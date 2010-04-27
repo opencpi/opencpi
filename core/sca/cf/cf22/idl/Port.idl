@@ -1,0 +1,70 @@
+#ifndef _PORT_IDL
+#define _PORT_IDL
+
+module CF {
+  
+	
+	/* This interface provides operations for managing associations between ports.  An application 
+	defines a specific Port type by specifying an interface that inherits the Port interface.  
+	An application establishes the operations for transferring data and control.  
+	The application also establishes the meaning of the data and control values.  Examples of how 
+	applications may use ports in different ways include: push or pull, synchronous or asynchronous, 
+	mono- or bi-directional, or whether to use flow control (e.g., pause, start, stop).
+	
+	The nature of Port fan-in, fan-out, or one-to-one is component dependent.
+	
+	Note 1:  The CORBA specification defines only a minimum size for each basic IDL type.  The actual size of the 
+	data type is dependent on the language (defined in the language mappings) as well as the Central Processing Unit 
+	(CPU) architecture used.  By using these CORBA basic data types, portability is maintained between components 
+	implemented in differing CPU architectures and languages.
+	
+	Note 2:  How components' ports are connected is described in the software assembly descriptor file 
+	of the Domain Profile. */
+	
+	interface Port {
+		/* This exception indicates one of the following errors has occurred in the specification 
+		of a Port association:
+		· errorCode 1 means the Port component is invalid (unable to narrow object reference) 
+		or illegal object reference,
+		· errorCode 2 means the Port name is not found (not used by this Port). */
+		
+		exception InvalidPort {
+			unsigned short errorCode;
+			string msg;
+		};
+		
+		/* This exception indicates the Port is unable to accept any additional connections. */
+		
+		exception OccupiedPort {
+		};
+		
+		/* The connectPort operation makes a connection to the component identified by the input parameters. 
+		The connectPort operation establishes only half of the association.  
+		
+		A port may support several connections.  The input connectionID is a unique identifier to be used by 
+		disconnectPort when breaking this specific connection.
+
+		The connectPort operation raises the InvalidPort exception when the input connection parameter is an 
+		invalid connection for this Port.  
+		The OccupiedPort exception is raised when the Port is fully occupied and unable to accept connections.
+		@roseuid 38C1759DA718 */
+		void connectPort (
+			in Object connection,
+			in string connectionId
+			)			
+			raises (InvalidPort, OccupiedPort);
+			
+		/* The disconnectPort operation breaks the connection to the component identified by the input parameters.
+		The InvalidPort exception is raised when the name passed to the operation is invalid.
+		@roseuid 38C175A5DC10 */
+		void disconnectPort (
+			in string connectionId
+			)			
+			raises (InvalidPort);
+			
+  }; 
+};
+
+#pragma version CF 1.0
+
+#endif

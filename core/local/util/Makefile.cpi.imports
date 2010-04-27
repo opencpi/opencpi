@@ -1,0 +1,16 @@
+ifeq ($(SYSTEM),vxworksdkm)
+EXCLUDE_SOURCES += CpiUtilLoadableModule.cxx
+endif
+
+ifeq ($(CROSS_HOST),ppc86xx-linux)
+ALLDEFS+=_CPU_POWERPC
+else
+ALLDEFS+=_CPU_IA64
+endif
+
+ALLINC += $(CPIOS_EXPORTS) \
+	$(LOGGER_EXPORTS)
+ALLLIBS += $(LOGGER_LIBS) \
+	$(CPIOS_LIBS)
+CXXFLAGS +=-D_VERSION='"2.3.9.1"' -DLINUX
+

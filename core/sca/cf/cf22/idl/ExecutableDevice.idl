@@ -1,0 +1,140 @@
+#ifndef _EXECUTABLEDEVICE_IDL
+#define _EXECUTABLEDEVICE_IDL
+
+#include "LoadableDevice.idl"
+
+module CF {
+	/* This interface extends the LoadableDevice interface by adding execute and
+	terminate behavior to a Device. */
+	
+	interface ExecutableDevice : LoadableDevice {
+		/* The InvalidProcess exception indicates that a process, as identified by the processId parameter, 
+		does not exist on this device. The error number indicates an ErrorNumberType value (e.g., ESRCH, EPERM, 
+		EINVAL). The message is component-dependent, providing additional information describing 
+		the reason for the error. */
+		
+		exception InvalidProcess {
+			ErrorNumberType errorNumber;
+			string msg;
+		};
+		
+		/* This exception indicates that a function, as identified by the input name parameter, 
+		hasn't been loaded on this device. */
+		
+		exception InvalidFunction {
+		};
+		
+		/* This type defines a process number within the system.  Process number is unique to the 
+		Processor operating system that created the process. */
+		
+		typedef unsigned long ProcessID_Type;
+		
+		/* The InvalidParameters exception indicates the input parameters are invalid on the execute 
+		operation. This exception is raised when there are invalid execute parameters. Each parameter's ID 
+		and value must be a valid string type. The invalidParms is a list of invalid parameters specified 
+		in the execute operation. */
+		
+		exception InvalidParameters {
+			/* The invalidParms is a list of invalid parameters specified in the execute or execute operation.  
+			Each parameter's ID and value must be a string type. */
+			Properties invalidParms;
+		};
+		
+		/* The InvalidOptions exception indicates the input options are invalid on the execute operation. 
+		The invalidOpts is a list of invalid options specified in the execute operation. */
+		
+		exception InvalidOptions {
+			/* The invalidParms is a list of invalid parameters specified in the execute or executeProcess 
+			operation.  Each parameter's ID and value must be a string type. */
+			Properties invalidOpts;
+		};
+		
+		/* The STACK_SIZE_ID is the identifier for the ExecutableDevice's execute options parameter.  
+		The value for a stack size is an unsigned long. */
+		
+		const string STACK_SIZE = "STACK_SIZE";
+		/* The PRIORITY_ID is the identifier for the ExecutableDevice's execute options parameters.
+		The value for a priority is an unsigned long. */
+		
+		const string PRIORITY_ID = "PRIORITY";
+		/* The ExecuteFail exception indicates that the Execute operation failed due to device dependent reasons. 
+		The ExecuteFail exception indicates that an error occurred during an attempt to invoke the execute 
+		function on the device. The error number indicates an ErrorNumberType value (e.g. EACCES, EBADF, 
+		EINVAL, EIO, EMFILE, ENAMETOOLONG, ENOENT, ENOMEM, ENOTDIR). The message is component-dependent, 
+		providing additional information describing the reason for the error. */
+		
+		exception ExecuteFail {
+			ErrorNumberType errorNumber;
+			string msg;
+		};
+		
+		/* The terminate operation provides the mechanism for terminating the execution of a process/thread 
+		on a specific device that was started up with the execute operation.
+
+		The terminate operation terminates the execution of the process/thread designated by the processId input 
+		parameter on the Device.
+
+		This operation does not return a value.
+
+		The terminate operation raises the InvalidState exception when the Device's adminState is LOCKED or 
+		operationalState is DISABLED. 
+
+		The terminate operation raises the InvalidProcess exception when the processId 
+		does not exist for the Device.
+		@roseuid 3A5DAEC1016D */
+		void terminate (
+			in ProcessID_Type processId
+			)			
+			raises (InvalidProcess, InvalidState);
+			
+		/* This operation provides the mechanism for starting up and executing a software 
+		process/thread on a device.  
+
+		The execute operation executes the function or file identified by the input name parameter 
+		using the input parameters and options parameters. Whether the input name parameter is a 
+		function or a file name is device-implementation-specific.The execute operation converts 
+		the input parameters (id/value string pairs) parameter to the standard argv of the POSIX exec 
+		family of functions, where argv(0) is the function name. The execute operation maps the 
+		input parameters parameter to argv starting at index 1 as follows, argv (1) maps to input 
+		parameters (0) id and argv (2) maps to input parameters (0) value and so forth. The execute operation passes argv 
+		through the operating system "execute" function.
+
+		The execute operation input options parameters are STACK_SIZE_ID and PRIORITY_ID. 
+		The execute operation uses these options, when specified, to set the operating system's 
+		process/thread stack size and priority, for the executable image of the given input name parameter.
+
+		The execute operation returns a unique process ID for the process that it created or a 
+		process ID of minus 1 (-1) when a process is not created.  
+
+		The execute operation raises the InvalidState exception when the Device's adminState is not 
+		UNLOCKED or operationalState is DISABLED.
+
+		The execute operation raises the InvalidFunction exception when the function indicated by the 
+		input name parameter does not exist for the Device.
+
+		The execute operation raises the CF InvalidFileName exception when the file name indicated by 
+		the input name parameter does not exist for the Device.
+
+		The execute operation raises the InvalidParameters exception when the input parameters parameter 
+		item ID and value are not string types. 
+
+		The execute operation raises the InvalidOptions exception when the input options parameter does 
+		not comply with STACK_SIZE_ID and  PRIORITY_ID options.
+
+		The execute operation raises the ExecuteFail exception when the operating system "execute" 
+		function for the device is not successful.
+		@roseuid 3A5DAEC1016F */
+		ProcessID_Type execute (
+			in string name,
+			in Properties options,
+			in Properties parameters
+			)			
+			raises (InvalidState, InvalidFunction, InvalidParameters, InvalidOptions, InvalidFileName, ExecuteFail);
+			
+  };
+  
+};
+
+#pragma version CF::ExecutableDevice 1.0
+
+#endif //EXECUTABLEDEVICE_IDL

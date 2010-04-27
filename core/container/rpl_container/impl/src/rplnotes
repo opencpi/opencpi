@@ -1,0 +1,35 @@
+pushing:
+
+producer WRITES data
+producer WRITES remoteDone as (local buffer is now) full flag
+consumer WRITES remBufAvail as (remote buffer is now) empty flag
+
+pulling:
+
+producer WRITES rembufAvail as (remote buffer is now) full flag
+consumer READS data
+consumer WRITES remoteDone as (local buffer is now) empty flag
+
+passive producer:
+
+consumer READS ready as (local buffer is now) full flag
+consumer READS data
+consumer WRITES remoteDone as (local buffer is now) empty flag
+
+passive consumer:
+
+producer READS ready as (local buffer is now) empty flag
+producer WRITES data
+producer WRITES remoteDone as (local buffer is now) full flag
+
+
+
+	  if (isProvider()) {
+	    // passive consumer
+	    empty = ready;
+	    full = done;
+	  } else {
+	    // passive producer
+	    full = ready;
+	    empty = done;
+	  }

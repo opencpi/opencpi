@@ -1,0 +1,42 @@
+#ifndef _DATATYPE_IDL
+#define _DATATYPE_IDL
+
+module CF {
+  
+  /**
+   *  This type is a CORBA  IDL struct type which can be used to hold any
+   *  CORBA basic type or static IDL type.
+   */
+  
+  struct DataType {
+    /**
+     *  The id attribute indicates the kind of value and type 
+     * (e.g., frequency, preset, etc.).  The id can be an UUID string,
+     *  an integer string, or a name identifier.
+     */
+    string id;
+    /**
+     *  The value attribute can be any static IDL type or CORBA basic 
+     * type.
+     */
+    any value;
+  }; 
+
+  /**
+   *  The Properties is a CORBA IDL unbounded sequence of CF DataType(s),
+   * which can be used in defining a sequence of name and value pairs.
+   */
+  
+  typedef sequence <DataType> Properties; 
+
+
+  exception UnknownProperties {
+    Properties invalidProperties;
+  }; 
+};
+
+#pragma version CF::DataType 1.0
+#pragma version CF::Properties 1.0
+#pragma version CF::UnknownProperties 1.0
+
+#endif

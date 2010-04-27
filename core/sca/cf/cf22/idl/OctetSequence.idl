@@ -1,0 +1,13 @@
+#ifndef _OCTETSEQUENCE_IDL
+#define _OCTETSEQUENCE_IDL
+
+module CF {
+  
+ 	/* This type is a CORBA unbounded sequence of octets. */
+	
+	typedef sequence <octet> OctetSequence;
+};
+
+#pragma version CF 1.0
+
+#endif

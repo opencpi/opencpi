@@ -1,0 +1,258 @@
+#ifndef _DEVICE_IDL
+#define _DEVICE_IDL
+
+#include "Resource.idl"
+
+module CF 
+{
+  interface AggregateDevice;
+
+  /**
+   *  This type defines an unbounded sequence of Devices.
+   * 
+   * The IDL to Ada mapping has a problem with self referential interfaces.
+   * To get around this problem, the interface Device forward declaration 
+   * has been created and this type has been moved outside of the Device 
+   * interface.
+   */
+  
+  interface Device;
+  typedef sequence <Device> DeviceSequence;
+
+  /**
+   *  A Device is a type of Resource within the domain and has the 
+   * requirements as stated in the Resource interface.  This interface 
+   * defines additional capabilities and attributes for any logical Device 
+   * in the domain.  A logical Device is a functional abstraction for a set 
+   * (e.g., zero or more) of hardware devices and provides the following 
+   * attributes and operations:
+   * 
+   * 1. Software Profile Attribute - This SPD XML profile defines the 
+   * logical Device capabilities (data/command uses and provides ports, 
+   * configure and query properties, capacity properties, status properties, 
+   * etc.), which could be a subset of the hardware device's capabilities.
+   * 
+   * 2. State Management Attributes - The usage, operational, and 
+   * administrative states constitutes the overall state for a logical 
+   * Device. Status properties may contain more detailed information about 
+   * aspects of the states.
+   * 
+   * 3. Capacity Operations - In order to use a device, certain capacities 
+   * (e.g., memory, performance, etc.) must be obtained from the Device.  
+   * The capacity properties will vary among devices and are described in 
+   * the Software Profile. A device may have multiple allocatable 
+   * capacities, each having its own unique capacity model.
+   * 
+   * The following behavior is in addition to the LifeCycle releaseObject 
+   * operation behavior.
+   * 
+   * The releaseObject operation calls the releaseObject operation on all of 
+   * the Device's aggregated Devices (i.e., those Devices that are contained 
+   * within the AggregateDevice'sdevices attribute).
+   * 
+   * The releaseObject operation transitions the Device's adminState to 
+   * SHUTTING_DOWNstate, when the Device's adminState is UNLOCKED.
+   * 
+   * The releaseObject operation causes the Device to be unavailable (i.e. 
+   * released from the CORBA environment, and process terminated on the OS 
+   * when applicable), when the Device's adminState transitions to LOCKED, 
+   * meaning its aggregated Devices have been removed and the Device's 
+   * usageState is IDLE.
+   * 
+   * The releaseObject operation shall cause the removal of its Device from 
+   * the Device's compositeDevice.  The releaseObject operation unregisters 
+   * its Device from its DeviceManager.
+   */
+  
+  interface Device : Resource {
+    /**
+     *  This exception indicates that the device is not capable of the 
+     * behavior being attempted due to the state the Device is in.  An 
+     * example of such behavior is allocateCapacity.
+     * exception InvalidState {string msg;};
+     */
+    
+    exception InvalidState {
+      string msg;
+    };
+    
+    /**
+     *  The InvalidCapacity exception returns the capacities that are 
+     * not valid for this device.exception InvalidCapacity.
+     */
+    
+    exception InvalidCapacity {
+      /**
+       *  The message indicates the reason for the invalid 
+       * capacity.
+       */
+      string msg;
+
+      /**
+       *  The invalid capacities sent to the allocateCapacity 
+       * operation.
+       */
+      Properties capacities;
+    };
+
+    /**
+     *  This is a CORBA IDL enumeration type that defines a Device's
+     * administrative states.  The administrative state indicates the
+     * permission to use or prohibition against using the Device.
+     */
+
+   	enum AdminType {
+			LOCKED,
+			SHUTTING_DOWN,
+			UNLOCKED
+		};
+
+    /**
+     *  This is a CORBA IDL enumeration type that defines a Device's
+     * operational states.  The operational state indicates whether or
+     * not the object is functioning.
+     */
+
+    enum OperationalType {
+      ENABLED,
+      DISABLED
+    };
+
+    /**
+     *  This is a CORBA IDL enumeration type that defines the Devices
+     * usage states.  This state indicates whether or not a Device is:
+     * IDLE     - not in use
+     * ACTIVE   - in use, with capacity remaining for allocation or
+     * BUSY     - in use, with no capacity remaining for allocation
+     * 
+     */
+
+    enum UsageType {
+      IDLE,
+      ACTIVE,
+      BUSY
+    };
+    
+		/* The readonly usageState attribute contains the Device's usage state (IDLE, ACTIVE, or BUSY).  
+		UsageState indicates whether or not a device is actively in
+		use at a specific instant, and if so, whether or not it has spare capacity for allocation at that instant.
+		
+		Whenever the usageState attribute changes, the Device sends an event to the Incoming Domain 
+		Management event channel with event data consisting of a StateChangeEventType. The event data 
+		will be populated as follows:
+		1.	The producerId field is the identifier attribute of the Device.
+		2.	The sourceId field is the identifier attribute of the Device.
+		3.	The stateChangeCategory field is  USAGE_STATE_EVENT.
+		4.	The stateChangeFrom and stateChangeTo fields reflects the usageState attribute value before 
+		and after the state change, respectively. */
+		
+		readonly attribute UsageType usageState;
+		/* The administrative state indicates the permission to use or prohibition against using the device. 
+		The adminState attribute contains the device's admin state value.  The adminState attribute only 
+		allows the setting of LOCKED and UNLOCKED values, where setting "LOCKED" is only effective when 
+		the adminState attribute value is UNLOCKED, and setting "UNLOCKED" is only effective when the 
+		adminState attribute value is LOCKED or SHUTTING_DOWN.  Illegal state transitions commands are ignored.
+		The adminState attribute, upon being commanded to be LOCKED, transitions from the UNLOCKED to the 
+		SHUTTING_DOWN state and set the adminState to LOCKED for its entire aggregation of Devices 
+		(if it has any).  The adminState then transitions to the LOCKED state when the Device's 
+		usageState is IDLE and its entire aggregation of Devices are LOCKED.
+		
+		Whenever the adminState attribute changes, the Device shall sends an event to the Incoming 
+		Domain Management event channel with event data consisting of a StateChangeEventType. The 
+		event data will be populated as follows:
+		1.	The producerId field is the identifier attribute of the Device.
+		2.	The sourceId field is the identifier attribute of the Device.
+		3.	The stateChangeCategory field is ADMINISTRATIVE_STATE_EVENT.
+		4.	The stateChangeFrom and stateChangeTo fields reflects the adminState attribute value before 
+		and after the state change, respectively. */
+		
+		attribute AdminType adminState;
+		/* The readonly operationalState attribute contains the device's operational state 
+		(ENABLED or DISABLED).  The operational state indicates whether or not the device is
+		functioning.
+		
+		Whenever the operationalState attribute changes, the Device sends an event to the 
+		Incoming Domain Management event channel with event data consisting of a StateChangeEventType. 
+		The event data will be populated as follows:
+		1.	The producerId field is the identifier attribute of the Device.
+		2.	The sourceId field is the identifier attribute of the Device.
+		3.	The stateChangeCategory field is OPERATIONAL_STATE_EVENT.
+		4.	The stateChangeFrom and stateChangeTo fields reflects the operationalState attribute value 
+		before and after the state change, respectively. */
+		
+		readonly attribute OperationalType operationalState;
+		/* The softwareProfile attribute is the XML description for this logical Device.The readonly 
+		softwareProfile attribute contains either a profile DTD element with a file reference to the 
+		SPD profile file or the XML for the SPD profile.  Files referenced within the softwareProfile 
+		are obtained via the FileManager. */
+		
+		readonly attribute string softwareProfile;
+		/* The readonly label attribute contains the Device's label.  The label attribute is the 
+		meaningful name given to a Device.  The attribute could convey location information
+		within the system (e.g., audio1, serial1, etc.). */
+		
+		readonly attribute string label;
+		/* The readonly compositeDevice attribute contains the object reference of the AggregateDevice 
+		with which this Device is associated or a nil CORBA object reference
+		if no association exists. */
+		
+		readonly attribute AggregateDevice compositeDevice;
+		
+		/* This operation provides the mechanism to request and allocate capacity from the Device.
+		The allocateCapacity operation reduces the current capacities of the Device based upon the input capacities 
+		parameter, when the Device's adminState is UNLOCKED, Device's operationalState is ENABLED, and 
+		Device's usageState is not BUSY.
+
+		The allocateCapacity operation sets the Device's usageState attribute to BUSY, when the 
+		Device determines that it is not possible to allocate any further capacity.  The 
+		allocateCapacity operation sets the usageState attribute to ACTIVE, when capacity is being used and 
+		any capacity is still available for allocation.
+
+		The allocateCapacity operation returns "True", if the capacities has been allocated, or "False", 
+		if not allocated
+
+		The allocateCapacity operation raises the InvalidCapacity exception, when the capacities are 
+		invalid or the capacity values are the wrong type or ID.
+
+		The allocateCapacity operation raises the InvalidState exception, when the Device's adminState is not 
+		UNLOCKED or operationalState is DISABLED.
+		@roseuid 38B7EFD077B0 */
+		boolean allocateCapacity (
+			in Properties capacities
+			)			
+			raises (InvalidCapacity, InvalidState);
+			
+		/* This operation provides the mechanism to return capacities back to the Device, 
+		making them available to other users.
+		
+		The deallocateCapacity operation adjusts the capacities of the Device based upon the input capacities parameter. 
+
+		The deallocateCapacity operation sets the usageState attribute to ACTIVE when, after 
+		adjusting capacities, any of the Device's capacities are still being used.
+
+		The deallocateCapacity operation sets the usageState attribute to IDLE when, after adjusting 
+		capacities, none of the Device's capacities are still being used.
+
+		The deallocateCapacity operation sets the adminState attribute to LOCKED as specified in adminState attribute.
+
+		This operation does not return any value.
+
+		The deallocateCapacity operation raises the InvalidCapacity exception, when the capacity ID is 
+		invalid or the capacity value is the wrong type.  The InvalidCapacity exception will 
+		state the reason for the exception.
+
+		The deallocateCapacity operation raises the InvalidState exception, when the Device's 
+		adminState is LOCKED or operationalState is DISABLED.
+		@roseuid 38B7EFFDDD48 */
+		void deallocateCapacity (
+			in Properties capacities
+			)			
+			raises (InvalidCapacity, InvalidState);
+			
+	};
+};
+
+#pragma version CF::Device 1.0
+#pragma version CF::DeviceSequence 1.0
+
+#endif

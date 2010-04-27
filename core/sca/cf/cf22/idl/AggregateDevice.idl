@@ -1,0 +1,81 @@
+#ifndef _AGGREGATEDEVICE_IDL
+#define _AGGREGATEDEVICE_IDL
+
+#include "Device.idl"
+#include "InvalidObjectReference.idl"
+
+module CF 
+{
+  /**
+   *  This interface defines behavior for a Device that can be used for 
+   * adding and removing Devices from the Device. This new interface can be 
+   * provided via inheritance or as a "provides port"  for any Device that 
+   * is capable of an aggregate relationship. Aggregated Devices use this 
+   * interface to add or remove themselves from composite Devices when being 
+   * created or torn-down.
+   */
+  
+  interface AggregateDevice {
+    /**
+     *  The readonly devices attribute contains a list of devices that 
+     * have been added to this Device or a sequence length of zero if 
+     * the Device has no aggregation relationships with other Devices. 
+     * 
+     */
+    
+    readonly attribute DeviceSequence devices;
+    
+    /**
+     *  This operation provides the mechanism to associate a Device 
+     * with another Device. Whena Device changes state or it is being 
+     * torn down, this affects its associated Devices. 
+     * 
+     * The addDevice operation adds the input associatedDevice parameter 
+     * to the AggregateDevice's devices attribute when the 
+     * associatedDevice does not exist in the devices attribute.  The 
+     * associatedDevice is ignored when duplicated.
+     * 
+     * The addDevice operation writes a FAILURE_ALARM log record,upon 
+     * unsuccessful adding of an associatedDevice to the 
+     * AggregateDevice's devices attribute.
+     * 
+     * This operation does not return any value.
+     * 
+     * The addDevice operation raises the CF InvalidObjectReference when 
+     * the input associatedDevice is a nil CORBA object reference.
+     */
+    void addDevice (
+      in Device associatedDevice
+      )      
+      raises (InvalidObjectReference);
+      
+    /**
+     *  This operation provides the mechanism to disassociate a Device 
+     * with another Device. 
+     * 
+     * The removeDevice operation removes the input associatedDevice 
+     * parameter from the AggregateDevice's devices attribute. 
+     * 
+     * The removeDevice operation writes a FAILURE_ALARM log record, 
+     * upon unsuccessful removal of the associatedDevice from the 
+     * AggregateDevice's devices attribute.
+     * 
+     * 
+     * 
+     * This operation does not return any value.
+     * 
+     * The removeDevice operation raises the CF InvalidObjectReference 
+     * when the input associatedDevice is a nil CORBA object reference 
+     * or does not exist in the aggregate Device's devices attribute.
+     */
+    void removeDevice (
+      in Device associatedDevice
+      )      
+      raises (InvalidObjectReference);
+      
+  };
+};
+
+//#pragma version CF::AggregateDevice 2.2
+
+#endif

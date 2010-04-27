@@ -1,0 +1,389 @@
+// Copyright (c) 2009 Mercury Federal Systems.
+// 
+// This file is part of OpenCPI.
+// 
+// OpenCPI is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// OpenCPI is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public License
+// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+//Source file: D:/projects/jtrs/sca 2.2/IDL/Log IDL Implementation Component/LogService.idl
+
+#ifndef __LOGSERVICE_DEFINED
+#define __LOGSERVICE_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+/* The LogService module contains the Log servant interface and the types
+necessary for a log producer to generate standard SCA log records.
+This module also defines the types necessary to control the logging output
+of a log producer. Components that produce logs are required to implement
+configure properties that allow the component to be configured as to what
+log records it will output. */
+
+module LogService {
+	
+	/* The LogLevelType is an enumeration type that is utilized to identify log levels. */
+	
+	enum LogLevelType {
+    SECURITY_ALARM,
+		FAILURE_ALARM,
+		DEGRADED_ALARM,
+		EXCEPTION_ERROR,
+		FLOW_CONTROL_ERROR,
+		RANGE_ERROR,
+		USAGE_ERROR,
+		ADMINISTRATIVE_EVENT,
+		STATISTIC_REPORT,
+		PROGRAMMER_DEBUG1,
+		PROGRAMMER_DEBUG2,
+		PROGRAMMER_DEBUG3,
+		PROGRAMMER_DEBUG4,
+		PROGRAMMER_DEBUG5,
+		PROGRAMMER_DEBUG6,
+		PROGRAMMER_DEBUG7,
+		PROGRAMMER_DEBUG8,
+		PROGRAMMER_DEBUG9,
+		PROGRAMMER_DEBUG10,
+		PROGRAMMER_DEBUG11,
+		PROGRAMMER_DEBUG12,
+		PROGRAMMER_DEBUG13,
+		PROGRAMMER_DEBUG14,
+		PROGRAMMER_DEBUG15,
+		PROGRAMMER_DEBUG16
+	};
+	
+	/* The LogLevelSequence type is an unbounded sequence of LogLevelTypes.
+	The PRODUCER_LOG_LEVEL configure/query property is of the
+	LogLevelSequence type. */
+	
+	typedef sequence <LogLevelType> LogLevelSequenceType;
+	
+	/* Log producers format log records as defined in the structure
+	ProducerLogRecordType.
+	
+	producerID : This field uniquely identifies the source of a log record.
+	The value is the component's identifier and is unique for each SCA Resource
+	and Core Framework component with the Domain. producerName : This field
+	identifies the producer of a log record in textual format.  This field is assigned by
+	the log producer, thus is not unique within the Domain (e.g. multiple instances of
+	an application will assign the same name to the ProducerName field.)
+	
+	level : The level field can be used to classify the log record according to the
+	LogLevelType.
+	
+	logData : This field contains the informational message being logged. */
+	
+	struct ProducerLogRecordType {
+		/* This attribute uniquely identifies the source of a log record.
+		The value is unique within the Domain. The DomainManager and
+		ApplicationFactory are responsible for assigning this value. */
+		string producerId;
+		/* This attrubute identifies the producer of a log record in textual format. 
+		This field is assigned by the log producer, thus is not unique within the Domain 
+		(e.g. - multiple instances of an application will assign the same name to the
+		ProducerName field.) */
+		string producerName;
+		/* This attribute identifies the type of message being logged as defined by the type LogLevelType. */
+		LogLevelType level;
+		/* This attribute contains the informational message being logged. */
+		string logData;
+	};
+	
+	/* A Log is utilized by CF and CORBA capable application components to store
+	informational messages.  These informational messages are referred to as
+	'log records' in this document. The interface provides operations for writing
+	log records to a Log, retrieving LogRecords from a Log, controlling of a Log,
+	and getting the status of a Log. */
+	
+	interface Log {
+		/* The AdministrativeStateType denotes the active logging state of an
+		operational Log. When set to UNLOCKED the Log will accept records
+		for storage, per its operational parameters. When set to LOCKED the
+		Log will not accept new log records and records can be read or deleted only. */
+		
+		enum AdministrativeStateType {
+			LOCKED,
+			UNLOCKED
+		};
+		
+		/* The AvailabilityStatusType denotes whether or not the Log is available
+		for use. When true,offDuty indicates the Log is LOCKED
+		(administrative state) or DISABLED (operational state). When true,
+		logFull indicates the Log storage is full. */
+		
+		struct AvailabilityStatusType {
+			boolean offDuty;
+			boolean logFull;
+		};
+		
+		/* This type specifies the action that the Log should take when its internal buffers
+		become full of data, leaving no room for new records to be written.  Wrap indicates that the Log 
+		will overwrite the oldest LogRecords with the newest records, as they are written to the Log.  
+		Halt indicates that the Log will stop logging when full. */
+		
+		enum LogFullActionType {
+			WRAP,
+			HALT
+		};
+		
+		/* The enumeration OperationalStateType defines the Log states of
+		operation. When the Log is ENABLED it is fully functional and is
+		available for use by log producer and log consumer clients. A Log that
+		is DISABLED has encountered a runtime problem and is not available
+		for use by log producers or log consumers. The internal error conditions
+		that cause the Log to set the operational state to ENABLED or DISABLED
+		are implementation specific. */
+		
+		enum OperationalStateType {
+			DISABLED,
+			ENABLED
+		};
+		
+		exception InvalidLogFullAction {
+			string Details;
+		};
+		
+		/* This exception indicates that a provided parameter was invalid. */
+		
+		exception InvalidParam {
+			string details;
+		};
+		
+		/* This type provides the time format used by the Log to time-stampLogRecords.  
+		The Log implementation is required to produce time-stamps compatible with the POSIX-defined time_t type. */
+		
+		struct LogTimeType {
+			/* This value corresponds to POSIX time_t type */
+			long seconds;
+			long nanoseconds;
+		};
+		
+		/* This type provides the record ID that is assigned to a LogRecord. */
+		
+		typedef unsigned long long RecordIdType;
+		
+		/* The LogRecordType defines the format of the LogRecords as stored in the Log. 
+		The 'info' field is the ProducerLogRecord that is written by a client to the Log. */
+		
+		struct LogRecordType {
+			RecordIdType id;
+			LogTimeType time;
+			ProducerLogRecordType info;
+		};
+		
+		/* The ProducerLogRecordSequence type defines a sequence of
+		ProducerLogRecordTypes. */
+		
+		typedef sequence <ProducerLogRecordType> ProducerLogRecordSequence;
+		
+		/* The LogRecordSequence type defines an unbounded sequence of LogRecords. */
+		
+		typedef sequence <LogRecordType> LogRecordSequence;
+		
+		/* This operation provides the maximum number of bytes that the Log can store.
+		The getMaxSizeis operation returns the integer number of bytes that the Log is capable of storing.
+		This operation does not raise any exceptions.
+		@roseuid 3B268C6203B5 */
+		unsigned long long getMaxSize ();
+			
+		/* This operation sets the maximum number of bytes that the Log can store.
+		The setMaxSize operation sets the maximum size of the log measured in number of bytes. 
+
+		This operation does not return a value. 
+
+		The setMaxSize operation raises the InvalidParam exception if the size parameter passed 
+		in is less than the current size of the Log.
+
+		The setMaxSizeis operation raises the InvalidParam exception if the size parameter passed 
+		in is less than the current size of the Log
+		@roseuid 3B268CAF0207 */
+		void setMaxSize (
+			in unsigned long long size
+			)			
+			raises (InvalidParam);
+			
+		/* The getCurrentSize operation provides the current size of the log storage in bytes.
+
+		The getCurrentSize operation returns the current size of the log storage in bytes 
+		(i.e. if the log contains no records, get CurrentSize will return a value of 0.).
+
+		This operation does not return any exceptions.
+		@roseuid 3B268D1500C4 */
+		unsigned long long getCurrentSize ();
+			
+		/* The getNumRecords operation provides the number of records present in the Log.
+
+		The getNumRecords operation returns the current number of LogRecords contained in the Log.
+
+		This operation does not raise any exceptions.
+		@roseuid 3B268D2B00D9 */
+		unsigned long long getNumRecords ();
+			
+		/* The getLogFullAction operation provides the action taken when the Log becomes full.
+
+		The getLogFullAction operation returns the Log's full action setting.
+
+		This operation does not return any exceptions.
+		@roseuid 3B268D4603BD */
+		LogFullActionType getLogFullAction ();
+			
+		/* The setLogFullAction operation provides the mechanism to configure the action taken by a Log when it becomes full.
+
+		The setLogFullAction operation sets the action taken by a Log when its 
+		maximum size has been reached to the value specified in the action parameter. 
+		The valid values for the action parameter, WRAP and HALT, are described by LogFullActionType.
+
+		This operation does not return a value.
+
+		This operation does not return any exceptions.
+		@roseuid 3B268D6503B8 */
+		void setLogFullAction (
+			in LogFullActionType action
+			);
+			
+		/* The getAvailabilityStatus operation is used to read the availability status of the Log.
+
+		The getAvailabilityStatus operation returns the current availability status of the Log.
+
+		This operation does not raise any exceptions.
+		@roseuid 3B268DD302CF */
+		AvailabilityStatusType getAvailabilityStatus ();
+			
+		/* The getAdministrativeState is used to read the administrative state of the Log.
+
+		The getAdministrativeState operation returns the current administrative state of the Log.
+
+		This operation does not raise any exceptions.
+		@roseuid 3B268DEC0376 */
+		AdministrativeStateType getAdministrativeState ();
+			
+		/* The setAdministrativeState operation provides write access to the administrative state value.
+
+The setAdministrativeState operation sets the administrative state of the Log.
+
+This operation does not return a value.
+
+This operation does not raise any exceptions.
+		@roseuid 3B268E0503AE */
+		void setAdministrativeState (
+			in AdministrativeStateType state
+			);
+			
+		/* The getOperationalState operation returns the operational state of the Log.
+
+This operation does not raise any exceptions.
+		@roseuid 3B268F0B02D8 */
+		OperationalStateType getOperationalState ();
+			
+		/* The writeRecords operation provides the method for writing log records to the Log. 
+		The operation is defined as oneway to minimize client overhead while writing to the Log.
+
+		The writeRecords operation adds each log record supplied in the records parameter to the Log.  
+		When there is insufficient storage to add one of the supplied log records 
+		to the Log, and the LogFullAction is set to HALT, the writeRecords method sets the availability 
+		status logFull state to true.  (i.e. if 3 records are provided in the records parameter, 
+		and while trying to write the second record to the log, the record will not fit, then the 
+		Log is considered to be full therefore the second and third records will not be stored in the 
+		Log but the first record would have been successfully stored.). 
+
+		The writeRecords operation writes the current local time to the time field of each record written to the Log. 
+
+		The writeRecords operation assigns a unique record ID to the id field of the LogRecordlog record. 
+		Log records accepted for storage by the writeRecords are made available for retrieval in the order received.
+
+		This operation does not return a value.
+
+		This operation does not raise any exceptions.
+		@roseuid 3B32456C03B8 */
+		oneway void writeRecords (
+			in ProducerLogRecordSequence records
+			);
+			
+		/* The getRecordIDFromTime operation is used to get the record ID of the first record in the 
+		log with a time-stamp that is greater than, or equal to, the time specified in the parameter.
+
+		The getRecordIdFromTime operation returns the record ID of the first record in the log with a time 
+		stamp that is greater than, or equal to, the time specified in the fromTime parameter. If the 
+		Log does not contain a record that meets the criteria provided, then the RecordIDType 
+		returned shall correspond to the next record that will be recorded in the future.  In this way, if 
+		this "future" recordID is passed into the retrieveById operation, an empty record will be returned, 
+		unless since that time records have been recorded.  Note that if the time specified in the fromTime 
+		parameter is in the future, there is no guarantee that the resulting records returned will have a time 
+		stamp after the fromTime parameter if the returned recordID is subsequently used as input to the retrieveByID operation.
+
+		The getRecordIdFromTime operation returns the record ID of the first record in the log with a time stamp that 
+		is greater than, or equal to, the time specified in the fromTime parameter. If the Log does not contain a 
+		record that meets the criteria provided, then the RecordIDType returned corresponds to the next record that 
+		will be recorded in the future. In this way, if this "future" recordID is passed into the retrieveById operation, 
+		an empty record will be returned, unless since that time records have been recorded.
+
+		This operation raises no exceptions.
+		@roseuid 3B33581D02C4 */
+		RecordIdType getRecordIdFromTime (
+			in LogTimeType fromTime
+			);
+			
+		/* The retrieveById operation is used to get a specified number of records from a Log.
+
+		The retrieveById operation returns a list of LogRecords that begins with the record specified by 
+		the currentID parameter and contains less than or equal to the number of records specified in the howMany parameter.
+
+		The retrieveById operation sets the inout parameter currentId to the LogRecord Id of next record after
+		the last record in the LogRecordSequence returned. If the record sequence returned exhausts the log records, 
+		then the currentId parameter sets the LogRecordId of where the log will resume writing logs on the next write.
+
+		The retrieveById operation returns a LogRecordSequence that begins with the record specified by the 
+		currentId parameter.  The number of records in the LogRecordSequencereturned by the retrieveById operation 
+		is equal to the number of records specified by the howMany parameter, or the number of records available if 
+		the number of records specified by the howMany parameter cannot be met.  If the record specified by currentId 
+		does not exist, the retrieveById operation returns an empty list of LogRecords and leave the currentId unchanged.  
+		If the Log is empty, or has been exhausted, the retrieveById operation returns an empty list of LogRecords and 
+		leave the currentId unchanged.
+
+		This operation does not raise any exceptions.
+		@roseuid 3B32456D000C */
+		LogRecordSequence retrieveById (
+			inout RecordIdType currentId,
+			in unsigned long howMany
+			);
+			
+		/* The clearLog operation provides the method for removing all of the LogRecords from the Log.
+
+		The clearLog operation deletes all records from the Log.  The clearLog operation sets the current 
+		size of the Log storage to zero.  The clearLog operation sets the current number of records in the 
+		Log to zero.  The clearLog operation sets the logFull availability status element to false.
+
+		The clearLog operation does not return a value.
+
+		This operation does not raise any exceptions.
+		@roseuid 3B32456D003E */
+		void clearLog ();
+			
+		/* The destroy operation provides a means by which an instantiated Log may be torn down.
+
+		The destroy operation releases all internal memory and/or storage allocated by theLog.  
+		The destroy operation tears down the component (i.e. released from the CORBA environment).  
+
+		The destroy operation does not return a value.
+
+		This operation does not raise any exceptions.
+		@roseuid 3B32456D007A */
+		void destroy ();
+			
+	};
+	
+};
+
+#pragma version LogService 1.0
+
+#endif

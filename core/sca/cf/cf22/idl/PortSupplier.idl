@@ -1,0 +1,49 @@
+#ifndef _PORTSUPPLIER_IDL
+#define _PORTSUPPLIER_IDL
+
+module CF {
+  
+  /**
+   *  This interface provides the getPort operation for those objects that 
+   * provide ports.
+   */
+  
+  interface PortSupplier {
+    /**
+     *  This exception is raised if an undefined port is requested.
+     */
+    
+    exception UnknownPort {
+    };
+    
+    /**
+     *  The getPort operation provides a mechanism to obtain a 
+     * specific consumer or producer Port.  A PortSupplier may contain 
+     * zero-to-many consumer and producer port components.  The exact 
+     * number is specified in the component's Software Profile SCD 
+     * (section Error! Reference source not found.).  These Ports can be 
+     * either push or pull types.  Multiple input and/or output ports 
+     * provide flexibility for PortSuppliers that must manage varying 
+     * priority levels and categories of incoming and outgoing messages, 
+     * provide multi-threaded message handling, or other special message 
+     * processing.
+     * 
+     * The getPort operations returns the object reference to the named 
+     * port as stated in the component's SCD.  The getPort operation 
+     * returns the CORBA object reference that is associated with the 
+     * input port name.
+     * 
+     * The getPort operation raises an UnknownPort exception if the port 
+     * name is invalid.
+     */
+    Object getPort (
+      in string name
+      )      
+      raises (UnknownPort);
+      
+  }; 
+};
+
+#pragma version CF::PortSupplier 1.0
+
+#endif

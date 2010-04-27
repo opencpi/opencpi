@@ -1,0 +1,15 @@
+#ifndef _INVALIDPROFILE_IDL
+#define _INVALIDPROFILE_IDL
+
+module CF 
+{
+  /* This exception indicates an invalid component profile error. */
+
+  exception InvalidProfile {
+	};
+  
+};
+
+#pragma version CF::InvalidProfile 1.0
+
+#endif

@@ -1,0 +1,63 @@
+#ifndef _ERRORNUMBERTYPE_IDL
+#define _ERRORNUMBERTYPE_IDL
+
+module CF {
+
+  	/* This enum is used to pass error number information in various exceptions. 
+	Those exceptions starting with "E" map the POSIX definitions, and can be found in 
+	IEEE Std 1003.1 1996 Edition. Those exceptions starting with CF are defined below:
+	CFNOTSET is not defined in the POSIX specification. CFNOTSET is an SCA specific value 
+	that is applicable for any exception when the method specific or standard POSIX error 
+	values are not appropriate.) */
+	
+	enum ErrorNumberType {
+		CFNOTSET,
+		SCA_E2BIG,
+		SCA_EACCES,
+		SCA_EAGAIN,
+		SCA_EBADF,
+		SCA_EBADMSG,
+		SCA_EBUSY,
+		SCA_ECANCELED,
+		SCA_ECHILD,
+		SCA_EDEADLK,
+		SCA_EDOM,
+	  SCA_EEXIST,
+		SCA_EFAULT,
+		SCA_EFBIG,
+		SCA_EINPROGRESS,
+		SCA_EINTR,
+		SCA_EINVAL,
+		SCA_EIO,
+		SCA_EISDIR,
+		SCA_EMFILE,
+		SCA_EMLINK,
+		SCA_EMSGSIZE,
+		SCA_ENAMETOOLONG,
+		SCA_ENFILE,
+		SCA_ENODEV,
+		SCA_ENOENT,
+		SCA_ENOEXEC,
+		SCA_ENOLCK,
+		SCA_ENOMEM,
+		SCA_ENOSPC,
+		SCA_ENOSYS,
+		SCA_ENOTDIR,
+		SCA_ENOTEMPTY,
+		SCA_ENOTSUP,
+		SCA_ENOTTY,
+		SCA_ENXIO,
+		SCA_EPERM,
+		SCA_EPIPE,
+		SCA_ERANGE,
+		SCA_EROFS,
+		SCA_ESPIPE,
+		SCA_ESRCH,
+		SCA_ETIMEDOUT,
+		SCA_EXDEV
+	};
+};
+
+#pragma version CF::ErrorNumberType 1.0
+
+#endif

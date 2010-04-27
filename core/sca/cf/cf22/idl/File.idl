@@ -1,0 +1,171 @@
+#ifndef _FILE_IDL
+#define _FILE_IDL
+
+#include "OctetSequence.idl"
+#include "ErrorNumberType.idl"
+
+module CF {
+
+  /**
+   *  This exception indicates an invalid file name was passed to a File 
+   * Service operation.  The message provides information describing why the 
+   * filename was invalid.
+   */
+  
+  exception InvalidFileName {
+		ErrorNumberType errorNumber;
+    string msg;
+  };
+  
+  /**
+   *  This exception indicates a file-related error occurred. The message 
+   * shall provide information describing the error.  The message can be 
+   * used for logging the error.
+   */
+  
+  exception FileException {
+		ErrorNumberType errorNumber;
+    string msg;
+    /**
+     *  The error code that corresponds to the error message.
+     */
+  };
+  
+  /**
+   *  The File interface provides the ability to read and write files 
+   * residing within a CF compliant distributed FileSystem.  A file can be 
+   * thought of conceptually as a sequence of octets with a current 
+   * filepointer describing where the next read or write will occur.
+   * This filepointer points to the beginning of the file upon construction 
+   * of the file object.  The File interface is modeled after the POSIX/C 
+   * file interface.
+   */
+  
+  interface File {
+    /**
+     *  This exception indicates an error occurred during a read or 
+     * write operation to a File. The message provides information 
+     * describing why the I/O error occurred.
+     */
+    
+    exception IOException {
+      /**
+       *  The error code that corresponds to the error message.
+       */
+      ErrorNumberType errorNumber;
+      string msg;
+    };
+    
+    /**
+     *  This exception indicates the file pointer is out of range 
+     * based upon the current file size.
+     */
+    
+    exception InvalidFilePointer {
+    };
+    
+    /**
+     *  The readonly fileName attribute contains the file name given 
+     * to the FileSystem open/create operation.  The syntax for a 
+     * filename is based upon the UNIX operating system.  That is, a 
+     * sequence of directory names separated by forward slashes (/) 
+     * followed by the base filename.  The fileName attribute will 
+     * contain the filename given to the FileSystem::open operation.
+     */
+    
+    readonly attribute string fileName;
+    /**
+     *  The readonly filePointer attribute contains the file position 
+     * where the next read or write will occur.
+     */
+    
+    readonly attribute unsigned long filePointer;
+    
+    /**
+     *  The read operation reads octets from the file referenced up to 
+     * the number specified by the length parameter and change the value 
+     * of the filePointer attribute forward by the number of octets 
+     * actually read.  The read operation only reads less than the 
+     * maximum number of octets specified in the length parameter when 
+     * an end of file is encountered.
+     * 
+     * The read operation returns via the out Message parameter an CF 
+     * OctetSequence that equals the number of octets actually read from 
+     * the File.  If the filePointer attribute value reflects the end of 
+     * the File, the read operation returns a 0-length CF OctetSequence.
+     * 
+     * The read operation raises the IOException when a read error 
+     * occurs.
+     */
+    void read (
+      out OctetSequence data,
+      in unsigned long length
+      )      
+      raises (IOException);
+      
+    /**
+     *  The write operation writes data to the file referenced. If the 
+     * write is successful, the write operation shall increment the 
+     * filePointer attribute to reflect the number of octets written. If 
+     * the write is unsuccessful, the filePointer attribute value is 
+     * maintained or is restored to its value prior to the write 
+     * operation call.
+     * 
+     * This operation does not return any value.
+     * 
+     * The write operation raises the IOException when a write error 
+     * occurs.
+     */
+    void write (
+      in OctetSequence data
+      )      
+      raises (IOException);
+      
+    /**
+     *  The sizeOf operation returns the current size of the file.
+     * The CF FileException is raised when a file-releated error occurs 
+     * (e.g. the file does not exist anymore).
+     */
+    unsigned long sizeOf ()      
+      raises (FileException);
+      
+    /**
+     *  The close operation releases any OE file resources associated 
+     * with the component.  The close operation makes the file 
+     * unavailable to the component  
+     * 
+     * A client should release its CORBA File reference after closing 
+     * the File.  The close operation raises CF FileException exception 
+     * when it cannot successfully close the file.
+     */
+    void close ()      
+      raises (FileException);
+      
+    /**
+     *  The setFilePointer operation positions the file pointer where 
+     * the next read or write will occur.
+     * 
+     * The setFilePointer operation sets the filePointer attribute value 
+     * to the input filePointer.
+     * 
+     * This operation does not return anyvalue.
+     * 
+     * The setFilePointer operation raises the CF FileException when the 
+     * File can not be successfully accessed to set thefilePointer 
+     * attribute. The setFilePointer operation raises the 
+     * InvalidFilePointer exception when the filePointer 
+     * parameterexceeds the file size.
+     */
+    void setFilePointer (
+      in unsigned long filePointer
+      )      
+      raises (InvalidFilePointer, FileException);
+      
+  };
+};
+
+#pragma version CF::File 1.0
+#pragma version CF::FileException 1.0
+#pragma version CF::InvalidFileName 1.0
+
+#endif

@@ -1,0 +1,130 @@
+#ifndef _RESOURCEFACTORY_IDL
+#define _RESOURCEFACTORY_IDL
+
+#include "Resource.idl"
+
+module CF {
+
+/* A ResourceFactory is used to create and tear down a Resource.  The ResourceFactory interface is 
+	designed after the Factory Design Patterns.  Each ResourceFactory object creates a specific type of 
+	Resource within the radio.  The ResourceFactory interface provides a one-step solution for creating a 
+	Resource, reducing the overhead of starting up Resources.  In CORBA, there are two separate object reference 
+	counts.  One for the client side and one for the server side.  The Factory keeps a server-side reference 
+	count of the number of clients that have requested the resource.  When a client is done with a resource, 
+	the client releases the client resource reference and calls releaseResource to the ResourceFactory.  
+	When the server-side reference goes to zero, the server resource object is released from the ORB that 
+	causes the resource to be destroyed. */
+	
+	interface ResourceFactory {
+		/* This exception indicates the resource ID does not exist in the ResourceFactory. */
+		
+		exception InvalidResourceId {
+		};
+		
+		/* This exception indicates that the shutdown method failed to release the ResourceFactory 
+		from the CORBA environment due to the fact the Factory still contains Resources.  
+		The message is component-dependent, providing additional information describing why the shutdown failed. */
+		
+		exception ShutdownFailure {
+			/* This message indicates the reason for the shutdown failure. */
+			string msg;
+		};
+		
+		/* The CreateResourceFailure exception indicates that the createResource method failed to create the 
+		Resource. The error number indicates an ErrorNumberType value (e.g., NOTSET, EBADMSG, EINVAL, 
+		EMSGSIZE, ENOMEM).  The message is component-dependent, providing additional information 
+		describing the reason for the error. */
+		
+		exception CreateResourceFailure {
+			ErrorNumberType errorNumber;
+			string msg;
+		};
+		
+		/* The readonly identifier attribute contains the unique identifier for a device instance. */
+		
+		readonly attribute string identifier;
+		
+		/* The createResource operation provides the capability to create Resources in the same process 
+		space as the ResourceFactory or to return a Resource that has already been created. 
+		This behavior is an alternative approach to the Device's execute operation for creating a Resource.
+		The resourceId is the identifier for Resource.  The qualifiers are parameter values used by the 
+		ResourceFactory in creation of the Resource.  The ApplicationFactory can determine the values to be 
+		supplied for the qualifiers from the description in the ResourceFactory's Software Profile.  
+		The qualifiers may be used to identify, for example, specific subtypes of Resources created by a ResourceFactory.
+
+
+		If no Resource exists for the given resourceId, the createResource operation creates a Resource.  
+		If the Resource already exists, the Resource's reference is returned.  
+		The createResource operation assigns the given resourceId to a new Resource and either set a 
+		reference count to one, when the Resource is initially created, or increment the reference 
+		count by one, when the Resource already exists. The reference count is used to indicate the 
+		number of times that a specific Resource reference has been given to requesting clients.  
+		This ensures that the ResourceFactory does not release a Resource that has a reference count 
+		greater than 0.  When multiple clients have obtained a reference to the same Resource, 
+		each client will request release of the Resource when through with the Resource.  
+		However, the Resource must not be released until the release request comes from the last client in existence.
+
+
+		The createResource operation returns a reference to the created Resource or the existing Resource.  
+		The createResource operation returns a nil CORBA component reference when the operation is unable to 
+		create the Resource
+
+
+		The createResource operation raises the CreateResourceFailure exception when it 
+		cannot create the Resource.
+		@roseuid 356B1F02C620 */
+		Resource createResource (
+			in string resourceId,
+			in Properties qualifiers
+			)			
+			raises (CreateResourceFailure);
+			
+		/* In CORBA there is client side and server side representation of a Resource.  
+		This operation provides the mechanism of releasing the Resource in the CORBA environment on the 
+		server side when all clients are through with a specific Resource.  The client still has to release 
+		its client side reference of the Resource.
+
+
+		The releaseResource operation decrements the reference count for the specified resource, 
+		as indicated by the resourceId.  The releaseResource operation makes the Resource no longer 
+		avaliable (i.e., it is released from the CORBA environment) when the Resource's reference 
+		count is zero.
+
+
+		This operation does not return a value.
+
+
+		The releaseResource operation raises the InvalidResourceId exception if an
+		invalid resourceId is received.
+		@roseuid 356B1F4E9140 */
+		void releaseResource (
+			in string resourceId
+			)			
+			raises (InvalidResourceId);
+			
+		/* In CORBA there is client side and server side representation of a ResourceFactory.  
+		This operation provides the mechanism for releasing the ResourceFactory from the CORBA environment 
+		on the server side.  The client has the responsibility to release its client side reference 
+		of the ResourceFactory.
+
+
+		The shutdown operation results in the ResourceFactory being unavailable to any subsequent 
+		calls to its object reference (i.e. it is released from the CORBA environment).
+
+
+		This operation does not raise any exceptions.
+
+
+
+		The shutdown operation raises the ShutdownFailure exception for any error that 
+		prevents the shutdown of the ResourceFactory.
+		@roseuid 356C2593F700 */
+		void shutdown ()			
+			raises (ShutdownFailure);
+			
+	};
+};
+
+#pragma version CF::ResourceFactory 1.0
+
+#endif

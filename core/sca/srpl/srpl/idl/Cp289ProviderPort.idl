@@ -1,0 +1,16 @@
+#ifndef Cp289Port_IDL
+#define Cp289Port_IDL
+
+#include "CF.idl"
+
+#pragma prefix "opencpi.org"
+
+module CPI {
+  interface Cp289ProviderPort : CF::Port {
+    typedef sequence<octet> Octets;
+    Octets connectInitial(in Octets initialUserInfo);
+    void connectFinal(in Octets finalUserInfo);
+  };
+};
+
+#endif

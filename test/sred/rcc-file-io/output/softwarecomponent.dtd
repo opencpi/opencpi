@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2009 Mercury Federal Systems.
+
+This file is part of OpenCPI.
+
+OpenCPI is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+OpenCPI is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!ELEMENT softwarecomponent
+	( corbaversion
+	, componentrepid
+	, componenttype
+	, componentfeatures
+	, interfaces
+	, propertyfile?
+	)>
+
+<!ELEMENT corbaversion (#PCDATA)> 
+
+<!ELEMENT componentrepid EMPTY>
+<!ATTLIST componentrepid
+	repid		CDATA	#REQUIRED>
+
+<!ELEMENT componenttype (#PCDATA)>
+
+<!ELEMENT componentfeatures
+	( supportsinterface* 
+	, ports
+	)>
+
+<!ELEMENT supportsinterface EMPTY>
+<!ATTLIST supportsinterface
+	repid			CDATA	#REQUIRED
+ 	supportsname	CDATA	#REQUIRED>
+
+<!ELEMENT ports
+	(provides   
+	| uses
+	)*> 
+
+<!ELEMENT provides
+	( porttype*)>
+
+<!ATTLIST provides
+	repid			CDATA	#REQUIRED
+	providesname	CDATA	#REQUIRED>
+
+<!ELEMENT uses
+	( porttype*)>
+<!ATTLIST uses
+	repid		CDATA	#REQUIRED
+	usesname	CDATA	#REQUIRED>
+
+<!ELEMENT porttype EMPTY>
+<!ATTLIST porttype
+	type	( data	| control | responses | test ) 	#REQUIRED>
+
+<!ELEMENT interfaces
+	( interface+ 
+	)>
+
+<!ELEMENT interface
+	( inheritsinterface*)>
+<!ATTLIST interface
+	repid		CDATA	#REQUIRED
+	name		CDATA	#REQUIRED>
+
+<!ELEMENT inheritsinterface EMPTY>
+<!ATTLIST inheritsinterface
+	repid		CDATA	#REQUIRED>
+
+<!ELEMENT propertyfile
+	(localfile
+	)>
+<!ATTLIST propertyfile
+	type		CDATA	#IMPLIED>
+
+<!ELEMENT localfile EMPTY>
+<!ATTLIST localfile
+	name		CDATA	#REQUIRED>
+
+

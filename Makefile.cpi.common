@@ -1,0 +1,765 @@
+# Copyright (c) 2009 Mercury Federal Systems.
+#
+# This file is part of OpenCPI.
+#
+# OpenCPI is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# OpenCPI is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# ----------------------------------------------------------------------
+# The rest should work.
+# ----------------------------------------------------------------------
+#
+
+ifeq ($(ASSERT),0)
+ALLDEFS += NDEBUG
+endif
+
+ifeq ($(findstring Cygwin,$(shell uname -a)),Cygwin)
+# Assume that we're using Cygwin's make
+MKDEPENDFLAGS += --pathtype cygwin
+else
+ifeq ($(findstring Msys,$(shell uname -a)),Msys)
+# Assume that we're using Msys' make
+MKDEPENDFLAGS += --pathtype mingw
+endif
+endif
+
+ifeq ($(SYSTEM),winnt)
+
+#
+# Win32 compile-time configuration
+#
+
+ifeq ($(WINNT_TOOLCHAIN),mingw)
+
+#
+# Use MinGW
+#
+
+CC = gcc
+CXX = c++
+LD = c++
+AR = ar
+
+MKDEPENDFLAGS += --xpattern "MinGW"
+
+CFLAGS += -DWIN32 -D_WIN32_WINNT=0x0400
+CXXFLAGS += -DWIN32 -D_WIN32_WINNT=0x0400
+
+ifeq ($(DEBUG),1)
+CFLAGS += -g
+CXXFLAGS += -g
+else
+CFLAGS += -O2
+CXXFLAGS += -O2
+endif
+
+BASICLIBS = -lws2_32
+
+.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .d
+
+$(OBJDIR)/%.obj : %.asm
+	$(CC) -c -o "$@" $(ASMFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.c
+	$(CC) -c -o "$@" $(CFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cxx
+	$(CXX) -c -o "$@" $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cpp
+	$(CXX) -c -o "$@" $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+%.d : %.c
+	$(CC) -E $(CFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.c,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cxx
+	$(CXX) -E $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cpp
+	$(CXX) -E $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cpp,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
+	$(LD) $(LDFLAGS) -o "$@" \
+		$(filter %.obj,$^) \
+		$(DYNOBJS) \
+		$(patsubst %,-L%$(OUTDIR),$(dir $(ALLLIBS))) \
+		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(BASICLIBS)
+
+else
+
+#
+# Use MSVC++
+#
+
+CC = cl
+CXX = cl
+LD = link
+CFLAGS += /nologo /W3 /DWIN32 /D_WIN32_WINNT=0x0400
+CXXFLAGS += /nologo /Zm400 /GR /GX /Zc:wchar_t /W3 /DWIN32 /D_WIN32_WINNT=0x0400 /wd4049 /wd4290
+LDFLAGS += /nologo
+BASICLIBS = ws2_32.lib
+
+MKDEPENDFLAGS += --xpattern "Microsoft Visual Studio"
+
+ifeq ($(DEBUG),1)
+CFLAGS += /MDd /Zi
+CXXFLAGS += /MDd /Zi
+LDFLAGS += /DEBUG
+BASICLIBS += msvcrtd.lib
+else
+CFLAGS += /MD /Ox
+CXXFLAGS += /MD /Ox
+BASICLIBS += msvcrt.lib
+endif
+
+.SUFFIXES:
+.SUFFIXES: .asm .cpp .cxx .c .obj .exe .lib .idl .d
+
+$(OBJDIR)/%.obj : %.asm
+	$(CC) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(ASMFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.c
+	$(CC) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(CFLAGS) \
+		$(patsubst %,/D%=1,$(ALLDEFS)) \
+		$(addprefix /I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cxx
+	$(CXX) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(CXXFLAGS) \
+		$(patsubst %,/D%=1,$(ALLDEFS)) \
+		$(addprefix /I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cpp
+	$(CXX) /c /Fo"$@" /Fd"$(OBJDIR)/vc70.pdb" $(CXXFLAGS) \
+		$(patsubst %,/D%=1,$(ALLDEFS)) \
+		$(addprefix /I,$(ALLINC)) \
+		"$<"
+
+%.d : %.c
+	$(CC) /E $(CFLAGS) \
+		$(patsubst %,/D%=1,$(ALLDEFS)) \
+		$(addprefix /I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.c,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cxx
+	$(CXX) /E $(CXXFLAGS) \
+		$(patsubst %,/D%=1,$(ALLDEFS)) \
+		$(addprefix /I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cpp
+	$(CXX) /E $(CXXFLAGS) \
+		$(patsubst %,/D%=1,$(ALLDEFS)) \
+		$(addprefix /I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cpp,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
+	$(LD) $(LDFLAGS) /OUT:"$@" \
+		$(filter %.obj,$^) \
+		$(DYNOBJS) \
+		$(patsubst %,/libpath:%$(OUTDIR),$(dir $(ALLLIBS))) \
+		$(addprefix /libpath:,$(dir $(SYSLIBS))) \
+		$(addsuffix .lib,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(BASICLIBS)
+
+endif
+
+ifeq ($(BUILDSHAREDLIBRARIES),0)
+# See Makefile.fp.for-pkg
+$(error Building Windows shared libraries with msvc is not supported yet.)
+endif
+
+else
+ifeq ($(SYSTEM),linux)
+
+#
+# Unix compile-time configuration
+#
+
+
+ISMAC:=$(shell uname)
+ifeq ($(ISMAC),Darwin)
+SO=dylib
+SHARED=-dynamiclib
+BASICLIBS=
+CXXFLAGS += -Wall
+# CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
+else
+ifeq ($(BUILDSHAREDLIBRARIES),1)
+CFLAGS += -fPIC
+CXXFLAGS += -fPIC -Wall
+endif
+SO=so
+endif
+ifeq ($(CROSS_HOST),)
+CC = gcc
+CXX = c++
+LD = c++
+else
+CC = $(CROSS_BUILD_BIN)/$(CROSS_HOST)-gcc
+CXX = $(CROSS_BUILD_BIN)/$(CROSS_HOST)-c++
+LD = $(CROSS_BUILD_BIN)/$(CROSS_HOST)-c++
+endif
+
+MKDEPENDFLAGS += --xpattern "/usr"
+
+ifneq ($(CROSS_HOST),)
+MKDEPENDFLAGS += --xpattern "$(CROSS_HOST)"
+endif
+
+ifeq ($(findstring timesys,$(CROSS_BUILD_BIN)),timesys)
+MKDEPENDFLAGS += --xpattern "timesys"
+endif
+
+ifeq ($(ISMAC),Darwin)
+CFLAGS+=-DMACOS
+CXXFLAGS+=-DMACOS -D_DARWIN_C_SOURCE
+endif
+
+ifeq ($(DEBUG),1)
+CFLAGS += -g
+CXXFLAGS += -g
+else
+CFLAGS += -O2
+CXXFLAGS += -O2
+endif
+
+ifeq ($(findstring Linux,$(shell uname -a)),Linux)
+# Linux libraries
+BASICLIBS = -lpthread -lrt
+ifeq ($(BUILDSHAREDLIBRARIES),1)
+BASICLIBS += -ldl
+endif
+else
+# Solaris libraries
+BASICLIBS = -lpthread -lsocket -lnsl -lrt
+endif
+
+.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .d
+
+$(OBJDIR)/%.obj : %.asm
+	$(CC) -c -o "$@" $(ASMFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.c
+	$(CC) -c -o "$@" $(CFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cxx
+	$(CXX) -c -o "$@" $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+
+$(OBJDIR)/%.obj : %.cpp
+	$(CXX) -c -o "$@" $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+%.d : %.c
+	$(CC) -E $(CFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.c,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cxx
+	$(CXX) -E $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cpp
+	$(CXX) -E $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cpp,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
+	$(LD) $(LDFLAGS) -o "$@" \
+		$(filter %.obj,$^) \
+		$(DYNOBJS) \
+		$(patsubst %,-L%$(OUTDIR),$(dir $(ALLLIBS))) \
+		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(BASICLIBS)
+
+else
+ifeq ($(SYSTEM),vxworksdkm)
+
+#
+# VxWorks (DKM) compile-time configuration
+#
+
+WIND_LIC_PROXY := $(WIND_HOME)/setup/$(WIND_HOST_TYPE)/bin
+WIND_FOUNDATION_PATH := $(wildcard $(WIND_WORKBENCH)/foundation/*)
+export WIND_HOME WIND_BASE WIND_LIC_PROXY
+
+CFLAGS += -Wall
+CXXFLAGS += -Wall
+LDFLAGS +=
+
+ifeq ($(WIND_BUILD_SPEC),PPC85XXgnu)
+CC = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/ccppc
+CXX = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/c++ppc
+LD = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/c++ppc
+AR = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/arppc
+NM = $(WIND_WORKBENCH)/$(WIND_HOST_TYPE)/bin/nmppc
+MUNCH = $(WIND_FOUNDATION_PATH)/$(WIND_HOST_TYPE)/bin/tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c ppc
+CFLAGS += -mcpu=8540 -mabi=no-spe -msoft-float -mstrict-align -mregnames -mlongcall
+CXXFLAGS += -mcpu=8540 -mabi=no-spe -msoft-float -mstrict-align -mregnames -mlongcall
+LDFLAGS += -non-static -msoft-float -L$(WIND_BASE)/target/lib/ppc/PPC32/sfcommon
+else
+ifeq ($(WIND_BUILD_SPEC),SIMNTgnu)
+CC = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/ccpentium
+CXX = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/c++pentium
+LD = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/c++pentium
+AR = $(WIND_GNU_PATH)/$(WIND_HOST_TYPE)/bin/arpentium
+NM = $(WIND_WORKBENCH)/$(WIND_HOST_TYPE)/bin/nmpentium
+MUNCH = $(WIND_FOUNDATION_PATH)/$(WIND_HOST_TYPE)/bin/tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c pentium
+CFLAGS += -mtune=i486 -march=i486 -DCPU=SIMNT -DTOOL_FAMILY=gnu -DTOOL=gnu
+CXXFLAGS += -mtune=i486 -march=i486 -DCPU=SIMNT -DTOOL_FAMILY=gnu -DTOOL=gnu
+LDFLAGS += -L$(WIND_BASE)/target/lib/simpc/SIMNT/sfcommon
+else
+$(error VxWorks DKM build for $(WIND_BUILD_SPEC) not implemented yet.)
+endif
+endif
+
+CFLAGS += -D_WRS_KERNEL
+CXXFLAGS += -D_WRS_KERNEL -fexceptions -frtti
+
+EXTRA_INCLUDES += $(WIND_BASE)/target/h $(WIND_BASE)/target/h/wrn/coreip
+
+ASMFLAGS += -xassembler-with-cpp  $(CLFAGS)
+MKDEPENDFLAGS += --xpattern WindRiver
+
+ifeq ($(DEBUG),1)
+CFLAGS += -g
+CXXFLAGS += -g
+else
+CFLAGS += -O3
+CXXFLAGS += -O3
+endif
+
+BASICLIBS = # -lstdc++ # Built into the kernel
+
+.SUFFIXES :
+.SUFFIXES : .asm .cpp .cxx .c .obj .exe .lib .idl .out .d
+
+$(OBJDIR)/%.obj : %.asm
+	$(CC) -c -o "$@" $(ASMFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.c
+	$(CC) -c -o "$@" $(CFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cxx
+	$(CXX) -c -o "$@" $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+$(OBJDIR)/%.obj : %.cpp
+	$(CXX) -c -o "$@" $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<"
+
+%.d : %.c
+	$(CC) -E $(CFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.c,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cxx
+	$(CXX) -E $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cxx,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+%.d : %.cpp
+	$(CXX) -E $(CXXFLAGS) \
+		$(patsubst %,-D%=1,$(ALLDEFS)) \
+		$(addprefix -I,$(ALLINC)) \
+		"$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.cpp,\$$(OBJDIR)/%.obj,$<)" \
+		--target "$@" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+#
+# The documentation tells us to "munch" the DKM, which creates a function
+# that calls C++ static constructors and destructors.  This function is
+# then compiled and linked using the C compiler.  Shouldn't the C++
+# compiler be smart enough to do all of that for us?  But this is the
+# way that Workbench does it, so let's emulate that for now.
+#
+
+ifeq ($(BUILDSHAREDLIBRARIES),1)
+
+#
+# When we build our own libraries as "shared" libraries, then we don't
+# need them to link our "executables".  Unfortunately, that means that
+# the linker will not complain about unresolved symbols.
+#
+
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
+	$(NM) $(filter %.obj,$^) | $(MUNCH) \
+		> $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
+	$(CC) $(CFLAGS) -fdollars-in-identifiers \
+		-o $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
+		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
+	$(CC) -o "$@" -r -nostdlib -Wl,-X \
+		-T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT \
+		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
+		$(filter %.obj,$^)
+else
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
+	$(NM) $(filter %.obj,$^) $(filter %.a,$^) | $(MUNCH) \
+		> $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
+	$(CC) $(CFLAGS) -fdollars-in-identifiers \
+		-o $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
+		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
+	$(CC) -o "$@" -r -nostdlib -Wl,-X \
+		-T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT \
+		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
+		$(filter %.obj,$^) \
+		$(patsubst %,-L%$(OUTDIR),$(dir $(ALLLIBS))) \
+		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(BASICLIBS)
+endif
+
+endif
+endif
+endif
+
+#
+# ORB configuration
+#
+
+ifeq ($(HAVE_CORBA),1)
+
+ifeq ($(ORB),TAO)
+
+IDL = TAO_ROOT="$(TAO_ROOT)" TAO_IDL_PREPROCESSOR="$(CC)" $(TAO_BIN)/tao_idl
+
+ALLIDLINC = $(TAO_INC) $(TAO_INC)/tao
+
+IDLOPTS = -ss _s.cxx -cs .cxx -hc .h -hs _s.h -ci .inl -si _s.inl -H binary_search
+
+ifeq ($(shell uname),Linux)
+LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(ACE_LIB)
+export LD_LIBRARY_PATH
+endif
+
+ifeq ($(CLIENT_IDL_ONLY),1)
+IDLOPTS += -Ssi -Ssc
+endif
+
+ifeq ($(TAO_DEBUG),1)
+TAOLIBINFIX = d
+else
+TAOLIBINFIX =
+endif
+
+TAOINCDIRS = $(ACE_INC) $(TAO_INC) $(TAO_INC)/orbsvcs
+
+TAODALIBS = $(TAO_LIB)/TAO_DynamicAny$(TAOLIBINFIX) \
+	$(TAO_LIB)/TAO_IFR_Client$(TAOLIBINFIX) \
+	$(TAO_LIB)/TAO_TypeCodeFactory$(TAOLIBINFIX)
+
+#
+# The following libraries need to be added for TAO 1.4.8
+#
+
+TAOBASELIBS += $(TAO_LIB)/TAO_CosNaming_Skel$(TAOLIBINFIX) \
+	$(TAO_LIB)/TAO_CosNaming$(TAOLIBINFIX) \
+	$(TAO_LIB)/TAO_AnyTypeCode$(TAOLIBINFIX) \
+	$(TAO_LIB)/TAO_CodecFactory$(TAOLIBINFIX) \
+	$(TAO_LIB)/TAO_PortableServer$(TAOLIBINFIX) \
+	$(TAO_LIB)/TAO_IORTable$(TAOLIBINFIX) \
+	$(TAO_LIB)/TAO$(TAOLIBINFIX) \
+	$(ACE_LIB)/ACE$(TAOLIBINFIX)
+
+  ALLDEFS += CPI_USES_TAO
+  ORBINCDIRS = $(TAOINCDIRS)
+  ORBLIBDIRS = $(TAOLIBDIRS)
+  ORBLIBS += $(TAOBASELIBS)
+
+MKDEPENDFLAGS += \
+	--xpattern ACE_wrappers \
+	--xpattern $(ACE_INC)/ace \
+	--xpattern $(TAO_INC)/tao \
+	--xpattern $(ORBSVCS)
+
+endif # End: ifeq ($(ORB),TAO)
+
+ifeq ($(ORB),OMNI)
+  IDL=$(CPIDIR)/do_omniidl.csh
+  IDLOPTS=
+  ALLDEFS += CPI_USES_OMNI
+  ORBINCDIRS = $(OMNIDIR)/include
+  ORBLIBS = $(OMNIDIR)/lib/omniORB4 $(OMNIDIR)/lib/omniDynamic4 $(OMNIDIR)/lib/omnithread $(OMNIDIR)/lib/COS4 $(OMNIDIR)/lib/COSDynamic4
+
+endif # End: ifeq ($(ORB),OMNI)
+
+endif # End: ifeq ($(HAVE_CORBA),1)
+
+%.cxx %.h %_s.cxx %_s.h : %.idl
+	$(IDL) $(IDLOPTS) $(patsubst %,-I%,$(ALLIDLINC)) "$<"
+
+%.d : %.idl
+	$(IDL) -E $(patsubst %,-I%,$(ALLIDLINC)) "$<" | \
+	$(MKDEPEND) \
+		--srcfile "$<" \
+		--target "$(patsubst %.idl,%.h,$<)" \
+		--target "$(patsubst %.idl,%.cxx,$<)" \
+		--target "$(patsubst %.idl,%_s.h,$<)" \
+		--target "$(patsubst %.idl,%_s.cxx,$<)" \
+		--target "$(patsubst %.idl,%.d,$<)" \
+		$(MKDEPENDFLAGS) \
+		-o "$@"
+
+#
+# SCA configuration
+#
+
+ifeq ($(SCAVERSION),2.2.2)
+ALLDEFS += CPI_USES_SCA222
+else
+ifeq ($(SCAVERSION),2.2)
+ALLDEFS += CPI_USES_SCA22
+else
+$(error Unknown SCA version "$(SCAVERSION)")
+endif
+endif
+
+
+#
+# Generic compile-time configuration
+#
+
+cleanup:
+	-rm -f *vxdkm-ctdc* *.vxe *.exe *.obj *.out *.map *.o *.so *.ilk *.sbr *.suo *.sln *.pdb *.bsc core* *~ *.dylib
+
+distcleanup:	cleanup
+	-rm -f *.d *.cdb *.inl
+
+#
+# Package exported include files.
+#
+# For the _LIBS variables, the last path component is the library's base
+# name, which will be rewritten appropriately.
+#
+
+CPI_EXTERNAL_EXPORTS = $(CPIDIR)/include
+
+
+CPIOS_EXPORTS = $(CPIDIR)/adapt/os/cpios/interfaces/include
+CPIOS_LIBS = $(CPIDIR)/adapt/os/cpios/cpios
+
+DATA_TRANSFER_EXPORTS = \
+	$(CPIDIR)/core/$(DATAPLANE)/rdma_driver_interface/interfaces/include
+DATA_TRANSFER_LIBS = $(CPIDIR)/core/$(DATAPLANE)/rdma_driver_interface/rdma_driver_interface
+
+TX_TRANSFER_LIBS = $(CPIDIR)/core/$(DATAPLANE)/rdma_drivers/rdma_drivers
+
+DATA_TRANSPORT_EXPORTS = \
+	$(CPIDIR)/core/$(DATAPLANE)/transport/interface/include \
+	$(CPIDIR)/core/$(DATAPLANE)/transport/client_server/include \
+	$(CPIDIR)/core/$(DATAPLANE)/transport/impl/include \
+	$(CPIDIR)/core/$(DATAPLANE)/transport/ddnp/include
+DATA_TRANSPORT_LIBS = $(CPIDIR)/core/$(DATAPLANE)/transport/transport
+
+
+CONTAINER_EXPORTS = \
+	$(CPIDIR)/core/container/interfaces/api/include \
+	$(CPIDIR)/core/container/cp289_container/cp289/include
+CONTAINER_LIBS = \
+	$(CPIDIR)/core/container/interfaces/interfaces
+
+CP289_CONTAINER_LIBS = \
+	$(CPIDIR)/core/container/cp289_container/cp289_container
+
+RPL_CONTAINER_LIBS = \
+	$(CPIDIR)/core/container/rpl_container/rpl_container
+
+
+LOGGER_EXPORTS = $(CPIDIR)/core/local/logger/logger/include
+LOGGER_LIBS = $(CPIDIR)/core/local/logger/logger
+
+UTIL_EXPORTS = \
+	$(CPIDIR)/core/local/util/driver/include \
+	$(CPIDIR)/core/local/util/ezxml/include \
+	$(CPIDIR)/core/local/util/filefs/include \
+	$(CPIDIR)/core/local/util/http/include \
+	$(CPIDIR)/core/local/util/ior/include \
+	$(CPIDIR)/core/local/util/memfs/include \
+	$(CPIDIR)/core/local/util/misc/include \
+	$(CPIDIR)/core/local/util/parentChild/include \
+	$(CPIDIR)/core/local/util/property/include \
+	$(CPIDIR)/core/local/util/streamfs/include \
+	$(CPIDIR)/core/local/util/tcp/include \
+	$(CPIDIR)/core/local/util/timeEmit/include \
+	$(CPIDIR)/core/local/util/vfs/include \
+	$(CPIDIR)/core/local/util/zipfs/include \
+	$(CPIDIR)/core/local/util/res/include \
+	$(CPIDIR)/core/local/util/list/include \
+	$(CPIDIR)/core/local/util/thread/include \
+	$(CPIDIR)/core/local/util/sockets/include
+UTIL_LIBS = $(CPIDIR)/core/local/util/util
+
+ifeq ($(SCAVERSION),2.2)
+ORB_SERVICES_EXPORTS = $(CPIDIR)/core/corba/orb_services/cf22log/idl
+else
+ORB_SERVICES_EXPORTS = $(CPIDIR)/core/corba/orb_services/lwlog/idl
+endif
+
+ORB_SERVICES_EXPORTS += \
+	$(CPIDIR)/core/corba/orb_services/corba/include \
+	$(CPIDIR)/core/corba/orb_services/naming/idl \
+	$(CPIDIR)/core/corba/orb_services/event/idl
+ORB_SERVICES_LIBS = $(CPIDIR)/core/corba/orb_services/orb_services
+
+CORBA_UTIL_EXPORTS = $(CPIDIR)/core/corba/corba_util/misc/include
+CORBA_UTIL_LIBS = $(CPIDIR)/core/corba/corba_util/corba_util
+
+ifeq ($(SCAVERSION),2.2)
+SCA_CF_EXPORTS = $(CPIDIR)/core/sca/cf/cf22/idl
+else
+SCA_CF_EXPORTS = $(CPIDIR)/core/sca/cf/cf222/idl
+endif
+
+SCA_CF_LIBS = $(CPIDIR)/core/sca/cf/cf
+
+CF_UTIL_EXPORTS = \
+	$(CPIDIR)/core/sca/cf_util/misc/include \
+	$(CPIDIR)/core/sca/cf_util/device_base/include \
+	$(CPIDIR)/core/sca/cf_util/vfs/include
+CF_UTIL_LIBS = $(CPIDIR)/core/sca/cf_util/cf_util
+
+
+WCI_API_BASE = $(CPIDIR)/core/control/wci_api
+WCI_API_EXPORTS = $(WCI_API_BASE)/interface/include \
+	$(WCI_API_BASE)/rpl/include \
+	$(WCI_API_BASE)/api/include
+WCI_API_LIBS = $(WCI_API_BASE)/wci_api
+

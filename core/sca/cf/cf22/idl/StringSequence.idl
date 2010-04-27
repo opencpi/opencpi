@@ -1,0 +1,15 @@
+#ifndef _STRINGSEQUENCE_IDL
+#define _STRINGSEQUENCE_IDL
+
+module CF {
+  
+  /**
+   *  This type defines a sequence of strings
+   */
+  
+  typedef sequence <string> StringSequence; 
+};
+
+#pragma version CF 1.0
+
+#endif

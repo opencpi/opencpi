@@ -1,0 +1,73 @@
+// Copyright (c) 2009 Mercury Federal Systems.
+// 
+// This file is part of OpenCPI.
+// 
+// OpenCPI is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// OpenCPI is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public License
+// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+
+#ifndef CONSUMER_WORKER_H
+#define CONSUMER_WORKER_H
+
+
+#include <RCCWorker.h>
+
+#ifndef WIN32
+/*#define TIME_TP */
+#ifdef TIME_TP
+#include <time_utils.h>
+#endif
+#endif
+
+#ifdef RAND_MAX
+#undef RAND_MAX
+#endif
+
+#define RAND_MAX 31
+
+struct  ConsumerWorkerProperties_ {
+  WorkerLong startIndex;
+  WorkerLong longProperty;
+};
+typedef struct ConsumerWorkerProperties_ ConsumerWorkerProperties;
+
+
+typedef enum  {
+	C_Old_Input,
+	C_New_Input
+} C_MyWorkerState;
+
+struct ConsumerWorkerStaticMemory_ {
+	WorkerULong     startIndex;
+    C_MyWorkerState state;
+	WorkerULong     b_count;
+	WorkerLong      longProperty;
+
+#ifdef TIME_TP
+	Timespec        startTime;
+#endif
+
+};
+
+typedef struct ConsumerWorkerStaticMemory_ ConsumerWorkerStaticMemory;
+
+
+#ifdef __cplusplus
+extern "C" {
+  extern WorkerDispatch CoverageConsumerWorkerDispatchTable;
+};
+#else
+  extern WorkerDispatch CoverageConsumerWorkerDispatchTable;
+#endif
+
+#endif

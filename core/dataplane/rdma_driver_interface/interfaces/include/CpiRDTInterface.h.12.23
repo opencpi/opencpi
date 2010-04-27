@@ -1,0 +1,84 @@
+// Copyright (c) 2009 Mercury Federal Systems.
+// 
+// This file is part of OpenCPI.
+// 
+// OpenCPI is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// OpenCPI is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public License
+// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+#ifndef CPIRDT_INTERFACE_H_
+#define CPIRDT_INTERFACE_H_
+
+#include <CpiOsDataTypes.h>
+
+namespace CPI {
+  namespace RDT {
+
+    enum PortSetupMessageTypes {
+      ConsumerDescType = 1,
+      ProducerDescType = 2
+    };
+    // These roles are not supported for all protocols, but those that need it specify it.
+    enum PortRole {
+      Passive = 1,        // Port is passive, needs other side to access all status and indicate new buffer state
+      ActiveDoorbell = 2, // Port will not move data, but will be active in providing feedback
+                          // For a consumer, this means telling the producer when buffers become available to fill/push-to.
+                          // For a producer, this means telling the consumer when buffers become available to empty/pull-from.
+      ActiveMessage = 3   // Port will move data
+                          // For a consumer, this means pulling data from the producer.
+                          // For a producer, this means pushing data to the consumer.
+    };
+
+    struct OutOfBandData {
+      CPI::OS::uint16_t  pid;         // Port Id
+      CPI::OS::uint16_t  cid;         // Circuit Id
+      char               oep[128];    // Originators endpoint
+    };
+
+    struct Desc_t {
+      CPI::OS::uint32_t  nBuffers;
+      CPI::OS::uint64_t  dataBufferBaseAddr;
+      CPI::OS::uint32_t  dataBufferPitch;
+      CPI::OS::uint32_t  dataBufferSize;
+      CPI::OS::uint64_t  metaDataBaseAddr;
+      CPI::OS::uint32_t  metaDataPitch;
+      CPI::OS::uint64_t  fullFlagBaseAddr; 
+      CPI::OS::uint32_t  fullFlagSize;
+      CPI::OS::uint32_t  fullFlagPitch;
+      CPI::OS::uint64_t  fullFlagValue;
+      CPI::OS::uint64_t  emptyFlagBaseAddr; // when consumer is passive
+      CPI::OS::uint32_t  emptyFlagSize;
+      CPI::OS::uint32_t  emptyFlagPitch;
+      CPI::OS::uint64_t  emptyFlagValue;
+
+      OutOfBandData       oob;
+    };
+
+    struct Descriptors {
+      CPI::OS::uint32_t mode;
+      CPI::OS::uint32_t role;
+      Desc_t desc;
+      Descriptors():role(ActiveMessage){}
+    };
+    
+    CPI::RDT::Descriptors*    getCPIDescFromConnectData( void* data );
+    CPI::RDT::Descriptors*    getCPIDescFromFBData( void* data );
+
+    // Debug utils
+    void printDesc( Desc_t& desc );
+
+  }
+
+}
+
+#endif
+

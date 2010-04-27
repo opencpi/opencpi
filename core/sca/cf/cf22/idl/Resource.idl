@@ -1,0 +1,64 @@
+#ifndef _RESOURCE_IDL
+#define _RESOURCE_IDL
+
+#include "LifeCycle.idl"
+#include "TestableObject.idl"
+#include "PropertySet.idl"
+#include "PortSupplier.idl"
+#include "ErrorNumberType.idl"
+
+module CF {
+
+  	/* The Resource interface provides a common API for the control and configuration
+	of a software component.
+	The Resource interface inherits from the LifeCycle, PropertySet, TestableObject, and
+	PortSupplier interfaces.
+	The inherited LifeCycle, PropertySet, TestableObject, and PortSupplier interface
+	operations are documented in their respective sections of this document.
+	The Resource interface may also be inherited by other application interfaces
+	as described in the Software Profile's Software Component Descriptor (SCD) file. */
+	
+	interface Resource : LifeCycle, TestableObject, PropertySet, PortSupplier {
+		/* The StartError exception indicates that an error occurred during an attempt to start the Resource.  
+		The error number indicates an ErrorNumberType value (e.g., EDOM, EPERM, ERANGE). The message is 
+		component-dependent, providing additional information describing the reason for the error. */
+		
+		exception StartError {
+			ErrorNumberType errorNumber;
+			string msg;
+		};
+		
+		/* The StopError exception indicates that an error occurred during an attempt to stop the Resource.  
+		The error number indicates an ErrorNumberType value (e.g., ECANCELED, EFAULT, EINPROGRESS). 
+		The message is component-dependent, providing additional information describing the reason for the error. */
+		
+		exception StopError {
+			ErrorNumberType errorNumber;
+			string msg;
+		};
+		
+		/* The readonly identifier attribute shall contain the unique identifier for a resource instance. */
+		
+		readonly attribute string identifier;
+		
+		/* The start operation puts the Resource in an operating condition. 
+
+		The start operation raises the StartError exception if an error occurs while starting the resource.
+		@roseuid 38BEE2457548 */
+		void start ()			
+			raises (StartError);
+			
+		/* The stop operation disables all current operations and put the Resource in a non-operating condition.  
+		Subsequent configure, query, and start operations are not inhibited by the stop operation.
+
+		The stop operation raises the StopError exception if an error occurs while stopping the resource.
+		@roseuid 38BEE2457549 */
+		void stop ()			
+			raises (StopError);
+
+  };
+};
+
+#pragma version CF::Resource 1.0
+
+#endif

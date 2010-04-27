@@ -1,0 +1,54 @@
+#ifndef _LIFECYCLE_IDL
+#define _LIFECYCLE_IDL
+
+#include "StringSequence.idl"
+
+module CF {
+  
+	
+	/* The LifeCycle interface defines the generic operations for initializing or releasing an instantiated 
+	component specific data and/or processing elements. */
+	
+	interface LifeCycle {
+		/* This exception indicates an error occurred during component initialization. The messages provides 
+		additional information describing the reason why the error occurred. */
+		
+		exception InitializeError {
+			StringSequence errorMessages;
+		};
+		
+		/* This exception indicates an error occurred during component releaseObject. The messages provides 
+		additional information describing the reason why the errors occurred. */
+		
+		exception ReleaseError {
+			StringSequence errorMessages;
+		};
+		
+		/* The purpose of the initialize operation is to provide a mechanism to set an object to an known 
+		initial state.  (For example, data structures may be set to initial values, memory may be allocated, 
+		hardware devices may be configured to some state, etc.).
+
+		Initialization behavior is implementation dependent.
+
+		This operation raises the InitializeError when an initialization error occurs.
+		@roseuid 37DD15FA01C2 */
+		void initialize ()			
+			raises (InitializeError);
+			
+		/* The purpose of the releaseObject operation is to provide a means by which an instantiated component 
+		may be torn down. The releaseObject operation releases itself from the CORBA ORB.  
+
+		The releaseObject operation releases all internal memory allocated by the component during the 
+		life of the component. The releaseObject operation tears down the component (i.e. released from 
+		the CORBA environment).  The releaseObject operation releases components from the Operating Environment.
+
+		This operation raises a ReleaseError when a release error occurs.
+		@roseuid 37DD15FA01C3 */
+		void releaseObject ()			
+			raises (ReleaseError);
+  }; 
+};
+
+#pragma version CF::LifeCycle 1.0
+
+#endif

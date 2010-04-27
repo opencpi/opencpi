@@ -1,0 +1,27 @@
+#ifndef CF_IDL__
+#define CF_IDL__
+
+#include "AggregateDevice.idl"
+#include "DataType.idl"
+#include "Device.idl"
+#include "DeviceManager.idl"
+#include "DomainManager.idl"
+#include "ErrorNumberType.idl"
+#include "ExecutableDevice.idl"
+#include "File.idl"
+#include "FileManager.idl"
+#include "FileSystem.idl"
+#include "InvalidObjectReference.idl"
+#include "InvalidProfile.idl"
+#include "LifeCycle.idl"
+#include "LoadableDevice.idl"
+#include "OctetSequence.idl"
+#include "Port.idl"
+#include "PortSupplier.idl"
+#include "PropertySet.idl"
+#include "Resource.idl"
+#include "ResourceFactory.idl"
+#include "StringSequence.idl"
+#include "TestableObject.idl"
+
+#endif

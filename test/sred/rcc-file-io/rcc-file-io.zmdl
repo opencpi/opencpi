@@ -1,0 +1,4288 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) 2009 Mercury Federal Systems.
+
+This file is part of OpenCPI.
+
+OpenCPI is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+OpenCPI is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<XMI xmi:id="_d063285a-89a7-4cf4-9dae-218f10c88b47" xmi:label="Model1" xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI">
+  <xmi:Documentation xmi:id="_8e744ebe-609b-430b-b204-b93c1d4d4077">
+    <exporter>Zeligsoft CE</exporter>
+    <exporterVersion>2.4.4</exporterVersion>
+  </xmi:Documentation>
+  <extension-field xmi:id="_d2b61fb5-4670-4fbe-998c-faf1743f1a80">
+    <key>Build directory</key>
+  </extension-field>
+  <extension-field xmi:id="_cf734b6c-809a-400d-a0f7-4496431e9994">
+    <key>IDL Source directory</key>
+  </extension-field>
+  <extension-field xmi:id="_87a10480-315d-4af0-af62-758057b5608d">
+    <key>Test binary directory</key>
+  </extension-field>
+  <sca-device-definition xmi:id="_0411b8ee-725a-4614-b764-04bdf0a4ff0d">
+    <name>RccExecutableDevice</name>
+    <id>DCE:4FC507AC-0003-4C8F-ABD6-763DBDE6F576</id>
+    <corba-version>2.2</corba-version>
+    <repository-id>IDL:CF/ExecutableDevice:1.0</repository-id>
+    <sca-type>sca_compliant</sca-type>
+    <componenttype>device</componenttype>
+    <scd-file>RccExecutableDevice.scd.xml</scd-file>
+    <spd-file>RccExecutableDevice.spd.xml</spd-file>
+    <element-file-name>RccExecutableDevice.zmel</element-file-name>
+    <author xmi:id="_3f7bdbaf-98c5-4bf4-aea9-75007ac40e8d">
+      <company>Mercury Computer Systems, Inc.</company>
+    </author>
+    <port-definition xmi:id="_1bf8de7e-76a4-4a59-809f-91ad9151d4e3">
+      <name>device1</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Device:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_d950f87b-ef04-4c58-863a-9a54d9286ad3">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_e3f994a0-b5e0-4636-b329-600eae012fde">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_55c07bdc-587c-4d7f-86cb-4631d57f7529">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_5c8162a6-2eda-440e-b949-3d51a45415bc">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_5a7890a3-308f-4288-8f37-8c1469724d7d">
+      <name>loadabledevice1</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/LoadableDevice:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_ba9b1c31-c8ab-4882-a861-cf644cdf2c72">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_0ca1ec84-a5da-48fe-8385-47cbc75b219d">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_9992a983-deea-4e2d-af99-55d54c584c40">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_cd2e5e31-35aa-4092-9c3b-ddeae8d5f063">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_6f8dd905-3559-46fe-bb0c-02c1d86714c2">
+      <name>executabledevice1</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/ExecutableDevice:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_50a86de6-7cd7-4ef4-9833-85f9f658bb32">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_fab20e77-c17c-45a2-a234-b9a59f51734a">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_15d3fb7c-9c4f-4bb9-be76-bf371f19cd0f">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_0e2f4345-637f-4a67-9243-fde7b22976b4">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_83d5c005-c122-4004-96da-669c09dd88fe">
+      <name>resource1</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_009dc437-6ace-4e7b-8b0a-c1935853744a">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_5e0fbcea-f93d-45c6-a37a-e6d2d69eec2b">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_90a6cbe9-2e95-4daf-81ab-a11613763b48">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_cc2be488-9600-4888-bf21-48043e248109">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <component-property-file-group xmi:id="_088380b7-5e56-410a-9681-0ffb87298777">
+      <file-name>RccExecutableDeviceComponent.prf.xml</file-name>
+    </component-property-file-group>
+    <package-property-file-group xmi:id="_1886d718-3c46-429a-a359-036d5ee71c33">
+      <simplesequence-property xmi:id="_03276ef7-1dcc-4e15-ad8c-642d52d13246">
+        <id>PRODUCER_LOG_LEVEL</id>
+        <name>PRODUCER_LOG_LEVEL</name>
+        <type>ushort</type>
+        <mode>readwrite</mode>
+        <kind>Configure</kind>
+        <action>none</action>
+        <order>1</order>
+      </simplesequence-property>
+      <simple-property xmi:id="_0df46c2d-aee7-4d80-b363-b7913a4b27ba">
+        <id>DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2</id>
+        <name>CPIDeviceId</name>
+        <type>ulong</type>
+        <mode>readonly</mode>
+        <kind>Allocation</kind>
+        <kind>Configure</kind>
+        <action>eq</action>
+        <order>1</order>
+      </simple-property>
+      <simple-property xmi:id="_34d630f3-ab8c-493b-99b4-dc4ace28421f">
+        <id>defaultBufferSize</id>
+        <name>defaultBufferSize</name>
+        <type>ulong</type>
+        <mode>readwrite</mode>
+        <kind>Configure</kind>
+        <kind>ExecParam</kind>
+        <action>none</action>
+        <order>1</order>
+      </simple-property>
+      <simple-property xmi:id="_4a31666d-dfd3-4a3a-8006-2c8c0a34b304">
+        <id>polled</id>
+        <name>polled</name>
+        <type>boolean</type>
+        <mode>readwrite</mode>
+        <kind>ExecParam</kind>
+        <action>none</action>
+        <order>1</order>
+      </simple-property>
+      <simple-property xmi:id="_5b05f92b-4f4b-40bb-a360-b1491e3a7892">
+        <id>defaultNumBuffers</id>
+        <name>defaultNumBuffers</name>
+        <type>ulong</type>
+        <mode>readwrite</mode>
+        <kind>Configure</kind>
+        <kind>ExecParam</kind>
+        <action>none</action>
+        <order>1</order>
+      </simple-property>
+      <simple-property xmi:id="_66a97b1a-5909-4a4b-ab6f-0784431eca97">
+        <id>DCE:ea7a686f-b851-40b9-b6c4-dfb38123a0f4</id>
+        <name>numberOfUnits</name>
+        <type>ulong</type>
+        <mode>readwrite</mode>
+        <kind>Allocation</kind>
+        <action>external</action>
+        <order>1</order>
+      </simple-property>
+      <simplesequence-property xmi:id="_6a72d015-e58e-4187-8904-efdab181b9db">
+        <id>DCE:80BF17F0-6C7F-11D4-A226-0050DA314CDA</id>
+        <name>supportedLoadTypes</name>
+        <type>ulong</type>
+        <mode>readwrite</mode>
+        <value>2</value>
+        <kind>Allocation</kind>
+        <action>eq</action>
+        <order>1</order>
+      </simplesequence-property>
+      <simple-property xmi:id="_8fda8bd8-3df0-45fb-b017-6fa8d8c3e5d5">
+        <id>DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43</id>
+        <name>CPIContainerType</name>
+        <type>string</type>
+        <mode>readwrite</mode>
+        <value>RCC</value>
+        <kind>Allocation</kind>
+        <action>eq</action>
+        <order>1</order>
+      </simple-property>
+      <simple-property xmi:id="_bd2e9a12-c920-460a-992f-119acbef0a84">
+        <id>debugLevel</id>
+        <name>debugLevel</name>
+        <type>ulong</type>
+        <mode>readwrite</mode>
+        <range-max>16</range-max>
+        <range-min>1</range-min>
+        <kind>ExecParam</kind>
+        <action>none</action>
+        <order>1</order>
+      </simple-property>
+      <simple-property xmi:id="_dce21f34-a8a8-4198-813b-c7d39a98fd23">
+        <id>logFile</id>
+        <name>logFile</name>
+        <type>string</type>
+        <mode>readwrite</mode>
+        <kind>ExecParam</kind>
+        <action>none</action>
+        <order>1</order>
+      </simple-property>
+      <simple-property xmi:id="_e7faf55b-663e-4eb9-a7c6-ca997baf3086">
+        <id>endpoint</id>
+        <name>endpoint</name>
+        <type>string</type>
+        <mode>readwrite</mode>
+        <kind>ExecParam</kind>
+        <action>none</action>
+        <order>1</order>
+      </simple-property>
+      <simple-property xmi:id="_efa501d8-e3a1-42e0-a47c-fe39b49f2413">
+        <id>cpiDeviceId</id>
+        <name>cpiDeviceId</name>
+        <type>ulong</type>
+        <mode>readonly</mode>
+        <kind>Configure</kind>
+        <kind>ExecParam</kind>
+        <action>none</action>
+        <order>1</order>
+      </simple-property>
+      <file-name>RccExecutableDevice.prf.xml</file-name>
+    </package-property-file-group>
+    <dpd xmi:id="_ca0d0204-e535-4063-a80a-02822ac5b208">
+      <id>DCE:ca0d0204-e535-4063-a80a-02822ac5b208</id>
+      <file-name>RccExecutableDevice.dpd.xml</file-name>
+      <hwdeviceregistration xmi:id="_6a4f7682-294d-4ce2-9a59-b00e23ef71af">
+        <id>DCE:6a4f7682-294d-4ce2-9a59-b00e23ef71af</id>
+        <hw-property-file xmi:id="_102ad734-3571-401e-96be-7f919b484bb8">
+          <file-name>RccExecutableDeviceHWDevReg.prf.xml</file-name>
+        </hw-property-file>
+      </hwdeviceregistration>
+    </dpd>
+    <definition-form-info xmi:id="_b05facfc-2a9a-4025-8acb-6b58e3cc1d54">
+      <form-left>0</form-left>
+      <form-top>0</form-top>
+      <form-width>0</form-width>
+      <form-height>0</form-height>
+      <ctrl-width>1130</ctrl-width>
+      <ctrl-height>710</ctrl-height>
+      <scale-factor>1.0</scale-factor>
+    </definition-form-info>
+  </sca-device-definition>
+  <sca-interface-definition xmi:id="_097f5283-c1e0-4bee-91e2-1013bdac746c">
+    <name>PortSupplier</name>
+    <scoped-name>::CF::PortSupplier</scoped-name>
+    <repository-id>IDL:CF/PortSupplier:1.0</repository-id>
+    <element-file-name>PortSupplier.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-operation xmi:id="_281a069d-dd64-4f2f-8cc2-1b11d3534df2">
+      <name>getPort</name>
+      <scoped-name>::CF::PortSupplier::getPort</scoped-name>
+      <type>Object</type>
+      <basetype>Object</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_f25f7e97-d009-48ab-b95a-7dd83bf985b4">
+        <name>name</name>
+        <scoped-name>::CF::PortSupplier::getPort::name</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::PortSupplier::UnknownPort</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_0fe1620a-7a7f-4de0-afba-16a4d38a5f9c">
+    <name>LogConsumer</name>
+    <scoped-name>::CosLwLog::LogConsumer</scoped-name>
+    <repository-id>IDL:CosLwLog/LogConsumer:1.0</repository-id>
+    <element-file-name>LogConsumer.zmel</element-file-name>
+    <file-name>CosLwLogConsumer.idl</file-name>
+    <inherited-interface>IDL:CosLwLog/LogStatus:1.0</inherited-interface>
+    <interface-operation xmi:id="_fcff886c-fafb-4cb3-857e-9cfc55077ba5">
+      <name>get_record_id_from_time</name>
+      <scoped-name>::LogConsumer::get_record_id_from_time</scoped-name>
+      <type>::CosLwLog::RecordId</type>
+      <basetype>unsigned long long</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_46d6f681-fd46-4bf2-acef-4d259ace3a7a">
+        <name>fromTime</name>
+        <scoped-name>::LogConsumer::get_record_id_from_time::fromTime</scoped-name>
+        <type>::CosLwLog::LogTime</type>
+        <basetype>struct</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+    </interface-operation>
+    <interface-operation xmi:id="_14475cbe-1880-4fc9-8aa8-16b23d6d8b9b">
+      <name>retrieve_records</name>
+      <scoped-name>::LogConsumer::retrieve_records</scoped-name>
+      <type>::CosLwLog::LogRecordSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_0bb9a0cd-10e4-4e56-b79b-b5ad1210f7ff">
+        <name>currentId</name>
+        <scoped-name>::LogConsumer::retrieve_records::currentId</scoped-name>
+        <type>::CosLwLog::RecordId</type>
+        <basetype>unsigned long long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <parameter xmi:id="_12d0cc84-ff63-4556-bce4-5beb0d7c0d56">
+        <name>howMany</name>
+        <scoped-name>::LogConsumer::retrieve_records::howMany</scoped-name>
+        <type>unsigned long</type>
+        <basetype>unsigned long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+    </interface-operation>
+    <interface-operation xmi:id="_ea261eab-87c9-4e2a-b7ae-3934f91546b3">
+      <name>retrieve_records_by_level</name>
+      <scoped-name>::LogConsumer::retrieve_records_by_level</scoped-name>
+      <type>::CosLwLog::LogRecordSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_7b44d995-ffed-4318-8222-172716c26cc2">
+        <name>currentId</name>
+        <scoped-name>::LogConsumer::retrieve_records_by_level::currentId</scoped-name>
+        <type>::CosLwLog::RecordId</type>
+        <basetype>unsigned long long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <parameter xmi:id="_d8ff78e7-f5f7-40a1-be82-04eb62016195">
+        <name>howMany</name>
+        <scoped-name>::LogConsumer::retrieve_records_by_level::howMany</scoped-name>
+        <type>unsigned long</type>
+        <basetype>unsigned long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <parameter xmi:id="_117f70c4-dfd0-4a54-afc3-4c54dd5e8254">
+        <name>valueList</name>
+        <scoped-name>::LogConsumer::retrieve_records_by_level::valueList</scoped-name>
+        <type>::CosLwLog::LogLevelSequence</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+    </interface-operation>
+    <interface-operation xmi:id="_aef73457-0e22-4e08-80f9-4dc9f52cd7b0">
+      <name>retrieve_records_by_producer_id</name>
+      <scoped-name>::LogConsumer::retrieve_records_by_producer_id</scoped-name>
+      <type>::CosLwLog::LogRecordSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_fbd97481-1ae7-42b4-a5c5-75ede09d2859">
+        <name>currentId</name>
+        <scoped-name>::LogConsumer::retrieve_records_by_producer_id::currentId</scoped-name>
+        <type>::CosLwLog::RecordId</type>
+        <basetype>unsigned long long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <parameter xmi:id="_16f2b068-19b5-44e2-b177-eac4a72ec973">
+        <name>howMany</name>
+        <scoped-name>::LogConsumer::retrieve_records_by_producer_id::howMany</scoped-name>
+        <type>unsigned long</type>
+        <basetype>unsigned long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <parameter xmi:id="_b7c94265-a90f-48ec-be49-861ee99bf62d">
+        <name>valueList</name>
+        <scoped-name>::LogConsumer::retrieve_records_by_producer_id::valueList</scoped-name>
+        <type>::CosLwLog::StringSeq</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+    </interface-operation>
+    <interface-operation xmi:id="_91854065-71d9-4379-a267-eb5550224bfd">
+      <name>retrieve_records_by_producer_name</name>
+      <scoped-name>::LogConsumer::retrieve_records_by_producer_name</scoped-name>
+      <type>::CosLwLog::LogRecordSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_c2e9d8b4-42d3-4932-aed6-b57a93b30324">
+        <name>currentId</name>
+        <scoped-name>::LogConsumer::retrieve_records_by_producer_name::currentId</scoped-name>
+        <type>::CosLwLog::RecordId</type>
+        <basetype>unsigned long long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <parameter xmi:id="_4ed5b3fe-3853-4bc6-8cc6-2382fe39fad5">
+        <name>howMany</name>
+        <scoped-name>::LogConsumer::retrieve_records_by_producer_name::howMany</scoped-name>
+        <type>unsigned long</type>
+        <basetype>unsigned long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <parameter xmi:id="_3f988810-32bc-4750-8df1-e0df579590af">
+        <name>valueList</name>
+        <scoped-name>::LogConsumer::retrieve_records_by_producer_name::valueList</scoped-name>
+        <type>::CosLwLog::StringSeq</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_11540306-10bf-4acc-8fc5-aea76b5f2d5e">
+    <name>LogAdministrator</name>
+    <scoped-name>::CosLwLog::LogAdministrator</scoped-name>
+    <repository-id>IDL:CosLwLog/LogAdministrator:1.0</repository-id>
+    <element-file-name>LogAdministrator.zmel</element-file-name>
+    <file-name>CosLwLogAdministrator.idl</file-name>
+    <inherited-interface>IDL:CosLwLog/LogStatus:1.0</inherited-interface>
+    <interface-operation xmi:id="_fe96bd6c-cae0-47da-bbbf-6b059be19ffd">
+      <name>set_max_size</name>
+      <scoped-name>::LogAdministrator::set_max_size</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_b14cf17b-6b3e-42ce-bd8d-96f89471329a">
+        <name>size</name>
+        <scoped-name>::LogAdministrator::set_max_size::size</scoped-name>
+        <type>unsigned long long</type>
+        <basetype>unsigned long long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CosLwLog::InvalidParam</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_8dd380b4-7c1e-43b2-bdb9-303fd168eaec">
+      <name>set_log_full_action</name>
+      <scoped-name>::LogAdministrator::set_log_full_action</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_c1f3086d-0f6d-4de2-a720-8e9a525a0729">
+        <name>action</name>
+        <scoped-name>::LogAdministrator::set_log_full_action::action</scoped-name>
+        <type>::CosLwLog::LogFullAction</type>
+        <basetype>enum</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+    </interface-operation>
+    <interface-operation xmi:id="_ba6daa1c-fcca-4052-a68e-11a3279007bb">
+      <name>set_administrative_state</name>
+      <scoped-name>::LogAdministrator::set_administrative_state</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_5c61dfc4-a04e-4baa-b112-85dd7809eda8">
+        <name>state</name>
+        <scoped-name>::LogAdministrator::set_administrative_state::state</scoped-name>
+        <type>::CosLwLog::AdministrativeState</type>
+        <basetype>enum</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+    </interface-operation>
+    <interface-operation xmi:id="_984824c8-ddf1-4ff8-a7be-1630f5526c10">
+      <name>clear_log</name>
+      <scoped-name>::LogAdministrator::clear_log</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+    <interface-operation xmi:id="_b77a3249-f6ef-449c-acb4-72b6cac59747">
+      <name>destroy</name>
+      <scoped-name>::LogAdministrator::destroy</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_18f87b9a-3bdb-4af7-966e-ca5a4213b17b">
+    <name>LogProducer</name>
+    <scoped-name>::CosLwLog::LogProducer</scoped-name>
+    <repository-id>IDL:CosLwLog/LogProducer:1.0</repository-id>
+    <element-file-name>LogProducer.zmel</element-file-name>
+    <file-name>CosLwLogProducer.idl</file-name>
+    <inherited-interface>IDL:CosLwLog/LogStatus:1.0</inherited-interface>
+    <interface-operation xmi:id="_6ca10e40-0aa9-4a49-b864-61711b78d2b3">
+      <name>write_records</name>
+      <scoped-name>::LogProducer::write_records</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>true</oneway>
+      <parameter xmi:id="_68ada8fa-d257-46f4-90e0-35159e740039">
+        <name>records</name>
+        <scoped-name>::LogProducer::write_records::records</scoped-name>
+        <type>::CosLwLog::ProducerLogRecordSequence</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+    </interface-operation>
+    <interface-operation xmi:id="_cd44b564-b515-4b83-bb50-025291bff1ec">
+      <name>write_record</name>
+      <scoped-name>::LogProducer::write_record</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>true</oneway>
+      <parameter xmi:id="_fc04dca0-6749-4655-8af7-ec299bada922">
+        <name>record</name>
+        <scoped-name>::LogProducer::write_record::record</scoped-name>
+        <type>::CosLwLog::ProducerLogRecord</type>
+        <basetype>struct</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_25434882-1cba-49e2-ab78-dca7daf61ce1">
+    <name>LoadableDevice</name>
+    <scoped-name>::CF::LoadableDevice</scoped-name>
+    <repository-id>IDL:CF/LoadableDevice:1.0</repository-id>
+    <element-file-name>LoadableDevice.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <inherited-interface>IDL:CF/Device:1.0</inherited-interface>
+    <interface-operation xmi:id="_f5de2ed9-663b-48e8-9aa1-a15c0722b3eb">
+      <name>load</name>
+      <scoped-name>::CF::LoadableDevice::load</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_0c653ef1-99c3-4f5b-828e-9c554c766373">
+        <name>fs</name>
+        <scoped-name>::CF::LoadableDevice::load::fs</scoped-name>
+        <type>::CF::FileSystem</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_6c15e160-627b-4f68-9a6f-3909ecbe07e3">
+        <name>fileName</name>
+        <scoped-name>::CF::LoadableDevice::load::fileName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_05cdf921-067f-44aa-b59d-712de618aaf3">
+        <name>loadKind</name>
+        <scoped-name>::CF::LoadableDevice::load::loadKind</scoped-name>
+        <type>::CF::LoadableDevice::LoadType</type>
+        <basetype>enum</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::Device::InvalidState</raises>
+      <raises>::CF::LoadableDevice::InvalidLoadKind</raises>
+      <raises>::CF::InvalidFileName</raises>
+      <raises>::CF::LoadableDevice::LoadFail</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_75974f98-f7a7-4673-92b2-a19260a83cf1">
+      <name>unload</name>
+      <scoped-name>::CF::LoadableDevice::unload</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_8f37fc42-525e-410e-8276-92c9f3ac0ba6">
+        <name>fileName</name>
+        <scoped-name>::CF::LoadableDevice::unload::fileName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::Device::InvalidState</raises>
+      <raises>::CF::InvalidFileName</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_268e4f08-de53-4ff5-a07a-cf14a8904ed0">
+    <name>FileManager</name>
+    <scoped-name>::CF::FileManager</scoped-name>
+    <repository-id>IDL:CF/FileManager:1.0</repository-id>
+    <element-file-name>FileManager.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <inherited-interface>IDL:CF/FileSystem:1.0</inherited-interface>
+    <interface-operation xmi:id="_68d3c102-c30e-4103-b317-3ba8e2dc8501">
+      <name>mount</name>
+      <scoped-name>::CF::FileManager::mount</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_384470c9-a911-478c-96aa-664c99c082ff">
+        <name>mountPoint</name>
+        <scoped-name>::CF::FileManager::mount::mountPoint</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_ad8385ff-7137-41b6-b78c-404db5a6868e">
+        <name>file_System</name>
+        <scoped-name>::CF::FileManager::mount::file_System</scoped-name>
+        <type>::CF::FileSystem</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidFileName</raises>
+      <raises>::CF::FileManager::InvalidFileSystem</raises>
+      <raises>::CF::FileManager::MountPointAlreadyExists</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_0a0869fc-f3a7-4ac2-b796-959123e2932b">
+      <name>unmount</name>
+      <scoped-name>::CF::FileManager::unmount</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_aced0993-fbf6-4f33-9db1-522e8a84c97a">
+        <name>mountPoint</name>
+        <scoped-name>::CF::FileManager::unmount::mountPoint</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::FileManager::NonExistentMount</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_82c8aafd-8d14-4790-bf44-ccce33004bc2">
+      <name>getMounts</name>
+      <scoped-name>::CF::FileManager::getMounts</scoped-name>
+      <type>::CF::FileManager::MountSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-monolithic-implementation xmi:id="_2ad2d603-dcd4-436c-83a0-126597e66156">
+    <name>FileSourceImplementation1</name>
+    <aep-compliance>aep_compliant</aep-compliance>
+    <impl-id>DCE:2ad2d603-dcd4-436c-83a0-126597e66156</impl-id>
+    <definition-id>e86d3323-bccb-438c-a142-2e84f2a0f166</definition-id>
+    <element-file-name>FileSourceImplementation1.zmel</element-file-name>
+    <code xmi:id="_f7b7308f-ae49-420d-9188-4dc73600e7b4">
+      <entry-point>FileSourceWorker</entry-point>
+      <local-file>FileSource.zip</local-file>
+      <type>SharedLibrary</type>
+    </code>
+    <compiler xmi:id="_7887b5ac-aa5c-4472-9be0-a5ff82858633" />
+    <runtime xmi:id="_36fe3c71-370a-4942-90e1-cafeff98740f" />
+    <programming-language xmi:id="_3d877480-109b-4809-bbcb-e178c6001116" />
+    <os-dependency xmi:id="_1d81e871-828d-463d-8d78-f6e527d8ef80">
+      <name>Linux</name>
+    </os-dependency>
+    <property-ref-dependency xmi:id="_36a8f23a-2dc1-4e1e-a53b-cff69797f32b">
+      <name>propertyref1</name>
+      <type>Property Reference Dependency</type>
+      <property-ref xmi:id="_b017664e-3ead-40e9-b614-76298373e5ff">
+        <ref-id>8fda8bd8-3df0-45fb-b017-6fa8d8c3e5d5</ref-id>
+        <value>RCC</value>
+      </property-ref>
+    </property-ref-dependency>
+    <processor-dependency xmi:id="_c0129099-76c8-4836-ae95-cfd1e60f29f8">
+      <name>x86</name>
+    </processor-dependency>
+    <property-file-group xmi:id="_41f3950d-0ad0-4f0a-8ecc-186be5ee6273">
+      <file-name>FileSourceImplementation1.prf.xml</file-name>
+    </property-file-group>
+    <extension-field xmi:id="_1fc94f0e-ee04-42a8-812b-42139314896b">
+      <key>Binary path</key>
+    </extension-field>
+    <extension-field xmi:id="_6ffabf3d-5566-49c8-9260-9b0ffb863581">
+      <key>Generate test source</key>
+      <value>no</value>
+    </extension-field>
+    <extension-field xmi:id="_4a66f0dd-5080-4025-9218-88bcea56aebc">
+      <key>Target</key>
+    </extension-field>
+    <extension-field xmi:id="_7fc50027-7ce4-448b-ae6f-06dd36b7ea5e">
+      <key>Test component target</key>
+    </extension-field>
+    <extension-field xmi:id="_710ada3a-6cc4-49fc-b9c0-b8d3b7c2e8f3">
+      <key>Test exec params</key>
+    </extension-field>
+    <extension-field xmi:id="_20cfa536-ea1e-4cae-a83b-19325eb1d463">
+      <key>Test naming service IOR</key>
+    </extension-field>
+    <extension-field xmi:id="_8d715c30-300a-40c4-a5bc-6c6f4754989d">
+      <key>User compiler flags</key>
+    </extension-field>
+    <extension-field xmi:id="_8c39fc8d-9577-4cab-872d-857a2ce5b51c">
+      <key>User defines</key>
+    </extension-field>
+    <extension-field xmi:id="_7b504364-7f28-4a94-b5ac-72529f0244d7">
+      <key>User includes</key>
+    </extension-field>
+    <extension-field xmi:id="_d5d63c7e-4e0b-48e0-80bc-1f6c42c16bad">
+      <key>User lib paths</key>
+    </extension-field>
+    <extension-field xmi:id="_c0dc34a4-742f-4f02-8635-5f72b01582b7">
+      <key>User libraries</key>
+    </extension-field>
+    <extension-field xmi:id="_5400c04f-5c33-4334-9b5f-5d40dc7fc82c">
+      <key>User linker flags</key>
+    </extension-field>
+  </sca-monolithic-implementation>
+  <sca-monolithic-implementation xmi:id="_2e9c38a4-64ef-4da2-ba7b-8ee3fc2d509f">
+    <name>LogImplementation</name>
+    <aep-compliance>aep_compliant</aep-compliance>
+    <impl-id>DCE:2e9c38a4-64ef-4da2-ba7b-8ee3fc2d509f</impl-id>
+    <definition-id>eaa74092-a57b-44d9-971b-7d41b6817d21</definition-id>
+    <element-file-name>LogImplementation.zmel</element-file-name>
+    <code xmi:id="_f2a84f33-1288-4f1d-963d-1bb9797ec0b8">
+      <type>Executable</type>
+    </code>
+    <compiler xmi:id="_b18b5df2-9ba3-475b-afc1-43c35cd45fba" />
+    <runtime xmi:id="_4f866341-1e8d-46fa-8b16-01bba9750dc4" />
+    <programming-language xmi:id="_7c35ccf2-8714-4805-9a60-84214d3d2dac" />
+    <property-file-group xmi:id="_fdc76877-f1a8-4e60-a30e-115fc44497c5">
+      <file-name>LogImplementation.prf.xml</file-name>
+    </property-file-group>
+  </sca-monolithic-implementation>
+  <sca-interface-definition xmi:id="_309ce268-d3ce-4dc6-aca5-23fef3c95c4e">
+    <name>PropertySet</name>
+    <scoped-name>::CF::PropertySet</scoped-name>
+    <repository-id>IDL:CF/PropertySet:1.0</repository-id>
+    <element-file-name>PropertySet.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-operation xmi:id="_b95d0d81-15eb-4bd2-97d9-6d226f924510">
+      <name>configure</name>
+      <scoped-name>::CF::PropertySet::configure</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_ebaed9dd-2fc1-46f7-b844-d0920306c2f4">
+        <name>configProperties</name>
+        <scoped-name>::CF::PropertySet::configure::configProperties</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::PropertySet::InvalidConfiguration</raises>
+      <raises>::CF::PropertySet::PartialConfiguration</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_f8b3afc0-0034-47d1-a702-acbf1497a40e">
+      <name>query</name>
+      <scoped-name>::CF::PropertySet::query</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_44eb71f9-b882-4f22-b610-5e7c2fb8cf86">
+        <name>configProperties</name>
+        <scoped-name>::CF::PropertySet::query::configProperties</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <raises>::CF::UnknownProperties</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-monolithic-implementation xmi:id="_3135168b-ef3e-49c1-88a3-0fd945a979e6">
+    <name>FileCopyAssemblyControllerImplementation1</name>
+    <aep-compliance>aep_compliant</aep-compliance>
+    <impl-id>DCE:cba02e8b-5358-45e1-9056-5f051f778a7f</impl-id>
+    <definition-id>faaccac6-1e25-45c7-9113-83c3a2555d06</definition-id>
+    <element-file-name>DataCheckerAssemblyControllerImplementation1.zmel</element-file-name>
+    <code xmi:id="_c92a57e8-3b65-434e-a10e-704139baeee7">
+      <local-file>cpi-generic-assy-controller</local-file>
+      <type>Executable</type>
+    </code>
+    <compiler xmi:id="_893b95f6-31bf-4822-a1fa-aa0f794ffed8" />
+    <runtime xmi:id="_967fc4b6-1fa8-4c6e-8846-9d2841fc79e8" />
+    <programming-language xmi:id="_48c89b30-3237-4a70-939c-327f8c5c2ecc" />
+    <processor-dependency xmi:id="_0ce5298d-aded-4eb5-af9a-73bdda17038f">
+      <name>x86</name>
+    </processor-dependency>
+    <os-dependency xmi:id="_ff479a37-cc97-4da9-bb8b-2fdc8db30b50">
+      <name>Linux</name>
+    </os-dependency>
+    <property-file-group xmi:id="_2b6b0f4c-7f58-40a7-846e-b43ffed47020">
+      <file-name>DataCheckerAssemblyControllerImplementation1.prf.xml</file-name>
+    </property-file-group>
+  </sca-monolithic-implementation>
+  <sca-interface-definition xmi:id="_36249244-c241-4e5b-9fa2-bf32d1a239f1">
+    <name>DeviceManager</name>
+    <scoped-name>::CF::DeviceManager</scoped-name>
+    <repository-id>IDL:CF/DeviceManager:1.0</repository-id>
+    <element-file-name>DeviceManager.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <inherited-interface>IDL:CF/PropertySet:1.0</inherited-interface>
+    <inherited-interface>IDL:CF/PortSupplier:1.0</inherited-interface>
+    <interface-attribute xmi:id="_e1e56cde-7b48-4364-985d-c6376508c9b9">
+      <name>deviceConfigurationProfile</name>
+      <scoped-name>::CF::DeviceManager::deviceConfigurationProfile</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_d8fd29fd-9124-466e-947e-edca0d6cadde">
+      <name>fileSys</name>
+      <scoped-name>::CF::DeviceManager::fileSys</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::FileSystem</type>
+      <basetype>Object</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_3b5f885a-98fc-478e-ae1d-0a337cefcaa6">
+      <name>identifier</name>
+      <scoped-name>::CF::DeviceManager::identifier</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_1f696bca-ca79-4c44-bda9-b5a618558eee">
+      <name>label</name>
+      <scoped-name>::CF::DeviceManager::label</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_9404170c-b520-42bb-9cca-cdd6aa5fe3e8">
+      <name>registeredDevices</name>
+      <scoped-name>::CF::DeviceManager::registeredDevices</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::DeviceSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_bf9293bf-fc02-4ce9-8867-dc840900dac1">
+      <name>registeredServices</name>
+      <scoped-name>::CF::DeviceManager::registeredServices</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::DeviceManager::ServiceSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-operation xmi:id="_8f4d8c5c-3307-4d2d-ae90-56100ec65b4a">
+      <name>registerDevice</name>
+      <scoped-name>::CF::DeviceManager::registerDevice</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_5f85d790-ece6-4295-b709-0a14ebf98fc3">
+        <name>registeringDevice</name>
+        <scoped-name>::CF::DeviceManager::registerDevice::registeringDevice</scoped-name>
+        <type>::CF::Device</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_65d8d556-c213-4eb1-ad2a-81c8272768ba">
+      <name>unregisterDevice</name>
+      <scoped-name>::CF::DeviceManager::unregisterDevice</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_37213672-ac34-4c4e-8f71-602a22a35f19">
+        <name>registeredDevice</name>
+        <scoped-name>::CF::DeviceManager::unregisterDevice::registeredDevice</scoped-name>
+        <type>::CF::Device</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_57143644-7ae0-4500-add6-4a717be15dd0">
+      <name>shutdown</name>
+      <scoped-name>::CF::DeviceManager::shutdown</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+    <interface-operation xmi:id="_5bc7d6f1-d765-41f8-abb6-fc3ca62fbbf9">
+      <name>registerService</name>
+      <scoped-name>::CF::DeviceManager::registerService</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_3768ef63-74c6-4658-b5f2-d0d47670e0f5">
+        <name>registeringService</name>
+        <scoped-name>::CF::DeviceManager::registerService::registeringService</scoped-name>
+        <type>Object</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_61ecb5d9-438f-41ef-8707-b0dc2eecfae4">
+        <name>name</name>
+        <scoped-name>::CF::DeviceManager::registerService::name</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_5fdb48fc-b9e6-4aaa-b755-247b4abe5ac4">
+      <name>unregisterService</name>
+      <scoped-name>::CF::DeviceManager::unregisterService</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_382eb9fc-501b-4165-9813-0e0e2c391a53">
+        <name>unregisteringService</name>
+        <scoped-name>::CF::DeviceManager::unregisterService::unregisteringService</scoped-name>
+        <type>Object</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_68495dff-db10-4ab3-9e54-c1fb95d2b241">
+        <name>name</name>
+        <scoped-name>::CF::DeviceManager::unregisterService::name</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_aeca2517-8db1-4d20-be68-bcf8508d0245">
+      <name>getComponentImplementationId</name>
+      <scoped-name>::CF::DeviceManager::getComponentImplementationId</scoped-name>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_47b92319-f997-4596-9dd3-10a950916e1e">
+        <name>componentInstantiationId</name>
+        <scoped-name>::CF::DeviceManager::getComponentImplementationId::componentInstantiationId</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_3eb81e78-6baf-42e9-af55-29718ee7ec6e">
+    <name>ResourceFactory</name>
+    <scoped-name>::CF::ResourceFactory</scoped-name>
+    <repository-id>IDL:CF/ResourceFactory:1.0</repository-id>
+    <element-file-name>ResourceFactory.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-attribute xmi:id="_2a24a97a-522f-433f-8f93-625656025700">
+      <name>identifier</name>
+      <scoped-name>::CF::ResourceFactory::identifier</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-operation xmi:id="_57b6c100-e114-4cf9-a4c3-221add59f909">
+      <name>createResource</name>
+      <scoped-name>::CF::ResourceFactory::createResource</scoped-name>
+      <type>::CF::Resource</type>
+      <basetype>Object</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_03a5731f-1af5-426c-9a3d-e3517ae9f7b9">
+        <name>resourceId</name>
+        <scoped-name>::CF::ResourceFactory::createResource::resourceId</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_082bc658-c95c-41ca-9519-9a807c5f5807">
+        <name>qualifiers</name>
+        <scoped-name>::CF::ResourceFactory::createResource::qualifiers</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::ResourceFactory::CreateResourceFailure</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_1395bd03-470a-4f5d-a471-40381fbb3047">
+      <name>releaseResource</name>
+      <scoped-name>::CF::ResourceFactory::releaseResource</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_f526cd83-15a5-4008-9b18-bb876fc92f13">
+        <name>resourceId</name>
+        <scoped-name>::CF::ResourceFactory::releaseResource::resourceId</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::ResourceFactory::InvalidResourceId</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_ece9e5c9-0e5f-4afa-9102-7018728e20e9">
+      <name>shutdown</name>
+      <scoped-name>::CF::ResourceFactory::shutdown</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <raises>::CF::ResourceFactory::ShutdownFailure</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_441e1253-cb1f-458b-8ada-d84d22e609b3">
+    <name>ExecutableDevice</name>
+    <scoped-name>::CF::ExecutableDevice</scoped-name>
+    <repository-id>IDL:CF/ExecutableDevice:1.0</repository-id>
+    <element-file-name>ExecutableDevice.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <inherited-interface>IDL:CF/LoadableDevice:1.0</inherited-interface>
+    <interface-operation xmi:id="_1620364f-d422-4530-bdf8-b7f201561a48">
+      <name>terminate</name>
+      <scoped-name>::CF::ExecutableDevice::terminate</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_8f95cb96-58e5-4986-8987-9168b5daf9bf">
+        <name>processId</name>
+        <scoped-name>::CF::ExecutableDevice::terminate::processId</scoped-name>
+        <type>::CF::ExecutableDevice::ProcessID_Type</type>
+        <basetype>long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::ExecutableDevice::InvalidProcess</raises>
+      <raises>::CF::Device::InvalidState</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_ef6fd25b-9cef-4fa4-9075-b162a9d49b2c">
+      <name>execute</name>
+      <scoped-name>::CF::ExecutableDevice::execute</scoped-name>
+      <type>::CF::ExecutableDevice::ProcessID_Type</type>
+      <basetype>long</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_35bb113a-a493-4ff1-b63a-553c75b6e80f">
+        <name>name</name>
+        <scoped-name>::CF::ExecutableDevice::execute::name</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_728b2c9f-e28f-4451-a6c6-d110fac3e8b7">
+        <name>options</name>
+        <scoped-name>::CF::ExecutableDevice::execute::options</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_94a18892-4753-4f7d-b6c6-a5d6870ff7fa">
+        <name>parameters</name>
+        <scoped-name>::CF::ExecutableDevice::execute::parameters</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::Device::InvalidState</raises>
+      <raises>::CF::ExecutableDevice::InvalidFunction</raises>
+      <raises>::CF::ExecutableDevice::InvalidParameters</raises>
+      <raises>::CF::ExecutableDevice::InvalidOptions</raises>
+      <raises>::CF::InvalidFileName</raises>
+      <raises>::CF::ExecutableDevice::ExecuteFail</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_4a7e0ed5-627f-46b6-97d9-6b2ee1f00adf">
+    <name>PushSupplier</name>
+    <scoped-name>::CosEventComm::PushSupplier</scoped-name>
+    <repository-id>IDL:CosEventComm/PushSupplier:1.0</repository-id>
+    <element-file-name>PushSupplier.zmel</element-file-name>
+    <file-name>CosEventComm.idl</file-name>
+    <interface-operation xmi:id="_7eaf82ca-d941-4d3e-8706-24569bb28840">
+      <name>disconnect_push_supplier</name>
+      <scoped-name>::CosEventComm::PushSupplier::disconnect_push_supplier</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_54ccf5e3-90f7-44d4-a229-15f3fe7efb52">
+    <name>Application</name>
+    <scoped-name>::CF::Application</scoped-name>
+    <repository-id>IDL:CF/Application:1.0</repository-id>
+    <element-file-name>Application.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <inherited-interface>IDL:CF/Resource:1.0</inherited-interface>
+    <interface-attribute xmi:id="_d50a869b-4cc0-44b7-8b2a-fc3f9a95bca2">
+      <name>componentNamingContexts</name>
+      <scoped-name>::CF::Application::componentNamingContexts</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::Application::ComponentElementSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_f4935a82-ee7e-4393-857b-f192e05efceb">
+      <name>componentProcessIds</name>
+      <scoped-name>::CF::Application::componentProcessIds</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::Application::ComponentProcessIdSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_aaa8db8c-e6ea-47e8-ac60-7d63f3292408">
+      <name>componentDevices</name>
+      <scoped-name>::CF::Application::componentDevices</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::DeviceAssignmentSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_5543055e-e56e-4307-b364-35fbcb8a44ac">
+      <name>componentImplementations</name>
+      <scoped-name>::CF::Application::componentImplementations</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::Application::ComponentElementSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_a278fd6e-92fb-41aa-9cd7-76a8bfe4cf50">
+      <name>profile</name>
+      <scoped-name>::CF::Application::profile</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_7262c1ed-9b28-4cda-adb3-9785be5b7f14">
+      <name>name</name>
+      <scoped-name>::CF::Application::name</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+  </sca-interface-definition>
+  <sca-cf-definition xmi:id="_5feb48f2-50bc-4843-bb04-6e77183d09b7">
+    <name>DeviceManager</name>
+    <id>DCE:5feb48f2-50bc-4843-bb04-6e77183d09b7</id>
+    <corba-version>2.2</corba-version>
+    <repository-id>IDL:CF/Resource:1.0</repository-id>
+    <sca-type>sca_compliant</sca-type>
+    <componenttype>devicemanager</componenttype>
+    <scd-file>DeviceManager.scd.xml</scd-file>
+    <spd-file>DeviceManager.spd.xml</spd-file>
+    <element-file-name>DeviceManager_1.zmel</element-file-name>
+    <author xmi:id="_dfe6a589-a03b-4c3e-a009-4aec9cd484a4" />
+    <port-definition xmi:id="_1da75da5-d92c-43a2-9169-9140d0e6c531">
+      <name>resource</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_250e7df1-c34b-4a04-b617-ece57032d741">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_8d8be84f-837c-46c2-8535-b39f4e857657">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_7e744ebe-609b-430b-b204-b93c1d4d4077">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_ee2745b5-d6fa-4daf-9bc7-885cbeb58a27">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_6a3434bc-58b8-4331-a60e-4a5396084030">
+      <name>deviceManager</name>
+      <conjugation>provides</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/DeviceManager:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_eff7e663-8204-4876-aa8b-e1bece7ed5c8">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_54e6ae1b-036e-42d9-be7c-416457a31d1e">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_fa074105-5e38-4cda-ba92-1ae55e88c654">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_253e771d-438a-4cf7-bb4c-fe3245174117">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <component-property-file-group xmi:id="_ad9120fc-cf47-4f87-8adc-b31a15229225">
+      <file-name>DeviceManagerComponent.prf.xml</file-name>
+    </component-property-file-group>
+    <package-property-file-group xmi:id="_cc7148ba-53e3-4d9d-af45-0dabba1aaf0e">
+      <file-name>DeviceManagerPackage.prf.xml</file-name>
+    </package-property-file-group>
+    <dmd xmi:id="_7507e32f-a2da-4052-a441-27f0bee11ae4">
+      <name>DeviceManager.dmd.xml</name>
+      <id>DCE:bbd9850e-497d-44c5-9d44-3bd883b42d2b</id>
+      <file-name>DeviceManager.dmd.xml</file-name>
+    </dmd>
+    <definition-form-info xmi:id="_b723a031-a670-4d40-a349-1a7c25e8efc0">
+      <form-left>0</form-left>
+      <form-top>0</form-top>
+      <form-width>0</form-width>
+      <form-height>0</form-height>
+      <ctrl-width>1130</ctrl-width>
+      <ctrl-height>710</ctrl-height>
+      <scale-factor>1.0</scale-factor>
+    </definition-form-info>
+  </sca-cf-definition>
+  <sca-interface-definition xmi:id="_701b1974-30a7-431b-8f0f-8f3b99ce4825">
+    <name>ApplicationFactory</name>
+    <scoped-name>::CF::ApplicationFactory</scoped-name>
+    <repository-id>IDL:CF/ApplicationFactory:1.0</repository-id>
+    <element-file-name>ApplicationFactory.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-attribute xmi:id="_67fc1a4a-9fd8-4cb0-81d3-b5e15869cc32">
+      <name>name</name>
+      <scoped-name>::CF::ApplicationFactory::name</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_109cebf2-4d97-4f40-8070-d2e4ccc9d840">
+      <name>identifier</name>
+      <scoped-name>::CF::ApplicationFactory::identifier</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_1f2510a5-5e69-4796-9dac-69b99c90ff45">
+      <name>softwareProfile</name>
+      <scoped-name>::CF::ApplicationFactory::softwareProfile</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-operation xmi:id="_0b073b96-cef6-4d08-88db-0933771312e8">
+      <name>create</name>
+      <scoped-name>::CF::ApplicationFactory::create</scoped-name>
+      <type>::CF::Application</type>
+      <basetype>Object</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_9ae9d715-10df-4c2f-9668-9dd639851d47">
+        <name>name</name>
+        <scoped-name>::CF::ApplicationFactory::create::name</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_9b057c96-881e-4e06-959a-ffda692ffa98">
+        <name>initConfiguration</name>
+        <scoped-name>::CF::ApplicationFactory::create::initConfiguration</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_ce971efb-56b2-4104-aaa9-f519062659f7">
+        <name>deviceAssignments</name>
+        <scoped-name>::CF::ApplicationFactory::create::deviceAssignments</scoped-name>
+        <type>::CF::DeviceAssignmentSequence</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::ApplicationFactory::CreateApplicationError</raises>
+      <raises>::CF::ApplicationFactory::CreateApplicationRequestError</raises>
+      <raises>::CF::ApplicationFactory::InvalidInitConfiguration</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_7023763c-0cc9-4fb1-b40a-43186ac48267">
+    <name>Log</name>
+    <scoped-name>::CosLwLog::Log</scoped-name>
+    <repository-id>IDL:CosLwLog/Log:1.0</repository-id>
+    <element-file-name>Log.zmel</element-file-name>
+    <file-name>CosLwLogService.idl</file-name>
+    <inherited-interface>IDL:CosLwLog/LogAdministrator:1.0</inherited-interface>
+    <inherited-interface>IDL:CosLwLog/LogConsumer:1.0</inherited-interface>
+    <inherited-interface>IDL:CosLwLog/LogProducer:1.0</inherited-interface>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_7cf306ad-d564-4b1b-a157-6143f72699c4">
+    <name>AggregateDevice</name>
+    <scoped-name>::CF::AggregateDevice</scoped-name>
+    <repository-id>IDL:CF/AggregateDevice:1.0</repository-id>
+    <element-file-name>AggregateDevice.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-attribute xmi:id="_d995b68c-2bc8-49cd-8017-1e79ab305479">
+      <name>devices</name>
+      <scoped-name>::CF::AggregateDevice::devices</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::DeviceSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-operation xmi:id="_ab058e3a-d841-4680-bc8c-ac8f422681f1">
+      <name>addDevice</name>
+      <scoped-name>::CF::AggregateDevice::addDevice</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_3d8e55f8-5578-4c86-ae9f-c58e8151dd7b">
+        <name>associatedDevice</name>
+        <scoped-name>::CF::AggregateDevice::addDevice::associatedDevice</scoped-name>
+        <type>::CF::Device</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_6296a4a5-2a17-4858-9abb-6098361dcdf7">
+      <name>removeDevice</name>
+      <scoped-name>::CF::AggregateDevice::removeDevice</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_54788f30-ec96-4b2f-ad33-b2eb60fadd83">
+        <name>associatedDevice</name>
+        <scoped-name>::CF::AggregateDevice::removeDevice::associatedDevice</scoped-name>
+        <type>::CF::Device</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_7ff2a006-32cf-437b-b481-61dacbb3265e">
+    <name>Device</name>
+    <scoped-name>::CF::Device</scoped-name>
+    <repository-id>IDL:CF/Device:1.0</repository-id>
+    <element-file-name>Device.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <inherited-interface>IDL:CF/Resource:1.0</inherited-interface>
+    <interface-attribute xmi:id="_3a3355c3-3eea-4ca0-a4d8-33f9b5325a01">
+      <name>usageState</name>
+      <scoped-name>::CF::Device::usageState</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::Device::UsageType</type>
+      <basetype>enum</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_d2e5ee79-c88a-4fd4-bd73-d2a504af2f87">
+      <name>adminState</name>
+      <scoped-name>::CF::Device::adminState</scoped-name>
+      <readonly>false</readonly>
+      <type>::CF::Device::AdminType</type>
+      <basetype>enum</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_e5a31860-421a-45f1-8eff-05b388b0007e">
+      <name>operationalState</name>
+      <scoped-name>::CF::Device::operationalState</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::Device::OperationalType</type>
+      <basetype>enum</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_d158fbac-94c9-4246-8c66-d180f864300c">
+      <name>softwareProfile</name>
+      <scoped-name>::CF::Device::softwareProfile</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_a2a1b6c5-08d8-45fc-b637-a8a039cf4dcd">
+      <name>label</name>
+      <scoped-name>::CF::Device::label</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_3b12d46b-cd04-48d9-aac5-589efe6eea63">
+      <name>compositeDevice</name>
+      <scoped-name>::CF::Device::compositeDevice</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::AggregateDevice</type>
+      <basetype>Object</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-operation xmi:id="_0c71045f-bb8e-4b58-9639-e119f40c23a8">
+      <name>allocateCapacity</name>
+      <scoped-name>::CF::Device::allocateCapacity</scoped-name>
+      <type>boolean</type>
+      <basetype>boolean</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_c8393bfb-38c5-47fa-b217-26c1fd26ad75">
+        <name>capacities</name>
+        <scoped-name>::CF::Device::allocateCapacity::capacities</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::Device::InvalidCapacity</raises>
+      <raises>::CF::Device::InvalidState</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_e9d42a65-595f-4767-9771-65cb58509b08">
+      <name>deallocateCapacity</name>
+      <scoped-name>::CF::Device::deallocateCapacity</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_0c0979f0-830b-4ea7-98df-a30ffe92a517">
+        <name>capacities</name>
+        <scoped-name>::CF::Device::deallocateCapacity::capacities</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::Device::InvalidCapacity</raises>
+      <raises>::CF::Device::InvalidState</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-monolithic-implementation xmi:id="_80a285a3-6f1f-4b3f-8b13-29dc8db65fac">
+    <name>DomainManagerImplementation</name>
+    <aep-compliance>aep_compliant</aep-compliance>
+    <impl-id>DCE:80a285a3-6f1f-4b3f-8b13-29dc8db65fac</impl-id>
+    <definition-id>9ff94f3c-f489-4a52-8c1b-3e60eb30432a</definition-id>
+    <element-file-name>DomainManagerImplementation.zmel</element-file-name>
+    <code xmi:id="_0f0c5099-2270-4e55-beb5-b7053c563258">
+      <type>Executable</type>
+    </code>
+    <compiler xmi:id="_6cb8ba93-ec42-405d-8221-576175f46c0e" />
+    <runtime xmi:id="_73a4fbab-c326-4b8a-9926-47dde32532ed" />
+    <programming-language xmi:id="_bc3a810e-b035-4489-9321-8fb4983904ca" />
+    <property-file-group xmi:id="_ebc00470-5b11-43aa-9bc1-6e196b07489b">
+      <file-name>DomainManagerImplementation.prf.xml</file-name>
+    </property-file-group>
+  </sca-monolithic-implementation>
+  <sca-application xmi:id="_80a6ddbb-a54f-47f4-8238-929525b3662a">
+    <name>FileCopy</name>
+    <id>DCE:fdfc21d4-505a-4494-bae1-93036020ee47</id>
+    <software-assembly-descriptor>FileCopy.sad.xml</software-assembly-descriptor>
+    <assembly-controller>bd0ca14f-c286-4433-9bb8-de84b7f6d5db</assembly-controller>
+    <element-file-name>FileCopy.zmel</element-file-name>
+    <component-instance xmi:id="_56987519-2acd-4247-ac08-ef2c6de48271">
+      <name>filesource1</name>
+      <id>DCE:56987519-2acd-4247-ac08-ef2c6de48271</id>
+      <definition-id>e86d3323-bccb-438c-a142-2e84f2a0f166</definition-id>
+      <find-component xmi:id="_139775dd-2618-42bd-8b23-840024f5e877">
+        <find-component-method>namingservice</find-component-method>
+        <findby-namingservice>filesource1</findby-namingservice>
+      </find-component>
+      <simple-ref xmi:id="_b11c120f-6473-41f1-a3eb-de6007838bca">
+        <definition-id>0dfc71a7-d0b8-4776-99d2-f44efb96ee95</definition-id>
+        <order>4</order>
+      </simple-ref>
+      <simple-ref xmi:id="_f7ad1b08-a7d8-4317-98dd-776c8721e959">
+        <definition-id>d0431f7e-3d63-40f6-b1f5-534a3ac6426e</definition-id>
+        <order>1</order>
+      </simple-ref>
+      <simple-ref xmi:id="_fd655cc7-f62c-430c-ac0d-be28566e2d31">
+        <definition-id>bb29e8b5-fc8d-4b45-8559-c241ca891a60</definition-id>
+        <order>3</order>
+      </simple-ref>
+      <port-instance xmi:id="_654633c2-c80d-4038-8040-4bc46017938f">
+        <definition-id>521f0bd1-e1e2-4d46-b0d8-d9149ce47829</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_57531c7c-0017-4a73-9b83-4e6496e982a7">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_c2a98ec8-3fff-42c1-a773-bd41fef259b4">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_553137cc-8eb4-4c9c-873b-aa0df0d896bf">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_1849f931-cf71-486f-8297-414fa40f3eaf">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+      <port-instance xmi:id="_e765c790-be25-4029-ba4b-e38dfee932f0">
+        <definition-id>2571beb2-ab0d-4d09-81c2-f86c21720b35</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_406f4579-d4a5-4796-aa23-5bc32eaeb6a4">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_a2183f00-0274-479e-a7af-b02a4b2528cc">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_4405fc09-11af-42b7-9a3b-154b17d17c0d">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_771e6c4a-78b0-45eb-856c-2bf17200a7ae">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+    </component-instance>
+    <component-instance xmi:id="_8b55efc7-4625-472b-ac12-9a3594cff6a6">
+      <name>filesink1</name>
+      <id>DCE:8b55efc7-4625-472b-ac12-9a3594cff6a6</id>
+      <definition-id>f3f4a1ba-bbcf-4709-bcba-dc71b31b8c07</definition-id>
+      <find-component xmi:id="_0659857f-cf73-4a89-a4d1-4c3a546a77d6">
+        <find-component-method>namingservice</find-component-method>
+        <findby-namingservice>filesink1</findby-namingservice>
+      </find-component>
+      <simple-ref xmi:id="_9d05db11-feaa-4da3-89b8-264446adb002">
+        <definition-id>b97b9831-f4d5-4533-9677-0de73c0c0dc8</definition-id>
+        <order>2</order>
+      </simple-ref>
+      <simple-ref xmi:id="_c7635354-fe9b-4e68-aeb4-5aaf69478d74">
+        <definition-id>bd4552bc-9939-43e1-acc6-bc99f55b398b</definition-id>
+        <order>1</order>
+      </simple-ref>
+      <port-instance xmi:id="_4e8dc4bb-926b-4908-8d35-cead6be1f652">
+        <definition-id>25cd90d1-98ac-410d-af5f-75014bc80c40</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_32cbbe83-f4e8-48c6-bf79-60f1a34b927c">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_44033f1d-bdcd-4a81-bcd0-b1e76990e9f1">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_f3269080-0179-4cb3-98dd-35ee17be9df3">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_1983fa0d-e955-4ae7-8adf-a6f3a7f21c4a">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+      <port-instance xmi:id="_f44aa4b6-ebe7-494b-9800-ed5a3f82b69d">
+        <definition-id>7bdaa68b-4bb5-4c78-a58b-c8e9cb22bf13</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_6db78e3d-8e70-410d-84c3-80f5ddf1d49b">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_218ec6de-5aab-4bd4-acca-4aec3314a622">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_7c90c7b5-6792-49f4-90e2-63ad5f4cacf8">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_4fcbeda6-fd5f-459d-9521-1586fbecd20d">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+    </component-instance>
+    <component-instance xmi:id="_bd0ca14f-c286-4433-9bb8-de84b7f6d5db">
+      <name>filecopyassemblycontroller1</name>
+      <id>DCE:bd0ca14f-c286-4433-9bb8-de84b7f6d5db</id>
+      <definition-id>faaccac6-1e25-45c7-9113-83c3a2555d06</definition-id>
+      <find-component xmi:id="_415e57d6-16df-4c79-ae33-b91bbe1df08d">
+        <find-component-method>namingservice</find-component-method>
+        <findby-namingservice>filecopyassemblycontroller1</findby-namingservice>
+      </find-component>
+      <simple-ref xmi:id="_122e284f-36eb-45e9-bf8c-868eeb6b5fe8">
+        <definition-id>a2d5ac88-bf3b-4aaa-908a-d4270714f2b5</definition-id>
+        <order>1</order>
+      </simple-ref>
+      <simple-ref xmi:id="_872babe9-9c94-438b-9732-ea0de0e026e6">
+        <definition-id>04da51c4-1f17-4ad3-94cd-3911faa3078a</definition-id>
+        <order>2</order>
+      </simple-ref>
+      <simple-ref xmi:id="_ac478aac-a0dc-4edd-850b-9a834cbea240">
+        <definition-id>455a5946-561c-415a-8612-e54188d34102</definition-id>
+        <order>3</order>
+      </simple-ref>
+      <port-instance xmi:id="_20436993-2e4e-4d78-bb02-7ab72a862eae">
+        <definition-id>0809d08f-9c60-4ba1-bdd9-cda136caf6fc</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_6b04b145-11dd-4a7a-a094-50d3d1408982">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_7f465ea1-35ba-40d2-8213-7db975577be0">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_fe16307c-9acb-4b6f-b947-df7714f5b681">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_802b4b4a-32ca-4cb8-ba2d-bc938775939c">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+      <port-instance xmi:id="_57883fed-e61c-48e3-9832-5dabdb0419dc">
+        <definition-id>80205396-f0f8-4c05-8938-c4b4f2d003c3</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_1fec449e-92a9-42ea-a4d4-4ebf0ad75cf6">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_db65f19e-b513-4871-8958-4ed1740d61a3">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_ca24772f-1ed0-4ac6-95cc-7f6b996a7b38">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_cc06e809-a8bb-4d2e-9e66-4be477a8b943">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+      <port-instance xmi:id="_6c5ccbba-1c4b-4440-826c-776ef149ea98">
+        <definition-id>3da1cd30-e9ba-4dfb-97e6-a831c072a809</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_23913653-fe64-489e-83c9-512cf692cf1e">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_fcc44c49-2cbd-43c7-8269-6222fdd3b908">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_3bab90c4-bb46-47b8-b509-6db097d72bd3">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_44a89ea9-5c86-4ef8-b231-7bffd1ea7c56">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+      <port-instance xmi:id="_d0c7a061-ee99-4819-8d74-3f3b3e066f2c">
+        <definition-id>88ce5b32-96f3-42ea-92a9-3c57cc62ba93</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_b099e08b-95a0-4017-8813-a7854784e574">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_930b0dbd-a30b-4b51-95b4-6647cb7ad931">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_82a0aa95-23d4-4bd3-86f7-749127152fe8">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_cd96ac04-ac4a-4d2d-a2d2-6b5e52a13afc">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+    </component-instance>
+    <component-instance xmi:id="_9a5259f4-459a-4413-b1b7-db699ab45413">
+      <name>filetee1</name>
+      <id>DCE:9a5259f4-459a-4413-b1b7-db699ab45413</id>
+      <definition-id>d8d79e23-e0f6-43f7-ac14-60737cfa06dc</definition-id>
+      <find-component xmi:id="_dcd543da-2667-4143-bdca-114bd5383293">
+        <find-component-method>namingservice</find-component-method>
+        <findby-namingservice>filetee1</findby-namingservice>
+      </find-component>
+      <simple-ref xmi:id="_573fedf8-63d9-470c-af91-7abe7613737e">
+        <definition-id>222b3c2c-c628-439d-824f-3c9074245819</definition-id>
+        <order>1</order>
+      </simple-ref>
+      <simple-ref xmi:id="_c26ef986-3307-42ca-b20c-8a3040e7ef71">
+        <definition-id>80bbcb43-afd5-4c2c-bc7a-e1b0479a66b6</definition-id>
+        <order>2</order>
+      </simple-ref>
+      <port-instance xmi:id="_1befefd0-eee2-4e09-91d5-d12acc9621b5">
+        <definition-id>2564d90c-3b92-49c2-a746-e378bb097d7e</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_98e1ec4d-a310-4a51-8081-2b1a7b958c02">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_3cf2a6f3-0420-4856-bd70-1c2802fee21c">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_1ceada78-e3cf-48db-8c33-e8b346ba1101">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_73f69625-ac0f-46d7-b926-09938f5e870f">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+      <port-instance xmi:id="_9e45ebec-d984-4ea2-af2a-4206211d520f">
+        <definition-id>0f433f66-912c-47f8-8aa4-669f97bd0a4f</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_90edc9a5-3142-49ae-8a17-4943f85bacb4">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_1fd8c3b3-7d5c-4023-9484-ca6cf96eb83a">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_7f154658-da44-4efa-9b89-2746110c0e10">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_303ab7bf-1e2d-4d0c-a2b4-91bdf91ee6d1">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+      <port-instance xmi:id="_f8b001cd-7532-4dd9-8c82-6ab1611bc74c">
+        <definition-id>5174cd0b-f887-4dee-9a80-641fb0370377</definition-id>
+        <graphical-index>-1</graphical-index>
+        <point xmi:id="_fa21a853-5dc2-4b02-8a12-ebd9116611ec">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </point>
+        <show-text>true</show-text>
+        <port-direction>0</port-direction>
+        <rectangle xmi:id="_3ff1ca84-6076-476e-9379-4565791ad438">
+          <name>BoundingRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_7c283dd8-0fff-4b1d-a4fe-c8687398f937">
+          <name>HitTestRectangle</name>
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+          <rectangle-height>0</rectangle-height>
+          <rectangle-width>0</rectangle-width>
+        </rectangle>
+        <port-label-graphical-info xmi:id="_bb7806d3-fde6-4658-9d06-b47c4928b17e">
+          <point-x>0</point-x>
+          <point-y>0</point-y>
+        </port-label-graphical-info>
+      </port-instance>
+    </component-instance>
+    <connection xmi:id="_8fdebe8d-5cf7-4056-a888-b95bd470fc30">
+      <id>DCE:8fdebe8d-5cf7-4056-a888-b95bd470fc30</id>
+      <connection-start-component>bd0ca14f-c286-4433-9bb8-de84b7f6d5db</connection-start-component>
+      <connection-start-port>57883fed-e61c-48e3-9832-5dabdb0419dc</connection-start-port>
+      <connection-end-component>56987519-2acd-4247-ac08-ef2c6de48271</connection-end-component>
+      <connection-end-port>e765c790-be25-4029-ba4b-e38dfee932f0</connection-end-port>
+    </connection>
+    <connection xmi:id="_a6ed2639-f451-48e3-b48f-1a16a4f4b9dc">
+      <id>DCE:a6ed2639-f451-48e3-b48f-1a16a4f4b9dc</id>
+      <connection-start-component>bd0ca14f-c286-4433-9bb8-de84b7f6d5db</connection-start-component>
+      <connection-start-port>d0c7a061-ee99-4819-8d74-3f3b3e066f2c</connection-start-port>
+      <connection-end-component>8b55efc7-4625-472b-ac12-9a3594cff6a6</connection-end-component>
+      <connection-end-port>4e8dc4bb-926b-4908-8d35-cead6be1f652</connection-end-port>
+    </connection>
+    <connection xmi:id="_5e9d2d5f-5072-44fa-8558-8cdf5e2ce204">
+      <id>DCE:5e9d2d5f-5072-44fa-8558-8cdf5e2ce204</id>
+      <connection-start-component>bd0ca14f-c286-4433-9bb8-de84b7f6d5db</connection-start-component>
+      <connection-start-port>20436993-2e4e-4d78-bb02-7ab72a862eae</connection-start-port>
+      <connection-end-component>9a5259f4-459a-4413-b1b7-db699ab45413</connection-end-component>
+      <connection-end-port>1befefd0-eee2-4e09-91d5-d12acc9621b5</connection-end-port>
+    </connection>
+    <connection xmi:id="_cbf9d972-26a4-4fb1-bc49-1ea4ce94bb4a">
+      <id>DCE:cbf9d972-26a4-4fb1-bc49-1ea4ce94bb4a</id>
+      <connection-start-component>56987519-2acd-4247-ac08-ef2c6de48271</connection-start-component>
+      <connection-start-port>654633c2-c80d-4038-8040-4bc46017938f</connection-start-port>
+      <connection-end-component>9a5259f4-459a-4413-b1b7-db699ab45413</connection-end-component>
+      <connection-end-port>9e45ebec-d984-4ea2-af2a-4206211d520f</connection-end-port>
+    </connection>
+    <connection xmi:id="_50ca8aaa-1400-4df9-a707-22c98beedbb7">
+      <id>DCE:50ca8aaa-1400-4df9-a707-22c98beedbb7</id>
+      <connection-start-component>9a5259f4-459a-4413-b1b7-db699ab45413</connection-start-component>
+      <connection-start-port>f8b001cd-7532-4dd9-8c82-6ab1611bc74c</connection-start-port>
+      <connection-end-component>8b55efc7-4625-472b-ac12-9a3594cff6a6</connection-end-component>
+      <connection-end-port>f44aa4b6-ebe7-494b-9800-ed5a3f82b69d</connection-end-port>
+    </connection>
+    <definition-form-info xmi:id="_7370ca00-3243-4c2c-9caa-fb7f4fc74aa3">
+      <form-left>0</form-left>
+      <form-top>0</form-top>
+      <form-width>0</form-width>
+      <form-height>0</form-height>
+      <ctrl-width>1130</ctrl-width>
+      <ctrl-height>710</ctrl-height>
+      <scale-factor>1.0</scale-factor>
+    </definition-form-info>
+    <implementation-view xmi:id="_2c6f421d-9898-4058-ad3e-2c48687a3239">
+      <name>FileCopyView</name>
+      <impl-form-info xmi:id="_0f032b65-d7d1-4556-9701-616a3124e23c">
+        <form-left>0</form-left>
+        <form-top>0</form-top>
+        <form-width>0</form-width>
+        <form-height>0</form-height>
+        <ctrl-width>1130</ctrl-width>
+        <ctrl-height>710</ctrl-height>
+        <scale-factor>1.0</scale-factor>
+      </impl-form-info>
+      <component-instance-view xmi:id="_1d38da4a-a8f7-4df1-892e-e865b664a755">
+        <component-instance>56987519-2acd-4247-ac08-ef2c6de48271</component-instance>
+        <graphical-index>1</graphical-index>
+        <point xmi:id="_b186f306-efa5-41fc-ac2e-4b247f4965db">
+          <point-x>187</point-x>
+          <point-y>271</point-y>
+        </point>
+        <color>BlanchedAlmond</color>
+        <text-color>Black</text-color>
+        <show-text>true</show-text>
+        <rectangle xmi:id="_a530b3e9-316c-4f30-9b97-804ea1cd1de0">
+          <name>BoundingRectangle</name>
+          <point-x>146</point-x>
+          <point-y>238</point-y>
+          <rectangle-height>50</rectangle-height>
+          <rectangle-width>80</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_f3adbfb8-4230-45c6-8e82-4f94330521b8">
+          <name>HitTestRectangle</name>
+          <point-x>146</point-x>
+          <point-y>238</point-y>
+          <rectangle-height>50</rectangle-height>
+          <rectangle-width>80</rectangle-width>
+        </rectangle>
+        <port-instance-view xmi:id="_075eadb4-7c75-4767-b2ce-75d00eb37c71">
+          <port-instance>e765c790-be25-4029-ba4b-e38dfee932f0</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_ed013874-c2b2-4c3d-a6e7-002f34569ee5">
+            <point-x>185</point-x>
+            <point-y>238</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>0</port-direction>
+          <rectangle xmi:id="_87d7f6be-87ff-49fa-b3c3-441b61a9accc">
+            <name>BoundingRectangle</name>
+            <point-x>177</point-x>
+            <point-y>216</point-y>
+            <rectangle-height>30</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_66e4de80-3615-4cb4-b777-5836e44e30eb">
+            <name>HitTestRectangle</name>
+            <point-x>176</point-x>
+            <point-y>219</point-y>
+            <rectangle-height>22</rectangle-height>
+            <rectangle-width>11</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_8519703c-ab73-4cff-8a81-25e319552e3b">
+            <point-x>0</point-x>
+            <point-y>0</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+        <port-instance-view xmi:id="_4f4b7627-1699-4af2-864b-cbabf8884ba3">
+          <port-instance>654633c2-c80d-4038-8040-4bc46017938f</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_f9d98617-ba51-4e1c-9396-4c0b87c37ce2">
+            <point-x>226</point-x>
+            <point-y>262</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>90</port-direction>
+          <rectangle xmi:id="_cff23857-9e4f-4eee-a03b-4db1cfebe135">
+            <name>BoundingRectangle</name>
+            <point-x>233</point-x>
+            <point-y>240</point-y>
+            <rectangle-height>15</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_2595cbd3-a7ba-48de-bc77-547c28861cc4">
+            <name>HitTestRectangle</name>
+            <point-x>218</point-x>
+            <point-y>257</point-y>
+            <rectangle-height>12</rectangle-height>
+            <rectangle-width>12</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_d042b076-e014-4e27-9c79-27a571d23eb9">
+            <point-x>-2</point-x>
+            <point-y>-13</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+      </component-instance-view>
+      <component-instance-view xmi:id="_7b300851-4c6a-47d4-9803-7a15c56cd8da">
+        <component-instance>9a5259f4-459a-4413-b1b7-db699ab45413</component-instance>
+        <graphical-index>0</graphical-index>
+        <point xmi:id="_e9b97843-25f1-4d3d-9cdc-9e043872a6b4">
+          <point-x>349</point-x>
+          <point-y>259</point-y>
+        </point>
+        <color>BlanchedAlmond</color>
+        <text-color>Black</text-color>
+        <show-text>true</show-text>
+        <rectangle xmi:id="_e9d25bd7-c5d2-4830-ad2a-86798ab3c86d">
+          <name>BoundingRectangle</name>
+          <point-x>298</point-x>
+          <point-y>235</point-y>
+          <rectangle-height>50</rectangle-height>
+          <rectangle-width>80</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_6f1cfbe5-2199-49ca-8005-66446981726d">
+          <name>HitTestRectangle</name>
+          <point-x>298</point-x>
+          <point-y>235</point-y>
+          <rectangle-height>50</rectangle-height>
+          <rectangle-width>80</rectangle-width>
+        </rectangle>
+        <port-instance-view xmi:id="_07851f33-8acc-45ed-9379-b4fdfaa16017">
+          <port-instance>1befefd0-eee2-4e09-91d5-d12acc9621b5</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_7ccc0c06-bf81-412e-9b46-89d2008b3fbb">
+            <point-x>337</point-x>
+            <point-y>235</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>0</port-direction>
+          <rectangle xmi:id="_fee4ef52-414c-4de2-9619-0307cd342145">
+            <name>BoundingRectangle</name>
+            <point-x>329</point-x>
+            <point-y>213</point-y>
+            <rectangle-height>30</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_121381dc-b4e9-4c28-9653-8768bc488c92">
+            <name>HitTestRectangle</name>
+            <point-x>328</point-x>
+            <point-y>216</point-y>
+            <rectangle-height>22</rectangle-height>
+            <rectangle-width>11</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_464acda2-da21-4138-ba74-7e895d8e6ba4">
+            <point-x>0</point-x>
+            <point-y>0</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+        <port-instance-view xmi:id="_14d7ed59-a77e-4064-8a9b-528937a40ce2">
+          <port-instance>9e45ebec-d984-4ea2-af2a-4206211d520f</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_3e790453-a06f-49d0-9be4-f222ab8b6da5">
+            <point-x>298</point-x>
+            <point-y>262</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>270</port-direction>
+          <rectangle xmi:id="_59a03607-ec5c-4b86-b00f-142547f00b0c">
+            <name>BoundingRectangle</name>
+            <point-x>305</point-x>
+            <point-y>240</point-y>
+            <rectangle-height>15</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_3fb5a203-7205-4921-be7a-6cec9fccf351">
+            <name>HitTestRectangle</name>
+            <point-x>292</point-x>
+            <point-y>255</point-y>
+            <rectangle-height>12</rectangle-height>
+            <rectangle-width>12</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_07023227-cb7c-4a3e-aaed-3cd0b3fafecf">
+            <point-x>-41</point-x>
+            <point-y>10</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+        <port-instance-view xmi:id="_f7e61182-ce8f-46d0-a94b-c1de4893c89b">
+          <port-instance>f8b001cd-7532-4dd9-8c82-6ab1611bc74c</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_6e8f1bcd-ec1b-47d4-9a46-2f32205e95cf">
+            <point-x>378</point-x>
+            <point-y>260</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>90</port-direction>
+          <rectangle xmi:id="_cb42defa-60a7-4c86-b013-4573e14a24bf">
+            <name>BoundingRectangle</name>
+            <point-x>385</point-x>
+            <point-y>238</point-y>
+            <rectangle-height>15</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_3f5280c7-4202-41a1-99d1-99d2c1c863ef">
+            <name>HitTestRectangle</name>
+            <point-x>370</point-x>
+            <point-y>255</point-y>
+            <rectangle-height>12</rectangle-height>
+            <rectangle-width>12</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_8104b8c9-96ae-460d-8fcf-a51888d49bf8">
+            <point-x>-4</point-x>
+            <point-y>-13</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+      </component-instance-view>
+      <component-instance-view xmi:id="_829a855b-2e50-4d1e-9b73-9b046ad5874d">
+        <component-instance>8b55efc7-4625-472b-ac12-9a3594cff6a6</component-instance>
+        <graphical-index>2</graphical-index>
+        <point xmi:id="_c086dcf8-6567-46c5-a936-818a4a6b393c">
+          <point-x>477</point-x>
+          <point-y>268</point-y>
+        </point>
+        <color>BlanchedAlmond</color>
+        <text-color>Black</text-color>
+        <show-text>true</show-text>
+        <rectangle xmi:id="_d4d1ec2f-8ce2-4a18-b2ba-b1f73cbeb794">
+          <name>BoundingRectangle</name>
+          <point-x>456</point-x>
+          <point-y>234</point-y>
+          <rectangle-height>50</rectangle-height>
+          <rectangle-width>80</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_73dc6bd1-d0da-4e73-b824-1359127a6e25">
+          <name>HitTestRectangle</name>
+          <point-x>456</point-x>
+          <point-y>234</point-y>
+          <rectangle-height>50</rectangle-height>
+          <rectangle-width>80</rectangle-width>
+        </rectangle>
+        <port-instance-view xmi:id="_a931bb23-fcf7-49a6-9958-12284aa93213">
+          <port-instance>f44aa4b6-ebe7-494b-9800-ed5a3f82b69d</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_f62073e4-93b8-49a1-aa2c-d874d87cfbcd">
+            <point-x>456</point-x>
+            <point-y>260</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>270</port-direction>
+          <rectangle xmi:id="_512bc4d5-22e0-4566-bd29-2751f9808122">
+            <name>BoundingRectangle</name>
+            <point-x>463</point-x>
+            <point-y>238</point-y>
+            <rectangle-height>15</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_eb6cfa29-71b7-4785-8994-626f10e0fade">
+            <name>HitTestRectangle</name>
+            <point-x>450</point-x>
+            <point-y>253</point-y>
+            <rectangle-height>12</rectangle-height>
+            <rectangle-width>12</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_70d66308-f816-4498-8d4a-6b6dcc1243a8">
+            <point-x>-39</point-x>
+            <point-y>14</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+        <port-instance-view xmi:id="_f2d71742-58b8-40a2-8a84-6a7d7c47f1d4">
+          <port-instance>4e8dc4bb-926b-4908-8d35-cead6be1f652</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_a0c32e09-b946-4b30-a8c0-8cdffe01e345">
+            <point-x>493</point-x>
+            <point-y>234</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>0</port-direction>
+          <rectangle xmi:id="_ce916117-397b-4333-98fa-99a9973715aa">
+            <name>BoundingRectangle</name>
+            <point-x>485</point-x>
+            <point-y>212</point-y>
+            <rectangle-height>30</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_4c541a63-8d55-4b5d-a743-fc85dabf99d3">
+            <name>HitTestRectangle</name>
+            <point-x>484</point-x>
+            <point-y>215</point-y>
+            <rectangle-height>22</rectangle-height>
+            <rectangle-width>11</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_b5783bfa-9a5f-4905-99c6-2e33620db923">
+            <point-x>0</point-x>
+            <point-y>0</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+      </component-instance-view>
+      <component-instance-view xmi:id="_c602e57b-84f7-433c-b0ee-ba772c57ba91">
+        <component-instance>bd0ca14f-c286-4433-9bb8-de84b7f6d5db</component-instance>
+        <graphical-index>3</graphical-index>
+        <point xmi:id="_95650fd7-0c4e-4791-8b40-f52e355547e0">
+          <point-x>327</point-x>
+          <point-y>145</point-y>
+        </point>
+        <color>BlanchedAlmond</color>
+        <text-color>Black</text-color>
+        <show-text>true</show-text>
+        <rectangle xmi:id="_a5213928-2f7e-4407-a083-96a09e77d8b6">
+          <name>BoundingRectangle</name>
+          <point-x>294</point-x>
+          <point-y>119</point-y>
+          <rectangle-height>50</rectangle-height>
+          <rectangle-width>80</rectangle-width>
+        </rectangle>
+        <rectangle xmi:id="_6d6d15e8-15e2-43c3-be9c-d2a97865aa13">
+          <name>HitTestRectangle</name>
+          <point-x>294</point-x>
+          <point-y>119</point-y>
+          <rectangle-height>50</rectangle-height>
+          <rectangle-width>80</rectangle-width>
+        </rectangle>
+        <port-instance-view xmi:id="_0308ee42-b18c-40fc-8879-e930ca037c7e">
+          <port-instance>6c5ccbba-1c4b-4440-826c-776ef149ea98</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_6468e08b-268d-4d1a-aa9c-a0b6208d6a24">
+            <point-x>337</point-x>
+            <point-y>119</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>0</port-direction>
+          <rectangle xmi:id="_29d22300-37bb-4a4a-b8e9-c356a1bd6614">
+            <name>BoundingRectangle</name>
+            <point-x>329</point-x>
+            <point-y>97</point-y>
+            <rectangle-height>30</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_93c39998-7445-4e21-b47e-036885570114">
+            <name>HitTestRectangle</name>
+            <point-x>328</point-x>
+            <point-y>100</point-y>
+            <rectangle-height>22</rectangle-height>
+            <rectangle-width>11</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_38e6f951-fdc0-4d7d-9721-f1c4f510244d">
+            <point-x>0</point-x>
+            <point-y>0</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+        <port-instance-view xmi:id="_54420b6b-0d9e-43ae-866b-bbe3ad76f4a8">
+          <port-instance>20436993-2e4e-4d78-bb02-7ab72a862eae</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_460b2652-fc6a-4358-a6e4-5ffbd8af9c5a">
+            <point-x>334</point-x>
+            <point-y>169</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>180</port-direction>
+          <rectangle xmi:id="_f1a33585-b4fe-493d-afac-901b56eabdcd">
+            <name>BoundingRectangle</name>
+            <point-x>341</point-x>
+            <point-y>147</point-y>
+            <rectangle-height>15</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_e9eb4359-8ad2-4e8a-9c24-5fb62c1b2dcf">
+            <name>HitTestRectangle</name>
+            <point-x>326</point-x>
+            <point-y>162</point-y>
+            <rectangle-height>12</rectangle-height>
+            <rectangle-width>12</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_093fb0fc-4bbb-4c54-83f6-eebc7dbb947f">
+            <point-x>0</point-x>
+            <point-y>0</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+        <port-instance-view xmi:id="_ae5426f5-a5fb-4789-889b-f1852508b93f">
+          <port-instance>57883fed-e61c-48e3-9832-5dabdb0419dc</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_c572b4d2-c0a0-4d56-9363-6a6e5a14f193">
+            <point-x>314</point-x>
+            <point-y>169</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>180</port-direction>
+          <rectangle xmi:id="_c9100a3f-0586-4a37-a209-ee07e3bbfec5">
+            <name>BoundingRectangle</name>
+            <point-x>321</point-x>
+            <point-y>147</point-y>
+            <rectangle-height>15</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_757f4a33-eed8-4393-ae05-31d6043d5897">
+            <name>HitTestRectangle</name>
+            <point-x>306</point-x>
+            <point-y>162</point-y>
+            <rectangle-height>12</rectangle-height>
+            <rectangle-width>12</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_120bdc6e-7dc9-45cc-b7d3-c4ac15b06cd4">
+            <point-x>0</point-x>
+            <point-y>0</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+        <port-instance-view xmi:id="_e4accbd7-ad07-43ec-bcc6-2bd951d55b20">
+          <port-instance>d0c7a061-ee99-4819-8d74-3f3b3e066f2c</port-instance>
+          <graphical-index>-1</graphical-index>
+          <point xmi:id="_4e534f07-accb-4d3e-b7ce-afa71cfa1faf">
+            <point-x>362</point-x>
+            <point-y>169</point-y>
+          </point>
+          <show-text>true</show-text>
+          <port-direction>180</port-direction>
+          <rectangle xmi:id="_c85ef7bf-a5ad-4342-9f02-fbb2a34305ab">
+            <name>BoundingRectangle</name>
+            <point-x>369</point-x>
+            <point-y>147</point-y>
+            <rectangle-height>15</rectangle-height>
+            <rectangle-width>15</rectangle-width>
+          </rectangle>
+          <rectangle xmi:id="_247c35f7-36b8-49c6-8f7f-70359c93df43">
+            <name>HitTestRectangle</name>
+            <point-x>354</point-x>
+            <point-y>162</point-y>
+            <rectangle-height>12</rectangle-height>
+            <rectangle-width>12</rectangle-width>
+          </rectangle>
+          <port-label-graphical-info xmi:id="_c2838e0e-8f6d-4063-8be7-d95bc8b2bc4f">
+            <point-x>0</point-x>
+            <point-y>0</point-y>
+          </port-label-graphical-info>
+        </port-instance-view>
+      </component-instance-view>
+      <connection-instance-view xmi:id="_39923651-8a3c-4b64-8005-1230c7517328">
+        <connection-instance>50ca8aaa-1400-4df9-a707-22c98beedbb7</connection-instance>
+        <color>Black</color>
+        <connection-segment xmi:id="_6808a5b7-ec13-4c40-8fd7-fc58d0c83f24">
+          <point-x>386</point-x>
+          <point-y>260</point-y>
+        </connection-segment>
+        <connection-segment xmi:id="_169d711d-07ac-4d8a-b3f1-a50353f400c9">
+          <point-x>448</point-x>
+          <point-y>260</point-y>
+        </connection-segment>
+      </connection-instance-view>
+      <connection-instance-view xmi:id="_4b9d6077-1332-4863-bfec-6391a2873459">
+        <connection-instance>5e9d2d5f-5072-44fa-8558-8cdf5e2ce204</connection-instance>
+        <color>Black</color>
+        <connection-segment xmi:id="_bb334abc-80a6-45c7-b0ed-996dff335e2d">
+          <point-x>334</point-x>
+          <point-y>177</point-y>
+        </connection-segment>
+        <connection-segment xmi:id="_9379dbe8-c1bd-431c-8b2b-7a8ebd4b0ca5">
+          <point-x>334</point-x>
+          <point-y>218</point-y>
+        </connection-segment>
+      </connection-instance-view>
+      <connection-instance-view xmi:id="_51826902-4580-4a09-a957-d1a739e34072">
+        <connection-instance>a6ed2639-f451-48e3-b48f-1a16a4f4b9dc</connection-instance>
+        <color>Black</color>
+        <connection-segment xmi:id="_b5637fd1-2bd6-485c-b307-90ff0b37ca49">
+          <point-x>362</point-x>
+          <point-y>177</point-y>
+        </connection-segment>
+        <connection-segment xmi:id="_8b798b6f-f0bc-49a5-b9f8-805637065c7d">
+          <point-x>490</point-x>
+          <point-y>217</point-y>
+        </connection-segment>
+      </connection-instance-view>
+      <connection-instance-view xmi:id="_56481166-f78e-4525-b5e1-fa4843ef4519">
+        <connection-instance>8fdebe8d-5cf7-4056-a888-b95bd470fc30</connection-instance>
+        <color>Black</color>
+        <connection-segment xmi:id="_58186a8a-316c-4555-a30b-2b83764349f2">
+          <point-x>314</point-x>
+          <point-y>177</point-y>
+        </connection-segment>
+        <connection-segment xmi:id="_7210382c-a140-4fbe-99ff-cd0e56b793cf">
+          <point-x>182</point-x>
+          <point-y>221</point-y>
+        </connection-segment>
+      </connection-instance-view>
+      <connection-instance-view xmi:id="_f1ce62fb-5b4d-4108-a6a5-ea4e80599de4">
+        <connection-instance>cbf9d972-26a4-4fb1-bc49-1ea4ce94bb4a</connection-instance>
+        <color>Black</color>
+        <connection-segment xmi:id="_46da1505-40a6-43fe-8a0d-3dec0d9a7503">
+          <point-x>234</point-x>
+          <point-y>262</point-y>
+        </connection-segment>
+        <connection-segment xmi:id="_5dccea58-199b-4193-b25f-97a09e30c1d2">
+          <point-x>290</point-x>
+          <point-y>262</point-y>
+        </connection-segment>
+      </connection-instance-view>
+    </implementation-view>
+  </sca-application>
+  <sca-interface-definition xmi:id="_8165e91f-9d66-450e-8d76-76b9dcdbf053">
+    <name>FileSystem</name>
+    <scoped-name>::CF::FileSystem</scoped-name>
+    <repository-id>IDL:CF/FileSystem:1.0</repository-id>
+    <element-file-name>FileSystem.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-operation xmi:id="_9b57c792-6267-4052-950b-064f882f1191">
+      <name>remove</name>
+      <scoped-name>::CF::FileSystem::remove</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_bb9b7724-c214-44a7-a297-430755ad15c1">
+        <name>fileName</name>
+        <scoped-name>::CF::FileSystem::remove::fileName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::FileException</raises>
+      <raises>::CF::InvalidFileName</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_5918d330-0344-49c0-b73d-aebd9c4f0010">
+      <name>copy</name>
+      <scoped-name>::CF::FileSystem::copy</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_dd4eb7d4-9451-412b-a1a3-1d657b7a9b8d">
+        <name>sourceFileName</name>
+        <scoped-name>::CF::FileSystem::copy::sourceFileName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_14fa67ae-9716-4908-8e9a-f706abd3d01b">
+        <name>destinationFileName</name>
+        <scoped-name>::CF::FileSystem::copy::destinationFileName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidFileName</raises>
+      <raises>::CF::FileException</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_c7837304-e0d3-4465-a2bc-a9c252f50aca">
+      <name>exists</name>
+      <scoped-name>::CF::FileSystem::exists</scoped-name>
+      <type>boolean</type>
+      <basetype>boolean</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_f7dc4d1e-677d-4b81-9139-e4f6076152e8">
+        <name>fileName</name>
+        <scoped-name>::CF::FileSystem::exists::fileName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidFileName</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_1866257e-1cdc-414f-9c5b-661bb0d5ae5f">
+      <name>list</name>
+      <scoped-name>::CF::FileSystem::list</scoped-name>
+      <type>::CF::FileSystem::FileInformationSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_c41a3915-07c2-4451-805c-6c4cfb8e51ef">
+        <name>pattern</name>
+        <scoped-name>::CF::FileSystem::list::pattern</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::FileException</raises>
+      <raises>::CF::InvalidFileName</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_a1cdc7e0-a32d-4d8d-8a3a-1b667abc0ca0">
+      <name>create</name>
+      <scoped-name>::CF::FileSystem::create</scoped-name>
+      <type>::CF::File</type>
+      <basetype>Object</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_9073e10b-9a36-45b5-b1cb-ad141cdf3131">
+        <name>fileName</name>
+        <scoped-name>::CF::FileSystem::create::fileName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidFileName</raises>
+      <raises>::CF::FileException</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_2e67f738-c83d-4754-b753-2084850a80ed">
+      <name>open</name>
+      <scoped-name>::CF::FileSystem::open</scoped-name>
+      <type>::CF::File</type>
+      <basetype>Object</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_aba71b03-7b7d-46df-8cbc-b21a53056605">
+        <name>fileName</name>
+        <scoped-name>::CF::FileSystem::open::fileName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_7c0c69c6-2520-448d-b083-2bf1f749c1d4">
+        <name>read_Only</name>
+        <scoped-name>::CF::FileSystem::open::read_Only</scoped-name>
+        <type>boolean</type>
+        <basetype>boolean</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidFileName</raises>
+      <raises>::CF::FileException</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_2e7f5eb4-24ae-4913-a960-264979e09c2d">
+      <name>mkdir</name>
+      <scoped-name>::CF::FileSystem::mkdir</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_f74040b7-09ff-4d34-8df3-235f2f54430e">
+        <name>directoryName</name>
+        <scoped-name>::CF::FileSystem::mkdir::directoryName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidFileName</raises>
+      <raises>::CF::FileException</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_00a5292e-2abe-48d4-aca4-00ae54337360">
+      <name>rmdir</name>
+      <scoped-name>::CF::FileSystem::rmdir</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_5095b508-a060-4c0d-a759-b48b7d907b54">
+        <name>directoryName</name>
+        <scoped-name>::CF::FileSystem::rmdir::directoryName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidFileName</raises>
+      <raises>::CF::FileException</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_21c21a56-dcaf-4c99-8628-5e43364e8d62">
+      <name>query</name>
+      <scoped-name>::CF::FileSystem::query</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_601d9458-3ef6-47d9-80b8-21780bc64b8e">
+        <name>fileSystemProperties</name>
+        <scoped-name>::CF::FileSystem::query::fileSystemProperties</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <raises>::CF::FileSystem::UnknownFileSystemProperties</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-cf-definition xmi:id="_9ff94f3c-f489-4a52-8c1b-3e60eb30432a">
+    <name>DomainManager</name>
+    <id>DCE:9ff94f3c-f489-4a52-8c1b-3e60eb30432a</id>
+    <corba-version>2.2</corba-version>
+    <repository-id>IDL:CF/Resource:1.0</repository-id>
+    <sca-type>sca_compliant</sca-type>
+    <componenttype>domainmanager</componenttype>
+    <scd-file>DomainManager.scd.xml</scd-file>
+    <spd-file>DomainManager.spd.xml</spd-file>
+    <element-file-name>DomainManager_1.zmel</element-file-name>
+    <author xmi:id="_d7b5fdf9-63bf-42c8-8197-ae55294032c9" />
+    <port-definition xmi:id="_86e51775-6afa-4c2e-b9a0-6f7055806fb9">
+      <name>resource</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_08fdb6b0-beeb-464a-97d7-52403b06d9ed">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_48947406-19b3-47e2-b029-8a8db6509746">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_dc29cdaf-ba09-4571-9983-a93459021b4d">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_5379e281-3f09-412b-ba2c-7740677edd40">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_d36669aa-938d-4047-b6f2-09dd62afcab5">
+      <name>domainManager</name>
+      <conjugation>provides</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/DomainManager:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_d62a9192-2dc8-4b24-8c70-605aae978421">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_f3ff29e6-e85c-41b1-bcba-e79acf3c0107">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_c6ebb2bb-6c36-42e6-b89d-5c51c66f9652">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_9cfd1b16-4a11-4f13-97b5-25cf898f53d1">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <component-property-file-group xmi:id="_90270c65-5029-41a6-ad9a-f0043c532fe6">
+      <file-name>DomainManagerComponent.prf.xml</file-name>
+    </component-property-file-group>
+    <package-property-file-group xmi:id="_04e4b8e6-4052-4ef8-aa26-b75f6a03e07b">
+      <file-name>DomainManagerPackage.prf.xml</file-name>
+    </package-property-file-group>
+    <dmd xmi:id="_d881a8bf-b987-4908-ae9f-8b0efabc8484">
+      <name>DomainManager.dmd.xml</name>
+      <id>DCE:e06a5a41-3643-47eb-8d88-f48f3b459d04</id>
+      <file-name>DomainManager.dmd.xml</file-name>
+    </dmd>
+    <definition-form-info xmi:id="_d31a7f28-93c9-4ba5-bdcf-4067a83e0c4c">
+      <form-left>0</form-left>
+      <form-top>0</form-top>
+      <form-width>0</form-width>
+      <form-height>0</form-height>
+      <ctrl-width>1130</ctrl-width>
+      <ctrl-height>710</ctrl-height>
+      <scale-factor>1.0</scale-factor>
+    </definition-form-info>
+  </sca-cf-definition>
+  <sca-interface-definition xmi:id="_a0006a22-a069-4223-81b1-ce874604ee36">
+    <name>LifeCycle</name>
+    <scoped-name>::CF::LifeCycle</scoped-name>
+    <repository-id>IDL:CF/LifeCycle:1.0</repository-id>
+    <element-file-name>LifeCycle.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-operation xmi:id="_258db981-e0d9-4ff5-9429-4892d45977bc">
+      <name>initialize</name>
+      <scoped-name>::CF::LifeCycle::initialize</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <raises>::CF::LifeCycle::InitializeError</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_7743b188-1762-4425-96ab-ea726bc66100">
+      <name>releaseObject</name>
+      <scoped-name>::CF::LifeCycle::releaseObject</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <raises>::CF::LifeCycle::ReleaseError</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_aa98c977-996a-481a-aaa2-4e588eb96ce4">
+    <name>LogStatus</name>
+    <scoped-name>::CosLwLog::LogStatus</scoped-name>
+    <repository-id>IDL:CosLwLog/LogStatus:1.0</repository-id>
+    <element-file-name>LogStatus.zmel</element-file-name>
+    <file-name>CosLwLogStatus.idl</file-name>
+    <interface-operation xmi:id="_6a7aec68-bbf7-49a2-a3ef-7e3a85fd3e0c">
+      <name>get_max_size</name>
+      <scoped-name>::CosLwLog::LogStatus::get_max_size</scoped-name>
+      <type>unsigned long long</type>
+      <basetype>unsigned long long</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+    <interface-operation xmi:id="_a0070643-6645-4da9-811b-bf5ff04070be">
+      <name>get_current_size</name>
+      <scoped-name>::CosLwLog::LogStatus::get_current_size</scoped-name>
+      <type>unsigned long long</type>
+      <basetype>unsigned long long</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+    <interface-operation xmi:id="_14e0b605-19b7-4ddc-b93e-42e8e4d00dd3">
+      <name>get_n_records</name>
+      <scoped-name>::CosLwLog::LogStatus::get_n_records</scoped-name>
+      <type>unsigned long long</type>
+      <basetype>unsigned long long</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+    <interface-operation xmi:id="_da52fc9b-c237-4088-86f3-c11a85f6bede">
+      <name>get_log_full_action</name>
+      <scoped-name>::CosLwLog::LogStatus::get_log_full_action</scoped-name>
+      <type>::CosLwLog::LogFullAction</type>
+      <basetype>enum</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+    <interface-operation xmi:id="_1e1bd0bf-155d-4b9b-94db-5fb2a2da0afd">
+      <name>get_availability_status</name>
+      <scoped-name>::CosLwLog::LogStatus::get_availability_status</scoped-name>
+      <type>::CosLwLog::AvailabilityStatus</type>
+      <basetype>struct</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+    <interface-operation xmi:id="_2809eb83-7db6-4e2a-a8bc-2cee7a9fbfac">
+      <name>get_administrative_state</name>
+      <scoped-name>::CosLwLog::LogStatus::get_administrative_state</scoped-name>
+      <type>::CosLwLog::AdministrativeState</type>
+      <basetype>enum</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+    <interface-operation xmi:id="_1e3aa943-42f6-402a-9051-b2b2025cea17">
+      <name>get_operational_state</name>
+      <scoped-name>::CosLwLog::LogStatus::get_operational_state</scoped-name>
+      <type>::CosLwLog::OperationalState</type>
+      <basetype>enum</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_ac8b73fb-6a8c-41d6-ae90-90765c10a1ec">
+    <name>TestableObject</name>
+    <scoped-name>::CF::TestableObject</scoped-name>
+    <repository-id>IDL:CF/TestableObject:1.0</repository-id>
+    <element-file-name>TestableObject.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-operation xmi:id="_2704881a-ff8a-4767-a2a5-a62a34b419d3">
+      <name>runTest</name>
+      <scoped-name>::CF::TestableObject::runTest</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_58bd2ec7-f507-499b-90ff-df9bea24cac8">
+        <name>testid</name>
+        <scoped-name>::CF::TestableObject::runTest::testid</scoped-name>
+        <type>unsigned long</type>
+        <basetype>unsigned long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_c1a510b2-e006-4b44-97e5-f4e6533dcdb2">
+        <name>testValues</name>
+        <scoped-name>::CF::TestableObject::runTest::testValues</scoped-name>
+        <type>::CF::Properties</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>inout</direction>
+      </parameter>
+      <raises>::CF::TestableObject::UnknownTest</raises>
+      <raises>::CF::UnknownProperties</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-interface-definition xmi:id="_b13db83b-fe34-4186-aa22-ca703e400865">
+    <name>Port</name>
+    <scoped-name>::CF::Port</scoped-name>
+    <repository-id>IDL:CF/Port:1.0</repository-id>
+    <element-file-name>Port.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-operation xmi:id="_482aa283-7bce-430e-805d-f24d2fae2936">
+      <name>connectPort</name>
+      <scoped-name>::CF::Port::connectPort</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_94db9e8f-0c30-42ec-83da-57cc99dac7e2">
+        <name>connection</name>
+        <scoped-name>::CF::Port::connectPort::connection</scoped-name>
+        <type>Object</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_b236637a-a084-460a-b1b3-6e92e8a51dac">
+        <name>connectionId</name>
+        <scoped-name>::CF::Port::connectPort::connectionId</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::Port::InvalidPort</raises>
+      <raises>::CF::Port::OccupiedPort</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_ac08755a-c8ad-422f-9c59-58fe85bc63e4">
+      <name>disconnectPort</name>
+      <scoped-name>::CF::Port::disconnectPort</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_918e96c2-827d-4d81-bc5c-bb56d8931db0">
+        <name>connectionId</name>
+        <scoped-name>::CF::Port::disconnectPort::connectionId</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::Port::InvalidPort</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-monolithic-implementation xmi:id="_b4551a74-36ea-45e6-bf70-12737aebf182">
+    <name>RccExecutableDeviceImplementation1</name>
+    <aep-compliance>aep_non_compliant</aep-compliance>
+    <impl-id>DCE:CCB0C63D-05FD-421B-818B-7A8397947F3F</impl-id>
+    <definition-id>0411b8ee-725a-4614-b764-04bdf0a4ff0d</definition-id>
+    <element-file-name>RccExecutableDeviceImplementation1.zmel</element-file-name>
+    <code xmi:id="_7f94434c-66cf-4cb1-a518-2855985ccb8a">
+      <entry-point>startRccExecutableDeviceSca</entry-point>
+      <local-file>sred.out</local-file>
+      <type>SharedLibrary</type>
+    </code>
+    <compiler xmi:id="_c3d80069-31ac-4327-89c0-f002afd08b21" />
+    <runtime xmi:id="_9f903ad1-f31f-4217-8f6c-8e7e51b922fc" />
+    <programming-language xmi:id="_0f0a9e67-c539-4fa3-8936-baa93a8f7a51" />
+    <os-dependency xmi:id="_609b6df7-03b9-4c16-9fc2-5e186bc5fcc8">
+      <name>VxWorks</name>
+    </os-dependency>
+    <property-file-group xmi:id="_635ec80d-31a5-49b7-8eee-7c7e39a8bda3">
+      <file-name>RccExecutableDeviceImplementation1.prf.xml</file-name>
+    </property-file-group>
+  </sca-monolithic-implementation>
+  <sca-interface-definition xmi:id="_ba5975cd-eb49-487a-b337-2a5c27126d1d">
+    <name>File</name>
+    <scoped-name>::CF::File</scoped-name>
+    <repository-id>IDL:CF/File:1.0</repository-id>
+    <element-file-name>File.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <interface-attribute xmi:id="_b468d764-e32e-44f9-bbb2-e696b1fab371">
+      <name>fileName</name>
+      <scoped-name>::CF::File::fileName</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_12894598-859e-4eb5-8e14-1dbaa06eae3c">
+      <name>filePointer</name>
+      <scoped-name>::CF::File::filePointer</scoped-name>
+      <readonly>true</readonly>
+      <type>unsigned long</type>
+      <basetype>unsigned long</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+    </interface-attribute>
+    <interface-operation xmi:id="_bc22b571-b2cf-41b5-95ca-a7c94573cc58">
+      <name>read</name>
+      <scoped-name>::CF::File::read</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_e0129c09-1b4c-4141-855d-19783421dca4">
+        <name>data</name>
+        <scoped-name>::CF::File::read::data</scoped-name>
+        <type>::CF::OctetSequence</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>out</direction>
+      </parameter>
+      <parameter xmi:id="_2370b683-bdff-45c5-ae8d-0e93a05a2818">
+        <name>length</name>
+        <scoped-name>::CF::File::read::length</scoped-name>
+        <type>unsigned long</type>
+        <basetype>unsigned long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::File::IOException</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_f94f2088-8f4e-43b9-b3b0-4fa1886dbc63">
+      <name>write</name>
+      <scoped-name>::CF::File::write</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_f114afa4-f66a-4608-946a-956169f218b6">
+        <name>data</name>
+        <scoped-name>::CF::File::write::data</scoped-name>
+        <type>::CF::OctetSequence</type>
+        <basetype>sequence</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::File::IOException</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_eb763ad3-f6b5-4361-ba53-7b22d45afc53">
+      <name>sizeOf</name>
+      <scoped-name>::CF::File::sizeOf</scoped-name>
+      <type>unsigned long</type>
+      <basetype>unsigned long</basetype>
+      <type-is-fixed-size>true</type-is-fixed-size>
+      <oneway>false</oneway>
+      <raises>::CF::FileException</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_f143d848-44b0-4843-b431-2b1c922e3f02">
+      <name>close</name>
+      <scoped-name>::CF::File::close</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <raises>::CF::FileException</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_98403ee9-fc82-4da7-bd2b-640e5458428f">
+      <name>setFilePointer</name>
+      <scoped-name>::CF::File::setFilePointer</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_a8e74053-5e66-4921-9daf-5fa34e354840">
+        <name>filePointer</name>
+        <scoped-name>::CF::File::setFilePointer::filePointer</scoped-name>
+        <type>unsigned long</type>
+        <basetype>unsigned long</basetype>
+        <type-is-fixed-size>true</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::File::InvalidFilePointer</raises>
+      <raises>::CF::FileException</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-monolithic-implementation xmi:id="_c6986861-922e-4143-b25f-675de3f74a05">
+    <name>FileSinkImplementation1</name>
+    <aep-compliance>aep_compliant</aep-compliance>
+    <impl-id>DCE:c6986861-922e-4143-b25f-675de3f74a05</impl-id>
+    <definition-id>f3f4a1ba-bbcf-4709-bcba-dc71b31b8c07</definition-id>
+    <element-file-name>FileSinkImplementation1.zmel</element-file-name>
+    <code xmi:id="_b284ff0b-1569-450e-8c1d-826e449e0c17">
+      <entry-point>FileSinkWorker</entry-point>
+      <local-file>FileSink.zip</local-file>
+      <type>SharedLibrary</type>
+    </code>
+    <compiler xmi:id="_3caa3938-a4da-4ed0-9e34-d9d7f506bb5a" />
+    <runtime xmi:id="_1cb02b28-3c0f-44e8-b7ff-79ce0fd61949" />
+    <programming-language xmi:id="_ea79a032-93d1-4195-87e3-aece5665d809" />
+    <os-dependency xmi:id="_128cd459-f841-4f22-8484-50202c69c5f8">
+      <name>Linux</name>
+    </os-dependency>
+    <property-ref-dependency xmi:id="_4dc8f5e9-52e6-4caa-b7a6-2bba5a435be7">
+      <name>propertyref1</name>
+      <type>Property Reference Dependency</type>
+      <property-ref xmi:id="_e493d414-db80-43d8-8d4a-1c2bd66f9066">
+        <ref-id>8fda8bd8-3df0-45fb-b017-6fa8d8c3e5d5</ref-id>
+        <value>RCC</value>
+      </property-ref>
+    </property-ref-dependency>
+    <processor-dependency xmi:id="_fef6e9b6-bd46-425a-96e6-e30f011340c3">
+      <name>x86</name>
+    </processor-dependency>
+    <property-file-group xmi:id="_c20461f3-814a-4008-a82b-644b4957f22c">
+      <file-name>FileSinkImplementation1.prf.xml</file-name>
+    </property-file-group>
+    <extension-field xmi:id="_70b0fa9f-af63-4b17-99d5-c0ebcbfac8de">
+      <key>Binary path</key>
+    </extension-field>
+    <extension-field xmi:id="_1cb19e7f-ca0a-425e-8657-525d3e9c6ff3">
+      <key>Generate test source</key>
+      <value>no</value>
+    </extension-field>
+    <extension-field xmi:id="_ee478714-5d0d-4fdc-ab12-70841c8e8ad3">
+      <key>Target</key>
+    </extension-field>
+    <extension-field xmi:id="_39cb284b-6ca7-4db0-b5d0-86c06423bcf4">
+      <key>Test component target</key>
+    </extension-field>
+    <extension-field xmi:id="_36684654-f79f-4143-8474-25d434d9f2ba">
+      <key>Test exec params</key>
+    </extension-field>
+    <extension-field xmi:id="_620670fb-49a5-453b-8228-efa4241ef513">
+      <key>Test naming service IOR</key>
+    </extension-field>
+    <extension-field xmi:id="_f9a0254f-d949-4d2d-8dbe-f0620f4ef4f8">
+      <key>User compiler flags</key>
+    </extension-field>
+    <extension-field xmi:id="_5045979e-c53f-46e1-9024-2587c9d1a1db">
+      <key>User defines</key>
+    </extension-field>
+    <extension-field xmi:id="_047b025a-7bd7-40b2-a19d-d370fc0b1f7b">
+      <key>User includes</key>
+    </extension-field>
+    <extension-field xmi:id="_7d598ae7-6eea-4b8c-811d-6830c69071a8">
+      <key>User lib paths</key>
+    </extension-field>
+    <extension-field xmi:id="_2e8b7212-9ebf-4d66-a2b2-46083500efa6">
+      <key>User libraries</key>
+    </extension-field>
+    <extension-field xmi:id="_48fefe6b-381d-4bf9-acf6-6a0f881ad9d7">
+      <key>User linker flags</key>
+    </extension-field>
+  </sca-monolithic-implementation>
+  <sca-component-definition xmi:id="_d8d79e23-e0f6-43f7-ac14-60737cfa06dc">
+    <name>FileTee</name>
+    <id>DCE:d8d79e23-e0f6-43f7-ac14-60737cfa06dc</id>
+    <corba-version>2.2</corba-version>
+    <repository-id>IDL:CF/Resource:1.0</repository-id>
+    <sca-type>sca_compliant</sca-type>
+    <componenttype>resource</componenttype>
+    <scd-file>FileTee.scd.xml</scd-file>
+    <spd-file>FileTee.spd.xml</spd-file>
+    <element-file-name>FileTee.zmel</element-file-name>
+    <author xmi:id="_8c4d42f5-da8f-4ec2-94c2-3d0a4a958b07" />
+    <port-definition xmi:id="_0f433f66-912c-47f8-8aa4-669f97bd0a4f">
+      <name>DataIn</name>
+      <conjugation>provides</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Port:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_b608705c-2cf3-447d-90ec-d5331055a71b">
+        <point-x>105</point-x>
+        <point-y>238</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>270</port-direction>
+      <rectangle xmi:id="_847f2535-9bf8-4bc3-9fb0-61b02ada928f">
+        <name>BoundingRectangle</name>
+        <point-x>95</point-x>
+        <point-y>203</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_1fca5746-2c48-4614-ae1e-6932780b8f47">
+        <name>HitTestRectangle</name>
+        <point-x>95</point-x>
+        <point-y>228</point-y>
+        <rectangle-height>20</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_6d43e993-10c8-4a33-874d-8188bc2968b6">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_2564d90c-3b92-49c2-a746-e378bb097d7e">
+      <name>resource1</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_0a0e6380-145d-437a-ad6d-207f8fcbc77e">
+        <point-x>343</point-x>
+        <point-y>69</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_a0b5679b-21d6-45ea-9775-d6f57b5a961c">
+        <name>BoundingRectangle</name>
+        <point-x>333</point-x>
+        <point-y>34</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_66f04c86-eb4b-45d9-90e5-953a427780c9">
+        <name>HitTestRectangle</name>
+        <point-x>333</point-x>
+        <point-y>29</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_78122995-aafe-4d2d-a105-09fe9c771273">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_5174cd0b-f887-4dee-9a80-641fb0370377">
+      <name>DataOut</name>
+      <conjugation>uses</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Port:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_83b4ef80-f2ca-47ce-b918-1dfa32cfac6f">
+        <point-x>575</point-x>
+        <point-y>240</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>90</port-direction>
+      <rectangle xmi:id="_2fab6ee2-d7b9-4bc2-8563-c9d261126e7f">
+        <name>BoundingRectangle</name>
+        <point-x>565</point-x>
+        <point-y>205</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_baf2dbb1-c500-48bc-a350-8387102f882a">
+        <name>HitTestRectangle</name>
+        <point-x>565</point-x>
+        <point-y>230</point-y>
+        <rectangle-height>20</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_5677d580-0ab0-4389-84ef-c946107749a1">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <component-property-file-group xmi:id="_08137b05-ae54-4e99-85a9-9e8d921e461b">
+      <simple-property xmi:id="_222b3c2c-c628-439d-824f-3c9074245819">
+        <id>DCE:79a2f501-c281-4f5d-a05b-e9b4f89e0db6</id>
+        <name>fileName</name>
+        <type>string</type>
+        <mode>readwrite</mode>
+        <description>max_string_size=256</description>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>1</order>
+        <extension-field xmi:id="_0299f25f-5c4b-4e35-bdef-6522332835f1">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_b263088f-c41c-4d3a-989e-2c65f529e7c9">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <simple-property xmi:id="_80bbcb43-afd5-4c2c-bc7a-e1b0479a66b6">
+        <id>DCE:1db772fa-4f22-4c40-8a49-8f1b17be1413</id>
+        <name>offset</name>
+        <type>ulong</type>
+        <mode>readonly</mode>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>2</order>
+        <extension-field xmi:id="_a19d9bd1-2d5e-411c-9661-ad2b74ade188">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_0b41cc8e-bb40-48ef-a12d-5bc3f05bd803">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <file-name>FileTeeComponent.prf.xml</file-name>
+    </component-property-file-group>
+    <package-property-file-group xmi:id="_50ed7166-60b7-4f48-bc22-8368da6782b5">
+      <file-name>FileTeePackage.prf.xml</file-name>
+    </package-property-file-group>
+    <extension-field xmi:id="_796864fd-e889-443d-9f1d-ab82101d1c4c">
+      <key>Generate test source</key>
+      <value>yes</value>
+    </extension-field>
+    <definition-form-info xmi:id="_e6b29b21-4831-4b39-83dd-ab0c0e0e45b5">
+      <form-left>0</form-left>
+      <form-top>0</form-top>
+      <form-width>0</form-width>
+      <form-height>0</form-height>
+      <ctrl-width>1130</ctrl-width>
+      <ctrl-height>710</ctrl-height>
+      <scale-factor>1</scale-factor>
+    </definition-form-info>
+  </sca-component-definition>
+  <sca-monolithic-implementation xmi:id="_e1653438-607f-43bc-a1b6-87ff446665c2">
+    <name>FileTeeImplementation1</name>
+    <aep-compliance>aep_compliant</aep-compliance>
+    <impl-id>DCE:e1653438-607f-43bc-a1b6-87ff446665c2</impl-id>
+    <definition-id>d8d79e23-e0f6-43f7-ac14-60737cfa06dc</definition-id>
+    <element-file-name>FileTeeImplementation1.zmel</element-file-name>
+    <code xmi:id="_f85c4376-19d3-40d8-a473-e7341b604c30">
+      <entry-point>FileTeeWorker</entry-point>
+      <local-file>FileTee.zip</local-file>
+      <type>SharedLibrary</type>
+    </code>
+    <compiler xmi:id="_1b0c5af9-eb3d-42f7-85c2-14f861831c71" />
+    <runtime xmi:id="_3dc53f6e-0b18-4bc0-b0ec-93380380e6d3" />
+    <programming-language xmi:id="_9238f475-aee4-4e9d-b2a6-213844e410d5" />
+    <os-dependency xmi:id="_5f6d0d19-95fa-40fd-814e-41e236a3b895">
+      <name>Linux</name>
+    </os-dependency>
+    <property-ref-dependency xmi:id="_a6d92977-6841-4fa4-a966-ec9dc1bb52c3">
+      <name>propertyref1</name>
+      <type>Property Reference Dependency</type>
+      <property-ref xmi:id="_f7945dcc-c32d-47ac-83ad-0e95d444e51c">
+        <ref-id>8fda8bd8-3df0-45fb-b017-6fa8d8c3e5d5</ref-id>
+        <value>RCC</value>
+      </property-ref>
+    </property-ref-dependency>
+    <processor-dependency xmi:id="_ea840354-8dfb-4b36-9607-52cfdd5ff959">
+      <name>x86</name>
+    </processor-dependency>
+    <property-file-group xmi:id="_79f52bb9-52dc-4565-8c6d-ae4141a874e0">
+      <file-name>FileTeeImplementation1.prf.xml</file-name>
+    </property-file-group>
+    <extension-field xmi:id="_2b928dd3-1531-4ade-bb7b-b0d6373d5f4d">
+      <key>Binary path</key>
+    </extension-field>
+    <extension-field xmi:id="_bbb888f8-7930-4ba4-b0e2-339421433ebc">
+      <key>Generate test source</key>
+      <value>no</value>
+    </extension-field>
+    <extension-field xmi:id="_86bb9745-bf69-46d7-82db-9f5c58df9c7e">
+      <key>Target</key>
+    </extension-field>
+    <extension-field xmi:id="_e4e0b467-b05d-437c-859c-0586781ecd1e">
+      <key>Test component target</key>
+    </extension-field>
+    <extension-field xmi:id="_9b24129c-c34d-4517-814f-5fc5f2e49644">
+      <key>Test exec params</key>
+    </extension-field>
+    <extension-field xmi:id="_5475daf6-5796-416d-9211-2b0a4c1e3b6b">
+      <key>Test naming service IOR</key>
+    </extension-field>
+    <extension-field xmi:id="_f6d6751a-3bdf-46a6-ae8c-02197a034b5f">
+      <key>User compiler flags</key>
+    </extension-field>
+    <extension-field xmi:id="_fca9a198-bc2b-4fcd-9467-848d69879dba">
+      <key>User defines</key>
+    </extension-field>
+    <extension-field xmi:id="_4e09a737-b39d-4df7-91f9-5aa84e866024">
+      <key>User includes</key>
+    </extension-field>
+    <extension-field xmi:id="_6313c77d-ee81-4deb-8bdb-5ba86a40bd64">
+      <key>User lib paths</key>
+    </extension-field>
+    <extension-field xmi:id="_cf6070c7-8a5d-4214-878b-0d39ac785f3e">
+      <key>User libraries</key>
+    </extension-field>
+    <extension-field xmi:id="_c5607a34-281f-4d29-8586-737260d6fd16">
+      <key>User linker flags</key>
+    </extension-field>
+  </sca-monolithic-implementation>
+  <sca-interface-definition xmi:id="_e7dddd2a-a29e-45ec-996e-b475cc099228">
+    <name>DomainManager</name>
+    <scoped-name>::CF::DomainManager</scoped-name>
+    <repository-id>IDL:CF/DomainManager:1.0</repository-id>
+    <element-file-name>DomainManager.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <inherited-interface>IDL:CF/PropertySet:1.0</inherited-interface>
+    <interface-attribute xmi:id="_b891dccc-90e7-4f17-88be-38f96bfb3f79">
+      <name>domainManagerProfile</name>
+      <scoped-name>::CF::DomainManager::domainManagerProfile</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_f64e5e09-0223-45dc-901c-4ca2a842e876">
+      <name>deviceManagers</name>
+      <scoped-name>::CF::DomainManager::deviceManagers</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::DomainManager::DeviceManagerSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_116d7727-0a3b-4a6a-868d-e4c4f78c5fc2">
+      <name>applications</name>
+      <scoped-name>::CF::DomainManager::applications</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::DomainManager::ApplicationSequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_e9e5063b-55ed-49ef-987d-55c319e4a538">
+      <name>applicationFactories</name>
+      <scoped-name>::CF::DomainManager::applicationFactories</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::DomainManager::ApplicationFactorySequence</type>
+      <basetype>sequence</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_4045be15-d1d2-4abd-bf50-81d1da49554d">
+      <name>fileMgr</name>
+      <scoped-name>::CF::DomainManager::fileMgr</scoped-name>
+      <readonly>true</readonly>
+      <type>::CF::FileManager</type>
+      <basetype>Object</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-attribute xmi:id="_2a10817d-da71-4429-bf31-6a8101c99cfa">
+      <name>identifier</name>
+      <scoped-name>::CF::DomainManager::identifier</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-operation xmi:id="_71f5a7f8-df2c-4dcf-b736-d754d6c8c919">
+      <name>registerDevice</name>
+      <scoped-name>::CF::DomainManager::registerDevice</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_62d39277-8264-4042-8151-eaa150135bc2">
+        <name>registeringDevice</name>
+        <scoped-name>::CF::DomainManager::registerDevice::registeringDevice</scoped-name>
+        <type>::CF::Device</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_18620fd5-2417-4a53-9c59-ac51ad985fc2">
+        <name>registeredDeviceMgr</name>
+        <scoped-name>::CF::DomainManager::registerDevice::registeredDeviceMgr</scoped-name>
+        <type>::CF::DeviceManager</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+      <raises>::CF::InvalidProfile</raises>
+      <raises>::CF::DomainManager::DeviceManagerNotRegistered</raises>
+      <raises>::CF::DomainManager::RegisterError</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_51161321-6e16-44b8-98f1-366d86791f4f">
+      <name>registerDeviceManager</name>
+      <scoped-name>::CF::DomainManager::registerDeviceManager</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_63f388c6-c2e5-48ed-914e-26de834a2138">
+        <name>deviceMgr</name>
+        <scoped-name>::CF::DomainManager::registerDeviceManager::deviceMgr</scoped-name>
+        <type>::CF::DeviceManager</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+      <raises>::CF::InvalidProfile</raises>
+      <raises>::CF::DomainManager::RegisterError</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_7fc1dc3c-9378-41b2-90b4-a67a965e08d4">
+      <name>unregisterDeviceManager</name>
+      <scoped-name>::CF::DomainManager::unregisterDeviceManager</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_bec5e372-5aef-4f30-ace2-a84e5c121cdf">
+        <name>deviceMgr</name>
+        <scoped-name>::CF::DomainManager::unregisterDeviceManager::deviceMgr</scoped-name>
+        <type>::CF::DeviceManager</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+      <raises>::CF::DomainManager::UnregisterError</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_313a88b1-61bd-457d-9490-030c323d0444">
+      <name>unregisterDevice</name>
+      <scoped-name>::CF::DomainManager::unregisterDevice</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_40dd4a83-4847-45c9-94cf-a3ce48fa4825">
+        <name>unregisteringDevice</name>
+        <scoped-name>::CF::DomainManager::unregisterDevice::unregisteringDevice</scoped-name>
+        <type>::CF::Device</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+      <raises>::CF::DomainManager::UnregisterError</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_21579f79-fd4f-49d4-934f-b35a3be7379b">
+      <name>installApplication</name>
+      <scoped-name>::CF::DomainManager::installApplication</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_d4af16e4-b775-4fe6-aff9-894bb47e193c">
+        <name>profileFileName</name>
+        <scoped-name>::CF::DomainManager::installApplication::profileFileName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidProfile</raises>
+      <raises>::CF::InvalidFileName</raises>
+      <raises>::CF::DomainManager::ApplicationInstallationError</raises>
+      <raises>::CF::DomainManager::ApplicationAlreadyInstalled</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_5e6c92e3-bb0a-4c73-950c-8a9c6a6b3d18">
+      <name>uninstallApplication</name>
+      <scoped-name>::CF::DomainManager::uninstallApplication</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_cf57bf06-6103-4a98-b8ee-7d206bdeb433">
+        <name>applicationId</name>
+        <scoped-name>::CF::DomainManager::uninstallApplication::applicationId</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::DomainManager::InvalidIdentifier</raises>
+      <raises>::CF::DomainManager::ApplicationUninstallationError</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_53b3a4a0-de10-4fc3-9989-baa002e09698">
+      <name>registerService</name>
+      <scoped-name>::CF::DomainManager::registerService</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_bb950337-a02b-4873-9960-3ccb8176c62d">
+        <name>registeringService</name>
+        <scoped-name>::CF::DomainManager::registerService::registeringService</scoped-name>
+        <type>Object</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_c6282bd0-ef3b-4d19-bfc6-1d57e278eb00">
+        <name>registeredDeviceMgr</name>
+        <scoped-name>::CF::DomainManager::registerService::registeredDeviceMgr</scoped-name>
+        <type>::CF::DeviceManager</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_9616ec99-e234-4ec6-9a7c-69965f7e14c1">
+        <name>name</name>
+        <scoped-name>::CF::DomainManager::registerService::name</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+      <raises>::CF::DomainManager::DeviceManagerNotRegistered</raises>
+      <raises>::CF::DomainManager::RegisterError</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_97ec8100-b8b3-4a8c-b40b-fe8e02c4c921">
+      <name>unregisterService</name>
+      <scoped-name>::CF::DomainManager::unregisterService</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_1aa8a03c-e360-4a2c-ad2f-2d870f0c1a2a">
+        <name>unregisteringService</name>
+        <scoped-name>::CF::DomainManager::unregisterService::unregisteringService</scoped-name>
+        <type>Object</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_0a65bed2-e42c-4290-9a77-c3f3ce30e7a3">
+        <name>name</name>
+        <scoped-name>::CF::DomainManager::unregisterService::name</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+      <raises>::CF::DomainManager::UnregisterError</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_358e92b2-70b6-4381-9985-794d4447faee">
+      <name>registerWithEventChannel</name>
+      <scoped-name>::CF::DomainManager::registerWithEventChannel</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_d86f2c59-12cb-4cfb-a038-79401c193bc5">
+        <name>registeringObject</name>
+        <scoped-name>::CF::DomainManager::registerWithEventChannel::registeringObject</scoped-name>
+        <type>Object</type>
+        <basetype>Object</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_baefd7a3-4ac8-46f3-bd2e-76338408bf01">
+        <name>registeringId</name>
+        <scoped-name>::CF::DomainManager::registerWithEventChannel::registeringId</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_d9c8325f-f594-47bb-a763-92b8889eafa0">
+        <name>eventChannelName</name>
+        <scoped-name>::CF::DomainManager::registerWithEventChannel::eventChannelName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::InvalidObjectReference</raises>
+      <raises>::CF::DomainManager::InvalidEventChannelName</raises>
+      <raises>::CF::DomainManager::AlreadyConnected</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_d598ae3a-fd0c-4d65-a93e-a76b02cf5e07">
+      <name>unregisterFromEventChannel</name>
+      <scoped-name>::CF::DomainManager::unregisterFromEventChannel</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_4f899216-21a1-4847-9f10-d3d8c158b11d">
+        <name>unregisteringId</name>
+        <scoped-name>::CF::DomainManager::unregisterFromEventChannel::unregisteringId</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <parameter xmi:id="_1643d76f-41bd-4431-b1ac-14b64d6fc878">
+        <name>eventChannelName</name>
+        <scoped-name>::CF::DomainManager::unregisterFromEventChannel::eventChannelName</scoped-name>
+        <type>string</type>
+        <basetype>string</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CF::DomainManager::InvalidEventChannelName</raises>
+      <raises>::CF::DomainManager::NotConnected</raises>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-component-definition xmi:id="_e86d3323-bccb-438c-a142-2e84f2a0f166">
+    <name>FileSource</name>
+    <id>DCE:e86d3323-bccb-438c-a142-2e84f2a0f166</id>
+    <corba-version>2.2</corba-version>
+    <repository-id>IDL:CF/Resource:1.0</repository-id>
+    <sca-type>sca_compliant</sca-type>
+    <componenttype>resource</componenttype>
+    <scd-file>FileSource.scd.xml</scd-file>
+    <spd-file>FileSource.spd.xml</spd-file>
+    <element-file-name>FileSource.zmel</element-file-name>
+    <author xmi:id="_645cacc7-0f2d-4b18-b133-f98878c38b65" />
+    <port-definition xmi:id="_2571beb2-ab0d-4d09-81c2-f86c21720b35">
+      <name>resource1</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_3f8d3aff-736d-41e4-ac1f-65521b4e1787">
+        <point-x>342</point-x>
+        <point-y>69</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_ec0b62d3-edaa-4a88-88d9-6f2117a73a59">
+        <name>BoundingRectangle</name>
+        <point-x>332</point-x>
+        <point-y>34</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_ef6fb6fe-fc75-452e-b80b-c46242d9aee1">
+        <name>HitTestRectangle</name>
+        <point-x>332</point-x>
+        <point-y>29</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_db08444c-fa3c-4e4d-8d82-3c92b351ab15">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_521f0bd1-e1e2-4d46-b0d8-d9149ce47829">
+      <name>DataOut</name>
+      <conjugation>uses</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Port:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_ea0596fe-0ae2-49df-bca0-a19c4dbe4531">
+        <point-x>575</point-x>
+        <point-y>231</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>90</port-direction>
+      <rectangle xmi:id="_3d6e59a0-f756-473e-a4bb-0bab805f9a5a">
+        <name>BoundingRectangle</name>
+        <point-x>565</point-x>
+        <point-y>196</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_d054d83b-2a88-4388-966d-73fc0f857c1b">
+        <name>HitTestRectangle</name>
+        <point-x>565</point-x>
+        <point-y>221</point-y>
+        <rectangle-height>20</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_accb11d6-8fc8-4b56-89c3-11f49e49abb1">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <component-property-file-group xmi:id="_207acb44-de1b-44eb-988e-fb51b1e7fc90">
+      <simple-property xmi:id="_0dfc71a7-d0b8-4776-99d2-f44efb96ee95">
+        <id>DCE:9a429aa8-071f-4d55-ac40-c087bb51b16a</id>
+        <name>offset</name>
+        <type>ulong</type>
+        <mode>readonly</mode>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>4</order>
+        <extension-field xmi:id="_12cd17d7-8699-4660-9f42-f341f7839c06">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_cf736eef-1147-4c72-990a-5caccf9305b6">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <simple-property xmi:id="_bb29e8b5-fc8d-4b45-8559-c241ca891a60">
+        <id>DCE:52d9ebfa-4102-4df6-a8b8-158d9811c528</id>
+        <name>bytesPerPacket</name>
+        <type>ulong</type>
+        <mode>readwrite</mode>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>3</order>
+        <extension-field xmi:id="_7d841480-706b-4f73-828e-af2ad839fc50">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_3ad3fddb-0b48-4ace-b27e-7e3d0e06d625">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <simple-property xmi:id="_d0431f7e-3d63-40f6-b1f5-534a3ac6426e">
+        <id>DCE:be8cbe84-70ca-4117-970f-3b2cc24450c2</id>
+        <name>fileName</name>
+        <type>string</type>
+        <mode>readwrite</mode>
+        <description>max_string_size=256</description>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>1</order>
+        <extension-field xmi:id="_b1e78adb-b796-4435-9ca3-62843f84859f">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_af61d273-a592-4074-bf29-15e65214d065">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <test-property xmi:id="_e97ab940-0d03-4cc1-9903-8ca25023c70c">
+        <id>1245111881</id>
+        <name>attribute1</name>
+        <order>5</order>
+        <result-value xmi:id="_a26a9a13-ca60-4220-b33d-dacc232a40c0">
+          <id>DCE:d5462d5b-b84a-4e12-a6a6-449ecec67b77</id>
+          <name>errnoValue</name>
+          <type>ulong</type>
+          <mode>readwrite</mode>
+          <kind>Test</kind>
+          <action>external</action>
+          <order>1</order>
+        </result-value>
+      </test-property>
+      <file-name>FileSourceComponent.prf.xml</file-name>
+    </component-property-file-group>
+    <package-property-file-group xmi:id="_2a91077d-bc2c-45ee-b9b4-772fc8471297">
+      <file-name>FileSourcePackage.prf.xml</file-name>
+    </package-property-file-group>
+    <extension-field xmi:id="_14577153-945b-4a32-8dbd-8bb8783b6d1b">
+      <key>Generate test source</key>
+      <value>yes</value>
+    </extension-field>
+    <definition-form-info xmi:id="_3b96417e-cd7d-4b00-940a-00de5bbde5e4">
+      <form-left>0</form-left>
+      <form-top>0</form-top>
+      <form-width>0</form-width>
+      <form-height>0</form-height>
+      <ctrl-width>1130</ctrl-width>
+      <ctrl-height>710</ctrl-height>
+      <scale-factor>1</scale-factor>
+    </definition-form-info>
+  </sca-component-definition>
+  <sca-cf-definition xmi:id="_eaa74092-a57b-44d9-971b-7d41b6817d21">
+    <name>Log</name>
+    <id>DCE:eaa74092-a57b-44d9-971b-7d41b6817d21</id>
+    <corba-version>2.2</corba-version>
+    <repository-id>IDL:CF/Resource:1.0</repository-id>
+    <sca-type>sca_compliant</sca-type>
+    <componenttype>log</componenttype>
+    <scd-file>Log.scd.xml</scd-file>
+    <spd-file>Log.spd.xml</spd-file>
+    <element-file-name>Log_1.zmel</element-file-name>
+    <author xmi:id="_224a1780-277b-43f4-993e-94ec43b12fe5" />
+    <port-definition xmi:id="_158b2a89-0a20-461f-85be-b02574812807">
+      <name>resource</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_4f12e860-0356-43ac-b388-bf51b04598be">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_40e0e073-d0ab-4271-af21-98821e6263a6">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_fcf508a1-f2c6-48c3-a7c5-2498e86d1c22">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_782cebae-a4b3-4bc5-a2e1-34fe63ff462d">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_1c9bedd7-dd9d-4592-beab-b9f6780f12c1">
+      <name>log</name>
+      <conjugation>provides</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CosLwLog/Log:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_e43bc36e-74b2-45d7-9915-5962b92928af">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_c2483505-d45e-45e4-89a5-8fd3f21043e7">
+        <name>BoundingRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_f24e9462-c26a-4e81-9240-35ba6e101c31">
+        <name>HitTestRectangle</name>
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+        <rectangle-height>0</rectangle-height>
+        <rectangle-width>0</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_bfafee11-d1f5-4982-b332-fa2c45d2710c">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <component-property-file-group xmi:id="_c83b1cc1-fe64-46a0-ad79-f21bffc98773">
+      <file-name>LogComponent.prf.xml</file-name>
+    </component-property-file-group>
+    <package-property-file-group xmi:id="_145f77b3-14be-412e-9346-635af06b7c30">
+      <file-name>LogPackage.prf.xml</file-name>
+    </package-property-file-group>
+    <dmd xmi:id="_928cc5c7-5ea0-4ab2-8846-881cf1dba00c">
+      <name>Log.dmd.xml</name>
+      <id>DCE:589c0f55-7780-496c-98a1-245e43c210d9</id>
+      <file-name>Log.dmd.xml</file-name>
+    </dmd>
+    <definition-form-info xmi:id="_f9623986-f501-4707-948a-8cd614fac89c">
+      <form-left>0</form-left>
+      <form-top>0</form-top>
+      <form-width>0</form-width>
+      <form-height>0</form-height>
+      <ctrl-width>1130</ctrl-width>
+      <ctrl-height>710</ctrl-height>
+      <scale-factor>1.0</scale-factor>
+    </definition-form-info>
+  </sca-cf-definition>
+  <sca-component-definition xmi:id="_f3f4a1ba-bbcf-4709-bcba-dc71b31b8c07">
+    <name>FileSink</name>
+    <id>DCE:f3f4a1ba-bbcf-4709-bcba-dc71b31b8c07</id>
+    <corba-version>2.2</corba-version>
+    <repository-id>IDL:CF/Resource:1.0</repository-id>
+    <sca-type>sca_compliant</sca-type>
+    <componenttype>resource</componenttype>
+    <scd-file>FileSink.scd.xml</scd-file>
+    <spd-file>FileSink.spd.xml</spd-file>
+    <element-file-name>FileSink.zmel</element-file-name>
+    <author xmi:id="_2fe85163-d6dc-4654-9dd8-d531504c254a" />
+    <port-definition xmi:id="_25cd90d1-98ac-410d-af5f-75014bc80c40">
+      <name>resource1</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_821e5603-8c26-4b8b-bc00-8e12a2b86d49">
+        <point-x>329</point-x>
+        <point-y>69</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_c735de68-0f55-4600-bb6a-81508fbedee1">
+        <name>BoundingRectangle</name>
+        <point-x>319</point-x>
+        <point-y>34</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_bf6c5bf4-4b64-4777-9e92-75895ab70e3e">
+        <name>HitTestRectangle</name>
+        <point-x>319</point-x>
+        <point-y>29</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_2c54dc9e-967c-44d1-a0a4-1b986281ac7f">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_7bdaa68b-4bb5-4c78-a58b-c8e9cb22bf13">
+      <name>DataIn</name>
+      <conjugation>provides</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Port:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_d866544c-2c3b-428a-902d-21db7860dd4a">
+        <point-x>105</point-x>
+        <point-y>233</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>270</port-direction>
+      <rectangle xmi:id="_4b335e72-18b1-48b8-94e9-57ee4445849a">
+        <name>BoundingRectangle</name>
+        <point-x>95</point-x>
+        <point-y>198</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_2547445a-f674-4665-8d42-432b7bb0e6f7">
+        <name>HitTestRectangle</name>
+        <point-x>95</point-x>
+        <point-y>223</point-y>
+        <rectangle-height>20</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_c06983af-c6fa-46de-a199-ac2120fdfa3d">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <component-property-file-group xmi:id="_05cf50ea-7e65-49df-b347-08a7609b7186">
+      <simple-property xmi:id="_b97b9831-f4d5-4533-9677-0de73c0c0dc8">
+        <id>DCE:3e0184b5-a600-4a49-80ea-3736620a74e3</id>
+        <name>offset</name>
+        <type>ulong</type>
+        <mode>readonly</mode>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>2</order>
+        <extension-field xmi:id="_32285cce-7a47-438f-9041-16b51f52937e">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_aaea9a00-3acd-4b98-8aa0-c4c40c8768e8">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <simple-property xmi:id="_bd4552bc-9939-43e1-acc6-bc99f55b398b">
+        <id>DCE:cf4bdcbf-d26a-4a41-8d38-48a5db832a0b</id>
+        <name>fileName</name>
+        <type>string</type>
+        <mode>readwrite</mode>
+        <description>max_string_size=256</description>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>1</order>
+        <extension-field xmi:id="_c4ddbdf0-c129-49d5-bed6-6390dd270179">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_34d0737d-0c0d-4a80-8c3b-a617a84cb9ab">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <file-name>FileSinkComponent.prf.xml</file-name>
+    </component-property-file-group>
+    <package-property-file-group xmi:id="_cf57110c-cd7d-4024-95e8-61482b8479bf">
+      <file-name>FileSinkPackage.prf.xml</file-name>
+    </package-property-file-group>
+    <extension-field xmi:id="_5f2f1e24-070f-4af8-a748-0ec1136bb148">
+      <key>Generate test source</key>
+      <value>yes</value>
+    </extension-field>
+    <definition-form-info xmi:id="_dfe022e7-fcc2-4434-8ffc-f7fd1df9490e">
+      <form-left>0</form-left>
+      <form-top>0</form-top>
+      <form-width>0</form-width>
+      <form-height>0</form-height>
+      <ctrl-width>1130</ctrl-width>
+      <ctrl-height>710</ctrl-height>
+      <scale-factor>1</scale-factor>
+    </definition-form-info>
+  </sca-component-definition>
+  <sca-interface-definition xmi:id="_f402b832-7af5-4681-a22e-35b7a4bc1a63">
+    <name>PushConsumer</name>
+    <scoped-name>::CosEventComm::PushConsumer</scoped-name>
+    <repository-id>IDL:CosEventComm/PushConsumer:1.0</repository-id>
+    <element-file-name>PushConsumer.zmel</element-file-name>
+    <file-name>CosEventComm.idl</file-name>
+    <interface-operation xmi:id="_9726897f-9315-4afb-8707-6d392da1fd72">
+      <name>push</name>
+      <scoped-name>::CosEventComm::PushConsumer::push</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <parameter xmi:id="_6826be7d-a3e3-46d0-bbfe-8f2579016eda">
+        <name>data</name>
+        <scoped-name>::CosEventComm::PushConsumer::push::data</scoped-name>
+        <type>any</type>
+        <basetype>any</basetype>
+        <type-is-fixed-size>false</type-is-fixed-size>
+        <direction>in</direction>
+      </parameter>
+      <raises>::CosEventComm::Disconnected</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_23ddf0ad-2af2-458f-8730-d24f5ec35947">
+      <name>disconnect_push_consumer</name>
+      <scoped-name>::CosEventComm::PushConsumer::disconnect_push_consumer</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+    </interface-operation>
+  </sca-interface-definition>
+  <sca-monolithic-implementation xmi:id="_f6de0032-b06e-4f83-92c3-769e73afee0c">
+    <name>DeviceManagerImplementation</name>
+    <aep-compliance>aep_compliant</aep-compliance>
+    <impl-id>DCE:f6de0032-b06e-4f83-92c3-769e73afee0c</impl-id>
+    <definition-id>5feb48f2-50bc-4843-bb04-6e77183d09b7</definition-id>
+    <element-file-name>DeviceManagerImplementation.zmel</element-file-name>
+    <code xmi:id="_a9d318ca-9e6a-45be-9597-20aa9b7d49c6">
+      <type>Executable</type>
+    </code>
+    <compiler xmi:id="_2c7fc0e9-eebe-4ede-b74d-d2c32e62e5e4" />
+    <runtime xmi:id="_79256fe4-93cb-426b-8891-fde9b6f5345f" />
+    <programming-language xmi:id="_c0b2cb66-bbd5-41ec-b626-31eaf66a9203" />
+    <property-file-group xmi:id="_3cfcdab2-36fd-49a4-a03c-42d53c95fcd4">
+      <file-name>DeviceManagerImplementation.prf.xml</file-name>
+    </property-file-group>
+  </sca-monolithic-implementation>
+  <sca-component-definition xmi:id="_faaccac6-1e25-45c7-9113-83c3a2555d06">
+    <name>GenericAssemblyController</name>
+    <id>DCE:1dd52fca-1d51-4cc1-b4bc-daf71173b65f</id>
+    <corba-version>2.2</corba-version>
+    <repository-id>IDL:CF/Resource:1.0</repository-id>
+    <sca-type>sca_compliant</sca-type>
+    <componenttype>resource</componenttype>
+    <scd-file>GenericAssemblyController.scd.xml</scd-file>
+    <spd-file>GenericAssemblyController.spd.xml</spd-file>
+    <element-file-name>DataCheckerAssemblyController.zmel</element-file-name>
+    <author xmi:id="_c99cce4f-efe9-44e0-a163-137a66207728" />
+    <port-definition xmi:id="_0809d08f-9c60-4ba1-bdd9-cda136caf6fc">
+      <name>Tee</name>
+      <conjugation>uses</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_c6d5cc51-c2f5-4c68-a138-b489e57d73f8">
+        <point-x>346</point-x>
+        <point-y>391</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>180</port-direction>
+      <rectangle xmi:id="_dddee328-ece2-45d4-90ce-56bd48b94f2e">
+        <name>BoundingRectangle</name>
+        <point-x>336</point-x>
+        <point-y>356</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_c492511e-3a0a-4ba1-86a2-febd9da9b48f">
+        <name>HitTestRectangle</name>
+        <point-x>336</point-x>
+        <point-y>381</point-y>
+        <rectangle-height>20</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_56118ea3-62c9-4b45-924c-c208c326bcf7">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_3da1cd30-e9ba-4dfb-97e6-a831c072a809">
+      <name>resource1</name>
+      <conjugation>ImplementsBase</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_327ad16e-ebd1-46c9-b28e-2780c644e53d">
+        <point-x>350</point-x>
+        <point-y>69</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>0</port-direction>
+      <rectangle xmi:id="_58bece4b-0640-427c-b323-a8d10398f0bf">
+        <name>BoundingRectangle</name>
+        <point-x>340</point-x>
+        <point-y>34</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_e59b3109-e768-4054-b8fa-589f7f26d3dd">
+        <name>HitTestRectangle</name>
+        <point-x>340</point-x>
+        <point-y>29</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_c0af8e67-cd7b-4cbe-a89d-620004f39b41">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_80205396-f0f8-4c05-8938-c4b4f2d003c3">
+      <name>Source</name>
+      <conjugation>uses</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_a4b82e28-98f3-4235-a77a-254ea3de55bc">
+        <point-x>159</point-x>
+        <point-y>391</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>180</port-direction>
+      <rectangle xmi:id="_8259b355-11e8-46f0-9252-2353b4be92d5">
+        <name>BoundingRectangle</name>
+        <point-x>149</point-x>
+        <point-y>356</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_15fd4ae5-e663-42a7-a682-39e125e64689">
+        <name>HitTestRectangle</name>
+        <point-x>149</point-x>
+        <point-y>381</point-y>
+        <rectangle-height>20</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_108e876a-30ea-4dc2-a178-e230bb702604">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <port-definition xmi:id="_88ce5b32-96f3-42ea-92a9-3c57cc62ba93">
+      <name>Sink</name>
+      <conjugation>uses</conjugation>
+      <porttype>PortTypeControl</porttype>
+      <interface-name>IDL:CF/Resource:1.0</interface-name>
+      <graphical-index>-1</graphical-index>
+      <point xmi:id="_a6f3fbdd-ebf4-4c69-b9f7-95080841d16c">
+        <point-x>511</point-x>
+        <point-y>391</point-y>
+      </point>
+      <show-text>true</show-text>
+      <port-direction>180</port-direction>
+      <rectangle xmi:id="_4b1781a7-7c9d-4c40-b55d-2d915ead8f70">
+        <name>BoundingRectangle</name>
+        <point-x>501</point-x>
+        <point-y>356</point-y>
+        <rectangle-height>45</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <rectangle xmi:id="_d04e1348-d9a2-4ced-a3ab-81bb31a6ab04">
+        <name>HitTestRectangle</name>
+        <point-x>501</point-x>
+        <point-y>381</point-y>
+        <rectangle-height>20</rectangle-height>
+        <rectangle-width>20</rectangle-width>
+      </rectangle>
+      <port-label-graphical-info xmi:id="_006634fb-d2fe-4c95-9eda-d8e45558bbf7">
+        <point-x>0</point-x>
+        <point-y>0</point-y>
+      </port-label-graphical-info>
+    </port-definition>
+    <component-property-file-group xmi:id="_fc0eeb48-59c9-43c7-bde8-c76d4e707a02">
+      <simple-property xmi:id="_04da51c4-1f17-4ad3-94cd-3911faa3078a">
+        <id>DCE:d866ff26-13c6-4ce4-88f2-32eda10cb515</id>
+        <name>Tee.fileName</name>
+        <type>string</type>
+        <mode>readwrite</mode>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>2</order>
+        <extension-field xmi:id="_7d114369-237c-46d3-ba5c-400566d526a5">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_897e6f6e-d117-47a4-a7fc-b4b0d85eb2f4">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <simple-property xmi:id="_455a5946-561c-415a-8612-e54188d34102">
+        <id>DCE:e137c8da-6ddb-481e-a56e-448332334df9</id>
+        <name>Sink.fileName</name>
+        <type>string</type>
+        <mode>readwrite</mode>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>3</order>
+        <extension-field xmi:id="_0b656043-4c06-490e-b822-bf4d4dc8b90f">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_eff34a14-23ab-4283-8c04-b055e39e75bb">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <simple-property xmi:id="_a2d5ac88-bf3b-4aaa-908a-d4270714f2b5">
+        <id>DCE:50bd03ab-33b4-485f-9af4-650c2bd4e2a2</id>
+        <name>Source.fileName</name>
+        <type>string</type>
+        <mode>readwrite</mode>
+        <kind>Configure</kind>
+        <action>external</action>
+        <order>1</order>
+        <extension-field xmi:id="_fbd920e7-5a54-49a0-b5f3-536567ead655">
+          <key>Invalid input</key>
+        </extension-field>
+        <extension-field xmi:id="_ea9ee876-069d-41da-9ba9-ccacdf41f333">
+          <key>Valid input</key>
+        </extension-field>
+      </simple-property>
+      <file-name>GenericAssemblyControllerComponent.prf.xml</file-name>
+    </component-property-file-group>
+    <package-property-file-group xmi:id="_249b62fc-d865-4b23-951c-395240c6ed21">
+      <file-name>GenericAssemblyControllerPackage.prf.xml</file-name>
+    </package-property-file-group>
+    <definition-form-info xmi:id="_522247ed-b300-4261-8ae0-6210b911832f">
+      <form-left>0</form-left>
+      <form-top>0</form-top>
+      <form-width>0</form-width>
+      <form-height>0</form-height>
+      <ctrl-width>1130</ctrl-width>
+      <ctrl-height>710</ctrl-height>
+      <scale-factor>1</scale-factor>
+    </definition-form-info>
+  </sca-component-definition>
+  <sca-interface-definition xmi:id="_fdd92bdc-fa76-407f-b383-b78754065641">
+    <name>Resource</name>
+    <scoped-name>::CF::Resource</scoped-name>
+    <repository-id>IDL:CF/Resource:1.0</repository-id>
+    <element-file-name>Resource.zmel</element-file-name>
+    <file-name>CF.idl</file-name>
+    <inherited-interface>IDL:CF/LifeCycle:1.0</inherited-interface>
+    <inherited-interface>IDL:CF/TestableObject:1.0</inherited-interface>
+    <inherited-interface>IDL:CF/PropertySet:1.0</inherited-interface>
+    <inherited-interface>IDL:CF/PortSupplier:1.0</inherited-interface>
+    <interface-attribute xmi:id="_3fbf1450-fca7-4abb-a39b-7b3a0a81cab3">
+      <name>identifier</name>
+      <scoped-name>::CF::Resource::identifier</scoped-name>
+      <readonly>true</readonly>
+      <type>string</type>
+      <basetype>string</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+    </interface-attribute>
+    <interface-operation xmi:id="_8d6e9943-4da6-472a-80cf-d625f427ec52">
+      <name>start</name>
+      <scoped-name>::CF::Resource::start</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <raises>::CF::Resource::StartError</raises>
+    </interface-operation>
+    <interface-operation xmi:id="_ecb7cb32-9227-4095-87cb-3394f755c1c8">
+      <name>stop</name>
+      <scoped-name>::CF::Resource::stop</scoped-name>
+      <type>void</type>
+      <basetype>void</basetype>
+      <type-is-fixed-size>false</type-is-fixed-size>
+      <oneway>false</oneway>
+      <raises>::CF::Resource::StopError</raises>
+    </interface-operation>
+  </sca-interface-definition>
+</XMI>

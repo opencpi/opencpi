@@ -1,0 +1,143 @@
+#! /bin/sh
+# Copyright (c) 2009 Mercury Federal Systems.
+# 
+# This file is part of OpenCPI.
+# 
+# OpenCPI is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# OpenCPI is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public License
+# along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+# ----------------------------------------------------------------------
+# Top-level script to run all CPI tests.
+#
+# Revision History:
+#
+#     06/03/2009 - Frank Pilhofer
+#                  Initial version.
+#
+# ----------------------------------------------------------------------
+#
+
+if test -z "$RUN_VIA_MAKEFILE" ; then
+    #
+    # Someone is running this script directly.  However, this script
+    # wants to be run via the Makefile, since it exports the variables
+    # from MakeVars.cpi that some tests may depend on.
+    #
+    # Restart via the Makefile.
+    #
+
+    exec make -f `dirname $0`/Makefile.cpi test TESTS="$*"
+fi
+
+PATH=".:$PATH"
+
+if test -z "$TESTS" ; then
+    #
+    # Run the entire test suite.  Look for all executable files whose name
+    # starts with "test".
+    #
+
+    TESTS="`find . -name 'test*' -type f -perm -100 -print | grep -v '~$'`"
+elif test -x "$TESTS" ; then
+    #
+    # Run a single test only.  Don't send its output to a log file, just
+    # run the test and report its status at the end.
+    #
+
+    test="$TESTS"
+    testdir="`dirname $test`"
+    testfile="`basename $test`"
+    ( cd "$testdir" ; $testfile )
+    code=$?
+
+    case "$code" in
+	0)
+	    echo "$test: passed."
+	    ;;
+	2)
+	    echo "$test: skipped."
+	    ;;
+	*)
+	    echo "$test: failed."
+	    ;;
+    esac
+
+    exit $code
+fi
+
+TOTAL=0
+PASSED=0
+SKIPPED=0
+FAILED=0
+
+started_at=`date +%s`
+timestamp=`date +%Y-%m-%d-%H-%M`
+logdir="${LOGDIR:-.}/log-$timestamp"
+logfile="${logdir}/run-all-tests.log"
+mkdir -p $logdir || exit 1
+touch $logfile || exit 1
+
+echo "Started at `date '+%Y-%m-%d %H:%M:%S'`." >> $logfile
+
+for test in $TESTS ; do
+    if test ! -x $test ; then
+	echo "$test: file not found"
+	FAILED=$((FAILED+1))
+	continue
+    fi
+
+    testname=`echo $test | sed -e 's%^./%%' -e 's%/%_%g'`
+    testlog="${logdir}/${testname}.log"
+
+    TOTAL=$((TOTAL+1))
+
+    echo -n "$test: "
+    testdir=`dirname "$test"`
+    testfile=`basename "$test"`
+    ( cd "$testdir" ; $testfile ) > $testlog 2>&1
+    code=$?
+
+    case "$code" in
+	0)
+	    echo "$test: passed." >> $logfile
+	    echo "passed."
+	    PASSED=$((PASSED+1))
+	    rm -f $testlog
+	    ;;
+	2)
+	    echo "$test: skipped." >> $logfile
+	    echo "skipped."
+	    SKIPPED=$((SKIPPED+1))
+	    ;;
+	*)
+	    echo "$test: failed." >> $logfile
+	    echo "failed."
+	    FAILED=$((FAILED+1))
+	    ;;
+    esac
+done
+
+finished_at=`date +%s`
+seconds=$((finished_at - started_at))
+
+(
+    echo "Ran $TOTAL tests in $seconds seconds."
+    echo "$PASSED tests passed."
+    echo "$SKIPPED tests skipped."
+    echo "$FAILED tests failed."
+    echo "Finished at `date '+%Y-%m-%d %H:%M:%S'`."
+) | tee -a $logfile
+
+if test $FAILED -gt 0 ; then
+    exit 1
+fi

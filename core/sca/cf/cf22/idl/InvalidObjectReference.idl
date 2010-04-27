@@ -1,0 +1,18 @@
+#ifndef _INVALIDOBJECTREFERENCE_IDL
+#define _INVALIDOBJECTREFERENCE_IDL
+
+module CF 
+{
+  /**
+   *  This exception indicates an invalid CORBA object reference error.
+   */
+  
+  exception InvalidObjectReference {
+    string msg;
+  };
+  
+};
+
+#pragma version CF::InvalidObjectReference 1.0
+
+#endif

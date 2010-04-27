@@ -1,0 +1,66 @@
+#ifndef _PROPERTYSET_IDL
+#define _PROPERTYSET_IDL
+
+#include "DataType.idl"
+
+module CF {
+
+	/* The PropertySet interface defines configure and query operations to access component properties/attributes. */
+	
+	interface PropertySet {
+		/* This exception indicates the configuration of a component has failed (no configuration 
+		at all was done). The message provides additional information describing the reason why the 
+		error occurred. The invalid properties returned indicates the properties that were invalid. */
+		
+		exception InvalidConfiguration {
+			string msg;
+			Properties invalidProperties;
+		};
+		
+		/* The PartialConfiguration exception indicates the configuration of a Component was partially 
+		successful. The invalid properties returned indicates the properties that were invalid. */
+		
+		exception PartialConfiguration {
+			Properties invalidProperties;
+		};
+		
+		/* The purpose of this operation is to allow id/value pair configuration properties to be assigned to 
+		components implementing this interface.
+
+		The configure operation shall assign values to the properties as indicated in the configProperties argument. 
+		An component's SPD profile indicates the valid configuration values.  Valid properties for the 
+		configure operation are at a minimum the configure readwrite and writeonly properties referenced 
+		in the component's SPD.
+
+		The configure operation raises an InvalidConfiguration exception when a configuration error 
+		occurs that prevents any property configuration on the component.
+
+		This operation raises PartialConfiguration exception when some configuration properties were 
+		successful and some configuration properties were not successful.
+		@roseuid 38A583FFC998 */
+		void configure (
+			in Properties configProperties
+			)			
+			raises (InvalidConfiguration, PartialConfiguration);
+			
+		/* The purpose of this operation is to allow a component to be queried to retrieve its properties. 
+		If the configProperties are zero size then, the query operation returns all component properties.  
+		If the configProperties are not zero size, then the query operation returns only those id/value pairs 
+		specified in the configProperties. An component's SPD profile indicates the valid query types. Valid 
+		properties for the query operation are at a minimum the configure readwrite and readonly properties, 
+		and allocation properties that have an action value of "external" as referenced in the component's SPD.
+
+		This operation raises the CF UnknownProperties exception when one or more properties 
+		being requested are not known by the component.
+		@roseuid 38A583FFC99A */
+		void query (
+			inout Properties configProperties
+			)			
+			raises (UnknownProperties);
+
+  }; 
+};
+
+#pragma version CF::PropertySet 1.0
+
+#endif

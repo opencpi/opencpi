@@ -1,0 +1,320 @@
+#! /bin/sh
+# Copyright (c) 2009 Mercury Federal Systems.
+# 
+# This file is part of OpenCPI.
+# 
+# OpenCPI is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# OpenCPI is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public License
+# along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+# the next line restarts using tclsh8.4 on unix \
+if type tclsh8.4 > /dev/null 2>&1 ; then exec tclsh8.4 "$0" ${1+"$@"} ; fi
+# the next line restarts using tclsh84 on Windows using Cygwin \
+if type tclsh84 > /dev/null 2>&1 ; then exec tclsh84 "`cygpath --windows $0`" ${1+"$@"} ; fi
+# the next line complains about a missing tclsh \
+echo "Found neither \"tclsh8.4\" nor \"tclsh84\" is in your \$PATH" ; \
+exit 1
+
+#
+# ----------------------------------------------------------------------
+# Helpers
+# ----------------------------------------------------------------------
+#
+
+proc fnormalize {fn} {
+    return [file normalize [file join [pwd] $fn]]
+}
+
+proc makeabspath {name type} {
+    switch -- $type {
+	native {
+	    set path [file nativename $name]
+	}
+	cygwin {
+	    set path "/cygdrive/"
+
+	    if {[string index $name 1] == ":"} {
+		append path [string tolower [string index $name 0]]
+		append path [string range $name 2 end]
+	    } else {
+		append path "c" $name
+	    }
+	}
+	mingw {
+	    if {[string index $name 1] == ":"} {
+		set path "/"
+		append path [string tolower [string index $name 0]]
+		append path [string range $name 2 end]
+	    } else {
+		append path "/c" $name
+	    }
+	}
+	default {
+	    set path $name
+	}
+    }
+
+    if {$type != "native"} {
+	set path [string map {" " "\\ "} $path]
+    } else {
+	set path [file nativename $path]
+    }
+
+    return $path
+}
+
+proc makepath {fromdir tofile relbase type} {
+    set from [file split $fromdir]
+    set to [file split $tofile]
+    set rb [file split $relbase]
+
+    set fdl [llength $from]
+    set tdl [llength $to]
+    set rbl [llength $rb]
+
+    #
+    # Check if $tofile is below $relbase
+    #
+
+    for {set c 0} {$c < $rbl} {incr c} {
+	if {[lindex $to $c] != [lindex $rb $c]} {
+	    break
+	}
+    }
+
+    if {$c < $rbl} {
+	#
+	# $tofile is not below $relbase, use an absolute path
+	#
+
+	return [makeabspath $tofile $type]
+    }
+
+    #
+    # See how much path $fromdir and $tofile have in common
+    #
+
+    for {set c 0} {$c < $fdl} {incr c} {
+	if {[lindex $from $c] != [lindex $to $c]} {
+	    break
+	}
+    }
+
+    #
+    # Add ".." from $fromdir to the common base path
+    #
+
+    set path [list]
+
+    for {set i $fdl} {$i > $c} {incr i -1} {
+	lappend path ".."
+    }
+
+    #
+    # Add the remainder of $tofile to the common base path
+    #
+
+    for {} {$i < $tdl} {incr i} {
+	lappend path [lindex $to $i]
+    }
+
+    set path [eval file join $path]
+
+    if {$type != "native"} {
+	set path [string map {" " "\\ "} $path]
+    } else {
+	set path [file nativename $path]
+    }
+
+    return $path
+}
+
+#
+# ----------------------------------------------------------------------
+# Process command line
+# ----------------------------------------------------------------------
+#
+
+proc usage {argv0} {
+    puts ""
+    puts "    Reads a preprocessed file on standard input and writes a \"make\" rule"
+    puts "    with all included files as prerequisites to the source file."
+    puts ""
+    puts "usage: $argv0 \[options\]"
+    puts "  Options:"
+    puts "    --srcfile <n>    The name of the source file (that was the input to the"
+    puts "                     preprocessor.  This file is also added to the set of"
+    puts "                     prerequisites.  Prerequisites are listed relative to"
+    puts "                     this file."
+    puts "    --target <n>     The target that must be rebuilt by \"make\" when any"
+    puts "                     of the prerequisites is modified.  This option can be"
+    puts "                     used multiple times."
+    puts "    --prereq <n>     Add to the set of prerequisites.  This option can be"
+    puts "                     used multiple times."
+    puts "    --ipattern <n>   Only list prerequisites that partially match this"
+    puts "                     pattern.  This option can be used multiple times."
+    puts "    --xpattern <n>   Exclude prerequisites that partially match this"
+    puts "                     pattern.  This option can be used multiple times."
+    puts "                     This option is usually used to filter out system"
+    puts "                     header files."
+    puts "    --relbase <n>    Use relative path names for prerequisites below"
+    puts "                     this directory.  The default is the file system root,"
+    puts "                     resulting in relative paths for all prerequisites."
+    puts "    --pathtype <n>   What absolute path type to use for prerequisites"
+    puts "                     outside of --relbase.  Can be \"native\", \"cygwin\" or"
+    puts "                     \"mingw\".  Default is \"native\"."
+    puts "    -o <n>           Write output to this file instead of standard output."
+    exit 1
+}
+
+set srcfile ""
+set targets [list]
+array set prereqs {}
+set ipatterns [list]
+set xpatterns [list]
+set relbase ""
+set pathtype "native"
+set outfile ""
+
+for {set i 0} {$i < [llength $argv]} {incr i} {
+    switch -- [lindex $argv $i] {
+	--srcfile {
+	    set srcfile [fnormalize [lindex $argv [incr i]]]
+	    set prereqs($srcfile) 1
+	}
+	--target {
+	    lappend targets [lindex $argv [incr i]]
+	}
+	--prereq {
+	    set absname [fnormalize [lindex $argv [incr i]]]
+	    set prereqs($absname) 1
+	}
+	--ipattern {
+	    lappend ipatterns [lindex $argv [incr i]]
+	}
+	--xpattern {
+	    lappend xpatterns [lindex $argv [incr i]]
+	}
+	--relbase {
+	    set relbase [fnormalize [lindex $argv [incr i]]]
+	}
+	--pathtype {
+	    set pathtype [lindex $argv [incr i]]
+	}
+	-o {
+	    set outfile [lindex $argv [incr i]]
+	}
+	default {
+	    puts stderr "Oops: invalid option: [lindex $argv $i]"
+	    exit 1
+	}
+    }
+}
+
+if {$srcfile == "" || [llength $targets] == 0} {
+    usage $argv0
+}
+
+#
+# ----------------------------------------------------------------------
+# Read preprocessor output on standard input
+# ----------------------------------------------------------------------
+#
+
+set empty 1
+
+while {![eof stdin]} {
+    if {[gets stdin line] < 0} {
+	break
+    }
+
+    set line [string trim $line]
+
+    if {![regexp -- {^\#(?:line)? ([1-9][0-9]*) \"([^\"]*)\"} $line - lineno filename]} {
+	continue
+    }
+
+    set absname [fnormalize $filename]
+    set empty 0
+
+    if {![file exists $filename] || [file isdirectory $filename]} {
+	continue
+    }
+
+    if {[llength $ipatterns]} {
+	set found 0
+
+	foreach pattern $ipatterns {
+	    if {[regexp -nocase -- $pattern $absname]} {
+		set found 1
+		break
+	    }
+	}
+
+	if {!$found} {
+	    continue
+	}
+    }
+
+    if {[llength $xpatterns]} {
+	set found 0
+
+	foreach pattern $xpatterns {
+	    if {[regexp -nocase -- $pattern $absname]} {
+		set found 1
+		break
+	    }
+	}
+
+	if {$found} {
+	    continue
+	}
+    }
+
+    set prereqs($absname) 1
+}
+
+if {$empty} {
+    puts stderr "Oops: Input does not look like preprocessor output."
+    exit 1
+}
+
+#
+# ----------------------------------------------------------------------
+# Write make rule to standard output
+# ----------------------------------------------------------------------
+#
+
+set fromdir [file dirname $srcfile]
+
+if {$outfile == ""} {
+    set out stdout
+} else {
+    set out [open $outfile "w"]
+}
+
+foreach target $targets {
+    puts -nonewline $out "$target "
+}
+puts -nonewline $out ":"
+
+foreach prereq [lsort [array names prereqs]] {
+    puts $out " \\"
+    puts -nonewline $out " \t"
+    puts -nonewline $out [makepath $fromdir $prereq $relbase $pathtype]
+}
+
+puts $out ""
+
+if {$outfile == ""} {
+    close $out
+}

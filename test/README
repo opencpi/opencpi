@@ -1,0 +1,105 @@
+
+----------------------------------------------------------------------
+CPI TEST SUITE
+----------------------------------------------------------------------
+
+This directory contains the test suite for CPI.
+
+
+----------------------------------------------------------------------
+1. Running the entire test suite
+----------------------------------------------------------------------
+
+The entire test suite is run using:
+
+  make -f Makefile.cpi test
+
+A new directory "log-<timestamp>" is created.  Each test is run; its
+standard output and standard error are redirected to a log file.  If
+a test completes successfully, its log file is removed so that only
+the log files of skipped or failed tests remain.
+
+Eventually, a test report is written to the "run-all-tests.log" file.
+
+Note that the test suite must be built separately before it is run.
+(This is not implicit, because in the case of cross-compilation, the
+test suite must be built on the development host and is later run on
+the target.)
+
+----------------------------------------------------------------------
+2. Running a single test
+----------------------------------------------------------------------
+
+To run a single test, use:
+
+  make -f Makefile.cpi test TESTS="<test>"
+
+Where <test> is the file that implements the test.
+
+In this case, the test output is not redirected to a file.  A single
+status line is printed at the end indicating whether the test has
+passed, failed or was skipped.
+
+
+----------------------------------------------------------------------
+3. Running a set of tests
+----------------------------------------------------------------------
+
+To run a set of tests, use
+
+  make -f Makefile.cpi test TESTS="<test1> <test2> ..."
+
+Where <test1> etc. are the files that implement the tests.
+
+Like when running the entire test suite, a new directory is created
+to contain the test logs and the overall test report.
+
+
+----------------------------------------------------------------------
+4. Implementing a test
+----------------------------------------------------------------------
+
+Any executable file in the directory hiearchy under the "test"
+directory whose name begins with "test" is considered a test.  Adding
+to the test suite involves writing a new script or executable, naming
+it "test*", and placing it within this directory hierarchy.
+
+A test's status is communicated using its return code:
+
+- If the test returns 0, it succeeded.
+- If the test returns 2, it was skipped.
+- If the test returns any other code, it failed.
+
+A test should return 2 if the test can not be performed in the current
+configuration.  (The rationale for using "2" for skipped instead of 1
+is that most shell commands fail with a return code of 1, so it seemed
+to make sense to stick to the convention that "1" means failed.)
+
+All settings from MakeVars.cpi are exported as environment variables
+before the test is run, so the test can use these variables. E.g.,
+tests should use the $CPIDIR and $OUTDIR variables to locate any
+executables and can use $SYSTEM to decide whether they can run or
+not.
+
+Tests shall not require user interaction and shall not hang.
+
+Tests may assume that the current working directory is set to the
+directory that contains the test.
+
+To avoid side effects, a test should clean up after itself and remove
+all processes and files that it created.
+
+Tests that require compiled code have two options:
+
+- Tie into the CPI build system by providing a Makefile.cpi file two
+  directory levels below the test directory.
+- Provide its own Makefile (without the .cpi extension).
+
+At compile time (or whenever doing a "make -f Makefile.cpi build" in
+the test directory), all of these makefiles are executed.
+
+To support cross-compilation, it is highly recommended that makefiles
+take advantage of the $(OUTDIR) variable from MakeVars.cpi to place
+compiled files into a target-specific subdirectory.
+
+All makefiles shall also provide a "clean" target.
