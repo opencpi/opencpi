@@ -20,6 +20,10 @@ Building OpenCPI with OmniOrb for x86 Linux
 
     $ make
 
+ 4. Cleaning the build
+
+    $ make distclean
+
 
 Building OpenCPI with OmniOrb for PowerPC on Timesys Linux
 ----------------------------------------------------------
@@ -42,4 +46,7 @@ Building OpenCPI with OmniOrb for PowerPC on Timesys Linux
     $ cd $CPIDIR
     $ make
 
+ 4. Cleaning the build
+
+    $ make distclean
 
