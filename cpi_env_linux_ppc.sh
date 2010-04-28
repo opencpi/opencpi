@@ -1,13 +1,12 @@
 
 # Cross-build on x86 Linux for PPC Linux
 export ORB=OMNI
-export VIEW=
 export PPP_INC=/opt/mercury/include
-export PPP_LIB=/opt/mercury/linux-MPC8641D/lib/librose.a
-export CPIDIR=/home/jmiller/projects/opencpi/cpi
+export PPP_LIB=/opt/mercury/linux-MPC8641D/lib
+export CPIDIR=/home/mpepe/projects/jcrew/i2wd/opencpi
 export SYSTEM=linux
-export MKDEPEND=/h/mpepe/bin/fpmkdepend
-export BUILDSHAREDLIBRARIES=0
+export ARCH=ppc
+export BUILDSHAREDLIBRARIES=1
 export DEBUG=1
 export ASSERT=1
 export USE_CPIP_SIMULATION=0
@@ -17,7 +16,8 @@ export HOST_ROOT=/opt/TAO/5.6.6/linux-x86_64-gcc/ACE_wrappers
 export LD_LIBRARY_PATH=$HOST_ROOT/lib:$LD_LIBRARY_PATH
 export CROSS_HOST=ppc86xx-linux
 export CROSS_BUILD_BIN=/opt/timesys/toolchains/$CROSS_HOST/bin
-export OMNIDIR=/usr/local/
-export OUTDIR=$SYSTEM-ppc-bin
+export OMNIDIR=/opt/omniORB
+export OMNI_IDL_DIR=/opt/omniORB/idl
+export OUTDIR=$SYSTEM-$ARCH-bin
 PATH=$PATH:~/bin
 

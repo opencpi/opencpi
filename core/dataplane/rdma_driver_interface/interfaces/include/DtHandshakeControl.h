@@ -1,17 +1,17 @@
 // Copyright (c) 2009 Mercury Federal Systems.
-// 
+//
 // This file is part of OpenCPI.
-// 
+//
 // OpenCPI is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // OpenCPI is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public License
 // along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -19,8 +19,8 @@
  * Abstact:
  *   This file contains the class that controls the setup for handshake within the CPI transfer protocol.
  *
- * Revision History: 
- * 
+ * Revision History:
+ *
  *    Author: John F. Miller
  *    Date: 1/2005
  *    Revision Detail: Created
@@ -35,30 +35,30 @@
 
 namespace DataTransfer {
 
-  // This is the const value that is used to determine if a SMB transport 
+  // This is the const value that is used to determine if a SMB transport
   // is up and running
   const CPI::OS::uint64_t UpAndRunningMarker = 0x51abac;
-  const CPI::OS::uint32_t BufferEmptyFlag    = 0x0fffffff; 
+  const CPI::OS::uint32_t BufferEmptyFlag    = 0x0fffffff;
 
   // Token definition
   typedef CPI::OS::int32_t ControlToken;
   typedef CPI::OS::int32_t BooleanToken;
 
-  
+
   /**********************************
    *  SMB communications structures
    *
    *	 This structure is used to make inband requests to other SMB's.
-   *    We use our mailbox id to index into our local SMB as the output 
-   *  of our request.  A non-zero in the request indicates that a request 
+   *    We use our mailbox id to index into our local SMB as the output
+   *  of our request.  A non-zero in the request indicates that a request
    *  is in process.  If this local SMB is used in a multi-threaded environment
    *  this structure needs mutex protection.
    *********************************/
   const int GetPortOffsets = 1;
-  
+
   struct ContainerComms {
 
-    enum ReqTypeIds { 
+    enum ReqTypeIds {
       NoRequest = 0,
       ReqShadowRstateOffset=1,
       ReqInputOffsets=2,
@@ -71,7 +71,7 @@ namespace DataTransfer {
       ReqTypeIds         type;
       CPI::OS::uint32_t  pad;
     };
-	 
+
     struct RequestUpdateCircuit {
       ReqTypeIds         type;
       CPI::OS::uint32_t  pad;
@@ -89,26 +89,26 @@ namespace DataTransfer {
     struct RequestShadowRstateOffset {
       ReqTypeIds         type;
       CPI::OS::uint32_t  pad;
-      CPI::OS::uint32_t  circuitId;			            
-      CPI::OS::uint32_t  portId;				
+      CPI::OS::uint32_t  circuitId;
+      CPI::OS::uint32_t  portId;
       CPI::OS::uint32_t  pad1;
-      char               url[128];                   
+      char               url[128];
     };
 
     struct RequestInputOffsets {
       ReqTypeIds         type;
       CPI::OS::uint32_t  pad;
-      CPI::OS::uint32_t  circuitId;			            
-      CPI::OS::uint32_t  portId;				
+      CPI::OS::uint32_t  circuitId;
+      CPI::OS::uint32_t  portId;
       CPI::OS::uint32_t       pad1;
-      char               url[128];                   
+      char               url[128];
     };
 
     struct RequestOutputControlOffset {
       ReqTypeIds                type;
       CPI::OS::uint32_t         pad;
-      CPI::OS::uint32_t  circuitId;			            
-      CPI::OS::uint32_t  portId;				
+      CPI::OS::uint32_t  circuitId;
+      CPI::OS::uint32_t  portId;
       char                      shadow_end_point[128];       // Output endpoint
     };
 
@@ -130,7 +130,7 @@ namespace DataTransfer {
       RequestNewConnection        reqNewConnection;
       RequestUpdateCircuit        reqUpdateCircuit;
     };
-	  
+
     struct MailBox {
       RequestTypes            request;
       CPI::OS::int32_t	      error_code;
@@ -138,10 +138,10 @@ namespace DataTransfer {
       CPI::OS::int32_t	      return_offset;
       CPI::OS::uint32_t	      return_size;
     };
-	  
+
     CPI::OS::int64_t	       upAndRunning;
     MailBox		       mailBox[MAX_SYSTEM_SMBS];
-	  
+
   };
 
 
@@ -164,7 +164,7 @@ namespace DataTransfer {
     // buffer full token
     CPI::OS::int32_t   bufferFull;
   };
-  
+
 
   struct BufferShape
   {
@@ -176,7 +176,7 @@ namespace DataTransfer {
 
     /* Number of dimensions */
     CPI::OS::uint32_t ndims;
-  
+
     /* Data shape size */
     CPI::OS::uint32_t dataShape[3];
 
@@ -206,10 +206,9 @@ namespace DataTransfer {
    *********************************/
   const unsigned int ZeroCopyReady = 0x10000000;
 
-#define N_BYTES_TRANSFERED(v) ( v & 0xffffffff )
-#define DECODE_OPCODE(v) ( (v>>32) & 0xffffffff )
-#define SET_BYTES_TRANSFERED(l,bytes) l = ((l & 0xffffffff00000000) | bytes);
-
+#define N_BYTES_TRANSFERED(v) ( v & 0xffffffffUL )
+#define DECODE_OPCODE(v) ( (v>>32) & 0xffffffffUL )
+#define SET_BYTES_TRANSFERED(l,bytes) l = ((l & 0xffffffff00000000ULL) | bytes);
 
   struct BufferMetaData {
     CPI::OS::uint64_t        cpiMetaDataWord;      // CPI compatible metadata word

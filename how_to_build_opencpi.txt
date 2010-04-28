@@ -32,8 +32,14 @@ Building OpenCPI with OmniOrb for PowerPC on Timesys Linux
 
     $ . cpi_env_linux_ppc.sh
 
+ 3. Build the RDMA PPP drivers
+
+    $ $CPIDIR/adapt/drivers/rdma
+    $ make -f Makefile.cpi
+
  3. Start the build.
 
+    $ cd $CPIDIR
     $ make
 
 

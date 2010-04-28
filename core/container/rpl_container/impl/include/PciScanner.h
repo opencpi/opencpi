@@ -24,7 +24,7 @@ namespace CPI {
     const char *
       search(const char **exclude,
 	     unsigned vendor, unsigned device, unsigned pciClass, unsigned subClass,
-		       Found &found, unsigned &count);
+		       Found found, unsigned &count);
   }
 }
 #endif

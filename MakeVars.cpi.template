@@ -225,7 +225,9 @@ WINNT_TOOLCHAIN = msvc
 # ----------------------------------------------------------------------
 #
 
+ifeq "$(ORB)" ""
 ORB = TAO
+endif
 
 #
 # ----------------------------------------------------------------------
@@ -265,7 +267,10 @@ TAO_DEBUG = 1
 #
 
 ifeq ($(SYSTEM),linux)
+ifeq "$(ACE_ROOT)" ""
 ACE_ROOT=/opt/local/TAO/5.6.6/linux-x86-gcc/ACE_wrappers
+endif
+
 TAO_ROOT=$(ACE_ROOT)/TAO
 TAO_BIN=$(ACE_ROOT)/bin
 ACE_LIB=$(ACE_ROOT)/lib
@@ -274,8 +279,12 @@ ACE_INC=$(ACE_ROOT)
 TAO_INC=$(TAO_ROOT)
 ORBSVCS=$(TAO_ROOT)/orbsvcs
 else
+ifeq "$(ACE_ROOT)" ""
 ACE_ROOT=/opt/local/TAO/5.6.6/vxworks-ppc8548-gcc/ACE_wrappers
+endif
+ifeq "$(HOST_ROOT)" ""
 HOST_ROOT=/opt/local/TAO/5.6.6/linux-x86-gcc/ACE_wrappers
+endif
 TAO_ROOT=$(ACE_ROOT)/TAO
 TAO_BIN=$(HOST_ROOT)/bin
 ACE_LIB=$(ACE_ROOT)/lib

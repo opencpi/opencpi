@@ -85,15 +85,15 @@ CPPSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsub
 ASMSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.asm,$(FACILITIES))))
 
 ifneq ($(OBJDIR),.)
-OBJECTS = $(patsubst %.c,$(OBJDIR)/%.obj,$(notdir $(CSOURCES))) \
+OBJECTS = $(sort $(patsubst %.c,$(OBJDIR)/%.obj,$(notdir $(CSOURCES))) \
 	$(patsubst %.cxx,$(OBJDIR)/%.obj,$(notdir $(CXXSOURCES))) \
 	$(patsubst %.cpp,$(OBJDIR)/%.obj,$(notdir $(CPPSOURCES))) \
-	$(patsubst %.asm,$(OBJDIR)/%.obj,$(notdir $(ASMSOURCES)))
+	$(patsubst %.asm,$(OBJDIR)/%.obj,$(notdir $(ASMSOURCES))))
 else
-OBJECTS = $(patsubst %.c,%.obj,$(CSOURCES)) \
+OBJECTS = $(sort $(patsubst %.c,%.obj,$(CSOURCES)) \
 	$(patsubst %.cxx,%.obj,$(CXXSOURCES)) \
 	$(patsubst %.cpp,%.obj,$(CPPSOURCES)) \
-	$(patsubst %.asm,%.obj,$(ASMSOURCES))
+	$(patsubst %.asm,%.obj,$(ASMSOURCES)))
 endif
 
 .SUFFIXES:
@@ -256,7 +256,7 @@ clean distclean:
 	-rm -f $(OBJDIR)/*vxdkm-ctdc* $(OBJDIR)/*.vxe $(OBJDIR)/*.exe $(OBJDIR)/*.obj $(OBJDIR)/*.out $(OBJDIR)/*.map $(OBJDIR)/*.o $(OBJDIR)/*.so $(OBJDIR)/*.ilk \
 		$(OBJDIR)/*.sbr $(OBJDIR)/*.suo $(OBJDIR)/*.sln $(OBJDIR)/*.pdb $(OBJDIR)/*.bsc $(OBJDIR)/core* $(OBJDIR)/*.d $(OBJDIR)/*~
 	-rm -f $(WINLIB) $(WINDLL) $(UNIXLIB) $(UNIXSHLIB) $(VXWORKSDKM)
-	-if test "x$(OUTDIR)" != "x" ; then rmdir $(OUTDIR) ; fi
+	-if test "x$(OUTDIR)" != "x" ; then rm -rf $(OUTDIR) ; fi
 	find . -name '*~' -exec rm {} \;
-	rm  -f $(CPIDIR)/lib/*.so
+	rm -rf $(CPIDIR)/lib/*.so;
 

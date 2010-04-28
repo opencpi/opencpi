@@ -1,17 +1,17 @@
 # Copyright (c) 2009 Mercury Federal Systems.
-# 
+#
 # This file is part of OpenCPI.
-# 
+#
 # OpenCPI is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # OpenCPI is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Lesser General Public License
 # along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -22,22 +22,22 @@ TRANSFER_DRIVERS +=  $(TX_TRANSFER_LIBS)
 ALLINC += $(WCI_API_EXPORTS) $(CPIOS_EXPORTS) \
  $(UTIL_EXPORTS) \
  $(DATA_TRANSFER_EXPORTS) $(DATA_TRANSPORT_EXPORTS) \
- $(CONTAINER_EXPORTS) /opt/mercury/include/
+ $(CONTAINER_EXPORTS) $(PPP_INC)
 
 ifeq ($(BUILDSHAREDLIBRARIES),0)
 ifeq ($(CROSS_HOST),ppc86xx-linux)
 DYNOBJS += ../../../cp289_container/$(OUTDIR)/CpiContainerDriver.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPCIPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtSocketsXfer.obj \
-	/home/jmiller/projects/opencpi/jcrew/adapt/drivers/rdma/$(OUTDIR)/DtPPP_PioXfer.obj \
-	/home/jmiller/projects/opencpi/jcrew/adapt/drivers/rdma/$(OUTDIR)/DtPPP_DMAXfer.obj 
+	$(CPIDIR)/core/dataplane/rdma_drivers/$(OUTDIR)/DtPioXfer.obj \
+	$(CPIDIR)/core/dataplane/rdma_drivers/$(OUTDIR)/DtPCIPioXfer.obj \
+	$(CPIDIR)/core/dataplane/rdma_drivers/$(OUTDIR)/DtSocketsXfer.obj \
+	$(CPIDIR)/adapt/drivers/rdma/$(OUTDIR)/DtPPP_PioXfer.obj \
+	$(CPIDIR)/adapt/drivers/rdma/$(OUTDIR)/DtPPP_DMAXfer.obj
 else
 DYNOBJS += ../../../cp289_container/$(OUTDIR)/CpiContainerDriver.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPCIPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPioXfer.obj 
+	$(CPIDIR)/core/dataplane/rdma_drivers/$(OUTDIR)/DtPCIPioXfer.obj \
+	$(CPIDIR)/core/dataplane/rdma_drivers/$(OUTDIR)/DtPioXfer.obj
 
-#	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtSocketsXfer.obj 
+#	$(CPIDIR)/core/dataplane/rdma_drivers/$(OUTDIR)/DtSocketsXfer.obj
 endif
 endif
 
@@ -47,11 +47,13 @@ ALLLIBS += $(CP289_CONTAINER_LIBS) $(CONTAINER_LIBS) $(DATA_TRANSPORT_LIBS) \
 
 #FOR TEST ONLY !!
 ifeq ($(CROSS_HOST),ppc86xx-linux)
-ALLLIBS +=  /home/jmiller/projects/opencpi/jcrew/adapt/drivers/rdma/rdma /h/jmiller/projects/opencpi/rose/lib/rose \
-	 $(UTIL_LIBS) $(LOGGER_LIBS) $(CPIOS_LIBS)
+ALLLIBS += $(CPIDIR)/adapt/drivers/rdma/rdma $(UTIL_LIBS) $(LOGGER_LIBS) $(CPIOS_LIBS)
+
+SYSLIBS += $(PPP_LIB)/rose
+
 endif
 
-	
+
 
 
 

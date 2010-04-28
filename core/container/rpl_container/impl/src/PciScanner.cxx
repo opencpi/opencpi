@@ -95,10 +95,10 @@ namespace CPI {
 		  bar->addressSize = 64;
 		else
 		  err = "Invalid address space indication";
-	      }			  
+	      }
 #if 0
 	      printf("   BAR %d: 0x%llx to 0x%llx (%lu%s %db %s %s)\n",
-		     i, bottom, top, 
+		     i, bottom, top,
 		     bar->size >= 1024 ? bar->size/1024 : bar->size,
 		     bar->size >= 1024 ? "K" : "",
 		     bar->addressSize, bar->io ? "io":"mem",
@@ -118,9 +118,9 @@ namespace CPI {
     const char *
     search(const char **exclude,
 	   unsigned theVendor, unsigned theDevice, unsigned theClass, unsigned theSubClass,
-	   Found &found, unsigned &count) {
+	   Found found, unsigned &count) {
       DIR *pcid = opendir(PCIDIR);
-      if (!pcid) 
+      if (!pcid)
 	return "can't open the " PCIDIR " directory";
       struct dirent *ent;
       const char *err = 0;
