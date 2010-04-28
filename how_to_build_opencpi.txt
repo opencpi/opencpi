@@ -1,0 +1,39 @@
+
+Contents
+--------
+
+ 1. Building OpenCPI with OmniOrb for x86 Linux
+ 2. Building OpenCPI with OmniOrb for PowerPC on Timesys Linux
+
+Building OpenCPI with OmniOrb for x86 Linux
+-------------------------------------------
+
+ 1. Enter the OpenCPI source code directory.
+
+    $ cd <path to OpenCPI source code>
+
+ 2. Setup your environment
+
+    $ . cpi_env_linux_x86.sh
+
+ 3. Start the build.
+
+    $ make
+
+
+Building OpenCPI with OmniOrb for PowerPC on Timesys Linux
+----------------------------------------------------------
+
+ 1. Enter the OpenCPI source code directory.
+
+    $ cd <path to OpenCPI source code>
+
+ 2. Setup your environment
+
+    $ . cpi_env_linux_ppc.sh
+
+ 3. Start the build.
+
+    $ make
+
+
