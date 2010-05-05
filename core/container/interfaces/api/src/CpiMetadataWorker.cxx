@@ -36,29 +36,29 @@ namespace CPI {
   namespace CC = CPI::Container;
   namespace Metadata {
 
-    Worker::Worker(const char *workerMetadata) 
+    Worker::Worker(const char *workerMetadata)
       : myProps( NULL )
     {
       if ( ! workerMetadata ) {
-	return;
+        return;
       }
       if (decode(workerMetadata))
-	throw CC::ApiError("Worker xml metadata invalid", 0);
+        throw CC::ApiError("Worker xml metadata invalid", 0);
     }
     Worker::Worker(ezxml_t xml) {
       if (decode(xml))
-	throw CC::ApiError("Worker encoded metadata invalid", 0);
+        throw CC::ApiError("Worker encoded metadata invalid", 0);
     }
     Worker::~Worker() {
       if ( myProps ) {
-	delete [] (char *)myProps;
+        delete [] (char *)myProps;
       }
     }
     unsigned Worker::whichProperty(const char *id) {
       Property *p = myProps;
       for (unsigned n=0; n < nProps; n++, p++)
-	if (!strcmp(p->name, id))
-	  return n;
+        if (!strcmp(p->name, id))
+          return n;
       throw CC::ApiError("Unknown property: \"", id, "\"", 0);
     }
     Property &Worker::findProperty(const char *id) {
@@ -67,8 +67,8 @@ namespace CPI {
     Port *Worker::findPort(const char *id) {
       Port *p = myPorts;
       for (unsigned int n=nPorts; n; n--, p++) {
-	if ( strcmp(p->name,id)==0 )
-	  return p;
+        if ( strcmp(p->name,id)==0 )
+          return p;
       }
       return 0;
     }
@@ -92,28 +92,28 @@ namespace CPI {
       char *cp;
 
       n = sscanf (metadata, "%u/%u/%u/%u/%u/%u/%u$",
-		  &nPorts, &nProps, &size, &nMembers, &nameSize,
-		  &nTests, &nTestPs);
+                  &nPorts, &nProps, &size, &nMembers, &nameSize,
+                  &nTests, &nTestPs);
 
       if (n == 5) { // For backwards compatibility
-	nTests = nTestPs = 0;
+        nTests = nTestPs = 0;
       }
       else if (n != 7) {
-	return true;
+        return true;
       }
 
       if (!(cp = strchr(metadata, '$'))) {
-	return true;
+        return true;
       }
       cp++;
 
       // Compute allocation to hold all properties, names, types etc.
       unsigned int memSize = (nProps * sizeof(Property) +
-			      nMembers * sizeof(Property::SimpleType) +
-			      nPorts * sizeof(Port) + 
-			      nTests * sizeof(Test) +
-			      nTestPs * sizeof(unsigned int) +
-			      nameSize);
+                              nMembers * sizeof(Property::SimpleType) +
+                              nPorts * sizeof(Port) +
+                              nTests * sizeof(Test) +
+                              nTestPs * sizeof(unsigned int) +
+                              nameSize);
       Property *properties = (Property *) new char[memSize];
       Property::SimpleType *s = (Property::SimpleType *)(properties + nProps);
       Port *ports = (Port *)(s + nMembers);
@@ -125,107 +125,107 @@ namespace CPI {
       Property *p = properties;
       char c[10];
       for (unsigned n = 0; n <  nProps; p++, n++) {
-	if (!*cp || sscanf(cp, "%[^~]~%lu/%lu/%lu/%lu/%[^|]|",
-			   names, &p->numMembers, &p->sequence_size, &p->offset, &p->data_offset, c) != 6)
-	  break;
-	p->name = names;
-	p->ordinal = n;
-	names += strlen(names) + 1;
-	cpiAssert ((unsigned)(names - (char *) properties) <= memSize);
-	p->types = s;
-	p->is_sequence = c[0] == '1';
-	p->is_struct = c[1] == '1';
-	p->is_readable = c[2] == '1';
-	p->is_writable = c[3] == '1';
-	p->read_error = c[4] == '1';
-	p->write_error = c[5] == '1';
-	p->read_sync = c[6] == '1';
-	p->write_sync = c[7] == '1';
-	p->is_test = c[8] == '1';
-	if (!(cp = strchr(cp, '|')))
-	  break;
-	cp++;
-	for (nMembers = p->numMembers; nMembers; nMembers--) {
-	  char c;
-	  if (sscanf(cp, "%c%lu/", &c, &s->size) != 2)
-	    break;
-	  s->type = (Property::Type)(c - 'a');
-	  s++;
-	  if (!(cp = strchr(cp, '/')))
-	    break;
-	  cp++;
-	}
-	if (nMembers || *cp++ != '$')
-	  break;
-      } 
+        if (!*cp || sscanf(cp, "%[^~]~%lu/%lu/%lu/%lu/%[^|]|",
+                           names, &p->numMembers, &p->sequence_size, &p->offset, &p->data_offset, c) != 6)
+          break;
+        p->name = names;
+        p->ordinal = n;
+        names += strlen(names) + 1;
+        cpiAssert ((unsigned)(names - (char *) properties) <= memSize);
+        p->types = s;
+        p->is_sequence = c[0] == '1';
+        p->is_struct = c[1] == '1';
+        p->is_readable = c[2] == '1';
+        p->is_writable = c[3] == '1';
+        p->read_error = c[4] == '1';
+        p->write_error = c[5] == '1';
+        p->read_sync = c[6] == '1';
+        p->write_sync = c[7] == '1';
+        p->is_test = c[8] == '1';
+        if (!(cp = strchr(cp, '|')))
+          break;
+        cp++;
+        for (nMembers = p->numMembers; nMembers; nMembers--) {
+          char c;
+          if (sscanf(cp, "%c%lu/", &c, &s->size) != 2)
+            break;
+          s->type = (Property::Type)(c - 'a');
+          s++;
+          if (!(cp = strchr(cp, '/')))
+            break;
+          cp++;
+        }
+        if (nMembers || *cp++ != '$')
+          break;
+      }
       if (n) {
-	delete [] (char*)properties;
-	return true;
+        delete [] (char*)properties;
+        return true;
       }
 
       // Decode each port
       Port *port = ports;
       for (n = nPorts; n; n--, port++) {
-	if (!*cp || sscanf(cp, "%[^~]~%[^|]|", names, c) != 2)
-	  break;
-	port->name = names;
-	names += strlen(names) + 1;
-	port->provider = c[0] == '1';
-	port->twoway = c[1] == '1';
-	if (!(cp = strchr(cp, '|')))
-	  break;
-	cp++;
+        if (!*cp || sscanf(cp, "%[^~]~%[^|]|", names, c) != 2)
+          break;
+        port->name = names;
+        names += strlen(names) + 1;
+        port->provider = c[0] == '1';
+        port->twoway = c[1] == '1';
+        if (!(cp = strchr(cp, '|')))
+          break;
+        cp++;
       }
       if (n) {
-	delete [] (char*)properties;
-	return true;
+        delete [] (char*)properties;
+        return true;
       }
 
       // Decode each test
       Test *test = tests;
       for (n = nTests; n; n--, test++) {
-	if (!*cp || sscanf (cp, "%u/%u/%u|", &test->testId, &test->numInputs, &test->numResults) != 3) {
-	  break;
-	}
-	if (!(cp = strchr (cp, '|'))) {
-	  break;
-	}
-	cp++;
+        if (!*cp || sscanf (cp, "%u/%u/%u|", &test->testId, &test->numInputs, &test->numResults) != 3) {
+          break;
+        }
+        if (!(cp = strchr (cp, '|'))) {
+          break;
+        }
+        cp++;
 
-	test->inputValues = testps;
-	for (nMembers = test->numInputs; nMembers; nMembers--, testps++) {
-	  if (sscanf (cp, "%u/", testps) != 1) {
-	    break;
-	  }
-	  if (!(cp = strchr (cp, '/'))) {
-	    break;
-	  }
-	  cp++;
-	}
+        test->inputValues = testps;
+        for (nMembers = test->numInputs; nMembers; nMembers--, testps++) {
+          if (sscanf (cp, "%u/", testps) != 1) {
+            break;
+          }
+          if (!(cp = strchr (cp, '/'))) {
+            break;
+          }
+          cp++;
+        }
 
-	if (*cp++ != '|') {
-	  break;
-	}
+        if (*cp++ != '|') {
+          break;
+        }
 
-	test->resultValues = testps;
-	for (nMembers = test->numResults; nMembers; nMembers--, testps++) {
-	  if (sscanf (cp, "%u/", testps) != 1) {
-	    break;
-	  }
-	  if (!(cp = strchr (cp, '/'))) {
-	    break;
-	  }
-	  cp++;
-	}
+        test->resultValues = testps;
+        for (nMembers = test->numResults; nMembers; nMembers--, testps++) {
+          if (sscanf (cp, "%u/", testps) != 1) {
+            break;
+          }
+          if (!(cp = strchr (cp, '/'))) {
+            break;
+          }
+          cp++;
+        }
 
-	if (*cp++ != '$') {
-	  break;
-	}
+        if (*cp++ != '$') {
+          break;
+        }
       }
 
       if (n) {
-	delete [] (char*)properties;
-	return true;
+        delete [] (char*)properties;
+        return true;
       }
 
       myPorts = ports;
@@ -236,34 +236,36 @@ namespace CPI {
     static bool decodeMember(ezxml_t x, Property::SimpleType *s, unsigned &maxAlign) {
       static const char *tnames[] = {
 #define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) #pretty,
-	"None",
-	CPI_PROPERTY_DATA_TYPES
-	0
+        "None",
+        CPI_PROPERTY_DATA_TYPES
+        0
       };
       const char *type = ezxml_attr(x, "type");
+      printf ( "decode(%d) -%s-\n", __LINE__, type );
+
       if (!type)
-	return true;
+        return true;
       for (unsigned i = 0; tnames[i]; i++)
-	if (strcmp(tnames[i], type) == 0) {
-	  s->type = (Property::Type)i;
-	  const char *a = ezxml_attr(x, "size");
-	  s->size = a ? strtoul(a, NULL, 10) : 1;
-	  if (Property::tsize[i] > maxAlign)
-	    maxAlign = Property::tsize[i];
-	  return false;
-	}
+        if (strcmp(tnames[i], type) == 0) {
+          s->type = (Property::Type)i;
+          const char *a = ezxml_attr(x, "size");
+          s->size = a ? strtoul(a, NULL, 10) : 1;
+          if (Property::tsize[i] > maxAlign)
+            maxAlign = Property::tsize[i];
+          return false;
+        }
       return true;
     }
     static bool getBoolean(ezxml_t x, const char *name) {
       const char *a = ezxml_attr(x, name);
       if (a) {
-	if (!strcmp(a, "true") || !strcmp(a, "1"))
-	  return true;
-	else if (!strcmp(a, "false")  || !strcmp(a, "0"))
-	  return false;
-	throw CC::ApiError("Bad boolean value: \n", a, "\"", 0);
+        if (!strcmp(a, "true") || !strcmp(a, "1"))
+          return true;
+        else if (!strcmp(a, "false")  || !strcmp(a, "0"))
+          return false;
+        throw CC::ApiError("Bad boolean value: \n", a, "\"", 0);
       } else
-	return false; // booleans default to false;
+        return false; // booleans default to false;
     }
     inline void roundUp(unsigned offset, unsigned n) {
       offset += n - 1;
@@ -272,30 +274,31 @@ namespace CPI {
     bool Property::decode(ezxml_t x, SimpleType *&s) {
       name = ezxml_attr(x, "name");
       if (!name)
-	  return true;
+          return true;
       const char *a = ezxml_attr(x, "sequenceSize");
+      printf ( "decode(%d) -%s-\n", __LINE__, a );
       if (a) {
-	is_sequence = true;
-	sequence_size = strtoul(a, NULL, 10);
+        is_sequence = true;
+        sequence_size = strtoul(a, NULL, 10);
       } else {
-	is_sequence = false;
-	sequence_size = 1;
+        is_sequence = false;
+        sequence_size = 1;
       }
       types = s;
       maxAlign = 4;
       ezxml_t y = ezxml_child(x, "member");
       if (y) {
-	is_struct = true;
-	unsigned i;
-	for (i = 0; y; i++, y = ezxml_next(y))
-	  if (decodeMember(y, s++, maxAlign))
-	    return true;
-	numMembers = i;
+        is_struct = true;
+        unsigned i;
+        for (i = 0; y; i++, y = ezxml_next(y))
+          if (decodeMember(y, s++, maxAlign))
+            return true;
+        numMembers = i;
       } else {
-	is_struct = false;
-	if (decodeMember(x, s++, maxAlign))
-	  return true;
-	numMembers = 1;
+        is_struct = false;
+        if (decodeMember(x, s++, maxAlign))
+          return true;
+        numMembers = 1;
       }
       is_readable = getBoolean(x, "readable");
       is_writable = getBoolean(x, "writable");
@@ -316,27 +319,28 @@ namespace CPI {
       roundUp(theOffset, maxAlign);
       offset = theOffset;
       if (is_sequence)
-	theOffset += maxAlign;
+        theOffset += maxAlign;
       SimpleType *st = types;
       unsigned dataOffset = theOffset;
       for (unsigned m = 0; m < numMembers; m++, st++) {
-	roundUp(theOffset, tsize[st->type]);
-	if (st->type == CPI_String)
-	  theOffset += st->size + 1;
-	else
-	  theOffset += tsize[st->type];
+        roundUp(theOffset, tsize[st->type]);
+        if (st->type == CPI_String)
+          theOffset += st->size + 1;
+        else
+          theOffset += tsize[st->type];
       }
       if (is_sequence) {
-	roundUp(theOffset, maxAlign);
-	theOffset += dataOffset + sequence_size * (theOffset - dataOffset);
+        roundUp(theOffset, maxAlign);
+        theOffset += dataOffset + sequence_size * (theOffset - dataOffset);
       }
       size = theOffset - offset;
     }
     bool Port::decode(ezxml_t x, int pid) {
       name = ezxml_attr(x, "name");
+      printf ( "decode(%d) -%s-\n", __LINE__, name );
       m_pid = pid;
       if ( name == NULL )
-	return true;
+        return true;
       twoway = getBoolean(x, "twoWay");
       provider = getBoolean(x, "provider");
       myXml = x;
@@ -349,45 +353,45 @@ namespace CPI {
       // First pass - just count for allocation
       nProps = nPorts = nTests = nMembers = 0;
       for (x = ezxml_child(xml, "property"); x; x = ezxml_next(x)) {
-	nProps++;      
-	ezxml_t y = ezxml_child(xml, "member");
-	if (y)
-	  do 
-	    nMembers++;
-	  while ((y = ezxml_next(y)));
-	else
-	  nMembers++;
+        nProps++;
+        ezxml_t y = ezxml_child(xml, "member");
+        if (y)
+          do
+            nMembers++;
+          while ((y = ezxml_next(y)));
+        else
+          nMembers++;
       }
       for (x = ezxml_child(xml, "port"); x; x = ezxml_next(x))
-	nPorts++;      
+        nPorts++;
       unsigned int memSize = (nProps * sizeof(Property) +
-			      nMembers * sizeof(Property::SimpleType) +
-			      nPorts * sizeof(Port));
+                              nMembers * sizeof(Property::SimpleType) +
+                              nPorts * sizeof(Port));
       Property *prop = myProps = (Property *) new char[memSize];
       Property::SimpleType *s = (Property::SimpleType *)(myProps + nProps);
       Port *port = myPorts = (Port *)(s + nMembers);
       // Second pass - decode all information
       for (x = ezxml_child(xml, "property"); x; x = ezxml_next(x), prop++)
-	if (prop->decode(x, s))
-	  throw CC::ApiError("Invalid xml property description", 0); // can't decode property
+        if (prop->decode(x, s))
+          throw CC::ApiError("Invalid xml property description", 0); // can't decode property
       // Third pass - determine offsets and total sizes
       unsigned offset = 0;
       prop = myProps;
       for (unsigned i = 0; i < nProps; i++, prop++)
-	prop->align(i, offset);
+        prop->align(i, offset);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
       int pid=0;
       for (x = ezxml_child(xml, "port"); x; x = ezxml_next(x), port++) {
-	if (port->decode(x,pid)) {
-	  throw CC::ApiError("Invalid xml port description", 0);
-	}
+        if (port->decode(x,pid)) {
+          throw CC::ApiError("Invalid xml port description", 0);
+        }
       }
       // Control operations
       const char *ops = ezxml_attr(xml, "controlOperations");
 #define CONTROL_OP(x, c, t, s1, s2, s3)  has##c = ops && strstr(ops, #x) != NULL;
       CPI_CONTROL_OPS
 #undef CONTROL_OP
-	return false;
+        return false;
     }
   }
 }

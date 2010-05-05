@@ -82,7 +82,7 @@ namespace CPI {
       // are any container devices supported by this driver
       // It uses a generic PCI scanner to find candidates, and when found, calls the
       // "found" method.
-      virtual unsigned search(const CPI::Util::PValue*, const char **exclude) 
+      virtual unsigned search(const CPI::Util::PValue*, const char **exclude)
 	throw (CPI::Util::EmbeddedException)
       {
 	const char *df = getenv("CPI_OCFRP_DUMMY");
@@ -100,7 +100,7 @@ namespace CPI {
       }
 
 
-      virtual CU::Device *probe(const CU::PValue *props, const char *which ) 
+      virtual CU::Device *probe(const CU::PValue *props, const char *which )
 	throw (CPI::Util::EmbeddedException)
       {
 	const char *df = getenv("CPI_OCFRP_DUMMY");
@@ -189,11 +189,11 @@ namespace CPI {
 
     // Container methods that depend on Application
     CC::Application *
-    Container::createApplication() 
+    Container::createApplication()
       throw ( CPI::Util::EmbeddedException )
     {
 
-    }      
+    }
 #endif
 
 
@@ -239,7 +239,8 @@ namespace CPI {
 	else {
 	  volatile OccpSpace *occp = (OccpSpace *)bar0;
 	  static union { char string[5]; uint32_t value; }
-	  magic1 = {{'n', 'e', 'p', 'O'}}, magic2 = {{0, 'I', 'P', 'C'}};
+//	  magic1 = {{'n', 'e', 'p', 'O'}}, magic2 = {{0, 'I', 'P', 'C'}};
+	  magic1 = {{'O', 'p', 'e', 'n'}}, magic2 = {{'C', 'P', 'I', '\0'}};
 	  //	  magic1 = {OCCP_MAGIC1}, magic2 = {OCCP_MAGIC2};
 	  if (occp->admin.magic1 != magic1.value || occp->admin.magic2 != magic2.value) {
 	    err = "Magic numbers do not match in region/bar 0";
@@ -276,7 +277,7 @@ namespace CPI {
     Container::createApplication() throw()
     {
       return new Application(*this);
-    }      
+    }
 #endif
 
 
@@ -294,7 +295,7 @@ namespace CPI {
       virtual CC::Worker &
       createWorkerX(CC::Application &a, ezxml_t impl, ezxml_t inst, CU::PValue *execProps);
     };
-    
+
     CC::Artifact & Container::
     createArtifact(const char *url, CU::PValue *artifactParams)
     {
@@ -446,12 +447,12 @@ namespace CPI {
       CC::Port &
       createOutputPort(CC::PortId portId,
 		       CPI::OS::uint32_t bufferCount,
-		       CPI::OS::uint32_t bufferSize, 
+		       CPI::OS::uint32_t bufferSize,
 		       CU::PValue* props) throw();
       CC::Port &
       createInputPort(CC::PortId portId,
 		      CPI::OS::uint32_t bufferCount,
-		      CPI::OS::uint32_t bufferSize, 
+		      CPI::OS::uint32_t bufferSize,
 		      CU::PValue* props) throw();
 
       // These property access methods are called when the fast path
@@ -651,10 +652,10 @@ namespace CPI {
       return *new Worker(app, static_cast<Container&>(*app.myParent),
 			 impl, inst, execProps);
     }
-    // This port class really has two cases: externally connected ports and 
+    // This port class really has two cases: externally connected ports and
     // internally connected ports.
     // Also ports are either user or provider.
-    // So this class takes care of all 4 cases, since the differences are so 
+    // So this class takes care of all 4 cases, since the differences are so
     // minor as to not be worth (re)factoring (currently).
     class Port : public CC::Port, WciControl {
       friend class Worker;
@@ -772,7 +773,7 @@ namespace CPI {
 	// It will be updated at connect time.
 	// FIXME: do we need to assert a preference here?
 	connectionData.data.role = CPI::RDT::NoRole;
-	connectionData.data.options = 
+	connectionData.data.options =
 	  (1 << CPI::RDT::Passive) |
 	  (1 << CPI::RDT::ActiveFlowControl) |
 	  (1 << CPI::RDT::ActiveMessage);
@@ -829,7 +830,7 @@ namespace CPI {
 	  // (thus it is a "remote buffer is empty")
 	  // This register is for writing.
 	  myDesc.emptyFlagBaseAddr =
-	    (uint8_t*)&myOcdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr; 
+	    (uint8_t*)&myOcdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr;
 	  // The nReady register is the full flag, which tells the consumer how many
 	  // full buffers there are to read/take when producer is PASSIVE
 	  // This register is for READING (in passive mode)
@@ -845,7 +846,7 @@ namespace CPI {
 	    cpiAssert((dumpFd = creat(df, 0666)) >= 0);
 	  CC::PortData *pd = this;
 	  cpiAssert(::write(dumpFd, (void *)pd, sizeof(*pd)) == sizeof(*pd));
-	}	  
+	}
 	if (getenv("CPI_OCFRP_DUMMY"))
 	  *(uint32_t*)&myOcdpRegisters->foodFace = 0xf00dface;
       }
@@ -870,9 +871,9 @@ namespace CPI {
 	switch (myRole) {
 	case CPI::RDT::ActiveFlowControl:
 	  myOcdpRole = OCDP_ACTIVE_FLOWCONTROL;
-	  myOcdpRegisters->remoteFlagBase = busAddress + 
+	  myOcdpRegisters->remoteFlagBase = busAddress +
 	    (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
-	  myOcdpRegisters->remoteFlagPitch = 
+	  myOcdpRegisters->remoteFlagPitch =
 	    (isProvider() ?
 	     other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
 	  break;
@@ -889,9 +890,9 @@ namespace CPI {
 	  myOcdpRegisters->nRemoteBuffers = other.desc.nBuffers;
 	  myOcdpRegisters->remoteBufferSize = other.desc.dataBufferPitch;
 	  myOcdpRegisters->remoteMetadataSize = OCDP_METADATA_SIZE;
-	  myOcdpRegisters->remoteFlagBase = busAddress + 
+	  myOcdpRegisters->remoteFlagBase = busAddress +
 	    ( isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
-	  myOcdpRegisters->remoteFlagPitch = 
+	  myOcdpRegisters->remoteFlagPitch =
 	    ( isProvider() ?
 	     other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
 	  break;
@@ -951,7 +952,7 @@ namespace CPI {
 	  *to = ezxml_attr(conn,"to"),     // instance with provider port
 	  *out = ezxml_attr(conn, "out"),  // user port name
 	  *in = ezxml_attr(conn, "in");    // provider port name
-	if (from && to && out && in && 
+	if (from && to && out && in &&
 	    (isProvider && !strcmp(myInstTag, to) && !strcmp(in, name) ||
 	     !isProvider && !strcmp(myInstTag, from) && !strcmp(out, name))) {
 	  // We have a connection.  See if it is to an external interconnect.  FIXME i/o later
@@ -984,14 +985,14 @@ namespace CPI {
     CC::Port &Worker::
     createOutputPort(CC::PortId portId,
 		     CPI::OS::uint32_t bufferCount,
-		     CPI::OS::uint32_t bufferSize, 
+		     CPI::OS::uint32_t bufferSize,
 		     CU::PValue* props) throw() {
       return *(Port *)0;//return *new Port(*this);
     }
     CC::Port &Worker::
     createInputPort(CC::PortId portId,
 		    CPI::OS::uint32_t bufferCount,
-		    CPI::OS::uint32_t bufferSize, 
+		    CPI::OS::uint32_t bufferSize,
 		    CU::PValue* props) throw() {
       return *(Port *)0;//      return *new Port(*this);
     }
@@ -1001,9 +1002,9 @@ namespace CPI {
     // Buffers directly used by the "user" (non-container/component) API
     class ExternalBuffer : CC::ExternalBuffer {
 
-      ExternalBuffer(CC::ExternalPort*p=NULL) 
+      ExternalBuffer(CC::ExternalPort*p=NULL)
 	: CC::ExternalBuffer(*p){}
-      
+
       friend class ExternalPort;
       ExternalPort *myExternalPort;     // which user port do we belong to
       OcdpMetadata *metadata;   // where is the metadata buffer
@@ -1039,7 +1040,7 @@ namespace CPI {
       };
 
 
-    
+
 
       Port &myPort;
       //      uint32_t nBuffers, *ready, next;
@@ -1056,7 +1057,7 @@ namespace CPI {
 	myPort(port)
       {
 	// Default is active only (host is master, never slave)
-	connectionData.data.options = 
+	connectionData.data.options =
 	  (1 << CPI::RDT::ActiveFlowControl) |
 	  (1 << CPI::RDT::ActiveMessage) |
 	  (1 << CPI::RDT::ActiveOnly);
@@ -1292,7 +1293,7 @@ namespace CPI {
       }
       void checkConnectParams() {
       }
-    }; 
+    };
 
     // FIXME make readyForRemote zero when active flow control
     void ExternalBuffer::release() {

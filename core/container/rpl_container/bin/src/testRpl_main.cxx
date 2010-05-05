@@ -17,38 +17,38 @@ namespace CPI {
     public:
       // This constructor simply registers itself. This class has no state.
       Driver() :
-	CPI::Util::Driver("OCFRP","Global",true) {
+        CPI::Util::Driver("OCFRP","Global",true) {
       }
       // This driver method is called when container-discovery happens, to see if there
       // are any container devices supported by this driver
       // It uses a generic PCI scanner to find candidates, and when found, calls the "found" method below.
-      virtual unsigned search(const CPI::Util::PValue*, const char **exclude) 
-	throw (CPI::Util::EmbeddedException)
+      virtual unsigned search(const CPI::Util::PValue*, const char **exclude)
+        throw (CPI::Util::EmbeddedException)
       {
 
-	if (getenv("CPI_OCFRP_DUMMY"))
-	  probe(0,"0");
+        if (getenv("CPI_OCFRP_DUMMY"))
+          probe(0,"0");
 
 #ifdef DONT_COMPILE
-	unsigned n = 0;
-	const char *err = PCI::search(exclude, OCFRP0_VENDOR, OCFRP0_DEVICE,
-				      OCFRP0_CLASS, OCFRP0_SUBCLASS, found, n);
+        unsigned n = 0;
+        const char *err = PCI::search(exclude, OCFRP0_VENDOR, OCFRP0_DEVICE,
+                                      OCFRP0_CLASS, OCFRP0_SUBCLASS, found, n);
 
-	if (err)
-	  fprintf(stderr, "PCI Scanner Error: %s\n", err);
-	return n;
+        if (err)
+          fprintf(stderr, "PCI Scanner Error: %s\n", err);
+        return n;
 #else
-	return 0;
+        return 0;
 #endif
       }
 
       // This driver method is called to see if a particular container device exists,
       // and if so, to instantiate a container
       virtual CPI::Util::Device *probe(const CPI::Util::PValue*, const char *which  )
-	throw (CPI::Util::EmbeddedException);
+        throw (CPI::Util::EmbeddedException);
 
       virtual ~Driver()
-	throw() {};
+        throw() {};
 
     };
 
@@ -74,124 +74,124 @@ int main(int argc, char *argv[])
   if (argc == 1) {
     fprintf(stderr, "Usage is: testRpl <options> [<container-name>]\n");
     fprintf(stderr, "  Options are:\n"
-	    "-rW[io][mfap]\t\tRole for DMA for worker W in or out\n"
-	    "-d\tProbe specific device, don't discover all\n"
-	    "-f <file>\tSpecify file to use for test data content\n"
-	    "-i <iocoiunt>\tSpecify number of message to send(default == 1)\n"
-	    "-l\t\tEnter the emulator loopback mode\n"
-	    "-m <memory> <size>\tSpecify pinned DMA memory address\n"
-	    "-n <nbufs>\tSpecify number of buffers (default == 2)\n"
+            "-rW[io][mfap]\t\tRole for DMA for worker W in or out\n"
+            "-d\tProbe specific device, don't discover all\n"
+            "-f <file>\tSpecify file to use for test data content\n"
+            "-i <iocoiunt>\tSpecify number of message to send(default == 1)\n"
+            "-l\t\tEnter the emulator loopback mode\n"
+            "-m <memory> <size>\tSpecify pinned DMA memory address\n"
+            "-n <nbufs>\tSpecify number of buffers (default == 2)\n"
             "-NW[io] <nbufs>\tSpecify number of buffers for worker W in or out\n"
-	    "\t\tOptions are: -n0o -n1i -n3o  -n4i -n6o -n0i\n"
-	    "\t\tWorker 0 is this test program's input and output\n"
-	    "-s <bufsize>\tSpecify size of buffers (default == 2048)\n"
-	    "-D <shmname>\tSpecify emulated hardware buffer shm\n"
-	    "-I <msgsize>\tSpecify size of messages (default == 16 bytes)\n"
-	    "-P <pdname>\tSpecify file to dump port data\n"
-	    "-R\tSuppress the read-back and test of what is written\n"
-	    "-o\tOutput file to write data into\n"
-	    "-a\tAcquire data from acquistion source, not file or pattern\n"
-	    "-e\tEmit data to DAC (not implemented)\n"
-	    );
+            "\t\tOptions are: -n0o -n1i -n3o  -n4i -n6o -n0i\n"
+            "\t\tWorker 0 is this test program's input and output\n"
+            "-s <bufsize>\tSpecify size of buffers (default == 2048)\n"
+            "-D <shmname>\tSpecify emulated hardware buffer shm\n"
+            "-I <msgsize>\tSpecify size of messages (default == 16 bytes)\n"
+            "-P <pdname>\tSpecify file to dump port data\n"
+            "-R\tSuppress the read-back and test of what is written\n"
+            "-o\tOutput file to write data into\n"
+            "-a\tAcquire data from acquistion source, not file or pattern\n"
+            "-e\tEmit data to DAC (not implemented)\n"
+            );
     return 1;
   }
   for (char **ap = &argv[1]; *ap; ap++)
     if (**ap == '-')
       switch ((*ap)[1]) {
       case 'f':
-	file = *++ap;
-	break;
+        file = *++ap;
+        break;
       case 'R':
-	doread = false;
-	break;
+        doread = false;
+        break;
       case 'd':
-	probe = true;
-	break;
+        probe = true;
+        break;
       case 'n':
-	{
-	  unsigned n = atoi(*++ap);
-	  for (unsigned i = 0; i < 10; i++)
-	    bufferCount[i][0] = bufferCount[i][1] = n;
-	}
-	break;
+        {
+          unsigned n = atoi(*++ap);
+          for (unsigned i = 0; i < 10; i++)
+            bufferCount[i][0] = bufferCount[i][1] = n;
+        }
+        break;
       case 'N':
-	{
-	  unsigned n = 0, i = 0;
-	  if ((*ap)[2]) {
-	    same = false;
-	    n = (*ap)[2] - '0';
-	    if ((*ap)[3] == 'o')
-	      i = 1;
-	  }
-	  bufferCount[n][i] = atoi(*++ap);
-	}
-	break;
+        {
+          unsigned n = 0, i = 0;
+          if ((*ap)[2]) {
+            same = false;
+            n = (*ap)[2] - '0';
+            if ((*ap)[3] == 'o')
+              i = 1;
+          }
+          bufferCount[n][i] = atoi(*++ap);
+        }
+        break;
       case 'D':
-	{
-	  static char buf[100];
-	  snprintf(buf, sizeof(buf), "CPI_OCFRP_DUMMY=%s", *++ap);
-	  putenv(buf);
-	}
-	break;
+        {
+          static char buf[100];
+          snprintf(buf, sizeof(buf), "CPI_OCFRP_DUMMY=%s", *++ap);
+          putenv(buf);
+        }
+        break;
       case 'P':
-	{
-	  static char buf[100];
-	  snprintf(buf, sizeof(buf), "CPI_DUMP_PORTS=%s", *++ap);
-	  putenv(buf);
-	}
-	break;
+        {
+          static char buf[100];
+          snprintf(buf, sizeof(buf), "CPI_DUMP_PORTS=%s", *++ap);
+          putenv(buf);
+        }
+        break;
       case 'i':
-	ioCount = atoi(*++ap);
-	break;
+        ioCount = atoi(*++ap);
+        break;
       case 'I':
-	ioSize = atoi(*++ap);
-	break;
+        ioSize = atoi(*++ap);
+        break;
       case 's':
-	bufferSize = atoi(*++ap);
-	break;
+        bufferSize = atoi(*++ap);
+        break;
       case '2':
-	two = true;
-	break;
+        two = true;
+        break;
       case 'l':
-	loop = true;
-	break;
+        loop = true;
+        break;
       case 'm':
-	memoryBase = atoll(*++ap);
-	memorySize = atoi(*++ap);
-	break;
+        memoryBase = atoll(*++ap);
+        memorySize = atoi(*++ap);
+        break;
       case 'a':
-	acquire = true;
-	break;
+        acquire = true;
+        break;
       case 'o':
-	ofile = *++ap;
-	break;
+        ofile = *++ap;
+        break;
       case 'r':
-	{
-	  unsigned n = 0, i = 0;
-	  if ((*ap)[2]) {
-	    n = (*ap)[2] - '0';
-	    if ((*ap)[3] == 'o')
-	      i = 1;
-	  }
-	  if ((*ap)[4])
-	    switch ((*ap)[4]) {
-	    case 'm':
-	      active[n][i] = "active";
-	      break;
-	    case 'f':
-	      active[n][i] = "flowcontrol";
-	      break;
-	    case 'p':
-	      active[n][i] = "passive";
-	      break;
-	    case 'a':
-	      active[n][i] = "activeonly";
-	      break;
-	    }
-	  else
-	    active[n][i] = "active";
-	}
-	break;
+        {
+          unsigned n = 0, i = 0;
+          if ((*ap)[2]) {
+            n = (*ap)[2] - '0';
+            if ((*ap)[3] == 'o')
+              i = 1;
+          }
+          if ((*ap)[4])
+            switch ((*ap)[4]) {
+            case 'm':
+              active[n][i] = "active";
+              break;
+            case 'f':
+              active[n][i] = "flowcontrol";
+              break;
+            case 'p':
+              active[n][i] = "passive";
+              break;
+            case 'a':
+              active[n][i] = "activeonly";
+              break;
+            }
+          else
+            active[n][i] = "active";
+        }
+        break;
       default:;
       }
     else if (!firstarg)
@@ -204,13 +204,13 @@ int main(int argc, char *argv[])
     bufferSize = ioSize;
   printf("Starting: sending %lu messages of %lu (buffer %lu)\n", ioCount, ioSize, bufferSize);
   printf("Buffer counts: 0o %lu 1i %lu 3o %lu 6i %lu 8o %lu 0i %lu\n",
-	 bufferCount[0][1], 
-	 bufferCount[1][0], bufferCount[3][1], bufferCount[6][0],
-	 bufferCount[8][1], bufferCount[0][0]);
+         bufferCount[0][1],
+         bufferCount[1][0], bufferCount[3][1], bufferCount[6][0],
+         bufferCount[8][1], bufferCount[0][0]);
   printf("Active indicators: 0o %s 1i %s 3o %s 6i %s 8o %s 0i %s\n",
-	 active[0][1], 
-	 active[1][0], active[3][1], active[6][0],
-	 active[8][1], active[0][0]);
+         active[0][1],
+         active[1][0], active[3][1], active[6][0],
+         active[8][1], active[0][0]);
   if (two)
     printf("Using two boards: %s and %s\n", firstarg, secondarg);
   // If we know there is one, try to create it.
@@ -245,26 +245,27 @@ int main(int argc, char *argv[])
     try {
       // Create an application on this container, no parameters at this time
       std::auto_ptr<CC::Application>
-	ap(rplContainer->createApplication( /* "testRPL" */ )),
-	ap2(two ? rplContainer2->createApplication( /* "testRpl2" */ ) : 0);
+        ap(rplContainer->createApplication( /* "testRPL" */ )),
+        ap2(two ? rplContainer2->createApplication( /* "testRpl2" */ ) : 0);
       CC::Application
-	&a = *ap,
-	&a2 = two ? *ap2 : a;
+        &a = *ap,
+        &a2 = two ? *ap2 : a;
       CC::Worker *w[12] = {((CC::Worker *)0),
-			   &a.createWorker("file", 0, "FC", "FCi"),
-			   &a.createWorker("file", 0, "Bias", "BIASi"),
-			   &a.createWorker("file", 0, "FP", "FPi"),
-			   acquire ?
-			   &a.createWorker("file", 0, "ADC", "ADCi") : 0,
-			   emit ?
-			   &a.createWorker("file", 0, "DAC", "DACi") : 0,
-			  two ? &a2.createWorker("file", 0, "FC", "FCi") : 0,
-			  two ? &a2.createWorker("file", 0, "Bias", "BIASi") : 0,
-			  two ? &a2.createWorker("file", 0, "FP", "FPi") : 0,
-			   ((CC::Worker *)0),
-			   ((CC::Worker *)0),
-			  ((CC::Worker *)0)
+                           &a.createWorker("file", 0, "FC", "FCi"),
+                           &a.createWorker("file", 0, "Bias", "BIASi"),
+                           &a.createWorker("file", 0, "FP", "FPi"),
+                           acquire ?
+                           &a.createWorker("file", 0, "ADC", "ADCi") : 0,
+                           emit ?
+                           &a.createWorker("file", 0, "DAC", "DACi") : 0,
+                          two ? &a2.createWorker("file", 0, "FC", "FCi") : 0,
+                          two ? &a2.createWorker("file", 0, "Bias", "BIASi") : 0,
+                          two ? &a2.createWorker("file", 0, "FP", "FPi") : 0,
+                           ((CC::Worker *)0),
+                           ((CC::Worker *)0),
+                          ((CC::Worker *)0)
       };
+
       CC::Port &w1in = w[1]->getPort("WMIin");
       CC::Port &w1out = w[1]->getPort("WSIout");
       CC::Port &w1sin = w[1]->getPort("WSIin");
@@ -272,6 +273,7 @@ int main(int argc, char *argv[])
       CC::Port &w2out = w[2]->getPort("WSIout");
       CC::Port &w3in = w[3]->getPort("WSIin");
       CC::Port &w3out = w[3]->getPort("WMIout");
+
       CC::Port &w4out = acquire ? w[4]->getPort("ADCout") : *(CC::Port *)0;
       CC::Port &w6in = two ? w[6]->getPort("WMIin") : *(CC::Port *)0;
       CC::Port &w6out = two ? w[6]->getPort("WSIout") : *(CC::Port *)0;;
@@ -279,161 +281,165 @@ int main(int argc, char *argv[])
       CC::Port &w7out = two ? w[7]->getPort("WSIout") : *(CC::Port *)0;;
       CC::Port &w8in = two ? w[8]->getPort("WSIin") : *(CC::Port *)0;;
       CC::Port &w8out = two ? w[8]->getPort("WMIout") : *(CC::Port *)0;;
+
       CPI::Util::PValue
-	p00[] = {CU::PVULong("bufferCount", bufferCount[0][0]),
-		 CU::PVString("xferRole", active[0][0]),
-		 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
-	p01[] = {CU::PVULong("bufferCount", bufferCount[0][1]),
-		 CU::PVString("xferRole", active[0][1]),
-		 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
-	p10[] = {CU::PVULong("bufferCount", bufferCount[1][0]),
-		 CU::PVString("xferRole", active[1][0]),
-		 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
-	p31[] = {CU::PVULong("bufferCount", bufferCount[3][1]),
-		 CU::PVString("xferRole", active[3][1]),
-		 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
-	p60[] = {CU::PVULong("bufferCount", bufferCount[6][0]),
-		 CU::PVString("xferRole", active[6][0]),
-		 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
-	p81[] = {CU::PVULong("bufferCount", bufferCount[8][1]),
-		 CU::PVString("xferRole", active[8][1]),
-		 CU::PVULong("bufferSize", bufferSize), CU::PVEnd};
+        p00[] = {CU::PVULong("bufferCount", bufferCount[0][0]),
+                 CU::PVString("xferRole", active[0][0]),
+                 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
+        p01[] = {CU::PVULong("bufferCount", bufferCount[0][1]),
+                 CU::PVString("xferRole", active[0][1]),
+                 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
+        p10[] = {CU::PVULong("bufferCount", bufferCount[1][0]),
+                 CU::PVString("xferRole", active[1][0]),
+                 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
+        p31[] = {CU::PVULong("bufferCount", bufferCount[3][1]),
+                 CU::PVString("xferRole", active[3][1]),
+                 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
+        p60[] = {CU::PVULong("bufferCount", bufferCount[6][0]),
+                 CU::PVString("xferRole", active[6][0]),
+                 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
+        p81[] = {CU::PVULong("bufferCount", bufferCount[8][1]),
+                 CU::PVString("xferRole", active[8][1]),
+                 CU::PVULong("bufferSize", bufferSize), CU::PVEnd};
+
       CC::Property pfc(*w[1], "control");
       CC::Property pfp(*w[3], "control");
+
       // Caller knows data type, we can add a debug-mode runtime check
       pfc.setULongValue(acquire ? 0 : 1);
       pfp.setULongValue(emit ? 0 : 2);
+
       if (loop)
-	w1in.loopback(w3out);
+        w1in.loopback(w3out);
       if (acquire)
-	w4out.connect(w1sin);
+        w4out.connect(w1sin);
       w1out.connect(w2in);
       w2out.connect(w3in);
       CC::ExternalPort *myOut =
-	acquire ? 0 : &w1in.connectExternal("w0out", p01, p10);
+        acquire ? 0 : &w1in.connectExternal("w0out", p01, p10);
       if (two) {
-	w3out.connect(w6in,p31,p60);
-	w6out.connect(w7in);
-	w7out.connect(w8in);
+        w3out.connect(w6in,p31,p60);
+        w6out.connect(w7in);
+        w7out.connect(w8in);
       }
       CC::ExternalPort &myIn =
-	two ? w8out.connectExternal("w0in", p00, p81) : w3out.connectExternal("w0in", p00, p31);
+        two ? w8out.connectExternal("w0in", p00, p81) : w3out.connectExternal("w0in", p00, p31);
       w[1]->start();
       w[2]->start();
       w[3]->start();
       if (two) {
-	w[6]->start();
-	w[7]->start();
-	w[8]->start();
+        w[6]->start();
+        w[7]->start();
+        w[8]->start();
       }
       if (acquire)
-	w[4]->start();
+        w[4]->start();
       unsigned outLeft, inLeft, inN = 0, outN = 0;
       int ifd = -1, cfd = -1, ofd = -1;
       off_t bytes;
       uint8_t *cbuf = (uint8_t*)malloc(ioSize);
       if (file) {
-	if ((ifd = open(file, O_RDONLY)) < 0 ||
-	    (cfd = open(file, O_RDONLY)) < 0 ||
-	    (bytes = lseek(ifd, SEEK_END, 0)) < 0 ||
-	    lseek(ifd, SEEK_SET, 0) < 0) {
-	  fprintf(stderr, "Can't open file \"%s\" for input\n", file);
-	  return 1;
-	}
-	inLeft = bytes - (bytes % ioSize);
+        if ((ifd = open(file, O_RDONLY)) < 0 ||
+            (cfd = open(file, O_RDONLY)) < 0 ||
+            (bytes = lseek(ifd, SEEK_END, 0)) < 0 ||
+            lseek(ifd, SEEK_SET, 0) < 0) {
+          fprintf(stderr, "Can't open file \"%s\" for input\n", file);
+          return 1;
+        }
+        inLeft = bytes - (bytes % ioSize);
       } else
-	inLeft = ioCount * ioSize;
+        inLeft = ioCount * ioSize;
       outLeft = acquire ? 0 : inLeft;
       if (ofile && (ofd = open(ofile, O_WRONLY|O_CREAT|O_TRUNC)) < 0) {
-	fprintf(stderr, "Can't open file \"%s\" for output\n", ofile);
-	return 1;
+        fprintf(stderr, "Can't open file \"%s\" for output\n", ofile);
+        return 1;
       }
       // While anything to do
       while (outLeft || inLeft) {
-	uint32_t length;
-	uint8_t *data;
-	CC::ExternalBuffer *cBuffer;
-	if (!acquire) {
-	  CC::ExternalBuffer *pBuffer;
-	  // While output to do, do all that can be done
-	  for (;outLeft && (pBuffer = myOut->getBuffer(data, length));
-	       outLeft -= ioSize, outN++) {
-	    assert(length >= ioSize);
-	    if (file) {
-	      if (read(ifd, data, ioSize) != (int)ioSize) {
-		fprintf(stderr, "Error reading input file\n");
-		return 1;
-	      }
-	    } else
-	      for (unsigned w = 0; w < ioSize/sizeof(uint32_t); w++)
-		((uint32_t *)(data))[w] = outN * (ioSize/sizeof(uint32_t)) + w;
-	    pBuffer->put(outN, ioSize, false);
-	  }
-	  myOut->tryFlush(); // keep buffered output moving
-	}
-	if (!doread)
-	  continue;
-	uint8_t opCode;
-	bool end;
-	for (;inLeft && (cBuffer = myIn.getBuffer(opCode, data, length, end));
-	     inLeft -= ioSize, inN++) {
-	  uint32_t *d32 = (uint32_t*)data;
-	  const char *oops = 0;
-	  if (acquire) {
-	    if (inN == 0) {
-	      if (opCode != 1 || length != 0) {
-		oops = "Initial Acquire opcode/length not 1/0";
-		fprintf(stderr, "Bad opcode %d, len %d inN %d should be 1\n",
-		      opCode, length, inN);
-	      }
-	    } else if (opCode != 0) {
-		oops = "Acquire opcode after first not 0";
-		fprintf(stderr, "Bad opcode %d, len %d inN %d should be 0\n",
-		      opCode, length, inN);
-	    }
-	  } else {
-	    if (opCode != (inN & 0xff)) {
-	      fprintf(stderr, "Bad opcode %d, len %d inN %d should be 0x%x\n",
-		      opCode, length, inN, inN & 0xff);
-	      oops = "Opcode mismatch on input";
-	    }
-	    if (length != ioSize) {
-	      fprintf(stderr, "Len (%d) should be %ld (d[0] %x, inN %d op %d)\n",
-		      length, ioSize, d32[0], inN, opCode);
-	      oops = "Length mismatch on input";
-	    }
-	  }
-	  if (file) {
-	    if (read(cfd, cbuf, ioSize) != (int)ioSize) {
-	      fprintf(stderr, "Error reading input file\n");
-	      return 1;
-	    }
-	    if (memcmp(cbuf, data, ioSize))
-	      oops = "Data mismatch on file data";
-	  } else if (ofile) {
-	    if (ioSize && write(ofd, data, ioSize) != (int)ioSize) {
-	      fprintf(stderr, "Error writing output file\n");
-	      return 1;
-	    }
-	  } else
-	    for (unsigned w = 0; w < ioSize/sizeof(uint32_t); w++)
-	      if (d32[w] != inN * ioSize/sizeof(uint32_t) + w) {
-		fprintf(stderr, "Bad data 0x%x, len %d w %d inN %d should be 0x%lx\n",
-			d32[w], length, w, inN, inN * ioSize/sizeof(uint32_t) + w);
-		oops = "Data mismatch on input";
-	      }
-	  cBuffer->release();
-	  if (oops)
-	    throw CC::ApiError(oops, NULL);
-	}
+        uint32_t length;
+        uint8_t *data;
+        CC::ExternalBuffer *cBuffer;
+        if (!acquire) {
+          CC::ExternalBuffer *pBuffer;
+          // While output to do, do all that can be done
+          for (;outLeft && (pBuffer = myOut->getBuffer(data, length));
+               outLeft -= ioSize, outN++) {
+            assert(length >= ioSize);
+            if (file) {
+              if (read(ifd, data, ioSize) != (int)ioSize) {
+                fprintf(stderr, "Error reading input file\n");
+                return 1;
+              }
+            } else
+              for (unsigned w = 0; w < ioSize/sizeof(uint32_t); w++)
+                ((uint32_t *)(data))[w] = outN * (ioSize/sizeof(uint32_t)) + w;
+            pBuffer->put(outN, ioSize, false);
+          }
+          myOut->tryFlush(); // keep buffered output moving
+        }
+        if (!doread)
+          continue;
+        uint8_t opCode;
+        bool end;
+        for (;inLeft && (cBuffer = myIn.getBuffer(opCode, data, length, end));
+             inLeft -= ioSize, inN++) {
+          uint32_t *d32 = (uint32_t*)data;
+          const char *oops = 0;
+          if (acquire) {
+            if (inN == 0) {
+              if (opCode != 1 || length != 0) {
+                oops = "Initial Acquire opcode/length not 1/0";
+                fprintf(stderr, "Bad opcode %d, len %d inN %d should be 1\n",
+                      opCode, length, inN);
+              }
+            } else if (opCode != 0) {
+                oops = "Acquire opcode after first not 0";
+                fprintf(stderr, "Bad opcode %d, len %d inN %d should be 0\n",
+                      opCode, length, inN);
+            }
+          } else {
+            if (opCode != (inN & 0xff)) {
+              fprintf(stderr, "Bad opcode %d, len %d inN %d should be 0x%x\n",
+                      opCode, length, inN, inN & 0xff);
+              oops = "Opcode mismatch on input";
+            }
+            if (length != ioSize) {
+              fprintf(stderr, "Len (%d) should be %ld (d[0] %x, inN %d op %d)\n",
+                      length, ioSize, d32[0], inN, opCode);
+              oops = "Length mismatch on input";
+            }
+          }
+          if (file) {
+            if (read(cfd, cbuf, ioSize) != (int)ioSize) {
+              fprintf(stderr, "Error reading input file\n");
+              return 1;
+            }
+            if (memcmp(cbuf, data, ioSize))
+              oops = "Data mismatch on file data";
+          } else if (ofile) {
+            if (ioSize && write(ofd, data, ioSize) != (int)ioSize) {
+              fprintf(stderr, "Error writing output file\n");
+              return 1;
+            }
+          } else
+            for (unsigned w = 0; w < ioSize/sizeof(uint32_t); w++)
+              if (d32[w] != inN * ioSize/sizeof(uint32_t) + w) {
+                fprintf(stderr, "Bad data 0x%x, len %d w %d inN %d should be 0x%lx\n",
+                        d32[w], length, w, inN, inN * ioSize/sizeof(uint32_t) + w);
+                oops = "Data mismatch on input";
+              }
+          cBuffer->release();
+          if (oops)
+            throw CC::ApiError(oops, NULL);
+        }
       }
       printf("Successfully sent and received %ld messages\n", ioCount);
       if (file)
-	printf("Contents of file \"%s\" successfully sent and received\n",
-	       file);
+        printf("Contents of file \"%s\" successfully sent and received\n",
+               file);
       if (ofile) {
-	printf("File \"%s\" successfully written\n", ofile);
-	close(ofd);
+        printf("File \"%s\" successfully written\n", ofile);
+        close(ofd);
       }
       return 0;
     } catch (CC::ApiError &e) {
