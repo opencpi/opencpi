@@ -150,6 +150,10 @@ endif
 #
 
 
+LDFLAGS := -m32
+CFLAGS := -m32
+CXXFLAGS := -m32
+
 #
 # ----------------------------------------------------------------------
 # WindRiver Workbench settings. Only used when $(SYSTEM)=vxworksdkm.

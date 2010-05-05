@@ -283,7 +283,6 @@ finalize( const char* endpoint )
 CPI::DataTransport::Circuit::
 ~Circuit()
 {
-  cpiAssert( m_ref_count == 0 );
 
 #ifdef DD_N_P_SUPPORTED
   // First we will try to tell all of the input ports that we are going away.
@@ -300,7 +299,6 @@ CPI::DataTransport::Circuit::
   }
 #endif
 
-
   // Since our children have a reference to our metadata, we need to make sure they
   // get removed first
   PortSet* ps = firstChild();
@@ -310,6 +308,8 @@ CPI::DataTransport::Circuit::
   }
 
   delete m_metaData;
+
+  //  cpiAssert( m_ref_count == 0 );
 }
 
 

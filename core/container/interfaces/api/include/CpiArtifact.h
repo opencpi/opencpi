@@ -26,22 +26,18 @@ namespace CPI {
     class Worker;
     class PValue;
     class Artifact : public CPI::Util::Parent<Worker>, public CPI::Util::Child<Interface,Artifact> {
-
-#ifdef WAS
-    class Artifact : public CPI::Util::Parent<Worker>  {
-#endif
+      friend class Application;
+      friend class Interface;
+    protected:
+      Artifact(Interface &, const char *url);
+      virtual Worker &createWorkerX(Application &a, ezxml_t impl, ezxml_t inst, CPI::Util::PValue *) = 0;
+      Worker &createWorker(Application &a, const char *impltag, const char *instTag, CPI::Util::PValue *params = NULL);
+      virtual ~Artifact();
+      bool hasUrl(const char *url);
 
       const char *myUrl;
       char * myMetadata;
       ezxml_t myXml;
-      friend class Application;
-      friend class Interface;
-    protected:
-      virtual Worker &createWorkerX(Application &a, ezxml_t impl, ezxml_t inst, CPI::Util::PValue *) = 0;
-      Worker &createWorker(Application &a, const char *impltag, const char *instTag, CPI::Util::PValue *params = NULL);
-      Artifact(Interface &, const char *url);
-      virtual ~Artifact();
-      bool hasUrl(const char *url);
     };
   } // Container
 } // CPI

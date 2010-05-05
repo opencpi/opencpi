@@ -88,6 +88,8 @@ namespace CPI {
 	CPI::Container::Application * createApplication()
 	  throw ( CPI::Util::EmbeddedException );
 
+	CPI::Container::Artifact & createArtifact(const char *url, CPI::Util::PValue *artifactParams = 0);
+
 	std::vector<std::string> getSupportedEndpoints()
 	  throw ();
       
@@ -102,31 +104,8 @@ namespace CPI {
 
       protected:
 
-
-
-
 	// Our thread safe mutex
 	CPI::OS::Mutex m_threadSafeMutex;
-
-#ifdef WAS
-
-	/**********************************
-	 * Disconnects a set of connected ports
-	 *********************************/
-	void disconnectPort( 
-			    CPI::Container::PortData* sp,                
-			    CPI::Container::PortData* target             
-			    );
-
-	// RCC Container interface
-	RCCWorkerContainer * m_container;
-
-	// Our controller
-	Controller* m_controller;
-#endif
-
-
-
 
 	// Cpi transport 
 	CPI::DataTransport::Transport* m_transport;

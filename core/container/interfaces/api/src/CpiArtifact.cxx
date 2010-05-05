@@ -48,10 +48,6 @@ namespace CPI {
     }
     Artifact::Artifact(Interface &i, const char *url) 
       : CPI::Util::Child<Interface,Artifact>(i), myUrl(url), myMetadata(0), myXml(0) {
-
-#ifdef WAS
-      : myUrl(url), myMetadata(0), myXml(0) {
-#endif
       unsigned length;
       myMetadata = getMetadata(url, length);
       myXml = ezxml_parse_str(myMetadata, length);

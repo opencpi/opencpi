@@ -53,8 +53,11 @@ using namespace CPI::OS;
 
 XferFactoryManager& XferFactoryManager::getFactoryManager()
 {
-  static XferFactoryManager fm;
-  return fm;
+  static XferFactoryManager * fm = NULL;
+  if ( !fm ) {
+    fm = new XferFactoryManager;
+  }
+  return *fm;
 }
 
 // Register the Data transfer class
@@ -76,7 +79,8 @@ void XferFactoryManager::unregisterFactory( XferFactory* dt )
 // in the system.  Note that some of the endpoints may not be finalized. 
 std::vector<std::string> XferFactoryManager::getListOfSupportedEndpoints()
 {
-  CPI::OS::uint32_t default_ep_size = 1*1024*1024;
+  CPI::OS::uint32_t default_ep_size = 10*1024*1024;
+
 
   XferFactory* factory;
   std::vector<std::string> l;

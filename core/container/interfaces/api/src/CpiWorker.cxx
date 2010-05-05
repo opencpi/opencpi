@@ -27,17 +27,18 @@ namespace CPI {
     Worker::Worker(Application &a, ezxml_t impl, ezxml_t inst) :
       CPI::Util::Child<Application,Worker>(a), CPI::Metadata::Worker(impl),
       myXml(impl),
-      myImplTag(ezxml_attr(impl, "name")),
+      myImplTag(impl ? ezxml_attr(impl, "name") : 0),
       myInstTag(inst ? ezxml_attr(inst, "name") : 0) {
     }
 
+
+    /*
     Worker::Worker( Application & a )
       :  CPI::Util::Child<Application,Worker>(a),
 	 CPI::Metadata::Worker((const char *)0)
     {
-
-
     }
+    */
 
 
 

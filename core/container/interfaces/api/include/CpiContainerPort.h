@@ -35,22 +35,38 @@ namespace CPI {
     class PortData
     {
     public:
+
+#ifdef WAS
       CPI::OS::uint8_t	  provider;	       // Provider port (input port for now)
-      PortConnectionDesc  connectionData;      // Port Connection Dependency data
+#endif
+
+
+
+
+      CPI::Metadata::Port myMetaPort;  // Deep copy to support all constructors
+
       CPI::OS::uint8_t    external;	       // connected externally ?
-      PortData():external(0)
+
+      PortConnectionDesc  connectionData;      // Port Connection Dependency data
+
+
+
+      PortData() : external(0) 
 	{
 	  connectionData.port = reinterpret_cast<PortDesc>(this);
 	}
 
+      PortData( CPI::Metadata::Port & pmd ): myMetaPort(pmd) , external(0)
+	{
+	  connectionData.port = reinterpret_cast<PortDesc>(this);
+	}
 	PortData & operator = ( const PortData & lhs )
 	  {
-	    provider = lhs.provider;
+	    myMetaPort = lhs.myMetaPort;
 	    memcpy(&connectionData,&lhs.connectionData,sizeof(PortConnectionDesc));
 	    external = lhs.external;
 	    return *this;
 	  }
-	
 	PortData( PortData& lhs ) 
 	  {
 	    *this = lhs;
@@ -61,13 +77,14 @@ namespace CPI {
     // The class used by both ExternalPorts (not associated with a worker) and Ports (owned by worker)
     class BasePort : public PortData {
     protected:
-      BasePort(const char *name, bool provider);
+      BasePort(CPI::Metadata::Port & metaData );
       virtual ~BasePort();
+
+#ifdef WAS
       const char *myName;
-      static const unsigned
-	DEFAULT_NBUFFERS = 2,
-	DEFAULT_BUFFER_SIZE = 2*1024;
-      uint32_t minBufferSize, minBufferCount, maxBufferSize;
+#endif
+
+
       CPI::RDT::Desc_t &myDesc; // convenience
       // called after connection parameters have changed.
       virtual void checkConnectParams() = 0;
@@ -80,7 +97,7 @@ namespace CPI {
 
     class Port : public BasePort, public CPI::Util::Child<Worker,Port> {
 
-      CPI::Metadata::Port &myMetaPort;
+
       static const std::string empty;
       // This is here so we own this storage while we pass back references.
       std::string myInitialPortInfo;
@@ -89,7 +106,11 @@ namespace CPI {
       bool canBeExternal;
       Interface &myContainer;
       Port(Worker &, CPI::Metadata::Port &mport);
+
+      /*
       Port(Worker &, bool provider);
+      */
+
       virtual ~Port(){}
 
     public:

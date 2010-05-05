@@ -58,6 +58,12 @@ namespace CPI {
       friend class Port;
       friend class RCCWorkerInterface;
 
+
+      Worker( CPI::Container::Application & app, const void* entryPoint, CPI::Util::PValue *wparams,
+	      ::RCCContainer* c, ezxml_t impl, ezxml_t inst );
+      CPI::Container::Port& createPort(CPI::Metadata::Port&);
+
+
       CPI::Container::Port &  createInputPort(
 					      CPI::Container::PortId              portId,      
 					      CPI::OS::uint32_t   bufferCount,
@@ -301,15 +307,11 @@ namespace CPI {
 
       // Debug/stats
       CPI::OS::uint32_t worker_run_count;
-
-      Worker( CPI::Container::Application & app, const void* entryPoint, CPI::Util::PValue *wparams,
-	      ::RCCContainer* c );
       virtual ~Worker();
       void stop(bool);
 
       // Override the port data based on hardcoded requirements from the worker
-      void overRidePortInfo( CPI::Container::PortData * portData, CPI::Container::PortId portId  );
-
+      void overRidePortInfo( CPI::Metadata::Port & portData );
 
       // Update a ports information (as a result of a connection)
       void updatePort( CPI::CP289::Port &port );
@@ -317,64 +319,217 @@ namespace CPI {
 
       public:      
 
-      virtual void initialize(){};
-      virtual void start(){};
-      virtual void release(){};
-      virtual void beforeQuery(){};
-      virtual void afterConfigure(){};
-      virtual void test(){};
+      inline void initialize(){control(WCI_CONTROL_INITIALIZE, WCI_DEFAULT );}
+      inline  void start(){ control(WCI_CONTROL_START, WCI_DEFAULT );}
+      inline void release(){ control(WCI_CONTROL_RELEASE, WCI_DEFAULT );}
+      inline  void beforeQuery(){control(WCI_CONTROL_BEFORE_QUERY, WCI_DEFAULT );}
+      inline  void afterConfigure(){control(WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );}
+      inline void test(){control(WCI_CONTROL_TEST, WCI_DEFAULT );}
 
-      // The following are stubbed until we merge for real !!
+      // Dont know how this relates to a CP289 worker
       virtual void prepareProperty(CPI::Metadata::Property&, CPI::Container::Property&){};
-      virtual CPI::Container::Port& createPort(CPI::Metadata::Port&){};
-      virtual void setBoolProperty(unsigned int, bool){};
-      virtual void setBoolSequenceProperty(unsigned int, const bool*, unsigned int){};
-      virtual void setCharProperty(unsigned int, char){};
-      virtual void setCharSequenceProperty(unsigned int, const char*, unsigned int){};
-      virtual void setDoubleProperty(unsigned int, double){};
-      virtual void setDoubleSequenceProperty(unsigned int, const double*, unsigned int){};
-      virtual void setFloatProperty(unsigned int, float){};
-      virtual void setFloatSequenceProperty(unsigned int, const float*, unsigned int){};
-      virtual void setShortProperty(unsigned int, int16_t){};
-      virtual void setShortSequenceProperty(unsigned int, const int16_t*, unsigned int){};
-      virtual void setLongProperty(unsigned int, int32_t){};
-      virtual void setLongSequenceProperty(unsigned int, const int32_t*, unsigned int){};
-      virtual void setUCharProperty(unsigned int, uint8_t){};
-      virtual void setUCharSequenceProperty(unsigned int, const uint8_t*, unsigned int){};
-      virtual void setULongProperty(unsigned int, uint32_t){};
-      virtual void setULongSequenceProperty(unsigned int, const uint32_t*, unsigned int){};
-      virtual void setUShortProperty(unsigned int, uint16_t){};
-      virtual void setUShortSequenceProperty(unsigned int, const uint16_t*, unsigned int){};
-      virtual void setLongLongProperty(unsigned int, int64_t){};
-      virtual void setLongLongSequenceProperty(unsigned int, const int64_t*, unsigned int){};
-      virtual void setULongLongProperty(unsigned int, uint64_t){};
-      virtual void setULongLongSequenceProperty(unsigned int, const uint64_t*, unsigned int){};
-      virtual void setStringProperty(unsigned int, const char*){};
-      virtual void setStringSequenceProperty(unsigned int, const char**, unsigned int){};
-      virtual bool getBoolProperty(unsigned int){return true;};
-      virtual unsigned int getBoolSequenceProperty(unsigned int, bool*, unsigned int){return 0;};
-      virtual char getCharProperty(unsigned int){return 0;};
-      virtual unsigned int getCharSequenceProperty(unsigned int, char*, unsigned int){return 0;};
-      virtual double getDoubleProperty(unsigned int){return 0;};
-      virtual unsigned int getDoubleSequenceProperty(unsigned int, double*, unsigned int){return 0;};
-      virtual float getFloatProperty(unsigned int){return 0;};
-      virtual unsigned int getFloatSequenceProperty(unsigned int, float*, unsigned int){return 0;};
-      virtual int16_t getShortProperty(unsigned int){return 0;};
-      virtual unsigned int getShortSequenceProperty(unsigned int, int16_t*, unsigned int){return 0;};
-      virtual int32_t getLongProperty(unsigned int){return 0;};
-      virtual unsigned int getLongSequenceProperty(unsigned int, int32_t*, unsigned int){return 0;};
-      virtual uint8_t getUCharProperty(unsigned int){return 0;};
-      virtual unsigned int getUCharSequenceProperty(unsigned int, uint8_t*, unsigned int){return 0;};
-      virtual uint32_t getULongProperty(unsigned int){return 0;};
-      virtual unsigned int getULongSequenceProperty(unsigned int, uint32_t*, unsigned int){return 0;};
-      virtual uint16_t getUShortProperty(unsigned int){return 0;};
-      virtual unsigned int getUShortSequenceProperty(unsigned int, uint16_t*, unsigned int){return 0;};
-      virtual int64_t getLongLongProperty(unsigned int){return 0;};
-      virtual unsigned int getLongLongSequenceProperty(unsigned int, int64_t*, unsigned int){return 0;};
-      virtual uint64_t getULongLongProperty(unsigned int){return 0;};
-      virtual unsigned int getULongLongSequenceProperty(unsigned int, uint64_t*, unsigned int){return 0;};
-      virtual void getStringProperty(unsigned int, char*, unsigned int){};
-      virtual unsigned int getStringSequenceProperty(unsigned int, char**, unsigned int, char*, unsigned int){return 0;};
+
+      
+      inline void setBoolProperty(unsigned int where, bool b)
+	{ setProperties( where, sizeof(bool), &b); }
+
+      inline void setBoolSequenceProperty(unsigned int where, const bool * b, unsigned int count )
+	{ setProperties( where, sizeof(bool)*count, &b); }
+
+      inline void setCharProperty(unsigned int where, char c)
+	{ setProperties( where, sizeof(char), &c); }
+
+      inline void setCharSequenceProperty(unsigned int where, const char* p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, &p); }
+
+      inline void setDoubleProperty(unsigned int where, double p)
+	{setProperties( where, sizeof(p), &p); }
+
+      inline void setDoubleSequenceProperty(unsigned int where, const double*p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, p); }
+
+      inline void setFloatProperty(unsigned int where, float p)
+	{setProperties( where, sizeof(p), &p); }
+
+      inline void setFloatSequenceProperty(unsigned int where, const float*p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, p); }
+
+      inline void setShortProperty(unsigned int where, int16_t p)
+	{setProperties( where, sizeof(p), &p); }
+
+      inline void setShortSequenceProperty(unsigned int where, const int16_t*p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, p); }
+
+      inline void setLongProperty(unsigned int where, int32_t p)
+	{setProperties( where, sizeof(p), &p); }
+
+      inline void setLongSequenceProperty(unsigned int where, const int32_t*p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, p); }
+
+      inline void setUCharProperty(unsigned int where, uint8_t p)
+	{setProperties( where, sizeof(p), &p); }
+
+      inline void setUCharSequenceProperty(unsigned int where, const uint8_t*p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, p); }
+
+      inline void setULongProperty(unsigned int where, uint32_t p)
+	{setProperties( where, sizeof(p), &p); }
+
+      inline void setULongSequenceProperty(unsigned int where, const uint32_t*p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, p); }
+
+      inline void setUShortProperty(unsigned int where, uint16_t p)
+	{setProperties( where, sizeof(p), &p); }
+
+      inline void setUShortSequenceProperty(unsigned int where, const uint16_t*p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, p); }
+
+      inline void setLongLongProperty(unsigned int where, int64_t p)
+	{setProperties( where, sizeof(p), &p); }
+
+      inline void setLongLongSequenceProperty(unsigned int where, const int64_t*p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, p); }
+
+      inline void setULongLongProperty(unsigned int where, uint64_t p)
+	{setProperties( where, sizeof(p), &p); }
+
+      inline void setULongLongSequenceProperty(unsigned int where, const uint64_t*p, unsigned int count)
+	{setProperties( where, sizeof(p)*count, p); }
+
+      inline void setStringProperty(unsigned int where, const char* p)
+	{cpiAssert(!"Not Implemented!!");}
+
+      inline void setStringSequenceProperty(unsigned int where, const char**p, unsigned int count)
+	{cpiAssert(!"Not Implemented!!");}
+
+
+      inline bool getBoolProperty(unsigned int where)
+	{ bool b;
+	  getProperties( where, sizeof(bool), &b);
+	  return b;
+	}
+
+      inline unsigned int getBoolSequenceProperty(unsigned int where, bool*b, unsigned int count)
+	{  getProperties( where, sizeof(bool)*count, b);
+	  return count;
+	}
+
+      inline char getCharProperty(unsigned int where)
+	{ char p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getCharSequenceProperty(unsigned int where, char*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+      inline double getDoubleProperty(unsigned int where)
+	{ double p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getDoubleSequenceProperty(unsigned int where, double*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+      inline float getFloatProperty(unsigned int where)
+	{ float p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getFloatSequenceProperty(unsigned int where, float*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+      inline int16_t getShortProperty(unsigned int where)
+	{ int16_t p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getShortSequenceProperty(unsigned int where, int16_t*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+      inline int32_t getLongProperty(unsigned int where)
+	{ int32_t p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getLongSequenceProperty(unsigned int where, int32_t*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+      inline uint8_t getUCharProperty(unsigned int where)
+	{ int8_t p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getUCharSequenceProperty(unsigned int where, uint8_t*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+
+      inline uint32_t getULongProperty(unsigned int where)
+	{ int32_t p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getULongSequenceProperty(unsigned int where, uint32_t*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+      inline uint16_t getUShortProperty(unsigned int where)
+	{ int16_t p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getUShortSequenceProperty(unsigned int where, uint16_t*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+      inline int64_t getLongLongProperty(unsigned int where)
+	{ int64_t p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getLongLongSequenceProperty(unsigned int where, int64_t*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+      inline uint64_t getULongLongProperty(unsigned int where)
+	{ int64_t p;
+	  getProperties( where, sizeof(p), &p);
+	  return p;
+	}
+
+      inline unsigned int getULongLongSequenceProperty(unsigned int where, uint64_t*p, unsigned int count)
+	{  getProperties( where, sizeof(p)*count, p);
+	  return count;
+	}
+
+      inline void getStringProperty(unsigned int where, char*, unsigned int)
+	{cpiAssert(!"Not Implemented!!");}
+
+      inline unsigned int getStringSequenceProperty(unsigned int where, char**, unsigned int, char*p, unsigned int count)
+	{cpiAssert(!"Not Implemented!!"); return 0;}
 
     };
 

@@ -100,6 +100,15 @@ Container(  CPI::Util::Driver &d,
 }
 
 
+
+CPI::Container::Artifact & 
+CPI::CP289::Container::
+createArtifact(const char *url, CPI::Util::PValue *artifactParams)
+{
+  return *(new Artifact(*this, url));
+}
+
+
 /**********************************
  * Destructor
  *********************************/
@@ -114,6 +123,18 @@ CPI::CP289::Container::
   }
   catch( ... ) {
     printf("ERROR: Got an exception in CPI::CP289::Container::~Container)\n");
+  }
+
+
+  // Because we own and share our mutex with our children, we need to remove them while the
+  // mutex is still valid.
+  CPI::CP289::Application * app = 
+    static_cast<CPI::CP289::Application*>( this->Parent<CPI::Container::Application>::firstChild() );
+  while ( app ) {
+    CPI::CP289::Application * next_app =  
+      static_cast<CPI::CP289::Application*>( this->Parent<CPI::Container::Application>::nextChild(app) );
+    delete app;
+    app = next_app;
   }
 
 }

@@ -465,16 +465,16 @@ namespace CPI {
 	  if (strcmp(p->name, "bufferCount") == 0) {
 	    if (p->type != CM::Property::CPI_ULong)
 	      throw CC::ApiError("bufferCount property has wrong type, should be ULong", NULL);
-	    if (p->vULong < minBufferCount)
+	    if (p->vULong < myMetaPort.minBufferCount)
 	      throw CC::ApiError("bufferCount is below worker's minimum", NULL);
 	    bufferCount = p->vULong;
 	  }
 	  if (strcmp(p->name, "bufferSize") == 0) {
 	    if (p->type != CM::Property::CPI_ULong)
 	      throw CC::ApiError("bufferSize property has wrong type, should be ULong", 0);
-	    if (p->vULong < minBufferSize)
+	    if (p->vULong < myMetaPort.minBufferSize)
 	      throw CC::ApiError("bufferSize is below worker's minimum", NULL);
-	    if (maxBufferSize && p->vULong > maxBufferSize)
+	    if (myMetaPort.maxBufferSize && p->vULong > myMetaPort.maxBufferSize)
 	      throw CC::ApiError("bufferSize exceeds worker's maximum", NULL);
 	    bufferSize = p->vULong;
 	  }

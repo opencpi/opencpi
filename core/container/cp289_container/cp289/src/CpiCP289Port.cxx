@@ -101,7 +101,7 @@ initOutputPort()
 
 void
 CPI::CP289::Port::
-processPortProperties(PValue* props )
+processPortProperties(CPI::Util::PValue* props )
 {
   const CPI::Util::PValue* p = CPI::Util::PValue::find(props, "role");
   if ( p ) {
@@ -148,6 +148,7 @@ initInputPort()
 }
 
 
+#ifdef WAS
 CPI::CP289::Port::
 Port(CPI::Container::Worker& w, PortData& initialPortData, CPI::Container::PortId pid )
   : CPI::Container::Port(w,initialPortData.provider),m_portId(pid),m_circuit(NULL),m_props(NULL)
@@ -165,16 +166,49 @@ Port(CPI::Container::Worker& w, PortData& initialPortData, CPI::Container::PortI
     cpiAssert( m_circuit );
   }
 }
+#endif
+
+
+CPI::CP289::Port::
+Port(CPI::Container::Worker& w, CPI::Metadata::Port & pmd,  const char * endpoint )
+  : CPI::Container::Port(w,pmd),m_portId(pmd.m_pid),m_circuit(NULL),m_props(NULL)
+{
+
+#ifdef WAS
+  *(static_cast<CPI::Container::PortData*>(this)) = initialPortData;
+  connectionData.port = (PortDesc)this;
+  connectionData.container_id = static_cast<CPI::CP289::Container*>(myParent->myParent->myParent)->getId();
+  processPortProperties( m_props );
+#endif
+
+  
+  connectionData.port = (PortDesc)this;
+  connectionData.container_id = static_cast<CPI::CP289::Container*>(myParent->myParent->myParent)->getId();  
+  myMetaPort.provider = pmd.provider;
+  connectionData.data.desc.nBuffers = (pmd.minBufferCount == 0) ? pmd.DEFAULT_NBUFFERS : pmd.minBufferCount;
+  connectionData.data.desc.dataBufferSize = (pmd.minBufferSize == 0)  ? pmd.DEFAULT_BUFFER_SIZE : pmd.minBufferSize;
+  connectionData.data.role = CPI::RDT::ActiveMessage;
+  processPortProperties( m_props );
+  if ( endpoint ) {
+    strcpy( connectionData.data.desc.oob.oep, endpoint );
+  }
+
+  if ( ! isProvider() ) {
+    // The output port does not get initialized until it gets connected
+  }
+  else {
+    initInputPort();
+    cpiAssert( m_circuit );
+  }
+}
+
 
 
 
 CPI::CP289::Port::
 ~Port()
 {
-  // Delete the data transport circuit 
-  if ( m_circuit ) {
-    m_circuit->release();
-  }
+  disconnect();
 }
 
 
@@ -190,7 +224,7 @@ const std::string&
 CPI::CP289::Port::
 getInitialProviderInfo(CPI::Util::PValue*)
 {
-  cpiAssert( provider );
+  cpiAssert( isProvider() );
   m_ourFinalDescriptor = MyParent->myParent->myParent->packPortDesc( *this );
   return m_ourFinalDescriptor;
 }
@@ -199,7 +233,7 @@ const std::string&
 CPI::CP289::Port::
 setInitialProviderInfo(CPI::Util::PValue* myprops, const std::string & user )
 {
-  cpiAssert( ! provider );
+  cpiAssert( ! isProvider() );
   throw std::string("setInitialInputDesc() Not yet Implemented");
   return m_localShadowPort;
 }
@@ -208,7 +242,7 @@ const std::string&
 CPI::CP289::Port::
 setFinalProviderInfo(const std::string & input_port )
 {
-  cpiAssert( ! provider );
+  cpiAssert( ! isProvider() );
   PortData tpdata;
   MyParent->myParent->myParent->unpackPortDesc( input_port, &tpdata );
   connectInputPort( &tpdata, m_localShadowPort, NULL  );
@@ -219,7 +253,7 @@ const std::string&
 CPI::CP289::Port::
 setInitialUserInfo(const std::string& user)
 {
-  cpiAssert( provider );
+  cpiAssert( isProvider() );
   throw std::string("setInitialOutputDesc() Not yet Implemented");
   return m_localShadowPort;
 }
@@ -229,7 +263,7 @@ void
 CPI::CP289::Port::
 setFinalUserInfo(const std::string& srcPort )
 {
-  cpiAssert( provider );
+  cpiAssert( isProvider() );
 
   PortData src;
   PortData * pd;
@@ -420,28 +454,6 @@ connectExternal(const char * name, CPI::Util::PValue * myprops, CPI::Util::PValu
 }
 
 
-
-
-#ifdef PORT_COMPLETE
-unsigned int 
-CPI::CP289::Port::
-read(uint8_t*, CPI::Container::Port::Metadata*, unsigned int, unsigned int)
-{
-  return 0;
-}
-
-
-unsigned int 
-CPI::CP289::Port::
-write(uint8_t*, CPI::Container::Port::Metadata*, unsigned int, unsigned int)
-{
-  return 0;
-}
-#endif
-
-
-
-
 static 
 inline 
 CPI::CP289::Worker* toWorker(WorkerId & id)
@@ -546,8 +558,8 @@ disconnect( )
 PortConnectionDesc
 CPI::CP289::Port::
 connectExternalInputPort( PortData *           inputPort,    
-			   PValue*       props
-			   )
+			  CPI::Util::PValue*       props
+			  )
 {
   CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
 
@@ -593,7 +605,7 @@ void
 CPI::CP289::Port::
 connectInputPort( PortData *    inputPort,    
 		   std::string&  lPort,
-		   PValue*       props
+		  CPI::Util::PValue*       props
 		  )
   throw ( CPI::Util::EmbeddedException )
 {
@@ -649,7 +661,7 @@ CPI::CP289::Port::
 setOutputFlowControl( PortData * srcPort )
   throw ( CPI::Util::EmbeddedException )
 {
-  cpiAssert( provider );
+  cpiAssert( isProvider() );
   CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
 
   // Local connection
@@ -657,7 +669,11 @@ setOutputFlowControl( PortData * srcPort )
     try {
       CPI::CP289::Port* p = reinterpret_cast<CPI::CP289::Port*>(srcPort->connectionData.port);
       p->m_circuit = m_circuit;
+
+#ifdef WAS
       m_circuit->attach();
+#endif
+
       m_connectionCookie.init( srcPort,true, this,true );
     }
     catch( std::bad_alloc ) {
@@ -682,7 +698,7 @@ setOutputFlowControl( PortData * srcPort )
 void
 CPI::CP289::Port::
 connectInternalInputPort( CPI::Container::Port *  tPort,
-			   PValue*            props  )
+			  CPI::Util::PValue*            props  )
 {
   CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
 

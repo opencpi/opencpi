@@ -66,8 +66,17 @@ namespace CPI {
     public:
 
 
+#ifdef WAS
       Port(CPI::Container::Worker& w, PortData& initialPortData,
 	   CPI::Container::PortId pid );
+#endif
+
+
+
+      Port(CPI::Container::Worker& w, CPI::Metadata::Port & pmd, const char * endpoint );
+
+
+
       virtual ~Port();
 
       void disconnect()
@@ -79,14 +88,6 @@ namespace CPI {
 	const std::string& setInitialUserInfo(const std::string&);
 	const std::string& setFinalProviderInfo(const std::string&);
 	void setFinalUserInfo(const std::string&);
-
-
-
-#ifdef PORT_COMPLETE
-	unsigned int read(uint8_t*, CPI::Container::Port::Metadata*, unsigned int, unsigned int);
-	unsigned int write(uint8_t*, CPI::Container::Port::Metadata*, unsigned int, unsigned int);
-#endif
-
 
 	void checkConnectParams(){}
 	void connectInside(CPI::Container::Port & other, CPI::Util::PValue * my_props,  CPI::Util::PValue * other_props);

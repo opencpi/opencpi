@@ -9,20 +9,20 @@ namespace CPI {
   namespace Container {
     namespace CM = CPI::Metadata;
 
-    BasePort::BasePort(const char *name, bool provider) :
-       myName(name), minBufferSize(0), minBufferCount(1), maxBufferSize(0),
-       myDesc(connectionData.data.desc)
+    BasePort::BasePort(CPI::Metadata::Port & metaData ) :
+      PortData(metaData), myDesc(connectionData.data.desc)
     {
       // FIXME: put these in the default PortData constructor
       myDesc.nBuffers = DEFAULT_NBUFFERS;
       myDesc.dataBufferSize = DEFAULT_BUFFER_SIZE;
       CPI::RDT::Descriptors &d = connectionData.data;
-      d.type = provider ? CPI::RDT::ConsumerDescT : CPI::RDT::ProducerDescT;
+      d.type = myMetaPort.provider ? CPI::RDT::ConsumerDescT : CPI::RDT::ProducerDescT;
       d.role = CPI::RDT::NoRole;
     }
     BasePort::~BasePort(){}
 
-    
+
+#ifdef WAS    
     // REMOVE ME!! for interim merge use only
     static CPI::Metadata::Port tmp;
     Port::Port(Worker &w, bool provider)
@@ -33,34 +33,39 @@ namespace CPI {
     {
       myMetaPort.provider = provider;
     }
+#endif
+
 
     // This base class constructor for generic initialization
     Port::Port(Worker &w, CPI::Metadata::Port &mPort) :
-      BasePort(mPort.name, mPort.provider),
-      CPI::Util::Child<Worker,Port>(w), myMetaPort(mPort), 
+      BasePort( mPort ),
+      CPI::Util::Child<Worker,Port>(w),
       canBeExternal(true),
       myContainer(*myParent->myParent->myParent)
     {
-      provider = mPort.provider;
       uint32_t n;
       bool found;
-
-      n = getAttrNum(mPort.myXml, "minBufferSize", true, &found);
-      if (found)
-	minBufferSize = n;
-      n = getAttrNum(mPort.myXml, "maxBufferSize", true, &found);
-      if (found)
-	maxBufferSize = n; // no max if not specified.
-      n = getAttrNum(mPort.myXml, "minNumBuffers", true, &found);
-      if (found)
-	minBufferCount = n;
+      
+      // Some of the tests use the default values of the meta-port so there may
+      // not be xml associated with it.
+      if ( mPort.myXml ) {
+	n = getAttrNum(mPort.myXml, "minBufferSize", true, &found);
+	if (found)
+	  myMetaPort.minBufferSize = n;
+	n = getAttrNum(mPort.myXml, "maxBufferSize", true, &found);
+	if (found)
+	  myMetaPort.maxBufferSize = n; // no max if not specified.
+	n = getAttrNum(mPort.myXml, "minNumBuffers", true, &found);
+	if (found)
+	  myMetaPort.minBufferCount = n;
+      }
       connectionData.port = (intptr_t)this;
     }
 
     void Port::loopback(Port &) {}
 
     bool Port::hasName(const char *name) {
-      return strcmp(name, myName) == 0;
+      return (name == myMetaPort.name );
     }
 
     // The default behavior is that there is nothing special to do between
@@ -170,13 +175,13 @@ namespace CPI {
 	{"NoRole", "ActiveMessage", "ActiveFlowControl", "ActiveOnly", "Passive", "MaxRole"};
       printf("Port %s, a %s, has options 0x%x, initial role %s\n"
 	     "  other has options 0x%x, initial role %s\n",
-	     myName, isProvider() ? "provider/consumer" : "user/producer",
+	     myMetaPort.name, isProvider() ? "provider/consumer" : "user/producer",
 	     connectionData.data.options, roleName[connectionData.data.role],
 	     other.options, roleName[other.role]);
       chooseRoles(uDesc.role, uDesc.options, pDesc.role, pDesc.options);
       printf("  after negotiation, port %s, a %s, has role %s\n"
 	     "  other has role %s\n",
-	     myName, isProvider() ? "provider/consumer" : "user/producer",
+	     myMetaPort.name, isProvider() ? "provider/consumer" : "user/producer",
 	     roleName[connectionData.data.role], roleName[other.role]);
       // We must make sure other side doesn't mess with roles anymore.
       uDesc.options |= 1 << CPI::RDT::MandatedRole;
@@ -191,15 +196,15 @@ namespace CPI {
 	if (strcmp(p->name, "bufferCount") == 0) {
 	  if (p->type != CM::Property::CPI_ULong)
 	    throw ApiError("bufferCount property has wrong type, should be ULong", NULL);
-	  if (p->vULong < minBufferCount)
+	  if (p->vULong < myMetaPort.minBufferCount)
 	    throw ApiError("bufferCount is below worker's minimum", NULL);
 	  myDesc.nBuffers = p->vULong;
 	} else if (strcmp(p->name, "bufferSize") == 0) {
 	  if (p->type != CM::Property::CPI_ULong)
 	    throw ApiError("bufferSize property has wrong type, should be ULong", NULL);
-	  if (p->vULong < minBufferSize)
+	  if (p->vULong < myMetaPort.minBufferSize)
 	    throw ApiError("bufferSize is below worker's minimum", NULL);
-	  if (maxBufferSize && p->vULong > maxBufferSize)
+	  if (myMetaPort.maxBufferSize && p->vULong > myMetaPort.maxBufferSize)
 	    throw ApiError("bufferSize exceeds worker's maximum", NULL);
 	  myDesc.dataBufferSize = p->vULong;
 	} else if (strcmp(p->name, "xferRole") == 0 && p->vString) {
@@ -217,7 +222,7 @@ namespace CPI {
 	  else
 	    throw ApiError("xferRole property must be passive|active|flowcontrol|activeonly", NULL);
 	  if (!(connectionData.data.options & (1 << role)))
-	    throw ApiError("xferRole of \"%s\" not supported by port \"%s\"", p->vString, myName);
+	    throw ApiError("xferRole of \"%s\" not supported by port \"%s\"", p->vString, myMetaPort.name);
 	  connectionData.data.role = role;
 	}
       }

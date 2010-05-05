@@ -115,7 +115,7 @@ namespace CPI {
 
 	 ****************************************************************** */	
       virtual Application * createApplication()
-	throw ( CPI::Util::EmbeddedException )=0;
+	throw ( CPI::Util::EmbeddedException );
 
 
       /**
@@ -151,61 +151,9 @@ namespace CPI {
       virtual DispatchRetCode dispatch(DataTransfer::EventManager* event_manager)
 	throw ( CPI::Util::EmbeddedException );
 
+      Artifact & loadArtifact(const char *url, CPI::Util::PValue *artifactParams = 0);
+      virtual Artifact & createArtifact(const char *url, CPI::Util::PValue *artifactParams = 0)=0;
 
-#ifdef NEEDED
-      /**
-	 @brief
-	 loadArtifacts
-
-	 Loads a worker artifact that can later be used to create a worker instance.
-
-	 @param [ in ] app
-	 Application.
-
-	 @param [ in ] artifactData
-	 Array of artifact information.
-
-	 @param [ in ] artifactCount
-         Number of elements in artifactData.
-
-	 @throw CPI::Util::EmbeddedException  If an error is detected
-
-	 ****************************************************************** */	
-      virtual void loadArtifacts( 
-				 Application&   app,	       
-				 CPI::Util::PValue*    artifactData,	
-				 CPI::OS::uint32_t     artifactCount 
-				  )
-	throw ( CPI::Util::EmbeddedException ){};
-#endif
-
-
-      virtual Artifact & loadArtifact(const char *url, CPI::Util::PValue *artifactParams = 0);
-
-
-
-#ifdef NEEDED
-
-      /**
-	 @brief
-	 unLoadArtifacts
-
-	 Unloads all previously loaded artifacts withing the context.
-
-	 @param [ in ] app
-	 Application.
-
-	 @throw CPI::Util::EmbeddedException  If the unload operation fails.
-
-	 ****************************************************************** */	
-      virtual void unLoadArtifacts( 
-				   Application& app 
-				    )
-	throw ( CPI::Util::EmbeddedException ){}
-#endif
-
-
-		
 
       /**
 	 @brief

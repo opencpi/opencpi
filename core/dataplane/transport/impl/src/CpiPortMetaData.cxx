@@ -184,11 +184,6 @@ PortMetaData( PortOrdinal pid,
   // port
   real_location_string = pdd.desc.oob.oep;
   shadow_location_string = ep;
-
-#ifdef WAS
-  remoteCircuitId = pdd.desc.oob.cid;
-#endif
-
   remotePortId = pdd.desc.oob.port_id;
 
   std::string nuls;
@@ -253,72 +248,9 @@ PortMetaData::
     return;
   }
 
-  for ( CPI::OS::uint32_t index=0; index<1; index++ ) {
-    if ( m_portSetMd->output ) {
 
-	if ( !m_shadow ) {
 
-	  res_mgr = 
-	    XferFactoryManager::getFactoryManager().getSMBResources( m_real_location )->sMemResourceMgr;
-	  cpiAssert( res_mgr );
-
-	  rc = res_mgr->free( m_bufferData[index].outputOffsets.bufferOffset,
-			      m_bufferData[index].outputOffsets.bufferSize);
-	  cpiAssert( rc == 0 );
-
-	  rc = res_mgr->free( m_bufferData[index].outputOffsets.localStateOffset,
-			      sizeof(BufferState)*MAX_PORT_COUNT);
-	  cpiAssert( rc == 0 );
-
-	  rc = res_mgr->free( m_bufferData[index].outputOffsets.metaDataOffset,
-			      sizeof(BufferMetaData)*MAX_PORT_COUNT);
-	  cpiAssert( rc == 0 );
-
-	  if ( m_localPortSetControl != 0  ) {
-
-	    rc = res_mgr->free( m_localPortSetControl,
-				sizeof(OutputPortSetControl));
-	    cpiAssert( rc == 0 );
-	    m_localPortSetControl = 0;
-	  }
-	}
-      }
-      else {
-
-	if ( ! m_shadow ) {
-
-	  res_mgr = 
-	    XferFactoryManager::getFactoryManager().getSMBResources( m_real_location )->sMemResourceMgr;
-	  cpiAssert( res_mgr );
-
-	  rc = res_mgr->free( m_bufferData[index].inputOffsets.bufferOffset,
-			      m_bufferData[index].inputOffsets.bufferSize);
-	  cpiAssert( rc == 0 );
-
-	  rc = res_mgr->free( m_bufferData[index].inputOffsets.metaDataOffset,
-			      sizeof(BufferMetaData)*MAX_PORT_COUNT);
-	  cpiAssert( rc == 0 );
-
-	  rc = res_mgr->free( m_bufferData[index].inputOffsets.localStateOffset,
-			      sizeof(BufferState)*MAX_PORT_COUNT);
-	  cpiAssert( rc == 0 );
-
-	}
-	else {  // We are a shadow port
-
-	  res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_shadow_location )->sMemResourceMgr;
-	  cpiAssert( res_mgr );
-
-	  rc = res_mgr->free( m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_shadow_location->mailbox],
-			      sizeof(BufferState));
-	  cpiAssert( rc == 0 );
-	}
-
-      }
-
-    }
-
-  }
+}
 
 
 

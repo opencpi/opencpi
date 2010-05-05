@@ -206,9 +206,10 @@ namespace DataTransfer {
    *********************************/
   const unsigned int ZeroCopyReady = 0x10000000;
 
-#define N_BYTES_TRANSFERED(v) ( v & 0xffffffffUL )
-#define DECODE_OPCODE(v) ( (v>>32) & 0xffffffffUL )
+#define N_BYTES_TRANSFERED(v) ( v & 0xffffffffULL )
+#define DECODE_OPCODE(v) ( (v>>32) & 0xffffffffULL )
 #define SET_BYTES_TRANSFERED(l,bytes) l = ((l & 0xffffffff00000000ULL) | bytes);
+
 
   struct BufferMetaData {
     CPI::OS::uint64_t        cpiMetaDataWord;      // CPI compatible metadata word

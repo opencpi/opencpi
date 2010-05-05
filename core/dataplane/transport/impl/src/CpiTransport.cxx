@@ -203,9 +203,6 @@ CPI::DataTransport::Transport::~Transport()
     c = next_c;
   }
 
-
-
-
   unsigned int n;
   for ( n=0; n<m_remoteEndpoints.getElementCount(); n++ ) {
     delete static_cast<GEndPoint*>(m_remoteEndpoints[n]);
@@ -394,17 +391,7 @@ createCircuit(
 	      )
 {
   CircuitId cid;
-#ifdef WAS
-  if ( id ) {
-    cid = Misc::hashCode( id );
-  }
-  else {
-    cid = this->m_nextCircuitId++;
-  }
-#endif
-
   cid = this->m_nextCircuitId++;
-
   return createCircuit( cid, connection, src_ports, dest_ports, flags);
 }
 

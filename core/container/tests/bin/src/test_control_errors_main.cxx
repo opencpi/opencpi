@@ -341,6 +341,7 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
     createPorts( ca, workers );
   }
   catch ( ... ) {
+    cpiAssert ( 0 );
     TUPRINTF("Failed to initialize properties\n");
     throw;
   }
@@ -1059,6 +1060,7 @@ int  main( int argc, char** argv)
   LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT0].bufferCount = 5;
   CONSUMER.pdata[CONSUMER_INPUT_PORT0].bufferCount  = 1;
 
+
   test_name = "Misc. Control Error Tests";
   try { 
     printf("\n\nRunning test (%s): \n", test_name );
@@ -1079,6 +1081,7 @@ int  main( int argc, char** argv)
   }
   printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
+
 
 
   test_name = "Property read/write Control Error Test";
@@ -1124,6 +1127,8 @@ int  main( int argc, char** argv)
   printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
+
+
   
   test_name = "init() Control Error Test 1";
   try { 
@@ -1145,6 +1150,10 @@ int  main( int argc, char** argv)
   }
   printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
+
+
+
+
 
 
   test_name = "init() Control Error Test 2";
@@ -1190,6 +1199,9 @@ int  main( int argc, char** argv)
   printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
+
+
+
   test_name = "start() Control Error Test 2";
   try { 
     printf("\n\nRunning test (%s): \n", test_name );
@@ -1211,31 +1223,13 @@ int  main( int argc, char** argv)
   printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
+
+
+
   test_name = "stop() Control Error Test 1";
   try { 
     printf("\n\nRunning test (%s): \n", test_name );
     test_rc &= config_and_run_state_error_test1( test_name, ca, workers, WCI_CONTROL_STOP );
-  }
-  catch( CPI::Util::EmbeddedException& ex ) {
-    printf("failed with an exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
-    test_rc = 0;
-  }
-  catch ( std::string& str ) {
-    printf(" failed with an exception %s\n",
-	   str.c_str() );
-    test_rc = 0;
-  }
-  catch ( ... ) {
-    test_rc = 0;
-  }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
-  oa_test_rc &= test_rc; test_rc=1;
-
-  test_name = "stop() Control Error Test 2";
-  try { 
-    printf("\n\nRunning test (%s): \n", test_name );
-    test_rc &= config_and_run_state_error_test2( test_name, ca, workers, WCI_CONTROL_STOP  );
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("failed with an exception. errorno = %d, aux = %s\n",
@@ -1274,9 +1268,35 @@ int  main( int argc, char** argv)
   printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
+
+  test_name = "stop() Control Error Test 2";
+  try { 
+    printf("\n\nRunning test (%s): \n", test_name );
+    test_rc &= config_and_run_state_error_test2( test_name, ca, workers, WCI_CONTROL_STOP  );
+  }
+  catch( CPI::Util::EmbeddedException& ex ) {
+    printf("failed with an exception. errorno = %d, aux = %s\n",
+	   ex.getErrorCode(), ex.getAuxInfo() );
+    test_rc = 0;
+  }
+  catch ( std::string& str ) {
+    printf(" failed with an exception %s\n",
+	   str.c_str() );
+    test_rc = 0;
+  }
+  catch ( ... ) {
+    test_rc = 0;
+  }
+  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  oa_test_rc &= test_rc; test_rc=1;
+
+
+
+
   tdata.run=0;
   t->join();
   delete t;
+
   destroyContainers( ca, workers );
 
   return !oa_test_rc;

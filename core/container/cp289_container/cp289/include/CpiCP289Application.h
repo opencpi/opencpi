@@ -36,7 +36,9 @@
 #include <CpiOsDataTypes.h>
 #include <CpiContainerDataTypes.h>
 #include <CpiApplication.h>
+#include <CpiArtifact.h>
 #include <RCC_Worker.h>
+#include <CpiOsLoadableModule.h>
 
 
 namespace CPI {
@@ -50,6 +52,23 @@ namespace CPI {
 
       class Worker;
       class Container;
+
+      class Artifact : public CPI::Container::Artifact {
+
+      public:
+	Artifact(CPI::Container::Interface &, const char *url);
+	virtual CPI::Container::Worker &createWorkerX( CPI::Container::Application &a, ezxml_t impl, ezxml_t inst, CPI::Util::PValue *);
+	virtual ~Artifact();
+	bool hasUrl(const char *url);
+
+      private:
+	CPI::OS::LoadableModule m_loader;
+	bool                    m_open;
+	RCCDispatch          *  m_dispatch;
+	int                     m_workerCount;
+
+      };
+
 
       /**********************************
        * Containers represented Node Application class

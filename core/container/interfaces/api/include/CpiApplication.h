@@ -35,15 +35,18 @@ namespace CPI {
       Application(Interface &, const char *name=0, CPI::Util::PValue *props = 0);
     public:
       virtual ~Application();
+
       // convenience.
       Artifact & loadArtifact(const char *url, CPI::Util::PValue *artifactParams = 0);
 
       // Convenience method that does loadArtifact(url), artifact->createWorker
+
       virtual Worker & createWorker(const char *url, CPI::Util::PValue *aparams,
-				   const void *entryPoint, const char *inst=NULL,
-				   CPI::Util::PValue *wparams = NULL);
-      virtual Worker & createWorker(Artifact &, const void *entryPoint, const char *inst,
-				   CPI::Util::PValue *wparams = NULL);
+				    const void *entryPoint, const char * inst=NULL, CPI::Util::PValue *wparams = NULL);
+
+
+      virtual Worker & createWorker(Artifact &, const char * impl, const char * inst=NULL,
+				    CPI::Util::PValue *wparams = NULL);
 
 
     };

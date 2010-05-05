@@ -125,7 +125,7 @@ $(UNIXLIB): $(OBJECTS)
 	ar r $@ $(OBJECTS)
 
 $(UNIXSHLIB): $(OBJECTS)
-	$(CXX) -shared -o $@ $(OBJECTS)
+	$(CXX) $(SHAREDLIBFLAGS) -shared -o $@ $(OBJECTS)
 	cp -p $@ $(CPIDIR)/lib
 endif
 

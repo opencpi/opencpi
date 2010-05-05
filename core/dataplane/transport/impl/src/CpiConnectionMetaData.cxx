@@ -109,14 +109,5 @@ void ConnectionMetaData::addPortSet( PortSetMetaData* psmd )
 ConnectionMetaData::~ConnectionMetaData()
 {
   delete dataDistribution;
-
-#ifdef WAS
-  PortSetMetaData * psmd = firstChild();
-  while ( psmd ) {
-    delete psmd;
-    psmd = firstChild();
-  }
-#endif
-
 }
 

@@ -45,6 +45,7 @@
 #include <CpiPValue.h>
 #include <CpiUtilMisc.h>
 #include <CpiParentChild.h>
+#include <CpiMetadataWorker.h>
 
 
 #define SET_LAST_ERROR_TO_WORKER_ERROR_STRING(x)			\
@@ -73,7 +74,7 @@ using namespace CPI::CP289;
 
 void 
 CPI::CP289::Worker::
-overRidePortInfo( CPI::Container::PortData * portData, CPI::Container::PortId portId )
+overRidePortInfo( CPI::Metadata::Port & portData )
 {
   RCCPortInfo* pi = NULL;
   if ( m_rcc_worker->m_dispatch->portInfo == NULL ) {
@@ -81,7 +82,7 @@ overRidePortInfo( CPI::Container::PortData * portData, CPI::Container::PortId po
   }
   int n=0;
   while ( m_rcc_worker->m_dispatch->portInfo[n].port != RCC_NO_ORDINAL ) {
-    if ( m_rcc_worker->m_dispatch->portInfo[n].port == portId ) {
+    if ( m_rcc_worker->m_dispatch->portInfo[n].port == portData.m_pid  ) {
       pi = &m_rcc_worker->m_dispatch->portInfo[n];
       break;
     }
@@ -90,10 +91,10 @@ overRidePortInfo( CPI::Container::PortData * portData, CPI::Container::PortId po
   if ( pi ) {
 #ifndef NDEBUG
     printf("\nWorker Port info is non NULL, overriding port defaults from s,bc -> %d,%d to %d,%d\n",
-	   portData->connectionData.data.desc.nBuffers, portData->connectionData.data.desc.dataBufferSize, pi->minBuffers, pi->maxLength );
+	   portData.minBufferCount, portData.minBufferSize, pi->minBuffers, pi->maxLength );
 #endif
-    portData->connectionData.data.desc.nBuffers = ( portData->connectionData.data.desc.nBuffers > pi->minBuffers ) ? portData->connectionData.data.desc.nBuffers : pi->minBuffers;
-    portData->connectionData.data.desc.dataBufferSize = pi->maxLength;
+    portData.minBufferCount = ( portData.minBufferCount > pi->minBuffers ) ? portData.minBufferCount : pi->minBuffers;
+    portData.minBufferSize  = portData.maxBufferSize  = pi->maxLength;
 
   }
 }
@@ -102,8 +103,8 @@ overRidePortInfo( CPI::Container::PortData * portData, CPI::Container::PortId po
 
 CPI::CP289::Worker::
 Worker( CPI::Container::Application & app, const void* entryPoint, CPI::Util::PValue *wparams,
-	::RCCContainer * rcc_container)
-  : CPI::Container::Worker(app),
+	::RCCContainer * rcc_container, ezxml_t impl, ezxml_t inst)
+  : CPI::Container::Worker(app,impl,inst),
    m_rcc_worker(0),workerId(NULL),enabled(false),sourcePortCount(0),targetPortCount(0),
   sourcePorts(1), targetPorts(1), runConditionSS(0), worker_run_count(0)
 {
@@ -180,6 +181,11 @@ setProperties(
   }
   memcpy( (char*)m_rcc_worker->m_context->properties+offset, p_data, nBytes );
 }
+
+
+
+
+
 
 
 // Destructor
@@ -351,7 +357,21 @@ RCCWorkerInterface( RCCDispatch * wd, CPI::CP289::Worker * wi )
 	
 }
 
+CPI::Container::Port & 
+CPI::CP289::Worker::
+createPort(CPI::Metadata::Port& mp )
+{
 
+  int bSize = ( mp.minBufferSize == 0 ) ? CPI::Metadata::Port::DEFAULT_BUFFER_SIZE : mp.minBufferSize;
+  int bCount = ( mp.minBufferCount == 0 ) ? CPI::Metadata::Port::DEFAULT_NBUFFERS : mp.minBufferCount;
+  if ( mp.provider ) {
+    return createInputPort( mp.m_pid, bCount, bSize, NULL );
+  }
+  else {
+    return createOutputPort( mp.m_pid, bCount, bSize, NULL );
+  }
+
+}
 
 
 
@@ -362,7 +382,7 @@ createOutputPort(
 		 PortId               portId,
 		 CPI::OS::uint32_t    bufferCount,
 		 CPI::OS::uint32_t    bufferSize, 
-		 PValue*	      props	    
+		 CPI::Util::PValue*	      props	    
 		 )
   throw ( CPI::Util::EmbeddedException )
 {
@@ -381,25 +401,33 @@ createOutputPort(
     throw CPI::Util::EmbeddedException( PORT_NOT_FOUND, "Port id exceeds max port count of 32", ApplicationFatal);
   }
 
+#ifdef WAS
   PortData ipd;
   ipd.provider = false;
   ipd.connectionData.data.desc.nBuffers = bufferCount;
   ipd.connectionData.data.desc.dataBufferSize = bufferSize;
   ipd.connectionData.container_id = static_cast<CPI::CP289::Container*>(myParent->myParent)->getId();
+#endif
+
+  CPI::Metadata::Port pmd;
+  pmd.m_pid = portId;
+  pmd.provider = false;
+  pmd.minBufferCount = bufferCount;
+  pmd.minBufferSize = bufferSize;
 
   // Check to see if the worker requested specific port information
-  overRidePortInfo( &ipd, portId );
+  overRidePortInfo( pmd );
 
   Port *port;
   try {
-    port = new CPI::CP289::Port(*this, ipd, portId );
+    port = new CPI::CP289::Port(*this, pmd, NULL );
   }
   catch( std::bad_alloc ) {
     throw CPI::Util::EmbeddedException( NO_MORE_MEMORY, "new", ContainerFatal);
   }
 
   m_rcc_worker->m_context->ports[portId].current.maxLength = 
-    ipd.connectionData.data.desc.dataBufferSize;
+    (pmd.minBufferSize > pmd.maxBufferSize) ? pmd.minBufferSize : pmd.maxBufferSize;
 
   // Defer the real work until the port is connected.
   sourcePorts.insertToPosition(port, portId);
@@ -416,7 +444,7 @@ createInputPort(
 		 PortId              portId,   
 		 CPI::OS::uint32_t   bufferCount,
 		 CPI::OS::uint32_t   bufferSize, 
-		 PValue*	     props	    
+		 CPI::Util::PValue*	     props	    
 		 )
   throw ( CPI::Util::EmbeddedException )
 {
@@ -465,20 +493,28 @@ createInputPort(
     endpoint = MyParent->getTransport().addLocalEndpoint( endpoint.c_str() )->sMemServices->getEndPoint()->end_point;
   }
 
-
+#ifdef WAS
   PortData ipd;
   strcpy( ipd.connectionData.data.desc.oob.oep, endpoint.c_str() );
   ipd.provider = true;
   ipd.connectionData.data.desc.nBuffers = bufferCount;
   ipd.connectionData.data.desc.dataBufferSize = bufferSize;
   ipd.connectionData.container_id = static_cast<CPI::CP289::Container*>(myParent->myParent)->getId();
+#endif
+
+  CPI::Metadata::Port pmd;
+  pmd.m_pid = portId;
+  pmd.provider = true;
+  pmd.minBufferCount = bufferCount;
+  pmd.minBufferSize = bufferSize;
+
 
   // Check to see if the worker requested specific port information
-  overRidePortInfo( &ipd, portId );
+  overRidePortInfo( pmd );
 
   Port *port;
   try {
-    port = new CPI::CP289::Port(*this, ipd, portId );
+    port = new CPI::CP289::Port(*this, pmd, endpoint.c_str() );
   }
   catch( std::bad_alloc ) {
     throw CPI::Util::EmbeddedException( NO_MORE_MEMORY, "new", ContainerFatal);
@@ -489,8 +525,8 @@ createInputPort(
     static_cast<CPI::CP289::OpaquePortData*>(m_rcc_worker->m_context->ports[portId].opaque);  
   port->opaque() = opaque;
   opaque->port = port;
-    m_rcc_worker->m_context->ports[portId].current.maxLength = 
-    ipd.connectionData.data.desc.dataBufferSize;
+  m_rcc_worker->m_context->ports[portId].current.maxLength = 
+    (pmd.minBufferSize > pmd.maxBufferSize) ? pmd.minBufferSize : pmd.maxBufferSize;
   targetPorts.insertToPosition(port, portId);
 
   return *port;

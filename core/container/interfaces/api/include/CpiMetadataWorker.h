@@ -39,11 +39,25 @@ namespace CPI {
     class Port {
       friend class Worker;
       // Describe a port
-      bool decode(ezxml_t x);
+      bool decode(ezxml_t x, int pid);
     public:
-      const char *name;
-      bool provider, twoway;
-      ezxml_t myXml;
+      const char *   name;
+      int            m_pid;
+      bool           provider;
+      bool           twoway;
+
+
+      static const unsigned
+	DEFAULT_NBUFFERS = 2,
+	DEFAULT_BUFFER_SIZE = 2*1024;
+      uint32_t minBufferSize;
+      uint32_t minBufferCount;
+      uint32_t maxBufferSize;
+
+      ezxml_t        myXml;
+
+      Port(): twoway(false), minBufferSize(DEFAULT_BUFFER_SIZE), minBufferCount(1), maxBufferSize(0), myXml(0){}
+
     };
 
     class Test {
@@ -53,6 +67,7 @@ namespace CPI {
       unsigned int * inputValues;  // reference to property[n]
       unsigned int * resultValues;
     };
+
     // Dealing with worker meta as a bundle
     class Worker {
       Property *myProps;

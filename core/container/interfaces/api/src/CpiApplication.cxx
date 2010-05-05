@@ -23,9 +23,9 @@ namespace CPI {
       Artifact &a = loadArtifact(url, aParams);
       return a.createWorker(*this, (const char*)entry, inst, wParams);
     }
-    Worker &Application::createWorker(Artifact &a, const void *entryPoint,
-				      const char *inst, CPI::Util::PValue *wParams) {
-      return a.createWorker(*this, (const char*)entryPoint, inst, wParams);
+    Worker &Application::createWorker(Artifact &a, const char* impl, const char *inst, 
+				      CPI::Util::PValue *wParams) {
+      return a.createWorker(*this, impl, inst, wParams);
     }
   }
 }

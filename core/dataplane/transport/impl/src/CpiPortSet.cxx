@@ -177,11 +177,5 @@ PortSet::
        delete m_transferController;
   }
 
-
-#ifdef PORT_COMPLETE
-  if ( m_data.psMetaData )
-    delete  m_data.psMetaData;
-#endif
-
 }
 

@@ -66,9 +66,10 @@ namespace CPI {
     }
     Port *Worker::findPort(const char *id) {
       Port *p = myPorts;
-      for (unsigned int n=nPorts; n; n--, p++)
-	if (!strcmp(p->name, id))
+      for (unsigned int n=nPorts; n; n--, p++) {
+	if ( strcmp(p->name,id)==0 )
 	  return p;
+      }
       return 0;
     }
     Test &Worker::findTest(unsigned int testId) {
@@ -331,9 +332,10 @@ namespace CPI {
       }
       size = theOffset - offset;
     }
-    bool Port::decode(ezxml_t x) {
+    bool Port::decode(ezxml_t x, int pid) {
       name = ezxml_attr(x, "name");
-      if (!name)
+      m_pid = pid;
+      if ( name == NULL )
 	return true;
       twoway = getBoolean(x, "twoWay");
       provider = getBoolean(x, "provider");
@@ -374,9 +376,12 @@ namespace CPI {
       for (unsigned i = 0; i < nProps; i++, prop++)
 	prop->align(i, offset);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
-      for (x = ezxml_child(xml, "port"); x; x = ezxml_next(x), port++)
-	if (port->decode(x))
+      int pid=0;
+      for (x = ezxml_child(xml, "port"); x; x = ezxml_next(x), port++) {
+	if (port->decode(x,pid)) {
 	  throw CC::ApiError("Invalid xml port description", 0);
+	}
+      }
       // Control operations
       const char *ops = ezxml_attr(xml, "controlOperations");
 #define CONTROL_OP(x, c, t, s1, s2, s3)  has##c = ops && strstr(ops, #x) != NULL;

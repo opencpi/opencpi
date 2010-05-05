@@ -76,7 +76,7 @@ void CPI::DataTransport::Port::initialize()
   if ( m_initialized ) {
     return;
   }
-  m_initialized = true;
+
   m_sequence = 0;
   m_lastBufferOrd=-1;
 
@@ -150,6 +150,7 @@ void CPI::DataTransport::Port::initialize()
   // Now we need to create our buffers
   createBuffers();
 
+  m_initialized = true;
 }
 
 
@@ -432,14 +433,6 @@ void CPI::DataTransport::Port::advance( CPI::OS::uint64_t value )
 bool CPI::DataTransport::Port::supportsZeroCopy( CPI::DataTransport::Port* port )
 {
 
-#ifdef WAS
-  // Simple in process case
-  if (this->m_data->m_real_location == port->m_data->m_real_location ) {
-    return true;
-  }
-#endif
-  
-
   if ( getCircuit()->m_transport->isLocalEndpoint( port->m_data->m_real_location->end_point.c_str() ) &&
        getCircuit()->m_transport->isLocalEndpoint( m_data->m_real_location->end_point.c_str() )
        ) {
@@ -509,6 +502,78 @@ getBufferCount()
 CPI::DataTransport::Port::
 ~Port()
 {
+  int rc;
+  int index=0;
+  ResourceServices* res_mgr;
+
+
+  if ( ! m_initialized ) {
+    return;
+  }
+
+  if ( isOutput() ) {
+
+    if ( ! m_data->m_shadow  ) {
+
+      res_mgr = 
+	XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+      cpiAssert( res_mgr );
+
+      rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.bufferOffset,
+			  m_data->m_bufferData[index].outputOffsets.bufferSize);
+      cpiAssert( rc == 0 );
+
+      rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.localStateOffset,
+			  sizeof(BufferState)*MAX_PORT_COUNT);
+      cpiAssert( rc == 0 );
+
+      rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.metaDataOffset,
+			  sizeof(BufferMetaData)*MAX_PORT_COUNT);
+      cpiAssert( rc == 0 );
+
+      if ( m_data->m_localPortSetControl != 0  ) {
+
+	rc = res_mgr->free( m_data->m_localPortSetControl,
+			    sizeof(OutputPortSetControl));
+	cpiAssert( rc == 0 );
+	m_data->m_localPortSetControl = 0;
+      }
+    }
+  }
+  else {
+
+    if ( ! m_shadow ) {
+
+      res_mgr = 
+	XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+      cpiAssert( res_mgr );
+
+      rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.bufferOffset,
+			  m_data->m_bufferData[index].inputOffsets.bufferSize);
+      cpiAssert( rc == 0 );
+
+      rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.metaDataOffset,
+			  sizeof(BufferMetaData)*MAX_PORT_COUNT);
+      cpiAssert( rc == 0 );
+
+      rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.localStateOffset,
+			  sizeof(BufferState)*MAX_PORT_COUNT);
+      cpiAssert( rc == 0 );
+
+    }
+    else {  // We are a shadow port
+
+      res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_shadow_location )->sMemResourceMgr;
+      cpiAssert( res_mgr );
+
+      rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox],
+			  sizeof(BufferState));
+      cpiAssert( rc == 0 );
+    }
+
+  }
+
+
   if ( m_localSMemResources ) {
     m_localSMemResources->sMemResourceMgr->free( m_offsetsOffset,
 						 sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS);

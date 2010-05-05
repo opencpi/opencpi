@@ -23,6 +23,19 @@ using namespace CPI::RDT;
 namespace CPI {
   namespace Container {
 
+
+
+
+    Application * 
+    Interface::
+    createApplication()
+      throw ( CPI::Util::EmbeddedException )
+    {
+      return new Application(*this,NULL,NULL);
+    }
+
+
+
     std::string
     packDescriptor (CPI::Util::CDR::Encoder& packer, const Descriptors & desc)
       throw ()
@@ -151,16 +164,9 @@ namespace CPI {
 
 
     Artifact & Interface::loadArtifact(const char *url, CPI::Util::PValue *artifactParams) {
-
-
-#ifdef PORT_COMPLETE
       // check whether the url is already loaded - canonicalize? FIXME
       Artifact *a = Parent<Artifact>::findChild(&Artifact::hasUrl, url);
       return a ? *a : createArtifact(url, artifactParams);
-#else
-
-      
-#endif
     }
 
     // Ultimately there would be a set of "base class" generic properties

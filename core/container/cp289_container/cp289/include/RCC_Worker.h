@@ -235,4 +235,12 @@ typedef struct {
 
 } RCCDispatch;
 
+
+typedef struct {
+  const char * worker_name;
+  RCCDispatch *dt;
+} DllDispatchEntry;
+
+
+
 #endif

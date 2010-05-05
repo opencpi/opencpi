@@ -43,8 +43,7 @@ namespace CPI {
     protected:
       ezxml_t myXml;
       const char *myImplTag, *myInstTag;
-      Worker();
-      Worker( Application & );
+
       // Provide hardware-related property information
       Worker(Application &, ezxml_t impl, ezxml_t inst);
       virtual void prepareProperty(Metadata::Property &p, Property &) = 0;

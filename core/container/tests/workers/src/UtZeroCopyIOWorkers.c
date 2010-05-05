@@ -26,7 +26,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef TIME_IT
 #include <CpiTimeEmitC.h>
+#endif
 #include "UtZeroCopyIOWorkers.h"
 
 enum PPortIds {
@@ -68,7 +70,9 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     return RCC_OK;
   }
 
+#ifdef TIME_IT
   CPI_TIME_EMIT_C( "Producer Start" );
+#endif
 
 #ifndef NDEBUG
   printf("Producing buffer number %d\n", props->buffersProcessed );
@@ -88,7 +92,9 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
   props->buffersProcessed++; 
 
+#ifdef TIME_IT
   CPI_TIME_EMIT_C( "Producer Start Send" ); 
+#endif
 
 #ifndef NDEBUG
   printf("Producer is producing\n"); 
@@ -108,7 +114,9 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
   props->bytesProcessed += len;
 
+#ifdef TIME_IT
   CPI_TIME_EMIT_C( "Producer End Send" ); 
+#endif
 	
   return RCC_OK;
 
@@ -193,7 +201,9 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 		
   char* in_buffer = (char*)this_->ports[ConsumerWorker_Data_In_Port].current.data;
 
+#ifdef TIME_IT
   CPI_TIME_EMIT_C( "Consumer Start" );
+#endif
 		    
 #ifdef TIME_TP
   if ( mem->b_count == 0 ) {
@@ -273,9 +283,13 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #endif
 				
   if ( props->transferMode == ConsumerConsume ) {
+#ifdef TIME_IT
     CPI_TIME_EMIT_C( "Consumer Start Release" );
+#endif
     this_->container->release( &this_->ports[ConsumerWorker_Data_In_Port].current ); 
+#ifdef TIME_IT
     CPI_TIME_EMIT_C( "Consumer End Release" );
+#endif
   }
   else {
 
@@ -458,6 +472,13 @@ RCCDispatch UTZCopyLoopbackWorkerDispatchTable = { RCC_VERSION, 1, 1,
 						   LoopbackWorker_run,
 						   LBWorkerRunConditions, NULL, 0};
 
+
+DllDispatchEntry ZeroCopyWorkerDispatchTables[] = {
+  {"Consumer", &UTZCopyConsumerWorkerDispatchTable},
+  {"Loopback", &UTZCopyLoopbackWorkerDispatchTable},
+  {"Producer", &UTZCopyProducerWorkerDispatchTable},
+  {NULL,NULL}
+};
 
 
 
