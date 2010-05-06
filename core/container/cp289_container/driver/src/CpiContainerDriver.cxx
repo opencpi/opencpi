@@ -56,7 +56,6 @@ Driver::Driver()
      m_tpg_events(NULL),
      m_tpg_no_events(NULL)
 {
-    printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
   // Empty
 }
 
@@ -67,7 +66,6 @@ Driver::
 probe(const CPI::Util::PValue* props, const char *which )
   throw ( CPI::Util::EmbeddedException )
 {
-    printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
   int cid = g_cid++;
   cid += getpid();
   bool polled=true;
@@ -123,7 +121,6 @@ probe(const CPI::Util::PValue* props, const char *which )
 Driver::~Driver()
   throw ( )
 {
-    printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
   if ( m_tpg_no_events ) delete m_tpg_no_events;
   if ( m_tpg_events ) delete m_tpg_events;
 }

@@ -32,7 +32,6 @@ namespace CPI {
       :Child<DriverManager,Driver>(parent,name),
        m_type(type),m_name(name),m_isDiscoverable(dis)
     {
-    printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
       DriverManager::registerDriver(this);
     }
 
@@ -40,7 +39,6 @@ namespace CPI {
       throw()
       : Child<DriverManager,Driver>(name), m_type(type),m_name(name),m_isDiscoverable(dis)
     {
-    printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
       DriverManager::registerDriver(this);
     }
 
@@ -140,7 +138,6 @@ namespace CPI {
       throw ( CPI::Util::EmbeddedException )
         : Child<Driver,Device>(parent, instance_name)
     {
-    printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
       // Empty
     }
 
@@ -148,7 +145,6 @@ namespace CPI {
     Driver::~Driver()
       throw()
     {
-    printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
       // Empty
     };
 

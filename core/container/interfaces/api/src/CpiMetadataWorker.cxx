@@ -241,7 +241,6 @@ namespace CPI {
         0
       };
       const char *type = ezxml_attr(x, "type");
-      printf ( "decode(%d) -%s-\n", __LINE__, type );
 
       if (!type)
         return true;
@@ -276,7 +275,6 @@ namespace CPI {
       if (!name)
           return true;
       const char *a = ezxml_attr(x, "sequenceSize");
-      printf ( "decode(%d) -%s-\n", __LINE__, a );
       if (a) {
         is_sequence = true;
         sequence_size = strtoul(a, NULL, 10);
@@ -337,7 +335,6 @@ namespace CPI {
     }
     bool Port::decode(ezxml_t x, int pid) {
       name = ezxml_attr(x, "name");
-      printf ( "decode(%d) -%s-\n", __LINE__, name );
       m_pid = pid;
       if ( name == NULL )
         return true;
