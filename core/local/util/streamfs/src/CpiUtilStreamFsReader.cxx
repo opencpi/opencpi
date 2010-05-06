@@ -39,14 +39,14 @@ namespace CpiUtilStreamFsReader {
     class StreamBuf : public std::streambuf {
     public:
       StreamBuf (std::istream * stream,
-		 unsigned long long beg,
-		 unsigned long long size);
+                 unsigned long long beg,
+                 unsigned long long size);
       ~StreamBuf ();
 
     protected:
       int_type pbackfail (int_type = std::streambuf::traits_type::eof());
       pos_type seekoff (off_type off, std::ios_base::seekdir way,
-			std::ios_base::openmode which);
+                        std::ios_base::openmode which);
       pos_type seekpos (pos_type pos, std::ios_base::openmode which);
       std::streamsize xsgetn (char *, std::streamsize);
       int_type underflow ();
@@ -61,8 +61,8 @@ namespace CpiUtilStreamFsReader {
 
   public:
     StreamFsReaderStream (std::istream *,
-			  unsigned long long,
-			  unsigned long long);
+                          unsigned long long,
+                          unsigned long long);
     ~StreamFsReaderStream ();
 
   protected:
@@ -71,8 +71,8 @@ namespace CpiUtilStreamFsReader {
 
   StreamFsReaderStream::StreamBuf::
   StreamBuf (std::istream * str,
-	     unsigned long long beg,
-	     unsigned long long size)
+             unsigned long long beg,
+             unsigned long long size)
     : m_stream (str),
       m_beg (beg),
       m_pos (0),
@@ -111,7 +111,7 @@ namespace CpiUtilStreamFsReader {
   std::streambuf::pos_type
   StreamFsReaderStream::StreamBuf::
   seekoff (off_type off, std::ios_base::seekdir way,
-	   std::ios_base::openmode mode)
+           std::ios_base::openmode mode)
   {
     unsigned long long origin=0;
 
@@ -230,8 +230,8 @@ namespace CpiUtilStreamFsReader {
   }
 
   StreamFsReaderStream::StreamFsReaderStream (std::istream * str,
-					      unsigned long long beg,
-					      unsigned long long size)
+                                              unsigned long long beg,
+                                              unsigned long long size)
     : std::istream (0),
       m_buf (str, beg, size)
   {
@@ -257,8 +257,8 @@ namespace {
   class StreamFsIterator : public CPI::Util::Vfs::Iterator {
   public:
     StreamFsIterator (const std::string & dir,
-		      const std::string & pattern,
-		      const CPI::Util::StreamFs::StreamFsReader::TOC & contents)
+                      const std::string & pattern,
+                      const CPI::Util::StreamFs::StreamFsReader::TOC & contents)
       throw ();
 
     ~StreamFsIterator ()
@@ -296,8 +296,8 @@ namespace {
   };
 
   StreamFsIterator::StreamFsIterator (const std::string & dir,
-				      const std::string & pattern,
-				      const CPI::Util::StreamFs::StreamFsReader::TOC & contents)
+                                      const std::string & pattern,
+                                      const CPI::Util::StreamFs::StreamFsReader::TOC & contents)
     throw ()
     : m_dir (dir),
       m_contents (contents)
@@ -445,38 +445,38 @@ namespace {
       const std::string & absFileName = (*m_iterator).first;
 
       if (absFileName.length() >= firstFnPos &&
-	  (pdl == 1 || absFileName[pdl] == '/') &&
-	  absFileName.compare (0, pdl, m_absPatDir) == 0) {
-	std::string::size_type nextSlash =
-	  absFileName.find ('/', firstFnPos);
-	std::string nextPathComponent;
-	bool isDirectory;
+          (pdl == 1 || absFileName[pdl] == '/') &&
+          absFileName.compare (0, pdl, m_absPatDir) == 0) {
+        std::string::size_type nextSlash =
+          absFileName.find ('/', firstFnPos);
+        std::string nextPathComponent;
+        bool isDirectory;
 
-	if (nextSlash == std::string::npos) {
-	  nextPathComponent = absFileName.substr (firstFnPos);
-	  isDirectory = false;
-	}
-	else {
-	  nextPathComponent =
-	    absFileName.substr (firstFnPos, nextSlash-firstFnPos);
-	  isDirectory = true;
-	}
+        if (nextSlash == std::string::npos) {
+          nextPathComponent = absFileName.substr (firstFnPos);
+          isDirectory = false;
+        }
+        else {
+          nextPathComponent =
+            absFileName.substr (firstFnPos, nextSlash-firstFnPos);
+          isDirectory = true;
+        }
 
-	if (CPI::Util::Misc::glob (nextPathComponent, m_relPat)) {
-	  if (isDirectory) {
-	    if (m_seenDirectories.find (nextPathComponent) == m_seenDirectories.end()) {
-	      m_seenDirectories.insert (nextPathComponent);
-	      break;
-	    }
-	    else {
-	      // already seen this directory, do not break but continue
-	    }
-	  }
-	  else {
-	    // regular file
-	    break;
-	  }
-	}
+        if (CPI::Util::Misc::glob (nextPathComponent, m_relPat)) {
+          if (isDirectory) {
+            if (m_seenDirectories.find (nextPathComponent) == m_seenDirectories.end()) {
+              m_seenDirectories.insert (nextPathComponent);
+              break;
+            }
+            else {
+              // already seen this directory, do not break but continue
+            }
+          }
+          else {
+            // regular file
+            break;
+          }
+        }
       }
 
       m_iterator++;
@@ -893,10 +893,10 @@ exists (const std::string & fileName, bool * isDir)
 
   for (it = m_toc.begin(); it != m_toc.end(); it++) {
     if ((*it).first.length () > nnlen &&
-	(*it).first.compare (0, nnlen, nn) == 0 &&
-	(*it).first[nnlen] == '/') {
+        (*it).first.compare (0, nnlen, nn) == 0 &&
+        (*it).first[nnlen] == '/') {
       if (isDir) {
-	*isDir = true;
+        *isDir = true;
       }
 
       return true;
@@ -954,7 +954,7 @@ open (const std::string &, std::ios_base::openmode)
 std::istream *
 CPI::Util::StreamFs::StreamFsReader::
 openReadonly (const std::string & fileName,
-	      std::ios_base::openmode)
+              std::ios_base::openmode)
   throw (std::string)
 {
   CPI::Util::AutoMutex lock (m_mutex);
@@ -994,7 +994,7 @@ openReadonly (const std::string & fileName,
 std::ostream *
 CPI::Util::StreamFs::StreamFsReader::
 openWriteonly (const std::string &,
-	       std::ios_base::openmode)
+               std::ios_base::openmode)
   throw (std::string)
 {
   throw std::string ("not supported on this file system");

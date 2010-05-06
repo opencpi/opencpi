@@ -36,8 +36,8 @@ namespace OStreamOutputTests {
 
   std::string
   makePrefix (const std::string & producerId,
-	      unsigned short logLevel,
-	      const std::string & producerName)
+              unsigned short logLevel,
+              const std::string & producerName)
   {
     std::string res;
 
@@ -84,12 +84,12 @@ namespace OStreamOutputTests {
 
   std::string
   makePrefix (const std::string & producerId,
-	      CPI::Logger::Level::LwLogLevel level,
-	      const std::string & producerName)
+              CPI::Logger::Level::LwLogLevel level,
+              const std::string & producerName)
   {
     return makePrefix (producerId,
-		       static_cast<unsigned short> (level),
-		       producerName);
+                       static_cast<unsigned short> (level),
+                       producerName);
   }
 
   /*
@@ -111,13 +111,13 @@ namespace OStreamOutputTests {
       CPI::Logger::OStreamOutput logger (out);
       logger.setProducerId ("02-OStreamOutput");
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("runHelloWorldTest")
-	     << "Hello World"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("runHelloWorldTest")
+             << "Hello World"
+             << std::flush;
 
       std::string expected = makePrefix ("02-OStreamOutput",
-					 CPI::Logger::Level::ADMINISTRATIVE_EVENT,
-					 "runHelloWorldTest");
+                                         CPI::Logger::Level::ADMINISTRATIVE_EVENT,
+                                         "runHelloWorldTest");
       expected += "Hello World";
       expected += "\n";
 
@@ -139,8 +139,8 @@ namespace OStreamOutputTests {
 
     for (int i=0; i<20; i++) {
       *logger << CPI::Logger::LogLevel (111)
-	      << CPI::Logger::ProducerName ("threadSafetyTestThread1")
-	      << "Thread 1 - ";
+              << CPI::Logger::ProducerName ("threadSafetyTestThread1")
+              << "Thread 1 - ";
 
       CPI::OS::sleep (10);
 
@@ -149,7 +149,7 @@ namespace OStreamOutputTests {
       CPI::OS::sleep (10);
       
       *logger << "Thread 1."
-	      << std::flush;
+              << std::flush;
     }
   }
 
@@ -161,8 +161,8 @@ namespace OStreamOutputTests {
 
     for (int i=0; i<5; i++) {
       *logger << CPI::Logger::LogLevel (222)
-	      << CPI::Logger::ProducerName ("threadSafetyTestThread2")
-	      << "Hello from Thread 2 - ";
+              << CPI::Logger::ProducerName ("threadSafetyTestThread2")
+              << "Hello from Thread 2 - ";
 
       CPI::OS::sleep (50);
 
@@ -171,7 +171,7 @@ namespace OStreamOutputTests {
       CPI::OS::sleep (50);
       
       *logger << "Goodbye from Thread 2."
-	      << std::flush;
+              << std::flush;
     }
   }
 
@@ -193,14 +193,14 @@ namespace OStreamOutputTests {
       CPI::OS::ThreadManager tm2 (threadSafetyTestThread2, pl);
 
       std::string expected1 = makePrefix ("02-OStreamOutput", 111,
-					  "threadSafetyTestThread1");
+                                          "threadSafetyTestThread1");
       expected1 += "Thread 1 - ";
       expected1 += "Thread 1 - ";
       expected1 += "Thread 1.";
       expected1 += "\n";
 
       std::string expected2 = makePrefix ("02-OStreamOutput", 222,
-					  "threadSafetyTestThread2");
+                                          "threadSafetyTestThread2");
       expected2 += "Hello from Thread 2 - ";
       expected2 += "Hello from Thread 2 - ";
       expected2 += "Goodbye from Thread 2.";
@@ -215,32 +215,32 @@ namespace OStreamOutputTests {
       int seen2 = 0;
 
       while (pos < data.length()) {
-	bool found1, found2;
+        bool found1, found2;
 
-	if (data.substr (pos, expected1.length()) == expected1) {
-	  found1 = true;
-	  seen1++;
-	}
-	else {
-	  found1 = false;
-	}
+        if (data.substr (pos, expected1.length()) == expected1) {
+          found1 = true;
+          seen1++;
+        }
+        else {
+          found1 = false;
+        }
 
-	if (data.substr (pos, expected2.length()) == expected2) {
-	  found2 = true;
-	  seen2++;
-	}
-	else {
-	  found2 = false;
-	}
+        if (data.substr (pos, expected2.length()) == expected2) {
+          found2 = true;
+          seen2++;
+        }
+        else {
+          found2 = false;
+        }
 
-	test ((found1 && !found2) || (!found1 && found2));
+        test ((found1 && !found2) || (!found1 && found2));
 
-	if (found1) {
-	  pos += expected1.length ();
-	}
-	else {
-	  pos += expected2.length ();
-	}
+        if (found1) {
+          pos += expected1.length ();
+        }
+        else {
+          pos += expected2.length ();
+        }
       }
 
       test (seen1 == 20);
@@ -286,8 +286,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

@@ -53,8 +53,8 @@ namespace CPI {
        */
 
       struct TaggedProfile {
-	ProfileId tag;
-	std::string profile_data;
+        ProfileId tag;
+        std::string profile_data;
       };
 
       /**
@@ -89,210 +89,210 @@ namespace CPI {
 
       class IOR {
       public:
-	/**
-	 * Default constructor.
-	 *
-	 * Initializes the IOR to represent a <em>nil</em> object
-	 * reference, with an empty <em>type_id</em> field and an
-	 * empty set of profiles.
-	 */
+        /**
+         * Default constructor.
+         *
+         * Initializes the IOR to represent a <em>nil</em> object
+         * reference, with an empty <em>type_id</em> field and an
+         * empty set of profiles.
+         */
 
-	IOR ()
-	  throw ();
+        IOR ()
+          throw ();
 
-	/**
-	 * Constructor from encapsulated data.
-	 *
-	 * \param[in] data A CDR-encapsulated IOR.
-	 *
-	 * \throw std::string If the IOR can not be unmarshalled from
-	 * \a data.
-	 */
+        /**
+         * Constructor from encapsulated data.
+         *
+         * \param[in] data A CDR-encapsulated IOR.
+         *
+         * \throw std::string If the IOR can not be unmarshalled from
+         * \a data.
+         */
 
-	explicit IOR (const std::string & data)
-	  throw (std::string);
+        explicit IOR (const std::string & data)
+          throw (std::string);
 
-	/**
-	 * Copy constructor.
-	 *
-	 * \param[in] other Another IOR.
-	 */
+        /**
+         * Copy constructor.
+         *
+         * \param[in] other Another IOR.
+         */
 
-	IOR (const IOR & other)
-	  throw ();
+        IOR (const IOR & other)
+          throw ();
 
-	/**
-	 * Assignment operator.
-	 *
-	 * \param[in] other Another IOR.
-	 * \return *this
-	 */
+        /**
+         * Assignment operator.
+         *
+         * \param[in] other Another IOR.
+         * \return *this
+         */
 
-	IOR & operator= (const IOR & other)
-	  throw ();
+        IOR & operator= (const IOR & other)
+          throw ();
 
-	/**
-	 * Assign from CDR-encapsulated data.
-	 *
-	 * \param[in] data A CDR-encapsulated IOR.
-	 *
-	 * \throw std::string If the ProfileBody can not be unmarshalled
-	 * from \a data.
-	 *
-	 * \note Equivalent to operator= (IOR (data)).
-	 */
+        /**
+         * Assign from CDR-encapsulated data.
+         *
+         * \param[in] data A CDR-encapsulated IOR.
+         *
+         * \throw std::string If the ProfileBody can not be unmarshalled
+         * from \a data.
+         *
+         * \note Equivalent to operator= (IOR (data)).
+         */
 
-	void decode (const std::string & data)
-	  throw (std::string);
+        void decode (const std::string & data)
+          throw (std::string);
 
-	/**
-	 * Marshal this IOR as CDR-encapsulated data.
-	 *
-	 * \return The CDR-encapsulated IOR.
-	 */
+        /**
+         * Marshal this IOR as CDR-encapsulated data.
+         *
+         * \return The CDR-encapsulated IOR.
+         */
 
-	std::string encode () const
-	  throw ();
+        std::string encode () const
+          throw ();
 
-	/**
-	 * Access the IOR's <em>type_id</em> field.
-	 *
-	 * \return The IOR's <em>type_id</em>.
-	 */
+        /**
+         * Access the IOR's <em>type_id</em> field.
+         *
+         * \return The IOR's <em>type_id</em>.
+         */
 
-	const std::string & type_id () const
-	  throw ();
+        const std::string & type_id () const
+          throw ();
 
-	/**
-	 * Set the IOR's <em>type_id</em> field.
-	 *
-	 * \param[in] id The new value for the <em>type_id</em> field, i.e.,
-	 * the most derived type that the server wishes to publish.
-	 */
+        /**
+         * Set the IOR's <em>type_id</em> field.
+         *
+         * \param[in] id The new value for the <em>type_id</em> field, i.e.,
+         * the most derived type that the server wishes to publish.
+         */
 
-	void type_id (const std::string & id)
-	  throw ();
+        void type_id (const std::string & id)
+          throw ();
 
-	/**
-	 * \name Access to tagged profiles
-	 */
+        /**
+         * \name Access to tagged profiles
+         */
 
-	//@{
+        //@{
 
-	/**
-	 * Add a profile to the IOR's set of profiles.
-	 *
-	 * \param[in] tag  The tag value.
-	 * \param[in] data Pointer to the data associated with the tag.  The
-	 *                 format of the data is profile-specific.
-	 * \param[in] len  The length of the data, in octets.
-	 *
-	 * \pre !#hasProfile(\a tag)
-	 */
+        /**
+         * Add a profile to the IOR's set of profiles.
+         *
+         * \param[in] tag  The tag value.
+         * \param[in] data Pointer to the data associated with the tag.  The
+         *                 format of the data is profile-specific.
+         * \param[in] len  The length of the data, in octets.
+         *
+         * \pre !#hasProfile(\a tag)
+         */
 
-	void addProfile (ProfileId tag, const void * data, unsigned long len)
-	  throw ();
+        void addProfile (ProfileId tag, const void * data, unsigned long len)
+          throw ();
 
-	/**
-	 * Add a profile to the IOR's set of profiles.
-	 *
-	 * \param[in] tag  The tag value.
-	 * \param[in] data The data associated with the tag.  The format of
-	 *                 the data is profile-specific.
-	 *
-	 * \pre !#hasProfile(\a tag)
-	 */
+        /**
+         * Add a profile to the IOR's set of profiles.
+         *
+         * \param[in] tag  The tag value.
+         * \param[in] data The data associated with the tag.  The format of
+         *                 the data is profile-specific.
+         *
+         * \pre !#hasProfile(\a tag)
+         */
 
-	void addProfile (ProfileId tag, const std::string & data)
-	  throw ();
+        void addProfile (ProfileId tag, const std::string & data)
+          throw ();
 
-	/**
-	 * Check if the IOR contains a tagged profile.
-	 *
-	 * \param[in] tag  The tag value to search.
-	 * \return         true if the IOR contains a profile with this tag,
-	 *                 false if not.
-	 */
+        /**
+         * Check if the IOR contains a tagged profile.
+         *
+         * \param[in] tag  The tag value to search.
+         * \return         true if the IOR contains a profile with this tag,
+         *                 false if not.
+         */
 
-	bool hasProfile (ProfileId tag)
-	  throw ();
+        bool hasProfile (ProfileId tag)
+          throw ();
 
-	/**
-	 * Access the data associated with a profile (non-const version).
-	 * The returned reference can be used to modify the profile data.
-	 *
-	 * \param[in] tag  The tag value to search.
-	 * \return         The data associated with the tag.
-	 *
-	 * \throw std::string if the IOR does not contain a profile
-	 * tagged \a tag.
-	 *
-	 * \pre #hasProfile(\a tag).
-	 */
+        /**
+         * Access the data associated with a profile (non-const version).
+         * The returned reference can be used to modify the profile data.
+         *
+         * \param[in] tag  The tag value to search.
+         * \return         The data associated with the tag.
+         *
+         * \throw std::string if the IOR does not contain a profile
+         * tagged \a tag.
+         *
+         * \pre #hasProfile(\a tag).
+         */
 
-	std::string & profileData (ProfileId tag)
-	  throw (std::string);
+        std::string & profileData (ProfileId tag)
+          throw (std::string);
 
-	/**
-	 * Access the data associated with a profile (const version).
-	 *
-	 * \param[in] tag  The tag value to search.
-	 * \return         The data associated with the tag.
-	 *
-	 * \throw std::string if the IOR does not contain a profile
-	 * tagged \a tag.
-	 *
-	 * \pre #hasProfile(\a tag).
-	 */
+        /**
+         * Access the data associated with a profile (const version).
+         *
+         * \param[in] tag  The tag value to search.
+         * \return         The data associated with the tag.
+         *
+         * \throw std::string if the IOR does not contain a profile
+         * tagged \a tag.
+         *
+         * \pre #hasProfile(\a tag).
+         */
 
-	const std::string & profileData (ProfileId tag) const
-	  throw (std::string);
+        const std::string & profileData (ProfileId tag) const
+          throw (std::string);
 
-	/**
-	 * The number of profiles in this IOR.
-	 *
-	 * \return The number of profiles in this IOR.
-	 */
+        /**
+         * The number of profiles in this IOR.
+         *
+         * \return The number of profiles in this IOR.
+         */
 
-	unsigned long numProfiles () const
-	  throw ();
+        unsigned long numProfiles () const
+          throw ();
 
-	/**
-	 * Access to a profile (non-const version).
-	 * The returned reference can be used to modify the profile data.
-	 *
-	 * \param[in] idx The index of the profile to access.
-	 * \return        The profile.
-	 *
-	 * \throw std::string If \a idx exceeds the number of profiles
-	 * in this IOR.
-	 *
-	 * \pre \a idx < #numProfiles().
-	 */
+        /**
+         * Access to a profile (non-const version).
+         * The returned reference can be used to modify the profile data.
+         *
+         * \param[in] idx The index of the profile to access.
+         * \return        The profile.
+         *
+         * \throw std::string If \a idx exceeds the number of profiles
+         * in this IOR.
+         *
+         * \pre \a idx < #numProfiles().
+         */
 
-	TaggedProfile & getProfile (unsigned long idx)
-	  throw (std::string);
+        TaggedProfile & getProfile (unsigned long idx)
+          throw (std::string);
 
-	/**
-	 * Access to a profile (const version).
-	 *
-	 * \param[in] idx The index of the profile to access.
-	 * \return        The profile.
-	 *
-	 * \throw std::string If \a idx exceeds the number of profiles
-	 * in this IOR.
-	 *
-	 * \pre \a idx < #numProfiles().
-	 */
+        /**
+         * Access to a profile (const version).
+         *
+         * \param[in] idx The index of the profile to access.
+         * \return        The profile.
+         *
+         * \throw std::string If \a idx exceeds the number of profiles
+         * in this IOR.
+         *
+         * \pre \a idx < #numProfiles().
+         */
 
-	const TaggedProfile & getProfile (unsigned long idx) const
-	  throw (std::string);
+        const TaggedProfile & getProfile (unsigned long idx) const
+          throw (std::string);
 
-	//@}
+        //@}
 
       protected:
-	std::string m_type_id;
-	TaggedProfileSeq m_profiles;
+        std::string m_type_id;
+        TaggedProfileSeq m_profiles;
       };
 
       /**
@@ -312,7 +312,7 @@ namespace CPI {
        */
 
       IOR string_to_ior (const std::string & hex)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Produce a stringified IOR from an IOR object.
@@ -322,7 +322,7 @@ namespace CPI {
        */
 
       std::string ior_to_string (const IOR & ior)
-	throw ();
+        throw ();
 
       //@}
 
@@ -347,8 +347,8 @@ namespace CPI {
        */
 
       struct TaggedComponent {
-	ComponentId tag;
-	std::string component_data;
+        ComponentId tag;
+        std::string component_data;
       };
 
       /**
@@ -396,189 +396,189 @@ namespace CPI {
 
       class MultipleComponentProfile {
       public:
-	/**
-	 * Default constructor.
-	 */
+        /**
+         * Default constructor.
+         */
 
-	MultipleComponentProfile ()
-	  throw ();
+        MultipleComponentProfile ()
+          throw ();
 
-	/**
-	 * Constructor from encapsulated data.
-	 *
-	 * \param[in] data CDR-encapsulated data.
-	 *
-	 * \throw std::string If the MultipleComponentProfile can not be
-	 * unmarshalled from \a data.
-	 */
+        /**
+         * Constructor from encapsulated data.
+         *
+         * \param[in] data CDR-encapsulated data.
+         *
+         * \throw std::string If the MultipleComponentProfile can not be
+         * unmarshalled from \a data.
+         */
 
-	explicit MultipleComponentProfile (const std::string & data)
-	  throw (std::string);
+        explicit MultipleComponentProfile (const std::string & data)
+          throw (std::string);
 
-	/**
-	 * Copy constructor.
-	 *
-	 * \param[in] other Another MultipleComponentProfile.
-	 */
+        /**
+         * Copy constructor.
+         *
+         * \param[in] other Another MultipleComponentProfile.
+         */
 
-	MultipleComponentProfile (const MultipleComponentProfile & other)
-	  throw ();
+        MultipleComponentProfile (const MultipleComponentProfile & other)
+          throw ();
 
-	/**
-	 * Assignment operator.
-	 *
-	 * \param[in] other Another MultipleComponentProfile.
-	 * \return *this
-	 */
+        /**
+         * Assignment operator.
+         *
+         * \param[in] other Another MultipleComponentProfile.
+         * \return *this
+         */
 
-	MultipleComponentProfile & operator= (const MultipleComponentProfile & other)
-	  throw ();
+        MultipleComponentProfile & operator= (const MultipleComponentProfile & other)
+          throw ();
 
-	/**
-	 * Assign from CDR-encapsulated data.
-	 *
-	 * \param[in] data CDR-encapsulated data.
-	 *
-	 *
-	 * \throw std::string If the MultipleComponentProfile can not be
-	 * unmarshalled from \a data.
-	 *
-	 * \note Equivalent to operator= (MultipleComponentProfile (data)).
-	 */
+        /**
+         * Assign from CDR-encapsulated data.
+         *
+         * \param[in] data CDR-encapsulated data.
+         *
+         *
+         * \throw std::string If the MultipleComponentProfile can not be
+         * unmarshalled from \a data.
+         *
+         * \note Equivalent to operator= (MultipleComponentProfile (data)).
+         */
 
-	void decode (const std::string & data)
-	  throw (std::string);
+        void decode (const std::string & data)
+          throw (std::string);
 
-	/*
-	 * Marshal this MultipleComponentProfile as CDR-encapsulated data.
-	 *
-	 * \return The CDR-encapsulated MultipleComponentProfile.
-	 */
+        /*
+         * Marshal this MultipleComponentProfile as CDR-encapsulated data.
+         *
+         * \return The CDR-encapsulated MultipleComponentProfile.
+         */
 
-	std::string encode () const
-	  throw ();
+        std::string encode () const
+          throw ();
 
-	/**
-	 * \name Access to tagged components
-	 */
+        /**
+         * \name Access to tagged components
+         */
 
-	//@{
+        //@{
 
-	/**
-	 * Add a component to the set of tagged components.
-	 *
-	 * \param[in] tag  The tag value.
-	 * \param[in] data Pointer to the data associated with the tag.  The
-	 *                 format of the data is component-specific.
-	 * \param[in] len  The length of the data, in octets.
-	 *
-	 * \pre !#hasComponent(\a tag)
-	 */
+        /**
+         * Add a component to the set of tagged components.
+         *
+         * \param[in] tag  The tag value.
+         * \param[in] data Pointer to the data associated with the tag.  The
+         *                 format of the data is component-specific.
+         * \param[in] len  The length of the data, in octets.
+         *
+         * \pre !#hasComponent(\a tag)
+         */
 
-	void addComponent (ComponentId tag, const void * data, unsigned long len)
-	  throw ();
+        void addComponent (ComponentId tag, const void * data, unsigned long len)
+          throw ();
 
-	/**
-	 * Add a component to the set of tagged components.
-	 *
-	 * \param[in] tag  The tag value.
-	 * \param[in] data The data associated with the tag.  The format of
-	 *                 the data is component-specific.
-	 *
-	 * \pre !#hasComponent(\a tag)
-	 */
+        /**
+         * Add a component to the set of tagged components.
+         *
+         * \param[in] tag  The tag value.
+         * \param[in] data The data associated with the tag.  The format of
+         *                 the data is component-specific.
+         *
+         * \pre !#hasComponent(\a tag)
+         */
 
-	void addComponent (ComponentId tag, const std::string & data)
-	  throw ();
+        void addComponent (ComponentId tag, const std::string & data)
+          throw ();
 
-	/**
-	 * Check if the profile contains a tagged component.
-	 *
-	 * \param[in] tag  The tag value to search.
-	 * \return         true if the profile contains a component with this
-	 *                 tag, false if not.
-	 */
+        /**
+         * Check if the profile contains a tagged component.
+         *
+         * \param[in] tag  The tag value to search.
+         * \return         true if the profile contains a component with this
+         *                 tag, false if not.
+         */
 
-	bool hasComponent (ComponentId tag)
-	  throw ();
+        bool hasComponent (ComponentId tag)
+          throw ();
 
-	/**
-	 * Access the data associated with a component (non-const version).
-	 * The returned reference can be used to modify the tagged component
-	 * data.
-	 *
-	 * \param[in] tag  The tag value to search.
-	 * \return         The data associated with the tag.
-	 *
-	 * \throw std::string If the profile does not contain a component
-	 * tagged \a tag.
-	 *
-	 * \pre #hasComponent(\a tag).
-	 */
+        /**
+         * Access the data associated with a component (non-const version).
+         * The returned reference can be used to modify the tagged component
+         * data.
+         *
+         * \param[in] tag  The tag value to search.
+         * \return         The data associated with the tag.
+         *
+         * \throw std::string If the profile does not contain a component
+         * tagged \a tag.
+         *
+         * \pre #hasComponent(\a tag).
+         */
 
-	std::string & componentData (ComponentId tag)
-	  throw (std::string);
+        std::string & componentData (ComponentId tag)
+          throw (std::string);
 
-	/**
-	 * Access the data associated with a component (const version).
-	 *
-	 * \param[in] tag  The tag value to search.
-	 * \return         The data associated with the tag.
-	 *
-	 * \throw std::string If the profile does not contain a component
-	 * tagged \a tag.
-	 *
-	 * \pre #hasComponent(\a tag).
-	 */
+        /**
+         * Access the data associated with a component (const version).
+         *
+         * \param[in] tag  The tag value to search.
+         * \return         The data associated with the tag.
+         *
+         * \throw std::string If the profile does not contain a component
+         * tagged \a tag.
+         *
+         * \pre #hasComponent(\a tag).
+         */
 
-	const std::string & componentData (ComponentId tag) const
-	  throw (std::string);
+        const std::string & componentData (ComponentId tag) const
+          throw (std::string);
 
-	/**
-	 * The number of tagged components in this profile.
-	 *
-	 * \return The number of tagged components in this profile.
-	 */
+        /**
+         * The number of tagged components in this profile.
+         *
+         * \return The number of tagged components in this profile.
+         */
 
-	unsigned long numComponents () const
-	  throw ();
+        unsigned long numComponents () const
+          throw ();
 
-	/**
-	 * Access to a tagged component (non-const version).
-	 * The returned reference can be used to modify the tagged component
-	 * data.
-	 *
-	 * \param[in] idx The index of the component to access.
-	 * \return        The profile.
-	 *
-	 * \throw std::string If \a idx exceeds the number of components in
-	 * this profile.
-	 *
-	 * \pre \a idx < #numComponents().
-	 */
+        /**
+         * Access to a tagged component (non-const version).
+         * The returned reference can be used to modify the tagged component
+         * data.
+         *
+         * \param[in] idx The index of the component to access.
+         * \return        The profile.
+         *
+         * \throw std::string If \a idx exceeds the number of components in
+         * this profile.
+         *
+         * \pre \a idx < #numComponents().
+         */
 
-	TaggedComponent & getComponent (unsigned long idx)
-	  throw (std::string);
+        TaggedComponent & getComponent (unsigned long idx)
+          throw (std::string);
 
-	/**
-	 * Access to a tagged component (const version).
-	 *
-	 * \param[in] idx The index of the component to access.
-	 * \return        The profile.
-	 *
-	 * \throw std::string If \a idx exceeds the number of components in
-	 * this profile.
-	 *
-	 * \pre \a idx < #numComponents().
-	 */
+        /**
+         * Access to a tagged component (const version).
+         *
+         * \param[in] idx The index of the component to access.
+         * \return        The profile.
+         *
+         * \throw std::string If \a idx exceeds the number of components in
+         * this profile.
+         *
+         * \pre \a idx < #numComponents().
+         */
 
-	const TaggedComponent & getComponent (unsigned long idx) const
-	  throw (std::string);
+        const TaggedComponent & getComponent (unsigned long idx) const
+          throw (std::string);
 
-	//@}
+        //@}
 
       protected:
-	TaggedComponentSeq m_components;
+        TaggedComponentSeq m_components;
       };
 
       /**
@@ -599,89 +599,89 @@ namespace CPI {
 
       class ORBTypeComponent {
       public:
-	/**
-	 * Default constructor.
-	 */
+        /**
+         * Default constructor.
+         */
 
-	ORBTypeComponent ()
-	  throw ();
+        ORBTypeComponent ()
+          throw ();
 
-	/**
-	 * Constructor.
-	 *
-	 * \param[in] type The ORB type ID.
-	 */
+        /**
+         * Constructor.
+         *
+         * \param[in] type The ORB type ID.
+         */
 
-	explicit ORBTypeComponent (CPI::OS::uint32_t type)
-	  throw ();
+        explicit ORBTypeComponent (CPI::OS::uint32_t type)
+          throw ();
 
-	/**
-	 * Constructor from encapsulated data.
-	 *
-	 * \param[in] data A CDR-encapsulated <em>TAG_ORB_TYPE</em> component.
-	 *
-	 * \throw std::string If the data can not be unmarshalled as a
-	 * <em>TAG_ORB_TYPE</em> component.
-	 */
+        /**
+         * Constructor from encapsulated data.
+         *
+         * \param[in] data A CDR-encapsulated <em>TAG_ORB_TYPE</em> component.
+         *
+         * \throw std::string If the data can not be unmarshalled as a
+         * <em>TAG_ORB_TYPE</em> component.
+         */
 
-	explicit ORBTypeComponent (const std::string & data)
-	  throw (std::string);
+        explicit ORBTypeComponent (const std::string & data)
+          throw (std::string);
 
-	/**
-	 * Copy constructor.
-	 *
-	 * \param[in] other Another <em>TAG_ORB_TYPE</em> component.
-	 */
+        /**
+         * Copy constructor.
+         *
+         * \param[in] other Another <em>TAG_ORB_TYPE</em> component.
+         */
 
-	ORBTypeComponent (const ORBTypeComponent & other)
-	  throw ();
+        ORBTypeComponent (const ORBTypeComponent & other)
+          throw ();
 
-	/**
-	 * Assignment operator.
-	 *
-	 * \param[in] type The ORB type ID.
-	 */
+        /**
+         * Assignment operator.
+         *
+         * \param[in] type The ORB type ID.
+         */
 
-	ORBTypeComponent & operator= (CPI::OS::uint32_t type)
-	  throw ();
+        ORBTypeComponent & operator= (CPI::OS::uint32_t type)
+          throw ();
 
-	/**
-	 * Assignment operator.
-	 *
-	 * \param[in] other Another <em>TAG_ORB_TYPE</em> component.
-	 * \return *this
-	 */
+        /**
+         * Assignment operator.
+         *
+         * \param[in] other Another <em>TAG_ORB_TYPE</em> component.
+         * \return *this
+         */
 
-	ORBTypeComponent & operator= (const ORBTypeComponent & other)
-	  throw ();
+        ORBTypeComponent & operator= (const ORBTypeComponent & other)
+          throw ();
 
-	/**
-	 * Assign from CDR-encapsulated data.
-	 *
-	 * \param[in] data A CDR-encapsulated <em>TAG_ORB_TYPE</em> component.
-	 *
-	 * \throw std::string If the data can not be unmarshalled as a
-	 * <em>TAG_ORB_TYPE</em> component.
-	 */
+        /**
+         * Assign from CDR-encapsulated data.
+         *
+         * \param[in] data A CDR-encapsulated <em>TAG_ORB_TYPE</em> component.
+         *
+         * \throw std::string If the data can not be unmarshalled as a
+         * <em>TAG_ORB_TYPE</em> component.
+         */
 
-	void decode (const std::string & data)
-	  throw (std::string);
+        void decode (const std::string & data)
+          throw (std::string);
 
-	/*
-	 * Marshal this component as CDR-encapsulated data.
-	 *
-	 * \return The CDR-encapsulated <em>TAG_ORB_TYPE</em> component.
-	 */
+        /*
+         * Marshal this component as CDR-encapsulated data.
+         *
+         * \return The CDR-encapsulated <em>TAG_ORB_TYPE</em> component.
+         */
 
-	std::string encode () const
-	  throw ();
+        std::string encode () const
+          throw ();
 
       public:
-	/**
-	 * The ORB type ID.
-	 */
+        /**
+         * The ORB type ID.
+         */
 
-	CPI::OS::uint32_t orb_type;
+        CPI::OS::uint32_t orb_type;
       };
 
       /**
@@ -701,82 +701,82 @@ namespace CPI {
 
       class AlternateIIOPAddressComponent {
       public:
-	/**
-	 * Default constructor.
-	 */
+        /**
+         * Default constructor.
+         */
 
-	AlternateIIOPAddressComponent ()
-	  throw ();
+        AlternateIIOPAddressComponent ()
+          throw ();
 
-	/**
-	 * Constructor from encapsulated data.
-	 *
-	 * \param[in] data A CDR-encapsulated
-	 *                 <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
-	 *
-	 * \throw std::string If the data can not be unmarshalled as a
-	 * <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
-	 */
+        /**
+         * Constructor from encapsulated data.
+         *
+         * \param[in] data A CDR-encapsulated
+         *                 <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
+         *
+         * \throw std::string If the data can not be unmarshalled as a
+         * <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
+         */
 
-	explicit AlternateIIOPAddressComponent (const std::string & data)
-	  throw (std::string);
+        explicit AlternateIIOPAddressComponent (const std::string & data)
+          throw (std::string);
 
-	/**
-	 * Copy constructor.
-	 *
-	 * \param[in] other Another <em>TAG_ALTERNATE_IIOP_ADDRESS</em>
-	 *                  component.
-	 */
+        /**
+         * Copy constructor.
+         *
+         * \param[in] other Another <em>TAG_ALTERNATE_IIOP_ADDRESS</em>
+         *                  component.
+         */
 
-	AlternateIIOPAddressComponent (const AlternateIIOPAddressComponent & other)
-	  throw ();
+        AlternateIIOPAddressComponent (const AlternateIIOPAddressComponent & other)
+          throw ();
 
-	/**
-	 * Assignment operator.
-	 *
-	 * \param[in] other Another <em>TAG_ALTERNATE_IIOP_ADDRESS</em>
-	 *                  component.
-	 * \return *this
-	 */
+        /**
+         * Assignment operator.
+         *
+         * \param[in] other Another <em>TAG_ALTERNATE_IIOP_ADDRESS</em>
+         *                  component.
+         * \return *this
+         */
 
-	AlternateIIOPAddressComponent & operator= (const AlternateIIOPAddressComponent & other)
-	  throw ();
+        AlternateIIOPAddressComponent & operator= (const AlternateIIOPAddressComponent & other)
+          throw ();
 
-	/**
-	 * Assign from CDR-encapsulated data.
-	 *
-	 * \param[in] data A CDR-encapsulated
-	 *                 <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
-	 *
-	 * \throw std::string If the data can not be unmarshalled as a
-	 * <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
-	 */
+        /**
+         * Assign from CDR-encapsulated data.
+         *
+         * \param[in] data A CDR-encapsulated
+         *                 <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
+         *
+         * \throw std::string If the data can not be unmarshalled as a
+         * <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
+         */
 
-	void decode (const std::string & data)
-	  throw (std::string);
+        void decode (const std::string & data)
+          throw (std::string);
 
-	/**
-	 * Marshal this component as CDR-encapsulated data.
-	 *
-	 * \return The CDR-encapsulated
-	 * <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
-	 */
+        /**
+         * Marshal this component as CDR-encapsulated data.
+         *
+         * \return The CDR-encapsulated
+         * <em>TAG_ALTERNATE_IIOP_ADDRESS</em> component.
+         */
 
-	std::string encode () const
-	  throw ();
+        std::string encode () const
+          throw ();
 
       public:
-	/**
-	 * The alternate IIOP address' host.
-	 */
+        /**
+         * The alternate IIOP address' host.
+         */
 
-	std::string HostID;
+        std::string HostID;
 
-	/**
-	 * The alternate IIOP address' port.
-	 */
+        /**
+         * The alternate IIOP address' port.
+         */
 
-	CPI::OS::uint16_t port;
+        CPI::OS::uint16_t port;
       };
 
     }

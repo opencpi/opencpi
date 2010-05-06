@@ -33,9 +33,9 @@ namespace CPI {
 
       // Constructor
       EmbeddedException( 
-			const CPI::OS::uint32_t errorCode,		// Embedded error code
-			const char* auxInfo,		                // Aux information
-			CPI::OS::uint32_t errorLevel=0 );		// Error Level
+                        const CPI::OS::uint32_t errorCode,                // Embedded error code
+                        const char* auxInfo,                                // Aux information
+                        CPI::OS::uint32_t errorLevel=0 );                // Error Level
 
       // String error only
       EmbeddedException( const char* auxInfo );
@@ -83,84 +83,84 @@ namespace CPI {
      ****
      *********************************/
     inline EmbeddedException::EmbeddedException( 
-						CPI::OS::uint32_t errorCode, 
-						const char* auxInfo,
-						CPI::OS::uint32_t errorLevel )
+                                                CPI::OS::uint32_t errorCode, 
+                                                const char* auxInfo,
+                                                CPI::OS::uint32_t errorLevel )
       {
-	m_errorCode  = errorCode;
-	if ( auxInfo ) {
-	  m_auxInfo = auxInfo;
-	}
-	m_errorLevel = errorLevel;
+        m_errorCode  = errorCode;
+        if ( auxInfo ) {
+          m_auxInfo = auxInfo;
+        }
+        m_errorLevel = errorLevel;
       }
       // String error only
     inline EmbeddedException::EmbeddedException( const char* auxInfo )
       {
-	m_errorCode  = 0; // reserved for string errors
-	if ( auxInfo ) {
-	  m_auxInfo = auxInfo;
-	}
-	m_errorLevel = 0;
+        m_errorCode  = 0; // reserved for string errors
+        if ( auxInfo ) {
+          m_auxInfo = auxInfo;
+        }
+        m_errorLevel = 0;
 
       }
     inline EmbeddedException::~EmbeddedException(){}
     inline CPI::OS::uint32_t EmbeddedException::getErrorCode() const {return m_errorCode;}
     inline const char* EmbeddedException::getAuxInfo() const {return m_auxInfo.c_str();}
     inline void  EmbeddedException::setAuxInfo( const char* info ){m_auxInfo=info;}
-    inline 	EmbeddedException::EmbeddedException( const EmbeddedException& cpy )
+    inline         EmbeddedException::EmbeddedException( const EmbeddedException& cpy )
       {
-	m_errorCode = cpy.m_errorCode;
-	m_auxInfo = cpy.m_auxInfo;
-	m_errorLevel = cpy.m_errorLevel;
+        m_errorCode = cpy.m_errorCode;
+        m_auxInfo = cpy.m_auxInfo;
+        m_errorLevel = cpy.m_errorLevel;
       }
 
 
     inline bool ExceptionMonitor::error(){return m_ex;}
     inline void ExceptionMonitor::setError( EmbeddedException* ex )
       {
-	m_errorCode = ex->m_errorCode;
-	m_auxInfo = ex->m_auxInfo;
-	m_ex = true;
+        m_errorCode = ex->m_errorCode;
+        m_auxInfo = ex->m_auxInfo;
+        m_ex = true;
       }
     inline void ExceptionMonitor::setError( const EmbeddedException& ex )
       {
-	m_errorCode = ex.m_errorCode;
-	m_auxInfo = ex.m_auxInfo;
-	m_ex = true;
+        m_errorCode = ex.m_errorCode;
+        m_auxInfo = ex.m_auxInfo;
+        m_ex = true;
       }
     inline void ExceptionMonitor::setError( CPI::OS::uint32_t ec, const char* aux_info )
       {
-	m_errorCode = ec;
-	m_auxInfo = aux_info;
-	m_ex = true;
+        m_errorCode = ec;
+        m_auxInfo = aux_info;
+        m_ex = true;
       }
     inline EmbeddedException& ExceptionMonitor::getError(){m_ex=false; return *this;}
     inline bool ExceptionMonitor::clearError()
       {
-	bool er = m_ex;
-	m_ex=false;
-	return er;
+        bool er = m_ex;
+        m_ex=false;
+        return er;
       }
     inline ExceptionMonitor::ExceptionMonitor():EmbeddedException(0,NULL),m_ex(false){}
       inline EmbeddedException& ExceptionMonitor::operator =(EmbeddedException& ex)
-	{
-	  setError(ex); 
-	  return *this;
-	}
+        {
+          setError(ex); 
+          return *this;
+        }
       inline  ExceptionMonitor::ExceptionMonitor( const ExceptionMonitor& rhs)
-	:EmbeddedException(0,NULL)
-	{
-	  m_errorCode = rhs.m_errorCode;
-	  m_auxInfo = rhs.m_auxInfo;
-	  m_ex = rhs.m_ex;
-	}
+        :EmbeddedException(0,NULL)
+        {
+          m_errorCode = rhs.m_errorCode;
+          m_auxInfo = rhs.m_auxInfo;
+          m_ex = rhs.m_ex;
+        }
 
 
 
-	/**********************************
-	 * This set of macros are used in the embedded system code to 
-	 * support platforms that do not support exceptions
-	 *********************************/
+        /**********************************
+         * This set of macros are used in the embedded system code to 
+         * support platforms that do not support exceptions
+         *********************************/
 
 #define CPI_EXCEPTION_OCCURED( x ) x->m_exceptionMonitor.error()
 #define INHERIT_EXCEPTION( x ) m_exceptionMonitor = x->m_exceptionMonitor; \
@@ -190,9 +190,9 @@ namespace CPI {
 #define CPI_TRY \
 
 #define CPI_CATCH( mon )if ( mon.clearError() )
-#define CPI_CATCH_LEVEL( mon, level )		\
-	level:					\
-	  if ( mon.clearError() )
+#define CPI_CATCH_LEVEL( mon, level )                \
+        level:                                        \
+          if ( mon.clearError() )
 
 #define CPI_THROW_TO_NEXT_LEVEL(ex, level) CPI::Util::EmbeddedException* exp; m_exceptionMonitor.setError( exp = new ex ); delete exp; goto level;
 #define CPI_RETHROW_TO_NEXT_LEVEL(level) goto level;

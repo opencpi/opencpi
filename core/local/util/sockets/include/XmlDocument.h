@@ -1,7 +1,7 @@
 /**
- **	\file XmlDocument.h
- **	\date  2008-02-09
- **	\author grymse@alhem.net
+ **        \file XmlDocument.h
+ **        \date  2008-02-09
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom
@@ -50,22 +50,22 @@ namespace Xml {
 class XmlDocument
 {
 public:
-	XmlDocument(const std::string& filename,const std::string& verify_ns = "",const std::string& verify_root = "");
-	virtual ~XmlDocument();
+        XmlDocument(const std::string& filename,const std::string& verify_ns = "",const std::string& verify_root = "");
+        virtual ~XmlDocument();
 
-	/** Document parse successful. */
-	bool IsOk() { return m_ok; }
+        /** Document parse successful. */
+        bool IsOk() { return m_ok; }
 
-	operator xmlDocPtr();
+        operator xmlDocPtr();
 
 protected:
-	XmlDocument(const XmlDocument& ) {} // copy constructor
+        XmlDocument(const XmlDocument& ) {} // copy constructor
 
 private:
-	XmlDocument& operator=(const XmlDocument& ) { return *this; } // assignment operator
+        XmlDocument& operator=(const XmlDocument& ) { return *this; } // assignment operator
 
-	xmlDocPtr m_doc;
-	bool m_ok;
+        xmlDocPtr m_doc;
+        bool m_ok;
 };
 
 

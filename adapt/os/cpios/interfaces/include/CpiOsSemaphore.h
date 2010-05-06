@@ -61,14 +61,14 @@ namespace CPI {
        */
 
       Semaphore (unsigned int initial = 1)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
        */
 
       ~Semaphore ()
-	throw ();
+        throw ();
       
       /**
        * Increase the value of the semaphore.
@@ -79,7 +79,7 @@ namespace CPI {
        */
 
       void post ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Decrease the value of the semaphore.
@@ -94,7 +94,7 @@ namespace CPI {
        */
 
       void wait ()
-	throw (std::string);
+        throw (std::string);
 
     private:
       CPI::OS::uint64_t m_osOpaque[12];

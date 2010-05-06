@@ -59,7 +59,7 @@ namespace CPI {
        */
 
       ThreadManager ()
-	throw ();
+        throw ();
 
       /**
        * Constructor: Initializes the instance, then calls
@@ -69,7 +69,7 @@ namespace CPI {
        */
 
       ThreadManager (void (*func) (void *), void * opaque)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
@@ -78,7 +78,7 @@ namespace CPI {
        */
 
       ~ThreadManager ()
-	throw ();
+        throw ();
 
       /**
        * Starts a thread, and manages it.
@@ -95,7 +95,7 @@ namespace CPI {
        */
 
       void start (void (*func) (void *), void * opaque)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Waits for the completion of a thread.
@@ -110,7 +110,7 @@ namespace CPI {
        */
 
       void join ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Cease management of the managed thread.
@@ -125,7 +125,7 @@ namespace CPI {
        */
 
       void detach ()
-	throw (std::string);
+        throw (std::string);
 
     private:
       CPI::OS::uint64_t m_osOpaque[2];

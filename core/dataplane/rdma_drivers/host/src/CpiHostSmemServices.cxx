@@ -17,9 +17,9 @@
 
 /*
  * Abstact:
- *	This file contains the MCHOST implementation for shared memory functions
- *	originally in /vobs/Cpi/prod_utils/system/smem/src/smem.cxx. Any
- *	target with an MCOS port can use this implementation.
+ *        This file contains the MCHOST implementation for shared memory functions
+ *        originally in /vobs/Cpi/prod_utils/system/smem/src/smem.cxx. Any
+ *        target with an MCOS port can use this implementation.
  *
  * Author: Tony Anzelmo
  *
@@ -49,16 +49,16 @@ namespace DataTransfer {
   public:
 
     HostSmem (
-	      EndPoint* loc, 
-	      SMB_handle handle, 
-	      CpiFileMappingServices* mapper) 
+              EndPoint* loc, 
+              SMB_handle handle, 
+              CpiFileMappingServices* mapper) 
       : BaseSmem (loc ), m_handle(handle), m_pMapper (mapper) 
     { 
       m_maphandle = NULL;
     }
 
-    SMB_handle		     m_handle;
-    SMB_mapping_handle	     m_maphandle;
+    SMB_handle                     m_handle;
+    SMB_mapping_handle             m_maphandle;
     CpiFileMappingServices*  m_pMapper;
     virtual ~HostSmem()
     {
@@ -99,45 +99,45 @@ namespace DataTransfer {
       unsigned long size = loc->size;
 
       try
-	{
-	  // Verify state
-	  if (m_pSmem)
-	    {
-	      throw DataTransferEx (RESOURCE_EXCEPTION, "HostSmemServices::Create: Already created/attached to an instance");
-	    }
+        {
+          // Verify state
+          if (m_pSmem)
+            {
+              throw DataTransferEx (RESOURCE_EXCEPTION, "HostSmemServices::Create: Already created/attached to an instance");
+            }
 
-	  // Use plaform-specific file mapping mechanism.
-	  pMapper = CreateFileMappingServices ();
-	  if (pMapper == 0)
-	    {
-	      throw DataTransferEx (RESOURCE_EXCEPTION, 
-				    "HostSmemServices::Create: CreateFileMappingServices returned NULL reference");
-	    }
-		
+          // Use plaform-specific file mapping mechanism.
+          pMapper = CreateFileMappingServices ();
+          if (pMapper == 0)
+            {
+              throw DataTransferEx (RESOURCE_EXCEPTION, 
+                                    "HostSmemServices::Create: CreateFileMappingServices returned NULL reference");
+            }
+                
 #ifndef NDEBUG
-	  printf("Creating mapping of size %lu\n", size );
+          printf("Creating mapping of size %lu\n", size );
 #endif
 
-	  rc = pMapper->CreateMapping ("", loc->getAddress(), CpiFileMappingServices::ReadWriteAccess, (CPI::OS::int64_t)size);
+          rc = pMapper->CreateMapping ("", loc->getAddress(), CpiFileMappingServices::ReadWriteAccess, (CPI::OS::int64_t)size);
 
-	  if (rc == 0)
-	    {
-	      pSmem = new HostSmem ( loc, handle, pMapper);
-	      if (pSmem == 0)
-		{
-		  throw DataTransferEx (RESOURCE_EXCEPTION, 
-					"HostSmemServices::Create: Failed to allocate a new HostSmem instance");
-		}
-	      this->BaseSmemServices::add (pSmem);
-	      m_pSmem = pSmem;
-	    }
-	}
+          if (rc == 0)
+            {
+              pSmem = new HostSmem ( loc, handle, pMapper);
+              if (pSmem == 0)
+                {
+                  throw DataTransferEx (RESOURCE_EXCEPTION, 
+                                        "HostSmemServices::Create: Failed to allocate a new HostSmem instance");
+                }
+              this->BaseSmemServices::add (pSmem);
+              m_pSmem = pSmem;
+            }
+        }
       catch( ... ) 
-	{
-	  delete pMapper;
-	  delete (m_pSmem);
-	  throw;
-	}
+        {
+          delete pMapper;
+          delete (m_pSmem);
+          throw;
+        }
     }
 
 
@@ -148,15 +148,15 @@ namespace DataTransfer {
       // Verify state
       HostSmem* pSmem = (HostSmem*)m_pSmem;
       if (pSmem == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION, "HostSmemServices::Close: No active instance");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION, "HostSmemServices::Close: No active instance");
+        }
 
       // Close mappers.
       if (pSmem->m_pMapper)
-	{
-	  (void)pSmem->m_pMapper->CloseMapping ();
-	}
+        {
+          (void)pSmem->m_pMapper->CloseMapping ();
+        }
 
       // Remove from the dictionary, ignoring reference count.
       pSmem->m_refcnt = 0;
@@ -176,53 +176,53 @@ namespace DataTransfer {
 
       m_location = loc;
       try 
-	{
-	  // Verify state
-	  if (m_pSmem)
-	    {
-	      return 0;
-	    }
+        {
+          // Verify state
+          if (m_pSmem)
+            {
+              return 0;
+            }
 
-	  // Lookup existing named shared memory object.
-	  if ((pSmem = (HostSmem *)this->BaseSmemServices::lookup (loc->getAddress())) == 0)
-	    {
-	      // Attempt to attach to host OS shared memory.
-	      //		EndPoint loc = CpiSmemServices::HostOnly;
+          // Lookup existing named shared memory object.
+          if ((pSmem = (HostSmem *)this->BaseSmemServices::lookup (loc->getAddress())) == 0)
+            {
+              // Attempt to attach to host OS shared memory.
+              //                EndPoint loc = CpiSmemServices::HostOnly;
 
-	      pMapper = CreateFileMappingServices ();
-	      if (pMapper == 0)
-		{
-		  throw DataTransferEx (RESOURCE_EXCEPTION, 
-					"HostSmemServices::Attach: CreateFileMappingServices returned NULL reference");
-		}
-	      rc = pMapper->OpenMapping (loc->getAddress(), CpiFileMappingServices::AllAccess);
-	      if (rc == 0)
-		{
-		  // Add this instance with the name.
-		  pSmem = new HostSmem (m_location, handle, pMapper);
-		  if (pSmem == 0)
-		    {
-		      throw DataTransferEx (RESOURCE_EXCEPTION, 
-					    "HostSmemServices::Create: Failed to allocate a new HostSmem instance");
-		    }
-		  this->BaseSmemServices::add (pSmem);
-		}
-	      else {
-		throw DataTransferEx (RESOURCE_EXCEPTION, 
-				      "HostSmemServices::Attach: CreateFileMappingServices could not attach");
-	      }
-	    }
-	}
+              pMapper = CreateFileMappingServices ();
+              if (pMapper == 0)
+                {
+                  throw DataTransferEx (RESOURCE_EXCEPTION, 
+                                        "HostSmemServices::Attach: CreateFileMappingServices returned NULL reference");
+                }
+              rc = pMapper->OpenMapping (loc->getAddress(), CpiFileMappingServices::AllAccess);
+              if (rc == 0)
+                {
+                  // Add this instance with the name.
+                  pSmem = new HostSmem (m_location, handle, pMapper);
+                  if (pSmem == 0)
+                    {
+                      throw DataTransferEx (RESOURCE_EXCEPTION, 
+                                            "HostSmemServices::Create: Failed to allocate a new HostSmem instance");
+                    }
+                  this->BaseSmemServices::add (pSmem);
+                }
+              else {
+                throw DataTransferEx (RESOURCE_EXCEPTION, 
+                                      "HostSmemServices::Attach: CreateFileMappingServices could not attach");
+              }
+            }
+        }
       catch( ... ) 
-	{
-	  delete pMapper;
-	  delete (m_pSmem);
-	  throw;
-	}
+        {
+          delete pMapper;
+          delete (m_pSmem);
+          throw;
+        }
       if (rc == 0)
-	{
-	  m_pSmem = pSmem;
-	}
+        {
+          m_pSmem = pSmem;
+        }
       return 0;
     }
 
@@ -232,20 +232,20 @@ namespace DataTransfer {
       // Verify state
       HostSmem* pSmem = (HostSmem*)m_pSmem;
       if (pSmem == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Detach: No active instance");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Detach: No active instance");
+        }
 
       // Close on last detach
-      //	  CPI::OS::int32_t rc = 0;
+      //          CPI::OS::int32_t rc = 0;
       if (pSmem->m_refcnt == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION, "HostSmemServices::Detach: Request with no current attach active");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION, "HostSmemServices::Detach: Request with no current attach active");
+        }
       if (--pSmem->m_refcnt == 0)
-	{
-	  close ();
-	}
+        {
+          close ();
+        }
       m_pSmem = 0;
       return 0;
     }
@@ -258,29 +258,29 @@ namespace DataTransfer {
       // Verify state
       HostSmem* pSmem = (HostSmem*)m_pSmem;
       if (pSmem == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Map: No active instance");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Map: No active instance");
+        }
 
       // If this instance is not currently mapped...
       CPI::OS::int32_t rc = 0;
-      //	  CPI::OS::uint32_t offsetToAdd = offset;
+      //          CPI::OS::uint32_t offsetToAdd = offset;
       if (pSmem->m_maphandle == 0)
-	{
-	  // Map a view using platform dependent file mapping.
-	  pSmem->m_mappedva = pSmem->m_pMapper->MapView (0, 0, CpiFileMappingServices::AllAccess);
-	  if (pSmem->m_mappedva == 0)
-	    {
-	      rc = pSmem->m_pMapper->GetLastError ();
-	    }
-	  else
-	    {
-	      pSmem->m_maphandle = (void *)-1;
-	    }
-	  pSmem->m_mappedoffset = 0;
-	  pSmem->m_mappedsize = pSmem->m_size;
-				
-	}
+        {
+          // Map a view using platform dependent file mapping.
+          pSmem->m_mappedva = pSmem->m_pMapper->MapView (0, 0, CpiFileMappingServices::AllAccess);
+          if (pSmem->m_mappedva == 0)
+            {
+              rc = pSmem->m_pMapper->GetLastError ();
+            }
+          else
+            {
+              pSmem->m_maphandle = (void *)-1;
+            }
+          pSmem->m_mappedoffset = 0;
+          pSmem->m_mappedsize = pSmem->m_size;
+                                
+        }
       pSmem->m_reqoffset = offset;
 
       // Bump mapping count and return the virtual address of this mapping.
@@ -289,17 +289,17 @@ namespace DataTransfer {
       // to map before an already mapped area, throw an exception because we
       // can't produce a valid VA (the area is not mapped).
       if (rc == 0)
-	{
-	  if (offset < pSmem->m_mappedoffset)
-	    {
-	      throw DataTransferEx (RESOURCE_EXCEPTION, 
-				    "HostSmemServices::Map: caller's offset is less than mapped offset");
-	    }
-	  pSmem->m_mapcnt++;
+        {
+          if (offset < pSmem->m_mappedoffset)
+            {
+              throw DataTransferEx (RESOURCE_EXCEPTION, 
+                                    "HostSmemServices::Map: caller's offset is less than mapped offset");
+            }
+          pSmem->m_mapcnt++;
 
-	  // Determine the virtual address to return
-	  pva = computeMappedVA ();
-	}
+          // Determine the virtual address to return
+          pva = computeMappedVA ();
+        }
 
       return pva;
     }
@@ -310,22 +310,22 @@ namespace DataTransfer {
       // Verify state
       HostSmem* pSmem = (HostSmem*)m_pSmem;
       if (pSmem == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::UnMap: No active instance");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::UnMap: No active instance");
+        }
 
       // Unmap on last reference
-      //	  CPI::OS::int32_t rc = 0;
+      //          CPI::OS::int32_t rc = 0;
       if (pSmem->m_mapcnt == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::UnMap: Request with no current mapping active");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::UnMap: Request with no current mapping active");
+        }
       if (--pSmem->m_mapcnt == 0)
-	{			
-	  pSmem->m_pMapper->UnMapView (pSmem->m_mappedva);
-	  pSmem->m_maphandle = 0;
-	  pSmem->m_mappedva = 0;
-	}
+        {                        
+          pSmem->m_pMapper->UnMapView (pSmem->m_mappedva);
+          pSmem->m_maphandle = 0;
+          pSmem->m_mappedva = 0;
+        }
       return 0;
     }
 
@@ -337,25 +337,25 @@ namespace DataTransfer {
       // Verify state
       HostSmem* pSmem = (HostSmem*)m_pSmem;
       if (pSmem == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Enable: No active instance");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Enable: No active instance");
+        }
       if (pSmem->m_maphandle == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Enable: No active mapping");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Enable: No active mapping");
+        }
 
       if ( 1 ) 
-	{
-	  //			rc = this->SMBEnable (pva);
-	}
+        {
+          //                        rc = this->SMBEnable (pva);
+        }
       else
-	{
-	  pva = (void *)((char *)pSmem->m_mappedva + (pSmem->m_reqoffset - pSmem->m_mappedoffset));
-	}
+        {
+          pva = (void *)((char *)pSmem->m_mappedva + (pSmem->m_reqoffset - pSmem->m_mappedoffset));
+        }
 
       return pva;
-			
+                        
     }
 
     // Disable mapping
@@ -364,24 +364,24 @@ namespace DataTransfer {
       // Verify state
       HostSmem* pSmem = (HostSmem*)m_pSmem;
       if (pSmem == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Disable: No active instance");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Disable: No active instance");
+        }
       if (pSmem->m_maphandle == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Disable: No active mapping");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Disable: No active mapping");
+        }
       return 0;
     }
 
-    //	GetHandle - platform dependent opaque handle for Smem instance.
+    //        GetHandle - platform dependent opaque handle for Smem instance.
     void* getHandle ()
     {
       HostSmem* pSmem = (HostSmem*)m_pSmem;
       if (pSmem == 0)
-	{
-	  throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::GetHandle: No active instance");
-	}
+        {
+          throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::GetHandle: No active instance");
+        }
       return pSmem->m_handle;
     }
 

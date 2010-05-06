@@ -165,10 +165,10 @@ CpiEdCommandLineConfigurator::g_options[] = {
 static
 void
 printUsage (CpiEdCommandLineConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -185,7 +185,7 @@ namespace {
   {
     if (!CORBA::is_nil (g_cp289edOrb)) {
       try {
-	g_cp289edOrb->shutdown (0);
+        g_cp289edOrb->shutdown (0);
       }
       catch (...) {
       }
@@ -205,35 +205,35 @@ namespace {
     for (const char **ap = temps; *ap; ap += 2) {
       switch (ap[1][0]) {
       case 'e':
-	tmpDir = std::getenv(ap[0]); break;
+        tmpDir = std::getenv(ap[0]); break;
       case 'd':
-	tmpDir = ap[0]; break;
+        tmpDir = ap[0]; break;
       case 'a':
-	tmpDir = tempDir; break;
+        tmpDir = tempDir; break;
       default:
-	tmpDir = 0;
+        tmpDir = 0;
       }
       if (tmpDir)  {
-	try {
-	  ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
-	  exists = CPI::OS::FileSystem::exists (ntd, &isdir);
-	} catch (...) {
-	}
-	if (exists && isdir) {
-	  std::string relName = "cp289ExecutableDevice-";
-	  relName += CPI::Util::Misc::unsignedToString (cpiDeviceId);
-	  std::string tempFileLocation = CPI::OS::FileSystem::joinNames (ntd, relName);
-	  try {
-	    exists = CPI::OS::FileSystem::exists (tempFileLocation, &isdir);
-	    if (!exists) {
-	      CPI::OS::FileSystem::mkdir (tempFileLocation);
-	      exists = CPI::OS::FileSystem::exists (tempFileLocation, &isdir);
-	    }
-	  } catch (...) {
-	  }
-	  if (exists && isdir)
-	    return tempFileLocation;
-	}
+        try {
+          ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
+          exists = CPI::OS::FileSystem::exists (ntd, &isdir);
+        } catch (...) {
+        }
+        if (exists && isdir) {
+          std::string relName = "cp289ExecutableDevice-";
+          relName += CPI::Util::Misc::unsignedToString (cpiDeviceId);
+          std::string tempFileLocation = CPI::OS::FileSystem::joinNames (ntd, relName);
+          try {
+            exists = CPI::OS::FileSystem::exists (tempFileLocation, &isdir);
+            if (!exists) {
+              CPI::OS::FileSystem::mkdir (tempFileLocation);
+              exists = CPI::OS::FileSystem::exists (tempFileLocation, &isdir);
+            }
+          } catch (...) {
+          }
+          if (exists && isdir)
+            return tempFileLocation;
+        }
       }
     }
     throw std::string ("Could not create temporary file location");
@@ -249,11 +249,11 @@ namespace {
        */
 
       if (!tempFileLocation.length()) {
-	return;
+        return;
       }
 
       if (tempFileLocation == CPI::OS::FileSystem::cwd()) {
-	return;
+        return;
       }
     }
     catch (...) {
@@ -263,13 +263,13 @@ namespace {
       CPI::OS::FileIterator fit = CPI::OS::FileSystem::list (tempFileLocation);
 
       while (!fit.end()) {
-	try {
-	  CPI::OS::FileSystem::remove (fit.absoluteName());
-	}
-	catch (...) {
-	}
+        try {
+          CPI::OS::FileSystem::remove (fit.absoluteName());
+        }
+        catch (...) {
+        }
 
-	fit.next ();
+        fit.next ();
       }
 
       fit.close ();
@@ -293,8 +293,8 @@ namespace {
 static
 CF::ExecutableDevice_ptr
 startCpiExecutableDeviceCmdInt (CORBA::ORB_ptr orb,
-				int & argc, char * argv[],
-				bool shutdownOrbOnRelease, bool sca = false)
+                                int & argc, char * argv[],
+                                bool shutdownOrbOnRelease, bool sca = false)
 {
   CpiEdCommandLineConfigurator config;
   CF::ExecutableDevice_var ed;
@@ -339,38 +339,38 @@ startCpiExecutableDeviceCmdInt (CORBA::ORB_ptr orb,
       std::ofstream * of = new std::ofstream (config.logFile.c_str());
 
       if (!of->good()) {
-	std::cout << "Oops: can not open log file \""
-		  << config.logFile
-		  << "\" for writing."
-		  << std::endl;
-	delete of;
-	return CF::ExecutableDevice::_nil ();
+        std::cout << "Oops: can not open log file \""
+                  << config.logFile
+                  << "\" for writing."
+                  << std::endl;
+        delete of;
+        return CF::ExecutableDevice::_nil ();
       }
 
       logger = new CPI::Logger::OStreamOutput (of, true);
       if (sca) {
-	logger->setProducerId (config.identifier.c_str());
-	CPI::Logger::DebugLogger debug (*logger);
+        logger->setProducerId (config.identifier.c_str());
+        CPI::Logger::DebugLogger debug (*logger);
 
-	debug << CPI::Logger::ProducerName (config.label)
-	      << "CP289 Executable Device for device id "
-	      << config.cpiDeviceId
-	      << " starting."
-	      << std::flush;
+        debug << CPI::Logger::ProducerName (config.label)
+              << "CP289 Executable Device for device id "
+              << config.cpiDeviceId
+              << " starting."
+              << std::flush;
 
-	debug << CPI::Logger::ProducerName (config.label)
-	      << CPI::Logger::Verbosity (2)
-	      << argc << " command-line options:"
-	      << std::flush;
+        debug << CPI::Logger::ProducerName (config.label)
+              << CPI::Logger::Verbosity (2)
+              << argc << " command-line options:"
+              << std::flush;
 
-	for (int ai=0; ai<argc; ai++) {
-	  debug << CPI::Logger::ProducerName (config.label)
-		<< CPI::Logger::Verbosity (2)
-		<< "argv[" << ai << "] = \""
-		<< argv[ai]
-		<< "\""
-		<< std::flush;
-	}
+        for (int ai=0; ai<argc; ai++) {
+          debug << CPI::Logger::ProducerName (config.label)
+                << CPI::Logger::Verbosity (2)
+                << "argv[" << ai << "] = \""
+                << argv[ai]
+                << "\""
+                << std::flush;
+        }
       }
     }
     /*
@@ -386,20 +386,20 @@ startCpiExecutableDeviceCmdInt (CORBA::ORB_ptr orb,
 
     CPI::SCA::Cp289ExecutableDevice * cp289ed =
       new CPI::SCA::Cp289ExecutableDevice (orb, poa, devMgr,
-					   config.profileFileName,
-					   config.identifier,
-					   config.label,                // pretty description
-					   g_tempFileLocation,		// for use by temporary files as needed
-					   static_cast<unsigned int> (config.cpiDeviceId), // sytem-wide ordinal assignment
-					   config.cpiDeviceType,        // which driver we are expecting to use for this container
-					   config.cpiDeviceUnit,
-					   config.endpoint,             // CPI comm endpoint to use
-					   config.polled,
-					   config.osName,
-					   config.processorName,
-					   logger,
-					   true,
-					   shutdownOrbOnRelease);
+                                           config.profileFileName,
+                                           config.identifier,
+                                           config.label,                // pretty description
+                                           g_tempFileLocation,                // for use by temporary files as needed
+                                           static_cast<unsigned int> (config.cpiDeviceId), // sytem-wide ordinal assignment
+                                           config.cpiDeviceType,        // which driver we are expecting to use for this container
+                                           config.cpiDeviceUnit,
+                                           config.endpoint,             // CPI comm endpoint to use
+                                           config.polled,
+                                           config.osName,
+                                           config.processorName,
+                                           logger,
+                                           true,
+                                           shutdownOrbOnRelease);
     if (sca) {
       PortableServer::ObjectId_var oid = poa->activate_object (cp289ed);
       CORBA::Object_var so = poa->id_to_reference (oid);
@@ -417,22 +417,22 @@ startCpiExecutableDeviceCmdInt (CORBA::ORB_ptr orb,
       CORBA::String_var ior = orb->object_to_string (ed);
       
       if (config.iorFileName == "-") {
-	std::cout << ior << std::endl;
+        std::cout << ior << std::endl;
       }
       else {
-	std::cout << "Writing IOR to \""
-		  << config.iorFileName
-		  << "\" ... "
-		  << std::flush;
-	std::ofstream out (config.iorFileName.c_str());
-	out << ior << std::endl;
+        std::cout << "Writing IOR to \""
+                  << config.iorFileName
+                  << "\" ... "
+                  << std::flush;
+        std::ofstream out (config.iorFileName.c_str());
+        out << ior << std::endl;
 
-	if (out.good()) {
-	  std::cout << "done." << std::endl;
-	}
-	else {
-	  std::cout << "failed." << std::endl;
-	}
+        if (out.good()) {
+          std::cout << "done." << std::endl;
+        }
+        else {
+          std::cout << "failed." << std::endl;
+        }
       }
     }
     /*
@@ -440,33 +440,33 @@ startCpiExecutableDeviceCmdInt (CORBA::ORB_ptr orb,
      */
     if (config.registerWithNamingService) {
       std::cout << "Registering with Naming Service as \""
-		<< config.namingServiceName
-		<< "\" ... " << std::flush;
+                << config.namingServiceName
+                << "\" ... " << std::flush;
 
       try {
-	CORBA::Object_var nso = orb->resolve_initial_references ("NameService");
-	CosNaming::NamingContextExt_var ns = CosNaming::NamingContextExt::_narrow (nso);
-	CPI::CORBAUtil::Misc::nameServiceBind (ns, ed, config.namingServiceName);
-	std::cout << "done." << std::endl;
+        CORBA::Object_var nso = orb->resolve_initial_references ("NameService");
+        CosNaming::NamingContextExt_var ns = CosNaming::NamingContextExt::_narrow (nso);
+        CPI::CORBAUtil::Misc::nameServiceBind (ns, ed, config.namingServiceName);
+        std::cout << "done." << std::endl;
       }
       catch (const CORBA::Exception & ex) {
-	std::cout << "failed: "
-		  << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		  << std::endl;
+        std::cout << "failed: "
+                  << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                  << std::endl;
       }
       catch (const std::string & oops) {
-	std::cout << "failed: " << oops << std::endl;
+        std::cout << "failed: " << oops << std::endl;
       }
     }
   } catch (const CORBA::Exception & ex) {
     std::cout << "Oops: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
     return CF::ExecutableDevice::_nil ();
   } catch (const std::string &s) {
     std::cout << "Couldn't create CpiExectableDevice because: "
-	      << s
-	      << std::endl;
+              << s
+              << std::endl;
     return CF::ExecutableDevice::_nil ();
   } catch (...) {
     std::cout << "Oops." << std::endl;
@@ -484,8 +484,8 @@ startCpiExecutableDeviceCmdInt (CORBA::ORB_ptr orb,
 static
 CF::ExecutableDevice_ptr
 startCpiExecutableDeviceScaInt (CORBA::ORB_ptr orb,
-				int & argc, char *argv[],
-				bool shutdownOrbOnRelease)
+                                int & argc, char *argv[],
+                                bool shutdownOrbOnRelease)
 {
   CF::ExecutableDevice_var ed;
   char **myargv = new char *[argc*2];
@@ -497,41 +497,41 @@ startCpiExecutableDeviceScaInt (CORBA::ORB_ptr orb,
     for (int ai=1; ai<argc; ai++) {
       const char *fmt = 0, *val = argv[ai+1];
       if (std::strcmp (argv[ai], "DEVICE_MGR_IOR") == 0) {
-	if (ai+1 >= argc)
-	  throw std::string ("DEVICE_MGR_IOR parameter lacks value");
-	fmt = "--devMgrIOR";
+        if (ai+1 >= argc)
+          throw std::string ("DEVICE_MGR_IOR parameter lacks value");
+        fmt = "--devMgrIOR";
       } else if (std::strcmp (argv[ai], "PROFILE_NAME") == 0)
-	fmt = "--profileFileName";
+        fmt = "--profileFileName";
       else if (std::strcmp (argv[ai], "DEVICE_ID") == 0)
-	fmt = "--identifier";
+        fmt = "--identifier";
       else if (std::strcmp (argv[ai], "DEVICE_LABEL") == 0)
-	fmt = "--label";
+        fmt = "--label";
       else if (std::strcmp (argv[ai], "cpiDeviceId") == 0) 
-	fmt = "--cpiDeviceId";
+        fmt = "--cpiDeviceId";
       else if (std::strcmp (argv[ai], "cpiDeviceType") == 0) 
-	fmt = "--cpiDeviceType";
+        fmt = "--cpiDeviceType";
       else if (std::strcmp (argv[ai], "cpiDeviceUnit") == 0) 
-	fmt = "--cpiDeviceUnit";
+        fmt = "--cpiDeviceUnit";
       else if (std::strcmp (argv[ai], "endpoint") == 0)
-	fmt = "--endpoint";
+        fmt = "--endpoint";
       else if (std::strcmp (argv[ai], "osName") == 0)
-	fmt = "--osName";
+        fmt = "--osName";
       else if (std::strcmp (argv[ai], "processorName") == 0)
-	fmt = "--processorName";
+        fmt = "--processorName";
       else if (std::strcmp (argv[ai], "polled") == 0) {
-	fmt = "--polled";
-	val = !strcmp(argv[ai+1], "true") ? "true" :
-	  !strcmp(argv[ai+1], "false") ? "false" :
-	  atoi(argv[ai + 1]) ? "true" : "false";
+        fmt = "--polled";
+        val = !strcmp(argv[ai+1], "true") ? "true" :
+          !strcmp(argv[ai+1], "false") ? "false" :
+          atoi(argv[ai + 1]) ? "true" : "false";
       } else if (std::strcmp (argv[ai], "debugLevel") == 0)
-	fmt = "--debugLevel";
+        fmt = "--debugLevel";
       else if (std::strcmp (argv[ai], "logFile") == 0)
-	fmt = "--logFile";
+        fmt = "--logFile";
       else {
-	std::string oops = "invalid command-line option: \"";
-	oops += argv[ai];
-	oops += "\"";
-	throw oops;
+        std::string oops = "invalid command-line option: \"";
+        oops += argv[ai];
+        oops += "\"";
+        throw oops;
       }
       asprintf(&myargv[++argc], "%s=%s", fmt, val);
     }
@@ -561,8 +561,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "Oops: ORB_init: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
       return -1;
     }
     catch (...) {
@@ -594,8 +594,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "Oops: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
       return -1;
     }
     catch (...) {
@@ -626,8 +626,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }
@@ -646,15 +646,15 @@ main (int argc, char * argv[])
   try {
     for (int cdi=1; cdi<argc; cdi++) {
       if (std::strcmp (argv[cdi], "cpiDeviceId") == 0 ||
-	  std::strcmp (argv[cdi], "--cpiDeviceId") == 0) {
-	cpiDeviceId = CPI::Util::Misc::stringToUnsigned (argv[cdi+1]);
-	break;
+          std::strcmp (argv[cdi], "--cpiDeviceId") == 0) {
+        cpiDeviceId = CPI::Util::Misc::stringToUnsigned (argv[cdi+1]);
+        break;
       }
       else if (std::strncmp (argv[cdi], "--cpiDeviceId=", 14) == 0) {
-	cpiDeviceId = CPI::Util::Misc::stringToUnsigned (argv[cdi]+14);
-	break;
+        cpiDeviceId = CPI::Util::Misc::stringToUnsigned (argv[cdi]+14);
+        break;
       } else if (std::strncmp (argv[cdi], "--tempDir=", 10) == 0)
-	tempDir = argv[cdi] + 10;
+        tempDir = argv[cdi] + 10;
     }
 
     g_tempFileLocation = makeTempFileLocation (cpiDeviceId, tempDir);
@@ -715,11 +715,11 @@ main (int argc, char * argv[])
 
     if (pid && (kill (pid, 0) == 0 || errno == EPERM)) {
       std::cout << "Oops: RCC Executable Device for CPI Device Id "
-		<< cpiDeviceId
-		<< " already running, pid "
-		<< pid
-		<< "."
-		<< std::endl;
+                << cpiDeviceId
+                << " already running, pid "
+                << pid
+                << "."
+                << std::endl;
       return 1;
     }
 
@@ -731,12 +731,12 @@ main (int argc, char * argv[])
 
   if (!oPidFile.good()) {
     std::cout << "Oops: Failed to write PID to \""
-	      << nativePidFileName
-	      << "\"." << std::endl;
+              << nativePidFileName
+              << "\"." << std::endl;
     std::cout << "      Please delete \""
-	      << g_tempFileLocation
-	      << "\" before continuing."
-	      << std::endl;
+              << g_tempFileLocation
+              << "\" before continuing."
+              << std::endl;
     return 1;
   }
 
@@ -752,8 +752,8 @@ main (int argc, char * argv[])
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: ORB_init: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
     return 1;
   }
   catch (...) {
@@ -822,8 +822,8 @@ main (int argc, char * argv[])
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "Oops: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
     }
 
     try {
@@ -843,8 +843,8 @@ main (int argc, char * argv[])
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
   }
   catch (...) {
     std::cout << "Oops." << std::endl;

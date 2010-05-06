@@ -19,8 +19,8 @@ CPI::Util::Vfs::ReadOnlyFs::~ReadOnlyFs ()
 
 void
 CPI::Util::Vfs::ReadOnlyFs::access (const std::string &,
-				    std::ios_base::openmode mode,
-				    bool)
+                                    std::ios_base::openmode mode,
+                                    bool)
   throw (std::string)
 {
   if ((mode & std::ios_base::out) || (mode & std::ios_base::trunc)) {

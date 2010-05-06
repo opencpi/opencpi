@@ -63,12 +63,12 @@ namespace CPI {
 
       /**********************************
        *  This method gets called when a new circuit is available
-       **********************************/	
+       **********************************/        
       virtual void newMessageCircuitAvailable( MessageCircuit* new_circuit ) = 0;
 
       /**********************************
        *  This method gets called when data is available on a circuit
-       **********************************/	
+       **********************************/        
       virtual void dataAvailable( MessageCircuit* circuit ) = 0;
 
 
@@ -98,8 +98,8 @@ namespace CPI {
        *  Constructors
        **********************************/
       Server( std::string& end_point,     // In - endpoint
-	      ServerEventHandler* cb     // In - Server event handler
-	      );
+              ServerEventHandler* cb     // In - Server event handler
+              );
 
       /**********************************
        *  Dispatch control, this method needs to be called periodically to provide 

@@ -48,7 +48,7 @@ namespace CPI {
        */
 
       void dumpStack (std::ostream & out)
-	throw ();
+        throw ();
 
     }
   }

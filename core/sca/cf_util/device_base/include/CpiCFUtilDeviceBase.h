@@ -52,7 +52,7 @@ namespace CPI {
 
     class DeviceBase :
         virtual public CPI::CFUtil::ReceptacleHelperCallback,
-	virtual public POA_CF::Device
+        virtual public POA_CF::Device
     {
     public:
       /**
@@ -85,18 +85,18 @@ namespace CPI {
        */
 
       DeviceBase (CORBA::ORB_ptr orb,
-		  PortableServer::POA_ptr poa,
-		  CF::DeviceManager_ptr devMgr,
-		  const std::string & profileFileName,
-		  const std::string & deviceId,
-		  const std::string & deviceLabel,
-		  CPI::Logger::Logger * logger = 0,
-		  bool adoptLogger = true,
-		  bool shutdownOrbOnRelease = false)
-	throw (std::string);
+                  PortableServer::POA_ptr poa,
+                  CF::DeviceManager_ptr devMgr,
+                  const std::string & profileFileName,
+                  const std::string & deviceId,
+                  const std::string & deviceLabel,
+                  CPI::Logger::Logger * logger = 0,
+                  bool adoptLogger = true,
+                  bool shutdownOrbOnRelease = false)
+        throw (std::string);
 
       ~DeviceBase ()
-	throw ();
+        throw ();
 
       /**
        * \name Implements CPI::CFUtil::ReceptacleHelperCallback.
@@ -112,15 +112,15 @@ namespace CPI {
        */
 
       void connectPort (const std::string & portName,
-			const std::string & connectionId)
-	throw (CF::Port::InvalidPort,
-	       CF::Port::OccupiedPort,
-	       CORBA::SystemException);
+                        const std::string & connectionId)
+        throw (CF::Port::InvalidPort,
+               CF::Port::OccupiedPort,
+               CORBA::SystemException);
 
       void disconnectPort (const std::string & portName,
-			   const std::string & connectionId)
-	throw (CF::Port::InvalidPort,
-	       CORBA::SystemException);
+                           const std::string & connectionId)
+        throw (CF::Port::InvalidPort,
+               CORBA::SystemException);
 
       //@}
 
@@ -135,8 +135,8 @@ namespace CPI {
        */
 
       void initialize ()
-	throw (CF::LifeCycle::InitializeError,
-	       CORBA::SystemException);
+        throw (CF::LifeCycle::InitializeError,
+               CORBA::SystemException);
 
       /**
        * Default implementation.  Deactivates this device and calls
@@ -145,8 +145,8 @@ namespace CPI {
        */
 
       void releaseObject ()
-	throw (CF::LifeCycle::ReleaseError,
-	       CORBA::SystemException);
+        throw (CF::LifeCycle::ReleaseError,
+               CORBA::SystemException);
 
       //@}
 
@@ -172,9 +172,9 @@ namespace CPI {
        */
 
       void runTest (CORBA::ULong testId, CF::Properties & testValues)
-	throw (CF::TestableObject::UnknownTest,
-	       CF::UnknownProperties,
-	       CORBA::SystemException);
+        throw (CF::TestableObject::UnknownTest,
+               CF::UnknownProperties,
+               CORBA::SystemException);
 
       //@}
 
@@ -190,9 +190,9 @@ namespace CPI {
        */
 
       void configure (const CF::Properties & configProperties)
-	throw (CF::PropertySet::InvalidConfiguration,
-	       CF::PropertySet::PartialConfiguration,
-	       CORBA::SystemException);
+        throw (CF::PropertySet::InvalidConfiguration,
+               CF::PropertySet::PartialConfiguration,
+               CORBA::SystemException);
 
       /**
        * Default implementation.
@@ -200,8 +200,8 @@ namespace CPI {
        */
 
       void query (CF::Properties & configProperties)
-	throw (CF::UnknownProperties,
-	       CORBA::SystemException);
+        throw (CF::UnknownProperties,
+               CORBA::SystemException);
 
       //@}
 
@@ -219,8 +219,8 @@ namespace CPI {
        */
 
       CORBA::Object_ptr getPort (const char * name)
-	throw (CF::PortSupplier::UnknownPort,
-	       CORBA::SystemException);
+        throw (CF::PortSupplier::UnknownPort,
+               CORBA::SystemException);
 
       //@}
 
@@ -236,23 +236,23 @@ namespace CPI {
        */
 
       char * identifier ()
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       /**
        * Default implementation as a no-op.
        */
 
       void start ()
-	throw (CF::Resource::StartError,
-	       CORBA::SystemException);
+        throw (CF::Resource::StartError,
+               CORBA::SystemException);
 
       /**
        * Default implementation as a no-op.
        */
 
       void stop ()
-	throw (CF::Resource::StopError,
-	       CORBA::SystemException);
+        throw (CF::Resource::StopError,
+               CORBA::SystemException);
 
       //@}
 
@@ -267,14 +267,14 @@ namespace CPI {
        */
 
       CF::Device::UsageType usageState ()
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       /**
        * Default implementation.  Returns m_adminState.
        */
 
       CF::Device::AdminType adminState ()
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       /**
        * Default implementation.  Updates m_adminState, publishing a
@@ -282,14 +282,14 @@ namespace CPI {
        */
 
       void adminState (CF::Device::AdminType state)
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       /**
        * Default implementation.  Returns m_operationalState.
        */
 
       CF::Device::OperationalType operationalState ()
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       /**
        * Returns m_label, which is initialized from the deviceLabel
@@ -297,7 +297,7 @@ namespace CPI {
        */
 
       char * label ()
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       /**
        * Returns m_softwareProfile, which is initialized from the
@@ -305,14 +305,14 @@ namespace CPI {
        */
 
       char * softwareProfile ()
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       /**
        * Returns nil.
        */
 
       CF::AggregateDevice_ptr compositeDevice ()
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       /**
        * Default implementation as a no-op.  If a device has capacities,
@@ -320,9 +320,9 @@ namespace CPI {
        */
 
       CORBA::Boolean allocateCapacity (const CF::Properties & capacities)
-	throw (CF::Device::InvalidCapacity,
-	       CF::Device::InvalidState,
-	       CORBA::SystemException);
+        throw (CF::Device::InvalidCapacity,
+               CF::Device::InvalidState,
+               CORBA::SystemException);
 
       /**
        * Default implementation as a no-op.  If a device has capacities,
@@ -330,9 +330,9 @@ namespace CPI {
        */
 
       void deallocateCapacity (const CF::Properties & capacities)
-	throw (CF::Device::InvalidCapacity,
-	       CF::Device::InvalidState,
-	       CORBA::SystemException);
+        throw (CF::Device::InvalidCapacity,
+               CF::Device::InvalidState,
+               CORBA::SystemException);
 
       //@}
 
@@ -354,7 +354,7 @@ namespace CPI {
        */
 
       bool configureProducerLogLevel (const CF::DataType & property)
-	throw ();
+        throw ();
 
       /**
        * If a derived class overloads query(), it shall
@@ -362,7 +362,7 @@ namespace CPI {
        */
 
       void queryProducerLogLevel (CF::DataType & property)
-	throw ();
+        throw ();
 
       //@}
 
@@ -388,8 +388,8 @@ namespace CPI {
        */
 
       virtual bool sBit ()
-	throw (CF::TestableObject::UnknownTest,
-	       std::string);
+        throw (CF::TestableObject::UnknownTest,
+               std::string);
 
       /**
        * Built-in O-BIT (Offline Built-In Test).  This function should
@@ -407,8 +407,8 @@ namespace CPI {
        */
 
       virtual bool oBit ()
-	throw (CF::TestableObject::UnknownTest,
-	       std::string);
+        throw (CF::TestableObject::UnknownTest,
+               std::string);
 
       /**
        * Built-in C-BIT (Continuous Built-In Test).  This function should
@@ -426,8 +426,8 @@ namespace CPI {
        */
 
       virtual bool cBit ()
-	throw (CF::TestableObject::UnknownTest,
-	       std::string);
+        throw (CF::TestableObject::UnknownTest,
+               std::string);
 
       //@}
 
@@ -439,18 +439,18 @@ namespace CPI {
       //@{
 
       void adminStateLocked (CF::Device::AdminType state)
-	throw ();
+        throw ();
 
       void usageStateLocked (CF::Device::UsageType state)
-	throw ();
+        throw ();
 
       void operationalStateLocked (CF::Device::OperationalType state)
-	throw ();
+        throw ();
 
       void publishStateChangeEvent (StandardEvent::StateChangeCategoryType category,
-				    StandardEvent::StateChangeType from,
-				    StandardEvent::StateChangeType to)
-	throw ();
+                                    StandardEvent::StateChangeType from,
+                                    StandardEvent::StateChangeType to)
+        throw ();
 
       //@}
 

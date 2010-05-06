@@ -70,10 +70,10 @@ CpiRccBinderConfigurator::g_options[] = {
 static
 void
 printUsage (CpiRccBinderConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 

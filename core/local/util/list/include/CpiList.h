@@ -86,7 +86,7 @@ namespace CPI {
     inline unsigned int VList::getElementCount(){return get_nentries( &m_list );}
     inline unsigned int VList::size(){return get_nentries( &m_list );}
     inline void* VList::getEntry( int index){return get_entry(&m_list, index);}
-    inline 	void* VList::operator[](int n){return getEntry(n);}
+    inline         void* VList::operator[](int n){return getEntry(n);}
 
   }
 

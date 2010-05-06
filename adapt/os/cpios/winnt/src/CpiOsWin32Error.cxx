@@ -27,12 +27,12 @@ CPI::OS::Win32::getErrorMessage (unsigned long errorCode)
   char lpMsgBuf[1024];
 
   if (FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM | 
-		     FORMAT_MESSAGE_IGNORE_INSERTS,
-		     NULL,
-		     errorCode,
-		     MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-		     lpMsgBuf, 1024,
-		     NULL)) {
+                     FORMAT_MESSAGE_IGNORE_INSERTS,
+                     NULL,
+                     errorCode,
+                     MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+                     lpMsgBuf, 1024,
+                     NULL)) {
     /*
      * Get rid of line break at the end.
      */

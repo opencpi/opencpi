@@ -18,8 +18,8 @@ const char i2hc[16] = {
 
 void
 dumpOctetSeq (std::ostream & out,
-	      const std::string & data,
-	      const std::string & prefix)
+              const std::string & data,
+              const std::string & prefix)
 {
   const unsigned char * ptr = reinterpret_cast<const unsigned char *> (data.data ());
   unsigned long len = data.length ();
@@ -49,10 +49,10 @@ dumpOctetSeq (std::ostream & out,
     for (i=0; i<16 && i<len; i++) {
       unsigned char c = ptr[i];
       if (std::isprint (c)) {
-	out << c;
+        out << c;
       }
       else {
-	out << '.';
+        out << '.';
       }
     }
 
@@ -71,17 +71,17 @@ dumpTaggedComponent (std::ostream & out, const CPI::Util::IOP::TaggedComponent &
       CPI::Util::IOP::ORBTypeComponent otc (tc.component_data);
       out << "ORB Type." << std::endl;
       out << "     ORB Type: 0x"
-	  << CPI::Util::Misc::unsignedToString ((unsigned int) otc.orb_type, 16, 8);
+          << CPI::Util::Misc::unsignedToString ((unsigned int) otc.orb_type, 16, 8);
 
       if ((otc.orb_type >= 0x58505300 && otc.orb_type <= 0x5850530f) ||
-	  (otc.orb_type >= 0x50544300 && otc.orb_type <= 0x5054430f)) {
-	out << " <PrismTech>";
+          (otc.orb_type >= 0x50544300 && otc.orb_type <= 0x5054430f)) {
+        out << " <PrismTech>";
       }
       else if (otc.orb_type >= 0x4f495300 && otc.orb_type <= 0x4f4953ff) {
-	out << " <OIS>";
+        out << " <OIS>";
       }
       else if (otc.orb_type == 0x54414f00) {
-	out << " <TAO>";
+        out << " <TAO>";
       }
 
       out << std::endl;
@@ -90,20 +90,20 @@ dumpTaggedComponent (std::ostream & out, const CPI::Util::IOP::TaggedComponent &
       CPI::Util::IOP::AlternateIIOPAddressComponent aa (tc.component_data);
       out << "Alternate IIOP Address." << std::endl;
       out << "         Host: " << aa.HostID << std::endl
-	  << "         Port: " << aa.port << std::endl;
+          << "         Port: " << aa.port << std::endl;
     }
     else {
       out << "Unknown Component: Tag 0x"
-	  << CPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
-	  << "." << std::endl;
+          << CPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
+          << "." << std::endl;
       dumpOctetSeq (out, tc.component_data, "         Data: ");
     }
   }
   catch (const std::string & oops) {
     out << "Undecodeable Component: Tag 0x"
-	<< CPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
-	<< ": " << oops
-	<< "." << std::endl;
+        << CPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
+        << ": " << oops
+        << "." << std::endl;
     dumpOctetSeq (out, tc.component_data, "         Data: ");
   }
 }
@@ -154,16 +154,16 @@ dumpProfile (std::ostream & out, const CPI::Util::IOP::TaggedProfile & tp)
     }
     else {
       out << "Unknown Profile: Tag 0x"
-	  << CPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
-	  << "." << std::endl;
+          << CPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
+          << "." << std::endl;
       dumpOctetSeq (out, tp.profile_data, "         Data: ");
     }
   }
   catch (const std::string & oops) {
     out << "Undecodeable Profile: Tag 0x"
-	<< CPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
-	<< ": " << oops
-	<< "." << std::endl;
+        << CPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
+        << ": " << oops
+        << "." << std::endl;
     dumpOctetSeq (out, tp.profile_data, "         Data: ");
   }
 }
@@ -241,7 +241,7 @@ main (int argc, char *argv[])
 
     if (!ifs.good()) {
       std::cout << "oops: can not open \"" << argv[argpos] << " for reading."
-		<< std::endl;
+                << std::endl;
       return 1;
     }
 

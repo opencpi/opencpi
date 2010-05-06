@@ -149,10 +149,10 @@ void OutputBuffer::update(bool critical)
 
 #ifndef NDEBUG
     printf("m_bcsVaddr %p, portSetControlOffset %lld\n",
-	   m_bcsVaddr, (long long)output_offsets->portSetControlOffset);
+           m_bcsVaddr, (long long)output_offsets->portSetControlOffset);
 #endif
 
-		 
+                 
     memset(m_bcsVaddr, 0, sizeof(OutputPortSetControl));
     m_spsControl = static_cast<OutputPortSetControl*>(m_bcsVaddr);
     getPort()->setOutputControlBlock( m_spsControl );
@@ -168,14 +168,14 @@ volatile BufferState* OutputBuffer::getState()
   if ( m_dependentZeroCopyCount ) {
     CPI::OS::uint32_t c=0;
     for ( CPI::OS::uint32_t n=0;
-	  c<m_dependentZeroCopyCount && n<m_dependentZeroCopyPorts.size(); n++) {
+          c<m_dependentZeroCopyCount && n<m_dependentZeroCopyPorts.size(); n++) {
       if ( m_dependentZeroCopyPorts[n] ) {
-		       
-	if ((m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()].bufferFull &
-	     DataTransfer::BufferEmptyFlag) != DataTransfer::BufferEmptyFlag ) {
-	  return &m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()];
-	}
-	c++;
+                       
+        if ((m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()].bufferFull &
+             DataTransfer::BufferEmptyFlag) != DataTransfer::BufferEmptyFlag ) {
+          return &m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()];
+        }
+        c++;
       }
     }
   }
@@ -199,7 +199,7 @@ bool OutputBuffer::isEmpty()
     return false;
   }
   CPI::Util::AutoMutex guard ( m_threadSafeMutex,
-			       true ); 
+                               true ); 
 
 #ifdef DEBUG_L2
   printf("Checking output isEmpty, m_dependentZeroCopyCount = %d, NOT CHECKING THEM !!\n", m_dependentZeroCopyCount);

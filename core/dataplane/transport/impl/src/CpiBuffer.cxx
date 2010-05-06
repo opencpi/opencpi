@@ -63,7 +63,7 @@ void Buffer::markZeroCopyDependent( Buffer* dependent_buffer )
 {
 
   CPI::Util::AutoMutex guard ( m_threadSafeMutex,
-			       true ); 
+                               true ); 
 
   cpiAssert( dependent_buffer );
   if ( (CPI::OS::uint32_t)dependent_buffer->getPort()->getPortId()<m_dependentZeroCopyPorts.size() &&
@@ -111,7 +111,7 @@ bool Buffer::isEmpty()
 {
 
   CPI::Util::AutoMutex guard ( m_threadSafeMutex,
-			       true ); 
+                               true ); 
 
   // There are two reasons why this would be non-zero, either there is a local "in-process"
   // zero copy buffer attached, or an OOP zer copy buffer attached.  Internal buffers are 
@@ -119,19 +119,19 @@ bool Buffer::isEmpty()
   if ( m_dependentZeroCopyCount ) {
     if ( m_remoteZCopy ) {
       for ( unsigned int n=0; n<reinterpret_cast<CPI::DataTransport::Circuit*>(m_port->getCircuit())->getMaxPortOrd() &&
-	      n<m_dependentZeroCopyCount && n<m_dependentZeroCopyPorts.size();
-	    n++ ) {
-	if ( m_dependentZeroCopyPorts[n] &&
-	     static_cast<Buffer*>(m_dependentZeroCopyPorts[n])->getPort()->isShadow() && 
-	     static_cast<Buffer*>(m_dependentZeroCopyPorts[n])->isEmpty() ) {
+              n<m_dependentZeroCopyCount && n<m_dependentZeroCopyPorts.size();
+            n++ ) {
+        if ( m_dependentZeroCopyPorts[n] &&
+             static_cast<Buffer*>(m_dependentZeroCopyPorts[n])->getPort()->isShadow() && 
+             static_cast<Buffer*>(m_dependentZeroCopyPorts[n])->isEmpty() ) {
 
 #ifdef DEBUG_L2
-	  printf("CpiNmOutputBuffer::isEmpty() Dependent input is empty, removing it\n");
+          printf("CpiNmOutputBuffer::isEmpty() Dependent input is empty, removing it\n");
 #endif
 
-	  m_dependentZeroCopyCount--;
-	  m_dependentZeroCopyPorts.insertToPosition(NULL,n);
-	}
+          m_dependentZeroCopyCount--;
+          m_dependentZeroCopyPorts.insertToPosition(NULL,n);
+        }
       }
     }
     else {
@@ -160,7 +160,7 @@ bool Buffer::isEmpty()
     unsigned int tid = getMetaDataByPortId(m_pid)->zcopy & 0xff;
 #ifdef DEBUG_L2
     printf("*&*&* We have a OOP Zercopy ready buffer, s_pid = %d, tid = %d\n",
-	   s_pid, tid);
+           s_pid, tid);
 #endif
     CPI::DataTransport::Port* s_port = 
       static_cast<CPI::DataTransport::Port*>(this->getPort()->getCircuit()->getOutputPortSet()->getPortFromOrdinal( s_pid ));
@@ -178,7 +178,7 @@ bool Buffer::isEmpty()
 void Buffer::attachZeroCopy( Buffer* from_buffer )
 {
   CPI::Util::AutoMutex guard ( m_threadSafeMutex,
-			       true ); 
+                               true ); 
 
   cpiAssert( ! m_zeroCopyFromBuffer );
 
@@ -208,7 +208,7 @@ void Buffer::attachZeroCopy( Buffer* from_buffer )
 Buffer* Buffer::detachZeroCopy()
 {
   CPI::Util::AutoMutex guard ( m_threadSafeMutex,
-			       true ); 
+                               true ); 
 
   Buffer* rb=m_zeroCopyFromBuffer;
 

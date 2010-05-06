@@ -97,55 +97,55 @@ namespace CPI {
 
       // Offsets for port communication structures
       struct OutputPortBufferControlMap {
-	DtOsDataTypes::Offset bufferOffset;		  // offset to our buffer
-	CPI::OS::uint32_t bufferSize;			  // Buffer size in bytes
-	DtOsDataTypes::Offset localStateOffset;	  // offset to our state structure
-	DtOsDataTypes::Offset metaDataOffset;		  // offset to our meta-data structure
-	DtOsDataTypes::Offset portSetControlOffset;  // offset to our port set control structure
+        DtOsDataTypes::Offset bufferOffset;                  // offset to our buffer
+        CPI::OS::uint32_t bufferSize;                          // Buffer size in bytes
+        DtOsDataTypes::Offset localStateOffset;          // offset to our state structure
+        DtOsDataTypes::Offset metaDataOffset;                  // offset to our meta-data structure
+        DtOsDataTypes::Offset portSetControlOffset;  // offset to our port set control structure
       };
 
       // In this structure, the number of offsets for the remote state and meta data
       // is equal to the number of ports in the output port set.
       struct InputPortBufferControlMap {
-	DtOsDataTypes::Offset bufferOffset;		            // offset to our buffer
-	CPI::OS::uint32_t bufferSize;			            // Buffer size in bytes
+        DtOsDataTypes::Offset bufferOffset;                            // offset to our buffer
+        CPI::OS::uint32_t bufferSize;                                    // Buffer size in bytes
 
-	/*
-	 *  The input buffers need N number of local states where N is the number of 
-	 *  output ports that can write to the input.  We will create a contiguous array
-	 *  of states so we only need 1 offset
-	 */
-	DtOsDataTypes::Offset localStateOffset; // offset to our state structure
+        /*
+         *  The input buffers need N number of local states where N is the number of 
+         *  output ports that can write to the input.  We will create a contiguous array
+         *  of states so we only need 1 offset
+         */
+        DtOsDataTypes::Offset localStateOffset; // offset to our state structure
 
-	/*
-	 *  The remote state structure contains the offsets to all of our remote
-	 *  states.  The remote states exist in the "shadow" input buffers in our
-	 *  represented port for each circuit instance that exists.  The number of 
-	 *  circuit instances that exist is equal to the number of output ports * 
-	 *  the number of input ports, however the only ones that we need to be concerned
-	 *  with are the ones that exist in circuits that have "real" output ports.
-	 *
-	 *  If this is a shadow port, these are not initialized.
-	 */
+        /*
+         *  The remote state structure contains the offsets to all of our remote
+         *  states.  The remote states exist in the "shadow" input buffers in our
+         *  represented port for each circuit instance that exists.  The number of 
+         *  circuit instances that exist is equal to the number of output ports * 
+         *  the number of input ports, however the only ones that we need to be concerned
+         *  with are the ones that exist in circuits that have "real" output ports.
+         *
+         *  If this is a shadow port, these are not initialized.
+         */
 
-	// Offsets to our remote "shadow" input ports states.  When we indicate 
-	// that this buffer is empty, we need to inform all of the shadows that have
-	// a "real" output port.   This array is indexed by the port id, so only the output
-	// port id's are valid.
-	DtOsDataTypes::Offset myShadowsRemoteStateOffsets[MAX_PORT_COUNT]; 
+        // Offsets to our remote "shadow" input ports states.  When we indicate 
+        // that this buffer is empty, we need to inform all of the shadows that have
+        // a "real" output port.   This array is indexed by the port id, so only the output
+        // port id's are valid.
+        DtOsDataTypes::Offset myShadowsRemoteStateOffsets[MAX_PORT_COUNT]; 
 
 
-	// Each output that can write data to our buffer will also write its meta-data here.
-	// This array is also indexed by the output port id.  We will create a contiguous array
-	// so we only need 1 offset
-	DtOsDataTypes::Offset metaDataOffset;
-	CPI::OS::uint32_t     metaDataSize;
+        // Each output that can write data to our buffer will also write its meta-data here.
+        // This array is also indexed by the output port id.  We will create a contiguous array
+        // so we only need 1 offset
+        DtOsDataTypes::Offset metaDataOffset;
+        CPI::OS::uint32_t     metaDataSize;
 
       };
 
       union BufferOffsets {
-	struct OutputPortBufferControlMap outputOffsets;
-	struct InputPortBufferControlMap inputOffsets;
+        struct OutputPortBufferControlMap outputOffsets;
+        struct InputPortBufferControlMap inputOffsets;
       };
 
       // Our local "real" descriptor
@@ -158,7 +158,7 @@ namespace CPI {
       CPI::RDT::Descriptors m_externPortDependencyData;
 
       struct CpiPortDependencyData  {
-	BufferOffsets *offsets;  // buffer offsets
+        BufferOffsets *offsets;  // buffer offsets
       };
 
       // Here is our buffer offset information.  This is an array that is "N" buffers deep
@@ -166,31 +166,31 @@ namespace CPI {
 
       // Standard constructors
       PortMetaData( PortOrdinal pid, 
-		    bool s, 
-		    CPI::RDT::Descriptors& sPort,
-		    const char * shadow_ep,
-		    PortSetMetaData* psmd );
+                    bool s, 
+                    CPI::RDT::Descriptors& sPort,
+                    const char * shadow_ep,
+                    PortSetMetaData* psmd );
 
       PortMetaData( PortOrdinal pid, 
-		    bool output,
-		    const char* ep, 
-		    const char * shadow_ep,
-		    PortSetMetaData* psmd );
+                    bool output,
+                    const char* ep, 
+                    const char * shadow_ep,
+                    PortSetMetaData* psmd );
 
 
 
       PortMetaData( PortOrdinal pid, 
-		    CPI::RDT::Descriptors& portDesc,
-		    PortSetMetaData* psmd );
+                    CPI::RDT::Descriptors& portDesc,
+                    PortSetMetaData* psmd );
 
       // Dependency constructor
       PortMetaData( PortOrdinal pid, 
-		    bool s, 
-		    const char* ep, 
-		    const char* shadow_ep,
-		    CPI::RDT::Descriptors& pd, 
-		    CPI::OS::uint32_t circuitId,
-		    PortSetMetaData* psmd );
+                    bool s, 
+                    const char* ep, 
+                    const char* shadow_ep,
+                    CPI::RDT::Descriptors& pd, 
+                    CPI::OS::uint32_t circuitId,
+                    PortSetMetaData* psmd );
 
       virtual ~PortMetaData();
 

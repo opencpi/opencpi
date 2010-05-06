@@ -54,9 +54,9 @@ CPI::Util::Misc::integerToString (int value)
 
 std::string
 CPI::Util::Misc::unsignedToString (unsigned int value,
-				   unsigned int base,
-				   unsigned int mindigits,
-				   char pad)
+                                   unsigned int base,
+                                   unsigned int mindigits,
+                                   char pad)
 {
   unsigned int tmp;
   unsigned int count=1;
@@ -106,9 +106,9 @@ CPI::Util::Misc::unsignedToString (unsigned int value,
 
 std::string
 CPI::Util::Misc::unsignedToString (unsigned long long value,
-				   unsigned int base,
-				   unsigned int mindigits,
-				   char pad)
+                                   unsigned int base,
+                                   unsigned int mindigits,
+                                   char pad)
 {
   unsigned long long tmp;
   unsigned int count=1;
@@ -195,7 +195,7 @@ CPI::Util::Misc::stringToInteger (const std::string & str)
 
 unsigned int
 CPI::Util::Misc::stringToUnsigned (const std::string & str,
-				   unsigned int base)
+                                   unsigned int base)
 {
   const char * txtPtr = str.c_str ();
   unsigned long int value;
@@ -219,7 +219,7 @@ CPI::Util::Misc::stringToUnsigned (const std::string & str,
 
 unsigned long long
 CPI::Util::Misc::stringToULongLong (const std::string & str,
-				    unsigned int base)
+                                    unsigned int base)
 {
   const char * txtPtr = str.c_str ();
   char * endPtr;
@@ -329,7 +329,7 @@ CPI::Util::Misc::readline (std::istream * conn, unsigned int maxSize)
 int
 CPI::Util::Misc::
 caseInsensitiveStringCompare (const std::string & s1,
-			      const std::string & s2)
+                              const std::string & s2)
 {
   int s1l = s1.length ();
   int s2l = s2.length ();
@@ -361,7 +361,7 @@ caseInsensitiveStringCompare (const std::string & s1,
 bool
 CPI::Util::Misc::CaseInsensitiveStringLess::
 operator() (const std::string & s1,
-	    const std::string & s2) const
+            const std::string & s2) const
 {
   return (caseInsensitiveStringCompare (s1, s2) < 0);
 }
@@ -374,7 +374,7 @@ operator() (const std::string & s1,
 
 bool
 CPI::Util::Misc::glob (const std::string & str,
-		       const std::string & pat)
+                       const std::string & pat)
 {
   int strIdx = 0, strLen = str.length ();
   int patIdx = 0, patLen = pat.length ();
@@ -386,15 +386,15 @@ CPI::Util::Misc::glob (const std::string & str,
       pattern++;
       patIdx++;
       while (*pattern == '*' && patIdx < patLen) {
-	pattern++;
-	patIdx++;
+        pattern++;
+        patIdx++;
       }
       while (strIdx < strLen) {
-	if (glob (name, pattern)) {
-	  return true;
-	}
-	strIdx++;
-	name++;
+        if (glob (name, pattern)) {
+          return true;
+        }
+        strIdx++;
+        name++;
       }
       return (patIdx < patLen) ? false : true;
     }

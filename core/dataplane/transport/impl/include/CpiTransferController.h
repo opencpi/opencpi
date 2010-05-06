@@ -50,8 +50,8 @@ namespace CPI {
     public:
 
       enum TransferType {
-	OUTPUT,
-	INPUT
+        OUTPUT,
+        INPUT
       };
 
       /**********************************
@@ -74,9 +74,9 @@ namespace CPI {
        * Creates an instance of a controller
        *********************************/
       virtual TransferController* createController( 
-						   CPI::DataTransport::PortSet* output, 
-						   CPI::DataTransport::PortSet* input, 
-						   bool whole_output_set)=0;
+                                                   CPI::DataTransport::PortSet* output, 
+                                                   CPI::DataTransport::PortSet* input, 
+                                                   bool whole_output_set)=0;
 
 
       /******************************
@@ -89,36 +89,36 @@ namespace CPI {
        * This method gets the next available buffer from the specified output port
        *********************************/
       virtual Buffer* getNextEmptyOutputBuffer( 
-					       CPI::DataTransport::Port* src_port			// In - Output port
-					       );
+                                               CPI::DataTransport::Port* src_port                        // In - Output port
+                                               );
 
       /**********************************
        * This method determines if there is an available buffer, but does not affect the
        * state of the object.
        *********************************/
       virtual bool hasEmptyOutputBuffer(
-					    CPI::DataTransport::Port* port
-					    )const;
+                                            CPI::DataTransport::Port* port
+                                            )const;
 
       /**********************************
        * This method determines if there is data available, but does not affect the
        * state of the object.
        *********************************/
       virtual bool hasFullInputBuffer(
-				       CPI::DataTransport::Port* port,	       
-				       InputBuffer**
-				       )const;
-				
+                                       CPI::DataTransport::Port* port,               
+                                       InputBuffer**
+                                       )const;
+                                
       /**********************************
        * This is used to indicate that a buffer has been filled. Since we manage circular
        * buffers, the actual buffer is implied (next)
        *
        *********************************/
       virtual void bufferFull(
-			      CPI::DataTransport::Port* port						
-			      );
-						
-						
+                              CPI::DataTransport::Port* port                                                
+                              );
+                                                
+                                                
       /**********************************
        * This is used to indicate that a remote input 
        * buffer has been freed. Since we manage circular
@@ -126,8 +126,8 @@ namespace CPI {
        *
        *********************************/
       virtual void freeBuffer(
-			      CPI::DataTransport::Port* port						
-			      );
+                              CPI::DataTransport::Port* port                                                
+                              );
 
       /**********************************
        * This is used to indicate that all remote input 
@@ -135,30 +135,30 @@ namespace CPI {
        *
        *********************************/
       virtual void freeAllBuffersLocal(
-				       CPI::DataTransport::Port* port						
-				       );
+                                       CPI::DataTransport::Port* port                                                
+                                       );
 
 
       /**********************************
        * This method gets the next available buffer from the specified input port
        *********************************/
       virtual Buffer* getNextFullInputBuffer( 
-					       CPI::DataTransport::Port* input_port			// In - Output port
-					       );
+                                               CPI::DataTransport::Port* input_port                        // In - Output port
+                                               );
 
       /**********************************
        * This method determines if we can produce from the indicated buffer
        *********************************/
       virtual bool canProduce( 
-			      Buffer* buffer			// InOut - Buffer to produce from
-			      )=0;
+                              Buffer* buffer                        // InOut - Buffer to produce from
+                              )=0;
 
       /**********************************
        * This method determines if we can produce from the indicated buffer
        *********************************/
       virtual bool canBroadcast( 
-				Buffer* buffer			// InOut - Buffer to produce from
-				);
+                                Buffer* buffer                        // InOut - Buffer to produce from
+                                );
 
       /**********************************
        * This method determines if we have the output barrier token
@@ -170,43 +170,43 @@ namespace CPI {
        * it will be initiated, if not it will be queued in the circuit.
        *********************************/
       virtual int produce( 
-			  Buffer* buffer,			// InOut - Buffer to produce from
-			  bool      broadcast=false	// In    - Broadcast the buffer
-			  )=0;
+                          Buffer* buffer,                        // InOut - Buffer to produce from
+                          bool      broadcast=false        // In    - Broadcast the buffer
+                          )=0;
 
       /**********************************
        * This initiates a broadcastdata transfer from the output buffer.
        *********************************/
       virtual void broadCastOutput(
-				   Buffer* buffer			// InOut - Buffer to produce from
-				   );
+                                   Buffer* buffer                        // InOut - Buffer to produce from
+                                   );
 
       /**********************************
        * This marks the input buffer as "Empty" and informs all interested outputs that
        * the input is now available.
        *********************************/
       virtual Buffer* consume( 
-			      Buffer* buffer			// InOut - Buffer to consume
-			      )=0;
+                              Buffer* buffer                        // InOut - Buffer to consume
+                              )=0;
 
       /**********************************
        * This marks the input buffer as "Empty" and informs all interested outputs that
        * the input is now available.
        *********************************/
       virtual void consumeAllBuffersLocal( 
-					  CPI::DataTransport::Port* port		          
-					  );
+                                          CPI::DataTransport::Port* port                          
+                                          );
 
       /**********************************
        * Add a template
        *********************************/
       void addTemplate( CpiTransferTemplate* temp, 
-			CPI::OS::uint32_t sp, 
-			CPI::OS::uint32_t stid, 
-			CPI::OS::uint32_t tp, 
-			CPI::OS::uint32_t ttid, 
-			bool broadcast=false,
-			TransferType tt = OUTPUT);
+                        CPI::OS::uint32_t sp, 
+                        CPI::OS::uint32_t stid, 
+                        CPI::OS::uint32_t tp, 
+                        CPI::OS::uint32_t ttid, 
+                        bool broadcast=false,
+                        TransferType tt = OUTPUT);
 
 
     protected:
@@ -217,9 +217,9 @@ namespace CPI {
       void init( CPI::DataTransport::PortSet* output, CPI::DataTransport::PortSet* input, bool whole_ss );
 
       // Next input temporal id
-      CPI::OS::int32_t	m_nextTid;
-      CPI::OS::int32_t	m_FillQPtr;
-      CPI::OS::int32_t	m_EmptyQPtr;			
+      CPI::OS::int32_t        m_nextTid;
+      CPI::OS::int32_t        m_FillQPtr;
+      CPI::OS::int32_t        m_EmptyQPtr;                        
 
       // Our port
       CPI::DataTransport::Port* m_port;
@@ -261,13 +261,13 @@ namespace CPI {
      * Add a template
      *********************************/
     inline void TransferController::addTemplate( 
-						CpiTransferTemplate* temp, CPI::OS::uint32_t sp, 
-						CPI::OS::uint32_t stid, 
-						CPI::OS::uint32_t tp, 
-						CPI::OS::uint32_t ttid, 
-						bool bcast,TransferType tt )
+                                                CpiTransferTemplate* temp, CPI::OS::uint32_t sp, 
+                                                CPI::OS::uint32_t stid, 
+                                                CPI::OS::uint32_t tp, 
+                                                CPI::OS::uint32_t ttid, 
+                                                bool bcast,TransferType tt )
       {
-	m_templates[sp][stid][tp][ttid][bcast?1:0][tt] = temp;
+        m_templates[sp][stid][tp][ttid][bcast?1:0][tt] = temp;
       }
 
 
@@ -277,13 +277,13 @@ namespace CPI {
     public:
       virtual ~TransferControllerNotSupported(){}
       TransferController* createController( 
-					   CPI::DataTransport::PortSet* output, 
-					   CPI::DataTransport::PortSet* input,
-					   bool whole_output_set)
+                                           CPI::DataTransport::PortSet* output, 
+                                           CPI::DataTransport::PortSet* input,
+                                           bool whole_output_set)
       {
-	cpiAssert(!"Unsupported data transfer request rejected !!\n");
-	throw CPI::Util::EmbeddedException("Unsupported data transfer request rejected !!\n");
-	return NULL;
+        cpiAssert(!"Unsupported data transfer request rejected !!\n");
+        throw CPI::Util::EmbeddedException("Unsupported data transfer request rejected !!\n");
+        return NULL;
       }
       bool canProduce( Buffer* buffer ){return true;}
       int produce( Buffer* buffer, bool bcast=false ){return 0;}
@@ -303,9 +303,9 @@ namespace CPI {
       virtual ~TransferController1(){};
       TransferController1( CPI::DataTransport::PortSet* output, CPI::DataTransport::PortSet* input, bool whole_ss );
       virtual TransferController* createController( 
-						   CPI::DataTransport::PortSet* output, 
-						   CPI::DataTransport::PortSet* input,
-						   bool whole_output_set);
+                                                   CPI::DataTransport::PortSet* output, 
+                                                   CPI::DataTransport::PortSet* input,
+                                                   bool whole_output_set);
   
       /**********************************
        * This method determines if we can produce from the indicated buffer
@@ -336,9 +336,9 @@ namespace CPI {
       virtual ~TransferController1AFCShadow(){};
       TransferController1AFCShadow( CPI::DataTransport::PortSet* output, CPI::DataTransport::PortSet* input, bool whole_ss );
       virtual TransferController* createController( 
-						   CPI::DataTransport::PortSet* output, 
-						   CPI::DataTransport::PortSet* input,
-						   bool whole_output_set);
+                                                   CPI::DataTransport::PortSet* output, 
+                                                   CPI::DataTransport::PortSet* input,
+                                                   bool whole_output_set);
 
       /**********************************
        * This method gets the next available buffer from the specified output port
@@ -357,9 +357,9 @@ namespace CPI {
        * state of the object.
        *********************************/
        bool hasFullInputBuffer(
-				CPI::DataTransport::Port* port,	       
-				InputBuffer**
-				)const;
+                                CPI::DataTransport::Port* port,               
+                                InputBuffer**
+                                )const;
   
       /**********************************
        * This method determines if we can produce from the indicated buffer
@@ -396,20 +396,20 @@ namespace CPI {
       TransferController2(){};
       virtual ~TransferController2(){};
       TransferController2( 
-			  CPI::DataTransport::PortSet* output, 
-			  CPI::DataTransport::PortSet* input,
-			  bool whole_output_set);
+                          CPI::DataTransport::PortSet* output, 
+                          CPI::DataTransport::PortSet* input,
+                          bool whole_output_set);
 
       virtual TransferController* 
-	createController( CPI::DataTransport::PortSet* output, CPI::DataTransport::
-			  PortSet* input, bool whole_output_set);
+        createController( CPI::DataTransport::PortSet* output, CPI::DataTransport::
+                          PortSet* input, bool whole_output_set);
  
       /**********************************
        * This method determines if we can produce from the indicated buffer
        *********************************/
       virtual bool canProduce( 
-			      Buffer* buffer			// InOut - Buffer to produce from
-			      );
+                              Buffer* buffer                        // InOut - Buffer to produce from
+                              );
 
       /**********************************
        * This initiates a data transfer from the output buffer.  If the transfer can take place, 
@@ -428,8 +428,8 @@ namespace CPI {
        * This method gets the next available buffer from the specified input port
        *********************************/
       virtual Buffer* getNextFullInputBuffer( 
-					       CPI::DataTransport::Port* input_port			// In - Output port
-					       );
+                                               CPI::DataTransport::Port* input_port                        // In - Output port
+                                               );
 
     private:
 
@@ -450,14 +450,14 @@ namespace CPI {
       TransferController3(){};
       virtual ~TransferController3(){};
       TransferController3( 
-			  CPI::DataTransport::PortSet* output, 
-			  CPI::DataTransport::PortSet* input,
-			  bool whole_output_set);
+                          CPI::DataTransport::PortSet* output, 
+                          CPI::DataTransport::PortSet* input,
+                          bool whole_output_set);
 
       virtual TransferController* createController( 
-						   CPI::DataTransport::PortSet* output, 
-						   CPI::DataTransport::PortSet* input,
-						   bool whole_output_set);
+                                                   CPI::DataTransport::PortSet* output, 
+                                                   CPI::DataTransport::PortSet* input,
+                                                   bool whole_output_set);
  
       /******************************
        * This method is used to determine if a transfer can be started while
@@ -485,16 +485,16 @@ namespace CPI {
      *********************************/
 
     inline TransferController3::TransferController3( 
-						    CPI::DataTransport::PortSet* output, 
-						    CPI::DataTransport::PortSet* input,
-						    bool whole_output_set)
+                                                    CPI::DataTransport::PortSet* output, 
+                                                    CPI::DataTransport::PortSet* input,
+                                                    bool whole_output_set)
       :TransferController2(output,input,whole_output_set){}
 
       inline TransferController* 
-	TransferController3::createController( 
-					      CPI::DataTransport::PortSet* output, 
-					      CPI::DataTransport::PortSet* input,
-					      bool wss ){return new TransferController3(output,input,wss);}
+        TransferController3::createController( 
+                                              CPI::DataTransport::PortSet* output, 
+                                              CPI::DataTransport::PortSet* input,
+                                              bool wss ){return new TransferController3(output,input,wss);}
 
       /*
        *  
@@ -512,36 +512,36 @@ namespace CPI {
       {
       public:
 
-	TransferController4(){};
+        TransferController4(){};
 
-	TransferController4( CPI::DataTransport::PortSet* output, CPI::DataTransport::PortSet* input, bool whole_ss );
-
-
-	virtual TransferController* createController( 
-						     CPI::DataTransport::PortSet* output, 
-						     CPI::DataTransport::PortSet* input,
-						     bool whole_output_set);
-
-	/**********************************
-	 * This method determines if we can produce from the indicated buffer
-	 *********************************/
-	virtual bool canProduce( 
-				Buffer* buffer			// InOut - Buffer to produce from
-				);
-
-	/**********************************
-	 * This initiates a data transfer from the output buffer.  If the transfer can take place, 
-	 * it will be initiated, if not it will be queued in the circuit.
-	 *********************************/
-	virtual int produce( Buffer* buffer, bool bcast=false );
+        TransferController4( CPI::DataTransport::PortSet* output, CPI::DataTransport::PortSet* input, bool whole_ss );
 
 
-	/**********************************
-	 * This method gets the next available buffer from the specified input port
-	 *********************************/
-	virtual Buffer* getNextFullInputBuffer( 
-						 CPI::DataTransport::Port* input_port			// In - Output port
-						 );
+        virtual TransferController* createController( 
+                                                     CPI::DataTransport::PortSet* output, 
+                                                     CPI::DataTransport::PortSet* input,
+                                                     bool whole_output_set);
+
+        /**********************************
+         * This method determines if we can produce from the indicated buffer
+         *********************************/
+        virtual bool canProduce( 
+                                Buffer* buffer                        // InOut - Buffer to produce from
+                                );
+
+        /**********************************
+         * This initiates a data transfer from the output buffer.  If the transfer can take place, 
+         * it will be initiated, if not it will be queued in the circuit.
+         *********************************/
+        virtual int produce( Buffer* buffer, bool bcast=false );
+
+
+        /**********************************
+         * This method gets the next available buffer from the specified input port
+         *********************************/
+        virtual Buffer* getNextFullInputBuffer( 
+                                                 CPI::DataTransport::Port* input_port                        // In - Output port
+                                                 );
 
 
       protected:

@@ -37,7 +37,7 @@ using namespace CPI::DataTransport;
  *  Constructors
  **********************************/
 SequentialDataDistribution::SequentialDataDistribution( DataDistributionMetaData* data, 
-							CPI::DataTransport::Circuit* circuit )
+                                                        CPI::DataTransport::Circuit* circuit )
   : DataDistribution( data, circuit ){}
 
 
@@ -50,7 +50,7 @@ SequentialDataDistribution::SequentialDataDistribution( DataDistributionMetaData
 
   // Distribution sub-type
   m_metaData->distSubType = sub_type;
-	
+        
   // Our partition object, default is whole distribution
   m_metaData->partition = new IndivisiblePartition();
 

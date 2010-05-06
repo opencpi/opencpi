@@ -58,16 +58,16 @@ namespace DataTransfer {
       :EndPoint(s){};
       virtual ~SocketEndPoint();
       SocketEndPoint( std::string& ep, CPI::OS::uint32_t size=0)
-	:EndPoint(ep,size){setEndpoint(ep);};
+        :EndPoint(ep,size){setEndpoint(ep);};
 
-	// Sets smem location data based upon the specified endpoint
-	virtual CPI::OS::int32_t setEndpoint( std::string& ep );
+        // Sets smem location data based upon the specified endpoint
+        virtual CPI::OS::int32_t setEndpoint( std::string& ep );
 
-	// Get the address from the endpoint
-	virtual const char* getAddress(){return ipAddress.c_str();}
+        // Get the address from the endpoint
+        virtual const char* getAddress(){return ipAddress.c_str();}
 
-	std::string ipAddress;
-	int         portNum;
+        std::string ipAddress;
+        int         portNum;
   };
 
 
@@ -150,13 +150,13 @@ namespace DataTransfer {
 
     // General init
     void init (
-	       Creator cr, 
-	       Flags flags, 
-	       CPI::OS::uint32_t srcoffs, 
-	       Shape *psrcshape, 
-	       CPI::OS::uint32_t dstoffs, 
-	       Shape *pdstshape, 
-	       CPI::OS::uint32_t length );
+               Creator cr, 
+               Flags flags, 
+               CPI::OS::uint32_t srcoffs, 
+               Shape *psrcshape, 
+               CPI::OS::uint32_t dstoffs, 
+               Shape *pdstshape, 
+               CPI::OS::uint32_t length );
 
     // Queue data transfer request
     void start (Shape* s_shape=NULL, Shape* t_shape=NULL);
@@ -178,14 +178,14 @@ namespace DataTransfer {
 
     // Data members accessible from this/derived class
   protected:
-    Creator						m_creator;		// What  method created this instance
-    Flags						m_flags;		// Flags used during creation
-    CPI::OS::uint32_t			m_srcoffset;	// The source memory offset
-    Shape						m_srcshape;		// The source shape
-    CPI::OS::uint32_t			m_dstoffset;	// The destination memory offset
-    Shape						m_dstshape;		// The destination memory shape
-    CPI::OS::uint32_t			m_length;		// The length of the request in bytes
-    XF_transfer					m_thandle;		// Transfer handle returned by xfer_xxx etal
+    Creator                                                m_creator;                // What  method created this instance
+    Flags                                                m_flags;                // Flags used during creation
+    CPI::OS::uint32_t                        m_srcoffset;        // The source memory offset
+    Shape                                                m_srcshape;                // The source shape
+    CPI::OS::uint32_t                        m_dstoffset;        // The destination memory offset
+    Shape                                                m_dstshape;                // The destination memory shape
+    CPI::OS::uint32_t                        m_length;                // The length of the request in bytes
+    XF_transfer                                        m_thandle;                // Transfer handle returned by xfer_xxx etal
 
   };
 
@@ -210,11 +210,11 @@ namespace DataTransfer {
 
       // Create a transfer request
       XferRequest* copy (CPI::OS::uint32_t srcoffs, CPI::OS::uint32_t dstoffs, 
-			 CPI::OS::uint32_t nbytes, XferRequest::Flags flags, XferRequest* add_to);
+                         CPI::OS::uint32_t nbytes, XferRequest::Flags flags, XferRequest* add_to);
 
       // Create a 2-dimensional transfer request
       XferRequest* copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc, 
-			   CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest* add_to);
+                           CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest* add_to);
 
       // Group data transfer requests
       XferRequest* group (XferRequest* preqs[]);
@@ -254,7 +254,7 @@ namespace DataTransfer {
       static CPI::Util::VList m_map;
 
       // The handle returned by xfer_create
-      XF_template	m_xftemplate;
+      XF_template        m_xftemplate;
 
       // Our transfer request
       XferRequest* m_txRequest;

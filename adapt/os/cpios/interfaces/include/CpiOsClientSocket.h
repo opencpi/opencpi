@@ -58,8 +58,8 @@ namespace CPI {
        */
 
       CPI::OS::Socket connect (const std::string & remoteHost,
-			       unsigned int remotePort)
-	throw (std::string);
+                               unsigned int remotePort)
+        throw (std::string);
 
     };
 

@@ -28,16 +28,16 @@ namespace CPI {
     public:
     Thread() 
       :m_joined(true) 
-	{
-	  m_pobjThreadServices = new CPI::OS::ThreadManager;
-	}
+        {
+          m_pobjThreadServices = new CPI::OS::ThreadManager;
+        }
       virtual ~Thread()
-	{ 
-	  if ( ! m_joined ) {
-	    m_pobjThreadServices->detach(); 
-	  }
-	  delete m_pobjThreadServices; 
-	}
+        { 
+          if ( ! m_joined ) {
+            m_pobjThreadServices->detach(); 
+          }
+          delete m_pobjThreadServices; 
+        }
 
       // User implementation method
       virtual void run()=0;
@@ -47,7 +47,7 @@ namespace CPI {
       void join();
 
     private:
-      CPI::OS::ThreadManager 	*m_pobjThreadServices;
+      CPI::OS::ThreadManager         *m_pobjThreadServices;
       bool m_joined;
     };
 

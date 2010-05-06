@@ -76,13 +76,13 @@ stringifyCorbaException (const CORBA::Exception & ex)
        */
 
       if (vmcid == 0x50540 || vmcid == 0x58500) {
-	res += " <PrismTech>";
+        res += " <PrismTech>";
       }
       else if (vmcid == 0x4f490 || vmcid == 0x4f495) {
-	res += " <OIS>";
+        res += " <OIS>";
       }
       else if (vmcid == 0x54410) {
-	res += " <TAO>";
+        res += " <TAO>";
       }
 
       res += " VMCID 0x";

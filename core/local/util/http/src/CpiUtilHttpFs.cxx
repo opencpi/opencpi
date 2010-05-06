@@ -12,7 +12,7 @@
 
 CPI::Util::Http::HttpFsBase::
 HttpFsBase (const std::string & scheme,
-	    const std::string & root)
+            const std::string & root)
   throw (std::string)
 {
   if (root.length() && root[root.length()-1] == '/') {
@@ -238,7 +238,7 @@ hgpr (const std::string & fileName,
     std::string duri = CPI::Util::Uri::decode (redir.newLocation);
 
     if (duri.length() < m_baseURI.length() ||
-	duri.compare (0, m_baseURI.length(), m_baseURI) != 0) {
+        duri.compare (0, m_baseURI.length(), m_baseURI) != 0) {
       throw;
     }
 

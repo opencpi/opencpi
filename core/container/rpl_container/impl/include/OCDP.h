@@ -2,21 +2,21 @@
 #define OCDP_H
 struct OcdpProperties {
   uint32_t
-  nLocalBuffers,	// 0x00
-    nRemoteBuffers,	// 0x04
-    localBufferBase,	// 0x08
-    localMetadataBase,	// 0x0c
-    localBufferSize,	// 0x10
-    localMetadataSize,	// 0x14
+  nLocalBuffers,        // 0x00
+    nRemoteBuffers,        // 0x04
+    localBufferBase,        // 0x08
+    localMetadataBase,        // 0x0c
+    localBufferSize,        // 0x10
+    localMetadataSize,        // 0x14
     nRemoteDone,        // 0x18 written indicating remote action on local buffers
-    rsvd,		// 0x1c
+    rsvd,                // 0x1c
     nReady;             // 0x20 read by remote to know local buffers for remote action
   const uint32_t
-    foodFace,	        // 0x24 constant 0xf00dface
-    debug[9];		// 0x28/2c/30/34/38/3c/40/44/48
+    foodFace,                // 0x24 constant 0xf00dface
+    debug[9];                // 0x28/2c/30/34/38/3c/40/44/48
   uint32_t
     memoryBytes,        // 0x4c
-    remoteBufferBase,	// 0x50
+    remoteBufferBase,        // 0x50
     remoteMetadataBase, // 0x54
     remoteBufferSize,   // 0x58
     remoteMetadataSize, // 0x5c

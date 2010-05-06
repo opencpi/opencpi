@@ -171,7 +171,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
 
   this_->container->send( &this_->ports[ProducerWorker_Data_Out_Port], 
-			  &this_->ports[ProducerWorker_Data_Out_Port].current, 0x54, len );
+                          &this_->ports[ProducerWorker_Data_Out_Port].current, 0x54, len );
 
 #define DELAY_AFTER_SEND__
 #ifdef DELAY_AFTER_SEND
@@ -184,7 +184,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   this_->ports[ProducerWorker_Data_Out_Port].output.u.operation = 0;
 
   CPI_TIME_EMIT_C( "Producer End Send" );
-	
+        
   return RCC_OK;
 
 }
@@ -202,20 +202,20 @@ static int32_t portRunConditions[] = { (1<<ProducerWorker_Data_Out_Port) , 0 };
 static RCCRunCondition RCCRunConditions[] = { {portRunConditions}, {0} , {0} };
 static RCCPortInfo portInfo = { 0, 1024*12, 1 };
 RCCDispatch ProducerWorkerDispatchTable = { RCC_VERSION, NUM_INPUT_PORTS, NUM_OUTPUT_PORTS, 
-					    PROPERTY_SIZE, 
-					    memSizes, 
-					    0,
-					    initialize, 
-					    start, 
-					    stop, 
-					    release, 
-					    test, 
-					    afterConfigure, 
-					    beforeQuery, 
-					    ProducerWorker_run,
-					    /*workerRunConditions*/ NULL, 
-					    NULL, 
-					    0};
+                                            PROPERTY_SIZE, 
+                                            memSizes, 
+                                            0,
+                                            initialize, 
+                                            start, 
+                                            stop, 
+                                            release, 
+                                            test, 
+                                            afterConfigure, 
+                                            beforeQuery, 
+                                            ProducerWorker_run,
+                                            /*workerRunConditions*/ NULL, 
+                                            NULL, 
+                                            0};
 
 
 

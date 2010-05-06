@@ -31,36 +31,36 @@ namespace CPI {
 
       class ReadOnlyFs : public CPI::Util::Vfs::FilterFs {
       public:
-	/**
-	 * Constructor
-	 *
-	 * \param[in] delegatee The secondary Vfs instance to delegate all
-	 *                      read access to.
-	 */
+        /**
+         * Constructor
+         *
+         * \param[in] delegatee The secondary Vfs instance to delegate all
+         *                      read access to.
+         */
 
-	ReadOnlyFs (CPI::Util::Vfs::Vfs & delegatee)
-	  throw ();
+        ReadOnlyFs (CPI::Util::Vfs::Vfs & delegatee)
+          throw ();
 
-	/**
-	 * Destructor.
-	 */
+        /**
+         * Destructor.
+         */
 
-	~ReadOnlyFs ()
-	  throw ();
+        ~ReadOnlyFs ()
+          throw ();
 
       protected:
-	/**
-	 * \name Implementation of the CPI::Util::Vfs::FilterFs interface.
-	 */
+        /**
+         * \name Implementation of the CPI::Util::Vfs::FilterFs interface.
+         */
 
-	//@{
+        //@{
 
-	void access (const std::string & name,
-		     std::ios_base::openmode mode,
-		     bool isDirectory)
-	  throw (std::string);
+        void access (const std::string & name,
+                     std::ios_base::openmode mode,
+                     bool isDirectory)
+          throw (std::string);
 
-	//@}
+        //@}
       };
 
     }

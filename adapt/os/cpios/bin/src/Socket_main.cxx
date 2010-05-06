@@ -198,9 +198,9 @@ namespace SocketTests {
       unsigned long long count;
 
       while (*ptr) {
-	count = so.send (ptr, 1);
-	test (count == 1);
-	ptr++;
+        count = so.send (ptr, 1);
+        test (count == 1);
+        ptr++;
       }
 
       so.shutdown ();
@@ -209,8 +209,8 @@ namespace SocketTests {
       char *ptr2 = buf;
 
       do {
-	count = so.recv (ptr2, 2);
-	ptr2 += count;
+        count = so.recv (ptr2, 2);
+        ptr2 += count;
       }
       while (count > 0);
       *ptr2 = 0;
@@ -289,10 +289,10 @@ namespace SocketTests {
 
     while (*ap) {
       if (*ap != '.' &&
-	  *ap != '0' && *ap != '1' && *ap != '2' && *ap != '3' &&
-	  *ap != '4' && *ap != '5' && *ap != '6' && *ap != '7' &&
-	  *ap != '8' && *ap != '9') {
-	break;
+          *ap != '0' && *ap != '1' && *ap != '2' && *ap != '3' &&
+          *ap != '4' && *ap != '5' && *ap != '6' && *ap != '7' &&
+          *ap != '8' && *ap != '9') {
+        break;
       }
       ap++;
     }
@@ -378,8 +378,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

@@ -94,21 +94,21 @@ std::vector<std::string> XferFactoryManager::getListOfSupportedEndpoints()
 
 
 bool XferFactory::supportsEndPoints(
-				    std::string& end_point1, 
-				    std::string& end_point2 )
+                                    std::string& end_point1, 
+                                    std::string& end_point2 )
 {
 #ifndef NDEBUG
   printf("In  XferFactory::supportsEndPoints, (%s) (%s)\n",
-	 end_point1.c_str(), end_point2.c_str() );
+         end_point1.c_str(), end_point2.c_str() );
 #endif
 
   unsigned int len = strlen( getProtocol() );
   if ( end_point1.length() && end_point2.length() ) {
 
     if ( (strncmp( end_point1.c_str(), getProtocol(), strlen(getProtocol())) == 0 ) &&
-	 strncmp( end_point2.c_str(), getProtocol(), strlen(getProtocol())) == 0 ) {
+         strncmp( end_point2.c_str(), getProtocol(), strlen(getProtocol())) == 0 ) {
       if ( (end_point1[len] != ':') ||  (end_point2[len] != ':') ) {
-	return false;
+        return false;
       }
       return true;
     }
@@ -116,7 +116,7 @@ bool XferFactory::supportsEndPoints(
   else if ( end_point1.length() ) {
     if ( (strncmp( end_point1.c_str(), getProtocol(), strlen(getProtocol())) == 0) ) {
       if ( (len<end_point1.length()) && (end_point1[len] != ':')  ) {
-	return false;
+        return false;
       }
       return true;
     }
@@ -124,7 +124,7 @@ bool XferFactory::supportsEndPoints(
   else if ( end_point2.length() ) {
     if ( (strncmp( end_point2.c_str(), getProtocol(), strlen(getProtocol())) == 0 ) ) {
       if ( (len<end_point2.length()) && (end_point2[len] != ':')  ) {
-	return false;
+        return false;
       }
       return true;
     }
@@ -289,7 +289,7 @@ XferFactoryManager::get_template(const char *src, const char *dst, XferServices*
     TList_Item *item = (TList_Item *)get_entry(&m_templatelist, i);
     /* Check for a complete match */
     if ((!(strcmp((const char *)item->src, src))) &&
-	(!(strcmp((const char *)item->dst, dst)))) {
+        (!(strcmp((const char *)item->dst, dst)))) {
       /* We have a match, return the template */
       xfer_template = item->xf_template;
       /* Increment the ref count */
@@ -329,9 +329,9 @@ XferFactoryManager::add_template(std::string& src, std::string& dst, XferService
 
   /* Add the template to the list */
   if (insert_to_list(&m_templatelist,
-		     (void *)item,
-		     TLIST_INITIAL_SIZE,
-		     TLIST_INCREMENT)) {
+                     (void *)item,
+                     TLIST_INITIAL_SIZE,
+                     TLIST_INCREMENT)) {
     return 1;
   }
 
@@ -353,12 +353,12 @@ SMBResources* XferFactoryManager::findResource(const char* ep)
 
 
 void XferFactoryManager::deleteSMBResources(
-					    EndPoint* loc)
+                                            EndPoint* loc)
 {
 
   CPI::Util::AutoMutex guard ( m_mutex, true ); 
 
-  SMBResources* sr;	
+  SMBResources* sr;        
   sr = findResource( loc->end_point.c_str() );  
   cpiAssert( sr );
   m_resources.remove(sr);  
@@ -367,12 +367,12 @@ void XferFactoryManager::deleteSMBResources(
 
 // create a transfer compatible SMB
 SMBResources* XferFactoryManager::createSMBResources( 
-						     EndPoint* loc)
+                                                     EndPoint* loc)
 
 {
   CPI::Util::AutoMutex guard ( m_mutex, true ); 
 
-  SMBResources* sr;	
+  SMBResources* sr;        
   sr = findResource( loc->end_point.c_str() );
   if ( sr ) {
     return sr;
@@ -397,7 +397,7 @@ SMBResources* XferFactoryManager::createSMBResources(
   sr->sMemResourceMgr->createLocal( loc->size );
   CPI::OS::uint64_t offset;
   if ( sr->sMemResourceMgr->alloc( sizeof(ContainerComms), 
-				   0, &offset) != 0 ) {
+                                   0, &offset) != 0 ) {
     throw CPI::Util::EmbeddedException(  NO_MORE_SMB, loc->end_point.c_str() );
   }
 
@@ -417,8 +417,8 @@ SMBResources* XferFactoryManager::createSMBResources(
 
 
 // create a transfer compatible SMB
-SMBResources* XferFactoryManager::getSMBResources(	
-						  EndPoint* ep )
+SMBResources* XferFactoryManager::getSMBResources(        
+                                                  EndPoint* ep )
 {
   cpiAssert( ep );
   if ( ep->resources ) {
@@ -434,8 +434,8 @@ SMBResources* XferFactoryManager::getSMBResources(
 
 
 // create a transfer compatible SMB
-SMBResources* XferFactoryManager::getSMBResources(	
-						  std::string& ep)
+SMBResources* XferFactoryManager::getSMBResources(        
+                                                  std::string& ep)
 {
   CPI::Util::AutoMutex guard ( m_mutex, true ); 
 
@@ -472,8 +472,8 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 
 #ifndef NDEBUG
   printf("In makerequest from %s to %s\n", 
-	 source->sMemServices->getEndPoint()->end_point.c_str(), 
-	 target->sMemServices->getEndPoint()->end_point.c_str() );
+         source->sMemServices->getEndPoint()->end_point.c_str(), 
+         target->sMemServices->getEndPoint()->end_point.c_str() );
 #endif
 
 #ifdef MULTI_THREADED
@@ -486,8 +486,8 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
   /* Attempt to get or make a transfer template */
   XferServices* ptemplate = 
     XferFactoryManager::getFactoryManager().getService( 
-				   source->sMemServices->getEndPoint(), 
-				   target->sMemServices->getEndPoint() );
+                                   source->sMemServices->getEndPoint(), 
+                                   target->sMemServices->getEndPoint() );
   if ( ! ptemplate ) {
     cpiAssert(0);
   }
@@ -501,17 +501,17 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
   // create the copy in the template
   XferRequest* ptransfer_a =
     ptemplate->copy (
-		     offset + sizeof(ContainerComms::BasicReq),
-		     offset + sizeof(ContainerComms::BasicReq),
-		     sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
-		     XferRequest::FirstTransfer,0 );
+                     offset + sizeof(ContainerComms::BasicReq),
+                     offset + sizeof(ContainerComms::BasicReq),
+                     sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
+                     XferRequest::FirstTransfer,0 );
 
   XferRequest *ptransfer_b =
     ptemplate->copy (
-		     offset,
-		     offset,
-		     sizeof(ContainerComms::BasicReq),
-		     XferRequest::LastTransfer, ptransfer_a );
+                     offset,
+                     offset,
+                     sizeof(ContainerComms::BasicReq),
+                     XferRequest::LastTransfer, ptransfer_a );
 
   // Create a list
   XferRequest *grps[3];
@@ -537,10 +537,10 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 std::string XferFactoryManager::allocateEndpoint(std::string& protocol, CPI::OS::uint32_t *size)
 {
   CPI::Util::AutoMutex guard ( m_mutex, true ); 
-		
+                
   XferFactory* factory;
   if ( protocol.length() == 0 ) {
-		
+                
     // We will simply ask the first factory for an address
     factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, 0));
   }
@@ -548,7 +548,7 @@ std::string XferFactoryManager::allocateEndpoint(std::string& protocol, CPI::OS:
     std::string nuls;
     factory = find(protocol,nuls);
   }
-	
+        
   if ( ! factory ) {
     return NULL;
   }
@@ -558,8 +558,8 @@ std::string XferFactoryManager::allocateEndpoint(std::string& protocol, CPI::OS:
 
 
 XferServices* XferFactoryManager::getService(
-					     EndPoint *s_endpoint,			
-					     EndPoint *t_endpoint)
+                                             EndPoint *s_endpoint,                        
+                                             EndPoint *t_endpoint)
 {
 
   SMBResources* source_info;
@@ -573,10 +573,10 @@ XferServices* XferFactoryManager::getService(
 
     // Find the factory that supports the endpoints
     XferFactory* factory = find( s_endpoint->end_point, 
-						     t_endpoint->end_point);
+                                                     t_endpoint->end_point);
     if ( factory == NULL ) {
       printf("Enpoint connection, %s to %s not supported\n", s_endpoint->end_point.c_str(),
-	     t_endpoint->end_point.c_str() );
+             t_endpoint->end_point.c_str() );
       throw -1;
     }
 

@@ -1,6 +1,6 @@
 /** \file IStream.h
- **	\date  2008-11-15
- **	\author grymse@alhem.net
+ **        \date  2008-11-15
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom
@@ -42,14 +42,14 @@ namespace SOCKETS_NAMESPACE {
 class IStream
 {
 public:
-	virtual ~IStream() {}
+        virtual ~IStream() {}
 
-	/** Try to read 'buf_sz' number of bytes from source.
-	    \return Number of bytes actually read. */
-	virtual size_t IStreamRead(char *buf, size_t buf_sz) = 0;
+        /** Try to read 'buf_sz' number of bytes from source.
+            \return Number of bytes actually read. */
+        virtual size_t IStreamRead(char *buf, size_t buf_sz) = 0;
 
-	/** Write 'sz' bytes to destination. */
-	virtual void IStreamWrite(const char *buf, size_t sz) = 0;
+        /** Write 'sz' bytes to destination. */
+        virtual void IStreamWrite(const char *buf, size_t sz) = 0;
 
 };
 

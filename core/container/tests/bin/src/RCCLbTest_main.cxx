@@ -107,44 +107,44 @@ CpiRccBinderConfigurator::g_options[] = {
 static
 void
 printUsage (CpiRccBinderConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
 
 
 #define CHECK_WCI_CONROL_ERROR(err, op) \
-	if ( err != WCI_SUCCESS ) { \
-	printf("ERROR: WCI control(%d) returned %d\n", op, err );\
-	throw 1;\
-	}
+        if ( err != WCI_SUCCESS ) { \
+        printf("ERROR: WCI control(%d) returned %d\n", op, err );\
+        throw 1;\
+        }
 
 #define PORT_0 0
 #define PORT_1 1
 
 #define GPP_CONT_UID 1
 
-#define CATCH_ALL_RETHROW( msg )					\
-  catch ( int& ii ) {							\
-    printf("gpp: Caught an int exception while %s = %d\n", msg,ii );	\
-    throw;								\
-  }									\
-  catch( std::string& stri ) {						\
+#define CATCH_ALL_RETHROW( msg )                                        \
+  catch ( int& ii ) {                                                        \
+    printf("gpp: Caught an int exception while %s = %d\n", msg,ii );        \
+    throw;                                                                \
+  }                                                                        \
+  catch( std::string& stri ) {                                                \
     printf("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
-    throw;								\
-  }									\
-  catch ( CPI::Util::EmbeddedException& eex ) {				\
-    printf(" gpp: Caught an embedded exception while %s:\n", msg);		\
-    printf( " error number = %d", eex.m_errorCode );			\
-    printf( " aux info = %s\n", eex.m_auxInfo.c_str() );	        \
-    throw;								\
-  }									\
-  catch( ... ) {							\
-    printf("gpp: Caught an unknown exception while %s\n",msg );		\
-    throw;								\
+    throw;                                                                \
+  }                                                                        \
+  catch ( CPI::Util::EmbeddedException& eex ) {                                \
+    printf(" gpp: Caught an embedded exception while %s:\n", msg);                \
+    printf( " error number = %d", eex.m_errorCode );                        \
+    printf( " aux info = %s\n", eex.m_auxInfo.c_str() );                \
+    throw;                                                                \
+  }                                                                        \
+  catch( ... ) {                                                        \
+    printf("gpp: Caught an unknown exception while %s\n",msg );                \
+    throw;                                                                \
   }
 
 // using namespace CPI::DataTransport;
@@ -307,11 +307,11 @@ void setupForPCMode()
 
  try { 
       outputPort = &  WORKER_OUTPUT_ID->createOutputPort( PORT_0,
-							    config.nBuffers,
-							    config.msgSize, NULL);
+                                                            config.nBuffers,
+                                                            config.msgSize, NULL);
   }
   CATCH_ALL_RETHROW( "creating source port" );
-	
+        
 
   try {
 
@@ -321,10 +321,10 @@ void setupForPCMode()
       CPI::Util::PVEnd };
 
     inputPort = & WORKER_INPUT_ID->createInputPort(  PORT_0,
-						    config.nBuffers,
-						    config.msgSize,
-						    tprops
-						    );
+                                                    config.nBuffers,
+                                                    config.msgSize,
+                                                    tprops
+                                                    );
   }
   CATCH_ALL_RETHROW("creating target port")
 
@@ -483,19 +483,19 @@ int gpp_cont(int argc, char** argv)
     while( CPI_RUN_TEST ) {
 
       if ( gpp_event_manager ) {
-	do {
-	  gpp_container->dispatch( gpp_event_manager);
-	  if ( gpp_event_manager->waitForEvent( 100, event_id, evalue ) == DataTransfer::EventTimeout ) {
-	    printf("We have not recieved an event for 100 uSec.\n");
-	  }
-	  else {
-	    gpp_container->dispatch( gpp_event_manager );
-	    break;
-	  }
-	} while(1);
+        do {
+          gpp_container->dispatch( gpp_event_manager);
+          if ( gpp_event_manager->waitForEvent( 100, event_id, evalue ) == DataTransfer::EventTimeout ) {
+            printf("We have not recieved an event for 100 uSec.\n");
+          }
+          else {
+            gpp_container->dispatch( gpp_event_manager );
+            break;
+          }
+        } while(1);
       }
       else {
-	gpp_container->dispatch( gpp_event_manager );
+        gpp_container->dispatch( gpp_event_manager );
       }
 
       CPI::OS::sleep( 500 );
@@ -504,7 +504,7 @@ int gpp_cont(int argc, char** argv)
       //#define LIMIT_RUN
 #ifdef LIMIT_RUN
       if ( lc > (1000 * 10) ) {
-	CPI_RUN_TEST = 0;
+        CPI_RUN_TEST = 0;
       }
       CPI::OS::sleep( 1 );
 #endif
@@ -521,19 +521,19 @@ int gpp_cont(int argc, char** argv)
     gpp_container = NULL; 
 
   }
-  catch ( int& ii ) {						      
+  catch ( int& ii ) {                                                      
     printf("gpp: Caught an int exception while %s = %d\n", "main" ,ii );
-  }									
-  catch( std::string& stri ) {						
+  }                                                                        
+  catch( std::string& stri ) {                                                
     printf("gpp: Caught a string exception while %s = %s\n","main", stri.c_str() );
-  }									
-  catch ( CPI::Util::EmbeddedException& eex ) {				
-    printf(" gpp: Caught an embedded exception while %s:\n", "main");	
-    printf( " error number = %d", eex.m_errorCode );			
-    printf( " aux info = %s\n", eex.m_auxInfo.c_str() );	        
-  }									
-  catch( ... ) {							
-    printf("gpp: Caught an unknown exception while %s\n","main" );		
+  }                                                                        
+  catch ( CPI::Util::EmbeddedException& eex ) {                                
+    printf(" gpp: Caught an embedded exception while %s:\n", "main");        
+    printf( " error number = %d", eex.m_errorCode );                        
+    printf( " aux info = %s\n", eex.m_auxInfo.c_str() );                
+  }                                                                        
+  catch( ... ) {                                                        
+    printf("gpp: Caught an unknown exception while %s\n","main" );                
   }
 
   printf("gpp_container: Good Bye\n");

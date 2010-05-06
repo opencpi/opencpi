@@ -25,10 +25,10 @@ namespace {
   class VfsFile : public POA_CF::File {
   public:
     VfsFile (PortableServer::POA_ptr poa,
-	     CPI::Util::Vfs::Vfs * fs,
-	     const std::string & fileName,
-	     std::istream * in,
-	     std::ostream * out)
+             CPI::Util::Vfs::Vfs * fs,
+             const std::string & fileName,
+             std::istream * in,
+             std::ostream * out)
       throw ();
 
     ~VfsFile ()
@@ -41,26 +41,26 @@ namespace {
       throw (CORBA::SystemException);
 
     void read (CF::OctetSequence_out data,
-	       CORBA::ULong length)
+               CORBA::ULong length)
       throw (CF::File::IOException,
-	     CORBA::SystemException);
+             CORBA::SystemException);
 
     void write (const CF::OctetSequence & data)
       throw (CF::File::IOException,
-	     CORBA::SystemException);
+             CORBA::SystemException);
 
     CORBA::ULong sizeOf ()
       throw (CF::FileException,
-	     CORBA::SystemException);
+             CORBA::SystemException);
 
     void close ()
       throw (CF::FileException,
-	     CORBA::SystemException);
+             CORBA::SystemException);
 
     void setFilePointer (CORBA::ULong filePointer)
       throw (CF::File::InvalidFilePointer,
-	     CF::FileException,
-	     CORBA::SystemException);
+             CF::FileException,
+             CORBA::SystemException);
 
   protected:
     PortableServer::POA_var m_poa;
@@ -73,10 +73,10 @@ namespace {
 
 VfsFile::
 VfsFile (PortableServer::POA_ptr poa,
-	 CPI::Util::Vfs::Vfs * fs,
-	 const std::string & fileName,
-	 std::istream * in,
-	 std::ostream * out)
+         CPI::Util::Vfs::Vfs * fs,
+         const std::string & fileName,
+         std::istream * in,
+         std::ostream * out)
   throw ()
   : m_poa (PortableServer::POA::_duplicate (poa)),
     m_fs (fs),
@@ -127,7 +127,7 @@ VfsFile::
 read (CF::OctetSequence_out data,
       CORBA::ULong length)
   throw (CF::File::IOException,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CF::OctetSequence_var buf = new CF::OctetSequence (length);
   buf->length (length);
@@ -151,7 +151,7 @@ void
 VfsFile::
 write (const CF::OctetSequence & data)
   throw (CF::File::IOException,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   if (!m_out) {
     CF::File::IOException ioe;
@@ -161,7 +161,7 @@ write (const CF::OctetSequence & data)
   }
 
   m_out->write (reinterpret_cast<const char *> (data.get_buffer ()),
-		data.length ());
+                data.length ());
 
   if (m_out->bad()) {
     CF::File::IOException ioe;
@@ -175,7 +175,7 @@ CORBA::ULong
 VfsFile::
 sizeOf ()
   throw (CF::FileException,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   unsigned long long size;
 
@@ -203,7 +203,7 @@ void
 VfsFile::
 close ()
   throw (CF::FileException,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   PortableServer::ObjectId_var myId = m_poa->servant_to_id (this);
   m_poa->deactivate_object (myId.in());
@@ -223,8 +223,8 @@ void
 VfsFile::
 setFilePointer (CORBA::ULong filePointer)
   throw (CF::File::InvalidFilePointer,
-	 CF::FileException,
-	 CORBA::SystemException)
+         CF::FileException,
+         CORBA::SystemException)
 {
   /*
    * The setFilePointer operation shall raise the InvalidFilePointer
@@ -266,9 +266,9 @@ setFilePointer (CORBA::ULong filePointer)
 
 CPI::CFUtil::VfsFileSystem::
 VfsFileSystem (CORBA::ORB_ptr orb,
-	       PortableServer::POA_ptr poa,
-	       CPI::Util::Vfs::Vfs * fs,
-	       bool adopt)
+               PortableServer::POA_ptr poa,
+               CPI::Util::Vfs::Vfs * fs,
+               bool adopt)
   throw ()
   : m_orb (CORBA::ORB::_duplicate (orb)),
     m_poa (PortableServer::POA::_duplicate (poa)),
@@ -296,8 +296,8 @@ void
 CPI::CFUtil::VfsFileSystem::
 remove (const char * fileName)
   throw (CF::InvalidFileName,
-	 CF::FileException,
-	 CORBA::SystemException)
+         CF::FileException,
+         CORBA::SystemException)
 {
   std::string name (fileName);
   testFileName (fileName);
@@ -318,8 +318,8 @@ CPI::CFUtil::VfsFileSystem::
 copy (const char * sourceFileName,
       const char * destinationFileName)
   throw (CF::InvalidFileName,
-	 CF::FileException,
-	 CORBA::SystemException)
+         CF::FileException,
+         CORBA::SystemException)
 {
   std::string sourceName (sourceFileName);
   std::string destName (destinationFileName);
@@ -342,7 +342,7 @@ CORBA::Boolean
 CPI::CFUtil::VfsFileSystem::
 exists (const char * fileName)
   throw (CF::InvalidFileName,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   std::string name (fileName);
   CORBA::Boolean res;
@@ -366,8 +366,8 @@ CF::FileSystem::FileInformationSequence *
 CPI::CFUtil::VfsFileSystem::
 list (const char * pattern)
   throw (CF::InvalidFileName,
-	 CF::FileException,
-	 CORBA::SystemException)
+         CF::FileException,
+         CORBA::SystemException)
 {
   std::string pat (pattern);
   testFileName (pat, true);
@@ -398,23 +398,23 @@ list (const char * pattern)
       std::string fn = vit->relativeName ();
 
       if (vit->isDirectory()) {
-	fn += '/';
-	fi.name = fn.c_str ();
-	fi.kind = CF::FileSystem::DIRECTORY;
-	fi.size = 0;
+        fn += '/';
+        fi.name = fn.c_str ();
+        fi.kind = CF::FileSystem::DIRECTORY;
+        fi.size = 0;
       }
       else {
-	fi.name = fn.c_str ();
-	fi.kind = CF::FileSystem::PLAIN;
-	fi.size = vit->size ();
+        fi.name = fn.c_str ();
+        fi.kind = CF::FileSystem::PLAIN;
+        fi.size = vit->size ();
       }
 
       std::time_t lm = vit->lastModified ();
 
       if (lm != static_cast<std::time_t> (-1)) {
-	fi.fileProperties.length (1);
-	fi.fileProperties[0].id = CF::FileSystem::MODIFIED_TIME_ID;
-	fi.fileProperties[0].value <<= static_cast<CORBA::ULong> (lm);
+        fi.fileProperties.length (1);
+        fi.fileProperties[0].id = CF::FileSystem::MODIFIED_TIME_ID;
+        fi.fileProperties[0].value <<= static_cast<CORBA::ULong> (lm);
       }
 
       index++;
@@ -449,8 +449,8 @@ CF::File_ptr
 CPI::CFUtil::VfsFileSystem::
 create (const char * fileName)
   throw (CF::InvalidFileName,
-	 CF::FileException,
-	 CORBA::SystemException)
+         CF::FileException,
+         CORBA::SystemException)
 {
   std::string name (fileName);
   testFileName (name);
@@ -517,8 +517,8 @@ CPI::CFUtil::VfsFileSystem::
 open (const char * fileName,
       CORBA::Boolean read_Only)
   throw (CF::InvalidFileName,
-	 CF::FileException,
-	 CORBA::SystemException)
+         CF::FileException,
+         CORBA::SystemException)
 {
   std::string name (fileName);
   testFileName (name);
@@ -591,8 +591,8 @@ void
 CPI::CFUtil::VfsFileSystem::
 mkdir (const char * directoryName)
   throw (CF::InvalidFileName,
-	 CF::FileException,
-	 CORBA::SystemException)
+         CF::FileException,
+         CORBA::SystemException)
 {
   std::string name (directoryName);
   testFileName (name);
@@ -612,8 +612,8 @@ void
 CPI::CFUtil::VfsFileSystem::
 rmdir (const char * directoryName)
   throw (CF::InvalidFileName,
-	 CF::FileException,
-	 CORBA::SystemException)
+         CF::FileException,
+         CORBA::SystemException)
 {
   std::string name (directoryName);
   testFileName (name);
@@ -633,7 +633,7 @@ void
 CPI::CFUtil::VfsFileSystem::
 query (CF::Properties & fileSystemProperties)
   throw (CF::FileSystem::UnknownFileSystemProperties,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CF::FileSystem::UnknownFileSystemProperties ufsp;
   CORBA::ULong np = fileSystemProperties.length ();
@@ -743,7 +743,7 @@ testFileName (const std::string & fileName, bool isPattern)
     }
 
     if ((pcl == 1 && pc[0] == '.') ||
-	(pcl == 2 && pc[0] == '.' && pc[1] == '.')) {
+        (pcl == 2 && pc[0] == '.' && pc[1] == '.')) {
       CF::InvalidFileName ifn;
       ifn.errorNumber = CF::CF_EINVAL;
       ifn.msg = "Dot or dot-dot path component encountered";
@@ -754,18 +754,18 @@ testFileName (const std::string & fileName, bool isPattern)
       char c = pc[pci];
 
       if (!isalnum (c) && c != '.' && c != '_' && c != '-') {
-	if (pcEnd == std::string::npos && isPattern) {
-	  /*
-	   * Last path component in a pattern.  Allow wildcard characters.
-	   */
+        if (pcEnd == std::string::npos && isPattern) {
+          /*
+           * Last path component in a pattern.  Allow wildcard characters.
+           */
 
-	  if (c != '?' && c != '*') {
-	    CF::InvalidFileName ifn;
-	    ifn.errorNumber = CF::CF_EINVAL;
-	    ifn.msg = "Invalid file name character";
-	    throw ifn;
-	  }
-	}
+          if (c != '?' && c != '*') {
+            CF::InvalidFileName ifn;
+            ifn.errorNumber = CF::CF_EINVAL;
+            ifn.msg = "Invalid file name character";
+            throw ifn;
+          }
+        }
       }
     }
 

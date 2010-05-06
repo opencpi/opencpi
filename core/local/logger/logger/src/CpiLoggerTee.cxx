@@ -50,7 +50,7 @@ CPI::Logger::Tee::TeeBuf::~TeeBuf ()
 
 void
 CPI::Logger::Tee::TeeBuf::addOutput (Logger * delegatee, bool adopt,
-				     bool retry, bool ignoreErrors)
+                                     bool retry, bool ignoreErrors)
 {
   m_selfLock.lock ();
   Delegatee d;
@@ -103,18 +103,18 @@ CPI::Logger::Tee::TeeBuf::sync ()
     Delegatees::iterator it;
     for (it = m_delegatee.begin(); it != m_delegatee.end(); it++) {
       if ((*it).retry && !(*it).delegatee->good()) {
-	(*it).delegatee->clear ();
+        (*it).delegatee->clear ();
       }
 
       if ((*it).delegatee->good ()) {
-	(*it).delegatee->setLogLevel (m_logLevel);
-	(*it).delegatee->setProducerName (m_producerName.c_str());
-	(*it).delegatee->write (m_logMessage.data(), m_logMessage.length());
-	(*it).delegatee->flush ();
+        (*it).delegatee->setLogLevel (m_logLevel);
+        (*it).delegatee->setProducerName (m_producerName.c_str());
+        (*it).delegatee->write (m_logMessage.data(), m_logMessage.length());
+        (*it).delegatee->flush ();
       }
 
       if (!(*it).ignoreErrors && !(*it).delegatee->good()) {
-	good = false;
+        good = false;
       }
     }
     m_selfLock.unlock ();
@@ -178,7 +178,7 @@ CPI::Logger::Tee::addOutput (Logger & delegatee, bool retry, bool ignoreErrors)
 
 void
 CPI::Logger::Tee::addOutput (Logger * delegatee, bool adopt,
-			     bool retry, bool ignoreErrors)
+                             bool retry, bool ignoreErrors)
 {
   m_obuf.addOutput (delegatee, adopt, retry, ignoreErrors);
 }

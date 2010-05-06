@@ -13,9 +13,9 @@
 static
 int
 tclkill (ClientData clientData,
-	 Tcl_Interp * interp,
-	 int objc,
-	 Tcl_Obj * CONST objv[])
+         Tcl_Interp * interp,
+         int objc,
+         Tcl_Obj * CONST objv[])
 {
   int pid, res;
   HANDLE h;
@@ -53,9 +53,9 @@ tclkill (ClientData clientData,
 static
 int
 tclkill (ClientData clientData,
-	 Tcl_Interp * interp,
-	 int objc,
-	 Tcl_Obj * CONST objv[])
+         Tcl_Interp * interp,
+         int objc,
+         Tcl_Obj * CONST objv[])
 {
   int pid, res;
 

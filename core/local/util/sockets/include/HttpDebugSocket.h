@@ -1,5 +1,5 @@
 /** \file HttpDebugSocket.h
- **	\date  2004-09-27
+ **        \date  2004-09-27
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom (grymse@alhem.net)
@@ -42,26 +42,26 @@ class ISocketHandler;
 
 /** HTTP request "echo" class. This class echoes a http request/body
 with a html formatted page. 
-	\ingroup http */
+        \ingroup http */
 class HttpDebugSocket : public HTTPSocket
 {
 public:
-	HttpDebugSocket(ISocketHandler&);
-	~HttpDebugSocket();
+        HttpDebugSocket(ISocketHandler&);
+        ~HttpDebugSocket();
 
-	void Init();
+        void Init();
 
-	void OnFirst();
-	void OnHeader(const std::string& key,const std::string& value);
-	void OnHeaderComplete();
-	void OnData(const char *,size_t);
-	void OnDataComplete();
+        void OnFirst();
+        void OnHeader(const std::string& key,const std::string& value);
+        void OnHeaderComplete();
+        void OnData(const char *,size_t);
+        void OnDataComplete();
 
 private:
-	HttpDebugSocket(const HttpDebugSocket& s) : HTTPSocket(s) {} // copy constructor
-	HttpDebugSocket& operator=(const HttpDebugSocket& ) { return *this; } // assignment operator
-	int m_content_length;
-	int m_read_ptr;
+        HttpDebugSocket(const HttpDebugSocket& s) : HTTPSocket(s) {} // copy constructor
+        HttpDebugSocket& operator=(const HttpDebugSocket& ) { return *this; } // assignment operator
+        int m_content_length;
+        int m_read_ptr;
 };
 
 

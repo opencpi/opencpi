@@ -61,7 +61,7 @@ int main()
         if (wait_time > 0)
         {
             printf("Waiting %d secs for fasttime to get ready...\n", wait_time);
-	    CPI::OS::sleep(wait_time);
+            CPI::OS::sleep(wait_time);
         }
     }
     

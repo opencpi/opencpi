@@ -1,6 +1,6 @@
 /** \file HttpPutSocket.cpp
- **	\date  2004-10-30
- **	\author grymse@alhem.net
+ **        \date  2004-10-30
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -65,61 +65,61 @@ HttpPutSocket::~HttpPutSocket()
 
 void HttpPutSocket::SetFile(const std::string& file)
 {
-	struct stat st;
-	if (!stat(file.c_str(), &st))
-	{
-		m_filename = file;
-		m_content_length = st.st_size;
-	}
-	else
-	{
-		Handler().LogError(this, "SetFile", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-		SetCloseAndDelete();
-	}
+        struct stat st;
+        if (!stat(file.c_str(), &st))
+        {
+                m_filename = file;
+                m_content_length = st.st_size;
+        }
+        else
+        {
+                Handler().LogError(this, "SetFile", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+                SetCloseAndDelete();
+        }
 }
 
 
 void HttpPutSocket::SetContentType(const std::string& type)
 {
-	m_content_type = type;
+        m_content_type = type;
 }
 
 
 
 void HttpPutSocket::Open()
 {
-	// why do I have to specify TcpSocket:: to get to the Open() method??
-	TcpSocket::Open(GetUrlHost(), GetUrlPort());
+        // why do I have to specify TcpSocket:: to get to the Open() method??
+        TcpSocket::Open(GetUrlHost(), GetUrlPort());
 }
 
 
 void HttpPutSocket::OnConnect()
 {
-	SetMethod( "PUT" );
-	SetHttpVersion( "HTTP/1.1" );
-	AddResponseHeader( "Host", GetUrlHost() );
-	AddResponseHeader( "Content-type", m_content_type );
-	AddResponseHeader( "Content-length", Utility::l2string(m_content_length) );
-	AddResponseHeader( "User-agent", MyUseragent() );
-	SendRequest();
+        SetMethod( "PUT" );
+        SetHttpVersion( "HTTP/1.1" );
+        AddResponseHeader( "Host", GetUrlHost() );
+        AddResponseHeader( "Content-type", m_content_type );
+        AddResponseHeader( "Content-length", Utility::l2string(m_content_length) );
+        AddResponseHeader( "User-agent", MyUseragent() );
+        SendRequest();
 
 #ifdef _WIN32
-	FILE *fil;
-	if (fopen_s(&fil, m_filename.c_str(), "rb"))
-		fil = NULL;
+        FILE *fil;
+        if (fopen_s(&fil, m_filename.c_str(), "rb"))
+                fil = NULL;
 #else
-	FILE *fil = fopen(m_filename.c_str(), "rb");
+        FILE *fil = fopen(m_filename.c_str(), "rb");
 #endif
-	if (fil)
-	{
-		size_t n;
-		char buf[32768];
-		while ((n = fread(buf, 1, 32768, fil)) > 0)
-		{
-			SendBuf(buf, n);
-		}
-		fclose(fil);
-	}
+        if (fil)
+        {
+                size_t n;
+                char buf[32768];
+                while ((n = fread(buf, 1, 32768, fil)) > 0)
+                {
+                        SendBuf(buf, n);
+                }
+                fclose(fil);
+        }
 }
 
 

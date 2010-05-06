@@ -80,7 +80,7 @@ namespace CPI {
        */
 
       ProcessManager ()
-	throw ();
+        throw ();
 
       /**
        * Constructor: Initializes the ProcessManager instance, and then
@@ -89,8 +89,8 @@ namespace CPI {
        */
 
       ProcessManager (const std::string & executable,
-		      const ParameterList & parameters)
-	throw (std::string);
+                      const ParameterList & parameters)
+        throw (std::string);
 
       /**
        * Destructor.
@@ -101,7 +101,7 @@ namespace CPI {
        */
 
       ~ProcessManager ()
-	throw ();
+        throw ();
 
       /**
        * Start a process and manage it.
@@ -120,8 +120,8 @@ namespace CPI {
        */
 
       void start (const std::string & executable,
-		  const ParameterList & parameters)
-	throw (std::string);
+                  const ParameterList & parameters)
+        throw (std::string);
 
       /**
        * Returns the started process' process identifier.
@@ -132,7 +132,7 @@ namespace CPI {
        */
 
       unsigned long pid ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Returns the exit code of the process, if it has exited.
@@ -149,7 +149,7 @@ namespace CPI {
        */
 
       int getExitCode ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Waits for the process to exit.
@@ -167,7 +167,7 @@ namespace CPI {
        */
 
       bool wait (unsigned long timeout = static_cast<unsigned long> (-1))
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Signals the managed process to exit.
@@ -184,7 +184,7 @@ namespace CPI {
        */
 
       void shutdown ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Requests immediate termination of the managed process.
@@ -200,7 +200,7 @@ namespace CPI {
        */
 
       void kill ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * "Forgets" about the started process, which will continue to
@@ -211,7 +211,7 @@ namespace CPI {
        */
 
       void detach ()
-	throw ();
+        throw ();
 
     private:
       CPI::OS::uint64_t m_osOpaque[4];

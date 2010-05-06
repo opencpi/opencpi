@@ -35,11 +35,11 @@ action_pio_transfer(PIO_transfer transfer)
 
     if (src == 0) {
       for (CPI::OS::int32_t i=0; i < nbytes; i++)
-	*dst++ = 0;
+        *dst++ = 0;
     }
     else {
       for (CPI::OS::int32_t i=0; i < nbytes; i++)
-	*dst++ = *src++;
+        *dst++ = *src++;
     }
   }
   else if (src_al > 0) {
@@ -67,11 +67,11 @@ action_pio_transfer(PIO_transfer transfer)
 
     if (src_w == 0) {
       for (i=0; i < nwords; i++)    
-	*dst_w++ = 0;
+        *dst_w++ = 0;
     }
     else {
       for (i=0; i < nwords; i++)    
-	*dst_w++ = *src_w++;
+        *dst_w++ = *src_w++;
     }
     
     if (rem_nwords) {
@@ -81,12 +81,12 @@ action_pio_transfer(PIO_transfer transfer)
 
       /* Process remainder in bytes */
       if (src_w == 0) {
-	for (i=0; i < rem_nwords; i++)
-	  *dst_b++ = 0;
+        for (i=0; i < rem_nwords; i++)
+          *dst_b++ = 0;
       }
       else {
-	for (i=0; i < rem_nwords; i++)
-	  *dst_b++ = *src_b++;
+        for (i=0; i < rem_nwords; i++)
+          *dst_b++ = *src_b++;
       }
     }
   }
@@ -100,11 +100,11 @@ action_pio_transfer(PIO_transfer transfer)
 
     if (src_w == 0) {
       for (i=0; i < nwords; i++)    
-	*dst_w++ = 0;
+        *dst_w++ = 0;
     }
     else {
       for (i=0; i < nwords; i++)    
-	*dst_w++ = *src_w++;
+        *dst_w++ = *src_w++;
     }
     
     if (rem_nwords) {
@@ -114,12 +114,12 @@ action_pio_transfer(PIO_transfer transfer)
 
       /* Process remainder in bytes */
       if (src_w == 0) {
-	for (i=0; i < rem_nwords; i++)
-	  *dst_b++ = 0;
+        for (i=0; i < rem_nwords; i++)
+          *dst_b++ = 0;
       }
       else {
-	for (i=0; i < rem_nwords; i++)
-	  *dst_b++ = *src_b++;
+        for (i=0; i < rem_nwords; i++)
+          *dst_b++ = *src_b++;
       }
     }
   }
@@ -133,12 +133,12 @@ action_pio_transfer(PIO_transfer transfer)
 
 #ifdef DEBUG
   {
-	int M=50;
-	char* c=(char*)src;
-	printf("\n\nSource Data(0x%x) Target(0x%x):\n", src, dst );
-	for (int n=0; n<M; n++ ) {
-		printf("%d ", c[n]);
-	}
+        int M=50;
+        char* c=(char*)src;
+        printf("\n\nSource Data(0x%x) Target(0x%x):\n", src, dst );
+        for (int n=0; n<M; n++ ) {
+                printf("%d ", c[n]);
+        }
   }
 #endif
 
@@ -153,11 +153,11 @@ action_pio_transfer(PIO_transfer transfer)
 
       /*
       if ( (src1[0] == 1 ) || (src1[1] == 1 ) ) {
-	printf("patching flag 1->0 \n");
-	dst[0] = 1;
+        printf("patching flag 1->0 \n");
+        dst[0] = 1;
       }
       else {
-	dst1[0] = 0;
+        dst1[0] = 0;
       }
       */
       
@@ -220,7 +220,7 @@ calc_shape_size(Shape *s)
 
 static CPI::OS::int32_t
 process_shapes(Shape *src, Shape *dst, PIO_template pio_template,
-	       CPI::OS::uint32_t src_os, CPI::OS::uint32_t dst_os, PIO_transfer *xf_transfers)
+               CPI::OS::uint32_t src_os, CPI::OS::uint32_t dst_os, PIO_transfer *xf_transfers)
 {
   /* Get the shape sizes */
   CPI::OS::uint32_t src_shape_size = calc_shape_size(src);
@@ -291,7 +291,7 @@ xfer_pio_modify( PIO_transfer transfer, int,  CPI::OS::uint32_t *noff,  CPI::OS:
 
 CPI::OS::int32_t
 xfer_pio_copy(PIO_template pio_template, CPI::OS::uint32_t src_os, CPI::OS::uint32_t dst_os,
-	      CPI::OS::int32_t nbytes, CPI::OS::int32_t flags, PIO_transfer *pio_transferp)
+              CPI::OS::int32_t nbytes, CPI::OS::int32_t flags, PIO_transfer *pio_transferp)
 {
   /* Allocate transfer */
   PIO_transfer pio_transfer = new struct pio_transfer_;
@@ -311,15 +311,15 @@ xfer_pio_copy(PIO_template pio_template, CPI::OS::uint32_t src_os, CPI::OS::uint
     pio_transfer->src_off = src_os;
     pio_transfer->dst_off = dst_os;
     pio_transfer->src_stride = 1;
-	
+        
 #define MULTI_MAP
 #ifdef MULTI_MAP
     if ( dst_os >= OF_WINDOW ) {
-		
+                
 #ifndef NDEBUG
       printf("*** Got a window bigger than original map, offset = 0x%x !!\n", dst_os );
 #endif
-		
+                
       pio_template->rdst_va[pio_template->rdst] = pio_template->t_smem->map (dst_os, nbytes);
       pio_transfer->dst_va = (char*)pio_template->rdst_va[pio_template->rdst];
       pio_template->rdst++;
@@ -330,7 +330,7 @@ xfer_pio_copy(PIO_template pio_template, CPI::OS::uint32_t src_os, CPI::OS::uint
 #else
     pio_transfer->dst_va = ((char *)pio_template->dst_va + dst_os);
 #endif
-		
+                
     pio_transfer->dst_stride = 1;
     pio_transfer->nbytes = nbytes;
     pio_transfer->next = 0;
@@ -345,13 +345,13 @@ xfer_pio_copy(PIO_template pio_template, CPI::OS::uint32_t src_os, CPI::OS::uint
 
 CPI::OS::int32_t
 xfer_pio_copy_2d(PIO_template pio_template, CPI::OS::uint32_t src_os, Shape *src,
-		 CPI::OS::uint32_t dst_os, Shape *dst, CPI::OS::int32_t, 
-		 PIO_transfer *pio_transferp)
+                 CPI::OS::uint32_t dst_os, Shape *dst, CPI::OS::int32_t, 
+                 PIO_transfer *pio_transferp)
 {
 
   /* Process the shapes */
   if (process_shapes(src, dst, pio_template, 
-		     src_os, dst_os, pio_transferp))
+                     src_os, dst_os, pio_transferp))
     return 1;
 
   return 0;
@@ -388,19 +388,19 @@ xfer_pio_group(PIO_transfer *members, CPI::OS::int32_t, PIO_transfer *pio_transf
 
       /* Walk to the end of the current transfer */
       while (xf->next) {
-	/* Allocate a new space to copy the transfer into */
-	tmp = new struct pio_transfer_;
-	/* Copy the next transfer */
-	*tmp = *(xf->next);
-	/* Set the correct next pointer */
-	xf->next = tmp;
-	/* Point xf to the new transfer */
-	xf = tmp;
+        /* Allocate a new space to copy the transfer into */
+        tmp = new struct pio_transfer_;
+        /* Copy the next transfer */
+        *tmp = *(xf->next);
+        /* Set the correct next pointer */
+        xf->next = tmp;
+        /* Point xf to the new transfer */
+        xf = tmp;
       }
 
       /* Increment the index, and check for end of list */
       if (!(members[++index]))
-	break;
+        break;
 
       /* Allocate a new member */
       tmp = new struct pio_transfer_;

@@ -56,7 +56,7 @@ namespace CPI {
       std::vector<Driver*>::iterator it;
       std::vector<Driver*>&  drivers = getDrivers();
       for (it=drivers.begin(); it!=drivers.end(); it++ ) {
-	(*it)->setParent(*this);
+        (*it)->setParent(*this);
       }
     }
 
@@ -70,9 +70,9 @@ namespace CPI {
       std::vector<Driver*>::iterator it;
       std::vector<Driver*>&  drivers = getDrivers();
       for (it=drivers.begin(); it!=drivers.end(); it++ ) {
-	if ( (d=(*it)->probe(props,instance)) ) {
-	  break;
-	}
+        if ( (d=(*it)->probe(props,instance)) ) {
+          break;
+        }
       }
       return d;
     }
@@ -96,9 +96,9 @@ namespace CPI {
       std::vector<Driver*>::iterator it;
       std::vector<Driver*>&  drivers = getDrivers();
       for (it=drivers.begin(); it!=drivers.end(); it++ ) {
-	if ((*it)->m_isDiscoverable) {
-	  n += (*it)->search(props, exclude);
-	}
+        if ((*it)->m_isDiscoverable) {
+          n += (*it)->search(props, exclude);
+        }
       }
       return n;
     }
@@ -107,36 +107,36 @@ namespace CPI {
     void 
     DriverManager::
     registerDriver( Driver* dev) {
-	CPI::Util::AutoMutex guard ( m_g_mutex, true ); 
-	std::map< std::string,std::vector< Driver* > > & dr_map = getDriverMap();
-	std::map<std::string,std::vector< Driver* > >::iterator it =dr_map.find(dev->m_type);
-	if ( it != dr_map.end() ) {
-	  (*it).second.push_back( dev );
-	  return;
-	}
-	std::vector<Driver*> d;
-	d.push_back(dev);
-	dr_map[dev->m_type] = d;
+        CPI::Util::AutoMutex guard ( m_g_mutex, true ); 
+        std::map< std::string,std::vector< Driver* > > & dr_map = getDriverMap();
+        std::map<std::string,std::vector< Driver* > >::iterator it =dr_map.find(dev->m_type);
+        if ( it != dr_map.end() ) {
+          (*it).second.push_back( dev );
+          return;
+        }
+        std::vector<Driver*> d;
+        d.push_back(dev);
+        dr_map[dev->m_type] = d;
       }
 
 
     std::vector< Driver* >& 
     DriverManager::
     getDrivers() {
-	CPI::Util::AutoMutex guard ( m_g_mutex, true ); 
-	std::map< std::string,std::vector< Driver* > > & dr_map = getDriverMap();
-	std::map<std::string,std::vector< Driver* > >::iterator it =dr_map.find(m_type);	
-	if ( it == dr_map.end() ) {
-	  std::vector<Driver*> d;
-	  dr_map[m_type] = d;	  
-	}
-	return dr_map[m_type];
+        CPI::Util::AutoMutex guard ( m_g_mutex, true ); 
+        std::map< std::string,std::vector< Driver* > > & dr_map = getDriverMap();
+        std::map<std::string,std::vector< Driver* > >::iterator it =dr_map.find(m_type);        
+        if ( it == dr_map.end() ) {
+          std::vector<Driver*> d;
+          dr_map[m_type] = d;          
+        }
+        return dr_map[m_type];
       }
 
 
     Device::Device( Driver& parent, const char* instance_name )
       throw ( CPI::Util::EmbeddedException )
-	: Child<Driver,Device>(parent, instance_name)
+        : Child<Driver,Device>(parent, instance_name)
     {
       // Empty
     }

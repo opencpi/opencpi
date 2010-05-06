@@ -58,10 +58,10 @@ namespace CPI {
        * returns 0 on success.
        **********************************/
       virtual CPI::OS::int32_t calculateBufferOffsets( 
-						      CPI::OS::uint32_t	   sequence,
-						      Buffer     *src_buf,	      
-						      Buffer     *input_buf,		
-						      BufferInfo **input_buf_info);    
+                                                      CPI::OS::uint32_t           sequence,
+                                                      Buffer     *src_buf,              
+                                                      Buffer     *input_buf,                
+                                                      BufferInfo **input_buf_info);    
 
     private:
 

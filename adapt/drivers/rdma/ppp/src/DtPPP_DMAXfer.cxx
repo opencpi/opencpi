@@ -73,7 +73,7 @@ PPPDMAXferFactory::~PPPDMAXferFactory()
 void PPPDMAXferFactory::clearCache()
 {
 
-#ifndef NDEBUG	
+#ifndef NDEBUG        
   printf("PPPDMAXferFactory() Destroying all global data !!\n");
 #endif
 
@@ -99,7 +99,7 @@ EndPoint* PPPDMAXferFactory::getEndPoint( std::string& end_point)
   printf("Creating new location for %s\n", end_point.c_str() );
 #endif
   try {
-    loc = new PPPEndPoint(end_point);	
+    loc = new PPPEndPoint(end_point);        
   }
   catch( std::bad_alloc ) {
     throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "no more memory"  );
@@ -200,10 +200,10 @@ void PPPDMAXferRequest::modify( CPI::OS::uint32_t new_offsets[], CPI::OS::uint32
   // CPI protocol sends the data first
   old_offsets[0] = m_iovec.iov[0].src_offset;
   rc = rose_dma_iovec_modify_src_offset( &m_iovec_handle,
-					 0,
-					 &m_iovec.iov[0].src_ep_info,		
-					 new_offsets[0],
-					 0);
+                                         0,
+                                         &m_iovec.iov[0].src_ep_info,                
+                                         new_offsets[0],
+                                         0);
   if ( rc != ROSE_SUCCESS ) {
 #ifndef NDEBUG 
     printf("PPPDMAXferRequest::modify() error modifying iovec source offsets, error = %d\n", rc );
@@ -220,18 +220,18 @@ void PPPDMAXferRequest::modify( CPI::OS::uint32_t new_offsets[], CPI::OS::uint32
 
 
 int PPPDMAXferRequest::addTransfer( Creator cr, 
-				    Flags             flags, 
-				    CPI::OS::uint32_t srcoffs, 
-				    Shape             *psrcshape, 
-				    CPI::OS::uint32_t dstoffs, 
-				    Shape             *pdstshape, 
-				    CPI::OS::uint32_t length,
-				    PPPEndPoint*    sEp,
-				    PPPEndPoint*    dEp
-				    )
+                                    Flags             flags, 
+                                    CPI::OS::uint32_t srcoffs, 
+                                    Shape             *psrcshape, 
+                                    CPI::OS::uint32_t dstoffs, 
+                                    Shape             *pdstshape, 
+                                    CPI::OS::uint32_t length,
+                                    PPPEndPoint*    sEp,
+                                    PPPEndPoint*    dEp
+                                    )
 {
 
-#ifndef NDEBUG	
+#ifndef NDEBUG        
   if ( (m_index > 0) && (flags & FirstTransfer)  ) {
     printf("ERROR (m_index > 0) && (flags & FirstTransfer)\n");
     cpiAssert(0);
@@ -307,8 +307,8 @@ void PPPDMAXferRequest::dump_transfer()
   printf("There are %d transfers in this chain\n",m_index);
   for ( int n=0; n<m_index; n++ ) {
     printf("Transfering from offset %lld to offset %lld, size = %d\n",
-	   m_iovec.iov[n].src_offset, m_iovec.iov[n].dst_offset,
-	   m_iovec.iov[n].size );
+           m_iovec.iov[n].src_offset, m_iovec.iov[n].dst_offset,
+           m_iovec.iov[n].size );
   }
 }
 
@@ -328,7 +328,7 @@ void PPPDMAXferRequest::start(Shape* s_shape, Shape* t_shape)
     }
     m_init = true;
   }
-	
+        
   //#define NDEBUG_STATUS
 #ifndef NDEBUG_STATUS
     int count = 0;
@@ -344,8 +344,8 @@ void PPPDMAXferRequest::start(Shape* s_shape, Shape* t_shape)
     }
     }
 #endif
-	
-	
+        
+        
     //#define TRACE_START
 #ifdef TRACE_START
   printf("In PPPDMAXferRequest::start() \n");
@@ -353,7 +353,7 @@ void PPPDMAXferRequest::start(Shape* s_shape, Shape* t_shape)
 #endif
 
   //  CPI_TATL_TRACE( TATL_TRACE_PPP_START_TX );
-	
+        
 #ifndef _WRS_KERNEL
   int rc;
   if ( (rc=rose_dma_iovec_start( &m_iovec_handle )) != ROSE_SUCCESS ) {
@@ -376,9 +376,9 @@ void PPPDMAXferRequest::start(Shape* s_shape, Shape* t_shape)
   }
 
 #endif
-	
+        
   //  CPI_TATL_TRACE( TATL_TRACE_PPP_RETURN_Q );
-	
+        
 }
 
 
@@ -420,11 +420,11 @@ void PPPDMAXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 
 // Create a transfer request
 XferRequest* PPPDMAXferServices::copy (CPI::OS::uint32_t srcoffs, 
-				       CPI::OS::uint32_t dstoffs, 
-				       CPI::OS::uint32_t nbytes, 
-				       XferRequest::Flags flags,
-				       XferRequest* group_to
-				       )
+                                       CPI::OS::uint32_t dstoffs, 
+                                       CPI::OS::uint32_t nbytes, 
+                                       XferRequest::Flags flags,
+                                       XferRequest* group_to
+                                       )
 {
 
   PPPEndPoint* Spep = static_cast<PPPEndPoint*>(m_sourceSmb->getEndPoint());
@@ -453,7 +453,7 @@ XferRequest* PPPDMAXferServices::copy (CPI::OS::uint32_t srcoffs,
 #endif
 
   pXferReq->addTransfer( XferRequest::Copy, flags, srcoffs, 0, 
-			 dstoffs, 0, nbytes, Spep, Tpep  );
+                         dstoffs, 0, nbytes, Spep, Tpep  );
 
   return pXferReq;
 }
@@ -461,7 +461,7 @@ XferRequest* PPPDMAXferServices::copy (CPI::OS::uint32_t srcoffs,
 
 // Create a 2-dimensional transfer request
 XferRequest* PPPDMAXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc, 
-					 CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
+                                         CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
 {
   // Not yet supported
   return NULL;

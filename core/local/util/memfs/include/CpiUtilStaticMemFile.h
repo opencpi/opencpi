@@ -67,101 +67,101 @@ namespace CPI {
 
       class StaticMemFile {
       public:
-	/**
-	 * Constructor for a file whose data consists of a single chunk
-	 * of memory.
-	 *
-	 * \param[in] ptr   Pointer to the file's contents.
-	 * \param[in] size  The amount of data in the file, in octets.
-	 * \param[in] lastModified The timestamp of the last modification,
-	 *                  or -1 if unknown.
-	 */
+        /**
+         * Constructor for a file whose data consists of a single chunk
+         * of memory.
+         *
+         * \param[in] ptr   Pointer to the file's contents.
+         * \param[in] size  The amount of data in the file, in octets.
+         * \param[in] lastModified The timestamp of the last modification,
+         *                  or -1 if unknown.
+         */
 
-	StaticMemFile (const char * ptr,
-		       unsigned long long size,
-		       std::time_t lastModified = (std::time_t) -1)
-	  throw ();
+        StaticMemFile (const char * ptr,
+                       unsigned long long size,
+                       std::time_t lastModified = (std::time_t) -1)
+          throw ();
 
-	/**
-	 * Constructor for a file whose data is in multiple chunks.
-	 *
-	 * \param[in] chunks Null-terminated array of MemFileChunk elements.
-	 * \param[in] lastModified The timestamp of the last modification,
-	 *              or -1 if unknown.
-	 */
+        /**
+         * Constructor for a file whose data is in multiple chunks.
+         *
+         * \param[in] chunks Null-terminated array of MemFileChunk elements.
+         * \param[in] lastModified The timestamp of the last modification,
+         *              or -1 if unknown.
+         */
 
-	StaticMemFile (const CPI::Util::MemFs::MemFileChunk * chunks,
-		       std::time_t lastModified = (std::time_t) -1)
-	  throw ();
+        StaticMemFile (const CPI::Util::MemFs::MemFileChunk * chunks,
+                       std::time_t lastModified = (std::time_t) -1)
+          throw ();
 
-	/**
-	 * Destructor.
-	 */
+        /**
+         * Destructor.
+         */
 
-	~StaticMemFile ()
-	  throw ();
+        ~StaticMemFile ()
+          throw ();
 
-	/**
-	 * File size.
-	 *
-	 * \return The size, in octets.
-	 */
+        /**
+         * File size.
+         *
+         * \return The size, in octets.
+         */
 
-	unsigned long long size ()
-	  throw ();
+        unsigned long long size ()
+          throw ();
 
-	/**
-	 * Last modification timestamp.
-	 *
-	 * \return The last modification timestamp, or -1 if unknown.
-	 */
+        /**
+         * Last modification timestamp.
+         *
+         * \return The last modification timestamp, or -1 if unknown.
+         */
 
-	std::time_t lastModified ()
-	  throw ();
+        std::time_t lastModified ()
+          throw ();
 
-	/**
-	 * Open the file.
-	 *
-	 * \return An object of type std::istream that can be used to
-	 *         read from the file.  This object must eventually be
-	 *         released using close().
-	 */
+        /**
+         * Open the file.
+         *
+         * \return An object of type std::istream that can be used to
+         *         read from the file.  This object must eventually be
+         *         released using close().
+         */
 
-	std::istream * openReadonly ()
-	  throw ();
+        std::istream * openReadonly ()
+          throw ();
 
-	/**
-	 * Release resources associated with an open stream.
-	 *
-	 * \param[in] str A stream object previously returned from
-	 *                openReadonly().
-	 */
+        /**
+         * Release resources associated with an open stream.
+         *
+         * \param[in] str A stream object previously returned from
+         *                openReadonly().
+         */
 
-	void close (std::ios * str)
-	  throw ();
+        void close (std::ios * str)
+          throw ();
 
-	/** \cond */
-
-      private:
-	unsigned long long m_size;
-	std::time_t m_lastModified;
-	const char * m_ptr; // either ...
-	const CPI::Util::MemFs::MemFileChunk * m_chunks; // or
-
-	/** \endcond */
+        /** \cond */
 
       private:
-	/**
-	 * Not implemented.
-	 */
+        unsigned long long m_size;
+        std::time_t m_lastModified;
+        const char * m_ptr; // either ...
+        const CPI::Util::MemFs::MemFileChunk * m_chunks; // or
 
-	StaticMemFile (const StaticMemFile &);
+        /** \endcond */
 
-	/**
-	 * Not implemented.
-	 */
+      private:
+        /**
+         * Not implemented.
+         */
 
-	StaticMemFile & operator= (const StaticMemFile &);
+        StaticMemFile (const StaticMemFile &);
+
+        /**
+         * Not implemented.
+         */
+
+        StaticMemFile & operator= (const StaticMemFile &);
       };
 
     }

@@ -1,6 +1,6 @@
 /** \file IFileUpload.h
- **	\date  2009-04-22
- **	\author grymse@alhem.net
+ **        \date  2009-04-22
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -40,15 +40,15 @@ namespace SOCKETS_NAMESPACE {
 class IStream;
 
 /** Multipart form file upload callback.
-	\ingroup webserver */
+        \ingroup webserver */
 class IFileUpload
 {
 public:
-	virtual ~IFileUpload() {}
+        virtual ~IFileUpload() {}
 
-	virtual IStream& IFileUploadBegin(const std::string& input_name, const std::string& filename, const std::string& content_type) = 0;
+        virtual IStream& IFileUploadBegin(const std::string& input_name, const std::string& filename, const std::string& content_type) = 0;
 
-	virtual void IFileUploadEnd() = 0;
+        virtual void IFileUploadEnd() = 0;
 };
 
 

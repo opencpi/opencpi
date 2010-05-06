@@ -109,10 +109,10 @@ CpiRccBinderConfigurator::g_options[] = {
 static
 void
 printUsage (CpiRccBinderConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -142,7 +142,7 @@ static void initWorkerProperties( std::vector<CApp>& ca )
   nBytes = sizeof( uint32_t );
   tprop[0] = BUFFERS_2_PROCESS;
   wcie =  PRODUCER.worker->write(  offset, 
-					      nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
+                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
   wcie =  PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER );
@@ -152,7 +152,7 @@ static void initWorkerProperties( std::vector<CApp>& ca )
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   wcie =  PRODUCER.worker->write(  offset, 
-					      nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
+                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
   wcie =  PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER );
@@ -162,7 +162,7 @@ static void initWorkerProperties( std::vector<CApp>& ca )
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   wcie =  PRODUCER.worker->write(  offset, 
-					      nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
+                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
   wcie =  PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER );
@@ -172,7 +172,7 @@ static void initWorkerProperties( std::vector<CApp>& ca )
   nBytes = sizeof( uint32_t );
   tprop[0] = 1;
   wcie =  CONSUMER.worker->write(  offset, 
-					      nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
+                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER);
@@ -182,7 +182,7 @@ static void initWorkerProperties( std::vector<CApp>& ca )
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   wcie = CONSUMER.worker->write(  offset,
-					     nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
+                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
@@ -192,7 +192,7 @@ static void initWorkerProperties( std::vector<CApp>& ca )
   nBytes = sizeof( uint32_t );
   tprop[0] = BUFFERS_2_PROCESS;
   wcie = CONSUMER.worker->write(  offset, 
-					     nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
+                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
@@ -202,7 +202,7 @@ static void initWorkerProperties( std::vector<CApp>& ca )
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   wcie = CONSUMER.worker->write(  offset, 
-					     nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
+                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
@@ -212,7 +212,7 @@ static void initWorkerProperties( std::vector<CApp>& ca )
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   wcie = CONSUMER.worker->write(  offset, 
-					     nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
+                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
@@ -249,30 +249,30 @@ static bool run_lb_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers )
 
     // Read the consumer properties to monitor progress
     CONSUMER.worker->read(   0, 
-					sizeof(UTGConsumerWorkerProperties), 
-					WCI_DATA_TYPE_U8, WCI_DEFAULT, &cprops);
+                                        sizeof(UTGConsumerWorkerProperties), 
+                                        WCI_DATA_TYPE_U8, WCI_DEFAULT, &cprops);
 
     if ( cprops.buffersProcessed == cprops.run2BufferCount  ) {
 
       if ( cprops.droppedBuffers ) {
-	printf("\nConsumer dropped %d buffers\n", cprops.droppedBuffers );
-	passed = false;
-	break;
+        printf("\nConsumer dropped %d buffers\n", cprops.droppedBuffers );
+        passed = false;
+        break;
       }
 
       // Make sure that the consumer got the same data
       PRODUCER.worker->read(   0, 
-					  sizeof(UTGProducerWorkerProperties), 
-					  WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
+                                          sizeof(UTGProducerWorkerProperties), 
+                                          WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
 
       if ( cprops.bytesProcessed != pprops.bytesProcessed ) {
-	printf("Producer produced %d bytes of data, consumer got %d bytes of data\n",
-	       pprops.bytesProcessed, cprops.bytesProcessed );
-	passed = false;
-	break;
+        printf("Producer produced %d bytes of data, consumer got %d bytes of data\n",
+               pprops.bytesProcessed, cprops.bytesProcessed );
+        passed = false;
+        break;
       }
       else {
-	break;
+        break;
       }
 
     }
@@ -287,17 +287,17 @@ static bool run_lb_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers )
 
   if ( ! passed ) {
     PRODUCER.worker->read(   0, 
-					sizeof(UTGProducerWorkerProperties), 
-					WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
+                                        sizeof(UTGProducerWorkerProperties), 
+                                        WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
 
     // Read the consumer properties to monitor progress
     CONSUMER.worker->read(   0, 
-					sizeof(UTGConsumerWorkerProperties), 
-					WCI_DATA_TYPE_U8, WCI_DEFAULT, &cprops);
+                                        sizeof(UTGConsumerWorkerProperties), 
+                                        WCI_DATA_TYPE_U8, WCI_DEFAULT, &cprops);
 
     printf("\nTest failed results:\n");
     printf("   Producer produced %d buffers, consumer received %d buffers\n", 
-	   pprops.buffersProcessed, cprops.buffersProcessed );
+           pprops.buffersProcessed, cprops.buffersProcessed );
   }
 
   disableWorkers(ca, workers );
@@ -306,8 +306,8 @@ static bool run_lb_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers )
 
 
 int config_and_run_shutdown_test1(const char *test_name, std::vector<CApp>& ca, 
-				  std::vector<CWorker*>& workers
-				  )
+                                  std::vector<CWorker*>& workers
+                                  )
 {
   int testPassed = 1;
 
@@ -329,8 +329,8 @@ int config_and_run_shutdown_test1(const char *test_name, std::vector<CApp>& ca,
 
 
 int config_and_run_shutdown_test2(const char *test_name, std::vector<CApp>& ca, 
-				  std::vector<CWorker*>& workers
-				  )
+                                  std::vector<CWorker*>& workers
+                                  )
 {
 
   int testPassed = 1;
@@ -362,8 +362,8 @@ int config_and_run_shutdown_test2(const char *test_name, std::vector<CApp>& ca,
 
 
 int config_and_run_shutdown_test3(const char *test_name, std::vector<CApp>& ca, 
-				  std::vector<CWorker*>& workers
-				  )
+                                  std::vector<CWorker*>& workers
+                                  )
 {
  
   int testPassed = 1;
@@ -401,8 +401,8 @@ int config_and_run_shutdown_test3(const char *test_name, std::vector<CApp>& ca,
 
 
 int config_and_run_shutdown_test4(const char *test_name, std::vector<CApp>& ca, 
-				  std::vector<CWorker*>& workers
-				  )
+                                  std::vector<CWorker*>& workers
+                                  )
 {
  
   int testPassed = 1;
@@ -438,8 +438,8 @@ int config_and_run_shutdown_test4(const char *test_name, std::vector<CApp>& ca,
 
 
 int config_and_run_shutdown_test5(const char *test_name, std::vector<CApp>& ca, 
-				  std::vector<CWorker*>& workers
-				  )
+                                  std::vector<CWorker*>& workers
+                                  )
 {
 
   int testPassed = 1;
@@ -510,8 +510,8 @@ int config_and_run_shutdown_test5(const char *test_name, std::vector<CApp>& ca,
 
 
 int config_and_run_shutdown_test6(const char *test_name, std::vector<CApp>& ca, 
-				  std::vector<CWorker*>& workers
-				  )
+                                  std::vector<CWorker*>& workers
+                                  )
 {
 
   int testPassed = 1;
@@ -566,7 +566,7 @@ int config_and_run_shutdown_test6(const char *test_name, std::vector<CApp>& ca,
 
 
 int config_and_run_shutdown_test7(const char *test_name, std::vector<CApp>& ca, 
-				  std::vector<CWorker*>& workers )
+                                  std::vector<CWorker*>& workers )
 {
   int tbtp = BUFFERS_2_PROCESS;
   BUFFERS_2_PROCESS = 2000;
@@ -678,7 +678,7 @@ int  main( int argc, char** argv)
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("Create containers failed with exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
+           ex.getErrorCode(), ex.getAuxInfo() );
     exit(-1);
   }
   catch( ... ) {
@@ -724,12 +724,12 @@ int  main( int argc, char** argv)
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("failed with an exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
+           ex.getErrorCode(), ex.getAuxInfo() );
     test_rc = 0;
   }
   catch ( std::string& str ) {
     printf(" failed with an exception %s\n",
-	   str.c_str() );
+           str.c_str() );
     test_rc = 0;
   }
   catch ( ... ) {
@@ -747,12 +747,12 @@ int  main( int argc, char** argv)
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("failed with an exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
+           ex.getErrorCode(), ex.getAuxInfo() );
     test_rc = 0;
   }
   catch ( std::string& str ) {
     printf(" failed with an exception %s\n",
-	   str.c_str() );
+           str.c_str() );
     test_rc = 0;
   }
   catch ( ... ) {
@@ -769,12 +769,12 @@ int  main( int argc, char** argv)
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("failed with an exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
+           ex.getErrorCode(), ex.getAuxInfo() );
     test_rc = 0;
   }
   catch ( std::string& str ) {
     printf(" failed with an exception %s\n",
-	   str.c_str() );
+           str.c_str() );
     test_rc = 0;
   }
   catch ( ... ) {
@@ -791,12 +791,12 @@ int  main( int argc, char** argv)
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("failed with an exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
+           ex.getErrorCode(), ex.getAuxInfo() );
     test_rc = 0;
   }
   catch ( std::string& str ) {
     printf(" failed with an exception %s\n",
-	   str.c_str() );
+           str.c_str() );
     test_rc = 0;
   }
   catch ( ... ) {
@@ -813,12 +813,12 @@ int  main( int argc, char** argv)
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("failed with an exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
+           ex.getErrorCode(), ex.getAuxInfo() );
     test_rc = 0;
   }
   catch ( std::string& str ) {
     printf(" failed with an exception %s\n",
-	   str.c_str() );
+           str.c_str() );
     test_rc = 0;
   }
   catch ( ... ) {
@@ -835,12 +835,12 @@ int  main( int argc, char** argv)
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("failed with an exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
+           ex.getErrorCode(), ex.getAuxInfo() );
     test_rc = 0;
   }
   catch ( std::string& str ) {
     printf(" failed with an exception %s\n",
-	   str.c_str() );
+           str.c_str() );
     test_rc = 0;
   }
   catch ( ... ) {
@@ -857,12 +857,12 @@ int  main( int argc, char** argv)
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("failed with an exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
+           ex.getErrorCode(), ex.getAuxInfo() );
     test_rc = 0;
   }
   catch ( std::string& str ) {
     printf(" failed with an exception %s\n",
-	   str.c_str() );
+           str.c_str() );
     test_rc = 0;
   }
   catch ( ... ) {
@@ -879,12 +879,12 @@ int  main( int argc, char** argv)
   }
   catch( CPI::Util::EmbeddedException& ex ) {
     printf("failed with an exception. errorno = %d, aux = %s\n",
-	   ex.getErrorCode(), ex.getAuxInfo() );
+           ex.getErrorCode(), ex.getAuxInfo() );
     test_rc = 0;
   }
   catch ( std::string& str ) {
     printf(" failed with an exception %s\n",
-	   str.c_str() );
+           str.c_str() );
     test_rc = 0;
   }
   catch ( ... ) {
@@ -899,7 +899,7 @@ int  main( int argc, char** argv)
   destroyContainers( ca, workers );
 
   delete t;
-	
+        
   return !oa_test_rc;
 }
 

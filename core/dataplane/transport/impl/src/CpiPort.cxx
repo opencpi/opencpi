@@ -83,7 +83,7 @@ void CPI::DataTransport::Port::initialize()
   m_realSMemResources = XferFactoryManager::getFactoryManager().getSMBResources( m_data->real_location_string );
   if ( !  m_realSMemResources ) {
     throw CPI::Util::EmbeddedException ( UNSUPPORTED_ENDPOINT, 
-					m_data->real_location_string.c_str() );
+                                        m_data->real_location_string.c_str() );
   }
 
   // If we are a shadow, map the local shared memory
@@ -93,7 +93,7 @@ void CPI::DataTransport::Port::initialize()
   else {
     m_shadowSMemResources = m_realSMemResources;
   }
-	
+        
   // Set the SMB name
   m_data->m_real_location = m_realSMemResources->sMemServices->getEndPoint();
 
@@ -123,12 +123,12 @@ void CPI::DataTransport::Port::initialize()
   // At this point we are going to map our offset stucture into
   // SMB memory so that we can make direct requests to our remote
   // dependencies to fill in the missing data.
-	
+        
   if ( m_localSMemResources->sMemResourceMgr->alloc( 
-				    sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS, 0, &m_offsetsOffset ) ) {
+                                    sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS, 0, &m_offsetsOffset ) ) {
     throw CPI::Util::EmbeddedException ( 
-				      NO_MORE_SMB, 
-				      m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+                                      NO_MORE_SMB, 
+                                      m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
   }
 
   // Now get our mailbox
@@ -141,7 +141,7 @@ void CPI::DataTransport::Port::initialize()
       sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS ));
 
   memcpy(m_portDependencyData.offsets,m_data->m_bufferData,
-	 sizeof(PortMetaData::BufferOffsets[MAX_BUFFERS]));
+         sizeof(PortMetaData::BufferOffsets[MAX_BUFFERS]));
 
   delete [] m_data->m_bufferData;
   m_data->m_bufferData = m_portDependencyData.offsets;
@@ -241,7 +241,7 @@ setFlowControlDescriptorInternal( CPI::RDT::Descriptors & desc )
     tb->markBufferEmpty();
     this->getMetaData()->m_bufferData[n].inputOffsets.myShadowsRemoteStateOffsets[idx] =
       desc.desc.emptyFlagBaseAddr  + ( desc.desc.emptyFlagPitch * n );
-    m_portDependencyData.offsets[n].inputOffsets.myShadowsRemoteStateOffsets[idx] =			
+    m_portDependencyData.offsets[n].inputOffsets.myShadowsRemoteStateOffsets[idx] =                        
       desc.desc.emptyFlagBaseAddr  + ( desc.desc.emptyFlagPitch * n );
   }
 
@@ -282,28 +282,28 @@ void CPI::DataTransport::Port::getPortDescriptor( CPI::RDT::Descriptors& desc )
     else {
 
       if ( getMetaData()->m_descriptor.role == CPI::RDT::ActiveFlowControl ) {
-	desc.type = CPI::RDT::ProducerDescT;
-	desc.role = CPI::RDT::ActiveOnly;
-	desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
-	desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
-	desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
-	desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PORT_COUNT;
-	desc.desc.nBuffers = getPortSet()->getBufferCount();
-	desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
-	desc.desc.fullFlagSize = sizeof(BufferState);
-	desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PORT_COUNT * 2;
+        desc.type = CPI::RDT::ProducerDescT;
+        desc.role = CPI::RDT::ActiveOnly;
+        desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
+        desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
+        desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
+        desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PORT_COUNT;
+        desc.desc.nBuffers = getPortSet()->getBufferCount();
+        desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
+        desc.desc.fullFlagSize = sizeof(BufferState);
+        desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PORT_COUNT * 2;
       }
       else {
-	desc.type = CPI::RDT::ProducerDescT;
-	desc.role = CPI::RDT::ActiveOnly;
-	desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
-	desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
-	desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
-	desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PORT_COUNT;
-	desc.desc.nBuffers = getPortSet()->getBufferCount();
-	desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
-	desc.desc.fullFlagSize = sizeof(BufferState);
-	desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PORT_COUNT * 2;
+        desc.type = CPI::RDT::ProducerDescT;
+        desc.role = CPI::RDT::ActiveOnly;
+        desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
+        desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
+        desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
+        desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PORT_COUNT;
+        desc.desc.nBuffers = getPortSet()->getBufferCount();
+        desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
+        desc.desc.fullFlagSize = sizeof(BufferState);
+        desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PORT_COUNT * 2;
       }
 
     }
@@ -313,11 +313,11 @@ void CPI::DataTransport::Port::getPortDescriptor( CPI::RDT::Descriptors& desc )
 #ifndef NDEBUG
       printf("We are using EVENTS\n");
 #endif
-		
+                
       int lr,hr;
       getCircuit()->m_transport->m_transportGlobal->getEventManager()->getEventRange(lr,hr);
       desc.desc.fullFlagValue = 1 | 
-	((CPI::OS::uint64_t)(lr+1)<<32) | (CPI::OS::uint64_t)1<<63;
+        ((CPI::OS::uint64_t)(lr+1)<<32) | (CPI::OS::uint64_t)1<<63;
 #ifndef NDEBUG
       printf("CpiPort: low range = %d, high range = %d, flag = 0x%llx\n", lr, hr, (long long)desc.desc.fullFlagValue);
 #endif
@@ -328,7 +328,7 @@ void CPI::DataTransport::Port::getPortDescriptor( CPI::RDT::Descriptors& desc )
       printf("We are NOT using events \n");
 #endif
       desc.desc.fullFlagValue = 1 | 
-	((CPI::OS::uint64_t)(0xfff)<<32) | (CPI::OS::uint64_t)1<<63;
+        ((CPI::OS::uint64_t)(0xfff)<<32) | (CPI::OS::uint64_t)1<<63;
     }
 
 #ifndef NDEBUG
@@ -386,10 +386,10 @@ void CPI::DataTransport::Port::advance( CPI::OS::uint64_t value )
 {
   if ( isOutput() ) {
 
-#ifndef NDEBUG		
+#ifndef NDEBUG                
     printf("ERROR: Attemping to advance a source buffer \n");
 #endif
-		
+                
     if ( isShadow() ) {
       // Nothing to do
       printf("Programming ERROR!! advancing a output shadow buffer\n");
@@ -403,11 +403,11 @@ void CPI::DataTransport::Port::advance( CPI::OS::uint64_t value )
   }
   else {
     if ( isShadow() ) {
-	
-#ifndef NDEBUG				
+        
+#ifndef NDEBUG                                
       printf("Advancing the shadow buffer\n");
 #endif
-			
+                        
       // If we are a input shadow buffer, it means that a remote input buffer
       // became empty.
       getPortSet()->getTxController()->freeBuffer(this);
@@ -417,13 +417,13 @@ void CPI::DataTransport::Port::advance( CPI::OS::uint64_t value )
 #ifndef NDEBUG
       printf("Advancing the REAL buffer\n");
 #endif
-						
+                                                
       // One of our inputs just got filled
       getPortSet()->getTxController()->bufferFull(this);
-			
+                        
     }
   }
-	
+        
 }
 
 
@@ -445,7 +445,7 @@ bool CPI::DataTransport::Port::supportsZeroCopy( CPI::DataTransport::Port* port 
 
 
   else if ( 1  /*(test++)%3 == 0*/ ) {
-    //		return TransportGlobal::m_ooPZeroCopy;
+    //                return TransportGlobal::m_ooPZeroCopy;
     return false;
 
   }
@@ -461,7 +461,7 @@ void
 CPI::DataTransport::Port::
 createBuffers()
 {
-	
+        
 #ifndef NDEBUG
   printf("Number of buffers = %d\n", this->getBufferCount() );
 #endif
@@ -516,27 +516,27 @@ CPI::DataTransport::Port::
     if ( ! m_data->m_shadow  ) {
 
       res_mgr = 
-	XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+        XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
       cpiAssert( res_mgr );
 
       rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.bufferOffset,
-			  m_data->m_bufferData[index].outputOffsets.bufferSize);
+                          m_data->m_bufferData[index].outputOffsets.bufferSize);
       cpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.localStateOffset,
-			  sizeof(BufferState)*MAX_PORT_COUNT);
+                          sizeof(BufferState)*MAX_PORT_COUNT);
       cpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.metaDataOffset,
-			  sizeof(BufferMetaData)*MAX_PORT_COUNT);
+                          sizeof(BufferMetaData)*MAX_PORT_COUNT);
       cpiAssert( rc == 0 );
 
       if ( m_data->m_localPortSetControl != 0  ) {
 
-	rc = res_mgr->free( m_data->m_localPortSetControl,
-			    sizeof(OutputPortSetControl));
-	cpiAssert( rc == 0 );
-	m_data->m_localPortSetControl = 0;
+        rc = res_mgr->free( m_data->m_localPortSetControl,
+                            sizeof(OutputPortSetControl));
+        cpiAssert( rc == 0 );
+        m_data->m_localPortSetControl = 0;
       }
     }
   }
@@ -545,19 +545,19 @@ CPI::DataTransport::Port::
     if ( ! m_shadow ) {
 
       res_mgr = 
-	XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+        XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
       cpiAssert( res_mgr );
 
       rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.bufferOffset,
-			  m_data->m_bufferData[index].inputOffsets.bufferSize);
+                          m_data->m_bufferData[index].inputOffsets.bufferSize);
       cpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.metaDataOffset,
-			  sizeof(BufferMetaData)*MAX_PORT_COUNT);
+                          sizeof(BufferMetaData)*MAX_PORT_COUNT);
       cpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.localStateOffset,
-			  sizeof(BufferState)*MAX_PORT_COUNT);
+                          sizeof(BufferState)*MAX_PORT_COUNT);
       cpiAssert( rc == 0 );
 
     }
@@ -567,7 +567,7 @@ CPI::DataTransport::Port::
       cpiAssert( res_mgr );
 
       rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox],
-			  sizeof(BufferState));
+                          sizeof(BufferState));
       cpiAssert( rc == 0 );
     }
 
@@ -576,17 +576,17 @@ CPI::DataTransport::Port::
 
   if ( m_localSMemResources ) {
     m_localSMemResources->sMemResourceMgr->free( m_offsetsOffset,
-						 sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS);
+                                                 sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS);
   }
  
   CPI::OS::int32_t i;
   if ( m_buffers[0] ) {
     for (i=0; i<m_bufferCount; i++ ) {
       if ( this->isOutput() ) {
-	delete static_cast<OutputBuffer*>(m_buffers[i]);
+        delete static_cast<OutputBuffer*>(m_buffers[i]);
       }
       else {
-	delete static_cast<InputBuffer*>(m_buffers[i]);	
+        delete static_cast<InputBuffer*>(m_buffers[i]);        
       }
     }
   }
@@ -626,76 +626,76 @@ bool CPI::DataTransport::Port::ready()
 
   int last_idx = getPortSet()->getBufferCount()-1;
   if ( ! isShadow() ) {  // Real port
-		
+                
     if ( ! isOutput() ) {  // Real input
 
       // Now make sure that all of our shadow offsets have been allocated
       for ( CPI::OS::uint32_t n=0; n<getCircuit()->getOutputPortSet()->getPortCount(); n++ ) {
 
-	PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
-	CPI::DataTransport::Port* output_port = static_cast<CPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
-	int idx = output_port->m_realSMemResources->sMemServices->getEndPoint()->mailbox;
-	if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.myShadowsRemoteStateOffsets[idx] ) {
-					
-	  // Make sure this output port is not co-located
+        PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
+        CPI::DataTransport::Port* output_port = static_cast<CPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
+        int idx = output_port->m_realSMemResources->sMemServices->getEndPoint()->mailbox;
+        if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.myShadowsRemoteStateOffsets[idx] ) {
+                                        
+          // Make sure this output port is not co-located
 
-	  if ( getCircuit()->m_transport->isLocalEndpoint( 
-				     output_port->getMetaData()->m_real_location->end_point.c_str() ) ) {
+          if ( getCircuit()->m_transport->isLocalEndpoint( 
+                                     output_port->getMetaData()->m_real_location->end_point.c_str() ) ) {
 
-	    for ( CPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
-	      m_portDependencyData.offsets[n].inputOffsets.myShadowsRemoteStateOffsets[getMailbox()] =
-		m_portDependencyData.offsets[n].inputOffsets.localStateOffset;
-	    }
-	    continue;
-	  }
-					
-	  // Make the request to get our offset
-	  SMBResources* s_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
-	  SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( output_port->getEndpoint() );
-	  XferMailBox xmb( getMailbox() );
+            for ( CPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
+              m_portDependencyData.offsets[n].inputOffsets.myShadowsRemoteStateOffsets[getMailbox()] =
+                m_portDependencyData.offsets[n].inputOffsets.localStateOffset;
+            }
+            continue;
+          }
+                                        
+          // Make the request to get our offset
+          SMBResources* s_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
+          SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( output_port->getEndpoint() );
+          XferMailBox xmb( getMailbox() );
 
-	  if ( ! xmb.mailBoxAvailable(s_res) ) {
-	    return false;
-	  }
+          if ( ! xmb.mailBoxAvailable(s_res) ) {
+            return false;
+          }
 #ifndef NDEBUG
-	  printf("Real Input buffer is making a request to get shadow offsets !!\n");
+          printf("Real Input buffer is making a request to get shadow offsets !!\n");
 #endif
-					
-	  DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
-	  mb->request.reqShadowOffsets.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
+                                        
+          DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
+          mb->request.reqShadowOffsets.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
                   
 
-	  if ( this->m_data->remoteCircuitId != -1 ) {
-	    mb->request.reqShadowOffsets.circuitId = this->m_data->remoteCircuitId;
-	    mb->request.reqShadowOffsets.portId    = this->m_data->remotePortId;
-	  }
-	  else {
-	    mb->request.reqShadowOffsets.circuitId = getCircuit()->getCircuitId();
-	    mb->request.reqShadowOffsets.portId    = getPortId();
-	  }
+          if ( this->m_data->remoteCircuitId != -1 ) {
+            mb->request.reqShadowOffsets.circuitId = this->m_data->remoteCircuitId;
+            mb->request.reqShadowOffsets.portId    = this->m_data->remotePortId;
+          }
+          else {
+            mb->request.reqShadowOffsets.circuitId = getCircuit()->getCircuitId();
+            mb->request.reqShadowOffsets.portId    = getPortId();
+          }
 
 #ifndef NDEBUG
-	  printf("Making return address to %s\n", 
-		 m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+          printf("Making return address to %s\n", 
+                 m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
 #endif
 
-	  strncpy( mb->request.reqShadowOffsets.url, 
-		   m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str(), 128 );
-	  mb->return_offset = m_offsetsOffset;
-	  mb->return_size = sizeof( PortMetaData::BufferOffsets );
-	  mb->returnMailboxId = getMailbox();
-					
-	  xmb.makeRequest( s_res, t_res );
+          strncpy( mb->request.reqShadowOffsets.url, 
+                   m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str(), 128 );
+          mb->return_offset = m_offsetsOffset;
+          mb->return_size = sizeof( PortMetaData::BufferOffsets );
+          mb->returnMailboxId = getMailbox();
+                                        
+          xmb.makeRequest( s_res, t_res );
 
-	  rtn = false;
-					
-	}
-				
+          rtn = false;
+                                        
+        }
+                                
       }
 
 
-		
-			
+                
+                        
     }
     else {  // Real output port
 
@@ -714,113 +714,113 @@ bool CPI::DataTransport::Port::ready()
       // co-located(with this shadow) source ports can know where to write.  In addition
       // we need the remote state offsets to ALL of the other shadow ports because of 
       // patterns that need to mark this buffer as used within the other shadow ports.
-			
+                        
       // We are ready when we have all of our offset data
       if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.bufferOffset ||
-	   ! m_portDependencyData.offsets[last_idx].inputOffsets.localStateOffset ||
-	   ! m_portDependencyData.offsets[last_idx].inputOffsets.metaDataOffset ) {
+           ! m_portDependencyData.offsets[last_idx].inputOffsets.localStateOffset ||
+           ! m_portDependencyData.offsets[last_idx].inputOffsets.metaDataOffset ) {
 
 
-	SMBResources* s_res = 
-	  XferFactoryManager::getFactoryManager().getSMBResources( m_localSMemResources->sMemServices->getEndPoint() );
-	SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
-	XferMailBox xmb( getMailbox() );
-	if ( ! xmb.mailBoxAvailable(s_res) ) {
-	  return false;
-	}
-				
+        SMBResources* s_res = 
+          XferFactoryManager::getFactoryManager().getSMBResources( m_localSMemResources->sMemServices->getEndPoint() );
+        SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
+        XferMailBox xmb( getMailbox() );
+        if ( ! xmb.mailBoxAvailable(s_res) ) {
+          return false;
+        }
+                                
 #ifndef NDEBUG
-	printf("Input Shadow buffer is making a request to get buffer offsets, my offset = 0x%llx!!\n",
-	       (long long unsigned)m_offsetsOffset);
+        printf("Input Shadow buffer is making a request to get buffer offsets, my offset = 0x%llx!!\n",
+               (long long unsigned)m_offsetsOffset);
 #endif
 
-	DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
-	mb->request.reqInputOffsets.type = DataTransfer::ContainerComms::ReqInputOffsets;
+        DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
+        mb->request.reqInputOffsets.type = DataTransfer::ContainerComms::ReqInputOffsets;
 
-	if ( this->m_data->remoteCircuitId != -1 ) {
-	  mb->request.reqInputOffsets.circuitId = this->m_data->remoteCircuitId;
-	  mb->request.reqInputOffsets.portId    = this->m_data->remotePortId;
-	}
-	else {
-	  mb->request.reqInputOffsets.circuitId = getCircuit()->getCircuitId();
-	  mb->request.reqInputOffsets.portId    = getPortId();
-	}
+        if ( this->m_data->remoteCircuitId != -1 ) {
+          mb->request.reqInputOffsets.circuitId = this->m_data->remoteCircuitId;
+          mb->request.reqInputOffsets.portId    = this->m_data->remotePortId;
+        }
+        else {
+          mb->request.reqInputOffsets.circuitId = getCircuit()->getCircuitId();
+          mb->request.reqInputOffsets.portId    = getPortId();
+        }
 
 
 #ifndef NDEBUG
-	printf("Making return address to %s\n", 
-	       m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+        printf("Making return address to %s\n", 
+               m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
 #endif
 
-	strncpy( mb->request.reqInputOffsets.url, 
-		   m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str(), 128 );
-	mb->return_offset = m_offsetsOffset;
-	mb->return_size = sizeof( PortMetaData::BufferOffsets );
-	mb->returnMailboxId = getMailbox();
-		
-	xmb.makeRequest( s_res, t_res );
-				
-	rtn = false;
+        strncpy( mb->request.reqInputOffsets.url, 
+                   m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str(), 128 );
+        mb->return_offset = m_offsetsOffset;
+        mb->return_size = sizeof( PortMetaData::BufferOffsets );
+        mb->returnMailboxId = getMailbox();
+                
+        xmb.makeRequest( s_res, t_res );
+                                
+        rtn = false;
       }
 
 
       // Now make sure that all of our shadow offsets have been allocated
       for ( CPI::OS::uint32_t n=0; n<getCircuit()->getOutputPortSet()->getPortCount(); n++ ) {
-				
-	PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
-	CPI::DataTransport::Port* shadow_port = static_cast<CPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
-	int idx = shadow_port->getMailbox();
+                                
+        PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
+        CPI::DataTransport::Port* shadow_port = static_cast<CPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
+        int idx = shadow_port->getMailbox();
 
-	if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.myShadowsRemoteStateOffsets[idx] ) {
-					
-	  // Make sure this output port is not co-located
+        if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.myShadowsRemoteStateOffsets[idx] ) {
+                                        
+          // Make sure this output port is not co-located
 
-	  if ( getCircuit()->m_transport->isLocalEndpoint( shadow_port->getMetaData()->m_real_location->end_point.c_str() ) ) {
-	    continue;
-	  }
+          if ( getCircuit()->m_transport->isLocalEndpoint( shadow_port->getMetaData()->m_real_location->end_point.c_str() ) ) {
+            continue;
+          }
 
-	  SMBResources* s_res = 
-	    XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
-	  SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( shadow_port->getEndpoint() );
-	  XferMailBox xmb( getMailbox() );
-	  if ( ! xmb.mailBoxAvailable(s_res) ) {
-	    return false;
-	  }
-
-#ifndef NDEBUG
-	  printf("Shadow Input buffer is making a request to get other shadow offsets !!\n");
-#endif
-
-	  DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
-	  mb->request.reqShadowOffsets.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
-				
-
-	  if ( this->m_data->remoteCircuitId != -1 ) {
-	    mb->request.reqShadowOffsets.circuitId = this->m_data->remoteCircuitId;
-	    mb->request.reqShadowOffsets.portId    = this->m_data->remotePortId;
-	  }
-	  else {
-	    mb->request.reqShadowOffsets.circuitId = getCircuit()->getCircuitId();
-	    mb->request.reqShadowOffsets.portId    = getPortId();
-	  }
+          SMBResources* s_res = 
+            XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
+          SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( shadow_port->getEndpoint() );
+          XferMailBox xmb( getMailbox() );
+          if ( ! xmb.mailBoxAvailable(s_res) ) {
+            return false;
+          }
 
 #ifndef NDEBUG
-	  printf("Making return address to %s\n", 
-		 m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+          printf("Shadow Input buffer is making a request to get other shadow offsets !!\n");
 #endif
 
-	  strncpy( mb->request.reqShadowOffsets.url, 
-		   m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str(), 128 );
-	  mb->return_offset = m_offsetsOffset;
-	  mb->return_size = sizeof( PortMetaData::BufferOffsets );
-	  mb->returnMailboxId = getMailbox();
-					
-	  // Now make the request
-	  xmb.makeRequest( s_res, t_res );
-					
-	  rtn = false;
-					
-	}
+          DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
+          mb->request.reqShadowOffsets.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
+                                
+
+          if ( this->m_data->remoteCircuitId != -1 ) {
+            mb->request.reqShadowOffsets.circuitId = this->m_data->remoteCircuitId;
+            mb->request.reqShadowOffsets.portId    = this->m_data->remotePortId;
+          }
+          else {
+            mb->request.reqShadowOffsets.circuitId = getCircuit()->getCircuitId();
+            mb->request.reqShadowOffsets.portId    = getPortId();
+          }
+
+#ifndef NDEBUG
+          printf("Making return address to %s\n", 
+                 m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+#endif
+
+          strncpy( mb->request.reqShadowOffsets.url, 
+                   m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str(), 128 );
+          mb->return_offset = m_offsetsOffset;
+          mb->return_size = sizeof( PortMetaData::BufferOffsets );
+          mb->returnMailboxId = getMailbox();
+                                        
+          // Now make the request
+          xmb.makeRequest( s_res, t_res );
+                                        
+          rtn = false;
+                                        
+        }
 
       }
 
@@ -830,47 +830,47 @@ bool CPI::DataTransport::Port::ready()
       if ( ! m_portDependencyData.offsets[0].outputOffsets.portSetControlOffset ) {
 
 
-	SMBResources* s_res = 
-	  XferFactoryManager::getFactoryManager().getSMBResources( getShadowEndpoint() );
-	SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
-	XferMailBox xmb( getMailbox() );
-	if ( ! xmb.mailBoxAvailable(s_res) ) {
-	  return false;
-	}
+        SMBResources* s_res = 
+          XferFactoryManager::getFactoryManager().getSMBResources( getShadowEndpoint() );
+        SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
+        XferMailBox xmb( getMailbox() );
+        if ( ! xmb.mailBoxAvailable(s_res) ) {
+          return false;
+        }
 
 #ifndef NDEBUG
-	printf("Output shadow port is making a request to get port control offsets !!\n");
+        printf("Output shadow port is making a request to get port control offsets !!\n");
 #endif
 
-	DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
-	mb->request.reqOutputContOffset.type = DataTransfer::ContainerComms::ReqOutputControlOffset;
+        DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
+        mb->request.reqOutputContOffset.type = DataTransfer::ContainerComms::ReqOutputControlOffset;
 
-	    
-	if ( this->m_data->remoteCircuitId != -1 ) {
-	  mb->request.reqOutputContOffset.circuitId = this->m_data->remoteCircuitId;
-	  mb->request.reqOutputContOffset.portId    = this->m_data->remotePortId;
-	}
-	else {
-	  mb->request.reqOutputContOffset.circuitId = getCircuit()->getCircuitId();
-	  mb->request.reqOutputContOffset.portId    = getPortId();
-	}
+            
+        if ( this->m_data->remoteCircuitId != -1 ) {
+          mb->request.reqOutputContOffset.circuitId = this->m_data->remoteCircuitId;
+          mb->request.reqOutputContOffset.portId    = this->m_data->remotePortId;
+        }
+        else {
+          mb->request.reqOutputContOffset.circuitId = getCircuit()->getCircuitId();
+          mb->request.reqOutputContOffset.portId    = getPortId();
+        }
 
-	// Need to tell it how to get back with us
-	strcpy(mb->request.reqOutputContOffset.shadow_end_point,
-	       m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+        // Need to tell it how to get back with us
+        strcpy(mb->request.reqOutputContOffset.shadow_end_point,
+               m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
 
 #ifndef NDEBUG
-	printf("Making return address to %s\n", 
-	       m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
-	printf("Setting port id = %lld\n", (long long)mb->request.reqShadowOffsets.portId );
+        printf("Making return address to %s\n", 
+               m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+        printf("Setting port id = %lld\n", (long long)mb->request.reqShadowOffsets.portId );
 #endif
 
-	mb->return_offset = m_offsetsOffset;
-	mb->return_size = sizeof( PortMetaData::BufferOffsets );
-	mb->returnMailboxId = getMailbox();
-	xmb.makeRequest( s_res, t_res);
+        mb->return_offset = m_offsetsOffset;
+        mb->return_size = sizeof( PortMetaData::BufferOffsets );
+        mb->returnMailboxId = getMailbox();
+        xmb.makeRequest( s_res, t_res);
 
-	return false;
+        return false;
       }
     }
   }
@@ -891,38 +891,38 @@ void CPI::DataTransport::Port::writeOffsets( PortMetaData::BufferOffsets* offset
   // for all buffers
   if ( ! isOutput() ) { 
     for ( CPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
-			
+                        
       if ( m_shadow ) {
 
-	int idx = m_localSMemResources->sMemServices->getEndPoint()->mailbox;
+        int idx = m_localSMemResources->sMemServices->getEndPoint()->mailbox;
 
-	offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx ] =
-	  m_data->m_bufferData[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
-				
-#ifndef NDEBUG		
-	printf("Wrote shadow offset %lld to address %p\n", 
-	       (long long)m_data->m_bufferData[n].inputOffsets.myShadowsRemoteStateOffsets[idx],
-	       &offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx] );
+        offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx ] =
+          m_data->m_bufferData[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
+                                
+#ifndef NDEBUG                
+        printf("Wrote shadow offset %lld to address %p\n", 
+               (long long)m_data->m_bufferData[n].inputOffsets.myShadowsRemoteStateOffsets[idx],
+               &offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx] );
 #endif
-				
-				
+                                
+                                
       }
       else {
 
 #ifndef NDEBUG
-	printf("Wrote real input offsets\n");
+        printf("Wrote real input offsets\n");
 #endif
-				
-	// Our buffer space
-	offset[n].inputOffsets.bufferOffset = m_data->m_bufferData[n].inputOffsets.bufferOffset;
-	offset[n].inputOffsets.bufferSize = m_data->m_bufferData[n].inputOffsets.bufferSize;
-				
-	// Our state info
-	offset[n].inputOffsets.localStateOffset = m_data->m_bufferData[n].inputOffsets.localStateOffset;
-				
-	// Our meta-data
-	offset[n].inputOffsets.metaDataOffset = m_data->m_bufferData[n].inputOffsets.metaDataOffset;
-				
+                                
+        // Our buffer space
+        offset[n].inputOffsets.bufferOffset = m_data->m_bufferData[n].inputOffsets.bufferOffset;
+        offset[n].inputOffsets.bufferSize = m_data->m_bufferData[n].inputOffsets.bufferSize;
+                                
+        // Our state info
+        offset[n].inputOffsets.localStateOffset = m_data->m_bufferData[n].inputOffsets.localStateOffset;
+                                
+        // Our meta-data
+        offset[n].inputOffsets.metaDataOffset = m_data->m_bufferData[n].inputOffsets.metaDataOffset;
+                                
       }
     }
   }
@@ -935,17 +935,17 @@ void CPI::DataTransport::Port::writeOffsets( PortMetaData::BufferOffsets* offset
     for ( CPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
 
       offset[n].outputOffsets.portSetControlOffset = 
-	m_data->m_bufferData[n].outputOffsets.portSetControlOffset;
+        m_data->m_bufferData[n].outputOffsets.portSetControlOffset;
 
     }
 
 #ifndef NDEBUG
     printf("Wrote output control offset 0x%llx to address %p\n", 
-	   (long long)m_data->m_bufferData[0].outputOffsets.portSetControlOffset,
-	   &offset[0].outputOffsets.portSetControlOffset );
+           (long long)m_data->m_bufferData[0].outputOffsets.portSetControlOffset,
+           &offset[0].outputOffsets.portSetControlOffset );
 #endif
-				
-				
+                                
+                                
   }
 
 }
@@ -971,47 +971,47 @@ void CPI::DataTransport::Port::getOffsets( CPI::OS::uint32_t to_base_offset, CPI
   // for all buffers
   if ( ! isOutput() ) { 
     for ( CPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
-			
+                        
       if ( m_shadow ) {
 
-	int idx = m_localSMemResources->sMemServices->getEndPoint()->mailbox;
+        int idx = m_localSMemResources->sMemServices->getEndPoint()->mailbox;
 
-	ToFrom* tf = new ToFrom;
-	tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
-	tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
-	offsets.push_back( tf );
+        ToFrom* tf = new ToFrom;
+        tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
+        tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
+        offsets.push_back( tf );
 
 #ifndef NDEBUG
-	printf("Wrote shadow offset 0x%llx to address 0x%llx\n", 
-	       (long long)tf->from_offset, (long long)tf->to_offset );
+        printf("Wrote shadow offset 0x%llx to address 0x%llx\n", 
+               (long long)tf->from_offset, (long long)tf->to_offset );
 #endif
-				
+                                
       }
       else {
 
 #ifndef NDEBUG
-	printf("Wrote real input offsets\n");
+        printf("Wrote real input offsets\n");
 #endif
 
-	ToFrom* tf = new ToFrom;
-	tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.bufferOffset;
-	tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.bufferOffset;
-	offsets.push_back( tf );
+        ToFrom* tf = new ToFrom;
+        tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.bufferOffset;
+        tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.bufferOffset;
+        offsets.push_back( tf );
 
-	tf = new ToFrom;
-	tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.bufferSize;
-	tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.bufferSize;
-	offsets.push_back( tf );
+        tf = new ToFrom;
+        tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.bufferSize;
+        tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.bufferSize;
+        offsets.push_back( tf );
 
-	tf = new ToFrom;
-	tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.localStateOffset;
-	tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.localStateOffset;
-	offsets.push_back( tf );
+        tf = new ToFrom;
+        tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.localStateOffset;
+        tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.localStateOffset;
+        offsets.push_back( tf );
 
-	tf = new ToFrom;
-	tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.metaDataOffset;
-	tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.metaDataOffset;
-	offsets.push_back( tf );
+        tf = new ToFrom;
+        tf->from_offset = (CPI::OS::uint64_t)&from_offset[n].inputOffsets.metaDataOffset;
+        tf->to_offset = (CPI::OS::uint64_t)&to_offset[n].inputOffsets.metaDataOffset;
+        offsets.push_back( tf );
       }
     }
   }
@@ -1032,7 +1032,7 @@ void CPI::DataTransport::Port::getOffsets( CPI::OS::uint32_t to_base_offset, CPI
 #ifndef NDEBUG
     printf("Wrote output control offsets\n");
 #endif
-				
+                                
   }
 }
 
@@ -1108,59 +1108,59 @@ createOutputOffsets()
     // Allocate the buffers.  We will allocate a contiguous block of memory
     // for all the buffers and the split them up
     rc = res_mgr->alloc( m_data->m_portSetMd->bufferLength * bCount, 
-			 BUF_ALIGNMENT, &boffset);
+                         BUF_ALIGNMENT, &boffset);
     if ( rc != 0 ) {
       throw CPI::Util::EmbeddedException( 
-					 NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+                                         NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
     }
 
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.bufferOffset = boffset+(index*m_data->m_portSetMd->bufferLength);
       m_data->m_bufferData[index].outputOffsets.bufferSize =  m_data->m_portSetMd->bufferLength;
     }
-		
+                
     // Allocate the local state
     rc = res_mgr->alloc( sizeof(BufferState) * MAX_PORT_COUNT * bCount, 
-			 BUF_ALIGNMENT, &soffset);
+                         BUF_ALIGNMENT, &soffset);
     if ( rc != 0 ) {
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
       throw CPI::Util::EmbeddedException( 
-					 NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+                                         NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
     }
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.localStateOffset = 
-	soffset + index * MAX_PORT_COUNT * sizeof(BufferState);
+        soffset + index * MAX_PORT_COUNT * sizeof(BufferState);
     }
-		
+                
     // Allocate the meta-data structure
     rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount, 
-			 BUF_ALIGNMENT, &moffset);
+                         BUF_ALIGNMENT, &moffset);
     if ( rc != 0 ) {
       res_mgr->free( soffset,  sizeof(BufferState) * MAX_PORT_COUNT * bCount );
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
       throw CPI::Util::EmbeddedException( 
-					 NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+                                         NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
     }
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.metaDataOffset = 
-	moffset + index * MAX_PORT_COUNT * sizeof(BufferMetaData);
+        moffset + index * MAX_PORT_COUNT * sizeof(BufferMetaData);
     }
 
     // Allocate the port set control structure if needed (even shadows get one of these)
     if ( m_data->m_localPortSetControl == 0 ) {
-			
+                        
       rc = res_mgr->alloc( sizeof(OutputPortSetControl), 
-			   BUF_ALIGNMENT, &coffset);
+                           BUF_ALIGNMENT, &coffset);
       if ( rc != 0 ) {
-	res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
-	res_mgr->free( soffset,  sizeof(BufferState) * MAX_PORT_COUNT * bCount );
-	res_mgr->free( moffset,   sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount );
-	throw CPI::Util::EmbeddedException( 
-					   NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+        res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
+        res_mgr->free( soffset,  sizeof(BufferState) * MAX_PORT_COUNT * bCount );
+        res_mgr->free( moffset,   sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount );
+        throw CPI::Util::EmbeddedException( 
+                                           NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
       }
       m_data->m_localPortSetControl = coffset;
       for ( index=0; index<bCount; index++ ) {
-	m_data->m_bufferData[index].outputOffsets.portSetControlOffset = m_data->m_localPortSetControl;
+        m_data->m_bufferData[index].outputOffsets.portSetControlOffset = m_data->m_localPortSetControl;
       }
     }
         
@@ -1197,47 +1197,47 @@ createInputOffsets()
       res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
       cpiAssert( res_mgr );
       rc = res_mgr->alloc( m_data->m_portSetMd->bufferLength * bCount, 
-			   BUF_ALIGNMENT, &boffset);
+                           BUF_ALIGNMENT, &boffset);
       if ( rc != 0 ) {
-	throw CPI::Util::EmbeddedException( 
-					   NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+        throw CPI::Util::EmbeddedException( 
+                                           NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
       }
       for ( index=0; index<bCount; index++ ) {
-	m_data->m_bufferData[index].inputOffsets.bufferOffset = boffset + 
-	  index * m_data->m_portSetMd->bufferLength;
-	m_data->m_bufferData[index].inputOffsets.bufferSize = m_data->m_portSetMd->bufferLength;
+        m_data->m_bufferData[index].inputOffsets.bufferOffset = boffset + 
+          index * m_data->m_portSetMd->bufferLength;
+        m_data->m_bufferData[index].inputOffsets.bufferSize = m_data->m_portSetMd->bufferLength;
       }
-		
+                
 #ifndef NDEBUG
       printf("\n\nInput buffer offset = 0x%llx\n", boffset );
 #endif
-		
+                
       // Allocate the meta-data structure
       rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount, 
-			   BUF_ALIGNMENT, &moffset);
+                           BUF_ALIGNMENT, &moffset);
       if ( rc != 0 ) {
-	res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
-	throw CPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+        res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
+        throw CPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
       }
       for ( index=0; index<bCount; index++ ) {
-	m_data->m_bufferData[index].inputOffsets.metaDataOffset = 
-	  moffset + index * sizeof(BufferMetaData) * MAX_PORT_COUNT;
+        m_data->m_bufferData[index].inputOffsets.metaDataOffset = 
+          moffset + index * sizeof(BufferMetaData) * MAX_PORT_COUNT;
       }
-		
+                
       // Allocate the local state(s)
       rc = res_mgr->alloc( 
-			  sizeof(BufferState) * MAX_PORT_COUNT * bCount * 2, 
-			  BUF_ALIGNMENT, &soffset);
+                          sizeof(BufferState) * MAX_PORT_COUNT * bCount * 2, 
+                          BUF_ALIGNMENT, &soffset);
       if ( rc != 0 ) {
-	res_mgr->free( moffset,  sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount );
-	res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
-	throw CPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+        res_mgr->free( moffset,  sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount );
+        res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
+        throw CPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
       }
       for ( index=0; index<bCount; index++ ) {
-	m_data->m_bufferData[index].inputOffsets.localStateOffset = 
-	  soffset + (index * sizeof(BufferState) * MAX_PORT_COUNT * 2);
+        m_data->m_bufferData[index].inputOffsets.localStateOffset = 
+          soffset + (index * sizeof(BufferState) * MAX_PORT_COUNT * 2);
       }
-		
+                
     }
     else {  // We are a shadow port
 
@@ -1245,8 +1245,8 @@ createInputOffsets()
       cpiAssert( res_mgr );
       rc = res_mgr->alloc( sizeof(BufferState) * bCount , BUF_ALIGNMENT, &soffset);
       if ( rc != 0 ) {
-	throw CPI::Util::EmbeddedException(
-					   NO_MORE_BUFFER_AVAILABLE, m_data->m_shadow_location->end_point.c_str());
+        throw CPI::Util::EmbeddedException(
+                                           NO_MORE_BUFFER_AVAILABLE, m_data->m_shadow_location->end_point.c_str());
       }
       m_data->m_shadowPortDescriptor.type = CPI::RDT::ConsumerFlowControlDescT;
       m_data->m_shadowPortDescriptor.desc.emptyFlagBaseAddr = soffset;
@@ -1254,25 +1254,25 @@ createInputOffsets()
       m_data->m_shadowPortDescriptor.desc.emptyFlagPitch = sizeof(BufferState);
 
       if ( getCircuit()->m_transport->m_transportGlobal->useEvents() ) {
-	int lr,hr;
-	getCircuit()->m_transport->m_transportGlobal->getEventManager()->getEventRange(lr,hr);
-	m_data->m_shadowPortDescriptor.desc.emptyFlagValue = 
-	  ((CPI::OS::uint64_t)(lr)<<32) 
-	  | (CPI::OS::uint64_t)1<<63;
+        int lr,hr;
+        getCircuit()->m_transport->m_transportGlobal->getEventManager()->getEventRange(lr,hr);
+        m_data->m_shadowPortDescriptor.desc.emptyFlagValue = 
+          ((CPI::OS::uint64_t)(lr)<<32) 
+          | (CPI::OS::uint64_t)1<<63;
       }
       else {
-	m_data->m_shadowPortDescriptor.desc.emptyFlagValue = 
-	  ((CPI::OS::uint64_t)(0xfff)<<32)
-	  | (CPI::OS::uint64_t)1<<63;
+        m_data->m_shadowPortDescriptor.desc.emptyFlagValue = 
+          ((CPI::OS::uint64_t)(0xfff)<<32)
+          | (CPI::OS::uint64_t)1<<63;
       }
-		
+                
       //    printf("EmptyFlag value = 0x%llx\n", m_shadowPortDescriptor.desc.emptyFlagValue);
-		
+                
       strcpy( m_data->m_shadowPortDescriptor.desc.oob.oep,m_data->m_shadow_location->end_point.c_str());
       m_data->m_shadowPortDescriptor.desc.oob.port_id = m_data->m_externPortDependencyData.desc.oob.port_id;
       for ( index=0; index<bCount; index++ ) {
-	m_data->m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox] = 
-	  soffset + index * sizeof(BufferState);
+        m_data->m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox] = 
+          soffset + index * sizeof(BufferState);
       }
 
     }
@@ -1311,13 +1311,13 @@ hasFullInputBuffer()
   if ( ! available ) {
     if ( tb->m_zCopyPort && tb->m_attachedZBuffer ) {
       if ( tb->m_attachedZBuffer->isEmpty() && ! tb->m_attachedZBuffer->inUse() ) {
-	CPI::DataTransport::PortSet* aps = static_cast<CPI::DataTransport::PortSet*>(tb->m_zCopyPort->getPortSet());
-	aps->getTxController()->modifyOutputOffsets( tb->m_attachedZBuffer, tb, true );
-	inputAvailable( tb );
-	tb->m_zCopyPort = NULL;
-	tb->m_attachedZBuffer->m_attachedZBuffer = NULL;
-	tb->m_attachedZBuffer = NULL;
-	available = true;
+        CPI::DataTransport::PortSet* aps = static_cast<CPI::DataTransport::PortSet*>(tb->m_zCopyPort->getPortSet());
+        aps->getTxController()->modifyOutputOffsets( tb->m_attachedZBuffer, tb, true );
+        inputAvailable( tb );
+        tb->m_zCopyPort = NULL;
+        tb->m_attachedZBuffer->m_attachedZBuffer = NULL;
+        tb->m_attachedZBuffer = NULL;
+        available = true;
       }
     }
   }

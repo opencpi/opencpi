@@ -1,7 +1,7 @@
 /**
- **	\file FileStream.cpp
- **	\date  2008-12-20
- **	\author grymse@alhem.net
+ **        \file FileStream.cpp
+ **        \date  2008-12-20
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom

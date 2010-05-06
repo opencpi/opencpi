@@ -1,6 +1,6 @@
 /** \file socket_include.h
- **	\date  2005-04-12
- **	\author grymse@alhem.net
+ **        \date  2005-04-12
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -135,8 +135,8 @@ namespace SOCKETS_NAMESPACE {
 #   define MSG_NOSIGNAL 0
 #  endif
 #  include <netinet/in.h>
-typedef	in_addr_t ipaddr_t;
-typedef	in_port_t port_t;
+typedef        in_addr_t ipaddr_t;
+typedef        in_port_t port_t;
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
@@ -234,17 +234,17 @@ namespace SOCKETS_NAMESPACE {
 class WSAInitializer // Winsock Initializer
 {
 public:
-	WSAInitializer() {
-		if (WSAStartup(0x101,&m_wsadata)) 
-		{
-			exit(-1);
-		}
-	}
-	~WSAInitializer() {
-		WSACleanup();
-	}
+        WSAInitializer() {
+                if (WSAStartup(0x101,&m_wsadata)) 
+                {
+                        exit(-1);
+                }
+        }
+        ~WSAInitializer() {
+                WSACleanup();
+        }
 private:
-	WSADATA m_wsadata;
+        WSADATA m_wsadata;
 };
 
 #ifdef SOCKETS_NAMESPACE
@@ -271,8 +271,8 @@ namespace SOCKETS_NAMESPACE {
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
-	/** List type containing file descriptors. */
-	typedef std::list<SOCKET> socket_v;
+        /** List type containing file descriptors. */
+        typedef std::list<SOCKET> socket_v;
 
 
 #ifdef SOCKETS_NAMESPACE

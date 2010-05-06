@@ -78,55 +78,55 @@ namespace CPI {
 
       //!< Dispatch thread return codes
       enum DispatchRetCode {
-	MoreWorkNeeded,   // Dispatch returned, but there is more work needed
-	Spin,             // Dispatch completed it current tasks
-	DispatchNoMore,   // No more dispatching required
-	Stopped           // Container is stopped
+        MoreWorkNeeded,   // Dispatch returned, but there is more work needed
+        Spin,             // Dispatch completed it current tasks
+        DispatchNoMore,   // No more dispatching required
+        Stopped           // Container is stopped
       };
 
       //!< Default constructor
       Interface(CPI::Util::Driver &, const char *)
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
       /**
-	 @brief
-	 Constructor
+         @brief
+         Constructor
 
-	 @param [ in ] properties
-	 Container startup properties
+         @param [ in ] properties
+         Container startup properties
 
-	 @throw  CPI::Util::EmbeddedException  If an error is detected during construction
+         @throw  CPI::Util::EmbeddedException  If an error is detected during construction
 
-	 ****************************************************************** */
+         ****************************************************************** */
       Interface( CPI::Util::Driver &, const char *, const CPI::Util::PValue* props )
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
       //!< Destructor
       virtual ~Interface()
-	throw ( );
+        throw ( );
 
       /**
-	 @brief
-	 createApplication
+         @brief
+         createApplication
 
-	 Creates an application  for all subsequent method calls.
+         Creates an application  for all subsequent method calls.
 
-	 @throw CPI::Util::EmbeddedException  If an error is detected during the creation of the .
+         @throw CPI::Util::EmbeddedException  If an error is detected during the creation of the .
 
-	 ****************************************************************** */	
+         ****************************************************************** */        
       virtual Application * createApplication()
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
 
       /**
-	 @brief
-	 getSupportedEndpoints
+         @brief
+         getSupportedEndpoints
 
-	 This is the method that gets called by the creator to get tge list of endpoints that this container supports.
+         This is the method that gets called by the creator to get tge list of endpoints that this container supports.
 
-	 ****************************************************************** */	
+         ****************************************************************** */        
       virtual std::vector<std::string> getSupportedEndpoints()
-	throw ();
+        throw ();
 
 
       CPI::Util::PValue *getProperties();
@@ -134,70 +134,70 @@ namespace CPI {
 
 
       /**
-	 @brief
-	 dispatch
+         @brief
+         dispatch
 
-	 This is the method that gets called by the creator to provide thread time to the container.  If this method
-	 returns "true" the caller must continue to call this method.  If the return is "false" the method no longer needs
-	 to be called.
+         This is the method that gets called by the creator to provide thread time to the container.  If this method
+         returns "true" the caller must continue to call this method.  If the return is "false" the method no longer needs
+         to be called.
 
-	 @param [ in ] event_manager
-	 Event Manager object that is associated with this container.  This parameter can be NULL if the container is
-	 being used in polled mode.
+         @param [ in ] event_manager
+         Event Manager object that is associated with this container.  This parameter can be NULL if the container is
+         being used in polled mode.
 
-	 @throw CPI::Util::EmbeddedException  If an error is detected during dispatch
+         @throw CPI::Util::EmbeddedException  If an error is detected during dispatch
 
-	 ****************************************************************** */	
+         ****************************************************************** */        
       virtual DispatchRetCode dispatch(DataTransfer::EventManager* event_manager)
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
       Artifact & loadArtifact(const char *url, CPI::Util::PValue *artifactParams = 0);
       virtual Artifact & createArtifact(const char *url, CPI::Util::PValue *artifactParams = 0)=0;
 
 
       /**
-	 @brief
-	 packPortDesc
+         @brief
+         packPortDesc
 
-	 This method is used to "pack" a port descriptor into a string that
-	 can be sent over a wire.	
+         This method is used to "pack" a port descriptor into a string that
+         can be sent over a wire.        
 
-	 @param [ in ] port
-	 Port to be packed.
+         @param [ in ] port
+         Port to be packed.
 
-	 @retval std::string packed port descriptor
+         @retval std::string packed port descriptor
 
-	 ****************************************************************** */
+         ****************************************************************** */
       virtual std::string packPortDesc( PortData&  port )
-	throw ();
+        throw ();
 
 
       /**
-	 @brief
-	 unpackPortDesc
+         @brief
+         unpackPortDesc
 
-	 This method is used to "unpack" a port descriptor into a Port.
+         This method is used to "unpack" a port descriptor into a Port.
 
 
-	 @param [ in ] desc
-	 String descriptor previously created with "packPort *".
+         @param [ in ] desc
+         String descriptor previously created with "packPort *".
 
-	 @param [ in ] pd
-	 Unpacked port descriptor.
+         @param [ in ] pd
+         Unpacked port descriptor.
 
-	 @retval bool true if method successful.
+         @retval bool true if method successful.
 
-	 ****************************************************************** */
+         ****************************************************************** */
       virtual PortData * unpackPortDesc( const std::string& desc, PortData* desc_storage )
-	throw ();
+        throw ();
       virtual int portDescSize();
 
      
       //!< Start/Stop the container
       virtual void start(DataTransfer::EventManager* event_manager)
-	throw();
+        throw();
       virtual void stop(DataTransfer::EventManager* event_manager)
-	throw();
+        throw();
 
       //! get the event manager for this container
       virtual DataTransfer::EventManager*  getEventManager(){return NULL;}

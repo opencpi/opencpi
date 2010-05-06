@@ -61,7 +61,7 @@ PropertyParser ()
 
 CPI::SCA::PropertyParser::
 PropertyParser (CPI::Util::Vfs::Vfs & fs,
-		const std::string & fileName)
+                const std::string & fileName)
   throw (std::string)
   : m_magicString (0),
     m_sizeOfPropertySpace (0),
@@ -95,9 +95,9 @@ encode ()
 {
   if (!m_magicString) {
     m_magicString = CPI::SCA::encode_props (m_properties, m_numProperties,
-					    m_sizeOfPropertySpace,
-					    m_ports, m_numPorts,
-					    m_tests, m_numTests);
+                                            m_sizeOfPropertySpace,
+                                            m_ports, m_numPorts,
+                                            m_tests, m_numTests);
   }
 
   return m_magicString;
@@ -188,9 +188,9 @@ parse (CPI::Util::Vfs::Vfs & fs,
 void
 CPI::SCA::PropertyParser::
 processSPD (CPI::Util::Vfs::Vfs & fs,
-	    const std::string & spdFileName,
-	    const std::string & implId,
-	    ezxml_t spdRoot)
+            const std::string & spdFileName,
+            const std::string & implId,
+            ezxml_t spdRoot)
   throw (std::string)
 {
   cpiAssert (spdRoot && ezxml_name (spdRoot));
@@ -298,10 +298,10 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
     unsigned int oldNumTests = m_numTests;
 
     parsePropertyfile (fs, spdFileName,
-		       propertyFileNode);
+                       propertyFileNode);
 
     if (m_numProperties != oldNumProperties ||
-	m_numTests != oldNumTests) {
+        m_numTests != oldNumTests) {
       /*
        * We picked up new properties and/or tests from this property file.
        * Update the component type: use the SPD's name.  The name attribute
@@ -311,7 +311,7 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
       const char * spdName = ezxml_attr (spdRoot, "name");
 
       if (!spdName) {
-	throw std::string ("root node lacks \"name\" attribute");
+        throw std::string ("root node lacks \"name\" attribute");
       }
 
       m_componentType = spdName;
@@ -330,7 +330,7 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
       const char * id = ezxml_attr (implNode, "id");
 
       if (id && implId == id) {
-	break;
+        break;
       }
 
       implNode = ezxml_next (implNode);
@@ -354,16 +354,16 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
       unsigned int oldNumTests = m_numTests;
 
       parsePropertyfile (fs, spdFileName,
-			 implPrfNode);
+                         implPrfNode);
 
       if (m_numProperties != oldNumProperties ||
-	  m_numTests != oldNumTests) {
-	/*
-	 * We picked up new properties and/or tests from this property file.
-	 * Update the component type: it is specific to this implementation.
-	 */
+          m_numTests != oldNumTests) {
+        /*
+         * We picked up new properties and/or tests from this property file.
+         * Update the component type: it is specific to this implementation.
+         */
 
-	m_componentType = implId;
+        m_componentType = implId;
       }
     }
   }
@@ -372,8 +372,8 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
 void
 CPI::SCA::PropertyParser::
 processSCD (CPI::Util::Vfs::Vfs & fs,
-	    const std::string & scdFileName,
-	    ezxml_t scdRoot)
+            const std::string & scdFileName,
+            ezxml_t scdRoot)
   throw (std::string)
 {
   cpiAssert (scdRoot && ezxml_name (scdRoot));
@@ -418,8 +418,8 @@ processSCD (CPI::Util::Vfs::Vfs & fs,
     const char * portType = ezxml_name (portsNode);
 
     if (portType &&
-	(std::strcmp (portType, "uses") == 0 ||
-	 std::strcmp (portType, "provides") == 0)) {
+        (std::strcmp (portType, "uses") == 0 ||
+         std::strcmp (portType, "provides") == 0)) {
       numPorts++;
     }
 
@@ -457,28 +457,28 @@ processSCD (CPI::Util::Vfs::Vfs & fs,
       const char * portType = ezxml_name (portsNode);
 
       if (portType && std::strcmp (portType, "uses") == 0) {
-	const char * portName = ezxml_attr (portsNode, "usesname");
+        const char * portName = ezxml_attr (portsNode, "usesname");
 
-	if (!portName) {
-	  throw std::string ("Missing \"usesname\" attribute for uses port");
-	}
+        if (!portName) {
+          throw std::string ("Missing \"usesname\" attribute for uses port");
+        }
 
-	portData->name = strdup (portName);
-	portData->provider = false;
-	portData->twoway = false;
-	portData++;
+        portData->name = strdup (portName);
+        portData->provider = false;
+        portData->twoway = false;
+        portData++;
       }
       else if (portType && std::strcmp (portType, "provides") == 0) {
-	const char * portName = ezxml_attr (portsNode, "providesname");
+        const char * portName = ezxml_attr (portsNode, "providesname");
 
-	if (!portName) {
-	  throw std::string ("Missing \"providesname\" attribute for provides port");
-	}
+        if (!portName) {
+          throw std::string ("Missing \"providesname\" attribute for provides port");
+        }
 
-	portData->name = strdup (portName);
-	portData->provider = true;
-	portData->twoway = false;
-	portData++;
+        portData->name = strdup (portName);
+        portData->provider = true;
+        portData->twoway = false;
+        portData++;
       }
 
       portsNode = portsNode->ordered;
@@ -493,15 +493,15 @@ processSCD (CPI::Util::Vfs::Vfs & fs,
 
   if (propertyFileNode) {
     parsePropertyfile (fs, scdFileName,
-		       propertyFileNode);
+                       propertyFileNode);
   }
 }
 
 void
 CPI::SCA::PropertyParser::
 parsePropertyfile (CPI::Util::Vfs::Vfs & fs,
-		   const std::string & fileName,
-		   ezxml_t propertyFileNode)
+                   const std::string & fileName,
+                   ezxml_t propertyFileNode)
   throw (std::string)
 {
   ezxml_t localFileNode = ezxml_child (propertyFileNode, "localfile");
@@ -604,17 +604,17 @@ processPRF (ezxml_t prfRoot)
     const char * propertyType = ezxml_name (propertyNode);
 
     if (propertyType &&
-	(std::strcmp (propertyType, "simple") == 0 ||
-	 std::strcmp (propertyType, "simplesequence") == 0) &&
-	isConfigurableProperty (propertyNode)) {
+        (std::strcmp (propertyType, "simple") == 0 ||
+         std::strcmp (propertyType, "simplesequence") == 0) &&
+        isConfigurableProperty (propertyNode)) {
       const char * propName = getNameOrId (propertyNode);
 
       if (!propName) {
-	throw std::string ("Missing property name");
+        throw std::string ("Missing property name");
       }
 
       if (haveProperty (propName)) {
-	continue;
+        continue;
       }
 
       numProperties++;
@@ -622,8 +622,8 @@ processPRF (ezxml_t prfRoot)
 
     if (propertyType && std::strcmp (propertyType, "test") == 0) {
       if (!m_numTests && !numTests && !haveProperty ("testId")) {
-	// testId property
-	numProperties++;
+        // testId property
+        numProperties++;
       }
 
       numTests++;
@@ -631,43 +631,43 @@ processPRF (ezxml_t prfRoot)
       ezxml_t ivNode = ezxml_child (propertyNode, "inputvalue");
 
       if (ivNode) {
-	ezxml_t ivProp = ezxml_child (ivNode, "simple");
+        ezxml_t ivProp = ezxml_child (ivNode, "simple");
 
-	while (ivProp) {
-	  const char * propName = getNameOrId (ivProp);
+        while (ivProp) {
+          const char * propName = getNameOrId (ivProp);
 
-	  if (!propName) {
-	    throw std::string ("Missing property name");
-	  }
+          if (!propName) {
+            throw std::string ("Missing property name");
+          }
 
-	  if (haveProperty (propName)) {
-	    continue;
-	  }
+          if (haveProperty (propName)) {
+            continue;
+          }
 
-	  ivProp = ezxml_next (ivProp);
-	  numProperties++;
-	}
+          ivProp = ezxml_next (ivProp);
+          numProperties++;
+        }
       }
 
       ezxml_t ovNode = ezxml_child (propertyNode, "resultvalue");
 
       if (ovNode) {
-	ezxml_t ovProp = ezxml_child (ovNode, "simple");
+        ezxml_t ovProp = ezxml_child (ovNode, "simple");
 
-	while (ovProp) {
-	  const char * propName = getNameOrId (ovProp);
+        while (ovProp) {
+          const char * propName = getNameOrId (ovProp);
 
-	  if (!propName) {
-	    throw std::string ("Missing property name");
-	  }
+          if (!propName) {
+            throw std::string ("Missing property name");
+          }
 
-	  if (haveProperty (propName)) {
-	    continue;
-	  }
+          if (haveProperty (propName)) {
+            continue;
+          }
 
-	  ovProp = ezxml_next (ovProp);
-	  numProperties++;
-	}
+          ovProp = ezxml_next (ovProp);
+          numProperties++;
+        }
       }
     }
 
@@ -720,71 +720,71 @@ processPRF (ezxml_t prfRoot)
     const char * propertyType = ezxml_name (propertyNode);
 
     if (propertyType &&
-	std::strcmp (propertyType, "simple") == 0 &&
-	isConfigurableProperty (propertyNode)) {
+        std::strcmp (propertyType, "simple") == 0 &&
+        isConfigurableProperty (propertyNode)) {
       const char * propName = getNameOrId (propertyNode);
 
       if (!haveProperty (propName)) {
-	processSimpleProperty (propertyNode, propData, offset, false, false);
-	m_nameToIdxMap[propName] = propIdx++;
-	propData++;
+        processSimpleProperty (propertyNode, propData, offset, false, false);
+        m_nameToIdxMap[propName] = propIdx++;
+        propData++;
       }
       else {
-	adjustSimpleProperty (propertyNode,
-			      &m_properties[m_nameToIdxMap[propName]],
-			      false, false);
+        adjustSimpleProperty (propertyNode,
+                              &m_properties[m_nameToIdxMap[propName]],
+                              false, false);
       }
     }
     else if (propertyType &&
-	     std::strcmp (propertyType, "simplesequence") == 0 &&
-	     isConfigurableProperty (propertyNode)) {
+             std::strcmp (propertyType, "simplesequence") == 0 &&
+             isConfigurableProperty (propertyNode)) {
       const char * propName = getNameOrId (propertyNode);
 
       if (!haveProperty (propName)) {
-	processSimpleProperty (propertyNode, propData, offset, true, false);
-	m_nameToIdxMap[propName] = propIdx++;
-	propData++;
+        processSimpleProperty (propertyNode, propData, offset, true, false);
+        m_nameToIdxMap[propName] = propIdx++;
+        propData++;
       }
       else {
-	adjustSimpleProperty (propertyNode,
-			      &m_properties[m_nameToIdxMap[propName]],
-			      true, false);
+        adjustSimpleProperty (propertyNode,
+                              &m_properties[m_nameToIdxMap[propName]],
+                              true, false);
       }
     }
     else if (propertyType && std::strcmp (propertyType, "test") == 0) {
       if (!haveProperty ("testId")) {
-	propData->name = strdup ("testId");
-	propData->is_sequence = false;
-	propData->is_struct = false;
-	propData->read_sync = false;
-	propData->write_sync = false;
-	propData->is_writable = true;
-	propData->is_readable = false;
-	propData->is_test = true;
-	propData->num_members = 1;
-	propData->types = new CPI::SCA::SimpleType [1];
-	propData->types[0].data_type = CPI::SCA::SCA_ulong;
-	propData->types[0].size = 0;
-	propData->offset = roundUp (offset, 4);
-	offset = propData->offset + 4;
-	m_nameToIdxMap["testId"] = propIdx++;
-	propData++;
+        propData->name = strdup ("testId");
+        propData->is_sequence = false;
+        propData->is_struct = false;
+        propData->read_sync = false;
+        propData->write_sync = false;
+        propData->is_writable = true;
+        propData->is_readable = false;
+        propData->is_test = true;
+        propData->num_members = 1;
+        propData->types = new CPI::SCA::SimpleType [1];
+        propData->types[0].data_type = CPI::SCA::SCA_ulong;
+        propData->types[0].size = 0;
+        propData->offset = roundUp (offset, 4);
+        offset = propData->offset + 4;
+        m_nameToIdxMap["testId"] = propIdx++;
+        propData++;
       }
 
       const char * testIdStr = ezxml_attr (propertyNode, "id");
       char * endPtr;
 
       if (!testIdStr) {
-	throw std::string ("Missing \"id\" attribute for test element");
+        throw std::string ("Missing \"id\" attribute for test element");
       }
 
       testData->testId = std::strtoul (testIdStr, &endPtr, 10);
 
       if (*endPtr) {
-	std::string errMsg = "Invalid test id \"";
-	errMsg += testIdStr;
-	errMsg += "\"";
-	throw errMsg;
+        std::string errMsg = "Invalid test id \"";
+        errMsg += testIdStr;
+        errMsg += "\"";
+        throw errMsg;
       }
 
       /*
@@ -794,38 +794,38 @@ processPRF (ezxml_t prfRoot)
       ezxml_t ivNode = ezxml_child (propertyNode, "inputvalue");
 
       if (ivNode) {
-	ezxml_t ivProp = ezxml_child (ivNode, "simple");
-	unsigned int numInputValues = 0;
+        ezxml_t ivProp = ezxml_child (ivNode, "simple");
+        unsigned int numInputValues = 0;
 
-	while (ivProp) {
-	  const char * propName = getNameOrId (ivProp);
+        while (ivProp) {
+          const char * propName = getNameOrId (ivProp);
 
-	  if (!haveProperty (propName)) {
-	    processSimpleProperty (ivProp, propData, offset, false, true);
-	    m_nameToIdxMap[propName] = propIdx++;
-	    propData->is_writable = true;
-	    propData++;
-	  }
+          if (!haveProperty (propName)) {
+            processSimpleProperty (ivProp, propData, offset, false, true);
+            m_nameToIdxMap[propName] = propIdx++;
+            propData->is_writable = true;
+            propData++;
+          }
 
-	  ivProp = ezxml_next (ivProp);
-	  numInputValues++;
-	}
+          ivProp = ezxml_next (ivProp);
+          numInputValues++;
+        }
 
-	/*
-	 * Cross-reference input values.
-	 */
+        /*
+         * Cross-reference input values.
+         */
 
-	testData->numInputs = numInputValues;
-	testData->inputValues = new unsigned int [numInputValues];
+        testData->numInputs = numInputValues;
+        testData->inputValues = new unsigned int [numInputValues];
 
-	ivProp = ezxml_child (ivNode, "simple");
-	unsigned int inputValueIdx = 0;
+        ivProp = ezxml_child (ivNode, "simple");
+        unsigned int inputValueIdx = 0;
 
-	while (ivProp) {
-	  const char * propName = getNameOrId (ivProp);
-	  testData->inputValues[inputValueIdx++] = m_nameToIdxMap[propName];
-	  ivProp = ezxml_next (ivProp);
-	}
+        while (ivProp) {
+          const char * propName = getNameOrId (ivProp);
+          testData->inputValues[inputValueIdx++] = m_nameToIdxMap[propName];
+          ivProp = ezxml_next (ivProp);
+        }
       }
 
       /*
@@ -835,38 +835,38 @@ processPRF (ezxml_t prfRoot)
       ezxml_t ovNode = ezxml_child (propertyNode, "resultvalue");
 
       if (ovNode) {
-	ezxml_t ovProp = ezxml_child (ovNode, "simple");
-	unsigned int numResultValues = 0;
+        ezxml_t ovProp = ezxml_child (ovNode, "simple");
+        unsigned int numResultValues = 0;
 
-	while (ovProp) {
-	  const char * propName = getNameOrId (ovProp);
+        while (ovProp) {
+          const char * propName = getNameOrId (ovProp);
 
-	  if (!haveProperty (propName)) {
-	    processSimpleProperty (ovProp, propData, offset, false, true);
-	    m_nameToIdxMap[propName] = propIdx++;
-	    propData->is_readable = true;
-	    propData++;
-	  }
+          if (!haveProperty (propName)) {
+            processSimpleProperty (ovProp, propData, offset, false, true);
+            m_nameToIdxMap[propName] = propIdx++;
+            propData->is_readable = true;
+            propData++;
+          }
 
-	  ovProp = ezxml_next (ovProp);
-	  numResultValues++;
-	}
+          ovProp = ezxml_next (ovProp);
+          numResultValues++;
+        }
 
-	/*
-	 * Cross-reference result values.
-	 */
+        /*
+         * Cross-reference result values.
+         */
 
-	testData->numResults = numResultValues;
-	testData->resultValues = new unsigned int [numResultValues];
+        testData->numResults = numResultValues;
+        testData->resultValues = new unsigned int [numResultValues];
 
-	ovProp = ezxml_child (ovNode, "simple");
-	unsigned int resultValueIdx = 0;
+        ovProp = ezxml_child (ovNode, "simple");
+        unsigned int resultValueIdx = 0;
 
-	while (ovProp) {
-	  const char * propName = getNameOrId (ovProp);
-	  testData->resultValues[resultValueIdx++] = m_nameToIdxMap[propName];
-	  ovProp = ezxml_next (ovProp);
-	}
+        while (ovProp) {
+          const char * propName = getNameOrId (ovProp);
+          testData->resultValues[resultValueIdx++] = m_nameToIdxMap[propName];
+          ovProp = ezxml_next (ovProp);
+        }
       }
 
       testData++;
@@ -883,10 +883,10 @@ processPRF (ezxml_t prfRoot)
 void
 CPI::SCA::PropertyParser::
 processSimpleProperty (ezxml_t simplePropertyNode,
-		       CPI::SCA::Property * propData,
-		       unsigned int & offset,
-		       bool isSequence,
-		       bool isTest)
+                       CPI::SCA::Property * propData,
+                       unsigned int & offset,
+                       bool isSequence,
+                       bool isTest)
   throw (std::string)
 {
   const char * propId = ezxml_attr (simplePropertyNode, "id");
@@ -912,14 +912,14 @@ processSimpleProperty (ezxml_t simplePropertyNode,
   propData->is_test = isTest;
 
   if (!isTest && (!propMode ||
-		  std::strcmp (propMode, "readwrite") == 0 ||
-		  std::strcmp (propMode, "writeonly") == 0)) {
+                  std::strcmp (propMode, "readwrite") == 0 ||
+                  std::strcmp (propMode, "writeonly") == 0)) {
     propData->is_writable = true;
   }
 
   if (!isTest && (!propMode ||
-		  std::strcmp (propMode, "readwrite") == 0 ||
-		  std::strcmp (propMode, "readonly")  == 0)) {
+                  std::strcmp (propMode, "readwrite") == 0 ||
+                  std::strcmp (propMode, "readonly")  == 0)) {
     propData->is_readable = true;
   }
 
@@ -957,10 +957,10 @@ processSimpleProperty (ezxml_t simplePropertyNode,
       pt.size = std::strtoul (propMaxSize, &endPtr, 10);
 
       if (!propData->types[0].size || *endPtr) {
-	std::string errMsg = "Invalid value \"";
-	errMsg += propMaxSize;
-	errMsg += "\" for \"max_string_size\" property";
-	throw errMsg;
+        std::string errMsg = "Invalid value \"";
+        errMsg += propMaxSize;
+        errMsg += "\" for \"max_string_size\" property";
+        throw errMsg;
       }
     }
     else {
@@ -993,25 +993,25 @@ processSimpleProperty (ezxml_t simplePropertyNode,
       const char * propSeqSize = ezxml_attr (simplePropertyNode, "max_sequence_size");
 
       if (!propSeqSize) {
-	ezxml_t descNode = ezxml_child (simplePropertyNode, "description");
-	const char * description = descNode ? ezxml_txt (descNode) : 0;
-	propSeqSize = description ? std::strstr (description, "max_sequence_size=") : 0;
-	propSeqSize = propSeqSize ? propSeqSize+18 : 0;
+        ezxml_t descNode = ezxml_child (simplePropertyNode, "description");
+        const char * description = descNode ? ezxml_txt (descNode) : 0;
+        propSeqSize = description ? std::strstr (description, "max_sequence_size=") : 0;
+        propSeqSize = propSeqSize ? propSeqSize+18 : 0;
       }
 
       if (propSeqSize) {
-	char * endPtr;
-	propData->sequence_size = std::strtoul (propSeqSize, &endPtr, 10);
+        char * endPtr;
+        propData->sequence_size = std::strtoul (propSeqSize, &endPtr, 10);
 
-	if (!propData->sequence_size || *endPtr) {
-	  std::string errMsg = "Invalid value \"";
-	  errMsg += propSeqSize;
-	  errMsg += "\" for \"max_sequence_size\" property";
-	  throw errMsg;
-	}
+        if (!propData->sequence_size || *endPtr) {
+          std::string errMsg = "Invalid value \"";
+          errMsg += propSeqSize;
+          errMsg += "\" for \"max_sequence_size\" property";
+          throw errMsg;
+        }
       }
       else {
-	propData->sequence_size = 256; /* Hardcoded default. */
+        propData->sequence_size = 256; /* Hardcoded default. */
       }
 
       propData->offset = roundUp (offset, 4);
@@ -1028,9 +1028,9 @@ processSimpleProperty (ezxml_t simplePropertyNode,
 void
 CPI::SCA::PropertyParser::
 adjustSimpleProperty (ezxml_t propertyNode,
-		      CPI::SCA::Property * propData,
-		      bool isSequence,
-		      bool isTest)
+                      CPI::SCA::Property * propData,
+                      bool isSequence,
+                      bool isTest)
   throw (std::string)
 {
   const char * propMode = ezxml_attr (propertyNode, "mode");
@@ -1041,14 +1041,14 @@ adjustSimpleProperty (ezxml_t propertyNode,
     propData->is_test = false;
 
     if (!propMode ||
-	std::strcmp (propMode, "readwrite") == 0 ||
-	std::strcmp (propMode, "writeonly") == 0) {
+        std::strcmp (propMode, "readwrite") == 0 ||
+        std::strcmp (propMode, "writeonly") == 0) {
       propData->is_writable = true;
     }
 
     if (!propMode ||
-	std::strcmp (propMode, "readwrite") == 0 ||
-	std::strcmp (propMode, "readonly")  == 0) {
+        std::strcmp (propMode, "readwrite") == 0 ||
+        std::strcmp (propMode, "readonly")  == 0) {
       propData->is_readable = true;
     }
   }

@@ -36,9 +36,9 @@ namespace {
 
   std::string
   unsignedToString (unsigned int value,
-		    unsigned int base = 10,
-		    unsigned int mindigits = 0,
-		    char pad = '0')
+                    unsigned int base = 10,
+                    unsigned int mindigits = 0,
+                    char pad = '0')
   {
     unsigned int tmp;
     unsigned int count=1;
@@ -88,7 +88,7 @@ namespace {
 
   unsigned int
   stringToUnsigned (const std::string & str,
-		    unsigned int base = 10)
+                    unsigned int base = 10)
   {
     const char * txtPtr = str.c_str ();
     unsigned long int value;
@@ -125,7 +125,7 @@ namespace ProcessManagerTests {
   public:
     Test01 (const std::string & argv0)
       : CPI::Util::Test::Test ("Starting and waiting for a process"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -152,7 +152,7 @@ namespace ProcessManagerTests {
   public:
     Test02 (const std::string & argv0)
       : CPI::Util::Test::Test ("Check exit code"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -180,7 +180,7 @@ namespace ProcessManagerTests {
   public:
     Test03 (const std::string & argv0)
       : CPI::Util::Test::Test ("Shutdown a process"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -210,7 +210,7 @@ namespace ProcessManagerTests {
   public:
     Test04 (const std::string & argv0)
       : CPI::Util::Test::Test ("Run multiple processes"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -269,7 +269,7 @@ namespace ProcessManagerTests {
   public:
     Test05 (const std::string & argv0)
       : CPI::Util::Test::Test ("Command-line parameters"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -278,22 +278,22 @@ namespace ProcessManagerTests {
       unsigned int numTests = sizeof (test5CommandLines) / sizeof (char **);
 
       for (unsigned int testIdx=0; testIdx<numTests; testIdx++) {
-	const char * const * commandLine = test5CommandLines[testIdx];
-	unsigned int testNo = testIdx + 1;
+        const char * const * commandLine = test5CommandLines[testIdx];
+        unsigned int testNo = testIdx + 1;
 
-	CPI::OS::ProcessManager::ParameterList p;
-	p.push_back ("5");
-	p.push_back (unsignedToString (testNo));
+        CPI::OS::ProcessManager::ParameterList p;
+        p.push_back ("5");
+        p.push_back (unsignedToString (testNo));
 
-	for (unsigned int pi=0; commandLine[pi]; pi++) {
-	  p.push_back (commandLine[pi]);
-	}
+        for (unsigned int pi=0; commandLine[pi]; pi++) {
+          p.push_back (commandLine[pi]);
+        }
 
-	CPI::OS::ProcessManager pm (m_argv0, p);
-	pm.wait ();
+        CPI::OS::ProcessManager pm (m_argv0, p);
+        pm.wait ();
 
-	int ec = pm.getExitCode ();
-	test (static_cast<unsigned int> (ec) == testNo);
+        int ec = pm.getExitCode ();
+        test (static_cast<unsigned int> (ec) == testNo);
       }
     }
   };
@@ -340,7 +340,7 @@ testProcessManagerInt (int argc, char * argv[])
     else if (testNum == 3) {
       // waiting for shutdown
       for (int i=0; i<1000; i++) {
-	CPI::OS::sleep (1000);
+        CPI::OS::sleep (1000);
       }
     }
     else if (testNum == 4) {
@@ -353,18 +353,18 @@ testProcessManagerInt (int argc, char * argv[])
       unsigned int testNo;
 
       if (argc < 3) {
-	return 0;
+        return 0;
       }
 
       try {
-	testNo = stringToUnsigned (argv[2]);
+        testNo = stringToUnsigned (argv[2]);
       }
       catch (const std::string &) {
-	return 0;
+        return 0;
       }
 
       if (testNo > numTests) {
-	return 0;
+        return 0;
       }
 
       unsigned int testIdx = testNo - 1;
@@ -373,16 +373,16 @@ testProcessManagerInt (int argc, char * argv[])
       int argci = 3;
 
       for (unsigned int pi=0; commandLine[pi]; pi++, argci++) {
-	if (argci >= argc) {
-	  return 0;
-	}
-	else if (std::strcmp (commandLine[pi], argv[argci]) != 0) {
-	  return 0;
-	}
+        if (argci >= argc) {
+          return 0;
+        }
+        else if (std::strcmp (commandLine[pi], argv[argci]) != 0) {
+          return 0;
+        }
       }
 
       if (argci != argc) {
-	return 0;
+        return 0;
       }
 
       return static_cast<int> (testNo);
@@ -421,8 +421,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

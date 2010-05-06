@@ -33,9 +33,9 @@ main (int argc, char *argv[])
     CPI::Logger::debug ("All", 42);
 
     std::cout << "Running on port "
-	      << serverPort.getPortNo()
-	      << "."
-	      << std::endl;
+              << serverPort.getPortNo()
+              << "."
+              << std::endl;
 
     CPI::Util::Tcp::Stream * stream;
 

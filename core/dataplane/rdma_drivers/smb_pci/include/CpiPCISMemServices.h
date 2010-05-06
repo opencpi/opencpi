@@ -45,18 +45,18 @@ namespace DataTransfer {
       :EndPoint(s){};
       virtual ~PCIEndPoint();
       PCIEndPoint( std::string& ep, CPI::OS::uint32_t size=0)
-	:EndPoint(ep,size){setEndpoint(ep);};
+        :EndPoint(ep,size){setEndpoint(ep);};
 
-	// Sets smem location data based upon the specified endpoint
-	virtual CPI::OS::int32_t setEndpoint( std::string& ep );
+        // Sets smem location data based upon the specified endpoint
+        virtual CPI::OS::int32_t setEndpoint( std::string& ep );
 
-	// Get the address from the endpoint
-	virtual const char* getAddress(){return p_virt_addr;}
-	char*              p_virt_addr;
+        // Get the address from the endpoint
+        virtual const char* getAddress(){return p_virt_addr;}
+        char*              p_virt_addr;
 
-	int bus_id;
-	CPI::OS::uint64_t bus_offset;
-	int map_size;
+        int bus_id;
+        CPI::OS::uint64_t bus_offset;
+        int map_size;
 
   };
 
@@ -90,27 +90,27 @@ namespace DataTransfer {
     // Disable mapping
     CPI::OS::int32_t disable ();
 
-    //	GetName - the name of the shared memory object
+    //        GetName - the name of the shared memory object
     const char* getName ()
       {
-	return m_location->getAddress();
+        return m_location->getAddress();
       }
 
-    //	getEndPoint - the location of the shared area as an enumeration
+    //        getEndPoint - the location of the shared area as an enumeration
     EndPoint* getEndPoint ()
       {
-	return m_location;
+        return m_location;
       }
 
-    //	GetHandle - platform dependent opaque handle for current mapping
+    //        GetHandle - platform dependent opaque handle for current mapping
     void* getHandle ();
 
     // Ctor/dtor
     PCISmemServices ( EndPoint* loc ) 
       : DataTransfer::SmemServices( loc ), m_init(false),m_fd(-1)
       {
-	m_location = dynamic_cast<PCIEndPoint*>(loc);
-	create( loc, loc->size);
+        m_location = dynamic_cast<PCIEndPoint*>(loc);
+        create( loc, loc->size);
 
       }
       PCISmemServices ();
@@ -118,7 +118,7 @@ namespace DataTransfer {
 
   protected:
 
-      //	Our thread safe mutex
+      //        Our thread safe mutex
       CPI::OS::Mutex m_threadSafeMutex;
 
       // Our location
@@ -129,10 +129,10 @@ namespace DataTransfer {
       int               m_fd;
 
       struct Map {
-	CPI::OS::uint64_t offset;
-	unsigned int size;
-	void*        vaddr;
-	Map( CPI::OS::uint64_t o,unsigned int s, void* v ):offset(o),size(s),vaddr(v){};
+        CPI::OS::uint64_t offset;
+        unsigned int size;
+        void*        vaddr;
+        Map( CPI::OS::uint64_t o,unsigned int s, void* v ):offset(o),size(s),vaddr(v){};
       };
       std::vector<Map> m_map;
 

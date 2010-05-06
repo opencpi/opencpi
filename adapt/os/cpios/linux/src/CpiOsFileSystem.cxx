@@ -88,19 +88,19 @@ CPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
      */
 
     if ((slashPos == 1 ||
-	 (slashPos == std::string::npos && nativeName.length() == 1)) &&
-	nativeName[0] == '.') {
+         (slashPos == std::string::npos && nativeName.length() == 1)) &&
+        nativeName[0] == '.') {
       name = cwd ();
     }
     else if ((slashPos == 2 ||
-	      (slashPos == std::string::npos && nativeName.length() == 2)) &&
-	     nativeName[0] == '.' && nativeName[1] == '.') {
+              (slashPos == std::string::npos && nativeName.length() == 2)) &&
+             nativeName[0] == '.' && nativeName[1] == '.') {
       std::string currentDir = cwd ();
 
       cpiAssert (currentDir.length() && currentDir[0] == '/');
 
       if (currentDir.length() == 1) {
-	throw std::string ("invalid file name '..' in top-level directory");
+        throw std::string ("invalid file name '..' in top-level directory");
       }
 
       std::string::size_type lastSlashPos = currentDir.rfind ('/');
@@ -142,45 +142,45 @@ CPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
        * Ignore a slash at the end
        */
       if (slashPos == std::string::npos) {
-	break;
+        break;
       }
 
       throw std::string ("empty path component");
     }
     else if (newSlashPos - oldSlashPos == 2 &&
-	     nativeName[oldSlashPos+1] == '.') {
+             nativeName[oldSlashPos+1] == '.') {
       /*
        * A path component of "." - ignore
        */
       continue;
     }
     else if (newSlashPos - oldSlashPos == 3 &&
-	     nativeName[oldSlashPos+1] == '.' &&
-	     nativeName[oldSlashPos+2] == '.') {
+             nativeName[oldSlashPos+1] == '.' &&
+             nativeName[oldSlashPos+2] == '.') {
       /*
        * If the name is empty, and if it was a relative name, then
        * back up beyond the current working directory.
        */
 
       if (name.empty()) {
-	if (!mayBackUp) {
-	  throw std::string ("unprocessible '..' path component");
-	}
+        if (!mayBackUp) {
+          throw std::string ("unprocessible '..' path component");
+        }
 
-	name = cwd ();
-	mayBackUp = false;
+        name = cwd ();
+        mayBackUp = false;
       }
 
       std::string::size_type lastSlashPos = name.rfind ('/');
 
       if (lastSlashPos == 0) {
-	throw std::string ("unprocessible '..' path component");
+        throw std::string ("unprocessible '..' path component");
       }
       else if (lastSlashPos == std::string::npos) {
-	name.erase ();
+        name.erase ();
       }
       else {
-	name.erase (lastSlashPos);
+        name.erase (lastSlashPos);
       }
 
       continue;
@@ -217,7 +217,7 @@ CPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
 
 std::string
 CPI::OS::FileSystem::joinNames (const std::string & dir,
-				const std::string & name)
+                                const std::string & name)
   throw (std::string)
 {
   cpiAssert (name.length() > 0);
@@ -285,8 +285,8 @@ CPI::OS::FileSystem::relativeName (const std::string & name)
 
 std::string
 CPI::OS::FileSystem::getPathElement (std::string & path,
-				     bool ignoreInvalid,
-				     char separator)
+                                     bool ignoreInvalid,
+                                     char separator)
   throw (std::string)
 {
   std::string::size_type colPos;
@@ -390,7 +390,7 @@ CPI::OS::FileSystem::rmdir (const std::string & name)
 
 CPI::OS::FileIterator
 CPI::OS::FileSystem::list (const std::string & dir,
-			   const std::string & pattern)
+                           const std::string & pattern)
   throw (std::string)
 {
   return FileIterator (dir, pattern);
@@ -473,7 +473,7 @@ CPI::OS::FileSystem::lastModified (const std::string & name)
 
 void
 CPI::OS::FileSystem::rename (const std::string & srcName,
-			     const std::string & destName)
+                             const std::string & destName)
   throw (std::string)
 {
   std::string srcNativeName = toNativeName (srcName);

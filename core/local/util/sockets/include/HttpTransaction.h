@@ -1,7 +1,7 @@
 /**
- **	\file HttpTransaction.h
- **	\date  2007-10-05
- **	\author grymse@alhem.net
+ **        \file HttpTransaction.h
+ **        \date  2007-10-05
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -44,55 +44,55 @@ namespace SOCKETS_NAMESPACE {
 class HttpTransaction
 {
 public:
-	HttpTransaction();
-	virtual ~HttpTransaction();
+        HttpTransaction();
+        virtual ~HttpTransaction();
 
-	/** Set / Read http header value */
-	void SetHeader(const std::string& key, const std::string& value);
-	void SetHeader(const std::string& key, long value);
-	const std::string& Header(const std::string& key) const;
+        /** Set / Read http header value */
+        void SetHeader(const std::string& key, const std::string& value);
+        void SetHeader(const std::string& key, long value);
+        const std::string& Header(const std::string& key) const;
 
-	void SetAccept(const std::string& value);
-	const std::string& Accept() const;
+        void SetAccept(const std::string& value);
+        const std::string& Accept() const;
 
-	void SetAcceptCharset(const std::string& value);
-	const std::string& AcceptCharset() const;
+        void SetAcceptCharset(const std::string& value);
+        const std::string& AcceptCharset() const;
 
-	void SetAcceptEncoding(const std::string& value);
-	const std::string& AcceptEncoding() const;
+        void SetAcceptEncoding(const std::string& value);
+        const std::string& AcceptEncoding() const;
 
-	void SetAcceptLanguage(const std::string& value);
-	const std::string& AcceptLanguage() const;
+        void SetAcceptLanguage(const std::string& value);
+        const std::string& AcceptLanguage() const;
 
-	void SetConnection(const std::string& value);
-	const std::string& Connection() const;
+        void SetConnection(const std::string& value);
+        const std::string& Connection() const;
 
-	void SetContentType(const std::string& value);
-	const std::string& ContentType() const;
+        void SetContentType(const std::string& value);
+        const std::string& ContentType() const;
 
-	void SetContentLength(long value);
-	long ContentLength() const;
+        void SetContentLength(long value);
+        long ContentLength() const;
 
-	void SetHost(const std::string& value);
-	const std::string& Host() const;
-	const std::string HostOnly() const;
+        void SetHost(const std::string& value);
+        const std::string& Host() const;
+        const std::string HostOnly() const;
 
-	void SetPragma(const std::string& value);
-	const std::string& Pragma() const;
+        void SetPragma(const std::string& value);
+        const std::string& Pragma() const;
 
-	void SetReferer(const std::string& value);
-	const std::string& Referer() const;
+        void SetReferer(const std::string& value);
+        const std::string& Referer() const;
 
-	void SetUserAgent(const std::string& value);
-	const std::string& UserAgent() const;
+        void SetUserAgent(const std::string& value);
+        const std::string& UserAgent() const;
 
-	const Utility::ncmap<std::string>& Headers() const;
+        const Utility::ncmap<std::string>& Headers() const;
 
-	virtual void Reset();
+        virtual void Reset();
 
 private:
-	Utility::ncmap<std::string> m_header;
-	std::string m_null;
+        Utility::ncmap<std::string> m_header;
+        std::string m_null;
 
 }; // end of class
 

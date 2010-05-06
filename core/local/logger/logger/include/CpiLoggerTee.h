@@ -49,38 +49,38 @@ namespace CPI {
       /** \cond */
       class TeeBuf : public LogBuf {
       public:
-	TeeBuf ();
-	~TeeBuf ();
+        TeeBuf ();
+        ~TeeBuf ();
 
-	void addOutput (Logger *, bool, bool, bool);
+        void addOutput (Logger *, bool, bool, bool);
 
-	void setLogLevel (unsigned short);
-	void setProducerId (const char *);
-	void setProducerName (const char *);
-
-      protected:
-	int sync ();
-	int_type overflow (int_type = std::streambuf::traits_type::eof());
-	std::streamsize xsputn (const char *, std::streamsize);
+        void setLogLevel (unsigned short);
+        void setProducerId (const char *);
+        void setProducerName (const char *);
 
       protected:
-	struct Delegatee {
-	  Logger * delegatee;
-	  bool adopted;
-	  bool retry;
-	  bool ignoreErrors;
-	};
+        int sync ();
+        int_type overflow (int_type = std::streambuf::traits_type::eof());
+        std::streamsize xsputn (const char *, std::streamsize);
 
-	typedef std::vector<Delegatee> Delegatees;
+      protected:
+        struct Delegatee {
+          Logger * delegatee;
+          bool adopted;
+          bool retry;
+          bool ignoreErrors;
+        };
 
-	bool m_first;
-	bool m_locked;
-	Delegatees m_delegatee;
-	unsigned short m_logLevel;
-	std::string m_producerName;
-	std::string m_logMessage;
-	CPI::OS::Mutex m_lock;
-	CPI::OS::Mutex m_selfLock;
+        typedef std::vector<Delegatee> Delegatees;
+
+        bool m_first;
+        bool m_locked;
+        Delegatees m_delegatee;
+        unsigned short m_logLevel;
+        std::string m_producerName;
+        std::string m_logMessage;
+        CPI::OS::Mutex m_lock;
+        CPI::OS::Mutex m_selfLock;
       };
       /** \endcond */
 
@@ -127,8 +127,8 @@ namespace CPI {
        */
 
       void addOutput (Logger & delegatee,
-		      bool retry = false,
-		      bool ignoreErrors = false);
+                      bool retry = false,
+                      bool ignoreErrors = false);
 
       /**
        * Add a delegatee that will receive future log messages.
@@ -159,9 +159,9 @@ namespace CPI {
        */
 
       void addOutput (Logger * delegatee,
-		      bool adopt = false,
-		      bool retry = false,
-		      bool ignoreErrors = false);
+                      bool adopt = false,
+                      bool retry = false,
+                      bool ignoreErrors = false);
 
     protected:
       TeeBuf m_obuf;

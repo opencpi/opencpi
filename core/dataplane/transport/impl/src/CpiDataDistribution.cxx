@@ -40,7 +40,7 @@ using namespace DataTransfer;
  *  Constructors
  **********************************/
 CpiDataDistribution::CpiDataDistribution( DataDistributionMetaData* meta_data, 
-					  CPI::DataTransport::Circuit* circuit )
+                                          CPI::DataTransport::Circuit* circuit )
   : DataDistribution( meta_data, circuit )
 {
   // Empty
@@ -83,81 +83,81 @@ void CpiDataDistribution::initSourceBuffers()
       // Get the next relevant port
       Port* target_port = target_portset->GetPort(y);
       if ( ! circuit_->IsPartOfCircuit( target_port ) ) {
-	continue;
+        continue;
       }
 
       // Do for all target buffers
       for ( int target_buffer_tid=0; 
-	    target_buffer_tid<target_portset->GetNumBuffers(); target_buffer_tid++ ) {
+            target_buffer_tid<target_portset->GetNumBuffers(); target_buffer_tid++ ) {
 
-	// Do for all source buffers
-	for ( int source_buffer_tid=0;
-	      source_buffer_tid<source_portset->GetNumBuffers(); source_buffer_tid++ ) {
-					
-	  // Create a new template
-	  CpiTransferMetaData* tmd = new CpiTransferMetaData();
-					
-					
-	  /* Set the source buffer's rank in the buffer group */
-	  tmd->buffer->rank = source_port->GetRank();
-					
-	  /* Set the target rank */
-	  tmd->buffer->target_rank = target_port->GetRank() % target_port->max_rank;
-	  tmd->buffer->target_tid = (source_port->rank / target_port->max_rank) % target_port->nbuffers;
-					
+        // Do for all source buffers
+        for ( int source_buffer_tid=0;
+              source_buffer_tid<source_portset->GetNumBuffers(); source_buffer_tid++ ) {
+                                        
+          // Create a new template
+          CpiTransferMetaData* tmd = new CpiTransferMetaData();
+                                        
+                                        
+          /* Set the source buffer's rank in the buffer group */
+          tmd->buffer->rank = source_port->GetRank();
+                                        
+          /* Set the target rank */
+          tmd->buffer->target_rank = target_port->GetRank() % target_port->max_rank;
+          tmd->buffer->target_tid = (source_port->rank / target_port->max_rank) % target_port->nbuffers;
+                                        
 #ifndef NDEBUG
-	  printf("buffer 0x%08lx target_rank %d src rank %d tgt max rank %d\n",
-		 tmd->buffer, tmd->buffer->target_rank, source_port->rank,
-		 target_port->max_rank);
+          printf("buffer 0x%08lx target_rank %d src rank %d tgt max rank %d\n",
+                 tmd->buffer, tmd->buffer->target_rank, source_port->rank,
+                 target_port->max_rank);
 #endif
-					
-	  /* Set the max rank in the buffer group */
-	  tmd->buffer->max_rank = source_portset->GetPortCount();
-	  tmd->buffer->max_buffers = source_portset->GetNumBuffers();
-	  tmd->buffer->max_bgindex = source_port->max_bgindex;
-	  tmd->buffer->target_max_rank = tgt_p->max_rank;
-	  tmd->buffer->target_max_buffers = target_port->max_buffers;
-	  tmd->buffer->target_max_bgindex = target_port->max_bgindex;
-					
-	  /* Set the element size */
-	  tmd->buffer->element_size = source_port->element_size;
-	  tmd->buffer->scalar_size = source_port->scalar_size;
-	  tmd->buffer->nscalars = source_port->nscalars;
-					
-	  /* Calculate the source partition offset */
-	  CPI::OS::int32_t src_poffset = 
-	    (src_p->index * 2 * sizeof(Buffer_State) * src_p->nbuffers);
-					
-	  /* Calculate the offset and size for the mapping */
-	  CPI::OS::uint32_t offset = src_p->rstate_offset;
-	  CPI::OS::uint32_t size = 2 * sizeof(Buffer_State) * src_p->nbuffers;
-					
-	  void *rstate_va;
-					
-	  /* Map the remote state area */
-	  if (rc = tmd->buffer->info->Map (offset, size, &rstate_va))
-	    {
-	      /* Set the error details */
-	      pp->error = 1;
-	      pp->mcos_return_code = rc;
-						
-	      return 1;
-	    }
-					
-					
+                                        
+          /* Set the max rank in the buffer group */
+          tmd->buffer->max_rank = source_portset->GetPortCount();
+          tmd->buffer->max_buffers = source_portset->GetNumBuffers();
+          tmd->buffer->max_bgindex = source_port->max_bgindex;
+          tmd->buffer->target_max_rank = tgt_p->max_rank;
+          tmd->buffer->target_max_buffers = target_port->max_buffers;
+          tmd->buffer->target_max_bgindex = target_port->max_bgindex;
+                                        
+          /* Set the element size */
+          tmd->buffer->element_size = source_port->element_size;
+          tmd->buffer->scalar_size = source_port->scalar_size;
+          tmd->buffer->nscalars = source_port->nscalars;
+                                        
+          /* Calculate the source partition offset */
+          CPI::OS::int32_t src_poffset = 
+            (src_p->index * 2 * sizeof(Buffer_State) * src_p->nbuffers);
+                                        
+          /* Calculate the offset and size for the mapping */
+          CPI::OS::uint32_t offset = src_p->rstate_offset;
+          CPI::OS::uint32_t size = 2 * sizeof(Buffer_State) * src_p->nbuffers;
+                                        
+          void *rstate_va;
+                                        
+          /* Map the remote state area */
+          if (rc = tmd->buffer->info->Map (offset, size, &rstate_va))
+            {
+              /* Set the error details */
+              pp->error = 1;
+              pp->mcos_return_code = rc;
+                                                
+              return 1;
+            }
+                                        
+                                        
 
 
 
-	  // Each target needs the source ports rank
-	  //	            source_portset->SetSourceRank( source_port->GetRank() );
+          // Each target needs the source ports rank
+          //                    source_portset->SetSourceRank( source_port->GetRank() );
 
 
-	  // Set the transfer meta data template for this transfer
-	  source_port->SetTransferMetaData( source_buffer_tid, 
-					    target_port->GetPortId(), 
-					    target_buffer_tid, tmd);
+          // Set the transfer meta data template for this transfer
+          source_port->SetTransferMetaData( source_buffer_tid, 
+                                            target_port->GetPortId(), 
+                                            target_buffer_tid, tmd);
 
-	}
+        }
       }
     }
   }

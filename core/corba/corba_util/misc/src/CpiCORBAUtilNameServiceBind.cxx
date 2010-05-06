@@ -26,10 +26,10 @@
 void
 CPI::CORBAUtil::Misc::
 nameServiceBind (CosNaming::NamingContextExt_ptr ns,
-		 CORBA::Object_ptr objToBind,
-		 const std::string & nameStr,
-		 bool createPath,
-		 bool rebind)
+                 CORBA::Object_ptr objToBind,
+                 const std::string & nameStr,
+                 bool createPath,
+                 bool rebind)
   throw (std::string)
 {
   if (CORBA::is_nil (ns)) {
@@ -51,15 +51,15 @@ nameServiceBind (CosNaming::NamingContextExt_ptr ns,
       CORBA::Object_var dirNc;
 
       try {
-	dirNc = context->resolve (dirName);
+        dirNc = context->resolve (dirName);
       }
       catch (const CosNaming::NamingContext::NotFound &) {
-	if (createPath) {
-	  dirNc = context->bind_new_context (dirName);
-	}
-	else {
-	  throw;
-	}
+        if (createPath) {
+          dirNc = context->bind_new_context (dirName);
+        }
+        else {
+          throw;
+        }
       }
 
       context = CosNaming::NamingContext::_narrow (dirNc);

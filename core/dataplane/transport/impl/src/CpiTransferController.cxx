@@ -50,17 +50,17 @@ using namespace CPI::OS;
  *********************************/
 TransferController::TransferController()
   : m_FillQPtr(0), m_EmptyQPtr(0)
-{			 
+{                         
   for ( CPI::OS::uint32_t x=0; x<MAX_OUTPUT_PORTS; x++ ) {
     for ( CPI::OS::uint32_t y=0; y<MAX_BUFFERS; y++ ) {
       for ( CPI::OS::uint32_t z=0; z<MAX_INPUT_PORTS; z++ ) {
-	for ( CPI::OS::uint32_t zz=0; zz<MAX_BUFFERS; zz++ ) {
-	  for ( CPI::OS::uint32_t bc=0; bc<2; bc++) {
-	    for ( CPI::OS::uint32_t ts=0; ts<2; ts++) {
-	      m_templates[x][y][z][zz][bc][ts] = NULL;
-	    }
-	  }
-	}
+        for ( CPI::OS::uint32_t zz=0; zz<MAX_BUFFERS; zz++ ) {
+          for ( CPI::OS::uint32_t bc=0; bc<2; bc++) {
+            for ( CPI::OS::uint32_t ts=0; ts<2; ts++) {
+              m_templates[x][y][z][zz][bc][ts] = NULL;
+            }
+          }
+        }
       }
     }
   }
@@ -76,13 +76,13 @@ TransferController::~TransferController()
   for ( CPI::OS::uint32_t x=0; x<MAX_OUTPUT_PORTS; x++ ) {
     for ( CPI::OS::uint32_t y=0; y<MAX_BUFFERS; y++ ) {
       for ( CPI::OS::uint32_t z=0; z<MAX_INPUT_PORTS; z++ ) {
-	for ( CPI::OS::uint32_t zz=0; zz<MAX_BUFFERS; zz++ ) {
-	  for ( CPI::OS::uint32_t bc=0; bc<2; bc++) {
-	    for ( CPI::OS::uint32_t ts=0; ts<2; ts++) {
-	      delete m_templates[x][y][z][zz][bc][ts];
-	    }
-	  }
-	}
+        for ( CPI::OS::uint32_t zz=0; zz<MAX_BUFFERS; zz++ ) {
+          for ( CPI::OS::uint32_t bc=0; bc<2; bc++) {
+            for ( CPI::OS::uint32_t ts=0; ts<2; ts++) {
+              delete m_templates[x][y][z][zz][bc][ts];
+            }
+          }
+        }
       }
     }
   }
@@ -90,8 +90,8 @@ TransferController::~TransferController()
 }
 
 bool TransferController::hasEmptyOutputBuffer(
-						  CPI::DataTransport::Port* src_port
-						  )const
+                                                  CPI::DataTransport::Port* src_port
+                                                  )const
 {
   CPI::OS::uint32_t &n = src_port->getLastBufferTidProcessed();
   OutputBuffer* buffer =  src_port->getOutputBuffer(n);
@@ -102,9 +102,9 @@ bool TransferController::hasEmptyOutputBuffer(
 }
 
 bool TransferController::hasFullInputBuffer(
-					     CPI::DataTransport::Port* input_port,
-					     InputBuffer** retb
-					     )const
+                                             CPI::DataTransport::Port* input_port,
+                                             InputBuffer** retb
+                                             )const
 {
   InputBuffer* buffer;
   int& lo = input_port->getLastBufferOrd();
@@ -119,10 +119,10 @@ bool TransferController::hasFullInputBuffer(
 
 
 void TransferController::bufferFull(
-				    CPI::DataTransport::Port* port						
-				    )
+                                    CPI::DataTransport::Port* port                                                
+                                    )
 {
-  //	We treat the input buffers as a circular queue, so we only need to check
+  //        We treat the input buffers as a circular queue, so we only need to check
   // the next buffer 
   port->getBuffer(m_FillQPtr)->markBufferFull();
   m_FillQPtr++ ;
@@ -130,13 +130,13 @@ void TransferController::bufferFull(
     m_FillQPtr = 0;
   }
 }
-						
+                                                
 
 void  TransferController::freeBuffer(
-				     CPI::DataTransport::Port* port						
-				     )
+                                     CPI::DataTransport::Port* port                                                
+                                     )
 {
-  //	We treat the input buffers as a circular queue, so we only need to check
+  //        We treat the input buffers as a circular queue, so we only need to check
   // the next buffer 
   port->getBuffer(m_EmptyQPtr)->markBufferEmpty();
   m_EmptyQPtr++;
@@ -151,11 +151,11 @@ void  TransferController::freeBuffer(
  * This method gets the next available buffer from the specified output port
  *********************************/
 Buffer* TransferController::getNextEmptyOutputBuffer( 
-						     CPI::DataTransport::Port* src_port	
-						     )
+                                                     CPI::DataTransport::Port* src_port        
+                                                     )
 {
   // This default implementation simply finds the first available output buffer
-  OutputBuffer* boi=NULL;	
+  OutputBuffer* boi=NULL;        
   CPI::OS::uint32_t &n = src_port->getLastBufferTidProcessed();
   OutputBuffer* buffer = src_port->getOutputBuffer(n);
   if (  buffer->isEmpty() && ! buffer->inUse() ) {
@@ -173,8 +173,8 @@ Buffer* TransferController::getNextEmptyOutputBuffer(
  * This method gets the next available buffer from the specified input port
  *********************************/
 Buffer* TransferController::getNextFullInputBuffer( 
-						     CPI::DataTransport::Port* input_port 
-						     )
+                                                     CPI::DataTransport::Port* input_port 
+                                                     )
 {
 
 #ifdef SEQ_RETURN
@@ -203,31 +203,31 @@ Buffer* TransferController::getNextFullInputBuffer(
       // to be in order
       if ( d_type == DataDistributionMetaData::sequential ) {
 
-	int inc = input_port->getCircuit()->getInputPortSetCount();
-	if ( seq == 0 ) {
-	  seq = buffers[n]->getMetaData()->sequence;
-	  boi = buffers[n];
-	  seq += inc;
-	  break;
-	}
-	else if ( buffers[n]->getMetaData()->sequence == seq ) {
-	  boi = buffers[n];
-	  seq += inc;
-	  break;
-	}
+        int inc = input_port->getCircuit()->getInputPortSetCount();
+        if ( seq == 0 ) {
+          seq = buffers[n]->getMetaData()->sequence;
+          boi = buffers[n];
+          seq += inc;
+          break;
+        }
+        else if ( buffers[n]->getMetaData()->sequence == seq ) {
+          boi = buffers[n];
+          seq += inc;
+          break;
+        }
 
-	// A broadcast may be out of sequence
-	else if ( buffers[n]->getMetaData()->broadCast == 1 ) {   
-	  boi = buffers[n];
-	  seq += inc;
-	  break;
-	}
+        // A broadcast may be out of sequence
+        else if ( buffers[n]->getMetaData()->broadCast == 1 ) {   
+          boi = buffers[n];
+          seq += inc;
+          break;
+        }
 
       }
       else if ( buffers[n]->getMetaData()->sequence == seq ) {
-	boi = buffers[n];
-	seq++;
-	break;
+        boi = buffers[n];
+        seq++;
+        break;
       }
 
     }
@@ -262,30 +262,30 @@ Buffer* TransferController::getNextFullInputBuffer(
     return buffer;
   }
   return NULL;
-	
+        
 #else
   // With this pattern, the data buffers are not deterministic, so we will always hand back 
   // the buffer with the lowest sequence
   InputBuffer* buffer; 
   InputBuffer *low_seq = NULL;
-	
+        
   for ( CPI::OS::uint32_t n=0; n<input_port->getBufferCount(); n++ ) {
     buffer = input_port->getInputBuffer(n);
     if (  ! buffer->isEmpty() && ! buffer->inUse() ) {
       if ( low_seq ) {
-	if ( buffer->getMetaData()->sequence < low_seq->getMetaData()->sequence  ) {
-	  low_seq = buffer;
-	}
-	else if ( (buffer->getMetaData()->sequence == low_seq->getMetaData()->sequence) &&
-		  (buffer->getMetaData()->partsSequence < low_seq->getMetaData()->partsSequence) ) {
-	  low_seq = buffer;
-	}
+        if ( buffer->getMetaData()->sequence < low_seq->getMetaData()->sequence  ) {
+          low_seq = buffer;
+        }
+        else if ( (buffer->getMetaData()->sequence == low_seq->getMetaData()->sequence) &&
+                  (buffer->getMetaData()->partsSequence < low_seq->getMetaData()->partsSequence) ) {
+          low_seq = buffer;
+        }
       }
       else {
-	low_seq = buffer;
+        low_seq = buffer;
       }
     }
-		
+                
   }
   if ( low_seq ) {
     low_seq->setInUse( true );
@@ -296,12 +296,12 @@ Buffer* TransferController::getNextFullInputBuffer(
     printf("No Input buffers avail\n");
   }
 #endif
-	
+        
   return low_seq;
 #endif
 
 #endif
-	
+        
 }
 
 /**********************************
@@ -319,8 +319,8 @@ void TransferController::init( PortSet* output, PortSet* input, bool whole_ss ) 
  * This method determines if we can produce from the indicated buffer
  *********************************/
 bool TransferController::canBroadcast( 
-				      Buffer* buffer			// InOut - Buffer to produce from
-				      )
+                                      Buffer* buffer                        // InOut - Buffer to produce from
+                                      )
 {
 
   // When s DD = whole only port 0 of the output port set can produce
@@ -341,11 +341,11 @@ bool TransferController::canBroadcast(
     for ( CPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
       CPI::DataTransport::Port* port = m_input->getPort(n);
       if ( port->getBuffer(p)->isEmpty() ) {
-	produce = true;
+        produce = true;
       }
       else {
-	produce = false;
-	break;
+        produce = false;
+        break;
       }
     }
 
@@ -382,7 +382,7 @@ void TransferController::broadCastOutput( Buffer* b )
 
   // We need to mark the buffer as full
   buffer->markBufferFull();
-	
+        
   for ( CPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
 #ifndef NDEBUG
     printf("TransferController:: 1 m_nextTid = %d\n", m_nextTid );
@@ -391,7 +391,7 @@ void TransferController::broadCastOutput( Buffer* b )
     tbuf->markBufferFull();
 
   }
-	
+        
   /*
    *  For this pattern the output port and input port are constants when we look 
    *  up the template that we need to produce.  So, since the output tid is a given,
@@ -399,16 +399,16 @@ void TransferController::broadCastOutput( Buffer* b )
    */
 #ifndef NDEBUG
   printf("output port id = %d, buffer id = %d, input id = %d\n", 
-	 buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
+         buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
   printf("Template address = %p\n", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid][1][OUTPUT]);
 #endif
 
   // Start producing, this may be asynchronous
   m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid][1][OUTPUT]->produce();
-	
+        
   // Add the template to our list
   insert_to_list(&buffer->getPendingTxList(), m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid][1][OUTPUT], 64, 8);
-	
+        
 }
 
 
@@ -426,9 +426,9 @@ TransferController1::TransferController1( PortSet* output, PortSet* input, bool 
 }
 
 TransferController* TransferController1::createController( 
-							  PortSet* output, 
-							  PortSet* input,
-							  bool whole_output_set)
+                                                          PortSet* output, 
+                                                          PortSet* input,
+                                                          bool whole_output_set)
 {
   return new TransferController1( output, input, whole_output_set );
 }
@@ -468,11 +468,11 @@ canProduce( Buffer* buffer )
     for ( CPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
       CPI::DataTransport::Port* port = m_input->getPort(n);
       if ( port->getBuffer(p)->isEmpty() ) {
-	produce = true;
+        produce = true;
       }
       else {
-	produce = false;
-	break;
+        produce = false;
+        break;
       }
     }
 
@@ -630,7 +630,7 @@ int TransferController1::produce( Buffer* b, bool bcast )
 
 #ifdef DEBUG_L2
   printf("output port id = %d, buffer id = %d, input id = %d\n", 
-	 buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
+         buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
   printf("Template address = 0x%x\n", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid]);
 #endif
 
@@ -695,7 +695,7 @@ Buffer* TransferController1::consume( Buffer* input )
 #ifdef DEBUG_L2
   printf("Set load factor to %d\n", buffer->getState()->pad);
   printf("Consuming using tpid = %d, ttid = %d, template = 0x%x\n",input->getPort()->getPortId(),
-	 input->getTid(), m_templates [0][0][input->getPort()->getPortId()][input->getTid()][0][INPUT] );
+         input->getTid(), m_templates [0][0][input->getPort()->getPortId()][input->getTid()][0][INPUT] );
 #endif
 
   // Tell everyone that we are empty
@@ -720,9 +720,9 @@ TransferController2::TransferController2( PortSet* output, PortSet* input, bool 
 
 
 TransferController* TransferController2::createController( 
-							  PortSet* output, 
-							  PortSet* input,
-							  bool whole_output_set)
+                                                          PortSet* output, 
+                                                          PortSet* input,
+                                                          bool whole_output_set)
 {
 
   TransferController* tc=NULL;
@@ -731,16 +731,16 @@ TransferController* TransferController2::createController(
   switch ( input->getDataDistribution()->getMetaData()->distSubType ) {
   case DataDistributionMetaData::round_robin:
     break;
-		
+                
   case DataDistributionMetaData::random_even:
     break;
 
   case DataDistributionMetaData::random_statistical:
     break;
-		
+                
   case DataDistributionMetaData::first_available:
     break;
-		
+                
   case DataDistributionMetaData::least_busy:
     tc = new TransferController2(output,input,whole_output_set);
     break;
@@ -757,8 +757,8 @@ TransferController* TransferController2::createController(
  * This method determines if we can produce from the indicated buffer
  *********************************/
 bool TransferController2::canProduce( 
-				     Buffer* b				// InOut - Buffer to produce from
-				     )
+                                     Buffer* b                                // InOut - Buffer to produce from
+                                     )
 {
 
   Buffer* buffer = static_cast<Buffer*>(b);
@@ -790,7 +790,7 @@ bool TransferController2::canProduce(
   // has the next buffer of data in one of its buffers, but we dont have to worry about 
   // sequencing through its buffers in order because the inputs have the logic needed
   // to re-sequence there own buffers
-	
+        
   for ( CPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
     CPI::DataTransport::Port* port = m_input->getPort(n);
     for ( CPI::OS::uint32_t p=0; p<m_input->getBufferCount(); p++ ) {
@@ -799,24 +799,24 @@ bool TransferController2::canProduce(
       printf("canProduce:: busy factor for port %d = %d\n", n, port->getBusyFactor() ) ;
 #endif
       if ( port->getBuffer(p)->isEmpty() ) {
-	if ( m_inputPort ) {
-	  if ( port->getBusyFactor() < m_inputPort->getBusyFactor() ) {
-	    m_nextTid = p;
+        if ( m_inputPort ) {
+          if ( port->getBusyFactor() < m_inputPort->getBusyFactor() ) {
+            m_nextTid = p;
 
 #ifndef NDEBUG
-	    printf("TransferController:: m_nextTid = %d\n", m_nextTid );
+            printf("TransferController:: m_nextTid = %d\n", m_nextTid );
 #endif
-	    m_inputPort = port;
-	  }
-	}
-	else {
-	  m_nextTid = p;
+            m_inputPort = port;
+          }
+        }
+        else {
+          m_nextTid = p;
 #ifndef NDEBUG
-	  printf("TransferController:: m_nextTid = %d\n", m_nextTid );
+          printf("TransferController:: m_nextTid = %d\n", m_nextTid );
 #endif
-	  m_inputPort = port;
-	}
-	break;
+          m_inputPort = port;
+        }
+        break;
       }
     }
   }
@@ -847,7 +847,7 @@ int TransferController2::produce( Buffer* b, bool bcast )
     if ( ! buffer->getMetaData()->endOfStream ) {
 #ifndef NDEBUG
       printf("*** ERROR *** EOS not set via broadcast !!\n");
-#endif		
+#endif                
     }
   }
 
@@ -894,7 +894,7 @@ int TransferController2::produce( Buffer* b, bool bcast )
    */
 #ifdef DEBUG_L2
   printf("output port id = %d, buffer id = %d, input id = %d\n", 
-	 buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
+         buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
   printf("Template address = 0x%x\n", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][m_inputPort->getPortId()][m_nextTid][bcast_idx][OUTPUT]);
 #endif
 
@@ -938,27 +938,27 @@ Buffer* TransferController2::consume( Buffer* input )
  * This method gets the next available buffer from the specified input port
  *********************************/
 Buffer* TransferController2::getNextFullInputBuffer( 
-						      CPI::DataTransport::Port* input_port   
-						      )
+                                                      CPI::DataTransport::Port* input_port   
+                                                      )
 {
   // With this pattern, the data buffers are not deterministic, so we will always hand back 
   // the buffer with the lowest sequence
   InputBuffer* buffer; 
   InputBuffer *low_seq = NULL;
-	
+        
   for ( CPI::OS::uint32_t n=0; n<input_port->getBufferCount(); n++ ) {
     buffer = input_port->getInputBuffer(n);
     if (  ! buffer->isEmpty() && ! buffer->inUse() ) {
       if ( low_seq ) {
-	if ( buffer->getMetaData()->sequence < low_seq->getMetaData()->sequence  ) {
-	  low_seq = buffer;
-	}
+        if ( buffer->getMetaData()->sequence < low_seq->getMetaData()->sequence  ) {
+          low_seq = buffer;
+        }
       }
       else {
-	low_seq = buffer;
+        low_seq = buffer;
       }
     }
-		
+                
   }
   if ( low_seq ) {
     low_seq->setInUse( true );
@@ -987,19 +987,19 @@ bool TransferController3::haveOutputBarrierToken( OutputBuffer* src_buf )
   int our_port_id = src_buf->getPort()->getPortId();
 
   if ( src_buf->getControlBlock()->sequentialControlToken == our_port_id ) {
-		
+                
     tok = true;
-		
+                
 #ifdef DEBUG_L2
     printf("Checking barrier token for port %d, token = %d, returning %d\n", our_port_id ,
-	   src_buf->getControlBlock()->sequentialControlToken, tok);
+           src_buf->getControlBlock()->sequentialControlToken, tok);
 #endif
-		
+                
   }
 
 #ifdef DEBUG_L2
   printf("Checking barrier token for port %d, token = %d, returning %d\n", our_port_id ,
-	 src_buf->getControlBlock()->sequentialControlToken, tok);
+         src_buf->getControlBlock()->sequentialControlToken, tok);
 #endif
 
   return tok;
@@ -1039,9 +1039,9 @@ TransferController4::TransferController4( PortSet* output, PortSet* input, bool 
 
 
 TransferController* TransferController4::createController( 
-							  PortSet* output, 
-							  PortSet* input,
-							  bool whole_output_set)
+                                                          PortSet* output, 
+                                                          PortSet* input,
+                                                          bool whole_output_set)
 {
   return new TransferController4( output, input, whole_output_set );
 }
@@ -1069,17 +1069,17 @@ int TransferController4::produce( Buffer* b, bool bcast )
   int total=0;
   int n=0;
   for (n=0; n<n_pending; n++ ) {
-		
+                
     CpiTransferTemplate* temp = static_cast<CpiTransferTemplate*>(get_entry(&l_pending, n));
-		
+                
     // If this is one ouf ours, produce and then break, we only get to produce once each time
     // "canProduce" is called.
     if ( temp && temp->getTypeId() == 4 ) {
 
       // This is effectivly a broadcst to all port buffers, so we need to mark them as full
       for ( CPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
-	Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid));
-	tbuf->markBufferFull();
+        Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid));
+        tbuf->markBufferFull();
       }
 
       total += temp->produceGated( 0, m_nextTid );
@@ -1100,8 +1100,8 @@ int TransferController4::produce( Buffer* b, bool bcast )
  * This method gets the next available buffer from the specified input port
  *********************************/
 Buffer* TransferController4::getNextFullInputBuffer( 
-						      CPI::DataTransport::Port* input_port 
-						      )
+                                                      CPI::DataTransport::Port* input_port 
+                                                      )
 {
 
 #ifdef DEBUG_L2
@@ -1112,21 +1112,21 @@ Buffer* TransferController4::getNextFullInputBuffer(
   // the buffer with the lowest output sequence AND the lowest whole sequence
   InputBuffer* buffer;
   InputBuffer *low_seq = NULL;
-	
+        
   for ( CPI::OS::uint32_t n=0; n<input_port->getBufferCount(); n++ ) {
     buffer = input_port->getInputBuffer(n);
     if (  ! buffer->isEmpty() && ! buffer->inUse() ) {
       if ( low_seq ) {
-	if ( buffer->getMetaData()->sequence < low_seq->getMetaData()->sequence) {
-	  low_seq = buffer;
-	}
-	else if ( (buffer->getMetaData()->sequence == low_seq->getMetaData()->sequence) &&
-		  (buffer->getMetaData()->partsSequence < low_seq->getMetaData()->partsSequence) ) {
-	  low_seq = buffer;
-	}
+        if ( buffer->getMetaData()->sequence < low_seq->getMetaData()->sequence) {
+          low_seq = buffer;
+        }
+        else if ( (buffer->getMetaData()->sequence == low_seq->getMetaData()->sequence) &&
+                  (buffer->getMetaData()->partsSequence < low_seq->getMetaData()->partsSequence) ) {
+          low_seq = buffer;
+        }
       }
       else {
-	low_seq = buffer;
+        low_seq = buffer;
       }
     }
   }
@@ -1139,7 +1139,7 @@ Buffer* TransferController4::getNextFullInputBuffer(
     printf("No Input buffers avail\n");
   }
 #endif
-	
+        
   return low_seq;
 
 }

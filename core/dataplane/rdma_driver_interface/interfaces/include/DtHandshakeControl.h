@@ -48,7 +48,7 @@ namespace DataTransfer {
   /**********************************
    *  SMB communications structures
    *
-   *	 This structure is used to make inband requests to other SMB's.
+   *         This structure is used to make inband requests to other SMB's.
    *    We use our mailbox id to index into our local SMB as the output
    *  of our request.  A non-zero in the request indicates that a request
    *  is in process.  If this local SMB is used in a multi-threaded environment
@@ -75,13 +75,13 @@ namespace DataTransfer {
     struct RequestUpdateCircuit {
       ReqTypeIds         type;
       CPI::OS::uint32_t  pad;
-      CPI::OS::uint32_t       senderCircuitId;	      // Id of circuit of interest
+      CPI::OS::uint32_t       senderCircuitId;              // Id of circuit of interest
       CPI::OS::uint32_t       receiverCircuitId;      // Id of circuit of interest
-      CPI::OS::uint64_t  receiverPortId;	    // Our new input port id
-      CPI::OS::uint32_t	 tPortCount;	            // Number of input ports
-      CPI::OS::uint64_t	 senderPortId;             // Sender port ordinal
+      CPI::OS::uint64_t  receiverPortId;            // Our new input port id
+      CPI::OS::uint32_t         tPortCount;                    // Number of input ports
+      CPI::OS::uint64_t         senderPortId;             // Sender port ordinal
       CPI::OS::uint64_t  senderOutputPortId;       // Our output port ordinal
-      CPI::OS::uint32_t	 senderOutputControlOffset; // Control offset to output
+      CPI::OS::uint32_t         senderOutputControlOffset; // Control offset to output
       CPI::OS::uint32_t  pad1;
       char               output_end_point[128];   // Output endpoint
     };
@@ -117,13 +117,13 @@ namespace DataTransfer {
       CPI::OS::uint32_t         pad;
       CPI::OS::uint32_t         circuitId;
       CPI::OS::uint32_t         buffer_size;
-      CPI::OS::uint32_t		  send;				// Send or recieve buffer
+      CPI::OS::uint32_t                  send;                                // Send or recieve buffer
       CPI::OS::uint32_t         pad1;
       char                      output_end_point[128];
     };
 
     union RequestTypes {
-      BasicReq				    reqBasic;
+      BasicReq                                    reqBasic;
       RequestInputOffsets        reqInputOffsets;
       RequestShadowRstateOffset   reqShadowOffsets;
       RequestOutputControlOffset  reqOutputContOffset;
@@ -133,14 +133,14 @@ namespace DataTransfer {
 
     struct MailBox {
       RequestTypes            request;
-      CPI::OS::int32_t	      error_code;
-      CPI::OS::uint32_t	      returnMailboxId;
-      CPI::OS::int32_t	      return_offset;
-      CPI::OS::uint32_t	      return_size;
+      CPI::OS::int32_t              error_code;
+      CPI::OS::uint32_t              returnMailboxId;
+      CPI::OS::int32_t              return_offset;
+      CPI::OS::uint32_t              return_size;
     };
 
-    CPI::OS::int64_t	       upAndRunning;
-    MailBox		       mailBox[MAX_SYSTEM_SMBS];
+    CPI::OS::int64_t               upAndRunning;
+    MailBox                       mailBox[MAX_SYSTEM_SMBS];
 
   };
 
@@ -215,22 +215,22 @@ namespace DataTransfer {
     CPI::OS::uint64_t        cpiMetaDataWord;      // CPI compatible metadata word
 
 
-    CPI::OS::uint32_t	   sequence;			    // Transfer sequence
-    CPI::OS::int32_t	   userTag;			    // User defined buffer tag
-    CPI::OS::int32_t	   endOfCircuit;		    // Circuit is being deleted
-    CPI::OS::int32_t	   broadCast;			// This buffer was broadcast to all inputs
+    CPI::OS::uint32_t           sequence;                            // Transfer sequence
+    CPI::OS::int32_t           userTag;                            // User defined buffer tag
+    CPI::OS::int32_t           endOfCircuit;                    // Circuit is being deleted
+    CPI::OS::int32_t           broadCast;                        // This buffer was broadcast to all inputs
     CPI::OS::int32_t       metaDataOnlyTransfer; // Only meta data transfered
     CPI::OS::uint32_t      srcRank;              // rank of the output buffer
     CPI::OS::int32_t       srcTemporalId;        // temporal buffer id
     BooleanToken           endOfWhole;           // end of whole data distribution
-    CPI::OS::uint32_t	   nPartsPerWhole;		// Number of parts to make up the whole data set
-    CPI::OS::uint32_t	   partsSequence;	    // This buffers sequence in the whole
+    CPI::OS::uint32_t           nPartsPerWhole;                // Number of parts to make up the whole data set
+    CPI::OS::uint32_t           partsSequence;            // This buffers sequence in the whole
     BooleanToken           endOfStream;          // end of data stream
-    CPI::OS::int32_t	   timeStamp;			// Buffer time stamp
+    CPI::OS::int32_t           timeStamp;                        // Buffer time stamp
     DtOsDataTypes::Offset  localStateOffset;     // offset back to local state
     CPI::OS::int32_t       outputSmbId;          // Output smb id
-    BufferShape	           shape;				// buffer shape
-    CPI::OS::uint32_t  	   zcopy;
+    BufferShape                   shape;                                // buffer shape
+    CPI::OS::uint32_t             zcopy;
 
 
     volatile BufferMetaData& operator =(volatile BufferMetaData*);
@@ -249,18 +249,18 @@ namespace DataTransfer {
     {
       cpiMetaDataWord           = t->cpiMetaDataWord;
       endOfCircuit              = t->endOfCircuit;
-      broadCast			= t->broadCast;
-      metaDataOnlyTransfer	= t->metaDataOnlyTransfer;
-      srcRank			= t->srcRank;
-      endOfWhole		= t->endOfWhole;
-      nPartsPerWhole		= t->nPartsPerWhole;
-      partsSequence		= t->partsSequence;
-      endOfStream		= t->endOfStream;
-      userTag			= t->userTag;
-      timeStamp			= t->timeStamp;
-      localStateOffset		= t->localStateOffset;
-      outputSmbId		= t->outputSmbId;
-      sequence			= t->sequence;
+      broadCast                        = t->broadCast;
+      metaDataOnlyTransfer        = t->metaDataOnlyTransfer;
+      srcRank                        = t->srcRank;
+      endOfWhole                = t->endOfWhole;
+      nPartsPerWhole                = t->nPartsPerWhole;
+      partsSequence                = t->partsSequence;
+      endOfStream                = t->endOfStream;
+      userTag                        = t->userTag;
+      timeStamp                        = t->timeStamp;
+      localStateOffset                = t->localStateOffset;
+      outputSmbId                = t->outputSmbId;
+      sequence                        = t->sequence;
       return *this;
     }
 

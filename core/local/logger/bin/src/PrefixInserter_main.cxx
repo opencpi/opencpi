@@ -39,9 +39,9 @@ namespace PrefixInserterTests {
       MessageKeeperOutput logger;
       logger.setProducerId ("03-PrefixInserter");
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testMessageKeeper")
-	     << "Hello World"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testMessageKeeper")
+             << "Hello World"
+             << std::flush;
 
       test (logger.getLogLevel() == 8);
       test (logger.getProducerId() == "03-PrefixInserter");
@@ -70,9 +70,9 @@ namespace PrefixInserterTests {
 
       CPI::Logger::PrefixInserter pi (logger, "MyPrefix: ");
       pi << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	 << CPI::Logger::ProducerName ("testPrefixInserter")
-	 << "Hello World"
-	 << std::flush;
+         << CPI::Logger::ProducerName ("testPrefixInserter")
+         << "Hello World"
+         << std::flush;
 
       test (logger.getLogLevel() == 8);
       test (logger.getProducerId() == "03-PrefixInserter");
@@ -103,9 +103,9 @@ namespace PrefixInserterTests {
       CPI::Logger::PrefixInserter p2 (p1, "Second Prefix: ");
 
       p2 << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	 << CPI::Logger::ProducerName ("testChainingPrefixInserters")
-	 << "Hello World"
-	 << std::flush;
+         << CPI::Logger::ProducerName ("testChainingPrefixInserters")
+         << "Hello World"
+         << std::flush;
 
       test (logger.getLogLevel() == 8);
       test (logger.getProducerId() == "03-PrefixInserter");
@@ -153,8 +153,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

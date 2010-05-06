@@ -65,7 +65,7 @@ namespace CPI {
 
       /**********************************
        *  This method gets called when data is available on a circuit
-       **********************************/	
+       **********************************/        
       virtual void dataAvailable( MessageCircuit* circuit ) = 0;
 
       /**********************************
@@ -93,9 +93,9 @@ namespace CPI {
        *  Constructors
        **********************************/
       Client( std::string&     our_end_point, // In - endpoint
-	      int             buffer_size,       // In - Buffer size in bytes
-	      ClientEventHandler* cb     // In - Client event handler
-	      );
+              int             buffer_size,       // In - Buffer size in bytes
+              ClientEventHandler* cb     // In - Client event handler
+              );
 
       /**********************************
        *  Create a new circuit

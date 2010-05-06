@@ -16,7 +16,7 @@ namespace CPI {
     // specify it.  Roughly, the order is the order of "goodness" when there is
     // no other basis for choosing a role
     enum PortRole {
-      NoRole,	         // Role is unspecified (during negotiation)
+      NoRole,                 // Role is unspecified (during negotiation)
       ActiveMessage,     // Port will move data
                          // For a consumer, this means pulling data from the producer.
                          // For a producer, this means pushing data to the consumer.
@@ -34,7 +34,7 @@ namespace CPI {
     // The low order bits are used for what roles are possible for a port (during negotiation)
     enum ProtocolOptions {
       FeedbackIsCount = MaxRole, // The doorbell indicating feedback is a count of buffers rather than a constant
-      MandatedRole,		 // Role is not a preference, but a mandate
+      MandatedRole,                 // Role is not a preference, but a mandate
       MaxOption
     };
 

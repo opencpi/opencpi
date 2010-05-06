@@ -115,7 +115,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
   /*
   printf("Consumer: got a buffer(%d) of data, len = %d first words = %d,%d \n", 
-	 mem->b_count, len, (int)in_buffer[0],(int)in_buffer[4] ); 
+         mem->b_count, len, (int)in_buffer[0],(int)in_buffer[4] ); 
   */
 
   /* printf("Con: Actual len = %d, max = %d\n", len, this_->ports[ConsumerWorker_Data_In_Port].maxLength );
@@ -134,7 +134,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #ifdef RESYNC
   if ( *b != mem->b_count ) {
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
-	   *b, mem->b_count );
+           *b, mem->b_count );
     dropped_b++;
     /* resync */
     mem->b_count = *b;
@@ -145,7 +145,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   for (n=4; n<len+4; n++) {
     if ( (in_buffer[n] != (char)(n+mem->b_count)%23) && (ncount++ < 100000) ) {
       printf("Consumer(b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
-	     mem->b_count,n, (char)(n+mem->b_count)%23, in_buffer[n]);
+             mem->b_count,n, (char)(n+mem->b_count)%23, in_buffer[n]);
       passed = 0;
     }
   }
@@ -168,9 +168,9 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     get_timestamp( &cTime );
     usecs = elapsed_usecs ( &mem->startTime, &cTime );
     printf ( "xfer n_bytes %lld %16.4f usecs/transfer %16.4f MB/s\n",
-	     (unsigned long long)(mem->b_count * len),
-	     ( usecs / ( double ) mem->b_count ),
-	     ( ( double ) mem->b_count * ( double )len ) / usecs );
+             (unsigned long long)(mem->b_count * len),
+             ( usecs / ( double ) mem->b_count ),
+             ( ( double ) mem->b_count * ( double )len ) / usecs );
   }
 #endif
 
@@ -191,18 +191,18 @@ static int32_t portRunConditions[] = { (1<<ConsumerWorker_Data_In_Port)  , 0 };
 static RCCRunCondition workerRunConditions[] = { portRunConditions, 0 , 0 };
 static RCCPortInfo portInfo = { 0, 1024*12, 1 };
 RCCDispatch ConsumerWorkerDispatchTable = { RCC_VERSION, NUM_INPUT_PORTS, NUM_OUTPUT_PORTS, 
-					    PROPERTY_SIZE, memSizes, 0, 
-					    initialize, 
-					    start, 
-					    stop, 
-					    release, 
-					    test, 
-					    afterConfigure, 
-					    beforeQuery, 
-					    ConsumerWorker_run,
-					       /* workerRunConditions */ 
-					    NULL, 
-					    0 };
+                                            PROPERTY_SIZE, memSizes, 0, 
+                                            initialize, 
+                                            start, 
+                                            stop, 
+                                            release, 
+                                            test, 
+                                            afterConfigure, 
+                                            beforeQuery, 
+                                            ConsumerWorker_run,
+                                               /* workerRunConditions */ 
+                                            NULL, 
+                                            0 };
 
 
 

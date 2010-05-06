@@ -50,15 +50,15 @@ addPort( PortMetaData* pmd )
 
 PortSetMetaData::
 PortSetMetaData( bool src, 
-		 CPI::OS::uint32_t ps_id, 
-		 DataDistribution* dd, 
-		 ConnectionMetaData* c,
-		 CPI::RDT::Descriptors* port_dep, 
-		 CPI::OS::uint32_t cid, 
-		 int port_count, 
-		 int buffer_count,
-		 int buffer_size,
-		 const char* our_ep  )
+                 CPI::OS::uint32_t ps_id, 
+                 DataDistribution* dd, 
+                 ConnectionMetaData* c,
+                 CPI::RDT::Descriptors* port_dep, 
+                 CPI::OS::uint32_t cid, 
+                 int port_count, 
+                 int buffer_count,
+                 int buffer_size,
+                 const char* our_ep  )
   :CU::Child<ConnectionMetaData,PortSetMetaData>( *c ),
    m_connection(c)
 {
@@ -83,11 +83,11 @@ PortSetMetaData( bool src,
 
 PortSetMetaData::
 PortSetMetaData(    bool src, 
-		    int ps_id, 
-		    DataDistribution* dd, 
-		    int buffer_count,
-		    int buffer_size,
-		    ConnectionMetaData* c )
+                    int ps_id, 
+                    DataDistribution* dd, 
+                    int buffer_count,
+                    int buffer_size,
+                    ConnectionMetaData* c )
   :CU::Child<ConnectionMetaData,PortSetMetaData>( *c ),
    m_connection(c)
 {
@@ -111,7 +111,7 @@ PortSetMetaData::
 
 
 
-		
+                
 
 
 

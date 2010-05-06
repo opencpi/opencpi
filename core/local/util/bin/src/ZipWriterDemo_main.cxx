@@ -7,7 +7,7 @@
 
 void
 copyFilesRecursively (CPI::Util::Vfs::Vfs * fs1, const std::string & name1,
-		      CPI::Util::Vfs::Vfs * fs2, const std::string & name2)
+                      CPI::Util::Vfs::Vfs * fs2, const std::string & name2)
 {
   CPI::Util::Vfs::Iterator * it = fs1->list (name1);
 
@@ -17,23 +17,23 @@ copyFilesRecursively (CPI::Util::Vfs::Vfs * fs1, const std::string & name1,
 
     if (it->isDirectory()) {
       std::cout << "Recursing into "
-		<< targetName
-		<< "/"
-		<< std::endl;
+                << targetName
+                << "/"
+                << std::endl;
 
       copyFilesRecursively (fs1, it->absoluteName(),
-			    fs2, targetName);
+                            fs2, targetName);
 
       std::cout << "Done with "
-		<< targetName
-		<< "/"
-		<< std::endl;
+                << targetName
+                << "/"
+                << std::endl;
     }
     else {
       std::cout << "Copying "
-		<< targetName
-		<< " (" << it->size() << " bytes) ... "
-		<< std::flush;
+                << targetName
+                << " (" << it->size() << " bytes) ... "
+                << std::flush;
       fs1->copy (it->absoluteName(), fs2, targetName);
       std::cout << "done." << std::endl;
     }
@@ -84,28 +84,28 @@ main (int argc, char *argv[])
   try {
     while (!toAdd->end()) {
       if (toAdd->isDirectory()) {
-	std::cout << "Recursing into "
-		  << toAdd->relativeName()
-		  << "/"
-		  << std::endl;
-	copyFilesRecursively (&localFs,
-			      toAdd->absoluteName(),
-			      &zipFs,
-			      toAdd->relativeName());
-	std::cout << "Done with "
-		  << toAdd->relativeName()
-		  << "/"
-		  << std::endl;
+        std::cout << "Recursing into "
+                  << toAdd->relativeName()
+                  << "/"
+                  << std::endl;
+        copyFilesRecursively (&localFs,
+                              toAdd->absoluteName(),
+                              &zipFs,
+                              toAdd->relativeName());
+        std::cout << "Done with "
+                  << toAdd->relativeName()
+                  << "/"
+                  << std::endl;
       }
       else {
-	std::cout << "Copying "
-		  << toAdd->relativeName()
-		  << " (" << toAdd->size() << " bytes) ... "
-		  << std::flush;
-	localFs.copy (toAdd->absoluteName(),
-		      &zipFs,
-		      toAdd->relativeName());
-	std::cout << "done." << std::endl;
+        std::cout << "Copying "
+                  << toAdd->relativeName()
+                  << " (" << toAdd->size() << " bytes) ... "
+                  << std::flush;
+        localFs.copy (toAdd->absoluteName(),
+                      &zipFs,
+                      toAdd->relativeName());
+        std::cout << "done." << std::endl;
       }
 
       toAdd->next ();

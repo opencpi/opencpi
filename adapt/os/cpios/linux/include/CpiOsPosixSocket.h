@@ -32,22 +32,22 @@ namespace CPI {
        */
 
       void netDbLock ()
-	throw (std::string);
+        throw (std::string);
 
       void netDbUnlock ()
-	throw (std::string);
+        throw (std::string);
 
       std::string getHostname ()
-	throw (std::string);
+        throw (std::string);
 
       std::string getFQDN ()
-	throw (std::string);
+        throw (std::string);
 
       std::string getIPAddress ()
-	throw (std::string);
+        throw (std::string);
 
       bool isLocalhost (const std::string &)
-	throw (std::string);
+        throw (std::string);
 
     }
   }

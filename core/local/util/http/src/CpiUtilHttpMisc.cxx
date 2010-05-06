@@ -19,7 +19,7 @@ CPI::Util::Http::isToken (const std::string & str)
       case '(': case ')': case '<': case '>': case '@': case ',':
       case ';': case ':': case '\\': case '\"': case '/': case '[':
       case ']': case '?': case '=': case '{': case '}':
-	return false;
+        return false;
       }
     }
   }
@@ -112,7 +112,7 @@ CPI::Util::Http::parseHttpDate (const std::string & httpDate)
   case 1: // rfc1123-date
     {
       if (date.length() != 11) {
-	throw std::string ("rfc1123 date string should be length 11");
+        throw std::string ("rfc1123 date string should be length 11");
       }
       day   = date.substr (0, 2);
       month = date.substr (3, 3);
@@ -123,7 +123,7 @@ CPI::Util::Http::parseHttpDate (const std::string & httpDate)
   case 2: // rfc850-date
     {
       if (date.length() != 9) {
-	throw std::string ("rfc850 date string should be length 9");
+        throw std::string ("rfc850 date string should be length 9");
       }
 
       day   = date.substr (0, 2);
@@ -135,7 +135,7 @@ CPI::Util::Http::parseHttpDate (const std::string & httpDate)
   case 3: // asctime-date
     {
       if (date.length() != 6) {
-	throw std::string ("asctime date string should be length 6");
+        throw std::string ("asctime date string should be length 6");
       }
 
       std::string month = date.substr (0, 3);

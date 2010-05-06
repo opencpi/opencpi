@@ -193,11 +193,11 @@ CPI::OS::Win32::isLocalhost (const std::string & name)
       char ** aliases = hent->h_aliases;
 
       while (aliases && *aliases) {
-	if (name.compare (*aliases) == 0) {
-	  res = true;
-	  break;
-	}
-	aliases++;
+        if (name.compare (*aliases) == 0) {
+          res = true;
+          break;
+        }
+        aliases++;
       }
     }
   }

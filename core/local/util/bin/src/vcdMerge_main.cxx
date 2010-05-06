@@ -63,10 +63,10 @@ CpiRccBinderConfigurator::g_options[] = {
 static
 void
 printUsage (CpiRccBinderConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -125,50 +125,50 @@ enum VCDType { VariableT, TagT, TimeT, Opaque2PartT, JunkT };
 struct VCDValue :  public VCDBase {
   VCDValue ( std::string& v )
     :VCDBase(v),type(JunkT){parse();}
-  void parse() {	
+  void parse() {        
     int c;
     for (unsigned int n=0; n<m_value.size(); n++) {
       if ( isspace( m_value[n] ) ) {
-	continue;
+        continue;
       }
       else if ( m_value[n] == '#' ) {
-	type = TimeT;
-	//	printf("MV = %s\n", m_value.c_str() );
-	if ( (c=sscanf( m_value.c_str(),"#%llu", (long long unsigned*)&time)) != 1 ) {
-	  printf("c = %d\n",c);
-	  throw std::string("Could not parse value (%s)\n", m_value.c_str() );
-	}
-	break;
+        type = TimeT;
+        //        printf("MV = %s\n", m_value.c_str() );
+        if ( (c=sscanf( m_value.c_str(),"#%llu", (long long unsigned*)&time)) != 1 ) {
+          printf("c = %d\n",c);
+          throw std::string("Could not parse value (%s)\n", m_value.c_str() );
+        }
+        break;
       }
       else if ( m_value[n] == '$' ) {
-	type = TagT;
-	break;
+        type = TagT;
+        break;
       }
       else if ( (m_value[n]>=48) && (m_value[n]<=57) ) {
-	type = VariableT;
-	// Format 01010token
-	std::string t;
-	int n;
-	for (n=m_value.length()-1; n>=0; n--) {
-	  if ( (m_value[n]>=48) && (m_value[n]<=57) ) {
-	    memcpy(token,t.c_str(),t.length());
-	    token[t.length()]=0;
-	    break;
-	  }	  
-	  if ( ! isspace( m_value[n] )) {
-	    t += m_value[n];
-	  }
-	}
-	memcpy(value, m_value.c_str(), n+1);
-	
-	// can fail on $end, ok
-	//	sscanf( m_value.c_str(),"%s %s",value, token);
-	break;
+        type = VariableT;
+        // Format 01010token
+        std::string t;
+        int n;
+        for (n=m_value.length()-1; n>=0; n--) {
+          if ( (m_value[n]>=48) && (m_value[n]<=57) ) {
+            memcpy(token,t.c_str(),t.length());
+            token[t.length()]=0;
+            break;
+          }          
+          if ( ! isspace( m_value[n] )) {
+            t += m_value[n];
+          }
+        }
+        memcpy(value, m_value.c_str(), n+1);
+        
+        // can fail on $end, ok
+        //        sscanf( m_value.c_str(),"%s %s",value, token);
+        break;
       }
       else if ( m_value[n] == 'b' ) {
-	type = Opaque2PartT;
-	sscanf( m_value.c_str(),"%s %s",value, token);
-	break;
+        type = Opaque2PartT;
+        sscanf( m_value.c_str(),"%s %s",value, token);
+        break;
       }
     }
   }
@@ -201,7 +201,7 @@ struct VCDValDef : public VCDBase {
   VCDValDef( std::string& v )
     :VCDBase(v),type(TagT){parse();}
 
-  void parse() {	
+  void parse() {        
 
     if ( m_value.find("$var") != std::string::npos ) {
       type = VariableT;
@@ -244,8 +244,8 @@ void replaceTokens( std::vector<VCDValue> & values, std::vector<VCDValDef> & def
   for ( vit=values.begin(); vit!=values.end(); vit++) {
     for ( dit=defs.begin(); dit!=defs.end(); dit++) {
       if ( (*vit).token == (*dit).old_token ) {
-	strcpy( (*vit).token, (*dit).token );
-	break;
+        strcpy( (*vit).token, (*dit).token );
+        break;
       }
     }
   }
@@ -277,13 +277,13 @@ public:
       getline(  m_file, line );
       printf("%s\n", line.c_str() );
       if ( line.find("$timescale") != std::string::npos ) {
-	printf("Found the timescale !!");
+        printf("Found the timescale !!");
       }
       if ( line.find("$scope") != std::string::npos ) {
-	done = true;
+        done = true;
       }
       else {
-	header += line + "\n";
+        header += line + "\n";
       }
     }
     printf("Header = %s\n", header.c_str() );    
@@ -295,10 +295,10 @@ public:
       getline( m_file, line );
       printf("%s\n", line.c_str() );
       if ( ( line.find("$enddefinitions" ) != std::string::npos ) ) {
-	done = true;
+        done = true;
       }
       else {
-	val_defs.push_back(VCDValDef(line));
+        val_defs.push_back(VCDValDef(line));
       }
     }
 
@@ -310,21 +310,21 @@ public:
       getline( m_file, line );
       printf("%s\n", line.c_str() );
       if ( ( line.find("$dumpvars" ) != std::string::npos ) ) {
-	ivfound = true;
-	done = true;
+        ivfound = true;
+        done = true;
       }
     }
     if ( ivfound ) {
       done = false;
       while ( ! done &&  ! m_file.eof() ) {  
-	getline( m_file, line );
-	printf("%s\n", line.c_str() );
-	if ( ( line.find("$end" ) != std::string::npos ) ) {
-	  done = true;
-	}
-	else {
-	  init_values.push_back(VCDValue(line) );
-	}
+        getline( m_file, line );
+        printf("%s\n", line.c_str() );
+        if ( ( line.find("$end" ) != std::string::npos ) ) {
+          done = true;
+        }
+        else {
+          init_values.push_back(VCDValue(line) );
+        }
       }      
     }
     replaceTokens( init_values, val_defs );
@@ -336,18 +336,18 @@ public:
       getline( m_file, line );
       printf("%s\n", line.c_str() );
       if ( ( line.find("$dumpoff" ) != std::string::npos ) ) {
-	done = true;
+        done = true;
       }
       else {
-	VCDValue v(line);
-	if ( v.type == TimeT ) {
-	  std::vector<VCDValue> vv;
-	  vv.push_back(v);
-	  time.push_back( vv );
-	}
-	else if ( v.type != JunkT ) {
-	  time.back().push_back( v );
-	}
+        VCDValue v(line);
+        if ( v.type == TimeT ) {
+          std::vector<VCDValue> vv;
+          vv.push_back(v);
+          time.push_back( vv );
+        }
+        else if ( v.type != JunkT ) {
+          time.back().push_back( v );
+        }
       }
     }
     for ( int n=0; n<time.size(); n++ ) {
@@ -355,8 +355,8 @@ public:
     }
 
     if ( header.empty() ||
-	 val_defs.empty() ||
-	 time.empty() ) {
+         val_defs.empty() ||
+         time.empty() ) {
       std::string err("Invalid VCD file format ");
       err += m_filename;
       throw err;
@@ -371,11 +371,11 @@ public:
     // If there are name collisions, correct them with a post fix
     for( n=0; n<val_defs.size(); n++ ) { 
       for(  m=0; m<p->val_defs.size(); m++ ) { 
-	if ( val_defs[n].type == VariableT ) {
-	  if ( val_defs[n].name == p->val_defs[m].name ) {
-	    p->val_defs[m].name += "_Mrg";
-	  }
-	}
+        if ( val_defs[n].type == VariableT ) {
+          if ( val_defs[n].name == p->val_defs[m].name ) {
+            p->val_defs[m].name += "_Mrg";
+          }
+        }
       }
     }
     for(  m=0; m<p->val_defs.size(); m++ ) { 
@@ -397,21 +397,21 @@ public:
     for( t=p->time.begin(); t!=p->time.end(); t++ ) { 
       bool inserted=false;
       for( ts=time.begin(); ts!=time.end(); ts++ ) { 
-	if ( (*t).begin()[0].time < (*ts).begin()[0].time ) {
-	  time.insert( ts, (*t) );
-	  inserted = true;
-	  break;
-	}      
-	else if ( (*t).begin()[0].time == (*ts).begin()[0].time ) {
-	  for (unsigned int u=1; u<(*t).size(); u++ ) {
-	    (*ts).push_back( (*t)[u] );
-	  }
-	  inserted = true;
-	  break;
-	}      
+        if ( (*t).begin()[0].time < (*ts).begin()[0].time ) {
+          time.insert( ts, (*t) );
+          inserted = true;
+          break;
+        }      
+        else if ( (*t).begin()[0].time == (*ts).begin()[0].time ) {
+          for (unsigned int u=1; u<(*t).size(); u++ ) {
+            (*ts).push_back( (*t)[u] );
+          }
+          inserted = true;
+          break;
+        }      
       }
       if ( ! inserted ) {
-	time.push_back( (*t) );
+        time.push_back( (*t) );
       }
     }
 
@@ -449,7 +449,7 @@ formatOutput(  VcdParser * parser, std::fstream & out )
 
   // Version
   out << "$version" << std::endl;  
-  out << "	    CPI VCD Merged File Event Dumper V1.0" << std::endl;
+  out << "            CPI VCD Merged File Event Dumper V1.0" << std::endl;
   out << "$end" << std::endl;  
   
   // Timescale

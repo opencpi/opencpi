@@ -48,14 +48,14 @@ namespace CPI {
        */
 
       WorkerThread (bool synchronous = false)
-	throw (std::string);
+        throw (std::string);
 
       /*
        * Destructor. Stops the worker thread.
        */
 
       ~WorkerThread ()
-	throw ();
+        throw ();
 
       /**
        * Submit a job.  If the worker thread is currently busy, this blocks
@@ -67,7 +67,7 @@ namespace CPI {
        */
 
       void start (void (*job) (void *), void * opaque)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Block until the currently running job is complete (i.e., its
@@ -75,7 +75,7 @@ namespace CPI {
        */
 
       void wait ()
-	throw (std::string);
+        throw (std::string);
 
       /** \cond */
 
@@ -96,13 +96,13 @@ namespace CPI {
        */
 
       struct ThreadData {
-	ThreadData ()
-	  throw (std::string);
-	bool terminate;
-	void (*job) (void *);
-	void * opaque;
-	CPI::OS::Semaphore jobPosted;
-	CPI::OS::Semaphore jobComplete;
+        ThreadData ()
+          throw (std::string);
+        bool terminate;
+        void (*job) (void *);
+        void * opaque;
+        CPI::OS::Semaphore jobPosted;
+        CPI::OS::Semaphore jobComplete;
       };
       /** \endcond */
 

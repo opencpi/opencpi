@@ -271,10 +271,10 @@ namespace CPI {
 
       // This port is externally connected
       enum ExternalConnectState {
-	NotExternal,
-	WaitingForUpdate,
-	WaitingForShadowBuffer,
-	DefinitionComplete
+        NotExternal,
+        WaitingForUpdate,
+        WaitingForShadowBuffer,
+        DefinitionComplete
       };
       ExternalConnectState m_externalState;
 
@@ -365,8 +365,8 @@ namespace CPI {
        * get buffer offsets to dependent data
        *********************************/
       struct ToFrom_ {
-	CPI::OS::uint64_t from_offset;
-	CPI::OS::uint64_t to_offset;
+        CPI::OS::uint64_t from_offset;
+        CPI::OS::uint64_t to_offset;
       };
       typedef ToFrom_ ToFrom;
       void getOffsets( CPI::OS::uint32_t to_base_offset, CPI::Util::VList& offsets );
@@ -379,7 +379,7 @@ namespace CPI {
       DataTransfer::SmemServices* getRealShemServices();
       DataTransfer::SmemServices* getShadowShemServices();
       DataTransfer::SmemServices* getLocalShemServices();
-      CPI::OS::uint32_t			    getMailbox();
+      CPI::OS::uint32_t                            getMailbox();
 
       /**********************************
        * Get this source port's control structure
@@ -451,7 +451,7 @@ namespace CPI {
     /**************************************
      * Our mailbox
      ***************************************/
-    inline CPI::OS::uint32_t	Port::getMailbox(){return m_mailbox;}
+    inline CPI::OS::uint32_t        Port::getMailbox(){return m_mailbox;}
 
   }
 }

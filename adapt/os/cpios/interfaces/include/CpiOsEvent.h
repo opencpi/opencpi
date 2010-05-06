@@ -67,14 +67,14 @@ namespace CPI {
        */
 
       Event (bool initial = false)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
        */
 
       ~Event ()
-	throw ();
+        throw ();
 
       /**
        * \brief Sets the event to the signaled state.
@@ -84,7 +84,7 @@ namespace CPI {
        */
 
       void set ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * \brief Wait for the event to be signaled.
@@ -103,7 +103,7 @@ namespace CPI {
        */
 
       void wait ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * \brief Timed wait for the event to be signaled.
@@ -124,7 +124,7 @@ namespace CPI {
        */
 
       bool wait (unsigned int timeout)
-	throw (std::string);
+        throw (std::string);
 
     private:
       CPI::OS::uint64_t m_osOpaque[12];

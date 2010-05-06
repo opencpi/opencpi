@@ -54,7 +54,7 @@ CPI::OS::ProcessManager::ProcessManager ()
 }
 
 CPI::OS::ProcessManager::ProcessManager (const std::string & executable,
-					 const ParameterList & parameters)
+                                         const ParameterList & parameters)
   throw (std::string)
 {
   cpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (PROCESS_INFORMATION)> ()));
@@ -75,7 +75,7 @@ CPI::OS::ProcessManager::~ProcessManager ()
 
 void
 CPI::OS::ProcessManager::start (const std::string & executable,
-				const ParameterList & parameters)
+                                const ParameterList & parameters)
   throw (std::string)
 {
   PROCESS_INFORMATION & pi = o2pi (m_osOpaque);
@@ -122,12 +122,12 @@ CPI::OS::ProcessManager::start (const std::string & executable,
     }
     else {
       for (std::string::size_type pos = 0; pos < parLen; pos++) {
-	if (par[pos] == '\"' ||
-	    (par[pos] == '\\' && pos+1 < parLen && par[pos+1] == '\"') ||
-	    (par[pos] == '\\' && pos+1 == parLen)) {
-	  commandLine += '\\';
-	}
-	commandLine += par[pos];
+        if (par[pos] == '\"' ||
+            (par[pos] == '\\' && pos+1 < parLen && par[pos+1] == '\"') ||
+            (par[pos] == '\\' && pos+1 == parLen)) {
+          commandLine += '\\';
+        }
+        commandLine += par[pos];
       }
     }
 
@@ -160,10 +160,10 @@ CPI::OS::ProcessManager::start (const std::string & executable,
   si.lpReserved2 = 0;
 
   bool res = !!CreateProcess (executable.c_str (), cl,
-			      0, 0, 0,
-			      CREATE_NEW_PROCESS_GROUP,
-			      0, 0, &si,
-			      &pi);
+                              0, 0, 0,
+                              CREATE_NEW_PROCESS_GROUP,
+                              0, 0, &si,
+                              &pi);
 
   delete cl;
 

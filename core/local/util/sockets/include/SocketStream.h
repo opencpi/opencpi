@@ -1,7 +1,7 @@
 /**
- **	\file SocketStream.h
- **	\date  2008-12-20
- **	\author grymse@alhem.net
+ **        \file SocketStream.h
+ **        \date  2008-12-20
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom
@@ -47,16 +47,16 @@ class TcpSocket;
 class SocketStream : public IStream
 {
 public:
-	SocketStream(ISocketHandler& h, TcpSocket *sock);
+        SocketStream(ISocketHandler& h, TcpSocket *sock);
 
-	size_t IStreamRead(char *buf, size_t max_sz);
+        size_t IStreamRead(char *buf, size_t max_sz);
 
-	void IStreamWrite(const char *buf, size_t sz);
+        void IStreamWrite(const char *buf, size_t sz);
 
 private:
-	ISocketHandler& m_handler;
-	TcpSocket *m_socket;
-	socketuid_t m_socket_uid;
+        ISocketHandler& m_handler;
+        TcpSocket *m_socket;
+        socketuid_t m_socket_uid;
 };
 
 #ifdef SOCKETS_NAMESPACE

@@ -229,60 +229,60 @@ namespace CPI {
 
       class DebugLogger : virtual public Logger {
       public:
-	/** \cond */
-	class DebugLoggerBuf : public LogBuf {
-	public:
-	  DebugLoggerBuf (Logger::LogBuf &);
-	  ~DebugLoggerBuf ();
-	
-	  void setLogLevel (unsigned short);
-	  void setProducerId (const char *);
-	  void setProducerName (const char *);
-	  void setVerbosity (unsigned int);
+        /** \cond */
+        class DebugLoggerBuf : public LogBuf {
+        public:
+          DebugLoggerBuf (Logger::LogBuf &);
+          ~DebugLoggerBuf ();
+        
+          void setLogLevel (unsigned short);
+          void setProducerId (const char *);
+          void setProducerName (const char *);
+          void setVerbosity (unsigned int);
 
-	protected:
-	  int sync ();
-	  int_type overflow (int_type = std::streambuf::traits_type::eof ());
-	  std::streamsize xsputn (const char *, std::streamsize);
+        protected:
+          int sync ();
+          int_type overflow (int_type = std::streambuf::traits_type::eof ());
+          std::streamsize xsputn (const char *, std::streamsize);
 
-	protected:
-	  bool m_first;
-	  bool m_locked;
-	  Logger::LogBuf & m_out;
-	  bool m_shouldprint;
-	  std::string m_producerName;
-	  unsigned int m_verbosity;
-	  CPI::OS::Mutex m_lock;
-	};
-	/** \endcond */
+        protected:
+          bool m_first;
+          bool m_locked;
+          Logger::LogBuf & m_out;
+          bool m_shouldprint;
+          std::string m_producerName;
+          unsigned int m_verbosity;
+          CPI::OS::Mutex m_lock;
+        };
+        /** \endcond */
 
       public:
-	/**
-	 * Constructor.
-	 *
-	 * \param[in] delegatee The logger to delegate debug messages to,
-	 *                      if the message matches the criteria configured
-	 *                      via CPI::Logger::debug().
-	 */
+        /**
+         * Constructor.
+         *
+         * \param[in] delegatee The logger to delegate debug messages to,
+         *                      if the message matches the criteria configured
+         *                      via CPI::Logger::debug().
+         */
 
-	DebugLogger (Logger & delegatee);
+        DebugLogger (Logger & delegatee);
 
-	/**
-	 * Destructor.
-	 */
+        /**
+         * Destructor.
+         */
 
-	~DebugLogger ();
+        ~DebugLogger ();
 
-	/**
-	 * Set the current message's verbosity level.  This function
-	 * shall not be called directly.  It is only called from the
-	 * output operator for CPI::Logger::Verbosity.
-	 */
+        /**
+         * Set the current message's verbosity level.  This function
+         * shall not be called directly.  It is only called from the
+         * output operator for CPI::Logger::Verbosity.
+         */
 
-	void setVerbosity (unsigned int level);
+        void setVerbosity (unsigned int level);
 
       protected:
-	DebugLoggerBuf m_obuf;
+        DebugLoggerBuf m_obuf;
       };
 
     }
@@ -301,15 +301,15 @@ namespace CPI {
 
       class DebugLogger {
       public:
-	/**
-	 * Constructor.
-	 *
-	 * \param[in] delegatee This parameter is ignored.  It is present
-	 *                      so that code does not need to be modified
-	 *                      when debugging is enabled or disabled.
-	 */
+        /**
+         * Constructor.
+         *
+         * \param[in] delegatee This parameter is ignored.  It is present
+         *                      so that code does not need to be modified
+         *                      when debugging is enabled or disabled.
+         */
 
-	DebugLogger (Logger & delegatee);
+        DebugLogger (Logger & delegatee);
       };
 
     }
@@ -350,7 +350,7 @@ CPI::Logger::DebugEnabled::DebugLogger::setVerbosity (unsigned int v)
 inline
 CPI::Logger::DebugEnabled::DebugLogger &
 operator<< (CPI::Logger::DebugEnabled::DebugLogger & l,
-	    CPI::Logger::Level::LwLogLevel)
+            CPI::Logger::Level::LwLogLevel)
 {
   cpiAssert (0);
   return l;
@@ -359,7 +359,7 @@ operator<< (CPI::Logger::DebugEnabled::DebugLogger & l,
 inline
 CPI::Logger::DebugEnabled::DebugLogger &
 operator<< (CPI::Logger::DebugEnabled::DebugLogger & l,
-	    const CPI::Logger::LogLevel &)
+            const CPI::Logger::LogLevel &)
 {
   cpiAssert (0);
   return l;
@@ -368,7 +368,7 @@ operator<< (CPI::Logger::DebugEnabled::DebugLogger & l,
 inline
 CPI::Logger::DebugEnabled::DebugLogger &
 operator<< (CPI::Logger::DebugEnabled::DebugLogger & l,
-	    const CPI::Logger::ProducerName & producerName)
+            const CPI::Logger::ProducerName & producerName)
 {
   l.setProducerName (producerName.m_producerName);
   return l;
@@ -377,7 +377,7 @@ operator<< (CPI::Logger::DebugEnabled::DebugLogger & l,
 inline
 CPI::Logger::DebugEnabled::DebugLogger &
 operator<< (CPI::Logger::DebugEnabled::DebugLogger & l,
-	    const CPI::Logger::Verbosity & v)
+            const CPI::Logger::Verbosity & v)
 {
   l.setVerbosity (v.m_verbosity);
   return l;
@@ -486,7 +486,7 @@ operator<< (CPI::Logger::DebugDisabled::DebugLogger & l, const void *)
 inline
 CPI::Logger::DebugDisabled::DebugLogger &
 operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
-	    std::ios & (*) (std::ios &))
+            std::ios & (*) (std::ios &))
 {
   return l;
 }
@@ -494,7 +494,7 @@ operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
 inline
 CPI::Logger::DebugDisabled::DebugLogger &
 operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
-	    std::ostream & (*) (std::ostream &))
+            std::ostream & (*) (std::ostream &))
 {
   return l;
 }
@@ -523,7 +523,7 @@ operator<< (CPI::Logger::DebugDisabled::DebugLogger & l, const std::string &)
 inline
 CPI::Logger::DebugDisabled::DebugLogger &
 operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
-	    CPI::Logger::Level::LwLogLevel)
+            CPI::Logger::Level::LwLogLevel)
 {
   cpiAssert (0);
   return l;
@@ -532,7 +532,7 @@ operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
 inline
 CPI::Logger::DebugDisabled::DebugLogger &
 operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
-	    const CPI::Logger::LogLevel &)
+            const CPI::Logger::LogLevel &)
 {
   cpiAssert (0);
   return l;
@@ -541,7 +541,7 @@ operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
 inline
 CPI::Logger::DebugDisabled::DebugLogger &
 operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
-	    const CPI::Logger::ProducerName &)
+            const CPI::Logger::ProducerName &)
 {
   return l;
 }
@@ -549,7 +549,7 @@ operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
 inline
 CPI::Logger::DebugDisabled::DebugLogger &
 operator<< (CPI::Logger::DebugDisabled::DebugLogger & l,
-	    const CPI::Logger::Verbosity &)
+            const CPI::Logger::Verbosity &)
 {
   return l;
 }

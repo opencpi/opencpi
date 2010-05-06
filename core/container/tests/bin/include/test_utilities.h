@@ -65,9 +65,9 @@ class SignalHandler {
       if ( once ) return;
       printf("Got a signal, number = %d\n", signum );
       if ( m_cb ) {
-	once = true;
-	CPI::Time::Emit::shutdown();
-	m_cb(signum);
+        once = true;
+        CPI::Time::Emit::shutdown();
+        m_cb(signum);
       }
     }
 
@@ -125,42 +125,42 @@ CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
 #define PORT_4 4
 #define PORT_5 5
 
-#define CATCH_ALL_RETHROW( msg )					\
-  catch ( int& ii ) {							\
-    TUPRINTF("gpp: Caught an int exception while %s = %d\n", msg,ii );	\
-    throw;								\
-  }									\
-  catch( std::string& stri ) {						\
+#define CATCH_ALL_RETHROW( msg )                                        \
+  catch ( int& ii ) {                                                        \
+    TUPRINTF("gpp: Caught an int exception while %s = %d\n", msg,ii );        \
+    throw;                                                                \
+  }                                                                        \
+  catch( std::string& stri ) {                                                \
     TUPRINTF("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
-    throw;								\
-  }									\
-  catch ( CPI::Util::EmbeddedException& eex ) {				\
-    TUPRINTF(" gpp: Caught an embedded exception while %s:\n", msg);	\
-    TUPRINTF( " error number = %d", eex.m_errorCode );			\
-    TUPRINTF( " aux info = %s\n", eex.m_auxInfo.c_str() );	        \
-    throw;								\
-  }									\
-  catch( ... ) {							\
-    TUPRINTF("gpp: Caught an unknown exception while %s\n",msg );	\
-    throw;								\
+    throw;                                                                \
+  }                                                                        \
+  catch ( CPI::Util::EmbeddedException& eex ) {                                \
+    TUPRINTF(" gpp: Caught an embedded exception while %s:\n", msg);        \
+    TUPRINTF( " error number = %d", eex.m_errorCode );                        \
+    TUPRINTF( " aux info = %s\n", eex.m_auxInfo.c_str() );                \
+    throw;                                                                \
+  }                                                                        \
+  catch( ... ) {                                                        \
+    TUPRINTF("gpp: Caught an unknown exception while %s\n",msg );        \
+    throw;                                                                \
   }
 
 
 
-#define CHECK_WCI_CONROL_ERROR(err, op, ca, w)				\
-  if ( err != WCI_SUCCESS ) {						\
+#define CHECK_WCI_CONROL_ERROR(err, op, ca, w)                                \
+  if ( err != WCI_SUCCESS ) {                                                \
     std::string err_str = w.worker->getLastControlError(); \
     TUPRINTF("ERROR: WCI control(%d) returned %d, error string = %s\n", op, err, err_str.c_str() ); \
-    throw std::string("WCI control error");				\
+    throw std::string("WCI control error");                                \
   }
 
 
 
-#define CHECK_WCI_WRITE_ERROR(err, ca, w )				\
-  if ( err != WCI_SUCCESS ) {						\
+#define CHECK_WCI_WRITE_ERROR(err, ca, w )                                \
+  if ( err != WCI_SUCCESS ) {                                                \
     std::string err_str = w.worker->getLastControlError(); \
     TUPRINTF("ERROR: WCI write returned %d, error string = %s\n", err, err_str.c_str() ); \
-    throw std::string("WCI Write error");				\
+    throw std::string("WCI Write error");                                \
   }
 
 namespace CPI {
@@ -176,10 +176,10 @@ namespace CPI {
     void createPorts( std::vector<CApp>& ca, std::vector<CWorker*>& workers );
     void connectWorkers(std::vector<CApp>& ca, std::vector<CWorker*>& workers );
     std::vector<CApp> createContainers( std::vector<char*>& eps, 
-					DataTransfer::EventManager*& event_manager, bool use_polling );
+                                        DataTransfer::EventManager*& event_manager, bool use_polling );
 
     std::vector<CApp> createContainers( std::vector<ContainerDesc>& eps, 
-					DataTransfer::EventManager*& event_manager, bool use_polling );
+                                        DataTransfer::EventManager*& event_manager, bool use_polling );
 
     struct DThreadData {
       bool run;

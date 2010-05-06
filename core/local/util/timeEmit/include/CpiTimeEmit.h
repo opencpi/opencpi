@@ -90,55 +90,55 @@
 
 #ifdef CPI_TIME_EMIT_SUPPORT
 
-#define CPI_EMIT_REGISTER(  name )	\
+#define CPI_EMIT_REGISTER(  name )        \
   static CPI::Time::Emit::RegisterEvent re(name);
 
-#define CPI_EMIT_REGISTER_FULL(  name, dtype, width, etype )	\
+#define CPI_EMIT_REGISTER_FULL(  name, dtype, width, etype )        \
   static CPI::Time::Emit::RegisterEvent re(name,width,etype,dtype);
 
-#define CPI_EMIT_REGISTER_P( p )	\
+#define CPI_EMIT_REGISTER_P( p )        \
   static CPI::Time::Emit::RegisterEvent re(p);
 
 // The following macros are used to emit events within a class that has inherited from Time::Emit
 // They assume that they have access to "this" and they will preserve the class heirarchy information.
 
-#define CPI_EMIT_HERE		\
+#define CPI_EMIT_HERE                \
 { \
   CPI_EMIT_REGISTER_FULL( __FILE__ "_line_"  TOSTRING(__LINE__), CPI::Time::Emit::u, 1, CPI::Time::Emit::Transient); \
-  CPI::Time::Emit::getSEmit().emit(re);			\
+  CPI::Time::Emit::getSEmit().emit(re);                        \
 }
-#define CPI_EMIT_HERE_		\
+#define CPI_EMIT_HERE_                \
 { \
   CPI_EMIT_REGISTER_FULL( __FILE__ "_line_"  TOSTRING(__LINE__), CPI::Time::Emit::u, 1, CPI::Time::Emit::Transient); \
-  this->emit(re);		\
+  this->emit(re);                \
 }
 
-#define CPI_EMIT_REGISTERED( re,v )		\
+#define CPI_EMIT_REGISTERED( re,v )                \
 { \
-  CPI::Time::Emit::getSEmit().emit(re,v);	\
+  CPI::Time::Emit::getSEmit().emit(re,v);        \
 }
-#define CPI_EMIT_REGISTERED_( re,v )		\
+#define CPI_EMIT_REGISTERED_( re,v )                \
 { \
-  this->emit(re,v);				\
+  this->emit(re,v);                                \
 }
 
 #define CPI_EMIT( name ) \
 { \
   CPI_EMIT_REGISTER_FULL( name, CPI::Time::Emit::u, 1, CPI::Time::Emit::Transient); \
-  CPI::Time::Emit::getSEmit().emit(re);			\
+  CPI::Time::Emit::getSEmit().emit(re);                        \
 }
 #define CPI_EMIT_( name ) \
 { \
   CPI_EMIT_REGISTER_FULL( name, CPI::Time::Emit::u, 1, CPI::Time::Emit::Transient); \
-  this->emit(re);	   \
+  this->emit(re);           \
 }
 
-#define CPI_EMIT_STATE( name, state )			\
+#define CPI_EMIT_STATE( name, state )                        \
 { \
   CPI_EMIT_REGISTER_FULL( name, CPI::Time::Emit::u, 1, CPI::Time::Emit::Value); \
   CPI::Time::Emit::getSEmit().emit(re,static_cast<CPI::OS::uint64_t>(state)); \
 }
-#define CPI_EMIT_STATE_( name, state )		\
+#define CPI_EMIT_STATE_( name, state )                \
 { \
   CPI_EMIT_REGISTER_FULL( name, CPI::Time::Emit::u, 1, CPI::Time::Emit::Value); \
   this->emit(re,static_cast<CPI::OS::uint64_t>(state)); \
@@ -147,55 +147,55 @@
 #define CPI_EMIT_PVALUE_( p ) \
 { \
   CPI_EMIT_REGISTER_P( p ) \
-  this->emit(re, p);	\
+  this->emit(re, p);        \
 }
 
 #define CPI_EMIT_PVALUE( p ) \
 { \
   CPI_EMIT_REGISTER_P( p ) \
-  CPI::Time::Emit::getSEmit().emit(re, p);	\
+  CPI::Time::Emit::getSEmit().emit(re, p);        \
 }
 
 
 #define CPI_EMIT_UINT64_( name, value ) \
 { \
   CPI_EMIT_REGISTER_FULL(name,CPI::Time::Emit::u,64,CPI::Time::Emit::Value); \
-  this->emit(re,static_cast<CPI::OS::uint64_t>(value));			\
+  this->emit(re,static_cast<CPI::OS::uint64_t>(value));                        \
 }
 #define CPI_EMIT_UINT64( name, value ) \
 { \
   CPI_EMIT_REGISTER_FULL(name,CPI::Time::Emit::u,64,CPI::Time::Emit::Value); \
-  CPI::Time::Emit::getSEmit().emit(re,static_cast<CPI::OS::uint64_t>(value));			\
+  CPI::Time::Emit::getSEmit().emit(re,static_cast<CPI::OS::uint64_t>(value));                        \
 }
 #define CPI_EMIT_UINT32_( name, value ) \
 { \
   CPI_EMIT_REGISTER_FULL(name,CPI::Time::Emit::u,32,CPI::Time::Emit::Value); \
-  this->emit(re,static_cast<CPI::OS::uint64_t>(value));			\
+  this->emit(re,static_cast<CPI::OS::uint64_t>(value));                        \
 }
 #define CPI_EMIT_UINT32( name, value ) \
 { \
   CPI_EMIT_REGISTER_FULL(name,CPI::Time::Emit::u,32,CPI::Time::Emit::Value); \
-  CPI::Time::Emit::getSEmit().emit(re,static_cast<CPI::OS::uint64_t>(value));			\
+  CPI::Time::Emit::getSEmit().emit(re,static_cast<CPI::OS::uint64_t>(value));                        \
 }
 #define CPI_EMIT_UINT16_( name, value ) \
 { \
   CPI_EMIT_REGISTER_FULL(name,CPI::Time::Emit::u,16,CPI::Time::Emit::Value); \
-  this->emit(re,static_cast<CPI::OS::uint64_t>(value));			\
+  this->emit(re,static_cast<CPI::OS::uint64_t>(value));                        \
 }
 #define CPI_EMIT_UINT16( name, value ) \
 { \
   CPI_EMIT_REGISTER_FULL(name,CPI::Time::Emit::u,16,CPI::Time::Emit::Value); \
-  CPI::Time::Emit::getSEmit().emit(re,static_cast<CPI::OS::uint64_t>(value));			\
+  CPI::Time::Emit::getSEmit().emit(re,static_cast<CPI::OS::uint64_t>(value));                        \
 }
 #define CPI_EMIT_UINT8_( name, value ) \
 { \
   CPI_EMIT_REGISTER_FULL(name,CPI::Time::Emit::u,8,CPI::Time::Emit::Value); \
-  this->emit(re,static_cast<CPI::OS::uint64_t>(value));			\
+  this->emit(re,static_cast<CPI::OS::uint64_t>(value));                        \
 }
 #define CPI_EMIT_UINT8( name, value ) \
 { \
   CPI_EMIT_REGISTER_FULL(name,CPI::Time::Emit::u,8,CPI::Time::Emit::Value); \
-  CPI::Time::Emit::getSEmit().emit(re,static_cast<CPI::OS::uint64_t>(value));			\
+  CPI::Time::Emit::getSEmit().emit(re,static_cast<CPI::OS::uint64_t>(value));                        \
 }
 
 #else
@@ -246,44 +246,44 @@ namespace CPI {
       typedef CPI::OS::uint64_t Time;
 
       enum EventType {
-	Transient,
-	State,
-	Value
+        Transient,
+        State,
+        Value
       };
 
       // These types are used by the formatter class to determine how to 
       // display the event values.
       enum DataType {
-	u,   // unsigned
-	i,   // signed
-	d,   // double
-	c    // character
+        u,   // unsigned
+        i,   // signed
+        d,   // double
+        c    // character
       };
 
       struct QConfig {
-	unsigned int size;
-	bool         stopWhenFull;
+        unsigned int size;
+        bool         stopWhenFull;
       };
       
       enum EventTriggerRole {
 
-	// This allows anyone with this role to trigger the collection of events in the local Q.
-	// The first event with this role starts collection.
-	LocalQGroupTrigger,  
+        // This allows anyone with this role to trigger the collection of events in the local Q.
+        // The first event with this role starts collection.
+        LocalQGroupTrigger,  
 
-	// This role allows an event to start event collection.  If more than 1 event use this role,
-	// The last event with this role "restarts" event collection in the local Q.  
-	LocalQMasterTrigger,
+        // This role allows an event to start event collection.  If more than 1 event use this role,
+        // The last event with this role "restarts" event collection in the local Q.  
+        LocalQMasterTrigger,
 
-	// This allows anyone with this role to trigger the collection of events in all the Q's
-	// The first event with this role starts collection.
-	GlobalQGroupTrigger,
+        // This allows anyone with this role to trigger the collection of events in all the Q's
+        // The first event with this role starts collection.
+        GlobalQGroupTrigger,
 
-	// This role allows an event to start event collection.  If more than 1 event use this role,
-	// The last event with this role "restarts" event collection in all the Q's.  
-	GlobalQMasterTrigger,
+        // This role allows an event to start event collection.  If more than 1 event use this role,
+        // The last event with this role "restarts" event collection in all the Q's.  
+        GlobalQMasterTrigger,
 
-	NoTrigger
+        NoTrigger
       };
       
       // Forward references
@@ -302,52 +302,52 @@ namespace CPI {
        */
       class RegisterEvent {
       public:
-	RegisterEvent( const char* event_name,
-		       int width=1, 
-		       EventType type=CPI::Time::Emit::Transient,
-		       DataType dt=CPI::Time::Emit::u
-		       );
-	RegisterEvent( CPI::Util::PValue& pvstr );
-	static int registerEvent( const char* event_name,
-			   int width=1, 
-			   EventType type=CPI::Time::Emit::Transient,
-			   DataType dt=CPI::Time::Emit::u
-			   );
+        RegisterEvent( const char* event_name,
+                       int width=1, 
+                       EventType type=CPI::Time::Emit::Transient,
+                       DataType dt=CPI::Time::Emit::u
+                       );
+        RegisterEvent( CPI::Util::PValue& pvstr );
+        static int registerEvent( const char* event_name,
+                           int width=1, 
+                           EventType type=CPI::Time::Emit::Transient,
+                           DataType dt=CPI::Time::Emit::u
+                           );
 
-	operator EventId () const {return m_eid;}
+        operator EventId () const {return m_eid;}
 
       private:
-	EventId m_eid;
+        EventId m_eid;
 
-	CPI::OS::Mutex m_mutex;
-	
+        CPI::OS::Mutex m_mutex;
+        
       };
 
       // This is the base class for the time source that gets used by the emit class for time stamping events.
       class TimeSource {
       public:
-	TimeSource();
-	virtual Time getTime()=0;
-	virtual ~TimeSource(){}
+        TimeSource();
+        virtual Time getTime()=0;
+        virtual ~TimeSource(){}
       };
 
       // This class uses "gettimeofday" to get the time tag
       class SimpleSystemTime : public TimeSource {
       public:
-	Time getTime();
+        Time getTime();
       private:
-	virtual ~SimpleSystemTime(){};
+        virtual ~SimpleSystemTime(){};
       };
 
       // This class uses both "gettimeofday" and the CPU free runnging clock to minimize the 
       // "call site" latency.
       class FastSystemTime : public TimeSource {
       public:
-	FastSystemTime();
-	Time getTime();
+        FastSystemTime();
+        Time getTime();
       private:
-	  int m_method;
-	  virtual ~FastSystemTime(){};
+          int m_method;
+          virtual ~FastSystemTime(){};
       };
       
 
@@ -355,24 +355,24 @@ namespace CPI {
        * This constructor is used by a top-level traceable object.
        */
       Emit( const char* class_name=NULL, 
-		 const char* instance_name=NULL, QConfig* config=NULL )
-	throw ( CPI::Util::EmbeddedException );
+                 const char* instance_name=NULL, QConfig* config=NULL )
+        throw ( CPI::Util::EmbeddedException );
 
       /*
        * This constructor is used by a top-level traceable object.
        */
       Emit( TimeSource& ts, const char* class_name=NULL, 
-		 const char* instance_name=NULL, QConfig* config=NULL )
-	throw ( CPI::Util::EmbeddedException );
+                 const char* instance_name=NULL, QConfig* config=NULL )
+        throw ( CPI::Util::EmbeddedException );
 
       /*
        * This constructor is used by sub-ordinate objects.
        */
       Emit( Emit* parent, const char* class_name=NULL, 
-		 const char* instance_name=NULL, QConfig* config=NULL )
-	throw ( CPI::Util::EmbeddedException ) ;
+                 const char* instance_name=NULL, QConfig* config=NULL )
+        throw ( CPI::Util::EmbeddedException ) ;
       ~Emit()
-	throw ( );
+        throw ( );
 
       // Header utility methods
       OwnerId addHeader( Emit* t );
@@ -398,23 +398,23 @@ namespace CPI {
       static Header& getHeader();
       // This mutex is used to protect the static header data
       static inline CPI::OS::Mutex& getGMutex() {
-	static CPI::OS::Mutex m_g_mutex(true);
-	return m_g_mutex;
+        static CPI::OS::Mutex m_g_mutex(true);
+        return m_g_mutex;
       }
 
       // Shutdown, deletes all global resources 
       static void shutdown()
-	throw ( );
+        throw ( );
 
     private:
 
       void pre_init( const char* class_name, 
-		const char* instance_name, 
-		QConfig* config )
-	throw ( CPI::Util::EmbeddedException );
+                const char* instance_name, 
+                QConfig* config )
+        throw ( CPI::Util::EmbeddedException );
 
       void init()
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
       // static class methods
       static Time getTime();
@@ -448,9 +448,9 @@ namespace CPI {
     public:
 
       enum DumpFormat {
-	CPIReadable,
-	CPIRaw,
-	VCDFormat
+        CPIReadable,
+        CPIRaw,
+        VCDFormat
       };
 
       EmitFormatter( DumpFormat df=CPIReadable  );
@@ -463,9 +463,9 @@ namespace CPI {
 
       // Utility format methods
       std::string formatEventString ( Emit::EventQEntry& eqe,
-				      Emit::Time time_ref );
+                                      Emit::Time time_ref );
       std::string formatEventStringRaw ( Emit::EventQEntry& eqe,
-					 Emit::Time time_ref );
+                                         Emit::Time time_ref );
 
       // Top level formatter methods
       std::ostream& formatDumpToStream( std::ostream& out );

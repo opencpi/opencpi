@@ -41,19 +41,19 @@ namespace CPI {
        */
 
       AutoWRLock (CPI::OS::RWLock & rwlock, bool locked = true)
-	throw (std::string);
+        throw (std::string);
 
       ~AutoWRLock ()
-	throw ();
+        throw ();
 
       void lock ()
-	throw (std::string);
+        throw (std::string);
 
       bool trylock ()
-	throw (std::string);
+        throw (std::string);
 
       void unlock ()
-	throw (std::string);
+        throw (std::string);
 
     private:
       bool m_locked;

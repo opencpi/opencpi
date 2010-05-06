@@ -24,7 +24,7 @@
  
      3/2005 - John Miller
      Initial version.   
-	     
+             
      5/18/2009 - John Miller
      Updated to support revised CP289U RCC specification.
 
@@ -50,9 +50,9 @@ namespace CPI {
 #ifdef WAS
       struct RCCWorkerContainer : public RCCContainer
       {
-	RCCWorkerContainer( Controller* controller );
-	private:
-	Controller* m_controller;
+        RCCWorkerContainer( Controller* controller );
+        private:
+        Controller* m_controller;
       };
 #endif
 
@@ -68,27 +68,27 @@ namespace CPI {
 
       public:
 
-	Controller( CPI::CP289::Container* c,
-		    const char * monitorIPAddress = 0 );
-	virtual ~Controller();
+        Controller( CPI::CP289::Container* c,
+                    const char * monitorIPAddress = 0 );
+        virtual ~Controller();
 
-	/**********************************
-	 * When a component  requests to run within the containers thread, the container calls
-	 * this method periodically to allow the s scheduled execution.  This method MUST NOT
-	 * BE BLOCKED.
-	 *********************************/      
-	bool run( DataTransfer::EventManager* event_manager );
+        /**********************************
+         * When a component  requests to run within the containers thread, the container calls
+         * this method periodically to allow the s scheduled execution.  This method MUST NOT
+         * BE BLOCKED.
+         *********************************/      
+        bool run( DataTransfer::EventManager* event_manager );
 
-	// Advance all ports 
-	void advanceAll( Worker * worker );
+        // Advance all ports 
+        void advanceAll( Worker * worker );
 
       protected:
 
-	CPI::OS::int32_t	
-	  markWorkersPolled( CPI::CP289::Worker* worker );
+        CPI::OS::int32_t        
+          markWorkersPolled( CPI::CP289::Worker* worker );
 
-	// Our component controller
-	CPI::CP289::Container * m_container;
+        // Our component controller
+        CPI::CP289::Container * m_container;
 
       };
     }

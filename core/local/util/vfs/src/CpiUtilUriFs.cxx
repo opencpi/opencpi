@@ -269,7 +269,7 @@ CPI::Util::Vfs::UriFs::rmdir (const std::string & fileName)
 
 CPI::Util::Vfs::Iterator *
 CPI::Util::Vfs::UriFs::list (const std::string & dir,
-			     const std::string & pattern)
+                             const std::string & pattern)
   throw (std::string)
 {
   CPI::Util::AutoWRLock lock (m_lock);
@@ -398,8 +398,8 @@ CPI::Util::Vfs::UriFs::close (std::ios * str)
 
 void
 CPI::Util::Vfs::UriFs::copy (const std::string & oldName,
-			     CPI::Util::Vfs::Vfs * destFs,
-			     const std::string & newName)
+                             CPI::Util::Vfs::Vfs * destFs,
+                             const std::string & newName)
   throw (std::string)
 {
   CPI::Util::AutoRDLock lock (m_lock);
@@ -422,8 +422,8 @@ CPI::Util::Vfs::UriFs::copy (const std::string & oldName,
 
 void
 CPI::Util::Vfs::UriFs::move (const std::string & oldName,
-			     CPI::Util::Vfs::Vfs * destFs,
-			     const std::string & newName)
+                             CPI::Util::Vfs::Vfs * destFs,
+                             const std::string & newName)
   throw (std::string)
 {
   CPI::Util::AutoRDLock lock (m_lock);
@@ -462,7 +462,7 @@ CPI::Util::Vfs::UriFs::remove (const std::string & fileName)
 
 CPI::Util::Vfs::Vfs *
 CPI::Util::Vfs::UriFs::findFs (const std::string & fileName,
-			       std::string & localName) const
+                               std::string & localName) const
   throw (std::string)
 {
   std::string absName = absoluteNameLocked (fileName);

@@ -1,6 +1,6 @@
 /** \file File.h
- **	\date  2005-04-25
- **	\author grymse@alhem.net
+ **        \date  2005-04-25
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -42,41 +42,41 @@ namespace SOCKETS_NAMESPACE {
 
 
 /** IFile implementation of a disk file. 
-	\ingroup file */
+        \ingroup file */
 class File : public IFile
 {
 public:
-	File();
-	/** convenience: calls fopen() */
-	File(const std::string& path, const std::string& mode);
-	~File();
+        File();
+        /** convenience: calls fopen() */
+        File(const std::string& path, const std::string& mode);
+        ~File();
 
-	bool fopen(const std::string& path, const std::string& mode);
-	void fclose() const;
+        bool fopen(const std::string& path, const std::string& mode);
+        void fclose() const;
 
-	size_t fread(char *, size_t, size_t) const;
-	size_t fwrite(const char *, size_t, size_t);
+        size_t fread(char *, size_t, size_t) const;
+        size_t fwrite(const char *, size_t, size_t);
 
-	char *fgets(char *, int) const;
-	void fprintf(const char *format, ...);
+        char *fgets(char *, int) const;
+        void fprintf(const char *format, ...);
 
-	off_t size() const;
-	bool eof() const;
+        off_t size() const;
+        bool eof() const;
 
-	void reset_read() const;
-	void reset_write();
+        void reset_read() const;
+        void reset_write();
 
-	const std::string& Path() const;
+        const std::string& Path() const;
 
 private:
-	File(const File& ) {} // copy constructor
-	File& operator=(const File& ) { return *this; } // assignment operator
+        File(const File& ) {} // copy constructor
+        File& operator=(const File& ) { return *this; } // assignment operator
 
-	std::string m_path;
-	std::string m_mode;
-	mutable FILE *m_fil;
-	mutable long m_rptr;
-	long m_wptr;
+        std::string m_path;
+        std::string m_mode;
+        mutable FILE *m_fil;
+        mutable long m_rptr;
+        long m_wptr;
 };
 
 

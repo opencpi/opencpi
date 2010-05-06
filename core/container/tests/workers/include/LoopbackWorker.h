@@ -38,16 +38,16 @@ struct LoopbackWorkerProperties_ {
 typedef struct LoopbackWorkerProperties_ LoopbackWorkerProperties;
 
 typedef enum  {
-	LB_Old_Input,
-	LB_New_Input
+        LB_Old_Input,
+        LB_New_Input
 }LB_MyWorkerState;
 
 struct LoopbackWorkerStaticMemory_ {
-	uint32_t startIndex;
+        uint32_t startIndex;
     LB_MyWorkerState state;
-	char overlap[100];
-	uint32_t overlapSize;
-	uint32_t longProperty;
+        char overlap[100];
+        uint32_t overlapSize;
+        uint32_t longProperty;
 };
 
 typedef struct LoopbackWorkerStaticMemory_ LoopbackWorkerStaticMemory;

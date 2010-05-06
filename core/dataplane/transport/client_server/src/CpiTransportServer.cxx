@@ -40,60 +40,60 @@ namespace CPI {
     public:
 
       NewCircuitListener( Server* server, ServerEventHandler* cb, Transport* transport )
-	:m_server(server),m_cb(cb),m_transport(transport),m_halfMCircuit(0){}
+        :m_server(server),m_cb(cb),m_transport(transport),m_halfMCircuit(0){}
 
 
       void newCircuitAvailable( Circuit* circuit )
       {
 
 #ifndef NDEBUG
-	printf("In NewCircuitListener::newCircuitAvailable, got a new circuit \n");
+        printf("In NewCircuitListener::newCircuitAvailable, got a new circuit \n");
 #endif
 
-	// We will block here until the circuit is ready
-	while ( 1 ) {
+        // We will block here until the circuit is ready
+        while ( 1 ) {
 
-	  if ( circuit->ready() ) {
-	    circuit->initializeDataTransfers();
-	    break;
-	  }
-	  else {
-	    circuit->updateConnection( NULL, 0 );
-	  }
+          if ( circuit->ready() ) {
+            circuit->initializeDataTransfers();
+            break;
+          }
+          else {
+            circuit->updateConnection( NULL, 0 );
+          }
 
-	  // We need to make sure to give the transport time to perform
-	  // any houskeeping that it needs to do.
-	  m_transport->dispatch();
+          // We need to make sure to give the transport time to perform
+          // any houskeeping that it needs to do.
+          m_transport->dispatch();
 
-	  CPI::OS::sleep(0);
-	}
+          CPI::OS::sleep(0);
+        }
 
 
-	// If we have a complete circuit, hand it back to the application
-	if ( m_halfMCircuit.getElementCount() == 0  ) {
-	  m_halfMCircuit.insert( circuit );
-	}
-	else {
-	  Circuit *c1;
-	  for ( unsigned int n=0; n<m_halfMCircuit.getElementCount(); n++ ) {
-	    c1 = static_cast<Circuit*>(m_halfMCircuit.getEntry(n));
+        // If we have a complete circuit, hand it back to the application
+        if ( m_halfMCircuit.getElementCount() == 0  ) {
+          m_halfMCircuit.insert( circuit );
+        }
+        else {
+          Circuit *c1;
+          for ( unsigned int n=0; n<m_halfMCircuit.getElementCount(); n++ ) {
+            c1 = static_cast<Circuit*>(m_halfMCircuit.getEntry(n));
 
-	    // Determine if these are a pair
-	    if ( circuit->getOutputPortSet()->getPortFromIndex(0)->getMetaData()->real_location_string ==
-		 c1->getInputPortSet(0)->getPortFromIndex(0)->getMetaData()->real_location_string  ) {
+            // Determine if these are a pair
+            if ( circuit->getOutputPortSet()->getPortFromIndex(0)->getMetaData()->real_location_string ==
+                 c1->getInputPortSet(0)->getPortFromIndex(0)->getMetaData()->real_location_string  ) {
 
-	      // Remove it from the list
-	      m_halfMCircuit.remove( c1 );
+              // Remove it from the list
+              m_halfMCircuit.remove( c1 );
 
-	      // Tell the application 
-	      MessageCircuit* mc = new MessageCircuit( m_transport, c1, circuit);
-	      m_server->m_circuits.push_back( mc );
-	      m_cb->newMessageCircuitAvailable( mc );
-	      break;
+              // Tell the application 
+              MessageCircuit* mc = new MessageCircuit( m_transport, c1, circuit);
+              m_server->m_circuits.push_back( mc );
+              m_cb->newMessageCircuitAvailable( mc );
+              break;
 
-	    }
-	  }
-	}
+            }
+          }
+        }
       }
 
 
@@ -103,16 +103,16 @@ namespace CPI {
       void error( CPI::Util::EmbeddedException& ex )
       {
 #ifndef NDEBUG
-	printf("Got an exception, (%d %s)\n", ex.getErrorCode(), ex.getAuxInfo() );
+        printf("Got an exception, (%d %s)\n", ex.getErrorCode(), ex.getAuxInfo() );
 #endif
-	m_cb->error( ex );
+        m_cb->error( ex );
       }
 
     private:
-      Server*		  m_server;
+      Server*                  m_server;
       ServerEventHandler* m_cb;
       Transport*          m_transport;
-      VList		  m_halfMCircuit;  
+      VList                  m_halfMCircuit;  
 
     };
 
@@ -127,53 +127,53 @@ namespace CPI {
       friend class Server;
 
       TransportControl( Server* server, ServerEventHandler* cb,  
-			CPI::DataTransport::Transport* transport, Mutex* sem)
-	: m_server(server),m_cb(cb),m_transport(transport),m_mutex(sem)
+                        CPI::DataTransport::Transport* transport, Mutex* sem)
+        : m_server(server),m_cb(cb),m_transport(transport),m_mutex(sem)
       {
-	m_listener = new NewCircuitListener(server, m_cb, m_transport);
-	transport->setNewCircuitRequestListener( m_listener );
+        m_listener = new NewCircuitListener(server, m_cb, m_transport);
+        transport->setNewCircuitRequestListener( m_listener );
       }
 
       ~TransportControl()
       {
-	delete m_listener;
+        delete m_listener;
       }
 
       void run() {
 
-	m_mutex->lock ();
-	while( m_server->runThreadFlag ) {
-	  bool someCircuitHadData = false;
+        m_mutex->lock ();
+        while( m_server->runThreadFlag ) {
+          bool someCircuitHadData = false;
 
-	  m_transport->dispatch();
+          m_transport->dispatch();
 
-	  // See if any of the circuits have data
-	  for ( CPI::OS::uint32_t n=0; n<m_server->m_circuits.getElementCount(); n++ ) {
-	    if ( static_cast<MessageCircuit*>(m_server->m_circuits[n])->messageAvailable() ) {
-	      someCircuitHadData = true;
-	      m_cb->dataAvailable( static_cast<MessageCircuit*>(m_server->m_circuits[n]) );
-	    }
-	  }
+          // See if any of the circuits have data
+          for ( CPI::OS::uint32_t n=0; n<m_server->m_circuits.getElementCount(); n++ ) {
+            if ( static_cast<MessageCircuit*>(m_server->m_circuits[n])->messageAvailable() ) {
+              someCircuitHadData = true;
+              m_cb->dataAvailable( static_cast<MessageCircuit*>(m_server->m_circuits[n]) );
+            }
+          }
 
-	  m_mutex->unlock();
+          m_mutex->unlock();
 
-	  /*
-	   * If there is work to do, keep spinning.
-	   * Otherwise, be Mr. Nice Guy and yield.
-	   */
+          /*
+           * If there is work to do, keep spinning.
+           * Otherwise, be Mr. Nice Guy and yield.
+           */
 
-	  if (!someCircuitHadData) {
-	    CPI::OS::sleep(100);
-	  }
+          if (!someCircuitHadData) {
+            CPI::OS::sleep(100);
+          }
 
-	  m_mutex->lock();
-	}
+          m_mutex->lock();
+        }
 
-	m_mutex->unlock ();
+        m_mutex->unlock ();
       }
 
     private:
-      Server*		    m_server;
+      Server*                    m_server;
       ServerEventHandler*   m_cb;
       Transport*            m_transport;
       Mutex*                m_mutex;
@@ -208,9 +208,9 @@ void Server::remove( MessageCircuit* circuit )
  *  Constructors
  **********************************/
 Server::Server( 
-		std::string& end_point,     // In - endpoint
-		ServerEventHandler* cb     // In - Server event handler
-		)
+                std::string& end_point,     // In - endpoint
+                ServerEventHandler* cb     // In - Server event handler
+                )
   :m_circuits(0),m_event_handler(cb),runThreadFlag(true)
 {
   CPI::DataTransport::TransportGlobal *tpg = new CPI::DataTransport::TransportGlobal(0,(char**)0);
@@ -224,7 +224,7 @@ Server::Server(
   catch( CPI::Util::ExceptionMonitor& ) {
     throw;
   }
-	
+        
 #ifdef CONTAINER_MULTI_THREADED
   m_mutex = new Mutex(true);
 #endif

@@ -34,14 +34,14 @@ namespace CPI {
     class SCAFs : public CPI::Util::Vfs::Vfs {
     public:
       SCAFs (CORBA::ORB_ptr orb, CF::FileSystem_ptr fs)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
        */
 
       ~SCAFs ()
-	throw ();
+        throw ();
 
       /**
        * \name Implementation of the CPI::Util::Vfs::Vfs interface.
@@ -59,79 +59,79 @@ namespace CPI {
        */
 
       std::string baseURI () const
-	throw ();
+        throw ();
 
       std::string nameToURI (const std::string &) const
-	throw (std::string);
+        throw (std::string);
 
       std::string URIToName (const std::string &) const
-	throw (std::string);
+        throw (std::string);
 
       /*
        * Directory Management
        */
 
       std::string cwd () const
-	throw (std::string);
+        throw (std::string);
 
       void cd (const std::string &)
-	throw (std::string);
+        throw (std::string);
 
       void mkdir (const std::string &)
-	throw (std::string);
+        throw (std::string);
 
       void rmdir (const std::string &)
-	throw (std::string);
+        throw (std::string);
 
       /*
        * Directory Listing
        */
 
       CPI::Util::Vfs::Iterator * list (const std::string & dir,
-				       const std::string & pattern = "*")
-	throw (std::string);
+                                       const std::string & pattern = "*")
+        throw (std::string);
 
       void closeIterator (CPI::Util::Vfs::Iterator *)
-	throw (std::string);
+        throw (std::string);
 
       /*
        * File Information
        */
 
       bool exists (const std::string &, bool * = 0)
-	throw (std::string);
+        throw (std::string);
 
       unsigned long long size (const std::string &)
-	throw (std::string);
+        throw (std::string);
 
       std::time_t lastModified (const std::string &)
-	throw (std::string);
+        throw (std::string);
 
       /*
        * File I/O
        */
 
       std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
-	throw (std::string);
+        throw (std::string);
 
       std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
-	throw (std::string);
+        throw (std::string);
 
       std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
-	throw (std::string);
+        throw (std::string);
 
       void close (std::ios *)
-	throw (std::string);
+        throw (std::string);
 
       /*
        * File System Operations
        */
 
       void copy (const std::string &, Vfs *, const std::string &)
-	throw (std::string);
+        throw (std::string);
 
       void remove (const std::string &)
-	throw (std::string);
+        throw (std::string);
 
       //@}
 

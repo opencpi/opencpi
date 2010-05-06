@@ -54,7 +54,7 @@ namespace CPI {
        **********************************/
       virtual void initTransfers();
 
-	
+        
       /**********************************
        * Creates or retreives an existing transfer handle. Based upon our rank and
        * the distribution type, this template will be created with the proper offset(s) into

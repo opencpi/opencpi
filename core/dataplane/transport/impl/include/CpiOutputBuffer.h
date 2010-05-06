@@ -66,7 +66,7 @@ namespace CPI {
        *********************************/
       volatile DataTransfer::OutputPortSetControl* getControlBlock();
 
-	
+        
       /**********************************
        * Get this buffers local state structure
        **********************************/              
@@ -115,7 +115,7 @@ namespace CPI {
       volatile DataTransfer::OutputPortSetControl* m_spsControl;
 
       // buffer state virtual address
-      void     *m_bcsVaddr;		
+      void     *m_bcsVaddr;                
 
     };
 
@@ -132,11 +132,11 @@ namespace CPI {
     inline void OutputBuffer::markBufferFull()
       {
 #ifdef USE_TID_FOR_DB
-	m_state[0][m_pid].bufferFull = m_tid;
+        m_state[0][m_pid].bufferFull = m_tid;
 #else
-	m_state[0][m_pid].bufferFull = 1;
+        m_state[0][m_pid].bufferFull = 1;
 #endif
-	setInUse(false);
+        setInUse(false);
       }
 
     /**********************************
@@ -144,7 +144,7 @@ namespace CPI {
      *********************************/
     inline void OutputBuffer::markBufferEmpty()
       {
-	m_state[0][m_pid].bufferFull = DataTransfer::BufferEmptyFlag;
+        m_state[0][m_pid].bufferFull = DataTransfer::BufferEmptyFlag;
       }
 
 

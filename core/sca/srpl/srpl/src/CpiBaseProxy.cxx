@@ -38,11 +38,11 @@
 
 CPI::SCA::BaseProxy::
 BaseProxy (CORBA::ORB_ptr orb,
-	      PortableServer::POA_ptr poa,
-	      const std::string & identifier,
-	      CPI::Logger::Logger * logger,
-	      bool adoptLogger,
-	      bool shutdownOrbOnRelease)
+              PortableServer::POA_ptr poa,
+              const std::string & identifier,
+              CPI::Logger::Logger * logger,
+              bool adoptLogger,
+              bool shutdownOrbOnRelease)
   throw (std::string)
   : m_disabled (false),
     m_orb (CORBA::ORB::_duplicate (orb)),
@@ -67,9 +67,9 @@ BaseProxy (CORBA::ORB_ptr orb,
 
   CPI::Logger::DebugLogger debug (*m_logger);
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Constructed."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Constructed."
+        << std::flush;
 }
 
 CPI::SCA::BaseProxy::
@@ -78,9 +78,9 @@ CPI::SCA::BaseProxy::
 {
   CPI::Logger::DebugLogger debug (*m_logger);
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Destructed."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Destructed."
+        << std::flush;
 
 }
 
@@ -94,7 +94,7 @@ void
 CPI::SCA::BaseProxy::
 initialize ()
   throw (CF::LifeCycle::InitializeError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex lock (m_mutex);
   CPI::Logger::DebugLogger debug (*m_logger);
@@ -104,20 +104,20 @@ initialize ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "initialize ()"
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "initialize ()"
+        << std::flush;
 
   try {
     initializeWorker();//controlWorker (WCI_CONTROL_INITIALIZE);
   }
   catch (const std::string & oops) {
     *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Failed to initialize: "
-	      << oops
-	      << "."
-	      << std::flush;
+              << m_logProducerName
+              << "Failed to initialize: "
+              << oops
+              << "."
+              << std::flush;
 
     CF::LifeCycle::InitializeError ie;
     ie.errorMessages.length (1);
@@ -132,7 +132,7 @@ void
 CPI::SCA::BaseProxy::
 releaseObject ()
   throw (CF::LifeCycle::ReleaseError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex lock (m_mutex);
   CPI::Logger::DebugLogger debug (*m_logger);
@@ -142,9 +142,9 @@ releaseObject ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "releaseObject ()"
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "releaseObject ()"
+        << std::flush;
 
   /*
    * We might want to exit at this point.
@@ -162,7 +162,7 @@ releaseObject ()
   if (m_shutdownOrbOnRelease) {
     if (!CORBA::is_nil (m_orb)) {
       try {
-	m_orb->shutdown (0);
+        m_orb->shutdown (0);
       }
       catch (...) {
       }
@@ -180,11 +180,11 @@ releaseObject ()
   }
   catch (const std::string & oops) {
     *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Failed to release: "
-	      << oops
-	      << "."
-	      << std::flush;
+              << m_logProducerName
+              << "Failed to release: "
+              << oops
+              << "."
+              << std::flush;
 
     CF::LifeCycle::ReleaseError re;
     re.errorMessages.length (1);
@@ -205,8 +205,8 @@ void
 CPI::SCA::BaseProxy::
 runTest (CORBA::ULong testId, CF::Properties & testValues)
   throw (CF::TestableObject::UnknownTest,
-	 CF::UnknownProperties,
-	 CORBA::SystemException)
+         CF::UnknownProperties,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex lock (m_mutex);
   CPI::Logger::DebugLogger debug (*m_logger);
@@ -223,9 +223,9 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "testId ("
-	<< testId;
+        << CPI::Logger::Verbosity (2)
+        << "testId ("
+        << testId;
 
   for (CORBA::ULong dpi=0; dpi<numProps; dpi++) {
     debug << ", ";
@@ -242,10 +242,10 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
   }
   catch (const CF::TestableObject::UnknownTest &) {
     *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Unknown test "
-	      << testId << "."
-	      << std::flush;
+              << m_logProducerName
+              << "Unknown test "
+              << testId << "."
+              << std::flush;
     throw;
   }
 
@@ -283,38 +283,38 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
       StringSet::iterator eii = expectedInputs.find (property.id.in());
 
       if (eii == expectedInputs.end()) {
-	up.invalidProperties.length (numInvalidProps + 1);
-	up.invalidProperties[numInvalidProps++] = property;
-	*m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		  << m_logProducerName
-		  << "Error: \""
-		  << property.id
-		  << "\" is not an input value to test "
-		  << testId
-		  << "."
-		  << std::flush;
-	continue;
+        up.invalidProperties.length (numInvalidProps + 1);
+        up.invalidProperties[numInvalidProps++] = property;
+        *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+                  << m_logProducerName
+                  << "Error: \""
+                  << property.id
+                  << "\" is not an input value to test "
+                  << testId
+                  << "."
+                  << std::flush;
+        continue;
       }
 
       expectedInputs.erase (eii);
 
       try {
-	configureWorker (property.id,
-			 property.value,
-			 false,
-			 needSync);
+        configureWorker (property.id,
+                         property.value,
+                         false,
+                         needSync);
       }
       catch (const std::string & oops) {
-	up.invalidProperties.length (numInvalidProps + 1);
-	up.invalidProperties[numInvalidProps++] = property;
-	*m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		  << m_logProducerName
-		  << "Error configuring test input value \""
-		  << property.id
-		  << "\": "
-		  << oops
-		  << "."
-		  << std::flush;
+        up.invalidProperties.length (numInvalidProps + 1);
+        up.invalidProperties[numInvalidProps++] = property;
+        *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+                  << m_logProducerName
+                  << "Error configuring test input value \""
+                  << property.id
+                  << "\": "
+                  << oops
+                  << "."
+                  << std::flush;
       }
     }
 
@@ -324,24 +324,24 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
 
     if (!expectedInputs.empty()) {
       *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		<< m_logProducerName
-		<< "Missing input value";
+                << m_logProducerName
+                << "Missing input value";
 
       if (expectedInputs.size() != 1) {
-	*m_logger << "s";
+        *m_logger << "s";
       }
 
       *m_logger << " ";
 
       for (StringSet::iterator eii = expectedInputs.begin();
-	   eii != expectedInputs.end(); eii++) {
-	if (eii != expectedInputs.begin()) {
-	  *m_logger << ", ";
-	}
-	*m_logger << *eii;
+           eii != expectedInputs.end(); eii++) {
+        if (eii != expectedInputs.begin()) {
+          *m_logger << ", ";
+        }
+        *m_logger << *eii;
 
-	up.invalidProperties.length (numInvalidProps + 1);
-	up.invalidProperties[numInvalidProps++].id = (*eii).c_str ();
+        up.invalidProperties.length (numInvalidProps + 1);
+        up.invalidProperties[numInvalidProps++].id = (*eii).c_str ();
       }
 
       *m_logger << " for test " << testId << "." << std::flush;
@@ -360,12 +360,12 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
     }
     catch (const std::string & oops) {
       *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		<< m_logProducerName
-		<< "Failed to run test \""
-		<< testId << ": "
-		<< oops
-		<< "."
-		<< std::flush;
+                << m_logProducerName
+                << "Failed to run test \""
+                << testId << ": "
+                << oops
+                << "."
+                << std::flush;
 
       throw CF::TestableObject::UnknownTest ();
     }
@@ -390,11 +390,11 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
   }
   catch (const std::string & oops) {
     *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Failed to run test "
-	      << testId << ": "
-	      << oops << "."
-	      << std::flush;
+              << m_logProducerName
+              << "Failed to run test "
+              << testId << ": "
+              << oops << "."
+              << std::flush;
     throw CF::TestableObject::UnknownTest ();
   }
 #endif
@@ -410,8 +410,8 @@ void
 CPI::SCA::BaseProxy::
 configure (const CF::Properties & props)
   throw (CF::PropertySet::InvalidConfiguration,
-	 CF::PropertySet::PartialConfiguration,
-	 CORBA::SystemException)
+         CF::PropertySet::PartialConfiguration,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex lock (m_mutex);
   CPI::Logger::DebugLogger debug (*m_logger);
@@ -425,8 +425,8 @@ configure (const CF::Properties & props)
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "configure (";
+        << CPI::Logger::Verbosity (2)
+        << "configure (";
 
   for (CORBA::ULong dpi=0; dpi<numProps; dpi++) {
     if (dpi > 0) {
@@ -444,21 +444,21 @@ configure (const CF::Properties & props)
 
     try {
       configureWorker (property.id,
-		       property.value,
-		       last,
-		       needSync);
+                       property.value,
+                       last,
+                       needSync);
     }
     catch (const std::string & oops) {
       invalidProperties.length (numInvalidProps + 1);
       invalidProperties[numInvalidProps++] = property;
       *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		<< m_logProducerName
-		<< "Error configuring property \""
-		<< property.id
-		<< "\": "
-		<< oops
-		<< "."
-		<< std::flush;
+                << m_logProducerName
+                << "Error configuring property \""
+                << property.id
+                << "\": "
+                << oops
+                << "."
+                << std::flush;
     }
   }
 
@@ -481,7 +481,7 @@ void
 CPI::SCA::BaseProxy::
 query (CF::Properties & props)
   throw (CF::UnknownProperties,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex lock (m_mutex);
   CPI::Logger::DebugLogger debug (*m_logger);
@@ -495,8 +495,8 @@ query (CF::Properties & props)
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "query (";
+        << CPI::Logger::Verbosity (2)
+        << "query (";
 
   for (CORBA::ULong dpi=0; dpi<numProps; dpi++) {
     if (dpi > 0) {
@@ -525,7 +525,7 @@ query (CF::Properties & props)
 
     for (CORBA::ULong pi=0; pi<numProps; pi++) {
       if (cprops[pi].is_readable && !cprops[pi].is_test) {
-	props[pc++].id = CORBA::string_dup (cprops[pi].name);
+        props[pc++].id = CORBA::string_dup (cprops[pi].name);
       }
     }
 
@@ -538,20 +538,20 @@ query (CF::Properties & props)
 
     try {
       queryWorker (property.id,
-		   property.value,
-		   haveSync);
+                   property.value,
+                   haveSync);
     }
     catch (const std::string & oops) {
       up.invalidProperties.length (numInvalidProps + 1);
       up.invalidProperties[numInvalidProps++] = property;
       *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		<< m_logProducerName
-		<< "Error querying property \""
-		<< property.id
-		<< "\": "
-		<< oops
-		<< "."
-		<< std::flush;
+                << m_logProducerName
+                << "Error querying property \""
+                << property.id
+                << "\": "
+                << oops
+                << "."
+                << std::flush;
     }
   }
 
@@ -582,7 +582,7 @@ void
 CPI::SCA::BaseProxy::
 start ()
   throw (CF::Resource::StartError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex lock (m_mutex);
   CPI::Logger::DebugLogger debug (*m_logger);
@@ -592,9 +592,9 @@ start ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "start ()"
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "start ()"
+        << std::flush;
 
   if (m_state == WCI_CONTROL_START) {
     // Ignore "start" when already started.
@@ -606,11 +606,11 @@ start ()
   }
   catch (const std::string & oops) {
     *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Failed to start: "
-	      << oops
-	      << "."
-	      << std::flush;
+              << m_logProducerName
+              << "Failed to start: "
+              << oops
+              << "."
+              << std::flush;
 
     CF::Resource::StartError se;
     se.msg = oops.c_str();
@@ -624,7 +624,7 @@ void
 CPI::SCA::BaseProxy::
 stop ()
   throw (CF::Resource::StopError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex lock (m_mutex);
   CPI::Logger::DebugLogger debug (*m_logger);
@@ -634,9 +634,9 @@ stop ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "stop ()"
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "stop ()"
+        << std::flush;
 
   if (m_state == WCI_CONTROL_STOP) {
     // Ignore "stop" when already stopped.
@@ -648,11 +648,11 @@ stop ()
   }
   catch (const std::string & oops) {
     *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Failed to start: "
-	      << oops
-	      << "."
-	      << std::flush;
+              << m_logProducerName
+              << "Failed to start: "
+              << oops
+              << "."
+              << std::flush;
 
     CF::Resource::StopError se;
     se.msg = oops.c_str();
@@ -670,7 +670,7 @@ stop ()
 
 CPI::SCA::BaseProxyPort::
 BaseProxyPort (const std::string & portName,
-		  CPI::SCA::BaseProxy * proxy)
+                  CPI::SCA::BaseProxy * proxy)
   throw ()
   : m_portName (portName),
     m_proxy (proxy)
@@ -697,8 +697,8 @@ void
 CPI::SCA::BaseProxyPort::
 connectPort (CORBA::Object_ptr connection, const char * connectionId)
   throw (CF::Port::InvalidPort,
-	 CF::Port::OccupiedPort,
-	 CORBA::SystemException)
+         CF::Port::OccupiedPort,
+         CORBA::SystemException)
 {
 #if 0
   m_proxy->connectPort (m_portName, connectionId, connection);
@@ -711,7 +711,7 @@ void
 CPI::SCA::BaseProxyPort::
 disconnectPort (const char * connectionId)
   throw (CF::Port::InvalidPort,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
 #if 0
   m_proxy->disconnectPort (m_portName, connectionId);

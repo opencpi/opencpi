@@ -82,12 +82,12 @@ namespace DataTransfer {
   class EventManager
   {
   public:
-	
+        
     // Constructor
     EventManager( 
-		 int low_range,  // Event id low range
-		 int high_range  // Event id high range
-		 );
+                 int low_range,  // Event id low range
+                 int high_range  // Event id high range
+                 );
     ~EventManager();
 
     // Register an event handler
@@ -95,7 +95,7 @@ namespace DataTransfer {
 
     // Unregister an event handler
     static void unregisterEventHandlerFactory( EventHandlerFactory* eh );
-	
+        
     // Allow an application to wait for an event.  Calling this method does remove the
     // returned event from the Q.
     ReturnStatus waitForEvent( int timeout_us );
@@ -113,7 +113,7 @@ namespace DataTransfer {
 
     // Consume all existing events
     void consumeEvents();
-		
+                
     // get the range values that are vectored to this handler
     void getEventRange( int& low_range, int& high_range  );
 
@@ -122,10 +122,10 @@ namespace DataTransfer {
 
     // Forces this EM to wake up 
     void wakeUp( DataTransfer::EndPoint* ep );
-			
+                        
   protected:
-		
-    void setEventRange( int low_range, int high_range  );	
+                
+    void setEventRange( int low_range, int high_range  );        
     static EventHandlerFactory* m_eventHandlerFactory;
     EventHandler* m_eventHandler;
     bool m_spin;
@@ -136,15 +136,15 @@ namespace DataTransfer {
       int id;
       CPI::OS::uint64_t value;
       Events(int& pid, CPI::OS::uint64_t &pv)
-	:id(pid),value(pv){};
+        :id(pid),value(pv){};
     };
     std::list<Events> m_events;
-						
+                                                
   private:
     bool oneOfOurs(int id);
   };
-	
-	 
+        
+         
 }
 
 

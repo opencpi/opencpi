@@ -1,6 +1,6 @@
 /** \file Lock.cpp
- **	\date  2005-08-22
- **	\author grymse@alhem.net
+ **        \date  2005-08-22
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
@@ -39,13 +39,13 @@ namespace SOCKETS_NAMESPACE {
 
 Lock::Lock(const IMutex& m) : m_mutex(m)
 {
-	m_mutex.Lock();
+        m_mutex.Lock();
 }
 
 
 Lock::~Lock()
 {
-	m_mutex.Unlock();
+        m_mutex.Unlock();
 }
 
 

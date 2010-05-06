@@ -50,308 +50,308 @@ namespace CPI {
 
       class ZipFs : public CPI::Util::Vfs::Vfs {
       public:
-	/**
-	 * Constructor.
-	 *
-	 * Must call openZip() to open a Zip file.
-	 */
+        /**
+         * Constructor.
+         *
+         * Must call openZip() to open a Zip file.
+         */
 
-	ZipFs ()
-	  throw ();
+        ZipFs ()
+          throw ();
 
-	/**
-	 * Constructor.
-	 *
-	 * Calls #openZip (\a fs, \a name, \a mode, \a adopt, \a keepOpen).
-	 *
-	 * \param[in] fs   The file system containing the Zip file.
-	 * \param[in] name The name of the Zip file in the file system.
-	 * \param[in] mode Whether to allow reading, writing or both.
-	 * \param[in] adopt Whether to adopt the \a fs.
-	 * \param[in] keepOpen Whether to cache the Zip file handle.
-	 *
-	 * \throw std::string See openZip().
-	 *
-	 * \note See openZip() for more details.
-	 */
+        /**
+         * Constructor.
+         *
+         * Calls #openZip (\a fs, \a name, \a mode, \a adopt, \a keepOpen).
+         *
+         * \param[in] fs   The file system containing the Zip file.
+         * \param[in] name The name of the Zip file in the file system.
+         * \param[in] mode Whether to allow reading, writing or both.
+         * \param[in] adopt Whether to adopt the \a fs.
+         * \param[in] keepOpen Whether to cache the Zip file handle.
+         *
+         * \throw std::string See openZip().
+         *
+         * \note See openZip() for more details.
+         */
 
-	ZipFs (CPI::Util::Vfs::Vfs * fs, const std::string & name,
-	       std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out,
-	       bool adopt = false,
-	       bool keepOpen = false)
-	  throw (std::string);
+        ZipFs (CPI::Util::Vfs::Vfs * fs, const std::string & name,
+               std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out,
+               bool adopt = false,
+               bool keepOpen = false)
+          throw (std::string);
 
-	/**
-	 * Destructor.
-	 *
-	 * Calls closeZip().
-	 */
+        /**
+         * Destructor.
+         *
+         * Calls closeZip().
+         */
 
-	~ZipFs ()
-	  throw ();
+        ~ZipFs ()
+          throw ();
 
-	/**
-	 * \name Opening and closing Zip files.
-	 */
+        /**
+         * \name Opening and closing Zip files.
+         */
 
-	//@{
+        //@{
 
-	/**
-	 * Opens a Zip file.
-	 *
-	 * If (\a mode & std::ios_base::trunc), a new empty ZIP file is
-	 * created; an existing file with that name is overwritten.
-	 *
-	 * \param[in] fs   The file system containing the Zip file.
-	 * \param[in] name The name of the Zip file in the file system.
-	 * \param[in] mode Whether to allow reading (std::ios_base::in),
-	 *                 writing (std::ios_base::out) or both
-	 *                 both (std::ios_base::in|std::ios_base::out).
-	 * \param[in] adopt Whether to adopt the \a fs.  If true, \a fs
-	 *                 is deleted when the zip file is closed.
-	 * \param[in] keepOpen If false, then the Zip file is closed
-	 *                 whenever no file within the Zip file is being
-	 *                 read or written. If set to true, then the Zip
-	 *                 file handle is cached and the Zip file is only
-	 *                 re-opened when switching between reading and
-	 *                 writing files.
-	 *
-	 * \pre No Zip file is currently open in this instance.
-	 *
-	 * \pre If !(\a mode & std::ios_base::trunc), \a fileName must
-	 * identify an existing  ZIP file within the \a fs file system.
-	 *
-	 * \pre To read from Zip files, the stream that is returned from
-	 * \a fs->openReadonly (\a name) shall be randomly seekable.
-	 *
-	 * \pre To write to Zip files, the stream that is returned from
-	 * \a fs->open (\a name) shall be randomly seekable, and it shall
-	 * be possible to modify the directory that contains the Zip file.
-	 *
-	 * \post A Zip file is open.
-	 *
-	 * \note Setting \a keepOpen to true can significantly reduce I/O
-	 * when reading or writing multiple files, because the underlying
-	 * zlib library will re-read the Zip file's table of contents
-	 * every time the Zip file is re-opened.  However, if \a keepOpen
-	 * is set to true, an error flushing written data that would
-	 * normally be result in close() raising an exception, may be
-	 * delayed until the next file access.  In particular, this may
-	 * cause closeZip() to raise an exception.
-	 *
-	 * \note The ZIP file format by itself does not support
-	 * file removal.  File deletion is accomplished by copying the
-	 * contents of the ZIP file, minus the to-be deleted file, to
-	 * a new temporary file, deleting the original ZIP, and then
-	 * renaming the temporary file.  So these operations need to
-	 * be supported by the file system that holds the ZIP file.
-	 * Writing to an existing file involves deleting that file
-	 * first.
-	 */
+        /**
+         * Opens a Zip file.
+         *
+         * If (\a mode & std::ios_base::trunc), a new empty ZIP file is
+         * created; an existing file with that name is overwritten.
+         *
+         * \param[in] fs   The file system containing the Zip file.
+         * \param[in] name The name of the Zip file in the file system.
+         * \param[in] mode Whether to allow reading (std::ios_base::in),
+         *                 writing (std::ios_base::out) or both
+         *                 both (std::ios_base::in|std::ios_base::out).
+         * \param[in] adopt Whether to adopt the \a fs.  If true, \a fs
+         *                 is deleted when the zip file is closed.
+         * \param[in] keepOpen If false, then the Zip file is closed
+         *                 whenever no file within the Zip file is being
+         *                 read or written. If set to true, then the Zip
+         *                 file handle is cached and the Zip file is only
+         *                 re-opened when switching between reading and
+         *                 writing files.
+         *
+         * \pre No Zip file is currently open in this instance.
+         *
+         * \pre If !(\a mode & std::ios_base::trunc), \a fileName must
+         * identify an existing  ZIP file within the \a fs file system.
+         *
+         * \pre To read from Zip files, the stream that is returned from
+         * \a fs->openReadonly (\a name) shall be randomly seekable.
+         *
+         * \pre To write to Zip files, the stream that is returned from
+         * \a fs->open (\a name) shall be randomly seekable, and it shall
+         * be possible to modify the directory that contains the Zip file.
+         *
+         * \post A Zip file is open.
+         *
+         * \note Setting \a keepOpen to true can significantly reduce I/O
+         * when reading or writing multiple files, because the underlying
+         * zlib library will re-read the Zip file's table of contents
+         * every time the Zip file is re-opened.  However, if \a keepOpen
+         * is set to true, an error flushing written data that would
+         * normally be result in close() raising an exception, may be
+         * delayed until the next file access.  In particular, this may
+         * cause closeZip() to raise an exception.
+         *
+         * \note The ZIP file format by itself does not support
+         * file removal.  File deletion is accomplished by copying the
+         * contents of the ZIP file, minus the to-be deleted file, to
+         * a new temporary file, deleting the original ZIP, and then
+         * renaming the temporary file.  So these operations need to
+         * be supported by the file system that holds the ZIP file.
+         * Writing to an existing file involves deleting that file
+         * first.
+         */
 
-	void openZip (CPI::Util::Vfs::Vfs * fs, const std::string & name,
-		      std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out,
-		      bool adopt = false,
-		      bool keepOpen = false)
-	  throw (std::string);
+        void openZip (CPI::Util::Vfs::Vfs * fs, const std::string & name,
+                      std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out,
+                      bool adopt = false,
+                      bool keepOpen = false)
+          throw (std::string);
 
-	/**
-	 * Close this Zip file.
-	 *
-	 * \throw std::string If an I/O error occurs closing the file.
-	 *
-	 * \pre A Zip file is open.
-	 * \post No Zip file is open.
-	 */
+        /**
+         * Close this Zip file.
+         *
+         * \throw std::string If an I/O error occurs closing the file.
+         *
+         * \pre A Zip file is open.
+         * \post No Zip file is open.
+         */
 
-	void closeZip ()
-	  throw (std::string);
+        void closeZip ()
+          throw (std::string);
 
-	//@}
+        //@}
 
-	/**
-	 * \name Implementation of the CPI::Util::Vfs::Vfs interface.
-	 */
+        /**
+         * \name Implementation of the CPI::Util::Vfs::Vfs interface.
+         */
 
-	//@{
+        //@{
 
-	/*
-	 * File Name URI Mapping
-	 */
+        /*
+         * File Name URI Mapping
+         */
 
-	std::string baseURI () const
-	  throw ();
+        std::string baseURI () const
+          throw ();
 
-	std::string nameToURI (const std::string &) const
-	  throw (std::string);
+        std::string nameToURI (const std::string &) const
+          throw (std::string);
 
-	std::string URIToName (const std::string &) const
-	  throw (std::string);
+        std::string URIToName (const std::string &) const
+          throw (std::string);
 
-	/*
-	 * Directory Management
-	 */
+        /*
+         * Directory Management
+         */
 
-	std::string cwd () const
-	  throw (std::string);
+        std::string cwd () const
+          throw (std::string);
 
-	void cd (const std::string &)
-	  throw (std::string);
+        void cd (const std::string &)
+          throw (std::string);
 
-	void mkdir (const std::string &)
-	  throw (std::string);
+        void mkdir (const std::string &)
+          throw (std::string);
 
-	void rmdir (const std::string &)
-	  throw (std::string);
+        void rmdir (const std::string &)
+          throw (std::string);
 
-	/*
-	 * Directory Listing
-	 */
+        /*
+         * Directory Listing
+         */
 
-	CPI::Util::Vfs::Iterator * list (const std::string & dir,
-					 const std::string & pattern = "*")
-	  throw (std::string);
+        CPI::Util::Vfs::Iterator * list (const std::string & dir,
+                                         const std::string & pattern = "*")
+          throw (std::string);
 
-	void closeIterator (CPI::Util::Vfs::Iterator *)
-	  throw (std::string);
+        void closeIterator (CPI::Util::Vfs::Iterator *)
+          throw (std::string);
 
-	/*
-	 * File Information
-	 */
+        /*
+         * File Information
+         */
 
-	bool exists (const std::string &, bool * = 0)
-	  throw (std::string);
+        bool exists (const std::string &, bool * = 0)
+          throw (std::string);
 
-	unsigned long long size (const std::string &)
-	  throw (std::string);
+        unsigned long long size (const std::string &)
+          throw (std::string);
 
-	std::time_t lastModified (const std::string &)
-	  throw (std::string);
+        std::time_t lastModified (const std::string &)
+          throw (std::string);
 
-	/*
-	 * File I/O
-	 */
+        /*
+         * File I/O
+         */
 
-	/**
-	 * \note ZipFs does not support open().  It always throws an exception.
-	 */
+        /**
+         * \note ZipFs does not support open().  It always throws an exception.
+         */
 
-	std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
-	  throw (std::string);
+        std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
+          throw (std::string);
 
-	std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
-	  throw (std::string);
+        std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
+          throw (std::string);
 
-	std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
-	  throw (std::string);
+        std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
+          throw (std::string);
 
-	void close (std::ios *)
-	  throw (std::string);
+        void close (std::ios *)
+          throw (std::string);
 
-	/*
-	 * File System Operations
-	 */
+        /*
+         * File System Operations
+         */
 
-	void rename (const std::string &, const std::string &)
-	  throw (std::string);
+        void rename (const std::string &, const std::string &)
+          throw (std::string);
 
-	void remove (const std::string &)
-	  throw (std::string);
+        void remove (const std::string &)
+          throw (std::string);
 
-	//@}
+        //@}
 
-	/** \cond */
-
-      protected:
-	static void testFilenameForValidity (const std::string &)
-	  throw (std::string);
-
-	std::string nativeFilename (const std::string &)
-	  throw ();
+        /** \cond */
 
       protected:
-	void updateContents ()
-	  throw (std::string);
+        static void testFilenameForValidity (const std::string &)
+          throw (std::string);
 
-	std::string absoluteNameLocked (const std::string &) const
-	  throw (std::string);
-
-	void removeLocked (const std::string &)
-	  throw (std::string);
+        std::string nativeFilename (const std::string &)
+          throw ();
 
       protected:
-	/*
-	 * Our base URI
-	 */
+        void updateContents ()
+          throw (std::string);
 
-	std::string m_baseURI;
+        std::string absoluteNameLocked (const std::string &) const
+          throw (std::string);
 
-	/*
-	 * File system that contains the ZIP file, and its name
-	 */
+        void removeLocked (const std::string &)
+          throw (std::string);
 
-	std::ios_base::openmode m_mode;
-	CPI::Util::Vfs::Vfs * m_fs;
-	std::string m_zipFileName;
-	bool m_adopted;
-	bool m_keepOpen;
+      protected:
+        /*
+         * Our base URI
+         */
 
-	/*
-	 * Open zip file handles, if m_keepOpen is true.  The types are
-	 * zipFile and unzFile, respectively, but we use void pointers
-	 * so that we don't have to drag in zip.h and unzip.h.
-	 */
+        std::string m_baseURI;
 
-	void * m_zipFile;
-	void * m_unzFile;
+        /*
+         * File system that contains the ZIP file, and its name
+         */
 
-	/*
-	 * Our "working directory" within the ZIP file
-	 */
+        std::ios_base::openmode m_mode;
+        CPI::Util::Vfs::Vfs * m_fs;
+        std::string m_zipFileName;
+        bool m_adopted;
+        bool m_keepOpen;
 
-	std::string m_cwd;
+        /*
+         * Open zip file handles, if m_keepOpen is true.  The types are
+         * zipFile and unzFile, respectively, but we use void pointers
+         * so that we don't have to drag in zip.h and unzip.h.
+         */
 
-	/*
-	 * Table of Contents
-	 */
+        void * m_zipFile;
+        void * m_unzFile;
+
+        /*
+         * Our "working directory" within the ZIP file
+         */
+
+        std::string m_cwd;
+
+        /*
+         * Table of Contents
+         */
 
       public:
-	struct FileInfo {
-	  unsigned long long size;
-	  std::time_t lastModified;
-	};
+        struct FileInfo {
+          unsigned long long size;
+          std::time_t lastModified;
+        };
 
-	typedef std::map<std::string, FileInfo> FileInfos;
+        typedef std::map<std::string, FileInfo> FileInfos;
 
       protected:
-	FileInfos m_contents;
+        FileInfos m_contents;
 
-	/*
-	 * Implementation of the I/O API for zip/unzip
-	 */
+        /*
+         * Implementation of the I/O API for zip/unzip
+         */
 
-	void * m_zFileFuncsOpaque[8];
+        void * m_zFileFuncsOpaque[8];
 
-	/*
-	 * For reentrancy.
-	 */
+        /*
+         * For reentrancy.
+         */
 
-	mutable CPI::OS::RWLock m_lock;
+        mutable CPI::OS::RWLock m_lock;
 
-	/** \endcond */
+        /** \endcond */
 
       private:
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	ZipFs (const ZipFs &);
+        ZipFs (const ZipFs &);
 
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	ZipFs & operator= (const ZipFs &);
+        ZipFs & operator= (const ZipFs &);
       };
 
     }

@@ -45,7 +45,7 @@ namespace CPI {
        */
 
       void winSockInit ()
-	throw (std::string);
+        throw (std::string);
 
       /*
        * Uninitializes the Windows Socket library. Must be called as
@@ -53,7 +53,7 @@ namespace CPI {
        */
 
       void winSockFini ()
-	throw (std::string);
+        throw (std::string);
 
       /*
        * Windows implementations of CPI::OS::getHostname(), CPI::OS::getFQDN()
@@ -61,16 +61,16 @@ namespace CPI {
        */
 
       std::string getHostname ()
-	throw (std::string);
+        throw (std::string);
 
       std::string getFQDN ()
-	throw (std::string);
+        throw (std::string);
 
       std::string getIPAddress ()
-	throw (std::string);
+        throw (std::string);
 
       bool isLocalhost (const std::string &)
-	throw (std::string);
+        throw (std::string);
 
       /*
        * Returns the message associated with an error code that is
@@ -78,7 +78,7 @@ namespace CPI {
        */
 
       std::string getWinSockErrorMessage (int errorCode)
-	throw ();
+        throw ();
 
     }
   }

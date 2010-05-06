@@ -28,10 +28,10 @@ using namespace DataTransport::Interface;
  * Constructor
  **********************************/
 MessageCircuit::MessageCircuit(
-			       CPI::DataTransport::Transport* transport,
-			       CPI::DataTransport::Circuit* send,		// In - send circuit
-			       CPI::DataTransport::Circuit* rcv		// In - recieve circuit
-			       )
+                               CPI::DataTransport::Transport* transport,
+                               CPI::DataTransport::Circuit* send,                // In - send circuit
+                               CPI::DataTransport::Circuit* rcv                // In - recieve circuit
+                               )
   :m_transport(transport),m_send(send),m_rcv(rcv),m_full_buffer(NULL)
 {
   m_rcv_port = rcv->getInputPortSet(0)->getPort(0);

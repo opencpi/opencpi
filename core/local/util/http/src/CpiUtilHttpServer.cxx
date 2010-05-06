@@ -21,7 +21,7 @@ g_myProducerName ("CPI::Util::Http::Server");
 
 CPI::Util::Http::Server::
 Server (CPI::Util::Vfs::Vfs * fs,
-	CPI::Logger::Logger * logger)
+        CPI::Logger::Logger * logger)
   throw ()
   : m_logger (logger),
     m_fs (fs)
@@ -74,9 +74,9 @@ resetConn (std::istream * in, std::ostream * out)
 
   CPI::Logger::DebugLogger debugLogger (*m_logger);
   debugLogger << g_myProducerName
-	      << CPI::Logger::Verbosity (2)
-	      << "Got new connection."
-	      << std::flush;
+              << CPI::Logger::Verbosity (2)
+              << "Got new connection."
+              << std::flush;
 }
 
 bool
@@ -105,9 +105,9 @@ receiveRequestLine ()
 
   if (!m_inConn->good()) {
     debugLogger << g_myProducerName
-		<< CPI::Logger::Verbosity (2)
-		<< "Failed to read request. Returning 400 error."
-		<< std::flush;
+                << CPI::Logger::Verbosity (2)
+                << "Failed to read request. Returning 400 error."
+                << std::flush;
     sendError ("400", "Bad Request", "Failed to read request.");
     m_state = STATE_BROKEN;
     return false;
@@ -115,22 +115,22 @@ receiveRequestLine ()
 
   if (m_requestLine.length() == MAX_LENGTH_OF_HEADER_LINE) {
     debugLogger << g_myProducerName
-		<< CPI::Logger::Verbosity (2)
-		<< "Request line exceeds "
-		<< MAX_LENGTH_OF_HEADER_LINE
-		<< " in length. Returning 414 error."
-		<< std::flush;
+                << CPI::Logger::Verbosity (2)
+                << "Request line exceeds "
+                << MAX_LENGTH_OF_HEADER_LINE
+                << " in length. Returning 414 error."
+                << std::flush;
     sendError ("414", "Request URI too large");
     m_state = STATE_BROKEN;
     return false;
   }
 
   debugLogger << g_myProducerName
-	      << CPI::Logger::Verbosity (2)
-	      << "Got request: \""
-	      << m_requestLine
-	      << "\"."
-	      << std::flush;
+              << CPI::Logger::Verbosity (2)
+              << "Got request: \""
+              << m_requestLine
+              << "\"."
+              << std::flush;
 
   /*
    * Determine the request type
@@ -140,10 +140,10 @@ receiveRequestLine ()
 
   if (idx == std::string::npos) {
     debugLogger << g_myProducerName
-		<< CPI::Logger::Verbosity (2)
-		<< "Failed to parse request line, no space found. "
-		<< "Returning 414 error."
-		<< std::flush;
+                << CPI::Logger::Verbosity (2)
+                << "Failed to parse request line, no space found. "
+                << "Returning 414 error."
+                << std::flush;
     sendError ("400", "Bad Request", "Does not look like a request.");
     m_state = STATE_BROKEN;
     return false;
@@ -177,11 +177,11 @@ receiveRequestLine ()
   }
   else {
     debugLogger << g_myProducerName
-		<< CPI::Logger::Verbosity (2)
-		<< "Unsupported request type: \""
-		<< m_requestType
-		<< "\". Returning 501 error."
-		<< std::flush;
+                << CPI::Logger::Verbosity (2)
+                << "Unsupported request type: \""
+                << m_requestType
+                << "\". Returning 501 error."
+                << std::flush;
 
     sendError ("501", "Not Implemented", "Invalid request method.");
     m_requestType = REQUEST_UNKNOWN;
@@ -206,15 +206,15 @@ receiveRequestLine ()
     std::string versionStr = m_requestLine.substr (idx2+1);
 
     if (versionStr.length() < 8 ||
-	versionStr[0] != 'H' || versionStr[1] != 'T' ||
-	versionStr[2] != 'T' || versionStr[3] != 'P' ||
-	versionStr[4] != '/' || versionStr[6] != '.') {
+        versionStr[0] != 'H' || versionStr[1] != 'T' ||
+        versionStr[2] != 'T' || versionStr[3] != 'P' ||
+        versionStr[4] != '/' || versionStr[6] != '.') {
       debugLogger << g_myProducerName
-		  << CPI::Logger::Verbosity (2)
-		  << "Invalid HTTP version string: \""
-		  << versionStr
-		  << "\". Returning 400 error."
-		  << std::flush;
+                  << CPI::Logger::Verbosity (2)
+                  << "Invalid HTTP version string: \""
+                  << versionStr
+                  << "\". Returning 400 error."
+                  << std::flush;
       sendError ("400", "Bad Request", "Invalid HTTP version string.");
       m_state = STATE_BROKEN;
       return false;
@@ -230,19 +230,19 @@ receiveRequestLine ()
        * I don't think we can handle HTTP/2.x
        */
       debugLogger << g_myProducerName
-		  << CPI::Logger::Verbosity (2)
-		  << "HTTP version not supported: \""
-		  << version
-		  << "\". Returning 505 error."
-		  << std::flush;
+                  << CPI::Logger::Verbosity (2)
+                  << "HTTP version not supported: \""
+                  << version
+                  << "\". Returning 505 error."
+                  << std::flush;
       sendError ("505", "HTTP Version Not Supported",
-		 "HTTP Version Not Supported.");
+                 "HTTP Version Not Supported.");
       m_state = STATE_BROKEN;
       return false;
     }
 
     if (major < m_majorVersion ||
-	(major == m_majorVersion && minor < m_minorVersion)) {
+        (major == m_majorVersion && minor < m_minorVersion)) {
       m_majorVersion = major;
       m_minorVersion = minor;
     }
@@ -273,11 +273,11 @@ receiveRequestHeaders ()
   while (m_inConn->good() && headerLine.length()) {
     if (++count > MAX_NUM_OF_HEADER_LINES) {
       debugLogger << g_myProducerName
-		  << CPI::Logger::Verbosity (2)
-		  << "Request exceeds maximum allowed number of header lines: "
-		  << MAX_NUM_OF_HEADER_LINES
-		  << ". Request too large. Returning 500 error."
-		  << std::flush;
+                  << CPI::Logger::Verbosity (2)
+                  << "Request exceeds maximum allowed number of header lines: "
+                  << MAX_NUM_OF_HEADER_LINES
+                  << ". Request too large. Returning 500 error."
+                  << std::flush;
       sendError ("500", "Internal Error", "Request too large.");
       m_state = STATE_BROKEN;
       return false;
@@ -285,11 +285,11 @@ receiveRequestHeaders ()
 
     if ((colonPos = headerLine.find (':')) == std::string::npos) {
       debugLogger << g_myProducerName
-		  << CPI::Logger::Verbosity (2)
-		  << "Invalid header line received: \""
-		  << headerLine
-		  << "\". Returning 400 error."
-		  << std::flush;
+                  << CPI::Logger::Verbosity (2)
+                  << "Invalid header line received: \""
+                  << headerLine
+                  << "\". Returning 400 error."
+                  << std::flush;
       sendError ("400", "Bad Request", "Invalid header line received.");
       m_state = STATE_BROKEN;
       return false;
@@ -303,13 +303,13 @@ receiveRequestHeaders ()
 
     if (!isToken (fieldName)) {
       debugLogger << g_myProducerName
-		  << CPI::Logger::Verbosity (2)
-		  << "Invalid header line received: \""
-		  << headerLine
-		  << "\". Field name \""
-		  << fieldName
-		  << "\" is not a token. Returning 400 error."
-		  << std::flush;
+                  << CPI::Logger::Verbosity (2)
+                  << "Invalid header line received: \""
+                  << headerLine
+                  << "\". Field name \""
+                  << fieldName
+                  << "\" is not a token. Returning 400 error."
+                  << std::flush;
       sendError ("400", "Bad Request", "Invalid header line received.");
       m_state = STATE_BROKEN;
       return false;
@@ -340,21 +340,21 @@ receiveRequestHeaders ()
     }
 
     debugLogger << g_myProducerName
-		<< CPI::Logger::Verbosity (3)
-		<< "Header line received: \""
-		<< headerLine
-		<< "\""
-		<< std::flush;
+                << CPI::Logger::Verbosity (3)
+                << "Header line received: \""
+                << headerLine
+                << "\""
+                << std::flush;
 
     headerLine = CPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
   }
 
   if (!m_inConn->good ()) {
     debugLogger << g_myProducerName
-		<< CPI::Logger::Verbosity (2)
-		<< "Connection broken while reading headers. "
-		<< "Returning 400 error."
-		<< std::flush;
+                << CPI::Logger::Verbosity (2)
+                << "Connection broken while reading headers. "
+                << "Returning 400 error."
+                << std::flush;
     sendError ("400", "Bad Request", "Connection broken while reading headers.");
     return false;
   }
@@ -381,23 +381,23 @@ processGetOrHeadRequest ()
   unsigned long long fileSize;
 
   debugLogger << g_myProducerName
-	      << "Got "
-	      << ((m_requestType == REQUEST_GET) ? "GET" : "HEAD")
-	      << " request for \""
-	      << m_requestURI
-	      << "\"."
-	      << std::flush;
+              << "Got "
+              << ((m_requestType == REQUEST_GET) ? "GET" : "HEAD")
+              << " request for \""
+              << m_requestURI
+              << "\"."
+              << std::flush;
 
   try {
     fileName = CPI::Util::Uri::decode (m_requestURI);
   }
   catch (const std::string & oops) {
     debugLogger << g_myProducerName
-		<< "Invalid request URI: \""
-		<< m_requestURI
-		<< "\": "
-		<< oops
-		<< std::flush;
+                << "Invalid request URI: \""
+                << m_requestURI
+                << "\": "
+                << oops
+                << std::flush;
     sendError ("404", "Not Found", "File not found.");
     return false;
   }
@@ -448,35 +448,35 @@ processGetOrHeadRequest ()
      */
 
     if (oldTimestamp != static_cast<time_t> (-1) &&
-	lastModified < oldTimestamp) {
+        lastModified < oldTimestamp) {
       if (m_majorVersion == 1 && m_minorVersion == 0) {
-	*m_outConn << "HTTP/1.0 304 Not Modified\r\n";
+        *m_outConn << "HTTP/1.0 304 Not Modified\r\n";
       }
       else if (m_majorVersion == 1 && m_minorVersion == 1) {
-	*m_outConn << "HTTP/1.1 304 Not Modified\r\n";
+        *m_outConn << "HTTP/1.1 304 Not Modified\r\n";
       }
 
       *m_outConn << "Date: "
-		 << CPI::Util::Http::makeHttpDate (currentTime)
-		 << "\r\n";
+                 << CPI::Util::Http::makeHttpDate (currentTime)
+                 << "\r\n";
       *m_outConn << "Last-Modified: "
-		 << CPI::Util::Http::makeHttpDate (lastModified)
-		 << "\r\n";
+                 << CPI::Util::Http::makeHttpDate (lastModified)
+                 << "\r\n";
       *m_outConn << "\r\n"
-		 << std::flush;
+                 << std::flush;
 
       if (m_closeConnection) {
-	m_state = STATE_CLOSE;
+        m_state = STATE_CLOSE;
       }
       else {
-	m_state = STATE_REQUEST;
+        m_state = STATE_REQUEST;
       }
 
       debugLogger << g_myProducerName
-		  << "Document not modified since "
-		  << (*ims).second
-		  << ". Returning 304."
-		  << std::flush;
+                  << "Document not modified since "
+                  << (*ims).second
+                  << ". Returning 304."
+                  << std::flush;
 
       return true;
     }
@@ -500,11 +500,11 @@ processGetOrHeadRequest ()
     }
     catch (const std::string & err) {
       debugLogger << g_myProducerName
-		  << "Failed to check existence of \""
-		  << fileName
-		  << "\":"
-		  << err
-		  << std::flush;
+                  << "Failed to check existence of \""
+                  << fileName
+                  << "\":"
+                  << err
+                  << std::flush;
       sendError ("404", "Not Found", "File not found.");
       return true;
     }
@@ -514,10 +514,10 @@ processGetOrHeadRequest ()
     }
     if (!exists) {
       debugLogger << g_myProducerName
-		  << "File does not exist: \""
-		  << fileName
-		  << "\". Returning 404."
-		  << std::flush;
+                  << "File does not exist: \""
+                  << fileName
+                  << "\". Returning 404."
+                  << std::flush;
       sendError ("404", "Not Found", "File not found.");
       return true;
     }
@@ -528,11 +528,11 @@ processGetOrHeadRequest ()
     }
     catch (const std::string & err) {
       debugLogger << g_myProducerName
-		  << "Can not open file \""
-		  << fileName
-		  << "\" for reading: "
-		  << err << "."
-		  << std::flush;
+                  << "Can not open file \""
+                  << fileName
+                  << "\" for reading: "
+                  << err << "."
+                  << std::flush;
       sendError ("404", "Not Found", "File not found.");
       return true;
     }
@@ -549,7 +549,7 @@ processGetOrHeadRequest ()
   }
   else if (m_majorVersion == 1 && m_minorVersion == 1) {
     *m_outConn << "HTTP/1.1 200 Ok\r\n"
-		<< "Transfer-Encoding: chunked\r\n";
+                << "Transfer-Encoding: chunked\r\n";
     chunked = true;
   }
 
@@ -559,13 +559,13 @@ processGetOrHeadRequest ()
 
   if (m_majorVersion > 0) {
     *m_outConn << "Date: "
-	       << CPI::Util::Http::makeHttpDate (currentTime)
-	       << "\r\n";
+               << CPI::Util::Http::makeHttpDate (currentTime)
+               << "\r\n";
 
     if (lastModified != (time_t) -1) {
       *m_outConn << "Last-Modified: "
-		 << CPI::Util::Http::makeHttpDate (lastModified)
-		 << "\r\n";
+                 << CPI::Util::Http::makeHttpDate (lastModified)
+                 << "\r\n";
     }
 
     if (fileSize != static_cast<unsigned long long> (-1)) {
@@ -597,13 +597,13 @@ processGetOrHeadRequest ()
       totalBytes += amountRead;
 
       if (chunked && amountRead) {
-	*m_outConn << std::hex << amountRead << std::dec << "\r\n";
+        *m_outConn << std::hex << amountRead << std::dec << "\r\n";
       }
 
       m_outConn->write (buffer, amountRead);
 
       if (chunked && amountRead) {
-	*m_outConn << "\r\n";
+        *m_outConn << "\r\n";
       }
     }
 
@@ -613,10 +613,10 @@ processGetOrHeadRequest ()
 
     if (!m_outConn->good()) {
       debugLogger << g_myProducerName
-		  << "Oops. Output is no good after sending "
-		  << totalBytes
-		  << " bytes."
-		  << std::flush;
+                  << "Oops. Output is no good after sending "
+                  << totalBytes
+                  << " bytes."
+                  << std::flush;
     }
 
     try {
@@ -624,10 +624,10 @@ processGetOrHeadRequest ()
     }
     catch (const std::string & oops) {
       debugLogger << g_myProducerName
-		  << "Oops. Error closing file: "
-		  << oops
-		  << " (ignored)"
-		  << std::flush;
+                  << "Oops. Error closing file: "
+                  << oops
+                  << " (ignored)"
+                  << std::flush;
     }
   }
 
@@ -639,10 +639,10 @@ processGetOrHeadRequest ()
   }
 
   debugLogger << g_myProducerName
-	      << "Request complete, "
-	      << totalBytes
-	      << " bytes sent."
-	      << std::flush;
+              << "Request complete, "
+              << totalBytes
+              << " bytes sent."
+              << std::flush;
 
   return true;
 }
@@ -658,21 +658,21 @@ processPutRequest ()
   std::ostream * fileStream;
 
   debugLogger << g_myProducerName
-	      << "Got PUT request for \""
-	      << m_requestURI
-	      << "\"."
-	      << std::flush;
+              << "Got PUT request for \""
+              << m_requestURI
+              << "\"."
+              << std::flush;
 
   try {
     fileName = CPI::Util::Uri::decode (m_requestURI);
   }
   catch (const std::string & oops) {
     debugLogger << g_myProducerName
-		<< "Invalid request URI: \""
-		<< m_requestURI
-		<< "\": "
-		<< oops
-		<< std::flush;
+                << "Invalid request URI: \""
+                << m_requestURI
+                << "\": "
+                << oops
+                << std::flush;
     sendError ("404", "Not Found", "File not found.");
     return false;
   }
@@ -682,11 +682,11 @@ processPutRequest ()
   }
   catch (const std::string & err) {
       debugLogger << g_myProducerName
-		  << "Can not open file \""
-		  << fileName
-		  << "\" for writing: "
-		  << err
-		  << std::flush;
+                  << "Can not open file \""
+                  << fileName
+                  << "\" for writing: "
+                  << err
+                  << std::flush;
     sendError ("404", "File Error", "Cannot write file.");
     return false;
   }
@@ -704,13 +704,13 @@ processPutRequest ()
 
     if (it != m_requestHeaders.end()) {
       if ((*it).second != "chunked") {
-	debugLogger << g_myProducerName
-		    << "Unsupported transfer encoding: \""
-		    << (*it).second
-		    << "\""
-		    << std::flush;
-	sendError ("404", "Request error", "Unsupported transfer encoding.");
-	return false;
+        debugLogger << g_myProducerName
+                    << "Unsupported transfer encoding: \""
+                    << (*it).second
+                    << "\""
+                    << std::flush;
+        sendError ("404", "Request error", "Unsupported transfer encoding.");
+        return false;
       }
       chunked = true;
     }
@@ -729,14 +729,14 @@ processPutRequest ()
       contentLength = std::strtoul (cl, &cep, 10);
 
       if (cep && *cep) {
-	debugLogger << g_myProducerName
-		    << "Invalid content-length value: \""
-		    << (*it).second
-		    << "\" (ignoring)."
-		    << std::flush;
+        debugLogger << g_myProducerName
+                    << "Invalid content-length value: \""
+                    << (*it).second
+                    << "\" (ignoring)."
+                    << std::flush;
       }
       else {
-	haveContentLength = true;
+        haveContentLength = true;
       }
     }
   }
@@ -763,58 +763,58 @@ processPutRequest ()
       strChunkSize = CPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
 
       if (strChunkSize.length() == 0 || strChunkSize.length() == MAX_LENGTH_OF_HEADER_LINE) {
-	debugLogger << g_myProducerName
-		    << "Error reading chunk size: \""
-		    << strChunkSize
-		    << "\"."
-		    << std::flush;
-	sendError ("404", "Upload failure", "Error reading chunk size.");
-	return false;
+        debugLogger << g_myProducerName
+                    << "Error reading chunk size: \""
+                    << strChunkSize
+                    << "\"."
+                    << std::flush;
+        sendError ("404", "Upload failure", "Error reading chunk size.");
+        return false;
       }
 
       csptr = strChunkSize.c_str ();
       chunkSize = strtoul (csptr, &eptr, 16);
 
       if (eptr && *eptr) {
-	debugLogger << g_myProducerName
-		    << "Error determining chunk size: \""
-		    << strChunkSize
-		    << "\"."
-		    << std::flush;
-	sendError ("404", "Upload failure", "Error reading chunk size.");
-	return false;
+        debugLogger << g_myProducerName
+                    << "Error determining chunk size: \""
+                    << strChunkSize
+                    << "\"."
+                    << std::flush;
+        sendError ("404", "Upload failure", "Error reading chunk size.");
+        return false;
       }
 
       if (chunkSize == 0) {
-	break;
+        break;
       }
     }
 
     while ((!chunked || chunkSize > 0) &&
-	   (!haveContentLength || contentLength > 0) &&
-	   m_inConn->good() && fileStream->good()) {
+           (!haveContentLength || contentLength > 0) &&
+           m_inConn->good() && fileStream->good()) {
       if (chunked) {
-	std::streamsize inChunk =
-	  CPI::Util::Misc::unsignedToStreamsize (chunkSize, true);
-	amountToRead = (inChunk < DATA_BUFFER_SIZE) ? inChunk : DATA_BUFFER_SIZE;
+        std::streamsize inChunk =
+          CPI::Util::Misc::unsignedToStreamsize (chunkSize, true);
+        amountToRead = (inChunk < DATA_BUFFER_SIZE) ? inChunk : DATA_BUFFER_SIZE;
       }
       else if (!haveContentLength) {
-	std::streamsize inContent =
-	  CPI::Util::Misc::unsignedToStreamsize (contentLength, true);
-	amountToRead = (inContent < DATA_BUFFER_SIZE) ? inContent : DATA_BUFFER_SIZE;
+        std::streamsize inContent =
+          CPI::Util::Misc::unsignedToStreamsize (contentLength, true);
+        amountToRead = (inContent < DATA_BUFFER_SIZE) ? inContent : DATA_BUFFER_SIZE;
       }
       else {
-	amountToRead = DATA_BUFFER_SIZE;
+        amountToRead = DATA_BUFFER_SIZE;
       }
 
       m_inConn->read (buffer, amountToRead);
       amountRead = m_inConn->gcount ();
 
       if (chunked) {
-	chunkSize -= amountRead;
+        chunkSize -= amountRead;
       }
       else if (haveContentLength) {
-	contentLength -= amountRead;
+        contentLength -= amountRead;
       }
 
       totalBytes += amountRead;
@@ -826,23 +826,23 @@ processPutRequest ()
       strChunkSize = CPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
 
       if (strChunkSize.length() != 0) {
-	debugLogger << g_myProducerName
-		    << "Error reading end of chunk size: \""
-		    << strChunkSize
-		    << "\" (expected empty line)"
-		    << std::flush;
-	sendError ("404", "Upload failure", "Error reading end of chunk.");
-	return false;
+        debugLogger << g_myProducerName
+                    << "Error reading end of chunk size: \""
+                    << strChunkSize
+                    << "\" (expected empty line)"
+                    << std::flush;
+        sendError ("404", "Upload failure", "Error reading end of chunk.");
+        return false;
       }
     }
   }
 
   if (!fileStream->good()) {
     debugLogger << g_myProducerName
-		<< "Oops. Output file is no good after writing "
-		<< totalBytes
-		<< " bytes."
-		<< std::flush;
+                << "Oops. Output file is no good after writing "
+                << totalBytes
+                << " bytes."
+                << std::flush;
   }
 
   /*
@@ -859,10 +859,10 @@ processPutRequest ()
   }
   catch (const std::string & oops) {
     debugLogger << g_myProducerName
-		<< "Oops. Error closing file: "
-		<< oops
-		<< " (ignored)"
-		<< std::flush;
+                << "Oops. Error closing file: "
+                << oops
+                << " (ignored)"
+                << std::flush;
   }
 
   if (m_closeConnection) {
@@ -875,10 +875,10 @@ processPutRequest ()
   sendError ("201", "Created", "The file was uploaded.");
 
   debugLogger << g_myProducerName
-	      << "Upload complete, "
-	      << totalBytes
-	      << " bytes received."
-	      << std::flush;
+              << "Upload complete, "
+              << totalBytes
+              << " bytes received."
+              << std::flush;
 
 
   return true;
@@ -900,49 +900,49 @@ run ()
     switch (m_requestType) {
     case REQUEST_HEAD:
       if (!processGetOrHeadRequest ()) {
-	return false;
+        return false;
       }
       break;
 
     case REQUEST_GET:
       if (!processGetOrHeadRequest ()) {
-	return false;
+        return false;
       }
       break;
 
     case REQUEST_PUT:
       if (!processPutRequest ()) {
-	return false;
+        return false;
       }
       break;
 
     default:
       {
-	debugLogger << g_myProducerName
-		    << CPI::Logger::Verbosity (2)
-		    << "Invalid request method: \""
-		    << m_requestMethod
-		    << "\""
-		    << std::flush;
-	sendError ("501", "Not Implemented", "Method not implemented.");
-	m_state = STATE_BROKEN;
-	return false;
+        debugLogger << g_myProducerName
+                    << CPI::Logger::Verbosity (2)
+                    << "Invalid request method: \""
+                    << m_requestMethod
+                    << "\""
+                    << std::flush;
+        sendError ("501", "Not Implemented", "Method not implemented.");
+        m_state = STATE_BROKEN;
+        return false;
       }
     }
   }
 
   debugLogger << g_myProducerName
-	      << CPI::Logger::Verbosity (2)
-	      << "End of connection."
-	      << std::flush;
+              << CPI::Logger::Verbosity (2)
+              << "End of connection."
+              << std::flush;
   return true;
 }
 
 void
 CPI::Util::Http::Server::
 sendError (const char * statusCode,
-	   const char * reasonPhrase,
-	   const char * message)
+           const char * reasonPhrase,
+           const char * message)
   throw ()
 {
   if (!m_outConn || !m_outConn->good()) {
@@ -963,13 +963,13 @@ sendError (const char * statusCode,
 
   *m_outConn << "\r\n";
   *m_outConn << "<html>\r\n"
-	      << "<head>\r\n"
-	      << "<title>" << reasonPhrase << "</title>\r\n"
-	      << "</head>\r\n"
-	      << "<body>\r\n"
-	      << "<h1>" << statusCode << ": " << reasonPhrase << "</h1>\r\n"
-	      << (message ? message : reasonPhrase) << "\r\n"
-	      << "</body>\r\n"
-	      << "</html>\r\n"
-	      << std::flush;
+              << "<head>\r\n"
+              << "<title>" << reasonPhrase << "</title>\r\n"
+              << "</head>\r\n"
+              << "<body>\r\n"
+              << "<h1>" << statusCode << ": " << reasonPhrase << "</h1>\r\n"
+              << (message ? message : reasonPhrase) << "\r\n"
+              << "</body>\r\n"
+              << "</html>\r\n"
+              << std::flush;
 }

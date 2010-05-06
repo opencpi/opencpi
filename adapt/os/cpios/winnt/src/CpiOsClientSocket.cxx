@@ -26,7 +26,7 @@
 
 CPI::OS::Socket
 CPI::OS::ClientSocket::connect (const std::string & remoteHost,
-				unsigned int remotePort)
+                                unsigned int remotePort)
   throw (std::string)
 {
   CPI::OS::Win32::winSockInit ();

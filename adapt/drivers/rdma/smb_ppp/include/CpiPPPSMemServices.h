@@ -1,4 +1,4 @@
-//	BaseSmemServices is a base class used by most/all implementations
+//        BaseSmemServices is a base class used by most/all implementations
 
 #ifndef CPI_BASE_SMEM_SERVICES_H
 #define CPI_BASE_SMEM_SERVICES_H
@@ -83,34 +83,34 @@ namespace DataTransfer {
       // Disable mapping
       CPI::OS::int32_t disable ();
 
-      //	GetName - the name of the shared memory object
+      //        GetName - the name of the shared memory object
       const char* getName ()
       {
-	return m_location->getAddress();
+        return m_location->getAddress();
       }
 
-      //	getEndPoint - the location of the shared area as an enumeration
+      //        getEndPoint - the location of the shared area as an enumeration
       EndPoint* getEndPoint ()
       {
-	return m_location;
+        return m_location;
       }
 
-      //	GetHandle - platform dependent opaque handle for current mapping
+      //        GetHandle - platform dependent opaque handle for current mapping
       void* getHandle ();
 
       // Ctor/dtor
       PPPSmemServices ( EndPoint* loc ) 
-	: DataTransfer::SmemServices( loc ), m_init(false)
-	{
-	  m_location = dynamic_cast<PPPEndPoint*>(loc);
-	  create( loc, loc->size);
+        : DataTransfer::SmemServices( loc ), m_init(false)
+        {
+          m_location = dynamic_cast<PPPEndPoint*>(loc);
+          create( loc, loc->size);
 
-	}
+        }
       PPPSmemServices ();
       virtual ~PPPSmemServices ();
-	
+        
     protected:
-	
+        
       //  Our thread safe mutex
       static CPI::OS::Mutex m_threadSafeMutex;
 
@@ -119,12 +119,12 @@ namespace DataTransfer {
       bool              m_init;
       CPI::OS::uint64_t m_last_offset;
       unsigned int      m_size;
-		
+                
       struct Map {
-	RoseMapHandle   rio_handle;
-	CPI::OS::uint64_t offset;
-	unsigned int size;
-	void*        vaddr;
+        RoseMapHandle   rio_handle;
+        CPI::OS::uint64_t offset;
+        unsigned int size;
+        void*        vaddr;
       Map( RoseMapHandle h,CPI::OS::uint64_t o,unsigned int s, void* v ):rio_handle(h),offset(o),size(s),vaddr(v){};
       };
       std::vector<Map> m_map;

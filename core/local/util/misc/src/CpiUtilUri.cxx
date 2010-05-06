@@ -20,18 +20,18 @@ namespace {
 
     while (length) {
       if (length >= 2 && *uri == '%' &&
-	  CPI::Util::Uri::ishex (*(uri+1)) && CPI::Util::Uri::ishex (*(uri+2))) {
-	x1 = *++uri;
-	x2 = *++uri;
-	c  = ((x1 >= 'A' && x1 <= 'F') ? (x1 - 'A' + 10) :
-	      (x1 >= 'a' && x1 <= 'f') ? (x1 - 'a' + 10) : (x1 - '0')) << 4;
-	c |= ((x2 >= 'A' && x2 <= 'F') ? (x2 - 'A' + 10) :
-	      (x2 >= 'a' && x2 <= 'f') ? (x2 - 'a' + 10) : (x2 - '0'));
-	res += (char) c;
-	length -= 2;
+          CPI::Util::Uri::ishex (*(uri+1)) && CPI::Util::Uri::ishex (*(uri+2))) {
+        x1 = *++uri;
+        x2 = *++uri;
+        c  = ((x1 >= 'A' && x1 <= 'F') ? (x1 - 'A' + 10) :
+              (x1 >= 'a' && x1 <= 'f') ? (x1 - 'a' + 10) : (x1 - '0')) << 4;
+        c |= ((x2 >= 'A' && x2 <= 'F') ? (x2 - 'A' + 10) :
+              (x2 >= 'a' && x2 <= 'f') ? (x2 - 'a' + 10) : (x2 - '0'));
+        res += (char) c;
+        length -= 2;
       }
       else {
-	res += *uri;
+        res += *uri;
       }
       length--;
       uri++;
@@ -42,7 +42,7 @@ namespace {
 
   std::string
   encodeURI (const char * uri, unsigned int length,
-	     const char * allowedChars, unsigned int numAllowedChars)
+             const char * allowedChars, unsigned int numAllowedChars)
     throw ()
   {
     std::string res;
@@ -53,24 +53,24 @@ namespace {
 
     while (length) {
       if (allowedChars) {
-	isallowed = false;
-	for (isai=0; isai < numAllowedChars; isai++) {
-	  if (allowedChars[isai] == *uri) {
-	    isallowed = true;
-	    break;
-	  }
-	}
+        isallowed = false;
+        for (isai=0; isai < numAllowedChars; isai++) {
+          if (allowedChars[isai] == *uri) {
+            isallowed = true;
+            break;
+          }
+        }
       }
 
       if (!CPI::Util::Uri::isunreserved (*uri) && !isallowed) {
-	x1 = (unsigned char) *uri >> 4;
-	x2 = (unsigned char) *uri & 15;
-	res += '%';
-	res += ((x1 > 9) ? ('a' + x1 - 10) : ('0' + x1));
-	res += ((x2 > 9) ? ('a' + x2 - 10) : ('0' + x2));
+        x1 = (unsigned char) *uri >> 4;
+        x2 = (unsigned char) *uri & 15;
+        res += '%';
+        res += ((x1 > 9) ? ('a' + x1 - 10) : ('0' + x1));
+        res += ((x2 > 9) ? ('a' + x2 - 10) : ('0' + x2));
       }
       else {
-	res += *uri;
+        res += *uri;
       }
 
       length--;
@@ -108,7 +108,7 @@ CPI::Util::Uri::encode (const char * uri, const char * allowedChars)
   }
 
   return encodeURI (uri, std::strlen (uri), allowedChars,
-		    allowedChars ? std::strlen (allowedChars) : 0);
+                    allowedChars ? std::strlen (allowedChars) : 0);
 }
 
 std::string
@@ -116,7 +116,7 @@ CPI::Util::Uri::encode (const std::string & uri, const char * allowedChars)
   throw (std::string)
 {
   return encodeURI (uri.data(), uri.length(), allowedChars,
-		    allowedChars ? std::strlen (allowedChars) : 0);
+                    allowedChars ? std::strlen (allowedChars) : 0);
 }
 
 std::string
@@ -124,7 +124,7 @@ CPI::Util::Uri::encode (const std::string & uri, const std::string & allowedChar
   throw (std::string)
 {
   return encodeURI (uri.data(), uri.length(),
-		    allowedChars.data(), allowedChars.length());
+                    allowedChars.data(), allowedChars.length());
 }
 
 /*
@@ -135,8 +135,8 @@ CPI::Util::Uri::encode (const std::string & uri, const std::string & allowedChar
 
 bool
 CPI::Util::Uri::isPrefix (const std::string & fullURI,
-			  const std::string & baseURI,
-			  std::string * prefix, std::string * tail)
+                          const std::string & baseURI,
+                          std::string * prefix, std::string * tail)
   throw ()
 {
   std::string::size_type idx1, idx2;
@@ -147,27 +147,27 @@ CPI::Util::Uri::isPrefix (const std::string & fullURI,
   while (idx1 < fullURI.length() && idx2 < baseURI.length()) {
     if (fullURI[idx1] == '%' && baseURI[idx2] == '%') {
       if (idx1+3 > fullURI.length() || idx2+3 > baseURI.length() ||
-	  tolower(fullURI[idx1+1]) != tolower(baseURI[idx2+1]) ||
-	  tolower(fullURI[idx1+2]) != tolower(baseURI[idx2+2])) {
-	return false;
+          tolower(fullURI[idx1+1]) != tolower(baseURI[idx2+1]) ||
+          tolower(fullURI[idx1+2]) != tolower(baseURI[idx2+2])) {
+        return false;
       }
       idx1 += 3;
       idx2 += 3;
     }
     else if (fullURI[idx1] == '%') {
       if (idx1+3 > fullURI.length()) {
-	return false;
+        return false;
       }
 
       x1 = fullURI[idx1+1];
       x2 = fullURI[idx1+2];
       c  = ((x1 >= 'A' && x1 <= 'F') ? (x1 - 'A' + 10) :
-	    (x1 >= 'a' && x1 <= 'f') ? (x1 - 'a' + 10) : (x1 - '0')) << 4;
+            (x1 >= 'a' && x1 <= 'f') ? (x1 - 'a' + 10) : (x1 - '0')) << 4;
       c |= ((x2 >= 'A' && x2 <= 'F') ? (x2 - 'A' + 10) :
-	    (x2 >= 'a' && x2 <= 'f') ? (x2 - 'a' + 10) : (x2 - '0'));
+            (x2 >= 'a' && x2 <= 'f') ? (x2 - 'a' + 10) : (x2 - '0'));
 
       if (c != baseURI[idx2]) {
-	return false;
+        return false;
       }
 
       idx1 += 3;
@@ -175,18 +175,18 @@ CPI::Util::Uri::isPrefix (const std::string & fullURI,
     }
     else if (baseURI[idx2] == '%') {
       if (idx2+3 > baseURI.length()) {
-	return false;
+        return false;
       }
 
       x1 = baseURI[idx2+1];
       x2 = baseURI[idx2+2];
       c  = ((x1 >= 'A' && x1 <= 'F') ? (x1 - 'A' + 10) :
-	    (x1 >= 'a' && x1 <= 'f') ? (x1 - 'a' + 10) : (x1 - '0')) << 4;
+            (x1 >= 'a' && x1 <= 'f') ? (x1 - 'a' + 10) : (x1 - '0')) << 4;
       c |= ((x2 >= 'A' && x2 <= 'F') ? (x2 - 'A' + 10) :
-	    (x2 >= 'a' && x2 <= 'f') ? (x2 - 'a' + 10) : (x2 - '0'));
+            (x2 >= 'a' && x2 <= 'f') ? (x2 - 'a' + 10) : (x2 - '0'));
 
       if (c != fullURI[idx1]) {
-	return false;
+        return false;
       }
 
       idx1++;
@@ -463,10 +463,10 @@ CPI::Util::Uri::getPathSegment (unsigned int num) const
 
     if (count == num) {
       if (segEnd == std::string::npos) {
-	return path.substr (segBegin);
+        return path.substr (segBegin);
       }
       else {
-	return path.substr (segBegin, segEnd - segBegin);
+        return path.substr (segBegin, segEnd - segBegin);
       }
     }
 
@@ -503,8 +503,8 @@ CPI::Util::Uri::parse (const std::string & data)
   if (uriLength && isalpha (uri[0])) {
     for (idx=1; idx<uriLength; idx++) {
       if (!(isalpha (uri[idx]) || isdigit (uri[idx]) ||
-	    uri[idx] == '+' || uri[idx] == '-' || uri[idx] == '.')) {
-	break;
+            uri[idx] == '+' || uri[idx] == '-' || uri[idx] == '.')) {
+        break;
       }
     }
 
@@ -527,10 +527,10 @@ CPI::Util::Uri::parse (const std::string & data)
   if (idx+1 < uriLength && uri[idx] == '/' && uri[idx+1] == '/') {
     for (beg = idx += 2; idx < uriLength; idx++) {
       if (!(isunreserved (uri[idx]) || uri[idx] == '%' || uri[idx] == '$' ||
-	    uri[idx] == ',' || uri[idx] == ';' || uri[idx] == ':' ||
-	    uri[idx] == '@' || uri[idx] == '&' || uri[idx] == '=' ||
-	    uri[idx] == '+' || uri[idx] == '$')) {
-	break;
+            uri[idx] == ',' || uri[idx] == ';' || uri[idx] == ':' ||
+            uri[idx] == '@' || uri[idx] == '&' || uri[idx] == '=' ||
+            uri[idx] == '+' || uri[idx] == '$')) {
+        break;
       }
     }
 
@@ -568,10 +568,10 @@ CPI::Util::Uri::parse (const std::string & data)
 
   for (beg=idx; idx < uriLength; idx++) {
     if (!(isunreserved (uri[idx]) ||
-	  uri[idx] == '%' || uri[idx] == '/' || uri[idx] == ';' ||
-	  uri[idx] == ':' || uri[idx] == '@' || uri[idx] == '&' ||
-	  uri[idx] == '=' || uri[idx] == '+' || uri[idx] == '$' ||
-	  uri[idx] == ',')) {
+          uri[idx] == '%' || uri[idx] == '/' || uri[idx] == ';' ||
+          uri[idx] == ':' || uri[idx] == '@' || uri[idx] == '&' ||
+          uri[idx] == '=' || uri[idx] == '+' || uri[idx] == '$' ||
+          uri[idx] == ',')) {
       break;
     }
   }
@@ -602,7 +602,7 @@ CPI::Util::Uri::parse (const std::string & data)
   if (idx < uriLength && uri[idx] == '?') {
     for (beg = ++idx; idx < uriLength; idx++) {
       if (!isuric (uri[idx])) {
-	break;
+        break;
       }
     }
 
@@ -621,7 +621,7 @@ CPI::Util::Uri::parse (const std::string & data)
   if (idx < uriLength && uri[idx] == '#') {
     for (beg = ++idx; idx < uriLength; idx++) {
       if (!isuric (uri[idx])) {
-	break;
+        break;
       }
     }
 
@@ -772,16 +772,16 @@ CPI::Util::Uri::normalizePath (const std::string & path)
 
     if (seg.length() == 1 && seg[0] == '.') {
       if (pos == std::string::npos) {
-	res += "/";
+        res += "/";
       }
       continue;
     }
     else if (seg.length() == 2 && seg[0] == '.' && seg[1] == '.') {
       if ((last = res.rfind ('/')) != std::string::npos) {
-	res = res.substr (0, last);
-	if (pos == std::string::npos) {
-	  res += "/";
-	}
+        res = res.substr (0, last);
+        if (pos == std::string::npos) {
+          res += "/";
+        }
       }
     }
     else {

@@ -44,7 +44,7 @@ AssemblyParser ()
 
 CPI::SCA::AssemblyParser::
 AssemblyParser (CPI::Util::Vfs::Vfs & fs,
-		const std::string & fileName)
+                const std::string & fileName)
   throw (std::string)
 {
   parse (fs, fileName);
@@ -99,8 +99,8 @@ parse (CPI::Util::Vfs::Vfs & fs,
 void
 CPI::SCA::AssemblyParser::
 processSAD (CPI::Util::Vfs::Vfs & fs,
-	    const std::string & scdFileName,
-	    ezxml_t sadRoot)
+            const std::string & scdFileName,
+            ezxml_t sadRoot)
   throw (std::string)
 {
   cpiAssert (sadRoot && ezxml_name (sadRoot));
@@ -156,18 +156,18 @@ processSAD (CPI::Util::Vfs::Vfs & fs,
       const char * cfId = ezxml_attr (cfNode, "id");
 
       if (!cfId || !*cfId) {
-	throw std::string ("Missing \"id\" attribute for \"componentfile\" element");
+        throw std::string ("Missing \"id\" attribute for \"componentfile\" element");
       }
 
       try {
-	parseComponentFileNode (cfNode, cfId);
+        parseComponentFileNode (cfNode, cfId);
       }
       catch (const std::string & oops) {
-	std::string msg = oops;
-	msg += " while parsing componentfile \"";
-	msg + cfId;
-	msg += "\"";
-	throw msg;
+        std::string msg = oops;
+        msg += " while parsing componentfile \"";
+        msg + cfId;
+        msg += "\"";
+        throw msg;
       }
 
       cfNode = ezxml_next (cfNode);
@@ -189,12 +189,12 @@ processSAD (CPI::Util::Vfs::Vfs & fs,
 
     while (cpNode) {
       try {
-	parseComponentPlacement (cpNode, m_assembly.componentPlacement);
+        parseComponentPlacement (cpNode, m_assembly.componentPlacement);
       }
       catch (const std::string & oops) {
-	std::string msg = oops;
-	msg += " while parsing componentplacement";
-	throw msg;
+        std::string msg = oops;
+        msg += " while parsing componentplacement";
+        throw msg;
       }
 
       cpNode = ezxml_next (cpNode);
@@ -208,7 +208,7 @@ processSAD (CPI::Util::Vfs::Vfs & fs,
     ezxml_t hcNode;
 
     for (hcNode = ezxml_child (partNode, "hostcollocation");
-	 hcNode; hcNode = ezxml_next (hcNode)) {
+         hcNode; hcNode = ezxml_next (hcNode)) {
       hcCount++;
     }
 
@@ -225,14 +225,14 @@ processSAD (CPI::Util::Vfs::Vfs & fs,
       cpiAssert (hcIdx < hcCount);
 
       try {
-	parseHostCollocation (hcNode, hcIdx);
+        parseHostCollocation (hcNode, hcIdx);
       }
       catch (const std::string & oops) {
-	std::string msg = oops;
-	msg += " while parsing hostcollocation[";
-	msg + CPI::Util::Misc::unsignedToString (hcIdx);
-	msg += "]";
-	throw msg;
+        std::string msg = oops;
+        msg += " while parsing hostcollocation[";
+        msg + CPI::Util::Misc::unsignedToString (hcIdx);
+        msg += "]";
+        throw msg;
       }
 
       hcNode = ezxml_next (hcNode);
@@ -288,7 +288,7 @@ processSAD (CPI::Util::Vfs::Vfs & fs,
     ezxml_t ciNode;
 
     for (ciNode = ezxml_child (connectionsNode, "connectinterface");
-	 ciNode; ciNode = ezxml_next (ciNode)) {
+         ciNode; ciNode = ezxml_next (ciNode)) {
       ciCount++;
     }
 
@@ -305,13 +305,13 @@ processSAD (CPI::Util::Vfs::Vfs & fs,
       cpiAssert (ciIdx < ciCount);
 
       try {
-	parseConnection (ciNode, ciIdx);
+        parseConnection (ciNode, ciIdx);
       }
       catch (const std::string & oops) {
-	std::string msg = "While parsing connection[";
-	msg += CPI::Util::Misc::unsignedToString (ciIdx);
-	msg += "]";
-	throw msg;
+        std::string msg = "While parsing connection[";
+        msg += CPI::Util::Misc::unsignedToString (ciIdx);
+        msg += "]";
+        throw msg;
       }
 
       ciNode = ezxml_next (ciNode);
@@ -334,7 +334,7 @@ processSAD (CPI::Util::Vfs::Vfs & fs,
     ezxml_t epNode;
 
     for (epNode = ezxml_child (epsNode, "port");
-	 epNode; epNode = ezxml_next (epNode)) {
+         epNode; epNode = ezxml_next (epNode)) {
       epCount++;
     }
 
@@ -351,13 +351,13 @@ processSAD (CPI::Util::Vfs::Vfs & fs,
       cpiAssert (epIdx < epCount);
 
       try {
-	parseExternalPort (epNode, epIdx);
+        parseExternalPort (epNode, epIdx);
       }
       catch (const std::string & oops) {
-	std::string msg = "While parsing port[";
-	msg += CPI::Util::Misc::unsignedToString (epIdx);
-	msg += "]";
-	throw msg;
+        std::string msg = "While parsing port[";
+        msg += CPI::Util::Misc::unsignedToString (epIdx);
+        msg += "]";
+        throw msg;
       }
 
       epNode = ezxml_next (epNode);
@@ -416,8 +416,8 @@ parseHostCollocation (ezxml_t hcNode, unsigned int hcIdx)
   while (cpNode) {
     try {
       parseComponentPlacement (cpNode,
-			       hc.componentPlacement,
-			       hcIdx);
+                               hc.componentPlacement,
+                               hcIdx);
     }
     catch (const std::string & oops) {
       std::string msg = oops;
@@ -435,8 +435,8 @@ parseHostCollocation (ezxml_t hcNode, unsigned int hcIdx)
 void
 CPI::SCA::AssemblyParser::
 parseComponentPlacement (ezxml_t cpNode,
-			 ComponentPlacements & cps,
-			 unsigned int hcIdx)
+                         ComponentPlacements & cps,
+                         unsigned int hcIdx)
   throw (std::string)
 {
   ezxml_t cfrNode = ezxml_child (cpNode, "componentfileref");
@@ -496,7 +496,7 @@ parseComponentPlacement (ezxml_t cpNode,
       const char * usageName = ezxml_txt (usageNameNode);
 
       if (usageName) {
-	cp.usageName = usageName;
+        cp.usageName = usageName;
       }
     }
 
@@ -576,8 +576,8 @@ parseConnection (ezxml_t ciNode, unsigned int ciIdx)
 void
 CPI::SCA::AssemblyParser::
 parsePortRef (ezxml_t portNode,
-	      PortRef & portRef,
-	      bool isProvides)
+              PortRef & portRef,
+              bool isProvides)
   throw (std::string)
 {
   const char * pnnName = isProvides ? "providesidentifier" : "usesidentifier";
@@ -681,7 +681,7 @@ parsePortRef (ezxml_t portNode,
 void
 CPI::SCA::AssemblyParser::
 parseSupportedInterfaceRef (ezxml_t csiNode,
-			    SupportedInterfaceRef & supportedInterface)
+                            SupportedInterfaceRef & supportedInterface)
   throw (std::string)
 {
   ezxml_t siNode = ezxml_child (csiNode, "supportedidentifier");

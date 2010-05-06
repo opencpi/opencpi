@@ -53,11 +53,11 @@ namespace CPI {
       @brief
         The factory class for creating containers.
 
-	This class is used by an application to create a concrete instance of a 
-	container for RCC and RPL workers.  
+        This class is used by an application to create a concrete instance of a 
+        container for RCC and RPL workers.  
 
-	Note that all containers created by a factory instance must be deleted before 
-	the factory is destroyed.
+        Note that all containers created by a factory instance must be deleted before 
+        the factory is destroyed.
 
       @sa CPI::Container::Driver
 
@@ -68,35 +68,35 @@ namespace CPI {
     public:
 
       /**
-	 @brief
-	 Constructor 
+         @brief
+         Constructor 
 
-	 @param [ in ] type
-	 The type of container factory to construct
+         @param [ in ] type
+         The type of container factory to construct
 
-	 @param [ in ] polled
-	 Tells the factory to contruct a container that will either be event driven or polled       
+         @param [ in ] polled
+         Tells the factory to contruct a container that will either be event driven or polled       
 
-	 @throw CPI::Util::EmbeddedException  Invalid type requested
+         @throw CPI::Util::EmbeddedException  Invalid type requested
 
-	 ****************************************************************** */
+         ****************************************************************** */
       Driver( )
-	throw ();
+        throw ();
 
 
       // See if the device described by these properties exists.
       // This would be called by something that had a configuration file
       CPI::Util::Device *probe(const CPI::Util::PValue* props, const char *which )
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
       // Per driver discovery routine to create devices
       unsigned search(const CPI::Util::PValue* props, const char **exclude)
-	throw ( CPI::Util::EmbeddedException ){return 1;};
+        throw ( CPI::Util::EmbeddedException ){return 1;};
 
 
       //!< Destructor
       virtual ~Driver()
-	throw ( );
+        throw ( );
 
     private:
       CPI::DataTransport::TransportGlobal *  m_tpg_events;

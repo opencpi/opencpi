@@ -18,19 +18,19 @@
 
 
 namespace CPI {
-	namespace Util {
+        namespace Util {
 
-		namespace Misc {
+                namespace Misc {
 
-			/**
-			 * \brief Generate a hash code from the string.
-			 */
+                        /**
+                         * \brief Generate a hash code from the string.
+                         */
 
-			unsigned int hashCode( const char* string );
+                        unsigned int hashCode( const char* string );
 
-		}
+                }
 
-	}
+        }
 }
 
 #endif

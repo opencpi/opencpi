@@ -99,7 +99,7 @@ namespace CPI {
        * Constructors
        *********************************/
       Transport(CPI::DataTransport::TransportGlobal* tpg,
-		bool uses_mailboxes );
+                bool uses_mailboxes );
 
       /**********************************
        * Destructor
@@ -124,20 +124,20 @@ namespace CPI {
        * Port set and destibnation ports set(s)
        *********************************/
       Circuit * createCircuit( 
-			      const char* id,			
-			      ConnectionMetaData* connection,		
-			      PortOrdinal src_ports[]=NULL,	
-			      PortOrdinal dest_ports[]=NULL,   
-			      CPI::OS::uint32_t flags=0
-			      );					
+                              const char* id,                        
+                              ConnectionMetaData* connection,                
+                              PortOrdinal src_ports[]=NULL,        
+                              PortOrdinal dest_ports[]=NULL,   
+                              CPI::OS::uint32_t flags=0
+                              );                                        
 
       // ports in the connection are used.
       Circuit * createCircuit( 
-			      CircuitId& cid,		     
-			      ConnectionMetaData* connection,		
-			      PortOrdinal src_ports[]=NULL,	
-			      PortOrdinal dest_ports[]=NULL,	
-			      CPI::OS::uint32_t flags=0 ); 
+                              CircuitId& cid,                     
+                              ConnectionMetaData* connection,                
+                              PortOrdinal src_ports[]=NULL,        
+                              PortOrdinal dest_ports[]=NULL,        
+                              CPI::OS::uint32_t flags=0 ); 
 
       // ports in the connection are used.
       Circuit * createCircuit( CPI::RDT::Descriptors& sPort );
@@ -149,7 +149,7 @@ namespace CPI {
       /**********************************
        * Deletes a circuit
        *********************************/
-      void deleteCircuit( CircuitId circuit );	
+      void deleteCircuit( CircuitId circuit );        
 
       /**********************************
        * Retrieves the requested circuit

@@ -1,7 +1,7 @@
 /**
- **	\file StreamWriter.h
- **	\date  2008-12-20
- **	\author grymse@alhem.net
+ **        \file StreamWriter.h
+ **        \date  2008-12-20
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom
@@ -45,18 +45,18 @@ class IStream;
 class StreamWriter
 {
 public:
-	StreamWriter(IStream& stream);
-	virtual ~StreamWriter() {}
+        StreamWriter(IStream& stream);
+        virtual ~StreamWriter() {}
 
-	StreamWriter& operator<<(const char *);
-	StreamWriter& operator<<(const std::string&);
-	StreamWriter& operator<<(short);
-	StreamWriter& operator<<(int);
-	StreamWriter& operator<<(long);
-	StreamWriter& operator<<(double);
+        StreamWriter& operator<<(const char *);
+        StreamWriter& operator<<(const std::string&);
+        StreamWriter& operator<<(short);
+        StreamWriter& operator<<(int);
+        StreamWriter& operator<<(long);
+        StreamWriter& operator<<(double);
 
 private:
-	IStream& m_stream;
+        IStream& m_stream;
 
 };
 

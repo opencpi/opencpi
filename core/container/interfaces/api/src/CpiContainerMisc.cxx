@@ -38,16 +38,16 @@ namespace CPI {
       m_auxInfo = err;
       const char *s;
       while ((s = va_arg(ap, const char*)))
-	m_auxInfo += s;
+        m_auxInfo += s;
     }
     unsigned long getNum(const char *s) {
       char *endptr;
       errno = 0;
       unsigned long val =  strtoul(s, &endptr, 0);
       if (errno == 0) {
-	if (*endptr == 'K' || *endptr == 'k')
-	  val *= 1024;
-	return val;
+        if (*endptr == 'K' || *endptr == 'k')
+          val *= 1024;
+        return val;
       }
       return ULONG_MAX;
     }
@@ -55,16 +55,16 @@ namespace CPI {
     unsigned long getAttrNum(ezxml_t x, const char *attr, bool missingOK, bool *found) {
       const char *a = ezxml_attr(x, attr);
       if (found)
-	*found = false;
+        *found = false;
       if (a) {
-	unsigned long val = getNum(a);
-	if (val != ULONG_MAX) {
-	  if (found)
-	    *found = true;
-	  return val;
-	}
+        unsigned long val = getNum(a);
+        if (val != ULONG_MAX) {
+          if (found)
+            *found = true;
+          return val;
+        }
       } else if (missingOK)
-	return 0;
+        return 0;
       throw ApiError("Attribute value \"", attr, a ? "\" invalid: \"" : "\" missing", a, "\"", 0);
     }
     

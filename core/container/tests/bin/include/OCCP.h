@@ -24,42 +24,42 @@ namespace CPI {
     struct OccpAdminRegisters {
       const uint32_t
         magic1,
-	magic2,
-	revision,
-	birthday,
-	config,
-	pciDevice,
-	attention,
-	mbz1;
+        magic2,
+        revision,
+        birthday,
+        config,
+        pciDevice,
+        attention,
+        mbz1;
       uint32_t
         scratch20,
-	scratch24;
+        scratch24;
       const uint32_t
         counter,
-	status;
+        status;
       uint32_t
         msiHigh,
-	msiLow,
-	msiData;
+        msiLow,
+        msiData;
       const uint32_t
         mbz2;
     };
     struct OccpWorkerRegisters {
       const uint32_t
         initialize,
-	start,
-	stop,
-	release,
-	test,
-	beforeQuery,
-	afterConfigure,
-	reserved7;
+        start,
+        stop,
+        release,
+        test,
+        beforeQuery,
+        afterConfigure,
+        reserved7;
       uint32_t
         status,
-	control;
+        control;
       const uint32_t
         lastConfig,
-	reserved[5];
+        reserved[5];
     };
 #define OCCP_CONTROL_ENABLE 0x80000000
 #define OCCP_WORKER_SIZE 0x10000

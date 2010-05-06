@@ -53,7 +53,7 @@ namespace CPI {
        */
 
       std::string stringifyCorbaException (const CORBA::Exception & ex)
-	throw ();
+        throw ();
 
     }
   }

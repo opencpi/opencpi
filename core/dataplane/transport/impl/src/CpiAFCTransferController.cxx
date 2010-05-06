@@ -59,9 +59,9 @@ TransferController1AFCShadow( PortSet* output, PortSet* input, bool whole_ss)
 TransferController* 
 TransferController1AFCShadow::
 createController( 
-		 PortSet* output, 
-		 PortSet* input,
-		 bool whole_output_set)
+                 PortSet* output, 
+                 PortSet* input,
+                 bool whole_output_set)
 {
   return new TransferController1AFCShadow( output, input, whole_output_set );
 }
@@ -138,7 +138,7 @@ produce( Buffer* b, bool bcast )
 
 #ifdef DEBUG_L2
   printf("output port id = %d, buffer id = %d, input id = %d\n", 
-	 buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
+         buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
   printf("Template address = 0x%x\n", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid]);
 #endif
 
@@ -188,7 +188,7 @@ consume( Buffer* input )
 #ifdef DEBUG_L2
   printf("Set load factor to %d\n", buffer->getState()->pad);
   printf("Consuming using tpid = %d, ttid = %d, template = 0x%x\n",input->getPort()->getPortId(),
-	 input->getTid(), m_templates [0][0][input->getPort()->getPortId()][input->getTid()][0][INPUT] );
+         input->getTid(), m_templates [0][0][input->getPort()->getPortId()][input->getTid()][0][INPUT] );
 #endif
 
   // Tell everyone that we are empty
@@ -204,10 +204,10 @@ consume( Buffer* input )
 Buffer* 
 TransferController1AFCShadow::
 getNextEmptyOutputBuffer( 
-						     CPI::DataTransport::Port* src_port	
-						     )
+                                                     CPI::DataTransport::Port* src_port        
+                                                     )
 {
-  OutputBuffer* boi=NULL;	
+  OutputBuffer* boi=NULL;        
   CPI::OS::uint32_t &n = src_port->getLastBufferTidProcessed();
   boi = static_cast<OutputBuffer*>(src_port->getBuffer(n));
   n = (n+1) % src_port->getBufferCount();
@@ -219,8 +219,8 @@ getNextEmptyOutputBuffer(
 Buffer* 
 TransferController1AFCShadow::
 getNextFullInputBuffer( 
-		    CPI::DataTransport::Port* input_port 
-		    )
+                    CPI::DataTransport::Port* input_port 
+                    )
 {
 
   InputBuffer* buffer;
@@ -249,9 +249,9 @@ getNextFullInputBuffer(
 bool 
 TransferController1AFCShadow::
 hasFullInputBuffer(
-		    CPI::DataTransport::Port* input_port,
-		    InputBuffer** retb
-		    )const
+                    CPI::DataTransport::Port* input_port,
+                    InputBuffer** retb
+                    )const
 {
   InputBuffer* buffer;
   int& lo = input_port->getLastBufferOrd();

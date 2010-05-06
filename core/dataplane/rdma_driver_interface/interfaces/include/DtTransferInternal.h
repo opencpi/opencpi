@@ -81,7 +81,7 @@ namespace DataTransfer {
 
       // Determine if the mail box is avialable
       inline bool mailBoxAvailable( SMBResources* res ){ 
-	return (res->m_comms->mailBox[m_slot].request.reqBasic.type == ContainerComms::NoRequest) ? true : false;
+        return (res->m_comms->mailBox[m_slot].request.reqBasic.type == ContainerComms::NoRequest) ? true : false;
       }
 
       // Returns the pointer to the mailbox
@@ -131,8 +131,8 @@ namespace DataTransfer {
     XferFactory* find( const char* end_point1,const char* end_point2 );
 
     // Creates a transfer service template
-    XferServices* getService(std::string& s_endpoint,  std::string& t_endpoint);	
-    XferServices* getService(EndPoint *s_endpoint, EndPoint *t_endpoint);	
+    XferServices* getService(std::string& s_endpoint,  std::string& t_endpoint);        
+    XferServices* getService(EndPoint *s_endpoint, EndPoint *t_endpoint);        
 
     // Register the Data transfer class
     void registerFactory( XferFactory* dt );

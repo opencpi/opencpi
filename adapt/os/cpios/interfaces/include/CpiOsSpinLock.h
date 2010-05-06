@@ -98,7 +98,7 @@ namespace CPI {
        */
 
       SpinLock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
@@ -107,7 +107,7 @@ namespace CPI {
        */
 
       ~SpinLock ()
-	throw ();
+        throw ();
 
       /**
        * Acquires the spinlock.
@@ -121,7 +121,7 @@ namespace CPI {
        */
 
       void lock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Attempts to acquire the lock without spinning.
@@ -133,7 +133,7 @@ namespace CPI {
        */
 
       bool trylock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Releases the spinlock.
@@ -145,7 +145,7 @@ namespace CPI {
        */
 
       void unlock ()
-	throw (std::string);
+        throw (std::string);
 
     private:
       CPI::OS::uint64_t m_osOpaque[5];

@@ -143,15 +143,15 @@ namespace CPI {
        */
 
       enum LwLogLevel {
-	SECURITY_ALARM = 1,
-	FAILURE_ALARM = 2,
-	DEGRADED_ALARM = 3,
-	EXCEPTION_ERROR = 4,
-	FLOW_CONTROL_ERROR = 5,
-	RANGE_ERROR = 6,
-	USAGE_ERROR = 7,
-	ADMINISTRATIVE_EVENT = 8,
-	STATISTIC_REPORT = 9
+        SECURITY_ALARM = 1,
+        FAILURE_ALARM = 2,
+        DEGRADED_ALARM = 3,
+        EXCEPTION_ERROR = 4,
+        FLOW_CONTROL_ERROR = 5,
+        RANGE_ERROR = 6,
+        USAGE_ERROR = 7,
+        ADMINISTRATIVE_EVENT = 8,
+        STATISTIC_REPORT = 9
       };
     }
 
@@ -323,10 +323,10 @@ namespace CPI {
       /** \cond */
       class LogBuf : public std::streambuf {
       public:
-	virtual ~LogBuf ();
-	virtual void setLogLevel (unsigned short) = 0;
-	virtual void setProducerId (const char *) = 0;
-	virtual void setProducerName (const char *) = 0;
+        virtual ~LogBuf ();
+        virtual void setLogLevel (unsigned short) = 0;
+        virtual void setProducerId (const char *) = 0;
+        virtual void setProducerName (const char *) = 0;
       };
       /** \endcond */
 

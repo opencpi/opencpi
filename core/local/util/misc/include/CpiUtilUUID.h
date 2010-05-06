@@ -34,7 +34,7 @@ namespace CPI {
        */
 
       struct BinaryUUID {
-	unsigned char data[16];
+        unsigned char data[16];
       };
 
       /**
@@ -47,7 +47,7 @@ namespace CPI {
        */
 
       BinaryUUID produceRandomUUID ()
-	throw ();
+        throw ();
 
       /**
        * \brief Convert a binary UUID to the hexadecimal representation.
@@ -57,7 +57,7 @@ namespace CPI {
        */
 
       std::string binaryToHex (BinaryUUID uuid)
-	throw ();
+        throw ();
 
     }
 

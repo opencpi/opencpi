@@ -1,7 +1,7 @@
 /**
- **	\file IHttpServer.h
- **	\date  2007-10-05
- **	\author grymse@alhem.net
+ **        \file IHttpServer.h
+ **        \date  2007-10-05
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -44,17 +44,17 @@ class HttpResponse;
 class IHttpServer
 {
 public:
-	virtual ~IHttpServer() {}
+        virtual ~IHttpServer() {}
 
-	/** Complete request has been received and parsed. Send response
-	    using the Respond() method. */
-	virtual void OnExec(const HttpRequest& req) = 0;
+        /** Complete request has been received and parsed. Send response
+            using the Respond() method. */
+        virtual void OnExec(const HttpRequest& req) = 0;
 
-	/** Send response. */
-	virtual void Respond(const HttpResponse& res) = 0;
+        /** Send response. */
+        virtual void Respond(const HttpResponse& res) = 0;
 
-	/** Called when the body part of the response has been sent. */
-	virtual void OnResponseComplete() = 0;
+        /** Called when the body part of the response has been sent. */
+        virtual void OnResponseComplete() = 0;
 };
 
 

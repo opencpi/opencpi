@@ -39,9 +39,9 @@ namespace NullOutputTests {
       CPI::Logger::NullOutput null;
       null.setProducerId ("01-NullOutput");
       null << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	   << CPI::Logger::ProducerName ("runNullTest")
-	   << "Hello World"
-	   << std::flush;
+           << CPI::Logger::ProducerName ("runNullTest")
+           << "Hello World"
+           << std::flush;
       test (null.good());
     }
   };
@@ -83,8 +83,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

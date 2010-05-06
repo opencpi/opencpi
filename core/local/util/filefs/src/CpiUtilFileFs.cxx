@@ -25,8 +25,8 @@ namespace {
   class FileFsIterator : public CPI::Util::Vfs::Iterator {
   public:
     FileFsIterator (const std::string & root,
-		    const std::string & dir,
-		    const std::string & pattern)
+                    const std::string & dir,
+                    const std::string & pattern)
       throw (std::string);
     ~FileFsIterator ()
       throw ();
@@ -57,15 +57,15 @@ namespace {
 }
 
 FileFsIterator::FileFsIterator (const std::string & root,
-				const std::string & dir,
-				const std::string & pattern)
+                                const std::string & dir,
+                                const std::string & pattern)
   throw (std::string)
   : m_root (root),
     m_osIterator (dir, pattern)
 {
   cpiAssert (m_root.length() > 0 && m_root[0] == '/');
   cpiAssert (dir.length() >= m_root.length() &&
-	     dir.substr (0, m_root.length()) == m_root);
+             dir.substr (0, m_root.length()) == m_root);
 }
 
 FileFsIterator::~FileFsIterator ()
@@ -107,7 +107,7 @@ FileFsIterator::absoluteName ()
 
   if (m_root.length() > 1) {
     cpiAssert (fullName.length() >= m_root.length() &&
-	       fullName.substr (0, m_root.length()) == m_root);
+               fullName.substr (0, m_root.length()) == m_root);
 
     fullName = fullName.substr (m_root.length());
   }
@@ -223,15 +223,15 @@ pathToName (const std::string & pathName) const
      */
 
     if (absPath.length() <= m_root.length() ||
-	absPath.substr (3, m_root.length() - 3) != m_root.substr (3) ||
-	absPath[m_root.length()] != '/') {
+        absPath.substr (3, m_root.length() - 3) != m_root.substr (3) ||
+        absPath[m_root.length()] != '/') {
       throw std::string ("file name points outside this file system");
     }
   }
   else {
     if (absPath.length() <= m_root.length() ||
-	absPath.substr (0, m_root.length()) != m_root ||
-	absPath[m_root.length()] != '/') {
+        absPath.substr (0, m_root.length()) != m_root ||
+        absPath[m_root.length()] != '/') {
       throw std::string ("file name points outside this file system");
     }
   }
@@ -310,8 +310,8 @@ CPI::Util::FileFs::FileFs::URIToName (const std::string & struri) const
      */
 
     if (authority.length() == 2 &&
-	CPI::Util::Uri::isalpha (authority[0]) &&
-	authority[1] == ':') {
+        CPI::Util::Uri::isalpha (authority[0]) &&
+        authority[1] == ':') {
       drivePrefix = authority;
       drivePrefix[0] = std::tolower (drivePrefix[0]);
     }
@@ -321,10 +321,10 @@ CPI::Util::FileFs::FileFs::URIToName (const std::string & struri) const
        */
 
       if (!CPI::OS::isLocalhost (authority)) {
-	std::string reason = "authority \"";
-	reason += authority;
-	reason += "\" does not look like a local host name";
-	throw reason;
+        std::string reason = "authority \"";
+        reason += authority;
+        reason += "\" does not look like a local host name";
+        throw reason;
       }
     }
   }
@@ -414,7 +414,7 @@ CPI::Util::FileFs::FileFs::rmdir (const std::string & name)
 
 CPI::Util::Vfs::Iterator *
 CPI::Util::FileFs::FileFs::list (const std::string & dir,
-				 const std::string & pattern)
+                                 const std::string & pattern)
   throw (std::string)
 {
   testFilenameForValidity (dir);
@@ -477,7 +477,7 @@ CPI::Util::FileFs::FileFs::lastModified (const std::string & name)
 
 std::iostream *
 CPI::Util::FileFs::FileFs::open (const std::string & name,
-				 std::ios_base::openmode mode)
+                                 std::ios_base::openmode mode)
   throw (std::string)
 {
   testFilenameForValidity (name);
@@ -501,7 +501,7 @@ CPI::Util::FileFs::FileFs::open (const std::string & name,
 
 std::istream *
 CPI::Util::FileFs::FileFs::openReadonly (const std::string & name,
-					 std::ios_base::openmode mode)
+                                         std::ios_base::openmode mode)
   throw (std::string)
 {
   testFilenameForValidity (name);
@@ -523,7 +523,7 @@ CPI::Util::FileFs::FileFs::openReadonly (const std::string & name,
 
 std::ostream *
 CPI::Util::FileFs::FileFs::openWriteonly (const std::string & name,
-					  std::ios_base::openmode mode)
+                                          std::ios_base::openmode mode)
   throw (std::string)
 {
   testFilenameForValidity (name);
@@ -578,8 +578,8 @@ CPI::Util::FileFs::FileFs::close (std::ios * str)
 
 void
 CPI::Util::FileFs::FileFs::move (const std::string & oldName,
-				 Vfs * destFs,
-				 const std::string & newName)
+                                 Vfs * destFs,
+                                 const std::string & newName)
   throw (std::string)
 {
   /*
@@ -603,7 +603,7 @@ CPI::Util::FileFs::FileFs::move (const std::string & oldName,
 
 void
 CPI::Util::FileFs::FileFs::rename (const std::string & oldName,
-				   const std::string & newName)
+                                   const std::string & newName)
   throw (std::string)
 {
   testFilenameForValidity (oldName);

@@ -144,21 +144,21 @@ remove_from_list(List *list, void *item)
     if (list->entries[i] == item) { /* Found it */
 
       if ( list->no_shuffle == 0 ) {
-	/* See if we need to shuffle the rest of the list */
-	if (i != (list->nentries - 1)) {
-	  /* Shuffle the rest of the list */
-	  for (int j=i; j < (list->nentries - 1); j++) {
-	    list->entries[j] = list->entries[j+1];
-	  }
-	}
-	/* Decrement the entry count */
-	list->nentries--;
-	/* Reprocess the list */
-	i--;
-	continue;
+        /* See if we need to shuffle the rest of the list */
+        if (i != (list->nentries - 1)) {
+          /* Shuffle the rest of the list */
+          for (int j=i; j < (list->nentries - 1); j++) {
+            list->entries[j] = list->entries[j+1];
+          }
+        }
+        /* Decrement the entry count */
+        list->nentries--;
+        /* Reprocess the list */
+        i--;
+        continue;
       }
       else {
-	list->entries[i] = NULL;
+        list->entries[i] = NULL;
       }
     }
   }

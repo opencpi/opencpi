@@ -1,7 +1,7 @@
 /**
- **	\file Semaphore.cpp
- **	\date  2007-04-13
- **	\author grymse@alhem.net
+ **        \file Semaphore.cpp
+ **        \date  2007-04-13
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -40,43 +40,43 @@ namespace SOCKETS_NAMESPACE {
 
 Semaphore::Semaphore()
 {
-	sem_init(&m_sem, 0, 0);
+        sem_init(&m_sem, 0, 0);
 }
 
 
 Semaphore::Semaphore(unsigned int start_val)
 {
-	sem_init(&m_sem, 0, start_val);
+        sem_init(&m_sem, 0, start_val);
 }
 
 
 Semaphore::~Semaphore()
 {
-	sem_destroy(&m_sem);
+        sem_destroy(&m_sem);
 }
 
 
 int Semaphore::Post()
 {
-	return sem_post(&m_sem);
+        return sem_post(&m_sem);
 }
 
 
 int Semaphore::Wait()
 {
-	return sem_wait(&m_sem);
+        return sem_wait(&m_sem);
 }
 
 
 int Semaphore::TryWait()
 {
-	return sem_trywait(&m_sem);
+        return sem_trywait(&m_sem);
 }
 
 
 int Semaphore::GetValue(int& i)
 {
-	return sem_getvalue(&m_sem, &i);
+        return sem_getvalue(&m_sem, &i);
 }
 
 

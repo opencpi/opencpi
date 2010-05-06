@@ -44,7 +44,7 @@ class Operation;
 class Tokenizer;
 class ParsedExpression {
 
-	friend class Parser;
+        friend class Parser;
 
  private:
   DefineExpVarInterface* cb_;

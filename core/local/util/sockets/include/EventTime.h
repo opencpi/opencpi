@@ -1,6 +1,6 @@
 /** \file EventTime.h
- **	\date  2005-12-07
- **	\author grymse@alhem.net
+ **        \date  2005-12-07
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
@@ -49,24 +49,24 @@ typedef int64_t mytime_t;
 /** \defgroup timer EventTimer event handling */
 
 /** EventTime primitive, returns current time as a 64-bit number.
-	\ingroup timer */
+        \ingroup timer */
 class EventTime
 {
 public:
-	EventTime();
-	EventTime(mytime_t sec,long usec);
-	~EventTime();
+        EventTime();
+        EventTime(mytime_t sec,long usec);
+        ~EventTime();
 
-	static mytime_t Tick();
+        static mytime_t Tick();
 
-	operator mytime_t () { return m_time; }
-	EventTime operator - (const EventTime& x) const;
-	bool operator < (const EventTime& x) const;
+        operator mytime_t () { return m_time; }
+        EventTime operator - (const EventTime& x) const;
+        bool operator < (const EventTime& x) const;
 
 private:
-	EventTime(const EventTime& ) {} // copy constructor
-	EventTime& operator=(const EventTime& ) { return *this; } // assignment operator
-	mytime_t m_time;
+        EventTime(const EventTime& ) {} // copy constructor
+        EventTime& operator=(const EventTime& ) { return *this; } // assignment operator
+        mytime_t m_time;
 };
 
 

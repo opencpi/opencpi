@@ -35,7 +35,7 @@ namespace DataTransfer {
     virtual ~PPPEventHandlerFactory(){};
   };
 
-	
+        
   class PPPEventHandler : public EventHandler
   {
   public:
@@ -68,7 +68,7 @@ namespace DataTransfer {
     std::list<CPI::OS::uint64_t> m_minTimeList;
     PPPEHWakeupThread       *m_WakeUpThread;
     int                      m_tid;
-			
+                        
   };
 
 }

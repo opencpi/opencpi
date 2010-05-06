@@ -48,8 +48,8 @@ CPI::Util::Vfs::md5 (std::istream * str, std::streamsize count)
     amount = str->gcount ();
 
     md5_append (&hash,
-		reinterpret_cast<unsigned char *> (buffer),
-		amount);
+                reinterpret_cast<unsigned char *> (buffer),
+                amount);
 
     if (count != -1) {
       count -= amount;

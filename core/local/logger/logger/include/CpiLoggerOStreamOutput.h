@@ -50,27 +50,27 @@ namespace CPI {
       /** \cond */
       class OStreamOutputBuf : public LogBuf {
       public:
-	OStreamOutputBuf (std::ostream *, bool);
-	~OStreamOutputBuf ();
+        OStreamOutputBuf (std::ostream *, bool);
+        ~OStreamOutputBuf ();
 
-	void setLogLevel (unsigned short);
-	void setProducerId (const char *);
-	void setProducerName (const char *);
-
-      protected:
-	int sync ();
-	int_type overflow (int_type = std::streambuf::traits_type::eof());
-	std::streamsize xsputn (const char *, std::streamsize);
+        void setLogLevel (unsigned short);
+        void setProducerId (const char *);
+        void setProducerName (const char *);
 
       protected:
-	bool m_first;
-	bool m_locked;
-	unsigned short m_logLevel;
-	std::string m_producerId;
-	std::string m_producerName;
-	std::ostream * m_out;
-	bool m_adopted;
-	CPI::OS::Mutex m_lock;
+        int sync ();
+        int_type overflow (int_type = std::streambuf::traits_type::eof());
+        std::streamsize xsputn (const char *, std::streamsize);
+
+      protected:
+        bool m_first;
+        bool m_locked;
+        unsigned short m_logLevel;
+        std::string m_producerId;
+        std::string m_producerName;
+        std::ostream * m_out;
+        bool m_adopted;
+        CPI::OS::Mutex m_lock;
       };
       /** \endcond */
 

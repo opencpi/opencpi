@@ -27,10 +27,10 @@ namespace CPI {
     namespace Bfd {
 
       void bfdInit (const char * argv0 = 0)
-	throw ();
+        throw ();
 
       void dumpStack (std::ostream & out)
-	throw ();
+        throw ();
 
     }
   }

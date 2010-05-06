@@ -33,7 +33,7 @@ namespace CPI {
        */
 
       bool nativeByteorder ()
-	throw ();
+        throw ();
 
       /**
        * Copy 2 octets in reverse order, thus changing the byteorder.
@@ -45,7 +45,7 @@ namespace CPI {
        */
 
       void copyswap2 (char * pdest, const char * psrc)
-	throw ();
+        throw ();
 
       /**
        * Copy 4 octets in reverse order, thus changing the byteorder.
@@ -57,7 +57,7 @@ namespace CPI {
        */
 
       void copyswap4 (char * pdest, const char * psrc)
-	throw ();
+        throw ();
 
       /**
        * Copy 8 octets in reverse order, thus changing the byteorder.
@@ -69,7 +69,7 @@ namespace CPI {
        */
 
       void copyswap8 (char * pdest, const char * psrc)
-	throw ();
+        throw ();
 
       /**
        * \brief CDR Encoder
@@ -80,113 +80,113 @@ namespace CPI {
 
       class Encoder {
       public:
-	/**
-	 * Constructor.
-	 */
+        /**
+         * Constructor.
+         */
 
-	Encoder ()
-	  throw ();
+        Encoder ()
+          throw ();
 
-	/**
-	 * Add padding so that the following data is aligned with respect
-	 * to the beginning of the stream.
-	 *
-	 * \param[in] mod The modulus to align to.
-	 */
+        /**
+         * Add padding so that the following data is aligned with respect
+         * to the beginning of the stream.
+         *
+         * \param[in] mod The modulus to align to.
+         */
 
-	void align (unsigned long mod)
-	  throw ();
+        void align (unsigned long mod)
+          throw ();
 
-	/**
-	 * \name Marshalling data.
-	 */
+        /**
+         * \name Marshalling data.
+         */
 
-	//@{
+        //@{
 
-	/**
-	 * Marshal a boolean value.
-	 *
-	 * \param[in] value A boolean value.
-	 */
+        /**
+         * Marshal a boolean value.
+         *
+         * \param[in] value A boolean value.
+         */
 
-	void putBoolean (bool value)
-	  throw ();
+        void putBoolean (bool value)
+          throw ();
 
-	/**
-	 * Marshal an octet value.
-	 *
-	 * \param[in] value An octet value.
-	 */
+        /**
+         * Marshal an octet value.
+         *
+         * \param[in] value An octet value.
+         */
 
-	void putOctet (unsigned char value)
-	  throw ();
+        void putOctet (unsigned char value)
+          throw ();
 
-	/**
-	 * Marshal a CORBA::UShort value.  Padding is added if necessary.
-	 *
-	 * \param[in] value A CORBA::UShort value.
-	 */
+        /**
+         * Marshal a CORBA::UShort value.  Padding is added if necessary.
+         *
+         * \param[in] value A CORBA::UShort value.
+         */
 
-	void putUShort (CPI::OS::uint16_t value)
-	  throw ();
+        void putUShort (CPI::OS::uint16_t value)
+          throw ();
 
-	/**
-	 * Marshal a CORBA::ULong value.  Padding is added if necessary.
-	 *
-	 * \param[in] value A CORBA::ULong value.
-	 */
+        /**
+         * Marshal a CORBA::ULong value.  Padding is added if necessary.
+         *
+         * \param[in] value A CORBA::ULong value.
+         */
 
-	void putULong (CPI::OS::uint32_t value)
-	  throw ();
-	void putLong (CPI::OS::int32_t value)
-	  throw ();
-	
-	/**
-	 * Marshal a CORBA::ULongLong value.  Padding is added if necessary.
-	 *
-	 * \param[in] value A CORBA::ULongLong value.
-	 */
+        void putULong (CPI::OS::uint32_t value)
+          throw ();
+        void putLong (CPI::OS::int32_t value)
+          throw ();
+        
+        /**
+         * Marshal a CORBA::ULongLong value.  Padding is added if necessary.
+         *
+         * \param[in] value A CORBA::ULongLong value.
+         */
 
-	void putULongLong (CPI::OS::uint64_t value)
-	  throw ();
+        void putULongLong (CPI::OS::uint64_t value)
+          throw ();
 
-	/**
-	 * Marshal a CORBA string.
-	 *
-	 * \param[in] value A string.
-	 */
+        /**
+         * Marshal a CORBA string.
+         *
+         * \param[in] value A string.
+         */
 
-	void putString (const std::string & value)
-	  throw ();
+        void putString (const std::string & value)
+          throw ();
 
-	/**
-	 * Marshal a sequence&lt;octet&gt;.
-	 *
-	 * \param[in] value An octet sequence.
-	 */
+        /**
+         * Marshal a sequence&lt;octet&gt;.
+         *
+         * \param[in] value An octet sequence.
+         */
 
-	void putOctetSeq (const std::string & value)
-	  throw ();
+        void putOctetSeq (const std::string & value)
+          throw ();
 
-	//@}
+        //@}
 
-	/**
-	 * Get the CDR-encoded marshalled data.
-	 *
-	 * \note The string may contain binary data and should not be
-	 * used as a C string.  Use std::string::data() and
-	 * std::string::length().
-	 *
-	 * \note The data is encoded using the native byteorder, which
-	 * must be communicated to the decoder.  (It may be embedded in
-	 * the stream itself.)
-	 */
+        /**
+         * Get the CDR-encoded marshalled data.
+         *
+         * \note The string may contain binary data and should not be
+         * used as a C string.  Use std::string::data() and
+         * std::string::length().
+         *
+         * \note The data is encoded using the native byteorder, which
+         * must be communicated to the decoder.  (It may be embedded in
+         * the stream itself.)
+         */
 
-	const std::string & data () const
-	  throw ();
+        const std::string & data () const
+          throw ();
 
       protected:
-	std::string m_data;
+        std::string m_data;
       };
 
       /**
@@ -195,183 +195,183 @@ namespace CPI {
 
       class Decoder {
       public:
-	/**
-	 * \brief Thrown as an exception by the CDR Decoder.
-	 *
-	 * The exception that is thrown when data can not be decoded.
-	 */
+        /**
+         * \brief Thrown as an exception by the CDR Decoder.
+         *
+         * The exception that is thrown when data can not be decoded.
+         */
 
-	struct InvalidData {};
+        struct InvalidData {};
 
       public:
-	/**
-	 * Constructor.
-	 *
-	 * \param[in] data Pointer to the CDR-encoded data to decode.
-	 * \param[in] size The length of the data blob, in octets.
-	 *
-	 * \post \a data shall not be modified for the lifetime of this
-	 * object, as no copy is made.
-	 */
+        /**
+         * Constructor.
+         *
+         * \param[in] data Pointer to the CDR-encoded data to decode.
+         * \param[in] size The length of the data blob, in octets.
+         *
+         * \post \a data shall not be modified for the lifetime of this
+         * object, as no copy is made.
+         */
 
-	Decoder (const void * data, unsigned long size)
-	  throw ();
+        Decoder (const void * data, unsigned long size)
+          throw ();
 
-	/**
-	 * Constructor.
-	 *
-	 * \param[in] data CDR-encoded data to decode.
-	 *
-	 * \post \a data shall not be modified for the lifetime of this
-	 * object, as no copy is made.
-	 */
+        /**
+         * Constructor.
+         *
+         * \param[in] data CDR-encoded data to decode.
+         *
+         * \post \a data shall not be modified for the lifetime of this
+         * object, as no copy is made.
+         */
 
-	Decoder (const std::string & data)
-	  throw ();
+        Decoder (const std::string & data)
+          throw ();
 
-	/**
-	 * Get the current byteorder value.
-	 *
-	 * \return The decoder's current byteorder setting, true for
-	 *         little-endian, false for big-endian.
-	 */
+        /**
+         * Get the current byteorder value.
+         *
+         * \return The decoder's current byteorder setting, true for
+         *         little-endian, false for big-endian.
+         */
 
-	bool byteorder () const
-	  throw ();
+        bool byteorder () const
+          throw ();
 
-	/**
-	 * Set the byteorder for unmarshalling.  If this is different
-	 * than the native byteorder, data will be byte-swapped when
-	 * unmarshalled.
-	 *
-	 * \param[in] bo The byteorder to use, true for little-endian,
-	 *               false for big-endian.
-	 */
+        /**
+         * Set the byteorder for unmarshalling.  If this is different
+         * than the native byteorder, data will be byte-swapped when
+         * unmarshalled.
+         *
+         * \param[in] bo The byteorder to use, true for little-endian,
+         *               false for big-endian.
+         */
 
-	void byteorder (bool bo)
-	  throw ();
+        void byteorder (bool bo)
+          throw ();
 
-	/**
-	 * Skip data so that the following data is aligned with respect
-	 * to the beginning of the stream.
-	 *
-	 * \param[in] mod The modulus to align to.
-	 */
+        /**
+         * Skip data so that the following data is aligned with respect
+         * to the beginning of the stream.
+         *
+         * \param[in] mod The modulus to align to.
+         */
 
-	void align (unsigned long mod)
-	  throw ();
+        void align (unsigned long mod)
+          throw ();
 
-	/**
-	 * Returns the remaining number of octets in the buffer.
-	 *
-	 * This value can be used, e.g., to guard against invalid values
-	 * for the length of a sequence: if the length claims to be one
-	 * billion, then we can complain that the buffer does not contain
-	 * as much data, rather than failing to adjust the length of the
-	 * sequence.
-	 *
-	 * \return The number of octets left in the buffer.
-	 */
+        /**
+         * Returns the remaining number of octets in the buffer.
+         *
+         * This value can be used, e.g., to guard against invalid values
+         * for the length of a sequence: if the length claims to be one
+         * billion, then we can complain that the buffer does not contain
+         * as much data, rather than failing to adjust the length of the
+         * sequence.
+         *
+         * \return The number of octets left in the buffer.
+         */
 
-	unsigned long remainingData () const
-	  throw ();
+        unsigned long remainingData () const
+          throw ();
 
-	/**
-	 * \name Unmarshalling data.
-	 */
+        /**
+         * \name Unmarshalling data.
+         */
 
-	//@{
+        //@{
 
-	/**
-	 * Unmarshal a boolean value.
-	 *
-	 * \param[out] value The boolean value.
-	 *
-	 * \throw InvalidData At the end of the stream.
-	 */
+        /**
+         * Unmarshal a boolean value.
+         *
+         * \param[out] value The boolean value.
+         *
+         * \throw InvalidData At the end of the stream.
+         */
 
-	void getBoolean (bool & value)
-	  throw (InvalidData);
+        void getBoolean (bool & value)
+          throw (InvalidData);
 
-	/**
-	 * Unmarshal an octet value.
-	 *
-	 * \param[out] value The octet value.
-	 *
-	 * \throw InvalidData At the end of the stream.
-	 */
+        /**
+         * Unmarshal an octet value.
+         *
+         * \param[out] value The octet value.
+         *
+         * \throw InvalidData At the end of the stream.
+         */
 
-	void getOctet (unsigned char & value)
-	  throw (InvalidData);
+        void getOctet (unsigned char & value)
+          throw (InvalidData);
 
-	/**
-	 * Unmarshal a CORBA::UShort value, aligning and byte-swapping if
-	 * necessary.
-	 *
-	 * \param[out] value The CORBA::UShort value.
-	 *
-	 * \throw InvalidData At the end of the stream.
-	 */
+        /**
+         * Unmarshal a CORBA::UShort value, aligning and byte-swapping if
+         * necessary.
+         *
+         * \param[out] value The CORBA::UShort value.
+         *
+         * \throw InvalidData At the end of the stream.
+         */
 
-	void getUShort (CPI::OS::uint16_t & value)
-	  throw (InvalidData);
+        void getUShort (CPI::OS::uint16_t & value)
+          throw (InvalidData);
 
-	/**
-	 * Unmarshal a CORBA::ULong value, aligning and byte-swapping if
-	 * necessary.
-	 *
-	 * \param[out] value The CORBA::ULong value.
-	 *
-	 * \throw InvalidData At the end of the stream.
-	 */
+        /**
+         * Unmarshal a CORBA::ULong value, aligning and byte-swapping if
+         * necessary.
+         *
+         * \param[out] value The CORBA::ULong value.
+         *
+         * \throw InvalidData At the end of the stream.
+         */
 
-	void getULong (CPI::OS::uint32_t & value)
-	  throw (InvalidData);
-	void getLong (CPI::OS::int32_t & value)
-	  throw (InvalidData);
+        void getULong (CPI::OS::uint32_t & value)
+          throw (InvalidData);
+        void getLong (CPI::OS::int32_t & value)
+          throw (InvalidData);
 
-	/**
-	 * Unmarshal a CORBA::ULongLong value, aligning and byte-swapping
-	 * if necessary.
-	 *
-	 * \param[out] value The CORBA::ULongLong value.
-	 *
-	 * \throw InvalidData At the end of the stream.
-	 */
+        /**
+         * Unmarshal a CORBA::ULongLong value, aligning and byte-swapping
+         * if necessary.
+         *
+         * \param[out] value The CORBA::ULongLong value.
+         *
+         * \throw InvalidData At the end of the stream.
+         */
 
-	void getULongLong (CPI::OS::uint64_t & value)
-	  throw (InvalidData);
+        void getULongLong (CPI::OS::uint64_t & value)
+          throw (InvalidData);
 
-	/**
-	 * Unmarshal a CORBA string.
-	 *
-	 * \param[out] value The string value.
-	 *
-	 * \throw InvalidData At the end of the stream.
-	 */
+        /**
+         * Unmarshal a CORBA string.
+         *
+         * \param[out] value The string value.
+         *
+         * \throw InvalidData At the end of the stream.
+         */
 
-	void getString (std::string & value)
-	  throw (InvalidData);
+        void getString (std::string & value)
+          throw (InvalidData);
 
-	/**
-	 * Unmarshal a sequence of octets.
-	 *
-	 * \param[out] value The octet sequence.
-	 *
-	 * \throw InvalidData At the end of the stream.
-	 */
+        /**
+         * Unmarshal a sequence of octets.
+         *
+         * \param[out] value The octet sequence.
+         *
+         * \throw InvalidData At the end of the stream.
+         */
 
-	void getOctetSeq (std::string & value)
-	  throw (InvalidData);
+        void getOctetSeq (std::string & value)
+          throw (InvalidData);
 
-	//@}
+        //@}
 
       protected:
-	bool m_dataByteorder;
-	bool m_nativeByteorder;
-	unsigned long m_pos;
-	unsigned long m_len;
-	const char * m_data;
+        bool m_dataByteorder;
+        bool m_nativeByteorder;
+        unsigned long m_pos;
+        unsigned long m_len;
+        const char * m_data;
       };
 
     }

@@ -191,15 +191,15 @@ CounterFreq::CounterFreq ()
 
     if (*endPtr++ == '.') {
       if (*endPtr >= '0' && *endPtr <= '9') {
-	khz = 100 * static_cast<int> (*endPtr++ - '0');
+        khz = 100 * static_cast<int> (*endPtr++ - '0');
 
-	if (*endPtr >= '0' && *endPtr <= '9') {
-	  khz += 10 * static_cast<int> (*endPtr++ - '0');
+        if (*endPtr >= '0' && *endPtr <= '9') {
+          khz += 10 * static_cast<int> (*endPtr++ - '0');
 
-	  if (*endPtr >= '0' && *endPtr <= '9') {
-	    khz += static_cast<int> (*endPtr - '0');
-	  }
-	}
+          if (*endPtr >= '0' && *endPtr <= '9') {
+            khz += static_cast<int> (*endPtr - '0');
+          }
+        }
       }
     }
 
@@ -325,9 +325,9 @@ Timer (bool start)
       register unsigned int tb_lower, tb_upper, tb_upper_tmp;
 
       do {
-	TBU( tb_upper );
-	TBL( tb_lower );
-	TBU( tb_upper_tmp );
+        TBU( tb_upper );
+        TBL( tb_lower );
+        TBU( tb_upper_tmp );
       }
       while ( tb_upper != tb_upper_tmp );
 
@@ -345,7 +345,7 @@ Timer (bool start)
       now(&tci.startTime);
 #else
       if (clock_gettime (CLOCK_MONOTONIC, &tci.startTime) != 0) {
-	cpiAssert (0);
+        cpiAssert (0);
       }
 #endif
     }
@@ -435,8 +435,8 @@ stop ()
     cpiAssert (td.running);
 
     cpiAssert ((stopTime.tv_sec > tci.startTime.tv_sec) ||
-	       (stopTime.tv_sec == tci.startTime.tv_sec &&
-		stopTime.tv_nsec >= tci.startTime.tv_nsec));
+               (stopTime.tv_sec == tci.startTime.tv_sec &&
+                stopTime.tv_nsec >= tci.startTime.tv_nsec));
 
     td.running = false;
     tci.accumulatedTime.seconds += stopTime.tv_sec - tci.startTime.tv_sec;

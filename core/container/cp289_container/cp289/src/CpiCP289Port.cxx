@@ -280,7 +280,7 @@ namespace CPI {
     class ExternalBuffer : public CPI::Container::ExternalBuffer {
     public:
       ExternalBuffer( ExternalPort& ep, Port & p, CPI::DataTransport::Buffer* buffer ) 
-	:CPI::Container::ExternalBuffer(ep),m_buffer(buffer),m_port(p)
+        :CPI::Container::ExternalBuffer(ep),m_buffer(buffer),m_port(p)
       {}
 
       virtual ~ExternalBuffer(){};
@@ -299,11 +299,11 @@ namespace CPI {
     public:
       friend class ExternalBuffer;
       ExternalPort( const char* name, Port &p, CPI::OS::Mutex & mutex ) 
-	: CPI::Container::ExternalPort(name), CPI::Util::Child<Port,CPI::Container::ExternalPort>(p),m_port(p),m_mutex(mutex)
+        : CPI::Container::ExternalPort(name), CPI::Util::Child<Port,CPI::Container::ExternalPort>(p),m_port(p),m_mutex(mutex)
       {
-	for ( unsigned int n=0; n<p.dtPort()->getBufferCount(); n++ ) {
-	  m_exBuffers.push_back( new  ExternalBuffer( *this, p, p.dtPort()->getBuffer(n) ) );
-	}
+        for ( unsigned int n=0; n<p.dtPort()->getBufferCount(); n++ ) {
+          m_exBuffers.push_back( new  ExternalBuffer( *this, p, p.dtPort()->getBuffer(n) ) );
+        }
       }
       CPI::Container::ExternalBuffer * getBuffer(uint8_t &opCode, uint8_t *&data, uint32_t &length, bool &endOfData);
       CPI::Container::ExternalBuffer *getBuffer(uint8_t *&data, uint32_t &length);
@@ -338,7 +338,7 @@ release()
 void 
 CPI::CP289::ExternalBuffer::
 put(uint8_t opCode, uint32_t length, bool endOfData)
-{	
+{        
   CPI::Util::AutoMutex guard ( static_cast<CPI::CP289::ExternalPort*>(myParent)->m_mutex, true ); 
   if ( endOfData ) length = 0;
   m_buffer->getMetaData()->cpiMetaDataWord = (uint64_t)((uint64_t)opCode<<32);
@@ -413,18 +413,18 @@ RCCResult stub_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondit
   return RCC_DONE;
 }
 static RCCDispatch stub_dispatch = { RCC_VERSION, 1, 1,
-					    0, 0, 0,
-					    0, 
-					    0, 
-					    0, 
-					    0, 
-					    0, 
-					    0, 
-					    0, 
-					    stub_run,
-					    0, 
-					    0, 
-					    0};
+                                            0, 0, 0,
+                                            0, 
+                                            0, 
+                                            0, 
+                                            0, 
+                                            0, 
+                                            0, 
+                                            0, 
+                                            stub_run,
+                                            0, 
+                                            0, 
+                                            0};
 
 
 CPI::Container::ExternalPort& 
@@ -439,13 +439,13 @@ connectExternal(const char * name, CPI::Util::PValue * myprops, CPI::Util::PValu
   Port * p;
   if ( isProvider() ) {
     p = static_cast<CPI::CP289::Port*>(&w.createOutputPort( 0, 
-			    connectionData.data.desc.nBuffers, connectionData.data.desc.dataBufferSize ));
+                            connectionData.data.desc.nBuffers, connectionData.data.desc.dataBufferSize ));
     std::string fb = p->setFinalProviderInfo( getInitialProviderInfo(0) );
     setFinalUserInfo( fb );
   }
   else {
     p = static_cast<CPI::CP289::Port*>(&w.createInputPort( 0, 
-			    connectionData.data.desc.nBuffers, connectionData.data.desc.dataBufferSize ));
+                            connectionData.data.desc.nBuffers, connectionData.data.desc.dataBufferSize ));
     std::string fb = setFinalProviderInfo( p->getInitialProviderInfo(0) );
     p->setFinalUserInfo( fb );
   }
@@ -468,8 +468,8 @@ CPI::CP289::Worker* toWorker(WorkerId & id)
 void 
 CPI::CP289::Port::
 disconnect(    CPI::Container::PortData* sp,                 
-	       CPI::Container::PortData* input
-	       )
+               CPI::Container::PortData* input
+               )
 {
 
   CPI::CP289::Worker * swi=NULL;
@@ -558,8 +558,8 @@ disconnect( )
 PortConnectionDesc
 CPI::CP289::Port::
 connectExternalInputPort( PortData *           inputPort,    
-			  CPI::Util::PValue*       props
-			  )
+                          CPI::Util::PValue*       props
+                          )
 {
   CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
 
@@ -604,9 +604,9 @@ connect( const std::string &other, CPI::Util::PValue *myProps, CPI::Util::PValue
 void
 CPI::CP289::Port::
 connectInputPort( PortData *    inputPort,    
-		   std::string&  lPort,
-		  CPI::Util::PValue*       props
-		  )
+                   std::string&  lPort,
+                  CPI::Util::PValue*       props
+                  )
   throw ( CPI::Util::EmbeddedException )
 {
   TRACE("CPI::CP289::Container::connectInputPort()");
@@ -698,7 +698,7 @@ setOutputFlowControl( PortData * srcPort )
 void
 CPI::CP289::Port::
 connectInternalInputPort( CPI::Container::Port *  tPort,
-			  CPI::Util::PValue*            props  )
+                          CPI::Util::PValue*            props  )
 {
   CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
 

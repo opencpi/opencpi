@@ -34,7 +34,7 @@ using namespace CPI::DataTransport;
 
 DataDistributionMetaData::DataDistributionMetaData( DataPartition* ){}
 DataDistributionMetaData::DataDistributionMetaData(){}
-	
+        
 /**********************************
  *  Destructor
  **********************************/
@@ -55,7 +55,7 @@ DataDistribution::DataDistribution()
  **********************************/
 DataDistribution::~DataDistribution()
 {
-  delete	m_metaData;
+  delete        m_metaData;
 }
 
 

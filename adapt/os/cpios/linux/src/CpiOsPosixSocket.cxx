@@ -137,8 +137,8 @@ CPI::OS::Posix::isLocalhost (const std::string & name)
 
     while (aliases && *aliases) {
       if (name.compare (*aliases) == 0) {
-	res = true;
-	break;
+        res = true;
+        break;
       }
       aliases++;
     }

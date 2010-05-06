@@ -39,10 +39,10 @@ namespace DataTransfer {
   const CPI::OS::uint32_t DT_EX_SOURCE_ID = 0x03;
   const CPI::OS::uint32_t MAIL_BOX_NOT_ALLOCATED   = (DT_EX_SOURCE_ID << 16) + 1;
   const CPI::OS::uint32_t PROPERTY_NOT_SET         = (DT_EX_SOURCE_ID << 16) + 2;
-  const CPI::OS::uint32_t RESOURCE_EXCEPTION	   = (DT_EX_SOURCE_ID << 16) + 3;
-  const CPI::OS::uint32_t UNSUPPORTED_ENDPOINT	   = (DT_EX_SOURCE_ID << 16) + 4;
-  const CPI::OS::uint32_t NO_MORE_SMB	           = (DT_EX_SOURCE_ID << 16) + 5;
-  const CPI::OS::uint32_t SMB_MAP_ERROR      	   = (DT_EX_SOURCE_ID << 16) + 6;
+  const CPI::OS::uint32_t RESOURCE_EXCEPTION           = (DT_EX_SOURCE_ID << 16) + 3;
+  const CPI::OS::uint32_t UNSUPPORTED_ENDPOINT           = (DT_EX_SOURCE_ID << 16) + 4;
+  const CPI::OS::uint32_t NO_MORE_SMB                   = (DT_EX_SOURCE_ID << 16) + 5;
+  const CPI::OS::uint32_t SMB_MAP_ERROR                 = (DT_EX_SOURCE_ID << 16) + 6;
   const CPI::OS::uint32_t EM_NOT_SUPPORTED_FOR_EP  = (DT_EX_SOURCE_ID << 16) + 7; // Event Manager not supported
 
   /**********************************
@@ -54,7 +54,7 @@ namespace DataTransfer {
     :CPI::Util::EmbeddedException(errorCode,NULL){setAuxInfo(aux);};
     ~DataTransferEx(){};
   };
-	
+        
 }
 #endif
 

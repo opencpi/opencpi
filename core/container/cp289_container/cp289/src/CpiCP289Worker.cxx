@@ -48,13 +48,13 @@
 #include <CpiMetadataWorker.h>
 
 
-#define SET_LAST_ERROR_TO_WORKER_ERROR_STRING(x)			\
-  if ( x->m_rcc_worker->m_context->errorString ) {				\
-    x->m_lastError=x->m_rcc_worker->m_context->errorString;			\
-  }									\
-  else {								\
+#define SET_LAST_ERROR_TO_WORKER_ERROR_STRING(x)                        \
+  if ( x->m_rcc_worker->m_context->errorString ) {                                \
+    x->m_lastError=x->m_rcc_worker->m_context->errorString;                        \
+  }                                                                        \
+  else {                                                                \
     x->m_lastError = "Worked returned failure, but did not set errorString"; \
-  }									\
+  }                                                                        \
   x->m_rcc_worker->m_context->errorString=NULL;
 
 
@@ -91,7 +91,7 @@ overRidePortInfo( CPI::Metadata::Port & portData )
   if ( pi ) {
 #ifndef NDEBUG
     printf("\nWorker Port info is non NULL, overriding port defaults from s,bc -> %d,%d to %d,%d\n",
-	   portData.minBufferCount, portData.minBufferSize, pi->minBuffers, pi->maxLength );
+           portData.minBufferCount, portData.minBufferSize, pi->minBuffers, pi->maxLength );
 #endif
     portData.minBufferCount = ( portData.minBufferCount > pi->minBuffers ) ? portData.minBufferCount : pi->minBuffers;
     portData.minBufferSize  = portData.maxBufferSize  = pi->maxLength;
@@ -103,7 +103,7 @@ overRidePortInfo( CPI::Metadata::Port & portData )
 
 CPI::CP289::Worker::
 Worker( CPI::Container::Application & app, const void* entryPoint, CPI::Util::PValue *wparams,
-	::RCCContainer * rcc_container, ezxml_t impl, ezxml_t inst)
+        ::RCCContainer * rcc_container, ezxml_t impl, ezxml_t inst)
   : CPI::Container::Worker(app,impl,inst),
    m_rcc_worker(0),workerId(NULL),enabled(false),sourcePortCount(0),targetPortCount(0),
   sourcePorts(1), targetPorts(1), runConditionSS(0), worker_run_count(0)
@@ -122,7 +122,7 @@ Worker( CPI::Container::Application & app, const void* entryPoint, CPI::Util::PV
 
 #ifdef EM_PORT_COMPLETE
       MyParent->myparent->m_transport->m_transportGlobal->getEventManager()->setMinTimeout( workerId, 
-									wd->runCondition->usecs );
+                                                                        wd->runCondition->usecs );
 #endif
 
     }
@@ -159,9 +159,9 @@ stop()
 void 
 CPI::CP289::Worker::
 getProperties( 
-	      CPI::OS::uint32_t offset, 
-	      CPI::OS::uint32_t nBytes, 
-	      void * p_data  )
+              CPI::OS::uint32_t offset, 
+              CPI::OS::uint32_t nBytes, 
+              void * p_data  )
 {
   if ( (offset+nBytes) > m_rcc_worker->m_dispatch->propertySize ) {
     throw CPI::Util::EmbeddedException( PROPERTY_GET_EXCEPTION, NULL, ApplicationRecoverable);
@@ -172,9 +172,9 @@ getProperties(
 void 
 CPI::CP289::Worker::
 setProperties( 
-	      CPI::OS::uint32_t offset, 
-	      CPI::OS::uint32_t nBytes, 
-	      const void * p_data  )
+              CPI::OS::uint32_t offset, 
+              CPI::OS::uint32_t nBytes, 
+              const void * p_data  )
 {
   if ( (offset+nBytes) > m_rcc_worker->m_dispatch->propertySize ) {
     throw CPI::Util::EmbeddedException( PROPERTY_SET_EXCEPTION, NULL, ApplicationRecoverable);
@@ -238,7 +238,7 @@ CPI::CP289::Worker::
     // If we have an event handler, we need to inform it about the timeout
     if ( wd->runCondition && wd->runCondition->timeout ) {
       if ( MyParent->m_transport->m_transportGlobal->getEventManager() ) {
-	MyParent->m_transport->m_transportGlobal->getEventManager()->removeMinTimeout( w->workerId );
+        MyParent->m_transport->m_transportGlobal->getEventManager()->removeMinTimeout( w->workerId );
       }
     }
 #endif
@@ -253,7 +253,7 @@ CPI::CP289::Worker::
 CPI::CP289::RCCWorkerInterface::
 RCCWorkerInterface( RCCDispatch * wd, CPI::CP289::Worker * wi )
   :m_state(CPI::CP289::RCCWorkerInterface::WorkerExists), m_dispatch(wd)
-{	
+{        
  
   // Create our memory spaces
   int idx=0;
@@ -354,7 +354,7 @@ RCCWorkerInterface( RCCDispatch * wd, CPI::CP289::Worker * wi )
   m_context->properties = new char[wd->propertySize + 4];
 
   memset(m_context->properties, 0, sizeof(char)*wd->propertySize);
-	
+        
 }
 
 CPI::Container::Port & 
@@ -379,11 +379,11 @@ createPort(CPI::Metadata::Port& mp )
 CPI::Container::Port &
 CPI::CP289::Worker::
 createOutputPort( 
-		 PortId               portId,
-		 CPI::OS::uint32_t    bufferCount,
-		 CPI::OS::uint32_t    bufferSize, 
-		 CPI::Util::PValue*	      props	    
-		 )
+                 PortId               portId,
+                 CPI::OS::uint32_t    bufferCount,
+                 CPI::OS::uint32_t    bufferSize, 
+                 CPI::Util::PValue*              props            
+                 )
   throw ( CPI::Util::EmbeddedException )
 {
   TRACE(" CPI::CP289::Container::createOutputPort()");
@@ -441,11 +441,11 @@ createOutputPort(
 CPI::Container::Port &
 CPI::CP289::Worker::
 createInputPort( 
-		 PortId              portId,   
-		 CPI::OS::uint32_t   bufferCount,
-		 CPI::OS::uint32_t   bufferSize, 
-		 CPI::Util::PValue*	     props	    
-		 )
+                 PortId              portId,   
+                 CPI::OS::uint32_t   bufferCount,
+                 CPI::OS::uint32_t   bufferSize, 
+                 CPI::Util::PValue*             props            
+                 )
   throw ( CPI::Util::EmbeddedException )
 {
   TRACE("CPI::CP289::Container::createInputPort()");
@@ -588,21 +588,21 @@ control ( WCI_control operation, WCI_options options )
   case WCI_CONTROL_INITIALIZE: 
     {
       if ( m_rcc_worker->getState() != RCCWorkerInterface::WorkerExists ) {
-	m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
-	SET_LAST_ERROR_INVALID_SEQUENCE(this);
-	break;
+        m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
+        SET_LAST_ERROR_INVALID_SEQUENCE(this);
+        break;
       }
       rc = m_rcc_worker->initialize();
       if ( rc == RCC_OK ) {
-	// Nothing to do here
+        // Nothing to do here
       }
       else if ( rc == RCC_ERROR ) {
-	m_wciStatus.error = WCI_ERROR_UNKNOWN;
-	SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
+        m_wciStatus.error = WCI_ERROR_UNKNOWN;
+        SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
       }
       else {
-	m_wciStatus.error = WCI_ERROR_UNUSABLE_WORKER;
-	SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
+        m_wciStatus.error = WCI_ERROR_UNUSABLE_WORKER;
+        SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
       }
     }
     break;
@@ -610,62 +610,62 @@ control ( WCI_control operation, WCI_options options )
   case WCI_CONTROL_START:
     {
       if ( (m_rcc_worker->getState() != RCCWorkerInterface::WorkerInitialized) &&
-	   (m_rcc_worker->getState() != RCCWorkerInterface::WorkerSuspended) ) {
-	m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
-	SET_LAST_ERROR_INVALID_SEQUENCE(this);
-	break;
+           (m_rcc_worker->getState() != RCCWorkerInterface::WorkerSuspended) ) {
+        m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
+        SET_LAST_ERROR_INVALID_SEQUENCE(this);
+        break;
       }
-	
+        
       // If a worker gets started before all of its ports are created, return 
       // an error
       if ( (int)(targetPortCount + sourcePortCount) != 
-	   (int)(m_rcc_worker->m_dispatch->numInputs + m_rcc_worker->m_dispatch->numOutputs ) ) {
-	m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
-	SET_LAST_ERROR_PORT_COUNT_MISMATCH(this);
-	break;
+           (int)(m_rcc_worker->m_dispatch->numInputs + m_rcc_worker->m_dispatch->numOutputs ) ) {
+        m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
+        SET_LAST_ERROR_PORT_COUNT_MISMATCH(this);
+        break;
       }
 
       // If the worker does not have all the required ports connected, return an
       // error
       CPI::CP289::Port* port = static_cast<CPI::CP289::Port*>(firstChild());
       while ( port ) {
-	RCCPortMask pm = 1<<port->portId();
-	if ( m_rcc_worker->m_dispatch->optionallyConnectedPorts & pm ) {
-	  port = static_cast<CPI::CP289::Port*>(nextChild(port));
-	  continue;
-	}
-	CPI::DataTransport::Circuit* c = port->circuit();
-	if ( c ) {
-	  if ( c->isCircuitOpen() ) {
-	    m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
-	    SET_LAST_ERROR_ALL_REQUIRED_PORTS_NOT_CONNECTED(this); 
-	    break;
-	  }
-	}
-	else {
-	  m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
-	  SET_LAST_ERROR_ALL_REQUIRED_PORTS_NOT_CONNECTED(this); 
-	  break;
-	}	
-	port = static_cast<CPI::CP289::Port*>(nextChild(port));
+        RCCPortMask pm = 1<<port->portId();
+        if ( m_rcc_worker->m_dispatch->optionallyConnectedPorts & pm ) {
+          port = static_cast<CPI::CP289::Port*>(nextChild(port));
+          continue;
+        }
+        CPI::DataTransport::Circuit* c = port->circuit();
+        if ( c ) {
+          if ( c->isCircuitOpen() ) {
+            m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
+            SET_LAST_ERROR_ALL_REQUIRED_PORTS_NOT_CONNECTED(this); 
+            break;
+          }
+        }
+        else {
+          m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
+          SET_LAST_ERROR_ALL_REQUIRED_PORTS_NOT_CONNECTED(this); 
+          break;
+        }        
+        port = static_cast<CPI::CP289::Port*>(nextChild(port));
       }
 
 
 
       if (   m_wciStatus.error == WCI_SUCCESS ) {
-	rc = m_rcc_worker->start();
-	if ( rc == RCC_OK ) {
-	  enabled = true;
-	  runTimer.start();
-	}
-	else if ( rc == RCC_ERROR ) {
-	  m_wciStatus.error = WCI_ERROR_UNKNOWN;
-	  SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
-	}
-	else {
-	  m_wciStatus.error = WCI_ERROR_UNUSABLE_WORKER;
-	  SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
-	}
+        rc = m_rcc_worker->start();
+        if ( rc == RCC_OK ) {
+          enabled = true;
+          runTimer.start();
+        }
+        else if ( rc == RCC_ERROR ) {
+          m_wciStatus.error = WCI_ERROR_UNKNOWN;
+          SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
+        }
+        else {
+          m_wciStatus.error = WCI_ERROR_UNUSABLE_WORKER;
+          SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
+        }
       }
     }
     break;
@@ -673,25 +673,25 @@ control ( WCI_control operation, WCI_options options )
   case WCI_CONTROL_STOP:
     {
       if ( m_rcc_worker->getState() != RCCWorkerInterface::WorkerOperational ) {
-	m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
-	SET_LAST_ERROR_INVALID_SEQUENCE(this);
-	break;
+        m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
+        SET_LAST_ERROR_INVALID_SEQUENCE(this);
+        break;
       }
 
       // The worker gets disabled here regardless if it complains
       enabled = false;
       rc = m_rcc_worker->stop();
       if ( rc == RCC_OK ) {
-	runTimer.stop();
-	runTimer.reset();
+        runTimer.stop();
+        runTimer.reset();
       }
       else if ( rc == RCC_ERROR ) {
-	m_wciStatus.error = WCI_ERROR_UNKNOWN;
-	SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
+        m_wciStatus.error = WCI_ERROR_UNKNOWN;
+        SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
       }
       else {
-	m_wciStatus.error = WCI_ERROR_UNUSABLE_WORKER;
-	SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
+        m_wciStatus.error = WCI_ERROR_UNUSABLE_WORKER;
+        SET_LAST_ERROR_TO_WORKER_ERROR_STRING(this);
       }
 
     }
@@ -699,9 +699,9 @@ control ( WCI_control operation, WCI_options options )
 
   case WCI_CONTROL_RELEASE:
     if ( (m_rcc_worker->getState() != RCCWorkerInterface::WorkerExists) &&
-	 (m_rcc_worker->getState() != RCCWorkerInterface::WorkerInitialized) &&
-	 (m_rcc_worker->getState() != RCCWorkerInterface::WorkerOperational) &&
-	 (m_rcc_worker->getState() != RCCWorkerInterface::WorkerSuspended) ) {
+         (m_rcc_worker->getState() != RCCWorkerInterface::WorkerInitialized) &&
+         (m_rcc_worker->getState() != RCCWorkerInterface::WorkerOperational) &&
+         (m_rcc_worker->getState() != RCCWorkerInterface::WorkerSuspended) ) {
       m_wciStatus.error = WCI_ERROR_INVALID_CONTROL_SEQUENCE;
       SET_LAST_ERROR_INVALID_SEQUENCE(this);
       break;
@@ -772,7 +772,7 @@ control ( WCI_control operation, WCI_options options )
   }
 #endif
 
-  return m_wciStatus.error;	 
+  return m_wciStatus.error;         
 
 }
 
@@ -818,10 +818,10 @@ read ( WCI_u32 offset,
 WCI_error 
 CPI::CP289::Worker::
 write ( WCI_u32 offset,
-	WCI_u32 nBytes,
-	WCI_data_type data_type,
-	WCI_options options,
-	const void* p_data )
+        WCI_u32 nBytes,
+        WCI_data_type data_type,
+        WCI_options options,
+        const void* p_data )
 {
   CPI::Util::AutoMutex guard ( MyParent->mutex(), true ); 
 
@@ -846,7 +846,7 @@ write ( WCI_u32 offset,
 
 WCI_error 
 CPI::CP289::Worker::
-close (	WCI_options options ) 
+close (        WCI_options options ) 
 {
   // No - op
   return WCI_SUCCESS;

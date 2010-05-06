@@ -79,7 +79,7 @@ namespace CpiUtilStaticMemFile {
 using namespace CpiUtilStaticMemFile;
 
 MemIStream::MemIStreamBuf::MemIStreamBuf (const char * ptr,
-					  unsigned long long size)
+                                          unsigned long long size)
   : m_ptr (ptr),
     m_size (size),
     m_chunks (0)
@@ -126,12 +126,12 @@ MemIStream::MemIStreamBuf::underflow_common (bool bump)
   else {
     if (curpos >= m_chunk->size) {
       if (m_chunk->size) {
-	m_firstByteInChunk += m_chunk->size;
-	m_chunk++;
-	curpos = 0;
+        m_firstByteInChunk += m_chunk->size;
+        m_chunk++;
+        curpos = 0;
       }
       if (!m_chunk->size) {
-	return traits_type::eof ();
+        return traits_type::eof ();
       }
     }
 
@@ -183,7 +183,7 @@ MemIStream::MemIStreamBuf::xsgetn (char * s, std::streamsize n)
 
     if (!(ptr = gptr()) || (count = egptr() - gptr()) == 0) {
       if (traits_type::eq_int_type (underflow(), traits_type::eof())) {
-	return total;
+        return total;
       }
       ptr = gptr();
       count = egptr() - ptr;
@@ -251,7 +251,7 @@ MemIStream::MemIStreamBuf::pbackfail (int_type c)
 
 std::streambuf::pos_type
 MemIStream::MemIStreamBuf::seekoff (off_type off, std::ios_base::seekdir way,
-				    std::ios_base::openmode mode)
+                                    std::ios_base::openmode mode)
 {
   if (!gptr() || !egptr() || !eback()) {
     return static_cast<pos_type> (-1);
@@ -281,7 +281,7 @@ MemIStream::MemIStreamBuf::seekoff (off_type off, std::ios_base::seekdir way,
       const CPI::Util::MemFs::MemFileChunk * cp = m_chunk;
       origin = m_firstByteInChunk;
       while (cp->size) {
-	origin += (cp++)->size;
+        origin += (cp++)->size;
       }
     }
     break;
@@ -346,7 +346,7 @@ MemIStream::MemIStreamBuf::seekpos (pos_type ptpos, std::ios_base::openmode)
 }
 
 MemIStream::MemIStream (const char * ptr,
-			unsigned long long size)
+                        unsigned long long size)
   : std::istream (0),
     m_buf (ptr, size)
 {
@@ -372,8 +372,8 @@ MemIStream::~MemIStream ()
 
 CPI::Util::MemFs::StaticMemFile::
 StaticMemFile (const char * ptr,
-	       unsigned long long size,
-	       std::time_t lastModified)
+               unsigned long long size,
+               std::time_t lastModified)
   throw ()
   : m_size (size),
     m_lastModified (lastModified),
@@ -384,7 +384,7 @@ StaticMemFile (const char * ptr,
 
 CPI::Util::MemFs::StaticMemFile::
 StaticMemFile (const CPI::Util::MemFs::MemFileChunk * chunks,
-	       std::time_t lastModified)
+               std::time_t lastModified)
   throw ()
   : m_lastModified (lastModified),
     m_ptr (0),

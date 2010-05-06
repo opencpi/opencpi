@@ -1,6 +1,6 @@
 /** \file IEventOwner.cpp
- **	\date  2005-12-07
- **	\author grymse@alhem.net
+ **        \date  2005-12-07
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
@@ -44,34 +44,34 @@ IEventOwner::IEventOwner(IEventHandler& h) : m_event_handler(h), m_handler_inval
 
 IEventOwner::~IEventOwner()
 {
-	if (!m_handler_invalid)
-	{
-		m_event_handler.ClearEvents(this);
-	}
+        if (!m_handler_invalid)
+        {
+                m_event_handler.ClearEvents(this);
+        }
 }
 
 
 IEventHandler& IEventOwner::GetEventHandler()
 {
-	return m_event_handler;
+        return m_event_handler;
 }
 
 
 long IEventOwner::AddEvent(long sec,long usec)
 {
-	return m_event_handler.AddEvent(this, sec, usec);
+        return m_event_handler.AddEvent(this, sec, usec);
 }
 
 
 void IEventOwner::ClearEvents()
 {
-	m_event_handler.ClearEvents(this);
+        m_event_handler.ClearEvents(this);
 }
 
 
 void IEventOwner::RemoveEvent(long eid)
 {
-	m_event_handler.RemoveEvent(this, eid);
+        m_event_handler.RemoveEvent(this, eid);
 }
 
 

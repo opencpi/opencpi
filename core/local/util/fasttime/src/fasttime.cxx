@@ -86,7 +86,7 @@ int fasttime_init_context(fasttime_context_t context, int methods)
         /* Map shared memory if daemon was found */
         if (shmid != -1)
         {
-	  context->daemon.storage = (fasttime_buffers_t*)
+          context->daemon.storage = (fasttime_buffers_t*)
                 mmap(NULL, sizeof *context->daemon.storage, PROT_READ,
                      MAP_SHARED, shmid, 0);
             context->method = FASTTIME_METHOD_DAEMON | 
@@ -137,7 +137,7 @@ int fasttime_gettime_context(fasttime_context_t context,
     switch (context->method)
     {
         case FASTTIME_METHOD_SYSTEM:
-	  return clock_gettime(CLOCK_REALTIME, tp);
+          return clock_gettime(CLOCK_REALTIME, tp);
 
         case FASTTIME_METHOD_DAEMON:
         case FASTTIME_METHOD_DAEMON | FASTTIME_METHOD_SYSTEM:
@@ -164,7 +164,7 @@ int fasttime_gettime_context(fasttime_context_t context,
          * at the moment, fall back on system if allowed.
          */
         if (context->method & FASTTIME_METHOD_SYSTEM)
-	  return clock_gettime(CLOCK_REALTIME, tp );
+          return clock_gettime(CLOCK_REALTIME, tp );
         else
             return -1;
     }

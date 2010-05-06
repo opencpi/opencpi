@@ -197,7 +197,7 @@ CPI::Util::Tcp::Stream::Stream ()
 }
 
 CPI::Util::Tcp::Stream::Stream (CPI::OS::Socket & sock,
-				std::ios_base::openmode mode)
+                                std::ios_base::openmode mode)
   throw (std::string)
   : std::iostream (0)
 {
@@ -216,7 +216,7 @@ CPI::Util::Tcp::Stream::~Stream ()
 
 void
 CPI::Util::Tcp::Stream::setSocket (CPI::OS::Socket & sock,
-				   std::ios_base::openmode mode)
+                                   std::ios_base::openmode mode)
   throw (std::string)
 {
   if (!mode) {
@@ -240,7 +240,7 @@ CPI::Util::Tcp::Stream::linger (bool opt)
 
 CPI::Util::Tcp::Stream *
 CPI::Util::Tcp::Stream::dup (bool shutdownWhenClosed,
-			     std::ios_base::openmode shutdownMode)
+                             std::ios_base::openmode shutdownMode)
   throw (std::string)
 {
   if (!m_mode) {

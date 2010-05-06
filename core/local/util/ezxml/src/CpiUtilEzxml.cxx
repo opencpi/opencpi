@@ -175,7 +175,7 @@ parse (CPI::Util::Vfs::Vfs & fs, const std::string & fileName)
     }
     catch (...) {
       try {
-	fs.close (in);
+        fs.close (in);
       }
       catch (...) {
       }

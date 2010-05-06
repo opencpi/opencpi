@@ -40,8 +40,8 @@ main (int argc, char *argv[])
     }
 
     std::cout << "    "
-	      << contents->relativeName ()
-	      << std::endl;
+              << contents->relativeName ()
+              << std::endl;
 
     contents->next ();
   }
@@ -65,8 +65,8 @@ main (int argc, char *argv[])
       CPI::OS::FileSystem::absoluteName (localName);
 
     std::cout << "Copying " << argv[2]
-	      << " from Zip file to " << absLocalName
-	      << " ... " << std::flush;
+              << " from Zip file to " << absLocalName
+              << " ... " << std::flush;
 
     try {
       zipFs.copy (argv[2], &localFs, absLocalName);

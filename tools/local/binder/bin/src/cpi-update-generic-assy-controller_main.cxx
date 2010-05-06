@@ -155,10 +155,10 @@ CpiSgacUpdaterConfigurator::g_options[] = {
 static
 void
 printUsage (CpiSgacUpdaterConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options] <SAD-file>" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -171,9 +171,9 @@ printUsage (CpiSgacUpdaterConfigurator & config,
 class CpiSgacUpdater {
 public:
   CpiSgacUpdater (CPI::Util::Vfs::Vfs & fs,
-		  const std::string & sadFileName,
-		  std::ostream & out,
-		  bool verbose)
+                  const std::string & sadFileName,
+                  std::ostream & out,
+                  bool verbose)
     throw ();
 
   ~CpiSgacUpdater ()
@@ -202,7 +202,7 @@ protected:
     throw ();
 
   std::string resolveFileName (const std::string & baseName,
-			       const std::string & relName) const
+                               const std::string & relName) const
     throw ();
 
 public:
@@ -257,9 +257,9 @@ CpiSgacUpdater::InstanceInfo::
 
 CpiSgacUpdater::
 CpiSgacUpdater (CPI::Util::Vfs::Vfs & fs,
-		const std::string & sadFileName,
-		std::ostream & out,
-		bool verbose)
+                const std::string & sadFileName,
+                std::ostream & out,
+                bool verbose)
   throw ()
   : m_fs (fs),
     m_sadFileName (sadFileName),
@@ -377,7 +377,7 @@ updateAssembly ()
   try {
     std::ostream * sadOut =
       m_fs.openWriteonly (m_sadFileName,
-			  std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
+                          std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
     try {
       char * newSAD = ezxml_toxml (sadRoot);
@@ -388,7 +388,7 @@ updateAssembly ()
     }
     catch (...) {
       try {
-	m_fs.close (sadOut);
+        m_fs.close (sadOut);
       }
       catch (...) {
       }
@@ -474,7 +474,7 @@ updateAssemblyController ()
 
   try {
     scdOut = m_fs.openWriteonly (m_scdFileName,
-				 std::ios_base::out | std::ios_base::trunc);
+                                 std::ios_base::out | std::ios_base::trunc);
   }
   catch (const std::string & oops) {
     if (m_verbose) {
@@ -507,7 +507,7 @@ updateAssemblyController ()
 
   try {
     prfOut = m_fs.openWriteonly (m_prfFileName,
-				 std::ios_base::out | std::ios_base::trunc);
+                                 std::ios_base::out | std::ios_base::trunc);
   }
   catch (const std::string & oops) {
     if (m_verbose) {
@@ -629,36 +629,36 @@ updateConnections (ezxml_t sadRoot)
       ezxml_t usesPort = ezxml_child (connectInterface, "usesport");
 
       if (usesPort) {
-	ezxml_t ciRef = ezxml_child (usesPort, "componentinstantiationref");
+        ezxml_t ciRef = ezxml_child (usesPort, "componentinstantiationref");
 
-	if (ciRef) {
-	  const char * ciRefId = ezxml_attr (ciRef, "refid");
+        if (ciRef) {
+          const char * ciRefId = ezxml_attr (ciRef, "refid");
 
-	  if (ciRefId && acInstanceId == ciRefId) {
-	    /*
-	     * This connection involves the assembly controller.
-	     */
+          if (ciRefId && acInstanceId == ciRefId) {
+            /*
+             * This connection involves the assembly controller.
+             */
 
-	    ezxml_t csi = ezxml_child (connectInterface, "componentsupportedinterface");
+            ezxml_t csi = ezxml_child (connectInterface, "componentsupportedinterface");
 
-	    if (csi) {
-	      /*
-	       * And it is to another component's supported interface!
-	       */
+            if (csi) {
+              /*
+               * And it is to another component's supported interface!
+               */
 
-	      moveConnection = false;
-	    }
-	  }
-	}
+              moveConnection = false;
+            }
+          }
+        }
       }
 
       ezxml_t thisConnection = connectInterface;
       connectInterface = ezxml_next (connectInterface);
 
       if (moveConnection) {
-	ezxml_move (thisConnection, connsNode, connOff+indent);
-	connTxt.insert (connOff, sindent);
-	connOff += indent + 1;
+        ezxml_move (thisConnection, connsNode, connOff+indent);
+        connTxt.insert (connOff, sindent);
+        connOff += indent + 1;
       }
     }
   }
@@ -723,7 +723,7 @@ locateScdPrfFiles (const std::string & spdRelName)
     ezxml_t spdRoot = spdDoc.getRootNode ();
 
     if (!ezxml_name (spdRoot) ||
-	std::strcmp (ezxml_name (spdRoot), "softpkg") != 0) {
+        std::strcmp (ezxml_name (spdRoot), "softpkg") != 0) {
       throw std::string ("Not a software package");
     }
 
@@ -773,7 +773,7 @@ locateScdPrfFiles (const std::string & spdRelName)
     ezxml_t scdRoot = scdDoc.getRootNode ();
 
     if (!ezxml_name (scdRoot) ||
-	std::strcmp (ezxml_name (scdRoot), "softwarecomponent") != 0) {
+        std::strcmp (ezxml_name (scdRoot), "softwarecomponent") != 0) {
       throw std::string ("Not a component descriptor");
     }
 
@@ -783,23 +783,23 @@ locateScdPrfFiles (const std::string & spdRelName)
       ezxml_t localFileNode = ezxml_child (propertyFileNode, "localfile");
 
       if (!propertyFileNode) {
-	throw std::string ("Missing \"localfile\" element");
+        throw std::string ("Missing \"localfile\" element");
       }
 
       const char * prfRelName = ezxml_attr (localFileNode, "name");
 
       if (!prfRelName) {
-	throw std::string ("No \"name\" attribute in \"localfile\" element");
+        throw std::string ("No \"name\" attribute in \"localfile\" element");
       }
 
       m_prfRelName = prfRelName;
       m_prfFileName = resolveFileName (m_scdFileName, prfRelName);
 
       if (!m_fs.exists (m_prfFileName)) {
-	std::string msg = "Property file \"";
-	msg += m_prfFileName;
-	msg += "\" not found";
-	throw msg;
+        std::string msg = "Property file \"";
+        msg += m_prfFileName;
+        msg += "\" not found";
+        throw msg;
       }
     }
     else {
@@ -811,22 +811,22 @@ locateScdPrfFiles (const std::string & spdRelName)
       std::string::size_type scdFileNameLen = m_scdFileName.length ();
 
       if (scdFileNameLen > 8 &&
-	  m_scdFileName.substr (scdFileNameLen-8) == ".scd.xml") {
-	m_prfFileName = m_scdFileName.substr (0, scdFileNameLen-8);
-	m_prfFileName += "_SCD.prf.xml"; // Adopt SCA Architect's naming convention.
+          m_scdFileName.substr (scdFileNameLen-8) == ".scd.xml") {
+        m_prfFileName = m_scdFileName.substr (0, scdFileNameLen-8);
+        m_prfFileName += "_SCD.prf.xml"; // Adopt SCA Architect's naming convention.
       }
       else {
-	m_prfFileName = m_scdFileName;
-	m_prfFileName += "_SCD.prf.xml";
+        m_prfFileName = m_scdFileName;
+        m_prfFileName += "_SCD.prf.xml";
       }
 
       std::string::size_type lastSlash = m_prfFileName.rfind ('/');
 
       if (lastSlash != std::string::npos) {
-	m_prfRelName = m_prfFileName.substr (lastSlash + 1);
+        m_prfRelName = m_prfFileName.substr (lastSlash + 1);
       }
       else {
-	m_prfRelName = m_prfFileName;
+        m_prfRelName = m_prfFileName;
       }
     }
 
@@ -881,7 +881,7 @@ loadPropertyFiles ()
     }
     catch (const std::string & oops) {
       if (m_verbose) {
-	m_out << "failed." << std::endl;
+        m_out << "failed." << std::endl;
       }
 
       std::string msg = "Error processing \"";
@@ -908,11 +908,11 @@ loadPropertyFiles ()
     const CPI::SCA::HostCollocation & hc = (*hcit);
 
     for (cpit  = hc.componentPlacement.begin();
-	 cpit != hc.componentPlacement.end(); cpit++) {
+         cpit != hc.componentPlacement.end(); cpit++) {
       const std::string & componentInstantiationId = (*cpit).first;
 
       if (componentInstantiationId == assembly.assemblyController) {
-	continue;
+        continue;
       }
 
       const CPI::SCA::ComponentPlacement & cp = (*cpit).second;
@@ -920,27 +920,27 @@ loadPropertyFiles ()
       CPI::SCA::PropertyParser * pp = new CPI::SCA::PropertyParser;
 
       if (m_verbose) {
-	m_out << "Reading \"" << cp.spdFileName << "\" ... " << std::flush;
+        m_out << "Reading \"" << cp.spdFileName << "\" ... " << std::flush;
       }
 
       try {
-	pp->parse (m_fs, spdFileName);
+        pp->parse (m_fs, spdFileName);
       }
       catch (const std::string & oops) {
-	if (m_verbose) {
-	  m_out << "failed." << std::endl;
-	}
+        if (m_verbose) {
+          m_out << "failed." << std::endl;
+        }
 
-	std::string msg = "Error processing \"";
-	msg += spdFileName;
-	msg += "\": ";
-	msg += oops;
-	delete pp;
-	throw msg;
+        std::string msg = "Error processing \"";
+        msg += spdFileName;
+        msg += "\": ";
+        msg += oops;
+        delete pp;
+        throw msg;
       }
 
       if (m_verbose) {
-	m_out << "done." << std::endl;
+        m_out << "done." << std::endl;
       }
 
       InstanceInfo & ii = m_instances[componentInstantiationId];
@@ -1015,8 +1015,8 @@ writePRFFile (std::ostream & out)
       name += prop.name;
 
       out << "    <"
-	  << (prop.is_sequence ? "simplesequence" : "simple")
-	  << " id=\"" << name << "\" name=\"" << name << "\" type=\"";
+          << (prop.is_sequence ? "simplesequence" : "simple")
+          << " id=\"" << name << "\" name=\"" << name << "\" type=\"";
 
       switch (prop.types[0].data_type) {
       case CPI::SCA::SCA_boolean: out << "boolean"; break;
@@ -1035,16 +1035,16 @@ writePRFFile (std::ostream & out)
       out << "\" mode=\"";
 
       if (prop.is_readable && prop.is_writable) {
-	out << "readwrite";
+        out << "readwrite";
       }
       else if (prop.is_readable) {
-	out << "readonly";
+        out << "readonly";
       }
       else if (prop.is_writable) {
-	out << "writeonly";
+        out << "writeonly";
       }
       else {
-	cpiAssert (0);
+        cpiAssert (0);
       }
 
       out << "\"/>" << std::endl;
@@ -1100,7 +1100,7 @@ writePRFFile (std::ostream & out)
 std::string
 CpiSgacUpdater::
 resolveFileName (const std::string & baseName,
-		 const std::string & relName) const
+                 const std::string & relName) const
   throw ()
 {
   std::string name;
@@ -1201,9 +1201,9 @@ cpiUpdateSgacInt (int argc, char * argv[])
    */
 
   CpiSgacUpdater updater (fileFs,
-			  fileName,
-			  std::cout,
-			  config.verbose);
+                          fileName,
+                          std::cout,
+                          config.verbose);
 
   try {
     updater.updateAssembly ();
@@ -1243,8 +1243,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

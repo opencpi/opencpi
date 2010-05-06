@@ -55,10 +55,10 @@ namespace CPI {
     class Device : public Child<Driver, Device> {
     public:
       Device( Driver& parent, const char* instance_name )
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
       virtual ~Device()
-	throw () {}
+        throw () {}
 
     private:
       Device();  // Not implemented
@@ -76,24 +76,24 @@ namespace CPI {
     public:
       friend class DriverManager;
       Driver(DriverManager& parent, const char* type, const char *name, bool isDiscoverable)
-	throw ();
+        throw ();
       Driver(const char* type, const char *name, bool isDiscoverable)
-	throw ();
+        throw ();
 
       // See if the device described by these properties exists.
       // This would be called by something that had a configuration file
       virtual Device *probe(const CPI::Util::PValue* props, const char *which )
-	throw ( CPI::Util::EmbeddedException ) = 0;
+        throw ( CPI::Util::EmbeddedException ) = 0;
 
       // Per driver discovery routine to create devices
       virtual unsigned search(const PValue* props, const char **exclude)
-	throw ( CPI::Util::EmbeddedException ) = 0;
+        throw ( CPI::Util::EmbeddedException ) = 0;
 
       inline bool hasException(){return m_error;}
       inline std::string& getErrorString(){return m_lastError;}
 
       virtual ~Driver()
-	throw ();
+        throw ();
 
     private:
       Driver();  // Not Implemented
@@ -112,7 +112,7 @@ namespace CPI {
     public:
 
       DriverManager( const char* driver_type )
-	throw ();
+        throw ();
 
       // Load the runtime drivers that match the search criteria
       // dirs         - a colon separated path to look for drivers
@@ -122,21 +122,21 @@ namespace CPI {
       // interface instead of using "hardcode" environment variable internally allows each manager
       // to use their own variables if needed.
       virtual unsigned loadDynamicDrivers(const char* dirs, const char* regex_dnames, const char* exlcudes)
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
       // Find me a device among the registered devices, creating if needed, 
       // Fits the pattern when devices are created by specific request
       virtual Device *getDevice(const PValue* props, const char *which )
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
       // find and create all the drivers there are, returning how many
       // Fits the pattern of "use all the devices available".
       virtual unsigned discoverDevices(const PValue* props, const char **exclude)
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
       // Add a driver to this manager
       void addDriver( Driver*  )
-	throw ();
+        throw ();
 
       // Manages this type
       inline const char* type(){return m_type.c_str();}
@@ -153,8 +153,8 @@ namespace CPI {
 
       static CPI::OS::Mutex m_g_mutex;
       static std::map< std::string,std::vector< Driver* > >& getDriverMap() {
-	static std::map< std::string,std::vector< Driver* > > dr_map;
-	return dr_map;
+        static std::map< std::string,std::vector< Driver* > > dr_map;
+        return dr_map;
       }
 
 

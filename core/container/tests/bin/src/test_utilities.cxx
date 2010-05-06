@@ -63,26 +63,26 @@ namespace CPI {
       printf( "  cid = %d\n", pd.connectionData.cid );
 
       if ( pd.connectionData.data.mode == CPI::RDT::ProducerDescType ) {
-	printf( " desc.emptyFlagBaseAddr = 0x%llx\n",  (long long)pd.connectionData.data.desc.emptyFlagBaseAddr );
-	printf( " desc.emptyFlagSize = %d\n",  pd.connectionData.data.desc.emptyFlagSize );
-	printf( " desc.emptyFlagPitch = %d\n",  pd.connectionData.data.desc.emptyFlagPitch );
-	printf( " desc.emptyFlagValue = 0x%llx\n",  (long long)pd.connectionData.data.desc.emptyFlagValue );
-	printf( " desc.oob.oep = %s\n", pd.connectionData.data.desc.oob.oep );
+        printf( " desc.emptyFlagBaseAddr = 0x%llx\n",  (long long)pd.connectionData.data.desc.emptyFlagBaseAddr );
+        printf( " desc.emptyFlagSize = %d\n",  pd.connectionData.data.desc.emptyFlagSize );
+        printf( " desc.emptyFlagPitch = %d\n",  pd.connectionData.data.desc.emptyFlagPitch );
+        printf( " desc.emptyFlagValue = 0x%llx\n",  (long long)pd.connectionData.data.desc.emptyFlagValue );
+        printf( " desc.oob.oep = %s\n", pd.connectionData.data.desc.oob.oep );
 
       }
       else {
-	printf( " desc.nBuffers = %d\n",  pd.connectionData.data.desc.nBuffers );
-	printf( " desc.dataBufferBaseAddr = 0x%llx\n",  (long long)pd.connectionData.data.desc.dataBufferBaseAddr );
-	printf( " desc.dataBufferPitch = %d\n",  pd.connectionData.data.desc.dataBufferPitch );
-	printf( " desc.dataBufferSize = %d\n",  pd.connectionData.data.desc.dataBufferSize );
-	printf( " desc.metaDataBaseAddr = 0x%llx\n",  (long long)pd.connectionData.data.desc.metaDataBaseAddr );
-	printf( " desc.metaDataPitch = %d\n",  pd.connectionData.data.desc.metaDataPitch );
-	printf( " desc.fullFlagBaseAddr = 0x%llx\n",  (long long)pd.connectionData.data.desc.fullFlagBaseAddr );
-	printf( " desc.fullFlagSize = %d\n",  pd.connectionData.data.desc.fullFlagSize );
-	printf( " desc.fullFlagPitch = %d\n",  pd.connectionData.data.desc.fullFlagPitch );
-	printf( " desc.fullFlagValue = 0x%llx\n",  (long long)pd.connectionData.data.desc.fullFlagValue );
+        printf( " desc.nBuffers = %d\n",  pd.connectionData.data.desc.nBuffers );
+        printf( " desc.dataBufferBaseAddr = 0x%llx\n",  (long long)pd.connectionData.data.desc.dataBufferBaseAddr );
+        printf( " desc.dataBufferPitch = %d\n",  pd.connectionData.data.desc.dataBufferPitch );
+        printf( " desc.dataBufferSize = %d\n",  pd.connectionData.data.desc.dataBufferSize );
+        printf( " desc.metaDataBaseAddr = 0x%llx\n",  (long long)pd.connectionData.data.desc.metaDataBaseAddr );
+        printf( " desc.metaDataPitch = %d\n",  pd.connectionData.data.desc.metaDataPitch );
+        printf( " desc.fullFlagBaseAddr = 0x%llx\n",  (long long)pd.connectionData.data.desc.fullFlagBaseAddr );
+        printf( " desc.fullFlagSize = %d\n",  pd.connectionData.data.desc.fullFlagSize );
+        printf( " desc.fullFlagPitch = %d\n",  pd.connectionData.data.desc.fullFlagPitch );
+        printf( " desc.fullFlagValue = 0x%llx\n",  (long long)pd.connectionData.data.desc.fullFlagValue );
 
-	printf( " desc.oob.oep = %s\n", pd.connectionData.data.desc.oob.oep );
+        printf( " desc.oob.oep = %s\n", pd.connectionData.data.desc.oob.oep );
       }
 #endif
 
@@ -101,46 +101,46 @@ void CPI::CONTAINER_TEST::connectWorkers(std::vector<CApp>& ca, std::vector<CWor
   for ( wit=workers.begin(); wit!=workers.end(); wit++ ) {
     for ( int n=0; n<(*wit)->tPortCount+(*wit)->sPortCount; n++ ) {
       if ( (*wit)->pdata[n].input ){
-	continue;
+        continue;
       }
       if ( (*wit)->pdata[n].down_stream_connection.worker ) {
 
 #ifndef NDEBUG
-	dumpPortData( (*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port);
+        dumpPortData( (*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port);
 #endif
 
 
 
-	std::string portString = 
-	  ca[(*wit)->pdata[n].down_stream_connection.worker->cid].container->packPortDesc( 
-		 *((*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port) );
+        std::string portString = 
+          ca[(*wit)->pdata[n].down_stream_connection.worker->cid].container->packPortDesc( 
+                 *((*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port) );
 
 #ifdef NEEDED
-	Port consumerPortP;
-	Port * pd;
-	if ( ! (pd=ca[(*wit)->pdata[n].down_stream_connection.worker->cid].container->unpackPortDesc( 
-								     portString, &consumerPortP ))) {
-	  throw std::string( "ERROR: unpackPortDesc() failed for consumer" );
-	}
+        Port consumerPortP;
+        Port * pd;
+        if ( ! (pd=ca[(*wit)->pdata[n].down_stream_connection.worker->cid].container->unpackPortDesc( 
+                                                                     portString, &consumerPortP ))) {
+          throw std::string( "ERROR: unpackPortDesc() failed for consumer" );
+        }
 #endif
 
-	// Make the connection
-	TUPRINTF( "About to connect target port\n");
+        // Make the connection
+        TUPRINTF( "About to connect target port\n");
 #ifndef NDEBUG
-	dumpPortData( (*wit)->pdata[n].port );
+        dumpPortData( (*wit)->pdata[n].port );
 #endif
 
-	localShadowPort = (*wit)->pdata[n].port->setFinalProviderInfo( portString );
+        localShadowPort = (*wit)->pdata[n].port->setFinalProviderInfo( portString );
 
-	// Now configure the target port
-	TUPRINTF( "About to configure output port\n");
+        // Now configure the target port
+        TUPRINTF( "About to configure output port\n");
 
 #ifndef NDEBUG
-	dumpPortData( (*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port );
+        dumpPortData( (*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port );
 #endif
 
-	(*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port->
-	  setFinalUserInfo( localShadowPort );
+        (*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port->
+          setFinalUserInfo( localShadowPort );
 
       }
     }
@@ -163,11 +163,11 @@ void  CPI::CONTAINER_TEST::testDispatch(CPI::Container::Interface* rcc_container
     do {
       rcc_container->dispatch(event_manager);
       if ( event_manager->waitForEvent( 100  ) == DataTransfer::EventTimeout ) {
-	printf("We have not recieved an event for 100 uSec.\n");
+        printf("We have not recieved an event for 100 uSec.\n");
       }
       else {
-	rcc_container->dispatch( event_manager );
-	break;
+        rcc_container->dispatch( event_manager );
+        break;
       }
     } while(1);
   }
@@ -190,11 +190,11 @@ namespace {
 
     void run() {
       while(m_dtd->run) {
-	std::vector<CApp>::iterator it;
-	for ( it=m_dtd->containers.begin(); it != m_dtd->containers.end(); it++ ) {
-	  CPI::CONTAINER_TEST::testDispatch( (*it).container, m_dtd->event_manager );
-	}
-	CPI::OS::sleep(1);
+        std::vector<CApp>::iterator it;
+        for ( it=m_dtd->containers.begin(); it != m_dtd->containers.end(); it++ ) {
+          CPI::CONTAINER_TEST::testDispatch( (*it).container, m_dtd->event_manager );
+        }
+        CPI::OS::sleep(1);
       }
     }
 
@@ -218,9 +218,9 @@ void CPI::CONTAINER_TEST::createPorts( std::vector<CApp>& ca, std::vector<CWorke
 
     for ( n=0; n<(*wit)->tPortCount; n++ ) {
       (*wit)->pdata[n].port = &
-	(*wit)->worker->createInputPort( n,
-				      (*wit)->pdata[n].bufferCount,
-				      CPI_RCC_DEFAULT_DATA_BUFFER_SIZE, (*wit)->pdata[n].props );
+        (*wit)->worker->createInputPort( n,
+                                      (*wit)->pdata[n].bufferCount,
+                                      CPI_RCC_DEFAULT_DATA_BUFFER_SIZE, (*wit)->pdata[n].props );
       (*wit)->pdata[n].input = true;
     }
 
@@ -228,9 +228,9 @@ void CPI::CONTAINER_TEST::createPorts( std::vector<CApp>& ca, std::vector<CWorke
 
     for ( ; n<(*wit)->tPortCount+(*wit)->sPortCount; n++ ) {
       (*wit)->pdata[n].port = &
-	(*wit)->worker->createOutputPort( n,
-				       (*wit)->pdata[n].bufferCount,
-				       CPI_RCC_DEFAULT_DATA_BUFFER_SIZE,(*wit)->pdata[n].props );
+        (*wit)->worker->createOutputPort( n,
+                                       (*wit)->pdata[n].bufferCount,
+                                       CPI_RCC_DEFAULT_DATA_BUFFER_SIZE,(*wit)->pdata[n].props );
       (*wit)->pdata[n].input = false;
     }
   }
@@ -249,8 +249,8 @@ CPI::Util::Thread*  CPI::CONTAINER_TEST::runTestDispatch(  CPI::CONTAINER_TEST::
 
 static CPI::Util::DriverManager dm("Container");
 std::vector<CApp> CPI::CONTAINER_TEST::createContainers( std::vector<ContainerDesc>& eps, 
-							 DataTransfer::EventManager*& event_manager,
-							 bool polling )
+                                                         DataTransfer::EventManager*& event_manager,
+                                                         bool polling )
 {
 
   TUPRINTF( "In  CPI::CONTAINER_TEST::createContainers\n");
@@ -259,8 +259,8 @@ std::vector<CApp> CPI::CONTAINER_TEST::createContainers( std::vector<ContainerDe
   std::vector<CApp> containers;
 
   static CPI::Util::PValue cprops[] = {
-				       CPI::Util::PVBool("polling",1),
-				       CPI::Util::PVEnd };
+                                       CPI::Util::PVBool("polling",1),
+                                       CPI::Util::PVEnd };
 
 
   dm.discoverDevices(0,0);
@@ -270,7 +270,7 @@ std::vector<CApp> CPI::CONTAINER_TEST::createContainers( std::vector<ContainerDe
 
       CPI::Util::Device* d = dm.getDevice( cprops, eps[n].type.c_str());
       if ( ! d ) {
-	throw CPI::Util::EmbeddedException("No Containers found\n");
+        throw CPI::Util::EmbeddedException("No Containers found\n");
       }
       ca.container = static_cast<CPI::Container::Interface*>(d);
       ca.wci_worker = dynamic_cast<CPI::WCI::Worker*>(ca.container);
@@ -285,7 +285,7 @@ std::vector<CApp> CPI::CONTAINER_TEST::createContainers( std::vector<ContainerDe
 }
 
 std::vector<CApp> CPI::CONTAINER_TEST::createContainers( std::vector<char*>& eps, 
-							 DataTransfer::EventManager*& event_manager, bool polling )
+                                                         DataTransfer::EventManager*& event_manager, bool polling )
 {
   CApp ca;
   int ccount=3;
@@ -294,8 +294,8 @@ std::vector<CApp> CPI::CONTAINER_TEST::createContainers( std::vector<char*>& eps
   std::vector<CApp> containers;
 
   static CPI::Util::PValue cprops[] = {
-				       CPI::Util::PVBool("polling",1),
-				       CPI::Util::PVEnd };
+                                       CPI::Util::PVBool("polling",1),
+                                       CPI::Util::PVEnd };
 
   dm.discoverDevices(0,0);
   // Create the container
@@ -304,7 +304,7 @@ std::vector<CApp> CPI::CONTAINER_TEST::createContainers( std::vector<char*>& eps
 
       CPI::Util::Device* d = dm.getDevice( cprops, "RCC");
       if ( ! d ) {
-	throw CPI::Util::EmbeddedException("No Containers found\n");
+        throw CPI::Util::EmbeddedException("No Containers found\n");
       }
       ca.container = static_cast<CPI::Container::Interface*>(d);
       ca.wci_worker = dynamic_cast<CPI::WCI::Worker*>(ca.container);
@@ -326,7 +326,7 @@ void CPI::CONTAINER_TEST::disconnectPorts( std::vector<CApp>& ca, std::vector<CW
   for ( wit=workers.begin(); wit!=workers.end(); wit++ ) {
     for ( int n=0; n<((*wit)->sPortCount+(*wit)->tPortCount); n++ ) {
       if ( (*wit)->pdata[n].port ) {
-	(*wit)->pdata[n].port->disconnect();
+        (*wit)->pdata[n].port->disconnect();
       }
     }
   }

@@ -44,7 +44,7 @@ namespace CPI {
        */
 
       Uri ()
-	throw ();
+        throw ();
 
       /**
        * Constructor.
@@ -57,7 +57,7 @@ namespace CPI {
        */
 
       explicit Uri (const char * str)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Constructor.
@@ -70,7 +70,7 @@ namespace CPI {
        */
 
       explicit Uri (const std::string & str)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Copy constructor.
@@ -79,7 +79,7 @@ namespace CPI {
        */
 
       Uri (const Uri & other)
-	throw ();
+        throw ();
 
       /**
        * \name Assignment operators.
@@ -99,7 +99,7 @@ namespace CPI {
        */
 
       Uri & operator= (const char * str)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Assignment operator.  Re-initializes the Uri from a string.
@@ -111,7 +111,7 @@ namespace CPI {
        */
 
       Uri & operator= (const std::string & str)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Assignment operator.  Copies another Uri.
@@ -121,7 +121,7 @@ namespace CPI {
        */
 
       Uri & operator= (const Uri & other)
-	throw ();
+        throw ();
 
       //@}
 
@@ -153,7 +153,7 @@ namespace CPI {
        */
 
       Uri & operator+= (const char * str)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Addition operator.  If \a str is an absolute URI, then \a str
@@ -172,7 +172,7 @@ namespace CPI {
        */
 
       Uri & operator+= (const std::string & str)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Addition operator.  If \a other is an absolute URI, then \a other
@@ -190,7 +190,7 @@ namespace CPI {
        */
 
       Uri & operator+= (const Uri & other)
-	throw (std::string);
+        throw (std::string);
 
       //@}
 
@@ -205,14 +205,14 @@ namespace CPI {
        */
 
       bool isAbsolute () const
-	throw ();
+        throw ();
 
       /**
        * \return True if the URI is relative, false otherwise.
        */
 
       bool isRelative () const
-	throw ();
+        throw ();
 
       //@}
 
@@ -227,7 +227,7 @@ namespace CPI {
        */
 
       const std::string & get () const
-	throw ();
+        throw ();
 
       /**
        * Return the scheme component of the URI, i.e., the string before
@@ -238,7 +238,7 @@ namespace CPI {
        */
 
       const std::string & getScheme () const
-	throw ();
+        throw ();
 
       /**
        * Return the request component of the URI, i.e., everything
@@ -251,7 +251,7 @@ namespace CPI {
        */
 
       const std::string & getRequest () const
-	throw ();
+        throw ();
 
       /**
        * Return the path component of the URI, i.e., the string
@@ -262,7 +262,7 @@ namespace CPI {
        */
 
       const std::string & getPath () const
-	throw ();
+        throw ();
 
       /**
        * Return the file name component of the URI, i.e., the last
@@ -274,7 +274,7 @@ namespace CPI {
        */
 
       const std::string & getFileName () const
-	throw ();
+        throw ();
 
       /**
        * Return the query component of the URI, i.e., the string
@@ -285,7 +285,7 @@ namespace CPI {
        */
 
       const std::string & getQuery () const
-	throw ();
+        throw ();
 
       /**
        * Return the authority component of the URI.  This is the
@@ -299,7 +299,7 @@ namespace CPI {
        */
 
       const std::string & getAuthority () const
-	throw ();
+        throw ();
 
       /**
        * Return the userinfo component of the URI, which is the part
@@ -310,7 +310,7 @@ namespace CPI {
        */
 
       const std::string & getUserinfo () const
-	throw ();
+        throw ();
 
       /**
        * Return the hostport component of the URI, which is the part
@@ -328,7 +328,7 @@ namespace CPI {
        */
 
       const std::string & getHostport () const
-	throw ();
+        throw ();
 
       /**
        * Return the host component of the URI, which is the part
@@ -341,7 +341,7 @@ namespace CPI {
        */
 
       const std::string & getHost () const
-	throw ();
+        throw ();
 
       /**
        * Return the port component of the URI, which is the part
@@ -354,7 +354,7 @@ namespace CPI {
        */
 
       const std::string & getPort () const
-	throw ();
+        throw ();
 
       /**
        * Return the fragment component of the URI, i.e., the string
@@ -365,7 +365,7 @@ namespace CPI {
        */
 
       const std::string & getFragment () const
-	throw ();
+        throw ();
 
       //@}
 
@@ -380,7 +380,7 @@ namespace CPI {
        */
 
       unsigned int getNumPathSegments () const
-	throw ();
+        throw ();
 
       /**
        * \param[in] n The index of the desired path segment.
@@ -391,7 +391,7 @@ namespace CPI {
        */
 
       std::string getPathSegment (unsigned int n) const
-	throw ();
+        throw ();
 
       //@}
 
@@ -412,7 +412,7 @@ namespace CPI {
        */
 
       static std::string decode (const char * str)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Escape-decodes a string.
@@ -425,7 +425,7 @@ namespace CPI {
        */
 
       static std::string decode (const std::string & str)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Escape-encodes a string.
@@ -442,8 +442,8 @@ namespace CPI {
        */
 
       static std::string encode (const char * str,
-				 const char * allowedChars = 0)
-	throw (std::string);
+                                 const char * allowedChars = 0)
+        throw (std::string);
 
       /**
        * Escape-encodes a string.
@@ -460,8 +460,8 @@ namespace CPI {
        */
 
       static std::string encode (const std::string & str,
-				 const char * allowedChars = 0)
-	throw (std::string);
+                                 const char * allowedChars = 0)
+        throw (std::string);
 
       /**
        * Escape-encodes a string.
@@ -478,8 +478,8 @@ namespace CPI {
        */
 
       static std::string encode (const std::string & str,
-				 const std::string & allowedChars)
-	throw (std::string);
+                                 const std::string & allowedChars)
+        throw (std::string);
 
       //@}
 
@@ -501,10 +501,10 @@ namespace CPI {
        */
 
       static bool isPrefix (const std::string & fullURI,
-			    const std::string & baseURI,
-			    std::string * prefix = 0,
-			    std::string * tail = 0)
-	throw ();
+                            const std::string & baseURI,
+                            std::string * prefix = 0,
+                            std::string * tail = 0)
+        throw ();
 
       /**
        * \name RFC 2396 Character set helpers.
@@ -606,13 +606,13 @@ namespace CPI {
       /** \cond */
 
       void parse (const std::string &)
-	throw (std::string);
+        throw (std::string);
 
       void resolve (const Uri &)
-	throw (std::string);
+        throw (std::string);
 
       static std::string normalizePath (const std::string &)
-	throw ();
+        throw ();
 
       /** \endcond */
 

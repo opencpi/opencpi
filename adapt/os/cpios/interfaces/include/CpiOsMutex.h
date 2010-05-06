@@ -65,7 +65,7 @@ namespace CPI {
        */
 
       Mutex (bool recursive = false)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
@@ -74,7 +74,7 @@ namespace CPI {
        */
 
       ~Mutex ()
-	throw ();
+        throw ();
 
       /**
        * \brief Acquires the mutex.
@@ -95,7 +95,7 @@ namespace CPI {
        */
 
       void lock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * \brief Attempts to acquire the mutex without blocking.
@@ -110,7 +110,7 @@ namespace CPI {
        */
 
       bool trylock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * \brief Release a currently-held lock.
@@ -129,7 +129,7 @@ namespace CPI {
        */
 
       void unlock ()
-	throw (std::string);
+        throw (std::string);
 
     private:
       CPI::OS::uint64_t m_osOpaque[6];

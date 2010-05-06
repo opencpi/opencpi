@@ -33,17 +33,17 @@ namespace CPI {
     class VfsFileSystem : public POA_CF::FileSystem {
     public:
       VfsFileSystem (CORBA::ORB_ptr orb,
-		     PortableServer::POA_ptr poa,
-		     CPI::Util::Vfs::Vfs * fs,
-		     bool adopt)
-	throw ();
+                     PortableServer::POA_ptr poa,
+                     CPI::Util::Vfs::Vfs * fs,
+                     bool adopt)
+        throw ();
 
       /**
        * Destructor.
        */
 
       ~VfsFileSystem ()
-	throw ();
+        throw ();
 
       /**
        * \name Implementation of the CF::FileSystem interface.
@@ -52,55 +52,55 @@ namespace CPI {
       //@{
 
       void remove (const char * fileName)
-	throw (CF::InvalidFileName,
-	       CF::FileException,
-	       CORBA::SystemException);
+        throw (CF::InvalidFileName,
+               CF::FileException,
+               CORBA::SystemException);
 
       void copy (const char * sourceFileName,
-		 const char * destinationFileName)
-	throw (CF::InvalidFileName,
-	       CF::FileException,
-	       CORBA::SystemException);
+                 const char * destinationFileName)
+        throw (CF::InvalidFileName,
+               CF::FileException,
+               CORBA::SystemException);
 
       CORBA::Boolean exists (const char * fileName)
-	throw (CF::InvalidFileName,
-	       CORBA::SystemException);
+        throw (CF::InvalidFileName,
+               CORBA::SystemException);
 
       CF::FileSystem::FileInformationSequence * list (const char * pattern)
-	throw (CF::InvalidFileName,
-	       CF::FileException,
-	       CORBA::SystemException);
+        throw (CF::InvalidFileName,
+               CF::FileException,
+               CORBA::SystemException);
 
       CF::File_ptr create (const char * fileName)
-	throw (CF::InvalidFileName,
-	       CF::FileException,
-	       CORBA::SystemException);
+        throw (CF::InvalidFileName,
+               CF::FileException,
+               CORBA::SystemException);
 
       CF::File_ptr open (const char * fileName,
-			 CORBA::Boolean read_Only)
-	throw (CF::InvalidFileName,
-	       CF::FileException,
-	       CORBA::SystemException);
+                         CORBA::Boolean read_Only)
+        throw (CF::InvalidFileName,
+               CF::FileException,
+               CORBA::SystemException);
 
       void mkdir (const char * directoryName)
-	throw (CF::InvalidFileName,
-	       CF::FileException,
-	       CORBA::SystemException);
+        throw (CF::InvalidFileName,
+               CF::FileException,
+               CORBA::SystemException);
 
       void rmdir (const char * directoryName)
-	throw (CF::InvalidFileName,
-	       CF::FileException,
-	       CORBA::SystemException);
+        throw (CF::InvalidFileName,
+               CF::FileException,
+               CORBA::SystemException);
 
       void query (CF::Properties & fileSystemProperties)
-	throw (CF::FileSystem::UnknownFileSystemProperties,
-	       CORBA::SystemException);
+        throw (CF::FileSystem::UnknownFileSystemProperties,
+               CORBA::SystemException);
 
       //@}
 
     protected:
       static void testFileName (const std::string & fileName, bool isPattern = 0)
-	throw (CF::InvalidFileName);
+        throw (CF::InvalidFileName);
 
     protected:
       CORBA::ORB_var m_orb;

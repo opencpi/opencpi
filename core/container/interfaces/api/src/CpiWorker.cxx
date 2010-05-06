@@ -35,7 +35,7 @@ namespace CPI {
     /*
     Worker::Worker( Application & a )
       :  CPI::Util::Child<Application,Worker>(a),
-	 CPI::Metadata::Worker((const char *)0)
+         CPI::Metadata::Worker((const char *)0)
     {
     }
     */
@@ -44,7 +44,7 @@ namespace CPI {
 
 
     // implementations of non-fast set methods
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		            \
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                            \
     void Worker::set##pretty##Property(Worker::Ordinal p, const run) { assert(0); } \
 CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE
@@ -60,10 +60,10 @@ CPI_PROPERTY_DATA_TYPES
     getPort(const char *name) {
       Port *p = findChild(&Port::hasName, name);
       if (p)
-	return *p;
+        return *p;
       CPI::Metadata::Port *metaPort = findPort(name);
       if (!metaPort)
-	throw ApiError("no port found with name \"", name, "\"", NULL);
+        throw ApiError("no port found with name \"", name, "\"", NULL);
       return createPort(*metaPort);
     }
 

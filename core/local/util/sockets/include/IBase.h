@@ -1,7 +1,7 @@
 /**
- **	\file 
- **	\date  2007-06-05
- **	\author grymse@alhem.net
+ **        \file 
+ **        \date  2007-06-05
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -31,7 +31,7 @@ namespace SOCKETS_NAMESPACE {
 class IBase
 {
 public:
-	virtual ~IBase() {}
+        virtual ~IBase() {}
 
 };
 

@@ -32,12 +32,12 @@
 
 using namespace CPI::DataTransport;
 
-	
+        
 /**********************************
  *  Constructors
  **********************************/
 ParallelDataDistribution::ParallelDataDistribution( DataDistributionMetaData* data, 
-						    CPI::DataTransport::Circuit* circuit )
+                                                    CPI::DataTransport::Circuit* circuit )
   : DataDistribution( data, circuit ){}
 
 
@@ -49,7 +49,7 @@ ParallelDataDistribution::ParallelDataDistribution( DataPartition* parts )
 
   // Distribution sub-type
   // m_metaData->distSubType; // not used for parallel distribution
-	
+        
   // Our partition object, default is whole distribution
   if ( ! parts ) {
     m_metaData->partition = new IndivisiblePartition();

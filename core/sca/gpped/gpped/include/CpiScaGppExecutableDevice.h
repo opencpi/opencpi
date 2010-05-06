@@ -34,61 +34,61 @@ namespace CPI {
 
     class GppExecutableDevice :
         virtual public CPI::CFUtil::DeviceBase,
-	virtual public POA_CF::ExecutableDevice
+        virtual public POA_CF::ExecutableDevice
     {
     public:
       GppExecutableDevice (CORBA::ORB_ptr orb,
-			   PortableServer::POA_ptr poa,
-			   CF::DeviceManager_ptr devMgr,
-			   const std::string & profileFileName,
-			   const std::string & deviceId,
-			   const std::string & deviceLabel,
-			   const std::string & tempFileLocation,
-			   unsigned int cpiDeviceId,
-			   const std::string & osName,
-			   const std::string & processorName,
-			   CPI::Logger::Logger * logger = 0,
-			   bool adoptLogger = true,
-			   bool shutdownOrbOnRelease = false)
-	throw (std::string);
+                           PortableServer::POA_ptr poa,
+                           CF::DeviceManager_ptr devMgr,
+                           const std::string & profileFileName,
+                           const std::string & deviceId,
+                           const std::string & deviceLabel,
+                           const std::string & tempFileLocation,
+                           unsigned int cpiDeviceId,
+                           const std::string & osName,
+                           const std::string & processorName,
+                           CPI::Logger::Logger * logger = 0,
+                           bool adoptLogger = true,
+                           bool shutdownOrbOnRelease = false)
+        throw (std::string);
 
       ~GppExecutableDevice ()
-	throw ();
+        throw ();
 
       /*
        * Overloaded from DeviceBase.
        */
 
       void releaseObject ()
-	throw (CF::LifeCycle::ReleaseError,
-	       CORBA::SystemException);
+        throw (CF::LifeCycle::ReleaseError,
+               CORBA::SystemException);
 
       void configure (const CF::Properties & props)
-	throw (CF::PropertySet::InvalidConfiguration,
-	       CF::PropertySet::PartialConfiguration,
-	       CORBA::SystemException);
+        throw (CF::PropertySet::InvalidConfiguration,
+               CF::PropertySet::PartialConfiguration,
+               CORBA::SystemException);
 
       void query (CF::Properties & props)
-	throw (CF::UnknownProperties,
-	       CORBA::SystemException);
+        throw (CF::UnknownProperties,
+               CORBA::SystemException);
 
       /*
        * CF::LoadableDevice
        */
 
       void load (CF::FileSystem_ptr fs,
-		 const char * fileName,
-		 CF::LoadableDevice::LoadType loadKind)
-	throw (CF::LoadableDevice::InvalidLoadKind,
-	       CF::LoadableDevice::LoadFail,
-	       CF::Device::InvalidState,
-	       CF::InvalidFileName,
-	       CORBA::SystemException);
+                 const char * fileName,
+                 CF::LoadableDevice::LoadType loadKind)
+        throw (CF::LoadableDevice::InvalidLoadKind,
+               CF::LoadableDevice::LoadFail,
+               CF::Device::InvalidState,
+               CF::InvalidFileName,
+               CORBA::SystemException);
 
       void unload (const char * fileName)
-	throw (CF::Device::InvalidState,
-	       CF::InvalidFileName,
-	       CORBA::SystemException);
+        throw (CF::Device::InvalidState,
+               CF::InvalidFileName,
+               CORBA::SystemException);
 
       /*
        * CF::ExecutableDevice
@@ -96,34 +96,34 @@ namespace CPI {
 
       CF::ExecutableDevice::ProcessID_Type
       execute (const char * fileName,
-	       const CF::Properties & options,
-	       const CF::Properties & parameters)
-	throw (CF::ExecutableDevice::InvalidFunction,
-	       CF::ExecutableDevice::InvalidParameters,
-	       CF::ExecutableDevice::InvalidOptions,
-	       CF::ExecutableDevice::ExecuteFail,
-	       CF::Device::InvalidState,
-	       CF::InvalidFileName,
-	       CORBA::SystemException);
+               const CF::Properties & options,
+               const CF::Properties & parameters)
+        throw (CF::ExecutableDevice::InvalidFunction,
+               CF::ExecutableDevice::InvalidParameters,
+               CF::ExecutableDevice::InvalidOptions,
+               CF::ExecutableDevice::ExecuteFail,
+               CF::Device::InvalidState,
+               CF::InvalidFileName,
+               CORBA::SystemException);
 
       void terminate (CF::ExecutableDevice::ProcessID_Type)
-	throw (CF::ExecutableDevice::InvalidProcess,
-	       CF::Device::InvalidState,
-	       CORBA::SystemException);
+        throw (CF::ExecutableDevice::InvalidProcess,
+               CF::Device::InvalidState,
+               CORBA::SystemException);
 
     protected:
       void cleanup ()
-	throw ();
+        throw ();
 
       static std::string normalizeFileName (const std::string & fileName)
-	throw ();
+        throw ();
 
       void loadDll (CPI::Util::Vfs::Vfs & fs,
-		    const std::string & fileName)
-	throw (std::string);
+                    const std::string & fileName)
+        throw (std::string);
 
       void unloadDll (const std::string & fileName)
-	throw ();
+        throw ();
 
     protected:
       /*
@@ -131,7 +131,7 @@ namespace CPI {
        */
 
       struct LoadedFileInfo {
-	unsigned int referenceCount;
+        unsigned int referenceCount;
       };
 
       typedef std::map<std::string, LoadedFileInfo> LoadedFileInfos;
@@ -141,8 +141,8 @@ namespace CPI {
        */
 
       struct LoadedDllInfo {
-	unsigned int referenceCount;
-	CPI::Util::LoadableModule * module;
+        unsigned int referenceCount;
+        CPI::Util::LoadableModule * module;
       };
 
       typedef std::map<std::string, LoadedDllInfo> LoadedDllInfos;
@@ -152,8 +152,8 @@ namespace CPI {
        */
 
       struct ProcessInfo {
-	std::string executableFile;
-	CPI::OS::ProcessManager * processManager;
+        std::string executableFile;
+        CPI::OS::ProcessManager * processManager;
       };
 
       typedef std::map<unsigned int, ProcessInfo> ProcessInfos;

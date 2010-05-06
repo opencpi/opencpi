@@ -45,7 +45,7 @@ namespace {
 
   bool
   glob (const std::string & str,
-	const std::string & pat)
+        const std::string & pat)
     throw ()
   {
     int strIdx = 0, strLen = str.length ();
@@ -55,25 +55,25 @@ namespace {
 
     while (strIdx < strLen && patIdx < patLen) {
       if (*pattern == '*') {
-	pattern++;
-	patIdx++;
-	while (strIdx < strLen) {
-	  if (glob (name, pattern)) {
-	    return true;
-	  }
-	  strIdx++;
-	  name++;
-	}
-	return (patIdx < patLen) ? false : true;
+        pattern++;
+        patIdx++;
+        while (strIdx < strLen) {
+          if (glob (name, pattern)) {
+            return true;
+          }
+          strIdx++;
+          name++;
+        }
+        return (patIdx < patLen) ? false : true;
       }
       else if (*pattern == '?' || *pattern == *name) {
-	pattern++;
-	patIdx++;
-	name++;
-	strIdx++;
+        pattern++;
+        patIdx++;
+        name++;
+        strIdx++;
       }
       else {
-	return false;
+        return false;
       }
     }
     
@@ -97,12 +97,12 @@ namespace {
 
     if (data.isSearch) {
       if (data.fileInfo.cFileName[0] == '.' && !data.fileInfo.cFileName[1]) {
-	return false;
+        return false;
       }
       else if (data.fileInfo.cFileName[0] == '.' &&
-	       data.fileInfo.cFileName[1] == '.' &&
-	       !data.fileInfo.cFileName[2]) {
-	return false;
+               data.fileInfo.cFileName[1] == '.' &&
+               !data.fileInfo.cFileName[2]) {
+        return false;
       }
 
       return glob (data.fileInfo.cFileName, data.relPattern);
@@ -130,7 +130,7 @@ o2fid (const CPI::OS::uint64_t * ptr)
 }
 
 CPI::OS::FileIterator::FileIterator (const std::string & dir,
-				     const std::string & pattern)
+                                     const std::string & pattern)
   throw (std::string)
 {
   cpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (FileIteratorData)> ()));
@@ -235,7 +235,7 @@ CPI::OS::FileIterator::end ()
       data.atend = false;
 
       if (!(data.drives & data.mask) || !matchingFileName (data)) {
-	next ();
+        next ();
       }
     }
     else {
@@ -250,10 +250,10 @@ CPI::OS::FileIterator::end ()
       data.search = FindFirstFile (nativePat.c_str(), &data.fileInfo);
 
       if (data.search == INVALID_HANDLE_VALUE) {
-	data.atend = true;
+        data.atend = true;
       }
       else {
-	data.atend = false;
+        data.atend = false;
       }
 
       /*
@@ -261,7 +261,7 @@ CPI::OS::FileIterator::end ()
        */
 
       if (!data.atend && !matchingFileName (data)) {
-	next ();
+        next ();
       }
     }
   }
@@ -330,7 +330,7 @@ CPI::OS::FileIterator::size ()
   }
 
   return ((unsigned long long) data.fileInfo.nFileSizeLow +
-	  ((unsigned long long) data.fileInfo.nFileSizeHigh << 32));
+          ((unsigned long long) data.fileInfo.nFileSizeHigh << 32));
 }
 
 std::time_t
@@ -390,21 +390,21 @@ CPI::OS::FileIterator::next ()
   do {
     if (data.isSearch) {
       if (!FindNextFile (data.search, &data.fileInfo)) {
-	DWORD errCode = GetLastError();
+        DWORD errCode = GetLastError();
       
-	if (errCode != ERROR_NO_MORE_FILES) {
-	  throw CPI::OS::Win32::getErrorMessage (errCode);
-	}
+        if (errCode != ERROR_NO_MORE_FILES) {
+          throw CPI::OS::Win32::getErrorMessage (errCode);
+        }
     
-	data.atend = true;
+        data.atend = true;
       }
     }
     else {
       do {
-	if (!(data.mask <<= 1)) {
-	  data.atend = true;
-	}
-	data.driveName[0]++;
+        if (!(data.mask <<= 1)) {
+          data.atend = true;
+        }
+        data.driveName[0]++;
       }
       while (!data.atend && !(data.mask & data.drives));
     }

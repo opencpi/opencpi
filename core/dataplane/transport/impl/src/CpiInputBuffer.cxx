@@ -99,7 +99,7 @@ void InputBuffer::update(bool critical)
       (input_offsets->bufferOffset, 
        input_offsets->bufferSize );
     m_startOffset = input_offsets->bufferOffset;
-		  
+                  
     m_length = input_offsets->bufferSize;
     memset(m_bVaddr, 0, input_offsets->bufferSize);
     m_buffer = m_baseAddress = m_bVaddr;
@@ -130,22 +130,22 @@ void InputBuffer::update(bool critical)
     // our shadow buffer. 
     if ( m_useEmptyFlagForFlowControl ) {
       for ( unsigned int y=MAX_PORT_COUNT; y<MAX_PORT_COUNT*2; y++ ) {
-	m_state[0][y].bufferFull = DataTransfer::BufferEmptyFlag;
+        m_state[0][y].bufferFull = DataTransfer::BufferEmptyFlag;
       }
     }
     else {
 #ifdef USE_TID_FOR_DB
       for (unsigned  int y=MAX_PORT_COUNT; y<MAX_PORT_COUNT*2; y++ ) {
-	m_state[0][y].bufferFull = m_tid;
+        m_state[0][y].bufferFull = m_tid;
       }
 #else 
       for (unsigned  int y=MAX_PORT_COUNT; y<MAX_PORT_COUNT*2; y++ ) {
-	m_state[0][y].bufferFull = m_port->getMetaData()->m_externPortDependencyData.desc.emptyFlagValue;
+        m_state[0][y].bufferFull = m_port->getMetaData()->m_externPortDependencyData.desc.emptyFlagValue;
       }
 #endif
     }
 
-	  
+          
   }
 
   // Now map the meta-data
@@ -182,7 +182,7 @@ void InputBuffer::update(bool critical)
 
 #ifdef DEBUG_L2
       printf("&&&& mapping shadow offset to 0x%x\n", 
-	     input_offsets->myShadowsRemoteStateOffsets[idx]);
+             input_offsets->myShadowsRemoteStateOffsets[idx]);
 #endif
 
 #ifndef NDEBUG
@@ -190,24 +190,24 @@ void InputBuffer::update(bool critical)
 #endif
 
       m_rssVaddr[idx] = shadow_port->getRealShemServices()->map
-	(input_offsets->myShadowsRemoteStateOffsets[idx], 
-	 sizeof(BufferState));
+        (input_offsets->myShadowsRemoteStateOffsets[idx], 
+         sizeof(BufferState));
 
       // Now format our descriptor
       this->m_feedbackDesc.type = CPI::RDT::ConsumerFlowControlDescT;
       this->m_feedbackDesc.desc.emptyFlagBaseAddr = 
-	input_offsets->myShadowsRemoteStateOffsets[idx];
+        input_offsets->myShadowsRemoteStateOffsets[idx];
 
       // Our flag is 4 bytes
       this->m_feedbackDesc.desc.emptyFlagPitch = sizeof(BufferState);
       this->m_feedbackDesc.desc.emptyFlagSize = sizeof(BufferState);
       this->m_feedbackDesc.desc.emptyFlagValue = 0x1000; 
         
-#ifndef NDEBUG		
+#ifndef NDEBUG                
       printf("Requested Emptyflag port value = 0x%llx\n", 
-	     (long long)this->m_feedbackDesc.desc.emptyFlagValue);
+             (long long)this->m_feedbackDesc.desc.emptyFlagValue);
 #endif
-		
+                
 
 #ifndef NDEBUG
       printf("InputBuffer:update: map returned %p\n", m_rssVaddr[idx]);
@@ -215,7 +215,7 @@ void InputBuffer::update(bool critical)
 
 
       m_myShadowsRemoteStates[idx] = 
-	static_cast<volatile BufferState*>(m_rssVaddr[idx]);
+        static_cast<volatile BufferState*>(m_rssVaddr[idx]);
 
 
       m_myShadowsRemoteStates[idx]->bufferFull = -1;
@@ -312,8 +312,8 @@ volatile BufferState* InputBuffer::getState()
     // to look at all of the other states to determine if all outputs have written to us.
     for ( CPI::OS::uint32_t n=0; n<MAX_PORT_COUNT; n++ ) {
       if ( (m_state[0][n].bufferFull & DataTransfer::BufferEmptyFlag) != DataTransfer::BufferEmptyFlag ) {
-	m_tState.bufferFull = m_state[0][n].bufferFull;
-       	break;
+        m_tState.bufferFull = m_state[0][n].bufferFull;
+               break;
       }
     }
 #endif
@@ -362,7 +362,7 @@ void InputBuffer::markBufferFull()
     m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferFull = 1;
   }
 #endif
-	
+        
 }
 
 
@@ -380,7 +380,7 @@ void InputBuffer::markBufferEmpty()
     m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferFull =  DataTransfer::BufferEmptyFlag;
     volatile BufferState* state = this->getState();
     state->bufferFull = DataTransfer::BufferEmptyFlag;
-  }	
+  }        
 }
 
 
@@ -419,30 +419,30 @@ bool InputBuffer::isEmpty()
        // m_produced is our barrier sync.  
        if ( m_produced ) {
 
-	 CPI::OS::uint64_t mdata;
-	 bool empty = getPort()->getPullDriver()->checkBufferEmpty( (CPI::OS::uint8_t*)getBuffer(),getLength(),mdata);
-	 
-       //	 bool empty = getPort()->getPullDriver()->checkBufferEmpty(this);	 
-	 if ( empty ) {
-	   m_produced = false;
-	   return true;
-	 }
+         CPI::OS::uint64_t mdata;
+         bool empty = getPort()->getPullDriver()->checkBufferEmpty( (CPI::OS::uint8_t*)getBuffer(),getLength(),mdata);
+         
+       //         bool empty = getPort()->getPullDriver()->checkBufferEmpty(this);         
+         if ( empty ) {
+           m_produced = false;
+           return true;
+         }
        }       
        return false;
      }
      else {  // We are a real input
        bool empty = 
-	 ((state->bufferFull & DataTransfer::BufferEmptyFlag) == DataTransfer::BufferEmptyFlag) ? true : false;       
+         ((state->bufferFull & DataTransfer::BufferEmptyFlag) == DataTransfer::BufferEmptyFlag) ? true : false;       
        if ( empty ) {
 
-	 CPI::OS::uint64_t mdata;
-	 empty = getPort()->getPullDriver()->checkBufferEmpty((CPI::OS::uint8_t*)getBuffer(),getLength(),mdata);
-	 if ( !empty ) {
-	   setInUse(true);
-	   markBufferFull();
-	   getMetaData()->cpiMetaDataWord = mdata;
-	   setInUse(false);	    
-	 }
+         CPI::OS::uint64_t mdata;
+         empty = getPort()->getPullDriver()->checkBufferEmpty((CPI::OS::uint8_t*)getBuffer(),getLength(),mdata);
+         if ( !empty ) {
+           setInUse(true);
+           markBufferFull();
+           getMetaData()->cpiMetaDataWord = mdata;
+           setInUse(false);            
+         }
        }
        return empty;
      }

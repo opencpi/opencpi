@@ -32,7 +32,7 @@ namespace CPI {
     namespace Posix {
 
       std::string getErrorMessage (int errorCode)
-	throw ();
+        throw ();
 
     }
   }

@@ -31,14 +31,14 @@
 
 CPI::CFUtil::DeviceBase::
 DeviceBase (CORBA::ORB_ptr orb,
-	    PortableServer::POA_ptr poa,
-	    CF::DeviceManager_ptr devMgr,
-	    const std::string & profileFileName,
-	    const std::string & deviceId,
-	    const std::string & deviceLabel,
-	    CPI::Logger::Logger * logger,
-	    bool adoptLogger,
-	    bool shutdownOrbOnRelease)
+            PortableServer::POA_ptr poa,
+            CF::DeviceManager_ptr devMgr,
+            const std::string & profileFileName,
+            const std::string & deviceId,
+            const std::string & deviceLabel,
+            CPI::Logger::Logger * logger,
+            bool adoptLogger,
+            bool shutdownOrbOnRelease)
   throw (std::string)
   : m_disabled (false),
     m_orb (CORBA::ORB::_duplicate (orb)),
@@ -95,15 +95,15 @@ CPI::CFUtil::DeviceBase::
 void
 CPI::CFUtil::DeviceBase::
 connectPort (const std::string & portName,
-	     const std::string & connectionId)
+             const std::string & connectionId)
   throw (CF::Port::InvalidPort,
-	 CF::Port::OccupiedPort,
-	 CORBA::SystemException)
+         CF::Port::OccupiedPort,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
 
   cpiAssert (portName == "LogOut" ||
-	     portName == "EventOut");
+             portName == "EventOut");
 
   if (portName == "LogOut") {
     CPI::CORBAUtil::LwLogLoggerOutput::LogProducer_var log = m_logPort.getConnection ();
@@ -112,36 +112,36 @@ connectPort (const std::string & portName,
 
   CPI::Logger::DebugLogger debug (m_out);
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Port \""
-	<< portName
-	<< "\" connected, connection id \""
-	<< connectionId
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Port \""
+        << portName
+        << "\" connected, connection id \""
+        << connectionId
+        << "\"."
+        << std::flush;
 }
 
 void
 CPI::CFUtil::DeviceBase::
 disconnectPort (const std::string & portName,
-		const std::string & connectionId)
+                const std::string & connectionId)
   throw (CF::Port::InvalidPort,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Disconnecting from port \""
-	<< portName
-	<< "\" connection id \""
-	<< connectionId
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Disconnecting from port \""
+        << portName
+        << "\" connection id \""
+        << connectionId
+        << "\"."
+        << std::flush;
 
   cpiAssert (portName == "LogOut" ||
-	     portName == "EventOut");
+             portName == "EventOut");
 
   if (portName == "LogOut") {
     m_logOut.setLogService (CPI::CORBAUtil::LwLogLoggerOutput::LogProducer::_nil ());
@@ -158,7 +158,7 @@ void
 CPI::CFUtil::DeviceBase::
 initialize ()
   throw (CF::LifeCycle::InitializeError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -168,16 +168,16 @@ initialize ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Initializing."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Initializing."
+        << std::flush;
 }
 
 void
 CPI::CFUtil::DeviceBase::
 releaseObject ()
   throw (CF::LifeCycle::ReleaseError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -187,9 +187,9 @@ releaseObject ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Releasing."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Releasing."
+        << std::flush;
 
   try {
     PortableServer::ObjectId_var oid = m_poa->servant_to_id (this);
@@ -197,29 +197,29 @@ releaseObject ()
   }
   catch (const CORBA::Exception & ex) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Error deactivating this servant: "
-	  << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	  << " (Ignored.)"
-	  << std::flush;
+          << m_logProducerName
+          << "Error deactivating this servant: "
+          << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+          << " (Ignored.)"
+          << std::flush;
   }
 
   if (m_shutdownOrbOnRelease) {
     debug << m_logProducerName
-	  << CPI::Logger::Verbosity (1)
-	  << "Shutting down the ORB."
-	  << std::flush;
+          << CPI::Logger::Verbosity (1)
+          << "Shutting down the ORB."
+          << std::flush;
 
     try {
       m_orb->shutdown (0);
     }
     catch (const CORBA::Exception & ex) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Error shutting down the ORB: "
-	    << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	    << " (Ignored.)"
-	    << std::flush;
+            << m_logProducerName
+            << "Error shutting down the ORB: "
+            << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+            << " (Ignored.)"
+            << std::flush;
     }
   }
 
@@ -235,10 +235,10 @@ releaseObject ()
 void
 CPI::CFUtil::DeviceBase::
 runTest (CORBA::ULong testId,
-	 CF::Properties & testValues)
+         CF::Properties & testValues)
   throw (CF::TestableObject::UnknownTest,
-	 CF::UnknownProperties,
-	 CORBA::SystemException)
+         CF::UnknownProperties,
+         CORBA::SystemException)
 {
   CPI::Logger::DebugLogger debug (m_out);
 
@@ -265,46 +265,46 @@ runTest (CORBA::ULong testId,
       /*
        * C-BIT: Perform off-line test.
        */
-	
+        
       if (testValues.length() != 0) {
-	debug << m_logProducerName
-	      << CPI::Logger::Verbosity (1)
-	      << "Failed to run test " << testId
-	      << ": got non-empty set of input values."
-	      << std::flush;
-	throw CF::UnknownProperties (testValues);
+        debug << m_logProducerName
+              << CPI::Logger::Verbosity (1)
+              << "Failed to run test " << testId
+              << ": got non-empty set of input values."
+              << std::flush;
+        throw CF::UnknownProperties (testValues);
       }
 
       std::string testMessage;
       bool testResult;
 
       try {
-	if (testId == 1) {
-	  testResult = sBit ();
-	}
-	else if (testId == 2) {
-	  testResult = oBit ();
-	}
-	else {
-	  testResult = cBit ();
-	}
+        if (testId == 1) {
+          testResult = sBit ();
+        }
+        else if (testId == 2) {
+          testResult = oBit ();
+        }
+        else {
+          testResult = cBit ();
+        }
 
-	if (testResult) {
-	  testMessage = "Ok";
-	}
+        if (testResult) {
+          testMessage = "Ok";
+        }
       }
       catch (const std::string & oops) {
-	testResult = false;
-	testMessage = oops;
+        testResult = false;
+        testMessage = oops;
       }
 
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (2)
-	    << "Test " << testId
-	    << (testResult ? " succeeded" : " failed")
-	    << ", message: \""
-	    << testMessage << "\"."
-	    << std::flush;
+            << CPI::Logger::Verbosity (2)
+            << "Test " << testId
+            << (testResult ? " succeeded" : " failed")
+            << ", message: \""
+            << testMessage << "\"."
+            << std::flush;
 
       testValues.length (2);
       testValues[0].id = "result";
@@ -316,9 +316,9 @@ runTest (CORBA::ULong testId,
 
   default:
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Failed to run test " << testId << ": no such test."
-	  << std::flush;
+          << m_logProducerName
+          << "Failed to run test " << testId << ": no such test."
+          << std::flush;
     throw CF::TestableObject::UnknownTest ();
   }
 }
@@ -333,8 +333,8 @@ void
 CPI::CFUtil::DeviceBase::
 configure (const CF::Properties & configProperties)
   throw (CF::PropertySet::InvalidConfiguration,
-	 CF::PropertySet::PartialConfiguration,
-	 CORBA::SystemException)
+         CF::PropertySet::PartialConfiguration,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -352,17 +352,17 @@ configure (const CF::Properties & configProperties)
 
   if (np) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Attempt to configure non-existent properties."
-	  << std::flush;
+          << m_logProducerName
+          << "Attempt to configure non-existent properties."
+          << std::flush;
 
     for (CORBA::ULong pi=0; pi<np; pi++) {
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (2)
-	    << "This device does not have a property named \""
-	    << configProperties[pi].id.in()
-	    << "\"."
-	    << std::flush;
+            << CPI::Logger::Verbosity (2)
+            << "This device does not have a property named \""
+            << configProperties[pi].id.in()
+            << "\"."
+            << std::flush;
     }
 
     CF::PropertySet::InvalidConfiguration ic;
@@ -372,16 +372,16 @@ configure (const CF::Properties & configProperties)
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Configuring zero properties."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Configuring zero properties."
+        << std::flush;
 }
 
 void
 CPI::CFUtil::DeviceBase::
 query (CF::Properties & configProperties)
   throw (CF::UnknownProperties,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -399,17 +399,17 @@ query (CF::Properties & configProperties)
 
   if (np) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Attempt to query non-existent properties."
-	  << std::flush;
+          << m_logProducerName
+          << "Attempt to query non-existent properties."
+          << std::flush;
 
     for (CORBA::ULong pi=0; pi<np; pi++) {
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (2)
-	    << "This device does not have a property named \""
-	    << configProperties[pi].id.in()
-	    << "\"."
-	    << std::flush;
+            << CPI::Logger::Verbosity (2)
+            << "This device does not have a property named \""
+            << configProperties[pi].id.in()
+            << "\"."
+            << std::flush;
     }
 
     CF::UnknownProperties up;
@@ -418,9 +418,9 @@ query (CF::Properties & configProperties)
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Queried zero properties."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Queried zero properties."
+        << std::flush;
 }
 
 /*
@@ -433,7 +433,7 @@ CORBA::Object_ptr
 CPI::CFUtil::DeviceBase::
 getPort (const char * name)
   throw (CF::PortSupplier::UnknownPort,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -443,11 +443,11 @@ getPort (const char * name)
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Query for port \""
-	<< name
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Query for port \""
+        << name
+        << "\"."
+        << std::flush;
 
   if (std::strcmp (name, "LogOut") == 0) {
     return m_logPort.getPort ();
@@ -457,11 +457,11 @@ getPort (const char * name)
   }
   else {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "This component does not have a port named \""
-	  << name
-	  << "\"."
-	  << std::flush;
+          << m_logProducerName
+          << "This component does not have a port named \""
+          << name
+          << "\"."
+          << std::flush;
 
     throw CF::PortSupplier::UnknownPort ();
   }
@@ -482,11 +482,11 @@ identifier ()
   CPI::Logger::DebugLogger debug (m_out);
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Identifier attribute queried: \""
-	<< m_identifier
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Identifier attribute queried: \""
+        << m_identifier
+        << "\"."
+        << std::flush;
 
   return CORBA::string_dup (m_identifier.c_str());
 }
@@ -495,7 +495,7 @@ void
 CPI::CFUtil::DeviceBase::
 start ()
   throw (CF::Resource::StartError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
 
@@ -504,16 +504,16 @@ start ()
   }
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Started. (No-op.)"
-	<< std::flush;
+        << m_logProducerName
+        << "Started. (No-op.)"
+        << std::flush;
 }
 
 void
 CPI::CFUtil::DeviceBase::
 stop ()
   throw (CF::Resource::StopError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
 
@@ -522,9 +522,9 @@ stop ()
   }
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Stopped. (No-op.)"
-	<< std::flush;
+        << m_logProducerName
+        << "Stopped. (No-op.)"
+        << std::flush;
 }
 
 /*
@@ -546,11 +546,11 @@ usageState ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Usage state attribute queried: \""
-	<< CPI::CFUtil::usageTypeToString (m_usageState)
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Usage state attribute queried: \""
+        << CPI::CFUtil::usageTypeToString (m_usageState)
+        << "\"."
+        << std::flush;
 
   return m_usageState;
 }
@@ -568,11 +568,11 @@ adminState ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Admin state attribute queried: \""
-	<< CPI::CFUtil::adminTypeToString (m_adminState)
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Admin state attribute queried: \""
+        << CPI::CFUtil::adminTypeToString (m_adminState)
+        << "\"."
+        << std::flush;
 
   return m_adminState;
 }
@@ -595,11 +595,11 @@ operationalState ()
   CPI::Logger::DebugLogger debug (m_out);
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Operational state attribute queried: \""
-	<< CPI::CFUtil::operationalTypeToString (m_operationalState)
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Operational state attribute queried: \""
+        << CPI::CFUtil::operationalTypeToString (m_operationalState)
+        << "\"."
+        << std::flush;
 
   return m_operationalState;
 }
@@ -617,11 +617,11 @@ label ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Label attribute queried: \""
-	<< m_label
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Label attribute queried: \""
+        << m_label
+        << "\"."
+        << std::flush;
 
   return CORBA::string_dup (m_label.c_str());
 }
@@ -639,11 +639,11 @@ softwareProfile ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Software profile attribute queried: \""
-	<< m_softwareProfile
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Software profile attribute queried: \""
+        << m_softwareProfile
+        << "\"."
+        << std::flush;
 
   return CORBA::string_dup (m_softwareProfile.c_str());
 }
@@ -661,11 +661,11 @@ compositeDevice ()
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Composite Device attribute queried: \""
-	<< "{nil}"
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Composite Device attribute queried: \""
+        << "{nil}"
+        << "\"."
+        << std::flush;
 
   return CF::AggregateDevice::_nil ();
 }
@@ -674,8 +674,8 @@ CORBA::Boolean
 CPI::CFUtil::DeviceBase::
 allocateCapacity (const CF::Properties & capacities)
   throw (CF::Device::InvalidCapacity,
-	 CF::Device::InvalidState,
-	 CORBA::SystemException)
+         CF::Device::InvalidState,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -721,8 +721,8 @@ allocateCapacity (const CF::Properties & capacities)
   CORBA::ULong numInvalidCapacities = 0;
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "allocateCapacity (";
+        << CPI::Logger::Verbosity (2)
+        << "allocateCapacity (";
 
   for (CORBA::ULong dci=0; dci<numCaps; dci++) {
     if (dci > 0) {
@@ -739,32 +739,32 @@ allocateCapacity (const CF::Properties & capacities)
     const char * capacityId = capacity.id.in ();
 
     if (std::strcmp (capacityId, "numberOfUnits") == 0 ||
-	std::strcmp (capacityId, "ea7a686f-b851-40b9-b6c4-dfb38123a0f4") == 0) {
+        std::strcmp (capacityId, "ea7a686f-b851-40b9-b6c4-dfb38123a0f4") == 0) {
       CORBA::ULong value;
 
       if ((capacity.value >>= value)) {
-	if (value > 0 && value <= m_availableNumberOfUnits) {
-	  m_availableNumberOfUnits -= value;
+        if (value > 0 && value <= m_availableNumberOfUnits) {
+          m_availableNumberOfUnits -= value;
 
-	  if (m_availableNumberOfUnits) {
-	    usageStateLocked (CF::Device::ACTIVE);
-	  }
-	  else {
-	    usageStateLocked (CF::Device::BUSY);
-	  }
-	}
-	else {
-	  m_out << CPI::Logger::Level::EXCEPTION_ERROR
-		<< m_logProducerName
-		<< "Failed to allocate \"numberOfUnits\" capacity: invalid value: "
-		<< value << "."
-		<< std::endl;
-	  good = 0;
-	}
+          if (m_availableNumberOfUnits) {
+            usageStateLocked (CF::Device::ACTIVE);
+          }
+          else {
+            usageStateLocked (CF::Device::BUSY);
+          }
+        }
+        else {
+          m_out << CPI::Logger::Level::EXCEPTION_ERROR
+                << m_logProducerName
+                << "Failed to allocate \"numberOfUnits\" capacity: invalid value: "
+                << value << "."
+                << std::endl;
+          good = 0;
+        }
       }
       else {
-	invalidCapacities.length (numInvalidCapacities + 1);
-	invalidCapacities[numInvalidCapacities++] = capacity;
+        invalidCapacities.length (numInvalidCapacities + 1);
+        invalidCapacities[numInvalidCapacities++] = capacity;
       }
     }
     else {
@@ -775,16 +775,16 @@ allocateCapacity (const CF::Properties & capacities)
 
   if (numInvalidCapacities) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Allocation failed for "
-	  << ((numInvalidCapacities != 1) ? "capacities " : "capacity ");
+          << m_logProducerName
+          << "Allocation failed for "
+          << ((numInvalidCapacities != 1) ? "capacities " : "capacity ");
 
     for (CORBA::ULong dci=0; dci<numInvalidCapacities; dci++) {
       if (dci > 0 && dci+1 == numInvalidCapacities) {
-	m_out << " and ";
+        m_out << " and ";
       }
       else if (dci > 0) {
-	m_out << ", ";
+        m_out << ", ";
       }
 
       m_out << invalidCapacities[dci].id;
@@ -805,8 +805,8 @@ void
 CPI::CFUtil::DeviceBase::
 deallocateCapacity (const CF::Properties & capacities)
   throw (CF::Device::InvalidCapacity,
-	 CF::Device::InvalidState,
-	 CORBA::SystemException)
+         CF::Device::InvalidState,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -851,8 +851,8 @@ deallocateCapacity (const CF::Properties & capacities)
   CORBA::ULong numInvalidCapacities = 0;
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "deallocateCapacity (";
+        << CPI::Logger::Verbosity (2)
+        << "deallocateCapacity (";
 
   for (CORBA::ULong dci=0; dci<numCaps; dci++) {
     if (dci > 0) {
@@ -869,31 +869,31 @@ deallocateCapacity (const CF::Properties & capacities)
     const char * capacityId = capacity.id.in ();
 
     if (std::strcmp (capacityId, "numberOfUnits") == 0 ||
-	std::strcmp (capacityId, "ea7a686f-b851-40b9-b6c4-dfb38123a0f4") == 0) {
+        std::strcmp (capacityId, "ea7a686f-b851-40b9-b6c4-dfb38123a0f4") == 0) {
       CORBA::ULong value;
 
       if ((capacity.value >>= value) && value > 0 && value <= (m_totalNumberOfUnits - m_availableNumberOfUnits)) {
-	m_availableNumberOfUnits += value;
+        m_availableNumberOfUnits += value;
 
-	if (m_availableNumberOfUnits != m_totalNumberOfUnits) {
-	  usageStateLocked (CF::Device::ACTIVE);
-	}
-	else {
-	  usageStateLocked (CF::Device::IDLE);
+        if (m_availableNumberOfUnits != m_totalNumberOfUnits) {
+          usageStateLocked (CF::Device::ACTIVE);
+        }
+        else {
+          usageStateLocked (CF::Device::IDLE);
 
-	  /*
-	   * If this device is shutting down, then set the admin state to
-	   * LOCKED, now that the last capacity has been released.
-	   */
+          /*
+           * If this device is shutting down, then set the admin state to
+           * LOCKED, now that the last capacity has been released.
+           */
 
-	  if (m_adminState == CF::Device::SHUTTING_DOWN) {
-	    adminStateLocked (CF::Device::LOCKED);
-	  }
-	}
+          if (m_adminState == CF::Device::SHUTTING_DOWN) {
+            adminStateLocked (CF::Device::LOCKED);
+          }
+        }
       }
       else {
-	invalidCapacities.length (numInvalidCapacities + 1);
-	invalidCapacities[numInvalidCapacities++] = capacity;
+        invalidCapacities.length (numInvalidCapacities + 1);
+        invalidCapacities[numInvalidCapacities++] = capacity;
       }
     }
     else {
@@ -904,16 +904,16 @@ deallocateCapacity (const CF::Properties & capacities)
 
   if (numInvalidCapacities) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Allocation failed for "
-	  << ((numInvalidCapacities != 1) ? "capacities " : "capacity ");
+          << m_logProducerName
+          << "Allocation failed for "
+          << ((numInvalidCapacities != 1) ? "capacities " : "capacity ");
 
     for (CORBA::ULong dci=0; dci<numInvalidCapacities; dci++) {
       if (dci > 0 && dci+1 == numInvalidCapacities) {
-	m_out << " and ";
+        m_out << " and ";
       }
       else if (dci > 0) {
-	m_out << ", ";
+        m_out << ", ";
       }
 
       m_out << invalidCapacities[dci].id;
@@ -1013,7 +1013,7 @@ bool
 CPI::CFUtil::DeviceBase::
 sBit ()
   throw (CF::TestableObject::UnknownTest,
-	 std::string)
+         std::string)
 {
   return cBit ();
 }
@@ -1022,7 +1022,7 @@ bool
 CPI::CFUtil::DeviceBase::
 oBit ()
   throw (CF::TestableObject::UnknownTest,
-	 std::string)
+         std::string)
 {
   return cBit ();
 }
@@ -1031,7 +1031,7 @@ bool
 CPI::CFUtil::DeviceBase::
 cBit ()
   throw (CF::TestableObject::UnknownTest,
-	 std::string)
+         std::string)
 {
   throw CF::TestableObject::UnknownTest ();
 }
@@ -1058,13 +1058,13 @@ adminStateLocked (CF::Device::AdminType state)
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Request to change admin state from \""
-	<< CPI::CFUtil::adminTypeToString (m_adminState)
-	<< "\" to \""
-	<< CPI::CFUtil::adminTypeToString (state)
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Request to change admin state from \""
+        << CPI::CFUtil::adminTypeToString (m_adminState)
+        << "\" to \""
+        << CPI::CFUtil::adminTypeToString (state)
+        << "\"."
+        << std::flush;
 
   CF::Device::AdminType oldState = m_adminState;
 
@@ -1078,27 +1078,27 @@ adminStateLocked (CF::Device::AdminType state)
     case CF::Device::UNLOCKED:
       m_adminState = CF::Device::SHUTTING_DOWN;
       publishStateChangeEvent (StandardEvent::ADMINISTRATIVE_STATE_EVENT,
-			       StandardEvent::UNLOCKED,
-			       StandardEvent::SHUTTING_DOWN);
+                               StandardEvent::UNLOCKED,
+                               StandardEvent::SHUTTING_DOWN);
       /* Fall-through. */
 
     case CF::Device::SHUTTING_DOWN:
       if (m_usageState != CF::Device::IDLE) {
-	/* Must wait until device is idle before transitioning to LOCKED. */
-	debug << m_logProducerName
-	      << CPI::Logger::Verbosity (2)
-	      << "Not transitioning from \""
-	      << CPI::CFUtil::adminTypeToString (m_adminState)
-	      << "\" to \""
-	      << CPI::CFUtil::adminTypeToString (state)
-	      << "\" yet because the device is not idle."
-	      << std::flush;
+        /* Must wait until device is idle before transitioning to LOCKED. */
+        debug << m_logProducerName
+              << CPI::Logger::Verbosity (2)
+              << "Not transitioning from \""
+              << CPI::CFUtil::adminTypeToString (m_adminState)
+              << "\" to \""
+              << CPI::CFUtil::adminTypeToString (state)
+              << "\" yet because the device is not idle."
+              << std::flush;
       }
       else {
-	m_adminState = CF::Device::LOCKED;
-	publishStateChangeEvent (StandardEvent::ADMINISTRATIVE_STATE_EVENT,
-				 StandardEvent::SHUTTING_DOWN,
-				 StandardEvent::LOCKED);
+        m_adminState = CF::Device::LOCKED;
+        publishStateChangeEvent (StandardEvent::ADMINISTRATIVE_STATE_EVENT,
+                                 StandardEvent::SHUTTING_DOWN,
+                                 StandardEvent::LOCKED);
       }
 
       break;
@@ -1112,13 +1112,13 @@ adminStateLocked (CF::Device::AdminType state)
      */
 
     debug << m_logProducerName
-	  << CPI::Logger::Verbosity (2)
-	  << "Not transitioning from \""
-	  << CPI::CFUtil::adminTypeToString (m_adminState)
-	  << "\" to \""
-	  << CPI::CFUtil::adminTypeToString (state)
-	  << "\" because this state transition is illegal. (Ignored.)"
-	  << std::flush;
+          << CPI::Logger::Verbosity (2)
+          << "Not transitioning from \""
+          << CPI::CFUtil::adminTypeToString (m_adminState)
+          << "\" to \""
+          << CPI::CFUtil::adminTypeToString (state)
+          << "\" because this state transition is illegal. (Ignored.)"
+          << std::flush;
     break;
 
   case CF::Device::UNLOCKED:
@@ -1126,8 +1126,8 @@ adminStateLocked (CF::Device::AdminType state)
     case CF::Device::LOCKED:
       m_adminState = CF::Device::UNLOCKED;
       publishStateChangeEvent (StandardEvent::ADMINISTRATIVE_STATE_EVENT,
-			       StandardEvent::LOCKED,
-			       StandardEvent::UNLOCKED);
+                               StandardEvent::LOCKED,
+                               StandardEvent::UNLOCKED);
       break;
 
     case CF::Device::UNLOCKED:
@@ -1136,13 +1136,13 @@ adminStateLocked (CF::Device::AdminType state)
 
     case CF::Device::SHUTTING_DOWN:
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (2)
-	    << "Not transitioning from \""
-	    << CPI::CFUtil::adminTypeToString (m_adminState)
-	    << "\" to \""
-	    << CPI::CFUtil::adminTypeToString (state)
-	    << "\" because this state transition is illegal. (Ignored.)"
-	    << std::flush;
+            << CPI::Logger::Verbosity (2)
+            << "Not transitioning from \""
+            << CPI::CFUtil::adminTypeToString (m_adminState)
+            << "\" to \""
+            << CPI::CFUtil::adminTypeToString (state)
+            << "\" because this state transition is illegal. (Ignored.)"
+            << std::flush;
       break;
     }
 
@@ -1150,22 +1150,22 @@ adminStateLocked (CF::Device::AdminType state)
 
   default:
     debug << m_logProducerName
-	  << CPI::Logger::Verbosity (2)
-	  << "Unknown target state (value "
-	  << static_cast<unsigned int> (state)
-	  << "). (Ignored.)"
-	  << std::flush;
+          << CPI::Logger::Verbosity (2)
+          << "Unknown target state (value "
+          << static_cast<unsigned int> (state)
+          << "). (Ignored.)"
+          << std::flush;
   }
 
   if (state != oldState) {
     m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	  << m_logProducerName
-	  << "Administrative state changed from \""
-	  << CPI::CFUtil::adminTypeToString (oldState)
-	  << "\" to \""
-	  << CPI::CFUtil::adminTypeToString (state)
-	  << "\"."
-	  << std::flush;
+          << m_logProducerName
+          << "Administrative state changed from \""
+          << CPI::CFUtil::adminTypeToString (oldState)
+          << "\" to \""
+          << CPI::CFUtil::adminTypeToString (state)
+          << "\"."
+          << std::flush;
   }
 }
 
@@ -1181,8 +1181,8 @@ usageStateLocked (CF::Device::UsageType state)
   CPI::Logger::DebugLogger debug (m_out);
 
   cpiAssert (state == CF::Device::IDLE ||
-	     state == CF::Device::ACTIVE ||
-	     state == CF::Device::BUSY);
+             state == CF::Device::ACTIVE ||
+             state == CF::Device::BUSY);
 
   if (state == m_usageState) {
     /* No-op. */
@@ -1209,17 +1209,17 @@ usageStateLocked (CF::Device::UsageType state)
   }
 
   publishStateChangeEvent (StandardEvent::USAGE_STATE_EVENT,
-			   oldType,
-			   newType);
+                           oldType,
+                           newType);
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Usage state changed from \""
-	<< CPI::CFUtil::usageTypeToString (oldState)
-	<< "\" to \""
-	<< CPI::CFUtil::usageTypeToString (state)
-	<< "\"."
-	<< std::flush;
+        << m_logProducerName
+        << "Usage state changed from \""
+        << CPI::CFUtil::usageTypeToString (oldState)
+        << "\" to \""
+        << CPI::CFUtil::usageTypeToString (state)
+        << "\"."
+        << std::flush;
 }
 
 void
@@ -1234,7 +1234,7 @@ operationalStateLocked (CF::Device::OperationalType state)
   CPI::Logger::DebugLogger debug (m_out);
 
   cpiAssert (state == CF::Device::ENABLED ||
-	     state == CF::Device::DISABLED);
+             state == CF::Device::DISABLED);
 
   if (state == m_operationalState) {
     /* No-op. */
@@ -1245,24 +1245,24 @@ operationalStateLocked (CF::Device::OperationalType state)
   m_operationalState = state;
 
   publishStateChangeEvent (StandardEvent::OPERATIONAL_STATE_EVENT,
-			   (oldState == CF::Device::ENABLED) ? StandardEvent::ENABLED : StandardEvent::DISABLED,
-			   (state    == CF::Device::ENABLED) ? StandardEvent::ENABLED : StandardEvent::DISABLED);
+                           (oldState == CF::Device::ENABLED) ? StandardEvent::ENABLED : StandardEvent::DISABLED,
+                           (state    == CF::Device::ENABLED) ? StandardEvent::ENABLED : StandardEvent::DISABLED);
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Operational state changed from \""
-	<< CPI::CFUtil::operationalTypeToString (oldState)
-	<< "\" to \""
-	<< CPI::CFUtil::operationalTypeToString (state)
-	<< "\"."
-	<< std::flush;
+        << m_logProducerName
+        << "Operational state changed from \""
+        << CPI::CFUtil::operationalTypeToString (oldState)
+        << "\" to \""
+        << CPI::CFUtil::operationalTypeToString (state)
+        << "\"."
+        << std::flush;
 }
 
 void
 CPI::CFUtil::DeviceBase::
 publishStateChangeEvent (StandardEvent::StateChangeCategoryType category,
-			 StandardEvent::StateChangeType from,
-			 StandardEvent::StateChangeType to)
+                         StandardEvent::StateChangeType from,
+                         StandardEvent::StateChangeType to)
   throw ()
 {
   StandardEvent::StateChangeEventType ev;
@@ -1281,17 +1281,17 @@ publishStateChangeEvent (StandardEvent::StateChangeCategoryType category,
     }
     catch (const CORBA::Exception & ex) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Failed to publish state change event: "
-	    << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	    << std::flush;
+            << m_logProducerName
+            << "Failed to publish state change event: "
+            << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+            << std::flush;
     }
   }
   else {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Failed to publish state change event: "
-	  << "Event port is not connected."
-	  << std::flush;
+          << m_logProducerName
+          << "Failed to publish state change event: "
+          << "Event port is not connected."
+          << std::flush;
   }
 }

@@ -151,8 +151,8 @@ FileTeeStop (RCCWorker * wctx)
 static
 RCCResult
 FileTeeRun (RCCWorker * wctx,
-	    RCCBoolean timedout,
-	    RCCBoolean * newRunCondition)
+            RCCBoolean timedout,
+            RCCBoolean * newRunCondition)
 {
   FileTeeContext * ctx = (FileTeeContext *) wctx->memories[0];
   FileTeeProperties * props = (FileTeeProperties *) wctx->properties;

@@ -71,7 +71,7 @@ CPI::CP289::Controller::
 }
 
 
-CPI::OS::int32_t	
+CPI::OS::int32_t        
 CPI::CP289::Controller::
 markWorkersPolled( CPI::CP289::Worker* worker )
 {
@@ -89,31 +89,31 @@ markWorkersPolled( CPI::CP289::Worker* worker )
     }
 
     // If this is an output port, set the mask if it has a free buffer
-    if ( cpiport->dtPort()->isOutput() ) {	
+    if ( cpiport->dtPort()->isOutput() ) {        
       CPI::DataTransport::Port* port = cpiport->dtPort();
       RCCPort *wport = &worker->m_rcc_worker->m_context->ports[cpiport->portId()];
       if ( wport->current.data ) {
-	active_mask |= (1<<cpiport->portId());
+        active_mask |= (1<<cpiport->portId());
       }
       else if ( port->hasEmptyOutputBuffer() ) {
-	CPI::CP289::OpaquePortData *opd = static_cast<CPI::CP289::OpaquePortData*>(wport->opaque);
-	if ( opd->readyToAdvance ) {
-	  opd->buffer = port->getNextEmptyOutputBuffer();
-	  if ( opd->buffer ) {
-	    opd->buffer->opaque = opd;
-	    wport->current.data = (void*)opd->buffer->getBuffer();
-	    wport->current.id_ = opd->buffer;
-	    wport->output.length = 	
-	      (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opd->buffer->getMetaData()->cpiMetaDataWord);
-	    wport->output.u.operation = 	
-	      (CPI::OS::uint32_t)DECODE_OPCODE(opd->buffer->getMetaData()->cpiMetaDataWord);
-	  }
-	  else {
-	    wport->current.data = NULL;
-	  }
-	  opd->readyToAdvance = false;
-	}
-	active_mask |= (1<<cpiport->portId());
+        CPI::CP289::OpaquePortData *opd = static_cast<CPI::CP289::OpaquePortData*>(wport->opaque);
+        if ( opd->readyToAdvance ) {
+          opd->buffer = port->getNextEmptyOutputBuffer();
+          if ( opd->buffer ) {
+            opd->buffer->opaque = opd;
+            wport->current.data = (void*)opd->buffer->getBuffer();
+            wport->current.id_ = opd->buffer;
+            wport->output.length =         
+              (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opd->buffer->getMetaData()->cpiMetaDataWord);
+            wport->output.u.operation =         
+              (CPI::OS::uint32_t)DECODE_OPCODE(opd->buffer->getMetaData()->cpiMetaDataWord);
+          }
+          else {
+            wport->current.data = NULL;
+          }
+          opd->readyToAdvance = false;
+        }
+        active_mask |= (1<<cpiport->portId());
       }
     }
 
@@ -123,35 +123,35 @@ markWorkersPolled( CPI::CP289::Worker* worker )
       CPI::CP289::OpaquePortData *opd = static_cast<CPI::CP289::OpaquePortData*>(wport->opaque);
 
       if ( wport->current.data ) {
-	active_mask |= (1<<cpiport->portId());
+        active_mask |= (1<<cpiport->portId());
       }
       else if ( port->hasFullInputBuffer() ) {
-	cpiAssert( opd->readyToAdvance );
-	if ( opd->readyToAdvance ) {
-	  opd->buffer = port->getNextFullInputBuffer();
-	  if ( opd->buffer ) {
-	    wport->current.data = (void*)opd->buffer->getBuffer();
-	    opd->buffer->opaque = opd;
-	    wport->current.id_ = opd->buffer;
-	    wport->input.length = 
-	      (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opd->buffer->getMetaData()->cpiMetaDataWord);
-	    wport->input.u.operation = 	
-	      (CPI::OS::uint32_t)DECODE_OPCODE(opd->buffer->getMetaData()->cpiMetaDataWord);
-	    cpiAssert( wport->input.length <= wport->current.maxLength );
+        cpiAssert( opd->readyToAdvance );
+        if ( opd->readyToAdvance ) {
+          opd->buffer = port->getNextFullInputBuffer();
+          if ( opd->buffer ) {
+            wport->current.data = (void*)opd->buffer->getBuffer();
+            opd->buffer->opaque = opd;
+            wport->current.id_ = opd->buffer;
+            wport->input.length = 
+              (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opd->buffer->getMetaData()->cpiMetaDataWord);
+            wport->input.u.operation =         
+              (CPI::OS::uint32_t)DECODE_OPCODE(opd->buffer->getMetaData()->cpiMetaDataWord);
+            cpiAssert( wport->input.length <= wport->current.maxLength );
 
 #ifndef NDEBUG
-	    printf("max = %d, actual = %d\n", wport->current.maxLength, wport->input.length );
+            printf("max = %d, actual = %d\n", wport->current.maxLength, wport->input.length );
 #endif
-	    active_mask |= (1<<cpiport->portId());
-	    opd->readyToAdvance = false;
-	  }
-	  else {
-	    wport->current.data = NULL;
-	  }
-	}
+            active_mask |= (1<<cpiport->portId());
+            opd->readyToAdvance = false;
+          }
+          else {
+            wport->current.data = NULL;
+          }
+        }
       }
     }
-	  
+          
     cpiport = static_cast<CPI::CP289::Port*>(worker->nextChild(cpiport));
 
   } // End for each port
@@ -221,33 +221,33 @@ run(DataTransfer::EventManager* event_manager )
 
       // Make sure the worker is enabled
       if ( ! worker->enabled ) {
-	worker = static_cast<CPI::CP289::Worker*>(app->nextChild(worker));
-	continue;
+        worker = static_cast<CPI::CP289::Worker*>(app->nextChild(worker));
+        continue;
       }
       else {
-	worker->run_condition_met = false;
+        worker->run_condition_met = false;
       }
 
       // Check if this worker has a timer for a run condition
       if ( worker->m_rcc_worker->m_dispatch->runCondition && worker->m_rcc_worker->m_dispatch->runCondition->timeout ) {
-	CPI::OS::Timer::ElapsedTime et;
-	worker->runTimer.stop();
-	worker->runTimer.getValue( et );
-	worker->runTimer.start();
-	if ( et > worker->runTimeout ) {	  
+        CPI::OS::Timer::ElapsedTime et;
+        worker->runTimer.stop();
+        worker->runTimer.getValue( et );
+        worker->runTimer.start();
+        if ( et > worker->runTimeout ) {          
 #ifndef NDEBUG
-	  printf("WORKER TIMED OUT, timer time = %d,%d -- run timer = %d,%d\n", 
-		 et.seconds, et.nanoseconds, worker->runTimeout.seconds, worker->runTimeout.nanoseconds );
+          printf("WORKER TIMED OUT, timer time = %d,%d -- run timer = %d,%d\n", 
+                 et.seconds, et.nanoseconds, worker->runTimeout.seconds, worker->runTimeout.nanoseconds );
 #endif
-	  worker->run_condition_met = true;
-	  timeout = true;
-	}
+          worker->run_condition_met = true;
+          timeout = true;
+        }
       }
       active_mask = markWorkersPolled( worker );
 
 #ifndef NDEBUG
       if ( cpi_dbg_run ) {
-	printf("WORKER RUN: worker active mask = %d\n", active_mask );
+        printf("WORKER RUN: worker active mask = %d\n", active_mask );
       }
 #endif
 
@@ -255,76 +255,76 @@ run(DataTransfer::EventManager* event_manager )
       int n=0;
       if ( worker->m_rcc_worker->m_context->runCondition ) {
 
-	// We need to ignore optional ports that are NOT connected
-	CPI::OS::uint32_t op_nc = 
-	  (worker->m_rcc_worker->m_dispatch->optionallyConnectedPorts &  ~worker->m_rcc_worker->m_context->connectedPorts);
+        // We need to ignore optional ports that are NOT connected
+        CPI::OS::uint32_t op_nc = 
+          (worker->m_rcc_worker->m_dispatch->optionallyConnectedPorts &  ~worker->m_rcc_worker->m_context->connectedPorts);
 
-	CPI::OS::uint32_t t_active_mask = active_mask | op_nc;
+        CPI::OS::uint32_t t_active_mask = active_mask | op_nc;
 
-	while ( worker->m_rcc_worker->m_context->runCondition->portMasks && 
-		worker->m_rcc_worker->m_context->runCondition->portMasks[n] ) {
-	  if ( t_active_mask && ((worker->m_rcc_worker->m_context->runCondition->portMasks[n]&t_active_mask ) == 
-				 worker->m_rcc_worker->m_context->runCondition->portMasks[n]) ) {
-	    worker->run_condition_met = true;
-	    break;
-	  }
-	  n++;
-	}
+        while ( worker->m_rcc_worker->m_context->runCondition->portMasks && 
+                worker->m_rcc_worker->m_context->runCondition->portMasks[n] ) {
+          if ( t_active_mask && ((worker->m_rcc_worker->m_context->runCondition->portMasks[n]&t_active_mask ) == 
+                                 worker->m_rcc_worker->m_context->runCondition->portMasks[n]) ) {
+            worker->run_condition_met = true;
+            break;
+          }
+          n++;
+        }
       }
       else {
-	worker->run_condition_met = true;
+        worker->run_condition_met = true;
       }
 
       // Run the worker if needed
       if ( worker->run_condition_met ) {
-	RCCResult wr;
+        RCCResult wr;
 
-	// If the worker has defined a port method, we will call it instead of the run method
-	// for each port that has one
-	CPI::OS::int32_t pord=0;
-	bool execute_run = true;
-	CPI::OS::uint32_t mtest=0;
-	while ( mtest<active_mask  ) {
-	  mtest = 1<<pord;
-	  if ( (mtest&active_mask)==mtest) {
-	    if ( worker->m_rcc_worker->m_context->ports[pord].callBack ) {
-	      execute_run = false;
-	      RCCResult wr = 
-		worker->m_rcc_worker->m_context->ports[pord].callBack( 
-								      worker->m_rcc_worker->m_context,
-								      &worker->m_rcc_worker->m_context->ports[pord], 
-								      RCC_OK);
-	      if ( wr != RCC_OK ) {
-		worker->enabled = false;
-		worker->m_rcc_worker->m_state = RCCWorkerInterface::WorkerUnusable;
-	      }
-	    }
-	  }
-	  pord++;
-	}
+        // If the worker has defined a port method, we will call it instead of the run method
+        // for each port that has one
+        CPI::OS::int32_t pord=0;
+        bool execute_run = true;
+        CPI::OS::uint32_t mtest=0;
+        while ( mtest<active_mask  ) {
+          mtest = 1<<pord;
+          if ( (mtest&active_mask)==mtest) {
+            if ( worker->m_rcc_worker->m_context->ports[pord].callBack ) {
+              execute_run = false;
+              RCCResult wr = 
+                worker->m_rcc_worker->m_context->ports[pord].callBack( 
+                                                                      worker->m_rcc_worker->m_context,
+                                                                      &worker->m_rcc_worker->m_context->ports[pord], 
+                                                                      RCC_OK);
+              if ( wr != RCC_OK ) {
+                worker->enabled = false;
+                worker->m_rcc_worker->m_state = RCCWorkerInterface::WorkerUnusable;
+              }
+            }
+          }
+          pord++;
+        }
 
-	if ( execute_run ) {
-	  anyone_run = true;
-	  CPI_EMIT_("End Worker Evaluation");
-	  if ( (wr = worker->m_rcc_worker->run( timeout, &timeout)) == RCC_ADVANCE ) {
-	    advanceAll( worker );
-	  }
-	  else if ( wr == RCC_DONE ) {
-	    worker->enabled = false;
-	  }
-	  else if ( wr != RCC_OK ) {
-	    worker->enabled = false;
-	    worker->m_rcc_worker->m_state = RCCWorkerInterface::WorkerUnusable;
-	    worker->runTimer.stop();
-	  }
-	  else {
-	    worker->runTimer.stop();
-	    worker->runTimer.reset();
-	    worker->runTimer.start();
-	  }
-	  checkWorkerDeadLock( worker );
-	  worker->worker_run_count++;
-	}
+        if ( execute_run ) {
+          anyone_run = true;
+          CPI_EMIT_("End Worker Evaluation");
+          if ( (wr = worker->m_rcc_worker->run( timeout, &timeout)) == RCC_ADVANCE ) {
+            advanceAll( worker );
+          }
+          else if ( wr == RCC_DONE ) {
+            worker->enabled = false;
+          }
+          else if ( wr != RCC_OK ) {
+            worker->enabled = false;
+            worker->m_rcc_worker->m_state = RCCWorkerInterface::WorkerUnusable;
+            worker->runTimer.stop();
+          }
+          else {
+            worker->runTimer.stop();
+            worker->runTimer.reset();
+            worker->runTimer.start();
+          }
+          checkWorkerDeadLock( worker );
+          worker->worker_run_count++;
+        }
       }
 
       worker = static_cast<CPI::CP289::Worker*>(app->nextChild(worker));      
@@ -447,21 +447,21 @@ RCCBoolean CP289Request( ::RCCPort* port, ::uint32_t max )
     }
     else if ( opq->port->dtPort()->hasEmptyOutputBuffer() ) {
       if ( opq->readyToAdvance ) {
-	opq->buffer = opq->port->dtPort()->getNextEmptyOutputBuffer();
-	if ( opq->buffer ) {
-	  port->current.data = (void*)opq->buffer->getBuffer();
-	  opq->buffer->opaque = opq;
-	  port->current.id_ = opq->buffer;
-	  port->output.length = 
-	    (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opq->buffer->getMetaData()->cpiMetaDataWord);
-	  port->output.u.operation = 	
-	      (CPI::OS::uint32_t)DECODE_OPCODE(opq->buffer->getMetaData()->cpiMetaDataWord);
+        opq->buffer = opq->port->dtPort()->getNextEmptyOutputBuffer();
+        if ( opq->buffer ) {
+          port->current.data = (void*)opq->buffer->getBuffer();
+          opq->buffer->opaque = opq;
+          port->current.id_ = opq->buffer;
+          port->output.length = 
+            (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opq->buffer->getMetaData()->cpiMetaDataWord);
+          port->output.u.operation =         
+              (CPI::OS::uint32_t)DECODE_OPCODE(opq->buffer->getMetaData()->cpiMetaDataWord);
 
-	}
-	else {
-	  port->current.data = NULL;
-	}
-	opq->readyToAdvance = false;
+        }
+        else {
+          port->current.data = NULL;
+        }
+        opq->readyToAdvance = false;
       }
     }
     else {
@@ -474,22 +474,22 @@ RCCBoolean CP289Request( ::RCCPort* port, ::uint32_t max )
     }
     else if ( opq->port->dtPort()->hasFullInputBuffer() ) {
       if ( opq->readyToAdvance ) {
-	opq->buffer = opq->port->dtPort()->getNextFullInputBuffer();
-	if ( opq->buffer ) {
+        opq->buffer = opq->port->dtPort()->getNextFullInputBuffer();
+        if ( opq->buffer ) {
 
-	  port->current.data = (void*)opq->buffer->getBuffer();
-	  opq->buffer->opaque = opq;
-	  port->current.id_ = opq->buffer;
-	  port->input.length = 
-	    (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opq->buffer->getMetaData()->cpiMetaDataWord);
-	  port->input.u.operation = 	
-	      (CPI::OS::uint32_t)DECODE_OPCODE(opq->buffer->getMetaData()->cpiMetaDataWord);
+          port->current.data = (void*)opq->buffer->getBuffer();
+          opq->buffer->opaque = opq;
+          port->current.id_ = opq->buffer;
+          port->input.length = 
+            (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opq->buffer->getMetaData()->cpiMetaDataWord);
+          port->input.u.operation =         
+              (CPI::OS::uint32_t)DECODE_OPCODE(opq->buffer->getMetaData()->cpiMetaDataWord);
 
-	}
-	else {
-	  port->current.data = NULL;
-	}
-	opq->readyToAdvance = false;
+        }
+        else {
+          port->current.data = NULL;
+        }
+        opq->readyToAdvance = false;
       }
     }
     else { 

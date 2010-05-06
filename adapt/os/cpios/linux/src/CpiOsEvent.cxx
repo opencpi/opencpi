@@ -157,7 +157,7 @@ CPI::OS::Event::wait (unsigned int timeout)
       pthread_mutex_unlock (&ed.mutex);
 
       if (res == ETIMEDOUT) {
-	return false;
+        return false;
       }
 
       throw CPI::OS::Posix::getErrorMessage (res);

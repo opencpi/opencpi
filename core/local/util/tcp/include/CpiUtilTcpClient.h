@@ -36,71 +36,71 @@ namespace CPI {
 
       class Client : public Stream {
       public:
-	/**
-	 * Constructor.
-	 *
-	 * This class creates an unconnected instance.  connect() must be
-	 * called to connect to a remote port.
-	 *
-	 * \post The stream is unconnected.
-	 */
+        /**
+         * Constructor.
+         *
+         * This class creates an unconnected instance.  connect() must be
+         * called to connect to a remote port.
+         *
+         * \post The stream is unconnected.
+         */
 
-	Client ()
-	  throw ();
+        Client ()
+          throw ();
 
-	/**
-	 * Constructor.  Creates a socket that is connected to a remote peer.
-	 *
-	 * Calls connect (\a host, \a port).
-	 *
-	 * \param[in] host The name or dotted IP address of the remote host
-	 *                 to connect to.
-	 * \param[in] port The port number of the remote service to connect
-	 *                 to.
-	 *
-	 * \post The stream is connected.
-	 *
-	 * \throw std::string If the connection can not be established.
-	 */
+        /**
+         * Constructor.  Creates a socket that is connected to a remote peer.
+         *
+         * Calls connect (\a host, \a port).
+         *
+         * \param[in] host The name or dotted IP address of the remote host
+         *                 to connect to.
+         * \param[in] port The port number of the remote service to connect
+         *                 to.
+         *
+         * \post The stream is connected.
+         *
+         * \throw std::string If the connection can not be established.
+         */
 
-	Client (const std::string & host, unsigned int port)
-	  throw (std::string);
+        Client (const std::string & host, unsigned int port)
+          throw (std::string);
 
-	/**
-	 * Destructor.
-	 */
+        /**
+         * Destructor.
+         */
 
-	~Client ()
-	  throw ();
+        ~Client ()
+          throw ();
 
-	/**
-	 * Connect the socket, if it was not connected upon construction.
-	 *
-	 * \param[in] host The name or dotted IP address of the remote host
-	 *                 to connect to.
-	 * \param[in] port The port number of the remote service to connect
-	 *                 to.
-	 *
-	 * \post The stream is connected.
-	 *
-	 * \throw std::string If the connection can not be established.
-	 */
+        /**
+         * Connect the socket, if it was not connected upon construction.
+         *
+         * \param[in] host The name or dotted IP address of the remote host
+         *                 to connect to.
+         * \param[in] port The port number of the remote service to connect
+         *                 to.
+         *
+         * \post The stream is connected.
+         *
+         * \throw std::string If the connection can not be established.
+         */
 
-	void connect (const std::string & host, unsigned int port)
-	  throw (std::string);
+        void connect (const std::string & host, unsigned int port)
+          throw (std::string);
 
       private:
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	Client (const Client &);
+        Client (const Client &);
 
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	Client & operator= (const Client &);
+        Client & operator= (const Client &);
       };
 
     }

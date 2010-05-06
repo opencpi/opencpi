@@ -39,15 +39,15 @@ namespace CPI {
 namespace SCA {
 
 #define SCA_DATA_TYPES \
-  SCA_DATA_TYPE_H(boolean, Boolean, u, 8)			\
-    SCA_DATA_TYPE_H(char, Char, u, 8)				\
-    SCA_DATA_TYPE(double, Double, f, 64)			\
-    SCA_DATA_TYPE(float, Float, f, 32)				\
-    SCA_DATA_TYPE(short, Short, u, 16)				\
-    SCA_DATA_TYPE(long, Long, u, 32)				\
-    SCA_DATA_TYPE_H(octet, Octet, u, 8)				\
-    SCA_DATA_TYPE(ulong, ULong, u, 32)				\
-    SCA_DATA_TYPE(ushort, UShort, u, 16)			\
+  SCA_DATA_TYPE_H(boolean, Boolean, u, 8)                        \
+    SCA_DATA_TYPE_H(char, Char, u, 8)                                \
+    SCA_DATA_TYPE(double, Double, f, 64)                        \
+    SCA_DATA_TYPE(float, Float, f, 32)                                \
+    SCA_DATA_TYPE(short, Short, u, 16)                                \
+    SCA_DATA_TYPE(long, Long, u, 32)                                \
+    SCA_DATA_TYPE_H(octet, Octet, u, 8)                                \
+    SCA_DATA_TYPE(ulong, ULong, u, 32)                                \
+    SCA_DATA_TYPE(ushort, UShort, u, 16)                        \
     SCA_DATA_TYPE_S(string, String)
 
 #define SCA_DATA_TYPE_H SCA_DATA_TYPE
@@ -93,13 +93,13 @@ typedef struct {
 
 // Return a single string, to be freed by caller, or NULL on error.
 extern char *encode_props(Property *properties, unsigned nprops, unsigned size,
-			  Port *ports, unsigned nports,
-			  Test *tests, unsigned ntests);
+                          Port *ports, unsigned nports,
+                          Test *tests, unsigned ntests);
 // Return an array of structs, to be freed by caller (in one "free");
 extern bool decode_props(const char *props,
-			 Property **propsp, unsigned *nprops, unsigned *size,
-			 Port **ports, unsigned *nports,
-			 Test **tests, unsigned *ntests);
+                         Property **propsp, unsigned *nprops, unsigned *size,
+                         Port **ports, unsigned *nports,
+                         Test **tests, unsigned *ntests);
 }
 }
 #endif

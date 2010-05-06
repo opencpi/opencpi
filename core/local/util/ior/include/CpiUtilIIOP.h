@@ -35,8 +35,8 @@ namespace CPI {
        */
 
       struct Version {
-	unsigned char major;
-	unsigned char minor;
+        unsigned char major;
+        unsigned char minor;
       };
 
       /**
@@ -49,237 +49,237 @@ namespace CPI {
 
       class ProfileBody {
       public:
-	/**
-	 * Default constructor.
-	 */
+        /**
+         * Default constructor.
+         */
 
-	ProfileBody ()
-	  throw ();
+        ProfileBody ()
+          throw ();
 
-	/**
-	 * Constructor from encapsulated data.
-	 *
-	 * \param[in] data A CDR-encapsulated IIOP ProfileBody, using
-	 *                 IIOP versions 1.0, 1.1, 1.2 or 1.3.
-	 *
-	 * \throw std::string If the ProfileBody can not be unmarshalled
-	 * from \a data.
-	 */
+        /**
+         * Constructor from encapsulated data.
+         *
+         * \param[in] data A CDR-encapsulated IIOP ProfileBody, using
+         *                 IIOP versions 1.0, 1.1, 1.2 or 1.3.
+         *
+         * \throw std::string If the ProfileBody can not be unmarshalled
+         * from \a data.
+         */
 
-	explicit ProfileBody (const std::string & data)
-	  throw (std::string);
+        explicit ProfileBody (const std::string & data)
+          throw (std::string);
 
-	/**
-	 * Copy constructor.
-	 *
-	 * \param[in] other Another ProfileBody.
-	 */
+        /**
+         * Copy constructor.
+         *
+         * \param[in] other Another ProfileBody.
+         */
 
-	ProfileBody (const ProfileBody & other)
-	  throw ();
+        ProfileBody (const ProfileBody & other)
+          throw ();
 
-	/**
-	 * Assignment operator.
-	 *
-	 * \param[in] other Another ProfileBody.
-	 * \return *this
-	 */
+        /**
+         * Assignment operator.
+         *
+         * \param[in] other Another ProfileBody.
+         * \return *this
+         */
 
-	ProfileBody & operator= (const ProfileBody & other)
-	  throw ();
+        ProfileBody & operator= (const ProfileBody & other)
+          throw ();
 
-	/**
-	 * Assign from CDR-encapsulated data.
-	 *
-	 * \param[in] data A CDR-encapsulated IIOP ProfileBody, using
-	 *                 IIOP versions 1.0, 1.1, 1.2 or 1.3.
-	 *
-	 * \throw std::string If the ProfileBody can not be unmarshalled
-	 * from \a data.
-	 *
-	 * \note Equivalent to operator= (ProfileBody (data)).
-	 */
+        /**
+         * Assign from CDR-encapsulated data.
+         *
+         * \param[in] data A CDR-encapsulated IIOP ProfileBody, using
+         *                 IIOP versions 1.0, 1.1, 1.2 or 1.3.
+         *
+         * \throw std::string If the ProfileBody can not be unmarshalled
+         * from \a data.
+         *
+         * \note Equivalent to operator= (ProfileBody (data)).
+         */
 
-	void decode (const std::string & data)
-	  throw (std::string);
+        void decode (const std::string & data)
+          throw (std::string);
 
-	/**
-	 * Marshal this ProfileBody as CDR-encapsulated data.
-	 *
-	 * \return The CDR-encapsulated ProfileBody.
-	 *
-	 * \throw std::string If the IIOP version in #iiop_version
-	 * is not 1.0, 1.1, 1.2 or 1.3.
-	 */
+        /**
+         * Marshal this ProfileBody as CDR-encapsulated data.
+         *
+         * \return The CDR-encapsulated ProfileBody.
+         *
+         * \throw std::string If the IIOP version in #iiop_version
+         * is not 1.0, 1.1, 1.2 or 1.3.
+         */
 
-	std::string encode () const
-	  throw (std::string);
+        std::string encode () const
+          throw (std::string);
 
-	/**
-	 * \name Access to tagged components
-	 */
+        /**
+         * \name Access to tagged components
+         */
 
-	//@{
+        //@{
 
-	/**
-	 * Add a component to the set of tagged components.
-	 *
-	 * \param[in] tag  The tag value.
-	 * \param[in] data Pointer to the data associated with the tag.  The
-	 *                 format of the data is component-specific.
-	 * \param[in] len  The length of the data, in octets.
-	 *
-	 * \pre !#hasComponent(\a tag)
-	 */
+        /**
+         * Add a component to the set of tagged components.
+         *
+         * \param[in] tag  The tag value.
+         * \param[in] data Pointer to the data associated with the tag.  The
+         *                 format of the data is component-specific.
+         * \param[in] len  The length of the data, in octets.
+         *
+         * \pre !#hasComponent(\a tag)
+         */
 
-	void addComponent (CPI::Util::IOP::ComponentId tag, const void * data, unsigned long len)
-	  throw ();
+        void addComponent (CPI::Util::IOP::ComponentId tag, const void * data, unsigned long len)
+          throw ();
 
-	/**
-	 * Add a component to the set of tagged components.
-	 *
-	 * \param[in] tag  The tag value.
-	 * \param[in] data The data associated with the tag.  The format of
-	 *                 the data is component-specific.
-	 *
-	 * \pre !#hasComponent(\a tag)
-	 */
+        /**
+         * Add a component to the set of tagged components.
+         *
+         * \param[in] tag  The tag value.
+         * \param[in] data The data associated with the tag.  The format of
+         *                 the data is component-specific.
+         *
+         * \pre !#hasComponent(\a tag)
+         */
 
-	void addComponent (CPI::Util::IOP::ComponentId tag, const std::string & data)
-	  throw ();
+        void addComponent (CPI::Util::IOP::ComponentId tag, const std::string & data)
+          throw ();
 
-	/**
-	 * Check if the profile contains a tagged component.
-	 *
-	 * \param[in] tag  The tag value to search.
-	 * \return         true if the profile contains a component with this
-	 *                 tag, false if not.
-	 */
+        /**
+         * Check if the profile contains a tagged component.
+         *
+         * \param[in] tag  The tag value to search.
+         * \return         true if the profile contains a component with this
+         *                 tag, false if not.
+         */
 
-	bool hasComponent (CPI::Util::IOP::ComponentId tag)
-	  throw ();
+        bool hasComponent (CPI::Util::IOP::ComponentId tag)
+          throw ();
 
-	/**
-	 * Access the data associated with a component (non-const version).
-	 * The returned reference can be used to modify the tagged component
-	 * data.
-	 *
-	 * \param[in] tag  The tag value to search.
-	 * \return         The data associated with the tag.
-	 *
-	 * \throw std::string If the profile does not contain a component
-	 * tagged \a tag.
-	 *
-	 * \pre #hasComponent(\a tag).
-	 */
+        /**
+         * Access the data associated with a component (non-const version).
+         * The returned reference can be used to modify the tagged component
+         * data.
+         *
+         * \param[in] tag  The tag value to search.
+         * \return         The data associated with the tag.
+         *
+         * \throw std::string If the profile does not contain a component
+         * tagged \a tag.
+         *
+         * \pre #hasComponent(\a tag).
+         */
 
-	std::string & componentData (CPI::Util::IOP::ComponentId tag)
-	  throw (std::string);
+        std::string & componentData (CPI::Util::IOP::ComponentId tag)
+          throw (std::string);
 
-	/**
-	 * Access the data associated with a component (const version).
-	 *
-	 * \param[in] tag  The tag value to search.
-	 * \return         The data associated with the tag.
-	 *
-	 * \throw std::string If the profile does not contain a component
-	 * tagged \a tag.
-	 *
-	 * \pre #hasComponent(\a tag).
-	 */
+        /**
+         * Access the data associated with a component (const version).
+         *
+         * \param[in] tag  The tag value to search.
+         * \return         The data associated with the tag.
+         *
+         * \throw std::string If the profile does not contain a component
+         * tagged \a tag.
+         *
+         * \pre #hasComponent(\a tag).
+         */
 
-	const std::string & componentData (CPI::Util::IOP::ComponentId tag) const
-	  throw (std::string);
+        const std::string & componentData (CPI::Util::IOP::ComponentId tag) const
+          throw (std::string);
 
-	/**
-	 * The number of tagged components in this profile.
-	 *
-	 * \return The number of tagged components in this profile.
-	 */
+        /**
+         * The number of tagged components in this profile.
+         *
+         * \return The number of tagged components in this profile.
+         */
 
-	unsigned long numComponents () const
-	  throw ();
+        unsigned long numComponents () const
+          throw ();
 
-	/**
-	 * Access to a tagged component (non-const version).
-	 * The returned reference can be used to modify the tagged component
-	 * data.
-	 *
-	 * \param[in] idx The index of the component to access.
-	 * \return        The profile.
-	 *
-	 * \throw std::string If \a idx exceeds the number of components in
-	 * this profile.
-	 *
-	 * \pre \a idx < #numComponents().
-	 */
+        /**
+         * Access to a tagged component (non-const version).
+         * The returned reference can be used to modify the tagged component
+         * data.
+         *
+         * \param[in] idx The index of the component to access.
+         * \return        The profile.
+         *
+         * \throw std::string If \a idx exceeds the number of components in
+         * this profile.
+         *
+         * \pre \a idx < #numComponents().
+         */
 
-	CPI::Util::IOP::TaggedComponent & getComponent (unsigned long idx)
-	  throw (std::string);
+        CPI::Util::IOP::TaggedComponent & getComponent (unsigned long idx)
+          throw (std::string);
 
-	/**
-	 * Access to a tagged component (const version).
-	 *
-	 * \param[in] idx The index of the component to access.
-	 * \return        The profile.
-	 *
-	 * \throw std::string If \a idx exceeds the number of components in
-	 * this profile.
-	 *
-	 * \pre \a idx < #numComponents().
-	 */
+        /**
+         * Access to a tagged component (const version).
+         *
+         * \param[in] idx The index of the component to access.
+         * \return        The profile.
+         *
+         * \throw std::string If \a idx exceeds the number of components in
+         * this profile.
+         *
+         * \pre \a idx < #numComponents().
+         */
 
-	const CPI::Util::IOP::TaggedComponent & getComponent (unsigned long idx) const
-	  throw (std::string);
+        const CPI::Util::IOP::TaggedComponent & getComponent (unsigned long idx) const
+          throw (std::string);
 
-	//@}
+        //@}
 
       public:
-	/**
-	 * \name Data members
-	 */
+        /**
+         * \name Data members
+         */
 
-	//@{
+        //@{
 
-	/**
-	 * The version of IIOP that the agent at the specified address
-	 * is prepared to receive.
-	 */
+        /**
+         * The version of IIOP that the agent at the specified address
+         * is prepared to receive.
+         */
 
-	Version iiop_version;
+        Version iiop_version;
 
-	/**
-	 * The internet host to which GIOP messages for the specified
-	 * object may be sent.
-	 */
+        /**
+         * The internet host to which GIOP messages for the specified
+         * object may be sent.
+         */
 
-	std::string host;
+        std::string host;
 
-	/**
-	 * The TCP/IP port number (at the specified host) where the
-	 * target agent is listening for connection requests.
-	 */
+        /**
+         * The TCP/IP port number (at the specified host) where the
+         * target agent is listening for connection requests.
+         */
 
-	CPI::OS::uint16_t port;
+        CPI::OS::uint16_t port;
 
-	/**
-	 * An opaque value supplied by the agent producing the IOR.
-	 * This value is used in request messages to identify the
-	 * object to which the request is directed.
-	 */
+        /**
+         * An opaque value supplied by the agent producing the IOR.
+         * This value is used in request messages to identify the
+         * object to which the request is directed.
+         */
 
-	std::string object_key;
+        std::string object_key;
 
-	/**
-	 * A sequence of CPI::Util::IOP::TaggedComponent which contains
-	 * additional information that may be used in making invocations
-	 * on the object described by this profile.  Not present in
-	 * IIOP version 1.0.
-	 */
+        /**
+         * A sequence of CPI::Util::IOP::TaggedComponent which contains
+         * additional information that may be used in making invocations
+         * on the object described by this profile.  Not present in
+         * IIOP version 1.0.
+         */
 
-	CPI::Util::IOP::TaggedComponentSeq components;
+        CPI::Util::IOP::TaggedComponentSeq components;
 
-	//@}
+        //@}
       };
 
     }

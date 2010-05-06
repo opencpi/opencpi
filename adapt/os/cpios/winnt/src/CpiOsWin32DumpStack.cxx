@@ -84,7 +84,7 @@ static tSFTA pSFTA = NULL;
 
 // SymGetLineFromAddr()
 typedef BOOL (__stdcall *tSGLFA)( IN HANDLE hProcess, IN DWORD dwAddr,
-	OUT PDWORD pdwDisplacement, OUT PIMAGEHLP_LINE Line );
+        OUT PDWORD pdwDisplacement, OUT PIMAGEHLP_LINE Line );
 static tSGLFA pSGLFA = NULL;
 
 // SymGetModuleBase()
@@ -101,7 +101,7 @@ static tSGO pSGO = NULL;
 
 // SymGetSymFromAddr()
 typedef BOOL (__stdcall *tSGSFA)( IN HANDLE hProcess, IN DWORD dwAddr,
-	OUT PDWORD pdwDisplacement, OUT PIMAGEHLP_SYMBOL Symbol );
+        OUT PDWORD pdwDisplacement, OUT PIMAGEHLP_SYMBOL Symbol );
 static tSGSFA pSGSFA = NULL;
 
 // SymInitialize()
@@ -110,7 +110,7 @@ static tSI pSI = NULL;
 
 // SymLoadModule()
 typedef BOOL (__stdcall *tSLM)( IN HANDLE hProcess, IN HANDLE hFile,
-	IN PSTR ImageName, IN PSTR ModuleName, IN DWORD BaseOfDll, IN DWORD SizeOfDll );
+        IN PSTR ImageName, IN PSTR ModuleName, IN DWORD BaseOfDll, IN DWORD SizeOfDll );
 static tSLM pSLM = NULL;
 
 // SymSetOptions()
@@ -119,26 +119,26 @@ static tSSO pSSO = NULL;
 
 // StackWalk()
 typedef BOOL (__stdcall *tSW)( DWORD MachineType, HANDLE hProcess,
-	HANDLE hThread, LPSTACKFRAME StackFrame, PVOID ContextRecord,
-	PREAD_PROCESS_MEMORY_ROUTINE ReadMemoryRoutine,
-	PFUNCTION_TABLE_ACCESS_ROUTINE FunctionTableAccessRoutine,
-	PGET_MODULE_BASE_ROUTINE GetModuleBaseRoutine,
-	PTRANSLATE_ADDRESS_ROUTINE TranslateAddress );
+        HANDLE hThread, LPSTACKFRAME StackFrame, PVOID ContextRecord,
+        PREAD_PROCESS_MEMORY_ROUTINE ReadMemoryRoutine,
+        PFUNCTION_TABLE_ACCESS_ROUTINE FunctionTableAccessRoutine,
+        PGET_MODULE_BASE_ROUTINE GetModuleBaseRoutine,
+        PTRANSLATE_ADDRESS_ROUTINE TranslateAddress );
 static tSW pSW = NULL;
 
 // UnDecorateSymbolName()
 typedef DWORD (__stdcall WINAPI *tUDSN)( PCSTR DecoratedName, PSTR UnDecoratedName,
-	DWORD UndecoratedLength, DWORD Flags );
+        DWORD UndecoratedLength, DWORD Flags );
 static tUDSN pUDSN = NULL;
 
 
 
 struct ModuleEntry
 {
-	std::string imageName;
-	std::string moduleName;
-	DWORD baseAddress;
-	DWORD size;
+        std::string imageName;
+        std::string moduleName;
+        DWORD baseAddress;
+        DWORD size;
 };
 typedef std::vector< ModuleEntry > ModuleList;
 typedef ModuleList::iterator ModuleListIter;
@@ -167,7 +167,7 @@ ThreadStackDump (void * arg)
 
   if (SuspendThread (tsi->targetThread) == (DWORD) -1) {
     tsi->output << "StackDump: cannot initialize: error suspending thread."
-		<< std::endl;
+                << std::endl;
     return 0;
   }
 
@@ -177,7 +177,7 @@ ThreadStackDump (void * arg)
 
   if (!GetThreadContext (tsi->targetThread, &c)) {
     tsi->output << "StackDump: cannot initialize: error getting thread context."
-		<< std::endl;
+                << std::endl;
     return 0;
   }
 
@@ -185,7 +185,7 @@ ThreadStackDump (void * arg)
 
   if (ResumeThread (tsi->targetThread) == (DWORD) -1) {
     tsi->output << "StackDump: cannot initialize: error resuming thread."
-		<< std::endl;
+                << std::endl;
   }
 
   return 0;
@@ -253,10 +253,10 @@ CPI::OS::Win32::dumpStack (std::ostream & out)
 
   HANDLE myThread;
   if (!DuplicateHandle (GetCurrentProcess(), GetCurrentThread(),
-			GetCurrentProcess(), &myThread, 0, 0,
-			DUPLICATE_SAME_ACCESS)) {
+                        GetCurrentProcess(), &myThread, 0, 0,
+                        DUPLICATE_SAME_ACCESS)) {
     out << "StackDump: cannot initialize: error duplicating handle"
-	<< std::endl;
+        << std::endl;
     return;
   }
 
@@ -264,13 +264,13 @@ CPI::OS::Win32::dumpStack (std::ostream & out)
   tsi.targetThread = myThread;
 
   HANDLE childThread = CreateThread (0, 0,
-				     ThreadStackDump,
-				     &tsi,
-				     0, 0);
+                                     ThreadStackDump,
+                                     &tsi,
+                                     0, 0);
 
   if (childThread == 0) {
     out << "StackDump: cannot initialize: error creating helper thread"
-	<< std::endl;
+        << std::endl;
     return;
   }
 
@@ -323,13 +323,13 @@ ShowStack (HANDLE hThread, CONTEXT& c, std::ostream & out)
     for ( p = tt + strlen( tt ) - 1; p >= tt; -- p ) {
       // locate the rightmost path separator
       if ( *p == '\\' || *p == '/' || *p == ':' )
-	break;
+        break;
     }
     // if we found one, p is pointing at it; if not, tt only contains
     // an exe name (no path), and p points before its first byte
     if ( p != tt ) { // path sep found?
       if ( *p == ':' ) // we leave colons in place
-	++ p;
+        ++ p;
       *p = '\0'; // eliminate the exe name and last path sep
       symSearchPath += tt + std::string( ";" );
     }
@@ -402,109 +402,109 @@ ShowStack (HANDLE hThread, CONTEXT& c, std::ostream & out)
     // assume that either you are done, or that the stack is so hosed that the next
     // deeper frame could not be found.
     if ( ! pSW( imageType, hProcess, hThread, &s, &c, NULL,
-		pSFTA, pSGMB, NULL ) )
+                pSFTA, pSGMB, NULL ) )
       break;
 
 #if 0
     // display its contents
     printf( "\n%3d %c%c %08lx %08lx %08lx %08lx ",
-	    frameNum, s.Far? 'F': '.', s.Virtual? 'V': '.',
-	    s.AddrPC.Offset, s.AddrReturn.Offset,
-	    s.AddrFrame.Offset, s.AddrStack.Offset );
+            frameNum, s.Far? 'F': '.', s.Virtual? 'V': '.',
+            s.AddrPC.Offset, s.AddrReturn.Offset,
+            s.AddrFrame.Offset, s.AddrStack.Offset );
 #endif
 
     out << "#" << frameNum << "  ";
 
-    if ( s.AddrPC.Offset == 0 )	{
+    if ( s.AddrPC.Offset == 0 )        {
       out << "(PC == 0)";
     }
     else { // we seem to have a valid PC
       // show procedure info (SymGetSymFromAddr())
       if ( ! pSGSFA( hProcess, s.AddrPC.Offset, &offsetFromSymbol, pSym ) ) {
-	out << "(SymGetSymFromAddr() failed)";
+        out << "(SymGetSymFromAddr() failed)";
       }
       else {
-	// UnDecorateSymbolName()
-	pUDSN( pSym->Name, undName, MAXNAMELEN, UNDNAME_NAME_ONLY );
-	pUDSN( pSym->Name, undFullName, MAXNAMELEN, UNDNAME_COMPLETE );
+        // UnDecorateSymbolName()
+        pUDSN( pSym->Name, undName, MAXNAMELEN, UNDNAME_NAME_ONLY );
+        pUDSN( pSym->Name, undFullName, MAXNAMELEN, UNDNAME_COMPLETE );
 #if 0
-	printf( "%s", undName );
-	if ( offsetFromSymbol != 0 )
-	  printf( " %+ld bytes", (long) offsetFromSymbol );
-	putchar( '\n' );
-	printf( "    Sig:  %s\n", pSym->Name );
-	printf( "    Decl: %s\n", undFullName );
+        printf( "%s", undName );
+        if ( offsetFromSymbol != 0 )
+          printf( " %+ld bytes", (long) offsetFromSymbol );
+        putchar( '\n' );
+        printf( "    Sig:  %s\n", pSym->Name );
+        printf( "    Decl: %s\n", undFullName );
 #endif
 
-	out << undFullName;
-	if (offsetFromSymbol != 0) {
-	  if (offsetFromSymbol > 0) {
-	    out << "+";
-	  }
-	  out << (long) offsetFromSymbol;
-	}
+        out << undFullName;
+        if (offsetFromSymbol != 0) {
+          if (offsetFromSymbol > 0) {
+            out << "+";
+          }
+          out << (long) offsetFromSymbol;
+        }
       }
 
       // show line number info, NT5.0-method (SymGetLineFromAddr())
       if ( pSGLFA != NULL ) { // yes, we have SymGetLineFromAddr()
-	if ( ! pSGLFA( hProcess, s.AddrPC.Offset, &offsetFromSymbol, &Line ) ) {
+        if ( ! pSGLFA( hProcess, s.AddrPC.Offset, &offsetFromSymbol, &Line ) ) {
 #if 0
-	  if ( gle != 487 )
-	    printf( "SymGetLineFromAddr(): gle = %lu\n", gle );
+          if ( gle != 487 )
+            printf( "SymGetLineFromAddr(): gle = %lu\n", gle );
 #endif
-	  out << " (no line number information)";
-	}
-	else {
-	  out << " at " << Line.FileName << ":" << Line.LineNumber;
-	  if (offsetFromSymbol != 0) {
-	    out << " (";
-	    if (offsetFromSymbol > 0) {
-	      out << "+";
-	    }
-	    out << (long) offsetFromSymbol;
-	    out << " bytes)";
-	  }
-	}
+          out << " (no line number information)";
+        }
+        else {
+          out << " at " << Line.FileName << ":" << Line.LineNumber;
+          if (offsetFromSymbol != 0) {
+            out << " (";
+            if (offsetFromSymbol > 0) {
+              out << "+";
+            }
+            out << (long) offsetFromSymbol;
+            out << " bytes)";
+          }
+        }
       } // yes, we have SymGetLineFromAddr()
 
 #if 0
       // show module info (SymGetModuleInfo())
       if ( ! pSGMI( hProcess, s.AddrPC.Offset, &Module ) ) {
-	printf( "SymGetModuleInfo): gle = %lu\n", gle );
+        printf( "SymGetModuleInfo): gle = %lu\n", gle );
       }
       else { // got module info OK
-	char ty[80];
-	switch ( Module.SymType ) {
-	  case SymNone:
-	    strcpy( ty, "-nosymbols-" );
-	    break;
-	  case SymCoff:
-	    strcpy( ty, "COFF" );
-	    break;
-	case SymCv:
-	  strcpy( ty, "CV" );
-	  break;
-	case SymPdb:
-	  strcpy( ty, "PDB" );
-	  break;
-	case SymExport:
-	  strcpy( ty, "-exported-" );
-	  break;
-	case SymDeferred:
-	  strcpy( ty, "-deferred-" );
-	  break;
-	case SymSym:
-	  strcpy( ty, "SYM" );
-	  break;
-	default:
-	  _snprintf( ty, sizeof ty, "symtype=%ld", (long) Module.SymType );
-	  break;
-	}
+        char ty[80];
+        switch ( Module.SymType ) {
+          case SymNone:
+            strcpy( ty, "-nosymbols-" );
+            break;
+          case SymCoff:
+            strcpy( ty, "COFF" );
+            break;
+        case SymCv:
+          strcpy( ty, "CV" );
+          break;
+        case SymPdb:
+          strcpy( ty, "PDB" );
+          break;
+        case SymExport:
+          strcpy( ty, "-exported-" );
+          break;
+        case SymDeferred:
+          strcpy( ty, "-deferred-" );
+          break;
+        case SymSym:
+          strcpy( ty, "SYM" );
+          break;
+        default:
+          _snprintf( ty, sizeof ty, "symtype=%ld", (long) Module.SymType );
+          break;
+        }
 
-	printf( "    Mod:  %s[%s], base: %08lxh\n",
-		Module.ModuleName, Module.ImageName, Module.BaseOfImage );
-	printf( "    Sym:  type: %s, file: %s\n",
-		ty, Module.LoadedImageName );
+        printf( "    Mod:  %s[%s], base: %08lxh\n",
+                Module.ModuleName, Module.ImageName, Module.BaseOfImage );
+        printf( "    Sym:  type: %s, file: %s\n",
+                ty, Module.LoadedImageName );
       } // got module info OK
 #endif
     } // we seem to have a valid PC
@@ -554,7 +554,7 @@ enumAndLoadModuleSymbols( HANDLE hProcess, DWORD pid )
     if ( pSLM( hProcess, 0, img, mod, (*it).baseAddress, (*it).size ) == 0 ) {
 #if 0
       printf( "Error %lu loading symbols for \"%s\"\n",
-	      gle, (*it).moduleName.c_str() );
+              gle, (*it).moduleName.c_str() );
 #endif
     }
 #if 0
@@ -755,7 +755,7 @@ fillModuleListPSAPI( ModuleList& modules, DWORD pid, HANDLE hProcess )
     e.moduleName = tt;
 #if 0
     printf( "%08lXh %6lu %-15.15s %s\n", e.baseAddress,
-	    e.size, e.moduleName.c_str(), e.imageName.c_str() );
+            e.size, e.moduleName.c_str(), e.imageName.c_str() );
 #endif
     modules.push_back( e );
   }

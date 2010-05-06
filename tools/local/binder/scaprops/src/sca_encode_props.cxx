@@ -26,8 +26,8 @@ namespace CPI { namespace SCA {
 // Return a single string, to be freed by caller, or NULL on error.
  char *
 encode_props(Property *properties, unsigned nprops, unsigned size,
-	     Port *ports, unsigned nports,
-	     Test *tests, unsigned ntests)
+             Port *ports, unsigned nports,
+             Test *tests, unsigned ntests)
 {
   Property *p;
   unsigned length, n, nmems, ntestps;
@@ -68,16 +68,16 @@ encode_props(Property *properties, unsigned nprops, unsigned size,
   for (p = properties, n = 0; n < nprops; n++, p++) {
     cpiAssert(!strchr(p->name, '~'));
     cp += sprintf(cp, "%s~%lu/%lu/%lu/%lu/%c%c%c%c%c%c%c%c%c|", 
-		  p->name, p->num_members, p->sequence_size, p->offset, p->data_offset,
-		  p->is_sequence ? '1' : '0',
-		  p->is_struct ? '1' : '0',
-		  p->is_readable ? '1' : '0',
-		  p->is_writable ? '1' : '0',
-		  p->read_error ? '1' : '0',
-		  p->write_error ? '1' : '0',
-		  p->read_sync ? '1' : '0',
-		  p->write_sync ? '1' : '0',
-		  p->is_test ? '1' : '0');
+                  p->name, p->num_members, p->sequence_size, p->offset, p->data_offset,
+                  p->is_sequence ? '1' : '0',
+                  p->is_struct ? '1' : '0',
+                  p->is_readable ? '1' : '0',
+                  p->is_writable ? '1' : '0',
+                  p->read_error ? '1' : '0',
+                  p->write_error ? '1' : '0',
+                  p->read_sync ? '1' : '0',
+                  p->write_sync ? '1' : '0',
+                  p->is_test ? '1' : '0');
     // Now do the structure members (or the single simple data type)
     unsigned nm = p->num_members;
     for (SimpleType *t = p->types; nm--; t++)

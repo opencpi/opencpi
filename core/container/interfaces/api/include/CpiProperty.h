@@ -28,17 +28,17 @@ namespace CPI {
     // on their stack so that access to members (in inline methods) has no indirection.
     class Property {
       friend class Worker;
-      Worker &worker;		     // Use worker if pointers can't work
+      Worker &worker;                     // Use worker if pointers can't work
       Metadata::Property::Type type; // For type-checking user's data type assertion for a property
-      Worker::Ordinal ordinal;	     // Index into properties of the worker
+      Worker::Ordinal ordinal;             // Index into properties of the worker
       unsigned mySequenceSize, myStringSize;
       bool myWriteSync, myReadSync;
       inline void checkType(Metadata::Property::Type ctype, unsigned n) {
 #ifndef NDEBUG
-	if (ctype != type)
-	  throw ApiError("incorrect type for this property", 0);
-	if (n > mySequenceSize)
-	  throw ApiError("sequence to too long for this property", 0);
+        if (ctype != type)
+          throw ApiError("incorrect type for this property", 0);
+        if (n > mySequenceSize)
+          throw ApiError("sequence to too long for this property", 0);
 #endif
       }
     public:
@@ -53,49 +53,49 @@ namespace CPI {
       // We don't use templates (sigh) so we can control which types are supported explicitly
       // The "writeVaddr" member is only non-zero if the implementation does not produce errors and 
       // it is atomic at this data size
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-      inline void set##pretty##Value(run val) {				\
-	checkType(Metadata::Property::CPI_##pretty, 0);			\
-	if (writeVaddr)							\
-	  *(store *)writeVaddr= *(store *)&(val);			\
-	else								\
-	  worker.set##pretty##Property(ordinal, val);			\
-      }									\
-      inline void set##pretty##SequenceValue(const run *vals, unsigned n) {	\
-	checkType(Metadata::Property::CPI_##pretty, n);			\
-	worker.set##pretty##SequenceProperty(ordinal, vals, n);		\
-      }									\
-      inline run get##pretty##Value() {					\
-	checkType(Metadata::Property::CPI_##pretty, 0);			\
-	if (readVaddr) {						\
-	  union { store s; run r; }u;					\
-	  u.s = *(store *)readVaddr;					\
-	  return u.r;							\
-	} else								\
-	  return worker.get##pretty##Property(ordinal);			\
-      }									\
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
+      inline void set##pretty##Value(run val) {                                \
+        checkType(Metadata::Property::CPI_##pretty, 0);                        \
+        if (writeVaddr)                                                        \
+          *(store *)writeVaddr= *(store *)&(val);                        \
+        else                                                                \
+          worker.set##pretty##Property(ordinal, val);                        \
+      }                                                                        \
+      inline void set##pretty##SequenceValue(const run *vals, unsigned n) {        \
+        checkType(Metadata::Property::CPI_##pretty, n);                        \
+        worker.set##pretty##SequenceProperty(ordinal, vals, n);                \
+      }                                                                        \
+      inline run get##pretty##Value() {                                        \
+        checkType(Metadata::Property::CPI_##pretty, 0);                        \
+        if (readVaddr) {                                                \
+          union { store s; run r; }u;                                        \
+          u.s = *(store *)readVaddr;                                        \
+          return u.r;                                                        \
+        } else                                                                \
+          return worker.get##pretty##Property(ordinal);                        \
+      }                                                                        \
       inline unsigned get##pretty##SequenceValue(run *vals, unsigned length) { \
-	return worker.get##pretty##SequenceProperty(ordinal, vals, length);	\
+        return worker.get##pretty##SequenceProperty(ordinal, vals, length);        \
       }
 #undef CPI_DATA_TYPE_S
       // for a string we will take a function call
-#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	      \
-      inline void set##pretty##Value(const run val) {		      \
-	checkType(Metadata::Property::CPI_##pretty, 0);		      \
-	worker.set##pretty##Property(ordinal, val);		      \
-      }								      \
+#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)              \
+      inline void set##pretty##Value(const run val) {                      \
+        checkType(Metadata::Property::CPI_##pretty, 0);                      \
+        worker.set##pretty##Property(ordinal, val);                      \
+      }                                                                      \
       inline void set##pretty##SequenceValue(const run *vals, unsigned n) { \
-	checkType(Metadata::Property::CPI_##pretty, n);		      \
-	worker.set##pretty##SequenceProperty(ordinal, vals, n);	      \
-      }								      \
+        checkType(Metadata::Property::CPI_##pretty, n);                      \
+        worker.set##pretty##SequenceProperty(ordinal, vals, n);              \
+      }                                                                      \
       inline void get##pretty##Value(char *val, unsigned length) {    \
-	checkType(Metadata::Property::CPI_##pretty, 0);		      \
-	worker.get##pretty##Property(ordinal, val, length);	      \
-      }								      \
-      inline unsigned get##pretty##SequenceValue		      \
-	(run *vals, unsigned length, char *buf, unsigned space) {     \
-	return worker.get##pretty##SequenceProperty		      \
-	  (ordinal, vals, length, buf, space);			      \
+        checkType(Metadata::Property::CPI_##pretty, 0);                      \
+        worker.get##pretty##Property(ordinal, val, length);              \
+      }                                                                      \
+      inline unsigned get##pretty##SequenceValue                      \
+        (run *vals, unsigned length, char *buf, unsigned space) {     \
+        return worker.get##pretty##SequenceProperty                      \
+          (ordinal, vals, length, buf, space);                              \
       } 
       CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE_S

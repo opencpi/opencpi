@@ -47,9 +47,9 @@ namespace CPI {
        *  Constructors
        **********************************/
       SequentialDataDistribution( 
-				 DataDistributionMetaData* data, 
-				 CPI::DataTransport::Circuit* circuit
-				 );
+                                 DataDistributionMetaData* data, 
+                                 CPI::DataTransport::Circuit* circuit
+                                 );
 
       SequentialDataDistribution( DataDistributionMetaData::DistributionSubType sub_type );
 
@@ -63,7 +63,7 @@ namespace CPI {
      * inline declarations
      ****
      *********************************/
-		
+                
   }
 
 }

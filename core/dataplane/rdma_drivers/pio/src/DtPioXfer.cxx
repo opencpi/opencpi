@@ -95,7 +95,7 @@ EndPoint* PIOXferFactory::getEndPoint( std::string& end_point  )
   }
 
   loc = new GppEndPoint(end_point);
-	
+        
   // This is a test case to make sure that a factory can modify the endpoint
   // string and system can handle it !!
 
@@ -193,12 +193,12 @@ GppEndPoint::~GppEndPoint()
 
 
 void PIOXferRequest::init (Creator cr, 
-			   Flags flags, 
-			   CPI::OS::uint32_t srcoffs, 
-			   Shape *psrcshape, 
-			   CPI::OS::uint32_t dstoffs, 
-			   Shape *pdstshape, 
-			   CPI::OS::uint32_t length)
+                           Flags flags, 
+                           CPI::OS::uint32_t srcoffs, 
+                           Shape *psrcshape, 
+                           CPI::OS::uint32_t dstoffs, 
+                           Shape *pdstshape, 
+                           CPI::OS::uint32_t length)
 {
   m_creator = cr;
   m_flags = flags;
@@ -259,11 +259,11 @@ void PIOXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 
 // Create a transfer request
 XferRequest* PIOXferServices::copy (CPI::OS::uint32_t srcoffs, 
-				    CPI::OS::uint32_t dstoffs, 
-				    CPI::OS::uint32_t nbytes, 
-				    XferRequest::Flags flags,
-				    XferRequest*
-				    )
+                                    CPI::OS::uint32_t dstoffs, 
+                                    CPI::OS::uint32_t nbytes, 
+                                    XferRequest::Flags flags,
+                                    XferRequest*
+                                    )
 {
   // Create a transfer request instance and save in list
   PIOXferRequest* pXferReq = new PIOXferRequest ();
@@ -282,9 +282,9 @@ XferRequest* PIOXferServices::copy (CPI::OS::uint32_t srcoffs,
       // Invoke original code.
       retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &pXferReq->getHandle());
       if (retVal)
-	{
-	  CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-	}
+        {
+          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+        }
     }
   CPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
     {
@@ -299,7 +299,7 @@ XferRequest* PIOXferServices::copy (CPI::OS::uint32_t srcoffs,
 
 // Create a 2-dimensional transfer request
 XferRequest* PIOXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc, 
-				      CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
+                                      CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
 {
   // Create a transfer request instance and save in list
   PIOXferRequest* pXferReq = new PIOXferRequest ();
@@ -313,11 +313,11 @@ XferRequest* PIOXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc,
       // Invoke original code.
       // We simple cast "XferServices::Shape" to "EP_shape" since they must have the
       // exact same definitions. We don't specify any flags (they weren't used in the original).
-      //			retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
+      //                        retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
       if (retVal)
-	{
-	  CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-	}
+        {
+          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+        }
     }
   CPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
     {
@@ -347,17 +347,17 @@ XferRequest* PIOXferServices::group (XferRequest* preqs[])
       while (preqs[numHandles]) { numHandles++;}
       handles = new XF_transfer [numHandles + 1] ;
       for (int i = 0; i < numHandles; i++)
-	{
-	  handles[i] = ((PIOXferRequest*)preqs[i])->getHandle();
-	}
+        {
+          handles[i] = ((PIOXferRequest*)preqs[i])->getHandle();
+        }
       handles[numHandles] = 0;
 
       // Invoke original code.
       retVal = xfer_group (handles, 0, &pXferReq->getHandle());
       if (retVal)
-	{
-	  CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-	}
+        {
+          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+        }
     }
   CPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
     {

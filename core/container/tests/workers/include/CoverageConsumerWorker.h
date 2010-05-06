@@ -43,18 +43,18 @@ typedef struct ConsumerWorkerProperties_ ConsumerWorkerProperties;
 
 
 typedef enum  {
-	C_Old_Input,
-	C_New_Input
+        C_Old_Input,
+        C_New_Input
 } C_MyWorkerState;
 
 struct ConsumerWorkerStaticMemory_ {
-	WorkerULong     startIndex;
+        WorkerULong     startIndex;
     C_MyWorkerState state;
-	WorkerULong     b_count;
-	WorkerLong      longProperty;
+        WorkerULong     b_count;
+        WorkerLong      longProperty;
 
 #ifdef TIME_TP
-	Timespec        startTime;
+        Timespec        startTime;
 #endif
 
 };

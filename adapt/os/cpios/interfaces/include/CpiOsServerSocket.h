@@ -60,7 +60,7 @@ namespace CPI {
        */
 
       ServerSocket ()
-	throw ();
+        throw ();
 
       /**
        * Constructor: Initializes the instance, then calls
@@ -75,7 +75,7 @@ namespace CPI {
        */
 
       ServerSocket (unsigned int portNo, bool reuse = false)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
@@ -84,7 +84,7 @@ namespace CPI {
        */
 
       ~ServerSocket ()
-	throw ();
+        throw ();
 
       /**
        * Bind the server socket to a local port.
@@ -111,7 +111,7 @@ namespace CPI {
        */
 
       void bind (unsigned int portNo = 0, bool reuse = false)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Returns the port number that the server socket is bound to.
@@ -125,7 +125,7 @@ namespace CPI {
        */
 
       unsigned int getPortNo ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Waits for and accepts a new client-side connection.
@@ -142,7 +142,7 @@ namespace CPI {
        */
 
       CPI::OS::Socket accept ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Waits for a connection request.
@@ -161,7 +161,7 @@ namespace CPI {
        */
 
       bool wait (unsigned long timeout = -1)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Closes (unbinds) the server socket.
@@ -177,7 +177,7 @@ namespace CPI {
        */
 
       void close ()
-	throw (std::string);
+        throw (std::string);
 
     protected:
       CPI::OS::uint64_t m_osOpaque[1];

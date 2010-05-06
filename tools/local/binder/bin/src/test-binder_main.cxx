@@ -84,10 +84,10 @@ TestBinderConfigurator::g_options[] = {
 static
 void
 printUsage (TestBinderConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -99,8 +99,8 @@ printUsage (TestBinderConfigurator & config,
 
 void
 writeFile (CPI::Util::Vfs::Vfs & fs,
-	   const std::string & fileName,
-	   const char * data)
+           const std::string & fileName,
+           const char * data)
   throw (std::string)
 {
   std::ostream * out = fs.openWriteonly (fileName, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
@@ -110,7 +110,7 @@ writeFile (CPI::Util::Vfs::Vfs & fs,
 
 std::string
 readFile (CPI::Util::Vfs::Vfs & fs,
-	  const std::string & fileName)
+          const std::string & fileName)
   throw (std::string)
 {
   std::istream * in = fs.openReadonly (fileName, std::ios_base::in | std::ios_base::binary);
@@ -136,7 +136,7 @@ public:
 
 public:
   TempFileHolder (CPI::Util::FileFs::FileFs & fs,
-		  const std::string & wd);
+                  const std::string & wd);
   ~TempFileHolder ();
 
   Info & add (const std::string & name);
@@ -149,7 +149,7 @@ private:
 
 TempFileHolder::
 TempFileHolder (CPI::Util::FileFs::FileFs & fs,
-		const std::string & wd)
+                const std::string & wd)
   : m_fs (fs),
     m_wd (wd)
 {
@@ -260,8 +260,8 @@ simpleSCDData = "\
 class ZipFileTest : public CPI::Util::Test::Test {
 public:
   ZipFileTest (CPI::Util::FileFs::FileFs & fs,
-	       const std::string & workingDirectory,
-	       const std::string & rccBinderExecutable);
+               const std::string & workingDirectory,
+               const std::string & rccBinderExecutable);
   void run ();
 
 private:
@@ -272,8 +272,8 @@ private:
 
 ZipFileTest::
 ZipFileTest (CPI::Util::FileFs::FileFs & fs,
-	     const std::string & workingDirectory,
-	     const std::string & rccBinderExecutable)
+             const std::string & workingDirectory,
+             const std::string & rccBinderExecutable)
   : CPI::Util::Test::Test ("Zip File Test"),
     m_fs (fs),
     m_wd (workingDirectory),
@@ -340,8 +340,8 @@ ZipFileTest::run ()
 class CreateSPDTest : public CPI::Util::Test::Test {
 public:
   CreateSPDTest (CPI::Util::FileFs::FileFs & fs,
-		 const std::string & workingDirectory,
-		 const std::string & rccBinderExecutable);
+                 const std::string & workingDirectory,
+                 const std::string & rccBinderExecutable);
   void run ();
 
 private:
@@ -352,8 +352,8 @@ private:
 
 CreateSPDTest::
 CreateSPDTest (CPI::Util::FileFs::FileFs & fs,
-	       const std::string & workingDirectory,
-	       const std::string & rccBinderExecutable)
+               const std::string & workingDirectory,
+               const std::string & rccBinderExecutable)
   : CPI::Util::Test::Test ("Create SPD Test"),
     m_fs (fs),
     m_wd (workingDirectory),
@@ -415,8 +415,8 @@ CreateSPDTest::run ()
 class UpdateSPDNoImplementationTest : public CPI::Util::Test::Test {
 public:
   UpdateSPDNoImplementationTest (CPI::Util::FileFs::FileFs & fs,
-				 const std::string & workingDirectory,
-				 const std::string & rccBinderExecutable);
+                                 const std::string & workingDirectory,
+                                 const std::string & rccBinderExecutable);
   void run ();
 
 private:
@@ -451,8 +451,8 @@ s_spdData = "\
 
 UpdateSPDNoImplementationTest::
 UpdateSPDNoImplementationTest (CPI::Util::FileFs::FileFs & fs,
-			       const std::string & workingDirectory,
-			       const std::string & rccBinderExecutable)
+                               const std::string & workingDirectory,
+                               const std::string & rccBinderExecutable)
   : CPI::Util::Test::Test ("Update SPD No Implementation"),
     m_fs (fs),
     m_wd (workingDirectory),
@@ -560,8 +560,8 @@ UpdateSPDNoImplementationTest::run ()
 class UpdateSPDExistingImplementationTest : public CPI::Util::Test::Test {
 public:
   UpdateSPDExistingImplementationTest (CPI::Util::FileFs::FileFs & fs,
-				       const std::string & workingDirectory,
-				       const std::string & rccBinderExecutable);
+                                       const std::string & workingDirectory,
+                                       const std::string & rccBinderExecutable);
   void run ();
 
 protected:
@@ -619,8 +619,8 @@ s_implUUID = "DCE:70b385a5-d3e5-4146-8f26-4ce4e0c8dd7e";
 
 UpdateSPDExistingImplementationTest::
 UpdateSPDExistingImplementationTest (CPI::Util::FileFs::FileFs & fs,
-				     const std::string & workingDirectory,
-				     const std::string & rccBinderExecutable)
+                                     const std::string & workingDirectory,
+                                     const std::string & rccBinderExecutable)
   : CPI::Util::Test::Test ("Update SPD Existing Implementation"),
     m_fs (fs),
     m_wd (workingDirectory),
@@ -915,8 +915,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

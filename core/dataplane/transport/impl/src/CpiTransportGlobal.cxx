@@ -100,18 +100,18 @@ TransportGlobal::TransportGlobal( int event_ordinal, bool asyc )
   int high = low+EVENT_RANGE-1;
   if ( asyc ) {
 #ifndef NDEBUG
-    printf("GPP: Using events\n");	
+    printf("GPP: Using events\n");        
 #endif
-    //	Create a asyc event handler object
+    //        Create a asyc event handler object
     m_event_manager = new DataTransfer::EventManager(low,high);
   }
   else {
 #ifndef NDEBUG
-    printf("GPP: Not Using events\n");		
+    printf("GPP: Not Using events\n");                
 #endif
     m_event_manager = NULL;
   }
-	
+        
   init();
 }
 

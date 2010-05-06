@@ -44,191 +44,191 @@ namespace CPI {
 
       class Server {
       protected:
-	/**
-	 * Server limits.  These should probably be configurable.
-	 */
+        /**
+         * Server limits.  These should probably be configurable.
+         */
 
-	enum {
-	  MAX_NUM_OF_HEADER_LINES = 256,
-	  MAX_LENGTH_OF_HEADER_LINE = 4096,
-	  MAX_UPLOAD_SIZE = 10 * 1024 * 1024
-	};
+        enum {
+          MAX_NUM_OF_HEADER_LINES = 256,
+          MAX_LENGTH_OF_HEADER_LINE = 4096,
+          MAX_UPLOAD_SIZE = 10 * 1024 * 1024
+        };
 
-	/** \cond */
+        /** \cond */
 
-	enum {
-	  DATA_BUFFER_SIZE = 32768
-	};
+        enum {
+          DATA_BUFFER_SIZE = 32768
+        };
 
-	enum {
-	  REQUEST_UNKNOWN,
-	  REQUEST_OPTIONS,
-	  REQUEST_GET,
-	  REQUEST_HEAD,
-	  REQUEST_POST,
-	  REQUEST_PUT,
-	  REQUEST_DELETE,
-	  REQUEST_TRACE,
-	  REQUEST_CONNECT
-	};
+        enum {
+          REQUEST_UNKNOWN,
+          REQUEST_OPTIONS,
+          REQUEST_GET,
+          REQUEST_HEAD,
+          REQUEST_POST,
+          REQUEST_PUT,
+          REQUEST_DELETE,
+          REQUEST_TRACE,
+          REQUEST_CONNECT
+        };
 
-	enum {
-	  STATE_REQUEST,
-	  STATE_HEADERS,
-	  STATE_UPLOAD,
-	  STATE_DOWNLOAD,
-	  STATE_CLOSE,
-	  STATE_BROKEN
-	};
+        enum {
+          STATE_REQUEST,
+          STATE_HEADERS,
+          STATE_UPLOAD,
+          STATE_DOWNLOAD,
+          STATE_CLOSE,
+          STATE_BROKEN
+        };
 
-	/** \endcond */
+        /** \endcond */
 
       public:
-	/**
-	 * Constructor.
-	 *
-	 * \param[in] fs The file system to use for accessing files
-	 *               requested by clients.
-	 * \param[in] logger A logger to print log messages to.
-	 *               If 0, no messages are logged.
-	 *
-	 * \pre The server is idle and unconnected.
-	 */
+        /**
+         * Constructor.
+         *
+         * \param[in] fs The file system to use for accessing files
+         *               requested by clients.
+         * \param[in] logger A logger to print log messages to.
+         *               If 0, no messages are logged.
+         *
+         * \pre The server is idle and unconnected.
+         */
 
-	Server (CPI::Util::Vfs::Vfs * fs,
-		CPI::Logger::Logger * logger = 0)
-	  throw ();
+        Server (CPI::Util::Vfs::Vfs * fs,
+                CPI::Logger::Logger * logger = 0)
+          throw ();
 
-	/**
-	 * Destructor.
-	 */
+        /**
+         * Destructor.
+         */
 
-	~Server ()
-	  throw ();
+        ~Server ()
+          throw ();
 
-	/**
-	 * Change the log message destination.
-	 *
-	 * \param[in] logger A logger to print log messages to.
-	 *               If 0, no messages are logged.
-	 *
-	 * \pre The server is idle.
-	 */
+        /**
+         * Change the log message destination.
+         *
+         * \param[in] logger A logger to print log messages to.
+         *               If 0, no messages are logged.
+         *
+         * \pre The server is idle.
+         */
 
-	void setLogger (CPI::Logger::Logger * logger)
-	  throw ();
+        void setLogger (CPI::Logger::Logger * logger)
+          throw ();
 
-	/**
-	 * Change the file system to use for file access.
-	 *
-	 * \param[in] fs The new file system.
-	 *
-	 * \pre The server is idle.
-	 */
+        /**
+         * Change the file system to use for file access.
+         *
+         * \param[in] fs The new file system.
+         *
+         * \pre The server is idle.
+         */
 
-	void setRoot (CPI::Util::Vfs::Vfs * fs)
-	  throw ();
+        void setRoot (CPI::Util::Vfs::Vfs * fs)
+          throw ();
 
-	/**
-	 * Configure the connection to communicate with the client.
-	 *
-	 * Both \a in and \a out may point to the same std::iostream
-	 * instance.
-	 *
-	 * \param[in] in  The stream for incoming data, i.e., for reading
-	 *                data sent by the client.
-	 * \param[in] out The stream for outgoing data, i.e., for sending
-	 *                data to the client.
-	 *
-	 * \pre The server is idle.
-	 * \post The server is idle and connected.
-	 */
+        /**
+         * Configure the connection to communicate with the client.
+         *
+         * Both \a in and \a out may point to the same std::iostream
+         * instance.
+         *
+         * \param[in] in  The stream for incoming data, i.e., for reading
+         *                data sent by the client.
+         * \param[in] out The stream for outgoing data, i.e., for sending
+         *                data to the client.
+         *
+         * \pre The server is idle.
+         * \post The server is idle and connected.
+         */
 
-	void resetConn (std::istream * in, std::ostream * out)
-	  throw ();
+        void resetConn (std::istream * in, std::ostream * out)
+          throw ();
 
-	/**
-	 * Process requests.
-	 *
-	 * Reads client requests from the input stream, processes
-	 * the requests, and sends responses to the output stream.
-	 *
-	 * This operation may block; during this time, the server
-	 * is not idle.
-	 *
-	 * \return true if the requests completed successfully, false
-	 *         if not (e.g., if the connection was broken).
-	 *
-	 * \pre The server is idle and connected.
-	 * \post The server is idle and unconnected.
-	 */
+        /**
+         * Process requests.
+         *
+         * Reads client requests from the input stream, processes
+         * the requests, and sends responses to the output stream.
+         *
+         * This operation may block; during this time, the server
+         * is not idle.
+         *
+         * \return true if the requests completed successfully, false
+         *         if not (e.g., if the connection was broken).
+         *
+         * \pre The server is idle and connected.
+         * \post The server is idle and unconnected.
+         */
 
-	bool run ()
-	  throw ();
-
-      protected:
-	/** \cond */
-	bool processGetOrHeadRequest ()
-	  throw ();
-
-	bool processPutRequest ()
-	  throw ();
-
-	bool receiveRequestLine ()
-	  throw ();
-
-	bool receiveRequestHeaders ()
-	  throw ();
-
-	void sendError (const char *, const char *,
-			const char * = 0)
-	  throw ();
-	/** \endcond */
+        bool run ()
+          throw ();
 
       protected:
-	/** \cond */
-	std::istream * m_inConn;
-	std::ostream * m_outConn;
-	CPI::Logger::Logger * m_logger;
-	CPI::Util::Vfs::Vfs * m_fs;
+        /** \cond */
+        bool processGetOrHeadRequest ()
+          throw ();
 
-	/*
-	 * Current state
-	 */
+        bool processPutRequest ()
+          throw ();
 
-	int m_state;
-	bool m_closeConnection;
+        bool receiveRequestLine ()
+          throw ();
 
-	/*
-	 * Request header
-	 */
+        bool receiveRequestHeaders ()
+          throw ();
 
-	int m_requestType;
-	std::string m_requestLine;
-	std::string m_requestMethod;
-	std::string m_requestURI;
-	int m_majorVersion, m_minorVersion;
-	Headers m_requestHeaders;
-	/** \endcond */
+        void sendError (const char *, const char *,
+                        const char * = 0)
+          throw ();
+        /** \endcond */
 
       protected:
-	/** \cond */
-	static CPI::Logger::NullOutput g_myDefaultLogger;
-	static CPI::Logger::ProducerName g_myProducerName;
-	/** \endcond */
+        /** \cond */
+        std::istream * m_inConn;
+        std::ostream * m_outConn;
+        CPI::Logger::Logger * m_logger;
+        CPI::Util::Vfs::Vfs * m_fs;
+
+        /*
+         * Current state
+         */
+
+        int m_state;
+        bool m_closeConnection;
+
+        /*
+         * Request header
+         */
+
+        int m_requestType;
+        std::string m_requestLine;
+        std::string m_requestMethod;
+        std::string m_requestURI;
+        int m_majorVersion, m_minorVersion;
+        Headers m_requestHeaders;
+        /** \endcond */
+
+      protected:
+        /** \cond */
+        static CPI::Logger::NullOutput g_myDefaultLogger;
+        static CPI::Logger::ProducerName g_myProducerName;
+        /** \endcond */
 
       private:
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	Server (const Server &);
+        Server (const Server &);
 
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	Server & operator= (const Server &);
+        Server & operator= (const Server &);
       };
 
     }

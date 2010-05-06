@@ -91,7 +91,7 @@ CPI::OS::ServerSocket::bind (unsigned int portNo, bool reuse)
   int reuseopt = reuse ? 1 : 0;
 
   if (::setsockopt (fileno, SOL_SOCKET, SO_REUSEADDR,
-		    (char *) &reuseopt, sizeof (int)) != 0) {
+                    (char *) &reuseopt, sizeof (int)) != 0) {
     int err = errno;
     ::close (fileno);
     throw CPI::OS::Posix::getErrorMessage (err);

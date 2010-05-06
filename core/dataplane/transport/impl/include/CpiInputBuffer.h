@@ -77,7 +77,7 @@ namespace CPI {
        * Get this buffers remote state offset
        **********************************/
       DtOsDataTypes::Offset getRemoteStateOffset( 
-						 CPI::OS::uint32_t s_port_id );  // There is a remote state for every output port in the circuit
+                                                 CPI::OS::uint32_t s_port_id );  // There is a remote state for every output port in the circuit
 
       /**********************************
        * Is this buffer empty
@@ -142,7 +142,7 @@ namespace CPI {
        **********************************/
       volatile DataTransfer::BufferMetaData* getMetaData();
 
-		
+                
       /**********************************
        * Get number of outputs that have written to this buffer
        *********************************/
@@ -173,7 +173,7 @@ namespace CPI {
 
       // Mapped pointer to our state
       volatile DataTransfer::BufferState*  m_myShadowsRemoteStates[MAX_PORT_COUNT];
-      void          *(m_rssVaddr[MAX_PORT_COUNT]);		// buffer state virtual address
+      void          *(m_rssVaddr[MAX_PORT_COUNT]);                // buffer state virtual address
 
       // Keeps track of when it produces
       bool m_produced;

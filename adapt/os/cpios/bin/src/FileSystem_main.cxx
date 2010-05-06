@@ -38,16 +38,16 @@ namespace FileSystemTests {
     CPI::OS::FileIterator it = CPI::OS::FileSystem::list ();
     while (!it.end()) {
       if (it.isDirectory()) {
-	std::string cwd = CPI::OS::FileSystem::cwd ();
-	// sanity check
-	std::string name = it.relativeName ();
-	assert (name != "." && name != "..");
-	CPI::OS::FileSystem::cd (name);
-	removeAllFiles ();
-	CPI::OS::FileSystem::cd (cwd);
+        std::string cwd = CPI::OS::FileSystem::cwd ();
+        // sanity check
+        std::string name = it.relativeName ();
+        assert (name != "." && name != "..");
+        CPI::OS::FileSystem::cd (name);
+        removeAllFiles ();
+        CPI::OS::FileSystem::cd (cwd);
       }
       else {
-	CPI::OS::FileSystem::remove (it.relativeName());
+        CPI::OS::FileSystem::remove (it.relativeName());
       }
       it.next ();
     }
@@ -66,11 +66,11 @@ namespace FileSystemTests {
       std::string dirName = "fileSystemTestDirectory";
       std::string absDirName = CPI::OS::FileSystem::joinNames (cwd, dirName);
       if (CPI::OS::FileSystem::exists (dirName)) {
-	CPI::OS::FileSystem::cd (dirName);
-	test (CPI::OS::FileSystem::cwd() == absDirName);
-	removeAllFiles ();
-	CPI::OS::FileSystem::cd (cwd);
-	CPI::OS::FileSystem::rmdir (absDirName);
+        CPI::OS::FileSystem::cd (dirName);
+        test (CPI::OS::FileSystem::cwd() == absDirName);
+        removeAllFiles ();
+        CPI::OS::FileSystem::cd (cwd);
+        CPI::OS::FileSystem::rmdir (absDirName);
       }
      test (!CPI::OS::FileSystem::exists (dirName));
     }
@@ -110,7 +110,7 @@ namespace FileSystemTests {
   public:
     Test03 (const std::string & argv0)
       : CPI::Util::Test::Test ("Checking that argv0 exists"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -136,7 +136,7 @@ namespace FileSystemTests {
   public:
     Test04 (const std::string & argv0)
       : CPI::Util::Test::Test ("Checking absolute name of argv0"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -161,7 +161,7 @@ namespace FileSystemTests {
   public:
     Test05 (const std::string & argv0)
       : CPI::Util::Test::Test ("Joining names"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -189,7 +189,7 @@ namespace FileSystemTests {
   public:
     Test06 (const std::string & argv0)
       : CPI::Util::Test::Test ("Joining absolute names"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -216,7 +216,7 @@ namespace FileSystemTests {
   public:
     Test07 (const std::string & argv0)
       : CPI::Util::Test::Test ("Checking directory listing for argv0"),
-	m_argv0 (argv0)
+        m_argv0 (argv0)
     {
     }
 
@@ -229,15 +229,15 @@ namespace FileSystemTests {
       bool found = false;
       CPI::OS::FileIterator it = CPI::OS::FileSystem::list (argv0Dir);
       while (!it.end()) {
-	std::string relName = it.relativeName ();
-	std::string absName = it.absoluteName ();
-	if (relName == argv0Rel) {
-	  test (absName == absArgv0);
-	  test (!it.isDirectory());
-	  found = true;
-	  break;
-	}
-	it.next ();
+        std::string relName = it.relativeName ();
+        std::string absName = it.absoluteName ();
+        if (relName == argv0Rel) {
+          test (absName == absArgv0);
+          test (!it.isDirectory());
+          found = true;
+          break;
+        }
+        it.next ();
       }
       it.close ();
       test (found);
@@ -327,13 +327,13 @@ namespace FileSystemTests {
       std::string nativeName = CPI::OS::FileSystem::toNativeName (absFileName);
 
       {
-	std::ofstream file (nativeName.c_str(),
-			    std::ios_base::out |
-			    std::ios_base::trunc |
-			    std::ios_base::binary);
-	test (file.good ());
-	file << "Hello World!" << std::endl;
-	file.close ();
+        std::ofstream file (nativeName.c_str(),
+                            std::ios_base::out |
+                            std::ios_base::trunc |
+                            std::ios_base::binary);
+        test (file.good ());
+        file << "Hello World!" << std::endl;
+        file.close ();
       }
 
       bool isDir;
@@ -409,8 +409,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

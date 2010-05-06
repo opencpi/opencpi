@@ -64,7 +64,7 @@ decode (const std::string & data)
     cd.getOctet (iiop_version.minor);
 
     if (iiop_version.major != 1 ||
-	iiop_version.minor > 3) {
+        iiop_version.minor > 3) {
       throw std::string ("unknown IIOP version");
     }
 
@@ -77,14 +77,14 @@ decode (const std::string & data)
       cd.getULong (numComponents);
 
       if (numComponents*8 > cd.remainingData()) {
-	throw CPI::Util::CDR::Decoder::InvalidData();
+        throw CPI::Util::CDR::Decoder::InvalidData();
       }
 
       components.resize (numComponents);
       
       for (CPI::OS::uint32_t pi=0; pi<numComponents; pi++) {
-	cd.getULong (components[pi].tag);
-	cd.getOctetSeq (components[pi].component_data);
+        cd.getULong (components[pi].tag);
+        cd.getOctetSeq (components[pi].component_data);
       }
     }
     else {

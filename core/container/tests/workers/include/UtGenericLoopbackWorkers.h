@@ -59,9 +59,9 @@ struct  UTGConsumerWorkerProperties_ {
 typedef struct UTGConsumerWorkerProperties_ UTGConsumerWorkerProperties;
 
 struct UTGConsumerWorkerStaticMemory_ {
-	uint32_t     place_holder;
+        uint32_t     place_holder;
 #ifdef TIME_TP
-	Timespec        startTime;
+        Timespec        startTime;
 #endif
 };
 typedef struct UTGConsumerWorkerStaticMemory_ UTGConsumerWorkerStaticMemory;

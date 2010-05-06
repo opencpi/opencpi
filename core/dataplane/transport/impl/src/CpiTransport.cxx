@@ -137,17 +137,17 @@ getLocalCompatibleEndpoint( const char* ep )
     while ( (*it).c_str()[m] && ep[m] ) {
 
       if ( (*it).c_str()[m] != ep[m] ) {
-	break;
+        break;
       }
       if ( ( (*it).c_str()[m] == ':') || ep[m] == ':' ) {
 
-	// Make sure that the endpoint is finalized
-	(*it) = 
-	  addLocalEndpoint( (*it).c_str() )->sMemServices->getEndPoint()->end_point; 
+        // Make sure that the endpoint is finalized
+        (*it) = 
+          addLocalEndpoint( (*it).c_str() )->sMemServices->getEndPoint()->end_point; 
 #ifndef NDEBUG
-	printf("Found %s for %s\n", (*it).c_str(), ep );
+        printf("Found %s for %s\n", (*it).c_str(), ep );
 #endif
-	return (*it);
+        return (*it);
       }
       m++;
     }
@@ -337,12 +337,12 @@ requestNewConnection( Circuit* circuit, bool send )
 Circuit *
 CPI::DataTransport::Transport::
 createCircuit( 
-	      CircuitId&   cid,
-	      ConnectionMetaData* connection,
-	      PortOrdinal src_ports[],
-	      PortOrdinal dest_ports[],
-	      CPI::OS::uint32_t flags
-	      )			
+              CircuitId&   cid,
+              ConnectionMetaData* connection,
+              PortOrdinal src_ports[],
+              PortOrdinal dest_ports[],
+              CPI::OS::uint32_t flags
+              )                        
 {
 
   // Make sure that this circuit does not already exist
@@ -366,7 +366,7 @@ createCircuit(
     try {
       bool send = false;
       if ( flags & SendCircuitFlag ) {
-	send = true;
+        send = true;
       }
       requestNewConnection( circuit, send );
     }
@@ -383,12 +383,12 @@ createCircuit(
 Circuit *
 CPI::DataTransport::Transport::
 createCircuit( 
-	      const char*   id,	 
-	      ConnectionMetaData* connection,	
-	      PortOrdinal src_ports[],	
-	      PortOrdinal dest_ports[],
-	      CPI::OS::uint32_t flags
-	      )
+              const char*   id,         
+              ConnectionMetaData* connection,        
+              PortOrdinal src_ports[],        
+              PortOrdinal dest_ports[],
+              CPI::OS::uint32_t flags
+              )
 {
   CircuitId cid;
   cid = this->m_nextCircuitId++;
@@ -442,9 +442,9 @@ createInputPort( Circuit * &circuit,  CPI::RDT::Descriptors& desc )
     CPI::DataTransport::PortSetMetaData* psmd;
     if ( ! circuit->getInputPortSet(0) ) {
       psmd = new CPI::DataTransport::PortSetMetaData(  false, 1,new CPI::DataTransport::ParallelDataDistribution(), 
-						       desc.desc.nBuffers,
-						       desc.desc.dataBufferSize,
-						       circuit->getConnectionMetaData() );
+                                                       desc.desc.nBuffers,
+                                                       desc.desc.dataBufferSize,
+                                                       circuit->getConnectionMetaData() );
     }
     else {
       psmd = circuit->getInputPortSet(0)->getPsMetaData();
@@ -458,9 +458,9 @@ createInputPort( Circuit * &circuit,  CPI::RDT::Descriptors& desc )
     // Create the port meta-data
     CPI::DataTransport::ConnectionMetaData* cmd = 
       new CPI::DataTransport::ConnectionMetaData( NULL,
-						     eps.c_str(),
-						     desc.desc.nBuffers,
-						     desc.desc.dataBufferSize );
+                                                     eps.c_str(),
+                                                     desc.desc.nBuffers,
+                                                     desc.desc.dataBufferSize );
     ord = 1;
     circuit = createCircuit(NULL ,cmd);
 
@@ -554,7 +554,7 @@ void CPI::DataTransport::Transport::clearRemoteMailbox( CPI::OS::uint32_t offset
       td = tmp_td;
       while ( td->xfer->getStatus() ) {
 #ifdef DEBUG_L2
-	printf("Request to clear the remote mailbox has not yet completed\n");
+        printf("Request to clear the remote mailbox has not yet completed\n");
 #endif
       }
     }
@@ -565,7 +565,7 @@ void CPI::DataTransport::Transport::clearRemoteMailbox( CPI::OS::uint32_t offset
     /* Attempt to get or make a transfer template */
     XferServices* ptemplate = 
       XferFactoryManager::getFactoryManager().getService( m_CSendpoint, 
-				      loc );
+                                      loc );
     if ( ! ptemplate ) {
       cpiAssert(0);
     }
@@ -573,17 +573,17 @@ void CPI::DataTransport::Transport::clearRemoteMailbox( CPI::OS::uint32_t offset
     // Create the copy in the template
     XferRequest* ptransfer_a =
       ptemplate->copy (
-		       offset + sizeof(ContainerComms::BasicReq),
-		       offset + sizeof(ContainerComms::BasicReq),
-		       sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
-		       XferRequest::FirstTransfer, NULL);
-		
+                       offset + sizeof(ContainerComms::BasicReq),
+                       offset + sizeof(ContainerComms::BasicReq),
+                       sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
+                       XferRequest::FirstTransfer, NULL);
+                
     XferRequest* ptransfer_b =
       ptemplate->copy (
-		       offset,
-		       offset,
-		       sizeof(ContainerComms::BasicReq),
-		       XferRequest::LastTransfer, ptransfer_a);
+                       offset,
+                       offset,
+                       sizeof(ContainerComms::BasicReq),
+                       XferRequest::LastTransfer, ptransfer_a);
 
     XferRequest* grps[3] = { ptransfer_a, ptransfer_b, 0 };
     XferRequest* ptransfer_c = ptemplate->group(grps);
@@ -609,33 +609,33 @@ void CPI::DataTransport::Transport::clearRemoteMailbox( CPI::OS::uint32_t offset
 
 static XferRequest* Group( XferServices* temp, XferRequest* xfr1, XferRequest* t2 )
 {
-	
+        
   /* Group with the existing transfer */
   XferRequest* groups[3];
   XferRequest* ptmp;
-	
+        
   /* Build the list of transfers */
   groups[0] = xfr1;
   groups[1] = t2;
   groups[2] = 0;
-	
+        
   /* Group the transfers */
-  //	auto_ptr<XferRequest> ptransferPtr (xfr1);
-	
+  //        auto_ptr<XferRequest> ptransferPtr (xfr1);
+        
   /* Group the transfers */
   ptmp = temp->group ( groups );
-  //	auto_ptr<XferRequest> ptmpPtr (ptmp);
-	
+  //        auto_ptr<XferRequest> ptmpPtr (ptmp);
+        
   /* Release the previous transfer */
   delete t2;
-	
+        
   /* Release the just grouped transfer */
   delete xfr1;
-	
+        
   /* Copy the transfer */
-  //	ptransferPtr.release ();
-  //	ptmpPtr.release ();
-	
+  //        ptransferPtr.release ();
+  //        ptmpPtr.release ();
+        
   /* Copy the transfer */
   return ptmp;
 }
@@ -667,7 +667,7 @@ void CPI::DataTransport::Transport::sendOffsets( CPI::Util::VList& offsets, std:
   /* Attempt to get or make a transfer template */
   XferServices* ptemplate = 
     XferFactoryManager::getFactoryManager().getService( m_CSendpoint->end_point, 
-				    remote_ep );
+                                    remote_ep );
   if ( ! ptemplate ) {
     cpiAssert(0);
   }
@@ -687,17 +687,17 @@ void CPI::DataTransport::Transport::sendOffsets( CPI::Util::VList& offsets, std:
 #endif
     if ( count < 1 ) {
       ptransfer[n] = ptemplate->copy (
-				      tf->from_offset,
-				      tf->to_offset,
-				      sizeof(CPI::OS::uint32_t),
-				      XferRequest::FirstTransfer, NULL );
+                                      tf->from_offset,
+                                      tf->to_offset,
+                                      sizeof(CPI::OS::uint32_t),
+                                      XferRequest::FirstTransfer, NULL );
     }
     else {
       ptransfer[n] = ptemplate->copy (
-				      tf->from_offset,
-				      tf->to_offset,
-				      sizeof(CPI::OS::uint32_t),
-				      XferRequest::LastTransfer, ptransfer[0]);
+                                      tf->from_offset,
+                                      tf->to_offset,
+                                      sizeof(CPI::OS::uint32_t),
+                                      XferRequest::LastTransfer, ptransfer[0]);
     }
 
     if ( count >= 1 ) {
@@ -730,7 +730,7 @@ SMBResources* Transport::getEndpointResourcesFromMailbox(CPI::OS::uint32_t mb )
   return NULL;
 }
 
-								
+                                                                
 
 /**********************************
  * Our mailbox handler
@@ -750,274 +750,274 @@ void CPI::DataTransport::Transport::checkMailBoxs()
 
 #ifndef NDEBUG
       printf("***&&& Got a mailbox request from %d, req = %d\n", n, 
-	     comms->mailBox[n].request.reqBasic.type);
+             comms->mailBox[n].request.reqBasic.type);
 #endif
 
       switch ( comms->mailBox[n].request.reqBasic.type ) {
 
       case DataTransfer::ContainerComms::ReqUpdateCircuit:
-	{
+        {
 
 #ifndef NDEBUG
-	  printf("Handling case DataTransfer::ContainerComms::ReqUpdateCircuit:\n");
+          printf("Handling case DataTransfer::ContainerComms::ReqUpdateCircuit:\n");
 #endif
 
-	  CircuitId circuit_id = comms->mailBox[n].request.reqUpdateCircuit.receiverCircuitId;
-	  CPI::DataTransport::Circuit* c = 
-	    static_cast<CPI::DataTransport::Circuit*>(getCircuit(circuit_id ));
+          CircuitId circuit_id = comms->mailBox[n].request.reqUpdateCircuit.receiverCircuitId;
+          CPI::DataTransport::Circuit* c = 
+            static_cast<CPI::DataTransport::Circuit*>(getCircuit(circuit_id ));
 
-	  c->updateInputs( &comms->mailBox[n].request.reqUpdateCircuit );
+          c->updateInputs( &comms->mailBox[n].request.reqUpdateCircuit );
 
-	  // Clear our mailbox
-	  comms->mailBox[n].error_code = 0;
-	  comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
+          // Clear our mailbox
+          comms->mailBox[n].error_code = 0;
+          comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
 
-	  // Clear the remote mailbox
-	  XferFactory* tfactory = 
-	    XferFactoryManager::getFactoryManager().find( comms->mailBox[n].request.reqUpdateCircuit.output_end_point, NULL );
-	  if ( ! tfactory ) {
-	    throw UnsupportedEndpointEx(comms->mailBox[n].request.reqUpdateCircuit.output_end_point);
-	  }
+          // Clear the remote mailbox
+          XferFactory* tfactory = 
+            XferFactoryManager::getFactoryManager().find( comms->mailBox[n].request.reqUpdateCircuit.output_end_point, NULL );
+          if ( ! tfactory ) {
+            throw UnsupportedEndpointEx(comms->mailBox[n].request.reqUpdateCircuit.output_end_point);
+          }
 
-	  // We will copy our copy of their mailbox back to them
-	  int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
-	  std::string s(comms->mailBox[n].request.reqUpdateCircuit.output_end_point);
-	  clearRemoteMailbox( offset, tfactory->getEndPoint( s ) );
-	}
-	break;
+          // We will copy our copy of their mailbox back to them
+          int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
+          std::string s(comms->mailBox[n].request.reqUpdateCircuit.output_end_point);
+          clearRemoteMailbox( offset, tfactory->getEndPoint( s ) );
+        }
+        break;
 
-	// New connection request
+        // New connection request
       case DataTransfer::ContainerComms::ReqNewConnection:
-	{
+        {
 #ifndef NDEBUG
-	  printf("Handling case DataTransfer::ContainerComms::ReqNewConnection:\n");
+          printf("Handling case DataTransfer::ContainerComms::ReqNewConnection:\n");
 #endif
-	  try {
+          try {
 
-	    // If we dont have a new circuit listener installed, ignore the request
-	    if ( ! m_newCircuitListener ) {
-	      nc--;
-	      return;
-	    }
+            // If we dont have a new circuit listener installed, ignore the request
+            if ( ! m_newCircuitListener ) {
+              nc--;
+              return;
+            }
 
-	    CircuitId circuit_id = comms->mailBox[n].request.reqNewConnection.circuitId;
-	    ConnectionMetaData* md=NULL;
-	    Circuit* c=NULL;
-	    addRemoteEndpoint( 
-			      comms->mailBox[n].request.reqNewConnection.output_end_point	);
-	    try {
+            CircuitId circuit_id = comms->mailBox[n].request.reqNewConnection.circuitId;
+            ConnectionMetaData* md=NULL;
+            Circuit* c=NULL;
+            addRemoteEndpoint( 
+                              comms->mailBox[n].request.reqNewConnection.output_end_point        );
+            try {
 
-	      // send flag indicates that the client is requesting a circuit to send data to me
-	      if ( comms->mailBox[n].request.reqNewConnection.send ) {
+              // send flag indicates that the client is requesting a circuit to send data to me
+              if ( comms->mailBox[n].request.reqNewConnection.send ) {
 
-		std::string s(comms->mailBox[n].request.reqNewConnection.output_end_point);
-		md = new ConnectionMetaData( s.c_str(), 
-					     m_CSendpoint->end_point.c_str(), 1, 
-					     comms->mailBox[n].request.reqNewConnection.buffer_size  );
-	      }
-	      else {
-									
-		std::string s(comms->mailBox[n].request.reqNewConnection.output_end_point);
-		md = new ConnectionMetaData( m_CSendpoint->end_point.c_str(),
-						s.c_str(),  1, 
-						comms->mailBox[n].request.reqNewConnection.buffer_size );
-	      }
+                std::string s(comms->mailBox[n].request.reqNewConnection.output_end_point);
+                md = new ConnectionMetaData( s.c_str(), 
+                                             m_CSendpoint->end_point.c_str(), 1, 
+                                             comms->mailBox[n].request.reqNewConnection.buffer_size  );
+              }
+              else {
+                                                                        
+                std::string s(comms->mailBox[n].request.reqNewConnection.output_end_point);
+                md = new ConnectionMetaData( m_CSendpoint->end_point.c_str(),
+                                                s.c_str(),  1, 
+                                                comms->mailBox[n].request.reqNewConnection.buffer_size );
+              }
 
-	      // Create the new circuit
-	      c = createCircuit( circuit_id, md, NULL,NULL,0);
-	    }
-	    catch ( ... ) {
+              // Create the new circuit
+              c = createCircuit( circuit_id, md, NULL,NULL,0);
+            }
+            catch ( ... ) {
 
-	      delete md;
-	      delete c;
+              delete md;
+              delete c;
 
-	      // Clear our mailbox
-	      comms->mailBox[n].error_code = -1;
-	      comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
+              // Clear our mailbox
+              comms->mailBox[n].error_code = -1;
+              comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
 
-	      // Clear the remote mailbox
-	      XferFactory* tfactory = 
-		XferFactoryManager::getFactoryManager().find( comms->mailBox[n].request.reqNewConnection.output_end_point, NULL );
+              // Clear the remote mailbox
+              XferFactory* tfactory = 
+                XferFactoryManager::getFactoryManager().find( comms->mailBox[n].request.reqNewConnection.output_end_point, NULL );
 
-	      // We will copy our copy of their mailbox back to them
-	      int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
-	      std::string s(comms->mailBox[n].request.reqNewConnection.output_end_point);
-	      clearRemoteMailbox( offset, tfactory->getEndPoint( s ));
+              // We will copy our copy of their mailbox back to them
+              int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
+              std::string s(comms->mailBox[n].request.reqNewConnection.output_end_point);
+              clearRemoteMailbox( offset, tfactory->getEndPoint( s ));
 
-	      throw;
-	    }
+              throw;
+            }
 
-	    // Clear our mailbox
-	    comms->mailBox[n].error_code = 0;
-	    comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
+            // Clear our mailbox
+            comms->mailBox[n].error_code = 0;
+            comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
 
-	    // Clear the remote mailbox
-	    XferFactory* tfactory = 
-	      XferFactoryManager::getFactoryManager().find( comms->mailBox[n].request.reqNewConnection.output_end_point, NULL );
-	    if ( ! tfactory ) {
-	      throw UnsupportedEndpointEx(comms->mailBox[n].request.reqNewConnection.output_end_point);
-	    }
+            // Clear the remote mailbox
+            XferFactory* tfactory = 
+              XferFactoryManager::getFactoryManager().find( comms->mailBox[n].request.reqNewConnection.output_end_point, NULL );
+            if ( ! tfactory ) {
+              throw UnsupportedEndpointEx(comms->mailBox[n].request.reqNewConnection.output_end_point);
+            }
 
-	    // We will copy our copy of their mailbox back to them
-	    int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
-	    std::string s(comms->mailBox[n].request.reqNewConnection.output_end_point);
-	    clearRemoteMailbox( offset, tfactory->getEndPoint( s ) );
+            // We will copy our copy of their mailbox back to them
+            int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
+            std::string s(comms->mailBox[n].request.reqNewConnection.output_end_point);
+            clearRemoteMailbox( offset, tfactory->getEndPoint( s ) );
 
-	    // Hand it back to the listener
-	    m_newCircuitListener->newCircuitAvailable( c );
+            // Hand it back to the listener
+            m_newCircuitListener->newCircuitAvailable( c );
 
-	  }
-	  catch( ... ) {
-	    throw;
-	  }
-	}
-	break;
+          }
+          catch( ... ) {
+            throw;
+          }
+        }
+        break;
 
 
       case DataTransfer::ContainerComms::ReqOutputControlOffset:
-	{
+        {
 #ifndef NDEBUG
-	  printf("Handling case DataTransfer::ContainerComms::ReqOutputControlOffset:\n");
+          printf("Handling case DataTransfer::ContainerComms::ReqOutputControlOffset:\n");
 #endif
 
-	  CircuitId circuit_id = comms->mailBox[n].request.reqOutputContOffset.circuitId;
-	  int port_id = comms->mailBox[n].request.reqOutputContOffset.portId;
+          CircuitId circuit_id = comms->mailBox[n].request.reqOutputContOffset.circuitId;
+          int port_id = comms->mailBox[n].request.reqOutputContOffset.portId;
 
-	  addRemoteEndpoint( 
-			    comms->mailBox[n].request.reqOutputContOffset.shadow_end_point );
+          addRemoteEndpoint( 
+                            comms->mailBox[n].request.reqOutputContOffset.shadow_end_point );
 
-	  // Get the circuit 
-	  Circuit* c = getCircuit( circuit_id );
+          // Get the circuit 
+          Circuit* c = getCircuit( circuit_id );
 
-	  CPI::DataTransport::Port* port = 
-	    static_cast<CPI::DataTransport::Port*>(c->getOutputPortSet()->getPortFromOrdinal( port_id ));
-	  cpiAssert(port);
+          CPI::DataTransport::Port* port = 
+            static_cast<CPI::DataTransport::Port*>(c->getOutputPortSet()->getPortFromOrdinal( port_id ));
+          cpiAssert(port);
 
-	  // We will lookup the return addres based upon the mailbox
-	  SMBResources* res = getEndpointResources(comms->mailBox[n].request.reqOutputContOffset.shadow_end_point) ;
-	  if ( ! res ) {
+          // We will lookup the return addres based upon the mailbox
+          SMBResources* res = getEndpointResources(comms->mailBox[n].request.reqOutputContOffset.shadow_end_point) ;
+          if ( ! res ) {
 #ifndef NDEBUG
-	    printf("**** INTERNAL programming error !! output shadow port asked for control offset and we dont know its end point !!\n");
+            printf("**** INTERNAL programming error !! output shadow port asked for control offset and we dont know its end point !!\n");
 #endif
-	    cpiAssert(0);
-	  }
+            cpiAssert(0);
+          }
 
-	  CPI::Util::VList offsetv;
+          CPI::Util::VList offsetv;
 
-	  port->getOffsets( comms->mailBox[n].return_offset, offsetv);
-	  sendOffsets( offsetv, res->sMemServices->getEndPoint()->end_point);
-	  port->releaseOffsets( offsetv );
+          port->getOffsets( comms->mailBox[n].return_offset, offsetv);
+          sendOffsets( offsetv, res->sMemServices->getEndPoint()->end_point);
+          port->releaseOffsets( offsetv );
 
-	  // Clear our mailbox
-	  comms->mailBox[n].error_code = 0;
-	  comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
+          // Clear our mailbox
+          comms->mailBox[n].error_code = 0;
+          comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
 
-	  // We will copy our copy of their mailbox back to them
-	  int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
-	  clearRemoteMailbox( offset, res->sMemServices->getEndPoint() );
+          // We will copy our copy of their mailbox back to them
+          int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
+          clearRemoteMailbox( offset, res->sMemServices->getEndPoint() );
 
-	}
-	break;
+        }
+        break;
 
 
 
       case DataTransfer::ContainerComms::ReqShadowRstateOffset:
-	{
+        {
 
 #ifndef NDEBUG
-	  printf("Handling case DataTransfer::ContainerComms::ReqShadowRstateOffset:\n");
+          printf("Handling case DataTransfer::ContainerComms::ReqShadowRstateOffset:\n");
 #endif
-	  CircuitId circuit_id = comms->mailBox[n].request.reqShadowOffsets.circuitId;
-	  int port_id = comms->mailBox[n].request.reqShadowOffsets.portId;
+          CircuitId circuit_id = comms->mailBox[n].request.reqShadowOffsets.circuitId;
+          int port_id = comms->mailBox[n].request.reqShadowOffsets.portId;
 
-	  SMBResources* res=    
-	    getEndpointResources( comms->mailBox[n].request.reqShadowOffsets.url );
+          SMBResources* res=    
+            getEndpointResources( comms->mailBox[n].request.reqShadowOffsets.url );
 
-	  // Get the circuit 
-	  Circuit* c = getCircuit( circuit_id );
+          // Get the circuit 
+          Circuit* c = getCircuit( circuit_id );
 
-	  printf("Return address = %s\n", comms->mailBox[n].request.reqShadowOffsets.url );
+          printf("Return address = %s\n", comms->mailBox[n].request.reqShadowOffsets.url );
 
-	  CPI::DataTransport::Port* port=NULL;
-	  for ( CPI::OS::uint32_t y=0; y<c->getInputPortSetCount(); y++ ) {
-	    PortSet* ps = static_cast<PortSet*>(c->getInputPortSet(y));
-	    port = static_cast<CPI::DataTransport::Port*>(ps->getPortFromOrdinal( port_id ));
-	    if ( port ) {
-	      break;
-	    }
-	  }
-	  if ( !port ) {
-		break;
-	  }
+          CPI::DataTransport::Port* port=NULL;
+          for ( CPI::OS::uint32_t y=0; y<c->getInputPortSetCount(); y++ ) {
+            PortSet* ps = static_cast<PortSet*>(c->getInputPortSet(y));
+            port = static_cast<CPI::DataTransport::Port*>(ps->getPortFromOrdinal( port_id ));
+            if ( port ) {
+              break;
+            }
+          }
+          if ( !port ) {
+                break;
+          }
 
-	  CPI::Util::VList offsetv;
-	  port->getOffsets( comms->mailBox[n].return_offset, offsetv);
-	  sendOffsets( offsetv, res->sMemServices->getEndPoint()->end_point );
-	  port->releaseOffsets( offsetv );
+          CPI::Util::VList offsetv;
+          port->getOffsets( comms->mailBox[n].return_offset, offsetv);
+          sendOffsets( offsetv, res->sMemServices->getEndPoint()->end_point );
+          port->releaseOffsets( offsetv );
 
-	  // Clear our mailbox
-	  comms->mailBox[n].error_code = 0;
-	  comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
+          // Clear our mailbox
+          comms->mailBox[n].error_code = 0;
+          comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
 
-	  // We will copy our copy of their mailbox back to them
-	  int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
-	  clearRemoteMailbox( offset, res->sMemServices->getEndPoint() );
+          // We will copy our copy of their mailbox back to them
+          int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
+          clearRemoteMailbox( offset, res->sMemServices->getEndPoint() );
 
-	}
-	break;
+        }
+        break;
 
       case DataTransfer::ContainerComms::ReqInputOffsets:
-	{
+        {
 
 #ifndef NDEBUG
-	  printf("Handling case DataTransfer::ContainerComms::ReqInputOffsets:\n");
+          printf("Handling case DataTransfer::ContainerComms::ReqInputOffsets:\n");
 #endif
-	  CircuitId circuit_id = comms->mailBox[n].request.reqInputOffsets.circuitId;
-	  int port_id = comms->mailBox[n].request.reqInputOffsets.portId;
+          CircuitId circuit_id = comms->mailBox[n].request.reqInputOffsets.circuitId;
+          int port_id = comms->mailBox[n].request.reqInputOffsets.portId;
 
-	  SMBResources* res=    
-	    getEndpointResources( comms->mailBox[n].request.reqInputOffsets.url );
+          SMBResources* res=    
+            getEndpointResources( comms->mailBox[n].request.reqInputOffsets.url );
 
-	  // Get the circuit 
-	  Circuit* c = getCircuit( circuit_id );
+          // Get the circuit 
+          Circuit* c = getCircuit( circuit_id );
 
 
-	  CPI::DataTransport::Port* port=NULL;
-	  for ( CPI::OS::uint32_t y=0; y<c->getInputPortSetCount(); y++ ) {
-	    PortSet* ps = static_cast<PortSet*>(c->getInputPortSet(y));
-	    port = static_cast<CPI::DataTransport::Port*>(ps->getPortFromOrdinal( port_id ));
-	    if ( port ) {
-	      break;
-	    }
-	  }
-	  if ( !port ) {
-		break;
-	  }
+          CPI::DataTransport::Port* port=NULL;
+          for ( CPI::OS::uint32_t y=0; y<c->getInputPortSetCount(); y++ ) {
+            PortSet* ps = static_cast<PortSet*>(c->getInputPortSet(y));
+            port = static_cast<CPI::DataTransport::Port*>(ps->getPortFromOrdinal( port_id ));
+            if ( port ) {
+              break;
+            }
+          }
+          if ( !port ) {
+                break;
+          }
 
-	  CPI::Util::VList offsetv;
-	  port->getOffsets( comms->mailBox[n].return_offset, offsetv);
-	  sendOffsets( offsetv, res->sMemServices->getEndPoint()->end_point );
-	  port->releaseOffsets( offsetv );
+          CPI::Util::VList offsetv;
+          port->getOffsets( comms->mailBox[n].return_offset, offsetv);
+          sendOffsets( offsetv, res->sMemServices->getEndPoint()->end_point );
+          port->releaseOffsets( offsetv );
 
-	  // Clear our mailbox
-	  comms->mailBox[n].error_code = 0;
-	  comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
+          // Clear our mailbox
+          comms->mailBox[n].error_code = 0;
+          comms->mailBox[n].request.reqBasic.type = DataTransfer::ContainerComms::NoRequest;
 
-	  // We will copy our copy of their mailbox back to them
-	  int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
-	  clearRemoteMailbox( offset, res->sMemServices->getEndPoint() );
+          // We will copy our copy of their mailbox back to them
+          int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
+          clearRemoteMailbox( offset, res->sMemServices->getEndPoint() );
 
-	}
-	break;
+        }
+        break;
 
       case DataTransfer::ContainerComms::NoRequest:
       default:
 #ifndef NDEBUG
-	printf("Handling case DataTransfer::ContainerComms::Default:\n");
+        printf("Handling case DataTransfer::ContainerComms::Default:\n");
 #endif
-	//				cpiAssert(0);
+        //                                cpiAssert(0);
 
-	break;
+        break;
 
       }
     }
@@ -1053,7 +1053,7 @@ SMBResources* Transport::addRemoteEndpoint( const char* loc )
 
   GEndPoint* gep = new GEndPoint;
   gep->ep = loc;
-	
+        
   std::string nuls;
   XferFactory* tfactory = 
     XferFactoryManager::getFactoryManager().find( nuls, sloc );
@@ -1145,7 +1145,7 @@ bool Transport::isLocalEndpoint( const char* loc )
   for ( CPI::OS::uint32_t n=0; n<m_localEndpoints.getElementCount(); n++ ) {
 #ifndef NDEBUG
     printf("isLocalEndpoint:: Comparing (%s) with (%s) \n", loc, 
-	   ((GEndPoint*)m_localEndpoints.getEntry(n))->ep.c_str()  );
+           ((GEndPoint*)m_localEndpoints.getEntry(n))->ep.c_str()  );
 #endif
     if ( strcmp( loc, ((GEndPoint*)m_localEndpoints.getEntry(n))->ep.c_str() ) == 0 ) {
 #ifndef NDEBUG

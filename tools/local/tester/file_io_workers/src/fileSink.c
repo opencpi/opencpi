@@ -77,8 +77,8 @@ FileSinkStart (RCCWorker * wctx)
   if (ctx->fd < 0) {
     if (props->verbose) {
       printf ("Output port %s: Failed to open \"%s\" for writing: %s\n",
-	      props->portName, props->fileName,
-	      strerror (errno));
+              props->portName, props->fileName,
+              strerror (errno));
     }
 
     props->errnoValue = errno;
@@ -87,7 +87,7 @@ FileSinkStart (RCCWorker * wctx)
 
   if (props->verbose) {
     printf ("Output port %s: Openend \"%s\" for writing.\n",
-	    props->portName, props->fileName);
+            props->portName, props->fileName);
   }
 
   props->offset = 0;
@@ -104,8 +104,8 @@ FileSinkStop (RCCWorker * wctx)
   if (close (ctx->fd) != 0) {
     if (props->verbose) {
       printf ("Output port %s: Error closing \"%s\": %s\n",
-	      props->portName, props->fileName,
-	      strerror (errno));
+              props->portName, props->fileName,
+              strerror (errno));
     }
 
     props->errnoValue = errno;
@@ -114,7 +114,7 @@ FileSinkStop (RCCWorker * wctx)
 
   if (props->verbose) {
     printf ("Output port %s: Closing \"%s\".\n",
-	    props->portName, props->fileName);
+            props->portName, props->fileName);
   }
 
   return RCC_OK;
@@ -123,8 +123,8 @@ FileSinkStop (RCCWorker * wctx)
 static
 RCCResult
 FileSinkRun (RCCWorker * wctx,
-	     RCCBoolean timedout,
-	     RCCBoolean * newRunCondition)
+             RCCBoolean timedout,
+             RCCBoolean * newRunCondition)
 {
   FileSinkContext * ctx = (FileSinkContext *) wctx->memories[0];
   FileSinkProperties * props = (FileSinkProperties *) wctx->properties;
@@ -135,8 +135,8 @@ FileSinkRun (RCCWorker * wctx,
   if (count != pDataIn->input.length) {
     if (props->verbose) {
       printf ("Output port %s: Failed to write to \"%s\": %s\n",
-	      props->portName, props->fileName,
-	      strerror (errno));
+              props->portName, props->fileName,
+              strerror (errno));
     }
 
     props->errnoValue = errno;
@@ -145,7 +145,7 @@ FileSinkRun (RCCWorker * wctx,
 
   if (props->verbose) {
     printf ("Output port %s: Wrote %d bytes.\n",
-	    props->portName, (int) count);
+            props->portName, (int) count);
   }
 
   props->offset += count;

@@ -1,6 +1,6 @@
 /** \file EventTime.cpp
- **	\date  2005-12-07
- **	\author grymse@alhem.net
+ **        \date  2005-12-07
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
@@ -56,7 +56,7 @@ EventTime::EventTime() : m_time(Tick())
 
 EventTime::EventTime(mytime_t sec,long usec) : m_time(Tick())
 {
-	m_time += sec * 1000000 + usec;
+        m_time += sec * 1000000 + usec;
 }
 
 
@@ -67,37 +67,37 @@ EventTime::~EventTime()
 
 mytime_t EventTime::Tick()
 {
-	mytime_t t;
+        mytime_t t;
 #ifdef _WIN32
-	FILETIME ft;
-	GetSystemTimeAsFileTime(&ft);
-	t = ft.dwHighDateTime;
-	t = t << 32;
-	t += ft.dwLowDateTime;
-	t /= 10; // us
+        FILETIME ft;
+        GetSystemTimeAsFileTime(&ft);
+        t = ft.dwHighDateTime;
+        t = t << 32;
+        t += ft.dwLowDateTime;
+        t /= 10; // us
 #else
-	struct timeval tv;
-	struct timezone tz;
-	gettimeofday(&tv, &tz);
-	t = tv.tv_sec;
-	t *= 1000000;
-	t += tv.tv_usec;
+        struct timeval tv;
+        struct timezone tz;
+        gettimeofday(&tv, &tz);
+        t = tv.tv_sec;
+        t *= 1000000;
+        t += tv.tv_usec;
 #endif
-	return t;
+        return t;
 }
 
 
 EventTime EventTime::operator - (const EventTime& x) const
 {
-	EventTime t;
-	t.m_time = m_time - x.m_time;
-	return t;
+        EventTime t;
+        t.m_time = m_time - x.m_time;
+        return t;
 }
 
 
 bool EventTime::operator < (const EventTime& x) const
 {
-	return m_time < x.m_time;
+        return m_time < x.m_time;
 }
 
 

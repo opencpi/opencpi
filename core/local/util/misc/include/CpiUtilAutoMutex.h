@@ -41,7 +41,7 @@ namespace CPI {
        */
 
       AutoMutex (CPI::OS::Mutex & mutex, bool locked = true)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
@@ -50,16 +50,16 @@ namespace CPI {
        */
 
       ~AutoMutex ()
-	throw ();
+        throw ();
 
       void lock ()
-	throw (std::string);
+        throw (std::string);
 
       bool trylock ()
-	throw (std::string);
+        throw (std::string);
 
       void unlock ()
-	throw (std::string);
+        throw (std::string);
 
     private:
       bool m_locked;

@@ -39,60 +39,60 @@ namespace DataTransfer {
     typedef enum { ReadWriteAccess, ReadOnlyAccess, CopyAccess, AllAccess } AccessType;
 
     // Create a mapping to a named file.
-    //	Arguments:
-    //		strFilePath - Path to a file. If null, no backing store.
-    //		strMapName	- Name of the mapping. Can be null.
-    //		eAccess		- The type of access desired.
-    //		iMaxSize	- Maximum size of mapping object.
-    //	Returns:
-    //		0 for success; platform dependent error code otherwise.
-    //	Throws:
-    //		DataTransferEx for all other exception conditions
+    //        Arguments:
+    //                strFilePath - Path to a file. If null, no backing store.
+    //                strMapName        - Name of the mapping. Can be null.
+    //                eAccess                - The type of access desired.
+    //                iMaxSize        - Maximum size of mapping object.
+    //        Returns:
+    //                0 for success; platform dependent error code otherwise.
+    //        Throws:
+    //                DataTransferEx for all other exception conditions
     virtual int CreateMapping (const char*  strFilePath, const char* strMapName, AccessType eAccess, CPI::OS::int64_t iMaxSize) = 0;
 
     // Open an existing mapping to a named file.
-    //	Arguments:
-    //		strMapName	- Name of the mapping.
-    //		eAccess		- The type of access desired.
-    //	Returns:
-    //		0 for success; platform dependent error code otherwise.
-    //	Throws:
-    //		DataTransferEx for all other exception conditions
+    //        Arguments:
+    //                strMapName        - Name of the mapping.
+    //                eAccess                - The type of access desired.
+    //        Returns:
+    //                0 for success; platform dependent error code otherwise.
+    //        Throws:
+    //                DataTransferEx for all other exception conditions
     virtual int OpenMapping (const char* strMapName, AccessType eAccess) = 0;
 
     // Close an existing mapping.
-    //	Arguments:
-    //	Returns:
-    //		0 for success; platform dependent error code otherwise.
-    //	Throws:
-    //		DataTransferEx for all other exception conditions
+    //        Arguments:
+    //        Returns:
+    //                0 for success; platform dependent error code otherwise.
+    //        Throws:
+    //                DataTransferEx for all other exception conditions
     virtual int CloseMapping () = 0;
 
     // Map a segment of the file into the address space.
-    //	Arguments:
-    //		iOffset		- Byte offset into file for this view.
-    //		lLength		- Number of bytes to map.
-    //	Returns:
-    //		virtual address or 0 if failure
-    //	Throws:
-    //		DataTransferEx for all other exception conditions
+    //        Arguments:
+    //                iOffset                - Byte offset into file for this view.
+    //                lLength                - Number of bytes to map.
+    //        Returns:
+    //                virtual address or 0 if failure
+    //        Throws:
+    //                DataTransferEx for all other exception conditions
     virtual void* MapView (CPI::OS::uint64_t iOffset, CPI::OS::uint64_t lLength, AccessType eAccess) = 0;
 
     // Unmap a segment of a file from the address space.
-    //	Arguments:
-    //		pVA		- Virtual address of view to unmap
-    //	Returns:
-    //		Returns 0 for success or a platform specific error number
-    //	Throws:
-    //		DataTransferEx for all other exception conditions
+    //        Arguments:
+    //                pVA                - Virtual address of view to unmap
+    //        Returns:
+    //                Returns 0 for success or a platform specific error number
+    //        Throws:
+    //                DataTransferEx for all other exception conditions
     virtual int UnMapView (void *pVA) = 0;
 
     // Return the last error that occurred for a file mapping operation.
-    //	Arguments:
-    //	Returns:
-    //		Returns 0 for success or a platform specific error number
-    //	Throws:
-    //		DataTransferEx for all other exception conditions
+    //        Arguments:
+    //        Returns:
+    //                Returns 0 for success or a platform specific error number
+    //        Throws:
+    //                DataTransferEx for all other exception conditions
     virtual int GetLastError () = 0;
 
     // Destructor

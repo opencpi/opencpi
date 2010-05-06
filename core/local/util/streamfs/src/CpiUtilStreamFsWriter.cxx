@@ -44,7 +44,7 @@ namespace CpiUtilStreamFsWriter {
     protected:
       int sync ();
       pos_type seekoff (off_type off, std::ios_base::seekdir way,
-			std::ios_base::openmode which);
+                        std::ios_base::openmode which);
       int_type overflow (int_type c);
       std::streamsize xsputn (const char *, std::streamsize);
 
@@ -87,7 +87,7 @@ namespace CpiUtilStreamFsWriter {
   std::streambuf::pos_type
   StreamFsWriterStream::StreamBuf::
   seekoff (off_type off, std::ios_base::seekdir way,
-	   std::ios_base::openmode)
+           std::ios_base::openmode)
   {
     if (way != std::ios_base::cur || off != 0) {
       return -1;
@@ -133,7 +133,7 @@ namespace CpiUtilStreamFsWriter {
   }
 
   StreamFsWriterStream::StreamFsWriterStream (std::ostream * str,
-					      const std::string & name)
+                                              const std::string & name)
     : std::ostream (0),
       m_buf (str),
       m_name (name)
@@ -267,11 +267,11 @@ closeFs ()
       m_stream = 0;
 
       if (m_fs) {
-	try {
-	  m_fs->close (omstream);
-	}
-	catch (...) {
-	}
+        try {
+          m_fs->close (omstream);
+        }
+        catch (...) {
+        }
       }
 
       throw;
@@ -510,7 +510,7 @@ open (const std::string &, std::ios_base::openmode)
 std::istream *
 CPI::Util::StreamFs::StreamFsWriter::
 openReadonly (const std::string &,
-	      std::ios_base::openmode)
+              std::ios_base::openmode)
   throw (std::string)
 {
   throw std::string ("not supported on this file system");
@@ -520,7 +520,7 @@ openReadonly (const std::string &,
 std::ostream *
 CPI::Util::StreamFs::StreamFsWriter::
 openWriteonly (const std::string & fileName,
-	       std::ios_base::openmode)
+               std::ios_base::openmode)
   throw (std::string)
 {
   CPI::Util::AutoMutex lock (m_mutex);

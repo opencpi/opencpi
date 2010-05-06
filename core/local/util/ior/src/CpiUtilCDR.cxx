@@ -19,7 +19,7 @@ nativeByteorder ()
   char * cv = reinterpret_cast<char *> (&v);
 
   cpiAssert ((cv[0] == 1 && cv[1] == 2 && cv[2] == 3 && cv[3] == 4) ||
-	     (cv[0] == 4 && cv[1] == 3 && cv[2] == 2 && cv[3] == 1));
+             (cv[0] == 4 && cv[1] == 3 && cv[2] == 2 && cv[3] == 1));
 
   return (cv[0] == 1) ? false : true;
 }

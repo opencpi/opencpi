@@ -122,7 +122,7 @@ getPortFromIndex( CPI::OS::int32_t idx )
   for ( CPI::OS::uint32_t n=0; n<m_data.ports.size(); n++) {
     if (m_data.ports[n] ) {
       if ( f == idx ) {
-	return static_cast<Port*>(m_data.ports[n]);
+        return static_cast<Port*>(m_data.ports[n]);
       }
       f++;
     }
@@ -140,7 +140,7 @@ CPI::DataTransport::Port* PortSet::getPort( CPI::OS::uint32_t idx )
   for ( CPI::OS::uint32_t n=0; n<m_data.ports.size(); n++) {
     if (m_data.ports[n] ) {
       if ( f == idx ) {
-	return static_cast<CPI::DataTransport::Port*>(m_data.ports[n]);
+        return static_cast<CPI::DataTransport::Port*>(m_data.ports[n]);
       }
       f++;
     }

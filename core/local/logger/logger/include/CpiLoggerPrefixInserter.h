@@ -51,25 +51,25 @@ namespace CPI {
       /** \cond */
       class PrefixInserterBuf : public LogBuf {
       public:
-	PrefixInserterBuf (Logger *, const std::string &, bool);
-	~PrefixInserterBuf ();
+        PrefixInserterBuf (Logger *, const std::string &, bool);
+        ~PrefixInserterBuf ();
 
-	void setLogLevel (unsigned short);
-	void setProducerId (const char *);
-	void setProducerName (const char *);
-	void setPrefix (const std::string &);
-
-      protected:
-	int sync ();
-	int_type overflow (int_type = std::streambuf::traits_type::eof());
-	std::streamsize xsputn (const char *, std::streamsize);
+        void setLogLevel (unsigned short);
+        void setProducerId (const char *);
+        void setProducerName (const char *);
+        void setPrefix (const std::string &);
 
       protected:
-	bool m_first;
-	bool m_adopted;
-	Logger * m_logger;
-	Logger::LogBuf & m_out;
-	std::string m_prefix;
+        int sync ();
+        int_type overflow (int_type = std::streambuf::traits_type::eof());
+        std::streamsize xsputn (const char *, std::streamsize);
+
+      protected:
+        bool m_first;
+        bool m_adopted;
+        Logger * m_logger;
+        Logger::LogBuf & m_out;
+        std::string m_prefix;
       };
       /** \endcond */
 
@@ -106,7 +106,7 @@ namespace CPI {
        */
 
       PrefixInserter (Logger * logger, const std::string & prefix,
-		      bool adopt = false);
+                      bool adopt = false);
 
       /**
        * Destructor.

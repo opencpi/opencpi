@@ -45,7 +45,7 @@ namespace CPI {
        */
 
       std::string getErrorMessage (unsigned long errorCode)
-	throw ();
+        throw ();
 
     }
   }

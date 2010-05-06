@@ -138,31 +138,31 @@ sync ()
     cpiAssert (m_locked);
 
     if (m_allLogLevelsEnabled ||
-	m_enabledLogLevels.find (m_logLevel) != m_enabledLogLevels.end ()) {
+        m_enabledLogLevels.find (m_logLevel) != m_enabledLogLevels.end ()) {
       try {
 #if defined (CPI_USES_SCA22)
-	::LogService::Log::ProducerLogRecordSequence plrs (1);
-	plrs.length (1);
-	::LogService::ProducerLogRecordType & plr = plrs[0];
+        ::LogService::Log::ProducerLogRecordSequence plrs (1);
+        plrs.length (1);
+        ::LogService::ProducerLogRecordType & plr = plrs[0];
 
-	plr.producerId = m_producerId.c_str ();
-	plr.producerName = m_producerName.c_str ();
-	plr.level = static_cast< ::LogService::LogLevelType > (m_logLevel - 1);
-	plr.logData = m_logMessage.c_str ();
+        plr.producerId = m_producerId.c_str ();
+        plr.producerName = m_producerName.c_str ();
+        plr.level = static_cast< ::LogService::LogLevelType > (m_logLevel - 1);
+        plr.logData = m_logMessage.c_str ();
 
-	m_logService->writeRecords (plrs);
+        m_logService->writeRecords (plrs);
 #else
-	::CosLwLog::ProducerLogRecord plr;
-	plr.producerId = m_producerId.c_str ();
-	plr.producerName = m_producerName.c_str ();
-	plr.level = m_logLevel;
-	plr.logData = m_logMessage.c_str ();
+        ::CosLwLog::ProducerLogRecord plr;
+        plr.producerId = m_producerId.c_str ();
+        plr.producerName = m_producerName.c_str ();
+        plr.level = m_logLevel;
+        plr.logData = m_logMessage.c_str ();
 
-	m_logService->write_record (plr);
+        m_logService->write_record (plr);
 #endif
       }
       catch (const CORBA::Exception &) {
-	good = false;
+        good = false;
       }
     }
 

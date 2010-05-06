@@ -226,10 +226,10 @@ TestWorkerCommandLineConfigurator::g_options[] = {
 static
 void
 printUsage (TestWorkerCommandLineConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -258,37 +258,37 @@ namespace {
 
       switch (rc) {
       case CPI::Container::Interface::DispatchNoMore:
-	// All done, exit from dispatch thread.
-	keepWorking = false;
-	break;
+        // All done, exit from dispatch thread.
+        keepWorking = false;
+        break;
 
       case CPI::Container::Interface::MoreWorkNeeded:
-	// No-op. To prevent blocking the CPU, yield.
-	CPI::OS::sleep (0);
-	break;
+        // No-op. To prevent blocking the CPU, yield.
+        CPI::OS::sleep (0);
+        break;
 
       case CPI::Container::Interface::Stopped:
-	// Exit from dispatch thread, it will be restarted.
-	keepWorking = false;
-	break;
+        // Exit from dispatch thread, it will be restarted.
+        keepWorking = false;
+        break;
 
       case CPI::Container::Interface::Spin:
-	/*
-	 * If we have an event manager, ask it to go to sleep and wait for
-	 * an event.  If we are not event driven, the event manager will
-	 * tell us that it is spinning.  In that case, yield to give other
-	 * threads a chance to run.
-	 */
+        /*
+         * If we have an event manager, ask it to go to sleep and wait for
+         * an event.  If we are not event driven, the event manager will
+         * tell us that it is spinning.  In that case, yield to give other
+         * threads a chance to run.
+         */
 
-	if (dtd->eventManager) {
-	  if (dtd->eventManager->waitForEvent (0) == DataTransfer::EventSpin) {
-	    CPI::OS::sleep (0);
-	  }
-	}
-	else {
-	  CPI::OS::sleep (0);
-	}
-	break;
+        if (dtd->eventManager) {
+          if (dtd->eventManager->waitForEvent (0) == DataTransfer::EventSpin) {
+            CPI::OS::sleep (0);
+          }
+        }
+        else {
+          CPI::OS::sleep (0);
+        }
+        break;
       }
     }
 
@@ -362,7 +362,7 @@ private:
     throw (std::string);
 
   void loadDll (CPI::Util::Vfs::Vfs & fs,
-		const std::string & fileName)
+                const std::string & fileName)
     throw (std::string);
 
   void unloadDll (const std::string & fileName)
@@ -476,14 +476,14 @@ TestWorker::
 
     if (pd.connected) {
       try {
-	pd.localPort->disconnect();
-	pd.fileIoPort->disconnect();
+        pd.localPort->disconnect();
+        pd.fileIoPort->disconnect();
       }
       catch (...) {
       }
 
       try {
-	delete pd.fileIoWorkerId;
+        delete pd.fileIoWorkerId;
       }
       catch (...) {
       }
@@ -517,10 +517,10 @@ TestWorker::
 
     try {
       if (dllInfo.lm) {
-	dllInfo.lm->close ();
+        dllInfo.lm->close ();
       }
       else {
-	dllInfo.module->close ();
+        dllInfo.module->close ();
       }
     }
     catch (const std::string &) {
@@ -558,8 +558,8 @@ runTest ()
   try {
     dm.discoverDevices(0,0);
     CPI::Util::PValue cprops[] = {CPI::Util::PVString("endpoint",(char*)endpoint.c_str() ),
-				  CPI::Util::PVBool("polling",m_config.polled),
-				  CPI::Util::PVEnd };
+                                  CPI::Util::PVBool("polling",m_config.polled),
+                                  CPI::Util::PVEnd };
     CPI::Util::Device* d = dm.getDevice( cprops, "RCC" );
     m_container = static_cast<CPI::Container::Interface*>(d);
     m_eventManager = m_container->getEventManager ();
@@ -589,7 +589,7 @@ runTest ()
   CPI::Util::FileFs::FileFs fileFs ("/");
   std::string workerFile = fileFs.fromNativeName (m_config.workerFile);
   CPI::Util::ZipFs::ZipFs zfs (&fileFs, workerFile, std::ios_base::in,
-			       false, true);
+                               false, true);
 
   if (m_verbose) {
     std::cout << "done." << std::endl;
@@ -774,9 +774,9 @@ runTest ()
   }
 
   if (CPI::SCA::decode_props (workerProperties.c_str(),
-			      &m_props, &m_nprops, &m_sizeOfPropertySpace,
-			      &m_ports, &m_nports,
-			      &m_tests, &m_ntests)) {
+                              &m_props, &m_nprops, &m_sizeOfPropertySpace,
+                              &m_ports, &m_nports,
+                              &m_tests, &m_ntests)) {
     throw std::string ("Invalid property string");
   }
 
@@ -825,8 +825,8 @@ runTest ()
   if (m_config.pauseBeforeStart) {
     if (m_verbose) {
       std::cout << "Pausing, send SIGINT to pid "
-		<< CPI::OS::getProcessId()
-		<< " to continue ... " << std::flush;
+                << CPI::OS::getProcessId()
+                << " to continue ... " << std::flush;
     }
 
     g_expectSignal = true;
@@ -884,14 +884,14 @@ runTest ()
 
     if (pd.connected) {
       if ( pd.fileIoWorkerId->control ( WCI_CONTROL_START, WCI_DEFAULT) != WCI_SUCCESS) {
-	std::string msg = "Failed to open ";
-	msg += pd.provider ? "output" : "input";
-	msg += " file \"";
-	msg += pd.fileName;
-	msg += "\" for port \"";
-	msg += (*spit).first;
-	msg += "\"";
-	throw msg;
+        std::string msg = "Failed to open ";
+        msg += pd.provider ? "output" : "input";
+        msg += " file \"";
+        msg += pd.fileName;
+        msg += "\" for port \"";
+        msg += (*spit).first;
+        msg += "\"";
+        throw msg;
       }
     }
   }
@@ -933,17 +933,17 @@ runTest ()
       PortData & pd = (*spit).second;
 
       if (pd.connected && pd.provider) {
-	WCI_u8 atEof;
+        WCI_u8 atEof;
 
-	pd.fileIoWorkerId->read (
-				  offsetof (FileSourceProperties, atEof),
-				  1, WCI_DATA_TYPE_U8,
-				  WCI_DEFAULT, &atEof);
+        pd.fileIoWorkerId->read (
+                                  offsetof (FileSourceProperties, atEof),
+                                  1, WCI_DATA_TYPE_U8,
+                                  WCI_DEFAULT, &atEof);
 
-	if (!atEof) {
-	  allInputWorkersAtEof = false;
-	  break;
-	}
+        if (!atEof) {
+          allInputWorkersAtEof = false;
+          break;
+        }
       }
     }
 
@@ -1019,14 +1019,14 @@ runTest ()
 
     if (pd.connected) {
       if ( pd.fileIoWorkerId->control (WCI_CONTROL_STOP, WCI_DEFAULT) != WCI_SUCCESS) {
-	std::string msg = "Failed to stop ";
-	msg += pd.provider ? "output" : "input";
-	msg += " file \"";
-	msg += pd.fileName;
-	msg += "\" for port \"";
-	msg += (*spit).first;
-	msg += "\"";
-	throw msg;
+        std::string msg = "Failed to stop ";
+        msg += pd.provider ? "output" : "input";
+        msg += " file \"";
+        msg += pd.fileName;
+        msg += "\" for port \"";
+        msg += (*spit).first;
+        msg += "\"";
+        throw msg;
       }
     }
   }
@@ -1085,15 +1085,15 @@ createAllPorts ()
 
     try {
       if (portInfo->provider) {
-	pd.localPort = & m_containerWorkerId->createInputPort (  portOrdinal,
-							       m_numBuffers,
-							       m_bufferSize);
+        pd.localPort = & m_containerWorkerId->createInputPort (  portOrdinal,
+                                                               m_numBuffers,
+                                                               m_bufferSize);
       }
       else {
-	pd.localPort = & m_containerWorkerId->createOutputPort (
-							  portOrdinal,
-							  m_numBuffers,
-							  m_bufferSize);
+        pd.localPort = & m_containerWorkerId->createOutputPort (
+                                                          portOrdinal,
+                                                          m_numBuffers,
+                                                          m_bufferSize);
       }
     }
     catch (const CPI::Util::EmbeddedException & oops) {
@@ -1107,9 +1107,9 @@ createAllPorts ()
       msg += CPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
 
       if (auxInfo) {
-	msg += " (";
-	msg += auxInfo;
-	msg += ")";
+        msg += " (";
+        msg += auxInfo;
+        msg += ")";
       }
 
       throw msg;
@@ -1128,19 +1128,19 @@ connectInputPorts ()
 {
   try {
     for (CPI::Util::CommandLineConfiguration::MultiNameValue::const_iterator ipit = m_config.inputFile.begin();
-	 ipit != m_config.inputFile.end(); ipit++) {
+         ipit != m_config.inputFile.end(); ipit++) {
       const std::string & portName = (*ipit).first;
       std::string fileName = (*ipit).second;
       std::string::size_type colonPos = fileName.find (':');
       uint32_t packetSize = static_cast<uint32_t> (m_config.defaultPacketSize);
 
       if (colonPos != std::string::npos) {
-	packetSize = CPI::Util::Misc::stringToUnsigned (fileName.substr (colonPos+1));
-	fileName = fileName.substr (0, colonPos);
+        packetSize = CPI::Util::Misc::stringToUnsigned (fileName.substr (colonPos+1));
+        fileName = fileName.substr (0, colonPos);
       }
 
       if (m_verbose) {
-	std::cout << "Connecting file \"" << fileName << "\" to input port \"" << portName << "\" ... " << std::flush;
+        std::cout << "Connecting file \"" << fileName << "\" to input port \"" << portName << "\" ... " << std::flush;
       }
 
       const CPI::SCA::Port * portInfo;
@@ -1153,10 +1153,10 @@ connectInputPorts ()
       std::string shadowPort;
 
       if (!pd.provider) {
-	std::string msg = "Port \"";
-	msg += portName;
-	msg += "\" is not an input port";
-	throw msg;
+        std::string msg = "Port \"";
+        msg += portName;
+        msg += "\" is not an input port";
+        throw msg;
       }
 
       /*
@@ -1170,8 +1170,8 @@ connectInputPorts ()
        */
 
       pd.fileIoPort = & pd.fileIoWorkerId->createOutputPort ( 0,
-							 m_numBuffers,
-							 m_bufferSize);
+                                                         m_numBuffers,
+                                                         m_bufferSize);
 
       shadowPort = pd.fileIoPort->setFinalProviderInfo( pd.localPort->getInitialProviderInfo() );
       pd.localPort->setFinalUserInfo ( shadowPort);
@@ -1187,35 +1187,35 @@ connectInputPorts ()
 
       cpiAssert (fileName.length()+1 <= 256);
       pd.fileIoWorkerId->write (
-				 offsetof (FileSourceProperties, fileName),
-				 fileName.length() + 1,
-				 WCI_DATA_TYPE_U8,
-				 WCI_DEFAULT,
-				 fileName.c_str());
+                                 offsetof (FileSourceProperties, fileName),
+                                 fileName.length() + 1,
+                                 WCI_DATA_TYPE_U8,
+                                 WCI_DEFAULT,
+                                 fileName.c_str());
 
       cpiAssert (portName.length()+1 <= 256);
       pd.fileIoWorkerId->write (
-				 offsetof (FileSourceProperties, portName),
-				 portName.length() + 1,
-				 WCI_DATA_TYPE_U8,
-				 WCI_DEFAULT,
-				 portName.c_str());
+                                 offsetof (FileSourceProperties, portName),
+                                 portName.length() + 1,
+                                 WCI_DATA_TYPE_U8,
+                                 WCI_DEFAULT,
+                                 portName.c_str());
 
       WCI_u8 data = m_verbose ? 1 : 0;
       pd.fileIoWorkerId->write (
-				 offsetof (FileSourceProperties, verbose),
-				 1, WCI_DATA_TYPE_U8,
-				 WCI_DEFAULT, &data);
+                                 offsetof (FileSourceProperties, verbose),
+                                 1, WCI_DATA_TYPE_U8,
+                                 WCI_DEFAULT, &data);
 
       if (packetSize) {
-	pd.fileIoWorkerId->write (
-				   offsetof (FileSourceProperties, bytesPerPacket),
-				   4, WCI_DATA_TYPE_U32,
-				   WCI_DEFAULT, &packetSize);
+        pd.fileIoWorkerId->write (
+                                   offsetof (FileSourceProperties, bytesPerPacket),
+                                   4, WCI_DATA_TYPE_U32,
+                                   WCI_DEFAULT, &packetSize);
       }
 
       if (m_verbose) {
-	std::cout << "done." << std::endl;
+        std::cout << "done." << std::endl;
       }
     }
   }
@@ -1244,12 +1244,12 @@ connectOutputPorts ()
 {
   try {
     for (CPI::Util::CommandLineConfiguration::MultiNameValue::const_iterator opit = m_config.outputFile.begin();
-	 opit != m_config.outputFile.end(); opit++) {
+         opit != m_config.outputFile.end(); opit++) {
       const std::string & portName = (*opit).first;
       const std::string & fileName = (*opit).second;
 
       if (m_verbose) {
-	std::cout << "Connecting output port \"" << portName << "\" to file \"" << fileName << "\" ... " << std::flush;
+        std::cout << "Connecting output port \"" << portName << "\" to file \"" << fileName << "\" ... " << std::flush;
       }
 
       const CPI::SCA::Port * portInfo;
@@ -1262,10 +1262,10 @@ connectOutputPorts ()
       std::string shadowPort;
 
       if (pd.provider) {
-	std::string msg = "Port \"";
-	msg += portName;
-	msg += "\" is not an output port";
-	throw msg;
+        std::string msg = "Port \"";
+        msg += portName;
+        msg += "\" is not an output port";
+        throw msg;
       }
 
       /*
@@ -1279,9 +1279,9 @@ connectOutputPorts ()
        */
 
       pd.fileIoPort = & pd.fileIoWorkerId->createInputPort (
-							 0,
-							 m_numBuffers,
-							 m_bufferSize);
+                                                         0,
+                                                         m_numBuffers,
+                                                         m_bufferSize);
 
 
       shadowPort = pd.localPort->setFinalProviderInfo( pd.fileIoPort->getInitialProviderInfo() );
@@ -1298,27 +1298,27 @@ connectOutputPorts ()
 
       cpiAssert (fileName.length()+1 <= 256);
       pd.fileIoWorkerId->write (offsetof (FileSinkProperties, fileName),
-				 fileName.length() + 1,
-				 WCI_DATA_TYPE_U8,
-				 WCI_DEFAULT,
-				 fileName.c_str());
+                                 fileName.length() + 1,
+                                 WCI_DATA_TYPE_U8,
+                                 WCI_DEFAULT,
+                                 fileName.c_str());
 
       cpiAssert (portName.length()+1 <= 256);
       pd.fileIoWorkerId->write (
-				 offsetof (FileSinkProperties, portName),
-				 portName.length() + 1,
-				 WCI_DATA_TYPE_U8,
-				 WCI_DEFAULT,
-				 portName.c_str());
+                                 offsetof (FileSinkProperties, portName),
+                                 portName.length() + 1,
+                                 WCI_DATA_TYPE_U8,
+                                 WCI_DEFAULT,
+                                 portName.c_str());
 
       WCI_u8 data = m_verbose ? 1 : 0;
       pd.fileIoWorkerId->write (
-				 offsetof (FileSinkProperties, verbose),
-				 1, WCI_DATA_TYPE_U8,
-				 WCI_DEFAULT, &data);
+                                 offsetof (FileSinkProperties, verbose),
+                                 1, WCI_DATA_TYPE_U8,
+                                 WCI_DEFAULT, &data);
 
       if (m_verbose) {
-	std::cout << "done." << std::endl;
+        std::cout << "done." << std::endl;
       }
     }
   }
@@ -1378,86 +1378,86 @@ configureWorker ()
     if (!p.is_sequence) {
       switch (pt.data_type) {
       case CPI::SCA::SCA_boolean:
-	{
-	  WCI_u8 data;
+        {
+          WCI_u8 data;
 
-	  if (value == "true" || value == "TRUE" || value == "1") {
-	    data = 1;
-	  }
-	  else if (value == "false" || value == "FALSE" || value == "0") {
-	    data = 0;
-	  }
-	  else {
-	    throw std::string ("Failed to extract value of type boolean");
-	  }
+          if (value == "true" || value == "TRUE" || value == "1") {
+            data = 1;
+          }
+          else if (value == "false" || value == "FALSE" || value == "0") {
+            data = 0;
+          }
+          else {
+            throw std::string ("Failed to extract value of type boolean");
+          }
 
-	  e = m_containerWorkerId->write ( p.offset,
-					 1, WCI_DATA_TYPE_U8,
-					 WCI_DEFAULT, &data);
-	}
-	break;
+          e = m_containerWorkerId->write ( p.offset,
+                                         1, WCI_DATA_TYPE_U8,
+                                         WCI_DEFAULT, &data);
+        }
+        break;
 
       case CPI::SCA::SCA_short:
-	{
-	  int idata = CPI::Util::Misc::stringToInteger (value);
-	  int16_t data = static_cast<int16_t> (idata);
+        {
+          int idata = CPI::Util::Misc::stringToInteger (value);
+          int16_t data = static_cast<int16_t> (idata);
 
-	  e = m_containerWorkerId->write ( p.offset,
-					 2, WCI_DATA_TYPE_U16,
-					 WCI_DEFAULT, &data);
-	}
-	break;
+          e = m_containerWorkerId->write ( p.offset,
+                                         2, WCI_DATA_TYPE_U16,
+                                         WCI_DEFAULT, &data);
+        }
+        break;
 
       case CPI::SCA::SCA_long:
-	{
-	  int idata = CPI::Util::Misc::stringToInteger (value);
-	  int32_t data = static_cast<int32_t> (idata);
+        {
+          int idata = CPI::Util::Misc::stringToInteger (value);
+          int32_t data = static_cast<int32_t> (idata);
 
-	  e = m_containerWorkerId->write (  p.offset,
-					 4, WCI_DATA_TYPE_U32,
-					 WCI_DEFAULT, &data);
-	}
-	break;
+          e = m_containerWorkerId->write (  p.offset,
+                                         4, WCI_DATA_TYPE_U32,
+                                         WCI_DEFAULT, &data);
+        }
+        break;
 
       case CPI::SCA::SCA_ulong:
-	{
-	  unsigned int idata = CPI::Util::Misc::stringToUnsigned (value);
-	  uint32_t data = static_cast<uint32_t> (idata);
+        {
+          unsigned int idata = CPI::Util::Misc::stringToUnsigned (value);
+          uint32_t data = static_cast<uint32_t> (idata);
 
-	  e = m_containerWorkerId->write (  p.offset,
-					 4, WCI_DATA_TYPE_U32,
-					 WCI_DEFAULT, &data);
-	}
-	break;
+          e = m_containerWorkerId->write (  p.offset,
+                                         4, WCI_DATA_TYPE_U32,
+                                         WCI_DEFAULT, &data);
+        }
+        break;
 
       case CPI::SCA::SCA_ushort:
-	{
-	  unsigned int idata = CPI::Util::Misc::stringToUnsigned (value);
-	  uint16_t data = static_cast<uint16_t> (idata);
+        {
+          unsigned int idata = CPI::Util::Misc::stringToUnsigned (value);
+          uint16_t data = static_cast<uint16_t> (idata);
 
-	  e = m_containerWorkerId->write ( p.offset,
-					 2, WCI_DATA_TYPE_U16,
-					 WCI_DEFAULT, &data);
-	}
-	break;
+          e = m_containerWorkerId->write ( p.offset,
+                                         2, WCI_DATA_TYPE_U16,
+                                         WCI_DEFAULT, &data);
+        }
+        break;
 
       case CPI::SCA::SCA_string:
-	{
-	  unsigned int len = value.length () + 1;
+        {
+          unsigned int len = value.length () + 1;
 
-	  if (len > pt.size + 1) {
-	    throw std::string ("String exceeds maximum length");
-	  }
+          if (len > pt.size + 1) {
+            throw std::string ("String exceeds maximum length");
+          }
 
-	  e = m_containerWorkerId->write ( p.offset,
-					 len, WCI_DATA_TYPE_U8,
-					 WCI_DEFAULT,
-					 value.c_str ());
-	}
-	break;
+          e = m_containerWorkerId->write ( p.offset,
+                                         len, WCI_DATA_TYPE_U8,
+                                         WCI_DEFAULT,
+                                         value.c_str ());
+        }
+        break;
 
       default:
-	throw std::string ("type not supported yet");
+        throw std::string ("type not supported yet");
       }
     }
     else {
@@ -1496,7 +1496,7 @@ printWorkerProperties ()
 
     if (p.write_sync && !haveSync) {
       if (m_containerWorkerId->control ( WCI_CONTROL_BEFORE_QUERY, WCI_DEFAULT) != WCI_SUCCESS) {
-	throw std::string ("Failed to query worker");
+        throw std::string ("Failed to query worker");
       }
 
       haveSync = true;
@@ -1516,162 +1516,162 @@ printWorkerProperties ()
     try {
       if (!p.is_sequence) {
 
-#define PRINTPROPERTY(type,wcitype,printitem) do {	\
-	  type data;					\
-	  e = m_containerWorkerId->read ( \
-					p.offset,	\
-					sizeof(type),	\
-					wcitype,	\
-					WCI_DEFAULT,	\
-					&data);		\
-	  std::cout << (printitem);			\
-	} while (0)
+#define PRINTPROPERTY(type,wcitype,printitem) do {        \
+          type data;                                        \
+          e = m_containerWorkerId->read ( \
+                                        p.offset,        \
+                                        sizeof(type),        \
+                                        wcitype,        \
+                                        WCI_DEFAULT,        \
+                                        &data);                \
+          std::cout << (printitem);                        \
+        } while (0)
 
-	switch (pt.data_type) {
-	case CPI::SCA::SCA_boolean:
-	  PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, (data ? "true" : "false"));
-	  break;
+        switch (pt.data_type) {
+        case CPI::SCA::SCA_boolean:
+          PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, (data ? "true" : "false"));
+          break;
 
-	case CPI::SCA::SCA_char:
-	  PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, ((int) data));
-	  break;
+        case CPI::SCA::SCA_char:
+          PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, ((int) data));
+          break;
 
-	case CPI::SCA::SCA_double:
-	  PRINTPROPERTY(WCI_f64, WCI_DATA_TYPE_F64, data);
-	  break;
+        case CPI::SCA::SCA_double:
+          PRINTPROPERTY(WCI_f64, WCI_DATA_TYPE_F64, data);
+          break;
 
-	case CPI::SCA::SCA_float:
-	  PRINTPROPERTY(WCI_f32, WCI_DATA_TYPE_F32, data);
-	  break;
+        case CPI::SCA::SCA_float:
+          PRINTPROPERTY(WCI_f32, WCI_DATA_TYPE_F32, data);
+          break;
 
-	case CPI::SCA::SCA_short:
-	  PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, static_cast<CPI::OS::int16_t> (data));
-	  break;
+        case CPI::SCA::SCA_short:
+          PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, static_cast<CPI::OS::int16_t> (data));
+          break;
 
-	case CPI::SCA::SCA_long:
-	  PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, static_cast<CPI::OS::int32_t> (data));
-	  break;
+        case CPI::SCA::SCA_long:
+          PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, static_cast<CPI::OS::int32_t> (data));
+          break;
 
-	case CPI::SCA::SCA_octet:
-	  PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, data);
-	  break;
+        case CPI::SCA::SCA_octet:
+          PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, data);
+          break;
 
-	case CPI::SCA::SCA_ulong:
-	  PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, data);
-	  break;
+        case CPI::SCA::SCA_ulong:
+          PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, data);
+          break;
 
-	case CPI::SCA::SCA_ushort:
-	  PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, data);
-	  break;
+        case CPI::SCA::SCA_ushort:
+          PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, data);
+          break;
 
-	case CPI::SCA::SCA_string:
-	  {
-	    char * buf = new char[pt.size+1];
+        case CPI::SCA::SCA_string:
+          {
+            char * buf = new char[pt.size+1];
 
-	    e = m_containerWorkerId->read ( p.offset,
-					  pt.size, WCI_DATA_TYPE_U8,
-					  WCI_DEFAULT, buf);
+            e = m_containerWorkerId->read ( p.offset,
+                                          pt.size, WCI_DATA_TYPE_U8,
+                                          WCI_DEFAULT, buf);
 
-	    buf[pt.size] = '\0';
-	    std::cout << buf;
-	    delete [] buf;
-	  }
-	  break;
+            buf[pt.size] = '\0';
+            std::cout << buf;
+            delete [] buf;
+          }
+          break;
 
-	default:
-	  cpiAssert (0);
-	}
+        default:
+          cpiAssert (0);
+        }
 
 #undef PRINTPROPERTY
 
       }
       else {
-	WCI_u32 length;
+        WCI_u32 length;
 
-	if ((e = m_containerWorkerId->read ( p.offset,
-					   4, WCI_DATA_TYPE_U32,
-					   WCI_DEFAULT, &length)) != WCI_SUCCESS) {
-	  std::cout << "{Failed to read sequence length}";
-	  continue;
-	}
+        if ((e = m_containerWorkerId->read ( p.offset,
+                                           4, WCI_DATA_TYPE_U32,
+                                           WCI_DEFAULT, &length)) != WCI_SUCCESS) {
+          std::cout << "{Failed to read sequence length}";
+          continue;
+        }
 
-	if (length > p.sequence_size) {
-	  std::cout << "{Sequence length (" << length
-		    << ") exceeds maximum length (" << p.sequence_size
-		    << ")}";
-	  continue;
-	}
+        if (length > p.sequence_size) {
+          std::cout << "{Sequence length (" << length
+                    << ") exceeds maximum length (" << p.sequence_size
+                    << ")}";
+          continue;
+        }
 
-#define PRINTSEQ(printitem) do {		\
-	  for (WCI_u32 i=0; i<length; i++) {	\
-	    if (i) {				\
-	      std::cout << ", ";		\
-	    }					\
-	    std::cout << printitem;		\
-	  }					\
-	} while (0)
+#define PRINTSEQ(printitem) do {                \
+          for (WCI_u32 i=0; i<length; i++) {        \
+            if (i) {                                \
+              std::cout << ", ";                \
+            }                                        \
+            std::cout << printitem;                \
+          }                                        \
+        } while (0)
 
-#define PRINTPROPERTY(type,wcitype,printitem) do {		\
-	  type * data = new type [length];			\
-	  e = m_containerWorkerId->read (		\
-					p.data_offset,		\
-					sizeof(type)*length,	\
-					wcitype,		\
-					WCI_DEFAULT,		\
-					data);			\
-	  PRINTSEQ(printitem);					\
-	  delete [] data;					\
-	} while (0)
+#define PRINTPROPERTY(type,wcitype,printitem) do {                \
+          type * data = new type [length];                        \
+          e = m_containerWorkerId->read (                \
+                                        p.data_offset,                \
+                                        sizeof(type)*length,        \
+                                        wcitype,                \
+                                        WCI_DEFAULT,                \
+                                        data);                        \
+          PRINTSEQ(printitem);                                        \
+          delete [] data;                                        \
+        } while (0)
 
-	switch (pt.data_type) {
-	case CPI::SCA::SCA_boolean:
-	  PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, (data[i] ? "true" : "false"));
-	  break;
+        switch (pt.data_type) {
+        case CPI::SCA::SCA_boolean:
+          PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, (data[i] ? "true" : "false"));
+          break;
 
-	case CPI::SCA::SCA_char:
-	case CPI::SCA::SCA_octet:
-	  {
-	    WCI_u8 * data = new WCI_u8 [length];
-	    e = m_containerWorkerId->read ( p.data_offset,
-					  length, WCI_DATA_TYPE_U8,
-					  WCI_DEFAULT, data);
-	    std::cout << std::endl;
-	    dumpOctets (data, length);
-	    delete [] data;
-	  }
-	  break;
+        case CPI::SCA::SCA_char:
+        case CPI::SCA::SCA_octet:
+          {
+            WCI_u8 * data = new WCI_u8 [length];
+            e = m_containerWorkerId->read ( p.data_offset,
+                                          length, WCI_DATA_TYPE_U8,
+                                          WCI_DEFAULT, data);
+            std::cout << std::endl;
+            dumpOctets (data, length);
+            delete [] data;
+          }
+          break;
 
-	case CPI::SCA::SCA_double:
-	  PRINTPROPERTY(WCI_f64, WCI_DATA_TYPE_F64, data[i]);
-	  break;
+        case CPI::SCA::SCA_double:
+          PRINTPROPERTY(WCI_f64, WCI_DATA_TYPE_F64, data[i]);
+          break;
 
-	case CPI::SCA::SCA_float:
-	  PRINTPROPERTY(WCI_f32, WCI_DATA_TYPE_F32, data[i]);
-	  break;
+        case CPI::SCA::SCA_float:
+          PRINTPROPERTY(WCI_f32, WCI_DATA_TYPE_F32, data[i]);
+          break;
 
-	case CPI::SCA::SCA_short:
-	  PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, static_cast<CPI::OS::int16_t> (data[i]));
-	  break;
+        case CPI::SCA::SCA_short:
+          PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, static_cast<CPI::OS::int16_t> (data[i]));
+          break;
 
-	case CPI::SCA::SCA_long:
-	  PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, static_cast<CPI::OS::int32_t> (data[i]));
-	  break;
+        case CPI::SCA::SCA_long:
+          PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, static_cast<CPI::OS::int32_t> (data[i]));
+          break;
 
-	case CPI::SCA::SCA_ulong:
-	  PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, data[i]);
-	  break;
+        case CPI::SCA::SCA_ulong:
+          PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, data[i]);
+          break;
 
-	case CPI::SCA::SCA_ushort:
-	  PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, data[i]);
-	  break;
+        case CPI::SCA::SCA_ushort:
+          PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, data[i]);
+          break;
 
-	case CPI::SCA::SCA_string:
-	  std::cout << "{String sequences not implemented yet}";
-	  break;
+        case CPI::SCA::SCA_string:
+          std::cout << "{String sequences not implemented yet}";
+          break;
 
-	default:
-	  cpiAssert (0);
-	}
+        default:
+          cpiAssert (0);
+        }
 
 #undef PRINTPROPERTY
 #undef PRINTSEQ
@@ -1679,7 +1679,7 @@ printWorkerProperties ()
       }
 
       if (e != WCI_SUCCESS) {
-	std::cout << "{" << wci_strerror (e) << "}";
+        std::cout << "{" << wci_strerror (e) << "}";
       }
 
       std::cout << std::endl;
@@ -1742,7 +1742,7 @@ findPort (const char * name, unsigned int & portOrdinal)
 void
 TestWorker::
 loadDll (CPI::Util::Vfs::Vfs & fs,
-	 const std::string & dllFileName)
+         const std::string & dllFileName)
   throw (std::string)
 {
   // Assumes that a lock is held.
@@ -1887,10 +1887,10 @@ dumpOctets (const unsigned char * data, unsigned int length)
 
     for (i=0; i<16 && index+i<length; i++) {
       if (std::isprint(data[i])) {
-	std::cout << data[i];
+        std::cout << data[i];
       }
       else {
-	std::cout << '.';
+        std::cout << '.';
       }
     }
 
@@ -1917,31 +1917,31 @@ namespace {
 
     if ((tmpDir = std::getenv ("TEMP"))) {
       try {
-	ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
-	exists = CPI::OS::FileSystem::exists (ntd, &isdir);
+        ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
+        exists = CPI::OS::FileSystem::exists (ntd, &isdir);
       }
       catch (...) {
-	exists = false;
+        exists = false;
       }
     }
 
     if ((!exists || !isdir) && (tmpDir = std::getenv ("TMP"))) {
       try {
-	ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
-	exists = CPI::OS::FileSystem::exists (ntd, &isdir);
+        ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
+        exists = CPI::OS::FileSystem::exists (ntd, &isdir);
       }
       catch (...) {
-	exists = false;
+        exists = false;
       }
     }
 
     if (!exists || !isdir) {
       try {
-	ntd = CPI::OS::FileSystem::fromNativeName ("/tmp");
-	exists = CPI::OS::FileSystem::exists (ntd, &isdir);
+        ntd = CPI::OS::FileSystem::fromNativeName ("/tmp");
+        exists = CPI::OS::FileSystem::exists (ntd, &isdir);
       }
       catch (...) {
-	exists = false;
+        exists = false;
       }
     }
 
@@ -1982,11 +1982,11 @@ namespace {
        */
 
       if (!tempFileLocation.length()) {
-	return;
+        return;
       }
 
       if (tempFileLocation == CPI::OS::FileSystem::cwd()) {
-	return;
+        return;
       }
     }
     catch (...) {
@@ -1996,13 +1996,13 @@ namespace {
       CPI::OS::FileIterator fit = CPI::OS::FileSystem::list (tempFileLocation);
 
       while (!fit.end()) {
-	try {
-	  CPI::OS::FileSystem::remove (fit.absoluteName());
-	}
-	catch (...) {
-	}
+        try {
+          CPI::OS::FileSystem::remove (fit.absoluteName());
+        }
+        catch (...) {
+        }
 
-	fit.next ();
+        fit.next ();
       }
 
       fit.close ();
@@ -2079,8 +2079,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }
@@ -2132,15 +2132,15 @@ main (int argc, char * argv[])
 
     if (!oldLdLibraryPath || !std::strstr (oldLdLibraryPath, g_tempFileLocation.c_str())) {
       if (haveDllDir) {
-	std::cerr << "Oops: --dllDir not found in LD_LIBRARY_PATH" << std::endl;
-	return 1;
+        std::cerr << "Oops: --dllDir not found in LD_LIBRARY_PATH" << std::endl;
+        return 1;
       }
 
       std::string newLdLibraryPath = g_tempFileLocation;
 
       if (oldLdLibraryPath) {
-	newLdLibraryPath += ':';
-	newLdLibraryPath += oldLdLibraryPath;
+        newLdLibraryPath += ':';
+        newLdLibraryPath += oldLdLibraryPath;
       }
 
       setenv ("LD_LIBRARY_PATH", newLdLibraryPath.c_str(), 1);
@@ -2174,9 +2174,9 @@ main (int argc, char * argv[])
 
     if (pid && (kill (pid, 0) == 0 || errno == EPERM)) {
       std::cerr << "Oops: CPI RCC Tester is already running, pid "
-		<< pid
-		<< "."
-		<< std::endl;
+                << pid
+                << "."
+                << std::endl;
       return 1;
     }
 
@@ -2188,12 +2188,12 @@ main (int argc, char * argv[])
 
   if (!oPidFile.good()) {
     std::cerr << "Oops: Failed to write PID to \""
-	      << nativePidFileName
-	      << "\"." << std::endl;
+              << nativePidFileName
+              << "\"." << std::endl;
     std::cerr << "      Please delete \""
-	      << g_tempFileLocation
-	      << "\" before continuing."
-	      << std::endl;
+              << g_tempFileLocation
+              << "\" before continuing."
+              << std::endl;
     return 1;
   }
 

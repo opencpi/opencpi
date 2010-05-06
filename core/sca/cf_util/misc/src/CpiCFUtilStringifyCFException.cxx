@@ -19,74 +19,74 @@
 #include "CpiCFUtilStringifyCFException.h"
 
 #define EX_NO_DATA(type,text) \
-	{ \
-	  const type * ex = type::_downcast (&cex); \
-	  if (ex) { \
-	    return text; \
-	  } \
-	}
+        { \
+          const type * ex = type::_downcast (&cex); \
+          if (ex) { \
+            return text; \
+          } \
+        }
 
 #define EX_WITH_MSG(type,text) \
-	{ \
-	  const type * ex = type::_downcast (&cex); \
-	  if (ex) { \
-	    reason = text; \
-	    reason += ": "; \
-	    reason += ex->msg.in (); \
-	    return reason; \
-	  } \
-	}
+        { \
+          const type * ex = type::_downcast (&cex); \
+          if (ex) { \
+            reason = text; \
+            reason += ": "; \
+            reason += ex->msg.in (); \
+            return reason; \
+          } \
+        }
 
 #define EX_WITH_ERRNO_MSG(type,text) \
-	{ \
-	  const type * ex = type::_downcast (&cex); \
-	  if (ex) { \
-	    reason = text; \
-	    reason += ": "; \
-	    reason += CPI::CFUtil::errorNumberToString (ex->errorNumber); \
-	    reason += ": "; \
-	    reason += ex->msg.in (); \
-	    return reason; \
-	  } \
-	}
+        { \
+          const type * ex = type::_downcast (&cex); \
+          if (ex) { \
+            reason = text; \
+            reason += ": "; \
+            reason += CPI::CFUtil::errorNumberToString (ex->errorNumber); \
+            reason += ": "; \
+            reason += ex->msg.in (); \
+            return reason; \
+          } \
+        }
 
 #define EX_WITH_PROPERTIES(type,text,props) \
-	{ \
-	  const type * ex = type::_downcast (&cex); \
-	  if (ex) { \
-	    CORBA::ULong np = ex-> props .length (); \
-	    reason = text; \
-	    reason += ": \""; \
-	    for (CORBA::ULong i=0; i<np; i++) { \
-	      reason += ex-> props [i].id.in (); \
-	      if (i+1 < np) { \
-	        reason += "\", \""; \
-	      } \
-	    } \
-	    reason += "\""; \
-	    return reason; \
-	  } \
-	}
+        { \
+          const type * ex = type::_downcast (&cex); \
+          if (ex) { \
+            CORBA::ULong np = ex-> props .length (); \
+            reason = text; \
+            reason += ": \""; \
+            for (CORBA::ULong i=0; i<np; i++) { \
+              reason += ex-> props [i].id.in (); \
+              if (i+1 < np) { \
+                reason += "\", \""; \
+              } \
+            } \
+            reason += "\""; \
+            return reason; \
+          } \
+        }
 
 #define EX_WITH_PROPERTIES_AND_MSG(type,text,props) \
-	{ \
-	  const type * ex = type::_downcast (&cex); \
-	  if (ex) { \
-	    CORBA::ULong np = ex-> props .length (); \
-	    reason = text; \
-	    reason += ": "; \
-	    reason += ex->msg.in (); \
-	    reason += ": \""; \
-	    for (CORBA::ULong i=0; i<np; i++) { \
-	      reason += ex-> props [i].id.in (); \
-	      if (i+1 < np) { \
-	        reason += "\", \""; \
-	      } \
-	    } \
-	    reason += "\""; \
-	    return reason; \
-	  } \
-	}
+        { \
+          const type * ex = type::_downcast (&cex); \
+          if (ex) { \
+            CORBA::ULong np = ex-> props .length (); \
+            reason = text; \
+            reason += ": "; \
+            reason += ex->msg.in (); \
+            reason += ": \""; \
+            for (CORBA::ULong i=0; i<np; i++) { \
+              reason += ex-> props [i].id.in (); \
+              if (i+1 < np) { \
+                reason += "\", \""; \
+              } \
+            } \
+            reason += "\""; \
+            return reason; \
+          } \
+        }
 
 std::string
 CPI::CFUtil::
@@ -138,11 +138,11 @@ stringifyCFException (const CORBA::Exception & cex)
       reason = "Initialize error: \"";
 
       for (CORBA::ULong i=0; i<nip; i++) {
-	reason += ex->errorMessages[i].in();
+        reason += ex->errorMessages[i].in();
 
-	if (i+1 < nip) {
-	  reason += "\", \"";
-	}
+        if (i+1 < nip) {
+          reason += "\", \"";
+        }
       }
 
       reason += "\"";
@@ -160,11 +160,11 @@ stringifyCFException (const CORBA::Exception & cex)
       reason = "Release error: \"";
 
       for (CORBA::ULong i=0; i<nip; i++) {
-	reason += ex->errorMessages[i].in();
+        reason += ex->errorMessages[i].in();
 
-	if (i+1 < nip) {
-	  reason += "\", \"";
-	}
+        if (i+1 < nip) {
+          reason += "\", \"";
+        }
       }
 
       reason += "\"";
@@ -199,18 +199,18 @@ stringifyCFException (const CORBA::Exception & cex)
       reason = "Application creation request error: ";
 
       if (nip != 1) {
-	reason += "Invalid assignments for: \"";
+        reason += "Invalid assignments for: \"";
       }
       else {
-	reason += "Invalid assignment for: \"";
+        reason += "Invalid assignment for: \"";
       }
 
       for (CORBA::ULong i=0; i<nip; i++) {
-	reason += ex->invalidAssignments[i].componentId.in ();
+        reason += ex->invalidAssignments[i].componentId.in ();
 
-	if (i+1 < nip) {
-	  reason += "\", \"";
-	}
+        if (i+1 < nip) {
+          reason += "\", \"";
+        }
       }
 
       reason += "\"";

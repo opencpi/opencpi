@@ -42,10 +42,10 @@ IndivisiblePartition::~IndivisiblePartition(){}
  * returns 0 on success.
  **********************************/
 CPI::OS::int32_t IndivisiblePartition::calculateBufferOffsets( 
-							      CPI::OS::uint32_t		,				
-							      Buffer     *,			   
-							      Buffer     *,		        
-							      BufferInfo **)       
+                                                              CPI::OS::uint32_t                ,                                
+                                                              Buffer     *,                           
+                                                              Buffer     *,                        
+                                                              BufferInfo **)       
 {
 
   return -1;

@@ -59,56 +59,56 @@ namespace CPI {
     const CPI::OS::uint32_t CP289_EX_SOURCE_ID          = 10;
     const CPI::OS::uint32_t BAD_ARTIFACT_URL            = (CP289_EX_SOURCE_ID << 16) + 1;
     const CPI::OS::uint32_t REQUIRED_PROPERTY_NOT_SET   = (CP289_EX_SOURCE_ID << 16) + 2;
-    const CPI::OS::uint32_t WORKER_INIT_FAILED	  = (CP289_EX_SOURCE_ID << 16) + 3;
-    const CPI::OS::uint32_t WORKER_ENABLE_FAILED	  = (CP289_EX_SOURCE_ID << 16) + 4;
-    const CPI::OS::uint32_t WORKER_DISABLE_FAILED	  = (CP289_EX_SOURCE_ID << 16) + 5;
-    const CPI::OS::uint32_t CP289_CSINTERNAL_ERROR	  = (CP289_EX_SOURCE_ID << 16) + 6;
+    const CPI::OS::uint32_t WORKER_INIT_FAILED          = (CP289_EX_SOURCE_ID << 16) + 3;
+    const CPI::OS::uint32_t WORKER_ENABLE_FAILED          = (CP289_EX_SOURCE_ID << 16) + 4;
+    const CPI::OS::uint32_t WORKER_DISABLE_FAILED          = (CP289_EX_SOURCE_ID << 16) + 5;
+    const CPI::OS::uint32_t CP289_CSINTERNAL_ERROR          = (CP289_EX_SOURCE_ID << 16) + 6;
 
     class Container : public CPI::Container::Interface, public Controller
       {
 
       public:
-	friend class Controller;
-	friend class Application;
+        friend class Controller;
+        friend class Application;
 
-	/**********************************
-	 * Constructors
-	 *********************************/
-	Container(  CPI::Util::Driver &, CPI::OS::uint32_t g_unique_id,
-			 CPI::DataTransport::TransportGlobal* tpg, 
-			 const CPI::Util::PValue* props )
-	  throw ( CPI::Util::EmbeddedException );
+        /**********************************
+         * Constructors
+         *********************************/
+        Container(  CPI::Util::Driver &, CPI::OS::uint32_t g_unique_id,
+                         CPI::DataTransport::TransportGlobal* tpg, 
+                         const CPI::Util::PValue* props )
+          throw ( CPI::Util::EmbeddedException );
 
-	virtual ~Container()
-	  throw ();
+        virtual ~Container()
+          throw ();
 
-	DispatchRetCode dispatch(DataTransfer::EventManager* event_manager=NULL)
-	  throw ( CPI::Util::EmbeddedException );
+        DispatchRetCode dispatch(DataTransfer::EventManager* event_manager=NULL)
+          throw ( CPI::Util::EmbeddedException );
 
-	CPI::Container::Application * createApplication()
-	  throw ( CPI::Util::EmbeddedException );
+        CPI::Container::Application * createApplication()
+          throw ( CPI::Util::EmbeddedException );
 
-	CPI::Container::Artifact & createArtifact(const char *url, CPI::Util::PValue *artifactParams = 0);
+        CPI::Container::Artifact & createArtifact(const char *url, CPI::Util::PValue *artifactParams = 0);
 
-	std::vector<std::string> getSupportedEndpoints()
-	  throw ();
+        std::vector<std::string> getSupportedEndpoints()
+          throw ();
       
-	//!< Start/Stop the container
-	void start(DataTransfer::EventManager* event_manager)
-	  throw();
-	void stop(DataTransfer::EventManager* event_manager)
-	  throw();
+        //!< Start/Stop the container
+        void start(DataTransfer::EventManager* event_manager)
+          throw();
+        void stop(DataTransfer::EventManager* event_manager)
+          throw();
 
-	//! get the event manager for this container
-	DataTransfer::EventManager*  getEventManager();
+        //! get the event manager for this container
+        DataTransfer::EventManager*  getEventManager();
 
       protected:
 
-	// Our thread safe mutex
-	CPI::OS::Mutex m_threadSafeMutex;
+        // Our thread safe mutex
+        CPI::OS::Mutex m_threadSafeMutex;
 
-	// Cpi transport 
-	CPI::DataTransport::Transport* m_transport;
+        // Cpi transport 
+        CPI::DataTransport::Transport* m_transport;
 
 
       };

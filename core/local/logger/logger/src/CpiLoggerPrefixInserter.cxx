@@ -28,8 +28,8 @@
 
 CPI::Logger::PrefixInserter::
 PrefixInserterBuf::PrefixInserterBuf (Logger * logger,
-				      const std::string & pfx,
-				      bool adopt)
+                                      const std::string & pfx,
+                                      bool adopt)
   : m_first (true),
     m_adopted (adopt),
     m_logger (logger),
@@ -135,8 +135,8 @@ PrefixInserter (Logger & log, const std::string & prefix)
 
 CPI::Logger::PrefixInserter::
 PrefixInserter (Logger * log,
-		const std::string & prefix,
-		bool adopt)
+                const std::string & prefix,
+                bool adopt)
   : Logger (m_obuf),
     m_obuf (log, prefix, adopt)
 {

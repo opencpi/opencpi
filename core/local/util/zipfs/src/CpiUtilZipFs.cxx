@@ -44,10 +44,10 @@ extern "C" {
       std::istream * is;
 
       try {
-	is = fs->openReadonly (filename, std::ios_base::binary);
+        is = fs->openReadonly (filename, std::ios_base::binary);
       }
       catch (...) {
-	return 0;
+        return 0;
       }
 
       zfsopaque * zfs = new zfsopaque;
@@ -165,10 +165,10 @@ extern "C" {
       res = 0;
 
       try {
-	fs->close (zfs->is);
+        fs->close (zfs->is);
       }
       catch (...) {
-	res = 1;
+        res = 1;
       }
     }
 
@@ -223,10 +223,10 @@ namespace {
 
   void
   updateZipFile (CPI::Util::Vfs::Vfs * fs,
-		 const std::string & zipFileName,
-		 zlib_filefunc_def * zFileFuncs,
-		 const ZipFileSet & filesToDelete,
-		 const ZipFileMap & filesToRename)
+                 const std::string & zipFileName,
+                 zlib_filefunc_def * zFileFuncs,
+                 const ZipFileSet & filesToDelete,
+                 const ZipFileMap & filesToRename)
     throw (std::string)
   {
     std::string tempName = zipFileName + ".tmp";
@@ -238,8 +238,8 @@ namespace {
     }
 
     zipFile tzf = zipOpen2 (tempName.c_str(),
-			    APPEND_STATUS_CREATE,
-			    0, zFileFuncs);
+                            APPEND_STATUS_CREATE,
+                            0, zFileFuncs);
 
     if (!tzf) {
       std::string reason = "Can not open temp ZIP file \"";
@@ -270,10 +270,10 @@ namespace {
 
     while (status == UNZ_OK) {
       if (unzGetCurrentFileInfo (uzf, &uFileInfo,
-				 fileName, 1024,
-				 0, 0, 0, 0) != UNZ_OK) {
-	good = false;
-	break;
+                                 fileName, 1024,
+                                 0, 0, 0, 0) != UNZ_OK) {
+        good = false;
+        break;
       }
 
       /*
@@ -283,8 +283,8 @@ namespace {
       destFileName = fileName;
 
       if (filesToDelete.find (destFileName) != filesToDelete.end()) {
-	status = unzGoToNextFile (uzf);
-	continue;
+        status = unzGoToNextFile (uzf);
+        continue;
       }
 
       /*
@@ -294,7 +294,7 @@ namespace {
       ZipFileMap::const_iterator it = filesToRename.find (destFileName);
 
       if (it != filesToRename.end()) {
-	destFileName = (*it).second;
+        destFileName = (*it).second;
       }
 
       zFileInfo.tmz_date.tm_sec  = uFileInfo.tmu_date.tm_sec;
@@ -310,50 +310,50 @@ namespace {
       int method, level;
 
       if (unzOpenCurrentFile2 (uzf, &method, &level, 1) != UNZ_OK) {
-	good = false;
-	break;
+        good = false;
+        break;
       }
 
       if (zipOpenNewFileInZip2 (tzf, destFileName.c_str(), &zFileInfo,
-				0, 0, 0, 0, 0,
-				method, level, 1) != ZIP_OK) {
-	unzCloseCurrentFile (uzf);
-	good = false;
-	break;
+                                0, 0, 0, 0, 0,
+                                method, level, 1) != ZIP_OK) {
+        unzCloseCurrentFile (uzf);
+        good = false;
+        break;
       }
 
       count = unzReadCurrentFile (uzf, buffer, ZIP_BUFFER_SIZE);
       while (count > 0) {
-	if (zipWriteInFileInZip (tzf, buffer, count) != ZIP_OK) {
-	  count = -1;
-	  break;
-	}
-	count = unzReadCurrentFile (uzf, buffer, ZIP_BUFFER_SIZE);
+        if (zipWriteInFileInZip (tzf, buffer, count) != ZIP_OK) {
+          count = -1;
+          break;
+        }
+        count = unzReadCurrentFile (uzf, buffer, ZIP_BUFFER_SIZE);
       }
 
       if (count < 0) {
-	zipCloseFileInZipRaw (tzf,
-			      uFileInfo.uncompressed_size,
-			      uFileInfo.crc);
-	unzCloseCurrentFile (uzf);
-	good = false;
-	break;
+        zipCloseFileInZipRaw (tzf,
+                              uFileInfo.uncompressed_size,
+                              uFileInfo.crc);
+        unzCloseCurrentFile (uzf);
+        good = false;
+        break;
       }
 
       if (unzCloseCurrentFile (uzf) != UNZ_OK) {
-	zipCloseFileInZipRaw (tzf,
-			      uFileInfo.uncompressed_size,
-			      uFileInfo.crc);
-	unzCloseCurrentFile (uzf);
-	good = false;
-	break;
+        zipCloseFileInZipRaw (tzf,
+                              uFileInfo.uncompressed_size,
+                              uFileInfo.crc);
+        unzCloseCurrentFile (uzf);
+        good = false;
+        break;
       }
 
       if (zipCloseFileInZipRaw (tzf,
-				uFileInfo.uncompressed_size,
-				uFileInfo.crc)) {
-	good = false;
-	break;
+                                uFileInfo.uncompressed_size,
+                                uFileInfo.crc)) {
+        good = false;
+        break;
       }
 
       status = unzGoToNextFile (uzf);
@@ -401,8 +401,8 @@ namespace {
   class ZipFsIterator : public CPI::Util::Vfs::Iterator {
   public:
     ZipFsIterator (const std::string & dir,
-		   const std::string & pattern,
-		   const CPI::Util::ZipFs::ZipFs::FileInfos & contents)
+                   const std::string & pattern,
+                   const CPI::Util::ZipFs::ZipFs::FileInfos & contents)
       throw ();
     ~ZipFsIterator ()
       throw ();
@@ -442,8 +442,8 @@ namespace {
 }
 
 ZipFsIterator::ZipFsIterator (const std::string & dir,
-			      const std::string & pattern,
-			      const CPI::Util::ZipFs::ZipFs::FileInfos & contents)
+                              const std::string & pattern,
+                              const CPI::Util::ZipFs::ZipFs::FileInfos & contents)
   throw ()
   : m_contents (contents)
 {
@@ -592,37 +592,37 @@ ZipFsIterator::findFirstMatching ()
     const std::string & absFileName = (*m_iterator).first;
 
     if (absFileName.length() >= firstFnPos &&
-	(pdl == 0 || absFileName[pdl] == '/') &&
-	absFileName.compare (0, pdl, m_absPatDir) == 0) {
+        (pdl == 0 || absFileName[pdl] == '/') &&
+        absFileName.compare (0, pdl, m_absPatDir) == 0) {
       std::string::size_type nextSlash =
-	absFileName.find ('/', firstFnPos);
+        absFileName.find ('/', firstFnPos);
       std::string nextPathComponent;
       bool isDirectory;
 
       if (nextSlash == std::string::npos) {
-	nextPathComponent = absFileName.substr (firstFnPos);
-	isDirectory = false;
+        nextPathComponent = absFileName.substr (firstFnPos);
+        isDirectory = false;
       }
       else {
-	nextPathComponent =
-	  absFileName.substr (firstFnPos, nextSlash-firstFnPos);
-	isDirectory = true;
+        nextPathComponent =
+          absFileName.substr (firstFnPos, nextSlash-firstFnPos);
+        isDirectory = true;
       }
 
       if (CPI::Util::Misc::glob (nextPathComponent, m_relPat)) {
-	if (isDirectory) {
-	  if (m_seenDirectories.find (nextPathComponent) == m_seenDirectories.end()) {
-	    m_seenDirectories.insert (nextPathComponent);
-	    break;
-	  }
-	  else {
-	    // already seen this directory, do not break but continue
-	  }
-	}
-	else {
-	  // regular file
-	  break;
-	}
+        if (isDirectory) {
+          if (m_seenDirectories.find (nextPathComponent) == m_seenDirectories.end()) {
+            m_seenDirectories.insert (nextPathComponent);
+            break;
+          }
+          else {
+            // already seen this directory, do not break but continue
+          }
+        }
+        else {
+          // regular file
+          break;
+        }
       }
     }
 
@@ -660,10 +660,10 @@ CPI::Util::ZipFs::ZipFs::ZipFs ()
 }
 
 CPI::Util::ZipFs::ZipFs::ZipFs (CPI::Util::Vfs::Vfs * fs,
-				const std::string & zipFileName,
-				std::ios_base::openmode mode,
-				bool adopt,
-				bool keepOpen)
+                                const std::string & zipFileName,
+                                std::ios_base::openmode mode,
+                                bool adopt,
+                                bool keepOpen)
   throw (std::string)
   : m_fs (0),
     m_adopted (false),
@@ -691,10 +691,10 @@ CPI::Util::ZipFs::ZipFs::~ZipFs ()
 
 void
 CPI::Util::ZipFs::ZipFs::openZip (CPI::Util::Vfs::Vfs * fs,
-				  const std::string & zipFileName,
-				  std::ios_base::openmode mode,
-				  bool adopt,
-				  bool keepOpen)
+                                  const std::string & zipFileName,
+                                  std::ios_base::openmode mode,
+                                  bool adopt,
+                                  bool keepOpen)
   throw (std::string)
 {
   if (m_fs) {
@@ -917,8 +917,8 @@ CPI::Util::ZipFs::ZipFs::rmdir (const std::string & fileName)
 
   for (it = m_contents.begin(); it != m_contents.end(); it++) {
     if ((*it).first.length () > dnlen &&
-	(*it).first.compare (0, dnlen, nn) == 0 &&
-	(*it).first[dnlen] == '/') {
+        (*it).first.compare (0, dnlen, nn) == 0 &&
+        (*it).first[dnlen] == '/') {
       std::string reason = "Can not remove directory \"";
       reason += fileName;
       reason += "\": not empty";
@@ -935,7 +935,7 @@ CPI::Util::ZipFs::ZipFs::rmdir (const std::string & fileName)
 
 CPI::Util::Vfs::Iterator *
 CPI::Util::ZipFs::ZipFs::list (const std::string & dir,
-			       const std::string & pattern)
+                               const std::string & pattern)
   throw (std::string)
 {
   m_lock.rdLock ();
@@ -1006,10 +1006,10 @@ CPI::Util::ZipFs::ZipFs::exists (const std::string & fileName, bool * isDir)
 
   for (it = m_contents.begin(); it != m_contents.end(); it++) {
     if ((*it).first.length () > nnlen &&
-	(*it).first.compare (0, nnlen, nn) == 0 &&
-	(*it).first[nnlen] == '/') {
+        (*it).first.compare (0, nnlen, nn) == 0 &&
+        (*it).first[nnlen] == '/') {
       if (isDir) {
-	*isDir = true;
+        *isDir = true;
       }
 
       return true;
@@ -1081,7 +1081,7 @@ CPI::Util::ZipFs::ZipFs::open (const std::string &, std::ios_base::openmode)
 
 std::istream *
 CPI::Util::ZipFs::ZipFs::openReadonly (const std::string & fileName,
-				       std::ios_base::openmode)
+                                       std::ios_base::openmode)
   throw (std::string)
 {
   m_lock.rdLock ();
@@ -1154,7 +1154,7 @@ CPI::Util::ZipFs::ZipFs::openReadonly (const std::string & fileName,
 
 std::ostream *
 CPI::Util::ZipFs::ZipFs::openWriteonly (const std::string & fileName,
-					std::ios_base::openmode mode)
+                                        std::ios_base::openmode mode)
   throw (std::string)
 {
   m_lock.wrLock ();
@@ -1217,7 +1217,7 @@ CPI::Util::ZipFs::ZipFs::openWriteonly (const std::string & fileName,
   else {
     zlib_filefunc_def & zFileFuncs = o2zfd (m_zFileFuncsOpaque);
     zf = zipOpen2 (m_zipFileName.c_str(), appflag,
-		   0, &zFileFuncs);
+                   0, &zFileFuncs);
 
     if (!zf) {
       m_lock.wrUnlock ();
@@ -1247,9 +1247,9 @@ CPI::Util::ZipFs::ZipFs::openWriteonly (const std::string & fileName,
   zfi.tmz_date.tm_year = timeStr->tm_year + 1900;
 
   if (zipOpenNewFileInZip (zf, nn.c_str(), &zfi,
-			   0, 0, 0, 0, 0,
-			   Z_DEFLATED,
-			   Z_DEFAULT_COMPRESSION) != ZIP_OK) {
+                           0, 0, 0, 0, 0,
+                           Z_DEFLATED,
+                           Z_DEFAULT_COMPRESSION) != ZIP_OK) {
     if (!m_keepOpen) {
       zipClose (zf, 0);
       m_zipFile = 0;
@@ -1300,8 +1300,8 @@ CPI::Util::ZipFs::ZipFs::close (std::ios * str)
 
     if (!m_keepOpen) {
       if (unzClose (zis->m_zip) != UNZ_OK && good) {
-	reason = "error closing ZIP file";
-	good = false;
+        reason = "error closing ZIP file";
+        good = false;
       }
     }
 
@@ -1327,8 +1327,8 @@ CPI::Util::ZipFs::ZipFs::close (std::ios * str)
 
     if (!m_keepOpen) {
       if (zipClose (zos->m_zip, 0) != ZIP_OK) {
-	reason = "error closing ZIP file";
-	good = false;
+        reason = "error closing ZIP file";
+        good = false;
       }
     }
 
@@ -1372,7 +1372,7 @@ CPI::Util::ZipFs::ZipFs::close (std::ios * str)
 
 void
 CPI::Util::ZipFs::ZipFs::rename (const std::string & oldName,
-				 const std::string & newName)
+                                 const std::string & newName)
   throw (std::string)
 {
   /*
@@ -1427,7 +1427,7 @@ CPI::Util::ZipFs::ZipFs::rename (const std::string & oldName,
 
   zlib_filefunc_def & zFileFuncs = o2zfd (m_zFileFuncsOpaque);
   updateZipFile (m_fs, m_zipFileName, &zFileFuncs,
-		 toBeDeleted, toBeRenamed);
+                 toBeDeleted, toBeRenamed);
 
   m_contents[nnn] = m_contents[onn];
   m_contents.erase (onn);
@@ -1484,7 +1484,7 @@ CPI::Util::ZipFs::ZipFs::removeLocked (const std::string & fileName)
 
   zlib_filefunc_def & zFileFuncs = o2zfd (m_zFileFuncsOpaque);
   updateZipFile (m_fs, m_zipFileName, &zFileFuncs,
-		 toBeDeleted, ZipFileMap());
+                 toBeDeleted, ZipFileMap());
 
   m_contents.erase (nn);
 }
@@ -1628,8 +1628,8 @@ CPI::Util::ZipFs::ZipFs::updateContents ()
 
   while (status == UNZ_OK) {
     if (unzGetCurrentFileInfo (zf, &fileInfo,
-			       fileName, 1024,
-			       0, 0, 0, 0) != UNZ_OK) {
+                               fileName, 1024,
+                               0, 0, 0, 0) != UNZ_OK) {
       break;
     }
 

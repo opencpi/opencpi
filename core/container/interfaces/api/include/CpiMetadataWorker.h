@@ -23,7 +23,7 @@
 #include "CpiMetadataProperty.h"
 #include "ezxml.h"
 
-#define CPI_CONTROL_OPS							\
+#define CPI_CONTROL_OPS                                                        \
   CONTROL_OP(initialize,     Initialize,     INITIALIZED, EXISTS,      NONE,        NONE) \
   CONTROL_OP(start,          Start,          OPERATING,   SUSPENDED,   INITIALIZED, NONE) \
   CONTROL_OP(stop,           Stop,           SUSPENDED,   OPERATING,   NONE,        NONE) \
@@ -48,8 +48,8 @@ namespace CPI {
 
 
       static const unsigned
-	DEFAULT_NBUFFERS = 2,
-	DEFAULT_BUFFER_SIZE = 2*1024;
+        DEFAULT_NBUFFERS = 2,
+        DEFAULT_BUFFER_SIZE = 2*1024;
       uint32_t minBufferSize;
       uint32_t minBufferCount;
       uint32_t maxBufferSize;
@@ -79,29 +79,29 @@ namespace CPI {
       bool decode(ezxml_t xml);
     public:
       inline Property *getProperties(unsigned &np) {
-	np = nProps;
-	return myProps;
+        np = nProps;
+        return myProps;
       }
       inline Property &
-	property(unsigned long which)
+        property(unsigned long which)
       {
-	cpiAssert(which < nProps);
-	return myProps[which];
+        cpiAssert(which < nProps);
+        return myProps[which];
       }
       Port *findPort(const char *id);
       inline Port & 
-	port(unsigned long which) 
+        port(unsigned long which) 
       {
-	cpiAssert(which < nPorts);
-	return myPorts[which];
+        cpiAssert(which < nPorts);
+        return myPorts[which];
       }
       enum ControlState {
-	EXISTS,
-	INITIALIZED,
-	OPERATING,
-	SUSPENDED,
-	UNUSABLE,
-	NONE
+        EXISTS,
+        INITIALIZED,
+        OPERATING,
+        SUSPENDED,
+        UNUSABLE,
+        NONE
       };
 #define CONTROL_OP(x, c, t, s1, s2, s3)  Op##c,
       enum Ops {

@@ -154,10 +154,10 @@ CpiRccBinderConfigurator::g_options[] = {
 static
 void
 printUsage (CpiRccBinderConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -221,19 +221,19 @@ struct ExecutableInfo {
 class CpiRccSpdUpdater {
 public:
   CpiRccSpdUpdater (const std::string & exeFileName,
-		    const std::string & os,
-		    const std::string & processor,
-		    unsigned int cpiDeviceId = static_cast<unsigned int> (-1))
+                    const std::string & os,
+                    const std::string & processor,
+                    unsigned int cpiDeviceId = static_cast<unsigned int> (-1))
     throw ();
 
   void updateSPD (ezxml_t root,
-		  const std::string & entrypoint,
-		  const std::string & implId)
+                  const std::string & entrypoint,
+                  const std::string & implId)
     throw (std::string);
 
   ezxml_t createSPDfromSCD (const std::string & spdFileName,
-			    const std::string & entrypoint,
-			    const std::string & implId)
+                            const std::string & entrypoint,
+                            const std::string & implId)
     throw ();
 
 protected:
@@ -244,17 +244,17 @@ protected:
     throw ();
 
   static void insertNode (ezxml_t newParent, ezxml_t newNode,
-			  std::string & parentTxt, size_t & parentOff,
-			  unsigned int indent)
+                          std::string & parentTxt, size_t & parentOff,
+                          unsigned int indent)
     throw ();
 
   static void moveNode (ezxml_t newParent, ezxml_t oldParent, const char * name,
-			std::string & parentTxt, size_t & parentOff,
-			unsigned int indent)
+                        std::string & parentTxt, size_t & parentOff,
+                        unsigned int indent)
     throw ();
 
   static ezxml_t createCodeElement (const std::string & outputFileName,
-				    const std::string & entrypoint)
+                                    const std::string & entrypoint)
     throw ();
 
   static ezxml_t createOsElement (const std::string & os)
@@ -295,9 +295,9 @@ s_cpiDeviceIdPropertyId = "DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2";
 
 CpiRccSpdUpdater::
 CpiRccSpdUpdater (const std::string & exeFileName,
-		  const std::string & os,
-		  const std::string & processor,
-		  unsigned int cpiDeviceId)
+                  const std::string & os,
+                  const std::string & processor,
+                  unsigned int cpiDeviceId)
   throw ()
   : m_exeFileName (exeFileName),
     m_os (os),
@@ -309,8 +309,8 @@ CpiRccSpdUpdater (const std::string & exeFileName,
 void
 CpiRccSpdUpdater::
 updateSPD (ezxml_t root,
-	   const std::string & entrypoint,
-	   const std::string & implId)
+           const std::string & entrypoint,
+           const std::string & implId)
   throw (std::string)
 {
   ezxml_t oldImplNode = 0;
@@ -361,8 +361,8 @@ updateSPD (ezxml_t root,
        */
 
       while (udNode) {
-	udNode->off += insLen;
-	udNode = ezxml_next (udNode);
+        udNode->off += insLen;
+        udNode = ezxml_next (udNode);
       }
 
       /*
@@ -401,9 +401,9 @@ updateSPD (ezxml_t root,
      */
 
     ezxml_set_attr_d (implNode, "id",
-		      ezxml_attr (oldImplNode, "id"));
+                      ezxml_attr (oldImplNode, "id"));
     ezxml_set_attr_d (implNode, "aepcompliance",
-		      ezxml_attr (oldImplNode, "aepcompliance"));
+                      ezxml_attr (oldImplNode, "aepcompliance"));
 
     /*
      * Copy description, propertyfile.
@@ -431,8 +431,8 @@ updateSPD (ezxml_t root,
    */
 
   insertNode (implNode,
-	      createCodeElement (m_exeFileName, entrypoint),
-	      implTxt, implOff, 8);
+              createCodeElement (m_exeFileName, entrypoint),
+              implTxt, implOff, 8);
 
   /*
    * Move compiler, programminglanguage, humanlanguage.
@@ -452,8 +452,8 @@ updateSPD (ezxml_t root,
   ezxml_set_attr (runtimeNode, "name", s_cpiRuntimeRccName);
 
   insertNode (implNode,
-	      runtimeNode,
-	      implTxt, implOff, 8);
+              runtimeNode,
+              implTxt, implOff, 8);
 
   /*
    * OS.
@@ -461,8 +461,8 @@ updateSPD (ezxml_t root,
 
   if (m_os.length()) {
     insertNode (implNode,
-		createOsElement (m_os),
-		implTxt, implOff, 8);
+                createOsElement (m_os),
+                implTxt, implOff, 8);
   }
   else if (oldImplNode) {
     moveNode (implNode, oldImplNode, "os", implTxt, implOff, 8);
@@ -474,8 +474,8 @@ updateSPD (ezxml_t root,
 
   if (m_processor.length()) {
     insertNode (implNode,
-		createProcessorElement (m_processor),
-		implTxt, implOff, 8);
+                createProcessorElement (m_processor),
+                implTxt, implOff, 8);
   }
   else if (oldImplNode) {
     moveNode (implNode, oldImplNode, "processor", implTxt, implOff, 8);
@@ -486,8 +486,8 @@ updateSPD (ezxml_t root,
    */
 
   insertNode (implNode,
-	      createCPIContainerDependencyElement (),
-	      implTxt, implOff, 8);
+              createCPIContainerDependencyElement (),
+              implTxt, implOff, 8);
 
   /*
    * CPI Device Id Dependency.
@@ -498,8 +498,8 @@ updateSPD (ezxml_t root,
   if (m_cpiDeviceId != static_cast<unsigned int> (-1)) {
     haveCpiDeviceIdDependency = true;
     insertNode (implNode,
-		createCPIDeviceIdDependencyElement (m_cpiDeviceId),
-		implTxt, implOff, 8);
+                createCPIDeviceIdDependencyElement (m_cpiDeviceId),
+                implTxt, implOff, 8);
   }
   else {
     haveCpiDeviceIdDependency = false;
@@ -518,24 +518,24 @@ updateSPD (ezxml_t root,
       move = true;
 
       if (prefNode) {
-	const char * prefId = ezxml_attr (prefNode, "refid");
+        const char * prefId = ezxml_attr (prefNode, "refid");
 
-	if (prefId && std::strcmp (prefId, s_cpiRuntimePropertyId) == 0) {
-	  move = false;
-	}
-	else if (prefId && std::strcmp (prefId, s_cpiDeviceIdPropertyId) == 0 &&
-		 haveCpiDeviceIdDependency) {
-	  move = false;
-	}
+        if (prefId && std::strcmp (prefId, s_cpiRuntimePropertyId) == 0) {
+          move = false;
+        }
+        else if (prefId && std::strcmp (prefId, s_cpiDeviceIdPropertyId) == 0 &&
+                 haveCpiDeviceIdDependency) {
+          move = false;
+        }
       }
 
       if (move) {
-	ezxml_move (depNode, implNode, implOff+8);
-	implTxt.insert (implOff, "        \n");
-	implOff += 9;
+        ezxml_move (depNode, implNode, implOff+8);
+        implTxt.insert (implOff, "        \n");
+        implOff += 9;
       }
       else {
-	ezxml_remove (depNode);
+        ezxml_remove (depNode);
       }
 
       depNode = ezxml_child (oldImplNode, "dependency");
@@ -561,8 +561,8 @@ updateSPD (ezxml_t root,
 ezxml_t
 CpiRccSpdUpdater::
 createSPDfromSCD (const std::string & scdFileName,
-		  const std::string & entrypoint,
-		  const std::string & implId)
+                  const std::string & entrypoint,
+                  const std::string & implId)
   throw ()
 {
   ezxml_t root = ezxml_new ("softpkg");
@@ -581,8 +581,8 @@ createSPDfromSCD (const std::string & scdFileName,
    */
 
   insertNode (root,
-	      ezxml_new ("author"),
-	      rootTxt, rootOff, 4);
+              ezxml_new ("author"),
+              rootTxt, rootOff, 4);
 
   /*
    * Create descriptor element.  It points to the SCD file.
@@ -600,7 +600,7 @@ createSPDfromSCD (const std::string & scdFileName,
 
   ezxml_set_txt_d (descNode, descTxt.c_str());
   insertNode (root, descNode,
-	      rootTxt, rootOff, 4);
+              rootTxt, rootOff, 4);
 
   /*
    * Create implementation element.
@@ -627,8 +627,8 @@ createSPDfromSCD (const std::string & scdFileName,
    */
 
   insertNode (implNode,
-	      createCodeElement (m_exeFileName, entrypoint),
-	      implTxt, implOff, 8);
+              createCodeElement (m_exeFileName, entrypoint),
+              implTxt, implOff, 8);
 
   /*
    * Create runtime element.
@@ -638,8 +638,8 @@ createSPDfromSCD (const std::string & scdFileName,
   ezxml_set_attr (runtimeNode, "name", s_cpiRuntimeRccName);
 
   insertNode (implNode,
-	      runtimeNode,
-	      implTxt, implOff, 8);
+              runtimeNode,
+              implTxt, implOff, 8);
 
   /*
    * OS.
@@ -647,8 +647,8 @@ createSPDfromSCD (const std::string & scdFileName,
 
   if (m_os.length()) {
     insertNode (implNode,
-		createOsElement (m_os),
-		implTxt, implOff, 8);
+                createOsElement (m_os),
+                implTxt, implOff, 8);
   }
 
   /*
@@ -657,8 +657,8 @@ createSPDfromSCD (const std::string & scdFileName,
 
   if (m_processor.length()) {
     insertNode (implNode,
-		createProcessorElement (m_processor),
-		implTxt, implOff, 8);
+                createProcessorElement (m_processor),
+                implTxt, implOff, 8);
   }
 
   /*
@@ -666,8 +666,8 @@ createSPDfromSCD (const std::string & scdFileName,
    */
 
   insertNode (implNode,
-	      createCPIContainerDependencyElement (),
-	      implTxt, implOff, 8);
+              createCPIContainerDependencyElement (),
+              implTxt, implOff, 8);
 
   /*
    * CPI Device Id Dependency.
@@ -675,8 +675,8 @@ createSPDfromSCD (const std::string & scdFileName,
 
   if (m_cpiDeviceId != static_cast<unsigned int> (-1)) {
     insertNode (implNode,
-		createCPIDeviceIdDependencyElement (m_cpiDeviceId),
-		implTxt, implOff, 8);
+                createCPIDeviceIdDependencyElement (m_cpiDeviceId),
+                implTxt, implOff, 8);
   }
 
   /*
@@ -685,7 +685,7 @@ createSPDfromSCD (const std::string & scdFileName,
 
   ezxml_set_txt_d (implNode, implTxt.c_str());
   insertNode (root, implNode,
-	      rootTxt, rootOff, 4);
+              rootTxt, rootOff, 4);
 
   /*
    * Wrap up.
@@ -733,13 +733,13 @@ findRccImplementation (ezxml_t root)
       const char * spdOsVersion = osNode ? ezxml_attr (osNode, "version") : 0;
 
       if (spdOsName && osName.length() && osName != spdOsName) {
-	haveOS = false;
+        haveOS = false;
       }
       else if (spdOsVersion && osVersion.length() && osVersion != spdOsVersion) {
-	haveOS = false;
+        haveOS = false;
       }
       else {
-	haveOS = true;
+        haveOS = true;
       }
     }
     else {
@@ -751,10 +751,10 @@ findRccImplementation (ezxml_t root)
       const char * spdProcName = procNode ? ezxml_attr (procNode, "name") : 0;
 
       if (spdProcName && m_processor != spdProcName) {
-	haveProcessor = false;
+        haveProcessor = false;
       }
       else {
-	haveProcessor = true;
+        haveProcessor = true;
       }
     }
     else {
@@ -767,32 +767,32 @@ findRccImplementation (ezxml_t root)
       ezxml_t prefNode = ezxml_child (depNode, "propertyref");
 
       if (prefNode) {
-	const char * refid = ezxml_attr (prefNode, "refid");
-	const char * value = ezxml_attr (prefNode, "value");
+        const char * refid = ezxml_attr (prefNode, "refid");
+        const char * value = ezxml_attr (prefNode, "value");
 
-	if (!refid || !value) {
-	  continue;
-	}
+        if (!refid || !value) {
+          continue;
+        }
 
-	if (std::strcmp (refid, s_cpiRuntimePropertyId) == 0 &&
-	    std::strcmp (value, s_cpiRuntimeRccName) == 0) {
-	  haveContainerType = true;
-	}
-	else if (std::strcmp (refid, s_cpiDeviceIdPropertyId) == 0) {
-	  try {
-	    implDeviceId = CPI::Util::Misc::stringToUnsigned (value);
-	  }
-	  catch (...) {
-	  }
-	}
+        if (std::strcmp (refid, s_cpiRuntimePropertyId) == 0 &&
+            std::strcmp (value, s_cpiRuntimeRccName) == 0) {
+          haveContainerType = true;
+        }
+        else if (std::strcmp (refid, s_cpiDeviceIdPropertyId) == 0) {
+          try {
+            implDeviceId = CPI::Util::Misc::stringToUnsigned (value);
+          }
+          catch (...) {
+          }
+        }
       }
 
       depNode = ezxml_next (depNode);
     }
 
     if (haveContainerType && haveOS && haveProcessor &&
-	(implDeviceId == static_cast<unsigned int> (-1) ||
-	 implDeviceId == m_cpiDeviceId)) {
+        (implDeviceId == static_cast<unsigned int> (-1) ||
+         implDeviceId == m_cpiDeviceId)) {
       break;
     }
 
@@ -825,8 +825,8 @@ findImplementation (ezxml_t root, const std::string & implId)
 void
 CpiRccSpdUpdater::
 insertNode (ezxml_t newParent, ezxml_t newNode,
-	    std::string & parentTxt, size_t & parentOff,
-	    unsigned int indent)
+            std::string & parentTxt, size_t & parentOff,
+            unsigned int indent)
   throw ()
 {
   std::string sindent (indent, ' ');
@@ -840,8 +840,8 @@ insertNode (ezxml_t newParent, ezxml_t newNode,
 void
 CpiRccSpdUpdater::
 moveNode (ezxml_t newParent, ezxml_t oldParent, const char * name,
-	  std::string & parentTxt, size_t & parentOff,
-	  unsigned int indent)
+          std::string & parentTxt, size_t & parentOff,
+          unsigned int indent)
   throw ()
 {
   ezxml_t oldNode = ezxml_child (oldParent, name);
@@ -862,7 +862,7 @@ moveNode (ezxml_t newParent, ezxml_t oldParent, const char * name,
 ezxml_t
 CpiRccSpdUpdater::
 createCodeElement (const std::string & exeFileName,
-		   const std::string & entrypoint)
+                   const std::string & entrypoint)
   throw ()
 {
   ezxml_t codeNode = ezxml_new ("code");
@@ -1067,9 +1067,9 @@ cpiRccBinderInt (int argc, char * argv[])
 
     if (config.verbose) {
       std::cout << "Determining file type of \""
-		<< workerInfo.relFileName
-		<< "\" ... "
-		<< std::flush;
+                << workerInfo.relFileName
+                << "\" ... "
+                << std::flush;
     }
 
     /*
@@ -1081,7 +1081,7 @@ cpiRccBinderInt (int argc, char * argv[])
     }
     catch (const std::string & oops) {
       if (config.verbose) {
-	std::cout << "failed." << std::endl;
+        std::cout << "failed." << std::endl;
       }
       std::cerr << "Oops: \"" << workerInfo.relFileName << "\": " << oops << "." << std::endl;
       return false;
@@ -1098,7 +1098,7 @@ cpiRccBinderInt (int argc, char * argv[])
     }
     catch (const std::string & oops) {
       if (config.verbose) {
-	std::cout << "failed." << std::endl;
+        std::cout << "failed." << std::endl;
       }
       std::cerr << "Oops: " << oops << "." << std::endl;
       return false;
@@ -1109,76 +1109,76 @@ cpiRccBinderInt (int argc, char * argv[])
 
     if (config.verbose) {
       if (std::strcmp (type, "softpkg") == 0) {
-	std::cout << "SPD." << std::endl;
+        std::cout << "SPD." << std::endl;
       }
       else if (std::strcmp (type, "softwarecomponent") == 0) {
-	std::cout << "SCD." << std::endl;
+        std::cout << "SCD." << std::endl;
       }
       else if (std::strcmp (type, "properties") == 0) {
-	std::cout << "PRF." << std::endl;
+        std::cout << "PRF." << std::endl;
       }
       else {
-	std::cout << type << std::endl;
+        std::cout << type << std::endl;
       }
     }
 
     if (config.verbose) {
       std::cout << "Processing \""
-		<< workerInfo.relFileName
-		<< "\" ... "
-		<< std::flush;
+                << workerInfo.relFileName
+                << "\" ... "
+                << std::flush;
     }
 
     CPI::SCA::PropertyParser props;
 
     try {
       if (std::strcmp (type, "softpkg") == 0) {
-	std::string implUUID = workerInfo.implementation;
+        std::string implUUID = workerInfo.implementation;
 
-	if (implUUID.length()) {
-	  if (config.updateSPD && !findImplementation (root, workerInfo.implementation)) {
-	    // we will create this implementation later
-	    implUUID.clear ();
-	  }
-	  else {
-	    std::string errMsg = "Implementation \"";
-	    errMsg += implUUID;
-	    errMsg += "\" not found in \"";
-	    errMsg += workerInfo.relFileName;
-	    errMsg += "\"";
-	  }
-	}
+        if (implUUID.length()) {
+          if (config.updateSPD && !findImplementation (root, workerInfo.implementation)) {
+            // we will create this implementation later
+            implUUID.clear ();
+          }
+          else {
+            std::string errMsg = "Implementation \"";
+            errMsg += implUUID;
+            errMsg += "\" not found in \"";
+            errMsg += workerInfo.relFileName;
+            errMsg += "\"";
+          }
+        }
 
-	props.processSPD (fileFs, workerInfo.fileName, implUUID, root);
+        props.processSPD (fileFs, workerInfo.fileName, implUUID, root);
       }
       else if (std::strcmp (type, "softwarecomponent") == 0) {
-	if (workerInfo.implementation.length() && !config.updateSPD) {
-	  std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
-		    << std::endl;
-	}
+        if (workerInfo.implementation.length() && !config.updateSPD) {
+          std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
+                    << std::endl;
+        }
 
-	props.processSCD (fileFs, workerInfo.fileName, root);
+        props.processSCD (fileFs, workerInfo.fileName, root);
       }
       else if (std::strcmp (type, "properties") == 0) {
-	if (workerInfo.implementation.length()) {
-	  std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
-		    << std::endl;
-	}
+        if (workerInfo.implementation.length()) {
+          std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
+                    << std::endl;
+        }
 
-	props.processPRF (root);
+        props.processPRF (root);
       }
       else {
-	std::string errMsg = "Input file \"";
-	errMsg += workerInfo.relFileName;
-	errMsg += "\" is not an SPD, SCD or PRF file, but a \"";
-	errMsg += type;
-	errMsg += "\" file";
-	throw errMsg;
+        std::string errMsg = "Input file \"";
+        errMsg += workerInfo.relFileName;
+        errMsg += "\" is not an SPD, SCD or PRF file, but a \"";
+        errMsg += type;
+        errMsg += "\" file";
+        throw errMsg;
       }
     }
     catch (const std::string & oops) {
       if (config.verbose) {
-	std::cout << "failed." << std::endl;
+        std::cout << "failed." << std::endl;
       }
       std::cerr << "Oops: " << oops << "." << std::endl;
       return false;
@@ -1229,7 +1229,7 @@ cpiRccBinderInt (int argc, char * argv[])
       depTail = CPI::Util::Vfs::relativeName (depFileName);
 
       if (!fileFs.exists (depFileName)) {
-	throw std::string ("File not found");
+        throw std::string ("File not found");
       }
 
       executableInfo.dependency.push_back (DependencyInfos::value_type (depTail, depFileName));
@@ -1250,8 +1250,8 @@ cpiRccBinderInt (int argc, char * argv[])
   try {
     zipFileName = fileFs.fromNativeName (config.outputFileName);
     outputFile.openZip (&fileFs, zipFileName,
-			std::ios_base::out | std::ios_base::trunc,
-			false, true);
+                        std::ios_base::out | std::ios_base::trunc,
+                        false, true);
   }
   catch (const std::string & oops) {
     std::cerr << "Oops: \"" << config.outputFileName << "\": " << oops << "." << std::endl;
@@ -1274,7 +1274,7 @@ cpiRccBinderInt (int argc, char * argv[])
     *meta << "  <file>" << executableTail << "</file>" << std::endl;
 
     for (WorkerInfos::iterator wit = executableInfo.workerInfo.begin ();
-	 wit != executableInfo.workerInfo.end(); wit++) {
+         wit != executableInfo.workerInfo.end(); wit++) {
       const std::string & entrypointName = (*wit).first;
       const WorkerInfo & workerInfo = (*wit).second;
       *meta << "  <worker>" << std::endl;
@@ -1288,7 +1288,7 @@ cpiRccBinderInt (int argc, char * argv[])
      */
 
     for (DependencyInfos::iterator dit = executableInfo.dependency.begin ();
-	 dit != executableInfo.dependency.end (); dit++) {
+         dit != executableInfo.dependency.end (); dit++) {
       const std::string & dllTail = (*dit).first;
       *meta << "  <dependency>" << dllTail << "</dependency>" << std::endl;
     }
@@ -1297,7 +1297,7 @@ cpiRccBinderInt (int argc, char * argv[])
 
     if (!meta->good()) {
       try {
-	outputFile.close (meta);
+        outputFile.close (meta);
       }
       catch (...) {
       }
@@ -1317,14 +1317,14 @@ cpiRccBinderInt (int argc, char * argv[])
 
     if (config.verbose) {
       std::cout << "Copying executable file \""
-		<< config.workerDllName
-		<< "\" ... "
-		<< std::flush;
+                << config.workerDllName
+                << "\" ... "
+                << std::flush;
     }
 
     fileFs.copy (executableFileName,
-		 &outputFile,
-		 executableTail);
+                 &outputFile,
+                 executableTail);
 
     if (config.verbose) {
       std::cout << "done." << std::endl;
@@ -1335,23 +1335,23 @@ cpiRccBinderInt (int argc, char * argv[])
      */
 
     for (DependencyInfos::iterator dit = executableInfo.dependency.begin ();
-	 dit != executableInfo.dependency.end (); dit++) {
+         dit != executableInfo.dependency.end (); dit++) {
       const std::string & dllTail = (*dit).first;
       const std::string & dllName = (*dit).second;
 
       if (config.verbose) {
-	std::cout << "Copying DLL file \""
-		  << dllName
-		  << "\" ... "
-		  << std::flush;
+        std::cout << "Copying DLL file \""
+                  << dllName
+                  << "\" ... "
+                  << std::flush;
       }
 
       fileFs.copy (dllName,
-		   &outputFile,
-		   dllTail);
+                   &outputFile,
+                   dllTail);
 
       if (config.verbose) {
-	std::cout << "done." << std::endl;
+        std::cout << "done." << std::endl;
       }
     }
   }
@@ -1402,12 +1402,12 @@ cpiRccBinderInt (int argc, char * argv[])
 
   if (config.updateSPD) {
     CpiRccSpdUpdater crsu (config.outputFileName,
-			   config.os,
-			   config.processor,
-			   static_cast<unsigned int> (config.cpiDeviceId));
+                           config.os,
+                           config.processor,
+                           static_cast<unsigned int> (config.cpiDeviceId));
 
     for (WorkerInfos::iterator wit = executableInfo.workerInfo.begin ();
-	 wit != executableInfo.workerInfo.end(); wit++) {
+         wit != executableInfo.workerInfo.end(); wit++) {
       const std::string & workerEntrypoint = (*wit).first;
       const WorkerInfo & workerInfo = (*wit).second;
 
@@ -1420,189 +1420,189 @@ cpiRccBinderInt (int argc, char * argv[])
       cpiAssert (root && type);
 
       if (std::strcmp (type, "softpkg") == 0) {
-	/*
-	 * We are processing an existing SPD.  Update it.
-	 */
+        /*
+         * We are processing an existing SPD.  Update it.
+         */
 
-	if (config.verbose) {
-	  std::cout << "Updating \""
-		    << workerInfo.relFileName
-		    << "\" ... "
-		    << std::flush;
-	}
+        if (config.verbose) {
+          std::cout << "Updating \""
+                    << workerInfo.relFileName
+                    << "\" ... "
+                    << std::flush;
+        }
 
-	try {
-	  crsu.updateSPD (root, workerEntrypoint, workerInfo.implementation);
+        try {
+          crsu.updateSPD (root, workerEntrypoint, workerInfo.implementation);
 
-	  /*
-	   * Write the new SPD file.
-	   */
+          /*
+           * Write the new SPD file.
+           */
 
-	  std::ostream * out =
-	    fileFs.openWriteonly (workerInfo.fileName,
-				  std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
+          std::ostream * out =
+            fileFs.openWriteonly (workerInfo.fileName,
+                                  std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
-	  try {
-	    char * newSPD = ezxml_toxml (root);
-	    *out << "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" << std::endl;
-	    *out << "<!DOCTYPE softpkg SYSTEM \"" << config.spdDtdName << "\">" << std::endl;
-	    *out << newSPD << std::endl;
-	    free (newSPD);
-	  }
-	  catch (...) {
-	    try {
-	      fileFs.close (out);
-	    }
-	    catch (...) {
-	    }
-	    throw;
-	  }
+          try {
+            char * newSPD = ezxml_toxml (root);
+            *out << "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" << std::endl;
+            *out << "<!DOCTYPE softpkg SYSTEM \"" << config.spdDtdName << "\">" << std::endl;
+            *out << newSPD << std::endl;
+            free (newSPD);
+          }
+          catch (...) {
+            try {
+              fileFs.close (out);
+            }
+            catch (...) {
+            }
+            throw;
+          }
 
-	  fileFs.close (out);
-	}
-	catch (const std::string & oops) {
-	  if (config.verbose) {
-	    std::cout << "failed." << std::endl;
-	  }
+          fileFs.close (out);
+        }
+        catch (const std::string & oops) {
+          if (config.verbose) {
+            std::cout << "failed." << std::endl;
+          }
 
-	  std::cerr << "Oops: \""
-		    << workerInfo.fileName
-		    << "\": "
-		    << oops
-		    << "."
-		    << std::endl;
+          std::cerr << "Oops: \""
+                    << workerInfo.fileName
+                    << "\": "
+                    << oops
+                    << "."
+                    << std::endl;
 
-	  return false;
-	}
+          return false;
+        }
 
-	if (config.verbose) {
-	  std::cout << "done." << std::endl;
-	}
+        if (config.verbose) {
+          std::cout << "done." << std::endl;
+        }
       }
       else if (std::strcmp (type, "softwarecomponent") == 0) {
-	/*
-	 * We are processing an SCD.  Create a new SPD file using the SCD
-	 * file's base name.  It should have the ".scd.xml" extension.
-	 */
+        /*
+         * We are processing an SCD.  Create a new SPD file using the SCD
+         * file's base name.  It should have the ".scd.xml" extension.
+         */
 
-	std::string relFileName;
-	std::string fileName;
-	std::string::size_type rfnl = workerInfo.relFileName.length ();
-	std::string::size_type fnl = workerInfo.fileName.length ();
+        std::string relFileName;
+        std::string fileName;
+        std::string::size_type rfnl = workerInfo.relFileName.length ();
+        std::string::size_type fnl = workerInfo.fileName.length ();
 
-	if (rfnl > 8 && workerInfo.relFileName.substr (rfnl-8) == ".scd.xml") {
-	  cpiAssert (fnl > 8);
-	  cpiAssert (workerInfo.fileName.substr (fnl-8) == ".scd.xml");
+        if (rfnl > 8 && workerInfo.relFileName.substr (rfnl-8) == ".scd.xml") {
+          cpiAssert (fnl > 8);
+          cpiAssert (workerInfo.fileName.substr (fnl-8) == ".scd.xml");
 
-	  relFileName  = workerInfo.relFileName.substr (0, rfnl-8);
-	  relFileName += ".spd.xml";
+          relFileName  = workerInfo.relFileName.substr (0, rfnl-8);
+          relFileName += ".spd.xml";
 
-	  fileName  = workerInfo.fileName.substr (0, fnl-8);
-	  fileName += ".spd.xml";
-	}
-	else if (rfnl > 4 &&
-		 (workerInfo.relFileName.substr (rfnl-4) == ".scd" ||
-		  workerInfo.relFileName.substr (rfnl-4) == ".xml")) {
-	  cpiAssert (fnl > 4);
-	  cpiAssert (workerInfo.fileName.substr (fnl-4) == workerInfo.relFileName.substr (rfnl-4));
+          fileName  = workerInfo.fileName.substr (0, fnl-8);
+          fileName += ".spd.xml";
+        }
+        else if (rfnl > 4 &&
+                 (workerInfo.relFileName.substr (rfnl-4) == ".scd" ||
+                  workerInfo.relFileName.substr (rfnl-4) == ".xml")) {
+          cpiAssert (fnl > 4);
+          cpiAssert (workerInfo.fileName.substr (fnl-4) == workerInfo.relFileName.substr (rfnl-4));
 
-	  relFileName  = workerInfo.relFileName.substr (0, rfnl-4);
-	  relFileName += ".spd.xml";
+          relFileName  = workerInfo.relFileName.substr (0, rfnl-4);
+          relFileName += ".spd.xml";
 
-	  fileName  = workerInfo.fileName.substr (0, fnl-4);
-	  fileName += ".spd.xml";
-	}
+          fileName  = workerInfo.fileName.substr (0, fnl-4);
+          fileName += ".spd.xml";
+        }
 
-	if (config.verbose) {
-	  std::cout << "Creating \""
-		    << relFileName
-		    << "\" ... "
-		    << std::flush;
-	}
+        if (config.verbose) {
+          std::cout << "Creating \""
+                    << relFileName
+                    << "\" ... "
+                    << std::flush;
+        }
 
-	try {
-	  ezxml_t spdRoot =
-	    crsu.createSPDfromSCD (workerInfo.relFileName,
-				   workerEntrypoint,
-				   workerInfo.implementation);
+        try {
+          ezxml_t spdRoot =
+            crsu.createSPDfromSCD (workerInfo.relFileName,
+                                   workerEntrypoint,
+                                   workerInfo.implementation);
 
-	  try {
-	    /*
-	     * Write the new SPD file.
-	     */
+          try {
+            /*
+             * Write the new SPD file.
+             */
 
-	    std::ostream * out =
-	      fileFs.openWriteonly (fileName,
-				    std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
+            std::ostream * out =
+              fileFs.openWriteonly (fileName,
+                                    std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
-	    try {
-	      char * newSPD = ezxml_toxml (spdRoot);
-	      *out << "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" << std::endl;
-	      *out << "<!DOCTYPE softpkg SYSTEM \"" << config.spdDtdName << "\">" << std::endl;
-	      *out << newSPD << std::endl;
-	      free (newSPD);
-	    }
-	    catch (...) {
-	      try {
-		fileFs.close (out);
-	      }
-	      catch (...) {
-	      }
-	      throw;
-	    }
+            try {
+              char * newSPD = ezxml_toxml (spdRoot);
+              *out << "<?xml version=\"1.0\" encoding=\"us-ascii\"?>" << std::endl;
+              *out << "<!DOCTYPE softpkg SYSTEM \"" << config.spdDtdName << "\">" << std::endl;
+              *out << newSPD << std::endl;
+              free (newSPD);
+            }
+            catch (...) {
+              try {
+                fileFs.close (out);
+              }
+              catch (...) {
+              }
+              throw;
+            }
 
-	    fileFs.close (out);
-	  }
-	  catch (...) {
-	    ezxml_free (spdRoot);
-	    throw;
-	  }
+            fileFs.close (out);
+          }
+          catch (...) {
+            ezxml_free (spdRoot);
+            throw;
+          }
 
-	  ezxml_free (spdRoot);
-	}
-	catch (const std::string & oops) {
-	  if (config.verbose) {
-	    std::cout << "failed." << std::endl;
-	  }
+          ezxml_free (spdRoot);
+        }
+        catch (const std::string & oops) {
+          if (config.verbose) {
+            std::cout << "failed." << std::endl;
+          }
 
-	  std::cerr << "Oops: \""
-		    << workerInfo.fileName
-		    << "\": "
-		    << oops
-		    << "."
-		    << std::endl;
+          std::cerr << "Oops: \""
+                    << workerInfo.fileName
+                    << "\": "
+                    << oops
+                    << "."
+                    << std::endl;
 
-	  return false;
-	}
+          return false;
+        }
 
-	if (config.verbose) {
-	  std::cout << "done." << std::endl;
-	}
+        if (config.verbose) {
+          std::cout << "done." << std::endl;
+        }
       }
       else if (std::strcmp (type, "properties") == 0) {
-	/*
-	 * We are processing a property file.
-	 *
-	 * We can't create an SPD without an SCD, so we complain.
-	 *
-	 * We could create a vanilla SCD (describing a component that
-	 * implements CF::Resource and has no ports), but that's probably
-	 * a bad idea.
-	 */
+        /*
+         * We are processing a property file.
+         *
+         * We can't create an SPD without an SCD, so we complain.
+         *
+         * We could create a vanilla SCD (describing a component that
+         * implements CF::Resource and has no ports), but that's probably
+         * a bad idea.
+         */
 
-	std::cerr << "Oops: \""
-		  << workerInfo.relFileName
-		  << "\" is a PRF file.  Can not update SPD."
-		  << std::endl;
+        std::cerr << "Oops: \""
+                  << workerInfo.relFileName
+                  << "\" is a PRF file.  Can not update SPD."
+                  << std::endl;
 
-	return false;
+        return false;
       }
       else {
-	/*
-	 * Should not get here due to code above.
-	 */
+        /*
+         * Should not get here due to code above.
+         */
 
-	cpiAssert (0);
+        cpiAssert (0);
       }
     }
   }
@@ -1637,8 +1637,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

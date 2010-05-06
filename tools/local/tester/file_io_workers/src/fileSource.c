@@ -79,8 +79,8 @@ FileSourceStart (RCCWorker * wctx)
   if (ctx->fd < 0) {
     if (props->verbose) {
       printf ("Input port %s: Failed to open \"%s\" for reading: %s\n",
-	      props->portName, props->fileName,
-	      strerror (errno));
+              props->portName, props->fileName,
+              strerror (errno));
     }
 
     props->errnoValue = errno;
@@ -89,7 +89,7 @@ FileSourceStart (RCCWorker * wctx)
 
   if (props->verbose) {
     printf ("Input port %s: Openend \"%s\" for reading.\n",
-	    props->portName, props->fileName);
+            props->portName, props->fileName);
   }
 
   props->offset = 0;
@@ -105,7 +105,7 @@ FileSourceStop (RCCWorker * wctx)
 
   if (props->verbose) {
     printf ("Input port %s: Closing \"%s\".\n",
-	    props->portName, props->fileName);
+            props->portName, props->fileName);
   }
 
   close (ctx->fd);
@@ -115,8 +115,8 @@ FileSourceStop (RCCWorker * wctx)
 static
 RCCResult
 FileSourceRun (RCCWorker * wctx,
-	       RCCBoolean timedout,
-	       RCCBoolean * newRunCondition)
+               RCCBoolean timedout,
+               RCCBoolean * newRunCondition)
 {
   FileSourceContext * ctx = (FileSourceContext *) wctx->memories[0];
   FileSourceProperties * props = (FileSourceProperties *) wctx->properties;
@@ -129,8 +129,8 @@ FileSourceRun (RCCWorker * wctx,
   if (count < 0) {
     if (props->verbose) {
       printf ("Input port %s: Failed to read from \"%s\": %s\n",
-	      props->portName, props->fileName,
-	      strerror (errno));
+              props->portName, props->fileName,
+              strerror (errno));
     }
 
     props->errnoValue = errno;
@@ -139,7 +139,7 @@ FileSourceRun (RCCWorker * wctx,
   else if (count == 0) {
     if (props->verbose) {
       printf ("Input port %s: End of file.\n",
-	      props->portName);
+              props->portName);
     }
 
     props->atEof = 1;
@@ -152,7 +152,7 @@ FileSourceRun (RCCWorker * wctx,
 
   if (props->verbose) {
     printf ("Input port %s: Read %d bytes.\n",
-	    props->portName, (int) count);
+            props->portName, (int) count);
   }
 
   return RCC_ADVANCE;

@@ -33,20 +33,20 @@ void CPI::Util::Test::Test::runTest ( )
 
     if (d_stream) {
       *d_stream << (d_name ? d_name : typeid ( *this ).name ( ))
-		<< " failure: ("
-		<< oops
-		<< ")"
-		<< std::endl;
+                << " failure: ("
+                << oops
+                << ")"
+                << std::endl;
     }
   }
   catch (...) {
     ++d_n_failed;
     if (d_stream) {
       *d_stream << (d_name ? d_name : typeid ( *this ).name ( ))
-		<< " failure: ("
-		<< "unknown exception"
-		<< ")"
-		<< std::endl;
+                << " failure: ("
+                << "unknown exception"
+                << ")"
+                << std::endl;
     }
   }
 }
@@ -102,10 +102,10 @@ void CPI::Util::Test::Test::reset ( )
 }
 
 void CPI::Util::Test::Test::do_test ( bool rc,
-				      const std::string& message,
-				      const char* file_name,
-				      std::size_t line_number,
-				      bool abort )
+                                      const std::string& message,
+                                      const char* file_name,
+                                      std::size_t line_number,
+                                      bool abort )
 {
   if ( rc )
   {
@@ -118,9 +118,9 @@ void CPI::Util::Test::Test::do_test ( bool rc,
 }
 
 void CPI::Util::Test::Test::do_fail ( const std::string& message,
-				      const char* file_name,
-				      std::size_t line_number,
-				      bool abort )
+                                      const char* file_name,
+                                      std::size_t line_number,
+                                      bool abort )
 {
   ++d_n_failed;
 
@@ -141,8 +141,8 @@ void CPI::Util::Test::Test::do_fail ( const std::string& message,
   if (abort) {
     if (d_stream) {
       *d_stream << (d_name ? d_name : typeid (*this).name ())
-		<< " aborted."
-		<< std::endl;
+                << " aborted."
+                << std::endl;
     }
 
     throw CPI::Util::Test::Abort ();
@@ -153,7 +153,7 @@ void CPI::Util::Test::Test::do_fail ( const std::string& message,
 
 
 CPI::Util::Test::Suite::Suite ( const std::string& name,
-				std::ostream* stream )
+                                std::ostream* stream )
   : d_name ( name ),
     d_stream ( stream )
 {

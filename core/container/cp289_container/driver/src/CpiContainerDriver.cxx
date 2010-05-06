@@ -72,7 +72,7 @@ probe(const CPI::Util::PValue* props, const char *which )
   for (int n=0; props[n].name; n++) {
     if (strcmp(props[n].name, "polled") == 0) {
       if (props[n].type != CPI::Metadata::Property::CPI_Bool) {
-	throw CPI::Util::EmbeddedException(" \"Polled\" property has wrong type, should be Bool");
+        throw CPI::Util::EmbeddedException(" \"Polled\" property has wrong type, should be Bool");
       }
       polled = props[n].vBool;
     }
@@ -83,11 +83,11 @@ probe(const CPI::Util::PValue* props, const char *which )
   if ( use_events ) {
     if ( m_tpg_events == NULL ) {
       try {
-	m_tpg_events = 
-	  new CPI::DataTransport::TransportGlobal( event_range_start++, use_events );
+        m_tpg_events = 
+          new CPI::DataTransport::TransportGlobal( event_range_start++, use_events );
       }
       catch( std::bad_alloc ) {
-	throw CPI::Util::EmbeddedException( NO_MORE_MEMORY, "new", ContainerFatal);
+        throw CPI::Util::EmbeddedException( NO_MORE_MEMORY, "new", ContainerFatal);
       }
     }
     tpg = m_tpg_events;
@@ -95,11 +95,11 @@ probe(const CPI::Util::PValue* props, const char *which )
   else {
     if ( m_tpg_no_events == NULL ) {    
       try {
-	m_tpg_no_events = 
-	  new CPI::DataTransport::TransportGlobal( event_range_start++, use_events );
+        m_tpg_no_events = 
+          new CPI::DataTransport::TransportGlobal( event_range_start++, use_events );
       }
       catch( std::bad_alloc ) {
-	throw CPI::Util::EmbeddedException( NO_MORE_MEMORY, "new", ContainerFatal);
+        throw CPI::Util::EmbeddedException( NO_MORE_MEMORY, "new", ContainerFatal);
       }
     }
     tpg = m_tpg_no_events;

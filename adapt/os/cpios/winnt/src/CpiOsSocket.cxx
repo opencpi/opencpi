@@ -131,7 +131,7 @@ CPI::OS::Socket::getPortNo ()
 
 void
 CPI::OS::Socket::getPeerName (std::string & peerHost,
-			      unsigned int & peerPort)
+                              unsigned int & peerPort)
   throw (std::string)
 {
   struct sockaddr_in sin;
@@ -145,7 +145,7 @@ CPI::OS::Socket::getPeerName (std::string & peerHost,
 
   struct hostent * hent =
     ::gethostbyaddr ((const char *) &sin.sin_addr.s_addr, 4,
-		     sin.sin_family);
+                     sin.sin_family);
 
   if (hent && hent->h_name) {
     peerHost = hent->h_name;
@@ -166,7 +166,7 @@ CPI::OS::Socket::linger (bool opt)
   lopt.l_linger = 0;
 
   if (::setsockopt (o2fd (m_osOpaque), SOL_SOCKET, SO_LINGER,
-		    (char *) &lopt, sizeof (struct linger)) != 0) {
+                    (char *) &lopt, sizeof (struct linger)) != 0) {
     throw CPI::OS::Win32::getWinSockErrorMessage (WSAGetLastError());
   }   
 }
@@ -203,8 +203,8 @@ CPI::OS::Socket::dup ()
   }
 
   newfd = WSASocket (FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
-		     FROM_PROTOCOL_INFO, &proto_info, 0,
-		     WSA_FLAG_OVERLAPPED);
+                     FROM_PROTOCOL_INFO, &proto_info, 0,
+                     WSA_FLAG_OVERLAPPED);
 
   if (newfd == INVALID_SOCKET) {
     throw CPI::OS::Win32::getWinSockErrorMessage (WSAGetLastError());

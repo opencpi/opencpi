@@ -21,7 +21,7 @@ namespace {
 
 std::string
 CPI::Util::Vfs::joinNames (const std::string & dir,
-			   const std::string & name)
+                           const std::string & name)
   throw (std::string)
 {
   return CPI::OS::FileSystem::joinNames (dir, name);
@@ -99,8 +99,8 @@ CPI::Util::Vfs::Vfs::directoryName (const std::string & name) const
 
 void
 CPI::Util::Vfs::Vfs::copy (const std::string & src,
-			   Vfs * destfs,
-			   const std::string & dest)
+                           Vfs * destfs,
+                           const std::string & dest)
   throw (std::string)
 {
   std::istream * srcStream = openReadonly (src, std::ios_base::binary);
@@ -232,7 +232,7 @@ CPI::Util::Vfs::Vfs::copy (const std::string & src,
 
 void
 CPI::Util::Vfs::Vfs::rename (const std::string & src,
-			     const std::string & dest)
+                             const std::string & dest)
   throw (std::string)
 {
   copy (src, this, dest);
@@ -245,8 +245,8 @@ CPI::Util::Vfs::Vfs::rename (const std::string & src,
 
 void
 CPI::Util::Vfs::Vfs::move (const std::string & src,
-			   Vfs * destfs,
-			   const std::string & dest)
+                           Vfs * destfs,
+                           const std::string & dest)
   throw (std::string)
 {
   if (this == destfs) {

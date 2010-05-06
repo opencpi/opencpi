@@ -29,16 +29,16 @@
 #define RAND_MAX 31
 
 typedef enum  {
-	P_Old_Input,
-	P_New_Input
+        P_Old_Input,
+        P_New_Input
 }P_MyWorkerState;
 
 struct ProducerWorkerStaticMemory_ {
-	uint32_t startIndex;
+        uint32_t startIndex;
     P_MyWorkerState state;
-	char overlap[100];
-	uint32_t b_count;
-	int32_t longProperty;
+        char overlap[100];
+        uint32_t b_count;
+        int32_t longProperty;
 };
 
 typedef struct ProducerWorkerStaticMemory_ ProducerWorkerStaticMemory;

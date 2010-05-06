@@ -42,9 +42,9 @@ namespace CPI {
     const CPI::OS::uint32_t WORKER_CREATE_ERROR         = 2;   
     const CPI::OS::uint32_t PROPERTY_NOT_SET            = 3;  
     const CPI::OS::uint32_t MAIL_BOX_NOT_ALLOCATED      = 4;  
-    const CPI::OS::uint32_t RESOURCE_EXCEPTION		    = 5;
+    const CPI::OS::uint32_t RESOURCE_EXCEPTION                    = 5;
     const CPI::OS::uint32_t APPLICATION_EXCEPTION       = 6;
-    const CPI::OS::uint32_t WORKER_NOT_FOUND		    = 7;
+    const CPI::OS::uint32_t WORKER_NOT_FOUND                    = 7;
     const CPI::OS::uint32_t PORT_NOT_FOUND              = 8;
     const CPI::OS::uint32_t BAD_CONNECTION_COOKIE       = 9;
     const CPI::OS::uint32_t ARTIFACT_NOT_FOUND          = 10;
@@ -57,7 +57,7 @@ namespace CPI {
     const CPI::OS::uint32_t CONTROL_PLANE_EXCEPTION     = 17;
     const CPI::OS::uint32_t PROPERTY_SET_EXCEPTION      = 18;
     const CPI::OS::uint32_t PROPERTY_GET_EXCEPTION      = 19;
-    const CPI::OS::uint32_t CIRCUIT_NOT_FOUND		    = 20;
+    const CPI::OS::uint32_t CIRCUIT_NOT_FOUND                    = 20;
     const CPI::OS::uint32_t ONP_WORKER_STARTED          = 21;  // Operation not permitted while worker is started
     const CPI::OS::uint32_t BAD_PORT_CONFIGURATION      = 22;
 
@@ -80,14 +80,14 @@ namespace CPI {
     public:
     ResourceEx( const char* ex, ContainerErrorLevel level )
       :EmbeddedException(RESOURCE_EXCEPTION, ex,(CPI::OS::uint32_t)level) {
-	setAuxInfo(ex);
+        setAuxInfo(ex);
       }
     };
     class ApplicationEx : public CPI::Util::EmbeddedException {
     public:
     ApplicationEx( const char* ex, ContainerErrorLevel level )
       :EmbeddedException(APPLICATION_EXCEPTION, ex,(CPI::OS::uint32_t)level) {
-	setAuxInfo(ex);
+        setAuxInfo(ex);
       }
     };
 
@@ -95,7 +95,7 @@ namespace CPI {
     public:
     InternalProgrammingErrorEx( const char* ex, ContainerErrorLevel level )
       :EmbeddedException(INTERNAL_PROGRAMMING_ERROR, ex,(CPI::OS::uint32_t)level) {
-	setAuxInfo(ex);
+        setAuxInfo(ex);
       }
     };
   }

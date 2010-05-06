@@ -72,157 +72,157 @@ namespace CPI {
 
       class HttpFsBase : public CPI::Util::Vfs::Vfs {
       public:
-	/**
-	 * Constructor.
-	 *
-	 * \param[in] scheme The URI scheme supported by this instance,
-	 *                   e.g., "http" or "https".  This is used in
-	 *                   composing the file system's base URI and for
-	 *                   mapping between URIs and file names.
-	 * \param[in] root   A fixed absolute path name prefix for all
-	 *                   filenames.  E.g., if \a root is set to
-	 *                   "/www.mc.com", only locations within this
-	 *                   domain can be accessed.
-	 */
+        /**
+         * Constructor.
+         *
+         * \param[in] scheme The URI scheme supported by this instance,
+         *                   e.g., "http" or "https".  This is used in
+         *                   composing the file system's base URI and for
+         *                   mapping between URIs and file names.
+         * \param[in] root   A fixed absolute path name prefix for all
+         *                   filenames.  E.g., if \a root is set to
+         *                   "/www.mc.com", only locations within this
+         *                   domain can be accessed.
+         */
 
-	HttpFsBase (const std::string & scheme, const std::string & root)
-	  throw (std::string);
+        HttpFsBase (const std::string & scheme, const std::string & root)
+          throw (std::string);
 
-	/**
-	 * Destructor.
-	 */
+        /**
+         * Destructor.
+         */
 
-	~HttpFsBase ()
-	  throw ();
+        ~HttpFsBase ()
+          throw ();
 
-	/**
-	 * \name Implementation of the CPI::Util::Vfs::Vfs interface.
-	 */
+        /**
+         * \name Implementation of the CPI::Util::Vfs::Vfs interface.
+         */
 
-	//@{
+        //@{
 
-	/*
-	 * File Name URI Mapping
-	 */
+        /*
+         * File Name URI Mapping
+         */
 
-	std::string baseURI () const
-	  throw ();
+        std::string baseURI () const
+          throw ();
 
-	std::string nameToURI (const std::string &) const
-	  throw (std::string);
+        std::string nameToURI (const std::string &) const
+          throw (std::string);
 
-	std::string URIToName (const std::string &) const
-	  throw (std::string);
+        std::string URIToName (const std::string &) const
+          throw (std::string);
 
-	/*
-	 * Directory Management
-	 */
+        /*
+         * Directory Management
+         */
 
-	std::string cwd () const
-	  throw (std::string);
+        std::string cwd () const
+          throw (std::string);
 
-	void cd (const std::string &)
-	  throw (std::string);
+        void cd (const std::string &)
+          throw (std::string);
 
-	void mkdir (const std::string &)
-	  throw (std::string);
+        void mkdir (const std::string &)
+          throw (std::string);
 
-	void rmdir (const std::string &)
-	  throw (std::string);
+        void rmdir (const std::string &)
+          throw (std::string);
 
-	/*
-	 * Directory Listing
-	 */
+        /*
+         * Directory Listing
+         */
 
-	CPI::Util::Vfs::Iterator * list (const std::string & dir,
-					 const std::string & pattern = "*")
-	  throw (std::string);
+        CPI::Util::Vfs::Iterator * list (const std::string & dir,
+                                         const std::string & pattern = "*")
+          throw (std::string);
 
-	void closeIterator (CPI::Util::Vfs::Iterator *)
-	  throw (std::string);
+        void closeIterator (CPI::Util::Vfs::Iterator *)
+          throw (std::string);
 
-	/*
-	 * File Information
-	 */
+        /*
+         * File Information
+         */
 
-	bool exists (const std::string &, bool * = 0)
-	  throw (std::string);
+        bool exists (const std::string &, bool * = 0)
+          throw (std::string);
 
-	unsigned long long size (const std::string &)
-	  throw (std::string);
+        unsigned long long size (const std::string &)
+          throw (std::string);
 
-	std::time_t lastModified (const std::string &)
-	  throw (std::string);
+        std::time_t lastModified (const std::string &)
+          throw (std::string);
 
-	/*
-	 * File I/O
-	 */
+        /*
+         * File I/O
+         */
 
-	std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
-	  throw (std::string);
+        std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
+          throw (std::string);
 
-	std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
-	  throw (std::string);
+        std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
+          throw (std::string);
 
-	std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
-	  throw (std::string);
+        std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
+          throw (std::string);
 
-	void close (std::ios *)
-	  throw (std::string);
+        void close (std::ios *)
+          throw (std::string);
 
-	/*
-	 * File System Operations
-	 */
+        /*
+         * File System Operations
+         */
 
-	void remove (const std::string &)
-	  throw (std::string);
+        void remove (const std::string &)
+          throw (std::string);
 
-	//@}
-
-      protected:
-	/**
-	 * Make a transport-specific HTTP connection.
-	 */
-
-	virtual CPI::Util::Http::ClientStream * makeConnection ()
-	  throw (std::string) = 0;
-
-	/** \cond */
+        //@}
 
       protected:
-	CPI::Util::Http::ClientStream * hgpr (const std::string &, bool, bool, bool, bool)
-	  throw (std::string);
+        /**
+         * Make a transport-specific HTTP connection.
+         */
 
-	void testFilenameForValidity (const std::string &) const
-	  throw (std::string);
+        virtual CPI::Util::Http::ClientStream * makeConnection ()
+          throw (std::string) = 0;
 
-	std::string nativeFilename (const std::string &) const
-	  throw (std::string);
-
-	std::string absoluteNameLocked (const std::string &) const
-	  throw (std::string);
+        /** \cond */
 
       protected:
-	std::string m_scheme;
-	std::string m_baseURI;
-	std::string m_root;
-	std::string m_cwd;
-	mutable CPI::OS::Mutex m_lock;
+        CPI::Util::Http::ClientStream * hgpr (const std::string &, bool, bool, bool, bool)
+          throw (std::string);
 
-	/** \endcond */
+        void testFilenameForValidity (const std::string &) const
+          throw (std::string);
+
+        std::string nativeFilename (const std::string &) const
+          throw (std::string);
+
+        std::string absoluteNameLocked (const std::string &) const
+          throw (std::string);
+
+      protected:
+        std::string m_scheme;
+        std::string m_baseURI;
+        std::string m_root;
+        std::string m_cwd;
+        mutable CPI::OS::Mutex m_lock;
+
+        /** \endcond */
 
       private:
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	HttpFsBase (const HttpFsBase &);
+        HttpFsBase (const HttpFsBase &);
 
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	HttpFsBase & operator= (const HttpFsBase &);
+        HttpFsBase & operator= (const HttpFsBase &);
       };
 
       /**
@@ -255,60 +255,60 @@ namespace CPI {
       template<class Connector>
       class HttpFs : public HttpFsBase {
       public:
-	/**
-	 * Constructor.
-	 *
-	 * This constructor uses an empty "root", i.e., the first path
-	 * component of absolute file names is interpreted as the URL
-	 * authority.
-	 *
-	 * Calls CPI::Util::Http::HttpFsBase ("http", "").
-	 */
+        /**
+         * Constructor.
+         *
+         * This constructor uses an empty "root", i.e., the first path
+         * component of absolute file names is interpreted as the URL
+         * authority.
+         *
+         * Calls CPI::Util::Http::HttpFsBase ("http", "").
+         */
 
-	inline HttpFs ()
-	  throw (std::string);
+        inline HttpFs ()
+          throw (std::string);
 
-	/**
-	 * Constructor.
-	 *
-	 * \param[in] root   A fixed absolute path name prefix for all
-	 *                   filenames.  E.g., if \a root is set to
-	 *                   "/www.mc.com", only locations within this
-	 *                   domain can be accessed.
-	 *
-	 * Calls CPI::Util::Http::HttpFsBase ("http", \a root).
-	 */
+        /**
+         * Constructor.
+         *
+         * \param[in] root   A fixed absolute path name prefix for all
+         *                   filenames.  E.g., if \a root is set to
+         *                   "/www.mc.com", only locations within this
+         *                   domain can be accessed.
+         *
+         * Calls CPI::Util::Http::HttpFsBase ("http", \a root).
+         */
 
-	inline HttpFs (const std::string & root)
-	  throw (std::string);
+        inline HttpFs (const std::string & root)
+          throw (std::string);
 
-	/**
-	 * Destructor.
-	 */
+        /**
+         * Destructor.
+         */
 
-	inline ~HttpFs ()
-	  throw ();
+        inline ~HttpFs ()
+          throw ();
 
       protected:
-	/**
-	 * Creates an HTTP client.
-	 */
+        /**
+         * Creates an HTTP client.
+         */
 
-	inline CPI::Util::Http::ClientStream * makeConnection ()
-	  throw (std::string);
+        inline CPI::Util::Http::ClientStream * makeConnection ()
+          throw (std::string);
 
       private:
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	HttpFs (const HttpFs &);
+        HttpFs (const HttpFs &);
 
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	HttpFs & operator= (const HttpFs &);
+        HttpFs & operator= (const HttpFs &);
       };
 
     }

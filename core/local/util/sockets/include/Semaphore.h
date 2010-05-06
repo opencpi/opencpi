@@ -1,7 +1,7 @@
 /**
- **	\file Semaphore.h
- **	\date  2007-04-13
- **	\author grymse@alhem.net
+ **        \file Semaphore.h
+ **        \date  2007-04-13
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -48,23 +48,23 @@ namespace SOCKETS_NAMESPACE {
 
 
 /** pthread semaphore wrapper.
-	\ingroup threading */
+        \ingroup threading */
 class Semaphore
 {
 public:
-	Semaphore();
-	Semaphore(unsigned int start_val);
-	~Semaphore();
+        Semaphore();
+        Semaphore(unsigned int start_val);
+        ~Semaphore();
 
-	int Post();
-	int Wait();
-	int TryWait();
-	int GetValue(int&);
+        int Post();
+        int Wait();
+        int TryWait();
+        int GetValue(int&);
 
 private:
-	Semaphore(const Semaphore& ) {} // copy constructor
-	Semaphore& operator=(const Semaphore& ) { return *this; } // assignment operator
-	sem_t m_sem;
+        Semaphore(const Semaphore& ) {} // copy constructor
+        Semaphore& operator=(const Semaphore& ) { return *this; } // assignment operator
+        sem_t m_sem;
 };
 
 

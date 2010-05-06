@@ -71,29 +71,29 @@ namespace {
 
     while (length) {
       while (length && hc2i[*src] == -2) {
-	src++;
-	length--;
+        src++;
+        length--;
       }
 
       if (!length) {
-	break;
+        break;
       }
       else if (hc2i[*src] == -1) {
-	delete [] buf;
-	return false;
+        delete [] buf;
+        return false;
       }
 
       unsigned char h1 = *src++;
       length--;
 
       while (length && hc2i[*src] == -2) {
-	src++;
-	length--;
+        src++;
+        length--;
       }
 
       if (!length || hc2i[*src] == -1) {
-	delete [] buf;
-	return false;
+        delete [] buf;
+        return false;
       }
 
       unsigned char h2 = *src++;
@@ -374,7 +374,7 @@ string_to_ior (const std::string & ior)
    */
 
   while (len && (*ptr == ' ' || *ptr == '\t' ||
-		 *ptr == '\r' || *ptr == '\n')) {
+                 *ptr == '\r' || *ptr == '\n')) {
     ptr++;
     len--;
   }

@@ -1,6 +1,6 @@
 /** \file IEventHandler.h
- **	\date  2005-12-07
- **	\author grymse@alhem.net
+ **        \date  2005-12-07
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
@@ -42,27 +42,27 @@ namespace SOCKETS_NAMESPACE {
 class IEventOwner;
 
 /** Timer event handler pure virtual base class.
-	\ingroup timer */
+        \ingroup timer */
 class IEventHandler
 {
 public:
-	virtual ~IEventHandler() {}
+        virtual ~IEventHandler() {}
 
-	/** Return time left until next event.
-		\param tv Time struct that will be filled by method
-		\return true if time is set for next event */
-	virtual bool GetTimeUntilNextEvent(struct timeval *) = 0;
-	/** Will fire events whose time has come. */
-	virtual void CheckEvents() = 0;
-	/** Schedule event for an owner.
-		\param from Event owner
-		\param sec Seconds until event
-		\param usec Microseconds until event */
-	virtual long AddEvent(IEventOwner *,long sec,long usec) = 0;
-	/** Clear all events for a specific owner. */
-	virtual void ClearEvents(IEventOwner *) = 0;
-	/** Remove one specific event for an event owner. */
-	virtual void RemoveEvent(IEventOwner *,long) = 0;
+        /** Return time left until next event.
+                \param tv Time struct that will be filled by method
+                \return true if time is set for next event */
+        virtual bool GetTimeUntilNextEvent(struct timeval *) = 0;
+        /** Will fire events whose time has come. */
+        virtual void CheckEvents() = 0;
+        /** Schedule event for an owner.
+                \param from Event owner
+                \param sec Seconds until event
+                \param usec Microseconds until event */
+        virtual long AddEvent(IEventOwner *,long sec,long usec) = 0;
+        /** Clear all events for a specific owner. */
+        virtual void ClearEvents(IEventOwner *) = 0;
+        /** Remove one specific event for an event owner. */
+        virtual void RemoveEvent(IEventOwner *,long) = 0;
 
 };
 

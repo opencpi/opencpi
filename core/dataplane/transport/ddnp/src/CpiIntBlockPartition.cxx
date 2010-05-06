@@ -35,10 +35,10 @@ BlockPartition::BlockPartition(){}
 BlockPartition::~BlockPartition(){}
 
 CPI::OS::int32_t BlockPartition::calculateBufferOffsets( 
-							CPI::OS::uint32_t     sequence,
-							Buffer   *src_buf,    
-							Buffer   *target_buf,	
-							BufferInfo **buf_info)  
+                                                        CPI::OS::uint32_t     sequence,
+                                                        Buffer   *src_buf,    
+                                                        Buffer   *target_buf,        
+                                                        BufferInfo **buf_info)  
 {
   return -1;
 }

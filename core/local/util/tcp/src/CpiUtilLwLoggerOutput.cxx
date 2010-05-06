@@ -120,7 +120,7 @@ connectToLogService ()
 
   try {
     m_conn.connect (m_profile.host,
-		    m_profile.port);
+                    m_profile.port);
   }
   catch (const std::string &) {
     return false;

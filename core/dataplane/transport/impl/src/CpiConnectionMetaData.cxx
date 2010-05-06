@@ -44,16 +44,16 @@ using namespace CPI::OS;
 
 // This constructor is used to create a simple point to point Whole/Par ->Par/Whole circuit
 ConnectionMetaData::ConnectionMetaData( const char* source_ep, const char* target_ep, 
-					      int  buf_count,
-					      int  buf_len
-					      )
+                                              int  buf_count,
+                                              int  buf_len
+                                              )
   : m_portSetMd(0) 
 {
 
   // Create the source port 
   PortSetMetaData* psmd = new PortSetMetaData( true,0,new ParallelDataDistribution(), 
-					       buf_count, buf_len, 
-					       this);
+                                               buf_count, buf_len, 
+                                               this);
   PortMetaData* pmd;
   m_portSetMd.push_back( psmd );
   pmd = new PortMetaData(0,true,source_ep,target_ep,psmd);
@@ -61,8 +61,8 @@ ConnectionMetaData::ConnectionMetaData( const char* source_ep, const char* targe
 
   // Create the destination port
   psmd = new PortSetMetaData(   false,1,new ParallelDataDistribution(), 
-				buf_count, buf_len,
-				this);
+                                buf_count, buf_len,
+                                this);
 
   m_portSetMd.push_back( psmd );
   pmd = new PortMetaData( 1,false,target_ep,source_ep,psmd);
@@ -81,7 +81,7 @@ ConnectionMetaData::ConnectionMetaData( CPI::RDT::Descriptors& sPort )
 
   // Create the source port 
   PortSetMetaData* psmd = new PortSetMetaData(true,0,new ParallelDataDistribution(), 
-						    sPort.desc.nBuffers, sPort.desc.dataBufferSize, this);
+                                                    sPort.desc.nBuffers, sPort.desc.dataBufferSize, this);
   m_portSetMd.push_back( psmd );
   PortMetaData* pmd = new PortMetaData(0,true,sPort,NULL,psmd);
 

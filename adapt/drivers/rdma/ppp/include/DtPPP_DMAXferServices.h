@@ -24,8 +24,8 @@ namespace DataTransfer {
     // Public methods available to clients
   public:
     void init (Creator cr, Flags flags, 
-	       unsigned long srcoffs, Shape *psrcshape, 
-	       unsigned long dstoffs, Shape *pdstshape, unsigned long length)
+               unsigned long srcoffs, Shape *psrcshape, 
+               unsigned long dstoffs, Shape *pdstshape, unsigned long length)
     {
       m_creator = cr;
       m_flags = flags;
@@ -35,14 +35,14 @@ namespace DataTransfer {
       m_thandle = 0;
       memset (&m_srcshape, 0, sizeof (m_srcshape));
       if (psrcshape)
-	{
-	  memcpy (&m_srcshape, psrcshape, sizeof (m_srcshape));
-	}
+        {
+          memcpy (&m_srcshape, psrcshape, sizeof (m_srcshape));
+        }
       memset (&m_dstshape, 0, sizeof (m_dstshape));
       if (pdstshape)
-	{
-	  memcpy (&m_dstshape, pdstshape, sizeof (m_dstshape));
-	}
+        {
+          memcpy (&m_dstshape, pdstshape, sizeof (m_dstshape));
+        }
     }
 
     // Queue data transfer request
@@ -84,16 +84,16 @@ namespace DataTransfer {
 
     // Data members accessible from this/derived class
   protected:
-    Flags			m_flags;	// Flags used during creation
-    unsigned long		m_srcoffset;	// The source memory offset
-    Shape			m_srcshape;	// The source shape
-    unsigned long		m_dstoffset;	// The destination memory offset
-    Shape			m_dstshape;	// The destination memory shape
-    unsigned long		m_length;	// The length of the request in bytes
+    Flags                        m_flags;        // Flags used during creation
+    unsigned long                m_srcoffset;        // The source memory offset
+    Shape                        m_srcshape;        // The source shape
+    unsigned long                m_dstoffset;        // The destination memory offset
+    Shape                        m_dstshape;        // The destination memory shape
+    unsigned long                m_length;        // The length of the request in bytes
 
     // Public data members
   public:
-    XF_transfer		m_thandle;	// Transfer handle returned by xfer_xxx etal
+    XF_transfer                m_thandle;        // Transfer handle returned by xfer_xxx etal
   };
 
 
@@ -130,25 +130,25 @@ namespace DataTransfer {
       // Begin exception block
       long retVal = 0;
       try
-	{
-	  // map flags
-	  long newflags = 0;
-	  if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
-	  if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
+        {
+          // map flags
+          long newflags = 0;
+          if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
+          if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
 
-	  // Invoke original code.
-	  retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &pXferReq->m_thandle);
-	  if (retVal)
-	    {
-	      throw;
-	    }
-	}
+          // Invoke original code.
+          retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &pXferReq->m_thandle);
+          if (retVal)
+            {
+              throw;
+            }
+        }
       catch (...)
-	{
-	  remove (pXferReq);
-	  delete pXferReq;
-	  pXferReq = 0;
-	}
+        {
+          remove (pXferReq);
+          delete pXferReq;
+          pXferReq = 0;
+        }
       preq = pXferReq;
       return retVal;
     }
@@ -164,22 +164,22 @@ namespace DataTransfer {
       // Begin exception block
       long retVal = 0;
       try
-	{
-	  // Invoke original code.
-	  // We simple cast "XferServices::Shape" to "EP_shape" since they must have the
-	  // exact same definitions. We don't specify any flags (they weren't used in the original).
-	  //			retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
-	  if (retVal)
-	    {
-	      throw;
-	    }
-	}
+        {
+          // Invoke original code.
+          // We simple cast "XferServices::Shape" to "EP_shape" since they must have the
+          // exact same definitions. We don't specify any flags (they weren't used in the original).
+          //                        retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
+          if (retVal)
+            {
+              throw;
+            }
+        }
       catch (...)
-	{
-	  remove (pXferReq);
-	  delete pXferReq;
-	  pXferReq = 0;
-	}
+        {
+          remove (pXferReq);
+          delete pXferReq;
+          pXferReq = 0;
+        }
       preq = pXferReq;
       return retVal;
     }
@@ -196,31 +196,31 @@ namespace DataTransfer {
       long retVal = 0;
       XF_transfer* handles = 0;
       try
-	{
-	  // Make a list of existing XF_transfer from the XferRequest* [] argument.
-	  int numHandles = 0;
-	  while (preqs[numHandles]) { numHandles++;}
-	  handles = new XF_transfer [numHandles + 1] ;
-	  for (int i = 0; i < numHandles; i++)
-	    {
-	      handles[i] = ((NtXferRequest*)preqs[i])->m_thandle;
-	    }
-	  handles[numHandles] = 0;
+        {
+          // Make a list of existing XF_transfer from the XferRequest* [] argument.
+          int numHandles = 0;
+          while (preqs[numHandles]) { numHandles++;}
+          handles = new XF_transfer [numHandles + 1] ;
+          for (int i = 0; i < numHandles; i++)
+            {
+              handles[i] = ((NtXferRequest*)preqs[i])->m_thandle;
+            }
+          handles[numHandles] = 0;
 
-	  // Invoke original code.
-	  retVal = xfer_group (handles, 0, &pXferReq->m_thandle);
-	  if (retVal)
-	    {
-	      throw;
-	    }
-	}
+          // Invoke original code.
+          retVal = xfer_group (handles, 0, &pXferReq->m_thandle);
+          if (retVal)
+            {
+              throw;
+            }
+        }
       catch (...)
-	{
-	  remove (pXferReq);
-	  delete pXferReq;
-	  pXferReq = 0;
-	  delete handles;
-	}
+        {
+          remove (pXferReq);
+          delete pXferReq;
+          pXferReq = 0;
+          delete handles;
+        }
       preq = pXferReq;
       return retVal;
     }
@@ -236,11 +236,11 @@ namespace DataTransfer {
     // Destructor
     virtual ~PPPDMAXferServices ()
       {
-	// Release all transfer requests
-	releaseAll ();
+        // Release all transfer requests
+        releaseAll ();
 
-	// Invoke destroy without flags.
-	xfer_destroy (m_xftemplate, 0);
+        // Invoke destroy without flags.
+        xfer_destroy (m_xftemplate, 0);
 
       }
 
@@ -263,10 +263,10 @@ namespace DataTransfer {
 #ifdef map_IN_CLASS_DEF // Should be in class definition but cause link errors.
     // A map of data transfer requests to the instance that created it
     // to support rundow. Note that list access is not thread-safe.
-    static map<PPPXferRequest*, PPPXferServices*>	m_map;
+    static map<PPPXferRequest*, PPPXferServices*>        m_map;
 #endif
     // The handle returned by xfer_create
-    XF_template	m_xftemplate;
+    XF_template        m_xftemplate;
 
 
 
@@ -283,7 +283,7 @@ namespace DataTransfer {
   // A map of data transfer requests to the instance that created it
   // to support rundow. Note that list access is not thread-safe.
 #define m_map SceMCOEXfermap
-  static map<PPPXferRequest*, PPPXferServices*>	SceMCOEXfermap;
+  static map<PPPXferRequest*, PPPXferServices*>        SceMCOEXfermap;
 #endif
 
 
@@ -303,7 +303,7 @@ namespace DataTransfer {
     map<PPPDMAXferRequest*,PPPDMAXferServices*>::iterator pos = m_map.find (pXferReq);
     if (pos != m_map.end ())
       {
-	m_map.erase (pos);
+        m_map.erase (pos);
       }
   }
 
@@ -314,10 +314,10 @@ namespace DataTransfer {
     map<PPPDMAXferRequest*, PPPDMAXferServices*>::iterator it;
     for (it = m_map.begin (); it != m_map.end (); it++)
       {
-	if (it->second == this)
-	  {
-	    m_map.erase (it);
-	  }
+        if (it->second == this)
+          {
+            m_map.erase (it);
+          }
       }
   }
 
@@ -328,9 +328,9 @@ namespace DataTransfer {
       // remove self from the map and release xfer handle.
       PPPDMAXferServices::remove (this);
       if (m_thandle)
-	{
-	  (void)xfer_release (m_thandle, 0);
-	}
+        {
+          (void)xfer_release (m_thandle, 0);
+        }
     }
 
 

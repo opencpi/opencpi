@@ -40,29 +40,29 @@ namespace CPI  {
     // Our error code defintiions
     const CPI::OS::uint32_t CPI_EX_SOURCE_ID = 07;
     const CPI::OS::uint32_t UNSUPPORTED_ENDPOINT         = (CPI_EX_SOURCE_ID << 16) + 1;
-    const CPI::OS::uint32_t CIRCUIT_DISCONNECTING	 = (CPI_EX_SOURCE_ID << 16) + 2;
+    const CPI::OS::uint32_t CIRCUIT_DISCONNECTING         = (CPI_EX_SOURCE_ID << 16) + 2;
     const CPI::OS::uint32_t INTERNAL_PROGRAMMING_ERROR   = (CPI_EX_SOURCE_ID << 16) + 3;
     const CPI::OS::uint32_t NO_MORE_BUFFER_AVAILABLE      = (CPI_EX_SOURCE_ID << 16) + 4;
     const CPI::OS::uint32_t UNABLE_TO_CREATE_TX_REQUEST  = (CPI_EX_SOURCE_ID << 16) + 5;
     const CPI::OS::uint32_t INTERNAL_PROGRAMMING_ERROR1  = (CPI_EX_SOURCE_ID << 16) + 6;
     const CPI::OS::uint32_t MAX_ENDPOINT_COUNT_EXCEEDED  = (CPI_EX_SOURCE_ID << 16) + 7;
-		
+                
     /**********************************
      * Exception definitions
      *********************************/
-		
+                
     class UnsupportedEndpointEx : public  DT::Interface::TransportExcept {
     public:
       UnsupportedEndpointEx( const char* aux)
-	: DT::Interface::TransportExcept(UNSUPPORTED_ENDPOINT, aux)
-	{setAuxInfo(aux);}
+        : DT::Interface::TransportExcept(UNSUPPORTED_ENDPOINT, aux)
+        {setAuxInfo(aux);}
     };
-		
+                
     class CircuitDisconnectingEx : public DT::Interface::TransportExcept {
     public:
       CircuitDisconnectingEx( const char* aux="")
-	: DT::Interface::TransportExcept(CIRCUIT_DISCONNECTING, aux )
-	{setAuxInfo(aux);}
+        : DT::Interface::TransportExcept(CIRCUIT_DISCONNECTING, aux )
+        {setAuxInfo(aux);}
     };
 
   }

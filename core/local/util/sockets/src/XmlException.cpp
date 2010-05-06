@@ -1,7 +1,7 @@
 /**
- **	\file XmlException.cpp
- **	\date  2008-02-09
- **	\author grymse@alhem.net
+ **        \file XmlException.cpp
+ **        \date  2008-02-09
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom

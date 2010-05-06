@@ -56,16 +56,16 @@ namespace CPI {
       class Artifact : public CPI::Container::Artifact {
 
       public:
-	Artifact(CPI::Container::Interface &, const char *url);
-	virtual CPI::Container::Worker &createWorkerX( CPI::Container::Application &a, ezxml_t impl, ezxml_t inst, CPI::Util::PValue *);
-	virtual ~Artifact();
-	bool hasUrl(const char *url);
+        Artifact(CPI::Container::Interface &, const char *url);
+        virtual CPI::Container::Worker &createWorkerX( CPI::Container::Application &a, ezxml_t impl, ezxml_t inst, CPI::Util::PValue *);
+        virtual ~Artifact();
+        bool hasUrl(const char *url);
 
       private:
-	CPI::OS::LoadableModule m_loader;
-	bool                    m_open;
-	RCCDispatch          *  m_dispatch;
-	int                     m_workerCount;
+        CPI::OS::LoadableModule m_loader;
+        bool                    m_open;
+        RCCDispatch          *  m_dispatch;
+        int                     m_workerCount;
 
       };
 
@@ -77,24 +77,24 @@ namespace CPI {
       {
 
     public:
-	friend class Container;
-	friend class Controller;
+        friend class Container;
+        friend class Controller;
 
-	CPI::Container::Artifact & createArtifact(const char *url, CPI::Util::PValue *params);
-	CPI::Container::Worker & createWorker(const char *url, CPI::Util::PValue *aparams,
-				   const void *entryPoint, const char *inst=NULL,
-				   CPI::Util::PValue *wparams = NULL);
+        CPI::Container::Artifact & createArtifact(const char *url, CPI::Util::PValue *params);
+        CPI::Container::Worker & createWorker(const char *url, CPI::Util::PValue *aparams,
+                                   const void *entryPoint, const char *inst=NULL,
+                                   CPI::Util::PValue *wparams = NULL);
 
 
       /**********************************
        * Constructor
        *********************************/  
-	Application(CPI::CP289::Container &, CPI::OS::Mutex& );
+        Application(CPI::CP289::Container &, CPI::OS::Mutex& );
 
       /**********************************
        * Destructor
        *********************************/  
-	virtual ~Application();
+        virtual ~Application();
 
       /**********************************
        * Get the worker info from the worker id
@@ -144,7 +144,7 @@ namespace CPI {
      *********************************/
       inline  Worker* Application::getWorker( CPI::Container::WorkerId& worker )
       {
-	return reinterpret_cast<Worker*>(worker);
+        return reinterpret_cast<Worker*>(worker);
       }
 
     }

@@ -37,8 +37,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cerr << "Running the ORB failed: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
     }
     catch (...) {
       std::cerr << "Running the ORB failed." << std::endl;
@@ -70,8 +70,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "ORB initialization failed: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
       return 0;
     }
     catch (...) {
@@ -109,8 +109,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "ORB initialization failed: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
       return 0;
     }
     catch (...) {
@@ -120,7 +120,7 @@ extern "C" {
 
     try {
       CPI::OS::ThreadManager ror (runOrbRun,
-				  static_cast<void *> (orb));
+                                  static_cast<void *> (orb));
       ror.detach ();
     }
     catch (const std::string & ex) {
@@ -145,8 +145,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "ORB shutdown failed: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
       return -1;
     }
 
@@ -166,8 +166,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "ORB destruction failed: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
       return -1;
     }
 

@@ -37,45 +37,45 @@ namespace CPI {
 
       class zipibuf : public std::streambuf {
       public:
-	zipibuf (unzFile = 0);
-	~zipibuf ();
+        zipibuf (unzFile = 0);
+        ~zipibuf ();
 
-	bool setFile (unzFile);
+        bool setFile (unzFile);
 
-	/*
-	 * Implementation of the streambuf interface
-	 */
-
-      protected:
-	int_type underflow ();
-	int_type uflow ();
-	std::streamsize xsgetn (char *, std::streamsize);
-	int_type pbackfail (int_type = std::streambuf::traits_type::eof());
-	pos_type seekoff (off_type off, std::ios_base::seekdir way,
-			  std::ios_base::openmode which);
-	pos_type seekpos (pos_type pos, std::ios_base::openmode which);
-
-	/*
-	 * Data
-	 */
+        /*
+         * Implementation of the streambuf interface
+         */
 
       protected:
-	/*
-	 * If havePending, pending is the next character in the stream.
-	 * Happens as a result of underflow().
-	 *
-	 * If !havePending && haveLast, pending is the last character
-	 * that was read. To be used by pbackfail(eof).
-	 */
+        int_type underflow ();
+        int_type uflow ();
+        std::streamsize xsgetn (char *, std::streamsize);
+        int_type pbackfail (int_type = std::streambuf::traits_type::eof());
+        pos_type seekoff (off_type off, std::ios_base::seekdir way,
+                          std::ios_base::openmode which);
+        pos_type seekpos (pos_type pos, std::ios_base::openmode which);
 
-	bool m_haveLast;
-	bool m_havePending;
-	int_type m_pending;
-	unzFile m_zipFile;
+        /*
+         * Data
+         */
+
+      protected:
+        /*
+         * If havePending, pending is the next character in the stream.
+         * Happens as a result of underflow().
+         *
+         * If !havePending && haveLast, pending is the last character
+         * that was read. To be used by pbackfail(eof).
+         */
+
+        bool m_haveLast;
+        bool m_havePending;
+        int_type m_pending;
+        unzFile m_zipFile;
 
       private:
-	zipibuf (const zipibuf &);
-	zipibuf & operator= (const zipibuf &);
+        zipibuf (const zipibuf &);
+        zipibuf & operator= (const zipibuf &);
       };
 
       /**
@@ -84,29 +84,29 @@ namespace CPI {
 
       class zipobuf : public std::streambuf {
       public:
-	zipobuf (zipFile = 0);
-	~zipobuf ();
+        zipobuf (zipFile = 0);
+        ~zipobuf ();
 
-	bool setFile (zipFile);
+        bool setFile (zipFile);
 
-	/*
-	 * Implementation of the streambuf interface
-	 */
+        /*
+         * Implementation of the streambuf interface
+         */
 
       protected:
-	int_type overflow (int_type c = std::streambuf::traits_type::eof());
-	std::streamsize xsputn (const char *, std::streamsize);
+        int_type overflow (int_type c = std::streambuf::traits_type::eof());
+        std::streamsize xsputn (const char *, std::streamsize);
 
-	/*
-	 * Data
-	 */
-	
+        /*
+         * Data
+         */
+        
       protected:
-	zipFile m_zipFile;
-	
+        zipFile m_zipFile;
+        
       private:
-	zipobuf (const zipobuf &);
-	zipobuf & operator= (const zipobuf &);
+        zipobuf (const zipobuf &);
+        zipobuf & operator= (const zipobuf &);
       };
 
       /**
@@ -119,19 +119,19 @@ namespace CPI {
 
       class zipistream : public std::istream {
       private:
-	friend class ZipFs;
+        friend class ZipFs;
 
       public:
-	zipistream (unzFile);
-	~zipistream ();
+        zipistream (unzFile);
+        ~zipistream ();
 
       protected:
-	unzFile m_zip;
-	zipibuf m_buf;
+        unzFile m_zip;
+        zipibuf m_buf;
 
       private:
-	zipistream (const zipistream &);
-	zipistream & operator= (const zipistream &);
+        zipistream (const zipistream &);
+        zipistream & operator= (const zipistream &);
       };
 
       /**
@@ -140,19 +140,19 @@ namespace CPI {
 
       class zipostream : public std::ostream {
       private:
-	friend class ZipFs;
+        friend class ZipFs;
 
       public:
-	zipostream (zipFile);
-	~zipostream ();
+        zipostream (zipFile);
+        ~zipostream ();
 
       protected:
-	zipFile m_zip;
-	zipobuf m_buf;
+        zipFile m_zip;
+        zipobuf m_buf;
 
       private:
-	zipostream (const zipostream &);
-	zipostream & operator= (const zipostream &);
+        zipostream (const zipostream &);
+        zipostream & operator= (const zipostream &);
       };
 
     }

@@ -68,62 +68,62 @@ CPI_CONTROL_OPS
        */
 
       BaseProxy (CORBA::ORB_ptr orb,
-		    PortableServer::POA_ptr poa,
-		    const std::string & identifier,
-		    CPI::Logger::Logger * logger = 0,
-		    bool adoptLogger = true,
-		    bool shutdownOrbOnRelease = false)
-	throw (std::string);
+                    PortableServer::POA_ptr poa,
+                    const std::string & identifier,
+                    CPI::Logger::Logger * logger = 0,
+                    bool adoptLogger = true,
+                    bool shutdownOrbOnRelease = false)
+        throw (std::string);
 
       ~BaseProxy ()
-	throw ();
+        throw ();
 
       /*
        * CF::LifeCycle
        */
 
       void initialize ()
-	throw (CF::LifeCycle::InitializeError,
-	       CORBA::SystemException);
+        throw (CF::LifeCycle::InitializeError,
+               CORBA::SystemException);
       void releaseObject ()
-	throw (CF::LifeCycle::ReleaseError,
-	       CORBA::SystemException);
+        throw (CF::LifeCycle::ReleaseError,
+               CORBA::SystemException);
 
       /*
        * CF::TestableObject
        */
 
       void runTest (CORBA::ULong, CF::Properties &)
-	throw (CF::TestableObject::UnknownTest,
-	       CF::UnknownProperties,
-	       CORBA::SystemException);
+        throw (CF::TestableObject::UnknownTest,
+               CF::UnknownProperties,
+               CORBA::SystemException);
 
       /*
        * CF::PropertySet
        */
 
       void configure (const CF::Properties &)
-	throw (CF::PropertySet::InvalidConfiguration,
-	       CF::PropertySet::PartialConfiguration,
-	       CORBA::SystemException);
+        throw (CF::PropertySet::InvalidConfiguration,
+               CF::PropertySet::PartialConfiguration,
+               CORBA::SystemException);
       void query (CF::Properties &)
-	throw (CF::UnknownProperties,
-	       CORBA::SystemException);
+        throw (CF::UnknownProperties,
+               CORBA::SystemException);
 
       /*
        * CF::Resource
        */
 
       char * identifier ()
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       void start ()
-	throw (CF::Resource::StartError,
-	       CORBA::SystemException);
+        throw (CF::Resource::StartError,
+               CORBA::SystemException);
 
       void stop ()
-	throw (CF::Resource::StopError,
-	       CORBA::SystemException);
+        throw (CF::Resource::StopError,
+               CORBA::SystemException);
 
       // These are public for the convenience of derived port types
       // FIXME: perhaps some proxy methods to support derived port types
@@ -139,47 +139,47 @@ CPI_CONTROL_OPS
        */
 
       virtual void configureWorker (const char * name,
-				    const CORBA::Any & value,
-				    bool last,
-				    bool & needSync)
-	throw (std::string) = 0;
+                                    const CORBA::Any & value,
+                                    bool last,
+                                    bool & needSync)
+        throw (std::string) = 0;
 
       virtual void queryWorker (const char * name,
-				CORBA::Any & value,
-				bool & haveSync)
-	throw (std::string) = 0;
+                                CORBA::Any & value,
+                                bool & haveSync)
+        throw (std::string) = 0;
 
 #if 0
       virtual void controlWorker (WCI_control op,
-				  WCI_options flags = WCI_DEFAULT)
-	throw (std::string) = 0;
+                                  WCI_options flags = WCI_DEFAULT)
+        throw (std::string) = 0;
 #endif
 
       virtual const CPI::Metadata::Property * getProperties (unsigned int & numProperties)
-	throw () = 0;
+        throw () = 0;
 #ifdef TEST
 
       virtual const CPI::SCA::Port * findPort (const char * name, unsigned int & portOrdinal)
         throw (std::string) = 0;
 
       virtual const CPI::SCA::Test * findTest (unsigned int testId)
-	throw (CF::TestableObject::UnknownTest) = 0;
+        throw (CF::TestableObject::UnknownTest) = 0;
 
       /*
        * Connection management.
        */
 
       virtual void connectPort (const std::string & portName,
-				const std::string & connectionId,
-				CORBA::Object_ptr connection)
-	throw (CF::Port::InvalidPort,
-	       CF::Port::OccupiedPort,
-	       CORBA::SystemException) = 0;
+                                const std::string & connectionId,
+                                CORBA::Object_ptr connection)
+        throw (CF::Port::InvalidPort,
+               CF::Port::OccupiedPort,
+               CORBA::SystemException) = 0;
 
       virtual void disconnectPort (const std::string & portName,
-				   const std::string & connectionId)
-	throw (CF::Port::InvalidPort,
-	       CORBA::SystemException) = 0;
+                                   const std::string & connectionId)
+        throw (CF::Port::InvalidPort,
+               CORBA::SystemException) = 0;
 #endif
 
     protected:
@@ -203,20 +203,20 @@ CPI_CONTROL_OPS
     class BaseProxyPort : virtual public POA_CF::Port {
     public:
       BaseProxyPort (const std::string & portName,
-			CPI::SCA::BaseProxy * proxy)
-	throw ();
+                        CPI::SCA::BaseProxy * proxy)
+        throw ();
 
       ~BaseProxyPort ()
         throw ();
       void release();
       virtual void connectPort (CORBA::Object_ptr connection, const char * connectionId)
-	throw (CF::Port::InvalidPort,
-	       CF::Port::OccupiedPort,
-	       CORBA::SystemException);
+        throw (CF::Port::InvalidPort,
+               CF::Port::OccupiedPort,
+               CORBA::SystemException);
 
       virtual void disconnectPort (const char * connectionId)
-	throw (CF::Port::InvalidPort,
-	       CORBA::SystemException);
+        throw (CF::Port::InvalidPort,
+               CORBA::SystemException);
 
     protected:
       std::string m_portName;

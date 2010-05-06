@@ -94,7 +94,7 @@ CPI::Util::Vfs::FilterFs::rmdir (const std::string & fileName)
 
 CPI::Util::Vfs::Iterator *
 CPI::Util::Vfs::FilterFs::list (const std::string & dir,
-				const std::string & pattern)
+                                const std::string & pattern)
   throw (std::string)
 {
   std::string absDirName = absoluteName (dir);
@@ -155,7 +155,7 @@ CPI::Util::Vfs::FilterFs::lastModified (const std::string & fileName)
 
 std::iostream *
 CPI::Util::Vfs::FilterFs::open (const std::string & fileName,
-				std::ios_base::openmode mode)
+                                std::ios_base::openmode mode)
   throw (std::string)
 {
   access (fileName, mode, false);
@@ -164,7 +164,7 @@ CPI::Util::Vfs::FilterFs::open (const std::string & fileName,
 
 std::istream *
 CPI::Util::Vfs::FilterFs::openReadonly (const std::string & fileName,
-					std::ios_base::openmode mode)
+                                        std::ios_base::openmode mode)
   throw (std::string)
 {
   access (fileName, mode & ~(std::ios_base::out), false);
@@ -173,7 +173,7 @@ CPI::Util::Vfs::FilterFs::openReadonly (const std::string & fileName,
 
 std::ostream *
 CPI::Util::Vfs::FilterFs::openWriteonly (const std::string & fileName,
-					 std::ios_base::openmode mode)
+                                         std::ios_base::openmode mode)
   throw (std::string)
 {
   access (fileName, mode & ~(std::ios_base::in), false);
@@ -195,8 +195,8 @@ CPI::Util::Vfs::FilterFs::close (std::ios * str)
 
 void
 CPI::Util::Vfs::FilterFs::copy (const std::string & oldName,
-				CPI::Util::Vfs::Vfs * destfs,
-				const std::string & newName)
+                                CPI::Util::Vfs::Vfs * destfs,
+                                const std::string & newName)
   throw (std::string)
 {
   access (oldName, std::ios_base::in, false);
@@ -214,8 +214,8 @@ CPI::Util::Vfs::FilterFs::copy (const std::string & oldName,
 
 void
 CPI::Util::Vfs::FilterFs::move (const std::string & oldName,
-				CPI::Util::Vfs::Vfs * destfs,
-				const std::string & newName)
+                                CPI::Util::Vfs::Vfs * destfs,
+                                const std::string & newName)
   throw (std::string)
 {
   access (oldName, std::ios_base::in | std::ios_base::trunc, false);
@@ -233,7 +233,7 @@ CPI::Util::Vfs::FilterFs::move (const std::string & oldName,
 
 void
 CPI::Util::Vfs::FilterFs::rename (const std::string & oldName,
-				  const std::string & newName)
+                                  const std::string & newName)
   throw (std::string)
 {
   access (oldName, std::ios_base::in | std::ios_base::trunc, false);

@@ -59,8 +59,8 @@ namespace CPI {
        */
 
       std::string stringifyNamingException (const CORBA::Exception & ex,
-					    CosNaming::NamingContext_ptr context = CosNaming::NamingContext::_nil ())
-	throw ();
+                                            CosNaming::NamingContext_ptr context = CosNaming::NamingContext::_nil ())
+        throw ();
 
     }
   }

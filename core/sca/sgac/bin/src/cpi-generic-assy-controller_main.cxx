@@ -94,10 +94,10 @@ SgacCommandLineConfigurator::g_options[] = {
 static
 void
 printUsage (SgacCommandLineConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -113,7 +113,7 @@ namespace {
   {
     if (!CORBA::is_nil (g_sgacOrb)) {
       try {
-	g_sgacOrb->shutdown (0);
+        g_sgacOrb->shutdown (0);
       }
       catch (...) {
       }
@@ -130,8 +130,8 @@ namespace {
 static
 CF::Resource_ptr
 startGenericAssemblyControllerCmdInt (CORBA::ORB_ptr orb,
-				      int & argc, char * argv[],
-				      bool shutdownOrbOnRelease)
+                                      int & argc, char * argv[],
+                                      bool shutdownOrbOnRelease)
 {
   SgacCommandLineConfigurator config;
   CF::Resource_var res;
@@ -176,12 +176,12 @@ startGenericAssemblyControllerCmdInt (CORBA::ORB_ptr orb,
       std::ofstream * of = new std::ofstream (config.logFile.c_str());
 
       if (!of->good()) {
-	std::cout << "Oops: can not open log file \""
-		  << config.logFile
-		  << "\" for writing."
-		  << std::endl;
-	delete of;
-	return CF::Resource::_nil ();
+        std::cout << "Oops: can not open log file \""
+                  << config.logFile
+                  << "\" for writing."
+                  << std::endl;
+        delete of;
+        return CF::Resource::_nil ();
       }
 
       logger = new CPI::Logger::OStreamOutput (of, true);
@@ -200,10 +200,10 @@ startGenericAssemblyControllerCmdInt (CORBA::ORB_ptr orb,
 
     CPI::SCA::GenericAssemblyController * sgac =
       new CPI::SCA::GenericAssemblyController (orb, poa,
-					       config.identifier,
-					       logger,
-					       true,
-					       shutdownOrbOnRelease);
+                                               config.identifier,
+                                               logger,
+                                               true,
+                                               shutdownOrbOnRelease);
 
     res = sgac->_this ();
     sgac->_remove_ref ();
@@ -216,22 +216,22 @@ startGenericAssemblyControllerCmdInt (CORBA::ORB_ptr orb,
       CORBA::String_var ior = orb->object_to_string (res);
 
       if (config.iorFileName == "-") {
-	std::cout << ior << std::endl;
+        std::cout << ior << std::endl;
       }
       else {
-	std::cout << "Writing IOR to \""
-		  << config.iorFileName
-		  << "\" ... "
-		  << std::flush;
-	std::ofstream out (config.iorFileName.c_str());
-	out << ior << std::endl;
+        std::cout << "Writing IOR to \""
+                  << config.iorFileName
+                  << "\" ... "
+                  << std::flush;
+        std::ofstream out (config.iorFileName.c_str());
+        out << ior << std::endl;
 
-	if (out.good()) {
-	  std::cout << "done." << std::endl;
-	}
-	else {
-	  std::cout << "failed." << std::endl;
-	}
+        if (out.good()) {
+          std::cout << "done." << std::endl;
+        }
+        else {
+          std::cout << "failed." << std::endl;
+        }
       }
     }
 
@@ -241,29 +241,29 @@ startGenericAssemblyControllerCmdInt (CORBA::ORB_ptr orb,
 
     if (config.registerWithNamingService) {
       std::cout << "Registering with Naming Service as \""
-		<< config.namingServiceName
-		<< "\" ... " << std::flush;
+                << config.namingServiceName
+                << "\" ... " << std::flush;
 
       try {
-	CORBA::Object_var nso = orb->resolve_initial_references ("NameService");
-	CosNaming::NamingContextExt_var ns = CosNaming::NamingContextExt::_narrow (nso);
-	CPI::CORBAUtil::Misc::nameServiceBind (ns, res, config.namingServiceName);
-	std::cout << "done." << std::endl;
+        CORBA::Object_var nso = orb->resolve_initial_references ("NameService");
+        CosNaming::NamingContextExt_var ns = CosNaming::NamingContextExt::_narrow (nso);
+        CPI::CORBAUtil::Misc::nameServiceBind (ns, res, config.namingServiceName);
+        std::cout << "done." << std::endl;
       }
       catch (const CORBA::Exception & ex) {
-	std::cout << "failed: "
-		  << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		  << std::endl;
+        std::cout << "failed: "
+                  << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                  << std::endl;
       }
       catch (const std::string & oops) {
-	std::cout << "failed: " << oops << std::endl;
+        std::cout << "failed: " << oops << std::endl;
       }
     }
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
     return CF::Resource::_nil ();
   }
   catch (...) {
@@ -281,8 +281,8 @@ startGenericAssemblyControllerCmdInt (CORBA::ORB_ptr orb,
 static
 CF::Resource_ptr
 startGenericAssemblyControllerScaInt (CORBA::ORB_ptr orb,
-				      int & argc, char *argv[],
-				      bool shutdownOrbOnRelease)
+                                      int & argc, char *argv[],
+                                      bool shutdownOrbOnRelease)
 {
   CF::Resource_var res;
   int ai;
@@ -296,29 +296,29 @@ startGenericAssemblyControllerScaInt (CORBA::ORB_ptr orb,
 
     for (ai=1; ai<argc; ai++) {
       if (std::strcmp (argv[ai], "NAMING_CONTEXT_IOR") == 0) {
-	namingContextIor = argv[++ai];
+        namingContextIor = argv[++ai];
       }
       else if (std::strcmp (argv[ai], "NAME_BINDING") == 0) {
-	nameBinding = argv[++ai];
+        nameBinding = argv[++ai];
       }
       else if (std::strcmp (argv[ai], "COMPONENT_IDENTIFIER") == 0) {
-	componentIdentifier = argv[++ai];
+        componentIdentifier = argv[++ai];
       }
       else if (std::strcmp (argv[ai], "COMPONENT_NAME") == 0) {
-	/* Passed by SCARI++ 2.2.  Ignore. */
-	ai++;
+        /* Passed by SCARI++ 2.2.  Ignore. */
+        ai++;
       }
       else if (std::strcmp (argv[ai], "debugLevel") == 0) {
-	debugLevel = atoi (argv[++ai]);
+        debugLevel = atoi (argv[++ai]);
       }
       else if (std::strcmp (argv[ai], "logFile") == 0) {
-	logFile = argv[++ai];
+        logFile = argv[++ai];
       }
       else {
-	std::string oops = "Invalid command-line option: \"";
-	oops += argv[ai];
-	oops += "\"";
-	throw oops;
+        std::string oops = "Invalid command-line option: \"";
+        oops += argv[ai];
+        oops += "\"";
+        throw oops;
       }
     }
 
@@ -351,12 +351,12 @@ startGenericAssemblyControllerScaInt (CORBA::ORB_ptr orb,
       std::ofstream * of = new std::ofstream (logFile.c_str());
 
       if (!of->good()) {
-	std::cout << "Oops: can not open log file \""
-		  << logFile
-		  << "\" for writing."
-		  << std::endl;
-	delete of;
-	return CF::Resource::_nil ();
+        std::cout << "Oops: can not open log file \""
+                  << logFile
+                  << "\" for writing."
+                  << std::endl;
+        delete of;
+        return CF::Resource::_nil ();
       }
 
       logger = new CPI::Logger::OStreamOutput (of, true);
@@ -367,23 +367,23 @@ startGenericAssemblyControllerScaInt (CORBA::ORB_ptr orb,
       CPI::Logger::DebugLogger debug (*logger);
 
       debug << CPI::Logger::ProducerName (applicationName)
-	    << "Generic Assembly Controller for application "
-	    << applicationName
-	    << " starting."
-	    << std::flush;
+            << "Generic Assembly Controller for application "
+            << applicationName
+            << " starting."
+            << std::flush;
 
       debug << CPI::Logger::ProducerName (applicationName)
-	    << CPI::Logger::Verbosity (2)
-	    << argc << " command-line options:"
-	    << std::flush;
+            << CPI::Logger::Verbosity (2)
+            << argc << " command-line options:"
+            << std::flush;
 
       for (ai=0; ai<argc; ai++) {
-	debug << CPI::Logger::ProducerName (applicationName)
-	      << CPI::Logger::Verbosity (2)
-	      << "argv[" << ai << "] = \""
-	      << argv[ai]
-	      << "\""
-	      << std::flush;
+        debug << CPI::Logger::ProducerName (applicationName)
+              << CPI::Logger::Verbosity (2)
+              << "argv[" << ai << "] = \""
+              << argv[ai]
+              << "\""
+              << std::flush;
       }
     }
 
@@ -393,10 +393,10 @@ startGenericAssemblyControllerScaInt (CORBA::ORB_ptr orb,
 
     CPI::SCA::GenericAssemblyController * sgac =
       new CPI::SCA::GenericAssemblyController (orb, poa,
-					       componentIdentifier,
-					       logger,
-					       true,
-					       shutdownOrbOnRelease);
+                                               componentIdentifier,
+                                               logger,
+                                               true,
+                                               shutdownOrbOnRelease);
 
     PortableServer::ObjectId_var oid = poa->activate_object (sgac);
     CORBA::Object_var so = poa->id_to_reference (oid);
@@ -420,10 +420,10 @@ startGenericAssemblyControllerScaInt (CORBA::ORB_ptr orb,
       msg += CPI::CORBAUtil::Misc::stringifyCorbaException (ex);
 
       *logger << CPI::Logger::Level::EXCEPTION_ERROR
-	      << CPI::Logger::ProducerName (applicationName)
-	      << msg
-	      << "."
-	      << std::flush;
+              << CPI::Logger::ProducerName (applicationName)
+              << msg
+              << "."
+              << std::flush;
 
       /*
        * To do: undo all of the above and throw an exception.
@@ -438,8 +438,8 @@ startGenericAssemblyControllerScaInt (CORBA::ORB_ptr orb,
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
     return CF::Resource::_nil ();
   }
   catch (const std::string & ex) {
@@ -470,8 +470,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "Oops: ORB_init: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
       return -1;
     }
     catch (...) {
@@ -503,8 +503,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "Oops: ORB_init: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
       return -1;
     }
     catch (...) {
@@ -535,8 +535,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }
@@ -549,8 +549,8 @@ main (int argc, char * argv[])
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: ORB_init: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
     return 1;
   }
   catch (...) {
@@ -619,8 +619,8 @@ main (int argc, char * argv[])
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "Oops: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
     }
 
     try {
@@ -631,8 +631,8 @@ main (int argc, char * argv[])
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
   }
   catch (...) {
     std::cout << "Oops." << std::endl;

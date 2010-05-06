@@ -46,16 +46,16 @@ namespace CPI { namespace SCA {
 // or NULL on error
     bool
 decode_props(const char *props,
-	     Property **propsp, unsigned *npropsp, unsigned *sizep,
-	     Port **portsp, unsigned *nportsp,
-	     Test **testsp, unsigned *ntestsp)
+             Property **propsp, unsigned *npropsp, unsigned *sizep,
+             Port **portsp, unsigned *nportsp,
+             Test **testsp, unsigned *ntestsp)
 {
   unsigned nprops, namesize, nmembers, size, nports, ntests, ntestps, n;
   char *cp;
 
   n = sscanf (props, "%u/%u/%u/%u/%u/%u/%u$",
-	      &nports, &nprops, &size, &nmembers, &namesize,
-	      &ntests, &ntestps);
+              &nports, &nprops, &size, &nmembers, &namesize,
+              &ntests, &ntestps);
 
   if (n == 5) { // For backwards compatibility
     ntests = ntestps = 0;
@@ -71,11 +71,11 @@ decode_props(const char *props,
 
   // Compute allocation to hold all properties, names, types etc.
   unsigned int memSize = (nprops * sizeof(Property) +
-			  nmembers * sizeof(SimpleType) +
-			  nports * sizeof(Port) + 
-			  ntests * sizeof(Test) +
-			  ntestps * sizeof(unsigned int) +
-			  namesize);
+                          nmembers * sizeof(SimpleType) +
+                          nports * sizeof(Port) + 
+                          ntests * sizeof(Test) +
+                          ntestps * sizeof(unsigned int) +
+                          namesize);
   Property *properties = (Property *) malloc (memSize);
   if (!properties)
     return true;
@@ -91,7 +91,7 @@ decode_props(const char *props,
   char c[10];
   for (n = nprops; n; p++, n--) {
     if (!*cp || sscanf(cp, "%[^~]~%lu/%lu/%lu/%lu/%[^|]|",
-		       names, &p->num_members, &p->sequence_size, &p->offset, &p->data_offset, c) != 6)
+                       names, &p->num_members, &p->sequence_size, &p->offset, &p->data_offset, c) != 6)
       break;
     p->name = names;
     names += strlen(names) + 1;
@@ -112,11 +112,11 @@ decode_props(const char *props,
     for (nmembers = p->num_members; nmembers; nmembers--) {
       char c;
       if (sscanf(cp, "%c%lu/", &c, &s->size) != 2)
-	break;
+        break;
       s->data_type = (DataType)(c - 'a');
       s++;
       if (!(cp = strchr(cp, '/')))
-	break;
+        break;
       cp++;
     }
     if (nmembers || *cp++ != '$')
@@ -159,10 +159,10 @@ decode_props(const char *props,
     test->inputValues = testps;
     for (nmembers = test->numInputs; nmembers; nmembers--, testps++) {
       if (sscanf (cp, "%u/", testps) != 1) {
-	break;
+        break;
       }
       if (!(cp = strchr (cp, '/'))) {
-	break;
+        break;
       }
       cp++;
     }
@@ -174,10 +174,10 @@ decode_props(const char *props,
     test->resultValues = testps;
     for (nmembers = test->numResults; nmembers; nmembers--, testps++) {
       if (sscanf (cp, "%u/", testps) != 1) {
-	break;
+        break;
       }
       if (!(cp = strchr (cp, '/'))) {
-	break;
+        break;
       }
       cp++;
     }

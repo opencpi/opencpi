@@ -87,7 +87,7 @@ isDuplicate(  OutputBuffer* output, InputBuffer* input )
     ZCopy* z = m_zCopy;
     while( z ) {
       if ( (z->output == output ) && ( z->input == input) ) {
-	return true;
+        return true;
       }
       z = z->next;
     }
@@ -102,8 +102,8 @@ isDuplicate(  OutputBuffer* output, InputBuffer* input )
 void 
 CpiTransferTemplate::
 addZeroCopyTransfer( 
-		    OutputBuffer* output, 
-		    InputBuffer* input )
+                    OutputBuffer* output, 
+                    InputBuffer* input )
 {
 
 #ifndef NDEBUG
@@ -185,7 +185,7 @@ produceGated( CPI::OS::uint32_t port_id, CPI::OS::uint32_t tid  )
 
 #ifndef NDEBUG
     printf("ERROR !!! CpiTransferTemplate::produceGated got a NULL template, p = %d, t = %d\n",
-	   port_id, tid);
+           port_id, tid);
 #endif
 
     cpiAssert(0);
@@ -193,7 +193,7 @@ produceGated( CPI::OS::uint32_t port_id, CPI::OS::uint32_t tid  )
 
   // Add the template to our list
   insert_to_list(&m_gatedTransfersPending, temp, 64, 8);
-	
+        
   return m_maxSequence - m_sequence;
 
 }
@@ -207,11 +207,11 @@ produceGated( CPI::OS::uint32_t port_id, CPI::OS::uint32_t tid  )
 void 
 CpiTransferTemplate::
 presetMetaData( 
-	       volatile BufferMetaData* data, 
-	       CPI::OS::uint32_t length,
-	       bool end_of_whole,
-	       CPI::OS::uint32_t parts_per_whole,		
-	       CPI::OS::uint32_t sequence)				
+               volatile BufferMetaData* data, 
+               CPI::OS::uint32_t length,
+               bool end_of_whole,
+               CPI::OS::uint32_t parts_per_whole,                
+               CPI::OS::uint32_t sequence)                                
 {
 
   CPI::OS::uint32_t seq_inc=0;
@@ -246,7 +246,7 @@ presetMetaData()
     pmd->ptr->nPartsPerWhole     = pmd->nPartsPerWhole;
     pmd->ptr->partsSequence      = pmd->sequence;
   }
-	   
+           
 }
 
 

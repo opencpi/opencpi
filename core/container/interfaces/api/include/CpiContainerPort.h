@@ -16,7 +16,7 @@ namespace CPI {
     // Port connection dependency data. 
     struct PortConnectionDesc
     {
-      CPI::RDT::Descriptors	data;	// Connection data
+      CPI::RDT::Descriptors        data;        // Connection data
 
       // Cookie used to communicate the orignal port information from the user port
       // back to the provider port.  I.E. to complete your flowcontrol here is the information
@@ -37,7 +37,7 @@ namespace CPI {
     public:
 
 #ifdef WAS
-      CPI::OS::uint8_t	  provider;	       // Provider port (input port for now)
+      CPI::OS::uint8_t          provider;               // Provider port (input port for now)
 #endif
 
 
@@ -45,32 +45,32 @@ namespace CPI {
 
       CPI::Metadata::Port myMetaPort;  // Deep copy to support all constructors
 
-      CPI::OS::uint8_t    external;	       // connected externally ?
+      CPI::OS::uint8_t    external;               // connected externally ?
 
       PortConnectionDesc  connectionData;      // Port Connection Dependency data
 
 
 
       PortData() : external(0) 
-	{
-	  connectionData.port = reinterpret_cast<PortDesc>(this);
-	}
+        {
+          connectionData.port = reinterpret_cast<PortDesc>(this);
+        }
 
       PortData( CPI::Metadata::Port & pmd ): myMetaPort(pmd) , external(0)
-	{
-	  connectionData.port = reinterpret_cast<PortDesc>(this);
-	}
-	PortData & operator = ( const PortData & lhs )
-	  {
-	    myMetaPort = lhs.myMetaPort;
-	    memcpy(&connectionData,&lhs.connectionData,sizeof(PortConnectionDesc));
-	    external = lhs.external;
-	    return *this;
-	  }
-	PortData( PortData& lhs ) 
-	  {
-	    *this = lhs;
-	  }
+        {
+          connectionData.port = reinterpret_cast<PortDesc>(this);
+        }
+        PortData & operator = ( const PortData & lhs )
+          {
+            myMetaPort = lhs.myMetaPort;
+            memcpy(&connectionData,&lhs.connectionData,sizeof(PortConnectionDesc));
+            external = lhs.external;
+            return *this;
+          }
+        PortData( PortData& lhs ) 
+          {
+            *this = lhs;
+          }
     };
 
 
@@ -90,7 +90,7 @@ namespace CPI {
       virtual void checkConnectParams() = 0;
       void setConnectParams(CPI::Util::PValue *props);
       static void chooseRoles(int32_t &uRole, uint32_t uOptions,
-			      int32_t &pRole, uint32_t pOptions);
+                              int32_t &pRole, uint32_t pOptions);
     public:
       void applyConnectParams(CPI::Util::PValue *props);
     };
@@ -142,7 +142,7 @@ namespace CPI {
 
 
       virtual void disconnect( )
-	throw ( CPI::Util::EmbeddedException )=0;
+        throw ( CPI::Util::EmbeddedException )=0;
 
 
       // Local connection within a container
@@ -216,7 +216,8 @@ namespace CPI {
 
     public:
       ExternalBuffer( ExternalPort& p )
-	:CPI::Util::Child<ExternalPort,ExternalBuffer>(p){}
+        :CPI::Util::Child<ExternalPort,ExternalBuffer>(p){}
+      ExternalBuffer(){}
       // For consumer buffers
       virtual void release() = 0;
       // For producer buffers
@@ -230,7 +231,7 @@ namespace CPI {
     class ExternalPort : public CPI::Util::Parent<ExternalBuffer> {
     protected:
       ExternalPort( const char *name )
-	:m_ExName(name){};
+        :m_ExName(name){};
       virtual ~ExternalPort(){};
     public:
       // Return zero if there is no buffer ready
@@ -238,7 +239,7 @@ namespace CPI {
       // This means NO MESSAGE, not a zero length message.
       // I.e. if "data" is null, length is not valid.
       virtual ExternalBuffer *
-	getBuffer(uint8_t &opCode, uint8_t *&data, uint32_t &length, bool &endOfData) = 0;
+        getBuffer(uint8_t &opCode, uint8_t *&data, uint32_t &length, bool &endOfData) = 0;
       // Return zero when no buffers are available.
       virtual ExternalBuffer *getBuffer(uint8_t *&data, uint32_t &length) = 0;
       // Use this when end of data indication happens AFTER the last message.

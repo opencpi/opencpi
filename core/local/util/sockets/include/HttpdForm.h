@@ -1,6 +1,6 @@
 /** \file HttpdForm.h - read stdin, parse cgi input
  **
- **	Written: 1999-Feb-10 grymse@alhem.net
+ **        Written: 1999-Feb-10 grymse@alhem.net
  **/
 
 /*
@@ -50,74 +50,74 @@ class IFileUpload;
 class IStream;
 
 /** Parse/store a http query_string/form-data body. 
-	\ingroup webserver */
+        \ingroup webserver */
 class HttpdForm
 {
-	/**
-	 * Store the name/value pairs from a GET/POST operation.
-	 * "name" does not have to be unique.
-	 \ingroup webserver
-	*/
-	struct CGI
-	{
-		CGI(const std::string& n,const std::string& v) : name(n),value(v) {}
-		CGI(const std::string& n,const std::string& v,const std::string& p) : name(n),value(v),path(p) {}
-		std::string name;
-		std::string value;
-		std::string path;
-	};
-	/** list of key/value pairs. */
-	typedef std::list<CGI *> cgi_v;
+        /**
+         * Store the name/value pairs from a GET/POST operation.
+         * "name" does not have to be unique.
+         \ingroup webserver
+        */
+        struct CGI
+        {
+                CGI(const std::string& n,const std::string& v) : name(n),value(v) {}
+                CGI(const std::string& n,const std::string& v,const std::string& p) : name(n),value(v),path(p) {}
+                std::string name;
+                std::string value;
+                std::string path;
+        };
+        /** list of key/value pairs. */
+        typedef std::list<CGI *> cgi_v;
 
 public:
-	/**
-	 * Default constructor (used in POST operations).
-	 * Input is read from stdin. Number of characters to read
-	 * can be found in the environment variable CONTENT_LENGTH.
-	*/
-	HttpdForm(IFile *, const std::string& content_type, size_t content_length);
-	/**
-	 * Another constructor (used in GET operations).
-	 * Input is read from the environment variable QUERY_STRING.
-	 * @param query_string The httpd server provided QUERY_STRING
-	 * @param length Query string length.
-	*/
-	HttpdForm(const std::string& query_string,size_t length);
-	~HttpdForm();
+        /**
+         * Default constructor (used in POST operations).
+         * Input is read from stdin. Number of characters to read
+         * can be found in the environment variable CONTENT_LENGTH.
+        */
+        HttpdForm(IFile *, const std::string& content_type, size_t content_length);
+        /**
+         * Another constructor (used in GET operations).
+         * Input is read from the environment variable QUERY_STRING.
+         * @param query_string The httpd server provided QUERY_STRING
+         * @param length Query string length.
+        */
+        HttpdForm(const std::string& query_string,size_t length);
+        ~HttpdForm();
 
-	void EnableRaw(bool);
+        void EnableRaw(bool);
 
-	/** Encode characters '<' '>' '&' as &lt; &gt; &amp; */
-	void strcpyval(std::string&,const char *) const;
+        /** Encode characters '<' '>' '&' as &lt; &gt; &amp; */
+        void strcpyval(std::string&,const char *) const;
 
-	/* get names */
-	bool getfirst(std::string& n) const;
-	bool getnext(std::string& n) const;
+        /* get names */
+        bool getfirst(std::string& n) const;
+        bool getnext(std::string& n) const;
 
-	/* get names and values */
-	bool getfirst(std::string& n,std::string& v) const;
-	bool getnext(std::string& n,std::string& v) const;
+        /* get names and values */
+        bool getfirst(std::string& n,std::string& v) const;
+        bool getnext(std::string& n,std::string& v) const;
 
-	/* get value */
-	int getvalue(const std::string& ,std::string& ) const;
-	std::string getvalue(const std::string& ) const;
-	size_t getlength(const std::string& ) const;
-	cgi_v& getbase();
+        /* get value */
+        int getvalue(const std::string& ,std::string& ) const;
+        std::string getvalue(const std::string& ) const;
+        size_t getlength(const std::string& ) const;
+        cgi_v& getbase();
 
-	const std::string& GetBoundary() const;
+        const std::string& GetBoundary() const;
 
-	/** Enable IFileUpload callback */
-	void SetFileUpload(IFileUpload& cb);
+        /** Enable IFileUpload callback */
+        void SetFileUpload(IFileUpload& cb);
 
 private:
-	HttpdForm(const HttpdForm& ) {}
-	HttpdForm& operator=(const HttpdForm& ) { return *this; }
-	cgi_v m_cgi;
-	mutable cgi_v::const_iterator m_current;
-	std::string m_strBoundary;
-	bool raw;
-	IFileUpload *m_file_upload;
-	IStream *m_upload_stream;
+        HttpdForm(const HttpdForm& ) {}
+        HttpdForm& operator=(const HttpdForm& ) { return *this; }
+        cgi_v m_cgi;
+        mutable cgi_v::const_iterator m_current;
+        std::string m_strBoundary;
+        bool raw;
+        IFileUpload *m_file_upload;
+        IStream *m_upload_stream;
 };
 
 

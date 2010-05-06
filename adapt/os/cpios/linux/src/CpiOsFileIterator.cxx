@@ -44,7 +44,7 @@ namespace {
 
   bool
   glob (const std::string & str,
-	const std::string & pat)
+        const std::string & pat)
     throw ()
   {
     int strIdx = 0, strLen = str.length ();
@@ -54,25 +54,25 @@ namespace {
 
     while (strIdx < strLen && patIdx < patLen) {
       if (*pattern == '*') {
-	pattern++;
-	patIdx++;
-	while (strIdx < strLen) {
-	  if (glob (name, pattern)) {
-	    return true;
-	  }
-	  strIdx++;
-	  name++;
-	}
-	return (patIdx < patLen) ? false : true;
+        pattern++;
+        patIdx++;
+        while (strIdx < strLen) {
+          if (glob (name, pattern)) {
+            return true;
+          }
+          strIdx++;
+          name++;
+        }
+        return (patIdx < patLen) ? false : true;
       }
       else if (*pattern == '?' || *pattern == *name) {
-	pattern++;
-	patIdx++;
-	name++;
-	strIdx++;
+        pattern++;
+        patIdx++;
+        name++;
+        strIdx++;
       }
       else {
-	return false;
+        return false;
       }
     }
     
@@ -98,8 +98,8 @@ namespace {
       return false;
     }
     else if (data.dirInfo->d_name[0] == '.' &&
-	     data.dirInfo->d_name[1] == '.' &&
-	     !data.dirInfo->d_name[2]) {
+             data.dirInfo->d_name[1] == '.' &&
+             !data.dirInfo->d_name[2]) {
       return false;
     }
 
@@ -124,7 +124,7 @@ o2fid (const CPI::OS::uint64_t * ptr)
 }
 
 CPI::OS::FileIterator::FileIterator (const std::string & dir,
-				     const std::string & pattern)
+                                     const std::string & pattern)
   throw (std::string)
 {
   cpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (FileIteratorData)> ()));

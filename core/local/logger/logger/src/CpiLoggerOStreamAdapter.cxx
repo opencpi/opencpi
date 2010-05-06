@@ -28,9 +28,9 @@
 
 CPI::Logger::OStreamAdapter::
 OStreamAdapterBuf::OStreamAdapterBuf (Logger * logger,
-				      unsigned short logLevel,
-				      const std::string & producerName,
-				      bool adopt)
+                                      unsigned short logLevel,
+                                      const std::string & producerName,
+                                      bool adopt)
   : m_first (true),
     m_adopted (adopt),
     m_logger (logger),
@@ -98,7 +98,7 @@ OStreamAdapterBuf::overflow (int_type c)
 std::streamsize
 CPI::Logger::OStreamAdapter::
 OStreamAdapterBuf::xsputn (const char * data,
-			   std::streamsize count)
+                           std::streamsize count)
 {
   std::streamsize total = 0;
   std::streamsize idx;
@@ -114,7 +114,7 @@ OStreamAdapterBuf::xsputn (const char * data,
 
     if (idx) {
       if (m_out.sputn (data, idx) != idx) {
-	return total;
+        return total;
       }
       data += idx;
       count -= idx;
@@ -133,8 +133,8 @@ OStreamAdapterBuf::xsputn (const char * data,
 
 CPI::Logger::OStreamAdapter::
 OStreamAdapter (Logger & log,
-		unsigned short logLevel,
-		const std::string & producerName)
+                unsigned short logLevel,
+                const std::string & producerName)
   : std::ostream (&m_buf),
     m_buf (&log, logLevel, producerName, false)
 {
@@ -142,9 +142,9 @@ OStreamAdapter (Logger & log,
 
 CPI::Logger::OStreamAdapter::
 OStreamAdapter (Logger * log,
-		unsigned short logLevel,
-		const std::string & producerName,
-		bool adopt)
+                unsigned short logLevel,
+                const std::string & producerName,
+                bool adopt)
   : std::ostream (&m_buf),
     m_buf (log, logLevel, producerName, adopt)
 {

@@ -40,9 +40,9 @@ namespace TeeTests {
 
       logger.setProducerId ("04-Tee");
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testEmptyTee")
-	     << "Hello World"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testEmptyTee")
+             << "Hello World"
+             << std::flush;
 
       test (logger.good());
     }
@@ -70,9 +70,9 @@ namespace TeeTests {
       logger.addOutput (keeper);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testOneDelegatee")
-	     << "Hello World"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testOneDelegatee")
+             << "Hello World"
+             << std::flush;
 
       test (keeper.getLogLevel() == 8);
       test (keeper.getProducerId() == "04-Tee");
@@ -105,9 +105,9 @@ namespace TeeTests {
       logger.addOutput (keeper2);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testTwoDelegatees")
-	     << "An Important Message"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testTwoDelegatees")
+             << "An Important Message"
+             << std::flush;
 
       test (keeper1.getLogLevel() == 8);
       test (keeper1.getProducerId() == "04-Tee");
@@ -146,9 +146,9 @@ namespace TeeTests {
       logger.addOutput (keeper2);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testFirstDelegateeFailed")
-	     << "An Important Message"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testFirstDelegateeFailed")
+             << "An Important Message"
+             << std::flush;
 
       test (!logger.good());
       test (keeper2.getLogLevel() == 8);
@@ -183,9 +183,9 @@ namespace TeeTests {
       logger.addOutput (keeper2);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testIgnoringFirstDelegatee")
-	     << "An Important Message"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testIgnoringFirstDelegatee")
+             << "An Important Message"
+             << std::flush;
 
       test (logger.good());
       test (keeper2.getLogLevel() == 8);
@@ -220,9 +220,9 @@ namespace TeeTests {
       logger.addOutput (keeper2);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testRecoveringFirstDelegatee")
-	     << "An Important Message"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testRecoveringFirstDelegatee")
+             << "An Important Message"
+             << std::flush;
 
       test (logger.good());
 
@@ -280,8 +280,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

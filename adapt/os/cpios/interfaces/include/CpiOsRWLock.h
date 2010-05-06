@@ -62,7 +62,7 @@ namespace CPI {
        */
 
       RWLock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
@@ -71,7 +71,7 @@ namespace CPI {
        */
 
       ~RWLock ()
-	throw ();
+        throw ();
 
       /**
        * Acquires a read lock.
@@ -85,7 +85,7 @@ namespace CPI {
        */
 
       void rdLock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Attempts to acquire a read lock without blocking.
@@ -97,7 +97,7 @@ namespace CPI {
        */
 
       bool rdTrylock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Releases a currently-held read lock.
@@ -109,7 +109,7 @@ namespace CPI {
        */
 
       void rdUnlock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Acquires a write lock.
@@ -124,7 +124,7 @@ namespace CPI {
        */
 
       void wrLock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Attempts to acquire the write lock without blocking.
@@ -136,7 +136,7 @@ namespace CPI {
        */
 
       bool wrTrylock ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Releases a currently-held write lock.
@@ -148,7 +148,7 @@ namespace CPI {
        */
 
       void wrUnlock ()
-	throw (std::string);
+        throw (std::string);
 
     private:
       CPI::OS::uint64_t m_osOpaque[16];

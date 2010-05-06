@@ -68,7 +68,7 @@ namespace CPI {
 
 #ifdef WAS
       Port(CPI::Container::Worker& w, PortData& initialPortData,
-	   CPI::Container::PortId pid );
+           CPI::Container::PortId pid );
 #endif
 
 
@@ -80,101 +80,101 @@ namespace CPI {
       virtual ~Port();
 
       void disconnect()
-	throw ( CPI::Util::EmbeddedException );
+        throw ( CPI::Util::EmbeddedException );
 
-	// Connection routines
-	const std::string& getInitialProviderInfo(CPI::Util::PValue*);
-	const std::string& setInitialProviderInfo(CPI::Util::PValue*, const std::string&);
-	const std::string& setInitialUserInfo(const std::string&);
-	const std::string& setFinalProviderInfo(const std::string&);
-	void setFinalUserInfo(const std::string&);
+        // Connection routines
+        const std::string& getInitialProviderInfo(CPI::Util::PValue*);
+        const std::string& setInitialProviderInfo(CPI::Util::PValue*, const std::string&);
+        const std::string& setInitialUserInfo(const std::string&);
+        const std::string& setFinalProviderInfo(const std::string&);
+        void setFinalUserInfo(const std::string&);
 
-	void checkConnectParams(){}
-	void connectInside(CPI::Container::Port & other, CPI::Util::PValue * my_props,  CPI::Util::PValue * other_props);
-	void finishConnection(CPI::RDT::Descriptors&){}
-	CPI::Container::ExternalPort& connectExternal(const char*, CPI::Util::PValue*, CPI::Util::PValue*);
+        void checkConnectParams(){}
+        void connectInside(CPI::Container::Port & other, CPI::Util::PValue * my_props,  CPI::Util::PValue * other_props);
+        void finishConnection(CPI::RDT::Descriptors&){}
+        CPI::Container::ExternalPort& connectExternal(const char*, CPI::Util::PValue*, CPI::Util::PValue*);
 
-	// Member access methods
-	inline CPI::DataTransport::Port *         &dtPort(){return m_dtPort;}
-	inline CPI::Container::PortId&            portId(){return m_portId;}
-	inline CPI::DataTransport::Circuit *      &circuit(){return m_circuit;}
-	inline OpaquePortData *                   &opaque(){return m_opaque;}
-	
+        // Member access methods
+        inline CPI::DataTransport::Port *         &dtPort(){return m_dtPort;}
+        inline CPI::Container::PortId&            portId(){return m_portId;}
+        inline CPI::DataTransport::Circuit *      &circuit(){return m_circuit;}
+        inline OpaquePortData *                   &opaque(){return m_opaque;}
+        
 
     private:
 
-	void
-	setOutputFlowControl( CPI::Container::PortData * srcPort )
-	  throw ( CPI::Util::EmbeddedException );
+        void
+        setOutputFlowControl( CPI::Container::PortData * srcPort )
+          throw ( CPI::Util::EmbeddedException );
 
 
-	void connectInputPort( PortData *    inputPort,    
-			       std::string&  lPort,
-			       CPI::Util::PValue*       props
-			       )
-	  throw ( CPI::Util::EmbeddedException );
+        void connectInputPort( PortData *    inputPort,    
+                               std::string&  lPort,
+                               CPI::Util::PValue*       props
+                               )
+          throw ( CPI::Util::EmbeddedException );
 
 
-	void initInputPort();
-	void initOutputPort();
-	void processPortProperties( CPI::Util::PValue* props );
-	void disconnect( CPI::Container::PortData* sp, CPI::Container::PortData* input );
+        void initInputPort();
+        void initOutputPort();
+        void processPortProperties( CPI::Util::PValue* props );
+        void disconnect( CPI::Container::PortData* sp, CPI::Container::PortData* input );
 
 
-	/**********************************
-	 * This method is used to connect an external port decribed in the
-	 * the PortDependencyData structure to a output port for the given worker.
-	 *********************************/
-	CPI::Container::PortConnectionDesc 
-	  connectExternalInputPort( 
-				    CPI::Container::PortData *     inputPort,
-				    CPI::Util::PValue*       props=NULL
-				    );
+        /**********************************
+         * This method is used to connect an external port decribed in the
+         * the PortDependencyData structure to a output port for the given worker.
+         *********************************/
+        CPI::Container::PortConnectionDesc 
+          connectExternalInputPort( 
+                                    CPI::Container::PortData *     inputPort,
+                                    CPI::Util::PValue*       props=NULL
+                                    );
 
-	/**********************************
-	 * This method is used to connect the external ports decribed in the
-	 * the PortDependencyData structure to output port for the given worker.
-	 *********************************/
-	void connectInternalInputPort( 
-				       CPI::Container::Port *          inputPort,  
-				       CPI::Util::PValue*       properties    
-				       );
+        /**********************************
+         * This method is used to connect the external ports decribed in the
+         * the PortDependencyData structure to output port for the given worker.
+         *********************************/
+        void connectInternalInputPort( 
+                                       CPI::Container::Port *          inputPort,  
+                                       CPI::Util::PValue*       properties    
+                                       );
 
 
-	// Data transport port reference
-	CPI::DataTransport::Port   *    m_dtPort;
+        // Data transport port reference
+        CPI::DataTransport::Port   *    m_dtPort;
 
-	// Port id that is used by the caller, it is an ordinal that is less than the maximum
-	// number of ports in a worker
-	CPI::Container::PortId  m_portId;
+        // Port id that is used by the caller, it is an ordinal that is less than the maximum
+        // number of ports in a worker
+        CPI::Container::PortId  m_portId;
 
-	// Our circuit
-	CPI::DataTransport::Circuit * m_circuit;   
+        // Our circuit
+        CPI::DataTransport::Circuit * m_circuit;   
 
-	// Port properties
-	CPI::Util::PValue*  m_props;	       
+        // Port properties
+        CPI::Util::PValue*  m_props;               
 
-	// Opaque port data cross link
-	OpaquePortData * m_opaque;
+        // Opaque port data cross link
+        OpaquePortData * m_opaque;
 
-	// local shadow port descriptor (string form)
-	std::string m_localShadowPort;
+        // local shadow port descriptor (string form)
+        std::string m_localShadowPort;
 
-	// our descriptor (string form)
-	std::string m_ourFinalDescriptor;
+        // our descriptor (string form)
+        std::string m_ourFinalDescriptor;
 
-	// Our connection cookie
-	struct MyConnection {
-	  MyConnection():connected(false),nosrcd(false){}
-	  void init( PortData * src, bool slocal,  PortData * input, bool tlocal);
-	  bool connected;
-	  CPI::CP289::Port  *   lsrc;
-	  bool                  nosrcd;
-	  CPI::CP289::Port  *   linput;
-	  CPI::Container::PortData  rsrc;
-	  CPI::Container::PortData  rinput;	  
-	};
-	MyConnection m_connectionCookie;
+        // Our connection cookie
+        struct MyConnection {
+          MyConnection():connected(false),nosrcd(false){}
+          void init( PortData * src, bool slocal,  PortData * input, bool tlocal);
+          bool connected;
+          CPI::CP289::Port  *   lsrc;
+          bool                  nosrcd;
+          CPI::CP289::Port  *   linput;
+          CPI::Container::PortData  rsrc;
+          CPI::Container::PortData  rinput;          
+        };
+        MyConnection m_connectionCookie;
 
     };
 

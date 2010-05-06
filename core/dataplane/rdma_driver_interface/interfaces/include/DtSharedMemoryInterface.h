@@ -47,14 +47,14 @@ namespace DataTransfer {
   struct EndPoint
   {
 
-    std::string  end_point;		// deep copy of the endpoint string
-    std::string  protocol;		// protocol string
-    CPI::OS::uint32_t     mailbox;	// endpoint mailbox
-    CPI::OS::uint32_t	  maxCount;	// Number of mailboxes in communication domain
-    CPI::OS::uint32_t     size;		// Size of endpoint area in bytes
+    std::string  end_point;                // deep copy of the endpoint string
+    std::string  protocol;                // protocol string
+    CPI::OS::uint32_t     mailbox;        // endpoint mailbox
+    CPI::OS::uint32_t          maxCount;        // Number of mailboxes in communication domain
+    CPI::OS::uint32_t     size;                // Size of endpoint area in bytes
     CPI::OS::uint32_t     event_id;     
-    bool                  local;	// local endpoint
-    SMBResources*	  resources;	// SMB resources associated with this endpoint
+    bool                  local;        // local endpoint
+    SMBResources*          resources;        // SMB resources associated with this endpoint
 
     // Constructors
     EndPoint(CPI::OS::uint32_t size=0);
@@ -73,12 +73,12 @@ namespace DataTransfer {
     static const char* getProtocolFromString( const char* ep, char* );
 
     static void getResourceValuesFromString( 
-			    const char*  ep,		// Endpoint value
-			    char*  cs,			// User provided buffer (at least sizeof ep )
-			    CPI::OS::uint32_t* mailBox,	// Mailbox value returned
-			    CPI::OS::uint32_t* maxMb,	// Maximum mailbox value in circuit returned
-			    CPI::OS::uint32_t* bufsize	// Buffer size returned
-			    );
+                            const char*  ep,                // Endpoint value
+                            char*  cs,                        // User provided buffer (at least sizeof ep )
+                            CPI::OS::uint32_t* mailBox,        // Mailbox value returned
+                            CPI::OS::uint32_t* maxMb,        // Maximum mailbox value in circuit returned
+                            CPI::OS::uint32_t* bufsize        // Buffer size returned
+                            );
 
   };
 
@@ -91,46 +91,46 @@ namespace DataTransfer {
 
     /*
      * Attach to an existing shared memory object by name.
-     *	Arguments:
-     *		name	- Name of shared memory to attach to
-     *	Returns:
-     *		Returns 0 if success, platform dependent error otherwise
+     *        Arguments:
+     *                name        - Name of shared memory to attach to
+     *        Returns:
+     *                Returns 0 if success, platform dependent error otherwise
      *
      */
     virtual CPI::OS::int32_t attach (EndPoint* loc) = 0;
 
     /*
      * Detach from shared memory object
-     *	Arguments:
-     *	Returns:
-     *		Returns 0 if success, platform dependent error otherwise
+     *        Arguments:
+     *        Returns:
+     *                Returns 0 if success, platform dependent error otherwise
      *
      */
     virtual CPI::OS::int32_t detach () = 0;
 
     /*
      * Map a view of the shared memory area at some offset/size and return the virtual address.
-     *	Arguments:
-     *		offset	- offset into the shared memory area to map in bytes
-     *		size	- size of the area to map where 0 means entire shared memory area
-     *		pva		- receives the virtual address of the mapping
-     *	Returns:
-     *		Returns address if success, NULL on error and sets platform dependent exception
+     *        Arguments:
+     *                offset        - offset into the shared memory area to map in bytes
+     *                size        - size of the area to map where 0 means entire shared memory area
+     *                pva                - receives the virtual address of the mapping
+     *        Returns:
+     *                Returns address if success, NULL on error and sets platform dependent exception
      *
      */
     virtual void* map (CPI::OS::uint64_t offset, CPI::OS::uint32_t size ) = 0;
 
     /*
      * Unmap the current mapped view.
-     *	Arguments:
-     *	Returns:
-     *		Returns 0 if success, platform dependent error otherwise
+     *        Arguments:
+     *        Returns:
+     *                Returns 0 if success, platform dependent error otherwise
      *
      */
     virtual CPI::OS::int32_t unMap () = 0;
 
     /*
-     *	GetEndPoint - Returns the endpoint of the shared memory area
+     *        GetEndPoint - Returns the endpoint of the shared memory area
      */
     virtual EndPoint* getEndPoint () = 0;
 

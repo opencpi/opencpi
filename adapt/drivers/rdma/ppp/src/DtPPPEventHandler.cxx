@@ -43,12 +43,12 @@ extern "C" {
     memInfo.access.bridge.local.sp.rio.localport = 0;
     memInfo.access.bridge.local.sp.rio.destid = tid;
     memInfo.access.bridge.local.sp.rio.hopcount = hc;
-    memInfo.access.bridge.local.sp.rio.qualifier = 0;	
+    memInfo.access.bridge.local.sp.rio.qualifier = 0;        
     rose_mailbox_encode_cookie(id, value, value, &data);
     for ( int n=0; n<count; n++) {
       ret = rose_send_mbox(&memInfo, &data);
       if ( ret != ROSE_SUCCESS ) {
-	break;
+        break;
       }
     }
     return ret;
@@ -85,27 +85,27 @@ namespace DataTransfer {
       int &m_tid;
       int m_mbId;
       PPPEHWakeupThread( int& tid, int mbid, int uSec )
-	:m_run(true),m_tid(tid),m_mbId(mbid){setTime(uSec);}
+        :m_run(true),m_tid(tid),m_mbId(mbid){setTime(uSec);}
       void setTime( int uSec )
       {
-	// We will set a max timeout period
-	if ( uSec > 5000 ) {
-	  m_sleepTime = 5000 / 1000;
-	}
-	else {
-	  m_sleepTime=(uSec / 1000);
-	}
+        // We will set a max timeout period
+        if ( uSec > 5000 ) {
+          m_sleepTime = 5000 / 1000;
+        }
+        else {
+          m_sleepTime=(uSec / 1000);
+        }
       };
 
       void run() {
-	while(m_run) {
+        while(m_run) {
 
-	  // For our current implementation we have mSec resolution for timeouts
-	  CPI::OS::sleep( m_sleepTime );
-	  if ( m_tid != -1 ) {
-	    send_mbox( m_tid, m_mbId, 0, 1);	  
-	  }
-	}
+          // For our current implementation we have mSec resolution for timeouts
+          CPI::OS::sleep( m_sleepTime );
+          if ( m_tid != -1 ) {
+            send_mbox( m_tid, m_mbId, 0, 1);          
+          }
+        }
       }
     };
   }
@@ -115,7 +115,7 @@ namespace DataTransfer {
 DataTransfer::ReturnStatus 
 DataTransfer::PPPEventHandler::init( int lr, int hr)
 {
-  int	rc;
+  int        rc;
   RoseUint32Type port;
   int device_id = 1;
   int i;
@@ -131,7 +131,7 @@ DataTransfer::PPPEventHandler::init( int lr, int hr)
 
   memset(&m_interrupt, 0x0, sizeof(RoseInterruptInfo));
   m_pending = 0;
-	
+        
   /* 
   ** assign fabric bridge.
   */
@@ -157,7 +157,7 @@ DataTransfer::PPPEventHandler::init( int lr, int hr)
   m_interrupt.info.interrupt.mailbox.numRanges = 1;
   m_interrupt.info.interrupt.mailbox.channelRanges[0].min = lr;
   m_interrupt.info.interrupt.mailbox.channelRanges[0].max = hr-10;
-  m_ourMbId = lr;	
+  m_ourMbId = lr;        
   for (i = 0; i < 4; i++) {
     m_interrupt.info.interrupt.dmaError.channelInfo[i].options = ROSE_DMA_ERROR_FAILED_ID;
     m_interrupt.info.interrupt.dmaError.channelInfo[i].dmaChannel = i;
@@ -185,7 +185,7 @@ DataTransfer::PPPEventHandler::init( int lr, int hr)
   ** get deferred buffer and setup ring buffer.
   */
   rc = rose_get_deferred_buffer(&m_handle, &m_pBuffer, 
-				   PPP_EVENT_Q_SIZE/* *sizeof(RoseMailboxCookie) */);
+                                   PPP_EVENT_Q_SIZE/* *sizeof(RoseMailboxCookie) */);
   if ( rc != ROSE_SUCCESS ) {
 #ifndef NDEBUG
     printf("Got error %d from rose_get_deferred_buffer()  \n", rc );
@@ -195,12 +195,12 @@ DataTransfer::PPPEventHandler::init( int lr, int hr)
     return DataTransfer::EventFailure;
   }
   ( void ) rose_interrupt_check ( &m_handle );
-	
+        
   m_ringStart = (RoseMailboxCookie *)m_pBuffer;
   m_ringEnd = m_ringStart + PPP_EVENT_Q_SIZE; //RoseMailboxCookie;
   m_ringCurrent = m_ringStart;
 
-  m_WakeUpThread->start();	
+  m_WakeUpThread->start();        
   return DataTransfer::EventSuccess;
 
 }
@@ -249,7 +249,7 @@ DataTransfer::PPPEventHandler::getPendingEvent(int &id, CPI::OS::uint64_t &value
 #endif
 
   RoseMailboxCookie *cookie;
-  RoseUint32Type	channel;
+  RoseUint32Type        channel;
   RoseUint32Type d22;
   RoseUint32Type d32;
   if ( m_pending == 0 ) {
@@ -283,37 +283,37 @@ DataTransfer::PPPEventHandler::getPendingEvent(int &id, CPI::OS::uint64_t &value
     // Reserved for worker threads
   }
   else if ( (channel >= ROSE_TEST_CH_MBOX_DMA_COMPLETE) &&
-	    (channel <= ROSE_TEST_CH_MBOX_DMA_COMPLETE+4 ) ) {
+            (channel <= ROSE_TEST_CH_MBOX_DMA_COMPLETE+4 ) ) {
     printf("Got a DMA chain complete interrupt\n");
     channel = 103;
   }
   else {
     printf("got an event from channel = %d\n", channel );
   }
-#endif	
-	
+#endif        
+        
   value = ((CPI::OS::uint64_t)d22 << 32) | d32;
 
-#ifndef NDEBUG	
+#ifndef NDEBUG        
   if (event_print )
     printf("PPPEventHandler::get_pending_event(%d) return value = %lld\n", id, value);
 #endif
 
   return DataTransfer::EventSuccess;
 }
-	
+        
 
 
 DataTransfer::ReturnStatus 
 DataTransfer::PPPEventHandler::waitForEvent( int timeout_us, int &id, CPI::OS::uint64_t &value )
 {
   RoseMailboxCookie *cookie;
-  RoseUint32Type	channel;
+  RoseUint32Type        channel;
   RoseUint32Type d22;
   RoseUint32Type d32;
-  int	rc;
+  int        rc;
 
-#ifndef NDEBUG	
+#ifndef NDEBUG        
   if (event_print ) {
     printf("PPPwfe in wait_for_event()\n");
     printf("PPPwfe nPending = %d\n", m_pending );
@@ -322,7 +322,7 @@ DataTransfer::PPPEventHandler::waitForEvent( int timeout_us, int &id, CPI::OS::u
 
   if ( m_pending == 0 ) {
 
-#ifndef NDEBUG				
+#ifndef NDEBUG                                
     if ( event_print ) {
       printf("PPPwfe About to block until we get a mailbox interrupt\n");
       printf("m_pending = %d, before block\n", m_pending );
@@ -343,9 +343,9 @@ DataTransfer::PPPEventHandler::waitForEvent( int timeout_us, int &id, CPI::OS::u
       return DataTransfer::EventFailure;
     }
   }
-		
+                
   cookie = m_ringCurrent;
-		
+                
   /*
   ** process cookie
   */
@@ -359,22 +359,22 @@ DataTransfer::PPPEventHandler::waitForEvent( int timeout_us, int &id, CPI::OS::u
     event_print = false;
   }
   else if ( (channel >= ROSE_TEST_CH_MBOX_DMA_COMPLETE) &&
-	    (channel <= ROSE_TEST_CH_MBOX_DMA_COMPLETE+4 ) ) {
+            (channel <= ROSE_TEST_CH_MBOX_DMA_COMPLETE+4 ) ) {
     printf("Got a DMA chain complete interrupt\n");
-    channel = 103;					
+    channel = 103;                                        
   }
 #endif
 
-#ifndef NDEBUG			
+#ifndef NDEBUG                        
   if ( event_print ) 
     printf("PPPwfe The mailbox interrupt was for channel %d\n", channel);
 #endif
-			
+                        
   id = channel;
   value = ((CPI::OS::uint64_t)d22 << 32) | d32;
-	
+        
   return DataTransfer::EventSuccess;
-	
+        
 }
 
 

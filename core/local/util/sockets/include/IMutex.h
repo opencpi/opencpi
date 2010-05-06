@@ -1,6 +1,6 @@
 /** \file IMutex.h
- **	\date  2008-10-25
- **	\author grymse@alhem.net
+ **        \date  2008-10-25
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -39,14 +39,14 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 /** IMutex interface.
-	\ingroup threading */
+        \ingroup threading */
 class IMutex
 {
 public:
-	virtual ~IMutex() {}
+        virtual ~IMutex() {}
 
-	virtual void Lock() const = 0;
-	virtual void Unlock() const = 0;
+        virtual void Lock() const = 0;
+        virtual void Unlock() const = 0;
 };
 
 

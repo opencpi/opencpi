@@ -187,7 +187,7 @@ createArtifact(const char *url, CPI::Util::PValue *)
 CPI::Container::Worker &
 CPI::CP289::Application::
 createWorker(const char *url, CPI::Util::PValue *aparams,
-	     const void *entryPoint, const char *inst, CPI::Util::PValue *wparams )
+             const void *entryPoint, const char *inst, CPI::Util::PValue *wparams )
 {
   CPI::Util::AutoMutex guard ( m_mutex, true ); 
   return *(new CPI::CP289::Worker( *this, entryPoint, wparams, MyParent, NULL, NULL ));

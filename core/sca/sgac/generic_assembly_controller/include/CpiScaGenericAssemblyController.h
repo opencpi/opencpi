@@ -82,87 +82,87 @@ namespace CPI {
        */
 
       GenericAssemblyController (CORBA::ORB_ptr orb,
-				 PortableServer::POA_ptr poa,
-				 const std::string & componentIdentifier,
-				 CPI::Logger::Logger * logger = 0,
-				 bool adoptLogger = true,
-				 bool shutdownOrbOnRelease = false)
-	throw (std::string);
+                                 PortableServer::POA_ptr poa,
+                                 const std::string & componentIdentifier,
+                                 CPI::Logger::Logger * logger = 0,
+                                 bool adoptLogger = true,
+                                 bool shutdownOrbOnRelease = false)
+        throw (std::string);
 
       ~GenericAssemblyController ()
-	throw ();
+        throw ();
 
       /*
        * CPI::CFUtil::ReceptacleHelperCallback
        */
 
       void connectPort (const std::string & portName,
-			const std::string & connectionId)
-	throw (CF::Port::InvalidPort,
-	       CF::Port::OccupiedPort,
-	       CORBA::SystemException);
+                        const std::string & connectionId)
+        throw (CF::Port::InvalidPort,
+               CF::Port::OccupiedPort,
+               CORBA::SystemException);
 
       void disconnectPort (const std::string & portName,
-			   const std::string & connectionId)
-	throw (CF::Port::InvalidPort,
-	       CORBA::SystemException);
+                           const std::string & connectionId)
+        throw (CF::Port::InvalidPort,
+               CORBA::SystemException);
 
       /*
        * CF::LifeCycle
        */
 
       void initialize ()
-	throw (CF::LifeCycle::InitializeError,
-	       CORBA::SystemException);
+        throw (CF::LifeCycle::InitializeError,
+               CORBA::SystemException);
 
       void releaseObject ()
-	throw (CF::LifeCycle::ReleaseError,
-	       CORBA::SystemException);
+        throw (CF::LifeCycle::ReleaseError,
+               CORBA::SystemException);
 
       /*
        * CF::TestableObject
        */
 
       void runTest (CORBA::ULong testId, CF::Properties & testValues)
-	throw (CF::TestableObject::UnknownTest,
-	       CF::UnknownProperties,
-	       CORBA::SystemException);
+        throw (CF::TestableObject::UnknownTest,
+               CF::UnknownProperties,
+               CORBA::SystemException);
 
       /*
        * CF::PropertySet
        */
 
       void configure (const CF::Properties & configProperties)
-	throw (CF::PropertySet::InvalidConfiguration,
-	       CF::PropertySet::PartialConfiguration,
-	       CORBA::SystemException);
+        throw (CF::PropertySet::InvalidConfiguration,
+               CF::PropertySet::PartialConfiguration,
+               CORBA::SystemException);
 
       void query (CF::Properties & configProperties)
-	throw (CF::UnknownProperties,
-	       CORBA::SystemException);
+        throw (CF::UnknownProperties,
+               CORBA::SystemException);
 
       /*
        * CF::PortSupplier
        */
 
       CORBA::Object_ptr getPort (const char * name)
-	throw (CF::PortSupplier::UnknownPort,
-	       CORBA::SystemException);
+        throw (CF::PortSupplier::UnknownPort,
+               CORBA::SystemException);
 
       /*
        * CF::Resource
        */
 
       char * identifier ()
-	throw (CORBA::SystemException);
+        throw (CORBA::SystemException);
 
       void start ()
-	throw (CF::Resource::StartError,
-	       CORBA::SystemException);
+        throw (CF::Resource::StartError,
+               CORBA::SystemException);
 
       void stop ()
-	throw (CF::Resource::StopError,
-	       CORBA::SystemException);
+        throw (CF::Resource::StopError,
+               CORBA::SystemException);
 
     protected:
       /*
@@ -179,10 +179,10 @@ namespace CPI {
        */
 
       bool configureProducerLogLevel (const CF::DataType & property)
-	throw ();
+        throw ();
 
       void queryProducerLogLevel (CF::DataType & property)
-	throw ();
+        throw ();
 
     protected:
       /*
@@ -190,10 +190,10 @@ namespace CPI {
        */
 
       void mergeProperties (CF::Properties & set,
-			    CORBA::ULong & setSize,
-			    const CF::Properties & toMerge,
-			    const std::string & propPrefix)
-	throw ();
+                            CORBA::ULong & setSize,
+                            const CF::Properties & toMerge,
+                            const std::string & propPrefix)
+        throw ();
 
     protected:
       /*

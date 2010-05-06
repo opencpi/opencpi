@@ -113,25 +113,25 @@ DataPartition::DataPartition( DataPartitionMetaData* md )
 /**********************************
  * Get the total number of parts that make up the whole for this distribution.
  **********************************/
-CPI::OS::uint32_t DataPartition::getPartsCount(	
-					       PortSet* src_ps, 
-					       PortSet* input_ps )
+CPI::OS::uint32_t DataPartition::getPartsCount(        
+                                               PortSet* src_ps, 
+                                               PortSet* input_ps )
 {
   CPI::OS::uint32_t  parts_count = 1;
-	
+        
   // Get the output info
   DataPartition*  src_part = src_ps->getDataDistribution()->getDataPartition();
   CPI::OS::uint32_t buf_len = src_ps->getPortFromIndex(0)->getBuffer(0)->getLength();
-	
+        
   // Get input info
   DataPartition*  input_part = input_ps->getDataDistribution()->getDataPartition();
-	
+        
   if ( src_part->getData()->dataPartType ==  DataPartitionMetaData::INDIVISIBLE ) {
     if ( input_part->getData()->dataPartType ==  DataPartitionMetaData::BLOCK ) {
-			
+                        
       parts_count = buf_len / m_data->maxSize;
       parts_count += (buf_len%m_data->maxSize) ? 1 : 0;
-			
+                        
     }
   }
 
@@ -142,7 +142,7 @@ CPI::OS::uint32_t DataPartition::getPartsCount(
 /**********************************
  * Get the total number of individual transfers that are needed.
  **********************************/
-CPI::OS::uint32_t DataPartition::getTransferCount( PortSet* src_ps, PortSet* input_ps )			
+CPI::OS::uint32_t DataPartition::getTransferCount( PortSet* src_ps, PortSet* input_ps )                        
 {
   CPI::OS::uint32_t  trans_count = 1;
 
@@ -154,7 +154,7 @@ CPI::OS::uint32_t DataPartition::getTransferCount( PortSet* src_ps, PortSet* inp
 
   if ( src_part->getData()->dataPartType ==  DataPartitionMetaData::INDIVISIBLE ) {
     if ( input_part->getData()->dataPartType ==  DataPartitionMetaData::BLOCK ) {
-			
+                        
       CPI::OS::uint32_t parts_count = getPartsCount( src_ps, input_ps );
       trans_count = (parts_count + (parts_count%input_ps->getPortCount())) / input_ps->getPortCount();
 
@@ -169,24 +169,24 @@ CPI::OS::uint32_t DataPartition::getTransferCount( PortSet* src_ps, PortSet* inp
 /**********************************
  * Given the parts sequence, calculate the offset into output buffer
  **********************************/
-CPI::OS::uint32_t DataPartition::getOutputOffset(	
-						 PortSet* src_ps, 
-						 PortSet* input_ps,
-						 CPI::OS::uint32_t sequence )
+CPI::OS::uint32_t DataPartition::getOutputOffset(        
+                                                 PortSet* src_ps, 
+                                                 PortSet* input_ps,
+                                                 CPI::OS::uint32_t sequence )
 {
   CPI::OS::uint32_t parts_count = getPartsCount( src_ps, input_ps );
   return (src_ps->getBufferLength() / parts_count) * sequence;
 }
-		
+                
 
 
 
 
 void DataPartition::calculateWholeToParts( 
-					  CPI::OS::uint32_t	sequence,			// In - Transfer sequence
-					  Buffer   *src_buf,			    // In - Output buffer
-					  Buffer   *input_buf,		    // In - Input buffer
-					  BufferInfo *buf_info)			// InOut - Buffer info
+                                          CPI::OS::uint32_t        sequence,                        // In - Transfer sequence
+                                          Buffer   *src_buf,                            // In - Output buffer
+                                          Buffer   *input_buf,                    // In - Input buffer
+                                          BufferInfo *buf_info)                        // InOut - Buffer info
 {
   int input_port_count = input_buf->getPort()->getPortSet()->getPortCount();
   int input_rank       = input_buf->getPort()->getRank();
@@ -200,7 +200,7 @@ void DataPartition::calculateWholeToParts(
     buf_info->length = 0;
   }
   else if ( (buf_info->output_offset+m_data->maxSize) > src_buf->getLength() ) {
-    //		buf_info->length = (buf_info->output_offset+m_data->maxSize) - src_buf->getLength();
+    //                buf_info->length = (buf_info->output_offset+m_data->maxSize) - src_buf->getLength();
     buf_info->length = src_buf->getLength() % m_data->maxSize;
   }
   else {
@@ -214,34 +214,34 @@ void DataPartition::calculateWholeToParts(
 
 
 void DataPartition::calculatePartsToWhole( 
-					  CPI::OS::uint32_t 	   ,			
-					  Buffer     *,			    
-					  Buffer     *,		    
-					  BufferInfo *)			
+                                          CPI::OS::uint32_t            ,                        
+                                          Buffer     *,                            
+                                          Buffer     *,                    
+                                          BufferInfo *)                        
 {
-	
-	
+        
+        
 }
 
 
 void DataPartition::calculatePartsToParts( 
-					  CPI::OS::uint32_t 	  ,			
-					  Buffer   *,			    
-					  Buffer   *,		   
-					  BufferInfo *)			
+                                          CPI::OS::uint32_t           ,                        
+                                          Buffer   *,                            
+                                          Buffer   *,                   
+                                          BufferInfo *)                        
 {
 
-	
-	
+        
+        
 }
 
 
 
 CPI::OS::int32_t DataPartition::calculateBufferOffsets( 
-						       CPI::OS::uint32_t 		   sequence,				// In - Transfer sequence
-						       Buffer   *src_buf,			    // In - Output buffer
-						       Buffer   *input_buf,		    // In - Input buffer
-						       BufferInfo **buf_info)     // Out - Input buffer offset information
+                                                       CPI::OS::uint32_t                    sequence,                                // In - Transfer sequence
+                                                       Buffer   *src_buf,                            // In - Output buffer
+                                                       Buffer   *input_buf,                    // In - Input buffer
+                                                       BufferInfo **buf_info)     // Out - Input buffer offset information
 {
 
 
@@ -252,7 +252,7 @@ CPI::OS::int32_t DataPartition::calculateBufferOffsets(
   DataPartition*  src_part = src_ps->getDataDistribution()->getDataPartition();
 
   // Get input info
-  CPI::DataTransport::Port*	 input_port = static_cast<CPI::DataTransport::Port*>(input_buf->getPort());
+  CPI::DataTransport::Port*         input_port = static_cast<CPI::DataTransport::Port*>(input_buf->getPort());
   CPI::DataTransport::PortSet*   input_ps   = input_port->getPortSet();
   DataPartition*  input_part = input_ps->getDataDistribution()->getDataPartition();
 
@@ -264,61 +264,61 @@ CPI::OS::int32_t DataPartition::calculateBufferOffsets(
 
   // Switch on the input partition type
   switch ( src_part->getData()->dataPartType ) {
-		
+                
   case DataPartitionMetaData::INDIVISIBLE:
     {
 
       // Now switch on the output partition type
       switch ( input_part->getData()->dataPartType ) {
-				
-				
-	// In this case, there are no parts
+                                
+                                
+        // In this case, there are no parts
       case DataPartitionMetaData::INDIVISIBLE:
-	{
-	  input_buf_info->output_offset = 0;
-	  input_buf_info->input_offset = 0;
-	  input_buf_info->length = src_buf->getLength();
-	}
-	break;
-				
-				
-	// Output is whole, input is parts
+        {
+          input_buf_info->output_offset = 0;
+          input_buf_info->input_offset = 0;
+          input_buf_info->length = src_buf->getLength();
+        }
+        break;
+                                
+                                
+        // Output is whole, input is parts
       case DataPartitionMetaData::BLOCK:
-	{
-	  calculateWholeToParts( sequence, src_buf, input_buf, input_buf_info);
-	}
-	break;	
+        {
+          calculateWholeToParts( sequence, src_buf, input_buf, input_buf_info);
+        }
+        break;        
       }
-			
+                        
     }
     break;
-		
-		
+                
+                
   case DataPartitionMetaData::BLOCK:
     {
-			
+                        
       // Now switch on the output partition type
       switch ( input_part->getData()->dataPartType ) {
-				
-	// Output is parts, input is whole
+                                
+        // Output is parts, input is whole
       case DataPartitionMetaData::INDIVISIBLE:
-	{
-	  calculatePartsToWhole( sequence, src_buf, input_buf, input_buf_info);
-	}
-	break;
-				
-				
-	// Output is parts, input is parts
+        {
+          calculatePartsToWhole( sequence, src_buf, input_buf, input_buf_info);
+        }
+        break;
+                                
+                                
+        // Output is parts, input is parts
       case DataPartitionMetaData::BLOCK:
-	{
-	  calculatePartsToParts( sequence, src_buf, input_buf, input_buf_info);
-	}
-	break;
+        {
+          calculatePartsToParts( sequence, src_buf, input_buf, input_buf_info);
+        }
+        break;
       }
       break;
-			
+                        
     }
-		
+                
 
   }
 

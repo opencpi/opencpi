@@ -99,10 +99,10 @@ CpiWorkerReportConfigurator::g_options[] = {
 static
 void
 printUsage (CpiWorkerReportConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options] <SPD-SCD-or-PRF-file>" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -150,20 +150,20 @@ enumerateProps ()
 
     if (p.is_sequence) {
       m_out << "Property "
-	    << pi+1
-	    << ": \""
-	    << p.name
-	    << "\" length: Readwrite unsigned long at offset "
-	    << p.offset
-	    << ", size 4."
-	    << std::endl;
+            << pi+1
+            << ": \""
+            << p.name
+            << "\" length: Readwrite unsigned long at offset "
+            << p.offset
+            << ", size 4."
+            << std::endl;
     }
 
     m_out << "Property "
-	  << pi+1
-	  << ": \""
-	  << p.name
-	  << "\": ";
+          << pi+1
+          << ": \""
+          << p.name
+          << "\": ";
 
     if (p.is_readable && p.is_writable) {
       m_out << "Readwrite ";
@@ -227,10 +227,10 @@ enumerateProps ()
     CPI::SCA::Port & p = m_ports[pi];
 
     m_out << "Port "
-	  << pi
-	  << ": \""
-	  << p.name
-	  << "\": ";
+          << pi
+          << ": \""
+          << p.name
+          << "\": ";
 
     if (p.provider) {
       m_out << "Input port";
@@ -255,34 +255,34 @@ enumerateProps ()
       m_out << ": Input values: ";
 
       for (unsigned int ii=0; ii<t.numInputs; ii++) {
-	if (ii) {
-	  m_out << ", ";
-	}
+        if (ii) {
+          m_out << ", ";
+        }
 
-	cpiAssert (t.inputValues[ii] < m_numProperties);
+        cpiAssert (t.inputValues[ii] < m_numProperties);
 
-	m_out << m_properties[t.inputValues[ii]].name;
+        m_out << m_properties[t.inputValues[ii]].name;
       }
     }
 
     if (t.numResults) {
       if (t.numInputs) {
-	m_out << "; ";
+        m_out << "; ";
       }
       else {
-	m_out << ": ";
+        m_out << ": ";
       }
 
       m_out << "Result values: ";
 
       for (unsigned int oi=0; oi<t.numResults; oi++) {
-	if (oi) {
-	  m_out << ", ";
-	}
+        if (oi) {
+          m_out << ", ";
+        }
 
-	cpiAssert (t.resultValues[oi] < m_numProperties);
+        cpiAssert (t.resultValues[oi] < m_numProperties);
 
-	m_out << m_properties[t.resultValues[oi]].name;
+        m_out << m_properties[t.resultValues[oi]].name;
       }
     }
 
@@ -299,7 +299,7 @@ enumerateProps ()
 static
 bool
 findImplInSPD (ezxml_t spdRoot,
-	       const std::string & implId)
+               const std::string & implId)
   throw ()
 {
   ezxml_t implNode = ezxml_child (spdRoot, "implementation");
@@ -348,9 +348,9 @@ cpiWorkerReportInt (int argc, char * argv[])
 
   if (config.verbose) {
     std::cout << "Determining file type of \""
-	      << argv[1]
-	      << "\" ... "
-	      << std::flush;
+              << argv[1]
+              << "\" ... "
+              << std::flush;
   }
 
   std::string fileName;
@@ -400,9 +400,9 @@ cpiWorkerReportInt (int argc, char * argv[])
 
   if (config.verbose) {
     std::cout << "Processing \""
-	      << argv[1]
-	      << "\" ... "
-	      << std::flush;
+              << argv[1]
+              << "\" ... "
+              << std::flush;
   }
 
   CpiPropsEnumerator codeGenerator (std::cout);
@@ -410,28 +410,28 @@ cpiWorkerReportInt (int argc, char * argv[])
   try {
     if (std::strcmp (type, "softpkg") == 0) {
       if (config.implementation.length() &&
-	  !findImplInSPD (root, config.implementation)) {
-	std::cerr << "Warning: Implementation \""
-		  << config.implementation
-		  << "\" not found in software package.  Ignoring."
-		  << std::endl;
-	config.implementation.clear ();
+          !findImplInSPD (root, config.implementation)) {
+        std::cerr << "Warning: Implementation \""
+                  << config.implementation
+                  << "\" not found in software package.  Ignoring."
+                  << std::endl;
+        config.implementation.clear ();
       }
 
       codeGenerator.processSPD (fileFs, fileName, config.implementation, root);
     }
     else if (std::strcmp (type, "softwarecomponent") == 0) {
       if (config.implementation.length()) {
-	std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
-		  << std::endl;
+        std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
+                  << std::endl;
       }
 
       codeGenerator.processSCD (fileFs, fileName, root);
     }
     else if (std::strcmp (type, "properties") == 0) {
       if (config.implementation.length()) {
-	std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
-		  << std::endl;
+        std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
+                  << std::endl;
       }
 
       codeGenerator.processPRF (root);
@@ -493,8 +493,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

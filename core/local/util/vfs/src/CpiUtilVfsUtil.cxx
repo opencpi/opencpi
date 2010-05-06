@@ -30,7 +30,7 @@ isXMLDocument (Vfs * fs, const std::string & fileName)
     }
     catch (...) {
       try {
-	fs->close (istr);
+        fs->close (istr);
       }
       catch (...) {
       }
@@ -57,8 +57,8 @@ isXMLDocument (Vfs * fs, const std::string & fileName)
 void
 CPI::Util::Vfs::
 copyFilesRecursively (Vfs * srcFs, const std::string & srcDir,
-		      Vfs * destFs, const std::string & destDir,
-		      const std::string & pattern)
+                      Vfs * destFs, const std::string & destDir,
+                      const std::string & pattern)
   throw (std::string)
 {
   if (CPI::Util::Vfs::relativeName (pattern) != pattern) {
@@ -74,13 +74,13 @@ copyFilesRecursively (Vfs * srcFs, const std::string & srcDir,
   try {
     while (!it->end()) {
       if (it->isDirectory()) {
-	std::string newSrcDir =
-	  CPI::Util::Vfs::joinNames (srcDir, it->relativeName());
-	std::string newDestDir =
-	  CPI::Util::Vfs::joinNames (destDir, it->relativeName());
-	copyDirectoryRecursively (srcFs, newSrcDir,
-				  destFs, newDestDir,
-				  pattern);
+        std::string newSrcDir =
+          CPI::Util::Vfs::joinNames (srcDir, it->relativeName());
+        std::string newDestDir =
+          CPI::Util::Vfs::joinNames (destDir, it->relativeName());
+        copyDirectoryRecursively (srcFs, newSrcDir,
+                                  destFs, newDestDir,
+                                  pattern);
       }
       it->next ();
     }
@@ -101,9 +101,9 @@ copyFilesRecursively (Vfs * srcFs, const std::string & srcDir,
   try {
     while (!it->end()) {
       if (!it->isDirectory()) {
-	std::string destFileName =
-	  CPI::Util::Vfs::joinNames (destDir, it->relativeName());
-	srcFs->copy (it->absoluteName(), destFs, destFileName);
+        std::string destFileName =
+          CPI::Util::Vfs::joinNames (destDir, it->relativeName());
+        srcFs->copy (it->absoluteName(), destFs, destFileName);
       }
       it->next ();
     }
@@ -119,8 +119,8 @@ copyFilesRecursively (Vfs * srcFs, const std::string & srcDir,
 void
 CPI::Util::Vfs::
 copyDirectoryRecursively (Vfs * srcFs, const std::string & srcName,
-			  Vfs * destFs, const std::string & destName,
-			  const std::string & pattern)
+                          Vfs * destFs, const std::string & destName,
+                          const std::string & pattern)
   throw (std::string)
 {
   destFs->mkdir (destName);
@@ -130,9 +130,9 @@ copyDirectoryRecursively (Vfs * srcFs, const std::string & srcName,
 void
 CPI::Util::Vfs::
 removeFilesRecursively (Vfs * fs,
-			const std::string & dir,
-			const std::string & pattern,
-			bool deleteEmptyDirectories)
+                        const std::string & dir,
+                        const std::string & pattern,
+                        bool deleteEmptyDirectories)
   throw (std::string)
 {
   if (CPI::Util::Vfs::relativeName (pattern) != pattern) {
@@ -148,31 +148,31 @@ removeFilesRecursively (Vfs * fs,
   try {
     while (!it->end()) {
       if (it->isDirectory()) {
-	removeFilesRecursively (fs, it->absoluteName(), pattern,
-				deleteEmptyDirectories);
+        removeFilesRecursively (fs, it->absoluteName(), pattern,
+                                deleteEmptyDirectories);
 
-	/*
-	 * If deleteEmptyDirectories is true, see if that directory
-	 * is now empty. If yes, delete it.
-	 */
+        /*
+         * If deleteEmptyDirectories is true, see if that directory
+         * is now empty. If yes, delete it.
+         */
 
-	if (deleteEmptyDirectories) {
-	  CPI::Util::Vfs::Iterator * it2 =
-	    fs->list (it->absoluteName());
+        if (deleteEmptyDirectories) {
+          CPI::Util::Vfs::Iterator * it2 =
+            fs->list (it->absoluteName());
 
-	  bool isempty;
+          bool isempty;
 
-	  try {
-	    isempty = it2->end ();
-	  }
-	  catch (...) {
-	    fs->closeIterator (it2);
-	    throw;
-	  }
+          try {
+            isempty = it2->end ();
+          }
+          catch (...) {
+            fs->closeIterator (it2);
+            throw;
+          }
 
-	  fs->closeIterator (it2);
-	  fs->rmdir (it->absoluteName());
-	}
+          fs->closeIterator (it2);
+          fs->rmdir (it->absoluteName());
+        }
       }
       it->next ();
     }
@@ -193,7 +193,7 @@ removeFilesRecursively (Vfs * fs,
   try {
     while (!it->end()) {
       if (!it->isDirectory()) {
-	fs->remove (it->absoluteName());
+        fs->remove (it->absoluteName());
       }
       it->next ();
     }
@@ -209,9 +209,9 @@ removeFilesRecursively (Vfs * fs,
 void
 CPI::Util::Vfs::
 removeDirectoryRecursively (Vfs * fs,
-			    const std::string & dir,
-			    const std::string & pattern,
-			    bool deleteEmptyDirectories)
+                            const std::string & dir,
+                            const std::string & pattern,
+                            bool deleteEmptyDirectories)
   throw (std::string)
 {
   removeFilesRecursively (fs, dir, pattern, deleteEmptyDirectories);
@@ -262,10 +262,10 @@ CPI::Util::Vfs::EventualEraser::
   if (m_fs) {
     try {
       if (m_isFile) {
-	m_fs->remove (m_name);
+        m_fs->remove (m_name);
       }
       else {
-	CPI::Util::Vfs::removeDirectoryRecursively (m_fs, m_name);
+        CPI::Util::Vfs::removeDirectoryRecursively (m_fs, m_name);
       }
     }
     catch (...) {

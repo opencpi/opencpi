@@ -89,73 +89,73 @@ namespace CPI {
 
       public:
 
-	/**********************************
-	 * Constructors
-	 *********************************/
-	TransportGlobal( CPI::OS::int32_t argc, char** argv );
-	TransportGlobal( int event_ordinal, bool use_events);
+        /**********************************
+         * Constructors
+         *********************************/
+        TransportGlobal( CPI::OS::int32_t argc, char** argv );
+        TransportGlobal( int event_ordinal, bool use_events);
 
-	/**********************************
-	 * Destructor
-	 *********************************/
-	virtual ~TransportGlobal();
+        /**********************************
+         * Destructor
+         *********************************/
+        virtual ~TransportGlobal();
 
-	/**********************************
-	 * Get the shared memory service by smb id
-	 *********************************/
-	P_STATIC DataTransfer::SmemServices* getSmemFromLocation( DataTransfer::EndPoint& loc, bool create=0 );
+        /**********************************
+         * Get the shared memory service by smb id
+         *********************************/
+        P_STATIC DataTransfer::SmemServices* getSmemFromLocation( DataTransfer::EndPoint& loc, bool create=0 );
 
-	/**********************************
-	 * Clear the global cache
-	 *********************************/
-	P_STATIC void clearGlobalCache();
+        /**********************************
+         * Clear the global cache
+         *********************************/
+        P_STATIC void clearGlobalCache();
 
-	/**********************************
-	 * Get the eventmanager object
-	 *********************************/
-	DataTransfer::EventManager* getEventManager();
-	bool                        useEvents();
-			
-	// polling or events
-	P_STATIC bool m_useEvents;
+        /**********************************
+         * Get the eventmanager object
+         *********************************/
+        DataTransfer::EventManager* getEventManager();
+        bool                        useEvents();
+                        
+        // polling or events
+        P_STATIC bool m_useEvents;
 
-	// Use out of process zero copy
-	P_STATIC bool m_ooPZeroCopy;	
-	P_STATIC bool m_Circuitinit;
-	P_STATIC TransferTemplateGenerator                  *m_gen_temp_gen;
-	P_STATIC TransferTemplateGeneratorPattern1          *m_gen_pat1;
-	P_STATIC TransferTemplateGeneratorPattern1AFC       *m_gen_pat1AFC;
-	P_STATIC TransferTemplateGeneratorPattern1AFCShadow *m_gen_pat1AFCShadow;
-	P_STATIC TransferTemplateGeneratorPattern2 *m_gen_pat2;
-	P_STATIC TransferTemplateGeneratorPattern3 *m_gen_pat3;
-	P_STATIC TransferTemplateGeneratorPattern4 *m_gen_pat4;
-	P_STATIC TransferController                *m_gen_control;
-	P_STATIC TransferController1               *m_cont1;
-	P_STATIC TransferController1AFCShadow      *m_cont1AFCShadow;
-	P_STATIC TransferController2               *m_cont2;
-	P_STATIC TransferController3               *m_cont3;
-	P_STATIC TransferController4               *m_cont4;
+        // Use out of process zero copy
+        P_STATIC bool m_ooPZeroCopy;        
+        P_STATIC bool m_Circuitinit;
+        P_STATIC TransferTemplateGenerator                  *m_gen_temp_gen;
+        P_STATIC TransferTemplateGeneratorPattern1          *m_gen_pat1;
+        P_STATIC TransferTemplateGeneratorPattern1AFC       *m_gen_pat1AFC;
+        P_STATIC TransferTemplateGeneratorPattern1AFCShadow *m_gen_pat1AFCShadow;
+        P_STATIC TransferTemplateGeneratorPattern2 *m_gen_pat2;
+        P_STATIC TransferTemplateGeneratorPattern3 *m_gen_pat3;
+        P_STATIC TransferTemplateGeneratorPattern4 *m_gen_pat4;
+        P_STATIC TransferController                *m_gen_control;
+        P_STATIC TransferController1               *m_cont1;
+        P_STATIC TransferController1AFCShadow      *m_cont1AFCShadow;
+        P_STATIC TransferController2               *m_cont2;
+        P_STATIC TransferController3               *m_cont3;
+        P_STATIC TransferController4               *m_cont4;
 
-	// Our list of transfer controllers                 s dist s part t dist t part shadow s role              t role
-	P_STATIC TransferController* m_transferControllers  [2]    [2]    [2]    [2]    [2]      [CPI::RDT::MaxRole] [CPI::RDT::MaxRole];
+        // Our list of transfer controllers                 s dist s part t dist t part shadow s role              t role
+        P_STATIC TransferController* m_transferControllers  [2]    [2]    [2]    [2]    [2]      [CPI::RDT::MaxRole] [CPI::RDT::MaxRole];
 
-	// Our list of template generators
-	P_STATIC TransferTemplateGenerator* m_templateGenerators [2][2][2][2] [2] [CPI::RDT::MaxRole] [CPI::RDT::MaxRole];
+        // Our list of template generators
+        P_STATIC TransferTemplateGenerator* m_templateGenerators [2][2][2][2] [2] [CPI::RDT::MaxRole] [CPI::RDT::MaxRole];
 
       protected:
 
-	// Our event handler
-	P_STATIC DataTransfer::EventManager* m_event_manager;
+        // Our event handler
+        P_STATIC DataTransfer::EventManager* m_event_manager;
 
-	/**********************************
-	 * Parse args
-	 *********************************/
-	void parseArgs( CPI::OS::int32_t argc, char** argv );
+        /**********************************
+         * Parse args
+         *********************************/
+        void parseArgs( CPI::OS::int32_t argc, char** argv );
 
-	/**********************************
-	 * Init method
-	 *********************************/
-	void init();
+        /**********************************
+         * Init method
+         *********************************/
+        void init();
 
       };
 
@@ -165,7 +165,7 @@ namespace CPI {
      ****
      *********************************/
     inline bool TransportGlobal::useEvents(){return m_useEvents;}
-    inline 	DataTransfer::EventManager* TransportGlobal::getEventManager()
+    inline         DataTransfer::EventManager* TransportGlobal::getEventManager()
       {return m_event_manager;}
 
   }

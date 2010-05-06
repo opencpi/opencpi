@@ -80,7 +80,7 @@ namespace CPI {
        */
 
       FileIterator (const std::string & dir, const std::string & pattern)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Copy constructor. The new instance will iterate over the same
@@ -90,7 +90,7 @@ namespace CPI {
        */
 
       FileIterator (const FileIterator & other)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Destructor.
@@ -100,7 +100,7 @@ namespace CPI {
        */
 
       ~FileIterator ()
-	throw ();
+        throw ();
 
       /**
        * Assignment operator. This instance will then iterate over the
@@ -110,7 +110,7 @@ namespace CPI {
        */
 
       FileIterator & operator= (const FileIterator & other)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Tests whether the iterator has moved beyond the last file,
@@ -122,7 +122,7 @@ namespace CPI {
        */
 
       bool end ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * \return The relative file name of the matching
@@ -132,7 +132,7 @@ namespace CPI {
        */
 
       std::string relativeName ()
-	throw ();
+        throw ();
 
       /**
        * \return The absolute file name of the matching file.
@@ -140,7 +140,7 @@ namespace CPI {
        */
 
       std::string absoluteName ()
-	throw ();
+        throw ();
 
       /**
        * \return true if the current match identifies a
@@ -149,7 +149,7 @@ namespace CPI {
        */
 
       bool isDirectory ()
-	throw ();
+        throw ();
 
       /**
        * \return size() returns the size of this file, in bytes.
@@ -158,7 +158,7 @@ namespace CPI {
        */
 
       unsigned long long size ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * \return The last-modification timestamp for
@@ -167,7 +167,7 @@ namespace CPI {
        */
 
       std::time_t lastModified ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Advances the iterator to the next file in the list.
@@ -179,7 +179,7 @@ namespace CPI {
        */
 
       bool next ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Closes the iterator and releases associated resources. An
@@ -187,7 +187,7 @@ namespace CPI {
        */
 
       void close ()
-	throw ();
+        throw ();
 
     private:
       CPI::OS::uint64_t m_osOpaque[256];

@@ -102,8 +102,8 @@ namespace CPI {
        * Check for duplicates
        *********************************/
       bool isDuplicate( 
-		       OutputBuffer* output,			// In - Output buffer
-		       InputBuffer* input );		// In - Input buffer
+                       OutputBuffer* output,                        // In - Output buffer
+                       InputBuffer* input );                // In - Input buffer
 
       /**********************************
        * Add a transfer request
@@ -119,17 +119,17 @@ namespace CPI {
        * Add a gated transfer, gated transfers are additional transfers that 
        *********************************/
       void addGatedTransfer( 
-			    CPI::OS::uint32_t sequence,
-			    CpiTransferTemplate* gated_transfer,
-			    PortOrdinal input_port_id,
-			    CPI::OS::uint32_t	 buffer_tid);
+                            CPI::OS::uint32_t sequence,
+                            CpiTransferTemplate* gated_transfer,
+                            PortOrdinal input_port_id,
+                            CPI::OS::uint32_t         buffer_tid);
 
       /**********************************
        * Get a gated transfer
        *********************************/
       CpiTransferTemplate* getNextGatedTransfer(
-						PortOrdinal input_port_id,
-						CPI::OS::uint32_t	 buffer_tid);
+                                                PortOrdinal input_port_id,
+                                                CPI::OS::uint32_t         buffer_tid);
 
       /**********************************
        * Get the maximum post produce sequence this class should transfer
@@ -146,12 +146,12 @@ namespace CPI {
        * a transfer
        *********************************/
       virtual void presetMetaData( 
-			  volatile DataTransfer::BufferMetaData* data,    // In - Pointer to output meta-data
-			  CPI::OS::uint32_t    length,				// In - Data transfer length
-			  bool  end_of_whole,		// In - End of whole transfer
-			  CPI::OS::uint32_t    nPartsPerWhole,		// In - Number of parts that make up a whole
-			  CPI::OS::uint32_t    sequence				// In - Whole sequence
-			  );
+                          volatile DataTransfer::BufferMetaData* data,    // In - Pointer to output meta-data
+                          CPI::OS::uint32_t    length,                                // In - Data transfer length
+                          bool  end_of_whole,                // In - End of whole transfer
+                          CPI::OS::uint32_t    nPartsPerWhole,                // In - Number of parts that make up a whole
+                          CPI::OS::uint32_t    sequence                                // In - Whole sequence
+                          );
 
 
       /**********************************
@@ -161,13 +161,13 @@ namespace CPI {
 
 
       struct ZCopy {
-	ZCopy():output(NULL),input(NULL),next(NULL){}
-	ZCopy( OutputBuffer* s, InputBuffer* t )
-	  :output(s),input(t),next(NULL){}
-	void add( ZCopy* );
-	OutputBuffer* output;
-	InputBuffer* input;
-	ZCopy* next;
+        ZCopy():output(NULL),input(NULL),next(NULL){}
+        ZCopy( OutputBuffer* s, InputBuffer* t )
+          :output(s),input(t),next(NULL){}
+        void add( ZCopy* );
+        OutputBuffer* output;
+        InputBuffer* input;
+        ZCopy* next;
 
       };
       ZCopy *m_zCopy;
@@ -190,7 +190,7 @@ namespace CPI {
       // For some templates, there are mutiple transfers that have to take place from
       // a single output buffer, such is the case for whole to parts when the number of
       // parts exceed the number of buffers+input ports.
-      //									   transfer sequence	    input port    input buffer
+      //                                                                           transfer sequence            input port    input buffer
       CpiTransferTemplate* m_nextTransfer[MAX_TRANSFERS_PER_BUFFER] [MAX_PORT_COUNT] [MAX_BUFFERS];
       List m_gatedTransfersPending;
       CPI::OS::uint32_t m_sequence;
@@ -199,11 +199,11 @@ namespace CPI {
 
       // List of preset meta-data structures
       struct PresetMetaData {
-	volatile DataTransfer::BufferMetaData* ptr;
-	CPI::OS::uint32_t length;
-	CPI::OS::uint32_t endOfWhole;
-	CPI::OS::uint32_t nPartsPerWhole;
-	CPI::OS::uint32_t sequence;
+        volatile DataTransfer::BufferMetaData* ptr;
+        CPI::OS::uint32_t length;
+        CPI::OS::uint32_t endOfWhole;
+        CPI::OS::uint32_t nPartsPerWhole;
+        CPI::OS::uint32_t sequence;
       };
       List m_PresetMetaData;
 
@@ -234,27 +234,27 @@ namespace CPI {
      * Add a gated transfer, gated transfers are additional transfers that 
      *********************************/
     inline void CpiTransferTemplate::addGatedTransfer( 
-						      CPI::OS::uint32_t      sequence,
-						      CpiTransferTemplate* gated_transfer, 
-						      PortOrdinal     input_port_id,
-						      CPI::OS::uint32_t	     buffer_tid)
+                                                      CPI::OS::uint32_t      sequence,
+                                                      CpiTransferTemplate* gated_transfer, 
+                                                      PortOrdinal     input_port_id,
+                                                      CPI::OS::uint32_t             buffer_tid)
       {
-	if ( sequence > m_maxSequence ) {
-	  m_maxSequence = sequence;
-	}
+        if ( sequence > m_maxSequence ) {
+          m_maxSequence = sequence;
+        }
 #ifndef NDEBUG
-	printf("*** Adding a gated transfer to this[%d][%d][%d] \n",
-	       m_maxSequence,input_port_id, buffer_tid);
+        printf("*** Adding a gated transfer to this[%d][%d][%d] \n",
+               m_maxSequence,input_port_id, buffer_tid);
 #endif
-	m_nextTransfer[sequence][input_port_id][buffer_tid] = gated_transfer;
+        m_nextTransfer[sequence][input_port_id][buffer_tid] = gated_transfer;
       }
 
     /**********************************
      * Get a gated transfer
      *********************************/
     inline CpiTransferTemplate* CpiTransferTemplate::getNextGatedTransfer(
-									  PortOrdinal input_port_id,
-									  CPI::OS::uint32_t	 buffer_tid)
+                                                                          PortOrdinal input_port_id,
+                                                                          CPI::OS::uint32_t         buffer_tid)
       {return m_nextTransfer[m_sequence++][input_port_id][buffer_tid];}
 
     /**********************************
@@ -272,7 +272,7 @@ namespace CPI {
      * Sets the next input port and tid
      *********************************/
     inline void CpiTransferTemplate::setInput( CPI::DataTransport::Port* p, 
-						CPI::OS::uint32_t tid){m_nextPort=p; m_nextTid=tid;}
+                                                CPI::OS::uint32_t tid){m_nextPort=p; m_nextTid=tid;}
 
   }
 

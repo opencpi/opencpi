@@ -36,7 +36,7 @@ namespace CPI {
        */
 
       typedef std::map<std::string, std::string,
-	CPI::Util::Misc::CaseInsensitiveStringLess> Headers;
+        CPI::Util::Misc::CaseInsensitiveStringLess> Headers;
 
       /**
        * Check whether a string is a valid HTTP token.
@@ -49,7 +49,7 @@ namespace CPI {
        */
 
       bool isToken (const std::string & str)
-	throw ();
+        throw ();
 
       /**
        * Parse a HTTP date/time stamp.
@@ -62,7 +62,7 @@ namespace CPI {
        */
 
       std::time_t parseHttpDate (const std::string & str)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Create a date/time stamp string suitable for use in the HTTP
@@ -73,7 +73,7 @@ namespace CPI {
        */
 
       std::string makeHttpDate (std::time_t ts)
-	throw (std::string);
+        throw (std::string);
 
       /*
        * Create a date/time stamp string, representing the current time,
@@ -83,7 +83,7 @@ namespace CPI {
        */
 
       std::string getHttpTimestamp ()
-	throw ();
+        throw ();
 
     }
   }

@@ -80,7 +80,7 @@
 #define CPI_DATA_TYPE_X CPI_DATA_TYPE
 #define CPI_DATA_TYPE_S CPI_DATA_TYPE
 
-#define CPI_CONTROL_OPS							\
+#define CPI_CONTROL_OPS                                                        \
   CONTROL_OP(initialize,     Initialize,     INITIALIZED, EXISTS,      NONE,        NONE) \
   CONTROL_OP(start,          Start,          OPERATING,   SUSPENDED,   INITIALIZED, NONE) \
   CONTROL_OP(stop,           Stop,           SUSPENDED,   OPERATING,   NONE,        NONE) \
@@ -100,16 +100,16 @@ namespace CPI {
       friend class Worker;
     public:
       enum Type {
-	CPI_none, // 0 isn't a valid type
+        CPI_none, // 0 isn't a valid type
 #define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) CPI_##pretty,
-	CPI_PROPERTY_DATA_TYPES
+        CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE
-	CPI_data_type_limit
+        CPI_data_type_limit
       };
       // Describe a simple type, along with its max size(for strings)
       struct SimpleType {
-	unsigned long size;
-	Type type;
+        unsigned long size;
+        Type type;
       };
       SimpleType *types; // More than one when type is struct.
       const char *name;

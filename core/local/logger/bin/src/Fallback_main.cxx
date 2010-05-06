@@ -40,9 +40,9 @@ namespace FallbackTests {
 
       logger.setProducerId ("05-Fallback");
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testEmptyFallback")
-	     << "Hello World"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testEmptyFallback")
+             << "Hello World"
+             << std::flush;
 
       test (!logger.good());
     }
@@ -70,9 +70,9 @@ namespace FallbackTests {
       logger.addOutput (keeper);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testOneDelegatee")
-	     << "Hello World"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testOneDelegatee")
+             << "Hello World"
+             << std::flush;
 
       test (keeper.getLogLevel() == 8);
       test (keeper.getProducerId() == "05-Fallback");
@@ -105,9 +105,9 @@ namespace FallbackTests {
       logger.addOutput (keeper2);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testTwoDelegatees")
-	     << "An Important Message"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testTwoDelegatees")
+             << "An Important Message"
+             << std::flush;
 
       test (keeper1.getLogLevel() == 8);
       test (keeper1.getProducerId() == "05-Fallback");
@@ -141,16 +141,16 @@ namespace FallbackTests {
       logger.addOutput (keeper2);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testFirstDelegateeFails")
-	     << "An Important Message For Delegatee 1"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testFirstDelegateeFails")
+             << "An Important Message For Delegatee 1"
+             << std::flush;
 
       keeper1.setstate (std::ios_base::badbit);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testFirstDelegateeFails")
-	     << "An Important Message For Delegatee 2"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testFirstDelegateeFails")
+             << "An Important Message For Delegatee 2"
+             << std::flush;
 
       test (logger.good());
 
@@ -192,16 +192,16 @@ namespace FallbackTests {
       keeper1.setstate (std::ios_base::badbit);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testFirstDelegateeRecovers")
-	     << "An Important Message For Delegatee 2"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testFirstDelegateeRecovers")
+             << "An Important Message For Delegatee 2"
+             << std::flush;
 
       keeper1.clear ();
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testFirstDelegateeRecovers")
-	     << "An Important Message For Delegatee 1"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testFirstDelegateeRecovers")
+             << "An Important Message For Delegatee 1"
+             << std::flush;
 
       test (logger.good());
 
@@ -242,9 +242,9 @@ namespace FallbackTests {
       logger.addOutput (keeper2);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testAutoRecoveringFirstDelegatee")
-	     << "An Important Message"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testAutoRecoveringFirstDelegatee")
+             << "An Important Message"
+             << std::flush;
 
       test (logger.good());
       test (keeper1.getLogLevel() == 8);
@@ -281,9 +281,9 @@ namespace FallbackTests {
       logger.addOutput (keeper2);
 
       logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	     << CPI::Logger::ProducerName ("testBothDelegateesFail")
-	     << "An Important Message"
-	     << std::flush;
+             << CPI::Logger::ProducerName ("testBothDelegateesFail")
+             << "An Important Message"
+             << std::flush;
 
       test (!logger.good());
     }
@@ -332,8 +332,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

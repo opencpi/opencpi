@@ -62,7 +62,7 @@ namespace CPI {
       p_prev_ = prev_;
       p_next_ = next_;
       if ( next_ ) {
-	next_->reset();
+        next_->reset();
       }
     }
 
@@ -81,29 +81,29 @@ namespace CPI {
     // Relink after calculation
     void relink() {
       Operation* tmp;
-	 
+         
       // relink them
       if ( p_prev_ ) {
-	if (  p_prev_->p_prev_ ) {
-	  tmp = p_prev_->p_prev_;
-	  p_prev_->p_prev_->p_next_ = this;
-	  p_prev_ = tmp;
-	}
-	else {
-	  p_prev_->p_prev_ = NULL;
-	}
+        if (  p_prev_->p_prev_ ) {
+          tmp = p_prev_->p_prev_;
+          p_prev_->p_prev_->p_next_ = this;
+          p_prev_ = tmp;
+        }
+        else {
+          p_prev_->p_prev_ = NULL;
+        }
       }
 
 
       if ( p_next_ ) {
-	if (  p_next_->p_next_ ) {
-	  tmp = p_next_->p_next_;
-	  p_next_->p_next_->p_prev_ = this;
-	  p_next_ = tmp;
-	}
-	else {
-	  p_next_->p_next_ = NULL;
-	}
+        if (  p_next_->p_next_ ) {
+          tmp = p_next_->p_next_;
+          p_next_->p_next_->p_prev_ = this;
+          p_next_ = tmp;
+        }
+        else {
+          p_next_->p_next_ = NULL;
+        }
       }
     }
 
@@ -137,14 +137,14 @@ namespace CPI {
 
     virtual double getValue(bool upstream=true) {
       if ( p_next_ ) {
-	return p_next_->getValue(upstream);
+        return p_next_->getValue(upstream);
       }
       return 0.0;
     }
 
     virtual bool calculate(bool high_priority) {
       if ( p_next_ ) {
-	return p_next_->calculate(high_priority);
+        return p_next_->calculate(high_priority);
       }
       return true;
     }
@@ -193,75 +193,75 @@ namespace CPI {
     virtual double getValue(bool upstream=true) {
 
       if ( complete_ ) {
-	return v_;
+        return v_;
       }
 
 
       if ( !p_prev_ || !p_next_ ) {
-	throw std::string( "BasicOp operator needs a left hand and right hand values" );
+        throw std::string( "BasicOp operator needs a left hand and right hand values" );
       }
       else if ( upstream ) {
 
-	switch( op_ ) {
-	case '+':
-	  if ( p_prev_->getType() == Operation::NoOp ) {
-	    v_ = p_next_->getValue(false);
-	  }
-	  else {
-	    v_ = p_prev_->getValue(false) + p_next_->getValue(false);
-	  }
+        switch( op_ ) {
+        case '+':
+          if ( p_prev_->getType() == Operation::NoOp ) {
+            v_ = p_next_->getValue(false);
+          }
+          else {
+            v_ = p_prev_->getValue(false) + p_next_->getValue(false);
+          }
              
-	  break;
+          break;
 
-	case '-':
-	  if ( p_prev_->getType() == Operation::NoOp ) {
-	    v_ = -p_next_->getValue(false);
-	  }
-	  else {
+        case '-':
+          if ( p_prev_->getType() == Operation::NoOp ) {
+            v_ = -p_next_->getValue(false);
+          }
+          else {
 
 
 
-	    if ( p_prev_->p_prev_->getType() == Operation::BasicOps ) {
-	      BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_->p_prev_);
-	      if ( bo->op_ == '-' && 
-		   (p_prev_->getType() == Operation::Const ||
-		    p_prev_->getType() == Operation::Variable ||
-		    p_prev_->getType() == Operation::ArrayElement ||
-		    p_prev_->getType() == Operation::Node) ) {
+            if ( p_prev_->p_prev_->getType() == Operation::BasicOps ) {
+              BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_->p_prev_);
+              if ( bo->op_ == '-' && 
+                   (p_prev_->getType() == Operation::Const ||
+                    p_prev_->getType() == Operation::Variable ||
+                    p_prev_->getType() == Operation::ArrayElement ||
+                    p_prev_->getType() == Operation::Node) ) {
 
-		double v = p_prev_->getValue(false);
+                double v = p_prev_->getValue(false);
 
-		p_prev_->Invert();
-		bo->op_ = '+';
-	      }
-	    }
-				
+                p_prev_->Invert();
+                bo->op_ = '+';
+              }
+            }
+                                
 
-	    v_ = p_prev_->getValue(false) - p_next_->getValue(false);
+            v_ = p_prev_->getValue(false) - p_next_->getValue(false);
 
-	  }
+          }
              
-	  break;
+          break;
 
-	case '*':
-	  v_ = p_prev_->getValue(false) * p_next_->getValue(false);
-	  break;
+        case '*':
+          v_ = p_prev_->getValue(false) * p_next_->getValue(false);
+          break;
 
-	case '/':
-	  v_ = p_prev_->getValue(false) / p_next_->getValue(false);
-	  break;
+        case '/':
+          v_ = p_prev_->getValue(false) / p_next_->getValue(false);
+          break;
 
-	case '^':
-	  v_ = pow( p_prev_->getValue(false), p_next_->getValue(false) );
-	  break;
+        case '^':
+          v_ = pow( p_prev_->getValue(false), p_next_->getValue(false) );
+          break;
 
-	default:
-	  cerr << "Unsupported operation: " << op_ << endl;
-	  break;
+        default:
+          cerr << "Unsupported operation: " << op_ << endl;
+          break;
 
-	}
-	complete_ = true;
-	relink();
+        }
+        complete_ = true;
+        relink();
       }
       return v_;
     }
@@ -274,12 +274,12 @@ namespace CPI {
 
       // mults and divs have priority
       if ( high_priority ) {
-	if ( (op_ == '*') || (op_ == '/') || (op_ == '^')) {
-	  v_ = this->getValue();
-	}
+        if ( (op_ == '*') || (op_ == '/') || (op_ == '^')) {
+          v_ = this->getValue();
+        }
       }
       else if ( !complete_ ) {
-	v_ = this->getValue();
+        v_ = this->getValue();
       }
 
       // Make sure everyone downstream is done
@@ -318,68 +318,68 @@ namespace CPI {
     virtual double getValue(bool upstream=true) {
 
       if ( !upstream || !p_next_ || (p_next_->getType() == Operation::NoOp) 
-	   || (p_next_->getType() == Operation::EndNode) ) {
-	if ( ! complete_ ) {
-	  this->calculate(true);
-	}
+           || (p_next_->getType() == Operation::EndNode) ) {
+        if ( ! complete_ ) {
+          this->calculate(true);
+        }
 
-	if ( invert_ ) {
-	  return -v_;
-	}
-	return v_;
+        if ( invert_ ) {
+          return -v_;
+        }
+        return v_;
       }
       else {
-	return p_next_->getValue();
+        return p_next_->getValue();
       }
     }
 
     virtual bool calculate(bool high_priority) {
 
       if ( p_prev_->getType() == Operation::BasicOps ) {
-	BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_);
-	if ( bo->op_ == '-' ) {
-	  invert_ = true;
-	  bo->op_ = '+';
-	}
+        BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_);
+        if ( bo->op_ == '-' ) {
+          invert_ = true;
+          bo->op_ = '+';
+        }
       }
 
 
       // Do our tree first
       if ( ! complete_ ) {
-	op_->calculate(true);
-	op_->calculate(false);
+        op_->calculate(true);
+        op_->calculate(false);
 
-	// 
-	/*
-	  #ifndef NDEBUG
-	  #if 0
-	  Operation* o=op_;
+        // 
+        /*
+          #ifndef NDEBUG
+          #if 0
+          Operation* o=op_;
 
-	  cout << endl << "Node next list" << endl;
-	  while(o) {
-	  o->printSelf();
-	  o = o->next_;
-	  }
+          cout << endl << "Node next list" << endl;
+          while(o) {
+          o->printSelf();
+          o = o->next_;
+          }
 
           cout << endl << "Node p_next list" << endl;
-	  o=op_;
+          o=op_;
           while(o) {
-	  o->printSelf();
-	  o = o->p_next_;
-	  }
-	  #endif
-	  #endif
-	*/
+          o->printSelf();
+          o = o->p_next_;
+          }
+          #endif
+          #endif
+        */
 
-	v_ = op_->getValue();
-	complete_ = true;
+        v_ = op_->getValue();
+        complete_ = true;
       }
-	  
+          
       if ( p_next_ ) {
-	return p_next_->calculate(high_priority);
+        return p_next_->calculate(high_priority);
       }
       else {
-	return false;
+        return false;
       }
     }
 
@@ -396,21 +396,21 @@ namespace CPI {
       // We will link vertically until we hit our end bracket
       if ( op->getType() == Operation::EndNode ) {
 
-	// This is our end to vertical linkage
-	last_->link(op);
-	v_link_ = false;
-	return false;
+        // This is our end to vertical linkage
+        last_->link(op);
+        v_link_ = false;
+        return false;
       }
 
      
       // We will link vertically until we hit our end bracket
       if ( v_link_ ) {
-	last_->link(op);
-	last_ = op;
-	return false;
+        last_->link(op);
+        last_ = op;
+        return false;
       }
       else {
-	Operation::link( op );
+        Operation::link( op );
       }
 
       return true;
@@ -422,29 +422,29 @@ namespace CPI {
     stack<Operation*> nodes_;
     virtual bool link( Operation* op ) {
 
-	  
+          
 
 
       // We will link vertically until we hit our end bracket
       if ( inc_link_ && op->getType() == Operation::EndNode ) {
 
-	// This is our end to vertical linkage
-	last_->link(op);
-	v_link_ = false;
-	return false;
+        // This is our end to vertical linkage
+        last_->link(op);
+        v_link_ = false;
+        return false;
       }
 
      
       // We will link vertically until we hit our end bracket
       if ( v_link_ ) {
-	inc_link_ = last_->link(op);
-	if ( inc_link_ ) {
-	  last_ = op;
-	}
-	return false;
+        inc_link_ = last_->link(op);
+        if ( inc_link_ ) {
+          last_ = op;
+        }
+        return false;
       }
       else {
-	return Operation::link( op );
+        return Operation::link( op );
       }
 
       return true;
@@ -458,7 +458,7 @@ namespace CPI {
     { 
       // We need to reset everyone in our vertical list
       if ( op_ ) {
-	op_->reset();
+        op_->reset();
       }
       Operation::reset();
       inc_link_ = true;
@@ -470,10 +470,10 @@ namespace CPI {
       cout << "Node: " << v_ << endl;
       Operation *o=op_;
       while ( o ) {
-	int inc = nest_level*3;
-	for( int n=0;n<inc;n++) cout << " ";
-	o->printSelf();
-	o = o->p_next_;
+        int inc = nest_level*3;
+        for( int n=0;n<inc;n++) cout << " ";
+        o->printSelf();
+        o = o->p_next_;
       }
       nest_level--;
     }
@@ -485,14 +485,14 @@ namespace CPI {
 
       Operation* o = op_->next_;
       while ( op_ ) {
-	delete op_;
-	if ( o ) {
-	  op_ = o;
-	  o = o->next_;
-	}
-	else {
-	  break;
-	}
+        delete op_;
+        if ( o ) {
+          op_ = o;
+          o = o->next_;
+        }
+        else {
+          break;
+        }
       }
 
 
@@ -515,14 +515,14 @@ namespace CPI {
     virtual double getValue(bool upstream=true) {
 
       if ( !upstream || !p_next_ || (p_next_->getType() == Operation::NoOp) 
-	   || (p_next_->getType() == Operation::EndNode) ) {
-	if ( invert_ ) {
-	  return -v_;
-	}
-	return v_;
+           || (p_next_->getType() == Operation::EndNode) ) {
+        if ( invert_ ) {
+          return -v_;
+        }
+        return v_;
       }
       else {
-	return p_next_->getValue();
+        return p_next_->getValue();
       }
     }
 
@@ -533,15 +533,15 @@ namespace CPI {
 
     virtual bool calculate(bool high_priority) {
 
-	
+        
       if ( p_prev_->getType() == Operation::BasicOps ) {
-	BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_);
-	if ( bo->op_ == '-' ) {
-	  invert_ = true;
-	  bo->op_ = '+';
-	}
+        BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_);
+        if ( bo->op_ == '-' ) {
+          invert_ = true;
+          bo->op_ = '+';
+        }
       }
-	   
+           
 
       // we dont calculate, but there is a special case
       return p_next_->calculate(high_priority); 
@@ -568,13 +568,13 @@ namespace CPI {
     Variable(  const char* s,  DefineExpVarInterface* cb) 
       :cb_(cb),auto_invert_(false) {
       if ( s[0] == '-' ) {
-	auto_invert_ = true;
-	name_ = &s[1];
+        auto_invert_ = true;
+        name_ = &s[1];
       }
       else {
-	name_ = s;
+        name_ = s;
       }
-	  
+          
     }
    
     virtual double getValue(bool upstream=true) {
@@ -582,21 +582,21 @@ namespace CPI {
       // We need to ask the caller to define our value
       if ( ! complete_ ) {
 
-	if ( cb_ ) {
-	  v_ = cb_->defineVariable(name_.c_str());
-	  if ( auto_invert_ || invert_) {
-	    v_ = -v_;
-	  }
-	}
-	complete_ = true;
+        if ( cb_ ) {
+          v_ = cb_->defineVariable(name_.c_str());
+          if ( auto_invert_ || invert_) {
+            v_ = -v_;
+          }
+        }
+        complete_ = true;
       }
 
       if ( !upstream || !p_next_ || (p_next_->getType() == Operation::NoOp) 
-	   || (p_next_->getType() == Operation::EndNode) ) {
-	return v_;
+           || (p_next_->getType() == Operation::EndNode) ) {
+        return v_;
       }
       else {
-	return p_next_->getValue();
+        return p_next_->getValue();
       }
     }
 
@@ -610,19 +610,19 @@ namespace CPI {
     virtual bool calculate(bool high_priority) {
 
       if ( p_prev_->getType() == Operation::BasicOps ) {
-	BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_);
-	if ( bo->op_ == '-' ) {
-	  invert_ = true;
-	  bo->op_ = '+';
-	}
+        BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_);
+        if ( bo->op_ == '-' ) {
+          invert_ = true;
+          bo->op_ = '+';
+        }
       }
 
       // we dont calculate, but there is a special case
       if ( !p_prev_ && !complete_ ) {
-	getValue();
+        getValue();
       }
       else {
-	return p_next_->calculate(high_priority); 
+        return p_next_->calculate(high_priority); 
       }
       return false;
     };
@@ -644,40 +644,40 @@ namespace CPI {
   public:
     ArrayElement( const char* s,  DefineExpVarInterface* cb) 
       :cb_(cb),auto_invert_(false) {
-		
+                
       try {
-	string t;
+        string t;
 
-	if ( s[0] == '-' ) {
-	  t = &s[1];
-	  auto_invert_ = true;
-	}
-	else {
-	  t = s;
-	}
+        if ( s[0] == '-' ) {
+          t = &s[1];
+          auto_invert_ = true;
+        }
+        else {
+          t = s;
+        }
 
-	string idx;
-	bool name_ended=false;
-	for( unsigned int n=0; n<t.length(); n++ ) {
-	  char c = t[n];
-	  if ( c == '[' ) {
-	    name_ended = true;
-	    continue;
-	  }
-	  else if ( c == ']' ) {
-	    break;
-	  }
-	  if ( ! name_ended ) {
-	    name_ += c;
-	  }
-	  else {
-	    idx += c;
-	  }
-	}
-	index = atoi(idx.c_str());
+        string idx;
+        bool name_ended=false;
+        for( unsigned int n=0; n<t.length(); n++ ) {
+          char c = t[n];
+          if ( c == '[' ) {
+            name_ended = true;
+            continue;
+          }
+          else if ( c == ']' ) {
+            break;
+          }
+          if ( ! name_ended ) {
+            name_ += c;
+          }
+          else {
+            idx += c;
+          }
+        }
+        index = atoi(idx.c_str());
       }
       catch( ... ) {
-	throw std::string(s);
+        throw std::string(s);
       }
     }
 
@@ -685,21 +685,21 @@ namespace CPI {
 
       // We need to ask the caller to define our value
       if ( ! complete_ ) {
-	if ( cb_ ) {
-	  v_ = cb_->defineArrayElement(name_.c_str(), index);
-	  if ( auto_invert_ || invert_) {
-	    v_ = -v_;
-	  }
-	}
-	complete_ = true;
+        if ( cb_ ) {
+          v_ = cb_->defineArrayElement(name_.c_str(), index);
+          if ( auto_invert_ || invert_) {
+            v_ = -v_;
+          }
+        }
+        complete_ = true;
       }
      
       if ( !upstream || !p_next_ || (p_next_->getType() == Operation::NoOp) 
-	   || (p_next_->getType() == Operation::EndNode) ) {
-	return v_;
+           || (p_next_->getType() == Operation::EndNode) ) {
+        return v_;
       }
       else {
-	return p_next_->getValue();
+        return p_next_->getValue();
       }
     }
 
@@ -712,20 +712,20 @@ namespace CPI {
     virtual bool calculate(bool high_priority) {
 
       if ( p_prev_->getType() == Operation::BasicOps ) {
-	BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_);
-	if ( bo->op_ == '-' ) {
-	  invert_ = true;
-	  bo->op_ = '+';
-	}
+        BasicOp* bo = dynamic_cast<BasicOp*>(p_prev_);
+        if ( bo->op_ == '-' ) {
+          invert_ = true;
+          bo->op_ = '+';
+        }
       }
 
 
       // we dont calculate, but there is a special case
       if ( !p_prev_ && !complete_ ) {
-	getValue();
+        getValue();
       }
       else {
-	return p_next_->calculate(high_priority); 
+        return p_next_->calculate(high_priority); 
       }
       return false;
     };
@@ -766,35 +766,35 @@ namespace CPI {
       string v;
       for ( unsigned int n=0; n<t.length();n++ ) {
 
-	char c = t[n];
-	if ( c == '(' ) {
-	  func_found = true;
-	  continue;
-	}
-	else if ( c == ')' ) {
-	  break;
-	}
+        char c = t[n];
+        if ( c == '(' ) {
+          func_found = true;
+          continue;
+        }
+        else if ( c == ')' ) {
+          break;
+        }
 
-	if ( func_found ) {
-	  v += c;
-	}
-	else {
-	  sop_ += (c | 0x20);
-	}
+        if ( func_found ) {
+          v += c;
+        }
+        else {
+          sop_ += (c | 0x20);
+        }
       }
       v_ = atof( v.c_str() );
-	  
+          
       if( sop_ == "sin" ) {
-	op_ = SIN;
+        op_ = SIN;
       }
       else if ( sop_ == "cos" ) {
-	op_ = COS;
+        op_ = COS;
       }
       else if ( sop_ == "tan" ) {
-	op_ = TAN;
+        op_ = TAN;
       }
       else if ( sop_ == "atan" ) {
-	op_ = ATAN;
+        op_ = ATAN;
       }
 
 
@@ -811,49 +811,49 @@ namespace CPI {
     virtual double getValue(bool upstream=true) {
 
       if ( complete_ ) {
-	return v_;
+        return v_;
       }
 
 
       if ( !p_prev_ || !p_next_ ) {
-	throw std::string( "BasicOp operator needs a left hand and right hand values" );
+        throw std::string( "BasicOp operator needs a left hand and right hand values" );
       }
       else if ( upstream ) {
 
-	switch( op_ ) {
-	case SIN:
-	  v_ = sin( v_ );
-	  break;
+        switch( op_ ) {
+        case SIN:
+          v_ = sin( v_ );
+          break;
 
-	case COS:
-	  v_ = cos( v_ );
-	  break;
+        case COS:
+          v_ = cos( v_ );
+          break;
 
-	case TAN:
-	  v_ = tan( v_ );
-	  break;
+        case TAN:
+          v_ = tan( v_ );
+          break;
 
-	case ATAN:
-	  v_ = atan( v_ );
-	  break;
-	}
-	complete_ = true;
-	relink();
+        case ATAN:
+          v_ = atan( v_ );
+          break;
+        }
+        complete_ = true;
+        relink();
       }
       return v_;
     }
 
 
     virtual bool calculate(bool high_priority) {
-	
+        
       // mults and divs have priority
       if ( high_priority ) {
-	if ( (op_ == '*') || (op_ == '/') || (op_ == '^')) {
-	  v_ = this->getValue();
-	}
+        if ( (op_ == '*') || (op_ == '/') || (op_ == '^')) {
+          v_ = this->getValue();
+        }
       }
       else if ( !complete_ ) {
-	v_ = this->getValue();
+        v_ = this->getValue();
       }
 
       // Make sure everyone downstream is done
@@ -876,32 +876,32 @@ namespace CPI {
 
       switch( op ) {
       case  Operation::BasicOps:
-	oper = new BasicOp(token);
-	break;
+        oper = new BasicOp(token);
+        break;
 
       case Operation::Const:
-	oper = new Const(token);
-	break;
+        oper = new Const(token);
+        break;
 
       case Operation::Variable:
-	oper = new Variable(token,cb);
-	break;
+        oper = new Variable(token,cb);
+        break;
 
       case Operation::ArrayElement:
-	oper = new ArrayElement(token,cb);
-	break;
+        oper = new ArrayElement(token,cb);
+        break;
 
       case Operation::Node:
-	oper = new Node();
-	break;
+        oper = new Node();
+        break;
 
       case Operation::EndNode:
-	oper = new EndNode();
-	break;
+        oper = new EndNode();
+        break;
 
       case Operation::FuncOps:
-	oper = OpsFactory::createFuncOps(index,token);
-	break;
+        oper = OpsFactory::createFuncOps(index,token);
+        break;
 
       };
       return oper;
@@ -965,8 +965,8 @@ namespace CPI {
     // Early syntax check
     inline bool matchedBrackets() {
       if ( ( curlies_start_ != curlies_end_ ) ||
-	   ( squares_start_ != squares_end_ ) ) {
-	return false;
+           ( squares_start_ != squares_end_ ) ) {
+        return false;
       }
       return true;
     }
@@ -1075,117 +1075,117 @@ void CPI::Tokenizer::operator ++(int)
     isa_basic_ops_ = false;
     isa_end_node_ =false;
     bool negate=false;
-	
+        
     while( tnf && c_index_<(int)orig_.length() ) {
-			
+                        
       char c = orig_[c_index_++];
       // It can only be a variable, an array, a bracket, or an operator
       if ( isalpha(c) ) {
 
-	if ( c == 'x' ) {
-	  if ( c_token_.length() > 0 ) {
-	    if ( c_token_[0] == '0' ) {
-	      isa_hex = true;
-	    }
-	  }
-	}
+        if ( c == 'x' ) {
+          if ( c_token_.length() > 0 ) {
+            if ( c_token_[0] == '0' ) {
+              isa_hex = true;
+            }
+          }
+        }
 
-	if ( c_token_.length() == 0 ) {
-	  isa_var_ = true;
-	}
-	c_token_ += c;
+        if ( c_token_.length() == 0 ) {
+          isa_var_ = true;
+        }
+        c_token_ += c;
       }
       else if ( c == '-' && last_token_was_node_ && (c_token_.length()==0) ) {
 
-	/*
-	  isa_digit_ = true;
-	  c_token_ += c;
-	*/
+        /*
+          isa_digit_ = true;
+          c_token_ += c;
+        */
 
-	negate = true;
-	continue;
+        negate = true;
+        continue;
       }
       else if ( c == '.' ) {
-	if ( c_token_.length() == 0 ) {
-	  isa_digit_ = true;
-	}
-	c_token_ += c;
+        if ( c_token_.length() == 0 ) {
+          isa_digit_ = true;
+        }
+        c_token_ += c;
       }
       else if ( isdigit(c) ) {
 
-	if ( c_token_.length() == 0 ) {
-	  isa_digit_ = true;
-	}
-	c_token_ += c;
+        if ( c_token_.length() == 0 ) {
+          isa_digit_ = true;
+        }
+        c_token_ += c;
       }
       else if ( isspace(c) ) {
-	if ( c_token_.length() == 0 ) {
-	  continue;
-	}
-	else {
-	  break;
-	}
+        if ( c_token_.length() == 0 ) {
+          continue;
+        }
+        else {
+          break;
+        }
       }
       else if ( c == '(' ) {
-	curlies_start_++;
+        curlies_start_++;
 
-	if ( c_token_.length() != 0 ) {  // must be a function with arg
-	  isa_var_ = false;
-	  wait_for_closing_curly_bracket = true;
-	  c_token_ += c;
-	}
-	else {  // must be a priory calculation
-	  c_token_ = "Node";
-	  isa_node_ = true;
-	  break;
-	}
+        if ( c_token_.length() != 0 ) {  // must be a function with arg
+          isa_var_ = false;
+          wait_for_closing_curly_bracket = true;
+          c_token_ += c;
+        }
+        else {  // must be a priory calculation
+          c_token_ = "Node";
+          isa_node_ = true;
+          break;
+        }
 
       }
       else if ( c == ')' ) {
-	curlies_end_++;
-	if ( wait_for_closing_curly_bracket ) {
-	  c_token_ += c;
-	  break;
-	}
-	else {
-	  if ( c_token_.length() == 0 ) {
-	    c_token_ = "EndNode";
-	    isa_end_node_ = true;
-	    break;
-	  }
-	  else {
-	    curlies_end_--;
-	    c_index_--;
-	    break;
-	  }
-	}
+        curlies_end_++;
+        if ( wait_for_closing_curly_bracket ) {
+          c_token_ += c;
+          break;
+        }
+        else {
+          if ( c_token_.length() == 0 ) {
+            c_token_ = "EndNode";
+            isa_end_node_ = true;
+            break;
+          }
+          else {
+            curlies_end_--;
+            c_index_--;
+            break;
+          }
+        }
       }
       else if ( c == '[' ) { 
-	squares_start_++;
-	// we only support this as a means of indexing arrays, so
-	if ( c_token_.length() == 0 ) {
-	  std::string s("Invalid Syntax: ");
-	  s += orig_;
-	  throw s;
-	}
-	c_token_ += c;
-	isa_var_=false;
-	isa_array_=true;
+        squares_start_++;
+        // we only support this as a means of indexing arrays, so
+        if ( c_token_.length() == 0 ) {
+          std::string s("Invalid Syntax: ");
+          s += orig_;
+          throw s;
+        }
+        c_token_ += c;
+        isa_var_=false;
+        isa_array_=true;
       }
       else if ( c == ']' ) {
-	c_token_ += c;
-	squares_end_++;
+        c_token_ += c;
+        squares_end_++;
       }
 
       // must be an operator
       else {
-	if ( isa_digit_ || isa_var_ || isa_array_ ) {
-	  c_index_--;
-	  break;
-	}
-	isa_basic_ops_=true;
-	c_token_ += c;
-	break;
+        if ( isa_digit_ || isa_var_ || isa_array_ ) {
+          c_index_--;
+          break;
+        }
+        isa_basic_ops_=true;
+        c_token_ += c;
+        break;
       }
     }
 
@@ -1197,7 +1197,7 @@ void CPI::Tokenizer::operator ++(int)
       c_token_.insert(0,"-");
     }
 
-		
+                
 #ifndef NDEBUG
     // printf("%s\n", c_token_.c_str() );
 #endif
@@ -1213,7 +1213,7 @@ void CPI::Tokenizer::operator ++(int)
     sprintf( c, "%.3f", (float)i );
     c_token_ = c;
   }
-	
+        
 
 
 }
@@ -1317,7 +1317,7 @@ public:
 
   virtual double defineVariable( const char* var )
     throw (std::string) {
-    return atof( &var[1] );	
+    return atof( &var[1] );        
   }
 
   virtual double defineArrayElement( const char* var, int index )
@@ -1330,19 +1330,19 @@ public:
 
 
 
-#define CHECK_VALUE( s,v,ans)						\
-  if ( (int)v != (int)ans ) {						\
+#define CHECK_VALUE( s,v,ans)                                                \
+  if ( (int)v != (int)ans ) {                                                \
     cerr << "PARSER ERROR !!, Expected " << ans << " Got " << v << " from expression (" << s << ")" << endl; \
-  } else {								\
+  } else {                                                                \
     cerr << "Parser passes for expression (" << s << ") Got " << v << " Expected " << ans << endl; \
   }
 
 
 
-#define CHECK_D_VALUE( s,v,ans)						\
-  if ( (int)(v*10000.0) != (int)ans ) {					\
+#define CHECK_D_VALUE( s,v,ans)                                                \
+  if ( (int)(v*10000.0) != (int)ans ) {                                        \
     cerr << "PARSER ERROR !!, Expected " << ((double)ans/10000.0) << " Got " << v << " from expression (" << s << ")" << endl; \
-  } else {								\
+  } else {                                                                \
     cerr << "Parser passes for expression (" << s << ") Got " << v << " Expected " << ((double)ans/10000.0) << endl; \
   }
 
@@ -1357,7 +1357,7 @@ void run_exp_tests()
     CPI::ParsedExpression* exp;
     char *ex;
 
-	
+        
 
     // Some simple expression
     ex = "1";
@@ -1513,13 +1513,13 @@ void run_exp_tests()
     value = exp->evaluate();
     CHECK_VALUE( ex,value, 12);
     delete exp;
-	
+        
     ex = "SIN(5)";
     exp = exp_parser->parseExpression( ex );
     value = exp->evaluate();
     CHECK_D_VALUE( ex,value, -9589);
     delete exp;
-	
+        
     ex = "v1";
     exp = exp_parser->parseExpression( ex );
     value = exp->evaluate();
@@ -1537,7 +1537,7 @@ void run_exp_tests()
     value = exp->evaluate();
     CHECK_VALUE( ex,value, 69);
     delete exp;
-	 
+         
 
     ex = "101-1-(8*4)";
     exp = exp_parser->parseExpression( ex );

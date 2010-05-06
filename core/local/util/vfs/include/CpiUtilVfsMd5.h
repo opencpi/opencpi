@@ -45,7 +45,7 @@ namespace CPI {
        */
 
       std::string md5 (std::istream * stream, std::streamsize count = -1)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Compute MD5 checksum for a file.
@@ -60,7 +60,7 @@ namespace CPI {
        */
 
       std::string md5 (Vfs * fs, const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       //@}
 

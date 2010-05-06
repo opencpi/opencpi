@@ -44,14 +44,14 @@ namespace CPI {
       /** \cond */
       class NullOutputBuf : public Logger::LogBuf {
       public:
-	~NullOutputBuf ();
-	void setLogLevel (unsigned short);
-	void setProducerId (const char *);
-	void setProducerName (const char *);
+        ~NullOutputBuf ();
+        void setLogLevel (unsigned short);
+        void setProducerId (const char *);
+        void setProducerName (const char *);
 
       protected:
-	int_type overflow (int_type = std::streambuf::traits_type::eof());
-	std::streamsize xsputn (const char *, std::streamsize);
+        int_type overflow (int_type = std::streambuf::traits_type::eof());
+        std::streamsize xsputn (const char *, std::streamsize);
       };
       /** \endcond */
 

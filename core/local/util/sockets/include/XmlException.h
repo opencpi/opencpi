@@ -1,7 +1,7 @@
 /**
- **	\file XmlException.h
- **	\date  2008-02-09
- **	\author grymse@alhem.net
+ **        \file XmlException.h
+ **        \date  2008-02-09
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom
@@ -46,12 +46,12 @@ namespace Xml {
 class XmlException : public Exception
 {
 public:
-	XmlException(const std::string& descr);
+        XmlException(const std::string& descr);
 
-	XmlException(const XmlException& x) : Exception(x) {} // copy constructor
+        XmlException(const XmlException& x) : Exception(x) {} // copy constructor
 
 private:
-	XmlException& operator=(const XmlException& ) { return *this; } // assignment operator
+        XmlException& operator=(const XmlException& ) { return *this; } // assignment operator
 
 };
 

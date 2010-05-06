@@ -60,11 +60,11 @@ namespace CPI {
        */
 
       void nameServiceBind (CosNaming::NamingContextExt_ptr ns,
-			    CORBA::Object_ptr obj,
-			    const std::string & name,
-			    bool createPath = true,
-			    bool rebind = true)
-	throw (std::string);
+                            CORBA::Object_ptr obj,
+                            const std::string & name,
+                            bool createPath = true,
+                            bool rebind = true)
+        throw (std::string);
 
     }
   }

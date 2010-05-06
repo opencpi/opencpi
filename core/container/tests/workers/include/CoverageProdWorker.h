@@ -38,10 +38,10 @@ typedef struct ProducerWorkerProperties_ ProducerWorkerProperties;
 
 
 struct ProducerWorkerStaticMemory_ {
-	WorkerULong startIndex;
-	char overlap[100];
-	WorkerULong b_count;
-	WorkerLong longProperty;
+        WorkerULong startIndex;
+        char overlap[100];
+        WorkerULong b_count;
+        WorkerLong longProperty;
 };
 
 typedef struct ProducerWorkerStaticMemory_ ProducerWorkerStaticMemory;

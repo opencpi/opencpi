@@ -93,11 +93,11 @@ const char* EndPoint::getProtocolFromString( const char* ep, char *proto )
 }
 
 void EndPoint::getResourceValuesFromString( const char* ep, 
-					    char* cs, 
-					    CPI::OS::uint32_t* mailBox, 
-					    CPI::OS::uint32_t* maxMb, 
-					    CPI::OS::uint32_t* size
-					    )
+                                            char* cs, 
+                                            CPI::OS::uint32_t* mailBox, 
+                                            CPI::OS::uint32_t* maxMb, 
+                                            CPI::OS::uint32_t* size
+                                            )
 {
   *size = 0;
   int item_count = 0;
@@ -105,44 +105,44 @@ void EndPoint::getResourceValuesFromString( const char* ep,
   for ( size_t n=strlen(ep)-1; n>=0; n-- ) {
     if ( ep[n] == '.' ) { 
       if ( item_count == 1 ) { //  mailbox value
-	if ( cs_index > 1 ) {
-	  char tmp = cs[0];
-	  for ( int y=0; y<cs_index-1; y++) {
-	    cs[y] = cs[cs_index-1-y];
-	  }
-	  cs[cs_index-1] = tmp;
-	}
-	cs[cs_index] = 0;
-	*mailBox = atoi(cs);
-	cs_index = 0;
-	item_count++;
+        if ( cs_index > 1 ) {
+          char tmp = cs[0];
+          for ( int y=0; y<cs_index-1; y++) {
+            cs[y] = cs[cs_index-1-y];
+          }
+          cs[cs_index-1] = tmp;
+        }
+        cs[cs_index] = 0;
+        *mailBox = atoi(cs);
+        cs_index = 0;
+        item_count++;
       }
       else if ( item_count == 0 ) { // max mailbox value
-	if ( cs_index > 1 ) {
-	  char tmp = cs[0];
-	  for ( int y=0; y<cs_index-1; y++) {
-	    cs[y] = cs[cs_index-1-y];
-	  }
-	  cs[cs_index-1] = tmp;
-	}
-	cs[cs_index] = 0;
-	*maxMb = atoi(cs);
-	cs_index = 0;
-	item_count++;
+        if ( cs_index > 1 ) {
+          char tmp = cs[0];
+          for ( int y=0; y<cs_index-1; y++) {
+            cs[y] = cs[cs_index-1-y];
+          }
+          cs[cs_index-1] = tmp;
+        }
+        cs[cs_index] = 0;
+        *maxMb = atoi(cs);
+        cs_index = 0;
+        item_count++;
       }
     }
     else if ( ep[n] == ':' ) { 
       if ( cs_index > 0  ) {  // buffer size
-	if ( cs_index > 1 ) {
-	  char tmp = cs[0];
-	  for ( int y=0; y<cs_index-1; y++) {
-	    cs[y] = cs[cs_index-1-y];
-	  }
-	  cs[cs_index-1] = tmp;
-	}
-	cs[cs_index] = 0;
-	*size = atoi(cs);
-	cs_index = 0;
+        if ( cs_index > 1 ) {
+          char tmp = cs[0];
+          for ( int y=0; y<cs_index-1; y++) {
+            cs[y] = cs[cs_index-1-y];
+          }
+          cs[cs_index-1] = tmp;
+        }
+        cs[cs_index] = 0;
+        *size = atoi(cs);
+        cs_index = 0;
       }
       break;
     }

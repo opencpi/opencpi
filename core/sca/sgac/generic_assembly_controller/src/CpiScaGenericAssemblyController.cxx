@@ -35,11 +35,11 @@
 
 CPI::SCA::GenericAssemblyController::
 GenericAssemblyController (CORBA::ORB_ptr orb,
-			   PortableServer::POA_ptr poa,
-			   const std::string & componentIdentifier,
-			   CPI::Logger::Logger * logger,
-			   bool adoptLogger,
-			   bool shutdownOrbOnRelease)
+                           PortableServer::POA_ptr poa,
+                           const std::string & componentIdentifier,
+                           CPI::Logger::Logger * logger,
+                           bool adoptLogger,
+                           bool shutdownOrbOnRelease)
   throw (std::string)
   : m_orb (CORBA::ORB::_duplicate (orb)),
     m_poa (PortableServer::POA::_duplicate (poa)),
@@ -92,10 +92,10 @@ CPI::SCA::GenericAssemblyController::
 void
 CPI::SCA::GenericAssemblyController::
 connectPort (const std::string & portName,
-	     const std::string & connectionId)
+             const std::string & connectionId)
   throw (CF::Port::InvalidPort,
-	 CF::Port::OccupiedPort,
-	 CORBA::SystemException)
+         CF::Port::OccupiedPort,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
 
@@ -106,33 +106,33 @@ connectPort (const std::string & portName,
 
   CPI::Logger::DebugLogger debug (m_out);
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Port \""
-	<< portName
-	<< "\" connected, connection id \""
-	<< connectionId
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Port \""
+        << portName
+        << "\" connected, connection id \""
+        << connectionId
+        << "\"."
+        << std::flush;
 }
 
 void
 CPI::SCA::GenericAssemblyController::
 disconnectPort (const std::string & portName,
-		const std::string & connectionId)
+                const std::string & connectionId)
   throw (CF::Port::InvalidPort,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Disconnecting from port \""
-	<< portName
-	<< "\" connection id \""
-	<< connectionId
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Disconnecting from port \""
+        << portName
+        << "\" connection id \""
+        << connectionId
+        << "\"."
+        << std::flush;
 
   if (portName == "LogOut") {
     m_logOut.setLogService (CPI::CORBAUtil::LwLogLoggerOutput::LogProducer::_nil ());
@@ -149,30 +149,30 @@ void
 CPI::SCA::GenericAssemblyController::
 initialize ()
   throw (CF::LifeCycle::InitializeError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Initializing."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Initializing."
+        << std::flush;
 }
 
 void
 CPI::SCA::GenericAssemblyController::
 releaseObject ()
   throw (CF::LifeCycle::ReleaseError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Releasing."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Releasing."
+        << std::flush;
 
   try {
     PortableServer::ObjectId_var oid = m_poa->servant_to_id (this);
@@ -180,29 +180,29 @@ releaseObject ()
   }
   catch (const CORBA::Exception & ex) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Error deactivating this servant: "
-	  << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	  << " (Ignored.)"
-	  << std::flush;
+          << m_logProducerName
+          << "Error deactivating this servant: "
+          << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+          << " (Ignored.)"
+          << std::flush;
   }
 
   if (m_shutdownOrbOnRelease) {
     debug << m_logProducerName
-	  << CPI::Logger::Verbosity (1)
-	  << "Shutting down the ORB."
-	  << std::flush;
+          << CPI::Logger::Verbosity (1)
+          << "Shutting down the ORB."
+          << std::flush;
 
     try {
       m_orb->shutdown (0);
     }
     catch (const CORBA::Exception & ex) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Error shutting down the ORB: "
-	    << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	    << " (Ignored.)"
-	    << std::flush;
+            << m_logProducerName
+            << "Error shutting down the ORB: "
+            << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+            << " (Ignored.)"
+            << std::flush;
     }
   }
 }
@@ -216,10 +216,10 @@ releaseObject ()
 void
 CPI::SCA::GenericAssemblyController::
 runTest (CORBA::ULong testId,
-	 CF::Properties & testValues)
+         CF::Properties & testValues)
   throw (CF::TestableObject::UnknownTest,
-	 CF::UnknownProperties,
-	 CORBA::SystemException)
+         CF::UnknownProperties,
+         CORBA::SystemException)
 {
   throw CF::TestableObject::UnknownTest ();
 }
@@ -233,9 +233,9 @@ runTest (CORBA::ULong testId,
 void
 CPI::SCA::GenericAssemblyController::
 mergeProperties (CF::Properties & set,
-		 CORBA::ULong & setSize,
-		 const CF::Properties & toMerge,
-		 const std::string & propPrefix)
+                 CORBA::ULong & setSize,
+                 const CF::Properties & toMerge,
+                 const std::string & propPrefix)
   throw ()
 {
   CORBA::ULong tms = toMerge.length ();
@@ -257,8 +257,8 @@ void
 CPI::SCA::GenericAssemblyController::
 configure (const CF::Properties & configProperties)
   throw (CF::PropertySet::InvalidConfiguration,
-	 CF::PropertySet::PartialConfiguration,
-	 CORBA::SystemException)
+         CF::PropertySet::PartialConfiguration,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -268,8 +268,8 @@ configure (const CF::Properties & configProperties)
   CORBA::ULong numInvalidProperties = 0;
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "configure (";
+        << CPI::Logger::Verbosity (2)
+        << "configure (";
 
   for (CORBA::ULong dpi=0; dpi<numProps; dpi++) {
     if (dpi > 0) {
@@ -305,8 +305,8 @@ configure (const CF::Properties & configProperties)
     }
     else if (propertyId == "PRODUCER_LOG_LEVEL") {
       if (!configureProducerLogLevel (property)) {
-	invalidProperties.length (numInvalidProperties + 1);
-	invalidProperties[numInvalidProperties++] = property;
+        invalidProperties.length (numInvalidProperties + 1);
+        invalidProperties[numInvalidProperties++] = property;
       }
     }
     else {
@@ -327,33 +327,33 @@ configure (const CF::Properties & configProperties)
     const CORBA::ULong ccpl = ccp.length ();
 
     debug << m_logProducerName
-	  << CPI::Logger::Verbosity (1)
-	  << "Calling configure (";
+          << CPI::Logger::Verbosity (1)
+          << "Calling configure (";
 
     for (CORBA::ULong cpi=0; cpi<ccpl; cpi++) {
       if (cpi > 0) {
-	debug << ", ";
+        debug << ", ";
       }
 
       debug << ccp[cpi].id;
     }
 
     debug << ") on component \""
-	  << componentName
-	  << "\"."
-	  << std::flush;
+          << componentName
+          << "\"."
+          << std::flush;
 
     PortMap::iterator pmi = m_portMap.find (componentName);
 
     if (pmi == m_portMap.end()) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Attempt to configure non-existent component \""
-	    << componentName
-	    << "\"."
-	    << std::flush;
+            << m_logProducerName
+            << "Attempt to configure non-existent component \""
+            << componentName
+            << "\"."
+            << std::flush;
       mergeProperties (invalidProperties, numInvalidProperties,
-		       ccp, componentName);
+                       ccp, componentName);
       continue;
     }
 
@@ -361,13 +361,13 @@ configure (const CF::Properties & configProperties)
 
     if (CORBA::is_nil (cr)) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Can not configure component \""
-	    << componentName
-	    << "\" because it is not connected."
-	    << std::flush;
+            << m_logProducerName
+            << "Can not configure component \""
+            << componentName
+            << "\" because it is not connected."
+            << std::flush;
       mergeProperties (invalidProperties, numInvalidProperties,
-		       ccp, componentName);
+                       ccp, componentName);
       continue;
     }
 
@@ -376,39 +376,39 @@ configure (const CF::Properties & configProperties)
     }
     catch (const CF::PropertySet::InvalidConfiguration & icex) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Failed to configure component \""
-	    << componentName
-	    << "\":"
-	    << CPI::CFUtil::stringifyCFException (icex)
-	    << "."
-	    << std::flush;
+            << m_logProducerName
+            << "Failed to configure component \""
+            << componentName
+            << "\":"
+            << CPI::CFUtil::stringifyCFException (icex)
+            << "."
+            << std::flush;
       mergeProperties (invalidProperties, numInvalidProperties,
-		       icex.invalidProperties, componentName);
+                       icex.invalidProperties, componentName);
     }
     catch (const CF::PropertySet::PartialConfiguration & pcex) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Failed to configure component \""
-	    << componentName
-	    << "\":"
-	    << CPI::CFUtil::stringifyCFException (pcex)
-	    << "."
-	    << std::flush;
+            << m_logProducerName
+            << "Failed to configure component \""
+            << componentName
+            << "\":"
+            << CPI::CFUtil::stringifyCFException (pcex)
+            << "."
+            << std::flush;
       mergeProperties (invalidProperties, numInvalidProperties,
-		       pcex.invalidProperties, componentName);
+                       pcex.invalidProperties, componentName);
     }
     catch (const CORBA::SystemException & ex) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Failed to configure component \""
-	    << componentName
-	    << "\":"
-	    << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	    << "."
-	    << std::flush;
+            << m_logProducerName
+            << "Failed to configure component \""
+            << componentName
+            << "\":"
+            << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+            << "."
+            << std::flush;
       mergeProperties (invalidProperties, numInvalidProperties,
-		       ccp, componentName);
+                       ccp, componentName);
     }
   }
 
@@ -427,24 +427,24 @@ configure (const CF::Properties & configProperties)
   }
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "configured."
-	<< std::flush;
+        << m_logProducerName
+        << "configured."
+        << std::flush;
 }
 
 void
 CPI::SCA::GenericAssemblyController::
 query (CF::Properties & configProperties)
   throw (CF::UnknownProperties,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
   CORBA::ULong numProps = configProperties.length ();
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "query (";
+        << CPI::Logger::Verbosity (2)
+        << "query (";
 
   for (CORBA::ULong dpi=0; dpi<numProps; dpi++) {
     if (dpi > 0) {
@@ -468,42 +468,42 @@ query (CF::Properties & configProperties)
       const std::string & componentName = (*pit).first;
 
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (1)
-	    << "Calling query() on component \""
-	    << componentName
-	    << "\"."
-	    << std::flush;
+            << CPI::Logger::Verbosity (1)
+            << "Calling query() on component \""
+            << componentName
+            << "\"."
+            << std::flush;
 
       CF::Resource_var cr = (*pit).second->getConnection ();
 
       if (CORBA::is_nil (cr)) {
-	m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Can not query component \""
-	      << componentName
-	      << "\" because it is not connected."
-	      << std::flush;
-	continue;
+        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+              << m_logProducerName
+              << "Can not query component \""
+              << componentName
+              << "\" because it is not connected."
+              << std::flush;
+        continue;
       }
 
       CF::Properties ccp;
 
       try {
-	cr->query (ccp);
+        cr->query (ccp);
       }
       catch (const CORBA::Exception & ex) {
-	m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Failed to query component \""
-	      << componentName
-	      << "\": "
-	      << CPI::CFUtil::stringifyCFException (ex)
-	      << "."
-	      << std::flush;
+        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+              << m_logProducerName
+              << "Failed to query component \""
+              << componentName
+              << "\": "
+              << CPI::CFUtil::stringifyCFException (ex)
+              << "."
+              << std::flush;
       }
 
       mergeProperties (configProperties, numProps,
-		       ccp, componentName);
+                       ccp, componentName);
     }
 
     configProperties.length (numProps + 1);
@@ -564,33 +564,33 @@ query (CF::Properties & configProperties)
     const CORBA::ULong ccpl = ccp.length ();
 
     debug << m_logProducerName
-	  << CPI::Logger::Verbosity (1)
-	  << "Calling configure (";
+          << CPI::Logger::Verbosity (1)
+          << "Calling configure (";
 
     for (CORBA::ULong cpi=0; cpi<ccpl; cpi++) {
       if (cpi > 0) {
-	debug << ", ";
+        debug << ", ";
       }
 
       debug << ccp[cpi].id;
     }
 
     debug << ") on component \""
-	  << componentName
-	  << "\"."
-	  << std::flush;
+          << componentName
+          << "\"."
+          << std::flush;
 
     PortMap::iterator pmi = m_portMap.find (componentName);
 
     if (pmi == m_portMap.end()) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Attempt to query non-existent component \""
-	    << componentName
-	    << "\"."
-	    << std::flush;
+            << m_logProducerName
+            << "Attempt to query non-existent component \""
+            << componentName
+            << "\"."
+            << std::flush;
       mergeProperties (up.invalidProperties, numInvalidProperties,
-		       ccp, componentName);
+                       ccp, componentName);
       continue;
     }
 
@@ -598,59 +598,59 @@ query (CF::Properties & configProperties)
 
     if (CORBA::is_nil (cr)) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Can not query component \""
-	    << componentName
-	    << "\" because it is not connected."
-	    << std::flush;
+            << m_logProducerName
+            << "Can not query component \""
+            << componentName
+            << "\" because it is not connected."
+            << std::flush;
       mergeProperties (up.invalidProperties, numInvalidProperties,
-		       ccp, componentName);
+                       ccp, componentName);
       continue;
     }
 
     try {
       cr->query (ccp);
       mergeProperties (configProperties, numProps,
-		       ccp, componentName);
+                       ccp, componentName);
     }
     catch (const CF::UnknownProperties & upex) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Failed to query component \""
-	    << componentName
-	    << "\":"
-	    << CPI::CFUtil::stringifyCFException (upex)
-	    << "."
-	    << std::flush;
+            << m_logProducerName
+            << "Failed to query component \""
+            << componentName
+            << "\":"
+            << CPI::CFUtil::stringifyCFException (upex)
+            << "."
+            << std::flush;
       mergeProperties (up.invalidProperties, numInvalidProperties,
-		       upex.invalidProperties, componentName);
+                       upex.invalidProperties, componentName);
     }
     catch (const CORBA::SystemException & ex) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Failed to query component \""
-	    << componentName
-	    << "\":"
-	    << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	    << "."
-	    << std::flush;
+            << m_logProducerName
+            << "Failed to query component \""
+            << componentName
+            << "\":"
+            << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+            << "."
+            << std::flush;
       mergeProperties (up.invalidProperties, numInvalidProperties,
-		       ccp, componentName);
+                       ccp, componentName);
     }
   }
 
   if (numInvalidProperties) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "query failed for "
-	  << ((numInvalidProperties != 1) ? "properties " : "property ");
+          << m_logProducerName
+          << "query failed for "
+          << ((numInvalidProperties != 1) ? "properties " : "property ");
 
     for (CORBA::ULong dpi=0; dpi<numInvalidProperties; dpi++) {
       if (dpi > 0 && dpi+1 == numInvalidProperties) {
-	m_out << " and ";
+        m_out << " and ";
       }
       else if (dpi > 0) {
-	m_out << ", ";
+        m_out << ", ";
       }
 
       m_out << up.invalidProperties[dpi].id;
@@ -661,9 +661,9 @@ query (CF::Properties & configProperties)
   }
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "queried."
-	<< std::flush;
+        << m_logProducerName
+        << "queried."
+        << std::flush;
 }
 
 /*
@@ -676,17 +676,17 @@ CORBA::Object_ptr
 CPI::SCA::GenericAssemblyController::
 getPort (const char * name)
   throw (CF::PortSupplier::UnknownPort,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Query for port \""
-	<< name
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Query for port \""
+        << name
+        << "\"."
+        << std::flush;
 
   if (std::strcmp (name, "LogOut") == 0) {
     return m_logPort.getPort ();
@@ -720,11 +720,11 @@ identifier ()
   CPI::Logger::DebugLogger debug (m_out);
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "Identifier attribute queried: \""
-	<< m_componentIdentifier
-	<< "\"."
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "Identifier attribute queried: \""
+        << m_componentIdentifier
+        << "\"."
+        << std::flush;
 
   return CORBA::string_dup (m_componentIdentifier.c_str());
 }
@@ -733,7 +733,7 @@ void
 CPI::SCA::GenericAssemblyController::
 start ()
   throw (CF::Resource::StartError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -741,11 +741,11 @@ start ()
   PortMap::size_type nc = m_portMap.size ();
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Starting "
-	<< nc
-	<< " componentns."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Starting "
+        << nc
+        << " componentns."
+        << std::flush;
 
   /*
    * Call start() on every connected component.  If one of them fails to
@@ -760,76 +760,76 @@ start ()
 
     if (!CORBA::is_nil (cr)) {
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (1)
-	    << "Starting component \""
-	    << (*it).first
-	    << "\"."
-	    << std::flush;
+            << CPI::Logger::Verbosity (1)
+            << "Starting component \""
+            << (*it).first
+            << "\"."
+            << std::flush;
 
       try {
-	cr->start ();
+        cr->start ();
       }
       catch (const CORBA::Exception & ex) {
-	m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Component \""
-	      << (*it).first
-	      << "\" failed to start: "
-	      << CPI::CFUtil::stringifyCFException (ex)
-	      << "."
-	      << std::flush;
+        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+              << m_logProducerName
+              << "Component \""
+              << (*it).first
+              << "\" failed to start: "
+              << CPI::CFUtil::stringifyCFException (ex)
+              << "."
+              << std::flush;
 
-	for (PortMap::const_iterator i2 = m_portMap.begin (); i2 != it; i2++) {
-	  cr = (*it).second->getConnection ();
+        for (PortMap::const_iterator i2 = m_portMap.begin (); i2 != it; i2++) {
+          cr = (*it).second->getConnection ();
 
-	  if (!CORBA::is_nil (cr)) {
-	    debug << m_logProducerName
-		  << CPI::Logger::Verbosity (1)
-		  << "Stopping component \""
-		  << (*it).first
-		  << "\"."
-		  << std::flush;
+          if (!CORBA::is_nil (cr)) {
+            debug << m_logProducerName
+                  << CPI::Logger::Verbosity (1)
+                  << "Stopping component \""
+                  << (*it).first
+                  << "\"."
+                  << std::flush;
 
-	    try {
-	      cr->stop ();
-	    }
-	    catch (const CORBA::Exception & e2) {
-	      m_out << CPI::Logger::Level::EXCEPTION_ERROR
-		    << m_logProducerName
-		    << "Failed to stop component \""
-		    << (*it).first
-		    << "\": "
-		    << CPI::CFUtil::stringifyCFException (ex)
-		    << ".  (Ignored.)"
-		    << std::flush;
-	    }
-	  }
-	}
+            try {
+              cr->stop ();
+            }
+            catch (const CORBA::Exception & e2) {
+              m_out << CPI::Logger::Level::EXCEPTION_ERROR
+                    << m_logProducerName
+                    << "Failed to stop component \""
+                    << (*it).first
+                    << "\": "
+                    << CPI::CFUtil::stringifyCFException (ex)
+                    << ".  (Ignored.)"
+                    << std::flush;
+            }
+          }
+        }
 
-	throw;
+        throw;
       }
     }
     else {
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (1)
-	    << "Can not start component \""
-	    << (*it).first
-	    << "\" because is not connected yet."
-	    << std::flush;
+            << CPI::Logger::Verbosity (1)
+            << "Can not start component \""
+            << (*it).first
+            << "\" because is not connected yet."
+            << std::flush;
     }
   }
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Started."
-	<< std::flush;
+        << m_logProducerName
+        << "Started."
+        << std::flush;
 }
 
 void
 CPI::SCA::GenericAssemblyController::
 stop ()
   throw (CF::Resource::StopError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -837,11 +837,11 @@ stop ()
   PortMap::size_type nc = m_portMap.size ();
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (1)
-	<< "Starting "
-	<< nc
-	<< " componentns."
-	<< std::flush;
+        << CPI::Logger::Verbosity (1)
+        << "Starting "
+        << nc
+        << " componentns."
+        << std::flush;
 
   /*
    * Call stop() on every connected component.  If one of them fails to
@@ -859,53 +859,53 @@ stop ()
 
     if (!CORBA::is_nil (cr)) {
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (1)
-	    << "Stopping component \""
-	    << (*it).first
-	    << "\"."
-	    << std::flush;
+            << CPI::Logger::Verbosity (1)
+            << "Stopping component \""
+            << (*it).first
+            << "\"."
+            << std::flush;
 
       try {
-	cr->stop ();
+        cr->stop ();
       }
       catch (const CF::Resource::StopError & ex) {
-	m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Component \""
-	      << (*it).first
-	      << "\" failed to stop: "
-	      << CPI::CFUtil::stringifyCFException (ex)
-	      << "."
-	      << std::flush;
+        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+              << m_logProducerName
+              << "Component \""
+              << (*it).first
+              << "\" failed to stop: "
+              << CPI::CFUtil::stringifyCFException (ex)
+              << "."
+              << std::flush;
 
-	if (!gotException) {
-	  gotException = true;
-	  se = ex;
-	}
+        if (!gotException) {
+          gotException = true;
+          se = ex;
+        }
       }
       catch (const CORBA::SystemException & ex) {
-	m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	      << m_logProducerName
-	      << "Component \""
-	      << (*it).first
-	      << "\" failed to stop: "
-	      << CPI::CFUtil::stringifyCFException (ex)
-	      << "."
-	      << std::flush;
+        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+              << m_logProducerName
+              << "Component \""
+              << (*it).first
+              << "\" failed to stop: "
+              << CPI::CFUtil::stringifyCFException (ex)
+              << "."
+              << std::flush;
 
-	if (!gotException) {
-	  gotException = true;
-	  cse = CPI::CORBAUtil::Misc::cloneSystemException (ex);
-	}
+        if (!gotException) {
+          gotException = true;
+          cse = CPI::CORBAUtil::Misc::cloneSystemException (ex);
+        }
       }
     }
     else {
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (1)
-	    << "Can not stop component \""
-	    << (*it).first
-	    << "\" because is not connected yet."
-	    << std::flush;
+            << CPI::Logger::Verbosity (1)
+            << "Can not stop component \""
+            << (*it).first
+            << "\" because is not connected yet."
+            << std::flush;
     }
   }
 
@@ -920,9 +920,9 @@ stop ()
   }
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Stopped."
-	<< std::flush;
+        << m_logProducerName
+        << "Stopped."
+        << std::flush;
 }
 
 /*

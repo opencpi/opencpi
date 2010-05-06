@@ -31,69 +31,69 @@ namespace CPI {
 
       class ReceptacleHelperServantCallback {
       public:
-	virtual void connectPort (CORBA::Object_ptr connection,
-				  const char * connectionId)
-	  throw (CF::Port::InvalidPort,
-		 CF::Port::OccupiedPort,
-		 CORBA::SystemException) = 0;
+        virtual void connectPort (CORBA::Object_ptr connection,
+                                  const char * connectionId)
+          throw (CF::Port::InvalidPort,
+                 CF::Port::OccupiedPort,
+                 CORBA::SystemException) = 0;
 
-	virtual void disconnectPort (const char * connectionId)
-	  throw (CF::Port::InvalidPort,
-		 CORBA::SystemException) = 0;
+        virtual void disconnectPort (const char * connectionId)
+          throw (CF::Port::InvalidPort,
+                 CORBA::SystemException) = 0;
       };
 
       class ReceptacleHelperPortServant : virtual public POA_CF::Port {
       public:
-	ReceptacleHelperPortServant (ReceptacleHelperServantCallback * cb)
-	  throw ();
-	~ReceptacleHelperPortServant ()
-	  throw ();
+        ReceptacleHelperPortServant (ReceptacleHelperServantCallback * cb)
+          throw ();
+        ~ReceptacleHelperPortServant ()
+          throw ();
 
-	void connectPort (CORBA::Object_ptr connection,
-			  const char * connectionId)
-	  throw (CF::Port::InvalidPort,
-		 CF::Port::OccupiedPort,
-		 CORBA::SystemException);
+        void connectPort (CORBA::Object_ptr connection,
+                          const char * connectionId)
+          throw (CF::Port::InvalidPort,
+                 CF::Port::OccupiedPort,
+                 CORBA::SystemException);
 
-	void disconnectPort (const char * connectionId)
-	  throw (CF::Port::InvalidPort,
-		 CORBA::SystemException);
+        void disconnectPort (const char * connectionId)
+          throw (CF::Port::InvalidPort,
+                 CORBA::SystemException);
 
       private:
-	ReceptacleHelperServantCallback * m_cb;
+        ReceptacleHelperServantCallback * m_cb;
       };
 
       ReceptacleHelperPortServant::
       ReceptacleHelperPortServant (ReceptacleHelperServantCallback * cb)
-	throw ()
-	: m_cb (cb)
+        throw ()
+        : m_cb (cb)
       {
       }
 
       ReceptacleHelperPortServant::
       ~ReceptacleHelperPortServant ()
-	throw ()
+        throw ()
       {
       }
 
       void
       ReceptacleHelperPortServant::
       connectPort (CORBA::Object_ptr connection,
-		   const char * connectionId)
-	throw (CF::Port::InvalidPort,
-	       CF::Port::OccupiedPort,
-	       CORBA::SystemException)
+                   const char * connectionId)
+        throw (CF::Port::InvalidPort,
+               CF::Port::OccupiedPort,
+               CORBA::SystemException)
       {
-	m_cb->connectPort (connection, connectionId);
+        m_cb->connectPort (connection, connectionId);
       }
 
       void
       ReceptacleHelperPortServant::
       disconnectPort (const char * connectionId)
-	throw (CF::Port::InvalidPort,
-	       CORBA::SystemException)
+        throw (CF::Port::InvalidPort,
+               CORBA::SystemException)
       {
-	m_cb->disconnectPort (connectionId);
+        m_cb->disconnectPort (connectionId);
       }
 
     }
@@ -126,10 +126,10 @@ namespace CPI {
        */
 
       virtual void connectPort (const std::string & portName,
-				const std::string & connectionId)
-	throw (CF::Port::InvalidPort,
-	       CF::Port::OccupiedPort,
-	       CORBA::SystemException) = 0;
+                                const std::string & connectionId)
+        throw (CF::Port::InvalidPort,
+               CF::Port::OccupiedPort,
+               CORBA::SystemException) = 0;
 
       /**
        * Notify the Resource/Device that a connection was disconnected.  The
@@ -145,9 +145,9 @@ namespace CPI {
        */
 
       virtual void disconnectPort (const std::string & portName,
-				   const std::string & connectionId)
-	throw (CF::Port::InvalidPort,
-	       CORBA::SystemException) = 0;
+                                   const std::string & connectionId)
+        throw (CF::Port::InvalidPort,
+               CORBA::SystemException) = 0;
     };
 
     /**
@@ -205,9 +205,9 @@ namespace CPI {
        */
 
       ReceptacleHelper (PortableServer::POA_ptr poa,
-			const std::string & portName,
-			ReceptacleHelperCallback * callback = 0)
-	throw (std::string);
+                        const std::string & portName,
+                        ReceptacleHelperCallback * callback = 0)
+        throw (std::string);
 
       /**
        * Destructor.
@@ -215,7 +215,7 @@ namespace CPI {
 
       virtual
       ~ReceptacleHelper ()
-	throw ();
+        throw ();
 
       /**
        * Whether a connection is established or not.
@@ -224,7 +224,7 @@ namespace CPI {
        */
 
       bool isConnected ()
-	throw ();
+        throw ();
 
       /**
        * Returns the port object that represents this receptacle.
@@ -237,7 +237,7 @@ namespace CPI {
        */
 
       CF::Port_ptr getPort ()
-	throw ();
+        throw ();
 
       /**
        * Returns a reference to the remote port, if a connection is
@@ -248,18 +248,18 @@ namespace CPI {
        */
 
       typename T::_ptr_type getConnection ()
-	throw ();
+        throw ();
 
     protected:
       void connectPort (CORBA::Object_ptr connection,
-			const char * connectionId)
-	throw (CF::Port::InvalidPort,
-	       CF::Port::OccupiedPort,
-	       CORBA::SystemException);
+                        const char * connectionId)
+        throw (CF::Port::InvalidPort,
+               CF::Port::OccupiedPort,
+               CORBA::SystemException);
 
       void disconnectPort (const char * connectionId)
-	throw (CF::Port::InvalidPort,
-	       CORBA::SystemException);
+        throw (CF::Port::InvalidPort,
+               CORBA::SystemException);
 
     private:
       std::string m_portName;
@@ -279,8 +279,8 @@ template<class T>
 inline
 CPI::CFUtil::ReceptacleHelper<T>::
 ReceptacleHelper (PortableServer::POA_ptr poa,
-		  const std::string & portName,
-		  ReceptacleHelperCallback * callback)
+                  const std::string & portName,
+                  ReceptacleHelperCallback * callback)
   throw (std::string)
   : m_portName (portName),
     m_callback (callback)
@@ -356,10 +356,10 @@ inline
 void
 CPI::CFUtil::ReceptacleHelper<T>::
 connectPort (CORBA::Object_ptr connection,
-	     const char * connectionId)
+             const char * connectionId)
   throw (CF::Port::InvalidPort,
-	 CF::Port::OccupiedPort,
-	 CORBA::SystemException)
+         CF::Port::OccupiedPort,
+         CORBA::SystemException)
 {
   if (!CORBA::is_nil (m_connection)) {
     throw CF::Port::OccupiedPort ();
@@ -376,7 +376,7 @@ connectPort (CORBA::Object_ptr connection,
   if (m_callback) {
     try {
       m_callback->connectPort (m_portName,
-			       m_connectionId);
+                               m_connectionId);
     }
     catch (...) {
       m_connection = T::_nil ();
@@ -391,7 +391,7 @@ void
 CPI::CFUtil::ReceptacleHelper<T>::
 disconnectPort (const char * connectionId)
   throw (CF::Port::InvalidPort,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   if (CORBA::is_nil (m_connection)) {
     throw CF::Port::InvalidPort (2, "not connected");

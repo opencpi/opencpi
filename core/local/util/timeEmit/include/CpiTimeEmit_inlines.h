@@ -72,13 +72,13 @@ namespace CPI {
       EventQ():start(NULL),current(NULL),full(false),done(false),role(NoTrigger){}
       void allocate()
       {
-	start = (EventQEntry*) new CPI::OS::uint8_t[config.size];
-	end   = (CPI::OS::uint8_t*)start + config.size;
-	memset( start,0,config.size);
+        start = (EventQEntry*) new CPI::OS::uint8_t[config.size];
+        end   = (CPI::OS::uint8_t*)start + config.size;
+        memset( start,0,config.size);
       };
       ~EventQ() 
       {
-	delete [] start;
+        delete [] start;
       }
     };
 
@@ -89,7 +89,7 @@ namespace CPI {
       int             parentIndex;   // Index into this vector
       std::string     outputPostFix;
       HeaderEntry( std::string& cn, std::string& in, int i, int pi  )
-	:className(cn),instanceName(in),instanceId(i),parentIndex(pi){};
+        :className(cn),instanceName(in),instanceId(i),parentIndex(pi){};
     };
 
     struct Emit::EventMap {
@@ -99,7 +99,7 @@ namespace CPI {
       EventType   type;
       DataType dtype;
       EventMap( EventId pid, const char* en, int w, EventType t, DataType dt)
-	:id(pid),eventName(en),width(w),type(t),dtype(dt){}
+        :id(pid),eventName(en),width(w),type(t),dtype(dt){}
     };
 
     struct Emit::Header {
@@ -136,13 +136,13 @@ inline void CPI::Time::Emit::processTrigger( EventTriggerRole role ) {
   case LocalQGroupTrigger:
     {
       if ( (m_q->role == LocalQGroupTrigger) || (m_q->role == GlobalQGroupTrigger)) {
-	// nothing to do
-	break;
+        // nothing to do
+        break;
       }
       else {
-	m_q->role = LocalQGroupTrigger;
-	m_q->current = NULL;
-	m_q->full = false;
+        m_q->role = LocalQGroupTrigger;
+        m_q->current = NULL;
+        m_q->full = false;
       }
     }
     break;
@@ -161,7 +161,7 @@ inline void CPI::Time::Emit::processTrigger( EventTriggerRole role ) {
 
       std::vector<CPI::Time::Emit::EventQ*>::iterator it;
       for( it=CPI::Time::Emit::getHeader().eventQ.begin();
-	   it!=CPI::Time::Emit::getHeader().eventQ.end(); it++ ) {  
+           it!=CPI::Time::Emit::getHeader().eventQ.end(); it++ ) {  
     
       }
     }
@@ -193,8 +193,8 @@ inline void CPI::Time::Emit::processTrigger( EventTriggerRole role ) {
   } \
   ADJUST_CURRENT( m_q, s ); \
   m_q->current->size = s; \
-  m_q->current->time  = getTime();	\
-  m_q->current->eid   = id;		\
+  m_q->current->time  = getTime();        \
+  m_q->current->eid   = id;                \
   m_q->current->owner = m_myId;
 
 
@@ -202,7 +202,7 @@ inline void CPI::Time::Emit::processTrigger( EventTriggerRole role ) {
 #define FINI_EVENT \
   m_q->current = reinterpret_cast<EventQEntry*>(((CPI::OS::uint8_t*)m_q->current +  m_q->current->size )); \
   m_q->current++; \
-  if ( (CPI::OS::uint8_t*)m_q->current >= m_q->end ) {			\
+  if ( (CPI::OS::uint8_t*)m_q->current >= m_q->end ) {                        \
     m_q->full = true; \
     if ( m_q->config.stopWhenFull ) { \
       m_q->done = true; \
@@ -214,9 +214,9 @@ inline void CPI::Time::Emit::processTrigger( EventTriggerRole role ) {
 
 
 inline void CPI::Time::Emit::emit( CPI::Time::Emit::EventId id, 
-					   CPI::OS::uint64_t v,
-					   EventTriggerRole role)
-{	
+                                           CPI::OS::uint64_t v,
+                                           EventTriggerRole role)
+{        
   //  INIT_EVENT(id, role, sizeof(CPI::OS::uint64_t) );
 
   int size = sizeof(CPI::OS::uint64_t);
@@ -238,8 +238,8 @@ inline void CPI::Time::Emit::emit( CPI::Time::Emit::EventId id,
   }
 
   m_q->current->size = size; 
-  m_q->current->time  = getTime();	
-  m_q->current->eid   = id;		
+  m_q->current->time  = getTime();        
+  m_q->current->eid   = id;                
   m_q->current->owner = m_myId;
 
 
@@ -250,7 +250,7 @@ inline void CPI::Time::Emit::emit( CPI::Time::Emit::EventId id,
 
   m_q->current++; 
   m_q->current = reinterpret_cast<EventQEntry*>(((CPI::OS::uint8_t*)m_q->current + size )); 
-  if ( (CPI::OS::uint8_t*)m_q->current >= m_q->end ) {			
+  if ( (CPI::OS::uint8_t*)m_q->current >= m_q->end ) {                        
     m_q->full = true; 
     if ( m_q->config.stopWhenFull ) { 
       m_q->done = true; 
@@ -320,8 +320,8 @@ inline void CPI::Time::Emit::emit( EventId id, CPI::Util::PValue& p, EventTrigge
 }
 
 inline void CPI::Time::Emit::emit( CPI::Time::Emit::EventId id,
-					   EventTriggerRole role )
-{	
+                                           EventTriggerRole role )
+{        
   INIT_EVENT(id, role, sizeof(CPI::OS::uint64_t) );
   FINI_EVENT;
 }
@@ -336,7 +336,7 @@ namespace {
 }
 
 inline void CPI::Time::Emit::sEmit( EventId id,
-					    EventTriggerRole role )
+                                            EventTriggerRole role )
 {
   getSEmit().emit( id, role );
 }

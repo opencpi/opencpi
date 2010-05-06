@@ -47,8 +47,8 @@ namespace CPI {
     public:
 
       enum TransferType {
-	SOURCE,
-	TARGET
+        SOURCE,
+        TARGET
       };
 
       /**********************************
@@ -72,20 +72,20 @@ namespace CPI {
        * Creates an instance of a controller
        *********************************/
       virtual TransferController* createController( 
-						   CPI::DataTransport::PortSet* source, 
-						   CPI::DataTransport::PortSet* target, 
-						   bool whole_source_set)=0;
+                                                   CPI::DataTransport::PortSet* source, 
+                                                   CPI::DataTransport::PortSet* target, 
+                                                   bool whole_source_set)=0;
 
       /**********************************
        * Get/Set transfer template
        *********************************/
       virtual CpiTransferTemplate* getTemplate(
-				       CPI::OS::uint32_t sp,			// In - Source port id
-				       CPI::OS::uint32_t stid,		// In - Source buffer id
-				       CPI::OS::uint32_t tp,			// In - Target port id
-				       CPI::OS::uint32_t ttid,		// In - Target buffer id
-				       bool bcast, 	// In - Broadcast template ?
-				       TransferType tt); // In - Transfer type
+                                       CPI::OS::uint32_t sp,                        // In - Source port id
+                                       CPI::OS::uint32_t stid,                // In - Source buffer id
+                                       CPI::OS::uint32_t tp,                        // In - Target port id
+                                       CPI::OS::uint32_t ttid,                // In - Target buffer id
+                                       bool bcast,         // In - Broadcast template ?
+                                       TransferType tt); // In - Transfer type
 
       /******************************
        * This method is used to determine if a transfer can be started while
@@ -96,36 +96,36 @@ namespace CPI {
       /**********************************
        * This method gets the next available buffer from the specified source port
        *********************************/
-      virtual Buffer* getNextSourceBuffer(  CPI::DataTransport::Port* src_port			// In - Source port
-					    );
+      virtual Buffer* getNextSourceBuffer(  CPI::DataTransport::Port* src_port                        // In - Source port
+                                            );
 
       /**********************************
        * This method determines if there is an available buffer, but does not affect the
        * state of the object.
        *********************************/
       virtual bool hasAvailableSourceBuffer(
-					    CPI::DataTransport::Port* port
-					    )const;
+                                            CPI::DataTransport::Port* port
+                                            )const;
 
       /**********************************
        * This method determines if there is data available, but does not affect the
        * state of the object.
        *********************************/
       virtual bool hasFullTargetBuffer(
-				       CPI::DataTransport::Port* port,	       
-				       TargetBuffer**
-				       )const;
-				
+                                       CPI::DataTransport::Port* port,               
+                                       TargetBuffer**
+                                       )const;
+                                
       /**********************************
        * This is used to indicate that a buffer has been filled. Since we manage circular
        * buffers, the actual buffer is implied (next)
        *
        *********************************/
       virtual void bufferFull(
-			      CPI::DataTransport::Port* port						
-			      );
-						
-						
+                              CPI::DataTransport::Port* port                                                
+                              );
+                                                
+                                                
       /**********************************
        * This is used to indicate that a remote target 
        * buffer has been freed. Since we manage circular
@@ -133,8 +133,8 @@ namespace CPI {
        *
        *********************************/
       virtual void freeBuffer(
-			      CPI::DataTransport::Port* port						
-			      );
+                              CPI::DataTransport::Port* port                                                
+                              );
 
       /**********************************
        * This is used to indicate that all remote target 
@@ -142,37 +142,37 @@ namespace CPI {
        *
        *********************************/
       virtual void freeAllBuffersLocal(
-				       CPI::DataTransport::Port* port						
-				       );
+                                       CPI::DataTransport::Port* port                                                
+                                       );
 
 
       /**********************************
        * This method gets the next available buffer from the specified source port
        *********************************/
       virtual bool useThisSourceBuffer( 
-				       CPI::DataTransport::Port* src_port			// In - Source port
-				       );
+                                       CPI::DataTransport::Port* src_port                        // In - Source port
+                                       );
 
       /**********************************
        * This method gets the next available buffer from the specified target port
        *********************************/
       virtual Buffer* getNextTargetBuffer( 
-					       CPI::DataTransport::Port* target_port			// In - Source port
-					       );
+                                               CPI::DataTransport::Port* target_port                        // In - Source port
+                                               );
 
       /**********************************
        * This method determines if we can produce from the indicated buffer
        *********************************/
       virtual bool canProduce( 
-			      Buffer* buffer			// InOut - Buffer to produce from
-			      )=0;
+                              Buffer* buffer                        // InOut - Buffer to produce from
+                              )=0;
 
       /**********************************
        * This method determines if we can produce from the indicated buffer
        *********************************/
       virtual bool canBroadcast( 
-				Buffer* buffer			// InOut - Buffer to produce from
-				);
+                                Buffer* buffer                        // InOut - Buffer to produce from
+                                );
 
       /**********************************
        * This method determines if we have the source barrier token
@@ -184,43 +184,43 @@ namespace CPI {
        * it will be initiated, if not it will be queued in the circuit.
        *********************************/
       virtual int produce( 
-			  Buffer* buffer,			// InOut - Buffer to produce from
-			  bool      broadcast=false	// In    - Broadcast the buffer
-			  )=0;
+                          Buffer* buffer,                        // InOut - Buffer to produce from
+                          bool      broadcast=false        // In    - Broadcast the buffer
+                          )=0;
 
       /**********************************
        * This initiates a broadcastdata transfer from the source buffer.
        *********************************/
       virtual void broadCastSource(
-				   Buffer* buffer			// InOut - Buffer to produce from
-				   );
+                                   Buffer* buffer                        // InOut - Buffer to produce from
+                                   );
 
       /**********************************
        * This marks the target buffer as "Empty" and informs all interested sources that
        * the target is now available.
        *********************************/
       virtual Buffer* consume( 
-			      Buffer* buffer			// InOut - Buffer to consume
-			      )=0;
+                              Buffer* buffer                        // InOut - Buffer to consume
+                              )=0;
 
       /**********************************
        * This marks the target buffer as "Empty" and informs all interested sources that
        * the target is now available.
        *********************************/
       virtual void consumeAllBuffersLocal( 
-					  CPI::DataTransport::Port* port		          
-					  );
+                                          CPI::DataTransport::Port* port                          
+                                          );
 
       /**********************************
        * Add a template
        *********************************/
       void addTemplate( CpiTransferTemplate* temp, 
-			CPI::OS::uint32_t sp, 
-			CPI::OS::uint32_t stid, 
-			CPI::OS::uint32_t tp, 
-			CPI::OS::uint32_t ttid, 
-			bool broadcast=false,
-			TransferType tt = SOURCE);
+                        CPI::OS::uint32_t sp, 
+                        CPI::OS::uint32_t stid, 
+                        CPI::OS::uint32_t tp, 
+                        CPI::OS::uint32_t ttid, 
+                        bool broadcast=false,
+                        TransferType tt = SOURCE);
 
 
     protected:
@@ -231,9 +231,9 @@ namespace CPI {
       void init( CPI::DataTransport::PortSet* source, CPI::DataTransport::PortSet* target, bool whole_ss );
 
       // Next target temporal id
-      CPI::OS::int32_t	m_nextTid;
-      CPI::OS::int32_t	m_FillQPtr;
-      CPI::OS::int32_t	m_EmptyQPtr;			
+      CPI::OS::int32_t        m_nextTid;
+      CPI::OS::int32_t        m_FillQPtr;
+      CPI::OS::int32_t        m_EmptyQPtr;                        
 
       // Our port
       CPI::DataTransport::Port* m_port;
@@ -275,13 +275,13 @@ namespace CPI {
      * Add a template
      *********************************/
     inline void TransferController::addTemplate( 
-						CpiTransferTemplate* temp, CPI::OS::uint32_t sp, 
-						CPI::OS::uint32_t stid, 
-						CPI::OS::uint32_t tp, 
-						CPI::OS::uint32_t ttid, 
-						bool bcast,TransferType tt )
+                                                CpiTransferTemplate* temp, CPI::OS::uint32_t sp, 
+                                                CPI::OS::uint32_t stid, 
+                                                CPI::OS::uint32_t tp, 
+                                                CPI::OS::uint32_t ttid, 
+                                                bool bcast,TransferType tt )
       {
-	m_templates[sp][stid][tp][ttid][bcast?1:0][tt] = temp;
+        m_templates[sp][stid][tp][ttid][bcast?1:0][tt] = temp;
       }
 
 
@@ -289,12 +289,12 @@ namespace CPI {
      * Get/Set transfer template
      *********************************/
     inline CpiTransferTemplate* TransferController::getTemplate(
-								CPI::OS::uint32_t sp, 
-								CPI::OS::uint32_t stid, 
-								CPI::OS::uint32_t tp, 
-								CPI::OS::uint32_t ttid, 
-								bool bcast,
-								TransferType tt)
+                                                                CPI::OS::uint32_t sp, 
+                                                                CPI::OS::uint32_t stid, 
+                                                                CPI::OS::uint32_t tp, 
+                                                                CPI::OS::uint32_t ttid, 
+                                                                bool bcast,
+                                                                TransferType tt)
       {return m_templates[sp][stid][tp][ttid][bcast?1:0][tt];}
 
 
@@ -314,17 +314,17 @@ namespace CPI {
       TransferController1( CPI::DataTransport::PortSet* source, CPI::DataTransport::PortSet* target, bool whole_ss );
 
       virtual TransferController* createController( 
-						   CPI::DataTransport::PortSet* source, 
-						   CPI::DataTransport::PortSet* target,
-						   bool whole_source_set);
+                                                   CPI::DataTransport::PortSet* source, 
+                                                   CPI::DataTransport::PortSet* target,
+                                                   bool whole_source_set);
 
   
       /**********************************
        * This method determines if we can produce from the indicated buffer
        *********************************/
       virtual bool canProduce( 
-			      Buffer* buffer			// InOut - Buffer to produce from
-			      );
+                              Buffer* buffer                        // InOut - Buffer to produce from
+                              );
 
       /**********************************
        * This initiates a data transfer from the source buffer.  If the transfer can take place, 
@@ -357,22 +357,22 @@ namespace CPI {
       TransferController2(){};
 
       TransferController2( 
-			  CPI::DataTransport::PortSet* source, 
-			  CPI::DataTransport::PortSet* target,
-			  bool whole_source_set);
+                          CPI::DataTransport::PortSet* source, 
+                          CPI::DataTransport::PortSet* target,
+                          bool whole_source_set);
 
 
       virtual TransferController* 
-	createController( CPI::DataTransport::PortSet* source, CPI::DataTransport::
-			  PortSet* target, bool whole_source_set);
+        createController( CPI::DataTransport::PortSet* source, CPI::DataTransport::
+                          PortSet* target, bool whole_source_set);
 
  
       /**********************************
        * This method determines if we can produce from the indicated buffer
        *********************************/
       virtual bool canProduce( 
-			      Buffer* buffer			// InOut - Buffer to produce from
-			      );
+                              Buffer* buffer                        // InOut - Buffer to produce from
+                              );
 
       /**********************************
        * This initiates a data transfer from the source buffer.  If the transfer can take place, 
@@ -391,8 +391,8 @@ namespace CPI {
        * This method gets the next available buffer from the specified target port
        *********************************/
       virtual Buffer* getNextTargetBuffer( 
-					       CPI::DataTransport::Port* target_port			// In - Source port
-					       );
+                                               CPI::DataTransport::Port* target_port                        // In - Source port
+                                               );
 
     private:
 
@@ -414,14 +414,14 @@ namespace CPI {
       TransferController3(){};
 
       TransferController3( 
-			  CPI::DataTransport::PortSet* source, 
-			  CPI::DataTransport::PortSet* target,
-			  bool whole_source_set);
+                          CPI::DataTransport::PortSet* source, 
+                          CPI::DataTransport::PortSet* target,
+                          bool whole_source_set);
 
       virtual TransferController* createController( 
-						   CPI::DataTransport::PortSet* source, 
-						   CPI::DataTransport::PortSet* target,
-						   bool whole_source_set);
+                                                   CPI::DataTransport::PortSet* source, 
+                                                   CPI::DataTransport::PortSet* target,
+                                                   bool whole_source_set);
 
  
       /******************************
@@ -450,17 +450,17 @@ namespace CPI {
      *********************************/
 
     inline TransferController3::TransferController3( 
-						    CPI::DataTransport::PortSet* source, 
-						    CPI::DataTransport::PortSet* target,
-						    bool whole_source_set)
+                                                    CPI::DataTransport::PortSet* source, 
+                                                    CPI::DataTransport::PortSet* target,
+                                                    bool whole_source_set)
       :TransferController2(source,target,whole_source_set){}
 
 
       inline TransferController* 
-	TransferController3::createController( 
-					      CPI::DataTransport::PortSet* source, 
-					      CPI::DataTransport::PortSet* target,
-					      bool wss ){return new TransferController3(source,target,wss);}
+        TransferController3::createController( 
+                                              CPI::DataTransport::PortSet* source, 
+                                              CPI::DataTransport::PortSet* target,
+                                              bool wss ){return new TransferController3(source,target,wss);}
 
 
 
@@ -480,36 +480,36 @@ namespace CPI {
       {
       public:
 
-	TransferController4(){};
+        TransferController4(){};
 
-	TransferController4( CPI::DataTransport::PortSet* source, CPI::DataTransport::PortSet* target, bool whole_ss );
-
-
-	virtual TransferController* createController( 
-						     CPI::DataTransport::PortSet* source, 
-						     CPI::DataTransport::PortSet* target,
-						     bool whole_source_set);
-
-	/**********************************
-	 * This method determines if we can produce from the indicated buffer
-	 *********************************/
-	virtual bool canProduce( 
-				Buffer* buffer			// InOut - Buffer to produce from
-				);
-
-	/**********************************
-	 * This initiates a data transfer from the source buffer.  If the transfer can take place, 
-	 * it will be initiated, if not it will be queued in the circuit.
-	 *********************************/
-	virtual int produce( Buffer* buffer, bool bcast=false );
+        TransferController4( CPI::DataTransport::PortSet* source, CPI::DataTransport::PortSet* target, bool whole_ss );
 
 
-	/**********************************
-	 * This method gets the next available buffer from the specified target port
-	 *********************************/
-	virtual Buffer* getNextTargetBuffer( 
-						 CPI::DataTransport::Port* target_port			// In - Source port
-						 );
+        virtual TransferController* createController( 
+                                                     CPI::DataTransport::PortSet* source, 
+                                                     CPI::DataTransport::PortSet* target,
+                                                     bool whole_source_set);
+
+        /**********************************
+         * This method determines if we can produce from the indicated buffer
+         *********************************/
+        virtual bool canProduce( 
+                                Buffer* buffer                        // InOut - Buffer to produce from
+                                );
+
+        /**********************************
+         * This initiates a data transfer from the source buffer.  If the transfer can take place, 
+         * it will be initiated, if not it will be queued in the circuit.
+         *********************************/
+        virtual int produce( Buffer* buffer, bool bcast=false );
+
+
+        /**********************************
+         * This method gets the next available buffer from the specified target port
+         *********************************/
+        virtual Buffer* getNextTargetBuffer( 
+                                                 CPI::DataTransport::Port* target_port                        // In - Source port
+                                                 );
 
 
       protected:

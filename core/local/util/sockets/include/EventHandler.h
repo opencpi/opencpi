@@ -1,6 +1,6 @@
 /** \file EventHandler.h
- **	\date  2005-12-07
- **	\author grymse@alhem.net
+ **        \date  2005-12-07
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
@@ -47,34 +47,34 @@ class Event;
 class TcpSocket;
 
 /** SocketHandler implementing the IEventHandler interface.
-	\ingroup timer */
+        \ingroup timer */
 class EventHandler : public SocketHandler,public IEventHandler
 {
 public:
-	EventHandler(StdLog * = NULL);
-	EventHandler(IMutex&,StdLog * = NULL);
-	~EventHandler();
+        EventHandler(StdLog * = NULL);
+        EventHandler(IMutex&,StdLog * = NULL);
+        ~EventHandler();
 
-	bool GetTimeUntilNextEvent(struct timeval *tv);
-	void CheckEvents();
-	long AddEvent(IEventOwner *from,long sec,long usec);
-	void ClearEvents(IEventOwner *from);
-	void RemoveEvent(IEventOwner *from,long eid);
+        bool GetTimeUntilNextEvent(struct timeval *tv);
+        void CheckEvents();
+        long AddEvent(IEventOwner *from,long sec,long usec);
+        void ClearEvents(IEventOwner *from);
+        void RemoveEvent(IEventOwner *from,long eid);
 
-	/** SocketHandler while() loop implemented with event functionality. */
-	void EventLoop();
-	/** Stop event loop. */
-	void SetQuit(bool = true);
+        /** SocketHandler while() loop implemented with event functionality. */
+        void EventLoop();
+        /** Stop event loop. */
+        void SetQuit(bool = true);
 
-	void Add(Socket *);
+        void Add(Socket *);
 
 private:
-	EventHandler(const EventHandler& ) {} // copy constructor
-	EventHandler& operator=(const EventHandler& ) { return *this; } // assignment operator
-	std::list<Event *> m_events;
-	bool m_quit;
-	TcpSocket *m_socket;
-	port_t m_port;
+        EventHandler(const EventHandler& ) {} // copy constructor
+        EventHandler& operator=(const EventHandler& ) { return *this; } // assignment operator
+        std::list<Event *> m_events;
+        bool m_quit;
+        TcpSocket *m_socket;
+        port_t m_port;
 };
 
 

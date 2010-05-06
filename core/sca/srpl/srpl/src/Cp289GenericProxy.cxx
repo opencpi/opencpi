@@ -48,39 +48,39 @@ namespace CPI {
 
     Cp289GenericProxy::
     Cp289GenericProxy (// needed by base class
-		       CORBA::ORB_ptr orb,
-		       PortableServer::POA_ptr poa,
-		       // Identity within the application/assembly
-		       const std::string & identifier,
-		       // spd:softpkg/implementation/code/localfile@name
-		       const char *codeLocalFileName,
-		       // spd:softpkg/implementation/code/entrypoint
-		       const char *functionName,
-		       const char *instanceName,
-		       CC::Application &application,
-		       const char *namingContextIor,
-		       const char *nameBinding,
-		       // Optional
-		       CPI::Logger::Logger * logger,
-		       bool adoptLogger,
-		       bool shutdownOrbOnRelease)
+                       CORBA::ORB_ptr orb,
+                       PortableServer::POA_ptr poa,
+                       // Identity within the application/assembly
+                       const std::string & identifier,
+                       // spd:softpkg/implementation/code/localfile@name
+                       const char *codeLocalFileName,
+                       // spd:softpkg/implementation/code/entrypoint
+                       const char *functionName,
+                       const char *instanceName,
+                       CC::Application &application,
+                       const char *namingContextIor,
+                       const char *nameBinding,
+                       // Optional
+                       CPI::Logger::Logger * logger,
+                       bool adoptLogger,
+                       bool shutdownOrbOnRelease)
       throw (std::string)
       : BaseProxy (orb, poa, identifier,
-		      logger, adoptLogger,
-		      shutdownOrbOnRelease),
-	m_application (application),
-	// ALl the hard work happens here.
-	m_worker(application.createWorker(codeLocalFileName, 0, functionName, instanceName, 0))
+                      logger, adoptLogger,
+                      shutdownOrbOnRelease),
+        m_application (application),
+        // ALl the hard work happens here.
+        m_worker(application.createWorker(codeLocalFileName, 0, functionName, instanceName, 0))
     {
       // Externalize us.
       m_scaResource = poa->id_to_reference(*poa->activate_object(this));
       if (namingContextIor) {
-	CORBA::Object_var ncref = orb->string_to_object (namingContextIor);
-	CosNaming::NamingContext_var nc = CosNaming::NamingContext::_narrow (ncref);
-	CosNaming::Name nn;
-	nn.length (1);
-	nn[0].id = nameBinding;
-	nc->bind (nn, m_scaResource);
+        CORBA::Object_var ncref = orb->string_to_object (namingContextIor);
+        CosNaming::NamingContext_var nc = CosNaming::NamingContext::_narrow (ncref);
+        CosNaming::Name nn;
+        nn.length (1);
+        nn[0].id = nameBinding;
+        nc->bind (nn, m_scaResource);
       }      
       static CF::ExecutableDevice::ProcessID_Type lastPid;
       m_scaPid = ++lastPid; // FIXME: interlocked for trhead safety.
@@ -105,7 +105,7 @@ namespace CPI {
     CPI::SCA::Cp289GenericProxy::
     releaseObject ()
       throw (CF::LifeCycle::ReleaseError,
-	     CORBA::SystemException)
+             CORBA::SystemException)
     {
       /*
        * Disconnect and release all ports.
@@ -115,7 +115,7 @@ namespace CPI {
       CPI::Logger::DebugLogger debug (*m_logger);
       
       if (m_disabled) {
-	throw CORBA::BAD_INV_ORDER ();
+        throw CORBA::BAD_INV_ORDER ();
       }
       releasePorts();
       // base class deactivates
@@ -132,53 +132,53 @@ namespace CPI {
     CPI::SCA::Cp289GenericProxy::
     getPort (const char * name)
       throw (CF::PortSupplier::UnknownPort,
-	     CORBA::SystemException)
+             CORBA::SystemException)
     {
       CU::AutoMutex lock (m_mutex);
       CPI::Logger::DebugLogger debug (*m_logger);
 
       if (m_disabled) {
-	throw CORBA::BAD_INV_ORDER ();
+        throw CORBA::BAD_INV_ORDER ();
       }
 
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (2)
-	    << "getPort (\""
-	    << name
-	    << "\")"
-	    << std::flush;
+            << CPI::Logger::Verbosity (2)
+            << "getPort (\""
+            << name
+            << "\")"
+            << std::flush;
 
       Cp289GenericProxyPort *cggp;
       PortMap::iterator pit = m_portMap.find (name);
       if (pit != m_portMap.end())
-	cggp = (*pit).second;
+        cggp = (*pit).second;
       else {
-	try {
-	  cggp = new Cp289GenericProxyPort (name, this);
-	}
-	catch (const CORBA::Exception & oops) {
-	  *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		    << m_logProducerName
-		    << "Oops: "
-		    << CPI::CORBAUtil::Misc::stringifyCorbaException (oops)
-		    << std::flush;
-	  throw;
-	}
-	catch (const std::bad_alloc & oops) {
-	  *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		    << m_logProducerName
-		    << "Oops: " << oops.what ()
-		    << std::flush;
-	  throw CORBA::NO_RESOURCES();
-	}
-	catch (...) {
-	  *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		    << m_logProducerName
-		    << "Oops."
-		    << std::flush;
-	  throw;
-	}
-	m_portMap[name] = cggp;
+        try {
+          cggp = new Cp289GenericProxyPort (name, this);
+        }
+        catch (const CORBA::Exception & oops) {
+          *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+                    << m_logProducerName
+                    << "Oops: "
+                    << CPI::CORBAUtil::Misc::stringifyCorbaException (oops)
+                    << std::flush;
+          throw;
+        }
+        catch (const std::bad_alloc & oops) {
+          *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+                    << m_logProducerName
+                    << "Oops: " << oops.what ()
+                    << std::flush;
+          throw CORBA::NO_RESOURCES();
+        }
+        catch (...) {
+          *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+                    << m_logProducerName
+                    << "Oops."
+                    << std::flush;
+          throw;
+        }
+        m_portMap[name] = cggp;
       }
       return CORBA::Object::_duplicate (cggp->getScaPort());
     }
@@ -186,8 +186,8 @@ namespace CPI {
     void Cp289GenericProxy::
     releasePorts() {
       for (PortMap::iterator pit = m_portMap.begin ();
-	   pit != m_portMap.end (); pit++)
-	(*pit).second->release();
+           pit != m_portMap.end (); pit++)
+        (*pit).second->release();
       m_portMap.clear();
     }
 
@@ -204,58 +204,58 @@ namespace CPI {
 #undef CPI_DATA_TYPE_H
 #undef CPI_DATA_TYPE_S
 
-#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)		\
-    case CM::Property::CPI_##pretty:					\
-    if (p.isSequence()) {						\
-      const CORBA::StringSeq *seq;					\
-      if (!(any >>= seq))						\
-	oops = "property value is not correct string sequence type";	\
-      else								\
-	p.setStringSequenceValue((const run *)seq->get_buffer(), seq->length()); \
-    } else {								\
-      /* we simply have a string */					\
-      const char *cp;							\
-      CORBA::ULong bound;						\
-      if (!(any >>= CORBA::Any::to_string(cp, bound)))			\
-	oops = "property value not a string as is should be";		\
-      else								\
-	p.setStringValue(cp);						\
-    }									\
-	break;								\
-	/**/
+#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
+    case CM::Property::CPI_##pretty:                                        \
+    if (p.isSequence()) {                                                \
+      const CORBA::StringSeq *seq;                                        \
+      if (!(any >>= seq))                                                \
+        oops = "property value is not correct string sequence type";        \
+      else                                                                \
+        p.setStringSequenceValue((const run *)seq->get_buffer(), seq->length()); \
+    } else {                                                                \
+      /* we simply have a string */                                        \
+      const char *cp;                                                        \
+      CORBA::ULong bound;                                                \
+      if (!(any >>= CORBA::Any::to_string(cp, bound)))                        \
+        oops = "property value not a string as is should be";                \
+      else                                                                \
+        p.setStringValue(cp);                                                \
+    }                                                                        \
+        break;                                                                \
+        /**/
 
     // For simple types (not strings) and simple sequences (not strings)
 #undef CPI_DATA_TYPE_H
-#define CPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)		\
+#define CPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter,bits,CORBA::Any::to_##sca(typed_value), pretty, run)
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter, bits, typed_value, pretty, run)
-#define SCA_SIMPLE(l,c,t,n,h,pt,run)					\
-    case CM::Property::CPI_##pt:					\
-    /* now we know its not MMIO */					\
-    if (p.isSequence()) {						\
-      const CORBA::c##Seq *seq;						\
-      if (any >>= seq)							\
-	p.set##pt##SequenceValue((const run *)seq->get_buffer(), seq->length()); \
-      else								\
-	oops = "property value not correct sequence type";		\
-    } else {								\
-      /* It is a simple scalar type that is not MMIO */			\
-      CORBA::c typed_value;						\
-      if ((any >>= h))							\
-	p.set##pt##Value(typed_value);					\
-      else								\
-	oops =  "property value has incorrect type";			\
-    }									\
-	break;								\
-	/**/  
+#define SCA_SIMPLE(l,c,t,n,h,pt,run)                                        \
+    case CM::Property::CPI_##pt:                                        \
+    /* now we know its not MMIO */                                        \
+    if (p.isSequence()) {                                                \
+      const CORBA::c##Seq *seq;                                                \
+      if (any >>= seq)                                                        \
+        p.set##pt##SequenceValue((const run *)seq->get_buffer(), seq->length()); \
+      else                                                                \
+        oops = "property value not correct sequence type";                \
+    } else {                                                                \
+      /* It is a simple scalar type that is not MMIO */                        \
+      CORBA::c typed_value;                                                \
+      if ((any >>= h))                                                        \
+        p.set##pt##Value(typed_value);                                        \
+      else                                                                \
+        oops =  "property value has incorrect type";                        \
+    }                                                                        \
+        break;                                                                \
+        /**/  
 
     void
     CPI::SCA::Cp289GenericProxy::
     configureWorker (const char * name,
-		     const CORBA::Any & any,
-		     bool last,
-		     bool & needSync)
+                     const CORBA::Any & any,
+                     bool last,
+                     bool & needSync)
       throw (std::string)
     {
       // There is a slight amount of caching optimization possible
@@ -264,92 +264,92 @@ namespace CPI {
       needSync = p.needWriteSync();
       const char *oops = 0;
       switch (p.getType()) {
-	CPI_PROPERTY_DATA_TYPES
+        CPI_PROPERTY_DATA_TYPES
       case CM::Property::CPI_none:
       case CM::Property::CPI_data_type_limit:
-	;
+        ;
       }
       if (oops)
-	throw std::string (oops);
+        throw std::string (oops);
       if (last && needSync)
-	m_worker.afterConfigure();
+        m_worker.afterConfigure();
     }
 
 #undef CPI_DATA_TYPE_H
-#define CPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)		\
+#define CPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter,bits,CORBA::Any::from_##sca(typed_value), pretty, run)
 #undef CPI_DATA_TYPE_S
 #undef SCA_SIMPLE
     // For simple types (not strings) and simple sequences (not strings)
     // We allocate storage - which we could in fact preallocate, but would that avoid an extra allocation?
-#define SCA_SIMPLE(l,c,t,n,h,pt,run)					\
-    case CM::Property::CPI_##pt:					\
-    if (p.isSequence()) {						\
-      unsigned size = p.sequenceSize();					\
-      /* is a sequence FIXME trycatch for allocation unless cached*/	\
-      /* cached is probaby better but must not consume into any */	\
-      CORBA::c##Seq *seq = new CORBA::c##Seq(size);			\
+#define SCA_SIMPLE(l,c,t,n,h,pt,run)                                        \
+    case CM::Property::CPI_##pt:                                        \
+    if (p.isSequence()) {                                                \
+      unsigned size = p.sequenceSize();                                        \
+      /* is a sequence FIXME trycatch for allocation unless cached*/        \
+      /* cached is probaby better but must not consume into any */        \
+      CORBA::c##Seq *seq = new CORBA::c##Seq(size);                        \
       seq->length(p.get##pt##SequenceValue((run *)seq->get_buffer(), size)); \
-      any <<= seq; /* seq and its buffer are consumed */		\
-    } else {								\
-      CORBA::c typed_value = p.get##pt##Value();			\
-      any <<= h;							\
-    }									\
-	break;								\
-	/**/  
+      any <<= seq; /* seq and its buffer are consumed */                \
+    } else {                                                                \
+      CORBA::c typed_value = p.get##pt##Value();                        \
+      any <<= h;                                                        \
+    }                                                                        \
+        break;                                                                \
+        /**/  
 
-#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
-    case CM::Property::CPI_##pretty: {				\
-      unsigned length = p.stringSize();				\
-      if (p.isSequence()) {					\
-	uint32_t limit = p.sequenceSize();			\
-	CORBA::corba##Seq *seq = new CORBA::corba##Seq(limit);	\
-	seq->length(limit);					\
-	char **data = seq->get_buffer();			\
-	uint32_t nSpace = limit * (length + 1);			\
-	char *space = new char[nSpace];				\
-	p.getStringSequenceValue(data, limit, space, nSpace);	\
-	for (unsigned i = 0; i < limit; i++)			\
-	  if (!(data[i] = CORBA::string_dup(data[i]))) {	\
-	    oops =  "can't allocate string for property value";	\
-	    break;						\
-	  }							\
-	if (!oops)						\
-	  any <<= seq;						\
-      } else {							\
-	/* we have a string, not a sequence */			\
-	char *cp = CORBA::string_alloc(length + 1);		\
-	if (!cp)						\
-	  oops =  "can't allocate string for property value";	\
-	else {							\
-	  cp[length] = '\0';					\
-	  p.getStringValue(cp, length + 1);			\
-	  any <<= cp;						\
-	}							\
-      }								\
-    }								\
-	/**/
+#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
+    case CM::Property::CPI_##pretty: {                                \
+      unsigned length = p.stringSize();                                \
+      if (p.isSequence()) {                                        \
+        uint32_t limit = p.sequenceSize();                        \
+        CORBA::corba##Seq *seq = new CORBA::corba##Seq(limit);        \
+        seq->length(limit);                                        \
+        char **data = seq->get_buffer();                        \
+        uint32_t nSpace = limit * (length + 1);                        \
+        char *space = new char[nSpace];                                \
+        p.getStringSequenceValue(data, limit, space, nSpace);        \
+        for (unsigned i = 0; i < limit; i++)                        \
+          if (!(data[i] = CORBA::string_dup(data[i]))) {        \
+            oops =  "can't allocate string for property value";        \
+            break;                                                \
+          }                                                        \
+        if (!oops)                                                \
+          any <<= seq;                                                \
+      } else {                                                        \
+        /* we have a string, not a sequence */                        \
+        char *cp = CORBA::string_alloc(length + 1);                \
+        if (!cp)                                                \
+          oops =  "can't allocate string for property value";        \
+        else {                                                        \
+          cp[length] = '\0';                                        \
+          p.getStringValue(cp, length + 1);                        \
+          any <<= cp;                                                \
+        }                                                        \
+      }                                                                \
+    }                                                                \
+        /**/
 
     void
     CPI::SCA::Cp289GenericProxy::
     queryWorker (const char * name,
-		 CORBA::Any & any,
-		 bool & haveSync)
+                 CORBA::Any & any,
+                 bool & haveSync)
       throw (std::string)
     {
       CC::Property p(m_worker, name);
       if (!haveSync &&
-	  ((haveSync = p.needReadSync())))
-	m_worker.beforeQuery();
+          ((haveSync = p.needReadSync())))
+        m_worker.beforeQuery();
       const char * oops;
       switch (p.getType()) {
-	CPI_PROPERTY_DATA_TYPES
+        CPI_PROPERTY_DATA_TYPES
       case CM::Property::CPI_none:
       case CM::Property::CPI_data_type_limit:
-	;
+        ;
       }
       if (oops)
-	throw std::string (oops);
+        throw std::string (oops);
     }
 
     const CPI::Metadata::Property *
@@ -377,7 +377,7 @@ namespace CPI {
       const CPI::SCA::Test * t = m_props.getTest (testid);
 
       if (!t) {
-	throw CF::TestableObject::UnknownTest ();
+        throw CF::TestableObject::UnknownTest ();
       }
 
       return t;
@@ -392,11 +392,11 @@ namespace CPI {
     void
     CPI::SCA::Cp289GenericProxy::
     connectPort (const std::string & portName,
-		 const std::string & connectionId,
-		 CORBA::Object_ptr connection)
+                 const std::string & connectionId,
+                 CORBA::Object_ptr connection)
       throw (CF::Port::InvalidPort,
-	     CF::Port::OccupiedPort,
-	     CORBA::SystemException)
+             CF::Port::OccupiedPort,
+             CORBA::SystemException)
     {
 #if 0
       // FIXME:  base class wants this but it is obsolete now.
@@ -408,24 +408,24 @@ namespace CPI {
       Cp289GenericProxyPort *cggp;
       PortMap::iterator pit = m_portMap.find (name);
       if (pit != m_portMap.end()) {
-	// Our port object exists, which means getPort was called before this,
-	// which means we are a provider, 
-	cggp = (*pit).second;
-	cggp->preOpenCpiConnectToProvider(connectId, connection);
+        // Our port object exists, which means getPort was called before this,
+        // which means we are a provider, 
+        cggp = (*pit).second;
+        cggp->preOpenCpiConnectToProvider(connectId, connection);
       } else
 #endif
-	// This shouldn't happen, since:
-	// The CF will call the operation on the port, not the prxy.
-	// The "other side" will only make this proxy call for provider ports.
-	throw std::string ("Unexpected connectPort to CP289Generic Proxy");
+        // This shouldn't happen, since:
+        // The CF will call the operation on the port, not the prxy.
+        // The "other side" will only make this proxy call for provider ports.
+        throw std::string ("Unexpected connectPort to CP289Generic Proxy");
     }
 
     void
     CPI::SCA::Cp289GenericProxy::
     disconnectPort (const std::string & portName,
-		    const std::string & connectionId)
+                    const std::string & connectionId)
       throw (CF::Port::InvalidPort,
-	     CORBA::SystemException)
+             CORBA::SystemException)
     {
 #if 0
       // FIXME:  base class wants this but it is obsolete now.
@@ -433,39 +433,39 @@ namespace CPI {
       CPI::Logger::DebugLogger debug (*m_logger);
 
       if (m_disabled) {
-	throw CORBA::BAD_INV_ORDER ();
+        throw CORBA::BAD_INV_ORDER ();
       }
 
       debug << m_logProducerName
-	    << CPI::Logger::Verbosity (2)
-	    << "disconnectPort (\""
-	    << portName
-	    << "\", \""
-	    << connectionId
-	    << "\")"
-	    << std::flush;
+            << CPI::Logger::Verbosity (2)
+            << "disconnectPort (\""
+            << portName
+            << "\", \""
+            << connectionId
+            << "\")"
+            << std::flush;
 
       try {
-	disconnectPortLocked (portName, connectionId);
+        disconnectPortLocked (portName, connectionId);
       }
       catch (const std::string & oops) {
-	std::string msg = "Failed to disconnect port \"";
-	msg += portName;
-	msg += "\": ";
-	msg += oops;
-	msg += " (connection id \"";
-	msg += connectionId;
-	msg += ")";
+        std::string msg = "Failed to disconnect port \"";
+        msg += portName;
+        msg += "\": ";
+        msg += oops;
+        msg += " (connection id \"";
+        msg += connectionId;
+        msg += ")";
 
-	*m_logger << CPI::Logger::Level::EXCEPTION_ERROR
-		  << m_logProducerName
-		  << msg << "."
-		  << std::flush;
+        *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+                  << m_logProducerName
+                  << msg << "."
+                  << std::flush;
 
-	CF::Port::InvalidPort ip;
-	ip.errorCode = CF::CF_EINVAL;
-	ip.msg = msg.c_str ();
-	throw ip;
+        CF::Port::InvalidPort ip;
+        ip.errorCode = CF::CF_EINVAL;
+        ip.msg = msg.c_str ();
+        throw ip;
       }
 #endif
     }
@@ -473,7 +473,7 @@ namespace CPI {
     void
     CPI::SCA::Cp289GenericProxy::
     disconnectPortLocked (const std::string & portName,
-			  const std::string & connectionId)
+                          const std::string & connectionId)
       throw (std::string)
     {
       PortMap::iterator pit = m_portMap.find (portName);
@@ -483,53 +483,53 @@ namespace CPI {
       ConnectionMap::iterator cmit = m_connections.find (connectionId);
 
       if (cmit == m_connections.end()) {
-	throw std::string ("Connection id not in use");
+        throw std::string ("Connection id not in use");
       }
 
       try {
-	ConnectionData & cd = (*cmit).second;
+        ConnectionData & cd = (*cmit).second;
 
-	/*
-	 * Ask the container to disconnect.
-	 */
+        /*
+         * Ask the container to disconnect.
+         */
 
-	cpiAssert (cd.connectionCookie);
+        cpiAssert (cd.connectionCookie);
 
-	try {
-	  m_container->disconnectPorts (&m_application,
-					cd.connectionCookie);
-	}
-	catch (const CU::EmbeddedException & oops) {
-	  const char * auxInfo = oops.getAuxInfo ();
-	  std::string msg = "Failed to break connection: error code ";
-	  msg += CU::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+        try {
+          m_container->disconnectPorts (&m_application,
+                                        cd.connectionCookie);
+        }
+        catch (const CU::EmbeddedException & oops) {
+          const char * auxInfo = oops.getAuxInfo ();
+          std::string msg = "Failed to break connection: error code ";
+          msg += CU::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
 
-	  if (auxInfo && *auxInfo) {
-	    msg += ": ";
-	    msg += auxInfo;
-	  }
+          if (auxInfo && *auxInfo) {
+            msg += ": ";
+            msg += auxInfo;
+          }
 
-	  throw msg;
-	}
+          throw msg;
+        }
 
-	if (!pd.provider) {
-	  /*
-	   * Also tell the remote container to disconnect.
-	   */
+        if (!pd.provider) {
+          /*
+           * Also tell the remote container to disconnect.
+           */
 
-	  try {
-	    cd.remotePort->disconnectPort (connectionId.c_str());
-	  }
-	  catch (const CORBA::Exception & oops) {
-	    std::string msg = "Failed to disconnect remote port: ";
-	    msg += CPI::CORBAUtil::Misc::stringifyCorbaException (oops);
-	    throw msg;
-	  }
-	}
+          try {
+            cd.remotePort->disconnectPort (connectionId.c_str());
+          }
+          catch (const CORBA::Exception & oops) {
+            std::string msg = "Failed to disconnect remote port: ";
+            msg += CPI::CORBAUtil::Misc::stringifyCorbaException (oops);
+            throw msg;
+          }
+        }
       }
       catch (...) {
-	m_connections.erase (cmit);
-	throw;
+        m_connections.erase (cmit);
+        throw;
       }
 
       m_connections.erase (cmit);
@@ -544,7 +544,7 @@ namespace CPI {
     unsigned int
     CPI::SCA::Cp289GenericProxy::
     computeMaximumBufferSize (unsigned int memorySize,
-			      unsigned int bufferCount)
+                              unsigned int bufferCount)
       throw ()
     {
       /*
@@ -571,13 +571,13 @@ namespace CPI {
        */
 
       if (memorySize < 1024) {
-	return 0;
+        return 0;
       }
 
       unsigned int bufferSize = (memorySize - 1024) / bufferCount;
 
       if (bufferSize < 256 * bufferCount) {
-	return 0;
+        return 0;
       }
 
       bufferSize -= 256 * bufferCount;
@@ -587,7 +587,7 @@ namespace CPI {
        */
 
       if (bufferSize > 2048) {
-	bufferSize = 2048;
+        bufferSize = 2048;
       }
 
       return bufferSize;

@@ -64,15 +64,15 @@ namespace CPI {
 
     struct FindBy {
       enum FindByType {
-	NAMINGSERVICE,
-	DOMAINFINDER
+        NAMINGSERVICE,
+        DOMAINFINDER
       };
 
       enum DomainFinderType {
-	DF_FILEMANAGER,
-	DF_LOG,
-	DF_EVENTCHANNEL,
-	DF_NAMINGSERVICE
+        DF_FILEMANAGER,
+        DF_LOG,
+        DF_EVENTCHANNEL,
+        DF_NAMINGSERVICE
       };
 
       FindByType type;
@@ -82,10 +82,10 @@ namespace CPI {
 
     struct PortRef {
       enum PortRefType {
-	COMPONENTINSTANTIATIONREF,
-	DEVICETHATLOADEDTHISCOMPONENTREF,
-	DEVICEUSEDBYTHISCOMPONENTREF,
-	FINDBY
+        COMPONENTINSTANTIATIONREF,
+        DEVICETHATLOADEDTHISCOMPONENTREF,
+        DEVICEUSEDBYTHISCOMPONENTREF,
+        FINDBY
       };
 
       PortRefType type;
@@ -97,8 +97,8 @@ namespace CPI {
 
     struct SupportedInterfaceRef {
       enum SupportedInterfaceRefType {
-	COMPONENTINSTANTIATIONREF,
-	FINDBY
+        COMPONENTINSTANTIATIONREF,
+        FINDBY
       };
 
       SupportedInterfaceRefType type;
@@ -109,9 +109,9 @@ namespace CPI {
 
     struct Connection {
       enum ProvidesPortType {
-	PROVIDESPORT,
-	COMPONENTSUPPORTEDINTERFACE,
-	FINDBY
+        PROVIDESPORT,
+        COMPONENTSUPPORTEDINTERFACE,
+        FINDBY
       };
 
       ProvidesPortType type;
@@ -126,9 +126,9 @@ namespace CPI {
 
     struct ExternalPort {
       enum ExternalPortType {
-	USESIDENTIFIER,
-	PROVIDESIDENTIFIER,
-	SUPPORTEDIDENTIFIER
+        USESIDENTIFIER,
+        PROVIDESIDENTIFIER,
+        SUPPORTEDIDENTIFIER
       };
 
       ExternalPortType type;
@@ -162,7 +162,7 @@ namespace CPI {
        */
 
       AssemblyParser ()
-	throw ();
+        throw ();
 
       /**
        * Constructor.
@@ -173,62 +173,62 @@ namespace CPI {
        */
 
       AssemblyParser (CPI::Util::Vfs::Vfs & fs,
-		      const std::string & fileName)
-	throw (std::string);
+                      const std::string & fileName)
+        throw (std::string);
 
       /**
        * Destructor.
        */
 
       ~AssemblyParser ()
-	throw ();
+        throw ();
 
       /**
        * \brief Parse a Software Assembly Descriptor file.
        */
 
       void parse (CPI::Util::Vfs::Vfs & fs,
-		  const std::string & fileName)
-	throw (std::string);
+                  const std::string & fileName)
+        throw (std::string);
 
       void processSAD (CPI::Util::Vfs::Vfs & fs,
-		       const std::string & fileName,
-		       ezxml_t top)
-	throw (std::string);
+                       const std::string & fileName,
+                       ezxml_t top)
+        throw (std::string);
 
       /**
        * \brief Assembly Accessor.
        */
 
       const Assembly & get () const
-	throw ();
+        throw ();
 
     protected:
       void parseComponentFileNode (ezxml_t cfNode, const char * id)
-	throw (std::string);
+        throw (std::string);
 
       void parseHostCollocation (ezxml_t hcNode, unsigned int hcIdx)
-	throw (std::string);
+        throw (std::string);
 
       void parseComponentPlacement (ezxml_t cpNode,
-				    ComponentPlacements & cp,
-				    unsigned int hcIdx = static_cast<unsigned int> (-1))
-	throw (std::string);
+                                    ComponentPlacements & cp,
+                                    unsigned int hcIdx = static_cast<unsigned int> (-1))
+        throw (std::string);
 
       void parseConnection (ezxml_t ciNode, unsigned int ciIdx)
-	throw (std::string);
+        throw (std::string);
 
       void parsePortRef (ezxml_t portNode, PortRef & portRef, bool isProvides)
-	throw (std::string);
+        throw (std::string);
 
       void parseSupportedInterfaceRef (ezxml_t csiNode, SupportedInterfaceRef & supportedInterface)
-	throw (std::string);
+        throw (std::string);
 
       void parseFindBy (ezxml_t findByNode, FindBy & findBy)
-	throw (std::string);
+        throw (std::string);
 
       void parseExternalPort (ezxml_t epNode, unsigned int epIdx)
-	throw (std::string);
+        throw (std::string);
 
     protected:
       Assembly m_assembly;

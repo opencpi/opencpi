@@ -56,24 +56,24 @@ namespace CPI {
        *  Partition type
        **********************************/
       enum PartitionType {
-	INDIVISIBLE,
-	BLOCK
+        INDIVISIBLE,
+        BLOCK
       };
 
       /**********************************
        *  Scalar types
        **********************************/
       enum ScalarType {
-	CHAR,
-	UCHAR,
-	SHORT,
-	USHORT,
-	INTEGER,
-	UINTEGER,
-	LONG,
-	ULONG,
-	FLOAT,
-	DOUBLE
+        CHAR,
+        UCHAR,
+        SHORT,
+        USHORT,
+        INTEGER,
+        UINTEGER,
+        LONG,
+        ULONG,
+        FLOAT,
+        DOUBLE
       };
 
       // minimum allignment
@@ -138,48 +138,48 @@ namespace CPI {
        * BufferInfo structure.
        **********************************/
       struct BufferInfo {
-	DtOsDataTypes::Offset output_offset;
-	DtOsDataTypes::Offset input_offset;
-	CPI::OS::uint32_t length;
-	BufferInfo* next;
-	BufferInfo* last;
+        DtOsDataTypes::Offset output_offset;
+        DtOsDataTypes::Offset input_offset;
+        CPI::OS::uint32_t length;
+        BufferInfo* next;
+        BufferInfo* last;
 
-	// Constructors/Destructors
-	BufferInfo();
-	~BufferInfo();
+        // Constructors/Destructors
+        BufferInfo();
+        ~BufferInfo();
 
-	//Add another structure
-	void add( BufferInfo* bi );
+        //Add another structure
+        void add( BufferInfo* bi );
       };
 
       virtual CPI::OS::int32_t calculateBufferOffsets( 
-						      CPI::OS::uint32_t		   sequence,	// In - Transfer sequence
-						      Buffer     *src_buf,			    // In - Output buffer
-						      Buffer     *input_buf,		        // In - Input buffer
-						      BufferInfo **input_buf_info);      // Out - Input buffer offset information
+                                                      CPI::OS::uint32_t                   sequence,        // In - Transfer sequence
+                                                      Buffer     *src_buf,                            // In - Output buffer
+                                                      Buffer     *input_buf,                        // In - Input buffer
+                                                      BufferInfo **input_buf_info);      // Out - Input buffer offset information
 
       /**********************************
        * Get the total number of individual transfers that are needed to transfer
        * all of the parts from the output to the inputs.
        **********************************/
-      CPI::OS::uint32_t getTransferCount(	
-					 PortSet* src_ps,					// In - Output port set
-					 PortSet* input_ps );				// In - Input port set
+      CPI::OS::uint32_t getTransferCount(        
+                                         PortSet* src_ps,                                        // In - Output port set
+                                         PortSet* input_ps );                                // In - Input port set
 
       /**********************************
        * Get the total number of parts that make up the whole for this distribution.
        **********************************/
-      CPI::OS::uint32_t getPartsCount(	
-				      PortSet* src_ps,				    // In - Output port set
-				      PortSet* input_ps );			    // In - Input port set
+      CPI::OS::uint32_t getPartsCount(        
+                                      PortSet* src_ps,                                    // In - Output port set
+                                      PortSet* input_ps );                            // In - Input port set
 
       /**********************************
        * Given the parts sequence, calculate the offset into output buffer
        **********************************/
-      CPI::OS::uint32_t getOutputOffset(	
-					PortSet* src_ps, 				    // In - Output port set
-					PortSet* input_ps,			        // In - Input port set
-					CPI::OS::uint32_t sequence );			// In - The sequence within the set
+      CPI::OS::uint32_t getOutputOffset(        
+                                        PortSet* src_ps,                                     // In - Output port set
+                                        PortSet* input_ps,                                // In - Input port set
+                                        CPI::OS::uint32_t sequence );                        // In - The sequence within the set
 
       /**********************************
        * Get our data structure
@@ -196,28 +196,28 @@ namespace CPI {
        * method for calculating whole to parts transfers
        **********************************/
       void calculateWholeToParts( 
-				 CPI::OS::uint32_t	sequence,			// In - Transfer sequence
-				 Buffer          *src_buf,			// In - Output buffer
-				 Buffer          *input_buf,		// In - Input buffer
-				 BufferInfo      *buf_info);			// InOut - Buffer info
+                                 CPI::OS::uint32_t        sequence,                        // In - Transfer sequence
+                                 Buffer          *src_buf,                        // In - Output buffer
+                                 Buffer          *input_buf,                // In - Input buffer
+                                 BufferInfo      *buf_info);                        // InOut - Buffer info
 
       /**********************************
        * method for calculating parts to whole transfers
        **********************************/
       void calculatePartsToWhole( 
-				 CPI::OS::uint32_t		sequence,	// In - Transfer sequence
-				 Buffer   *src_buf,			    // In - Output buffer
-				 Buffer   *input_buf,		    // In - Input buffer
-				 BufferInfo *buf_info);			// InOut - Buffer info
+                                 CPI::OS::uint32_t                sequence,        // In - Transfer sequence
+                                 Buffer   *src_buf,                            // In - Output buffer
+                                 Buffer   *input_buf,                    // In - Input buffer
+                                 BufferInfo *buf_info);                        // InOut - Buffer info
 
       /**********************************
        * method for calculating parts to parts transfers
        **********************************/
       void calculatePartsToParts( 
-				 CPI::OS::uint32_t	sequence,	    // In - Transfer sequence
-				 Buffer   *src_buf,			    // In - Output buffer
-				 Buffer   *input_buf,		    // In - Input buffer
-				 BufferInfo *buf_info);			// InOut - Buffer info
+                                 CPI::OS::uint32_t        sequence,            // In - Transfer sequence
+                                 Buffer   *src_buf,                            // In - Output buffer
+                                 Buffer   *input_buf,                    // In - Input buffer
+                                 BufferInfo *buf_info);                        // InOut - Buffer info
 
     };
 

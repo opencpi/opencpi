@@ -48,23 +48,23 @@ namespace CPI {
       TParent *myParent;
       std::string m_cname;
       Child<TParent,TChild> (TParent & p, const char* childname=NULL) :
-	myParent(&p) {
-	myParent->Parent<TChild>::addChild(*this);
+        myParent(&p) {
+        myParent->Parent<TChild>::addChild(*this);
       };
-	Child<TParent,TChild> (const char* childname=NULL) : 
-	  myParent(NULL)  
-	  {
-	    if ( childname ) {
-	      m_cname = childname;
-	    }
-	  }
-	  void setParent( TParent & p ) {
-	    myParent = &p;
-	    myParent->addChild(*this);
-	  }
-	  ~Child<TParent,TChild> () {
-	    myParent->Parent<TChild>::releaseChild(*this);
-	  }
+        Child<TParent,TChild> (const char* childname=NULL) : 
+          myParent(NULL)  
+          {
+            if ( childname ) {
+              m_cname = childname;
+            }
+          }
+          void setParent( TParent & p ) {
+            myParent = &p;
+            myParent->addChild(*this);
+          }
+          ~Child<TParent,TChild> () {
+            myParent->Parent<TChild>::releaseChild(*this);
+          }
     };
 
 
@@ -75,60 +75,60 @@ namespace CPI {
       bool done;
     public:
       Parent<TChild>(const char* instancename=NULL) :
-	myChildren(0), done(false) {}
-	void releaseChild(ChildI<TChild>& child) {
-	  if (done)
-	    return;
-	  for (ChildI<TChild> **cp = &myChildren; *cp; cp = &(*cp)->next)
-	    if (*cp == &child) {
-	      *cp = child.next;
-	      return;
-	    }
-	  assert(!"child missing from parent");
-	}
-	// call a function on all children, stopping if it returns true
-	// it should not add or remove anything.
-	bool doChildren(bool (*func)(TChild &)) {
-	  for (ChildI<TChild> *cp = myChildren; cp; cp = cp->next)
-	    if ((*func)(*static_cast<TChild *>(cp)))
-	      return true;
-	  return false;
-	}
+        myChildren(0), done(false) {}
+        void releaseChild(ChildI<TChild>& child) {
+          if (done)
+            return;
+          for (ChildI<TChild> **cp = &myChildren; *cp; cp = &(*cp)->next)
+            if (*cp == &child) {
+              *cp = child.next;
+              return;
+            }
+          assert(!"child missing from parent");
+        }
+        // call a function on all children, stopping if it returns true
+        // it should not add or remove anything.
+        bool doChildren(bool (*func)(TChild &)) {
+          for (ChildI<TChild> *cp = myChildren; cp; cp = cp->next)
+            if ((*func)(*static_cast<TChild *>(cp)))
+              return true;
+          return false;
+        }
 
 
-	TChild *firstChild() {
-	  return static_cast<TChild *>(myChildren);
-	}
-	TChild *nextChild( ChildI<TChild>* c) {
-	  return static_cast<TChild *>(c->next);
-	}
+        TChild *firstChild() {
+          return static_cast<TChild *>(myChildren);
+        }
+        TChild *nextChild( ChildI<TChild>* c) {
+          return static_cast<TChild *>(c->next);
+        }
 
 
-	// call a function on all children, stopping if it returns true
-	// it should not add or remove anything.
-	TChild *findChild(bool (TChild::*doChild)(const char*), const char* arg) {
-	  for (ChildI<TChild> *cp = myChildren; cp; cp = cp->next)
-	    if ((static_cast<TChild *>(cp)->*doChild)(arg))
-	      return static_cast<TChild *>(cp);
-	  return 0;
-	}
-	void addChild(ChildI<TChild> &child) {
+        // call a function on all children, stopping if it returns true
+        // it should not add or remove anything.
+        TChild *findChild(bool (TChild::*doChild)(const char*), const char* arg) {
+          for (ChildI<TChild> *cp = myChildren; cp; cp = cp->next)
+            if ((static_cast<TChild *>(cp)->*doChild)(arg))
+              return static_cast<TChild *>(cp);
+          return 0;
+        }
+        void addChild(ChildI<TChild> &child) {
 #ifndef NDEBUG
-	  for (ChildI<TChild> **cp = &myChildren; *cp; cp = &(*cp)->next)
-	    if (*cp == static_cast<ChildI<TChild> *>(&child))
-	      assert(!"duplicate child in parent");
+          for (ChildI<TChild> **cp = &myChildren; *cp; cp = &(*cp)->next)
+            if (*cp == static_cast<ChildI<TChild> *>(&child))
+              assert(!"duplicate child in parent");
 #endif
-	  child.next = myChildren;
-	  myChildren = &child;
-	}
-	virtual ~Parent<TChild> () {
-	  done = true; // suppress release
-	  while (myChildren) {
-	    ChildI<TChild> *child = myChildren;
-	    myChildren = child->next;
-	    delete child; // this should call most derived class
-	  }
-	}
+          child.next = myChildren;
+          myChildren = &child;
+        }
+        virtual ~Parent<TChild> () {
+          done = true; // suppress release
+          while (myChildren) {
+            ChildI<TChild> *child = myChildren;
+            myChildren = child->next;
+            delete child; // this should call most derived class
+          }
+        }
 
     };
   }

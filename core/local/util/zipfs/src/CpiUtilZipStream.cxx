@@ -163,7 +163,7 @@ pbackfail (int_type c)
 std::streambuf::pos_type
 CPI::Util::ZipFs::zipibuf::
 seekoff (off_type off, std::ios_base::seekdir way,
-	 std::ios_base::openmode mode)
+         std::ios_base::openmode mode)
 {
   if (!m_zipFile) {
     return static_cast<pos_type> (-1);
@@ -195,13 +195,13 @@ seekoff (off_type off, std::ios_base::seekdir way,
       unz_file_info fileInfo;
 
       if (unzGetCurrentFileInfo (m_zipFile, &fileInfo, 0, 0, 0, 0, 0, 0) != UNZ_OK) {
-	return static_cast<pos_type> (-1);
+        return static_cast<pos_type> (-1);
       }
 
       origin = static_cast<pos_type> (fileInfo.uncompressed_size);
 
       if (origin < 0) {
-	return static_cast<pos_type> (-1);
+        return static_cast<pos_type> (-1);
       }
       break;
 
@@ -271,7 +271,7 @@ seekpos (pos_type pos, std::ios_base::openmode)
       int amount = unzReadCurrentFile (m_zipFile, buffer, count);
 
       if (amount < 0) {
-	return static_cast<pos_type> (-1);
+        return static_cast<pos_type> (-1);
       }
 
       curpos += amount;

@@ -1,6 +1,6 @@
 /** \file Thread.h
- **	\date  2004-10-30
- **	\author grymse@alhem.net
+ **        \date  2004-10-30
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -63,47 +63,47 @@ The Thread class is used by the resolver (ResolvServer) and running a detached s
 When you know some processing will take a long time and will freeze up a socket, there is always the 
 possibility to call Detach() on that socket before starting the processing.
 When the OnDetached() callback is later called the processing can continue, now in its own thread.
-	\ingroup threading */
+        \ingroup threading */
 class Thread
 {
 public:
-	Thread(bool release = true);
-	virtual ~Thread();
+        Thread(bool release = true);
+        virtual ~Thread();
 
-	static threadfunc_t STDPREFIX StartThread(threadparam_t);
+        static threadfunc_t STDPREFIX StartThread(threadparam_t);
 
-	virtual void Run() = 0;
+        virtual void Run() = 0;
 
 #ifdef _WIN32
-	HANDLE GetThread() { return m_thread; }
-	unsigned GetThreadId() { return m_dwThreadId; }
+        HANDLE GetThread() { return m_thread; }
+        unsigned GetThreadId() { return m_dwThreadId; }
 #else
-	pthread_t GetThread() { return m_thread; }
+        pthread_t GetThread() { return m_thread; }
 #endif
 
-	bool IsRunning();
-	void SetRunning(bool x);
-	bool IsReleased();
-	void SetRelease(bool x);
-	bool DeleteOnExit();
-	void SetDeleteOnExit(bool x = true);
-	bool IsDestructor();
+        bool IsRunning();
+        void SetRunning(bool x);
+        bool IsReleased();
+        void SetRelease(bool x);
+        bool DeleteOnExit();
+        void SetDeleteOnExit(bool x = true);
+        bool IsDestructor();
 
 protected:
 #ifdef _WIN32
-	HANDLE m_thread;
-	unsigned m_dwThreadId;
+        HANDLE m_thread;
+        unsigned m_dwThreadId;
 #else
-	pthread_t m_thread;
+        pthread_t m_thread;
 #endif
 
 private:
-	Thread(const Thread& ) {}
-	Thread& operator=(const Thread& ) { return *this; }
-	bool m_running;
-	bool m_release;
-	bool m_b_delete_on_exit;
-	bool m_b_destructor;
+        Thread(const Thread& ) {}
+        Thread& operator=(const Thread& ) { return *this; }
+        bool m_running;
+        bool m_release;
+        bool m_b_delete_on_exit;
+        bool m_b_destructor;
 };
 
 

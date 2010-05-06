@@ -57,22 +57,22 @@ namespace CPI {
 
       // This method creates all 
       virtual TransferController* createTemplates ( Transport* transport,
-						    PortSet* output, 
-						    PortSet* input, 
-						    TransferController* cont );
+                                                    PortSet* output, 
+                                                    PortSet* input, 
+                                                    TransferController* cont );
 
     protected:
 
       // This structure is used to pass additional template information to the 
       // "addTransfer" hooks.
       struct TDataInterface {
-	CPI::DataTransport::Port*            s_port;
-	CPI::OS::int32_t                     s_tid;
-	CPI::DataTransport::Port*            t_port;
-	CPI::OS::int32_t                     t_tid;
-	TDataInterface(CPI::DataTransport::Port* sp, CPI::OS::int32_t st, 
-		       CPI::DataTransport::Port* tp,CPI::OS::int32_t tt)
-	  :s_port(sp),s_tid(st),t_port(tp),t_tid(tt){};
+        CPI::DataTransport::Port*            s_port;
+        CPI::OS::int32_t                     s_tid;
+        CPI::DataTransport::Port*            t_port;
+        CPI::OS::int32_t                     t_tid;
+        TDataInterface(CPI::DataTransport::Port* sp, CPI::OS::int32_t st, 
+                       CPI::DataTransport::Port* tp,CPI::OS::int32_t tt)
+          :s_port(sp),s_tid(st),t_port(tp),t_tid(tt){};
       };
 
       // Call appropriate creator
@@ -80,30 +80,30 @@ namespace CPI {
 
       // Create transfers for input port
       virtual void createInputTransfers( 
-					  PortSet* output, 
-					  Port* input,
-					  TransferController* cont );
+                                          PortSet* output, 
+                                          Port* input,
+                                          TransferController* cont );
 
 
       // Create transfers for output port
       virtual void createOutputTransfers(CPI::DataTransport::Port* output, 
-					 CPI::DataTransport::PortSet* input, TransferController* cont  )=0;
+                                         CPI::DataTransport::PortSet* input, TransferController* cont  )=0;
 
       // These methods are hooks to add additional transfers
       virtual DataTransfer::XferRequest* addTransferPreData( 
-							    TDataInterface& tdi);
-      virtual DataTransfer::XferRequest* addTransferPostData( 	
-							     TDataInterface& tdi);
-      virtual DataTransfer::XferRequest* addTransferPreState( 	
-							     TDataInterface& tdi);
+                                                            TDataInterface& tdi);
+      virtual DataTransfer::XferRequest* addTransferPostData(         
+                                                             TDataInterface& tdi);
+      virtual DataTransfer::XferRequest* addTransferPreState(         
+                                                             TDataInterface& tdi);
 
       // Create the output broadcast template for this set
       virtual void createOutputBroadcastTemplates(CPI::DataTransport::Port* output, 
-						  CPI::DataTransport::PortSet* input, TransferController* cont);
+                                                  CPI::DataTransport::PortSet* input, TransferController* cont);
 
       // Create the input broadcast template for this set
       virtual void createInputBroadcastTemplates(CPI::DataTransport::PortSet* output, CPI::DataTransport::Port* input, 
-						  TransferController* cont  );
+                                                  TransferController* cont  );
 
       // Our controller
       TransferController* m_controller;
@@ -126,20 +126,20 @@ namespace CPI {
 
       // Create transfers for output port
       void createOutputTransfers(CPI::DataTransport::Port* s_port, CPI::DataTransport::PortSet* input,
-					 TransferController* cont )
+                                         TransferController* cont )
       {
-	cpiAssert(!"Unsupported data transfer request rejected !!\n");
-	throw CPI::Util::EmbeddedException("Unsupported data transfer request rejected !!\n");
+        cpiAssert(!"Unsupported data transfer request rejected !!\n");
+        throw CPI::Util::EmbeddedException("Unsupported data transfer request rejected !!\n");
       }
 
       // Create transfers for input port
       void createInputTransfers( 
-				 PortSet* output, 
-				 Port* input,
-				 TransferController* cont )
+                                 PortSet* output, 
+                                 Port* input,
+                                 TransferController* cont )
       {
-	cpiAssert(!"Unsupported data transfer request rejected !!\n");
-	throw CPI::Util::EmbeddedException("Unsupported data transfer request rejected !!\n");
+        cpiAssert(!"Unsupported data transfer request rejected !!\n");
+        throw CPI::Util::EmbeddedException("Unsupported data transfer request rejected !!\n");
       }
 
     };
@@ -157,20 +157,20 @@ namespace CPI {
 
       // Constructor
       TransferTemplateGeneratorPattern1( )
-	:TransferTemplateGenerator(){};
+        :TransferTemplateGenerator(){};
 
-	// Destructor
-	virtual ~TransferTemplateGeneratorPattern1();
+        // Destructor
+        virtual ~TransferTemplateGeneratorPattern1();
 
     protected:
 
-	// Create transfers for output port
-	virtual void createOutputTransfers(CPI::DataTransport::Port* s_port, CPI::DataTransport::PortSet* input,
-					   TransferController* cont );
+        // Create transfers for output port
+        virtual void createOutputTransfers(CPI::DataTransport::Port* s_port, CPI::DataTransport::PortSet* input,
+                                           TransferController* cont );
 
-	// Create transfers for input port
-	virtual void createInputTransfers(CPI::DataTransport::PortSet* output, CPI::DataTransport::Port* input,
-					   TransferController* cont );
+        // Create transfers for input port
+        virtual void createInputTransfers(CPI::DataTransport::PortSet* output, CPI::DataTransport::Port* input,
+                                           TransferController* cont );
 
     };
 
@@ -185,20 +185,20 @@ namespace CPI {
 
       // Constructor
       TransferTemplateGeneratorPattern1AFC( )
-	:TransferTemplateGeneratorPattern1(){};
+        :TransferTemplateGeneratorPattern1(){};
 
     protected:
 
       // Create transfers for output port.  In this case the output port only tells the remote input that 
       // data is available, it does not push and data or meta-data.
       virtual void createOutputTransfers(CPI::DataTransport::Port* s_port, CPI::DataTransport::PortSet* input,
-					 TransferController* cont );
+                                         TransferController* cont );
 
       // Create transfers for input port. When a real input port "consumes" data, it only needs set the local
       // flag since all transfers from remote output to local input are managed locally when the remote output
       // has a ActiveFlowControl role.
       virtual void createInputTransfers(CPI::DataTransport::PortSet* output, CPI::DataTransport::Port* input,
-					 TransferController* cont );
+                                         TransferController* cont );
 
 
     };
@@ -212,13 +212,13 @@ namespace CPI {
 
       // Constructor
       TransferTemplateGeneratorPattern1AFCShadow( )
-	:TransferTemplateGeneratorPattern1(){};
+        :TransferTemplateGeneratorPattern1(){};
 
     protected:
 
-	// Create transfers for output port
-	virtual void createOutputTransfers(CPI::DataTransport::Port* s_port, CPI::DataTransport::PortSet* input,
-					   TransferController* cont );
+        // Create transfers for output port
+        virtual void createOutputTransfers(CPI::DataTransport::Port* s_port, CPI::DataTransport::PortSet* input,
+                                           TransferController* cont );
 
 
 
@@ -234,22 +234,22 @@ namespace CPI {
     public:
 
       TransferTemplateGeneratorPattern2( )
-	:TransferTemplateGenerator(){};
+        :TransferTemplateGenerator(){};
 
-	// Destructor
-	virtual ~TransferTemplateGeneratorPattern2(){};
+        // Destructor
+        virtual ~TransferTemplateGeneratorPattern2(){};
 
     protected:
 
-	// Create transfers for input port
-	virtual void createInputTransfers(CPI::DataTransport::PortSet* output, CPI::DataTransport::Port* input, 
-					   TransferController* cont );
+        // Create transfers for input port
+        virtual void createInputTransfers(CPI::DataTransport::PortSet* output, CPI::DataTransport::Port* input, 
+                                           TransferController* cont );
 
 
 
-	// Create transfers for output port
-	virtual void createOutputTransfers(CPI::DataTransport::Port* output, CPI::DataTransport::PortSet* input,
-					   TransferController* cont  );
+        // Create transfers for output port
+        virtual void createOutputTransfers(CPI::DataTransport::Port* output, CPI::DataTransport::PortSet* input,
+                                           TransferController* cont  );
 
     };
 
@@ -262,16 +262,16 @@ namespace CPI {
     public:
 
       TransferTemplateGeneratorPattern3( )
-	:TransferTemplateGeneratorPattern2(){};
+        :TransferTemplateGeneratorPattern2(){};
 
-	// Destructor
-	virtual ~TransferTemplateGeneratorPattern3(){};
+        // Destructor
+        virtual ~TransferTemplateGeneratorPattern3(){};
 
     protected:
 
-	// These methods are hooks to add additional transfers
-	virtual DataTransfer::XferRequest* addTransferPreState( 
-							       TDataInterface& tdi);
+        // These methods are hooks to add additional transfers
+        virtual DataTransfer::XferRequest* addTransferPreState( 
+                                                               TDataInterface& tdi);
 
     };
 
@@ -285,24 +285,24 @@ namespace CPI {
     public:
 
       TransferTemplateGeneratorPattern4(  )
-	: TransferTemplateGenerator(),m_markEndOfWhole(true){m_zcopyEnabled=false;};
+        : TransferTemplateGenerator(),m_markEndOfWhole(true){m_zcopyEnabled=false;};
 
-	// Destructor
-	virtual ~TransferTemplateGeneratorPattern4(){};
+        // Destructor
+        virtual ~TransferTemplateGeneratorPattern4(){};
 
     protected:
 
-	// Create transfers for input port
-	virtual void createInputTransfers(CPI::DataTransport::PortSet* output, CPI::DataTransport::Port* input, 
-					   TransferController* cont );
+        // Create transfers for input port
+        virtual void createInputTransfers(CPI::DataTransport::PortSet* output, CPI::DataTransport::Port* input, 
+                                           TransferController* cont );
 
 
-	// Create transfers for output port
-	virtual void createOutputTransfers(CPI::DataTransport::Port* output, CPI::DataTransport::PortSet* input,
-					   TransferController* cont  );
+        // Create transfers for output port
+        virtual void createOutputTransfers(CPI::DataTransport::Port* output, CPI::DataTransport::PortSet* input,
+                                           TransferController* cont  );
 
-	// Inform all ports when an end of whole has been reached
-	bool m_markEndOfWhole;
+        // Inform all ports when an end of whole has been reached
+        bool m_markEndOfWhole;
 
     };
 

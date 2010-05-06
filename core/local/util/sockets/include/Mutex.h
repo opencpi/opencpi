@@ -1,6 +1,6 @@
 /** \file Mutex.h
- **	\date  2004-10-30
- **	\author grymse@alhem.net
+ **        \date  2004-10-30
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -46,21 +46,21 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 /** Mutex container class, used by Lock. 
-	\ingroup threading */
+        \ingroup threading */
 class Mutex : public IMutex
 {
 public:
-	Mutex();
-	~Mutex();
+        Mutex();
+        ~Mutex();
 
-	virtual void Lock() const;
-	virtual void Unlock() const;
+        virtual void Lock() const;
+        virtual void Unlock() const;
 
 private:
 #ifdef _WIN32
-	HANDLE m_mutex;
+        HANDLE m_mutex;
 #else
-	mutable pthread_mutex_t m_mutex;
+        mutable pthread_mutex_t m_mutex;
 #endif
 };
 

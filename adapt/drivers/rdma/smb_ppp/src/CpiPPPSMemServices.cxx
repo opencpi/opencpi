@@ -1,6 +1,6 @@
 /*
  * Abstact:
- *	This file contains the implementation for a  PPP shared memory class
+ *        This file contains the implementation for a  PPP shared memory class
  *  implementation.
  *
  * Author: John Miller
@@ -34,7 +34,7 @@ void PPPSmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
     return;
   }
   CPI::Util::AutoMutex guard ( m_threadSafeMutex,
-			       true ); 
+                               true ); 
 
 
   m_init = true;
@@ -57,7 +57,7 @@ void PPPSmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
 
     m_location->mem_info.info.accessBytes = size;
     m_location->mem_info.info.accessOffset = 0;
-		
+                
 #ifndef NDEBUG
     printf("SMEM name = %s, m_handle = %p \n", m_location->ep_name.c_str(), &m_handle );
 #endif
@@ -66,30 +66,30 @@ void PPPSmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
 
     printf("About to call rose_pmem_alloc()\n");
     int rc = rose_pmem_alloc ( &m_handle, &m_location->mem_info, 
-			       &actual_n_bytes, NULL );
+                               &actual_n_bytes, NULL );
     printf("Done call rose_pmem_alloc()\n");
-			
-#ifndef NDEBUG			
+                        
+#ifndef NDEBUG                        
     printf("Asked for %d bytes, got %d bytes\n", size, actual_n_bytes );
 #endif
     
     if ( rc != ROSE_SUCCESS ) 
       {
-	printf ( "rose_pmem_alloc() failed, ec = %d\n", rc);
-	throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_pmem_alloc"  );
+        printf ( "rose_pmem_alloc() failed, ec = %d\n", rc);
+        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_pmem_alloc"  );
       }
 
     printf("About to call rose_pmem_map()\n");
     rc = rose_pmem_map ( m_handle,
-			 ( RoseVirtAddrType* ) &m_virt_addr,
-			 0,
-			 m_location->size);
+                         ( RoseVirtAddrType* ) &m_virt_addr,
+                         0,
+                         m_location->size);
     printf("Done call rose_pmem_map()\n");
       
     if ( rc != ROSE_SUCCESS ) 
       {
-	printf ( "rose_pmem_map() failed, ec = %d\n", rc );
-	throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_pmem_map"  );
+        printf ( "rose_pmem_map() failed, ec = %d\n", rc );
+        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_pmem_map"  );
       }
     pep->paddr = m_location->mem_info.info.accessOffset;
 
@@ -106,54 +106,54 @@ void PPPSmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
       snprintf( buf, 80, "cpi-ppp-pio://%d.%lld:%d.%d.%d",pep->target_id,off,size,pep->mailbox,pep->maxCount);
     }
     loc->end_point = buf;
-		
+                
     // Create our endpoint
 
     printf("About to call rose_create_endpoint()\n");
     rc = rose_create_endpoint(pep->paddr, &pep->ep_info);
     if ( rc != ROSE_SUCCESS ) 
       {
-	printf ( "rose_create_endpointfailed, rc: %d\n", rc );
-	throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_create_endpoint"  );
+        printf ( "rose_create_endpointfailed, rc: %d\n", rc );
+        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_create_endpoint"  );
       }
     printf("Done call rose_create_endpoint()\n");
 
     /* adjust the tid if necessary */
     for(int i = 0; i < MAX_ROSE_BUS; i++) 
       {
-	if (pep->ep_info.RoseEndpoint[i].bus_type == ROSE_BUS_RAPIDIO) {
-	  pep->ep_info.RoseEndpoint[i].word1 = pep->target_id;
-	}
+        if (pep->ep_info.RoseEndpoint[i].bus_type == ROSE_BUS_RAPIDIO) {
+          pep->ep_info.RoseEndpoint[i].word1 = pep->target_id;
+        }
       }
   }
   else {
-		
+                
     unsigned long paddr = pep->paddr;
 #ifndef NDEBUG
     printf("SMEM is remote !!, target id = %d, paddr = %lu, size = %u\n", 
-	   pep->target_id, paddr, size);
+           pep->target_id, paddr, size);
 #endif
 
     printf("About to call rose_pio_map_rio() tid = %d, paddr = %ld, size = %d \n",
-	   pep->target_id,
-	   paddr,
-	   size
-	   );
+           pep->target_id,
+           paddr,
+           size
+           );
 
     unsigned int rc = rose_pio_map_rio ( pep->target_id, paddr,
-					 size,
-					 0,
-					 &m_rio_handle );
+                                         size,
+                                         0,
+                                         &m_rio_handle );
     printf("Done call rose_pio_map_rio()\n");
 
     if ( rc != ROSE_SUCCESS ) 
       {
-	printf ( "rose_pio_map_rio 1 failed, rc: 0x%x\n", rc );
-	throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_pio_map_rio"  );
+        printf ( "rose_pio_map_rio 1 failed, rc: 0x%x\n", rc );
+        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_pio_map_rio"  );
       }
     m_virt_addr = (RoseVirtAddrType) m_rio_handle.l_vaddr;
     m_map.push_back( Map(m_rio_handle,0,size,m_virt_addr) );
-		
+                
     // In case this endpoint will be used for DMA, we must also create
     // a PPP Endpoint object
 
@@ -161,16 +161,16 @@ void PPPSmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
     rc = rose_create_endpoint(pep->paddr, &pep->ep_info);
     if ( rc != ROSE_SUCCESS ) 
       {
-	printf ( "rose_create_endpointfailed, rc: 0x%x\n", rc );
-	throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_create_endpoint"  );
+        printf ( "rose_create_endpointfailed, rc: 0x%x\n", rc );
+        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_create_endpoint"  );
       }
 
     /* adjust the tid if necessary */
     for(int i = 0; i < MAX_ROSE_BUS; i++) 
       {
-	if (pep->ep_info.RoseEndpoint[i].bus_type == ROSE_BUS_RAPIDIO) {
-	  pep->ep_info.RoseEndpoint[i].word1 = pep->target_id;
-	}
+        if (pep->ep_info.RoseEndpoint[i].bus_type == ROSE_BUS_RAPIDIO) {
+          pep->ep_info.RoseEndpoint[i].word1 = pep->target_id;
+        }
       }
 
   }
@@ -217,14 +217,14 @@ CPI::OS::int32_t PPPSmemServices::detach ()
 void* PPPSmemServices::map (CPI::OS::uint64_t offset, CPI::OS::uint32_t size )
 {
   CPI::Util::AutoMutex guard ( m_threadSafeMutex,
-			       true ); 
+                               true ); 
 
   if ( ! m_init  ) {
     create(m_location, m_location->size);
   }
   RoseUint32Type tid;
   rose_get_rio_base_device_id(&tid);
-  if ( m_location->local || (tid == m_location->target_id ) ) {	
+  if ( m_location->local || (tid == m_location->target_id ) ) {        
     return (char*)m_virt_addr + offset;
   }
 
@@ -232,53 +232,53 @@ void* PPPSmemServices::map (CPI::OS::uint64_t offset, CPI::OS::uint32_t size )
 
 
 
-	
-	
+        
+        
   // Determine if the request is already satisfied
   std::vector<Map>::iterator it;
   for ( it = m_map.begin(); it != m_map.end(); it ++ ) {
     if ( (offset >= (*it).offset) && ( (offset+size) < ((*it).offset+(*it).size))) {
-		
+                
 #ifndef NDEBUG
       printf("&*&* Returning address %p\n", (char*)((*it).vaddr) + offset );
 #endif
       if ( (*it).offset != 0 ) {
-	return (char*)((*it).vaddr) + (offset - (*it).offset) + 1024*16;
+        return (char*)((*it).vaddr) + (offset - (*it).offset) + 1024*16;
       }
       else {
-#ifndef NDEBUG			
-	printf("Returning untouched vaddr\n");
+#ifndef NDEBUG                        
+        printf("Returning untouched vaddr\n");
 #endif
-	return (char*)((*it).vaddr);
+        return (char*)((*it).vaddr);
       }
     }
   }
-	
+        
   // Force a large map so we dont have to create a bunch of small ones
   size = 1024*32;
-	
+        
   // Anticipate future map requests to lower data
   RosePhysAddrType moffset = offset - 1024*16;
-	
+        
 #ifndef WIN32
 
   RosePhysAddrType paddr = moffset + m_location->paddr;
-	
+        
 #ifndef NDEBUG
   printf("paddr = %lld\n", paddr );
 #endif
-	
+        
   RoseMapHandle   rio_handle;
   try {
-		
+                
     int rc = rose_pio_map_rio ( m_location->target_id, paddr,
-				size,
-				0,
-				&rio_handle );
+                                size,
+                                0,
+                                &rio_handle );
     if ( rc )
       {
-	printf ( "rose_pio_map_rio 2 failed, rc: %d\n", rc );
-	throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_pio_map_rio"  );
+        printf ( "rose_pio_map_rio 2 failed, rc: %d\n", rc );
+        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "rose_pio_map_rio"  );
       }
     m_map.push_back( Map(rio_handle, offset,size,rio_handle.l_vaddr) );
   }
@@ -289,7 +289,7 @@ void* PPPSmemServices::map (CPI::OS::uint64_t offset, CPI::OS::uint32_t size )
 #endif
 
   return (CPI::OS::uint8_t*)rio_handle.l_vaddr + 1024*16;
-	
+        
 }
 
 
@@ -331,8 +331,8 @@ PPPSmemServices::~PPPSmemServices ()
 #ifndef NDEBUG
   printf("IN PPPSmemServices::~PPPSmemServices ()\n");
 #endif
-	
-	
+        
+        
   std::vector<Map>::iterator it;
   for ( it=m_map.begin(); it != m_map.end(); it++ ) {
     rc = rose_pio_unmap_rio ( &(*it).rio_handle );
@@ -341,16 +341,16 @@ PPPSmemServices::~PPPSmemServices ()
     }
   }
   m_map.clear();
-	
+        
   if ( m_location->local ) {
     rc = rose_pmem_unmap ( m_handle, m_virt_addr, m_location->size );
     if ( rc ) {
       printf ( "rose_pmem_unmap failed, rc: 0x%x\n", rc );
-    }	
+    }        
     rc = rose_pmem_free ( m_handle ); //, m_virt_addr, ROSE_BUS_LOCAL );
     if ( rc ) {
       printf ( "rose_pmem_free failed, rc: 0x%x\n", rc );
-    }	
+    }        
   }
 
 }
@@ -390,7 +390,7 @@ CPI::OS::int32_t PPPEndPoint::setEndpoint( std::string& ep )
   i=0;
   while (sname[n++] != 0 )pa[i++]=sname[n];
   ep_name = sname;
-	
+        
   target_id = atoi(tid);
   paddr = atoi(pa);
       
@@ -407,8 +407,8 @@ CPI::OS::int32_t PPPEndPoint::setEndpoint( std::string& ep )
 
 PPPEndPoint::~PPPEndPoint()
 {
-	
-	
+        
+        
 }
 
 

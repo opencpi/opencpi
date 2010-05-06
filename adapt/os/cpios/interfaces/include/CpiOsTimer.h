@@ -171,7 +171,7 @@ namespace CPI {
       }
 
       if ( lhs.seconds == rhs.seconds &&
-	   lhs.nanoseconds > rhs.nanoseconds )
+           lhs.nanoseconds > rhs.nanoseconds )
       {
         return true;
       }
@@ -198,7 +198,7 @@ namespace CPI {
       }
 
       if ( lhs.seconds == rhs.seconds &&
-	   lhs.nanoseconds > rhs.nanoseconds )
+           lhs.nanoseconds > rhs.nanoseconds )
       {
         return false;
       }

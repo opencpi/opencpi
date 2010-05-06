@@ -60,26 +60,26 @@ namespace CPI {
       // Our data structure
       struct PortSetData  {
 
-	// Constructors
-	PortSetData()
-	  :portCount(0),ports(1),outputPortRank(0){}
+        // Constructors
+        PortSetData()
+          :portCount(0),ports(1),outputPortRank(0){}
 
-	PortSetData( PortSetMetaData* p );
+        PortSetData( PortSetMetaData* p );
 
-	// Destructor
-	virtual ~PortSetData();
+        // Destructor
+        virtual ~PortSetData();
 
-	// our meta data 
-	PortSetMetaData* psMetaData;
+        // our meta data 
+        PortSetMetaData* psMetaData;
 
-	// Number of ports
-	CPI::OS::int32_t portCount;
+        // Number of ports
+        CPI::OS::int32_t portCount;
 
-	// Sparse list of ports, index-able via the port ordinal
-	CPI::Util::VList ports;
+        // Sparse list of ports, index-able via the port ordinal
+        CPI::Util::VList ports;
 
-	// Output port
-	CPI::OS::uint32_t outputPortRank;
+        // Output port
+        CPI::OS::uint32_t outputPortRank;
 
       };
 
@@ -87,8 +87,8 @@ namespace CPI {
        * Constructors
        *********************************/
       PortSet( 
-	      PortSetMetaData* psmd,		// In - Port set meta-data
-	      Circuit* circuit );		// In - Parent circuit
+              PortSetMetaData* psmd,                // In - Port set meta-data
+              Circuit* circuit );                // In - Parent circuit
 
 
       /**********************************
@@ -102,12 +102,12 @@ namespace CPI {
       void update( PortSetMetaData* data );
       Port* getPort( CPI::OS::uint32_t idx );
       inline Port* getPortFromOrdinal( PortOrdinal id )
-	{
-	  if ( (CPI::OS::uint32_t)id >= m_data.ports.size() ) {
-	    return NULL;
-	  }
-	  return static_cast<Port*>(m_data.ports[id]);
-	}
+        {
+          if ( (CPI::OS::uint32_t)id >= m_data.ports.size() ) {
+            return NULL;
+          }
+          return static_cast<Port*>(m_data.ports[id]);
+        }
 
       /**********************************
        * Get/Set transfer controller

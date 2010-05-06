@@ -44,253 +44,253 @@ namespace CPI {
 
       class StreamFsReader : public CPI::Util::Vfs::Vfs {
       public:
-	/**
-	 * Constructor.
-	 *
-	 * Must call open().
-	 */
+        /**
+         * Constructor.
+         *
+         * Must call open().
+         */
 
-	StreamFsReader ()
-	  throw ();
+        StreamFsReader ()
+          throw ();
 
-	/**
-	 * Constructor.
-	 *
-	 * Calls #openFs (\a stream).
-	 *
-	 * \param[in] stream  The stream to read from.
-	 *
-	 * \throw std::string Read error, or invalid file.
-	 *
-	 * \pre \a stream shall be open for reading in binary mode.
-	 * \pre \a stream shall be seekable.
-	 * \post \a stream shall not be manipulated directly throughout
-	 * the lifetime of this object.
-	 */
+        /**
+         * Constructor.
+         *
+         * Calls #openFs (\a stream).
+         *
+         * \param[in] stream  The stream to read from.
+         *
+         * \throw std::string Read error, or invalid file.
+         *
+         * \pre \a stream shall be open for reading in binary mode.
+         * \pre \a stream shall be seekable.
+         * \post \a stream shall not be manipulated directly throughout
+         * the lifetime of this object.
+         */
 
-	StreamFsReader (std::istream * stream)
-	  throw (std::string);
+        StreamFsReader (std::istream * stream)
+          throw (std::string);
 
-	/**
-	 * Constructor.
-	 *
-	 * Calls #openFs (\a fs, \a name).
-	 *
-	 * \param[in] fs    A file system instance that contains the file.
-	 * \param[in] name  The name of the file in the file system to
-	 *                  read from.
-	 *
-	 * \throw std::string If the file can not be opened for reading.
-	 * \throw std::string Read error, or invalid file.
-	 */
+        /**
+         * Constructor.
+         *
+         * Calls #openFs (\a fs, \a name).
+         *
+         * \param[in] fs    A file system instance that contains the file.
+         * \param[in] name  The name of the file in the file system to
+         *                  read from.
+         *
+         * \throw std::string If the file can not be opened for reading.
+         * \throw std::string Read error, or invalid file.
+         */
 
-	StreamFsReader (CPI::Util::Vfs::Vfs * fs, const std::string & name)
-	  throw (std::string);
+        StreamFsReader (CPI::Util::Vfs::Vfs * fs, const std::string & name)
+          throw (std::string);
 
-	/**
-	 * Destructor.
-	 *
-	 * Calls closeFs(), ignoring any errors.
-	 */
+        /**
+         * Destructor.
+         *
+         * Calls closeFs(), ignoring any errors.
+         */
 
-	~StreamFsReader ()
-	  throw ();
+        ~StreamFsReader ()
+          throw ();
 
-	/**
-	 * \name Opening and closing stream file systems.
-	 */
+        /**
+         * \name Opening and closing stream file systems.
+         */
 
-	//@{
+        //@{
 
-	/**
-	 * Sets the stream to read the file system contents from.
-	 *
-	 * \param[in] stream  The stream to read from.
-	 *
-	 * \throw std::string Read error, or invalid file.
-	 *
-	 * \pre \a stream shall be open for reading in binary mode.
-	 * \post \a stream shall not be manipulated directly throughout
-	 * the lifetime of this object.
-	 */
+        /**
+         * Sets the stream to read the file system contents from.
+         *
+         * \param[in] stream  The stream to read from.
+         *
+         * \throw std::string Read error, or invalid file.
+         *
+         * \pre \a stream shall be open for reading in binary mode.
+         * \post \a stream shall not be manipulated directly throughout
+         * the lifetime of this object.
+         */
 
-	void openFs (std::istream * stream)
-	  throw (std::string);
+        void openFs (std::istream * stream)
+          throw (std::string);
 
-	/**
-	 * Opens a file to read the file system contents from.
-	 *
-	 * \param[in] fs    A file system instance that contains the file.
-	 * \param[in] name  The name of the file in the file system to
-	 *                  read from.
-	 *
-	 * \throw std::string If the file can not be opened for reading.
-	 * \throw std::string Read error, or invalid file.
-	 */
+        /**
+         * Opens a file to read the file system contents from.
+         *
+         * \param[in] fs    A file system instance that contains the file.
+         * \param[in] name  The name of the file in the file system to
+         *                  read from.
+         *
+         * \throw std::string If the file can not be opened for reading.
+         * \throw std::string Read error, or invalid file.
+         */
 
-	void openFs (CPI::Util::Vfs::Vfs * fs, const std::string & name)
-	  throw (std::string);
+        void openFs (CPI::Util::Vfs::Vfs * fs, const std::string & name)
+          throw (std::string);
 
-	/**
-	 * Closes the file system.
-	 *
-	 * \throw std::string Propagated from CPI::Util::Vfs::Vfs::close().
-	 */
+        /**
+         * Closes the file system.
+         *
+         * \throw std::string Propagated from CPI::Util::Vfs::Vfs::close().
+         */
 
-	void closeFs ()
-	  throw (std::string);
+        void closeFs ()
+          throw (std::string);
 
-	//@}
+        //@}
 
-	/**
-	 * \name Implementation of the CPI::Util::Vfs::Vfs interface.
-	 */
+        /**
+         * \name Implementation of the CPI::Util::Vfs::Vfs interface.
+         */
 
-	//@{
+        //@{
 
-	/*
-	 * File Name URI Mapping
-	 */
+        /*
+         * File Name URI Mapping
+         */
 
-	std::string baseURI () const
-	  throw ();
+        std::string baseURI () const
+          throw ();
 
-	std::string nameToURI (const std::string &) const
-	  throw (std::string);
+        std::string nameToURI (const std::string &) const
+          throw (std::string);
 
-	std::string URIToName (const std::string &) const
-	  throw (std::string);
+        std::string URIToName (const std::string &) const
+          throw (std::string);
 
-	/*
-	 * Directory Management
-	 */
+        /*
+         * Directory Management
+         */
 
-	std::string cwd () const
-	  throw (std::string);
+        std::string cwd () const
+          throw (std::string);
 
-	void cd (const std::string &)
-	  throw (std::string);
+        void cd (const std::string &)
+          throw (std::string);
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	void mkdir (const std::string &)
-	  throw (std::string);
+        void mkdir (const std::string &)
+          throw (std::string);
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	void rmdir (const std::string &)
-	  throw (std::string);
+        void rmdir (const std::string &)
+          throw (std::string);
 
-	/*
-	 * Directory Listing
-	 */
+        /*
+         * Directory Listing
+         */
 
-	CPI::Util::Vfs::Iterator * list (const std::string & dir,
-					 const std::string & pattern = "*")
-	  throw (std::string);
+        CPI::Util::Vfs::Iterator * list (const std::string & dir,
+                                         const std::string & pattern = "*")
+          throw (std::string);
 
-	void closeIterator (CPI::Util::Vfs::Iterator *)
-	  throw (std::string);
+        void closeIterator (CPI::Util::Vfs::Iterator *)
+          throw (std::string);
 
-	/*
-	 * File Information
-	 */
+        /*
+         * File Information
+         */
 
-	bool exists (const std::string &, bool * = 0)
-	  throw (std::string);
+        bool exists (const std::string &, bool * = 0)
+          throw (std::string);
 
-	unsigned long long size (const std::string &)
-	  throw (std::string);
+        unsigned long long size (const std::string &)
+          throw (std::string);
 
-	std::time_t lastModified (const std::string &)
-	  throw (std::string);
+        std::time_t lastModified (const std::string &)
+          throw (std::string);
 
-	/*
-	 * File I/O
-	 */
+        /*
+         * File I/O
+         */
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
-	  throw (std::string);
+        std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
+          throw (std::string);
 
-	std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
-	  throw (std::string);
+        std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
+          throw (std::string);
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
-	  throw (std::string);
+        std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
+          throw (std::string);
 
-	void close (std::ios *)
-	  throw (std::string);
+        void close (std::ios *)
+          throw (std::string);
 
-	/*
-	 * File System Operations. Not implemented.
-	 */
+        /*
+         * File System Operations. Not implemented.
+         */
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	void remove (const std::string &)
-	  throw (std::string);
+        void remove (const std::string &)
+          throw (std::string);
 
-	//@}
+        //@}
 
       protected:
-	/** \cond */
+        /** \cond */
 
-	void readTOC ()
-	  throw (std::string);
+        void readTOC ()
+          throw (std::string);
 
-	std::string absoluteNameLocked (const std::string &) const
-	  throw (std::string);
+        std::string absoluteNameLocked (const std::string &) const
+          throw (std::string);
 
       public:
-	struct Node {
-	  unsigned long long pos;
-	  unsigned long long size;
-	  std::time_t lastModified;
-	};
+        struct Node {
+          unsigned long long pos;
+          unsigned long long size;
+          std::time_t lastModified;
+        };
 
-	typedef std::map<std::string, Node> TOC;
+        typedef std::map<std::string, Node> TOC;
 
       protected:
-	Vfs * m_fs;
-	std::string m_name;
-	std::istream * m_stream;
-	unsigned long long m_pos;
+        Vfs * m_fs;
+        std::string m_name;
+        std::istream * m_stream;
+        unsigned long long m_pos;
 
-	TOC m_toc;
-	std::string m_cwd;
-	std::string m_baseURI;
+        TOC m_toc;
+        std::string m_cwd;
+        std::string m_baseURI;
 
-	unsigned long m_openFiles;
-	unsigned long m_openIterators;
-	mutable CPI::OS::Mutex m_mutex;
-	/** \endcond */
+        unsigned long m_openFiles;
+        unsigned long m_openIterators;
+        mutable CPI::OS::Mutex m_mutex;
+        /** \endcond */
 
       private:
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	StreamFsReader (const StreamFsReader &);
+        StreamFsReader (const StreamFsReader &);
 
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	StreamFsReader & operator= (const StreamFsReader &);
+        StreamFsReader & operator= (const StreamFsReader &);
       };
 
     }

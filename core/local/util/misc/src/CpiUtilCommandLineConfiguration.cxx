@@ -45,8 +45,8 @@ findOption (const std::string & name)
 void
 CPI::Util::CommandLineConfiguration::
 configure (int & argc, char *argv[],
-	   bool ignoreUnknown,
-	   bool removeFromSet)
+           bool ignoreUnknown,
+           bool removeFromSet)
   throw (std::string)
 {
   int newargc;
@@ -55,144 +55,144 @@ configure (int & argc, char *argv[],
   for (cmdidx=newargc=1; cmdidx<argc; cmdidx++) {
     try {
       if (argv[cmdidx][0] == '-' && argv[cmdidx][1] == '-') {
-	std::string option = argv[cmdidx] + 2;
-	std::string::size_type equalSignPos = option.find ('=');
+        std::string option = argv[cmdidx] + 2;
+        std::string::size_type equalSignPos = option.find ('=');
 
-	std::string optionName;
-	std::string optionValue;
+        std::string optionName;
+        std::string optionValue;
 
-	if (equalSignPos == std::string::npos) {
-	  optionName = option;
-	}
-	else {
-	  optionName = option.substr (0, equalSignPos);
-	  optionValue = option.substr (equalSignPos + 1);
-	}
+        if (equalSignPos == std::string::npos) {
+          optionName = option;
+        }
+        else {
+          optionName = option.substr (0, equalSignPos);
+          optionValue = option.substr (equalSignPos + 1);
+        }
 
-	const Option * optSpec = findOption (optionName);
+        const Option * optSpec = findOption (optionName);
 
-	/*
-	 * In GNU autoconf style, a boolean option can be prefixed by
-	 * "no-" to set its value to false.
-	 */
+        /*
+         * In GNU autoconf style, a boolean option can be prefixed by
+         * "no-" to set its value to false.
+         */
 
-	if (!optSpec &&
-	    optionName.length() > 3 &&
-	    optionName[0] == 'n' && optionName[1] == 'o' &&
-	    optionName[2] == '-' &&
-	    equalSignPos == std::string::npos) {
-	  std::string realOptionName = optionName.substr (3);
-	  const Option * realOptSpec = findOption (realOptionName);
+        if (!optSpec &&
+            optionName.length() > 3 &&
+            optionName[0] == 'n' && optionName[1] == 'o' &&
+            optionName[2] == '-' &&
+            equalSignPos == std::string::npos) {
+          std::string realOptionName = optionName.substr (3);
+          const Option * realOptSpec = findOption (realOptionName);
 
-	  if (realOptSpec && realOptSpec->type == OptionType::BOOLEAN) {
-	    optionName = realOptionName;
-	    optionValue = "false";
-	    optSpec = realOptSpec;
-	  }
-	}
+          if (realOptSpec && realOptSpec->type == OptionType::BOOLEAN) {
+            optionName = realOptionName;
+            optionValue = "false";
+            optSpec = realOptSpec;
+          }
+        }
 
-	/*
-	 * In a twist of the above GNU autoconf style for negating
-	 * boolean options, but more in line with our style of options,
-	 * we also accept a prefix of "no", followed by the option
-	 * name, with the first character capitalized.
-	 */
+        /*
+         * In a twist of the above GNU autoconf style for negating
+         * boolean options, but more in line with our style of options,
+         * we also accept a prefix of "no", followed by the option
+         * name, with the first character capitalized.
+         */
 
-	if (!optSpec &&
-	    optionName.length() > 2 &&
-	    optionName[0] == 'n' && optionName[1] == 'o' &&
-	    std::isupper (optionName[2])) {
-	  std::string realOptionName = optionName.substr (2);
-	  realOptionName[0] = std::tolower (realOptionName[0]);
-	  const Option * realOptSpec = findOption (realOptionName);
+        if (!optSpec &&
+            optionName.length() > 2 &&
+            optionName[0] == 'n' && optionName[1] == 'o' &&
+            std::isupper (optionName[2])) {
+          std::string realOptionName = optionName.substr (2);
+          realOptionName[0] = std::tolower (realOptionName[0]);
+          const Option * realOptSpec = findOption (realOptionName);
 
-	  if (realOptSpec && realOptSpec->type == OptionType::BOOLEAN) {
-	    optionName = realOptionName;
-	    optionValue = "false";
-	    optSpec = realOptSpec;
-	  }
-	}
+          if (realOptSpec && realOptSpec->type == OptionType::BOOLEAN) {
+            optionName = realOptionName;
+            optionValue = "false";
+            optSpec = realOptSpec;
+          }
+        }
 
-	if (!optSpec) {
-	  /*
-	   * Unknown option. Ignore or complain.
-	   */
+        if (!optSpec) {
+          /*
+           * Unknown option. Ignore or complain.
+           */
 
-	  if (ignoreUnknown) {
-	    if (removeFromSet) {
-	      if (cmdidx != newargc) {
-		argv[newargc] = argv[cmdidx];
-	      }
-	      newargc++;
-	    }
-	    continue;
-	  }
+          if (ignoreUnknown) {
+            if (removeFromSet) {
+              if (cmdidx != newargc) {
+                argv[newargc] = argv[cmdidx];
+              }
+              newargc++;
+            }
+            continue;
+          }
 
-	  throw std::string ("unknown option");
-	}
+          throw std::string ("unknown option");
+        }
 
-	/*
-	 * For options that expect a parameter (i.e., everything except
-	 * NONE and BOOLEAN), if the command-line parameter does not
-	 * contain an equal sign, the value is expected in the next
-	 * command-line parameter.
-	 */
+        /*
+         * For options that expect a parameter (i.e., everything except
+         * NONE and BOOLEAN), if the command-line parameter does not
+         * contain an equal sign, the value is expected in the next
+         * command-line parameter.
+         */
 
-	if (optSpec->type != OptionType::NONE &&
-	    optSpec->type != OptionType::BOOLEAN &&
-	    equalSignPos == std::string::npos) {
-	  if (cmdidx+1 >= argc) {
-	    std::string reason = "Command-line option \"";
-	    reason += optionName;
-	    reason += "\" requires a value";
-	    throw reason;
-	  }
+        if (optSpec->type != OptionType::NONE &&
+            optSpec->type != OptionType::BOOLEAN &&
+            equalSignPos == std::string::npos) {
+          if (cmdidx+1 >= argc) {
+            std::string reason = "Command-line option \"";
+            reason += optionName;
+            reason += "\" requires a value";
+            throw reason;
+          }
 
-	  optionValue = argv[++cmdidx];
+          optionValue = argv[++cmdidx];
 
-	  /*
-	   * In this case, the option value shall not start with two
-	   * dashes. This would be too confusing. Our documentation
-	   * says that in this case, the syntax using the equal sign
-	   * shall be used, i.e., "--option=--value".
-	   */
+          /*
+           * In this case, the option value shall not start with two
+           * dashes. This would be too confusing. Our documentation
+           * says that in this case, the syntax using the equal sign
+           * shall be used, i.e., "--option=--value".
+           */
 
-	  if (optionValue.length() >= 2 &&
-	      optionValue[0] == '-' &&
-	      optionValue[1] == '-') {
-	    std::string reason = "Confused about the parameter for ";
-	    reason += "command-line option \"";
-	    reason += optionName;
-	    reason += "\"; if the value is intended to start with two dashes, ";
-	    reason += "use \"--";
-	    reason += optionName;
-	    reason += '=';
-	    reason += optionValue;
-	    reason += "\"";
-	    throw reason;
-	  }
-	}
+          if (optionValue.length() >= 2 &&
+              optionValue[0] == '-' &&
+              optionValue[1] == '-') {
+            std::string reason = "Confused about the parameter for ";
+            reason += "command-line option \"";
+            reason += optionName;
+            reason += "\"; if the value is intended to start with two dashes, ";
+            reason += "use \"--";
+            reason += optionName;
+            reason += '=';
+            reason += optionValue;
+            reason += "\"";
+            throw reason;
+          }
+        }
 
-	char CommandLineConfiguration::* cMemberPtr = optSpec->value;
-	cpiAssert (cMemberPtr);
+        char CommandLineConfiguration::* cMemberPtr = optSpec->value;
+        cpiAssert (cMemberPtr);
 
-	char & cValuePtr = this->*cMemberPtr;
-	void * vValuePtr = &cValuePtr;
-	cpiAssert (vValuePtr);
+        char & cValuePtr = this->*cMemberPtr;
+        void * vValuePtr = &cValuePtr;
+        cpiAssert (vValuePtr);
 
-	configureOption (optSpec->type, vValuePtr, optionValue);
+        configureOption (optSpec->type, vValuePtr, optionValue);
 
-	if (optSpec->sentinel) {
-	  this->*(optSpec->sentinel) = true;
-	}
+        if (optSpec->sentinel) {
+          this->*(optSpec->sentinel) = true;
+        }
       }
       else {
-	if (removeFromSet) {
-	  if (cmdidx != newargc) {
-	    argv[newargc] = argv[cmdidx];
-	  }
-	  newargc++;
-	}
+        if (removeFromSet) {
+          if (cmdidx != newargc) {
+            argv[newargc] = argv[cmdidx];
+          }
+          newargc++;
+        }
       }
     }
     catch (const std::string & oops) {
@@ -213,8 +213,8 @@ configure (int & argc, char *argv[],
 void
 CPI::Util::CommandLineConfiguration::
 configureOption (unsigned int type,
-		 void * valuePtr,
-		 const std::string & optionValue)
+                 void * valuePtr,
+                 const std::string & optionValue)
   throw (std::string)
 {
   switch (type) {
@@ -223,7 +223,7 @@ configureOption (unsigned int type,
       bool & value = *reinterpret_cast<bool *> (valuePtr);
 
       if (!optionValue.empty()) {
-	throw std::string ("option does not take a value");
+        throw std::string ("option does not take a value");
       }
 
       value = true;
@@ -235,16 +235,16 @@ configureOption (unsigned int type,
       bool & value = *reinterpret_cast<bool *> (valuePtr);
 
       if (optionValue.empty() || optionValue == "true") {
-	value = true;
+        value = true;
       }
       else if (optionValue == "false") {
-	value = false;
+        value = false;
       }
       else {
-	std::string reason = "can not parse \"";
-	reason += optionValue;
-	reason += "\" as a boolean value";
-	throw reason;
+        std::string reason = "can not parse \"";
+        reason += optionValue;
+        reason += "\" as a boolean value";
+        throw reason;
       }
     }
     break;
@@ -252,7 +252,7 @@ configureOption (unsigned int type,
   case OptionType::LONG:
     {
       if (optionValue.empty()) {
-	throw std::string ("option needs a value");
+        throw std::string ("option needs a value");
       }
 
       long int & value = *reinterpret_cast<long int *> (valuePtr);
@@ -262,10 +262,10 @@ configureOption (unsigned int type,
       value = std::strtol (txtPtr, &endPtr, 10);
 
       if ((value == 0 && endPtr == txtPtr) || *endPtr) {
-	std::string reason = "expected integer, but got \"";
-	reason += optionValue;
-	reason += "\"";
-	throw reason;
+        std::string reason = "expected integer, but got \"";
+        reason += optionValue;
+        reason += "\"";
+        throw reason;
       }
     }
     break;
@@ -273,7 +273,7 @@ configureOption (unsigned int type,
   case OptionType::UNSIGNEDLONG:
     {
       if (optionValue.empty()) {
-	throw std::string ("option needs a value");
+        throw std::string ("option needs a value");
       }
 
       unsigned long & value = *reinterpret_cast<unsigned long *> (valuePtr);
@@ -283,10 +283,10 @@ configureOption (unsigned int type,
       value = std::strtoul (txtPtr, &endPtr, 10);
 
       if ((value == 0 && endPtr == txtPtr) || *endPtr) {
-	std::string reason = "expected unsigned integer, but got \"";
-	reason += optionValue;
-	reason += "\"";
-	throw reason;
+        std::string reason = "expected unsigned integer, but got \"";
+        reason += optionValue;
+        reason += "\"";
+        throw reason;
       }
     }
     break;
@@ -294,7 +294,7 @@ configureOption (unsigned int type,
   case OptionType::STRING:
     {
       if (optionValue.empty()) {
-	throw std::string ("option needs a value");
+        throw std::string ("option needs a value");
       }
 
       std::string & value = *reinterpret_cast<std::string *> (valuePtr);
@@ -305,19 +305,19 @@ configureOption (unsigned int type,
   case OptionType::NAMEVALUE:
     {
       if (optionValue.empty()) {
-	throw std::string ("option needs a value");
+        throw std::string ("option needs a value");
       }
 
       NameValue & value = *reinterpret_cast<NameValue *> (valuePtr);
       std::string::size_type nvEqualSign = optionValue.find ('=');
 
       if (nvEqualSign == std::string::npos) {
-	value.first = optionValue;
-	value.second.clear ();
+        value.first = optionValue;
+        value.second.clear ();
       }
       else {
-	value.first = optionValue.substr (0, nvEqualSign);
-	value.second = optionValue.substr (nvEqualSign + 1);
+        value.first = optionValue.substr (0, nvEqualSign);
+        value.second = optionValue.substr (nvEqualSign + 1);
       }
     }
     break;
@@ -325,26 +325,26 @@ configureOption (unsigned int type,
   case OptionType::MULTISTRING:
     {
       if (optionValue.empty()) {
-	throw std::string ("option needs a value");
+        throw std::string ("option needs a value");
       }
 
       MultiString & value = *reinterpret_cast<MultiString *> (valuePtr);
       std::string stringSet = optionValue;
 
       while (stringSet.length()) {
-	std::string::size_type firstCommaPos = stringSet.find (',');
-	std::string sv;
+        std::string::size_type firstCommaPos = stringSet.find (',');
+        std::string sv;
 
-	if (firstCommaPos == std::string::npos) {
-	  sv = stringSet;
-	  stringSet.clear ();
-	}
-	else {
-	  sv = stringSet.substr (0, firstCommaPos);
-	  stringSet = stringSet.substr (firstCommaPos + 1);
-	}
+        if (firstCommaPos == std::string::npos) {
+          sv = stringSet;
+          stringSet.clear ();
+        }
+        else {
+          sv = stringSet.substr (0, firstCommaPos);
+          stringSet = stringSet.substr (firstCommaPos + 1);
+        }
 
-	value.push_back (sv);
+        value.push_back (sv);
       }
     }
     break;
@@ -352,38 +352,38 @@ configureOption (unsigned int type,
   case OptionType::MULTINAMEVALUE:
     {
       if (optionValue.empty()) {
-	throw std::string ("option needs a value");
+        throw std::string ("option needs a value");
       }
 
       MultiNameValue & value = *reinterpret_cast<MultiNameValue *> (valuePtr);
       std::string stringSet = optionValue;
 
       while (stringSet.length()) {
-	std::string::size_type firstCommaPos = stringSet.find (',');
-	std::string nameValueString;
+        std::string::size_type firstCommaPos = stringSet.find (',');
+        std::string nameValueString;
 
-	if (firstCommaPos == std::string::npos) {
-	  nameValueString = stringSet;
-	  stringSet.clear ();
-	}
-	else {
-	  nameValueString = stringSet.substr (0, firstCommaPos);
-	  stringSet = stringSet.substr (firstCommaPos + 1);
-	}
+        if (firstCommaPos == std::string::npos) {
+          nameValueString = stringSet;
+          stringSet.clear ();
+        }
+        else {
+          nameValueString = stringSet.substr (0, firstCommaPos);
+          stringSet = stringSet.substr (firstCommaPos + 1);
+        }
 
-	NameValue nameValue;
-	std::string::size_type nvEqualSign = nameValueString.find ('=');
+        NameValue nameValue;
+        std::string::size_type nvEqualSign = nameValueString.find ('=');
 
-	if (nvEqualSign == std::string::npos) {
-	  nameValue.first = nameValueString;
-	  nameValue.second.clear ();
-	}
-	else {
-	  nameValue.first = nameValueString.substr (0, nvEqualSign);
-	  nameValue.second = nameValueString.substr (nvEqualSign + 1);
-	}
+        if (nvEqualSign == std::string::npos) {
+          nameValue.first = nameValueString;
+          nameValue.second.clear ();
+        }
+        else {
+          nameValue.first = nameValueString.substr (0, nvEqualSign);
+          nameValue.second = nameValueString.substr (nvEqualSign + 1);
+        }
 
-	value.push_back (nameValue);
+        value.push_back (nameValue);
       }
     }
     break;
@@ -405,7 +405,7 @@ printOptions (std::ostream & out)
        oi++) {
     if (oi->type == OptionType::DUMMY) {
       if (oi->desc) {
-	out << "  " << oi->desc;
+        out << "  " << oi->desc;
       }
       out << std::endl;
       continue;
@@ -463,8 +463,8 @@ printOptions (std::ostream & out)
 
     if (oi->desc) {
       if (length < 29) {
-	std::string emptySpace (29-length, ' ');
-	out << emptySpace;
+        std::string emptySpace (29-length, ' ');
+        out << emptySpace;
       }
 
       out << ' ' << oi->desc;

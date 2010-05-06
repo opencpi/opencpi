@@ -85,7 +85,7 @@ EndPoint* PCIPIOXferFactory::getEndPoint( std::string& end_point  )
   }
 
   loc = new PCIEndPoint(end_point);
-	
+        
   // This is a test case to make sure that a factory can modify the endpoint
   // string and system can handle it !!
 

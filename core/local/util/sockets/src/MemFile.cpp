@@ -1,6 +1,6 @@
 /** \file MemFile.cpp
- **	\date  2005-04-25
- **	\author grymse@alhem.net
+ **        \date  2005-04-25
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -78,7 +78,7 @@ MemFile::MemFile(MemFile& s)
 ,m_ref_decreased(false)
 ,m_path(s.m_path)
 {
-	m_src.Increase();
+        m_src.Increase();
 }
 
 
@@ -96,253 +96,253 @@ MemFile::MemFile(File& f)
 ,m_ref_decreased(false)
 ,m_path(f.Path())
 {
-	m_current_read = m_base;
-	m_current_write = m_base;
-	char slask[32768];
-	size_t n;
-	while ((n = f.fread(slask, 1, 32768)) > 0)
-	{
-		fwrite(slask, 1, n);
-	}
+        m_current_read = m_base;
+        m_current_write = m_base;
+        char slask[32768];
+        size_t n;
+        while ((n = f.fread(slask, 1, 32768)) > 0)
+        {
+                fwrite(slask, 1, n);
+        }
 }
 
 
 MemFile::~MemFile()
 {
-	if (m_ref_count)
-		std::cerr << "MemFile destructor with a ref count of " + Utility::l2string(m_ref_count) << std::endl;
-	while (m_base && !m_src_valid)
-	{
-		block_t *p = m_base;
-		m_base = p -> next;
-		delete p;
-	}
-	if (m_src_valid && !m_ref_decreased)
-	{
-		m_src.Decrease();
-		m_ref_decreased = true;
-	}
+        if (m_ref_count)
+                std::cerr << "MemFile destructor with a ref count of " + Utility::l2string(m_ref_count) << std::endl;
+        while (m_base && !m_src_valid)
+        {
+                block_t *p = m_base;
+                m_base = p -> next;
+                delete p;
+        }
+        if (m_src_valid && !m_ref_decreased)
+        {
+                m_src.Decrease();
+                m_ref_decreased = true;
+        }
 }
 
 
 bool MemFile::fopen(const std::string& path, const std::string& mode)
 {
-	return true;
+        return true;
 }
 
 
 void MemFile::fclose() const
 {
-	if (m_src_valid && !m_ref_decreased)
-	{
-		m_src.Decrease();
-		m_ref_decreased = true;
-	}
+        if (m_src_valid && !m_ref_decreased)
+        {
+                m_src.Decrease();
+                m_ref_decreased = true;
+        }
 }
 
 
 size_t MemFile::fread(char *ptr, size_t size, size_t nmemb) const
 {
-	size_t p = m_read_ptr % BLOCKSIZE;
-	size_t sz = size * nmemb;
-	size_t available = m_write_ptr - m_read_ptr;
-	if (sz > available) // read beyond eof
-	{
-		sz = available;
-		m_b_read_caused_eof = true;
-	}
-	if (!sz)
-	{
-		return 0;
-	}
-	if (p + sz < BLOCKSIZE)
-	{
-		memcpy(ptr, m_current_read -> data + p, sz);
-		m_read_ptr += sz;
-	}
-	else
-	{
-		size_t sz1 = BLOCKSIZE - p;
-		size_t sz2 = sz - sz1;
-		memcpy(ptr, m_current_read -> data + p, sz1);
-		m_read_ptr += sz1;
-		while (sz2 > BLOCKSIZE)
-		{
-			if (m_current_read -> next)
-			{
-				m_current_read = m_current_read -> next;
-				memcpy(ptr + sz1, m_current_read -> data, BLOCKSIZE);
-				m_read_ptr += BLOCKSIZE;
-				sz1 += BLOCKSIZE;
-				sz2 -= BLOCKSIZE;
-			}
-			else
-			{
-				return sz1;
-			}
-		}
-		if (m_current_read -> next)
-		{
-			m_current_read = m_current_read -> next;
-			memcpy(ptr + sz1, m_current_read -> data, sz2);
-			m_read_ptr += sz2;
-		}
-		else
-		{
-			return sz1;
-		}
-	}
-	return sz;
+        size_t p = m_read_ptr % BLOCKSIZE;
+        size_t sz = size * nmemb;
+        size_t available = m_write_ptr - m_read_ptr;
+        if (sz > available) // read beyond eof
+        {
+                sz = available;
+                m_b_read_caused_eof = true;
+        }
+        if (!sz)
+        {
+                return 0;
+        }
+        if (p + sz < BLOCKSIZE)
+        {
+                memcpy(ptr, m_current_read -> data + p, sz);
+                m_read_ptr += sz;
+        }
+        else
+        {
+                size_t sz1 = BLOCKSIZE - p;
+                size_t sz2 = sz - sz1;
+                memcpy(ptr, m_current_read -> data + p, sz1);
+                m_read_ptr += sz1;
+                while (sz2 > BLOCKSIZE)
+                {
+                        if (m_current_read -> next)
+                        {
+                                m_current_read = m_current_read -> next;
+                                memcpy(ptr + sz1, m_current_read -> data, BLOCKSIZE);
+                                m_read_ptr += BLOCKSIZE;
+                                sz1 += BLOCKSIZE;
+                                sz2 -= BLOCKSIZE;
+                        }
+                        else
+                        {
+                                return sz1;
+                        }
+                }
+                if (m_current_read -> next)
+                {
+                        m_current_read = m_current_read -> next;
+                        memcpy(ptr + sz1, m_current_read -> data, sz2);
+                        m_read_ptr += sz2;
+                }
+                else
+                {
+                        return sz1;
+                }
+        }
+        return sz;
 }
 
 
 size_t MemFile::fwrite(const char *ptr, size_t size, size_t nmemb)
 {
-	size_t p = m_write_ptr % BLOCKSIZE;
-	int nr = (int)m_write_ptr / BLOCKSIZE;
-	size_t sz = size * nmemb;
-	if (m_current_write_nr < nr)
-	{
-		block_t *next = new block_t;
-		m_current_write -> next = next;
-		m_current_write = next;
-		m_current_write_nr++;
-	}
-	if (p + sz <= BLOCKSIZE)
-	{
-		memcpy(m_current_write -> data + p, ptr, sz);
-		m_write_ptr += sz;
-	}
-	else
-	{
-		size_t sz1 = BLOCKSIZE - p; // size left
-		size_t sz2 = sz - sz1;
-		memcpy(m_current_write -> data + p, ptr, sz1);
-		m_write_ptr += sz1;
-		while (sz2 > BLOCKSIZE)
-		{
-			if (m_current_write -> next)
-			{
-				m_current_write = m_current_write -> next;
-				m_current_write_nr++;
-			}
-			else
-			{
-				block_t *next = new block_t;
-				m_current_write -> next = next;
-				m_current_write = next;
-				m_current_write_nr++;
-			}
-			memcpy(m_current_write -> data, ptr + sz1, BLOCKSIZE);
-			m_write_ptr += BLOCKSIZE;
-			sz1 += BLOCKSIZE;
-			sz2 -= BLOCKSIZE;
-		}
-		if (m_current_write -> next)
-		{
-			m_current_write = m_current_write -> next;
-			m_current_write_nr++;
-		}
-		else
-		{
-			block_t *next = new block_t;
-			m_current_write -> next = next;
-			m_current_write = next;
-			m_current_write_nr++;
-		}
-		memcpy(m_current_write -> data, ptr + sz1, sz2);
-		m_write_ptr += sz2;
-	}
-	return sz;
+        size_t p = m_write_ptr % BLOCKSIZE;
+        int nr = (int)m_write_ptr / BLOCKSIZE;
+        size_t sz = size * nmemb;
+        if (m_current_write_nr < nr)
+        {
+                block_t *next = new block_t;
+                m_current_write -> next = next;
+                m_current_write = next;
+                m_current_write_nr++;
+        }
+        if (p + sz <= BLOCKSIZE)
+        {
+                memcpy(m_current_write -> data + p, ptr, sz);
+                m_write_ptr += sz;
+        }
+        else
+        {
+                size_t sz1 = BLOCKSIZE - p; // size left
+                size_t sz2 = sz - sz1;
+                memcpy(m_current_write -> data + p, ptr, sz1);
+                m_write_ptr += sz1;
+                while (sz2 > BLOCKSIZE)
+                {
+                        if (m_current_write -> next)
+                        {
+                                m_current_write = m_current_write -> next;
+                                m_current_write_nr++;
+                        }
+                        else
+                        {
+                                block_t *next = new block_t;
+                                m_current_write -> next = next;
+                                m_current_write = next;
+                                m_current_write_nr++;
+                        }
+                        memcpy(m_current_write -> data, ptr + sz1, BLOCKSIZE);
+                        m_write_ptr += BLOCKSIZE;
+                        sz1 += BLOCKSIZE;
+                        sz2 -= BLOCKSIZE;
+                }
+                if (m_current_write -> next)
+                {
+                        m_current_write = m_current_write -> next;
+                        m_current_write_nr++;
+                }
+                else
+                {
+                        block_t *next = new block_t;
+                        m_current_write -> next = next;
+                        m_current_write = next;
+                        m_current_write_nr++;
+                }
+                memcpy(m_current_write -> data, ptr + sz1, sz2);
+                m_write_ptr += sz2;
+        }
+        return sz;
 }
 
 
 
 char *MemFile::fgets(char *s, int size) const
 {
-	int n = 0;
-	while (n < size - 1 && !eof())
-	{
-		char c;
-		size_t sz = fread(&c, 1, 1);
-		if (sz)
-		{
-			if (c == 10)
-			{
-				s[n] = 0;
-				return s;
-			}
-			s[n++] = c;
-		}
-	}
-	s[n] = 0;
-	return s;
+        int n = 0;
+        while (n < size - 1 && !eof())
+        {
+                char c;
+                size_t sz = fread(&c, 1, 1);
+                if (sz)
+                {
+                        if (c == 10)
+                        {
+                                s[n] = 0;
+                                return s;
+                        }
+                        s[n++] = c;
+                }
+        }
+        s[n] = 0;
+        return s;
 }
 
 
 void MemFile::fprintf(const char *format, ...)
 {
-	va_list ap;
-	char tmp[BLOCKSIZE];
-	va_start(ap, format);
+        va_list ap;
+        char tmp[BLOCKSIZE];
+        va_start(ap, format);
 #ifdef _WIN32
-	vsprintf_s(tmp, sizeof(tmp), format, ap);
+        vsprintf_s(tmp, sizeof(tmp), format, ap);
 #else
-	vsnprintf(tmp, sizeof(tmp), format, ap);
+        vsnprintf(tmp, sizeof(tmp), format, ap);
 #endif
-	va_end(ap);
-	fwrite(tmp, 1, strlen(tmp));
+        va_end(ap);
+        fwrite(tmp, 1, strlen(tmp));
 }
 
 
 off_t MemFile::size() const
 {
-	return (off_t)m_write_ptr;
+        return (off_t)m_write_ptr;
 }
 
 
 bool MemFile::eof() const
 {
-	return m_b_read_caused_eof; //(m_read_ptr < m_write_ptr) ? false : true;
+        return m_b_read_caused_eof; //(m_read_ptr < m_write_ptr) ? false : true;
 }
 
 
 void MemFile::reset_read() const
 {
-	m_read_ptr = 0;
-	m_current_read = m_base;
+        m_read_ptr = 0;
+        m_current_read = m_base;
 }
 
 
 void MemFile::reset_write()
 {
-	m_write_ptr = 0;
-	m_current_write = m_base;
-	m_current_write_nr = 0;
+        m_write_ptr = 0;
+        m_current_write = m_base;
+        m_current_write_nr = 0;
 }
 
 
 int MemFile::RefCount() const
 {
-	return m_ref_count;
+        return m_ref_count;
 }
 
 
 void MemFile::Increase()
 {
-	++m_ref_count;
+        ++m_ref_count;
 }
 
 
 void MemFile::Decrease()
 {
-	--m_ref_count;
+        --m_ref_count;
 }
 
 
 const std::string& MemFile::Path() const
 {
-	return m_path;
+        return m_path;
 }
 
 

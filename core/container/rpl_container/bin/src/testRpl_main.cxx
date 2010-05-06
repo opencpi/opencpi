@@ -64,6 +64,8 @@ namespace CPI {
 
 int main(int argc, char *argv[])
 {
+  try
+  {
   unsigned long bufferCount[10][2] =
     {{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2}};
   const char *active[10][2] = {{0}};
@@ -217,20 +219,28 @@ int main(int argc, char *argv[])
   // If we know there is one, try to create it.
   CC::Interface *rplContainer, *rplContainer2;
 
+
+
   CPI::RPL::Driver driver();
+
   CPI::Util::DriverManager dm("OCFRP");
+
 
 
   if (probe) {
     rplContainer = static_cast<CC::Interface*>(dm.getDevice( 0, "0" ));
   } else {
 
+
     dm.discoverDevices(0,0);
+
     rplContainer = static_cast<CC::Interface*>(dm.getDevice( 0, firstarg ));
+
 
 #ifdef WAS
     rplContainer = CU::Driver::getContainer("OCFRP", firstarg, "", 0);
 #endif
+
 
 
     if (two) {
@@ -242,15 +252,20 @@ int main(int argc, char *argv[])
 
     }
   }
+
   if (rplContainer && (!two || rplContainer2)) {
     try {
+
       // Create an application on this container, no parameters at this time
       std::auto_ptr<CC::Application>
         ap(rplContainer->createApplication( /* "testRPL" */ )),
         ap2(two ? rplContainer2->createApplication( /* "testRpl2" */ ) : 0);
+
+
       CC::Application
         &a = *ap,
         &a2 = two ? *ap2 : a;
+
       CC::Worker *w[12] = {((CC::Worker *)0),
                            &a.createWorker("file", 0, "FC", "FCi"),
                            &a.createWorker("file", 0, "Bias", "BIASi"),
@@ -266,29 +281,30 @@ int main(int argc, char *argv[])
                            ((CC::Worker *)0),
                           ((CC::Worker *)0)
       };
-      printf ( "%s:%d\n", __FUNCTION__,__LINE__ );
+
       CC::Port &w1in = w[1]->getPort("WMIin");
-      printf ( "%s:%d\n", __FUNCTION__,__LINE__ );
+
       CC::Port &w1out = w[1]->getPort("WSIout");
-      printf ( "%s:%d\n", __FUNCTION__,__LINE__ );
+
       CC::Port &w1sin = w[1]->getPort("WSIin");
-      printf ( "%s:%d\n", __FUNCTION__,__LINE__ );
+
       CC::Port &w2in = w[2]->getPort("WSIin");
-      printf ( "%s:%d\n", __FUNCTION__,__LINE__ );
+
       CC::Port &w2out = w[2]->getPort("WSIout");
-      printf ( "%s:%d\n", __FUNCTION__,__LINE__ );
+
       CC::Port &w3in = w[3]->getPort("WSIin");
-      printf ( "%s:%d\n", __FUNCTION__,__LINE__ );
+
       CC::Port &w3out = w[3]->getPort("WMIout");
-      printf ( "%s:%d\n", __FUNCTION__,__LINE__ );
+
       CC::Port &w4out = acquire ? w[4]->getPort("ADCout") : *(CC::Port *)0;
-      printf ( "%s:%d\n", __FUNCTION__,__LINE__ );
+
       CC::Port &w6in = two ? w[6]->getPort("WMIin") : *(CC::Port *)0;
       CC::Port &w6out = two ? w[6]->getPort("WSIout") : *(CC::Port *)0;;
       CC::Port &w7in = two ? w[7]->getPort("WSIin") : *(CC::Port *)0;;
       CC::Port &w7out = two ? w[7]->getPort("WSIout") : *(CC::Port *)0;;
       CC::Port &w8in = two ? w[8]->getPort("WSIin") : *(CC::Port *)0;;
       CC::Port &w8out = two ? w[8]->getPort("WMIout") : *(CC::Port *)0;;
+
 
       CPI::Util::PValue
         p00[] = {CU::PVULong("bufferCount", bufferCount[0][0]),
@@ -310,26 +326,38 @@ int main(int argc, char *argv[])
                  CU::PVString("xferRole", active[8][1]),
                  CU::PVULong("bufferSize", bufferSize), CU::PVEnd};
 
+
       CC::Property pfc(*w[1], "control");
+
       CC::Property pfp(*w[3], "control");
+
       // Caller knows data type, we can add a debug-mode runtime check
       pfc.setULongValue(acquire ? 0 : 1);
+
       pfp.setULongValue(emit ? 0 : 2);
+
       if (loop)
         w1in.loopback(w3out);
+
       if (acquire)
         w4out.connect(w1sin);
+
       w1out.connect(w2in);
+
       w2out.connect(w3in);
+
       CC::ExternalPort *myOut =
         acquire ? 0 : &w1in.connectExternal("w0out", p01, p10);
+
       if (two) {
         w3out.connect(w6in,p31,p60);
         w6out.connect(w7in);
         w7out.connect(w8in);
       }
+
       CC::ExternalPort &myIn =
         two ? w8out.connectExternal("w0in", p00, p81) : w3out.connectExternal("w0in", p00, p31);
+
       w[1]->start();
       w[2]->start();
       w[3]->start();
@@ -338,6 +366,7 @@ int main(int argc, char *argv[])
         w[7]->start();
         w[8]->start();
       }
+
       if (acquire)
         w[4]->start();
       unsigned outLeft, inLeft, inN = 0, outN = 0;
@@ -360,6 +389,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Can't open file \"%s\" for output\n", ofile);
         return 1;
       }
+
       // While anything to do
       while (outLeft || inLeft) {
         uint32_t length;
@@ -383,6 +413,7 @@ int main(int argc, char *argv[])
           }
           myOut->tryFlush(); // keep buffered output moving
         }
+
         if (!doread)
           continue;
         uint8_t opCode;
@@ -469,4 +500,10 @@ int main(int argc, char *argv[])
     fprintf(stderr, "No Rpl Containers found\n");
     return 1;
   }
+}
+catch ( ... )
+{
+  printf ( "Got an exception\n" );
+}
+return 0;
 }

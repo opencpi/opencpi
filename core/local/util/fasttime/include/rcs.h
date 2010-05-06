@@ -11,12 +11,12 @@
 #ifndef RCS_H_INCLUDED
 #define RCS_H_INCLUDED
 
-#define RCS_ID(id) static const char *rcs_id = id;	\
-static const char *				\
-	f_rcs_id(const char *s)		\
-	{						\
-		if (s) return s;			\
-		else return f_rcs_id(rcs_id);	\
-	}
+#define RCS_ID(id) static const char *rcs_id = id;        \
+static const char *                                \
+        f_rcs_id(const char *s)                \
+        {                                                \
+                if (s) return s;                        \
+                else return f_rcs_id(rcs_id);        \
+        }
 
 #endif /* ! RCS_H_INCLUDED */

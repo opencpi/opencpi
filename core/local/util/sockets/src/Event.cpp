@@ -1,6 +1,6 @@
 /** \file Event.cpp
- **	\date  2005-12-07
- **	\author grymse@alhem.net
+ **        \date  2005-12-07
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
@@ -59,31 +59,31 @@ Event::~Event()
 
 bool Event::operator<(Event& e)
 {
-	return m_time < e.m_time;
+        return m_time < e.m_time;
 }
 
 
 long Event::GetID() const
 {
-	return m_id;
+        return m_id;
 }
 
 
 const EventTime& Event::GetTime() const
 {
-	return m_time;
+        return m_time;
 }
 
 
 IEventOwner *Event::GetFrom() const
 {
-	return m_from;
+        return m_from;
 }
 
 
 unsigned long Event::Data() const
 {
-	return m_data;
+        return m_data;
 }
 
 

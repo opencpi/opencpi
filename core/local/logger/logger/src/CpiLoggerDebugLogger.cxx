@@ -62,7 +62,7 @@ CPI::Logger::debug (const std::string & producerName, unsigned int v)
       StringToUIntMap::iterator it = g_debugProducerNames.find (producerName);
 
       if (it != g_debugProducerNames.end()) {
-	g_debugProducerNames.erase (it);
+        g_debugProducerNames.erase (it);
       }
     }
   }

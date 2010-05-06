@@ -1,7 +1,7 @@
 /**
- **	\file Exception.h
- **	\date  2007-09-28
- **	\author grymse@alhem.net
+ **        \file Exception.h
+ **        \date  2007-09-28
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -45,19 +45,19 @@ namespace SOCKETS_NAMESPACE {
 class Exception
 {
 public:
-	Exception(const std::string& description);
-	virtual ~Exception() {}
+        Exception(const std::string& description);
+        virtual ~Exception() {}
 
-	virtual const std::string ToString() const;
-	virtual const std::string Stack() const;
+        virtual const std::string ToString() const;
+        virtual const std::string Stack() const;
 
-	Exception(const Exception& ) {} // copy constructor
+        Exception(const Exception& ) {} // copy constructor
 
-	Exception& operator=(const Exception& ) { return *this; } // assignment operator
+        Exception& operator=(const Exception& ) { return *this; } // assignment operator
 
 private:
-	std::string m_description;
-	std::string m_stack;
+        std::string m_description;
+        std::string m_stack;
 
 };
 

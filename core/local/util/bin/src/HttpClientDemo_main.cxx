@@ -22,16 +22,16 @@ main (int argc, char *argv[])
   }
   catch (const CPI::Util::Http::Redirection & ex) {
     std::cout << "request redirected to "
-	      << ex.newLocation
-	      << std::endl;
+              << ex.newLocation
+              << std::endl;
     uri = ex.newLocation;
     goto again;
   }
   catch (const CPI::Util::Http::HttpError & ex) {
     std::cout << "server status "
-	      << ex.statusCode << " "
-	      << ex.reasonPhrase
-	      << std::endl;
+              << ex.statusCode << " "
+              << ex.reasonPhrase
+              << std::endl;
     return 1;
   }
   catch (const std::string & ex) {
@@ -48,8 +48,8 @@ main (int argc, char *argv[])
   for (it = stream.responseHeaders().begin();
        it != stream.responseHeaders().end(); it++) {
     std::cout << "    " << (*it).first
-	      << ": " << (*it).second
-	      << std::endl;
+              << ": " << (*it).second
+              << std::endl;
   }
 
   std::string filename = uri.getFileName ();
@@ -62,18 +62,18 @@ main (int argc, char *argv[])
 
   if (!out.good()) {
     std::cout << "error: cannot open "
-	      << filename
-	      << " for output"
-	      << std::endl;
+              << filename
+              << " for output"
+              << std::endl;
     return 1;
   }
 
   std::cout << "downloading "
-	    << uri.get()
-	    << " as "
-	    << filename
-	    << " "
-	    << std::flush;
+            << uri.get()
+            << " as "
+            << filename
+            << " "
+            << std::flush;
 
   char buffer[10240];
   while (stream.good() && !stream.eof() && out.good()) {

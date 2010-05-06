@@ -1,7 +1,7 @@
 /**
- **	\file SSLInitializer.h
- **	\date  2007-04-30
- **	\author grymse@alhem.net
+ **        \file SSLInitializer.h
+ **        \date  2007-04-30
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -52,36 +52,36 @@ namespace SOCKETS_NAMESPACE {
 class SSLInitializer
 {
 public:
-	/**
-		init openssl
-		bio_err
-		create random file
-	*/
-	SSLInitializer();
+        /**
+                init openssl
+                bio_err
+                create random file
+        */
+        SSLInitializer();
 
-	/**
-		remove random file
-	*/
-	~SSLInitializer();
+        /**
+                remove random file
+        */
+        ~SSLInitializer();
 
-	void DeleteRandFile();
+        void DeleteRandFile();
 
-	/** SSL; mutex locking function callback. */
-static	void SSL_locking_function(int mode, int n, const char *file, int line);
+        /** SSL; mutex locking function callback. */
+static        void SSL_locking_function(int mode, int n, const char *file, int line);
 
-	/** Return thread id. */
-static	unsigned long SSL_id_function();
+        /** Return thread id. */
+static        unsigned long SSL_id_function();
 
-	BIO *bio_err;
+        BIO *bio_err;
 
 private:
-	std::string m_rand_file;
-	long m_rand_size;
-static	std::map<int, IMutex *> *m_mmap;
-static	Mutex *m_mmap_mutex;
+        std::string m_rand_file;
+        long m_rand_size;
+static        std::map<int, IMutex *> *m_mmap;
+static        Mutex *m_mmap_mutex;
 
-static	std::map<int, IMutex *>& MMap();
-static	Mutex& MMapMutex();
+static        std::map<int, IMutex *>& MMap();
+static        Mutex& MMapMutex();
 
 };
 

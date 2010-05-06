@@ -11,9 +11,9 @@
 
 long
 xfer_create(DataTransfer::SmemServices* src_ep,
-	    DataTransfer::SmemServices* dst_ep,
-	    CPI::OS::int32_t,
-	    XF_template *xf_templatep)
+            DataTransfer::SmemServices* dst_ep,
+            CPI::OS::int32_t,
+            XF_template *xf_templatep)
 {
   /* Define the local template */
   struct xf_template_ *tp;
@@ -40,18 +40,18 @@ xfer_create(DataTransfer::SmemServices* src_ep,
 
   /* Set the out parameter */
   *xf_templatep = tp;
-	
+        
   return 0;
 }
 
 
 long
 xfer_copy(XF_template xf_template,
-	  CPI::OS::uint32_t src_os,
-	  CPI::OS::uint32_t dst_os,
-	  CPI::OS::uint32_t nbytes,
-	  CPI::OS::int32_t flags,
-	  XF_transfer *xf_transferp)
+          CPI::OS::uint32_t src_os,
+          CPI::OS::uint32_t dst_os,
+          CPI::OS::uint32_t nbytes,
+          CPI::OS::int32_t flags,
+          XF_transfer *xf_transferp)
 {
   struct xf_template_ *tp = (struct xf_template_ *)xf_template;
   struct xf_transfer_ *xf = new struct xf_transfer_;
@@ -69,24 +69,24 @@ xfer_copy(XF_template xf_template,
   if (tp->type == PIO) {
     if (flags & XFER_FIRST) {
       rc = xfer_pio_copy(tp->pio_template,
-			 src_os, dst_os,
-			 nbytes,
-			 flags,
-			 &xf->first_pio_transfer);
+                         src_os, dst_os,
+                         nbytes,
+                         flags,
+                         &xf->first_pio_transfer);
     }
     else if (flags & XFER_LAST) {
       rc = xfer_pio_copy(tp->pio_template,
-			 src_os, dst_os,
-			 nbytes,
-			 flags,
-			 &xf->last_pio_transfer);
+                         src_os, dst_os,
+                         nbytes,
+                         flags,
+                         &xf->last_pio_transfer);
     }
     else {
       rc = xfer_pio_copy(tp->pio_template,
-			 src_os, dst_os,
-			 nbytes,
-			 flags,
-			 &xf->pio_transfer);
+                         src_os, dst_os,
+                         nbytes,
+                         flags,
+                         &xf->pio_transfer);
     }
 
     if (rc) {
@@ -155,8 +155,8 @@ xfer_destroy(XF_template xf_handle, CPI::OS::int32_t)
 
 long
 xfer_group(XF_transfer *xf_members,
-	   CPI::OS::int32_t flags,
-	   XF_transfer *xf_transferp)
+           CPI::OS::int32_t flags,
+           XF_transfer *xf_transferp)
 {
   /* Local Variables */
   PIO_transfer *pio_members=0;
@@ -198,7 +198,7 @@ xfer_group(XF_transfer *xf_members,
     /* See if the member has a pio component */
     if (((struct xf_transfer_ *)xf_members[i])->first_pio_transfer)
       pio_members[pio++] =
-	((struct xf_transfer_ *)xf_members[i])->first_pio_transfer;
+        ((struct xf_transfer_ *)xf_members[i])->first_pio_transfer;
   }
 
   /* Terminate the list */
@@ -212,7 +212,7 @@ xfer_group(XF_transfer *xf_members,
 #ifndef NDEBUG
       printf("xfer_pio_group failed\n");
 #endif
-	  cpiAssert(0);
+          cpiAssert(0);
     }
   }
 
@@ -227,7 +227,7 @@ xfer_group(XF_transfer *xf_members,
     /* See if the member has a pio component */
     if (((struct xf_transfer_ *)xf_members[i])->last_pio_transfer)
       pio_members[pio++] =
-	((struct xf_transfer_ *)xf_members[i])->last_pio_transfer;
+        ((struct xf_transfer_ *)xf_members[i])->last_pio_transfer;
   }
 
   /* Terminate the list */
@@ -240,7 +240,7 @@ xfer_group(XF_transfer *xf_members,
 #ifndef NDEBUG
       printf("xfer_pio_group failed\n");
 #endif
-	  cpiAssert(0);
+          cpiAssert(0);
     }
   }
 
@@ -253,7 +253,7 @@ xfer_group(XF_transfer *xf_members,
     /* See if the member has a pio component */
     if (((struct xf_transfer_ *)xf_members[i])->pio_transfer)
       pio_members[pio++] =
-	((struct xf_transfer_ *)xf_members[i])->pio_transfer;
+        ((struct xf_transfer_ *)xf_members[i])->pio_transfer;
   }
 
   /* Terminate the list */
@@ -266,7 +266,7 @@ xfer_group(XF_transfer *xf_members,
 #ifndef NDEBUG
       printf("xfer_pio_group failed\n");
 #endif
-	  cpiAssert(0);
+          cpiAssert(0);
     }
   }
 

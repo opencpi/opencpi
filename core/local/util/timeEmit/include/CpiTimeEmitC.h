@@ -41,8 +41,8 @@ void CpiEmit( int sig );
 #define CPI_TIME_EMIT_C( name ) \
 {\
   static int sig = -1; \
-  if ( sig == -1 ) {				\
-    sig = CpiTimeARegister( name );	\
+  if ( sig == -1 ) {                                \
+    sig = CpiTimeARegister( name );        \
   } \
   CpiEmit( sig );\
 }

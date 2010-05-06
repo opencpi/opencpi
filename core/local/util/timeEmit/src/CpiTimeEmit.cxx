@@ -109,8 +109,8 @@ init()
 void 
 CPI::Time::Emit::
 pre_init( const char* class_name, 
-	      const char* instance_name, 
-	      QConfig* config )
+              const char* instance_name, 
+              QConfig* config )
   throw ( CPI::Util::EmbeddedException )
 {
   if ( class_name ) {
@@ -164,8 +164,8 @@ Emit( TimeSource& ts, const char* class_name,
 
 CPI::Time::Emit::
 Emit( const char* class_name, 
-	      const char* instance_name, 
-	      QConfig* config )
+              const char* instance_name, 
+              QConfig* config )
   throw ( CPI::Util::EmbeddedException )
     : m_level(1),m_parent(NULL)
 {
@@ -180,9 +180,9 @@ Emit( const char* class_name,
 
 CPI::Time::Emit::
 Emit( Emit* parent, 
-	      const char* class_name, 
-	      const char* instance_name, 
-	      QConfig* config )
+              const char* class_name, 
+              const char* instance_name, 
+              QConfig* config )
   throw ( CPI::Util::EmbeddedException )
   :m_parent(parent)
 {
@@ -223,7 +223,7 @@ stop( bool globally )
   if ( globally ) {
     std::vector<EventQ*>::iterator it;    
     for( it=CPI::Time::Emit::getHeader().eventQ.begin();
-	 it!=CPI::Time::Emit::getHeader().eventQ.end(); it++ ) {
+         it!=CPI::Time::Emit::getHeader().eventQ.end(); it++ ) {
       (*it)->done = true;
     }
   }
@@ -250,7 +250,7 @@ addHeader( Emit* t )
 void 
 CPI::Time::Emit::
 getHeaderInfo( CPI::Time::Emit* t, 
-	       int& instance  ) 
+               int& instance  ) 
 {
   AUTO_MUTEX(CPI::Time::Emit::getGMutex());
   std::vector<HeaderEntry>::iterator it;
@@ -258,13 +258,13 @@ getHeaderInfo( CPI::Time::Emit* t,
   for ( it=getHeader().classDefs.begin(); it != getHeader().classDefs.end(); it++ ) {
     if ( t->m_parent != NULL ) {
       if ( (*it).className == t->m_className ) {
-	instance++;
-      }	  
+        instance++;
+      }          
     }
     else {
       if ( (*it).className == t->m_className  ) {
-	instance++;
-      }	  
+        instance++;
+      }          
     }
   }
 }
@@ -337,8 +337,8 @@ shutdown()
 int 
 CPI::Time::Emit::RegisterEvent::
 registerEvent( const char* event_name, int width,
-	       EventType type,
-	       DataType dtype)
+               EventType type,
+               DataType dtype)
 {
   int e;
   AUTO_MUTEX(CPI::Time::Emit::getGMutex());
@@ -358,8 +358,8 @@ registerEvent( const char* event_name, int width,
 }
 
 CPI::Time::Emit::RegisterEvent::RegisterEvent( const char* event_name, int width,
-						       EventType type,
-						       DataType dtype)
+                                                       EventType type,
+                                                       DataType dtype)
 {
   m_eid = registerEvent( event_name, width, type, dtype);
 }
@@ -405,8 +405,8 @@ CPI::Time::Emit::RegisterEvent::RegisterEvent( CPI::Util::PValue& p )
 
   }
   Emit::getHeader().eventMap.push_back( EventMap(m_eid,p.name,width,
-							 CPI::Time::Emit::Value, dtype
-							 ) );
+                                                         CPI::Time::Emit::Value, dtype
+                                                         ) );
 }
 
 CPI::Time::EmitFormatter::EmitFormatter( DumpFormat format)
@@ -419,7 +419,7 @@ const char* CPI::Time::EmitFormatter::getEventDescription( Emit::EventId id ) {
   AUTO_MUTEX(CPI::Time::Emit::getGMutex());
   std::vector<Emit::EventMap>::iterator it;
   for ( it=m_traceable->getHeader().eventMap.begin(); 
-	it!=m_traceable->getHeader().eventMap.end(); it++) {
+        it!=m_traceable->getHeader().eventMap.end(); it++) {
     if ( (*it).id == id ) {
       return (*it).eventName.c_str();
     }
@@ -428,7 +428,7 @@ const char* CPI::Time::EmitFormatter::getEventDescription( Emit::EventId id ) {
 }
 
 std::string CPI::Time::EmitFormatter::formatEventString ( Emit::EventQEntry& eqe, 
-								  CPI::Time::Emit::Time time_ref ) 
+                                                                  CPI::Time::Emit::Time time_ref ) 
 {
   std::string str;
   const char* ed =  getEventDescription(eqe.eid);
@@ -445,7 +445,7 @@ std::string CPI::Time::EmitFormatter::formatEventString ( Emit::EventQEntry& eqe
 }      
 
 std::string CPI::Time::EmitFormatter::formatEventStringRaw ( Emit::EventQEntry& eqe, 
-								  CPI::Time::Emit::Time time_ref ) 
+                                                                  CPI::Time::Emit::Time time_ref ) 
 {
   std::string str;
   const char* ed =  getEventDescription(eqe.eid);
@@ -467,7 +467,7 @@ static CPI::Time::Emit::EventMap* getEventMap( CPI::Time::Emit::EventQEntry* e )
   AUTO_MUTEX(CPI::Time::Emit::getGMutex());
   std::vector<CPI::Time::Emit::EventMap>::iterator it;
   for ( it=CPI::Time::Emit::getHeader().eventMap.begin();
-	it != CPI::Time::Emit::getHeader().eventMap.end(); it++ ) {
+        it != CPI::Time::Emit::getHeader().eventMap.end(); it++ ) {
     if ( (*it).id == e->eid ) {
       return &(*it);
     }
@@ -478,7 +478,7 @@ static CPI::Time::Emit::EventMap* getEventMap( CPI::Time::Emit::EventQEntry* e )
 static inline CPI::Time::Emit::EventQEntry* getNextEntry( CPI::Time::Emit::EventQEntry * ce, CPI::Time::Emit::EventQ * q )
 {
   CPI::Time::Emit::EventQEntry * ne = reinterpret_cast<CPI::Time::Emit::EventQEntry *>( 
-	       ( (CPI::OS::uint8_t*)((CPI::OS::uint8_t*)ce + sizeof(CPI::Time::Emit::EventQEntry) + ce->size) ));
+               ( (CPI::OS::uint8_t*)((CPI::OS::uint8_t*)ce + sizeof(CPI::Time::Emit::EventQEntry) + ce->size) ));
   return ne;
 }
 
@@ -506,10 +506,10 @@ CPI::Time::Emit::Time getStartTime()
     while( qe && qe->size ) {
 
       if ( time == 0 ) {
-	time = qe->time;
+        time = qe->time;
       }    
       if ( time > qe->time ) {
-	time = qe->time;
+        time = qe->time;
       }
       qe = getNextEntry( qe, (*it) );
     }
@@ -543,17 +543,17 @@ std::ostream& CPI::Time::EmitFormatter::formatDumpToStreamRaw( std::ostream& out
 
       switch ( emap->dtype ) {
       case CPI::Time::Emit::u:
-	out << d->uvalue  << std::endl;
-	break;
+        out << d->uvalue  << std::endl;
+        break;
       case CPI::Time::Emit::i:
-	out << d->ivalue  << std::endl;
-	break;
+        out << d->ivalue  << std::endl;
+        break;
       case CPI::Time::Emit::c:
-	out << d->ivalue  << std::endl;
-	break;
+        out << d->ivalue  << std::endl;
+        break;
       case CPI::Time::Emit::d:
-	out << d->dvalue  << std::endl;
-	break;
+        out << d->dvalue  << std::endl;
+        break;
       }
       qe = getNextEntry( qe, (*it) );
     }
@@ -593,17 +593,17 @@ std::ostream& CPI::Time::EmitFormatter::formatDumpToStreamReadable( std::ostream
 
       switch ( emap->dtype ) {
       case CPI::Time::Emit::u:
-	out << d->uvalue  << std::endl;
-	break;
+        out << d->uvalue  << std::endl;
+        break;
       case CPI::Time::Emit::i:
-	out << d->ivalue  << std::endl;
-	break;
+        out << d->ivalue  << std::endl;
+        break;
       case CPI::Time::Emit::c:
-	out << d->ivalue  << std::endl;
-	break;
+        out << d->ivalue  << std::endl;
+        break;
       case CPI::Time::Emit::d:
-	out << d->dvalue  << std::endl;
-	break;
+        out << d->dvalue  << std::endl;
+        break;
       }
       qe = getNextEntry( qe, (*it) );
     }
@@ -618,7 +618,7 @@ std::ostream& CPI::Time::EmitFormatter::formatDumpToStream( std::ostream& out )
   case CPIReadable:
     return formatDumpToStreamReadable(out);
     break;
-	  
+          
   case CPIRaw:
     return formatDumpToStreamRaw(out);
     break;
@@ -648,10 +648,10 @@ void CPI::Time::EmitFormatter::formatOwnerString( Emit::OwnerId id, std::string&
     str.append( "Class:" );
   }
   if ( CPI::Time::Emit::getHeader().classDefs[id].instanceName != "" ) {
-    str.append(  CPI::Time::Emit::getHeader().classDefs[id].instanceName + ":" );	  
+    str.append(  CPI::Time::Emit::getHeader().classDefs[id].instanceName + ":" );          
   }
   else {
-    str.append(  ":" );	  
+    str.append(  ":" );          
   }
   char buf[10];
   sprintf(buf,"%d::",CPI::Time::Emit::getHeader().classDefs[id].instanceId );
@@ -673,7 +673,7 @@ namespace {
 #define SYMEND   126
 #define SYMLEN (SYMEND-SYMSTART)
 void getVCDVarSyms( CPI::Time::Emit& t,
-			   std::map<CPI::Time::Emit::EventId,std::string,ecmp> & varsyms )
+                           std::map<CPI::Time::Emit::EventId,std::string,ecmp> & varsyms )
 {
   unsigned int n;
   char syms[SYMLEN];
@@ -717,7 +717,7 @@ static bool eventProducedBy( CPI::Time::Emit::EventId event, CPI::Time::Emit::Ow
     CPI::Time::Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
     while( qe && qe->size ) {
       if ( (event == qe->eid ) && (owner == qe->owner ) ) {
-	return true;
+        return true;
       }
       qe = getNextEntry( qe, (*it) );
     }
@@ -730,16 +730,16 @@ struct EventInstance {
   CPI::Time::Emit::EventId     id;
   std::string                       sym;
   EventInstance(CPI::Time::Emit::OwnerId     o,
-		CPI::Time::Emit::EventId     i,
-		std::string                       s):owner(0),id(i),sym(s){}
+                CPI::Time::Emit::EventId     i,
+                std::string                       s):owner(0),id(i),sym(s){}
 
 };
 
 
 
 static void dumpVCDScope( std::ostream& out, CPI::Time::Emit::OwnerId owner,
-			  std::map< CPI::Time::Emit::EventId, std::string, ecmp > & varsyms,
-			  std::vector<EventInstance> & allEis )
+                          std::map< CPI::Time::Emit::EventId, std::string, ecmp > & varsyms,
+                          std::vector<EventInstance> & allEis )
 {
     std::string pname;
     CPI::Time::EmitFormatter::formatOwnerString( owner, pname, false );
@@ -750,18 +750,18 @@ static void dumpVCDScope( std::ostream& out, CPI::Time::Emit::OwnerId owner,
     // Dump the variables for this object
     std::vector<CPI::Time::Emit::EventMap>::iterator it;
     for ( it=CPI::Time::Emit::getHeader().eventMap.begin();
-	  it!=CPI::Time::Emit::getHeader().eventMap.end();  it++ ) {
+          it!=CPI::Time::Emit::getHeader().eventMap.end();  it++ ) {
       if ( eventProducedBy( (*it).id, owner ) ) {
-	std::string tn((*it).eventName);
-	std::replace(tn.begin(),tn.end(),' ','_');
-	out << "$var reg " << (*it).width << " " << varsyms[(*it).id] << he.outputPostFix.c_str() <<
-	  " " <<  tn.c_str() << " $end" << std::endl;
+        std::string tn((*it).eventName);
+        std::replace(tn.begin(),tn.end(),' ','_');
+        out << "$var reg " << (*it).width << " " << varsyms[(*it).id] << he.outputPostFix.c_str() <<
+          " " <<  tn.c_str() << " $end" << std::endl;
 
-	std::cout << "$var reg " << (*it).width << " " << varsyms[(*it).id] << he.outputPostFix.c_str() <<
-	  " " <<  tn.c_str() << " $end" << std::endl;
+        std::cout << "$var reg " << (*it).width << " " << varsyms[(*it).id] << he.outputPostFix.c_str() <<
+          " " <<  tn.c_str() << " $end" << std::endl;
 
-	std::string sym = varsyms[(*it).id] + he.outputPostFix.c_str();
-	allEis.push_back( EventInstance(owner,(*it).id,sym) );
+        std::string sym = varsyms[(*it).id] + he.outputPostFix.c_str();
+        allEis.push_back( EventInstance(owner,(*it).id,sym) );
       }
     }
     
@@ -769,7 +769,7 @@ static void dumpVCDScope( std::ostream& out, CPI::Time::Emit::OwnerId owner,
     CPI::Time::Emit::OwnerId id;
     for ( id=0; id<CPI::Time::Emit::getHeader().classDefs.size(); id++ ) {
       if ( CPI::Time::Emit::getHeader().classDefs[id].parentIndex == owner ) {
-	dumpVCDScope( out, id, varsyms, allEis );
+        dumpVCDScope( out, id, varsyms, allEis );
       }
     }
     out << "$upscope $end" << std::endl;
@@ -783,7 +783,7 @@ getEventType( CPI::Time::Emit::EventQEntry* e )
   CPI::Time::Emit::EventType rtype = CPI::Time::Emit::Transient;
   std::vector<CPI::Time::Emit::EventMap>::iterator it;
   for ( it=CPI::Time::Emit::getHeader().eventMap.begin();
-	it != CPI::Time::Emit::getHeader().eventMap.end(); it++ ) {
+        it != CPI::Time::Emit::getHeader().eventMap.end(); it++ ) {
     if ( (*it).id == e->eid ) {
       rtype = (*it).type;
     }
@@ -826,7 +826,7 @@ std::ostream& CPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& out
 
   // Version
   out << "$version" << std::endl;  
-  out << "	    CPI VCD Software Event Dumper V1.0" << std::endl;
+  out << "            CPI VCD Software Event Dumper V1.0" << std::endl;
   out << "$end" << std::endl;  
   
   // Timescale
@@ -840,7 +840,7 @@ std::ostream& CPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& out
   // For each top level object generate its $var defs and then dump its children
   getVCDVarSyms( *m_traceable, varsyms );
   for ( owner=0, hit=m_traceable->getHeader().classDefs.begin();
-	hit!=m_traceable->getHeader().classDefs.end(); hit++,owner++ ) {
+        hit!=m_traceable->getHeader().classDefs.end(); hit++,owner++ ) {
     if ( (*hit).parentIndex != -1 ) continue;
     dumpVCDScope( out, owner, varsyms, allEis );
   }
@@ -860,7 +860,7 @@ std::ostream& CPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& out
   std::vector<CPI::Time::Emit::EventQ*>::iterator it;
   std::vector<TimeLineData> tldv;
   for ( it=CPI::Time::Emit::getHeader().eventQ.begin();
-	it!=CPI::Time::Emit::getHeader().eventQ.end();  it++ ) {
+        it!=CPI::Time::Emit::getHeader().eventQ.end();  it++ ) {
 
     CPI::Time::Emit::EventQEntry* e = (*it)->full ? (*it)->current : (*it)->start;
     CPI::Time::SValue* d = (CPI::Time::SValue*)(e + 1);
@@ -868,7 +868,7 @@ std::ostream& CPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& out
     
       CPI::Time::Emit::HeaderEntry & he = CPI::Time::Emit::getHeader().classDefs[e->owner];
       if ( start_time == 0 ) {
-	start_time = e->time;
+        start_time = e->time;
       }
 
       TimeLineData tld;
@@ -882,62 +882,62 @@ std::ostream& CPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& out
 
       switch ( getEventType( e )  ) {
       case CPI::Time::Emit::Transient:
-	{
-	  tld.values += "1" + varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
-	  snprintf(tbuf,256,"#%lld\n",(long long)(ctime+1));
-	  tld.values += tbuf;
-	  tld.values += "0" + varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
-	}
-	break;
+        {
+          tld.values += "1" + varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
+          snprintf(tbuf,256,"#%lld\n",(long long)(ctime+1));
+          tld.values += tbuf;
+          tld.values += "0" + varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
+        }
+        break;
       case CPI::Time::Emit::State:
-	{
-	  snprintf(tbuf,256,"%d ",(d->uvalue == 0) ? 0 : 1);
-	  tld.values += tbuf;
-	  tld.values += varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
-	}
-	break;
+        {
+          snprintf(tbuf,256,"%d ",(d->uvalue == 0) ? 0 : 1);
+          tld.values += tbuf;
+          tld.values += varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
+        }
+        break;
       case CPI::Time::Emit::Value:
-	{
-	  tld.values += "b";
+        {
+          tld.values += "b";
 
-	  CPI::Time::Emit::EventMap* emap = getEventMap( e ) ;
+          CPI::Time::Emit::EventMap* emap = getEventMap( e ) ;
 
-	    switch ( emap->dtype ) {
-	    case CPI::Time::Emit::u:
-	    case CPI::Time::Emit::i:
-	    case CPI::Time::Emit::c:
-	      {
-		CPI::OS::uint32_t* ui = reinterpret_cast<CPI::OS::uint32_t*>(&d->uvalue);
-		ui++;
-		for (int n=0; n<2; n++ ) {
-		  for ( CPI::OS::uint32_t i=(1<<31); i>=(CPI::OS::uint32_t)1; ) {
-		    tld.values += ((i & *ui)==i) ? "1" : "0";
-		    i = i>>1;
-		  }
-		  ui--;
-		}
-	      }
-	      break;
-	    case CPI::Time::Emit::d:
-	      {
-		CPI::OS::uint32_t* ui = reinterpret_cast<CPI::OS::uint32_t*>(&d->dvalue);
-		ui++;
-		for (int n=0; n<2; n++ ) {
-		  for ( CPI::OS::uint32_t i=(1<<31); i>=(CPI::OS::uint32_t)1; ) {
-		    tld.values += ((i & *ui)==i) ? "1" : "0";
-		    i = i>>1;
-		  }
-		  ui--;
-		}
-	      }
-	      break;
-	    }
+            switch ( emap->dtype ) {
+            case CPI::Time::Emit::u:
+            case CPI::Time::Emit::i:
+            case CPI::Time::Emit::c:
+              {
+                CPI::OS::uint32_t* ui = reinterpret_cast<CPI::OS::uint32_t*>(&d->uvalue);
+                ui++;
+                for (int n=0; n<2; n++ ) {
+                  for ( CPI::OS::uint32_t i=(1<<31); i>=(CPI::OS::uint32_t)1; ) {
+                    tld.values += ((i & *ui)==i) ? "1" : "0";
+                    i = i>>1;
+                  }
+                  ui--;
+                }
+              }
+              break;
+            case CPI::Time::Emit::d:
+              {
+                CPI::OS::uint32_t* ui = reinterpret_cast<CPI::OS::uint32_t*>(&d->dvalue);
+                ui++;
+                for (int n=0; n<2; n++ ) {
+                  for ( CPI::OS::uint32_t i=(1<<31); i>=(CPI::OS::uint32_t)1; ) {
+                    tld.values += ((i & *ui)==i) ? "1" : "0";
+                    i = i>>1;
+                  }
+                  ui--;
+                }
+              }
+              break;
+            }
 #ifdef GTK_VERSION_REQ_SPACE
-	  tld.values += " ";
+          tld.values += " ";
 #endif
-	  tld.values +=  varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
-	}
-	break;
+          tld.values +=  varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
+        }
+        break;
       }
       tldv.push_back(tld);
       e = getNextEntry( e, (*it) );
@@ -954,9 +954,9 @@ std::ostream& CPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& out
   if ( tldv.size() ) {
     for(n=0; n<tldv.size()-1; n++) {  
       if ( tldv[n].time == tldv[n+1].time ) {
-	tldv[n].values = tldv[n+1].values;
-	tldv.erase(tldv.begin()+n+1);
-	n=0;
+        tldv[n].values = tldv[n+1].values;
+        tldv.erase(tldv.begin()+n+1);
+        n=0;
       }
     }
   }

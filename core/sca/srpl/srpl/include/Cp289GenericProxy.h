@@ -56,13 +56,13 @@ namespace CPI {
       void connectFinal(const Cp289ProviderPort::Octets& finalUserInfo);
     public:
       void connectPort (CORBA::Object_ptr connection, const char * connectionId)
-	throw (CF::Port::InvalidPort,
-	       CF::Port::OccupiedPort,
-	       CORBA::SystemException);
+        throw (CF::Port::InvalidPort,
+               CF::Port::OccupiedPort,
+               CORBA::SystemException);
 
       void disconnectPort (const char * connectionId)
-	throw (CF::Port::InvalidPort,
-	       CORBA::SystemException);
+        throw (CF::Port::InvalidPort,
+               CORBA::SystemException);
     };
 
     class Cp289GenericProxy : virtual public BaseProxy {
@@ -101,23 +101,23 @@ namespace CPI {
        */
 
       Cp289GenericProxy (// needed by base class
-			 CORBA::ORB_ptr orb,
-			 PortableServer::POA_ptr poa,
-			 const std::string & identifier,
-			 // needed by this class
-			 // spd:softpkg/implementation/code/localfile@name
-			 const char *codeLocalFileName,
-			 // spd:softpkg/implementation/code/entrypoint
-			 const char *functionName,
-			 const char *instanceName,
-			 CC::Application &appContext,
-			 const char *namingContextIor,
-			 const char *nameBinding,
-			 // Optional
-			 CPI::Logger::Logger * logger = 0,
-			 bool adoptLogger = true,
-			 bool shutdownOrbOnRelease = false)
-	throw (std::string);
+                         CORBA::ORB_ptr orb,
+                         PortableServer::POA_ptr poa,
+                         const std::string & identifier,
+                         // needed by this class
+                         // spd:softpkg/implementation/code/localfile@name
+                         const char *codeLocalFileName,
+                         // spd:softpkg/implementation/code/entrypoint
+                         const char *functionName,
+                         const char *instanceName,
+                         CC::Application &appContext,
+                         const char *namingContextIor,
+                         const char *nameBinding,
+                         // Optional
+                         CPI::Logger::Logger * logger = 0,
+                         bool adoptLogger = true,
+                         bool shutdownOrbOnRelease = false)
+        throw (std::string);
 
       ~Cp289GenericProxy ()
       throw ();
@@ -126,18 +126,18 @@ namespace CPI {
        */
 
       void releaseObject ()
-	throw (CF::LifeCycle::ReleaseError,
-	       CORBA::SystemException);
+        throw (CF::LifeCycle::ReleaseError,
+               CORBA::SystemException);
 
       /*
        * CF::PortSupplier
        */
 
       CORBA::Object_ptr getPort (const char *)
-	throw (CF::PortSupplier::UnknownPort,
-	       CORBA::SystemException);
+        throw (CF::PortSupplier::UnknownPort,
+               CORBA::SystemException);
       inline CF::ExecutableDevice::ProcessID_Type getPid() {
-	return m_scaPid;
+        return m_scaPid;
       }
     protected:
       /*
@@ -145,27 +145,27 @@ namespace CPI {
        */
 
       void configureWorker (const char * name,
-			    const CORBA::Any & value,
-			    bool last,
-			    bool & needSync)
-	throw (std::string);
+                            const CORBA::Any & value,
+                            bool last,
+                            bool & needSync)
+        throw (std::string);
 
       void queryWorker (const char * name,
-			CORBA::Any & value,
-			bool & haveSync)
-	throw (std::string);
+                        CORBA::Any & value,
+                        bool & haveSync)
+        throw (std::string);
 
 #define CONTROL_OP(x,c,t,s1,s2,s3) virtual void x##Worker();
 CPI_CONTROL_OPS
 #undef CONTROL_OP      
 #if 0
       void controlWorker (WCI_control op,
-			  WCI_options flags = WCI_DEFAULT)
-	throw (std::string);
+                          WCI_options flags = WCI_DEFAULT)
+        throw (std::string);
 #endif
 
       const CPI::Metadata::Property * getProperties (unsigned int & numProperties)
-	throw ();
+        throw ();
 
 #ifdef TEST
       const CPI::SCA::Port * findPort (const char * name, unsigned int & portOrdinal)
@@ -180,32 +180,32 @@ CPI_CONTROL_OPS
        */
 
       void connectPort (const std::string & portName,
-			const std::string & connectionId,
-			CORBA::Object_ptr connection)
-	throw (CF::Port::InvalidPort,
-	       CF::Port::OccupiedPort,
-	       CORBA::SystemException);
+                        const std::string & connectionId,
+                        CORBA::Object_ptr connection)
+        throw (CF::Port::InvalidPort,
+               CF::Port::OccupiedPort,
+               CORBA::SystemException);
 
       void disconnectPort (const std::string & portName,
-			   const std::string & connectionId)
-	throw (CF::Port::InvalidPort,
-	       CORBA::SystemException);
+                           const std::string & connectionId)
+        throw (CF::Port::InvalidPort,
+               CORBA::SystemException);
 
     private:
       void disconnectPortLocked (const std::string & portName,
-				 const std::string & connectionId)
-	throw (std::string);
+                                 const std::string & connectionId)
+        throw (std::string);
 
       static unsigned int computeMaximumBufferSize (unsigned int memorySize,
-						    unsigned int bufferCount)
-	throw ();
+                                                    unsigned int bufferCount)
+        throw ();
 
     private:
       struct ConnectionData {
-	std::string localPortName;
-	CF::Port_var remotePort;
-	CC::PortData remotePortData;
-	CC::ConnectionCookie * connectionCookie;
+        std::string localPortName;
+        CF::Port_var remotePort;
+        CC::PortData remotePortData;
+        CC::ConnectionCookie * connectionCookie;
       };
 
 

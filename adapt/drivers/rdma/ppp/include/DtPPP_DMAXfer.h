@@ -112,16 +112,16 @@ namespace DataTransfer {
     PPPDMAXferRequest ();
 
     int addTransfer(
-		    Creator cr, 
-		    Flags flags, 
-		    CPI::OS::uint32_t srcoffs, 
-		    Shape *psrcshape, 
-		    CPI::OS::uint32_t dstoffs, 
-		    Shape *pdstshape, 
-		    CPI::OS::uint32_t length,
-		    PPPEndPoint* sEp,
-		    PPPEndPoint* dEp
-		    );
+                    Creator cr, 
+                    Flags flags, 
+                    CPI::OS::uint32_t srcoffs, 
+                    Shape *psrcshape, 
+                    CPI::OS::uint32_t dstoffs, 
+                    Shape *pdstshape, 
+                    CPI::OS::uint32_t length,
+                    PPPEndPoint* sEp,
+                    PPPEndPoint* dEp
+                    );
 
     // Queue data transfer request
     void start (Shape* s_shape=NULL, Shape* t_shape=NULL);
@@ -137,12 +137,12 @@ namespace DataTransfer {
 
     // Data members accessible from this/derived class
   protected:
-	
+        
     void dump_transfer();
 
-    Creator	 	  m_creator;		// What  method created this instance
+    Creator                   m_creator;                // What  method created this instance
     int                   m_index;        // index into the vector
-    RoseIovec  		  m_iovec;		    
+    RoseIovec                    m_iovec;                    
     RoseUint32Type        m_iovec_flags;
     RoseIovecHandle       m_iovec_handle;
     bool                  m_init;
@@ -169,11 +169,11 @@ namespace DataTransfer {
 
     // Create a transfer request
     XferRequest* copy (CPI::OS::uint32_t srcoffs, CPI::OS::uint32_t dstoffs, 
-		       CPI::OS::uint32_t nbytes, XferRequest::Flags flags, XferRequest* );
+                       CPI::OS::uint32_t nbytes, XferRequest::Flags flags, XferRequest* );
 
     // Create a 2-dimensional transfer request
     XferRequest* copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc, 
-			 CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest* );
+                         CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest* );
 
     // Group data transfer requests
     XferRequest* group (XferRequest* preqs[]);

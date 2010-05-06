@@ -39,46 +39,46 @@ namespace DataTransfer {
   {
   public:
     // Create a local resource pool
-    //	Arguments:
-    //		size	- size of resource pool in bytes.
-    //	Returns:
-    //		Returns 0 if transfer has completed, non-zero otherwise
-    //	Throws:
-    //		DtException for all other exception conditions
+    //        Arguments:
+    //                size        - size of resource pool in bytes.
+    //        Returns:
+    //                Returns 0 if transfer has completed, non-zero otherwise
+    //        Throws:
+    //                DtException for all other exception conditions
     virtual CPI::OS::int32_t createLocal (CPI::OS::uint32_t size) = 0;
 
     // Allocate from pool
-    //	Arguments:
-    //		nbytes		- size of block in bytes.
-    //		alignment	- desired alignment of block
-    //		addr_p		- receives address of allocated block
-    //	Returns:
-    //		Returns 0 if transfer has completed, non-zero otherwise
-    //	Throws:
-    //		DtException for all other exception conditions
+    //        Arguments:
+    //                nbytes                - size of block in bytes.
+    //                alignment        - desired alignment of block
+    //                addr_p                - receives address of allocated block
+    //        Returns:
+    //                Returns 0 if transfer has completed, non-zero otherwise
+    //        Throws:
+    //                DtException for all other exception conditions
     virtual CPI::OS::int32_t alloc (
-				    CPI::OS::uint32_t nbytes, 
-				    CPI::OS::uint32_t alignment, 
-				    CPI::OS::uint64_t* addr_p) = 0;
+                                    CPI::OS::uint32_t nbytes, 
+                                    CPI::OS::uint32_t alignment, 
+                                    CPI::OS::uint64_t* addr_p) = 0;
 
     // Free back to pool
-    //	Arguments:
-    //		addr		- address of block to free
-    //		nbytes		- size of block in bytes.
-    //	Returns:
-    //		Returns 0 if transfer has completed, non-zero otherwise
-    //	Throws:
-    //		DtException for all other exception conditions
+    //        Arguments:
+    //                addr                - address of block to free
+    //                nbytes                - size of block in bytes.
+    //        Returns:
+    //                Returns 0 if transfer has completed, non-zero otherwise
+    //        Throws:
+    //                DtException for all other exception conditions
     virtual CPI::OS::int32_t free (
-				   CPI::OS::uint32_t addr, 
-				   CPI::OS::uint32_t nbytes) = 0;
+                                   CPI::OS::uint32_t addr, 
+                                   CPI::OS::uint32_t nbytes) = 0;
 
     // Destroy resource pool
-    //	Arguments:
-    //	Returns:
-    //		Returns 0 if transfer has completed, non-zero otherwise
-    //	Throws:
-    //		DtException for all other exception conditions
+    //        Arguments:
+    //        Returns:
+    //                Returns 0 if transfer has completed, non-zero otherwise
+    //        Throws:
+    //                DtException for all other exception conditions
     virtual CPI::OS::int32_t destroy () = 0;
 
     // Destructor

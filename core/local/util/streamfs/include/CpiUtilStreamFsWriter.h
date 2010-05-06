@@ -55,267 +55,267 @@ namespace CPI {
 
       class StreamFsWriter : public CPI::Util::Vfs::Vfs {
       public:
-	/**
-	 * Constructor.
-	 *
-	 * Must call open().
-	 */
+        /**
+         * Constructor.
+         *
+         * Must call open().
+         */
 
-	StreamFsWriter ()
-	  throw ();
+        StreamFsWriter ()
+          throw ();
 
-	/**
-	 * Constructor.
-	 *
-	 * Calls #openFs (\a stream).
-	 *
-	 * \param[in] stream  The stream to write files to.
-	 *
-	 * \pre \a stream shall be open for writing in binary mode.
-	 * \post \a stream shall not be manipulated directly throughout
-	 * the lifetime of this object.
-	 */
+        /**
+         * Constructor.
+         *
+         * Calls #openFs (\a stream).
+         *
+         * \param[in] stream  The stream to write files to.
+         *
+         * \pre \a stream shall be open for writing in binary mode.
+         * \post \a stream shall not be manipulated directly throughout
+         * the lifetime of this object.
+         */
 
-	StreamFsWriter (std::ostream * stream)
-	  throw (std::string);
+        StreamFsWriter (std::ostream * stream)
+          throw (std::string);
 
-	/**
-	 * Constructor.
-	 *
-	 * Calls #openFs (\a fs, \a name).
-	 *
-	 * \param[in] fs    A file system instance that will contain the
-	 *                  file.
-	 * \param[in] name  The name of the file in the file system to
-	 *                  write to.
-	 *
-	 * \throw std::string If the file can not be opened for writing.
-	 */
+        /**
+         * Constructor.
+         *
+         * Calls #openFs (\a fs, \a name).
+         *
+         * \param[in] fs    A file system instance that will contain the
+         *                  file.
+         * \param[in] name  The name of the file in the file system to
+         *                  write to.
+         *
+         * \throw std::string If the file can not be opened for writing.
+         */
 
-	StreamFsWriter (CPI::Util::Vfs::Vfs * fs, const std::string & name)
-	  throw (std::string);
+        StreamFsWriter (CPI::Util::Vfs::Vfs * fs, const std::string & name)
+          throw (std::string);
 
-	/**
-	 * Destructor.
-	 *
-	 * Calls closeFs(), ignoring any errors.
-	 */
+        /**
+         * Destructor.
+         *
+         * Calls closeFs(), ignoring any errors.
+         */
 
-	~StreamFsWriter ()
-	  throw ();
+        ~StreamFsWriter ()
+          throw ();
 
-	/**
-	 * \name Opening and closing stream file systems.
-	 */
+        /**
+         * \name Opening and closing stream file systems.
+         */
 
-	//@{
+        //@{
 
-	/**
-	 * Sets the stream to write the file system contents to.
-	 *
-	 * \param[in] stream  The stream to write files to.
-	 *
-	 * \pre \a stream shall be open for writing in binary mode.
-	 * \post \a stream shall not be manipulated outside of this object
-	 * throughout the lifetime of this StreamFsWriter instance.
-	 */
+        /**
+         * Sets the stream to write the file system contents to.
+         *
+         * \param[in] stream  The stream to write files to.
+         *
+         * \pre \a stream shall be open for writing in binary mode.
+         * \post \a stream shall not be manipulated outside of this object
+         * throughout the lifetime of this StreamFsWriter instance.
+         */
 
-	void openFs (std::ostream * stream)
-	  throw (std::string);
+        void openFs (std::ostream * stream)
+          throw (std::string);
 
-	/**
-	 * Opens a file to write the file system contents to.
-	 *
-	 * \param[in] fs    A file system instance that will contain the
-	 *                  file.
-	 * \param[in] name  The name of the file in the file system to
-	 *                  write to.
-	 *
-	 * \throw std::string If the file can not be opened for writing.
-	 */
+        /**
+         * Opens a file to write the file system contents to.
+         *
+         * \param[in] fs    A file system instance that will contain the
+         *                  file.
+         * \param[in] name  The name of the file in the file system to
+         *                  write to.
+         *
+         * \throw std::string If the file can not be opened for writing.
+         */
 
-	void openFs (CPI::Util::Vfs::Vfs * fs, const std::string & name)
-	  throw (std::string);
+        void openFs (CPI::Util::Vfs::Vfs * fs, const std::string & name)
+          throw (std::string);
 
-	/**
-	 * Closes the file system.
-	 *
-	 * \throw std::string Write error.
-	 * \throw std::string Propagated from CPI::Util::Vfs::Vfs::close().
-	 *
-	 * \pre No files are open.
-	 * \note This is required to write the table of contents.
-	 */
+        /**
+         * Closes the file system.
+         *
+         * \throw std::string Write error.
+         * \throw std::string Propagated from CPI::Util::Vfs::Vfs::close().
+         *
+         * \pre No files are open.
+         * \note This is required to write the table of contents.
+         */
 
-	void closeFs ()
-	  throw (std::string);
+        void closeFs ()
+          throw (std::string);
 
-	//@}
+        //@}
 
-	/**
-	 * \name Implementation of the CPI::Util::Vfs::Vfs interface.
-	 */
+        /**
+         * \name Implementation of the CPI::Util::Vfs::Vfs interface.
+         */
 
-	//@{
+        //@{
 
-	/*
-	 * File Name URI Mapping
-	 */
+        /*
+         * File Name URI Mapping
+         */
 
-	std::string baseURI () const
-	  throw ();
+        std::string baseURI () const
+          throw ();
 
-	std::string nameToURI (const std::string &) const
-	  throw (std::string);
+        std::string nameToURI (const std::string &) const
+          throw (std::string);
 
-	std::string URIToName (const std::string &) const
-	  throw (std::string);
+        std::string URIToName (const std::string &) const
+          throw (std::string);
 
-	/*
-	 * Directory Management
-	 */
+        /*
+         * Directory Management
+         */
 
-	std::string cwd () const
-	  throw (std::string);
+        std::string cwd () const
+          throw (std::string);
 
-	void cd (const std::string &)
-	  throw (std::string);
+        void cd (const std::string &)
+          throw (std::string);
 
-	void mkdir (const std::string &)
-	  throw (std::string);
+        void mkdir (const std::string &)
+          throw (std::string);
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	void rmdir (const std::string &)
-	  throw (std::string);
+        void rmdir (const std::string &)
+          throw (std::string);
 
-	/*
-	 * Directory Listing
-	 */
-	
-	/**
-	 * Not supported by this file system.
-	 */
+        /*
+         * Directory Listing
+         */
+        
+        /**
+         * Not supported by this file system.
+         */
 
-	CPI::Util::Vfs::Iterator * list (const std::string & dir,
-					 const std::string & pattern = "*")
-	  throw (std::string);
+        CPI::Util::Vfs::Iterator * list (const std::string & dir,
+                                         const std::string & pattern = "*")
+          throw (std::string);
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	void closeIterator (CPI::Util::Vfs::Iterator *)
-	  throw (std::string);
+        void closeIterator (CPI::Util::Vfs::Iterator *)
+          throw (std::string);
 
-	/*
-	 * File Information
-	 */
+        /*
+         * File Information
+         */
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	bool exists (const std::string &, bool * = 0)
-	  throw (std::string);
+        bool exists (const std::string &, bool * = 0)
+          throw (std::string);
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	unsigned long long size (const std::string &)
-	  throw (std::string);
+        unsigned long long size (const std::string &)
+          throw (std::string);
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	std::time_t lastModified (const std::string &)
-	  throw (std::string);
+        std::time_t lastModified (const std::string &)
+          throw (std::string);
 
-	/*
-	 * File I/O
-	 */
+        /*
+         * File I/O
+         */
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
-	  throw (std::string);
+        std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
+          throw (std::string);
 
-	/**
-	 * Not supported by this file system.
-	 */
+        /**
+         * Not supported by this file system.
+         */
 
-	std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
-	  throw (std::string);
+        std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
+          throw (std::string);
 
-	std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
-	  throw (std::string);
+        std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
+          throw (std::string);
 
-	void close (std::ios *)
-	  throw (std::string);
+        void close (std::ios *)
+          throw (std::string);
 
-	/*
-	 * File System Operations. Not implemented.
-	 */
+        /*
+         * File System Operations. Not implemented.
+         */
 
-	/**
-	 * Not implemented by this file system.
-	 */
+        /**
+         * Not implemented by this file system.
+         */
 
-	void remove (const std::string &)
-	  throw (std::string);
+        void remove (const std::string &)
+          throw (std::string);
 
-	//@}
+        //@}
 
       protected:
-	/** \cond */
+        /** \cond */
 
-	void dumpTOC ()
-	  throw (std::string);
+        void dumpTOC ()
+          throw (std::string);
 
-	std::string absoluteNameLocked (const std::string &) const
-	  throw (std::string);
+        std::string absoluteNameLocked (const std::string &) const
+          throw (std::string);
 
       public:
-	struct Node {
-	  unsigned long long pos;
-	  unsigned long long size;
-	  std::time_t lastModified;
-	};
+        struct Node {
+          unsigned long long pos;
+          unsigned long long size;
+          std::time_t lastModified;
+        };
 
-	typedef std::map<std::string, Node> TOC;
+        typedef std::map<std::string, Node> TOC;
 
       protected:
-	Vfs * m_fs;
-	std::string m_name;
-	std::ostream * m_stream;
-	unsigned long long m_pos;
+        Vfs * m_fs;
+        std::string m_name;
+        std::ostream * m_stream;
+        unsigned long long m_pos;
 
-	TOC m_toc;
-	std::string m_cwd;
-	std::string m_baseURI;
+        TOC m_toc;
+        std::string m_cwd;
+        std::string m_baseURI;
 
-	unsigned long m_openFiles;
-	mutable CPI::OS::Mutex m_mutex;
-	/** \endcond */
+        unsigned long m_openFiles;
+        mutable CPI::OS::Mutex m_mutex;
+        /** \endcond */
 
       private:
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	StreamFsWriter (const StreamFsWriter &);
+        StreamFsWriter (const StreamFsWriter &);
 
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	StreamFsWriter & operator= (const StreamFsWriter &);
+        StreamFsWriter & operator= (const StreamFsWriter &);
       };
 
     }

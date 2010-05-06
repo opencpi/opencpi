@@ -44,25 +44,25 @@ namespace CPI {
      **********************************/
     class MessageCircuit
     {
-	
+        
     public:
-		  
-		  
+                  
+                  
       /**********************************
        *  Constructors
        **********************************/
       MessageCircuit(
-		     CPI::DataTransport::Transport* transport,
-		     CPI::DataTransport::Circuit* send,	// In - send circuit
-		     CPI::DataTransport::Circuit* rcv	// In - recieve circuit
-		     );
+                     CPI::DataTransport::Transport* transport,
+                     CPI::DataTransport::Circuit* send,        // In - send circuit
+                     CPI::DataTransport::Circuit* rcv        // In - recieve circuit
+                     );
 
 
       /**********************************
        *  Destructor
        **********************************/
       ~MessageCircuit();
-	
+        
       /**********************************
        *  Send a message
        **********************************/
@@ -77,7 +77,7 @@ namespace CPI {
        **********************************/
       bool messageAvailable();
 
-	
+        
       /**********************************
        *  Get a message
        **********************************/
@@ -100,11 +100,11 @@ namespace CPI {
       CPI::DataTransport::Port* m_rcv_port;
       CPI::DataTransport::Port* m_send_port;
       CPI::DataTransport::Buffer* m_full_buffer;
-		  
-		  
+                  
+                  
     };
-	  
-	  
+          
+          
     
     /**********************************
      ****
@@ -118,7 +118,7 @@ namespace CPI {
     inline CPI::DataTransport::Circuit* MessageCircuit::getSendCircuit(){return m_send;}
     inline CPI::DataTransport::Circuit* MessageCircuit::getRcvCircuit(){return m_rcv;}
  
-	  
+          
   }
   
 }

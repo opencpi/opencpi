@@ -49,7 +49,7 @@ namespace CPI {
 
       CORBA::SystemException *
       cloneSystemException (const CORBA::SystemException & ex)
-	throw ();
+        throw ();
 
     }
   }

@@ -1,6 +1,6 @@
 /** \file Event.h
- **	\date  2005-12-07
- **	\author grymse@alhem.net
+ **        \date  2005-12-07
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
@@ -47,27 +47,27 @@ namespace SOCKETS_NAMESPACE {
 class IEventOwner;
 
 /** Store information about a timer event.
-	\ingroup timer */
+        \ingroup timer */
 class Event
 {
 public:
-	Event(IEventOwner *,long sec,long usec,unsigned long data = 0);
-	~Event();
+        Event(IEventOwner *,long sec,long usec,unsigned long data = 0);
+        ~Event();
 
-	bool operator<(Event&);
-	long GetID() const;
-	const EventTime& GetTime() const;
-	IEventOwner *GetFrom() const;
-	unsigned long Data() const;
+        bool operator<(Event&);
+        long GetID() const;
+        const EventTime& GetTime() const;
+        IEventOwner *GetFrom() const;
+        unsigned long Data() const;
 
 private:
-	Event(const Event& ) {} // copy constructor
-	Event& operator=(const Event& ) { return *this; } // assignment operator
-	IEventOwner *m_from;
-	unsigned long m_data;
-	EventTime m_time;
-	static long m_unique_id;
-	long m_id;
+        Event(const Event& ) {} // copy constructor
+        Event& operator=(const Event& ) { return *this; } // assignment operator
+        IEventOwner *m_from;
+        unsigned long m_data;
+        EventTime m_time;
+        static long m_unique_id;
+        long m_id;
 };
 
 

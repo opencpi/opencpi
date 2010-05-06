@@ -133,9 +133,9 @@ namespace EventTests {
       CPI::OS::ThreadManager tm (test4Thread, &t4d);
 
       for (int i=0; i<42; i++) {
-	t4d.e1.wait ();
-	test (t4d.i == i);
-	t4d.e2.set ();
+        t4d.e1.wait ();
+        test (t4d.i == i);
+        t4d.e2.set ();
       }
 
       tm.join ();
@@ -208,8 +208,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

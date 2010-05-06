@@ -43,7 +43,7 @@ DataTransfer::EventManager::EventManager( int lr, int hr )
   :m_spin(false)
 {
   if ( ! m_eventHandlerFactory ) {
-	  throw CPI::Util::EmbeddedException( EM_NOT_SUPPORTED_FOR_EP, "Use Polling mode ONLY for selected endpoint");
+          throw CPI::Util::EmbeddedException( EM_NOT_SUPPORTED_FOR_EP, "Use Polling mode ONLY for selected endpoint");
   }
   setEventRange(lr,hr);
   m_eventHandler = m_eventHandlerFactory->createEventHandler();
@@ -62,7 +62,7 @@ DataTransfer::EventManager::~EventManager()
 
 // This is the CPI specialized port class definition
 void DataTransfer::EventManager::registerEventHandlerFactory( 
-							DataTransfer::EventHandlerFactory* factory )
+                                                        DataTransfer::EventHandlerFactory* factory )
 {
   m_eventHandlerFactory = factory;
 };
@@ -135,7 +135,7 @@ bool DataTransfer::EventManager::getNextEvent( int& id, CPI::OS::uint64_t &value
   return false;
 }
 
-	
+        
 bool
 DataTransfer::EventManager::oneOfOurs(int id)
 {
@@ -168,7 +168,7 @@ DataTransfer::EventManager::waitForEvent( int timeout_us, int& id, CPI::OS::uint
 
   //  CPI::Util::AutoMutex guard ( m_mutex, true ); 
 
-	
+        
   // NOTE:  This implementation can only handle a single event handler. 
   // Multi-threading is needed for more than 1
 #ifdef USE_CACHE
@@ -182,7 +182,7 @@ DataTransfer::EventManager::waitForEvent( int timeout_us, int& id, CPI::OS::uint
       return EventSuccess;
     }
   }
-	
+        
   while( m_eventHandler->get_pending_event(id,value) == DataTransfer::EventSuccess ) {
     if ( one_of_ours( id ) ) {
       printf("Returning a PENDING event(%d)\n",id);
@@ -196,27 +196,27 @@ DataTransfer::EventManager::waitForEvent( int timeout_us, int& id, CPI::OS::uint
 
   if ( m_events.size() == 0 ) {
 #ifndef NDEBUG
-   	printf("Waiting for an event !!!\n");
+           printf("Waiting for an event !!!\n");
 #endif
     if( m_eventHandler->waitForEvent( timeout_us,id,value) == EventSuccess ) {
       if ( ! oneOfOurs( id ) ) {
-				
-#ifdef USE_CACHE				
-	printf("Caching an Event(%d) !!\n", id );
-	m_events.push_back( Events(id,value) );
+                                
+#ifdef USE_CACHE                                
+        printf("Caching an Event(%d) !!\n", id );
+        m_events.push_back( Events(id,value) );
 #endif
-				
-	return EventContinue;
+                                
+        return EventContinue;
       }
     }
   }
-	
+        
 #ifndef NDEBUG
   printf("Returning one of our events\n");
 #endif
   return EventSuccess;
-	
+        
 };
 
-	
+        
 

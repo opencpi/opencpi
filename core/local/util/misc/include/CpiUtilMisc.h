@@ -73,9 +73,9 @@ namespace CPI {
        */
 
       std::string unsignedToString (unsigned int value,
-				    unsigned int base = 10,
-				    unsigned int mindigits = 0,
-				    char pad = '0');
+                                    unsigned int base = 10,
+                                    unsigned int mindigits = 0,
+                                    char pad = '0');
 
       /**
        * \brief Convert an unsigned long long integer to a string.
@@ -94,9 +94,9 @@ namespace CPI {
        */
 
       std::string unsignedToString (unsigned long long value,
-				    unsigned int base = 10,
-				    unsigned int mindigits = 0,
-				    char pad = '0');
+                                    unsigned int base = 10,
+                                    unsigned int mindigits = 0,
+                                    char pad = '0');
 
       /**
        * \brief Convert a floating-point value to a string.
@@ -133,7 +133,7 @@ namespace CPI {
        */
 
       unsigned int stringToUnsigned (const std::string & value,
-				     unsigned int base = 10);
+                                     unsigned int base = 10);
 
       /**
        * \brief Convert a string to an unsigned integer.
@@ -148,7 +148,7 @@ namespace CPI {
        */
 
       unsigned long long stringToULongLong (const std::string & value,
-					    unsigned int base = 10);
+                                            unsigned int base = 10);
 
       /**
        * \brief Convert an unsigned long long position to a <em>std::streamsize</em> value.
@@ -172,7 +172,7 @@ namespace CPI {
        */
 
       std::streamsize unsignedToStreamsize (unsigned long long pos,
-					    bool minusone = true);
+                                            bool minusone = true);
 
       /**
        * \brief Read a line from an input stream to the next LF.
@@ -207,7 +207,7 @@ namespace CPI {
        */
 
       int caseInsensitiveStringCompare (const std::string & s1,
-					const std::string & s2);
+                                        const std::string & s2);
 
       /**
        * \brief Predicate to compare two strings, ignoring case.
@@ -226,7 +226,7 @@ namespace CPI {
       class CaseInsensitiveStringLess : public std::binary_function<std::string, std::string, bool>
       {
       public:
-	bool operator() (const std::string & s1, const std::string & s2) const;
+        bool operator() (const std::string & s1, const std::string & s2) const;
       };
 
       /**

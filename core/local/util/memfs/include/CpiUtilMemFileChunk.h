@@ -31,17 +31,17 @@ namespace CPI {
        */
 
       struct MemFileChunk {
-	/**
-	 * Pointer to the first octet of the chunk.
-	 */
+        /**
+         * Pointer to the first octet of the chunk.
+         */
 
-	const char * ptr;
+        const char * ptr;
 
-	/**
-	 * The number of octets in this chunk.
-	 */
+        /**
+         * The number of octets in this chunk.
+         */
 
-	unsigned long long size;
+        unsigned long long size;
       };
 
     }

@@ -120,10 +120,10 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   this_->ports[UTGProducerWorker_Data_Out_Port0].output.length = len;
   this_->ports[UTGProducerWorker_Data_Out_Port0].output.u.operation = props->buffersProcessed%256;
   this_->container->send( &this_->ports[UTGProducerWorker_Data_Out_Port0], 
-			  &this_->ports[UTGProducerWorker_Data_Out_Port0].current, 0x54, len );
+                          &this_->ports[UTGProducerWorker_Data_Out_Port0].current, 0x54, len );
 
   CPI_TIME_EMIT_C( "Producer Start End" );
-	
+        
   return RCC_OK;
 
 }
@@ -137,9 +137,9 @@ static RCCRunCondition UTGProducerWorkerRunConditions[] = { UTGProducerPortRunCo
 #define NUM_OUTPUTS 3
 #define OPTIONAL_CONNECTIONS_MASK 0xe
 RCCDispatch UTGProducerWorkerDispatchTable = { RCC_VERSION, 0, NUM_OUTPUTS, 
-					       PROD_PROPERTY_SIZE, 0 , 0,
-					       UTGProducerInitialize, NULL, NULL, release, NULL, NULL, NULL, UTGProducerWorker_run,
-					       UTGProducerWorkerRunConditions, NULL, OPTIONAL_CONNECTIONS_MASK };
+                                               PROD_PROPERTY_SIZE, 0 , 0,
+                                               UTGProducerInitialize, NULL, NULL, release, NULL, NULL, NULL, UTGProducerWorker_run,
+                                               UTGProducerWorkerRunConditions, NULL, OPTIONAL_CONNECTIONS_MASK };
 
 
 
@@ -323,7 +323,7 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   if ( *b != props->buffersProcessed ) {
 #ifndef NDEBUG
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
-	   *b, props->buffersProcessed );
+           *b, props->buffersProcessed );
 #endif     
     props->droppedBuffers++;
     /* resync */
@@ -334,7 +334,7 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   for (n=4; n<len+4; n++) {
     if ( (in_buffer[n] != (char)(n+props->buffersProcessed)%23) && (ncount++ < 100000) ) {
       printf("UTGConsumer(b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
-	     props->buffersProcessed,n, (char)(n+props->buffersProcessed)%23, in_buffer[n]);
+             props->buffersProcessed,n, (char)(n+props->buffersProcessed)%23, in_buffer[n]);
       passed = 0;
     }
   }
@@ -360,9 +360,9 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
     get_timestamp( &cTime );
     usecs = elapsed_usecs ( &mem->startTime, &cTime );
     printf ( "xfer n_bytes %lld %16.4f usecs/transfer %16.4f MB/s\n",
-	     (unsigned long long)(mem->b_count * len),
-	     ( usecs / ( double ) mem->b_count ),
-	     ( ( double ) mem->b_count * ( double )len ) / usecs );
+             (unsigned long long)(mem->b_count * len),
+             ( usecs / ( double ) mem->b_count ),
+             ( ( double ) mem->b_count * ( double )len ) / usecs );
   }
 #endif
 
@@ -381,17 +381,17 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
 static uint32_t memSizes[] = {sizeof(UTGConsumerWorkerStaticMemory), 1024*10, 0 };
 static int32_t CPortRunConditions[] = { (1<<UTGConsumerWorker_Data_In_Port0)  , 0 }; 
 static RCCRunCondition CWorkerRunConditions[] = { CPortRunConditions, 0 , 0 };
-#define CoptionalPorts (						\
-			(1<<UTGConsumerWorker_Data_In_Port1) | (1<<UTGConsumerWorker_Data_In_Port2) \
-			| (1<<UTGConsumerWorker_Data_In_Port3) )
+#define CoptionalPorts (                                                \
+                        (1<<UTGConsumerWorker_Data_In_Port1) | (1<<UTGConsumerWorker_Data_In_Port2) \
+                        | (1<<UTGConsumerWorker_Data_In_Port3) )
 static RCCPortInfo UTGConsumerPortInfo[] = { {0, 1024*2, 3}, {RCC_NO_ORDINAL, 0, 0} };
 #define COPTIONAL_CONNECTIONS_MASK 0xe
 RCCDispatch UTGConsumerWorkerDispatchTable = { RCC_VERSION, 4, 0, 
-					       CON_PROPERTY_SIZE, memSizes, 0, 
-					       UTGConsumerInitialize, UTGConsumerStart, UTGConsumerStop, UTGConsumerRelease, UTGConsumerTest, 
-					       UTGConsumerAfterConfigure, UTGConsumerBeforeQuery, 
-					       UTGConsumerWorker_run,
-					       /*CWorkerRunConditions*/NULL, NULL, COPTIONAL_CONNECTIONS_MASK };
+                                               CON_PROPERTY_SIZE, memSizes, 0, 
+                                               UTGConsumerInitialize, UTGConsumerStart, UTGConsumerStop, UTGConsumerRelease, UTGConsumerTest, 
+                                               UTGConsumerAfterConfigure, UTGConsumerBeforeQuery, 
+                                               UTGConsumerWorker_run,
+                                               /*CWorkerRunConditions*/NULL, NULL, COPTIONAL_CONNECTIONS_MASK };
 
 
 
@@ -462,7 +462,7 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   case 0:
     {
       this_->container->send( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 
-			      &this_->ports[UTGLoopbackWorker_Data_In_Port0].current, 0x54, len );
+                              &this_->ports[UTGLoopbackWorker_Data_In_Port0].current, 0x54, len );
     }
     break;
 
@@ -471,16 +471,16 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
     {
       // First we need to get an output buffer
       if ( ! out_buffer ) {
-	this_->container->request( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 0 );
+        this_->container->request( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 0 );
       }
       out_buffer = (char*)this_->ports[UTGLoopbackWorker_Data_Out_Port0].current.data;
       if ( ! out_buffer ) {
-	runc--;
-	return RCC_OK;
+        runc--;
+        return RCC_OK;
       }
       memcpy(out_buffer,in_buffer,len);
       this_->container->send( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 
-			      &this_->ports[UTGLoopbackWorker_Data_Out_Port0].current, 0x54, len );
+                              &this_->ports[UTGLoopbackWorker_Data_Out_Port0].current, 0x54, len );
       this_->container->release( &this_->ports[UTGLoopbackWorker_Data_In_Port0].current );
     }
     break;
@@ -491,13 +491,13 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
     {
       // First we need to get an output buffer
       if ( ! out_buffer ) {
-	this_->container->request( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 0 );
+        this_->container->request( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 0 );
       }
       out_buffer = (char*)this_->ports[UTGLoopbackWorker_Data_Out_Port0].current.data;
       this_->ports[UTGLoopbackWorker_Data_Out_Port0].output.length = len;
       if ( ! out_buffer ) {
-	runc--;
-	return RCC_OK;
+        runc--;
+        return RCC_OK;
       }
       memcpy(out_buffer,in_buffer,len);
       return RCC_ADVANCE;
@@ -522,13 +522,13 @@ static int32_t LBPortRunConditions[] = { (1<<UTGLoopbackWorker_Data_In_Port0) /*
 static RCCRunCondition LBWorkerRunConditions[] = { LBPortRunConditions, 0 , 0 };
 static RCCPortInfo portInfo[] = { {0, 1024*3, 1}, {RCC_NO_ORDINAL, 0, 0} };
 RCCDispatch UTGLoopbackWorkerDispatchTable = { RCC_VERSION, 2, 3, 
-					       LB_PROPERTY_SIZE, LBmemSizes, 0,
-					       LBInitialize, NULL, NULL, release, NULL, LBAfterConfigure, LBBeforeQuery, 
-					       UTGLoopbackWorker_run,
-					       LBWorkerRunConditions, NULL, 
-					       (1<<UTGLoopbackWorker_Data_In_Port1)  |
-					       (1<<UTGLoopbackWorker_Data_Out_Port1) |
-					       (1<<UTGLoopbackWorker_Data_Out_Port2) };
+                                               LB_PROPERTY_SIZE, LBmemSizes, 0,
+                                               LBInitialize, NULL, NULL, release, NULL, LBAfterConfigure, LBBeforeQuery, 
+                                               UTGLoopbackWorker_run,
+                                               LBWorkerRunConditions, NULL, 
+                                               (1<<UTGLoopbackWorker_Data_In_Port1)  |
+                                               (1<<UTGLoopbackWorker_Data_Out_Port1) |
+                                               (1<<UTGLoopbackWorker_Data_Out_Port2) };
 
 
 DllDispatchEntry  GenericLoopbackWorkerDispatchTables[] = {

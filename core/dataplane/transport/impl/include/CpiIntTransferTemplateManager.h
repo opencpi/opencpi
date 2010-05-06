@@ -48,7 +48,7 @@ namespace DataTransport {
        * Constructors
        *********************************/
       TransferTemplateManager()
-	:m_templates(0){}
+        :m_templates(0){}
 
       /**********************************
        * Destructor

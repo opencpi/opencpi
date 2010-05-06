@@ -50,36 +50,36 @@ namespace CPI {
       case ConsumerFlowControlDescT:
       case ProducerDescT:
       default:
-	{
-	  const Desc_t & d = desc.desc;
-	  oob = &d.oob;
-	  packer.putULong     (d.nBuffers);
-	  packer.putULongLong (d.dataBufferBaseAddr);
-	  packer.putULong     (d.dataBufferPitch);
-	  packer.putULong     (d.dataBufferSize);
-	  packer.putULongLong (d.metaDataBaseAddr);
-	  packer.putULong     (d.metaDataPitch);
-	  packer.putULongLong (d.fullFlagBaseAddr);
-	  packer.putULong     (d.fullFlagSize);
-	  packer.putULong     (d.fullFlagPitch);
-	  packer.putULongLong (d.fullFlagValue);
-	  packer.putULongLong (d.emptyFlagBaseAddr);
-	  packer.putULong     (d.emptyFlagSize);
-	  packer.putULong     (d.emptyFlagPitch);
-	  packer.putULongLong (d.emptyFlagValue);
-	}
-	break;
+        {
+          const Desc_t & d = desc.desc;
+          oob = &d.oob;
+          packer.putULong     (d.nBuffers);
+          packer.putULongLong (d.dataBufferBaseAddr);
+          packer.putULong     (d.dataBufferPitch);
+          packer.putULong     (d.dataBufferSize);
+          packer.putULongLong (d.metaDataBaseAddr);
+          packer.putULong     (d.metaDataPitch);
+          packer.putULongLong (d.fullFlagBaseAddr);
+          packer.putULong     (d.fullFlagSize);
+          packer.putULong     (d.fullFlagPitch);
+          packer.putULongLong (d.fullFlagValue);
+          packer.putULongLong (d.emptyFlagBaseAddr);
+          packer.putULong     (d.emptyFlagSize);
+          packer.putULong     (d.emptyFlagPitch);
+          packer.putULongLong (d.emptyFlagValue);
+        }
+        break;
       }
 
       /*
        * OutOfBandData is the same for consumer and producer.
        */
       if ( oob ) { 
-	packer.putULongLong (oob->port_id);
-	packer.putString (oob->oep);
+        packer.putULongLong (oob->port_id);
+        packer.putString (oob->oep);
       }
       else {
-	return false;
+        return false;
       }
       /*
        * Return marshaled data.
@@ -90,63 +90,63 @@ namespace CPI {
 
     bool
     unpackDescriptor ( CPI::Util::CDR::Decoder& unpacker,
-		       Descriptors & desc)
+                       Descriptors & desc)
       throw ()
     {
       OutOfBandData * oob=NULL;
 
       try {
-	unpacker.getULong (desc.type);
-	unpacker.getLong (desc.role);
-	unpacker.getULong (desc.options);
+        unpacker.getULong (desc.type);
+        unpacker.getLong (desc.role);
+        unpacker.getULong (desc.options);
 
-	switch (desc.type) {
-	case ConsumerDescT:
-	case ConsumerFlowControlDescT:
-	case ProducerDescT:
-	default:
-	  {
-	    Desc_t & d = desc.desc;
-	    oob = &d.oob;
-	    unpacker.getULong     (d.nBuffers);
-	    unpacker.getULongLong (d.dataBufferBaseAddr);
-	    unpacker.getULong     (d.dataBufferPitch);
-	    unpacker.getULong     (d.dataBufferSize);
-	    unpacker.getULongLong (d.metaDataBaseAddr);
-	    unpacker.getULong     (d.metaDataPitch);
-	    unpacker.getULongLong (d.fullFlagBaseAddr);
-	    unpacker.getULong     (d.fullFlagSize);
-	    unpacker.getULong     (d.fullFlagPitch);
-	    unpacker.getULongLong (d.fullFlagValue);
-	    unpacker.getULongLong (d.emptyFlagBaseAddr);
-	    unpacker.getULong     (d.emptyFlagSize);
-	    unpacker.getULong     (d.emptyFlagPitch);
-	    unpacker.getULongLong (d.emptyFlagValue);
-	  }
-	  break;
-	}
+        switch (desc.type) {
+        case ConsumerDescT:
+        case ConsumerFlowControlDescT:
+        case ProducerDescT:
+        default:
+          {
+            Desc_t & d = desc.desc;
+            oob = &d.oob;
+            unpacker.getULong     (d.nBuffers);
+            unpacker.getULongLong (d.dataBufferBaseAddr);
+            unpacker.getULong     (d.dataBufferPitch);
+            unpacker.getULong     (d.dataBufferSize);
+            unpacker.getULongLong (d.metaDataBaseAddr);
+            unpacker.getULong     (d.metaDataPitch);
+            unpacker.getULongLong (d.fullFlagBaseAddr);
+            unpacker.getULong     (d.fullFlagSize);
+            unpacker.getULong     (d.fullFlagPitch);
+            unpacker.getULongLong (d.fullFlagValue);
+            unpacker.getULongLong (d.emptyFlagBaseAddr);
+            unpacker.getULong     (d.emptyFlagSize);
+            unpacker.getULong     (d.emptyFlagPitch);
+            unpacker.getULongLong (d.emptyFlagValue);
+          }
+          break;
+        }
 
-	/*
-	 * OutOfBandData is the same for consumer and producer.
-	 */
+        /*
+         * OutOfBandData is the same for consumer and producer.
+         */
 
-	std::string oep;
-	if ( oob ) {
-	  unpacker.getULongLong (oob->port_id);
-	  unpacker.getString (oep);
-	}
-	else {
-	  return false;
-	}
+        std::string oep;
+        if ( oob ) {
+          unpacker.getULongLong (oob->port_id);
+          unpacker.getString (oep);
+        }
+        else {
+          return false;
+        }
 
-	if (oep.length()+1 > 128) {
-	  return false;
-	}
+        if (oep.length()+1 > 128) {
+          return false;
+        }
 
-	std::strncpy (oob->oep, oep.c_str(), 128);
+        std::strncpy (oob->oep, oep.c_str(), 128);
       }
       catch (const CPI::Util::CDR::Decoder::InvalidData &) {
-	return false;
+        return false;
       }
 
       return true;
@@ -159,7 +159,7 @@ namespace CPI {
     Interface::Interface(CPI::Util::Driver &driver, const char *name, const CPI::Util::PValue* props )
       throw ( CPI::Util::EmbeddedException )
       : CPI::Util::Device(driver,name), 
-	m_name(name)
+        m_name(name)
     {}
 
 

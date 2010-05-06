@@ -61,22 +61,22 @@ CPI_PROPERTY_DATA_TYPES
      static inline const PValue* find( const PValue* p, const char* name ) {
      if (!p ) return NULL;
      for ( int n=0; p[n].name; n++) {
-	 if (strcmp(p[n].name, name ) == 0) {
-	   return &p[n];
-	 }
+         if (strcmp(p[n].name, name ) == 0) {
+           return &p[n];
+         }
        }
        return NULL;
      }
     };
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)	\
-    class PV##pretty : public PValue {				\
-    public:							\
-	  inline PV##pretty(const char *aname, const run value) {	\
-	    name = aname;					\
-	    type = CPI::Metadata::Property::CPI_##pretty;	\
-	    v##pretty = (run)value;				\
-	    width = sizeof(v##pretty);                          \
-	  }							\
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)        \
+    class PV##pretty : public PValue {                                \
+    public:                                                        \
+          inline PV##pretty(const char *aname, const run value) {        \
+            name = aname;                                        \
+            type = CPI::Metadata::Property::CPI_##pretty;        \
+            v##pretty = (run)value;                                \
+            width = sizeof(v##pretty);                          \
+          }                                                        \
     };
     CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE

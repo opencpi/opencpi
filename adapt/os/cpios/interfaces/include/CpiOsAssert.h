@@ -50,8 +50,8 @@ namespace CPI {
      */
 
     typedef void (*AssertionCallback) (const char * cond,
-				       const char * file,
-				       unsigned int line);
+                                       const char * file,
+                                       unsigned int line);
 
     /**
      * Set a callback function to call when an assertion fails.

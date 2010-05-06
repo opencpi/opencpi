@@ -128,10 +128,10 @@ CpiRccGenConfigurator::g_options[] = {
 static
 void
 printUsage (CpiRccGenConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options] <SPD-SCD-or-PRF-file>" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -144,14 +144,14 @@ printUsage (CpiRccGenConfigurator & config,
 class CpiRccGenerator : public CPI::SCA::PropertyParser {
 public:
   CpiRccGenerator (const std::string & workerName,
-		   const std::string & inputFileName)
+                   const std::string & inputFileName)
     throw ();
   void generateHeader (CPI::Util::Vfs::Vfs & fs,
-		       const std::string & fileName)
+                       const std::string & fileName)
     throw (std::string);
   void generateSkeleton (CPI::Util::Vfs::Vfs & fs,
-			 const std::string & fileName,
-			 const std::string & headerFileName)
+                         const std::string & fileName,
+                         const std::string & headerFileName)
     throw (std::string);
 
 protected:
@@ -170,7 +170,7 @@ protected:
 
 CpiRccGenerator::
 CpiRccGenerator (const std::string & workerName,
-		 const std::string & inputFileName)
+                 const std::string & inputFileName)
   throw ()
   : m_workerName (workerName),
     m_upperWorkerName (uppercase (workerName)),
@@ -182,7 +182,7 @@ CpiRccGenerator (const std::string & workerName,
 void
 CpiRccGenerator::
 generateHeader (CPI::Util::Vfs::Vfs & fs,
-		const std::string & fileName)
+                const std::string & fileName)
   throw (std::string)
 {
   std::time_t now = std::time (0);
@@ -208,23 +208,23 @@ generateHeader (CPI::Util::Vfs::Vfs & fs,
 
   try {
     *out << "#ifndef RCC_WORKER_" << m_upperWorkerName << "_H__" << std::endl
-	 << "#define RCC_WORKER_" << m_upperWorkerName << "_H__" << std::endl
-	 << std::endl;
+         << "#define RCC_WORKER_" << m_upperWorkerName << "_H__" << std::endl
+         << std::endl;
 
     *out << "/*" << std::endl
-	 << " * Header file for worker " << m_workerName << "." << std::endl
-	 << " * Generated at " << tmtmp << std::endl
-	 << " * from " << m_inputFileName << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Header file for worker " << m_workerName << "." << std::endl
+         << " * Generated at " << tmtmp << std::endl
+         << " * from " << m_inputFileName << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     *out << "#include <RCC_Worker.h>" << std::endl
-	 << std::endl;
+         << std::endl;
 
     *out << "#if defined (__cplusplus)" << std::endl
-	 << "extern \"C\" {" << std::endl
-	 << "#endif" << std::endl
-	 << std::endl;
+         << "extern \"C\" {" << std::endl
+         << "#endif" << std::endl
+         << std::endl;
 
     /*
      * Enumeration of the worker's ports.
@@ -242,30 +242,30 @@ generateHeader (CPI::Util::Vfs::Vfs & fs,
      */
 
     *out << "/*" << std::endl
-	 << " * Worker port ordinals." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Worker port ordinals." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     if (m_numPorts) {
       *out << "enum " << m_workerName << "PortOrdinal {" << std::endl;
 
       for (unsigned int pi=0; pi<m_numPorts; pi++) {
-	*out << "  " << m_upperWorkerName << "_" << uppercase (m_ports[pi].name);
+        *out << "  " << m_upperWorkerName << "_" << uppercase (m_ports[pi].name);
 
-	if (pi+1 < m_numPorts) {
-	  *out << "," << std::endl;
-	}
-	else {
-	  *out << std::endl;
-	}
+        if (pi+1 < m_numPorts) {
+          *out << "," << std::endl;
+        }
+        else {
+          *out << std::endl;
+        }
       }
 
       *out << "};" << std::endl
-	   << std::endl;
+           << std::endl;
     }
     else {
       *out << "/* This worker does not have any ports. */" << std::endl
-	   << std::endl;
+           << std::endl;
     }
 
     /*
@@ -277,25 +277,25 @@ generateHeader (CPI::Util::Vfs::Vfs & fs,
 
     for (unsigned int pi=0; pi<m_numPorts; pi++) {
       if (m_ports[pi].provider) {
-	numInputPorts++;
+        numInputPorts++;
       }
       else {
-	numOutputPorts++;
+        numOutputPorts++;
       }
     }
 
     *out << "#define " << m_upperWorkerName << "_N_INPUT_PORTS "  << numInputPorts << std::endl
-	 << "#define " << m_upperWorkerName << "_N_OUTPUT_PORTS " << numOutputPorts << std::endl
-	 << std::endl;
+         << "#define " << m_upperWorkerName << "_N_OUTPUT_PORTS " << numOutputPorts << std::endl
+         << std::endl;
 
     /*
      * Worker property space.
      */
 
     *out << "/*" << std::endl
-	 << " * Worker property space." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Worker property space." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     if (m_numProperties) {
       /*
@@ -312,74 +312,74 @@ generateHeader (CPI::Util::Vfs::Vfs & fs,
       *out << "typedef struct {" << std::endl;
 
       for (unsigned int pi=0; pi<m_numProperties; pi++) {
-	CPI::SCA::Property & p = m_properties[pi];
-	CPI::SCA::SimpleType & pt = p.types[0];
+        CPI::SCA::Property & p = m_properties[pi];
+        CPI::SCA::SimpleType & pt = p.types[0];
 
-	cpiAssert (!p.is_struct);
-	cpiAssert (p.num_members == 1);
+        cpiAssert (!p.is_struct);
+        cpiAssert (p.num_members == 1);
 
-	if (p.is_sequence) {
-	  *out << "  uint32_t " << p.name << "_length;" << std::endl;
-	  offset = roundUp (offset, 4) + 4;
-	}
-	else if (pt.data_type == CPI::SCA::SCA_string) {
-	  /*
-	   * Strings shall be 4 byte aligned.  Might need padding, because
-	   * the compiler may think otherwise and pack the string without
-	   * any alignment.
-	   */
+        if (p.is_sequence) {
+          *out << "  uint32_t " << p.name << "_length;" << std::endl;
+          offset = roundUp (offset, 4) + 4;
+        }
+        else if (pt.data_type == CPI::SCA::SCA_string) {
+          /*
+           * Strings shall be 4 byte aligned.  Might need padding, because
+           * the compiler may think otherwise and pack the string without
+           * any alignment.
+           */
 
-	  if (offset != roundUp (offset, 4)) {
-	    unsigned int pad = roundUp (offset, 4) - offset;
-	    *out << "  char pad_" << p.name << "[" << pad << "];" << std::endl;
-	    offset += pad;
-	  }
-	}
-	else {
-	  cpiAssert (roundUp (offset, propertyAlign (pt.data_type)) ==
-		     roundUp (offset, structAlign (pt.data_type)));
-	  offset = roundUp (offset, propertyAlign (pt.data_type));
-	}
+          if (offset != roundUp (offset, 4)) {
+            unsigned int pad = roundUp (offset, 4) - offset;
+            *out << "  char pad_" << p.name << "[" << pad << "];" << std::endl;
+            offset += pad;
+          }
+        }
+        else {
+          cpiAssert (roundUp (offset, propertyAlign (pt.data_type)) ==
+                     roundUp (offset, structAlign (pt.data_type)));
+          offset = roundUp (offset, propertyAlign (pt.data_type));
+        }
 
-	switch (pt.data_type) {
-	case CPI::SCA::SCA_boolean: *out << "  RCCBoolean "; break;
-	case CPI::SCA::SCA_char: *out << "  uint8_t "; break;
-	case CPI::SCA::SCA_double: *out << "  RCCDouble "; break;
-	case CPI::SCA::SCA_float: *out << "  RCCFloat "; break;
-	case CPI::SCA::SCA_short: *out << "  int16_t "; break;
-	case CPI::SCA::SCA_long: *out << "  int32_t "; break;
-	case CPI::SCA::SCA_octet: *out << "  uint8_t "; break;
-	case CPI::SCA::SCA_ulong: *out << "  uint32_t "; break;
-	case CPI::SCA::SCA_ushort: *out << "  uint16_t "; break;
-	case CPI::SCA::SCA_string: *out << "  RCCChar "; break;
-	default: cpiAssert (0);
-	}
+        switch (pt.data_type) {
+        case CPI::SCA::SCA_boolean: *out << "  RCCBoolean "; break;
+        case CPI::SCA::SCA_char: *out << "  uint8_t "; break;
+        case CPI::SCA::SCA_double: *out << "  RCCDouble "; break;
+        case CPI::SCA::SCA_float: *out << "  RCCFloat "; break;
+        case CPI::SCA::SCA_short: *out << "  int16_t "; break;
+        case CPI::SCA::SCA_long: *out << "  int32_t "; break;
+        case CPI::SCA::SCA_octet: *out << "  uint8_t "; break;
+        case CPI::SCA::SCA_ulong: *out << "  uint32_t "; break;
+        case CPI::SCA::SCA_ushort: *out << "  uint16_t "; break;
+        case CPI::SCA::SCA_string: *out << "  RCCChar "; break;
+        default: cpiAssert (0);
+        }
 
-	*out << p.name;
+        *out << p.name;
 
-	if (p.is_sequence) {
-	  cpiAssert (pt.data_type != CPI::SCA::SCA_string);
-	  *out << "[" << p.sequence_size << "]";
-	  offset += propertySize (pt.data_type) * p.sequence_size;
-	}
-	else if (pt.data_type == CPI::SCA::SCA_string) {
-	  *out << "[" << pt.size+1 << "]";
-	  offset += pt.size+1;
-	}
-	else {
-	  offset += propertySize (pt.data_type);
-	}
+        if (p.is_sequence) {
+          cpiAssert (pt.data_type != CPI::SCA::SCA_string);
+          *out << "[" << p.sequence_size << "]";
+          offset += propertySize (pt.data_type) * p.sequence_size;
+        }
+        else if (pt.data_type == CPI::SCA::SCA_string) {
+          *out << "[" << pt.size+1 << "]";
+          offset += pt.size+1;
+        }
+        else {
+          offset += propertySize (pt.data_type);
+        }
 
-	*out << ";" << std::endl;
+        *out << ";" << std::endl;
       }
 
       *out << "} " << m_workerName << "Properties;" << std::endl
-	   << std::endl;
+           << std::endl;
     }
 
     *out << "#if defined (__cplusplus)" << std::endl
-	 << "}" << std::endl
-	 << "#endif" << std::endl;
+         << "}" << std::endl
+         << "#endif" << std::endl;
     *out << "#endif" << std::endl;
   }
   catch (...) {
@@ -402,8 +402,8 @@ generateHeader (CPI::Util::Vfs::Vfs & fs,
 void
 CpiRccGenerator::
 generateSkeleton (CPI::Util::Vfs::Vfs & fs,
-		  const std::string & fileName,
-		  const std::string & headerFileName)
+                  const std::string & fileName,
+                  const std::string & headerFileName)
   throw (std::string)
 {
   /*
@@ -414,139 +414,139 @@ generateSkeleton (CPI::Util::Vfs::Vfs & fs,
 
   try {
     *out << "#include <stddef.h>" << std::endl
-	 << "#include <RCC_Worker.h>" << std::endl
-	 << "#include \"" << headerFileName << "\"" << std::endl
-	 << std::endl;
+         << "#include <RCC_Worker.h>" << std::endl
+         << "#include \"" << headerFileName << "\"" << std::endl
+         << std::endl;
 
     /*
      * Context
      */
 
     *out << "/*" << std::endl
-	 << " * Worker private memory." << std::endl
-	 << " *" << std::endl
-	 << " * This convenient data structure can be used to hold private data used by" << std::endl
-	 << " * the worker instance.  The container allocates (but does not initialize)" << std::endl
-	 << " * an instance of this structure per worker instance." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Worker private memory." << std::endl
+         << " *" << std::endl
+         << " * This convenient data structure can be used to hold private data used by" << std::endl
+         << " * the worker instance.  The container allocates (but does not initialize)" << std::endl
+         << " * an instance of this structure per worker instance." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     *out << "typedef struct {" << std::endl
-	 << "  /* The \"dummy\" member is only here to make this file compile -- C " << std::endl
-	 << "     disallows structures without members -- and should be removed when" << std::endl
-	 << "     other members are added. */" << std::endl
-	 << "  int dummy;" << std::endl
-	 << "} " << m_workerName << "Context;" << std::endl
-	 << std::endl;
+         << "  /* The \"dummy\" member is only here to make this file compile -- C " << std::endl
+         << "     disallows structures without members -- and should be removed when" << std::endl
+         << "     other members are added. */" << std::endl
+         << "  int dummy;" << std::endl
+         << "} " << m_workerName << "Context;" << std::endl
+         << std::endl;
 
     /*
      * Initialize
      */
 
     *out << "/*" << std::endl
-	 << " * Worker initialization." << std::endl
-	 << " *" << std::endl
-	 << " * The initialize operation provides the worker with the opportunity to" << std::endl
-	 << " * perform any one-time initialization to achieve a known state prior to" << std::endl
-	 << " * normal execution." << std::endl
-	 << " *" << std::endl
-	 << " * The property set and the worker context (if applicable) should be" << std::endl
-	 << " * initialized here." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Worker initialization." << std::endl
+         << " *" << std::endl
+         << " * The initialize operation provides the worker with the opportunity to" << std::endl
+         << " * perform any one-time initialization to achieve a known state prior to" << std::endl
+         << " * normal execution." << std::endl
+         << " *" << std::endl
+         << " * The property set and the worker context (if applicable) should be" << std::endl
+         << " * initialized here." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     *out << "static" << std::endl
-	 << "RCCResult" << std::endl
-	 << m_workerName << "Initialize (RCCWorker * wctx)" << std::endl
-	 << "{" << std::endl
-	 << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
-	 << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
-	 << std::endl
-	 << "  /* TODO: Initialize ctx here. */" << std::endl
-	 << "  /* TODO: Initialize props here. */" << std::endl
-	 << std::endl
-	 << "  return RCC_OK;" << std::endl
-	 << "}" << std::endl
-	 << std::endl;
+         << "RCCResult" << std::endl
+         << m_workerName << "Initialize (RCCWorker * wctx)" << std::endl
+         << "{" << std::endl
+         << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
+         << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
+         << std::endl
+         << "  /* TODO: Initialize ctx here. */" << std::endl
+         << "  /* TODO: Initialize props here. */" << std::endl
+         << std::endl
+         << "  return RCC_OK;" << std::endl
+         << "}" << std::endl
+         << std::endl;
 
     /*
      * Start
      */
 
     *out << "/*" << std::endl
-	 << " * Prepare to run." << std::endl
-	 << " *" << std::endl
-	 << " * The start operation provides the worker with the opportunity to perform" << std::endl
-	 << " * any one-time initialization that are dependent on initial configuration" << std::endl
-	 << " * property values, since those property values are not set prior to the" << std::endl
-	 << " * the initialize operation.  This operation also provides the opportunity" << std::endl
-	 << " * to prepare to resume internal processing after the stop operation is" << std::endl
-	 << " * used." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Prepare to run." << std::endl
+         << " *" << std::endl
+         << " * The start operation provides the worker with the opportunity to perform" << std::endl
+         << " * any one-time initialization that are dependent on initial configuration" << std::endl
+         << " * property values, since those property values are not set prior to the" << std::endl
+         << " * the initialize operation.  This operation also provides the opportunity" << std::endl
+         << " * to prepare to resume internal processing after the stop operation is" << std::endl
+         << " * used." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     *out << "static" << std::endl
-	 << "RCCResult" << std::endl
-	 << m_workerName << "Start (RCCWorker * wctx)" << std::endl
-	 << "{" << std::endl
-	 << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
-	 << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
-	 << std::endl
-	 << "  /* TODO: Configure worker according to the property values. */" << std::endl
-	 << std::endl
-	 << "  return RCC_OK;" << std::endl
-	 << "}" << std::endl
-	 << std::endl;
+         << "RCCResult" << std::endl
+         << m_workerName << "Start (RCCWorker * wctx)" << std::endl
+         << "{" << std::endl
+         << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
+         << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
+         << std::endl
+         << "  /* TODO: Configure worker according to the property values. */" << std::endl
+         << std::endl
+         << "  return RCC_OK;" << std::endl
+         << "}" << std::endl
+         << std::endl;
 
     /*
      * Stop
      */
 
     *out << "/*" << std::endl
-	 << " * Stop processing." << std::endl
-	 << " *" << std::endl
-	 << " * The stop operation is provided to command a worker to stop internal" << std::endl
-	 << " * processing in a way that can be later restarted via the start operation." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Stop processing." << std::endl
+         << " *" << std::endl
+         << " * The stop operation is provided to command a worker to stop internal" << std::endl
+         << " * processing in a way that can be later restarted via the start operation." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     *out << "static" << std::endl
-	 << "RCCResult" << std::endl
-	 << m_workerName << "Stop (RCCWorker * wctx)" << std::endl
-	 << "{" << std::endl
-	 << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
-	 << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
-	 << std::endl
-	 << "  /* TODO: Stop processing. */" << std::endl
-	 << std::endl
-	 << "  return RCC_OK;" << std::endl
-	 << "}" << std::endl
-	 << std::endl;
+         << "RCCResult" << std::endl
+         << m_workerName << "Stop (RCCWorker * wctx)" << std::endl
+         << "{" << std::endl
+         << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
+         << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
+         << std::endl
+         << "  /* TODO: Stop processing. */" << std::endl
+         << std::endl
+         << "  return RCC_OK;" << std::endl
+         << "}" << std::endl
+         << std::endl;
 
     /*
      * Release
      */
 
     *out << "/*" << std::endl
-	 << " * Final processing." << std::endl
-	 << " *" << std::endl
-	 << " * The release operation requests that the worker perform any final" << std::endl
-	 << " * processing.  Any resources shall be released." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Final processing." << std::endl
+         << " *" << std::endl
+         << " * The release operation requests that the worker perform any final" << std::endl
+         << " * processing.  Any resources shall be released." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     *out << "static" << std::endl
-	 << "RCCResult" << std::endl
-	 << m_workerName << "Release (RCCWorker * wctx)" << std::endl
-	 << "{" << std::endl
-	 << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
-	 << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
-	 << std::endl
-	 << "  /* TODO: Release resources here. */" << std::endl
-	 << std::endl
-	 << "  return RCC_OK;" << std::endl
-	 << "}" << std::endl
-	 << std::endl;
+         << "RCCResult" << std::endl
+         << m_workerName << "Release (RCCWorker * wctx)" << std::endl
+         << "{" << std::endl
+         << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
+         << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
+         << std::endl
+         << "  /* TODO: Release resources here. */" << std::endl
+         << std::endl
+         << "  return RCC_OK;" << std::endl
+         << "}" << std::endl
+         << std::endl;
 
     /*
      * AfterConfigure
@@ -554,29 +554,29 @@ generateSkeleton (CPI::Util::Vfs::Vfs & fs,
 
     if (m_numProperties) {
       *out << "/*" << std::endl
-	   << " * Notification that properties have changed." << std::endl
-	   << " *" << std::endl
-	   << " * The afterConfigure operation allows the worker to be notified when" << std::endl
-	   << " * some of its configuration properties have changed, according to its" << std::endl
-	   << " * notification requirements.  This operation notifies the worker that" << std::endl
-	   << " * one or more such values in the property structure have changed." << std::endl
-	   << " */" << std::endl
-	   << std::endl;
+           << " * Notification that properties have changed." << std::endl
+           << " *" << std::endl
+           << " * The afterConfigure operation allows the worker to be notified when" << std::endl
+           << " * some of its configuration properties have changed, according to its" << std::endl
+           << " * notification requirements.  This operation notifies the worker that" << std::endl
+           << " * one or more such values in the property structure have changed." << std::endl
+           << " */" << std::endl
+           << std::endl;
 
       *out << "static" << std::endl
-	   << "RCCResult" << std::endl
-	   << m_workerName << "AfterConfigure (RCCWorker * wctx)" << std::endl
-	   << "{" << std::endl
-	   << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
-	   << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
-	   << std::endl
-	   << "  /*" << std::endl
-	   << "   * TODO: Act upon modified properties." << std::endl
-	   << "   */" << std::endl
-	   << std::endl
-	   << "  return RCC_OK;" << std::endl
-	   << "}" << std::endl
-	   << std::endl;
+           << "RCCResult" << std::endl
+           << m_workerName << "AfterConfigure (RCCWorker * wctx)" << std::endl
+           << "{" << std::endl
+           << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
+           << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
+           << std::endl
+           << "  /*" << std::endl
+           << "   * TODO: Act upon modified properties." << std::endl
+           << "   */" << std::endl
+           << std::endl
+           << "  return RCC_OK;" << std::endl
+           << "}" << std::endl
+           << std::endl;
     }
 
     /*
@@ -585,27 +585,27 @@ generateSkeleton (CPI::Util::Vfs::Vfs & fs,
 
     if (m_numProperties) {
       *out << "/*" << std::endl
-	   << " * Notification that properties will be queried." << std::endl
-	   << " *" << std::endl
-	   << " * The beforeQuery operation notifies the worker that the container is about" << std::endl
-	   << " * to read one or more values in the property structure." << std::endl
-	   << " */" << std::endl
-	   << std::endl;
+           << " * Notification that properties will be queried." << std::endl
+           << " *" << std::endl
+           << " * The beforeQuery operation notifies the worker that the container is about" << std::endl
+           << " * to read one or more values in the property structure." << std::endl
+           << " */" << std::endl
+           << std::endl;
 
       *out << "static" << std::endl
-	   << "RCCResult" << std::endl
-	   << m_workerName << "BeforeQuery (RCCWorker * wctx)" << std::endl
-	   << "{" << std::endl
-	   << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
-	   << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
-	   << std::endl
-	   << "  /*" << std::endl
-	   << "   * TODO: Update properties, if applicable." << std::endl
-	   << "   */" << std::endl
-	   << std::endl
-	   << "  return RCC_OK;" << std::endl
-	   << "}" << std::endl
-	   << std::endl;
+           << "RCCResult" << std::endl
+           << m_workerName << "BeforeQuery (RCCWorker * wctx)" << std::endl
+           << "{" << std::endl
+           << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
+           << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
+           << std::endl
+           << "  /*" << std::endl
+           << "   * TODO: Update properties, if applicable." << std::endl
+           << "   */" << std::endl
+           << std::endl
+           << "  return RCC_OK;" << std::endl
+           << "}" << std::endl
+           << std::endl;
     }
 
     /*
@@ -613,49 +613,49 @@ generateSkeleton (CPI::Util::Vfs::Vfs & fs,
      */
 
     *out << "/*" << std::endl
-	 << " * Process data." << std::endl
-	 << " *" << std::endl
-	 << " * The run operation requests that the worker perform its normal computation." << std::endl
-	 << " * The container only calls this operation when the worker's run condition is" << std::endl
-	 << " * true." << std::endl
-	 << " *" << std::endl
-	 << " * Normally this involves using messages in buffers at input ports to produce" << std::endl
-	 << " * messages at output ports." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Process data." << std::endl
+         << " *" << std::endl
+         << " * The run operation requests that the worker perform its normal computation." << std::endl
+         << " * The container only calls this operation when the worker's run condition is" << std::endl
+         << " * true." << std::endl
+         << " *" << std::endl
+         << " * Normally this involves using messages in buffers at input ports to produce" << std::endl
+         << " * messages at output ports." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     *out << "static" << std::endl
-	 << "RCCResult" << std::endl
-	 << m_workerName  << "Run (RCCWorker * wctx," << std::endl
-	 << m_blankedName << "     RCCBoolean timedout," << std::endl
-	 << m_blankedName << "     RCCBoolean * newRunCondition)" << std::endl
-	 << "{" << std::endl
-	 << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
-	 << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
-	 << std::endl;
+         << "RCCResult" << std::endl
+         << m_workerName  << "Run (RCCWorker * wctx," << std::endl
+         << m_blankedName << "     RCCBoolean timedout," << std::endl
+         << m_blankedName << "     RCCBoolean * newRunCondition)" << std::endl
+         << "{" << std::endl
+         << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
+         << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
+         << std::endl;
 
     for (unsigned int pi=0; pi<m_numPorts; pi++) {
       *out << "  RCCPort * p" << m_ports[pi].name << " = "
-	   << "&wctx->ports[" << m_upperWorkerName << "_" << uppercase (m_ports[pi].name) << "];"
-	   << std::endl;
+           << "&wctx->ports[" << m_upperWorkerName << "_" << uppercase (m_ports[pi].name) << "];"
+           << std::endl;
     }
 
     if (m_numPorts) {
       *out << std::endl
-	   << "  /* TODO: Process data. Port readiness is indicated by their" << std::endl
-	   << "     current.data member being non-null.  Ports referenced by" << std::endl
-	   << "     the worker's run condition are guaranteed to be ready. */" << std::endl
-	   << std::endl;
+           << "  /* TODO: Process data. Port readiness is indicated by their" << std::endl
+           << "     current.data member being non-null.  Ports referenced by" << std::endl
+           << "     the worker's run condition are guaranteed to be ready. */" << std::endl
+           << std::endl;
     }
 
     *out << "  /* Returning RCC_ADVANCE indicates that all ports shall be" << std::endl
-	 << "     advanced, i.e., data at input ports is consumed, and data" << std::endl
-	 << "     at output ports is produced and sent to the next worker. */" << std::endl
-	 << std::endl
-	 << "  return RCC_ADVANCE;" << std::endl;
+         << "     advanced, i.e., data at input ports is consumed, and data" << std::endl
+         << "     at output ports is produced and sent to the next worker. */" << std::endl
+         << std::endl
+         << "  return RCC_ADVANCE;" << std::endl;
 
     *out << "}" << std::endl
-	 << std::endl;
+         << std::endl;
 
     /*
      * Test
@@ -663,69 +663,69 @@ generateSkeleton (CPI::Util::Vfs::Vfs & fs,
 
     if (m_numTests) {
       *out << "/*" << std::endl
-	   << " * Tests." << std::endl
-	   << " */" << std::endl
-	   << std::endl;
+           << " * Tests." << std::endl
+           << " */" << std::endl
+           << std::endl;
 
       *out << "static" << std::endl
-	   << "RCCResult" << std::endl
-	   << m_workerName << "Test (RCCWorker * wctx)" << std::endl
-	   << "{" << std::endl
-	   << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
-	   << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
-	   << std::endl
-	   << "  /*" << std::endl
-	   << "   * Each test has a set of input values and result values, which are" << std::endl
-	   << "   * passed via the property space.  The test outcome is communicated" << std::endl
-	   << "   * via result values as well: if a test \"fails\", this function shall" << std::endl
-	   << "   * return RCC_OK while setting the result values appropriately." << std::endl
-	   << "   */" << std::endl
-	   << std::endl;
+           << "RCCResult" << std::endl
+           << m_workerName << "Test (RCCWorker * wctx)" << std::endl
+           << "{" << std::endl
+           << "  " << m_workerName << "Context * ctx = (" << m_workerName << "Context *) wctx->memories[0];" << std::endl
+           << "  " << m_workerName << "Properties * props = (" << m_workerName << "Properties *) wctx->properties;" << std::endl
+           << std::endl
+           << "  /*" << std::endl
+           << "   * Each test has a set of input values and result values, which are" << std::endl
+           << "   * passed via the property space.  The test outcome is communicated" << std::endl
+           << "   * via result values as well: if a test \"fails\", this function shall" << std::endl
+           << "   * return RCC_OK while setting the result values appropriately." << std::endl
+           << "   */" << std::endl
+           << std::endl;
 
       for (unsigned int ti=0; ti<m_numTests; ti++) {
-	*out << "  ";
+        *out << "  ";
 
-	if (ti) {
-	  *out << "else ";
-	}
+        if (ti) {
+          *out << "else ";
+        }
 
-	*out << "if (props->testId == " << m_tests[ti].testId << ") {" << std::endl
-	     << "    /*" << std::endl
-	     << "     * Test Id: " << m_tests[ti].testId << std::endl
-	     << "     *" << std::endl;
+        *out << "if (props->testId == " << m_tests[ti].testId << ") {" << std::endl
+             << "    /*" << std::endl
+             << "     * Test Id: " << m_tests[ti].testId << std::endl
+             << "     *" << std::endl;
 
-	if (!m_tests[ti].numInputs) {
-	  *out << "     * This test has no input values." << std::endl;
-	}
-	else {
-	  *out << "     * Input values:" << std::endl;
-	  for (unsigned int ivi=0; ivi<m_tests[ti].numInputs; ivi++) {
-	    *out << "     * - " << m_properties[m_tests[ti].inputValues[ivi]].name << std::endl;
-	  }
-	}
+        if (!m_tests[ti].numInputs) {
+          *out << "     * This test has no input values." << std::endl;
+        }
+        else {
+          *out << "     * Input values:" << std::endl;
+          for (unsigned int ivi=0; ivi<m_tests[ti].numInputs; ivi++) {
+            *out << "     * - " << m_properties[m_tests[ti].inputValues[ivi]].name << std::endl;
+          }
+        }
 
-	// Resultvalues are not optional, there should be some.
-	*out << "     * Result values:" << std::endl;
-	for (unsigned int rvi=0; rvi<m_tests[ti].numResults; rvi++) {
-	  *out << "     * - " << m_properties[m_tests[ti].resultValues[rvi]].name << std::endl;
-	}
+        // Resultvalues are not optional, there should be some.
+        *out << "     * Result values:" << std::endl;
+        for (unsigned int rvi=0; rvi<m_tests[ti].numResults; rvi++) {
+          *out << "     * - " << m_properties[m_tests[ti].resultValues[rvi]].name << std::endl;
+        }
 
-	*out << "     */" << std::endl
-	     << std::endl;
+        *out << "     */" << std::endl
+             << std::endl;
 
-	*out << "    /* TODO: Implement test. */" << std::endl
-	     << "  }" << std::endl;
+        *out << "    /* TODO: Implement test. */" << std::endl
+             << "  }" << std::endl;
       }
 
       *out << "  else {" << std::endl
-	   << "    /* Unknown test id */" << std::endl
-	   << "    return RCC_ERROR;" << std::endl
-	   << "  }" << std::endl;
+           << "    /* Unknown test id */" << std::endl
+           << "    return RCC_ERROR;" << std::endl
+           << "  }" << std::endl;
 
       *out << std::endl
-	   << "  return RCC_OK;" << std::endl
-	   << "}" << std::endl
-	   << std::endl;
+           << "  return RCC_OK;" << std::endl
+           << "}" << std::endl
+           << std::endl;
     }
 
     /*
@@ -733,64 +733,64 @@ generateSkeleton (CPI::Util::Vfs::Vfs & fs,
      */
 
     *out << "/*" << std::endl
-	 << " * Worker memory requests." << std::endl
-	 << " *" << std::endl
-	 << " * These memories are allocated by the container and provided to the worker" << std::endl
-	 << " * in the \"memories\" member of the RCCWorker structure." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Worker memory requests." << std::endl
+         << " *" << std::endl
+         << " * These memories are allocated by the container and provided to the worker" << std::endl
+         << " * in the \"memories\" member of the RCCWorker structure." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     *out << "static" << std::endl
-	 << "uint32_t" << std::endl
-	 << m_workerName << "Memories[] = {" << std::endl
-	 << "  sizeof (" << m_workerName << "Context)," << std::endl
-	 << "  0" << std::endl
-	 << "};" << std::endl
-	 << std::endl;
+         << "uint32_t" << std::endl
+         << m_workerName << "Memories[] = {" << std::endl
+         << "  sizeof (" << m_workerName << "Context)," << std::endl
+         << "  0" << std::endl
+         << "};" << std::endl
+         << std::endl;
 
     /*
      * Dispatch table
      */
 
     *out << "/*" << std::endl
-	 << " * Worker dispatch table." << std::endl
-	 << " *" << std::endl
-	 << " * This is the only symbol that is exported (non-static) from this file." << std::endl
-	 << " * The name of the dispatch table is used as this worker's \"entrypoint\"." << std::endl
-	 << " */" << std::endl
-	 << std::endl;
+         << " * Worker dispatch table." << std::endl
+         << " *" << std::endl
+         << " * This is the only symbol that is exported (non-static) from this file." << std::endl
+         << " * The name of the dispatch table is used as this worker's \"entrypoint\"." << std::endl
+         << " */" << std::endl
+         << std::endl;
 
     *out << "RCCDispatch" << std::endl
-	 << m_workerName << "Worker = {" << std::endl;
+         << m_workerName << "Worker = {" << std::endl;
 
     *out << "  /*" << std::endl
-	 << "   * Information for consistency checking by the container." << std::endl
-	 << "   */" << std::endl
-	 << std::endl
-	 << "  .version = RCC_VERSION," << std::endl
-	 << "  .numInputs = " << m_upperWorkerName << "_N_INPUT_PORTS," << std::endl
-	 << "  .numOutputs = " << m_upperWorkerName << "_N_OUTPUT_PORTS," << std::endl
-	 << "  .propertySize = sizeof (" << m_workerName << "Properties)," << std::endl
-	 << "  .memSizes = " << m_workerName << "Memories," << std::endl
-	 << "  .threadProfile = 0," << std::endl
-	 << std::endl;
+         << "   * Information for consistency checking by the container." << std::endl
+         << "   */" << std::endl
+         << std::endl
+         << "  .version = RCC_VERSION," << std::endl
+         << "  .numInputs = " << m_upperWorkerName << "_N_INPUT_PORTS," << std::endl
+         << "  .numOutputs = " << m_upperWorkerName << "_N_OUTPUT_PORTS," << std::endl
+         << "  .propertySize = sizeof (" << m_workerName << "Properties)," << std::endl
+         << "  .memSizes = " << m_workerName << "Memories," << std::endl
+         << "  .threadProfile = 0," << std::endl
+         << std::endl;
 
     *out << "  /*" << std::endl
-	 << "   * Methods.  Can be NULL if not needed." << std::endl
-	 << "   */" << std::endl
-	 << std::endl
-	 << "  .initialize = " << m_workerName << "Initialize," << std::endl
-	 << "  .start = " << m_workerName << "Start," << std::endl
-	 << "  .stop = " << m_workerName << "Stop," << std::endl
-	 << "  .release = " << m_workerName << "Release," << std::endl;
+         << "   * Methods.  Can be NULL if not needed." << std::endl
+         << "   */" << std::endl
+         << std::endl
+         << "  .initialize = " << m_workerName << "Initialize," << std::endl
+         << "  .start = " << m_workerName << "Start," << std::endl
+         << "  .stop = " << m_workerName << "Stop," << std::endl
+         << "  .release = " << m_workerName << "Release," << std::endl;
 
     if (m_numProperties) {
       *out << "  .afterConfigure = " << m_workerName << "AfterConfigure," << std::endl
-	   << "  .beforeQuery = " << m_workerName << "BeforeQuery," << std::endl;
+           << "  .beforeQuery = " << m_workerName << "BeforeQuery," << std::endl;
     }
     else {
       *out << "  .afterConfigure = NULL," << std::endl
-	   << "  .beforeQuery = NULL," << std::endl;
+           << "  .beforeQuery = NULL," << std::endl;
     }
 
     if (m_numTests) {
@@ -801,15 +801,15 @@ generateSkeleton (CPI::Util::Vfs::Vfs & fs,
     }
 
     *out << "  .run = " << m_workerName << "Run," << std::endl
-	 << std::endl;
+         << std::endl;
 
     *out << "  /*" << std::endl
-	 << "   * Implementation information for container behavior." << std::endl
-	 << "   */" << std::endl
-	 << std::endl
-	 << "  .runCondition = NULL, /* Implies a run condition of all ports ready. */" << std::endl
-	 << "  .portInfo = NULL, /* Non-default port information */" << std::endl
-	 << "  .optionallyConnectedPorts = 0 /* Bit mask */" << std::endl;
+         << "   * Implementation information for container behavior." << std::endl
+         << "   */" << std::endl
+         << std::endl
+         << "  .runCondition = NULL, /* Implies a run condition of all ports ready. */" << std::endl
+         << "  .portInfo = NULL, /* Non-default port information */" << std::endl
+         << "  .optionallyConnectedPorts = 0 /* Bit mask */" << std::endl;
 
     *out << "};" << std::endl;
   }
@@ -883,7 +883,7 @@ uppercase (const std::string & str)
 static
 bool
 findImplInSPD (ezxml_t spdRoot,
-	       const std::string & implId)
+               const std::string & implId)
   throw ()
 {
   ezxml_t implNode = ezxml_child (spdRoot, "implementation");
@@ -938,9 +938,9 @@ cpiRccGeneratorInt (int argc, char * argv[])
 
   if (config.verbose) {
     std::cout << "Determining file type of \""
-	      << argv[1]
-	      << "\" ... "
-	      << std::flush;
+              << argv[1]
+              << "\" ... "
+              << std::flush;
   }
 
   std::string fileName;
@@ -990,9 +990,9 @@ cpiRccGeneratorInt (int argc, char * argv[])
 
   if (config.verbose) {
     std::cout << "Processing \""
-	      << argv[1]
-	      << "\" ... "
-	      << std::flush;
+              << argv[1]
+              << "\" ... "
+              << std::flush;
   }
 
   CpiRccGenerator codeGenerator (config.name, argv[1]);
@@ -1000,28 +1000,28 @@ cpiRccGeneratorInt (int argc, char * argv[])
   try {
     if (std::strcmp (type, "softpkg") == 0) {
       if (config.implementation.length() &&
-	  !findImplInSPD (root, config.implementation)) {
-	std::cerr << "Warning: Implementation \""
-		  << config.implementation
-		  << "\" not found in software package.  Ignoring."
-		  << std::endl;
-	config.implementation.clear ();
+          !findImplInSPD (root, config.implementation)) {
+        std::cerr << "Warning: Implementation \""
+                  << config.implementation
+                  << "\" not found in software package.  Ignoring."
+                  << std::endl;
+        config.implementation.clear ();
       }
 
       codeGenerator.processSPD (fileFs, fileName, config.implementation, root);
     }
     else if (std::strcmp (type, "softwarecomponent") == 0) {
       if (config.implementation.length()) {
-	std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
-		  << std::endl;
+        std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
+                  << std::endl;
       }
 
       codeGenerator.processSCD (fileFs, fileName, root);
     }
     else if (std::strcmp (type, "properties") == 0) {
       if (config.implementation.length()) {
-	std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
-		  << std::endl;
+        std::cerr << "Warning: SCD file provided.  Ignoring implementation identifier."
+                  << std::endl;
       }
 
       codeGenerator.processPRF (root);
@@ -1053,9 +1053,9 @@ cpiRccGeneratorInt (int argc, char * argv[])
 
   if (config.verbose) {
     std::cout << "Writing header file \""
-	      << config.headerFile
-	      << "\" ... "
-	      << std::flush;
+              << config.headerFile
+              << "\" ... "
+              << std::flush;
   }
 
   std::string headerFileName;
@@ -1111,31 +1111,31 @@ cpiRccGeneratorInt (int argc, char * argv[])
 
     if (skeletonFileExists) {
       std::cerr << "Warning: Not overwriting existing file \""
-		<< config.skeletonFile
-		<< "\"." << std::endl;
+                << config.skeletonFile
+                << "\"." << std::endl;
     }
     else {
       if (config.verbose) {
-	std::cout << "Writing skeleton file \""
-		  << config.skeletonFile
-		  << "\" ... "
-		  << std::flush;
+        std::cout << "Writing skeleton file \""
+                  << config.skeletonFile
+                  << "\" ... "
+                  << std::flush;
       }
 
       try {
-	codeGenerator.generateSkeleton (fileFs, skeletonFileName,
-					config.headerFile);
+        codeGenerator.generateSkeleton (fileFs, skeletonFileName,
+                                        config.headerFile);
       }
       catch (const std::string & oops) {
-	if (config.verbose) {
-	  std::cout << "failed." << std::endl;
-	}
-	std::cerr << "Oops: \"" << config.skeletonFile << "\": " << oops << "." << std::endl;
-	return false;
+        if (config.verbose) {
+          std::cout << "failed." << std::endl;
+        }
+        std::cerr << "Oops: \"" << config.skeletonFile << "\": " << oops << "." << std::endl;
+        return false;
       }
 
       if (config.verbose) {
-	std::cout << "done." << std::endl;
+        std::cout << "done." << std::endl;
       }
     }
   }
@@ -1170,8 +1170,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

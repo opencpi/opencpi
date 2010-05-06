@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 
-//	BaseSmemServices is a base class used by most/all implementations
+//        BaseSmemServices is a base class used by most/all implementations
 
 #ifndef CPI_BASE_SMEM_SERVICES_H_
 #define CPI_BASE_SMEM_SERVICES_H_
@@ -40,15 +40,15 @@ namespace DataTransfer {
 
       // Properties of an BaseSmem instance
   public:
-    std::string			 m_name;			// Name of this shared memory area
-    EndPoint         	        *m_location;	// Location of this shared memory area
-    CPI::OS::uint32_t		 m_size;			// Size of area
-    int				 m_refcnt;		// Reference count of create/attach calls
-    int				 m_mapcnt;		// Reference count of number of successful map calls
-    void*			 m_mappedva;		// Virtual address of mapped area
-    CPI::OS::uint32_t		 m_mappedoffset;	// Offset of where mapping was actually done (what mappedva points to)
-    CPI::OS::uint32_t		 m_reqoffset;	// Offset that was request in last Map call
-    CPI::OS::uint32_t		 m_mappedsize;	// Size of area that was mapped
+    std::string                         m_name;                        // Name of this shared memory area
+    EndPoint                         *m_location;        // Location of this shared memory area
+    CPI::OS::uint32_t                 m_size;                        // Size of area
+    int                                 m_refcnt;                // Reference count of create/attach calls
+    int                                 m_mapcnt;                // Reference count of number of successful map calls
+    void*                         m_mappedva;                // Virtual address of mapped area
+    CPI::OS::uint32_t                 m_mappedoffset;        // Offset of where mapping was actually done (what mappedva points to)
+    CPI::OS::uint32_t                 m_reqoffset;        // Offset that was request in last Map call
+    CPI::OS::uint32_t                 m_mappedsize;        // Size of area that was mapped
   };
 
   class BaseSmemServices : public DataTransfer::SmemServices
@@ -80,27 +80,27 @@ namespace DataTransfer {
     // Disable mapping
     virtual CPI::OS::int32_t disable () = 0;
 
-    //	GetName - the name of the shared memory object
+    //        GetName - the name of the shared memory object
     virtual const char* getName ()
     {
       if (m_pSmem == 0)
-	{
-	  CPI_THROWNULL( DataTransferEx (RESOURCE_EXCEPTION, "BaseSmemServices::GetName: No active instance") );
-	}
+        {
+          CPI_THROWNULL( DataTransferEx (RESOURCE_EXCEPTION, "BaseSmemServices::GetName: No active instance") );
+        }
       return m_pSmem->m_name.c_str();
     }
 
-    //	getEndPoint - the location of the shared area as an enumeration
+    //        getEndPoint - the location of the shared area as an enumeration
     virtual EndPoint* getEndPoint ()
     {
       if (m_pSmem == 0)
-	{
-	  CPI_THROWNULL( DataTransferEx (RESOURCE_EXCEPTION, "BaseSmemServices::getEndPoint: No active instance") );
-	}
+        {
+          CPI_THROWNULL( DataTransferEx (RESOURCE_EXCEPTION, "BaseSmemServices::getEndPoint: No active instance") );
+        }
       return m_pSmem->m_location;
     }
 
-    //	GetHandle - platform dependent opaque handle for current mapping
+    //        GetHandle - platform dependent opaque handle for current mapping
     virtual void* getHandle () = 0;
 
   public:
@@ -116,52 +116,52 @@ namespace DataTransfer {
   protected:
       // Add a new name->BaseSmem dictionary entry
       static void add (BaseSmem* pSmem)
-	{
-	  m_cache[pSmem->m_name] = pSmem;
-	  pSmem->m_refcnt++;
-	}
+        {
+          m_cache[pSmem->m_name] = pSmem;
+          pSmem->m_refcnt++;
+        }
 
       // Remove an instance from the dictionary and initialize the state.
       void remove (BaseSmem* pSmem)
       {
-	if (pSmem->m_refcnt)
-	  {
-	    CPI_THROWVOID( DataTransferEx (RESOURCE_EXCEPTION, "BaseSmemServices::Remove: Active references exist"));
-	  }
-	std::map<std::string, BaseSmem*>::iterator pos = m_cache.find (pSmem->m_name);
-	if (pos != m_cache.end ())
-	  {
-	    m_cache.erase (pos);
-	  }
+        if (pSmem->m_refcnt)
+          {
+            CPI_THROWVOID( DataTransferEx (RESOURCE_EXCEPTION, "BaseSmemServices::Remove: Active references exist"));
+          }
+        std::map<std::string, BaseSmem*>::iterator pos = m_cache.find (pSmem->m_name);
+        if (pos != m_cache.end ())
+          {
+            m_cache.erase (pos);
+          }
       }
 
       // Lookup an existing named shared memory object.
       BaseSmem* lookup (std::string name)
-	{
+        {
 
-	  BaseSmem* pSmem = 0;
-	  std::map<std::string, BaseSmem*>::iterator pos = m_cache.find (name);
-	  if (pos != m_cache.end ())
-	    {
-	      // Successful Lookup bumps the reference count
-	      pSmem = pos->second;
-	      pSmem->m_refcnt++;
-	    }
+          BaseSmem* pSmem = 0;
+          std::map<std::string, BaseSmem*>::iterator pos = m_cache.find (name);
+          if (pos != m_cache.end ())
+            {
+              // Successful Lookup bumps the reference count
+              pSmem = pos->second;
+              pSmem->m_refcnt++;
+            }
 
-	  return pSmem;
-	}
+          return pSmem;
+        }
 
   protected:
       // The currently attached (via Create or Attach) instance.
-      BaseSmem*	m_pSmem;
+      BaseSmem*        m_pSmem;
 
       // Our location
       EndPoint *m_location;
 
   private:
-	
-      static std::map<std::string, BaseSmem*>	m_cache;
-	
+        
+      static std::map<std::string, BaseSmem*>        m_cache;
+        
   };
 
 };

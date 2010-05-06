@@ -73,11 +73,11 @@ CPI::OS::uint32_t CPI::DataTransport::Circuit::m_init=0;
  *********************************/
 CPI::DataTransport::Circuit::
 Circuit( 
-	CPI::DataTransport::Transport* t,
-	CircuitId& id,
-	ConnectionMetaData* connection, 
-	PortOrdinal src_ps[],
-	PortOrdinal dest_pss[] )
+        CPI::DataTransport::Transport* t,
+        CircuitId& id,
+        ConnectionMetaData* connection, 
+        PortOrdinal src_ps[],
+        PortOrdinal dest_pss[] )
   :  CU::Child<CPI::DataTransport::Transport,Circuit>(*t),
      CPI::Time::Emit(t, "Circuit"),
      m_transport(t),
@@ -104,13 +104,13 @@ Circuit(
     int a,b,c,d,e,f,g,y;
     for(a=0;a<2;a++)
       for(b=0;b<2;b++)
-	for(c=0;c<2;c++)
-	  for(d=0;d<2;d++)
-	    for(e=0;e<2;e++)
-	      for(f=0;f<CPI::RDT::MaxRole;f++)
-		for(g=0;g<CPI::RDT::MaxRole;g++)
-		  m_transport->m_transportGlobal->m_templateGenerators[a][b][c][d][e][f][g] = 
-		    m_transport->m_transportGlobal->m_gen_temp_gen;
+        for(c=0;c<2;c++)
+          for(d=0;d<2;d++)
+            for(e=0;e<2;e++)
+              for(f=0;f<CPI::RDT::MaxRole;f++)
+                for(g=0;g<CPI::RDT::MaxRole;g++)
+                  m_transport->m_transportGlobal->m_templateGenerators[a][b][c][d][e][f][g] = 
+                    m_transport->m_transportGlobal->m_gen_temp_gen;
 
     m_transport->m_transportGlobal->m_gen_pat1 = new TransferTemplateGeneratorPattern1( );
     m_transport->m_transportGlobal->m_gen_pat1AFC = new TransferTemplateGeneratorPattern1AFC( );
@@ -119,7 +119,7 @@ Circuit(
     m_transport->m_transportGlobal->m_gen_pat3 = new TransferTemplateGeneratorPattern3( );
     m_transport->m_transportGlobal->m_gen_pat4 = new TransferTemplateGeneratorPattern4( );
 
-    //	output dd : input dd : output part : input part : "output shadow" : output role : input role
+    //        output dd : input dd : output part : input part : "output shadow" : output role : input role
     m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
       [false] [CPI::RDT::ActiveMessage] [CPI::RDT::ActiveMessage] 
@@ -134,14 +134,14 @@ Circuit(
     for( y=0; y<CPI::RDT::MaxRole; y++) {
 
       m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
-	[DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-	[false] [CPI::RDT::ActiveFlowControl] [y] 
-	= m_transport->m_transportGlobal->m_gen_pat1AFC;
+        [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+        [false] [CPI::RDT::ActiveFlowControl] [y] 
+        = m_transport->m_transportGlobal->m_gen_pat1AFC;
 
       m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
-	[DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-	[true] [CPI::RDT::ActiveFlowControl] [y] 
-	= m_transport->m_transportGlobal->m_gen_pat1AFCShadow;
+        [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+        [true] [CPI::RDT::ActiveFlowControl] [y] 
+        = m_transport->m_transportGlobal->m_gen_pat1AFCShadow;
     }
 
 
@@ -162,19 +162,19 @@ Circuit(
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::BLOCK] 
       [false] [CPI::RDT::ActiveMessage] [CPI::RDT::ActiveMessage] 
       = m_transport->m_transportGlobal->m_gen_pat4;
-	
+        
 
     // Same thing for the transfer controllers
     m_transport->m_transportGlobal->m_gen_control = new TransferControllerNotSupported();
     for(a=0;a<2;a++)
       for(b=0;b<2;b++)
-	for(c=0;c<2;c++)
-	  for(d=0;d<2;d++)
-	    for(e=0;e<2;e++)
-	      for(f=0;f<CPI::RDT::MaxRole;f++)
-		for(g=0;g<CPI::RDT::MaxRole;g++)
-		  m_transport->m_transportGlobal->m_transferControllers[a][b][c][d][e][f][g]
-		    = m_transport->m_transportGlobal->m_gen_control;
+        for(c=0;c<2;c++)
+          for(d=0;d<2;d++)
+            for(e=0;e<2;e++)
+              for(f=0;f<CPI::RDT::MaxRole;f++)
+                for(g=0;g<CPI::RDT::MaxRole;g++)
+                  m_transport->m_transportGlobal->m_transferControllers[a][b][c][d][e][f][g]
+                    = m_transport->m_transportGlobal->m_gen_control;
 
     
     m_transport->m_transportGlobal->m_cont1 = new TransferController1();
@@ -183,7 +183,7 @@ Circuit(
     m_transport->m_transportGlobal->m_cont3 = new TransferController3();
     m_transport->m_transportGlobal->m_cont4 = new TransferController4();
 
-    //	output dd : input dd : output part : input part : "output shadow" : output role : input role
+    //        output dd : input dd : output part : input part : "output shadow" : output role : input role
     m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
       [false] [CPI::RDT::ActiveMessage] [CPI::RDT::ActiveMessage] 
@@ -197,14 +197,14 @@ Circuit(
     // If the output port is AFC, the same controller is used for any input port role
     for( y=0; y<CPI::RDT::MaxRole; y++) {
       m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
-	[DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-	[true] [CPI::RDT::ActiveFlowControl] [y] 
-	= m_transport->m_transportGlobal->m_cont1AFCShadow;
+        [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+        [true] [CPI::RDT::ActiveFlowControl] [y] 
+        = m_transport->m_transportGlobal->m_cont1AFCShadow;
 
       m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
-	[DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-	[false] [CPI::RDT::ActiveFlowControl] [y] 
-	= m_transport->m_transportGlobal->m_cont1;
+        [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+        [false] [CPI::RDT::ActiveFlowControl] [y] 
+        = m_transport->m_transportGlobal->m_cont1;
     }
 
 
@@ -378,7 +378,7 @@ updateInputs( void* data )
   if ( sports>0 && tports>0 ) {
     m_openCircuit = false;
   }
-		  
+                  
 }
 
 
@@ -413,27 +413,27 @@ updateInputs()
       CPI::DataTransport::Port* port = static_cast<CPI::DataTransport::Port*>(ps->getPortFromIndex(i));
       // Ignore local ports
       if ( m_transport->isLocalEndpoint( port->getRealShemServices()->getEndPoint()->end_point.c_str() ) ) {
-	if ( port->getCircuit()->getOutputPortSet()->getPortFromIndex(0) != output_port ) {
+        if ( port->getCircuit()->getOutputPortSet()->getPortFromIndex(0) != output_port ) {
 #ifndef NDEBUG
-	  printf("**** ERROR We have a local connection to a different circuit !!\n");
+          printf("**** ERROR We have a local connection to a different circuit !!\n");
 #endif
-	  throw CPI::Util::EmbeddedException (
-					      INTERNAL_PROGRAMMING_ERROR1, 
-					      "We have a local connection to a different circuit" );
-	}
-	continue;
+          throw CPI::Util::EmbeddedException (
+                                              INTERNAL_PROGRAMMING_ERROR1, 
+                                              "We have a local connection to a different circuit" );
+        }
+        continue;
       }
 
       // Wait for our mailbox to become free
       while( ! xmb.mailBoxAvailable(s_res) ) {
-	CPI::OS::sleep(0);
+        CPI::OS::sleep(0);
 #ifndef NDEBUG
-	printf("Waiting for our mailbox to be cleared !!\n");
+        printf("Waiting for our mailbox to be cleared !!\n");
 #endif
       }
 
       SMBResources* t_res = 
-	XferFactoryManager::getFactoryManager().getSMBResources( static_cast<CPI::DataTransport::Port*>(ps->getPortFromIndex(i))->getEndpoint() );
+        XferFactoryManager::getFactoryManager().getSMBResources( static_cast<CPI::DataTransport::Port*>(ps->getPortFromIndex(i))->getEndpoint() );
       DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
       mb->request.reqUpdateCircuit.type = DataTransfer::ContainerComms::ReqUpdateCircuit;
       mb->request.reqUpdateCircuit.senderCircuitId = port->getCircuit()->getCircuitId();
@@ -442,7 +442,7 @@ updateInputs()
       mb->request.reqUpdateCircuit.receiverPortId = port->m_data->remotePortId;
       mb->request.reqUpdateCircuit.senderOutputPortId = output_port->getPortId();
       mb->request.reqUpdateCircuit.senderOutputControlOffset = 
-	output_port->m_data->m_bufferData->outputOffsets.portSetControlOffset;
+        output_port->m_data->m_bufferData->outputOffsets.portSetControlOffset;
       strcpy(mb->request.reqUpdateCircuit.output_end_point, output_port->getEndpoint()->end_point.c_str() );
       mb->request.reqUpdateCircuit.tPortCount = ps->getPortCount();
       mb->return_offset = -1;
@@ -478,100 +478,100 @@ namespace CPI {
     public:
 
       PullDataDriverIP( PullDataInfo* pd )
-	:PullDataDriver(pd),sbuf_index(0)
+        :PullDataDriver(pd),sbuf_index(0)
       {
-	current_src_buffer_ptr = pull_data_info->src_buffer;
-	current_src_metaData_ptr = pull_data_info->src_metaData;
-	current_empty_flag_ptr = pull_data_info->empty_flag;
+        current_src_buffer_ptr = pull_data_info->src_buffer;
+        current_src_metaData_ptr = pull_data_info->src_metaData;
+        current_empty_flag_ptr = pull_data_info->empty_flag;
       }
 
       bool checkBufferEmpty( CPI::OS::uint8_t* buffer_data, CPI::OS::uint32_t tlen, CPI::OS::uint64_t& metaData ) {
 
 #ifdef SLEEP_DEBUG
-	  // for debug
-	  CPI::OS::sleep(500);
+          // for debug
+          CPI::OS::sleep(500);
 #endif
-	
-	tlen = tlen < pull_data_info->pdesc.desc.dataBufferSize ? tlen : pull_data_info->pdesc.desc.dataBufferSize;
+        
+        tlen = tlen < pull_data_info->pdesc.desc.dataBufferSize ? tlen : pull_data_info->pdesc.desc.dataBufferSize;
 
-	if ( pull_data_info->pdesc.type == CPI::RDT::ProducerDescT ) {
+        if ( pull_data_info->pdesc.type == CPI::RDT::ProducerDescT ) {
 
 #ifdef DEBUG_WITH_EMULATOR
-	  while( *current_empty_flag_ptr != 0 ) CPI::OS::sleep(1);
+          while( *current_empty_flag_ptr != 0 ) CPI::OS::sleep(1);
 #endif
 
-	  // get the number of output buffers available
-	  CPI::OS::uint32_t src_buffers_available = *pull_data_info->src_flag;
+          // get the number of output buffers available
+          CPI::OS::uint32_t src_buffers_available = *pull_data_info->src_flag;
 
 #ifndef NDEBUG
-	  printf("FPGA producer has %d buffers available, tlen = %d\n", 
-		 src_buffers_available, tlen );
+          printf("FPGA producer has %d buffers available, tlen = %d\n", 
+                 src_buffers_available, tlen );
 #endif
-	  /*
-	   * NOTE:  This will only work with synch. PIO. otherwise there is a race condition here.
-	   */
-	  if ( src_buffers_available == 0 ) {
-	    return true;
-	  }
+          /*
+           * NOTE:  This will only work with synch. PIO. otherwise there is a race condition here.
+           */
+          if ( src_buffers_available == 0 ) {
+            return true;
+          }
 
-	  CPI::OS::uint32_t* tgt_buffer = (CPI::OS::uint32_t*)buffer_data;
+          CPI::OS::uint32_t* tgt_buffer = (CPI::OS::uint32_t*)buffer_data;
 
 #ifndef NDEBUG
-	  printf("Moving data from FPGA producer to local consumer, tgt buf = %p\n", tgt_buffer);
-	  printf("current_src = %p tlen = %u, fw = %d\n", current_src_buffer_ptr, tlen, *current_src_buffer_ptr );
-	  printf("The meta data word = %lu\n", *current_src_metaData_ptr );
+          printf("Moving data from FPGA producer to local consumer, tgt buf = %p\n", tgt_buffer);
+          printf("current_src = %p tlen = %u, fw = %d\n", current_src_buffer_ptr, tlen, *current_src_buffer_ptr );
+          printf("The meta data word = %lu\n", *current_src_metaData_ptr );
 #endif
 
 #ifndef IP_SUPPORTS_64BIT_ACCESS
-	  volatile CPI::OS::uint32_t* src = (volatile CPI::OS::uint32_t*)current_src_buffer_ptr;
-	  for ( unsigned int n=0; n<(tlen/4); n++ ) {
-	    tgt_buffer[n] = src[n];
-	  }
+          volatile CPI::OS::uint32_t* src = (volatile CPI::OS::uint32_t*)current_src_buffer_ptr;
+          for ( unsigned int n=0; n<(tlen/4); n++ ) {
+            tgt_buffer[n] = src[n];
+          }
 #else
-	  memcpy((void*)tgt_buffer,(void*)current_src_buffer_ptr,tlen);
+          memcpy((void*)tgt_buffer,(void*)current_src_buffer_ptr,tlen);
 #endif
 
-	  metaData = *current_src_metaData_ptr;
+          metaData = *current_src_metaData_ptr;
 
-	  // Tell the IP it can advance.
-	  // Note that the transfer engine will send this when this buffer gets consumed
-	  // *current_empty_flag_ptr = 1;
+          // Tell the IP it can advance.
+          // Note that the transfer engine will send this when this buffer gets consumed
+          // *current_empty_flag_ptr = 1;
 
-	  sbuf_index++;
-	  if ( sbuf_index >=  pull_data_info->pdesc.desc.nBuffers ) {
-	    current_src_buffer_ptr = pull_data_info->src_buffer;
-	    current_src_metaData_ptr = pull_data_info->src_metaData;
-	    current_empty_flag_ptr = pull_data_info->empty_flag;
-	    sbuf_index = 0;
-	  }
-	  else {
-	    current_src_buffer_ptr += pull_data_info->pdesc.desc.dataBufferPitch;
-	    current_src_metaData_ptr += pull_data_info->pdesc.desc.metaDataPitch/8;
-	    current_empty_flag_ptr += pull_data_info->pdesc.desc.emptyFlagPitch;
-	  }
+          sbuf_index++;
+          if ( sbuf_index >=  pull_data_info->pdesc.desc.nBuffers ) {
+            current_src_buffer_ptr = pull_data_info->src_buffer;
+            current_src_metaData_ptr = pull_data_info->src_metaData;
+            current_empty_flag_ptr = pull_data_info->empty_flag;
+            sbuf_index = 0;
+          }
+          else {
+            current_src_buffer_ptr += pull_data_info->pdesc.desc.dataBufferPitch;
+            current_src_metaData_ptr += pull_data_info->pdesc.desc.metaDataPitch/8;
+            current_empty_flag_ptr += pull_data_info->pdesc.desc.emptyFlagPitch;
+          }
 
-	}
-	else {
+        }
+        else {
 
 #ifdef DEBUG_WITH_EMULATOR
-	  while( *pull_data_info->src_flag != 0 ) CPI::OS::sleep(1);
+          while( *pull_data_info->src_flag != 0 ) CPI::OS::sleep(1);
 #endif
 
-	  // get the number of input buffers available
-	  CPI::OS::uint32_t buffers_available = *pull_data_info->empty_flag;
+          // get the number of input buffers available
+          CPI::OS::uint32_t buffers_available = *pull_data_info->empty_flag;
       
-	  if ( buffers_available == 0 ) {
-	    return false;
-	  }
+          if ( buffers_available == 0 ) {
+            return false;
+          }
 
 #ifndef NDEBUG
-	  printf("FPGA consumer has %d buffers available\n", 
-		 buffers_available );
+          printf("FPGA consumer has %d buffers available\n", 
+                 buffers_available );
 #endif
 
-	  return true;
-	}
-	return false;
+          return true;
+        }
+        return false;
       }
 
     private:
@@ -594,18 +594,18 @@ createPullDriver( CPI::RDT::Descriptors& pdesc, Port* p )
   if ( pdesc.type == CPI::RDT::ProducerDescT ) {
     if ( pdesc.desc.oob.oep[0] != 0 ) {
       try {
-	std::string s(pdesc.desc.oob.oep);
-	sres =   XferFactoryManager::getFactoryManager().getSMBResources(s);
-	if ( ! sres ) {
-	  throw CPI::Util::EmbeddedException (
-					      CPI::DataTransport::UNSUPPORTED_ENDPOINT, 
-					      pdesc.desc.oob.oep );
-	}
+        std::string s(pdesc.desc.oob.oep);
+        sres =   XferFactoryManager::getFactoryManager().getSMBResources(s);
+        if ( ! sres ) {
+          throw CPI::Util::EmbeddedException (
+                                              CPI::DataTransport::UNSUPPORTED_ENDPOINT, 
+                                              pdesc.desc.oob.oep );
+        }
       }
       catch(...) {
-	throw CPI::Util::EmbeddedException (
-					    CPI::DataTransport::UNSUPPORTED_ENDPOINT, 
-					    pdesc.desc.oob.oep );
+        throw CPI::Util::EmbeddedException (
+                                            CPI::DataTransport::UNSUPPORTED_ENDPOINT, 
+                                            pdesc.desc.oob.oep );
       }
     }
 
@@ -615,23 +615,23 @@ createPullDriver( CPI::RDT::Descriptors& pdesc, Port* p )
     // Get the local and remote vaddrs
     pull_data_info->src_buffer = (volatile CPI::OS::uint8_t*)
       sres->sMemServices->map( pdesc.desc.dataBufferBaseAddr, 
-			       pdesc.desc.dataBufferPitch == 0 ? 
-			       pdesc.desc.dataBufferSize : pdesc.desc.dataBufferPitch * pdesc.desc.nBuffers );
+                               pdesc.desc.dataBufferPitch == 0 ? 
+                               pdesc.desc.dataBufferSize : pdesc.desc.dataBufferPitch * pdesc.desc.nBuffers );
 
     pull_data_info->src_metaData = (volatile CPI::OS::uint64_t*)
       sres->sMemServices->map( pdesc.desc.metaDataBaseAddr,
-			       pdesc.desc.metaDataPitch == 0 ? 
-			       sizeof(CPI::OS::uint64_t) : pdesc.desc.metaDataPitch * pdesc.desc.nBuffers );
+                               pdesc.desc.metaDataPitch == 0 ? 
+                               sizeof(CPI::OS::uint64_t) : pdesc.desc.metaDataPitch * pdesc.desc.nBuffers );
 
     pull_data_info->src_flag = (volatile CPI::OS::uint32_t*)
       sres->sMemServices->map( pdesc.desc.fullFlagBaseAddr,
-			       pdesc.desc.fullFlagPitch == 0 ? 
-			       sizeof(CPI::OS::uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
+                               pdesc.desc.fullFlagPitch == 0 ? 
+                               sizeof(CPI::OS::uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
 
     pull_data_info->empty_flag = (CPI::OS::uint32_t*)
       sres->sMemServices->map( pdesc.desc.emptyFlagBaseAddr,
-			       pdesc.desc.emptyFlagPitch == 0 ? 
-			       sizeof(CPI::OS::uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
+                               pdesc.desc.emptyFlagPitch == 0 ? 
+                               sizeof(CPI::OS::uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
     memcpy(&pull_data_info->pdesc, &pdesc, sizeof(CPI::RDT::Descriptors));
     pdd = new CPI::DataTransport::PullDataDriverIP( pull_data_info );
   }
@@ -640,31 +640,31 @@ createPullDriver( CPI::RDT::Descriptors& pdesc, Port* p )
     printf("Circuit::createPullDriver() creating thread for Consumer(1)\n");
     if ( pdesc.desc.oob.oep[0] != 0 ) {
       try {
-	std::string s(pdesc.desc.oob.oep);
-	tres =   XferFactoryManager::getFactoryManager().getSMBResources(s);
-	if ( ! tres ) {
-	  throw CPI::Util::EmbeddedException (
-					      CPI::DataTransport::UNSUPPORTED_ENDPOINT, 
-					      pdesc.desc.oob.oep );
-	}
+        std::string s(pdesc.desc.oob.oep);
+        tres =   XferFactoryManager::getFactoryManager().getSMBResources(s);
+        if ( ! tres ) {
+          throw CPI::Util::EmbeddedException (
+                                              CPI::DataTransport::UNSUPPORTED_ENDPOINT, 
+                                              pdesc.desc.oob.oep );
+        }
       }
       catch(...) {
-	throw CPI::Util::EmbeddedException (
-					    CPI::DataTransport::UNSUPPORTED_ENDPOINT, 
-					    pdesc.desc.oob.oep );
+        throw CPI::Util::EmbeddedException (
+                                            CPI::DataTransport::UNSUPPORTED_ENDPOINT, 
+                                            pdesc.desc.oob.oep );
       }
     }
 
     PullDataInfo* pull_data_info = new PullDataInfo;
     pull_data_info->empty_flag = (CPI::OS::uint32_t*)
       tres->sMemServices->map( pdesc.desc.emptyFlagBaseAddr,
-			       pdesc.desc.emptyFlagPitch == 0 ? 
-			       sizeof(CPI::OS::uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
+                               pdesc.desc.emptyFlagPitch == 0 ? 
+                               sizeof(CPI::OS::uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
 
     pull_data_info->src_flag = (volatile CPI::OS::uint32_t*)
       tres->sMemServices->map( pdesc.desc.fullFlagBaseAddr,
-			       pdesc.desc.fullFlagPitch == 0 ? 
-			       sizeof(CPI::OS::uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
+                               pdesc.desc.fullFlagPitch == 0 ? 
+                               sizeof(CPI::OS::uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
     memcpy(&pull_data_info->pdesc, &pdesc, sizeof(CPI::RDT::Descriptors));
     pdd = new CPI::DataTransport::PullDataDriverIP( pull_data_info );
   }
@@ -721,7 +721,7 @@ setFlowControlDescriptor( CPI::DataTransport::Port* p, CPI::RDT::Descriptors& pd
       std::string s(pdesc.desc.oob.oep);
       SMBResources* res =   XferFactoryManager::getFactoryManager().getSMBResources(s);
       if ( res ) {
-	res->sMemServices->getEndPoint()->event_id = (int)((pdesc.desc.emptyFlagValue>>32) & 0xfff);
+        res->sMemServices->getEndPoint()->event_id = (int)((pdesc.desc.emptyFlagValue>>32) & 0xfff);
       }
     }
     catch(...) {
@@ -864,7 +864,7 @@ addInputPort( CPI::RDT::Descriptors& pdesc, const char* our_ep, CPI::RDT::Descri
   PortSetMetaData* psmd;
   if ( m_metaData->m_portSetMd.getElementCount() <= 1 ) {
     psmd = new PortSetMetaData( false, 1, new ParallelDataDistribution(), m_metaData,
-				&pdesc, this->getCircuitId(), 1, 1, 1024, our_ep );
+                                &pdesc, this->getCircuitId(), 1, 1, 1024, our_ep );
     m_metaData->addPortSet( psmd );
     update();
   }
@@ -938,12 +938,12 @@ ready()
 
   // Now do the input port sets
   for (y=0; y<this->getInputPortSetCount(); y++ ) {
-		
+                
     CPI::DataTransport::PortSet* t_ps = getInputPortSet(y);
     for (n=0; n<t_ps->getPortCount(); n++ ) {
       CPI::DataTransport::Port* tp = t_ps->getPort(n);
       if ( ! tp->ready() ) {
-	return false;
+        return false;
       }
     }
   }
@@ -980,13 +980,13 @@ initializeDataTransfers()
       CPI::DataTransport::Port* port = portset->getPort(y);
       for ( CPI::OS::uint32_t b=0; b<port->getNumBuffers(); b++ ) {
 
-	InputBuffer* tb = port->getInputBuffer(b);
-	if ( tb ) {
-	  tb->dumpOffsets();
-	  tb->update(0);
-	  tb->dumpOffsets();
+        InputBuffer* tb = port->getInputBuffer(b);
+        if ( tb ) {
+          tb->dumpOffsets();
+          tb->update(0);
+          tb->dumpOffsets();
 
-	}
+        }
       }
     }
   }
@@ -998,9 +998,9 @@ initializeDataTransfers()
 
       OutputBuffer* tb = port->getOutputBuffer(b);
       if ( tb ) {
-	tb->dumpOffsets();
-	tb->update(0);
-	tb->dumpOffsets();
+        tb->dumpOffsets();
+        tb->update(0);
+        tb->dumpOffsets();
       }
     }
   }
@@ -1079,7 +1079,7 @@ createCircuitTemplateGenerators()
       [input_port_set->getPort(0)->getMetaData()->m_descriptor.role]
       ->
       createTemplates( m_transport, output_port_set, input_port_set, controller);
-	  
+          
     // Attach the controller
     input_port_set->setTxController( controller );
 
@@ -1123,14 +1123,14 @@ checkIOZCopyQ()
 void 
 CPI::DataTransport::Circuit::
 QInputToWaitForOutput( 
-		      Port* out_port,
-		      Buffer* input_buf,
-		      CPI::OS::uint32_t )
+                      Port* out_port,
+                      Buffer* input_buf,
+                      CPI::OS::uint32_t )
 {
 
 #ifdef DEBUG_L2
   printf("Queuing Input->Output buffer %d, owned by port %d, prepend = %d\n", 
-	 src_buf->getTid(), src_buf->getPort()->getPortId(), prepend );
+         src_buf->getTid(), src_buf->getPort()->getPortId(), prepend );
 #endif
 
   // Attach the input buffer to the output port
@@ -1144,9 +1144,9 @@ QInputToWaitForOutput(
 void 
 CPI::DataTransport::Circuit::
 QInputToOutput( 
-	       Port* out_port,
-	       Buffer* input_buf,
-	       CPI::OS::uint32_t )
+               Port* out_port,
+               Buffer* input_buf,
+               CPI::OS::uint32_t )
 {
 
   // Get the next available output buffer
@@ -1188,9 +1188,9 @@ QInputToOutput(
 // This method sends a workers input buffer to the input of one of its output ports.
 void CPI::DataTransport::Circuit::
 sendZcopyInputBuffer( 
-		     Port* out_port,
-		     Buffer* input_buf,
-		     CPI::OS::uint32_t len )
+                     Port* out_port,
+                     Buffer* input_buf,
+                     CPI::OS::uint32_t len )
 {
   QInputToWaitForOutput( out_port, input_buf, len);
 }
@@ -1201,12 +1201,12 @@ checkQueuedTransfers()
 {
 
   CPI::OS::uint32_t total=0;
-	
+        
   for ( CPI::OS::uint32_t n=0; n<m_maxPortOrd; n++ ) {
-		
+                
     CPI::OS::uint32_t n_queued = m_queuedTransfers[n].getElementCount();
     total += n_queued;
-		
+                
 #ifdef DEBUG_L2
     printf("In checkQueuedTransfers, there are %d tranfers queued\n", n_queued);
 #endif
@@ -1218,32 +1218,32 @@ checkQueuedTransfers()
     Buffer* b[MAX_PORT_COUNT];
     for (CPI::OS::int32_t i=0; i<n_queued; i++ ) {
       b[i] = 
-	static_cast<Buffer*>(get_entry(&m_queuedTransfers, i));
+        static_cast<Buffer*>(get_entry(&m_queuedTransfers, i));
     }
     if ( (n_queued == 2 ) && (b[0] == b[1]) ) {
       printf("ERROR **** que contains multiple copies of the same buffer !!!!\n");
       Sleep( 2000 );
     }
 #endif
-		
+                
 #ifdef DEBUG_L2
     printf("******* There are %d queued transfers\n", n_queued);
 #endif
-		
+                
     Buffer* buffer = 
       static_cast<Buffer*>(m_queuedTransfers[n].getEntry(0));
-		
+                
 #ifdef DEBUG_L2
     printf("buffer is owned by port %d\n", buffer->getPort()->getPortId() );
 #endif
-		
+                
     if ( canTransferBuffer( buffer, true ) ) {
-			
+                        
 #ifdef DEBUG_L2
       printf("Starting queued transfer, buffer id = %d, (%d) transfers total\n", 
-	     buffer->getTid(), n_queued );
+             buffer->getTid(), n_queued );
 #endif
-			
+                        
       m_queuedTransfers[n].remove( buffer );
       startBufferTransfer( buffer );
       total--;
@@ -1299,7 +1299,7 @@ startBufferTransfer( Buffer* src_buf )
 
 #ifdef DEBUG_L2
   printf("*** Transfering, buffer id = %d, from port %d\n", 
-	 src_buf->getTid(), src_buf->getPort()->getPortId() );
+         src_buf->getTid(), src_buf->getPort()->getPortId() );
 #endif
 
   Buffer *buffer = static_cast<Buffer*>(src_buf);
@@ -1314,7 +1314,7 @@ startBufferTransfer( Buffer* src_buf )
   static int seq=1;
   if ( ((Buffer*)src_buf)->sequence() != seq ) {
     printf("*** ERROR **** found a buffer out of sequence, buf(%d), seq(%d)!!!\n",
-	   ((Buffer*)src_buf)->sequence(), seq);
+           ((Buffer*)src_buf)->sequence(), seq);
     Sleep( 2000 );
   }
   seq++;
@@ -1381,7 +1381,7 @@ queTransfer( Buffer* src_buf, bool prepend )
 
 #ifdef DEBUG_L2
   printf("Queuing buffer %d, owned by port %d, prepend = %d\n", 
-	 src_buf->getTid(), src_buf->getPort()->getPortId(), prepend );
+         src_buf->getTid(), src_buf->getPort()->getPortId(), prepend );
 #endif
 
   if ( ! prepend ) {
@@ -1430,7 +1430,7 @@ getQualifiedInputPortSetCount( bool queued )
   else {
     ps_count = 1;
   }
-	
+        
   // If we have a sequential distribution type, we can only send to one port set
   return ps_count;
 }
@@ -1493,10 +1493,10 @@ canTransferBuffer( Buffer* src_buf, bool queued_transfer )
     CPI::OS::uint32_t n_queued = m_queuedTransfers[src_buf->getPort()->getPortId()].getElementCount();
     if ( n_queued ) {
       for ( CPI::OS::uint32_t n=0; n<this->getQualifiedInputPortSetCount(queued_transfer); n++ ) {
-	CPI::DataTransport::PortSet* t_port = this->getQualifiedInputPortSet(n, queued_transfer);
-	if ( ! t_port->getTxController()->canTransferBufferWhileOthersAreQueued()) {
-	  return false;
-	}
+        CPI::DataTransport::PortSet* t_port = this->getQualifiedInputPortSet(n, queued_transfer);
+        if ( ! t_port->getTxController()->canTransferBufferWhileOthersAreQueued()) {
+          return false;
+        }
       }
     }
   }
@@ -1565,8 +1565,8 @@ update()
     CPI::DataTransport::PortSet* ps=NULL;
     try {
       ps = 
-	new CPI::DataTransport::PortSet( static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[n]),
-					 this );
+        new CPI::DataTransport::PortSet( static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[n]),
+                                         this );
     }
     catch ( ... ) {
       throw;

@@ -88,7 +88,7 @@ namespace {
 
   struct ProcessData {
     ProcessData (const std::string & executable,
-		 const CPI::OS::ProcessManager::ParameterList & parameters);
+                 const CPI::OS::ProcessManager::ParameterList & parameters);
     ~ProcessData ();
 
     bool started;
@@ -101,7 +101,7 @@ namespace {
   };
 
   ProcessData::ProcessData (const std::string & executable,
-			    const CPI::OS::ProcessManager::ParameterList & parameters)
+                            const CPI::OS::ProcessManager::ParameterList & parameters)
     : started (false),
       detached (false),
       terminated (false),
@@ -228,88 +228,88 @@ reaperThread (void *)
       ProcessData & pd = **it;
 
       if (!pd.started) {
-	/*
-	 * Start this process!
-	 */
+        /*
+         * Start this process!
+         */
 
-	pid_t cp = fork ();
+        pid_t cp = fork ();
 
-	if (cp == 0) {
-	  /*
-	   * Undo our blocked signals.  The new process is created single-
-	   * threaded, so use sigprocmask here.
-	   */
+        if (cp == 0) {
+          /*
+           * Undo our blocked signals.  The new process is created single-
+           * threaded, so use sigprocmask here.
+           */
 
-	  sigset_t clearSigSet;
-	  sigaddset (&clearSigSet, SIGCHLD);
-	  sigaddset (&clearSigSet, SIGUSR1);
-	  sigaddset (&clearSigSet, SIGINT);
-	  sigaddset (&clearSigSet, SIGTERM);
-	  sigprocmask (SIG_UNBLOCK, &clearSigSet, 0);
+          sigset_t clearSigSet;
+          sigaddset (&clearSigSet, SIGCHLD);
+          sigaddset (&clearSigSet, SIGUSR1);
+          sigaddset (&clearSigSet, SIGINT);
+          sigaddset (&clearSigSet, SIGTERM);
+          sigprocmask (SIG_UNBLOCK, &clearSigSet, 0);
 
-	  /*
-	   * Child process, run the executable.
-	   */
+          /*
+           * Child process, run the executable.
+           */
 
-	  execv (pd.argv[0], pd.argv);
+          execv (pd.argv[0], pd.argv);
 
-	  /*
-	   * We get here only if the exec has failed.
-	   */
+          /*
+           * We get here only if the exec has failed.
+           */
 
-	  exit (1);
-	}
-	else if (cp == -1) {
-	  /*
-	   * The fork has failed.  Clean up.
-	   */
+          exit (1);
+        }
+        else if (cp == -1) {
+          /*
+           * The fork has failed.  Clean up.
+           */
 
-	  g_numRunningChildren--;
-	  pd.started = true;
-	  pd.terminated = true;
-	  pd.exitCode = -1;
+          g_numRunningChildren--;
+          pd.started = true;
+          pd.terminated = true;
+          pd.exitCode = -1;
 
-	  if (pd.detached) {
-	    /*
-	     * Nobody cares about this process.
-	     */
+          if (pd.detached) {
+            /*
+             * Nobody cares about this process.
+             */
 
-	    delete *it;
-	  }
-	  else {
-	    /*
-	     * Wake up any threads that may be blocked in wait().
-	     */
+            delete *it;
+          }
+          else {
+            /*
+             * Wake up any threads that may be blocked in wait().
+             */
 
-	    pthread_cond_broadcast (&g_pmDataCond);
-	  }
+            pthread_cond_broadcast (&g_pmDataCond);
+          }
 
-	  /*
-	   * We don't care about this process any more.  Forget about it.
-	   */
+          /*
+           * We don't care about this process any more.  Forget about it.
+           */
 
-	  g_myChildren.erase (it);
+          g_myChildren.erase (it);
 
-	  /*
-	   * The iterator may be invalidated.  And we may have no more
-	   * children.  Start from the top.
-	   */
+          /*
+           * The iterator may be invalidated.  And we may have no more
+           * children.  Start from the top.
+           */
 
-	  goto again;
-	}
+          goto again;
+        }
 
-	/*
-	 * The new process was started successfully.
-	 */
+        /*
+         * The new process was started successfully.
+         */
 
-	pd.started = true;
-	pd.pid = cp;
+        pd.started = true;
+        pd.pid = cp;
 
-	/*
-	 * Signal the parent that its child is alive and well.
-	 */
+        /*
+         * Signal the parent that its child is alive and well.
+         */
 
-	pthread_cond_broadcast (&g_pmDataCond);
+        pthread_cond_broadcast (&g_pmDataCond);
       }
     }
 
@@ -349,9 +349,9 @@ reaperThread (void *)
 
     while (childPid != 0 && childPid != -1) {
       for (it = g_myChildren.begin(); it != g_myChildren.end(); it++) {
-	if ((*it)->pid == childPid) {
-	  break;
-	}
+        if ((*it)->pid == childPid) {
+          break;
+        }
       }
 
       cpiAssert (it != g_myChildren.end());
@@ -362,18 +362,18 @@ reaperThread (void *)
       pd.exitCode = exitCode;
 
       if (pd.detached) {
-	/*
-	 * Nobody cares about this process.
-	 */
+        /*
+         * Nobody cares about this process.
+         */
 
-	delete *it;
+        delete *it;
       }
       else {
-	/*
-	 * Wake up any threads that may be blocked in wait().
-	 */
+        /*
+         * Wake up any threads that may be blocked in wait().
+         */
 
-	pthread_cond_broadcast (&g_pmDataCond);
+        pthread_cond_broadcast (&g_pmDataCond);
       }
 
       /*
@@ -421,7 +421,7 @@ CPI::OS::ProcessManager::ProcessManager ()
 }
 
 CPI::OS::ProcessManager::ProcessManager (const std::string & executable,
-					 const ParameterList & parameters)
+                                         const ParameterList & parameters)
   throw (std::string)
 {
   cpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (ProcessData)> ()));
@@ -443,7 +443,7 @@ CPI::OS::ProcessManager::~ProcessManager ()
 
 void
 CPI::OS::ProcessManager::start (const std::string & executable,
-				const ParameterList & parameters)
+                                const ParameterList & parameters)
   throw (std::string)
 {
   ProcessData *& pdp = o2pd (m_osOpaque);
@@ -579,7 +579,7 @@ CPI::OS::ProcessManager::wait (unsigned long timeout)
     }
     else if (timeout != static_cast<unsigned long> (-1)) {
       res = pthread_cond_timedwait (&g_pmDataCond, &g_pmDataMutex,
-				    &deadline);
+                                    &deadline);
     }
     else {
       res = pthread_cond_wait (&g_pmDataCond, &g_pmDataMutex);

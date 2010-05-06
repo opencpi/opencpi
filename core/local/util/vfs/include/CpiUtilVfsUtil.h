@@ -37,7 +37,7 @@ namespace CPI {
        */
 
       bool isXMLDocument (Vfs * fs, const std::string & fileName)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * \name Recursive Copying and Deleting
@@ -65,9 +65,9 @@ namespace CPI {
        */
 
       void copyFilesRecursively (Vfs * srcFs, const std::string & srcDir,
-				 Vfs * destFs, const std::string & destDir,
-				 const std::string & pattern = "*")
-	throw (std::string);
+                                 Vfs * destFs, const std::string & destDir,
+                                 const std::string & pattern = "*")
+        throw (std::string);
 
       /**
        * Recursively copies a directory, including its files and
@@ -90,9 +90,9 @@ namespace CPI {
        */
 
       void copyDirectoryRecursively (Vfs * srcFs, const std::string & srcDir,
-				     Vfs * destFs, const std::string & destDir,
-				     const std::string & pattern = "*")
-	throw (std::string);
+                                     Vfs * destFs, const std::string & destDir,
+                                     const std::string & pattern = "*")
+        throw (std::string);
 
       /**
        * Recursively deletes all files matching a pattern.
@@ -110,9 +110,9 @@ namespace CPI {
        */
 
       void removeFilesRecursively (Vfs * fs, const std::string & name,
-				   const std::string & pattern = "*",
-				   bool deleteEmptyDirectories = true)
-	throw (std::string);
+                                   const std::string & pattern = "*",
+                                   bool deleteEmptyDirectories = true)
+        throw (std::string);
 
       /**
        * Recursively delete all files matching a pattern.
@@ -133,9 +133,9 @@ namespace CPI {
        */
 
       void removeDirectoryRecursively (Vfs * fs, const std::string & name,
-				       const std::string & pattern = "*",
-				       bool deleteEmptyDirectories = true)
-	throw (std::string);
+                                       const std::string & pattern = "*",
+                                       bool deleteEmptyDirectories = true)
+        throw (std::string);
 
       //@}
 
@@ -152,65 +152,65 @@ namespace CPI {
       class EventualEraser {
       public:
 
-	/**
-	 * Default constructor.
-	 *
-	 * A file can later be scheduled for removal using
-	 * #eventuallyErase().
-	 */
+        /**
+         * Default constructor.
+         *
+         * A file can later be scheduled for removal using
+         * #eventuallyErase().
+         */
 
-	EventualEraser ()
-	  throw ();
+        EventualEraser ()
+          throw ();
 
-	/**
-	 * Constructor.
-	 *
-	 * Calls #eventuallyErase (\a fs, \a name, \a isFile).
-	 */
+        /**
+         * Constructor.
+         *
+         * Calls #eventuallyErase (\a fs, \a name, \a isFile).
+         */
 
-	EventualEraser (Vfs * fs, const std::string & name,
-			bool isFile = true)
-	  throw ();
+        EventualEraser (Vfs * fs, const std::string & name,
+                        bool isFile = true)
+          throw ();
 
-	/**
-	 * Destructor.
-	 *
-	 * Attempts to erase a file or directory, if eventuallyErase()
-	 * was called and cancel() was not called afterwards.  Any error
-	 * deleting the file or directory is ignored.
-	 */
+        /**
+         * Destructor.
+         *
+         * Attempts to erase a file or directory, if eventuallyErase()
+         * was called and cancel() was not called afterwards.  Any error
+         * deleting the file or directory is ignored.
+         */
 
-	~EventualEraser ()
-	  throw ();
+        ~EventualEraser ()
+          throw ();
 
-	/**
-	 * Schedule removal of a file or directory.  Arranges for the
-	 * destructor to remove the file or directory.
-	 *
-	 * \param[in] fs      A file system.
-	 * \param[in] name    The name of a file or directory within that file
-	 *                    system, which is to be removed eventually.
-	 * \param[in] isFile  Whether \a name identifies a file name (true) or
-	 *                    a directory (false).
-	 *
-	 * \throw std::string If this instance is already "in use."
-	 */
+        /**
+         * Schedule removal of a file or directory.  Arranges for the
+         * destructor to remove the file or directory.
+         *
+         * \param[in] fs      A file system.
+         * \param[in] name    The name of a file or directory within that file
+         *                    system, which is to be removed eventually.
+         * \param[in] isFile  Whether \a name identifies a file name (true) or
+         *                    a directory (false).
+         *
+         * \throw std::string If this instance is already "in use."
+         */
 
-	void eventuallyErase (Vfs * fs, const std::string & name,
-			      bool isFile = true)
-	  throw (std::string);
+        void eventuallyErase (Vfs * fs, const std::string & name,
+                              bool isFile = true)
+          throw (std::string);
 
-	/**
-	 * Cancel the eventual removal of the file.
-	 */
+        /**
+         * Cancel the eventual removal of the file.
+         */
 
-	void cancel ()
-	  throw ();
+        void cancel ()
+          throw ();
 
       protected:
-	Vfs * m_fs;
-	std::string m_name;
-	bool m_isFile;
+        Vfs * m_fs;
+        std::string m_name;
+        bool m_isFile;
       };
 
     }

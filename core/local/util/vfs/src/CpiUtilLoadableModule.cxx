@@ -58,7 +58,7 @@ LoadableModule ()
 
 CPI::Util::LoadableModule::
 LoadableModule (CPI::Util::Vfs::Vfs * vfs,
-		const std::string & fileName)
+                const std::string & fileName)
   throw (std::string)
   : m_open (false)
 {
@@ -99,31 +99,31 @@ open (CPI::Util::Vfs::Vfs * vfs,
 
     if ((tmpDir = std::getenv ("TEMP"))) {
       try {
-	ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
-	exists = CPI::OS::FileSystem::exists (ntd, &isdir);
+        ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
+        exists = CPI::OS::FileSystem::exists (ntd, &isdir);
       }
       catch (...) {
-	exists = false;
+        exists = false;
       }
     }
 
     if ((!exists || !isdir) && (tmpDir = std::getenv ("TMP"))) {
       try {
-	ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
-	exists = CPI::OS::FileSystem::exists (ntd, &isdir);
+        ntd = CPI::OS::FileSystem::fromNativeName (tmpDir);
+        exists = CPI::OS::FileSystem::exists (ntd, &isdir);
       }
       catch (...) {
-	exists = false;
+        exists = false;
       }
     }
 
     if (!exists || !isdir) {
       try {
-	ntd = CPI::OS::FileSystem::fromNativeName ("/tmp");
-	exists = CPI::OS::FileSystem::exists (ntd, &isdir);
+        ntd = CPI::OS::FileSystem::fromNativeName ("/tmp");
+        exists = CPI::OS::FileSystem::exists (ntd, &isdir);
       }
       catch (...) {
-	exists = false;
+        exists = false;
       }
     }
 
@@ -153,7 +153,7 @@ open (CPI::Util::Vfs::Vfs * vfs,
   }
 
   std::string absFileName = CPI::Util::Vfs::joinNames (g_loadableModuleLocation,
-						       relFileName);
+                                                       relFileName);
   m_fileName = CPI::OS::FileSystem::toNativeName (absFileName);
 
   /*
@@ -176,8 +176,8 @@ open (CPI::Util::Vfs::Vfs * vfs,
      */
 
     int out = ::open (m_fileName.c_str(),
-		      O_CREAT | O_WRONLY | O_TRUNC,
-		      S_IRWXU);
+                      O_CREAT | O_WRONLY | O_TRUNC,
+                      S_IRWXU);
 
     if (out < 0) {
       std::string oops = "Failed to open \"";
@@ -191,24 +191,24 @@ open (CPI::Util::Vfs::Vfs * vfs,
       char buffer[DEFAULT_BUFFER_SIZE];
 
       while (!in->eof() && in->good()) {
-	in->read (buffer, DEFAULT_BUFFER_SIZE);
-	if (::write (out, buffer, in->gcount()) != in->gcount()) {
-	  break;
-	}
+        in->read (buffer, DEFAULT_BUFFER_SIZE);
+        if (::write (out, buffer, in->gcount()) != in->gcount()) {
+          break;
+        }
       }
 
       if (!in->eof() && in->fail()) {
-	std::string oops = "Error reading from \"";
-	oops += fileName;
-	oops += "\"";
-	throw oops;
+        std::string oops = "Error reading from \"";
+        oops += fileName;
+        oops += "\"";
+        throw oops;
       }
 
       if (!in->eof()) {
-	std::string oops = "Error writing to \"";
-	oops += m_fileName;
-	oops += "\"";
-	throw oops;
+        std::string oops = "Error writing to \"";
+        oops += m_fileName;
+        oops += "\"";
+        throw oops;
       }
     }
     catch (const std::string &) {

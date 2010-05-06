@@ -54,18 +54,18 @@ namespace CPI {
     class WaitForNameServiceBinding {
     public:
       WaitForNameServiceBinding (CORBA::ORB_ptr orb,
-				 PortableServer::POA_ptr poa,
-				 const CosNaming::Name & expectedBinding)
-	throw (std::string);
+                                 PortableServer::POA_ptr poa,
+                                 const CosNaming::Name & expectedBinding)
+        throw (std::string);
       ~WaitForNameServiceBinding ()
-	throw ();
+        throw ();
 
       CosNaming::NamingContext_ptr getContext ()
-	throw ();
+        throw ();
       bool waitForBinding (unsigned long timeoutInSeconds)
-	throw ();
+        throw ();
       CORBA::Object_var getBinding ()
-	throw ();
+        throw ();
 
     public:
       /*
@@ -76,26 +76,26 @@ namespace CPI {
 
       class NamingContextBase {
       public:
-	NamingContextBase (const CosNaming::Name & expectedBinding)
-	  throw ();
-	virtual ~NamingContextBase ()
-	  throw ();
+        NamingContextBase (const CosNaming::Name & expectedBinding)
+          throw ();
+        virtual ~NamingContextBase ()
+          throw ();
 
-	bool haveBinding ()
-	  throw ();
-	CORBA::Object_ptr getBinding ()
-	  throw ();
-
-      protected:
-	static bool namesAreEqual (const CosNaming::Name & n1,
-				   const CosNaming::Name & n2)
-	  throw ();
+        bool haveBinding ()
+          throw ();
+        CORBA::Object_ptr getBinding ()
+          throw ();
 
       protected:
-	bool m_haveBinding;
-	CosNaming::Name m_expectedBinding;
-	CORBA::Object_var m_boundObject;
-	CPI::OS::Mutex m_mutex;
+        static bool namesAreEqual (const CosNaming::Name & n1,
+                                   const CosNaming::Name & n2)
+          throw ();
+
+      protected:
+        bool m_haveBinding;
+        CosNaming::Name m_expectedBinding;
+        CORBA::Object_var m_boundObject;
+        CPI::OS::Mutex m_mutex;
       };
 
     protected:

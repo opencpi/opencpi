@@ -1,6 +1,6 @@
 /** \file Base64.h
- **	\date  2004-02-13
- **	\author grymse@alhem.net
+ **        \date  2004-02-13
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -47,27 +47,27 @@ namespace SOCKETS_NAMESPACE {
 /** \defgroup util Utilities */
 
 /** Base64 encode/decode. 
-	\ingroup util */
+        \ingroup util */
 class Base64
 {
 public:
-	Base64();
+        Base64();
 
-	void encode(FILE *, std::string& , bool add_crlf = true);
-	void encode(const std::string&, std::string& , bool add_crlf = true);
-	void encode(const char *, size_t, std::string& , bool add_crlf = true);
-	void encode(const unsigned char *, size_t, std::string& , bool add_crlf = true);
+        void encode(FILE *, std::string& , bool add_crlf = true);
+        void encode(const std::string&, std::string& , bool add_crlf = true);
+        void encode(const char *, size_t, std::string& , bool add_crlf = true);
+        void encode(const unsigned char *, size_t, std::string& , bool add_crlf = true);
 
-	void decode(const std::string&, std::string& );
-	void decode(const std::string&, unsigned char *, size_t&);
+        void decode(const std::string&, std::string& );
+        void decode(const std::string&, unsigned char *, size_t&);
 
-	size_t decode_length(const std::string& );
+        size_t decode_length(const std::string& );
 
 private:
-	Base64(const Base64& ) {}
-	Base64& operator=(const Base64& ) { return *this; }
-static	const char *bstr;
-static	const char rstr[128];
+        Base64(const Base64& ) {}
+        Base64& operator=(const Base64& ) { return *this; }
+static        const char *bstr;
+static        const char rstr[128];
 };
 
 

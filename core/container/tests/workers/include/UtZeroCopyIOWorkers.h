@@ -71,9 +71,9 @@ typedef struct ConsumerWorkerStaticMemory_ ConsumerWorkerStaticMemory;
 
 
 #define LBZCopyOnly    0
-#define	LBAdvanceOnly  1
-#define	LBSendOnly     2
-#define	LBMix          3
+#define        LBAdvanceOnly  1
+#define        LBSendOnly     2
+#define        LBMix          3
 
 
 struct LoopbackWorkerProperties_ {

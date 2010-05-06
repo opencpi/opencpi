@@ -37,10 +37,10 @@ namespace CPI {
     {
     public:
       PullDataDriver( PullDataInfo* pd )
-	:pull_data_info(pd){}
-	virtual bool checkBufferEmpty( CPI::OS::uint8_t* buffer_data, CPI::OS::uint32_t tlen, 
-				       CPI::OS::uint64_t& metaData )=0;
-	virtual  ~PullDataDriver(){};
+        :pull_data_info(pd){}
+        virtual bool checkBufferEmpty( CPI::OS::uint8_t* buffer_data, CPI::OS::uint32_t tlen, 
+                                       CPI::OS::uint64_t& metaData )=0;
+        virtual  ~PullDataDriver(){};
     protected:
       PullDataInfo* pull_data_info;
     };

@@ -50,7 +50,7 @@ struct xf_transfer_ : public XFTransfer
 
 extern CPI::OS::int32_t xfer_pio_create(DataTransfer::SmemServices*, DataTransfer::SmemServices*, PIO_template *);
 extern CPI::OS::int32_t xfer_pio_copy(PIO_template, CPI::OS::uint32_t, CPI::OS::uint32_t, CPI::OS::int32_t, CPI::OS::int32_t, 
-			  PIO_transfer *);
+                          PIO_transfer *);
 extern CPI::OS::int32_t xfer_pio_start(PIO_transfer, CPI::OS::int32_t);
 extern CPI::OS::int32_t xfer_pio_group(PIO_transfer *, CPI::OS::int32_t, PIO_transfer *);
 extern CPI::OS::int32_t xfer_pio_release(PIO_transfer);

@@ -43,7 +43,7 @@ namespace CPI {
        */
 
       LoadableModule ()
-	throw ();
+        throw ();
 
       /**
        * Constructor: Initializes the instance, then calls
@@ -56,8 +56,8 @@ namespace CPI {
        */
 
       LoadableModule (CPI::Util::Vfs::Vfs * vfs,
-		      const std::string & fileName)
-	throw (std::string);
+                      const std::string & fileName)
+        throw (std::string);
 
       /**
        * Destructor.
@@ -66,7 +66,7 @@ namespace CPI {
        */
 
       ~LoadableModule ()
-	throw ();
+        throw ();
 
       /**
        * Load a loadable module.
@@ -81,8 +81,8 @@ namespace CPI {
        */
 
       void open (CPI::Util::Vfs::Vfs * vfs,
-		 const std::string & fileName)
-	throw (std::string);
+                 const std::string & fileName)
+        throw (std::string);
 
       /**
        * Locates a symbol within the open loadable module.
@@ -102,7 +102,7 @@ namespace CPI {
        */
 
       void * getSymbol (const std::string & symbolName)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Closes the open loadable module.
@@ -115,7 +115,7 @@ namespace CPI {
        */
 
       void close ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Set location for temporary files.
@@ -132,7 +132,7 @@ namespace CPI {
        */
 
       static void setTemporaryFileLocation (const std::string & dirName)
-	throw ();
+        throw ();
 
     private:
       bool m_open;

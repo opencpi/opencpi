@@ -62,7 +62,7 @@ namespace CPI {
        */
 
       PropertyParser ()
-	throw ();
+        throw ();
 
       /**
        * Constructor.
@@ -73,15 +73,15 @@ namespace CPI {
        */
 
       PropertyParser (CPI::Util::Vfs::Vfs & fs,
-		      const std::string & fileName)
-	throw (std::string);
+                      const std::string & fileName)
+        throw (std::string);
 
       /**
        * Destructor.
        */
 
       ~PropertyParser ()
-	throw ();
+        throw ();
 
       /**
        * \brief Parse an SPD, SCD or PRF file.
@@ -107,22 +107,22 @@ namespace CPI {
        */
 
       void parse (CPI::Util::Vfs::Vfs & fs,
-		  const std::string & fileName)
-	throw (std::string);
+                  const std::string & fileName)
+        throw (std::string);
 
       void processSPD (CPI::Util::Vfs::Vfs & fs,
-		       const std::string & fileName,
-		       const std::string & implementation,
-		       ezxml_t top)
-	throw (std::string);
+                       const std::string & fileName,
+                       const std::string & implementation,
+                       ezxml_t top)
+        throw (std::string);
 
       void processSCD (CPI::Util::Vfs::Vfs & fs,
-		       const std::string & fileName,
-		       ezxml_t top)
-	throw (std::string);
+                       const std::string & fileName,
+                       ezxml_t top)
+        throw (std::string);
 
       void processPRF (ezxml_t top)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Returns port and property information as a magic string.
@@ -138,7 +138,7 @@ namespace CPI {
        */
 
       const char * encode ()
-	throw ();
+        throw ();
 
       /**
        * Size of the property space.
@@ -147,7 +147,7 @@ namespace CPI {
        */
 
       unsigned int sizeOfPropertySpace () const
-	throw ();
+        throw ();
 
       /**
        * Properties accessor.
@@ -157,7 +157,7 @@ namespace CPI {
        */
 
       const CPI::SCA::Property * getProperties (unsigned int & numProps) const
-	throw ();
+        throw ();
 
       /**
        * Ports accessor.
@@ -167,7 +167,7 @@ namespace CPI {
        */
 
       const CPI::SCA::Port * getPorts (unsigned int & numPorts) const
-	throw ();
+        throw ();
 
       /**
        * Tests accessor.
@@ -177,7 +177,7 @@ namespace CPI {
        */
 
       const CPI::SCA::Test * getTests (unsigned int & numTests) const
-	throw ();
+        throw ();
 
       /**
        * Component "type" accessor.
@@ -194,53 +194,53 @@ namespace CPI {
        */
 
       const std::string & getType () const
-	throw ();
+        throw ();
 
     protected:
       void cleanup ()
-	throw ();
+        throw ();
 
       void parsePropertyfile (CPI::Util::Vfs::Vfs & fs,
-			      const std::string & fileName,
-			      ezxml_t propertyFileNode)
-	throw (std::string);
+                              const std::string & fileName,
+                              ezxml_t propertyFileNode)
+        throw (std::string);
 
       void processSimpleProperty (ezxml_t simplePropertyNode,
-				  CPI::SCA::Property * propData,
-				  unsigned int & offset,
-				  bool isSequence,
-				  bool isTest)
-	throw (std::string);
+                                  CPI::SCA::Property * propData,
+                                  unsigned int & offset,
+                                  bool isSequence,
+                                  bool isTest)
+        throw (std::string);
 
       void adjustSimpleProperty (ezxml_t simplePropertyNode,
-				 CPI::SCA::Property * propData,
-				 bool isSequence,
-				 bool isTest)
-	throw (std::string);
+                                 CPI::SCA::Property * propData,
+                                 bool isSequence,
+                                 bool isTest)
+        throw (std::string);
 
       const char * getNameOrId (ezxml_t node)
-	throw ();
+        throw ();
 
       bool haveProperty (const char * name)
-	throw ();
+        throw ();
 
       static bool isConfigurableProperty (ezxml_t propertyNode)
-	throw ();
+        throw ();
 
       static CPI::SCA::DataType mapPropertyType (const char * type)
-	throw (std::string);
+        throw (std::string);
 
       static unsigned int propertySize (CPI::SCA::DataType type)
-	throw ();
+        throw ();
 
       static unsigned int propertyAlign (CPI::SCA::DataType type)
-	throw ();
+        throw ();
 
       static unsigned int roundUp (unsigned int, unsigned int)
-	throw ();
+        throw ();
 
       static char * strdup (const char *)
-	throw ();
+        throw ();
 
     protected:
       char * m_magicString;

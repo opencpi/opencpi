@@ -53,59 +53,59 @@ namespace {
 
     void bind (const CosNaming::Name & n, CORBA::Object_ptr obj)
       throw (CosNaming::NamingContext::NotFound,
-	     CosNaming::NamingContext::CannotProceed,
-	     CosNaming::NamingContext::InvalidName,
-	     CosNaming::NamingContext::AlreadyBound,
-	     CORBA::SystemException);
+             CosNaming::NamingContext::CannotProceed,
+             CosNaming::NamingContext::InvalidName,
+             CosNaming::NamingContext::AlreadyBound,
+             CORBA::SystemException);
 
     void rebind (const CosNaming::Name & n, CORBA::Object_ptr obj)
       throw (CosNaming::NamingContext::NotFound,
-	     CosNaming::NamingContext::CannotProceed,
-	     CosNaming::NamingContext::InvalidName,
-	     CORBA::SystemException);
+             CosNaming::NamingContext::CannotProceed,
+             CosNaming::NamingContext::InvalidName,
+             CORBA::SystemException);
 
     void bind_context (const CosNaming::Name & n, CosNaming::NamingContext_ptr nc)
       throw (CosNaming::NamingContext::NotFound,
-	     CosNaming::NamingContext::CannotProceed,
-	     CosNaming::NamingContext::InvalidName,
-	     CosNaming::NamingContext::AlreadyBound,
-	     CORBA::SystemException);
+             CosNaming::NamingContext::CannotProceed,
+             CosNaming::NamingContext::InvalidName,
+             CosNaming::NamingContext::AlreadyBound,
+             CORBA::SystemException);
 
     void rebind_context (const CosNaming::Name & n, CosNaming::NamingContext_ptr nc)
       throw (CosNaming::NamingContext::NotFound,
-	     CosNaming::NamingContext::CannotProceed,
-	     CosNaming::NamingContext::InvalidName,
-	     CORBA::SystemException);
+             CosNaming::NamingContext::CannotProceed,
+             CosNaming::NamingContext::InvalidName,
+             CORBA::SystemException);
 
     CORBA::Object_ptr resolve (const CosNaming::Name & n)
       throw (CosNaming::NamingContext::NotFound,
-	     CosNaming::NamingContext::CannotProceed,
-	     CosNaming::NamingContext::InvalidName,
-	     CORBA::SystemException);
+             CosNaming::NamingContext::CannotProceed,
+             CosNaming::NamingContext::InvalidName,
+             CORBA::SystemException);
 
     void unbind (const CosNaming::Name & n)
       throw (CosNaming::NamingContext::NotFound,
-	     CosNaming::NamingContext::CannotProceed,
-	     CosNaming::NamingContext::InvalidName,
-	     CORBA::SystemException);
+             CosNaming::NamingContext::CannotProceed,
+             CosNaming::NamingContext::InvalidName,
+             CORBA::SystemException);
 
     CosNaming::NamingContext_ptr new_context ()
       throw (CORBA::SystemException);
 
     CosNaming::NamingContext_ptr bind_new_context (const CosNaming::Name & n)
       throw (CosNaming::NamingContext::NotFound,
-	     CosNaming::NamingContext::AlreadyBound,
-	     CosNaming::NamingContext::CannotProceed,
-	     CosNaming::NamingContext::InvalidName,
-	     CORBA::SystemException);
+             CosNaming::NamingContext::AlreadyBound,
+             CosNaming::NamingContext::CannotProceed,
+             CosNaming::NamingContext::InvalidName,
+             CORBA::SystemException);
 
     void destroy ()
       throw (CosNaming::NamingContext::NotEmpty,
-	     CORBA::SystemException);
+             CORBA::SystemException);
 
     void list (CORBA::ULong how_many,
-	       CosNaming::BindingList_out bl,
-	       CosNaming::BindingIterator_out bi)
+               CosNaming::BindingList_out bl,
+               CosNaming::BindingIterator_out bi)
       throw (CORBA::SystemException);
   };
 
@@ -126,16 +126,16 @@ namespace {
   MyNamingContext_impl::
   bind (const CosNaming::Name & n, CORBA::Object_ptr obj)
     throw (CosNaming::NamingContext::NotFound,
-	   CosNaming::NamingContext::CannotProceed,
-	   CosNaming::NamingContext::InvalidName,
-	   CosNaming::NamingContext::AlreadyBound,
-	   CORBA::SystemException)
+           CosNaming::NamingContext::CannotProceed,
+           CosNaming::NamingContext::InvalidName,
+           CosNaming::NamingContext::AlreadyBound,
+           CORBA::SystemException)
   {
     CPI::Util::AutoMutex lock (m_mutex);
 
     if (namesAreEqual (m_expectedBinding, n)) {
       if (m_haveBinding) {
-	throw CosNaming::NamingContext::AlreadyBound ();
+        throw CosNaming::NamingContext::AlreadyBound ();
       }
 
       m_haveBinding = true;
@@ -150,9 +150,9 @@ namespace {
   MyNamingContext_impl::
   rebind (const CosNaming::Name & n, CORBA::Object_ptr obj)
     throw (CosNaming::NamingContext::NotFound,
-	   CosNaming::NamingContext::CannotProceed,
-	   CosNaming::NamingContext::InvalidName,
-	   CORBA::SystemException)
+           CosNaming::NamingContext::CannotProceed,
+           CosNaming::NamingContext::InvalidName,
+           CORBA::SystemException)
   {
     CPI::Util::AutoMutex lock (m_mutex);
 
@@ -169,10 +169,10 @@ namespace {
   MyNamingContext_impl::
   bind_context (const CosNaming::Name &, CosNaming::NamingContext_ptr)
     throw (CosNaming::NamingContext::NotFound,
-	   CosNaming::NamingContext::CannotProceed,
-	   CosNaming::NamingContext::InvalidName,
-	   CosNaming::NamingContext::AlreadyBound,
-	   CORBA::SystemException)
+           CosNaming::NamingContext::CannotProceed,
+           CosNaming::NamingContext::InvalidName,
+           CosNaming::NamingContext::AlreadyBound,
+           CORBA::SystemException)
   {
     throw CORBA::NO_IMPLEMENT ();
   }
@@ -181,9 +181,9 @@ namespace {
   MyNamingContext_impl::
   rebind_context (const CosNaming::Name &, CosNaming::NamingContext_ptr)
     throw (CosNaming::NamingContext::NotFound,
-	   CosNaming::NamingContext::CannotProceed,
-	   CosNaming::NamingContext::InvalidName,
-	   CORBA::SystemException)
+           CosNaming::NamingContext::CannotProceed,
+           CosNaming::NamingContext::InvalidName,
+           CORBA::SystemException)
   {
     throw CORBA::NO_IMPLEMENT ();
   }
@@ -192,18 +192,18 @@ namespace {
   MyNamingContext_impl::
   resolve (const CosNaming::Name & n)
     throw (CosNaming::NamingContext::NotFound,
-	   CosNaming::NamingContext::CannotProceed,
-	   CosNaming::NamingContext::InvalidName,
-	   CORBA::SystemException)
+           CosNaming::NamingContext::CannotProceed,
+           CosNaming::NamingContext::InvalidName,
+           CORBA::SystemException)
   {
     CPI::Util::AutoMutex lock (m_mutex);
 
     if (namesAreEqual (m_expectedBinding, n)) {
       if (m_haveBinding) {
-	return CORBA::Object::_duplicate (m_boundObject);
+        return CORBA::Object::_duplicate (m_boundObject);
       }
       else {
-	throw CosNaming::NamingContext::NotFound (CosNaming::NamingContext::missing_node, n);
+        throw CosNaming::NamingContext::NotFound (CosNaming::NamingContext::missing_node, n);
       }
     }
     else {
@@ -215,18 +215,18 @@ namespace {
   MyNamingContext_impl::
   unbind (const CosNaming::Name & n)
     throw (CosNaming::NamingContext::NotFound,
-	   CosNaming::NamingContext::CannotProceed,
-	   CosNaming::NamingContext::InvalidName,
-	   CORBA::SystemException)
+           CosNaming::NamingContext::CannotProceed,
+           CosNaming::NamingContext::InvalidName,
+           CORBA::SystemException)
   {
     CPI::Util::AutoMutex lock (m_mutex);
 
     if (namesAreEqual (m_expectedBinding, n)) {
       if (m_haveBinding) {
-	m_haveBinding = false;
+        m_haveBinding = false;
       }
       else {
-	throw CosNaming::NamingContext::NotFound (CosNaming::NamingContext::missing_node, n);
+        throw CosNaming::NamingContext::NotFound (CosNaming::NamingContext::missing_node, n);
       }
     }
     else {
@@ -246,10 +246,10 @@ namespace {
   MyNamingContext_impl::
   bind_new_context (const CosNaming::Name &)
     throw (CosNaming::NamingContext::NotFound,
-	   CosNaming::NamingContext::AlreadyBound,
-	   CosNaming::NamingContext::CannotProceed,
-	   CosNaming::NamingContext::InvalidName,
-	   CORBA::SystemException)
+           CosNaming::NamingContext::AlreadyBound,
+           CosNaming::NamingContext::CannotProceed,
+           CosNaming::NamingContext::InvalidName,
+           CORBA::SystemException)
   {
     throw CORBA::NO_IMPLEMENT ();
   }
@@ -258,15 +258,15 @@ namespace {
   MyNamingContext_impl::
   destroy ()
     throw (CosNaming::NamingContext::NotEmpty,
-	   CORBA::SystemException)
+           CORBA::SystemException)
   {
   }
 
   void
   MyNamingContext_impl::
   list (CORBA::ULong,
-	CosNaming::BindingList_out,
-	CosNaming::BindingIterator_out)
+        CosNaming::BindingList_out,
+        CosNaming::BindingIterator_out)
     throw (CORBA::SystemException)
   {
     throw CORBA::NO_IMPLEMENT ();
@@ -316,7 +316,7 @@ getBinding ()
 bool
 CPI::CORBAUtil::WaitForNameServiceBinding::NamingContextBase::
 namesAreEqual (const CosNaming::Name & n1,
-	       const CosNaming::Name & n2)
+               const CosNaming::Name & n2)
   throw ()
 {
   CORBA::ULong nl = n1.length ();
@@ -330,7 +330,7 @@ namesAreEqual (const CosNaming::Name & n1,
     const CosNaming::NameComponent & n2c = n2[li];
 
     if (std::strcmp (n1c.id.in(), n2c.id.in()) != 0 ||
-	std::strcmp (n1c.kind.in(), n2c.kind.in()) != 0) {
+        std::strcmp (n1c.kind.in(), n2c.kind.in()) != 0) {
       return false;
     }
   }
@@ -346,8 +346,8 @@ namesAreEqual (const CosNaming::Name & n1,
 
 CPI::CORBAUtil::WaitForNameServiceBinding::
 WaitForNameServiceBinding (CORBA::ORB_ptr orb,
-			   PortableServer::POA_ptr poa,
-			   const CosNaming::Name & expectedBinding)
+                           PortableServer::POA_ptr poa,
+                           const CosNaming::Name & expectedBinding)
   throw (std::string)
   : m_orb (CORBA::ORB::_duplicate (orb)),
     m_poa (PortableServer::POA::_duplicate (poa))
@@ -365,12 +365,12 @@ WaitForNameServiceBinding (CORBA::ORB_ptr orb,
       m_oid = m_poa->activate_object (mnc);
 
       try {
-	CORBA::Object_var obj = m_poa->id_to_reference (m_oid);
-	m_context = CosNaming::NamingContext::_narrow (obj);
-	cpiAssert (!CORBA::is_nil (m_context));
+        CORBA::Object_var obj = m_poa->id_to_reference (m_oid);
+        m_context = CosNaming::NamingContext::_narrow (obj);
+        cpiAssert (!CORBA::is_nil (m_context));
       }
       catch (...) {
-	m_poa->deactivate_object (m_oid);
+        m_poa->deactivate_object (m_oid);
       }
     }
     catch (...) {
@@ -424,7 +424,7 @@ waitForBinding (unsigned long timeoutInSeconds)
 
     try {
       if (m_orb->work_pending()) {
-	m_orb->perform_work ();
+        m_orb->perform_work ();
       }
     }
     catch (...) {

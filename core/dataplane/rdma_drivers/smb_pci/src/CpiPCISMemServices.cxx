@@ -59,7 +59,7 @@ void PCIInit()
 void PCISmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
 {
   CPI::Util::AutoMutex guard ( m_threadSafeMutex,
-			       true ); 
+                               true ); 
 
   if ( m_init ) {
     return;
@@ -94,17 +94,17 @@ void PCISmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
     static uint64_t base = 0x8f700000ll;
     char buf[128];
     snprintf(buf, 128,
-	     "cpi-pci-pio://%s.%llx:%llx.1.10", "0", (unsigned long long)base,
-	     (unsigned long long)size);
+             "cpi-pci-pio://%s.%llx:%llx.1.10", "0", (unsigned long long)base,
+             (unsigned long long)size);
     loc->end_point = buf;
 
     if ( m_fd == -1 ) {
       if ( ( m_fd = open("/dev/mem", O_RDWR|O_SYNC )) < 0 ) {
-	throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
+        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
       }
     }
     m_vaddr =  (uint8_t*)mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED,
-			      m_fd, base);
+                              m_fd, base);
 #endif
 
 
@@ -125,14 +125,14 @@ void PCISmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
     umask(0);
     if ( m_fd == -1 ) {
       if ( (m_fd = shm_open("myshm", O_RDWR, 0666)) <= 0) {
-	printf("errno = %d\n", errno);
-	throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/shm/myshm"  );
+        printf("errno = %d\n", errno);
+        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/shm/myshm"  );
       }
     }
 #else
     if ( m_fd == -1 ) {
       if ( (m_fd = open("/dev/mem", O_RDWR)) < 0) {
-	throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
+        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
       }
     }
 #endif
@@ -178,13 +178,13 @@ CPI::OS::int32_t PCISmemServices::detach ()
 void* PCISmemServices::map (CPI::OS::uint64_t offset, CPI::OS::uint32_t size )
 {
   CPI::Util::AutoMutex guard ( m_threadSafeMutex,
-			       true ); 
+                               true ); 
 
   if ( ! m_init  ) {
     create(m_location, m_location->size);
   }
-	
-  if ( m_location->local ) {	
+        
+  if ( m_location->local ) {        
 #ifndef NDEBUG
     printf("**************** Returning local vaddr = %p\n", m_vaddr );
 #endif
@@ -195,10 +195,10 @@ void* PCISmemServices::map (CPI::OS::uint64_t offset, CPI::OS::uint32_t size )
   // We will create a map per offset until we change the CPI endpoint to handle segments
   // We just need to make sure we dont run out of maps.
   printf("shm size = %d, bus_offset = %llu, offset = %llu, fd = %d\n", 
-	 m_location->map_size, (long long)m_location->bus_offset,(long long)offset, m_fd );
+         m_location->map_size, (long long)m_location->bus_offset,(long long)offset, m_fd );
   if (m_vaddr == NULL ) {
     m_vaddr = mmap(NULL, m_location->map_size, PROT_READ|PROT_WRITE, MAP_SHARED,
-		    m_fd,  m_location->bus_offset );
+                    m_fd,  m_location->bus_offset );
     printf("vaddr = %p\n", m_vaddr );
   }
 
@@ -300,7 +300,7 @@ CPI::OS::int32_t PCIEndPoint::setEndpoint( std::string& ep )
 #ifndef NDEBUG
   printf("bus_id = %s, off = %s, size = %s,\n", bi,pa,ms);
 #endif
-	
+        
   bus_id = atoi(bi);
   bus_offset = strtoul( pa, NULL, 0);
   map_size = atoi(ms);

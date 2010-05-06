@@ -62,20 +62,20 @@ CPI::OS::FileSystem::toNativeName (const std::string & name)
        */
 
       if (name.length() == 3 && std::isalpha (name[1]) && name[2] == ':') {
-	/*
-	 * Drive name only, making into, e.g., c:\
-	 */
-	nativeName = name.substr (1);
-	nativeName += "\\";
+        /*
+         * Drive name only, making into, e.g., c:\
+         */
+        nativeName = name.substr (1);
+        nativeName += "\\";
       }
       else {
-	/*
-	 * Host name only, making into \\host\\
-	 */
+        /*
+         * Host name only, making into \\host\\
+         */
 
-	nativeName = "\\\\";
-	nativeName += name.substr (1);
-	nativeName += '\\';
+        nativeName = "\\\\";
+        nativeName += name.substr (1);
+        nativeName += '\\';
       }
 
       return nativeName;
@@ -163,8 +163,8 @@ CPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
      */
 
     if (nativeName.length() > 2 &&
-	nativeName[2] != '/' && 
-	nativeName[2] != '\\') {
+        nativeName[2] != '/' && 
+        nativeName[2] != '\\') {
       throw std::string ("invalid file name: expected (back) slash after drive name");
     }
 
@@ -173,15 +173,15 @@ CPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
     slashPos = 2;
   }
   else if (nativeName.length() > 1 &&
-	   (nativeName[0] == '\\' && nativeName[1] == '\\' ||
-	    nativeName[0] == '/' && nativeName[1] == '/')) {
+           (nativeName[0] == '\\' && nativeName[1] == '\\' ||
+            nativeName[0] == '/' && nativeName[1] == '/')) {
     /*
      * A UNC file name
      */
 
     if (nativeName.length() == 2 ||
-	nativeName[2] == '\\' ||
-	nativeName[2] == '/') {
+        nativeName[2] == '\\' ||
+        nativeName[2] == '/') {
       throw std::string ("invalid file name: expected host name after '\\\\'");
     }
 
@@ -220,20 +220,20 @@ CPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
      */
 
     if ((slashPos == 1 ||
-	 (slashPos == std::string::npos && nativeName.length() == 1)) &&
-	nativeName[0] == '.') {
+         (slashPos == std::string::npos && nativeName.length() == 1)) &&
+        nativeName[0] == '.') {
       name = cwd ();
     }
     else if ((slashPos == 2 ||
-	      (slashPos == std::string::npos && nativeName.length() == 2)) &&
-	     nativeName[0] == '.' && nativeName[1] == '.') {
+              (slashPos == std::string::npos && nativeName.length() == 2)) &&
+             nativeName[0] == '.' && nativeName[1] == '.') {
       std::string currentDir = cwd ();
 
       cpiAssert (currentDir.length() && currentDir[0] == '/');
       std::string::size_type secondSlash = currentDir.find_first_of (slashes, 1);
 
       if (secondSlash == std::string::npos) {
-	throw std::string ("invalid file name: '..' in top-level directory");
+        throw std::string ("invalid file name: '..' in top-level directory");
       }
 
       std::string::size_type prevSlashPos = currentDir.rfind ('/');
@@ -276,47 +276,47 @@ CPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
        * Ignore a slash at the end
        */
       if (slashPos == std::string::npos) {
-	break;
+        break;
       }
 
       throw std::string ("empty path component");
     }
     else if (newSlashPos - oldSlashPos == 2 &&
-	     nativeName[oldSlashPos+1] == '.') {
+             nativeName[oldSlashPos+1] == '.') {
       /*
        * A path component of "." - ignore
        */
       continue;
     }
     else if (newSlashPos - oldSlashPos == 3 &&
-	     nativeName[oldSlashPos+1] == '.' &&
-	     nativeName[oldSlashPos+2] == '.') {
+             nativeName[oldSlashPos+1] == '.' &&
+             nativeName[oldSlashPos+2] == '.') {
       /*
        * If the name is empty, and if it was a relative name, then
        * back up beyond the current working directory.
        */
 
       if (name.empty()) {
-	if (!prefix.empty()) {
-	  throw std::string ("unprocessible '..' path component");
-	}
+        if (!prefix.empty()) {
+          throw std::string ("unprocessible '..' path component");
+        }
 
-	std::string currentDir = cwd ();
+        std::string currentDir = cwd ();
 
-	/*
-	 * Everything up to the second slash becomes the immutable
-	 * prefix. This way, we never "back up" twice.
-	 */
+        /*
+         * Everything up to the second slash becomes the immutable
+         * prefix. This way, we never "back up" twice.
+         */
 
-	cpiAssert (currentDir.length() && currentDir[0] == '/');
-	std::string::size_type secondSlash = currentDir.find ('/', 1);
+        cpiAssert (currentDir.length() && currentDir[0] == '/');
+        std::string::size_type secondSlash = currentDir.find ('/', 1);
 
-	if (secondSlash == std::string::npos) {
-	  throw std::string ("unprocessible '..' path component");
-	}
+        if (secondSlash == std::string::npos) {
+          throw std::string ("unprocessible '..' path component");
+        }
 
-	prefix = currentDir.substr (0, secondSlash);
-	name = currentDir.substr (secondSlash+1);
+        prefix = currentDir.substr (0, secondSlash);
+        name = currentDir.substr (secondSlash+1);
       }
 
       /*
@@ -326,10 +326,10 @@ CPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
       std::string::size_type prevSlashPos = name.rfind ('/');
 
       if (prevSlashPos == std::string::npos) {
-	name.erase ();
+        name.erase ();
       }
       else {
-	name.erase (prevSlashPos);
+        name.erase (prevSlashPos);
       }
 
       continue;
@@ -379,7 +379,7 @@ CPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
 
 std::string
 CPI::OS::FileSystem::joinNames (const std::string & dir,
-				const std::string & name)
+                                const std::string & name)
   throw (std::string)
 {
   cpiAssert (name.length() > 0);
@@ -446,8 +446,8 @@ CPI::OS::FileSystem::relativeName (const std::string & name)
 
 std::string
 CPI::OS::FileSystem::getPathElement (std::string & path,
-				     bool ignoreInvalid,
-				     char separator)
+                                     bool ignoreInvalid,
+                                     char separator)
   throw (std::string)
 {
   std::string::size_type colPos;
@@ -553,7 +553,7 @@ CPI::OS::FileSystem::rmdir (const std::string & name)
 
 CPI::OS::FileIterator
 CPI::OS::FileSystem::list (const std::string & dir,
-			   const std::string & pattern)
+                           const std::string & pattern)
   throw (std::string)
 {
   return FileIterator (dir, pattern);
@@ -608,12 +608,12 @@ CPI::OS::FileSystem::size (const std::string & name)
   std::string nativeName = toNativeName (name);
 
   HANDLE fh = CreateFile (nativeName.c_str (),
-			  GENERIC_READ,
-			  FILE_SHARE_READ | FILE_SHARE_WRITE,
-			  0,
-			  OPEN_EXISTING,
-			  0,
-			  0);
+                          GENERIC_READ,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          0,
+                          OPEN_EXISTING,
+                          0,
+                          0);
 
   if (fh == INVALID_HANDLE_VALUE) {
     throw CPI::OS::Win32::getErrorMessage (GetLastError());
@@ -632,7 +632,7 @@ CPI::OS::FileSystem::size (const std::string & name)
   CloseHandle (fh);
 
   return ((unsigned long long) fileSizeLow +
-	  ((unsigned long long) fileSizeHigh << 32));
+          ((unsigned long long) fileSizeHigh << 32));
 }
 
 std::time_t
@@ -642,12 +642,12 @@ CPI::OS::FileSystem::lastModified (const std::string & name)
   std::string nativeName = toNativeName (name);
   
   HANDLE fh = CreateFile (nativeName.c_str (),
-			  GENERIC_READ,
-			  FILE_SHARE_READ | FILE_SHARE_WRITE,
-			  0,
-			  OPEN_EXISTING,
-			  0,
-			  0);
+                          GENERIC_READ,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          0,
+                          OPEN_EXISTING,
+                          0,
+                          0);
 
   if (fh == INVALID_HANDLE_VALUE) {
     throw CPI::OS::Win32::getErrorMessage (GetLastError());
@@ -703,7 +703,7 @@ CPI::OS::FileSystem::lastModified (const std::string & name)
 
 void
 CPI::OS::FileSystem::rename (const std::string & srcName,
-			     const std::string & destName)
+                             const std::string & destName)
   throw (std::string)
 {
   std::string srcNativeName = toNativeName (srcName);

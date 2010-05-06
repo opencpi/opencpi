@@ -50,7 +50,7 @@ CPI::Logger::Fallback::FallbackBuf::~FallbackBuf ()
 
 void
 CPI::Logger::Fallback::FallbackBuf::addOutput (Logger * delegatee,
-					       bool adopt, bool retry)
+                                               bool adopt, bool retry)
 {
   m_selfLock.lock ();
   Delegatee d;
@@ -101,20 +101,20 @@ CPI::Logger::Fallback::FallbackBuf::sync ()
     m_selfLock.lock ();
     Delegatees::iterator it;
     for (it = m_delegatee.begin(), good = false;
-	 it != m_delegatee.end() && !good; it++) {
+         it != m_delegatee.end() && !good; it++) {
       if ((*it).retry && !(*it).delegatee->good()) {
-	(*it).delegatee->clear ();
+        (*it).delegatee->clear ();
       }
 
       if ((*it).delegatee->good ()) {
-	(*it).delegatee->setLogLevel (m_logLevel);
-	(*it).delegatee->setProducerName (m_producerName.c_str());
-	(*it).delegatee->write (m_logMessage.data(), m_logMessage.length());
-	(*it).delegatee->flush ();
+        (*it).delegatee->setLogLevel (m_logLevel);
+        (*it).delegatee->setProducerName (m_producerName.c_str());
+        (*it).delegatee->write (m_logMessage.data(), m_logMessage.length());
+        (*it).delegatee->flush ();
       }
 
       if ((*it).delegatee->good()) {
-	good = true;
+        good = true;
       }
     }
     m_selfLock.unlock ();
@@ -178,7 +178,7 @@ CPI::Logger::Fallback::addOutput (Logger & delegatee, bool retry)
 
 void
 CPI::Logger::Fallback::addOutput (Logger * delegatee,
-				  bool adopt, bool retry)
+                                  bool adopt, bool retry)
 {
   m_obuf.addOutput (delegatee, adopt, retry);
 }

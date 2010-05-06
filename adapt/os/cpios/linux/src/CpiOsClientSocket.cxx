@@ -33,7 +33,7 @@
 
 CPI::OS::Socket
 CPI::OS::ClientSocket::connect (const std::string & remoteHost,
-				unsigned int remotePort)
+                                unsigned int remotePort)
   throw (std::string)
 {
   struct sockaddr_in sin;
@@ -56,15 +56,15 @@ CPI::OS::ClientSocket::connect (const std::string & remoteHost,
 
       switch (err) {
       case HOST_NOT_FOUND:
-	throw std::string ("unknown host");
-	break;
+        throw std::string ("unknown host");
+        break;
 
       case NO_ADDRESS:
-	throw std::string ("host has no address");
-	break;
+        throw std::string ("host has no address");
+        break;
 
       default:
-	throw std::string ("gethostbyname() failed");
+        throw std::string ("gethostbyname() failed");
       }
 
       // should not be here

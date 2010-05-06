@@ -10,24 +10,24 @@
 #include <CpiBuffer.h>
 
 
-#define CATCH_ALL_RETHROW( msg )					\
-  catch ( int& ii ) {							\
-    printf("gpp: Caught an int exception while %s = %d\n", msg,ii );	\
-    throw;								\
-  }									\
-  catch( std::string& stri ) {						\
+#define CATCH_ALL_RETHROW( msg )                                        \
+  catch ( int& ii ) {                                                        \
+    printf("gpp: Caught an int exception while %s = %d\n", msg,ii );        \
+    throw;                                                                \
+  }                                                                        \
+  catch( std::string& stri ) {                                                \
     printf("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
-    throw;								\
-  }									\
-  catch ( CPI::Util::EmbeddedException& eex ) {				\
-    printf(" gpp: Caught an embedded exception while %s:\n", msg);		\
-    printf( " error number = %d", eex.m_errorCode );			\
-    printf( " aux info = %s\n", eex.m_auxInfo.c_str() );	        \
-    throw;								\
-  }									\
-  catch( ... ) {							\
-    printf("gpp: Caught an unknown exception while %s\n",msg );		\
-    throw;								\
+    throw;                                                                \
+  }                                                                        \
+  catch ( CPI::Util::EmbeddedException& eex ) {                                \
+    printf(" gpp: Caught an embedded exception while %s:\n", msg);                \
+    printf( " error number = %d", eex.m_errorCode );                        \
+    printf( " aux info = %s\n", eex.m_auxInfo.c_str() );                \
+    throw;                                                                \
+  }                                                                        \
+  catch( ... ) {                                                        \
+    printf("gpp: Caught an unknown exception while %s\n",msg );                \
+    throw;                                                                \
   }
 
 
@@ -69,7 +69,7 @@ public:
 
   void newMessageCircuitAvailable( MessageCircuit* new_circuit )
   {
-    //		printf("TransportEventHandler::newCircuitAvailable new circuit available\n");
+    //                printf("TransportEventHandler::newCircuitAvailable new circuit available\n");
     gpp_circuits[circuit_count++] = new_circuit;
   }
 
@@ -94,7 +94,7 @@ public:
 
   /**********************************
    *  This method gets called when data is available on a circuit
-   **********************************/	
+   **********************************/        
   void dataAvailable( MessageCircuit* circuit )
   {
 
@@ -146,31 +146,31 @@ int gpp_cont(int argc, char** argv)
 
       // We need a client to continue
       while ( circuit_count == 0 ) {
-	server->dispatch();
-	CPI::OS::sleep( 500 );
-	printf("Waiting for a client to connect\n");
+        server->dispatch();
+        CPI::OS::sleep( 500 );
+        printf("Waiting for a client to connect\n");
       }
 
       
 
       printf("***** Got a new client !! \n");
       for (int n=0; n<10; n++) {
-	CPI::OS::sleep( 500 );
-	server->dispatch();
+        CPI::OS::sleep( 500 );
+        server->dispatch();
       }
 
       printf("About to start sending data\n");
       
       int msg_count = 0;
       while( msg_count < 100 ) {
-	CPI::DataTransport::Buffer* buffer;	
-	buffer = gpp_circuits[0]->getSendMessageBuffer();
-	if ( buffer ) {
-	  sprintf((char*)buffer->getBuffer(),"message %d\n", msg_count++ );
-	  gpp_circuits[0]->sendMessage( buffer, strlen((char*)buffer->getBuffer()) + 1 );
-	}
-	CPI::OS::sleep( 5 );
-	server->dispatch();
+        CPI::DataTransport::Buffer* buffer;        
+        buffer = gpp_circuits[0]->getSendMessageBuffer();
+        if ( buffer ) {
+          sprintf((char*)buffer->getBuffer(),"message %d\n", msg_count++ );
+          gpp_circuits[0]->sendMessage( buffer, strlen((char*)buffer->getBuffer()) + 1 );
+        }
+        CPI::OS::sleep( 5 );
+        server->dispatch();
       }
 
 
@@ -184,16 +184,16 @@ int gpp_cont(int argc, char** argv)
       printf("***** Established a new connection  !! \n");
 
       while( 1) {
-	client->dispatch();
-	CPI::DataTransport::Buffer* buffer;	
-	CPI::OS::sleep( 5 );
-	if ( loopback_circuit->messageAvailable() ) {
-	  buffer = loopback_circuit->getNextMessage();
-	  if ( buffer ) {
-	    printf("Message from server = %s\n", (char*)buffer->getBuffer() );
-	    loopback_circuit->freeMessage( buffer );
-	  }
-	}      
+        client->dispatch();
+        CPI::DataTransport::Buffer* buffer;        
+        CPI::OS::sleep( 5 );
+        if ( loopback_circuit->messageAvailable() ) {
+          buffer = loopback_circuit->getNextMessage();
+          if ( buffer ) {
+            printf("Message from server = %s\n", (char*)buffer->getBuffer() );
+            loopback_circuit->freeMessage( buffer );
+          }
+        }      
       }
     }
   }

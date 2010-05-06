@@ -29,17 +29,17 @@ namespace {
 
   void
   defaultAssertionCallback (const char * cond,
-			    const char * file,
-			    unsigned int line)
+                            const char * file,
+                            unsigned int line)
   {
     std::cerr << std::endl
-	      << "Assertion failed: " << cond << " is false at "
-	      << file << ":" << line << "."
-	      << std::endl;
+              << "Assertion failed: " << cond << " is false at "
+              << file << ":" << line << "."
+              << std::endl;
 
 #if !defined (NDEBUG)
     std::cerr << "Stack Dump:"
-	      << std::endl;
+              << std::endl;
     CPI::OS::dumpStack (std::cerr);
     CPI::OS::debugBreak ();
 #endif

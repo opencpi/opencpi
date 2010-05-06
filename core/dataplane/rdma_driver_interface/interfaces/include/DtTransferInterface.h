@@ -65,7 +65,7 @@ namespace DataTransfer {
       CPI::OS::uint32_t stride;       /* Z element stride */
     } z;                              /* Z dimension (i.e. columns) */
   } Shape;
-	 
+         
 
   // A single request to perform a data transfer, this is effectively a transfer template
   // that is used aCPI::OS::int32_t with a transfer service object to describe a transfer.
@@ -76,11 +76,11 @@ namespace DataTransfer {
 
     // XferServices method used to create this request
     typedef enum { Copy, Copy2D, Group } Creator;
-		 
+                 
     // Flags used when created
     typedef enum { 
       None = 0, 
-      FlagTransfer       = 0x01,	 // 
+      FlagTransfer       = 0x01,         // 
       FirstTransfer      = 0x02, // First transfer in list
       LastTransfer       = 0x04, // Last transfer in list
       SizeModifiable     = 0x06, // Size of this transfer is modifiable on start
@@ -90,162 +90,162 @@ namespace DataTransfer {
 
     /*
      * Queue Data Transfer Request
-     *	Arguments:
+     *        Arguments:
      *    s_shape - Used to modify the source shape for all requests created using
-     *				the SizeModifiable flag.
+     *                                the SizeModifiable flag.
      *    t_shape - Used to modify the target shape for all requests created using
-     *				the SizeModifiable flag.
+     *                                the SizeModifiable flag.
      *    
      * Returns: void
-     *	
-     *	Throws:
-     *		DataTransferEx for all exception conditions
+     *        
+     *        Throws:
+     *                DataTransferEx for all exception conditions
      */
     virtual void start ( Shape* s_shape=NULL, Shape* t_shape=NULL) = 0;
 
     /*
      * Get Information about a Data Transfer Request
-     *	Arguments:
-     *	Returns: 
+     *        Arguments:
+     *        Returns: 
      *     0 if transfer complete 1 if transfer is pending
-     *	
-     *	Throws:
-     *		DataTransferEx for all exception conditions
+     *        
+     *        Throws:
+     *                DataTransferEx for all exception conditions
      */
     virtual CPI::OS::int32_t getStatus () = 0;
 
 
     /*
      * Modify the source offset pointers
-     *	Arguments:
+     *        Arguments:
      *     new_offsets[] - List of new source offsets
      *
      *     old_offsets[] - Returned list of old offsets
      *
-     *	Returns: 
+     *        Returns: 
      *    void
-     *	
-     *	Throws:
-     *		DataTransferEx for all exception conditions
+     *        
+     *        Throws:
+     *                DataTransferEx for all exception conditions
      */
     virtual void modify( CPI::OS::uint32_t new_offsets[], CPI::OS::uint32_t old_offsets[] )=0;
-		 
+                 
 
     // Destructor - Note that invoking CpiXferServices::Release is the preferred method.
     virtual ~XferRequest () {};
 
   };
 
-	 
+         
   // Platform dependent data transfer services.  This class is responsible for 
   // creating the appropriate transfer service that is capable of transfering data
   // to and from the specifed shared memory objects.
   class XferServices
   {
-		
+                
   public:
-		 
+                 
     /*
      * Create tranfer services template
-     *	Arguments:
-     *		p1	- Source memory instance
-     *		p2	- Destination memory instance
-     *	Returns: void
+     *        Arguments:
+     *                p1        - Source memory instance
+     *                p2        - Destination memory instance
+     *        Returns: void
      *
-     *	Errors:
-     *		DataTransferEx for all exception conditions
+     *        Errors:
+     *                DataTransferEx for all exception conditions
      */
     XferServices (SmemServices* source, SmemServices* target){};
-		 
+                 
     /*
      * Create a transfer request.
-     *	Arguments:
-     *		srcoffs	- Source memory offset
-     *		dstoffs	- Destination memory offset
-     *		nbytes	- number of bytes in request
-     *		flags	- Copy "flags"
-     *		xfer	- receives transfer request instance
-     *	Returns: void
+     *        Arguments:
+     *                srcoffs        - Source memory offset
+     *                dstoffs        - Destination memory offset
+     *                nbytes        - number of bytes in request
+     *                flags        - Copy "flags"
+     *                xfer        - receives transfer request instance
+     *        Returns: void
      *
-     *	Errors:
-     *		DataTransferEx for all exception conditions
+     *        Errors:
+     *                DataTransferEx for all exception conditions
      */
     virtual XferRequest* copy (CPI::OS::uint32_t srcoff, 
-			       CPI::OS::uint32_t dstoff, 
-			       CPI::OS::uint32_t nbytes, 
-			       XferRequest::Flags flags,
-			       XferRequest* add_to
-			       ) = 0;
-		 
+                               CPI::OS::uint32_t dstoff, 
+                               CPI::OS::uint32_t nbytes, 
+                               XferRequest::Flags flags,
+                               XferRequest* add_to
+                               ) = 0;
+                 
     /*
      * Create a 2-dimensional transfer request.
-     *	Arguments:
-     *		srcoffs	- Source memory offset
-     *		psrc	- Source shape
-     *		dstoffs	- Destination memory offset
-     *		pdst	- Destination shape
-     *		nbytes	- number of bytes in request
-     *		flags	- Copy "flags"
-     *		xfer	- receives transfer request instance
-     *	Returns: void
+     *        Arguments:
+     *                srcoffs        - Source memory offset
+     *                psrc        - Source shape
+     *                dstoffs        - Destination memory offset
+     *                pdst        - Destination shape
+     *                nbytes        - number of bytes in request
+     *                flags        - Copy "flags"
+     *                xfer        - receives transfer request instance
+     *        Returns: void
      *
-     *	Errors:
-     *		DataTransferEx for all exception conditions
+     *        Errors:
+     *                DataTransferEx for all exception conditions
      */
     virtual XferRequest* copy2D (CPI::OS::uint32_t srcoffs, 
-				 Shape* psrc, 
-				 CPI::OS::uint32_t dstoffs,
-				 Shape* pdst,
-				 XferRequest* add_to
-				 ) = 0;
-		 
-		 
+                                 Shape* psrc, 
+                                 CPI::OS::uint32_t dstoffs,
+                                 Shape* pdst,
+                                 XferRequest* add_to
+                                 ) = 0;
+                 
+                 
     /*
      * Group data transfer requests.
-     *	Arguments:
-     *		preqs	- List of transfer request instances to group
-     *		preq	- receives transfer request instance for the group
-     *	Returns: void
+     *        Arguments:
+     *                preqs        - List of transfer request instances to group
+     *                preq        - receives transfer request instance for the group
+     *        Returns: void
      *
-     *	Errors:
-     *		DataTransferEx for all exception conditions
+     *        Errors:
+     *                DataTransferEx for all exception conditions
      */
     virtual XferRequest* group (XferRequest* preqs[]) = 0;
-		 
-		 
+                 
+                 
     /*
      * Release a transfer request that was created using Copy, Copy2D, or Group.
-     *	Arguments:
-     *		preq	- transfer request instance to release.
-     *	Returns: void
+     *        Arguments:
+     *                preq        - transfer request instance to release.
+     *        Returns: void
      *
-     *	Errors:
-     *		DataTransferEx for all exception conditions
+     *        Errors:
+     *                DataTransferEx for all exception conditions
      */
     virtual void release (XferRequest* preq) = 0;
-		 
-		 
+                 
+                 
     // Destructor - implementations are required to track all CpiXferRequests that they
     // produce (via Copy, Copy2D, and Group) and dispose of them when destructed.
     virtual ~XferServices () {};
 
   };
-	 
-	 
-	 
+         
+         
+         
   // Each transfer implementation must implement a factory class
   class XferFactory : public CPI::Util::Driver {
-		 
+                 
   public:
 
     // Default constructor
     XferFactory(const char*)
       throw ();
-		 
+                 
     // Destructor
     virtual ~XferFactory()
       throw ();
-		 
+                 
     // Get our protocol string
     virtual const char* getProtocol()=0;
 
@@ -262,17 +262,17 @@ namespace DataTransfer {
      * of the endpoints equal to NULL.
      ***************************************/
     virtual bool supportsEndPoints(
-				   std::string& end_point1, 
-				   std::string& end_point2 );
-		 
-		
+                                   std::string& end_point1, 
+                                   std::string& end_point2 );
+                 
+                
     /***************************************
      * This method creates a specialized SmeLocation object.  This call should
      * cache locations and return the same location object for identical strings.
      ***************************************/
     virtual EndPoint* getEndPoint( std::string& endpoint )=0;
     virtual void releaseEndPoint( EndPoint* loc ) = 0;
-		 
+                 
     /***************************************
      *  This method is used to dynamically allocate
      *  a source endpoint for an application running on "this"
@@ -294,7 +294,7 @@ namespace DataTransfer {
     virtual XferServices* getXferServices(SmemServices* source, SmemServices* target)=0;
 
   };
-	
+        
 }
 
 

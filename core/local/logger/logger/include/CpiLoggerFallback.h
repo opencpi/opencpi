@@ -64,37 +64,37 @@ namespace CPI {
       /** \cond */
       class FallbackBuf : public LogBuf {
       public:
-	FallbackBuf ();
-	~FallbackBuf ();
+        FallbackBuf ();
+        ~FallbackBuf ();
 
-	void addOutput (Logger *, bool, bool);
+        void addOutput (Logger *, bool, bool);
 
-	void setLogLevel (unsigned short);
-	void setProducerId (const char *);
-	void setProducerName (const char *);
-
-      protected:
-	int sync ();
-	int_type overflow (int_type = std::streambuf::traits_type::eof());
-	std::streamsize xsputn (const char *, std::streamsize);
+        void setLogLevel (unsigned short);
+        void setProducerId (const char *);
+        void setProducerName (const char *);
 
       protected:
-	struct Delegatee {
-	  Logger * delegatee;
-	  bool adopted;
-	  bool retry;
-	};
+        int sync ();
+        int_type overflow (int_type = std::streambuf::traits_type::eof());
+        std::streamsize xsputn (const char *, std::streamsize);
 
-	typedef std::vector<Delegatee> Delegatees;
+      protected:
+        struct Delegatee {
+          Logger * delegatee;
+          bool adopted;
+          bool retry;
+        };
 
-	bool m_first;
-	bool m_locked;
-	Delegatees m_delegatee;
-	unsigned short m_logLevel;
-	std::string m_producerName;
-	std::string m_logMessage;
-	CPI::OS::Mutex m_lock;
-	CPI::OS::Mutex m_selfLock;
+        typedef std::vector<Delegatee> Delegatees;
+
+        bool m_first;
+        bool m_locked;
+        Delegatees m_delegatee;
+        unsigned short m_logLevel;
+        std::string m_producerName;
+        std::string m_logMessage;
+        CPI::OS::Mutex m_lock;
+        CPI::OS::Mutex m_selfLock;
       };
       /** \endcond */
 

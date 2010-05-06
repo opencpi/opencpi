@@ -69,8 +69,8 @@ CPI::Util::Http::Redirection::operator const std::string & () const
 }
 
 CPI::Util::Http::HttpError::HttpError (int code,
-				       const std::string & phrase,
-				       const std::string & b)
+                                       const std::string & phrase,
+                                       const std::string & b)
   : statusCode (code),
     reasonPhrase (phrase),
     body (b)
@@ -78,15 +78,15 @@ CPI::Util::Http::HttpError::HttpError (int code,
 }
 
 CPI::Util::Http::ClientError::ClientError (int code,
-					   const std::string & phrase,
-					   const std::string & b)
+                                           const std::string & phrase,
+                                           const std::string & b)
   : HttpError (code, phrase, b)
 {
 }
 
 CPI::Util::Http::ServerError::ServerError (int code,
-					   const std::string & phrase,
-					   const std::string & b)
+                                           const std::string & phrase,
+                                           const std::string & b)
   : HttpError (code, phrase, b)
 {
 }
@@ -115,9 +115,9 @@ CPI::Util::Http::ClientStream::ClientBuf::
 void
 CPI::Util::Http::ClientStream::ClientBuf::
 setConn (std::istream * in,
-	 std::ostream * out,
-	 void (*shutdown) (void *),
-	 void * sdopaque)
+         std::ostream * out,
+         void (*shutdown) (void *),
+         void * sdopaque)
   throw ()
 {
   m_statusCode = 0;
@@ -169,8 +169,8 @@ startRequest (int requestType)
 void
 CPI::Util::Http::ClientStream::ClientBuf::
 sendAnyRequest (const CPI::Util::Uri & uri,
-		const std::string & request,
-		const Headers & requestHeaders)
+                const std::string & request,
+                const Headers & requestHeaders)
   throw (std::string)
 {
   Headers::const_iterator hit;
@@ -217,8 +217,8 @@ sendAnyRequest (const CPI::Util::Uri & uri,
 
   if (requestHeaders.find ("Host") == requestHeaders.end()) {
     *m_outConn << "Host: "
-	       << CPI::Util::Uri::decode (uri.getHost())
-	       << "\r\n";
+               << CPI::Util::Uri::decode (uri.getHost())
+               << "\r\n";
   }
 
   if (requestHeaders.find ("User-Agent") == requestHeaders.end()) {
@@ -348,7 +348,7 @@ receiveHeaders ()
 
     colonPos++;
     while (colonPos < headerLine.length() &&
-	   std::isspace (headerLine[colonPos])) {
+           std::isspace (headerLine[colonPos])) {
       colonPos++;
     }
 
@@ -386,8 +386,8 @@ receiveHeaders ()
 void
 CPI::Util::Http::ClientStream::ClientBuf::
 sendRequest (int requestType,
-	     const CPI::Util::Uri & uri,
-	     const Headers & headers)
+             const CPI::Util::Uri & uri,
+             const Headers & headers)
   throw (std::string)
 {
   switch (requestType) {
@@ -405,8 +405,8 @@ sendRequest (int requestType,
 void
 CPI::Util::Http::ClientStream::ClientBuf::
 sendGetOrHeadOrDeleteRequest (int requestType,
-			      const CPI::Util::Uri & uri,
-			      const Headers & headers)
+                              const CPI::Util::Uri & uri,
+                              const Headers & headers)
   throw (std::string)
 {
   /*
@@ -496,8 +496,8 @@ sendGetOrHeadOrDeleteRequest (int requestType,
 void
 CPI::Util::Http::ClientStream::ClientBuf::
 sendPutOrPostRequest (int requestType,
-		      const CPI::Util::Uri & uri,
-		      const Headers & headers)
+                      const CPI::Util::Uri & uri,
+                      const Headers & headers)
   throw (std::string)
 {
   /*
@@ -696,12 +696,12 @@ underflow_common (bool bump)
   if (m_chunked && m_chunkRemaining == 0) {
     if (!m_firstChunk) {
       std::string trailingCRLF =
-	CPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+        CPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
       
       if (!m_inConn->good() || trailingCRLF.length()) {
-	// "protocol error, chunk did not end in CRLF";
-	m_state = STATE_CLOSE;
-	return traits_type::eof ();
+        // "protocol error, chunk did not end in CRLF";
+        m_state = STATE_CLOSE;
+        return traits_type::eof ();
       }
     }
     else {
@@ -730,10 +730,10 @@ underflow_common (bool bump)
        */
 
       try {
-	receiveHeaders ();
+        receiveHeaders ();
       }
       catch (...) {
-	// ignore, nothing we can do about it
+        // ignore, nothing we can do about it
       }
 
       m_state = STATE_CLOSE;
@@ -751,8 +751,8 @@ underflow_common (bool bump)
     res = traits_type::eof ();
   }
   else if (!m_chunked &&
-	   m_contentLength != static_cast<unsigned long long> (-1) &&
-	   m_contentRemaining == 0) {
+           m_contentLength != static_cast<unsigned long long> (-1) &&
+           m_contentRemaining == 0) {
     res = traits_type::eof ();
   }
   else {
@@ -781,10 +781,10 @@ underflow_common (bool bump)
   else {
     if (bump) {
       if (m_chunked) {
-	m_chunkRemaining--;
+        m_chunkRemaining--;
       }
       else if (m_contentLength != static_cast<unsigned long long> (-1)) {
-	m_contentRemaining--;
+        m_contentRemaining--;
       }
     }
   }
@@ -879,7 +879,7 @@ xsgetn (char * s, std::streamsize n)
 
     if (m_chunked && m_chunkRemaining == 0) {
       if (traits_type::eq_int_type (underflow(), traits_type::eof())) {
-	break;
+        break;
       }
     }
 
@@ -888,19 +888,19 @@ xsgetn (char * s, std::streamsize n)
      */
 
     if (!m_chunked &&
-	m_contentLength != static_cast<unsigned long long> (-1) &&
-	m_contentRemaining == 0) {
+        m_contentLength != static_cast<unsigned long long> (-1) &&
+        m_contentRemaining == 0) {
       break;
     }
 
     if (m_chunked) {
       std::streamsize inChunk =
-	CPI::Util::Misc::unsignedToStreamsize (m_chunkRemaining, true);
+        CPI::Util::Misc::unsignedToStreamsize (m_chunkRemaining, true);
       toRead = (remaining < inChunk) ? remaining : inChunk;
     }
     else if (m_contentLength != static_cast<unsigned long long> (-1)) {
       std::streamsize inContent =
-	CPI::Util::Misc::unsignedToStreamsize (m_contentRemaining, true);
+        CPI::Util::Misc::unsignedToStreamsize (m_contentRemaining, true);
       toRead = (remaining < inContent) ? remaining : inContent;
     }
     else {
@@ -997,8 +997,8 @@ connect (const CPI::Util::Uri & uri)
   openConnection (uri, inConn, outConn);
 
   m_buf.setConn (inConn, outConn,
-		  shutdownForBuf,
-		  reinterpret_cast<void *> (this));
+                  shutdownForBuf,
+                  reinterpret_cast<void *> (this));
 
   m_connected = true;
 }
@@ -1016,7 +1016,7 @@ close ()
     }
     catch (...) {
       try {
-	closeConnection ();
+        closeConnection ();
       }
       catch (...) {
       }
@@ -1057,7 +1057,7 @@ readBody ()
 {
   char bodyBuffer[10240];
   while (this->good() && !this->eof() &&
-	 m_body.length() < MAX_LENGTH_OF_BODY) {
+         m_body.length() < MAX_LENGTH_OF_BODY) {
     this->read (bodyBuffer, 10240);
     m_body.append (bodyBuffer, this->gcount());
   }
@@ -1096,7 +1096,7 @@ checkRelocation ()
       this->setstate (std::ios_base::badbit);
 
       try {
-	closeConnection ();
+        closeConnection ();
       }
       catch (...) {
       }
@@ -1126,13 +1126,13 @@ checkServerError ()
 
     if (m_buf.getStatusCode() >= 400 && m_buf.getStatusCode() < 500) {
       throw ClientError (m_buf.getStatusCode (),
-			 m_buf.getReasonPhrase (),
-			 m_body);
+                         m_buf.getReasonPhrase (),
+                         m_body);
     }
     else {
       throw ServerError (m_buf.getStatusCode (),
-			 m_buf.getReasonPhrase (),
-			 m_body);
+                         m_buf.getReasonPhrase (),
+                         m_body);
     }
   }
 }
@@ -1148,7 +1148,7 @@ head (const CPI::Util::Uri & uri)
 void
 CPI::Util::Http::ClientStream::
 remove (const CPI::Util::Uri & uri,
-	std::ios_base::openmode mode)
+        std::ios_base::openmode mode)
   throw (std::string, Redirection, ClientError, ServerError)
 {
   if ((mode & std::ios_base::out)) {
@@ -1161,8 +1161,8 @@ remove (const CPI::Util::Uri & uri,
 void
 CPI::Util::Http::ClientStream::
 headOrDelete (int requestType,
-	      const CPI::Util::Uri & uri,
-	      std::ios_base::openmode mode)
+              const CPI::Util::Uri & uri,
+              std::ios_base::openmode mode)
   throw (std::string, Redirection, ClientError, ServerError)
 {
   m_mode = mode;
@@ -1267,10 +1267,10 @@ post (const CPI::Util::Uri & uri,
 void
 CPI::Util::Http::ClientStream::
 putOrPost (int requestType,
-	   const CPI::Util::Uri & uri,
-	   const std::string & contentType,
-	   unsigned long long contentLength,
-	   std::ios_base::openmode mode)
+           const CPI::Util::Uri & uri,
+           const std::string & contentType,
+           unsigned long long contentLength,
+           std::ios_base::openmode mode)
   throw (std::string, Redirection, ClientError, ServerError)
 {
   m_mode = mode | std::ios_base::out;
@@ -1448,11 +1448,11 @@ charset ()
     else {
       idx = colonPos;
       while (idx > 0 && isspace (parameters[idx-1])) {
-	idx--;
+        idx--;
       }
       colonPos++;
       while (colonPos < parameters.length() && isspace (parameters[colonPos])) {
-	colonPos++;
+        colonPos++;
       }
       parameter  = parameters.substr (0, idx);
       parameters = parameters.substr (colonPos);
@@ -1469,7 +1469,7 @@ charset ()
     if (value.length() && value[0] == '"') {
       idx = value.length();
       while (idx > 0 && value[idx] != '"') {
-	idx--;
+        idx--;
       }
       value = value.substr (1, idx-1);
     }

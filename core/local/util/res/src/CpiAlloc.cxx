@@ -14,7 +14,7 @@ namespace CPI {
       CPI::Util::ResAddrType  addr;
       CPI::Util::ResAddrType  aligned_addr;      
       Block( ResPool* rpp, CPI::OS::uint64_t s, CPI::OS::uint64_t adr,  CPI::OS::uint64_t a_adr)
-	:rp(rpp),size(s),addr(adr),aligned_addr(a_adr){}
+        :rp(rpp),size(s),addr(adr),aligned_addr(a_adr){}
       int operator<(const Block& rhs)const;
     };
     struct ResPool {
@@ -29,10 +29,10 @@ namespace CPI {
     int Block::operator<(const Block& rhs)const
     {
       if ( rp->sort_by_size ) {
-	if ( this->size < rhs.size ) return 1;
+        if ( this->size < rhs.size ) return 1;
       }
       else {
-	if ( this->addr < rhs.addr ) return 1;
+        if ( this->addr < rhs.addr ) return 1;
       }
       return 0;
     }
@@ -72,10 +72,10 @@ void CPI::Util::ResPool::defrag()
     it2++;
     for ( ; it2 !=free_list.end(); it2++, it1++ ) {
       if ( ((*it1).addr+(*it1).size) == (*it2).addr ) {
-	(*it1).size += (*it2).size;
-	free_list.erase(it2);
-	not_done=true;
-	break;
+        (*it1).size += (*it2).size;
+        free_list.erase(it2);
+        not_done=true;
+        break;
       }
     }
   }
@@ -104,25 +104,25 @@ int CPI::Util::MemBlockMgr::alloc(CPI::OS::uint64_t nbytes, unsigned int alignme
   do {
     for ( it=m_pool->free_list.begin(); it !=m_pool->free_list.end(); it++ ) {
       if ( ((*it).size > nbytes) ) {
-	req_addr = ALIGN((*it).addr, alignment);
-	CPI::Util::ResAddrType taddr = (*it).addr;
-	(*it).addr += nbytes;
-	(*it).size -= nbytes;      
-	m_pool->alloc_list.push_back( Block(m_pool, nbytes, taddr, ALIGN(req_addr, alignment)) );
+        req_addr = ALIGN((*it).addr, alignment);
+        CPI::Util::ResAddrType taddr = (*it).addr;
+        (*it).addr += nbytes;
+        (*it).size -= nbytes;      
+        m_pool->alloc_list.push_back( Block(m_pool, nbytes, taddr, ALIGN(req_addr, alignment)) );
 #ifndef NDEBUG
-	printf("**** Alloc Returning address = %d, %d\n", taddr, req_addr );
+        printf("**** Alloc Returning address = %d, %d\n", taddr, req_addr );
 #endif
-	return 0;
+        return 0;
       }
       else if (  ((*it).size == nbytes) ) {
-	req_addr = ALIGN((*it).addr, alignment);
-	(*it).aligned_addr = req_addr;
-	m_pool->alloc_list.push_back( *it );
-	m_pool->free_list.erase( it );      
+        req_addr = ALIGN((*it).addr, alignment);
+        (*it).aligned_addr = req_addr;
+        m_pool->alloc_list.push_back( *it );
+        m_pool->free_list.erase( it );      
 #ifndef NDEBUG
-	printf("**** Alloc Returning address = %d, %d\n", (*it).addr, req_addr );
+        printf("**** Alloc Returning address = %d, %d\n", (*it).addr, req_addr );
 #endif
-	return 0;
+        return 0;
       }
     }
     retry--;

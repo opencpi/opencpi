@@ -95,157 +95,157 @@ namespace CPI {
 
       class StaticMemFs : public CPI::Util::Vfs::Vfs {
       public:
-	/**
-	 * Constructor.
-	 *
-	 * The file system is initially empty.
-	 */
+        /**
+         * Constructor.
+         *
+         * The file system is initially empty.
+         */
 
-	StaticMemFs ()
-	  throw ();
+        StaticMemFs ()
+          throw ();
 
-	/**
-	 * Destructor.
-	 */
+        /**
+         * Destructor.
+         */
 
-	~StaticMemFs ()
-	  throw ();
+        ~StaticMemFs ()
+          throw ();
 
-	/**
-	 * Add a file to the file system.
-	 *
-	 * \param[in] name  The name of the file in the file system.
-	 * \param[in] file  The in-memory file.
-	 * \param[in] adopt Whether to "adopt" the file. If true,
-	 *                  \a file will be deleted in the destructor.
-	 */
+        /**
+         * Add a file to the file system.
+         *
+         * \param[in] name  The name of the file in the file system.
+         * \param[in] file  The in-memory file.
+         * \param[in] adopt Whether to "adopt" the file. If true,
+         *                  \a file will be deleted in the destructor.
+         */
 
-	void mount (const std::string & name,
-		    CPI::Util::MemFs::StaticMemFile * file,
-		    bool adopt = false)
-	  throw (std::string);
+        void mount (const std::string & name,
+                    CPI::Util::MemFs::StaticMemFile * file,
+                    bool adopt = false)
+          throw (std::string);
 
-	/**
-	 * \name Implementation of the CPI::Util::Vfs::Vfs interface.
-	 */
+        /**
+         * \name Implementation of the CPI::Util::Vfs::Vfs interface.
+         */
 
-	//@{
+        //@{
 
-	/*
-	 * File Name URI Mapping
-	 */
+        /*
+         * File Name URI Mapping
+         */
 
-	std::string baseURI () const
-	  throw ();
+        std::string baseURI () const
+          throw ();
 
-	std::string nameToURI (const std::string &) const
-	  throw (std::string);
+        std::string nameToURI (const std::string &) const
+          throw (std::string);
 
-	std::string URIToName (const std::string &) const
-	  throw (std::string);
+        std::string URIToName (const std::string &) const
+          throw (std::string);
 
-	/*
-	 * Directory Management
-	 */
+        /*
+         * Directory Management
+         */
 
-	std::string cwd () const
-	  throw (std::string);
+        std::string cwd () const
+          throw (std::string);
 
-	void cd (const std::string &)
-	  throw (std::string);
+        void cd (const std::string &)
+          throw (std::string);
 
-	void mkdir (const std::string &)
-	  throw (std::string);
+        void mkdir (const std::string &)
+          throw (std::string);
 
-	void rmdir (const std::string &)
-	  throw (std::string);
+        void rmdir (const std::string &)
+          throw (std::string);
 
-	/*
-	 * Directory Listing
-	 */
+        /*
+         * Directory Listing
+         */
 
-	CPI::Util::Vfs::Iterator * list (const std::string & dir,
-					 const std::string & pattern = "*")
-	  throw (std::string);
+        CPI::Util::Vfs::Iterator * list (const std::string & dir,
+                                         const std::string & pattern = "*")
+          throw (std::string);
 
-	void closeIterator (CPI::Util::Vfs::Iterator *)
-	  throw (std::string);
+        void closeIterator (CPI::Util::Vfs::Iterator *)
+          throw (std::string);
 
-	/*
-	 * File Information
-	 */
+        /*
+         * File Information
+         */
 
-	bool exists (const std::string &, bool * = 0)
-	  throw (std::string);
+        bool exists (const std::string &, bool * = 0)
+          throw (std::string);
 
-	unsigned long long size (const std::string &)
-	  throw (std::string);
+        unsigned long long size (const std::string &)
+          throw (std::string);
 
-	std::time_t lastModified (const std::string &)
-	  throw (std::string);
+        std::time_t lastModified (const std::string &)
+          throw (std::string);
 
-	/*
-	 * File I/O
-	 */
+        /*
+         * File I/O
+         */
 
-	std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
-	  throw (std::string);
+        std::iostream * open (const std::string &, std::ios_base::openmode = std::ios_base::in | std::ios_base::out)
+          throw (std::string);
 
-	std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
-	  throw (std::string);
+        std::istream * openReadonly (const std::string &, std::ios_base::openmode = std::ios_base::in)
+          throw (std::string);
 
-	std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
-	  throw (std::string);
+        std::ostream * openWriteonly (const std::string &, std::ios_base::openmode = std::ios_base::out | std::ios_base::trunc)
+          throw (std::string);
 
-	void close (std::ios *)
-	  throw (std::string);
+        void close (std::ios *)
+          throw (std::string);
 
-	/*
-	 * File System Operations
-	 */
+        /*
+         * File System Operations
+         */
 
-	void remove (const std::string &)
-	  throw (std::string);
+        void remove (const std::string &)
+          throw (std::string);
 
-	//@}
+        //@}
 
-	/** \cond */
+        /** \cond */
 
       protected:
-	std::string absoluteNameLocked (const std::string &) const
-	  throw (std::string);
-	static void testFilenameForValidity (const std::string &)
-	  throw (std::string);
+        std::string absoluteNameLocked (const std::string &) const
+          throw (std::string);
+        static void testFilenameForValidity (const std::string &)
+          throw (std::string);
 
       public:
-	struct INode {
-	  bool adopted;
-	  StaticMemFile * file;
-	};
+        struct INode {
+          bool adopted;
+          StaticMemFile * file;
+        };
 
-	typedef std::map<std::string, INode> FileList;
+        typedef std::map<std::string, INode> FileList;
 
       protected:
-	std::string m_cwd;
-	std::string m_baseURI;
+        std::string m_cwd;
+        std::string m_baseURI;
 
-	FileList m_contents;
-	mutable CPI::OS::RWLock m_lock;
+        FileList m_contents;
+        mutable CPI::OS::RWLock m_lock;
 
-	/** \endcond */
+        /** \endcond */
 
       private:
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	StaticMemFs (const StaticMemFs &);
+        StaticMemFs (const StaticMemFs &);
 
-	/**
-	 * Not implemented.
-	 */
+        /**
+         * Not implemented.
+         */
 
-	StaticMemFs & operator= (const StaticMemFs &);
+        StaticMemFs & operator= (const StaticMemFs &);
       };
 
     }

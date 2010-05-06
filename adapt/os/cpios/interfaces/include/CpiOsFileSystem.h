@@ -94,7 +94,7 @@ namespace CPI {
        */
 
       std::string toNativeName (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Maps a file name in "native" format to the "common" format.
@@ -107,7 +107,7 @@ namespace CPI {
        */
 
       std::string fromNativeName (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       //@}
 
@@ -135,8 +135,8 @@ namespace CPI {
        */
 
       std::string joinNames (const std::string & dir,
-			     const std::string & name)
-	throw (std::string);
+                             const std::string & name)
+        throw (std::string);
 
       /**
        * Returns an absolute file name for a file name.
@@ -150,7 +150,7 @@ namespace CPI {
        */
 
       std::string absoluteName (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Returns all but the last path component of a file name.
@@ -162,7 +162,7 @@ namespace CPI {
        */
 
       std::string directoryName (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Returns a file name's last path component.
@@ -174,7 +174,7 @@ namespace CPI {
        */
 
       std::string relativeName (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Allows iterating over elements in a string that is composed of a
@@ -212,9 +212,9 @@ namespace CPI {
        */
 
       std::string getPathElement (std::string & path,
-				  bool ignoreInvalid = true,
-				  char separator = '\0')
-	throw (std::string);
+                                  bool ignoreInvalid = true,
+                                  char separator = '\0')
+        throw (std::string);
 
       //@}
 
@@ -231,7 +231,7 @@ namespace CPI {
        */
 
       std::string cwd ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Changes the current working directory.
@@ -244,7 +244,7 @@ namespace CPI {
        */
 
       void cd (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Create a directory.
@@ -257,7 +257,7 @@ namespace CPI {
        */
 
       void mkdir (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Remove a directory.
@@ -272,7 +272,7 @@ namespace CPI {
        */
 
       void rmdir (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       //@}
 
@@ -299,8 +299,8 @@ namespace CPI {
        */
 
       FileIterator list (const std::string & dir = cwd(),
-			 const std::string & pattern = "*")
-	throw (std::string);
+                         const std::string & pattern = "*")
+        throw (std::string);
 
       //@}
 
@@ -322,8 +322,8 @@ namespace CPI {
        */
 
       bool exists (const std::string & name, bool * isDir = 0,
-		   uint64_t *size = 0, std::time_t *mtime = 0)
-	throw ();
+                   uint64_t *size = 0, std::time_t *mtime = 0)
+        throw ();
 
       /**
        * Returns the size of a file.
@@ -335,7 +335,7 @@ namespace CPI {
        */
 
       unsigned long long size (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Returns the timestamp of the last modification.
@@ -347,7 +347,7 @@ namespace CPI {
        */
 
       std::time_t lastModified (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       //@}
 
@@ -367,8 +367,8 @@ namespace CPI {
        */
 
       void rename (const std::string & srcName,
-		   const std::string & destName)
-	throw (std::string);
+                   const std::string & destName)
+        throw (std::string);
 
       /**
        * Remove a file.
@@ -379,7 +379,7 @@ namespace CPI {
        */
 
       void remove (const std::string & name)
-	throw (std::string);
+        throw (std::string);
 
       //@}
     }

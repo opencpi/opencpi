@@ -62,36 +62,36 @@ namespace CPI {
 
       class Buf : public LogBuf {
       public:
-	Buf ();
-	Buf (LogProducer_ptr logService);
-	~Buf ();
+        Buf ();
+        Buf (LogProducer_ptr logService);
+        ~Buf ();
 
-	void setLogService (LogProducer_ptr logService);
-	void setLogLevels (const LogLevelSequence & levels);
+        void setLogService (LogProducer_ptr logService);
+        void setLogLevels (const LogLevelSequence & levels);
 
-	void setLogLevel (unsigned short);
-	void setProducerId (const char *);
-	void setProducerName (const char *);
-
-      protected:
-	int sync ();
-	int_type overflow (int_type = std::streambuf::traits_type::eof());
-	std::streamsize xsputn (const char *, std::streamsize);
+        void setLogLevel (unsigned short);
+        void setProducerId (const char *);
+        void setProducerName (const char *);
 
       protected:
-	typedef std::set<unsigned short> LogLevelSet;
+        int sync ();
+        int_type overflow (int_type = std::streambuf::traits_type::eof());
+        std::streamsize xsputn (const char *, std::streamsize);
 
       protected:
-	bool m_first;
-	bool m_locked;
-	unsigned short m_logLevel;
-	std::string m_producerId;
-	std::string m_producerName;
-	std::string m_logMessage;
-	CPI::OS::Mutex m_lock;
-	bool m_allLogLevelsEnabled;
-	LogLevelSet m_enabledLogLevels;
-	LogProducer_var m_logService;
+        typedef std::set<unsigned short> LogLevelSet;
+
+      protected:
+        bool m_first;
+        bool m_locked;
+        unsigned short m_logLevel;
+        std::string m_producerId;
+        std::string m_producerName;
+        std::string m_logMessage;
+        CPI::OS::Mutex m_lock;
+        bool m_allLogLevelsEnabled;
+        LogLevelSet m_enabledLogLevels;
+        LogProducer_var m_logService;
       };
 
     public:

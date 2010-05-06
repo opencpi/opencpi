@@ -134,7 +134,7 @@ namespace CPI {
       List& getPendingTxList();
       CPI::OS::uint32_t getPendingTransferCount();
 
-	
+        
       /**********************************
        * Marks/Unmarks the attached buffers that are using
        * this buffer for zero copy
@@ -205,11 +205,11 @@ namespace CPI {
 
       // Mapped pointer to our meta data
       volatile DataTransfer::BufferMetaData  (*m_sbMd)[MAX_PORT_COUNT];
-      void*                     m_bmdVaddr;	// buffer meta data virtual address
+      void*                     m_bmdVaddr;        // buffer meta data virtual address
 
       // Mapped pointer to our state
       volatile DataTransfer::BufferState  (*m_state)[MAX_PORT_COUNT];
-      void*                  m_bsVaddr;		// buffer state virtual address
+      void*                  m_bsVaddr;                // buffer state virtual address
 
       // Mapped pointer to our buffer
       volatile void     *m_buffer;
@@ -260,11 +260,11 @@ namespace CPI {
      **********************************/
     inline bool Buffer::inUse()
       {
-	return m_InUse;
+        return m_InUse;
       }
     inline void Buffer::setInUse( bool in_use )
       {
-	m_InUse=in_use;
+        m_InUse=in_use;
       }
 
     /**********************************

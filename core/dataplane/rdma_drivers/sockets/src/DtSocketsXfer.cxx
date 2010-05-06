@@ -128,7 +128,7 @@ public:
   }
 
 private:
-	
+        
 };
 
 
@@ -159,7 +159,7 @@ public:
     m_sh.Select(1,0);
     while ( !m_stop )
       {
-	m_sh.Select(1,0);
+        m_sh.Select(1,0);
       }
   }
   void stop(){m_stop=true;}
@@ -206,13 +206,13 @@ public:
     uint64_t off;
     if ( m_bytes_left == 0 ) {
       if ( len >= sizeof(SocketDataHeader) ) {
-	SocketDataHeader* hdr = reinterpret_cast<SocketDataHeader*>(&m_buf[m_bidx]);
-	m_current_ptr = (char*)m_startupParms.lsmem->map(hdr->offset,hdr->length);
-	off = hdr->offset;
-	m_bytes_left = hdr->length;
-	len -= sizeof(SocketDataHeader);
-	m_bidx += sizeof(SocketDataHeader);
-      }	
+        SocketDataHeader* hdr = reinterpret_cast<SocketDataHeader*>(&m_buf[m_bidx]);
+        m_current_ptr = (char*)m_startupParms.lsmem->map(hdr->offset,hdr->length);
+        off = hdr->offset;
+        m_bytes_left = hdr->length;
+        len -= sizeof(SocketDataHeader);
+        m_bidx += sizeof(SocketDataHeader);
+      }        
     }
 
     int copy_len = (len <= m_bytes_left) ? len : m_bytes_left;
@@ -269,8 +269,8 @@ public:
    
     try {
       if (m_socket.Bind(portNum,10)) {
-	printf("SocketServer: Unable to bind to port %d\n", portNum );
-	cpiAssert(!"Failed to bind socket");
+        printf("SocketServer: Unable to bind to port %d\n", portNum );
+        cpiAssert(!"Failed to bind socket");
       }
     }
     catch( ... ) {
@@ -479,15 +479,15 @@ setEndpoint( std::string& ep )
     }
     else if ( start == 2 ) {
       if ( ep[n] == ';' ) {
-	port = true;
-	ipaddr[i] = 0;
-	i = 0;
+        port = true;
+        ipaddr[i] = 0;
+        i = 0;
       }
       if ( ! port ) {
-	ipaddr[i++] = ep[n];
+        ipaddr[i++] = ep[n];
       }
       else {
-	sportNum[i++] = ep[n];
+        sportNum[i++] = ep[n];
       }
     }
   }
@@ -506,12 +506,12 @@ SocketEndPoint::
 
 
 void SocketXferRequest::init (Creator cr, 
-			   Flags flags, 
-			   CPI::OS::uint32_t srcoffs, 
-			   Shape *psrcshape, 
-			   CPI::OS::uint32_t dstoffs, 
-			   Shape *pdstshape, 
-			   CPI::OS::uint32_t length)
+                           Flags flags, 
+                           CPI::OS::uint32_t srcoffs, 
+                           Shape *psrcshape, 
+                           CPI::OS::uint32_t dstoffs, 
+                           Shape *pdstshape, 
+                           CPI::OS::uint32_t length)
 {
   m_creator = cr;
   m_flags = flags;
@@ -588,11 +588,11 @@ void SocketXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 
 // Create a transfer request
 XferRequest* SocketXferServices::copy (CPI::OS::uint32_t srcoffs, 
-				    CPI::OS::uint32_t dstoffs, 
-				    CPI::OS::uint32_t nbytes, 
-				    XferRequest::Flags flags,
-				    XferRequest*
-				    )
+                                    CPI::OS::uint32_t dstoffs, 
+                                    CPI::OS::uint32_t nbytes, 
+                                    XferRequest::Flags flags,
+                                    XferRequest*
+                                    )
 {
   // Create a transfer request instance and save in list
   SocketXferRequest* pXferReq = new SocketXferRequest (this);
@@ -614,9 +614,9 @@ XferRequest* SocketXferServices::copy (CPI::OS::uint32_t srcoffs,
       // Invoke original code.
       retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &pXferReq->getHandle());
       if (retVal)
-	{
-	  CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-	}
+        {
+          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+        }
     }
   CPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
     {
@@ -631,7 +631,7 @@ XferRequest* SocketXferServices::copy (CPI::OS::uint32_t srcoffs,
 
 // Create a 2-dimensional transfer request
 XferRequest* SocketXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc, 
-				      CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
+                                      CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
 {
   // Create a transfer request instance and save in list
   SocketXferRequest* pXferReq = new SocketXferRequest (this);
@@ -645,11 +645,11 @@ XferRequest* SocketXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc,
       // Invoke original code.
       // We simple cast "XferServices::Shape" to "EP_shape" since they must have the
       // exact same definitions. We don't specify any flags (they weren't used in the original).
-      //			retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
+      //                        retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
       if (retVal)
-	{
-	  CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-	}
+        {
+          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+        }
     }
   catch( ... )
     {
@@ -679,17 +679,17 @@ XferRequest* SocketXferServices::group (XferRequest* preqs[])
       while (preqs[numHandles]) { numHandles++;}
       handles = new XF_transfer [numHandles + 1] ;
       for (int i = 0; i < numHandles; i++)
-	{
-	  handles[i] = ((SocketXferRequest*)preqs[i])->getHandle();
-	}
+        {
+          handles[i] = ((SocketXferRequest*)preqs[i])->getHandle();
+        }
       handles[numHandles] = 0;
 
       // Invoke original code.
       retVal = xfer_group (handles, 0, &pXferReq->getHandle());
       if (retVal)
-	{
-	  CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-	}
+        {
+          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+        }
     }
   catch( ... )
     {

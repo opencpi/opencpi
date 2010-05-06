@@ -67,9 +67,9 @@ namespace CPI {
        * Constructors
        *********************************/
       Circuit( Transport* tpg,
-	       CircuitId&  iid, ConnectionMetaData* connection, 
-	       PortOrdinal sps[], 
-	       PortOrdinal dpss[] );
+               CircuitId&  iid, ConnectionMetaData* connection, 
+               PortOrdinal sps[], 
+               PortOrdinal dpss[] );
 
 
       /**********************************
@@ -81,9 +81,9 @@ namespace CPI {
        * Get circuit status
        *********************************/
       enum Status {
-	Active,
-	Disconnecting,
-	Unknown
+        Active,
+        Disconnecting,
+        Unknown
       };
 
       /**********************************
@@ -116,26 +116,26 @@ namespace CPI {
        * Adds a port to the circuit
        *********************************/
       CPI::DataTransport::Port* addInputPort(
-					      CPI::RDT::Descriptors&      portDep,
-					      const char*                 our_ep,
-					      CPI::RDT::Descriptors*      feedBack);
+                                              CPI::RDT::Descriptors&      portDep,
+                                              const char*                 our_ep,
+                                              CPI::RDT::Descriptors*      feedBack);
 
       /**********************************
        * Adds a port to the circuit
        *********************************/
-      CPI::DataTransport::Port* addPort( PortMetaData* pmd );	
+      CPI::DataTransport::Port* addPort( PortMetaData* pmd );        
 
       /**********************************
        * Updates a port in the circuit
        *********************************/
-      CPI::DataTransport::Port* updatePort( CPI::DataTransport::Port* p );	
+      CPI::DataTransport::Port* updatePort( CPI::DataTransport::Port* p );        
 
 
       /**********************************
        * Sets the feedback descriptor for this port.
        *********************************/
       void setFlowControlDescriptor( CPI::DataTransport::Port* p, 
-				     CPI::RDT::Descriptors& desc);
+                                     CPI::RDT::Descriptors& desc);
 
 
       /**********************************
@@ -170,9 +170,9 @@ namespace CPI {
        * if possible
        *********************************/
       void sendZcopyInputBuffer( 
-				Port* out_port,
-				Buffer* src_buf,
-				CPI::OS::uint32_t len );
+                                Port* out_port,
+                                Buffer* src_buf,
+                                CPI::OS::uint32_t len );
 
 
       /***********************************
@@ -194,8 +194,8 @@ namespace CPI {
        * transfer.
        *********************************/
       bool canTransferBuffer( 
-			     Buffer* input_buf,				// In - Buffer to be transfered
-			     bool queued_transfer=false);		// In - Is this a queued buffer
+                             Buffer* input_buf,                                // In - Buffer to be transfered
+                             bool queued_transfer=false);                // In - Is this a queued buffer
 
 
       /**********************************
@@ -283,14 +283,14 @@ namespace CPI {
 
 
       void QInputToWaitForOutput( 
-				 Port* out_port,
-				 Buffer* input_buf,
-				 CPI::OS::uint32_t len );
+                                 Port* out_port,
+                                 Buffer* input_buf,
+                                 CPI::OS::uint32_t len );
 
       void QInputToOutput( 
-			  Port* out_port,
-			  Buffer* input_buf,
-			  CPI::OS::uint32_t len );
+                          Port* out_port,
+                          Buffer* input_buf,
+                          CPI::OS::uint32_t len );
 
       void checkIOZCopyQ();
  
@@ -305,7 +305,7 @@ namespace CPI {
        * This method is used to get the user port flow control descriptor.
        *********************************/
       void
-	getUserPortFlowControlDescriptor( CPI::RDT::Descriptors* fb, unsigned int idx );
+        getUserPortFlowControlDescriptor( CPI::RDT::Descriptors* fb, unsigned int idx );
 
 
       /**********************************

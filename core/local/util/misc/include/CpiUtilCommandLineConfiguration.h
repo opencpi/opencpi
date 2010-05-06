@@ -99,28 +99,28 @@ namespace CPI {
        */
 
       struct OptionType {
-	/**
-	 * Enumerator for supported command-line data types.
-	 *
-	 * See CPI::Util::CommandLineConfiguration and
-	 * CPI::Util::CommandLineConfiguration::Option.
-	 *
-	 * Derived classes may extend this set.
-	 */
+        /**
+         * Enumerator for supported command-line data types.
+         *
+         * See CPI::Util::CommandLineConfiguration and
+         * CPI::Util::CommandLineConfiguration::Option.
+         *
+         * Derived classes may extend this set.
+         */
 
-	enum OptionTypes {
-	  END,
-	  DUMMY,
-	  NONE,
-	  BOOLEAN,
-	  LONG,
-	  UNSIGNEDLONG,
-	  STRING,
-	  NAMEVALUE,
-	  MULTISTRING,
-	  MULTINAMEVALUE,
-	  MAXOPTIONTYPE
-	};
+        enum OptionTypes {
+          END,
+          DUMMY,
+          NONE,
+          BOOLEAN,
+          LONG,
+          UNSIGNEDLONG,
+          STRING,
+          NAMEVALUE,
+          MULTISTRING,
+          MULTINAMEVALUE,
+          MAXOPTIONTYPE
+        };
       };
 
       /**
@@ -133,146 +133,146 @@ namespace CPI {
        */
 
       struct Option {
-	/**
-	 * An enumeration value from the
-	 * CPI::Util::CommandLineConfiguration::OptionType::OptionTypes
-	 * set above.
-	 *
-	 * If the #type is <tt>DUMMY</tt>, then this element does not
-	 * identify an option, but only adds some description in the
-	 * #desc field which is printed among the other options by the
-	 * CPI::Util::CommandLineConfiguration::printOptions()
-	 * operation.  The #name, #value and #sentinel fields are
-	 * ignored.
-	 *
-	 * If the #type is <tt>NONE</tt>, then the option is of boolean type,
-	 * but does not accept a value.  The <em>value</em> member is set
-	 * to true if the option occurs on the command line.  The
-	 * command-line parameter must have the form
-	 * <tt>--&lt;name&gt;</tt>.
-	 *
-	 * If the #type is <tt>BOOLEAN</tt>, the command-line parameter
-	 * must have the form
-	 * <tt>--&lt;name&gt;[=&lt;value&gt;]</tt>,
-	 * <tt>--no-&lt;name&gt;</tt> or
-	 * <tt>--no&lt;Name&gt;</tt> (with the first letter capitalized).
-	 * In the first case, <tt>value</tt> must be <tt>true</tt> or
-	 * <tt>false</tt>, if omitted, it defaults to true.  In the
-	 * second and third case, the value is set to false.
-	 *
-	 * For all of the following option types, the name and value can
-	 * be separated by an equal sign, or supplied as separate
-	 * command-line parameters.  The equal sign shall be used if
-	 * the value starts with two dashes, i.e.,
-	 * <tt>--option=--value</tt> instead of
-	 * <tt>--option --value</tt>, which might be misinterpreted.
-	 *
-	 * If the #type is <tt>LONG</tt>, <tt>UNSIGNEDLONG</tt>,
-	 * or <tt>STRING</tt>, then the command-line parameter must be
-	 * of the form
-	 * <tt>--&lt;name&gt;=&lt;value&gt;</tt>.
-	 *
-	 * If the #type is <tt>NAMEVALUE</tt>, then the command-line
-	 * parameter must be of the form
-	 * <tt>--&lt;name&gt;=&lt;optname&gt;=&lt;optvalue&gt;</tt>.
-	 *
-	 * If the #type is <tt>MULTISTRING</tt>, then the command-line
-	 * parameter must be of the form
-	 * <tt>--&lt;name&gt;=&lt;value1&gt;[,&lt;value2&gt;...]</tt>.
-	 * The name can occur multiple times on the command line; the
-	 * values will be concatenated.
-	 *
-	 * If the #type is <tt>MULTINAMEVALUE</tt>, then the command-line
-	 * parameter must be of the form
-	 * <tt>--&lt;name&gt;=&lt;optname1&gt;=&lt;optvalue1&gt;[,&lt;optname2&gt;=&lt;optvalue2&gt;...]</tt>.
-	 * The name can occur multiple times on the command line;
-	 * the values will be concatenated.
-	 *
-	 * A #type of END indicates the end of an array of
-	 * command-line option descriptions.  All other fields are
-	 * ignored.
-	 *
-	 * Derived classes may add further values for #type.
-	 */
+        /**
+         * An enumeration value from the
+         * CPI::Util::CommandLineConfiguration::OptionType::OptionTypes
+         * set above.
+         *
+         * If the #type is <tt>DUMMY</tt>, then this element does not
+         * identify an option, but only adds some description in the
+         * #desc field which is printed among the other options by the
+         * CPI::Util::CommandLineConfiguration::printOptions()
+         * operation.  The #name, #value and #sentinel fields are
+         * ignored.
+         *
+         * If the #type is <tt>NONE</tt>, then the option is of boolean type,
+         * but does not accept a value.  The <em>value</em> member is set
+         * to true if the option occurs on the command line.  The
+         * command-line parameter must have the form
+         * <tt>--&lt;name&gt;</tt>.
+         *
+         * If the #type is <tt>BOOLEAN</tt>, the command-line parameter
+         * must have the form
+         * <tt>--&lt;name&gt;[=&lt;value&gt;]</tt>,
+         * <tt>--no-&lt;name&gt;</tt> or
+         * <tt>--no&lt;Name&gt;</tt> (with the first letter capitalized).
+         * In the first case, <tt>value</tt> must be <tt>true</tt> or
+         * <tt>false</tt>, if omitted, it defaults to true.  In the
+         * second and third case, the value is set to false.
+         *
+         * For all of the following option types, the name and value can
+         * be separated by an equal sign, or supplied as separate
+         * command-line parameters.  The equal sign shall be used if
+         * the value starts with two dashes, i.e.,
+         * <tt>--option=--value</tt> instead of
+         * <tt>--option --value</tt>, which might be misinterpreted.
+         *
+         * If the #type is <tt>LONG</tt>, <tt>UNSIGNEDLONG</tt>,
+         * or <tt>STRING</tt>, then the command-line parameter must be
+         * of the form
+         * <tt>--&lt;name&gt;=&lt;value&gt;</tt>.
+         *
+         * If the #type is <tt>NAMEVALUE</tt>, then the command-line
+         * parameter must be of the form
+         * <tt>--&lt;name&gt;=&lt;optname&gt;=&lt;optvalue&gt;</tt>.
+         *
+         * If the #type is <tt>MULTISTRING</tt>, then the command-line
+         * parameter must be of the form
+         * <tt>--&lt;name&gt;=&lt;value1&gt;[,&lt;value2&gt;...]</tt>.
+         * The name can occur multiple times on the command line; the
+         * values will be concatenated.
+         *
+         * If the #type is <tt>MULTINAMEVALUE</tt>, then the command-line
+         * parameter must be of the form
+         * <tt>--&lt;name&gt;=&lt;optname1&gt;=&lt;optvalue1&gt;[,&lt;optname2&gt;=&lt;optvalue2&gt;...]</tt>.
+         * The name can occur multiple times on the command line;
+         * the values will be concatenated.
+         *
+         * A #type of END indicates the end of an array of
+         * command-line option descriptions.  All other fields are
+         * ignored.
+         *
+         * Derived classes may add further values for #type.
+         */
 
-	unsigned int type;
+        unsigned int type;
 
-	/**
-	 * The name of the command-line option.  On the command
-	 * line, users need to prefix this name with two dashes,
-	 * i.e., <tt>--foo</tt> is used to configure a property named
-	 * <tt>foo</tt>.
-	 */
+        /**
+         * The name of the command-line option.  On the command
+         * line, users need to prefix this name with two dashes,
+         * i.e., <tt>--foo</tt> is used to configure a property named
+         * <tt>foo</tt>.
+         */
 
-	const char * name;
+        const char * name;
 
-	/**
-	 * A brief human-readable description of the option.  This
-	 * text is printed by the printOptions() operation below.
-	 * To fit on an 80-character wide screen, the description
-	 * should be less than 44 characters long.
-	 */
+        /**
+         * A brief human-readable description of the option.  This
+         * text is printed by the printOptions() operation below.
+         * To fit on an 80-character wide screen, the description
+         * should be less than 44 characters long.
+         */
 
-	const char * desc;
+        const char * desc;
 
-	/**
-	 * A pointer to the data member where the value is to
-	 * be stored.  This must be a non-static data member of
-	 * a class derived from CommandLineConfiguration.
-	 * This pointer-to-member must then be cast to type
-	 * <tt>char CommandLineConfiguration::*</tt>,
-	 * using <em>reinterpret_cast&lt;&gt;</em>.
-	 * The <tt>CPI_CLC_OPT(x)</tt> macro is provided for this
-	 * purpose.
-	 *
-	 * If #type == <tt>NONE</tt>, then #value must be of type bool.
-	 *
-	 * If #type == <tt>BOOLEAN</tt>, then #value must be of type bool.
-	 *
-	 * If #type == <tt>LONG</tt>, then #value must be of type long.
-	 *
-	 * If #type == <tt>UNSIGNEDLONG</tt>, then #value must be of type unsigned long.
-	 *
-	 * If #type == <tt>STRING</tt>, then #value must be of type std::string.
-	 *
-	 * If #type == <tt>NAMEVALUE</tt>, then #value must be of type
-	 * CPI::Util::CommandLineConfiguration::NameValue.
-	 *
-	 * If #type == <tt>MULTISTRING</tt>, then #value must be of type
-	 * CPI::Util::CommandLineConfiguration::MultiString.
-	 *
-	 * If #type == <tt>MULTINAMEVALUE</tt>, then #value must be of type
-	 * CPI::Util::CommandLineConfiguration::MultiNameValue.
-	 *
-	 * Note that a mismatch between the type indicated by
-	 * #type and the actual type of the data member pointed to
-	 * by #value of the data member yields undefined behavior.
-	 */
+        /**
+         * A pointer to the data member where the value is to
+         * be stored.  This must be a non-static data member of
+         * a class derived from CommandLineConfiguration.
+         * This pointer-to-member must then be cast to type
+         * <tt>char CommandLineConfiguration::*</tt>,
+         * using <em>reinterpret_cast&lt;&gt;</em>.
+         * The <tt>CPI_CLC_OPT(x)</tt> macro is provided for this
+         * purpose.
+         *
+         * If #type == <tt>NONE</tt>, then #value must be of type bool.
+         *
+         * If #type == <tt>BOOLEAN</tt>, then #value must be of type bool.
+         *
+         * If #type == <tt>LONG</tt>, then #value must be of type long.
+         *
+         * If #type == <tt>UNSIGNEDLONG</tt>, then #value must be of type unsigned long.
+         *
+         * If #type == <tt>STRING</tt>, then #value must be of type std::string.
+         *
+         * If #type == <tt>NAMEVALUE</tt>, then #value must be of type
+         * CPI::Util::CommandLineConfiguration::NameValue.
+         *
+         * If #type == <tt>MULTISTRING</tt>, then #value must be of type
+         * CPI::Util::CommandLineConfiguration::MultiString.
+         *
+         * If #type == <tt>MULTINAMEVALUE</tt>, then #value must be of type
+         * CPI::Util::CommandLineConfiguration::MultiNameValue.
+         *
+         * Note that a mismatch between the type indicated by
+         * #type and the actual type of the data member pointed to
+         * by #value of the data member yields undefined behavior.
+         */
 
-	char CommandLineConfiguration::* value;
+        char CommandLineConfiguration::* value;
 
-	/**
-	 * If non-zero, this is a pointer to a data member of type
-	 * bool.  It is set to true if the option is being configured
-	 * on the command line.  This information can be used to
-	 * determine if the option occured on the command line,
-	 * even if the value remains indistinguishable from its
-	 * default setting.
-	 *
-	 * This must be a pointer to a non-static data member of a
-	 * class derived from this class.  This pointer-to-member
-	 * must then be cast to the
-	 * <tt>bool CommandLineConfiguration::*</tt> type (from
-	 * its original <tt>bool &lt;Derived&gt;::*</tt> type), using
-	 * <em>static_cast&lt;&gt;</em>.
-	 * The <tt>CPI_CLC_SENT(x)</tt> macro is provided
-	 * for this purpose.
-	 *
-	 * Note that this field can be omitted from an initializer
-	 * list to default-initialize it to zero.
-	 */
+        /**
+         * If non-zero, this is a pointer to a data member of type
+         * bool.  It is set to true if the option is being configured
+         * on the command line.  This information can be used to
+         * determine if the option occured on the command line,
+         * even if the value remains indistinguishable from its
+         * default setting.
+         *
+         * This must be a pointer to a non-static data member of a
+         * class derived from this class.  This pointer-to-member
+         * must then be cast to the
+         * <tt>bool CommandLineConfiguration::*</tt> type (from
+         * its original <tt>bool &lt;Derived&gt;::*</tt> type), using
+         * <em>static_cast&lt;&gt;</em>.
+         * The <tt>CPI_CLC_SENT(x)</tt> macro is provided
+         * for this purpose.
+         *
+         * Note that this field can be omitted from an initializer
+         * list to default-initialize it to zero.
+         */
 
-	bool CommandLineConfiguration::* sentinel;
+        bool CommandLineConfiguration::* sentinel;
       };
 
     public:
@@ -286,7 +286,7 @@ namespace CPI {
        */
 
       CommandLineConfiguration (const Option * options)
-	throw ();
+        throw ();
 
       /**
        * Destructor.
@@ -334,9 +334,9 @@ namespace CPI {
        */
 
       void configure (int & argc, char * argv[],
-		      bool ignoreUnknown = false,
-		      bool removeFromSet = true)
-	throw (std::string);
+                      bool ignoreUnknown = false,
+                      bool removeFromSet = true)
+        throw (std::string);
 
       /**
        * Print a human-readable description of available command-line
@@ -358,7 +358,7 @@ namespace CPI {
        */
 
       void printOptions (std::ostream & out)
-	throw ();
+        throw ();
 
     protected:
       /**
@@ -392,9 +392,9 @@ namespace CPI {
        */
 
       virtual void configureOption (unsigned int type,
-				    void * valuePtr,
-				    const std::string & optionValue)
-	throw (std::string);
+                                    void * valuePtr,
+                                    const std::string & optionValue)
+        throw (std::string);
 
       /**
        * Returns a string indicating how to options of a certain type
@@ -418,11 +418,11 @@ namespace CPI {
        */
 
       virtual std::string printOptionSpec (unsigned int type) const
-	throw ();
+        throw ();
 
     protected:
       const Option * findOption (const std::string & name)
-	throw ();
+        throw ();
 
     protected:
       unsigned long m_numOpts;

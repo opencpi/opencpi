@@ -83,25 +83,25 @@ namespace CPI {
       /** \cond */
       class OStreamAdapterBuf : public std::streambuf {
       public:
-	OStreamAdapterBuf (Logger *,
-			   unsigned short,
-			   const std::string &,
-			   bool);
-	~OStreamAdapterBuf ();
+        OStreamAdapterBuf (Logger *,
+                           unsigned short,
+                           const std::string &,
+                           bool);
+        ~OStreamAdapterBuf ();
 
       protected:
-	int sync ();
-	int_type overflow (int_type = std::streambuf::traits_type::eof());
-	std::streamsize xsputn (const char *, std::streamsize);
+        int sync ();
+        int_type overflow (int_type = std::streambuf::traits_type::eof());
+        std::streamsize xsputn (const char *, std::streamsize);
 
       protected:
-	bool m_first;
-	bool m_adopted;
-	Logger * m_logger;
-	Logger::LogBuf & m_out;
-	unsigned short m_logLevel;
-	std::string m_producerName;
-	CPI::OS::Mutex m_selfLock;
+        bool m_first;
+        bool m_adopted;
+        Logger * m_logger;
+        Logger::LogBuf & m_out;
+        unsigned short m_logLevel;
+        std::string m_producerName;
+        CPI::OS::Mutex m_selfLock;
       };
       /** \endcond */
 
@@ -119,8 +119,8 @@ namespace CPI {
        */
 
       OStreamAdapter (Logger & logger,
-		      unsigned short logLevel,
-		      const std::string & producerName);
+                      unsigned short logLevel,
+                      const std::string & producerName);
 
       /**
        * Constructor
@@ -140,9 +140,9 @@ namespace CPI {
        */
 
       OStreamAdapter (Logger * logger,
-		      unsigned short logLevel,
-		      const std::string & producerName,
-		      bool adopt = false);
+                      unsigned short logLevel,
+                      const std::string & producerName,
+                      bool adopt = false);
 
       /**
        * Destructor.

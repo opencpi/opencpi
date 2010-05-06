@@ -125,343 +125,343 @@ namespace CPI {
     namespace Test {
 
       /**
-	 @brief Abort a test
+         @brief Abort a test
 
-	 Throwing this exception aborts the current test.
+         Throwing this exception aborts the current test.
       */
 
       class Abort {
       public:
-	Abort ()
-	{
-	  // Empty
-	}
+        Abort ()
+        {
+          // Empty
+        }
       };
 
       /**
-	 @brief
-	 test suite exception class.
+         @brief
+         test suite exception class.
 
-	 Exceptions of this type are thrown by the test suite for run time
-	 errors that are not related to test failures. For example, an
-	 exception is thrown if a NULL test pointer is provided to
-	 Suite::add_test().
+         Exceptions of this type are thrown by the test suite for run time
+         errors that are not related to test failures. For example, an
+         exception is thrown if a NULL test pointer is provided to
+         Suite::add_test().
       */
 
       class Exception : public std::logic_error
-	{
-	public:
+        {
+        public:
 
-	  /**
-	     @brief
-	     Construct a test suite exception instance.
+          /**
+             @brief
+             Construct a test suite exception instance.
 
-	     Creates a test suite exception with the specified error
-	     message.
-	  */
+             Creates a test suite exception with the specified error
+             message.
+          */
 
-	  Exception ( const std::string& message = "" )
-	    : std::logic_error ( message )
-	    {
-	      // Empty
-	    }
-	};
+          Exception ( const std::string& message = "" )
+            : std::logic_error ( message )
+            {
+              // Empty
+            }
+        };
 
       /**
-	 @brief
-	 test suite test class.
+         @brief
+         test suite test class.
 
-	 The class test is an abstract class. A class must derived from test
-	 and implement the run() function.  The derived class contains the
-	 tests that are to be executed. The tests should pass their return status
-	 into the macro called test() (defined above). If the return status
-	 is 0 the tests "passed". Otherewise, the test failed. The run() function
-	 in the derived class is invoked from the framework. The run() function
-	 should call all of the tests in the derived class.
+         The class test is an abstract class. A class must derived from test
+         and implement the run() function.  The derived class contains the
+         tests that are to be executed. The tests should pass their return status
+         into the macro called test() (defined above). If the return status
+         is 0 the tests "passed". Otherewise, the test failed. The run() function
+         in the derived class is invoked from the framework. The run() function
+         should call all of the tests in the derived class.
 
-	 @code
+         @code
 
-	 class foo_test : public CPI::Util::Test::Test
-	 {
-	 public:
+         class foo_test : public CPI::Util::Test::Test
+         {
+         public:
 
-	   // Implement the pure virtual run() function from test
-	   void run ( )
-	   {
-	     test_foo_1 ( );
-	     test_foo_2 ( );
-	   }
+           // Implement the pure virtual run() function from test
+           void run ( )
+           {
+             test_foo_1 ( );
+             test_foo_2 ( );
+           }
 
-	   void test_foo_1 ( )
-	   {
-	     // The macro test() records the rc from each sub-test
-	     test_call( test_foo_1a ( arg0 ) );
-	     test_call( test_foo_1b ( argA, argB ) );
-	     test_call( test_foo_1c ( ) );
-	   }
+           void test_foo_1 ( )
+           {
+             // The macro test() records the rc from each sub-test
+             test_call( test_foo_1a ( arg0 ) );
+             test_call( test_foo_1b ( argA, argB ) );
+             test_call( test_foo_1c ( ) );
+           }
 
-	   void test_foo_2 ( )
-	   {
-	     test_call( test_foo_2a ( ) );
-	     test_call( test_foo_2b ( ) );
-	     test_call( test_foo_2c ( ) );
-	   }
+           void test_foo_2 ( )
+           {
+             test_call( test_foo_2a ( ) );
+             test_call( test_foo_2b ( ) );
+             test_call( test_foo_2c ( ) );
+           }
 
-	 private:
-	   // Data used by the tests
-	 };
+         private:
+           // Data used by the tests
+         };
 
-	 int main ( )
-	 {
-	   // Instance of the foo_test
-	   foo_test test;
+         int main ( )
+         {
+           // Instance of the foo_test
+           foo_test test;
 
-	   // Perform the test
-	   test.run();
+           // Perform the test
+           test.run();
 
-	   // Report the results
-	   std::size_t n_failed = test.report ( );
-	 }
+           // Report the results
+           std::size_t n_failed = test.report ( );
+         }
 
-	 @endcode
+         @endcode
       */
 
       class Test
       {
       public:
 
-	/**
-	   @brief
-	   Construct an instance of a test.
+        /**
+           @brief
+           Construct an instance of a test.
 
-	   The function Test() initializes the test instance. Provide an
-	   opportunity to use out output stream other than stdout.
+           The function Test() initializes the test instance. Provide an
+           opportunity to use out output stream other than stdout.
 
-	   @param [ in ] p_name
-	   Optional test name.
+           @param [ in ] p_name
+           Optional test name.
 
-	   @param [ in ] p_stream
-	   Optional output stream.
-	*/
+           @param [ in ] p_stream
+           Optional output stream.
+        */
 
-	Test ( const char * p_name = 0, std::ostream* p_stream = &std::cout );
+        Test ( const char * p_name = 0, std::ostream* p_stream = &std::cout );
 
-	/**
-	   @brief
-	   Destroys an instance of a test.
+        /**
+           @brief
+           Destroys an instance of a test.
 
-	   The function ~test() finalizes the test instance.
-	*/
+           The function ~test() finalizes the test instance.
+        */
 
-	virtual ~Test ( );
+        virtual ~Test ( );
 
-	/**
-	   @brief
-	   Run the test.
+        /**
+           @brief
+           Run the test.
 
-	   Calls run() and catches any exceptions.
-	*/
+           Calls run() and catches any exceptions.
+        */
 
-	void runTest ();
+        void runTest ();
 
-	/**
-	   @brief
-	   Returns umber of tests that passed.
+        /**
+           @brief
+           Returns umber of tests that passed.
 
-	   The function n_passed() returns the number of tests that have
-	   passed.
+           The function n_passed() returns the number of tests that have
+           passed.
 
-	   @retval
-	   Number of tests that passed.
-	*/
+           @retval
+           Number of tests that passed.
+        */
 
-	std::size_t n_passed ( ) const;
+        std::size_t n_passed ( ) const;
 
-	/**
-	   @brief
-	   Returns number of tests that failed.
+        /**
+           @brief
+           Returns number of tests that failed.
 
-	   The function n_failed() returns the number of tests that have
-	   failed.
+           The function n_failed() returns the number of tests that have
+           failed.
 
-	   @retval
-	   Number of tests that failed.
-	*/
+           @retval
+           Number of tests that failed.
+        */
 
-	std::size_t n_failed ( ) const;
+        std::size_t n_failed ( ) const;
 
-	/**
-	   @brief
-	   Returns a pointer to the output stream.
+        /**
+           @brief
+           Returns a pointer to the output stream.
 
-	   The function stream() returns a pointer to the output stream.
+           The function stream() returns a pointer to the output stream.
 
-	   @retval
-	   Pointer to the output stream.
-	*/
+           @retval
+           Pointer to the output stream.
+        */
 
-	const std::ostream* stream ( ) const;
+        const std::ostream* stream ( ) const;
 
-	/**
-	   @brief
-	   Sets the output stream.
+        /**
+           @brief
+           Sets the output stream.
 
-	   The function stream() sets the output stream that will be used
-	   by the class to write its output.
+           The function stream() sets the output stream that will be used
+           by the class to write its output.
 
-	   @param [ n ] p_stream
-	   Pointer to the stream the class will use to write
-	   its output.
-	*/
+           @param [ n ] p_stream
+           Pointer to the stream the class will use to write
+           its output.
+        */
 
-	void stream ( std::ostream* p_stream );
+        void stream ( std::ostream* p_stream );
 
-	/**
-	   @brief
-	   Called when a test passes.
+        /**
+           @brief
+           Called when a test passes.
 
-	   The function do_pass() increments the number of tests that have
-	   passed.
-	*/
+           The function do_pass() increments the number of tests that have
+           passed.
+        */
 
-	void do_pass ( );
+        void do_pass ( );
 
-	/**
-	   @brief
-	   Reports the status of the tests.
+        /**
+           @brief
+           Reports the status of the tests.
 
-	   The function report() reports the number of tests that have
-	   passed and failed. The function report() should be called after
-	   run() to see the status of the tests performed by run().
+           The function report() reports the number of tests that have
+           passed and failed. The function report() should be called after
+           run() to see the status of the tests performed by run().
 
-	   @retval Number of tests that have failed.
-	*/
+           @retval Number of tests that have failed.
+        */
 
-	std::size_t report ( ) const;
+        std::size_t report ( ) const;
 
-	/**
-	   @brief
-	   Resets the status of the tests.
+        /**
+           @brief
+           Resets the status of the tests.
 
-	   The function reset() resets the number of tests that have
-	   passed and failed to zero.
-	*/
+           The function reset() resets the number of tests that have
+           passed and failed to zero.
+        */
 
-	virtual void reset ( );
+        virtual void reset ( );
 
       protected:
-	/**
-	   @brief
-	   Function invoked by the framework to run the tests.
+        /**
+           @brief
+           Function invoked by the framework to run the tests.
 
-	   The function run() is implemented in the derived class to perform
-	   the tests encapsulated by the derived class.
-	*/
+           The function run() is implemented in the derived class to perform
+           the tests encapsulated by the derived class.
+        */
 
-	virtual void run ( ) = 0;
+        virtual void run ( ) = 0;
 
-	/**
-	   @brief
-	   Records information about a test.
+        /**
+           @brief
+           Records information about a test.
 
-	   The function do_test() is called from the macro test(). The function
-	   do_test() records the pass/fail status of a test.
+           The function do_test() is called from the macro test(). The function
+           do_test() records the pass/fail status of a test.
 
-	   @param [ in ] rc
-	   A zero value indicates the test passed. A non-zero
-	   value indicates the test failed.
+           @param [ in ] rc
+           A zero value indicates the test passed. A non-zero
+           value indicates the test failed.
 
-	   @param [ in ] message
-	   Message associated with a failed test.
+           @param [ in ] message
+           Message associated with a failed test.
 
-	   @param [ in ] file_name
-	   Name of the file that contains the test that failed.
+           @param [ in ] file_name
+           Name of the file that contains the test that failed.
 
-	   @param [ in ] line_number
-	   Line number in the file of the failed test.
+           @param [ in ] line_number
+           Line number in the file of the failed test.
 
-	   @param [ in ] abort
-	   Whether the current test set shall be aborted if the test failed.
-	*/
+           @param [ in ] abort
+           Whether the current test set shall be aborted if the test failed.
+        */
 
-	void do_test ( bool rc,
-		       const std::string& message,
-		       const char* file_name,
-		       std::size_t line_number,
-		       bool abort = false );
+        void do_test ( bool rc,
+                       const std::string& message,
+                       const char* file_name,
+                       std::size_t line_number,
+                       bool abort = false );
 
-	/**
-	   @brief
-	   Reports a failed test.
+        /**
+           @brief
+           Reports a failed test.
 
-	   The function do_fail() is called from the do_test() when a test
-	   fails (rc to do_test() is non-zero). The function do_fail()
-	   increments the number of test that failed and reports the
-	   message, file name, and line number of the failed test.
+           The function do_fail() is called from the do_test() when a test
+           fails (rc to do_test() is non-zero). The function do_fail()
+           increments the number of test that failed and reports the
+           message, file name, and line number of the failed test.
 
-	   @param [ in ] message
-	   Message associated with a failed test.
+           @param [ in ] message
+           Message associated with a failed test.
 
-	   @param [ in ] file_name
-	   Name of the file that contains the test that failed.
+           @param [ in ] file_name
+           Name of the file that contains the test that failed.
 
-	   @param [ in ] line_number
-	   Line number in the file of the failed test.
+           @param [ in ] line_number
+           Line number in the file of the failed test.
 
-	   @param [ in ] abort
-	   Whether the current test set shall be aborted.
-	*/
+           @param [ in ] abort
+           Whether the current test set shall be aborted.
+        */
 
-	void do_fail ( const std::string& message,
-		       const char* file_name,
-		       std::size_t line_number,
-		       bool abort = false );
-
-      private:
-
-	// Not implemented
-	Test ( const Test& );
-	Test& operator= ( const Test& );
+        void do_fail ( const std::string& message,
+                       const char* file_name,
+                       std::size_t line_number,
+                       bool abort = false );
 
       private:
 
-	const char * d_name;
-	//!< Test name
+        // Not implemented
+        Test ( const Test& );
+        Test& operator= ( const Test& );
 
-	std::ostream* d_stream;
-	//!< Output stream
+      private:
 
-	std::size_t d_n_passed;
-	//!< Number of tests that have passed
+        const char * d_name;
+        //!< Test name
 
-	std::size_t d_n_failed;
-	// Number of tests that have failed
+        std::ostream* d_stream;
+        //!< Output stream
+
+        std::size_t d_n_passed;
+        //!< Number of tests that have passed
+
+        std::size_t d_n_failed;
+        // Number of tests that have failed
 
       }; // End: class test
 
       /**
-	 @brief
-	 Test suite "suite" class.
+         @brief
+         Test suite "suite" class.
 
-	 The class suite aggregates together multiple test instances. The
-	 status for a collection of tests is maintained by suite.
+         The class suite aggregates together multiple test instances. The
+         status for a collection of tests is maintained by suite.
 
-	 @code
-	 // Create an instance of a test suite
-	 CPI::Util::Test::Suite suite ( "Example suite" );
+         @code
+         // Create an instance of a test suite
+         CPI::Util::Test::Suite suite ( "Example suite" );
 
-	 // Add tests to to the suite
+         // Add tests to to the suite
 
-	 suite.add_test ( new foo_test );
-	 suite.add_test ( new BarTest );
-	 suite.add_test ( new FuzzTest );
+         suite.add_test ( new foo_test );
+         suite.add_test ( new BarTest );
+         suite.add_test ( new FuzzTest );
 
-	 // Perform all of the tests
-	 suite.run ( );
+         // Perform all of the tests
+         suite.run ( );
 
-	 // Report the results
-	 std::size_t n_failed = suite.report ( );
-	 @endcode
+         // Report the results
+         std::size_t n_failed = suite.report ( );
+         @endcode
       */
 
       class Suite
@@ -469,168 +469,168 @@ namespace CPI {
       public:
 
 
-	/**
-	   @brief
-	   Construct an instance of a test suite.
+        /**
+           @brief
+           Construct an instance of a test suite.
 
-	   The function Suite() initializes the suite instance. Provide an
-	   opportunity to use out output stream other than stdout.
+           The function Suite() initializes the suite instance. Provide an
+           opportunity to use out output stream other than stdout.
 
-	   @param [ in ] name
-	   Name of the test suite.
+           @param [ in ] name
+           Name of the test suite.
 
-	   @param [ in ] p_stream
-	   Optional output stream.
-	*/
+           @param [ in ] p_stream
+           Optional output stream.
+        */
 
-	Suite ( const std::string& name, std::ostream* d_stream = &std::cout );
+        Suite ( const std::string& name, std::ostream* d_stream = &std::cout );
 
-	/**
-	   @brief
-	   Destroys an instance of a suite.
+        /**
+           @brief
+           Destroys an instance of a suite.
 
-	   The function ~Suite() finalizes the suite instance.
-	*/
+           The function ~Suite() finalizes the suite instance.
+        */
 
-	~Suite ( );
+        ~Suite ( );
 
-	/**
-	   @brief
-	   Returns the name of the suite instance.
+        /**
+           @brief
+           Returns the name of the suite instance.
 
-	   The function name() returns the name of the suite instance.
+           The function name() returns the name of the suite instance.
 
-	   @retval Name of the suite instance.
-	*/
+           @retval Name of the suite instance.
+        */
 
-	std::string name ( ) const;
+        std::string name ( ) const;
 
-	/**
-	   @brief
-	   Returns the total number of tests that have passed.
+        /**
+           @brief
+           Returns the total number of tests that have passed.
 
-	   The function n_passed() returns total number of tests that have
-	   passed.
+           The function n_passed() returns total number of tests that have
+           passed.
 
-	   @retval Ttotal number of tests that have passed.
-	*/
+           @retval Ttotal number of tests that have passed.
+        */
 
-	std::size_t n_passed ( ) const;
+        std::size_t n_passed ( ) const;
 
-	/**
-	   @brief
-	   Returns the total number of tests that have failed.
+        /**
+           @brief
+           Returns the total number of tests that have failed.
 
-	   The function n_failed() returns total number of tests that have
-	   failed.
+           The function n_failed() returns total number of tests that have
+           failed.
 
-	   @retval Ttotal number of tests that have failed.
-	*/
+           @retval Ttotal number of tests that have failed.
+        */
 
-	std::size_t n_failed ( ) const;
+        std::size_t n_failed ( ) const;
 
-	/**
-	   @brief
-	   Returns a pointer to the output stream.
+        /**
+           @brief
+           Returns a pointer to the output stream.
 
-	   The function stream() returns a pointer to the output stream.
+           The function stream() returns a pointer to the output stream.
 
-	   @retval
-	   Pointer to the output stream.
-	*/
+           @retval
+           Pointer to the output stream.
+        */
 
-	const std::ostream* stream ( ) const;
+        const std::ostream* stream ( ) const;
 
-	/**
-	   @brief
-	   Sets the output stream.
+        /**
+           @brief
+           Sets the output stream.
 
-	   The function stream() sets the output stream that will be used
-	   by the class to write its output.
+           The function stream() sets the output stream that will be used
+           by the class to write its output.
 
-	   @param [ in ] stream
-	   Pointer to the stream the class will use to write
-	   its output.
-	*/
+           @param [ in ] stream
+           Pointer to the stream the class will use to write
+           its output.
+        */
 
-	void stream ( std::ostream* stream );
+        void stream ( std::ostream* stream );
 
-	/**
-	   @brief
-	   Add a test instance to the test suite.
+        /**
+           @brief
+           Add a test instance to the test suite.
 
-	   The function add_test() adds an instance of a test to the test
-	   suite. The test will be forced to use the output stream of the
-	   suite instance. The passed/failed status of the test will also
-	   be reset.
+           The function add_test() adds an instance of a test to the test
+           suite. The test will be forced to use the output stream of the
+           suite instance. The passed/failed status of the test will also
+           be reset.
 
-	   @param [ in ] p_test
-	   Pointer to the test instance to add to the suite.
-	*/
+           @param [ in ] p_test
+           Pointer to the test instance to add to the suite.
+        */
 
-	void add_test ( Test* p_test );
+        void add_test ( Test* p_test );
 
-	/**
-	   @brief
-	   Invokes the run() function of each test in the suite.
+        /**
+           @brief
+           Invokes the run() function of each test in the suite.
 
-	   The function run() invokes the run() function of each test
-	   instance in the suite. The suite owns the test instances and will
-	   delete the tests instances when the suite instance is destroyed.
-	*/
+           The function run() invokes the run() function of each test
+           instance in the suite. The suite owns the test instances and will
+           delete the tests instances when the suite instance is destroyed.
+        */
 
-	void run ( );
+        void run ( );
 
-	/**
-	   @brief
-	   Reports the status of all of the tests in the suite.
+        /**
+           @brief
+           Reports the status of all of the tests in the suite.
 
-	   The function report() reports the number of tests that have
-	   passed and failed for all of the tests in the suite. The function
-	   report() should be called after run() to see the status of the tests
-	   performed by suite.
+           The function report() reports the number of tests that have
+           passed and failed for all of the tests in the suite. The function
+           report() should be called after run() to see the status of the tests
+           performed by suite.
 
-	   @retval Number of tests that have failed.
-	*/
+           @retval Number of tests that have failed.
+        */
 
-	std::size_t report ( ) const;
-
-      private:
-
-	/**
-	   @brief
-	   Resets the status of all of the tests in the suite.
-
-	   The function reset() calls the reset() function on each test
-	   in the suite.
-	*/
-
-	void reset ( );
-
-	/**
-	   @brief
-	   Delete each test instance in the suite.
-
-	   The function free() is called from the suite destructor to
-	   delete all of the test instances.
-	*/
-
-	void free ( );
-
-	// Not implemented
-	Suite ( const Suite& );
-	Suite& operator= ( const Suite& );
+        std::size_t report ( ) const;
 
       private:
 
-	std::string d_name;
-	//!< Name of the test suite
+        /**
+           @brief
+           Resets the status of all of the tests in the suite.
 
-	std::ostream* d_stream;
-	//!< Output stream
+           The function reset() calls the reset() function on each test
+           in the suite.
+        */
 
-	std::vector<Test*> d_p_tests;
-	//!< Container that holds the test instances owned by the suite.
+        void reset ( );
+
+        /**
+           @brief
+           Delete each test instance in the suite.
+
+           The function free() is called from the suite destructor to
+           delete all of the test instances.
+        */
+
+        void free ( );
+
+        // Not implemented
+        Suite ( const Suite& );
+        Suite& operator= ( const Suite& );
+
+      private:
+
+        std::string d_name;
+        //!< Name of the test suite
+
+        std::ostream* d_stream;
+        //!< Output stream
+
+        std::vector<Test*> d_p_tests;
+        //!< Container that holds the test instances owned by the suite.
 
       }; // End: class suite
 

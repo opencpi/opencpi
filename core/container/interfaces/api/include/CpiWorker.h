@@ -51,21 +51,21 @@ namespace CPI {
 
     public:
 
-	/**
-	   @brief
-	   getLastControlError
+        /**
+           @brief
+           getLastControlError
 
-	   This method is used to get the last error that occured during a control
-	   operation.
+           This method is used to get the last error that occured during a control
+           operation.
 
-	   @param [ in ] workerId
-	   Container worker id.
+           @param [ in ] workerId
+           Container worker id.
 
-	   @retval std::string - last control error
+           @retval std::string - last control error
 
-	   ****************************************************************** */
+           ****************************************************************** */
       virtual std::string getLastControlError()
-	throw ( CPI::Util::EmbeddedException )=0;
+        throw ( CPI::Util::EmbeddedException )=0;
 
 
       bool hasImplTag(const char *tag);
@@ -73,39 +73,39 @@ namespace CPI {
       typedef unsigned Ordinal;
       // generate the simple-type-specific setting methods
       // this also works fine for strings
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-      virtual void set##pretty##Property(Ordinal,const run) = 0;	\
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
+      virtual void set##pretty##Property(Ordinal,const run) = 0;        \
       inline void set##pretty##Property(const char *name, const run val) { \
-	set##pretty##Property(whichProperty(name), val);		\
-      }									\
+        set##pretty##Property(whichProperty(name), val);                \
+      }                                                                        \
       virtual void set##pretty##SequenceProperty(Ordinal,const run *, unsigned length) = 0; \
       inline void set##pretty##SequenceProperty(const char *name, const run* vals, unsigned length) { \
-	set##pretty##SequenceProperty(whichProperty(name), vals, length);	\
+        set##pretty##SequenceProperty(whichProperty(name), vals, length);        \
       }
     CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE
 #undef CPI_DATA_TYPE_S
       // generate the simple-type-specific getting methods
       // need a special item for strings
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-      virtual run get##pretty##Property(Ordinal ord) = 0;		\
-      inline run get##pretty##Property(const char *name) {		\
-	return get##pretty##Property(whichProperty(name));		\
-      }									\
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
+      virtual run get##pretty##Property(Ordinal ord) = 0;                \
+      inline run get##pretty##Property(const char *name) {                \
+        return get##pretty##Property(whichProperty(name));                \
+      }                                                                        \
       virtual unsigned get##pretty##SequenceProperty(Ordinal, run *, unsigned length) = 0; \
       inline unsigned get##pretty##SequenceProperty(const char *name,  run* vals, unsigned length) { \
-	return get##pretty##SequenceProperty(whichProperty(name), vals, length); \
+        return get##pretty##SequenceProperty(whichProperty(name), vals, length); \
       }
-#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)		\
-      virtual void get##pretty##Property(Ordinal ord, run, unsigned length) = 0;		\
-      inline void get##pretty##Property(const char *name, run val, unsigned length) {	\
-	get##pretty##Property(whichProperty(name), val, length);	\
-      }									\
+#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
+      virtual void get##pretty##Property(Ordinal ord, run, unsigned length) = 0;                \
+      inline void get##pretty##Property(const char *name, run val, unsigned length) {        \
+        get##pretty##Property(whichProperty(name), val, length);        \
+      }                                                                        \
       virtual unsigned get##pretty##SequenceProperty \
-	(Ordinal ord, run *, unsigned length, char *buf, unsigned space) = 0; \
-      inline unsigned get##pretty##SequenceProperty			\
-	(const char *name, run *vals, unsigned length, char *buf, unsigned space) {	\
-	return get##pretty##SequenceProperty(whichProperty(name), vals, length, buf, space); \
+        (Ordinal ord, run *, unsigned length, char *buf, unsigned space) = 0; \
+      inline unsigned get##pretty##SequenceProperty                        \
+        (const char *name, run *vals, unsigned length, char *buf, unsigned space) {        \
+        return get##pretty##SequenceProperty(whichProperty(name), vals, length, buf, space); \
       }
 
     CPI_PROPERTY_DATA_TYPES
@@ -120,16 +120,16 @@ namespace CPI {
 
 
       virtual Port & createOutputPort(PortId portId,
-				     CPI::OS::uint32_t bufferCount,
-				     CPI::OS::uint32_t bufferSize, 
-				      CPI::Util::PValue* props=NULL) 
-	throw ( CPI::Util::EmbeddedException ) = 0;
+                                     CPI::OS::uint32_t bufferCount,
+                                     CPI::OS::uint32_t bufferSize, 
+                                      CPI::Util::PValue* props=NULL) 
+        throw ( CPI::Util::EmbeddedException ) = 0;
 
       virtual Port & createInputPort(PortId portId,
-				     CPI::OS::uint32_t bufferCount,
-				     CPI::OS::uint32_t bufferSize, 
-				     CPI::Util::PValue* props=NULL) 
-	throw ( CPI::Util::EmbeddedException ) = 0;
+                                     CPI::OS::uint32_t bufferCount,
+                                     CPI::OS::uint32_t bufferSize, 
+                                     CPI::Util::PValue* props=NULL) 
+        throw ( CPI::Util::EmbeddedException ) = 0;
 
 
 

@@ -16,15 +16,15 @@ namespace CPI {
     // Return an error string or null on success
     bool
       probe(const char *name, unsigned theVendor, unsigned theDevice, unsigned theClass,
-	    unsigned theSubClass, Bar *bars, unsigned &nbars, const char *&err);
+            unsigned theSubClass, Bar *bars, unsigned &nbars, const char *&err);
     // Search for devices of this vendor/device/class/subclass
     // call the "found" function for each such device,
     // set the output arg "count" to the number of devices found,
     // return an error string if something went wrong.
     const char *
       search(const char **exclude,
-	     unsigned vendor, unsigned device, unsigned pciClass, unsigned subClass,
-		       Found found, unsigned &count);
+             unsigned vendor, unsigned device, unsigned pciClass, unsigned subClass,
+                       Found found, unsigned &count);
   }
 }
 #endif

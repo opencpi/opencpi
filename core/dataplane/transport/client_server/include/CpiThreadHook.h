@@ -40,7 +40,7 @@ namespace CPI {
 
       /**********************************
        *  This method gets called to provide the circuit with execution time.
-       **********************************/	
+       **********************************/        
       virtual void dispatch(DataTransfer::EventManager* event_manager) = 0;
       virtual ~ThreadHook(){};
     };

@@ -25,13 +25,13 @@ namespace CPI {
 
       class RefCounter {
       public:
-	RefCounter();
-	virtual ~RefCounter();
-	int incRef();
-	int decRef();
+        RefCounter();
+        virtual ~RefCounter();
+        int incRef();
+        int decRef();
       private:
-	int refCount;
-	
+        int refCount;
+        
       };
 
     }

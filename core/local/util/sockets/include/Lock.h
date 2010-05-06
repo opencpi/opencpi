@@ -1,6 +1,6 @@
 /** \file Lock.h
- **	\date  2005-08-22
- **	\author grymse@alhem.net
+ **        \date  2005-08-22
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
@@ -40,15 +40,15 @@ namespace SOCKETS_NAMESPACE {
 class IMutex;
 
 /** IMutex encapsulation class. 
-	\ingroup threading */
+        \ingroup threading */
 class Lock
 {
 public:
-	Lock(const IMutex&);
-	~Lock();
+        Lock(const IMutex&);
+        ~Lock();
 
 private:
-	const IMutex& m_mutex;
+        const IMutex& m_mutex;
 };
 
 

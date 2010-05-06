@@ -1,7 +1,7 @@
 /**
- **	\file HttpBaseSocket.h
- **	\date  2007-10-05
- **	\author grymse@alhem.net
+ **        \file HttpBaseSocket.h
+ **        \date  2007-10-05
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -48,32 +48,32 @@ class HttpResponse;
 class HttpBaseSocket : public HTTPSocket, public IHttpServer
 {
 public:
-	HttpBaseSocket(ISocketHandler& h);
-	~HttpBaseSocket();
+        HttpBaseSocket(ISocketHandler& h);
+        ~HttpBaseSocket();
 
-	void OnFirst();
-	void OnHeader(const std::string& key,const std::string& value);
-	void OnHeaderComplete();
-	void OnData(const char *,size_t);
+        void OnFirst();
+        void OnHeader(const std::string& key,const std::string& value);
+        void OnHeaderComplete();
+        void OnData(const char *,size_t);
 
-	// implements IHttpServer::Respond
-	void Respond(const HttpResponse& res);
+        // implements IHttpServer::Respond
+        void Respond(const HttpResponse& res);
 
-	void OnTransferLimit();
+        void OnTransferLimit();
 
 protected:
-	HttpBaseSocket(const HttpBaseSocket& s) : HTTPSocket(s) {} // copy constructor
-	//
-	HttpRequest m_req;
-	HttpResponse m_res;
-	void Reset();
+        HttpBaseSocket(const HttpBaseSocket& s) : HTTPSocket(s) {} // copy constructor
+        //
+        HttpRequest m_req;
+        HttpResponse m_res;
+        void Reset();
 
 private:
-	HttpBaseSocket& operator=(const HttpBaseSocket& ) { return *this; } // assignment operator
-	void Execute();
-	//
-	size_t m_body_size_left;
-	bool m_b_keepalive;
+        HttpBaseSocket& operator=(const HttpBaseSocket& ) { return *this; } // assignment operator
+        void Execute();
+        //
+        size_t m_body_size_left;
+        bool m_b_keepalive;
 };
 
 

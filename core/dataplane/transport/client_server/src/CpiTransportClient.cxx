@@ -30,7 +30,7 @@ using namespace DataTransfer;
 using namespace DataTransport::Interface;
 
 int Client::m_count=0;
-	
+        
 /**********************************
  *  Local init
  **********************************/
@@ -45,11 +45,11 @@ void Client::init()
     catch( ... ) {
       throw;
     }
-		
+                
     // Get our endpoint
     m_end_point = res->sMemServices->getEndPoint();
     m_transport->setListeningEndpoint( m_end_point );
-		
+                
     m_init=true;
   }
 
@@ -75,10 +75,10 @@ public:
       m_transport->dispatch();
 
       for ( CPI::OS::uint32_t n=0; n<m_client->m_circuits.getElementCount(); n++ ) {
-	if ( static_cast<MessageCircuit*>(m_client->m_circuits[n])->messageAvailable() ) {
-	  someCircuitHadData = true;
-	  m_cb->dataAvailable( static_cast<MessageCircuit*>(m_client->m_circuits[n]) );
-	}
+        if ( static_cast<MessageCircuit*>(m_client->m_circuits[n])->messageAvailable() ) {
+          someCircuitHadData = true;
+          m_cb->dataAvailable( static_cast<MessageCircuit*>(m_client->m_circuits[n]) );
+        }
       }
 
       m_mutex->unlock();
@@ -89,7 +89,7 @@ public:
        */
 
       if (!someCircuitHadData) {
-	CPI::OS::sleep(100);
+        CPI::OS::sleep(100);
       }
 
       m_mutex->lock();
@@ -99,23 +99,23 @@ public:
   }
 
 private:
-  Client*			    m_client;
+  Client*                            m_client;
   ClientEventHandler*               m_cb;
   CPI::DataTransport::Transport*    m_transport;
   Mutex*                            m_mutex;
 
 };
 
-	
+        
 /**********************************
  *  Constructors
  **********************************/
 Client::Client( 
-		std::string&                   end_point,    
-		int                            buffer_size,  
-		ClientEventHandler*            cb     
+                std::string&                   end_point,    
+                int                            buffer_size,  
+                ClientEventHandler*            cb     
 
-		)
+                )
   : m_circuits(0),runThreadFlag(true),m_event_handler(cb),m_buffer_size(buffer_size),
     m_init(false)
 {
@@ -141,7 +141,7 @@ Client::Client(
 #ifdef CONTAINER_MULTI_THREADED
   m_transport_controller->start();
 #endif
-	
+        
 }
 
 
@@ -262,7 +262,7 @@ void Client::dispatch(DataTransfer::EventManager* eh)
  **********************************/
 void Client::remove( MessageCircuit* circuit )
 {
-	
+        
 #ifdef CONTAINER_MULTI_THREADED
   m_mutex->lock();
 #endif
@@ -277,7 +277,7 @@ void Client::remove( MessageCircuit* circuit )
 }
 
 
-	
+        
 /**********************************
  *  Destructor
  **********************************/
@@ -336,4 +336,4 @@ Client::~Client()
 
 
 }
-	
+        

@@ -90,10 +90,10 @@ StandaloneGenericProxyConfigurator::g_options[] = {
 static
 void
 printUsage (StandaloneGenericProxyConfigurator & config,
-	    const char * argv0)
+            const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options] <container-type> <container-name> <endpoint> <codefile> <entry[/inst[/port]]>+" << std::endl
-	    << "  options: " << std::endl;
+            << "  options: " << std::endl;
   config.printOptions (std::cout);
 }
 
@@ -106,9 +106,9 @@ static  CPI::Util::DriverManager* dm;
 static
 bool
 startGenericProxyCmdInt (CORBA::ORB_ptr orb,
-			 int & argc, char * argv[],
-			 std::string & identifier,
-			 bool shutdownOrbOnRelease)
+                         int & argc, char * argv[],
+                         std::string & identifier,
+                         bool shutdownOrbOnRelease)
 {
   StandaloneGenericProxyConfigurator config;
 
@@ -142,72 +142,72 @@ startGenericProxyCmdInt (CORBA::ORB_ptr orb,
     dm = new CPI::Util::DriverManager( driverName );
     dm->discoverDevices(0, 0);
     CPI::Util::PValue cprops[] = {CPI::Util::PVString("endpoint",(char*)endpoint),
-				  CPI::Util::PVBool("polling",1),
-				  CPI::Util::PVEnd };
+                                  CPI::Util::PVBool("polling",1),
+                                  CPI::Util::PVEnd };
     CPI::Container::Interface *container = 
       static_cast<CPI::Container::Interface*>(dm->getDevice( cprops, instanceName ));
     cpiAssert(container);
     CPI::Container::Application *application= container->createApplication( /* "gpmain" */ );
     while (*ap) {
       char
-	*functionName = ap[0],
-	*slash = strchr(functionName, '/'),
-	*instName = 0, *portName = 0;
+        *functionName = ap[0],
+        *slash = strchr(functionName, '/'),
+        *instName = 0, *portName = 0;
       if (slash) {
-	*slash++ = 0;
-	instName = slash;
-	slash = strchr(slash, '/');
-	if (slash) {
-	  *slash++ = 0;
-	  portName = slash;
-	}
-	if (!instName[0])
-	  instName = 0;
+        *slash++ = 0;
+        instName = slash;
+        slash = strchr(slash, '/');
+        if (slash) {
+          *slash++ = 0;
+          portName = slash;
+        }
+        if (!instName[0])
+          instName = 0;
       }
       identifier = config.identifier.length() ? config.identifier : functionName;
       // We are a singleton component on a container for the purposes
       // of debug.  The generic proxy must be collocated with the CPI::Container.
       CPI::SCA::Cp289GenericProxy * gp =
-	new CPI::SCA::Cp289GenericProxy (orb, poa,
-					 identifier,
-					 codeLocalFileName,
-					 functionName,
-					 instName,
-					 *application,
-					 0, 0, 0, false,
-					 shutdownOrbOnRelease);
+        new CPI::SCA::Cp289GenericProxy (orb, poa,
+                                         identifier,
+                                         codeLocalFileName,
+                                         functionName,
+                                         instName,
+                                         *application,
+                                         0, 0, 0, false,
+                                         shutdownOrbOnRelease);
       CF::Resource_var s = gp->_this ();
       gp->_remove_ref ();
 
       ap++;
       if (portName) {
-	CORBA::Object_ptr p = gp->getPort(portName);
-	CORBA::String_var ior = orb->object_to_string (p);
-	std::cout << functionName << ": " << ior << std::endl;
+        CORBA::Object_ptr p = gp->getPort(portName);
+        CORBA::String_var ior = orb->object_to_string (p);
+        std::cout << functionName << ": " << ior << std::endl;
       }
       /*
        * Write object reference.
        */
       if (config.writeIORFile) {
-	CORBA::String_var ior = orb->object_to_string (s);
-	
-	if (config.iorFileName == "-") {
-	  std::cout << ior << std::endl;
-	} else {
-	  std::cout << "Writing IOR to \""
-		    << config.iorFileName
-		    << "\" ... "
-		    << std::flush;
-	  std::ofstream out (config.iorFileName.c_str());
-	  out << ior << std::endl;
-	  
-	  if (out.good()) {
-	    std::cout << "done." << std::endl;
-	  }
-	  else {
-	    std::cout << "failed." << std::endl;
-	  }
-	}
+        CORBA::String_var ior = orb->object_to_string (s);
+        
+        if (config.iorFileName == "-") {
+          std::cout << ior << std::endl;
+        } else {
+          std::cout << "Writing IOR to \""
+                    << config.iorFileName
+                    << "\" ... "
+                    << std::flush;
+          std::ofstream out (config.iorFileName.c_str());
+          out << ior << std::endl;
+          
+          if (out.good()) {
+            std::cout << "done." << std::endl;
+          }
+          else {
+            std::cout << "failed." << std::endl;
+          }
+        }
       }
 
       /*
@@ -215,22 +215,22 @@ startGenericProxyCmdInt (CORBA::ORB_ptr orb,
        */
 
       if (config.registerWithNamingService) {
-	std::cout << "Registering with Naming Service as \""
-		  << config.namingServiceName
-		  << "\" ... " << std::flush;
-	
-	try {
-	  CORBA::Object_var nso = orb->resolve_initial_references ("NameService");
-	  CosNaming::NamingContextExt_var ns = CosNaming::NamingContextExt::_narrow (nso);
-	  CPI::CORBAUtil::Misc::nameServiceBind (ns, s, config.namingServiceName);
-	  std::cout << "done." << std::endl;
-	}
-	catch (const CORBA::Exception &) {
-	  std::cout << "failed." << std::endl;
-	}
-	catch (const std::string & oops) {
-	  std::cout << "failed: " << oops << std::endl;
-	}
+        std::cout << "Registering with Naming Service as \""
+                  << config.namingServiceName
+                  << "\" ... " << std::flush;
+        
+        try {
+          CORBA::Object_var nso = orb->resolve_initial_references ("NameService");
+          CosNaming::NamingContextExt_var ns = CosNaming::NamingContextExt::_narrow (nso);
+          CPI::CORBAUtil::Misc::nameServiceBind (ns, s, config.namingServiceName);
+          std::cout << "done." << std::endl;
+        }
+        catch (const CORBA::Exception &) {
+          std::cout << "failed." << std::endl;
+        }
+        catch (const std::string & oops) {
+          std::cout << "failed: " << oops << std::endl;
+        }
       }
     }
     /*
@@ -240,8 +240,8 @@ startGenericProxyCmdInt (CORBA::ORB_ptr orb,
     mgr->activate ();
   } catch (const CORBA::Exception & ex) {
     std::cout << "Oops: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
     return false;
   } catch (...) {
     std::cout << "Oops." << std::endl;
@@ -266,8 +266,8 @@ extern "C" {
     }
     catch (const CORBA::Exception & ex) {
       std::cout << "Oops: ORB_init: "
-		<< CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-		<< std::endl;
+                << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                << std::endl;
       return -1;
     }
     catch (...) {
@@ -282,8 +282,8 @@ extern "C" {
     }
 
     std::cout << "Generic proxy "
-	      << identifier
-	      << " running." << std::endl;
+              << identifier
+              << " running." << std::endl;
 
     return 0;
   }
@@ -300,8 +300,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }
@@ -314,8 +314,8 @@ main (int argc, char * argv[])
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: ORB_init: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
     return 0;
   }
   catch (...) {
@@ -335,12 +335,12 @@ main (int argc, char * argv[])
 
   try {
     std::cout << "Generic proxy "
-	      << identifier
-	      << " running." << std::endl;
+              << identifier
+              << " running." << std::endl;
     orb->run ();
     std::cout << "Generic proxy "
-	      << identifier
-	      << " shutting down. " << std::endl;
+              << identifier
+              << " shutting down. " << std::endl;
 
     try {
       orb->shutdown (1);
@@ -365,8 +365,8 @@ main (int argc, char * argv[])
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: "
-	      << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
-	      << std::endl;
+              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << std::endl;
   }
   catch (...) {
     std::cout << "Oops." << std::endl;

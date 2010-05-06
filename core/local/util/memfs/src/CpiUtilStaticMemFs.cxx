@@ -23,8 +23,8 @@ namespace {
   class StaticMemFsIterator : public CPI::Util::Vfs::Iterator {
   public:
     StaticMemFsIterator (const std::string & dir,
-			 const std::string & pattern,
-			 const CPI::Util::MemFs::StaticMemFs::FileList & contents)
+                         const std::string & pattern,
+                         const CPI::Util::MemFs::StaticMemFs::FileList & contents)
       throw ();
     ~StaticMemFsIterator ()
       throw ();
@@ -67,8 +67,8 @@ namespace {
 }
 
 StaticMemFsIterator::StaticMemFsIterator (const std::string & dir,
-					  const std::string & pattern,
-					  const CPI::Util::MemFs::StaticMemFs::FileList & contents)
+                                          const std::string & pattern,
+                                          const CPI::Util::MemFs::StaticMemFs::FileList & contents)
   throw ()
   : m_dir (dir),
     m_contents (contents)
@@ -216,37 +216,37 @@ StaticMemFsIterator::findFirstMatching ()
     const std::string & absFileName = (*m_iterator).first;
 
     if (absFileName.length() >= firstFnPos &&
-	(pdl == 1 || absFileName[pdl] == '/') &&
-	absFileName.compare (0, pdl, m_absPatDir) == 0) {
+        (pdl == 1 || absFileName[pdl] == '/') &&
+        absFileName.compare (0, pdl, m_absPatDir) == 0) {
       std::string::size_type nextSlash =
-	absFileName.find ('/', firstFnPos);
+        absFileName.find ('/', firstFnPos);
       std::string nextPathComponent;
       bool isDirectory;
 
       if (nextSlash == std::string::npos) {
-	nextPathComponent = absFileName.substr (firstFnPos);
-	isDirectory = false;
+        nextPathComponent = absFileName.substr (firstFnPos);
+        isDirectory = false;
       }
       else {
-	nextPathComponent =
-	  absFileName.substr (firstFnPos, nextSlash-firstFnPos);
-	isDirectory = true;
+        nextPathComponent =
+          absFileName.substr (firstFnPos, nextSlash-firstFnPos);
+        isDirectory = true;
       }
 
       if (CPI::Util::Misc::glob (nextPathComponent, m_relPat)) {
-	if (isDirectory) {
-	  if (m_seenDirectories.find (nextPathComponent) == m_seenDirectories.end()) {
-	    m_seenDirectories.insert (nextPathComponent);
-	    break;
-	  }
-	  else {
-	    // already seen this directory, do not break but continue
-	  }
-	}
-	else {
-	  // regular file
-	  break;
-	}
+        if (isDirectory) {
+          if (m_seenDirectories.find (nextPathComponent) == m_seenDirectories.end()) {
+            m_seenDirectories.insert (nextPathComponent);
+            break;
+          }
+          else {
+            // already seen this directory, do not break but continue
+          }
+        }
+        else {
+          // regular file
+          break;
+        }
       }
     }
 
@@ -282,8 +282,8 @@ CPI::Util::MemFs::StaticMemFs::~StaticMemFs ()
 
 void
 CPI::Util::MemFs::StaticMemFs::mount (const std::string & fileName,
-				      StaticMemFile * file,
-				      bool adopt)
+                                      StaticMemFile * file,
+                                      bool adopt)
   throw (std::string)
 {
   CPI::Util::AutoWRLock lock (m_lock);
@@ -410,7 +410,7 @@ CPI::Util::MemFs::StaticMemFs::rmdir (const std::string &)
 
 CPI::Util::Vfs::Iterator *
 CPI::Util::MemFs::StaticMemFs::list (const std::string & dir,
-				     const std::string & pattern)
+                                     const std::string & pattern)
   throw (std::string)
 {
   m_lock.rdLock ();
@@ -469,10 +469,10 @@ CPI::Util::MemFs::StaticMemFs::exists (const std::string & fileName, bool * isDi
 
   for (it = m_contents.begin(); it != m_contents.end(); it++) {
     if ((*it).first.length () > nnlen &&
-	(*it).first.compare (0, nnlen, nn) == 0 &&
-	(*it).first[nnlen] == '/') {
+        (*it).first.compare (0, nnlen, nn) == 0 &&
+        (*it).first[nnlen] == '/') {
       if (isDir) {
-	*isDir = true;
+        *isDir = true;
       }
 
       return true;

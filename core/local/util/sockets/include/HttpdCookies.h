@@ -53,33 +53,33 @@ class HTTPSocket;
 \ingroup webserver */
 class HttpdCookies 
 {
-	/** list of key/value structs. */
-	typedef std::list<std::pair<std::string, std::string> > cookie_v;
+        /** list of key/value structs. */
+        typedef std::list<std::pair<std::string, std::string> > cookie_v;
 
 public:
-	HttpdCookies();
-	HttpdCookies(const std::string& query_string);
-	~HttpdCookies();
+        HttpdCookies();
+        HttpdCookies(const std::string& query_string);
+        ~HttpdCookies();
 
-	void add(const std::string& s);
+        void add(const std::string& s);
 
-	bool getvalue(const std::string&,std::string&) const;
-	void replacevalue(const std::string& ,const std::string& );
-	void replacevalue(const std::string& ,long);
-	void replacevalue(const std::string& ,int);
-	size_t getlength(const std::string& ) const;
-	void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,const std::string& v);
-	void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,long v);
-	void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,int v);
-	const std::string& expiredatetime() const;
+        bool getvalue(const std::string&,std::string&) const;
+        void replacevalue(const std::string& ,const std::string& );
+        void replacevalue(const std::string& ,long);
+        void replacevalue(const std::string& ,int);
+        size_t getlength(const std::string& ) const;
+        void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,const std::string& v);
+        void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,long v);
+        void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,int v);
+        const std::string& expiredatetime() const;
 
-	cookie_v& GetHttpdCookies() { return m_cookies; }
+        cookie_v& GetHttpdCookies() { return m_cookies; }
 
-	void Reset();
+        void Reset();
 
 private:
-	cookie_v m_cookies;
-	mutable std::string m_date;
+        cookie_v m_cookies;
+        mutable std::string m_date;
 };
 
 

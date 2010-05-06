@@ -77,10 +77,10 @@ init()
 // Standard constructor 
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
-	      bool s, 
-	      CPI::RDT::Descriptors& port,
-	      const char* shadow_ep,
-	      PortSetMetaData* psmd )
+              bool s, 
+              CPI::RDT::Descriptors& port,
+              const char* shadow_ep,
+              PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd), remoteCircuitId(-1),
     remotePortId(-1),id(-1),rank(0),output(s),user_data(NULL),
     m_init(false),m_real_location(NULL),m_shadow_location(NULL)
@@ -103,8 +103,8 @@ PortMetaData( PortOrdinal pid,
 
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
-	      CPI::RDT::Descriptors& portDesc,
-	      PortSetMetaData* psmd )
+              CPI::RDT::Descriptors& portDesc,
+              PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd), remoteCircuitId(-1),
     remotePortId(-1),id(-1),rank(0),user_data(NULL),
     m_init(false),m_real_location(NULL),m_shadow_location(NULL)
@@ -125,10 +125,10 @@ PortMetaData( PortOrdinal pid,
 
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
-	      bool s, 
-	      const char* ep,
-	      const char* shadow_ep,
-	      PortSetMetaData* psmd )
+              bool s, 
+              const char* ep,
+              const char* shadow_ep,
+              PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd),remoteCircuitId(-1),
     remotePortId(-1),id(-1),rank(0),output(s),user_data(NULL),
     m_init(false),m_real_location(NULL),m_shadow_location(NULL)
@@ -151,12 +151,12 @@ PortMetaData( PortOrdinal pid,
 // Dependency constructor
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
-	      bool s, 
-	      const char* ep, 
-	      const char* shadow_ep,
-	      CPI::RDT::Descriptors&  pdd , 
-	      CPI::OS::uint32_t circuitId,
-	      PortSetMetaData* psmd )
+              bool s, 
+              const char* ep, 
+              const char* shadow_ep,
+              CPI::RDT::Descriptors&  pdd , 
+              CPI::OS::uint32_t circuitId,
+              PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd),
     remotePortId(-1),id(-1),rank(0),output(s),user_data(NULL),
     m_portSetMd(psmd), m_init(false)
@@ -214,7 +214,7 @@ PortMetaData( PortOrdinal pid,
   m_bufferData = new BufferOffsets[MAX_BUFFERS];
   memset( m_bufferData, 0, sizeof(BufferOffsets[MAX_BUFFERS]));
   m_localPortSetControl = 0;
-	
+        
   for ( unsigned int n=0; n<pdd.desc.nBuffers; n++ ) {
     m_bufferData[n].inputOffsets.bufferOffset = 
       pdd.desc.dataBufferBaseAddr + (n*pdd.desc.dataBufferPitch);

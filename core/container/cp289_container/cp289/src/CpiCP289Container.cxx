@@ -68,8 +68,8 @@ getEventManager()
 
 CPI::CP289::Container::
 Container(  CPI::Util::Driver &d,
-	    CPI::OS::uint32_t g_unique_id, CPI::DataTransport::TransportGlobal *tpg, 
-	    const CPI::Util::PValue* props )
+            CPI::OS::uint32_t g_unique_id, CPI::DataTransport::TransportGlobal *tpg, 
+            const CPI::Util::PValue* props )
   throw ( CPI::Util::EmbeddedException )
   :CPI::Container::Interface( d, "RCC Container Instance", props), 
    CPI::CP289::Controller( this ),
@@ -185,7 +185,7 @@ createApplication()
 std::vector<std::string> 
 CPI::CP289::Container::
 getSupportedEndpoints()
-	throw ()
+        throw ()
 {
   return m_transport->getListOfSupportedEndpoints();
 }

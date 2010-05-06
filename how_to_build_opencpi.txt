@@ -50,3 +50,53 @@ Building OpenCPI with OmniOrb for PowerPC on Timesys Linux
 
     $ make distclean
 
+
+Running testRpl on the mica system
+
+ 1. Load the ECV5 with the OpenCPI bitstream.
+    See the document on ECV5 bitstream loading.
+
+ 2. Load the Mica FPGA with the OpenCPI bitstream
+    See the document on Mica FPGA bitstream loading.
+
+ 3. Setup the Mica environment
+    See the document on TOS environment setup.
+
+    TOS # scp mpepe@155.34.103.250:/home/mpepe/setup.sh .
+    TOS # . setup.sh
+
+ 4. Set LD_LIBRARY_PATH to point to OpenCPI installation.
+
+    TOS # . /home/mpepe/projects/jcrew/i2wd/ocpi_env.sh
+
+ 5. Go to the testRpl directory.
+
+    TOS # cd $OCPI_BASE/core/container/rpl_container/linux-ppc-bin
+
+    Copy the XML file into this directory
+
+    TOS # cp $OCPI_BASE/core/container/rpl_container/bin/src/file .
+
+ 6. Run the DIEN enable to enable PCIe lane swapping.
+
+    TOS # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/utils/linux-MPC8641D/lib
+    TOS # /opt/utils/linux-MPC8641D/dien_enable.lnx
+
+
+ 7. Allocate DMA friendly memory and set the environment variable with the
+    address of the DMA friendly memory.
+
+    TOS # /opt/utils/linux-MPC8641D/get_base_address_of_dma_memory.lnx
+
+    TOS # export CPI_DMA_MEMORY=<Size of allocation in Mbytes>M$0x<Virtual Address of allocation>
+
+    Example:
+
+    TOS # export CPI_DMA_MEMORY="256M\$0x20000000"
+
+    You will need to escape the $ in the define.
+
+
+ 8. Run the testRpl program.
+
+    A. TOS # .testRpl -l

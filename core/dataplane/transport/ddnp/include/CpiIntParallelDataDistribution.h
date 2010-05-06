@@ -49,9 +49,9 @@ namespace CPI {
        *  Constructors
        **********************************/
       ParallelDataDistribution( 
-			       DataDistributionMetaData* data,		
-			       CPI::DataTransport::Circuit* circuit
-			       );
+                               DataDistributionMetaData* data,                
+                               CPI::DataTransport::Circuit* circuit
+                               );
 
       // This is used for test
       ParallelDataDistribution(DataPartition* parts=NULL);
@@ -66,7 +66,7 @@ namespace CPI {
      * inline declarations
      ****
      *********************************/
-		
+                
   }
 
 }

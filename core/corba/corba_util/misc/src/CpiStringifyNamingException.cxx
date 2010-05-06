@@ -28,7 +28,7 @@
 std::string
 CPI::CORBAUtil::Misc::
 stringifyNamingException (const CORBA::Exception & ex,
-			  CosNaming::NamingContext_ptr ns)
+                          CosNaming::NamingContext_ptr ns)
   throw ()
 {
   std::string reason;
@@ -58,10 +58,10 @@ stringifyNamingException (const CORBA::Exception & ex,
       CORBA::String_var rest;
 
       try {
-	rest = nc->to_string (nf->rest_of_name);
+        rest = nc->to_string (nf->rest_of_name);
       }
       catch (...) {
-	rest = const_cast<const char *> ("(unknown)");
+        rest = const_cast<const char *> ("(unknown)");
       }
 
       reason += ", remaining name \"";
@@ -79,10 +79,10 @@ stringifyNamingException (const CORBA::Exception & ex,
       CORBA::String_var rest;
 
       try {
-	rest = nc->to_string (cp->rest_of_name);
+        rest = nc->to_string (cp->rest_of_name);
       }
       catch (...) {
-	rest = const_cast<const char *> ("(unknown)");
+        rest = const_cast<const char *> ("(unknown)");
       }
 
       reason += ", remaining name \"";

@@ -10,13 +10,13 @@ namespace CPI {
     {
     public:
       MemBlockMgr(ResAddrType start, CPI::OS::uint64_t size)
-	throw( std::bad_alloc );
+        throw( std::bad_alloc );
       ~MemBlockMgr()
-	throw();
+        throw();
       int alloc( CPI::OS::uint64_t nbytes, unsigned int alignment, ResAddrType& req_addr)
-	throw( std::bad_alloc );
+        throw( std::bad_alloc );
       int free(ResAddrType  addr )
-	throw( std::bad_alloc );
+        throw( std::bad_alloc );
 
 
     private:

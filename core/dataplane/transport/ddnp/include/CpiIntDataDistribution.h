@@ -48,19 +48,19 @@ namespace CPI {
        *  Distribution type
        **********************************/
       enum DistributionType {
-	parallel,
-	sequential
+        parallel,
+        sequential
       };
 
       /**********************************
        *  Distribution sub-type
        **********************************/
       enum DistributionSubType {
-	round_robin,
-	random_even,
-	random_statistical,
-	first_available,
-	least_busy
+        round_robin,
+        random_even,
+        random_statistical,
+        first_available,
+        least_busy
       };
 
       /**********************************

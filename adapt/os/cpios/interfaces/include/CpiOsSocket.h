@@ -65,14 +65,14 @@ namespace CPI {
        */
 
       Socket ()
-	throw ();
+        throw ();
 
       /**
        * Constructor: For internal use only.
        */
 
       Socket (const CPI::OS::uint64_t * opaque)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Copy constructor: Assigns ownership of the \a other socket to
@@ -86,7 +86,7 @@ namespace CPI {
        */
 
       Socket (const Socket & other)
-	throw ();
+        throw ();
 
       /**
        * Assignment operator: Assigns ownership of the \a other socket to
@@ -100,7 +100,7 @@ namespace CPI {
        */
 
       Socket & operator= (const Socket & other)
-	throw ();
+        throw ();
 
       /**
        * Destructor.
@@ -109,7 +109,7 @@ namespace CPI {
        */
 
       ~Socket ()
-	throw ();
+        throw ();
 
       /**
        * Receives data from the peer.
@@ -130,7 +130,7 @@ namespace CPI {
        */
 
       unsigned long long recv (char * buffer, unsigned long long amount)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Sends data to the peer.
@@ -150,7 +150,7 @@ namespace CPI {
        */
 
       unsigned long long send (const char * data, unsigned long long amount)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Returns the socket's local port number.
@@ -163,7 +163,7 @@ namespace CPI {
        */
 
       unsigned int getPortNo ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Returns the host name and the port number of the remote peer.
@@ -177,8 +177,8 @@ namespace CPI {
        */
 
       void getPeerName (std::string & peerHost,
-			unsigned int & peerPort)
-	throw (std::string);
+                        unsigned int & peerPort)
+        throw (std::string);
 
       /**
        * Configure behavior upon close().
@@ -199,7 +199,7 @@ namespace CPI {
        */
 
       void linger (bool opt = true)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Performs a half-close.
@@ -227,7 +227,7 @@ namespace CPI {
        */
 
       void shutdown (bool sendingEnd = true)
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Closes (disconnects) the socket.
@@ -246,7 +246,7 @@ namespace CPI {
        */
 
       void close ()
-	throw (std::string);
+        throw (std::string);
 
       /**
        * Creates a duplicate of the socket.
@@ -265,7 +265,7 @@ namespace CPI {
        */
 
       Socket dup ()
-	throw (std::string);
+        throw (std::string);
 
     protected:
       CPI::OS::uint64_t m_osOpaque[1];

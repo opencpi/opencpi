@@ -93,7 +93,7 @@ static INLINE int fasttime_init()
 
 /* Obtain the current time of day using the given context. */
 int fasttime_gettime_context(fasttime_context_t context,
-			     struct timespec *tp);
+                             struct timespec *tp);
 
 /* Obtain the current time of day using the default context.  The
  * time is recorded in a timespec struct, as used by the gettimeofday()

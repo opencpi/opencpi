@@ -46,7 +46,7 @@ namespace CpiCFUtilSCAFs {
     class Buf : public std::streambuf {
     public:
       enum {
-	BufferSize = 4096
+        BufferSize = 4096
       };
 
     public:
@@ -259,7 +259,7 @@ xsgetn (char * s, std::streamsize n)
 
     if (!(ptr = gptr()) || (count = egptr() - gptr()) == 0) {
       if (traits_type::eq_int_type (underflow(), traits_type::eof())) {
-	return total;
+        return total;
       }
 
       ptr = gptr();
@@ -317,10 +317,10 @@ sync ()
       m_buffer->length (count);
 
       try {
-	m_file->write (m_buffer.in());
+        m_file->write (m_buffer.in());
       }
       catch (...) {
-	return -1;
+        return -1;
       }
 
       m_bufferBeginPos += count;
@@ -392,7 +392,7 @@ xsputn (const char * s, std::streamsize n)
 
     if (!(ptr = pptr()) || (count = epptr() - pptr()) == 0) {
       if (traits_type::eq_int_type (overflow(traits_type::eof()), traits_type::eof())) {
-	return total;
+        return total;
       }
 
       ptr = pptr();
@@ -510,8 +510,8 @@ namespace {
   class SCAFsIterator : public CPI::Util::Vfs::Iterator {
   public:
     SCAFsIterator (CF::FileSystem::FileInformationSequence * fis,
-		   const std::string & dir,
-		   const std::string & pbd)
+                   const std::string & dir,
+                   const std::string & pbd)
       throw ();
     ~SCAFsIterator ()
       throw ();
@@ -545,8 +545,8 @@ namespace {
 }
 
 SCAFsIterator::SCAFsIterator (CF::FileSystem::FileInformationSequence * fis,
-			      const std::string & dir,
-			      const std::string & pbd)
+                              const std::string & dir,
+                              const std::string & pbd)
   throw ()
   : m_index (0),
     m_fisLength (fis->length()),
@@ -574,7 +574,7 @@ SCAFsIterator::end ()
     }
     else if (fileName[1] == '.') {
       if (fileName[2] && fileName[2] != '/') {
-	break;
+        break;
       }
     }
     else if (fileName[1] && fileName[1] != '/') {
@@ -693,7 +693,7 @@ SCAFsIterator::lastModified ()
     if (std::strcmp (fp.id, "MODIFIED_TIME") == 0) {
       CORBA::ULongLong ts;
       if (!(fp.value >>= ts)) {
-	throw std::string ("invalid timestamp");
+        throw std::string ("invalid timestamp");
       }
 
       return static_cast<std::time_t> (ts);
@@ -998,7 +998,7 @@ lastModified (const std::string & name)
     if (std::strcmp (fp.id.in(), CF::FileSystem::MODIFIED_TIME_ID) == 0) {
       CORBA::ULongLong ts;
       if (!(fp.value >>= ts)) {
-	throw std::string ("invalid timestamp");
+        throw std::string ("invalid timestamp");
       }
 
       return static_cast<std::time_t> (ts);
@@ -1067,14 +1067,14 @@ open (const std::string & name,
 
     if (CORBA::is_nil (file)) {
       try {
-	file = m_fs->create (absName.c_str());
+        file = m_fs->create (absName.c_str());
       }
       catch (const CORBA::Exception & ex) {
-	throw CPI::CFUtil::stringifyCFException (ex);
+        throw CPI::CFUtil::stringifyCFException (ex);
       }
 
       if (CORBA::is_nil (file)) {
-	throw std::string ("CF::FileSystem::create() failed");
+        throw std::string ("CF::FileSystem::create() failed");
       }
     }
   }
@@ -1085,7 +1085,7 @@ open (const std::string & name,
 std::istream *
 CPI::CFUtil::SCAFs::
 openReadonly (const std::string & name,
-	      std::ios_base::openmode mode)
+              std::ios_base::openmode mode)
   throw (std::string)
 {
   std::string absName = absoluteName (name);
@@ -1108,7 +1108,7 @@ openReadonly (const std::string & name,
 std::ostream *
 CPI::CFUtil::SCAFs::
 openWriteonly (const std::string & name,
-	       std::ios_base::openmode mode)
+               std::ios_base::openmode mode)
   throw (std::string)
 {
   return open (name, mode);

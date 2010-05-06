@@ -118,7 +118,7 @@ public:
 
   void newMessageCircuitAvailable( CPI::DataTransport::MessageCircuit* new_circuit )
   {
-    //		printf("TransportEventHandler::newCircuitAvailable new circuit available\n");
+    //                printf("TransportEventHandler::newCircuitAvailable new circuit available\n");
     circuit = gpp_circuits[circuit_count++] = new_circuit;
     
   }
@@ -144,7 +144,7 @@ public:
 
   /**********************************
    *  This method gets called when data is available on a circuit
-   **********************************/	
+   **********************************/        
   void dataAvailable( CPI::DataTransport::MessageCircuit* circuit )
   {
 
@@ -379,23 +379,23 @@ void setupForPCMode()
 
   try { 
     pc_outputPort = &WORKER_PRODUCER_ID->createOutputPort( PORT_0,
-							  CPI_RCC_CONT_NBUFFERS,
-							  CPI_RCC_DATA_BUFFER_SIZE, NULL);
+                                                          CPI_RCC_CONT_NBUFFERS,
+                                                          CPI_RCC_DATA_BUFFER_SIZE, NULL);
   }
   CATCH_ALL_RETHROW( "creating output port" );
-	
+        
 
   try {
 
 
     //    static CPI::Util::PValue c_port_props[] = {CPI::Util::PVString("protocol","cpi-socket-rdma"),
     static CPI::Util::PValue c_port_props[] = {CPI::Util::PVString("protocol","cpi-ppp-dma"),
-  				   					     CPI::Util::PVEnd };
+                                                                                  CPI::Util::PVEnd };
   pc_inputPort = &WORKER_CONSUMER_ID->createInputPort( PORT_0,
-						       CPI_RCC_CONT_NBUFFERS,
-						       CPI_RCC_DATA_BUFFER_SIZE,
-						       c_port_props
-						       );
+                                                       CPI_RCC_CONT_NBUFFERS,
+                                                       CPI_RCC_DATA_BUFFER_SIZE,
+                                                       c_port_props
+                                                       );
   }
   CATCH_ALL_RETHROW("creating input port")
 
@@ -438,7 +438,7 @@ void setupForPCMode()
 
 
   }
-  catch( ... ) {		
+  catch( ... ) {                
     printf("gpp: Caught an unknown exception while connecting external ports\n" );
     throw;
   }
@@ -467,17 +467,17 @@ void setupForLoopbackMode()
 
   try {
     lb_outputPort = &WORKER_LOOPBACK_ID->createOutputPort( PORT_0,
-							  CPI_RCC_CONT_NBUFFERS,
-							  CPI_RCC_DATA_BUFFER_SIZE, NULL);
+                                                          CPI_RCC_CONT_NBUFFERS,
+                                                          CPI_RCC_DATA_BUFFER_SIZE, NULL);
 
     static CPI::Util::PValue c_port_props[] = {CPI::Util::PVString("protocol","cpi-socket-rdma"),
-					       //    static CPI::Util::PValue c_port_props[] = {CPI::Util::PVString("protocol","cpi-ppp-dma"),
-					       CPI::Util::PVEnd };
+                                               //    static CPI::Util::PValue c_port_props[] = {CPI::Util::PVString("protocol","cpi-ppp-dma"),
+                                               CPI::Util::PVEnd };
     lb_inputPort = &WORKER_LOOPBACK_ID->createInputPort( PORT_1,
-							  CPI_RCC_CONT_NBUFFERS,
-							 CPI_RCC_DATA_BUFFER_SIZE,
-							 c_port_props
-							 );
+                                                          CPI_RCC_CONT_NBUFFERS,
+                                                         CPI_RCC_DATA_BUFFER_SIZE,
+                                                         c_port_props
+                                                         );
   }
   CATCH_ALL_RETHROW( "creating ports");
 
@@ -560,10 +560,10 @@ int gpp_cont(int argc, char** argv)
       loopback = parseArgs(argc,argv);
 
       static CPI::Util::PValue cprops[] = {
-	  CPI::Util::PVBool("polling",1),
-	  CPI::Util::PVEnd };
+          CPI::Util::PVBool("polling",1),
+          CPI::Util::PVEnd };
 
-	dm.discoverDevices(0,0);
+        dm.discoverDevices(0,0);
 
 
 #ifndef USE_FS
@@ -572,29 +572,29 @@ int gpp_cont(int argc, char** argv)
       TransportSEventHandler *tcb=NULL;
       if ( !loopback ) {
 
-	// Create the server endpoint and its processing thread
-	tcb = new TransportSEventHandler();
-	server = new CPI::DataTransport::Server( server_end_point, tcb );
-	printf("setServerURL \"%s\"\n", server_end_point.c_str() );
+        // Create the server endpoint and its processing thread
+        tcb = new TransportSEventHandler();
+        server = new CPI::DataTransport::Server( server_end_point, tcb );
+        printf("setServerURL \"%s\"\n", server_end_point.c_str() );
 
-	// We need a client to continue
-	while ( circuit_count == 0 ) {
-	  server->dispatch();
-	  CPI::OS::sleep( 500 );
-	  printf("Waiting for a client to connect\n");
-	}
-	printf("***** Got a new client !! \n");
-	for (int n=0; n<20; n++) {
-	  CPI::OS::sleep( 5 );
-	  server->dispatch();
-	}
+        // We need a client to continue
+        while ( circuit_count == 0 ) {
+          server->dispatch();
+          CPI::OS::sleep( 500 );
+          printf("Waiting for a client to connect\n");
+        }
+        printf("***** Got a new client !! \n");
+        for (int n=0; n<20; n++) {
+          CPI::OS::sleep( 5 );
+          server->dispatch();
+        }
       }
       else {
-	loopback_end_point = CPI_RCC_LBCONT_COMMS_EP;
-	eh = new TransportCEventHandler();
-	client = new CPI::DataTransport::Client( loopback_end_point, 1024, eh );
-	circuit = loopback_circuit = client->createCircuit( server_end_point );   	
-	printf("***** Established a new connection  !! \n");
+        loopback_end_point = CPI_RCC_LBCONT_COMMS_EP;
+        eh = new TransportCEventHandler();
+        client = new CPI::DataTransport::Client( loopback_end_point, 1024, eh );
+        circuit = loopback_circuit = client->createCircuit( server_end_point );           
+        printf("***** Established a new connection  !! \n");
       }
 #endif
 
@@ -606,132 +606,132 @@ int gpp_cont(int argc, char** argv)
       if ( ! loopback ) {
 
 
-	// Bootstrap the communications
-	
+        // Bootstrap the communications
+        
 
 
 
 
-	try { 
+        try { 
 
-	  // Create the container
-	  CPI::Util::Device* d = dm.getDevice( cprops, "RCC");
-	  if ( ! d ) {
-	    throw CPI::Util::EmbeddedException("No Containers found\n");
-	  }
-	  gpp_container = static_cast<CPI::Container::Interface*>(d);
-	  gpp_app = gpp_container->createApplication();
+          // Create the container
+          CPI::Util::Device* d = dm.getDevice( cprops, "RCC");
+          if ( ! d ) {
+            throw CPI::Util::EmbeddedException("No Containers found\n");
+          }
+          gpp_container = static_cast<CPI::Container::Interface*>(d);
+          gpp_app = gpp_container->createApplication();
 
-	}
-	CATCH_ALL_RETHROW( "creating container");
+        }
+        CATCH_ALL_RETHROW( "creating container");
 
       }
       else {
 
-	CPI::Util::Device* d = dm.getDevice( cprops, "RCC" );
-	if ( ! d ) {
-	  throw CPI::Util::EmbeddedException("No Containers found\n");
-	}
-	loopback_container = static_cast<CPI::Container::Interface*>(d);
-	loopback_app = loopback_container->createApplication();
+        CPI::Util::Device* d = dm.getDevice( cprops, "RCC" );
+        if ( ! d ) {
+          throw CPI::Util::EmbeddedException("No Containers found\n");
+        }
+        loopback_container = static_cast<CPI::Container::Interface*>(d);
+        loopback_app = loopback_container->createApplication();
 
       }
 
       // We can either take on the role of the producer/consumer or the loopback
       if ( loopback ) {
 
-	setupForLoopbackMode();
+        setupForLoopbackMode();
 
-	WORKER_LOOPBACK_ID->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
-	WORKER_LOOPBACK_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
+        WORKER_LOOPBACK_ID->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
+        WORKER_LOOPBACK_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
 
       }
       else {
 
-	try {
-	  setupForPCMode();
-	}
-	CATCH_ALL_RETHROW("setting mode");
+        try {
+          setupForPCMode();
+        }
+        CATCH_ALL_RETHROW("setting mode");
 
-	printf("\n\nWaiting 2 secs to continue ....\n");
-	for (int y=0; y<10; y++ ) {
-	  gpp_container->dispatch(event_manager);
-	  CPI::OS::sleep( 200 );		
-	}
+        printf("\n\nWaiting 2 secs to continue ....\n");
+        for (int y=0; y<10; y++ ) {
+          gpp_container->dispatch(event_manager);
+          CPI::OS::sleep( 200 );                
+        }
 
 
-	try {
+        try {
 
-	  WORKER_PRODUCER_ID->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
-	  WORKER_PRODUCER_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
+          WORKER_PRODUCER_ID->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
+          WORKER_PRODUCER_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
 
-	  WORKER_CONSUMER_ID->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
-	  WORKER_CONSUMER_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
+          WORKER_CONSUMER_ID->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
+          WORKER_CONSUMER_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
 
-	}
-	CATCH_ALL_RETHROW("initializing workers");
+        }
+        CATCH_ALL_RETHROW("initializing workers");
 
       }
 
       CPI_RUN_TEST = 1;
 
       if ( event_manager ) {
-	printf("Running with an event manager\n");
+        printf("Running with an event manager\n");
       }
       else {
-	printf("Running without a event manager\n");
+        printf("Running without a event manager\n");
       }      
       
 
       while( CPI_RUN_TEST ) {
-			
-	if (!loopback) {
+                        
+        if (!loopback) {
 
-	  // Block here until we get a PPP mailbox notification
-	  // We will get a notification for the following reasons
-	  // 1) One of our input buffers has been filled
-	  // 2) A DMA has completed and we have a output buffer that is now empty
-	  // 3) A timeout has occured
-	  if ( event_manager ) {
-	    do {
-	      gpp_container->dispatch(event_manager);
+          // Block here until we get a PPP mailbox notification
+          // We will get a notification for the following reasons
+          // 1) One of our input buffers has been filled
+          // 2) A DMA has completed and we have a output buffer that is now empty
+          // 3) A timeout has occured
+          if ( event_manager ) {
+            do {
+              gpp_container->dispatch(event_manager);
 
-	      /*
-	      if ( event_manager->wait_for_event( 100, event_id, evalue ) == DataTransfer::EventTimeout ) {
-		printf("We have not recieved an event for 100 uSec.\n");
-	      }
-	      else {
-		gpp_container->dispatch( event_manager );
-		break;
-	      }
-	      */
+              /*
+              if ( event_manager->wait_for_event( 100, event_id, evalue ) == DataTransfer::EventTimeout ) {
+                printf("We have not recieved an event for 100 uSec.\n");
+              }
+              else {
+                gpp_container->dispatch( event_manager );
+                break;
+              }
+              */
 
-	    } while(1);
-	  }
-	  else {
-	    gpp_container->dispatch( event_manager );
-	  }
+            } while(1);
+          }
+          else {
+            gpp_container->dispatch( event_manager );
+          }
 
-	}
-	else {
-	  loopback_container->dispatch( event_manager );
-	}
+        }
+        else {
+          loopback_container->dispatch( event_manager );
+        }
 
-	//	CPI::OS::sleep( 10 );	
+        //        CPI::OS::sleep( 10 );        
 
       }
 
       // Cleanup
       if ( loopback ) {
-	delete loopback_app;
-	delete loopback_container;
-	loopback_container = NULL;
+        delete loopback_app;
+        delete loopback_container;
+        loopback_container = NULL;
       }
       else {
-	CPI::OS::sleep( 3000 );
-	delete gpp_app;
-	delete gpp_container;
-	gpp_container = NULL; 
+        CPI::OS::sleep( 3000 );
+        delete gpp_app;
+        delete gpp_container;
+        gpp_container = NULL; 
       }
 
 
@@ -742,10 +742,10 @@ int gpp_cont(int argc, char** argv)
     catch( std::string& stri ) {
       printf("gpp: Caught a string exception = %s\n", stri.c_str() );
     }
-    catch ( CPI::Util::EmbeddedException& eex ) {			
+    catch ( CPI::Util::EmbeddedException& eex ) {                        
       printf(" \n gpp main: Caught an embedded exception");  
-      printf( " error number = %d", eex.m_errorCode );			
-    }							       
+      printf( " error number = %d", eex.m_errorCode );                        
+    }                                                               
     catch( ... ) {
       printf("gpp: Caught an unknown exception\n" );
     }

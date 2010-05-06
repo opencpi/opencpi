@@ -8,20 +8,20 @@ CPI::Util::Misc::RefCounter::RefCounter()
 }
 CPI::Util::Misc::RefCounter::~RefCounter()
 {
-	cpiAssert( refCount == 0 );
+        cpiAssert( refCount == 0 );
 }
 int CPI::Util::Misc::RefCounter::incRef()
 {
-	return refCount++;
+        return refCount++;
 }
 int CPI::Util::Misc::RefCounter::decRef()
 {
-	refCount--;
-	if ( refCount == 0 ) {
-		delete this;
-		return 0;
-	}
-	return refCount;
+        refCount--;
+        if ( refCount == 0 ) {
+                delete this;
+                return 0;
+        }
+        return refCount;
 }
 
 

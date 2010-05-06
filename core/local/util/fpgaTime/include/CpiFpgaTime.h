@@ -27,9 +27,9 @@ namespace  CPI {
     public:
 
       Time( void * AdminBaseAdr  )
-	{
-	  m_adminBaseAdr=(CPI::OS::uint8_t*)AdminBaseAdr;
-	}
+        {
+          m_adminBaseAdr=(CPI::OS::uint8_t*)AdminBaseAdr;
+        }
 
       /*
        * Register access methods
@@ -59,10 +59,10 @@ namespace  CPI {
       void disablePPSIn(bool d){setControlReg( d?1:0 );}
 
       enum PPSOutControl {
-	TimeServerSeconds,
-	PPSInputLoopThru,
-	LocalXORefDiv2,
-	PPSMute
+        TimeServerSeconds,
+        PPSInputLoopThru,
+        LocalXORefDiv2,
+        PPSMute
       };
       void driverPPSOut( PPSOutControl );
 

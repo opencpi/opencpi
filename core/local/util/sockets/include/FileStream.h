@@ -1,7 +1,7 @@
 /**
- **	\file FileStream.h
- **	\date  2008-12-20
- **	\author grymse@alhem.net
+ **        \file FileStream.h
+ **        \date  2008-12-20
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom
@@ -44,14 +44,14 @@ class IFile;
 class FileStream : public IStream
 {
 public:
-	FileStream(IFile& file);
+        FileStream(IFile& file);
 
-	size_t IStreamRead(char *buf, size_t max_sz);
+        size_t IStreamRead(char *buf, size_t max_sz);
 
-	void IStreamWrite(const char *buf, size_t sz);
+        void IStreamWrite(const char *buf, size_t sz);
 
 private:
-	IFile& m_file;
+        IFile& m_file;
 };
 
 #ifdef SOCKETS_NAMESPACE

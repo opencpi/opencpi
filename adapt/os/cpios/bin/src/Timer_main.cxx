@@ -91,10 +91,10 @@ namespace TimerTests {
       CPI::OS::Timer t;
 
       for (unsigned int i=0; i<10; i++) {
-	t.start ();
-	CPI::OS::sleep (300);
-	t.stop ();
-	CPI::OS::sleep (300);
+        t.start ();
+        CPI::OS::sleep (300);
+        t.stop ();
+        CPI::OS::sleep (300);
       }
 
       t.getValue (e);
@@ -123,17 +123,17 @@ namespace TimerTests {
       CPI::OS::Timer t;
 
       for (unsigned int i=0; i<10; i++) {
-	t.start ();
-	CPI::OS::sleep (300);
-	t.stop ();
+        t.start ();
+        CPI::OS::sleep (300);
+        t.stop ();
       }
 
       t.reset ();
 
       for (unsigned int i=0; i<10; i++) {
-	t.start ();
-	CPI::OS::sleep (300);
-	t.stop ();
+        t.start ();
+        CPI::OS::sleep (300);
+        t.stop ();
       }
 
       t.getValue (e);
@@ -315,8 +315,8 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-	CPI::OS::debugBreak ();
-	break;
+        CPI::OS::debugBreak ();
+        break;
       }
     }
   }

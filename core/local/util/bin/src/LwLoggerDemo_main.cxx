@@ -71,7 +71,7 @@ main (int argc, char *argv[])
 
     if (!ifs.good()) {
       std::cout << "oops: can not open \"" << argv[iorpos] << " for reading."
-		<< std::endl;
+                << std::endl;
       return 1;
     }
 
@@ -91,9 +91,9 @@ main (int argc, char *argv[])
   CPI::Util::LwLoggerOutput logger (ior);
 
   logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	 << CPI::Logger::ProducerName ("main")
-	 << argv[msgpos]
-	 << std::flush;
+         << CPI::Logger::ProducerName ("main")
+         << argv[msgpos]
+         << std::flush;
 
   return 0;
 }

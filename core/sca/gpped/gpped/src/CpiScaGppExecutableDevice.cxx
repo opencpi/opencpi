@@ -48,28 +48,28 @@ s_shutdownGracePeriod = 3000;
 
 CPI::SCA::GppExecutableDevice::
 GppExecutableDevice (CORBA::ORB_ptr orb,
-		     PortableServer::POA_ptr poa,
-		     CF::DeviceManager_ptr devMgr,
-		     const std::string & profileFileName,
-		     const std::string & deviceId,
-		     const std::string & deviceLabel,
-		     const std::string & tempFileLocation,
-		     unsigned int cpiDeviceId,
-		     const std::string & osName,
-		     const std::string & processorName,
-		     CPI::Logger::Logger * logger,
-		     bool adoptLogger,
-		     bool shutdownOrbOnRelease)
+                     PortableServer::POA_ptr poa,
+                     CF::DeviceManager_ptr devMgr,
+                     const std::string & profileFileName,
+                     const std::string & deviceId,
+                     const std::string & deviceLabel,
+                     const std::string & tempFileLocation,
+                     unsigned int cpiDeviceId,
+                     const std::string & osName,
+                     const std::string & processorName,
+                     CPI::Logger::Logger * logger,
+                     bool adoptLogger,
+                     bool shutdownOrbOnRelease)
   throw (std::string)
   : CPI::CFUtil::DeviceBase (orb,
-			     poa,
-			     devMgr,
-			     profileFileName,
-			     deviceId,
-			     deviceLabel,
-			     logger,
-			     adoptLogger,
-			     shutdownOrbOnRelease),
+                             poa,
+                             devMgr,
+                             profileFileName,
+                             deviceId,
+                             deviceLabel,
+                             logger,
+                             adoptLogger,
+                             shutdownOrbOnRelease),
     m_cpiDeviceId (cpiDeviceId),
     m_osName (osName),
     m_processorName (processorName),
@@ -77,10 +77,10 @@ GppExecutableDevice (CORBA::ORB_ptr orb,
 {
   CPI::Logger::DebugLogger debug (m_out);
   debug << m_logProducerName
-	<< "GppExecutableDevice for device id "
-	<< m_cpiDeviceId
-	<< " constructor."
-	<< std::flush;
+        << "GppExecutableDevice for device id "
+        << m_cpiDeviceId
+        << " constructor."
+        << std::flush;
 
   /*
    * If os_name and processor_name weren't specified, use defaults.
@@ -119,10 +119,10 @@ CPI::SCA::GppExecutableDevice::
 {
   CPI::Logger::DebugLogger debug (m_out);
   debug << m_logProducerName
-	<< "GppExecutableDevice for device id "
-	<< m_cpiDeviceId
-	<< " destructor."
-	<< std::flush;
+        << "GppExecutableDevice for device id "
+        << m_cpiDeviceId
+        << " destructor."
+        << std::flush;
   cleanup ();
 }
 
@@ -143,19 +143,19 @@ cleanup ()
     CPI::OS::ProcessManager * pm = (*rit).second.processManager;
 
     debug << m_logProducerName
-	  << "Terminating process "
-	  << (*rit).first
-	  << "."
-	  << std::flush;
+          << "Terminating process "
+          << (*rit).first
+          << "."
+          << std::flush;
 
     try {
       pm->shutdown ();
     }
     catch (const std::string & oops) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Error terminating process " << (*rit).first
-	    << ": " << oops << ". (Ignored.)" << std::flush;
+            << m_logProducerName
+            << "Error terminating process " << (*rit).first
+            << ": " << oops << ". (Ignored.)" << std::flush;
     }
 
     bool hasTerminated;
@@ -183,23 +183,23 @@ cleanup ()
   for (LoadedDllInfos::iterator ldi = m_loadedDlls.begin ();
        ldi != m_loadedDlls.end (); ldi++) {
     debug << m_logProducerName
-	  << "Unloading DLL \""
-	  << (*ldi).first
-	  << "\"."
-	  << std::flush;
+          << "Unloading DLL \""
+          << (*ldi).first
+          << "\"."
+          << std::flush;
 
     try {
       (*ldi).second.module->close ();
     }
     catch (const std::string & oops) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Error unloading DLL \""
-	    << (*ldi).first
-	    << "\": "
-	    << oops
-	    << ". (Ignored.)"
-	    << std::flush;
+            << m_logProducerName
+            << "Error unloading DLL \""
+            << (*ldi).first
+            << "\": "
+            << oops
+            << ". (Ignored.)"
+            << std::flush;
     }
   }
 
@@ -212,19 +212,19 @@ cleanup ()
   for (LoadedFileInfos::iterator lfit = m_loadedFiles.begin ();
        lfit != m_loadedFiles.end (); lfit++) {
     debug << m_logProducerName
-	  << "Removing \""
-	  << (*lfit).first
-	  << "\"."
-	  << std::flush;
+          << "Removing \""
+          << (*lfit).first
+          << "\"."
+          << std::flush;
 
     try {
       m_fileFs.remove ((*lfit).first);
     }
     catch (const std::string & oops) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Error removing file " << (*lfit).first
-	    << ": " << oops << ". (Ignored.)" << std::flush;
+            << m_logProducerName
+            << "Error removing file " << (*lfit).first
+            << ": " << oops << ". (Ignored.)" << std::flush;
     }
   }
 
@@ -235,7 +235,7 @@ void
 CPI::SCA::GppExecutableDevice::
 releaseObject ()
   throw (CF::LifeCycle::ReleaseError,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   /*
    * First call the base class' implementation, which deactivates us.
@@ -254,8 +254,8 @@ void
 CPI::SCA::GppExecutableDevice::
 configure (const CF::Properties & props)
   throw (CF::PropertySet::InvalidConfiguration,
-	 CF::PropertySet::PartialConfiguration,
-	 CORBA::SystemException)
+         CF::PropertySet::PartialConfiguration,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -269,8 +269,8 @@ configure (const CF::Properties & props)
   CORBA::ULong numInvalidProperties = 0;
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "configure (";
+        << CPI::Logger::Verbosity (2)
+        << "configure (";
 
   for (CORBA::ULong dpi=0; dpi<numProps; dpi++) {
     if (dpi > 0) {
@@ -288,8 +288,8 @@ configure (const CF::Properties & props)
 
     if (std::strcmp (propertyId, "PRODUCER_LOG_LEVEL") == 0) {
       if (!configureProducerLogLevel (property)) {
-	invalidProperties.length (numInvalidProperties + 1);
-	invalidProperties[numInvalidProperties++] = property;
+        invalidProperties.length (numInvalidProperties + 1);
+        invalidProperties[numInvalidProperties++] = property;
       }
     }
     else {
@@ -300,16 +300,16 @@ configure (const CF::Properties & props)
 
   if (numInvalidProperties) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Configuration failed for "
-	  << ((numInvalidProperties != 1) ? "properties " : "property ");
+          << m_logProducerName
+          << "Configuration failed for "
+          << ((numInvalidProperties != 1) ? "properties " : "property ");
 
     for (CORBA::ULong dpi=0; dpi<numInvalidProperties; dpi++) {
       if (dpi > 0 && dpi+1 == numInvalidProperties) {
-	m_out << " and ";
+        m_out << " and ";
       }
       else if (dpi > 0) {
-	m_out << ", ";
+        m_out << ", ";
       }
 
       m_out << invalidProperties[dpi].id;
@@ -333,16 +333,16 @@ configure (const CF::Properties & props)
   }
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Configuration complete."
-	<< std::flush;
+        << m_logProducerName
+        << "Configuration complete."
+        << std::flush;
 }
 
 void
 CPI::SCA::GppExecutableDevice::
 query (CF::Properties & props)
   throw (CF::UnknownProperties,
-	 CORBA::SystemException)
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -356,8 +356,8 @@ query (CF::Properties & props)
   CF::UnknownProperties up;
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "query (";
+        << CPI::Logger::Verbosity (2)
+        << "query (";
 
   for (CORBA::ULong dpi=0; dpi<numProps; dpi++) {
     if (dpi > 0) {
@@ -411,16 +411,16 @@ query (CF::Properties & props)
 
   if (numInvalidProperties) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Query failed for "
-	  << ((numInvalidProperties != 1) ? "properties " : "property ");
+          << m_logProducerName
+          << "Query failed for "
+          << ((numInvalidProperties != 1) ? "properties " : "property ");
 
     for (CORBA::ULong dpi=0; dpi<numInvalidProperties; dpi++) {
       if (dpi > 0 && dpi+1 == numInvalidProperties) {
-	m_out << " and ";
+        m_out << " and ";
       }
       else if (dpi > 0) {
-	m_out << ", ";
+        m_out << ", ";
       }
 
       m_out << up.invalidProperties[dpi].id;
@@ -437,10 +437,10 @@ load (CF::FileSystem_ptr fileSystem,
       const char * fileName,
       CF::LoadableDevice::LoadType loadKind)
   throw (CF::LoadableDevice::InvalidLoadKind,
-	 CF::LoadableDevice::LoadFail,
-	 CF::Device::InvalidState,
-	 CF::InvalidFileName,
-	 CORBA::SystemException)
+         CF::LoadableDevice::LoadFail,
+         CF::Device::InvalidState,
+         CF::InvalidFileName,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -450,13 +450,13 @@ load (CF::FileSystem_ptr fileSystem,
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "load (\""
-	<< fileName
-	<< "\", "
-	<< CPI::CFUtil::loadTypeToString (loadKind)
-	<< ")"
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "load (\""
+        << fileName
+        << "\", "
+        << CPI::CFUtil::loadTypeToString (loadKind)
+        << ")"
+        << std::flush;
 
   if (m_adminState != CF::Device::UNLOCKED ||
       m_operationalState == CF::Device::DISABLED) {
@@ -488,13 +488,13 @@ load (CF::FileSystem_ptr fileSystem,
   if (loadKind != CF::LoadableDevice::SHARED_LIBRARY &&
       loadKind != CF::LoadableDevice::EXECUTABLE) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Can not load "
-	  << CPI::CFUtil::loadTypeToString (loadKind)
-	  << " \""
-	  << fileName
-	  << "\": only \"executable\" files are supported."
-	  << std::flush;
+          << m_logProducerName
+          << "Can not load "
+          << CPI::CFUtil::loadTypeToString (loadKind)
+          << " \""
+          << fileName
+          << "\": only \"executable\" files are supported."
+          << std::flush;
 
     throw CF::LoadableDevice::InvalidLoadKind ();
   }
@@ -525,14 +525,14 @@ load (CF::FileSystem_ptr fileSystem,
       std::string fileExtension = loadFileName.substr (dot + 1);
 
       if (fileExtension == "so" ||
-	  fileExtension == "dll" ||
-	  fileExtension == "out") {
-	/*
-	 * Treat this file as a shared library.
-	 */
+          fileExtension == "dll" ||
+          fileExtension == "out") {
+        /*
+         * Treat this file as a shared library.
+         */
 
-	loadDll (scaFs, theFileName);
-	return;
+        loadDll (scaFs, theFileName);
+        return;
       }
     }
 
@@ -551,12 +551,12 @@ load (CF::FileSystem_ptr fileSystem,
       (*lfi).second.referenceCount++;
 
       debug << m_logProducerName
-	    << "Incremented reference count for \""
-	    << loadFileName
-	    << "\" to "
-	    << (*lfi).second.referenceCount
-	    << "."
-	    << std::flush;
+            << "Incremented reference count for \""
+            << loadFileName
+            << "\" to "
+            << (*lfi).second.referenceCount
+            << "."
+            << std::flush;
 
       return;
     }
@@ -591,9 +591,9 @@ load (CF::FileSystem_ptr fileSystem,
     msg += oops;
 
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << msg << "."
-	  << std::flush;
+          << m_logProducerName
+          << msg << "."
+          << std::flush;
 
     CF::LoadableDevice::LoadFail lf;
     lf.errorNumber = CF::CF_EIO;
@@ -602,11 +602,11 @@ load (CF::FileSystem_ptr fileSystem,
   }
   catch (const CF::InvalidFileName & ifn) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Invalid file name: "
-	  << ifn.msg
-	  << "."
-	  << std::flush;
+          << m_logProducerName
+          << "Invalid file name: "
+          << ifn.msg
+          << "."
+          << std::flush;
     throw;
   }
 
@@ -615,21 +615,21 @@ load (CF::FileSystem_ptr fileSystem,
    */
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Loaded executable \""
-	<< fileName
-	<< "\" on device "
-	<< m_cpiDeviceId
-	<< "."
-	<< std::flush;
+        << m_logProducerName
+        << "Loaded executable \""
+        << fileName
+        << "\" on device "
+        << m_cpiDeviceId
+        << "."
+        << std::flush;
 }
 
 void
 CPI::SCA::GppExecutableDevice::
 unload (const char * fileName)
   throw (CF::Device::InvalidState,
-	 CF::InvalidFileName,
-	 CORBA::SystemException)
+         CF::InvalidFileName,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -639,11 +639,11 @@ unload (const char * fileName)
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "unload (\""
-	<< fileName
-	<< "\")"
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "unload (\""
+        << fileName
+        << "\")"
+        << std::flush;
 
   if (m_adminState != CF::Device::UNLOCKED ||
       m_operationalState == CF::Device::DISABLED) {
@@ -679,8 +679,8 @@ unload (const char * fileName)
     std::string fileExtension = loadFileName.substr (dot + 1);
 
     if (fileExtension == "so" ||
-	fileExtension == "dll" ||
-	fileExtension == "out") {
+        fileExtension == "dll" ||
+        fileExtension == "out") {
       /*
        * Treat this file as a shared library.
        */
@@ -702,9 +702,9 @@ unload (const char * fileName)
     msg += "\": not loaded";
 
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << msg << "."
-	  << std::flush;
+          << m_logProducerName
+          << msg << "."
+          << std::flush;
 
     CF::InvalidFileName ifn;
     ifn.errorNumber = CF::CF_EINVAL;
@@ -720,12 +720,12 @@ unload (const char * fileName)
   fileInfo.referenceCount--;
 
   debug << m_logProducerName
-	<< "Decremented reference count for \""
-	<< loadFileName
-	<< "\" to "
-	<< fileInfo.referenceCount
-	<< "."
-	<< std::flush;
+        << "Decremented reference count for \""
+        << loadFileName
+        << "\" to "
+        << fileInfo.referenceCount
+        << "."
+        << std::flush;
 
   if (fileInfo.referenceCount) {
     /*
@@ -746,28 +746,28 @@ unload (const char * fileName)
   }
   catch (const std::string & oops) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Failed to delete \""
-	  << loadFileName
-	  << "\": "
-	  << oops
-	  << ". (Ignored.)"
-	  << std::flush;
+          << m_logProducerName
+          << "Failed to delete \""
+          << loadFileName
+          << "\": "
+          << oops
+          << ". (Ignored.)"
+          << std::flush;
   }
 }
 
 CF::ExecutableDevice::ProcessID_Type
 CPI::SCA::GppExecutableDevice::
 execute (const char * entrypoint,
-	 const CF::Properties & options,
-	 const CF::Properties & parameters)
+         const CF::Properties & options,
+         const CF::Properties & parameters)
   throw (CF::ExecutableDevice::InvalidFunction,
-	 CF::ExecutableDevice::InvalidParameters,
-	 CF::ExecutableDevice::InvalidOptions,
-	 CF::ExecutableDevice::ExecuteFail,
-	 CF::Device::InvalidState,
-	 CF::InvalidFileName,
-	 CORBA::SystemException)
+         CF::ExecutableDevice::InvalidParameters,
+         CF::ExecutableDevice::InvalidOptions,
+         CF::ExecutableDevice::ExecuteFail,
+         CF::Device::InvalidState,
+         CF::InvalidFileName,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -777,11 +777,11 @@ execute (const char * entrypoint,
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "execute (\""
-	<< entrypoint
-	<< "\")"
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "execute (\""
+        << entrypoint
+        << "\")"
+        << std::flush;
 
   if (m_adminState != CF::Device::UNLOCKED ||
       m_operationalState == CF::Device::DISABLED) {
@@ -819,9 +819,9 @@ execute (const char * entrypoint,
     msg += "\": file not loaded";
 
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << msg << "."
-	  << std::flush;
+          << m_logProducerName
+          << msg << "."
+          << std::flush;
 
     throw CF::ExecutableDevice::InvalidFunction ();
   }
@@ -839,41 +839,41 @@ execute (const char * entrypoint,
       const char * optionId = option.id.in ();
 
       if (std::strcmp (optionId, "STACK_SIZE") == 0) {
-	CORBA::ULong value;
+        CORBA::ULong value;
 
-	if (!(option.value >>= value)) {
-	  io.invalidOpts.length (numInvalidOptions + 1);
-	  io.invalidOpts[numInvalidOptions++] = option;
-	}
+        if (!(option.value >>= value)) {
+          io.invalidOpts.length (numInvalidOptions + 1);
+          io.invalidOpts[numInvalidOptions++] = option;
+        }
 
-	/* STACK_SIZE value is ignored */
+        /* STACK_SIZE value is ignored */
       }
       else if (std::strcmp (optionId, "PRIORITY") == 0) {
-	CORBA::ULong value;
+        CORBA::ULong value;
 
-	if (!(option.value >>= value)) {
-	  io.invalidOpts.length (numInvalidOptions + 1);
-	  io.invalidOpts[numInvalidOptions++] = option;
-	}
+        if (!(option.value >>= value)) {
+          io.invalidOpts.length (numInvalidOptions + 1);
+          io.invalidOpts[numInvalidOptions++] = option;
+        }
 
-	/* PRIORITY value is ignored */
+        /* PRIORITY value is ignored */
       }
       else {
-	io.invalidOpts.length (numInvalidOptions + 1);
-	io.invalidOpts[numInvalidOptions++] = option;
+        io.invalidOpts.length (numInvalidOptions + 1);
+        io.invalidOpts[numInvalidOptions++] = option;
       }
     }
 
     if (numInvalidOptions) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "execute: invalid options: ";
+            << m_logProducerName
+            << "execute: invalid options: ";
 
       for (CORBA::ULong ioi=0; ioi<numInvalidOptions; ioi++) {
-	if (ioi) {
-	  m_out << ", ";
-	}
-	m_out << io.invalidOpts[ioi].id;
+        if (ioi) {
+          m_out << ", ";
+        }
+        m_out << io.invalidOpts[ioi].id;
       }
 
       m_out << "." << std::flush;
@@ -897,25 +897,25 @@ execute (const char * entrypoint,
       const char * value;
 
       if ((parameter.value >>= value)) {
-	pp.push_back (name);
-	pp.push_back (value);
+        pp.push_back (name);
+        pp.push_back (value);
       }
       else {
-	ip.invalidParms.length (numInvalidParameters + 1);
-	ip.invalidParms[numInvalidParameters++] = parameter;
+        ip.invalidParms.length (numInvalidParameters + 1);
+        ip.invalidParms[numInvalidParameters++] = parameter;
       }
     }
 
     if (numInvalidParameters) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "execute: invalid parameters: ";
+            << m_logProducerName
+            << "execute: invalid parameters: ";
 
       for (CORBA::ULong ipi=0; ipi<numInvalidParameters; ipi++) {
-	if (ipi) {
-	  m_out << ", ";
-	}
-	m_out << ip.invalidParms[ipi].id;
+        if (ipi) {
+          m_out << ", ";
+        }
+        m_out << ip.invalidParms[ipi].id;
       }
 
       m_out << "." << std::flush;
@@ -940,9 +940,9 @@ execute (const char * entrypoint,
     msg += oops;
 
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << msg << "."
-	  << std::flush;
+          << m_logProducerName
+          << msg << "."
+          << std::flush;
 
     CF::ExecutableDevice::ExecuteFail ef;
     ef.errorNumber = CF::CF_ENOEXEC;
@@ -956,13 +956,13 @@ execute (const char * entrypoint,
   pi.processManager = pm;
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Started \""
-	<< entrypoint
-	<< "\", process id "
-	<< pid
-	<< "."
-	<< std::flush;
+        << m_logProducerName
+        << "Started \""
+        << entrypoint
+        << "\", process id "
+        << pid
+        << "."
+        << std::flush;
 
   return static_cast<CF::ExecutableDevice::ProcessID_Type> (pid);
 }
@@ -971,8 +971,8 @@ void
 CPI::SCA::GppExecutableDevice::
 terminate (CF::ExecutableDevice::ProcessID_Type processId)
   throw (CF::ExecutableDevice::InvalidProcess,
-	 CF::Device::InvalidState,
-	 CORBA::SystemException)
+         CF::Device::InvalidState,
+         CORBA::SystemException)
 {
   CPI::Util::AutoMutex mutex (m_mutex);
   CPI::Logger::DebugLogger debug (m_out);
@@ -982,11 +982,11 @@ terminate (CF::ExecutableDevice::ProcessID_Type processId)
   }
 
   debug << m_logProducerName
-	<< CPI::Logger::Verbosity (2)
-	<< "terminate ("
-	<< processId
-	<< ")"
-	<< std::flush;
+        << CPI::Logger::Verbosity (2)
+        << "terminate ("
+        << processId
+        << ")"
+        << std::flush;
 
   if (m_adminState != CF::Device::UNLOCKED ||
       m_operationalState == CF::Device::DISABLED) {
@@ -1024,9 +1024,9 @@ terminate (CF::ExecutableDevice::ProcessID_Type processId)
     msg += "\" not found";
 
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << msg << "."
-	  << std::flush;
+          << m_logProducerName
+          << msg << "."
+          << std::flush;
 
     CF::ExecutableDevice::InvalidProcess ip;
     ip.errorNumber = CF::CF_EINVAL;
@@ -1042,9 +1042,9 @@ terminate (CF::ExecutableDevice::ProcessID_Type processId)
   }
   catch (const std::string & oops) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Failed to shutdown pid " << pid << ": " << oops << "."
-	  << std::flush;
+          << m_logProducerName
+          << "Failed to shutdown pid " << pid << ": " << oops << "."
+          << std::flush;
   }
 
   bool didExit;
@@ -1055,25 +1055,25 @@ terminate (CF::ExecutableDevice::ProcessID_Type processId)
   catch (const std::string & oops) {
     didExit = true;
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Failed to wait for process pid " << pid << ": " << oops << "."
-	  << std::flush;
+          << m_logProducerName
+          << "Failed to wait for process pid " << pid << ": " << oops << "."
+          << std::flush;
   }
 
   if (!didExit) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Process pid " << pid << " did not exit, killing."
-	  << std::flush;
+          << m_logProducerName
+          << "Process pid " << pid << " did not exit, killing."
+          << std::flush;
 
     try {
       pm->kill ();
     }
     catch (const std::string & oops) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Failed to kill pid " << pid << ": " << oops << "."
-	    << std::flush;
+            << m_logProducerName
+            << "Failed to kill pid " << pid << ": " << oops << "."
+            << std::flush;
     }
 
     try {
@@ -1082,28 +1082,28 @@ terminate (CF::ExecutableDevice::ProcessID_Type processId)
     catch (const std::string & oops) {
       didExit = true;
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Failed to wait for process pid " << pid << ": " << oops << "."
-	    << std::flush;
+            << m_logProducerName
+            << "Failed to wait for process pid " << pid << ": " << oops << "."
+            << std::flush;
     }
 
     if (!didExit) {
       m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	    << m_logProducerName
-	    << "Process pid " << pid << " still did not exit, forgetting about it."
-	    << std::flush;
+            << m_logProducerName
+            << "Process pid " << pid << " still did not exit, forgetting about it."
+            << std::flush;
       pm->detach ();
     }
   }
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Terminated \""
-	<< pi.executableFile
-	<< "\", process id "
-	<< pid
-	<< "."
-	<< std::flush;
+        << m_logProducerName
+        << "Terminated \""
+        << pi.executableFile
+        << "\", process id "
+        << pid
+        << "."
+        << std::flush;
 
   delete pm;
   m_processInfos.erase (pit);
@@ -1112,7 +1112,7 @@ terminate (CF::ExecutableDevice::ProcessID_Type processId)
 void
 CPI::SCA::GppExecutableDevice::
 loadDll (CPI::Util::Vfs::Vfs & fs,
-	 const std::string & dllFileName)
+         const std::string & dllFileName)
   throw (std::string)
 {
   CPI::Logger::DebugLogger debug (m_out);
@@ -1126,13 +1126,13 @@ loadDll (CPI::Util::Vfs::Vfs & fs,
     dllInfo.referenceCount++;
 
     debug << m_logProducerName
-	  << CPI::Logger::Verbosity (2)
-	  << "Incremented reference count for DLL \""
-	  << normalName
-	  << "\" to "
-	  << dllInfo.referenceCount
-	  << "."
-	  << std::flush;
+          << CPI::Logger::Verbosity (2)
+          << "Incremented reference count for DLL \""
+          << normalName
+          << "\" to "
+          << dllInfo.referenceCount
+          << "."
+          << std::flush;
 
     return;
   }
@@ -1151,11 +1151,11 @@ loadDll (CPI::Util::Vfs::Vfs & fs,
   dllInfo.module = lm;
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Loaded DLL file \""
-	<< dllFileName
-	<< "\"."
-	<< std::flush;
+        << m_logProducerName
+        << "Loaded DLL file \""
+        << dllFileName
+        << "\"."
+        << std::flush;
 }
 
 void
@@ -1172,13 +1172,13 @@ unloadDll (const std::string & dllFileName)
 
   if (--dllInfo.referenceCount) {
     debug << m_logProducerName
-	  << CPI::Logger::Verbosity (2)
-	  << "Decremented reference count for DLL \""
-	  << dllFileName
-	  << "\" to "
-	  << dllInfo.referenceCount
-	  << "."
-	  << std::flush;
+          << CPI::Logger::Verbosity (2)
+          << "Decremented reference count for DLL \""
+          << dllFileName
+          << "\" to "
+          << dllInfo.referenceCount
+          << "."
+          << std::flush;
     return;
   }
 
@@ -1191,21 +1191,21 @@ unloadDll (const std::string & dllFileName)
   }
   catch (const std::string & oops) {
     m_out << CPI::Logger::Level::EXCEPTION_ERROR
-	  << m_logProducerName
-	  << "Error unloading DLL \""
-	  << dllFileName
-	  << "\": "
-	  << oops
-	  << ". (Ignored.)"
-	  << std::flush;
+          << m_logProducerName
+          << "Error unloading DLL \""
+          << dllFileName
+          << "\": "
+          << oops
+          << ". (Ignored.)"
+          << std::flush;
   }
 
   m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-	<< m_logProducerName
-	<< "Unloaded DLL file \""
-	<< dllFileName
-	<< "\"."
-	<< std::flush;
+        << m_logProducerName
+        << "Unloaded DLL file \""
+        << dllFileName
+        << "\"."
+        << std::flush;
 
   delete dllInfo.module;
   m_loadedDlls.erase (ldi);

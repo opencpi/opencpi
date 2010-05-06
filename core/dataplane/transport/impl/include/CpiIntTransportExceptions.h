@@ -56,7 +56,7 @@ namespace DT {
     public:
     CircuitAlreadyExists( const char* aux="")
       :TransportExcept(CIRCUIT_ALREADY_EXISTS, aux)
-	{setAuxInfo(aux);}
+        {setAuxInfo(aux);}
 
     };
 
@@ -64,7 +64,7 @@ namespace DT {
     public:
     ServerNotResponding( const char* aux="")
       :TransportExcept(SERVER_NOT_RESPONDING, aux)
-	{setAuxInfo(aux);}
+        {setAuxInfo(aux);}
 
     };
 
@@ -72,7 +72,7 @@ namespace DT {
     public:
     CircuitCreateFailed( const char* aux="")
       :TransportExcept(FAILED_TO_CREATE_CIRCUIT, aux)
-	{setAuxInfo(aux);}
+        {setAuxInfo(aux);}
 
     };
 

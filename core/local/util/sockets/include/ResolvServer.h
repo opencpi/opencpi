@@ -1,6 +1,6 @@
 /** \file ResolvServer.h
- **	\date  2005-03-24
- **	\author grymse@alhem.net
+ **        \date  2005-03-24
+ **        \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -42,25 +42,25 @@ namespace SOCKETS_NAMESPACE {
 
 /** \defgroup async Asynchronous DNS */
 /** Async DNS resolver thread. 
-	\ingroup async */
+        \ingroup async */
 class ResolvServer : public Thread
 {
 public:
-	ResolvServer(port_t);
-	~ResolvServer();
+        ResolvServer(port_t);
+        ~ResolvServer();
 
-	void Run();
-	void Quit();
+        void Run();
+        void Quit();
 
-	bool Ready();
+        bool Ready();
 
 private:
-	ResolvServer(const ResolvServer& ) {} // copy constructor
-	ResolvServer& operator=(const ResolvServer& ) { return *this; } // assignment operator
+        ResolvServer(const ResolvServer& ) {} // copy constructor
+        ResolvServer& operator=(const ResolvServer& ) { return *this; } // assignment operator
 
-	bool m_quit;
-	port_t m_port;
-	bool m_ready;
+        bool m_quit;
+        port_t m_port;
+        bool m_ready;
 };
 
 

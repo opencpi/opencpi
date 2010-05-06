@@ -38,8 +38,8 @@ main (int argc, char *argv[])
   std::cout << "HttpFs base URI is " << remoteFs.baseURI() << std::endl;
 
   std::cout << "Copying " << remoteAbsName
-	    << " to " << localAbsName
-	    << " ... " << std::flush;
+            << " to " << localAbsName
+            << " ... " << std::flush;
 
   try {
     ufs.copy (remoteAbsName, &ufs, localAbsName);

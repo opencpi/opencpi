@@ -152,11 +152,11 @@ typedef struct {
 
 typedef RCCResult RCCMethod(RCCWorker *_this);
 typedef RCCResult RCCRunMethod(RCCWorker *_this,
-			       RCCBoolean timedout,
-			       RCCBoolean *newRunCondition);
+                               RCCBoolean timedout,
+                               RCCBoolean *newRunCondition);
 typedef RCCResult RCCPortMethod(RCCWorker *_this,
-				RCCPort *port,
-				RCCResult reason);
+                                RCCPort *port,
+                                RCCResult reason);
 
 typedef struct {
   void *data;
