@@ -19,7 +19,7 @@
 //    this template class with: Child<XParent,XChild>(XParent &parent)
 
 // I wish you didn't need to feed the child's class to the template that it inherits.
-// I wish that 
+// I wish that
 #ifndef CPI_PARENTCHILD_H
 #define CPI_PARENTCHILD_H
 #include <stdint.h>
@@ -30,7 +30,6 @@
 namespace CPI {
   namespace Util {
 
-  
     template <class TChild> class Parent;
 
     // This is the "internal" template that simply provide a linked list among children.
@@ -38,7 +37,10 @@ namespace CPI {
       friend class Parent<TChild>; // Allow the parent to use this link
       ChildI<TChild> *next;
     public:
-      virtual ~ChildI<TChild>(){};
+      virtual ~ChildI<TChild>()
+      {
+            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
+      }
     };
 
     // This is the class inherited by the child, given the parent's type and the child's type
@@ -48,21 +50,27 @@ namespace CPI {
       TParent *myParent;
       std::string m_cname;
       Child<TParent,TChild> (TParent & p, const char* childname=NULL) :
-        myParent(&p) {
+        myParent(&p)
+      {
+        printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
+
         myParent->Parent<TChild>::addChild(*this);
       };
-        Child<TParent,TChild> (const char* childname=NULL) : 
-          myParent(NULL)  
+        Child<TParent,TChild> (const char* childname=NULL) :
+          myParent(NULL)
           {
+            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
             if ( childname ) {
               m_cname = childname;
             }
           }
           void setParent( TParent & p ) {
+            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
             myParent = &p;
             myParent->addChild(*this);
           }
           ~Child<TParent,TChild> () {
+            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
             myParent->Parent<TChild>::releaseChild(*this);
           }
     };
@@ -75,9 +83,13 @@ namespace CPI {
       bool done;
     public:
       Parent<TChild>(const char* instancename=NULL) :
-        myChildren(0), done(false) {}
+        myChildren(0), done(false)
+        {
+            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
+        }
         void releaseChild(ChildI<TChild>& child) {
-          if (done)
+            printf ( "%s:%s:%d this %p done %d\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this, done );
+         if (done)
             return;
           for (ChildI<TChild> **cp = &myChildren; *cp; cp = &(*cp)->next)
             if (*cp == &child) {
@@ -122,8 +134,9 @@ namespace CPI {
           myChildren = &child;
         }
         virtual ~Parent<TChild> () {
-          done = true; // suppress release
-          while (myChildren) {
+           printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
+           done = true; // suppress release
+           while (myChildren) {
             ChildI<TChild> *child = myChildren;
             myChildren = child->next;
             delete child; // this should call most derived class

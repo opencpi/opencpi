@@ -118,7 +118,12 @@ namespace CPI {
           CC::ApiError("Error creating \"", which, "\" (which probed ok): ", err, NULL);
         return c;
       }
+#if 1
     } driver;
+#else
+  };
+    Driver* driver = new Driver();
+#endif
 
 
     bool Driver::found(const char *name, PCI::Bar *bars, unsigned nbars) {
@@ -129,6 +134,7 @@ namespace CPI {
       fprintf(stderr, "Error during probe for OCFRP: %s\n", err);
       return false;
     }
+
     class Container : public CC::Interface {
       volatile OccpAdminRegisters *adminRegisters;
       volatile OccpSpace* occp;
@@ -204,9 +210,19 @@ namespace CPI {
     createDummy(const char *name, const char *df, const CU::PValue *) {
       int fd;
       uint8_t *bar0, *bar1;
-      fprintf(stderr, "DF: %s, Page %d, Occp %ld, SC pagesize %ld off_t %ld bd %ld\n",
-              df, getpagesize(), sizeof(OccpSpace), sysconf(_SC_PAGE_SIZE),
-              sizeof(off_t), sizeof(CC::PortData));
+      std::cerr << "DF: "
+                << df
+                << " Page "
+                << getpagesize ( )
+                << " Occp "
+                << sizeof ( OccpSpace )
+                << " SC pagesize "
+                << sysconf ( _SC_PAGE_SIZE )
+                << " off_t "
+                << sizeof ( off_t )
+                << " bd "
+                << sizeof ( CC::PortData )
+                << std::endl;
       umask(0);
       cpiAssert((fd = shm_open(df, O_CREAT | O_RDWR, 0666)) >= 0);
       cpiAssert(ftruncate(fd, sizeof(OccpSpace) + 64*1024) >= 0);
@@ -252,7 +268,7 @@ namespace CPI {
             char tbuf[30];
             time_t bd = occp->admin.birthday;
             fprintf(stderr, "OCFRP: %s, with bitstream birthday: %s", name, ctime_r(&bd, tbuf));
-            return new Container(driver, name, bars[0].address, occp, bars[1].address,
+            return new Container( driver, name, bars[0].address, occp, bars[1].address,
                                          (uint8_t*)bar1, bars[1].size);
           }
         }

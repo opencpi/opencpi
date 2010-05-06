@@ -221,11 +221,13 @@ int main(int argc, char *argv[])
 
 
 
+#ifdef WAS
   CPI::RPL::Driver driver();
-
   CPI::Util::DriverManager dm("OCFRP");
-
-
+#else
+  CPI::RPL::Driver & driver = *(new CPI::RPL::Driver());
+  CPI::Util::DriverManager & dm = *(new CPI::Util::DriverManager("OCFRP"));
+#endif
 
   if (probe) {
     rplContainer = static_cast<CC::Interface*>(dm.getDevice( 0, "0" ));
