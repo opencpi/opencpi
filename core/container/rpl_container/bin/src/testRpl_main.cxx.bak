@@ -2,7 +2,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <memory>
-#include <sys/uio.h>
 #include <CpiDriver.h>
 #include "CpiApi.h"
 
