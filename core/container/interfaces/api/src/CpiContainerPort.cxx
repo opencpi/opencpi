@@ -21,21 +21,6 @@ namespace CPI {
     }
     BasePort::~BasePort(){}
 
-
-#ifdef WAS    
-    // REMOVE ME!! for interim merge use only
-    static CPI::Metadata::Port tmp;
-    Port::Port(Worker &w, bool provider)
-      : BasePort("Invalid", provider),
-        CPI::Util::Child<Worker,Port>(w),
-        myMetaPort(tmp), 
-        myContainer(*myParent->myParent->myParent)
-    {
-      myMetaPort.provider = provider;
-    }
-#endif
-
-
     // This base class constructor for generic initialization
     Port::Port(Worker &w, CPI::Metadata::Port &mPort) :
       BasePort( mPort ),

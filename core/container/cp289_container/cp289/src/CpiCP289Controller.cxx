@@ -541,20 +541,6 @@ Controller(Container* c, const char * monitorIPAddress)
 
 
 
-#ifdef WAS
-RCCWorkerContainer::RCCWorkerContainer( Controller* controller )
-  :m_controller(controller)
-{
-  release = CP289Release;
-  send    = CP289Send;
-  request = CP289Request;
-  advance = CP289Advance;
-  wait    = CP289Wait;
-  take    = CP289Take;
-}
-#endif
-
-
 
 
 

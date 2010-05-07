@@ -46,18 +46,6 @@ namespace CPI {
 
       class Controller;
 
-
-#ifdef WAS
-      struct RCCWorkerContainer : public RCCContainer
-      {
-        RCCWorkerContainer( Controller* controller );
-        private:
-        Controller* m_controller;
-      };
-#endif
-
-
-
       /**********************************
        * This class is used to support the CP289 component model in the CPI
        * environment.

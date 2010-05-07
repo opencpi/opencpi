@@ -118,23 +118,17 @@ namespace CPI {
           CC::ApiError("Error creating \"", which, "\" (which probed ok): ", err, NULL);
         return c;
       }
-#if 0
     } driver;
-#else
-  };
-    Driver* driver = new Driver();
-#endif
 
 
     bool Driver::found(const char *name, PCI::Bar *bars, unsigned nbars) {
       const char *err = 0;
-      CC::Interface *c = driver->create(name, bars, nbars, err);
+      CC::Interface *c = driver.create(name, bars, nbars, err);
       if (c)
         return true;
       fprintf(stderr, "Error during probe for OCFRP: %s\n", err);
       return false;
     }
-
     class Container : public CC::Interface {
       volatile OccpAdminRegisters *adminRegisters;
       volatile OccpSpace* occp;
@@ -210,19 +204,9 @@ namespace CPI {
     createDummy(const char *name, const char *df, const CU::PValue *) {
       int fd;
       uint8_t *bar0, *bar1;
-      std::cerr << "DF: "
-                << df
-                << " Page "
-                << getpagesize ( )
-                << " Occp "
-                << sizeof ( OccpSpace )
-                << " SC pagesize "
-                << sysconf ( _SC_PAGE_SIZE )
-                << " off_t "
-                << sizeof ( off_t )
-                << " bd "
-                << sizeof ( CC::PortData )
-                << std::endl;
+      fprintf(stderr, "DF: %s, Page %d, Occp %ld, SC pagesize %ld off_t %ld bd %ld\n",
+              df, getpagesize(), sizeof(OccpSpace), sysconf(_SC_PAGE_SIZE),
+              sizeof(off_t), sizeof(CC::PortData));
       umask(0);
       cpiAssert((fd = shm_open(df, O_CREAT | O_RDWR, 0666)) >= 0);
       cpiAssert(ftruncate(fd, sizeof(OccpSpace) + 64*1024) >= 0);
@@ -268,7 +252,7 @@ namespace CPI {
             char tbuf[30];
             time_t bd = occp->admin.birthday;
             fprintf(stderr, "OCFRP: %s, with bitstream birthday: %s", name, ctime_r(&bd, tbuf));
-            return new Container( *driver, name, bars[0].address, occp, bars[1].address,
+            return new Container(driver, name, bars[0].address, occp, bars[1].address,
                                          (uint8_t*)bar1, bars[1].size);
           }
         }
@@ -687,11 +671,6 @@ namespace CPI {
       bool userConnected;
       static int dumpFd;
 
-      virtual ~Port ( )
-      {
-        // Empty
-      }
-
       void disconnect()
         throw ( CPI::Util::EmbeddedException )
       {
@@ -1046,35 +1025,8 @@ namespace CPI {
       }
     };
 
-#if WAS
-    // Producer or consumer
-    class ExternalPort : public CC::ExternalPort , public CPI::RPL::Port {
-      friend class ExternalBuffer;
-      // What we know about a far buffer
-      struct FarBuffer {
-        // When we are active, we use these far data pointers
-        volatile OcdpMetadata *metadata;
-        volatile uint8_t *data;
-        // We use this all the time.
-        volatile uint32_t *ready;
-        bool last;
-      };
 
-      Port &myPort;
-      //      uint32_t nBuffers, *ready, next;
-      OcdpMetadata *metadata;
-      uint32_t *flags;
-      ExternalBuffer *localBuffers, *nextLocal, *nextRemote;
-      FarBuffer *farBuffers, *nextFar;
-      uint8_t *localData;
-      friend class Port;
 
-      ExternalPort(const char *name, Port &port, CU::PValue *props) :
-        CC::ExternalPort(name),
-        Port( port ),
-        myPort(port)
-      {
-#else
 
     // Producer or consumer
     class ExternalPort : public CC::ExternalPort, public CC::BasePort {
@@ -1090,6 +1042,7 @@ namespace CPI {
         bool last;
       };
 
+
       Port &myPort;
       //      uint32_t nBuffers, *ready, next;
       OcdpMetadata *metadata;
@@ -1104,8 +1057,6 @@ namespace CPI {
         BasePort( port.myMetaPort ),
         myPort(port)
       {
-
-#endif
         // Default is active only (host is master, never slave)
         connectionData.data.options =
           (1 << CPI::RDT::ActiveFlowControl) |
@@ -1147,20 +1098,15 @@ namespace CPI {
           }
           done = true;
         }
-
         snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
                  "cpi-pci-pio://%s.%llx.%llx:0.1.10", "0", (unsigned long long)base,
                  (unsigned long long)nAlloc);
-
         // If we are ActiveOnly we need no DMAable memory at all, so get it from the heap.
         if (connectionData.data.role == CPI::RDT::ActiveOnly)
-        {
           allocation = new uint8_t[nAlloc];
-        }
         else {
           if (!dma)
             throw CC::ApiError("Asking for DMA without CPI_DMA_MEMORY environment var", NULL);
-
           allocation = (uint8_t*)mmap(NULL, nAlloc, PROT_READ|PROT_WRITE, MAP_SHARED,
                                       Driver::pciMemFd, base);
           cpiAssert(allocation != (uint8_t*)-1);
@@ -1175,7 +1121,6 @@ namespace CPI {
           allocation = myEndpoint->alloc(nAlloc);
 #endif
         }
-
         memset((void *)allocation, 0, nAlloc);
         localData = allocation;
         myDesc.dataBufferBaseAddr  = 0;
@@ -1215,7 +1160,6 @@ namespace CPI {
 
         // Initialize our structures that keep track of LOCAL buffer status
         ExternalBuffer *lb = nextLocal = nextRemote = localBuffers = new ExternalBuffer[nLocal];
-
         for (unsigned i = 0; i < nLocal; i++, lb++) {
           lb->myParent = this;
           this->addChild( *lb );
@@ -1231,7 +1175,6 @@ namespace CPI {
           *lb->readyForRemote = !myPort.isProvider();
         }
         (lb-1)->last = true;
-
       }
       // We know a move can be done.  Do it.
       // We are either ActiveOnly or ActiveMessage

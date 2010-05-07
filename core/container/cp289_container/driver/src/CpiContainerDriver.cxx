@@ -1,17 +1,17 @@
 // Copyright (c) 2009 Mercury Federal Systems.
-//
+// 
 // This file is part of OpenCPI.
-//
+// 
 // OpenCPI is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // OpenCPI is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU Lesser General Public License
 // along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -19,7 +19,7 @@
 * Abstact:
 *   This file contains the driver implementation for creating RCC containers.
 *
-* Revision History:
+* Revision History: 
 
     03/02/2009 - John Miller
     Added event range for transport system.
@@ -56,7 +56,7 @@ Driver::Driver()
      m_tpg_events(NULL),
      m_tpg_no_events(NULL)
 {
-  // Empty
+  // Empty 
 }
 
 
@@ -83,7 +83,7 @@ probe(const CPI::Util::PValue* props, const char *which )
   if ( use_events ) {
     if ( m_tpg_events == NULL ) {
       try {
-        m_tpg_events =
+        m_tpg_events = 
           new CPI::DataTransport::TransportGlobal( event_range_start++, use_events );
       }
       catch( std::bad_alloc ) {
@@ -93,9 +93,9 @@ probe(const CPI::Util::PValue* props, const char *which )
     tpg = m_tpg_events;
   }
   else {
-    if ( m_tpg_no_events == NULL ) {
+    if ( m_tpg_no_events == NULL ) {    
       try {
-        m_tpg_no_events =
+        m_tpg_no_events = 
           new CPI::DataTransport::TransportGlobal( event_range_start++, use_events );
       }
       catch( std::bad_alloc ) {

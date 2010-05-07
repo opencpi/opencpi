@@ -574,12 +574,6 @@ void SocketXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
   m_clientSocketT->start();
   m_clientSocketT->btr();
 
-#ifdef WAS
-  SocketSmemServices* ss = static_cast<SocketSmemServices*>(p1);
-  ss->m_clientSocket = &m_clientSocketT->socket();
-#endif
-
-
 }
 
 
@@ -738,12 +732,6 @@ SocketXferServices::
   xfer_destroy (m_xftemplate, 0);
 
   if ( m_clientSocketT ) {
-
-#ifdef WAS
-    m_clientSocketT->stop();
-    m_clientSocketT->join();
-#endif
-
     delete m_clientSocketT;
   }
 }
@@ -801,10 +789,6 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
   hdr.length = transfer->nbytes;
   hdr.offset = transfer->dst_off;
 
-#ifdef WAS
-  req->m_xferServices->m_sourceSmb->m_clientSocket->SendBuf((const char*)&hdr,(size_t)sizeof(SocketDataHeader),1);
-  req->m_xferServices->m_sourceSmb->m_clientSocket->SendBuf((const char*)src1,(size_t)transfer->nbytes,1);
-#endif
 
 #ifndef NDEBUG
   printf("Sending IP header\n");

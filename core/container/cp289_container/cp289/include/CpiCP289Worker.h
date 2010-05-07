@@ -58,10 +58,197 @@ namespace CPI {
       friend class Port;
       friend class RCCWorkerInterface;
 
-
       Worker( CPI::Container::Application & app, const void* entryPoint, CPI::Util::PValue *wparams,
               ::RCCContainer* c, ezxml_t impl, ezxml_t inst );
       CPI::Container::Port& createPort(CPI::Metadata::Port&);
+
+      // Control Operations 
+      inline void initialize(){control(WCI_CONTROL_INITIALIZE, WCI_DEFAULT );}
+      inline void start(){ control(WCI_CONTROL_START, WCI_DEFAULT );}
+      inline void stop(){enabled=false;stop(true);}
+      inline void release(){ control(WCI_CONTROL_RELEASE, WCI_DEFAULT );}
+      inline void beforeQuery(){control(WCI_CONTROL_BEFORE_QUERY, WCI_DEFAULT );}
+      inline void afterConfigure(){control(WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );}
+      inline void test(){control(WCI_CONTROL_TEST, WCI_DEFAULT );}
+
+
+      // These property access methods are called when the fast path
+      // is not enabled, either due to no MMIO or that the property can
+      // return errors. 
+#undef CPI_DATA_TYPE_S
+      // Set a scalar property value
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
+      void set##pretty##Property(unsigned ord, const run val) {                \
+        CPI::Metadata::Property &p = property(ord);                                \
+        if (!p.is_writable)                                                \
+          throw; /*"attempt to set property that is not writable" */        \
+        if (p.write_error ) \
+          throw; /*"worker has errors before write */                        \
+        store *pp = (store *)(getPropertyVaddr() + p.offset);                        \
+        if (bits > 32) {                                                \
+          assert(bits == 64);                                                \
+          uint32_t *p32 = (uint32_t *)pp;                                \
+          p32[1] = ((uint32_t *)&val)[1];                                \
+          p32[0] = ((uint32_t *)&val)[0];                                \
+        } else                                                                \
+          *pp = *(store *)&val;                                                \
+        if (p.write_error ) \
+          throw; /*"worker has errors after write */                        \
+      }                                                                        \
+      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned length) { \
+        CPI::Metadata::Property &p = property(ord);                                \
+        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
+        if (!p.is_writable)                                                \
+          throw; /*"attempt to set property that is not writable" */        \
+        if (length > p.sequence_size)                                        \
+          throw;                                                        \
+        if (p.write_error )  \
+          throw; /*"worker has errors before write */                        \
+        memcpy((void *)(getPropertyVaddr() + p.offset + p.maxAlign), vals, length * sizeof(run)); \
+        *(uint32_t *)(getPropertyVaddr() + p.offset) = length;                \
+        if (p.write_error ) \
+          throw; /*"worker has errors after write */                        \
+      }
+      // Set a string property value
+      // ASSUMPTION:  strings always occupy at least 4 bytes, and
+      // are aligned on 4 byte boundaries.  The offset calculations
+      // and structure padding are assumed to do this.
+#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
+      virtual void set##pretty##Property(unsigned ord, const run val) {        \
+        CPI::Metadata::Property &p = property(ord);                                \
+        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
+        if (!p.is_writable)                                                \
+          throw; /*"attempt to set property that is not writable" */        \
+        unsigned cpi_length;                                                \
+        if (!val || (cpi_length = strlen(val)) > p.types->size)                \
+          throw; /*"string property too long"*/;                        \
+        if (p.write_error ) \
+          throw; /*"worker has errors before write */                        \
+        uint32_t *p32 = (uint32_t *)(getPropertyVaddr() + p.offset);                \
+        /* if length to be written is more than 32 bits */                \
+        if (++cpi_length > 32/CHAR_BIT)                                        \
+          memcpy(p32 + 1, val + 32/CHAR_BIT, cpi_length - 32/CHAR_BIT); \
+        uint32_t i;                                                        \
+        memcpy(&i, val, 32/CHAR_BIT);                                        \
+        p32[0] = i;                                                        \
+        if (p.write_error ) \
+          throw; /*"worker has errors after write */                        \
+      }                                                                        \
+      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned length) { \
+        CPI::Metadata::Property &p = property(ord);                                \
+        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
+        if (!p.is_writable)                                                \
+          throw; /*"attempt to set property that is not writable" */        \
+        if (length > p.sequence_size)                                        \
+          throw;                                                        \
+        if (p.write_error) \
+          throw; /*"worker has errors before write */                        \
+        char *cp = (char *)(getPropertyVaddr() + p.offset + 32/CHAR_BIT);        \
+        for (unsigned i = 0; i < length; i++) {                                \
+          unsigned len = strlen(vals[i]);                                \
+          if (len > p.types->size)                                        \
+            throw; /* "string in sequence too long" */                        \
+          memcpy(cp, vals[i], len+1);                                        \
+        }                                                                \
+        *(uint32_t *)(getPropertyVaddr() + p.offset) = length;                \
+        if (p.write_error) \
+          throw; /*"worker has errors after write */                        \
+      }
+      CPI_PROPERTY_DATA_TYPES
+#undef CPI_DATA_TYPE_S
+#undef CPI_DATA_TYPE
+      // Get Scalar Property
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
+      virtual run get##pretty##Property(unsigned ord) {                        \
+        CPI::Metadata::Property &p = property(ord);                                \
+        if (!p.is_readable)                                                \
+          throw; /*"attempt to set property that is not writable" */        \
+        if (p.read_error ) \
+          throw; /*"worker has errors before read "*/                        \
+        uint32_t *pp = (uint32_t *)(getPropertyVaddr() + p.offset);                \
+        union {                                                                \
+                run r;                                                        \
+                uint32_t u32[bits/32];                                        \
+        } u;                                                                \
+        if (bits > 32)                                                        \
+          u.u32[1] = pp[1];                                                \
+        u.u32[0] = pp[0];                                                \
+        if (p.read_error )\
+          throw; /*"worker has errors after read */                        \
+        return u.r;                                                        \
+      }                                                                        \
+      unsigned get##pretty##SequenceProperty(unsigned ord, run *vals, unsigned length) { \
+        CPI::Metadata::Property &p = property(ord);                                \
+        if (!p.is_readable)                                                \
+          throw; /*"attempt to set property that is not writable" */        \
+        if (p.read_error ) \
+          throw; /*"worker has errors before read "*/                        \
+        uint32_t n = *(uint32_t *)(getPropertyVaddr() + p.offset);                \
+        if (n > length)                                                        \
+          throw; /* sequence longer than provided buffer */                \
+        memcpy(vals, (void*)(getPropertyVaddr() + p.offset + p.maxAlign),        \
+               n * sizeof(run));                                        \
+        if (p.read_error ) \
+          throw; /*"worker has errors after read */                        \
+        return n;                                                        \
+      }
+
+      // ASSUMPTION:  strings always occupy at least 4 bytes, and
+      // are aligned on 4 byte boundaries.  The offset calculations
+      // and structure padding are assumed to do this.
+#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
+      virtual void get##pretty##Property(unsigned ord, char *cp, unsigned length) { \
+        CPI::Metadata::Property &p = property(ord);                                \
+        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
+        if (!p.is_readable)                                                \
+          throw; /*"attempt to set property that is not writable" */        \
+        if (length < p.types->size+1)                                        \
+          throw; /*"string buffer smaller than property"*/;                \
+        if (p.read_error) \
+          throw; /*"worker has errors before write */                        \
+        uint32_t i32, *p32 = (uint32_t *)(getPropertyVaddr() + p.offset);        \
+        memcpy(cp + 32/CHAR_BIT, p32 + 1, p.types->size + 1 - 32/CHAR_BIT); \
+        i32 = *p32;                                                        \
+        memcpy(cp, &i32, 32/CHAR_BIT);                                        \
+        if (p.read_error) \
+          throw; /*"worker has errors after write */                        \
+      }                                                                        \
+      unsigned get##pretty##SequenceProperty                                \
+      (unsigned ord, run *vals, unsigned length, char *buf, unsigned space) { \
+        CPI::Metadata::Property &p = property(ord);                                \
+        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
+        if (!p.is_readable)                                                \
+          throw; /*"attempt to get property that is not readable" */        \
+        if (length > p.sequence_size)                                        \
+          throw;                                                        \
+        if (p.read_error ) \
+          throw; /*"worker has errors before read */                        \
+        uint32_t                                                        \
+          n = *(uint32_t *)(getPropertyVaddr() + p.offset),                        \
+          wlen = p.types->size + 1;                                        \
+        if (n > length)                                                        \
+          throw; /* sequence longer than provided buffer */                \
+        char *cp = (char *)(getPropertyVaddr() + p.offset + 32/CHAR_BIT);        \
+        for (unsigned i = 0; i < n; i++) {                                \
+          if (space < wlen)                                                \
+            throw;                                                        \
+          memcpy(buf, cp, wlen);                                        \
+          cp += wlen;                                                        \
+          vals[i] = buf;                                                \
+          unsigned slen = strlen(buf) + 1;                                \
+          buf += slen;                                                        \
+          space -= slen;                                                \
+        }                                                                \
+        if (p.read_error)                                                \
+          throw; /*"worker has errors after read */                        \
+        return n;                                                        \
+      }
+      CPI_PROPERTY_DATA_TYPES
+#undef CPI_DATA_TYPE_S
+#undef CPI_DATA_TYPE
+#define CPI_DATA_TYPE_S CPI_DATA_TYPE
+
+        virtual void prepareProperty(CPI::Metadata::Property&, CPI::Container::Property&);
 
 
       CPI::Container::Port &  createInputPort(
@@ -81,193 +268,34 @@ namespace CPI {
                                                )
         throw ( CPI::Util::EmbeddedException );
 
-        /**
-           @brief
-           getLastControlError
 
-           This method is used to get the last error that occured during a control
-           operation.
 
-           @param [ in ] workerId
-           Container worker id.
 
-           @retval std::string - last control error
-
-           ****************************************************************** */
+      // The following methods are WCI control ops and are all deprecated.
         std::string getLastControlError()
           throw ( CPI::Util::EmbeddedException );
-
-
-        /**
-           @brief
-           Request a Worker to perform a control operation.
-
-           The function control() sends a request to a WCI Worker for
-           the specified operation. The function will block until the
-           Worker responds indicating the success or failure of the
-           operation or a timeout occurs.
-
-           @param [ in ] h_worker
-           The Worker handle provided to wci_control().
-
-           @param [ in ] operation
-           The WCI_control operation provided to wci_control().
-
-           @param [ in ] options
-           The WCI_options option provided to wci_control().
-
-           @retval Success WCI_SUCCESS
-           @retval Error   Error code that describes the error. Error
-           code can be decoded with wci_strerror().
-
-           ****************************************************************** */
         WCI_error control (  WCI_control operation, WCI_options options );
-
-        /**
-           @brief
-           Query the Worker's status information.
-
-           The function status() returns the status information for a
-           Worker in the WCI_status structure.
-
-           @param [ in ] h_worker
-           The Worker handle provided to wci_status().
-
-           @param [ out ] p_status
-           The WCI_status operation provided to wci_status().
-           Will contain a snapshot of the Worker's status
-           information after the call completes.
-
-           @retval Success WCI_SUCCESS
-           @retval Error   Error code that describes the error. Error
-           code can be decoded with wci_strerror().
-
-           ****************************************************************** */
         WCI_error status ( WCI_status* p_status );
-
-
-
-        /**
-           @brief
-           Perform a property space read request.
-
-           The function read() reads the specified number of bytes from
-           the Worker's property space. The function will block until the
-           Worker responds indicating the success or failure of the
-           operation or a timeout occurs.
-
-           @param [ in ] h_worker
-           The Worker handle provided to the WCI API function
-           that initiated the read operation.
-
-           @param [ in ] offset
-           Offset into the property space to start the read.
-
-           @param [ in ] nBytes
-           Number of bytes to read from the property space.
-
-           @param [ in ] data_type
-           WCI_data_type value that specifies the type
-           of data being read.
-
-           @param [ in ] options
-           WCI_options argument passed to the WCI API function
-           that initiated the read operation.
-
-           @param [ out ] p_data
-           Upon successful completion the data read from
-           the Worker's property space will be stored in
-           this buffer. The caller is responsible for
-           ensuring the provided buffer is large enough
-           to hold the result of the read request.
-
-           @retval Success WCI_SUCCESS
-           @retval Error   Error code that describes the error. Error
-           code can be decoded with wci_strerror().
-
-           ****************************************************************** */
         WCI_error read ( WCI_u32 offset,
                          WCI_u32 nBytes,
                          WCI_data_type data_type,
                          WCI_options options,
                          void* p_data );
-
-        /**
-           @brief
-           Perform a property space write.
-
-           The function write() writes the specified number of bytes into
-           the Worker's property space. The function will block until the
-           Worker responds indicating the success or failure of the
-           operation or a timeout occurs.
-
-           @param [ in ] h_worker
-           The Worker handle provided to the WCI API function
-           that initiated the write operation.
-
-           @param [ in ] offset
-           Offset into the property space to start writing.
-
-           @param [ in ] nBytes
-           Number of bytes to write into the property space.
-
-           @param [ in ] data_type
-           WCI_data_type value that specifies the type
-           of data being written.
-
-           @param [ in ] options
-           WCI_options argument passed to the WCI API function
-           that initiated the write operation.
-
-           @param [ in ] p_data
-           Buffer that contains the data to be written into
-           the Worker's property space.
-
-           @retval Success WCI_SUCCESS
-           @retval Error   Error code that describes the error. Error
-           code can be decoded with wci_strerror().
-
-           ****************************************************************** */
         WCI_error write ( WCI_u32 offset,
                           WCI_u32 nBytes,
                           WCI_data_type data_type,
                           WCI_options options,
                           const void* p_data );
-
-
-        /**
-           @brief
-           Ends a session created by wci_open() and releases resources.
-
-           The function close() frees the resources allocated for the
-           Worker.  If it fails, the resources may not all be recovered.
-           By default, the call to close () asserts the reset signal on the
-           RPL worker unless the WCI_DO_NOT_RESET option is specified.
-
-           @param [ in ] h_worker
-           The Worker handle provided to the WCI API function
-           that initiated the close operation.
-
-           @param [ in ] options
-           WCI_options argument passed to the WCI API function
-           that initiated the close operation.
-
-           @retval Success WCI_SUCCESS
-           @retval Error   Error code that describes the error. Error
-           code can be decoded with wci_strerror().
-
-           ****************************************************************** */
         WCI_error close ( WCI_options options ) ;
 
 
-      void stop();
-
-      // Get our transport
-      CPI::DataTransport::Transport & getTransport();
-
-      // Set/get properties
+      // Set/get properties : deprecated
       void setProperties( CPI::OS::uint32_t offset, CPI::OS::uint32_t nBytes, const void *p_data  );
       void getProperties( CPI::OS::uint32_t offset, CPI::OS::uint32_t nBytes, void *p_data  );
+
+     
+      // Get our transport
+      CPI::DataTransport::Transport & getTransport();
 
 
     private:
@@ -280,6 +308,7 @@ namespace CPI {
 
 
     protected:
+      uint8_t * getPropertyVaddr();
 
       CPI::Util::PValue properties;  
       RCCWorkerInterface * m_rcc_worker;               
@@ -315,221 +344,8 @@ namespace CPI {
 
       // Update a ports information (as a result of a connection)
       void updatePort( CPI::CP289::Port &port );
-      
-
-      public:      
-
-      inline void initialize(){control(WCI_CONTROL_INITIALIZE, WCI_DEFAULT );}
-      inline  void start(){ control(WCI_CONTROL_START, WCI_DEFAULT );}
-      inline void release(){ control(WCI_CONTROL_RELEASE, WCI_DEFAULT );}
-      inline  void beforeQuery(){control(WCI_CONTROL_BEFORE_QUERY, WCI_DEFAULT );}
-      inline  void afterConfigure(){control(WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );}
-      inline void test(){control(WCI_CONTROL_TEST, WCI_DEFAULT );}
-
-      // Dont know how this relates to a CP289 worker
-      virtual void prepareProperty(CPI::Metadata::Property&, CPI::Container::Property&){};
-
-      
-      inline void setBoolProperty(unsigned int where, bool b)
-        { setProperties( where, sizeof(bool), &b); }
-
-      inline void setBoolSequenceProperty(unsigned int where, const bool * b, unsigned int count )
-        { setProperties( where, sizeof(bool)*count, &b); }
-
-      inline void setCharProperty(unsigned int where, char c)
-        { setProperties( where, sizeof(char), &c); }
-
-      inline void setCharSequenceProperty(unsigned int where, const char* p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, &p); }
-
-      inline void setDoubleProperty(unsigned int where, double p)
-        {setProperties( where, sizeof(p), &p); }
-
-      inline void setDoubleSequenceProperty(unsigned int where, const double*p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, p); }
-
-      inline void setFloatProperty(unsigned int where, float p)
-        {setProperties( where, sizeof(p), &p); }
-
-      inline void setFloatSequenceProperty(unsigned int where, const float*p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, p); }
-
-      inline void setShortProperty(unsigned int where, int16_t p)
-        {setProperties( where, sizeof(p), &p); }
-
-      inline void setShortSequenceProperty(unsigned int where, const int16_t*p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, p); }
-
-      inline void setLongProperty(unsigned int where, int32_t p)
-        {setProperties( where, sizeof(p), &p); }
-
-      inline void setLongSequenceProperty(unsigned int where, const int32_t*p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, p); }
-
-      inline void setUCharProperty(unsigned int where, uint8_t p)
-        {setProperties( where, sizeof(p), &p); }
-
-      inline void setUCharSequenceProperty(unsigned int where, const uint8_t*p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, p); }
-
-      inline void setULongProperty(unsigned int where, uint32_t p)
-        {setProperties( where, sizeof(p), &p); }
-
-      inline void setULongSequenceProperty(unsigned int where, const uint32_t*p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, p); }
-
-      inline void setUShortProperty(unsigned int where, uint16_t p)
-        {setProperties( where, sizeof(p), &p); }
-
-      inline void setUShortSequenceProperty(unsigned int where, const uint16_t*p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, p); }
-
-      inline void setLongLongProperty(unsigned int where, int64_t p)
-        {setProperties( where, sizeof(p), &p); }
-
-      inline void setLongLongSequenceProperty(unsigned int where, const int64_t*p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, p); }
-
-      inline void setULongLongProperty(unsigned int where, uint64_t p)
-        {setProperties( where, sizeof(p), &p); }
-
-      inline void setULongLongSequenceProperty(unsigned int where, const uint64_t*p, unsigned int count)
-        {setProperties( where, sizeof(p)*count, p); }
-
-      inline void setStringProperty(unsigned int where, const char* p)
-        {cpiAssert(!"Not Implemented!!");}
-
-      inline void setStringSequenceProperty(unsigned int where, const char**p, unsigned int count)
-        {cpiAssert(!"Not Implemented!!");}
 
 
-      inline bool getBoolProperty(unsigned int where)
-        { bool b;
-          getProperties( where, sizeof(bool), &b);
-          return b;
-        }
-
-      inline unsigned int getBoolSequenceProperty(unsigned int where, bool*b, unsigned int count)
-        {  getProperties( where, sizeof(bool)*count, b);
-          return count;
-        }
-
-      inline char getCharProperty(unsigned int where)
-        { char p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getCharSequenceProperty(unsigned int where, char*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-      inline double getDoubleProperty(unsigned int where)
-        { double p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getDoubleSequenceProperty(unsigned int where, double*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-      inline float getFloatProperty(unsigned int where)
-        { float p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getFloatSequenceProperty(unsigned int where, float*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-      inline int16_t getShortProperty(unsigned int where)
-        { int16_t p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getShortSequenceProperty(unsigned int where, int16_t*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-      inline int32_t getLongProperty(unsigned int where)
-        { int32_t p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getLongSequenceProperty(unsigned int where, int32_t*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-      inline uint8_t getUCharProperty(unsigned int where)
-        { int8_t p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getUCharSequenceProperty(unsigned int where, uint8_t*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-
-      inline uint32_t getULongProperty(unsigned int where)
-        { int32_t p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getULongSequenceProperty(unsigned int where, uint32_t*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-      inline uint16_t getUShortProperty(unsigned int where)
-        { int16_t p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getUShortSequenceProperty(unsigned int where, uint16_t*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-      inline int64_t getLongLongProperty(unsigned int where)
-        { int64_t p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getLongLongSequenceProperty(unsigned int where, int64_t*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-      inline uint64_t getULongLongProperty(unsigned int where)
-        { int64_t p;
-          getProperties( where, sizeof(p), &p);
-          return p;
-        }
-
-      inline unsigned int getULongLongSequenceProperty(unsigned int where, uint64_t*p, unsigned int count)
-        {  getProperties( where, sizeof(p)*count, p);
-          return count;
-        }
-
-      inline void getStringProperty(unsigned int where, char*, unsigned int)
-        {cpiAssert(!"Not Implemented!!");}
-
-      inline unsigned int getStringSequenceProperty(unsigned int where, char**, unsigned int, char*p, unsigned int count)
-        {cpiAssert(!"Not Implemented!!"); return 0;}
 
     };
 

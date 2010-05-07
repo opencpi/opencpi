@@ -2,8 +2,8 @@
  * Abstact:
  *   This file contains the interface for the CPI Application class
  *
- * Revision History:
- *
+ * Revision History: 
+ * 
  *    Author: Jim Kulp
  *    Date: 7/2009
  *    Revision Detail: Created
@@ -28,8 +28,7 @@ namespace CPI {
     class Interface;
     class Artifact;
 
-    class Application : public CPI::Util::Child<Interface, Application>,
-                        public CPI::Util::Parent<Worker> {
+    class Application : public CPI::Util::Child<Interface, Application>, public CPI::Util::Parent<Worker> {
       friend class Interface;
       const char *m_name;
     protected:
@@ -45,8 +44,10 @@ namespace CPI {
       virtual Worker & createWorker(const char *url, CPI::Util::PValue *aparams,
                                     const void *entryPoint, const char * inst=NULL, CPI::Util::PValue *wparams = NULL);
 
+
       virtual Worker & createWorker(Artifact &, const char * impl, const char * inst=NULL,
                                     CPI::Util::PValue *wparams = NULL);
+
 
     };
   } // Container

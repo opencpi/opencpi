@@ -148,40 +148,12 @@ initInputPort()
 }
 
 
-#ifdef WAS
-CPI::CP289::Port::
-Port(CPI::Container::Worker& w, PortData& initialPortData, CPI::Container::PortId pid )
-  : CPI::Container::Port(w,initialPortData.provider),m_portId(pid),m_circuit(NULL),m_props(NULL)
-{
-  *(static_cast<CPI::Container::PortData*>(this)) = initialPortData;
-  connectionData.port = (PortDesc)this;
-  connectionData.container_id = static_cast<CPI::CP289::Container*>(myParent->myParent->myParent)->getId();
-  processPortProperties( m_props );
-
-  if ( ! provider ) {
-    // The output port does not get initialized until it gets connected
-  }
-  else {
-    initInputPort();
-    cpiAssert( m_circuit );
-  }
-}
-#endif
-
 
 CPI::CP289::Port::
 Port(CPI::Container::Worker& w, CPI::Metadata::Port & pmd,  const char * endpoint )
   : CPI::Container::Port(w,pmd),m_portId(pmd.m_pid),m_circuit(NULL),m_props(NULL)
 {
 
-#ifdef WAS
-  *(static_cast<CPI::Container::PortData*>(this)) = initialPortData;
-  connectionData.port = (PortDesc)this;
-  connectionData.container_id = static_cast<CPI::CP289::Container*>(myParent->myParent->myParent)->getId();
-  processPortProperties( m_props );
-#endif
-
-  
   connectionData.port = (PortDesc)this;
   connectionData.container_id = static_cast<CPI::CP289::Container*>(myParent->myParent->myParent)->getId();  
   myMetaPort.provider = pmd.provider;
@@ -580,27 +552,6 @@ connectExternalInputPort( PortData *           inputPort,
 }
 
 
-#ifdef NEEDED
-void 
-CPI::CP289::Port::
-connect( CPI::Container::Port &other, CPI::Util::PValue *myProps, CPI::Util::PValue *otherProps)
-{
-  connectInputPort( &other, m_localShadowPort, myProps );
-}
-
-
-void 
-CPI::CP289::Port::
-connect( const std::string &other, CPI::Util::PValue *myProps, CPI::Util::PValue *otherProps)
-{
-  PortData tpdata;
-  MyParent->myParent->myParent->unpackPortDesc( other, &tpdata );
-  connectInputPort( &tpdata, m_localShadowPort, myProps );
-}
-#endif
-
-
-
 void
 CPI::CP289::Port::
 connectInputPort( PortData *    inputPort,    
@@ -669,11 +620,6 @@ setOutputFlowControl( PortData * srcPort )
     try {
       CPI::CP289::Port* p = reinterpret_cast<CPI::CP289::Port*>(srcPort->connectionData.port);
       p->m_circuit = m_circuit;
-
-#ifdef WAS
-      m_circuit->attach();
-#endif
-
       m_connectionCookie.init( srcPort,true, this,true );
     }
     catch( std::bad_alloc ) {

@@ -1,7 +1,7 @@
 /**
- **        \file StreamSocket.cpp
- **        \date  2008-12-20
- **        \author grymse@alhem.net
+ **	\file StreamSocket.cpp
+ **	\date  2008-12-20
+ **	\author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom
@@ -58,110 +58,110 @@ StreamSocket::~StreamSocket()
 
 void StreamSocket::SetConnecting(bool x)
 {
-        if (x != m_bConnecting)
-        {
-                m_bConnecting = x;
-                if (x)
-                {
-                        SetTimeout( GetConnectTimeout() );
-                }
-                else
-                {
-                        SetTimeout( 0 );
-                }
-        }
+	if (x != m_bConnecting)
+	{
+		m_bConnecting = x;
+		if (x)
+		{
+			SetTimeout( GetConnectTimeout() );
+		}
+		else
+		{
+			SetTimeout( 0 );
+		}
+	}
 }
 
 
 bool StreamSocket::Connecting()
 {
-        return m_bConnecting;
+	return m_bConnecting;
 }
 
 
 bool StreamSocket::Ready()
 {
-        if (GetSocket() != INVALID_SOCKET && !Connecting() && !CloseAndDelete())
-                return true;
-        return false;
+	if (GetSocket() != INVALID_SOCKET && !Connecting() && !CloseAndDelete())
+		return true;
+	return false;
 }
 
 
 void StreamSocket::SetConnectTimeout(int x)
 {
-        m_connect_timeout = x;
+	m_connect_timeout = x;
 }
 
 
 int StreamSocket::GetConnectTimeout()
 {
-        return m_connect_timeout;
+	return m_connect_timeout;
 }
 
 
 void StreamSocket::SetFlushBeforeClose(bool x)
 {
-        m_flush_before_close = x;
+	m_flush_before_close = x;
 }
 
 
 bool StreamSocket::GetFlushBeforeClose()
 {
-        return m_flush_before_close;
+	return m_flush_before_close;
 }
 
 
 int StreamSocket::GetConnectionRetry()
 {
-        return m_connection_retry;
+	return m_connection_retry;
 }
 
 
 void StreamSocket::SetConnectionRetry(int x)
 {
-        m_connection_retry = x;
+	m_connection_retry = x;
 }
 
 
 int StreamSocket::GetConnectionRetries()
 {
-        return m_retries;
+	return m_retries;
 }
 
 
 void StreamSocket::IncreaseConnectionRetries()
 {
-        m_retries++;
+	m_retries++;
 }
 
 
 void StreamSocket::ResetConnectionRetries()
 {
-        m_retries = 0;
+	m_retries = 0;
 }
 
 
 void StreamSocket::SetLineProtocol(bool x)
 {
-        m_line_protocol = x;
+	m_line_protocol = x;
 }
 
 
 bool StreamSocket::LineProtocol()
 {
-        return m_line_protocol;
+	return m_line_protocol;
 }
 
 
 void StreamSocket::SetShutdown(int x)
 {
-        m_shutdown = x;
+	m_shutdown = x;
 }
 
 
 int StreamSocket::GetShutdown()
 {
-        return m_shutdown;
+	return m_shutdown;
 }
 
 

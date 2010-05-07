@@ -36,20 +36,9 @@ namespace CPI {
     {
     public:
 
-#ifdef WAS
-      CPI::OS::uint8_t          provider;               // Provider port (input port for now)
-#endif
-
-
-
-
       CPI::Metadata::Port myMetaPort;  // Deep copy to support all constructors
-
       CPI::OS::uint8_t    external;               // connected externally ?
-
       PortConnectionDesc  connectionData;      // Port Connection Dependency data
-
-
 
       PortData() : external(0) 
         {
@@ -79,12 +68,6 @@ namespace CPI {
     protected:
       BasePort(CPI::Metadata::Port & metaData );
       virtual ~BasePort();
-
-#ifdef WAS
-      const char *myName;
-#endif
-
-
       CPI::RDT::Desc_t &myDesc; // convenience
       // called after connection parameters have changed.
       virtual void checkConnectParams() = 0;
@@ -95,8 +78,9 @@ namespace CPI {
       void applyConnectParams(CPI::Util::PValue *props);
     };
 
-    class Port : public BasePort, public CPI::Util::Child<Worker,Port> {
 
+
+    class Port : public BasePort, public CPI::Util::Child<Worker,Port> {
 
       static const std::string empty;
       // This is here so we own this storage while we pass back references.

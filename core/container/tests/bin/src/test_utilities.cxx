@@ -115,15 +115,6 @@ void CPI::CONTAINER_TEST::connectWorkers(std::vector<CApp>& ca, std::vector<CWor
           ca[(*wit)->pdata[n].down_stream_connection.worker->cid].container->packPortDesc( 
                  *((*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port) );
 
-#ifdef NEEDED
-        Port consumerPortP;
-        Port * pd;
-        if ( ! (pd=ca[(*wit)->pdata[n].down_stream_connection.worker->cid].container->unpackPortDesc( 
-                                                                     portString, &consumerPortP ))) {
-          throw std::string( "ERROR: unpackPortDesc() failed for consumer" );
-        }
-#endif
-
         // Make the connection
         TUPRINTF( "About to connect target port\n");
 #ifndef NDEBUG

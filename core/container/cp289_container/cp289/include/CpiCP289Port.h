@@ -65,18 +65,7 @@ namespace CPI {
     class Port : public CPI::Container::Port, public CPI::Util::Parent<CPI::Container::ExternalPort> {
     public:
 
-
-#ifdef WAS
-      Port(CPI::Container::Worker& w, PortData& initialPortData,
-           CPI::Container::PortId pid );
-#endif
-
-
-
       Port(CPI::Container::Worker& w, CPI::Metadata::Port & pmd, const char * endpoint );
-
-
-
       virtual ~Port();
 
       void disconnect()

@@ -36,7 +36,7 @@ namespace CPI {
   namespace CC = CPI::Container;
   namespace Metadata {
 
-    Worker::Worker(const char *workerMetadata)
+    Worker::Worker(const char *workerMetadata) 
       : myProps( NULL )
     {
       if ( ! workerMetadata ) {
@@ -110,7 +110,7 @@ namespace CPI {
       // Compute allocation to hold all properties, names, types etc.
       unsigned int memSize = (nProps * sizeof(Property) +
                               nMembers * sizeof(Property::SimpleType) +
-                              nPorts * sizeof(Port) +
+                              nPorts * sizeof(Port) + 
                               nTests * sizeof(Test) +
                               nTestPs * sizeof(unsigned int) +
                               nameSize);
@@ -157,7 +157,7 @@ namespace CPI {
         }
         if (nMembers || *cp++ != '$')
           break;
-      }
+      } 
       if (n) {
         delete [] (char*)properties;
         return true;
@@ -241,7 +241,6 @@ namespace CPI {
         0
       };
       const char *type = ezxml_attr(x, "type");
-
       if (!type)
         return true;
       for (unsigned i = 0; tnames[i]; i++)
@@ -350,17 +349,17 @@ namespace CPI {
       // First pass - just count for allocation
       nProps = nPorts = nTests = nMembers = 0;
       for (x = ezxml_child(xml, "property"); x; x = ezxml_next(x)) {
-        nProps++;
+        nProps++;      
         ezxml_t y = ezxml_child(xml, "member");
         if (y)
-          do
+          do 
             nMembers++;
           while ((y = ezxml_next(y)));
         else
           nMembers++;
       }
       for (x = ezxml_child(xml, "port"); x; x = ezxml_next(x))
-        nPorts++;
+        nPorts++;      
       unsigned int memSize = (nProps * sizeof(Property) +
                               nMembers * sizeof(Property::SimpleType) +
                               nPorts * sizeof(Port));

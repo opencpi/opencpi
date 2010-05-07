@@ -1,7 +1,7 @@
 /**
- **        \file HttpTransaction.cpp
- **        \date  2007-10-05
- **        \author grymse@alhem.net
+ **	\file HttpTransaction.cpp
+ **	\date  2007-10-05
+ **	\author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -55,22 +55,22 @@ HttpTransaction::~HttpTransaction()
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetHeader(const std::string& key, const std::string& value)
 {
-        m_header[key] = value;
+	m_header[key] = value;
 }
 
 
 void HttpTransaction::SetHeader(const std::string& key, long value)
 {
-        m_header[key] = Utility::l2string(value);
+	m_header[key] = Utility::l2string(value);
 }
 
 
 const std::string& HttpTransaction::Header(const std::string& key) const
 {
-        Utility::ncmap<std::string>::const_iterator it;
-        if ((it = m_header.find(key)) != m_header.end())
-                return it -> second;
-        return m_null;
+	Utility::ncmap<std::string>::const_iterator it;
+	if ((it = m_header.find(key)) != m_header.end())
+		return it -> second;
+	return m_null;
 }
 
 
@@ -78,13 +78,13 @@ const std::string& HttpTransaction::Header(const std::string& key) const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetAccept(const std::string& value)
 {
-        SetHeader("accept", value);
+	SetHeader("accept", value);
 }
 
 
 const std::string& HttpTransaction::Accept() const
 {
-        return Header("accept");
+	return Header("accept");
 }
 
 
@@ -92,13 +92,13 @@ const std::string& HttpTransaction::Accept() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetAcceptCharset(const std::string& value)
 {
-        SetHeader("accept-charset", value);
+	SetHeader("accept-charset", value);
 }
 
 
 const std::string& HttpTransaction::AcceptCharset() const
 {
-        return Header("accept-charset");
+	return Header("accept-charset");
 }
 
 
@@ -106,13 +106,13 @@ const std::string& HttpTransaction::AcceptCharset() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetAcceptEncoding(const std::string& value)
 {
-        SetHeader("accept-encoding", value);
+	SetHeader("accept-encoding", value);
 }
 
 
 const std::string& HttpTransaction::AcceptEncoding() const
 {
-        return Header("accept-encoding");
+	return Header("accept-encoding");
 }
 
 
@@ -120,13 +120,13 @@ const std::string& HttpTransaction::AcceptEncoding() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetAcceptLanguage(const std::string& value)
 {
-        SetHeader("accept-language", value);
+	SetHeader("accept-language", value);
 }
 
 
 const std::string& HttpTransaction::AcceptLanguage() const
 {
-        return Header("accept-language");
+	return Header("accept-language");
 }
 
 
@@ -134,13 +134,13 @@ const std::string& HttpTransaction::AcceptLanguage() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetConnection(const std::string& value)
 {
-        SetHeader("connection", value);
+	SetHeader("connection", value);
 }
 
 
 const std::string& HttpTransaction::Connection() const
 {
-        return Header("connection");
+	return Header("connection");
 }
 
 
@@ -148,13 +148,13 @@ const std::string& HttpTransaction::Connection() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetContentType(const std::string& value)
 {
-        SetHeader("content-type", value);
+	SetHeader("content-type", value);
 }
 
 
 const std::string& HttpTransaction::ContentType() const
 {
-        return Header("content-type");
+	return Header("content-type");
 }
 
 
@@ -162,13 +162,13 @@ const std::string& HttpTransaction::ContentType() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetContentLength(long value)
 {
-        SetHeader("content-length", value );
+	SetHeader("content-length", value );
 }
 
 
 long HttpTransaction::ContentLength() const
 {
-        return atol(Header("content-length").c_str());
+	return atol(Header("content-length").c_str());
 }
 
 
@@ -176,23 +176,23 @@ long HttpTransaction::ContentLength() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetHost(const std::string& value)
 {
-        SetHeader("host", value);
+	SetHeader("host", value);
 }
 
 
 const std::string& HttpTransaction::Host() const
 {
-        return Header("host");
+	return Header("host");
 }
 
 
 const std::string HttpTransaction::HostOnly() const
 {
-        std::string host = Header("host");
-        size_t pos = host.find(":");
-        if (pos != std::string::npos)
-                return host.substr(0, pos);
-        return host;
+	std::string host = Header("host");
+	size_t pos = host.find(":");
+	if (pos != std::string::npos)
+		return host.substr(0, pos);
+	return host;
 }
 
 
@@ -200,13 +200,13 @@ const std::string HttpTransaction::HostOnly() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetPragma(const std::string& value)
 {
-        SetHeader("pragma", value);
+	SetHeader("pragma", value);
 }
 
 
 const std::string& HttpTransaction::Pragma() const
 {
-        return Header("pragma");
+	return Header("pragma");
 }
 
 
@@ -214,13 +214,13 @@ const std::string& HttpTransaction::Pragma() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetReferer(const std::string& value)
 {
-        SetHeader("referer", value);
+	SetHeader("referer", value);
 }
 
 
 const std::string& HttpTransaction::Referer() const
 {
-        return Header("referer");
+	return Header("referer");
 }
 
 
@@ -228,30 +228,30 @@ const std::string& HttpTransaction::Referer() const
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetUserAgent(const std::string& value)
 {
-        SetHeader("user-agent", value);
+	SetHeader("user-agent", value);
 }
 
 
 const std::string& HttpTransaction::UserAgent() const
 {
-        return Header("user-agent");
+	return Header("user-agent");
 }
 
 
 // --------------------------------------------------------------------------------------
 const Utility::ncmap<std::string>& HttpTransaction::Headers() const
 {
-        return m_header;
+	return m_header;
 }
 
 
 // --------------------------------------------------------------------------------------
 void HttpTransaction::Reset()
 {
-        while (!m_header.empty())
-        {
-                m_header.erase(m_header.begin());
-        }
+	while (!m_header.empty())
+	{
+		m_header.erase(m_header.begin());
+	}
 }
 
 

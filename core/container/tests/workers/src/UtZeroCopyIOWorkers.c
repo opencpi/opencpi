@@ -171,6 +171,16 @@ static RCCResult ConsumerAfterConfigure( RCCWorker *this_ )
   /* This only works for simple memory configurations */
   ConsumerWorkerStaticMemory *static_mem = this_->memories[0];
   ConsumerWorkerProperties *props = this_->properties;
+
+#ifdef DEBUG_PROPS
+  printf("doubleT value = %f", props->doubleT);
+  printf("passfail value = %d", props->passfail);
+  printf("run2BufferCount value = %d", props->run2BufferCount);
+  printf("longlongT value = %lld", props->longlongT);
+  printf("buffersProcessed value = %d", props->buffersProcessed);
+  printf("droppedBuffers value = %d", props->droppedBuffers);  
+  printf("bytesProcessed value = %d", props->bytesProcessed);  
+#endif
       
   return RCC_OK;
 }
@@ -193,6 +203,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   ConsumerWorkerStaticMemory *mem = this_->memories[0];
   ConsumerWorkerProperties *props = this_->properties;
   int passed = 1;
+
             
 #ifdef TIME_TP
   double          usecs;
@@ -473,7 +484,7 @@ RCCDispatch UTZCopyLoopbackWorkerDispatchTable = { RCC_VERSION, 1, 1,
                                                    LBWorkerRunConditions, NULL, 0};
 
 
-DllDispatchEntry ZeroCopyWorkerDispatchTables[] = {
+DllDispatchEntry WorkerDispatchTables[] = {
   {"Consumer", &UTZCopyConsumerWorkerDispatchTable},
   {"Loopback", &UTZCopyLoopbackWorkerDispatchTable},
   {"Producer", &UTZCopyProducerWorkerDispatchTable},

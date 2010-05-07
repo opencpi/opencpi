@@ -46,7 +46,7 @@
 #include <CpiUtilMisc.h>
 #include <CpiParentChild.h>
 #include <CpiMetadataWorker.h>
-
+#include <CpiProperty.h>
 
 #define SET_LAST_ERROR_TO_WORKER_ERROR_STRING(x)                        \
   if ( x->m_rcc_worker->m_context->errorString ) {                                \
@@ -69,6 +69,7 @@
 using namespace CPI::Container;
 using namespace CPI::Util;
 using namespace CPI::CP289;
+namespace CM = CPI::Metadata;
 
 #define MyParent static_cast<CPI::CP289::Application*>(myParent)
 
@@ -145,15 +146,6 @@ stop( bool informWorker )
     }
   }
 }
-
-void 
-CPI::CP289::Worker::
-stop()
-{
-  enabled = false;
-  stop(true);
-}
-
 
 
 void 
@@ -401,14 +393,6 @@ createOutputPort(
     throw CPI::Util::EmbeddedException( PORT_NOT_FOUND, "Port id exceeds max port count of 32", ApplicationFatal);
   }
 
-#ifdef WAS
-  PortData ipd;
-  ipd.provider = false;
-  ipd.connectionData.data.desc.nBuffers = bufferCount;
-  ipd.connectionData.data.desc.dataBufferSize = bufferSize;
-  ipd.connectionData.container_id = static_cast<CPI::CP289::Container*>(myParent->myParent)->getId();
-#endif
-
   CPI::Metadata::Port pmd;
   pmd.m_pid = portId;
   pmd.provider = false;
@@ -493,21 +477,11 @@ createInputPort(
     endpoint = MyParent->getTransport().addLocalEndpoint( endpoint.c_str() )->sMemServices->getEndPoint()->end_point;
   }
 
-#ifdef WAS
-  PortData ipd;
-  strcpy( ipd.connectionData.data.desc.oob.oep, endpoint.c_str() );
-  ipd.provider = true;
-  ipd.connectionData.data.desc.nBuffers = bufferCount;
-  ipd.connectionData.data.desc.dataBufferSize = bufferSize;
-  ipd.connectionData.container_id = static_cast<CPI::CP289::Container*>(myParent->myParent)->getId();
-#endif
-
   CPI::Metadata::Port pmd;
   pmd.m_pid = portId;
   pmd.provider = true;
   pmd.minBufferCount = bufferCount;
   pmd.minBufferSize = bufferSize;
-
 
   // Check to see if the worker requested specific port information
   overRidePortInfo( pmd );
@@ -852,3 +826,26 @@ close (        WCI_options options )
   return WCI_SUCCESS;
 }
 
+
+uint8_t * 
+CPI::CP289::Worker::
+getPropertyVaddr()
+{
+  return  (uint8_t*)m_rcc_worker->m_context->properties;
+}
+
+
+void 
+CPI::CP289::Worker::
+prepareProperty(CPI::Metadata::Property& md , CPI::Container::Property& cp)
+{
+  if (!md.is_struct && !md.is_sequence && !md.types->type != CM::Property::CPI_String &&
+      CM::Property::tsize[md.types->type] <= 32 &&
+      !md.write_error) {
+
+    if ( (md.offset+sizeof(md.types->type)) > m_rcc_worker->m_dispatch->propertySize ) {
+      throw CPI::Util::EmbeddedException( PROPERTY_SET_EXCEPTION, NULL, ApplicationRecoverable);
+    }
+    cp.writeVaddr = (uint8_t*)m_rcc_worker->m_context->properties + md.offset;
+  }
+}

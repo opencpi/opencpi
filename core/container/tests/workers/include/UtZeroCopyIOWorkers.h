@@ -41,6 +41,10 @@ struct  ProducerWorkerProperties_ {
   uint32_t bytesProcessed;
   int32_t transferMode;
 };
+
+
+
+
 typedef struct ProducerWorkerProperties_ ProducerWorkerProperties;
 
 
@@ -48,6 +52,8 @@ typedef struct ProducerWorkerProperties_ ProducerWorkerProperties;
 #define ConsumerTake    1
 
 #define MIN_CONSUMER_BUFFERS 4
+
+/*
 struct  ConsumerWorkerProperties_ {
   uint32_t passfail;
   uint32_t run2BufferCount;
@@ -59,6 +65,27 @@ struct  ConsumerWorkerProperties_ {
   uint32_t takenBufferIndex;
   uint32_t releaseBufferIndex;
 };
+*/
+
+struct  ConsumerWorkerProperties_ {
+  RCCDouble    doubleT;
+  uint32_t     passfail;
+  uint32_t     run2BufferCount;
+  uint64_t     longlongT;
+  uint32_t     buffersProcessed;
+  uint32_t     droppedBuffers;
+  uint32_t     floatCountT;
+  RCCFloat     floatST[32];
+  uint32_t     bytesProcessed;
+  int32_t      transferMode;
+  uint32_t     stringCountST;
+  RCCChar      stringST[256][50];
+  uint32_t     takenBufferIndex;
+  uint32_t     releaseBufferIndex;
+  RCCBoolean   boolT;
+  RCCBuffer    takenBuffers[MIN_CONSUMER_BUFFERS];
+};
+
 typedef struct ConsumerWorkerProperties_ ConsumerWorkerProperties;
 
 struct ConsumerWorkerStaticMemory_ {

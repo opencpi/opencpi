@@ -1,6 +1,6 @@
 /** \file Mutex.cpp
- **        \date  2004-10-30
- **        \author grymse@alhem.net
+ **	\date  2004-10-30
+ **	\author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
@@ -39,9 +39,9 @@ namespace SOCKETS_NAMESPACE {
 Mutex::Mutex()
 {
 #ifdef _WIN32
-        m_mutex = ::CreateMutex(NULL, FALSE, NULL);
+	m_mutex = ::CreateMutex(NULL, FALSE, NULL);
 #else
-        pthread_mutex_init(&m_mutex, NULL);
+	pthread_mutex_init(&m_mutex, NULL);
 #endif
 }
 
@@ -49,9 +49,9 @@ Mutex::Mutex()
 Mutex::~Mutex()
 {
 #ifdef _WIN32
-        ::CloseHandle(m_mutex);
+	::CloseHandle(m_mutex);
 #else
-        pthread_mutex_destroy(&m_mutex);
+	pthread_mutex_destroy(&m_mutex);
 #endif
 }
 
@@ -59,10 +59,10 @@ Mutex::~Mutex()
 void Mutex::Lock() const
 {
 #ifdef _WIN32
-        DWORD d = WaitForSingleObject(m_mutex, INFINITE);
-        /// \todo check 'd' for result
+	DWORD d = WaitForSingleObject(m_mutex, INFINITE);
+	/// \todo check 'd' for result
 #else
-        pthread_mutex_lock(&m_mutex);
+	pthread_mutex_lock(&m_mutex);
 #endif
 }
 
@@ -70,9 +70,9 @@ void Mutex::Lock() const
 void Mutex::Unlock() const
 {
 #ifdef _WIN32
-        ::ReleaseMutex(m_mutex);
+	::ReleaseMutex(m_mutex);
 #else
-        pthread_mutex_unlock(&m_mutex);
+	pthread_mutex_unlock(&m_mutex);
 #endif
 }
 

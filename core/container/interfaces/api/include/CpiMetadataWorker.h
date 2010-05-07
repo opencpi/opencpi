@@ -56,7 +56,7 @@ namespace CPI {
 
       ezxml_t        myXml;
 
-      Port(): twoway(false), minBufferSize(DEFAULT_BUFFER_SIZE), minBufferCount(1), maxBufferSize(0), myXml(0){}
+      Port(bool prov=true): provider(prov),twoway(false), minBufferSize(DEFAULT_BUFFER_SIZE), minBufferCount(1), maxBufferSize(0), myXml(0){}
 
     };
 

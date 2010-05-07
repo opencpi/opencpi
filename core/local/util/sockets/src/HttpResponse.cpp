@@ -1,7 +1,7 @@
 /**
- **        \file HttpResponse.cpp
- **        \date  2007-10-05
- **        \author grymse@alhem.net
+ **	\file HttpResponse.cpp
+ **	\date  2007-10-05
+ **	\author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
@@ -82,29 +82,29 @@ HttpResponse::~HttpResponse()
 // --------------------------------------------------------------------------------------
 HttpResponse& HttpResponse::operator=(const HttpResponse& src)
 {
-        m_http_version = src.m_http_version;
-        m_http_status_code = src.m_http_status_code;
-        m_http_status_msg = src.m_http_status_msg;
-        m_cookie = src.m_cookie;
-        m_file = src.m_file;
+	m_http_version = src.m_http_version;
+	m_http_status_code = src.m_http_status_code;
+	m_http_status_msg = src.m_http_status_msg;
+	m_cookie = src.m_cookie;
+	m_file = src.m_file;
 
-        HttpTransaction::operator=(src);
+	HttpTransaction::operator=(src);
 
-        return *this;
+	return *this;
 }
 
 
 // --------------------------------------------------------------------------------------
 void HttpResponse::SetHttpVersion(const std::string& value)
 {
-        m_http_version = value;
+	m_http_version = value;
 }
 
 
 // --------------------------------------------------------------------------------------
 const std::string& HttpResponse::HttpVersion() const
 {
-        return m_http_version;
+	return m_http_version;
 }
 
 
@@ -112,13 +112,13 @@ const std::string& HttpResponse::HttpVersion() const
 // --------------------------------------------------------------------------------------
 void HttpResponse::SetHttpStatusCode(int value)
 {
-        m_http_status_code = value;
+	m_http_status_code = value;
 }
 
 
 int HttpResponse::HttpStatusCode() const
 {
-        return m_http_status_code;
+	return m_http_status_code;
 }
 
 
@@ -126,51 +126,51 @@ int HttpResponse::HttpStatusCode() const
 // --------------------------------------------------------------------------------------
 void HttpResponse::SetHttpStatusMsg(const std::string& value)
 {
-        m_http_status_msg = value;
+	m_http_status_msg = value;
 }
 
 
 const std::string& HttpResponse::HttpStatusMsg() const
 {
-        return m_http_status_msg;
+	return m_http_status_msg;
 }
 
 
 // --------------------------------------------------------------------------------------
 void HttpResponse::SetCookie(const std::string& value)
 {
-        Parse pa(value, "=");
-        std::string name = pa.getword();
-        m_cookie[name] = value;
+	Parse pa(value, "=");
+	std::string name = pa.getword();
+	m_cookie[name] = value;
 DEB(fprintf(stderr, "HttpResponse::Set-Cookie<%s>: %s\n", name.c_str(), value.c_str());)
 }
 
 
 const std::string HttpResponse::Cookie(const std::string& name) const
 {
-        Utility::ncmap<std::string>::const_iterator it = m_cookie.find(name);
+	Utility::ncmap<std::string>::const_iterator it = m_cookie.find(name);
 DEB(fprintf(stderr, "HttpResponse; get value of Cookie<%s>: ", name.c_str());)
-        if (it != m_cookie.end())
-        {
+	if (it != m_cookie.end())
+	{
 DEB(fprintf(stderr, "%s\n", it -> second.c_str());)
-                return it -> second;
-        }
+		return it -> second;
+	}
 DEB(fprintf(stderr, "\n");)
-        return "";
+	return "";
 }
 
 
 std::list<std::string> HttpResponse::CookieNames() const
 {
-        std::list<std::string> vec;
-        DEB(fprintf(stderr, "HttpResponse::CookieNames; ");)
-        for (Utility::ncmap<std::string>::const_iterator it = m_cookie.begin(); it != m_cookie.end(); ++it)
-        {
-                DEB(fprintf(stderr, " %s", it -> first.c_str());)
-                vec.push_back(it -> first);
-        }
-        DEB(fprintf(stderr, "\n");)
-        return vec;
+	std::list<std::string> vec;
+	DEB(fprintf(stderr, "HttpResponse::CookieNames; ");)
+	for (Utility::ncmap<std::string>::const_iterator it = m_cookie.begin(); it != m_cookie.end(); ++it)
+	{
+		DEB(fprintf(stderr, " %s", it -> first.c_str());)
+		vec.push_back(it -> first);
+	}
+	DEB(fprintf(stderr, "\n");)
+	return vec;
 }
 
 
@@ -178,30 +178,30 @@ std::list<std::string> HttpResponse::CookieNames() const
 // --------------------------------------------------------------------------------------
 void HttpResponse::Write( const std::string& str )
 {
-        Write( str.c_str(), str.size() );
+	Write( str.c_str(), str.size() );
 }
 
 
 // --------------------------------------------------------------------------------------
 void HttpResponse::Write( const char *buf, size_t sz )
 {
-        m_file -> fwrite( buf, 1, sz );
+	m_file -> fwrite( buf, 1, sz );
 }
 
 
 // --------------------------------------------------------------------------------------
 void HttpResponse::Writef( const char *format, ... )
 {
-        va_list ap;
-        va_start(ap, format);
-        char tmp[10000];
+	va_list ap;
+	va_start(ap, format);
+	char tmp[10000];
 #ifdef _WIN32
-        vsprintf_s(tmp, sizeof(tmp), format, ap);
+	vsprintf_s(tmp, sizeof(tmp), format, ap);
 #else
-        vsnprintf(tmp, sizeof(tmp), format, ap);
+	vsnprintf(tmp, sizeof(tmp), format, ap);
 #endif
-        va_end(ap);
-        m_file -> fwrite( tmp, 1, strlen(tmp) );
+	va_end(ap);
+	m_file -> fwrite( tmp, 1, strlen(tmp) );
 }
 
 
@@ -222,30 +222,30 @@ IFile& HttpResponse::GetFile()
 // --------------------------------------------------------------------------------------
 void HttpResponse::SetFile( const std::string& path )
 {
-        m_file = std::auto_ptr<IFile>(new File);
-        m_file -> fopen( path, "rb" );
+	m_file = std::auto_ptr<IFile>(new File);
+	m_file -> fopen( path, "rb" );
 }
 
 
 // --------------------------------------------------------------------------------------
 void HttpResponse::SetFile( IFile *f )
 {
-        m_file = std::auto_ptr<IFile>(f);
+	m_file = std::auto_ptr<IFile>(f);
 }
 
 
 // --------------------------------------------------------------------------------------
 void HttpResponse::Reset()
 {
-        HttpTransaction::Reset();
-        m_http_version = "";
-        m_http_status_code = 0;
-        m_http_status_msg = "";
-        while (!m_cookie.empty())
-        {
-                m_cookie.erase(m_cookie.begin());
-        }
-        m_file = std::auto_ptr<IFile>(new MemFile);
+	HttpTransaction::Reset();
+	m_http_version = "";
+	m_http_status_code = 0;
+	m_http_status_msg = "";
+	while (!m_cookie.empty())
+	{
+		m_cookie.erase(m_cookie.begin());
+	}
+	m_file = std::auto_ptr<IFile>(new MemFile);
 }
 
 

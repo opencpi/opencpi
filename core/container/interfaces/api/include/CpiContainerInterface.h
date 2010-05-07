@@ -1,17 +1,17 @@
 // Copyright (c) 2009 Mercury Federal Systems.
-//
+// 
 // This file is part of OpenCPI.
-//
+// 
 // OpenCPI is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // OpenCPI is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU Lesser General Public License
 // along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -20,8 +20,7 @@
    @file
 
    @brief
-   The CPI::Container::Interface class is used to defined the API for
-   Container implementations.
+   The CPI::Container::Interface class is used to defined the API for Container implementations.
 
    Revision History:
 
@@ -71,9 +70,7 @@ namespace CPI {
        @sa CPI::Container::Interface
 
        ********************************************************************** */
-    class Interface : public CPI::Util::Parent<Application>,
-                      public CPI::Util::Parent<Artifact>,
-                      public CPI::Util::Device
+    class Interface : public CPI::Util::Parent<Application>, public CPI::Util::Parent<Artifact>, public CPI::Util::Device
     {
 
     public:
@@ -116,7 +113,7 @@ namespace CPI {
 
          @throw CPI::Util::EmbeddedException  If an error is detected during the creation of the .
 
-         ****************************************************************** */
+         ****************************************************************** */        
       virtual Application * createApplication()
         throw ( CPI::Util::EmbeddedException );
 
@@ -127,7 +124,7 @@ namespace CPI {
 
          This is the method that gets called by the creator to get tge list of endpoints that this container supports.
 
-         ****************************************************************** */
+         ****************************************************************** */        
       virtual std::vector<std::string> getSupportedEndpoints()
         throw ();
 
@@ -150,7 +147,7 @@ namespace CPI {
 
          @throw CPI::Util::EmbeddedException  If an error is detected during dispatch
 
-         ****************************************************************** */
+         ****************************************************************** */        
       virtual DispatchRetCode dispatch(DataTransfer::EventManager* event_manager)
         throw ( CPI::Util::EmbeddedException );
 
@@ -163,7 +160,7 @@ namespace CPI {
          packPortDesc
 
          This method is used to "pack" a port descriptor into a string that
-         can be sent over a wire.
+         can be sent over a wire.        
 
          @param [ in ] port
          Port to be packed.
@@ -195,7 +192,7 @@ namespace CPI {
         throw ();
       virtual int portDescSize();
 
-
+     
       //!< Start/Stop the container
       virtual void start(DataTransfer::EventManager* event_manager)
         throw();
