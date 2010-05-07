@@ -307,7 +307,6 @@ int main(int argc, char *argv[])
       CC::Port &w8in = two ? w[8]->getPort("WSIin") : *(CC::Port *)0;;
       CC::Port &w8out = two ? w[8]->getPort("WMIout") : *(CC::Port *)0;;
 
-
       CPI::Util::PValue
         p00[] = {CU::PVULong("bufferCount", bufferCount[0][0]),
                  CU::PVString("xferRole", active[0][0]),
@@ -357,8 +356,8 @@ int main(int argc, char *argv[])
         w7out.connect(w8in);
       }
 
-      CC::ExternalPort &myIn =
-        two ? w8out.connectExternal("w0in", p00, p81) : w3out.connectExternal("w0in", p00, p31);
+      CC::ExternalPort &myIn = two ? w8out.connectExternal ( "w0in", p00, p81 )
+                                   : w3out.connectExternal ( "w0in", p00, p31 );
 
       w[1]->start();
       w[2]->start();

@@ -39,7 +39,6 @@ namespace CPI {
     public:
       virtual ~ChildI<TChild>()
       {
-            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
       }
     };
 
@@ -52,25 +51,20 @@ namespace CPI {
       Child<TParent,TChild> (TParent & p, const char* childname=NULL) :
         myParent(&p)
       {
-        printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
-
         myParent->Parent<TChild>::addChild(*this);
       };
         Child<TParent,TChild> (const char* childname=NULL) :
           myParent(NULL)
           {
-            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
             if ( childname ) {
               m_cname = childname;
             }
           }
           void setParent( TParent & p ) {
-            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
             myParent = &p;
             myParent->addChild(*this);
           }
           ~Child<TParent,TChild> () {
-            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
             myParent->Parent<TChild>::releaseChild(*this);
           }
     };
@@ -85,17 +79,17 @@ namespace CPI {
       Parent<TChild>(const char* instancename=NULL) :
         myChildren(0), done(false)
         {
-            printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
         }
         void releaseChild(ChildI<TChild>& child) {
-            printf ( "%s:%s:%d this %p done %d\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this, done );
          if (done)
             return;
           for (ChildI<TChild> **cp = &myChildren; *cp; cp = &(*cp)->next)
+          {
             if (*cp == &child) {
               *cp = child.next;
               return;
             }
+          }
           assert(!"child missing from parent");
         }
         // call a function on all children, stopping if it returns true
@@ -134,7 +128,6 @@ namespace CPI {
           myChildren = &child;
         }
         virtual ~Parent<TChild> () {
-           printf ( "%s:%s:%d this %p\n", __FILE__, __PRETTY_FUNCTION__, __LINE__, this );
            done = true; // suppress release
            while (myChildren) {
             ChildI<TChild> *child = myChildren;
