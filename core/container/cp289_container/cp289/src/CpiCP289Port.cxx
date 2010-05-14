@@ -203,11 +203,10 @@ getInitialProviderInfo(CPI::Util::PValue*)
 
 const std::string& 
 CPI::CP289::Port::
-setInitialProviderInfo(CPI::Util::PValue* myprops, const std::string & user )
+setInitialProviderInfo(CPI::Util::PValue*, const std::string & user )
 {
   cpiAssert( ! isProvider() );
-  throw std::string("setInitialInputDesc() Not yet Implemented");
-  return m_localShadowPort;
+  return setFinalProviderInfo( user );
 }
 
 const std::string& 
@@ -226,8 +225,9 @@ CPI::CP289::Port::
 setInitialUserInfo(const std::string& user)
 {
   cpiAssert( isProvider() );
-  throw std::string("setInitialOutputDesc() Not yet Implemented");
-  return m_localShadowPort;
+  setFinalUserInfo(user );
+  // Nothing more to do
+  return std::string();
 }
 
 
