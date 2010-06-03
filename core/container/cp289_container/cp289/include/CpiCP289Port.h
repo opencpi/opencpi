@@ -85,10 +85,11 @@ namespace CPI {
 
         // Member access methods
         inline CPI::DataTransport::Port *         &dtPort(){return m_dtPort;}
-        inline CPI::Container::PortId&            portId(){return m_portId;}
+        inline CPI::Container::PortId             portId(){return m_portId;}
         inline CPI::DataTransport::Circuit *      &circuit(){return m_circuit;}
         inline OpaquePortData *                   &opaque(){return m_opaque;}
-        
+
+	virtual void connect( CPI::Container::Port &other, CPI::Util::PValue *myProps=NULL, CPI::Util::PValue *otherProps=NULL);        
 
     private:
 

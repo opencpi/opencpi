@@ -75,6 +75,7 @@ CPI::OS::int32_t
 CPI::CP289::Controller::
 markWorkersPolled( CPI::CP289::Worker* worker )
 {
+
   // Create the active mask
   CPI::OS::int32_t active_mask=0;
   CPI::CP289::Port * cpiport = static_cast<CPI::CP289::Port*>(worker->firstChild());
@@ -88,8 +89,15 @@ markWorkersPolled( CPI::CP289::Worker* worker )
       continue;
     }
 
+    // This condition can occur when a port is not connected.
+    if ( ! cpiport->dtPort() ) {
+      cpiport = static_cast<CPI::CP289::Port*>(worker->nextChild(cpiport));
+      continue;
+    }
+
     // If this is an output port, set the mask if it has a free buffer
-    if ( cpiport->dtPort()->isOutput() ) {        
+    if (  cpiport->dtPort()->isOutput() ) {        
+
       CPI::DataTransport::Port* port = cpiport->dtPort();
       RCCPort *wport = &worker->m_rcc_worker->m_context->ports[cpiport->portId()];
       if ( wport->current.data ) {
@@ -104,9 +112,9 @@ markWorkersPolled( CPI::CP289::Worker* worker )
             wport->current.data = (void*)opd->buffer->getBuffer();
             wport->current.id_ = opd->buffer;
             wport->output.length =         
-              (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opd->buffer->getMetaData()->cpiMetaDataWord);
+              (CPI::OS::uint32_t)opd->buffer->getMetaData()->cpiMetaDataWord.length;
             wport->output.u.operation =         
-              (CPI::OS::uint32_t)DECODE_OPCODE(opd->buffer->getMetaData()->cpiMetaDataWord);
+              opd->buffer->getMetaData()->cpiMetaDataWord.opCode;
           }
           else {
             wport->current.data = NULL;
@@ -133,10 +141,9 @@ markWorkersPolled( CPI::CP289::Worker* worker )
             wport->current.data = (void*)opd->buffer->getBuffer();
             opd->buffer->opaque = opd;
             wport->current.id_ = opd->buffer;
-            wport->input.length = 
-              (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opd->buffer->getMetaData()->cpiMetaDataWord);
-            wport->input.u.operation =         
-              (CPI::OS::uint32_t)DECODE_OPCODE(opd->buffer->getMetaData()->cpiMetaDataWord);
+            wport->input.length = opd->buffer->getMetaData()->cpiMetaDataWord.length;
+            wport->input.u.operation = opd->buffer->getMetaData()->cpiMetaDataWord.opCode;
+
             cpiAssert( wport->input.length <= wport->current.maxLength );
 
 #ifndef NDEBUG
@@ -306,6 +313,7 @@ run(DataTransfer::EventManager* event_manager )
         if ( execute_run ) {
           anyone_run = true;
           CPI_EMIT_("End Worker Evaluation");
+
           if ( (wr = worker->m_rcc_worker->run( timeout, &timeout)) == RCC_ADVANCE ) {
             advanceAll( worker );
           }
@@ -395,6 +403,7 @@ void CP289SendZCopy( ::RCCPort* port, ::RCCBuffer* buffer, ::RCCOrdinal op, ::ui
 void CP289Send( ::RCCPort* port, ::RCCBuffer* buffer, ::RCCOrdinal op, ::uint32_t len )
 {
   // Cant send data out a input port.
+  CPI::CP289::OpaquePortData* opq = static_cast<CPI::CP289::OpaquePortData*>(port->opaque);
   if ( ! static_cast<CPI::CP289::OpaquePortData*>(port->opaque)->port->dtPort()->isOutput() ) {
     return;
   }
@@ -415,7 +424,8 @@ void CP289Send( ::RCCPort* port, ::RCCBuffer* buffer, ::RCCOrdinal op, ::uint32_
   }
 
   static_cast<CPI::CP289::OpaquePortData*>(port->opaque)->buffer->
-    getMetaData()->cpiMetaDataWord = (uint64_t)((uint64_t)op<<32);
+    getMetaData()->cpiMetaDataWord.opCode = op;
+
   t_port->advance( static_cast<CPI::CP289::OpaquePortData*>(port->opaque)->buffer, len );
   port->current.data = NULL;
 }
@@ -425,7 +435,7 @@ RCCBoolean CP289Advance( ::RCCPort* wport, ::uint32_t max )
   CPI::CP289::OpaquePortData *opd = static_cast<CPI::CP289::OpaquePortData*>(wport->opaque); 
   opd->readyToAdvance = true;
   if ( opd->buffer ) {
-    opd->buffer->getMetaData()->cpiMetaDataWord = (uint64_t)((uint64_t)opd->cp289Port->output.u.operation<<32);
+    opd->buffer->getMetaData()->cpiMetaDataWord.opCode = opd->cp289Port->output.u.operation;
     opd->port->dtPort()->advance( opd->buffer, opd->cp289Port->output.length );
     wport->current.data = NULL;
     return true;
@@ -452,11 +462,8 @@ RCCBoolean CP289Request( ::RCCPort* port, ::uint32_t max )
           port->current.data = (void*)opq->buffer->getBuffer();
           opq->buffer->opaque = opq;
           port->current.id_ = opq->buffer;
-          port->output.length = 
-            (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opq->buffer->getMetaData()->cpiMetaDataWord);
-          port->output.u.operation =         
-              (CPI::OS::uint32_t)DECODE_OPCODE(opq->buffer->getMetaData()->cpiMetaDataWord);
-
+          port->output.length = opq->buffer->getMetaData()->cpiMetaDataWord.length;
+          port->output.u.operation =  opq->buffer->getMetaData()->cpiMetaDataWord.opCode;
         }
         else {
           port->current.data = NULL;
@@ -480,10 +487,8 @@ RCCBoolean CP289Request( ::RCCPort* port, ::uint32_t max )
           port->current.data = (void*)opq->buffer->getBuffer();
           opq->buffer->opaque = opq;
           port->current.id_ = opq->buffer;
-          port->input.length = 
-            (CPI::OS::uint32_t)N_BYTES_TRANSFERED((CPI::OS::uint32_t)opq->buffer->getMetaData()->cpiMetaDataWord);
-          port->input.u.operation =         
-              (CPI::OS::uint32_t)DECODE_OPCODE(opq->buffer->getMetaData()->cpiMetaDataWord);
+          port->input.length = opq->buffer->getMetaData()->cpiMetaDataWord.length;
+          port->input.u.operation = opq->buffer->getMetaData()->cpiMetaDataWord.opCode;
 
         }
         else {

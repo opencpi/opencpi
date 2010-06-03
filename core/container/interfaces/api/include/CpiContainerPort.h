@@ -83,10 +83,11 @@ namespace CPI {
     class Port : public BasePort, public CPI::Util::Child<Worker,Port> {
 
       static const std::string empty;
-      // This is here so we own this storage while we pass back references.
-      std::string myInitialPortInfo;
+
 
     protected:
+      // This is here so we own this storage while we pass back references.
+      std::string myInitialPortInfo;
       bool canBeExternal;
       Interface &myContainer;
       Port(Worker &, CPI::Metadata::Port &mport);

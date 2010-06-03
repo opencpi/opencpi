@@ -459,6 +459,14 @@ createInputPort(
     protocol = p->vString;
     endpoint = MyParent->getTransport().getEndpointFromProtocol( protocol.c_str() );
   }
+  else if ( getenv("CPI_DEFAULT_PROTOCOL") ) {
+    
+    const char * pe = getenv("CPI_DEFAULT_PROTOCOL");
+    printf("&&&& $$$$ Forcing protocol = %s \n", pe);
+    protocol = pe;
+    endpoint = MyParent->getTransport().getEndpointFromProtocol( protocol.c_str() );
+
+  }
   else {
 
     // It is up to the caller to specify the endpoint which implicitly defines
@@ -476,6 +484,7 @@ createInputPort(
     }
     endpoint = MyParent->getTransport().addLocalEndpoint( endpoint.c_str() )->sMemServices->getEndPoint()->end_point;
   }
+
 
   CPI::Metadata::Port pmd;
   pmd.m_pid = portId;

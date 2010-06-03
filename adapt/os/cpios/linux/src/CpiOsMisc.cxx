@@ -46,9 +46,14 @@ CPI::OS::sleep (unsigned long msecs)
 
     int res = ::select (0, 0, 0, 0, &timeout);
 
+
+    // NOTE: This needs to be made smarter since select can get kicked off from a signal !!
+
+    /*
     if (res < 0) {
       throw CPI::OS::Posix::getErrorMessage (errno);
     }
+    */
   }
   else {
     sched_yield ();

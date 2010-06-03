@@ -56,6 +56,7 @@ Driver::Driver()
      m_tpg_events(NULL),
      m_tpg_no_events(NULL)
 {
+  printf("Registering a new RCC Container driver");
   // Empty 
 }
 
