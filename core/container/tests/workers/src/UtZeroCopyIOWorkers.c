@@ -374,11 +374,12 @@ static RCCResult LBBeforeQuery(RCCWorker *this_ )
 }
         
         
-static int runc=0;
+static int runc=1;
 static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
   uint32_t len;
   uint32_t cplen;
+  int      oc;
     
   LoopbackWorkerStaticMemory *mem = this_->memories[0];
   LoopbackWorkerProperties *props = this_->properties;
@@ -387,8 +388,20 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   char* out_buffer = (char*)this_->ports[LoopbackWorker_Data_Out_Port].current.data;
             
   len = this_->ports[LoopbackWorker_Data_In_Port].input.length;
+  oc  = this_->ports[LoopbackWorker_Data_In_Port].input.u.operation;
+
+#ifndef NDEBUG
+  printf("In LB run, len = %d\n", len);
+#endif
+
+  uint32_t * d = (uint32_t)in_buffer;
+
+  /*
+  printf("Data words = %d, %d, %d, %d\n", d[0], d[1], d[2], d[3] );
+  */
  
-              
+
+  /*              
   switch ( props->transferMode ) {
   case LBZCopyOnly:
     runc = 0;
@@ -404,9 +417,11 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
                     
   case LBMix:
     runc = (++runc)%3;
-    break;
-                    
+    break;                
   }
+  */
+
+  runc=1;
                 
   switch( runc ) {
                   
@@ -430,11 +445,17 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
         runc--;
         return RCC_OK;
       }
-          cplen = (len < this_->ports[LoopbackWorker_Data_Out_Port].current.maxLength )
-                  ? len : this_->ports[LoopbackWorker_Data_Out_Port].current.maxLength;
+      cplen = (len < this_->ports[LoopbackWorker_Data_Out_Port].current.maxLength )
+	? len : this_->ports[LoopbackWorker_Data_Out_Port].current.maxLength;
       memcpy(out_buffer,in_buffer,cplen);
+
+      /*      printf("NOT SENDING LB DATA FOR DEBUG!!\n"); */
+
       this_->container->send( &this_->ports[LoopbackWorker_Data_Out_Port], 
-                              &this_->ports[LoopbackWorker_Data_Out_Port].current, 0x54, len );
+                              &this_->ports[LoopbackWorker_Data_Out_Port].current, oc, len );
+
+
+
       this_->container->release( &this_->ports[LoopbackWorker_Data_In_Port].current );
     }
     break;
@@ -474,9 +495,8 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
          
 #define LB_PROPERTY_SIZE      sizeof( LoopbackWorkerProperties )
 static uint32_t LBmemSizes[] = {sizeof(LoopbackWorkerStaticMemory), 0 };
-static int32_t LBPortRunConditions[] = { (1<<LoopbackWorker_Data_In_Port) /* | (1<<LoopbackWorker_Data_Out_Port)*/ , 0 };
+static int32_t LBPortRunConditions[] = { (1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port), 0 };
 static RCCRunCondition LBWorkerRunConditions[] = { LBPortRunConditions, 0 , 0 };
-static RCCPortInfo portInfo[] = { {1,1024,2}, {RCC_NO_ORDINAL,0,0} };
 RCCDispatch UTZCopyLoopbackWorkerDispatchTable = { RCC_VERSION, 1, 1, 
                                                    LB_PROPERTY_SIZE, LBmemSizes, 0,
                                                    LBInitialize, NULL, NULL, release, NULL, LBAfterConfigure, LBBeforeQuery, 

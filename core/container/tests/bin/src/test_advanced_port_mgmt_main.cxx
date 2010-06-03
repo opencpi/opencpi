@@ -185,20 +185,8 @@ static void createPorts( std::vector<CApp>& ca )
 
 static void connectWorkers(std::vector<CApp>& ca )
 {
-  std::string localShadowPort;
-
-  std::string portString = 
-    ca[LOOPBACK.cid].container->packPortDesc( *LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port );
-  
-  localShadowPort = PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->setFinalProviderInfo( portString );
-  LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port->setFinalUserInfo( localShadowPort );
-
-  portString  = 
-    ca[CONSUMER.cid].container->packPortDesc( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port );
-
-  localShadowPort = LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].port->setFinalProviderInfo( portString );
-  CONSUMER.pdata[CONSUMER_INPUT_PORT].port->setFinalUserInfo( localShadowPort );
-
+  PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->connect( *LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port,0,0 );
+  LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].port->connect( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port,0,0 );
 }
 
 

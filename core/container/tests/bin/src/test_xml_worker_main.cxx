@@ -163,7 +163,7 @@ int  main( int argc, char** argv)
 
 
   // Create an artifact
-  const char * w1Url = "/home/jmiller/projects/opencpi/cpi/core/container/linux-dll/test.dll";
+  const char * w1Url = "/home/jmiller/projects/opencpi/core/container/linux-dll/test.dll";
   Artifact & art1 = ca[0].app-> loadArtifact(w1Url);
   Worker & consumer = ca[0].app->createWorker( art1,"Consumer",0 );
   Worker & producer = ca[0].app->createWorker( art1,"Producer",0 );

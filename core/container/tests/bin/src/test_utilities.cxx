@@ -109,29 +109,8 @@ void CPI::CONTAINER_TEST::connectWorkers(std::vector<CApp>& ca, std::vector<CWor
         dumpPortData( (*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port);
 #endif
 
+	(*wit)->pdata[n].port->connect( *(*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port, NULL,NULL);
 
-
-        std::string portString = 
-          ca[(*wit)->pdata[n].down_stream_connection.worker->cid].container->packPortDesc( 
-                 *((*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port) );
-
-        // Make the connection
-        TUPRINTF( "About to connect target port\n");
-#ifndef NDEBUG
-        dumpPortData( (*wit)->pdata[n].port );
-#endif
-
-        localShadowPort = (*wit)->pdata[n].port->setFinalProviderInfo( portString );
-
-        // Now configure the target port
-        TUPRINTF( "About to configure output port\n");
-
-#ifndef NDEBUG
-        dumpPortData( (*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port );
-#endif
-
-        (*wit)->pdata[n].down_stream_connection.worker->pdata[(*wit)->pdata[n].down_stream_connection.pid].port->
-          setFinalUserInfo( localShadowPort );
 
       }
     }

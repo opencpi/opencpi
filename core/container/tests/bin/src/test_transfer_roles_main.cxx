@@ -145,9 +145,14 @@ static void createPorts( std::vector<CApp>& ca )
 
 static void connectWorkers(std::vector<CApp>& ca )
 {
+
+#ifdef WAS
   std::string p = CONSUMER.pdata[CONSUMER_INPUT_PORT].port->getInitialProviderInfo() ;
   std::string flowc = PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->setFinalProviderInfo( p );
   CONSUMER.pdata[CONSUMER_INPUT_PORT].port->setFinalUserInfo( flowc );
+#else
+  PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->connect( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port );
+#endif
 }
 
 
