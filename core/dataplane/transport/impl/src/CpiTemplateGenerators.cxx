@@ -485,8 +485,8 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
 
     // Since there may be multiple output ports on 1 processs, we need to make sure we dont send
     // more than 1 time
-    int sent[MAX_PORT_COUNT];
-    memset(sent,0,sizeof(int)*MAX_PORT_COUNT);
+    int sent[MAX_PCONTRIBS];
+    memset(sent,0,sizeof(int)*MAX_PCONTRIBS);
 
     // We need to setup a transfer for each shadow, they exist in the unique output circuits
     for ( n=0; n<output->getPortCount(); n++ ) {
@@ -531,7 +531,7 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
         // Create the copy in the template
         ptransfer = 
           ptemplate->copy (
-                           input_offsets->localStateOffset + (sizeof(BufferState) * MAX_PORT_COUNT) + (sizeof(BufferState)* input->getPortId()),
+                           input_offsets->localStateOffset + (sizeof(BufferState) * MAX_PCONTRIBS) + (sizeof(BufferState)* input->getPortId()),
                            input_offsets->myShadowsRemoteStateOffsets[s_pid],
                            sizeof(BufferState),
                            XferRequest::LastTransfer, NULL);
@@ -721,6 +721,23 @@ void TransferTemplateGeneratorPattern1::createInputTransfers(PortSet* output, Po
 }
 
 
+class CpiTransferTemplateAFC : public CpiTransferTemplate
+{
+public:
+  CpiTransferTemplateAFC(CPI::OS::uint32_t id)
+    :CpiTransferTemplate(id){}
+  virtual ~CpiTransferTemplateAFC(){}
+  virtual bool isSlave()
+  {
+    printf("\n\n\n\n I Am A slave port \n\n\n\n\n");
+    return true;
+  }
+};
+
+
+
+
+
 
 // Create transfers for a output port that has a ActiveFlowControl role.  This means that the 
 // the only transfer that takes place is the "flag" transfer.  It is the responibility of the 
@@ -751,6 +768,7 @@ createOutputTransfers(CPI::DataTransport::Port* s_port,
 
     // output buffer
     OutputBuffer* s_buf = s_port->getOutputBuffer(s_buffers);
+    s_buf->setSlave();
     int s_tid = s_buf->getTid();
 
     // We need a transfer template to allow a transfer to each input buffer
@@ -764,7 +782,7 @@ createOutputTransfers(CPI::DataTransport::Port* s_port,
       int t_tid = t_buf->getTid();
 
       // Create a template
-      CpiTransferTemplate* temp = new CpiTransferTemplate(1);
+      CpiTransferTemplate* temp = new CpiTransferTemplateAFC(1);
 
 
       // Add the template to the controller, for this pattern the output port
@@ -871,7 +889,7 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
     int t_tid = t_buf->getTid();
 
     // Create a template
-    CpiTransferTemplate* temp = new CpiTransferTemplate(0);
+    CpiTransferTemplate* temp = new CpiTransferTemplateAFC(0);
 
 #ifndef NDEBUG
     printf("*&*&* Adding template for tpid = %d, ttid = %d, template = %p\n", 
@@ -888,8 +906,8 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
 
     // Since there may be multiple output ports on 1 processs, we need to make sure we dont send
     // more than 1 time
-    int sent[MAX_PORT_COUNT];
-    memset(sent,0,sizeof(int)*MAX_PORT_COUNT);
+    int sent[MAX_PCONTRIBS];
+    memset(sent,0,sizeof(int)*MAX_PCONTRIBS);
 
     // We need to setup a transfer for each shadow, they exist in the unique output circuits
     for ( n=0; n<output->getPortCount(); n++ ) {
@@ -968,7 +986,7 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
       int t_tid = t_buf->getTid();
 
       // Create a template
-      CpiTransferTemplate* temp = new CpiTransferTemplate(1);
+      CpiTransferTemplate* temp = new CpiTransferTemplateAFC(1);
 
 
       // Add the template to the controller, for this pattern the output port

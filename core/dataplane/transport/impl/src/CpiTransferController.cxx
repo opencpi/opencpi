@@ -51,9 +51,10 @@ using namespace CPI::OS;
 TransferController::TransferController()
   : m_FillQPtr(0), m_EmptyQPtr(0)
 {                         
-  for ( CPI::OS::uint32_t x=0; x<MAX_OUTPUT_PORTS; x++ ) {
+
+  for ( CPI::OS::uint32_t x=0; x<MAX_PCONTRIBS; x++ ) {
     for ( CPI::OS::uint32_t y=0; y<MAX_BUFFERS; y++ ) {
-      for ( CPI::OS::uint32_t z=0; z<MAX_INPUT_PORTS; z++ ) {
+      for ( CPI::OS::uint32_t z=0; z<MAX_PCONTRIBS; z++ ) {
         for ( CPI::OS::uint32_t zz=0; zz<MAX_BUFFERS; zz++ ) {
           for ( CPI::OS::uint32_t bc=0; bc<2; bc++) {
             for ( CPI::OS::uint32_t ts=0; ts<2; ts++) {
@@ -64,6 +65,7 @@ TransferController::TransferController()
       }
     }
   }
+
   m_wholeOutputSet=true;
 }
 
@@ -72,10 +74,10 @@ TransferController::TransferController()
  *********************************/
 TransferController::~TransferController()
 {
-  
-  for ( CPI::OS::uint32_t x=0; x<MAX_OUTPUT_PORTS; x++ ) {
+
+  for ( CPI::OS::uint32_t x=0; x<MAX_PCONTRIBS; x++ ) {
     for ( CPI::OS::uint32_t y=0; y<MAX_BUFFERS; y++ ) {
-      for ( CPI::OS::uint32_t z=0; z<MAX_INPUT_PORTS; z++ ) {
+      for ( CPI::OS::uint32_t z=0; z<MAX_PCONTRIBS; z++ ) {
         for ( CPI::OS::uint32_t zz=0; zz<MAX_BUFFERS; zz++ ) {
           for ( CPI::OS::uint32_t bc=0; bc<2; bc++) {
             for ( CPI::OS::uint32_t ts=0; ts<2; ts++) {
@@ -443,6 +445,10 @@ bool
 TransferController1::
 canProduce( Buffer* buffer )
 {
+
+#ifndef NDEBUG
+  printf(" In TransferController1::canProduce \n");
+#endif
 
   // When s DD = whole only port 0 of the output port set can produce
   if (  m_wholeOutputSet && buffer->getPort()->getRank() != 0 ) {
