@@ -334,6 +334,10 @@ namespace CPI {
     }
     bool Port::decode(ezxml_t x, int pid) {
       name = ezxml_attr(x, "name");
+
+
+      printf("Port %s has pid = %d\n", name, pid );
+
       m_pid = pid;
       if ( name == NULL )
         return true;
@@ -378,7 +382,7 @@ namespace CPI {
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
       int pid=0;
       for (x = ezxml_child(xml, "port"); x; x = ezxml_next(x), port++) {
-        if (port->decode(x,pid)) {
+        if (port->decode(x,pid++)) {
           throw CC::ApiError("Invalid xml port description", 0);
         }
       }

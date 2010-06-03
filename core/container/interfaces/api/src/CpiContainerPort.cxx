@@ -153,6 +153,7 @@ namespace CPI {
     // Since roles can determine resource allocations
     // This could be table-driven...
     void Port::establishRoles(CPI::RDT::Descriptors &other) {
+
       CPI::RDT::Descriptors
         &pDesc = isProvider() ? connectionData.data : other,
         &uDesc = isProvider() ? other : connectionData.data;
