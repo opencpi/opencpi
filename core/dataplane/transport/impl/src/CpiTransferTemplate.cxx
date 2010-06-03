@@ -241,7 +241,7 @@ presetMetaData()
   CPI::OS::int32_t n_pending = get_nentries(&m_PresetMetaData);
   for (CPI::OS::int32_t i=0; i < n_pending; i++) {
     PresetMetaData *pmd = static_cast<PresetMetaData*>(get_entry(&m_PresetMetaData, i));
-    SET_BYTES_TRANSFERED( pmd->ptr->cpiMetaDataWord, pmd->length );
+    pmd->ptr->cpiMetaDataWord.length = pmd->length;
     pmd->ptr->endOfWhole         = pmd->endOfWhole;
     pmd->ptr->nPartsPerWhole     = pmd->nPartsPerWhole;
     pmd->ptr->partsSequence      = pmd->sequence;
