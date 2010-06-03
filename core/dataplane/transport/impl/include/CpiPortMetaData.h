@@ -132,7 +132,7 @@ namespace CPI {
         // that this buffer is empty, we need to inform all of the shadows that have
         // a "real" output port.   This array is indexed by the port id, so only the output
         // port id's are valid.
-        DtOsDataTypes::Offset myShadowsRemoteStateOffsets[MAX_PORT_COUNT]; 
+        DtOsDataTypes::Offset myShadowsRemoteStateOffsets[MAX_PCONTRIBS]; 
 
 
         // Each output that can write data to our buffer will also write its meta-data here.

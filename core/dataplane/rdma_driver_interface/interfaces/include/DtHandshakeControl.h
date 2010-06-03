@@ -38,7 +38,6 @@ namespace DataTransfer {
   // This is the const value that is used to determine if a SMB transport
   // is up and running
   const CPI::OS::uint64_t UpAndRunningMarker = 0x51abac;
-  const CPI::OS::uint32_t BufferEmptyFlag    = 0x0fffffff;
 
   // Token definition
   typedef CPI::OS::int32_t ControlToken;
@@ -206,14 +205,17 @@ namespace DataTransfer {
    *********************************/
   const unsigned int ZeroCopyReady = 0x10000000;
 
-#define N_BYTES_TRANSFERED(v) ( v & 0xffffffffULL )
-#define DECODE_OPCODE(v) ( (v>>32) & 0xffffffffULL )
-#define SET_BYTES_TRANSFERED(l,bytes) l = ((l & 0xffffffff00000000ULL) | bytes);
+  struct RplMetaData {
+    uint32_t
+    length,
+      opCode,
+      tag,
+      interval;
+  };
 
 
   struct BufferMetaData {
-    CPI::OS::uint64_t        cpiMetaDataWord;      // CPI compatible metadata word
-
+    RplMetaData              cpiMetaDataWord;      // CPI compatible metadata word
 
     CPI::OS::uint32_t           sequence;                            // Transfer sequence
     CPI::OS::int32_t           userTag;                            // User defined buffer tag
@@ -233,7 +235,6 @@ namespace DataTransfer {
     CPI::OS::uint32_t             zcopy;
 
 
-    volatile BufferMetaData& operator =(volatile BufferMetaData*);
   };
 
 
@@ -244,25 +245,6 @@ namespace DataTransfer {
    * inline declarations
    ****
    *********************************/
-
-  inline volatile BufferMetaData& BufferMetaData::operator =(volatile BufferMetaData* t)
-    {
-      cpiMetaDataWord           = t->cpiMetaDataWord;
-      endOfCircuit              = t->endOfCircuit;
-      broadCast                        = t->broadCast;
-      metaDataOnlyTransfer        = t->metaDataOnlyTransfer;
-      srcRank                        = t->srcRank;
-      endOfWhole                = t->endOfWhole;
-      nPartsPerWhole                = t->nPartsPerWhole;
-      partsSequence                = t->partsSequence;
-      endOfStream                = t->endOfStream;
-      userTag                        = t->userTag;
-      timeStamp                        = t->timeStamp;
-      localStateOffset                = t->localStateOffset;
-      outputSmbId                = t->outputSmbId;
-      sequence                        = t->sequence;
-      return *this;
-    }
 
 }
 

@@ -33,6 +33,7 @@
 #include <DtOsDataTypes.h>
 #include <CpiBuffer.h>
 #include <CpiOsMutex.h>
+#include <CpiOsAssert.h>
 
 namespace CPI {
 
@@ -109,6 +110,8 @@ namespace CPI {
        *********************************/
       virtual bool isEOW();
 
+      void setSlave(){m_slave=true;}
+
     protected:
 
       // Mapped pointer to our control structure
@@ -117,6 +120,8 @@ namespace CPI {
       // buffer state virtual address
       void     *m_bcsVaddr;                
 
+      // I do not control DMA from my buffer
+      bool m_slave;
     };
 
 
@@ -131,11 +136,7 @@ namespace CPI {
      *********************************/
     inline void OutputBuffer::markBufferFull()
       {
-#ifdef USE_TID_FOR_DB
-        m_state[0][m_pid].bufferFull = m_tid;
-#else
-        m_state[0][m_pid].bufferFull = 1;
-#endif
+        m_state[0][m_pid].bufferFull = 0;
         setInUse(false);
       }
 
@@ -144,7 +145,7 @@ namespace CPI {
      *********************************/
     inline void OutputBuffer::markBufferEmpty()
       {
-        m_state[0][m_pid].bufferFull = DataTransfer::BufferEmptyFlag;
+        m_state[0][m_pid].bufferFull = 1;
       }
 
 

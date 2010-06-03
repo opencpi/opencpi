@@ -204,11 +204,11 @@ namespace CPI {
       CPI::OS::int32_t  m_pid;
 
       // Mapped pointer to our meta data
-      volatile DataTransfer::BufferMetaData  (*m_sbMd)[MAX_PORT_COUNT];
+      volatile DataTransfer::BufferMetaData  (*m_sbMd)[MAX_PCONTRIBS];
       void*                     m_bmdVaddr;        // buffer meta data virtual address
 
       // Mapped pointer to our state
-      volatile DataTransfer::BufferState  (*m_state)[MAX_PORT_COUNT];
+      volatile DataTransfer::BufferState  (*m_state)[MAX_PCONTRIBS];
       void*                  m_bsVaddr;                // buffer state virtual address
 
       // Mapped pointer to our buffer

@@ -148,7 +148,8 @@ std::string PCIPIOXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
 
   char tep[128];
   pid = getpid();
-  snprintf(tep,128,"cpi-pci-pio://PciPioXfer%d%d:%d.%d.20",pid,smb_count++,*size, mailbox);
+  int bus_id = 0;
+  snprintf(tep,128,"cpi-pci-pio://%d.0:%d.%d.20",bus_id,*size, mailbox);
   ep = tep;
 
   mailbox++;

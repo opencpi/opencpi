@@ -42,8 +42,9 @@
 #include <dirent.h>
 #include <sys/mman.h>
 #include <time.h>
-#include "CpiPCISMemServices.h"
-#include "CpiUtilAutoMutex.h"
+#include <CpiPCISMemServices.h>
+#include <CpiUtilAutoMutex.h>
+#include <CpiOsAssert.h>
 
 using namespace DataTransfer;
 
@@ -78,34 +79,40 @@ void PCISmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
     printf("************************ SMEM is local !!, vaddr = %p\n", m_vaddr);
 #endif
 
-#define LOCAL_ONLY
-#ifdef LOCAL_ONLY
-    m_vaddr = new int[size];
-#else
-
-    //    CPI_DMA_MEMORY   env var that specifies the base address of pinned memory
-    char *dma_base_str = getenv("CPI_DMA_MEMORY");
+    static const char *dma = getenv("CPI_DMA_MEMORY");
     CPI::OS::uint64_t base_adr;
-    if ( dma_base_str ) {
-      sscanf( dma_base_str, "%dM$0x%lld", &size, &base_adr );
+    if (dma) {
+      unsigned sizeM;
+      cpiAssert(sscanf(dma, "%uM$0x%llx", &sizeM,
+		       (unsigned long long *) &base_adr) == 2);
+      size = (unsigned long long)sizeM * 1024 * 1024;
+      fprintf(stderr, "DMA Memory:  %uM at 0x%llx\n", sizeM,
+	      (unsigned long long)base_adr);
+    }
+    else {
+      cpiAssert(!"CPI_DMA_MEMORY not found in the environment\n");
     }
 
-
-    static uint64_t base = 0x8f700000ll;
+    uint32_t offset = 1024*1024*128;
+    size -= offset;
+    base_adr+=offset;
     char buf[128];
     snprintf(buf, 128,
-             "cpi-pci-pio://%s.%llx:%llx.1.10", "0", (unsigned long long)base,
+             "cpi-pci-pio://%s.%lld:%lld.2.10", "0", (unsigned long long)base_adr,
              (unsigned long long)size);
     loc->end_point = buf;
 
     if ( m_fd == -1 ) {
       if ( ( m_fd = open("/dev/mem", O_RDWR|O_SYNC )) < 0 ) {
+	cpiAssert(0);
         throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
       }
     }
+
+    printf("mmap mapping base = %lld with size = %d\n", base_adr, size );
+
     m_vaddr =  (uint8_t*)mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED,
-                              m_fd, base);
-#endif
+                              m_fd, base_adr);
 
 
   }
@@ -113,35 +120,21 @@ void PCISmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
 
     m_vaddr = NULL;
 
-#ifdef SIM
-    m_vaddr = new int[size];
-#else
-
 #ifndef NDEBUG
     printf("About to open shm\n");
 #endif
 
-#ifdef USE_EMULATOR
-    umask(0);
     if ( m_fd == -1 ) {
-      if ( (m_fd = shm_open("myshm", O_RDWR, 0666)) <= 0) {
-        printf("errno = %d\n", errno);
-        throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/shm/myshm"  );
-      }
-    }
-#else
-    if ( m_fd == -1 ) {
-      if ( (m_fd = open("/dev/mem", O_RDWR)) < 0) {
+      if ( (m_fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0) {
+	cpiAssert(0);
         throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
       }
     }
-#endif
 
 #ifndef NDEBUG
     printf("*******************  fd = %d *************************\n", m_fd);
 #endif
 
-#endif
   }
 }
 
@@ -186,7 +179,7 @@ void* PCISmemServices::map (CPI::OS::uint64_t offset, CPI::OS::uint32_t size )
         
   if ( m_location->local ) {        
 #ifndef NDEBUG
-    printf("**************** Returning local vaddr = %p\n", m_vaddr );
+    printf("**************** Returning local vaddr = %p\n", (uint8_t*)m_vaddr + offset);
 #endif
     return (char*)m_vaddr + offset;
   }
@@ -242,71 +235,14 @@ CPI::OS::int32_t PCIEndPoint::setEndpoint( std::string& ep )
 {
   EndPoint::setEndpoint(ep);
 
-  unsigned long n,i=0;
-  long start=0;
-  char sname[80];
-  for ( n=0; n<ep.length(); n++ ) {
-    if ( (start<2) && (ep[n] == '/') ) {
-      start++;
-    }
-    else if ( (start == 2) && (ep[n] == ':') ) {
-      break;
-    }
-    else if ( start == 2) {
-      sname[i++] = ep[n];
-    }
-  }
-  sname[i] = 0;
-  n=0;
-  char bi[32];
-  char pa[32];
-  char ms[32];
-  while ( sname[n]!=0 ) {
-    if ( sname[n] == '.' ) {
-      break;
-    }
-    bi[n] = sname[n];
-    n++;
-  }
-  bi[n] = 0;
-
-  printf("bi(%s)\n", bi );
-
-  n++;
-  i=0;
-  while ( sname[n]!=0 ) {
-    if ( sname[n] == '.' ) {
-      break;
-    }
-    pa[i++] = sname[n];
-    n++;
-  }
-  pa[i] = 0;
-  n++;
-  printf("pa(%s)\n", pa );
-
-  i=0;
-  while ( sname[n]!=0 ) {
-    if ( sname[n] == '.' ) {
-      break;
-    }
-    ms[i++] = sname[n];
-    n++;
-  }
-  ms[i] = 0;
-  n++;
-  printf("ms(%s)\n", ms );
-
-#ifndef NDEBUG
-  printf("bus_id = %s, off = %s, size = %s,\n", bi,pa,ms);
-#endif
-        
-  bus_id = atoi(bi);
-  bus_offset = strtoul( pa, NULL, 0);
-  map_size = atoi(ms);
+  printf("Scaning %s\n", ep.c_str() );
+  if (sscanf(ep.c_str(), "cpi-pci-pio://%x.%lld:%d.3.10", &bus_id,
+                   (long long unsigned *)&bus_offset,
+                   (long long unsigned *)&map_size) != 3)
+    throw CPI::Util::EmbeddedException("Remote endpoint description wrong: ");
   
 #ifndef NDEBUG
-  printf("bus_id = %d, off = %llu, size = %d\n", bus_id, (long long)bus_offset, map_size );
+  printf("bus_id = %d, offset = %llu, size = %d\n", bus_id, (long long)bus_offset, map_size );
 #endif
    
   return 0;

@@ -77,7 +77,7 @@ namespace CPI {
        * Get this buffers remote state offset
        **********************************/
       DtOsDataTypes::Offset getRemoteStateOffset( 
-                                                 CPI::OS::uint32_t s_port_id );  // There is a remote state for every output port in the circuit
+            CPI::OS::uint32_t s_port_id );  // There is a remote state for every output port in the circuit
 
       /**********************************
        * Is this buffer empty
@@ -85,10 +85,12 @@ namespace CPI {
       virtual bool isEmpty();
 
 
+
       /**********************************
        * Use the buffer id for flow control
        *********************************/
       void useTidForFlowControl( bool ut );
+
 
 
       /**********************************
@@ -159,10 +161,6 @@ namespace CPI {
        *********************************/
       volatile DataTransfer::BufferMetaData* getMetaDataByIndex( CPI::OS::uint32_t idx );
 
-
-      // Use either our tid or the empty flag value for flow control
-      bool m_useEmptyFlagForFlowControl;
-
     protected:
 
       // Number of ports int the output port set
@@ -172,8 +170,8 @@ namespace CPI {
       DataTransfer::BufferState m_tState;
 
       // Mapped pointer to our state
-      volatile DataTransfer::BufferState*  m_myShadowsRemoteStates[MAX_PORT_COUNT];
-      void          *(m_rssVaddr[MAX_PORT_COUNT]);                // buffer state virtual address
+      volatile DataTransfer::BufferState*  m_myShadowsRemoteStates[MAX_PCONTRIBS];
+      void          *(m_rssVaddr[MAX_PCONTRIBS]);                // buffer state virtual address
 
       // Keeps track of when it produces
       bool m_produced;

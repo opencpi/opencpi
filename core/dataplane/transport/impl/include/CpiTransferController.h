@@ -234,7 +234,8 @@ namespace CPI {
       bool m_wholeOutputSet;
 
       // List of transfer templates     output port          output buf tid         input port        input buf tid     broadcast   input/output
-      CpiTransferTemplate* m_templates[MAX_OUTPUT_PORTS] [MAX_BUFFERS] [MAX_INPUT_PORTS] [MAX_BUFFERS] [2]  [2];
+
+      CpiTransferTemplate* m_templates[MAX_PCONTRIBS] [MAX_BUFFERS] [MAX_PCONTRIBS] [MAX_BUFFERS] [2]  [2];
 
     };
 

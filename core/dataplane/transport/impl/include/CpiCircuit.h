@@ -331,11 +331,11 @@ namespace CPI {
 
       // Queued transfer lists
       CPI::OS::uint32_t m_maxPortOrd;
-      CU::VList m_queuedTransfers[MAX_PORT_COUNT];
+      CU::VList m_queuedTransfers[MAX_PCONTRIBS];
 
       // ZCopy transfer list.  This list is used to Q up zero copy transfers of another
       // ports buffers
-      CU::VList m_queuedInputOutputTransfers[MAX_PORT_COUNT];
+      CU::VList m_queuedInputOutputTransfers[MAX_PCONTRIBS];
 
       // Last input port set processed, (used for sequential distribution at connection level)
       CPI::OS::uint32_t m_lastPortSet;

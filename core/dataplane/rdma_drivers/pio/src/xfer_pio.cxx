@@ -11,15 +11,15 @@
 
 using namespace DataTransfer;
 
-
+#define USE_BYTE_TRANSFERS
 #ifdef USE_BYTE_TRANSFERS
 static void
 action_pio_transfer(PIO_transfer transfer)
 {
 
   /* Get the alignments */
-  CPI::OS::int32_t src_al = (CPI::OS::uint32_t)transfer->src_va & 3;
-  CPI::OS::int32_t dst_al = (CPI::OS::uint32_t)transfer->dst_va & 3;
+  CPI::OS::int64_t src_al = (CPI::OS::uint64_t)transfer->src_va & 3;
+  CPI::OS::int64_t dst_al = (CPI::OS::uint64_t)transfer->dst_va & 3;
   CPI::OS::int32_t i;
 
   /* Check src and dst alignment */
@@ -123,6 +123,14 @@ action_pio_transfer(PIO_transfer transfer)
       }
     }
   }
+
+  //#define TRACE_PIO_XFERS  
+#ifdef TRACE_PIO_XFERS
+  CPI::OS::int32_t *src1 = (CPI::OS::int32_t *)transfer->src_va;
+  printf("^^^^ copying %d bytes from %llx to %llx\n", transfer->nbytes,transfer->src_off,transfer->dst_off);
+  printf("source wrd 1 = %d wrd2 = %d\n", src1[0], src1[1] );
+#endif
+
 }
 #else
 
@@ -185,7 +193,8 @@ action_pio_transfer(PIO_transfer transfer)
   //#define TRACE_PIO_XFERS  
 #ifdef TRACE_PIO_XFERS
   printf("^^^^ copying %d bytes from %llx to %llx\n", transfer->nbytes,transfer->src_off,transfer->dst_off);
-  printf("source wrd 1 = %d\n", src1[0] );
+  printf("source wrd 1 = %d, %d\n", src1[0], src1[1] );
+  printf("dst va = %p\n", dst1 );
 #endif
 
 
