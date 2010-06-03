@@ -268,43 +268,33 @@ void CPI::DataTransport::Port::getPortDescriptor( CPI::RDT::Descriptors& desc )
     if ( ! isOutput() ) { 
 
       desc.type = CPI::RDT::ConsumerDescT;
-      desc.role = getMetaData()->m_descriptor.role;
+      desc.role = CPI::RDT::ActiveFlowControl;
+      desc.options |= 1 << CPI::RDT::MandatedRole;
       desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
       desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
       desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
-      desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PORT_COUNT;
+      desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
       desc.desc.nBuffers = getPortSet()->getBufferCount();
       desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
       desc.desc.fullFlagSize = sizeof(BufferState);
-      desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PORT_COUNT * 2;
+      desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
 
     }
-    else {
+    else {  // We are an output port
 
-      if ( getMetaData()->m_descriptor.role == CPI::RDT::ActiveFlowControl ) {
-        desc.type = CPI::RDT::ProducerDescT;
-        desc.role = CPI::RDT::ActiveOnly;
-        desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
+        desc.role = CPI::RDT::ActiveFlowControl;
+	desc.options |= 1 << CPI::RDT::MandatedRole;
+        desc.desc.dataBufferBaseAddr = 	m_data->m_bufferData[0].outputOffsets.bufferOffset;
         desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
-        desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
-        desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PORT_COUNT;
+        desc.desc.metaDataBaseAddr = m_data->m_bufferData[0].outputOffsets.metaDataOffset;
+        desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
         desc.desc.nBuffers = getPortSet()->getBufferCount();
-        desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
+	desc.desc.fullFlagBaseAddr = m_data->m_bufferData[0].outputOffsets.localStateOffset;
         desc.desc.fullFlagSize = sizeof(BufferState);
-        desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PORT_COUNT * 2;
-      }
-      else {
-        desc.type = CPI::RDT::ProducerDescT;
-        desc.role = CPI::RDT::ActiveOnly;
-        desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
-        desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
-        desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
-        desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PORT_COUNT;
-        desc.desc.nBuffers = getPortSet()->getBufferCount();
-        desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
-        desc.desc.fullFlagSize = sizeof(BufferState);
-        desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PORT_COUNT * 2;
-      }
+        desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
+	desc.desc.emptyFlagBaseAddr = m_data->m_bufferData[0].outputOffsets.localStateOffset;
+        desc.desc.emptyFlagSize = sizeof(BufferState);
+        desc.desc.emptyFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
 
     }
 
@@ -524,11 +514,11 @@ CPI::DataTransport::Port::
       cpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.localStateOffset,
-                          sizeof(BufferState)*MAX_PORT_COUNT);
+                          sizeof(BufferState)*MAX_PCONTRIBS);
       cpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.metaDataOffset,
-                          sizeof(BufferMetaData)*MAX_PORT_COUNT);
+                          sizeof(BufferMetaData)*MAX_PCONTRIBS);
       cpiAssert( rc == 0 );
 
       if ( m_data->m_localPortSetControl != 0  ) {
@@ -553,11 +543,11 @@ CPI::DataTransport::Port::
       cpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.metaDataOffset,
-                          sizeof(BufferMetaData)*MAX_PORT_COUNT);
+                          sizeof(BufferMetaData)*MAX_PCONTRIBS);
       cpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.localStateOffset,
-                          sizeof(BufferState)*MAX_PORT_COUNT);
+                          sizeof(BufferState)*MAX_PCONTRIBS);
       cpiAssert( rc == 0 );
 
     }
@@ -1120,7 +1110,7 @@ createOutputOffsets()
     }
                 
     // Allocate the local state
-    rc = res_mgr->alloc( sizeof(BufferState) * MAX_PORT_COUNT * bCount, 
+    rc = res_mgr->alloc( sizeof(BufferState) * MAX_PCONTRIBS * bCount, 
                          BUF_ALIGNMENT, &soffset);
     if ( rc != 0 ) {
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
@@ -1129,21 +1119,21 @@ createOutputOffsets()
     }
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.localStateOffset = 
-        soffset + index * MAX_PORT_COUNT * sizeof(BufferState);
+        soffset + index * MAX_PCONTRIBS * sizeof(BufferState);
     }
                 
     // Allocate the meta-data structure
-    rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount, 
+    rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount, 
                          BUF_ALIGNMENT, &moffset);
     if ( rc != 0 ) {
-      res_mgr->free( soffset,  sizeof(BufferState) * MAX_PORT_COUNT * bCount );
+      res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount );
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
       throw CPI::Util::EmbeddedException( 
                                          NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
     }
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.metaDataOffset = 
-        moffset + index * MAX_PORT_COUNT * sizeof(BufferMetaData);
+        moffset + index * MAX_PCONTRIBS * sizeof(BufferMetaData);
     }
 
     // Allocate the port set control structure if needed (even shadows get one of these)
@@ -1153,8 +1143,8 @@ createOutputOffsets()
                            BUF_ALIGNMENT, &coffset);
       if ( rc != 0 ) {
         res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
-        res_mgr->free( soffset,  sizeof(BufferState) * MAX_PORT_COUNT * bCount );
-        res_mgr->free( moffset,   sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount );
+        res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount );
+        res_mgr->free( moffset,   sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount );
         throw CPI::Util::EmbeddedException( 
                                            NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
       }
@@ -1213,7 +1203,7 @@ createInputOffsets()
 #endif
                 
       // Allocate the meta-data structure
-      rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount, 
+      rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount, 
                            BUF_ALIGNMENT, &moffset);
       if ( rc != 0 ) {
         res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
@@ -1221,21 +1211,21 @@ createInputOffsets()
       }
       for ( index=0; index<bCount; index++ ) {
         m_data->m_bufferData[index].inputOffsets.metaDataOffset = 
-          moffset + index * sizeof(BufferMetaData) * MAX_PORT_COUNT;
+          moffset + index * sizeof(BufferMetaData) * MAX_PCONTRIBS;
       }
                 
       // Allocate the local state(s)
       rc = res_mgr->alloc( 
-                          sizeof(BufferState) * MAX_PORT_COUNT * bCount * 2, 
+                          sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2, 
                           BUF_ALIGNMENT, &soffset);
       if ( rc != 0 ) {
-        res_mgr->free( moffset,  sizeof(BufferMetaData) * MAX_PORT_COUNT * bCount );
+        res_mgr->free( moffset,  sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount );
         res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
         throw CPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
       }
       for ( index=0; index<bCount; index++ ) {
         m_data->m_bufferData[index].inputOffsets.localStateOffset = 
-          soffset + (index * sizeof(BufferState) * MAX_PORT_COUNT * 2);
+          soffset + (index * sizeof(BufferState) * MAX_PCONTRIBS * 2);
       }
                 
     }
@@ -1296,6 +1286,7 @@ bool
 CPI::DataTransport::Port::
 hasFullInputBuffer()
 {
+
   if ( getCircuit()->isCircuitOpen() ) {
     return false;
   }
@@ -1303,6 +1294,7 @@ hasFullInputBuffer()
   if ( txc == NULL ) {
     return false;
   }
+
   InputBuffer* tb;
   bool available = 
     getPortSet()->getTxController()->hasFullInputBuffer(this, &tb);
@@ -1443,7 +1435,7 @@ void
 Port::
 sendZcopyInputBuffer( Buffer* src_buf, unsigned int len )
 {
-  SET_BYTES_TRANSFERED(src_buf->getMetaData()->cpiMetaDataWord,len);
+  src_buf->getMetaData()->cpiMetaDataWord.length = len;
   getCircuit()->sendZcopyInputBuffer( this, src_buf, len );
 }
 
@@ -1465,7 +1457,7 @@ Port::
 sendOutputBuffer( Buffer* b, unsigned int length )
 {
   // Put the actual data length in the meta-data
-  SET_BYTES_TRANSFERED( b->getMetaData()->cpiMetaDataWord, length );
+  b->getMetaData()->cpiMetaDataWord.length = length;
 
   // If there were no available output buffers when the worker was last run on this port, then the
   // buffer can be NULL.  The user should not be advancing all in this case, but we need to protect against it.

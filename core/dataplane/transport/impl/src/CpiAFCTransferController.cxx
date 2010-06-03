@@ -70,7 +70,6 @@ bool
 TransferController1AFCShadow::
 canProduce( Buffer* buffer )
 {
-  cpiAssert( buffer->getPort()->isShadow() );
   return true;
 }
 
@@ -86,6 +85,11 @@ int
 TransferController1AFCShadow::
 produce( Buffer* b, bool bcast )
 {
+#ifndef NDEBUG
+  printf("In TransferController1AFCShadow::produce \n");
+#endif
+
+
   Buffer* buffer = static_cast<Buffer*>(b);
   int bcast_idx = bcast ? 1 : 0;
   if ( bcast_idx == 1 ) {
@@ -141,6 +145,9 @@ produce( Buffer* b, bool bcast )
          buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
   printf("Template address = 0x%x\n", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid]);
 #endif
+
+  // We need to mark the local buffer as free
+  buffer->markBufferFull();
 
   // Start producing, this may be asynchronous
   CpiTransferTemplate *temp = 
@@ -258,7 +265,7 @@ hasFullInputBuffer(
   int tlo = ((lo+1)%input_port->getBufferCount());
   *retb = buffer = static_cast<InputBuffer*>(input_port->getBuffer(tlo));
   volatile BufferState* state = buffer->getState();
-  if ( ((state->bufferFull & DataTransfer::BufferEmptyFlag) == DataTransfer::BufferEmptyFlag ) ||
+  if ( (state->bufferFull == 0 ) ||
        buffer->inUse() ) {
     return false;
   }

@@ -204,7 +204,7 @@ Circuit(
       m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
         [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
         [false] [CPI::RDT::ActiveFlowControl] [y] 
-        = m_transport->m_transportGlobal->m_cont1;
+        = m_transport->m_transportGlobal->m_cont1AFCShadow;
     }
 
 
@@ -1157,7 +1157,8 @@ QInputToOutput(
   cpiAssert( tbuf->m_attachedZBuffer == NULL );
   Buffer* cbuf = static_cast<Buffer*>(tbuf);
 
-  tbuf->getMetaData()->cpiMetaDataWord = input_buf->getMetaData()->cpiMetaDataWord;
+  memcpy((void*)&(tbuf->getMetaData()->cpiMetaDataWord),
+	 (void*)&(input_buf->getMetaData()->cpiMetaDataWord),sizeof(RplMetaData));
 
   // Modify the output port transfer to point to the input buffer output
   CPI::DataTransport::PortSet* ps = static_cast<CPI::DataTransport::PortSet*>(out_port->getPortSet());
@@ -1485,7 +1486,7 @@ canTransferBuffer( Buffer* src_buf, bool queued_transfer )
   if ( ! queued_transfer ) { 
 
     unsigned int pid = src_buf->getPort()->getPortId();
-    if ( pid  >=   MAX_PORT_COUNT) {
+    if ( pid  >= MAX_PCONTRIBS) {
       printf("ERROR, attempt to transfer a bad buffer \n");
       return false;
     }

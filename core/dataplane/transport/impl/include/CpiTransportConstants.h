@@ -39,8 +39,8 @@ namespace DataTransport {
     // Maximum endpoint size
     const CPI::OS::uint32_t MAX_ENDPOINT_SIZE = 160;
 
-    // maximum number of ports per worker 
-    const CPI::OS::uint32_t MAX_PORT_COUNT = 32;
+    // maximum number of transport source contributers
+    const CPI::OS::uint32_t MAX_PCONTRIBS = 32;
 
     // maximum number of endpoints 
     const CPI::OS::uint32_t MAX_ENDPOINTS = 32;
@@ -63,14 +63,8 @@ namespace DataTransport {
     // Maximum number of transfers
     const CPI::OS::uint32_t MAX_TRANSFERS = 8;
 
-    // Maximum number of input ports allowed
-    const CPI::OS::uint32_t MAX_INPUT_PORTS = MAX_PORT_COUNT;
-
     // Maximum number of transfers per buffer
     const CPI::OS::uint32_t MAX_TRANSFERS_PER_BUFFER = 4;
-
-    // Maximum number of input ports allowed
-    const CPI::OS::uint32_t MAX_OUTPUT_PORTS = MAX_PORT_COUNT;
 
     // maximum length for transport name
     const CPI::OS::uint32_t MAX_TRANSPORT_NAME_LEN = 80;

@@ -1,3 +1,5 @@
+#define NDEBUG
+
 // Copyright (c) 2009 Mercury Federal Systems.
 // 
 // This file is part of OpenCPI.
@@ -47,7 +49,7 @@ using namespace CPI::OS;
  * Constructors
  *********************************/
 OutputBuffer::OutputBuffer( CPI::DataTransport::Port* port, CPI::OS::uint32_t tid )
-  : CPI::DataTransport::Buffer( port, tid )
+  : CPI::DataTransport::Buffer( port, tid ),m_slave(false)
 {
   m_bVaddr = 0;
   m_bsVaddr = 0;
@@ -64,7 +66,7 @@ OutputBuffer::OutputBuffer( CPI::DataTransport::Port* port, CPI::OS::uint32_t ti
  *********************************/
 void OutputBuffer::setNumberOfBytes2Transfer(CPI::OS::uint32_t length)
 {
-  SET_BYTES_TRANSFERED( getMetaData()->cpiMetaDataWord,length );
+  getMetaData()->cpiMetaDataWord.length = length;
 }
 
 
@@ -112,11 +114,11 @@ void OutputBuffer::update(bool critical)
 
     m_bsVaddr = getPort()->getLocalShemServices()->map
       (output_offsets->localStateOffset, 
-       sizeof(BufferState)*MAX_PORT_COUNT);
+       sizeof(BufferState)*MAX_PCONTRIBS);
 
-    m_state = static_cast<volatile BufferState (*)[MAX_PORT_COUNT]>(m_bsVaddr);
-    for ( unsigned int y=0; y<MAX_PORT_COUNT; y++ ) {
-      m_state[0][y].bufferFull = DataTransfer::BufferEmptyFlag;
+    m_state = static_cast<volatile BufferState (*)[MAX_PCONTRIBS]>(m_bsVaddr);
+    for ( unsigned int y=0; y<MAX_PCONTRIBS; y++ ) {
+      m_state[0][y].bufferFull = 1;
     }
   }
  
@@ -129,10 +131,10 @@ void OutputBuffer::update(bool critical)
 
     m_bmdVaddr = getPort()->getLocalShemServices()->map
       (output_offsets->metaDataOffset, 
-       sizeof(BufferMetaData)*MAX_PORT_COUNT);
+       sizeof(BufferMetaData)*MAX_PCONTRIBS);
 
-    memset(m_bmdVaddr, 0, sizeof(BufferMetaData)*MAX_PORT_COUNT);
-    m_sbMd = static_cast<volatile BufferMetaData (*)[MAX_PORT_COUNT]>(m_bmdVaddr);
+    memset(m_bmdVaddr, 0, sizeof(BufferMetaData)*MAX_PCONTRIBS);
+    m_sbMd = static_cast<volatile BufferMetaData (*)[MAX_PCONTRIBS]>(m_bmdVaddr);
   }
 
 
@@ -171,9 +173,8 @@ volatile BufferState* OutputBuffer::getState()
           c<m_dependentZeroCopyCount && n<m_dependentZeroCopyPorts.size(); n++) {
       if ( m_dependentZeroCopyPorts[n] ) {
                        
-        if ((m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()].bufferFull &
-             DataTransfer::BufferEmptyFlag) != DataTransfer::BufferEmptyFlag ) {
-          return &m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()];
+        if (m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()].bufferFull != 0 ) {
+	    return &m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()];
         }
         c++;
       }
@@ -225,27 +226,26 @@ bool OutputBuffer::isEmpty()
     }
   }
 
-  if ( n_pending == 0 ) {
-    m_state[0][m_pid].bufferFull = DataTransfer::BufferEmptyFlag;
+  if ( ! m_slave ) {
+
+#ifndef NDEBUG
+    printf("Not Slave port, manually setting DMA complete flag\n");
+#endif
+
+    if ( n_pending == 0 ) {
+      m_state[0][m_pid].bufferFull = 1;
+    }
   }
 
   if ( getPort()->isShadow() ) {
     return true;
   }
 
-
-
-#ifdef WAS
-  // Mark our transfer state as empty
-#ifdef DEBUG_L2
-  printf("Marking output transfer state as empty\n");
-#endif
-  m_state[0][m_pid].bufferFull = DataTransfer::BufferEmptyFlag;
-#endif
-
-
   volatile BufferState* state = this->getState();
-  return ((state->bufferFull & DataTransfer::BufferEmptyFlag) == DataTransfer::BufferEmptyFlag) ? true : false;
+
+  //  printf("Buffer state = %d\n", state->bufferFull );
+
+  return (state->bufferFull != 0) ? true:false;
 }
 
 /**********************************
@@ -266,13 +266,14 @@ volatile BufferMetaData* OutputBuffer::getMetaData()
  *********************************/
 CPI::OS::uint32_t OutputBuffer::getNumberOfBytesTransfered()
 {
-  return (CPI::OS::uint32_t) N_BYTES_TRANSFERED( getMetaDataByIndex(0)->cpiMetaDataWord );
+  return (CPI::OS::uint32_t) getMetaDataByIndex(0)->cpiMetaDataWord.length;
 }
 
 void OutputBuffer::setMetaData()
 {
   for ( unsigned int b=0; b<reinterpret_cast<CPI::DataTransport::Circuit*>(m_port->getCircuit())->getMaxPortOrd(); b++ ) {
-    m_sbMd[0][b].cpiMetaDataWord = m_sbMd[0][m_pid].cpiMetaDataWord;
+    memcpy((void*) &m_sbMd[0][b].cpiMetaDataWord, (void*)&m_sbMd[0][m_pid].cpiMetaDataWord, sizeof(RplMetaData) );
+
     m_sbMd[0][b].zcopy           = m_sbMd[0][m_pid].zcopy;
     m_sbMd[0][b].sequence       = m_sbMd[0][m_pid].sequence;
     m_sbMd[0][b].broadCast      = m_sbMd[0][m_pid].broadCast;

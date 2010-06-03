@@ -77,6 +77,7 @@ namespace CPI {
        *********************************/
       virtual bool isComplete();
 
+
       /**********************************
        * Start the output/input transfer
        *********************************/
@@ -191,7 +192,7 @@ namespace CPI {
       // a single output buffer, such is the case for whole to parts when the number of
       // parts exceed the number of buffers+input ports.
       //                                                                           transfer sequence            input port    input buffer
-      CpiTransferTemplate* m_nextTransfer[MAX_TRANSFERS_PER_BUFFER] [MAX_PORT_COUNT] [MAX_BUFFERS];
+      CpiTransferTemplate* m_nextTransfer[MAX_TRANSFERS_PER_BUFFER] [MAX_PCONTRIBS] [MAX_BUFFERS];
       List m_gatedTransfersPending;
       CPI::OS::uint32_t m_sequence;
       CPI::OS::uint32_t m_maxSequence;
