@@ -31,6 +31,7 @@
 #include <assert.h>
 #include <CpiOsAssert.h>
 #include "CpiMetadataWorker.h"
+#include <CpiContainerMisc.h>
 
 namespace CPI {
   namespace CC = CPI::Container;
@@ -333,8 +334,8 @@ namespace CPI {
       size = theOffset - offset;
     }
     bool Port::decode(ezxml_t x, int pid) {
+      myXml = x;
       name = ezxml_attr(x, "name");
-
 
       printf("Port %s has pid = %d\n", name, pid );
 
@@ -343,7 +344,19 @@ namespace CPI {
         return true;
       twoway = getBoolean(x, "twoWay");
       provider = getBoolean(x, "provider");
-      myXml = x;
+
+
+      bool found;
+      int n = CC::getAttrNum(x, "minBufferSize", true, &found);
+      if (found)
+	minBufferSize = n;
+      n = CC::getAttrNum(x, "maxBufferSize", true, &found);
+      if (found)
+	maxBufferSize = n; // no max if not specified.
+      n = CC::getAttrNum(x, "minNumBuffers", true, &found);
+      if (found)
+	minBufferCount = n;
+
       return false;
     }
     // Decode based on XML, determining offsets
