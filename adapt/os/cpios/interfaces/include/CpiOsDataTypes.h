@@ -38,7 +38,7 @@
  *                  RTP land.
  */
 
-#if defined (__linux) || defined(__APPLE__) || (defined (__vxworks) && !defined (_WRS_KERNEL))
+#if defined (__linux__) || defined(__APPLE__) || (defined (__vxworks) && !defined (_WRS_KERNEL))
 #include <stdint.h>
 #endif
 
@@ -112,7 +112,7 @@ namespace CPI {
     typedef unsigned long uintptr_t;
 
     
-#elif defined (__linux) || defined (__vxworks) || defined (__APPLE__)
+#elif defined (__linux__) || defined (__vxworks) || defined (__APPLE__)
 
     using ::int8_t;
     using ::uint8_t;
