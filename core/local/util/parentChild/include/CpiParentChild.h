@@ -49,6 +49,7 @@ namespace CPI {
       std::string m_cname;
       Child<TParent,TChild> (TParent & p, const char* childname=NULL) :
         myParent(&p) {
+        ( void ) childname;
         myParent->Parent<TChild>::addChild(*this);
       };
         Child<TParent,TChild> (const char* childname=NULL) : 
@@ -75,7 +76,7 @@ namespace CPI {
       bool done;
     public:
       Parent<TChild>(const char* instancename=NULL) :
-        myChildren(0), done(false) {}
+        myChildren(0), done(false) { ( void ) instancename; }
         void releaseChild(ChildI<TChild>& child) {
           if (done)
             return;
