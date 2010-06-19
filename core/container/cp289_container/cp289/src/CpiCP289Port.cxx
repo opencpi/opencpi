@@ -209,6 +209,7 @@ const std::string&
 CPI::CP289::Port::
 getInitialProviderInfo(CPI::Util::PValue* props)
 {
+  CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
   cpiAssert( isProvider() );
   applyConnectParams(props);
   connectionData.data.desc.nBuffers = myDesc.nBuffers;
@@ -222,6 +223,7 @@ const std::string&
 CPI::CP289::Port::
 setInitialProviderInfo(CPI::Util::PValue* props, const std::string & user )
 {
+  CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
   cpiAssert( ! isProvider() );
   applyConnectParams(props);
   PortData otherPortData;
@@ -235,6 +237,7 @@ const std::string&
 CPI::CP289::Port::
 setFinalProviderInfo(const std::string & input_port )
 {
+  CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
   cpiAssert( ! isProvider() );
   PortData tpdata;
   MyParent->myParent->myParent->unpackPortDesc( input_port, &tpdata );
@@ -257,6 +260,7 @@ const std::string&
 CPI::CP289::Port::
 setInitialUserInfo(const std::string& user)
 {
+  CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
   cpiAssert( isProvider() );
   setFinalUserInfo(user );
   // Nothing more to do
@@ -268,6 +272,7 @@ void
 CPI::CP289::Port::
 setFinalUserInfo(const std::string& srcPort )
 {
+  CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
   cpiAssert( isProvider() );
   initInputPort();
   PortData src;
@@ -605,6 +610,8 @@ connectInputPort( PortData *    inputPort,
   throw ( CPI::Util::EmbeddedException )
 {
   TRACE("CPI::CP289::Container::connectInputPort()");
+  CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
+
   PortData          localShadowPort;
 
   // At this point the output ports reoutputs are not yet created, we need to 
@@ -713,6 +720,9 @@ connectInternalInputPort( CPI::Container::Port *  tPort,
 void 
 CPI::CP289::Port::
 connect( CPI::Container::Port &other, CPI::Util::PValue *myProps, CPI::Util::PValue *otherProps) {
+
+  CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
+
   if (isProvider())
     if (other.isProvider())
       throw ApiError("Cannot connect two provider ports", NULL);
