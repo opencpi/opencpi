@@ -223,8 +223,11 @@ namespace CPI {
      ****
      *********************************/
     inline CPI::Container::Interface::DispatchRetCode Interface::dispatch(DataTransfer::EventManager* event_manager)
-      throw ( CPI::Util::EmbeddedException ) {return CPI::Container::Interface::DispatchNoMore;}
-
+      throw ( CPI::Util::EmbeddedException ) 
+    { 
+      (void) event_manager;
+       return CPI::Container::Interface::DispatchNoMore;
+    }
   }
 }
 

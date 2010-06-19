@@ -39,6 +39,9 @@ namespace CPI {
           throw ApiError("incorrect type for this property", 0);
         if (n > mySequenceSize)
           throw ApiError("sequence to too long for this property", 0);
+#else 
+        ( void ) ctype;
+        ( void ) n;
 #endif
       }
     public:
@@ -57,7 +60,7 @@ namespace CPI {
       inline void set##pretty##Value(run val) {                                \
         checkType(Metadata::Property::CPI_##pretty, 0);                        \
         if (writeVaddr)                                                        \
-          *(store *)writeVaddr= *(store *)&(val);                        \
+          *(store *)writeVaddr= *(store*)((void*)&(val));                        \
         else                                                                \
           worker.set##pretty##Property(ordinal, val);                        \
       }                                                                        \
