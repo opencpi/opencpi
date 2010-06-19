@@ -38,7 +38,7 @@
 #include "OCDP.h"
 
 #define wmb()        asm volatile("sfence" ::: "memory"); usleep(0)
-#define clflush(p) asm volatile("clflush %0" : "+m" (*(char *)(p))) //(*(volatile char __force *)p))
+#define clflush(p) asm volatile("clflush %0" : "+m" (*(char *)(p))) //(*(volatil
 
 namespace CPI {
   namespace Container{}
@@ -49,12 +49,12 @@ namespace CPI {
     namespace CU = CPI::Util;
 
     static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
-    // This is the alignment constraint of DMA buffers in the processor's memory.
+    // This is the alignment constraint of DMA buffers in the processor's memory
     // It could be a cache line or a malloc granule...
     // It should come from somewhere else.  FIXME
     static const unsigned LOCAL_BUFFER_ALIGN = 32;
-    // This is the constraint based both on the local issues and the OCDP's DMA engine.
-    static const unsigned LOCAL_DMA_ALIGN = max(LOCAL_BUFFER_ALIGN, OCDP_FAR_BUFFER_ALIGN);
+    // This is the constraint based both on the local issues and the OCDP's DMA
+    static const unsigned LOCAL_DMA_ALIGN = max(LOCAL_BUFFER_ALIGN, OCDP_FAR_BUF
     class ExternalPort;
     class Driver : public CU::Driver {
 
@@ -67,7 +67,7 @@ namespace CPI {
                             const char *&err);
 
       // Create a dummy container using shm_open for the device
-      CC::Interface *createDummy(const char *name, const char *df, const CU::PValue *);
+      CC::Interface *createDummy(const char *name, const char *df, const CU::PVa
 
       // Callback function for PciScanner::search which creates a container
       static bool found(const char *name, PCI::Bar *bars, unsigned nbars);
@@ -78,9 +78,9 @@ namespace CPI {
         CU::Driver("OCFRP", "Global", true) {
       }
 
-      // This driver method is called when container-discovery happens, to see if there
+      // This driver method is called when container-discovery happens, to see i
       // are any container devices supported by this driver
-      // It uses a generic PCI scanner to find candidates, and when found, calls the
+      // It uses a generic PCI scanner to find candidates, and when found, calls
       // "found" method.
       virtual unsigned search(const CPI::Util::PValue*, const char **exclude)
         throw (CPI::Util::EmbeddedException)
@@ -92,7 +92,7 @@ namespace CPI {
         } else {
           unsigned n = 0;
           const char *err = PCI::search(exclude, OCFRP0_VENDOR, OCFRP0_DEVICE,
-                                        OCFRP0_CLASS, OCFRP0_SUBCLASS, found, n);
+                                        OCFRP0_CLASS, OCFRP0_SUBCLASS, found, n)
           if (err)
             fprintf(stderr, "PCI Scanner Error: %s\n", err);
           return n;
@@ -115,7 +115,7 @@ namespace CPI {
           CC::ApiError("Error probing \"", which, "\": ", err, NULL);
         CC::Interface *c = create(which, bars, nbars, err);
         if (!c)
-          CC::ApiError("Error creating \"", which, "\" (which probed ok): ", err, NULL);
+          CC::ApiError("Error creating \"", which, "\" (which probed ok): ", err
         return c;
       }
     } driver;
@@ -134,14 +134,14 @@ namespace CPI {
       volatile OccpSpace* occp;
       uint8_t *bar1Vaddr;
       uint64_t basePaddr, bar1Offset;
-      uint8_t *baseVaddr;     // base virtual address of whole region containing both BARs
-      uint64_t endPointSize; // size in bytes of whole region containing both BARs.
+      uint8_t *baseVaddr;     // base virtual address of whole region containing
+      uint64_t endPointSize; // size in bytes of whole region containing both BA
       friend class WciControl;
       friend class Driver;
       friend class Port;
     protected:
       Container(CU::Driver &driver, const char *name, uint64_t bar0Paddr,
-                volatile OccpSpace *occp, uint64_t bar1Paddr, uint8_t *bar1Vaddr,
+                volatile OccpSpace *occp, uint64_t bar1Paddr, uint8_t *bar1Vaddr
                 uint32_t bar1Size)  :
         CC::Interface(driver, name), occp(occp), bar1Vaddr(bar1Vaddr)
       {
@@ -204,7 +204,7 @@ namespace CPI {
     createDummy(const char *name, const char *df, const CU::PValue *) {
       int fd;
       uint8_t *bar0, *bar1;
-      fprintf(stderr, "DF: %s, Page %d, Occp %ld, SC pagesize %ld off_t %ld bd %ld\n",
+      fprintf(stderr, "DF: %s, Page %d, Occp %ld, SC pagesize %ld off_t %ld bd %
               df, getpagesize(), sizeof(OccpSpace), sysconf(_SC_PAGE_SIZE),
               sizeof(off_t), sizeof(CC::PortData));
       umask(0);
@@ -222,7 +222,7 @@ namespace CPI {
     // Return container pointer OR null, and if NULL, set "err" output arg.
     CC::Interface *Driver::
     create(const char *name, PCI::Bar *bars, unsigned nbars, const char *&err) {
-      if (nbars != 2 || bars[0].io || bars[0].prefetch || bars[1].io || bars[1].prefetch ||
+      if (nbars != 2 || bars[0].io || bars[0].prefetch || bars[1].io || bars[1].
           bars[0].addressSize != 32 || bars[0].size != sizeof(OccpSpace))
         err = "OCFRP found but bars are misconfigured\n";
       else {
@@ -230,10 +230,10 @@ namespace CPI {
         // PCI config info looks good.  Now check the OCCP signature.
         if (pciMemFd < 0 && (pciMemFd = open("/dev/mem", O_RDWR|O_SYNC)) < 0)
           err = "Can't open /dev/mem";
-        else if ((bar0 = mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
+        else if ((bar0 = mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP
                               pciMemFd, bars[0].address)) == (void*)-1)
           err = "can't mmap /dev/mem for bar0";
-        else if ((bar1 = mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE, MAP_SHARED,
+        else if ((bar1 = mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE, MAP_SHAR
                               pciMemFd, bars[1].address)) == (void*)-1)
           err = "can't mmap /dev/mem for bar1";
         else {
@@ -242,17 +242,17 @@ namespace CPI {
 //          magic1 = {{'n', 'e', 'p', 'O'}}, magic2 = {{0, 'I', 'P', 'C'}};
           magic1 = {{'O', 'p', 'e', 'n'}}, magic2 = {{'C', 'P', 'I', '\0'}};
           //          magic1 = {OCCP_MAGIC1}, magic2 = {OCCP_MAGIC2};
-          if (occp->admin.magic1 != magic1.value || occp->admin.magic2 != magic2.value) {
+          if (occp->admin.magic1 != magic1.value || occp->admin.magic2 != magic2
             err = "Magic numbers do not match in region/bar 0";
-            fprintf(stderr, "PCI Device matches OCFRP vendor/device, but not OCCP signature: "
+            fprintf(stderr, "PCI Device matches OCFRP vendor/device, but not OCC
                     "magic1: 0x%x (sb 0x%x), magic2: 0x%x (sb 0x%x)",
                     occp->admin.magic1, magic1.value, occp->admin.magic2,
                     magic2.value);
           } else {
             char tbuf[30];
             time_t bd = occp->admin.birthday;
-            fprintf(stderr, "OCFRP: %s, with bitstream birthday: %s", name, ctime_r(&bd, tbuf));
-            return new Container(driver, name, bars[0].address, occp, bars[1].address,
+            fprintf(stderr, "OCFRP: %s, with bitstream birthday: %s", name, ctim
+            return new Container(driver, name, bars[0].address, occp, bars[1].ad
                                          (uint8_t*)bar1, bars[1].size);
           }
         }
@@ -293,7 +293,7 @@ namespace CPI {
       ~Artifact() {
       }
       virtual CC::Worker &
-      createWorkerX(CC::Application &a, ezxml_t impl, ezxml_t inst, CU::PValue *execProps);
+      createWorkerX(CC::Application &a, ezxml_t impl, ezxml_t inst, CU::PValue *
     };
 
     CC::Artifact & Container::
@@ -351,7 +351,7 @@ namespace CPI {
           *(uint32_t *)&myRegisters->initialize = OCCP_SUCCESS_RESULT; //fakeout
           *(uint32_t *)&myRegisters->start = OCCP_SUCCESS_RESULT; //fakeout
         }
-        // Maybe this should be delayed until construction of derived class is done? FIXME?
+        // Maybe this should be delayed until construction of derived class is d
         initialize();
       }
       virtual ~WciControl() {
@@ -363,7 +363,7 @@ namespace CPI {
       // the key members are "readVaddr" and "writeVaddr"
       virtual void prepareProperty(CM::Property &md, CC::Property &cp) {
         if (myRegisters)
-          if (!md.is_struct && !md.is_sequence && !md.types->type != CM::Property::CPI_String &&
+          if (!md.is_struct && !md.is_sequence && !md.types->type != CM::Propert
               CM::Property::tsize[md.types->type] <= 32 &&
               !md.write_error)
             cp.writeVaddr = myProperties + md.offset;
@@ -378,7 +378,7 @@ namespace CPI {
           oops = "worker indicated an error from control operation";
           break;
         case OCCP_RESET_RESULT:
-          oops = "worker was in a reset state when control operation was requested";
+          oops = "worker was in a reset state when control operation was request
           break;
         case OCCP_FATAL_RESULT:
           oops = "worker indicated a fatal error from control operation";
@@ -392,8 +392,8 @@ namespace CPI {
 #define CONTROL_OP(x, c, t, s1, s2, s3)                                \
       virtual void x() {                                \
         if (myState == CM::Worker::s1 ||                        \
-            (CM::Worker::s2 != CM::Worker::NONE && myState == CM::Worker::s2) || \
-            (CM::Worker::s3 != CM::Worker::NONE && myState == CM::Worker::s3)) { \
+            (CM::Worker::s2 != CM::Worker::NONE && myState == CM::Worker::s2) ||
+            (CM::Worker::s3 != CM::Worker::NONE && myState == CM::Worker::s3)) {
           if (controlMask & (1 << CM::Worker::Op##c)) {                        \
             uint32_t result = myRegisters->x;                        \
             if (result != OCCP_SUCCESS_RESULT)                        \
@@ -425,21 +425,21 @@ namespace CPI {
 
       WCI_error control(WCI_control, WCI_options){return WCI_SUCCESS;}
       WCI_error status(WCI_status*){return WCI_SUCCESS;}
-      WCI_error read(WCI_u32, WCI_u32, WCI_data_type, WCI_options, void*){return WCI_SUCCESS;}
-      WCI_error write(WCI_u32, WCI_u32, WCI_data_type, WCI_options, const void*){return WCI_SUCCESS;}
+      WCI_error read(WCI_u32, WCI_u32, WCI_data_type, WCI_options, void*){return
+      WCI_error write(WCI_u32, WCI_u32, WCI_data_type, WCI_options, const void*)
       WCI_error close(WCI_options){return WCI_SUCCESS;}
       std::string getLastControlError()
-        throw (CPI::Util::EmbeddedException){std::string s("No Error");return s;}
+        throw (CPI::Util::EmbeddedException){std::string s("No Error");return s;
 
 
 
       CC::Port & createPort(CM::Port &metaport);
-      // FIXME: why is this neessary?  Why isn't the inheritance of WciControl enough to satisfy this?
+      // FIXME: why is this neessary?  Why isn't the inheritance of WciControl e
 #define CONTROL_OP(x, c, t, s1, s2, s3)                                \
       virtual void x() { WciControl::x(); }
       CPI_CONTROL_OPS
 #undef CONTROL_OP
-      // FIXME: why is this neessary?  Why isn't the inheritance of WciControl enough to satisfy this?
+      // FIXME: why is this neessary?  Why isn't the inheritance of WciControl e
       virtual void prepareProperty(CM::Property &mp, CC::Property &cp) {
         return WciControl::prepareProperty(mp, cp);
       }
@@ -479,7 +479,7 @@ namespace CPI {
         if (p.write_error && myRegisters->status & OCCP_STATUS_ALL_ERRORS) \
           throw; /*"worker has errors after write */                        \
       }                                                                        \
-      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned length) { \
+      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned
         CM::Property &p = property(ord);                                \
         assert(p.types->type == CM::Property::CPI_##pretty);                \
         if (!p.is_writable)                                                \
@@ -489,7 +489,7 @@ namespace CPI {
         if (p.write_error &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before write */                        \
-        memcpy((void *)(myProperties + p.offset + p.maxAlign), vals, length * sizeof(run)); \
+        memcpy((void *)(myProperties + p.offset + p.maxAlign), vals, length * si
         *(uint32_t *)(myProperties + p.offset) = length;                \
         if (p.write_error &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
@@ -522,7 +522,7 @@ namespace CPI {
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors after write */                        \
       }                                                                        \
-      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned length) { \
+      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned
         CM::Property &p = property(ord);                                \
         assert(p.types->type == CM::Property::CPI_##pretty);                \
         if (!p.is_writable)                                                \
@@ -568,7 +568,7 @@ namespace CPI {
           throw; /*"worker has errors after read */                        \
         return u.r;                                                        \
       }                                                                        \
-      unsigned get##pretty##SequenceProperty(unsigned ord, run *vals, unsigned length) { \
+      unsigned get##pretty##SequenceProperty(unsigned ord, run *vals, unsigned l
         CM::Property &p = property(ord);                                \
         if (!p.is_readable)                                                \
           throw; /*"attempt to set property that is not writable" */        \
@@ -590,7 +590,7 @@ namespace CPI {
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void get##pretty##Property(unsigned ord, char *cp, unsigned length) { \
+      virtual void get##pretty##Property(unsigned ord, char *cp, unsigned length
         CM::Property &p = property(ord);                                \
         assert(p.types->type == CM::Property::CPI_##pretty);                \
         if (!p.is_readable)                                                \
@@ -677,19 +677,19 @@ namespace CPI {
         throw CPI::Util::EmbeddedException("disconnect not yet implemented !!");
       }
 
-      // Called after connection PValues have been set, which is after our constructor
+      // Called after connection PValues have been set, which is after our const
       // userDataBaseAddr, dataBufferBaseAddr are assumed set
       // Also error-check for bad combinations or values of parameters
       // FIXME:  we are relying on dataBufferBaseAddr being set before we know
-      // buffer sizes etc.  If we are sharing a memory pool, this will not be the case,
+      // buffer sizes etc.  If we are sharing a memory pool, this will not be th
       // and we would probably allocate the whole thing here.
       void checkConnectParams() {
         if (!canBeExternal)
           return;
         if (myDesc.nBuffers *
-            (CC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN) + OCDP_METADATA_SIZE) > myOcdpSize)
-          throw CC::ApiError("Requested buffer count and size won't fit in the OCDP's memory", 0);
-        myDesc.dataBufferPitch = CC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN);
+            (CC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN) + OCDP_
+          throw CC::ApiError("Requested buffer count and size won't fit in the O
+        myDesc.dataBufferPitch = CC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_B
         myDesc.metaDataBaseAddr =
           myDesc.dataBufferBaseAddr +
           myOcdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
@@ -698,7 +698,7 @@ namespace CPI {
                                                  myDesc.dataBufferBaseAddr));
       }
       // I am an input port, the other guy is an output port.
-      // My job is to emulate a bitstream that consumes from me, and produces at otherPort
+      // My job is to emulate a bitstream that consumes from me, and produces at
       // This is for testing
       void loopback(CU::PValue *pProps, CC::Port &uPort, CU::PValue *uProps) {
         cpiAssert(isProvider());
@@ -708,13 +708,13 @@ namespace CPI {
         uPort.connectionData.data.role = CPI::RDT::Passive;
         applyConnectParams(pProps);
         uPort.applyConnectParams(uProps);
-        // We must initialize the emulated register file for use by other software
+        // We must initialize the emulated register file for use by other softwa
         Port &other = *static_cast<Port *>(&uPort);
         myOcdpRegisters->nRemoteDone = 0;
         myOcdpRegisters->nReady = myDesc.nBuffers;
         other.myOcdpRegisters->nRemoteDone = 0;
         other.myOcdpRegisters->nReady = 0;
-        unsigned doneCount = 0, copyCount = 0, myUserNext = 0, otherUserNext = 0;
+        unsigned doneCount = 0, copyCount = 0, myUserNext = 0, otherUserNext = 0
         for (;;) {
           if (myOcdpRegisters->nRemoteDone != 0) {
             doneCount++;
@@ -728,14 +728,14 @@ namespace CPI {
             other.myOcdpRegisters->nReady--;
             other.myOcdpRegisters->nRemoteDone = 0;
           }
-          while (copyCount && other.myOcdpRegisters->nReady != other.myDesc.nBuffers) {
-            uint8_t *remoteData = userDataBaseAddr + myUserNext * myDesc.dataBufferSize;
-            volatile OcdpMetadata *remoteMetadata = userMetadataBaseAddr + myUserNext;
+          while (copyCount && other.myOcdpRegisters->nReady != other.myDesc.nBuf
+            uint8_t *remoteData = userDataBaseAddr + myUserNext * myDesc.dataBuf
+            volatile OcdpMetadata *remoteMetadata = userMetadataBaseAddr + myUse
             if (++myUserNext >= myDesc.nBuffers)
               myUserNext = 0;
-            uint8_t *otherData = other.userDataBaseAddr + otherUserNext * other.myDesc.dataBufferSize;
-            volatile OcdpMetadata *otherMetadata = other.userMetadataBaseAddr + otherUserNext;
-            memcpy((void *)otherMetadata, (void *)remoteMetadata, sizeof(OcdpMetadata));
+            uint8_t *otherData = other.userDataBaseAddr + otherUserNext * other.
+            volatile OcdpMetadata *otherMetadata = other.userMetadataBaseAddr +
+            memcpy((void *)otherMetadata, (void *)remoteMetadata, sizeof(OcdpMet
             memcpy(otherData, remoteData, remoteMetadata->length);
             myOcdpRegisters->nReady++;
             other.myOcdpRegisters->nReady++;
@@ -746,10 +746,10 @@ namespace CPI {
         }
       }
       Port(Worker &w,
-           CM::Port &mPort, // the port metadata from when the worker was created
+           CM::Port &mPort, // the port metadata from when the worker was create
            ezxml_t connXml, // the xml connection for this port
-           ezxml_t icwXml,  // the xml interconnect/infrastructure worker attached to this port if any
-           ezxml_t icXml) : // the xml interconnect instance attached to this port if any
+           ezxml_t icwXml,  // the xml interconnect/infrastructure worker attach
+           ezxml_t icXml) : // the xml interconnect instance attached to this po
         CC::Port(w, mPort),
         WciControl(w.myRplContainer, icwXml, icXml),
         myConnection(connXml),
@@ -765,10 +765,10 @@ namespace CPI {
         uint32_t myOcdpOffset = CC::getAttrNum(icXml, "ocdpOffset");
         myOcdpSize = myOcdpRegisters->memoryBytes;
         // myOcdpSize = CC::getAttrNum(icXml, "ocdpSize");
-        //FIXME:  extra level of port metadata from worker, to impl, to instance?
+        //FIXME:  extra level of port metadata from worker, to impl, to instance
         // get buffer sizes from port from somewhere.
-        // from port xml? myMinBuffersize = getAttrNum(icXml, "minBufferSize", true);
-        // from port xml? myMinNumBuffers = getAttrNum(icXml, "minNumBuffers", true);
+        // from port xml? myMinBuffersize = getAttrNum(icXml, "minBufferSize", t
+        // from port xml? myMinNumBuffers = getAttrNum(icXml, "minNumBuffers", t
         // Fill in the transport information with defaults.
         // It will be updated at connect time.
         // FIXME: do we need to assert a preference here?
@@ -784,7 +784,7 @@ namespace CPI {
         // Fixed values not set later in checkConnectParams
         myDesc.fullFlagSize      = 4;
         myDesc.fullFlagPitch     = 0;
-        myDesc.fullFlagValue     = 1; // will be a count of buffers made full someday?
+        myDesc.fullFlagValue     = 1; // will be a count of buffers made full so
         myDesc.emptyFlagSize     = 4;
         myDesc.emptyFlagPitch    = 0;
         myDesc.emptyFlagValue    = 1; // Will be a count of buffers made empty
@@ -797,45 +797,45 @@ namespace CPI {
 #endif
 
         snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "cpi-pci-pio://%s.%llx.%llx:0.1.10", busId,
+                 "cpi-pci-pio://%s.%lld:%lld.3.10", busId,
                  (long long unsigned)w.myRplContainer.basePaddr,
                  (long long unsigned)w.myRplContainer.endPointSize);
         if ( isProvider()) {
           // CONSUMER
           connectionData.data.type = CPI::RDT::ConsumerDescT;
           // The flag is in the OCDP's register space.
-          // "full" is the flag telling me (the consumer) a buffer has become full
+          // "full" is the flag telling me (the consumer) a buffer has become fu
           // Mode dependent usage:
-          // *Passive/ActiveFlowCtl: producer hits this after writing/filling local buffer
+          // *Passive/ActiveFlowCtl: producer hits this after writing/filling lo
           //  (thus it is a "local buffer is full")
-          // *Active Message: producer hits this when remote buffer is ready to pull
+          // *Active Message: producer hits this when remote buffer is ready to
           //  (thus it is a "remote buffer is full")
           // This register is for WRITING.
           myDesc.fullFlagBaseAddr =
-            (uint8_t*)&myOcdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr;
-          // The nReady register is the empty flag, which tells the producer how many
+            (uint8_t*)&myOcdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.
+          // The nReady register is the empty flag, which tells the producer how
           // empty buffers there are to fill when consumer is in PASSIVE MODE
           // Other modes it is not used.
           // This register is for READING (in passive mode)
           myDesc.emptyFlagBaseAddr =
-            (uint8_t*)&myOcdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
+            (uint8_t*)&myOcdpRegisters->nReady - (uint8_t *)myWciContainer.baseV
         } else {
           connectionData.data.type = CPI::RDT::ProducerDescT;
           // The flag is in the OCDP's register space.
-          // "empty" is the flag telling me (the producer) a buffer has become empty
+          // "empty" is the flag telling me (the producer) a buffer has become e
           // Mode dependent usage:
-          // *Passive/ActiveFlowCtl: consumer hits this after making a local buffer empty
+          // *Passive/ActiveFlowCtl: consumer hits this after making a local buf
           //  (thus it is a "local buffer is empty")
-          // *ActiveMessage: consumer hits this after making a remote buffer empty
+          // *ActiveMessage: consumer hits this after making a remote buffer emp
           // (thus it is a "remote buffer is empty")
           // This register is for writing.
           myDesc.emptyFlagBaseAddr =
-            (uint8_t*)&myOcdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr;
-          // The nReady register is the full flag, which tells the consumer how many
+            (uint8_t*)&myOcdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.
+          // The nReady register is the full flag, which tells the consumer how
           // full buffers there are to read/take when producer is PASSIVE
           // This register is for READING (in passive mode)
           myDesc.fullFlagBaseAddr =
-            (uint8_t*)&myOcdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
+            (uint8_t*)&myOcdpRegisters->nReady - (uint8_t *)myWciContainer.baseV
         }
         userDataBaseAddr = myWciContainer.bar1Vaddr + myOcdpOffset;
         // Set this provisionally, for debug mostly.
@@ -850,48 +850,64 @@ namespace CPI {
         if (getenv("CPI_OCFRP_DUMMY"))
           *(uint32_t*)&myOcdpRegisters->foodFace = 0xf00dface;
       }
-      // All the info is in.  Do final work to (locally) establish the connection
+      // All the info is in.  Do final work to (locally) establish the connectio
       void finishConnection(CPI::RDT::Descriptors &other) {
         // Here is where we can setup the OCDP producer/user
         cpiAssert(myOcdpRegisters->foodFace == 0xf00dface);
         myOcdpRegisters->nLocalBuffers = myDesc.nBuffers;
         myOcdpRegisters->localBufferSize = myDesc.dataBufferPitch;
         myOcdpRegisters->localBufferBase = 0;
-        myOcdpRegisters->localMetadataBase = myOcdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
+        myOcdpRegisters->localMetadataBase = myOcdpSize - myDesc.nBuffers * OCDP
         OcdpRole myOcdpRole;
-        CPI::RDT::PortRole myRole = (CPI::RDT::PortRole)connectionData.data.role;
+        CPI::RDT::PortRole myRole = (CPI::RDT::PortRole)connectionData.data.role
         // FIXME - can't we avoid string processing here?
         unsigned busId;
         uint64_t busAddress, busSize;
-        if (sscanf(other.desc.oob.oep, "cpi-pci-pio://%x.%llx.%llx:0.1.10", &busId,
+        if (sscanf(other.desc.oob.oep, "cpi-pci-pio://%x.%lld:%lld.3.10", &busId
                    (long long unsigned *)&busAddress,
                    (long long unsigned *)&busSize) != 3)
           throw CC::ApiError("other port's endpoint description wrong: \"",
                              other.desc.oob.oep, "\"", NULL);
+
+
+
+        printf("\n\n\n base = %lld, offset = %lld, RFB = %lld  \n\n\n",  (uint64
+         (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseA
+          (uint64_t)(busAddress +
+                     (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.f
+
+               printf("Other ep = %s\n", other.desc.oob.oep );
+
+
+
         switch (myRole) {
         case CPI::RDT::ActiveFlowControl:
           myOcdpRole = OCDP_ACTIVE_FLOWCONTROL;
           myOcdpRegisters->remoteFlagBase = busAddress +
-            (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+            (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBa
           myOcdpRegisters->remoteFlagPitch =
             (isProvider() ?
              other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
           break;
         case CPI::RDT::ActiveMessage:
           myOcdpRole = OCDP_ACTIVE_MESSAGE;
-          myOcdpRegisters->remoteBufferBase = busAddress + other.desc.dataBufferBaseAddr;
-          myOcdpRegisters->remoteMetadataBase = busAddress + other.desc.metaDataBaseAddr;
+          myOcdpRegisters->remoteBufferBase = busAddress + other.desc.dataBuffer
+          myOcdpRegisters->remoteMetadataBase = busAddress + other.desc.metaData
           if ( isProvider()) {
             if (other.desc.dataBufferSize > myDesc.dataBufferSize)
-              throw CC::ApiError("At consumer, remote buffer size is larger than mine", NULL);
+              throw CC::ApiError("At consumer, remote buffer size is larger than
           } else if (other.desc.dataBufferSize < myDesc.dataBufferSize) {
-            throw CC::ApiError("At producer, remote buffer size smaller than mine", NULL);
+            throw CC::ApiError("At producer, remote buffer size smaller than min
           }
           myOcdpRegisters->nRemoteBuffers = other.desc.nBuffers;
           myOcdpRegisters->remoteBufferSize = other.desc.dataBufferPitch;
+#ifdef WAS
           myOcdpRegisters->remoteMetadataSize = OCDP_METADATA_SIZE;
+#else
+          myOcdpRegisters->remoteMetadataSize = other.desc.metaDataPitch;
+#endif
           myOcdpRegisters->remoteFlagBase = busAddress +
-            ( isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+            ( isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagB
           myOcdpRegisters->remoteFlagPitch =
             ( isProvider() ?
              other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
@@ -903,28 +919,28 @@ namespace CPI {
           cpiAssert(0);
         }
         myOcdpRegisters->control =
-          OCDP_CONTROL(isProvider() ? OCDP_CONTROL_CONSUMER : OCDP_CONTROL_PRODUCER,
+          OCDP_CONTROL(isProvider() ? OCDP_CONTROL_CONSUMER : OCDP_CONTROL_PRODU
                        myOcdpRole);
         // We're all set, enable the adapter.
         //        initialize(); // temp FIXME
         start();
       }
       // Connection between two ports inside this container
-      // We know they must be in the same artifact, and have a metadata-defined connection
-      void connectInside(CC::Port &provider, CU::PValue *myProps, CU::PValue *otherProps) {
+      // We know they must be in the same artifact, and have a metadata-defined
+      void connectInside(CC::Port &provider, CU::PValue *myProps, CU::PValue *ot
         cpiAssert(myParent->myParent == provider.myParent->myParent);
-        // We're both in the same runtime artifact object, so we know the port class
+        // We're both in the same runtime artifact object, so we know the port c
         Port &pport = static_cast<Port&>(provider);
         if (myConnection != pport.myConnection)
-          throw CC::ApiError("Ports are both local in bitstream/artifact, but are not connected", 0);
+          throw CC::ApiError("Ports are both local in bitstream/artifact, but ar
         pport.applyConnectParams(otherProps);
         applyConnectParams(myProps);
-        // For now we assume there is nothing to actually adjust in the bitstream.
+        // For now we assume there is nothing to actually adjust in the bitstrea
       }
       // Connect to a port in a like container (same driver)
-      bool connectLike(CU::PValue *uProps, CC::Port &provider, CU::PValue *pProps) {
-        cpiAssert(myParent->myParent->myParent->myParent == provider.myParent->myParent->myParent->myParent);
-        // We're both in the same runtime artifact object, so we know the port class
+      bool connectLike(CU::PValue *uProps, CC::Port &provider, CU::PValue *pProp
+        cpiAssert(myParent->myParent->myParent->myParent == provider.myParent->m
+        // We're both in the same runtime artifact object, so we know the port c
         Port &pport = static_cast<Port&>(provider);
         cpiAssert(canBeExternal && pport.canBeExternal);
         pport.applyConnectParams(pProps);
@@ -936,7 +952,7 @@ namespace CPI {
       }
       // Directly connect to this port
       // which creates a dummy user port
-      CC::ExternalPort &connectExternal(const char *name, CU::PValue *userProps, CU::PValue *props);
+      CC::ExternalPort &connectExternal(const char *name, CU::PValue *userProps,
     };
     int Port::dumpFd = -1;
     // CPI API
@@ -946,7 +962,7 @@ namespace CPI {
       const char *name = metaPort.name;
       // Find connections attached to this port
       ezxml_t conn, ic = 0, icw = 0;
-      for (conn = ezxml_child(myXml->parent, "connection"); conn; conn = ezxml_next(conn)) {
+      for (conn = ezxml_child(myXml->parent, "connection"); conn; conn = ezxml_n
         const char
           *from = ezxml_attr(conn,"from"), // instance with user port
           *to = ezxml_attr(conn,"to"),     // instance with provider port
@@ -955,8 +971,8 @@ namespace CPI {
         if (from && to && out && in &&
             (isProvider && !strcmp(myInstTag, to) && !strcmp(in, name) ||
              !isProvider && !strcmp(myInstTag, from) && !strcmp(out, name))) {
-          // We have a connection.  See if it is to an external interconnect.  FIXME i/o later
-          for (ic = ezxml_child(myXml->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
+          // We have a connection.  See if it is to an external interconnect.  F
+          for (ic = ezxml_child(myXml->parent, "interconnect"); ic; ic = ezxml_n
             const char *icName = ezxml_attr(ic, "name");
             if (icName &&
                 (isProvider && !strcmp(icName, from) ||
@@ -965,14 +981,14 @@ namespace CPI {
               // Find its details
               const char *icwName = ezxml_attr(ic, "worker");
               if (icwName)
-                for (icw = ezxml_child(myXml->parent, "worker"); icw; icw = ezxml_next(icw)) {
+                for (icw = ezxml_child(myXml->parent, "worker"); icw; icw = ezxm
                   const char *nameAttr = ezxml_attr(icw, "name");
                   if (nameAttr && !strcmp(nameAttr, icwName))
                     break;
                 }
               if (!icw)
                 throw CC::ApiError("For port \"", name,
-                                   "\": interconnect worker missing for connection", NULL);
+                                   "\": interconnect worker missing for connecti
               break; // we found an external connection
             }
           }
@@ -1012,9 +1028,9 @@ namespace CPI {
       OcdpMetadata *metadata;   // where is the metadata buffer
       uint8_t *data;                // where is the data buffer
       uint32_t length;          // length of the buffer (not message)
-      volatile uint32_t *readyForLocal;  // where is the flag set by remote on data movement
-      volatile uint32_t *readyForRemote; // where is ready flag for remote data movement
-      bool busy;                // in use by local processing (for error checking)
+      volatile uint32_t *readyForLocal;  // where is the flag set by remote on d
+      volatile uint32_t *readyForRemote; // where is ready flag for remote data
+      bool busy;                // in use by local processing (for error checkin
       bool last;                // last buffer in the set
       void release();
       void put(uint8_t opCode, uint32_t dataLength, bool endOfData) {
@@ -1066,7 +1082,7 @@ namespace CPI {
         port.establishRoles(connectionData.data);
         unsigned nFar = myPort.connectionData.data.desc.nBuffers;
         unsigned nLocal = myDesc.nBuffers;
-        myDesc.dataBufferPitch = myPort.connectionData.data.desc.dataBufferPitch;
+        myDesc.dataBufferPitch = myPort.connectionData.data.desc.dataBufferPitch
         myDesc.metaDataPitch = myPort.connectionData.data.desc.metaDataPitch;
         myDesc.fullFlagPitch = sizeof(uint32_t);
         myDesc.emptyFlagPitch = sizeof(uint32_t);
@@ -1077,9 +1093,9 @@ namespace CPI {
         unsigned nAlloc =
           CC::roundup(myDesc.dataBufferPitch * nLocal, LOCAL_DMA_ALIGN) +
           CC::roundup(myDesc.metaDataPitch * nLocal, LOCAL_DMA_ALIGN) +
-          CC::roundup(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // local flags
+          CC::roundup(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // local fla
           // These might actually be remote
-          CC::roundup(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // remote flags
+          CC::roundup(sizeof(uint32_t) * nLocal, LOCAL_DMA_ALIGN) + // remote fl
           // These might not be needed if we are ActiveFlowControl
           CC::roundup(sizeof(uint32_t) * nFar, LOCAL_DMA_ALIGN);
         // Now we allocate all the (local) endpoint memory
@@ -1099,15 +1115,15 @@ namespace CPI {
           done = true;
         }
         snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "cpi-pci-pio://%s.%llx.%llx:0.1.10", "0", (unsigned long long)base,
+                 "cpi-pci-pio://%s.%lld:%lld.3.10", "0", (unsigned long long)bas
                  (unsigned long long)nAlloc);
-        // If we are ActiveOnly we need no DMAable memory at all, so get it from the heap.
+        // If we are ActiveOnly we need no DMAable memory at all, so get it from
         if (connectionData.data.role == CPI::RDT::ActiveOnly)
           allocation = new uint8_t[nAlloc];
         else {
           if (!dma)
-            throw CC::ApiError("Asking for DMA without CPI_DMA_MEMORY environment var", NULL);
-          allocation = (uint8_t*)mmap(NULL, nAlloc, PROT_READ|PROT_WRITE, MAP_SHARED,
+            throw CC::ApiError("Asking for DMA without CPI_DMA_MEMORY environmen
+          allocation = (uint8_t*)mmap(NULL, nAlloc, PROT_READ|PROT_WRITE, MAP_SH
                                       Driver::pciMemFd, base);
           cpiAssert(allocation != (uint8_t*)-1);
           base += nAlloc;
@@ -1117,25 +1133,29 @@ namespace CPI {
 #if 0
           myEndpoint = CPI::RDT::GetEndpoint("cpi-pci//bus-id");
           if (!myEndpoint)
-            CC::ApiError("No local (CPU) endpoint support for pci bus %s", NULL);
+            CC::ApiError("No local (CPU) endpoint support for pci bus %s", NULL)
           allocation = myEndpoint->alloc(nAlloc);
 #endif
         }
+
+#ifdef NEEDED
         memset((void *)allocation, 0, nAlloc);
+#endif
+
         localData = allocation;
         myDesc.dataBufferBaseAddr  = 0;
-        allocation += CC::roundup(myDesc.dataBufferPitch * nLocal, LOCAL_BUFFER_ALIGN);
+        allocation += CC::roundup(myDesc.dataBufferPitch * nLocal, LOCAL_BUFFER_
         metadata = (OcdpMetadata *)allocation;
         myDesc.metaDataBaseAddr = allocation - localData;
-        allocation += CC::roundup(myDesc.metaDataPitch * nLocal, LOCAL_BUFFER_ALIGN);
+        allocation += CC::roundup(myDesc.metaDataPitch * nLocal, LOCAL_BUFFER_AL
         uint32_t *localFlags = (uint32_t*)allocation;
-        allocation += CC::roundup(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN);
+        allocation += CC::roundup(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN)
         uint32_t *remoteFlags = (uint32_t*)allocation;
-        allocation += CC::roundup(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN);
+        allocation += CC::roundup(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN)
         uint32_t *farFlags = (uint32_t*)allocation;
         switch (connectionData.data.role) {
         case CPI::RDT::ActiveMessage:
-          // my exposed addresses are the flags in my memory that indicate far buffer state
+          // my exposed addresses are the flags in my memory that indicate far b
           myDesc.emptyFlagBaseAddr =
             myDesc.fullFlagBaseAddr = allocation - localData;
           // FALL THROUGH
@@ -1144,7 +1164,7 @@ namespace CPI {
             FarBuffer *fb = nextFar = farBuffers = new FarBuffer[nFar];
             for (unsigned i = 0; i < nFar; i++, fb++) {
               fb->metadata = myPort.userMetadataBaseAddr + i;
-              fb->data = myPort.userDataBaseAddr + i * myPort.myDesc.dataBufferPitch;
+              fb->data = myPort.userDataBaseAddr + i * myPort.myDesc.dataBufferP
               fb->ready = farFlags + i; // not used for ActiveOnly
               *fb->ready = myPort.isProvider();
               fb->last = false;
@@ -1159,7 +1179,7 @@ namespace CPI {
         }
 
         // Initialize our structures that keep track of LOCAL buffer status
-        ExternalBuffer *lb = nextLocal = nextRemote = localBuffers = new ExternalBuffer[nLocal];
+        ExternalBuffer *lb = nextLocal = nextRemote = localBuffers = new Externa
         for (unsigned i = 0; i < nLocal; i++, lb++) {
           lb->myParent = this;
           this->addChild( *lb );
@@ -1171,7 +1191,7 @@ namespace CPI {
           lb->busy = false;
           lb->readyForLocal = localFlags + i;
           *lb->readyForLocal = myPort.isProvider();
-          lb->readyForRemote = remoteFlags + i; //&myPort.myOcdpRegisters->nRemoteDone;
+          lb->readyForRemote = remoteFlags + i; //&myPort.myOcdpRegisters->nRemo
           *lb->readyForRemote = !myPort.isProvider();
         }
         (lb-1)->last = true;
@@ -1181,12 +1201,12 @@ namespace CPI {
       void moveData() {
         if (myPort.isProvider()) {
           // Here to far
-          memcpy((void *)nextFar->metadata, nextRemote->metadata, sizeof(OcdpMetadata));
-          memcpy((void *)nextFar->data, nextRemote->data, nextRemote->metadata->length);
+          memcpy((void *)nextFar->metadata, nextRemote->metadata, sizeof(OcdpMet
+          memcpy((void *)nextFar->data, nextRemote->data, nextRemote->metadata->
         } else {
           // Far to here
-          memcpy(nextRemote->metadata, (const void *)nextFar->metadata, sizeof(OcdpMetadata));
-          memcpy(nextRemote->data, (const void *)nextFar->data, nextRemote->metadata->length);
+          memcpy(nextRemote->metadata, (const void *)nextFar->metadata, sizeof(O
+          memcpy(nextRemote->data, (const void *)nextFar->data, nextRemote->meta
         }
         // Set the local indication of readiness of the far buffer to false.
         // Far side will make it true (or us when we are ActiveOnly).
@@ -1217,9 +1237,9 @@ namespace CPI {
         // Try to advance my remote side
         switch (connectionData.data.role) {
         case CPI::RDT::ActiveOnly:
-          // Use far side "ready" register to determine whether far buffers are ready
+          // Use far side "ready" register to determine whether far buffers are
           // Thus we need to do a remote PCIe read to know far size status
-          if (*nextRemote->readyForRemote) { // avoid remote read if local is not ready
+          if (*nextRemote->readyForRemote) { // avoid remote read if local is no
             for (uint32_t nReady = myPort.myOcdpRegisters->nReady;
                  nReady && *nextRemote->readyForRemote; nReady--)
             moveData();
@@ -1300,7 +1320,7 @@ namespace CPI {
 
     // FIXME make readyForRemote zero when active flow control
     void ExternalBuffer::release() {
-      cpiAssert(myExternalPort->connectionData.data.role == CPI::RDT::ActiveFlowControl ||
+      cpiAssert(myExternalPort->connectionData.data.role == CPI::RDT::ActiveFlow
                 myExternalPort->connectionData.data.role == CPI::RDT::Passive ||
                 !*readyForRemote);
       // The buffer is not ready for local processing
@@ -1313,7 +1333,7 @@ namespace CPI {
       // Tell the other side that the buffer has become available
       myExternalPort->advanceLocal();
     }
-    CC::ExternalPort &Port::connectExternal(const char *name, CU::PValue *userProps, CU::PValue *props) {
+    CC::ExternalPort &Port::connectExternal(const char *name, CU::PValue *userPr
       if (!canBeExternal)
         throw CC::ApiError("Port is locally connected in the bitstream.", 0);
       applyConnectParams(props);
@@ -1325,3 +1345,4 @@ namespace CPI {
     int Driver::pciMemFd = -1;
   }
 }
+
