@@ -37,7 +37,7 @@ namespace CPI {
   namespace CC = CPI::Container;
   namespace Metadata {
 
-    Worker::Worker(const char *workerMetadata) 
+    Worker::Worker(const char *workerMetadata)
       : myProps( NULL )
     {
       if ( ! workerMetadata ) {
@@ -111,7 +111,7 @@ namespace CPI {
       // Compute allocation to hold all properties, names, types etc.
       unsigned int memSize = (nProps * sizeof(Property) +
                               nMembers * sizeof(Property::SimpleType) +
-                              nPorts * sizeof(Port) + 
+                              nPorts * sizeof(Port) +
                               nTests * sizeof(Test) +
                               nTestPs * sizeof(unsigned int) +
                               nameSize);
@@ -158,7 +158,7 @@ namespace CPI {
         }
         if (nMembers || *cp++ != '$')
           break;
-      } 
+      }
       if (n) {
         delete [] (char*)properties;
         return true;
@@ -366,23 +366,23 @@ namespace CPI {
       // First pass - just count for allocation
       nProps = nPorts = nTests = nMembers = 0;
       for (x = ezxml_child(xml, "property"); x; x = ezxml_next(x)) {
-        nProps++;      
+        nProps++;
         ezxml_t y = ezxml_child(xml, "member");
         if (y)
-          do 
+          do
             nMembers++;
           while ((y = ezxml_next(y)));
         else
           nMembers++;
       }
       for (x = ezxml_child(xml, "port"); x; x = ezxml_next(x))
-        nPorts++;      
+        nPorts++;
       unsigned int memSize = (nProps * sizeof(Property) +
                               nMembers * sizeof(Property::SimpleType) +
                               nPorts * sizeof(Port));
-      Property *prop = myProps = (Property *) new char[memSize];
-      Property::SimpleType *s = (Property::SimpleType *)(myProps + nProps);
-      Port *port = myPorts = (Port *)(s + nMembers);
+      Property *prop = myProps = (Property *) new char[memSize]; bzero ( prop,
+      memSize ); Property::SimpleType *s = (Property::SimpleType *)(myProps +
+      nProps); Port *port = myPorts = (Port *)(s + nMembers);
       // Second pass - decode all information
       for (x = ezxml_child(xml, "property"); x; x = ezxml_next(x), prop++)
         if (prop->decode(x, s))

@@ -30,8 +30,8 @@ DYNOBJS += ../../../cp289_container/$(OUTDIR)/CpiContainerDriver.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPCIPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtSocketsXfer.obj \
-	/home/jmiller/projects/opencpi/jcrew/adapt/drivers/rdma/$(OUTDIR)/DtPPP_PioXfer.obj \
-	/home/jmiller/projects/opencpi/jcrew/adapt/drivers/rdma/$(OUTDIR)/DtPPP_DMAXfer.obj
+	$(OCPI_BASE)/adapt/drivers/rdma/$(OUTDIR)/DtPPP_PioXfer.obj \
+	$(OCPI_BASE)/adapt/drivers/rdma/$(OUTDIR)/DtPPP_DMAXfer.obj
 else
 DYNOBJS += ../../../cp289_container/$(OUTDIR)/CpiContainerDriver.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPCIPioXfer.obj \
@@ -51,7 +51,7 @@ ifeq ($(CROSS_HOST),ppc86xx-linux)
 ALLLIBS +=  $(OCPI_BASE)/adapt/drivers/rdma/rdma \
 	 $(UTIL_LIBS) $(LOGGER_LIBS) $(CPIOS_LIBS)
 
-BASICLIBS += -L$(PPP_LIB) -lrose
+BASICLIBS += -L$(PPP_LIB) -lrose -ldl
 
 endif
 

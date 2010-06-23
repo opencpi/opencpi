@@ -1,3 +1,6 @@
+
+
+
 /**
   @brief
   This file contains the implementation for the RPL container for the OC FPGA
@@ -797,7 +800,7 @@ namespace CPI {
 #endif
 
         snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "cpi-pci-pio://%s.%llx.%llx:0.1.10", busId,
+                 "cpi-pci-pio://%s.%lld:%lld.3.10", busId,
                  (long long unsigned)w.myRplContainer.basePaddr,
                  (long long unsigned)w.myRplContainer.endPointSize);
         if ( isProvider()) {
@@ -863,11 +866,23 @@ namespace CPI {
         // FIXME - can't we avoid string processing here?
         unsigned busId;
         uint64_t busAddress, busSize;
-        if (sscanf(other.desc.oob.oep, "cpi-pci-pio://%x.%llx.%llx:0.1.10", &busId,
+        if (sscanf(other.desc.oob.oep, "cpi-pci-pio://%x.%lld:%lld.3.10", &busId,
                    (long long unsigned *)&busAddress,
                    (long long unsigned *)&busSize) != 3)
           throw CC::ApiError("other port's endpoint description wrong: \"",
                              other.desc.oob.oep, "\"", NULL);
+
+
+
+        printf("\n\n\n base = %lld, offset = %lld, RFB = %lld  \n\n\n",  (uint64_t)busAddress,
+         (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr ),
+          (uint64_t)(busAddress +
+                     (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr )) );
+
+               printf("Other ep = %s\n", other.desc.oob.oep );
+
+
+
         switch (myRole) {
         case CPI::RDT::ActiveFlowControl:
           myOcdpRole = OCDP_ACTIVE_FLOWCONTROL;
@@ -889,7 +904,11 @@ namespace CPI {
           }
           myOcdpRegisters->nRemoteBuffers = other.desc.nBuffers;
           myOcdpRegisters->remoteBufferSize = other.desc.dataBufferPitch;
+#ifdef WAS
           myOcdpRegisters->remoteMetadataSize = OCDP_METADATA_SIZE;
+#else
+          myOcdpRegisters->remoteMetadataSize = other.desc.metaDataPitch;
+#endif
           myOcdpRegisters->remoteFlagBase = busAddress +
             ( isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
           myOcdpRegisters->remoteFlagPitch =
@@ -1099,7 +1118,7 @@ namespace CPI {
           done = true;
         }
         snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "cpi-pci-pio://%s.%llx.%llx:0.1.10", "0", (unsigned long long)base,
+                 "cpi-pci-pio://%s.%lld:%lld.3.10", "0", (unsigned long long)base,
                  (unsigned long long)nAlloc);
         // If we are ActiveOnly we need no DMAable memory at all, so get it from the heap.
         if (connectionData.data.role == CPI::RDT::ActiveOnly)
@@ -1121,7 +1140,11 @@ namespace CPI {
           allocation = myEndpoint->alloc(nAlloc);
 #endif
         }
+
+#ifdef NEEDED
         memset((void *)allocation, 0, nAlloc);
+#endif
+
         localData = allocation;
         myDesc.dataBufferBaseAddr  = 0;
         allocation += CC::roundup(myDesc.dataBufferPitch * nLocal, LOCAL_BUFFER_ALIGN);
@@ -1325,3 +1348,4 @@ namespace CPI {
     int Driver::pciMemFd = -1;
   }
 }
+
