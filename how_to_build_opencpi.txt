@@ -100,5 +100,7 @@ Running testRpl on the mica system
 
  8. Run the testRpl program.
 
-    A. TOS # ./testRpl  -r1ip -r3op -N0o 3 -N1i 3 -N3o 3 -N0i 3 -I 0 -i 1000   0000:06:00.0
+    A. TOS # ./testRpl -r1ip -r3op -N0o 3 -N1i 3 -N3o 3 -N0i 3 -I 0 -i 1000 0000:06:00.0
     B. TOS # ./testRpl -l -i 1000 -r3om 0000:06:00.0 0000:09:00.0
+
+
