@@ -151,7 +151,7 @@ namespace CPI {
         throw (std::string);
 
     private:
-      CPI::OS::uint64_t m_osOpaque[16];
+      CPI::OS::uint64_t m_osOpaque[25];
 
     private:
       /**

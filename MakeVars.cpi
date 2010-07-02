@@ -49,19 +49,19 @@
 
 # #### Guess SYSTEM if it is not provided ################################# #
 
-ifeq "$(SYSTEM)" ""
-
+ifndef SYSTEM
   # Build from Cygwin for vxWorks DKM
   ifeq ($(findstring Cygwin,$(shell uname -a)),Cygwin)
-    SYSTEM = vxworksdkm
-  else # Build from Windriver shell for vxWorks DKM
-    ifeq ($(findstring windows32,$(shell uname -a)),windows32)
-      SYSTEM = vxworksdkm
-    else # Build under Linux for Linux
-      SYSTEM = linux
-    endif
+    SYSTEM=vxworksdkm
+  else ifeq ($(findstring windows32,$(shell uname -a)),windows32)
+    # Build from Windriver shell for vxWorks DKM
+    SYSTEM=vxworksdkm
+  else ifeq ($(findstring Darwin,$(shell uname -a)),Darwin)
+    SYSTEM=macos
+  else
+    # Build under Linux for Linux
+    SYSTEM=linux
   endif
-
 endif
 
 # #### Use Frank's directory if CPIDIR is not provided #################### #
@@ -150,10 +150,13 @@ endif
 #
 
 
-LDFLAGS := -m32
-CFLAGS := -m32
-CXXFLAGS := -m32
-
+#LDFLAGS := -m32
+#CFLAGS := -m32
+#CXXFLAGS := -m32
+LDFLAGS :=
+CFLAGS :=
+CXXFLAGS :=
+export OMNI_IDL_DIR=/usr/local/share/idl/omniORB
 #
 # ----------------------------------------------------------------------
 # WindRiver Workbench settings. Only used when $(SYSTEM)=vxworksdkm.

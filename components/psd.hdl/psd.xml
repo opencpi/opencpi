@@ -1,0 +1,19 @@
+<HdlImplementation Name="psd" Language="Verilog" Pattern="%w%M%0_">
+  <xi:include href="psd_spec.xml"/>
+  <!-- force byte enables because shep always uses them -->
+  <ControlInterface Sub32BitConfigProperties="true">
+    <Property Name="dummy0x8"/>
+    <Property Name="dummy0xc"/>
+    <Property Name="portStatus" Readable="true"/>
+    <Property Name="wsiSpMesgCount" Readable="true"/>
+    <Property Name="wsiSiMesgCount" Readable="true"/>
+    <Property Name="wsiStBusyCount" Readable="true"/>
+    <Property Name="wsiMpMesgCount" Readable="true"/>
+    <Property Name="wsiMiMesgCount" Readable="true"/>
+    <Property Name="wsiMtBusyCount" Readable="true"/>
+    <Property Name="psdCtrlInit" Parameter="true"/>
+    <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+  </ControlInterface>
+  <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+  <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+</HdlImplementation>

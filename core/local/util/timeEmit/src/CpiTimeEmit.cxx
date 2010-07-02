@@ -21,7 +21,6 @@
 #include <CpiOsAssert.h>
 #include <fasttime.h>
 
-
 extern "C" {
   int CpiTimeARegister( char* signal_name );
   void CpiEmit( int sig );

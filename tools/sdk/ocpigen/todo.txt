@@ -1,0 +1,13 @@
+Maybe allow "value" rather than "DefaultValue".
+Allow attributes to be case insensitive.
+Modularity for different modules, maybe when we do the OCL model.
+Global applications, and deployments.
+Share more prop code with runtime.
+Maybe the runtime xml should be j-son?
+Evolve to use xml schemas.
+Better, more consistent error messages, and line numbers, that work with emacs etc.
+Perhaps suppress "." in the include path.
+Update usage message to be good and correct.
+Use gnu getopt/argp or something better, maybe enhance and use the OCPI one etc.
+
+

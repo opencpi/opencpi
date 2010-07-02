@@ -1,0 +1,27 @@
+<HdlAssembly Name="demoappC" Language="Verilog">
+  <Instance Worker="delay.xml" Name="delay"/>
+  <Instance Worker="sma.xml" Name="sma0"/>
+  <Instance Worker="sma.xml" Name="sma1"/>
+  <Connection Name="adc" External="producer">
+    <Attach Instance="sma0" Interface="wsiS1"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="sma0" Interface="wsiM1"/>
+    <Attach Instance="delay" Interface="wsiS1"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="delay" Interface="wsiM1"/>
+    <Attach Instance="sma1" Interface="wsiS1"/>
+  </Connection>
+  <Connection Name="dac" External="consumer">
+    <Attach Instance="sma1" Interface="wsiM1"/>
+  </Connection>
+  <Connection Name="FC" External="consumer">
+    <Attach Instance="sma0" Interface="wmiM"/>
+  </Connection>
+  <Connection Name="FP" External="producer">
+    <Attach Instance="sma1" Interface="wmiM"/>
+  </Connection>
+</HdlAssembly>
+
+   

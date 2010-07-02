@@ -122,8 +122,10 @@ CPI::OS::testAssertion (bool cond)
 
 #if defined (NDEBUG)
 #define cpiAssert(cond) ((void)0)
+#define cpiCheck(cond) ((void)(cond))
 #else
 #define cpiAssert(cond) ((::CPI::OS::testAssertion ((cond) ? true : false)) || ::CPI::OS::assertionFailed (#cond, __FILE__, __LINE__))
+#define cpiCheck(cond) cpiAssert(cond)
 #endif
 
 #endif

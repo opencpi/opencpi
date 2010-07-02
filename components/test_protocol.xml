@@ -1,0 +1,9 @@
+<Protocol>
+  <Operation Name="Samples">
+    <Argument Name="data" Type="Short" ArrayLength="4k"/>
+  </Operation>
+  <Operation Name="Sync"/>
+  <Operation Name="Time">
+    <Argument Name="time" Type="ULongLong"/>
+  </Operation>
+</Protocol>

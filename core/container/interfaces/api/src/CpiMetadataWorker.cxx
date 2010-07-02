@@ -76,12 +76,11 @@ namespace CPI {
     Test &Worker::findTest(unsigned int testId) {
       assert(0); static Test *t; return *t;
     }
-    uint8_t Property::tsize[CPI_data_type_limit + 1] = {
+    uint8_t Property::tsize[CPI_data_type_limit] = {
       0,// for CPI_NONE
 #define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) bits/CHAR_BIT,
       CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE
-      0
     };
 
     // return an array of properties, to be freed (as one thing) by caller,
@@ -380,9 +379,10 @@ namespace CPI {
       unsigned int memSize = (nProps * sizeof(Property) +
                               nMembers * sizeof(Property::SimpleType) +
                               nPorts * sizeof(Port));
-      Property *prop = myProps = (Property *) new char[memSize]; bzero ( prop,
-      memSize ); Property::SimpleType *s = (Property::SimpleType *)(myProps +
-      nProps); Port *port = myPorts = (Port *)(s + nMembers);
+      Property *prop = myProps = (Property *) new char[memSize];
+      bzero (prop, memSize);
+      Property::SimpleType *s = (Property::SimpleType *)(myProps + nProps);
+      Port *port = myPorts = (Port *)(s + nMembers);
       // Second pass - decode all information
       for (x = ezxml_child(xml, "property"); x; x = ezxml_next(x), prop++)
         if (prop->decode(x, s))

@@ -662,6 +662,11 @@ ezxml_t ezxml_parse_fd(int fd)
     else { // mmap failed, read file into memory
 #endif // EZXML_NOMMAP
         l = read(fd, m = malloc(st.st_size), st.st_size);
+	/* Fix bug when you read a directory  - Jim K.*/
+	if (l == -1) {
+	  free(m);
+	  return NULL;
+	}
         root = (ezxml_root_t)ezxml_parse_str(m, l);
         root->len = -1; // so we know to free s in ezxml_free()
 #ifndef EZXML_NOMMAP

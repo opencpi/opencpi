@@ -37,7 +37,8 @@ PACKAGE = $(notdir $(shell pwd))
 WINLIB = $(patsubst %,$(OBJDIR)/%.lib,$(PACKAGE))
 WINDLL = $(patsubst %,$(OBJDIR)/%.dll,$(PACKAGE))
 UNIXLIB = $(patsubst %,$(OBJDIR)/lib%.a,$(PACKAGE))
-UNIXSHLIB = $(patsubst %,$(OBJDIR)/lib%.so,$(PACKAGE))
+UNIXSHLIB = $(patsubst %,$(OBJDIR)/lib%.$(SO),$(PACKAGE))
+EXPORTSHLIB=$(CPIDIR)/lib/$(OUTDIR)/$(notdir $(UNIXSHLIB))
 VXWORKSDKM = $(patsubst %,$(OBJDIR)/lib%.out,$(PACKAGE))
 
 ifeq ($(SYSTEM),winnt)
@@ -50,11 +51,11 @@ PACKAGELIB = $(WINLIB)
 endif
 
 else
-ifeq ($(SYSTEM),linux)
+ifneq ($(filter linux macos,$(SYSTEM)),)
 
 EXCLUDE_FACILITIES += winnt vxworksdkm
 ifeq ($(BUILDSHAREDLIBRARIES),1)
-PACKAGELIB = $(UNIXSHLIB)
+PACKAGELIB = $(EXPORTSHLIB)
 else
 PACKAGELIB = $(UNIXLIB)
 endif
@@ -119,14 +120,21 @@ lib: objects
 		$(MAKE) -f $(CPIDIR)/Makefile.cpi.for-pkg $(SYSTEMOPTION) $(PACKAGELIB) ; \
 	fi
 
-ifeq ($(SYSTEM),linux)
+ifneq ($(filter linux macos,$(SYSTEM)),)
 $(UNIXLIB): $(OBJECTS)
 	-rm -f $@
 	ar r $@ $(OBJECTS)
 
+$(EXPORTSHLIB): $(UNIXSHLIB)
+	if ! test -d $(CPIDIR)/lib; then mkdir $(CPIDIR)/lib; fi
+	if ! test -d $(CPIDIR)/lib/$(SYSTEM)-bin; then mkdir $(CPIDIR)/lib/$(SYSTEM)-bin; fi
+	cp -p $(UNIXSHLIB) $@
+
 $(UNIXSHLIB): $(OBJECTS)
-	$(CXX) $(SHAREDLIBFLAGS) -shared -o $@ $(OBJECTS)
-	cp -p $@ $(CPIDIR)/lib
+	$(CXX) $(SHAREDLIBFLAGS) $(SHARED) -o $@ $(OBJECTS) \
+	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
+		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS)))
 endif
 
 ifeq ($(SYSTEM),winnt)
@@ -252,8 +260,8 @@ clean distclean:
 			$(MAKE) -C bin/src -f $(CPIDIR)/Makefile.cpi.for-bin $@ ; \
 		fi ; \
 	fi
-	-rm -f *vxdkm-ctdc* *.vxe *.exe *.obj *.out *.map *.o *.so *.ilk *.sbr *.suo *.sln *.pdb *.bsc core* *.d *~
-	-rm -f $(OBJDIR)/*vxdkm-ctdc* $(OBJDIR)/*.vxe $(OBJDIR)/*.exe $(OBJDIR)/*.obj $(OBJDIR)/*.out $(OBJDIR)/*.map $(OBJDIR)/*.o $(OBJDIR)/*.so $(OBJDIR)/*.ilk \
+	-rm -f *vxdkm-ctdc* *.vxe *.exe *.obj *.out *.map *.o *.so *.dylib *.ilk *.sbr *.suo *.sln *.pdb *.bsc core* *.d *~
+	-rm -f $(OBJDIR)/*vxdkm-ctdc* $(OBJDIR)/*.vxe $(OBJDIR)/*.exe $(OBJDIR)/*.obj $(OBJDIR)/*.out $(OBJDIR)/*.map $(OBJDIR)/*.o $(OBJDIR)/*.so $(OBJDIR)/*.ilk $(OBJDIR)/*.dylib \
 		$(OBJDIR)/*.sbr $(OBJDIR)/*.suo $(OBJDIR)/*.sln $(OBJDIR)/*.pdb $(OBJDIR)/*.bsc $(OBJDIR)/core* $(OBJDIR)/*.d $(OBJDIR)/*~
 	-rm -f $(WINLIB) $(WINDLL) $(UNIXLIB) $(UNIXSHLIB) $(VXWORKSDKM)
 	-if test "x$(OUTDIR)" != "x" ; then rm -rf $(OUTDIR) ; fi

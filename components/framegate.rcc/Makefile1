@@ -1,0 +1,10 @@
+# A component library, consisting of different models built for different targets
+# The expectation is that a library has spec XML in the top level, and subdirectories for each implementation.
+# Active implementations are lists in Implementations.
+# This this makefile just names the library and lists implementations to be built.
+# The name of an implementation includes its authoring model as the file extension.
+# This specification of model is redundant with the "include" line in the makefile inside the directory
+# We also list the targets per model.
+Implementations=framegate.rcc
+RccTargets=Linux-MCS_864x
+include $(OCPI_DIR)/include/lib.mk

@@ -245,15 +245,12 @@ $(error Building Windows shared libraries with msvc is not supported yet.)
 endif
 
 else
-ifeq ($(SYSTEM),linux)
-
+ifneq ($(filter linux macos,$(SYSTEM)),)
 #
 # Unix compile-time configuration
 #
 
-
-ISMAC:=$(shell uname)
-ifeq ($(ISMAC),Darwin)
+ifeq ($(SYSTEM),macos)
 SO=dylib
 SHARED=-dynamiclib
 BASICLIBS=
@@ -261,6 +258,7 @@ CXXFLAGS += -Wall
 # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
 else
 ifeq ($(BUILDSHAREDLIBRARIES),1)
+SHARED=-shared
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC -Wall
 endif
@@ -286,7 +284,7 @@ ifeq ($(findstring timesys,$(CROSS_BUILD_BIN)),timesys)
 MKDEPENDFLAGS += --xpattern "timesys"
 endif
 
-ifeq ($(ISMAC),Darwin)
+ifeq ($(SYSTEM),macos)
 CFLAGS+=-DMACOS
 CXXFLAGS+=-DMACOS -D_DARWIN_C_SOURCE
 endif
@@ -299,13 +297,13 @@ CFLAGS += -O2
 CXXFLAGS += -O2
 endif
 
-ifeq ($(findstring Linux,$(shell uname -a)),Linux)
+ifeq ($(SYSTEM),linux)
 # Linux libraries
-BASICLIBS = -lpthread -lrt
-ifeq ($(BUILDSHAREDLIBRARIES),1)
-BASICLIBS += -ldl
-endif
-else
+BASICLIBS = -lpthread -lrt -ldl
+#ifeq ($(BUILDSHAREDLIBRARIES),1)
+#BASICLIBS += -ldl
+#endif
+else ifneq ($(SYSTEM),macos)
 # Solaris libraries
 BASICLIBS = -lpthread -lsocket -lnsl -lrt
 endif
@@ -565,7 +563,7 @@ ALLIDLINC = $(TAO_INC) $(TAO_INC)/tao
 
 IDLOPTS = -ss _s.cxx -cs .cxx -hc .h -hs _s.h -ci .inl -si _s.inl -H binary_search
 
-ifeq ($(shell uname),Linux)
+ifeq ($(SYSTEM),linux)
 LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(ACE_LIB)
 export LD_LIBRARY_PATH
 endif
@@ -658,7 +656,7 @@ endif
 #
 
 cleanup:
-	-rm -f *vxdkm-ctdc* *.vxe *.exe *.obj *.out *.map *.o *.so *.ilk *.sbr *.suo *.sln *.pdb *.bsc core* *~ *.dylib
+	-rm -f *vxdkm-ctdc* *.vxe *.exe *.obj *.out *.map *.o *.so *.dylib *.ilk *.sbr *.suo *.sln *.pdb *.bsc core* *~ *.d
 
 distcleanup:	cleanup
 	-rm -f *.d *.cdb *.inl

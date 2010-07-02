@@ -31,6 +31,21 @@
 #include <sys/time.h>
 #include <time.h>
 
+// FIXME Fix this in cpios
+#ifdef __APPLE__
+#ifndef CLOCK_REALTIME
+#include <sys/time.h>
+typedef int clockid_t;
+#define CLOCK_REALTIME ((clockid_t)0)
+static inline int clock_gettime(int id, struct timespec *tp) {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  TIMEVAL_TO_TIMESPEC(&tv, tp);
+  return 0;
+}
+#endif
+#endif
+
 /* Allow inlining */
 #define INLINE inline
 

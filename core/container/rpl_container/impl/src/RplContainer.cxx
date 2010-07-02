@@ -211,9 +211,9 @@ namespace CPI {
               df, getpagesize(), sizeof(OccpSpace), sysconf(_SC_PAGE_SIZE),
               sizeof(off_t), sizeof(CC::PortData));
       umask(0);
-      cpiAssert((fd = shm_open(df, O_CREAT | O_RDWR, 0666)) >= 0);
-      cpiAssert(ftruncate(fd, sizeof(OccpSpace) + 64*1024) >= 0);
-      cpiAssert((bar0 = (uint8_t*)mmap(NULL, sizeof(OccpSpace) + 64*1024,
+      cpiCheck((fd = shm_open(df, O_CREAT | O_RDWR, 0666)) >= 0);
+      cpiCheck(ftruncate(fd, sizeof(OccpSpace) + 64*1024) >= 0);
+      cpiCheck((bar0 = (uint8_t*)mmap(NULL, sizeof(OccpSpace) + 64*1024,
                                        PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0))
                 != (uint8_t*)-1);
       bar1 = bar0 + sizeof(OccpSpace);
@@ -241,16 +241,16 @@ namespace CPI {
           err = "can't mmap /dev/mem for bar1";
         else {
           volatile OccpSpace *occp = (OccpSpace *)bar0;
-          static union { char string[5]; uint32_t value; }
-//          magic1 = {{'n', 'e', 'p', 'O'}}, magic2 = {{0, 'I', 'P', 'C'}};
-          magic1 = {{'O', 'p', 'e', 'n'}}, magic2 = {{'C', 'P', 'I', '\0'}};
+	  //          static union { char string[5]; uint32_t value; }
+	  //          magic1 = {{'n', 'e', 'p', 'O'}}, magic2 = {{0, 'I', 'P', 'C'}};
+          //magic1 = {{'O', 'p', 'e', 'n'}}, magic2 = {{'C', 'P', 'I', '\0'}};
           //          magic1 = {OCCP_MAGIC1}, magic2 = {OCCP_MAGIC2};
-          if (occp->admin.magic1 != magic1.value || occp->admin.magic2 != magic2.value) {
+          //if (occp->admin.magic1 != magic1.value || occp->admin.magic2 != magic2.value) {
+	  if (occp->admin.magic1 != OCCP_MAGIC1 || occp->admin.magic2 != OCCP_MAGIC2) {
             err = "Magic numbers do not match in region/bar 0";
-            fprintf(stderr, "PCI Device matches OCFRP vendor/device, but not OCCP signature: "
-                    "magic1: 0x%x (sb 0x%x), magic2: 0x%x (sb 0x%x)",
-                    occp->admin.magic1, magic1.value, occp->admin.magic2,
-                    magic2.value);
+	    fprintf(stderr, "PCI Device matches OCFRP vendor/device, but not OCCP signature: "
+		    "magic1: 0x%x (sb 0x%x), magic2: 0x%x (sb 0x%x)",
+		    occp->admin.magic1, OCCP_MAGIC1, occp->admin.magic2, OCCP_MAGIC2);
           } else {
             char tbuf[30];
             time_t bd = occp->admin.birthday;
@@ -507,7 +507,7 @@ namespace CPI {
         CM::Property &p = property(ord);                                \
         assert(p.types->type == CM::Property::CPI_##pretty);                \
         if (!p.is_writable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
+          throw "attempt to set property that is not writable";        \
         unsigned cpi_length;                                                \
         if (!val || (cpi_length = strlen(val)) > p.types->size)                \
           throw; /*"string property too long"*/;                        \
@@ -846,9 +846,9 @@ namespace CPI {
         const char *df = getenv("CPI_DUMP_PORTS");
         if (df) {
           if (dumpFd < 0)
-            cpiAssert((dumpFd = creat(df, 0666)) >= 0);
+            cpiCheck((dumpFd = creat(df, 0666)) >= 0);
           CC::PortData *pd = this;
-          cpiAssert(::write(dumpFd, (void *)pd, sizeof(*pd)) == sizeof(*pd));
+          cpiCheck(::write(dumpFd, (void *)pd, sizeof(*pd)) == sizeof(*pd));
         }
         if (getenv("CPI_OCFRP_DUMMY"))
           *(uint32_t*)&myOcdpRegisters->foodFace = 0xf00dface;
@@ -874,9 +874,9 @@ namespace CPI {
 
 
 
-        printf("\n\n\n base = %lld, offset = %lld, RFB = %lld  \n\n\n",  (uint64_t)busAddress,
-         (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr ),
-          (uint64_t)(busAddress +
+        printf("\n\n\n base = %lld, offset = %lld, RFB = %lld  \n\n\n",  (long long)busAddress,
+	       (long long)(isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr ),
+          (long long)(busAddress +
                      (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr )) );
 
                printf("Other ep = %s\n", other.desc.oob.oep );
@@ -919,6 +919,7 @@ namespace CPI {
           myOcdpRole = OCDP_PASSIVE;
           break;
         default:
+          myOcdpRole = OCDP_PASSIVE; // quiet compiler warning
           cpiAssert(0);
         }
         myOcdpRegisters->control =
@@ -1109,7 +1110,7 @@ namespace CPI {
         if (!done) {
           if (dma) {
             unsigned sizeM;
-            cpiAssert(sscanf(dma, "%uM$0x%llx", &sizeM,
+            cpiCheck(sscanf(dma, "%uM$0x%llx", &sizeM,
                              (unsigned long long *) &base) == 2);
             size = (unsigned long long)sizeM * 1024 * 1024;
             fprintf(stderr, "DMA Memory:  %uM at 0x%llx\n", sizeM,
@@ -1199,17 +1200,45 @@ namespace CPI {
         }
         (lb-1)->last = true;
       }
+void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
+{
+  while (nbytes > 128) {
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    nbytes -= 128;
+  }
+  while (nbytes > 8) {
+    *to++ = *from++;
+    nbytes -= 8;
+  }
+  if (nbytes)
+    memcpy(to, from, nbytes);
+}
       // We know a move can be done.  Do it.
       // We are either ActiveOnly or ActiveMessage
       void moveData() {
         if (myPort.isProvider()) {
           // Here to far
-          memcpy((void *)nextFar->metadata, nextRemote->metadata, sizeof(OcdpMetadata));
-          memcpy((void *)nextFar->data, nextRemote->data, nextRemote->metadata->length);
+          memcpy64((uint64_t *)nextFar->metadata, (uint64_t *)nextRemote->metadata, sizeof(OcdpMetadata));
+          memcpy64((uint64_t *)nextFar->data, (uint64_t *)nextRemote->data, nextRemote->metadata->length);
         } else {
           // Far to here
-          memcpy(nextRemote->metadata, (const void *)nextFar->metadata, sizeof(OcdpMetadata));
-          memcpy(nextRemote->data, (const void *)nextFar->data, nextRemote->metadata->length);
+          memcpy64((uint64_t *)nextRemote->metadata, (uint64_t *)nextFar->metadata, sizeof(OcdpMetadata));
+          memcpy64((uint64_t *)nextRemote->data, (uint64_t *)nextFar->data, nextRemote->metadata->length);
         }
         // Set the local indication of readiness of the far buffer to false.
         // Far side will make it true (or us when we are ActiveOnly).

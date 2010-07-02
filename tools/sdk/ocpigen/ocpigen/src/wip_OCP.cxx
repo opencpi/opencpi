@@ -1,0 +1,239 @@
+// This file is for ocp interface derivation from the WIP spec
+#include <strings.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "wip.h"
+
+#undef OCP_SIGNAL_MT
+#define OCP_SIGNAL_MT(n, w) {#n, true, true, w, true},
+#define OCP_SIGNAL_MTR(n, w) {#n, true, true, w, true, true},
+#undef OCP_SIGNAL_ST
+#define OCP_SIGNAL_ST(n, w) {#n, true, false, w, true},
+#define OCP_SIGNAL_MS(n) {#n, false, true, 0},
+#define OCP_SIGNAL_MV(n, w) {#n, true, true, w},
+#define OCP_SIGNAL_MSR(n) {#n, false, true, 0, false, true},
+#define OCP_SIGNAL_MVR(n, w) {#n, true, true, w, false, true},
+#define OCP_SIGNAL_SS(n) {#n, false, false, 0},
+#define OCP_SIGNAL_SV(n, w) {#n, true, false, w},
+OcpSignalDesc ocpSignals [N_OCP_SIGNALS+1] = {
+OCP_SIGNALS
+{0}
+};
+
+#undef OCP_SIGNAL_MS
+#undef OCP_SIGNAL_MV
+#undef OCP_SIGNAL_SS
+#undef OCP_SIGNAL_SV
+
+static unsigned myfls(uint64_t n) {
+  for (unsigned i = sizeof(n)*8; i > 0; i--)
+    if (n & ((uint64_t)1 << (i - 1)))
+      return i;
+  return 0;
+}
+// Derive the OCP signal configuration based on the WIP profile
+static unsigned ceilLog2(uint64_t n) {
+  return n ? myfls(n - 1) : 0;
+}
+static unsigned floorLog2(uint64_t n) {
+  return myfls(n) - 1;
+}
+#define max(a,b) ((a) > (b) ? (a) : (b))
+
+static void fixOCP(Port *p) {
+  OcpSignal *o = p->ocp.signals;
+  OcpSignalDesc *osd = ocpSignals;
+  unsigned nAlloc = 0;
+  for (unsigned i = 0; i < N_OCP_SIGNALS; i++, o++, osd++)
+    if (o->value || o->width) {
+      if (osd->vector) {
+	if (osd->width)
+	  o->width = osd->width;
+      } else
+	o->width = 1;
+      nAlloc += o->width;
+    }
+  p->values = (uint8_t*)calloc(nAlloc, 1);
+  uint8_t *v = p->values;
+  o = p->ocp.signals;
+  osd = ocpSignals;
+  for (unsigned i = 0; i < N_OCP_SIGNALS; i++, o++, osd++)
+    if (o->value || o->width) {
+      o->value = v;
+      v += o->width;
+    }
+}
+
+const char *
+deriveOCP(Worker *w) {
+  //  printf("4095 %d 4096 %d\n", floorLog2(4095), floorLog2(4096));
+  static uint8_t s[1]; // a non-zero string pointer
+  Port *p = w->ports;
+  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+    OcpSignals *ocp = &p->ocp;
+    if (p->myClock)
+      ocp->Clk.value = s;
+    ocp->MCmd.width = 3;
+    switch (p->type) {
+    case WCIPort:
+      // Do the WCI port
+      p->master = false;
+      if (w->ctl.sizeOfConfigSpace <= 32)
+	ocp->MAddr.width = 5;
+      else
+	ocp->MAddr.width = ceilLog2(w->ctl.sizeOfConfigSpace);
+      if (w->ctl.sizeOfConfigSpace != 0)
+	ocp->MAddrSpace.value = s;
+      if (w->ctl.sub32BitConfigProperties)
+	ocp->MByteEn.width = 4;
+      if (w->ctl.writableConfigProperties)
+	ocp->MData.width = 32;
+      ocp->MFlag.width = 2;
+      ocp->MReset_n.value = s;
+      if (w->ctl.readableConfigProperties)
+	ocp->SData.width = 32;
+      ocp->SFlag.width = 2;  //FIXME should be 1
+      ocp->SResp.value = s;
+      ocp->SThreadBusy.value = s;
+      break;
+    case WSIPort:
+      p->master = p->wdi.isProducer ? true : false;
+      if (p->preciseBurst) {
+	ocp->MBurstLength.width =
+	  floorLog2((p->wdi.maxMessageValues * p->wdi.dataValueWidth  + p->dataWidth - 1)/
+		    p->dataWidth) + 1;
+	if (ocp->MBurstLength.width < 2)
+	  ocp->MBurstLength.width = 2;
+	if (p->impreciseBurst)
+	  ocp->MBurstPrecise.value = s;
+      } else
+	ocp->MBurstLength.width = 2;
+      if (p->byteWidth != p->dataWidth || p->wdi.zeroLengthMessages) {
+	ocp->MByteEn.width = p->dataWidth / p->byteWidth;
+	ocp->MByteEn.value = s;
+      }
+      if (p->dataWidth != 0)
+	ocp->MData.width =
+	  p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
+	  8 * p->dataWidth / p->byteWidth : p->dataWidth;
+      if (p->byteWidth != p->dataWidth && p->byteWidth != 8)
+	ocp->MDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
+      if (p->wsi.earlyRequest) {
+	ocp->MDataLast.value = s;
+	ocp->MDataValid.value = s;
+      }
+      if (p->wsi.abortable)
+	ocp->MFlag.width = 1;
+      if (p->wdi.numberOfOpcodes > 1)
+	ocp->MReqInfo.width = ceilLog2(p->wdi.numberOfOpcodes);
+      ocp->MReqLast.value = s;
+      ocp->MReset_n.value = s;
+      ocp->SReset_n.value = s;
+      ocp->SThreadBusy.value = s;
+      break;
+    case WMIPort:
+      p->master = true;
+      {
+	unsigned n = (p->wdi.maxMessageValues * p->wdi.dataValueWidth +
+		      p->dataWidth - 1) / p->dataWidth;
+	if (n > 1)
+	  ocp->MAddr.width = ceilLog2(n) + max(0, ceilLog2(p->dataWidth) - 3);
+	ocp->MAddrSpace.value = s;
+	if (p->preciseBurst) {
+	  ocp->MBurstLength.width = n < 4 ? 2 : floorLog2(n-1) + 1;
+	  if (p->impreciseBurst)
+	    ocp->MBurstPrecise.value = s;
+	} else
+	  ocp->MBurstLength.width = 2;
+      }
+      if (p->wdi.isProducer || p->wmi.talkBack)
+	ocp->MData.width =
+	  p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
+	  8 * p->dataWidth / p->byteWidth : p->dataWidth;
+      if ((p->wdi.isProducer || p->wmi.talkBack) && p->byteWidth != p->dataWidth)
+	ocp->MDataByteEn.width = p->dataWidth / p->byteWidth;
+      if ((p->wdi.isProducer || p->wmi.talkBack) &&
+	  p->byteWidth != p->dataWidth && p->byteWidth != 8)
+	ocp->MDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
+      ocp->MDataLast.value = s;
+      ocp->MDataValid.value = s;
+      if ((p->wdi.isProducer || p->wmi.bidirectional) &&
+	  (p->wdi.numberOfOpcodes > 1 || p->wdi.variableMessageLength))
+	ocp->MFlag.width = 8 + ceilLog2(p->wdi.maxMessageValues + 1);
+      ocp->MReqInfo.width = 1;
+      ocp->MReqLast.value = s;
+      ocp->MReset_n.value = s;
+      if (!p->wdi.isProducer || p->wmi.talkBack)
+	ocp->SData.width = p->dataWidth;
+      if (p->wdi.isProducer || p->wmi.talkBack)
+	ocp->SDataThreadBusy.value = s;
+      if ((!p->wdi.isProducer || p->wmi.bidirectional) &&
+	  (p->wdi.numberOfOpcodes > 1 || p->wdi.variableMessageLength))
+	ocp->SFlag.width = 8 + ceilLog2(p->wdi.maxMessageValues + 1);
+      ocp->SReset_n.value = s;
+      if (!p->wdi.isProducer || p->wmi.talkBack)
+	ocp->SResp.value = s;
+      if ((p->impreciseBurst || p->preciseBurst) &&
+	  (!p->wdi.isProducer || p->wmi.talkBack))
+	ocp->SRespLast.value = s;
+      ocp->SThreadBusy.value = s;
+      if (p->wmi.mflagWidth) {
+	ocp->MFlag.width = p->wmi.mflagWidth; // FIXME remove when shep kludge unnecessary
+	ocp->SFlag.width = p->wmi.mflagWidth; // FIXME remove when shep kludge unnecessary
+      }
+      break;
+    case WMemIPort:
+      p->master = true;
+      ocp->MAddr.width =
+	ceilLog2(p->wmemi.memoryWords) + ceilLog2(p->dataWidth/p->byteWidth);
+      ocp->MAddr.value = s;
+      if (p->preciseBurst)
+	ocp->MBurstLength.width = floorLog2(max(2, p->wmemi.maxBurstLength)) + 1;
+      else if (p->impreciseBurst)
+	ocp->MBurstLength.width = 2;
+      if (p->preciseBurst && p->impreciseBurst) {
+	ocp->MBurstPrecise.value = s;
+	ocp->MBurstSingleReq.value = s;
+      }
+      ocp->MData.width =
+	p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
+	  8 * p->dataWidth / p->byteWidth : p->dataWidth;
+      if (!p->preciseBurst && !p->impreciseBurst && p->byteWidth != p->dataWidth)
+	ocp->MByteEn.width = p->dataWidth / p->byteWidth;
+      if ((p->preciseBurst || p->impreciseBurst) && p->byteWidth != p->dataWidth)
+	ocp->MDataByteEn.width = p->dataWidth / p->byteWidth;
+      if (p->byteWidth != p->dataWidth && p->byteWidth != 8)
+	ocp->MDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
+      if (p->preciseBurst || p->impreciseBurst) {
+	ocp->MDataLast.value = s;
+	ocp->MDataValid.value = s;
+	ocp->MReqLast.value = s;
+	ocp->SRespLast.value = s;
+      }
+      ocp->MReset_n.value = s;
+      if ((p->preciseBurst || p->impreciseBurst) &&
+	  p->wmemi.readDataFlowControl)
+	ocp->MRespAccept.value = s;
+      ocp->SCmdAccept.value = s;
+      ocp->SData.width =
+	p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
+	8 * p->dataWidth / p->byteWidth : p->dataWidth;
+      if ((p->preciseBurst || p->impreciseBurst) && p->wmemi.writeDataFlowControl)
+	ocp->SDataAccept.value = s;
+      if (p->byteWidth != p->dataWidth && p->byteWidth != 8)
+	ocp->SDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
+      ocp->SResp.value = s;
+      break;
+    case WTIPort:
+      ocp->MData.width = p->dataWidth;
+      p->master = false;
+      ocp->SReset_n.value = s;
+      ocp->SThreadBusy.value = s;
+      break;
+    default:
+      return esprintf("No WIP port type specified for interface \"%s\"", p->name);
+    }
+    fixOCP(p);
+  }
+  return 0;
+}

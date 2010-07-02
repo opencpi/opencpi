@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include <memory>
 #include <sys/uio.h>
-#include <CpiDriver.h>
+#include <sys/time.h>
+#include <math.h>
+#include "CpiDriver.h"
 #include "CpiApi.h"
 
 #define W(s) write(2, s, sizeof(s) - 1)
@@ -61,6 +63,55 @@ namespace CPI {
   }
 }
 
+#define D2E7  128.0
+#define D2E15 32768.0
+#define NPTS  4096
+#define PI    3.1415926536
+#define FREQ  32.0  // In samples per radian, divide by 2 to get fraction of Nyquist
+#define GAIN  0.99
+// fill a buffer of "length" bytes with 16 bit sized cosine values
+static void
+doCosine(int16_t *data, unsigned length) {
+  unsigned npts = (length + sizeof(*data) - 1) / sizeof(*data);
+  double phi = 0.0, dphi = 2.*PI / FREQ;
+
+  for (unsigned i=0; i<npts ;i++, phi += dphi) {
+    double d = cos(phi) * D2E15 * GAIN + 0.5;
+    int16_t s = (int16_t)d;
+    //    printf(" 0x%4x %4d %f\n", s & 0xffff, s, d);
+    *data++ = s;
+  }
+}
+
+static void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
+{
+  while (nbytes > 128) {
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    *to++ = *from++;
+    nbytes -= 128;
+  }
+  while (nbytes > 8) {
+    *to++ = *from++;
+    nbytes -= 8;
+  }
+  if (nbytes)
+    memcpy(to, from, nbytes);
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -69,10 +120,10 @@ int main(int argc, char *argv[])
   unsigned long bufferCount[10][2] =
     {{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2}};
   const char *active[10][2] = {{0}};
-  unsigned long bufferSize = 2048, ioCount = 1, ioSize = 16, memorySize = 0;
+  unsigned long bufferSize = 2048, ioCount = 1, ioSize = 16, memorySize = 0, delay = 0;
   uint64_t memoryBase = 0;
   bool probe = false, loop = false, doread = true, two = false, same = true,
-    acquire = false, emit = false;
+    acquire = false, emit = false, dummy = false, cosine = false, psd = false;
   char *firstarg = 0, *secondarg = 0, *file = 0, *ofile = 0;
   if (argc == 1) {
     fprintf(stderr, "Usage is: testRpl <options> [<container-name>]\n");
@@ -94,13 +145,28 @@ int main(int argc, char *argv[])
             "-R\tSuppress the read-back and test of what is written\n"
             "-o\tOutput file to write data into\n"
             "-a\tAcquire data from acquistion source, not file or pattern\n"
-            "-e\tEmit data to DAC (not implemented)\n"
+            "-e\tEmit data to DAC\n"
+	    "-c\tCosine data generator used for test data\n"
+	    "-p\tUse the PSD bitstream configuration\n"
             );
     return 1;
   }
   for (char **ap = &argv[1]; *ap; ap++)
     if (**ap == '-')
       switch ((*ap)[1]) {
+      case 'y':
+        delay = atoi(*++ap);
+	break;
+      case 'p':
+	psd = true;
+	break;
+      case 'e':
+	emit = true;
+	doread = false;
+	break;
+      case 'c':
+	cosine = true;
+	break;
       case 'f':
         file = *++ap;
         break;
@@ -168,6 +234,9 @@ int main(int argc, char *argv[])
       case 'o':
         ofile = *++ap;
         break;
+      case 'z':
+	dummy = true;
+	break;
       case 'r':
         {
           unsigned n = 0, i = 0;
@@ -217,7 +286,7 @@ int main(int argc, char *argv[])
   if (two)
     printf("Using two boards: %s and %s\n", firstarg, secondarg);
   // If we know there is one, try to create it.
-  CC::Interface *rplContainer, *rplContainer2;
+  CC::Interface *rplContainer, *rplContainer2 = 0;
 
 
 
@@ -268,20 +337,20 @@ int main(int argc, char *argv[])
         &a = *ap,
         &a2 = two ? *ap2 : a;
 
-      CC::Worker *w[12] = {((CC::Worker *)0),
-                           &a.createWorker("file", 0, "FC", "FCi"),
-                           &a.createWorker("file", 0, "Bias", "BIASi"),
-                           &a.createWorker("file", 0, "FP", "FPi"),
-                           acquire ?
-                           &a.createWorker("file", 0, "ADC", "ADCi") : 0,
-                           emit ?
-                           &a.createWorker("file", 0, "DAC", "DACi") : 0,
-                          two ? &a2.createWorker("file", 0, "FC", "FCi") : 0,
-                          two ? &a2.createWorker("file", 0, "Bias", "BIASi") : 0,
-                          two ? &a2.createWorker("file", 0, "FP", "FPi") : 0,
-                           ((CC::Worker *)0),
-                           ((CC::Worker *)0),
-                          ((CC::Worker *)0)
+      CC::Worker *w[13] = {
+	((CC::Worker *)0),
+	&a.createWorker("file", 0, "FC", "FCi"),                                 // w2# 1
+	&a.createWorker("file", 0, "Bias", "BIASi"),                             // w3# 2
+	&a.createWorker("file", 0, "FP", "FPi"),                                 // w4# 3
+	acquire ? &a.createWorker("file", 0, "ADC", "ADCi") : 0,                 //w10# 4
+	emit ? &a.createWorker("file", 0, "DAC", "DACi") : 0,                    //w11# 5
+	two ? &a2.createWorker("file", 0, "FC", "FCi") : 0,                      // w2# 6
+	two ? &a2.createWorker("file", 0, "Bias", "BIASi") : 0,                  // w3# 7
+	two ? &a2.createWorker("file", 0, "FP", "FPi") : 0,                      // w4# 8
+	psd ? &a.createWorker("file", 0, "WsiSplitter2x2", "WsiSplitter2x2i"):0, // w5# 9
+	psd ? &a.createWorker("file", 0, "FrameGate", "FrameGatei") : 0,         // w6#10
+	psd ? &a.createWorker("file", 0, "PSD", "PSDi") : 0,                      // w7#11
+	psd ? &a.createWorker("file", 0, "DramServer", "DramServeri") : 0        //w12#12
       };
 
       CC::Port &w1in = w[1]->getPort("WMIin");
@@ -297,8 +366,11 @@ int main(int argc, char *argv[])
       CC::Port &w3in = w[3]->getPort("WSIin");
 
       CC::Port &w3out = w[3]->getPort("WMIout");
+      CC::Port &w3sout = w[3]->getPort("WSIout");
 
       CC::Port &w4out = acquire ? w[4]->getPort("ADCout") : *(CC::Port *)0;
+
+      CC::Port &w5in = emit ? w[5]->getPort("DACin") : *(CC::Port *)0;
 
       CC::Port &w6in = two ? w[6]->getPort("WMIin") : *(CC::Port *)0;
       CC::Port &w6out = two ? w[6]->getPort("WSIout") : *(CC::Port *)0;;
@@ -306,6 +378,9 @@ int main(int argc, char *argv[])
       CC::Port &w7out = two ? w[7]->getPort("WSIout") : *(CC::Port *)0;;
       CC::Port &w8in = two ? w[8]->getPort("WSIin") : *(CC::Port *)0;;
       CC::Port &w8out = two ? w[8]->getPort("WMIout") : *(CC::Port *)0;;
+      CC::Port &w9in0 = psd ? w[9]->getPort("WSIinB") : *(CC::Port *)0;;
+      CC::Port &w9in1 = psd ? w[9]->getPort("WSIinA") : *(CC::Port *)0;;
+      CC::Port &w9out0 = psd ? w[9]->getPort("WSIoutC") : *(CC::Port *)0;;
 
       CPI::Util::PValue
         p00[] = {CU::PVULong("bufferCount", bufferCount[0][0]),
@@ -329,25 +404,36 @@ int main(int argc, char *argv[])
 
 
       CC::Property pfc(*w[1], "control");
-
       CC::Property pfp(*w[3], "control");
+      if (psd) {
+	CC::Property splitCtrl(*w[9], "splitCtrl");
+	const unsigned IN_FROM_ADC = 0x1, IN_FROM_SMA0 = 0x100;
+	splitCtrl.setULongValue(acquire ? IN_FROM_ADC : IN_FROM_SMA0);
+      }
 
       // Caller knows data type, we can add a debug-mode runtime check
       pfc.setULongValue(acquire ? 0 : 1);
 
       pfp.setULongValue(emit ? 0 : 2);
+      
 
       if (loop)
         w1in.loopback(w3out);
 
       if (acquire)
-        w4out.connect(w1sin);
+        w4out.connect(psd ? w9in1 : w1sin);
 
-      w1out.connect(w2in);
+      // connect sma0 either directory to bias/delay, or if psd, to the second input of the splitter
+      w1out.connect(psd ? w9in0 : w2in);
+      if (psd)
+	w9out0.connect(w2in);
 
       w2out.connect(w3in);
 
-      CC::ExternalPort *myOut =
+      if (emit) {
+	w3sout.connect(w5in);
+      }
+     CC::ExternalPort *myOut =
         acquire ? 0 : &w1in.connectExternal("w0out", p01, p10);
 
       if (two) {
@@ -359,6 +445,15 @@ int main(int argc, char *argv[])
       CC::ExternalPort &myIn = two ? w8out.connectExternal ( "w0in", p00, p81 )
                                    : w3out.connectExternal ( "w0in", p00, p31 );
 
+      if (delay) {
+	CC::Property dlyCtrl(*w[2], "dlyCtrl");
+	CC::Property dlyHoldoffBytes(*w[2], "dlyHoldoffBytes");
+	CC::Property dlyHoldoffCycles(*w[2], "dlyHoldoffCycles");
+	dlyCtrl.setULongValue(7);
+	dlyHoldoffBytes.setULongValue(delay);
+	w[12]->start();
+      }
+
       w[1]->start();
       w[2]->start();
       w[3]->start();
@@ -367,12 +462,19 @@ int main(int argc, char *argv[])
         w[7]->start();
         w[8]->start();
       }
-
+      if (psd)
+	w[9]->start();
+      if (emit) {
+	CC::Property dacCtrl(*w[5], "dacControl");
+	dacCtrl.setULongValue(0x78);
+	w[5]->start();
+      }
       if (acquire)
         w[4]->start();
-      unsigned outLeft, inLeft, inN = 0, outN = 0;
+      unsigned outLeft = 0, inLeft = 0, inN = 0, outN = 0;
       int ifd = -1, cfd = -1, ofd = -1;
       off_t bytes;
+      static int16_t cosineBuf[4096];
       uint8_t *cbuf = (uint8_t*)malloc(ioSize);
       if (file) {
         if ((ifd = open(file, O_RDONLY)) < 0 ||
@@ -383,14 +485,21 @@ int main(int argc, char *argv[])
           return 1;
         }
         inLeft = bytes - (bytes % ioSize);
-      } else
-        inLeft = ioCount * ioSize;
-      outLeft = acquire ? 0 : inLeft;
+      } else {
+	if (cosine)
+	  doCosine(cosineBuf, sizeof(cosineBuf));
+	if (!emit)
+	  inLeft = ioCount * ioSize;
+      }
+      outLeft = acquire ? 0 : (emit ? ioCount * ioSize : inLeft);
       if (ofile && (ofd = open(ofile, O_WRONLY|O_CREAT|O_TRUNC)) < 0) {
         fprintf(stderr, "Can't open file \"%s\" for output\n", ofile);
         return 1;
       }
 
+      struct timeval tv0, tv1, tv2;
+      gettimeofday(&tv0, 0);
+      gettimeofday(&tv1, 0);
       // While anything to do
       while (outLeft || inLeft) {
         uint32_t length;
@@ -407,7 +516,9 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Error reading input file\n");
                 return 1;
               }
-            } else
+            } else if (cosine)
+	      memcpy64((uint64_t*)data, (uint64_t*)cosineBuf, ioSize);
+	    else if (!dummy)
               for (unsigned w = 0; w < ioSize/sizeof(uint32_t); w++)
                 ((uint32_t *)(data))[w] = outN * (ioSize/sizeof(uint32_t)) + w;
             pBuffer->put(outN, ioSize, false);
@@ -468,11 +579,11 @@ int main(int argc, char *argv[])
               {data, ioSize}
             };
             unsigned n = ioSize ? 2 : 1;
-            if (writev(ofd, io, n) != sizeof(head) + ioSize) {
+            if (writev(ofd, io, n) != (int)(sizeof(head) + ioSize)) {
               fprintf(stderr, "Error writing output file\n");
               return 1;
             }
-          } else
+          } else if (!dummy)
             for (unsigned w = 0; w < ioSize/sizeof(uint32_t); w++)
               if (d32[w] != inN * ioSize/sizeof(uint32_t) + w) {
                 fprintf(stderr, "Bad data 0x%x, len %d w %d inN %d should be 0x%lx\n",
@@ -484,7 +595,19 @@ int main(int argc, char *argv[])
             throw CC::ApiError(oops, NULL);
         }
       }
-      printf("Successfully sent and received %ld messages\n", ioCount);
+      gettimeofday(&tv2, 0);
+      uint64_t t0 = tv0.tv_sec * 1000000LL + tv0.tv_usec;
+      uint64_t t1 = tv1.tv_sec * 1000000LL + tv1.tv_usec;
+      uint64_t t2 = tv2.tv_sec * 1000000LL + tv2.tv_usec;
+      uint64_t ioBytes = (uint64_t)ioCount * ioSize;
+      fprintf(stderr, "Bytes %lld, Time delta = %lld, %f MBytes/seconds, Framesize %lu\n",
+	      (long long)ioBytes,(long long)((t2 - t1) - (t1 - t0)),
+	      (double)ioBytes/(double)((t2-t1)-(t1-t0)), ioSize);
+      printf("Successfully %s%s%s %ld messages\n",
+	     acquire ? "" : "sent",
+	     acquire || emit ? "" : " and ",
+	     emit ? "" : "received",
+	     ioCount);
       if (file)
         printf("Contents of file \"%s\" successfully sent and received\n",
                file);

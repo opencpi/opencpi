@@ -35,7 +35,7 @@ ALLDEFS += $(EXTRA_DEFS)
 ALLINC += $(wildcard ../../*/include) $(wildcard ../../*/idl) $(EXTRA_INCLUDES)
 
 ifeq ($(BUILDSHAREDLIBRARIES),1)
-ifeq ($(SYSTEM),linux)
+ifneq ($(filter linux macos,$(SYSTEM)),)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC
 endif

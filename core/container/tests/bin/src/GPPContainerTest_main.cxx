@@ -171,6 +171,9 @@ void writeDesc( std::string& desc, const char* file_name )
   std::string fn(fpath);
   int fd;
   fn += file_name;
+#ifndef O_DIRECT
+#define O_DIRECT 0
+#endif
   if ( (fd = open( fn.c_str(), O_CREAT | O_RDWR | O_DIRECT | O_DSYNC, 0666 )) < 0 ) {
     printf("Could not read the port descriptor file (%s)\n",  fn.c_str() );
     printf("Good bye\n");

@@ -7,6 +7,7 @@ ALLINC += $(CONTAINER_EXPORTS) \
 	$(UTIL_EXPORTS) \
 	$(LOGGER_EXPORTS) \
 	$(CPIOS_EXPORTS)
+
 ALLLIBS += $(CP289_CONTAINER_LIBS) $(CONTAINER_LIBS) \
 	$(DATA_TRANSPORT_LIBS) \
 	$(DATA_TRANSFER_LIBS) \
@@ -35,6 +36,7 @@ DYNOBJS += ../../../cp289_container/$(OUTDIR)/CpiContainerDriver.obj \
 #	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtSocketsXfer.obj
 endif
 
+ifdef PPP_LIB
 BASICLIBS += -L$(PPP_LIB) -lrose
-
+endif
 SYSLIBS += dl

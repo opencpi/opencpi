@@ -1,0 +1,13 @@
+<ComponentSpec Name="delay">
+  <Properties>
+     <Property Name="dlyCtrl" Readable="true" Writable="true"/>
+     <Property Name="dlyHoldoffBytes" Readable="true" Writable="true"/>
+     <Property Name="dlyHoldoffCycles" Readable="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="wsiS1">
+    <xi:include href="test_protocol.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="wsiM1" Producer="true">
+    <xi:include href="stream_protocol.xml"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

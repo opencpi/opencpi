@@ -1,0 +1,10 @@
+// THIS FILE WAS ORIGINALLY GENERATED ON Sun Jun 27 13:34:27 2010 EDT
+// BASED ON THE FILE: framegate.xml
+// YOU ARE EXPECTED TO EDIT IT
+// This file contains the implementation skeleton for worker: framegate
+
+`include "framegate_impl.v"
+
+
+
+endmodule //framegate

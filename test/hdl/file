@@ -1,0 +1,735 @@
+sdflklkjsdlkjdflgkjdflgjdflgjdkfgsdffkjkjshdkfhksjdfhsjfX0
+<artifact 
+<worker name="GCD1" occpIndex="0">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Boolean" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="GCD2" occpIndex="1">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Boolean" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" occpIndex="2">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" occpIndex="3">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+</artifact>
+X2165
+<artifact>
+<worker name="GCD1" occpIndex="0">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Boolean" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="GCD2" occpIndex="1">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Boolean" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" occpIndex="2">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" occpIndex="3">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+</artifact>
+X2165
+<artifact>
+<worker name="GCD1" occpIndex="0">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="GCD2" occpIndex="1">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Boolean" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" occpIndex="2">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" occpIndex="3">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+</artifact>
+X2162
+<artifact>
+<worker name="GCD1" occpIndex="0">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="GCD2" occpIndex="1">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" occpIndex="2">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" occpIndex="3">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+</artifact>
+X2159
+<artifact>
+<worker name="GCD1" occpIndex="0" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="GCD2" occpIndex="1">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" occpIndex="2">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" occpIndex="3">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+</artifact>
+X2196
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer">
+<port name="WMIout"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="13" attachment="pcie1" ocdpSize="32K" ocdpOffset='0'/>
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="14" attachment="pcie1" ocdpSize='32k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="FPi" worker="FP" occpIndex="3"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X2243
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer">
+<port name="WMIout"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="13" attachment="pcie1" ocdpSize="16K" ocdpOffset='0'/>
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="14" attachment="pcie1" ocdpSize='16k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="FPi" worker="FP" occpIndex="3"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X2243
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer" controlOperations="initialize">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer" controlOperations="initialize">
+<port name="WMIout"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="13" attachment="pcie1" ocdpSize="16K" ocdpOffset='0'/>
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="14" attachment="pcie1" ocdpSize='16k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="FPi" worker="FP" occpIndex="3"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X2367
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer" controlOperations="initialize">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer" controlOperations="initialize">
+<port name="WMIout"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="13" attachment="pcie1" ocdpSize="16K" ocdpOffset='0'/>
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="14" attachment="pcie1" ocdpSize='16k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="FPi" worker="FP" occpIndex="3"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X2367
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="Bias" controlOperations="initialize">
+<property name="biasValue" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer" controlOperations="initialize">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer" controlOperations="initialize">
+<port name="WMIout"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="13" attachment="pcie1" ocdpSize="16K" ocdpOffset='0'/>
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="14" attachment="pcie1" ocdpSize='16k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="BIASi" worker="Bias" occpIndex="3"/>
+<instance name="FPi" worker="FP" occpIndex="4"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X2633
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="Bias" controlOperations="initialize">
+<property name="biasValue" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer" controlOperations="initialize">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer" controlOperations="initialize">
+<port name="WMIout"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="13" attachment="pcie1" ocdpSize="16K" ocdpOffset='0'/>
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="14" attachment="pcie1" ocdpSize='16k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="BIASi" worker="Bias" occpIndex="3"/>
+<instance name="FPi" worker="FP" occpIndex="4"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="BIASi" in="WSIin" />
+<connection from="BIASi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X2696
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="Bias" controlOperations="initialize">
+<property name="biasValue" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer" controlOperations="initialize">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer" controlOperations="initialize">
+<port name="WMIout"/>
+</worker>
+<worker name="ADC" controlOperations="initialize">
+<port name="WSIout"/>
+</worker>
+<worker name="DAC" controlOperations="initialize">
+<port name="WSIin" provider="true"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="13" attachment="pcie1" ocdpSize="16K" ocdpOffset='0'/>
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="14" attachment="pcie1" ocdpSize='16k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="BIASi" worker="Bias" occpIndex="3"/>
+<instance name="FPi" worker="FP" occpIndex="4"/>
+<instance name="ADCi" worker="ADC" occpIndex="10"/>
+<instance name="DACi" worker="DAC" occpIndex="11"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="BIASi" in="WSIin" />
+<connection from="BIASi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X3057
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="Bias" controlOperations="initialize">
+<property name="biasValue" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer" controlOperations="initialize">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer" controlOperations="initialize">
+<port name="WMIout"/>
+</worker>
+<worker name="ADC" controlOperations="initialize" timeout="32000">
+<port name="WSIout"/>
+</worker>
+<worker name="DAC" controlOperations="initialize">
+<port name="WSIin" provider="true"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="13" attachment="pcie1" ocdpSize="16K" ocdpOffset='0'/>
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="14" attachment="pcie1" ocdpSize='16k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="BIASi" worker="Bias" occpIndex="3"/>
+<instance name="FPi" worker="FP" occpIndex="4"/>
+<instance name="ADCi" worker="ADC" occpIndex="10"/>
+<instance name="DACi" worker="DAC" occpIndex="11"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="BIASi" in="WSIin" />
+<connection from="BIASi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X3073
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="Bias" controlOperations="initialize">
+<property name="biasValue" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" controlOperations="initialize">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer" controlOperations="initialize">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer" controlOperations="initialize">
+<port name="WMIout"/>
+</worker>
+<worker name="ADC" controlOperations="initialize" timeout="32000">
+<port name="ADCout"/>
+</worker>
+<worker name="DAC" controlOperations="initialize">
+<port name="WSIin" provider="true"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="13" attachment="pcie1" ocdpSize="16K" ocdpOffset='0'/>
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="14" attachment="pcie1" ocdpSize='16k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="BIASi" worker="Bias" occpIndex="3"/>
+<instance name="FPi" worker="FP" occpIndex="4"/>
+<instance name="ADCi" worker="ADC" occpIndex="10"/>
+<instance name="DACi" worker="DAC" occpIndex="11"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="BIASi" in="WSIin" />
+<connection from="BIASi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X3073
+<artifact>
+<worker name="GCD" controlOperations="initialize start">
+<property name="arg1" readable="true" writable="true" type="ULong" />
+<property name="arg2" readable="true" writable="true" type="ULong" />
+<property name="startResult" readable="true" writable="true" type="ULong" />
+<property name="ready" readable="true" type="Bool" />
+<property name="counter" readable="true" type="ULong" />
+<property name="init18" readable="true" writable="true" type="UChar" />
+<property name="init19" readable="true" writable="true" type="UChar" />
+<property name="init1a" readable="true" writable="true" type="UChar" />
+<property name="init1b" readable="true" writable="true" type="UChar" />
+<property name="timeout" readable="true" writable="true" type="ULong" />
+<property name="attention" readable="true" writable="true" type="ULong" />
+</worker>
+<worker name="FC" controlOperations="initialize">
+<property name="control" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WMIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="Bias" controlOperations="initialize">
+<property name="biasValue" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+</worker>
+<worker name="FP" controlOperations="initialize">
+<property name="control" readable="true" writable="true" type="ULong" />
+<port name="WSIin" provider="true"/>
+<port name="WSIout" provider="false"/>
+<port name="WMIout" provider="false"/>
+</worker>
+<worker name="PCIeProducer" controlOperations="initialize">
+<port name="WMIin" provider='true'/>
+</worker>
+<worker name="PCIeConsumer" controlOperations="initialize">
+<port name="WMIout"/>
+</worker>
+<worker name="ADC" controlOperations="initialize" timeout="32000">
+<port name="ADCout"/>
+</worker>
+<worker name="DAC" controlOperations="initialize">
+<port name="WSIin" provider="true"/>
+</worker>
+<!-- Interconnects provide a bridge from workers inside to an attachment of the node to some external interconnect -->
+<interconnect name="DPFC" worker="PCIeConsumer" occpIndex="13" attachment="pcie1" ocdpSize="16K" ocdpOffset='0'/>
+<interconnect name="DPFP" worker="PCIeProducer" occpIndex="14" attachment="pcie1" ocdpSize='16k' ocdpOffset='32k'/>
+<!-- Actual (static) workers  -->
+<instance name="GCD1" worker="GCD" occpIndex="0"/>
+<instance name="GCD2" worker="GCD" occpIndex="1"/>
+<instance name="FCi" worker="FC" occpIndex="2"/>
+<instance name="BIASi" worker="Bias" occpIndex="3"/>
+<instance name="FPi" worker="FP" occpIndex="4"/>
+<instance name="ADCi" worker="ADC" occpIndex="10"/>
+<instance name="DACi" worker="DAC" occpIndex="11"/>
+<connection from="DPFC" out="WMIout" to="FCi" in="WMIin" />
+<connection from="FCi" out="WSIout" to="BIASi" in="WSIin" />
+<connection from="BIASi" out="WSIout" to="FPi" in="WSIin" />
+<connection from="FPi" out="WMIout" to="DPFP" in="WMIin" />
+</artifact>
+X2939

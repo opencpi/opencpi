@@ -1,0 +1,25 @@
+<HdlImplementation Name="splitter2x2" Language="Verilog" Pattern="%w%M%0_">
+  <xi:include href="splitter2x2_spec.xml"/>
+  <!-- force byte enables because shep always uses them -->
+  <ControlInterface Sub32BitConfigProperties="true">
+    <Property Name="dummy0x08"/>
+    <Property Name="dummy0x10"/>
+    <Property Name="dummy0x14"/>
+    <Property Name="dummy0x18"/>
+    <Property Name="portStatus" Readable="true"/>
+    <Property Name="wsiS0pMesgCount" Readable="true"/>
+    <Property Name="wsiS0iMesgCount" Readable="true"/>
+    <Property Name="wsiS1pMesgCount" Readable="true"/>
+    <Property Name="wsiS1iMesgCount" Readable="true"/>
+    <Property Name="wsiM0pMesgCount" Readable="true"/>
+    <Property Name="wsiM0MesgCount" Readable="true"/>
+    <Property Name="wsiM1pMesgCount" Readable="true"/>
+    <Property Name="wsiM1iMesgCount" Readable="true"/>
+    <Property Name="ctrlInit" Parameter="true"/>
+    <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+  </ControlInterface>
+  <StreamInterface Name="wsiS0" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+  <StreamInterface Name="wsiS1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+  <StreamInterface Name="wsiM0" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+  <StreamInterface Name="wsiM1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+</HdlImplementation>

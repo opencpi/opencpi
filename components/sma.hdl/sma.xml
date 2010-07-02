@@ -1,0 +1,25 @@
+<HdlImplementation Name="sma" Language="Verilog" >
+  <xi:include href="sma_spec.xml"/>
+  <ControlInterface Name="wciS0" Sub32BitConfigProperties="true">
+    <Property Name="mesgCount" Readable="true"/>
+    <Property Name="abortCount" Readable="true"/>
+    <Property Name="dummy0"/>
+    <Property Name="thisMesg" Readable="true"/>
+    <Property Name="lastMesg" Readable="true"/>
+    <Property Name="portStatus" Readable="true"/>
+    <Property Name="dummy1"/>
+    <Property Name="wsiSpMesgCount" Readable="true"/>
+    <Property Name="wsiSiMesgCount" Readable="true"/>
+    <Property Name="wsiStBusyCount" Readable="true"/>
+    <Property Name="wsiMpMesgCount" Readable="true"/>
+    <Property Name="wsiMiMesgCount" Readable="true"/>
+    <Property Name="wsiMtBusyCount" Readable="true"/>
+    <Property Name="smaCtrlInit" Parameter="true"/>
+    <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+  </ControlInterface>
+  <StreamInterface Name="wsiS1" ImpreciseBurst="true" PreciseBurst="true" EarlyRequest="false" DataWidth="32"/>
+  <StreamInterface Name="wsiM1"  ImpreciseBurst="True" PreciseBurst="true" DataWidth="32"/>
+  <MessageInterface Name="wmiM"  ByteWidth="8" PreciseBurst="True" MFlagWidth="32" DataWidth="32" TalkBack="true" Bidirectional="true"/>
+</HdlImplementation>
+
+

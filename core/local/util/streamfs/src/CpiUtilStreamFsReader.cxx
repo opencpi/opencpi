@@ -17,11 +17,11 @@
 #include <ctime>
 #include <cstring>
 #include <cstdlib>
-#include <CpiOsAssert.h>
-#include <CpiOsMutex.h>
-#include <CpiUtilUri.h>
-#include <CpiUtilMisc.h>
-#include <CpiUtilAutoMutex.h>
+#include "CpiOsAssert.h"
+#include "CpiOsMutex.h"
+#include "CpiUtilUri.h"
+#include "CpiUtilMisc.h"
+#include "CpiUtilAutoMutex.h"
 #include "CpiUtilVfs.h"
 #include "CpiUtilVfsIterator.h"
 #include "CpiUtilStreamFsReader.h"

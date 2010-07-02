@@ -64,7 +64,8 @@ namespace CPI {
             myParent->addChild(*this);
           }
           ~Child<TParent,TChild> () {
-            myParent->Parent<TChild>::releaseChild(*this);
+	    if (myParent) // FIXME:  contructor should never have this be NULL
+	      myParent->Parent<TChild>::releaseChild(*this);
           }
     };
 

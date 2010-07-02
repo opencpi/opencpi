@@ -1,0 +1,18 @@
+  <ComponentSpec Name="splitter2x2">
+    <Properties >
+      <Property Name="dummy0"/>
+      <Property Name="splitCtrl" Readable="true" Writable="true"/>
+    </Properties>
+    <DataInterfaceSpec Name="wsiS0">
+      <xi:include href="stream_protocol.xml"/>
+    </DataInterfaceSpec>
+    <DataInterfaceSpec Name="wsiS1" Optional="true">
+      <xi:include href="stream_protocol.xml"/>
+    </DataInterfaceSpec>
+    <DataInterfaceSpec Name="wsiM0" Producer="true">
+      <xi:include href="stream_protocol.xml"/>
+    </DataInterfaceSpec>
+    <DataInterfaceSpec Name="wsiM1" Producer="true" Optional="true">
+      <xi:include href="stream_protocol.xml"/>
+    </DataInterfaceSpec>
+  </ComponentSpec>

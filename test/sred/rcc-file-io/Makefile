@@ -29,13 +29,20 @@ endif
 # is Linux, and that it was built using $(OUTDIR)=linux-bin.
 #
 
-CPI_RCC_BINDER = $(CPIDIR)/tools/local/binder/linux-bin/cpi-rcc-binder
-CPI_RCC_GEN = $(CPIDIR)/tools/local/binder/linux-bin/cpi-rcc-gen
+CPI_RCC_BINDER = $(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-binder
+DO_CPI_RCC_BINDER=echo 0 is $$0;\
+  export $(ENV)=$(CPIDIR)/lib/$(SYSTEM)-bin;\
+  $(CPI_RCC_BINDER)
+CPI_RCC_GEN = $(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-gen
 CFLAGS += -I.
 
 ifeq ($(shell if test -x $(CPI_RCC_BINDER) ; then echo "ok" ; fi),ok)
 ifeq ($(SYSTEM),linux)
 EXT=so
+ENV=LD_LIBRARY_PATH
+else ifeq ($(SYSTEM),macos)
+EXT=dylib
+ENV=DYLD_LIBRARY_PATH
 else
 EXT=out
 endif
@@ -61,19 +68,19 @@ $(OUTDIR)/FileCopy.zip: $(OUTDIR)/FileSource.zip $(OUTDIR)/FileSink.zip $(OUTDIR
 	zip -j $@ output/* $^ $(SGAC_FILES)
 
 $(OUTDIR)/FileSource.zip: $(OUTDIR)/FileSource.$(EXT) output/FileSource.scd.xml
-	$(CPI_RCC_BINDER) \
+	$(DO_CPI_RCC_BINDER) \
 		--output=$@ \
 		--workerDll=$(OUTDIR)/FileSource.$(EXT) \
 		--worker=FileSourceWorker=output/FileSource.scd.xml
 
 $(OUTDIR)/FileSink.zip: $(OUTDIR)/FileSink.$(EXT) output/FileSink.scd.xml
-	$(CPI_RCC_BINDER) \
+	$(DO_CPI_RCC_BINDER) \
 		--output=$@ \
 		--workerDll=$(OUTDIR)/FileSink.$(EXT) \
 		--worker=FileSinkWorker=output/FileSink.scd.xml
 
 $(OUTDIR)/FileTee.zip: $(OUTDIR)/FileTee.$(EXT) output/FileTee.scd.xml
-	$(CPI_RCC_BINDER) \
+	$(DO_CPI_RCC_BINDER) \
 		--output=$@ \
 		--workerDll=$(OUTDIR)/FileTee.$(EXT) \
 		--worker=FileTeeWorker=output/FileTee.scd.xml
@@ -91,7 +98,7 @@ $(OUTDIR)/FileSource.o: FileSource.c FileSource.h
 $(OUTDIR)/FileSink.o: FileSink.c FileSink.h
 $(OUTDIR)/FileTee.o: FileTee.c FileTee.h
 
-ifeq ($(SYSTEM),linux)
+ifneq ($(filter linux macos,$(SYSTEM)),)
 
 ifeq ($(CROSS_HOST),)
 CC = gcc
@@ -99,7 +106,7 @@ else
 CC = $(CROSS_BUILD_BIN)/$(CROSS_HOST)-gcc
 endif
 
-$(OUTDIR)/%.so : $(OUTDIR)/%.o
+$(OUTDIR)/%.$(EXT) : $(OUTDIR)/%.o
 	$(CC) -shared -o $@ $(LDFLAGS) $<
 
 $(OUTDIR)/%.o : %.c

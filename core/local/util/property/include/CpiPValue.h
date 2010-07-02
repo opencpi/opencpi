@@ -30,8 +30,8 @@
 #ifndef CPI_PVALUE_H
 #define CPI_PVALUE_H
 
-#include <CpiMetadataProperty.h>
 #include <cstring>
+#include "CpiMetadataProperty.h"
 
 
 namespace CPI {
@@ -45,11 +45,17 @@ namespace CPI {
     // A less type-safe would be to use varargs, which only saves a single character per property...
     // PVList props("label", PVString, "foolabel", "nbuffers", PVUlong, 10, 0);
 
+    union Value {
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run v##pretty;
+CPI_PROPERTY_DATA_TYPES
+#undef CPI_DATA_TYPE
+    };
     class PValue {
     public:
       const char *name;
       CPI::Metadata::Property::Type type;
       int width;
+      // Anonymous union here for convenience even though redundant with above.
       union {
 #define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run v##pretty;
 CPI_PROPERTY_DATA_TYPES
@@ -68,15 +74,15 @@ CPI_PROPERTY_DATA_TYPES
        return NULL;
      }
     };
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)        \
-    class PV##pretty : public PValue {                                \
-    public:                                                        \
-          inline PV##pretty(const char *aname, const run value) {        \
-            name = aname;                                        \
-            type = CPI::Metadata::Property::CPI_##pretty;        \
-            v##pretty = (run)value;                                \
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)   \
+    class PV##pretty : public PValue {                          \
+    public:                                                     \
+          inline PV##pretty(const char *aname, const run val) { \
+            name = aname;                                       \
+            type = CPI::Metadata::Property::CPI_##pretty;       \
+            v##pretty = (run)val;                               \
             width = sizeof(v##pretty);                          \
-          }                                                        \
+          }                                                     \
     };
     CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE

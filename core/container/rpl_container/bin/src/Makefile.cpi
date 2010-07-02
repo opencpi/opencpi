@@ -1,0 +1,4 @@
+include ../../../../../Makefile.cpi.for-bin
+#$(info MYCXXFLAGS is $(CXXFLAGS))
+#CXXFLAGS:=-Wall -fPIC -O2
+#$(info MYCXXFLAGS2 is $(CXXFLAGS))

@@ -848,7 +848,7 @@ void
 CPI::CP289::Worker::
 prepareProperty(CPI::Metadata::Property& md , CPI::Container::Property& cp)
 {
-  if (!md.is_struct && !md.is_sequence && !md.types->type != CM::Property::CPI_String &&
+  if (!md.is_struct && !md.is_sequence && md.types->type != CM::Property::CPI_String &&
       CM::Property::tsize[md.types->type] <= 32 &&
       !md.write_error) {
 

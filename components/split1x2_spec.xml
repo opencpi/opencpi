@@ -1,0 +1,14 @@
+<ComponentSpec Name="split1x2">
+  <Properties>
+    <Property Name="n_buffers" Readable="true" Writable="false" Type="ULong"/>
+  </Properties>
+  <DataInterfaceSpec Name="WSIin" Producer="false">
+    <xi:include href="stream_protocol_16bit.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="WSIoutA" Producer="true">
+    <xi:include href="stream_protocol_16bit.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="WSIoutB" Producer="true">
+    <xi:include href="stream_protocol_16bit.xml"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

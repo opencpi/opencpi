@@ -32,6 +32,10 @@ ifneq ($(wildcard ../../Makefile.cpi.imports),)
 include ../../Makefile.cpi.imports
 endif
 
+ifneq ($(wildcard ../../bin/Makefile.cpi.imports),)
+include ../../bin/Makefile.cpi.imports
+endif
+
 ALLINC += . $(wildcard ../../*/include) $(wildcard ../../*/idl) $(EXTRA_INCLUDES)
 
 #
@@ -45,9 +49,9 @@ else
 ALLLIBS := $(patsubst $(LIBDIR)/%.lib,../../%,$(wildcard $(LIBDIR)/*.lib)) $(ALLLIBS)
 endif
 else
-ifeq ($(SYSTEM),linux)
+ifneq ($(filter linux macos,$(SYSTEM)),)
 ifeq ($(BUILDSHAREDLIBRARIES),1)
-ALLLIBS := $(patsubst $(LIBDIR)/lib%.so,../../%,$(wildcard $(LIBDIR)/lib*.so)) $(ALLLIBS)
+ALLLIBS := $(patsubst $(LIBDIR)/lib%.$(SO),../../%,$(wildcard $(LIBDIR)/lib*.$(SO))) $(ALLLIBS)
 else
 ALLLIBS := $(patsubst $(LIBDIR)/lib%.a,../../%,$(wildcard $(LIBDIR)/lib*.a)) $(ALLLIBS)
 endif
@@ -96,7 +100,7 @@ ALLEXECUTABLES = $(ORIGEXECUTABLES) $(WINNTEXECUTABLES) \
 ifeq ($(SYSTEM),winnt)
 EXECUTABLES = $(WINNTEXECUTABLES)
 else
-ifeq ($(SYSTEM),linux)
+ifneq ($(filter linux macos,$(SYSTEM)),)
 EXECUTABLES = $(LINUXEXECUTABLES)
 else
 ifeq ($(SYSTEM),vxworksdkm)
@@ -126,7 +130,7 @@ ifeq ($(SYSTEM),winnt)
 $(OBJDIR)/%.exe: $(OBJDIR)/%_main.exe
 	cp $< $@
 else
-ifeq ($(SYSTEM),linux)
+ifneq ($(filter linux macos,$(SYSTEM)),)
 $(OBJDIR)/%: $(OBJDIR)/%_main.exe
 	cp -p $< $@; touch $@
 else
@@ -148,11 +152,11 @@ $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(L
 	$(join $(addsuffix $(OUTDIR)/,$(dir $(ALLLIBS))),$(addsuffix .lib,$(notdir $(ALLLIBS))))
 endif
 else
-ifeq ($(SYSTEM),linux)
+ifneq ($(filter linux macos,$(SYSTEM)),)
 ifeq ($(BUILDSHAREDLIBRARIES),1)
 $(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
-$(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/lib*.so) \
-	$(join $(addsuffix $(OUTDIR)/,$(dir $(ALLLIBS))),$(patsubst %,lib%.so,$(notdir $(ALLLIBS))))
+$(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/lib*.$(SO)) \
+	$(join $(addsuffix $(OUTDIR)/,$(dir $(ALLLIBS))),$(patsubst %,lib%.$(SO),$(notdir $(ALLLIBS))))
 else
 $(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
 $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/lib*.a) \

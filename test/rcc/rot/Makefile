@@ -29,13 +29,20 @@ endif
 # is Linux, and that it was built using $(OUTDIR)=linux-bin.
 #
 
-CPI_RCC_BINDER = $(CPIDIR)/tools/local/binder/linux-bin/cpi-rcc-binder
-CPI_RCC_GEN = $(CPIDIR)/tools/local/binder/linux-bin/cpi-rcc-gen
+CPI_RCC_BINDER=$(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-binder
+DO_CPI_RCC_BINDER=echo 0 is $$0;\
+  export $(ENV)=$(CPIDIR)/lib/$(SYSTEM)-bin;\
+  $(CPI_RCC_BINDER)
+CPI_RCC_GEN = $(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-gen
 CFLAGS += -I.
 
 ifeq ($(shell if test -x $(CPI_RCC_BINDER) ; then echo "ok" ; fi),ok)
 ifeq ($(SYSTEM),linux)
 EXT=so
+ENV=LD_LIBRARY_PATH
+else ifeq ($(SYSTEM),macos)
+EXT=dylib
+ENV=DYLD_LIBRARY_PATH
 else
 EXT=out
 endif
@@ -44,14 +51,13 @@ ifeq ($(OUTDIR),)
 OUTDIR=.
 endif
 
-all: objdir $(OUTDIR)/rot.zip
+all: $(OUTDIR)/rot.zip | objdir
 
 objdir:
 	if test "x$(OUTDIR)" != "x." ; then mkdir -p $(OUTDIR) ; fi
 
-$(OUTDIR)/rot.zip: $(OUTDIR)/rot.$(EXT) \
-		output/rot.scd.xml output/rot_SCD.prf.xml
-	$(CPI_RCC_BINDER) \
+$(OUTDIR)/rot.zip: $(OUTDIR)/rot.$(EXT) output/rot.scd.xml output/rot_SCD.prf.xml
+	$(DO_CPI_RCC_BINDER) \
 		--output=$@ \
 		--workerDll=$(OUTDIR)/rot.$(EXT) \
 		--worker=rotWorker=output/rot.scd.xml
@@ -61,7 +67,9 @@ rot.h: output/rot.scd.xml output/rot_SCD.prf.xml
 
 $(OUTDIR)/rot.o: rot.c rot.h
 
-ifeq ($(SYSTEM),linux)
+$(info x-$(filter macos linux,$(SYSTEM))-y)
+ifneq ($(filter macos linux,$(SYSTEM)),)
+$(info z-$(filter macos linux,$(SYSTEM))-y)
 
 ifeq ($(CROSS_HOST),)
 CC = gcc
@@ -69,12 +77,13 @@ else
 CC = $(CROSS_BUILD_BIN)/$(CROSS_HOST)-gcc
 endif
 
-$(OUTDIR)/%.so : $(OUTDIR)/%.o
+$(OUTDIR)/%.$(EXT) : $(OUTDIR)/%.o
 	$(CC) -shared -o $@ $(LDFLAGS) $<
 
 $(OUTDIR)/%.o : %.c
 	$(CC) -fPIC -c -o $@ $(CFLAGS) $<
 else
+$(info yy-$(filter macos linux,$(SYSTEM))-y)
 WIND_HOME := /opt/WindRiver
 WIND_BASE := $(WIND_HOME)/vxworks-6.3
 WIND_HOST_TYPE := x86-linux2
@@ -105,4 +114,4 @@ endif
 
 clean:
 	if test "x$(OUTDIR)" != "x." ; then rm -rf $(OUTDIR) ; fi
-	rm -rf rot.h *.zip *.out *.so *.o *~
+	rm -rf rot.h *.zip *.out *.dylib *.so *.o *~

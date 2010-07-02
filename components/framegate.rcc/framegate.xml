@@ -1,0 +1,6 @@
+<RccImplementation>
+  <xi:include href="framegate_spec.xml"/>
+  <ControlInterface Name="framegate">
+    <Property Name="skip_nbytes"/>
+  </ControlInterface>
+</RccImplementation>

@@ -108,6 +108,8 @@ namespace CPI {
     // We do not set up the OCDP here since we don't know everything.
     const std::string &Port::getInitialProviderInfo(CPI::Util::PValue *props) {
       cpiAssert(isProvider());
+      if (!canBeExternal)
+	throw ApiError("Port \", name, \" cannot be connected external to container", NULL);
       applyConnectParams(props);
       myInitialPortInfo = myContainer.packPortDesc(*this);
       return myInitialPortInfo;
@@ -117,6 +119,8 @@ namespace CPI {
     const std::string &Port::setInitialProviderInfo(CPI::Util::PValue *props, const std::string &ipi) {
       // User side, producer side.
       cpiAssert(!isProvider());
+      if (!canBeExternal)
+	throw ApiError("Port \", name, \" cannot be connected external to container", NULL);
       PortData otherPortData;
       myContainer.unpackPortDesc(ipi, &otherPortData);
       // Adjust any parameters from connection metadata
@@ -157,7 +161,7 @@ namespace CPI {
       CPI::RDT::Descriptors
         &pDesc = isProvider() ? connectionData.data : other,
         &uDesc = isProvider() ? other : connectionData.data;
-      static char *roleName[] =
+      static const char *roleName[] =
         {"NoRole", "ActiveMessage", "ActiveFlowControl", "ActiveOnly", "Passive", "MaxRole"};
       printf("Port %s, a %s, has options 0x%x, initial role %s\n"
              "  other has options 0x%x, initial role %s\n",

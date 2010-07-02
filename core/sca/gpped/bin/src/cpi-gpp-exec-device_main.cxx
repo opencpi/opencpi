@@ -32,7 +32,7 @@
 #include <CF.h>
 #include "CpiScaGppExecutableDevice.h"
 
-#if defined (__linux__)
+#if defined (__linux__) || defined(__APPLE__)
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>

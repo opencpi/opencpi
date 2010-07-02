@@ -1,0 +1,42 @@
+<ComponentSpec Name="wbr">
+	<XPropertySummary SizeOfConfigSpace="8k" WritableConfigProperties="true"
+			 ReadableConfigProperties="True"/>
+	<Properties>
+	  <!-- These are really 18 bit signed values.  Bits 31:18 ignored -->
+	  <Property Name="FirCoefSet0" Type="Long" Readable="true" Writable="true"
+		    ArrayLength="256"/>
+	  <Property Name="FirCoefSet1" Type="Long" Readable="true" Writable="true"
+		    ArrayLength="256"/>
+	  <Property Name="FirCoefSet2" Type="Long" Readable="true" Writable="true"
+		    ArrayLength="256"/>
+	  <Property Name="FirCoefSet3" Type="Long" Readable="true" Writable="true"
+		    ArrayLength="256"/>
+	  <Property Name="DecimationFirSet0" Type="ULong" Readable="true" Writable="true"/>
+	  <Property Name="DecimationFirSet1" Type="ULong" Readable="true" Writable="true"/>
+	  <Property Name="DecimationFirSet2" Type="ULong" Readable="true" Writable="true"/>
+	  <Property Name="DecimationFirSet3" Type="ULong" Readable="true" Writable="true"/>
+	  <Property Name="Reserved1" Type="ULong" ArrayLength="12"/>
+	  <!-- These is a 2 bit value to select FIR coef set -->
+X	  <Property Name="FirCoefSelection" Type="ULong" Readable="true" Writable="true"/>
+	  <!-- These is a 32 bit signed value to set NCO frequency -->
+	  <Property Name="NCOFrequency" Type="Long" Readable="true" Writable="true"/>
+	  <!-- These is a 32 bit signed value to set NCO Phase Offset -->
+	  <Property Name="NCOPhaseOffset" Type="Long" Readable="true" Writable="true"/>
+	  <!-- Bit 12 is CIC Bypass, bits 11:0 is decimation - 1 -->
+	  <Property Name="CICDecimation" Type="ULong" Readable="true" Writable="true"/>
+	  <!-- Bits 5:0 is CIC Bypass -->
+	  <Property Name="CICScale" Type="ULong" Readable="true" Writable="true"/>
+	  <!-- Bits 22:20, 14:12, 10:8, 6:4, and 2:0 define
+	       FIR, CIC Scale, CIC Decimation, NCO Phase and NCO Frequency sync-->
+	  <Property Name="UpdateMask" Type="ULong" Readable="true" Writable="true"/>
+	  <!-- Bits 5:4 and 1:0 defines Decimation and NCO sync-->
+	  <Property Name="SyncMask" Type="ULong" Readable="true" Writable="true"/>
+	</Properties>
+	<DataInterfaceSpec Name="dif">
+	  <ProtocolSummary DataValueWidth="18" MaxMessageValues="4k" NumberOfOpcodes="2"/>
+	</DataInterfaceSpec>
+	<DataInterfaceSpec Name="chan" Producer="true">
+	  <ProtocolSummary DataValueWidth="16" DataValueGranularity="2" MaxMessageValues="4k" NumberOfOpcodes="2"
+			   VariableMessageLength="true"/>
+	</DataInterfaceSpec>
+</ComponentSpec>

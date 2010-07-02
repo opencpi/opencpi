@@ -1,3 +1,20 @@
+// Copyright (c) 2009 Mercury Federal Systems.
+// 
+// This file is part of OpenCPI.
+// 
+// OpenCPI is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// OpenCPI is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public License
+// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
 /*
 
  Definitions for worker metadata encoding,decoding.
@@ -57,7 +74,7 @@
     CPI_DATA_TYPE(  ushort,    UShort,    u, 16, uint16_t, UShort,    uint16_t) \
     CPI_DATA_TYPE_X(longlong,  LongLong,  u, 64, int64_t,  LongLong,  uint64_t) \
     CPI_DATA_TYPE_X(ulonglong, ULongLong, u, 64, uint64_t, ULongLong, uint64_t) \
-    CPI_DATA_TYPE_S(string,    String,    @, 8,  char*,    String,    %^&)      \
+    CPI_DATA_TYPE_S(string,    String,    @, 32, char*,    String,    %^&)      \
 
 #define CPI_DATA_TYPE_H CPI_DATA_TYPE
 #define CPI_DATA_TYPE_X CPI_DATA_TYPE
@@ -102,7 +119,7 @@ namespace CPI {
       bool is_sequence, is_struct, read_error, write_error, is_test;
       unsigned long sequence_size, numMembers, offset, data_offset;
       // Sizes in bits of the various types
-      static uint8_t tsize[CPI_data_type_limit+1];
+      static uint8_t tsize[CPI_data_type_limit];
       bool decode(ezxml_t x, SimpleType *&s);
       void align(unsigned theOrdinal, unsigned &theOffset);
     private:

@@ -57,9 +57,9 @@ namespace CPI {
 #define OCFRP0_DEVICE 0x4243
 #define OCFRP0_CLASS 0x05
 #define OCFRP0_SUBCLASS 0x00
-// Magic values from config space
-#define OCCP_MAGIC1 "Open"
-#define OCCP_MAGIC2 "CPI"
+// Magic values from config space: these values are 32 bit values with chars big endian
+#define OCCP_MAGIC1 (('O'<<24)|('p'<<16)|('e'<<8)|'n')
+#define OCCP_MAGIC2 (('C'<<24)|('P'<<16)|('I'<<8))
 // Read return values from workers
 #define OCCP_ERROR_RESULT   0xc0de4202
 #define OCCP_TIMEOUT_RESULT 0xc0de4203
