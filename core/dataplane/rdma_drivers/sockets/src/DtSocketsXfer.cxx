@@ -42,14 +42,16 @@
 #include <DtExceptions.h>
 #include <CpiThread.h>
 
-#include <TcpSocket.h>
-#include <SocketHandler.h>
-#include <ISocketHandler.h>
-#include <ListenSocket.h>
+#include <CpiOsSocket.h>
+#include <CpiOsServerSocket.h>
+#include <CpiOsClientSocket.h>
 
 using namespace DataTransfer;
 using namespace CPI::Util;
 using namespace CPI::OS;
+
+
+#define TCP_BUFSIZE_READ 4096
 
 CPI::Util::VList SocketXferServices::m_map(0);
 
@@ -58,8 +60,6 @@ CPI::Util::VList SocketXferServices::m_map(0);
 // Used to register with the data transfer system;
 SocketXferFactory *g_socketsFactory = new SocketXferFactory;
 #endif
-
-
 
 namespace DataTransfer {
 
@@ -92,44 +92,12 @@ class SocketSmemServices : public DataTransfer::SmemServices
   public: 
 
     SocketServerT * m_socketServerT;
-    Socket * m_serverSocket;
+
 
   private:
     DataTransfer::EndPoint* m_ep;
     char* m_mem;
   };
-
-
-// The client socket is used to talk to the associated server and also is 
-// required to listen to callbacks for flow control and event notification.
-class ClientSocketHandler : public TcpSocket
-{
-public:
-
-  ClientSocketHandler(ISocketHandler& h )
-    :TcpSocket(h)
-  {
-    //    DisableInputBuffer();  
-  }
-
-  ~ClientSocketHandler()
-  {
-    
-  }
-
-  void OnConnect()
-  {
-    printf("Got a new client connection on client thread ????? !!\n");
-  }
-
-  void OnRawData(const char *buf,size_t len) 
-  {
-    printf("Got %ld bytes of data on client socket ????? \n", len);
-  }
-
-private:
-        
-};
 
 
 
@@ -139,64 +107,56 @@ struct SocketStartupParams {
 };
 
 
-class ClientSocketT  : public CPI::Util::Thread
+class ClientSocketT
 {
 public:
 
   ClientSocketT( SocketStartupParams& sp )
-    :m_socket(m_sh),m_startupParms(sp),m_stop(false),m_started(false)
+    :m_startupParms(sp)
   {
-
-  }
-  ~ClientSocketT( ){}
-
-
-  void run() {
     SocketEndPoint *rsep = static_cast<DataTransfer::SocketEndPoint*>(m_startupParms.rsmem->getEndPoint());
-    m_socket.Open(rsep->ipAddress,rsep->portNum);
-    m_sh.Add(&m_socket);
-    m_started = true;
-    m_sh.Select(1,0);
-    while ( !m_stop )
-      {
-        m_sh.Select(1,0);
-      }
+    m_socket =   CPI::OS::ClientSocket::connect(rsep->ipAddress,rsep->portNum);
+    m_socket.linger(false);
   }
-  void stop(){m_stop=true;}
-  void btr(){while (!m_started)CPI::OS::sleep(10);}
-
-  ClientSocketHandler& socket(){return m_socket;}  
+  ~ClientSocketT( )
+  {
+    printf("In ~ClientSocketT()\n");
+    m_socket.close();
+  }
+  CPI::OS::Socket& socket(){return m_socket;}
 
 private:
-  SocketHandler         m_sh;
-  ClientSocketHandler   m_socket;
-  SocketStartupParams   m_startupParms;
-  bool                  m_stop;
-  bool                  m_started;
+  CPI::OS::Socket                m_socket;
+  SocketStartupParams            m_startupParms;
 };
 
 
-
-class ServerSocketHandler : public TcpSocket
+class ServerSocketHandler : public Thread
 {
 public:
-  ServerSocketHandler(ISocketHandler& h)
-    :TcpSocket(h),m_h(h),m_bytes_left(0){}
-  ServerSocketHandler(ISocketHandler& h, SocketStartupParams & sp)
-    :TcpSocket(h),m_h(h),m_startupParms(sp),m_bytes_left(0){}
-
-  virtual ~ServerSocketHandler(){}
-
-  void OnRead()
+  ServerSocketHandler( CPI::OS::Socket & socket, SocketStartupParams & sp  )
+    :m_run(true), m_startupParms(sp),m_socket(socket){}
+  virtual ~ServerSocketHandler()
   {
-    m_bidx=0;
-    TcpSocket::OnRead();
-    size_t n = ibuf.GetLength();
+    m_socket.close();
+    printf("In ~ServerSocketHandler()\n");
+  }
+
+
+  void run() {
+    while ( m_run ) {
+      m_bidx=0;
+      long long n = m_socket.recv( m_buf, TCP_BUFSIZE_READ);
+      if ( n <= 0 ) {
+	printf("Got a socket error, terminating connection\n");
+	m_socket.close();
+	throw EmbeddedException("Got a socket communication error\n");
+      }
 #ifndef NDEBUG
-    printf("Got %ld bytes data on server socket !!\n", n);
+      printf("Got %lld bytes data on server socket !!\n", n);
 #endif
-    ibuf.Read(m_buf,n);
-    processBuffer( n );
+      processBuffer( n );
+    }
   }
 
 
@@ -215,9 +175,9 @@ public:
       }        
     }
 
-    int copy_len = (len <= m_bytes_left) ? len : m_bytes_left;
+    unsigned int copy_len = (len <= m_bytes_left) ? len : m_bytes_left;
 #ifndef NDEBUG
-    printf("Copying socket data to %lld, size = %d\n", off, copy_len );
+    printf("Copying socket data to %lld, size = %u\n", (long long)off, copy_len );
 #endif
     memcpy( m_current_ptr, &m_buf[m_bidx], copy_len );
     m_bytes_left -= copy_len;
@@ -228,33 +188,17 @@ public:
     }
   }
 
-  virtual Socket *Create() 
-  { 
-    ServerSocketHandler * s = new ServerSocketHandler( m_h, m_startupParms );
-    return s;
-  }
+  void stop(){m_run=false;}
 
 private:
-    ISocketHandler    &  m_h;
+  bool   m_run;
   SocketStartupParams   m_startupParms;
   char * m_current_ptr;
-  int    m_bytes_left;
+  unsigned int    m_bytes_left;
   char   m_buf[TCP_BUFSIZE_READ];
   int    m_bidx;
+  CPI::OS::Socket & m_socket;
 
-};
-
-class MyListener : public   ListenSocket<ServerSocketHandler> 
-{
-public:
-  MyListener( SocketHandler & h, SocketStartupParams & sp )
-    : ListenSocket<ServerSocketHandler>(h),m_startupParms(sp)
-  {
-    delete m_creator;
-    m_creator = new ServerSocketHandler(h,sp);
-  }
-  private:
-    SocketStartupParams   m_startupParms;
 };
 
 
@@ -262,36 +206,43 @@ class SocketServerT : public CPI::Util::Thread
 {
 public:  
   SocketServerT( SocketStartupParams& sp )
-    :m_socket(m_sh,sp),m_startupParms(sp),m_stop(false),m_started(false),m_error(false){}
+    :m_startupParms(sp),m_stop(false),m_started(false),m_error(false){}
   ~SocketServerT(){}
+
   void run() {
     int portNum = static_cast<DataTransfer::SocketEndPoint*>(m_startupParms.lsmem->getEndPoint())->portNum;
    
     try {
-      if (m_socket.Bind(portNum,10)) {
-        printf("SocketServer: Unable to bind to port %d\n", portNum );
-        cpiAssert(!"Failed to bind socket");
-      }
+      m_server.bind(portNum,false);
+    }
+    catch( std::string & err ) {
+      m_error=true;
+      printf("Socket bind error. %s\n", err.c_str() );
+      cpiAssert(!"Unable to bind to socket");
+      return;
     }
     catch( ... ) {
       m_error=true;
       cpiAssert(!"Unable to bind to socket");
       return;
     }
-    m_sh.Add(&m_socket);
     m_started = true;
     while ( ! m_stop )  {
-      m_sh.Select(1,0);
+      CPI::OS::Socket s = m_server.accept();
+      s.linger(false);
+      ServerSocketHandler * ssh = new ServerSocketHandler(s,m_startupParms);
+      m_sockets.push_back( ssh );
+      ssh->start();
     }
   }
   void stop(){m_stop=true;}
   void btr(){while (!m_started)CPI::OS::sleep(10);}
   bool error(){return m_error;}
-  ListenSocket<ServerSocketHandler> & socket(){return m_socket;}
+
 
 private:
-  SocketHandler         m_sh;
-  MyListener            m_socket;
+  CPI::OS::ServerSocket         m_server;
+  std::vector<ServerSocketHandler*>  m_sockets;
   SocketStartupParams   m_startupParms;
   bool                  m_stop;
   bool                  m_started;
@@ -305,11 +256,8 @@ SocketXferFactory::SocketXferFactory()
   throw ()
   : XferFactory("Network Socket transfer driver")
 {
-  printf("In SocketXferFactory::SocketXferFactory()\n");
+  // Empty
 }
-
-
-
 
 // Destructor
 SocketXferFactory::~SocketXferFactory()
@@ -337,7 +285,6 @@ void SocketXferFactory::clearCache()
 EndPoint* SocketXferFactory::getEndPoint( std::string& end_point  )
 { 
   CPI::Util::AutoMutex guard ( m_mutex, true ); 
-
   SocketEndPoint *loc;
   for ( CPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
     loc = static_cast<SocketEndPoint*>(g_locations.getEntry(n));
@@ -368,7 +315,6 @@ SmemServices* SocketXferFactory::createSmemServices(EndPoint* loc )
     smem->m_socketServerT = new SocketServerT( sp );
     smem->m_socketServerT->start();
     smem->m_socketServerT->btr();  
-    smem->m_serverSocket = & smem->m_socketServerT->socket();
   }
   return sp.lsmem;
 }
@@ -419,10 +365,12 @@ std::string SocketXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
   std::string ep;
   char ip_addr[128];
 
+  /*
   // Only one socket based endpoint per process
   if ( sep.length() ) {
     return sep;
   }
+  */
 
   //#define USE_LOOPBACK
 #ifdef USE_LOOPBACK
@@ -446,7 +394,11 @@ std::string SocketXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
     port = getNextPortNum();
   }
   else {
-    port = atoi(penv);
+    static int m_port = 0;
+    if ( m_port == 0 ) {
+      m_port = atoi(penv);
+    }
+    port = m_port++;
   }
 
   char tep[128];
@@ -564,21 +516,13 @@ void SocketXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 
   xfer_create (p1, p2, 0, &m_xftemplate);
 
-
-
   // We need to create a client socket here
   SocketStartupParams ssp;
   ssp.lsmem = p1;
   ssp.rsmem = p2;
   m_clientSocketT = new ClientSocketT( ssp );
-  m_clientSocketT->start();
-  m_clientSocketT->btr();
 
 }
-
-
-
-
 
 // Create a transfer request
 XferRequest* SocketXferServices::copy (CPI::OS::uint32_t srcoffs, 
@@ -794,16 +738,37 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
   printf("Sending IP header\n");
   CPI::OS::sleep( 100 );
 #endif
-  req->m_xferServices->m_clientSocketT->socket().SendBuf((const char*)&hdr,(size_t)sizeof(SocketDataHeader),1);
+  long long nb=0;  
+  unsigned long btt = sizeof(SocketDataHeader);
+  unsigned  trys = 10;
+  unsigned long idx=0;
+  char* chdr = (char*)&hdr;
+  while ( ((nb=req->m_xferServices->m_clientSocketT->socket().send((const char*)&chdr[idx],(size_t)btt) ) != 0) && trys-- ) {
+    btt -= nb;
+    idx += nb;
+  }
+  if ( trys <= 0 ) {
+    throw EmbeddedException("Socket write error during data transfer operation\n");
+  }
 
 #ifndef NDEBUG
   printf("Sending IP data\n");
   CPI::OS::sleep( 100 );
 #endif
-  req->m_xferServices->m_clientSocketT->socket().SendBuf((const char*)src1,(size_t)transfer->nbytes,1);
 
-  
-  
+
+  nb=0;  
+  btt = transfer->nbytes;
+  trys = 10;
+  idx=0;
+  while ( ((nb=req->m_xferServices->m_clientSocketT->socket().send((const char*)&src1[idx],(size_t)btt) ) != 0) && trys-- ) {
+    btt -= nb;
+    idx += nb;
+  }
+  if ( trys <= 0 ) {
+    throw EmbeddedException("Socket write error during data transfer operation\n");
+  }
+
 
 
   /*

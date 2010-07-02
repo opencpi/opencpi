@@ -526,6 +526,7 @@ void CPI::DataTransport::Transport::dispatch(DataTransfer::EventManager*)
   // move data from queue if possible
   std::vector<CPI::DataTransport::Circuit*>::iterator cit;
   for ( cit=m_circuits.begin(); cit!=m_circuits.end(); cit++) {
+    if ( (*cit) == NULL ) continue;
     if ( (*cit)->ready() ) {
       (*cit)->initializeDataTransfers();
       (*cit)->checkQueuedTransfers();
