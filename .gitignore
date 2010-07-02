@@ -1,0 +1,28 @@
+# Lines starting with '#' are considered comments.
+# Ignore (generated) html files,
+#*.html
+# except foo.html which is maintained by hand.
+#!foo.html
+# Ignore objects and archives.
+*.obj
+*.so
+*.dylib
+*.exe
+*~
+*.d
+*.o
+*/*/*/*/idl/*.cxx
+*/*/*/*/idl/*.h
+*-bin/
+target-*/
+*.deps
+gen/
+virtex5/
+virtex6/
+# temporary, until we rename targets
+xc5*/
+xc6*/
+*.old
+*.hold
+*.orig
+\#*\#
