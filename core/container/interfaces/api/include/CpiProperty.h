@@ -29,6 +29,7 @@ namespace CPI {
     class Property {
       friend class Worker;
       Worker &worker;                     // Use worker if pointers can't work
+      Metadata::Property &myMeta;
       Metadata::Property::Type type; // For type-checking user's data type assertion for a property
       Worker::Ordinal ordinal;             // Index into properties of the worker
       unsigned mySequenceSize, myStringSize;
@@ -45,6 +46,9 @@ namespace CPI {
 #endif
       }
     public:
+      inline const char *name() { return myMeta.name; }
+      inline bool is_writable() { return myMeta.is_writable; }
+      inline bool is_readable() { return myMeta.is_readable; }
       inline Metadata::Property::Type getType() { return type; }
       inline bool needWriteSync() { return myWriteSync; }
       inline bool needReadSync() { return myReadSync; }
