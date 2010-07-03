@@ -1,13 +1,31 @@
 <ComponentSpec Name="delay">
   <Properties>
-     <Property Name="dlyCtrl" Readable="true" Writable="true"/>
-     <Property Name="dlyHoldoffBytes" Readable="true" Writable="true"/>
-     <Property Name="dlyHoldoffCycles" Readable="true" Writable="true"/>
+    <Property Name="dlyCtrl" Readable="true" Writable="true" Type="ULong"/>
+    <Property Name="dlyHoldoffBytes" Readable="true" Writable="true" Type="ULong"/>
+    <Property Name="dlyHoldoffCycles" Readable="true" Writable="true" Type="ULong"/>
+    <Property Name="mesgWtCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="mesgRdCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="bytesWritten" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="portStatus" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dummy" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_S_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_S_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_S_tBusyCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_M_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_M_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_M_tBusyCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="wmemiWrReq" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="wmemiRdReq" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="wmemiRdResp" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyWordsStored" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyRdCredit" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyWAG" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyRAG" Readable="true" Writable="false" Type="ULong"/>
   </Properties>
-  <DataInterfaceSpec Name="wsiS1">
-    <xi:include href="test_protocol.xml"/>
+  <DataInterfaceSpec Name="WSIin" Producer="false">
+    <xi:include href="./stream_protocol_16bit.xml"/>
   </DataInterfaceSpec>
-  <DataInterfaceSpec Name="wsiM1" Producer="true">
-    <xi:include href="stream_protocol.xml"/>
+  <DataInterfaceSpec Name="WSIout" Producer="true">
+    <xi:include href="./stream_protocol_16bit.xml"/>
   </DataInterfaceSpec>
 </ComponentSpec>

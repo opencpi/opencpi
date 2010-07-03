@@ -3,12 +3,12 @@
     <Property Name="n_buffers" Readable="true" Writable="false" Type="ULong"/>
   </Properties>
   <DataInterfaceSpec Name="WSIin" Producer="false">
-    <xi:include href="stream_protocol_16bit.xml"/>
+    <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
   </DataInterfaceSpec>
   <DataInterfaceSpec Name="WSIoutA" Producer="true">
-    <xi:include href="stream_protocol_16bit.xml"/>
+    <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
   </DataInterfaceSpec>
   <DataInterfaceSpec Name="WSIoutB" Producer="true">
-    <xi:include href="stream_protocol_16bit.xml"/>
+    <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
   </DataInterfaceSpec>
 </ComponentSpec>
