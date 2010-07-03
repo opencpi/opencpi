@@ -1,6 +1,0 @@
-<RccImplementation>
-  <xi:include href="ptest.xml"/>
-  <ControlInterface Name="wciS0" SizeOfConfigSpace="1m" ControlOperations="start,initialize" Timeout="444"/>
-</RccImplementation>
-
-
