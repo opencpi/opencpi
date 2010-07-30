@@ -305,29 +305,22 @@ namespace CPI {
       return *new Artifact(*this, url, artifactParams);
     }
     // The class that knows about WCI interfaces and the OCCP.
-    class WciControl {
+    class WciControl : public CC::Controllable {
       const char *implName, *instName;
     protected:
       Container &myWciContainer;
       // myRegisters is zero when this WCI does not really exist.
       // (since we inherit this in some cases were it is not needed).
       volatile OccpWorkerRegisters *myRegisters;
-      uint32_t controlMask;
       unsigned myOccpIndex;
       volatile uint8_t *myProperties;
-      CM::Worker::ControlState myState;
       WciControl(Container &container, ezxml_t implXml, ezxml_t instXml) :
-        implName(0), instName(0), myWciContainer(container), myRegisters(0),
-        myState(CM::Worker::EXISTS)  {
+	CC::Controllable(ezxml_attr(implXml, "controlOperations")),
+        implName(0), instName(0), myWciContainer(container), myRegisters(0) {
         if (!implXml)
           return;
         implName = ezxml_attr(implXml, "name");
         instName = ezxml_attr(instXml, "name");
-        const char *ops = ezxml_attr(implXml, "controlOperations");
-#define CONTROL_OP(x, c, t, s1, s2, s3) \
-        if (ops && strstr(ops, #x)) controlMask |= 1 << CM::Worker::Op##c;
-        CPI_CONTROL_OPS
-#undef CONTROL_OP
         controlMask |= 1 << CM::Worker::OpStart;
         myOccpIndex = CC::getAttrNum(instXml, "occpIndex");
         uint32_t timeout = CC::getAttrNum(implXml, "timeout", true);
@@ -354,8 +347,6 @@ namespace CPI {
           *(uint32_t *)&myRegisters->initialize = OCCP_SUCCESS_RESULT; //fakeout
           *(uint32_t *)&myRegisters->start = OCCP_SUCCESS_RESULT; //fakeout
         }
-        // Maybe this should be delayed until construction of derived class is done? FIXME?
-        initialize();
       }
       virtual ~WciControl() {
         if (myRegisters)
@@ -409,15 +400,15 @@ namespace CPI {
       CPI_CONTROL_OPS
 #undef CONTROL_OP
     };
-    class Worker : public WciControl, public CC::Worker {
+    class Worker : public CC::Worker,  public WciControl {
       friend class Artifact;
       friend class Port;
       Container &myRplContainer;
       Worker(CC::Application &app, Container &container,
              ezxml_t implXml, ezxml_t instXml,
              CU::PValue* execProps) :
-        WciControl(container, implXml, instXml),
         CC::Worker(app, implXml, instXml),
+        WciControl(container, implXml, instXml),
         myRplContainer(container)
       {
       }
@@ -852,6 +843,8 @@ namespace CPI {
         }
         if (getenv("CPI_OCFRP_DUMMY"))
           *(uint32_t*)&myOcdpRegisters->foodFace = 0xf00dface;
+	else
+	  initialize();
       }
       // All the info is in.  Do final work to (locally) establish the connection
       void finishConnection(CPI::RDT::Descriptors &other) {
@@ -1264,7 +1257,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
         else
           nextRemote++;
       }
-      // Try to move some data
+      // Try to move some data, return if there is data that can't be moved
       void tryMove() {
         // Try to advance my remote side
         switch (connectionData.data.role) {
@@ -1274,7 +1267,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
           if (*nextRemote->readyForRemote) { // avoid remote read if local is not ready
             for (uint32_t nReady = myPort.myOcdpRegisters->nReady;
                  nReady && *nextRemote->readyForRemote; nReady--)
-            moveData();
+	      moveData();
           }
           break;
         case CPI::RDT::ActiveMessage:
@@ -1328,9 +1321,31 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       void endOfData() {
         cpiAssert(myPort.isProvider());
       }
-      void tryFlush() {
+      bool tryFlush() {
         cpiAssert(myPort.isProvider());
         tryMove();
+        switch (connectionData.data.role) {
+        case CPI::RDT::ActiveOnly:
+        case CPI::RDT::ActiveMessage:
+	  return *nextRemote->readyForRemote != 0;
+        case CPI::RDT::ActiveFlowControl:
+	  {
+	    ExternalBuffer *local = nextLocal; 
+	    do {
+	      if (local == localBuffers)
+		local = localBuffers + myDesc.nBuffers - 1;
+	      else
+		local--;
+	      if (!*local->readyForLocal)
+		return true;
+	    } while (local != nextLocal);
+	  }
+	  break;
+        case CPI::RDT::Passive:
+        case CPI::RDT::NoRole:
+          cpiAssert(0);
+	}
+	return false;
       }
       void advanceLocal() {
         if (connectionData.data.role == CPI::RDT::ActiveFlowControl) {
@@ -1338,7 +1353,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
           //            abort();
           //          wmb();
           myPort.myOcdpRegisters->nRemoteDone = 1;
-          usleep(0);
+          //usleep(0);
         }
         if (nextLocal->last)
           nextLocal = localBuffers;

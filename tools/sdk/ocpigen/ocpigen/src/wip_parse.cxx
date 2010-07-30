@@ -469,9 +469,12 @@ getMember(ezxml_t xp, Simple *t, unsigned &maxAlign, unsigned &offset, bool &sub
   offset += t->nBytes;
   // Process default values
   const char *defaultValue = ezxml_attr(xp, "Default");
-  if (defaultValue &&
-      (err = parseValue(defaultValue, t->type, t->stringLength, &t->defaultValue)))
-    return err;
+  if (defaultValue) {
+    if ((err = parseValue(defaultValue, t->type, t->stringLength,
+			  &t->defaultValue)))
+      return err;
+    t->hasDefault = true;
+  }
   return 0;
 }
 
@@ -706,8 +709,10 @@ doImplProp(ezxml_t prop, void *arg) {
 		      name);
     // only the impl attributes
     if ((err = checkAttrs(prop, "Name", "ReadSync", "WriteSync", "ReadError", "WriteError",
-			  "Parameter", "IsTest", (void*)0)))
+			  "Parameter", "IsTest", "Default", (void*)0)))
       return err;
+    if (p->types->hasDefault && ezxml_attr(prop, "Default"))
+      return esprintf("Implementation property named \"%s\" cannot override previous default value", name);
   } else {
     if (isSpec)
       return esprintf("Specification property named \"%s\" not found in spec", name);
@@ -751,7 +756,8 @@ doSpecProp(ezxml_t prop, void *arg) {
     return "Element under Properties is neither Property or xi:include";
   // Now actually process a property element
   if ((err = checkAttrs(prop, "Name", "Type", "Readable", "Writable", "IsTest",
-			"StringLength", "SequenceLength", "ArrayLength", (void*)0)))
+			"StringLength", "SequenceLength", "ArrayLength", "Default",
+			(void*)0)))
     return err;
   name = ezxml_attr(prop, "Name");
   if (!name)
@@ -949,7 +955,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
     if (ezxml_child(spec, "Properties") || ezxml_child(spec, "Property"))
       return "cannot have both PropertySummary and Properties";
     props = 0;
-  } else if ((err = tryChildInclude(spec, file, "Properties", &props, NULL)))
+  } else if ((err = tryChildInclude(spec, file, "Properties", &props, NULL, true)))
     return err;
   if (w->noControl) {
     if (ps || props)
@@ -994,8 +1000,8 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
 	  (err = getBoolean(pSum, "ZeroLengthMessages", &p->wdi.zeroLengthMessages)))
 	return err;
     } else {
-      if ((err = tryChildInclude(x, file, "Protocol", &prot, &protFile)) ||
-	  (err = parseProtocol(w, p, prot, protFile)))
+      if ((err = tryChildInclude(x, file, "Protocol", &prot, &protFile, true)) ||
+	  prot && (err = parseProtocol(w, p, prot, protFile)))
 	return err;
     }
   }
@@ -1140,14 +1146,19 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     }
     if (mp->byteWidth < 8 || mp->dataWidth % mp->byteWidth)
       return "Bytewidth < 8 or doesn't evenly divide into DataWidth";
+    mp->name = ezxml_attr(m, "Name");
+    if (!mp->name)
+      mp->name = "mem";
   }
   bool foundWTI = false;
   for (ezxml_t m = ezxml_child(xml, "TimeInterface"); m; m = ezxml_next(m), mp++) {
     if (foundWTI)
       return "More than one WTI specified, which is not permitted";
-    mp->name = "wti";
+    mp->name = ezxml_attr(m, "Name");
+    if (!mp->name)
+      mp->name = "time";
     mp->type = WTIPort;
-    if ((err = checkAttrs(m, "Clock", "SecondsWidth", "FractionWidth", "AllowUnavailable", (void*)0)) ||
+    if ((err = checkAttrs(m, "Name", "Clock", "SecondsWidth", "FractionWidth", "AllowUnavailable", (void*)0)) ||
 	(err = checkClock(w, m, mp)) ||
 	(err = getNumber(m, "SecondsWidth", &mp->wti.secondsWidth, 0, 32)) ||
 	(err = getNumber(m, "FractionWidth", &mp->wti.fractionWidth, 0, 0)) ||

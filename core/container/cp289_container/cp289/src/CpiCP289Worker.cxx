@@ -858,3 +858,31 @@ prepareProperty(CPI::Metadata::Property& md , CPI::Container::Property& cp)
     cp.writeVaddr = (uint8_t*)m_rcc_worker->m_context->properties + md.offset;
   }
 }
+::WCI_control CPI::CP289::Worker::wciControls[CM::Worker::OpsLimit] = {
+	WCI_CONTROL_INITIALIZE,
+	WCI_CONTROL_START,
+	WCI_CONTROL_STOP,
+	WCI_CONTROL_RELEASE,
+	WCI_CONTROL_BEFORE_QUERY,
+	WCI_CONTROL_AFTER_CONFIG,
+	WCI_CONTROL_RELEASE // for tesrt
+};
+
+// We can't user the control mask until the wci stuff is nuked: then we can do something like this
+//          if (controlMask & (1 << CM::Worker::Op##c) ||		\
+//	      CM::Worker::Op##c == CM::Worker::OpStop ||		\
+//	      CM::Worker::Op##c == CM::Worker::OpStart)			\
+//
+
+#define CONTROL_OP(x, c, t, s1, s2, s3)                                          \
+  void CPI::CP289::Worker::x() {         					 \
+        if (myState == CM::Worker::s1 ||                                         \
+            (CM::Worker::s2 != CM::Worker::NONE && myState == CM::Worker::s2) || \
+            (CM::Worker::s3 != CM::Worker::NONE && myState == CM::Worker::s3)) { \
+	  control(wciControls[CM::Worker::Op##c], WCI_DEFAULT);                  \
+          myState = CM::Worker::t;                                               \
+        } else                                                                   \
+          throw CPI::Container::ApiError("Illegal control state for operation",NULL); \
+      }
+      CPI_CONTROL_OPS
+#undef CONTROL_OP

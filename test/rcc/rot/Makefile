@@ -30,10 +30,13 @@ endif
 #
 
 CPI_RCC_BINDER=$(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-binder
-DO_CPI_RCC_BINDER=echo 0 is $$0;\
+DO_CPI_RCC_BINDER=\
   export $(ENV)=$(CPIDIR)/lib/$(SYSTEM)-bin;\
   $(CPI_RCC_BINDER)
 CPI_RCC_GEN = $(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-gen
+DO_CPI_RCC_GEN=\
+  export $(ENV)=$(CPIDIR)/lib/$(SYSTEM)-bin;\
+  $(CPI_RCC_GEN)
 CFLAGS += -I.
 
 ifeq ($(shell if test -x $(CPI_RCC_BINDER) ; then echo "ok" ; fi),ok)
@@ -51,10 +54,12 @@ ifeq ($(OUTDIR),)
 OUTDIR=.
 endif
 
-all: $(OUTDIR)/rot.zip | objdir
+$(info OUTDIR is $(OUTDIR))
+all: $(OUTDIR)/rot.zip | objdir $(OUTDIR)
 
-objdir:
-	if test "x$(OUTDIR)" != "x." ; then mkdir -p $(OUTDIR) ; fi
+objdir $(OUTDIR):
+	if test "x$(@)" != "x." ; then mkdir -p $(@) ; fi
+
 
 $(OUTDIR)/rot.zip: $(OUTDIR)/rot.$(EXT) output/rot.scd.xml output/rot_SCD.prf.xml
 	$(DO_CPI_RCC_BINDER) \
@@ -63,9 +68,9 @@ $(OUTDIR)/rot.zip: $(OUTDIR)/rot.$(EXT) output/rot.scd.xml output/rot_SCD.prf.xm
 		--worker=rotWorker=output/rot.scd.xml
 
 rot.h: output/rot.scd.xml output/rot_SCD.prf.xml
-	$(CPI_RCC_GEN) --name Rot --gen-header-file=$@ $<
+	$(DO_CPI_RCC_GEN) --name Rot --gen-header-file=$@ $<
 
-$(OUTDIR)/rot.o: rot.c rot.h
+$(OUTDIR)/rot.o: rot.c rot.h | $(OUTDIR)
 
 $(info x-$(filter macos linux,$(SYSTEM))-y)
 ifneq ($(filter macos linux,$(SYSTEM)),)

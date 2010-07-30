@@ -43,6 +43,7 @@ namespace CPI {
 
   namespace CP289 {
 
+    namespace CM = CPI::Metadata;
     class Controller;
     class RCCWorkerInterface;
     class Application;
@@ -51,6 +52,7 @@ namespace CPI {
     // Worker instance information structure
     class Worker : public CPI::Container::Worker
     {
+      static ::WCI_control wciControls[CM::Worker::OpsLimit];
 
     public:
       friend class Application;
@@ -63,6 +65,11 @@ namespace CPI {
       CPI::Container::Port& createPort(CPI::Metadata::Port&);
 
       // Control Operations 
+#if 1
+#define CONTROL_OP(x, c, t, s1, s2, s3) virtual void x();
+      CPI_CONTROL_OPS
+#undef CONTROL_OP
+#else
       inline void initialize(){control(WCI_CONTROL_INITIALIZE, WCI_DEFAULT );}
       inline void start(){ control(WCI_CONTROL_START, WCI_DEFAULT );}
       inline void stop(){enabled=false;stop(true);}
@@ -70,7 +77,7 @@ namespace CPI {
       inline void beforeQuery(){control(WCI_CONTROL_BEFORE_QUERY, WCI_DEFAULT );}
       inline void afterConfigure(){control(WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );}
       inline void test(){control(WCI_CONTROL_TEST, WCI_DEFAULT );}
-
+#endif
 
       // These property access methods are called when the fast path
       // is not enabled, either due to no MMIO or that the property can

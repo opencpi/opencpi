@@ -79,10 +79,8 @@ namespace CPI {
         }
         // Container MAY know how to do intercontainer connections between like containers.
         else if (&myContainer->myParent == &pContainer->myParent &&
-                 connectLike( other, myProps, otherProps)){
-
-          // empty ??
-
+                 connectLike( other, myProps, otherProps)) {
+	  return;
         }
         // We're in different containers managed locally.  Perform the connection protocol
         else {

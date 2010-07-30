@@ -722,6 +722,7 @@ UTIL_EXPORTS = \
 	$(CPIDIR)/core/local/util/res/include \
 	$(CPIDIR)/core/local/util/list/include \
 	$(CPIDIR)/core/local/util/thread/include \
+	$(CPIDIR)/core/local/util/fasttime/include \
 	$(CPIDIR)/core/local/util/sockets/include
 UTIL_LIBS = $(CPIDIR)/core/local/util/util
 

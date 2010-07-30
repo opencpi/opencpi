@@ -250,7 +250,7 @@ struct Port {
 struct Simple {
   const char *name;   // Member name if struct member
   PropertyType type;
-  bool isSequence, isArray;
+  bool isSequence, isArray, hasDefault;
   uint32_t nBytes;    // valid data bytes in this member, not including padding
   unsigned align, offset, bits;
   uint32_t

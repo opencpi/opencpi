@@ -3,7 +3,7 @@
 
 /*
  * Header file for worker Rot.
- * Generated at 2010-06-29 15:24:28
+ * Generated at 2010-07-02 18:58:39
  * from output/rot.scd.xml
  */
 

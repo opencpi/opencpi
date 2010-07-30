@@ -97,6 +97,9 @@ XstOptions += -sd { .. \
                     $(foreach l,$(OcpiLibraries),$(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(Target)))\
 		    $(foreach c,$(OcpiCores),$(call FindRelative,$(TargetDir),$(c)/$(Target))) \
                   }
+$(foreach l,$(Libraries:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found.)))
+$(foreach l,$(OcpiCores:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "OcpiCores" variable, was not found.)))
+
 Compile=\
   $(AT)echo Building $@  with top == $(Top)\; details in $(TargetDir)/xst.out.;\
   cd $(TargetDir);$(XstMakePrj)$(XstMakeLso)$(XstMakeIni)$(XstMakeScr)\

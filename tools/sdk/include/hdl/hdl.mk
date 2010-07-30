@@ -14,8 +14,12 @@ LibName=work
 else
 ifndef InstallDir
 InstallDir=$(OCPI_DIR)/lib/hdl/$(LibName)
-$(InstallDir):
+$(OCPI_DIR)/lib/hdl $(OCPI_DIR)/lib $(InstallDir):
 	$(AT)mkdir $@
+
+$(InstallDir): | $(OCPI_DIR)/lib/hdl
+$(OCPI_DIR)/lib/hdl: | $(OCPI_DIR)/lib
+
 endif
 endif
 include $(OCPI_DIR)/include/hdl/xst.mk

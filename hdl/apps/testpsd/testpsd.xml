@@ -1,0 +1,42 @@
+<HdlAssembly Name="testpsd" Language="Verilog">
+  <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
+  <Instance Worker="sma.xml"/>
+  <Instance Worker="bias.xml"/>
+  <Instance Worker="sma.xml"/>
+  <Instance Worker="splitter2x2.xml" Name="split0"/>
+  <Instance Worker="psd.xml"/>
+  <Instance Worker="splitter2x2.xml" Name="split1"/>
+  <Connection Name="FC" External="consumer">
+    <Attach Instance="sma0" Interface="wmiM"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="sma0" Interface="wsiM1"/>
+    <Attach Instance="split0" Interface="wsiS0"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="split0" Interface="wsiM0"/>
+    <Attach Instance="bias" Interface="in"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="bias" Interface="out"/>
+    <Attach Instance="split1" Interface="wsiS0"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="split1" Interface="wsiM0"/>
+    <Attach Instance="sma1" Interface="wsiS1"/>
+  </Connection>
+  <Connection Name="FP" External="producer">
+    <Attach Instance="sma1" Interface="wmiM"/>
+  </Connection>
+  <!-- Now alternate path for wbr -->
+  <Connection>
+    <Attach Instance="split0" Interface="wsiM1"/>
+    <Attach Instance="psd" Interface="in"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="psd" Interface="out"/>
+    <Attach Instance="split1" Interface="wsiS1"/>
+  </Connection>
+</HdlAssembly>
+
+   

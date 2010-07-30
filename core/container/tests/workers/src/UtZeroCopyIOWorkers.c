@@ -504,7 +504,7 @@ RCCDispatch UTZCopyLoopbackWorkerDispatchTable = { RCC_VERSION, 1, 1,
                                                    LBWorkerRunConditions, NULL, 0};
 
 
-DllDispatchEntry WorkerDispatchTables[] = {
+RCCEntryTable WorkerDispatchTables[] = {
   {"Consumer", &UTZCopyConsumerWorkerDispatchTable},
   {"Loopback", &UTZCopyLoopbackWorkerDispatchTable},
   {"Producer", &UTZCopyProducerWorkerDispatchTable},

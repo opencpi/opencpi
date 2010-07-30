@@ -45,6 +45,7 @@
 #include <CpiPValue.h>
 #include <CpiUtilMisc.h>
 #include <CpiArtifact.h>
+#include <CpiOsAssert.h>
 
 
 using namespace CPI::Container;
@@ -79,7 +80,7 @@ CPI::Container::Worker &
 CPI::CP289::Artifact::
 createWorkerX( CPI::Container::Application &app, ezxml_t impl, ezxml_t inst, CPI::Util::PValue *props)
 {
-  const char* entryPoint = NULL;
+  const char* entryPoint = "ocpi_EntryTable";
 
   // First get the entry point from the properties
   const CPI::Util::PValue*  p = CPI::Util::PValue::find(props, "DLLEntryPoint");
@@ -89,43 +90,23 @@ createWorkerX( CPI::Container::Application &app, ezxml_t impl, ezxml_t inst, CPI
     }
     entryPoint = p->vString;
   }
-  else {  
-    entryPoint = "WorkerDispatchTables";
-  }
 
-  void * ep = m_loader.getSymbol( entryPoint );
-  if ( ! ep ) {
+  ::RCCEntryTable * et = (::RCCEntryTable *)m_loader.getSymbol( entryPoint );
+  if ( ! et ) {
     std::string error("Worker DLL entry point not found ");
     error += entryPoint;
     throw CPI::Util::EmbeddedException( error.c_str() );
   }
 
-  DllDispatchEntry * de = (DllDispatchEntry * )ep;
-  
-  //  RCCDispatch ** eps = (RCCDispatch **)ep;
-
-  int wi=0;
-  bool found = false;  
   const char * implName = ezxml_attr(impl, "name");
-  while ( de[wi].worker_name ) {
-    if ( implName && (strcmp( de[wi].worker_name, (char*)implName) == 0) ) {
-      found = true;
-      break;
-    }
-    wi++;
-  }
+  cpiAssert(implName);
 
-  Worker * w;
-  if ( found ) {
-    w = new CPI::CP289::Worker( app, de[wi].dt, props, MyParent, impl, inst );
-  }
-  else {
-    std::string error("Worker not found in DLL -> ");
-    error += (char*)implName;
-    throw CPI::Util::EmbeddedException( error.c_str() );
-  }
-
-  return *w;
+  for (; et->name; et++)
+    if (!strcmp(et->name, implName))
+      return *new CPI::CP289::Worker( app, et->dispatch, props, MyParent, impl, inst );
+  std::string error("Worker not found in DLL -> ");
+  error += implName;
+  throw CPI::Util::EmbeddedException( error.c_str() );
 }
 
 
@@ -184,6 +165,7 @@ createArtifact(const char *url, CPI::Util::PValue *)
 }
 
 
+#if 0 // this should not be here - it is not virtual (now)
 CPI::Container::Worker &
 CPI::CP289::Application::
 createWorker(const char *url, CPI::Util::PValue *aparams,
@@ -192,7 +174,7 @@ createWorker(const char *url, CPI::Util::PValue *aparams,
   CPI::Util::AutoMutex guard ( m_mutex, true ); 
   return *(new CPI::CP289::Worker( *this, entryPoint, wparams, MyParent, NULL, NULL ));
 }
-
+#endif
 
 void 
 CPI::CP289::Application::

@@ -10,22 +10,32 @@ namespace CPI {
     // This is user-visible, initialized from information in the metadata
     // It is intended to be constructed on the user's stack - a cache of
     // items needed
-    Property::Property(Worker &w, const char *name) : worker(w) {
+    Property::Property(Worker &w, const char *name) :
+      worker(w), myMeta(w.findProperty(name)) {
       // Get the metadata about this property from the worker's database.
-      Metadata::Property &md = w.findProperty(name);
-      type = md.types->type;
-      ordinal = md.ordinal;
-      mySequenceSize = md.is_sequence ? md.sequence_size : 0;
-      myStringSize = md.types->size;
-      myWriteSync = md.write_sync;
-      myReadSync = md.read_sync;
+      type = myMeta.types->type;
+      ordinal = myMeta.ordinal;
+      mySequenceSize = myMeta.is_sequence ? myMeta.sequence_size : 0;
+      myStringSize = myMeta.types->size;
+      myWriteSync = myMeta.write_sync;
+      myReadSync = myMeta.read_sync;
       readVaddr = 0;
       writeVaddr = 0;
       // Now ask the underlying implementation to tell us what we can do
-      w.prepareProperty(md, *this);
+      w.prepareProperty(myMeta, *this);
     }
+    Controllable::Controllable(const char *ops)
+      : myState(CPI::Metadata::Worker::EXISTS)  {
+#define CONTROL_OP(x, c, t, s1, s2, s3) \
+      if (ops && strstr(ops, #x)) \
+	controlMask |= 1 << CPI::Metadata::Worker::Op##c;
+      CPI_CONTROL_OPS
+#undef CONTROL_OP
+    }
+
     Worker::Worker(Application &a, ezxml_t impl, ezxml_t inst) :
       CPI::Util::Child<Application,Worker>(a), CPI::Metadata::Worker(impl),
+      Controllable(ezxml_attr(impl, "controlOperations")),
       myXml(impl),
       myImplTag(impl ? ezxml_attr(impl, "name") : 0),
       myInstTag(inst ? ezxml_attr(inst, "name") : 0) {

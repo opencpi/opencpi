@@ -25,4 +25,6 @@ xc6*/
 *.old
 *.hold
 *.orig
+a.out*
+\.\#*
 \#*\#

@@ -29,13 +29,20 @@ namespace CPI {
   namespace Util {
     class EmbeddedException;
   }
-
   namespace Container {
+    // This class is a small module of behavior used by workers, but available for other uses
+    class Controllable {
+    protected:
+      CPI::Metadata::Worker::ControlState myState;
+      uint32_t controlMask;
+      Controllable(const char *controlOperations);
+    };
+
     class Application;
     class Port;
     class Property;
     class Worker : public CPI::Util::Parent<Port>, public CPI::Util::Child<Application, Worker>,
-      public CPI::Metadata::Worker,  public WCI__worker, public CPI::WCI::WorkerOO {
+      public CPI::Metadata::Worker,  public Controllable, public WCI__worker, public CPI::WCI::WorkerOO {
 
       friend class Property;
       friend class Artifact;

@@ -253,7 +253,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
       if (p->wdi.isOptional)
 	optionals |= 1 << n;
     if (optionals)
-      fprintf(f, "  .optionalPorts. = 0x%x,\\\n", optionals);
+      fprintf(f, "  .optionallyConnectedPorts = 0x%x,\\\n", optionals);
     fprintf(f, "/**/\n");
     if (w->nPorts) {
       p = w->ports;

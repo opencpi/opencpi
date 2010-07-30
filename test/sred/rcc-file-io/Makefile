@@ -30,10 +30,13 @@ endif
 #
 
 CPI_RCC_BINDER = $(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-binder
-DO_CPI_RCC_BINDER=echo 0 is $$0;\
+DO_CPI_RCC_BINDER=\
   export $(ENV)=$(CPIDIR)/lib/$(SYSTEM)-bin;\
   $(CPI_RCC_BINDER)
 CPI_RCC_GEN = $(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-gen
+DO_CPI_RCC_GEN=\
+  export $(ENV)=$(CPIDIR)/lib/$(SYSTEM)-bin;\
+   $(CPI_RCC_GEN)
 CFLAGS += -I.
 
 ifeq ($(shell if test -x $(CPI_RCC_BINDER) ; then echo "ok" ; fi),ok)
@@ -86,13 +89,13 @@ $(OUTDIR)/FileTee.zip: $(OUTDIR)/FileTee.$(EXT) output/FileTee.scd.xml
 		--worker=FileTeeWorker=output/FileTee.scd.xml
 
 FileSource.h: output/FileSource.scd.xml output/FileSourceComponent.prf.xml
-	$(CPI_RCC_GEN) --name FileSource --gen-header-file=$@ $<
+	$(DO_CPI_RCC_GEN) --name FileSource --gen-header-file=$@ $<
 
 FileSink.h: output/FileSink.scd.xml output/FileSinkComponent.prf.xml
-	$(CPI_RCC_GEN) --name FileSink --gen-header-file=$@ $<
+	$(DO_CPI_RCC_GEN) --name FileSink --gen-header-file=$@ $<
 
 FileTee.h: output/FileTee.scd.xml output/FileTeeComponent.prf.xml
-	$(CPI_RCC_GEN) --name FileTee --gen-header-file=$@ $<
+	$(DO_CPI_RCC_GEN) --name FileTee --gen-header-file=$@ $<
 
 $(OUTDIR)/FileSource.o: FileSource.c FileSource.h
 $(OUTDIR)/FileSink.o: FileSink.c FileSink.h

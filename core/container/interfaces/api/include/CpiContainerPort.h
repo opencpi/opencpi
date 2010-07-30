@@ -230,7 +230,8 @@ namespace CPI {
       // Use this when end of data indication happens AFTER the last message.
       // Use the endOfData argument to put, when it is known at that time
       virtual void endOfData() = 0;
-      virtual void tryFlush() = 0;
+      // Return whether there are still buffers to send that can't be flushed now.
+      virtual bool tryFlush() = 0;
 
       std::string & externalName(){return m_ExName;}
 

@@ -2,11 +2,16 @@
 #include <assert.h>
 #include <stdio.h>
 #include <memory>
+#include <math.h>
+#include <time.h>
 #include <sys/uio.h>
 #include <sys/time.h>
-#include <math.h>
+#include "CpiOsMisc.h"
+#include "CpiThread.h"
 #include "CpiDriver.h"
 #include "CpiApi.h"
+#define _CPU_IA32
+#include "fasttime_private.h"
 
 #define W(s) write(2, s, sizeof(s) - 1)
 
@@ -70,10 +75,11 @@ namespace CPI {
 #define FREQ  32.0  // In samples per radian, divide by 2 to get fraction of Nyquist
 #define GAIN  0.99
 // fill a buffer of "length" bytes with 16 bit sized cosine values
+static double freq = FREQ;
 static void
 doCosine(int16_t *data, unsigned length) {
   unsigned npts = (length + sizeof(*data) - 1) / sizeof(*data);
-  double phi = 0.0, dphi = 2.*PI / FREQ;
+  double phi = 0.0, dphi = 2.*PI / freq;
 
   for (unsigned i=0; i<npts ;i++, phi += dphi) {
     double d = cos(phi) * D2E15 * GAIN + 0.5;
@@ -112,6 +118,26 @@ static void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
     memcpy(to, from, nbytes);
 }
 
+namespace {
+
+  class  DThread : public CPI::Util::Thread
+  {
+  public:
+    bool m_run;
+    CC::Interface & m_interface;
+    DThread(  CC::Interface & i )
+      :m_run(true),m_interface(i){};
+
+    void run() {
+      while(m_run) {
+	m_interface.dispatch(NULL);
+        CPI::OS::sleep(0);
+      }
+    }
+
+  };
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -121,105 +147,67 @@ int main(int argc, char *argv[])
     {{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2}};
   const char *active[10][2] = {{0}};
   unsigned long bufferSize = 2048, ioCount = 1, ioSize = 16, memorySize = 0, delay = 0;
+#define NTICKS 100
   uint64_t memoryBase = 0;
   bool probe = false, loop = false, doread = true, two = false, same = true,
-    acquire = false, emit = false, dummy = false, cosine = false, psd = false;
-  char *firstarg = 0, *secondarg = 0, *file = 0, *ofile = 0;
+    acquire = false, emit = false, dummy = false, cosine = false, psd = false,
+    test = false, doTicks = false;
+  char *firstarg = 0, *secondarg = 0, *file = 0, *ofile = 0, *xfile = (char*)"file", *rccFile = 0, *rccName = 0;
   if (argc == 1) {
-    fprintf(stderr, "Usage is: testRpl <options> [<container-name>]\n");
+    fprintf(stderr, "Usage is: testRpl <options> [<container-name>][<second-container-name>]\n");
     fprintf(stderr, "  Options are:\n"
-            "-rW[io][mfap]\t\tRole for DMA for worker W in or out\n"
-            "-d\tProbe specific device, don't discover all\n"
+            "-a\t\tAcquire data from ADC, not file (-f) or pattern or cosien (-c)\n"
+	    "-c\t\tCosine data generator used for test data\n"
+            "-d\t\tProbe specific device, don't discover all\n"
+            "-e\t\tEmit data to DAC, don't return it to SW\n"
             "-f <file>\tSpecify file to use for test data content\n"
             "-i <iocoiunt>\tSpecify number of message to send(default == 1)\n"
             "-l\t\tEnter the emulator loopback mode\n"
-            "-m <memory> <size>\tSpecify pinned DMA memory address\n"
-            "-n <nbufs>\tSpecify number of buffers (default == 2)\n"
+            "-m <addr> <size>Specify pinned DMA memory address and size\n"
+            "-n <nbufs>\tSpecify number of buffers for all (default == 2)\n"
+            "-o\t\tOutput file to write data into\n"
+	    "-p\t\tUse the PSD bitstream configuration\n"
+            "-rW[io][mfap]\tRole for DMA for worker W in or out\n"
+            "-s <bufsize>\tSpecify size of buffers (default is larger of 2048 or -I)\n"
+            "-u\t\tUse unit test bitstream configuration\n"
+	    "-x <xfile>\tUse the <xfile> for xml bitstream file\n"
+	    "-y\t\tSet delay hold off byte count, enable delay, start DRAM\n"
+	    "-z\t\tDon't touch data at all, just send and receive junk\n"
+            "-D <shmname>\tSpecify emulated hardware buffer shm\n"
+            "-I <msgsize>\tSpecify size of messages (default == 16 bytes)\n"
             "-NW[io] <nbufs>\tSpecify number of buffers for worker W in or out\n"
             "\t\tOptions are: -n0o -n1i -n3o  -n4i -n6o -n0i\n"
             "\t\tWorker 0 is this test program's input and output\n"
-            "-s <bufsize>\tSpecify size of buffers (default == 2048)\n"
-            "-D <shmname>\tSpecify emulated hardware buffer shm\n"
-            "-I <msgsize>\tSpecify size of messages (default == 16 bytes)\n"
             "-P <pdname>\tSpecify file to dump port data\n"
-            "-R\tSuppress the read-back and test of what is written\n"
-            "-o\tOutput file to write data into\n"
-            "-a\tAcquire data from acquistion source, not file or pattern\n"
-            "-e\tEmit data to DAC\n"
-	    "-c\tCosine data generator used for test data\n"
-	    "-p\tUse the PSD bitstream configuration\n"
+            "-R\t\tSuppress the read-back and test of what is written\n"
+	    "-S\t\tInsert software worker (rcc) on input side\n"
+	    "-T\t\tPrint timing information between I/Os\n"
             );
     return 1;
   }
   for (char **ap = &argv[1]; *ap; ap++)
     if (**ap == '-')
       switch ((*ap)[1]) {
-      case 'y':
-        delay = atoi(*++ap);
+      case 'a':
+        acquire = true;
+        break;
+      case 'c':
+	cosine = true;
+	if ((*ap)[2])
+	  freq = strtod(&(*ap)[2], NULL);
 	break;
-      case 'p':
-	psd = true;
-	break;
+      case 'd':
+        probe = true;
+        break;
       case 'e':
 	emit = true;
 	doread = false;
 	break;
-      case 'c':
-	cosine = true;
-	break;
       case 'f':
         file = *++ap;
         break;
-      case 'R':
-        doread = false;
-        break;
-      case 'd':
-        probe = true;
-        break;
-      case 'n':
-        {
-          unsigned n = atoi(*++ap);
-          for (unsigned i = 0; i < 10; i++)
-            bufferCount[i][0] = bufferCount[i][1] = n;
-        }
-        break;
-      case 'N':
-        {
-          unsigned n = 0, i = 0;
-          if ((*ap)[2]) {
-            same = false;
-            n = (*ap)[2] - '0';
-            if ((*ap)[3] == 'o')
-              i = 1;
-          }
-          bufferCount[n][i] = atoi(*++ap);
-        }
-        break;
-      case 'D':
-        {
-          static char buf[100];
-          snprintf(buf, sizeof(buf), "CPI_OCFRP_DUMMY=%s", *++ap);
-          putenv(buf);
-        }
-        break;
-      case 'P':
-        {
-          static char buf[100];
-          snprintf(buf, sizeof(buf), "CPI_DUMP_PORTS=%s", *++ap);
-          putenv(buf);
-        }
-        break;
       case 'i':
         ioCount = atoi(*++ap);
-        break;
-      case 'I':
-        ioSize = atoi(*++ap);
-        break;
-      case 's':
-        bufferSize = atoi(*++ap);
-        break;
-      case '2':
-        two = true;
         break;
       case 'l':
         loop = true;
@@ -228,14 +216,18 @@ int main(int argc, char *argv[])
         memoryBase = atoll(*++ap);
         memorySize = atoi(*++ap);
         break;
-      case 'a':
-        acquire = true;
+      case 'n':
+        {
+          unsigned n = atoi(*++ap);
+          for (unsigned i = 0; i < 10; i++)
+            bufferCount[i][0] = bufferCount[i][1] = n;
+        }
         break;
       case 'o':
         ofile = *++ap;
         break;
-      case 'z':
-	dummy = true;
+      case 'p':
+	psd = true;
 	break;
       case 'r':
         {
@@ -264,6 +256,69 @@ int main(int argc, char *argv[])
             active[n][i] = "active";
         }
         break;
+      case 's':
+        bufferSize = atoi(*++ap);
+        break;
+      case 'u':
+	test = true;
+	break;
+      case 'x':
+        xfile = *++ap;
+        break;
+      case 'y':
+        delay = atoi(*++ap);
+	break;
+      case 'z':
+	dummy = true;
+	break;
+      case 'D':
+        {
+          static char buf[100];
+          snprintf(buf, sizeof(buf), "CPI_OCFRP_DUMMY=%s", *++ap);
+          putenv(buf);
+        }
+        break;
+      case 'I':
+        ioSize = atoi(*++ap);
+        break;
+      case 'N':
+        {
+          unsigned n = 0, i = 0;
+          if ((*ap)[2]) {
+            same = false;
+            n = (*ap)[2] - '0';
+            if ((*ap)[3] == 'o')
+              i = 1;
+          }
+          bufferCount[n][i] = atoi(*++ap);
+        }
+        break;
+      case 'P':
+        {
+          static char buf[100];
+          snprintf(buf, sizeof(buf), "CPI_DUMP_PORTS=%s", *++ap);
+          putenv(buf);
+        }
+        break;
+      case 'R':
+        doread = false;
+        break;
+      case 'S':
+        rccFile = *++ap;
+	{
+	  char *cp = strrchr(rccFile, '/');
+	  rccName = strdup(cp ? cp + 1 : rccFile);
+	  cp = strchr(rccName, '.');
+	  if (cp)
+	    *cp = 0;
+	}
+	break;
+      case 'T':
+	doTicks = true;
+	break;
+      case '2':
+        two = true;
+        break;
       default:;
       }
     else if (!firstarg)
@@ -275,10 +330,10 @@ int main(int argc, char *argv[])
   if (ioSize > bufferSize)
     bufferSize = ioSize;
   printf("Starting: sending %lu messages of %lu (buffer %lu)\n", ioCount, ioSize, bufferSize);
-  printf("Buffer counts: 0o %lu 1i %lu 3o %lu 6i %lu 8o %lu 0i %lu\n",
+  printf("Buffer counts: 0o %lu 1i %lu 3o %lu 6i %lu 8o %lu 0i %lu 9i %lu 9o %lu\n",
          bufferCount[0][1],
          bufferCount[1][0], bufferCount[3][1], bufferCount[6][0],
-         bufferCount[8][1], bufferCount[0][0]);
+         bufferCount[8][1], bufferCount[0][0], bufferCount[9][0], bufferCount[9][1]);
   printf("Active indicators: 0o %s 1i %s 3o %s 6i %s 8o %s 0i %s\n",
          active[0][1],
          active[1][0], active[3][1], active[6][0],
@@ -286,9 +341,7 @@ int main(int argc, char *argv[])
   if (two)
     printf("Using two boards: %s and %s\n", firstarg, secondarg);
   // If we know there is one, try to create it.
-  CC::Interface *rplContainer, *rplContainer2 = 0;
-
-
+  CC::Interface *rplContainer, *rplContainer2 = 0, *rccContainer = 0;
 
 #ifdef WAS
   CPI::RPL::Driver driver();
@@ -296,8 +349,14 @@ int main(int argc, char *argv[])
 #else
   CPI::RPL::Driver & driver = *(new CPI::RPL::Driver());
   CPI::Util::DriverManager & dm = *(new CPI::Util::DriverManager("OCFRP"));
-#endif
 
+#endif
+#ifdef WANTSTOBE
+  // Find the container we want
+  CPI::Container
+    *rplContainer = CPI::ContainerManager::find("HDL",,,firstarg),
+    *rplContainer2 = two ? CPI::ContainerManager::find("HDL",,,secondarg);
+#endif
   if (probe) {
     rplContainer = static_cast<CC::Interface*>(dm.getDevice( 0, "0" ));
   } else {
@@ -326,31 +385,52 @@ int main(int argc, char *argv[])
 
   if (rplContainer && (!two || rplContainer2)) {
     try {
+      DThread * rcc_dThread;
+      if (rccFile) {
+	static CPI::Util::DriverManager rcc_dm("Container");
+	static CPI::Util::PValue cprops[] = {
+	  CPI::Util::PVBool("polling",1),
+	  CPI::Util::PVEnd };
+	rcc_dm.discoverDevices(0,0);
+	CPI::Util::Device* d = rcc_dm.getDevice( cprops, "RCC");
+	if ( ! d ) {
+	  throw std::string("No RCC Containers found\n");
+	}
+	rccContainer = static_cast<CPI::Container::Interface*>(d);
+	rcc_dThread = new DThread( *rccContainer );
+	rcc_dThread->start();
+      }
 
       // Create an application on this container, no parameters at this time
       std::auto_ptr<CC::Application>
         ap(rplContainer->createApplication( /* "testRPL" */ )),
-        ap2(two ? rplContainer2->createApplication( /* "testRpl2" */ ) : 0);
+        ap2(two ? rplContainer2->createApplication( /* "testRpl2" */ ) : 0),
+	apRcc(rccFile ? rccContainer->createApplication() : 0);
 
 
       CC::Application
         &a = *ap,
-        &a2 = two ? *ap2 : a;
+        &a2 = two ? *ap2 : a,
+	&rcca = rccFile ? *apRcc : a;
 
-      CC::Worker *w[13] = {
+      CC::Worker *w[14] = {
 	((CC::Worker *)0),
-	&a.createWorker("file", 0, "FC", "FCi"),                                 // w2# 1
-	&a.createWorker("file", 0, "Bias", "BIASi"),                             // w3# 2
-	&a.createWorker("file", 0, "FP", "FPi"),                                 // w4# 3
-	acquire ? &a.createWorker("file", 0, "ADC", "ADCi") : 0,                 //w10# 4
-	emit ? &a.createWorker("file", 0, "DAC", "DACi") : 0,                    //w11# 5
-	two ? &a2.createWorker("file", 0, "FC", "FCi") : 0,                      // w2# 6
-	two ? &a2.createWorker("file", 0, "Bias", "BIASi") : 0,                  // w3# 7
-	two ? &a2.createWorker("file", 0, "FP", "FPi") : 0,                      // w4# 8
-	psd ? &a.createWorker("file", 0, "WsiSplitter2x2", "WsiSplitter2x2i"):0, // w5# 9
-	psd ? &a.createWorker("file", 0, "FrameGate", "FrameGatei") : 0,         // w6#10
-	psd ? &a.createWorker("file", 0, "PSD", "PSDi") : 0,                      // w7#11
-	psd ? &a.createWorker("file", 0, "DramServer", "DramServeri") : 0        //w12#12
+	&a.createWorker(xfile, 0, "FC", "FCi"),                                 // w2# 1
+	&a.createWorker(xfile, 0, "Bias", "BIASi"),                             // w3# 2
+	&a.createWorker(xfile, 0, "FP", "FPi"),                                 // w4# 3
+	acquire ? &a.createWorker(xfile, 0, "ADC", "ADCi") : 0,                 //w10# 4
+	emit ? &a.createWorker(xfile, 0, "DAC", "DACi") : 0,                    //w11# 5
+	two ? &a2.createWorker(xfile, 0, "FC", "FCi") : 0,                      // w2# 6
+	two ? &a2.createWorker(xfile, 0, "Bias", "BIASi") : 0,                  // w3# 7
+	two ? &a2.createWorker(xfile, 0, "FP", "FPi") : 0,                      // w4# 8
+	psd ? &a.createWorker(xfile, 0, "WsiSplitter2x2", "WsiSplitter2x2i") :
+	(test ? &a.createWorker(xfile, 0, "splitter2x2", "split0") : 0 ),       // w5# 9
+	psd ? &a.createWorker(xfile, 0, "FrameGate", "FrameGatei") :          
+	(test ? &a.createWorker(xfile, 0, "psd", "psd") : 0),                   // w6#10
+	psd ? &a.createWorker(xfile, 0, "PSD", "PSDi") :
+	(test ? &a.createWorker(xfile, 0, "splitter2x2", "split1") : 0 ),       // w7#11
+	psd ? &a.createWorker(xfile, 0, "DramServer", "DramServeri") : 0,       //w12#12
+	rccFile ? &rcca.createWorker(rccFile, 0, rccName, 0) : 0             //   #13
       };
 
       CC::Port &w1in = w[1]->getPort("WMIin");
@@ -373,14 +453,20 @@ int main(int argc, char *argv[])
       CC::Port &w5in = emit ? w[5]->getPort("DACin") : *(CC::Port *)0;
 
       CC::Port &w6in = two ? w[6]->getPort("WMIin") : *(CC::Port *)0;
-      CC::Port &w6out = two ? w[6]->getPort("WSIout") : *(CC::Port *)0;;
-      CC::Port &w7in = two ? w[7]->getPort("WSIin") : *(CC::Port *)0;;
-      CC::Port &w7out = two ? w[7]->getPort("WSIout") : *(CC::Port *)0;;
-      CC::Port &w8in = two ? w[8]->getPort("WSIin") : *(CC::Port *)0;;
-      CC::Port &w8out = two ? w[8]->getPort("WMIout") : *(CC::Port *)0;;
-      CC::Port &w9in0 = psd ? w[9]->getPort("WSIinB") : *(CC::Port *)0;;
-      CC::Port &w9in1 = psd ? w[9]->getPort("WSIinA") : *(CC::Port *)0;;
-      CC::Port &w9out0 = psd ? w[9]->getPort("WSIoutC") : *(CC::Port *)0;;
+      CC::Port &w6out = two ? w[6]->getPort("WSIout") : *(CC::Port *)0;
+      CC::Port &w7in = two ? w[7]->getPort("WSIin") : *(CC::Port *)0;
+      CC::Port &w7out = two ? w[7]->getPort("WSIout") : *(CC::Port *)0;
+      CC::Port &w8in = two ? w[8]->getPort("WSIin") : *(CC::Port *)0;
+      CC::Port &w8out = two ? w[8]->getPort("WMIout") : *(CC::Port *)0;
+      CC::Port &w9in0 = psd ? w[9]->getPort("WSIinB") : *(CC::Port *)0;
+      CC::Port &w9in1 = psd ? w[9]->getPort("WSIinA") : *(CC::Port *)0;
+      CC::Port &w9out0 = psd ? w[9]->getPort("WSIoutC") : *(CC::Port *)0;
+      // The issue here is that input ports get their protocol bound at
+      // construction time rather than connection time.
+      if (rccFile)
+	putenv("CPI_DEFAULT_PROTOCOL=cpi-pci-pio");
+      CC::Port &w13in = rccFile ? w[13]->getPort("in") : *(CC::Port*)0;
+      CC::Port &w13out = rccFile ? w[13]->getPort("out") : *(CC::Port*)0;
 
       CPI::Util::PValue
         p00[] = {CU::PVULong("bufferCount", bufferCount[0][0]),
@@ -400,6 +486,10 @@ int main(int argc, char *argv[])
                  CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
         p81[] = {CU::PVULong("bufferCount", bufferCount[8][1]),
                  CU::PVString("xferRole", active[8][1]),
+                 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
+        p90[] = {CU::PVULong("bufferCount", bufferCount[9][0]),
+                 CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
+        p91[] = {CU::PVULong("bufferCount", bufferCount[9][1]),
                  CU::PVULong("bufferSize", bufferSize), CU::PVEnd};
 
 
@@ -442,8 +532,13 @@ int main(int argc, char *argv[])
         w7out.connect(w8in);
       }
 
-      CC::ExternalPort &myIn = two ? w8out.connectExternal ( "w0in", p00, p81 )
-                                   : w3out.connectExternal ( "w0in", p00, p31 );
+      if (rccFile) {
+	w3out.connect(w13in,p31,p90);
+      }
+      CC::ExternalPort &myIn =
+	two ? w8out.connectExternal ( "w0in", p00, p81 ) :
+	rccFile ? w13out.connectExternal ( "w13out", p00, p91) :
+	w3out.connectExternal ( "w0in", p00, p31 );
 
       if (delay) {
 	CC::Property dlyCtrl(*w[2], "dlyCtrl");
@@ -471,6 +566,8 @@ int main(int argc, char *argv[])
       }
       if (acquire)
         w[4]->start();
+      if (rccFile)
+	w[13]->start();
       unsigned outLeft = 0, inLeft = 0, inN = 0, outN = 0;
       int ifd = -1, cfd = -1, ofd = -1;
       off_t bytes;
@@ -498,9 +595,14 @@ int main(int argc, char *argv[])
       }
 
       struct timeval tv0, tv1, tv2;
+      static tick_t ticks[NTICKS + 10] = {{{0}}};
+      unsigned tick = 0;
+      bool doTick = doTicks;
       gettimeofday(&tv0, 0);
       gettimeofday(&tv1, 0);
       // While anything to do
+      if (doTick)
+	get_tick_count(&ticks[tick++]);
       while (outLeft || inLeft) {
         uint32_t length;
         uint8_t *data;
@@ -510,6 +612,8 @@ int main(int argc, char *argv[])
           // While output to do, do all that can be done
           for (;outLeft && (pBuffer = myOut->getBuffer(data, length));
                outLeft -= ioSize, outN++) {
+	    if (doTick)
+	      get_tick_count(&ticks[tick++]);
             assert(length >= ioSize);
             if (file) {
               if (read(ifd, data, ioSize) != (int)ioSize) {
@@ -521,7 +625,14 @@ int main(int argc, char *argv[])
 	    else if (!dummy)
               for (unsigned w = 0; w < ioSize/sizeof(uint32_t); w++)
                 ((uint32_t *)(data))[w] = outN * (ioSize/sizeof(uint32_t)) + w;
+	    if (doTick)
+	      get_tick_count(&ticks[tick++]);
             pBuffer->put(outN, ioSize, false);
+	    if (doTick) {
+	      get_tick_count(&ticks[tick++]);
+	      if (tick >= NTICKS)
+		doTick = false;
+	    }
           }
           myOut->tryFlush(); // keep buffered output moving
         }
@@ -595,6 +706,10 @@ int main(int argc, char *argv[])
             throw CC::ApiError(oops, NULL);
         }
       }
+      if (!doread && myOut->tryFlush()) {
+	static const struct timespec t = { 0, 1};
+	nanosleep(&t, NULL);
+      }
       gettimeofday(&tv2, 0);
       uint64_t t0 = tv0.tv_sec * 1000000LL + tv0.tv_usec;
       uint64_t t1 = tv1.tv_sec * 1000000LL + tv1.tv_usec;
@@ -614,6 +729,16 @@ int main(int argc, char *argv[])
       if (ofile) {
         printf("File \"%s\" successfully written\n", ofile);
         close(ofd);
+      }
+      if (rccFile ) {
+	rcc_dThread->m_run = false;
+	rcc_dThread->join();
+      }
+      if (doTicks) {
+	tick_t *tp = ticks + 1;
+	for (unsigned n = 0; tp->ll && n <= NTICKS; n++, tp++) {
+	  printf("%3d: %20lld\n", n, (long long)(tp->ll - (tp - 1)->ll));
+	}
       }
       return 0;
     } catch (CC::ApiError &e) {

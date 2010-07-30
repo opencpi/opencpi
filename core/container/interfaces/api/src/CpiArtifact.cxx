@@ -9,6 +9,8 @@ namespace CPI {
     // This scheme allows for binary metadata, but we are doing XML now.
     static char *getMetadata(const char *url, unsigned &length) {
       int fd = open(url, O_RDONLY);
+      if (fd < 0)
+	throw ApiError("Cannot open file: \"", url, "\"", NULL);
 #define STR(x) #x
       // +3 for X, \r (if needed), \n, and assuming the definition is decimal
       char buf[sizeof(STR(UINT64_MAX))+3];
@@ -44,7 +46,7 @@ namespace CPI {
       }
       if (fd >= 0)
         (void)close(fd);
-      throw ApiError("Invalid Metadaa in bitstream/artifact file", NULL);
+      throw ApiError("Invalid Metadata in bitstream/artifact file", NULL);
     }
     Artifact::Artifact(Interface &i, const char *url) 
       : CPI::Util::Child<Interface,Artifact>(i), myUrl(url), myMetadata(0), myXml(0) {
@@ -128,7 +130,9 @@ namespace CPI {
           throw ApiError("non-reusable worker named \"", implTag,
                              "\" already used", NULL);
       }
-      return createWorkerX(app, impl, inst, execProps);
+      Worker &w = createWorkerX(app, impl, inst, execProps);
+      w.initialize();
+      return w;
     }
   }
 }

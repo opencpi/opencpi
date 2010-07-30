@@ -531,7 +531,7 @@ RCCDispatch UTGLoopbackWorkerDispatchTable = { RCC_VERSION, 2, 3,
                                                (1<<UTGLoopbackWorker_Data_Out_Port2) };
 
 
-DllDispatchEntry  GenericLoopbackWorkerDispatchTables[] = {
+RCCEntryTable  GenericLoopbackWorkerDispatchTables[] = {
   "Consumer", &UTGConsumerWorkerDispatchTable,
   "Loopback", &UTGLoopbackWorkerDispatchTable,
   "Producer", &UTGProducerWorkerDispatchTable,

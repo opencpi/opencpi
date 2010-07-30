@@ -318,7 +318,7 @@ namespace CPI {
       CPI::Container::ExternalBuffer * getBuffer(uint8_t &opCode, uint8_t *&data, uint32_t &length, bool &endOfData);
       CPI::Container::ExternalBuffer *getBuffer(uint8_t *&data, uint32_t &length);
       void endOfData();
-      void tryFlush();
+      bool tryFlush();
 
 
     private:
@@ -403,11 +403,11 @@ endOfData()
 }
 
 
-void 
+bool 
 CPI::CP289::ExternalPort::
 tryFlush()
 {
-  // NoOp
+  return false; // there are no more buffers to send on this external port that I can send...
 }
 
 
@@ -445,7 +445,13 @@ connectExternal(const char * name, CPI::Util::PValue * myprops, CPI::Util::PValu
   // We will create a single port worker to do this so that we can use the mechanics of the 
   // underlying system
   CPI::Container::Worker & w = 
+#if 0
     MyApp->createWorker(NULL,NULL,&stub_dispatch);
+#else
+  // That application (above) method was being misused, but this isn't much better...
+  *(new CPI::CP289::Worker( *myParent->myParent, &stub_dispatch, NULL,
+			    static_cast<Container *>(myParent->myParent->myParent), NULL, NULL ));
+#endif
   Port * p;
   if ( isProvider() ) {
     p = static_cast<CPI::CP289::Port*>(&w.createOutputPort( 0, 
@@ -716,6 +722,9 @@ connectInternalInputPort( CPI::Container::Port *  tPort,
 }
 
 
+#if 0 // no need for this except guard???
+
+
 // The general case of connecting ports that are in the same process.
 void 
 CPI::CP289::Port::
@@ -735,7 +744,6 @@ connect( CPI::Container::Port &other, CPI::Util::PValue *myProps, CPI::Util::PVa
     Interface
       *myContainer = myParent->myParent->myParent,
       *pContainer = other.myParent->myParent->myParent;
-
     const std::string
       &ipi = other.getInitialProviderInfo(otherProps),
       &iui = setInitialProviderInfo(myProps, ipi);
@@ -750,4 +758,6 @@ connect( CPI::Container::Port &other, CPI::Util::PValue *myProps, CPI::Util::PVa
   }
 
 }
+#endif
+
 

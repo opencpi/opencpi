@@ -106,7 +106,7 @@ namespace CPI {
 #define CONTROL_OP(x, c, t, s1, s2, s3)  Op##c,
       enum Ops {
       CPI_CONTROL_OPS
-      NoOp
+      OpsLimit
       };
 #undef CONTROL_OP
 #define CONTROL_OP(x, c, t, s1, s2, s3) bool has##c;
