@@ -1,5 +1,5 @@
 /*
- * THIS FILE WAS ORIGINALLY GENERATED ON Tue Jun 29 17:34:08 2010 EDT
+ * THIS FILE WAS ORIGINALLY GENERATED ON Fri Jul  2 16:01:20 2010 EDT
  * BASED ON THE FILE: delayRcc.xml
  * YOU ARE EXPECTED TO EDIT IT
  *
@@ -28,5 +28,6 @@ static RCCResult start(RCCWorker *self) {
 static RCCResult run(RCCWorker *self,
                      RCCBoolean timedOut,
                      RCCBoolean *newRunCondition) {
+  // Just put some hand-authored text here to make this file not replaced all the time
   return RCC_ADVANCE;
 }
