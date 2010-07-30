@@ -223,7 +223,7 @@ namespace CPI
 
       inline
       impl::CustomIoFormatter<int, char> flt ( int width = 16,
-                                                 int precision = 8 )
+                                               int precision = 8 )
       throw ()
       {
         return impl::CustomIoFormatter<int, char> ( impl::flt_impl,

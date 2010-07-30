@@ -127,7 +127,7 @@ $(UNIXLIB): $(OBJECTS)
 
 $(EXPORTSHLIB): $(UNIXSHLIB)
 	if ! test -d $(CPIDIR)/lib; then mkdir $(CPIDIR)/lib; fi
-	if ! test -d $(CPIDIR)/lib/$(SYSTEM)-bin; then mkdir $(CPIDIR)/lib/$(SYSTEM)-bin; fi
+	if ! test -d $(CPIDIR)/lib/$(OUTDIR); then mkdir $(CPIDIR)/lib/$(OUTDIR); fi
 	cp -p $(UNIXSHLIB) $@
 
 $(UNIXSHLIB): $(OBJECTS)

@@ -47,6 +47,8 @@ namespace CPI {
       }
     public:
       inline const char *name() { return myMeta.name; }
+      inline bool isWritable() { return myMeta.is_writable; }
+      inline bool isReadable() { return myMeta.is_readable; }
       inline Metadata::Property::Type getType() { return type; }
       inline bool needWriteSync() { return myWriteSync; }
       inline bool needReadSync() { return myReadSync; }

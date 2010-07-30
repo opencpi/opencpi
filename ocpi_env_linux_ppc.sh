@@ -3,7 +3,7 @@
 export ORB=OMNI
 export PPP_INC=/opt/mercury/include
 export PPP_LIB=/opt/mercury/linux-MPC8641D/lib
-export CPIDIR=/home/mpepe/projects/jcrew/i2wd/opencpi
+export CPIDIR=$OCPI_BASE
 export SYSTEM=linux
 export ARCH=ppc
 export BUILDSHAREDLIBRARIES=1
@@ -20,4 +20,5 @@ export OMNIDIR=/opt/omniORB
 export OMNI_IDL_DIR=/opt/omniORB/idl
 export OUTDIR=$SYSTEM-$ARCH-bin
 PATH=$PATH:~/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CPIDIR/lib/linux-x86_64-bin
 

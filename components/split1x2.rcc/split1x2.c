@@ -55,7 +55,6 @@ static RCCResult run ( RCCWorker* self,
                        RCCBoolean timedOut,
                        RCCBoolean* newRunCondition )
 {
-	printf ( "split1x2 run\n" );
   const uint8_t* p_src =
               ( const uint8_t* ) self->ports [ SPLIT1X2_WSIIN ].current.data;
 

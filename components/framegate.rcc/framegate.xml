@@ -1,6 +1,4 @@
 <RccImplementation>
   <xi:include href="framegate_spec.xml"/>
-  <ControlInterface Name="framegate">
-    <Property Name="skip_nbytes"/>
-  </ControlInterface>
+  <ControlInterface Name="framegate" SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop,release" Timeout="60"/>
 </RccImplementation>
