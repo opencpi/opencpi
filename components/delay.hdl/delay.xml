@@ -1,6 +1,6 @@
-<HdlImplementation Name="delay" Language="Verilog">
+<HdlImplementation Name="delay" Language="Verilog" Pattern="%w%M%1_">
   <xi:include href="delay_spec.xml"/>
-  <ControlInterface Name="wciS0" SizeOfConfigSpace="1m" ControlOperations="start,initialize" Timeout="444">
+  <ControlInterface SizeOfConfigSpace="1m" ControlOperations="start,initialize" Timeout="444" Pattern="%w%M%0_">
     <Property Name="mesgWtCount" Readable="true"/>
     <Property Name="mesgRdCount" Readable="true"/>
     <Property Name="bytesWritten" Readable="true"/>
@@ -22,9 +22,9 @@
     <Property Name="dlyCtrlInit" Parameter="true"/>
     <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
   </ControlInterface>
-  <StreamInterface Name="wsiS1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
-  <StreamInterface Name="wsiM1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
-  <MemoryInterface Name="wmemiM" DataWidth="128" ByteWidth="8" MemoryWords="4g" MaxBurstLength="4k-1" PreciseBurst="true" WriteDataFlowControl="true"/>
+  <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+  <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+  <MemoryInterface Name="wmemiM" DataWidth="128" ByteWidth="8" MemoryWords="4g" MaxBurstLength="4k-1" PreciseBurst="true" WriteDataFlowControl="true" Pattern="%w%M_"/>
 </ComponentImplementation>
 
 
