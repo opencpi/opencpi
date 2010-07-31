@@ -4,15 +4,6 @@
     <Property Name="frameGateCtrl" Readable="true" Writable="true" Type="ULong"/>
     <Property Name="frameSize" Readable="true" Writable="true" Type="ULong"/>
     <Property Name="gateSize" Readable="true" Writable="true" Type="ULong"/>
-    <Property Name="reserved" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_S_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_S_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_S_tBusyCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_M_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_M_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_M_tBusyCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="Op0MesgCnt" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="otherMesgCnt" Readable="true" Writable="false" Type="ULong"/>
   </Properties>
   <DataInterfaceSpec Name="in" Producer="false">
     <xi:include href="./stream_protocol_16bit.xml"/>
