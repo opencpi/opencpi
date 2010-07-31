@@ -562,6 +562,7 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
   if (dp->impreciseBurst && dp->preciseBurst)
     return "Both ImpreciseBurst and PreciseBurst cannot be specified for WSI or WMI";
 #endif
+  dp->pattern = ezxml_attr(impl, "Pattern");
   *dpp = dp;
   return 0;
 }
@@ -1031,13 +1032,14 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
       w->ctl.controlOps = 1 << ControlOpStart;
     if (xctl) {
       if ((err = checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended",
-			    "Clock", "MyClock", "Timeout", "Count", "Name",
+			    "Clock", "MyClock", "Timeout", "Count", "Name", "Pattern",
 			    (void *)0)) ||
 	  (err = getNumber(xctl, "Timeout", &wci->wci.timeout, 0, 0)) ||
 	  (err = getNumber(xctl, "Count", &wci->count, 0, 0)) ||
 	  (err = getBoolean(xctl, "ResetWhileSuspended",
 			    &wci->wci.resetWhileSuspended)))
 	return err;
+      wci->pattern = ezxml_attr(xctl, "Pattern");
       wci->name = ezxml_attr(xctl, "Name");
     }
     if (!wci->count)
@@ -1090,7 +1092,8 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     Port *dp;
     if ((err = checkAttrs(s, "Name", "Clock", "DataWidth", "PreciseBurst",
 			  "ImpreciseBurst", "Continuous", "Abortable",
-			  "EarlyRequest", "MyClock", "RegRequest", (void*)0)) ||
+			  "EarlyRequest", "MyClock", "RegRequest", "Pattern",
+			  (void*)0)) ||
 	(err = checkDataPort(w, s, &dp)) ||
 	(err = getBoolean(s, "Abortable", &dp->wsi.abortable)) ||
 	(err = getBoolean(s, "RegRequest", &dp->wsi.regRequest)) ||
@@ -1107,7 +1110,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     Port *dp;
     if ((err = checkAttrs(m, "Name", "Clock", "MyClock", "DataWidth", "PreciseBurst",
 			  "MFlagWidth", "ImpreciseBurst", "Continuous", "ByteWidth",
-			  "TalkBack", "Bidirectional", (void*)0)) ||
+			  "TalkBack", "Bidirectional", "Pattern", (void*)0)) ||
 	(err = checkDataPort(w, m, &dp)) ||
 	(err = getNumber(m, "ByteWidth", &dp->byteWidth, 0, dp->dataWidth)) ||
 	(err = getBoolean(m, "TalkBack", &dp->wmi.talkBack)) ||
@@ -1124,7 +1127,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     bool memFound = false;
     if ((err = checkAttrs(m, "Name", "Clock", "DataWidth", "PreciseBurst", "ImpreciseBurst",
 			  "MemoryWords", "ByteWidth", "MaxBurstLength", "WriteDataFlowControl",
-			  "ReadDataFlowControl", "Count", (void*)0)) ||
+			  "ReadDataFlowControl", "Count", "Pattern", (void*)0)) ||
 	(err = checkClock(w, m, mp)) ||
 	(err = getNumber(m, "Count", &mp->count, 0, 0)) ||
 	(err = getNumber64(m, "MemoryWords", &mp->wmemi.memoryWords, &memFound, 0)) ||
@@ -1149,6 +1152,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     mp->name = ezxml_attr(m, "Name");
     if (!mp->name)
       mp->name = "mem";
+    mp->pattern = ezxml_attr(m, "Pattern");
   }
   bool foundWTI = false;
   for (ezxml_t m = ezxml_child(xml, "TimeInterface"); m; m = ezxml_next(m), mp++) {
@@ -1158,7 +1162,8 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     if (!mp->name)
       mp->name = "time";
     mp->type = WTIPort;
-    if ((err = checkAttrs(m, "Name", "Clock", "SecondsWidth", "FractionWidth", "AllowUnavailable", (void*)0)) ||
+    if ((err = checkAttrs(m, "Name", "Clock", "SecondsWidth", "FractionWidth", "AllowUnavailable", "Pattern",
+			  (void*)0)) ||
 	(err = checkClock(w, m, mp)) ||
 	(err = getNumber(m, "SecondsWidth", &mp->wti.secondsWidth, 0, 32)) ||
 	(err = getNumber(m, "FractionWidth", &mp->wti.fractionWidth, 0, 0)) ||
@@ -1166,6 +1171,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
       return err;
     mp->dataWidth = mp->wti.secondsWidth + mp->wti.fractionWidth;
     foundWTI = true;
+    mp->pattern = ezxml_attr(m, "Pattern");
   }
   // Now check that all clocks have a home and all ports have a clock
   c = w->clocks;

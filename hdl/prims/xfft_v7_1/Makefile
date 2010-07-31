@@ -6,4 +6,4 @@ include $(OCPI_DIR)/include/hdl/hdl-core.mk
 # This only works for a single target at this time
 $(CoreResults):
 	$(AT)echo Exporting pre-built coregen NGC file $(Core).ngc for target \"$(Target)\"
-	cd $(Target); ln -s ../$(Core)-$(Target).ngc $(Core).ngc
+	cd $(Target); rm -f $(Core).ngc; ln -s ../$(Core)-$(Target).ngc $(Core).ngc

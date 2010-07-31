@@ -13,11 +13,11 @@
   <!-- splitter output to delay/w3 -->
   <Connection>
     <Attach Instance="splitter2x2" Interface="wsiM0"/>
-    <Attach Instance="delay" Interface="wsiS1"/>
+    <Attach Instance="delay" Interface="in"/>
   </Connection>
   <!-- delay/w3 output to sma1/w4 -->
   <Connection>
-    <Attach Instance="delay" Interface="wsiM1"/>
+    <Attach Instance="delay" Interface="out"/>
     <Attach Instance="sma1" Interface="wsiS1"/>
   </Connection>
   <!-- sma1/w4 output to dac -->

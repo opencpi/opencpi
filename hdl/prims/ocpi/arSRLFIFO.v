@@ -3,6 +3,7 @@
 //
 // 2009-05-10 ssiegel Creation in VHDL
 // 2009-11-01 ssiegel Converted to Verilog from VHDL
+// 2010-07-23 ssiegel Logic change for empty and full
 
 module arSRLFIFO (CLK,RST_N,ENQ,DEQ,FULL_N,EMPTY_N,D_IN,D_OUT,CLR);
 
@@ -38,8 +39,12 @@ module arSRLFIFO (CLK,RST_N,ENQ,DEQ,FULL_N,EMPTY_N,D_IN,D_OUT,CLR);
         for(i=depth-1;i>0;i=i-1) dat[i] <= dat[i-1];
         dat[0] <= D_IN;
       end
-      empty <= (pos==0 || (pos==1 && (DEQ&&!ENQ)));
-      full  <= (pos==(depth-1) || (pos==(depth-2) && (ENQ&&!DEQ)));
+      //was... (1-cycle "late" in updating empty after ENQ or full after DEQ)
+      //empty <= (pos==0 || (pos==1 && (DEQ&&!ENQ)));
+      //full  <= (pos==(depth-1) || (pos==(depth-2) && (ENQ&&!DEQ)));
+      //is...
+      empty <= ((pos==0         && !ENQ) || (pos==1         && (DEQ&&!ENQ)));
+      full  <= ((pos==(depth-1) && !DEQ) || (pos==(depth-2) && (ENQ&&!DEQ)));
     end
   end
 

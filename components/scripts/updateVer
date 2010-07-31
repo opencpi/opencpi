@@ -1,0 +1,23 @@
+#!/bin/csh -f
+# Update a local file $1 with remote file $2
+if ($#argv == 0) then
+  echo This command updates a local worker verilog file from a BSV generated one.
+  echo "Usage is:  $0:t <file-to-update> <source-file-to-use>"
+  exit 1
+endif
+cp $1 $1.`date +%F-%T`
+cp $2 $1
+set x = $1:t
+set x = $x:r
+ed -s $1<<EOF
+/module /i
+\`ifdef ORIGINAL
+.
+/\/\/ inlined wires/i
+\`else
+\`define NOT_EMPTY_$1
+\`include "${x}_defs.v"
+\`endif
+.
+w
+EOF

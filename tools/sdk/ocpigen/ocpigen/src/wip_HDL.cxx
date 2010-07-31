@@ -15,7 +15,7 @@
 static const char *wipNames[] = {"Unknown", "WCI", "WSI", "WMI", "WDI", "WMemI", 0};
 
 const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master, char **suff) {
-  const char *pat = w->pattern;
+  const char *pat = p->pattern ? p->pattern : w->pattern;
   if (!pat) {
     *suff = strdup("");
     return 0;
@@ -44,7 +44,8 @@ const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master
 	*s++ = myMaster ? 'M' : 'S';
 	break;
       case '0': // zero origin ordinal-within-profile
-	sprintf(s, "%d", wn);
+      case '1':
+	sprintf(s, "%d", wn + (pat[-1] - '0'));
 	while (*s) s++;
 	break;
 #if 0

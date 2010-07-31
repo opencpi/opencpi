@@ -224,6 +224,7 @@ struct Port {
   unsigned count;
   bool isExternal;          // external port of an assembly (not part of worker)
   bool isData;		    // data plane port, model independent
+  const char *pattern;      // pattern if it overrides global pattern
   WIPType type;
   unsigned dataWidth;
   unsigned byteWidth; // derived
