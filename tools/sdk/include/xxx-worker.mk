@@ -27,8 +27,8 @@ endif
 BinaryFile=$(TargetDir)/$(word 1,$(Workers))$(BF)
 ObjectFiles=$(foreach s,$(AuthoredSourceFiles) $(GeneratedSourceFiles),\
               $(TargetDir)/$(basename $(notdir $(s)))$(OBJ))
-AEPLibraries=
-OtherLibraries=
+#AEPLibraries=
+#OtherLibraries=
 
 ToolsTarget=$(shell echo `uname -s`-`uname -p`)
 ToolsDir=$(OCPI_DIR)/bin/$(ToolsTarget)

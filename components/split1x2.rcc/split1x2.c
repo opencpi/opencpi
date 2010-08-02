@@ -13,6 +13,14 @@
 SPLIT1X2_METHOD_DECLARATIONS;
 RCCDispatch split1x2 =
 {
+  .memSizes = 0,
+  .test = 0,
+  .afterConfigure = 0,
+  .beforeQuery = 0,
+  .runCondition = 0,
+  .portInfo = 0,
+  .optionallyConnectedPorts = 0,
+
   /* insert any custom initializations here */
   SPLIT1X2_DISPATCH
 };
@@ -25,7 +33,11 @@ static RCCResult initialize ( RCCWorker* self )
 {
   Split1x2Properties* p = ( Split1x2Properties* ) self->properties;
 
-  p->n_buffers = 0;
+  p->n_bytes_a = 0;
+  p->n_buffers_a = 0;
+
+  p->n_bytes_b = 0;
+  p->n_buffers_b = 0;
 
   return RCC_OK;
 }
@@ -51,28 +63,51 @@ static RCCResult release ( RCCWorker* self )
   return RCC_OK;
 }
 
+
+static void copy ( void* to, const void* from, size_t n_bytes )
+{
+  memcpy ( to, from, n_bytes );
+}
+
 static RCCResult run ( RCCWorker* self,
                        RCCBoolean timedOut,
                        RCCBoolean* newRunCondition )
 {
-  const uint8_t* p_src =
-              ( const uint8_t* ) self->ports [ SPLIT1X2_WSIIN ].current.data;
+  ( void ) timedOut;
+  ( void ) newRunCondition;
+  Split1x2Properties* props = ( Split1x2Properties* ) self->properties;
 
-  size_t n_bytes = self->ports [ SPLIT1X2_WSIIN ].current.maxLength;
+  RCCPort* port_in = &( self->ports [ SPLIT1X2_WSIIN ] );
 
-  uint8_t* p_dst_a =
-                  ( uint8_t* ) self->ports [ SPLIT1X2_WSIOUTA ].current.data;
+  RCCPort* port_a = &( self->ports [ SPLIT1X2_WSIOUTA ] );
 
-  memcpy ( p_dst_a, p_src, n_bytes );
+  if ( port_in->current.data && port_a->current.data )
+  {
+    copy ( port_a->current.data,
+           port_in->current.data,
+           port_in->input.length );
 
-  self->ports [ SPLIT1X2_WSIOUTA ].output.length = n_bytes;
+    port_a->output.length = port_in->input.length;
+    port_a->output.u.operation = port_in->input.u.operation;
 
-  uint8_t* p_dst_b =
-                  ( uint8_t* ) self->ports [ SPLIT1X2_WSIOUTB ].current.data;
+    props->n_buffers_a++;
+    props->n_bytes_a += port_in->input.length;
+  }
 
-  memcpy ( p_dst_b, p_src, n_bytes );
+  RCCPort* port_b = &( self->ports [ SPLIT1X2_WSIOUTB ] );
 
-  self->ports [ SPLIT1X2_WSIOUTB ].output.length = n_bytes;
+  if ( port_in->current.data && port_b->current.data )
+  {
+    copy ( port_b->current.data,
+           port_in->current.data,
+           port_in->input.length );
+
+    port_b->output.length = port_in->input.length;
+    port_b->output.u.operation = port_in->input.u.operation;
+
+    props->n_buffers_b++;
+    props->n_bytes_b += port_in->input.length;
+  }
 
   return RCC_ADVANCE;
 }

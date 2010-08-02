@@ -10,7 +10,15 @@
 #include "CpiThread.h"
 #include "CpiDriver.h"
 #include "CpiApi.h"
+
+#if defined ( __x86_64__ ) && !defined ( _CPU_IA64 )
+#define _CPU_IA64
+#elif defined ( __i686__ ) && !defined ( _CPU_IA32 )
 #define _CPU_IA32
+#elif defined ( __PPC__ ) && !defined ( _CPU_POWERPC )
+#define _CPU_POWERPC
+#endif
+
 #include "fasttime_private.h"
 
 #define W(s) write(2, s, sizeof(s) - 1)

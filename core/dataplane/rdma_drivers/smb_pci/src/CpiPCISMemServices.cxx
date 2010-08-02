@@ -83,14 +83,14 @@ void PCISmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
     CPI::OS::uint64_t base_adr;
     if (dma) {
       unsigned sizeM;
-      cpiAssert(sscanf(dma, "%uM$0x%llx", &sizeM,
+      cpiCheck(sscanf(dma, "%uM$0x%llx", &sizeM,
 		       (unsigned long long *) &base_adr) == 2);
       size = (unsigned long long)sizeM * 1024 * 1024;
       fprintf(stderr, "DMA Memory:  %uM at 0x%llx\n", sizeM,
 	      (unsigned long long)base_adr);
     }
     else {
-      cpiAssert(!"CPI_DMA_MEMORY not found in the environment\n");
+      cpiCheck(!"CPI_DMA_MEMORY not found in the environment\n");
     }
 
     uint32_t offset = 1024*1024*128;
@@ -104,7 +104,6 @@ void PCISmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
 
     if ( m_fd == -1 ) {
       if ( ( m_fd = open("/dev/mem", O_RDWR|O_SYNC )) < 0 ) {
-	cpiAssert(0);
         throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
       }
     }
@@ -114,6 +113,10 @@ void PCISmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
     m_vaddr =  (uint8_t*)mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED,
                               m_fd, base_adr);
 
+    if ( m_vaddr == MAP_FAILED )
+    {
+      throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "mmap() of DMA memory failed."  );
+    } 
 
   }
   else {
@@ -126,7 +129,6 @@ void PCISmemServices::create (EndPoint* loc, CPI::OS::uint32_t size)
 
     if ( m_fd == -1 ) {
       if ( (m_fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0) {
-	cpiAssert(0);
         throw CPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
       }
     }

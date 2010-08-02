@@ -246,7 +246,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
       }
     if ((err = methodName(w, "run", mName)))
       return err;
-    fprintf(f, "  .run = %s\\\n", mName);
+    fprintf(f, "  .run = %s,\\\n", mName);
     p = w->ports;
     uint32_t optionals = 0;
     for (unsigned n = 0; n < w->nPorts; n++, p++)

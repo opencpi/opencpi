@@ -78,6 +78,11 @@ static RCCResult release ( RCCWorker* self )
 
 #define BYPASS 0
 
+static void copy ( void* to, const void* from, size_t n_bytes )
+{
+  memcpy ( to, from, n_bytes );
+}
+
 static RCCResult run ( RCCWorker* self,
                        RCCBoolean timedOut,
                        RCCBoolean* newRunCondition )
@@ -88,19 +93,19 @@ static RCCResult run ( RCCWorker* self,
 
   size_t* gate_n_bytes = ( size_t* ) self->memories [ GATE_N_BYTES_INDEX ];
 
-  size_t n_bytes = self->ports [ FRAMEGATE_IN ].current.maxLength;
+  size_t n_bytes = self->ports [ FRAMEGATE_WSIIN ].input.length;
 
   if ( ( p->frameGateCtrl == BYPASS ) || ( *gate_n_bytes >= p->gateSize ) )
   {
     *gate_n_bytes = 0;
 
-    const uint8_t* p_src =
-             ( const uint8_t* ) self->ports [ FRAMEGATE_IN ].current.data;
+    copy ( self->ports [ FRAMEGATE_WSIOUT ].current.data,
+           self->ports [ FRAMEGATE_WSIIN ].current.data,
+           n_bytes );
 
-    uint8_t* p_dst =
-                  ( uint8_t* ) self->ports [ FRAMEGATE_OUT ].current.data;
-
-    memcpy ( p_dst, p_src, n_bytes );
+    self->ports [ FRAMEGATE_WSIOUT ].output.length = n_bytes;
+    self->ports [ FRAMEGATE_WSIOUT ].output.u.operation =
+                           self->ports [ FRAMEGATE_WSIIN ].input.u.operation;
 
     rc = RCC_ADVANCE;
   }
@@ -109,7 +114,7 @@ static RCCResult run ( RCCWorker* self,
     *gate_n_bytes += n_bytes;
 
     /* Only adavance input port (not output was produced) */
-    self->container->advance ( &( self->ports [ FRAMEGATE_IN ] ), 0 );
+    self->container->advance ( &( self->ports [ FRAMEGATE_WSIIN ] ), 0 );
 
     rc = RCC_OK;
   }

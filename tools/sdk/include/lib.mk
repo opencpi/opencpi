@@ -20,12 +20,18 @@ LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call Un
 XmlIncludeDirs=.
 # default is what we are running on
 
-ifeq "$(XmTargets)" ""
-  XmTargets=$(shell echo `uname -s`-`uname -p`)
+build_targets := specs
+
+ifneq "$(XmTargets)" ""
+build_targets += xm
 endif
 
-ifeq "$(RccTargets)" ""
-  RccTargets=$(shell echo `uname -s`-`uname -p`)
+ifneq "$(RccTargets)" ""
+build_targets += rcc
+endif
+
+ifneq "$(HdlTargets)" ""
+build_targets += hdl
 endif
 
 # function to build the targets for an implemention.
@@ -72,7 +78,7 @@ CleanModel=\
 	  done; \
         fi
 
-all: xm rcc hdl specs
+all: $(build_targets)
 
 specs: | $(OutDir)lib
 	$(AT)$(foreach f,$(wildcard *_spec.xml) $(wildcard *_protocol*.xml),$(call MakeSymLink,$(f),$(OutDir)lib);)

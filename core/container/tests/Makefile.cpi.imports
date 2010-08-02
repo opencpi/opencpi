@@ -48,7 +48,7 @@ ALLLIBS += $(CP289_CONTAINER_LIBS) $(CONTAINER_LIBS) $(DATA_TRANSPORT_LIBS) \
 
 #FOR TEST ONLY !!
 ifeq ($(CROSS_HOST),ppc86xx-linux)
-ALLLIBS +=  $(OCPI_BASE)/adapt/drivers/rdma/rdma \
+ALLLIBS +=  $(OCPI_BASE)/lib/rdma \
 	 $(UTIL_LIBS) $(LOGGER_LIBS) $(CPIOS_LIBS)
 
 BASICLIBS += -L$(PPP_LIB) -lrose -ldl

@@ -1,4 +1,4 @@
 Workers = split1x2
-IncludeDirs=./
+IncludeDirs=./ 
 SourceFiles=
 include $(OCPI_DIR)/include/rcc/rcc-worker.mk

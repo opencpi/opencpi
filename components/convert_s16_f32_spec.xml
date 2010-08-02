@@ -1,0 +1,15 @@
+<ComponentSpec Name="convert_s16_f32">
+  <Properties>
+     <Property Name="scale" Type="Double" Readable="true" Writable="true"/>
+     <Property Name="bias" Type="Double" Readable="true" Writable="true"/>
+  </Properties>
+
+  <DataInterfaceSpec Name="in" Producer="false">
+    <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="out" Producer="true">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+
+</ComponentSpec>

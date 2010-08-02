@@ -20,5 +20,5 @@ export OMNIDIR=/opt/omniORB
 export OMNI_IDL_DIR=/opt/omniORB/idl
 export OUTDIR=$SYSTEM-$ARCH-bin
 PATH=$PATH:~/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CPIDIR/lib/linux-x86_64-bin
+
 

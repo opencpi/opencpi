@@ -312,6 +312,6 @@ endif
 # ----------------------------------------------------------------------
 #
 
-CXXFLAGS += -Wall
+CXXFLAGS += -Wall -Wextra -Weffc++ -Wshadow -Wshadow -Wfloat-equal -Wcast-qual
 
 SCAVERSION = 2.2.2

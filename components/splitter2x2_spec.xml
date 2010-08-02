@@ -1,18 +1,32 @@
   <ComponentSpec Name="splitter2x2">
     <Properties >
-      <Property Name="dummy0"/>
-      <Property Name="splitCtrl" Readable="true" Writable="true"/>
+      <Property Name="reserved0" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="splitCtrl" Readable="true" Writable="true" Type="ULong"/>
+      <Property Name="reserved1" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="reserved2" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="reserved3" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="reserved4" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="reserved5" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="status" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="S0_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="S0_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="S1_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="S1_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="M0_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="M0_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="M1_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="M1_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
     </Properties>
-    <DataInterfaceSpec Name="wsiS0">
-      <xi:include href="stream_protocol.xml"/>
+    <DataInterfaceSpec Name="WSIinA" Producer="false">
+      <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
     </DataInterfaceSpec>
-    <DataInterfaceSpec Name="wsiS1" Optional="true">
-      <xi:include href="stream_protocol.xml"/>
+    <DataInterfaceSpec Name="WSIinB" Producer="false" Optional="true">
+      <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
     </DataInterfaceSpec>
-    <DataInterfaceSpec Name="wsiM0" Producer="true">
-      <xi:include href="stream_protocol.xml"/>
+    <DataInterfaceSpec Name="WSIoutC" Producer="true">
+      <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
     </DataInterfaceSpec>
-    <DataInterfaceSpec Name="wsiM1" Producer="true" Optional="true">
-      <xi:include href="stream_protocol.xml"/>
+    <DataInterfaceSpec Name="WSIoutD" Producer="true" Optional="true">
+      <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
     </DataInterfaceSpec>
   </ComponentSpec>

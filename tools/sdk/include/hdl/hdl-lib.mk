@@ -12,6 +12,11 @@ Core=onewire
 override SourceFiles+=$(OCPI_DIR)/include/hdl/onewire.v
 AuthoredSourceFiles=$(sort $(SourceFiles))
 WorkLibrarySources+=$(OCPI_DIR)/include/hdl/onewire.v
+# If build does not have any HDL components do not try to build any HDL
+# components.
+ifndef HdlTargets
+Targets=
+endif
 ifndef Targets
 # These libraries need to be built for "families", which really just means that the format of the library
 # depends on the target to some extent.
