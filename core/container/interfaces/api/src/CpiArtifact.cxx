@@ -49,7 +49,7 @@ namespace CPI {
       throw ApiError("Invalid Metadata in bitstream/artifact file", NULL);
     }
     Artifact::Artifact(Interface &i, const char *url) 
-      : CPI::Util::Child<Interface,Artifact>(i), myUrl(url), myMetadata(0), myXml(0) {
+      : CPI::Util::Child<Interface,Artifact>(i), myUrl(strdup(url)), myMetadata(0), myXml(0) {
       unsigned length;
       myMetadata = getMetadata(url, length);
       myXml = ezxml_parse_str(myMetadata, length);
