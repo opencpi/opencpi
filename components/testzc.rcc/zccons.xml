@@ -1,0 +1,6 @@
+<RccImplementation Name="Consumer" StaticMethods="%W%M">
+  <ControlInterface ControlOperations="initialize,afterConfigure,beforeQuery"/>
+  <xi:include href="zccons_spec.xml"/>
+</RccImplementation>
+
+

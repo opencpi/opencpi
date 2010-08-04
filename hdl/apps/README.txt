@@ -1,5 +1,9 @@
 This is where the HDL/FPGA apps go.
-All apps result in a synthesized core called ocpi_app, with a precompiled library with the stub for ocpi_app, and an ngc file.  To use this app in the xst/ngc build process,
+All apps result in a synthesized core called ocpi_app, with a precompiled library with the stub for ocpi_app, and an ngc file.
+The precompoiled stub library enables the container that calls ocpi_app to find it during compilation.
+The ngc file enables the container to actually include the ocpi_app core during synthesis.
+
+To use these app in the xst/ngc build process: (this is preliminary and a bit messy right now).
 
 For xst in a shep drop:
 

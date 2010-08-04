@@ -2,20 +2,6 @@
     <Properties >
       <Property Name="reserved0" Readable="true" Writable="false" Type="ULong"/>
       <Property Name="splitCtrl" Readable="true" Writable="true" Type="ULong"/>
-      <Property Name="reserved1" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="reserved2" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="reserved3" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="reserved4" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="reserved5" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="status" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="S0_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="S0_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="S1_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="S1_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="M0_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="M0_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="M1_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
-      <Property Name="M1_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
     </Properties>
     <DataInterfaceSpec Name="WSIinA" Producer="false">
       <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>

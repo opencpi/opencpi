@@ -64,9 +64,9 @@ static CWorker PRODUCER(0,1),  LOOPBACK(1,1), CONSUMER(1,0);
 static void createWorkers(std::vector<CApp>& ca )
 {
   try {
-    PRODUCER.worker = &ca[PRODUCER.cid].app->createWorker( NULL,NULL, &UTZCopyProducerWorkerDispatchTable );
-    LOOPBACK.worker = &ca[LOOPBACK.cid].app->createWorker( NULL,NULL, &UTZCopyLoopbackWorkerDispatchTable );
-    CONSUMER.worker = &ca[CONSUMER.cid].app->createWorker( NULL,NULL, &UTZCopyConsumerWorkerDispatchTable );
+    PRODUCER.worker = &ca[PRODUCER.cid].app->createWorker( NULL,NULL, (char *)&UTZCopyProducerWorkerDispatchTable );
+    LOOPBACK.worker = &ca[LOOPBACK.cid].app->createWorker( NULL,NULL, (char *)&UTZCopyLoopbackWorkerDispatchTable );
+    CONSUMER.worker = &ca[CONSUMER.cid].app->createWorker( NULL,NULL, (char *)&UTZCopyConsumerWorkerDispatchTable );
   }
   CATCH_ALL_RETHROW( "creating workers" )
 
@@ -298,19 +298,19 @@ int run_zc_test( const char* test_name, std::vector<CApp>& ca, std::vector<CWork
 
   test_rc = run_zcopy_test(ca, workers, LBSendOnly);
   if ( test_rc == false ) testPassed = 0;
-  printf("\n%s Send Only:       %s",  test_name, test_rc ? "PASSED" : "FAILED" );
+  printf("\n%s Send Only:       %s\n",  test_name, test_rc ? "PASSED" : "FAILED" );
 
   test_rc = run_zcopy_test(ca, workers, LBAdvanceOnly);
   if ( test_rc == false ) testPassed = 0;
-  printf("\n%s Advance Only:    %s",  test_name, test_rc ? "PASSED" : "FAILED" );
+  printf("\n%s Advance Only:    %s\n",  test_name, test_rc ? "PASSED" : "FAILED" );
 
   test_rc = run_zcopy_test(ca, workers, LBZCopyOnly);
   if ( test_rc == false ) testPassed = 0;
-  printf("\n%s Zero copy only:  %s",  test_name, test_rc ? "PASSED" : "FAILED" );
+  printf("\n%s Zero copy only:  %s\n",  test_name, test_rc ? "PASSED" : "FAILED" );
 
   test_rc = run_zcopy_test(ca, workers, LBMix);
   if ( test_rc == false ) testPassed = 0;
-  printf("\n%s Mixed Send:      %s",  test_name, test_rc ? "PASSED" : "FAILED" );
+  printf("\n%s Mixed Send:      %s\n",  test_name, test_rc ? "PASSED" : "FAILED" );
 
   disconnectPorts( ca, workers );
   destroyWorkers( ca, workers );
@@ -323,7 +323,7 @@ int config_and_run_zcopy_container_tests(std::vector<CApp>& ca, std::vector<CWor
                                          int cmap[], int bcmap[] )
 {
   char tnamebuf[256];
-  sprintf(tnamebuf, "ZCopy TEST: container map %d,%d,%d buffer map %d,%d,%d,%d",
+  sprintf(tnamebuf, "ZCopy Test: container map %d,%d,%d buffer map %d,%d,%d,%d",
           cmap[0], cmap[1], cmap[2], bcmap[0], bcmap[1], bcmap[2], bcmap[3] );
 
   PRODUCER = cmap[0];

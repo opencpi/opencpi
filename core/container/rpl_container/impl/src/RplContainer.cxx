@@ -383,19 +383,20 @@ namespace CPI {
         throw CC::ApiError("Worker \"", implName, ":", instName, "\"", oops, 0);
       }
       // Should check for illegal sequences
-#define CONTROL_OP(x, c, t, s1, s2, s3)                                \
-      virtual void x() {                                \
-        if (myState == CM::Worker::s1 ||                        \
+#define CONTROL_OP(x, c, t, s1, s2, s3)                                          \
+      virtual void x() {                                                         \
+        if (myState == CM::Worker::s1 ||                                         \
             (CM::Worker::s2 != CM::Worker::NONE && myState == CM::Worker::s2) || \
             (CM::Worker::s3 != CM::Worker::NONE && myState == CM::Worker::s3)) { \
-          if (controlMask & (1 << CM::Worker::Op##c)) {                        \
-            uint32_t result = myRegisters->x;                        \
-            if (result != OCCP_SUCCESS_RESULT)                        \
-              checkResult(result);                                \
-          }                                                        \
-          myState = CM::Worker::t;                                \
-        } else                                                        \
-          throw CC::ApiError("Illegal control state for operation",0); \
+          if (controlMask & (1 << CM::Worker::Op##c)) {                          \
+            uint32_t result = myRegisters->x;                                    \
+            if (result != OCCP_SUCCESS_RESULT)                                   \
+              checkResult(result);                                               \
+          }                                                                      \
+          if (CM::Worker::t != CM::Worker::NONE)                                 \
+	    myState = CM::Worker::t;					         \
+        } else                                                                   \
+          throw CC::ApiError("Illegal control state for operation",0);           \
       }
       CPI_CONTROL_OPS
 #undef CONTROL_OP

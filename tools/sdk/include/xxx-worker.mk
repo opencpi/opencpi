@@ -21,10 +21,15 @@ ImplXmlFiles=$(Workers:%=%.xml)
 ifndef Application
 ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
 SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
+ifeq ($(origin WorkerSourceFiles),undefined)
 WorkerSourceFiles=$(foreach w,$(Workers),$(w)$(SourceSuffix))
+endif
 AuthoredSourceFiles=$(sort $(SourceFiles) $(WorkerSourceFiles))
 endif
-BinaryFile=$(TargetDir)/$(word 1,$(Workers))$(BF)
+ifndef BinaryName
+BinaryName=$(word 1,$(Workers))
+endif
+BinaryFile=$(TargetDir)/$(BinaryName)$(BF)
 ObjectFiles=$(foreach s,$(AuthoredSourceFiles) $(GeneratedSourceFiles),\
               $(TargetDir)/$(basename $(notdir $(s)))$(OBJ))
 #AEPLibraries=
@@ -82,6 +87,7 @@ $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : %.xml
 	$(AT)$(OcpiGen) -s $<
 endif
 
+$(ObjectFiles): $(ImplHeaderFiles) $(SkelFiles)
 $(ObjectFiles) $(BinaryFile): | $(TargetDir)
 
 $(SkelFiles) $(ImplHeaderFiles): | $(GeneratedDir)

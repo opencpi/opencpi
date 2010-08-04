@@ -60,7 +60,7 @@ namespace CPI {
       friend class Port;
       friend class RCCWorkerInterface;
 
-      Worker( CPI::Container::Application & app, const void* entryPoint, CPI::Util::PValue *wparams,
+      Worker( CPI::Container::Application & app, RCCDispatch *entryPoint, CPI::Util::PValue *wparams,
               ::RCCContainer* c, ezxml_t impl, ezxml_t inst );
       CPI::Container::Port& createPort(CPI::Metadata::Port&);
 

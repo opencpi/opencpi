@@ -116,8 +116,8 @@ printUsage (CpiRccBinderConfigurator & config,
 static void createWorkers(std::vector<CApp>& ca )
 {
   try {
-    PRODUCER.worker = &ca[PRODUCER.cid].app->createWorker( NULL,NULL, &UTZCopyProducerWorkerDispatchTable );
-    CONSUMER.worker = &ca[CONSUMER.cid].app->createWorker( NULL,NULL, &UTZCopyConsumerWorkerDispatchTable );
+    PRODUCER.worker = &ca[PRODUCER.cid].app->createWorker( NULL,NULL, (char *)&UTZCopyProducerWorkerDispatchTable );
+    CONSUMER.worker = &ca[CONSUMER.cid].app->createWorker( NULL,NULL, (char *)&UTZCopyConsumerWorkerDispatchTable );
   }
   CATCH_ALL_RETHROW( "creating workers" )
 
@@ -376,7 +376,7 @@ int run_ab_test( const char* test_name, std::vector<CApp>& ca, std::vector<CWork
 
   test_rc = run_ap_test(ca, workers, LBSendOnly);
   if ( test_rc == false ) testPassed = 0;
-  printf("\n%s Send Only:       %s",  test_name, test_rc ? "PASSED" : "FAILED" );
+  printf("\n%s Send Only:       %s\n",  test_name, test_rc ? "PASSED" : "FAILED" );
 
   disconnectPorts( ca, workers );
   destroyWorkers( ca, workers );
@@ -426,7 +426,7 @@ int config_and_run_ap_container_test1(std::vector<CApp>& ca, std::vector<CWorker
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER );
 
 
-  sprintf(tnamebuf, "Advanced port managment TEST (using send): container map %d,%d,%d buffer map %d,%d,%d,%d",
+  sprintf(tnamebuf, "Advanced port managment test (using send): container map %d,%d,%d buffer map %d,%d,%d,%d\n Test:  ",
           cmap[0], cmap[1], cmap[2], bcmap[0], bcmap[1], bcmap[2], bcmap[3] );
 
  

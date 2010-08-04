@@ -89,9 +89,7 @@ namespace CPI {
         inline CPI::DataTransport::Circuit *      &circuit(){return m_circuit;}
         inline OpaquePortData *                   &opaque(){return m_opaque;}
 
-#if 0
 	virtual void connect( CPI::Container::Port &other, CPI::Util::PValue *myProps=NULL, CPI::Util::PValue *otherProps=NULL);        
-#endif
 
     private:
 

@@ -18,7 +18,7 @@ namespace CPI {
 
     // Convenience if caller doesn't want Artifact objects.
     Worker &Application::createWorker(const char *url, CPI::Util::PValue *aParams,
-                                      const void *entry, const char *inst,
+                                      const char *entry, const char *inst,
                                       CPI::Util::PValue *wParams) {
       Artifact &a = loadArtifact(url, aParams);
       return a.createWorker(*this, (const char*)entry, inst, wParams);

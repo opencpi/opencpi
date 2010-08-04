@@ -3,35 +3,11 @@
     <Property Name="dlyCtrl" Readable="true" Writable="true" Type="ULong"/>
     <Property Name="dlyHoldoffBytes" Readable="true" Writable="true" Type="ULong"/>
     <Property Name="dlyHoldoffCycles" Readable="true" Writable="true" Type="ULong"/>
-    <Property Name="mesgWtCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="mesgRdCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="bytesWritten" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="portStatus" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="reserved" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_S_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_S_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_S_tBusyCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_M_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_M_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="WSI_M_tBusyCount" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="wmemiWrReq" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="wmemiRdReq" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="wmemiRdResp" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="dlyWordsStored" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="dlyRdCredit" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="dlyWAG" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="dlyRAG" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="dlyMaxReadCredit" Readable="true" Writable="true" Type="ULong"/>
-    <Property Name="dlyRdOpZero" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="dlyRdOpOther" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="wmemiRdResp2" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="delayStatus" Readable="true" Writable="false" Type="ULong"/>
-    <Property Name="dlyReadyToWrite" Readable="true" Writable="false" Type="ULong"/>
   </Properties>
-  <DataInterfaceSpec Name="WSIin" Producer="false">
+  <DataInterfaceSpec Name="in" Producer="false">
     <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
   </DataInterfaceSpec>
-  <DataInterfaceSpec Name="WSIout" Producer="true">
+  <DataInterfaceSpec Name="out" Producer="true">
     <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
   </DataInterfaceSpec>
 </ComponentSpec>

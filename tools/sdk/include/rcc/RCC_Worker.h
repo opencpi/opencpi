@@ -1,31 +1,20 @@
-
-/* ****
-
-  This file is licensed from, and is a trade secret of:
-
-    Mercury Computer Systems, Incorporated
-    199 Riverneck Road
-    Chelmsford, Massachusetts 01824-2820
-    United States of America
-    Telephone + 1 978 256-1300
-    Telecopy/FAX + 1 978 256-3599
-    US Customer Support (800) 872-0040
-
-  Refer to your Software License Agreements for provisions on use,
-  duplication, third party rights and disclosure. This file: (a) was
-  developed at private expense, and no part was developed with government
-  funds, (b) is a trade secret of Mercury Computer Systems, Inc. for the
-  purposes of the Freedom of Information Act, (c) is "commercial computer
-  software" subject to limited utilization as provided in the above noted
-  Software License Agreements and (d) is in all respects data belonging
-  exclusively to either Mercury Computer Systems, Inc. or its third party
-  providers.
-
-  Copyright (c) Mercury Computer Systems, Inc., Chelmsford MA., 1984-2008,
-  and all third party embedded software sources. All rights reserved under
-  the Copyright laws of US. and international treaties.
-
-************************************************************************** */
+/* Copyright (c) 2009 Mercury Federal Systems.
+ * 
+ * This file is part of OpenCPI.
+ * 
+ * OpenCPI is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * OpenCPI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
   @file

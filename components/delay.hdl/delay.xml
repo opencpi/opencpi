@@ -1,24 +1,33 @@
 <HdlImplementation Name="delay" Language="Verilog" Pattern="%w%M%1_">
   <xi:include href="delay_spec.xml"/>
   <ControlInterface SizeOfConfigSpace="1m" ControlOperations="start,initialize" Timeout="444" Pattern="%w%M%0_">
-    <Property Name="mesgWtCount" Readable="true"/>
-    <Property Name="mesgRdCount" Readable="true"/>
-    <Property Name="bytesWritten" Readable="true"/>
-    <Property Name="portStatus" Readable="true"/>
-    <Property Name="dummy" Readable="true"/>
-    <Property Name="wsiSpMesgCount" Readable="true"/>
-    <Property Name="wsiSiMesgCount" Readable="true"/>
-    <Property Name="wsiStBusyCount" Readable="true"/>
-    <Property Name="wsiMpMesgCount" Readable="true"/>
-    <Property Name="wsiMiMesgCount" Readable="true"/>
-    <Property Name="wsiMtBusyCount" Readable="true"/>
-    <Property Name="wmemiWrReq" Readable="true"/>
-    <Property Name="wmemiRdReq" Readable="true"/>
-    <Property Name="wmemiRdResp" Readable="true"/>
-    <Property Name="dlyWordsStored" Readable="true"/>
-    <Property Name="dlyReadCredit" Readable="true"/>
-    <Property Name="dlyWAG" Readable="true"/>
-    <Property Name="dlyRAG" Readable="true"/>
+    <Property Name="mesgWtCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="mesgRdCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="bytesWritten" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="portStatus" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="reserved" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_S_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_S_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_S_tBusyCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_M_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_M_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="WSI_M_tBusyCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="wmemiWrReq" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="wmemiRdReq" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="wmemiRdResp" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyWordsStored" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyRdCredit" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyWAG" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyRAG" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="reserved1" Readable="true" Writable="true" Type="ULong"/>
+    <Property Name="dlyRdOpZero" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyRdOpOther" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="wmemiRdResp2" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="delayStatus" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dlyReadyToWrite" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="wrtSerUnroll" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="bytesThisMessage" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="mesgLengthSoFar" Readable="true" Writable="false" Type="ULong"/>
     <Property Name="dlyCtrlInit" Parameter="true"/>
     <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
   </ControlInterface>

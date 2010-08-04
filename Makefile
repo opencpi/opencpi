@@ -101,6 +101,32 @@ ALLPACKAGES = \
 
 all: packages
 
+MODELS=rcc
+.PHONY: components hdlapps
+components:
+	make -C components $(MODELS)
+
+hdlapps: MODELS=hdl
+hdlapps: components
+	make -C hdl/apps
+
+hdl: MODELS=hdl
+hdl: hdlapps
+
+rcc: MODELS=rcc
+rcc: components
+
+ifeq ($(filter hdl,$(MODELS)),hdl)
+components: prims
+
+.PHONY: prims
+prims:
+	make -C hdl/prims
+	make -C hdl/prims install
+
+endif
+
+
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 
 compile build: $(PACKAGES)

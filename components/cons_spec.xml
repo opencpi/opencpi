@@ -1,0 +1,7 @@
+<ComponentSpec Name="copy">
+  <Properties>
+     <Property Name="startIndex" Readable="true" Writable="true"/>
+     <Property Name="longProperty" Readable="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="Data_In_Port"/>
+</ComponentSpec>

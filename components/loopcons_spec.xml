@@ -1,0 +1,13 @@
+<ComponentSpec Name="loopcons">
+  <Properties>
+    <Property Name="passFail" Readable="true" Writable="true"/>
+    <Property Name="run2BufferCount" Readable="true" Writable="true"/>
+    <Property Name="buffersProcessed" Readable="true" Writable="true"/>
+    <Property Name="droppedBuffers" Readable="true" Writable="true"/>
+    <Property Name="bytesProcessed" Readable="true" Writable="true"/>
+    <Property Name="testControlErrors" Readable="true" Writable="true"/>
+    <Property Name="testConfigErrors" eadable="true" Writable="true"/>
+    <Property Name="lastProp" eadable="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="Data_In_Port"/>
+</ComponentSpec>

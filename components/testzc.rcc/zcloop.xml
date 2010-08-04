@@ -1,0 +1,4 @@
+<RccImplementation Name="Loopback" StaticMethods="%W%M">
+  <ControlInterface ControlOperations="initialize,afterConfigure,beforeQuery"/>
+  <xi:include href="zcloop_spec.xml"/>
+</RccImplementation>

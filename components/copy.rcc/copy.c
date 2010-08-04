@@ -5,6 +5,7 @@
  *
  * This file contains the RCC implementation skeleton for worker: copy
  */
+#include <string.h>
 #include "copy_Worker.h"
 
 COPY_METHOD_DECLARATIONS;

@@ -1,0 +1,9 @@
+<ComponentSpec Name="zcprod">
+  <Properties>
+    <Property Name="run2BufferCount" Readable="true" Writable="true"/>
+    <Property Name="buffersProcessed" Readable="true" Writable="true"/>
+    <Property Name="bytesProcessed" Readable="true" Writable="true"/>
+    <Property Name="transferMode" Type="Long" Readable="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="Out" Producer="true"/>
+</ComponentSpec>

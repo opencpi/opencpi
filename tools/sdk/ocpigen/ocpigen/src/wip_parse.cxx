@@ -810,8 +810,6 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
 	if (!*p)
 	  return "Invalid control operation name in ControlOperations attribute";
       }
-      if (!(w->ctl.controlOps & (1 << ControlOpStart)))
-	return "Missing \"start\" operation in ControlOperations attribute";
     }
     ezxml_t props;
     if ((err = tryChildInclude(xctl, file, "Properties", &props, NULL, true)))
@@ -1806,11 +1804,12 @@ parseHdl(ezxml_t xml, const char *file, const char *parent, Worker *w) {
 const char *
 parseRcc(ezxml_t xml, const char *file, const char *parent, Worker *w) {
   const char *err;
-  if ((err = checkAttrs(xml, "Name", "ExternMethods", "Threaded", (void*)0)))
+  if ((err = checkAttrs(xml, "Name", "ExternMethods", "StaticMethods", "Threaded", (void*)0)))
     return err;
   // We use the pattern value as the method naming for RCC
   // and its presence indicates "extern" methods.
   w->pattern = ezxml_attr(xml, "ExternMethods");
+  w->staticPattern = ezxml_attr(xml, "StaticMethods");
   ezxml_t xctl;
   if ((err = parseSpec(xml, file, w)) ||
       (err = parseImplControl(xml, file, w, &xctl)) ||
@@ -1843,16 +1842,16 @@ parseWorker(const char *file, const char *parent, Worker *w) {
   ezxml_t xml;
   if ((err = parseFile(file, parent, NULL, &xml, &w->file)))
     return err;
+  const char *cp = strrchr(file, '/');
+  if (!cp)
+    cp = file;
+  w->fileName = strdup(cp);
+  char *lp = strrchr(w->fileName, '.');
+  if (lp)
+    *lp = 0;
   w->implName = ezxml_attr(xml, "Name");
-  if (!w->implName) {
-    const char *cp = strrchr(file, '/');
-    if (!cp)
-      cp = file;
-    w->implName = strdup(cp);
-    char *lp = strrchr(w->implName, '.');
-    if (lp)
-      *lp = 0;
-  }
+  if (!w->implName)
+    w->implName = w->fileName;
   const char *name = ezxml_name(xml);
   if (name) {
     if (!strcmp("RccImplementation", name))

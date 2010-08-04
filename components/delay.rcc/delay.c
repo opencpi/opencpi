@@ -62,6 +62,7 @@ static RCCResult initialize ( RCCWorker* self )
   p->dlyCtrl = 0;
   p->dlyHoldoffBytes = 0;
   p->dlyHoldoffCycles = 0;
+#if WAS
   p->mesgWtCount = 0;
   p->mesgRdCount = 0;
   p->bytesWritten = 0;
@@ -80,7 +81,7 @@ static RCCResult initialize ( RCCWorker* self )
   p->dlyRdCredit = 0;
   p->dlyWAG = 0;
   p->dlyRAG = 0;
-
+#endif
   return RCC_OK;
 }
 
@@ -249,11 +250,11 @@ static RCCResult run ( RCCWorker* self,
                        RCCBoolean* newRunCondition )
 {
   const uint8_t* p_src =
-                  ( const uint8_t* ) self->ports [ DELAY_WSIIN ].current.data;
+                  ( const uint8_t* ) self->ports [ DELAY_IN ].current.data;
 
-  uint8_t* p_dst = ( uint8_t* ) self->ports [ DELAY_WSIOUT ].current.data;
+  uint8_t* p_dst = ( uint8_t* ) self->ports [ DELAY_OUT ].current.data;
 
-  size_t n_bytes = self->ports [ DELAY_WSIIN ].current.maxLength;
+  size_t n_bytes = self->ports [ DELAY_IN ].current.maxLength;
 
   DelayProperties* p = ( DelayProperties* ) self->properties;
 
@@ -264,7 +265,7 @@ static RCCResult run ( RCCWorker* self,
     /* Read delayed data */
     read_delayed_data ( p_map_info, p_dst, n_bytes );
 
-    self->ports [ DELAY_WSIOUT ].output.length = n_bytes;
+    self->ports [ DELAY_OUT ].output.length = n_bytes;
 
     /* Write new data */
     write_delayed_data ( p_map_info, p_src, n_bytes );
@@ -273,7 +274,7 @@ static RCCResult run ( RCCWorker* self,
   {
     memcpy ( p_dst, p_src, n_bytes );
 
-    self->ports [ DELAY_WSIOUT ].output.length = n_bytes;
+    self->ports [ DELAY_OUT ].output.length = n_bytes;
   }
 
   return RCC_ADVANCE;

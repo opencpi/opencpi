@@ -758,7 +758,7 @@ runTest ()
   }
 
   try {
-    m_containerWorkerId = & m_appContext->createWorker (NULL, NULL, epPtr);
+    m_containerWorkerId = & m_appContext->createWorker (NULL, NULL, (char*)epPtr);
   }
   catch (const CPI::Util::EmbeddedException & oops) {
     const char * auxInfo = oops.getAuxInfo ();
@@ -1163,7 +1163,7 @@ connectInputPorts ()
        * Instantiate file input worker.
        */
 
-      pd.fileIoWorkerId = & m_appContext->createWorker ( NULL, NULL, &TestWorkerFileSourceWorker);
+      pd.fileIoWorkerId = & m_appContext->createWorker ( NULL, NULL, (char*)&TestWorkerFileSourceWorker);
 
       /*
        * Connect file input worker to worker port.
@@ -1272,7 +1272,7 @@ connectOutputPorts ()
        * Instantiate file output worker.
        */
 
-      pd.fileIoWorkerId = & m_appContext->createWorker (NULL, NULL, &TestWorkerFileSinkWorker);
+      pd.fileIoWorkerId = & m_appContext->createWorker (NULL, NULL, (char*)&TestWorkerFileSinkWorker);
 
       /*
        * Connect file input worker to worker port.

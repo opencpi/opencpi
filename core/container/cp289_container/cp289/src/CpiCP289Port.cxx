@@ -722,42 +722,12 @@ connectInternalInputPort( CPI::Container::Port *  tPort,
 }
 
 
-#if 0 // no need for this except guard???
-
-
-// The general case of connecting ports that are in the same process.
+// Just guard the generic connect method with our mutex
 void 
 CPI::CP289::Port::
 connect( CPI::Container::Port &other, CPI::Util::PValue *myProps, CPI::Util::PValue *otherProps) {
-
   CPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
-
-  if (isProvider())
-    if (other.isProvider())
-      throw ApiError("Cannot connect two provider ports", NULL);
-    else
-      other.connect( *this, otherProps, myProps);
-  else if (!other.isProvider()) {
-    throw ApiError("Cannot connect to user ports", NULL);
-  }
-  else {
-    Interface
-      *myContainer = myParent->myParent->myParent,
-      *pContainer = other.myParent->myParent->myParent;
-    const std::string
-      &ipi = other.getInitialProviderInfo(otherProps),
-      &iui = setInitialProviderInfo(myProps, ipi);
-    if (!iui.empty()) {
-      const std::string &fpi = other.setInitialUserInfo(iui);
-      if (!fpi.empty()) {
-	const std::string &fui = setFinalProviderInfo(fpi);
-	if (!fui.empty())
-	  other.setFinalUserInfo(fui);
-      }
-    }
-  }
-
+  return CPI::Container::Port::connect(other, myProps, otherProps);
 }
-#endif
 
 

@@ -5,6 +5,7 @@
 #include <time.h>
 #include <assert.h>
 #include <ctype.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include "wip.h"
 /*
@@ -129,9 +130,9 @@ printgen(FILE *f, const char *comment, const char *file, bool orig) {
 
 const char *
 openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
-	   const char *ext, FILE *&f) {
+	   const char *ext, const char *other, FILE *&f) {
   char *file = (char *)malloc(strlen(outDir) + 1 + strlen(prefix) +
-			      strlen(name) + strlen(suffix) + 1 +
+			      strlen(name) + (other ? strlen(other) : 0) + strlen(suffix) + 1 +
 			      strlen(ext) + 1);
   sprintf(file, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
 	  prefix, name, suffix, ext);
@@ -139,6 +140,29 @@ openOutput(const char *name, const char *outDir, const char *prefix, const char 
     return esprintf("Can't not open file %s for writing (%s)\n",
 		    file, strerror(errno));
   dumpDeps(file);
+  if (other && strcmp(other, name)) {
+    char *otherFile = strdup(file);
+    sprintf(otherFile, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
+	    prefix, other, suffix, ext);
+    // Put all this junk in CpiOs
+    char dummy;
+    ssize_t length = readlink(otherFile, &dummy, 1);
+    if (length != -1) {
+      char *buf = (char*)malloc(length + 1);
+      if (readlink(otherFile, buf, length) != length)
+	return "Unexpected system error reading symlink";
+      buf[length] = '\0';
+      if (!strcmp(otherFile, buf))
+	return 0;
+      if (unlink(otherFile))
+	return "Cannot remove symlink to replace it";
+    } else if (errno != ENOENT)
+      return "Unexpected error reading symlink";
+    char *contents = strrchr(file, '/');
+    contents = contents ? contents + 1 : file;
+    if (symlink(contents, otherFile))
+      return "Cannot create symlink";
+  }
   return 0;
 }
 										
@@ -148,7 +172,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
   const char *err;
   FILE *f;
   Language lang = wrap ? (w->language == VHDL ? Verilog : VHDL) : w->language;
-  if ((err = openOutput(w->implName, outDir, "", DEFS, lang == VHDL ? VHD : VER, f)))
+  if ((err = openOutput(w->implName, outDir, "", DEFS, lang == VHDL ? VHD : VER, NULL, f)))
     return err;
   const char *comment = lang == VHDL ? "--" : "//";
   printgen(f, comment, w->file);
@@ -387,7 +411,7 @@ CPI_PROPERTY_DATA_TYPES
 emitImplHDL(Worker *w, const char *outDir, const char *library) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->implName, outDir, "", IMPL, w->language == VHDL ? VHD : VER, f)))
+  if ((err = openOutput(w->implName, outDir, "", IMPL, w->language == VHDL ? VHD : VER, NULL, f)))
     return err;
   const char *comment = w->language == VHDL ? "--" : "//";
   printgen(f, comment, w->file);
@@ -666,7 +690,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 const char *
 openSkelHDL(Worker *w, const char *outDir, const char *suff, FILE *&f) {
   const char *err;
-  if ((err = openOutput(w->implName, outDir, "", suff, w->language == VHDL ? VHD : VER, f)))
+  if ((err = openOutput(w->implName, outDir, "", suff, w->language == VHDL ? VHD : VER, NULL, f)))
     return err;
   const char *comment = w->language == VHDL ? "--" : "//";
   printgen(f, comment, w->file, true);
@@ -1029,7 +1053,7 @@ const char *
 emitBsvHDL(Worker *w, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->implName, outDir, "I_", "", BSV, f)))
+  if ((err = openOutput(w->implName, outDir, "I_", "", BSV, NULL, f)))
     return err;
   const char *comment = "//";
   printgen(f, comment, w->file);
@@ -1419,7 +1443,7 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
   char *dot = strchr(cname, '.');
   if (dot)
     *dot = '\0';
-  if ((err = openOutput(cname, outDir, "", "_art", ".xml", f)))
+  if ((err = openOutput(cname, outDir, "", "_art", ".xml", NULL, f)))
     return err;
   fprintf(f, "<!--\n");
   printgen(f, "", hdlDep);

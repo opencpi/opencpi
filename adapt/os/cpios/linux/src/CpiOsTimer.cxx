@@ -177,6 +177,16 @@ CounterFreq::CounterFreq ()
 
 #if defined (__x86_64__) || defined (__i386__)
 
+  if ((ptr = std::strstr (tmp, "cpu cores"))) {
+    ptr += 9;
+    while (*ptr == ' ' || *ptr == '\t' || *ptr == ':') {
+      ptr++;
+    }
+    char * endPtr;
+    unsigned long ncores = strtoul (ptr, NULL, 10);
+    if (ncores != 1)
+      return;
+  }
   if ((ptr = std::strstr (tmp, "cpu MHz"))) {
     unsigned int mhz, khz = 0;
     char * endPtr;
@@ -400,6 +410,8 @@ stop ()
 {
   if (useHighResTimer()) {
     register unsigned int tb_lower, tb_upper, tb_upper_tmp;
+    TimerData & td = o2td (m_osOpaque);
+    TimerTickInfo & tti = td.t.tti;
 
     do {
       TBU( tb_upper );
@@ -408,8 +420,6 @@ stop ()
     }
     while ( tb_upper != tb_upper_tmp );
 
-    TimerData & td = o2td (m_osOpaque);
-    TimerTickInfo & tti = td.t.tti;
     cpiAssert (td.running);
 
     unsigned long long t2 = (((unsigned long long) tb_upper)  << 32) | tb_lower;

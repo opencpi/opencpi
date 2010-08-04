@@ -369,6 +369,7 @@ struct Worker {
   const char *file, *specFile;
   const char *implName;
   const char *specName;
+  const char *fileName;
   struct {
     bool isThreaded;
   } rcc;
@@ -379,6 +380,7 @@ struct Worker {
   Clock *clocks;
   Endian endian;
   const char *pattern;
+  const char *staticPattern;      // pattern for rcc static methods
   bool isAssembly;
   unsigned instances;
   Language language;
@@ -407,7 +409,7 @@ extern const char
   *dumpDeps(const char *top),
   **includes, *depFile,
   *openOutput(const char *name, const char *outDir, const char *prefix,
-	      const char *suffix, const char *ext, FILE *&f),
+	      const char *suffix, const char *ext, const char *other, FILE *&f),
   *propertyTypes[],
   *controlOperations[],
   *parseHdlAssy(ezxml_t xml, const char *file, Worker *aw),

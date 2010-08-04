@@ -165,16 +165,17 @@ createArtifact(const char *url, CPI::Util::PValue *)
 }
 
 
-#if 0 // this should not be here - it is not virtual (now)
 CPI::Container::Worker &
 CPI::CP289::Application::
 createWorker(const char *url, CPI::Util::PValue *aparams,
-             const void *entryPoint, const char *inst, CPI::Util::PValue *wparams )
+             const char *entryPoint, const char *inst, CPI::Util::PValue *wparams )
 {
   CPI::Util::AutoMutex guard ( m_mutex, true ); 
-  return *(new CPI::CP289::Worker( *this, entryPoint, wparams, MyParent, NULL, NULL ));
+  if (!url)
+    return *(new CPI::CP289::Worker( *this, (RCCDispatch *)entryPoint, wparams, MyParent, NULL, NULL ));
+  else
+    return CPI::Container::Application::createWorker(url, aparams, entryPoint, inst, wparams);
 }
-#endif
 
 void 
 CPI::CP289::Application::

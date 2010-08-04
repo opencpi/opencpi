@@ -81,10 +81,8 @@ namespace CPI {
         friend class Controller;
 
         CPI::Container::Artifact & createArtifact(const char *url, CPI::Util::PValue *params);
-        CPI::Container::Worker & createWorker(const char *url, CPI::Util::PValue *aparams,
-                                   const void *entryPoint, const char *inst=NULL,
-                                   CPI::Util::PValue *wparams = NULL);
-
+	CPI::Container::Worker &createWorker(const char *url, CPI::Util::PValue *aparams,
+					     const char *entryPoint, const char *inst, CPI::Util::PValue *wparams );
 
       /**********************************
        * Constructor

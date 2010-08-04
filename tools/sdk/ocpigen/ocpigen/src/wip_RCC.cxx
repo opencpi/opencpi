@@ -11,6 +11,7 @@
 // What implementations must explicitly (verilog) or implicitly (VHDL) include.
 #define HEADER ".h"
 #define RCCIMPL "_Worker"
+#define RCCMAP "_map"
 
 static const char *
 upperdup(const char *s) {
@@ -50,13 +51,13 @@ printSimple(FILE *f, Simple *t, const char *prefix, unsigned &offset, unsigned &
 
 static const char *
 methodName(Worker *w, const char *method, const char *&mName) {
-  const char *pat = w->pattern;
+  const char *pat = w->pattern ? w->pattern : w->staticPattern;
   if (!pat) {
     mName = method;
     return 0;
   }
   unsigned length =
-    strlen(w->implName) + strlen(method) + strlen(w->pattern) + 1;
+    strlen(w->implName) + strlen(method) + strlen(pat) + 1;
   char c, *s = (char *)malloc(length);
   mName = s;
   while ((c = *pat++)) {
@@ -110,7 +111,7 @@ const char *
 emitImplRCC(Worker *w, const char *outDir, const char *library) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->implName, outDir, "", RCCIMPL, HEADER, f)))
+  if ((err = openOutput(w->fileName, outDir, "", RCCIMPL, HEADER, w->implName, f)))
     return err;
   fprintf(f, "/*\n");
   printgen(f, " *", w->file);
@@ -300,6 +301,10 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	    upper);
   }  
   fclose(f);
+  if ((err = openOutput(w->fileName, outDir, "", RCCMAP, HEADER, NULL, f)))
+    return err;
+  fprintf(f, "#define RCC_FILE_WORKER_%s %s\n", w->fileName, w->implName);
+  fclose(f);
   return 0;
 }
 
@@ -307,7 +312,7 @@ const char*
 emitSkelRCC(Worker *w, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(w->implName, outDir, "", "_skel", ".c", f)))
+  if ((err = openOutput(w->fileName, outDir, "", "_skel", ".c", NULL, f)))
     return err;
   fprintf(f, "/*\n");
   printgen(f, " *", w->file, true);
@@ -361,7 +366,7 @@ const char *
 emitArtRCC(Worker *aw, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(aw->implName, outDir, "", "_art", ".xml", f)))
+  if ((err = openOutput(aw->implName, outDir, "", "_art", ".xml", NULL, f)))
     return err;
   fprintf(f, "<!--\n");
   printgen(f, "", aw->file);

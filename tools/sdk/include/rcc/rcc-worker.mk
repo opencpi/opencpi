@@ -54,10 +54,17 @@ $(ArtifactXmlFile): $(RccAssemblyFile)
 $(DispatchSourceFile):
 	$(AT)echo Generating dispatch file: $@
 	$(AT)(echo "#include <RCC_Worker.h>";\
-	  echo "extern RCCDispatch "`echo $(strip $(Workers))|tr ' ' ','`";";\
+	  echo "#define STR(foo) _STR(foo)";\
+	  echo "#define _STR(foo) #foo";\
+	  for w in $(Workers); do \
+	      echo "#include \"$${w}_map.h\"";\
+	  done; \
+	  for w in $(Workers); do \
+	      echo "extern RCCDispatch RCC_FILE_WORKER_$$w;";\
+	  done; \
 	  echo "RCCEntryTable ocpi_EntryTable[] = {";\
 	  for w in $(Workers); do \
-	      echo "  {.name=\""$$w"\", .dispatch=&"$$w"},";\
+	      echo "  {.name=STR(RCC_FILE_WORKER_$$w), .dispatch=&RCC_FILE_WORKER_$$w},";\
 	  done; \
 	  echo "  {.name=0}};";\
 	 ) > $@

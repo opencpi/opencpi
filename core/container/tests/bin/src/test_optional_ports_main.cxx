@@ -119,9 +119,9 @@ printUsage (CpiRccBinderConfigurator & config,
 static void createWorkers(std::vector<CApp>& ca )
 {
   try {
-    PRODUCER.worker = &ca[PRODUCER.cid].app->createWorker( NULL,NULL, &UTGProducerWorkerDispatchTable );
-    LOOPBACK.worker = &ca[LOOPBACK.cid].app->createWorker( NULL,NULL, &UTGLoopbackWorkerDispatchTable );
-    CONSUMER.worker = &ca[CONSUMER.cid].app->createWorker( NULL,NULL, &UTGConsumerWorkerDispatchTable );
+    PRODUCER.worker = &ca[PRODUCER.cid].app->createWorker( NULL,NULL, (char *)&UTGProducerWorkerDispatchTable );
+    LOOPBACK.worker = &ca[LOOPBACK.cid].app->createWorker( NULL,NULL, (char *)&UTGLoopbackWorkerDispatchTable );
+    CONSUMER.worker = &ca[CONSUMER.cid].app->createWorker( NULL,NULL, (char *)&UTGConsumerWorkerDispatchTable );
   }
   CATCH_ALL_RETHROW( "creating workers" )
     }
@@ -507,7 +507,7 @@ int  main( int argc, char** argv)
   }
 
   if ( test_rc == 0 ) {
-    printf("\n Test:   %s",  "PASSED"  );
+    printf("\n Test:  %s\n",  "PASSED"  );
     test_rc = 1;
   }
   else {
@@ -595,7 +595,7 @@ int  main( int argc, char** argv)
   }
 
   if ( test_rc == 0 ) {
-    printf("\n Test:   %s",  "PASSED"  );
+    printf("\n Test:  %s\n",  "PASSED"  );
     test_rc = 1;
   }
   else {

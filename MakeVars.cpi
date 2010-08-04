@@ -56,11 +56,9 @@ ifndef SYSTEM
   else ifeq ($(findstring windows32,$(shell uname -a)),windows32)
     # Build from Windriver shell for vxWorks DKM
     SYSTEM=vxworksdkm
-  else ifeq ($(findstring Darwin,$(shell uname -a)),Darwin)
-    SYSTEM=macos
   else
     # Build under Linux for Linux
-    SYSTEM=linux
+    SYSTEM=$(shell uname -s | tr A-Z a-z)
   endif
 endif
 
@@ -91,7 +89,7 @@ ifeq "$(VOBDIR)" ""
 endif
 
 ifeq "$(OUTDIR)" ""
-  OUTDIR = $(SYSTEM)-bin
+  OUTDIR = $(SYSTEM)-$(shell uname -m)-bin
 endif
 
 ifeq "$(DATAPLANE)" ""

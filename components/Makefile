@@ -16,8 +16,10 @@ Implementations = \
 	split1x2.rcc \
 	splitter2x2.hdl \
 	splitter2x2.rcc \
-	wbr.hdl
-#HdlTargets=xc5vsx95t-2-ff1136 xc5vlx50t-ff1136-1
+	wbr.hdl \
+	testmulti.rcc \
+	testzc.rcc
+HdlTargets=xc5vsx95t-2-ff1136 xc5vlx50t-ff1136-1
 # xc6vlx240t-1-ff1156  xc5vlx330t-2-ff1738
 RccTargets=$(HostTarget)
 include $(OCPI_DIR)/include/lib.mk

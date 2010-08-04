@@ -103,7 +103,7 @@ overRidePortInfo( CPI::Metadata::Port & portData )
 
 
 CPI::CP289::Worker::
-Worker( CPI::Container::Application & app, const void* entryPoint, CPI::Util::PValue *wparams,
+Worker( CPI::Container::Application & app, RCCDispatch* wd, CPI::Util::PValue *wparams,
         ::RCCContainer * rcc_container, ezxml_t impl, ezxml_t inst)
   : CPI::Container::Worker(app,impl,inst),
    m_rcc_worker(0),workerId(NULL),enabled(false),sourcePortCount(0),targetPortCount(0),
@@ -113,7 +113,6 @@ Worker( CPI::Container::Application & app, const void* entryPoint, CPI::Util::PV
   if ( wparams ) {
     properties = *wparams;
   }
-  RCCDispatch* wd = (RCCDispatch*)entryPoint;
   m_rcc_worker = new CPI::CP289::RCCWorkerInterface( wd, this );
   m_rcc_worker->m_context->container = rcc_container;
 
@@ -865,22 +864,19 @@ prepareProperty(CPI::Metadata::Property& md , CPI::Container::Property& cp)
 	WCI_CONTROL_RELEASE,
 	WCI_CONTROL_BEFORE_QUERY,
 	WCI_CONTROL_AFTER_CONFIG,
-	WCI_CONTROL_RELEASE // for tesrt
+	WCI_CONTROL_RELEASE // for test
 };
 
-// We can't user the control mask until the wci stuff is nuked: then we can do something like this
-//          if (controlMask & (1 << CM::Worker::Op##c) ||		\
-//	      CM::Worker::Op##c == CM::Worker::OpStop ||		\
-//	      CM::Worker::Op##c == CM::Worker::OpStart)			\
-//
-
+// We can't user the control mask until the wci stuff is nuked
+// And this can be shared better too...
 #define CONTROL_OP(x, c, t, s1, s2, s3)                                          \
   void CPI::CP289::Worker::x() {         					 \
         if (myState == CM::Worker::s1 ||                                         \
             (CM::Worker::s2 != CM::Worker::NONE && myState == CM::Worker::s2) || \
             (CM::Worker::s3 != CM::Worker::NONE && myState == CM::Worker::s3)) { \
 	  control(wciControls[CM::Worker::Op##c], WCI_DEFAULT);                  \
-          myState = CM::Worker::t;                                               \
+          if (CM::Worker::t != CM::Worker::NONE)                                 \
+	    myState = CM::Worker::t;					         \
         } else                                                                   \
           throw CPI::Container::ApiError("Illegal control state for operation",NULL); \
       }

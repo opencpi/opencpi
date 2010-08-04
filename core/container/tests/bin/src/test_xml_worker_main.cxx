@@ -163,7 +163,7 @@ int  main( int argc, char** argv)
 
 
   // Create an artifact
-  const char * w1Url = "/home/jmiller/projects/opencpi/core/container/linux-dll/test.dll";
+  const char * w1Url = "../../../../components/lib/rcc/Linux-x86_64/zcworkers.so";
   Artifact & art1 = ca[0].app-> loadArtifact(w1Url);
   Worker & consumer = ca[0].app->createWorker( art1,"Consumer",0 );
   Worker & producer = ca[0].app->createWorker( art1,"Producer",0 );
@@ -217,9 +217,9 @@ int  main( int argc, char** argv)
   producer.afterConfigure();
 
 
-  consumer.initialize();
+  //  consumer.initialize();
   consumer.start();
-  producer.initialize();
+  //  producer.initialize();
   producer.start();
 
   
@@ -228,7 +228,7 @@ int  main( int argc, char** argv)
   do {
     uint32_t bp = buffersProcessed.getULongValue();
     if ( bp == 250 ) {
-      printf("Test completed sucessfully !!\n");
+      printf("Test: PASSED\n");
       break;
     }
     CPI::OS::sleep( 1000 );
@@ -236,7 +236,7 @@ int  main( int argc, char** argv)
 
   uint32_t tbp = buffersProcessed.getULongValue();
   if ( tbp != 250 ) {
-    printf("Test FAILED!!, tried to process 250 buffers, only processed %d buffers\n", tbp );
+    printf("Test: FAILED!!, tried to process 250 buffers, only processed %d buffers\n", tbp );
   }
 
 
