@@ -39,7 +39,7 @@
 CPI::SCA::BaseProxy::
 BaseProxy (CORBA::ORB_ptr orb,
               PortableServer::POA_ptr poa,
-              const std::string & identifier,
+              const std::string & aIdentifier,
               CPI::Logger::Logger * logger,
               bool adoptLogger,
               bool shutdownOrbOnRelease)
@@ -48,9 +48,9 @@ BaseProxy (CORBA::ORB_ptr orb,
     m_orb (CORBA::ORB::_duplicate (orb)),
     m_poa (PortableServer::POA::_duplicate (poa)),
     m_logger (logger),
-    m_logProducerName (identifier),
+    m_logProducerName (aIdentifier),
     m_state (static_cast<WCI_control> (-1)),
-    m_identifier (identifier),
+    m_identifier (aIdentifier),
     m_adoptLogger (adoptLogger),
     m_shutdownOrbOnRelease (shutdownOrbOnRelease)
 {
@@ -524,7 +524,7 @@ query (CF::Properties & props)
     CORBA::ULong pc = 0;
 
     for (CORBA::ULong pi=0; pi<numProps; pi++) {
-      if (cprops[pi].is_readable && !cprops[pi].is_test) {
+      if (cprops[pi].isReadable && !cprops[pi].isTest) {
         props[pc++].id = CORBA::string_dup (cprops[pi].name);
       }
     }
@@ -703,6 +703,7 @@ connectPort (CORBA::Object_ptr connection, const char * connectionId)
 #if 0
   m_proxy->connectPort (m_portName, connectionId, connection);
 #else
+  (void)connection;(void)connectionId;
   cpiAssert(0);
 #endif
 }
@@ -716,6 +717,7 @@ disconnectPort (const char * connectionId)
 #if 0
   m_proxy->disconnectPort (m_portName, connectionId);
 #else
+  (void)connectionId;
   cpiAssert(0);
 #endif
 }

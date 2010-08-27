@@ -39,6 +39,9 @@
  */
 
 #if defined (__linux__) || defined(__APPLE__) || (defined (__vxworks) && !defined (_WRS_KERNEL))
+#ifndef __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS
+#endif
 #include <stdint.h>
 #endif
 

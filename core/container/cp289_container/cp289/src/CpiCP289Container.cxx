@@ -67,11 +67,11 @@ getEventManager()
 }
 
 CPI::CP289::Container::
-Container(  CPI::Util::Driver &d,
+Container(  CPI::Util::Driver &drv,
             CPI::OS::uint32_t g_unique_id, CPI::DataTransport::TransportGlobal *tpg, 
             const CPI::Util::PValue* props )
   throw ( CPI::Util::EmbeddedException )
-  :CPI::Container::Interface( d, "RCC Container Instance", props), 
+  :CPI::Container::Interface( drv, "RCC Container Instance", props), 
    CPI::CP289::Controller( this ),
    m_threadSafeMutex(true)
 {
@@ -90,7 +90,7 @@ Container(  CPI::Util::Driver &d,
   const CPI::Util::PValue*  p = CPI::Util::PValue::find(props, "monitorIPAddress");
   const char* monitorIPAddress = NULL;
   if ( p ) {
-    if ( p->type != CPI::Metadata::Property::CPI_String) {
+    if ( p->type != CPI::Util::Prop::Scalar::CPI_String) {
       throw CPI::Util::EmbeddedException("\"monitorIPAddress\" property has wrong type, should be String");
     }
     monitorIPAddress = p->vString;

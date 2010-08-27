@@ -50,6 +50,7 @@ namespace CPI {
     namespace CO = CPI::OS;
     namespace CM = CPI::Metadata;
     namespace CU = CPI::Util;
+    namespace CP = CPI::Util::Prop;
 
     static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
     // This is the alignment constraint of DMA buffers in the processor's memory.
@@ -143,10 +144,10 @@ namespace CPI {
       friend class Driver;
       friend class Port;
     protected:
-      Container(CU::Driver &driver, const char *name, uint64_t bar0Paddr,
-                volatile OccpSpace *occp, uint64_t bar1Paddr, uint8_t *bar1Vaddr,
+      Container(CU::Driver &aDriver, const char *name, uint64_t bar0Paddr,
+                volatile OccpSpace *aOccp, uint64_t bar1Paddr, uint8_t *aBar1Vaddr,
                 uint32_t bar1Size)  :
-        CC::Interface(driver, name), occp(occp), bar1Vaddr(bar1Vaddr)
+        CC::Interface(aDriver, name), occp(aOccp), bar1Vaddr(aBar1Vaddr)
       {
         if (bar0Paddr < bar1Paddr) {
           basePaddr = bar0Paddr;
@@ -174,6 +175,7 @@ namespace CPI {
       }
       void releaseWorkerAccess(unsigned index)
       {
+	(void)index;
         // potential unmapping/ref counting
       }
       // support worker ids for those who want it
@@ -290,6 +292,7 @@ namespace CPI {
       friend class Container;
       Artifact(CC::Interface &c, const char *url, CU::PValue *artifactParams) :
         CC::Artifact(c, url) {
+	(void)artifactParams;
         /* load bitstream here or on first worker creation or
            on first worker init/start */
       }
@@ -357,9 +360,9 @@ namespace CPI {
       // the key members are "readVaddr" and "writeVaddr"
       virtual void prepareProperty(CM::Property &md, CC::Property &cp) {
         if (myRegisters)
-          if (!md.is_struct && !md.is_sequence && !md.types->type != CM::Property::CPI_String &&
-              CM::Property::tsize[md.types->type] <= 32 &&
-              !md.write_error)
+          if (!md.isStruct && !md.members->type.isSequence && !md.members->type.scalar != CP::Scalar::CPI_String &&
+              CP::Scalar::sizes[md.members->type.scalar] <= 32 &&
+              !md.writeError)
             cp.writeVaddr = myProperties + md.offset;
       }
       void checkResult(uint32_t result) {
@@ -412,6 +415,7 @@ namespace CPI {
         WciControl(container, implXml, instXml),
         myRplContainer(container)
       {
+	(void)execProps;
       }
       ~Worker()
       {
@@ -456,37 +460,28 @@ namespace CPI {
 #undef CPI_DATA_TYPE_S
       // Set a scalar property value
 #define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
-      void set##pretty##Property(unsigned ord, const run val) {                \
-        CM::Property &p = property(ord);                                \
-        if (!p.is_writable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (p.write_error &&                                                \
+      void set##pretty##Property(CM::Property &p, const run val) {                \
+        if (p.writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before write */                        \
-        store *pp = (store *)(myProperties + p.offset);                        \
+        volatile store *pp = (volatile store *)(myProperties + p.offset);                        \
         if (bits > 32) {                                                \
           assert(bits == 64);                                                \
-          uint32_t *p32 = (uint32_t *)pp;                                \
-          p32[1] = ((uint32_t *)&val)[1];                                \
-          p32[0] = ((uint32_t *)&val)[0];                                \
+          volatile uint32_t *p32 = (volatile uint32_t *)pp;                                \
+          p32[1] = ((const uint32_t *)&val)[1];                                \
+          p32[0] = ((const uint32_t *)&val)[0];                                \
         } else                                                                \
-          *pp = *(store *)&val;                                                \
-        if (p.write_error && myRegisters->status & OCCP_STATUS_ALL_ERRORS) \
+          *pp = *(const store *)&val;                                                \
+        if (p.writeError && myRegisters->status & OCCP_STATUS_ALL_ERRORS) \
           throw; /*"worker has errors after write */                        \
       }                                                                        \
-      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned length) { \
-        CM::Property &p = property(ord);                                \
-        assert(p.types->type == CM::Property::CPI_##pretty);                \
-        if (!p.is_writable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (length > p.sequence_size)                                        \
-          throw;                                                        \
-        if (p.write_error &&                                                \
+      void set##pretty##SequenceProperty(CM::Property &p,const run *vals, unsigned length) { \
+        if (p.writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before write */                        \
         memcpy((void *)(myProperties + p.offset + p.maxAlign), vals, length * sizeof(run)); \
-        *(uint32_t *)(myProperties + p.offset) = length;                \
-        if (p.write_error &&                                                \
+        *(volatile uint32_t *)(myProperties + p.offset) = length;                \
+        if (p.writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors after write */                        \
       }
@@ -495,15 +490,11 @@ namespace CPI {
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void set##pretty##Property(unsigned ord, const run val) {        \
-        CM::Property &p = property(ord);                                \
-        assert(p.types->type == CM::Property::CPI_##pretty);                \
-        if (!p.is_writable)                                                \
-          throw "attempt to set property that is not writable";        \
+      virtual void set##pretty##Property(CM::Property &p, const run val) {        \
         unsigned cpi_length;                                                \
-        if (!val || (cpi_length = strlen(val)) > p.types->size)                \
+        if (!val || (cpi_length = strlen(val)) > p.members->type.stringLength)                \
           throw; /*"string property too long"*/;                        \
-        if (p.write_error &&                                                \
+        if (p.writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before write */                        \
         uint32_t *p32 = (uint32_t *)(myProperties + p.offset);                \
@@ -513,29 +504,25 @@ namespace CPI {
         uint32_t i;                                                        \
         memcpy(&i, val, 32/CHAR_BIT);                                        \
         p32[0] = i;                                                        \
-        if (p.write_error &&                                                \
+        if (p.writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors after write */                        \
       }                                                                        \
-      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned length) { \
-        CM::Property &p = property(ord);                                \
-        assert(p.types->type == CM::Property::CPI_##pretty);                \
-        if (!p.is_writable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (length > p.sequence_size)                                        \
+      void set##pretty##SequenceProperty(CM::Property &p,const run *vals, unsigned length) { \
+        if (length > p.members->type.length)                                        \
           throw;                                                        \
-        if (p.write_error &&                                                \
+        if (p.writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before write */                        \
         char *cp = (char *)(myProperties + p.offset + 32/CHAR_BIT);        \
         for (unsigned i = 0; i < length; i++) {                                \
           unsigned len = strlen(vals[i]);                                \
-          if (len > p.types->size)                                        \
+          if (len > p.members->type.length)                                        \
             throw; /* "string in sequence too long" */                        \
           memcpy(cp, vals[i], len+1);                                        \
         }                                                                \
         *(uint32_t *)(myProperties + p.offset) = length;                \
-        if (p.write_error &&                                                \
+        if (p.writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors after write */                        \
       }
@@ -544,11 +531,8 @@ namespace CPI {
 #undef CPI_DATA_TYPE
       // Get Scalar Property
 #define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
-      virtual run get##pretty##Property(unsigned ord) {                        \
-        CM::Property &p = property(ord);                                \
-        if (!p.is_readable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (p.read_error &&                                                \
+      virtual run get##pretty##Property(CM::Property &p) {                        \
+        if (p.readError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before read "*/                        \
         uint32_t *pp = (uint32_t *)(myProperties + p.offset);                \
@@ -559,15 +543,12 @@ namespace CPI {
         if (bits > 32)                                                        \
           u.u32[1] = pp[1];                                                \
         u.u32[0] = pp[0];                                                \
-        if (p.read_error && myRegisters->status & OCCP_STATUS_ALL_ERRORS) \
+        if (p.readError && myRegisters->status & OCCP_STATUS_ALL_ERRORS) \
           throw; /*"worker has errors after read */                        \
         return u.r;                                                        \
       }                                                                        \
-      unsigned get##pretty##SequenceProperty(unsigned ord, run *vals, unsigned length) { \
-        CM::Property &p = property(ord);                                \
-        if (!p.is_readable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (p.read_error &&                                                \
+      unsigned get##pretty##SequenceProperty(CM::Property &p, run *vals, unsigned length) { \
+        if (p.readError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before read "*/                        \
         uint32_t n = *(uint32_t *)(myProperties + p.offset);                \
@@ -575,7 +556,7 @@ namespace CPI {
           throw; /* sequence longer than provided buffer */                \
         memcpy(vals, (void*)(myProperties + p.offset + p.maxAlign),        \
                n * sizeof(run));                                        \
-        if (p.read_error &&                                                \
+        if (p.readError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors after read */                        \
         return n;                                                        \
@@ -585,38 +566,29 @@ namespace CPI {
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void get##pretty##Property(unsigned ord, char *cp, unsigned length) { \
-        CM::Property &p = property(ord);                                \
-        assert(p.types->type == CM::Property::CPI_##pretty);                \
-        if (!p.is_readable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (length < p.types->size+1)                                        \
+      virtual void get##pretty##Property(CM::Property &p, char *cp, unsigned length) { \
+        unsigned stringLength = p.members->type.stringLength; \
+        if (length < stringLength + 1)                                        \
           throw; /*"string buffer smaller than property"*/;                \
-        if (p.read_error &&                                                \
+        if (p.readError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before write */                        \
         uint32_t i32, *p32 = (uint32_t *)(myProperties + p.offset);        \
-        memcpy(cp + 32/CHAR_BIT, p32 + 1, p.types->size + 1 - 32/CHAR_BIT); \
+        memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT); \
         i32 = *p32;                                                        \
         memcpy(cp, &i32, 32/CHAR_BIT);                                        \
-        if (p.read_error &&                                                \
+        if (p.readError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors after write */                        \
       }                                                                        \
       unsigned get##pretty##SequenceProperty                                \
-      (unsigned ord, run *vals, unsigned length, char *buf, unsigned space) { \
-        CM::Property &p = property(ord);                                \
-        assert(p.types->type == CM::Property::CPI_##pretty);                \
-        if (!p.is_readable)                                                \
-          throw; /*"attempt to get property that is not readable" */        \
-        if (length > p.sequence_size)                                        \
-          throw;                                                        \
-        if (p.read_error &&                                                \
+      (CM::Property &p, run *vals, unsigned length, char *buf, unsigned space) { \
+        if (p.readError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before read */                        \
         uint32_t                                                        \
           n = *(uint32_t *)(myProperties + p.offset),                        \
-          wlen = p.types->size + 1;                                        \
+          wlen = p.members->type.stringLength + 1;                            \
         if (n > length)                                                        \
           throw; /* sequence longer than provided buffer */                \
         char *cp = (char *)(myProperties + p.offset + 32/CHAR_BIT);        \
@@ -630,7 +602,7 @@ namespace CPI {
           buf += slen;                                                        \
           space -= slen;                                                \
         }                                                                \
-        if (p.read_error &&                                                \
+        if (p.readError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors after read */                        \
         return n;                                                        \
@@ -1001,6 +973,7 @@ namespace CPI {
                      CPI::OS::uint32_t bufferCount,
                      CPI::OS::uint32_t bufferSize,
                      CU::PValue* props) throw() {
+      (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
       return *(Port *)0;//return *new Port(*this);
     }
     CC::Port &Worker::
@@ -1008,6 +981,7 @@ namespace CPI {
                     CPI::OS::uint32_t bufferCount,
                     CPI::OS::uint32_t bufferSize,
                     CU::PValue* props) throw() {
+      (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
       return *(Port *)0;//      return *new Port(*this);
     }
 
@@ -1032,6 +1006,7 @@ namespace CPI {
       bool last;                // last buffer in the set
       void release();
       void put(uint8_t opCode, uint32_t dataLength, bool endOfData) {
+	(void)endOfData;
         cpiAssert(dataLength <= length);
         metadata->opCode = opCode;
         metadata->length = dataLength;
@@ -1099,7 +1074,7 @@ namespace CPI {
         // Now we allocate all the (local) endpoint memory
         uint8_t *allocation = 0;
         static const char *dma = getenv("CPI_DMA_MEMORY");
-        static bool done = false;
+        static bool done = false;  // FIXME not thread safe, and generates incorrect compiler error
         static uint64_t base, size;
         if (!done) {
           if (dma) {

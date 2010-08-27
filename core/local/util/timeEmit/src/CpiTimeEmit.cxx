@@ -372,32 +372,32 @@ CPI::Time::Emit::RegisterEvent::RegisterEvent( CPI::Util::PValue& p )
   int width = p.width*8;
   DataType dtype=CPI::Time::Emit::i;
   switch( p.type ){
-  case CPI::Metadata::Property::CPI_Short:
-  case CPI::Metadata::Property::CPI_Long:
-  case CPI::Metadata::Property::CPI_Char:
-  case CPI::Metadata::Property::CPI_LongLong:
+  case CPI::Util::Prop::Scalar::CPI_Short:
+  case CPI::Util::Prop::Scalar::CPI_Long:
+  case CPI::Util::Prop::Scalar::CPI_Char:
+  case CPI::Util::Prop::Scalar::CPI_LongLong:
     dtype = CPI::Time::Emit::i;
     break;
 
-  case CPI::Metadata::Property::CPI_Bool:
-  case CPI::Metadata::Property::CPI_ULong:
-  case CPI::Metadata::Property::CPI_UShort:
-  case CPI::Metadata::Property::CPI_ULongLong:
-  case CPI::Metadata::Property::CPI_UChar:
+  case CPI::Util::Prop::Scalar::CPI_Bool:
+  case CPI::Util::Prop::Scalar::CPI_ULong:
+  case CPI::Util::Prop::Scalar::CPI_UShort:
+  case CPI::Util::Prop::Scalar::CPI_ULongLong:
+  case CPI::Util::Prop::Scalar::CPI_UChar:
     dtype = CPI::Time::Emit::u;
     break;
 
-  case CPI::Metadata::Property::CPI_Double:
-  case CPI::Metadata::Property::CPI_Float:
+  case CPI::Util::Prop::Scalar::CPI_Double:
+  case CPI::Util::Prop::Scalar::CPI_Float:
     dtype = CPI::Time::Emit::d;
     break;
 
-  case CPI::Metadata::Property::CPI_String:
+  case CPI::Util::Prop::Scalar::CPI_String:
     dtype = CPI::Time::Emit::c;
     break;
 
-  case CPI::Metadata::Property::CPI_none:
-  case CPI::Metadata::Property::CPI_data_type_limit:
+  case CPI::Util::Prop::Scalar::CPI_none:
+  case CPI::Util::Prop::Scalar::CPI_scalar_type_limit:
     cpiAssert(0);
     break;
 

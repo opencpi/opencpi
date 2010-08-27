@@ -37,6 +37,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <string>
+#include <ctype.h>
 #include <ezxml.h>
 #include <CpiOsAssert.h>
 #include <CpiUtilUri.h>
@@ -61,7 +62,9 @@ PropertyParser ()
 
 CPI::SCA::PropertyParser::
 PropertyParser (CPI::Util::Vfs::Vfs & fs,
-                const std::string & fileName)
+                const std::string & fileName,
+		const std::string & implementation)
+		
   throw (std::string)
   : m_magicString (0),
     m_sizeOfPropertySpace (0),
@@ -73,7 +76,7 @@ PropertyParser (CPI::Util::Vfs::Vfs & fs,
     m_tests (0)
 {
   try {
-    parse (fs, fileName);
+    parse (fs, fileName, implementation);
   }
   catch (...) {
     cleanup ();
@@ -101,6 +104,27 @@ encode ()
   }
 
   return m_magicString;
+}
+
+const char *
+CPI::SCA::PropertyParser::
+emitOcpiXml(std::string &name, std::string &specFile, std::string &specDir,
+	    std::string &implFile, std::string &implDir, std::string &model,
+	    char *idlFiles[], bool debug)
+  throw ()
+{
+  // What name should be used in the XML as the name of the implementation?
+  std::string implName = name.length() ? name : m_spdName;
+  std::string specPath = specDir + "/" + (specFile.length() ? specFile : m_spdFileName) + "_spec.xml";
+  std::string implPath = implDir + "/" + (implFile.length() ? implFile : m_spdFileName) + ".xml";
+
+  return CPI::SCA::emit_ocpi_xml(specPath.c_str(), implPath.c_str(),
+				 m_spdName.c_str(), implName.c_str(),
+				 m_spdPathName.c_str(), model.c_str(),
+				 idlFiles, debug,
+				 m_properties, m_numProperties,
+				 m_ports, m_numPorts,
+				 m_tests, m_numTests);
 }
 
 void
@@ -142,7 +166,8 @@ cleanup ()
 void
 CPI::SCA::PropertyParser::
 parse (CPI::Util::Vfs::Vfs & fs,
-       const std::string & fileName)
+       const std::string & fileName,
+       const std::string & implementation)
   throw (std::string)
 {
   /*
@@ -167,7 +192,7 @@ parse (CPI::Util::Vfs::Vfs & fs,
   cpiAssert (root && type);
 
   if (std::strcmp (type, "softpkg") == 0) {
-    processSPD (fs, fileName, std::string(), root);
+    processSPD (fs, fileName, implementation, root);
   }
   else if (std::strcmp (type, "softwarecomponent") == 0) {
     processSCD (fs, fileName, root);
@@ -188,13 +213,13 @@ parse (CPI::Util::Vfs::Vfs & fs,
 void
 CPI::SCA::PropertyParser::
 processSPD (CPI::Util::Vfs::Vfs & fs,
-            const std::string & spdFileName,
+            const std::string & spdPathName,
             const std::string & implId,
             ezxml_t spdRoot)
   throw (std::string)
 {
   cpiAssert (spdRoot && ezxml_name (spdRoot));
-  cpiAssert (std::strcmp (ezxml_name (spdRoot), "softpkg") == 0);
+  cpiAssert (std::strcmp (spdRoot->name, "softpkg") == 0);
 
   /*
    * The SCA says that "the SCD file is optional, since some SCA
@@ -230,7 +255,7 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
   std::string scdFileName;
 
   try {
-    CPI::Util::Uri scdUri (fs.nameToURI (spdFileName));
+    CPI::Util::Uri scdUri (fs.nameToURI (spdPathName));
     scdUri += scdRelName;
 
     scdFileName = fs.URIToName (scdUri.get());
@@ -248,7 +273,7 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
       scdTail = scdRelName;
     }
 
-    std::string spdDirName = CPI::Util::Vfs::directoryName (spdFileName);
+    std::string spdDirName = CPI::Util::Vfs::directoryName (spdPathName);
     scdFileName = CPI::Util::Vfs::joinNames (spdDirName, scdTail);
   }
 
@@ -287,6 +312,12 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
 
   processSCD (fs, scdFileName, scdRoot);
 
+  const char * spdName = ezxml_attr (spdRoot, "name");
+  
+  if (!spdName) {
+    throw std::string ("root node lacks \"name\" attribute");
+  }
+  m_spdName = spdName;
   /*
    * Now process the SPD's own PRF.  This element is optional.
    */
@@ -297,42 +328,42 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
     unsigned int oldNumProperties = m_numProperties;
     unsigned int oldNumTests = m_numTests;
 
-    parsePropertyfile (fs, spdFileName,
+    parsePropertyfile (fs, spdPathName,
                        propertyFileNode);
-
+    /*
+     * We picked up new properties and/or tests from this property file.
+     * Update the component type: use the SPD's name.  The name attribute
+     * is mandatory.
+     */
     if (m_numProperties != oldNumProperties ||
-        m_numTests != oldNumTests) {
-      /*
-       * We picked up new properties and/or tests from this property file.
-       * Update the component type: use the SPD's name.  The name attribute
-       * is mandatory.
-       */
-
-      const char * spdName = ezxml_attr (spdRoot, "name");
-
-      if (!spdName) {
-        throw std::string ("root node lacks \"name\" attribute");
-      }
-
+        m_numTests != oldNumTests)
       m_componentType = spdName;
-    }
   }
 
   /*
    * If an implementation UUID was specified, parse this implementation's
    * PRF file, if present.
+   * If the implementation UUID is a digit, it indicates the Nth implementation in the file.
    */
 
   if (implId.length()) {
     ezxml_t implNode = ezxml_child (spdRoot, "implementation");
+    bool position = isdigit(*implId.c_str());
+    unsigned n = atoi(implId.c_str());
+    const char *id;
 
     while (implNode) {
-      const char * id = ezxml_attr (implNode, "id");
-
-      if (id && implId == id) {
-        break;
+      id = ezxml_attr (implNode, "id");
+      if (position) {
+	if (n == 0)
+	  break;
+        else
+	  n--;
+      } else {
+	if (id && implId == id) {
+	  break;
+	}
       }
-
       implNode = ezxml_next (implNode);
     }
 
@@ -353,8 +384,8 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
       unsigned int oldNumProperties = m_numProperties;
       unsigned int oldNumTests = m_numTests;
 
-      parsePropertyfile (fs, spdFileName,
-                         implPrfNode);
+      parsePropertyfile (fs, spdPathName,
+                         implPrfNode, true);
 
       if (m_numProperties != oldNumProperties ||
           m_numTests != oldNumTests) {
@@ -364,9 +395,14 @@ processSPD (CPI::Util::Vfs::Vfs & fs,
          */
 
         m_componentType = implId;
+	m_implName = id;
       }
     }
   }
+  std::string spdRelName = CPI::Util::Vfs::relativeName (spdPathName);
+  size_t n = spdRelName.find_first_of('.');
+  m_spdFileName = n != std::string::npos ? spdRelName.substr(0, n) : spdRelName;
+  m_spdPathName = spdPathName;
 }
 
 void
@@ -377,7 +413,7 @@ processSCD (CPI::Util::Vfs::Vfs & fs,
   throw (std::string)
 {
   cpiAssert (scdRoot && ezxml_name (scdRoot));
-  cpiAssert (std::strcmp (ezxml_name (scdRoot), "softwarecomponent") == 0);
+  cpiAssert (std::strcmp (scdRoot->name, "softwarecomponent") == 0);
 
   ezxml_t scdFeaturesNode = ezxml_child (scdRoot, "componentfeatures");
 
@@ -406,6 +442,7 @@ processSCD (CPI::Util::Vfs::Vfs & fs,
   else {
     m_componentType = relScdName;
   }
+  m_scdName = m_componentType;
 
   /*
    * Count the number of ports.
@@ -455,6 +492,12 @@ processSCD (CPI::Util::Vfs::Vfs & fs,
 
     while (portsNode) {
       const char * portType = ezxml_name (portsNode);
+      const char * repId = ezxml_attr (portsNode, "repid");
+      
+      if (!repId) {
+	throw std::string ("Missing \"repid\" attribute for uses port");
+      }
+      portData->repid = strdup(repId);
 
       if (portType && std::strcmp (portType, "uses") == 0) {
         const char * portName = ezxml_attr (portsNode, "usesname");
@@ -464,7 +507,7 @@ processSCD (CPI::Util::Vfs::Vfs & fs,
         }
 
         portData->name = strdup (portName);
-        portData->provider = false;
+	portData->provider = false;
         portData->twoway = false;
         portData++;
       }
@@ -501,7 +544,8 @@ void
 CPI::SCA::PropertyParser::
 parsePropertyfile (CPI::Util::Vfs::Vfs & fs,
                    const std::string & fileName,
-                   ezxml_t propertyFileNode)
+                   ezxml_t propertyFileNode,
+		   bool impl)
   throw (std::string)
 {
   ezxml_t localFileNode = ezxml_child (propertyFileNode, "localfile");
@@ -581,16 +625,16 @@ parsePropertyfile (CPI::Util::Vfs::Vfs & fs,
     throw errMsg;
   }
 
-  processPRF (prfRoot);
+  processPRF (prfRoot, impl);
 }
 
 void
 CPI::SCA::PropertyParser::
-processPRF (ezxml_t prfRoot)
+processPRF (ezxml_t prfRoot, bool impl)
   throw (std::string)
 {
   cpiAssert (prfRoot && ezxml_name (prfRoot));
-  cpiAssert (std::strcmp (ezxml_name (prfRoot), "properties") == 0);
+  cpiAssert (std::strcmp (prfRoot->name, "properties") == 0);
 
   /*
    * Count the number of properties, excluding duplicates.
@@ -725,7 +769,7 @@ processPRF (ezxml_t prfRoot)
       const char * propName = getNameOrId (propertyNode);
 
       if (!haveProperty (propName)) {
-        processSimpleProperty (propertyNode, propData, offset, false, false);
+        processSimpleProperty (propertyNode, propData, offset, false, false, impl);
         m_nameToIdxMap[propName] = propIdx++;
         propData++;
       }
@@ -741,7 +785,7 @@ processPRF (ezxml_t prfRoot)
       const char * propName = getNameOrId (propertyNode);
 
       if (!haveProperty (propName)) {
-        processSimpleProperty (propertyNode, propData, offset, true, false);
+        processSimpleProperty (propertyNode, propData, offset, true, false, impl);
         m_nameToIdxMap[propName] = propIdx++;
         propData++;
       }
@@ -801,7 +845,7 @@ processPRF (ezxml_t prfRoot)
           const char * propName = getNameOrId (ivProp);
 
           if (!haveProperty (propName)) {
-            processSimpleProperty (ivProp, propData, offset, false, true);
+            processSimpleProperty (ivProp, propData, offset, false, true, impl);
             m_nameToIdxMap[propName] = propIdx++;
             propData->is_writable = true;
             propData++;
@@ -842,7 +886,7 @@ processPRF (ezxml_t prfRoot)
           const char * propName = getNameOrId (ovProp);
 
           if (!haveProperty (propName)) {
-            processSimpleProperty (ovProp, propData, offset, false, true);
+            processSimpleProperty (ovProp, propData, offset, false, true, impl);
             m_nameToIdxMap[propName] = propIdx++;
             propData->is_readable = true;
             propData++;
@@ -886,7 +930,8 @@ processSimpleProperty (ezxml_t simplePropertyNode,
                        CPI::SCA::Property * propData,
                        unsigned int & offset,
                        bool isSequence,
-                       bool isTest)
+                       bool isTest,
+		       bool isImpl)
   throw (std::string)
 {
   const char * propId = ezxml_attr (simplePropertyNode, "id");
@@ -910,6 +955,7 @@ processSimpleProperty (ezxml_t simplePropertyNode,
   propData->read_sync = isTest ? false : true;
   propData->write_sync = isTest ? false : true;
   propData->is_test = isTest;
+  propData->is_impl = isImpl;
 
   if (!isTest && (!propMode ||
                   std::strcmp (propMode, "readwrite") == 0 ||
@@ -1033,6 +1079,7 @@ adjustSimpleProperty (ezxml_t propertyNode,
                       bool isTest)
   throw (std::string)
 {
+  (void)isSequence;
   const char * propMode = ezxml_attr (propertyNode, "mode");
 
   if (!isTest) {
@@ -1090,6 +1137,7 @@ isConfigurableProperty (ezxml_t propertyNode)
     if (!kindType || std::strcmp (kindType, "configure") == 0) {
       isConfigurable = true;
     }
+    kindNode = ezxml_next(kindNode);
   }
 
   return isConfigurable;

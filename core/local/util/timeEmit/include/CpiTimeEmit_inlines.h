@@ -26,10 +26,11 @@
  *                  Initial version.
  */
 
-#include <CpiOsAssert.h>
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <CpiOsAssert.h>
+#include <CpiUtilPropertyType.h>
 
 #ifndef CPI_TIME_ANALYZER_INLINE_VALID_USE__
 #error "You are not permitted to include this file standalone"
@@ -244,8 +245,8 @@ inline void CPI::Time::Emit::emit( CPI::Time::Emit::EventId id,
 
 
 
-  CPI::OS::uint64_t* d = (CPI::OS::uint64_t*)(m_q->current + 1);
-  *d = v;
+  CPI::OS::uint64_t* dp = (CPI::OS::uint64_t*)(m_q->current + 1);
+  *dp = v;
 
 
   m_q->current++; 
@@ -267,51 +268,51 @@ inline void CPI::Time::Emit::emit( EventId id, CPI::Util::PValue& p, EventTrigge
 {
   INIT_EVENT(id, role, sizeof(CPI::OS::uint64_t) );
 
-  CPI::Time::SValue* d = (CPI::Time::SValue*)(m_q->current + 1);
+  CPI::Time::SValue* dp = (CPI::Time::SValue*)(m_q->current + 1);
 
   switch ( p.type ) {
 
-  case CPI::Metadata::Property::CPI_Short:
-    d->ivalue = p.vShort;    
+  case CPI::Util::Prop::Scalar::CPI_Short:
+    dp->ivalue = p.vShort;    
     break;
-  case CPI::Metadata::Property::CPI_Long:
-    d->ivalue = p.vLong;
+  case CPI::Util::Prop::Scalar::CPI_Long:
+    dp->ivalue = p.vLong;
     break;
-  case CPI::Metadata::Property::CPI_Char:
-    d->ivalue = p.vChar;
+  case CPI::Util::Prop::Scalar::CPI_Char:
+    dp->ivalue = p.vChar;
     break;    
-  case CPI::Metadata::Property::CPI_LongLong:
-    d->ivalue = p.vLongLong;
+  case CPI::Util::Prop::Scalar::CPI_LongLong:
+    dp->ivalue = p.vLongLong;
     break;    
-  case CPI::Metadata::Property::CPI_Bool:
-    d->uvalue = p.vBool;
+  case CPI::Util::Prop::Scalar::CPI_Bool:
+    dp->uvalue = p.vBool;
     break;    
-  case CPI::Metadata::Property::CPI_ULong:
-    d->uvalue = p.vULong;
+  case CPI::Util::Prop::Scalar::CPI_ULong:
+    dp->uvalue = p.vULong;
     break;    
-  case CPI::Metadata::Property::CPI_UShort:
-    d->uvalue = p.vUShort;
+  case CPI::Util::Prop::Scalar::CPI_UShort:
+    dp->uvalue = p.vUShort;
     break;    
-  case CPI::Metadata::Property::CPI_ULongLong:
-    d->uvalue = p.vULongLong;
+  case CPI::Util::Prop::Scalar::CPI_ULongLong:
+    dp->uvalue = p.vULongLong;
     break;    
-  case CPI::Metadata::Property::CPI_UChar:
-    d->uvalue = p.vUShort;
+  case CPI::Util::Prop::Scalar::CPI_UChar:
+    dp->uvalue = p.vUShort;
     break;    
-  case CPI::Metadata::Property::CPI_Double:
-    d->dvalue = p.vDouble;
+  case CPI::Util::Prop::Scalar::CPI_Double:
+    dp->dvalue = p.vDouble;
     break;    
-  case CPI::Metadata::Property::CPI_Float:
-    d->dvalue = p.vFloat;
+  case CPI::Util::Prop::Scalar::CPI_Float:
+    dp->dvalue = p.vFloat;
     break;    
 
-  case CPI::Metadata::Property::CPI_String:
+  case CPI::Util::Prop::Scalar::CPI_String:
     // NOTE:   NOT REALLY SURE WHAT TO DO WITH THIS YET !!
     //    memcpy( &m_q->current->uvalue, &p.vString, sizeof(CPI::OS::uint64_t) );
     break;    
 
-  case CPI::Metadata::Property::CPI_none:
-  case CPI::Metadata::Property::CPI_data_type_limit:
+  case CPI::Util::Prop::Scalar::CPI_none:
+  case CPI::Util::Prop::Scalar::CPI_scalar_type_limit:
     cpiAssert(0);
   }
 

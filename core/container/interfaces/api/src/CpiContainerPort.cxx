@@ -8,7 +8,7 @@
 namespace CPI {
   namespace Container {
     namespace CM = CPI::Metadata;
-
+    namespace CP = CPI::Util::Prop;
     BasePort::BasePort(CPI::Metadata::Port & metaData ) :
       PortData(metaData), myDesc(connectionData.data.desc)
     {
@@ -56,6 +56,7 @@ namespace CPI {
     // The default behavior is that there is nothing special to do between
     // ports of like containers.
     bool Port::connectLike(Port &other, CPI::Util::PValue *myProps,  CPI::Util::PValue *otherProps) {
+      (void)other;(void)myProps;(void)otherProps;
       return false;
     }
 
@@ -71,14 +72,13 @@ namespace CPI {
       }
       else {
         Interface
-          *myContainer = myParent->myParent->myParent,
           *pContainer = other.myParent->myParent->myParent;
         // Containers know how to do internal connections
-        if (myContainer == pContainer) {
+        if (&myContainer == pContainer) {
           connectInside(other, myProps, otherProps);
         }
         // Container MAY know how to do intercontainer connections between like containers.
-        else if (&myContainer->myParent == &pContainer->myParent &&
+        else if (myContainer.myParent == pContainer->myParent &&
                  connectLike( other, myProps, otherProps)) {
 	  return;
         }
@@ -182,13 +182,13 @@ namespace CPI {
         return;
       for (CPI::Util::PValue *p = props; p->name; p++) {
         if (strcmp(p->name, "bufferCount") == 0) {
-          if (p->type != CM::Property::CPI_ULong)
+          if (p->type != CP::Scalar::CPI_ULong)
             throw ApiError("bufferCount property has wrong type, should be ULong", NULL);
           if (p->vULong < myMetaPort.minBufferCount)
             throw ApiError("bufferCount is below worker's minimum", NULL);
           myDesc.nBuffers = p->vULong;
         } else if (strcmp(p->name, "bufferSize") == 0) {
-          if (p->type != CM::Property::CPI_ULong)
+          if (p->type != CP::Scalar::CPI_ULong)
             throw ApiError("bufferSize property has wrong type, should be ULong", NULL);
           if (p->vULong < myMetaPort.minBufferSize)
             throw ApiError("bufferSize is below worker's minimum", NULL);
@@ -196,7 +196,7 @@ namespace CPI {
             throw ApiError("bufferSize exceeds worker's maximum", NULL);
           myDesc.dataBufferSize = p->vULong;
         } else if (strcmp(p->name, "xferRole") == 0 && p->vString) {
-          if (p->type != CM::Property::CPI_String)
+          if (p->type != CP::Scalar::CPI_String)
             throw ApiError("xferRole property has wrong type, should be string", NULL);
           CPI::RDT::PortRole role;
           if (!strcmp(p->vString, "passive"))

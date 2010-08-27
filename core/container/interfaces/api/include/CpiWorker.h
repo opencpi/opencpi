@@ -78,41 +78,55 @@ namespace CPI {
       bool hasImplTag(const char *tag);
       bool hasInstTag(const char *tag);
       typedef unsigned Ordinal;
+      // Generic setting method
+      void setProperty(const char *name, const char *value);
       // generate the simple-type-specific setting methods
       // this also works fine for strings
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void set##pretty##Property(Ordinal,const run) = 0;        \
-      inline void set##pretty##Property(const char *name, const run val) { \
-        set##pretty##Property(whichProperty(name), val);                \
-      }                                                                        \
-      virtual void set##pretty##SequenceProperty(Ordinal,const run *, unsigned length) = 0; \
-      inline void set##pretty##SequenceProperty(const char *name, const run* vals, unsigned length) { \
-        set##pretty##SequenceProperty(whichProperty(name), vals, length);        \
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                 \
+      virtual void set##pretty##Property(Metadata::Property &,const run) = 0; \
+      inline void set##pretty##Property(const char *name, const run val) {    \
+        set##pretty##Property(findProperty(name), val);                       \
+      }                                                                       \
+      virtual void set##pretty##SequenceProperty(Metadata::Property &,        \
+						 const run *,	              \
+						 unsigned length) = 0;        \
+      inline void set##pretty##SequenceProperty(const char *name,             \
+						const run* vals,              \
+						unsigned length) {	      \
+        set##pretty##SequenceProperty(findProperty(name), vals, length);      \
       }
     CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE
 #undef CPI_DATA_TYPE_S
       // generate the simple-type-specific getting methods
       // need a special item for strings
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
-      virtual run get##pretty##Property(Ordinal ord) = 0;                \
-      inline run get##pretty##Property(const char *name) {                \
-        return get##pretty##Property(whichProperty(name));                \
-      }                                                                        \
-      virtual unsigned get##pretty##SequenceProperty(Ordinal, run *, unsigned length) = 0; \
-      inline unsigned get##pretty##SequenceProperty(const char *name,  run* vals, unsigned length) { \
-        return get##pretty##SequenceProperty(whichProperty(name), vals, length); \
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                    \
+      virtual run get##pretty##Property(Metadata::Property &) = 0;	         \
+      inline run get##pretty##Property(const char *name) {                       \
+        return get##pretty##Property(findProperty(name));                        \
+      }                                                                          \
+      virtual unsigned get##pretty##SequenceProperty(Metadata::Property&, run *, \
+						     unsigned length) = 0;       \
+      inline unsigned get##pretty##SequenceProperty(const char *name,            \
+						    run* vals,                   \
+						    unsigned length) {	         \
+        return get##pretty##SequenceProperty(findProperty(name), vals, length);  \
       }
 #define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void get##pretty##Property(Ordinal ord, run, unsigned length) = 0;                \
-      inline void get##pretty##Property(const char *name, run val, unsigned length) {        \
-        get##pretty##Property(whichProperty(name), val, length);        \
+      virtual void get##pretty##Property(Metadata::Property &, run,            \
+					 unsigned length) = 0;		       \
+      inline void get##pretty##Property(const char *name, run val,             \
+					unsigned length) {	               \
+        get##pretty##Property(findProperty(name), val, length);                \
       }                                                                        \
-      virtual unsigned get##pretty##SequenceProperty \
-        (Ordinal ord, run *, unsigned length, char *buf, unsigned space) = 0; \
-      inline unsigned get##pretty##SequenceProperty                        \
-        (const char *name, run *vals, unsigned length, char *buf, unsigned space) {        \
-        return get##pretty##SequenceProperty(whichProperty(name), vals, length, buf, space); \
+      virtual unsigned get##pretty##SequenceProperty                           \
+        (Metadata::Property &, run *, unsigned length, char *buf,              \
+	 unsigned space) = 0;						       \
+      inline unsigned get##pretty##SequenceProperty                            \
+        (const char *name, run *vals, unsigned length, char *buf,              \
+	 unsigned space) {						       \
+        return get##pretty##SequenceProperty(findProperty(name), vals, length, \
+					     buf, space);		       \
       }
 
     CPI_PROPERTY_DATA_TYPES

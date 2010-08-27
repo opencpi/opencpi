@@ -61,7 +61,6 @@ ifndef SYSTEM
     SYSTEM=$(shell uname -s | tr A-Z a-z)
   endif
 endif
-
 # #### Use Frank's directory if CPIDIR is not provided #################### #
 
 ifeq ($(CPIDIR),)
@@ -310,6 +309,7 @@ endif
 # ----------------------------------------------------------------------
 #
 
-CXXFLAGS += -Wall -Wextra -Weffc++ -Wshadow -Wshadow -Wfloat-equal -Wcast-qual
+#Mike: CXXFLAGS += -Wall -Wextra -Weffc++ -Wshadow -Wshadow -Wfloat-equal -Wcast-qual
+CXXFLAGS += -Wall -Wextra -Wshadow -Wfloat-equal -Wcast-qual
 
 SCAVERSION = 2.2.2

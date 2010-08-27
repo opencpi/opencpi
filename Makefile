@@ -101,31 +101,22 @@ ALLPACKAGES = \
 
 all: packages
 
-MODELS=rcc
-.PHONY: components hdlapps
-components:
-	make -C components $(MODELS)
+.PHONY: hdlcomps hdlapps
+hdlcomps: prims
+	make -C components hdl
 
-hdlapps: MODELS=hdl
-hdlapps: components
+hdlapps: hdlcomps
 	make -C hdl/apps
 
-hdl: MODELS=hdl
 hdl: hdlapps
 
-rcc: MODELS=rcc
-rcc: components
-
-ifeq ($(filter hdl,$(MODELS)),hdl)
-components: prims
+rcc:
+	make -C components rcc
 
 .PHONY: prims
 prims:
 	make -C hdl/prims
 	make -C hdl/prims install
-
-endif
-
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 

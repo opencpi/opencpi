@@ -45,6 +45,10 @@ namespace CPI {
         Doc ()
           throw ();
 
+	// reduce warnings about pointer members
+	Doc (const Doc &)
+	  throw ();
+
         /**
          * Constructor to parse XML from a string.
          * Calls parse(\a data).
@@ -170,9 +174,22 @@ namespace CPI {
         ezxml_t m_rootNode;
       };
 
+      extern const char
+        *getBoolean(ezxml_t x, const char *name, bool *b),
+        *checkAttrs(ezxml_t x, ...),
+        *getNumber(ezxml_t x, const char *attr, uint32_t *np, bool *found,
+		   uint32_t defaultValue, bool setDefault = true),
+        *getNumber64(ezxml_t x, const char *attr, uint64_t *np, bool *found,
+		     uint64_t defaultValue, bool setDefault = true);
+      extern bool
+        getUNum(const char *s, uint32_t *valp),
+        getUNum64(const char *s, uint64_t *valp),
+        parseBool(const char *a, unsigned length, bool *b);
     }
 
   }
 }
+// Move this somewhere sensible and integrate with CC::ApiError etc. FIXME
+extern const char *esprintf(const char *fmt, ...);
 
 #endif

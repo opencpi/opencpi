@@ -245,12 +245,12 @@ $(error Building Windows shared libraries with msvc is not supported yet.)
 endif
 
 else
-ifneq ($(filter linux macos,$(SYSTEM)),)
+ifneq ($(filter linux darwin,$(SYSTEM)),)
 #
 # Unix compile-time configuration
 #
 
-ifeq ($(SYSTEM),macos)
+ifeq ($(SYSTEM),darwin)
 SO=dylib
 SHARED=-dynamiclib
 BASICLIBS=
@@ -284,7 +284,7 @@ ifeq ($(findstring timesys,$(CROSS_BUILD_BIN)),timesys)
 MKDEPENDFLAGS += --xpattern "timesys"
 endif
 
-ifeq ($(SYSTEM),macos)
+ifeq ($(SYSTEM),darwin)
 CFLAGS+=-DMACOS
 CXXFLAGS+=-DMACOS -D_DARWIN_C_SOURCE
 endif
@@ -303,7 +303,7 @@ BASICLIBS = -lpthread -lrt -ldl
 #ifeq ($(BUILDSHAREDLIBRARIES),1)
 #BASICLIBS += -ldl
 #endif
-else ifneq ($(SYSTEM),macos)
+else ifneq ($(SYSTEM),darwin)
 # Solaris libraries
 BASICLIBS = -lpthread -lsocket -lnsl -lrt
 endif
@@ -376,7 +376,7 @@ $(OBJDIR)/%.exe : $(OBJDIR)/%.obj
 		$(filter %.obj,$^) \
 		$(DYNOBJS) \
 		$(patsubst %,-L%$(OUTDIR),$(dir $(ALLLIBS))) \
-		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -L,$(dir $(SYSLIBS)) $(SYSLIBDIRS)) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
 		$(BASICLIBS)
 

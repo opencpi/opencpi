@@ -72,7 +72,7 @@ probe(const CPI::Util::PValue* props, const char *which )
   bool polled=true;
   for (int n=0; props[n].name; n++) {
     if (strcmp(props[n].name, "polled") == 0) {
-      if (props[n].type != CPI::Metadata::Property::CPI_Bool) {
+      if (props[n].type != CPI::Util::Prop::Scalar::CPI_Bool) {
         throw CPI::Util::EmbeddedException(" \"Polled\" property has wrong type, should be Bool");
       }
       polled = props[n].vBool;

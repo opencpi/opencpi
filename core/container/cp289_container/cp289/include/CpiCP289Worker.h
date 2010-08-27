@@ -84,171 +84,145 @@ namespace CPI {
       // return errors. 
 #undef CPI_DATA_TYPE_S
       // Set a scalar property value
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
-      void set##pretty##Property(unsigned ord, const run val) {                \
-        CPI::Metadata::Property &p = property(ord);                                \
-        if (!p.is_writable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (p.write_error ) \
-          throw; /*"worker has errors before write */                        \
-        store *pp = (store *)(getPropertyVaddr() + p.offset);                        \
-        if (bits > 32) {                                                \
-          assert(bits == 64);                                                \
-          uint32_t *p32 = (uint32_t *)pp;                                \
-          p32[1] = ((uint32_t *)&val)[1];                                \
-          p32[0] = ((uint32_t *)&val)[0];                                \
-        } else                                                                \
-          *pp = *(store *)&val;                                                \
-        if (p.write_error ) \
-          throw; /*"worker has errors after write */                        \
-      }                                                                        \
-      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned length) { \
-        CPI::Metadata::Property &p = property(ord);                                \
-        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
-        if (!p.is_writable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (length > p.sequence_size)                                        \
-          throw;                                                        \
-        if (p.write_error )  \
-          throw; /*"worker has errors before write */                        \
-        memcpy((void *)(getPropertyVaddr() + p.offset + p.maxAlign), vals, length * sizeof(run)); \
-        *(uint32_t *)(getPropertyVaddr() + p.offset) = length;                \
-        if (p.write_error ) \
-          throw; /*"worker has errors after write */                        \
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                   \
+      void set##pretty##Property(Metadata::Property &p, const run val) {        \
+        if (p.writeError)                                                       \
+          throw; /*"worker has errors before write */                           \
+        store *pp = (store *)(getPropertyVaddr() + p.offset);                   \
+        if (bits > 32) {                                                        \
+          assert(bits == 64);                                                   \
+          uint32_t *p32 = (uint32_t *)pp;                                       \
+          p32[1] = ((const uint32_t *)&val)[1];                                 \
+          p32[0] = ((const uint32_t *)&val)[0];                                 \
+        } else                                                                  \
+          *pp = *(const store *)&val;                                           \
+        if (p.writeError)                                                       \
+          throw; /*"worker has errors after write */                            \
+      }                                                                         \
+      void set##pretty##SequenceProperty(Metadata::Property &p,const run *vals, \
+					 unsigned length) {		        \
+        if (p.writeError)                                                       \
+          throw; /*"worker has errors before write */                           \
+        memcpy((void *)(getPropertyVaddr() + p.offset + p.maxAlign), vals,      \
+	       length * sizeof(run));					        \
+        *(uint32_t *)(getPropertyVaddr() + p.offset) = length;                  \
+        if (p.writeError)                                                     \
+          throw; /*"worker has errors after write */                            \
       }
       // Set a string property value
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void set##pretty##Property(unsigned ord, const run val) {        \
-        CPI::Metadata::Property &p = property(ord);                                \
-        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
-        if (!p.is_writable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        unsigned cpi_length;                                                \
-        if (!val || (cpi_length = strlen(val)) > p.types->size)                \
-          throw; /*"string property too long"*/;                        \
-        if (p.write_error ) \
-          throw; /*"worker has errors before write */                        \
-        uint32_t *p32 = (uint32_t *)(getPropertyVaddr() + p.offset);                \
-        /* if length to be written is more than 32 bits */                \
-        if (++cpi_length > 32/CHAR_BIT)                                        \
-          memcpy(p32 + 1, val + 32/CHAR_BIT, cpi_length - 32/CHAR_BIT); \
-        uint32_t i;                                                        \
-        memcpy(&i, val, 32/CHAR_BIT);                                        \
-        p32[0] = i;                                                        \
-        if (p.write_error ) \
-          throw; /*"worker has errors after write */                        \
-      }                                                                        \
-      void set##pretty##SequenceProperty(unsigned ord,const run *vals, unsigned length) { \
-        CPI::Metadata::Property &p = property(ord);                                \
-        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
-        if (!p.is_writable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (length > p.sequence_size)                                        \
-          throw;                                                        \
-        if (p.write_error) \
-          throw; /*"worker has errors before write */                        \
+#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
+      virtual void set##pretty##Property(Metadata::Property &p, const run val) { \
+        unsigned cpi_length;                                                     \
+        if (!val || (cpi_length = strlen(val)) > p.members->type.stringLength)   \
+          throw; /*"string property too long"*/;                                 \
+        if (p.writeError)                                                       \
+          throw; /*"worker has errors before write */                            \
+        uint32_t *p32 = (uint32_t *)(getPropertyVaddr() + p.offset);             \
+        /* if length to be written is more than 32 bits */                       \
+        if (++cpi_length > 32/CHAR_BIT)                                          \
+          memcpy(p32 + 1, val + 32/CHAR_BIT, cpi_length - 32/CHAR_BIT);          \
+        uint32_t i;                                                              \
+        memcpy(&i, val, 32/CHAR_BIT);                                            \
+        p32[0] = i;                                                              \
+        if (p.writeError)                                                       \
+          throw; /*"worker has errors after write */                             \
+      }                                                                          \
+      void set##pretty##SequenceProperty(Metadata::Property &p,const run *vals,  \
+					 unsigned length) {		         \
+        if (p.writeError)                                                       \
+          throw; /*"worker has errors before write */                            \
         char *cp = (char *)(getPropertyVaddr() + p.offset + 32/CHAR_BIT);        \
-        for (unsigned i = 0; i < length; i++) {                                \
-          unsigned len = strlen(vals[i]);                                \
-          if (len > p.types->size)                                        \
-            throw; /* "string in sequence too long" */                        \
-          memcpy(cp, vals[i], len+1);                                        \
-        }                                                                \
-        *(uint32_t *)(getPropertyVaddr() + p.offset) = length;                \
-        if (p.write_error) \
-          throw; /*"worker has errors after write */                        \
+        for (unsigned i = 0; i < length; i++) {                                  \
+          unsigned len = strlen(vals[i]);                                        \
+          if (len > p.members->type.stringLength)	                         \
+            throw; /* "string in sequence too long" */                           \
+          memcpy(cp, vals[i], len+1);                                            \
+        }                                                                        \
+        *(uint32_t *)(getPropertyVaddr() + p.offset) = length;                   \
+        if (p.writeError)                                                       \
+          throw; /*"worker has errors after write */                             \
       }
       CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE_S
 #undef CPI_DATA_TYPE
       // Get Scalar Property
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
-      virtual run get##pretty##Property(unsigned ord) {                        \
-        CPI::Metadata::Property &p = property(ord);                                \
-        if (!p.is_readable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (p.read_error ) \
-          throw; /*"worker has errors before read "*/                        \
-        uint32_t *pp = (uint32_t *)(getPropertyVaddr() + p.offset);                \
-        union {                                                                \
-                run r;                                                        \
-                uint32_t u32[bits/32];                                        \
-        } u;                                                                \
-        if (bits > 32)                                                        \
-          u.u32[1] = pp[1];                                                \
-        u.u32[0] = pp[0];                                                \
-        if (p.read_error )\
-          throw; /*"worker has errors after read */                        \
-        return u.r;                                                        \
-      }                                                                        \
-      unsigned get##pretty##SequenceProperty(unsigned ord, run *vals, unsigned length) { \
-        CPI::Metadata::Property &p = property(ord);                                \
-        if (!p.is_readable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (p.read_error ) \
-          throw; /*"worker has errors before read "*/                        \
-        uint32_t n = *(uint32_t *)(getPropertyVaddr() + p.offset);                \
-        if (n > length)                                                        \
-          throw; /* sequence longer than provided buffer */                \
-        memcpy(vals, (void*)(getPropertyVaddr() + p.offset + p.maxAlign),        \
+#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+	virtual run get##pretty##Property(Metadata::Property &p) {	\
+        if (p.readError )						\
+          throw; /*"worker has errors before read "*/			\
+        uint32_t *pp = (uint32_t *)(getPropertyVaddr() + p.offset);	\
+        union {								\
+	  run r;							\
+	  uint32_t u32[bits/32];                                        \
+        } u;								\
+        if (bits > 32)							\
+          u.u32[1] = pp[1];						\
+        u.u32[0] = pp[0];						\
+        if (p.readError )						\
+          throw; /*"worker has errors after read */			\
+        return u.r;							\
+      }									\
+      unsigned get##pretty##SequenceProperty(Metadata::Property &p,	\
+					     run *vals,			\
+					     unsigned length) {		\
+        if (p.readError )						\
+          throw; /*"worker has errors before read "*/			\
+        uint32_t n = *(uint32_t *)(getPropertyVaddr() + p.offset);	\
+        if (n > length)							\
+          throw; /* sequence longer than provided buffer */		\
+        memcpy(vals,							\
+	       (void*)(getPropertyVaddr() + p.offset + p.maxAlign),	\
                n * sizeof(run));                                        \
-        if (p.read_error ) \
-          throw; /*"worker has errors after read */                        \
-        return n;                                                        \
+        if (p.readError )						\
+          throw; /*"worker has errors after read */			\
+        return n;							\
       }
 
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void get##pretty##Property(unsigned ord, char *cp, unsigned length) { \
-        CPI::Metadata::Property &p = property(ord);                                \
-        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
-        if (!p.is_readable)                                                \
-          throw; /*"attempt to set property that is not writable" */        \
-        if (length < p.types->size+1)                                        \
-          throw; /*"string buffer smaller than property"*/;                \
-        if (p.read_error) \
-          throw; /*"worker has errors before write */                        \
-        uint32_t i32, *p32 = (uint32_t *)(getPropertyVaddr() + p.offset);        \
-        memcpy(cp + 32/CHAR_BIT, p32 + 1, p.types->size + 1 - 32/CHAR_BIT); \
-        i32 = *p32;                                                        \
-        memcpy(cp, &i32, 32/CHAR_BIT);                                        \
-        if (p.read_error) \
-          throw; /*"worker has errors after write */                        \
-      }                                                                        \
-      unsigned get##pretty##SequenceProperty                                \
-      (unsigned ord, run *vals, unsigned length, char *buf, unsigned space) { \
-        CPI::Metadata::Property &p = property(ord);                                \
-        assert(p.types->type == CPI::Metadata::Property::CPI_##pretty);                \
-        if (!p.is_readable)                                                \
-          throw; /*"attempt to get property that is not readable" */        \
-        if (length > p.sequence_size)                                        \
-          throw;                                                        \
-        if (p.read_error ) \
-          throw; /*"worker has errors before read */                        \
-        uint32_t                                                        \
-          n = *(uint32_t *)(getPropertyVaddr() + p.offset),                        \
-          wlen = p.types->size + 1;                                        \
-        if (n > length)                                                        \
-          throw; /* sequence longer than provided buffer */                \
-        char *cp = (char *)(getPropertyVaddr() + p.offset + 32/CHAR_BIT);        \
-        for (unsigned i = 0; i < n; i++) {                                \
-          if (space < wlen)                                                \
-            throw;                                                        \
-          memcpy(buf, cp, wlen);                                        \
-          cp += wlen;                                                        \
-          vals[i] = buf;                                                \
-          unsigned slen = strlen(buf) + 1;                                \
+#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)		      \
+	virtual void get##pretty##Property(Metadata::Property &p, char *cp,   \
+					   unsigned length) {		      \
+	  unsigned stringLength = p.members->type.stringLength;               \
+	  if (length < stringLength+1)			      \
+	    throw; /*"string buffer smaller than property"*/;		      \
+	  if (p.readError)						      \
+	    throw; /*"worker has errors before write */			      \
+	  uint32_t i32, *p32 = (uint32_t *)(getPropertyVaddr() + p.offset);   \
+	  memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT); \
+	  i32 = *p32;							      \
+	  memcpy(cp, &i32, 32/CHAR_BIT);				      \
+	  if (p.readError)						      \
+	    throw; /*"worker has errors after write */			      \
+	}								      \
+      unsigned get##pretty##SequenceProperty                                  \
+	(Metadata::Property &p, run *vals, unsigned length, char *buf,        \
+	 unsigned space) {						      \
+        if (p.readError)						      \
+          throw; /*"worker has errors before read */                          \
+        uint32_t                                                              \
+          n = *(uint32_t *)(getPropertyVaddr() + p.offset),                   \
+          wlen = p.members->type.stringLength + 1;                            \
+        if (n > length)                                                       \
+          throw; /* sequence longer than provided buffer */                   \
+        char *cp = (char *)(getPropertyVaddr() + p.offset + 32/CHAR_BIT);     \
+        for (unsigned i = 0; i < n; i++) {                                    \
+          if (space < wlen)                                                   \
+            throw;                                                            \
+          memcpy(buf, cp, wlen);                                              \
+          cp += wlen;                                                         \
+          vals[i] = buf;                                                      \
+          unsigned slen = strlen(buf) + 1;                                    \
           buf += slen;                                                        \
-          space -= slen;                                                \
-        }                                                                \
-        if (p.read_error)                                                \
-          throw; /*"worker has errors after read */                        \
-        return n;                                                        \
+          space -= slen;                                                      \
+        }                                                                     \
+        if (p.readError)                                                     \
+          throw; /*"worker has errors after read */                           \
+        return n;                                                             \
       }
       CPI_PROPERTY_DATA_TYPES
 #undef CPI_DATA_TYPE_S
@@ -317,7 +291,7 @@ namespace CPI {
     protected:
       uint8_t * getPropertyVaddr();
 
-      CPI::Util::PValue properties;  
+      // this wont work      CPI::Util::PValue properties;  
       RCCWorkerInterface * m_rcc_worker;               
 
       CPI::Container::WorkerId                       workerId;        // Worker id

@@ -85,7 +85,7 @@ createWorkerX( CPI::Container::Application &app, ezxml_t impl, ezxml_t inst, CPI
   // First get the entry point from the properties
   const CPI::Util::PValue*  p = CPI::Util::PValue::find(props, "DLLEntryPoint");
   if ( p ) {
-    if ( p->type != CPI::Metadata::Property::CPI_String) {
+    if ( p->type != CPI::Util::Prop::Scalar::CPI_String) {
       throw CPI::Util::EmbeddedException("\"DLLEntryPoint\" property has wrong type, should be String");
     }
     entryPoint = p->vString;

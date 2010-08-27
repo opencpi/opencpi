@@ -24,6 +24,7 @@
 #include "CpiPValue.h"
 #include "CpiApplication.h"
 #include "CpiDriver.h"
+#include "CpiContainerMisc.h"
 #include <CpiCFUtilMisc.h>
 #include <CpiCFUtilDeviceBase.h>
 #include <CpiCFUtilLegacyErrorNumbers.h>
@@ -34,6 +35,7 @@
 
 
 namespace CU = CPI::Util;
+namespace CC = CPI::Container;
 
 #if 0
 /*
@@ -106,8 +108,8 @@ namespace CPI {
                            PortableServer::POA_ptr poa,
                            CF::DeviceManager_ptr devMgr,
                            const std::string &profileFileName,
-                           const std::string &identifier,
-                           const std::string &label,
+                           const std::string &aIdentifier,
+                           const std::string &aLabel,
                            const std::string &tempDir,
                            unsigned int cpiDeviceId,
                            const std::string & cpiDeviceType,
@@ -124,8 +126,8 @@ namespace CPI {
                                  poa,
                                  devMgr,
                                  profileFileName,
-                                 identifier,
-                                 label,
+                                 aIdentifier,
+                                 aLabel,
                                  logger,
                                  adoptLogger,
                                  shutdownOrbOnRelease),
@@ -151,7 +153,7 @@ namespace CPI {
                                    endpoint.c_str(), 0);
 #endif
 
-        CPI::Util::PValue cprops[] = {CPI::Util::PVString("endpoint",(char*)endpoint.c_str() ),
+        CPI::Util::PValue cprops[] = {CPI::Util::PVString("endpoint",(const char*)endpoint.c_str() ),
                                       CPI::Util::PVBool("polling",polled),
                                       CPI::Util::PVEnd };
         CC::Interface *container = static_cast< CC::Interface * >( 
@@ -162,7 +164,7 @@ namespace CPI {
 
         if (!container)
           throw CC::ApiError("Couldn't find or create container of type \"",
-                             cpiDeviceType.c_str(), "\" with name \"", identifier.c_str(), "\"", NULL);
+                             cpiDeviceType.c_str(), "\" with name \"", aIdentifier.c_str(), "\"", NULL);
 
         try { // catch errors to release container. Note it will take everything else down
 
@@ -397,12 +399,12 @@ namespace CPI {
 #undef CPI_DATA_TYPE_S
 #undef SCA_SIMPLE
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                        \
-              case CPI::Metadata::Property::CPI_##pt: {        \
+              case CU::Prop::Scalar::CPI_##pt: {		      \
               CORBA::c typed_value = p->v##pt;                \
               property.value <<= h; \
               break; }
 #define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
-              case CPI::Metadata::Property::CPI_String:        {        \
+              case CU::Prop::Scalar::CPI_String:        {        \
               property.value <<= p->vString; \
               break; }
               CPI_PROPERTY_DATA_TYPES
@@ -451,6 +453,7 @@ namespace CPI {
       CPI::Util::AutoMutex mutex (m_mutex);
       CPI::Logger::DebugLogger debug (m_out);
 
+      (void)fileSystem; // FIXME: need to use SCA FS for compliance here?
       debug << m_logProducerName
             << CPI::Logger::Verbosity (2)
             << "load (\""

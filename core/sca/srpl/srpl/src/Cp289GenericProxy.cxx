@@ -40,6 +40,7 @@ namespace CPI {
     namespace CC = CPI::Container;
     namespace CM = CPI::Metadata;
     namespace CU = CPI::Util;
+    namespace CP = CU::Prop;
     /*
      * ----------------------------------------------------------------------
      * Constructor and Destructor
@@ -51,7 +52,7 @@ namespace CPI {
                        CORBA::ORB_ptr orb,
                        PortableServer::POA_ptr poa,
                        // Identity within the application/assembly
-                       const std::string & identifier,
+                       const std::string & aIdentifier,
                        // spd:softpkg/implementation/code/localfile@name
                        const char *codeLocalFileName,
                        // spd:softpkg/implementation/code/entrypoint
@@ -65,7 +66,7 @@ namespace CPI {
                        bool adoptLogger,
                        bool shutdownOrbOnRelease)
       throw (std::string)
-      : BaseProxy (orb, poa, identifier,
+      : BaseProxy (orb, poa, aIdentifier,
                       logger, adoptLogger,
                       shutdownOrbOnRelease),
         m_application (application),
@@ -205,7 +206,7 @@ namespace CPI {
 #undef CPI_DATA_TYPE_S
 
 #define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-    case CM::Property::CPI_##pretty:                                        \
+    case CP::Scalar::CPI_##pretty:					\
     if (p.isSequence()) {                                                \
       const CORBA::StringSeq *seq;                                        \
       if (!(any >>= seq))                                                \
@@ -231,7 +232,7 @@ namespace CPI {
 #define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter, bits, typed_value, pretty, run)
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                                        \
-    case CM::Property::CPI_##pt:                                        \
+    case CP::Scalar::CPI_##pt:					\
     /* now we know its not MMIO */                                        \
     if (p.isSequence()) {                                                \
       const CORBA::c##Seq *seq;                                                \
@@ -265,8 +266,8 @@ namespace CPI {
       const char *oops = 0;
       switch (p.getType()) {
         CPI_PROPERTY_DATA_TYPES
-      case CM::Property::CPI_none:
-      case CM::Property::CPI_data_type_limit:
+      case CP::Scalar::CPI_none:
+      case CP::Scalar::CPI_scalar_type_limit:
         ;
       }
       if (oops)
@@ -283,7 +284,7 @@ namespace CPI {
     // For simple types (not strings) and simple sequences (not strings)
     // We allocate storage - which we could in fact preallocate, but would that avoid an extra allocation?
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                                        \
-    case CM::Property::CPI_##pt:                                        \
+    case CP::Scalar::CPI_##pt:					\
     if (p.isSequence()) {                                                \
       unsigned size = p.sequenceSize();                                        \
       /* is a sequence FIXME trycatch for allocation unless cached*/        \
@@ -299,7 +300,7 @@ namespace CPI {
         /**/  
 
 #define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
-    case CM::Property::CPI_##pretty: {                                \
+    case CP::Scalar::CPI_##pretty: {				       \
       unsigned length = p.stringSize();                                \
       if (p.isSequence()) {                                        \
         uint32_t limit = p.sequenceSize();                        \
@@ -344,8 +345,8 @@ namespace CPI {
       const char * oops;
       switch (p.getType()) {
         CPI_PROPERTY_DATA_TYPES
-      case CM::Property::CPI_none:
-      case CM::Property::CPI_data_type_limit:
+      case CP::Scalar::CPI_none:
+      case CP::Scalar::CPI_scalar_type_limit:
         ;
       }
       if (oops)

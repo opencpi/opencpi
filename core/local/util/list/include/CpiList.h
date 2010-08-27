@@ -73,7 +73,7 @@ namespace CPI {
     };
 
     // Inlines
-    inline VList::VList(int shuffle){m_list.no_shuffle=shuffle;}
+    inline VList::VList(int shuf){m_list.no_shuffle=shuf;}
     inline void VList::noShuffle(){m_list.no_shuffle=1;}
     inline VList::~VList(){destroy_list(&m_list);}
     inline void VList::destroyList(){destroy_list(&m_list);}

@@ -1,3 +1,4 @@
+#include "CpiContainerMisc.h"
 #include "CpiApplication.h"
 #include "CpiArtifact.h"
 

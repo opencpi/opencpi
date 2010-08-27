@@ -14,7 +14,7 @@ namespace CPI {
   namespace PCI {
 #define PCIDIR "/sys/bus/pci/devices"
     static const char *
-    getPciValue(const char *dev, char *value, char *buf, unsigned len)
+    getPciValue(const char *dev, const char *value, char *buf, unsigned len)
     {
       int n, fd;
       // get bars
@@ -32,7 +32,7 @@ namespace CPI {
       return 0;
     }
     static const char*
-    getPciNumber(const char *dev, char *value, char *buf, unsigned len, unsigned long *np)
+    getPciNumber(const char *dev, const char *value, char *buf, unsigned len, unsigned long *np)
     {
       const char *err = getPciValue(dev, value, buf, len);
       if (err)

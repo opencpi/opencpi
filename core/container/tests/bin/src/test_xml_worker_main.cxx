@@ -163,7 +163,20 @@ int  main( int argc, char** argv)
 
 
   // Create an artifact
+#if 1
+  // Someday make this a utility function in cpios FIXME
+  const char *target = getenv("OCPI_RCC_TARGET");
+  const char *suffix = getenv("OCPI_RCC_SUFFIX");
+  if (!target)
+    target = "linux-x86_64";
+  if (!suffix)
+    suffix = "so";
+  char *w1Url;
+  asprintf(&w1Url, "../../../../components/lib/rcc/%s/zcworkers.%s",
+	   target, suffix);
+#else	   
   const char * w1Url = "../../../../components/lib/rcc/Linux-x86_64/zcworkers.so";
+#endif
   Artifact & art1 = ca[0].app-> loadArtifact(w1Url);
   Worker & consumer = ca[0].app->createWorker( art1,"Consumer",0 );
   Worker & producer = ca[0].app->createWorker( art1,"Producer",0 );

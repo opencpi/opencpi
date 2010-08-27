@@ -71,7 +71,8 @@ typedef struct {
  typedef struct {
   const char *name;
   bool is_sequence, is_struct, is_readable, is_writable,
-    read_error, write_error, read_sync, write_sync, is_test;
+    read_error, write_error, read_sync, write_sync, is_test,
+    is_impl;
   unsigned long sequence_size, num_members, offset, data_offset;
   const volatile unsigned char *read_vaddr;
   volatile unsigned char *write_vaddr;
@@ -81,6 +82,7 @@ typedef struct {
  // Describe a port
  typedef struct {
    const char *name;
+   const char *repid;
    bool provider, twoway;
  } Port;
 
@@ -100,6 +102,12 @@ extern bool decode_props(const char *props,
                          Property **propsp, unsigned *nprops, unsigned *size,
                          Port **ports, unsigned *nports,
                          Test **tests, unsigned *ntests);
-}
-}
+extern const char *emit_ocpi_xml(const char *specFile, const char *implFile,
+				 const char *specName, const char *implName,
+				 const char *parentFile, const char *model,
+				 char *idlFiles[], bool debug,
+				 Property *properties, unsigned nprops,
+				 Port *ports, unsigned nports,
+				 Test *tests, unsigned ntests);
+}}
 #endif

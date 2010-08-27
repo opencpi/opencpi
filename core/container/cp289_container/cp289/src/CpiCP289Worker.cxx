@@ -70,6 +70,7 @@ using namespace CPI::Container;
 using namespace CPI::Util;
 using namespace CPI::CP289;
 namespace CM = CPI::Metadata;
+namespace CP = CPI::Util::Prop;
 
 #define MyParent static_cast<CPI::CP289::Application*>(myParent)
 
@@ -110,9 +111,12 @@ Worker( CPI::Container::Application & app, RCCDispatch* wd, CPI::Util::PValue *w
   sourcePorts(1), targetPorts(1), runConditionSS(0), worker_run_count(0)
 {
   workerId = reinterpret_cast<WorkerId>(this);
+#if 0
+  // This won't work.
   if ( wparams ) {
     properties = *wparams;
   }
+#endif
   m_rcc_worker = new CPI::CP289::RCCWorkerInterface( wd, this );
   m_rcc_worker->m_context->container = rcc_container;
 
@@ -451,7 +455,7 @@ createInputPort(
   std::string protocol;
   std::string endpoint;
   const CPI::Util::PValue* p = CPI::Util::PValue::find(props, "protocol");
-  if ( p && (p->type != CPI::Metadata::Property::CPI_String)) {
+  if ( p && (p->type != CPI::Util::Prop::Scalar::CPI_String)) {
     throw CPI::Util::EmbeddedException("\"protocol\" property has wrong type, should be String");
   }
   if (p) {
@@ -472,7 +476,7 @@ createInputPort(
     // the QOS.  If the caller does not provide the endpoint, we will pick one
     // by default.
     p = CPI::Util::PValue::find(props, "endpoint");
-    if ( p && (p->type != CPI::Metadata::Property::CPI_String)) {
+    if ( p && (p->type != CPI::Util::Prop::Scalar::CPI_String)) {
       throw CPI::Util::EmbeddedException("\"endpoint\" property has wrong type, should be String");
     }
     if (! p) {
@@ -847,11 +851,11 @@ void
 CPI::CP289::Worker::
 prepareProperty(CPI::Metadata::Property& md , CPI::Container::Property& cp)
 {
-  if (!md.is_struct && !md.is_sequence && md.types->type != CM::Property::CPI_String &&
-      CM::Property::tsize[md.types->type] <= 32 &&
-      !md.write_error) {
+  if (!md.isStruct && !md.members->type.isSequence && md.members->type.scalar != CP::Scalar::CPI_String &&
+      CP::Scalar::sizes[md.members->type.scalar] <= 32 &&
+      !md.writeError) {
 
-    if ( (md.offset+sizeof(md.types->type)) > m_rcc_worker->m_dispatch->propertySize ) {
+    if ( (md.offset+sizeof(md.members->type.scalar)) > m_rcc_worker->m_dispatch->propertySize ) {
       throw CPI::Util::EmbeddedException( PROPERTY_SET_EXCEPTION, NULL, ApplicationRecoverable);
     }
     cp.writeVaddr = (uint8_t*)m_rcc_worker->m_context->properties + md.offset;

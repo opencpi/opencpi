@@ -73,7 +73,8 @@ namespace CPI {
        */
 
       PropertyParser (CPI::Util::Vfs::Vfs & fs,
-                      const std::string & fileName)
+                      const std::string & fileName,
+		      const std::string & implementation = std::string())
         throw (std::string);
 
       /**
@@ -107,7 +108,8 @@ namespace CPI {
        */
 
       void parse (CPI::Util::Vfs::Vfs & fs,
-                  const std::string & fileName)
+                  const std::string & fileName,
+		  const std::string & implementation = std::string())
         throw (std::string);
 
       void processSPD (CPI::Util::Vfs::Vfs & fs,
@@ -121,7 +123,7 @@ namespace CPI {
                        ezxml_t top)
         throw (std::string);
 
-      void processPRF (ezxml_t top)
+      void processPRF (ezxml_t top, bool impl = false)
         throw (std::string);
 
       /**
@@ -138,6 +140,23 @@ namespace CPI {
        */
 
       const char * encode ()
+        throw ();
+
+      /**
+       * Emit the ocpi xml spec and impl files corresponding to the parsed SPD etc.
+       * All string arguments are optional (can be NULL).
+       * If implId is NULL, the first implementation is used.
+       *   Later use some attribute pattern match to id the impl?
+       *   If there is no implementations it is an error.
+       * If specFile is NULL, the file name of the spdFile are used (+ _spec).
+       * If implFile is NULL, the file name of the spdFile is used.
+       * If outDir is NULL, no output directory is used (prepended)
+       * Return a string error.
+       */
+
+      const char * emitOcpiXml(std::string &name, std::string &specFile, std::string &specDir,
+			       std::string &implFile, std::string&implDir, std::string &model,
+			       char *idlFiles[], bool debug)
         throw ();
 
       /**
@@ -202,14 +221,16 @@ namespace CPI {
 
       void parsePropertyfile (CPI::Util::Vfs::Vfs & fs,
                               const std::string & fileName,
-                              ezxml_t propertyFileNode)
+                              ezxml_t propertyFileNode,
+			      bool impl = false)
         throw (std::string);
 
       void processSimpleProperty (ezxml_t simplePropertyNode,
                                   CPI::SCA::Property * propData,
                                   unsigned int & offset,
                                   bool isSequence,
-                                  bool isTest)
+                                  bool isTest,
+				  bool isImpl = false)
         throw (std::string);
 
       void adjustSimpleProperty (ezxml_t simplePropertyNode,
@@ -258,7 +279,7 @@ namespace CPI {
       typedef std::map<std::string, unsigned int> NameToIdxMap;
       NameToIdxMap m_nameToIdxMap;
 
-      std::string m_componentType;
+      std::string m_componentType, m_scdName, m_spdName, m_implName, m_spdFileName, m_spdPathName;
     };
 
   }

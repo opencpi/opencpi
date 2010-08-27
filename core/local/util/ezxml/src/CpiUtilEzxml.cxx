@@ -1,11 +1,22 @@
 #include <iostream>
+#include <errno.h>
+#include <strings.h>
+#include <ezxml.h>
 #include <CpiOsAssert.h>
 #include <CpiUtilVfs.h>
 #include <CpiUtilEzxml.h>
-#include <ezxml.h>
+
 
 CPI::Util::EzXml::Doc::
 Doc ()
+  throw ()
+  : m_doc (0),
+    m_rootNode (0)
+{
+}
+// reduce warnings about pointer members
+CPI::Util::EzXml::Doc::
+Doc (const Doc &)
   throw ()
   : m_doc (0),
     m_rootNode (0)
@@ -65,7 +76,7 @@ parse (const std::string & data)
    */
 
   std::string::size_type len = data.length ();
-  char * m_doc = new char [len];
+  m_doc = new char [len];
   memcpy (m_doc, data.data(), len);
 
   m_rootNode = ezxml_parse_str (m_doc, len);
@@ -235,6 +246,7 @@ parse (CPI::Util::Vfs::Vfs & fs, const std::string & fileName)
   return m_rootNode;
 }
 
+
 ezxml_t
 CPI::Util::EzXml::Doc::
 getRootNode ()
@@ -242,4 +254,161 @@ getRootNode ()
 {
   cpiAssert (m_rootNode);
   return m_rootNode;
+}
+
+const char *
+CPI::Util::EzXml::
+checkAttrs(ezxml_t x, ...) {
+  va_list ap;
+  if (!x->attr)
+    return 0;
+  for (char **a = x->attr; *a; a += 2) {
+    va_start(ap, x);
+    char *p;
+    while ((p = va_arg(ap, char*)))
+      if (!strcasecmp(p, *a))
+	break;
+    va_end(ap);
+    if (!p)
+      return esprintf("Invalid attribute name: \"%s\", in a %s element", *a, x->name);
+  }
+  return 0;
+}
+bool
+CPI::Util::EzXml::
+getUNum(const char *s, uint32_t *valp) {
+  char *endptr;
+  errno = 0;
+  uint32_t val =  strtoul(s, &endptr, 0);
+  if (errno == 0) {
+    if (*endptr == 'K' || *endptr == 'k') {
+      endptr++;
+      val *= 1024;
+    } else if (*endptr == 'M' || *endptr == 'm') {
+      endptr++;
+      val *= 1024*1024;
+    }
+    while (isspace(*endptr))
+      endptr++;
+    if (*endptr++ == '-') {
+      while (isspace(*endptr))
+	endptr++;
+      if (*endptr++ == '1') {
+	while (isspace(*endptr))
+	  endptr++;
+	if (!*endptr)
+	  val--;
+      }
+    }
+    *valp = val;
+    return false;
+  }
+  return true;
+}
+const char *
+CPI::Util::EzXml::
+getNumber(ezxml_t x, const char *attr, uint32_t *np, bool *found,
+	  uint32_t defaultValue, bool setDefault) {
+  const char *a = ezxml_cattr(x, attr);
+  if (!a) {
+    if (found)
+      *found = false;
+    if (setDefault)
+      *np = defaultValue;
+    return 0;
+  }
+  if (CPI::Util::EzXml::getUNum(a, np))
+    return esprintf("Bad numeric value: \"%s\" for attribute %s in element %s",
+		    a, attr, x->name);
+  if (found)
+    *found = true;
+  return 0;
+}
+ bool
+CPI::Util::EzXml::
+getUNum64(const char *s, uint64_t *valp) {
+  char *endptr;
+  errno = 0;
+  uint64_t val =  strtoull(s, &endptr, 0);
+  if (errno == 0) {
+    if (*endptr == 'K' || *endptr == 'k') {
+      endptr++;
+      val *= 1024;
+    } else if (*endptr == 'M' || *endptr == 'm') {
+      endptr++;
+      val *= 1024*1024;
+    } else if (*endptr == 'G' || *endptr == 'g') {
+      endptr++;
+      val *= 1024ull*1024ull*1024ull;
+    }
+    while (isspace(*endptr))
+      endptr++;
+    if (*endptr++ == '-') {
+      while (isspace(*endptr))
+	endptr++;
+      if (*endptr++ == '1') {
+	while (isspace(*endptr))
+	  endptr++;
+	if (!*endptr)
+	  val--;
+      }
+    }
+    *valp = val;
+    return false;
+  }
+  return true;
+}
+
+const char *
+CPI::Util::EzXml::
+getNumber64(ezxml_t x, const char *attr, uint64_t *np, bool *found,
+	    uint64_t defaultValue, bool setDefault) {
+  const char *a = ezxml_cattr(x, attr);
+  if (!a) {
+    if (found)
+      *found = false;
+    if (setDefault)
+      *np = defaultValue;
+    return 0;
+  }
+  if (CPI::Util::EzXml::getUNum64(a, np))
+    return esprintf("Bad numeric value: \"%s\" for attribute %s in element %s",
+		    a, attr, x->name);
+  if (found)
+    *found = true;
+  return 0;
+}
+
+  bool
+CPI::Util::EzXml::
+parseBool(const char *a, unsigned length, bool *b)
+{
+  (void)length;
+  if (!strcasecmp(a, "true") || !strcmp(a, "1"))
+    *b = true;
+  else if (!strcasecmp(a, "false")  || !strcmp(a, "0"))
+    *b =  false;
+  else
+    return true;
+  return false;
+}
+
+const char *
+CPI::Util::EzXml::
+getBoolean(ezxml_t x, const char *name, bool *b) {
+  const char *a = ezxml_cattr(x, name);
+  if (a) {
+    if (parseBool(a, 0, b))
+      return esprintf("parsing value \"%s\" as type Bool", a);
+  } else
+    *b = false;
+  return 0;
+}
+const char *esprintf(const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  char *buf;
+  vasprintf(&buf, fmt, ap);
+  va_end(ap);
+  return buf;
 }

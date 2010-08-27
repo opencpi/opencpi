@@ -105,7 +105,7 @@ processPortProperties(CPI::Util::PValue* props )
 {
   const CPI::Util::PValue* p = CPI::Util::PValue::find(props, "role");
   if ( p ) {
-    if ( (p->type != CPI::Metadata::Property::CPI_String)) {
+    if ( (p->type != CPI::Util::Prop::Scalar::CPI_String)) {
       throw CPI::Util::EmbeddedException("\"role\" property has wrong type, should be String");
     }
     if ( strcmp(p->vString,"ActiveFlowControl") == 0 ) {
@@ -115,7 +115,7 @@ processPortProperties(CPI::Util::PValue* props )
 
   p = CPI::Util::PValue::find(props, "bufferCount");
   if ( p ) {
-    if ( (p->type != CPI::Metadata::Property::CPI_ULong)) {
+    if ( (p->type != CPI::Util::Prop::Scalar::CPI_ULong)) {
       throw CPI::Util::EmbeddedException("\"bufferCount\" property has wrong type, should be ULong");
     }
     connectionData.data.desc.nBuffers = p->vULong;
@@ -123,7 +123,7 @@ processPortProperties(CPI::Util::PValue* props )
 
   p = CPI::Util::PValue::find(props, "bufferSize");
   if ( p ) {
-    if ( (p->type != CPI::Metadata::Property::CPI_ULong)) {
+    if ( (p->type != CPI::Util::Prop::Scalar::CPI_ULong)) {
       throw CPI::Util::EmbeddedException("\"bufferSize\" property has wrong type, should be ULong");
     }
     connectionData.data.desc.dataBufferSize = p->vULong;

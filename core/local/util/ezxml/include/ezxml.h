@@ -153,6 +153,13 @@ ezxml_t ezxml_cut(ezxml_t xml);
 // inserts an existing tag into an ezxml structure
 ezxml_t ezxml_insert(ezxml_t xml, ezxml_t dest, size_t off);
 
+// returns the first child tag (one level deeper) with the given name or NULL
+// if not found.  Name is case INSENSITIVE - either will match, although in the
+// guts of ezxml, the children must be the same case
+extern ezxml_t ezxml_cchild(ezxml_t xml, const char *name);
+// CASE INSENSITIVE version of cattr
+extern const char *ezxml_cattr(ezxml_t xml, const char *attr);
+
 // Moves an existing tag to become a subtag of dest at the given offset from
 // the start of dest's character content. Returns the moved tag.
 #define ezxml_move(xml, dest, off) ezxml_insert(ezxml_cut(xml), dest, off)

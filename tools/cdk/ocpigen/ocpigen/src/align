@@ -1,0 +1,2547 @@
+wip_HDL.cxx:19:  const char *pat = p->pattern ? p->pattern : w->pattern;
+wip_HDL.cxx:24:  char c, *s = (char *)malloc(strlen(p->name) + strlen(w->pattern) * 3 + 10);
+wip_HDL.cxx:47:      case '0': // zero origin ordinal-within-profile
+wip_HDL.cxx:49:	sprintf(s, "%d", wn + (pat[-1] - '0'));
+wip_HDL.cxx:72:	strcpy(s, p->name);
+wip_HDL.cxx:73:	if (pat[-1] == 'S')
+wip_HDL.cxx:77:	if (p->count > 1)
+wip_HDL.cxx:79:	  case -1:
+wip_HDL.cxx:83:	  case -2:
+wip_HDL.cxx:92:	strcpy(s, wipNames[p->type]);
+wip_HDL.cxx:100:	strcpy(s, wipNames[p->type]);
+wip_HDL.cxx:107:	return esprintf("Invalid pattern rule: %s", w->pattern);
+wip_HDL.cxx:120:  ct[strlen(ct) - 1] = '\0';
+wip_HDL.cxx:126:	  comment, orig ? "ORIGINALLY " : "", ct, local->tm_zone,
+wip_HDL.cxx:150:    if (length != -1) {
+wip_HDL.cxx:174:  Language lang = wrap ? (w->language == VHDL ? Verilog : VHDL) : w->language;
+wip_HDL.cxx:175:  if ((err = openOutput(w->implName, outDir, "", DEFS, lang == VHDL ? VHD : VER, NULL, f)))
+wip_HDL.cxx:177:  const char *comment = lang == VHDL ? "--" : "//";
+wip_HDL.cxx:178:  printgen(f, comment, w->file);
+wip_HDL.cxx:184:	  comment, lang == VHDL ? "VHDL" : "Verilog", comment, w->specName,
+wip_HDL.cxx:185:	  w->implName, comment, comment, w->pattern);
+wip_HDL.cxx:194:	    w->implName);
+wip_HDL.cxx:196:  Port *p = w->ports;
+wip_HDL.cxx:199:    for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx:203:	      "-- These 2 records correspond to the input and output sides of the OCP bundle\n"
+wip_HDL.cxx:204:	      "-- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
+wip_HDL.cxx:205:	      w->implName, wipNames[p->type], p->name);
+wip_HDL.cxx:207:	      "\n-- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
+wip_HDL.cxx:208:	      wipNames[p->type], mIn ? "master" : "slave", p->name, w->implName);
+wip_HDL.cxx:215:      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx:216:	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx:217:	  fprintf(f, "    %-20s: ", osd->name);
+wip_HDL.cxx:218:	  if (osd->type)
+wip_HDL.cxx:219:	    fprintf(f, "%s_t", osd->name);
+wip_HDL.cxx:220:	  else if (osd->vector)
+wip_HDL.cxx:221:	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
+wip_HDL.cxx:228:	      "\n-- Record for the %s output (OCP %s) signals for port \"%s\" of worker \"%s\"\n"
+wip_HDL.cxx:230:	      wipNames[p->type], mIn ? "slave" : "master",
+wip_HDL.cxx:231:	      p->name, w->implName, p->name, pout);
+wip_HDL.cxx:233:      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx:234:	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx:235:	  fprintf(f, "    %-20s: ", osd->name);
+wip_HDL.cxx:236:	  if (osd->type)
+wip_HDL.cxx:237:	    fprintf(f, "%s_t", osd->name);
+wip_HDL.cxx:238:	  else if (osd->vector)
+wip_HDL.cxx:239:	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
+wip_HDL.cxx:249:	    "  port (\n", w->implName);
+wip_HDL.cxx:255:	    w->isAssembly ? "ocpi_app" : w->implName);
+wip_HDL.cxx:256:  p = w->ports;
+wip_HDL.cxx:263:  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx:270:    asprintf(&nbuf, " %d", p->count);
+wip_HDL.cxx:273:	    lang == VHDL ? "  " : "", comment, p->count > 1 ? nbuf : "", wipNames[p->type],
+wip_HDL.cxx:274:	    p->type == WMIPort || p->type == WSIPort ?
+wip_HDL.cxx:275:	    (p->wdi.isProducer ? "producer " : "consumer ") : "",
+wip_HDL.cxx:276:	    p->count > 1 ? "s" : "", p->name, w->implName, mIn ? "slave" : "master");
+wip_HDL.cxx:277:    for (unsigned n = 0; n < p->count; n++) {
+wip_HDL.cxx:282:      if (p->clock->port == p && n == 0) {
+wip_HDL.cxx:284:	  fprintf(f, "    %-20s: in  std_logic;\n", p->clock->signal);
+wip_HDL.cxx:287:		  p->clock->signal, (int)(20 - strlen(p->clock->signal)), "");
+wip_HDL.cxx:288:	p->ocp.Clk.signal = p->clock->signal;
+wip_HDL.cxx:292:		lang == VHDL ? "  " : "", comment, p->name, p->clock->signal);
+wip_HDL.cxx:294:	fprintf(f, "    %-20s: in  %s_t;\n",
+wip_HDL.cxx:295:		p->fullNameIn, p->fullNameIn);
+wip_HDL.cxx:298:	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx:299:	  if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx:301:	    asprintf(&name, os->signal, n);
+wip_HDL.cxx:302:	    fprintf(f, "  %s, %*s// input  ", name, (int)(20 - strlen(name)), "");
+wip_HDL.cxx:303:	    //if (osd->type)
+wip_HDL.cxx:304:	    //fprintf(f, "%s_t", osd->name);
+wip_HDL.cxx:306:	    if (osd->vector)
+wip_HDL.cxx:307:	      fprintf(f, "[%3u:0]\n", os->width - 1);
+wip_HDL.cxx:313:	fprintf(f, "    %-20s: out %s_t%s\n", p->fullNameOut, p->fullNameOut,
+wip_HDL.cxx:314:		i < w->nPorts-1 || p->count > n+1 ? ";" : "");
+wip_HDL.cxx:317:	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx:318:	  if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx:322:	    asprintf(&name, os->signal, n);
+wip_HDL.cxx:324:		     (int)(20 - strlen(name)), "");
+wip_HDL.cxx:325:	    if (osd->vector)
+wip_HDL.cxx:326:	      asprintf(&last, "%s[%3u:0]\n", last, os->width - 1);
+wip_HDL.cxx:336:	    "end package %s_defs;\n", w->implName, w->implName);
+wip_HDL.cxx:342:    Property *pr = w->ctl.properties;
+wip_HDL.cxx:343:    for (unsigned i = 0; i < w->ctl.nProperties; i++, pr++)
+wip_HDL.cxx:344:      if (pr->isParameter)
+wip_HDL.cxx:345:	if (w->language == VHDL) {
+wip_HDL.cxx:349:	  switch (pr->members->type) {
+wip_HDL.cxx:351:	    case CM::Property::CPI_##pretty: i64 = (int64_t)pr->members->defaultValue.v##pretty; break;
+wip_HDL.cxx:356:		  pr->members->bits - 1, pr->name, pr->members->bits,
+wip_HDL.cxx:360:    p = w->ports;
+wip_HDL.cxx:361:    for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx:363:      for (unsigned n = 0; n < p->count; n++) {
+wip_HDL.cxx:364:	if (p->clock->port == p && n == 0)
+wip_HDL.cxx:365:	  fprintf(f, "  input          %s;\n", p->clock->signal);
+wip_HDL.cxx:373:	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx:374:	  if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx:376:	    asprintf(&name, os->signal, n);
+wip_HDL.cxx:377:	    if (osd->vector)
+wip_HDL.cxx:378:	      fprintf(f, "  input  [%3u:0] %s;\n", os->width - 1, name);
+wip_HDL.cxx:383:	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx:384:	  if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx:386:	    asprintf(&name, os->signal, n);
+wip_HDL.cxx:387:	    if (osd->vector)
+wip_HDL.cxx:388:	      fprintf(f, "  output [%3u:0] %s;\n", os->width - 1, name);
+wip_HDL.cxx:403:	    w->implName, w->implName, w->implName);
+wip_HDL.cxx:414:  if ((err = openOutput(w->implName, outDir, "", IMPL, w->language == VHDL ? VHD : VER, NULL, f)))
+wip_HDL.cxx:416:  const char *comment = w->language == VHDL ? "--" : "//";
+wip_HDL.cxx:417:  printgen(f, comment, w->file);
+wip_HDL.cxx:421:	  comment, w->implName, comment, w->pattern);
+wip_HDL.cxx:422:  if (w->language == VHDL)
+wip_HDL.cxx:430:	    library, library, w->implName, DEFS, w->implName);
+wip_HDL.cxx:438:	    w->implName, w->implName, DEFS, VER, w->implName, DEFS, VER);
+wip_HDL.cxx:443:  Port *p = w->ports;
+wip_HDL.cxx:444:  if (w->language == VHDL) {
+wip_HDL.cxx:450:    for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx:453:      asprintf(&nbuf, " %d", p->count);
+wip_HDL.cxx:456:	      comment, p->count > 1 ? nbuf : "", wipNames[p->type],
+wip_HDL.cxx:457:	      p->type == WMIPort || p->type == WSIPort ?
+wip_HDL.cxx:458:	      (p->wdi.isProducer ? "producer " : "consumer ") : "",
+wip_HDL.cxx:459:	      p->count > 1 ? "s" : "", p->name,
+wip_HDL.cxx:460:	      w->implName, mIn ? "slave" : "master");
+wip_HDL.cxx:461:      for (unsigned n = 0; n < p->count; n++) {
+wip_HDL.cxx:462:	if (p->clock->port == p && n == 0)
+wip_HDL.cxx:463:	  fprintf(f, "    %-20s: in  std_logic;\n", p->clock->signal);
+wip_HDL.cxx:466:		  "    -- No Clk here. \"%s\" interface uses \"%s\" as clock,\n",
+wip_HDL.cxx:467:		  p->name, p->clock->signal);
+wip_HDL.cxx:472:	fprintf(f, "    %-20s: in  %s_t;\n",
+wip_HDL.cxx:474:	fprintf(f, "    %-20s: out %s_t%s\n", pout, pout,
+wip_HDL.cxx:475:		i < w->nPorts-1 || p->count > n+1 ? ";" : "");
+wip_HDL.cxx:481:  p = w->ports;
+wip_HDL.cxx:482:  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx:484:    for (unsigned n = 0; n < p->count; n++) {
+wip_HDL.cxx:489:      switch (p->type) {
+wip_HDL.cxx:493:		comment, wipNames[p->type], p->name);
+wip_HDL.cxx:494:	if (w->language == VHDL)
+wip_HDL.cxx:522:	if (w->ctl.nProperties) {
+wip_HDL.cxx:525:		  comment, w->implName);
+wip_HDL.cxx:526:	  if (w->language == VHDL)
+wip_HDL.cxx:529:		  p->ocp.MAddr.width - 1);
+wip_HDL.cxx:532:		    "  localparam %sPropertyWidth = %d;\n", pin, p->ocp.MAddr.width);
+wip_HDL.cxx:534:	    Property *pr = w->ctl.properties;
+wip_HDL.cxx:535:	    for (unsigned i = 0; i < w->ctl.nProperties; i++, pr++) {
+wip_HDL.cxx:536:	      if (w->language == VHDL) {
+wip_HDL.cxx:538:			"  constant %-20s : Property_t := b\"", pr->name);
+wip_HDL.cxx:539:		for (int b = p->ocp.MAddr.width-1; b >= 0; b--)
+wip_HDL.cxx:540:		  fprintf(f, "%c", pr->offset & (1 << b) ? '1' : '0');
+wip_HDL.cxx:541:		fprintf(f, "\"; -- 0x%0*x\n",
+wip_HDL.cxx:542:			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
+wip_HDL.cxx:545:			p->ocp.MAddr.width - 1, pr->name, p->ocp.MAddr.width,
+wip_HDL.cxx:546:			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
+wip_HDL.cxx:552:	if (p->wsi.regRequest) {
+wip_HDL.cxx:555:		  comment, p->name);
+wip_HDL.cxx:557:	  for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx:558:	    if (osd->request && p->wdi.isProducer && p->wsi.regRequest && os->value &&
+wip_HDL.cxx:559:		strcmp("MReqInfo", osd->name)) // fixme add "aliases" attribute somewhere
+wip_HDL.cxx:560:	      fprintf(f, "  reg %s%s;\n", pout, osd->name);
+wip_HDL.cxx:563:		"  %s Aliases for interface \"%s\"\n", comment, p->name);
+wip_HDL.cxx:564:	if (p->ocp.MReqInfo.width) {
+wip_HDL.cxx:566:	    if (w->language == VHDL)
+wip_HDL.cxx:569:		      p->name, mIn ? pin : pout, p->ocp.MReqInfo.width - 1);
+wip_HDL.cxx:573:		      mIn ? pin : pout, p->ocp.MReqInfo.width);
+wip_HDL.cxx:574:	  if (w->language == VHDL)
+wip_HDL.cxx:578:		    mIn ? pin : pout, p->ocp.MReqInfo.width - 1);
+wip_HDL.cxx:582:		    p->ocp.MReqInfo.width - 1, pin, pin);
+wip_HDL.cxx:586:		    // p->ocp.MReqInfo.width - 1, pout, p->clock->signal, pout, pout);
+wip_HDL.cxx:588:		    p->wsi.regRequest ? "reg" : "wire", p->ocp.MReqInfo.width - 1, pout, pout, pout);
+wip_HDL.cxx:590:	if (p->ocp.MFlag.width)
+wip_HDL.cxx:591:	  if (w->language == VHDL)
+wip_HDL.cxx:606:		"  %s Aliases for interface \"%s\"\n", comment, p->name);
+wip_HDL.cxx:607:	if (w->language == VHDL)
+wip_HDL.cxx:612:	else if (p->master) // if we are app
+wip_HDL.cxx:622:	if (p->wdi.numberOfOpcodes) {
+wip_HDL.cxx:623:	  if (w->language == VHDL) {
+wip_HDL.cxx:627:		      p->name, p->wdi.isProducer ? pout : pin);
+wip_HDL.cxx:630:		    p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx:631:		    p->name, p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx:632:		    p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx:633:		    p->wdi.isProducer ? 'M' : 'S');
+wip_HDL.cxx:635:	    if (p->wdi.isProducer) // opcode is an output
+wip_HDL.cxx:638:		      pout, pout, p->master ? 'M' : 'S', pout);
+wip_HDL.cxx:642:		      pin, pin, p->master ? 'S' : 'M');
+wip_HDL.cxx:645:	if (p->wdi.variableMessageLength) {
+wip_HDL.cxx:646:	  if (w->language == VHDL) {
+wip_HDL.cxx:650:		      p->name, p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx:651:		      (p->wdi.isProducer ? p->ocp.MFlag.width : p->ocp.MFlag.width) - 1);
+wip_HDL.cxx:654:		    p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx:655:		    p->name, p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx:656:		    p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx:657:		    p->wdi.isProducer ? 'M' : 'S',
+wip_HDL.cxx:658:		    (p->wdi.isProducer ? p->ocp.MFlag.width : p->ocp.MFlag.width) - 9);
+wip_HDL.cxx:660:	    if (p->wdi.isProducer) { // length is an output
+wip_HDL.cxx:662:		(p->master ? p->ocp.MFlag.width : p->ocp.SFlag.width) - 8;
+wip_HDL.cxx:665:		      width - 1, pout, pout, p->master ? 'M' : 'S', width + 7, pout);
+wip_HDL.cxx:668:		(p->master ? p->ocp.SFlag.width : p->ocp.MFlag.width) - 8;
+wip_HDL.cxx:671:		      width - 1, pin, pin, p->master ? 'S' : 'M', width + 7);
+wip_HDL.cxx:682:  if (w->language == VHDL)
+wip_HDL.cxx:684:	    "end entity %s;\n",	w->implName);
+wip_HDL.cxx:693:  if ((err = openOutput(w->implName, outDir, "", suff, w->language == VHDL ? VHD : VER, NULL, f)))
+wip_HDL.cxx:695:  const char *comment = w->language == VHDL ? "--" : "//";
+wip_HDL.cxx:696:  printgen(f, comment, w->file, true);
+wip_HDL.cxx:705:  if (w->language == VHDL)
+wip_HDL.cxx:707:	    "-- This file contains the architecture skeleton for worker: %s\n\n"
+wip_HDL.cxx:711:	    "begin -- rtl\n\n\n\n"
+wip_HDL.cxx:713:	    w->implName, w->implName);
+wip_HDL.cxx:718:	    w->implName, w->implName);
+wip_HDL.cxx:719:    Port *p = w->ports;
+wip_HDL.cxx:720:    for (unsigned i = 0; i < w->nPorts; i++, p++)
+wip_HDL.cxx:721:      switch (p->type) {
+wip_HDL.cxx:723:	if (p->wsi.regRequest)
+wip_HDL.cxx:726:		  p->name);
+wip_HDL.cxx:730:    fprintf(f, "\n\nendmodule //%s\n",  w->implName);
+wip_HDL.cxx:739:  Port *prod = producer->port, *cons = consumer->port;
+wip_HDL.cxx:740:  if (prod->wdi.dataValueWidth != cons->wdi.dataValueWidth)
+wip_HDL.cxx:742:  if (prod->wdi.dataValueGranularity < cons->wdi.dataValueGranularity ||
+wip_HDL.cxx:743:      prod->wdi.dataValueGranularity % cons->wdi.dataValueGranularity)
+wip_HDL.cxx:745:  if (prod->wdi.maxMessageValues > cons->wdi.maxMessageValues)
+wip_HDL.cxx:747:  if (prod->wdi.numberOfOpcodes > cons->wdi.numberOfOpcodes)
+wip_HDL.cxx:749:  if (prod->wdi.variableMessageLength && !cons->wdi.variableMessageLength)
+wip_HDL.cxx:751:  if (prod->wdi.zeroLengthMessages && !cons->wdi.zeroLengthMessages)
+wip_HDL.cxx:753:  if (prod->type != cons->type)
+wip_HDL.cxx:755:  if (cons->wdi.continuous && !prod->wdi.continuous)
+wip_HDL.cxx:757:  if (prod->dataWidth != prod->dataWidth)
+wip_HDL.cxx:759:  if (cons->wdi.continuous && !prod->wdi.continuous)
+wip_HDL.cxx:761:  // Profile-specific error checks and adaptations
+wip_HDL.cxx:763:  switch (prod->type) {
+wip_HDL.cxx:766:    if (prod->impreciseBurst && !cons->impreciseBurst)
+wip_HDL.cxx:768:    if (cons->impreciseBurst) {
+wip_HDL.cxx:769:      if (!cons->preciseBurst) {
+wip_HDL.cxx:771:	if (prod->preciseBurst) {
+wip_HDL.cxx:773:	  oa = &consumer->ocp[OCP_MBurstLength];
+wip_HDL.cxx:774:	  oa->expr= "%s ? 1 : 2";
+wip_HDL.cxx:775:	  oa->other = OCP_MReqLast;
+wip_HDL.cxx:776:	  oa->comment = "Convert precise to imprecise";
+wip_HDL.cxx:777:	  oa = &producer->ocp[OCP_MBurstLength];
+wip_HDL.cxx:778:	  oa->expr = "";
+wip_HDL.cxx:779:	  oa->comment = "MBurstLength ignored for imprecise consumer";
+wip_HDL.cxx:780:	  if (prod->impreciseBurst) {
+wip_HDL.cxx:781:	    oa = &producer->ocp[OCP_MBurstPrecise];
+wip_HDL.cxx:782:	    oa->expr = "";
+wip_HDL.cxx:783:	    oa->comment = "MBurstPrecise ignored for imprecise-only consumer";
+wip_HDL.cxx:788:	oa = &consumer->ocp[OCP_MBurstPrecise];
+wip_HDL.cxx:789:	if (!prod->impreciseBurst) {
+wip_HDL.cxx:790:	  oa->expr = "1";
+wip_HDL.cxx:791:	  oa->comment = "Tell consumer all bursts are precise";
+wip_HDL.cxx:792:	} else if (!prod->preciseBurst) {
+wip_HDL.cxx:793:	  oa = &consumer->ocp[OCP_MBurstPrecise];
+wip_HDL.cxx:794:	  oa->expr = "0";
+wip_HDL.cxx:795:	  oa->comment = "Tell consumer all bursts are imprecise";
+wip_HDL.cxx:796:	  oa = &consumer->ocp[OCP_MBurstLength];
+wip_HDL.cxx:797:	  oa->other = OCP_MBurstLength;
+wip_HDL.cxx:798:	  asprintf((char **)&oa->expr, "{%u'b0,%%s}", cons->ocp.MBurstLength.width - 2);
+wip_HDL.cxx:799:	  oa->comment = "Consumer only needs imprecise burstlength (2 bits)";
+wip_HDL.cxx:803:    if (prod->preciseBurst && cons->preciseBurst &&
+wip_HDL.cxx:804:	prod->ocp.MBurstLength.width < cons->ocp.MBurstLength.width) {
+wip_HDL.cxx:805:      oa = &consumer->ocp[OCP_MBurstLength];
+wip_HDL.cxx:806:      asprintf((char **)&oa->expr, "{%u'b0,%%s}",
+wip_HDL.cxx:807:	       cons->ocp.MBurstLength.width - prod->ocp.MBurstLength.width);
+wip_HDL.cxx:808:      oa->comment = "Consumer takes bigger bursts than producer";
+wip_HDL.cxx:809:      oa->other = OCP_MBurstLength;
+wip_HDL.cxx:812:    if (cons->wsi.abortable) {
+wip_HDL.cxx:813:      if (!prod->wsi.abortable) {
+wip_HDL.cxx:814:	oa = &consumer->ocp[OCP_MFlag];
+wip_HDL.cxx:815:	oa->expr = "0";
+wip_HDL.cxx:816:	oa->comment = "Tell consumer no frames are ever aborted";
+wip_HDL.cxx:818:    } else if (prod->wsi.abortable)
+wip_HDL.cxx:821:    if (cons->wsi.earlyRequest) {
+wip_HDL.cxx:822:      if (!prod->wsi.earlyRequest) {
+wip_HDL.cxx:823:	oa = &consumer->ocp[OCP_MDataLast];
+wip_HDL.cxx:824:	oa->other = OCP_MReqLast;
+wip_HDL.cxx:825:	oa->expr = "%s";
+wip_HDL.cxx:826:	oa->comment = "Tell consumer last data is same as last request";
+wip_HDL.cxx:827:	oa = &consumer->ocp[OCP_MDataValid];
+wip_HDL.cxx:828:	oa->other = OCP_MCmd;
+wip_HDL.cxx:829:	oa->expr = "%s == OCPI_OCP_MCMD_WRITE ? 1 : 0";
+wip_HDL.cxx:830:	oa->comment = "Tell consumer data is valid when request is MCMD_WRITE";
+wip_HDL.cxx:832:    } else if (prod->wsi.earlyRequest)
+wip_HDL.cxx:850: * -- Config accesses may be disabled in the worker
+wip_HDL.cxx:851: * -- Config accesses may have only one of read or write data paths
+wip_HDL.cxx:852: * -- Byte enables may or may not be present
+wip_HDL.cxx:853: * -- Address width of config properties may be different.
+wip_HDL.cxx:855: * -- May have different profiles entirely (WSI vs. WMI).
+wip_HDL.cxx:856: * -- May be generic infrastructure ports.
+wip_HDL.cxx:857: * -- Basic protocol attributes must match.
+wip_HDL.cxx:858: * -- May require repeaters
+wip_HDL.cxx:860: * -- Width.
+wip_HDL.cxx:875:	  w->implName, w->implName, w->implName, DEFS, VER, w->implName, DEFS, VER);
+wip_HDL.cxx:876:  Assembly *a = &w->assembly;
+wip_HDL.cxx:884:  // We define the internal-to-assembly signals, and also figure out the necessary tieoffs or 
+wip_HDL.cxx:886:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+wip_HDL.cxx:887:    if (c->nExtConsumers == 0 && c->nExtProducers == 0) {
+wip_HDL.cxx:889:      for (ip = c->ports; ip; ip = ip->nextConn) {
+wip_HDL.cxx:890:	if (ip->port->master)
+wip_HDL.cxx:894:	if (ip->port->wdi.isProducer)
+wip_HDL.cxx:900:      asprintf((char **)&c->masterName, "%s_%s_2_%s_%s_",
+wip_HDL.cxx:901:	       master->instance->name, master->port->name,
+wip_HDL.cxx:902:	       slave->instance->name, slave->port->name);
+wip_HDL.cxx:903:      asprintf((char **)&c->slaveName, "%s_%s_2_%s_%s_",
+wip_HDL.cxx:904:	       slave->instance->name, slave->port->name,
+wip_HDL.cxx:905:	       master->instance->name, master->port->name);
+wip_HDL.cxx:908:			producer->instance->name, producer->port->name,
+wip_HDL.cxx:909:			consumer->instance->name, consumer->port->name, err);
+wip_HDL.cxx:912:      for (osd = ocpSignals, osMaster = master->port->ocp.signals, osSlave = slave->port->ocp.signals ;
+wip_HDL.cxx:913:	   osd->name; osMaster++, osSlave++, osd++)
+wip_HDL.cxx:914:	if (osMaster->value && osSlave->value) {
+wip_HDL.cxx:915:	  unsigned width = osMaster->width < osSlave->width ? osMaster->width : osSlave->width;
+wip_HDL.cxx:917:	  if (osd->vector)
+wip_HDL.cxx:918:	    fprintf(f, "[%2d:%2d] ", width - 1, 0);
+wip_HDL.cxx:921:	  fprintf(f, "%s%s;\n", osd->master ? c->masterName : c->slaveName, osd->name);
+wip_HDL.cxx:926:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++) {
+wip_HDL.cxx:927:    fprintf(f, "%s %s (\n", i->worker->implName, i->name);
+wip_HDL.cxx:931:    for (ip = i->ports, nn = 0; nn < i->worker->nPorts; nn++, ip++)
+wip_HDL.cxx:932:      for (osd = ocpSignals, os = ip->port->ocp.signals, oa = ip->ocp; osd->name; os++, osd++, oa++)
+wip_HDL.cxx:934:	if (os->value) {
+wip_HDL.cxx:936:	  if (os == &ip->port->ocp.Clk)
+wip_HDL.cxx:937:	    signal = i->clocks[ip->port->clock - i->worker->clocks]->signal;
+wip_HDL.cxx:938:	  else if (ip->connection)
+wip_HDL.cxx:940:	    if (ip->connection->nExtConsumers == 0 && ip->connection->nExtProducers == 0) {
+wip_HDL.cxx:942:	      if (oa->expr) {
+wip_HDL.cxx:944:		if (oa->other) {
+wip_HDL.cxx:946:			   ocpSignals[oa->other].master ?
+wip_HDL.cxx:947:			   ip->connection->masterName : ip->connection->slaveName,
+wip_HDL.cxx:948:			   ocpSignals[oa->other].name);
+wip_HDL.cxx:951:		asprintf((char **)&signal, oa->expr, other);
+wip_HDL.cxx:954:			 osd->master ?
+wip_HDL.cxx:955:			 ip->connection->masterName : ip->connection->slaveName,
+wip_HDL.cxx:956:			 osd->name);
+wip_HDL.cxx:960:	      Port *p = ip->connection->external->port;
+wip_HDL.cxx:961:	      if ((err = pattern(w, p, 0, 0, p->wdi.isProducer, p->master, &suff)))
+wip_HDL.cxx:963:	      asprintf((char **)&signal, "%s%s", suff, osd->name);
+wip_HDL.cxx:965:	  else if (ip->external) {
+wip_HDL.cxx:966:	    // This port is indeed connected to an external, non-data-plane wip interface
+wip_HDL.cxx:968:	      // was: &i->ports[ip->port - i->worker->ports].external->ocp.signals[os - ip->port->ocp.signals];
+wip_HDL.cxx:969:	      &ip->external->ocp.signals[os - ip->port->ocp.signals];
+wip_HDL.cxx:972:	    asprintf((char **)&externalName, exf->signal, n);
+wip_HDL.cxx:974:	    switch (ip->port->type) {
+wip_HDL.cxx:976:	      switch (osd - ocpSignals) {
+wip_HDL.cxx:978:		if (os->width < exf->width)
+wip_HDL.cxx:979:		  asprintf((char **)&signal, "%s[%u:0]", externalName, os->width - 1);
+wip_HDL.cxx:991:	    if (osd->master != ip->port->master)
+wip_HDL.cxx:996:		    last, comment[0] ? " // " : "", comment, last[0] ? "\n" : "", os->signal, signal);
+wip_HDL.cxx:998:	    comment = oa->comment ? oa->comment : "";
+wip_HDL.cxx:1004:  Worker *ww = a->workers;
+wip_HDL.cxx:1005:  for (unsigned i = 0; i < a->nWorkers; i++, ww++) {
+wip_HDL.cxx:1014:    Port *p = ww->ports;
+wip_HDL.cxx:1015:    for (unsigned i = 0; i < ww->nPorts; i++, p++) {
+wip_HDL.cxx:1016:      if (!p->connection)
+wip_HDL.cxx:1019:	p->connection->from == p ? p->connection->from : p->connection->to;
+wip_HDL.cxx:1021:	other->worker->assembly ? !other->master : other->master;
+wip_HDL.cxx:1022:      if (p->master == otherMaster)
+wip_HDL.cxx:1025:      switch (p->type) {
+wip_HDL.cxx:1037:	// Deal with trivial adaptation cases, like precise->imprecise etc.
+wip_HDL.cxx:1048:  fprintf(f, "\n\nendmodule //%s\n",  w->implName);
+wip_HDL.cxx:1056:  if ((err = openOutput(w->implName, outDir, "I_", "", BSV, NULL, f)))
+wip_HDL.cxx:1059:  printgen(f, comment, w->file);
+wip_HDL.cxx:1065:	  comment, comment, w->specName, w->implName, comment, comment, w->pattern);
+wip_HDL.cxx:1072:	  w->implName);
+wip_HDL.cxx:1075:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1077:    if (p->count == 1) {
+wip_HDL.cxx:1078:      fprintf(f, "// For worker interface named \"%s\"", p->name);
+wip_HDL.cxx:1082:	      p->name, p->name, p->count - 1);
+wip_HDL.cxx:1084:    switch (p->type) {
+wip_HDL.cxx:1086:      fprintf(f, "// SizeOfConfigSpace: %u (0x%x)\n", w->ctl.sizeOfConfigSpace,
+wip_HDL.cxx:1087:	      w->ctl.sizeOfConfigSpace);
+wip_HDL.cxx:1090:      fprintf(f, "// DataValueWidth: %u\n", p->wdi.dataValueWidth);
+wip_HDL.cxx:1091:      fprintf(f, "// MaxMessageValues: %u\n", p->wdi.maxMessageValues);
+wip_HDL.cxx:1093:	      p->wdi.zeroLengthMessages ? "true" : "false");
+wip_HDL.cxx:1094:      fprintf(f, "// NumberOfOpcodes: %u\n", p->wdi.numberOfOpcodes);
+wip_HDL.cxx:1095:      fprintf(f, "// DataWidth: %u\n", p->dataWidth);
+wip_HDL.cxx:1098:      fprintf(f, "// DataValueWidth: %u\n", p->wdi.dataValueWidth);
+wip_HDL.cxx:1099:      fprintf(f, "// MaxMessageValues: %u\n", p->wdi.maxMessageValues);
+wip_HDL.cxx:1101:	      p->wdi.zeroLengthMessages ? "true" : "false");
+wip_HDL.cxx:1102:      fprintf(f, "// NumberOfOpcodes: %u\n", p->wdi.numberOfOpcodes);
+wip_HDL.cxx:1103:      fprintf(f, "// DataWidth: %u\n", p->dataWidth);
+wip_HDL.cxx:1107:	      p->dataWidth, (unsigned long long)p->wmemi.memoryWords,
+wip_HDL.cxx:1108:	      (unsigned long long)p->wmemi.memoryWords, p->byteWidth);
+wip_HDL.cxx:1109:      fprintf(f, "// MaxBurstLength: %u\n", p->wmemi.maxBurstLength);
+wip_HDL.cxx:1116:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx:1117:      if (p->count > 1)
+wip_HDL.cxx:1119:      switch (p->type) {
+wip_HDL.cxx:1121:	fprintf(f, "typedef Wci_Es#(%u) ", p->ocp.MAddr.width);
+wip_HDL.cxx:1125:		p->master ? 'm' : 's',
+wip_HDL.cxx:1126:		p->ocp.MBurstLength.width, p->dataWidth, p->ocp.MByteEn.width,
+wip_HDL.cxx:1127:		p->ocp.MReqInfo.width, p->ocp.MDataInfo.width);
+wip_HDL.cxx:1131:		p->ocp.MAddr.width, p->ocp.MBurstLength.width, p->dataWidth,
+wip_HDL.cxx:1132:		p->ocp.MDataInfo.width,p->ocp.MDataByteEn.width,
+wip_HDL.cxx:1133:		p->ocp.MFlag.width ? p->ocp.MFlag.width : p->ocp.SFlag.width);
+wip_HDL.cxx:1137:		p->ocp.MAddr.width, p->ocp.MBurstLength.width, p->dataWidth, p->ocp.MDataByteEn.width);
+wip_HDL.cxx:1143:      fprintf(f, "I_%s%s;\n", p->name, num);
+wip_HDL.cxx:1150:	  w->implName, w->implName);
+wip_HDL.cxx:1152:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1153:    if (p->clock->port == p)
+wip_HDL.cxx:1154:      fprintf(f, "  Clock %s;\n", p->clock->signal);
+wip_HDL.cxx:1157:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1159:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx:1160:      if (p->count > 1)
+wip_HDL.cxx:1162:      fprintf(f, "  interface I_%s%s i_%s%s;\n", p->name, num, p->name, num);
+wip_HDL.cxx:1166:	  "endinterface: V%sIfc\n\n", w->implName);
+wip_HDL.cxx:1171:	  w->implName, w->implName);
+wip_HDL.cxx:1174:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_HDL.cxx:1175:    if (p->clock->port == p) {
+wip_HDL.cxx:1176:      fprintf(f, "%sClock i_%sClk", last, p->name);
+wip_HDL.cxx:1180:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1181:    if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx:1182:			       !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx:1183:      if (p->count > 1)
+wip_HDL.cxx:1184:	fprintf(f, "%sVector#(%d,Reset) i_%sRst", last, p->count, p->name);
+wip_HDL.cxx:1186:	fprintf(f, "%sReset i_%sRst", last, p->name);
+wip_HDL.cxx:1195:	  w->implName);
+wip_HDL.cxx:1197:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_HDL.cxx:1198:    if (p->clock->port == p)
+wip_HDL.cxx:1200:	      p->name, p->clock->signal, p->name);
+wip_HDL.cxx:1202:      fprintf(f, "  // Interface \"%s\" uses clock on interface \"%s\"\n", p->name, p->clock->port->name);
+wip_HDL.cxx:1204:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1206:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx:1207:      if (p->count > 1)
+wip_HDL.cxx:1209:      if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx:1210:				 !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx:1213:		 p->master ? p->ocp.SReset_n.signal : p->ocp.MReset_n.signal, nn);
+wip_HDL.cxx:1214:	if (p->count > 1)
+wip_HDL.cxx:1216:		  p->name, num, signal, p->name, nn);
+wip_HDL.cxx:1219:		  p->name, signal, p->name);
+wip_HDL.cxx:1224:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1226:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx:1227:      if (p->count > 1)
+wip_HDL.cxx:1229:      fprintf(f, "interface I_%s%s i_%s%s;\n", p->name, num, p->name, num);
+wip_HDL.cxx:1234:      if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx:1235:				 !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx:1236:	asprintf((char **)&reset, "i_%s%sRst", p->name, num); 
+wip_HDL.cxx:1239:      for (o = 0, os = p->ocp.signals, osd = ocpSignals; osd->name; osd++, os++, o++)
+wip_HDL.cxx:1240:	if (os->value) {
+wip_HDL.cxx:1242:	  asprintf(&signal, os->signal, nn);
+wip_HDL.cxx:1245:	  if (p->master != osd->master && o != OCP_Clk &&
+wip_HDL.cxx:1246:	      (p->type != WCIPort || o != OCP_MReset_n && o != OCP_SReset_n)) {
+wip_HDL.cxx:1265:		      tolower(osd->name[0]), osd->name + 1, signal,
+wip_HDL.cxx:1266:		      p->clock->port->name, reset);
+wip_HDL.cxx:1269:		      tolower(osd->name[0]), osd->name + 1, signal, en++,
+wip_HDL.cxx:1270:		      p->clock->port->name, reset);
+wip_HDL.cxx:1272:	  if (p->master == osd->master) 
+wip_HDL.cxx:1274:		    signal, tolower(osd->name[0]), osd->name + 1,
+wip_HDL.cxx:1275:		    p->clock->port->name, reset);
+wip_HDL.cxx:1277:      fprintf(f, "endinterface: i_%s%s\n\n", p->name, num);
+wip_HDL.cxx:1283:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1285:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx:1286:      if (p->count > 1)
+wip_HDL.cxx:1291:      for (o = 0, os = p->ocp.signals, osd = ocpSignals; osd->name; osd++, os++, o++)
+wip_HDL.cxx:1292:	if (os->value && o != OCP_Clk &&
+wip_HDL.cxx:1293:	    (p->type != WCIPort ||
+wip_HDL.cxx:1294:	     !(o == OCP_MReset_n && !p->master || o == OCP_SReset_n && p->master))) {
+wip_HDL.cxx:1295:	  fprintf(f, "%si_%s%s_%c%s", last, p->name, num, tolower(osd->name[0]), osd->name+1);
+wip_HDL.cxx:1302:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1304:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx:1305:      if (p->count > 1)
+wip_HDL.cxx:1310:      for (o = 0, os = p->ocp.signals, osd = ocpSignals; osd->name; osd++, os++, o++)
+wip_HDL.cxx:1311:	if (os->value && o != OCP_Clk &&
+wip_HDL.cxx:1312:	    (p->type != WCIPort ||
+wip_HDL.cxx:1313:	     !(o == OCP_MReset_n && !p->master || o == OCP_SReset_n && p->master))) {
+wip_HDL.cxx:1314:	  fprintf(f, "%si_%s%s_%c%s", last, p->name, num, tolower(osd->name[0]), osd->name+1);
+wip_HDL.cxx:1320:  fprintf(f, "\nendmodule: vMk%s\n", w->implName);
+wip_HDL.cxx:1325:	  "module mk%s#(", w->implName);
+wip_HDL.cxx:1328:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_HDL.cxx:1329:    if (p->clock->port == p) {
+wip_HDL.cxx:1330:      fprintf(f, "%sClock i_%sClk", last, p->name);
+wip_HDL.cxx:1334:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1335:    if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx:1336:			       !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx:1337:      if (p->count > 1)
+wip_HDL.cxx:1338:	fprintf(f, "%sVector#(%d,Reset) i_%sRst", last, p->count, p->name);
+wip_HDL.cxx:1340:	fprintf(f, "%sReset i_%sRst", last, p->name);
+wip_HDL.cxx:1344:  fprintf(f, ") (V%sIfc);\n", w->implName);
+wip_HDL.cxx:1346:	  "  let _ifc <- vMk%s(",
+wip_HDL.cxx:1347:	  w->implName);
+wip_HDL.cxx:1349:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_HDL.cxx:1350:    if (p->clock->port == p) {
+wip_HDL.cxx:1351:      fprintf(f, "%si_%sClk", last, p->name);
+wip_HDL.cxx:1354:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx:1355:    if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx:1356:			       !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx:1357:      fprintf(f, "%si_%sRst", last, p->name);
+wip_HDL.cxx:1365:	  w->implName, w->implName);
+wip_HDL.cxx:1372:  fprintf(f, "<worker name=\"%s\"", w->implName);
+wip_HDL.cxx:1373:  if (w->ctl.controlOps) {
+wip_HDL.cxx:1378:	  w->ctl.controlOps & (1 << op)) {
+wip_HDL.cxx:1384:  if (w->ports->type == WCIPort && w->ports->wci.timeout)
+wip_HDL.cxx:1385:    fprintf(f, " Timeout=\"%u\"", w->ports->wci.timeout);
+wip_HDL.cxx:1389:  for (prop = w->ctl.properties, nn = 0; nn < w->ctl.nProperties; nn++, prop++) {
+wip_HDL.cxx:1391:	    prop->name, propertyTypes[prop->members->type]);
+wip_HDL.cxx:1392:    if (prop->isReadable)
+wip_HDL.cxx:1394:    if (prop->isWritable)
+wip_HDL.cxx:1396:    if (prop->readSync)
+wip_HDL.cxx:1398:    if (prop->writeSync)
+wip_HDL.cxx:1400:    if (prop->readError)
+wip_HDL.cxx:1402:    if (prop->writeError)
+wip_HDL.cxx:1404:    if (prop->members->type == CM::Property::CPI_String)
+wip_HDL.cxx:1405:      fprintf(f, " size=\"%u\"", prop->members->stringLength);
+wip_HDL.cxx:1406:    if (prop->members->isSequence)
+wip_HDL.cxx:1407:      fprintf(f, " sequenceSize=\"%u\"\n", prop->members->length);
+wip_HDL.cxx:1411:  for (p = w->ports, nn = 0; nn < w->nPorts; nn++, p++)
+wip_HDL.cxx:1412:    if (p->isData) {
+wip_HDL.cxx:1414:	      p->name, p->wdi.isProducer ? "false" : "true",
+wip_HDL.cxx:1415:	      (p->wdi.maxMessageValues * p->wdi.dataValueWidth + 7) / 8);
+wip_HDL.cxx:1416:      if (p->wdi.minBuffers)
+wip_HDL.cxx:1417:	fprintf(f, " minNumBuffers=\"%u\"", p->wdi.minBuffers);
+wip_HDL.cxx:1427:	  i->isInterconnect ? "interconnect" : "instance",
+wip_HDL.cxx:1428:	  i->name, i->worker->implName, i->index);
+wip_HDL.cxx:1429:  if (i->attach)
+wip_HDL.cxx:1430:    fprintf(f, " attachment=\"%s\"", i->attach);
+wip_HDL.cxx:1448:  fprintf(f, "<!--\n");
+wip_HDL.cxx:1453:	  aw->implName);
+wip_HDL.cxx:1454:  fprintf(f, "  -->\n");
+wip_HDL.cxx:1464:  for (w = aw->assembly.workers, n = 0; n < aw->assembly.nWorkers; n++, w++)
+wip_HDL.cxx:1470:  for (i = aw->assembly.instances, n = 0; n < aw->assembly.nInstances; n++, i++) {
+wip_HDL.cxx:1471:    for (di = dw->assembly.instances, nn = 0; nn < dw->assembly.nInstances; nn++, di++) {
+wip_HDL.cxx:1472:      if (di->name && !strcmp(di->name, i->name)) {
+wip_HDL.cxx:1473:	i->index = di->index;
+wip_HDL.cxx:1477:    if (!nn >= dw->assembly.nInstances)
+wip_HDL.cxx:1479:		      i->name);
+wip_HDL.cxx:1483:  for (di = dw->assembly.instances, nn = 0; nn < dw->assembly.nInstances; nn++, di++)
+wip_HDL.cxx:1484:    if (di->worker)
+wip_HDL.cxx:1488:  for (cc = dw->assembly.connections, n = 0; n < dw->assembly.nConnections; n++, cc++)
+wip_HDL.cxx:1489:    for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
+wip_HDL.cxx:1490:      if (!strcmp(ac->name, cc->name)) {
+wip_HDL.cxx:1491:	if (ac->external->isProducer == cc->external->isProducer)
+wip_HDL.cxx:1494:	for (aip = ac->ports; aip; aip = aip->nextConn)
+wip_HDL.cxx:1495:	  if (aip != ac->external)
+wip_HDL.cxx:1497:	for (cip = cc->ports; cip; cip = cip->nextConn)
+wip_HDL.cxx:1498:	  if (cip != cc->external)
+wip_HDL.cxx:1500:	if (ac->external->isProducer)
+wip_HDL.cxx:1503:		  cip->instance->name, cip->port->name,
+wip_HDL.cxx:1504:		  aip->instance->name, aip->port->name);
+wip_HDL.cxx:1508:		  aip->instance->name, aip->port->name,
+wip_HDL.cxx:1509:		  cip->instance->name, cip->port->name);
+wip_HDL.cxx:1512:  for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
+wip_HDL.cxx:1513:    if (!ac->external) {
+wip_HDL.cxx:1516:      for (aip = ac->ports; aip; aip = aip->nextConn)
+wip_HDL.cxx:1517:	if (aip->isProducer)
+wip_HDL.cxx:1522:	      from->instance->name, from->port->name,
+wip_HDL.cxx:1523:	      to->instance->name, to->port->name);
+wip_HDL.cxx~:19:  const char *pat = p->pattern ? p->pattern : w->pattern;
+wip_HDL.cxx~:24:  char c, *s = (char *)malloc(strlen(p->name) + strlen(w->pattern) * 3 + 10);
+wip_HDL.cxx~:47:      case '0': // zero origin ordinal-within-profile
+wip_HDL.cxx~:49:	sprintf(s, "%d", wn + (pat[-1] - '0'));
+wip_HDL.cxx~:72:	strcpy(s, p->name);
+wip_HDL.cxx~:73:	if (pat[-1] == 'S')
+wip_HDL.cxx~:77:	if (p->count > 1)
+wip_HDL.cxx~:79:	  case -1:
+wip_HDL.cxx~:83:	  case -2:
+wip_HDL.cxx~:92:	strcpy(s, wipNames[p->type]);
+wip_HDL.cxx~:100:	strcpy(s, wipNames[p->type]);
+wip_HDL.cxx~:107:	return esprintf("Invalid pattern rule: %s", w->pattern);
+wip_HDL.cxx~:120:  ct[strlen(ct) - 1] = '\0';
+wip_HDL.cxx~:126:	  comment, orig ? "ORIGINALLY " : "", ct, local->tm_zone,
+wip_HDL.cxx~:150:    if (length != -1) {
+wip_HDL.cxx~:174:  Language lang = wrap ? (w->language == VHDL ? Verilog : VHDL) : w->language;
+wip_HDL.cxx~:175:  if ((err = openOutput(w->implName, outDir, "", DEFS, lang == VHDL ? VHD : VER, NULL, f)))
+wip_HDL.cxx~:177:  const char *comment = lang == VHDL ? "--" : "//";
+wip_HDL.cxx~:178:  printgen(f, comment, w->file);
+wip_HDL.cxx~:184:	  comment, lang == VHDL ? "VHDL" : "Verilog", comment, w->specName,
+wip_HDL.cxx~:185:	  w->implName, comment, comment, w->pattern);
+wip_HDL.cxx~:194:	    w->implName);
+wip_HDL.cxx~:196:  Port *p = w->ports;
+wip_HDL.cxx~:199:    for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx~:203:	      "-- These 2 records correspond to the input and output sides of the OCP bundle\n"
+wip_HDL.cxx~:204:	      "-- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
+wip_HDL.cxx~:205:	      w->implName, wipNames[p->type], p->name);
+wip_HDL.cxx~:207:	      "\n-- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
+wip_HDL.cxx~:208:	      wipNames[p->type], mIn ? "master" : "slave", p->name, w->implName);
+wip_HDL.cxx~:215:      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx~:216:	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx~:217:	  fprintf(f, "    %-20s: ", osd->name);
+wip_HDL.cxx~:218:	  if (osd->type)
+wip_HDL.cxx~:219:	    fprintf(f, "%s_t", osd->name);
+wip_HDL.cxx~:220:	  else if (osd->vector)
+wip_HDL.cxx~:221:	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
+wip_HDL.cxx~:228:	      "\n-- Record for the %s output (OCP %s) signals for port \"%s\" of worker \"%s\"\n"
+wip_HDL.cxx~:230:	      wipNames[p->type], mIn ? "slave" : "master",
+wip_HDL.cxx~:231:	      p->name, w->implName, p->name, pout);
+wip_HDL.cxx~:233:      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx~:234:	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx~:235:	  fprintf(f, "    %-20s: ", osd->name);
+wip_HDL.cxx~:236:	  if (osd->type)
+wip_HDL.cxx~:237:	    fprintf(f, "%s_t", osd->name);
+wip_HDL.cxx~:238:	  else if (osd->vector)
+wip_HDL.cxx~:239:	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
+wip_HDL.cxx~:249:	    "  port (\n", w->implName);
+wip_HDL.cxx~:255:	    w->isAssembly ? "ocpi_app" : w->implName);
+wip_HDL.cxx~:256:  p = w->ports;
+wip_HDL.cxx~:263:  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx~:270:    asprintf(&nbuf, " %d", p->count);
+wip_HDL.cxx~:273:	    lang == VHDL ? "  " : "", comment, p->count > 1 ? nbuf : "", wipNames[p->type],
+wip_HDL.cxx~:274:	    p->type == WMIPort || p->type == WSIPort ?
+wip_HDL.cxx~:275:	    (p->wdi.isProducer ? "producer " : "consumer ") : "",
+wip_HDL.cxx~:276:	    p->count > 1 ? "s" : "", p->name, w->implName, mIn ? "slave" : "master");
+wip_HDL.cxx~:277:    for (unsigned n = 0; n < p->count; n++) {
+wip_HDL.cxx~:282:      if (p->clock->port == p && n == 0) {
+wip_HDL.cxx~:284:	  fprintf(f, "    %-20s: in  std_logic;\n", p->clock->signal);
+wip_HDL.cxx~:287:		  p->clock->signal, (int)(20 - strlen(p->clock->signal)), "");
+wip_HDL.cxx~:288:	p->ocp.Clk.signal = p->clock->signal;
+wip_HDL.cxx~:292:		lang == VHDL ? "  " : "", comment, p->name, p->clock->signal);
+wip_HDL.cxx~:294:	fprintf(f, "    %-20s: in  %s_t;\n",
+wip_HDL.cxx~:295:		p->fullNameIn, p->fullNameIn);
+wip_HDL.cxx~:298:	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx~:299:	  if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx~:301:	    asprintf(&name, os->signal, n);
+wip_HDL.cxx~:302:	    fprintf(f, "  %s, %*s// input  ", name, (int)(20 - strlen(name)), "");
+wip_HDL.cxx~:303:	    //if (osd->type)
+wip_HDL.cxx~:304:	    //fprintf(f, "%s_t", osd->name);
+wip_HDL.cxx~:306:	    if (osd->vector)
+wip_HDL.cxx~:307:	      fprintf(f, "[%3u:0]\n", os->width - 1);
+wip_HDL.cxx~:313:	fprintf(f, "    %-20s: out %s_t%s\n", p->fullNameOut, p->fullNameOut,
+wip_HDL.cxx~:314:		i < w->nPorts-1 || p->count > n+1 ? ";" : "");
+wip_HDL.cxx~:317:	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx~:318:	  if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx~:322:	    asprintf(&name, os->signal, n);
+wip_HDL.cxx~:324:		     (int)(20 - strlen(name)), "");
+wip_HDL.cxx~:325:	    if (osd->vector)
+wip_HDL.cxx~:326:	      asprintf(&last, "%s[%3u:0]\n", last, os->width - 1);
+wip_HDL.cxx~:336:	    "end package %s_defs;\n", w->implName, w->implName);
+wip_HDL.cxx~:342:    Property *pr = w->ctl.properties;
+wip_HDL.cxx~:343:    for (unsigned i = 0; i < w->ctl.nProperties; i++, pr++)
+wip_HDL.cxx~:344:      if (pr->isParameter)
+wip_HDL.cxx~:345:	if (w->language == VHDL) {
+wip_HDL.cxx~:349:	  switch (pr->types->type) {
+wip_HDL.cxx~:351:	    case CM::Property::CPI_##pretty: i64 = (int64_t)pr->types->defaultValue.v##pretty; break;
+wip_HDL.cxx~:356:		  pr->types->bits - 1, pr->name, pr->types->bits,
+wip_HDL.cxx~:360:    p = w->ports;
+wip_HDL.cxx~:361:    for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx~:363:      for (unsigned n = 0; n < p->count; n++) {
+wip_HDL.cxx~:364:	if (p->clock->port == p && n == 0)
+wip_HDL.cxx~:365:	  fprintf(f, "  input          %s;\n", p->clock->signal);
+wip_HDL.cxx~:373:	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx~:374:	  if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx~:376:	    asprintf(&name, os->signal, n);
+wip_HDL.cxx~:377:	    if (osd->vector)
+wip_HDL.cxx~:378:	      fprintf(f, "  input  [%3u:0] %s;\n", os->width - 1, name);
+wip_HDL.cxx~:383:	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx~:384:	  if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
+wip_HDL.cxx~:386:	    asprintf(&name, os->signal, n);
+wip_HDL.cxx~:387:	    if (osd->vector)
+wip_HDL.cxx~:388:	      fprintf(f, "  output [%3u:0] %s;\n", os->width - 1, name);
+wip_HDL.cxx~:403:	    w->implName, w->implName, w->implName);
+wip_HDL.cxx~:414:  if ((err = openOutput(w->implName, outDir, "", IMPL, w->language == VHDL ? VHD : VER, NULL, f)))
+wip_HDL.cxx~:416:  const char *comment = w->language == VHDL ? "--" : "//";
+wip_HDL.cxx~:417:  printgen(f, comment, w->file);
+wip_HDL.cxx~:421:	  comment, w->implName, comment, w->pattern);
+wip_HDL.cxx~:422:  if (w->language == VHDL)
+wip_HDL.cxx~:430:	    library, library, w->implName, DEFS, w->implName);
+wip_HDL.cxx~:438:	    w->implName, w->implName, DEFS, VER, w->implName, DEFS, VER);
+wip_HDL.cxx~:443:  Port *p = w->ports;
+wip_HDL.cxx~:444:  if (w->language == VHDL) {
+wip_HDL.cxx~:450:    for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx~:453:      asprintf(&nbuf, " %d", p->count);
+wip_HDL.cxx~:456:	      comment, p->count > 1 ? nbuf : "", wipNames[p->type],
+wip_HDL.cxx~:457:	      p->type == WMIPort || p->type == WSIPort ?
+wip_HDL.cxx~:458:	      (p->wdi.isProducer ? "producer " : "consumer ") : "",
+wip_HDL.cxx~:459:	      p->count > 1 ? "s" : "", p->name,
+wip_HDL.cxx~:460:	      w->implName, mIn ? "slave" : "master");
+wip_HDL.cxx~:461:      for (unsigned n = 0; n < p->count; n++) {
+wip_HDL.cxx~:462:	if (p->clock->port == p && n == 0)
+wip_HDL.cxx~:463:	  fprintf(f, "    %-20s: in  std_logic;\n", p->clock->signal);
+wip_HDL.cxx~:466:		  "    -- No Clk here. \"%s\" interface uses \"%s\" as clock,\n",
+wip_HDL.cxx~:467:		  p->name, p->clock->signal);
+wip_HDL.cxx~:472:	fprintf(f, "    %-20s: in  %s_t;\n",
+wip_HDL.cxx~:474:	fprintf(f, "    %-20s: out %s_t%s\n", pout, pout,
+wip_HDL.cxx~:475:		i < w->nPorts-1 || p->count > n+1 ? ";" : "");
+wip_HDL.cxx~:481:  p = w->ports;
+wip_HDL.cxx~:482:  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_HDL.cxx~:484:    for (unsigned n = 0; n < p->count; n++) {
+wip_HDL.cxx~:489:      switch (p->type) {
+wip_HDL.cxx~:493:		comment, wipNames[p->type], p->name);
+wip_HDL.cxx~:494:	if (w->language == VHDL)
+wip_HDL.cxx~:522:	if (w->ctl.nProperties) {
+wip_HDL.cxx~:525:		  comment, w->implName);
+wip_HDL.cxx~:526:	  if (w->language == VHDL)
+wip_HDL.cxx~:529:		  p->ocp.MAddr.width - 1);
+wip_HDL.cxx~:532:		    "  localparam %sPropertyWidth = %d;\n", pin, p->ocp.MAddr.width);
+wip_HDL.cxx~:534:	    Property *pr = w->ctl.properties;
+wip_HDL.cxx~:535:	    for (unsigned i = 0; i < w->ctl.nProperties; i++, pr++) {
+wip_HDL.cxx~:536:	      if (w->language == VHDL) {
+wip_HDL.cxx~:538:			"  constant %-20s : Property_t := b\"", pr->name);
+wip_HDL.cxx~:539:		for (int b = p->ocp.MAddr.width-1; b >= 0; b--)
+wip_HDL.cxx~:540:		  fprintf(f, "%c", pr->offset & (1 << b) ? '1' : '0');
+wip_HDL.cxx~:541:		fprintf(f, "\"; -- 0x%0*x\n",
+wip_HDL.cxx~:542:			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
+wip_HDL.cxx~:545:			p->ocp.MAddr.width - 1, pr->name, p->ocp.MAddr.width,
+wip_HDL.cxx~:546:			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
+wip_HDL.cxx~:552:	if (p->wsi.regRequest) {
+wip_HDL.cxx~:555:		  comment, p->name);
+wip_HDL.cxx~:557:	  for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_HDL.cxx~:558:	    if (osd->request && p->wdi.isProducer && p->wsi.regRequest && os->value &&
+wip_HDL.cxx~:559:		strcmp("MReqInfo", osd->name)) // fixme add "aliases" attribute somewhere
+wip_HDL.cxx~:560:	      fprintf(f, "  reg %s%s;\n", pout, osd->name);
+wip_HDL.cxx~:563:		"  %s Aliases for interface \"%s\"\n", comment, p->name);
+wip_HDL.cxx~:564:	if (p->ocp.MReqInfo.width) {
+wip_HDL.cxx~:566:	    if (w->language == VHDL)
+wip_HDL.cxx~:569:		      p->name, mIn ? pin : pout, p->ocp.MReqInfo.width - 1);
+wip_HDL.cxx~:573:		      mIn ? pin : pout, p->ocp.MReqInfo.width);
+wip_HDL.cxx~:574:	  if (w->language == VHDL)
+wip_HDL.cxx~:578:		    mIn ? pin : pout, p->ocp.MReqInfo.width - 1);
+wip_HDL.cxx~:582:		    p->ocp.MReqInfo.width - 1, pin, pin);
+wip_HDL.cxx~:586:		    // p->ocp.MReqInfo.width - 1, pout, p->clock->signal, pout, pout);
+wip_HDL.cxx~:588:		    p->wsi.regRequest ? "reg" : "wire", p->ocp.MReqInfo.width - 1, pout, pout, pout);
+wip_HDL.cxx~:590:	if (p->ocp.MFlag.width)
+wip_HDL.cxx~:591:	  if (w->language == VHDL)
+wip_HDL.cxx~:606:		"  %s Aliases for interface \"%s\"\n", comment, p->name);
+wip_HDL.cxx~:607:	if (w->language == VHDL)
+wip_HDL.cxx~:612:	else if (p->master) // if we are app
+wip_HDL.cxx~:622:	if (p->wdi.numberOfOpcodes) {
+wip_HDL.cxx~:623:	  if (w->language == VHDL) {
+wip_HDL.cxx~:627:		      p->name, p->wdi.isProducer ? pout : pin);
+wip_HDL.cxx~:630:		    p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx~:631:		    p->name, p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx~:632:		    p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx~:633:		    p->wdi.isProducer ? 'M' : 'S');
+wip_HDL.cxx~:635:	    if (p->wdi.isProducer) // opcode is an output
+wip_HDL.cxx~:638:		      pout, pout, p->master ? 'M' : 'S', pout);
+wip_HDL.cxx~:642:		      pin, pin, p->master ? 'S' : 'M');
+wip_HDL.cxx~:645:	if (p->wdi.variableMessageLength) {
+wip_HDL.cxx~:646:	  if (w->language == VHDL) {
+wip_HDL.cxx~:650:		      p->name, p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx~:651:		      (p->wdi.isProducer ? p->ocp.MFlag.width : p->ocp.MFlag.width) - 1);
+wip_HDL.cxx~:654:		    p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx~:655:		    p->name, p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx~:656:		    p->wdi.isProducer ? pout : pin,
+wip_HDL.cxx~:657:		    p->wdi.isProducer ? 'M' : 'S',
+wip_HDL.cxx~:658:		    (p->wdi.isProducer ? p->ocp.MFlag.width : p->ocp.MFlag.width) - 9);
+wip_HDL.cxx~:660:	    if (p->wdi.isProducer) { // length is an output
+wip_HDL.cxx~:662:		(p->master ? p->ocp.MFlag.width : p->ocp.SFlag.width) - 8;
+wip_HDL.cxx~:665:		      width - 1, pout, pout, p->master ? 'M' : 'S', width + 7, pout);
+wip_HDL.cxx~:668:		(p->master ? p->ocp.SFlag.width : p->ocp.MFlag.width) - 8;
+wip_HDL.cxx~:671:		      width - 1, pin, pin, p->master ? 'S' : 'M', width + 7);
+wip_HDL.cxx~:682:  if (w->language == VHDL)
+wip_HDL.cxx~:684:	    "end entity %s;\n",	w->implName);
+wip_HDL.cxx~:693:  if ((err = openOutput(w->implName, outDir, "", suff, w->language == VHDL ? VHD : VER, NULL, f)))
+wip_HDL.cxx~:695:  const char *comment = w->language == VHDL ? "--" : "//";
+wip_HDL.cxx~:696:  printgen(f, comment, w->file, true);
+wip_HDL.cxx~:705:  if (w->language == VHDL)
+wip_HDL.cxx~:707:	    "-- This file contains the architecture skeleton for worker: %s\n\n"
+wip_HDL.cxx~:711:	    "begin -- rtl\n\n\n\n"
+wip_HDL.cxx~:713:	    w->implName, w->implName);
+wip_HDL.cxx~:718:	    w->implName, w->implName);
+wip_HDL.cxx~:719:    Port *p = w->ports;
+wip_HDL.cxx~:720:    for (unsigned i = 0; i < w->nPorts; i++, p++)
+wip_HDL.cxx~:721:      switch (p->type) {
+wip_HDL.cxx~:723:	if (p->wsi.regRequest)
+wip_HDL.cxx~:726:		  p->name);
+wip_HDL.cxx~:730:    fprintf(f, "\n\nendmodule //%s\n",  w->implName);
+wip_HDL.cxx~:739:  Port *prod = producer->port, *cons = consumer->port;
+wip_HDL.cxx~:740:  if (prod->wdi.dataValueWidth != cons->wdi.dataValueWidth)
+wip_HDL.cxx~:742:  if (prod->wdi.dataValueGranularity < cons->wdi.dataValueGranularity ||
+wip_HDL.cxx~:743:      prod->wdi.dataValueGranularity % cons->wdi.dataValueGranularity)
+wip_HDL.cxx~:745:  if (prod->wdi.maxMessageValues > cons->wdi.maxMessageValues)
+wip_HDL.cxx~:747:  if (prod->wdi.numberOfOpcodes > cons->wdi.numberOfOpcodes)
+wip_HDL.cxx~:749:  if (prod->wdi.variableMessageLength && !cons->wdi.variableMessageLength)
+wip_HDL.cxx~:751:  if (prod->wdi.zeroLengthMessages && !cons->wdi.zeroLengthMessages)
+wip_HDL.cxx~:753:  if (prod->type != cons->type)
+wip_HDL.cxx~:755:  if (cons->wdi.continuous && !prod->wdi.continuous)
+wip_HDL.cxx~:757:  if (prod->dataWidth != prod->dataWidth)
+wip_HDL.cxx~:759:  if (cons->wdi.continuous && !prod->wdi.continuous)
+wip_HDL.cxx~:761:  // Profile-specific error checks and adaptations
+wip_HDL.cxx~:763:  switch (prod->type) {
+wip_HDL.cxx~:766:    if (prod->impreciseBurst && !cons->impreciseBurst)
+wip_HDL.cxx~:768:    if (cons->impreciseBurst) {
+wip_HDL.cxx~:769:      if (!cons->preciseBurst) {
+wip_HDL.cxx~:771:	if (prod->preciseBurst) {
+wip_HDL.cxx~:773:	  oa = &consumer->ocp[OCP_MBurstLength];
+wip_HDL.cxx~:774:	  oa->expr= "%s ? 1 : 2";
+wip_HDL.cxx~:775:	  oa->other = OCP_MReqLast;
+wip_HDL.cxx~:776:	  oa->comment = "Convert precise to imprecise";
+wip_HDL.cxx~:777:	  oa = &producer->ocp[OCP_MBurstLength];
+wip_HDL.cxx~:778:	  oa->expr = "";
+wip_HDL.cxx~:779:	  oa->comment = "MBurstLength ignored for imprecise consumer";
+wip_HDL.cxx~:780:	  if (prod->impreciseBurst) {
+wip_HDL.cxx~:781:	    oa = &producer->ocp[OCP_MBurstPrecise];
+wip_HDL.cxx~:782:	    oa->expr = "";
+wip_HDL.cxx~:783:	    oa->comment = "MBurstPrecise ignored for imprecise-only consumer";
+wip_HDL.cxx~:788:	oa = &consumer->ocp[OCP_MBurstPrecise];
+wip_HDL.cxx~:789:	if (!prod->impreciseBurst) {
+wip_HDL.cxx~:790:	  oa->expr = "1";
+wip_HDL.cxx~:791:	  oa->comment = "Tell consumer all bursts are precise";
+wip_HDL.cxx~:792:	} else if (!prod->preciseBurst) {
+wip_HDL.cxx~:793:	  oa = &consumer->ocp[OCP_MBurstPrecise];
+wip_HDL.cxx~:794:	  oa->expr = "0";
+wip_HDL.cxx~:795:	  oa->comment = "Tell consumer all bursts are imprecise";
+wip_HDL.cxx~:796:	  oa = &consumer->ocp[OCP_MBurstLength];
+wip_HDL.cxx~:797:	  oa->other = OCP_MBurstLength;
+wip_HDL.cxx~:798:	  asprintf((char **)&oa->expr, "{%u'b0,%%s}", cons->ocp.MBurstLength.width - 2);
+wip_HDL.cxx~:799:	  oa->comment = "Consumer only needs imprecise burstlength (2 bits)";
+wip_HDL.cxx~:803:    if (prod->preciseBurst && cons->preciseBurst &&
+wip_HDL.cxx~:804:	prod->ocp.MBurstLength.width < cons->ocp.MBurstLength.width) {
+wip_HDL.cxx~:805:      oa = &consumer->ocp[OCP_MBurstLength];
+wip_HDL.cxx~:806:      asprintf((char **)&oa->expr, "{%u'b0,%%s}",
+wip_HDL.cxx~:807:	       cons->ocp.MBurstLength.width - prod->ocp.MBurstLength.width);
+wip_HDL.cxx~:808:      oa->comment = "Consumer takes bigger bursts than producer";
+wip_HDL.cxx~:809:      oa->other = OCP_MBurstLength;
+wip_HDL.cxx~:812:    if (cons->wsi.abortable) {
+wip_HDL.cxx~:813:      if (!prod->wsi.abortable) {
+wip_HDL.cxx~:814:	oa = &consumer->ocp[OCP_MFlag];
+wip_HDL.cxx~:815:	oa->expr = "0";
+wip_HDL.cxx~:816:	oa->comment = "Tell consumer no frames are ever aborted";
+wip_HDL.cxx~:818:    } else if (prod->wsi.abortable)
+wip_HDL.cxx~:821:    if (cons->wsi.earlyRequest) {
+wip_HDL.cxx~:822:      if (!prod->wsi.earlyRequest) {
+wip_HDL.cxx~:823:	oa = &consumer->ocp[OCP_MDataLast];
+wip_HDL.cxx~:824:	oa->other = OCP_MReqLast;
+wip_HDL.cxx~:825:	oa->expr = "%s";
+wip_HDL.cxx~:826:	oa->comment = "Tell consumer last data is same as last request";
+wip_HDL.cxx~:827:	oa = &consumer->ocp[OCP_MDataValid];
+wip_HDL.cxx~:828:	oa->other = OCP_MCmd;
+wip_HDL.cxx~:829:	oa->expr = "%s == OCPI_OCP_MCMD_WRITE ? 1 : 0";
+wip_HDL.cxx~:830:	oa->comment = "Tell consumer data is valid when request is MCMD_WRITE";
+wip_HDL.cxx~:832:    } else if (prod->wsi.earlyRequest)
+wip_HDL.cxx~:850: * -- Config accesses may be disabled in the worker
+wip_HDL.cxx~:851: * -- Config accesses may have only one of read or write data paths
+wip_HDL.cxx~:852: * -- Byte enables may or may not be present
+wip_HDL.cxx~:853: * -- Address width of config properties may be different.
+wip_HDL.cxx~:855: * -- May have different profiles entirely (WSI vs. WMI).
+wip_HDL.cxx~:856: * -- May be generic infrastructure ports.
+wip_HDL.cxx~:857: * -- Basic protocol attributes must match.
+wip_HDL.cxx~:858: * -- May require repeaters
+wip_HDL.cxx~:860: * -- Width.
+wip_HDL.cxx~:875:	  w->implName, w->implName, w->implName, DEFS, VER, w->implName, DEFS, VER);
+wip_HDL.cxx~:876:  Assembly *a = &w->assembly;
+wip_HDL.cxx~:884:  // We define the internal-to-assembly signals, and also figure out the necessary tieoffs or 
+wip_HDL.cxx~:886:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+wip_HDL.cxx~:887:    if (c->nExtConsumers == 0 && c->nExtProducers == 0) {
+wip_HDL.cxx~:889:      for (ip = c->ports; ip; ip = ip->nextConn) {
+wip_HDL.cxx~:890:	if (ip->port->master)
+wip_HDL.cxx~:894:	if (ip->port->wdi.isProducer)
+wip_HDL.cxx~:900:      asprintf((char **)&c->masterName, "%s_%s_2_%s_%s_",
+wip_HDL.cxx~:901:	       master->instance->name, master->port->name,
+wip_HDL.cxx~:902:	       slave->instance->name, slave->port->name);
+wip_HDL.cxx~:903:      asprintf((char **)&c->slaveName, "%s_%s_2_%s_%s_",
+wip_HDL.cxx~:904:	       slave->instance->name, slave->port->name,
+wip_HDL.cxx~:905:	       master->instance->name, master->port->name);
+wip_HDL.cxx~:908:			producer->instance->name, producer->port->name,
+wip_HDL.cxx~:909:			consumer->instance->name, consumer->port->name, err);
+wip_HDL.cxx~:912:      for (osd = ocpSignals, osMaster = master->port->ocp.signals, osSlave = slave->port->ocp.signals ;
+wip_HDL.cxx~:913:	   osd->name; osMaster++, osSlave++, osd++)
+wip_HDL.cxx~:914:	if (osMaster->value && osSlave->value) {
+wip_HDL.cxx~:915:	  unsigned width = osMaster->width < osSlave->width ? osMaster->width : osSlave->width;
+wip_HDL.cxx~:917:	  if (osd->vector)
+wip_HDL.cxx~:918:	    fprintf(f, "[%2d:%2d] ", width - 1, 0);
+wip_HDL.cxx~:921:	  fprintf(f, "%s%s;\n", osd->master ? c->masterName : c->slaveName, osd->name);
+wip_HDL.cxx~:926:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++) {
+wip_HDL.cxx~:927:    fprintf(f, "%s %s (\n", i->worker->implName, i->name);
+wip_HDL.cxx~:931:    for (ip = i->ports, nn = 0; nn < i->worker->nPorts; nn++, ip++)
+wip_HDL.cxx~:932:      for (osd = ocpSignals, os = ip->port->ocp.signals, oa = ip->ocp; osd->name; os++, osd++, oa++)
+wip_HDL.cxx~:934:	if (os->value) {
+wip_HDL.cxx~:936:	  if (os == &ip->port->ocp.Clk)
+wip_HDL.cxx~:937:	    signal = i->clocks[ip->port->clock - i->worker->clocks]->signal;
+wip_HDL.cxx~:938:	  else if (ip->connection)
+wip_HDL.cxx~:940:	    if (ip->connection->nExtConsumers == 0 && ip->connection->nExtProducers == 0) {
+wip_HDL.cxx~:942:	      if (oa->expr) {
+wip_HDL.cxx~:944:		if (oa->other) {
+wip_HDL.cxx~:946:			   ocpSignals[oa->other].master ?
+wip_HDL.cxx~:947:			   ip->connection->masterName : ip->connection->slaveName,
+wip_HDL.cxx~:948:			   ocpSignals[oa->other].name);
+wip_HDL.cxx~:951:		asprintf((char **)&signal, oa->expr, other);
+wip_HDL.cxx~:954:			 osd->master ?
+wip_HDL.cxx~:955:			 ip->connection->masterName : ip->connection->slaveName,
+wip_HDL.cxx~:956:			 osd->name);
+wip_HDL.cxx~:960:	      Port *p = ip->connection->external->port;
+wip_HDL.cxx~:961:	      if ((err = pattern(w, p, 0, 0, p->wdi.isProducer, p->master, &suff)))
+wip_HDL.cxx~:963:	      asprintf((char **)&signal, "%s%s", suff, osd->name);
+wip_HDL.cxx~:965:	  else if (ip->external) {
+wip_HDL.cxx~:966:	    // This port is indeed connected to an external, non-data-plane wip interface
+wip_HDL.cxx~:968:	      // was: &i->ports[ip->port - i->worker->ports].external->ocp.signals[os - ip->port->ocp.signals];
+wip_HDL.cxx~:969:	      &ip->external->ocp.signals[os - ip->port->ocp.signals];
+wip_HDL.cxx~:972:	    asprintf((char **)&externalName, exf->signal, n);
+wip_HDL.cxx~:974:	    switch (ip->port->type) {
+wip_HDL.cxx~:976:	      switch (osd - ocpSignals) {
+wip_HDL.cxx~:978:		if (os->width < exf->width)
+wip_HDL.cxx~:979:		  asprintf((char **)&signal, "%s[%u:0]", externalName, os->width - 1);
+wip_HDL.cxx~:991:	    if (osd->master != ip->port->master)
+wip_HDL.cxx~:996:		    last, comment[0] ? " // " : "", comment, last[0] ? "\n" : "", os->signal, signal);
+wip_HDL.cxx~:998:	    comment = oa->comment ? oa->comment : "";
+wip_HDL.cxx~:1004:  Worker *ww = a->workers;
+wip_HDL.cxx~:1005:  for (unsigned i = 0; i < a->nWorkers; i++, ww++) {
+wip_HDL.cxx~:1014:    Port *p = ww->ports;
+wip_HDL.cxx~:1015:    for (unsigned i = 0; i < ww->nPorts; i++, p++) {
+wip_HDL.cxx~:1016:      if (!p->connection)
+wip_HDL.cxx~:1019:	p->connection->from == p ? p->connection->from : p->connection->to;
+wip_HDL.cxx~:1021:	other->worker->assembly ? !other->master : other->master;
+wip_HDL.cxx~:1022:      if (p->master == otherMaster)
+wip_HDL.cxx~:1025:      switch (p->type) {
+wip_HDL.cxx~:1037:	// Deal with trivial adaptation cases, like precise->imprecise etc.
+wip_HDL.cxx~:1048:  fprintf(f, "\n\nendmodule //%s\n",  w->implName);
+wip_HDL.cxx~:1056:  if ((err = openOutput(w->implName, outDir, "I_", "", BSV, NULL, f)))
+wip_HDL.cxx~:1059:  printgen(f, comment, w->file);
+wip_HDL.cxx~:1065:	  comment, comment, w->specName, w->implName, comment, comment, w->pattern);
+wip_HDL.cxx~:1072:	  w->implName);
+wip_HDL.cxx~:1075:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1077:    if (p->count == 1) {
+wip_HDL.cxx~:1078:      fprintf(f, "// For worker interface named \"%s\"", p->name);
+wip_HDL.cxx~:1082:	      p->name, p->name, p->count - 1);
+wip_HDL.cxx~:1084:    switch (p->type) {
+wip_HDL.cxx~:1086:      fprintf(f, "// SizeOfConfigSpace: %u (0x%x)\n", w->ctl.sizeOfConfigSpace,
+wip_HDL.cxx~:1087:	      w->ctl.sizeOfConfigSpace);
+wip_HDL.cxx~:1090:      fprintf(f, "// DataValueWidth: %u\n", p->wdi.dataValueWidth);
+wip_HDL.cxx~:1091:      fprintf(f, "// MaxMessageValues: %u\n", p->wdi.maxMessageValues);
+wip_HDL.cxx~:1093:	      p->wdi.zeroLengthMessages ? "true" : "false");
+wip_HDL.cxx~:1094:      fprintf(f, "// NumberOfOpcodes: %u\n", p->wdi.numberOfOpcodes);
+wip_HDL.cxx~:1095:      fprintf(f, "// DataWidth: %u\n", p->dataWidth);
+wip_HDL.cxx~:1098:      fprintf(f, "// DataValueWidth: %u\n", p->wdi.dataValueWidth);
+wip_HDL.cxx~:1099:      fprintf(f, "// MaxMessageValues: %u\n", p->wdi.maxMessageValues);
+wip_HDL.cxx~:1101:	      p->wdi.zeroLengthMessages ? "true" : "false");
+wip_HDL.cxx~:1102:      fprintf(f, "// NumberOfOpcodes: %u\n", p->wdi.numberOfOpcodes);
+wip_HDL.cxx~:1103:      fprintf(f, "// DataWidth: %u\n", p->dataWidth);
+wip_HDL.cxx~:1107:	      p->dataWidth, (unsigned long long)p->wmemi.memoryWords,
+wip_HDL.cxx~:1108:	      (unsigned long long)p->wmemi.memoryWords, p->byteWidth);
+wip_HDL.cxx~:1109:      fprintf(f, "// MaxBurstLength: %u\n", p->wmemi.maxBurstLength);
+wip_HDL.cxx~:1116:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx~:1117:      if (p->count > 1)
+wip_HDL.cxx~:1119:      switch (p->type) {
+wip_HDL.cxx~:1121:	fprintf(f, "typedef Wci_Es#(%u) ", p->ocp.MAddr.width);
+wip_HDL.cxx~:1125:		p->master ? 'm' : 's',
+wip_HDL.cxx~:1126:		p->ocp.MBurstLength.width, p->dataWidth, p->ocp.MByteEn.width,
+wip_HDL.cxx~:1127:		p->ocp.MReqInfo.width, p->ocp.MDataInfo.width);
+wip_HDL.cxx~:1131:		p->ocp.MAddr.width, p->ocp.MBurstLength.width, p->dataWidth,
+wip_HDL.cxx~:1132:		p->ocp.MDataInfo.width,p->ocp.MDataByteEn.width,
+wip_HDL.cxx~:1133:		p->ocp.MFlag.width ? p->ocp.MFlag.width : p->ocp.SFlag.width);
+wip_HDL.cxx~:1137:		p->ocp.MAddr.width, p->ocp.MBurstLength.width, p->dataWidth, p->ocp.MDataByteEn.width);
+wip_HDL.cxx~:1143:      fprintf(f, "I_%s%s;\n", p->name, num);
+wip_HDL.cxx~:1150:	  w->implName, w->implName);
+wip_HDL.cxx~:1152:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1153:    if (p->clock->port == p)
+wip_HDL.cxx~:1154:      fprintf(f, "  Clock %s;\n", p->clock->signal);
+wip_HDL.cxx~:1157:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1159:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx~:1160:      if (p->count > 1)
+wip_HDL.cxx~:1162:      fprintf(f, "  interface I_%s%s i_%s%s;\n", p->name, num, p->name, num);
+wip_HDL.cxx~:1166:	  "endinterface: V%sIfc\n\n", w->implName);
+wip_HDL.cxx~:1171:	  w->implName, w->implName);
+wip_HDL.cxx~:1174:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_HDL.cxx~:1175:    if (p->clock->port == p) {
+wip_HDL.cxx~:1176:      fprintf(f, "%sClock i_%sClk", last, p->name);
+wip_HDL.cxx~:1180:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1181:    if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx~:1182:			       !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx~:1183:      if (p->count > 1)
+wip_HDL.cxx~:1184:	fprintf(f, "%sVector#(%d,Reset) i_%sRst", last, p->count, p->name);
+wip_HDL.cxx~:1186:	fprintf(f, "%sReset i_%sRst", last, p->name);
+wip_HDL.cxx~:1195:	  w->implName);
+wip_HDL.cxx~:1197:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_HDL.cxx~:1198:    if (p->clock->port == p)
+wip_HDL.cxx~:1200:	      p->name, p->clock->signal, p->name);
+wip_HDL.cxx~:1202:      fprintf(f, "  // Interface \"%s\" uses clock on interface \"%s\"\n", p->name, p->clock->port->name);
+wip_HDL.cxx~:1204:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1206:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx~:1207:      if (p->count > 1)
+wip_HDL.cxx~:1209:      if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx~:1210:				 !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx~:1213:		 p->master ? p->ocp.SReset_n.signal : p->ocp.MReset_n.signal, nn);
+wip_HDL.cxx~:1214:	if (p->count > 1)
+wip_HDL.cxx~:1216:		  p->name, num, signal, p->name, nn);
+wip_HDL.cxx~:1219:		  p->name, signal, p->name);
+wip_HDL.cxx~:1224:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1226:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx~:1227:      if (p->count > 1)
+wip_HDL.cxx~:1229:      fprintf(f, "interface I_%s%s i_%s%s;\n", p->name, num, p->name, num);
+wip_HDL.cxx~:1234:      if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx~:1235:				 !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx~:1236:	asprintf((char **)&reset, "i_%s%sRst", p->name, num); 
+wip_HDL.cxx~:1239:      for (o = 0, os = p->ocp.signals, osd = ocpSignals; osd->name; osd++, os++, o++)
+wip_HDL.cxx~:1240:	if (os->value) {
+wip_HDL.cxx~:1242:	  asprintf(&signal, os->signal, nn);
+wip_HDL.cxx~:1245:	  if (p->master != osd->master && o != OCP_Clk &&
+wip_HDL.cxx~:1246:	      (p->type != WCIPort || o != OCP_MReset_n && o != OCP_SReset_n)) {
+wip_HDL.cxx~:1265:		      tolower(osd->name[0]), osd->name + 1, signal,
+wip_HDL.cxx~:1266:		      p->clock->port->name, reset);
+wip_HDL.cxx~:1269:		      tolower(osd->name[0]), osd->name + 1, signal, en++,
+wip_HDL.cxx~:1270:		      p->clock->port->name, reset);
+wip_HDL.cxx~:1272:	  if (p->master == osd->master) 
+wip_HDL.cxx~:1274:		    signal, tolower(osd->name[0]), osd->name + 1,
+wip_HDL.cxx~:1275:		    p->clock->port->name, reset);
+wip_HDL.cxx~:1277:      fprintf(f, "endinterface: i_%s%s\n\n", p->name, num);
+wip_HDL.cxx~:1283:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1285:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx~:1286:      if (p->count > 1)
+wip_HDL.cxx~:1291:      for (o = 0, os = p->ocp.signals, osd = ocpSignals; osd->name; osd++, os++, o++)
+wip_HDL.cxx~:1292:	if (os->value && o != OCP_Clk &&
+wip_HDL.cxx~:1293:	    (p->type != WCIPort ||
+wip_HDL.cxx~:1294:	     !(o == OCP_MReset_n && !p->master || o == OCP_SReset_n && p->master))) {
+wip_HDL.cxx~:1295:	  fprintf(f, "%si_%s%s_%c%s", last, p->name, num, tolower(osd->name[0]), osd->name+1);
+wip_HDL.cxx~:1302:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1304:    for (nn = 0; nn < p->count; nn++) {
+wip_HDL.cxx~:1305:      if (p->count > 1)
+wip_HDL.cxx~:1310:      for (o = 0, os = p->ocp.signals, osd = ocpSignals; osd->name; osd++, os++, o++)
+wip_HDL.cxx~:1311:	if (os->value && o != OCP_Clk &&
+wip_HDL.cxx~:1312:	    (p->type != WCIPort ||
+wip_HDL.cxx~:1313:	     !(o == OCP_MReset_n && !p->master || o == OCP_SReset_n && p->master))) {
+wip_HDL.cxx~:1314:	  fprintf(f, "%si_%s%s_%c%s", last, p->name, num, tolower(osd->name[0]), osd->name+1);
+wip_HDL.cxx~:1320:  fprintf(f, "\nendmodule: vMk%s\n", w->implName);
+wip_HDL.cxx~:1325:	  "module mk%s#(", w->implName);
+wip_HDL.cxx~:1328:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_HDL.cxx~:1329:    if (p->clock->port == p) {
+wip_HDL.cxx~:1330:      fprintf(f, "%sClock i_%sClk", last, p->name);
+wip_HDL.cxx~:1334:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1335:    if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx~:1336:			       !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx~:1337:      if (p->count > 1)
+wip_HDL.cxx~:1338:	fprintf(f, "%sVector#(%d,Reset) i_%sRst", last, p->count, p->name);
+wip_HDL.cxx~:1340:	fprintf(f, "%sReset i_%sRst", last, p->name);
+wip_HDL.cxx~:1344:  fprintf(f, ") (V%sIfc);\n", w->implName);
+wip_HDL.cxx~:1346:	  "  let _ifc <- vMk%s(",
+wip_HDL.cxx~:1347:	  w->implName);
+wip_HDL.cxx~:1349:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_HDL.cxx~:1350:    if (p->clock->port == p) {
+wip_HDL.cxx~:1351:      fprintf(f, "%si_%sClk", last, p->name);
+wip_HDL.cxx~:1354:  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+wip_HDL.cxx~:1355:    if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
+wip_HDL.cxx~:1356:			       !p->master && p->ocp.MReset_n.value)) {
+wip_HDL.cxx~:1357:      fprintf(f, "%si_%sRst", last, p->name);
+wip_HDL.cxx~:1365:	  w->implName, w->implName);
+wip_HDL.cxx~:1372:  fprintf(f, "<worker name=\"%s\"", w->implName);
+wip_HDL.cxx~:1373:  if (w->ctl.controlOps) {
+wip_HDL.cxx~:1378:	  w->ctl.controlOps & (1 << op)) {
+wip_HDL.cxx~:1384:  if (w->ports->type == WCIPort && w->ports->wci.timeout)
+wip_HDL.cxx~:1385:    fprintf(f, " Timeout=\"%u\"", w->ports->wci.timeout);
+wip_HDL.cxx~:1389:  for (prop = w->ctl.properties, nn = 0; nn < w->ctl.nProperties; nn++, prop++) {
+wip_HDL.cxx~:1391:	    prop->name, propertyTypes[prop->types->type]);
+wip_HDL.cxx~:1392:    if (prop->isReadable)
+wip_HDL.cxx~:1394:    if (prop->isWritable)
+wip_HDL.cxx~:1396:    if (prop->readSync)
+wip_HDL.cxx~:1398:    if (prop->writeSync)
+wip_HDL.cxx~:1400:    if (prop->readError)
+wip_HDL.cxx~:1402:    if (prop->writeError)
+wip_HDL.cxx~:1404:    if (prop->types->type == CM::Property::CPI_String)
+wip_HDL.cxx~:1405:      fprintf(f, " size=\"%u\"", prop->types->stringLength);
+wip_HDL.cxx~:1406:    if (prop->types->isSequence)
+wip_HDL.cxx~:1407:      fprintf(f, " sequenceSize=\"%u\"\n", prop->types->length);
+wip_HDL.cxx~:1411:  for (p = w->ports, nn = 0; nn < w->nPorts; nn++, p++)
+wip_HDL.cxx~:1412:    if (p->isData) {
+wip_HDL.cxx~:1414:	      p->name, p->wdi.isProducer ? "false" : "true",
+wip_HDL.cxx~:1415:	      (p->wdi.maxMessageValues * p->wdi.dataValueWidth + 7) / 8);
+wip_HDL.cxx~:1416:      if (p->wdi.minBuffers)
+wip_HDL.cxx~:1417:	fprintf(f, " minNumBuffers=\"%u\"", p->wdi.minBuffers);
+wip_HDL.cxx~:1427:	  i->isInterconnect ? "interconnect" : "instance",
+wip_HDL.cxx~:1428:	  i->name, i->worker->implName, i->index);
+wip_HDL.cxx~:1429:  if (i->attach)
+wip_HDL.cxx~:1430:    fprintf(f, " attachment=\"%s\"", i->attach);
+wip_HDL.cxx~:1448:  fprintf(f, "<!--\n");
+wip_HDL.cxx~:1453:	  aw->implName);
+wip_HDL.cxx~:1454:  fprintf(f, "  -->\n");
+wip_HDL.cxx~:1464:  for (w = aw->assembly.workers, n = 0; n < aw->assembly.nWorkers; n++, w++)
+wip_HDL.cxx~:1470:  for (i = aw->assembly.instances, n = 0; n < aw->assembly.nInstances; n++, i++) {
+wip_HDL.cxx~:1471:    for (di = dw->assembly.instances, nn = 0; nn < dw->assembly.nInstances; nn++, di++) {
+wip_HDL.cxx~:1472:      if (di->name && !strcmp(di->name, i->name)) {
+wip_HDL.cxx~:1473:	i->index = di->index;
+wip_HDL.cxx~:1477:    if (!nn >= dw->assembly.nInstances)
+wip_HDL.cxx~:1479:		      i->name);
+wip_HDL.cxx~:1483:  for (di = dw->assembly.instances, nn = 0; nn < dw->assembly.nInstances; nn++, di++)
+wip_HDL.cxx~:1484:    if (di->worker)
+wip_HDL.cxx~:1488:  for (cc = dw->assembly.connections, n = 0; n < dw->assembly.nConnections; n++, cc++)
+wip_HDL.cxx~:1489:    for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
+wip_HDL.cxx~:1490:      if (!strcmp(ac->name, cc->name)) {
+wip_HDL.cxx~:1491:	if (ac->external->isProducer == cc->external->isProducer)
+wip_HDL.cxx~:1494:	for (aip = ac->ports; aip; aip = aip->nextConn)
+wip_HDL.cxx~:1495:	  if (aip != ac->external)
+wip_HDL.cxx~:1497:	for (cip = cc->ports; cip; cip = cip->nextConn)
+wip_HDL.cxx~:1498:	  if (cip != cc->external)
+wip_HDL.cxx~:1500:	if (ac->external->isProducer)
+wip_HDL.cxx~:1503:		  cip->instance->name, cip->port->name,
+wip_HDL.cxx~:1504:		  aip->instance->name, aip->port->name);
+wip_HDL.cxx~:1508:		  aip->instance->name, aip->port->name,
+wip_HDL.cxx~:1509:		  cip->instance->name, cip->port->name);
+wip_HDL.cxx~:1512:  for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
+wip_HDL.cxx~:1513:    if (!ac->external) {
+wip_HDL.cxx~:1516:      for (aip = ac->ports; aip; aip = aip->nextConn)
+wip_HDL.cxx~:1517:	if (aip->isProducer)
+wip_HDL.cxx~:1522:	      from->instance->name, from->port->name,
+wip_HDL.cxx~:1523:	      to->instance->name, to->port->name);
+wip_OCP.cxx:29:  for (unsigned i = sizeof(n)*8; i > 0; i--)
+wip_OCP.cxx:30:    if (n & ((uint64_t)1 << (i - 1)))
+wip_OCP.cxx:36:  return n ? myfls(n - 1) : 0;
+wip_OCP.cxx:39:  return myfls(n) - 1;
+wip_OCP.cxx:44:  OcpSignal *o = p->ocp.signals;
+wip_OCP.cxx:48:    if (o->value || o->width) {
+wip_OCP.cxx:49:      if (osd->vector) {
+wip_OCP.cxx:50:	if (osd->width)
+wip_OCP.cxx:51:	  o->width = osd->width;
+wip_OCP.cxx:53:	o->width = 1;
+wip_OCP.cxx:54:      nAlloc += o->width;
+wip_OCP.cxx:56:  p->values = (uint8_t*)calloc(nAlloc, 1);
+wip_OCP.cxx:57:  uint8_t *v = p->values;
+wip_OCP.cxx:58:  o = p->ocp.signals;
+wip_OCP.cxx:61:    if (o->value || o->width) {
+wip_OCP.cxx:62:      o->value = v;
+wip_OCP.cxx:63:      v += o->width;
+wip_OCP.cxx:70:  static uint8_t s[1]; // a non-zero string pointer
+wip_OCP.cxx:71:  Port *p = w->ports;
+wip_OCP.cxx:72:  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_OCP.cxx:73:    OcpSignals *ocp = &p->ocp;
+wip_OCP.cxx:74:    if (p->myClock)
+wip_OCP.cxx:75:      ocp->Clk.value = s;
+wip_OCP.cxx:76:    ocp->MCmd.width = 3;
+wip_OCP.cxx:77:    switch (p->type) {
+wip_OCP.cxx:80:      p->master = false;
+wip_OCP.cxx:81:      if (w->ctl.sizeOfConfigSpace <= 32)
+wip_OCP.cxx:82:	ocp->MAddr.width = 5;
+wip_OCP.cxx:84:	ocp->MAddr.width = ceilLog2(w->ctl.sizeOfConfigSpace);
+wip_OCP.cxx:85:      if (w->ctl.sizeOfConfigSpace != 0)
+wip_OCP.cxx:86:	ocp->MAddrSpace.value = s;
+wip_OCP.cxx:87:      if (w->ctl.sub32BitConfigProperties)
+wip_OCP.cxx:88:	ocp->MByteEn.width = 4;
+wip_OCP.cxx:89:      if (w->ctl.writableConfigProperties)
+wip_OCP.cxx:90:	ocp->MData.width = 32;
+wip_OCP.cxx:91:      ocp->MFlag.width = 2;
+wip_OCP.cxx:92:      ocp->MReset_n.value = s;
+wip_OCP.cxx:93:      if (w->ctl.readableConfigProperties)
+wip_OCP.cxx:94:	ocp->SData.width = 32;
+wip_OCP.cxx:95:      ocp->SFlag.width = 2;  //FIXME should be 1
+wip_OCP.cxx:96:      ocp->SResp.value = s;
+wip_OCP.cxx:97:      ocp->SThreadBusy.value = s;
+wip_OCP.cxx:100:      p->master = p->wdi.isProducer ? true : false;
+wip_OCP.cxx:101:      if (p->preciseBurst) {
+wip_OCP.cxx:102:	ocp->MBurstLength.width =
+wip_OCP.cxx:103:	  floorLog2((p->wdi.maxMessageValues * p->wdi.dataValueWidth  + p->dataWidth - 1)/
+wip_OCP.cxx:104:		    p->dataWidth) + 1;
+wip_OCP.cxx:105:	if (ocp->MBurstLength.width < 2)
+wip_OCP.cxx:106:	  ocp->MBurstLength.width = 2;
+wip_OCP.cxx:107:	if (p->impreciseBurst)
+wip_OCP.cxx:108:	  ocp->MBurstPrecise.value = s;
+wip_OCP.cxx:110:	ocp->MBurstLength.width = 2;
+wip_OCP.cxx:111:      if (p->byteWidth != p->dataWidth || p->wdi.zeroLengthMessages) {
+wip_OCP.cxx:112:	ocp->MByteEn.width = p->dataWidth / p->byteWidth;
+wip_OCP.cxx:113:	ocp->MByteEn.value = s;
+wip_OCP.cxx:115:      if (p->dataWidth != 0)
+wip_OCP.cxx:116:	ocp->MData.width =
+wip_OCP.cxx:117:	  p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
+wip_OCP.cxx:118:	  8 * p->dataWidth / p->byteWidth : p->dataWidth;
+wip_OCP.cxx:119:      if (p->byteWidth != p->dataWidth && p->byteWidth != 8)
+wip_OCP.cxx:120:	ocp->MDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
+wip_OCP.cxx:121:      if (p->wsi.earlyRequest) {
+wip_OCP.cxx:122:	ocp->MDataLast.value = s;
+wip_OCP.cxx:123:	ocp->MDataValid.value = s;
+wip_OCP.cxx:125:      if (p->wsi.abortable)
+wip_OCP.cxx:126:	ocp->MFlag.width = 1;
+wip_OCP.cxx:127:      if (p->wdi.numberOfOpcodes > 1)
+wip_OCP.cxx:128:	ocp->MReqInfo.width = ceilLog2(p->wdi.numberOfOpcodes);
+wip_OCP.cxx:129:      ocp->MReqLast.value = s;
+wip_OCP.cxx:130:      ocp->MReset_n.value = s;
+wip_OCP.cxx:131:      ocp->SReset_n.value = s;
+wip_OCP.cxx:132:      ocp->SThreadBusy.value = s;
+wip_OCP.cxx:135:      p->master = true;
+wip_OCP.cxx:137:	unsigned n = (p->wdi.maxMessageValues * p->wdi.dataValueWidth +
+wip_OCP.cxx:138:		      p->dataWidth - 1) / p->dataWidth;
+wip_OCP.cxx:140:	  ocp->MAddr.width = ceilLog2(n) + max(0, ceilLog2(p->dataWidth) - 3);
+wip_OCP.cxx:141:	ocp->MAddrSpace.value = s;
+wip_OCP.cxx:142:	if (p->preciseBurst) {
+wip_OCP.cxx:143:	  ocp->MBurstLength.width = n < 4 ? 2 : floorLog2(n-1) + 1;
+wip_OCP.cxx:144:	  if (p->impreciseBurst)
+wip_OCP.cxx:145:	    ocp->MBurstPrecise.value = s;
+wip_OCP.cxx:147:	  ocp->MBurstLength.width = 2;
+wip_OCP.cxx:149:      if (p->wdi.isProducer || p->wmi.talkBack)
+wip_OCP.cxx:150:	ocp->MData.width =
+wip_OCP.cxx:151:	  p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
+wip_OCP.cxx:152:	  8 * p->dataWidth / p->byteWidth : p->dataWidth;
+wip_OCP.cxx:153:      if ((p->wdi.isProducer || p->wmi.talkBack) && p->byteWidth != p->dataWidth)
+wip_OCP.cxx:154:	ocp->MDataByteEn.width = p->dataWidth / p->byteWidth;
+wip_OCP.cxx:155:      if ((p->wdi.isProducer || p->wmi.talkBack) &&
+wip_OCP.cxx:156:	  p->byteWidth != p->dataWidth && p->byteWidth != 8)
+wip_OCP.cxx:157:	ocp->MDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
+wip_OCP.cxx:158:      ocp->MDataLast.value = s;
+wip_OCP.cxx:159:      ocp->MDataValid.value = s;
+wip_OCP.cxx:160:      if ((p->wdi.isProducer || p->wmi.bidirectional) &&
+wip_OCP.cxx:161:	  (p->wdi.numberOfOpcodes > 1 || p->wdi.variableMessageLength))
+wip_OCP.cxx:162:	ocp->MFlag.width = 8 + ceilLog2(p->wdi.maxMessageValues + 1);
+wip_OCP.cxx:163:      ocp->MReqInfo.width = 1;
+wip_OCP.cxx:164:      ocp->MReqLast.value = s;
+wip_OCP.cxx:165:      ocp->MReset_n.value = s;
+wip_OCP.cxx:166:      if (!p->wdi.isProducer || p->wmi.talkBack)
+wip_OCP.cxx:167:	ocp->SData.width = p->dataWidth;
+wip_OCP.cxx:168:      if (p->wdi.isProducer || p->wmi.talkBack)
+wip_OCP.cxx:169:	ocp->SDataThreadBusy.value = s;
+wip_OCP.cxx:170:      if ((!p->wdi.isProducer || p->wmi.bidirectional) &&
+wip_OCP.cxx:171:	  (p->wdi.numberOfOpcodes > 1 || p->wdi.variableMessageLength))
+wip_OCP.cxx:172:	ocp->SFlag.width = 8 + ceilLog2(p->wdi.maxMessageValues + 1);
+wip_OCP.cxx:173:      ocp->SReset_n.value = s;
+wip_OCP.cxx:174:      if (!p->wdi.isProducer || p->wmi.talkBack)
+wip_OCP.cxx:175:	ocp->SResp.value = s;
+wip_OCP.cxx:176:      if ((p->impreciseBurst || p->preciseBurst) &&
+wip_OCP.cxx:177:	  (!p->wdi.isProducer || p->wmi.talkBack))
+wip_OCP.cxx:178:	ocp->SRespLast.value = s;
+wip_OCP.cxx:179:      ocp->SThreadBusy.value = s;
+wip_OCP.cxx:180:      if (p->wmi.mflagWidth) {
+wip_OCP.cxx:181:	ocp->MFlag.width = p->wmi.mflagWidth; // FIXME remove when shep kludge unnecessary
+wip_OCP.cxx:182:	ocp->SFlag.width = p->wmi.mflagWidth; // FIXME remove when shep kludge unnecessary
+wip_OCP.cxx:186:      p->master = true;
+wip_OCP.cxx:187:      ocp->MAddr.width =
+wip_OCP.cxx:188:	ceilLog2(p->wmemi.memoryWords) + ceilLog2(p->dataWidth/p->byteWidth);
+wip_OCP.cxx:189:      ocp->MAddr.value = s;
+wip_OCP.cxx:190:      if (p->preciseBurst)
+wip_OCP.cxx:191:	ocp->MBurstLength.width = floorLog2(max(2, p->wmemi.maxBurstLength)) + 1;
+wip_OCP.cxx:192:      else if (p->impreciseBurst)
+wip_OCP.cxx:193:	ocp->MBurstLength.width = 2;
+wip_OCP.cxx:194:      if (p->preciseBurst && p->impreciseBurst) {
+wip_OCP.cxx:195:	ocp->MBurstPrecise.value = s;
+wip_OCP.cxx:196:	ocp->MBurstSingleReq.value = s;
+wip_OCP.cxx:198:      ocp->MData.width =
+wip_OCP.cxx:199:	p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
+wip_OCP.cxx:200:	  8 * p->dataWidth / p->byteWidth : p->dataWidth;
+wip_OCP.cxx:201:      if (!p->preciseBurst && !p->impreciseBurst && p->byteWidth != p->dataWidth)
+wip_OCP.cxx:202:	ocp->MByteEn.width = p->dataWidth / p->byteWidth;
+wip_OCP.cxx:203:      if ((p->preciseBurst || p->impreciseBurst) && p->byteWidth != p->dataWidth)
+wip_OCP.cxx:204:	ocp->MDataByteEn.width = p->dataWidth / p->byteWidth;
+wip_OCP.cxx:205:      if (p->byteWidth != p->dataWidth && p->byteWidth != 8)
+wip_OCP.cxx:206:	ocp->MDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
+wip_OCP.cxx:207:      if (p->preciseBurst || p->impreciseBurst) {
+wip_OCP.cxx:208:	ocp->MDataLast.value = s;
+wip_OCP.cxx:209:	ocp->MDataValid.value = s;
+wip_OCP.cxx:210:	ocp->MReqLast.value = s;
+wip_OCP.cxx:211:	ocp->SRespLast.value = s;
+wip_OCP.cxx:213:      ocp->MReset_n.value = s;
+wip_OCP.cxx:214:      if ((p->preciseBurst || p->impreciseBurst) &&
+wip_OCP.cxx:215:	  p->wmemi.readDataFlowControl)
+wip_OCP.cxx:216:	ocp->MRespAccept.value = s;
+wip_OCP.cxx:217:      ocp->SCmdAccept.value = s;
+wip_OCP.cxx:218:      ocp->SData.width =
+wip_OCP.cxx:219:	p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
+wip_OCP.cxx:220:	8 * p->dataWidth / p->byteWidth : p->dataWidth;
+wip_OCP.cxx:221:      if ((p->preciseBurst || p->impreciseBurst) && p->wmemi.writeDataFlowControl)
+wip_OCP.cxx:222:	ocp->SDataAccept.value = s;
+wip_OCP.cxx:223:      if (p->byteWidth != p->dataWidth && p->byteWidth != 8)
+wip_OCP.cxx:224:	ocp->SDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
+wip_OCP.cxx:225:      ocp->SResp.value = s;
+wip_OCP.cxx:228:      ocp->MData.width = p->dataWidth;
+wip_OCP.cxx:229:      p->master = false;
+wip_OCP.cxx:230:      ocp->SReset_n.value = s;
+wip_OCP.cxx:231:      ocp->SThreadBusy.value = s;
+wip_OCP.cxx:234:      return esprintf("No WIP port type specified for interface \"%s\"", p->name);
+wip_RCC.cxx:31:  unsigned rem = offset & (t->align - 1);
+wip_RCC.cxx:34:	    prefix, pad++, t->align - rem);
+wip_RCC.cxx:35:  offset = roundup(offset, t->align);
+wip_RCC.cxx:36:  if (t->isSequence) {
+wip_RCC.cxx:37:    fprintf(f, "%s  uint32_t     %s_length;\n", prefix, t->name);
+wip_RCC.cxx:38:    if (t->align > sizeof(uint32_t))
+wip_RCC.cxx:40:	      prefix, pad++, t->align - (unsigned)sizeof(uint32_t));
+wip_RCC.cxx:41:    offset += t->align;
+wip_RCC.cxx:43:  fprintf(f, "%s  %-12s %s", prefix, rccTypes[t->type], t->name);
+wip_RCC.cxx:44:  if (t->type == CM::Property::CPI_String)
+wip_RCC.cxx:45:    fprintf(f, "[%lu]", roundup(t->stringLength + 1, 4));
+wip_RCC.cxx:46:  if (t->isSequence || t->isArray)
+wip_RCC.cxx:47:    fprintf(f, "[%u]", t->length);
+wip_RCC.cxx:49:  offset += t->nBytes;
+wip_RCC.cxx:54:  const char *pat = w->pattern ? w->pattern : w->staticPattern;
+wip_RCC.cxx:60:    strlen(w->implName) + strlen(method) + strlen(pat) + 1;
+wip_RCC.cxx:84:	strcpy(s, w->implName);
+wip_RCC.cxx:89:	*s++ = toupper(w->implName[0]);
+wip_RCC.cxx:90:	strcpy(s, w->implName + 1);
+wip_RCC.cxx:95:	return esprintf("Invalid pattern rule: %s", w->pattern);
+wip_RCC.cxx:114:  if ((err = openOutput(w->fileName, outDir, "", RCCIMPL, HEADER, w->implName, f)))
+wip_RCC.cxx:117:  printgen(f, " *", w->file);
+wip_RCC.cxx:119:  const char *upper = upperdup(w->implName);
+wip_RCC.cxx:129:	  w->implName, upper, upper);
+wip_RCC.cxx:131:  if (w->nPorts) {
+wip_RCC.cxx:137:	    w->implName);
+wip_RCC.cxx:138:    Port *p = w->ports;
+wip_RCC.cxx:141:    for (unsigned n = 0; n < w->nPorts; n++, p++) {
+wip_RCC.cxx:142:      fprintf(f, "%s  %s_%s", last, upper, upperdup(p->name));
+wip_RCC.cxx:145:      if (p->wdi.isProducer)
+wip_RCC.cxx:150:    fprintf(f, "\n} %c%sPort;\n", toupper(w->implName[0]), w->implName+1);
+wip_RCC.cxx:155:    if (w->ctl.nProperties) {
+wip_RCC.cxx:161:	      w->implName);
+wip_RCC.cxx:162:      Property *p = w->ctl.properties;
+wip_RCC.cxx:164:      for (unsigned n = 0; n < w->ctl.nProperties; n++, p++) {
+wip_RCC.cxx:165:	if (p->isStructSequence) {
+wip_RCC.cxx:166:	  fprintf(f, "  uint32_t     %s_length;\n", p->name);
+wip_RCC.cxx:167:	  if (p->maxAlign > sizeof(uint32_t))
+wip_RCC.cxx:169:		    pad++, p->maxAlign - (unsigned)sizeof(uint32_t));
+wip_RCC.cxx:170:	  align += p->maxAlign;
+wip_RCC.cxx:172:	if (p->isStruct) {
+wip_RCC.cxx:174:		  toupper(w->implName[0]), w->implName+1,
+wip_RCC.cxx:175:		  toupper(p->name[0]), p->name + 1);
+wip_RCC.cxx:176:	  emitStructRCC(f, p->nMembers, p->members, "  ");
+wip_RCC.cxx:177:	  fprintf(f, "  } %s", p->name);
+wip_RCC.cxx:178:	  if (p->isSequence)
+wip_RCC.cxx:179:	    fprintf(f, "[%u]", p->sequenceSize);
+wip_RCC.cxx:182:	  printSimple(f, p->members, "", align, pad);
+wip_RCC.cxx:186:	      toupper(w->implName[0]), w->implName + 1);
+wip_RCC.cxx:202:    if (w->ctl.controlOps) {
+wip_RCC.cxx:204:      fprintf(f, "  %s RCCMethod ", w->pattern ? "extern" : "static");
+wip_RCC.cxx:206:	if (w->ctl.controlOps & (1 << op)) {
+wip_RCC.cxx:218:	    w->pattern ? "extern" : "static", mName);
+wip_RCC.cxx:238:	    w->implName, upper, upper, upper, upper, upper, w->rcc.isThreaded ? 1 : 0);
+wip_RCC.cxx:239:    if (w->ctl.nProperties)
+wip_RCC.cxx:241:	      toupper(w->implName[0]), w->implName + 1);
+wip_RCC.cxx:243:      if (w->ctl.controlOps & (1 << op)) {
+wip_RCC.cxx:251:    p = w->ports;
+wip_RCC.cxx:253:    for (unsigned n = 0; n < w->nPorts; n++, p++)
+wip_RCC.cxx:254:      if (p->wdi.isOptional)
+wip_RCC.cxx:259:    if (w->nPorts) {
+wip_RCC.cxx:260:      p = w->ports;
+wip_RCC.cxx:261:      for (unsigned n = 0; n < w->nPorts; n++, p++)
+wip_RCC.cxx:262:	if (p->wdi.nOperations) {
+wip_RCC.cxx:268:		  p->name, w->implName);
+wip_RCC.cxx:269:	  Operation *o = p->wdi.operations;
+wip_RCC.cxx:270:	  const char *puName = upperdup(p->name);
+wip_RCC.cxx:271:	  for (unsigned nn = 0; nn < p->wdi.nOperations; nn++, o++)
+wip_RCC.cxx:272:	    fprintf(f, "  %s_%s_%s,\n", upper, puName, upperdup(o->name));
+wip_RCC.cxx:274:		  toupper(w->implName[0]), w->implName+1,
+wip_RCC.cxx:275:		  toupper(p->name[0]), p->name+1);
+wip_RCC.cxx:277:	  o = p->wdi.operations;
+wip_RCC.cxx:278:	  for (unsigned nn = 0; nn < p->wdi.nOperations; nn++, o++)
+wip_RCC.cxx:279:	    if (o->nArgs) {
+wip_RCC.cxx:285:		      o->name, p->name);
+wip_RCC.cxx:286:	      emitStructRCC(f, o->nArgs, o->args, "");
+wip_RCC.cxx:288:		      toupper(w->implName[0]), w->implName + 1,
+wip_RCC.cxx:289:		      toupper(p->name[0]), p->name + 1,
+wip_RCC.cxx:290:		      toupper(o->name[0]), o->name + 1);
+wip_RCC.cxx:304:  if ((err = openOutput(w->fileName, outDir, "", RCCMAP, HEADER, NULL, f)))
+wip_RCC.cxx:306:  fprintf(f, "#define RCC_FILE_WORKER_%s %s\n", w->fileName, w->implName);
+wip_RCC.cxx:315:  if ((err = openOutput(w->fileName, outDir, "", "_skel", ".c", NULL, f)))
+wip_RCC.cxx:318:  printgen(f, " *", w->file, true);
+wip_RCC.cxx:320:  const char *upper = upperdup(w->implName);
+wip_RCC.cxx:334:	  w->implName, w->implName, upper, w->implName, upper, w->implName);
+wip_RCC.cxx:339:    if (w->ctl.controlOps & (1 << op)) {
+wip_RCC.cxx:347:	      w->pattern ? "extern" : "static", mName);
+wip_RCC.cxx:358:	  w->pattern ? "extern" : "static", mName,
+wip_RCC.cxx:361:  // FIXME Compilable - any initial functionality??? cool.
+wip_RCC.cxx:369:  if ((err = openOutput(aw->implName, outDir, "", "_art", ".xml", NULL, f)))
+wip_RCC.cxx:371:  fprintf(f, "<!--\n");
+wip_RCC.cxx:372:  printgen(f, "", aw->file);
+wip_RCC.cxx:376:	  aw->implName);
+wip_RCC.cxx:377:  fprintf(f, "  -->\n");
+wip_RCC.cxx:382:  for (w = aw->assembly.workers, n = 0; n < aw->assembly.nWorkers; n++, w++)
+wip_RCC.cxx~:31:  unsigned rem = offset & (t->align - 1);
+wip_RCC.cxx~:34:	    prefix, pad++, t->align - rem);
+wip_RCC.cxx~:35:  offset = roundup(offset, t->align);
+wip_RCC.cxx~:36:  if (t->isSequence) {
+wip_RCC.cxx~:37:    fprintf(f, "%s  uint32_t     %s_length;\n", prefix, t->name);
+wip_RCC.cxx~:38:    if (t->align > sizeof(uint32_t))
+wip_RCC.cxx~:40:	      prefix, pad++, t->align - (unsigned)sizeof(uint32_t));
+wip_RCC.cxx~:41:    offset += t->align;
+wip_RCC.cxx~:43:  fprintf(f, "%s  %-12s %s", prefix, rccTypes[t->type], t->name);
+wip_RCC.cxx~:44:  if (t->type == CM::Property::CPI_String)
+wip_RCC.cxx~:45:    fprintf(f, "[%lu]", roundup(t->stringLength + 1, 4));
+wip_RCC.cxx~:46:  if (t->isSequence || t->isArray)
+wip_RCC.cxx~:47:    fprintf(f, "[%u]", t->length);
+wip_RCC.cxx~:49:  offset += t->nBytes;
+wip_RCC.cxx~:54:  const char *pat = w->pattern ? w->pattern : w->staticPattern;
+wip_RCC.cxx~:60:    strlen(w->implName) + strlen(method) + strlen(pat) + 1;
+wip_RCC.cxx~:84:	strcpy(s, w->implName);
+wip_RCC.cxx~:89:	*s++ = toupper(w->implName[0]);
+wip_RCC.cxx~:90:	strcpy(s, w->implName + 1);
+wip_RCC.cxx~:95:	return esprintf("Invalid pattern rule: %s", w->pattern);
+wip_RCC.cxx~:114:  if ((err = openOutput(w->fileName, outDir, "", RCCIMPL, HEADER, w->implName, f)))
+wip_RCC.cxx~:117:  printgen(f, " *", w->file);
+wip_RCC.cxx~:119:  const char *upper = upperdup(w->implName);
+wip_RCC.cxx~:129:	  w->implName, upper, upper);
+wip_RCC.cxx~:131:  if (w->nPorts) {
+wip_RCC.cxx~:137:	    w->implName);
+wip_RCC.cxx~:138:    Port *p = w->ports;
+wip_RCC.cxx~:141:    for (unsigned n = 0; n < w->nPorts; n++, p++) {
+wip_RCC.cxx~:142:      fprintf(f, "%s  %s_%s", last, upper, upperdup(p->name));
+wip_RCC.cxx~:145:      if (p->wdi.isProducer)
+wip_RCC.cxx~:150:    fprintf(f, "\n} %c%sPort;\n", toupper(w->implName[0]), w->implName+1);
+wip_RCC.cxx~:155:    if (w->ctl.nProperties) {
+wip_RCC.cxx~:161:	      w->implName);
+wip_RCC.cxx~:162:      Property *p = w->ctl.properties;
+wip_RCC.cxx~:164:      for (unsigned n = 0; n < w->ctl.nProperties; n++, p++) {
+wip_RCC.cxx~:165:	if (p->isStructSequence) {
+wip_RCC.cxx~:166:	  fprintf(f, "  uint32_t     %s_length;\n", p->name);
+wip_RCC.cxx~:167:	  if (p->maxAlign > sizeof(uint32_t))
+wip_RCC.cxx~:169:		    pad++, p->maxAlign - (unsigned)sizeof(uint32_t));
+wip_RCC.cxx~:170:	  align += p->maxAlign;
+wip_RCC.cxx~:172:	if (p->isStruct) {
+wip_RCC.cxx~:174:		  toupper(w->implName[0]), w->implName+1,
+wip_RCC.cxx~:175:		  toupper(p->name[0]), p->name + 1);
+wip_RCC.cxx~:176:	  emitStructRCC(f, p->nTypes, p->types, "  ");
+wip_RCC.cxx~:177:	  fprintf(f, "  } %s", p->name);
+wip_RCC.cxx~:178:	  if (p->isStructSequence)
+wip_RCC.cxx~:179:	    fprintf(f, "[%u]", p->nStructs);
+wip_RCC.cxx~:182:	  printSimple(f, p->types, "", align, pad);
+wip_RCC.cxx~:186:	      toupper(w->implName[0]), w->implName + 1);
+wip_RCC.cxx~:202:    if (w->ctl.controlOps) {
+wip_RCC.cxx~:204:      fprintf(f, "  %s RCCMethod ", w->pattern ? "extern" : "static");
+wip_RCC.cxx~:206:	if (w->ctl.controlOps & (1 << op)) {
+wip_RCC.cxx~:218:	    w->pattern ? "extern" : "static", mName);
+wip_RCC.cxx~:238:	    w->implName, upper, upper, upper, upper, upper, w->rcc.isThreaded ? 1 : 0);
+wip_RCC.cxx~:239:    if (w->ctl.nProperties)
+wip_RCC.cxx~:241:	      toupper(w->implName[0]), w->implName + 1);
+wip_RCC.cxx~:243:      if (w->ctl.controlOps & (1 << op)) {
+wip_RCC.cxx~:251:    p = w->ports;
+wip_RCC.cxx~:253:    for (unsigned n = 0; n < w->nPorts; n++, p++)
+wip_RCC.cxx~:254:      if (p->wdi.isOptional)
+wip_RCC.cxx~:259:    if (w->nPorts) {
+wip_RCC.cxx~:260:      p = w->ports;
+wip_RCC.cxx~:261:      for (unsigned n = 0; n < w->nPorts; n++, p++)
+wip_RCC.cxx~:262:	if (p->wdi.nOperations) {
+wip_RCC.cxx~:268:		  p->name, w->implName);
+wip_RCC.cxx~:269:	  Operation *o = p->wdi.operations;
+wip_RCC.cxx~:270:	  const char *puName = upperdup(p->name);
+wip_RCC.cxx~:271:	  for (unsigned nn = 0; nn < p->wdi.nOperations; nn++, o++)
+wip_RCC.cxx~:272:	    fprintf(f, "  %s_%s_%s,\n", upper, puName, upperdup(o->name));
+wip_RCC.cxx~:274:		  toupper(w->implName[0]), w->implName+1,
+wip_RCC.cxx~:275:		  toupper(p->name[0]), p->name+1);
+wip_RCC.cxx~:277:	  o = p->wdi.operations;
+wip_RCC.cxx~:278:	  for (unsigned nn = 0; nn < p->wdi.nOperations; nn++, o++)
+wip_RCC.cxx~:279:	    if (o->nArgs) {
+wip_RCC.cxx~:285:		      o->name, p->name);
+wip_RCC.cxx~:286:	      emitStructRCC(f, o->nArgs, o->args, "");
+wip_RCC.cxx~:288:		      toupper(w->implName[0]), w->implName + 1,
+wip_RCC.cxx~:289:		      toupper(p->name[0]), p->name + 1,
+wip_RCC.cxx~:290:		      toupper(o->name[0]), o->name + 1);
+wip_RCC.cxx~:304:  if ((err = openOutput(w->fileName, outDir, "", RCCMAP, HEADER, NULL, f)))
+wip_RCC.cxx~:306:  fprintf(f, "#define RCC_FILE_WORKER_%s %s\n", w->fileName, w->implName);
+wip_RCC.cxx~:315:  if ((err = openOutput(w->fileName, outDir, "", "_skel", ".c", NULL, f)))
+wip_RCC.cxx~:318:  printgen(f, " *", w->file, true);
+wip_RCC.cxx~:320:  const char *upper = upperdup(w->implName);
+wip_RCC.cxx~:334:	  w->implName, w->implName, upper, w->implName, upper, w->implName);
+wip_RCC.cxx~:339:    if (w->ctl.controlOps & (1 << op)) {
+wip_RCC.cxx~:347:	      w->pattern ? "extern" : "static", mName);
+wip_RCC.cxx~:358:	  w->pattern ? "extern" : "static", mName,
+wip_RCC.cxx~:361:  // FIXME Compilable - any initial functionality??? cool.
+wip_RCC.cxx~:369:  if ((err = openOutput(aw->implName, outDir, "", "_art", ".xml", NULL, f)))
+wip_RCC.cxx~:371:  fprintf(f, "<!--\n");
+wip_RCC.cxx~:372:  printgen(f, "", aw->file);
+wip_RCC.cxx~:376:	  aw->implName);
+wip_RCC.cxx~:377:  fprintf(f, "  -->\n");
+wip_RCC.cxx~:382:  for (w = aw->assembly.workers, n = 0; n < aw->assembly.nWorkers; n++, w++)
+wip_parse.cxx:87:  if (!x->attr)
+wip_parse.cxx:89:  for (char **a = x->attr; *a; a += 2) {
+wip_parse.cxx:97:      return esprintf("Invalid attribute name: \"%s\", in a %s element", *a, x->name);
+wip_parse.cxx:107:    asprintf((char**)&cp, "%.*s%s", (int)(cp - parent + 1), parent, file);
+wip_parse.cxx:130:  if (!x || !x->name)
+wip_parse.cxx:132:  if (element && strcmp(x->name, element)) {
+wip_parse.cxx:158:    if (*endptr++ == '-') {
+wip_parse.cxx:165:	  val--;
+wip_parse.cxx:185:		    a, attr, x->name);
+wip_parse.cxx:203:		    a, attr, x->name);
+wip_parse.cxx:233:  t->name = ezxml_attr(xp, "Name");
+wip_parse.cxx:234:  if (!t->name)
+wip_parse.cxx:244:    t->type = (PropertyType)(tp - propertyTypes);
+wip_parse.cxx:246:    t->type = CM::Property::CPI_ULong;
+wip_parse.cxx:247:  t->bits = CM::Property::tsize[t->type];
+wip_parse.cxx:248:  t->align = (t->bits + CHAR_BIT - 1) / CHAR_BIT;
+wip_parse.cxx:249:  if (t->align > maxAlign)
+wip_parse.cxx:250:    maxAlign = t->align;
+wip_parse.cxx:251:  if (t->align < 4)
+wip_parse.cxx:253:  if (t->type == CM::Property::CPI_String) {
+wip_parse.cxx:254:    if ((err = getNumber(xp, "StringLength", &t->stringLength, &found, 0)))
+wip_parse.cxx:258:    if (t->stringLength == 0)
+wip_parse.cxx:263:  if ((err = getNumber(xp, "SequenceLength", &t->length, &t->isSequence, 0)) ||
+wip_parse.cxx:264:      (err = getNumber(xp, "ArrayLength", &length, &t->isArray, 0)))
+wip_parse.cxx:266:  if (t->isArray)
+wip_parse.cxx:267:    t->length = length;
+wip_parse.cxx:268:  if (t->isSequence && t->isArray)
+wip_parse.cxx:269:    return esprintf("Property/argument %s has both Array and Sequence length", t->name);
+wip_parse.cxx:270:  if ((t->isSequence || t->isArray) && t->length == 0)
+wip_parse.cxx:271:    return esprintf("Property/argumnt %s: Array or Sequence length cannot be zero", t->name);
+wip_parse.cxx:273:  t->nBytes =
+wip_parse.cxx:274:    t->type == CM::Property::CPI_String ?
+wip_parse.cxx:275:    roundup(t->stringLength + 1, 4) : (t->bits + CHAR_BIT - 1) / CHAR_BIT;
+wip_parse.cxx:276:  if (t->length)
+wip_parse.cxx:277:    t->nBytes *= t->length;
+wip_parse.cxx:278:  if (t->isSequence)
+wip_parse.cxx:279:    t->nBytes += t->align > 4 ? t->align : 4;
+wip_parse.cxx:280:  offset = roundup(offset, t->align);
+wip_parse.cxx:281:  t->offset = offset;
+wip_parse.cxx:282:  offset += t->nBytes;
+wip_parse.cxx:286:    if ((err = CPI::Util::parseValue(defaultValue, t->type, t->stringLength,
+wip_parse.cxx:287:			  &t->defaultValue)))
+wip_parse.cxx:288:      return esprintf("%s \"%s\" of type %s", defaultValue, propertyTypes[t->type]);
+wip_parse.cxx:289:    t->hasDefault = true;
+wip_parse.cxx:303:    if ((err = getBoolean(impl, "MyClock", &p->myClock)))
+wip_parse.cxx:307:    if (p->myClock || p->type == WCIPort) {
+wip_parse.cxx:309:      p->myClock = true;
+wip_parse.cxx:310:      p->clock = &w->clocks[w->nClocks++];
+wip_parse.cxx:311:      asprintf((char **)&p->clock->name, "%s_Clk", p->name); // fixme
+wip_parse.cxx:312:      p->clock->port = p;
+wip_parse.cxx:313:    } else if (w->ports->type == WCIPort)
+wip_parse.cxx:315:      p->clock = w->ports->clock;
+wip_parse.cxx:321:    Port *op = w->ports;
+wip_parse.cxx:322:    for (unsigned i = 0; i < w->nPorts; i++, op++)
+wip_parse.cxx:323:      if (p != op && !strcmp(clock, op->name)) {
+wip_parse.cxx:324:	if (p->myClock)
+wip_parse.cxx:328:			  p->name, clock);
+wip_parse.cxx:329:	p->clockPort = op;
+wip_parse.cxx:333:    Clock *c = w->clocks;
+wip_parse.cxx:334:    for (unsigned i = 0; i < w->nClocks; i++, c++)
+wip_parse.cxx:335:      if (!strcmp(clock, c->name)) {
+wip_parse.cxx:336:	p->clock = c;
+wip_parse.cxx:337:	if (p->myClock)
+wip_parse.cxx:338:	  if (c->port)
+wip_parse.cxx:340:			    p->name, clock, c->port->name);
+wip_parse.cxx:342:	    c->port = p;
+wip_parse.cxx:345:    return esprintf("Clock attribute of \"%s\" matches no interface or clock", p->name);
+wip_parse.cxx:356:    return esprintf("Missing \"Name\" attribute of %s element", impl->name);
+wip_parse.cxx:357:  Port *dp = w->ports;
+wip_parse.cxx:359:  for (i = 0; i < w->nPorts && dp->name; i++, dp++)
+wip_parse.cxx:360:    if (!strcmp(dp->name, name))
+wip_parse.cxx:362:  if (i >= w->nPorts || !dp->isData)
+wip_parse.cxx:367:      (err = getNumber(impl, "DataWidth", &dp->dataWidth, 0, dp->wdi.dataValueWidth)) ||
+wip_parse.cxx:368:      (err = getBoolean(impl, "Continuous", &dp->wdi.continuous)) ||
+wip_parse.cxx:369:      (err = getBoolean(impl, "ImpreciseBurst", &dp->impreciseBurst)) ||
+wip_parse.cxx:370:      (err = getBoolean(impl, "PreciseBurst", &dp->preciseBurst)))
+wip_parse.cxx:372:  if (dp->dataWidth % dp->wdi.dataValueWidth)
+wip_parse.cxx:375:  if (dp->impreciseBurst && dp->preciseBurst)
+wip_parse.cxx:378:  dp->pattern = ezxml_attr(impl, "Pattern");
+wip_parse.cxx:387:  for (xml = xml ? xml->child : NULL; xml; xml = xml->ordered)
+wip_parse.cxx:436:	     element, top->name, parent);
+wip_parse.cxx:444:  w->ctl.properties = myCrealloc(Property, w->ctl.properties, w->ctl.nProperties, 1);
+wip_parse.cxx:445:  w->ctl.prop = w->ctl.properties + w->ctl.nProperties;
+wip_parse.cxx:446:  w->ctl.nProperties++;
+wip_parse.cxx:447:  Property *p = w->ctl.prop++;
+wip_parse.cxx:448:  p->name = name;
+wip_parse.cxx:451:    p->isStruct = true;
+wip_parse.cxx:453:      p->nMembers++;
+wip_parse.cxx:454:    if (p->nMembers == 0)
+wip_parse.cxx:457:    p->isStruct = false;
+wip_parse.cxx:458:    p->nMembers = 1;
+wip_parse.cxx:460:  p->members = myCalloc(Simple, p->nMembers);
+wip_parse.cxx:461:  p->maxAlign = 1;
+wip_parse.cxx:464:  if (p->isStruct) {
+wip_parse.cxx:466:    if ((err = getNumber(prop, "SequenceLength", &p->nStructs, &p->isStructSequence, 1)) ||
+wip_parse.cxx:467:	(err = getNumber(prop, "ArrayLength", &p->nStructs, &structArray, 1)))
+wip_parse.cxx:469:    if (p->isStructSequence && structArray)
+wip_parse.cxx:471:    Simple *mem = p->members;
+wip_parse.cxx:475:	  (err = getMember(m, mem, p->maxAlign, myOffset, sub32)))
+wip_parse.cxx:478:  } else if ((err = getMember(prop, p->members, p->maxAlign, myOffset, sub32)))
+wip_parse.cxx:480:  p->nBytes = myOffset;
+wip_parse.cxx:481:  w->ctl.offset = roundup(w->ctl.offset, p->maxAlign);
+wip_parse.cxx:482:  p->offset = w->ctl.offset;
+wip_parse.cxx:483:  w->ctl.offset += myOffset;
+wip_parse.cxx:484:  //printf("%s at %x(word) %x(byte)\n", p->name, p->offset/4, p->offset);
+wip_parse.cxx:485:  if ((err = getBoolean(prop, "Readable", &p->isReadable)) ||
+wip_parse.cxx:486:      (err = getBoolean(prop, "Writable", &p->isWritable)))
+wip_parse.cxx:488:  if (p->isReadable)
+wip_parse.cxx:489:    w->ctl.readableConfigProperties = true;
+wip_parse.cxx:490:  if (p->isWritable)
+wip_parse.cxx:491:    w->ctl.writableConfigProperties = true;
+wip_parse.cxx:493:    w->ctl.sub32BitConfigProperties = true;
+wip_parse.cxx:513:  Property *p = w->ctl.properties;
+wip_parse.cxx:515:  for (unsigned n = 0; n < w->ctl.nProperties; n++, p++)
+wip_parse.cxx:516:    if (!strcmp(p->name, name)) {
+wip_parse.cxx:528:    if (p->members->hasDefault && ezxml_attr(prop, "Default"))
+wip_parse.cxx:541:  if ((err = getBoolean(prop, "ReadSync", &p->readSync)) ||
+wip_parse.cxx:542:      (err = getBoolean(prop, "WriteSync", &p->writeSync)) ||
+wip_parse.cxx:543:      (err = getBoolean(prop, "ReadError", &p->readError)) ||
+wip_parse.cxx:544:      (err = getBoolean(prop, "WriteError", &p->writeError)) ||
+wip_parse.cxx:545:      (err = getBoolean(prop, "IsTest", &p->isTest)) ||
+wip_parse.cxx:546:      (err = getBoolean(prop, "Parameter", &p->isParameter)))
+wip_parse.cxx:548:  if (p->isParameter && p->isWritable)
+wip_parse.cxx:549:    return esprintf("Property \"%s\" is a parameter and can't be writable", p->name);
+wip_parse.cxx:558:  if ((err = tryInclude(prop, w->file, "Properties", &iprop, &ifile)))
+wip_parse.cxx:562:    const char *ofile = w->file;
+wip_parse.cxx:563:    w->file = ifile;
+wip_parse.cxx:565:    w->file = ofile;
+wip_parse.cxx:595:    if (w->noControl)
+wip_parse.cxx:601:      if (sizeOfConfigSpace < w->ctl.sizeOfConfigSpace)
+wip_parse.cxx:603:      w->ctl.sizeOfConfigSpace = sizeOfConfigSpace;
+wip_parse.cxx:610:      w->ctl.sub32BitConfigProperties = true;
+wip_parse.cxx:620:	    w->ctl.controlOps |= 1 << op;
+wip_parse.cxx:643:  w->ctl.sizeOfConfigSpace = w->ctl.offset;
+wip_parse.cxx:655:	(err = getNumber(ps, "SizeOfConfigSpace", &w->ctl.sizeOfConfigSpace, 0, 0)) ||
+wip_parse.cxx:656:	(err = getBoolean(ps, "WritableConfigProperties", &w->ctl.writableConfigProperties)) ||
+wip_parse.cxx:657:	(err = getBoolean(ps, "ReadableConfigProperties", &w->ctl.readableConfigProperties)) ||
+wip_parse.cxx:658:	(err = getBoolean(ps, "Sub32BitConfigProperties", &w->ctl.sub32BitConfigProperties)))
+wip_parse.cxx:672:  if ((err = tryInclude(op, p->worker->file, "Protocol", &iprot, &ifile)))
+wip_parse.cxx:676:    const char *ofile = p->worker->file;
+wip_parse.cxx:677:    p->worker->file = ifile;
+wip_parse.cxx:679:    p->worker->file = ofile;
+wip_parse.cxx:689:  if (!p->wdi.operations) {
+wip_parse.cxx:690:    p->wdi.nOperations++;
+wip_parse.cxx:693:  Operation *o = p->wdi.op++;
+wip_parse.cxx:694:  o->name = ezxml_attr(op, "Name");
+wip_parse.cxx:695:  if (!p->name)
+wip_parse.cxx:697:  if ((err = getBoolean(op, "TwoWay", &o->isTwoWay)))
+wip_parse.cxx:700:    o->nArgs++;
+wip_parse.cxx:702:  if (o->nArgs) {
+wip_parse.cxx:703:    o->args = myCalloc(Simple, o->nArgs);
+wip_parse.cxx:704:    Simple *mem = o->args;
+wip_parse.cxx:712:      if (p->wdi.dataValueWidth &&
+wip_parse.cxx:713:	  mem->bits != p->wdi.dataValueWidth)
+wip_parse.cxx:714:	p->wdi.diverseDataSizes = true;
+wip_parse.cxx:715:      if (!p->wdi.dataValueWidth ||
+wip_parse.cxx:716:	  mem->bits < p->wdi.dataValueWidth)
+wip_parse.cxx:717:	p->wdi.dataValueWidth = mem->bits;
+wip_parse.cxx:719:    if (p->wdi.maxMessageValues &&
+wip_parse.cxx:720:	p->wdi.maxMessageValues != myOffset)
+wip_parse.cxx:721:      p->wdi.variableMessageLength = true;
+wip_parse.cxx:722:    if (myOffset > p->wdi.maxMessageValues)
+wip_parse.cxx:723:      p->wdi.maxMessageValues = myOffset; // still in bytes until later
+wip_parse.cxx:725:    p->wdi.zeroLengthMessages = true;
+wip_parse.cxx:734:  p->wdi.op = p->wdi.operations = myCalloc(Operation, p->wdi.nOperations);
+wip_parse.cxx:739:  if (p->wdi.dataValueWidth) {
+wip_parse.cxx:740:    unsigned bytes = (p->wdi.dataValueWidth + CHAR_BIT - 1) / CHAR_BIT;
+wip_parse.cxx:741:    p->wdi.maxMessageValues += bytes - 1;
+wip_parse.cxx:742:    p->wdi.maxMessageValues /= bytes;
+wip_parse.cxx:743:    p->wdi.dataValueGranularity = 1;  // FIXME - compute this for real
+wip_parse.cxx:745:  p->wdi.numberOfOpcodes = p->wdi.nOperations;
+wip_parse.cxx:754:  if ((err = tryChildInclude(xml, w->file, "ComponentSpec", &spec, &w->specFile)))
+wip_parse.cxx:756:  w->specName = ezxml_attr(spec, "Name");
+wip_parse.cxx:757:  if (!w->specName)
+wip_parse.cxx:760:      (err = getBoolean(spec, "NoControl", &w->noControl)))
+wip_parse.cxx:772:  if (w->noControl) {
+wip_parse.cxx:779:    w->nPorts++;
+wip_parse.cxx:781:  Port *p = w->ports = myCalloc(Port, w->nPorts);
+wip_parse.cxx:784:	(err = getBoolean(x, "Producer", &p->wdi.isProducer)) ||
+wip_parse.cxx:785:	(err = getBoolean(x, "Optional", &p->wdi.isOptional)))
+wip_parse.cxx:787:    p->worker = w;
+wip_parse.cxx:788:    p->isData = true;
+wip_parse.cxx:789:    p->type = WDIPort;
+wip_parse.cxx:790:    if (!(p->name = ezxml_attr(x, "Name")))
+wip_parse.cxx:792:    for (Port *pp = w->ports; pp < p; pp++)
+wip_parse.cxx:793:      if (!strcmp(pp->name, p->name))
+wip_parse.cxx:806:	  (err = getNumber(pSum, "DataValueWidth", &p->wdi.dataValueWidth, 0, 8)) ||
+wip_parse.cxx:807:	  (err = getNumber(pSum, "DataValueGranularity", &p->wdi.dataValueGranularity, 0, 1)) ||
+wip_parse.cxx:808:	  (err = getBoolean(pSum, "DiverseDataSizes", &p->wdi.diverseDataSizes)) ||
+wip_parse.cxx:809:	  (err = getNumber(pSum, "MaxMessageValues", &p->wdi.maxMessageValues, 0, 1)) ||
+wip_parse.cxx:810:	  (err = getNumber(pSum, "NumberOfOpcodes", &p->wdi.numberOfOpcodes, 0, 1)) ||
+wip_parse.cxx:811:	  (err = getBoolean(pSum, "VariableMessageLength", &p->wdi.variableMessageLength)) ||
+wip_parse.cxx:812:	  (err = getBoolean(pSum, "ZeroLengthMessages", &p->wdi.zeroLengthMessages)))
+wip_parse.cxx:832:  if (!w->noControl) {
+wip_parse.cxx:835:    Port *ports = myCalloc(Port, w->nPorts + 1);
+wip_parse.cxx:836:    memcpy(ports + 1, w->ports, w->nPorts * sizeof(Port));
+wip_parse.cxx:837:    free(w->ports);
+wip_parse.cxx:838:    w->ports = ports;
+wip_parse.cxx:839:    w->nPorts++;
+wip_parse.cxx:840:    // Finish HDL-specific control parsing
+wip_parse.cxx:841:    wci = w->ports;
+wip_parse.cxx:842:    if (w->ctl.controlOps == 0)
+wip_parse.cxx:843:      w->ctl.controlOps = 1 << ControlOpStart;
+wip_parse.cxx:848:	  (err = getNumber(xctl, "Timeout", &wci->wci.timeout, 0, 0)) ||
+wip_parse.cxx:849:	  (err = getNumber(xctl, "Count", &wci->count, 0, 0)) ||
+wip_parse.cxx:851:			    &wci->wci.resetWhileSuspended)))
+wip_parse.cxx:853:      wci->pattern = ezxml_attr(xctl, "Pattern");
+wip_parse.cxx:854:      wci->name = ezxml_attr(xctl, "Name");
+wip_parse.cxx:856:    if (!wci->count)
+wip_parse.cxx:857:      wci->count = 1;
+wip_parse.cxx:859:    if (!wci->name)
+wip_parse.cxx:860:      wci->name = "ctl";
+wip_parse.cxx:861:    wci->type = WCIPort;
+wip_parse.cxx:863:  // Count up and allocate the ports that are HDL-specific
+wip_parse.cxx:869:  w->ports = myCrealloc(Port, w->ports, w->nPorts, extraPorts);
+wip_parse.cxx:870:  wci = w->ports;
+wip_parse.cxx:871:  Port *p = w->ports + w->nPorts ;
+wip_parse.cxx:872:  w->nPorts += extraPorts;
+wip_parse.cxx:873:  // Clocks depend on port names, so get those names in first pass(non-control ports)
+wip_parse.cxx:875:    if (!(p->name = ezxml_attr(x, "Name")))
+wip_parse.cxx:878:    if (!(p->name = ezxml_attr(x, "Name")))
+wip_parse.cxx:882:    w->nClocks++;
+wip_parse.cxx:884:  w->clocks = myCalloc(Clock, w->nClocks + 1 + w->nPorts);
+wip_parse.cxx:885:  Clock *c = w->clocks;
+wip_parse.cxx:889:    c->name = ezxml_attr(xc, "Name");
+wip_parse.cxx:890:    if (!c->name)
+wip_parse.cxx:892:    c->signal = ezxml_attr(xc, "Signal");
+wip_parse.cxx:900:  p = w->ports + (w->noControl ? 0 : 1);
+wip_parse.cxx:901:  // Now lets look at the implementation-specific data interface info
+wip_parse.cxx:910:	(err = getBoolean(s, "Abortable", &dp->wsi.abortable)) ||
+wip_parse.cxx:911:	(err = getBoolean(s, "RegRequest", &dp->wsi.regRequest)) ||
+wip_parse.cxx:912:	(err = getBoolean(s, "EarlyRequest", &dp->wsi.earlyRequest)) ||
+wip_parse.cxx:913:	(err = getNumber(s, "NumberOfOpcodes", &p->wdi.numberOfOpcodes, 0, p->wdi.numberOfOpcodes)))
+wip_parse.cxx:915:    dp->type = WSIPort;
+wip_parse.cxx:916:    if ((dp->wdi.dataValueWidth * dp->wdi.dataValueGranularity) % dp->dataWidth &&
+wip_parse.cxx:917:	!dp->wdi.zeroLengthMessages)
+wip_parse.cxx:918:      dp->byteWidth = dp->dataWidth;
+wip_parse.cxx:920:      dp->byteWidth = dp->wdi.dataValueWidth;
+wip_parse.cxx:928:	(err = getNumber(m, "ByteWidth", &dp->byteWidth, 0, dp->dataWidth)) ||
+wip_parse.cxx:929:	(err = getBoolean(m, "TalkBack", &dp->wmi.talkBack)) ||
+wip_parse.cxx:930:	(err = getBoolean(m, "Bidirectional", &dp->wmi.bidirectional)) ||
+wip_parse.cxx:931:	(err = getNumber(m, "MFlagWidth", &dp->wmi.mflagWidth, 0, 0)))
+wip_parse.cxx:933:    dp->type = WMIPort;
+wip_parse.cxx:934:    if (dp->dataWidth % dp->byteWidth)
+wip_parse.cxx:937:  Port *mp = w->ports + w->nPorts - extraPorts;
+wip_parse.cxx:939:    mp->type = WMemIPort;
+wip_parse.cxx:945:	(err = getNumber(m, "Count", &mp->count, 0, 0)) ||
+wip_parse.cxx:946:	(err = getNumber64(m, "MemoryWords", &mp->wmemi.memoryWords, &memFound, 0)) ||
+wip_parse.cxx:947:	(err = getNumber(m, "DataWidth", &mp->dataWidth, 0, 8)) ||
+wip_parse.cxx:948:	(err = getNumber(m, "ByteWidth", &mp->byteWidth, 0, 8)) ||
+wip_parse.cxx:949:	(err = getNumber(m, "MaxBurstLength", &mp->wmemi.maxBurstLength, 0, 0)) ||
+wip_parse.cxx:950:	(err = getBoolean(m, "ImpreciseBurst", &mp->impreciseBurst)) ||
+wip_parse.cxx:951:	(err = getBoolean(m, "PreciseBurst", &mp->preciseBurst)) ||
+wip_parse.cxx:952:	(err = getBoolean(m, "WriteDataFlowControl", &mp->wmemi.writeDataFlowControl)) ||
+wip_parse.cxx:953:	(err = getBoolean(m, "ReadDataFlowControl", &mp->wmemi.readDataFlowControl)))
+wip_parse.cxx:955:    if (!memFound || !mp->wmemi.memoryWords)
+wip_parse.cxx:957:    if (!mp->preciseBurst && !mp->impreciseBurst) {
+wip_parse.cxx:958:      if (mp->wmemi.maxBurstLength > 0)
+wip_parse.cxx:960:      if (mp->wmemi.writeDataFlowControl || mp->wmemi.readDataFlowControl)
+wip_parse.cxx:963:    if (mp->byteWidth < 8 || mp->dataWidth % mp->byteWidth)
+wip_parse.cxx:965:    mp->name = ezxml_attr(m, "Name");
+wip_parse.cxx:966:    if (!mp->name)
+wip_parse.cxx:967:      mp->name = "mem";
+wip_parse.cxx:968:    mp->pattern = ezxml_attr(m, "Pattern");
+wip_parse.cxx:974:    mp->name = ezxml_attr(m, "Name");
+wip_parse.cxx:975:    if (!mp->name)
+wip_parse.cxx:976:      mp->name = "time";
+wip_parse.cxx:977:    mp->type = WTIPort;
+wip_parse.cxx:981:	(err = getNumber(m, "SecondsWidth", &mp->wti.secondsWidth, 0, 32)) ||
+wip_parse.cxx:982:	(err = getNumber(m, "FractionWidth", &mp->wti.fractionWidth, 0, 0)) ||
+wip_parse.cxx:983:	(err = getBoolean(m, "AllowUnavailable", &mp->wti.allowUnavailable)))
+wip_parse.cxx:985:    mp->dataWidth = mp->wti.secondsWidth + mp->wti.fractionWidth;
+wip_parse.cxx:987:    mp->pattern = ezxml_attr(m, "Pattern");
+wip_parse.cxx:990:  c = w->clocks;
+wip_parse.cxx:991:  for (unsigned i = 0; i < w->nClocks; i++, c++)
+wip_parse.cxx:992:    if (c->port) {
+wip_parse.cxx:993:      if (c->signal)
+wip_parse.cxx:995:			c->name, c->port->name);
+wip_parse.cxx:996:      //asprintf((char **)&c->signal, "%s_Clk", c->port->fullNameIn);
+wip_parse.cxx:997:    } else if (!c->signal)
+wip_parse.cxx:999:		      c->name);
+wip_parse.cxx:1001:  p = w->ports;
+wip_parse.cxx:1002:  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_parse.cxx:1003:    if (p->clockPort)
+wip_parse.cxx:1004:      p->clock = p->clockPort->clock;
+wip_parse.cxx:1005:    if (p->count == 0)
+wip_parse.cxx:1006:      p->count = 1;
+wip_parse.cxx:1017:  Worker *w = a->workers;
+wip_parse.cxx:1018:  for (unsigned i; i < a->nWorkers; i++, w++)
+wip_parse.cxx:1019:    if (!strcmp(wName, w->implName)) {
+wip_parse.cxx:1032:		    aName, w->implName);
+wip_parse.cxx:1033:  Port *p = w->ports;
+wip_parse.cxx:1034:  for (unsigned i; i < w->nPorts; i++, p++)
+wip_parse.cxx:1035:    if (!strcmp(pName, p->name)) {
+wip_parse.cxx:1040:		  pName, w->implName);
+wip_parse.cxx:1058:    c->nProducers++;
+wip_parse.cxx:1060:      c->nExtProducers++;
+wip_parse.cxx:1062:    c->nConsumers++;
+wip_parse.cxx:1064:      c->nExtConsumers++;
+wip_parse.cxx:1068:  for (pp = &c->ports; *pp; pp = &(*pp)->nextConn)
+wip_parse.cxx:1071:  ip->connection = c;
+wip_parse.cxx:1072:  ip->isExternal = isExternal;
+wip_parse.cxx:1073:  ip->isProducer = isProducer;
+wip_parse.cxx:1074:  ip->name = name;
+wip_parse.cxx:1075:  c->nPorts++;
+wip_parse.cxx:1077:    c->external = ip;
+wip_parse.cxx:1090:  unsigned nc = p->clock - i->worker->clocks;
+wip_parse.cxx:1092:  if (i->clocks[nc])
+wip_parse.cxx:1094:    aClock = i->clocks[nc];
+wip_parse.cxx:1095:  else if (p->clock->port->type == WCIPort) {
+wip_parse.cxx:1097:    i->clocks[nc] = aw->ports->clock;
+wip_parse.cxx:1098:    aClock = i->clocks[nc];
+wip_parse.cxx:1102:    // How do we have assembly re-use while optimizing based on infrastructure
+wip_parse.cxx:1119:    if (isCompatible(p->clock, aw->clock))
+wip_parse.cxx:1120:      aClock = aw->clock;
+wip_parse.cxx:1126:    switch (p->type) {
+wip_parse.cxx:1143:  Assembly *a = &aw->assembly;
+wip_parse.cxx:1144:  aw->model = RccModel;
+wip_parse.cxx:1145:  aw->isAssembly = true;
+wip_parse.cxx:1148:  aw->implName = ezxml_attr(xml, "Name");
+wip_parse.cxx:1149:  if (!aw->implName)
+wip_parse.cxx:1150:    aw->implName = "RccAssembly";
+wip_parse.cxx:1152:    a->nWorkers++;
+wip_parse.cxx:1153:  Worker *w = a->workers = myCalloc(Worker, a->nWorkers);
+wip_parse.cxx:1166:  Assembly *a = &aw->assembly;
+wip_parse.cxx:1167:  aw->isAssembly = true;
+wip_parse.cxx:1170:  a->isContainer = !strcmp(xml->name, "HdlContainer");
+wip_parse.cxx:1173:    a->nInstances++;
+wip_parse.cxx:1174:  Instance *i = a->instances = myCalloc(Instance, a->nInstances);
+wip_parse.cxx:1175:  // Overallocate workers - they won't exceed nInstances.
+wip_parse.cxx:1176:  Worker *w = a->workers = myCalloc(Worker, a->nInstances); // may overallocate
+wip_parse.cxx:1179:      a->isContainer ?
+wip_parse.cxx:1185:    i->name = ezxml_attr(x, "Name");   // Name attribute is in fact optional
+wip_parse.cxx:1186:    i->wName = ezxml_attr(x, "Worker"); // Worker attribute is pathname
+wip_parse.cxx:1187:    if (a->isContainer) {
+wip_parse.cxx:1189:      if ((err = getNumber(x, "Index", &i->index, &idxFound, 0)))
+wip_parse.cxx:1196:      if (!i->wName) {
+wip_parse.cxx:1198:	if (!i->name)
+wip_parse.cxx:1207:	i->attach = ic;
+wip_parse.cxx:1208:	i->isInterconnect = true;
+wip_parse.cxx:1210:	i->attach = io;
+wip_parse.cxx:1214:      if (!i->wName)
+wip_parse.cxx:1216:		 i->name ? i->name : "<no Name>");
+wip_parse.cxx:1219:    for (Instance *ii = a->instances; ii < i; ii++)
+wip_parse.cxx:1220:      if (!strcmp(i->wName, ii->wName))
+wip_parse.cxx:1221:	i->worker = ii->worker;
+wip_parse.cxx:1222:    if (!i->worker) {
+wip_parse.cxx:1223:      if ((err = parseWorker(i->wName, w->file, w)) ||
+wip_parse.cxx:1225:	return esprintf("in file %s: %s", i->wName, err);
+wip_parse.cxx:1226:      i->worker = w++;
+wip_parse.cxx:1228:    // Allocate the instance-clock-to-assembly-clock map
+wip_parse.cxx:1229:    i->clocks = myCalloc(Clock *, i->worker->nClocks);
+wip_parse.cxx:1230:    i->ports = myCalloc(InstancePort, i->worker->nPorts);
+wip_parse.cxx:1231:    for (unsigned n = 0; n < i->worker->nPorts; n++) {
+wip_parse.cxx:1232:      i->ports[n].port = &i->worker->ports[n];
+wip_parse.cxx:1233:      i->ports[n].instance = i;
+wip_parse.cxx:1236:  a->nWorkers = w - a->workers;
+wip_parse.cxx:1239:  for (i = a->instances; n < a->nInstances; n++, i++) {
+wip_parse.cxx:1240:    if (!i->name) {
+wip_parse.cxx:1243:      for (Instance *ii = a->instances; nn < a->nInstances; ii++, nn++)
+wip_parse.cxx:1244:	if (n != nn && i->worker == ii->worker) {
+wip_parse.cxx:1250:      const char *wName = strrchr(i->wName, '/');
+wip_parse.cxx:1251:      wName = wName ? wName+1 : i->wName;
+wip_parse.cxx:1256:	i->name = i->worker->implName;
+wip_parse.cxx:1258:	asprintf((char **)&i->name, "%s%d", i->worker->implName, nSame);
+wip_parse.cxx:1260:    for (Instance *ii = a->instances; ii < i; ii++)
+wip_parse.cxx:1261:      if (!strcmp(ii->name, i->name))
+wip_parse.cxx:1262:	return esprintf("Duplicate instance named \"%s\" in assembly", i->name);
+wip_parse.cxx:1267:    a->nConnections++;
+wip_parse.cxx:1269:  Connection *c = a->connections = myCalloc(Connection, a->nConnections);
+wip_parse.cxx:1272:    c->name = ezxml_attr(x, "Name");
+wip_parse.cxx:1278:		   "connection \"%s\"", c->name);
+wip_parse.cxx:1281:      for (i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx:1282:	if (!strcmp(i->name, instName)) {
+wip_parse.cxx:1287:		       "connection \"%s\"", c->name);
+wip_parse.cxx:1289:	  for (p = i->worker->ports; nn < i->worker->nPorts; p++, nn++)
+wip_parse.cxx:1290:	    if (!strcmp(p->name, iName)) {
+wip_parse.cxx:1291:	      if (p->type != WSIPort && p->type != WMIPort)
+wip_parse.cxx:1292:		return "Connections for non-data ports not allowed";
+wip_parse.cxx:1293:	      ip = &i->ports[nn];
+wip_parse.cxx:1294:	      if (ip->connection)
+wip_parse.cxx:1298:			   iName, instName, ip->connection->name, c->name);
+wip_parse.cxx:1301:	  if (nn >= i->worker->nPorts)
+wip_parse.cxx:1303:			    "connection  \"%s\"", iName, instName, c->name);
+wip_parse.cxx:1306:      if (n >= a->nInstances)
+wip_parse.cxx:1308:			instName, c->name);
+wip_parse.cxx:1309:      attachPort(c, ip, p->name, p->wdi.isProducer, false);
+wip_parse.cxx:1311:    if (!c->name)
+wip_parse.cxx:1312:      asprintf((char **)&c->name, "conn%d", (int)(c - a->connections));
+wip_parse.cxx:1313:    for (Connection *cc = a->connections; cc < c; cc++)
+wip_parse.cxx:1314:      if (!strcmp(cc->name, c->name))
+wip_parse.cxx:1316:			c->name);
+wip_parse.cxx:1326:			"\"consumer\" or \"producer\"", c->name);
+wip_parse.cxx:1328:      attachPort(c, ip, c->name, isProducer, true);
+wip_parse.cxx:1332:  // Now we fill in the top-level worker stuff.
+wip_parse.cxx:1333:  aw->specName = aw->implName;
+wip_parse.cxx:1338:  aw->nPorts = 1;
+wip_parse.cxx:1340:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+wip_parse.cxx:1341:    aw->nPorts += c->nExtProducers + c->nExtConsumers;
+wip_parse.cxx:1343:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++) 
+wip_parse.cxx:1344:    if (i->worker) {
+wip_parse.cxx:1346:      for (nn = 0, p = i->worker->ports; nn < i->worker->nPorts; nn++, p++)
+wip_parse.cxx:1347:	if (p->type == WTIPort || p->type == WMemIPort)
+wip_parse.cxx:1348:	  aw->nPorts++;
+wip_parse.cxx:1350:  p = aw->ports = myCalloc(Port, aw->nPorts);
+wip_parse.cxx:1352:  aw->nClocks = 1; // first clock for all instance WCIs.
+wip_parse.cxx:1353:  Clock *clk = aw->clocks = myCalloc(Clock, aw->nPorts); // overallocate
+wip_parse.cxx:1354:  clk->signal = clk->name = "wci_Clk";
+wip_parse.cxx:1356:  clk->port = wci;
+wip_parse.cxx:1357:  wci->name = "wci";
+wip_parse.cxx:1358:  wci->type = WCIPort;
+wip_parse.cxx:1359:  wci->myClock = true;
+wip_parse.cxx:1360:  wci->clock = clk++;
+wip_parse.cxx:1361:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx:1362:    if (i->worker && i->worker->ports->type == WCIPort)
+wip_parse.cxx:1363:      i->ports->ordinal = wci->count++;
+wip_parse.cxx:1366:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++) {
+wip_parse.cxx:1367:    for (ip = c->ports; ip; ip = ip->nextConn)
+wip_parse.cxx:1368:      if (!ip->isExternal &&
+wip_parse.cxx:1369:	  ip->instance->worker->ports->type == WCIPort &&
+wip_parse.cxx:1370:	  ip->port->clock == ip->instance->worker->ports->clock)
+wip_parse.cxx:1373:      c->clock = wci->clock;
+wip_parse.cxx:1374:      for (ip = c->ports; ip; ip = ip->nextConn)
+wip_parse.cxx:1375:	if (!ip->isExternal)
+wip_parse.cxx:1376:	  ip->instance->clocks[ip->port->clock - ip->instance->worker->clocks] =
+wip_parse.cxx:1377:	    wci->clock;
+wip_parse.cxx:1381:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx:1383:    if (i->worker && i->worker->ports->type == WCIPort)
+wip_parse.cxx:1384:      i->clocks[i->worker->ports->clock - i->worker->clocks] = wci->clock;
+wip_parse.cxx:1386:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+wip_parse.cxx:1387:    for (ip = c->ports; ip; ip = ip->nextConn)
+wip_parse.cxx:1388:      if (!ip->isExternal) {
+wip_parse.cxx:1389:	unsigned nc = ip->port->clock - ip->instance->worker->clocks;
+wip_parse.cxx:1390:	if (!c->clock)
+wip_parse.cxx:1392:	  if (ip->instance->clocks[nc])
+wip_parse.cxx:1394:	    c->clock = ip->instance->clocks[nc];
+wip_parse.cxx:1398:	    asprintf((char **)&clk->name, "%s_%s", i->name,
+wip_parse.cxx:1399:		     ip->port->clock->name);
+wip_parse.cxx:1400:	    if (ip->port->clock->signal)
+wip_parse.cxx:1401:	      asprintf((char **)&clk->signal, "%s_%s", i->name, ip->port->clock->signal);
+wip_parse.cxx:1403:	      clk->signal = clk->name;
+wip_parse.cxx:1404:	    clk->assembly = true;
+wip_parse.cxx:1405:	    aw->nClocks++;
+wip_parse.cxx:1406:	    c->clock = clk++;	
+wip_parse.cxx:1407:	    ip->instance->clocks[nc] = c->clock;
+wip_parse.cxx:1408:	    // FIXME inherit ip->port->clock constraints
+wip_parse.cxx:1410:	else if (ip->instance->clocks[nc]) {
+wip_parse.cxx:1412:	  if (ip->instance->clocks[nc] != c->clock)
+wip_parse.cxx:1414:			    c->name, ip->port->name, ip->instance->name);
+wip_parse.cxx:1416:	  // FIXME CHECK COMPATIBILITY OF c->clock with ip->port->clock
+wip_parse.cxx:1417:	  ip->instance->clocks[nc] = c->clock;
+wip_parse.cxx:1422:  // non-WCI: WTI, WMemI
+wip_parse.cxx:1425:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx:1426:    if (i->worker) {
+wip_parse.cxx:1428:      for (nn = 0, ip = i->ports; nn < i->worker->nPorts; nn++, ip++) {
+wip_parse.cxx:1429:	unsigned nc = ip->port->clock - ip->instance->worker->clocks;
+wip_parse.cxx:1430:	if (!i->clocks[nc]) {
+wip_parse.cxx:1431:	  if (ip->port->type == WSIPort || ip->port->type == WMIPort)
+wip_parse.cxx:1433:			    ip->port->name, i->name);
+wip_parse.cxx:1434:	  i->clocks[nc] = clk;
+wip_parse.cxx:1435:	  asprintf((char **)&clk->name, "%s_%s", i->name, ip->port->clock->name);
+wip_parse.cxx:1436:	  if (ip->port->clock->signal)
+wip_parse.cxx:1437:	    asprintf((char **)&clk->signal, "%s_%s", i->name,
+wip_parse.cxx:1438:		     ip->port->clock->signal);
+wip_parse.cxx:1439:	  clk->assembly = true;
+wip_parse.cxx:1440:	  aw->nClocks++;
+wip_parse.cxx:1441:	  c->clock = clk++;	
+wip_parse.cxx:1442:	  i->clocks[nc] = c->clock;
+wip_parse.cxx:1447:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx:1448:    if (i->worker) {
+wip_parse.cxx:1450:      Worker *iw = i->worker;
+wip_parse.cxx:1451:      for (nn = 0, ip = i->ports; nn < iw->nPorts; nn++, ip++) {
+wip_parse.cxx:1452:	Port *pp = ip->port;
+wip_parse.cxx:1453:	switch (pp->type) {
+wip_parse.cxx:1457:	  if (iw->ctl.sizeOfConfigSpace > aw->ctl.sizeOfConfigSpace)
+wip_parse.cxx:1458:	    aw->ctl.sizeOfConfigSpace = iw->ctl.sizeOfConfigSpace;
+wip_parse.cxx:1459:	  if (iw->ctl.writableConfigProperties)
+wip_parse.cxx:1460:	    aw->ctl.writableConfigProperties = true;
+wip_parse.cxx:1461:	  if (iw->ctl.readableConfigProperties)
+wip_parse.cxx:1462:	    aw->ctl.readableConfigProperties = true;
+wip_parse.cxx:1463:	  if (iw->ctl.sub32BitConfigProperties)
+wip_parse.cxx:1464:	    aw->ctl.sub32BitConfigProperties = true;
+wip_parse.cxx:1465:	  aw->ctl.controlOps |= iw->ctl.controlOps; // needed?  useful?
+wip_parse.cxx:1468:	  // is true.  And the use-case is just that you can reset the
+wip_parse.cxx:1472:	  if (!pp->wci.resetWhileSuspended)
+wip_parse.cxx:1474:	  ip->external = wci;
+wip_parse.cxx:1478:	  // intra-chip accuracy via replication of the time clients.
+wip_parse.cxx:1484:	    asprintf((char **)&wti->name, "wti%u", nWti++);
+wip_parse.cxx:1485:	    ip->external = wti;
+wip_parse.cxx:1486:	    wti->clock = i->clocks[pp->clock - i->worker->clocks];
+wip_parse.cxx:1493:	    asprintf((char **)&wmemi->name, "wmemi%u", nWmemi++);
+wip_parse.cxx:1494:	    ip->external = wmemi;
+wip_parse.cxx:1495:	    wmemi->clock = i->clocks[pp->clock - i->worker->clocks];
+wip_parse.cxx:1501:	  if (!pp->wdi.isOptional &&
+wip_parse.cxx:1502:	      !ip->connection)
+wip_parse.cxx:1506:		       pp->name, i->name, i->worker->implName);
+wip_parse.cxx:1514:    wci->wci.resetWhileSuspended = true;
+wip_parse.cxx:1516:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+wip_parse.cxx:1517:    if (c->nExtProducers || c->nExtConsumers) {
+wip_parse.cxx:1519:      for (ip = c->ports; ip; ip = ip->nextConn)
+wip_parse.cxx:1520:	if (ip->isExternal) {
+wip_parse.cxx:1522:	  ip->port = p++;
+wip_parse.cxx:1523:	  extPort = ip->port;
+wip_parse.cxx:1526:	  intPort = ip->port;  // remember the last one
+wip_parse.cxx:1530:      extPort->name = c->name;
+wip_parse.cxx:1531:      extPort->isExternal = true;
+wip_parse.cxx:1532:      extPort->clock = c->clock;
+wip_parse.cxx:1533:      if (!extPort->clock->port) {
+wip_parse.cxx:1534:	extPort->clock->port = extPort;
+wip_parse.cxx:1535:	extPort->myClock = true;
+wip_parse.cxx:1537:      if (extPort->type == WSIPort)
+wip_parse.cxx:1538:	extPort->wsi.regRequest = false;
+wip_parse.cxx:1540:  aw->nPorts = p - aw->ports;
+wip_parse.cxx:1542:  for (n = 0, p = aw->ports; n < aw->nPorts; n++, p++) {
+wip_parse.cxx:1543:    if (p->type != WCIPort)
+wip_parse.cxx:1544:      p->count = 1;
+wip_parse.cxx:1545:    p->worker = aw;
+wip_parse.cxx:1560:    w->language = Verilog;
+wip_parse.cxx:1562:    w->language = VHDL;
+wip_parse.cxx:1565:  w->pattern = ezxml_attr(xml, "Pattern");
+wip_parse.cxx:1566:  if (!w->pattern)
+wip_parse.cxx:1567:    w->pattern = "%s_";
+wip_parse.cxx:1569:  if (!strcmp(xml->name, "HdlImplementation")) {
+wip_parse.cxx:1571:      return esprintf("in %s for %s: %s", xml->name, w->implName, err);
+wip_parse.cxx:1572:  } else if (!strcmp(xml->name, "HdlAssembly")) {
+wip_parse.cxx:1574:      return esprintf("in %s for %s: %s", xml->name, w->implName, err);
+wip_parse.cxx:1579:    return esprintf("in %s for %s: %s", xml->name, w->implName, err);
+wip_parse.cxx:1580:  Port *p = w->ports;
+wip_parse.cxx:1582:  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_parse.cxx:1585:    // ordinal == -1 means insert "%d" into the name for using latter
+wip_parse.cxx:1586:    if ((err = pattern(w, p, -1, wipN[p->type][mIn], true, !mIn, (char **)&p->fullNameIn)) ||
+wip_parse.cxx:1587:	(err = pattern(w, p, -1, wipN[p->type][mIn], false, !mIn, (char **)&p->fullNameOut)))
+wip_parse.cxx:1589:    if (p->clock->port == p) {
+wip_parse.cxx:1591:      // ordinal == -2 means suppress ordinal
+wip_parse.cxx:1592:      if ((err = pattern(w, p, -2, wipN[p->type][mIn], true, !mIn, &sin)))
+wip_parse.cxx:1594:      asprintf((char **)&p->ocp.Clk.signal, "%s%s", sin, "Clk");
+wip_parse.cxx:1595:      p->clock->signal = p->ocp.Clk.signal;
+wip_parse.cxx:1598:    for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_parse.cxx:1599:      if (osd->master == mIn && strcmp(osd->name, "Clk") && os->value)
+wip_parse.cxx:1600:	asprintf((char **)&os->signal, "%s%s", p->fullNameIn, osd->name);
+wip_parse.cxx:1602:    for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_parse.cxx:1603:      if (osd->master != mIn && strcmp(osd->name, "Clk") && os->value)
+wip_parse.cxx:1604:	asprintf((char **)&os->signal, "%s%s", p->fullNameOut, osd->name);
+wip_parse.cxx:1605:    wipN[p->type][mIn]++;
+wip_parse.cxx:1607:  if (w->nPorts > 32)
+wip_parse.cxx:1609:  w->model = HdlModel;
+wip_parse.cxx:1614: * What implementation-specific attributes does an RCC worker have?
+wip_parse.cxx:1626:  w->pattern = ezxml_attr(xml, "ExternMethods");
+wip_parse.cxx:1627:  w->staticPattern = ezxml_attr(xml, "StaticMethods");
+wip_parse.cxx:1631:      (err = getBoolean(xml, "Threaded", &w->rcc.isThreaded)))
+wip_parse.cxx:1642:    for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_parse.cxx:1643:      if (!strcmp(p->name, name))
+wip_parse.cxx:1645:    if (n >= w->nPorts)
+wip_parse.cxx:1647:    if ((err = getNumber(x, "MinBuffers", &p->wdi.minBuffers, 0, 0)))
+wip_parse.cxx:1650:  w->model = RccModel;
+wip_parse.cxx:1658:  if ((err = parseFile(file, parent, NULL, &xml, &w->file)))
+wip_parse.cxx:1663:  w->fileName = strdup(cp);
+wip_parse.cxx:1664:  char *lp = strrchr(w->fileName, '.');
+wip_parse.cxx:1667:  w->implName = ezxml_attr(xml, "Name");
+wip_parse.cxx:1668:  if (!w->implName)
+wip_parse.cxx:1669:    w->implName = w->fileName;
+wip_parse.cxx:1681:  if (name && !strcmp(xml->name, "ComponentAssembly"))
+wip_parse.cxx:1682:    return parseAssy(xml, w->file, w);
+wip_parse.cxx:1684:  return esprintf("\"%s\" is not a valid implemention type (RccImplementation, HdlImplementation, HdlAssembly, ComponentAssembly)", xml->name);
+wip_parse.cxx~:87:  if (!x->attr)
+wip_parse.cxx~:89:  for (char **a = x->attr; *a; a += 2) {
+wip_parse.cxx~:97:      return esprintf("Invalid attribute name: \"%s\", in a %s element", *a, x->name);
+wip_parse.cxx~:107:    asprintf((char**)&cp, "%.*s%s", (int)(cp - parent + 1), parent, file);
+wip_parse.cxx~:130:  if (!x || !x->name)
+wip_parse.cxx~:132:  if (element && strcmp(x->name, element)) {
+wip_parse.cxx~:158:    if (*endptr++ == '-') {
+wip_parse.cxx~:165:	  val--;
+wip_parse.cxx~:185:		    a, attr, x->name);
+wip_parse.cxx~:203:		    a, attr, x->name);
+wip_parse.cxx~:233:  t->name = ezxml_attr(xp, "Name");
+wip_parse.cxx~:234:  if (!t->name)
+wip_parse.cxx~:244:    t->type = (PropertyType)(tp - propertyTypes);
+wip_parse.cxx~:246:    t->type = CM::Property::CPI_ULong;
+wip_parse.cxx~:247:  t->bits = CM::Property::tsize[t->type];
+wip_parse.cxx~:248:  t->align = (t->bits + CHAR_BIT - 1) / CHAR_BIT;
+wip_parse.cxx~:249:  if (t->align > maxAlign)
+wip_parse.cxx~:250:    maxAlign = t->align;
+wip_parse.cxx~:251:  if (t->align < 4)
+wip_parse.cxx~:253:  if (t->type == CM::Property::CPI_String) {
+wip_parse.cxx~:254:    if ((err = getNumber(xp, "StringLength", &t->stringLength, &found, 0)))
+wip_parse.cxx~:258:    if (t->stringLength == 0)
+wip_parse.cxx~:263:  if ((err = getNumber(xp, "SequenceLength", &t->length, &t->isSequence, 0)) ||
+wip_parse.cxx~:264:      (err = getNumber(xp, "ArrayLength", &length, &t->isArray, 0)))
+wip_parse.cxx~:266:  if (t->isArray)
+wip_parse.cxx~:267:    t->length = length;
+wip_parse.cxx~:268:  if (t->isSequence && t->isArray)
+wip_parse.cxx~:269:    return esprintf("Property/argument %s has both Array and Sequence length", t->name);
+wip_parse.cxx~:270:  if ((t->isSequence || t->isArray) && t->length == 0)
+wip_parse.cxx~:271:    return esprintf("Property/argumnt %s: Array or Sequence length cannot be zero", t->name);
+wip_parse.cxx~:273:  t->nBytes =
+wip_parse.cxx~:274:    t->type == CM::Property::CPI_String ?
+wip_parse.cxx~:275:    roundup(t->stringLength + 1, 4) : (t->bits + CHAR_BIT - 1) / CHAR_BIT;
+wip_parse.cxx~:276:  if (t->length)
+wip_parse.cxx~:277:    t->nBytes *= t->length;
+wip_parse.cxx~:278:  if (t->isSequence)
+wip_parse.cxx~:279:    t->nBytes += t->align > 4 ? t->align : 4;
+wip_parse.cxx~:280:  offset = roundup(offset, t->align);
+wip_parse.cxx~:281:  t->offset = offset;
+wip_parse.cxx~:282:  offset += t->nBytes;
+wip_parse.cxx~:286:    if ((err = CPI::Util::parseValue(defaultValue, t->type, t->stringLength,
+wip_parse.cxx~:287:			  &t->defaultValue)))
+wip_parse.cxx~:288:      return esprintf("%s \"%s\" of type %s", defaultValue, propertyTypes[t->type]);
+wip_parse.cxx~:289:    t->hasDefault = true;
+wip_parse.cxx~:303:    if ((err = getBoolean(impl, "MyClock", &p->myClock)))
+wip_parse.cxx~:307:    if (p->myClock || p->type == WCIPort) {
+wip_parse.cxx~:309:      p->myClock = true;
+wip_parse.cxx~:310:      p->clock = &w->clocks[w->nClocks++];
+wip_parse.cxx~:311:      asprintf((char **)&p->clock->name, "%s_Clk", p->name); // fixme
+wip_parse.cxx~:312:      p->clock->port = p;
+wip_parse.cxx~:313:    } else if (w->ports->type == WCIPort)
+wip_parse.cxx~:315:      p->clock = w->ports->clock;
+wip_parse.cxx~:321:    Port *op = w->ports;
+wip_parse.cxx~:322:    for (unsigned i = 0; i < w->nPorts; i++, op++)
+wip_parse.cxx~:323:      if (p != op && !strcmp(clock, op->name)) {
+wip_parse.cxx~:324:	if (p->myClock)
+wip_parse.cxx~:328:			  p->name, clock);
+wip_parse.cxx~:329:	p->clockPort = op;
+wip_parse.cxx~:333:    Clock *c = w->clocks;
+wip_parse.cxx~:334:    for (unsigned i = 0; i < w->nClocks; i++, c++)
+wip_parse.cxx~:335:      if (!strcmp(clock, c->name)) {
+wip_parse.cxx~:336:	p->clock = c;
+wip_parse.cxx~:337:	if (p->myClock)
+wip_parse.cxx~:338:	  if (c->port)
+wip_parse.cxx~:340:			    p->name, clock, c->port->name);
+wip_parse.cxx~:342:	    c->port = p;
+wip_parse.cxx~:345:    return esprintf("Clock attribute of \"%s\" matches no interface or clock", p->name);
+wip_parse.cxx~:356:    return esprintf("Missing \"Name\" attribute of %s element", impl->name);
+wip_parse.cxx~:357:  Port *dp = w->ports;
+wip_parse.cxx~:359:  for (i = 0; i < w->nPorts && dp->name; i++, dp++)
+wip_parse.cxx~:360:    if (!strcmp(dp->name, name))
+wip_parse.cxx~:362:  if (i >= w->nPorts || !dp->isData)
+wip_parse.cxx~:367:      (err = getNumber(impl, "DataWidth", &dp->dataWidth, 0, dp->wdi.dataValueWidth)) ||
+wip_parse.cxx~:368:      (err = getBoolean(impl, "Continuous", &dp->wdi.continuous)) ||
+wip_parse.cxx~:369:      (err = getBoolean(impl, "ImpreciseBurst", &dp->impreciseBurst)) ||
+wip_parse.cxx~:370:      (err = getBoolean(impl, "PreciseBurst", &dp->preciseBurst)))
+wip_parse.cxx~:372:  if (dp->dataWidth % dp->wdi.dataValueWidth)
+wip_parse.cxx~:375:  if (dp->impreciseBurst && dp->preciseBurst)
+wip_parse.cxx~:378:  dp->pattern = ezxml_attr(impl, "Pattern");
+wip_parse.cxx~:387:  for (xml = xml ? xml->child : NULL; xml; xml = xml->ordered)
+wip_parse.cxx~:436:	     element, top->name, parent);
+wip_parse.cxx~:444:  w->ctl.properties = myCrealloc(Property, w->ctl.properties, w->ctl.nProperties, 1);
+wip_parse.cxx~:445:  w->ctl.prop = w->ctl.properties + w->ctl.nProperties;
+wip_parse.cxx~:446:  w->ctl.nProperties++;
+wip_parse.cxx~:447:  Property *p = w->ctl.prop++;
+wip_parse.cxx~:448:  p->name = name;
+wip_parse.cxx~:451:    p->isStruct = true;
+wip_parse.cxx~:453:      p->nTypes++;
+wip_parse.cxx~:454:    if (p->nTypes == 0)
+wip_parse.cxx~:457:    p->isStruct = false;
+wip_parse.cxx~:458:    p->nTypes = 1;
+wip_parse.cxx~:460:  p->types = myCalloc(Simple, p->nTypes);
+wip_parse.cxx~:461:  p->maxAlign = 1;
+wip_parse.cxx~:464:  if (p->isStruct) {
+wip_parse.cxx~:466:    if ((err = getNumber(prop, "SequenceLength", &p->nStructs, &p->isStructSequence, 1)) ||
+wip_parse.cxx~:467:	(err = getNumber(prop, "ArrayLength", &p->nStructs, &structArray, 1)))
+wip_parse.cxx~:469:    if (p->isStructSequence && structArray)
+wip_parse.cxx~:471:    Simple *mem = p->types;
+wip_parse.cxx~:475:	  (err = getMember(m, mem, p->maxAlign, myOffset, sub32)))
+wip_parse.cxx~:478:  } else if ((err = getMember(prop, p->types, p->maxAlign, myOffset, sub32)))
+wip_parse.cxx~:480:  p->nBytes = myOffset;
+wip_parse.cxx~:481:  w->ctl.offset = roundup(w->ctl.offset, p->maxAlign);
+wip_parse.cxx~:482:  p->offset = w->ctl.offset;
+wip_parse.cxx~:483:  w->ctl.offset += myOffset;
+wip_parse.cxx~:484:  //printf("%s at %x(word) %x(byte)\n", p->name, p->offset/4, p->offset);
+wip_parse.cxx~:485:  if ((err = getBoolean(prop, "Readable", &p->isReadable)) ||
+wip_parse.cxx~:486:      (err = getBoolean(prop, "Writable", &p->isWritable)))
+wip_parse.cxx~:488:  if (p->isReadable)
+wip_parse.cxx~:489:    w->ctl.readableConfigProperties = true;
+wip_parse.cxx~:490:  if (p->isWritable)
+wip_parse.cxx~:491:    w->ctl.writableConfigProperties = true;
+wip_parse.cxx~:493:    w->ctl.sub32BitConfigProperties = true;
+wip_parse.cxx~:513:  Property *p = w->ctl.properties;
+wip_parse.cxx~:515:  for (unsigned n = 0; n < w->ctl.nProperties; n++, p++)
+wip_parse.cxx~:516:    if (!strcmp(p->name, name)) {
+wip_parse.cxx~:528:    if (p->types->hasDefault && ezxml_attr(prop, "Default"))
+wip_parse.cxx~:541:  if ((err = getBoolean(prop, "ReadSync", &p->readSync)) ||
+wip_parse.cxx~:542:      (err = getBoolean(prop, "WriteSync", &p->writeSync)) ||
+wip_parse.cxx~:543:      (err = getBoolean(prop, "ReadError", &p->readError)) ||
+wip_parse.cxx~:544:      (err = getBoolean(prop, "WriteError", &p->writeError)) ||
+wip_parse.cxx~:545:      (err = getBoolean(prop, "IsTest", &p->isTest)) ||
+wip_parse.cxx~:546:      (err = getBoolean(prop, "Parameter", &p->isParameter)))
+wip_parse.cxx~:548:  if (p->isParameter && p->isWritable)
+wip_parse.cxx~:549:    return esprintf("Property \"%s\" is a parameter and can't be writable", p->name);
+wip_parse.cxx~:558:  if ((err = tryInclude(prop, w->file, "Properties", &iprop, &ifile)))
+wip_parse.cxx~:562:    const char *ofile = w->file;
+wip_parse.cxx~:563:    w->file = ifile;
+wip_parse.cxx~:565:    w->file = ofile;
+wip_parse.cxx~:595:    if (w->noControl)
+wip_parse.cxx~:601:      if (sizeOfConfigSpace < w->ctl.sizeOfConfigSpace)
+wip_parse.cxx~:603:      w->ctl.sizeOfConfigSpace = sizeOfConfigSpace;
+wip_parse.cxx~:610:      w->ctl.sub32BitConfigProperties = true;
+wip_parse.cxx~:620:	    w->ctl.controlOps |= 1 << op;
+wip_parse.cxx~:643:  w->ctl.sizeOfConfigSpace = w->ctl.offset;
+wip_parse.cxx~:655:	(err = getNumber(ps, "SizeOfConfigSpace", &w->ctl.sizeOfConfigSpace, 0, 0)) ||
+wip_parse.cxx~:656:	(err = getBoolean(ps, "WritableConfigProperties", &w->ctl.writableConfigProperties)) ||
+wip_parse.cxx~:657:	(err = getBoolean(ps, "ReadableConfigProperties", &w->ctl.readableConfigProperties)) ||
+wip_parse.cxx~:658:	(err = getBoolean(ps, "Sub32BitConfigProperties", &w->ctl.sub32BitConfigProperties)))
+wip_parse.cxx~:672:  if ((err = tryInclude(op, p->worker->file, "Protocol", &iprot, &ifile)))
+wip_parse.cxx~:676:    const char *ofile = p->worker->file;
+wip_parse.cxx~:677:    p->worker->file = ifile;
+wip_parse.cxx~:679:    p->worker->file = ofile;
+wip_parse.cxx~:689:  if (!p->wdi.operations) {
+wip_parse.cxx~:690:    p->wdi.nOperations++;
+wip_parse.cxx~:693:  Operation *o = p->wdi.op++;
+wip_parse.cxx~:694:  o->name = ezxml_attr(op, "Name");
+wip_parse.cxx~:695:  if (!p->name)
+wip_parse.cxx~:697:  if ((err = getBoolean(op, "TwoWay", &o->isTwoWay)))
+wip_parse.cxx~:700:    o->nArgs++;
+wip_parse.cxx~:702:  if (o->nArgs) {
+wip_parse.cxx~:703:    o->args = myCalloc(Simple, o->nArgs);
+wip_parse.cxx~:704:    Simple *mem = o->args;
+wip_parse.cxx~:712:      if (p->wdi.dataValueWidth &&
+wip_parse.cxx~:713:	  mem->bits != p->wdi.dataValueWidth)
+wip_parse.cxx~:714:	p->wdi.diverseDataSizes = true;
+wip_parse.cxx~:715:      if (!p->wdi.dataValueWidth ||
+wip_parse.cxx~:716:	  mem->bits < p->wdi.dataValueWidth)
+wip_parse.cxx~:717:	p->wdi.dataValueWidth = mem->bits;
+wip_parse.cxx~:719:    if (p->wdi.maxMessageValues &&
+wip_parse.cxx~:720:	p->wdi.maxMessageValues != myOffset)
+wip_parse.cxx~:721:      p->wdi.variableMessageLength = true;
+wip_parse.cxx~:722:    if (myOffset > p->wdi.maxMessageValues)
+wip_parse.cxx~:723:      p->wdi.maxMessageValues = myOffset; // still in bytes until later
+wip_parse.cxx~:725:    p->wdi.zeroLengthMessages = true;
+wip_parse.cxx~:734:  p->wdi.op = p->wdi.operations = myCalloc(Operation, p->wdi.nOperations);
+wip_parse.cxx~:739:  if (p->wdi.dataValueWidth) {
+wip_parse.cxx~:740:    unsigned bytes = (p->wdi.dataValueWidth + CHAR_BIT - 1) / CHAR_BIT;
+wip_parse.cxx~:741:    p->wdi.maxMessageValues += bytes - 1;
+wip_parse.cxx~:742:    p->wdi.maxMessageValues /= bytes;
+wip_parse.cxx~:743:    p->wdi.dataValueGranularity = 1;  // FIXME - compute this for real
+wip_parse.cxx~:745:  p->wdi.numberOfOpcodes = p->wdi.nOperations;
+wip_parse.cxx~:754:  if ((err = tryChildInclude(xml, w->file, "ComponentSpec", &spec, &w->specFile)))
+wip_parse.cxx~:756:  w->specName = ezxml_attr(spec, "Name");
+wip_parse.cxx~:757:  if (!w->specName)
+wip_parse.cxx~:760:      (err = getBoolean(spec, "NoControl", &w->noControl)))
+wip_parse.cxx~:772:  if (w->noControl) {
+wip_parse.cxx~:779:    w->nPorts++;
+wip_parse.cxx~:781:  Port *p = w->ports = myCalloc(Port, w->nPorts);
+wip_parse.cxx~:784:	(err = getBoolean(x, "Producer", &p->wdi.isProducer)) ||
+wip_parse.cxx~:785:	(err = getBoolean(x, "Optional", &p->wdi.isOptional)))
+wip_parse.cxx~:787:    p->worker = w;
+wip_parse.cxx~:788:    p->isData = true;
+wip_parse.cxx~:789:    p->type = WDIPort;
+wip_parse.cxx~:790:    if (!(p->name = ezxml_attr(x, "Name")))
+wip_parse.cxx~:792:    for (Port *pp = w->ports; pp < p; pp++)
+wip_parse.cxx~:793:      if (!strcmp(pp->name, p->name))
+wip_parse.cxx~:806:	  (err = getNumber(pSum, "DataValueWidth", &p->wdi.dataValueWidth, 0, 8)) ||
+wip_parse.cxx~:807:	  (err = getNumber(pSum, "DataValueGranularity", &p->wdi.dataValueGranularity, 0, 1)) ||
+wip_parse.cxx~:808:	  (err = getBoolean(pSum, "DiverseDataSizes", &p->wdi.diverseDataSizes)) ||
+wip_parse.cxx~:809:	  (err = getNumber(pSum, "MaxMessageValues", &p->wdi.maxMessageValues, 0, 1)) ||
+wip_parse.cxx~:810:	  (err = getNumber(pSum, "NumberOfOpcodes", &p->wdi.numberOfOpcodes, 0, 1)) ||
+wip_parse.cxx~:811:	  (err = getBoolean(pSum, "VariableMessageLength", &p->wdi.variableMessageLength)) ||
+wip_parse.cxx~:812:	  (err = getBoolean(pSum, "ZeroLengthMessages", &p->wdi.zeroLengthMessages)))
+wip_parse.cxx~:832:  if (!w->noControl) {
+wip_parse.cxx~:835:    Port *ports = myCalloc(Port, w->nPorts + 1);
+wip_parse.cxx~:836:    memcpy(ports + 1, w->ports, w->nPorts * sizeof(Port));
+wip_parse.cxx~:837:    free(w->ports);
+wip_parse.cxx~:838:    w->ports = ports;
+wip_parse.cxx~:839:    w->nPorts++;
+wip_parse.cxx~:840:    // Finish HDL-specific control parsing
+wip_parse.cxx~:841:    wci = w->ports;
+wip_parse.cxx~:842:    if (w->ctl.controlOps == 0)
+wip_parse.cxx~:843:      w->ctl.controlOps = 1 << ControlOpStart;
+wip_parse.cxx~:848:	  (err = getNumber(xctl, "Timeout", &wci->wci.timeout, 0, 0)) ||
+wip_parse.cxx~:849:	  (err = getNumber(xctl, "Count", &wci->count, 0, 0)) ||
+wip_parse.cxx~:851:			    &wci->wci.resetWhileSuspended)))
+wip_parse.cxx~:853:      wci->pattern = ezxml_attr(xctl, "Pattern");
+wip_parse.cxx~:854:      wci->name = ezxml_attr(xctl, "Name");
+wip_parse.cxx~:856:    if (!wci->count)
+wip_parse.cxx~:857:      wci->count = 1;
+wip_parse.cxx~:859:    if (!wci->name)
+wip_parse.cxx~:860:      wci->name = "ctl";
+wip_parse.cxx~:861:    wci->type = WCIPort;
+wip_parse.cxx~:863:  // Count up and allocate the ports that are HDL-specific
+wip_parse.cxx~:869:  w->ports = myCrealloc(Port, w->ports, w->nPorts, extraPorts);
+wip_parse.cxx~:870:  wci = w->ports;
+wip_parse.cxx~:871:  Port *p = w->ports + w->nPorts ;
+wip_parse.cxx~:872:  w->nPorts += extraPorts;
+wip_parse.cxx~:873:  // Clocks depend on port names, so get those names in first pass(non-control ports)
+wip_parse.cxx~:875:    if (!(p->name = ezxml_attr(x, "Name")))
+wip_parse.cxx~:878:    if (!(p->name = ezxml_attr(x, "Name")))
+wip_parse.cxx~:882:    w->nClocks++;
+wip_parse.cxx~:884:  w->clocks = myCalloc(Clock, w->nClocks + 1 + w->nPorts);
+wip_parse.cxx~:885:  Clock *c = w->clocks;
+wip_parse.cxx~:889:    c->name = ezxml_attr(xc, "Name");
+wip_parse.cxx~:890:    if (!c->name)
+wip_parse.cxx~:892:    c->signal = ezxml_attr(xc, "Signal");
+wip_parse.cxx~:900:  p = w->ports + (w->noControl ? 0 : 1);
+wip_parse.cxx~:901:  // Now lets look at the implementation-specific data interface info
+wip_parse.cxx~:910:	(err = getBoolean(s, "Abortable", &dp->wsi.abortable)) ||
+wip_parse.cxx~:911:	(err = getBoolean(s, "RegRequest", &dp->wsi.regRequest)) ||
+wip_parse.cxx~:912:	(err = getBoolean(s, "EarlyRequest", &dp->wsi.earlyRequest)) ||
+wip_parse.cxx~:913:	(err = getNumber(s, "NumberOfOpcodes", &p->wdi.numberOfOpcodes, 0, p->wdi.numberOfOpcodes)))
+wip_parse.cxx~:915:    dp->type = WSIPort;
+wip_parse.cxx~:916:    if ((dp->wdi.dataValueWidth * dp->wdi.dataValueGranularity) % dp->dataWidth &&
+wip_parse.cxx~:917:	!dp->wdi.zeroLengthMessages)
+wip_parse.cxx~:918:      dp->byteWidth = dp->dataWidth;
+wip_parse.cxx~:920:      dp->byteWidth = dp->wdi.dataValueWidth;
+wip_parse.cxx~:928:	(err = getNumber(m, "ByteWidth", &dp->byteWidth, 0, dp->dataWidth)) ||
+wip_parse.cxx~:929:	(err = getBoolean(m, "TalkBack", &dp->wmi.talkBack)) ||
+wip_parse.cxx~:930:	(err = getBoolean(m, "Bidirectional", &dp->wmi.bidirectional)) ||
+wip_parse.cxx~:931:	(err = getNumber(m, "MFlagWidth", &dp->wmi.mflagWidth, 0, 0)))
+wip_parse.cxx~:933:    dp->type = WMIPort;
+wip_parse.cxx~:934:    if (dp->dataWidth % dp->byteWidth)
+wip_parse.cxx~:937:  Port *mp = w->ports + w->nPorts - extraPorts;
+wip_parse.cxx~:939:    mp->type = WMemIPort;
+wip_parse.cxx~:945:	(err = getNumber(m, "Count", &mp->count, 0, 0)) ||
+wip_parse.cxx~:946:	(err = getNumber64(m, "MemoryWords", &mp->wmemi.memoryWords, &memFound, 0)) ||
+wip_parse.cxx~:947:	(err = getNumber(m, "DataWidth", &mp->dataWidth, 0, 8)) ||
+wip_parse.cxx~:948:	(err = getNumber(m, "ByteWidth", &mp->byteWidth, 0, 8)) ||
+wip_parse.cxx~:949:	(err = getNumber(m, "MaxBurstLength", &mp->wmemi.maxBurstLength, 0, 0)) ||
+wip_parse.cxx~:950:	(err = getBoolean(m, "ImpreciseBurst", &mp->impreciseBurst)) ||
+wip_parse.cxx~:951:	(err = getBoolean(m, "PreciseBurst", &mp->preciseBurst)) ||
+wip_parse.cxx~:952:	(err = getBoolean(m, "WriteDataFlowControl", &mp->wmemi.writeDataFlowControl)) ||
+wip_parse.cxx~:953:	(err = getBoolean(m, "ReadDataFlowControl", &mp->wmemi.readDataFlowControl)))
+wip_parse.cxx~:955:    if (!memFound || !mp->wmemi.memoryWords)
+wip_parse.cxx~:957:    if (!mp->preciseBurst && !mp->impreciseBurst) {
+wip_parse.cxx~:958:      if (mp->wmemi.maxBurstLength > 0)
+wip_parse.cxx~:960:      if (mp->wmemi.writeDataFlowControl || mp->wmemi.readDataFlowControl)
+wip_parse.cxx~:963:    if (mp->byteWidth < 8 || mp->dataWidth % mp->byteWidth)
+wip_parse.cxx~:965:    mp->name = ezxml_attr(m, "Name");
+wip_parse.cxx~:966:    if (!mp->name)
+wip_parse.cxx~:967:      mp->name = "mem";
+wip_parse.cxx~:968:    mp->pattern = ezxml_attr(m, "Pattern");
+wip_parse.cxx~:974:    mp->name = ezxml_attr(m, "Name");
+wip_parse.cxx~:975:    if (!mp->name)
+wip_parse.cxx~:976:      mp->name = "time";
+wip_parse.cxx~:977:    mp->type = WTIPort;
+wip_parse.cxx~:981:	(err = getNumber(m, "SecondsWidth", &mp->wti.secondsWidth, 0, 32)) ||
+wip_parse.cxx~:982:	(err = getNumber(m, "FractionWidth", &mp->wti.fractionWidth, 0, 0)) ||
+wip_parse.cxx~:983:	(err = getBoolean(m, "AllowUnavailable", &mp->wti.allowUnavailable)))
+wip_parse.cxx~:985:    mp->dataWidth = mp->wti.secondsWidth + mp->wti.fractionWidth;
+wip_parse.cxx~:987:    mp->pattern = ezxml_attr(m, "Pattern");
+wip_parse.cxx~:990:  c = w->clocks;
+wip_parse.cxx~:991:  for (unsigned i = 0; i < w->nClocks; i++, c++)
+wip_parse.cxx~:992:    if (c->port) {
+wip_parse.cxx~:993:      if (c->signal)
+wip_parse.cxx~:995:			c->name, c->port->name);
+wip_parse.cxx~:996:      //asprintf((char **)&c->signal, "%s_Clk", c->port->fullNameIn);
+wip_parse.cxx~:997:    } else if (!c->signal)
+wip_parse.cxx~:999:		      c->name);
+wip_parse.cxx~:1001:  p = w->ports;
+wip_parse.cxx~:1002:  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_parse.cxx~:1003:    if (p->clockPort)
+wip_parse.cxx~:1004:      p->clock = p->clockPort->clock;
+wip_parse.cxx~:1005:    if (p->count == 0)
+wip_parse.cxx~:1006:      p->count = 1;
+wip_parse.cxx~:1017:  Worker *w = a->workers;
+wip_parse.cxx~:1018:  for (unsigned i; i < a->nWorkers; i++, w++)
+wip_parse.cxx~:1019:    if (!strcmp(wName, w->implName)) {
+wip_parse.cxx~:1032:		    aName, w->implName);
+wip_parse.cxx~:1033:  Port *p = w->ports;
+wip_parse.cxx~:1034:  for (unsigned i; i < w->nPorts; i++, p++)
+wip_parse.cxx~:1035:    if (!strcmp(pName, p->name)) {
+wip_parse.cxx~:1040:		  pName, w->implName);
+wip_parse.cxx~:1058:    c->nProducers++;
+wip_parse.cxx~:1060:      c->nExtProducers++;
+wip_parse.cxx~:1062:    c->nConsumers++;
+wip_parse.cxx~:1064:      c->nExtConsumers++;
+wip_parse.cxx~:1068:  for (pp = &c->ports; *pp; pp = &(*pp)->nextConn)
+wip_parse.cxx~:1071:  ip->connection = c;
+wip_parse.cxx~:1072:  ip->isExternal = isExternal;
+wip_parse.cxx~:1073:  ip->isProducer = isProducer;
+wip_parse.cxx~:1074:  ip->name = name;
+wip_parse.cxx~:1075:  c->nPorts++;
+wip_parse.cxx~:1077:    c->external = ip;
+wip_parse.cxx~:1090:  unsigned nc = p->clock - i->worker->clocks;
+wip_parse.cxx~:1092:  if (i->clocks[nc])
+wip_parse.cxx~:1094:    aClock = i->clocks[nc];
+wip_parse.cxx~:1095:  else if (p->clock->port->type == WCIPort) {
+wip_parse.cxx~:1097:    i->clocks[nc] = aw->ports->clock;
+wip_parse.cxx~:1098:    aClock = i->clocks[nc];
+wip_parse.cxx~:1102:    // How do we have assembly re-use while optimizing based on infrastructure
+wip_parse.cxx~:1119:    if (isCompatible(p->clock, aw->clock))
+wip_parse.cxx~:1120:      aClock = aw->clock;
+wip_parse.cxx~:1126:    switch (p->type) {
+wip_parse.cxx~:1143:  Assembly *a = &aw->assembly;
+wip_parse.cxx~:1144:  aw->model = RccModel;
+wip_parse.cxx~:1145:  aw->isAssembly = true;
+wip_parse.cxx~:1148:  aw->implName = ezxml_attr(xml, "Name");
+wip_parse.cxx~:1149:  if (!aw->implName)
+wip_parse.cxx~:1150:    aw->implName = "RccAssembly";
+wip_parse.cxx~:1152:    a->nWorkers++;
+wip_parse.cxx~:1153:  Worker *w = a->workers = myCalloc(Worker, a->nWorkers);
+wip_parse.cxx~:1166:  Assembly *a = &aw->assembly;
+wip_parse.cxx~:1167:  aw->isAssembly = true;
+wip_parse.cxx~:1170:  a->isContainer = !strcmp(xml->name, "HdlContainer");
+wip_parse.cxx~:1173:    a->nInstances++;
+wip_parse.cxx~:1174:  Instance *i = a->instances = myCalloc(Instance, a->nInstances);
+wip_parse.cxx~:1175:  // Overallocate workers - they won't exceed nInstances.
+wip_parse.cxx~:1176:  Worker *w = a->workers = myCalloc(Worker, a->nInstances); // may overallocate
+wip_parse.cxx~:1179:      a->isContainer ?
+wip_parse.cxx~:1185:    i->name = ezxml_attr(x, "Name");   // Name attribute is in fact optional
+wip_parse.cxx~:1186:    i->wName = ezxml_attr(x, "Worker"); // Worker attribute is pathname
+wip_parse.cxx~:1187:    if (a->isContainer) {
+wip_parse.cxx~:1189:      if ((err = getNumber(x, "Index", &i->index, &idxFound, 0)))
+wip_parse.cxx~:1196:      if (!i->wName) {
+wip_parse.cxx~:1198:	if (!i->name)
+wip_parse.cxx~:1207:	i->attach = ic;
+wip_parse.cxx~:1208:	i->isInterconnect = true;
+wip_parse.cxx~:1210:	i->attach = io;
+wip_parse.cxx~:1214:      if (!i->wName)
+wip_parse.cxx~:1216:		 i->name ? i->name : "<no Name>");
+wip_parse.cxx~:1219:    for (Instance *ii = a->instances; ii < i; ii++)
+wip_parse.cxx~:1220:      if (!strcmp(i->wName, ii->wName))
+wip_parse.cxx~:1221:	i->worker = ii->worker;
+wip_parse.cxx~:1222:    if (!i->worker) {
+wip_parse.cxx~:1223:      if ((err = parseWorker(i->wName, w->file, w)) ||
+wip_parse.cxx~:1225:	return esprintf("in file %s: %s", i->wName, err);
+wip_parse.cxx~:1226:      i->worker = w++;
+wip_parse.cxx~:1228:    // Allocate the instance-clock-to-assembly-clock map
+wip_parse.cxx~:1229:    i->clocks = myCalloc(Clock *, i->worker->nClocks);
+wip_parse.cxx~:1230:    i->ports = myCalloc(InstancePort, i->worker->nPorts);
+wip_parse.cxx~:1231:    for (unsigned n = 0; n < i->worker->nPorts; n++) {
+wip_parse.cxx~:1232:      i->ports[n].port = &i->worker->ports[n];
+wip_parse.cxx~:1233:      i->ports[n].instance = i;
+wip_parse.cxx~:1236:  a->nWorkers = w - a->workers;
+wip_parse.cxx~:1239:  for (i = a->instances; n < a->nInstances; n++, i++) {
+wip_parse.cxx~:1240:    if (!i->name) {
+wip_parse.cxx~:1243:      for (Instance *ii = a->instances; nn < a->nInstances; ii++, nn++)
+wip_parse.cxx~:1244:	if (n != nn && i->worker == ii->worker) {
+wip_parse.cxx~:1250:      const char *wName = strrchr(i->wName, '/');
+wip_parse.cxx~:1251:      wName = wName ? wName+1 : i->wName;
+wip_parse.cxx~:1256:	i->name = i->worker->implName;
+wip_parse.cxx~:1258:	asprintf((char **)&i->name, "%s%d", i->worker->implName, nSame);
+wip_parse.cxx~:1260:    for (Instance *ii = a->instances; ii < i; ii++)
+wip_parse.cxx~:1261:      if (!strcmp(ii->name, i->name))
+wip_parse.cxx~:1262:	return esprintf("Duplicate instance named \"%s\" in assembly", i->name);
+wip_parse.cxx~:1267:    a->nConnections++;
+wip_parse.cxx~:1269:  Connection *c = a->connections = myCalloc(Connection, a->nConnections);
+wip_parse.cxx~:1272:    c->name = ezxml_attr(x, "Name");
+wip_parse.cxx~:1278:		   "connection \"%s\"", c->name);
+wip_parse.cxx~:1281:      for (i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx~:1282:	if (!strcmp(i->name, instName)) {
+wip_parse.cxx~:1287:		       "connection \"%s\"", c->name);
+wip_parse.cxx~:1289:	  for (p = i->worker->ports; nn < i->worker->nPorts; p++, nn++)
+wip_parse.cxx~:1290:	    if (!strcmp(p->name, iName)) {
+wip_parse.cxx~:1291:	      if (p->type != WSIPort && p->type != WMIPort)
+wip_parse.cxx~:1292:		return "Connections for non-data ports not allowed";
+wip_parse.cxx~:1293:	      ip = &i->ports[nn];
+wip_parse.cxx~:1294:	      if (ip->connection)
+wip_parse.cxx~:1298:			   iName, instName, ip->connection->name, c->name);
+wip_parse.cxx~:1301:	  if (nn >= i->worker->nPorts)
+wip_parse.cxx~:1303:			    "connection  \"%s\"", iName, instName, c->name);
+wip_parse.cxx~:1306:      if (n >= a->nInstances)
+wip_parse.cxx~:1308:			instName, c->name);
+wip_parse.cxx~:1309:      attachPort(c, ip, p->name, p->wdi.isProducer, false);
+wip_parse.cxx~:1311:    if (!c->name)
+wip_parse.cxx~:1312:      asprintf((char **)&c->name, "conn%d", (int)(c - a->connections));
+wip_parse.cxx~:1313:    for (Connection *cc = a->connections; cc < c; cc++)
+wip_parse.cxx~:1314:      if (!strcmp(cc->name, c->name))
+wip_parse.cxx~:1316:			c->name);
+wip_parse.cxx~:1326:			"\"consumer\" or \"producer\"", c->name);
+wip_parse.cxx~:1328:      attachPort(c, ip, c->name, isProducer, true);
+wip_parse.cxx~:1332:  // Now we fill in the top-level worker stuff.
+wip_parse.cxx~:1333:  aw->specName = aw->implName;
+wip_parse.cxx~:1338:  aw->nPorts = 1;
+wip_parse.cxx~:1340:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+wip_parse.cxx~:1341:    aw->nPorts += c->nExtProducers + c->nExtConsumers;
+wip_parse.cxx~:1343:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++) 
+wip_parse.cxx~:1344:    if (i->worker) {
+wip_parse.cxx~:1346:      for (nn = 0, p = i->worker->ports; nn < i->worker->nPorts; nn++, p++)
+wip_parse.cxx~:1347:	if (p->type == WTIPort || p->type == WMemIPort)
+wip_parse.cxx~:1348:	  aw->nPorts++;
+wip_parse.cxx~:1350:  p = aw->ports = myCalloc(Port, aw->nPorts);
+wip_parse.cxx~:1352:  aw->nClocks = 1; // first clock for all instance WCIs.
+wip_parse.cxx~:1353:  Clock *clk = aw->clocks = myCalloc(Clock, aw->nPorts); // overallocate
+wip_parse.cxx~:1354:  clk->signal = clk->name = "wci_Clk";
+wip_parse.cxx~:1356:  clk->port = wci;
+wip_parse.cxx~:1357:  wci->name = "wci";
+wip_parse.cxx~:1358:  wci->type = WCIPort;
+wip_parse.cxx~:1359:  wci->myClock = true;
+wip_parse.cxx~:1360:  wci->clock = clk++;
+wip_parse.cxx~:1361:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx~:1362:    if (i->worker && i->worker->ports->type == WCIPort)
+wip_parse.cxx~:1363:      i->ports->ordinal = wci->count++;
+wip_parse.cxx~:1366:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++) {
+wip_parse.cxx~:1367:    for (ip = c->ports; ip; ip = ip->nextConn)
+wip_parse.cxx~:1368:      if (!ip->isExternal &&
+wip_parse.cxx~:1369:	  ip->instance->worker->ports->type == WCIPort &&
+wip_parse.cxx~:1370:	  ip->port->clock == ip->instance->worker->ports->clock)
+wip_parse.cxx~:1373:      c->clock = wci->clock;
+wip_parse.cxx~:1374:      for (ip = c->ports; ip; ip = ip->nextConn)
+wip_parse.cxx~:1375:	if (!ip->isExternal)
+wip_parse.cxx~:1376:	  ip->instance->clocks[ip->port->clock - ip->instance->worker->clocks] =
+wip_parse.cxx~:1377:	    wci->clock;
+wip_parse.cxx~:1381:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx~:1383:    if (i->worker && i->worker->ports->type == WCIPort)
+wip_parse.cxx~:1384:      i->clocks[i->worker->ports->clock - i->worker->clocks] = wci->clock;
+wip_parse.cxx~:1386:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+wip_parse.cxx~:1387:    for (ip = c->ports; ip; ip = ip->nextConn)
+wip_parse.cxx~:1388:      if (!ip->isExternal) {
+wip_parse.cxx~:1389:	unsigned nc = ip->port->clock - ip->instance->worker->clocks;
+wip_parse.cxx~:1390:	if (!c->clock)
+wip_parse.cxx~:1392:	  if (ip->instance->clocks[nc])
+wip_parse.cxx~:1394:	    c->clock = ip->instance->clocks[nc];
+wip_parse.cxx~:1398:	    asprintf((char **)&clk->name, "%s_%s", i->name,
+wip_parse.cxx~:1399:		     ip->port->clock->name);
+wip_parse.cxx~:1400:	    if (ip->port->clock->signal)
+wip_parse.cxx~:1401:	      asprintf((char **)&clk->signal, "%s_%s", i->name, ip->port->clock->signal);
+wip_parse.cxx~:1403:	      clk->signal = clk->name;
+wip_parse.cxx~:1404:	    clk->assembly = true;
+wip_parse.cxx~:1405:	    aw->nClocks++;
+wip_parse.cxx~:1406:	    c->clock = clk++;	
+wip_parse.cxx~:1407:	    ip->instance->clocks[nc] = c->clock;
+wip_parse.cxx~:1408:	    // FIXME inherit ip->port->clock constraints
+wip_parse.cxx~:1410:	else if (ip->instance->clocks[nc]) {
+wip_parse.cxx~:1412:	  if (ip->instance->clocks[nc] != c->clock)
+wip_parse.cxx~:1414:			    c->name, ip->port->name, ip->instance->name);
+wip_parse.cxx~:1416:	  // FIXME CHECK COMPATIBILITY OF c->clock with ip->port->clock
+wip_parse.cxx~:1417:	  ip->instance->clocks[nc] = c->clock;
+wip_parse.cxx~:1422:  // non-WCI: WTI, WMemI
+wip_parse.cxx~:1425:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx~:1426:    if (i->worker) {
+wip_parse.cxx~:1428:      for (nn = 0, ip = i->ports; nn < i->worker->nPorts; nn++, ip++) {
+wip_parse.cxx~:1429:	unsigned nc = ip->port->clock - ip->instance->worker->clocks;
+wip_parse.cxx~:1430:	if (!i->clocks[nc]) {
+wip_parse.cxx~:1431:	  if (ip->port->type == WSIPort || ip->port->type == WMIPort)
+wip_parse.cxx~:1433:			    ip->port->name, i->name);
+wip_parse.cxx~:1434:	  i->clocks[nc] = clk;
+wip_parse.cxx~:1435:	  asprintf((char **)&clk->name, "%s_%s", i->name, ip->port->clock->name);
+wip_parse.cxx~:1436:	  if (ip->port->clock->signal)
+wip_parse.cxx~:1437:	    asprintf((char **)&clk->signal, "%s_%s", i->name,
+wip_parse.cxx~:1438:		     ip->port->clock->signal);
+wip_parse.cxx~:1439:	  clk->assembly = true;
+wip_parse.cxx~:1440:	  aw->nClocks++;
+wip_parse.cxx~:1441:	  c->clock = clk++;	
+wip_parse.cxx~:1442:	  i->clocks[nc] = c->clock;
+wip_parse.cxx~:1447:  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+wip_parse.cxx~:1448:    if (i->worker) {
+wip_parse.cxx~:1450:      Worker *iw = i->worker;
+wip_parse.cxx~:1451:      for (nn = 0, ip = i->ports; nn < iw->nPorts; nn++, ip++) {
+wip_parse.cxx~:1452:	Port *pp = ip->port;
+wip_parse.cxx~:1453:	switch (pp->type) {
+wip_parse.cxx~:1457:	  if (iw->ctl.sizeOfConfigSpace > aw->ctl.sizeOfConfigSpace)
+wip_parse.cxx~:1458:	    aw->ctl.sizeOfConfigSpace = iw->ctl.sizeOfConfigSpace;
+wip_parse.cxx~:1459:	  if (iw->ctl.writableConfigProperties)
+wip_parse.cxx~:1460:	    aw->ctl.writableConfigProperties = true;
+wip_parse.cxx~:1461:	  if (iw->ctl.readableConfigProperties)
+wip_parse.cxx~:1462:	    aw->ctl.readableConfigProperties = true;
+wip_parse.cxx~:1463:	  if (iw->ctl.sub32BitConfigProperties)
+wip_parse.cxx~:1464:	    aw->ctl.sub32BitConfigProperties = true;
+wip_parse.cxx~:1465:	  aw->ctl.controlOps |= iw->ctl.controlOps; // needed?  useful?
+wip_parse.cxx~:1468:	  // is true.  And the use-case is just that you can reset the
+wip_parse.cxx~:1472:	  if (!pp->wci.resetWhileSuspended)
+wip_parse.cxx~:1474:	  ip->external = wci;
+wip_parse.cxx~:1478:	  // intra-chip accuracy via replication of the time clients.
+wip_parse.cxx~:1484:	    asprintf((char **)&wti->name, "wti%u", nWti++);
+wip_parse.cxx~:1485:	    ip->external = wti;
+wip_parse.cxx~:1486:	    wti->clock = i->clocks[pp->clock - i->worker->clocks];
+wip_parse.cxx~:1493:	    asprintf((char **)&wmemi->name, "wmemi%u", nWmemi++);
+wip_parse.cxx~:1494:	    ip->external = wmemi;
+wip_parse.cxx~:1495:	    wmemi->clock = i->clocks[pp->clock - i->worker->clocks];
+wip_parse.cxx~:1501:	  if (!pp->wdi.isOptional &&
+wip_parse.cxx~:1502:	      !ip->connection)
+wip_parse.cxx~:1506:		       pp->name, i->name, i->worker->implName);
+wip_parse.cxx~:1514:    wci->wci.resetWhileSuspended = true;
+wip_parse.cxx~:1516:  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+wip_parse.cxx~:1517:    if (c->nExtProducers || c->nExtConsumers) {
+wip_parse.cxx~:1519:      for (ip = c->ports; ip; ip = ip->nextConn)
+wip_parse.cxx~:1520:	if (ip->isExternal) {
+wip_parse.cxx~:1522:	  ip->port = p++;
+wip_parse.cxx~:1523:	  extPort = ip->port;
+wip_parse.cxx~:1526:	  intPort = ip->port;  // remember the last one
+wip_parse.cxx~:1530:      extPort->name = c->name;
+wip_parse.cxx~:1531:      extPort->isExternal = true;
+wip_parse.cxx~:1532:      extPort->clock = c->clock;
+wip_parse.cxx~:1533:      if (!extPort->clock->port) {
+wip_parse.cxx~:1534:	extPort->clock->port = extPort;
+wip_parse.cxx~:1535:	extPort->myClock = true;
+wip_parse.cxx~:1537:      if (extPort->type == WSIPort)
+wip_parse.cxx~:1538:	extPort->wsi.regRequest = false;
+wip_parse.cxx~:1540:  aw->nPorts = p - aw->ports;
+wip_parse.cxx~:1542:  for (n = 0, p = aw->ports; n < aw->nPorts; n++, p++) {
+wip_parse.cxx~:1543:    if (p->type != WCIPort)
+wip_parse.cxx~:1544:      p->count = 1;
+wip_parse.cxx~:1545:    p->worker = aw;
+wip_parse.cxx~:1560:    w->language = Verilog;
+wip_parse.cxx~:1562:    w->language = VHDL;
+wip_parse.cxx~:1565:  w->pattern = ezxml_attr(xml, "Pattern");
+wip_parse.cxx~:1566:  if (!w->pattern)
+wip_parse.cxx~:1567:    w->pattern = "%s_";
+wip_parse.cxx~:1569:  if (!strcmp(xml->name, "HdlImplementation")) {
+wip_parse.cxx~:1571:      return esprintf("in %s for %s: %s", xml->name, w->implName, err);
+wip_parse.cxx~:1572:  } else if (!strcmp(xml->name, "HdlAssembly")) {
+wip_parse.cxx~:1574:      return esprintf("in %s for %s: %s", xml->name, w->implName, err);
+wip_parse.cxx~:1579:    return esprintf("in %s for %s: %s", xml->name, w->implName, err);
+wip_parse.cxx~:1580:  Port *p = w->ports;
+wip_parse.cxx~:1582:  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+wip_parse.cxx~:1585:    // ordinal == -1 means insert "%d" into the name for using latter
+wip_parse.cxx~:1586:    if ((err = pattern(w, p, -1, wipN[p->type][mIn], true, !mIn, (char **)&p->fullNameIn)) ||
+wip_parse.cxx~:1587:	(err = pattern(w, p, -1, wipN[p->type][mIn], false, !mIn, (char **)&p->fullNameOut)))
+wip_parse.cxx~:1589:    if (p->clock->port == p) {
+wip_parse.cxx~:1591:      // ordinal == -2 means suppress ordinal
+wip_parse.cxx~:1592:      if ((err = pattern(w, p, -2, wipN[p->type][mIn], true, !mIn, &sin)))
+wip_parse.cxx~:1594:      asprintf((char **)&p->ocp.Clk.signal, "%s%s", sin, "Clk");
+wip_parse.cxx~:1595:      p->clock->signal = p->ocp.Clk.signal;
+wip_parse.cxx~:1598:    for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_parse.cxx~:1599:      if (osd->master == mIn && strcmp(osd->name, "Clk") && os->value)
+wip_parse.cxx~:1600:	asprintf((char **)&os->signal, "%s%s", p->fullNameIn, osd->name);
+wip_parse.cxx~:1602:    for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+wip_parse.cxx~:1603:      if (osd->master != mIn && strcmp(osd->name, "Clk") && os->value)
+wip_parse.cxx~:1604:	asprintf((char **)&os->signal, "%s%s", p->fullNameOut, osd->name);
+wip_parse.cxx~:1605:    wipN[p->type][mIn]++;
+wip_parse.cxx~:1607:  if (w->nPorts > 32)
+wip_parse.cxx~:1609:  w->model = HdlModel;
+wip_parse.cxx~:1614: * What implementation-specific attributes does an RCC worker have?
+wip_parse.cxx~:1626:  w->pattern = ezxml_attr(xml, "ExternMethods");
+wip_parse.cxx~:1627:  w->staticPattern = ezxml_attr(xml, "StaticMethods");
+wip_parse.cxx~:1631:      (err = getBoolean(xml, "Threaded", &w->rcc.isThreaded)))
+wip_parse.cxx~:1642:    for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+wip_parse.cxx~:1643:      if (!strcmp(p->name, name))
+wip_parse.cxx~:1645:    if (n >= w->nPorts)
+wip_parse.cxx~:1647:    if ((err = getNumber(x, "MinBuffers", &p->wdi.minBuffers, 0, 0)))
+wip_parse.cxx~:1650:  w->model = RccModel;
+wip_parse.cxx~:1658:  if ((err = parseFile(file, parent, NULL, &xml, &w->file)))
+wip_parse.cxx~:1663:  w->fileName = strdup(cp);
+wip_parse.cxx~:1664:  char *lp = strrchr(w->fileName, '.');
+wip_parse.cxx~:1667:  w->implName = ezxml_attr(xml, "Name");
+wip_parse.cxx~:1668:  if (!w->implName)
+wip_parse.cxx~:1669:    w->implName = w->fileName;
+wip_parse.cxx~:1681:  if (name && !strcmp(xml->name, "ComponentAssembly"))
+wip_parse.cxx~:1682:    return parseAssy(xml, w->file, w);
+wip_parse.cxx~:1684:  return esprintf("\"%s\" is not a valid implemention type (RccImplementation, HdlImplementation, HdlAssembly, ComponentAssembly)", xml->name);

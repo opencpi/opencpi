@@ -51,9 +51,12 @@ PACKAGELIB = $(WINLIB)
 endif
 
 else
-ifneq ($(filter linux macos,$(SYSTEM)),)
+ifneq ($(filter linux darwin,$(SYSTEM)),)
 
 EXCLUDE_FACILITIES += winnt vxworksdkm
+ifeq ($(SYSTEM),darwin)
+EXCLUDE_FACILITIES += pci smb_pcig
+endif
 ifeq ($(BUILDSHAREDLIBRARIES),1)
 PACKAGELIB = $(EXPORTSHLIB)
 else
@@ -120,7 +123,7 @@ lib: objects
 		$(MAKE) -f $(CPIDIR)/Makefile.cpi.for-pkg $(SYSTEMOPTION) $(PACKAGELIB) ; \
 	fi
 
-ifneq ($(filter linux macos,$(SYSTEM)),)
+ifneq ($(filter linux darwin,$(SYSTEM)),)
 $(UNIXLIB): $(OBJECTS)
 	-rm -f $@
 	ar r $@ $(OBJECTS)

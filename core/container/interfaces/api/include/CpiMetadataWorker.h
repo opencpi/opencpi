@@ -20,7 +20,7 @@
 
 #include <CpiOsAssert.h>
 #include <CpiUtilException.h>
-#include "CpiMetadataProperty.h"
+#include <CpiUtilProperty.h>
 #include "ezxml.h"
 
 #define CPI_CONTROL_OPS                                                        \
@@ -56,7 +56,7 @@ namespace CPI {
 
       ezxml_t        myXml;
 
-      Port(bool prov=true): name(NULL),provider(prov),twoway(false), minBufferSize(DEFAULT_BUFFER_SIZE), minBufferCount(1), maxBufferSize(0), myXml(0){}
+    Port(bool prov=true): name(NULL),m_pid(0),provider(prov),twoway(false), minBufferSize(DEFAULT_BUFFER_SIZE), minBufferCount(1), maxBufferSize(0), myXml(0){}
 
     };
 
@@ -69,14 +69,13 @@ namespace CPI {
     };
 
     // Dealing with worker meta as a bundle
+    typedef CPI::Util::Prop::Property Property;
     class Worker {
       Property *myProps;
       Port *myPorts;
       Test *myTests;
       unsigned nProps, nPorts, nTests, size;
       Test &findTest(unsigned int testId);
-      bool decode(const char *props);
-      bool decode(ezxml_t xml);
     public:
       inline Property *getProperties(unsigned &np) {
         np = nProps;
@@ -109,21 +108,20 @@ namespace CPI {
       OpsLimit
       };
 #undef CONTROL_OP
-#define CONTROL_OP(x, c, t, s1, s2, s3) bool has##c;
-CPI_CONTROL_OPS
-#undef CONTROL_OP
       Property &findProperty(const char *id);
       unsigned whichProperty(const char *id);
-      Worker(const char *workerMetadata);
+      //      Worker(const char *workerMetadata);
       Worker(ezxml_t xml);
       ~Worker();
     };
   }
+#if 0
   namespace Container {
     class ApiError : public CPI::Util::EmbeddedException {
     public:
       ApiError(const char *err, ...);
     };
   }
+#endif
 }
 #endif

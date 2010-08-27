@@ -1019,6 +1019,32 @@ ezxml_t ezxml_cut(ezxml_t xml)
     return xml;
 }
 
+// returns the first child tag with the given name or NULL if not found
+// CASE INSENSTIVE
+ezxml_t ezxml_cchild(ezxml_t xml, const char *name)
+{
+    xml = (xml) ? xml->child : NULL;
+    while (xml && strcasecmp(name, xml->name)) xml = xml->sibling;
+    return xml;
+}
+// returns the value of the requested tag attribute or NULL if not found
+// CASE INSENSTIVE: this code just copied from ezxml_attr
+const char *ezxml_cattr(ezxml_t xml, const char *attr)
+{
+    int i = 0, j = 1;
+    ezxml_root_t root = (ezxml_root_t)xml;
+
+    if (! xml || ! xml->attr) return NULL;
+    while (xml->attr[i] && strcasecmp(attr, xml->attr[i])) i += 2;
+    if (xml->attr[i]) return xml->attr[i + 1]; // found attribute
+
+    while (root->xml.parent) root = (ezxml_root_t)root->xml.parent; // root tag
+    for (i = 0; root->attr[i] && strcasecmp(xml->name, root->attr[i][0]); i++);
+    if (! root->attr[i]) return NULL; // no matching default attributes
+    while (root->attr[i][j] && strcasecmp(attr, root->attr[i][j])) j += 3;
+    return (root->attr[i][j]) ? root->attr[i][j + 1] : NULL; // found default
+}
+
 #ifdef EZXML_TEST // test harness
 int main(int argc, char **argv)
 {

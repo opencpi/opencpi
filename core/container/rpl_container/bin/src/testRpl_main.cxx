@@ -46,7 +46,7 @@ namespace CPI {
       virtual unsigned search(const CPI::Util::PValue*, const char **exclude)
         throw (CPI::Util::EmbeddedException)
       {
-
+	(void)exclude;
         if (getenv("CPI_OCFRP_DUMMY"))
           probe(0,"0");
 
@@ -423,22 +423,36 @@ int main(int argc, char *argv[])
 
       CC::Worker *w[14] = {
 	((CC::Worker *)0),
+	// SMA0 in first FPGA
 	&a.createWorker(xfile, 0, "FC", "FCi"),                                 // w2# 1
+	// MIddle worker in first FPGA
 	&a.createWorker(xfile, 0, "Bias", "BIASi"),                             // w3# 2
+	// SMA1 in first FPGA
 	&a.createWorker(xfile, 0, "FP", "FPi"),                                 // w4# 3
+	// ADC in first FPGA
 	acquire ? &a.createWorker(xfile, 0, "ADC", "ADCi") : 0,                 //w10# 4
+	// DAC in first FPGA
 	emit ? &a.createWorker(xfile, 0, "DAC", "DACi") : 0,                    //w11# 5
+	// SMA0 in second FPGA
 	two ? &a2.createWorker(xfile, 0, "FC", "FCi") : 0,                      // w2# 6
+	// Middle worker in second FPGA
 	two ? &a2.createWorker(xfile, 0, "Bias", "BIASi") : 0,                  // w3# 7
+	// SMA1 in second FPGA
 	two ? &a2.createWorker(xfile, 0, "FP", "FPi") : 0,                      // w4# 8
+	// Splitter from (SMA0|ADC) to (Middle|Framgate) in first FPGA
 	psd ? &a.createWorker(xfile, 0, "WsiSplitter2x2", "WsiSplitter2x2i") :
+	// Splitter from (SMA0|nothing) to (split1|Middle) in first FPGA
 	(test ? &a.createWorker(xfile, 0, "splitter2x2", "split0") : 0 ),       // w5# 9
+	// If PSD, Framegate, else if test, Middle/WUT
 	psd ? &a.createWorker(xfile, 0, "FrameGate", "FrameGatei") :          
 	(test ? &a.createWorker(xfile, 0, "psd", "psd") : 0),                   // w6#10
+	// If PSD, PSD, else if test, Middle/WUT, else (split0|middle) to SMA1
 	psd ? &a.createWorker(xfile, 0, "PSD", "PSDi") :
 	(test ? &a.createWorker(xfile, 0, "splitter2x2", "split1") : 0 ),       // w7#11
+	// Dram worker
 	psd ? &a.createWorker(xfile, 0, "DramServer", "DramServeri") : 0,       //w12#12
-	rccFile ? &rcca.createWorker(rccFile, 0, rccName, 0) : 0             //   #13
+	// RCC worker
+	rccFile ? &rcca.createWorker(rccFile, 0, rccName, 0) : 0                //   #13
       };
 
       CC::Port &w1in = w[1]->getPort("WMIin");
@@ -472,7 +486,7 @@ int main(int argc, char *argv[])
       // The issue here is that input ports get their protocol bound at
       // construction time rather than connection time.
       if (rccFile)
-	putenv("CPI_DEFAULT_PROTOCOL=cpi-pci-pio");
+	putenv((char *)"CPI_DEFAULT_PROTOCOL=cpi-pci-pio");
       CC::Port &w13in = rccFile ? w[13]->getPort("in") : *(CC::Port*)0;
       CC::Port &w13out = rccFile ? w[13]->getPort("out") : *(CC::Port*)0;
 
@@ -631,8 +645,8 @@ int main(int argc, char *argv[])
             } else if (cosine)
 	      memcpy64((uint64_t*)data, (uint64_t*)cosineBuf, ioSize);
 	    else if (!dummy)
-              for (unsigned w = 0; w < ioSize/sizeof(uint32_t); w++)
-                ((uint32_t *)(data))[w] = outN * (ioSize/sizeof(uint32_t)) + w;
+              for (unsigned i = 0; i < ioSize/sizeof(uint32_t); i++)
+                ((uint32_t *)(data))[i] = outN * (ioSize/sizeof(uint32_t)) + i;
 	    if (doTick)
 	      get_tick_count(&ticks[tick++]);
             pBuffer->put(outN, ioSize, false);
@@ -703,10 +717,10 @@ int main(int argc, char *argv[])
               return 1;
             }
           } else if (!dummy)
-            for (unsigned w = 0; w < ioSize/sizeof(uint32_t); w++)
-              if (d32[w] != inN * ioSize/sizeof(uint32_t) + w) {
+            for (unsigned i = 0; i < ioSize/sizeof(uint32_t); i++)
+              if (d32[i] != inN * ioSize/sizeof(uint32_t) + i) {
                 fprintf(stderr, "Bad data 0x%x, len %d w %d inN %d should be 0x%lx\n",
-                        d32[w], length, w, inN, inN * ioSize/sizeof(uint32_t) + w);
+                        d32[i], length, i, inN, inN * ioSize/sizeof(uint32_t) + i);
                 oops = "Data mismatch on input";
               }
           cBuffer->release();

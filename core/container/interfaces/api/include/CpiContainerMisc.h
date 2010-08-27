@@ -24,6 +24,10 @@
 
 namespace CPI {
   namespace Container {
+    class ApiError : public CPI::Util::EmbeddedException {
+    public:
+      ApiError(const char *err, ...);
+    };
     inline unsigned long roundup(unsigned long n, unsigned long grain) {
       return (n + grain - 1) & ~(grain - 1);
     }

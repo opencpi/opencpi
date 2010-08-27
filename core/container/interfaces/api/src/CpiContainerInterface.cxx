@@ -160,7 +160,9 @@ namespace CPI {
       throw ( CPI::Util::EmbeddedException )
       : CPI::Util::Device(driver,name), 
         m_name(name)
-    {}
+    {
+      (void)props;
+    }
 
 
     Artifact & Interface::loadArtifact(const char *url, CPI::Util::PValue *artifactParams) {
@@ -282,12 +284,14 @@ CPI::Container::PortData * CPI::Container::Interface::unpackPortDesc( const std:
 void CPI::Container::Interface::start(DataTransfer::EventManager* event_manager)
   throw()
 {
+  (void)event_manager;
   m_start = true;
 }
 
 void CPI::Container::Interface::stop(DataTransfer::EventManager* event_manager)
   throw()
 {
+  (void)event_manager;
   m_start = false;
 }
 

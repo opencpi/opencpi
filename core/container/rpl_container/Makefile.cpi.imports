@@ -29,10 +29,14 @@ ifeq ($(CROSS_HOST),ppc86xx-linux)
 #	$(OCPI_BASE)/adapt/drivers/rdma/$(OUTDIR)/DtPPP_PioXfer.obj \
 #	$(OCPI_BASE)/adapt/drivers/rdma/$(OUTDIR)/DtPPP_DMAXfer.obj
 else
+ifeq ($(SYSTEM),darwin)
+DYNOBJS += ../../../cp289_container/$(OUTDIR)/CpiContainerDriver.obj \
+	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPioXfer.obj
+else
 DYNOBJS += ../../../cp289_container/$(OUTDIR)/CpiContainerDriver.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPCIPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtPioXfer.obj
-
+endif
 #	../../../../../core/dataplane/rdma_drivers/$(OUTDIR)/DtSocketsXfer.obj
 endif
 

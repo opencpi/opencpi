@@ -1,4 +1,4 @@
-ifneq ($(SYSTEM),macos)
+ifneq ($(SYSTEM),darwin)
 DOSTATIC=-static
 endif
 all:

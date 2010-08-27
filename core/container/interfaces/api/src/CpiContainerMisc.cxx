@@ -53,7 +53,7 @@ namespace CPI {
     }
     // Used for application and infrastructure WCI things.
     unsigned long getAttrNum(ezxml_t x, const char *attr, bool missingOK, bool *found) {
-      const char *a = ezxml_attr(x, attr);
+      const char *a = ezxml_cattr(x, attr);
       if (found)
         *found = false;
       if (a) {

@@ -1,0 +1,17 @@
+MY_ACE_ROOT=$(CPIDIR)/../ACE_wrappers
+#EXTRA_CXXFLAGS=-DACE_AS_STATIC_LIBS
+EXTRA_INCLUDES=\
+  $(MY_ACE_ROOT) \
+  $(MY_ACE_ROOT)/TAO \
+  $(MY_ACE_ROOT)/$(OUTDIR)/TAO \
+  $(MY_ACE_ROOT)/$(OUTDIR) \
+  $(MY_ACE_ROOT)/$(OUTDIR)/TAO/tao \
+  $(MY_ACE_ROOT)/TAO/tao \
+  $(MY_ACE_ROOT)/TAO/TAO_IDL/include \
+  $(MY_ACE_ROOT)/TAO/orbsvcs/IFR_Service \
+  $(MY_ACE_ROOT)/TAO/orbsvcs
+
+#$(MY_ACE_ROOT) $(MY_ACE_ROOT)/TAO/tao $(MY_ACE_ROOT)/TAO $(MY_ACE_ROOT)/TAO/orbsvcs $(MY_ACE_ROOT)/TAO/TAO_IDL/include $(MY_ACE_ROOT)/TAO/orbsvcs/IFR_Service
+
+# LDLIBS =  -lTAO_IFRService -lTAO_IFR_Client -lTAO_AnyTypeCode -lTAO_IORTable -lTAO_Svc_Utils -lTAO_IFR_BE -lTAO_IDL_FE -lTAO_TypeCodeFactory -lTAO_PortableServer -lTAO -lACE -lxerces-c 
+include ../../../../../Makefile.cpi.for-src

@@ -42,7 +42,7 @@ namespace CPI {
 
       EmbeddedException( const EmbeddedException& cpy );
 
-      ~EmbeddedException();
+      virtual ~EmbeddedException();
 
       CPI::OS::uint32_t getErrorCode() const;
       const char* getAuxInfo() const;
@@ -86,32 +86,21 @@ namespace CPI {
                                                 CPI::OS::uint32_t errorCode, 
                                                 const char* auxInfo,
                                                 CPI::OS::uint32_t errorLevel )
+      : m_errorCode(errorCode), m_auxInfo(auxInfo), m_errorLevel(errorLevel)
       {
-        m_errorCode  = errorCode;
-        if ( auxInfo ) {
-          m_auxInfo = auxInfo;
-        }
-        m_errorLevel = errorLevel;
       }
-      // String error only
+      // String error only (error code zero)
     inline EmbeddedException::EmbeddedException( const char* auxInfo )
+      : m_errorCode(0), m_auxInfo(auxInfo), m_errorLevel(0)
       {
-        m_errorCode  = 0; // reserved for string errors
-        if ( auxInfo ) {
-          m_auxInfo = auxInfo;
-        }
-        m_errorLevel = 0;
-
       }
     inline EmbeddedException::~EmbeddedException(){}
     inline CPI::OS::uint32_t EmbeddedException::getErrorCode() const {return m_errorCode;}
     inline const char* EmbeddedException::getAuxInfo() const {return m_auxInfo.c_str();}
     inline void  EmbeddedException::setAuxInfo( const char* info ){m_auxInfo=info;}
     inline         EmbeddedException::EmbeddedException( const EmbeddedException& cpy )
+      : m_errorCode(cpy.m_errorCode), m_auxInfo(cpy.m_auxInfo), m_errorLevel(cpy.m_errorLevel)
       {
-        m_errorCode = cpy.m_errorCode;
-        m_auxInfo = cpy.m_auxInfo;
-        m_errorLevel = cpy.m_errorLevel;
       }
 
 
@@ -129,7 +118,7 @@ namespace CPI {
         m_ex = true;
       }
     inline void ExceptionMonitor::setError( CPI::OS::uint32_t ec, const char* aux_info )
-      {
+       {
         m_errorCode = ec;
         m_auxInfo = aux_info;
         m_ex = true;
@@ -148,11 +137,10 @@ namespace CPI {
           return *this;
         }
       inline  ExceptionMonitor::ExceptionMonitor( const ExceptionMonitor& rhs)
-        :EmbeddedException(0,NULL)
+        :EmbeddedException(0,NULL), m_ex(rhs.m_ex)
         {
           m_errorCode = rhs.m_errorCode;
           m_auxInfo = rhs.m_auxInfo;
-          m_ex = rhs.m_ex;
         }
 
 
