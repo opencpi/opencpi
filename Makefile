@@ -59,7 +59,7 @@ PACKAGES += core/sca/srpl
 endif
 
 PACKAGES += tools/local/binder tools/local/tester
-PACKAGES += tools/sdk/ocpigen
+PACKAGES += tools/cdk/ocpigen
 PACKAGES += test
 
 #
@@ -91,7 +91,7 @@ ALLPACKAGES = \
 	test \
 	tools/local/binder \
 	tools/local/tester \
-	tools/sdk/ocpigen
+	tools/cdk/ocpigen
 
 #
 # ----------------------------------------------------------------------

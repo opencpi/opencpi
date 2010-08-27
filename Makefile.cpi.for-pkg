@@ -39,6 +39,7 @@ WINDLL = $(patsubst %,$(OBJDIR)/%.dll,$(PACKAGE))
 UNIXLIB = $(patsubst %,$(OBJDIR)/lib%.a,$(PACKAGE))
 UNIXSHLIB = $(patsubst %,$(OBJDIR)/lib%.$(SO),$(PACKAGE))
 EXPORTSHLIB=$(CPIDIR)/lib/$(OUTDIR)/$(notdir $(UNIXSHLIB))
+EXPORTLIB=$(CPIDIR)/lib/$(OUTDIR)/$(notdir $(UNIXLIB))
 VXWORKSDKM = $(patsubst %,$(OBJDIR)/lib%.out,$(PACKAGE))
 
 ifeq ($(SYSTEM),winnt)
@@ -60,7 +61,7 @@ endif
 ifeq ($(BUILDSHAREDLIBRARIES),1)
 PACKAGELIB = $(EXPORTSHLIB)
 else
-PACKAGELIB = $(UNIXLIB)
+PACKAGELIB = $(EXPORTLIB)
 endif
 
 else
@@ -132,6 +133,11 @@ $(EXPORTSHLIB): $(UNIXSHLIB)
 	if ! test -d $(CPIDIR)/lib; then mkdir $(CPIDIR)/lib; fi
 	if ! test -d $(CPIDIR)/lib/$(OUTDIR); then mkdir $(CPIDIR)/lib/$(OUTDIR); fi
 	cp -p $(UNIXSHLIB) $@
+
+$(EXPORTLIB): $(UNIXLIB)
+	if ! test -d $(CPIDIR)/lib; then mkdir $(CPIDIR)/lib; fi
+	if ! test -d $(CPIDIR)/lib/$(OUTDIR); then mkdir $(CPIDIR)/lib/$(OUTDIR); fi
+	cp -p $(UNIXLIB) $@
 
 $(UNIXSHLIB): $(OBJECTS)
 	$(CXX) $(SHAREDLIBFLAGS) $(SHARED) -o $@ $(OBJECTS) \

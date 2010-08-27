@@ -18,7 +18,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#if 0 // until we have a functioning AEP..
 #include <CpiTimeEmitC.h>
+#else
+#define CPI_TIME_EMIT_C(x)
+#endif
 #include "ConsumerWorker_Worker.h"
 
 typedef enum  {

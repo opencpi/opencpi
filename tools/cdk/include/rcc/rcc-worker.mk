@@ -6,13 +6,18 @@ ImplSuffix=_Worker.h
 SkelSuffix=_skel.c
 SourceSuffix=.c
 OBJ:=.o
+
 ifeq ($(shell uname),Linux)
 BF=.so
+SOEXT=.so
+AREXT=.a
 SharedLibLinkOptions=-shared
 SharedLibCompileOptions=-fPIC
 else
 ifeq ($(shell uname),Darwin)
 BF=.dylib
+SOEXT=.dylib
+AREXT=.a
 SharedLibLinkOptions=-dynamiclib
 SharedLibCompileOptions=
 endif
@@ -38,7 +43,7 @@ endif
 OcpiLibDir=$(OCPI_DIR)/../lib/$(Target)-bin
 LinkBinary=$(GCCLINK) $(SharedLibLinkOptions) -o $@ $(ObjectFiles) \
 $(OtherLibraries) $(AEPLibraries) \
-$(OcpiLibraries:%=$(OcpiLibDir)/lib%$(BF))
+$(foreach ol,$(OcpiLibraries),$(or $(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
 Compile_c=$(GCC) -MMD -MP -MF $(GeneratedDir)/$$(@F).deps -c -Wall -g $(SharedLibCompileOptions) $(IncludeDirs:%=-I%) -o $$@ $$<
 
 include $(OCPI_DIR)/include/xxx-worker.mk
