@@ -4,7 +4,7 @@
 	  <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
 	</ControlInterface>
 <!-- this is really CONTINUOUS???? -->
-	<StreamInterface Name="dif" MyClock="true"
+	<StreamInterface Name="dif" MyClock="true" NumberOfOpcodes="256"
 			 DataWidth="32" ImpreciseBurst="true" PreciseBurst="true"/>
 <!--	<MessageInterface Name="dif" MyClock="true" Continuous="true"
 			  DataWidth="32" PreciseBurst="true"/> -->

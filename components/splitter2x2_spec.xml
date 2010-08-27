@@ -3,16 +3,16 @@
       <Property Name="reserved0" Readable="true" Writable="false" Type="ULong"/>
       <Property Name="splitCtrl" Readable="true" Writable="true" Type="ULong"/>
     </Properties>
-    <DataInterfaceSpec Name="WSIinA" Producer="false">
-      <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+    <DataInterfaceSpec Name="in0" Producer="false">
+      <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
     </DataInterfaceSpec>
-    <DataInterfaceSpec Name="WSIinB" Producer="false" Optional="true">
-      <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+    <DataInterfaceSpec Name="in1" Producer="false" Optional="true">
+      <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
     </DataInterfaceSpec>
-    <DataInterfaceSpec Name="WSIoutC" Producer="true">
-      <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+    <DataInterfaceSpec Name="out0" Producer="true">
+      <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
     </DataInterfaceSpec>
-    <DataInterfaceSpec Name="WSIoutD" Producer="true" Optional="true">
-      <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+    <DataInterfaceSpec Name="out1" Producer="true" Optional="true">
+      <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
     </DataInterfaceSpec>
   </ComponentSpec>

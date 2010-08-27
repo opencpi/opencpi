@@ -8,11 +8,11 @@
   <Instance Worker="psd.xml"/>
   <!-- adc input to splitter -->
   <Connection Name="adc" External="producer">
-    <Attach Instance="splitter2x2" Interface="wsiS1"/>
+    <Attach Instance="splitter2x2" Interface="in1"/>
   </Connection>
   <!-- splitter output to delay/w3 -->
   <Connection>
-    <Attach Instance="splitter2x2" Interface="wsiM0"/>
+    <Attach Instance="splitter2x2" Interface="out0"/>
     <Attach Instance="delay" Interface="in"/>
   </Connection>
   <!-- delay/w3 output to sma1/w4 -->
@@ -32,7 +32,7 @@
   <!-- Now path from ADC through framegate/psd to SMA0/DP0 -->
   <!-- splitter/w5 output to framegate/w6 -->
   <Connection>
-    <Attach Instance="splitter2x2" Interface="wsiM1"/>
+    <Attach Instance="splitter2x2" Interface="out1"/>
     <Attach Instance="framegate" Interface="in"/>
   </Connection>
   <!-- framegate/w6 output to psd/w7 -->
@@ -53,7 +53,7 @@
   <!-- Now test loop path from sma0/w2 to splitter/w5 -->
   <Connection>
     <Attach Instance="sma0" Interface="wsiM1"/>
-    <Attach Instance="splitter2x2" Interface="wsiS0"/>
+    <Attach Instance="splitter2x2" Interface="in0"/>
   </Connection>
 </HdlAssembly>
 
