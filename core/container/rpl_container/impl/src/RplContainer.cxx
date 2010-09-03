@@ -1358,7 +1358,8 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
     }
     CC::ExternalPort &Port::connectExternal(const char *name, CU::PValue *userProps, CU::PValue *props) {
       if (!canBeExternal)
-        throw CC::ApiError("Port is locally connected in the bitstream.", 0);
+        throw CC::ApiError ( "Port is locally connected in the bitstream.",
+                             "Port name is: ", name, 0 ); 
       applyConnectParams(props);
       // UserPort constructor must know the roles.
       ExternalPort *myExternalPort = new ExternalPort(name, *this, userProps);

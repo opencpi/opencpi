@@ -32,7 +32,7 @@ namespace CPI {
 // Convenience for single line, multi-string, API exceptions (API called badly)
 // Its easy to scan all callers for the terminating null
     ApiError::ApiError(const char *err, ...) :
-      CPI::Util::EmbeddedException(APPLICATION_EXCEPTION, 0, ApplicationFatal) {
+      CPI::Util::EmbeddedException(APPLICATION_EXCEPTION, "", ApplicationFatal) {
       va_list ap;
       va_start(ap, err);
       m_auxInfo = err;

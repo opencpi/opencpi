@@ -94,6 +94,11 @@ namespace CPI {
         cpiAssert(which < nPorts);
         return myPorts[which];
       }
+      inline Port* getPorts ( unsigned int& n_ports )
+      {
+        n_ports = nPorts;
+        return myPorts;
+      }
       enum ControlState {
         EXISTS,
         INITIALIZED,

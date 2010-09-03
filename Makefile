@@ -60,6 +60,7 @@ endif
 
 PACKAGES += tools/local/binder tools/local/tester
 PACKAGES += tools/cdk/ocpigen
+PACKAGES += tools/cdk/ocpixm
 PACKAGES += test
 
 #
@@ -91,7 +92,8 @@ ALLPACKAGES = \
 	test \
 	tools/local/binder \
 	tools/local/tester \
-	tools/cdk/ocpigen
+	tools/cdk/ocpigen \
+	tools/cdk/ocpixm
 
 #
 # ----------------------------------------------------------------------

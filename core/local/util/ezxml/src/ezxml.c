@@ -28,6 +28,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1 /* For strdup() */
+#endif
 #include <string.h>
 #include <ctype.h>
 #if defined (WIN32)
@@ -38,6 +41,9 @@
 #endif
 #include <sys/types.h>
 #ifndef EZXML_NOMMAP
+#ifndef __USE_BSD
+#define __USE_BSD 1
+#endif
 #include <sys/mman.h>
 #endif // EZXML_NOMMAP
 #include <sys/stat.h>

@@ -57,7 +57,7 @@ $(LibDir)/$(Target)/$(notdir $(BinaryFile)): $(BinaryFile) | $(LibDir)/$(Target)
 	$(AT)echo Creating link from $(LibDir)/$(Target) to $(BinaryFile) to expose the component binary.
 	$(AT)$(call MakeSymLink,$(BinaryFile),$(LibDir)/$(Target))
 else
-all: $(BinaryFile)
+all: $(ModelSpecificBuildHook) $(BinaryFile)
 endif
 
 # If the binary file is the same as the artifact file, then build it here
@@ -107,13 +107,16 @@ $(GeneratedDir):
 
 # only when source file does not exist
 ifndef Application
-Xm2OcpiGen=$(ToolsDir)/xm2ocpi
+
+ifeq ($(origin ModelSpecificBuildHook),undefined)
 
 $(WorkerSourceFiles): %$(SourceSuffix) : $(GeneratedDir)/%$(SkelSuffix)
 	$(AT)if test ! -e $@; then \
 		echo No source file exists. Copying skeleton \($<\) to $@. ; \
 		cp $< $@;\
 	fi
+endif
+
 endif
 
 clean:
@@ -134,5 +137,6 @@ clean:
 	  fi; \
 	done
 	$(AT)rm -r -f $(OutDir)
+	$(ModelSpecificCleanupHook)
 
 -include $(GeneratedDir)/*.deps
