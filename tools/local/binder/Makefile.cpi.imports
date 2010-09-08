@@ -18,17 +18,17 @@
 ALLINC += $(UTIL_EXPORTS) \
 	$(LOGGER_EXPORTS) \
 	$(CPIOS_EXPORTS)
-LIB_ACE_ROOT=$(CPIDIR)/../ACE_wrappers
-#LDLIBS =  -lTAO_IFRService -lTAO_IFR_Client -lTAO_AnyTypeCode -lTAO_IORTable -lTAO_Svc_Utils -lTAO_IFR_BE -lTAO_IDL_FE -lTAO_TypeCodeFactory -lTAO_PortableServer -lTAO -lACE
+LIB_ACE_ROOT=$(ACE_ROOT)
+#LDLIBS = -lTAO_IFRService -lTAO_IFR_Client -lTAO_AnyTypeCode -lTAO_IORTable -lTAO_Svc_Utils -lTAO_IFR_BE -lTAO_IDL_FE -lTAO_TypeCodeFactory -lTAO_PortableServer -lTAO -lACE
 # Not specifically libraries, but where indirect .so's can be found
 # SYSLIBDIRS += $(LIB_ACE_ROOT)/$(OUTDIR)/TAO/tao/.libs
 
 SYSLIBS += \
-  $(patsubst %,$(LIB_ACE_ROOT)/$(OUTDIR)/ace/.libs/%,ACE) \
-  $(patsubst %,$(LIB_ACE_ROOT)/$(OUTDIR)/TAO/orbsvcs/orbsvcs/.libs/%,TAO_IFRService TAO_Svc_Utils) \
-  $(patsubst %,$(LIB_ACE_ROOT)/$(OUTDIR)/TAO/TAO_IDL/.libs/%,TAO_IDL_FE) \
-  $(patsubst %,$(LIB_ACE_ROOT)/$(OUTDIR)/TAO/tao/.libs/%,TAO TAO_IFR_Client TAO_PortableServer TAO_IORTable TAO_TypeCodeFactory TAO_AnyTypeCode) \
-  $(patsubst %,$(LIB_ACE_ROOT)/$(OUTDIR)/TAO/orbsvcs/IFR_Service/.libs/%,TAO_IFR_BE) \
+  $(patsubst %,$(LIB_ACE_ROOT)/ace/%,ACE) \
+  $(patsubst %,$(LIB_ACE_ROOT)/TAO/orbsvcs/orbsvcs/%,TAO_IFRService TAO_Svc_Utils) \
+  $(patsubst %,$(LIB_ACE_ROOT)/TAO/TAO_IDL/%,TAO_IDL_FE) \
+  $(patsubst %,$(LIB_ACE_ROOT)/TAO/TAO_IDL/%,TAO_IDL_BE) \
+  $(patsubst %,$(LIB_ACE_ROOT)/TAO/tao/%,TAO TAO_IFR_Client TAO_PortableServer TAO_IORTable TAO_TypeCodeFactory TAO_AnyTypeCode) \
 
 ALLLIBS += $(UTIL_LIBS) \
 	$(LOGGER_LIBS) \
