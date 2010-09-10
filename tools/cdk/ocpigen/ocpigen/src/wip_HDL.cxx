@@ -30,9 +30,14 @@ const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master
       *s++ = '%';
     else {
       bool myMaster = master;
+      bool noOrdinal = false;
       if (*pat == '!') {
 	myMaster = !master;
-	*pat++;
+	pat++;
+      }
+      if (*pat == '*') {
+	noOrdinal = true;
+	pat++;
       }
       switch (*pat++) {
       case '%':
@@ -1385,8 +1390,11 @@ emitWorker(FILE *f, Worker *w)
   unsigned nn;
   Property *prop;
   for (prop = w->ctl.properties, nn = 0; nn < w->ctl.nProperties; nn++, prop++) {
-    fprintf(f, "<property name=\"%s\" type=\"%s\"",
-	    prop->name, CP::Scalar::names[prop->members->type.scalar]);
+    if (prop->isParameter)
+      continue;
+    fprintf(f, "<property name=\"%s\"", prop->name);
+    if (prop->members->type.scalar != CP::Scalar::CPI_ULong)
+      fprintf(f, " type=\"%s\"", CP::Scalar::names[prop->members->type.scalar]);
     if (prop->isReadable)
       fprintf(f, " readable=\"true\"");
     if (prop->isWritable)
@@ -1426,6 +1434,8 @@ emitInstance(Instance *i, FILE *f)
 	  i->name, i->worker->implName, i->index);
   if (i->attach)
     fprintf(f, " attachment=\"%s\"", i->attach);
+  if (i->isInterconnect) // FIXME!!!! when shep puts regions in the bitstream
+    fprintf(f, " ocdpOffset=\"%d\"", !strcmp(i->name, "dp0") ? 0 : 32*1024);
   fprintf(f, "/>\n");
 }
 
@@ -1496,15 +1506,15 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
 	  if (cip != cc->external)
 	    break;
 	if (ac->external->isProducer)
-	  // Application is consuming from an external producer
-	  fprintf(f, "<connection from=\"%s\" out=\"%s\" to=\"%s\" in=\"%s\"/>\n",
-		  cip->instance->name, cip->port->name,
-		  aip->instance->name, aip->port->name);
-	else
 	  // Application is producing to an external consumer
 	  fprintf(f, "<connection from=\"%s\" out=\"%s\" to=\"%s\" in=\"%s\"/>\n",
 		  aip->instance->name, aip->port->name,
 		  cip->instance->name, cip->port->name);
+	else
+	  // Application is consuming from an external producer
+	  fprintf(f, "<connection from=\"%s\" out=\"%s\" to=\"%s\" in=\"%s\"/>\n",
+		  cip->instance->name, cip->port->name,
+		  aip->instance->name, aip->port->name);
       }
   // Emit the connections inside the application
   for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)

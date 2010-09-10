@@ -100,9 +100,10 @@ XstOptions += -sd { .. \
 $(foreach l,$(Libraries:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found.)))
 $(foreach l,$(OcpiCores:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "OcpiCores" variable, was not found.)))
 
+Xilinx=. /opt/Xilinx/12.2/ISE_DS/settings64.sh
 Compile=\
   $(AT)echo Building $@  with top == $(Top)\; details in $(TargetDir)/xst.out.;\
   cd $(TargetDir);$(XstMakePrj)$(XstMakeLso)$(XstMakeIni)$(XstMakeScr)\
-  ($(TIME) xst -ifn $(XstScrFile)) > xst.out;\
+  ($(Xilinx) ; $(TIME) xst -ifn $(XstScrFile)) > xst.out;\
   grep -i error xst.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
   if grep -q 'Number of errors   :    0 ' xst.out; then exit 0; else exit 1; fi

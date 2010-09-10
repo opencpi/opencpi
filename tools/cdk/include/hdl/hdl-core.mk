@@ -48,7 +48,11 @@ endef
 
 $(foreach t,$(Targets),$(eval $(call DoCoreTarget,$(t))))
 
-ifndef DontBuildCores
+ifdef DontBuildCores
+$(CoreResults):
+	$(AT)echo Exporting pre-built coregen NGC file $(Core).ngc for target \"$(Target)\"
+	cd $(Target); rm -f $(Core).ngc; ln -s ../$(Core)-$(Target).ngc $(Core).ngc
+else
 $(CoreResults):
 	$(AT)echo Building core \"$(Core)\" for target \"$(Target)\"
 	$(Compile)

@@ -120,7 +120,7 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
   const char *err;
   const char *clock = 0;
   if (impl) {
-    clock = ezxml_attr(impl, "Clock");
+    clock = ezxml_cattr(impl, "Clock");
     if ((err = CE::getBoolean(impl, "MyClock", &p->myClock)))
       return err;
   }
@@ -172,7 +172,7 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
 static const char *
 checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
   const char *err;
-  const char *name = ezxml_attr(impl, "Name");
+  const char *name = ezxml_cattr(impl, "Name");
   if (!name)
     return esprintf("Missing \"Name\" attribute of %s element", impl->name);
   Port *dp = w->ports;
@@ -196,7 +196,7 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
   if (dp->impreciseBurst && dp->preciseBurst)
     return "Both ImpreciseBurst and PreciseBurst cannot be specified for WSI or WMI";
 #endif
-  dp->pattern = ezxml_attr(impl, "Pattern");
+  dp->pattern = ezxml_cattr(impl, "Pattern");
   *dpp = dp;
   return 0;
 }
@@ -223,7 +223,7 @@ tryInclude(ezxml_t top, const char *parent, const char *element, ezxml_t *parsed
   if (x) {
     if ((err = CE::checkAttrs(x, "href", (void*)0)))
       return err;
-    const char *ifile = ezxml_attr(x, "href");
+    const char *ifile = ezxml_cattr(x, "href");
     if (!ifile)
       return esprintf("xi:include missing an href attribute in file \"%s\"", parent);
     ezxml_t i = 0;
@@ -280,10 +280,10 @@ doImplProp(ezxml_t prop, void *arg) {
   const char *err;
   Worker *w = (Worker *)arg;
   const char *eName = ezxml_name(prop);
-  bool isSpec = eName && !strcmp(eName, "SpecProperty");
-  if (!eName || (strcmp(eName, "Property") && !isSpec))
+  bool isSpec = eName && !strcasecmp(eName, "SpecProperty");
+  if (!eName || (strcasecmp(eName, "Property") && !isSpec))
     return 0;
-  const char *name = ezxml_attr(prop, "Name");
+  const char *name = ezxml_cattr(prop, "Name");
   if (!name)
     return "Property or SpecProperty in ControlInterface has no \"Name\" attribute";
   // See if it matches
@@ -298,7 +298,7 @@ doImplProp(ezxml_t prop, void *arg) {
     if (!isSpec)
       return esprintf("Implementation property named \"%s\" conflict with spec property",
 		      name);
-    if (p->members->hasDefault && ezxml_attr(prop, "Default"))
+    if (p->members->hasDefault && ezxml_cattr(prop, "Default"))
       return esprintf("Implementation property named \"%s\" cannot override previous default value", name);
     if ((err = p->parseImpl(prop)))
       return err;
@@ -328,7 +328,7 @@ doSpecProp(ezxml_t prop, void *arg) {
     return err;
   }
   const char *name = ezxml_name(prop);
-  if (!name || strcmp(name, "Property"))
+  if (!name || strcasecmp(name, "Property"))
     return "Element under Properties is neither Property or xi:include";
   // Now actually process a property element
   if ((err = CE::checkAttrs(prop, "Name", "Type", "Readable", "Writable", "IsTest",
@@ -367,7 +367,7 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
       return err;
     if (sub32)
       w->ctl.sub32BitConfigProperties = true;
-    const char *ops = ezxml_attr(xctl, "ControlOperations");
+    const char *ops = ezxml_cattr(xctl, "ControlOperations");
     if (ops) {
       char *last = 0, *o;
       while ((o = strtok_r((char *)ops, ", \t", &last))) {
@@ -439,7 +439,7 @@ doOperation(ezxml_t op, void *arg) {
     return err;
   }
   const char *name = ezxml_name(op);
-  if (!name || strcmp(name, "Operation"))
+  if (!name || strcasecmp(name, "Operation"))
     return "Element under Protocol is neither Operation, Protocol or or xi:include";
   // Now actually process a property element
   if ((err = CE::checkAttrs(op, "Name", "Twoway", (void*)0)))
@@ -450,7 +450,7 @@ doOperation(ezxml_t op, void *arg) {
     return 0;
   }
   Operation *o = p->wdi.op++;
-  o->name = ezxml_attr(op, "Name");
+  o->name = ezxml_cattr(op, "Name");
   if (!p->name)
     return "Missing \"Name\" attribute for operation";
   if ((err = CE::getBoolean(op, "TwoWay", &o->isTwoWay)))
@@ -512,7 +512,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
   ezxml_t spec;
   if ((err = tryChildInclude(xml, w->file, "ComponentSpec", &spec, &w->specFile)))
     return err;
-  w->specName = ezxml_attr(spec, "Name");
+  w->specName = ezxml_cattr(spec, "Name");
   if (!w->specName)
     return "Missing Name attribute for ComponentSpec";
   if ((err = CE::checkAttrs(spec, "Name", "NoControl", (void*)0)) ||
@@ -546,7 +546,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
     p->worker = w;
     p->isData = true;
     p->type = WDIPort;
-    if (!(p->name = ezxml_attr(x, "Name")))
+    if (!(p->name = ezxml_cattr(x, "Name")))
       return "Missing \"Name\" attribute in DataInterfaceSpec";
     for (Port *pp = w->ports; pp < p; pp++)
       if (!strcmp(pp->name, p->name))
@@ -609,8 +609,8 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
 	  (err = CE::getBoolean(xctl, "ResetWhileSuspended",
 			    &wci->wci.resetWhileSuspended)))
 	return err;
-      wci->pattern = ezxml_attr(xctl, "Pattern");
-      wci->name = ezxml_attr(xctl, "Name");
+      wci->pattern = ezxml_cattr(xctl, "Pattern");
+      wci->name = ezxml_cattr(xctl, "Name");
     }
     if (!wci->count)
       wci->count = 1;
@@ -620,9 +620,9 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     wci->type = WCIPort;
   }
   // Count up and allocate the ports that are HDL-specific
-  for (ezxml_t x = ezxml_child(xml, "MemoryInterface"); x; x = ezxml_next(x))
+  for (ezxml_t x = ezxml_cchild(xml, "MemoryInterface"); x; x = ezxml_next(x))
     extraPorts++;
-  for (ezxml_t x = ezxml_child(xml, "TimeInterface"); x; x = ezxml_next(x))
+  for (ezxml_t x = ezxml_cchild(xml, "TimeInterface"); x; x = ezxml_next(x))
     extraPorts++;
   // Reallocate all the ports
   w->ports = myCrealloc(Port, w->ports, w->nPorts, extraPorts);
@@ -630,25 +630,25 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   Port *p = w->ports + w->nPorts ;
   w->nPorts += extraPorts;
   // Clocks depend on port names, so get those names in first pass(non-control ports)
-  for (ezxml_t x = ezxml_child(xml, "MemoryInterface"); x; x = ezxml_next(x), p++)
-    if (!(p->name = ezxml_attr(x, "Name")))
+  for (ezxml_t x = ezxml_cchild(xml, "MemoryInterface"); x; x = ezxml_next(x), p++)
+    if (!(p->name = ezxml_cattr(x, "Name")))
       return "Missing \"Name\" attribute in MemoryInterface";
-  for (ezxml_t x = ezxml_child(xml, "TimeInterface"); x; x = ezxml_next(x), p++)
-    if (!(p->name = ezxml_attr(x, "Name")))
+  for (ezxml_t x = ezxml_cchild(xml, "TimeInterface"); x; x = ezxml_next(x), p++)
+    if (!(p->name = ezxml_cattr(x, "Name")))
       return "Missing \"Name\" attribute in TimeInterface";
   // Now we do clocks before interfaces since they may refer to clocks
-  for (ezxml_t xc = ezxml_child(xml, "Clock"); xc; xc = ezxml_next(xc))
+  for (ezxml_t xc = ezxml_cchild(xml, "Clock"); xc; xc = ezxml_next(xc))
     w->nClocks++;
   // add one to allow for adding the WCI clock later
   w->clocks = myCalloc(Clock, w->nClocks + 1 + w->nPorts);
   Clock *c = w->clocks;
-  for (ezxml_t xc = ezxml_child(xml, "Clock"); xc; xc = ezxml_next(xc), c++) {
+  for (ezxml_t xc = ezxml_cchild(xml, "Clock"); xc; xc = ezxml_next(xc), c++) {
     if ((err = CE::checkAttrs(xc, "Name", "Signal", "Home", (void*)0)))
       return err;
-    c->name = ezxml_attr(xc, "Name");
+    c->name = ezxml_cattr(xc, "Name");
     if (!c->name)
       return "Missing Name attribute in Clock subelement of ComponentImplementation";
-    c->signal = ezxml_attr(xc, "Signal");
+    c->signal = ezxml_cattr(xc, "Signal");
   }
   // Now that we have clocks roughly set up, we process the wci clock
   if (wci && (err = checkClock(w, xctl, wci)))
@@ -658,13 +658,13 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   // Prepare to process data plane port implementation info
   p = w->ports + (w->noControl ? 0 : 1);
   // Now lets look at the implementation-specific data interface info
-  for (ezxml_t s = ezxml_child(xml, "StreamInterface"); s; s = ezxml_next(s)) {
+  for (ezxml_t s = ezxml_cchild(xml, "StreamInterface"); s; s = ezxml_next(s)) {
     Port *dp;
     if ((err = CE::checkAttrs(s, "Name", "Clock", "DataWidth", "PreciseBurst",
-			  "ImpreciseBurst", "Continuous", "Abortable",
-			  "EarlyRequest", "MyClock", "RegRequest", "Pattern",
-			  "NumberOfOpcodes",
-			  (void*)0)) ||
+			      "ImpreciseBurst", "Continuous", "Abortable",
+			      "EarlyRequest", "MyClock", "RegRequest", "Pattern",
+			      "NumberOfOpcodes",
+			      (void*)0)) ||
 	(err = checkDataPort(w, s, &dp)) ||
 	(err = CE::getBoolean(s, "Abortable", &dp->wsi.abortable)) ||
 	(err = CE::getBoolean(s, "RegRequest", &dp->wsi.regRequest)) ||
@@ -678,7 +678,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     else
       dp->byteWidth = dp->wdi.dataValueWidth;
   }
-  for (ezxml_t m = ezxml_child(xml, "MessageInterface"); m; m = ezxml_next(m)) {
+  for (ezxml_t m = ezxml_cchild(xml, "MessageInterface"); m; m = ezxml_next(m)) {
     Port *dp;
     if ((err = CE::checkAttrs(m, "Name", "Clock", "MyClock", "DataWidth", "PreciseBurst",
 			  "MFlagWidth", "ImpreciseBurst", "Continuous", "ByteWidth",
@@ -694,7 +694,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
       return "Specified ByteWidth does not divide evenly into specified DataWidth";
   }
   Port *mp = w->ports + w->nPorts - extraPorts;
-  for (ezxml_t m = ezxml_child(xml, "MemoryInterface"); m; m = ezxml_next(m), mp++) {
+  for (ezxml_t m = ezxml_cchild(xml, "MemoryInterface"); m; m = ezxml_next(m), mp++) {
     mp->type = WMemIPort;
     bool memFound = false;
     if ((err = CE::checkAttrs(m, "Name", "Clock", "DataWidth", "PreciseBurst", "ImpreciseBurst",
@@ -721,16 +721,16 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     }
     if (mp->byteWidth < 8 || mp->dataWidth % mp->byteWidth)
       return "Bytewidth < 8 or doesn't evenly divide into DataWidth";
-    mp->name = ezxml_attr(m, "Name");
+    mp->name = ezxml_cattr(m, "Name");
     if (!mp->name)
       mp->name = "mem";
-    mp->pattern = ezxml_attr(m, "Pattern");
+    mp->pattern = ezxml_cattr(m, "Pattern");
   }
   bool foundWTI = false;
-  for (ezxml_t m = ezxml_child(xml, "TimeInterface"); m; m = ezxml_next(m), mp++) {
+  for (ezxml_t m = ezxml_cchild(xml, "TimeInterface"); m; m = ezxml_next(m), mp++) {
     if (foundWTI)
       return "More than one WTI specified, which is not permitted";
-    mp->name = ezxml_attr(m, "Name");
+    mp->name = ezxml_cattr(m, "Name");
     if (!mp->name)
       mp->name = "time";
     mp->type = WTIPort;
@@ -743,7 +743,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
       return err;
     mp->dataWidth = mp->wti.secondsWidth + mp->wti.fractionWidth;
     foundWTI = true;
-    mp->pattern = ezxml_attr(m, "Pattern");
+    mp->pattern = ezxml_cattr(m, "Pattern");
   }
   // Now check that all clocks have a home and all ports have a clock
   c = w->clocks;
@@ -770,7 +770,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
 
 const char *
 getWorker(Assembly *a, ezxml_t x, const char *aName, Worker **wp) {
-  const char *wName = ezxml_attr(x, aName);
+  const char *wName = ezxml_cattr(x, aName);
   if (!wName)
     return esprintf("Missing \"%s\" attribute on connection", aName);
   Worker *w = a->workers;
@@ -785,7 +785,7 @@ getWorker(Assembly *a, ezxml_t x, const char *aName, Worker **wp) {
 
 const char *
 getPort(Worker *w, ezxml_t x, const char *aName, Port **pp) {
-  const char *pName = ezxml_attr(x, aName);
+  const char *pName = ezxml_cattr(x, aName);
   if (!pName)
     return esprintf("Missing \"%s\" attribute for worker \"%s\"",
 		    aName, w->implName);
@@ -904,14 +904,14 @@ parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
   aw->isAssembly = true;
   if ((err = CE::checkAttrs(xml, "Name", (void*)0)))
     return err;
-  aw->implName = ezxml_attr(xml, "Name");
+  aw->implName = ezxml_cattr(xml, "Name");
   if (!aw->implName)
     aw->implName = "RccAssembly";
   for (ezxml_t x = ezxml_child(xml, "Worker"); x; x = ezxml_next(x))
     a->nWorkers++;
   Worker *w = a->workers = myCalloc(Worker, a->nWorkers);
   for (ezxml_t x = ezxml_child(xml, "Worker"); x; x = ezxml_next(x), w++) {
-    const char *wXmlName = ezxml_attr(x, "File");
+    const char *wXmlName = ezxml_cattr(x, "File");
     if (!wXmlName)
       return "Missing \"File\" attribute is \"Worker\" element";
     if ((err = parseWorker(wXmlName, file, w)))
@@ -926,7 +926,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   aw->isAssembly = true;
   if ((err = CE::checkAttrs(xml, "Name", "Pattern", "Language", (void*)0)))
      return err;
-  a->isContainer = !strcmp(xml->name, "HdlContainer");
+  a->isContainer = !strcasecmp(xml->name, "HdlContainer");
   // Count instances and workers
   for (ezxml_t x = ezxml_child(xml, "Instance"); x; x = ezxml_next(x))
     a->nInstances++;
@@ -941,8 +941,8 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
       CE::checkAttrs(x, "Worker", "Name", (void*)0);
     if (err)
       return err;
-    i->name = ezxml_attr(x, "Name");   // Name attribute is in fact optional
-    i->wName = ezxml_attr(x, "Worker"); // Worker attribute is pathname
+    i->name = ezxml_cattr(x, "Name");   // Name attribute is in fact optional
+    i->wName = ezxml_cattr(x, "Worker"); // Worker attribute is pathname
     if (a->isContainer) {
       bool idxFound;
       if ((err = CE::getNumber(x, "Index", &i->index, &idxFound, 0)))
@@ -950,8 +950,8 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
       if (!idxFound)
 	return "Missing o\"Index\" attribute in instance in container assembly";
       const char
-	*ic = ezxml_attr(x, "Interconnect"),
-	*io = ezxml_attr(x, "IO");
+	*ic = ezxml_cattr(x, "Interconnect"),
+	*io = ezxml_cattr(x, "IO");
       if (!i->wName) {
 	// No worker means application instance
 	if (!i->name)
@@ -1028,9 +1028,9 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   Connection *c = a->connections = myCalloc(Connection, a->nConnections);
   Port *p;
   for (ezxml_t x = ezxml_child(xml, "Connection"); x; x = ezxml_next(x), c++) {
-    c->name = ezxml_attr(x, "Name");
+    c->name = ezxml_cattr(x, "Name");
     for (ezxml_t at = ezxml_child(x, "Attach"); at; at = ezxml_next(at)) {
-      const char *instName = ezxml_attr(at, "Instance");
+      const char *instName = ezxml_cattr(at, "Instance");
       if (!instName)
 	return
 	  esprintf("Missing \"Instance\" attribute in Attach subelement of "
@@ -1039,7 +1039,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
       InstancePort *ip;
       for (i = a->instances; n < a->nInstances; n++, i++)
 	if (!strcmp(i->name, instName)) {
-	  const char *iName = ezxml_attr(at, "Interface");
+	  const char *iName = ezxml_cattr(at, "Interface");
 	  if (!iName)
 	    return
 	      esprintf("Missing \"Interface\" attribute in Attach subelement of"
@@ -1073,7 +1073,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
       if (!strcmp(cc->name, c->name))
 	return esprintf("Duplicate connection named \"%s\" in assembly",
 			c->name);
-    const char *ext = ezxml_attr(x, "External");
+    const char *ext = ezxml_cattr(x, "External");
     if (ext) {
       bool isProducer;
       if (!strcasecmp(ext, "producer"))
@@ -1286,6 +1286,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	}
       // Start by copying everything.
       *extPort = *intPort;
+      extPort->pattern = 0;
       extPort->name = c->name;
       extPort->isExternal = true;
       extPort->clock = c->clock;
@@ -1312,23 +1313,23 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
    const char *err;
   if ((err = CE::checkAttrs(xml, "Name", "Pattern", "Language", (void*)0)))
     return err;
-  const char *lang = ezxml_attr(xml, "Language");
+  const char *lang = ezxml_cattr(xml, "Language");
   if (!lang)
     return "Missing Language attribute for ComponentImplementation element";
-  if (!strcmp(lang, "Verilog"))
+  if (!strcasecmp(lang, "Verilog"))
     w->language = Verilog;
-  else if (!strcmp(lang, "VHDL"))
+  else if (!strcasecmp(lang, "VHDL"))
     w->language = VHDL;
   else
     return "Language attribute not \"Verilog\" or \"VHDL\" in ComponentImplementation";
-  w->pattern = ezxml_attr(xml, "Pattern");
+  w->pattern = ezxml_cattr(xml, "Pattern");
   if (!w->pattern)
     w->pattern = "%s_";
   // Here is where there is a difference between a implementation and as assembly
-  if (!strcmp(xml->name, "HdlImplementation")) {
+  if (!strcasecmp(xml->name, "HdlImplementation")) {
     if ((err = parseHdlImpl(xml, file, w)))
       return esprintf("in %s for %s: %s", xml->name, w->implName, err);
-  } else if (!strcmp(xml->name, "HdlAssembly")) {
+  } else if (!strcasecmp(xml->name, "HdlAssembly")) {
     if ((err = parseHdlAssy(xml, w)))
       return esprintf("in %s for %s: %s", xml->name, w->implName, err);
   } else
@@ -1355,11 +1356,11 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
     }
     OcpSignalDesc *osd = ocpSignals;
     for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-      if (osd->master == mIn && strcmp(osd->name, "Clk") && os->value)
+      if (osd->master == mIn && strcasecmp(osd->name, "Clk") && os->value)
 	asprintf((char **)&os->signal, "%s%s", p->fullNameIn, osd->name);
     osd = ocpSignals;
     for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-      if (osd->master != mIn && strcmp(osd->name, "Clk") && os->value)
+      if (osd->master != mIn && strcasecmp(osd->name, "Clk") && os->value)
 	asprintf((char **)&os->signal, "%s%s", p->fullNameOut, osd->name);
     wipN[p->type][mIn]++;
   }
@@ -1382,8 +1383,8 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
     return err;
   // We use the pattern value as the method naming for RCC
   // and its presence indicates "extern" methods.
-  w->pattern = ezxml_attr(xml, "ExternMethods");
-  w->staticPattern = ezxml_attr(xml, "StaticMethods");
+  w->pattern = ezxml_cattr(xml, "ExternMethods");
+  w->staticPattern = ezxml_cattr(xml, "StaticMethods");
   ezxml_t xctl;
   if ((err = parseSpec(xml, file, w)) ||
       (err = parseImplControl(xml, file, w, &xctl)) ||
@@ -1393,7 +1394,7 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
   for (ezxml_t x = ezxml_child(xml, "Port"); x; x = ezxml_next(x)) {
     if ((err = CE::checkAttrs(x, "Name", "MinBuffers", (void*)0)))
       return err;
-    const char *name = ezxml_attr(x, "Name");
+    const char *name = ezxml_cattr(x, "Name");
     if (!name)
       return "Missing \"Name\" attribute on Port element if RccImplementation";
     Port *p;
@@ -1423,21 +1424,21 @@ parseWorker(const char *file, const char *parent, Worker *w) {
   char *lp = strrchr(w->fileName, '.');
   if (lp)
     *lp = 0;
-  w->implName = ezxml_attr(xml, "Name");
+  w->implName = ezxml_cattr(xml, "Name");
   if (!w->implName)
     w->implName = w->fileName;
   const char *name = ezxml_name(xml);
   if (name) {
-    if (!strcmp("RccImplementation", name))
+    if (!strcasecmp("RccImplementation", name))
       return parseRcc(xml, file, w);
-    if ((!strcmp("HdlImplementation", name) ||
-	 !strcmp("HdlAssembly", name)))
+    if ((!strcasecmp("HdlImplementation", name) ||
+	 !strcasecmp("HdlAssembly", name)))
       return parseHdl(xml, file, w);
-    if (!strcmp("RccAssembly", name))
+    if (!strcasecmp("RccAssembly", name))
       return parseRccAssy(xml, file, w);
   }
 #if 0
-  if (name && !strcmp(xml->name, "ComponentAssembly"))
+  if (name && !strcasecmp(xml->name, "ComponentAssembly"))
     return parseAssy(xml, w->file, w);
 #endif
   return esprintf("\"%s\" is not a valid implemention type (RccImplementation, HdlImplementation, HdlAssembly, ComponentAssembly)", xml->name);

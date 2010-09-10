@@ -103,12 +103,15 @@ void
 CPI::CP289::Port::
 processPortProperties(CPI::Util::PValue* props )
 {
-  const CPI::Util::PValue* p = CPI::Util::PValue::find(props, "role");
+  const CPI::Util::PValue* p = CPI::Util::PValue::find(props, "xferRole");
+  if (!p)
+    p = CPI::Util::PValue::find(props, "role");
   if ( p ) {
     if ( (p->type != CPI::Util::Prop::Scalar::CPI_String)) {
-      throw CPI::Util::EmbeddedException("\"role\" property has wrong type, should be String");
+      throw CPI::Util::EmbeddedException("\"xferrole\" property has wrong type, should be String");
     }
-    if ( strcmp(p->vString,"ActiveFlowControl") == 0 ) {
+    if ( strcasecmp(p->vString,"flowcontrol") == 0 ||
+	 strcasecmp(p->vString,"activeflowcontrol") == 0 ) {
       connectionData.data.role = CPI::RDT::ActiveFlowControl;
     }
   }

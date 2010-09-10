@@ -181,13 +181,13 @@ namespace CPI {
       if (!props)
         return;
       for (CPI::Util::PValue *p = props; p->name; p++) {
-        if (strcmp(p->name, "bufferCount") == 0) {
+        if (strcasecmp(p->name, "bufferCount") == 0) {
           if (p->type != CP::Scalar::CPI_ULong)
             throw ApiError("bufferCount property has wrong type, should be ULong", NULL);
           if (p->vULong < myMetaPort.minBufferCount)
             throw ApiError("bufferCount is below worker's minimum", NULL);
           myDesc.nBuffers = p->vULong;
-        } else if (strcmp(p->name, "bufferSize") == 0) {
+        } else if (strcasecmp(p->name, "bufferSize") == 0) {
           if (p->type != CP::Scalar::CPI_ULong)
             throw ApiError("bufferSize property has wrong type, should be ULong", NULL);
           if (p->vULong < myMetaPort.minBufferSize)
@@ -195,17 +195,19 @@ namespace CPI {
           if (myMetaPort.maxBufferSize && p->vULong > myMetaPort.maxBufferSize)
             throw ApiError("bufferSize exceeds worker's maximum", NULL);
           myDesc.dataBufferSize = p->vULong;
-        } else if (strcmp(p->name, "xferRole") == 0 && p->vString) {
+        } else if (strcasecmp(p->name, "xferRole") == 0 && p->vString) {
           if (p->type != CP::Scalar::CPI_String)
             throw ApiError("xferRole property has wrong type, should be string", NULL);
           CPI::RDT::PortRole role;
-          if (!strcmp(p->vString, "passive"))
+          if (!strcasecmp(p->vString, "passive"))
             role = CPI::RDT::Passive;
-          else if (!strcmp(p->vString, "active"))
+          else if (!strcasecmp(p->vString, "active") ||
+		   !strcasecmp(p->vString, "activemessage"))
             role = CPI::RDT::ActiveMessage;
-          else if (!strcmp(p->vString, "flowcontrol"))
+          else if (!strcasecmp(p->vString, "flowcontrol") ||
+		   !strcasecmp(p->vString, "activeflowcontrol"))
             role = CPI::RDT::ActiveFlowControl;
-          else if (!strcmp(p->vString, "activeonly"))
+          else if (!strcasecmp(p->vString, "activeonly"))
             role = CPI::RDT::ActiveOnly;
           else
             throw ApiError("xferRole property must be passive|active|flowcontrol|activeonly", NULL);

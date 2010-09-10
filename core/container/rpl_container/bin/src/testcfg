@@ -1,0 +1,11 @@
+# "name" is instance name assigned here and not anywhere else
+# establish container
+container name type p v p v p v
+# establish worker on container
+worker name container_name url type local-inst p v p v p v p v
+# define port, no unique name assigned here, must match other end
+p portname workernanme other-port-name otherworker-name p v p v p v p v
+# define external port of test harness
+e worker-name port-name p v p v p v
+
+ALso have PV constructor that uses the string parsing.

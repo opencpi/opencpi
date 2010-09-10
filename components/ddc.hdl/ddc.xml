@@ -1,0 +1,149 @@
+<HdlImplementation Name="ddc" Language="Verilog" Pattern="%w%M%0_">
+  <xi:include href="ddc_spec.xml"/>
+  <!-- force byte enables because shep always uses them -->
+  <ControlInterface Sub32BitConfigProperties="true" controlOperations="initialize">
+    <property name="reserved_0x08" arraylength="2"/>
+    <property name="has_debug" readable="true" writable="false"/>
+    <property name="wsiSpMesgCount" readable="true" writable="false"/>
+    <property name="wsiSiMesgCount" readable="true" writable="false"/>
+    <property name="wsiStMesgCount" readable="true" writable="false"/>
+    <property name="wsiMpMesgCount" readable="true" writable="false"/>
+    <property name="wsiMiMesgCount" readable="true" writable="false"/>
+    <property name="wsiMtMesgCount" readable="true" writable="false"/>
+    <property name="ambaWrReqCnt" readable="true" writable="false"/>
+    <property name="ambaRdReqCnt" readable="true" writable="false"/>
+    <property name="ambaRespCnt" readable="true" writable="false"/>
+    <property name="ambaErrCnt" readable="true" writable="false"/>
+    <property name="outMesgCnt" readable="true" writable="false"/>
+    <property name="reserved_0x0040" arraylength="1008"/>
+    <property name="lock" readable="true" writable="true"/>
+    <property name="bank_select" readable="true" writable="true"/>
+    <property name="reserved_0x1008" arraylength="30"/>
+    <property name="config" readable="true" writable="false"/>
+    <property name="mrm" readable="true" writable="false"/>
+    <property name="freq_raster" readable="true" writable="false"/>
+    <property name="reserved_0x108c" arraylength="5"/>
+    <property name="int_en" readable="true" writable="true"/>
+    <property name="int_stat_mask" readable="true" writable="false"/>
+    <property name="int_stat_raw" readable="true" writable="false"/>
+    <property name="int_clear" readable="false" writable="true"/>
+    <property name="reserved_0x10b0" arraylength="20"/>
+    <property name="a_frequency_00" readable="true" writable="true"/>
+    <property name="a_frequency_01" readable="true" writable="true"/>
+    <property name="a_frequency_02" readable="true" writable="true"/>
+    <property name="a_frequency_03" readable="true" writable="true"/>
+    <property name="a_frequency_04" readable="true" writable="true"/>
+    <property name="a_frequency_05" readable="true" writable="true"/>
+    <property name="a_frequency_06" readable="true" writable="true"/>
+    <property name="a_frequency_07" readable="true" writable="true"/>
+    <property name="a_frequency_08" readable="true" writable="true"/>
+    <property name="a_frequency_09" readable="true" writable="true"/>
+    <property name="a_frequency_10" readable="true" writable="true"/>
+    <property name="a_frequency_11" readable="true" writable="true"/>
+    <property name="a_frequency_12" readable="true" writable="true"/>
+    <property name="a_frequency_13" readable="true" writable="true"/>
+    <property name="a_frequency_14" readable="true" writable="true"/>
+    <property name="a_frequency_15" readable="true" writable="true"/>
+    <property name="a_frequency_16" readable="true" writable="true"/>
+    <property name="a_frequency_17" readable="true" writable="true"/>
+    <property name="reserved_0x1148" arraylength="46"/>
+    <property name="a_phase_00" readable="true" writable="false"/>
+    <property name="a_phase_01" readable="true" writable="false"/>
+    <property name="a_phase_02" readable="true" writable="false"/>
+    <property name="a_phase_03" readable="true" writable="false"/>
+    <property name="a_phase_04" readable="true" writable="false"/>
+    <property name="a_phase_05" readable="true" writable="false"/>
+    <property name="a_phase_06" readable="true" writable="false"/>
+    <property name="a_phase_07" readable="true" writable="false"/>
+    <property name="a_phase_08" readable="true" writable="false"/>
+    <property name="a_phase_09" readable="true" writable="false"/>
+    <property name="a_phase_10" readable="true" writable="false"/>
+    <property name="a_phase_11" readable="true" writable="false"/>
+    <property name="a_phase_12" readable="true" writable="false"/>
+    <property name="a_phase_13" readable="true" writable="false"/>
+    <property name="a_phase_14" readable="true" writable="false"/>
+    <property name="a_phase_15" readable="true" writable="false"/>
+    <property name="a_phase_16" readable="true" writable="false"/>
+    <property name="a_phase_17" readable="true" writable="false"/>
+    <property name="reserved_0x1248" arraylength="46"/>
+    <property name="a_gain_00" readable="true" writable="true"/>
+    <property name="a_gain_01" readable="true" writable="true"/>
+    <property name="a_gain_02" readable="true" writable="true"/>
+    <property name="a_gain_03" readable="true" writable="true"/>
+    <property name="a_gain_04" readable="true" writable="true"/>
+    <property name="a_gain_05" readable="true" writable="true"/>
+    <property name="a_gain_06" readable="true" writable="true"/>
+    <property name="a_gain_07" readable="true" writable="true"/>
+    <property name="a_gain_08" readable="true" writable="true"/>
+    <property name="a_gain_09" readable="true" writable="true"/>
+    <property name="a_gain_10" readable="true" writable="true"/>
+    <property name="a_gain_11" readable="true" writable="true"/>
+    <property name="a_gain_12" readable="true" writable="true"/>
+    <property name="a_gain_13" readable="true" writable="true"/>
+    <property name="a_gain_14" readable="true" writable="true"/>
+    <property name="a_gain_15" readable="true" writable="true"/>
+    <property name="a_gain_16" readable="true" writable="true"/>
+    <property name="a_gain_17" readable="true" writable="true"/>
+    <property name="reserved_0x1348" arraylength="110"/>
+    <property name="b_frequency_00" readable="true" writable="true"/>
+    <property name="b_frequency_01" readable="true" writable="true"/>
+    <property name="b_frequency_02" readable="true" writable="true"/>
+    <property name="b_frequency_03" readable="true" writable="true"/>
+    <property name="b_frequency_04" readable="true" writable="true"/>
+    <property name="b_frequency_05" readable="true" writable="true"/>
+    <property name="b_frequency_06" readable="true" writable="true"/>
+    <property name="b_frequency_07" readable="true" writable="true"/>
+    <property name="b_frequency_08" readable="true" writable="true"/>
+    <property name="b_frequency_09" readable="true" writable="true"/>
+    <property name="b_frequency_10" readable="true" writable="true"/>
+    <property name="b_frequency_11" readable="true" writable="true"/>
+    <property name="b_frequency_12" readable="true" writable="true"/>
+    <property name="b_frequency_13" readable="true" writable="true"/>
+    <property name="b_frequency_14" readable="true" writable="true"/>
+    <property name="b_frequency_15" readable="true" writable="true"/>
+    <property name="b_frequency_16" readable="true" writable="true"/>
+    <property name="b_frequency_17" readable="true" writable="true"/>
+    <property name="reserved_0x1548" arraylength="46"/>
+    <property name="b_phase_00" readable="true" writable="false"/>
+    <property name="b_phase_01" readable="true" writable="false"/>
+    <property name="b_phase_02" readable="true" writable="false"/>
+    <property name="b_phase_03" readable="true" writable="false"/>
+    <property name="b_phase_04" readable="true" writable="false"/>
+    <property name="b_phase_05" readable="true" writable="false"/>
+    <property name="b_phase_06" readable="true" writable="false"/>
+    <property name="b_phase_07" readable="true" writable="false"/>
+    <property name="b_phase_08" readable="true" writable="false"/>
+    <property name="b_phase_09" readable="true" writable="false"/>
+    <property name="b_phase_10" readable="true" writable="false"/>
+    <property name="b_phase_11" readable="true" writable="false"/>
+    <property name="b_phase_12" readable="true" writable="false"/>
+    <property name="b_phase_13" readable="true" writable="false"/>
+    <property name="b_phase_14" readable="true" writable="false"/>
+    <property name="b_phase_15" readable="true" writable="false"/>
+    <property name="b_phase_16" readable="true" writable="false"/>
+    <property name="b_phase_17" readable="true" writable="false"/>
+    <property name="reserved_0x1648" arraylength="46"/>
+    <property name="b_gain_00" readable="true" writable="true"/>
+    <property name="b_gain_01" readable="true" writable="true"/>
+    <property name="b_gain_02" readable="true" writable="true"/>
+    <property name="b_gain_03" readable="true" writable="true"/>
+    <property name="b_gain_04" readable="true" writable="true"/>
+    <property name="b_gain_05" readable="true" writable="true"/>
+    <property name="b_gain_06" readable="true" writable="true"/>
+    <property name="b_gain_07" readable="true" writable="true"/>
+    <property name="b_gain_08" readable="true" writable="true"/>
+    <property name="b_gain_09" readable="true" writable="true"/>
+    <property name="b_gain_10" readable="true" writable="true"/>
+    <property name="b_gain_11" readable="true" writable="true"/>
+    <property name="b_gain_12" readable="true" writable="true"/>
+    <property name="b_gain_13" readable="true" writable="true"/>
+    <property name="b_gain_14" readable="true" writable="true"/>
+    <property name="b_gain_15" readable="true" writable="true"/>
+    <property name="b_gain_16" readable="true" writable="true"/>
+    <property name="b_gain_17" readable="true" writable="true"/>
+    <Property Name="ddcCtrlInit" Parameter="true"/>
+    <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+  </ControlInterface>
+  <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
+  <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
+</HdlImplementation>

@@ -7,10 +7,10 @@ To use these app in the xst/ngc build process: (this is preliminary and a bit me
 
 For xst in a shep drop:
 
-1. setenv OCPIDIR to top of CP tree
-2. to make "board" until it fails (fix to do the other stuff)
-3. go to build/tmp-board
-4. add "app" to the end of the .lso file
+1. setenv OCPI_DIR to top of opencpi tree above hdl/apps etc. (and remove it from any .cshrc)
+2. to make "board" (like ml555) until it fails or just interrupt it
+3. go to build/tmp-<board>
+4. add "app" to the end of the fpgaTop.lso file
 5. add "app=$OCPI_DIR/hdl/apps/<theapp>/lib/hdl/virtex[5|6]" to the .ini file
 e.g.:
 app=$OCPI_DIR/hdl/apps/testpsd/lib/hdl/virtex5
@@ -20,7 +20,7 @@ e.g.:
 bsv=$OCPI_DIR/ocpi/lib/hdl/bsv/virtex5
 ocpi=$OCPI_DIR/ocpi/lib/hdl/ocpi/virtex5
 
-6. add -sd $OCPI_DIR/hdl/apps/<theapp>/lib/hdl/xc5vsx95t-2-ff1136 to .xst file
+6. add -sd $OCPI_DIR/hdl/apps/<theapp>/lib/hdl/xc5vsx95t-2-ff1136 to .xst file for the board
 e.g.:
 -sd $OCPI_DIR/hdl/apps/testpsd/lib/hdl/xc5vlx50t-1-ff1136
 
@@ -32,7 +32,8 @@ e.g.:
 e.g.:
   remove any existing OCApp, or app workers
   remote any existing library primitives
-9. run build_fpgaTop
+9. run build_fpgaTop <board>
+
 
 
 

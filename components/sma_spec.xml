@@ -2,13 +2,13 @@
     <Properties >
       <Property Name="smaCtrl" Readable="true" Writable="true"/>
     </Properties>
-    <DataInterfaceSpec Name="wsiS1" Optional="true">
+    <DataInterfaceSpec Name="in" Optional="true">
       <xi:include href="stream_protocol.xml"/>
     </DataInterfaceSpec>
-    <DataInterfaceSpec Name="wsiM1" Producer="true" Optional="true">
+    <DataInterfaceSpec Name="out" Producer="true" Optional="true">
       <xi:include href="stream_protocol.xml"/>
     </DataInterfaceSpec>
-    <DataInterfaceSpec Name="wmiM" Producer="true">
+    <DataInterfaceSpec Name="message" Producer="true">
       <xi:include href="stream_protocol.xml"/>
     </DataInterfaceSpec>
   </ComponentSpec>

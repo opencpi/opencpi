@@ -5,6 +5,8 @@ __UTIL_MK__=x
 all:
 Cwd=$(realpath .)
 CwdName=$(notdir $(Cwd))
+Models=xm rcc hdl
+Model=$(strip $(subst ., ,$(suffix $(CwdName))))
 AT=@
 RM=rm
 TIME=/usr/bin/time -f %E

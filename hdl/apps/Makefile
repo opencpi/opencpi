@@ -1,4 +1,4 @@
-APPS=demoappC demoappE testpsd testwbr
+APPS=demoappC demoappE testpsd testddc
 all: $(APPS)
 
 .PHONY: $(APPS) clean

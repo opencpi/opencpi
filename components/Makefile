@@ -6,6 +6,7 @@ Implementations = \
 	convert_s16_f32.rcc \
 	copy.rcc \
 	dac.rcc \
+	ddc.hdl \
 	delay.hdl \
 	delay.rcc \
 	framegate.hdl \

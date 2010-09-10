@@ -1,6 +1,7 @@
 OCPI_DIR=../../ocpi
 include $(OCPI_DIR)/include/util.mk
-Libs=bsv ocpi xfft_v7_1
+# wb_rcvr
+Libs=bsv ocpi xfft_v7_1 duc_ddc_compiler_v1_0
 all: $(Libs)
 
 clean:

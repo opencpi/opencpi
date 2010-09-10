@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
   uint64_t memoryBase = 0;
   bool probe = false, loop = false, doread = true, two = false, same = true,
     acquire = false, emit = false, dummy = false, cosine = false, psd = false,
-    test = false, doTicks = false;
+    test = false, doTicks = false, metadata = false;
   char *firstarg = 0, *secondarg = 0, *file = 0, *ofile = 0, *xfile = (char*)"file", *rccFile = 0, *rccName = 0;
   if (argc == 1) {
     fprintf(stderr, "Usage is: testRpl <options> [<container-name>][<second-container-name>]\n");
@@ -183,6 +183,7 @@ int main(int argc, char *argv[])
 	    "-z\t\tDon't touch data at all, just send and receive junk\n"
             "-D <shmname>\tSpecify emulated hardware buffer shm\n"
             "-I <msgsize>\tSpecify size of messages (default == 16 bytes)\n"
+	    "-M\t\tStore  metadata as well as data when writing an output file\n"
             "-NW[io] <nbufs>\tSpecify number of buffers for worker W in or out\n"
             "\t\tOptions are: -n0o -n1i -n3o  -n4i -n6o -n0i\n"
             "\t\tWorker 0 is this test program's input and output\n"
@@ -223,6 +224,9 @@ int main(int argc, char *argv[])
       case 'm':
         memoryBase = atoll(*++ap);
         memorySize = atoi(*++ap);
+        break;
+      case 'M':
+        metadata = true;
         break;
       case 'n':
         {
@@ -598,8 +602,8 @@ int main(int argc, char *argv[])
       if (file) {
         if ((ifd = open(file, O_RDONLY)) < 0 ||
             (cfd = open(file, O_RDONLY)) < 0 ||
-            (bytes = lseek(ifd, SEEK_END, 0)) < 0 ||
-            lseek(ifd, SEEK_SET, 0) < 0) {
+            (bytes = lseek(ifd, 0, SEEK_END)) < 0 ||
+            lseek(ifd, 0, SEEK_SET) < 0) {
           fprintf(stderr, "Can't open file \"%s\" for input\n", file);
           return 1;
         }
@@ -611,7 +615,7 @@ int main(int argc, char *argv[])
 	  inLeft = ioCount * ioSize;
       }
       outLeft = acquire ? 0 : (emit ? ioCount * ioSize : inLeft);
-      if (ofile && (ofd = open(ofile, O_WRONLY|O_CREAT|O_TRUNC)) < 0) {
+      if (ofile && (ofd = open(ofile, O_WRONLY|O_CREAT|O_TRUNC, 0666)) < 0) {
         fprintf(stderr, "Can't open file \"%s\" for output\n", ofile);
         return 1;
       }
@@ -694,7 +698,7 @@ int main(int argc, char *argv[])
               oops = "Length mismatch on input";
             }
           }
-          if (file) {
+          if (file && !ofile) {
             if (read(cfd, cbuf, ioSize) != (int)ioSize) {
               fprintf(stderr, "Error reading input file\n");
               return 1;
@@ -711,8 +715,19 @@ int main(int argc, char *argv[])
               {&head, sizeof(head)},
               {data, ioSize}
             };
-            unsigned n = ioSize ? 2 : 1;
-            if (writev(ofd, io, n) != (int)(sizeof(head) + ioSize)) {
+	    unsigned nVecs, vecOffset;
+	    ssize_t nBytes;
+	    if (metadata) {
+	      nVecs = ioSize ? 2 : 1;
+	      nBytes = sizeof(head) + ioSize;
+	      vecOffset = 0;
+	    } else {
+	      nVecs = ioSize ? 1 : 0;
+	      nBytes = ioSize;
+	      vecOffset = 1;
+	    }
+	    if (nBytes &&
+		writev(ofd, io + vecOffset, nVecs) != nBytes) {
               fprintf(stderr, "Error writing output file\n");
               return 1;
             }
