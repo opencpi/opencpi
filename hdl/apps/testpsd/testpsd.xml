@@ -7,10 +7,10 @@
   <Instance Worker="psd.xml"/>
   <Instance Worker="splitter2x2.xml" Name="split1"/>
   <Connection Name="FC" External="consumer">
-    <Attach Instance="sma0" Interface="wmiM"/>
+    <Attach Instance="sma0" Interface="message"/>
   </Connection>
   <Connection>
-    <Attach Instance="sma0" Interface="wsiM1"/>
+    <Attach Instance="sma0" Interface="out"/>
     <Attach Instance="split0" Interface="in0"/>
   </Connection>
   <Connection>
@@ -23,10 +23,10 @@
   </Connection>
   <Connection>
     <Attach Instance="split1" Interface="out0"/>
-    <Attach Instance="sma1" Interface="wsiS1"/>
+    <Attach Instance="sma1" Interface="in"/>
   </Connection>
   <Connection Name="FP" External="producer">
-    <Attach Instance="sma1" Interface="wmiM"/>
+    <Attach Instance="sma1" Interface="message"/>
   </Connection>
   <!-- Now alternate path for wbr -->
   <Connection>

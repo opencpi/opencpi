@@ -1,0 +1,22 @@
+<HdlAssembly Name="testddc" Language="Verilog">
+  <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
+  <Instance Worker="sma.xml"/>
+  <Instance Worker="ddc.xml"/>
+  <Instance Worker="sma.xml"/>
+  <Connection Name="FC" External="consumer">
+    <Attach Instance="sma0" Interface="message"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="sma0" Interface="out"/>
+    <Attach Instance="ddc" Interface="in"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="ddc" Interface="out"/>
+    <Attach Instance="sma1" Interface="in"/>
+  </Connection>
+  <Connection Name="FP" External="producer">
+    <Attach Instance="sma1" Interface="message"/>
+  </Connection>
+</HdlAssembly>
+
+   

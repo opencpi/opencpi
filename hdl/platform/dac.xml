@@ -1,0 +1,14 @@
+<HdlImplementation Name="dac" Language="Verilog" >
+  <ComponentSpec Name="dac">
+    <Properties >
+      <Property Name="Control" Type="ULong" Readable="true" Writable="true"/>
+      <Property Name="Controlbyte" Type="UChar" Readable="true" Writable="true"/>
+    </Properties>
+    <DataInterfaceSpec Name="in">
+      <xi:include href="stream_protocol.xml"/>
+    </DataInterfaceSpec>
+  </ComponentSpec>
+  <StreamInterface Name="in"  ImpreciseBurst="True" DataWidth="32"/>
+</HdlImplementation>
+
+

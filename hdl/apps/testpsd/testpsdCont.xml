@@ -9,12 +9,18 @@
    Foreach worker (including io and interconnect) define index.
   -->
 <HdlContainer>
-  <Interconnect Connection="FC" Worker="dp.xml" Interface="wmi" Index="13" Attach="pcie"/>
-  <Interconnect Connection="FP" Worker="dp.xml" Interface="wmi" Index="14" Attach="pcie"/>
+  <Instance Worker="dp.xml" Index="13" Interconnect="pcie"/>
+  <Instance Worker="dp.xml" Index="14" Interconnect="pcie"/>
   <Instance Name="sma0" Index="2"/>
   <Instance Name="bias" Index="3"/>
   <Instance Name="sma1" Index="4"/>
   <Instance Name="split0" Index="5"/>
   <Instance Name="psd" Index="6"/>
   <Instance Name="split1" Index="7"/>
+  <Connection Name="FC" External="producer">
+    <Attach Instance="dp0" Interface="wmi"/>
+  </Connection>
+  <Connection Name="FP" External="consumer">
+    <Attach Instance="dp1" Interface="wmi"/>
+  </Connection>
 </HdlContainer>

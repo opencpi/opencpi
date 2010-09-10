@@ -2,25 +2,25 @@
   <Instance Worker="delay.xml" Name="delay"/>
   <Instance Worker="sma.xml" Name="sma0"/>
   <Instance Worker="sma.xml" Name="sma1"/>
-  <Connection Name="adc" External="producer">
-    <Attach Instance="sma0" Interface="wsiS1"/>
+  <Connection Name="adc" External="consumer">
+    <Attach Instance="sma0" Interface="in"/>
   </Connection>
   <Connection>
-    <Attach Instance="sma0" Interface="wsiM1"/>
+    <Attach Instance="sma0" Interface="out"/>
     <Attach Instance="delay" Interface="in"/>
   </Connection>
   <Connection>
     <Attach Instance="delay" Interface="out"/>
-    <Attach Instance="sma1" Interface="wsiS1"/>
+    <Attach Instance="sma1" Interface="in"/>
   </Connection>
-  <Connection Name="dac" External="consumer">
-    <Attach Instance="sma1" Interface="wsiM1"/>
+  <Connection Name="dac" External="producer">
+    <Attach Instance="sma1" Interface="out"/>
   </Connection>
   <Connection Name="FC" External="consumer">
-    <Attach Instance="sma0" Interface="wmiM"/>
+    <Attach Instance="sma0" Interface="message"/>
   </Connection>
   <Connection Name="FP" External="producer">
-    <Attach Instance="sma1" Interface="wmiM"/>
+    <Attach Instance="sma1" Interface="message"/>
   </Connection>
 </HdlAssembly>
 

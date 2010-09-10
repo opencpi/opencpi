@@ -1,6 +1,7 @@
 OCPI_DIR=../../../ocpi
 # Which component libraries should be referenced to build this app?
 OcpiLibraries=../../../components
+XmlIncludeDirs += ../../platform
 # For which containers should the runtime xml be generated?
 # These (for now) just xml files containing HdlContainer elements.
 Containers=testpsdCont
