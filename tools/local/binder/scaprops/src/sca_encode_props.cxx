@@ -17,12 +17,10 @@
 
 #include <string.h>
 #include <stdio.h>
-#include "ORB.h"
 #include "CpiOsAssert.h"
 #include "CpiUtilEzxml.h"
 #include "sca_props.h"
 #include "idl2ifr.h"
-
 
 namespace CPI { namespace SCA {
 
@@ -139,7 +137,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
       if (p->is_sequence)
 	fprintf(f, " SequenceLength=\"%lu\"", p->sequence_size);
       if (p->is_struct) {
-	fprintf(f, " Type=\"Struct\">");
+	fprintf(f, " Type=\"Struct\">\n");
 	SimpleType *s = p->types;
 	for (unsigned m = 0; m < p->num_members; m++, s++) {
 	  fprintf(f, "      <Member Name=\"m%d\" Type=\"%s\"", m,
@@ -148,7 +146,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
 	    fprintf(f, " StringLength=\"%lu\"", s->size);
 	  fprintf(f, "/>\n");
 	}
-	fprintf(f, "</Property>");
+	fprintf(f, "    </Property>\n");
       } else {
 	fprintf(f, " Type=\"%s\"",
 		p->types->data_type == SCA_octet ? "UChar" : names[p->types->data_type]);
@@ -162,21 +160,26 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
   }
 }
  static const char *
- doPort(FILE *f, CPI::SCA::Port *p, unsigned n, CORBA::Repository *repo, bool debug)
+ doPort(FILE *f, CPI::SCA::Port *p, unsigned n, const char *repo, bool debug)
 {
-  CORBA::Contained_var contained = repo->lookup_id(p->repid);
-  if (CORBA::is_nil(contained.in()) ||
-      contained->def_kind() != CORBA::dk_Interface)
+  char *rid;
+  asprintf(&rid, "\n%s\n", p->repid);
+  char *cp = strcasestr(repo, rid);
+  if (!cp)
     return esprintf("Didn't find interface definition for REPID: %s in IDL files provided", p->repid);
-  CORBA::InterfaceDef_var iface = CORBA::InterfaceDef::_narrow(contained);
-  CORBA::DefinitionKind dKind = iface->def_kind();
-  cpiAssert(dKind == CORBA::dk_Interface);
-  CORBA::ContainedSeq_var operations =
-    iface->contents(CORBA::dk_Operation, false);
-  unsigned nops = operations->length();
-  if (debug)
-    printf("%d: %s Port: %s (repid %s) nops %d\n", n, p->provider ? "Provides" : "Uses", p->name,
-	   p->repid, nops);
+  cp += strlen(rid);
+  cp = strchr(cp, '\n'); // skip interface name
+  if (!cp)
+    return "Corrupted interface repository";
+  cp++;
+  char *end = strstr(cp, "</Protocol>\n");
+  if (!end)
+    return "Corrupted interface repository";
+  end = strchr(end, '\n');
+  if (!end)
+    return "Corrupted interface repository";
+  fwrite(cp, 1, end + 1 - cp, f);
+#if 0
   fprintf(f, "    <Protocol>\n");
   for (unsigned i = 0; i < nops; ++i) {
     CORBA::OperationDef_var op =
@@ -296,7 +299,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
       printf("op %d: %s(%d)\n", i, op->name(), twoway);
   }
   fprintf(f, "    </Protocol>\n");
-
+#endif
   return 0;
 }
 const char *emit_ocpi_xml(const char *specFile, const char *implFile,
@@ -307,8 +310,12 @@ const char *emit_ocpi_xml(const char *specFile, const char *implFile,
 			  Port *ports, unsigned nPorts,
 			  Test *tests, unsigned nTests)
 {
+#if 0
   // We use the repository to get idl info back
   CORBA::Repository_var repo;
+#else
+  char *repo;
+#endif
   // read all the idl files into the interface repository
   const char *err = idl2ifr(idlFiles, repo);
   if (err)

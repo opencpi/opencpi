@@ -355,9 +355,11 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 CPI_PROPERTY_DATA_TYPES
 	  default:;
 	  }
+	  unsigned bits =
+	    pr->members->type.scalar == CP::Scalar::CPI_Bool ?
+	    1 : pr->members->bits;
 	  fprintf(f, "  parameter [%u:0] %s = %u'b%lld;\n",
-		  pr->members->bits - 1, pr->name, pr->members->bits,
-		  (long long)i64);
+		  bits - 1, pr->name, bits, (long long)i64);
 	}
     // Now we emit the declarations (input, output, width) for each module port
     p = w->ports;

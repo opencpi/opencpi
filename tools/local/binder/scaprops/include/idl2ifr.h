@@ -17,9 +17,12 @@
 
 #ifndef IDL2IFR_H
 #define IDL2IFR_H
+#if 0
 #include "IFR_Client/IFR_ComponentsC.h"
 
 extern const char *idl2ifr(char **argv, CORBA::Repository_var &repo);
-
+#else
+extern const char *idl2ifr(char **argv, char *&repo);
+#endif
 #endif
 

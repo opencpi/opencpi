@@ -239,6 +239,16 @@ namespace CPI {
                                  bool isTest)
         throw (std::string);
 
+      void processStructProperty (ezxml_t simplePropertyNode,
+                                  CPI::SCA::Property * propData,
+                                  unsigned int & offset,
+                                  bool isSequence,
+                                  bool isTest,
+				  bool isImpl = false)
+        throw (std::string);
+
+      static void doSimple(ezxml_t simplePropertyNode, CPI::SCA::SimpleType *pt, unsigned &max_align, unsigned &size);
+
       const char * getNameOrId (ezxml_t node)
         throw ();
 

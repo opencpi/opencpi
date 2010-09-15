@@ -1,4 +1,5 @@
 # Build from Linux for Linux
+export OCPI_BASE=`pwd`
 export ORB=OMNI
 export PPP_LIB=
 export PPP_INC=
@@ -11,9 +12,9 @@ export DEBUG=1
 export ASSERT=1
 export USE_CPIP_SIMULATION=0
 export HAVE_CORBA=1
-export ACE_ROOT=/opt/TAO/5.6.6/linux-$ARCH-gcc/ACE_wrappers
-export HOST_ROOT=/opt/TAO/5.6.6/linux-$ARCH-gcc/ACE_wrappers
-export LD_LIBRARY_PATH=$CPIDIR/lib/$SYSTEM-$ARCH-bin:/opt/local/TAO/5.6.6/linux-$ARCH-gcc/ACE_wrappers/lib:$LD_LIBRARY_PATH
+# export ACE_ROOT=$OCPI_BASE/../ACE_wrappers/linux-x86_64-bin
+# export HOST_ROOT=/opt/TAO/5.6.6/linux-$ARCH-gcc/ACE_wrappers
+export LD_LIBRARY_PATH=$CPIDIR/lib/$SYSTEM-$ARCH-bin:$LD_LIBRARY_PATH
 export OUTDIR=$SYSTEM-$ARCH-bin
 export OMNIDIR=/usr/local
 export OMNI_IDL_DIR=/usr/local/omniORB/idl

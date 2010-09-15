@@ -10,6 +10,7 @@
 #include "CpiThread.h"
 #include "CpiDriver.h"
 #include "CpiApi.h"
+#include "CpiUtilEzxml.h"
 
 #if defined ( __x86_64__ ) && !defined ( _CPU_IA64 )
 #define _CPU_IA64
@@ -160,7 +161,9 @@ int main(int argc, char *argv[])
   bool probe = false, loop = false, doread = true, two = false, same = true,
     acquire = false, emit = false, dummy = false, cosine = false, psd = false,
     test = false, doTicks = false, metadata = false;
-  char *firstarg = 0, *secondarg = 0, *file = 0, *ofile = 0, *xfile = (char*)"file", *rccFile = 0, *rccName = 0;
+  char *firstarg = 0, *secondarg = 0, *file = 0, *ofile = 0, *xfile = (char*)"file", *rccFile = 0,
+    *rccName = 0, *setProp = 0;
+  uint32_t setValue;
   if (argc == 1) {
     fprintf(stderr, "Usage is: testRpl <options> [<container-name>][<second-container-name>]\n");
     fprintf(stderr, "  Options are:\n"
@@ -191,6 +194,7 @@ int main(int argc, char *argv[])
             "-R\t\tSuppress the read-back and test of what is written\n"
 	    "-S\t\tInsert software worker (rcc) on input side\n"
 	    "-T\t\tPrint timing information between I/Os\n"
+	    "-X prop=value\n"
             );
     return 1;
   }
@@ -277,6 +281,14 @@ int main(int argc, char *argv[])
       case 'x':
         xfile = *++ap;
         break;
+      case 'X':
+	setProp = *++ap;
+	{
+	  char *p = strchr(setProp, '=');
+	  *p++ = 0;
+	  CPI::Util::EzXml::getUNum(p, &setValue);
+	}
+	break;
       case 'y':
         delay = atoi(*++ap);
 	break;
@@ -566,6 +578,10 @@ int main(int argc, char *argv[])
 	rccFile ? w13out.connectExternal ( "w13out", p00, p91) :
 	w3out.connectExternal ( "w0in", p00, p31 );
 
+      if (setProp) {
+	CC::Property p(*w[2], setProp);
+	p.setULongValue(setValue);
+      }
       if (delay) {
 	CC::Property dlyCtrl(*w[2], "dlyCtrl");
 	CC::Property dlyHoldoffBytes(*w[2], "dlyHoldoffBytes");

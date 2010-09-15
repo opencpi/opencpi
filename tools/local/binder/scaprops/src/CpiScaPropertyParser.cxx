@@ -649,7 +649,8 @@ processPRF (ezxml_t prfRoot, bool impl)
 
     if (propertyType &&
         (std::strcmp (propertyType, "simple") == 0 ||
-         std::strcmp (propertyType, "simplesequence") == 0) &&
+         std::strcmp (propertyType, "simplesequence") == 0 ||
+	 std::strcmp (propertyType, "struct") == 0) &&
         isConfigurableProperty (propertyNode)) {
       const char * propName = getNameOrId (propertyNode);
 
@@ -795,6 +796,22 @@ processPRF (ezxml_t prfRoot, bool impl)
                               true, false);
       }
     }
+    else if (propertyType &&
+             std::strcmp (propertyType, "struct") == 0 &&
+             isConfigurableProperty (propertyNode)) {
+      const char * propName = getNameOrId (propertyNode);
+
+      if (!haveProperty (propName)) {
+        processStructProperty (propertyNode, propData, offset, false, false, impl);
+        m_nameToIdxMap[propName] = propIdx++;
+        propData++;
+      }
+      else {
+        adjustSimpleProperty (propertyNode,
+                              &m_properties[m_nameToIdxMap[propName]],
+                              true, false);
+      }
+    }
     else if (propertyType && std::strcmp (propertyType, "test") == 0) {
       if (!haveProperty ("testId")) {
         propData->name = strdup ("testId");
@@ -924,32 +941,19 @@ processPRF (ezxml_t prfRoot, bool impl)
   m_numTests += numTests;
 }
 
-void
-CPI::SCA::PropertyParser::
-processSimpleProperty (ezxml_t simplePropertyNode,
-                       CPI::SCA::Property * propData,
-                       unsigned int & offset,
-                       bool isSequence,
-                       bool isTest,
-		       bool isImpl)
-  throw (std::string)
-{
-  const char * propId = ezxml_attr (simplePropertyNode, "id");
-  const char * propMode = ezxml_attr (simplePropertyNode, "mode");
-  const char * propName = ezxml_attr (simplePropertyNode, "name");
-  const char * propType = ezxml_attr (simplePropertyNode, "type");
+// Code common to simple and struct
+static void
+doProperty(ezxml_t node, CPI::SCA::Property * propData,
+	   bool isSequence, bool isTest, bool isImpl) {
+  const char * propId = ezxml_attr (node, "id");
+  const char * propMode = ezxml_attr (node, "mode");
+  const char * propName = ezxml_attr (node, "name");
 
   if (!propId) {
     throw std::string ("property lacks \"id\" attribute");
   }
-
-  if (!propType) {
-    throw std::string ("property lacks \"type\" attribute");
-  }
-
   propData->name = strdup (propName ? propName : propId);
   propData->is_sequence = isSequence;
-  propData->is_struct = false;
   propData->is_readable = false;
   propData->is_writable = false;
   propData->read_sync = isTest ? false : true;
@@ -968,16 +972,20 @@ processSimpleProperty (ezxml_t simplePropertyNode,
                   std::strcmp (propMode, "readonly")  == 0)) {
     propData->is_readable = true;
   }
+}
 
-  propData->num_members = 1;
-  propData->types = new CPI::SCA::SimpleType [1];
-  CPI::SCA::SimpleType & pt = propData->types[0];
+// Either a simple property or a struct member
+void
+CPI::SCA::PropertyParser::
+doSimple(ezxml_t simplePropertyNode, CPI::SCA::SimpleType *pt, unsigned &max_align, unsigned &size)
+{
+  const char * propType = ezxml_attr (simplePropertyNode, "type");
+  if (!propType) {
+    throw std::string ("property lacks \"type\" attribute");
+  }
 
+  unsigned align;
   if (std::strcmp (propType, "string") == 0) {
-    if (isSequence) {
-      throw std::string ("sequences of strings not supported");
-    }
-
     /*
      * CP289 proposed a "max_string_size" attribute.  But since CP289
      * was never officially adopted, this attribute can not exist in a
@@ -1000,9 +1008,9 @@ processSimpleProperty (ezxml_t simplePropertyNode,
 
     if (propMaxSize) {
       char * endPtr;
-      pt.size = std::strtoul (propMaxSize, &endPtr, 10);
+      size = std::strtoul (propMaxSize, &endPtr, 10);
 
-      if (!propData->types[0].size || *endPtr) {
+      if (!size || *endPtr) {
         std::string errMsg = "Invalid value \"";
         errMsg += propMaxSize;
         errMsg += "\" for \"max_string_size\" property";
@@ -1010,65 +1018,122 @@ processSimpleProperty (ezxml_t simplePropertyNode,
       }
     }
     else {
-      pt.size = 255; /* Hardcoded default. */
+      size = 255; /* Hardcoded default. */
     }
-
-    pt.data_type = CPI::SCA::SCA_string;
-    propData->offset = roundUp (offset, 4);
-    offset = propData->offset + propData->types[0].size + 1;
+    align = 4;
+    if (pt) {
+      pt->data_type = CPI::SCA::SCA_string;
+      pt->size = size;
+    }
+    size++; // tell caller that we need that null byte too
   }
   else {
-    pt.data_type = mapPropertyType (propType);
-    pt.size = 0;
-
-    unsigned int size = propertySize (pt.data_type);
-    unsigned int align = propertyAlign (pt.data_type);
-
-    if (isSequence) {
-      /*
-       * CP289 proposed a "max_sequence_size" attribute.  But since CP289
-       * was never officially adopted, this attribute can not exist in a
-       * compliant property file.
-       *
-       * As a workaround, we accept "max_sequence_size=<nn>" as part of
-       * the description.
-       *
-       * If that is missing as well, use a hard-coded default.
-       */
-
-      const char * propSeqSize = ezxml_attr (simplePropertyNode, "max_sequence_size");
-
-      if (!propSeqSize) {
-        ezxml_t descNode = ezxml_child (simplePropertyNode, "description");
-        const char * description = descNode ? ezxml_txt (descNode) : 0;
-        propSeqSize = description ? std::strstr (description, "max_sequence_size=") : 0;
-        propSeqSize = propSeqSize ? propSeqSize+18 : 0;
-      }
-
-      if (propSeqSize) {
-        char * endPtr;
-        propData->sequence_size = std::strtoul (propSeqSize, &endPtr, 10);
-
-        if (!propData->sequence_size || *endPtr) {
-          std::string errMsg = "Invalid value \"";
-          errMsg += propSeqSize;
-          errMsg += "\" for \"max_sequence_size\" property";
-          throw errMsg;
-        }
-      }
-      else {
-        propData->sequence_size = 256; /* Hardcoded default. */
-      }
-
-      propData->offset = roundUp (offset, 4);
-      propData->data_offset = roundUp (propData->offset + 4, align);
-      offset = propData->data_offset + size * propData->sequence_size;
-    }
-    else {
-      propData->offset = roundUp (offset, align);
-      offset = propData->offset + size;
+    CPI::SCA::DataType dt = mapPropertyType (propType);
+    align = CPI::SCA::PropertyParser::propertyAlign (dt);
+    size = CPI::SCA::PropertyParser::propertySize (dt);
+    if (pt) {
+      pt->data_type = dt;
+      pt->size = 0;
     }
   }
+  if (align > max_align)
+    max_align = align;
+}
+
+void
+CPI::SCA::PropertyParser::
+processStructProperty (ezxml_t structPropertyNode,
+                       CPI::SCA::Property * propData,
+                       unsigned int & offset,
+                       bool isSequence,
+                       bool isTest,
+		       bool isImpl)
+  throw (std::string)
+{
+  doProperty(structPropertyNode, propData, isSequence, isTest, isImpl);
+  propData->is_struct = true;
+  propData->num_members = 0;
+  for (ezxml_t child = ezxml_child(structPropertyNode, "simple"); child; child = ezxml_next(child))
+    propData->num_members++;
+  // Count members
+  propData->types = new CPI::SCA::SimpleType [propData->num_members];
+  unsigned max_align = isSequence ? 4 : 0, size;
+  // First pass for alignment
+  for (ezxml_t child = ezxml_child(structPropertyNode, "simple"); child;
+       child = ezxml_next(child))
+    doSimple(child, 0, max_align, size);
+  propData->offset = roundUp(offset, max_align);
+  propData->data_offset = roundUp(propData->offset + (isSequence  ? 4 : 0), max_align);
+  offset = propData->data_offset;
+  CPI::SCA::SimpleType *pt = propData->types;
+  for (ezxml_t child = ezxml_child(structPropertyNode, "simple"); child;
+       child = ezxml_next(child), pt++) {
+    pt->name = strdup(ezxml_attr(child, "name"));
+    unsigned align = 0;
+    doSimple(child, pt, align, size);
+    offset = roundUp(offset, align);
+    offset += size;
+  }
+}
+void
+CPI::SCA::PropertyParser::
+processSimpleProperty (ezxml_t simplePropertyNode,
+                       CPI::SCA::Property * propData,
+                       unsigned int & offset,
+                       bool isSequence,
+                       bool isTest,
+		       bool isImpl)
+  throw (std::string)
+{
+  doProperty(simplePropertyNode, propData, isSequence, isTest, isImpl);
+
+  propData->is_struct = false;
+  propData->num_members = 1;
+  propData->types = new CPI::SCA::SimpleType [1];
+  unsigned align = isSequence ? 4 : 0, size;
+  doSimple(simplePropertyNode, propData->types, align, size);
+  if (isSequence) {
+    /*
+     * CP289 proposed a "max_sequence_size" attribute.  But since CP289
+     * was never officially adopted, this attribute can not exist in a
+     * compliant property file.
+     *
+     * As a workaround, we accept "max_sequence_size=<nn>" as part of
+     * the description.
+     *
+     * If that is missing as well, use a hard-coded default.
+     */
+    const char * propSeqSize = ezxml_attr (simplePropertyNode, "max_sequence_size");
+
+    if (!propSeqSize) {
+      ezxml_t descNode = ezxml_child (simplePropertyNode, "description");
+      const char * description = descNode ? ezxml_txt (descNode) : 0;
+      propSeqSize = description ? std::strstr (description, "max_sequence_size=") : 0;
+      propSeqSize = propSeqSize ? propSeqSize+18 : 0;
+    }
+    
+    if (propSeqSize) {
+      char * endPtr;
+      propData->sequence_size = std::strtoul (propSeqSize, &endPtr, 10);
+      
+      if (!propData->sequence_size || *endPtr) {
+	std::string errMsg = "Invalid value \"";
+	errMsg += propSeqSize;
+	errMsg += "\" for \"max_sequence_size\" property";
+	throw errMsg;
+      }
+    }
+    else {
+      propData->sequence_size = 256; /* Hardcoded default. */
+    }
+    propData->offset = roundUp (offset, align);
+    propData->data_offset = roundUp (propData->offset + 4, align);
+    offset = propData->data_offset + size * propData->sequence_size;
+  } else {
+    propData->offset = propData->data_offset = roundUp(offset, align);
+    offset = propData->offset + size;
+  }
+  propData->types->name = propData->name;
 }
 
 void
@@ -1130,6 +1195,8 @@ isConfigurableProperty (ezxml_t propertyNode)
 {
   bool isConfigurable = false;
   ezxml_t kindNode = ezxml_child (propertyNode, "kind");
+  if (!kindNode)
+    kindNode = ezxml_child (propertyNode, "configurationkind");
 
   while (kindNode && !isConfigurable) {
     const char * kindType = ezxml_attr (kindNode, "kindtype");

@@ -18,6 +18,7 @@
 ALLINC += $(UTIL_EXPORTS) \
 	$(LOGGER_EXPORTS) \
 	$(CPIOS_EXPORTS)
+ifneq (,)
 LIB_ACE_ROOT=$(ACE_ROOT)
 #LDLIBS = -lTAO_IFRService -lTAO_IFR_Client -lTAO_AnyTypeCode -lTAO_IORTable -lTAO_Svc_Utils -lTAO_IFR_BE -lTAO_IDL_FE -lTAO_TypeCodeFactory -lTAO_PortableServer -lTAO -lACE
 # Not specifically libraries, but where indirect .so's can be found
@@ -29,6 +30,8 @@ SYSLIBS += \
   $(patsubst %,$(LIB_ACE_ROOT)/TAO/TAO_IDL/%,TAO_IDL_FE) \
   $(patsubst %,$(LIB_ACE_ROOT)/TAO/TAO_IDL/%,TAO_IDL_BE) \
   $(patsubst %,$(LIB_ACE_ROOT)/TAO/tao/%,TAO TAO_IFR_Client TAO_PortableServer TAO_IORTable TAO_TypeCodeFactory TAO_AnyTypeCode) \
+
+endif
 
 ALLLIBS += $(UTIL_LIBS) \
 	$(LOGGER_LIBS) \

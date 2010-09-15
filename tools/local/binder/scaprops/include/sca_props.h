@@ -65,6 +65,7 @@ SCA_data_type_limit
 typedef struct {
   unsigned long size;
   DataType data_type;
+  const char *name; // for struct members
 } SimpleType;
 
 // Describe a property
