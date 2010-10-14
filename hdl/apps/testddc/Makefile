@@ -6,5 +6,5 @@ XmlIncludeDirs += ../../platform
 # These (for now) just xml files containing HdlContainer elements.
 Containers=testddcCont
 #Target=xc5vlx50t-ff1136-1
-Target=xc5vsx95t-ff1136-2
+#Target=xc5vsx95t-2-ff1136
 include $(OCPI_DIR)/include/hdl/hdl-app.mk
