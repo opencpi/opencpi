@@ -1,4 +1,38 @@
 
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 #include <stdio.h>
 #include <sstream>
 #include <stdlib.h>
@@ -6,14 +40,14 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <CpiUtilCommandLineConfiguration.h>
-#include <CpiOsAssert.h>
+#include <OcpiUtilCommandLineConfiguration.h>
+#include <OcpiOsAssert.h>
 
-class CpiRccBinderConfigurator
-  : public CPI::Util::CommandLineConfiguration
+class OcpiRccBinderConfigurator
+  : public OCPI::Util::CommandLineConfiguration
 {
 public:
-  CpiRccBinderConfigurator ();
+  OcpiRccBinderConfigurator ();
 
 public:
   bool          help;
@@ -26,43 +60,41 @@ private:
 };
 
 // Configuration
-static  CpiRccBinderConfigurator config;
+static  OcpiRccBinderConfigurator config;
 
-CpiRccBinderConfigurator::
-CpiRccBinderConfigurator ()
-  : CPI::Util::CommandLineConfiguration (g_options),
+OcpiRccBinderConfigurator::
+OcpiRccBinderConfigurator ()
+  : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
     verbose (false)
 {
 }
 
-CPI::Util::CommandLineConfiguration::Option
-CpiRccBinderConfigurator::g_options[] = {
- 
-  { CPI::Util::CommandLineConfiguration::OptionType::MULTISTRING,
+OCPI::Util::CommandLineConfiguration::Option
+OcpiRccBinderConfigurator::g_options[] = {
+
+  { OCPI::Util::CommandLineConfiguration::OptionType::MULTISTRING,
     "inputFiles", "Input Files to merge",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::inputFiles) },
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::inputFiles), 0 },
 
-  { CPI::Util::CommandLineConfiguration::OptionType::STRING,
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "outputFile", "Output File",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::outputFile) },
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::outputFile), 0 },
 
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "verbose", "Be verbose",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::verbose) },
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::verbose), 0 },
 
-  { CPI::Util::CommandLineConfiguration::OptionType::NONE,
+  { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
     "help", "This message",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::help) },
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::help), 0 },
 
-
-
-  { CPI::Util::CommandLineConfiguration::OptionType::END }
+  { OCPI::Util::CommandLineConfiguration::OptionType::END, 0, 0, 0, 0 }
 };
 
 static
 void
-printUsage (CpiRccBinderConfigurator & config,
+printUsage (OcpiRccBinderConfigurator & config,
             const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
@@ -71,7 +103,7 @@ printUsage (CpiRccBinderConfigurator & config,
 }
 
 
-static 
+static
 void
 getNextSym( char * mysym )
 {
@@ -88,7 +120,7 @@ getNextSym( char * mysym )
       syms[n] = SYMSTART + n;
     }
   }
-  
+
   int rem=nextsym/SYMLEN;
   int mod=nextsym%SYMLEN;
   int idx=0;
@@ -96,7 +128,7 @@ getNextSym( char * mysym )
   while ( rem ) {
     nextsym++;
     mod=nextsym%SYMLEN;
-    mysym[idx++] = syms[mod];    
+    mysym[idx++] = syms[mod];
     rem--;
   }
   nextsym++;
@@ -125,7 +157,7 @@ enum VCDType { VariableT, TagT, TimeT, Opaque2PartT, JunkT };
 struct VCDValue :  public VCDBase {
   VCDValue ( std::string& v )
     :VCDBase(v),type(JunkT){parse();}
-  void parse() {        
+  void parse() {
     int c;
     for (unsigned int n=0; n<m_value.size(); n++) {
       if ( isspace( m_value[n] ) ) {
@@ -154,13 +186,13 @@ struct VCDValue :  public VCDBase {
             memcpy(token,t.c_str(),t.length());
             token[t.length()]=0;
             break;
-          }          
+          }
           if ( ! isspace( m_value[n] )) {
             t += m_value[n];
           }
         }
         memcpy(value, m_value.c_str(), n+1);
-        
+
         // can fail on $end, ok
         //        sscanf( m_value.c_str(),"%s %s",value, token);
         break;
@@ -189,7 +221,7 @@ struct VCDValue :  public VCDBase {
   }
 
   virtual ~VCDValue(){};
-  
+
   VCDType type;
   char token[80];
   char value[128];
@@ -201,14 +233,14 @@ struct VCDValDef : public VCDBase {
   VCDValDef( std::string& v )
     :VCDBase(v),type(TagT){parse();}
 
-  void parse() {        
+  void parse() {
 
     if ( m_value.find("$var") != std::string::npos ) {
       type = VariableT;
       char n[256];
       sscanf( m_value.c_str(),"$var %s %s %s %s", kind,size,token,n);
       name = n;
-      getNextSym( n );      
+      getNextSym( n );
       printf("Replacing token %s with %s\n", token, n );
       old_token = token;
       strcpy( token, n );
@@ -255,7 +287,7 @@ void replaceTokens( std::vector<VCDValue> & values, std::vector<VCDValDef> & def
 class VcdParser {
 public:
 
-  VcdParser( const char* file ) 
+  VcdParser( const char* file )
     :m_filename(file)
   {
     m_file.open( file, std::ios::in );
@@ -263,7 +295,7 @@ public:
       std::string err("Unable to open input file: ");
       err += file;
       throw err;
-    }    
+    }
     parse();
   }
 
@@ -286,9 +318,9 @@ public:
         header += line + "\n";
       }
     }
-    printf("Header = %s\n", header.c_str() );    
+    printf("Header = %s\n", header.c_str() );
 
-    // Definitions    
+    // Definitions
     val_defs.push_back(VCDValDef(line));
     done = false;
     while ( ! done &&  ! m_file.eof() ) {
@@ -316,7 +348,7 @@ public:
     }
     if ( ivfound ) {
       done = false;
-      while ( ! done &&  ! m_file.eof() ) {  
+      while ( ! done &&  ! m_file.eof() ) {
         getline( m_file, line );
         printf("%s\n", line.c_str() );
         if ( ( line.find("$end" ) != std::string::npos ) ) {
@@ -325,14 +357,14 @@ public:
         else {
           init_values.push_back(VCDValue(line) );
         }
-      }      
+      }
     }
     replaceTokens( init_values, val_defs );
 
 
     // values
     done = false;
-    while ( ! done &&  ! m_file.eof() ) {  
+    while ( ! done &&  ! m_file.eof() ) {
       getline( m_file, line );
       printf("%s\n", line.c_str() );
       if ( ( line.find("$dumpoff" ) != std::string::npos ) ) {
@@ -350,7 +382,7 @@ public:
         }
       }
     }
-    for ( int n=0; n<time.size(); n++ ) {
+    for ( int n=0; n<(int)time.size(); n++ ) {
       replaceTokens( time[n], val_defs );
     }
 
@@ -369,8 +401,8 @@ public:
   {
     unsigned int n,m;
     // If there are name collisions, correct them with a post fix
-    for( n=0; n<val_defs.size(); n++ ) { 
-      for(  m=0; m<p->val_defs.size(); m++ ) { 
+    for( n=0; n<val_defs.size(); n++ ) {
+      for(  m=0; m<p->val_defs.size(); m++ ) {
         if ( val_defs[n].type == VariableT ) {
           if ( val_defs[n].name == p->val_defs[m].name ) {
             p->val_defs[m].name += "_Mrg";
@@ -378,37 +410,37 @@ public:
         }
       }
     }
-    for(  m=0; m<p->val_defs.size(); m++ ) { 
+    for(  m=0; m<p->val_defs.size(); m++ ) {
       val_defs.push_back( p->val_defs[m] );
     }
 
     //DEBUG, REMOVE
-    for(  m=0; m<val_defs.size(); m++ ) { 
+    for(  m=0; m<val_defs.size(); m++ ) {
       printf( "Var name = %s\n", val_defs[m].name.c_str() );
     }
 
 
 
-    for(  m=0; m<p->init_values.size(); m++ ) { 
+    for(  m=0; m<p->init_values.size(); m++ ) {
       init_values.push_back( p->init_values[m] );
     }
     std::vector< std::vector<VCDValue> >::iterator t;
     std::vector< std::vector<VCDValue> >::iterator ts;
-    for( t=p->time.begin(); t!=p->time.end(); t++ ) { 
+    for( t=p->time.begin(); t!=p->time.end(); t++ ) {
       bool inserted=false;
-      for( ts=time.begin(); ts!=time.end(); ts++ ) { 
+      for( ts=time.begin(); ts!=time.end(); ts++ ) {
         if ( (*t).begin()[0].time < (*ts).begin()[0].time ) {
           time.insert( ts, (*t) );
           inserted = true;
           break;
-        }      
+        }
         else if ( (*t).begin()[0].time == (*ts).begin()[0].time ) {
           for (unsigned int u=1; u<(*t).size(); u++ ) {
             (*ts).push_back( (*t)[u] );
           }
           inserted = true;
           break;
-        }      
+        }
       }
       if ( ! inserted ) {
         time.push_back( (*t) );
@@ -430,7 +462,7 @@ public:
 
 
 static
-void 
+void
 formatOutput(  VcdParser * parser, std::fstream & out )
 {
   unsigned int n;
@@ -445,20 +477,20 @@ formatOutput(  VcdParser * parser, std::fstream & out )
   strftime(date,80,fmt,pmt);
   out << "$date" << std::endl;
   out << "         " << date << std::endl;
-  out << "$end" << std::endl;  
+  out << "$end" << std::endl;
 
   // Version
-  out << "$version" << std::endl;  
-  out << "            CPI VCD Merged File Event Dumper V1.0" << std::endl;
-  out << "$end" << std::endl;  
-  
+  out << "$version" << std::endl;
+  out << "            OCPI VCD Merged File Event Dumper V1.0" << std::endl;
+  out << "$end" << std::endl;
+
   // Timescale
-  out << "$timescale" << std::endl;    
+  out << "$timescale" << std::endl;
   out << "          1 us" << std::endl;
   out << "$end" << std::endl;
 
   // Now the definitions
-  out << "$scope module Merge $end" << std::endl;    
+  out << "$scope module Merge $end" << std::endl;
   for ( n=0; n<parser->val_defs.size(); n++ ) {
     out << parser->val_defs[n].toString() << std::endl;
   }
@@ -470,18 +502,18 @@ formatOutput(  VcdParser * parser, std::fstream & out )
   for ( n=0; n<parser->init_values.size(); n++ ) {
     out << parser->init_values[n].toString() << std::endl;
   }
-  out << "$end" << std::endl;  
+  out << "$end" << std::endl;
 
   // Time values
   out << std::endl << "$dumpoff" << std::endl;
 
   std::vector< std::vector<VCDValue> >::iterator t;
-  for( t=parser->time.begin(); t!=parser->time.end(); t++ ) { 
+  for( t=parser->time.begin(); t!=parser->time.end(); t++ ) {
     for ( unsigned int m=0; m<(*t).size(); m++ ) {
       out << (*t)[m].toString() << std::endl;
     }
   }
-  out << "$end" << std::endl;  
+  out << "$end" << std::endl;
 
 }
 
@@ -512,7 +544,7 @@ int main( int argc, char ** argv )
     return -1;
   }
   if ( config.verbose ) {
-    printf("Processing Input files:\n");    
+    printf("Processing Input files:\n");
     std::vector<std::string>::iterator it;
     for ( it=config.inputFiles.begin(); it != config.inputFiles.end(); it++ ) {
       printf("   %s\n", (*it).c_str() );
@@ -537,7 +569,7 @@ int main( int argc, char ** argv )
     for ( it=config.inputFiles.begin(); it != config.inputFiles.end(); it++ ) {
       VcdParser* p = new VcdParser( (*it).c_str() );
       parsers.push_back( p );
-    } 
+    }
   }
   catch( std::string & err ) {
     fprintf( stderr, "%s\n", err.c_str());

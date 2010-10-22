@@ -1,3 +1,0 @@
-include ../../../../../Makefile.cpi.for-src
-#to just optimize this package
-#CXXFLAGS:=-Wall -fPIC -O2

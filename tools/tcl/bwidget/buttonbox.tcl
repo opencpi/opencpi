@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  buttonbox.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -19,15 +55,15 @@ namespace eval ButtonBox {
     Widget::define ButtonBox buttonbox Button
 
     Widget::declare ButtonBox {
-	{-background  TkResource ""	    0 frame}
-	{-orient      Enum	 horizontal 1 {horizontal vertical}}
-	{-state	      Enum	 "normal"   0 {normal disabled}}
-	{-homogeneous Boolean	 1	    1}
-	{-spacing     Int	 10	    0 "%d >= 0"}
-	{-padx	      TkResource ""	    0 button}
-	{-pady	      TkResource ""	    0 button}
-	{-default     Int	 -1	    0 "%d >= -1"}
-	{-bg	      Synonym	 -background}
+        {-background  TkResource ""            0 frame}
+        {-orient      Enum         horizontal 1 {horizontal vertical}}
+        {-state              Enum         "normal"   0 {normal disabled}}
+        {-homogeneous Boolean         1            1}
+        {-spacing     Int         10            0 "%d >= 0"}
+        {-padx              TkResource ""            0 button}
+        {-pady              TkResource ""            0 button}
+        {-default     Int         -1            0 "%d >= -1"}
+        {-bg              Synonym         -background}
     }
 
     Widget::addmap ButtonBox "" :cmd {-background {}}
@@ -46,7 +82,7 @@ proc ButtonBox::create { path args } {
     upvar 0  $path data
 
     eval [list frame $path] [Widget::subcget $path :cmd] \
-	[list -class ButtonBox -takefocus 0 -highlightthickness 0]
+        [list -class ButtonBox -takefocus 0 -highlightthickness 0]
     # For 8.4+ we don't want to inherit the padding
     catch {$path configure -padx 0 -pady 0}
 
@@ -85,9 +121,9 @@ proc ButtonBox::configure { path args } {
     }
 
     if {[Widget::hasChanged $path -state val]} {
-	foreach i $data(buttons) {
-	    $path.b$i configure -state $val
-	}
+        foreach i $data(buttons) {
+            $path.b$i configure -state $val
+        }
     }
 
     return $res
@@ -122,10 +158,10 @@ proc ButtonBox::insert { path idx args } {
     ## to their left while all other have their spacing applied
     ## to their right.
     if {$idx == "end"} {
-	set data(spacing,$data(nbuttons)) [list left $spacing]
-	lappend data(buttons) $data(nbuttons)
+        set data(spacing,$data(nbuttons)) [list left $spacing]
+        lappend data(buttons) $data(nbuttons)
     } else {
-	set data(spacing,$data(nbuttons)) [list right $spacing]
+        set data(spacing,$data(nbuttons)) [list right $spacing]
         set data(buttons) [linsert $data(buttons) $idx $data(nbuttons)]
     }
 
@@ -140,23 +176,23 @@ proc ButtonBox::insert { path idx args } {
     array set flags $args
     set tags ""
     if { [info exists flags(-tags)] } {
-	set tags $flags(-tags)
-	unset flags(-tags)
-	set args [array get flags]
+        set tags $flags(-tags)
+        unset flags(-tags)
+        set args [array get flags]
     }
 
     eval [list Button::create $but \
-	      -background [Widget::getoption $path -background]\
-	      -padx       [Widget::getoption $path -padx] \
-	      -pady       [Widget::getoption $path -pady]] \
+              -background [Widget::getoption $path -background]\
+              -padx       [Widget::getoption $path -padx] \
+              -pady       [Widget::getoption $path -pady]] \
         $args [list -default $style]
 
     # ericm@scriptics.com:  set up tags, just like the menu items
     foreach tag $tags {
-	lappend data(tags,$tag) $but
-	if { ![info exists data(tagstate,$tag)] } {
-	    set data(tagstate,$tag) 0
-	}
+        lappend data(tags,$tag) $but
+        if { ![info exists data(tagstate,$tag)] } {
+            set data(tagstate,$tag) 0
+        }
     }
     set data(buttontags,$but) $tags
     # ericm@scriptics.com
@@ -181,58 +217,58 @@ proc ButtonBox::delete { path idx } {
 
 # ButtonBox::setbuttonstate --
 #
-#	Set the state of a given button tag.  If this makes any buttons
+#        Set the state of a given button tag.  If this makes any buttons
 #       enable-able (ie, all of their tags are TRUE), enable them.
 #
 # Arguments:
-#	path        the button box widget name
-#	tag         the tag to modify
-#	state       the new state of $tag (0 or 1)
+#        path        the button box widget name
+#        tag         the tag to modify
+#        state       the new state of $tag (0 or 1)
 #
 # Results:
-#	None.
+#        None.
 
 proc ButtonBox::setbuttonstate {path tag state} {
     variable $path
     upvar 0  $path data
     # First see if this is a real tag
     if { [info exists data(tagstate,$tag)] } {
-	set data(tagstate,$tag) $state
-	foreach but $data(tags,$tag) {
-	    set expression "1"
-	    foreach buttontag $data(buttontags,$but) {
-		append expression " && $data(tagstate,$buttontag)"
-	    }
-	    if { [expr $expression] } {
-		set state normal
-	    } else {
-		set state disabled
-	    }
-	    $but configure -state $state
-	}
+        set data(tagstate,$tag) $state
+        foreach but $data(tags,$tag) {
+            set expression "1"
+            foreach buttontag $data(buttontags,$but) {
+                append expression " && $data(tagstate,$buttontag)"
+            }
+            if { [expr $expression] } {
+                set state normal
+            } else {
+                set state disabled
+            }
+            $but configure -state $state
+        }
     }
     return
 }
 
 # ButtonBox::getbuttonstate --
 #
-#	Retrieve the state of a given button tag.
+#        Retrieve the state of a given button tag.
 #
 # Arguments:
-#	path        the button box widget name
-#	tag         the tag to modify
+#        path        the button box widget name
+#        tag         the tag to modify
 #
 # Results:
-#	None.
+#        None.
 
 proc ButtonBox::getbuttonstate {path tag} {
     variable $path
     upvar 0  $path data
     # First see if this is a real tag
     if { [info exists data(tagstate,$tag)] } {
-	return $data(tagstate,$tag)
+        return $data(tagstate,$tag)
     } else {
-	error "unknown tag $tag"
+        error "unknown tag $tag"
     }
 }
 
@@ -289,19 +325,19 @@ proc ButtonBox::index { path index } {
     if {[string equal $index "default"]} {
         set res [Widget::getoption $path -default]
     } elseif {$index == "end" || $index == "last"} {
-	set res $n
+        set res $n
     } elseif {![string is integer -strict $index]} {
-	## It's not an integer.  Search the text of each button
-	## in the box and return the index that matches.
-	foreach i $data(buttons) {
-	    set w $path.b$i
-	    lappend text  [$w cget -text]
-	    lappend names [$w cget -name]
-	}
-	set res [lsearch -exact [concat $names $text] $index]
+        ## It's not an integer.  Search the text of each button
+        ## in the box and return the index that matches.
+        foreach i $data(buttons) {
+            set w $path.b$i
+            lappend text  [$w cget -text]
+            lappend names [$w cget -name]
+        }
+        set res [lsearch -exact [concat $names $text] $index]
     } else {
         set res $index
-	if {$index > $n} { set res $n }
+        if {$index > $n} { set res $n }
     }
     return $res
 }
@@ -309,19 +345,19 @@ proc ButtonBox::index { path index } {
 
 # ButtonBox::gettags --
 #
-#	Return a list of all the tags on all the buttons in a buttonbox.
+#        Return a list of all the tags on all the buttons in a buttonbox.
 #
 # Arguments:
-#	path      the buttonbox to query.
+#        path      the buttonbox to query.
 #
 # Results:
-#	taglist   a list of tags on the buttons in the buttonbox
+#        taglist   a list of tags on the buttons in the buttonbox
 
 proc ButtonBox::gettags {path} {
     upvar ::ButtonBox::$path data
     set taglist {}
     foreach tag [array names data "tags,*"] {
-	lappend taglist [string range $tag 5 end]
+        lappend taglist [string range $tag 5 end]
     }
     return $taglist
 }
@@ -344,8 +380,8 @@ proc ButtonBox::_redraw { path } {
     set idx  0
     set idxs [list]
     foreach i $data(buttons) {
-	set dir     [lindex $data(spacing,$i) 0]
-	set spacing [lindex $data(spacing,$i) 1]
+        set dir     [lindex $data(spacing,$i) 0]
+        set spacing [lindex $data(spacing,$i) 1]
         set but $path.b$i
         if {[string equal [Widget::getoption $path -orient] "horizontal"]} {
             grid $but -column $idx -row 0 -sticky nsew
@@ -360,22 +396,22 @@ proc ButtonBox::_redraw { path } {
                 grid columnconfigure $path $idx -weight 0
             }
 
-	    set col [expr {$idx - 1}]
-	    if {[string equal $dir "right"]} { set col [expr {$idx + 1}] }
-	    if {$col > 0 && [lsearch $idxs $col] < 0} {
-		lappend idxs $col
-		grid columnconfigure $path $col -minsize $spacing
-	    }
+            set col [expr {$idx - 1}]
+            if {[string equal $dir "right"]} { set col [expr {$idx + 1}] }
+            if {$col > 0 && [lsearch $idxs $col] < 0} {
+                lappend idxs $col
+                grid columnconfigure $path $col -minsize $spacing
+            }
         } else {
             grid $but -column 0 -row $idx -sticky nsew
             grid rowconfigure $path $idx -weight 0
 
-	    set row [expr {$idx - 1}]
-	    if {[string equal $dir "right"]} { set row [expr {$idx + 1}] }
-	    if {$row > 0 && [lsearch $idxs $row] < 0} {
-		lappend idxs $row
-		grid rowconfigure $path $row -minsize $spacing
-	    }
+            set row [expr {$idx - 1}]
+            if {[string equal $dir "right"]} { set row [expr {$idx + 1}] }
+            if {$row > 0 && [lsearch $idxs $row] < 0} {
+                lappend idxs $row
+                grid rowconfigure $path $row -minsize $spacing
+            }
         }
         incr idx 2
     }

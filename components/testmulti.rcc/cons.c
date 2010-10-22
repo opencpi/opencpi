@@ -1,27 +1,45 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #if 0 // until we have a functioning AEP..
-#include <CpiTimeEmitC.h>
+#include <OcpiTimeEmitC.h>
 #else
-#define CPI_TIME_EMIT_C(x)
+#define OCPI_TIME_EMIT_C(x)
 #endif
 #include "ConsumerWorker_Worker.h"
 
@@ -72,21 +90,25 @@ static RCCResult initialize(RCCWorker *this_)
 
 static RCCResult start(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
 static RCCResult stop(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
 static RCCResult release(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
 static RCCResult test(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
@@ -114,6 +136,9 @@ static int dropped_b=0;
 static int report_er=0;
 static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
+
   int ncount, *b;
   uint32_t len,n;
   ConsumerWorkerStaticMemory *mem = this_->memories[0];
@@ -132,7 +157,7 @@ static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCond
   */
 
 
-    CPI_TIME_EMIT_C( "Worker Consumer Start" );
+    OCPI_TIME_EMIT_C( "Worker Consumer Start" );
 
 #ifdef TIME_TP
   if ( mem->b_count == 0 ) {
@@ -161,7 +186,7 @@ static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCond
 
 #define RESYNC
 #ifdef RESYNC
-  if ( *b != mem->b_count ) {
+  if ( *b != (int)mem->b_count ) {
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
            *b, mem->b_count );
     dropped_b++;
@@ -203,9 +228,9 @@ static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCond
   }
 #endif
 
-  CPI_TIME_EMIT_C("Consumer Start Release");
+  OCPI_TIME_EMIT_C("Consumer Start Release");
   this_->container->release( &this_->ports[ConsumerWorker_Data_In_Port].current ); 
-  CPI_TIME_EMIT_C("Consumer End Release");
+  OCPI_TIME_EMIT_C("Consumer End Release");
   return RCC_OK;
 }
 

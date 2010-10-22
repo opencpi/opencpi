@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  panedw.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -37,7 +73,7 @@ namespace eval PanedWindow {
         {-background TkResource ""    0 frame}
         {-bg         Synonym    -background}
         {-activator  Enum       ""    1 {line button}}
-	{-weights    Enum       extra 1 {extra available}}
+        {-weights    Enum       extra 1 {extra available}}
     }
 
     variable _panedw
@@ -116,62 +152,62 @@ proc PanedWindow::add { path args } {
 
     if { $num > 0 } {
         set frame [frame $path.sash$num -relief flat -bd 0 \
-		-highlightthickness 0 -width $width -height $width -bg $bg]
+                -highlightthickness 0 -width $width -height $width -bg $bg]
         set sep   [frame $frame.sep -bd 5 -relief raised \
-		-highlightthickness 0 -bg $bg]
+                -highlightthickness 0 -bg $bg]
         set but   [frame $frame.but -bd 1 -relief raised \
-		-highlightthickness 0 -bg $bg -width $wbut -height $wbut]
-	set placeButton 1
-	set sepsize     2
+                -highlightthickness 0 -bg $bg -width $wbut -height $wbut]
+        set placeButton 1
+        set sepsize     2
 
-	set activator [Widget::getoption $path -activator]
-	if {$activator == ""} {
-	    if { $::tcl_platform(platform) != "windows" } {
-		set activator button
-	    } else {
-		set activator line
-	    }
-	}
-	if {$activator == "button"} {
-	    set activator $but
-	} else {
-	    set activator $sep
-	    set sepsize 4
-	    $sep configure -bd 3
-	    set placeButton 0
-	}
+        set activator [Widget::getoption $path -activator]
+        if {$activator == ""} {
+            if { $::tcl_platform(platform) != "windows" } {
+                set activator button
+            } else {
+                set activator line
+            }
+        }
+        if {$activator == "button"} {
+            set activator $but
+        } else {
+            set activator $sep
+            set sepsize 4
+            $sep configure -bd 3
+            set placeButton 0
+        }
         if {[string equal $side "top"] || [string equal $side "bottom"]} {
             place $sep -relx 0.5 -y 0 -width $sepsize -relheight 1.0 -anchor n
-	    if { $placeButton } {
-		if {[string equal $side "top"]} {
-		    place $but -relx 0.5 -y [expr {6+$wbut/2}] -anchor c
-		} else {
-		    place $but -relx 0.5 -rely 1.0 -y [expr {-6-$wbut/2}] \
-			    -anchor c
-		}
-	    }
+            if { $placeButton } {
+                if {[string equal $side "top"]} {
+                    place $but -relx 0.5 -y [expr {6+$wbut/2}] -anchor c
+                } else {
+                    place $but -relx 0.5 -rely 1.0 -y [expr {-6-$wbut/2}] \
+                            -anchor c
+                }
+            }
             $activator configure -cursor sb_h_double_arrow 
             grid $frame -column [expr {2*$num-1}] -row 0 -sticky ns
             grid columnconfigure $path [expr {2*$num-1}] -weight 0
         } else {
             place $sep -x 0 -rely 0.5 -height $sepsize -relwidth 1.0 -anchor w
-	    if { $placeButton } {
-		if {[string equal $side "left"]} {
-		    place $but -rely 0.5 -x [expr {6+$wbut/2}] -anchor c
-		} else {
-		    place $but -rely 0.5 -relx 1.0 -x [expr {-6-$wbut/2}] \
-			    -anchor c
-		}
-	    }
+            if { $placeButton } {
+                if {[string equal $side "left"]} {
+                    place $but -rely 0.5 -x [expr {6+$wbut/2}] -anchor c
+                } else {
+                    place $but -rely 0.5 -relx 1.0 -x [expr {-6-$wbut/2}] \
+                            -anchor c
+                }
+            }
             $activator configure -cursor sb_v_double_arrow 
             grid $frame -row [expr {2*$num-1}] -column 0 -sticky ew
             grid rowconfigure $path [expr {2*$num-1}] -weight 0
         }
         bind $activator <ButtonPress-1> \
-	    [list PanedWindow::_beg_move_sash $path $num %X %Y]
+            [list PanedWindow::_beg_move_sash $path $num %X %Y]
     } else {
         if { [string equal $side "top"] || \
-		[string equal $side "bottom"] } {
+                [string equal $side "bottom"] } {
             grid rowconfigure $path 0 -weight 1
         } else {
             grid columnconfigure $path 0 -weight 1
@@ -179,9 +215,9 @@ proc PanedWindow::add { path args } {
     }
 
     set pane [frame $path.f$num -bd 0 -relief flat \
-	    -highlightthickness 0 -bg $bg]
+            -highlightthickness 0 -bg $bg]
     set user [frame $path.f$num.frame  -bd 0 -relief flat \
-	    -highlightthickness 0 -bg $bg]
+            -highlightthickness 0 -bg $bg]
     if { [string equal $side "top"] || [string equal $side "bottom"] } {
         grid $pane -column [expr {2*$num}] -row 0 -sticky nsew
         grid columnconfigure $path [expr {2*$num}] -weight $weight
@@ -192,7 +228,7 @@ proc PanedWindow::add { path args } {
     pack $user -fill both -expand yes
     incr _panedw($path,nbpanes)
     if {$_panedw($path,configuredone)} {
-	_realize $path [winfo width $path] [winfo height $path]
+        _realize $path [winfo width $path] [winfo height $path]
     }
 
     return $user
@@ -252,9 +288,9 @@ proc PanedWindow::_beg_move_sash { path num x y } {
         update idletasks
         grab set $top
         bind $top <ButtonRelease-1> [list PanedWindow::_end_move_sash \
-		$path $top $num $ymin $ymax %Y rooty height]
+                $path $top $num $ymin $ymax %Y rooty height]
         bind $top <Motion>          [list PanedWindow::_move_sash \
-		$top $ymin $ymax %Y +$xr+%%d]
+                $top $ymin $ymax %Y +$xr+%%d]
         _move_sash $top $ymin $ymax $y "+$xr+%d"
     }
 }
@@ -266,9 +302,9 @@ proc PanedWindow::_beg_move_sash { path num x y } {
 proc PanedWindow::_move_sash { top min max v form } {
 
     if { $v < $min } {
-	set v $min
+        set v $min
     } elseif { $v > $max } {
-	set v $max
+        set v $max
     }
     wm geom $top [format $form $v]
 }
@@ -282,9 +318,9 @@ proc PanedWindow::_end_move_sash { path top num min max v rootv size } {
 
     destroy $top
     if { $v < $min } {
-	set v $min
+        set v $min
     } elseif { $v > $max } {
-	set v $max
+        set v $max
     }
     set fprev $path.f[expr {$num-1}]
     set fnext $path.f$num
@@ -340,14 +376,14 @@ proc PanedWindow::_apply_weights { path } {
 
     set weights [Widget::getoption $path -weights]
     if {[string equal $weights "extra"]} {
-	return
+        return
     }
 
     set side   [Widget::getoption $path -side]
     if {[string equal $side "top"] || [string equal $side "bottom"] } {
-	set size width
+        set size width
     } else {
-	set size height
+        set size height
     }
     set wsash [expr {[Widget::getoption $path -width] + 2*[Widget::getoption $path -pad]}]
     set rs [winfo $size $path]
@@ -355,13 +391,13 @@ proc PanedWindow::_apply_weights { path } {
     
     set tw 0.0
     foreach w $_panedw($path,weights) { 
-	set tw [expr {$tw + $w}]
+        set tw [expr {$tw + $w}]
     }
 
     for {set i 0} {$i < $_panedw($path,nbpanes)} {incr i} {
-	set rw [lindex $_panedw($path,weights) $i]
-	set ps [expr {int($rw / $tw * $s)}]
-	$path.f$i configure -$size $ps
+        set rw [lindex $_panedw($path,weights) $i]
+        set ps [expr {int($rw / $tw * $s)}]
+        $path.f$i configure -$size $ps
     }    
     return
 }

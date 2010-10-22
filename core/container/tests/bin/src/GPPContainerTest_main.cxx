@@ -1,8 +1,42 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #define USE_FS
 
 
 /*
- * This is a test container that runs on a GPP.  It is used as a loopback tester for ay other CPI compatible
+ * This is a test container that runs on a GPP.  It is used as a loopback tester for ay other OCPI compatible
  * conatiner.  The workers in this container generate a test pattern and send it to the remote worker.  It is 
  * expected that the remote worker send the same data back.
  * When it is setup as a server, it will wait until another container makes a connection and will wait 
@@ -12,22 +46,22 @@
 
 
 #include <stdio.h>
-#include <CpiOsMisc.h>
-#include <CpiOsAssert.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
-#include <CpiContainerInterface.h>
-#include <CpiContainerPort.h>
-#include <CpiContainerPort.h>
-#include <CpiWorker.h>
-#include <CpiRDTInterface.h>
+#include <OcpiContainerInterface.h>
+#include <OcpiContainerPort.h>
+#include <OcpiContainerPort.h>
+#include <OcpiWorker.h>
+#include <OcpiRDTInterface.h>
 #include <ConsumerWorker.h>
 #include <ProdWorker.h>
 #include <LoopbackWorker.h>
 #include <test_utilities.h>
 
-#include <CpiTransportServer.h>
-#include <CpiTransportClient.h>
-#include <CpiBuffer.h>
+#include <OcpiTransportServer.h>
+#include <OcpiTransportClient.h>
+#include <OcpiBuffer.h>
 
 #include <sstream>
 #include <sys/types.h>
@@ -42,14 +76,14 @@
 #define FCN_CONT_UID 2
 
 struct  PortSetupMessage_t {
-  CPI::RDT::PortDescriptorTypes    messageType;
-  CPI::OS::uint32_t                length;
+  OCPI::RDT::PortDescriptorTypes    messageType;
+  OCPI::OS::uint32_t                length;
 };
 
 
 
-using namespace CPI::Container;
-using namespace CPI;
+using namespace OCPI::Container;
+using namespace OCPI;
 
 
 // Constants
@@ -64,35 +98,35 @@ static bool loopback;
  */
 
 /*
-const char* CPI_RCC_CONT_COMMS_EP    = "cpi-smb-pio://s:300000.1.2";
-const char* CPI_RCC_LBCONT_COMMS_EP  = "cpi-smb-pio://lb:300000.2.2";
+const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-smb-pio://s:300000.1.2";
+const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-smb-pio://lb:300000.2.2";
 */
 
 
-const char* CPI_RCC_CONT_COMMS_EP    = "cpi-socket-rdma://172.16.89.91;40005:600000.1.4";
-const char* CPI_RCC_LBCONT_COMMS_EP  = "cpi-socket-rdma://172.16.89.93;40006:600000.2.4";
+const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-socket-rdma://172.16.89.91;40005:600000.1.4";
+const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-socket-rdma://172.16.89.93;40006:600000.2.4";
 
 /*
-//const char* CPI_RCC_CONT_COMMS_EP    = "cpi-ppp-pio://1.0:300000.1.2";
-//const char* CPI_RCC_LBCONT_COMMS_EP  = "cpi-ppp-pio://17.0:300000.2.2";
+//const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-ppp-pio://1.0:300000.1.2";
+//const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-ppp-pio://17.0:300000.2.2";
 */
 
 
-int  CPI_RCC_DATA_BUFFER_SIZE   = 128;
-int  CPI_RCC_CONT_NBUFFERS      = 1;
-extern volatile bool CPI_TRACE_TX;
+int  OCPI_RCC_DATA_BUFFER_SIZE   = 128;
+int  OCPI_RCC_CONT_NBUFFERS      = 1;
+extern volatile bool OCPI_TRACE_TX;
 
-volatile int CPI_RUN_TEST = 1;
-volatile int CPI_YIELD = 1;
-volatile int CPI_INPUT_ID;
-volatile int CPI_USE_EVENTS=0;
+volatile int OCPI_RUN_TEST = 1;
+volatile int OCPI_YIELD = 1;
+volatile int OCPI_INPUT_ID;
+volatile int OCPI_USE_EVENTS=0;
 
 
-static CPI::Container::Interface*     gpp_container;
-static CPI::Container::Application*   gpp_app;
+static OCPI::Container::Interface*     gpp_container;
+static OCPI::Container::Application*   gpp_app;
 
-static CPI::Container::Interface*     loopback_container;
-static CPI::Container::Application*   loopback_app;
+static OCPI::Container::Interface*     loopback_container;
+static OCPI::Container::Application*   loopback_app;
 
 Port *pc_inputPort, *pc_outputPort, *lb_inputPort, *lb_outputPort;
 
@@ -103,34 +137,34 @@ Port *pc_inputPort, *pc_outputPort, *lb_inputPort, *lb_outputPort;
 static std::string server_end_point;
 static std::string loopback_end_point;
 static volatile int circuit_count=0;
-static CPI::DataTransport::MessageCircuit  *gpp_circuits[10];
-static CPI::DataTransport::MessageCircuit  *loopback_circuit;
-static CPI::DataTransport::MessageCircuit  *circuit;
-static CPI::DataTransport::Server *server=NULL;
-static CPI::DataTransport::Client *client=NULL;
+static OCPI::DataTransport::MessageCircuit  *gpp_circuits[10];
+// static OCPI::DataTransport::MessageCircuit  *loopback_circuit;
+static OCPI::DataTransport::MessageCircuit  *circuit;
+// static OCPI::DataTransport::Server *server=NULL;
+// static OCPI::DataTransport::Client *client=NULL;
 
 
 #define CS_DISPATCH if (server)server->dispatch();if(client)client->dispatch();
 
-class TransportSEventHandler : public CPI::DataTransport::ServerEventHandler
+class TransportSEventHandler : public OCPI::DataTransport::ServerEventHandler
 {
 public:
 
-  void newMessageCircuitAvailable( CPI::DataTransport::MessageCircuit* new_circuit )
+  void newMessageCircuitAvailable( OCPI::DataTransport::MessageCircuit* new_circuit )
   {
     //                printf("TransportEventHandler::newCircuitAvailable new circuit available\n");
     circuit = gpp_circuits[circuit_count++] = new_circuit;
     
   }
 
-  void dataAvailable( CPI::DataTransport::MessageCircuit* circuit ) {
-
+  void dataAvailable( OCPI::DataTransport::MessageCircuit* circuit ) {
+    ( void ) circuit;
   }
 
   /**********************************
    * This method gets called when an error gets generated
    *********************************/
-  void error( CPI::Util::EmbeddedException& ex )
+  void error( OCPI::Util::EmbeddedException& ex )
   {
     printf("TransportEventHandler: Got an exception, (%d%s)\n", ex.getErrorCode(), ex.getAuxInfo() );
   }
@@ -138,24 +172,24 @@ public:
 };
 
 
-class TransportCEventHandler : public CPI::DataTransport::ClientEventHandler
+class TransportCEventHandler : public OCPI::DataTransport::ClientEventHandler
 {
 public:
 
   /**********************************
    *  This method gets called when data is available on a circuit
    **********************************/        
-  void dataAvailable( CPI::DataTransport::MessageCircuit* circuit )
+  void dataAvailable( OCPI::DataTransport::MessageCircuit* circuit )
   {
-
+    ( void ) circuit;
   }
 
   /**********************************
    * This method gets called when an error gets generated
    *********************************/
-  virtual void error( CPI::Util::EmbeddedException& ex )
+  virtual void error( OCPI::Util::EmbeddedException& ex )
   {
-
+    ( void ) ex;
   }
 
 };
@@ -183,7 +217,8 @@ void writeDesc( std::string& desc, const char* file_name )
   ssize_t br;
   br = write(fd,desc.c_str(), desc.length() + 1);
   if ( br <= 0  ) {
-    printf("Attempted to write %u bytes and only wrote  %lu bytes to %s\n", MAX_DESC_LEN, br, fn.c_str() );
+    printf("Attempted to write %u bytes and only wrote  %" PRIsize_t " bytes to %s\n",
+            MAX_DESC_LEN, br, fn.c_str() );
     exit(-1);
   }
 
@@ -197,7 +232,7 @@ void writeDesc( std::string& desc, const char* file_name )
 
 #else 
 
-  CPI::DataTransport::Buffer* buffer=NULL;
+  OCPI::DataTransport::Buffer* buffer=NULL;
 
   while ( buffer == NULL ) {
     buffer = circuit->getSendMessageBuffer();
@@ -207,7 +242,7 @@ void writeDesc( std::string& desc, const char* file_name )
       circuit->sendMessage( buffer, len );
     }
     else{
-      CPI::OS::sleep( 1000 );
+      OCPI::OS::sleep( 1000 );
       printf("Waiting for another send buffer \n");
     }
   }
@@ -235,7 +270,7 @@ std::string readDesc( const char* file_name )
 
 #ifdef USE_FS
   std::string fn(fpath);
-  int fd;
+  int fd = -1;
   fn += file_name;
   int retries = 1000;
   while ( retries-- > 0 ) {
@@ -244,7 +279,7 @@ std::string readDesc( const char* file_name )
     closedir( dir );
     if ( access( fn.c_str(), R_OK ) ) {
       printf("access() failed for %s \n", fn.c_str() );
-      CPI::OS::sleep( 2000 );
+      OCPI::OS::sleep( 2000 );
       continue;
     }
     else {
@@ -254,7 +289,7 @@ std::string readDesc( const char* file_name )
   while ( retries-- > 0 ) {
     if ( (fd = open( fn.c_str(), O_RDONLY )) < 0 ) {
       printf("Read failed for %s, fd = %d\n", fn.c_str(), fd );
-      CPI::OS::sleep( 2000 );
+      OCPI::OS::sleep( 2000 );
       continue;
     }
     else {
@@ -278,7 +313,7 @@ std::string readDesc( const char* file_name )
     if ( br > 0 ) {
       break;
     }
-    CPI::OS::sleep(1000);
+    OCPI::OS::sleep(1000);
   }
 
   if ( br <= 0  ) {
@@ -294,7 +329,7 @@ std::string readDesc( const char* file_name )
 #else
 
 
-  CPI::DataTransport::Buffer* buffer=NULL;  
+  OCPI::DataTransport::Buffer* buffer=NULL;  
   while ( buffer == NULL ) {
 
     printf("Checking for Buffer\n");
@@ -311,7 +346,7 @@ std::string readDesc( const char* file_name )
       return tbuf;
     }
     else {
-      CPI::OS::sleep( 1000 );
+      OCPI::OS::sleep( 1000 );
       printf("Waiting for a message\n");
     }
   }
@@ -332,20 +367,20 @@ std::string readDesc( const char* file_name )
 void dumpPd( PortData& pd ) 
 {
   /*
-      CPI::OS::uint32_t  nBuffers;
-      CPI::OS::uint64_t  dataBufferBaseAddr;
-      CPI::OS::uint32_t  dataBufferPitch;
-      CPI::OS::uint32_t  dataBufferSize;
-      CPI::OS::uint64_t  metaDataBaseAddr;
-      CPI::OS::uint32_t  metaDataPitch;
-      CPI::OS::uint64_t  fullFlagBaseAddr; 
-      CPI::OS::uint32_t  fullFlagSize;
-      CPI::OS::uint32_t  fullFlagPitch;
-      CPI::OS::uint64_t  fullFlagValue;
-      CPI::OS::uint64_t  emptyFlagBaseAddr; // when consumer is passive
-      CPI::OS::uint32_t  emptyFlagSize;
-      CPI::OS::uint32_t  emptyFlagPitch;
-      CPI::OS::uint64_t  emptyFlagValue;
+      OCPI::OS::uint32_t  nBuffers;
+      OCPI::OS::uint64_t  dataBufferBaseAddr;
+      OCPI::OS::uint32_t  dataBufferPitch;
+      OCPI::OS::uint32_t  dataBufferSize;
+      OCPI::OS::uint64_t  metaDataBaseAddr;
+      OCPI::OS::uint32_t  metaDataPitch;
+      OCPI::OS::uint64_t  fullFlagBaseAddr; 
+      OCPI::OS::uint32_t  fullFlagSize;
+      OCPI::OS::uint32_t  fullFlagPitch;
+      OCPI::OS::uint64_t  fullFlagValue;
+      OCPI::OS::uint64_t  emptyFlagBaseAddr; // when consumer is passive
+      OCPI::OS::uint32_t  emptyFlagSize;
+      OCPI::OS::uint32_t  emptyFlagPitch;
+      OCPI::OS::uint64_t  emptyFlagValue;
       OutOfBandData       oob;
 */
 
@@ -382,8 +417,8 @@ void setupForPCMode()
 
   try { 
     pc_outputPort = &WORKER_PRODUCER_ID->createOutputPort( PORT_0,
-                                                          CPI_RCC_CONT_NBUFFERS,
-                                                          CPI_RCC_DATA_BUFFER_SIZE, NULL);
+                                                          OCPI_RCC_CONT_NBUFFERS,
+                                                          OCPI_RCC_DATA_BUFFER_SIZE, NULL);
   }
   CATCH_ALL_RETHROW( "creating output port" );
         
@@ -391,12 +426,12 @@ void setupForPCMode()
   try {
 
 
-    //    static CPI::Util::PValue c_port_props[] = {CPI::Util::PVString("protocol","cpi-socket-rdma"),
-    static CPI::Util::PValue c_port_props[] = {CPI::Util::PVString("protocol","cpi-ppp-dma"),
-                                                                                  CPI::Util::PVEnd };
+    //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
+    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ppp-dma"),
+                                                                                  OCPI::Util::PVEnd };
   pc_inputPort = &WORKER_CONSUMER_ID->createInputPort( PORT_0,
-                                                       CPI_RCC_CONT_NBUFFERS,
-                                                       CPI_RCC_DATA_BUFFER_SIZE,
+                                                       OCPI_RCC_CONT_NBUFFERS,
+                                                       OCPI_RCC_DATA_BUFFER_SIZE,
                                                        c_port_props
                                                        );
   }
@@ -470,15 +505,15 @@ void setupForLoopbackMode()
 
   try {
     lb_outputPort = &WORKER_LOOPBACK_ID->createOutputPort( PORT_0,
-                                                          CPI_RCC_CONT_NBUFFERS,
-                                                          CPI_RCC_DATA_BUFFER_SIZE, NULL);
+                                                          OCPI_RCC_CONT_NBUFFERS,
+                                                          OCPI_RCC_DATA_BUFFER_SIZE, NULL);
 
-    static CPI::Util::PValue c_port_props[] = {CPI::Util::PVString("protocol","cpi-socket-rdma"),
-                                               //    static CPI::Util::PValue c_port_props[] = {CPI::Util::PVString("protocol","cpi-ppp-dma"),
-                                               CPI::Util::PVEnd };
+    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
+                                               //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ppp-dma"),
+                                               OCPI::Util::PVEnd };
     lb_inputPort = &WORKER_LOOPBACK_ID->createInputPort( PORT_1,
-                                                          CPI_RCC_CONT_NBUFFERS,
-                                                         CPI_RCC_DATA_BUFFER_SIZE,
+                                                          OCPI_RCC_CONT_NBUFFERS,
+                                                         OCPI_RCC_DATA_BUFFER_SIZE,
                                                          c_port_props
                                                          );
   }
@@ -553,7 +588,7 @@ bool parseArgs( int argc, char** argv)
 }
 
 
-static CPI::Util::DriverManager dm("Container");
+static OCPI::Util::DriverManager dm("Container");
 int gpp_cont(int argc, char** argv)
 {
   printf("In gpp_cont, Instrumentation turned on\n");
@@ -562,40 +597,40 @@ int gpp_cont(int argc, char** argv)
     try {
       loopback = parseArgs(argc,argv);
 
-      static CPI::Util::PValue cprops[] = {
-          CPI::Util::PVBool("polling",1),
-          CPI::Util::PVEnd };
+      static OCPI::Util::PValue cprops[] = {
+          OCPI::Util::PVBool("polling",1),
+          OCPI::Util::PVEnd };
 
         dm.discoverDevices(0,0);
 
 
 #ifndef USE_FS
-      server_end_point = CPI_RCC_CONT_COMMS_EP;
+      server_end_point = OCPI_RCC_CONT_COMMS_EP;
       TransportCEventHandler* eh=NULL;
       TransportSEventHandler *tcb=NULL;
       if ( !loopback ) {
 
         // Create the server endpoint and its processing thread
         tcb = new TransportSEventHandler();
-        server = new CPI::DataTransport::Server( server_end_point, tcb );
+        server = new OCPI::DataTransport::Server( server_end_point, tcb );
         printf("setServerURL \"%s\"\n", server_end_point.c_str() );
 
         // We need a client to continue
         while ( circuit_count == 0 ) {
           server->dispatch();
-          CPI::OS::sleep( 500 );
+          OCPI::OS::sleep( 500 );
           printf("Waiting for a client to connect\n");
         }
         printf("***** Got a new client !! \n");
         for (int n=0; n<20; n++) {
-          CPI::OS::sleep( 5 );
+          OCPI::OS::sleep( 5 );
           server->dispatch();
         }
       }
       else {
-        loopback_end_point = CPI_RCC_LBCONT_COMMS_EP;
+        loopback_end_point = OCPI_RCC_LBCONT_COMMS_EP;
         eh = new TransportCEventHandler();
-        client = new CPI::DataTransport::Client( loopback_end_point, 1024, eh );
+        client = new OCPI::DataTransport::Client( loopback_end_point, 1024, eh );
         circuit = loopback_circuit = client->createCircuit( server_end_point );           
         printf("***** Established a new connection  !! \n");
       }
@@ -605,7 +640,7 @@ int gpp_cont(int argc, char** argv)
 
 
       // First thing here on the GPP container is that we need to create the workers and
-      // the worker ports.  We will use CPIRDT mode 3 for this test. 
+      // the worker ports.  We will use OCPIRDT mode 3 for this test. 
       if ( ! loopback ) {
 
 
@@ -618,11 +653,11 @@ int gpp_cont(int argc, char** argv)
         try { 
 
           // Create the container
-          CPI::Util::Device* d = dm.getDevice( cprops, "RCC");
+          OCPI::Util::Device* d = dm.getDevice( cprops, "RCC");
           if ( ! d ) {
-            throw CPI::Util::EmbeddedException("No Containers found\n");
+            throw OCPI::Util::EmbeddedException("No Containers found\n");
           }
-          gpp_container = static_cast<CPI::Container::Interface*>(d);
+          gpp_container = static_cast<OCPI::Container::Interface*>(d);
           gpp_app = gpp_container->createApplication();
 
         }
@@ -631,11 +666,11 @@ int gpp_cont(int argc, char** argv)
       }
       else {
 
-        CPI::Util::Device* d = dm.getDevice( cprops, "RCC" );
+        OCPI::Util::Device* d = dm.getDevice( cprops, "RCC" );
         if ( ! d ) {
-          throw CPI::Util::EmbeddedException("No Containers found\n");
+          throw OCPI::Util::EmbeddedException("No Containers found\n");
         }
-        loopback_container = static_cast<CPI::Container::Interface*>(d);
+        loopback_container = static_cast<OCPI::Container::Interface*>(d);
         loopback_app = loopback_container->createApplication();
 
       }
@@ -659,7 +694,7 @@ int gpp_cont(int argc, char** argv)
         printf("\n\nWaiting 2 secs to continue ....\n");
         for (int y=0; y<10; y++ ) {
           gpp_container->dispatch(event_manager);
-          CPI::OS::sleep( 200 );                
+          OCPI::OS::sleep( 200 );                
         }
 
 
@@ -676,7 +711,7 @@ int gpp_cont(int argc, char** argv)
 
       }
 
-      CPI_RUN_TEST = 1;
+      OCPI_RUN_TEST = 1;
 
       if ( event_manager ) {
         printf("Running with an event manager\n");
@@ -686,7 +721,7 @@ int gpp_cont(int argc, char** argv)
       }      
       
 
-      while( CPI_RUN_TEST ) {
+      while( OCPI_RUN_TEST ) {
                         
         if (!loopback) {
 
@@ -720,7 +755,7 @@ int gpp_cont(int argc, char** argv)
           loopback_container->dispatch( event_manager );
         }
 
-        //        CPI::OS::sleep( 10 );        
+        //        OCPI::OS::sleep( 10 );        
 
       }
 
@@ -731,7 +766,7 @@ int gpp_cont(int argc, char** argv)
         loopback_container = NULL;
       }
       else {
-        CPI::OS::sleep( 3000 );
+        OCPI::OS::sleep( 3000 );
         delete gpp_app;
         delete gpp_container;
         gpp_container = NULL; 
@@ -745,7 +780,7 @@ int gpp_cont(int argc, char** argv)
     catch( std::string& stri ) {
       printf("gpp: Caught a string exception = %s\n", stri.c_str() );
     }
-    catch ( CPI::Util::EmbeddedException& eex ) {                        
+    catch ( OCPI::Util::EmbeddedException& eex ) {                        
       printf(" \n gpp main: Caught an embedded exception");  
       printf( " error number = %d", eex.m_errorCode );                        
     }                                                               
@@ -761,19 +796,20 @@ int gpp_cont(int argc, char** argv)
 
 int gpp_lb()
 {
-  const char* argv[] = {"main","-loopback","-ep", CPI_RCC_CONT_COMMS_EP, 0};
+  const char* argv[] = {"main","-loopback","-ep", OCPI_RCC_CONT_COMMS_EP, 0};
   return gpp_cont( 2, (char**)argv );
 }
 
 
 
-void cpi_stop()
+void ocpi_stop()
 {
-  CPI_RUN_TEST = 0;
+  OCPI_RUN_TEST = 0;
 }
 
 void mh(int sn )
 {
+  ( void ) sn;
   exit(-1);
 }
 

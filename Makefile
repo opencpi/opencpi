@@ -1,32 +1,53 @@
-# Copyright (c) 2009 Mercury Federal Systems.
-# 
-# This file is part of OpenCPI.
-# 
-# OpenCPI is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# OpenCPI is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public License
-# along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 
-ifneq ($(SYSTEM),)
-SYSTEMOPTION="SYSTEM=$(SYSTEM)"
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
+
+
+ifneq ($(OCPI_OS),)
+SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
 endif
 
 # defaults
-CPIDIR := $(shell pwd)
+OCPI_BASE_DIR := $(shell pwd)
 CLIENT_IDL_ONLY := 1
-LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(CPIDIR)/lib
+LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(OCPI_BASE_DIR)/lib
 export LD_LIBRARY_PATH
 export CLIENT_IDL_ONLY
-export CPIDIR
-include MakeVars.cpi
+export OCPI_BASE_DIR
+include MakeVars.ocpi
 
 #
 # ----------------------------------------------------------------------
@@ -39,7 +60,7 @@ include MakeVars.cpi
 # Basic packages.
 #
 
-PACKAGES += adapt/os/cpios core/local/logger core/local/util
+PACKAGES += adapt/os/ocpios core/local/logger core/local/util
 PACKAGES += core/control/wci_api
 
 PACKAGES += \
@@ -51,7 +72,7 @@ PACKAGES += \
 	 core/container/rpl_container \
 	 core/container/tests
 
-ifeq ($(HAVE_CORBA),1)
+ifeq ($(OCPI_HAVE_CORBA),1)
 PACKAGES += core/corba/orb_services core/corba/corba_util
 PACKAGES += core/sca/cf core/sca/cf_util core/sca/sgac
 PACKAGES += core/sca/gpped
@@ -71,7 +92,7 @@ PACKAGES += test
 
 
 ALLPACKAGES = \
-	adapt/os/cpios \
+	adapt/os/ocpios \
 	core/local/logger \
 	core/local/util \
 	core/control/wci_api \
@@ -126,18 +147,18 @@ compile build: $(PACKAGES)
 packages: $(PACKAGES)
 
 $(PACKAGES):
-	if test -f $@/Makefile.cpi ; then \
-		$(MAKE) -C $@ $(SYSTEMOPTION) -f Makefile.cpi ; \
+	if test -f $@/Makefile.ocpi ; then \
+		$(MAKE) -C $@ $(SYSTEMOPTION) -f Makefile.ocpi ; \
 	else \
-		$(MAKE) -C $@ $(SYSTEMOPTION) -f ../../../Makefile.cpi.for-pkg ; \
+		$(MAKE) -C $@ $(SYSTEMOPTION) -f ../../../Makefile.ocpi.for-pkg ; \
 	fi
 
 clean distclean:
 	for package in $(ALLPACKAGES) ; do \
-		if test -f $$package/Makefile.cpi ; then \
-			$(MAKE) -C $$package -f Makefile.cpi $@ ; \
+		if test -f $$package/Makefile.ocpi ; then \
+			$(MAKE) -C $$package -f Makefile.ocpi $@ ; \
 		else \
-			$(MAKE) -C $$package -f ../../../Makefile.cpi.for-pkg $@ ; \
+			$(MAKE) -C $$package -f ../../../Makefile.ocpi.for-pkg $@ ; \
 		fi ; \
 	done
 	find . -name '*~' -exec rm {} \;
@@ -145,8 +166,8 @@ clean distclean:
 	-rm -f *.exe *.obj *.o *.ilk *.sbr *.suo *.sln *.pdb *.bsc *~
 
 tar:
-	tar cvf cpi.tar MakeVars.cpi Makefile.cpi Makefile.cpi.for-* $(ALLPACKAGES)
-	gzip -9 cpi.tar
+	tar cvf ocpi.tar MakeVars.ocpi Makefile.ocpi Makefile.ocpi.for-* $(ALLPACKAGES)
+	gzip -9 ocpi.tar
 
 #
 # Note: the "sed" command does not work on Solaris; its sed does not
@@ -164,7 +185,7 @@ diff.q:
 # Shallow package dependencies.
 #
 
-core/local/logger: adapt/os/cpios
+core/local/logger: adapt/os/ocpios
 core/local/util: core/local/logger
 core/$(DATAPLANE)/tests: \
 	core/container/cp289_container core/$(DATAPLANE)/transport \

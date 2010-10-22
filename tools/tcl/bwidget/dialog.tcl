@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  dialog.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -25,23 +61,23 @@ namespace eval Dialog {
     Widget::define Dialog dialog ButtonBox
 
     Widget::bwinclude Dialog ButtonBox .bbox \
-	remove	   {-orient} \
-	initialize {-spacing 10 -padx 10}
+        remove           {-orient} \
+        initialize {-spacing 10 -padx 10}
 
     Widget::declare Dialog {
-	{-title	      String	 ""	  0}
-	{-geometry    String	 ""	  0}
-	{-modal	      Enum	 local	  0 {none local global}}
-	{-bitmap      TkResource ""	  1 label}
-	{-image	      TkResource ""	  1 label}
-	{-separator   Boolean	 0	  1}
-	{-cancel      Int	 -1	  0 "%d >= -1"}
-	{-parent      String	 ""	  0}
-	{-side	      Enum	 bottom	  1 {bottom left top right}}
-	{-anchor      Enum	 c	  1 {n e w s c}}
-	{-class	      String	 Dialog	  1}
-	{-transient   Boolean	 1	  1}
-	{-place	      Enum	 center	  0 {none center left right above below}}
+        {-title              String         ""          0}
+        {-geometry    String         ""          0}
+        {-modal              Enum         local          0 {none local global}}
+        {-bitmap      TkResource ""          1 label}
+        {-image              TkResource ""          1 label}
+        {-separator   Boolean         0          1}
+        {-cancel      Int         -1          0 "%d >= -1"}
+        {-parent      String         ""          0}
+        {-side              Enum         bottom          1 {bottom left top right}}
+        {-anchor      Enum         c          1 {n e w s c}}
+        {-class              String         Dialog          1}
+        {-transient   Boolean         1          1}
+        {-place              Enum         center          0 {none center left right above below}}
     }
 
     Widget::addmap Dialog "" :cmd   {-background {}}
@@ -67,15 +103,15 @@ proc Dialog::create { path args } {
     set dialogClass "Dialog"
     array set dialogArgs $maps(Dialog)
     if { [info exists dialogArgs(-class)] } {
-	set dialogClass $dialogArgs(-class)
+        set dialogClass $dialogArgs(-class)
     }
 
     if { [string equal $tcl_platform(platform) "unix"] } {
-	set re raised
-	set bd 1
+        set re raised
+        set bd 1
     } else {
-	set re flat
-	set bd 0
+        set re flat
+        set bd 0
     }
     toplevel $path -relief $re -borderwidth $bd -class $dialogClass
     wm withdraw $path
@@ -91,7 +127,7 @@ proc Dialog::create { path args } {
     }
     # JDC: made transient optional
     if { [Widget::getoption $path -transient] } {
-	wm transient $path [winfo toplevel $parent]
+        wm transient $path [winfo toplevel $parent]
     }
 
     set side [Widget::cget $path -side]
@@ -102,7 +138,7 @@ proc Dialog::create { path args } {
     }
 
     set bbox  [eval [list ButtonBox::create $path.bbox] $maps(.bbox) \
-		   -orient $orient]
+                   -orient $orient]
     set frame [frame $path.frame -relief flat -borderwidth 0]
     set bg [Widget::cget $path -background]
     $path configure -background $bg
@@ -113,7 +149,7 @@ proc Dialog::create { path args } {
         set label [label $path.label -bitmap $bitmap -background $bg]
     }
     if { [Widget::getoption $path -separator] } {
-	Separator::create $path.sep -orient $orient -background $bg
+        Separator::create $path.sep -orient $orient -background $bg
     }
     set _widget($path,realized) 0
     set _widget($path,nbut)     0
@@ -169,13 +205,13 @@ proc Dialog::add { path args } {
     variable _widget
 
     if {[string equal $::tcl_platform(platform) "windows"]
-	&& $::tk_version >= 8.4} {
-	set width -11
+        && $::tk_version >= 8.4} {
+        set width -11
     } else {
-	set width 8
+        set width 8
     }
     set cmd [list ButtonBox::add $path.bbox -width $width \
-		 -command [list Dialog::enddialog $path $_widget($path,nbut)]]
+                 -command [list Dialog::enddialog $path $_widget($path,nbut)]]
     set res [eval $cmd $args]
     incr _widget($path,nbut)
     return $res
@@ -243,7 +279,7 @@ proc Dialog::draw { path {focus ""} {overrideredirect 0} {geometry ""}} {
                 set fill x
             }
             pack $path.bbox -side $side -padx 1m -pady 1m \
-		-anchor [Widget::getoption $path -anchor]
+                -anchor [Widget::getoption $path -anchor]
             if { [winfo exists $path.sep] } {
                 pack $path.sep -side $side -fill $fill $pad 2m
             }
@@ -256,24 +292,24 @@ proc Dialog::draw { path {focus ""} {overrideredirect 0} {geometry ""}} {
 
     set geom [Widget::getMegawidgetOption $path -geometry]
     if { $geom != "" } {
-	wm geometry $path $geom
+        wm geometry $path $geom
     }
 
     if { [string equal $geometry ""] && ($geom == "") } {
-	set place [Widget::getoption $path -place]
-	if { ![string equal $place none] } {
-	    if { [winfo exists $parent] } {
-		BWidget::place $path 0 0 $place $parent
-	    } else {
-		BWidget::place $path 0 0 $place
-	    }
-	}
+        set place [Widget::getoption $path -place]
+        if { ![string equal $place none] } {
+            if { [winfo exists $parent] } {
+                BWidget::place $path 0 0 $place $parent
+            } else {
+                BWidget::place $path 0 0 $place
+            }
+        }
     } else {
-	if { $geom != "" } {
-	    wm geometry $path $geom
-	} else {
-	    wm geometry $path $geometry
-	}
+        if { $geom != "" } {
+            wm geometry $path $geom
+        } else {
+            wm geometry $path $geometry
+        }
     }
     update idletasks
     wm overrideredirect $path $overrideredirect
@@ -284,8 +320,8 @@ proc Dialog::draw { path {focus ""} {overrideredirect 0} {geometry ""}} {
     # When the toplevel is withdrawn, the tkwait command will wait forever.
     #  So, check that we are not withdrawn
     if {![winfo exists $parent] || \
-	    ([wm state [winfo toplevel $parent]] != "withdrawn")} {
-	tkwait visibility $path
+            ([wm state [winfo toplevel $parent]] != "withdrawn")} {
+        tkwait visibility $path
     }
     BWidget::focus set $path
     if { [winfo exists $focus] } {

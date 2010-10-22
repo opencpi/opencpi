@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 /**
    @file
@@ -29,18 +47,18 @@
    2/18/2009 - John Miller
    Removed exception monitor class.
 
-   ************************************************************************** */
+************************************************************************** */
 
 #ifndef DataTransfer_TransferInternal_H_
 #define DataTransfer_TransferInternal_H_
 
 #include <string.h>
 #include <list>
-#include <CpiOsMutex.h>
-#include <CpiList.h>
+#include <OcpiOsMutex.h>
+#include <OcpiList.h>
 #include <DtHandshakeControl.h>
 #include <DtExceptions.h>
-#include <CpiDriver.h>
+#include <OcpiDriver.h>
 #include <DtTransferInterface.h>
 #include <DtSharedMemoryInternal.h>
 
@@ -73,11 +91,11 @@ namespace DataTransfer {
   public:
 
     // Constructor 
-    XferMailBox( CPI::OS::uint32_t slot )
+    XferMailBox( OCPI::OS::uint32_t slot )
       :m_slot(slot){};
 
       // This method sets the communications slot for this template
-      void setMailBox( CPI::OS::uint32_t slot ){m_slot=slot;};
+      void setMailBox( OCPI::OS::uint32_t slot ){m_slot=slot;};
 
       // Determine if the mail box is avialable
       inline bool mailBoxAvailable( SMBResources* res ){ 
@@ -94,12 +112,12 @@ namespace DataTransfer {
   protected:
 
       // Our mail slot index
-      CPI::OS::uint32_t m_slot;
+      OCPI::OS::uint32_t m_slot;
 
   };
 
   // This is the transfer factory manager class. 
-  class XferFactoryManager : public CPI::Util::DriverManager {
+  class XferFactoryManager : public OCPI::Util::DriverManager {
 
   public:
 
@@ -112,7 +130,7 @@ namespace DataTransfer {
     // This method allocates an endpoint based upon the requested protocol.  The size is the
     // requested size of the memory block to associate with the endpoint, this call is responsible
     // for setting the actual size that was allocated.
-    std::string allocateEndpoint(std::string& protocol, CPI::OS::uint32_t *size);
+    std::string allocateEndpoint(std::string& protocol, OCPI::OS::uint32_t *size);
 
     // Create a transfer compatible SMB and associated resources
     SMBResources* createSMBResources(EndPoint* loc);
@@ -163,10 +181,10 @@ namespace DataTransfer {
     List m_registeredTransfers;
 
     // Reference counter
-    CPI::OS::uint32_t m_refCount;
+    OCPI::OS::uint32_t m_refCount;
     bool              m_init;
-    CPI::OS::Mutex    m_mutex;
-    CPI::Util::VList  m_resources;
+    OCPI::OS::Mutex    m_mutex;
+    OCPI::Util::VList  m_resources;
     List              m_templatelist;
 
   };

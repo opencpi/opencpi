@@ -1,3 +1,37 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <unistd.h>
 #include <assert.h>
 #include <stdio.h>
@@ -6,15 +40,15 @@
 #include <time.h>
 #include <sys/uio.h>
 #include <sys/time.h>
-#include "CpiOsMisc.h"
-#include "CpiThread.h"
-#include "CpiDriver.h"
-#include "CpiApi.h"
-#include "CpiUtilEzxml.h"
+#include "OcpiOsMisc.h"
+#include "OcpiThread.h"
+#include "OcpiDriver.h"
+#include "OcpiApi.h"
+#include "OcpiUtilEzxml.h"
 
 #if defined ( __x86_64__ ) && !defined ( _CPU_IA64 )
 #define _CPU_IA64
-#elif defined ( __i686__ ) && !defined ( _CPU_IA32 )
+#elif defined ( __i686__ ) || defined ( __i386__ ) && !defined ( _CPU_IA32 )
 #define _CPU_IA32
 #elif defined ( __PPC__ ) && !defined ( _CPU_POWERPC )
 #define _CPU_POWERPC
@@ -24,31 +58,31 @@
 
 #define W(s) write(2, s, sizeof(s) - 1)
 
-namespace CC = CPI::Container;
-namespace CM = CPI::Metadata;
+namespace CC = OCPI::Container;
+namespace CM = OCPI::Metadata;
 
 
-namespace CU = CPI::Util;
+namespace CU = OCPI::Util;
 
-namespace CPI {
+namespace OCPI {
   namespace RPL {
 
-    class Driver : public CPI::Util::Driver {
+    class Driver : public OCPI::Util::Driver {
       // The fd for mapped memory, until we have a driver to restrict it.
       static int pciMemFd;
     public:
       // This constructor simply registers itself. This class has no state.
       Driver() :
-        CPI::Util::Driver("OCFRP","Global",true) {
+        OCPI::Util::Driver("OCFRP","Global",true) {
       }
       // This driver method is called when container-discovery happens, to see if there
       // are any container devices supported by this driver
       // It uses a generic PCI scanner to find candidates, and when found, calls the "found" method below.
-      virtual unsigned search(const CPI::Util::PValue*, const char **exclude)
-        throw (CPI::Util::EmbeddedException)
+      virtual unsigned search(const OCPI::Util::PValue*, const char **exclude)
+        throw (OCPI::Util::EmbeddedException)
       {
 	(void)exclude;
-        if (getenv("CPI_OCFRP_DUMMY"))
+        if (getenv("OCPI_OCFRP_DUMMY"))
           probe(0,"0");
 
 #ifdef DONT_COMPILE
@@ -66,8 +100,8 @@ namespace CPI {
 
       // This driver method is called to see if a particular container device exists,
       // and if so, to instantiate a container
-      virtual CPI::Util::Device *probe(const CPI::Util::PValue*, const char *which  )
-        throw (CPI::Util::EmbeddedException);
+      virtual OCPI::Util::Device *probe(const OCPI::Util::PValue*, const char *which  )
+        throw (OCPI::Util::EmbeddedException);
 
       virtual ~Driver()
         throw() {};
@@ -129,7 +163,7 @@ static void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
 
 namespace {
 
-  class  DThread : public CPI::Util::Thread
+  class  DThread : public OCPI::Util::Thread
   {
   public:
     bool m_run;
@@ -140,7 +174,7 @@ namespace {
     void run() {
       while(m_run) {
 	m_interface.dispatch(NULL);
-        CPI::OS::sleep(0);
+        OCPI::OS::sleep(0);
       }
     }
 
@@ -286,7 +320,7 @@ int main(int argc, char *argv[])
 	{
 	  char *p = strchr(setProp, '=');
 	  *p++ = 0;
-	  CPI::Util::EzXml::getUNum(p, &setValue);
+	  OCPI::Util::EzXml::getUNum(p, &setValue);
 	}
 	break;
       case 'y':
@@ -298,7 +332,7 @@ int main(int argc, char *argv[])
       case 'D':
         {
           static char buf[100];
-          snprintf(buf, sizeof(buf), "CPI_OCFRP_DUMMY=%s", *++ap);
+          snprintf(buf, sizeof(buf), "OCPI_OCFRP_DUMMY=%s", *++ap);
           putenv(buf);
         }
         break;
@@ -320,7 +354,7 @@ int main(int argc, char *argv[])
       case 'P':
         {
           static char buf[100];
-          snprintf(buf, sizeof(buf), "CPI_DUMP_PORTS=%s", *++ap);
+          snprintf(buf, sizeof(buf), "OCPI_DUMP_PORTS=%s", *++ap);
           putenv(buf);
         }
         break;
@@ -368,18 +402,23 @@ int main(int argc, char *argv[])
   CC::Interface *rplContainer, *rplContainer2 = 0, *rccContainer = 0;
 
 #ifdef WAS
-  CPI::RPL::Driver driver();
-  CPI::Util::DriverManager dm("OCFRP");
+  OCPI::RPL::Driver driver();
+  OCPI::Util::DriverManager dm("OCFRP");
 #else
-  CPI::RPL::Driver & driver = *(new CPI::RPL::Driver());
-  CPI::Util::DriverManager & dm = *(new CPI::Util::DriverManager("OCFRP"));
+  OCPI::RPL::Driver* driver = (new OCPI::RPL::Driver());
+  if ( !driver )
+  {
+    printf ( "Failed to allocate OCPI::RPL::Driver\n" );
+    return -1;
+  }
+  OCPI::Util::DriverManager & dm = *(new OCPI::Util::DriverManager("OCFRP"));
 
 #endif
 #ifdef WANTSTOBE
   // Find the container we want
-  CPI::Container
-    *rplContainer = CPI::ContainerManager::find("HDL",,,firstarg),
-    *rplContainer2 = two ? CPI::ContainerManager::find("HDL",,,secondarg);
+  OCPI::Container
+    *rplContainer = OCPI::ContainerManager::find("HDL",,,firstarg),
+    *rplContainer2 = two ? OCPI::ContainerManager::find("HDL",,,secondarg);
 #endif
   if (probe) {
     rplContainer = static_cast<CC::Interface*>(dm.getDevice( 0, "0" ));
@@ -409,18 +448,18 @@ int main(int argc, char *argv[])
 
   if (rplContainer && (!two || rplContainer2)) {
     try {
-      DThread * rcc_dThread;
+      DThread * rcc_dThread=0;
       if (rccFile) {
-	static CPI::Util::DriverManager rcc_dm("Container");
-	static CPI::Util::PValue cprops[] = {
-	  CPI::Util::PVBool("polling",1),
-	  CPI::Util::PVEnd };
+	static OCPI::Util::DriverManager rcc_dm("Container");
+	static OCPI::Util::PValue cprops[] = {
+	  OCPI::Util::PVBool("polling",1),
+	  OCPI::Util::PVEnd };
 	rcc_dm.discoverDevices(0,0);
-	CPI::Util::Device* d = rcc_dm.getDevice( cprops, "RCC");
+	OCPI::Util::Device* d = rcc_dm.getDevice( cprops, "RCC");
 	if ( ! d ) {
 	  throw std::string("No RCC Containers found\n");
 	}
-	rccContainer = static_cast<CPI::Container::Interface*>(d);
+	rccContainer = static_cast<OCPI::Container::Interface*>(d);
 	rcc_dThread = new DThread( *rccContainer );
 	rcc_dThread->start();
       }
@@ -502,11 +541,11 @@ int main(int argc, char *argv[])
       // The issue here is that input ports get their protocol bound at
       // construction time rather than connection time.
       if (rccFile)
-	putenv((char *)"CPI_DEFAULT_PROTOCOL=cpi-pci-pio");
+	putenv((char *)"OCPI_DEFAULT_PROTOCOL=ocpi-pci-pio");
       CC::Port &w13in = rccFile ? w[13]->getPort("in") : *(CC::Port*)0;
       CC::Port &w13out = rccFile ? w[13]->getPort("out") : *(CC::Port*)0;
 
-      CPI::Util::PValue
+      OCPI::Util::PValue
         p00[] = {CU::PVULong("bufferCount", bufferCount[0][0]),
                  CU::PVString("xferRole", active[0][0]),
                  CU::PVULong("bufferSize", bufferSize), CU::PVEnd},
@@ -637,7 +676,7 @@ int main(int argc, char *argv[])
       }
 
       struct timeval tv0, tv1, tv2;
-      static tick_t ticks[NTICKS + 10] = {{{0}}};
+      static tick_t ticks[NTICKS + 10] = {{{0,0}}};
       unsigned tick = 0;
       bool doTick = doTicks;
       gettimeofday(&tv0, 0);

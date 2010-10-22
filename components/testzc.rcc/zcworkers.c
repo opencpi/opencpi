@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 /*
  * Zero copy I/O workers for test
@@ -27,7 +45,7 @@
 #include <stdio.h>
 #include <string.h>
 #ifdef TIME_IT
-#include <CpiTimeEmitC.h>
+#include <OcpiTimeEmitC.h>
 #endif
 #include "Consumer_Worker.h"
 #include "Loopback_Worker.h"
@@ -70,6 +88,8 @@ static RCCResult test(RCCWorker *this_ )
 //static int r_count = 0;
 static RCCResult ProducerRun(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
   uint32_t n;
   uint32_t len;
   int      *b;
@@ -82,7 +102,7 @@ static RCCResult ProducerRun(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *ne
   }
 
 #ifdef TIME_IT
-  CPI_TIME_EMIT_C( "Producer Start" );
+  OCPI_TIME_EMIT_C( "Producer Start" );
 #endif
 
 #ifndef NDEBUG
@@ -104,7 +124,7 @@ static RCCResult ProducerRun(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *ne
   props->buffersProcessed++; 
 
 #ifdef TIME_IT
-  CPI_TIME_EMIT_C( "Producer Start Send" ); 
+  OCPI_TIME_EMIT_C( "Producer Start Send" ); 
 #endif
 
 #ifndef NDEBUG
@@ -124,7 +144,7 @@ static RCCResult ProducerRun(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *ne
   props->bytesProcessed += len;
 
 #ifdef TIME_IT
-  CPI_TIME_EMIT_C( "Producer End Send" ); 
+  OCPI_TIME_EMIT_C( "Producer End Send" ); 
 #endif
         
   return RCC_OK;
@@ -191,6 +211,8 @@ static RCCResult ConsumerAfterConfigure( RCCWorker *this_ )
   printf("buffersProcessed value = %d", props->buffersProcessed);
   printf("droppedBuffers value = %d", props->droppedBuffers);  
   printf("bytesProcessed value = %d", props->bytesProcessed);  
+#else
+  ( void ) this_;
 #endif
       
   return RCC_OK;
@@ -202,13 +224,15 @@ static RCCResult ConsumerBeforeQuery(RCCWorker *this_ )
   /* This only works for simple memory configurations */
   //  ConsumerStaticMemory *static_mem = this_->memories[0];
   //  ConsumerProperties *props = this_->properties;
-      
+  ( void ) this_;    
   return RCC_OK;
 }
         
 
 static RCCResult ConsumerRun(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
   int ncount, *b;
   uint32_t len,n;
   ConsumerStaticMemory *mem = this_->memories[0];
@@ -225,7 +249,7 @@ static RCCResult ConsumerRun(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *ne
   char* in_buffer = in->current.data;
 
 #ifdef TIME_IT
-  CPI_TIME_EMIT_C( "Consumer Start" );
+  OCPI_TIME_EMIT_C( "Consumer Start" );
 #endif
                     
 #ifdef TIME_TP
@@ -256,7 +280,7 @@ static RCCResult ConsumerRun(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *ne
   len -= 4;
                               
   b = (int*)(in_buffer);
-  if ( *b != props->buffersProcessed ) {
+  if ( *b != (int)props->buffersProcessed ) {
 #ifndef NDEBUG
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
            *b, props->buffersProcessed );
@@ -307,11 +331,11 @@ static RCCResult ConsumerRun(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *ne
                                 
   if ( props->transferMode == ConsumerConsume ) {
 #ifdef TIME_IT
-    CPI_TIME_EMIT_C( "Consumer Start Release" );
+    OCPI_TIME_EMIT_C( "Consumer Start Release" );
 #endif
     this_->container->release( &in->current ); 
 #ifdef TIME_IT
-    CPI_TIME_EMIT_C( "Consumer End Release" );
+    OCPI_TIME_EMIT_C( "Consumer End Release" );
 #endif
   }
   else {
@@ -359,6 +383,7 @@ static RCCResult LoopbackInitialize(RCCWorker *this_)
 {
   //LoopbackStaticMemory *mem = this_->memories[0];
   //LoopbackProperties *props = this_->properties;
+  ( void ) this_;
   return RCC_OK;
 }
         
@@ -369,6 +394,7 @@ static RCCResult LoopbackAfterConfigure(RCCWorker *this_ )
   /* This only works for simple memory configurations */
   //LoopbackWorkerStaticMemory *static_mem = this_->memories[0];
   //LoopbackWorkerProperties *props = this_->properties;
+  ( void ) this_;
   return RCC_OK;
 }
         
@@ -377,6 +403,7 @@ static RCCResult LoopbackBeforeQuery(RCCWorker *this_ )
 {
   //LoopbackWorkerStaticMemory *static_mem = this_->memories[0];
   //LoopbackWorkerProperties *props = this_->properties;
+  ( void ) this_;
   return RCC_OK;
 }
         
@@ -384,6 +411,8 @@ static RCCResult LoopbackBeforeQuery(RCCWorker *this_ )
 static int runc=1;
 static RCCResult LoopbackRun(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
   uint32_t len;
   uint32_t cplen;
   int      oc;

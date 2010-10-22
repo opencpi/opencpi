@@ -1,4 +1,0 @@
-include ../../../../../Makefile.cpi.for-src
-#$(info MYCXXFLAGS is $(CXXFLAGS))
-#CXXFLAGS:=-Wall -fPIC -O2 -fno-strict-aliasing
-#$(info MYCXXFLAGS2 is $(CXXFLAGS))

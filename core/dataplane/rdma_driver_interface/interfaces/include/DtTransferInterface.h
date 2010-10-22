@@ -1,19 +1,38 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 
 /**
    @file
@@ -29,15 +48,15 @@
    2/18/2009 - John Miller
    Removed exception monitor class.
 
-   ************************************************************************** */
+************************************************************************** */
 
 #ifndef DataTransfer_TransferInterface_H_
 #define DataTransfer_TransferInterface_H_
 
 #include <string.h>
-#include <CpiOsDataTypes.h>
-#include <CpiList.h>
-#include <CpiDriver.h>
+#include <OcpiOsDataTypes.h>
+#include <OcpiList.h>
+#include <OcpiDriver.h>
 
 namespace DataTransfer {
 
@@ -48,27 +67,27 @@ namespace DataTransfer {
   // EndPoint shape (basically equivalent to EP_shape but not dependent on MCOS).
   // The layout and field names are identical to EP_shape to simplify MCOE-capable platforms.
   typedef struct {
-    CPI::OS::uint32_t element_size;   /* Element size in bytes */
+    OCPI::OS::uint32_t element_size;   /* Element size in bytes */
     struct {
-      CPI::OS::uint32_t offset;       
-      CPI::OS::uint32_t length;       /* Number of elements in X dimension */
-      CPI::OS::uint32_t stride;       /* X element stride */
+      OCPI::OS::uint32_t offset;       
+      OCPI::OS::uint32_t length;       /* Number of elements in X dimension */
+      OCPI::OS::uint32_t stride;       /* X element stride */
     } x;                              /* X dimension (i.e. rows) */
     struct {
-      CPI::OS::uint32_t offset;       
-      CPI::OS::uint32_t length;       /* Number of elements in Y dimension */
-      CPI::OS::uint32_t stride;       /* Y element stride */
+      OCPI::OS::uint32_t offset;       
+      OCPI::OS::uint32_t length;       /* Number of elements in Y dimension */
+      OCPI::OS::uint32_t stride;       /* Y element stride */
     } y;                              /* Y dimension (i.e. columns) */
     struct {
-      CPI::OS::uint32_t offset;       
-      CPI::OS::uint32_t length;       /* Number of elements in Z dimension */
-      CPI::OS::uint32_t stride;       /* Z element stride */
+      OCPI::OS::uint32_t offset;       
+      OCPI::OS::uint32_t length;       /* Number of elements in Z dimension */
+      OCPI::OS::uint32_t stride;       /* Z element stride */
     } z;                              /* Z dimension (i.e. columns) */
   } Shape;
          
 
   // A single request to perform a data transfer, this is effectively a transfer template
-  // that is used aCPI::OS::int32_t with a transfer service object to describe a transfer.
+  // that is used aOCPI::OS::int32_t with a transfer service object to describe a transfer.
   class XferRequest
   {
     // Types
@@ -112,7 +131,7 @@ namespace DataTransfer {
      *        Throws:
      *                DataTransferEx for all exception conditions
      */
-    virtual CPI::OS::int32_t getStatus () = 0;
+    virtual OCPI::OS::int32_t getStatus () = 0;
 
 
     /*
@@ -128,10 +147,10 @@ namespace DataTransfer {
      *        Throws:
      *                DataTransferEx for all exception conditions
      */
-    virtual void modify( CPI::OS::uint32_t new_offsets[], CPI::OS::uint32_t old_offsets[] )=0;
+    virtual void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )=0;
                  
 
-    // Destructor - Note that invoking CpiXferServices::Release is the preferred method.
+    // Destructor - Note that invoking OcpiXferServices::Release is the preferred method.
     virtual ~XferRequest () {};
 
   };
@@ -155,7 +174,11 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    XferServices (SmemServices* source, SmemServices* target){};
+    XferServices (SmemServices* source, SmemServices* target)
+    {
+      ( void ) source;
+      ( void ) target;
+    }
                  
     /*
      * Create a transfer request.
@@ -170,9 +193,9 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    virtual XferRequest* copy (CPI::OS::uint32_t srcoff, 
-                               CPI::OS::uint32_t dstoff, 
-                               CPI::OS::uint32_t nbytes, 
+    virtual XferRequest* copy (OCPI::OS::uint32_t srcoff, 
+                               OCPI::OS::uint32_t dstoff, 
+                               OCPI::OS::uint32_t nbytes, 
                                XferRequest::Flags flags,
                                XferRequest* add_to
                                ) = 0;
@@ -192,9 +215,9 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    virtual XferRequest* copy2D (CPI::OS::uint32_t srcoffs, 
+    virtual XferRequest* copy2D (OCPI::OS::uint32_t srcoffs, 
                                  Shape* psrc, 
-                                 CPI::OS::uint32_t dstoffs,
+                                 OCPI::OS::uint32_t dstoffs,
                                  Shape* pdst,
                                  XferRequest* add_to
                                  ) = 0;
@@ -225,7 +248,7 @@ namespace DataTransfer {
     virtual void release (XferRequest* preq) = 0;
                  
                  
-    // Destructor - implementations are required to track all CpiXferRequests that they
+    // Destructor - implementations are required to track all OcpiXferRequests that they
     // produce (via Copy, Copy2D, and Group) and dispose of them when destructed.
     virtual ~XferServices () {};
 
@@ -234,7 +257,7 @@ namespace DataTransfer {
          
          
   // Each transfer implementation must implement a factory class
-  class XferFactory : public CPI::Util::Driver {
+  class XferFactory : public OCPI::Util::Driver {
                  
   public:
 
@@ -250,11 +273,11 @@ namespace DataTransfer {
     virtual const char* getProtocol()=0;
 
     // Transfer factories may not need these, so we will provide defaults
-    virtual CPI::Util::Device *probe(const CPI::Util::PValue* props, const char *which )
-      throw ( CPI::Util::EmbeddedException ){return NULL;}
+    virtual OCPI::Util::Device *probe(const OCPI::Util::PValue* props, const char *which )
+      throw ( OCPI::Util::EmbeddedException ){ ( void ) props; ( void ) which; return NULL;}
 
-    virtual unsigned search(const CPI::Util::PValue* props, const char **exclude)
-      throw (CPI::Util::EmbeddedException) {return 1;}
+    virtual unsigned search(const OCPI::Util::PValue* props, const char **exclude)
+      throw (OCPI::Util::EmbeddedException) { ( void ) props; ( void ) exclude; return 1;}
 
     /***************************************
      * This method is called on this factory to dertermine if it supports
@@ -279,7 +302,7 @@ namespace DataTransfer {
      *  node.  This endpoint does not need to be finalized until
      * it has beed passed to the finalizeEndpoint().
      ***************************************/
-    virtual std::string allocateEndpoint(CPI::OS::uint32_t *size) = 0;
+    virtual std::string allocateEndpoint(OCPI::OS::uint32_t *size) = 0;
 
     /***************************************
      *  This method is used to allocate a transfer compatible SMB

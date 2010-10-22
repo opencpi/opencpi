@@ -1,3 +1,37 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 /*
  * ----------------------------------------------------------------------
  * Load and execute a worker on an SCA Executable Device.  Just in case
@@ -9,18 +43,18 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include <CpiOsMisc.h>
-#include <CpiOsDebug.h>
-#include <CpiOsAssert.h>
-#include <CpiOsFileSystem.h>
-#include <CpiUtilVfs.h>
-#include <CpiUtilFileFs.h>
-#include <CpiUtilCommandLineConfiguration.h>
-#include <CpiStringifyCorbaException.h>
-#include <CpiCORBAUtilNameServiceBind.h>
-#include <CpiCORBAUtilNameServiceWait.h>
-#include <CpiCFUtilVfsFileSystem.h>
-#include <CpiCFUtilStringifyCFException.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsDebug.h>
+#include <OcpiOsAssert.h>
+#include <OcpiOsFileSystem.h>
+#include <OcpiUtilVfs.h>
+#include <OcpiUtilFileFs.h>
+#include <OcpiUtilCommandLineConfiguration.h>
+#include <OcpiStringifyCorbaException.h>
+#include <OcpiCORBAUtilNameServiceBind.h>
+#include <OcpiCORBAUtilNameServiceWait.h>
+#include <OcpiCFUtilVfsFileSystem.h>
+#include <OcpiCFUtilStringifyCFException.h>
 #include <CosNaming.h>
 #include <CF.h>
 
@@ -31,7 +65,7 @@
  */
 
 class LoadWorkerConfigurator
-  : public CPI::Util::CommandLineConfiguration
+  : public OCPI::Util::CommandLineConfiguration
 {
 public:
   LoadWorkerConfigurator ();
@@ -59,7 +93,7 @@ private:
 
 LoadWorkerConfigurator::
 LoadWorkerConfigurator ()
-  : CPI::Util::CommandLineConfiguration (g_options),
+  : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
 #if !defined (NDEBUG)
     debugBreak (false),
@@ -71,46 +105,46 @@ LoadWorkerConfigurator ()
 {
 }
 
-CPI::Util::CommandLineConfiguration::Option
+OCPI::Util::CommandLineConfiguration::Option
 LoadWorkerConfigurator::g_options[] = {
-  { CPI::Util::CommandLineConfiguration::OptionType::STRING,
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "identifier", "Resource identifier",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::identifier) },
-  { CPI::Util::CommandLineConfiguration::OptionType::STRING,
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::identifier), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "executableDevice", "Executable Device IOR",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::executableDevice) },
-  { CPI::Util::CommandLineConfiguration::OptionType::STRING,
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::executableDevice), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "loadType", "CF::LoadableDevice::LoadType",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::loadType) },
-  { CPI::Util::CommandLineConfiguration::OptionType::STRING,
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::loadType), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "entrypoint", "If --loadType=SHARED_LIBRARY",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::entrypoint) },
-  { CPI::Util::CommandLineConfiguration::OptionType::MULTINAMEVALUE,
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::entrypoint), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::MULTINAMEVALUE,
     "execParameters", "Executable Parameters",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::execParameters) },
-  { CPI::Util::CommandLineConfiguration::OptionType::UNSIGNEDLONG,
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::execParameters), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::UNSIGNEDLONG,
     "bindTimeout", "Timeout for worker binding",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::bindTimeout) },
-  { CPI::Util::CommandLineConfiguration::OptionType::STRING,
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::bindTimeout), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "writeIORFile", "Write IOR to file",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::iorFileName),
-    CPI_CLC_SENT(&LoadWorkerConfigurator::writeIORFile) },
-  { CPI::Util::CommandLineConfiguration::OptionType::STRING,
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::iorFileName),
+    OCPI_CLC_SENT(&LoadWorkerConfigurator::writeIORFile) },
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "registerWithNamingService", "Register with Naming Service",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::namingServiceName),
-    CPI_CLC_SENT(&LoadWorkerConfigurator::registerWithNamingService) },
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::namingServiceName),
+    OCPI_CLC_SENT(&LoadWorkerConfigurator::registerWithNamingService) },
 #if !defined (NDEBUG)
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "break", "Whether to break on startup",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::debugBreak) },
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::debugBreak), 0 },
 #endif
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "v", "Verbose messages",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::verbose) },
-  { CPI::Util::CommandLineConfiguration::OptionType::NONE,
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::verbose), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
     "help", "This message",
-    CPI_CLC_OPT(&LoadWorkerConfigurator::help) },
-  { CPI::Util::CommandLineConfiguration::OptionType::END }
+    OCPI_CLC_OPT(&LoadWorkerConfigurator::help), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::END, 0, 0, 0, 0 }
 };
 
 static
@@ -177,14 +211,14 @@ loadWorkerInt (CORBA::ORB_ptr orb,
      * Instantiate a local FileFs that provides access to the worker file.
      */
 
-    std::string absWorkerFileName = CPI::OS::FileSystem::absoluteName (argv[1]);
-    std::string workerDirName = CPI::OS::FileSystem::directoryName (absWorkerFileName);
-    std::string workerRelName = CPI::OS::FileSystem::relativeName (absWorkerFileName);
+    std::string absWorkerFileName = OCPI::OS::FileSystem::absoluteName (argv[1]);
+    std::string workerDirName = OCPI::OS::FileSystem::directoryName (absWorkerFileName);
+    std::string workerRelName = OCPI::OS::FileSystem::relativeName (absWorkerFileName);
     std::string workerFileNameInFileFs = "/";
     workerFileNameInFileFs += workerRelName;
 
-    CPI::Util::FileFs::FileFs * fileFs =
-      new CPI::Util::FileFs::FileFs (workerDirName);
+    OCPI::Util::FileFs::FileFs * fileFs =
+      new OCPI::Util::FileFs::FileFs (workerDirName);
 
     if (!fileFs->exists (workerFileNameInFileFs)) {
       delete fileFs;
@@ -199,8 +233,8 @@ loadWorkerInt (CORBA::ORB_ptr orb,
      * can load the worker file from.
      */
 
-    CPI::CFUtil::VfsFileSystem * vfsFileSystem =
-      new CPI::CFUtil::VfsFileSystem (orb, poa, fileFs, true);
+    OCPI::CFUtil::VfsFileSystem * vfsFileSystem =
+      new OCPI::CFUtil::VfsFileSystem (orb, poa, fileFs, true);
     PortableServer::ObjectId_var fsOid;
     CF::FileSystem_var fileSystem;
 
@@ -210,7 +244,7 @@ loadWorkerInt (CORBA::ORB_ptr orb,
       try {
         CORBA::Object_var fsobj = poa->id_to_reference (fsOid);
         fileSystem = CF::FileSystem::_narrow (fsobj);
-        cpiAssert (!CORBA::is_nil (fileSystem));
+        ocpiAssert (!CORBA::is_nil (fileSystem));
       }
       catch (...) {
         try {
@@ -287,12 +321,12 @@ loadWorkerInt (CORBA::ORB_ptr orb,
       }
       catch (const CORBA::Exception & ex) {
         if (config.verbose) {
-          std::cout << CPI::CFUtil::stringifyCFException (ex) << std::endl;
+          std::cout << OCPI::CFUtil::stringifyCFException (ex) << std::endl;
         }
         std::string msg = "Failed to load \"";
         msg += argv[1];
         msg += "\": ";
-        msg += CPI::CFUtil::stringifyCFException (ex);
+        msg += OCPI::CFUtil::stringifyCFException (ex);
         throw msg;
       }
 
@@ -309,7 +343,7 @@ loadWorkerInt (CORBA::ORB_ptr orb,
       workerName.length (1);
       workerName[0].id = workerNameStr.c_str ();
 
-      CPI::CORBAUtil::WaitForNameServiceBinding ncb (orb, poa, workerName);
+      OCPI::CORBAUtil::WaitForNameServiceBinding ncb (orb, poa, workerName);
       CosNaming::NamingContext_var nc = ncb.getContext ();
       CORBA::String_var ncior = orb->object_to_string (nc);
 
@@ -360,7 +394,7 @@ loadWorkerInt (CORBA::ORB_ptr orb,
       }
       catch (const CORBA::Exception & ex) {
         if (config.verbose) {
-          std::cout << CPI::CFUtil::stringifyCFException (ex) << std::endl;
+          std::cout << OCPI::CFUtil::stringifyCFException (ex) << std::endl;
         }
 
         try {
@@ -372,7 +406,7 @@ loadWorkerInt (CORBA::ORB_ptr orb,
         std::string msg = "Failed to execute \"";
         msg += argv[1];
         msg += "\": ";
-        msg += CPI::CFUtil::stringifyCFException (ex);
+        msg += OCPI::CFUtil::stringifyCFException (ex);
         throw msg;
       }
 
@@ -475,11 +509,11 @@ loadWorkerInt (CORBA::ORB_ptr orb,
     }
     catch (const CORBA::Exception & ex) {
       if (config.verbose) {
-        std::cout << CPI::CORBAUtil::Misc::stringifyCorbaException (ex) << std::endl;
+        std::cout << OCPI::CORBAUtil::Misc::stringifyCorbaException (ex) << std::endl;
       }
       else {
         std::cerr << "Warning: Failed to test worker for \"CF::Resource\" type: "
-                  << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                  << OCPI::CORBAUtil::Misc::stringifyCorbaException (ex)
                   << "."
                   << std::endl;
       }
@@ -505,11 +539,11 @@ loadWorkerInt (CORBA::ORB_ptr orb,
       }
       catch (const CORBA::Exception & ex) {
         if (config.verbose) {
-          std::cout << CPI::CFUtil::stringifyCFException (ex) << std::endl;
+          std::cout << OCPI::CFUtil::stringifyCFException (ex) << std::endl;
         }
         else {
           std::cerr << "Warning: Failed to initialize worker: "
-                    << CPI::CFUtil::stringifyCFException (ex)
+                    << OCPI::CFUtil::stringifyCFException (ex)
                     << "."
                     << std::endl;
         }
@@ -570,7 +604,7 @@ loadWorkerInt (CORBA::ORB_ptr orb,
       try {
         CORBA::Object_var nso = orb->resolve_initial_references ("NameService");
         CosNaming::NamingContextExt_var ns = CosNaming::NamingContextExt::_narrow (nso);
-        CPI::CORBAUtil::Misc::nameServiceBind (ns, workerRef, config.namingServiceName);
+        OCPI::CORBAUtil::Misc::nameServiceBind (ns, workerRef, config.namingServiceName);
 
         if (config.verbose) {
           std::cout << "done." << std::endl;
@@ -578,13 +612,13 @@ loadWorkerInt (CORBA::ORB_ptr orb,
       }
       catch (const CORBA::Exception & ex) {
         if (config.verbose) {
-          std::cout << CPI::CORBAUtil::Misc::stringifyCorbaException (ex) << std::endl;
+          std::cout << OCPI::CORBAUtil::Misc::stringifyCorbaException (ex) << std::endl;
         }
         else {
           std::cerr << "Warning: Failed to register worker with Naming Service as \""
                     << config.namingServiceName
                     << "\": "
-                    << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+                    << OCPI::CORBAUtil::Misc::stringifyCorbaException (ex)
                     << "."
                     << std::endl;
         }
@@ -606,7 +640,7 @@ loadWorkerInt (CORBA::ORB_ptr orb,
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: "
-              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << OCPI::CORBAUtil::Misc::stringifyCorbaException (ex)
               << std::endl;
     return false;
   }
@@ -652,7 +686,7 @@ extern "C" {
     }
 
     /*
-     * Keep the ORB going.
+     * Keep the OCPI_CORBA_ORB going.
      */
 
     return 0;
@@ -670,7 +704,7 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-        CPI::OS::debugBreak ();
+        OCPI::OS::debugBreak ();
         break;
       }
     }
@@ -696,7 +730,7 @@ main (int argc, char * argv[])
   }
 
   /*
-   * Shut down and destroy the ORB.
+   * Shut down and destroy the OCPI_CORBA_ORB.
    */
 
   try {
@@ -705,7 +739,7 @@ main (int argc, char * argv[])
   }
   catch (const CORBA::Exception & ex) {
     std::cout << "Oops: "
-              << CPI::CORBAUtil::Misc::stringifyCorbaException (ex)
+              << OCPI::CORBAUtil::Misc::stringifyCorbaException (ex)
               << std::endl;
   }
   catch (...) {

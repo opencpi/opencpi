@@ -1,3 +1,4 @@
+
 /* $Id: fasttime_test.c,v 1.4 2005/08/27 08:24:44 alexholkner Exp $ 
  *
  * Copyright (c) Internet2, 2005.  All rights reserved.
@@ -13,7 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fasttime.h>
-#include <CpiOsMisc.h>
+#include <OcpiOsMisc.h>
 
 #define RUNS 1000000
 
@@ -61,7 +62,7 @@ int main()
         if (wait_time > 0)
         {
             printf("Waiting %d secs for fasttime to get ready...\n", wait_time);
-            CPI::OS::sleep(wait_time);
+            OCPI::OS::sleep(wait_time);
         }
     }
     
@@ -70,8 +71,12 @@ int main()
       clock_gettime(CLOCK_REALTIME, &tp_actual); 
       result = fasttime_gettime(&tp_fast);  
     } while (result);
-    printf(" Fast:   %u secs, %u nsecs\n", tp_fast.tv_sec, tp_fast.tv_nsec);
-    printf(" Actual: %u secs, %u nsecs\n", tp_actual.tv_sec, tp_actual.tv_nsec); 
+    printf(" Fast:   %u secs, %u nsecs\n", 
+             (unsigned int)tp_fast.tv_sec, 
+             (unsigned int)tp_fast.tv_nsec);
+    printf(" Actual: %u secs, %u nsecs\n", 
+             (unsigned int)tp_actual.tv_sec, 
+             (unsigned int)tp_actual.tv_nsec); 
     printf("Check speed:\n");
     fasttime_gettime(&tp_start);
     for (i = 0; i < RUNS; i++)

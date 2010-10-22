@@ -1,19 +1,38 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 
 /*
  * Abstact:
@@ -30,8 +49,8 @@
 #ifndef DataTransfer_PioTransfer_H_
 #define DataTransfer_PioTransfer_H_
 
-#include <CpiOsDataTypes.h>
-#include <CpiOsMutex.h>
+#include <OcpiOsDataTypes.h>
+#include <OcpiOsMutex.h>
 #include <DtTransferInterface.h>
 #include <DtSharedMemoryInterface.h>
 #include <xfer_if.h>
@@ -50,14 +69,14 @@ namespace DataTransfer {
   public:
 
     // Constructors
-    GppEndPoint(CPI::OS::int32_t s=0)
+    GppEndPoint(OCPI::OS::int32_t s=0)
       :EndPoint(s){};
       virtual ~GppEndPoint();
-      GppEndPoint( std::string& ep, CPI::OS::uint32_t size=0)
+      GppEndPoint( std::string& ep, OCPI::OS::uint32_t size=0)
         :EndPoint(ep,size){setEndpoint(ep);};
 
         // Sets smem location data based upon the specified endpoint
-        virtual CPI::OS::int32_t setEndpoint( std::string& ep );
+        virtual OCPI::OS::int32_t setEndpoint( std::string& ep );
 
         // Get the address from the endpoint
         virtual const char* getAddress(){return m_smb_name.c_str();}
@@ -114,7 +133,7 @@ namespace DataTransfer {
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(CPI::OS::uint32_t *size);
+    std::string allocateEndpoint(OCPI::OS::uint32_t *size);
 
     /***************************************
      *  This method is used to flush any cached items in the factoy
@@ -123,8 +142,8 @@ namespace DataTransfer {
 
   protected:
 
-    CPI::OS::Mutex m_mutex;
-    CPI::Util::VList g_locations;
+    OCPI::OS::Mutex m_mutex;
+    OCPI::Util::VList g_locations;
 
   private:
 
@@ -144,17 +163,17 @@ namespace DataTransfer {
     void init (
                Creator cr, 
                Flags flags, 
-               CPI::OS::uint32_t srcoffs, 
+               OCPI::OS::uint32_t srcoffs, 
                Shape *psrcshape, 
-               CPI::OS::uint32_t dstoffs, 
+               OCPI::OS::uint32_t dstoffs, 
                Shape *pdstshape, 
-               CPI::OS::uint32_t length );
+               OCPI::OS::uint32_t length );
 
     // Queue data transfer request
     void start (Shape* s_shape=NULL, Shape* t_shape=NULL);
 
     // Get Information about a Data Transfer Request
-    CPI::OS::int32_t getStatus();
+    OCPI::OS::int32_t getStatus();
 
     // Get the transfer handle
     XF_transfer& getHandle();
@@ -163,18 +182,18 @@ namespace DataTransfer {
     // Destructor - implementation at end of file
     virtual ~PIOXferRequest ();
 
-    void modify( CPI::OS::uint32_t new_offsets[], CPI::OS::uint32_t old_offsets[] );
+    void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] );
 
     // Data members accessible from this/derived class
   protected:
 
     Creator                                                m_creator;                // What  method created this instance
     Flags                                                m_flags;                // Flags used during creation
-    CPI::OS::uint32_t                        m_srcoffset;        // The source memory offset
+    OCPI::OS::uint32_t                        m_srcoffset;        // The source memory offset
     Shape                                                m_srcshape;                // The source shape
-    CPI::OS::uint32_t                        m_dstoffset;        // The destination memory offset
+    OCPI::OS::uint32_t                        m_dstoffset;        // The destination memory offset
     Shape                                                m_dstshape;                // The destination memory shape
-    CPI::OS::uint32_t                        m_length;                // The length of the request in bytes
+    OCPI::OS::uint32_t                        m_length;                // The length of the request in bytes
     XF_transfer                                        m_thandle;                // Transfer handle returned by xfer_xxx etal
 
   };
@@ -198,12 +217,12 @@ namespace DataTransfer {
       void createTemplate (SmemServices* p1, SmemServices* p2);
 
       // Create a transfer request
-      XferRequest* copy (CPI::OS::uint32_t srcoffs, CPI::OS::uint32_t dstoffs, 
-                         CPI::OS::uint32_t nbytes, XferRequest::Flags flags, XferRequest* add_to);
+      XferRequest* copy (OCPI::OS::uint32_t srcoffs, OCPI::OS::uint32_t dstoffs, 
+                         OCPI::OS::uint32_t nbytes, XferRequest::Flags flags, XferRequest* add_to);
 
       // Create a 2-dimensional transfer request
-      XferRequest* copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc, 
-                           CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest* add_to);
+      XferRequest* copy2D (OCPI::OS::uint32_t srcoffs, Shape* psrc, 
+                           OCPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest* add_to);
 
       // Group data transfer requests
       XferRequest* group (XferRequest* preqs[]);
@@ -229,7 +248,7 @@ namespace DataTransfer {
 
       // A map of data transfer requests to the instance that created it
       // to support rundow. Note that list access is not thread-safe.
-      static CPI::Util::VList m_map;
+      static OCPI::Util::VList m_map;
 
       // The handle returned by xfer_create
       XF_template        m_xftemplate;
@@ -255,12 +274,12 @@ namespace DataTransfer {
    *********************************/
 
   // inline methods for PIOXferFactory
-  inline const char* PIOXferFactory::getProtocol(){return "cpi-smb-pio";}
+  inline const char* PIOXferFactory::getProtocol(){return "ocpi-smb-pio";}
  
   // inline methods for PIOXferRequest
   inline XF_transfer& PIOXferRequest::getHandle(){return m_thandle;}
   inline void PIOXferRequest::start(Shape* , Shape*){xfer_start (m_thandle, 0);}
-  inline CPI::OS::int32_t PIOXferRequest::getStatus(){return xfer_get_status (m_thandle);}
+  inline OCPI::OS::int32_t PIOXferRequest::getStatus(){return xfer_get_status (m_thandle);}
 
   // inline methods for PIOXferServices
   inline void PIOXferServices::add (PIOXferRequest* pXferReq){m_map.insert(pXferReq);}

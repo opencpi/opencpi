@@ -1,3 +1,4 @@
+
 /* $Id: calibration.c,v 1.12 2005/08/27 08:24:45 alexholkner Exp $ 
  *
  * Copyright (c) Internet2, 2005.  All rights reserved.
@@ -20,6 +21,8 @@ RCS_ID("@(#) $Id: calibration.c,v 1.12 2005/08/27 08:24:45 alexholkner Exp $")
 #include <assert.h>
 #include <math.h>
 #include <unistd.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include "fasttime_private.h"
 #include "calibration.h"
 
@@ -142,9 +145,9 @@ void calibrate_init()
     
     /* Get intercept */
     /* XXX the multiply by 1000000000 here might overflow */
-    current_conversion.intercept = 
-        (tp_start.tv_sec * (uint64_t) 1000000000 + tp_start.tv_nsec)
-        - (ticks_start.ll * current_conversion.gradient);
+    current_conversion.intercept = (int64_t) 
+        ((tp_start.tv_sec * (uint64_t) 1000000000 + tp_start.tv_nsec)
+        - ((double)ticks_start.ll * current_conversion.gradient));
 
     old_gradient = current_conversion.gradient;
     state = STATE_UNSET;
@@ -210,10 +213,10 @@ void calibrate(fasttime_t *storage)
         
         /* Convert the tick measurements to microsecs using the most recent
          * known conversion. */
-        t1 = current_conversion.intercept + 
-                ticks1.ll * current_conversion.gradient;
-        t3 = current_conversion.intercept + 
-                ticks3.ll * current_conversion.gradient;
+        t1 = ( int64_t ) (current_conversion.intercept + 
+                ticks1.ll * current_conversion.gradient);
+        t3 = ( int64_t ) (current_conversion.intercept + 
+                ticks3.ll * current_conversion.gradient);
 
         /* Keep minimum dt2 and dt1 */
         if (t2 - t1 < min_dt1)
@@ -228,7 +231,7 @@ void calibrate(fasttime_t *storage)
     last_time = ticks3.ll;
 
     /* Calculate NTP-like stats */
-    prediction = old_offset + mu * (current_conversion.gradient - old_gradient);
+    prediction = ( int ) ( old_offset + mu * (current_conversion.gradient - old_gradient));
     correction = (offset - prediction/2);
     delay = min_dt1 + min_dt2;
     /* dispersion = delay + PRECISION; */ /*  Or is this completely wrong? */
@@ -247,7 +250,7 @@ void calibrate(fasttime_t *storage)
 
     if (debug_calibrate)
     {
-        printf("mu              %lld\n", mu);
+        printf("mu              %" PRIu64 "\n", mu);
         printf("offset          %d\n", offset);
         printf("prediction      %d\n", prediction);
         printf("correction      %d\n", correction);
@@ -277,9 +280,9 @@ void calibrate(fasttime_t *storage)
      * a large error in offset.
      */
     gradient_new = current_conversion.gradient + gradient_adjust;
-    intercept_new = 
-        ticks3.ll * (current_conversion.gradient - gradient_new) + 
-          current_conversion.intercept + intercept_adjust;
+    intercept_new = (int64_t) 
+        (ticks3.ll * (current_conversion.gradient - gradient_new) + 
+          current_conversion.intercept + intercept_adjust);
     
     old_gradient = current_conversion.gradient;
 
@@ -414,9 +417,9 @@ void slew_clock(fasttime_t *storage,
     ticks_per_segment = tmp_pwr / 2;
     
     /* Intersect old and new gradients at sync point */
-    intercept_new = 
-        sync * (current_conversion.gradient - gradient) + 
-          current_conversion.intercept;
+    intercept_new = (int64_t) 
+        (sync * (current_conversion.gradient - gradient) + 
+          current_conversion.intercept);
 
     for (i = 0; i < storage->linear_segments; i++)
     {

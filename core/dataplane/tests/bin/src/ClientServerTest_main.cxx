@@ -1,13 +1,47 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
 #include <sstream>
-#include <CpiOsMisc.h>
-#include <CpiOsAssert.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
-#include <CpiTransportServer.h>
-#include <CpiTransportClient.h>
-#include <CpiRDTInterface.h>
-#include <CpiThread.h>
-#include <CpiBuffer.h>
+#include <OcpiTransportServer.h>
+#include <OcpiTransportClient.h>
+#include <OcpiRDTInterface.h>
+#include <OcpiThread.h>
+#include <OcpiBuffer.h>
 
 
 #define CATCH_ALL_RETHROW( msg )                                        \
@@ -19,7 +53,7 @@
     printf("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
     throw;                                                                \
   }                                                                        \
-  catch ( CPI::Util::EmbeddedException& eex ) {                                \
+  catch ( OCPI::Util::EmbeddedException& eex ) {                                \
     printf(" gpp: Caught an embedded exception while %s:\n", msg);                \
     printf( " error number = %d", eex.m_errorCode );                        \
     printf( " aux info = %s\n", eex.m_auxInfo.c_str() );                \
@@ -31,24 +65,24 @@
   }
 
 
-using namespace CPI::DataTransport;
+using namespace OCPI::DataTransport;
 using namespace DataTransport::Interface;
-using namespace CPI::Container;
-using namespace CPI;
+using namespace OCPI::Container;
+using namespace OCPI;
 
 /*
  *  These are the global parameters that are configured in the vxWorks startup script
  */
 /*
-char* CPI_RCC_CONT_COMMS_EP    = "cpi-smb-pio://s:300000.1.20";
-char* CPI_RCC_LBCONT_COMMS_EP  = "cpi-smb-pio://lb:300000.3.20";
+char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-smb-pio://s:300000.1.20";
+char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-smb-pio://lb:300000.3.20";
 */
 
-const char* CPI_RCC_CONT_COMMS_EP    = "cpi-socket-rdma://mfs-opencpi-1;40005:600000.2.8";
-const char* CPI_RCC_LBCONT_COMMS_EP  = "cpi-socket-rdma://mfs-opencpi-1;40006:600000.4.8";
+const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-socket-rdma://mfs-openocpi-1;40005:600000.2.8";
+const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-socket-rdma://mfs-openocpi-1;40006:600000.4.8";
 
-int  CPI_RCC_DATA_BUFFER_SIZE   = 1024;
-int  CPI_RCC_CONT_NBUFFERS      = 1;
+int  OCPI_RCC_DATA_BUFFER_SIZE   = 1024;
+int  OCPI_RCC_CONT_NBUFFERS      = 1;
 
 
 // Program globals
@@ -80,7 +114,7 @@ public:
   /**********************************
    * This method gets called when an error gets generated
    *********************************/
-  void error( CPI::Util::EmbeddedException& ex )
+  void error( OCPI::Util::EmbeddedException& ex )
   {
     printf("TransportEventHandler: Got an exception, (%d%s)\n", ex.getErrorCode(), ex.getAuxInfo() );
   }
@@ -103,7 +137,7 @@ public:
   /**********************************
    * This method gets called when an error gets generated
    *********************************/
-  virtual void error( CPI::Util::EmbeddedException& ex )
+  virtual void error( OCPI::Util::EmbeddedException& ex )
   {
 
   }
@@ -133,7 +167,7 @@ int gpp_cont(int argc, char** argv)
   bool loopback;
 
   try {
-    server_end_point = CPI_RCC_CONT_COMMS_EP;
+    server_end_point = OCPI_RCC_CONT_COMMS_EP;
     loopback = parseArgs(argc,argv);
     TransportCEventHandler* eh=NULL;
     TransportSEventHandler *tcb=NULL;
@@ -147,7 +181,7 @@ int gpp_cont(int argc, char** argv)
       // We need a client to continue
       while ( circuit_count == 0 ) {
         server->dispatch();
-        CPI::OS::sleep( 500 );
+        OCPI::OS::sleep( 500 );
         printf("Waiting for a client to connect\n");
       }
 
@@ -155,7 +189,7 @@ int gpp_cont(int argc, char** argv)
 
       printf("***** Got a new client !! \n");
       for (int n=0; n<10; n++) {
-        CPI::OS::sleep( 500 );
+        OCPI::OS::sleep( 500 );
         server->dispatch();
       }
 
@@ -163,20 +197,20 @@ int gpp_cont(int argc, char** argv)
       
       int msg_count = 0;
       while( msg_count < 100 ) {
-        CPI::DataTransport::Buffer* buffer;        
+        OCPI::DataTransport::Buffer* buffer;        
         buffer = gpp_circuits[0]->getSendMessageBuffer();
         if ( buffer ) {
           sprintf((char*)buffer->getBuffer(),"message %d\n", msg_count++ );
           gpp_circuits[0]->sendMessage( buffer, strlen((char*)buffer->getBuffer()) + 1 );
         }
-        CPI::OS::sleep( 5 );
+        OCPI::OS::sleep( 5 );
         server->dispatch();
       }
 
 
     }
     else {
-      loopback_end_point = CPI_RCC_LBCONT_COMMS_EP;
+      loopback_end_point = OCPI_RCC_LBCONT_COMMS_EP;
       eh = new TransportCEventHandler();
       client = new Client( loopback_end_point, 1024, eh );
       loopback_circuit = client->createCircuit( server_end_point );   
@@ -185,8 +219,8 @@ int gpp_cont(int argc, char** argv)
 
       while( 1) {
         client->dispatch();
-        CPI::DataTransport::Buffer* buffer;        
-        CPI::OS::sleep( 5 );
+        OCPI::DataTransport::Buffer* buffer;        
+        OCPI::OS::sleep( 5 );
         if ( loopback_circuit->messageAvailable() ) {
           buffer = loopback_circuit->getNextMessage();
           if ( buffer ) {

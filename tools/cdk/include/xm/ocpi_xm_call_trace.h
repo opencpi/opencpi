@@ -1,8 +1,22 @@
 
 /*
- * Copyright (c) 2009 and 2010 Mercury Federal Systems.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
  *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
  *  OpenCPI is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published
@@ -18,6 +32,9 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+
+
 #ifndef INCLUDED_OCPI_XM_CALL_TRACE_H
 #define INCLUDED_OCPI_XM_CALL_TRACE_H
 
@@ -26,9 +43,9 @@
 #include <iomanip>
 #include <iostream>
 
-#define CPI_CALL_TRACE CPI::CallTrace trace_temp ( __FUNCTION__ );
+#define OCPI_CALL_TRACE OCPI::CallTrace trace_temp ( __FUNCTION__ );
 
-namespace CPI
+namespace OCPI
 {
 /**
   @brief
@@ -70,11 +87,11 @@ namespace CPI
     0 Leave main()
   @endcode
 
-  The macro CPI_CALL_TRACE invokes the explicit constructor of the CallTrace
+  The macro OCPI_CALL_TRACE invokes the explicit constructor of the CallTrace
   class with the built-in function name macro (__FUNCTION__).  The
   constructor writes logs an "entry" into the function in the log file
   (called trace.txt). When the function exits the CallTrace object
-  instantiated by the CPI_CALL_TRACE macro goes out of scope. When destructor
+  instantiated by the OCPI_CALL_TRACE macro goes out of scope. When destructor
   logs an "exit" from the function in the log file.
 
   @note
@@ -159,7 +176,7 @@ namespace CPI
 
     }; // End: class CallTrace
 
-} // End: namespace CPI
+} // End: namespace OCPI
 
 #endif // End: INCLUDED_OCPI_XM_CALL_TRACE_H
 

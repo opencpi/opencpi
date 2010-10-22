@@ -1,12 +1,46 @@
 
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <xfer_if.h>
 #include <xfer_internal.h>
 #include <DtTransferInterface.h>
-#include <CpiOsDataTypes.h>
-#include <CpiOsMisc.h>
+#include <OcpiOsDataTypes.h>
+#include <OcpiOsMisc.h>
 #include <DtSharedMemoryInterface.h>
 
 using namespace DataTransfer;
@@ -18,9 +52,9 @@ action_pio_transfer(PIO_transfer transfer)
 {
 
   /* Get the alignments */
-  CPI::OS::int64_t src_al = (CPI::OS::uint64_t)transfer->src_va & 3;
-  CPI::OS::int64_t dst_al = (CPI::OS::uint64_t)transfer->dst_va & 3;
-  CPI::OS::int32_t i;
+  OCPI::OS::int64_t src_al = (OCPI::OS::uint64_t)transfer->src_va & 3;
+  OCPI::OS::int64_t dst_al = (OCPI::OS::uint64_t)transfer->dst_va & 3;
+  OCPI::OS::int32_t i;
 
   /* Check src and dst alignment */
   if (src_al != dst_al) {
@@ -30,15 +64,15 @@ action_pio_transfer(PIO_transfer transfer)
      */
     char *src = (char *)transfer->src_va;
     char *dst = (char *)transfer->dst_va;
-    CPI::OS::int32_t nbytes = transfer->nbytes;
+    OCPI::OS::int32_t nbytes = transfer->nbytes;
 
 
     if (src == 0) {
-      for (CPI::OS::int32_t i=0; i < nbytes; i++)
+      for (OCPI::OS::int32_t i=0; i < nbytes; i++)
         *dst++ = 0;
     }
     else {
-      for (CPI::OS::int32_t i=0; i < nbytes; i++)
+      for (OCPI::OS::int32_t i=0; i < nbytes; i++)
         *dst++ = *src++;
     }
   }
@@ -51,19 +85,19 @@ action_pio_transfer(PIO_transfer transfer)
     char *src_b = (char *)transfer->src_va;
     char *dst_b = (char *)transfer->dst_va;
 
-    CPI::OS::int32_t *src_w;
-    CPI::OS::int32_t *dst_w;
+    OCPI::OS::int32_t *src_w;
+    OCPI::OS::int32_t *dst_w;
 
     for (i=0; i < src_al; i++)
       *dst_b++ = *src_b++;
 
     /* Get the word pointers */
-    src_w = (CPI::OS::int32_t *)src_b;
-    dst_w = (CPI::OS::int32_t *)dst_b;
+    src_w = (OCPI::OS::int32_t *)src_b;
+    dst_w = (OCPI::OS::int32_t *)dst_b;
 
     /* Get the word count and remainder */
-    CPI::OS::int32_t nwords = (transfer->nbytes - src_al) / 4;
-    CPI::OS::int32_t rem_nwords = (transfer->nbytes - src_al) % 4;
+    OCPI::OS::int32_t nwords = (transfer->nbytes - src_al) / 4;
+    OCPI::OS::int32_t rem_nwords = (transfer->nbytes - src_al) % 4;
 
     if (src_w == 0) {
       for (i=0; i < nwords; i++)    
@@ -92,11 +126,11 @@ action_pio_transfer(PIO_transfer transfer)
   }
   else {
     /* Get the word pointers */
-    CPI::OS::int32_t *src_w = (CPI::OS::int32_t *)transfer->src_va;
-    CPI::OS::int32_t *dst_w = (CPI::OS::int32_t *)transfer->dst_va;
+    OCPI::OS::int32_t *src_w = (OCPI::OS::int32_t *)transfer->src_va;
+    OCPI::OS::int32_t *dst_w = (OCPI::OS::int32_t *)transfer->dst_va;
 
-    CPI::OS::int32_t nwords = transfer->nbytes / 4;
-    CPI::OS::int32_t rem_nwords = transfer->nbytes % 4;
+    OCPI::OS::int32_t nwords = transfer->nbytes / 4;
+    OCPI::OS::int32_t rem_nwords = transfer->nbytes % 4;
 
     if (src_w == 0) {
       for (i=0; i < nwords; i++)    
@@ -126,7 +160,7 @@ action_pio_transfer(PIO_transfer transfer)
 
   //#define TRACE_PIO_XFERS  
 #ifdef TRACE_PIO_XFERS
-  CPI::OS::int32_t *src1 = (CPI::OS::int32_t *)transfer->src_va;
+  OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
   printf("^^^^ copying %d bytes from %llx to %llx\n", transfer->nbytes,transfer->src_off,transfer->dst_off);
   printf("source wrd 1 = %d wrd2 = %d\n", src1[0], src1[1] );
 #endif
@@ -137,7 +171,7 @@ action_pio_transfer(PIO_transfer transfer)
 static void
 action_pio_transfer(PIO_transfer transfer)
 {
-  CPI::OS::int32_t nwords = ((transfer->nbytes + 5) / 8) ;
+  OCPI::OS::int32_t nwords = ((transfer->nbytes + 5) / 8) ;
 
 #ifdef DEBUG
   {
@@ -154,8 +188,8 @@ action_pio_transfer(PIO_transfer transfer)
 
 #ifdef IP_DEBUG_SUPPORT
   if ( nwords == 1 ) {
-    CPI::OS::int32_t *src1 = (CPI::OS::int32_t *)transfer->src_va;
-    CPI::OS::int32_t *dst1 = (CPI::OS::int32_t *)transfer->dst_va;    
+    OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
+    OCPI::OS::int32_t *dst1 = (OCPI::OS::int32_t *)transfer->dst_va;    
     //    if ( ((src1[0] < 3) && (src1[1] < 3)) || ((src1[0] > 2048) && (src1[1] > 2048)) )  {
     if ( ((src1[0] < 3) && (src1[1] < 3)) || ((src1[0] > 2048) && (src1[1] > 2048)) )  {
 
@@ -177,9 +211,9 @@ action_pio_transfer(PIO_transfer transfer)
     }
   }
   else {
-    CPI::OS::int32_t *src1 = (CPI::OS::int32_t *)transfer->src_va;
-    CPI::OS::int32_t *dst1 = (CPI::OS::int32_t *)transfer->dst_va;    
-    for (CPI::OS::int32_t i=0; i < nwords*2; i++) {
+    OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
+    OCPI::OS::int32_t *dst1 = (OCPI::OS::int32_t *)transfer->dst_va;    
+    for (OCPI::OS::int32_t i=0; i < nwords*2; i++) {
       dst1[i] = src1[i];
     }
   }
@@ -187,8 +221,8 @@ action_pio_transfer(PIO_transfer transfer)
 
 
 
-  CPI::OS::int32_t *src1 = (CPI::OS::int32_t *)transfer->src_va;
-  CPI::OS::int32_t *dst1 = (CPI::OS::int32_t *)transfer->dst_va;    
+  OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
+  OCPI::OS::int32_t *dst1 = (OCPI::OS::int32_t *)transfer->dst_va;    
 
   //#define TRACE_PIO_XFERS  
 #ifdef TRACE_PIO_XFERS
@@ -198,7 +232,7 @@ action_pio_transfer(PIO_transfer transfer)
 #endif
 
 
-  for (CPI::OS::int32_t i=0; i < nwords*2; i++) {
+  for (OCPI::OS::int32_t i=0; i < nwords*2; i++) {
     dst1[i] = src1[i];
   }
   
@@ -208,7 +242,7 @@ action_pio_transfer(PIO_transfer transfer)
 #endif
 
 
-static CPI::OS::int32_t
+static OCPI::OS::int32_t
 is_contiguous(Shape *shape)
 {
   if ((shape->x.stride == 1) &&
@@ -221,19 +255,19 @@ is_contiguous(Shape *shape)
   }
 }
 
-static CPI::OS::uint32_t
+static OCPI::OS::uint32_t
 calc_shape_size(Shape *s)
 {
   return (s->x.length * s->y.length * s->z.length * s->element_size);
 }
 
-static CPI::OS::int32_t
+static OCPI::OS::int32_t
 process_shapes(Shape *src, Shape *dst, PIO_template pio_template,
-               CPI::OS::uint32_t src_os, CPI::OS::uint32_t dst_os, PIO_transfer *xf_transfers)
+               OCPI::OS::uint32_t src_os, OCPI::OS::uint32_t dst_os, PIO_transfer *xf_transfers)
 {
   /* Get the shape sizes */
-  CPI::OS::uint32_t src_shape_size = calc_shape_size(src);
-  CPI::OS::uint32_t dst_shape_size = calc_shape_size(dst);
+  OCPI::OS::uint32_t src_shape_size = calc_shape_size(src);
+  OCPI::OS::uint32_t dst_shape_size = calc_shape_size(dst);
 
   /* Check the sizes are equal */
   if (src_shape_size != dst_shape_size)
@@ -260,7 +294,7 @@ process_shapes(Shape *src, Shape *dst, PIO_template pio_template,
   return 0;
 }
 
-CPI::OS::int32_t
+OCPI::OS::int32_t
 xfer_pio_create(DataTransfer::SmemServices* src, DataTransfer::SmemServices* dst, PIO_template *pio_templatep)
 {
   void *src_va;
@@ -288,7 +322,7 @@ xfer_pio_create(DataTransfer::SmemServices* src, DataTransfer::SmemServices* dst
 #define OF_WINDOW 0x1000000
 
 void
-xfer_pio_modify( PIO_transfer transfer, int,  CPI::OS::uint32_t *noff,  CPI::OS::uint32_t *ooff )
+xfer_pio_modify( PIO_transfer transfer, int,  OCPI::OS::uint32_t *noff,  OCPI::OS::uint32_t *ooff )
 {
   ooff[0] = transfer->src_off;
   transfer->src_va = (char*)transfer->src_va - transfer->src_off;
@@ -298,9 +332,9 @@ xfer_pio_modify( PIO_transfer transfer, int,  CPI::OS::uint32_t *noff,  CPI::OS:
 
 
 
-CPI::OS::int32_t
-xfer_pio_copy(PIO_template pio_template, CPI::OS::uint32_t src_os, CPI::OS::uint32_t dst_os,
-              CPI::OS::int32_t nbytes, CPI::OS::int32_t flags, PIO_transfer *pio_transferp)
+OCPI::OS::int32_t
+xfer_pio_copy(PIO_template pio_template, OCPI::OS::uint32_t src_os, OCPI::OS::uint32_t dst_os,
+              OCPI::OS::int32_t nbytes, OCPI::OS::int32_t flags, PIO_transfer *pio_transferp)
 {
   /* Allocate transfer */
   PIO_transfer pio_transfer = new struct pio_transfer_;
@@ -352,9 +386,9 @@ xfer_pio_copy(PIO_template pio_template, CPI::OS::uint32_t src_os, CPI::OS::uint
   return 0;
 }
 
-CPI::OS::int32_t
-xfer_pio_copy_2d(PIO_template pio_template, CPI::OS::uint32_t src_os, Shape *src,
-                 CPI::OS::uint32_t dst_os, Shape *dst, CPI::OS::int32_t, 
+OCPI::OS::int32_t
+xfer_pio_copy_2d(PIO_template pio_template, OCPI::OS::uint32_t src_os, Shape *src,
+                 OCPI::OS::uint32_t dst_os, Shape *dst, OCPI::OS::int32_t, 
                  PIO_transfer *pio_transferp)
 {
 
@@ -366,15 +400,15 @@ xfer_pio_copy_2d(PIO_template pio_template, CPI::OS::uint32_t src_os, Shape *src
   return 0;
 }
 
-CPI::OS::int32_t
-xfer_pio_group(PIO_transfer *members, CPI::OS::int32_t, PIO_transfer *pio_transferp)
+OCPI::OS::int32_t
+xfer_pio_group(PIO_transfer *members, OCPI::OS::int32_t, PIO_transfer *pio_transferp)
 {
   /* Check for null member array */
   if (!members)
     return 1;
 
   PIO_transfer transfer = new struct pio_transfer_;
-  CPI::OS::int32_t index = 0;
+  OCPI::OS::int32_t index = 0;
 
   /* Check the allocation worked */
   if (!transfer)
@@ -433,8 +467,8 @@ xfer_pio_group(PIO_transfer *members, CPI::OS::int32_t, PIO_transfer *pio_transf
   return 0;
 }
 
-CPI::OS::int32_t
-xfer_pio_start(PIO_transfer pio_transfer, CPI::OS::int32_t)
+OCPI::OS::int32_t
+xfer_pio_start(PIO_transfer pio_transfer, OCPI::OS::int32_t)
 {
   PIO_transfer transfer = pio_transfer;
 
@@ -447,7 +481,7 @@ xfer_pio_start(PIO_transfer pio_transfer, CPI::OS::int32_t)
   return 0;
 }
 
-CPI::OS::int32_t
+OCPI::OS::int32_t
 xfer_pio_release(PIO_transfer pio_transfer)
 {
   /* Local Variables */
@@ -469,7 +503,7 @@ xfer_pio_release(PIO_transfer pio_transfer)
   return 0;
 }
 
-CPI::OS::int32_t
+OCPI::OS::int32_t
 xfer_pio_destroy(PIO_template pio_template)
 {
   /* Free the transfer template */

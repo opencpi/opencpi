@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  button.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -22,7 +58,7 @@ namespace eval Button {
 
     set remove [list -command -relief -text -textvariable -underline -state]
     if {[info tclversion] > 8.3} {
-	lappend remove -repeatdelay -repeatinterval
+        lappend remove -repeatdelay -repeatinterval
     }
     Widget::tkinclude Button button :cmd remove $remove
 
@@ -91,7 +127,7 @@ proc Button::create { path args } {
     }
 
     $path configure -relief $relief -text $text -underline $under \
-	    -textvariable $var -state $st
+            -textvariable $var -state $st
     bindtags $path [list $path BwButton [winfo toplevel $path] all]
 
     set accel1 [string tolower [string index $text $under]]
@@ -123,10 +159,10 @@ proc Button::configure { path args } {
 
     # Extract all the modified bits we're interested in
     foreach {cr cs cv cn ct cu} [Widget::hasChangedX $path \
-	    -relief -state -textvariable -name -text -underline] break
+            -relief -state -textvariable -name -text -underline] break
     if { $cr || $cs } {
-	set relief [Widget::cget $path -relief]
-	set state  [Widget::cget $path -state]
+        set relief [Widget::cget $path -relief]
+        set state  [Widget::cget $path -state]
         if { [string equal $relief "link"] } {
             if { [string equal $state "active"] } {
                 set relief "raised"
@@ -138,9 +174,9 @@ proc Button::configure { path args } {
     }
 
     if { $cv || $cn || $ct || $cu } {
-	set var		[Widget::cget $path -textvariable]
-	set text	[Widget::cget $path -text]
-	set under	[Widget::cget $path -underline]
+        set var                [Widget::cget $path -textvariable]
+        set text        [Widget::cget $path -text]
+        set under        [Widget::cget $path -underline]
         if {  ![string length $var] } {
             set desc [BWidget::getname [Widget::cget $path -name]]
             if { [llength $desc] } {
@@ -183,25 +219,25 @@ proc Button::cget { path option } {
 # ----------------------------------------------------------------------------
 proc Button::invoke { path } {
     if { ![string equal [$path:cmd cget -state] "disabled"] } {
-	$path:cmd configure -state active -relief sunken
-	update idletasks
-	set cmd [Widget::getMegawidgetOption $path -armcommand]
+        $path:cmd configure -state active -relief sunken
+        update idletasks
+        set cmd [Widget::getMegawidgetOption $path -armcommand]
         if { $cmd != "" } {
             uplevel \#0 $cmd
         }
-	after 100
+        after 100
         set relief [Widget::getMegawidgetOption $path -relief]
         if { [string equal $relief "link"] } {
             set relief flat
         }
-	$path:cmd configure \
+        $path:cmd configure \
             -state  [Widget::getMegawidgetOption $path -state] \
             -relief $relief
-	set cmd [Widget::getMegawidgetOption $path -disarmcommand]
+        set cmd [Widget::getMegawidgetOption $path -disarmcommand]
         if { $cmd != "" } {
             uplevel \#0 $cmd
         }
-	set cmd [Widget::getMegawidgetOption $path -command]
+        set cmd [Widget::getMegawidgetOption $path -command]
         if { $cmd != "" } {
             uplevel \#0 $cmd
         }
@@ -259,17 +295,17 @@ proc Button::_press { path } {
 
     if { ![string equal [$path:cmd cget -state] "disabled"] } {
         set _pressed $path
-	$path:cmd configure -relief sunken
-	set cmd [Widget::getMegawidgetOption $path -armcommand]
+        $path:cmd configure -relief sunken
+        set cmd [Widget::getMegawidgetOption $path -armcommand]
         if { $cmd != "" } {
             uplevel \#0 $cmd
-	    set repeatdelay [Widget::getMegawidgetOption $path -repeatdelay]
-	    set repeatint [Widget::getMegawidgetOption $path -repeatinterval]
+            set repeatdelay [Widget::getMegawidgetOption $path -repeatdelay]
+            set repeatint [Widget::getMegawidgetOption $path -repeatinterval]
             if { $repeatdelay > 0 } {
                 after $repeatdelay "Button::_repeat $path"
             } elseif { $repeatint > 0 } {
                 after $repeatint "Button::_repeat $path"
-	    }
+            }
         }
     }
 }
@@ -285,18 +321,18 @@ proc Button::_release { path } {
     if { $_pressed == $path } {
         set _pressed ""
         set relief [Widget::getMegawidgetOption $path -relief]
-	after cancel "Button::_repeat $path"
+        after cancel "Button::_repeat $path"
         if { [string equal $relief "link"] } {
             set relief raised
         }
         $path:cmd configure -relief $relief
-	set cmd [Widget::getMegawidgetOption $path -disarmcommand]
+        set cmd [Widget::getMegawidgetOption $path -disarmcommand]
         if { $cmd != "" } {
             uplevel \#0 $cmd
         }
         if { $_current == $path &&
              ![string equal [$path:cmd cget -state] "disabled"] && \
-	     [set cmd [Widget::getMegawidgetOption $path -command]] != "" } {
+             [set cmd [Widget::getMegawidgetOption $path -command]] != "" } {
             uplevel \#0 $cmd
         }
     }

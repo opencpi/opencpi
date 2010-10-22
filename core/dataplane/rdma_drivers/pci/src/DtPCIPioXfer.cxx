@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 /*
  * Abstact:
@@ -28,21 +46,21 @@
 #include <DtSharedMemoryInternal.h>
 #include <DtPCIPioXfer.h>
 #include <DtPioXfer.h>
-#include <CpiPCISMemServices.h>
+#include <OcpiPCISMemServices.h>
 #include <xfer_if.h>
-#include <CpiList.h>
-#include <CpiUtilHash.h>
-#include <CpiOsMutex.h>
-#include <CpiUtilAutoMutex.h>
-#include <CpiOsMisc.h>
+#include <OcpiList.h>
+#include <OcpiUtilHash.h>
+#include <OcpiOsMutex.h>
+#include <OcpiUtilAutoMutex.h>
+#include <OcpiOsMisc.h>
 #include <stdlib.h>
 #include <string>
 #include <stdio.h>
-#include <CpiOsAssert.h>
+#include <OcpiOsAssert.h>
 
 using namespace DataTransfer;
-using namespace CPI::Util;
-using namespace CPI::OS;
+using namespace OCPI::Util;
+using namespace OCPI::OS;
 
 // Used to register with the data transfer system;
 PCIPIOXferFactory *g_pciFactory = new PCIPIOXferFactory;
@@ -77,7 +95,7 @@ void PCIPIOXferFactory::clearCache()
 EndPoint* PCIPIOXferFactory::getEndPoint( std::string& end_point  )
 { 
   PCIEndPoint *loc;
-  for ( CPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
+  for ( OCPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
     loc = static_cast<PCIEndPoint*>(g_locations.getEntry(n));
     if ( end_point == loc->end_point ) {
       return loc;
@@ -95,6 +113,7 @@ EndPoint* PCIPIOXferFactory::getEndPoint( std::string& end_point  )
 
 void PCIPIOXferFactory::releaseEndPoint( EndPoint* loc )
 {
+   ( void ) loc;
 
 #ifndef NDEBUG
   printf("void PCIPIOXferFactory::releaseLocation( EndPoint* loc ), NOT YET IMPLEMENTED !!\n");
@@ -127,19 +146,18 @@ XferServices* PCIPIOXferFactory::getXferServices(SmemServices* source, SmemServi
  *  an endpoint for an application running on "this"
  *  node.
  ***************************************/
-static CPI::OS::int32_t mailbox=1;
-static CPI::OS::int32_t pid;
-static CPI::OS::int32_t smb_count=0;
-std::string PCIPIOXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
+static OCPI::OS::int32_t mailbox=1;
+static OCPI::OS::int32_t pid;
+std::string PCIPIOXferFactory::allocateEndpoint(OCPI::OS::uint32_t *size )
 {
   std::string ep;
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
 #ifdef USE_ENV_FOR_MAILBOX
   if ( mailbox == -1 ) {
-    const char* env = getenv("CPI_TRANSFER_MAILBOX");
+    const char* env = getenv("OCPI_TRANSFER_MAILBOX");
     if( !env || (env[0] == 0)) {
-      CPI_THROWNULL( DataTransferEx(PROPERTY_NOT_SET, "CPI_TRANSFER_MAILBOX" ) ) ;
+      OCPI_THROWNULL( DataTransferEx(PROPERTY_NOT_SET, "OCPI_TRANSFER_MAILBOX" ) ) ;
     }
     mailbox = atoi(env);
     pid++;
@@ -149,7 +167,7 @@ std::string PCIPIOXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
   char tep[128];
   pid = getpid();
   int bus_id = 0;
-  snprintf(tep,128,"cpi-pci-pio://%d.0:%d.%d.20",bus_id,*size, mailbox);
+  snprintf(tep,128,"ocpi-pci-pio://%d.0:%d.%d.20",bus_id,*size, mailbox);
   ep = tep;
 
   mailbox++;

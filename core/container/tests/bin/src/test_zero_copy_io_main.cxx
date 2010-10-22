@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 
 /*
@@ -29,29 +47,29 @@
 #include <stdio.h>
 #include <sstream>
 #include <stdlib.h>
-#include <CpiOsMisc.h>
-#include <CpiOsAssert.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
-#include <CpiTransportServer.h>
-#include <CpiTransportClient.h>
-#include <CpiRDTInterface.h>
+#include <OcpiTransportServer.h>
+#include <OcpiTransportClient.h>
+#include <OcpiRDTInterface.h>
 #include <test_utilities.h>
 
 #include <UtZeroCopyIOWorkers.h>
 
-#include <CpiThread.h>
+#include <OcpiThread.h>
 
-using namespace CPI::DataTransport;
+using namespace OCPI::DataTransport;
 using namespace DataTransport::Interface;
-using namespace CPI::Container;
-using namespace CPI;
-using namespace CPI::CONTAINER_TEST;
+using namespace OCPI::Container;
+using namespace OCPI;
+using namespace OCPI::CONTAINER_TEST;
 
-static char* g_ep1    = "cpi-smb-pio://test1:9000000.1.20";
-static char* g_ep2    = "cpi-smb-pio://test2:9000000.2.20";
-static char* g_ep3    = "cpi-smb-pio://test3:9000000.3.20";
-static int   CPI_RCC_DATA_BUFFER_SIZE   = 512;
-static int   CPI_USE_POLLING            = 1;
+static const char* g_ep1    = "ocpi-smb-pio://test1:9000000.1.20";
+static const char* g_ep2    = "ocpi-smb-pio://test2:9000000.2.20";
+static const char* g_ep3    = "ocpi-smb-pio://test3:9000000.3.20";
+static int   OCPI_RCC_DATA_BUFFER_SIZE   = 512;
+static int   OCPI_USE_POLLING            = 1;
 
 static CWorker PRODUCER(0,1),  LOOPBACK(1,1), CONSUMER(1,0);
 
@@ -74,12 +92,13 @@ static void createWorkers(std::vector<CApp>& ca )
 
 static void createPorts( std::vector<CApp>& ca )
 {
+  ( void ) ca;
   try { 
     PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port = &
       PRODUCER.worker->createOutputPort( 
                                         PRODUCER_OUTPUT_PORT,
                                         PRODUCER.pdata[PRODUCER_OUTPUT_PORT].bufferCount,
-                                        CPI_RCC_DATA_BUFFER_SIZE, NULL);                
+                                        OCPI_RCC_DATA_BUFFER_SIZE, NULL);                
   }
   CATCH_ALL_RETHROW( "creating producer source port" )
 
@@ -88,7 +107,7 @@ static void createPorts( std::vector<CApp>& ca )
         CONSUMER.worker->createInputPort( 
                                          CONSUMER_INPUT_PORT,
                                          CONSUMER.pdata[CONSUMER_INPUT_PORT].bufferCount,
-                                         CPI_RCC_DATA_BUFFER_SIZE);
+                                         OCPI_RCC_DATA_BUFFER_SIZE);
     }
   CATCH_ALL_RETHROW("creating consumer target port")
 
@@ -97,12 +116,12 @@ static void createPorts( std::vector<CApp>& ca )
         LOOPBACK.worker->createOutputPort(
                                           LOOPBACK_OUTPUT_PORT,
                                           LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].bufferCount,
-                                          CPI_RCC_DATA_BUFFER_SIZE, NULL);
+                                          OCPI_RCC_DATA_BUFFER_SIZE, NULL);
       LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port = &
         LOOPBACK.worker->createInputPort(
                                          LOOPBACK_INPUT_PORT,
                                          LOOPBACK.pdata[LOOPBACK_INPUT_PORT].bufferCount,
-                                         CPI_RCC_DATA_BUFFER_SIZE);
+                                         OCPI_RCC_DATA_BUFFER_SIZE);
     }
   CATCH_ALL_RETHROW( "creating loopback ports")
     }
@@ -110,6 +129,7 @@ static void createPorts( std::vector<CApp>& ca )
 
 static void connectWorkers(std::vector<CApp>& ca )
 {
+  ( void ) ca;
   std::string fb = PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->setFinalProviderInfo( 
                                    LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port->getInitialProviderInfo() );
   LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port->setFinalUserInfo( fb );
@@ -124,6 +144,7 @@ static void connectWorkers(std::vector<CApp>& ca )
 #define BUFFERS_2_PROCESS 200;
 static void initWorkerProperties(int mode, std::vector<CApp>& ca )
 {
+  ( void ) ca;
   WCI_error wcie;
   int32_t  tprop[5], offset, nBytes;
 
@@ -263,7 +284,7 @@ static bool run_zcopy_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers
       }
 
     }
-    CPI::OS::sleep( 1000 );
+    OCPI::OS::sleep( 1000 );
     count--;
   }
 
@@ -358,9 +379,11 @@ int unit_test_zcopy_main( int argc, char** argv)
 int  main( int argc, char** argv)
 #endif
 {
+  ( void ) argc;
+  ( void ) argv;
   int test_rc = 1;
   DataTransfer::EventManager* event_manager;
-  std::vector<char*> endpoints;
+  std::vector<const char*> endpoints;
   endpoints.push_back( g_ep1 );
   endpoints.push_back( g_ep2 );
   endpoints.push_back( g_ep3 );
@@ -368,13 +391,13 @@ int  main( int argc, char** argv)
 
   try {
     ca = 
-      createContainers(endpoints, event_manager, (bool)CPI_USE_POLLING);
+      createContainers(endpoints, event_manager, (bool)OCPI_USE_POLLING);
   }
   catch( std::string& err ) {
     printf("Got a string exception while creating containers = %s\n", err.c_str() );
     exit(-1);
   }
-  catch( CPI::Util::EmbeddedException& ex ) {
+  catch( OCPI::Util::EmbeddedException& ex ) {
     printf("Create containers failed with exception. errorno = %d, aux = %s\n",
            ex.getErrorCode(), ex.getAuxInfo() );
     exit(-1);
@@ -389,7 +412,7 @@ int  main( int argc, char** argv)
   tdata.run =1;
   tdata.containers = ca;
   tdata.event_manager = event_manager;
-  CPI::Util::Thread* t = runTestDispatch(tdata);
+  OCPI::Util::Thread* t = runTestDispatch(tdata);
 
   std::vector<CWorker*> workers;
   workers.push_back( &PRODUCER );

@@ -1,3 +1,4 @@
+
 /* trees.c -- output deflated data using Huffman coding
  * Copyright (C) 1995-2005 Jean-loup Gailly
  * For conditions of distribution and use, see copyright notice in zlib.h
@@ -11,7 +12,7 @@
  *
  *      Each code tree is stored in a compressed form which is itself
  * a Huffman encoding of the lengths of all the code strings (in
- * acpinding order by source values).  The actual code strings are
+ * aocpinding order by source values).  The actual code strings are
  * reconstructed from the lengths in the inflate process, as described
  * in the deflate specification.
  *

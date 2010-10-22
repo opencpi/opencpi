@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ------------------------------------------------------------------------------
 #  titleframe.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -31,12 +67,12 @@ namespace eval TitleFrame {
 
     Widget::addmap TitleFrame "" :cmd {-background {}}
     Widget::addmap TitleFrame "" .l   {
-    	-background {} -foreground {} -text {} -font {}
+            -background {} -foreground {} -text {} -font {}
     }
     Widget::addmap TitleFrame "" .l   {-state {}}
     Widget::addmap TitleFrame "" .p   {-background {}}
     Widget::addmap TitleFrame "" .b   {
-    	-background {} -relief {} -borderwidth {}
+            -background {} -relief {} -borderwidth {}
     }
     Widget::addmap TitleFrame "" .b.p {-background {}}
     Widget::addmap TitleFrame "" .f   {-background {}}
@@ -50,19 +86,19 @@ proc TitleFrame::create { path args } {
     Widget::init TitleFrame $path $args
 
     set frame  [eval [list frame $path] [Widget::subcget $path :cmd] \
-	    -class TitleFrame -relief flat -bd 0 -highlightthickness 0]
+            -class TitleFrame -relief flat -bd 0 -highlightthickness 0]
 
     set padtop [eval [list frame $path.p] [Widget::subcget $path :cmd] \
-	    -relief flat -borderwidth 0]
+            -relief flat -borderwidth 0]
     set border [eval [list frame $path.b] [Widget::subcget $path .b] -highlightthickness 0]
     set label  [eval [list label $path.l] [Widget::subcget $path .l] \
                     -highlightthickness 0 \
                     -relief flat \
                     -bd     0 -padx 2 -pady 0]
     set padbot [eval [list frame $border.p] [Widget::subcget $path .p] \
-	    -relief flat -bd 0 -highlightthickness 0]
+            -relief flat -bd 0 -highlightthickness 0]
     set frame  [eval [list frame $path.f] [Widget::subcget $path .f] \
-	    -relief flat -bd 0 -highlightthickness 0]
+            -relief flat -bd 0 -highlightthickness 0]
     set height [winfo reqheight $label]
 
     switch [Widget::getoption $path -side] {
@@ -73,20 +109,20 @@ proc TitleFrame::create { path args } {
     set bd [Widget::getoption $path -borderwidth]
     switch [Widget::getoption $path -baseline] {
         top    {
-	    set y    0
-	    set htop $height
-	    set hbot 1
-	}
+            set y    0
+            set htop $height
+            set hbot 1
+        }
         center {
-	    set y    0
-	    set htop [expr {$height/2}]
-	    set hbot [expr {$height/2+$height%2+1}]
-	}
+            set y    0
+            set htop [expr {$height/2}]
+            set hbot [expr {$height/2+$height%2+1}]
+        }
         bottom {
-	    set y    [expr {$bd+1}]
-	    set htop 1
-	    set hbot $height
-	}
+            set y    [expr {$bd+1}]
+            set htop 1
+            set hbot $height
+        }
     }
     $padtop configure -height $htop
     $padbot configure -height $hbot

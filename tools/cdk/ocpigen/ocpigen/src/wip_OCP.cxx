@@ -1,3 +1,37 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 // This file is for ocp interface derivation from the WIP spec
 #include <strings.h>
 #include <stdlib.h>
@@ -5,19 +39,19 @@
 #include "wip.h"
 
 #undef OCP_SIGNAL_MT
-#define OCP_SIGNAL_MT(n, w) {#n, true, true, w, true},
+#define OCP_SIGNAL_MT(n, w) {#n, true, true, w, true, false},
 #define OCP_SIGNAL_MTR(n, w) {#n, true, true, w, true, true},
 #undef OCP_SIGNAL_ST
-#define OCP_SIGNAL_ST(n, w) {#n, true, false, w, true},
-#define OCP_SIGNAL_MS(n) {#n, false, true, 0},
-#define OCP_SIGNAL_MV(n, w) {#n, true, true, w},
+#define OCP_SIGNAL_ST(n, w) {#n, true, false, w, true, false},
+#define OCP_SIGNAL_MS(n) {#n, false, true, 0, false, false},
+#define OCP_SIGNAL_MV(n, w) {#n, true, true, w, false, false},
 #define OCP_SIGNAL_MSR(n) {#n, false, true, 0, false, true},
 #define OCP_SIGNAL_MVR(n, w) {#n, true, true, w, false, true},
-#define OCP_SIGNAL_SS(n) {#n, false, false, 0},
-#define OCP_SIGNAL_SV(n, w) {#n, true, false, w},
+#define OCP_SIGNAL_SS(n) {#n, false, false, 0, false, false},
+#define OCP_SIGNAL_SV(n, w) {#n, true, false, w, false, false},
 OcpSignalDesc ocpSignals [N_OCP_SIGNALS+1] = {
 OCP_SIGNALS
-{0}
+{0,0,0,0,0,0}
 };
 
 #undef OCP_SIGNAL_MS
@@ -26,13 +60,13 @@ OCP_SIGNALS
 #undef OCP_SIGNAL_SV
 
 static unsigned myfls(uint64_t n) {
-  for (unsigned i = sizeof(n)*8; i > 0; i--)
+  for (int i = sizeof(n)*8; i > 0; i--)
     if (n & ((uint64_t)1 << (i - 1)))
       return i;
   return 0;
 }
 // Derive the OCP signal configuration based on the WIP profile
-static unsigned ceilLog2(uint64_t n) {
+static int64_t ceilLog2(uint64_t n) {
   return n ? myfls(n - 1) : 0;
 }
 static unsigned floorLog2(uint64_t n) {

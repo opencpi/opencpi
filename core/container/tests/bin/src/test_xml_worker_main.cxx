@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 
 /*
@@ -29,32 +47,32 @@
 #include <stdio.h>
 #include <sstream>
 #include <stdlib.h>
-#include <CpiOsMisc.h>
-#include <CpiOsAssert.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
-#include <CpiTransportServer.h>
-#include <CpiTransportClient.h>
-#include <CpiRDTInterface.h>
+#include <OcpiTransportServer.h>
+#include <OcpiTransportClient.h>
+#include <OcpiRDTInterface.h>
 #include <test_utilities.h>
-#include <CpiUtilCommandLineConfiguration.h>
+#include <OcpiUtilCommandLineConfiguration.h>
 #include <UtZeroCopyIOWorkers.h>
-#include <CpiTimeEmit.h>
-#include <CpiProperty.h>
+#include <OcpiTimeEmit.h>
+#include <OcpiProperty.h>
 
-#include <CpiThread.h>
+#include <OcpiThread.h>
 
-using namespace CPI::DataTransport;
+using namespace OCPI::DataTransport;
 using namespace DataTransport::Interface;
-using namespace CPI::Container;
-using namespace CPI;
-using namespace CPI::CONTAINER_TEST;
+using namespace OCPI::Container;
+using namespace OCPI;
+using namespace OCPI::CONTAINER_TEST;
 
 
-class CpiRccBinderConfigurator
-  : public CPI::Util::CommandLineConfiguration
+class OcpiRccBinderConfigurator
+  : public OCPI::Util::CommandLineConfiguration
 {
 public:
-  CpiRccBinderConfigurator ();
+  OcpiRccBinderConfigurator ();
 
 public:
   bool help;
@@ -66,34 +84,34 @@ private:
 };
 
 // Configuration
-static  CpiRccBinderConfigurator config;
+static  OcpiRccBinderConfigurator config;
 
-CpiRccBinderConfigurator::
-CpiRccBinderConfigurator ()
-  : CPI::Util::CommandLineConfiguration (g_options),
+OcpiRccBinderConfigurator::
+OcpiRccBinderConfigurator ()
+  : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
     verbose (false)
 {
 }
 
-CPI::Util::CommandLineConfiguration::Option
-CpiRccBinderConfigurator::g_options[] = {
- 
-  { CPI::Util::CommandLineConfiguration::OptionType::MULTISTRING,
+OCPI::Util::CommandLineConfiguration::Option
+OcpiRccBinderConfigurator::g_options[] = {
+
+  { OCPI::Util::CommandLineConfiguration::OptionType::MULTISTRING,
     "endpoints", "container endpoints",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::endpoints) },
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::endpoints), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "verbose", "Be verbose",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::verbose) },
-  { CPI::Util::CommandLineConfiguration::OptionType::NONE,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::verbose), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
     "help", "This message",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::help) },
-  { CPI::Util::CommandLineConfiguration::OptionType::END }
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::help), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::END, 0, 0, 0, 0 }
 };
 
 static
 void
-printUsage (CpiRccBinderConfigurator & config,
+printUsage (OcpiRccBinderConfigurator & config,
             const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
@@ -102,7 +120,8 @@ printUsage (CpiRccBinderConfigurator & config,
 }
 
 void sig_handler( int signum )
-{
+{ 
+  ( void ) signum;
   exit(-1);
 }
 
@@ -113,7 +132,7 @@ int test_ap_main( int argc, char** argv)
 int  main( int argc, char** argv)
 #endif
 {
-  
+
   SignalHandler sh(sig_handler);
 
   int test_rc = 1;
@@ -134,17 +153,17 @@ int  main( int argc, char** argv)
   g_testUtilVerbose = config.verbose;
   cmap[0] = 0; cmap[1] = 1; cmap[2] = 2;
 
-  std::vector<char*> endpoints;
+  std::vector<const char*> endpoints;
   std::vector<CApp> ca;
   try {
-    ca = 
+    ca =
       createContainers(endpoints, event_manager, (bool)1);
   }
   catch( std::string& err ) {
     printf("Got a string exception while creating containers = %s\n", err.c_str() );
     exit(-1);
   }
-  catch( CPI::Util::EmbeddedException& ex ) {
+  catch( OCPI::Util::EmbeddedException& ex ) {
     printf("Create containers failed with exception. errorno = %d, aux = %s\n",
            ex.getErrorCode(), ex.getAuxInfo() );
     exit(-1);
@@ -153,18 +172,18 @@ int  main( int argc, char** argv)
     printf("Got an unknown exception while creating containers\n");
     exit(-1);
   }
-        
+
   // Create a dispatch thread
   DThreadData tdata;
   tdata.run =1;
   tdata.containers = ca;
   tdata.event_manager = event_manager;
-  CPI::Util::Thread* t = runTestDispatch(tdata);
+  OCPI::Util::Thread* t = runTestDispatch(tdata);
 
 
   // Create an artifact
 #if 1
-  // Someday make this a utility function in cpios FIXME
+  // Someday make this a utility function in ocpios FIXME
   const char *target = getenv("OCPI_RCC_TARGET");
   const char *suffix = getenv("OCPI_RCC_SUFFIX");
   if (!target)
@@ -174,47 +193,47 @@ int  main( int argc, char** argv)
   char *w1Url;
   asprintf(&w1Url, "../../../../components/lib/rcc/%s/zcworkers.%s",
 	   target, suffix);
-#else	   
+#else
   const char * w1Url = "../../../../components/lib/rcc/Linux-x86_64/zcworkers.so";
 #endif
   Artifact & art1 = ca[0].app-> loadArtifact(w1Url);
   Worker & consumer = ca[0].app->createWorker( art1,"Consumer",0 );
   Worker & producer = ca[0].app->createWorker( art1,"Producer",0 );
 
-  CPI::Container::Port & pout = producer.getPort( "Out" );
-  CPI::Container::Port & cin = consumer.getPort( "In" );
+  OCPI::Container::Port & pout = producer.getPort( "Out" );
+  OCPI::Container::Port & cin = consumer.getPort( "In" );
 
   std::string p = cin.getInitialProviderInfo() ;
   std::string flowc = pout.setFinalProviderInfo( p );
   cin.setFinalUserInfo( flowc );
 
-  CPI::Container::Property doubleT ( consumer, "doubleT" );
-  CPI::Container::Property passFail ( consumer, "passfail" );
-  CPI::Container::Property boolT ( consumer, "boolT" );
-  CPI::Container::Property run2BufferCount ( consumer, "run2BufferCount" );
-  CPI::Container::Property longlongT ( consumer, "longlongT" );
-  CPI::Container::Property buffersProcessed ( consumer, "buffersProcessed" );
-  CPI::Container::Property floatST ( consumer, "floatST" );
-  CPI::Container::Property droppedBuffers ( consumer, "droppedBuffers" );
-  CPI::Container::Property bytesProcessed ( consumer, "bytesProcessed" );
-  CPI::Container::Property transferMode ( consumer, "transferMode" );
-  
+  OCPI::Container::Property doubleT ( consumer, "doubleT" );
+  OCPI::Container::Property passFail ( consumer, "passfail" );
+  OCPI::Container::Property boolT ( consumer, "boolT" );
+  OCPI::Container::Property run2BufferCount ( consumer, "run2BufferCount" );
+  OCPI::Container::Property longlongT ( consumer, "longlongT" );
+  OCPI::Container::Property buffersProcessed ( consumer, "buffersProcessed" );
+  OCPI::Container::Property floatST ( consumer, "floatST" );
+  OCPI::Container::Property droppedBuffers ( consumer, "droppedBuffers" );
+  OCPI::Container::Property bytesProcessed ( consumer, "bytesProcessed" );
+  OCPI::Container::Property transferMode ( consumer, "transferMode" );
 
-  CPI::Container::Property Prun2BufferCount ( producer, "run2BufferCount" );
-  CPI::Container::Property PbuffersProcessed ( producer, "buffersProcessed" );
-  CPI::Container::Property PbytesProcessed ( producer, "bytesProcessed" );
-  CPI::Container::Property PtransferMode ( producer, "transferMode" );
-  
+
+  OCPI::Container::Property Prun2BufferCount ( producer, "run2BufferCount" );
+  OCPI::Container::Property PbuffersProcessed ( producer, "buffersProcessed" );
+  OCPI::Container::Property PbytesProcessed ( producer, "bytesProcessed" );
+  OCPI::Container::Property PtransferMode ( producer, "transferMode" );
+
 
   // Extra for test case only
   doubleT.setDoubleValue( 167.82 );
   boolT.setBoolValue( 1 );
-  longlongT.setLongLongValue( 1234567890 );  
+  longlongT.setLongLongValue( 1234567890 );
   float fv[] = {1.1,2.2,3.3,4.4,5.5,6.6};
   floatST.setFloatSequenceValue( fv, 6 );
 
   // Set consumer properties
-  passFail.setULongValue( 1 ); 
+  passFail.setULongValue( 1 );
   droppedBuffers.setULongValue( 0 );
   run2BufferCount.setULongValue( 250  );
   buffersProcessed.setULongValue( 0 );
@@ -223,7 +242,7 @@ int  main( int argc, char** argv)
   consumer.afterConfigure();
 
 
-  // Set producer properties  
+  // Set producer properties
   Prun2BufferCount.setULongValue( 250 );
   PbuffersProcessed.setULongValue( 0 );
   PbytesProcessed.setULongValue( 0 );
@@ -235,7 +254,7 @@ int  main( int argc, char** argv)
   //  producer.initialize();
   producer.start();
 
-  
+
   // Let test run for a while
   int count = 5;
   do {
@@ -244,7 +263,7 @@ int  main( int argc, char** argv)
       printf("Test: PASSED\n");
       break;
     }
-    CPI::OS::sleep( 1000 );
+    OCPI::OS::sleep( 1000 );
   } while ( count-- );
 
   uint32_t tbp = buffersProcessed.getULongValue();

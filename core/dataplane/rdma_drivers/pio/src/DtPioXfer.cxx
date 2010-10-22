@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 /*
  * Abstact:
@@ -30,21 +48,21 @@
 #include <DtSharedMemoryInternal.h>
 #include <DtPioXfer.h>
 #include <xfer_if.h>
-#include <CpiList.h>
-#include <CpiUtilHash.h>
-#include <CpiOsMisc.h>
+#include <OcpiList.h>
+#include <OcpiUtilHash.h>
+#include <OcpiOsMisc.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <CpiOsAssert.h>
-#include <CpiUtilAutoMutex.h>
+#include <OcpiOsAssert.h>
+#include <OcpiUtilAutoMutex.h>
 #include <DtExceptions.h>
 
 using namespace DataTransfer;
-using namespace CPI::Util;
-using namespace CPI::OS;
+using namespace OCPI::Util;
+using namespace OCPI::OS;
 
-CPI::Util::VList PIOXferServices::m_map(0);
+OCPI::Util::VList PIOXferServices::m_map(0);
 
 // Used to register with the data transfer system;
 PIOXferFactory *g_pioFactory = new PIOXferFactory;
@@ -73,7 +91,7 @@ PIOXferFactory::~PIOXferFactory()
 void PIOXferFactory::clearCache()
 {
   GppEndPoint *loc;
-  for ( CPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
+  for ( OCPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
     loc = static_cast<GppEndPoint*>(g_locations.getEntry(n));
     delete loc;
   }
@@ -84,10 +102,10 @@ void PIOXferFactory::clearCache()
 // Get the location via the endpoint
 EndPoint* PIOXferFactory::getEndPoint( std::string& end_point  )
 { 
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
   GppEndPoint *loc;
-  for ( CPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
+  for ( OCPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
     loc = static_cast<GppEndPoint*>(g_locations.getEntry(n));
     if ( end_point == loc->end_point ) {
       return loc;
@@ -128,19 +146,19 @@ XferServices* PIOXferFactory::getXferServices(SmemServices* source, SmemServices
  *  an endpoint for an application running on "this"
  *  node.
  ***************************************/
-static CPI::OS::int32_t mailbox=1;
-static CPI::OS::int32_t pid;
-static CPI::OS::int32_t smb_count=0;
-std::string PIOXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
+static OCPI::OS::int32_t mailbox=1;
+static OCPI::OS::int32_t pid;
+static OCPI::OS::int32_t smb_count=0;
+std::string PIOXferFactory::allocateEndpoint(OCPI::OS::uint32_t *size )
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   std::string ep;
 
 #ifdef USE_ENV_FOR_MAILBOX
   if ( mailbox == -1 ) {
-    const char* env = getenv("CPI_TRANSFER_MAILBOX");
+    const char* env = getenv("OCPI_TRANSFER_MAILBOX");
     if( !env || (env[0] == 0)) {
-      CPI_THROWNULL( DataTransferEx(PROPERTY_NOT_SET, "CPI_TRANSFER_MAILBOX" ) ) ;
+      OCPI_THROWNULL( DataTransferEx(PROPERTY_NOT_SET, "OCPI_TRANSFER_MAILBOX" ) ) ;
     }
     mailbox = atoi(env);
     pid++;
@@ -150,7 +168,7 @@ std::string PIOXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
 
   pid = getpid();
   char tep[128];
-  snprintf(tep,128,"cpi-smb-pio://pioXfer%d%d:%d.%d.20",pid,smb_count++,*size, mailbox);
+  snprintf(tep,128,"ocpi-smb-pio://pioXfer%d%d:%d.%d.20",pid,smb_count++,*size, mailbox);
   ep = tep;
   mailbox++;
 
@@ -161,12 +179,12 @@ std::string PIOXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
 
 
 // Sets smem location data based upon the specified endpoint
-CPI::OS::int32_t GppEndPoint::setEndpoint( std::string& ep )
+OCPI::OS::int32_t GppEndPoint::setEndpoint( std::string& ep )
 {
   EndPoint::setEndpoint(ep);
 
-  CPI::OS::uint32_t n,i=0;
-  CPI::OS::int32_t start=0;
+  OCPI::OS::uint32_t n,i=0;
+  OCPI::OS::int32_t start=0;
   char sname[80];
   for ( n=0; n<ep.length(); n++ ) {
     if ( (start<2) && (ep[n] == '/') ) {
@@ -194,11 +212,11 @@ GppEndPoint::~GppEndPoint()
 
 void PIOXferRequest::init (Creator cr, 
                            Flags flags, 
-                           CPI::OS::uint32_t srcoffs, 
+                           OCPI::OS::uint32_t srcoffs, 
                            Shape *psrcshape, 
-                           CPI::OS::uint32_t dstoffs, 
+                           OCPI::OS::uint32_t dstoffs, 
                            Shape *pdstshape, 
-                           CPI::OS::uint32_t length)
+                           OCPI::OS::uint32_t length)
 {
   m_creator = cr;
   m_flags = flags;
@@ -219,7 +237,7 @@ void PIOXferRequest::init (Creator cr,
 }
 
 
-void PIOXferRequest::modify( CPI::OS::uint32_t new_offsets[], CPI::OS::uint32_t old_offsets[] )
+void PIOXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )
 {
   int n=0;
   while ( new_offsets[n] ) {
@@ -258,9 +276,9 @@ void PIOXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 
 
 // Create a transfer request
-XferRequest* PIOXferServices::copy (CPI::OS::uint32_t srcoffs, 
-                                    CPI::OS::uint32_t dstoffs, 
-                                    CPI::OS::uint32_t nbytes, 
+XferRequest* PIOXferServices::copy (OCPI::OS::uint32_t srcoffs, 
+                                    OCPI::OS::uint32_t dstoffs, 
+                                    OCPI::OS::uint32_t nbytes, 
                                     XferRequest::Flags flags,
                                     XferRequest*
                                     )
@@ -271,11 +289,11 @@ XferRequest* PIOXferServices::copy (CPI::OS::uint32_t srcoffs,
   add (pXferReq);
 
   // Begin exception block
-  CPI::OS::int32_t retVal = 0;
-  CPI_TRY
+  OCPI::OS::int32_t retVal = 0;
+  OCPI_TRY
     {
       // map flags
-      CPI::OS::int32_t newflags = 0;
+      OCPI::OS::int32_t newflags = 0;
       if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
       if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
 
@@ -283,10 +301,10 @@ XferRequest* PIOXferServices::copy (CPI::OS::uint32_t srcoffs,
       retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &pXferReq->getHandle());
       if (retVal)
         {
-          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
         }
     }
-  CPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
+  OCPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
     {
       remove (pXferReq);
       delete pXferReq;
@@ -298,8 +316,8 @@ XferRequest* PIOXferServices::copy (CPI::OS::uint32_t srcoffs,
 
 
 // Create a 2-dimensional transfer request
-XferRequest* PIOXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc, 
-                                      CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
+XferRequest* PIOXferServices::copy2D (OCPI::OS::uint32_t srcoffs, Shape* psrc, 
+                                      OCPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
 {
   // Create a transfer request instance and save in list
   PIOXferRequest* pXferReq = new PIOXferRequest ();
@@ -307,8 +325,8 @@ XferRequest* PIOXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc,
   add (pXferReq);
 
   // Begin exception block
-  CPI::OS::int32_t retVal = 0;
-  CPI_TRY
+  OCPI::OS::int32_t retVal = 0;
+  OCPI_TRY
     {
       // Invoke original code.
       // We simple cast "XferServices::Shape" to "EP_shape" since they must have the
@@ -316,10 +334,10 @@ XferRequest* PIOXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc,
       //                        retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
       if (retVal)
         {
-          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
         }
     }
-  CPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
+  OCPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
     {
       remove (pXferReq);
       delete pXferReq;
@@ -338,9 +356,9 @@ XferRequest* PIOXferServices::group (XferRequest* preqs[])
   add (pXferReq);
 
   // Begin exception handler
-  CPI::OS::int32_t retVal = 0;
+  OCPI::OS::int32_t retVal = 0;
   XF_transfer* handles = 0;
-  CPI_TRY
+  OCPI_TRY
     {
       // Make a list of existing XF_transfer from the XferRequest* [] argument.
       int numHandles = 0;
@@ -356,10 +374,10 @@ XferRequest* PIOXferServices::group (XferRequest* preqs[])
       retVal = xfer_group (handles, 0, &pXferReq->getHandle());
       if (retVal)
         {
-          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
         }
     }
-  CPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
+  OCPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
     {
       remove (pXferReq);
       delete pXferReq;
@@ -381,7 +399,7 @@ void PIOXferServices::release (XferRequest* preq)
 // remove all transfer request instances from the list for "this"
 void PIOXferServices::releaseAll ()
 {
-  for ( CPI::OS::uint32_t n=0; n<m_map.size(); n++ ) {
+  for ( OCPI::OS::uint32_t n=0; n<m_map.size(); n++ ) {
     PIOXferRequest* req = static_cast<PIOXferRequest*>(m_map[n]);
     delete req;
   }

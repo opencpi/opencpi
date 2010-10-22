@@ -1,14 +1,48 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <cctype>
 #include <cstring>
 #include <string>
 #include <iostream>
 #include <fstream>
-#include "CpiUtilIOP.h"
-#include "CpiUtilIIOP.h"
-#include "CpiUtilMisc.h"
+#include "OcpiUtilIOP.h"
+#include "OcpiUtilIIOP.h"
+#include "OcpiUtilMisc.h"
 
 #if !defined (NDEBUG)
-#include <CpiOsDebug.h>
+#include <OcpiOsDebug.h>
 #endif
 
 const char i2hc[16] = {
@@ -64,14 +98,14 @@ dumpOctetSeq (std::ostream & out,
 }
 
 void
-dumpTaggedComponent (std::ostream & out, const CPI::Util::IOP::TaggedComponent & tc)
+dumpTaggedComponent (std::ostream & out, const OCPI::Util::IOP::TaggedComponent & tc)
 {
   try {
-    if (tc.tag == CPI::Util::IOP::TAG_ORB_TYPE) {
-      CPI::Util::IOP::ORBTypeComponent otc (tc.component_data);
-      out << "ORB Type." << std::endl;
-      out << "     ORB Type: 0x"
-          << CPI::Util::Misc::unsignedToString ((unsigned int) otc.orb_type, 16, 8);
+    if (tc.tag == OCPI::Util::IOP::TAG_ORB_TYPE) {
+      OCPI::Util::IOP::ORBTypeComponent otc (tc.component_data);
+      out << "OCPI_CORBA_ORB Type." << std::endl;
+      out << "     OCPI_CORBA_ORB Type: 0x"
+          << OCPI::Util::Misc::unsignedToString ((unsigned int) otc.orb_type, 16, 8);
 
       if ((otc.orb_type >= 0x58505300 && otc.orb_type <= 0x5850530f) ||
           (otc.orb_type >= 0x50544300 && otc.orb_type <= 0x5054430f)) {
@@ -86,22 +120,22 @@ dumpTaggedComponent (std::ostream & out, const CPI::Util::IOP::TaggedComponent &
 
       out << std::endl;
     }
-    else if (tc.tag == CPI::Util::IOP::TAG_ALTERNATE_IIOP_ADDRESS) {
-      CPI::Util::IOP::AlternateIIOPAddressComponent aa (tc.component_data);
+    else if (tc.tag == OCPI::Util::IOP::TAG_ALTERNATE_IIOP_ADDRESS) {
+      OCPI::Util::IOP::AlternateIIOPAddressComponent aa (tc.component_data);
       out << "Alternate IIOP Address." << std::endl;
       out << "         Host: " << aa.HostID << std::endl
           << "         Port: " << aa.port << std::endl;
     }
     else {
       out << "Unknown Component: Tag 0x"
-          << CPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
+          << OCPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
           << "." << std::endl;
       dumpOctetSeq (out, tc.component_data, "         Data: ");
     }
   }
   catch (const std::string & oops) {
     out << "Undecodeable Component: Tag 0x"
-        << CPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
+        << OCPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
         << ": " << oops
         << "." << std::endl;
     dumpOctetSeq (out, tc.component_data, "         Data: ");
@@ -109,13 +143,13 @@ dumpTaggedComponent (std::ostream & out, const CPI::Util::IOP::TaggedComponent &
 }
 
 void
-dumpIIOPProfile (std::ostream & out, const CPI::Util::IIOP::ProfileBody & pb)
+dumpIIOPProfile (std::ostream & out, const OCPI::Util::IIOP::ProfileBody & pb)
 {
   unsigned long numComponents = pb.numComponents ();
   out << "IIOP Profile." << std::endl
       << "      Version: "
-      << CPI::Util::Misc::integerToString ((int) pb.iiop_version.major) << "."
-      << CPI::Util::Misc::integerToString ((int) pb.iiop_version.minor) << std::endl
+      << OCPI::Util::Misc::integerToString ((int) pb.iiop_version.major) << "."
+      << OCPI::Util::Misc::integerToString ((int) pb.iiop_version.minor) << std::endl
       << "         Host: " << pb.host << std::endl
       << "         Port: " << pb.port << std::endl;
   dumpOctetSeq (out, pb.object_key, "   Object Key: ");
@@ -129,7 +163,7 @@ dumpIIOPProfile (std::ostream & out, const CPI::Util::IIOP::ProfileBody & pb)
 }
 
 void
-dumpMultipleComponentProfile (std::ostream & out, const CPI::Util::IOP::MultipleComponentProfile & mcp)
+dumpMultipleComponentProfile (std::ostream & out, const OCPI::Util::IOP::MultipleComponentProfile & mcp)
 {
   unsigned long numComponents = mcp.numComponents ();
   out << " # Components: " << numComponents << std::endl;
@@ -141,27 +175,27 @@ dumpMultipleComponentProfile (std::ostream & out, const CPI::Util::IOP::Multiple
 }
 
 void
-dumpProfile (std::ostream & out, const CPI::Util::IOP::TaggedProfile & tp)
+dumpProfile (std::ostream & out, const OCPI::Util::IOP::TaggedProfile & tp)
 {
   try {
-    if (tp.tag == CPI::Util::IOP::TAG_INTERNET_IOP) {
-      CPI::Util::IIOP::ProfileBody pb (tp.profile_data);
+    if (tp.tag == OCPI::Util::IOP::TAG_INTERNET_IOP) {
+      OCPI::Util::IIOP::ProfileBody pb (tp.profile_data);
       dumpIIOPProfile (out, pb);
     }
-    else if (tp.tag == CPI::Util::IOP::TAG_MULTIPLE_COMPONENTS) {
-      CPI::Util::IOP::MultipleComponentProfile mcp (tp.profile_data);
+    else if (tp.tag == OCPI::Util::IOP::TAG_MULTIPLE_COMPONENTS) {
+      OCPI::Util::IOP::MultipleComponentProfile mcp (tp.profile_data);
       dumpMultipleComponentProfile (out, mcp);
     }
     else {
       out << "Unknown Profile: Tag 0x"
-          << CPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
+          << OCPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
           << "." << std::endl;
       dumpOctetSeq (out, tp.profile_data, "         Data: ");
     }
   }
   catch (const std::string & oops) {
     out << "Undecodeable Profile: Tag 0x"
-        << CPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
+        << OCPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
         << ": " << oops
         << "." << std::endl;
     dumpOctetSeq (out, tp.profile_data, "         Data: ");
@@ -169,7 +203,7 @@ dumpProfile (std::ostream & out, const CPI::Util::IOP::TaggedProfile & tp)
 }
 
 void
-dumpIOR (std::ostream & out, const CPI::Util::IOP::IOR & ior)
+dumpIOR (std::ostream & out, const OCPI::Util::IOP::IOR & ior)
 {
   unsigned long numProfiles = ior.numProfiles ();
 
@@ -199,7 +233,7 @@ main (int argc, char *argv[])
 #if !defined (NDEBUG)
   for (int i=1; i<argc; i++) {
     if (std::strcmp (argv[i], "--break") == 0) {
-      CPI::OS::debugBreak ();
+      OCPI::OS::debugBreak ();
       break;
     }
   }
@@ -248,10 +282,10 @@ main (int argc, char *argv[])
     std::getline (ifs, stringifiedIOR);
   }
 
-  CPI::Util::IOP::IOR ior;
+  OCPI::Util::IOP::IOR ior;
 
   try {
-    ior = CPI::Util::IOP::string_to_ior (stringifiedIOR);
+    ior = OCPI::Util::IOP::string_to_ior (stringifiedIOR);
   }
   catch (const std::string & oops) {
     std::cout << "oops: " << oops << "." << std::endl;

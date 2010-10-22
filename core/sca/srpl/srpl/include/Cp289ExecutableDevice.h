@@ -1,7 +1,41 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 // -*- c++ -*-
 
-#ifndef CPI_CP289_EXECUTABLE_DEVICE_H__
-#define CPI_CP289_EXECUTABLE_DEVICE_H__
+#ifndef OCPI_CP289_EXECUTABLE_DEVICE_H__
+#define OCPI_CP289_EXECUTABLE_DEVICE_H__
 
 /**
  * \file
@@ -15,14 +49,14 @@
 
 #include <string>
 #include <CosEventComm.h>
-#include <CpiLwLogLoggerOutput.h>
-#include <CpiCFUtilReceptacleHelper.h>
-#include <CpiCFUtilDeviceBase.h>
-#include <CpiContainerInterface.h>
+#include <OcpiLwLogLoggerOutput.h>
+#include <OcpiCFUtilReceptacleHelper.h>
+#include <OcpiCFUtilDeviceBase.h>
+#include <OcpiContainerInterface.h>
 #include <Cp289GenericProxy.h>
 #include <CF_s.h>
 
-namespace CPI {
+namespace OCPI {
   namespace SCA {
 
     /**
@@ -33,14 +67,14 @@ namespace CPI {
      * Proxy is created for each worker.  See the SCA specification
      * for the semantics of each method.
      *
-     * The device has two ports (implemented in CPI::CFUtil::DeviceBase),
+     * The device has two ports (implemented in OCPI::CFUtil::DeviceBase),
      * "LogOut" for a connection to the Log Service, and "EventOut" for a
      * connection to the Domain Manager's "IDM_Channel."  The device will
      * work in the absence of either connection.
      */
 
     class Cp289ExecutableDevice :
-        virtual public CPI::CFUtil::DeviceBase,
+        virtual public OCPI::CFUtil::DeviceBase,
         virtual public POA_CF::ExecutableDevice
     {
     public:
@@ -62,7 +96,7 @@ namespace CPI {
        *                   used in log messages and usually comes from the
        *                   usagename element in the DCD file via the
        *                   DEVICE_LABEL execution parameter.
-       * \param[in] cpiDeviceId The unique container ordinal for this container.
+       * \param[in] ocpiDeviceId The unique container ordinal for this container.
        * \param[in] endpoint The container endpoint.
        * \param[in] polled Whether the container should poll (true) or be
        *                   event driven (false).
@@ -73,7 +107,7 @@ namespace CPI {
        * \param[in] adoptLogger Whether to delete \a logger in the destructor.
        * \param[in] shutdownOrbOnRelease Whether to call orb->shutdown() from
        *                   the releaseObject() operation.  This is usually
-       *                   true in a stand-alone server and false if the ORB
+       *                   true in a stand-alone server and false if the OCPI_CORBA_ORB
        *                   is shared.
        */
 
@@ -84,14 +118,14 @@ namespace CPI {
                              const std::string &identifier,
                              const std::string &label,
                              const std::string &tempDir,
-                             unsigned int cpiDeviceId,
-                             const std::string & cpiDeviceType,
-                             const std::string & cpiDeviceUnit,
+                             unsigned int ocpiDeviceId,
+                             const std::string & ocpiDeviceType,
+                             const std::string & ocpiDeviceUnit,
                              const std::string & endpoint,
                              bool polled,
                              const std::string & osName,
                              const std::string & processorName,
-                             CPI::Logger::Logger * logger = 0,
+                             OCPI::Logger::Logger * logger = 0,
                              bool adoptLogger = true,
                              bool shutdownOrbOnRelease = false)
         throw (std::string);
@@ -161,25 +195,25 @@ namespace CPI {
         WorkerInfo ()
           throw ();
         RplGenericProxy * proxy;
-        CPI::Container::WorkerId containerWorkerId;
+        OCPI::Container::WorkerId containerWorkerId;
       };
 
       typedef std::vector<WorkerInfo> WorkerInfos;
 #endif
 
     protected:
-      CPI::Util::DriverManager  m_driverManager;
+      OCPI::Util::DriverManager  m_driverManager;
       std::string m_osName, m_processorName;
-      unsigned int m_cpiDeviceId;
-      std::string m_cpiDeviceType;
+      unsigned int m_ocpiDeviceId;
+      std::string m_ocpiDeviceType;
       // Map pid to proxy
       typedef std::map<CF::ExecutableDevice::ProcessID_Type,Cp289GenericProxy *> PidMap;
       PidMap m_pidMap;
-      CPI::Container::Interface *m_container;
-      CPI::Container::Application *m_application;
+      OCPI::Container::Interface *m_container;
+      OCPI::Container::Application *m_application;
       DataTransfer::EventManager * m_eventManager;
       std::string m_tempDir;
-      //      CPI::OS::ThreadManager m_dispatchThreadMgr;
+      //      OCPI::OS::ThreadManager m_dispatchThreadMgr;
 
     };
 

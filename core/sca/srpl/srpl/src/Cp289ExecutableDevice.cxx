@@ -1,3 +1,37 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 /*
  * SCA CP289 Executable Device.
  *
@@ -14,28 +48,28 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
-#include <CpiOsMisc.h>
-#include <CpiOsAssert.h>
-#include <CpiLoggerLogger.h>
-#include <CpiLoggerDebugLogger.h>
-#include <CpiUtilMisc.h>
-#include <CpiUtilAutoMutex.h>
-#include "CpiContainerInterface.h"
-#include "CpiPValue.h"
-#include "CpiApplication.h"
-#include "CpiDriver.h"
-#include "CpiContainerMisc.h"
-#include <CpiCFUtilMisc.h>
-#include <CpiCFUtilDeviceBase.h>
-#include <CpiCFUtilLegacyErrorNumbers.h>
-#include <CpiStringifyCorbaException.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsAssert.h>
+#include <OcpiLoggerLogger.h>
+#include <OcpiLoggerDebugLogger.h>
+#include <OcpiUtilMisc.h>
+#include <OcpiUtilAutoMutex.h>
+#include "OcpiContainerInterface.h"
+#include "OcpiPValue.h"
+#include "OcpiApplication.h"
+#include "OcpiDriver.h"
+#include "OcpiContainerMisc.h"
+#include <OcpiCFUtilMisc.h>
+#include <OcpiCFUtilDeviceBase.h>
+#include <OcpiCFUtilLegacyErrorNumbers.h>
+#include <OcpiStringifyCorbaException.h>
 #include <Cp289GenericProxy.h>
 #include <CF_s.h>
 #include "Cp289ExecutableDevice.h"
 
 
-namespace CU = CPI::Util;
-namespace CC = CPI::Container;
+namespace CU = OCPI::Util;
+namespace CC = OCPI::Container;
 
 #if 0
 /*
@@ -45,7 +79,7 @@ namespace CC = CPI::Container;
 namespace {
 
   struct DispatchThreadData {
-    CPI::Container::Interface * container;
+    OCPI::Container::Interface * container;
     DataTransfer::EventManager * eventManager;
   };
 
@@ -53,29 +87,29 @@ namespace {
   dispatchThread (void * opaque)
   {
     DispatchThreadData * dtd = static_cast<DispatchThreadData *> (opaque);
-    CPI::Container::Interface::DispatchRetCode rc;
+    OCPI::Container::Interface::DispatchRetCode rc;
     bool keepWorking = true;
 
     while (keepWorking) {
       rc = dtd->container->dispatch (dtd->eventManager);
 
       switch (rc) {
-      case CPI::Container::Interface::DispatchNoMore:
+      case OCPI::Container::Interface::DispatchNoMore:
         // All done, exit from dispatch thread.
         keepWorking = false;
         break;
 
-      case CPI::Container::Interface::MoreWorkNeeded:
+      case OCPI::Container::Interface::MoreWorkNeeded:
         // No-op. To prevent blocking the CPU, yield.
-        CPI::OS::sleep (0);
+        OCPI::OS::sleep (0);
         break;
 
-      case CPI::Container::Interface::Stopped:
+      case OCPI::Container::Interface::Stopped:
         // Go to sleep until started again.  In this device, means all done.
         keepWorking = false;
         break;
 
-      case CPI::Container::Interface::Spin:
+      case OCPI::Container::Interface::Spin:
         /*
          * If we have an event manager, ask it to go to sleep and wait for
          * an event.  If we are not event driven, the event manager will
@@ -85,11 +119,11 @@ namespace {
 
         if (dtd->eventManager) {
           if (dtd->eventManager->waitForEvent (0) == DataTransfer::EventSpin) {
-            CPI::OS::sleep (0);
+            OCPI::OS::sleep (0);
           }
         }
         else {
-          CPI::OS::sleep (0);
+          OCPI::OS::sleep (0);
         }
         break;
       }
@@ -101,7 +135,7 @@ namespace {
 }
 #endif
 
-namespace CPI {
+namespace OCPI {
   namespace SCA {
     Cp289ExecutableDevice::
     Cp289ExecutableDevice (CORBA::ORB_ptr orb,
@@ -111,18 +145,18 @@ namespace CPI {
                            const std::string &aIdentifier,
                            const std::string &aLabel,
                            const std::string &tempDir,
-                           unsigned int cpiDeviceId,
-                           const std::string & cpiDeviceType,
-                           const std::string & cpiDeviceUnit,
+                           unsigned int ocpiDeviceId,
+                           const std::string & ocpiDeviceType,
+                           const std::string & ocpiDeviceUnit,
                            const std::string & endpoint,
                            bool polled,
                            const std::string & osName,
                            const std::string & processorName,
-                           CPI::Logger::Logger * logger,
+                           OCPI::Logger::Logger * logger,
                            bool adoptLogger,
                            bool shutdownOrbOnRelease)
       throw (std::string)
-      : CPI::CFUtil::DeviceBase (orb,
+      : OCPI::CFUtil::DeviceBase (orb,
                                  poa,
                                  devMgr,
                                  profileFileName,
@@ -131,16 +165,16 @@ namespace CPI {
                                  logger,
                                  adoptLogger,
                                  shutdownOrbOnRelease),
-        m_driverManager( cpiDeviceType.c_str() ),
+        m_driverManager( ocpiDeviceType.c_str() ),
         m_osName(osName), m_processorName(processorName),
-        m_cpiDeviceId(cpiDeviceId),
-        m_cpiDeviceType(cpiDeviceType),
+        m_ocpiDeviceId(ocpiDeviceId),
+        m_ocpiDeviceType(ocpiDeviceType),
         m_container(0), m_application(0), m_eventManager(0), m_tempDir(tempDir)
     {
-      CPI::Logger::DebugLogger debug (m_out);
+      OCPI::Logger::DebugLogger debug (m_out);
       debug << m_logProducerName
-            << "CPI SCA CP289 Executable Device for device id "
-            << m_cpiDeviceId
+            << "OCPI SCA CP289 Executable Device for device id "
+            << m_ocpiDeviceId
             << " constructor."
             << std::flush;
 
@@ -149,22 +183,22 @@ namespace CPI {
 #ifdef PRE_PORT
         // FIXME: pass polled parameter as PValue?
         CC::Interface *container =
-          CC::Driver::getContainer(cpiDeviceType.c_str(), cpiDeviceUnit.c_str(),
+          CC::Driver::getContainer(ocpiDeviceType.c_str(), ocpiDeviceUnit.c_str(),
                                    endpoint.c_str(), 0);
 #endif
 
-        CPI::Util::PValue cprops[] = {CPI::Util::PVString("endpoint",(const char*)endpoint.c_str() ),
-                                      CPI::Util::PVBool("polling",polled),
-                                      CPI::Util::PVEnd };
+        OCPI::Util::PValue cprops[] = {OCPI::Util::PVString("endpoint",(const char*)endpoint.c_str() ),
+                                      OCPI::Util::PVBool("polling",polled),
+                                      OCPI::Util::PVEnd };
         CC::Interface *container = static_cast< CC::Interface * >( 
-                                  m_driverManager.getDevice( cprops, cpiDeviceUnit.c_str() ));
+                                  m_driverManager.getDevice( cprops, ocpiDeviceUnit.c_str() ));
 
 
 
 
         if (!container)
           throw CC::ApiError("Couldn't find or create container of type \"",
-                             cpiDeviceType.c_str(), "\" with name \"", aIdentifier.c_str(), "\"", NULL);
+                             ocpiDeviceType.c_str(), "\" with name \"", aIdentifier.c_str(), "\"", NULL);
 
         try { // catch errors to release container. Note it will take everything else down
 
@@ -200,10 +234,10 @@ namespace CPI {
           throw;
         }
         m_container = container;
-      } catch (const CPI::Util::EmbeddedException & oops) {
+      } catch (const OCPI::Util::EmbeddedException & oops) {
         const char * auxInfo = oops.getAuxInfo ();
         std::string msg = "Error creating RPL container: error code ";
-        msg += CPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+        msg += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
         
         if (auxInfo && *auxInfo) {
           msg += ": ";
@@ -219,10 +253,10 @@ namespace CPI {
     ~Cp289ExecutableDevice ()
       throw ()
     {
-      CPI::Logger::DebugLogger debug (m_out);
+      OCPI::Logger::DebugLogger debug (m_out);
       debug << m_logProducerName
-            << "CPI SCA CP289 Executable Device for device id "
-            << m_cpiDeviceId
+            << "OCPI SCA CP289 Executable Device for device id "
+            << m_ocpiDeviceId
             << " destructor."
             << std::flush;
 
@@ -252,15 +286,15 @@ namespace CPI {
              CF::PropertySet::PartialConfiguration,
              CORBA::SystemException)
     {
-      CPI::Util::AutoMutex mutex (m_mutex);
-      CPI::Logger::DebugLogger debug (m_out);
+      OCPI::Util::AutoMutex mutex (m_mutex);
+      OCPI::Logger::DebugLogger debug (m_out);
 
       CORBA::ULong numProps = props.length ();
       CF::Properties invalidProperties;
       CORBA::ULong numInvalidProperties = 0;
       
       debug << m_logProducerName
-            << CPI::Logger::Verbosity (2)
+            << OCPI::Logger::Verbosity (2)
             << "configure (";
 
       for (CORBA::ULong dpi=0; dpi<numProps; dpi++) {
@@ -292,7 +326,7 @@ namespace CPI {
       }
 
       if (numInvalidProperties) {
-        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+        m_out << OCPI::Logger::Level::EXCEPTION_ERROR
               << m_logProducerName
               << "Configuration failed for "
               << ((numInvalidProperties != 1) ? "properties " : "property ");
@@ -325,7 +359,7 @@ namespace CPI {
         throw pc;
       }
 
-      m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
+      m_out << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
             << m_logProducerName
             << "Configuration complete."
             << std::flush;
@@ -337,15 +371,15 @@ namespace CPI {
       throw (CF::UnknownProperties,
              CORBA::SystemException)
     {
-      CPI::Util::AutoMutex mutex (m_mutex);
-      CPI::Logger::DebugLogger debug (m_out);
+      OCPI::Util::AutoMutex mutex (m_mutex);
+      OCPI::Logger::DebugLogger debug (m_out);
 
       CORBA::ULong numProps = props.length ();
       CORBA::ULong numInvalidProperties = 0;
       CF::UnknownProperties up;
 
       debug << m_logProducerName
-            << CPI::Logger::Verbosity (2)
+            << OCPI::Logger::Verbosity (2)
             << "query (";
 
       for (CORBA::ULong dpi=0; dpi<numProps; dpi++) {
@@ -369,9 +403,9 @@ namespace CPI {
         props.length (numProps + 4);
         for (numProps = 0; pvals[numProps].name; numProps++)
           props[numProps].id = pvals[numProps].name;
-        props[++numProps].id = "DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2"; // CPIDeviceId allocation capability
-        props[++numProps].id = "DCE:c788404e-b9f5-4532-8c7d-3588d328fff0"; // CPIDeviceType allocation capability
-        props[++numProps].id = "DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43"; // CPIContainerType allocation capability
+        props[++numProps].id = "DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2"; // OCPIDeviceId allocation capability
+        props[++numProps].id = "DCE:c788404e-b9f5-4532-8c7d-3588d328fff0"; // OCPIDeviceType allocation capability
+        props[++numProps].id = "DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43"; // OCPIContainerType allocation capability
         props[++numProps].id = "PRODUCER_LOG_LEVEL"; // SCA required
       }
 
@@ -379,11 +413,11 @@ namespace CPI {
         CF::DataType & property = props[pi];
         const char * propertyId = property.id.in ();
 
-        if (CPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2") == 0)
-          property.value <<= static_cast<CORBA::ULong> (m_cpiDeviceId);
-        else if (CPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:c788404e-b9f5-4532-8c7d-3588d328fff0") == 0)
-          property.value <<= m_cpiDeviceType.c_str ();
-        else if (CPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43") == 0)
+        if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2") == 0)
+          property.value <<= static_cast<CORBA::ULong> (m_ocpiDeviceId);
+        else if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:c788404e-b9f5-4532-8c7d-3588d328fff0") == 0)
+          property.value <<= m_ocpiDeviceType.c_str ();
+        else if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43") == 0)
           property.value <<= "RPL";
         else if (std::strcmp (propertyId, "PRODUCER_LOG_LEVEL") == 0)
           queryProducerLogLevel (property);
@@ -391,23 +425,23 @@ namespace CPI {
           CU::PValue *p = m_container->getProperty(propertyId);
           if (p) {
             switch (p->type) {
-#undef CPI_DATA_TYPE_H
-#define CPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
+#undef OCPI_DATA_TYPE_H
+#define OCPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
               SCA_SIMPLE(sca,corba,letter,bits,CORBA::Any::from_##sca(typed_value), pretty, run)
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
               SCA_SIMPLE(sca,corba,letter,bits,typed_value, pretty, run)
-#undef CPI_DATA_TYPE_S
+#undef OCPI_DATA_TYPE_S
 #undef SCA_SIMPLE
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                        \
-              case CU::Prop::Scalar::CPI_##pt: {		      \
+              case CU::Prop::Scalar::OCPI_##pt: {		      \
               CORBA::c typed_value = p->v##pt;                \
               property.value <<= h; \
               break; }
-#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
-              case CU::Prop::Scalar::CPI_String:        {        \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
+              case CU::Prop::Scalar::OCPI_String:        {        \
               property.value <<= p->vString; \
               break; }
-              CPI_PROPERTY_DATA_TYPES
+              OCPI_PROPERTY_DATA_TYPES
             default:;
             }
           } else {
@@ -418,7 +452,7 @@ namespace CPI {
       }
 
       if (numInvalidProperties) {
-        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+        m_out << OCPI::Logger::Level::EXCEPTION_ERROR
               << m_logProducerName
               << "Query failed for "
               << ((numInvalidProperties != 1) ? "properties " : "property ");
@@ -450,16 +484,16 @@ namespace CPI {
              CF::InvalidFileName,
              CORBA::SystemException)
     {
-      CPI::Util::AutoMutex mutex (m_mutex);
-      CPI::Logger::DebugLogger debug (m_out);
+      OCPI::Util::AutoMutex mutex (m_mutex);
+      OCPI::Logger::DebugLogger debug (m_out);
 
       (void)fileSystem; // FIXME: need to use SCA FS for compliance here?
       debug << m_logProducerName
-            << CPI::Logger::Verbosity (2)
+            << OCPI::Logger::Verbosity (2)
             << "load (\""
             << fileName
             << "\", "
-            << CPI::CFUtil::loadTypeToString (loadKind)
+            << OCPI::CFUtil::loadTypeToString (loadKind)
             << ")"
             << std::flush;
 
@@ -474,11 +508,11 @@ namespace CPI {
 
         if (m_adminState != CF::Device::UNLOCKED) {
           msg = "Administrative state is ";
-          msg += CPI::CFUtil::adminTypeToString (m_adminState);
+          msg += OCPI::CFUtil::adminTypeToString (m_adminState);
         }
         else {
           msg = "Operational state is ";
-          msg += CPI::CFUtil::operationalTypeToString (m_operationalState);
+          msg += OCPI::CFUtil::operationalTypeToString (m_operationalState);
         }
 
         CF::Device::InvalidState is;
@@ -487,10 +521,10 @@ namespace CPI {
       }
 
       if (loadKind != CF::LoadableDevice::EXECUTABLE) {
-        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+        m_out << OCPI::Logger::Level::EXCEPTION_ERROR
               << m_logProducerName
               << "Can not load "
-              << CPI::CFUtil::loadTypeToString (loadKind)
+              << OCPI::CFUtil::loadTypeToString (loadKind)
               << " \""
               << fileName
               << "\": only \"executable\" files are supported."
@@ -515,7 +549,7 @@ namespace CPI {
         msg += e.m_auxInfo;
         msg += "\"";
 
-        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+        m_out << OCPI::Logger::Level::EXCEPTION_ERROR
               << m_logProducerName
               << msg << "."
               << std::flush;
@@ -534,11 +568,11 @@ namespace CPI {
              CF::InvalidFileName,
              CORBA::SystemException)
     {
-      CPI::Util::AutoMutex mutex (m_mutex);
-      CPI::Logger::DebugLogger debug (m_out);
+      OCPI::Util::AutoMutex mutex (m_mutex);
+      OCPI::Logger::DebugLogger debug (m_out);
 
       debug << m_logProducerName
-            << CPI::Logger::Verbosity (2)
+            << OCPI::Logger::Verbosity (2)
             << "unload (\""
             << fileName
             << "\")"
@@ -555,11 +589,11 @@ namespace CPI {
 
         if (m_adminState != CF::Device::UNLOCKED) {
           msg = "Administrative state is ";
-          msg += CPI::CFUtil::adminTypeToString (m_adminState);
+          msg += OCPI::CFUtil::adminTypeToString (m_adminState);
         }
         else {
           msg = "Operational state is ";
-          msg += CPI::CFUtil::operationalTypeToString (m_operationalState);
+          msg += OCPI::CFUtil::operationalTypeToString (m_operationalState);
         }
 
         CF::Device::InvalidState is;
@@ -589,11 +623,11 @@ namespace CPI {
              CF::InvalidFileName,
              CORBA::SystemException)
     {
-      CPI::Util::AutoMutex mutex (m_mutex);
-      CPI::Logger::DebugLogger debug (m_out);
+      OCPI::Util::AutoMutex mutex (m_mutex);
+      OCPI::Logger::DebugLogger debug (m_out);
 
       debug << m_logProducerName
-            << CPI::Logger::Verbosity (2)
+            << OCPI::Logger::Verbosity (2)
             << "execute (\""
             << functionName
             << "\")"
@@ -610,11 +644,11 @@ namespace CPI {
 
         if (m_adminState != CF::Device::UNLOCKED) {
           msg = "Administrative state is ";
-          msg += CPI::CFUtil::adminTypeToString (m_adminState);
+          msg += OCPI::CFUtil::adminTypeToString (m_adminState);
         }
         else {
           msg = "Operational state is ";
-          msg += CPI::CFUtil::operationalTypeToString (m_operationalState);
+          msg += OCPI::CFUtil::operationalTypeToString (m_operationalState);
         }
 
         CF::Device::InvalidState is;
@@ -661,7 +695,7 @@ namespace CPI {
         }
 
         if (numInvalidOptions) {
-          m_out << CPI::Logger::Level::EXCEPTION_ERROR
+          m_out << OCPI::Logger::Level::EXCEPTION_ERROR
                 << m_logProducerName
                 << "execute: invalid options: ";
 
@@ -701,7 +735,7 @@ namespace CPI {
           }
 
           debug << m_logProducerName
-                << CPI::Logger::Verbosity (2)
+                << OCPI::Logger::Verbosity (2)
                 << "Parameter " << pi << ": "
                 << parameter.id << " = \""
                 << value
@@ -745,7 +779,7 @@ namespace CPI {
         }
 
         if (numInvalidParameters) {
-          m_out << CPI::Logger::Level::EXCEPTION_ERROR
+          m_out << OCPI::Logger::Level::EXCEPTION_ERROR
                 << m_logProducerName
                 << "Invalid execution parameters: ";
 
@@ -763,7 +797,7 @@ namespace CPI {
       if (!namingContextIor.length() || !nameBinding.length()) {
         std::string msg = "Execution parameters \"NAMING_CONTEXT_IOR\" or \"NAME_BINDING\" missing";
 
-        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+        m_out << OCPI::Logger::Level::EXCEPTION_ERROR
               << m_logProducerName
               << msg
               << "."
@@ -777,7 +811,7 @@ namespace CPI {
 
       // Enable debug logging for this id at this level
 #if !defined (NDEBUG)
-      CPI::Logger::debug (componentIdentifier, debugLevel);
+      OCPI::Logger::debug (componentIdentifier, debugLevel);
 #endif
       CF::ExecutableDevice::ProcessID_Type pid;
       Cp289GenericProxy *gp;
@@ -787,21 +821,21 @@ namespace CPI {
                                    functionName, codeInstanceName.c_str(), *m_application,
                                    0, false, false);
         pid = gp->getPid();
-      } catch (const CPI::Util::EmbeddedException & oops) {
+      } catch (const OCPI::Util::EmbeddedException & oops) {
         const char * auxInfo = oops.getAuxInfo ();
         std::string msg = "Error executing worker with id \"";
         msg += componentIdentifier;
         msg += "\", function name \"";
         msg += functionName;
         msg += "\" ";
-        msg += CPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+        msg += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
 
         if (auxInfo && *auxInfo) {
           msg += ": ";
           msg += auxInfo;
         }
 
-        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+        m_out << OCPI::Logger::Level::EXCEPTION_ERROR
               << m_logProducerName
               << msg
               << "."
@@ -813,9 +847,9 @@ namespace CPI {
         throw ifn;
       } catch (const CORBA::Exception & ex) {
         std::string msg = "Failed to register generic proxy in Naming Service: ";
-        msg += CPI::CORBAUtil::Misc::stringifyCorbaException (ex);
+        msg += OCPI::CORBAUtil::Misc::stringifyCorbaException (ex);
 
-        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+        m_out << OCPI::Logger::Level::EXCEPTION_ERROR
               << m_logProducerName
               << msg
               << "."
@@ -826,7 +860,7 @@ namespace CPI {
         throw ef;
       }
 
-      m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
+      m_out << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
             << m_logProducerName
             << "Started \""
             << functionName
@@ -846,11 +880,11 @@ namespace CPI {
              CF::Device::InvalidState,
              CORBA::SystemException)
     {
-      CPI::Util::AutoMutex mutex (m_mutex);
-      CPI::Logger::DebugLogger debug (m_out);
+      OCPI::Util::AutoMutex mutex (m_mutex);
+      OCPI::Logger::DebugLogger debug (m_out);
 
       debug << m_logProducerName
-            << CPI::Logger::Verbosity (2)
+            << OCPI::Logger::Verbosity (2)
             << "terminate ("
             << pid
             << ")"
@@ -867,11 +901,11 @@ namespace CPI {
 
         if (m_adminState != CF::Device::UNLOCKED) {
           msg = "Administrative state is ";
-          msg += CPI::CFUtil::adminTypeToString (m_adminState);
+          msg += OCPI::CFUtil::adminTypeToString (m_adminState);
         }
         else {
           msg = "Operational state is ";
-          msg += CPI::CFUtil::operationalTypeToString (m_operationalState);
+          msg += OCPI::CFUtil::operationalTypeToString (m_operationalState);
         }
 
         CF::Device::InvalidState is;
@@ -882,8 +916,8 @@ namespace CPI {
       PidMap::iterator it = m_pidMap.find(pid);
       if (it == m_pidMap.end()) {
         std::string msg = "Invalid pid ";
-        msg += CPI::Util::Misc::integerToString (pid);
-        m_out << CPI::Logger::Level::EXCEPTION_ERROR
+        msg += OCPI::Util::Misc::integerToString (pid);
+        m_out << OCPI::Logger::Level::EXCEPTION_ERROR
               << m_logProducerName
               << msg
               << "."
@@ -904,7 +938,7 @@ namespace CPI {
       gp->_remove_ref();
       m_pidMap.erase(it);
 
-      m_out << CPI::Logger::Level::ADMINISTRATIVE_EVENT
+      m_out << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
             << m_logProducerName
             << "Terminated worker "
             << pid

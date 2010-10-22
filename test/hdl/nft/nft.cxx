@@ -1,3 +1,37 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <assert.h>
@@ -21,15 +55,15 @@
 
 // Control operations on workers
 static void
-  reset(volatile CPI::RPL::OccpWorkerRegisters *, unsigned),
-  init(volatile CPI::RPL::OccpWorkerRegisters *),
-  start(volatile CPI::RPL::OccpWorkerRegisters *);
+  reset(volatile OCPI::RPL::OccpWorkerRegisters *, unsigned),
+  init(volatile OCPI::RPL::OccpWorkerRegisters *),
+  start(volatile OCPI::RPL::OccpWorkerRegisters *);
 
 // Packet of arguments required to process a stream endpoint on the cpu side
 struct Stream {
   unsigned bufSize, nBufs;
   volatile uint8_t *buffers;
-  volatile CPI::RPL::OcdpMetadata *metadata;
+  volatile OCPI::RPL::OcdpMetadata *metadata;
   volatile uint32_t *flags;
   volatile uint32_t *doorbell;
 };
@@ -37,7 +71,7 @@ struct Stream {
 static void
   *doRead(void *args),
   *doWrite(void *args),
-  setupStream(Stream *s, volatile CPI::RPL::OcdpProperties *p, bool isToCpu,
+  setupStream(Stream *s, volatile OCPI::RPL::OcdpProperties *p, bool isToCpu,
 	      unsigned nCpuBufs, unsigned nFpgaBufs, unsigned bufSize,
 	      uint8_t *cpuBase, unsigned long long dmaBase, uint32_t *offset);
 
@@ -54,14 +88,14 @@ int main(int argc, char *argv[])
   int fd = open("/dev/mem", O_RDWR|O_SYNC);
   assert(fd >= 0);
 
-  CPI::RPL::OccpSpace *occp =
-    (CPI::RPL::OccpSpace *)mmap(NULL, sizeof(CPI::RPL::OccpSpace),
+  OCPI::RPL::OccpSpace *occp =
+    (OCPI::RPL::OccpSpace *)mmap(NULL, sizeof(OCPI::RPL::OccpSpace),
 				PROT_READ|PROT_WRITE, MAP_SHARED, fd, bar0Base);
-  assert(occp != (CPI::RPL::OccpSpace*)-1);
+  assert(occp != (OCPI::RPL::OccpSpace*)-1);
   uint8_t *bar1 = (uint8_t*)mmap(NULL, bar1Size,
 				 PROT_READ|PROT_WRITE, MAP_SHARED, fd, bar1Base);
   assert(bar1 != (uint8_t*)-1);
-  const char *dmaEnv = getenv("CPI_DMA_MEMORY");
+  const char *dmaEnv = getenv("OCPI_DMA_MEMORY");
   assert(dmaEnv);
   unsigned count = sscanf(dmaEnv, "%uM$0x%llx", &dmaMeg,
 			  (unsigned long long *) &dmaBase);
@@ -71,16 +105,16 @@ int main(int argc, char *argv[])
     (uint8_t*)mmap(NULL, dmaSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, dmaBase);
   assert(cpuBase != (uint8_t*)-1);
   // These have this structure of properties
-  volatile CPI::RPL::OcdpProperties
-    *dp0Props = (CPI::RPL::OcdpProperties*)occp->config[WORKER_DP0],
-    *dp1Props = (CPI::RPL::OcdpProperties*)occp->config[WORKER_DP1];
+  volatile OCPI::RPL::OcdpProperties
+    *dp0Props = (OCPI::RPL::OcdpProperties*)occp->config[WORKER_DP0],
+    *dp1Props = (OCPI::RPL::OcdpProperties*)occp->config[WORKER_DP1];
 
   // These just have a single 32 bit scalar property
   volatile uint32_t
     *sma0Props = (uint32_t*)occp->config[WORKER_SMA0],
     *sma1Props = (uint32_t*)occp->config[WORKER_SMA1],
     *biasProps = (uint32_t*)occp->config[WORKER_BIAS];
-  volatile CPI::RPL::OccpWorkerRegisters
+  volatile OCPI::RPL::OccpWorkerRegisters
     *dp0 = &occp->worker[WORKER_DP0].control,
     *dp1 = &occp->worker[WORKER_DP1].control,
     *sma0 = &occp->worker[WORKER_SMA0].control,
@@ -144,7 +178,7 @@ int main(int argc, char *argv[])
 
 // reset a worker
  static void
-reset(volatile CPI::RPL::OccpWorkerRegisters *w, unsigned timeout) {
+reset(volatile OCPI::RPL::OccpWorkerRegisters *w, unsigned timeout) {
    // compute log-2 timeout value
    if (!timeout)
      timeout = 16;
@@ -166,13 +200,13 @@ check(uint32_t val) {
 
 // initialize a worker
  static void
-init(volatile CPI::RPL::OccpWorkerRegisters *w) {
+init(volatile OCPI::RPL::OccpWorkerRegisters *w) {
   check(w->initialize);
 }
 
 // start a worker
  static void
-start(volatile CPI::RPL::OccpWorkerRegisters *w) {
+start(volatile OCPI::RPL::OccpWorkerRegisters *w) {
   check(w->start);
 }
 
@@ -234,14 +268,14 @@ doWrite(void *args) {
  }
 
  static void
-setupStream(Stream *s, volatile CPI::RPL::OcdpProperties *p, bool isToCpu,
+setupStream(Stream *s, volatile OCPI::RPL::OcdpProperties *p, bool isToCpu,
 	    unsigned nCpuBufs, unsigned nFpgaBufs, unsigned bufSize,
 	    uint8_t *cpuBase, unsigned long long dmaBase, uint32_t *offset)
 {
   s->nBufs = nCpuBufs;
   s->bufSize = bufSize;
   s->buffers = cpuBase + *offset;
-  s->metadata = (CPI::RPL::OcdpMetadata *)(s->buffers + nCpuBufs * bufSize);
+  s->metadata = (OCPI::RPL::OcdpMetadata *)(s->buffers + nCpuBufs * bufSize);
   s->flags = (uint32_t *)(s->metadata + nCpuBufs);
   s->doorbell = &p->nRemoteDone;
   *offset += (uint8_t *)(s->flags + nCpuBufs) - s->buffers;
@@ -251,14 +285,14 @@ setupStream(Stream *s, volatile CPI::RPL::OcdpProperties *p, bool isToCpu,
   p->localBufferBase = 0;
   p->localMetadataBase = nFpgaBufs * bufSize; // above 4 x 2k buffers
   p->localBufferSize = bufSize;
-  p->localMetadataSize = sizeof(CPI::RPL::OcdpMetadata);
+  p->localMetadataSize = sizeof(OCPI::RPL::OcdpMetadata);
   p->memoryBytes = 32*1024;
   p->remoteBufferBase = dmaBase + (s->buffers - cpuBase);
   p->remoteMetadataBase = dmaBase + ((uint8_t*)s->metadata - cpuBase);
   p->remoteBufferSize = bufSize;
-  p->remoteMetadataSize = sizeof(CPI::RPL::OcdpMetadata);
+  p->remoteMetadataSize = sizeof(OCPI::RPL::OcdpMetadata);
   p->remoteFlagBase = dmaBase + ((uint8_t*)s->flags - cpuBase);
   p->remoteFlagPitch = sizeof(uint32_t);
   p->control = OCDP_CONTROL(isToCpu ? OCDP_CONTROL_PRODUCER : OCDP_CONTROL_CONSUMER,
-			    CPI::RPL::OCDP_ACTIVE_MESSAGE);
+			    OCPI::RPL::OCDP_ACTIVE_MESSAGE);
  }

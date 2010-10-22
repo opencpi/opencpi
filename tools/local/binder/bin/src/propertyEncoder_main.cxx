@@ -1,22 +1,40 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 
 /*
- * CPI Magic Property String Encoder
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+/*
+ * OCPI Magic Property String Encoder
  *
  * Revision History:
  *
@@ -28,16 +46,16 @@
 #include <cstdlib>
 #include <string>
 #include <fstream>
-#include <CpiOsAssert.h>
-#include <CpiUtilVfs.h>
-#include <CpiUtilFileFs.h>
-#include <CpiOsDebug.h>
-#include <CpiUtilCommandLineConfiguration.h>
-#include <CpiScaPropertyParser.h>
+#include <OcpiOsAssert.h>
+#include <OcpiUtilVfs.h>
+#include <OcpiUtilFileFs.h>
+#include <OcpiOsDebug.h>
+#include <OcpiUtilCommandLineConfiguration.h>
+#include <OcpiScaPropertyParser.h>
 #include <sca_props.h>
 
 class PropertyEncoderConfigurator
-  : public CPI::Util::CommandLineConfiguration
+  : public OCPI::Util::CommandLineConfiguration
 {
 public:
   PropertyEncoderConfigurator ();
@@ -55,7 +73,7 @@ private:
 
 PropertyEncoderConfigurator::
 PropertyEncoderConfigurator ()
-  : CPI::Util::CommandLineConfiguration (g_options),
+  : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
 #if !defined (NDEBUG)
     debugBreak (false),
@@ -64,20 +82,20 @@ PropertyEncoderConfigurator ()
 {
 }
 
-CPI::Util::CommandLineConfiguration::Option
+OCPI::Util::CommandLineConfiguration::Option
 PropertyEncoderConfigurator::g_options[] = {
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "verbose", "Be verbose",
-    CPI_CLC_OPT(&PropertyEncoderConfigurator::verbose) },
+    OCPI_CLC_OPT(&PropertyEncoderConfigurator::verbose), 0 },
 #if !defined (NDEBUG)
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "break", "Whether to break on startup",
-    CPI_CLC_OPT(&PropertyEncoderConfigurator::debugBreak) },
+    OCPI_CLC_OPT(&PropertyEncoderConfigurator::debugBreak), 0 },
 #endif
-  { CPI::Util::CommandLineConfiguration::OptionType::NONE,
+  { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
     "help", "This message",
-    CPI_CLC_OPT(&PropertyEncoderConfigurator::help) },
-  { CPI::Util::CommandLineConfiguration::OptionType::END }
+    OCPI_CLC_OPT(&PropertyEncoderConfigurator::help), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::END, 0, 0, 0, 0 }
 };
 
 static
@@ -119,7 +137,7 @@ propertyEncoderInt (int argc, char * argv[])
    * Construct a FileFs to read the XML files from.
    */
 
-  CPI::Util::FileFs::FileFs fileFs ("/");
+  OCPI::Util::FileFs::FileFs fileFs ("/");
 
   /*
    * Figure out the name of our SCD file.
@@ -136,7 +154,7 @@ propertyEncoderInt (int argc, char * argv[])
   }
 
   try {
-    CPI::SCA::PropertyParser props (fileFs, scdFileName);
+    OCPI::SCA::PropertyParser props (fileFs, scdFileName);
     std::string ps = props.encode ();
     std::cout << ps << std::endl;
   }
@@ -171,7 +189,7 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-        CPI::OS::debugBreak ();
+        OCPI::OS::debugBreak ();
         break;
       }
     }

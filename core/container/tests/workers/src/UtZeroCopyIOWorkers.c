@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 /*
  * Zero copy I/O workers for test
@@ -27,7 +45,7 @@
 #include <stdio.h>
 #include <string.h>
 #ifdef TIME_IT
-#include <CpiTimeEmitC.h>
+#include <OcpiTimeEmitC.h>
 #endif
 #include "UtZeroCopyIOWorkers.h"
 
@@ -48,18 +66,24 @@ static RCCResult ProducerInitialize(RCCWorker *this_)
 
 static RCCResult release(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
+#if 0 /* Unused */
 static RCCResult test(RCCWorker *this_ )
 {
+  ( void ) this_;
   return RCC_OK;
 }
+#endif 
 
 
-static int r_count = 0;
+// static int r_count = 0;
 static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
   uint32_t n;
   uint32_t len;
   int      *b;
@@ -71,7 +95,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   }
 
 #ifdef TIME_IT
-  CPI_TIME_EMIT_C( "Producer Start" );
+  OCPI_TIME_EMIT_C( "Producer Start" );
 #endif
 
 #ifndef NDEBUG
@@ -93,7 +117,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   props->buffersProcessed++; 
 
 #ifdef TIME_IT
-  CPI_TIME_EMIT_C( "Producer Start Send" ); 
+  OCPI_TIME_EMIT_C( "Producer Start Send" ); 
 #endif
 
 #ifndef NDEBUG
@@ -115,7 +139,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   props->bytesProcessed += len;
 
 #ifdef TIME_IT
-  CPI_TIME_EMIT_C( "Producer End Send" ); 
+  OCPI_TIME_EMIT_C( "Producer End Send" ); 
 #endif
         
   return RCC_OK;
@@ -123,8 +147,8 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 }
 
 #define PROD_PROPERTY_SIZE  sizeof( ProducerWorkerProperties )
-static int32_t ProdportRunConditions[] = { (1<<ProducerWorker_Data_Out_Port) , 0 };
-static RCCRunCondition RCCRunConditions[] = { {ProdportRunConditions}, {0} , {0} };
+//static uint32_t ProdportRunConditions[] = { (1<<ProducerWorker_Data_Out_Port) , 0, 0 };
+// static RCCRunCondition RCCRunConditions[] = { {ProdportRunConditions}, {0,0,0} , {0,0,0} };
 
 RCCDispatch UTZCopyProducerWorkerDispatchTable = { RCC_VERSION, 0, 1, 
                                                    PROD_PROPERTY_SIZE, 0 , 0,
@@ -149,7 +173,7 @@ enum ConsumerPortIds {
 static RCCResult ConsumerInitialize(RCCWorker *this_)
 {
   uint32_t i;
-  ConsumerWorkerStaticMemory *mem = (ConsumerWorkerStaticMemory*)this_->memories[0];
+//  ConsumerWorkerStaticMemory *mem = (ConsumerWorkerStaticMemory*)this_->memories[0];
   ConsumerWorkerProperties *props = this_->properties;
   props->buffersProcessed = 0;
   props->bytesProcessed = 0;
@@ -169,10 +193,10 @@ static RCCResult ConsumerInitialize(RCCWorker *this_)
 static RCCResult ConsumerAfterConfigure( RCCWorker *this_ )
 {
   /* This only works for simple memory configurations */
-  ConsumerWorkerStaticMemory *static_mem = this_->memories[0];
-  ConsumerWorkerProperties *props = this_->properties;
+//  ConsumerWorkerStaticMemory *static_mem = this_->memories[0];
 
 #ifdef DEBUG_PROPS
+  ConsumerWorkerProperties *props = this_->properties;
   printf("doubleT value = %f", props->doubleT);
   printf("passfail value = %d", props->passfail);
   printf("run2BufferCount value = %d", props->run2BufferCount);
@@ -180,6 +204,8 @@ static RCCResult ConsumerAfterConfigure( RCCWorker *this_ )
   printf("buffersProcessed value = %d", props->buffersProcessed);
   printf("droppedBuffers value = %d", props->droppedBuffers);  
   printf("bytesProcessed value = %d", props->bytesProcessed);  
+#else
+  ( void ) this_;
 #endif
       
   return RCC_OK;
@@ -188,19 +214,18 @@ static RCCResult ConsumerAfterConfigure( RCCWorker *this_ )
         
 static RCCResult ConsumerBeforeQuery(RCCWorker *this_ )
 {
-  /* This only works for simple memory configurations */
-  ConsumerWorkerStaticMemory *static_mem = this_->memories[0];
-  ConsumerWorkerProperties *props = this_->properties;
-      
+  ( void ) this_;  
   return RCC_OK;
 }
         
 
 static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
   int ncount, *b;
   uint32_t len,n;
-  ConsumerWorkerStaticMemory *mem = this_->memories[0];
+//  ConsumerWorkerStaticMemory *mem = this_->memories[0];
   ConsumerWorkerProperties *props = this_->properties;
   int passed = 1;
 
@@ -213,7 +238,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   char* in_buffer = (char*)this_->ports[ConsumerWorker_Data_In_Port].current.data;
 
 #ifdef TIME_IT
-  CPI_TIME_EMIT_C( "Consumer Start" );
+  OCPI_TIME_EMIT_C( "Consumer Start" );
 #endif
                     
 #ifdef TIME_TP
@@ -244,7 +269,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   len -= 4;
                               
   b = (int*)(in_buffer);
-  if ( *b != props->buffersProcessed ) {
+  if ( *b != (int)props->buffersProcessed ) {
 #ifndef NDEBUG
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
            *b, props->buffersProcessed );
@@ -295,11 +320,11 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
                                 
   if ( props->transferMode == ConsumerConsume ) {
 #ifdef TIME_IT
-    CPI_TIME_EMIT_C( "Consumer Start Release" );
+    OCPI_TIME_EMIT_C( "Consumer Start Release" );
 #endif
     this_->container->release( &this_->ports[ConsumerWorker_Data_In_Port].current ); 
 #ifdef TIME_IT
-    CPI_TIME_EMIT_C( "Consumer End Release" );
+    OCPI_TIME_EMIT_C( "Consumer End Release" );
 #endif
   }
   else {
@@ -327,8 +352,8 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
                                                       
 #define CON_PROPERTY_SIZE  sizeof( ConsumerWorkerProperties )
 static uint32_t memSizes[] = {sizeof(ConsumerWorkerStaticMemory), 1024*10, 0 };
-static int32_t ConsumerPortRunConditions[] = { (1<<ConsumerWorker_Data_In_Port)  , 0 }; 
-static RCCRunCondition workerRunConditions[] = { ConsumerPortRunConditions, 0 , 0 };
+//static uint32_t ConsumerPortRunConditions[] = { (1<<ConsumerWorker_Data_In_Port) , 0, 0 }; 
+//static RCCRunCondition workerRunConditions[] = { {ConsumerPortRunConditions}, {0,0,0} , {0,0,0} };
 static RCCPortInfo ConsumerPortInfo[] = { {0,1024,MIN_CONSUMER_BUFFERS}, {RCC_NO_ORDINAL,0,0} };
 RCCDispatch UTZCopyConsumerWorkerDispatchTable = { RCC_VERSION, 1, 0, 
                                                    CON_PROPERTY_SIZE, memSizes, 0, 
@@ -350,8 +375,7 @@ enum PortIds {
          
 static RCCResult LBInitialize(RCCWorker *this_)
 {
-  LoopbackWorkerStaticMemory *mem = (LoopbackWorkerStaticMemory*)this_->memories[0];
-  LoopbackWorkerProperties *props = this_->properties;
+  ( void ) this_; 
   return RCC_OK;
 }
         
@@ -359,17 +383,14 @@ static RCCResult LBInitialize(RCCWorker *this_)
         
 static RCCResult LBAfterConfigure(RCCWorker *this_ )
 {
-  /* This only works for simple memory configurations */
-  LoopbackWorkerStaticMemory *static_mem = this_->memories[0];
-  LoopbackWorkerProperties *props = this_->properties;
+  ( void ) this_;
   return RCC_OK;
 }
         
         
 static RCCResult LBBeforeQuery(RCCWorker *this_ )
 {
-  LoopbackWorkerStaticMemory *static_mem = this_->memories[0];
-  LoopbackWorkerProperties *props = this_->properties;
+  ( void ) this_;
   return RCC_OK;
 }
         
@@ -377,12 +398,14 @@ static RCCResult LBBeforeQuery(RCCWorker *this_ )
 static int runc=1;
 static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
   uint32_t len;
   uint32_t cplen;
   int      oc;
     
-  LoopbackWorkerStaticMemory *mem = this_->memories[0];
-  LoopbackWorkerProperties *props = this_->properties;
+//  LoopbackWorkerStaticMemory *mem = this_->memories[0];
+//  LoopbackWorkerProperties *props = this_->properties;
         
   char* in_buffer = (char*)this_->ports[LoopbackWorker_Data_In_Port].current.data;
   char* out_buffer = (char*)this_->ports[LoopbackWorker_Data_Out_Port].current.data;
@@ -393,13 +416,6 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #ifndef NDEBUG
   printf("In LB run, len = %d\n", len);
 #endif
-
-  uint32_t * d = (uint32_t)in_buffer;
-
-  /*
-  printf("Data words = %d, %d, %d, %d\n", d[0], d[1], d[2], d[3] );
-  */
- 
 
   /*              
   switch ( props->transferMode ) {
@@ -495,8 +511,8 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
          
 #define LB_PROPERTY_SIZE      sizeof( LoopbackWorkerProperties )
 static uint32_t LBmemSizes[] = {sizeof(LoopbackWorkerStaticMemory), 0 };
-static int32_t LBPortRunConditions[] = { (1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port), 0 };
-static RCCRunCondition LBWorkerRunConditions[] = { LBPortRunConditions, 0 , 0 };
+static uint32_t LBPortRunConditions[] = { (1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port), 0, 0 };
+static RCCRunCondition LBWorkerRunConditions[] = { {LBPortRunConditions,0,0}, {0,0,0} , {0,0,0} };
 RCCDispatch UTZCopyLoopbackWorkerDispatchTable = { RCC_VERSION, 1, 1, 
                                                    LB_PROPERTY_SIZE, LBmemSizes, 0,
                                                    LBInitialize, NULL, NULL, release, NULL, LBAfterConfigure, LBBeforeQuery, 

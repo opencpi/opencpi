@@ -1,3 +1,37 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 /*
  * SCA CP289 Generic Proxy Port.
  *
@@ -9,22 +43,22 @@
 
 #include <new>
 #include <string>
-#include <CpiOsAssert.h>
-#include <CpiOsMutex.h>
-#include <CpiUtilCDR.h>
-#include <CpiUtilIOP.h>
-#include <CpiUtilMisc.h>
-#include <CpiUtilAutoMutex.h>
-#include <CpiLoggerLogger.h>
-#include <CpiLoggerNullOutput.h>
-#include <CpiLoggerDebugLogger.h>
-#include <CpiContainerInterface.h>
-#include "CpiWorker.h"
-#include <CpiStringifyCorbaException.h>
-#include <CpiCFUtilLegacyErrorNumbers.h>
+#include <OcpiOsAssert.h>
+#include <OcpiOsMutex.h>
+#include <OcpiUtilCDR.h>
+#include <OcpiUtilIOP.h>
+#include <OcpiUtilMisc.h>
+#include <OcpiUtilAutoMutex.h>
+#include <OcpiLoggerLogger.h>
+#include <OcpiLoggerNullOutput.h>
+#include <OcpiLoggerDebugLogger.h>
+#include <OcpiContainerInterface.h>
+#include "OcpiWorker.h"
+#include <OcpiStringifyCorbaException.h>
+#include <OcpiCFUtilLegacyErrorNumbers.h>
 #include <CF.h>
 #include <Cp289ProviderPort.h>
-#include "CpiContainerPort.h"
+#include "OcpiContainerPort.h"
 #include "Cp289GenericProxy.h"
 
 /*
@@ -35,9 +69,9 @@
 #undef IOP
 #endif
 
-namespace CPI {
+namespace OCPI {
   namespace SCA {
-    namespace CU = CPI::Util;
+    namespace CU = OCPI::Util;
     /*
      * ----------------------------------------------------------------------
      * Port and connection management
@@ -46,7 +80,7 @@ namespace CPI {
     Cp289GenericProxyPort::
     Cp289GenericProxyPort(const std::string &portName, Cp289GenericProxy *proxy) :
       BaseProxyPort(portName, proxy),
-      m_cpiPort(proxy->m_worker.getPort(portName.c_str()))
+      m_ocpiPort(proxy->m_worker.getPort(portName.c_str()))
     {
       // Externalize us.
       m_scaPort = proxy->m_poa->id_to_reference(*proxy->m_poa->activate_object(this));
@@ -55,8 +89,8 @@ namespace CPI {
        * reference that holds the target port data.  That avoids a
        * roundtrip at connection time.
        */
-      if (m_cpiPort.isProvider()) {
-        const std::string &providerInfo = m_cpiPort.getInitialProviderInfo(0);
+      if (m_ocpiPort.isProvider()) {
+        const std::string &providerInfo = m_ocpiPort.getInitialProviderInfo(0);
         /*
          * Unfortunately, the only portable way to get to the IOR is
          * by detour via IOR: string.
@@ -66,7 +100,7 @@ namespace CPI {
         /*
          * Add a profile with the target port data.
          */
-        portIor.addProfile (CPI_PORT_INFO_TAG, providerInfo);
+        portIor.addProfile (OCPI_PORT_INFO_TAG, providerInfo);
         /*
          * Now convert back to an object reference.
          */
@@ -102,14 +136,14 @@ namespace CPI {
              CORBA::SystemException) {
 
       CU::AutoMutex lock (m_proxy->m_mutex);
-      CPI::Logger::DebugLogger debug (*m_proxy->m_logger);
+      OCPI::Logger::DebugLogger debug (*m_proxy->m_logger);
 
       if (m_proxy->m_disabled) {
         throw CORBA::BAD_INV_ORDER ();
       }
 
       debug << m_proxy->m_logProducerName
-            << CPI::Logger::Verbosity (2)
+            << OCPI::Logger::Verbosity (2)
             << "connectPort (\""
             << m_portName
             << "\", \""
@@ -126,7 +160,7 @@ namespace CPI {
         msg += connectionId;
         msg += ")";
 
-        *m_proxy->m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+        *m_proxy->m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
                   << m_proxy->m_logProducerName
                   << msg << "."
                   << std::flush;
@@ -139,12 +173,12 @@ namespace CPI {
       const char *oops = 0;
       try { // break on oops errors
         // LIMITATION: we don't support user and provider with same name
-        if (m_cpiPort.isProvider()) {
+        if (m_ocpiPort.isProvider()) {
           // Legacy support.  We are receiving "connectInitial" via a connectPort in the other direction
           std::string shadow;
-          getProfile(connection, CPI_SOURCE_SHADOW_PORT_DATA_TAG, shadow);
+          getProfile(connection, OCPI_SOURCE_SHADOW_PORT_DATA_TAG, shadow);
           if (shadow.empty())
-            throw std::string ("CPI source shadow port profile missing from object reference");
+            throw std::string ("OCPI source shadow port profile missing from object reference");
           Cp289ProviderPort::Octets os(shadow.length(), shadow.length(), (CORBA::Octet*)shadow.data());
           connectInitial(os);
         } else {
@@ -161,20 +195,20 @@ namespace CPI {
           // 3. The connection protocol DOES require extra exchanges of information, and we 
           //    do it via private IDL
           std::string ipi;
-          getProfile(connection, CPI_PORT_INFO_TAG, ipi);
+          getProfile(connection, OCPI_PORT_INFO_TAG, ipi);
 
           if (ipi.empty())
             // LIMITATION: no local GIOP adapter
             oops = "Unsupported connection to provider";
           else {
             // Tell our local port about the provider's initial information
-            const std::string &initialUserInfo = m_cpiPort.setInitialProviderInfo(0, ipi);
+            const std::string &initialUserInfo = m_ocpiPort.setInitialProviderInfo(0, ipi);
             if (!initialUserInfo.empty()) {
 #if 1
               // We need to exchange information with the remote port using our private IDL.
               Cp289ProviderPort_var remoteProvider = Cp289ProviderPort::_narrow (connection);
               if (CORBA::is_nil(remoteProvider))
-                oops = "Incompatible CPI transport with remote port";
+                oops = "Incompatible OCPI transport with remote port";
               else {
                 // Now give our local user-side information to the remote provider
                 // Since we have info from both sides this will include all the provider
@@ -188,7 +222,7 @@ namespace CPI {
                 std::string fpi((const char*)finalProviderInfo->get_buffer(), (size_t)finalProviderInfo->length());
                 if (!fpi.empty()) {
                   // The connection protocol has given us more/final information about the provider.
-                  const std::string &finalUserInfo = m_cpiPort.setFinalProviderInfo(fpi);
+                  const std::string &finalUserInfo = m_ocpiPort.setFinalProviderInfo(fpi);
                   if (!finalUserInfo.empty()) {
                     const Cp289ProviderPort::Octets fui(finalUserInfo.length(), finalUserInfo.length(), (CORBA::Octet*)finalUserInfo.data());
                     remoteProvider->connectFinal(fui);
@@ -208,9 +242,9 @@ namespace CPI {
               if (CORBA::is_nil (remotePort)) {
                 throw std::string ("Failed to narrow remote object to CF::Port");
               }
-              CPI::Util::IOP::IOR shadowPortIor;
-              shadowPortIor.addProfile (CPI_SOURCE_SHADOW_PORT_DATA_TAG, initialUserInfo.data(), initialUserInfo.length());
-              std::string shadowPortIorString = CPI::Util::IOP::ior_to_string (shadowPortIor);
+              OCPI::Util::IOP::IOR shadowPortIor;
+              shadowPortIor.addProfile (OCPI_SOURCE_SHADOW_PORT_DATA_TAG, initialUserInfo.data(), initialUserInfo.length());
+              std::string shadowPortIorString = OCPI::Util::IOP::ior_to_string (shadowPortIor);
               CORBA::Object_var spObj = m_proxy->m_orb->string_to_object (shadowPortIorString.c_str());
               
               try {
@@ -224,7 +258,7 @@ namespace CPI {
                 }
                 
                 std::string msg = "Failed to connect remote port to local shadow port: ";
-                msg += CPI::CORBAUtil::Misc::stringifyCorbaException (oops);
+                msg += OCPI::CORBAUtil::Misc::stringifyCorbaException (oops);
                 throw msg;
               }
 
@@ -245,7 +279,7 @@ namespace CPI {
         msg += connectionId;
         msg += ")";
           
-        *m_proxy->m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+        *m_proxy->m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
                   << m_proxy->m_logProducerName
                   << msg << "."
                   << std::flush;
@@ -260,11 +294,11 @@ namespace CPI {
     Cp289ProviderPort::Octets* Cp289GenericProxyPort::
     connectInitial(const Cp289ProviderPort::Octets& initialUserInfo) {
       const char *oops;
-      if (m_cpiPort.isProvider())
+      if (m_ocpiPort.isProvider())
         try {
           // A copy here from corba to our string
           const std::string iui((const char*)initialUserInfo.get_buffer(), (size_t)initialUserInfo.length());
-          const std::string &finalProviderInfo = m_cpiPort.setInitialUserInfo(iui);
+          const std::string &finalProviderInfo = m_ocpiPort.setInitialUserInfo(iui);
           // String is not copied here
           Cp289ProviderPort::Octets* fpi =
             new Cp289ProviderPort::Octets(finalProviderInfo.length(), finalProviderInfo.length(),
@@ -280,7 +314,7 @@ namespace CPI {
       msg += m_portName;
       msg += "\"";
           
-      *m_proxy->m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+      *m_proxy->m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
                 << m_proxy->m_logProducerName
                 << msg << "."
                 << std::flush;
@@ -294,11 +328,11 @@ namespace CPI {
     void Cp289GenericProxyPort::
     connectFinal(const Cp289ProviderPort::Octets &finalUserInfo) {
       const char *oops;
-      if (m_cpiPort.isProvider())
+      if (m_ocpiPort.isProvider())
         try {
           // A copy here from corba to our string
           const std::string fui((const char*)finalUserInfo.get_buffer(), (size_t)finalUserInfo.length());
-          m_cpiPort.setFinalUserInfo(fui);
+          m_ocpiPort.setFinalUserInfo(fui);
           return;
         } catch (const char* e) {
           oops = e;
@@ -310,7 +344,7 @@ namespace CPI {
       msg += m_portName;
       msg += "\"";
           
-      *m_proxy->m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+      *m_proxy->m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
                 << m_proxy->m_logProducerName
                 << msg << "."
                 << std::flush;
@@ -327,14 +361,14 @@ namespace CPI {
       throw (CF::Port::InvalidPort,
              CORBA::SystemException) {
 
-      CPI::Util::AutoMutex lock (m_proxy->m_mutex);
-      CPI::Logger::DebugLogger debug (*m_proxy->m_logger);
+      OCPI::Util::AutoMutex lock (m_proxy->m_mutex);
+      OCPI::Logger::DebugLogger debug (*m_proxy->m_logger);
 
       if (m_proxy->m_disabled) {
         throw CORBA::BAD_INV_ORDER ();
       }
       debug << m_proxy->m_logProducerName
-        << CPI::Logger::Verbosity (2)
+        << OCPI::Logger::Verbosity (2)
         << "disconnectPort (\""
         << m_portName
         << "\", \""
@@ -356,7 +390,7 @@ namespace CPI {
           msg += connectionId;
           msg += ")";
 
-          *m_proxy->m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+          *m_proxy->m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
                              << m_proxy->m_logProducerName
                              << msg << "."
                              << std::flush;

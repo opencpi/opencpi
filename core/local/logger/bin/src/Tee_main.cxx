@@ -1,24 +1,42 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <CpiOsDebug.h>
-#include <CpiLoggerTee.h>
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+#include <OcpiOsDebug.h>
+#include <OcpiLoggerTee.h>
 #include "MessageKeeper.h"
-#include "CpiUtilTest.h"
+#include "OcpiUtilTest.h"
 
 namespace TeeTests {
   /*
@@ -27,20 +45,20 @@ namespace TeeTests {
    * ----------------------------------------------------------------------
    */
 
-  class Test1 : public CPI::Util::Test::Test {
+  class Test1 : public OCPI::Util::Test::Test {
   public:
     Test1 ()
-      : CPI::Util::Test::Test ("An empty Tee")
+      : OCPI::Util::Test::Test ("An empty Tee")
     {
     }
 
     void run ()
     {
-      CPI::Logger::Tee logger;
+      OCPI::Logger::Tee logger;
 
       logger.setProducerId ("04-Tee");
-      logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-             << CPI::Logger::ProducerName ("testEmptyTee")
+      logger << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
+             << OCPI::Logger::ProducerName ("testEmptyTee")
              << "Hello World"
              << std::flush;
 
@@ -54,10 +72,10 @@ namespace TeeTests {
    * ----------------------------------------------------------------------
    */
 
-  class Test2 : public CPI::Util::Test::Test {
+  class Test2 : public OCPI::Util::Test::Test {
   public:
     Test2 ()
-      : CPI::Util::Test::Test ("Tee with one delegatee")
+      : OCPI::Util::Test::Test ("Tee with one delegatee")
     {
     }
 
@@ -66,11 +84,11 @@ namespace TeeTests {
       MessageKeeperOutput keeper;
       keeper.setProducerId ("04-Tee");
 
-      CPI::Logger::Tee logger;
+      OCPI::Logger::Tee logger;
       logger.addOutput (keeper);
 
-      logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-             << CPI::Logger::ProducerName ("testOneDelegatee")
+      logger << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
+             << OCPI::Logger::ProducerName ("testOneDelegatee")
              << "Hello World"
              << std::flush;
 
@@ -87,10 +105,10 @@ namespace TeeTests {
    * ----------------------------------------------------------------------
    */
 
-  class Test3 : public CPI::Util::Test::Test {
+  class Test3 : public OCPI::Util::Test::Test {
   public:
     Test3 ()
-      : CPI::Util::Test::Test ("Tee with two delegatees")
+      : OCPI::Util::Test::Test ("Tee with two delegatees")
     {
     }
 
@@ -100,12 +118,12 @@ namespace TeeTests {
       keeper1.setProducerId ("04-Tee");
       keeper2.setProducerId ("04-Tee");
 
-      CPI::Logger::Tee logger;
+      OCPI::Logger::Tee logger;
       logger.addOutput (keeper1);
       logger.addOutput (keeper2);
 
-      logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-             << CPI::Logger::ProducerName ("testTwoDelegatees")
+      logger << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
+             << OCPI::Logger::ProducerName ("testTwoDelegatees")
              << "An Important Message"
              << std::flush;
 
@@ -127,10 +145,10 @@ namespace TeeTests {
    * ----------------------------------------------------------------------
    */
 
-  class Test4 : public CPI::Util::Test::Test {
+  class Test4 : public OCPI::Util::Test::Test {
   public:
     Test4 ()
-      : CPI::Util::Test::Test ("Tee with two delegatees, when the first one fails")
+      : OCPI::Util::Test::Test ("Tee with two delegatees, when the first one fails")
     {
     }
 
@@ -141,12 +159,12 @@ namespace TeeTests {
       keeper2.setProducerId ("04-Tee");
       keeper1.setstate (std::ios_base::badbit);
 
-      CPI::Logger::Tee logger;
+      OCPI::Logger::Tee logger;
       logger.addOutput (keeper1);
       logger.addOutput (keeper2);
 
-      logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-             << CPI::Logger::ProducerName ("testFirstDelegateeFailed")
+      logger << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
+             << OCPI::Logger::ProducerName ("testFirstDelegateeFailed")
              << "An Important Message"
              << std::flush;
 
@@ -164,10 +182,10 @@ namespace TeeTests {
    * ----------------------------------------------------------------------
    */
 
-  class Test5 : public CPI::Util::Test::Test {
+  class Test5 : public OCPI::Util::Test::Test {
   public:
     Test5 ()
-      : CPI::Util::Test::Test ("Tee with two delegatees, ignoring the first one's failure")
+      : OCPI::Util::Test::Test ("Tee with two delegatees, ignoring the first one's failure")
     {
     }
 
@@ -178,12 +196,12 @@ namespace TeeTests {
       keeper2.setProducerId ("04-Tee");
       keeper1.setstate (std::ios_base::badbit);
 
-      CPI::Logger::Tee logger;
+      OCPI::Logger::Tee logger;
       logger.addOutput (keeper1, false, true);
       logger.addOutput (keeper2);
 
-      logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-             << CPI::Logger::ProducerName ("testIgnoringFirstDelegatee")
+      logger << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
+             << OCPI::Logger::ProducerName ("testIgnoringFirstDelegatee")
              << "An Important Message"
              << std::flush;
 
@@ -201,10 +219,10 @@ namespace TeeTests {
    * ----------------------------------------------------------------------
    */
 
-  class Test6 : public CPI::Util::Test::Test {
+  class Test6 : public OCPI::Util::Test::Test {
   public:
     Test6 ()
-      : CPI::Util::Test::Test ("Tee with two delegatees, recovering the first one's failure")
+      : OCPI::Util::Test::Test ("Tee with two delegatees, recovering the first one's failure")
     {
     }
 
@@ -215,12 +233,12 @@ namespace TeeTests {
       keeper2.setProducerId ("04-Tee");
       keeper1.setstate (std::ios_base::badbit);
 
-      CPI::Logger::Tee logger;
+      OCPI::Logger::Tee logger;
       logger.addOutput (keeper1, true);
       logger.addOutput (keeper2);
 
-      logger << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-             << CPI::Logger::ProducerName ("testRecoveringFirstDelegatee")
+      logger << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
+             << OCPI::Logger::ProducerName ("testRecoveringFirstDelegatee")
              << "An Important Message"
              << std::flush;
 
@@ -244,7 +262,7 @@ static
 int
 testTeeInt (int, char *[])
 {
-  CPI::Util::Test::Suite tests ("Tee tests");
+  OCPI::Util::Test::Suite tests ("Tee tests");
   int n_failed;
   tests.add_test (new TeeTests::Test1);
   tests.add_test (new TeeTests::Test2);
@@ -280,7 +298,7 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-        CPI::OS::debugBreak ();
+        OCPI::OS::debugBreak ();
         break;
       }
     }

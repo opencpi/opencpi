@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ------------------------------------------------------------------------------
 #  messagedlg.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -10,27 +46,27 @@ namespace eval MessageDlg {
     Widget::define MessageDlg messagedlg Dialog
 
     Widget::tkinclude MessageDlg message .frame.msg \
-	    remove [list -cursor -highlightthickness		\
-		-highlightbackground -highlightcolor		\
-		-relief -borderwidth -takefocus -textvariable	\
-		] \
-	    rename [list -text -message]			\
-	    initialize [list -aspect 800 -anchor c -justify center]
+            remove [list -cursor -highlightthickness                \
+                -highlightbackground -highlightcolor                \
+                -relief -borderwidth -takefocus -textvariable        \
+                ] \
+            rename [list -text -message]                        \
+            initialize [list -aspect 800 -anchor c -justify center]
 
     Widget::bwinclude MessageDlg Dialog :cmd \
-	    remove [list -modal -image -bitmap -side -anchor -separator \
-		-homogeneous -padx -pady -spacing]
+            remove [list -modal -image -bitmap -side -anchor -separator \
+                -homogeneous -padx -pady -spacing]
 
     Widget::declare MessageDlg {
         {-icon       Enum   info 0 {none error info question warning}}
         {-type       Enum   user 0 {abortretryignore ok okcancel \
-		retrycancel yesno yesnocancel user}}
+                retrycancel yesno yesnocancel user}}
         {-buttons     String "" 0}
         {-buttonwidth String 0  0}
     }
 
     Widget::addmap MessageDlg "" tkMBox {
-	-parent {} -message {} -default {} -title {}
+        -parent {} -message {} -default {} -title {}
     }
 }
 
@@ -67,8 +103,8 @@ proc MessageDlg::create { path args } {
     # default, adding its flag/value to the "user" settings and to the tkMBox
     # settings
     if { ![info exists dialogArgs(-default)] } {
-	lappend maps(:cmd) -default $defb
-	lappend maps(tkMBox) -default $defb
+        lappend maps(:cmd) -default $defb
+        lappend maps(tkMBox) -default $defb
     }
     if { ![info exists dialogArgs(-cancel)] } {
         lappend maps(:cmd) -cancel $canb
@@ -82,8 +118,8 @@ proc MessageDlg::create { path args } {
         if { $title == "" } {
             set title "Message"
         }
-	lappend maps(:cmd) -title $title
-	lappend maps(tkMBox) -title $title
+        lappend maps(:cmd) -title $title
+        lappend maps(tkMBox) -title $title
     }
 
     # Create the "user" type dialog
@@ -94,34 +130,34 @@ proc MessageDlg::create { path args } {
             set image ""
         }
         eval [list Dialog::create $path] $maps(:cmd) \
-	    [list -image $image -modal local -side bottom -anchor e]
+            [list -image $image -modal local -side bottom -anchor e]
         foreach but $lbut {
             Dialog::add $path -text $but -name $but -width $width
         }
         set frame [Dialog::getframe $path]
 
         eval [list message $frame.msg] $maps(.frame.msg) \
-	    [list -relief flat -borderwidth 0 -highlightthickness 0 \
-		 -textvariable ""]
+            [list -relief flat -borderwidth 0 -highlightthickness 0 \
+                 -textvariable ""]
         pack  $frame.msg -side left -padx 3m -pady 1m -fill x -expand yes
 
         set res [Dialog::draw $path]
-	destroy $path
+        destroy $path
     } else {
-	# Do some translation of args into tk_messageBox syntax, then create
-	# the tk_messageBox
-	array set tkMBoxArgs $maps(tkMBox)
-	set tkMBoxArgs(-default) [lindex $lbut $tkMBoxArgs(-default)]
-	if { ![string equal $icon "none"] } {
-	    set tkMBoxArgs(-icon) $icon
-	}
-	if {[info exists tkMBoxArgs(-parent)]
-	    && ![winfo exists $tkMBoxArgs(-parent)]} {
-	    unset tkMBoxArgs(-parent)
-	}
-	set tkMBoxArgs(-type) $type
-	set res [eval [list tk_messageBox] [array get tkMBoxArgs]]
-	set res [lsearch $lbut $res]
+        # Do some translation of args into tk_messageBox syntax, then create
+        # the tk_messageBox
+        array set tkMBoxArgs $maps(tkMBox)
+        set tkMBoxArgs(-default) [lindex $lbut $tkMBoxArgs(-default)]
+        if { ![string equal $icon "none"] } {
+            set tkMBoxArgs(-icon) $icon
+        }
+        if {[info exists tkMBoxArgs(-parent)]
+            && ![winfo exists $tkMBoxArgs(-parent)]} {
+            unset tkMBoxArgs(-parent)
+        }
+        set tkMBoxArgs(-type) $type
+        set res [eval [list tk_messageBox] [array get tkMBoxArgs]]
+        set res [lsearch $lbut $res]
     }
     Widget::destroy "$path#Message"
     return $res

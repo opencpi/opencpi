@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  utils.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -258,10 +294,10 @@ proc BWidget::place { path w h args } {
 
     if { $arglen > 0 } {
         set where [lindex $args 0]
-	set list  [list "at" "center" "left" "right" "above" "below"]
+        set list  [list "at" "center" "left" "right" "above" "below"]
         set idx   [lsearch $list $where]
         if { $idx == -1 } {
-	    return -code error [BWidget::badOptionString position $where $list]
+            return -code error [BWidget::badOptionString position $where $list]
         }
         if { $idx == 0 } {
             set err [catch {
@@ -294,9 +330,9 @@ proc BWidget::place { path w h args } {
                 if { ![winfo exists $widget] } {
                     return -code error "BWidget::place: \"$widget\" does not exist"
                 }
-	    } else {
-		set widget .
-	    }
+            } else {
+                set widget .
+            }
             set sw [winfo screenwidth  $path]
             set sh [winfo screenheight $path]
             if { $idx == 1 } {
@@ -447,20 +483,20 @@ proc BWidget::focus { option path {refocus 1} } {
 
 # BWidget::refocus --
 #
-#	Helper function used to redirect focus from a container frame in 
-#	a megawidget to a component widget.  Only redirects focus if
-#	focus is already on the container.
+#        Helper function used to redirect focus from a container frame in 
+#        a megawidget to a component widget.  Only redirects focus if
+#        focus is already on the container.
 #
 # Arguments:
-#	container	container widget to redirect from.
-#	component	component widget to redirect to.
+#        container        container widget to redirect from.
+#        component        component widget to redirect to.
 #
 # Results:
-#	None.
+#        None.
 
 proc BWidget::refocus {container component} {
     if { [string equal $container [::focus]] } {
-	::focus $component
+        ::focus $component
     }
     return
 }
@@ -470,8 +506,8 @@ proc BWidget::refocus {container component} {
 # BWidget::SetFocusGrab --
 #   swap out current focus and grab temporarily (for dialogs)
 # Arguments:
-#   grab	new window to grab
-#   focus	window to give focus to
+#   grab        new window to grab
+#   focus        window to give focus to
 # Results:
 #   Returns nothing
 #
@@ -483,22 +519,22 @@ proc BWidget::SetFocusGrab {grab {focus {}}} {
     set oldGrab [::grab current $grab]
     lappend _focusGrab($index) $oldGrab
     if {[winfo exists $oldGrab]} {
-	lappend _focusGrab($index) [::grab status $oldGrab]
+        lappend _focusGrab($index) [::grab status $oldGrab]
     }
     # The "grab" command will fail if another application
     # already holds the grab.  So catch it.
     catch {::grab $grab}
     if {[winfo exists $focus]} {
-	::focus $focus
+        ::focus $focus
     }
 }
 
 # BWidget::RestoreFocusGrab --
 #   restore old focus and grab (for dialogs)
 # Arguments:
-#   grab	window that had taken grab
-#   focus	window that had taken focus
-#   destroy	destroy|withdraw - how to handle the old grabbed window
+#   grab        window that had taken grab
+#   focus        window that had taken focus
+#   destroy        destroy|withdraw - how to handle the old grabbed window
 # Results:
 #   Returns nothing
 #
@@ -506,40 +542,40 @@ proc BWidget::RestoreFocusGrab {grab focus {destroy destroy}} {
     variable _focusGrab
     set index "$grab,$focus"
     if {[info exists _focusGrab($index)]} {
-	foreach {oldFocus oldGrab oldStatus} $_focusGrab($index) break
-	unset _focusGrab($index)
+        foreach {oldFocus oldGrab oldStatus} $_focusGrab($index) break
+        unset _focusGrab($index)
     } else {
-	set oldGrab ""
+        set oldGrab ""
     }
 
     catch {::focus $oldFocus}
     ::grab release $grab
     if {[string equal $destroy "withdraw"]} {
-	wm withdraw $grab
+        wm withdraw $grab
     } else {
-	::destroy $grab
+        ::destroy $grab
     }
     if {[winfo exists $oldGrab] && [winfo ismapped $oldGrab]} {
-	if {[string equal $oldStatus "global"]} {
-	    ::grab -global $oldGrab
-	} else {
-	    ::grab $oldGrab
-	}
+        if {[string equal $oldStatus "global"]} {
+            ::grab -global $oldGrab
+        } else {
+            ::grab $oldGrab
+        }
     }
 }
 
 # BWidget::badOptionString --
 #
-#	Helper function to return a proper error string when an option
+#        Helper function to return a proper error string when an option
 #       doesn't match a list of given options.
 #
 # Arguments:
-#	type	A string that represents the type of option.
-#	value	The value that is in-valid.
-#       list	A list of valid options.
+#        type        A string that represents the type of option.
+#        value        The value that is in-valid.
+#       list        A list of valid options.
 #
 # Results:
-#	None.
+#        None.
 proc BWidget::badOptionString {type value list} {
     set last [lindex $list end]
     set list [lreplace $list end end]
@@ -567,7 +603,7 @@ proc BWidget::classes { class } {
     set classes [list $class]
     if {![info exists use($class)]} { return }
     foreach class $use($class) {
-	eval lappend classes [classes $class]
+        eval lappend classes [classes $class]
     }
     return [lsort -unique $classes]
 }
@@ -579,7 +615,7 @@ proc BWidget::library { args } {
     set libs    [list widget init utils]
     set classes [list]
     foreach class $args {
-	${class}::use
+        ${class}::use
         eval lappend classes [classes $class]
     }
 
@@ -587,11 +623,11 @@ proc BWidget::library { args } {
 
     set library ""
     foreach lib $libs {
-	if {![info exists use($lib,file)]} {
-	    set file [file join $::BWIDGET::LIBRARY $lib.tcl]
-	} else {
-	    set file [file join $::BWIDGET::LIBRARY $use($lib,file).tcl]
-	}
+        if {![info exists use($lib,file)]} {
+            set file [file join $::BWIDGET::LIBRARY $lib.tcl]
+        } else {
+            set file [file join $::BWIDGET::LIBRARY $use($lib,file).tcl]
+        }
         append library [read_file $file]
     }
 
@@ -614,8 +650,8 @@ proc BWidget::write { filename {mode w} } {
 
     set classes [list]
     foreach class $use(classes) {
-	if {![inuse $class]} { continue }
-	lappend classes $class
+        if {![inuse $class]} { continue }
+        lappend classes $class
     }
 
     set fp [open $filename $mode]
@@ -628,29 +664,29 @@ proc BWidget::write { filename {mode w} } {
 
 # BWidget::bindMouseWheel --
 #
-#	Bind mouse wheel actions to a given widget.
+#        Bind mouse wheel actions to a given widget.
 #
 # Arguments:
-#	widget - The widget to bind.
+#        widget - The widget to bind.
 #
 # Results:
-#	None.
+#        None.
 proc BWidget::bindMouseWheel { widget } {
     if {[bind all <MouseWheel>] eq ""} {
-	# style::as and Tk 8.5 have global bindings
-	# Only enable these if no global binding for MouseWheel exists
-	bind $widget <MouseWheel> \
-	    {%W yview scroll [expr {-%D/24}]  units}
-	bind $widget <Shift-MouseWheel> \
-	    {%W yview scroll [expr {-%D/120}] pages}
-	bind $widget <Control-MouseWheel> \
-	    {%W yview scroll [expr {-%D/120}] units}
+        # style::as and Tk 8.5 have global bindings
+        # Only enable these if no global binding for MouseWheel exists
+        bind $widget <MouseWheel> \
+            {%W yview scroll [expr {-%D/24}]  units}
+        bind $widget <Shift-MouseWheel> \
+            {%W yview scroll [expr {-%D/120}] pages}
+        bind $widget <Control-MouseWheel> \
+            {%W yview scroll [expr {-%D/120}] units}
     }
 
     if {[bind all <Button-4>] eq ""} {
-	# style::as and Tk 8.5 have global bindings
-	# Only enable these if no global binding for them exists
-	bind $widget <Button-4> {event generate %W <MouseWheel> -delta  120}
-	bind $widget <Button-5> {event generate %W <MouseWheel> -delta -120}
+        # style::as and Tk 8.5 have global bindings
+        # Only enable these if no global binding for them exists
+        bind $widget <Button-4> {event generate %W <MouseWheel> -delta  120}
+        bind $widget <Button-5> {event generate %W <MouseWheel> -delta -120}
     }
 }

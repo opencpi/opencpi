@@ -1,3 +1,4 @@
+
 /* config.h.in is copied to config.h with substitutions made by
  * the configure script.
  */

@@ -1,3 +1,4 @@
+
 /* $Id: fasttime.h.in,v 1.3 2005/08/27 08:24:45 alexholkner Exp $ 
  *
  * Copyright (c) Internet2, 2005.  All rights reserved.
@@ -31,7 +32,7 @@
 #include <sys/time.h>
 #include <time.h>
 
-// FIXME Fix this in cpios
+// FIXME Fix this in ocpios
 #ifdef __APPLE__
 #ifndef CLOCK_REALTIME
 #include <sys/time.h>
@@ -149,7 +150,7 @@ int fasttime_getstatistics(fasttime_context_t context,
 
 
 /*
- *   THIS SECTION WAS ADDED FOR CPI
+ *   THIS SECTION WAS ADDED FOR OCPI
  */
 enum TimeBase {
   FTTB_System,

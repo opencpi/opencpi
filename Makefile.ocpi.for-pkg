@@ -1,0 +1,300 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
+
+
+all: bin
+
+ifneq ($(OCPI_OS),)
+SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
+endif
+
+include $(OCPI_BASE_DIR)/MakeVars.ocpi
+ifneq ($(OCPI_OUT_DIR),)
+OBJDIR = $(OCPI_OUT_DIR)
+else
+OBJDIR = .
+endif
+include $(OCPI_BASE_DIR)/Makefile.ocpi.common
+
+ifneq ($(wildcard Makefile.ocpi.imports),)
+include Makefile.ocpi.imports
+endif
+
+PACKAGE = $(notdir $(shell pwd))
+WINLIB = $(patsubst %,$(OBJDIR)/%.lib,$(PACKAGE))
+WINDLL = $(patsubst %,$(OBJDIR)/%.dll,$(PACKAGE))
+UNIXLIB = $(patsubst %,$(OBJDIR)/lib%.a,$(PACKAGE))
+UNIXSHLIB = $(patsubst %,$(OBJDIR)/lib%.$(SO),$(PACKAGE))
+EXPORTSHLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB))
+EXPORTLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXLIB))
+VXWORKSDKM = $(patsubst %,$(OBJDIR)/lib%.out,$(PACKAGE))
+
+ifeq ($(OCPI_OS),winnt)
+EXCLUDE_FACILITIES += linux vxworksdkm
+
+ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+PACKAGELIB = $(WINDLL)
+else
+PACKAGELIB = $(WINLIB)
+endif
+
+else
+ifneq ($(filter linux darwin,$(OCPI_OS)),)
+
+EXCLUDE_FACILITIES += winnt vxworksdkm
+ifeq ($(OCPI_OS),darwin)
+EXCLUDE_FACILITIES += pci smb_pcig
+endif
+ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+PACKAGELIB = $(EXPORTSHLIB)
+else
+PACKAGELIB = $(EXPORTLIB)
+endif
+
+else
+ifeq ($(OCPI_OS),vxworksdkm)
+
+EXCLUDE_FACILITIES += linux winnt
+ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+PACKAGELIB = $(VXWORKSDKM)
+else
+PACKAGELIB = $(UNIXLIB)
+endif
+
+endif
+endif
+endif
+
+GENERATED = $(filter-out $(EXCLUDE_FACILITIES),$(patsubst %/idl,%,$(wildcard */idl)))
+FACILITIES = $(filter-out bin lib Makefile $(EXCLUDE_FACILITIES),$(patsubst %,%,$(wildcard *)))
+
+CSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.c,$(FACILITIES))))
+CXXSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.cxx,$(FACILITIES)))) \
+	$(patsubst %.idl,%.cxx,$(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
+CPPSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.cpp,$(FACILITIES)))) \
+	$(patsubst %.idl,%.cpp,$(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
+
+ASMSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.asm,$(FACILITIES))))
+
+ifneq ($(OBJDIR),.)
+OBJECTS = $(sort $(patsubst %.c,$(OBJDIR)/%.obj,$(notdir $(CSOURCES))) \
+	$(patsubst %.cxx,$(OBJDIR)/%.obj,$(notdir $(CXXSOURCES))) \
+	$(patsubst %.cpp,$(OBJDIR)/%.obj,$(notdir $(CPPSOURCES))) \
+	$(patsubst %.asm,$(OBJDIR)/%.obj,$(notdir $(ASMSOURCES))))
+else
+OBJECTS = $(sort $(patsubst %.c,%.obj,$(CSOURCES)) \
+	$(patsubst %.cxx,%.obj,$(CXXSOURCES)) \
+	$(patsubst %.cpp,%.obj,$(CPPSOURCES)) \
+	$(patsubst %.asm,%.obj,$(ASMSOURCES)))
+endif
+
+.SUFFIXES:
+.PHONY: bin lib objects depends generated clean distclean cleanup distcleanup
+
+ifeq ($(findstring bin,$(EXCLUDE_FACILITIES)),bin)
+bin: lib
+else
+bin: lib
+	if test -d bin/src ; then \
+		if test -f bin/src/Makefile.ocpi ; then \
+			$(MAKE) -C bin/src -f Makefile.ocpi $(SYSTEMOPTION) ; \
+		else \
+			$(MAKE) -C bin/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-bin $(SYSTEMOPTION) ; \
+		fi ; \
+	fi
+endif
+
+lib: objects
+	if test -f Makefile.ocpi ; then \
+		$(MAKE) -f Makefile.ocpi $(PACKAGELIB) $(SYSTEMOPTION) ; \
+	else \
+		$(MAKE) -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-pkg $(SYSTEMOPTION) $(PACKAGELIB) ; \
+	fi
+
+ifneq ($(filter linux darwin,$(OCPI_OS)),)
+$(UNIXLIB): $(OBJECTS)
+	-rm -f $@
+	ar r $@ $(OBJECTS)
+
+$(EXPORTSHLIB): $(UNIXSHLIB)
+	if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir $(OCPI_BASE_DIR)/lib; fi
+	if ! test -d $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); then mkdir $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); fi
+	cp -p $(UNIXSHLIB) $@
+
+$(EXPORTLIB): $(UNIXLIB)
+	if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir $(OCPI_BASE_DIR)/lib; fi
+	if ! test -d $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); then mkdir $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); fi
+	cp -p $(UNIXLIB) $@
+
+$(UNIXSHLIB): $(OBJECTS)
+	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o $@ $(OBJECTS) \
+	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
+		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS)))
+endif
+
+ifeq ($(OCPI_OS),winnt)
+ifeq ($(WINNT_TOOLCHAIN),mingw)
+$(WINLIB): $(OBJECTS)
+	-rm -f $@
+	$(AR) r $@ $(OBJECTS)
+
+$(WINDLL): $(OBJECTS)
+	$(CXX) --shared -o $@ \
+		-Wl,--enable-runtime-pseudo-reloc \
+		$(OBJECTS) \
+		$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
+		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(BASICLIBS)
+else
+
+$(WINLIB): $(OBJECTS)
+	lib /nologo /OUT:$@ $(OBJECTS)
+
+ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+$(error Building Windows shared libraries with msvc is not supported yet.)
+endif
+
+$(WINDLL): $(OBJECTS)
+	echo "Not implemented yet."
+	exit 1
+
+endif
+endif
+
+ifeq ($(OCPI_OS),vxworksdkm)
+$(UNIXLIB): $(OBJECTS)
+	-rm -f $@
+	$(AR) r $@ $(OBJECTS)
+
+#
+# This is for building "shared" libraries for everything.
+#
+
+$(VXWORKSDKM): $(OBJECTS)
+	$(NM) $(OBJECTS) | $(MUNCH) \
+		> $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
+	$(CC) $(CFLAGS) -fdollars-in-identifiers \
+		-o $(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
+		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.c
+	$(CC) -o "$@" -r -nostdlib -Wl,-X \
+		-T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT \
+		$(OBJDIR)/$(basename $(notdir $@))-vxdkm-ctdc.o \
+		$(OBJECTS)
+endif
+
+objects: generated
+	if test "x$(OCPI_OUT_DIR)" != "x" ; then mkdir -p $(OCPI_OUT_DIR) ; fi
+	for facility in $(GENERATED) ; do \
+		if test -d $$facility/idl ; then \
+			if test -f $$facility/idl/Makefile.ocpi ; then \
+				$(MAKE) -C $$facility/idl -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+			else \
+				$(MAKE) -C $$facility/idl -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
+			fi ; \
+		fi || exit 1 ; \
+	done && \
+	for facility in $(FACILITIES) ; do \
+		if test -d $$facility/src ; then \
+			if test -f $$facility/src/Makefile.ocpi ; then \
+				$(MAKE) -C $$facility/src -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+			else \
+				$(MAKE) -C $$facility/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+			fi ; \
+		fi || exit 1 ; \
+	done
+
+generated:
+	for facility in $(GENERATED) ; do \
+		if test -d $$facility/idl ; then \
+			if test -f $$facility/idl/Makefile.ocpi ; then \
+				$(MAKE) -C $$facility/idl -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+			else \
+				$(MAKE) -C $$facility/idl -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
+			fi ; \
+		fi || exit 1 ; \
+	done && \
+	for facility in $(FACILITIES) ; do \
+		if test -d $$facility/src ; then \
+			if test -f $$facility/src/Makefile.ocpi ; then \
+				$(MAKE) -C $$facility/src -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+			else \
+				$(MAKE) -C $$facility/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+			fi ; \
+		fi || exit 1 ; \
+	done && \
+	if test -d bin/src ; then \
+		if test -f bin/src/Makefile.ocpi ; then \
+			$(MAKE) -C bin/src -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+		else \
+			$(MAKE) -C bin/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-bin $(SYSTEMOPTION) $@ ; \
+		fi ; \
+	fi
+
+clean distclean:
+	for facility in $(FACILITIES) $(EXCLUDE_FACILITIES) ; do \
+		if test -d $$facility/idl ; then \
+			if test -f $$facility/idl/Makefile.ocpi ; then \
+				$(MAKE) -C $$facility/idl -f Makefile.ocpi $@ ; \
+			else \
+				$(MAKE) -C $$facility/idl -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-idl $@ ; \
+			fi ; \
+		fi && \
+		if test -d $$facility/src ; then \
+			if test -f $$facility/src/Makefile.ocpi ; then \
+				$(MAKE) -C $$facility/src -f Makefile.ocpi $@ ; \
+			else \
+				$(MAKE) -C $$facility/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-src $@ ; \
+			fi ; \
+		fi || exit 1 ; \
+	done && \
+	if test -d bin/src ; then \
+		if test -f bin/src/Makefile.ocpi ; then \
+			$(MAKE) -C bin/src -f Makefile.ocpi $@ ; \
+		else \
+			$(MAKE) -C bin/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-bin $@ ; \
+		fi ; \
+	fi
+	-rm -f *vxdkm-ctdc* *.vxe *.exe *.obj *.out *.map *.o *.so *.dylib *.ilk *.sbr *.suo *.sln *.pdb *.bsc core* *.d *~
+	-rm -f $(OBJDIR)/*vxdkm-ctdc* $(OBJDIR)/*.vxe $(OBJDIR)/*.exe $(OBJDIR)/*.obj $(OBJDIR)/*.out $(OBJDIR)/*.map $(OBJDIR)/*.o $(OBJDIR)/*.so $(OBJDIR)/*.ilk $(OBJDIR)/*.dylib \
+		$(OBJDIR)/*.sbr $(OBJDIR)/*.suo $(OBJDIR)/*.sln $(OBJDIR)/*.pdb $(OBJDIR)/*.bsc $(OBJDIR)/core* $(OBJDIR)/*.d $(OBJDIR)/*~
+	-rm -f $(WINLIB) $(WINDLL) $(UNIXLIB) $(UNIXSHLIB) $(VXWORKSDKM)
+	-if test "x$(OCPI_OUT_DIR)" != "x" ; then rm -rf $(OCPI_OUT_DIR) ; fi
+	find . -name '*~' -exec rm {} \;
+	rm -rf $(OCPI_BASE_DIR)/lib/*.so;
+

@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 /*
  * Abstact:
@@ -31,29 +49,29 @@
 #include <DtSocketsXfer.h>
 #include <xfer_if.h>
 #include <xfer_internal.h>
-#include <CpiList.h>
-#include <CpiUtilHash.h>
-#include <CpiOsMisc.h>
+#include <OcpiList.h>
+#include <OcpiUtilHash.h>
+#include <OcpiOsMisc.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <CpiOsAssert.h>
-#include <CpiUtilAutoMutex.h>
+#include <OcpiOsAssert.h>
+#include <OcpiUtilAutoMutex.h>
 #include <DtExceptions.h>
-#include <CpiThread.h>
+#include <OcpiThread.h>
 
-#include <CpiOsSocket.h>
-#include <CpiOsServerSocket.h>
-#include <CpiOsClientSocket.h>
+#include <OcpiOsSocket.h>
+#include <OcpiOsServerSocket.h>
+#include <OcpiOsClientSocket.h>
 
 using namespace DataTransfer;
-using namespace CPI::Util;
-using namespace CPI::OS;
+using namespace OCPI::Util;
+using namespace OCPI::OS;
 
 
 #define TCP_BUFSIZE_READ 4096
 
-CPI::Util::VList SocketXferServices::m_map(0);
+OCPI::Util::VList SocketXferServices::m_map(0);
 
 #define SOCKET_RDMA_SUPPORT
 #ifdef SOCKET_RDMA_SUPPORT
@@ -79,13 +97,13 @@ class SocketSmemServices : public DataTransfer::SmemServices
       m_mem = new char[ep->size];
       memset( m_mem, 0, ep->size );
     };
-    CPI::OS::int32_t attach (EndPoint* loc){return 0;};
-    CPI::OS::int32_t detach (){return 0;}
-    void* map (CPI::OS::uint64_t offset, CPI::OS::uint32_t/* size */)
+    OCPI::OS::int32_t attach (EndPoint* loc){ ( void ) loc; return 0;};
+    OCPI::OS::int32_t detach (){return 0;}
+    void* map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t/* size */)
     {
       return &m_mem[offset];
     }
-    CPI::OS::int32_t unMap (){return 0;}
+    OCPI::OS::int32_t unMap (){return 0;}
     DataTransfer::EndPoint* getEndPoint (){return m_ep;}
     virtual ~SocketSmemServices ();
 
@@ -102,6 +120,10 @@ class SocketSmemServices : public DataTransfer::SmemServices
 
 
 struct SocketStartupParams {
+    SocketStartupParams ( )
+    : rsmem ( 0 ),
+      lsmem ( 0 )
+    { }
     SmemServices*  rsmem;        
     SmemServices*  lsmem;
 };
@@ -115,7 +137,7 @@ public:
     :m_startupParms(sp)
   {
     SocketEndPoint *rsep = static_cast<DataTransfer::SocketEndPoint*>(m_startupParms.rsmem->getEndPoint());
-    m_socket =   CPI::OS::ClientSocket::connect(rsep->ipAddress,rsep->portNum);
+    m_socket =   OCPI::OS::ClientSocket::connect(rsep->ipAddress,rsep->portNum);
     m_socket.linger(false);
   }
   ~ClientSocketT( )
@@ -123,10 +145,10 @@ public:
     printf("In ~ClientSocketT()\n");
     m_socket.close();
   }
-  CPI::OS::Socket& socket(){return m_socket;}
+  OCPI::OS::Socket& socket(){return m_socket;}
 
 private:
-  CPI::OS::Socket                m_socket;
+  OCPI::OS::Socket                m_socket;
   SocketStartupParams            m_startupParms;
 };
 
@@ -134,7 +156,7 @@ private:
 class ServerSocketHandler : public Thread
 {
 public:
-  ServerSocketHandler( CPI::OS::Socket & socket, SocketStartupParams & sp  )
+  ServerSocketHandler( OCPI::OS::Socket & socket, SocketStartupParams & sp  )
     :m_run(true), m_startupParms(sp),m_socket(socket){}
   virtual ~ServerSocketHandler()
   {
@@ -197,12 +219,12 @@ private:
   unsigned int    m_bytes_left;
   char   m_buf[TCP_BUFSIZE_READ];
   int    m_bidx;
-  CPI::OS::Socket & m_socket;
+  OCPI::OS::Socket & m_socket;
 
 };
 
 
-class SocketServerT : public CPI::Util::Thread
+class SocketServerT : public OCPI::Util::Thread
 {
 public:  
   SocketServerT( SocketStartupParams& sp )
@@ -218,17 +240,17 @@ public:
     catch( std::string & err ) {
       m_error=true;
       printf("Socket bind error. %s\n", err.c_str() );
-      cpiAssert(!"Unable to bind to socket");
+      ocpiAssert(!"Unable to bind to socket");
       return;
     }
     catch( ... ) {
       m_error=true;
-      cpiAssert(!"Unable to bind to socket");
+      ocpiAssert(!"Unable to bind to socket");
       return;
     }
     m_started = true;
     while ( ! m_stop )  {
-      CPI::OS::Socket s = m_server.accept();
+      OCPI::OS::Socket s = m_server.accept();
       s.linger(false);
       ServerSocketHandler * ssh = new ServerSocketHandler(s,m_startupParms);
       m_sockets.push_back( ssh );
@@ -236,12 +258,12 @@ public:
     }
   }
   void stop(){m_stop=true;}
-  void btr(){while (!m_started)CPI::OS::sleep(10);}
+  void btr(){while (!m_started)OCPI::OS::sleep(10);}
   bool error(){return m_error;}
 
 
 private:
-  CPI::OS::ServerSocket         m_server;
+  OCPI::OS::ServerSocket         m_server;
   std::vector<ServerSocketHandler*>  m_sockets;
   SocketStartupParams   m_startupParms;
   bool                  m_stop;
@@ -273,7 +295,7 @@ SocketXferFactory::~SocketXferFactory()
 void SocketXferFactory::clearCache()
 {
   SocketEndPoint *loc;
-  for ( CPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
+  for ( OCPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
     loc = static_cast<SocketEndPoint*>(g_locations.getEntry(n));
     delete loc;
   }
@@ -284,9 +306,9 @@ void SocketXferFactory::clearCache()
 // Get the location via the endpoint
 EndPoint* SocketXferFactory::getEndPoint( std::string& end_point  )
 { 
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   SocketEndPoint *loc;
-  for ( CPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
+  for ( OCPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
     loc = static_cast<SocketEndPoint*>(g_locations.getEntry(n));
     if ( end_point == loc->end_point ) {
       return loc;
@@ -336,15 +358,15 @@ XferServices* SocketXferFactory::getXferServices(SmemServices* source, SmemServi
  ***************************************/
 
 
-static CPI::OS::int32_t mailbox=1;
-static CPI::OS::int32_t portNum=40001;
-static CPI::OS::int32_t getNextMailBox()
+static OCPI::OS::int32_t mailbox=1;
+static OCPI::OS::int32_t portNum=40001;
+static OCPI::OS::int32_t getNextMailBox()
 {
 
   if ( mailbox == 1 ) {
-    const char* env = getenv("CPI_TRANSFER_MAILBOX");
+    const char* env = getenv("OCPI_TRANSFER_MAILBOX");
     if( !env || (env[0] == 0)) {
-      printf("Set ""CPI_TRANSFER_MAILBOX"" environment varible to control mailbox\n");
+      printf("Set ""OCPI_TRANSFER_MAILBOX"" environment varible to control mailbox\n");
     }
     else {
       mailbox = atoi(env);
@@ -353,15 +375,15 @@ static CPI::OS::int32_t getNextMailBox()
 
   return mailbox++;
 }
-static CPI::OS::int32_t getNextPortNum()
+static OCPI::OS::int32_t getNextPortNum()
 {
   return portNum++;
 }
 
 static std::string sep;
-std::string SocketXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
+std::string SocketXferFactory::allocateEndpoint(OCPI::OS::uint32_t *size )
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   std::string ep;
   char ip_addr[128];
 
@@ -377,9 +399,9 @@ std::string SocketXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
   strcpy( ip_addr, "127.0.0.1");
 #else
 
-  const char* env = getenv("CPI_TRANSFER_IP_ADDR");
+  const char* env = getenv("OCPI_TRANSFER_IP_ADDR");
   if( !env || (env[0] == 0)) {
-    printf("Set ""CPI_TRANSFER_IP_ADDR"" environment varible to set socket IP address\n");
+    printf("Set ""OCPI_TRANSFER_IP_ADDR"" environment varible to set socket IP address\n");
     gethostname(ip_addr,128);
   }
   else {
@@ -388,9 +410,9 @@ std::string SocketXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
 #endif
 
   int port;
-  const char* penv = getenv("CPI_TRANSFER_PORT");
+  const char* penv = getenv("OCPI_TRANSFER_PORT");
   if( !penv || (penv[0] == 0)) {
-    printf("Set ""CPI_TRANSFER_PORT"" environment varible to set socket IP address\n");
+    printf("Set ""OCPI_TRANSFER_PORT"" environment varible to set socket IP address\n");
     port = getNextPortNum();
   }
   else {
@@ -402,7 +424,7 @@ std::string SocketXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
   }
 
   char tep[128];
-  snprintf(tep,128,"cpi-socket-rdma://%s;%d:%d.%d.20",ip_addr,port,*size, getNextMailBox());
+  snprintf(tep,128,"ocpi-socket-rdma://%s;%d:%d.%d.20",ip_addr,port,*size, getNextMailBox());
   sep = ep = tep;  
   return ep;
 }
@@ -411,14 +433,14 @@ std::string SocketXferFactory::allocateEndpoint(CPI::OS::uint32_t *size )
 
 
 // Sets smem location data based upon the specified endpoint
-CPI::OS::int32_t 
+OCPI::OS::int32_t 
 SocketEndPoint::
 setEndpoint( std::string& ep )
 {
   EndPoint::setEndpoint(ep);
 
-  CPI::OS::uint32_t n,i=0;
-  CPI::OS::int32_t start=0;
+  OCPI::OS::uint32_t n,i=0;
+  OCPI::OS::int32_t start=0;
   char ipaddr[80];
   char sportNum[80];
   bool port=false;
@@ -459,11 +481,11 @@ SocketEndPoint::
 
 void SocketXferRequest::init (Creator cr, 
                            Flags flags, 
-                           CPI::OS::uint32_t srcoffs, 
+                           OCPI::OS::uint32_t srcoffs, 
                            Shape *psrcshape, 
-                           CPI::OS::uint32_t dstoffs, 
+                           OCPI::OS::uint32_t dstoffs, 
                            Shape *pdstshape, 
-                           CPI::OS::uint32_t length)
+                           OCPI::OS::uint32_t length)
 {
   m_creator = cr;
   m_flags = flags;
@@ -484,7 +506,7 @@ void SocketXferRequest::init (Creator cr,
 }
 
 
-void SocketXferRequest::modify( CPI::OS::uint32_t new_offsets[], CPI::OS::uint32_t old_offsets[] )
+void SocketXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )
 {
   int n=0;
   while ( new_offsets[n] ) {
@@ -525,9 +547,9 @@ void SocketXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 }
 
 // Create a transfer request
-XferRequest* SocketXferServices::copy (CPI::OS::uint32_t srcoffs, 
-                                    CPI::OS::uint32_t dstoffs, 
-                                    CPI::OS::uint32_t nbytes, 
+XferRequest* SocketXferServices::copy (OCPI::OS::uint32_t srcoffs, 
+                                    OCPI::OS::uint32_t dstoffs, 
+                                    OCPI::OS::uint32_t nbytes, 
                                     XferRequest::Flags flags,
                                     XferRequest*
                                     )
@@ -538,11 +560,11 @@ XferRequest* SocketXferServices::copy (CPI::OS::uint32_t srcoffs,
   add (pXferReq);
 
   // Begin exception block
-  CPI::OS::int32_t retVal = 0;
-  CPI_TRY
+  OCPI::OS::int32_t retVal = 0;
+  OCPI_TRY
     {
       // map flags
-      CPI::OS::int32_t newflags = 0;
+      OCPI::OS::int32_t newflags = 0;
       if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
       if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
 
@@ -553,10 +575,10 @@ XferRequest* SocketXferServices::copy (CPI::OS::uint32_t srcoffs,
       retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &pXferReq->getHandle());
       if (retVal)
         {
-          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
         }
     }
-  CPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
+  OCPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
     {
       remove (pXferReq);
       delete pXferReq;
@@ -568,8 +590,8 @@ XferRequest* SocketXferServices::copy (CPI::OS::uint32_t srcoffs,
 
 
 // Create a 2-dimensional transfer request
-XferRequest* SocketXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc, 
-                                      CPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
+XferRequest* SocketXferServices::copy2D (OCPI::OS::uint32_t srcoffs, Shape* psrc, 
+                                      OCPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
 {
   // Create a transfer request instance and save in list
   SocketXferRequest* pXferReq = new SocketXferRequest (this);
@@ -577,7 +599,7 @@ XferRequest* SocketXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc,
   add (pXferReq);
 
   // Begin exception block
-  CPI::OS::int32_t retVal = 0;
+  OCPI::OS::int32_t retVal = 0;
   try
     {
       // Invoke original code.
@@ -586,7 +608,7 @@ XferRequest* SocketXferServices::copy2D (CPI::OS::uint32_t srcoffs, Shape* psrc,
       //                        retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
       if (retVal)
         {
-          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
         }
     }
   catch( ... )
@@ -608,7 +630,7 @@ XferRequest* SocketXferServices::group (XferRequest* preqs[])
   add (pXferReq);
 
   // Begin exception handler
-  CPI::OS::int32_t retVal = 0;
+  OCPI::OS::int32_t retVal = 0;
   XF_transfer* handles = 0;
   try 
     {
@@ -626,7 +648,7 @@ XferRequest* SocketXferServices::group (XferRequest* preqs[])
       retVal = xfer_group (handles, 0, &pXferReq->getHandle());
       if (retVal)
         {
-          CPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
+          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
         }
     }
   catch( ... )
@@ -651,7 +673,7 @@ void SocketXferServices::release (XferRequest* preq)
 // remove all transfer request instances from the list for "this"
 void SocketXferServices::releaseAll ()
 {
-  for ( CPI::OS::uint32_t n=0; n<m_map.size(); n++ ) {
+  for ( OCPI::OS::uint32_t n=0; n<m_map.size(); n++ ) {
     SocketXferRequest* req = static_cast<SocketXferRequest*>(m_map[n]);
     delete req;
   }
@@ -694,14 +716,14 @@ SocketSmemServices::
 
 
 namespace DataTransfer {
-  CPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, CPI::OS::int32_t, SocketXferRequest* req);
+  OCPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t, SocketXferRequest* req);
 }
 void 
 SocketXferRequest::
 start(Shape* , Shape*)
 {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)m_thandle;  
-  CPI::OS::int32_t pio_rc=0;
+  OCPI::OS::int32_t pio_rc=0;
   if (xf_transfer->first_pio_transfer) {
     pio_rc = xfer_socket_starti(xf_transfer->first_pio_transfer, 0, this);
   }
@@ -719,9 +741,9 @@ namespace DataTransfer {
 static void
 action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
 {
-  CPI::OS::int32_t nwords = ((transfer->nbytes + 5) / 8) ;
-  CPI::OS::int32_t *src1 = (CPI::OS::int32_t *)transfer->src_va;
-  CPI::OS::int32_t *dst1 = (CPI::OS::int32_t *)transfer->dst_va;    
+  // OCPI::OS::int32_t nwords = ((transfer->nbytes + 5) / 8) ;
+  OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
+  // OCPI::OS::int32_t *dst1 = (OCPI::OS::int32_t *)transfer->dst_va;    
 
   //#define TRACE_PIO_XFERS  
 #ifdef TRACE_PIO_XFERS
@@ -736,7 +758,7 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
 
 #ifndef NDEBUG
   printf("Sending IP header\n");
-  CPI::OS::sleep( 100 );
+  OCPI::OS::sleep( 100 );
 #endif
   long long nb=0;  
   unsigned long btt = sizeof(SocketDataHeader);
@@ -753,7 +775,7 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
 
 #ifndef NDEBUG
   printf("Sending IP data\n");
-  CPI::OS::sleep( 100 );
+  OCPI::OS::sleep( 100 );
 #endif
 
 
@@ -772,7 +794,7 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
 
 
   /*
-  for (CPI::OS::int32_t i=0; i < nwords*2; i++) {
+  for (OCPI::OS::int32_t i=0; i < nwords*2; i++) {
     dst1[i] = src1[i];
   }
   */
@@ -781,8 +803,8 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
 }
 
 
-CPI::OS::int32_t
-xfer_socket_starti(PIO_transfer pio_transfer, CPI::OS::int32_t, SocketXferRequest* req)
+OCPI::OS::int32_t
+xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t, SocketXferRequest* req)
 {
   PIO_transfer transfer = pio_transfer;
   do {

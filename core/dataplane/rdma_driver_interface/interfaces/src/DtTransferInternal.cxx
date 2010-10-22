@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 /*
  * Abstact:
@@ -40,15 +58,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <CpiOsAssert.h>
-#include <CpiOsMisc.h>
-#include <CpiUtilHash.h>
-#include <CpiUtilAutoMutex.h>
+#include <OcpiOsAssert.h>
+#include <OcpiOsMisc.h>
+#include <OcpiUtilHash.h>
+#include <OcpiUtilAutoMutex.h>
 #include <DtTransferInternal.h>
 
 using namespace DataTransfer;
-using namespace CPI::Util;
-using namespace CPI::OS;
+using namespace OCPI::Util;
+using namespace OCPI::OS;
 
 
 XferFactoryManager& XferFactoryManager::getFactoryManager()
@@ -63,14 +81,14 @@ XferFactoryManager& XferFactoryManager::getFactoryManager()
 // Register the Data transfer class
 void XferFactoryManager::registerFactory( XferFactory* dt )
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   insert_to_list( &m_registeredTransfers, dt, 64,8);
 }
 
 // Register the Data transfer class
 void XferFactoryManager::unregisterFactory( XferFactory* dt )
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   remove_from_list( &m_registeredTransfers, dt);
 }
 
@@ -79,7 +97,7 @@ void XferFactoryManager::unregisterFactory( XferFactory* dt )
 // in the system.  Note that some of the endpoints may not be finalized. 
 std::vector<std::string> XferFactoryManager::getListOfSupportedEndpoints()
 {
-  CPI::OS::uint32_t default_ep_size = 10*1024*1024;
+  OCPI::OS::uint32_t default_ep_size = 10*1024*1024;
 
 
   XferFactory* factory;
@@ -156,7 +174,7 @@ XferFactory* XferFactoryManager::find( const char* ep1, const char* ep2 )
 XferFactory* XferFactoryManager::find( std::string& ep1, std::string& ep2 )
 {
   XferFactory* factory;
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
   for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
     factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
@@ -170,7 +188,7 @@ XferFactory* XferFactoryManager::find( std::string& ep1, std::string& ep2 )
 
 
 XferFactoryManager::XferFactoryManager()
-  :CPI::Util::DriverManager("DataTransfer"),
+  :OCPI::Util::DriverManager("DataTransfer"),
    m_refCount(0),m_init(false),m_mutex(true),
   m_resources(0)
 {
@@ -186,12 +204,12 @@ XferFactoryManager::~XferFactoryManager()
 
 void XferFactoryManager::startup()
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
   // We will find any drivers that were statically registered and add them
   // to our list
-  std::vector<CPI::Util::Driver*> & list = getDrivers();
-  std::vector<CPI::Util::Driver*>::iterator it;
+  std::vector<OCPI::Util::Driver*> & list = getDrivers();
+  std::vector<OCPI::Util::Driver*>::iterator it;
   for (it=list.begin(); it!=list.end(); it++ ) {
     registerFactory( static_cast<XferFactory*>( (*it) ) );
   }
@@ -207,7 +225,7 @@ void XferFactoryManager::startup()
 // Shuts down the transer sub-system
 void XferFactoryManager::shutdown()
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   m_refCount--;
   if ( m_refCount == 0 ) {
     clearCache();
@@ -221,7 +239,7 @@ void XferFactoryManager::shutdown()
 // Default constructor
 XferFactory::XferFactory(const char* name )
   throw()
-  : CPI::Util::Driver( "DataTransfer", name, true )
+  : OCPI::Util::Driver( "DataTransfer", name, true )
 {
 }
 
@@ -261,13 +279,13 @@ typedef struct template_list_item_ TList_Item;
 
 void XferFactoryManager::clearCache()
 {
-  for (CPI::OS::int32_t i=0; i<get_nentries(&m_templatelist); i++) {
+  for (OCPI::OS::int32_t i=0; i<get_nentries(&m_templatelist); i++) {
     TList_Item *item = static_cast<TList_Item*>(get_entry(&m_templatelist, i));
     delete item;
   }
   destroy_list(&m_templatelist);
 
-  for ( CPI::OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
+  for ( OCPI::OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
     SMBResources* res = static_cast<SMBResources*>(m_resources.getEntry(n));
     delete res;
   }
@@ -341,8 +359,8 @@ XferFactoryManager::add_template(std::string& src, std::string& dst, XferService
 
 SMBResources* XferFactoryManager::findResource(const char* ep)
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
-  for ( CPI::OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  for ( OCPI::OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
     SMBResources* res = static_cast<SMBResources*>(m_resources.getEntry(n));
     if ( res->sMemServices->getEndPoint()->end_point == ep ) {
       return res;
@@ -356,11 +374,11 @@ void XferFactoryManager::deleteSMBResources(
                                             EndPoint* loc)
 {
 
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
   SMBResources* sr;        
   sr = findResource( loc->end_point.c_str() );  
-  cpiAssert( sr );
+  ocpiAssert( sr );
   m_resources.remove(sr);  
   delete sr;
 }
@@ -370,7 +388,7 @@ SMBResources* XferFactoryManager::createSMBResources(
                                                      EndPoint* loc)
 
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
   SMBResources* sr;        
   sr = findResource( loc->end_point.c_str() );
@@ -378,34 +396,34 @@ SMBResources* XferFactoryManager::createSMBResources(
     return sr;
   }
   else {
-    cpiAssert( loc->size );
+    ocpiAssert( loc->size );
     sr = new SMBResources;
   }
 
   std::string nuls;
   XferFactory* factory = find( loc->end_point, nuls );
   if ( ! factory ) {
-    throw CPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
+    throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
 
   sr->sMemServices = factory->createSmemServices( loc );
   if ( !sr->sMemServices ) {
-    throw CPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
+    throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
      
   sr->sMemResourceMgr = CreateResourceServices();
   sr->sMemResourceMgr->createLocal( loc->size );
-  CPI::OS::uint64_t offset;
+  OCPI::OS::uint64_t offset;
   if ( sr->sMemResourceMgr->alloc( sizeof(ContainerComms), 
                                    0, &offset) != 0 ) {
-    throw CPI::Util::EmbeddedException(  NO_MORE_SMB, loc->end_point.c_str() );
+    throw OCPI::Util::EmbeddedException(  NO_MORE_SMB, loc->end_point.c_str() );
   }
 
   sr->m_comms = static_cast<DataTransfer::ContainerComms*>
     (sr->sMemServices->map(offset,sizeof(ContainerComms)));
 
   if ( ! sr->m_comms ) {
-    throw CPI::Util::EmbeddedException(  SMB_MAP_ERROR, loc->end_point.c_str());
+    throw OCPI::Util::EmbeddedException(  SMB_MAP_ERROR, loc->end_point.c_str());
   }
 
   memset( sr->m_comms, 0, sizeof(ContainerComms) );
@@ -420,7 +438,7 @@ SMBResources* XferFactoryManager::createSMBResources(
 SMBResources* XferFactoryManager::getSMBResources(        
                                                   EndPoint* ep )
 {
-  cpiAssert( ep );
+  ocpiAssert( ep );
   if ( ep->resources ) {
     return ep->resources;
   }
@@ -437,10 +455,10 @@ SMBResources* XferFactoryManager::getSMBResources(
 SMBResources* XferFactoryManager::getSMBResources(        
                                                   std::string& ep)
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
   if ( ep.length() == 0 ) {
-    throw CPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, "Null Endpoint");
+    throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, "Null Endpoint");
   }
   SMBResources* sr = findResource( ep.c_str() );
   if ( sr ) {
@@ -455,7 +473,7 @@ SMBResources* XferFactoryManager::getSMBResources(
   std::string nuls;
   XferFactory* factory = find( ep, nuls );
   if ( ! factory ) {
-    throw CPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, ep.c_str());
+    throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, ep.c_str());
   }
   EndPoint* loc = factory->getEndPoint( ep );
   sr->sMemServices = factory->createSmemServices(loc);
@@ -489,10 +507,10 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
                                    source->sMemServices->getEndPoint(), 
                                    target->sMemServices->getEndPoint() );
   if ( ! ptemplate ) {
-    cpiAssert(0);
+    ocpiAssert(0);
   }
 
-  CPI::OS::uint32_t offset = sizeof(ContainerComms::MailBox) * m_slot + sizeof(CPI::OS::uint32_t);
+  OCPI::OS::uint32_t offset = sizeof(ContainerComms::MailBox) * m_slot + sizeof(OCPI::OS::uint32_t);
 
 #ifndef NDEBUG
   printf("In make request with offset = %d\n", offset );
@@ -527,16 +545,16 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
   ptransfer_c->start();
 
   while( ptransfer_c->getStatus() ) {
-    CPI::OS::sleep(0);
+    OCPI::OS::sleep(0);
   }
 
   return true;
 }
 
 // Statically available allocation routine
-std::string XferFactoryManager::allocateEndpoint(std::string& protocol, CPI::OS::uint32_t *size)
+std::string XferFactoryManager::allocateEndpoint(std::string& protocol, OCPI::OS::uint32_t *size)
 {
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
                 
   XferFactory* factory;
   if ( protocol.length() == 0 ) {
@@ -566,7 +584,7 @@ XferServices* XferFactoryManager::getService(
   SMBResources* target_info;
   XferServices* pxfer;
 
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
   /* Check to see if we already have a transfer template */
   if (get_template(s_endpoint->end_point.c_str(), t_endpoint->end_point.c_str(), pxfer)) {
@@ -603,7 +621,7 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
   SMBResources* target_info;
   XferServices* pxfer;
 
-  CPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
   /* Check to see if we already have a transfer template */
   if (get_template(source_sname.c_str(), target_sname.c_str(), pxfer)) {

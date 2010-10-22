@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 #! /bin/sh
 # the next line restarts using expect \
 exec tclsh8.5 "$0" ${1+"$@"}
@@ -17,7 +53,7 @@ set hostname [info hostname]
 catch {
     set testsock [socket -server none -myaddr [info hostname] 0]
     catch {
-	set hostname [lindex [fconfigure $testsock -sockname] 0] ;# IP address
+        set hostname [lindex [fconfigure $testsock -sockname] 0] ;# IP address
     }
     close $testsock
 }
@@ -56,8 +92,8 @@ proc MakeAppTop {app} {
     entry $appName.update.e -width 4
     label $appName.update.l3 -text "seconds"
     pack $appName.update.l1 $appName.update.b $appName.update.l2 \
-	$appName.update.e $appName.update.l3 \
-	-side left -padx 1
+        $appName.update.e $appName.update.l3 \
+        -side left -padx 1
     pack $appName.update -side top -pady 10
     bind $appName.update.e <Return> "AutoUpdate $appName"
 
@@ -68,13 +104,13 @@ proc MakeAppTop {app} {
 
     set idx 0
     foreach p $props {
-	array set prop $p
-	set value [lindex $prop(value) 1]
-	set wname "l[incr idx]"
-	LabelEntry $propsFrame.$wname -label $prop(id) -text $value \
-	    -labelwidth 20 -width 20 -labelanchor e \
-	    -command "Configure $appName $prop(id)"
-	pack $propsFrame.$wname -side top -fill x
+        array set prop $p
+        set value [lindex $prop(value) 1]
+        set wname "l[incr idx]"
+        LabelEntry $propsFrame.$wname -label $prop(id) -text $value \
+            -labelwidth 20 -width 20 -labelanchor e \
+            -command "Configure $appName $prop(id)"
+        pack $propsFrame.$wname -side top -fill x
     }
 
     pack $appName.sw -side top -fill both -expand yes
@@ -97,15 +133,15 @@ proc Configure {appName propId} {
     set props [list]
 
     foreach p $::appProps($appName) {
-	array set prop $p
-	set wname "l[incr idx]"
+        array set prop $p
+        set wname "l[incr idx]"
 
-	if {$prop(id) eq $propId} {
-	    set type [lindex $prop(value) 0]
-	    set value [$propsFrame.$wname cget -text]
-	    lappend props [list id $propId value [list $type $value]]
-	    break
-	}
+        if {$prop(id) eq $propId} {
+            set type [lindex $prop(value) 0]
+            set value [$propsFrame.$wname cget -text]
+            lappend props [list id $propId value [list $type $value]]
+            break
+        }
     }
 
     set ::status "Configuring \"$name\" ..."
@@ -126,18 +162,18 @@ proc Update {appName} {
     $app query props
 
     foreach p $props {
-	array set prop $p
-	set ap($prop(id)) [lindex $prop(value) 1]
+        array set prop $p
+        set ap($prop(id)) [lindex $prop(value) 1]
     }
 
     set propsFrame [$appName.sw.sf getframe]
 
     foreach p $::appProps($appName) {
-	array set prop $p
-	set wname "l[incr idx]"
-	if {[info exists ap($prop(id))]} {
-	    $propsFrame.$wname configure -text $ap($prop(id))
-	}
+        array set prop $p
+        set wname "l[incr idx]"
+        if {[info exists ap($prop(id))]} {
+            $propsFrame.$wname configure -text $ap($prop(id))
+        }
     }
 }
 
@@ -149,14 +185,14 @@ proc DoAutoUpdate {appName} {
 
 proc AutoUpdate {appName} {
     if {[info exists ::appAutoUpdate($appName)]} {
-	after cancel $::appAutoUpdate($appName)
-	unset ::appAutoUpdate($appName)
+        after cancel $::appAutoUpdate($appName)
+        unset ::appAutoUpdate($appName)
     }
 
     set value [$appName.update.e get]
 
     if {$value eq "" || $value == 0} {
-	return
+        return
     }
 
     set ::appAutoInterval [expr {$value * 1000}]
@@ -186,8 +222,8 @@ proc Terminate {appName} {
     set ::status "Terminating application \"$name\" ..."
 
     if {[info exists ::appAutoUpdate($appName)]} {
-	after cancel $::appAutoUpdate($appName)
-	unset ::appAutoUpdate($appName)
+        after cancel $::appAutoUpdate($appName)
+        unset ::appAutoUpdate($appName)
     }
 
     unset ::appProps($appName)
@@ -211,13 +247,13 @@ proc Create {afName} {
     set propsFrame [$afName.sw.sf getframe]
 
     foreach p $::afProps($afName) {
-	array set prop $p
-	set wname "l[incr idx]"
-	set type [lindex $prop(value) 0]
-	set value [$propsFrame.$wname cget -text]
-	if {$value ne ""} {
-	    lappend props [list id $prop(id) value [list $type $value]]
-	}
+        array set prop $p
+        set wname "l[incr idx]"
+        set type [lindex $prop(value) 0]
+        set value [$propsFrame.$wname cget -text]
+        if {$value ne ""} {
+            lappend props [list id $prop(id) value [list $type $value]]
+        }
     }
 
     set name [$afName.name.e get]
@@ -234,7 +270,7 @@ proc MakeAppFacTop {af {zipInfo {}}} {
     set ::appFactories($afName) $af
 
     if {[llength $zipInfo]} {
-	set ::zipInfo($afName) $zipInfo
+        set ::zipInfo($afName) $zipInfo
     }
 
     toplevel $afName -width 600 -height 480
@@ -258,12 +294,12 @@ proc MakeAppFacTop {af {zipInfo {}}} {
 
     set idx 0
     foreach p $::afProps($afName) {
-	array set prop $p
-	set value [lindex $prop(value) 1]
-	set wname "l[incr idx]"
-	LabelEntry $propsFrame.$wname -label $prop(id) -text $value \
-	    -labelwidth 20 -width 20 -labelanchor e
-	pack $propsFrame.$wname -side top -fill x
+        array set prop $p
+        set value [lindex $prop(value) 1]
+        set wname "l[incr idx]"
+        LabelEntry $propsFrame.$wname -label $prop(id) -text $value \
+            -labelwidth 20 -width 20 -labelanchor e
+        pack $propsFrame.$wname -side top -fill x
     }
 
     pack $afName.sw -side top -fill both -expand yes
@@ -284,8 +320,8 @@ proc Uninstall {afName} {
     unset ::appFactories($afName)
     unset ::afProps($afName)
     if {[info exists ::zipInfo($afName)]} {
-	eval vfs::zip::Unmount $::zipInfo($afName)
-	unset ::zipInfo($afName)
+        eval vfs::zip::Unmount $::zipInfo($afName)
+        unset ::zipInfo($afName)
     }
 }
 
@@ -299,21 +335,21 @@ proc ScanNamingContext {} {
     set nc [corba::string_to_object $::ncIor]
 
     if {[$nc _is_a IDL:CF/DomainManager:1.0]} {
-	set eds [cfutil::findExecutableDevicesInDomainManager $nc]
+        set eds [cfutil::findExecutableDevicesInDomainManager $nc]
     } else {
-	set eds [cfutil::findExecutableDevicesInNamingContext $nc]
+        set eds [cfutil::findExecutableDevicesInNamingContext $nc]
     }
 
     set numEds [llength $eds]
 
     if {$numEds == 1} {
-	set plural ""
+        set plural ""
     } else {
-	set plural "s"
+        set plural "s"
     }
 
     foreach ed $eds {
-	corba::release $ed
+        corba::release $ed
     }
 
     corba::release $nc
@@ -325,31 +361,31 @@ proc UpdateSadCombo {} {
     package require vfs
     package require vfs::zip
     if {[file extension $::appFile] eq ".zip"} {
-	set zipFd [vfs::zip::Mount $::appFile /zip]
-	set sads [glob -nocomplain -tails -directory /zip {*.[Ss][Aa][Dd]*}]
-	vfs::zip::Unmount $zipFd /zip
-	.sad.e configure -values $sads
-	if {[llength $sads]} {
-	    set ::sadFile [lindex $sads 0]
-	}
+        set zipFd [vfs::zip::Mount $::appFile /zip]
+        set sads [glob -nocomplain -tails -directory /zip {*.[Ss][Aa][Dd]*}]
+        vfs::zip::Unmount $zipFd /zip
+        .sad.e configure -values $sads
+        if {[llength $sads]} {
+            set ::sadFile [lindex $sads 0]
+        }
     } else {
-	.sad.e configure -values [list $::appFile]
-	set ::sadFile $::appFile
+        .sad.e configure -values [list $::appFile]
+        set ::sadFile $::appFile
     }
 }
 
 proc BrowseForFile {} {
     set fileTypes {
-	{{SAD Files} {.sad.xml}}
-	{{ZIP Files} {.zip}}
-	{{All Files} *}
+        {{SAD Files} {.sad.xml}}
+        {{ZIP Files} {.zip}}
+        {{All Files} *}
     }
 
     set appFile [tk_getOpenFile -title "Select Application File ..." \
-		     -filetypes $fileTypes]
+                     -filetypes $fileTypes]
 
     if {$appFile == ""} {
-	continue
+        continue
     }
 
     set ::appFile $appFile
@@ -360,44 +396,44 @@ proc Install {} {
     set nc [corba::string_to_object $::ncIor]
 
     if {[$nc _is_a IDL:CF/DomainManager:1.0]} {
-	set eds [cfutil::findExecutableDevicesInDomainManager $nc]
+        set eds [cfutil::findExecutableDevicesInDomainManager $nc]
     } else {
-	set eds [cfutil::findExecutableDevicesInNamingContext $nc]
+        set eds [cfutil::findExecutableDevicesInNamingContext $nc]
     }
 
     if {[file extension $::appFile] eq ".zip"} {
-	package require vfs
-	package require vfs::zip
-	incr ::uniqueCounter
-	set zipMount "/zip${::uniqueCounter}"
-	set zipFd [vfs::zip::Mount $::appFile $zipMount]
-	set sadFile [file join $zipMount $::sadFile]
-	set isZip 1
+        package require vfs
+        package require vfs::zip
+        incr ::uniqueCounter
+        set zipMount "/zip${::uniqueCounter}"
+        set zipFd [vfs::zip::Mount $::appFile $zipMount]
+        set sadFile [file join $zipMount $::sadFile]
+        set isZip 1
     } else {
-	set isZip 0
-	set sadFile $::appFile
+        set isZip 0
+        set sadFile $::appFile
     }
 
     corba::try {
-	set af [cfutil::ApplicationFactory \#auto $eds $sadFile $::verbose]
+        set af [cfutil::ApplicationFactory \#auto $eds $sadFile $::verbose]
     } catch {... oops} {
-	set savedInfo $::errorInfo
-	if {$isZip} {
-	    vfs::zip::Unmount $zipFd $zipMount
-	}
-	error $oops $savedInfo
+        set savedInfo $::errorInfo
+        if {$isZip} {
+            vfs::zip::Unmount $zipFd $zipMount
+        }
+        error $oops $savedInfo
     } finally {
-	foreach ed $eds {
-	    corba::release $ed
-	}
+        foreach ed $eds {
+            corba::release $ed
+        }
 
-	corba::release $nc
+        corba::release $nc
     }
 
     if {$isZip} {
-	MakeAppFacTop $af [list $zipFd $zipMount]
+        MakeAppFacTop $af [list $zipFd $zipMount]
     } else {
-	MakeAppFacTop $af
+        MakeAppFacTop $af
     }
 }
 

@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 
 /*
@@ -28,27 +46,27 @@
 #include <stdio.h>
 #include <sstream>
 #include <stdlib.h>
-#include <CpiOsMisc.h>
-#include <CpiOsAssert.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
-#include <CpiTransportServer.h>
-#include <CpiTransportClient.h>
-#include <CpiRDTInterface.h>
+#include <OcpiTransportServer.h>
+#include <OcpiTransportClient.h>
+#include <OcpiRDTInterface.h>
 #include <test_utilities.h>
-#include <CpiUtilCommandLineConfiguration.h>
+#include <OcpiUtilCommandLineConfiguration.h>
 #include <UtZeroCopyIOWorkers.h>
-#include <CpiTimeEmit.h>
+#include <OcpiTimeEmit.h>
 
-#include <CpiThread.h>
+#include <OcpiThread.h>
 
-using namespace CPI::DataTransport;
+using namespace OCPI::DataTransport;
 using namespace DataTransport::Interface;
-using namespace CPI::Container;
-using namespace CPI;
-using namespace CPI::CONTAINER_TEST;
+using namespace OCPI::Container;
+using namespace OCPI;
+using namespace OCPI::CONTAINER_TEST;
 
-static int   CPI_RCC_DATA_BUFFER_SIZE   = 1024;
-static int   CPI_USE_POLLING            = 1;
+static int   OCPI_RCC_DATA_BUFFER_SIZE   = 1024;
+static int   OCPI_USE_POLLING            = 1;
 
 static CWorker PRODUCER(0,1),  LOOPBACK(1,1), CONSUMER(1,0);
 
@@ -57,11 +75,11 @@ static CWorker PRODUCER(0,1),  LOOPBACK(1,1), CONSUMER(1,0);
 #define LOOPBACK_INPUT_PORT   PORT_0
 #define LOOPBACK_OUTPUT_PORT  PORT_1
 
-class CpiRccBinderConfigurator
-  : public CPI::Util::CommandLineConfiguration
+class OcpiRccBinderConfigurator
+  : public OCPI::Util::CommandLineConfiguration
 {
 public:
-  CpiRccBinderConfigurator ();
+  OcpiRccBinderConfigurator ();
 
 public:
   bool help;
@@ -73,34 +91,34 @@ private:
 };
 
 // Configuration
-static  CpiRccBinderConfigurator config;
+static  OcpiRccBinderConfigurator config;
 
-CpiRccBinderConfigurator::
-CpiRccBinderConfigurator ()
-  : CPI::Util::CommandLineConfiguration (g_options),
+OcpiRccBinderConfigurator::
+OcpiRccBinderConfigurator ()
+  : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
     verbose (false)
 {
 }
 
-CPI::Util::CommandLineConfiguration::Option
-CpiRccBinderConfigurator::g_options[] = {
- 
-  { CPI::Util::CommandLineConfiguration::OptionType::MULTISTRING,
+OCPI::Util::CommandLineConfiguration::Option
+OcpiRccBinderConfigurator::g_options[] = {
+
+  { OCPI::Util::CommandLineConfiguration::OptionType::MULTISTRING,
     "endpoints", "container endpoints",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::endpoints) },
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::endpoints), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "verbose", "Be verbose",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::verbose) },
-  { CPI::Util::CommandLineConfiguration::OptionType::NONE,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::verbose), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
     "help", "This message",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::help) },
-  { CPI::Util::CommandLineConfiguration::OptionType::END }
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::help), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::END, 0, 0, 0, 0 }
 };
 
 static
 void
-printUsage (CpiRccBinderConfigurator & config,
+printUsage (OcpiRccBinderConfigurator & config,
             const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
@@ -122,13 +140,14 @@ static void createWorkers(std::vector<CApp>& ca )
 
 static void createPorts( std::vector<CApp>& ca )
 {
-  try { 
+  ( void ) ca;
+  try {
     PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port = &
       PRODUCER.worker->createOutputPort(  PRODUCER_OUTPUT_PORT,
                                        PRODUCER.pdata[PRODUCER_OUTPUT_PORT].bufferCount,
-                                       CPI_RCC_DATA_BUFFER_SIZE, NULL);
+                                       OCPI_RCC_DATA_BUFFER_SIZE, NULL);
     PRODUCER.sPortCount++;
-                
+
   }
   CATCH_ALL_RETHROW( "creating producer source port" )
 
@@ -137,30 +156,30 @@ static void createPorts( std::vector<CApp>& ca )
       LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].port = &
         LOOPBACK.worker->createOutputPort(  LOOPBACK_OUTPUT_PORT,
                                          LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].bufferCount,
-                                         CPI_RCC_DATA_BUFFER_SIZE, NULL);
+                                         OCPI_RCC_DATA_BUFFER_SIZE, NULL);
       LOOPBACK.sPortCount++;
 
 
       /*
-      static CPI::Util::PValue cprops[] = {CPI::Util::PVString("endpoint",""),
-                                           CPI::Util::PVEnd };
+      static OCPI::Util::PValue cprops[] = {OCPI::Util::PVString("endpoint",""),
+                                           OCPI::Util::PVEnd };
 
       std::vector<std::string> eps = ca[LOOPBACK.cid].container->getSupportedEndpoints();
       cprops[0].vString = (char*)eps[2].c_str();
       printf("TEST IS FORCING ENDPOINT %s\n", cprops[0].vString );
 
-      
 
-      LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port = 
+
+      LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port =
         ca[LOOPBACK.cid].container->createTargetPort( LOOPBACK.worker, LOOPBACK_INPUT_PORT,
                                                       LOOPBACK.pdata[LOOPBACK_INPUT_PORT].bufferCount,
-                                                      CPI_RCC_DATA_BUFFER_SIZE, cprops);
+                                                      OCPI_RCC_DATA_BUFFER_SIZE, cprops);
       */
 
       LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port = &
         LOOPBACK.worker->createInputPort( LOOPBACK_INPUT_PORT,
                                        LOOPBACK.pdata[LOOPBACK_INPUT_PORT].bufferCount,
-                                       CPI_RCC_DATA_BUFFER_SIZE, NULL );
+                                       OCPI_RCC_DATA_BUFFER_SIZE, NULL );
 
 
 
@@ -175,7 +194,7 @@ static void createPorts( std::vector<CApp>& ca )
       CONSUMER.pdata[CONSUMER_INPUT_PORT].port = &
         CONSUMER.worker->createInputPort( CONSUMER_INPUT_PORT,
                                        CONSUMER.pdata[CONSUMER_INPUT_PORT].bufferCount,
-                                       CPI_RCC_DATA_BUFFER_SIZE,NULL);
+                                       OCPI_RCC_DATA_BUFFER_SIZE,NULL);
       CONSUMER.tPortCount++;
     }
   CATCH_ALL_RETHROW("creating consumer target port")
@@ -184,7 +203,8 @@ static void createPorts( std::vector<CApp>& ca )
 
 
 static void connectWorkers(std::vector<CApp>& ca )
-{
+{ 
+  ( void ) ca;
   PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->connect( *LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port,0,0 );
   LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].port->connect( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port,0,0 );
 }
@@ -194,9 +214,10 @@ static void connectWorkers(std::vector<CApp>& ca )
 #define BUFFERS_2_PROCESS 200;
 static void initWorkerProperties(int mode, std::vector<CApp>& ca )
 {
+  ( void ) ca;
   WCI_error wcie;
   int32_t  tprop[5], offset, nBytes;
-   
+
   // Set the producer buffer run count property to 0
   offset = offsetof(ProducerWorkerProperties,run2BufferCount);
   nBytes = sizeof( uint32_t );
@@ -210,7 +231,7 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   offset = offsetof(ProducerWorkerProperties,buffersProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie =  PRODUCER.worker->write( offset, 
+  wcie =  PRODUCER.worker->write( offset,
                                   nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
   wcie =  PRODUCER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -220,7 +241,7 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   offset = offsetof(ProducerWorkerProperties,bytesProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie =  PRODUCER.worker->write( offset, 
+  wcie =  PRODUCER.worker->write( offset,
                                   nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
   wcie =  PRODUCER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -230,7 +251,7 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   offset = offsetof(ConsumerWorkerProperties,passfail);
   nBytes = sizeof( uint32_t );
   tprop[0] = 1;
-  wcie =  CONSUMER.worker->write( offset, 
+  wcie =  CONSUMER.worker->write( offset,
                                               nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -250,7 +271,7 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   offset = offsetof(ConsumerWorkerProperties,run2BufferCount);
   nBytes = sizeof( uint32_t );
   tprop[0] = BUFFERS_2_PROCESS;
-  wcie = CONSUMER.worker->write( offset, 
+  wcie = CONSUMER.worker->write( offset,
                                  nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -260,7 +281,7 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   offset = offsetof(ConsumerWorkerProperties,buffersProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie = CONSUMER.worker->write(  offset, 
+  wcie = CONSUMER.worker->write(  offset,
                                   nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -270,18 +291,18 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   offset = offsetof(ConsumerWorkerProperties,bytesProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie = CONSUMER.worker->write( offset, 
+  wcie = CONSUMER.worker->write( offset,
                                  nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
 
- 
+
   // Set the producer mode
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerSend;
-  wcie = PRODUCER.worker->write( offset, 
+  wcie = PRODUCER.worker->write( offset,
                                  nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
   wcie = PRODUCER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -292,7 +313,7 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   offset = offsetof(LoopbackWorkerProperties,transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = mode;
-  wcie = LOOPBACK.worker->write( offset, 
+  wcie = LOOPBACK.worker->write( offset,
                                  nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, LOOPBACK );
   wcie = LOOPBACK.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -303,7 +324,7 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerTake;
   //  tprop[0] = ConsumerConsume;
-  wcie = CONSUMER.worker->write(  offset, 
+  wcie = CONSUMER.worker->write(  offset,
                                   nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -316,8 +337,9 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
 
 
 
-static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, int mode) 
+static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, int mode)
 {
+  ( void ) mode;
   bool passed = true;
 
   enableWorkers(ca, workers);
@@ -328,7 +350,7 @@ static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, i
   while ( count > 0 ) {
 
     // Read the consumer properties to monitor progress
-    CONSUMER.worker->read(  0,         sizeof(ConsumerWorkerProperties), 
+    CONSUMER.worker->read(  0,         sizeof(ConsumerWorkerProperties),
                             WCI_DATA_TYPE_U8, WCI_DEFAULT, &cprops);
 
     if ( cprops.buffersProcessed == cprops.run2BufferCount  ) {
@@ -340,8 +362,8 @@ static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, i
       }
 
       // Make sure that the consumer got the same data
-      PRODUCER.worker->read( 0, 
-                             sizeof(ProducerWorkerProperties), 
+      PRODUCER.worker->read( 0,
+                             sizeof(ProducerWorkerProperties),
                              WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
 
       if ( cprops.bytesProcessed != pprops.bytesProcessed ) {
@@ -355,7 +377,7 @@ static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, i
       }
 
     }
-    CPI::OS::sleep( 1000 );
+    OCPI::OS::sleep( 1000 );
     count--;
   }
 
@@ -365,11 +387,11 @@ static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, i
   }
 
   if ( ! passed ) {
-    PRODUCER.worker->read( 0, 
-                           sizeof(ProducerWorkerProperties), 
+    PRODUCER.worker->read( 0,
+                           sizeof(ProducerWorkerProperties),
                            WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
     printf("\nTest failed results:\n");
-    printf("   Producer produced %d buffers, consumer received %d buffers\n", 
+    printf("   Producer produced %d buffers, consumer received %d buffers\n",
            pprops.buffersProcessed, cprops.buffersProcessed );
   }
 
@@ -419,7 +441,7 @@ int config_and_run_ap_container_test1(std::vector<CApp>& ca, std::vector<CWorker
   offset = offsetof(ConsumerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerConsume;
-  wcie = CONSUMER.worker->write( offset, 
+  wcie = CONSUMER.worker->write( offset,
                                  nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -430,7 +452,7 @@ int config_and_run_ap_container_test1(std::vector<CApp>& ca, std::vector<CWorker
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerSend;
-  wcie = PRODUCER.worker->write( offset, 
+  wcie = PRODUCER.worker->write( offset,
                                  nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
   wcie = PRODUCER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -441,7 +463,7 @@ int config_and_run_ap_container_test1(std::vector<CApp>& ca, std::vector<CWorker
           cmap[0], cmap[1], cmap[2], bcmap[0], bcmap[1], bcmap[2], bcmap[3] );
 
 
- 
+
   return run_ab_test( tnamebuf, ca, workers );
 }
 
@@ -473,7 +495,7 @@ int config_and_run_ap_container_test2(std::vector<CApp>& ca, std::vector<CWorker
   offset = offsetof(ConsumerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerConsume;
-  wcie = CONSUMER.worker->write( offset, 
+  wcie = CONSUMER.worker->write( offset,
                                  nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -484,7 +506,7 @@ int config_and_run_ap_container_test2(std::vector<CApp>& ca, std::vector<CWorker
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerAdvance;
-  wcie = PRODUCER.worker->write( offset, 
+  wcie = PRODUCER.worker->write( offset,
                                  nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
   wcie = PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -526,7 +548,7 @@ int config_and_run_ap_container_test3(std::vector<CApp>& ca, std::vector<CWorker
   offset = offsetof(ConsumerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerTake;
-  wcie = CONSUMER.worker->write(  offset, 
+  wcie = CONSUMER.worker->write(  offset,
                                   nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -537,7 +559,7 @@ int config_and_run_ap_container_test3(std::vector<CApp>& ca, std::vector<CWorker
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerAdvance;
-  wcie = PRODUCER.worker->write( offset, 
+  wcie = PRODUCER.worker->write( offset,
                                  nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
   CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
   wcie = PRODUCER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
@@ -588,17 +610,17 @@ int  main( int argc, char** argv)
   g_testUtilVerbose = config.verbose;
   cmap[0] = 0; cmap[1] = 1; cmap[2] = 2;
 
-  std::vector<char*> endpoints;
+  std::vector<const char*> endpoints;
   std::vector<CApp> ca;
   try {
-    ca = 
-      createContainers(endpoints, event_manager, (bool)CPI_USE_POLLING);
+    ca =
+      createContainers(endpoints, event_manager, (bool)OCPI_USE_POLLING);
   }
   catch( std::string& err ) {
     printf("Got a string exception while creating containers = %s\n", err.c_str() );
     exit(-1);
   }
-  catch( CPI::Util::EmbeddedException& ex ) {
+  catch( OCPI::Util::EmbeddedException& ex ) {
     printf("Create containers failed with exception. errorno = %d, aux = %s\n",
            ex.getErrorCode(), ex.getAuxInfo() );
     exit(-1);
@@ -607,13 +629,13 @@ int  main( int argc, char** argv)
     printf("Got an unknown exception while creating containers\n");
     exit(-1);
   }
-        
+
   // Create a dispatch thread
   DThreadData tdata;
   tdata.run =1;
   tdata.containers = ca;
   tdata.event_manager = event_manager;
-  CPI::Util::Thread* t = runTestDispatch(tdata);
+  OCPI::Util::Thread* t = runTestDispatch(tdata);
 
   std::vector<CWorker*> workers;
   workers.push_back( &PRODUCER );

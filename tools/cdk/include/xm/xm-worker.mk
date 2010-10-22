@@ -34,6 +34,9 @@
 #
 ########################################################################### #
 
+
+
+
 # #####
 #
 # This Makefile fragment converts X-Midas primitives (both C++ and
@@ -61,7 +64,7 @@ SkelSuffix=_skel.c
 SourceSuffix=.c
 OBJ:=.o
 
-IncludeDirs += $(OCPI_DIR)/include/xm
+IncludeDirs += $(OCPI_CDK_DIR)/include/xm
 
 ifeq ($(shell uname),Linux)
 BF=.so
@@ -102,7 +105,7 @@ endif
 
 CFLAGS += -Wall -Wextra -Wshadow  -g -D"OCPI_XM_MAINROUTINE=$(MainRoutine)"
 CXXFLAGS += -Wall -Wextra -Wshadow -g -D"OCPI_XM_MAINROUTINE=$(MainRoutine)"
-OcpiLibDir=$(OCPI_DIR)/../lib/$(Target)-bin
+OcpiLibDir=$(OCPI_CDK_DIR)/../lib/$(Target)-bin
 LinkBinary=$(GCCLINK) $(SharedLibLinkOptions) -o $@ $(ObjectFiles) \
 $(OtherLibraries) $(AEPLibraries) \
 $(foreach ol,$(OcpiLibraries),$(or $(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
@@ -113,7 +116,7 @@ Compile_cc=$(GXX) -MMD -MP -MF $(GeneratedDir)/$$(@F).deps -c $(CXXFLAGS) $(Shar
 FC = /usr/bin/pfc
 
 Compile_for = \
-	$(FC) $$< R$(OCPI_DIR)/include/xm/xmpfc.cnf  Z$(OCPI_DIR)/../../xmidas_ppc/xm/inc  > /dev/null 2>&1; \
+	$(FC) $$< R$(OCPI_CDK_DIR)/include/xm/xmpfc.cnf  Z$(OCPI_CDK_DIR)/../../xmidas_ppc/xm/inc  > /dev/null 2>&1; \
 	mv $$(basename $$(@F)).c $$(basename $$(@F)).cxxx  > /dev/null 2>&1; \
 	(sh -c 'echo -e "\n\#include \"ocpi_xm_intercept_fortran.h\"\n\#include \"ocpi_xm_fortran_buffers.h\"\n\n\#ifndef INCLUDED_FORTRAN_H\n\#define INCLUDED_FORTRAN_H\ntypedef int bool;\n\#define LPROTOTYPE\n\#include \"fortran.h\"\n\#endif\n\n"'; cat $$(basename $$(@F)).cxxx | sed 's/U[0-9]*\.//g' | grep -v "\#include" | grep -v LPROTOTYPE) > $$(basename $$(@F)).c; \
 	$(GCC) -MMD -MP -MF $(GeneratedDir)/$$(basename $$(@F)).c.deps -c $(CFLAGS) $(SharedLibCompileOptions) $(IncludeDirs:%=-I%) -o $$@ $$(basename $$(@F)).c > /dev/null 2>&1; \
@@ -127,7 +130,7 @@ ModelSpecificBuildHook :=  $(word 1,$(Workers))$(SourceSuffix)
 
 endif
 
-include $(OCPI_DIR)/include/xxx-worker.mk
+include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 
 $(ModelSpecificBuildHook):
 	$(AT)echo Generating the XM wrapper file: $@; \

@@ -18,7 +18,7 @@
 
 #include "config.h"
 
-// FIXME Fix this in cpios
+// FIXME Fix this in ocpios
 #ifdef __APPLE__
 #ifndef CLOCK_REALTIME
 #include <sys/time.h>

@@ -1,3 +1,37 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 /*
  * SCA CP289 Generic Proxy.
  *
@@ -9,22 +43,22 @@
 
 #include <new>
 #include <string>
-#include <CpiOsAssert.h>
-#include <CpiOsMutex.h>
-#include <CpiUtilCDR.h>
-#include <CpiUtilIOP.h>
-#include <CpiUtilMisc.h>
-#include <CpiUtilAutoMutex.h>
-#include <CpiLoggerLogger.h>
-#include <CpiLoggerNullOutput.h>
-#include <CpiLoggerDebugLogger.h>
-#include <CpiContainerInterface.h>
-#include <CpiStringifyCorbaException.h>
-#include <CpiCFUtilLegacyErrorNumbers.h>
+#include <OcpiOsAssert.h>
+#include <OcpiOsMutex.h>
+#include <OcpiUtilCDR.h>
+#include <OcpiUtilIOP.h>
+#include <OcpiUtilMisc.h>
+#include <OcpiUtilAutoMutex.h>
+#include <OcpiLoggerLogger.h>
+#include <OcpiLoggerNullOutput.h>
+#include <OcpiLoggerDebugLogger.h>
+#include <OcpiContainerInterface.h>
+#include <OcpiStringifyCorbaException.h>
+#include <OcpiCFUtilLegacyErrorNumbers.h>
 #include <CF.h>
 #include <Cp289ProviderPort.h>
-#include "CpiApplication.h"
-#include "CpiProperty.h"
+#include "OcpiApplication.h"
+#include "OcpiProperty.h"
 #include "Cp289GenericProxy.h"
 
 /*
@@ -35,11 +69,11 @@
 #undef IOP
 #endif
 
-namespace CPI {
+namespace OCPI {
   namespace SCA {
-    namespace CC = CPI::Container;
-    namespace CM = CPI::Metadata;
-    namespace CU = CPI::Util;
+    namespace CC = OCPI::Container;
+    namespace CM = OCPI::Metadata;
+    namespace CU = OCPI::Util;
     namespace CP = CU::Prop;
     /*
      * ----------------------------------------------------------------------
@@ -62,7 +96,7 @@ namespace CPI {
                        const char *namingContextIor,
                        const char *nameBinding,
                        // Optional
-                       CPI::Logger::Logger * logger,
+                       OCPI::Logger::Logger * logger,
                        bool adoptLogger,
                        bool shutdownOrbOnRelease)
       throw (std::string)
@@ -103,7 +137,7 @@ namespace CPI {
      */
     
     void
-    CPI::SCA::Cp289GenericProxy::
+    OCPI::SCA::Cp289GenericProxy::
     releaseObject ()
       throw (CF::LifeCycle::ReleaseError,
              CORBA::SystemException)
@@ -113,7 +147,7 @@ namespace CPI {
        */
 
       CU::AutoMutex lock (m_mutex);
-      CPI::Logger::DebugLogger debug (*m_logger);
+      OCPI::Logger::DebugLogger debug (*m_logger);
       
       if (m_disabled) {
         throw CORBA::BAD_INV_ORDER ();
@@ -130,20 +164,20 @@ namespace CPI {
      */
     
     CORBA::Object_ptr
-    CPI::SCA::Cp289GenericProxy::
+    OCPI::SCA::Cp289GenericProxy::
     getPort (const char * name)
       throw (CF::PortSupplier::UnknownPort,
              CORBA::SystemException)
     {
       CU::AutoMutex lock (m_mutex);
-      CPI::Logger::DebugLogger debug (*m_logger);
+      OCPI::Logger::DebugLogger debug (*m_logger);
 
       if (m_disabled) {
         throw CORBA::BAD_INV_ORDER ();
       }
 
       debug << m_logProducerName
-            << CPI::Logger::Verbosity (2)
+            << OCPI::Logger::Verbosity (2)
             << "getPort (\""
             << name
             << "\")"
@@ -158,22 +192,22 @@ namespace CPI {
           cggp = new Cp289GenericProxyPort (name, this);
         }
         catch (const CORBA::Exception & oops) {
-          *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+          *m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
                     << m_logProducerName
                     << "Oops: "
-                    << CPI::CORBAUtil::Misc::stringifyCorbaException (oops)
+                    << OCPI::CORBAUtil::Misc::stringifyCorbaException (oops)
                     << std::flush;
           throw;
         }
         catch (const std::bad_alloc & oops) {
-          *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+          *m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
                     << m_logProducerName
                     << "Oops: " << oops.what ()
                     << std::flush;
           throw CORBA::NO_RESOURCES();
         }
         catch (...) {
-          *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+          *m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
                     << m_logProducerName
                     << "Oops."
                     << std::flush;
@@ -202,11 +236,11 @@ namespace CPI {
     // (based on contiguous enumeration)
     // "_H" are the types that need "helpers" per the C++ CORBA language mapping.
 
-#undef CPI_DATA_TYPE_H
-#undef CPI_DATA_TYPE_S
+#undef OCPI_DATA_TYPE_H
+#undef OCPI_DATA_TYPE_S
 
-#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-    case CP::Scalar::CPI_##pretty:					\
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
+    case CP::Scalar::OCPI_##pretty:					\
     if (p.isSequence()) {                                                \
       const CORBA::StringSeq *seq;                                        \
       if (!(any >>= seq))                                                \
@@ -216,7 +250,7 @@ namespace CPI {
     } else {                                                                \
       /* we simply have a string */                                        \
       const char *cp;                                                        \
-      CORBA::ULong bound;                                                \
+      CORBA::ULong bound = 0;                                                \
       if (!(any >>= CORBA::Any::to_string(cp, bound)))                        \
         oops = "property value not a string as is should be";                \
       else                                                                \
@@ -226,13 +260,13 @@ namespace CPI {
         /**/
 
     // For simple types (not strings) and simple sequences (not strings)
-#undef CPI_DATA_TYPE_H
-#define CPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
+#undef OCPI_DATA_TYPE_H
+#define OCPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter,bits,CORBA::Any::to_##sca(typed_value), pretty, run)
-#define CPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter, bits, typed_value, pretty, run)
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                                        \
-    case CP::Scalar::CPI_##pt:					\
+    case CP::Scalar::OCPI_##pt:					\
     /* now we know its not MMIO */                                        \
     if (p.isSequence()) {                                                \
       const CORBA::c##Seq *seq;                                                \
@@ -252,7 +286,7 @@ namespace CPI {
         /**/  
 
     void
-    CPI::SCA::Cp289GenericProxy::
+    OCPI::SCA::Cp289GenericProxy::
     configureWorker (const char * name,
                      const CORBA::Any & any,
                      bool last,
@@ -265,9 +299,9 @@ namespace CPI {
       needSync = p.needWriteSync();
       const char *oops = 0;
       switch (p.getType()) {
-        CPI_PROPERTY_DATA_TYPES
-      case CP::Scalar::CPI_none:
-      case CP::Scalar::CPI_scalar_type_limit:
+        OCPI_PROPERTY_DATA_TYPES
+      case CP::Scalar::OCPI_none:
+      case CP::Scalar::OCPI_scalar_type_limit:
         ;
       }
       if (oops)
@@ -276,15 +310,15 @@ namespace CPI {
         m_worker.afterConfigure();
     }
 
-#undef CPI_DATA_TYPE_H
-#define CPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
+#undef OCPI_DATA_TYPE_H
+#define OCPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter,bits,CORBA::Any::from_##sca(typed_value), pretty, run)
-#undef CPI_DATA_TYPE_S
+#undef OCPI_DATA_TYPE_S
 #undef SCA_SIMPLE
     // For simple types (not strings) and simple sequences (not strings)
     // We allocate storage - which we could in fact preallocate, but would that avoid an extra allocation?
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                                        \
-    case CP::Scalar::CPI_##pt:					\
+    case CP::Scalar::OCPI_##pt:					\
     if (p.isSequence()) {                                                \
       unsigned size = p.sequenceSize();                                        \
       /* is a sequence FIXME trycatch for allocation unless cached*/        \
@@ -299,8 +333,8 @@ namespace CPI {
         break;                                                                \
         /**/  
 
-#define CPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
-    case CP::Scalar::CPI_##pretty: {				       \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
+    case CP::Scalar::OCPI_##pretty: {				       \
       unsigned length = p.stringSize();                                \
       if (p.isSequence()) {                                        \
         uint32_t limit = p.sequenceSize();                        \
@@ -332,7 +366,7 @@ namespace CPI {
         /**/
 
     void
-    CPI::SCA::Cp289GenericProxy::
+    OCPI::SCA::Cp289GenericProxy::
     queryWorker (const char * name,
                  CORBA::Any & any,
                  bool & haveSync)
@@ -344,25 +378,25 @@ namespace CPI {
         m_worker.beforeQuery();
       const char * oops;
       switch (p.getType()) {
-        CPI_PROPERTY_DATA_TYPES
-      case CP::Scalar::CPI_none:
-      case CP::Scalar::CPI_scalar_type_limit:
+        OCPI_PROPERTY_DATA_TYPES
+      case CP::Scalar::OCPI_none:
+      case CP::Scalar::OCPI_scalar_type_limit:
         ;
       }
       if (oops)
         throw std::string (oops);
     }
 
-    const CPI::Metadata::Property *
-    CPI::SCA::Cp289GenericProxy::
+    const OCPI::Metadata::Property *
+    OCPI::SCA::Cp289GenericProxy::
     getProperties (unsigned int & numProperties)
       throw ()
     {
       return m_worker.getProperties (numProperties);
     }
 
-#define CONTROL_OP(x,c,t,s1,s2,s3) void CPI::SCA::Cp289GenericProxy::x##Worker() {m_worker.x();}
-    CPI_CONTROL_OPS
+#define CONTROL_OP(x,c,t,s1,s2,s3) void OCPI::SCA::Cp289GenericProxy::x##Worker() {m_worker.x();}
+    OCPI_CONTROL_OPS
 #undef CONTROL_OP      
 
   }
@@ -370,12 +404,12 @@ namespace CPI {
 
 #if 0
 
-    const CPI::SCA::Test *
-    CPI::SCA::Cp289GenericProxy::
+    const OCPI::SCA::Test *
+    OCPI::SCA::Cp289GenericProxy::
     findTest (unsigned int testid)
       throw (CF::TestableObject::UnknownTest)
     {
-      const CPI::SCA::Test * t = m_props.getTest (testid);
+      const OCPI::SCA::Test * t = m_props.getTest (testid);
 
       if (!t) {
         throw CF::TestableObject::UnknownTest ();
@@ -391,7 +425,7 @@ namespace CPI {
      */
 
     void
-    CPI::SCA::Cp289GenericProxy::
+    OCPI::SCA::Cp289GenericProxy::
     connectPort (const std::string & portName,
                  const std::string & connectionId,
                  CORBA::Object_ptr connection)
@@ -401,10 +435,10 @@ namespace CPI {
     {
 #if 0
       // FIXME:  base class wants this but it is obsolete now.
-      // This method exists just for compatibility with the pre-OpenCPI connection
+      // This method exists just for compatibility with the pre-OpenOCPI connection
       // protocol where the proxy (not the proxy port) is contacted (mis) using the SCA protocol
       // (but nicely symmetrical)
-      // We are being contacted from a pre-OpenCPI proxy
+      // We are being contacted from a pre-OpenOCPI proxy
       // If we are a provider, our cggp should already exist
       Cp289GenericProxyPort *cggp;
       PortMap::iterator pit = m_portMap.find (name);
@@ -412,7 +446,7 @@ namespace CPI {
         // Our port object exists, which means getPort was called before this,
         // which means we are a provider, 
         cggp = (*pit).second;
-        cggp->preOpenCpiConnectToProvider(connectId, connection);
+        cggp->preOpenOcpiConnectToProvider(connectId, connection);
       } else
 #endif
         // This shouldn't happen, since:
@@ -422,7 +456,7 @@ namespace CPI {
     }
 
     void
-    CPI::SCA::Cp289GenericProxy::
+    OCPI::SCA::Cp289GenericProxy::
     disconnectPort (const std::string & portName,
                     const std::string & connectionId)
       throw (CF::Port::InvalidPort,
@@ -431,14 +465,14 @@ namespace CPI {
 #if 0
       // FIXME:  base class wants this but it is obsolete now.
       CU::AutoMutex lock (m_mutex);
-      CPI::Logger::DebugLogger debug (*m_logger);
+      OCPI::Logger::DebugLogger debug (*m_logger);
 
       if (m_disabled) {
         throw CORBA::BAD_INV_ORDER ();
       }
 
       debug << m_logProducerName
-            << CPI::Logger::Verbosity (2)
+            << OCPI::Logger::Verbosity (2)
             << "disconnectPort (\""
             << portName
             << "\", \""
@@ -458,7 +492,7 @@ namespace CPI {
         msg += connectionId;
         msg += ")";
 
-        *m_logger << CPI::Logger::Level::EXCEPTION_ERROR
+        *m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
                   << m_logProducerName
                   << msg << "."
                   << std::flush;
@@ -472,13 +506,13 @@ namespace CPI {
     }
 
     void
-    CPI::SCA::Cp289GenericProxy::
+    OCPI::SCA::Cp289GenericProxy::
     disconnectPortLocked (const std::string & portName,
                           const std::string & connectionId)
       throw (std::string)
     {
       PortMap::iterator pit = m_portMap.find (portName);
-      cpiAssert (pit != m_portMap.end());
+      ocpiAssert (pit != m_portMap.end());
       PortData & pd = (*pit).second;
 
       ConnectionMap::iterator cmit = m_connections.find (connectionId);
@@ -494,7 +528,7 @@ namespace CPI {
          * Ask the container to disconnect.
          */
 
-        cpiAssert (cd.connectionCookie);
+        ocpiAssert (cd.connectionCookie);
 
         try {
           m_container->disconnectPorts (&m_application,
@@ -523,7 +557,7 @@ namespace CPI {
           }
           catch (const CORBA::Exception & oops) {
             std::string msg = "Failed to disconnect remote port: ";
-            msg += CPI::CORBAUtil::Misc::stringifyCorbaException (oops);
+            msg += OCPI::CORBAUtil::Misc::stringifyCorbaException (oops);
             throw msg;
           }
         }
@@ -543,7 +577,7 @@ namespace CPI {
      */
 
     unsigned int
-    CPI::SCA::Cp289GenericProxy::
+    OCPI::SCA::Cp289GenericProxy::
     computeMaximumBufferSize (unsigned int memorySize,
                               unsigned int bufferCount)
       throw ()

@@ -1,27 +1,45 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #if 0 // until we have a functioning AEP..
-#include <CpiTimeEmitC.h>
+#include <OcpiTimeEmitC.h>
 #else
-#define CPI_TIME_EMIT_C(x)
+#define OCPI_TIME_EMIT_C(x)
 #endif
 #include "ProducerWorker_Worker.h"
 
@@ -73,22 +91,26 @@ static RCCResult initialize(RCCWorker *this_)
 
 static RCCResult start(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
 
 static RCCResult stop(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
 static RCCResult release(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
 static RCCResult test(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
@@ -115,6 +137,7 @@ static RCCResult afterConfigure(RCCWorker *this_)
 
 static RCCResult beforeQuery(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
 
@@ -129,6 +152,8 @@ void PrintProdStatus()
 //static int r_count = 0;
 static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
   uint32_t n;
   uint32_t len;
   int      *b;
@@ -143,7 +168,7 @@ static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCond
   printf("Out maxlen = %d\n", out->current.maxLength ); 
 #endif
 
-  CPI_TIME_EMIT_C( "Producer Start" );
+  OCPI_TIME_EMIT_C( "Producer Start" );
 
 #define LIMIT_PRODUCTION__
 #ifdef LIMIT_PRODUCTION
@@ -172,7 +197,7 @@ static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCond
   mem->b_count++; 
   g_prod_p_count =  mem->b_count;
 
-  CPI_TIME_EMIT_C( "Producer Start Send" );
+  OCPI_TIME_EMIT_C( "Producer Start Send" );
 
 
   /*  printf("Producer is producing with a length = %d\n", len);  */
@@ -190,7 +215,7 @@ static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCond
   out->output.length = len;
   out->output.u.operation = 0;
 
-  CPI_TIME_EMIT_C( "Producer End Send" );
+  OCPI_TIME_EMIT_C( "Producer End Send" );
         
   return RCC_OK;
 }

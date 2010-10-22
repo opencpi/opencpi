@@ -1,23 +1,41 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <CpiOsDebug.h>
-#include <CpiLoggerNullOutput.h>
-#include "CpiUtilTest.h"
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+#include <OcpiOsDebug.h>
+#include <OcpiLoggerNullOutput.h>
+#include "OcpiUtilTest.h"
 
 namespace NullOutputTests {
 
@@ -27,19 +45,19 @@ namespace NullOutputTests {
    * ----------------------------------------------------------------------
    */
 
-  class Test1 : public CPI::Util::Test::Test {
+  class Test1 : public OCPI::Util::Test::Test {
   public:
     Test1 ()
-      : CPI::Util::Test::Test ("Testing the NullOutput logger")
+      : OCPI::Util::Test::Test ("Testing the NullOutput logger")
     {
     }
 
     void run ()
     {
-      CPI::Logger::NullOutput null;
+      OCPI::Logger::NullOutput null;
       null.setProducerId ("01-NullOutput");
-      null << CPI::Logger::Level::ADMINISTRATIVE_EVENT
-           << CPI::Logger::ProducerName ("runNullTest")
+      null << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
+           << OCPI::Logger::ProducerName ("runNullTest")
            << "Hello World"
            << std::flush;
       test (null.good());
@@ -52,7 +70,7 @@ static
 int
 testNullOutputInt (int, char *[])
 {
-  CPI::Util::Test::Suite tests ("NullOutput tests");
+  OCPI::Util::Test::Suite tests ("NullOutput tests");
   int n_failed;
   tests.add_test (new NullOutputTests::Test1);
   tests.run ();
@@ -83,7 +101,7 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-        CPI::OS::debugBreak ();
+        OCPI::OS::debugBreak ();
         break;
       }
     }

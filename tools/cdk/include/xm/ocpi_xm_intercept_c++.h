@@ -1,8 +1,22 @@
 
 /*
- * Copyright (c) 2009 and 2010 Mercury Federal Systems.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
  *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
  *  OpenCPI is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published
@@ -18,6 +32,9 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+
+
 #ifndef INCLUDED_OCPI_XM_INTERCEPT_CPP_H
 #define INCLUDED_OCPI_XM_INTERCEPT_CPP_H
 
@@ -29,11 +46,11 @@ extern "C" {
 
 /* ---- C/C++ language includes ------------------------------------------ */
 
-/* ---- OpenCPI for X-Midas types ---------------------------------------- */
+/* ---- OpenOCPI for X-Midas types ---------------------------------------- */
 
 #include "cdefs.h"
 
-/* ---- OpenCPI for X-Midas file header replacement ---------------------- */
+/* ---- OpenOCPI for X-Midas file header replacement ---------------------- */
 
 typedef struct HEADER
 {
@@ -109,14 +126,14 @@ typedef struct HEADER
   int cons_len;
   int offset;
 
-  // OpenCPI Information
+  // OpenOCPI Information
   std::size_t port_idx;
 
 } HEADER;
 
 typedef HEADER CPHEADER;
 
-/* ---- OpenCPI for X-Midas defines -------------------------------------- */
+/* ---- OpenOCPI for X-Midas defines -------------------------------------- */
 
 enum
 {
@@ -125,11 +142,11 @@ enum
   HCBF_OPTIONAL = ( 1 << 11 )
 };
 
-/* ---- OpenCPI for X-Midas global variables (from X-Midas) -------------- */
+/* ---- OpenOCPI for X-Midas global variables (from X-Midas) -------------- */
 
 extern const char* standard_windows;
 
-/* ---- OpenCPI for X-Midas forward declarations ------------------------- */
+/* ---- OpenOCPI for X-Midas forward declarations ------------------------- */
 
 struct RCCWorker;
 

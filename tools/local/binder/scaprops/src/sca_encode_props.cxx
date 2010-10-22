@@ -1,28 +1,46 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 #include <string.h>
 #include <stdio.h>
-#include "CpiOsAssert.h"
-#include "CpiUtilEzxml.h"
+#include "OcpiOsAssert.h"
+#include "OcpiUtilEzxml.h"
 #include "sca_props.h"
 #include "idl2ifr.h"
 
-namespace CPI { namespace SCA {
+namespace OCPI { namespace SCA {
 
 // Return a single string, to be freed by caller, or NULL on error.
  char *
@@ -36,7 +54,7 @@ encode_props(Property *properties, unsigned nprops, unsigned size,
   // Compute length of string encoding and allocate.
   for (p = properties, length = 0, nmems = 0, n = 0; n < nprops; n++, p++) {
     length += strlen(p->name) + 1;
-    cpiAssert(p->num_members);
+    ocpiAssert(p->num_members);
     nmems += p->num_members;
   }
 
@@ -67,7 +85,7 @@ encode_props(Property *properties, unsigned nprops, unsigned size,
   cp += sprintf(cp, "%u/%u/%u/%u/%u/%u/%u$", nports, nprops, size, nmems, length, ntests, ntestps);
   // Encode properties.
   for (p = properties, n = 0; n < nprops; n++, p++) {
-    cpiAssert(!strchr(p->name, '~'));
+    ocpiAssert(!strchr(p->name, '~'));
     cp += sprintf(cp, "%s~%lu/%lu/%lu/%lu/%c%c%c%c%c%c%c%c%c|", 
                   p->name, p->num_members, p->sequence_size, p->offset, p->data_offset,
                   p->is_sequence ? '1' : '0',
@@ -89,7 +107,7 @@ encode_props(Property *properties, unsigned nprops, unsigned size,
 
   // Encode ports
   for (port = ports, n = 0; n < nports; n++, port++) {
-    cpiAssert(!strchr(port->name, '~'));
+    ocpiAssert(!strchr(port->name, '~'));
     cp += sprintf(cp, "%s~%c%c|", port->name, port->provider + '0', port->twoway +'0');
   }
 
@@ -108,7 +126,7 @@ encode_props(Property *properties, unsigned nprops, unsigned size,
   }
 
   *cp++ = 0;
-  cpiAssert(cp - props <= (int)total);
+  ocpiAssert(cp - props <= (int)total);
   return props;
 }
 static const char *names[] = {
@@ -160,8 +178,10 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
   }
 }
  static const char *
- doPort(FILE *f, CPI::SCA::Port *p, unsigned n, const char *repo, bool debug)
+ doPort(FILE *f, OCPI::SCA::Port *p, unsigned n, const char *repo, bool debug)
 {
+  ( void ) n;
+  ( void ) debug;
   char *rid;
   asprintf(&rid, "\n%s\n", p->repid);
   char *cp = strcasestr(repo, rid);
@@ -310,6 +330,8 @@ const char *emit_ocpi_xml(const char *specFile, const char *implFile,
 			  Port *ports, unsigned nPorts,
 			  Test *tests, unsigned nTests)
 {
+  ( void ) tests;
+  ( void ) nTests;
 #if 0
   // We use the repository to get idl info back
   CORBA::Repository_var repo;

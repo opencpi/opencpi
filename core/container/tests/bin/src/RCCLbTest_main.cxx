@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 #include <unistd.h>
 #include <signal.h>
@@ -24,32 +42,32 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <CpiOsMisc.h>
-#include <CpiOsAssert.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
-#include <CpiContainerInterface.h>
-#include <CpiWorker.h>
-#include <CpiContainerPort.h>
+#include <OcpiContainerInterface.h>
+#include <OcpiWorker.h>
+#include <OcpiContainerPort.h>
 #include <ConsumerWorker.h>
 #include <ProdWorker.h>
-#include <CpiThread.h>
-#include <CpiPValue.h>
-#include <CpiDriver.h>
-#include <CpiUtilCommandLineConfiguration.h>
+#include <OcpiThread.h>
+#include <OcpiPValue.h>
+#include <OcpiDriver.h>
+#include <OcpiUtilCommandLineConfiguration.h>
 
 
-#define CPI_RCC_DATA_BUFFER_SIZE 32
+#define OCPI_RCC_DATA_BUFFER_SIZE 32
 
-// char* CPI_RCC_CONT_EP          = "cpi-smb-pio://GPPSMB:900000.18.20";
-// char* CPI_RCC_CONT_EP          = "cpi-pci-pio://1.0:900000.3.20";
-char* CPI_RCC_CONT_EP          = "cpi-pci-pio://1.0.900000:900000.3.20";
+// const char* OCPI_RCC_CONT_EP          = "ocpi-smb-pio://GPPSMB:900000.18.20";
+// const char* OCPI_RCC_CONT_EP          = "ocpi-pci-pio://1.0:900000.3.20";
+const char* OCPI_RCC_CONT_EP          = "ocpi-pci-pio://1.0.900000:900000.3.20";
 
 
-class CpiRccBinderConfigurator
-  : public CPI::Util::CommandLineConfiguration
+class OcpiRccBinderConfigurator
+  : public OCPI::Util::CommandLineConfiguration
 {
 public:
-  CpiRccBinderConfigurator ();
+  OcpiRccBinderConfigurator ();
 
 public:
   bool help;
@@ -64,49 +82,49 @@ private:
 };
 
 // Configuration
-static  CpiRccBinderConfigurator config;
+static  OcpiRccBinderConfigurator config;
 
-CpiRccBinderConfigurator::
-CpiRccBinderConfigurator ()
-  : CPI::Util::CommandLineConfiguration (g_options),
+OcpiRccBinderConfigurator::
+OcpiRccBinderConfigurator ()
+  : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
     verbose (false),
     standalone(false),
-    msgSize( CPI_RCC_DATA_BUFFER_SIZE ),
+    msgSize( OCPI_RCC_DATA_BUFFER_SIZE ),
     nBuffers(2),
-    endpoint(CPI_RCC_CONT_EP)
+    endpoint(OCPI_RCC_CONT_EP)
 {
 }
 
-CPI::Util::CommandLineConfiguration::Option
-CpiRccBinderConfigurator::g_options[] = {
-  { CPI::Util::CommandLineConfiguration::OptionType::STRING,
+OCPI::Util::CommandLineConfiguration::Option
+OcpiRccBinderConfigurator::g_options[] = {
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "endpoint", "Set this containers endpoint",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::endpoint) },
-   { CPI::Util::CommandLineConfiguration::OptionType::LONG,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::endpoint), 0 },
+   { OCPI::Util::CommandLineConfiguration::OptionType::LONG,
     "nBuffers", "Number of buffers",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::nBuffers) },
-   { CPI::Util::CommandLineConfiguration::OptionType::LONG,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::nBuffers), 0 },
+   { OCPI::Util::CommandLineConfiguration::OptionType::LONG,
     "msgSize", "Message size",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::msgSize) },
-   { CPI::Util::CommandLineConfiguration::OptionType::STRING,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::msgSize), 0 },
+   { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "pdfpath", "Port descriptor file",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::pdfpath) },
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::pdfpath), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "verbose", "Be verbose",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::verbose) },
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::verbose), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "standalone", "Run this test and connect the producer directly to the input",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::standalone) },
-  { CPI::Util::CommandLineConfiguration::OptionType::NONE,
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::standalone), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
     "help", "This message",
-    CPI_CLC_OPT(&CpiRccBinderConfigurator::help) },
-  { CPI::Util::CommandLineConfiguration::OptionType::END }
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::help), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::END, 0, 0, 0, 0 }
 };
 
 static
 void
-printUsage (CpiRccBinderConfigurator & config,
+printUsage (OcpiRccBinderConfigurator & config,
             const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
@@ -136,7 +154,7 @@ printUsage (CpiRccBinderConfigurator & config,
     printf("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
     throw;                                                                \
   }                                                                        \
-  catch ( CPI::Util::EmbeddedException& eex ) {                                \
+  catch ( OCPI::Util::EmbeddedException& eex ) {                                \
     printf(" gpp: Caught an embedded exception while %s:\n", msg);                \
     printf( " error number = %d", eex.m_errorCode );                        \
     printf( " aux info = %s\n", eex.m_auxInfo.c_str() );                \
@@ -147,20 +165,20 @@ printUsage (CpiRccBinderConfigurator & config,
     throw;                                                                \
   }
 
-// using namespace CPI::DataTransport;
+// using namespace OCPI::DataTransport;
 
-using namespace CPI::Container;
-using namespace CPI;
+using namespace OCPI::Container;
+using namespace OCPI;
 
 
 // Constants
 static Worker * WORKER_OUTPUT_ID;
 static Worker * WORKER_INPUT_ID;
 
-int CPI_USE_POLLING=1;
+int OCPI_USE_POLLING=1;
 
 // Program globals
-static CPI::Container::Interface* gpp_container;
+static OCPI::Container::Interface* gpp_container;
 static Application *gpp_app;
 Port *inputPort, *outputPort;
 
@@ -171,7 +189,7 @@ void  dumpPortData( PortData& pd )
   printf("CD mode = %d\n", pd.connectionData.data.mode);
   printf("CD role = %d\n", pd.connectionData.data.role);
 
-  if ( pd.connectionData.data.mode == CPI::RDT::OutputDescType ) {
+  if ( pd.connectionData.data.mode == OCPI::RDT::OutputDescType ) {
     printf("Output desc\n");
   }
   else{
@@ -203,7 +221,7 @@ void readPortDecsFile( std::string& rpl_output, std::string& rpl_input )
 {
   if ( config.verbose )
     printf("About to read the desc file (%s)\n", config.pdfpath.c_str() );
-  
+
   int pfd;
   std::string pfile = config.pdfpath;
   pfile += ".user";
@@ -225,9 +243,9 @@ void readPortDecsFile( std::string& rpl_output, std::string& rpl_input )
 
   // Read the input desc
   char buf[MAX_DESC_LEN];
-  br = read(cfd, buf, MAX_DESC_LEN);  
+  br = read(cfd, buf, MAX_DESC_LEN);
   if ( (br==0) || (br >= MAX_DESC_LEN)  ) {
-    printf("(2)Attempted to read %d bytes and only read %lu bytes from descriptor file\n", MAX_DESC_LEN, br );
+    printf("(2)Attempted to read %d bytes and only read %" PRIssize_t " bytes from descriptor file\n", MAX_DESC_LEN, br );
     exit(-1);
   }
   rpl_input.assign( buf, br );
@@ -235,7 +253,7 @@ void readPortDecsFile( std::string& rpl_output, std::string& rpl_input )
 
   br = read(pfd, buf, MAX_DESC_LEN);
   if ( br >= MAX_DESC_LEN ) {
-    printf("Attempted to read %d bytes and only read %lu bytes from descriptor file\n", MAX_DESC_LEN, br );
+    printf("Attempted to read %d bytes and only read %" PRIssize_t " bytes from descriptor file\n", MAX_DESC_LEN, br );
     exit(-1);
   }
   rpl_output.assign( buf, br );
@@ -281,13 +299,13 @@ void writePortDecsFile( std::string& rpl_output, std::string& rpl_input )
 
   br = write(cfd, rpl_input.c_str(), rpl_input.length() );
   if ( (br==0) || (br >= MAX_DESC_LEN) ) {
-    printf("(2)Attempted to write %d bytes and only wrote %lu bytes from descriptor file\n", MAX_DESC_LEN, br );
+    printf("(2)Attempted to write %d bytes and only wrote %" PRIssize_t " bytes from descriptor file\n", MAX_DESC_LEN, br );
     exit(-1);
   }
 
   br = write(pfd, rpl_output.c_str(), rpl_output.length() );
   if ((br==0) || ( br >= MAX_DESC_LEN )) {
-    printf("Attempted to write %d bytes and only wrote %lu bytes from descriptor file\n", MAX_DESC_LEN, br );
+    printf("Attempted to write %d bytes and only wrote %" PRIssize_t " bytes from descriptor file\n", MAX_DESC_LEN, br );
     exit(-1);
   }
 
@@ -305,20 +323,20 @@ void setupForPCMode()
   CATCH_ALL_RETHROW( "creating workers" )
 
 
- try { 
+ try {
       outputPort = &  WORKER_OUTPUT_ID->createOutputPort( PORT_0,
                                                             config.nBuffers,
                                                             config.msgSize, NULL);
   }
   CATCH_ALL_RETHROW( "creating source port" );
-        
+
 
   try {
 
 
-    static CPI::Util::PValue tprops[] = {
-      CPI::Util::PVString("endpoint","cpi-pci-pio://0.0:300000.1.10"),
-      CPI::Util::PVEnd };
+    static OCPI::Util::PValue tprops[] = {
+      OCPI::Util::PVString("endpoint","ocpi-pci-pio://0.0:300000.1.10"),
+      OCPI::Util::PVEnd };
 
     inputPort = & WORKER_INPUT_ID->createInputPort(  PORT_0,
                                                     config.nBuffers,
@@ -347,9 +365,9 @@ void setupForPCMode()
 
 
 #ifdef PORT_COMPLETE
-  if ( ! config.standalone ) { 
+  if ( ! config.standalone ) {
     // PATCH the descriptor
-    reinterpret_cast<PortData*>(&remoteSourcePort)->connectionData.port  =  
+    reinterpret_cast<PortData*>(&remoteSourcePort)->connectionData.port  =
       reinterpret_cast<PortData*>(outputPort)->connectionData.port;
     remoteSourcePort.connectionData.cid = 100;
     remoteTargetPort.connectionData.cid = 100;
@@ -384,7 +402,7 @@ void setupForPCMode()
     // gppSendInputDescPacked( gpp_circuits[0], scp );
 
 
-    // The CPI output descriptor contains the outputs "shadow port" buffer empty flag
+    // The OCPI output descriptor contains the outputs "shadow port" buffer empty flag
     // address information.  The id's in the descriptor relate to our input port.  This
     // info will let us know how to tell the output when we are done with a buffer.
     printf("About to configure the SFC\n");
@@ -400,30 +418,32 @@ void setupForPCMode()
 
 int gpp_cont(int argc, char** argv)
 {
+  ( void ) argc;
+  ( void ) argv; 
   DataTransfer::EventManager* gpp_event_manager;
-  static CPI::Util::PValue container_props[] = {CPI::Util::PVString("endpoint",""), CPI::Util::PVEnd };
-  CPI::Util::DriverManager dm("Container");
-  dm.discoverDevices(0,0);  
-  CPI::Util::Device* d = dm.getDevice( container_props, 0 );
+  static OCPI::Util::PValue container_props[] = {OCPI::Util::PVString("endpoint",""), OCPI::Util::PVEnd };
+  OCPI::Util::DriverManager dm("Container");
+  dm.discoverDevices(0,0);
+  OCPI::Util::Device* d = dm.getDevice( container_props, 0 );
 
-  gpp_container = static_cast<CPI::Container::Interface*>(d);
-  cpiAssert( dynamic_cast<CPI::Container::Interface*>(d) );
+  gpp_container = static_cast<OCPI::Container::Interface*>(d);
+  ocpiAssert( dynamic_cast<OCPI::Container::Interface*>(d) );
   gpp_event_manager = gpp_container->getEventManager();
   gpp_app = gpp_container->createApplication();
 
 
-  try { 
+  try {
 
 #ifdef DONE
     try {
-      gpp_cFactory =  new CPI::Container::Factory(CPI::Container::Factory::RCC,CPI_USE_POLLING);
+      gpp_cFactory =  new OCPI::Container::Factory(OCPI::Container::Factory::RCC,OCPI_USE_POLLING);
     }
     CATCH_ALL_RETHROW( "creating container");
 
     // First thing here on the GPP container is that we need to create the workers and
-    // the worker ports.  We will use CPIRDT mode 3 for this test. 
-    CPI::Container::StartupParams params;
-    try { 
+    // the worker ports.  We will use OCPIRDT mode 3 for this test.
+    OCPI::Container::StartupParams params;
+    try {
       params.endpoint = config.endpoint.c_str();
       gpp_container = gpp_cFactory->create( GPP_CONT_UID, params );
       gpp_event_manager = gpp_cFactory->getEventManager();
@@ -470,8 +490,8 @@ int gpp_cont(int argc, char** argv)
     // Now we will just enter a processing loop
     int lc=0;
     int event_id;
-    CPI::OS::uint64_t evalue;
-    int CPI_RUN_TEST = 1;
+    OCPI::OS::uint64_t evalue;
+    int OCPI_RUN_TEST = 1;
 
     if ( gpp_event_manager ) {
       printf("Running with an event manager\n");
@@ -480,7 +500,7 @@ int gpp_cont(int argc, char** argv)
       printf("Running without a event manager\n");
     }
 
-    while( CPI_RUN_TEST ) {
+    while( OCPI_RUN_TEST ) {
 
       if ( gpp_event_manager ) {
         do {
@@ -498,15 +518,15 @@ int gpp_cont(int argc, char** argv)
         gpp_container->dispatch( gpp_event_manager );
       }
 
-      CPI::OS::sleep( 500 );
+      OCPI::OS::sleep( 500 );
       lc++;
 
       //#define LIMIT_RUN
 #ifdef LIMIT_RUN
       if ( lc > (1000 * 10) ) {
-        CPI_RUN_TEST = 0;
+        OCPI_RUN_TEST = 0;
       }
-      CPI::OS::sleep( 1 );
+      OCPI::OS::sleep( 1 );
 #endif
 
     }
@@ -514,26 +534,26 @@ int gpp_cont(int argc, char** argv)
     printf("About to cleanup \n");
 
     // Cleanup
-    CPI::OS::sleep( 3000 );
+    OCPI::OS::sleep( 3000 );
     delete gpp_app;
     gpp_container->stop( gpp_event_manager );
     delete gpp_container;
-    gpp_container = NULL; 
+    gpp_container = NULL;
 
   }
-  catch ( int& ii ) {                                                      
+  catch ( int& ii ) {
     printf("gpp: Caught an int exception while %s = %d\n", "main" ,ii );
-  }                                                                        
-  catch( std::string& stri ) {                                                
+  }
+  catch( std::string& stri ) {
     printf("gpp: Caught a string exception while %s = %s\n","main", stri.c_str() );
-  }                                                                        
-  catch ( CPI::Util::EmbeddedException& eex ) {                                
-    printf(" gpp: Caught an embedded exception while %s:\n", "main");        
-    printf( " error number = %d", eex.m_errorCode );                        
-    printf( " aux info = %s\n", eex.m_auxInfo.c_str() );                
-  }                                                                        
-  catch( ... ) {                                                        
-    printf("gpp: Caught an unknown exception while %s\n","main" );                
+  }
+  catch ( OCPI::Util::EmbeddedException& eex ) {
+    printf(" gpp: Caught an embedded exception while %s:\n", "main");
+    printf( " error number = %d", eex.m_errorCode );
+    printf( " aux info = %s\n", eex.m_auxInfo.c_str() );
+  }
+  catch( ... ) {
+    printf("gpp: Caught an unknown exception while %s\n","main" );
   }
 
   printf("gpp_container: Good Bye\n");

@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ------------------------------------------------------------------------------
 #  entry.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -23,33 +59,33 @@ namespace eval Entry {
     # BW Entry so that we avoid the TkResource test for it, which screws up
     # the existance/non-existance bits of the -textvariable.
     Widget::tkinclude Entry entry :cmd \
-    	remove { -state -background -foreground -textvariable
-    		 -disabledforeground -disabledbackground }
+            remove { -state -background -foreground -textvariable
+                     -disabledforeground -disabledbackground }
 
     set declare [list \
-	    [list -background   TkResource  ""	   0  entry] \
-	    [list -foreground   TkResource  ""	   0  entry] \
-	    [list -state        Enum        normal 0  [list normal disabled]] \
-	    [list -text         String      ""	   0] \
-	    [list -textvariable String      ""     0] \
-	    [list -editable     Boolean     1      0] \
-	    [list -command      String      ""     0] \
-	    [list -relief       TkResource  ""     0  entry] \
-	    [list -borderwidth  TkResource  ""     0  entry] \
-	    [list -fg           Synonym     -foreground] \
-	    [list -bg           Synonym     -background] \
-	    [list -bd           Synonym     -borderwidth] \
-	]
+            [list -background   TkResource  ""           0  entry] \
+            [list -foreground   TkResource  ""           0  entry] \
+            [list -state        Enum        normal 0  [list normal disabled]] \
+            [list -text         String      ""           0] \
+            [list -textvariable String      ""     0] \
+            [list -editable     Boolean     1      0] \
+            [list -command      String      ""     0] \
+            [list -relief       TkResource  ""     0  entry] \
+            [list -borderwidth  TkResource  ""     0  entry] \
+            [list -fg           Synonym     -foreground] \
+            [list -bg           Synonym     -background] \
+            [list -bd           Synonym     -borderwidth] \
+        ]
 
     if {![package vsatisfies [package provide Tk] 8.4]} {
-	## If we're not running version 8.4 or higher, get our
-	## disabled resources from the button widget.
-	lappend declare [list -disabledforeground TkResource "" 0 button]
-	lappend declare [list -disabledbackground TkResource "" 0 \
-							{button -background}]
+        ## If we're not running version 8.4 or higher, get our
+        ## disabled resources from the button widget.
+        lappend declare [list -disabledforeground TkResource "" 0 button]
+        lappend declare [list -disabledbackground TkResource "" 0 \
+                                                        {button -background}]
     } else {
-	lappend declare [list -disabledforeground TkResource "" 0 entry]
-	lappend declare [list -disabledbackground TkResource "" 0 entry]
+        lappend declare [list -disabledforeground TkResource "" 0 entry]
+        lappend declare [list -disabledbackground TkResource "" 0 entry]
     }
 
     Widget::declare Entry $declare
@@ -112,22 +148,22 @@ proc Entry::create { path args } {
             -foreground [Widget::getMegawidgetOption $path -disabledforeground] \
             -background [Widget::getMegawidgetOption $path -disabledbackground]
     } else {
-	$path configure \
+        $path configure \
                 -foreground [Widget::getMegawidgetOption $path -foreground] \
                 -background [Widget::getMegawidgetOption $path -background]
-	bindtags $path [linsert [bindtags $path] 2 BwEditableEntry]
+        bindtags $path [linsert [bindtags $path] 2 BwEditableEntry]
     }
     if { [string length $text] } {
-	set varName [$path cget -textvariable]
-	if { ![string equal $varName ""] } {
-	    uplevel \#0 [list set $varName [Widget::cget $path -text]]
-	} else {
-	    set validateState [$path cget -validate]
-	    $path configure -validate none
-	    $path delete 0 end
-	    $path configure -validate $validateState
-	    $path insert 0 [Widget::getMegawidgetOption $path -text]
-	}
+        set varName [$path cget -textvariable]
+        if { ![string equal $varName ""] } {
+            uplevel \#0 [list set $varName [Widget::cget $path -text]]
+        } else {
+            set validateState [$path cget -validate]
+            $path configure -validate none
+            $path delete 0 end
+            $path configure -validate $validateState
+            $path insert 0 [Widget::getMegawidgetOption $path -text]
+        }
     }
 
     DragSite::setdrag $path $path Entry::_init_drag_cmd Entry::_end_drag_cmd 1
@@ -136,7 +172,7 @@ proc Entry::create { path args } {
 
     Widget::create Entry $path
     proc ::$path { cmd args } \
-    	"return \[Entry::_path_command [list $path] \$cmd \$args\]"
+            "return \[Entry::_path_command [list $path] \$cmd \$args\]"
     return $path
 }
 
@@ -158,8 +194,8 @@ proc Entry::configure { path args } {
     foreach $vars [eval [linsert $opts 0 Widget::hasChangedX $path]] { break }
 
     if { $chstate || $cheditable } {
-	set state [Widget::getMegawidgetOption $path -state]
-	set editable [Widget::getMegawidgetOption $path -editable]
+        set state [Widget::getMegawidgetOption $path -state]
+        set editable [Widget::getMegawidgetOption $path -editable]
         set btags [bindtags $path]
         if { $editable && [string equal $state "normal"] } {
             set idx [lsearch $btags BwDisabledEntry]
@@ -180,7 +216,7 @@ proc Entry::configure { path args } {
     }
 
     if { $chstate || $chfg || $chdfg || $chbg || $chdbg } {
-	set state [Widget::getMegawidgetOption $path -state]
+        set state [Widget::getMegawidgetOption $path -state]
         if { [string equal $state "disabled"] } {
             $path:cmd configure \
                 -fg [Widget::cget $path -disabledforeground] \
@@ -192,15 +228,15 @@ proc Entry::configure { path args } {
         }
     }
     if { $chstate } {
-	if { [string equal $state "disabled"] } {
-	    set idx [lsearch -exact [bindtags $path] BwEditableEntry]
-	    if { $idx != -1 } {
-		bindtags $path [lreplace [bindtags $path] $idx $idx]
-	    }
-	} else {
-	    set idx [expr {[lsearch [bindtags $path] Bw*Entry] + 1}]
-	    bindtags $path [linsert [bindtags $path] $idx BwEditableEntry]
-	}
+        if { [string equal $state "disabled"] } {
+            set idx [lsearch -exact [bindtags $path] BwEditableEntry]
+            if { $idx != -1 } {
+                bindtags $path [lreplace [bindtags $path] $idx $idx]
+            }
+        } else {
+            set idx [expr {[lsearch [bindtags $path] Bw*Entry] + 1}]
+            bindtags $path [linsert [bindtags $path] $idx BwEditableEntry]
+        }
     }
 
     if { $cheditable } {
@@ -212,21 +248,21 @@ proc Entry::configure { path args } {
     }
 
     if { $chtext } {
-	# Oh my lordee-ba-goordee
-	# Do some magic to prevent multiple validation command firings.
-	# If there is a textvariable, set that to the right value; if not,
-	# disable validation, delete the old text, enable, then set the text.
-	set varName [$path:cmd cget -textvariable]
-	if { ![string equal $varName ""] } {
-	    uplevel \#0 [list set $varName \
-		    [Widget::getMegawidgetOption $path -text]]
-	} else {
-	    set validateState [$path:cmd cget -validate]
-	    $path:cmd configure -validate none
-	    $path:cmd delete 0 end
-	    $path:cmd configure -validate $validateState
-	    $path:cmd insert 0 [Widget::getMegawidgetOption $path -text]
-	}
+        # Oh my lordee-ba-goordee
+        # Do some magic to prevent multiple validation command firings.
+        # If there is a textvariable, set that to the right value; if not,
+        # disable validation, delete the old text, enable, then set the text.
+        set varName [$path:cmd cget -textvariable]
+        if { ![string equal $varName ""] } {
+            uplevel \#0 [list set $varName \
+                    [Widget::getMegawidgetOption $path -text]]
+        } else {
+            set validateState [$path:cmd cget -validate]
+            $path:cmd configure -validate none
+            $path:cmd delete 0 end
+            $path:cmd configure -validate $validateState
+            $path:cmd insert 0 [Widget::getMegawidgetOption $path -text]
+        }
     }
 
     DragSite::setdrag $path $path Entry::_init_drag_cmd Entry::_end_drag_cmd
@@ -242,7 +278,7 @@ proc Entry::configure { path args } {
 # ------------------------------------------------------------------------------
 proc Entry::cget { path option } {
     if { [string equal "-text" $option] } {
-	return [$path:cmd get]
+        return [$path:cmd get]
     }
     Widget::cget $path $option
 }
@@ -394,7 +430,7 @@ proc Entry::_over_cmd { path source event X Y op type dnddata } {
         return 1
     }
     if { [Widget::getoption $path -editable]
-	&& [string equal [Widget::getoption $path -state] "normal"] } {
+        && [string equal [Widget::getoption $path -state] "normal"] } {
         if { ![string equal $event "leave"] } {
             $path:cmd selection clear
             $path:cmd icursor @$x

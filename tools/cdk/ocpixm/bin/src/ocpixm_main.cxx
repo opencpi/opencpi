@@ -32,16 +32,19 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+
+
 /**
-  Given an OpenCPI implementation metadata file for an X-Midas primitive
-  this tool generates the OpenCPI RCC wrapper that will permit the
-  X-Midas primitive to be used as an OpenCPI RCC component outside of
+  Given an OpenOCPI implementation metadata file for an X-Midas primitive
+  this tool generates the OpenOCPI RCC wrapper that will permit the
+  X-Midas primitive to be used as an OpenOCPI RCC component outside of
   the X-Midas runtime environment.
   When an X-Midas primitive is wrapped to become an RCC component the
   primitive no longer depends on the X-Midas runtime environment or
   build system. Instead, the X-Midas primitive becomes dependent on
   the X-Midas "intercept" library which is collection of M$ and m_ functions
-  that replaces the X-Midas library implementation with an OpenCPI
+  that replaces the X-Midas library implementation with an OpenOCPI
   implementation.
 
   Usage:
@@ -100,11 +103,11 @@
 
 ************************************************************************** */
 
-#include <CpiOsAssert.h>
-#include <CpiUtilVfs.h>
-#include <CpiUtilFileFs.h>
-#include <CpiUtilEzxml.h>
-#include <CpiUtilCommandLineConfiguration.h>
+#include <OcpiOsAssert.h>
+#include <OcpiUtilVfs.h>
+#include <OcpiUtilFileFs.h>
+#include <OcpiUtilEzxml.h>
+#include <OcpiUtilCommandLineConfiguration.h>
 
 #include <string>
 #include <vector>
@@ -124,20 +127,20 @@ namespace
 {
   enum PropertyType
   {
-    CPI_none, // 0 isn't a valid type
-    CPI_Bool,
-    CPI_Char,
-    CPI_UChar,
-    CPI_Short,
-    CPI_UShort,
-    CPI_Long,
-    CPI_ULong,
-    CPI_LongLong,
-    CPI_ULongLong,
-    CPI_Float,
-    CPI_Double,
-    CPI_String,
-    CPI_data_type_limit
+    OCPI_none, // 0 isn't a valid type
+    OCPI_Bool,
+    OCPI_Char,
+    OCPI_UChar,
+    OCPI_Short,
+    OCPI_UShort,
+    OCPI_Long,
+    OCPI_ULong,
+    OCPI_LongLong,
+    OCPI_ULongLong,
+    OCPI_Float,
+    OCPI_Double,
+    OCPI_String,
+    OCPI_data_type_limit
   };
 
   const char* propertyTypes [ ] =
@@ -248,7 +251,7 @@ namespace
       argument_idx ( 0 ),
       property ( 0 ),
       value ( 0 ),
-      data_type ( CPI_none )
+      data_type ( OCPI_none )
 
     {
       // Empty
@@ -266,7 +269,7 @@ namespace
     : name ( 0 ),
       property ( 0 ),
       value ( 0 ),
-      data_type ( CPI_none )
+      data_type ( OCPI_none )
 
     {
       // Empty
@@ -283,7 +286,7 @@ namespace
     : name ( 0 ),
       property ( 0 ),
       value ( 0 ),
-      data_type ( CPI_none )
+      data_type ( OCPI_none )
 
     {
       // Empty
@@ -300,7 +303,7 @@ namespace
     : name ( 0 ),
       property ( 0 ),
       value ( 0 ),
-      data_type ( CPI_none )
+      data_type ( OCPI_none )
 
     {
       // Empty
@@ -314,7 +317,7 @@ namespace
   struct Simple
   {
     Simple ( )
-      : type ( CPI_none ),
+      : type ( OCPI_none ),
         is_sequence ( false ),
         n_bytes ( 0 ),
         align ( 0 ),
@@ -383,15 +386,15 @@ namespace
   */
   enum ControlOp
   {
-    CPI_CONTROL_OP_INITIALIZE   = ( 1 << 0 ),
-    CPI_CONTROL_OP_START        = ( 1 << 1 ),
-    CPI_CONTROL_OP_STOP         = ( 1 << 2 ),
-    CPI_CONTROL_OP_RELEASE      = ( 1 << 3 ),
-    CPI_CONTROL_OP_BEFORE_QUERY = ( 1 << 4 ),
-    CPI_CONTROL_OP_AFTER_CONFIG = ( 1 << 5 ),
-    CPI_CONTROL_OP_TEST         = ( 1 << 6 ),
-    CPI_CONTROL_OP_NONE         = ( 1 << 7 ),
-    CPI_CONTROL_OP_FINISH = CPI_CONTROL_OP_AFTER_CONFIG
+    OCPI_CONTROL_OP_INITIALIZE   = ( 1 << 0 ),
+    OCPI_CONTROL_OP_START        = ( 1 << 1 ),
+    OCPI_CONTROL_OP_STOP         = ( 1 << 2 ),
+    OCPI_CONTROL_OP_RELEASE      = ( 1 << 3 ),
+    OCPI_CONTROL_OP_BEFORE_QUERY = ( 1 << 4 ),
+    OCPI_CONTROL_OP_AFTER_CONFIG = ( 1 << 5 ),
+    OCPI_CONTROL_OP_TEST         = ( 1 << 6 ),
+    OCPI_CONTROL_OP_NONE         = ( 1 << 7 ),
+    OCPI_CONTROL_OP_FINISH = OCPI_CONTROL_OP_AFTER_CONFIG
   };
 
   const char* control_op_str [ ] =
@@ -407,7 +410,7 @@ namespace
     0,
   };
 
-  std::size_t tsize [ CPI_data_type_limit ] =
+  std::size_t tsize [ OCPI_data_type_limit ] =
   {
      0,
      8/CHAR_BIT,
@@ -424,7 +427,7 @@ namespace
      8/CHAR_BIT
   };
 
-  class OcpiXmConfigurator : public CPI::Util::CommandLineConfiguration
+  class OcpiXmConfigurator : public OCPI::Util::CommandLineConfiguration
   {
     public:
 
@@ -440,28 +443,28 @@ namespace
   };
 
   OcpiXmConfigurator::OcpiXmConfigurator ( )
-    : CPI::Util::CommandLineConfiguration ( options ),
+    : OCPI::Util::CommandLineConfiguration ( options ),
       help ( false ),
       verbose ( false )
   {
     // Empty
   }
 
-  CPI::Util::CommandLineConfiguration::Option OcpiXmConfigurator::options [ ] =
+  OCPI::Util::CommandLineConfiguration::Option OcpiXmConfigurator::options [ ] =
   {
-    { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+    { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
       "verbose",
       "Be verbose",
-      CPI_CLC_OPT ( &OcpiXmConfigurator::verbose ),
+      OCPI_CLC_OPT ( &OcpiXmConfigurator::verbose ),
       0
     },
-    { CPI::Util::CommandLineConfiguration::OptionType::NONE,
+    { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
       "help",
       "This message",
-      CPI_CLC_OPT ( &OcpiXmConfigurator::help ),
+      OCPI_CLC_OPT ( &OcpiXmConfigurator::help ),
       0
     },
-    { CPI::Util::CommandLineConfiguration::OptionType::END,
+    { OCPI::Util::CommandLineConfiguration::OptionType::END,
       "end",
       "End",
       0,
@@ -545,9 +548,9 @@ namespace
   }
 
   ezxml_t get_xml_file_root ( const char* filename,
-                              CPI::Util::EzXml::Doc& doc )
+                              OCPI::Util::EzXml::Doc& doc )
   {
-    CPI::Util::FileFs::FileFs file_fs ( "/" );
+    OCPI::Util::FileFs::FileFs file_fs ( "/" );
 
     const std::string fs_filename ( file_fs.fromNativeName ( filename ) );
 
@@ -595,7 +598,7 @@ namespace
   }
 
   ezxml_t get_component_spec_root ( ezxml_t& xml,
-                                    CPI::Util::EzXml::Doc& doc )
+                                    OCPI::Util::EzXml::Doc& doc )
   {
     ezxml_t spec = ezxml_child ( xml, "ComponentSpec" );
 
@@ -834,10 +837,10 @@ namespace
     }
     else
     {
-      t->type = CPI_ULong;
+      t->type = OCPI_ULong;
     }
 
-    if ( t->type == CPI_String )
+    if ( t->type == OCPI_String )
     {
       get_number ( xp, "StringLength", &t->string_length, &found, 0 );
 
@@ -870,7 +873,7 @@ namespace
       throw std::string ( "Missing ArraySize attribute for sequence attribute" );
     }
 
-    t->n_bytes = roundup ( t->type == CPI_String ? t->string_length + 1
+    t->n_bytes = roundup ( t->type == OCPI_String ? t->string_length + 1
                                                 : tsize [ t->type ], 4 );
 
     if ( t->array_n_bytes )
@@ -1095,7 +1098,7 @@ namespace
           }
         } /* End: while ( ( o = strtok_r ( ( char* ) ops, ", \t", &last...  */
 
-        if ( !( impl->wci.control_ops & ( 1 << CPI_CONTROL_OP_START ) ) )
+        if ( !( impl->wci.control_ops & ( 1 << OCPI_CONTROL_OP_START ) ) )
         {
           throw std::string ( "Missing \"start\" operation in ControlOperations attribute" );
         }
@@ -1243,7 +1246,7 @@ namespace
       }
     }
 
-    return CPI_ULong;
+    return OCPI_ULong;
   }
 
   void parse_tag_xm_widgets ( ezxml_t& xml_impl,
@@ -1797,7 +1800,7 @@ namespace
   void create_output_stream ( const char* filename,
                               std::ofstream& out )
   {
-    CPI::Util::FileFs::FileFs file_fs ( "/" );
+    OCPI::Util::FileFs::FileFs file_fs ( "/" );
 
     const std::string fs_filename ( file_fs.fromNativeName ( filename ) );
 
@@ -3148,7 +3151,7 @@ namespace
     generate_xm_proxy_source ( impl );
   }
 
-  void xm_to_opencpi ( int argc, char* argv [ ] )
+  void xm_to_openocpi ( int argc, char* argv [ ] )
   {
     /* ---- Parse command line arguments -------------------------------- */
 
@@ -3167,13 +3170,13 @@ namespace
 
     /* ---- Find XmImplementation root ---------------------------------- */
 
-    CPI::Util::EzXml::Doc impl_doc;
+    OCPI::Util::EzXml::Doc impl_doc;
 
     ezxml_t xml_impl = get_xml_file_root ( argv [ 1 ], impl_doc );
 
     /* ---- Find componentSpec root ------------------------------------- */
 
-    CPI::Util::EzXml::Doc spec_doc;
+    OCPI::Util::EzXml::Doc spec_doc;
 
     ezxml_t xml_spec = get_component_spec_root ( xml_impl, spec_doc );
 
@@ -3196,7 +3199,7 @@ int main ( int argc, char* argv [ ] )
 {
   try
   {
-    xm_to_opencpi ( argc, argv );
+    xm_to_openocpi ( argc, argv );
   }
   catch ( const std::string& s )
   {

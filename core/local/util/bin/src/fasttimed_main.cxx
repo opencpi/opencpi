@@ -1,3 +1,4 @@
+
 /* $Id: fasttimed.c,v 1.15 2005/08/27 08:24:45 alexholkner Exp $ 
  *
  * Copyright (c) Internet2, 2005.  All rights reserved.
@@ -231,5 +232,6 @@ int main(int argc, char **argv)
 
 void signal_handler(int sig)
 {
+    ( void ) sig;
     shutdown_flag = 1;
 }

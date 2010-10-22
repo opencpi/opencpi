@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # -----------------------------------------------------------------------------
 #  passwddlg.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -17,34 +53,34 @@ namespace eval PasswdDlg {
     Widget::define PasswdDlg passwddlg Dialog LabelEntry
 
     Widget::bwinclude PasswdDlg Dialog :cmd \
-	    remove     {-image -bitmap -side -default -cancel -separator} \
-	    initialize {-modal local -anchor e}
+            remove     {-image -bitmap -side -default -cancel -separator} \
+            initialize {-modal local -anchor e}
     
     Widget::bwinclude PasswdDlg LabelEntry .frame.lablog \
-	    remove [list -command -justify -name -show -side	        \
-		-state -takefocus -width -xscrollcommand -padx -pady	\
-		-dragenabled -dragendcmd -dragevent -draginitcmd	\
-		-dragtype -dropenabled -dropcmd -dropovercmd -droptypes	\
-		] \
-	    prefix [list login -editable -helptext -helpvar -label      \
-		-text -textvariable -underline				\
-		] \
-	    initialize [list -relief sunken -borderwidth 2		\
-		-labelanchor w -width 15 -loginlabel "Login"		\
-		]
+            remove [list -command -justify -name -show -side                \
+                -state -takefocus -width -xscrollcommand -padx -pady        \
+                -dragenabled -dragendcmd -dragevent -draginitcmd        \
+                -dragtype -dropenabled -dropcmd -dropovercmd -droptypes        \
+                ] \
+            prefix [list login -editable -helptext -helpvar -label      \
+                -text -textvariable -underline                                \
+                ] \
+            initialize [list -relief sunken -borderwidth 2                \
+                -labelanchor w -width 15 -loginlabel "Login"                \
+                ]
     
-    Widget::bwinclude PasswdDlg LabelEntry .frame.labpass		\
-	    remove [list -command -width -show -side -takefocus		\
-		-xscrollcommand -dragenabled -dragendcmd -dragevent	\
-		-draginitcmd -dragtype -dropenabled -dropcmd		\
-		-dropovercmd -droptypes -justify -padx -pady -name	\
-		] \
-	    prefix [list passwd -editable -helptext -helpvar -label	\
-		-state -text -textvariable -underline			\
-		] \
-	    initialize [list -relief sunken -borderwidth 2		\
-		-labelanchor w -width 15 -passwdlabel "Password"	\
-		]
+    Widget::bwinclude PasswdDlg LabelEntry .frame.labpass                \
+            remove [list -command -width -show -side -takefocus                \
+                -xscrollcommand -dragenabled -dragendcmd -dragevent        \
+                -draginitcmd -dragtype -dropenabled -dropcmd                \
+                -dropovercmd -droptypes -justify -padx -pady -name        \
+                ] \
+            prefix [list passwd -editable -helptext -helpvar -label        \
+                -state -text -textvariable -underline                        \
+                ] \
+            initialize [list -relief sunken -borderwidth 2                \
+                -labelanchor w -width 15 -passwdlabel "Password"        \
+                ]
     
     Widget::declare PasswdDlg {
         {-type        Enum       ok           0 {ok okcancel}}
@@ -60,7 +96,7 @@ namespace eval PasswdDlg {
 proc PasswdDlg::create { path args } {
 
     array set maps [list PasswdDlg {} :cmd {} .frame.lablog {} \
-	    .frame.labpass {}]
+            .frame.labpass {}]
     array set maps [Widget::parseArgs PasswdDlg $args]
 
     Widget::initFromODB PasswdDlg "$path#PasswdDlg" $maps(PasswdDlg)
@@ -79,7 +115,7 @@ proc PasswdDlg::create { path args } {
 
     eval [list Dialog::create $path] $maps(:cmd) \
         [list -class PasswdDlg -image [Bitmap::get passwd] \
-	     -side bottom -default $defb -cancel $canb]
+             -side bottom -default $defb -cancel $canb]
     foreach but $lbut {
         if { $but == "ok" && $cmd != "" } {
             Dialog::add $path -text $but -name $but -command $cmd
@@ -93,17 +129,17 @@ proc PasswdDlg::create { path args } {
     bind $frame <Destroy> [list Widget::destroy $path\#PasswdDlg]
 
     set lablog [eval [list LabelEntry::create $frame.lablog] \
-		    $maps(.frame.lablog) \
-		    [list -name login -dragenabled 0 -dropenabled 0 \
-			 -command [list PasswdDlg::_verifonpasswd \
-				       $path $frame.labpass]]]
+                    $maps(.frame.lablog) \
+                    [list -name login -dragenabled 0 -dropenabled 0 \
+                         -command [list PasswdDlg::_verifonpasswd \
+                                       $path $frame.labpass]]]
 
     set labpass [eval [list LabelEntry::create $frame.labpass] \
-		     $maps(.frame.labpass) \
-		     [list -name password -show "*" \
-			  -dragenabled 0 -dropenabled 0 \
-			  -command [list PasswdDlg::_verifonlogin \
-					$path $frame.lablog]]]
+                     $maps(.frame.labpass) \
+                     [list -name password -show "*" \
+                          -dragenabled 0 -dropenabled 0 \
+                          -command [list PasswdDlg::_verifonlogin \
+                                        $path $frame.lablog]]]
 
     # compute label width
     if {[$lablog cget -labelwidth] == 0} {
@@ -122,9 +158,9 @@ proc PasswdDlg::create { path args } {
     # added by bach@mwgdna.com
     #  give focus to loginlabel unless the state is disabled
     if {[$lablog cget -editable]} {
-	focus $frame.lablog.e
+        focus $frame.lablog.e
     } else {
-	focus $frame.labpass.e
+        focus $frame.labpass.e
     }
     set res [Dialog::draw $path]
 

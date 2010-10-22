@@ -1,3 +1,4 @@
+
 # ----------------------------------------------------------------------------
 #  xpm2image.tcl
 #  Slightly modified xpm-to-image command
@@ -44,7 +45,7 @@ proc xpm-to-image { file } {
             set data(y_hotspot) [lindex $sizes 5]
         }
     } else {
-	    error "size line {$sizes} in $file did not compute"
+            error "size line {$sizes} in $file did not compute"
     }
 
     #

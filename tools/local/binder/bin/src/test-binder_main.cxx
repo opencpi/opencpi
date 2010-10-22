@@ -1,33 +1,51 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 #include <string>
 #include <iostream>
 #include <ezxml.h>
-#include <CpiOsDebug.h>
-#include <CpiOsFileSystem.h>
-#include <CpiOsProcessManager.h>
-#include <CpiUtilVfs.h>
-#include <CpiUtilVfsUtil.h>
-#include <CpiUtilFileFs.h>
-#include <CpiUtilZipFs.h>
-#include <CpiUtilTest.h>
-#include <CpiUtilEzxml.h>
-#include <CpiUtilCommandLineConfiguration.h>
+#include <OcpiOsDebug.h>
+#include <OcpiOsFileSystem.h>
+#include <OcpiOsProcessManager.h>
+#include <OcpiUtilVfs.h>
+#include <OcpiUtilVfsUtil.h>
+#include <OcpiUtilFileFs.h>
+#include <OcpiUtilZipFs.h>
+#include <OcpiUtilTest.h>
+#include <OcpiUtilEzxml.h>
+#include <OcpiUtilCommandLineConfiguration.h>
 
 /*
  * ----------------------------------------------------------------------
@@ -36,7 +54,7 @@
  */
 
 class TestBinderConfigurator
-  : public CPI::Util::CommandLineConfiguration
+  : public OCPI::Util::CommandLineConfiguration
 {
 public:
   TestBinderConfigurator ();
@@ -56,29 +74,29 @@ private:
 
 TestBinderConfigurator::
 TestBinderConfigurator ()
-  : CPI::Util::CommandLineConfiguration (g_options),
+  : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
 #if !defined (NDEBUG)
     debugBreak (false),
 #endif
-    rccBinderExecutable ("cpi-rcc-binder")
+    rccBinderExecutable ("ocpi-rcc-binder")
 {
 }
 
-CPI::Util::CommandLineConfiguration::Option
+OCPI::Util::CommandLineConfiguration::Option
 TestBinderConfigurator::g_options[] = {
-  { CPI::Util::CommandLineConfiguration::OptionType::STRING,
-    "rccBinderExecutable", "CPI RCC Binder Executable",
-    CPI_CLC_OPT(&TestBinderConfigurator::rccBinderExecutable) },
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
+    "rccBinderExecutable", "OCPI RCC Binder Executable",
+    OCPI_CLC_OPT(&TestBinderConfigurator::rccBinderExecutable), 0 },
 #if !defined (NDEBUG)
-  { CPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "break", "Whether to break on startup",
-    CPI_CLC_OPT(&TestBinderConfigurator::debugBreak) },
+    OCPI_CLC_OPT(&TestBinderConfigurator::debugBreak), 0 },
 #endif
-  { CPI::Util::CommandLineConfiguration::OptionType::NONE,
+  { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
     "help", "This message",
-    CPI_CLC_OPT(&TestBinderConfigurator::help) },
-  { CPI::Util::CommandLineConfiguration::OptionType::END }
+    OCPI_CLC_OPT(&TestBinderConfigurator::help), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::END, 0, 0, 0, 0 }
 };
 
 static
@@ -98,7 +116,7 @@ printUsage (TestBinderConfigurator & config,
  */
 
 void
-writeFile (CPI::Util::Vfs::Vfs & fs,
+writeFile (OCPI::Util::Vfs::Vfs & fs,
            const std::string & fileName,
            const char * data)
   throw (std::string)
@@ -109,7 +127,7 @@ writeFile (CPI::Util::Vfs::Vfs & fs,
 }
 
 std::string
-readFile (CPI::Util::Vfs::Vfs & fs,
+readFile (OCPI::Util::Vfs::Vfs & fs,
           const std::string & fileName)
   throw (std::string)
 {
@@ -131,24 +149,24 @@ public:
     std::string relName;
     std::string fileName;
     std::string nativeName;
-    CPI::Util::Vfs::EventualEraser eraser;
+    OCPI::Util::Vfs::EventualEraser eraser;
   };
 
 public:
-  TempFileHolder (CPI::Util::FileFs::FileFs & fs,
+  TempFileHolder (OCPI::Util::FileFs::FileFs & fs,
                   const std::string & wd);
   ~TempFileHolder ();
 
   Info & add (const std::string & name);
 
 private:
-  CPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs::FileFs & m_fs;
   const std::string m_wd;
   std::vector<Info *> m_infos;
 };
 
 TempFileHolder::
-TempFileHolder (CPI::Util::FileFs::FileFs & fs,
+TempFileHolder (OCPI::Util::FileFs::FileFs & fs,
                 const std::string & wd)
   : m_fs (fs),
     m_wd (wd)
@@ -169,7 +187,7 @@ TempFileHolder::add (const std::string & name)
 {
   Info * i = new Info;
   i->relName = name;
-  i->fileName = CPI::Util::Vfs::joinNames (m_wd, name);
+  i->fileName = OCPI::Util::Vfs::joinNames (m_wd, name);
   i->nativeName = m_fs.toNativeName (i->fileName);
   i->eraser.eventuallyErase (&m_fs, i->fileName);
   m_infos.push_back (i);
@@ -193,7 +211,7 @@ simplePRFData = "\
 <properties>\n\
     <description />\n\
     <simple id=\"DCE:505483cc-2b56-4156-99dc-1cd2a717aa2d\" type=\"string\" name=\"videoDevice\" mode=\"readwrite\">\n\
-        <description>CPI_MAX_SIZE=64</description>\n\
+        <description>OCPI_MAX_SIZE=64</description>\n\
         <kind kindtype=\"configure\" />\n\
     </simple>\n\
     <simple id=\"DCE:5b008c52-dd59-435e-b3f6-3125df361c2c\" type=\"ushort\" name=\"width\" mode=\"readwrite\">\n\
@@ -257,24 +275,24 @@ simpleSCDData = "\
  * ----------------------------------------------------------------------
  */
 
-class ZipFileTest : public CPI::Util::Test::Test {
+class ZipFileTest : public OCPI::Util::Test::Test {
 public:
-  ZipFileTest (CPI::Util::FileFs::FileFs & fs,
+  ZipFileTest (OCPI::Util::FileFs::FileFs & fs,
                const std::string & workingDirectory,
                const std::string & rccBinderExecutable);
   void run ();
 
 private:
-  CPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs::FileFs & m_fs;
   std::string m_wd;
   std::string m_rccBinderExecutable;
 };
 
 ZipFileTest::
-ZipFileTest (CPI::Util::FileFs::FileFs & fs,
+ZipFileTest (OCPI::Util::FileFs::FileFs & fs,
              const std::string & workingDirectory,
              const std::string & rccBinderExecutable)
-  : CPI::Util::Test::Test ("Zip File Test"),
+  : OCPI::Util::Test::Test ("Zip File Test"),
     m_fs (fs),
     m_wd (workingDirectory),
     m_rccBinderExecutable (rccBinderExecutable)
@@ -296,21 +314,21 @@ ZipFileTest::run ()
 
   TempFileHolder::Info & exeFile = temp.add ("test.zip");
 
-  CPI::OS::ProcessManager::ParameterList parameters;
+  OCPI::OS::ProcessManager::ParameterList parameters;
   parameters.push_back (std::string ("--workerDll=") + dllFile.nativeName);
   parameters.push_back (std::string ("--worker=dummyEntrypoint=") + scdFile.nativeName);
   parameters.push_back (std::string ("--output=") + exeFile.nativeName);
 
-  CPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
+  OCPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
   exe.wait ();
 
-  CPI::Util::ZipFs::ZipFs zip (&m_fs, exeFile.fileName);
-  CPI::Util::EzXml::Doc doc (zip, "cpi-meta.inf");
+  OCPI::Util::ZipFs::ZipFs zip (&m_fs, exeFile.fileName);
+  OCPI::Util::EzXml::Doc doc (zip, "ocpi-meta.inf");
   ezxml_t root = doc.getRootNode ();
 
   test (root);
   test (ezxml_name (root));
-  test (std::strcmp (ezxml_name (root), "cpx:rcc-executable") == 0);
+  test (std::strcmp (root->name, "cpx:rcc-executable") == 0);
 
   ezxml_t fileNode = ezxml_child (root, "file");
   test (fileNode);
@@ -337,24 +355,24 @@ ZipFileTest::run ()
  * ----------------------------------------------------------------------
  */
 
-class CreateSPDTest : public CPI::Util::Test::Test {
+class CreateSPDTest : public OCPI::Util::Test::Test {
 public:
-  CreateSPDTest (CPI::Util::FileFs::FileFs & fs,
+  CreateSPDTest (OCPI::Util::FileFs::FileFs & fs,
                  const std::string & workingDirectory,
                  const std::string & rccBinderExecutable);
   void run ();
 
 private:
-  CPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs::FileFs & m_fs;
   std::string m_wd;
   std::string m_rccBinderExecutable;
 };
 
 CreateSPDTest::
-CreateSPDTest (CPI::Util::FileFs::FileFs & fs,
+CreateSPDTest (OCPI::Util::FileFs::FileFs & fs,
                const std::string & workingDirectory,
                const std::string & rccBinderExecutable)
-  : CPI::Util::Test::Test ("Create SPD Test"),
+  : OCPI::Util::Test::Test ("Create SPD Test"),
     m_fs (fs),
     m_wd (workingDirectory),
     m_rccBinderExecutable (rccBinderExecutable)
@@ -377,21 +395,21 @@ CreateSPDTest::run ()
   TempFileHolder::Info & spdFile = temp.add ("VideoCapture.spd.xml");
   TempFileHolder::Info & exeFile = temp.add ("test.zip");
 
-  CPI::OS::ProcessManager::ParameterList parameters;
+  OCPI::OS::ProcessManager::ParameterList parameters;
   parameters.push_back (std::string ("--workerDll=") + dllFile.nativeName);
   parameters.push_back (std::string ("--worker=dummyEntrypoint=") + scdFile.nativeName);
   parameters.push_back (std::string ("--output=") + exeFile.nativeName);
   parameters.push_back (std::string ("--updateSPD"));
 
-  CPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
+  OCPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
   exe.wait ();
 
-  CPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
+  OCPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
   ezxml_t root = doc.getRootNode ();
 
   test (root);
   test (ezxml_name (root));
-  test (std::strcmp (ezxml_name (root), "softpkg") == 0);
+  test (std::strcmp (root->name, "softpkg") == 0);
 
   ezxml_t epNode = ezxml_get (root, "implementation", 0, "code", 0, "entrypoint", -1);
   test (epNode);
@@ -412,15 +430,15 @@ CreateSPDTest::run ()
  * ----------------------------------------------------------------------
  */
 
-class UpdateSPDNoImplementationTest : public CPI::Util::Test::Test {
+class UpdateSPDNoImplementationTest : public OCPI::Util::Test::Test {
 public:
-  UpdateSPDNoImplementationTest (CPI::Util::FileFs::FileFs & fs,
+  UpdateSPDNoImplementationTest (OCPI::Util::FileFs::FileFs & fs,
                                  const std::string & workingDirectory,
                                  const std::string & rccBinderExecutable);
   void run ();
 
 private:
-  CPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs::FileFs & m_fs;
   std::string m_wd;
   std::string m_rccBinderExecutable;
   static const char * s_spdData;
@@ -450,10 +468,10 @@ s_spdData = "\
 ";
 
 UpdateSPDNoImplementationTest::
-UpdateSPDNoImplementationTest (CPI::Util::FileFs::FileFs & fs,
+UpdateSPDNoImplementationTest (OCPI::Util::FileFs::FileFs & fs,
                                const std::string & workingDirectory,
                                const std::string & rccBinderExecutable)
-  : CPI::Util::Test::Test ("Update SPD No Implementation"),
+  : OCPI::Util::Test::Test ("Update SPD No Implementation"),
     m_fs (fs),
     m_wd (workingDirectory),
     m_rccBinderExecutable (rccBinderExecutable)
@@ -477,24 +495,24 @@ UpdateSPDNoImplementationTest::run ()
   TempFileHolder::Info & dllFile = temp.add ("test.dll");
   writeFile (m_fs, dllFile.fileName, "dummy");
 
-  CPI::OS::ProcessManager::ParameterList parameters;
+  OCPI::OS::ProcessManager::ParameterList parameters;
   parameters.push_back (std::string ("--workerDll=") + dllFile.nativeName);
   parameters.push_back (std::string ("--worker=dummyEntrypoint=") + spdFile.nativeName);
   parameters.push_back (std::string ("--output=") + exeFile.nativeName);
   parameters.push_back (std::string ("--updateSPD"));
   parameters.push_back (std::string ("--os=Linux:2.6.19"));
   parameters.push_back (std::string ("--processor=ppc"));
-  parameters.push_back (std::string ("--cpiDeviceId=42"));
+  parameters.push_back (std::string ("--ocpiDeviceId=42"));
 
-  CPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
+  OCPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
   exe.wait ();
 
-  CPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
+  OCPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
   ezxml_t root = doc.getRootNode ();
 
   test (root);
   test (ezxml_name (root));
-  test (std::strcmp (ezxml_name (root), "softpkg") == 0);
+  test (std::strcmp (root->name, "softpkg") == 0);
 
   /*
    * Check that all the information from the original SPD is still there.
@@ -557,9 +575,9 @@ UpdateSPDNoImplementationTest::run ()
  * ----------------------------------------------------------------------
  */
 
-class UpdateSPDExistingImplementationTest : public CPI::Util::Test::Test {
+class UpdateSPDExistingImplementationTest : public OCPI::Util::Test::Test {
 public:
-  UpdateSPDExistingImplementationTest (CPI::Util::FileFs::FileFs & fs,
+  UpdateSPDExistingImplementationTest (OCPI::Util::FileFs::FileFs & fs,
                                        const std::string & workingDirectory,
                                        const std::string & rccBinderExecutable);
   void run ();
@@ -570,7 +588,7 @@ protected:
   void testUpdateByInfo ();
 
 private:
-  CPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs::FileFs & m_fs;
   std::string m_wd;
   std::string m_rccBinderExecutable;
   static const char * s_spdData;
@@ -603,10 +621,10 @@ s_spdData = "\
         <runtime name=\"RCC\"/>\n\
         <os name=\"VxWorks\" version=\"6.6\"/>\n\
         <processor name=\"x86\"/>\n\
-        <dependency type=\"CPI Runtime\">\n\
+        <dependency type=\"OCPI Runtime\">\n\
             <propertyref refid=\"DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43\" value=\"RCC\"></propertyref>\n\
         </dependency>\n\
-        <dependency type=\"CPI Device Id\">\n\
+        <dependency type=\"OCPI Device Id\">\n\
             <propertyref refid=\"DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2\" value=\"1234\"></propertyref>\n\
         </dependency>\n\
     </implementation>\n\
@@ -618,10 +636,10 @@ UpdateSPDExistingImplementationTest::
 s_implUUID = "DCE:70b385a5-d3e5-4146-8f26-4ce4e0c8dd7e";
 
 UpdateSPDExistingImplementationTest::
-UpdateSPDExistingImplementationTest (CPI::Util::FileFs::FileFs & fs,
+UpdateSPDExistingImplementationTest (OCPI::Util::FileFs::FileFs & fs,
                                      const std::string & workingDirectory,
                                      const std::string & rccBinderExecutable)
-  : CPI::Util::Test::Test ("Update SPD Existing Implementation"),
+  : OCPI::Util::Test::Test ("Update SPD Existing Implementation"),
     m_fs (fs),
     m_wd (workingDirectory),
     m_rccBinderExecutable (rccBinderExecutable)
@@ -653,24 +671,24 @@ UpdateSPDExistingImplementationTest::testUpdateAll ()
   TempFileHolder::Info & dllFile = temp.add ("test.dll");
   writeFile (m_fs, dllFile.fileName, "dummy");
 
-  CPI::OS::ProcessManager::ParameterList parameters;
+  OCPI::OS::ProcessManager::ParameterList parameters;
   parameters.push_back (std::string ("--workerDll=") + dllFile.nativeName);
   parameters.push_back (std::string ("--worker=dummyEntrypoint=") + spdFile.nativeName + std::string(":") + std::string(s_implUUID));
   parameters.push_back (std::string ("--output=") + exeFile.nativeName);
   parameters.push_back (std::string ("--updateSPD"));
   parameters.push_back (std::string ("--os=Linux:2.6.19"));
   parameters.push_back (std::string ("--processor=ppc"));
-  parameters.push_back (std::string ("--cpiDeviceId=42"));
+  parameters.push_back (std::string ("--ocpiDeviceId=42"));
 
-  CPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
+  OCPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
   exe.wait ();
 
-  CPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
+  OCPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
   ezxml_t root = doc.getRootNode ();
 
   test (root);
   test (ezxml_name (root));
-  test (std::strcmp (ezxml_name (root), "softpkg") == 0);
+  test (std::strcmp (root->name, "softpkg") == 0);
 
   /*
    * Check that the implementation was updated with the desired information.
@@ -725,21 +743,21 @@ UpdateSPDExistingImplementationTest::testUpdateNothing ()
   TempFileHolder::Info & dllFile = temp.add ("test.dll");
   writeFile (m_fs, dllFile.fileName, "dummy");
 
-  CPI::OS::ProcessManager::ParameterList parameters;
+  OCPI::OS::ProcessManager::ParameterList parameters;
   parameters.push_back (std::string ("--workerDll=") + dllFile.nativeName);
   parameters.push_back (std::string ("--worker=dummyEntrypoint=") + spdFile.nativeName + std::string(":") + std::string(s_implUUID));
   parameters.push_back (std::string ("--output=") + exeFile.nativeName);
   parameters.push_back (std::string ("--updateSPD"));
 
-  CPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
+  OCPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
   exe.wait ();
 
-  CPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
+  OCPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
   ezxml_t root = doc.getRootNode ();
 
   test (root);
   test (ezxml_name (root));
-  test (std::strcmp (ezxml_name (root), "softpkg") == 0);
+  test (std::strcmp (root->name, "softpkg") == 0);
 
   /*
    * Check that the old implementation information was carried forward.
@@ -789,24 +807,24 @@ UpdateSPDExistingImplementationTest::testUpdateByInfo ()
   TempFileHolder::Info & dllFile = temp.add ("test.dll");
   writeFile (m_fs, dllFile.fileName, "dummy");
 
-  CPI::OS::ProcessManager::ParameterList parameters;
+  OCPI::OS::ProcessManager::ParameterList parameters;
   parameters.push_back (std::string ("--workerDll=") + dllFile.nativeName);
   parameters.push_back (std::string ("--worker=dummyEntrypoint=") + spdFile.nativeName);
   parameters.push_back (std::string ("--output=") + exeFile.nativeName);
   parameters.push_back (std::string ("--updateSPD"));
   parameters.push_back (std::string ("--os=VxWorks:6.6"));
   parameters.push_back (std::string ("--processor=x86"));
-  parameters.push_back (std::string ("--cpiDeviceId=1234"));
+  parameters.push_back (std::string ("--ocpiDeviceId=1234"));
 
-  CPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
+  OCPI::OS::ProcessManager exe (m_rccBinderExecutable, parameters);
   exe.wait ();
 
-  CPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
+  OCPI::Util::EzXml::Doc doc (m_fs, spdFile.fileName);
   ezxml_t root = doc.getRootNode ();
 
   test (root);
   test (ezxml_name (root));
-  test (std::strcmp (ezxml_name (root), "softpkg") == 0);
+  test (std::strcmp (root->name, "softpkg") == 0);
 
   /*
    * Check that the implementation was updated.
@@ -871,9 +889,9 @@ testRccBinderInt (int argc, char * argv[])
   }
 
   try {
-    CPI::Util::Test::Suite tests ("CPI RCC Binder Tests");
-    CPI::Util::FileFs::FileFs fs ("/");
-    std::string cwd = CPI::OS::FileSystem::cwd ();
+    OCPI::Util::Test::Suite tests ("OCPI RCC Binder Tests");
+    OCPI::Util::FileFs::FileFs fs ("/");
+    std::string cwd = OCPI::OS::FileSystem::cwd ();
 
     tests.add_test (new ZipFileTest (fs, cwd, config.rccBinderExecutable));
     tests.add_test (new CreateSPDTest (fs, cwd, config.rccBinderExecutable));
@@ -882,7 +900,7 @@ testRccBinderInt (int argc, char * argv[])
     tests.run ();
     n_failed = tests.report ();
   }
-  catch (const CPI::Util::Test::Exception & e) {
+  catch (const OCPI::Util::Test::Exception & e) {
     std::cout << std::endl << "Test Suite exception: " << e.what ( ) << std::endl;
   }
   catch (...) {
@@ -915,7 +933,7 @@ main (int argc, char * argv[])
   {
     for (int i=1; i<argc; i++) {
       if (std::strcmp (argv[i], "--break") == 0) {
-        CPI::OS::debugBreak ();
+        OCPI::OS::debugBreak ();
         break;
       }
     }

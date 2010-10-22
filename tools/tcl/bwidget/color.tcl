@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 namespace eval SelectColor {
     Widget::define SelectColor color Dialog
 
@@ -5,8 +41,8 @@ namespace eval SelectColor {
         {-title     String     "Select a color" 0}
         {-parent    String     ""               0}
         {-color     TkResource ""               0 {label -background}}
-	{-type      Enum       "dialog"         1 {dialog popup}}
-	{-placement String     "center"         1}
+        {-type      Enum       "dialog"         1 {dialog popup}}
+        {-placement String     "center"         1}
     }
 
     variable _baseColors {
@@ -39,28 +75,28 @@ proc SelectColor::create { path args } {
     set type [Widget::cget $path -type]
 
     switch -- [Widget::cget $path -type] {
-	"dialog" {
-	    return [eval [list SelectColor::dialog $path] $args]
-	}
+        "dialog" {
+            return [eval [list SelectColor::dialog $path] $args]
+        }
 
-	"popup" {
-	    set list      [list at center left right above below]
-	    set placement [Widget::cget $path -placement]
-	    set where     [lindex $placement 0]
+        "popup" {
+            set list      [list at center left right above below]
+            set placement [Widget::cget $path -placement]
+            set where     [lindex $placement 0]
 
-	    if {[lsearch $list $where] < 0} {
-		return -code error \
-		    [BWidget::badOptionString placement $placement $list]
-	    }
+            if {[lsearch $list $where] < 0} {
+                return -code error \
+                    [BWidget::badOptionString placement $placement $list]
+            }
 
-	    ## If they specified a parent and didn't pass a second argument
-	    ## in the placement, set the placement relative to the parent.
-	    set parent [Widget::cget $path -parent]
-	    if {[string length $parent]} {
-		if {[llength $placement] == 1} { lappend placement $parent }
-	    }
-	    return [eval [list SelectColor::menu $path $placement] $args]
-	}
+            ## If they specified a parent and didn't pass a second argument
+            ## in the placement, set the placement relative to the parent.
+            set parent [Widget::cget $path -parent]
+            if {[string length $parent]} {
+                if {[llength $placement] == 1} { lappend placement $parent }
+            }
+            return [eval [list SelectColor::menu $path $placement] $args]
+        }
     }
 }
 
@@ -114,14 +150,14 @@ proc SelectColor::menu {path placement args} {
     bind $top <1>      {set SelectColor::_selection -1}
     bind $top <Escape> {set SelectColor::_selection -2}
     bind $top <FocusOut> [subst {if {"%W" == "$top"} \
-				     {set SelectColor::_selection -2}}]
+                                     {set SelectColor::_selection -2}}]
     eval [list BWidget::place $top 0 0] $placement
 
     wm deiconify $top
     raise $top
     if {$::tcl_platform(platform) == "unix"} {
-	tkwait visibility $top
-	update
+        tkwait visibility $top
+        update
     }
     BWidget::SetFocusGrab $top $frame.c0
 
@@ -129,26 +165,26 @@ proc SelectColor::menu {path placement args} {
     BWidget::RestoreFocusGrab $top $frame.c0 destroy
     Widget::destroy $top
     if {$_selection == $count} {
-	array set opts {
-	    -parent -parent
-	    -title  -title
-	    -color  -initialcolor
-	}
-	if {[Widget::theme]} {
-	    set native 1
-	    set nativecmd [list tk_chooseColor -parent $parent]
-	    foreach {key val} $args {
-		if {![info exists opts($key)]} {
-		    set native 0
-		    break
-		}
-		lappend nativecmd $opts($key) $val
-	    }
-	    if {$native} {
-		return [eval $nativecmd]
-	    }
-	}
-	return [eval [list dialog $path] $args]
+        array set opts {
+            -parent -parent
+            -title  -title
+            -color  -initialcolor
+        }
+        if {[Widget::theme]} {
+            set native 1
+            set nativecmd [list tk_chooseColor -parent $parent]
+            foreach {key val} $args {
+                if {![info exists opts($key)]} {
+                    set native 0
+                    break
+                }
+                lappend nativecmd $opts($key) $val
+            }
+            if {$native} {
+                return [eval $nativecmd]
+            }
+        }
+        return [eval [list dialog $path] $args]
     } else {
         return [lindex $colors $_selection]
     }
@@ -198,10 +234,10 @@ proc SelectColor::dialog {path args} {
             bind $fround <ButtonPress-1> [list SelectColor::_select_rgb $count]
             bind $fcolor <ButtonPress-1> [list SelectColor::_select_rgb $count]
 
-	    bind $fround <Double-1> \
-	    	"SelectColor::_select_rgb [list $count]; [list $top] invoke 0"
-	    bind $fcolor <Double-1> \
-	    	"SelectColor::_select_rgb [list $count]; [list $top] invoke 0"
+            bind $fround <Double-1> \
+                    "SelectColor::_select_rgb [list $count]; [list $top] invoke 0"
+            bind $fcolor <Double-1> \
+                    "SelectColor::_select_rgb [list $count]; [list $top] invoke 0"
 
             incr count
             if {[incr col] == 6} {
@@ -248,9 +284,9 @@ proc SelectColor::dialog {path args} {
         for {set x 0} {$x < 200} {incr x 4} {
             for {set y 0} {$y < 200} {incr y 4} {
                 $_image put \
-		    [eval [list format "\#%04x%04x%04x"] \
-			[hsvToRgb [expr {$x/196.0}] [expr {(196-$y)/196.0}] 0.85]] \
-			-to $x $y [expr {$x+4}] [expr {$y+4}]
+                    [eval [list format "\#%04x%04x%04x"] \
+                        [hsvToRgb [expr {$x/196.0}] [expr {(196-$y)/196.0}] 0.85]] \
+                        -to $x $y [expr {$x+4}] [expr {$y+4}]
             }
         }
     }
@@ -416,23 +452,23 @@ proc SelectColor::_set_value {value} {
 proc SelectColor::hsvToRgb {hue sat val} {
     set v [expr {round(65535.0*$val)}]
     if {$sat == 0} {
-	return [list $v $v $v]
+        return [list $v $v $v]
     } else {
-	set hue [expr {$hue*6.0}]
-	if {$hue >= 6.0} {
-	    set hue 0.0
-	}
-	set i [expr {int($hue)}]
-	set f [expr {$hue-$i}]
-	set p [expr {round(65535.0*$val*(1 - $sat))}]
+        set hue [expr {$hue*6.0}]
+        if {$hue >= 6.0} {
+            set hue 0.0
+        }
+        set i [expr {int($hue)}]
+        set f [expr {$hue-$i}]
+        set p [expr {round(65535.0*$val*(1 - $sat))}]
         set q [expr {round(65535.0*$val*(1 - ($sat*$f)))}]
         set t [expr {round(65535.0*$val*(1 - ($sat*(1 - $f))))}]
         switch $i {
-	    0 {return [list $v $t $p]}
-	    1 {return [list $q $v $p]}
-	    2 {return [list $p $v $t]}
-	    3 {return [list $p $q $v]}
-	    4 {return [list $t $p $v]}
+            0 {return [list $v $t $p]}
+            1 {return [list $q $v $p]}
+            2 {return [list $p $v $t]}
+            3 {return [list $p $q $v]}
+            4 {return [list $t $p $v]}
             5 {return [list $v $p $q]}
         }
     }
@@ -450,43 +486,43 @@ proc SelectColor::hsvToRgb {hue sat val} {
 
 proc SelectColor::rgbToHsv {red green blue} {
     if {$red > $green} {
-	set max $red.0
-	set min $green.0
+        set max $red.0
+        set min $green.0
     } else {
-	set max $green.0
-	set min $red.0
+        set max $green.0
+        set min $red.0
     }
     if {$blue > $max} {
-	set max $blue.0
+        set max $blue.0
     } else {
-	if {$blue < $min} {
-	    set min $blue.0
-	}
+        if {$blue < $min} {
+            set min $blue.0
+        }
     }
     set range [expr {$max-$min}]
     if {$max == 0} {
-	set sat 0
+        set sat 0
     } else {
-	set sat [expr {($max-$min)/$max}]
+        set sat [expr {($max-$min)/$max}]
     }
     if {$sat == 0} {
-	set hue 0
+        set hue 0
     } else {
-	set rc [expr {($max - $red)/$range}]
-	set gc [expr {($max - $green)/$range}]
-	set bc [expr {($max - $blue)/$range}]
-	if {$red == $max} {
-	    set hue [expr {.166667*($bc - $gc)}]
-	} else {
-	    if {$green == $max} {
-		set hue [expr {.166667*(2 + $rc - $bc)}]
-	    } else {
-		set hue [expr {.166667*(4 + $gc - $rc)}]
-	    }
-	}
-	if {$hue < 0.0} {
-	    set hue [expr {$hue + 1.0}]
-	}
+        set rc [expr {($max - $red)/$range}]
+        set gc [expr {($max - $green)/$range}]
+        set bc [expr {($max - $blue)/$range}]
+        if {$red == $max} {
+            set hue [expr {.166667*($bc - $gc)}]
+        } else {
+            if {$green == $max} {
+                set hue [expr {.166667*(2 + $rc - $bc)}]
+            } else {
+                set hue [expr {.166667*(4 + $gc - $rc)}]
+            }
+        }
+        if {$hue < 0.0} {
+            set hue [expr {$hue + 1.0}]
+        }
     }
     return [list $hue $sat [expr {$max/65535}]]
 }

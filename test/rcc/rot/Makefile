@@ -1,107 +1,128 @@
-# Copyright (c) 2009 Mercury Federal Systems.
-# 
-# This file is part of OpenCPI.
-# 
-# OpenCPI is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# OpenCPI is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public License
-# along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
+
 
 #
-# When called from test/Makefile.cpi, MakeVars.cpi has already been loaded.
-# Else (when called directly), load MakeVars.cpi.
+# When called from test/Makefile.ocpi, MakeVars.ocpi has already been loaded.
+# Else (when called directly), load MakeVars.ocpi.
 #
 
-ifeq ($(SYSTEM),)
-include ../../../MakeVars.cpi
+ifeq ($(OCPI_OS),)
+include ../../../MakeVars.ocpi
 endif
 
 #
 # These must exist natively on the build host.  Assume that the build host
-# is Linux, and that it was built using $(OUTDIR)=linux-bin.
+# is Linux, and that it was built using $(OCPI_OUT_DIR)=linux-bin.
 #
 
-CPI_RCC_BINDER=$(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-binder
-DO_CPI_RCC_BINDER=\
-  export $(ENV)=$(CPIDIR)/lib/$(SYSTEM)-bin;\
-  $(CPI_RCC_BINDER)
-CPI_RCC_GEN = $(CPIDIR)/tools/local/binder/$(SYSTEM)-bin/cpi-rcc-gen
-DO_CPI_RCC_GEN=\
-  export $(ENV)=$(CPIDIR)/lib/$(SYSTEM)-bin;\
-  $(CPI_RCC_GEN)
+OCPI_RCC_BINDER=$(OCPI_BASE_DIR)/tools/local/binder/$(OCPI_OS)-bin/ocpi-rcc-binder
+DO_OCPI_RCC_BINDER=\
+  export $(ENV)=$(OCPI_BASE_DIR)/lib/$(OCPI_OS)-bin;\
+  $(OCPI_RCC_BINDER)
+OCPI_RCC_GEN = $(OCPI_BASE_DIR)/tools/local/binder/$(OCPI_OS)-bin/ocpi-rcc-gen
+DO_OCPI_RCC_GEN=\
+  export $(ENV)=$(OCPI_BASE_DIR)/lib/$(OCPI_OS)-bin;\
+  $(OCPI_RCC_GEN)
 CFLAGS += -I.
 
-ifeq ($(shell if test -x $(CPI_RCC_BINDER) ; then echo "ok" ; fi),ok)
-ifeq ($(SYSTEM),linux)
+ifeq ($(shell if test -x $(OCPI_RCC_BINDER) ; then echo "ok" ; fi),ok)
+ifeq ($(OCPI_OS),linux)
 EXT=so
 ENV=LD_LIBRARY_PATH
-else ifeq ($(SYSTEM),macos)
+else ifeq ($(OCPI_OS),macos)
 EXT=dylib
 ENV=DYLD_LIBRARY_PATH
 else
 EXT=out
 endif
 
-ifeq ($(OUTDIR),)
-OUTDIR=.
+ifeq ($(OCPI_OUT_DIR),)
+OCPI_OUT_DIR=.
 endif
 
-$(info OUTDIR is $(OUTDIR))
-all: $(OUTDIR)/rot.zip | objdir $(OUTDIR)
+$(info OCPI_OUT_DIR is $(OCPI_OUT_DIR))
+all: $(OCPI_OUT_DIR)/rot.zip | objdir $(OCPI_OUT_DIR)
 
-objdir $(OUTDIR):
+objdir $(OCPI_OUT_DIR):
 	if test "x$(@)" != "x." ; then mkdir -p $(@) ; fi
 
 
-$(OUTDIR)/rot.zip: $(OUTDIR)/rot.$(EXT) output/rot.scd.xml output/rot_SCD.prf.xml
-	$(DO_CPI_RCC_BINDER) \
+$(OCPI_OUT_DIR)/rot.zip: $(OCPI_OUT_DIR)/rot.$(EXT) output/rot.scd.xml output/rot_SCD.prf.xml
+	$(DO_OCPI_RCC_BINDER) \
 		--output=$@ \
-		--workerDll=$(OUTDIR)/rot.$(EXT) \
+		--workerDll=$(OCPI_OUT_DIR)/rot.$(EXT) \
 		--worker=rotWorker=output/rot.scd.xml
 
 rot.h: output/rot.scd.xml output/rot_SCD.prf.xml
-	$(DO_CPI_RCC_GEN) --name Rot --gen-header-file=$@ $<
+	$(DO_OCPI_RCC_GEN) --name Rot --gen-header-file=$@ $<
 
-$(OUTDIR)/rot.o: rot.c rot.h | $(OUTDIR)
+$(OCPI_OUT_DIR)/rot.o: rot.c rot.h | $(OCPI_OUT_DIR)
 
-$(info x-$(filter macos linux,$(SYSTEM))-y)
-ifneq ($(filter macos linux,$(SYSTEM)),)
-$(info z-$(filter macos linux,$(SYSTEM))-y)
+$(info x-$(filter macos linux,$(OCPI_OS))-y)
+ifneq ($(filter macos linux,$(OCPI_OS)),)
+$(info z-$(filter macos linux,$(OCPI_OS))-y)
 
-ifeq ($(CROSS_HOST),)
+ifeq ($(OCPI_CROSS_HOST),)
 CC = gcc
 else
-CC = $(CROSS_BUILD_BIN)/$(CROSS_HOST)-gcc
+CC = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-gcc
 endif
 
-$(OUTDIR)/%.$(EXT) : $(OUTDIR)/%.o
+$(OCPI_OUT_DIR)/%.$(EXT) : $(OCPI_OUT_DIR)/%.o
 	$(CC) -shared -o $@ $(LDFLAGS) $<
 
-$(OUTDIR)/%.o : %.c
+$(OCPI_OUT_DIR)/%.o : %.c
 	$(CC) -fPIC -c -o $@ $(CFLAGS) $<
 else
-$(info yy-$(filter macos linux,$(SYSTEM))-y)
+$(info yy-$(filter macos linux,$(OCPI_OS))-y)
 WIND_HOME := /opt/WindRiver
 WIND_BASE := $(WIND_HOME)/vxworks-6.3
 WIND_HOST_TYPE := x86-linux2
 WIND_LIC_PROXY := $(WIND_HOME)/setup/$(WIND_HOST_TYPE)/bin
 export WIND_HOME WIND_BASE WIND_LIC_PROXY
 
-$(OUTDIR)/%.out : $(OUTDIR)/%.o
+$(OCPI_OUT_DIR)/%.out : $(OCPI_OUT_DIR)/%.o
 	/opt/WindRiver/gnu/3.4.4-vxworks-6.3/x86-linux2/bin/ccppc \
 		-o $@ -r -nostdlib -Wl,-X \
                 -T /opt/WindRiver/vxworks-6.3/target/h/tool/gnu/ldscripts/link.OUT \
 		$<
 
-$(OUTDIR)/%.o : %.c
+$(OCPI_OUT_DIR)/%.o : %.c
 	/opt/WindRiver/gnu/3.4.4-vxworks-6.3/x86-linux2/bin/ccppc \
 		-c -o $@ -g -Wall -fPIC \
 		-mcpu=8540 -mabi=no-spe -msoft-float -mstrict-align \
@@ -112,11 +133,11 @@ $(OUTDIR)/%.o : %.c
 endif
 else
 #
-# $(CPI_RCC_BINDER) does not exist.  Don't build this test.
+# $(OCPI_RCC_BINDER) does not exist.  Don't build this test.
 #
 all:
 endif
 
 clean:
-	if test "x$(OUTDIR)" != "x." ; then rm -rf $(OUTDIR) ; fi
+	if test "x$(OCPI_OUT_DIR)" != "x." ; then rm -rf $(OCPI_OUT_DIR) ; fi
 	rm -rf rot.h *.zip *.out *.dylib *.so *.o *~

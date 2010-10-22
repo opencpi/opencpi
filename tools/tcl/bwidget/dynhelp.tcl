@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  dynhelp.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -29,7 +65,7 @@ namespace eval DynamicHelp {
         {-justify        TkResource left          0 label}
         {-font           TkResource "helvetica 8" 0 label}
         {-delay          Int        600           0 "%d >= 100 & %d <= 2000"}
-	{-state          Enum       "normal"      0 {normal disabled}}
+        {-state          Enum       "normal"      0 {normal disabled}}
         {-padx           TkResource 1             0 label}
         {-pady           TkResource 1             0 label}
         {-bd             Synonym    -borderwidth}
@@ -90,10 +126,10 @@ proc DynamicHelp::configure { args } {
 # ----------------------------------------------------------------------------
 proc DynamicHelp::include { class type } {
     set helpoptions [list \
-	    [list -helptext String "" 0] \
-	    [list -helpvar  String "" 0] \
-	    [list -helptype Enum $type 0 [list balloon variable]] \
-	    ]
+            [list -helptext String "" 0] \
+            [list -helpvar  String "" 0] \
+            [list -helptype Enum $type 0 [list balloon variable]] \
+            ]
     Widget::declare $class $helpoptions
 }
 
@@ -103,18 +139,18 @@ proc DynamicHelp::include { class type } {
 # ----------------------------------------------------------------------------
 proc DynamicHelp::sethelp { path subpath {force 0}} {
     foreach {ctype ctext cvar} [Widget::hasChangedX $path \
-	    -helptype -helptext -helpvar] break
+            -helptype -helptext -helpvar] break
     if { $force || $ctype || $ctext || $cvar } {
-	set htype [Widget::cget $path -helptype]
+        set htype [Widget::cget $path -helptype]
         switch $htype {
             balloon {
                 return [register $subpath balloon \
-			[Widget::cget $path -helptext]]
+                        [Widget::cget $path -helptext]]
             }
             variable {
                 return [register $subpath variable \
-			[Widget::cget $path -helpvar] \
-			[Widget::cget $path -helptext]]
+                        [Widget::cget $path -helpvar] \
+                        [Widget::cget $path -helptext]]
             }
         }
         return [register $subpath $htype]
@@ -144,68 +180,68 @@ proc DynamicHelp::register { path type args } {
     switch $type {
         balloon {
             set text [lindex $args 0]
-	    if {$text == ""} {
-		if {[info exists _registered($path,balloon)]} {
-		    unset _registered($path,balloon)
-		}
-		return 0
-	    }
+            if {$text == ""} {
+                if {[info exists _registered($path,balloon)]} {
+                    unset _registered($path,balloon)
+                }
+                return 0
+            }
 
-	    _add_balloon $path $text
+            _add_balloon $path $text
         }
 
         canvasBalloon {
             set tagOrItem  [lindex $args 0]
             set text       [lindex $args 1]
-	    if {$text == ""} {
-		if {[info exists _registered($path,$tagOrItem,balloon)]} {
-		    unset _registered($path,$tagOrItem,balloon)
-		}
-		return 0
-	    }
+            if {$text == ""} {
+                if {[info exists _registered($path,$tagOrItem,balloon)]} {
+                    unset _registered($path,$tagOrItem,balloon)
+                }
+                return 0
+            }
 
-	    _add_canvas_balloon $path $text $tagOrItem
+            _add_canvas_balloon $path $text $tagOrItem
         }
 
         variable {
             set var  [lindex $args 0]
             set text [lindex $args 1]
-	    if {$text == "" || $var == ""} {
-		if {[info exists _registered($path,variable)]} {
-		    unset _registered($path,variable)
-		}
-		return 0
-	    }
+            if {$text == "" || $var == ""} {
+                if {[info exists _registered($path,variable)]} {
+                    unset _registered($path,variable)
+                }
+                return 0
+            }
 
-	    _add_variable $path $text $var
+            _add_variable $path $text $var
         }
 
         canvasVariable {
             set tagOrItem  [lindex $args 0]
             set var        [lindex $args 1]
             set text       [lindex $args 2]
-	    if {$text == "" || $var == ""} {
-		if {[info exists _registered($path,$tagOrItem,variable)]} {
-		    unset _registered($path,$tagOrItem,variable)
-		}
-		return 0
-	    }
+            if {$text == "" || $var == ""} {
+                if {[info exists _registered($path,$tagOrItem,variable)]} {
+                    unset _registered($path,$tagOrItem,variable)
+                }
+                return 0
+            }
 
-	    _add_canvas_variable $path $text $var $tagOrItem
+            _add_canvas_variable $path $text $var $tagOrItem
         }
 
         menu {
             set var [lindex $args 0]
-	    if {$var == ""} {
-		set cpath [BWidget::clonename $path]
-		if {[winfo exists $cpath]} { set path $cpath }
-		if {[info exists _registered($path)]} {
-		    unset _registered($path)
-		}
-		return 0
-	    }
+            if {$var == ""} {
+                set cpath [BWidget::clonename $path]
+                if {[winfo exists $cpath]} { set path $cpath }
+                if {[info exists _registered($path)]} {
+                    unset _registered($path)
+                }
+                return 0
+            }
 
-	    _add_menu $path $var
+            _add_menu $path $var
         }
 
         menuentry {
@@ -215,18 +251,18 @@ proc DynamicHelp::register { path type args } {
 
             set text  [lindex $args 1]
             set index [lindex $args 0]
-	    if {$text == "" || $index == ""} {
-		set idx [lsearch $_registed($path) [list $index *]]
-		set _registered($path) [lreplace $_registered($path) $idx $idx]
-		return 0
-	    }
+            if {$text == "" || $index == ""} {
+                set idx [lsearch $_registed($path) [list $index *]]
+                set _registered($path) [lreplace $_registered($path) $idx $idx]
+                return 0
+            }
 
-	    _add_menuentry $path $text $index
+            _add_menuentry $path $text $index
         }
 
         default {
             _unset_help $path
-	    return 0
+            return 0
         }
     }
 
@@ -246,7 +282,7 @@ proc DynamicHelp::add { path args } {
         -variable ""
     }
     if {[winfo exists $path] && [winfo class $path] == "Menu"} {
-	set data(-type) menu
+        set data(-type) menu
     }
     array set data $args
 
@@ -261,9 +297,9 @@ proc DynamicHelp::add { path args } {
                 _add_balloon $path $data(-text)
             }
 
-	    if {$data(-variable) != ""} {
-		set _registered($item,balloonVar) $data(-variable)
-	    }
+            if {$data(-variable) != ""} {
+                set _registered($item,balloonVar) $data(-variable)
+            }
         }
 
         "variable" {
@@ -395,10 +431,10 @@ proc DynamicHelp::_add_menuentry { path text index } {
     set idx  [lsearch $_registered($path) [list $index *]]
     set list [list $index $text]
     if { $idx == -1 } {
-	lappend _registered($path) $list
+        lappend _registered($path) $list
     } else {
-	set _registered($path) \
-	    [lreplace $_registered($path) $idx $idx $list]
+        set _registered($path) \
+            [lreplace $_registered($path) $idx $idx $list]
     }
 }
 
@@ -495,10 +531,10 @@ proc DynamicHelp::_menu_info { event path } {
         set varName [lindex $_registered($path) 0]
         if { ![string equal $index "none"] &&
              [set idx [lsearch $_registered($path) [list $index *]]] != -1 } {
-	    set string [lindex [lindex $_registered($path) $idx] 1]
-	    if {[info exists _registered($path,$index,command)]} {
-		set string [eval $_registered($path,$index,command)]
-	    }
+            set string [lindex [lindex $_registered($path) $idx] 1]
+            if {[info exists _registered($path,$index,command)]} {
+                set string [eval $_registered($path,$index,command)]
+            }
             GlobalVar::setvar $varName $string
         } else {
             GlobalVar::setvar $varName ""
@@ -523,16 +559,16 @@ proc DynamicHelp::_show_help { path w x y } {
 
         set string $_registered($path,balloon)
 
-	if {[info exists _registered($path,balloonVar)]} {
-	    upvar #0 $_registered($path,balloonVar) var
-	    if {[info exists var]} { set string $var }
-	}
+        if {[info exists _registered($path,balloonVar)]} {
+            upvar #0 $_registered($path,balloonVar) var
+            if {[info exists var]} { set string $var }
+        }
 
         if {[info exists _registered($path,command)]} {
             set string [eval $_registered($path,command)]
         }
 
-	if {$string == ""} { return }
+        if {$string == ""} { return }
 
         toplevel $_top -relief flat \
             -bg [Widget::getoption $_top -topbackground] \
@@ -540,19 +576,19 @@ proc DynamicHelp::_show_help { path w x y } {
             -screen [winfo screen $w]
 
         wm withdraw $_top
-	if {$::tk_version >= 8.4
-	    && [string equal [tk windowingsystem] "aqua"]} {
-	    ::tk::unsupported::MacWindowStyle style $_top help none
-	} else {
-	    wm overrideredirect $_top 1
-	}
+        if {$::tk_version >= 8.4
+            && [string equal [tk windowingsystem] "aqua"]} {
+            ::tk::unsupported::MacWindowStyle style $_top help none
+        } else {
+            wm overrideredirect $_top 1
+        }
 
-	catch { wm attributes $_top -topmost 1 }
+        catch { wm attributes $_top -topmost 1 }
 
         label $_top.label -text $string \
             -relief flat -bd 0 -highlightthickness 0 \
-	    -padx       [Widget::getoption $_top -padx] \
-	    -pady       [Widget::getoption $_top -pady] \
+            -padx       [Widget::getoption $_top -padx] \
+            -pady       [Widget::getoption $_top -pady] \
             -foreground [Widget::getoption $_top -foreground] \
             -background [Widget::getoption $_top -background] \
             -font       [Widget::getoption $_top -font] \
@@ -562,7 +598,7 @@ proc DynamicHelp::_show_help { path w x y } {
         pack $_top.label -side left
         update idletasks
 
-	if {![winfo exists $_top]} {return}
+        if {![winfo exists $_top]} {return}
 
         set  scrwidth  [winfo vrootwidth  .]
         set  scrheight [winfo vrootheight .]
@@ -581,7 +617,7 @@ proc DynamicHelp::_show_help { path w x y } {
         wm geometry  $_top "+$x+$y"
         update idletasks
 
-	if {![winfo exists $_top]} { return }
+        if {![winfo exists $_top]} { return }
         wm deiconify $_top
         raise $_top
     }
@@ -597,8 +633,8 @@ proc DynamicHelp::_unset_help { path } {
 
     if {[info exists _registered($path)]} { unset _registered($path) }
     if {[winfo exists $path]} {
-	set cpath [BWidget::clonename $path]
-	if {[info exists _registered($cpath)]} { unset _registered($cpath) }
+        set cpath [BWidget::clonename $path]
+        if {[info exists _registered($cpath)]} { unset _registered($cpath) }
     }
     array unset _canvases   $path,*
     array unset _registered $path,*
@@ -618,8 +654,8 @@ proc DynamicHelp::_get_canvas_path { path type {item ""} } {
     ## item or for 'all' items, they override any other tags.
     eval [list lappend tags $item all] [$path itemcget $item -tags]
     foreach tag $tags {
-	set check $path,$tag
-	if {![info exists _registered($check,$type)]} { continue }
-	return $check
+        set check $path,$tag
+        if {![info exists _registered($check,$type)]} { continue }
+        return $check
     }
 }

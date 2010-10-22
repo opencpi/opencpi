@@ -1,3 +1,4 @@
+
 /* ezxml.c
  *
  * Copyright 2004-2006 Aaron Voisine <aaron@voisine.org>
@@ -669,7 +670,7 @@ ezxml_t ezxml_parse_fd(int fd)
 #endif // EZXML_NOMMAP
         l = read(fd, m = malloc(st.st_size), st.st_size);
 	/* Fix bug when you read a directory  - Jim K.*/
-	if (l == -1) {
+	if ((long)l == -1) {
 	  free(m);
 	  return NULL;
 	}
@@ -839,7 +840,7 @@ void ezxml_free(ezxml_t xml)
         }
         if (root->pi[0]) free(root->pi); // free processing instructions
 
-        if (root->len == -1) free(root->m); // malloced xml data
+        if ((long)root->len == -1) free(root->m); // malloced xml data
 #ifndef EZXML_NOMMAP
         else if (root->len) munmap(root->m, root->len); // mem mapped xml data
 #endif // EZXML_NOMMAP

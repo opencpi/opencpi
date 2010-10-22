@@ -1,3 +1,4 @@
+
 /* $Id: fasttime.c,v 1.11 2005/08/27 08:24:45 alexholkner Exp $ 
  *
  * Copyright (c) Internet2, 2005.  All rights reserved.
@@ -176,13 +177,13 @@ int fasttime_gettime_context(fasttime_context_t context,
                         current->log_ticks_per_segment;
 
     /* If daemon has fallen behind, just use the most recent conversion */
-    if (conversion_index >= current->linear_segments)
+    if ((int)conversion_index >= current->linear_segments)
         conversion_index = current->linear_segments - 1;
 
     conversion = &current->conversions[conversion_index];
 
     /* Interpolate time */
-    nsecs = ticks.ll * conversion->gradient + conversion->intercept;
+    nsecs = (int64_t)(ticks.ll * conversion->gradient + conversion->intercept);
 
     tp->tv_sec = (long) (nsecs / 1000000000);
     tp->tv_nsec = (long) (nsecs - tp->tv_sec * (int64_t) 1000000000);
@@ -203,6 +204,8 @@ int fasttime_make_timespec(fasttime_context_t context,
                           uint64_t ticks_in,
                           struct timespec *tp_out)
 {
+    ( void ) ticks_in;
+    ( void ) tp_out; 
     /*
     fasttime_t *current;
     uint64_t nsecs;
@@ -345,13 +348,14 @@ void *client_thread(void *arg)
 
 
 /*
- *   THIS SECTION WAS ADDED FOR CPI
+ *   THIS SECTION WAS ADDED FOR OCPI
  */
 
 
 
 void setTimeBase( TimeBase tb )
 {
+  ( void ) tb;
   /*
  switch( tb ) {
 
@@ -374,8 +378,8 @@ uint64_t getBinaryTime()
 
 int fasttime_clock_gettime( clockid_t clk_id, struct timespec * tp)
 {
-  
-
-
+  ( void ) clk_id;
+  ( void ) tp;  
+  return 0;
 }
 

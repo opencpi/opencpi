@@ -1,2 +1,0 @@
-CFLAGS += -DEZXML_NOMMAP
-include ../../../../../Makefile.cpi.for-src

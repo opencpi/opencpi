@@ -1,25 +1,43 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <CpiTimeEmitC.h>
+#include <OcpiTimeEmitC.h>
 
 #undef c_plus_plus
 #include "LoopbackWorker.h"
@@ -49,22 +67,26 @@ static RCCResult initialize(RCCWorker *this_)
 
 static RCCResult start(RCCWorker *this_)
 {
+        ( void ) this_;
         return RCC_OK;
 }
 
 
 static RCCResult stop(RCCWorker *this_)
 {
+        ( void ) this_;
         return RCC_OK;
 }
 
 static RCCResult release(RCCWorker *this_)
 {
+        ( void ) this_;
         return RCC_OK;
 }
 
 static RCCResult test(RCCWorker *this_)
 {
+        ( void ) this_;
         return RCC_OK;
 }
 
@@ -93,10 +115,12 @@ static RCCResult beforeQuery(RCCWorker *this_)
 
 static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
-  uint32_t len;
+    ( void ) timedout;
+    ( void ) newRunCondition;
+    uint32_t len;
 
-  LoopbackWorkerStaticMemory *mem = this_->memories[0];
-  LoopbackWorkerProperties *props = this_->properties;
+//  LoopbackWorkerStaticMemory *mem = this_->memories[0];
+//  LoopbackWorkerProperties *props = this_->properties;
 
   char* in_buffer = (char*)this_->ports[LoopbackWorker_Data_In_Port].current.data;
   char* out_buffer = (char*)this_->ports[LoopbackWorker_Data_Out_Port].current.data;
@@ -155,12 +179,12 @@ static uint32_t memSizes[] = {sizeof(LoopbackWorkerStaticMemory), 1024*10, 0 };
 //static int32_t portRunConditions[] = { (1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port) , 0 };
 
 #ifdef NZCOPYIO
-static int32_t portRunConditions[] = { ((1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port)), 0 };
+static uint32_t portRunConditions[] = { ((1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port)), 0 };
 #else
-static int32_t portRunConditions[] = { (1<<LoopbackWorker_Data_In_Port), 0 };
+static uint32_t portRunConditions[] = { (1<<LoopbackWorker_Data_In_Port), 0, 0 };
 #endif
-static RCCRunCondition workerRunConditions[] = { portRunConditions, 0 , 0 };
-static RCCPortInfo portInfo = { 0, 1024*12, 1 };
+static RCCRunCondition workerRunConditions[] = { { portRunConditions,0,0 }, {0,0,0} , { 0,0,0 } };
+// static RCCPortInfo portInfo = { 0, 1024*12, 1 };
 RCCDispatch LoopbackWorkerDispatchTable = { RCC_VERSION, NUM_INPUT_PORTS, NUM_OUTPUT_PORTS, 
                                             PROPERTY_SIZE, memSizes, 0,
                                             initialize, 

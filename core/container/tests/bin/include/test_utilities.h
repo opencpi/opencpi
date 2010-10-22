@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 /*
  * Unit test utilities include file.
@@ -27,17 +45,17 @@
 #include <stdio.h>
 #include <signal.h>
 #include <sstream>
-#include <CpiOsMisc.h>
-#include <CpiOsAssert.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
-#include <CpiTransportServer.h>
-#include <CpiTransportClient.h>
-#include <CpiContainerInterface.h>
-#include <CpiWorker.h>
-#include <CpiContainerPort.h>
-#include <CpiRDTInterface.h>
-#include <CpiThread.h>
-#include <CpiPValue.h>
+#include <OcpiTransportServer.h>
+#include <OcpiTransportClient.h>
+#include <OcpiContainerInterface.h>
+#include <OcpiWorker.h>
+#include <OcpiContainerPort.h>
+#include <OcpiRDTInterface.h>
+#include <OcpiThread.h>
+#include <OcpiPValue.h>
 #include <list>
 
 extern bool g_testUtilVerbose;
@@ -66,7 +84,7 @@ class SignalHandler {
       printf("Got a signal, number = %d\n", signum );
       if ( m_cb ) {
         once = true;
-        CPI::Time::Emit::shutdown();
+        OCPI::Time::Emit::shutdown();
         m_cb(signum);
       }
     }
@@ -85,23 +103,23 @@ struct ContainerDesc {
 };
 
 struct CApp {
-  CPI::Container::Interface*         container;
-  CPI::WCI::Worker*                  wci_worker;
-  CPI::Container::Application *      app;
+  OCPI::Container::Interface*         container;
+  OCPI::WCI::Worker*                  wci_worker;
+  OCPI::Container::Application *      app;
 };
 
 struct CWorker {
   int                            cid;
-  CPI::Container::Worker *       worker;
+  OCPI::Container::Worker *       worker;
   struct ConData {
     CWorker*     worker;
     int          pid;
   };
   struct Pdata {
-    CPI::Util::PValue            *props;
+    OCPI::Util::PValue            *props;
     bool                          input;
     int                           bufferCount;
-    CPI::Container::Port *        port;
+    OCPI::Container::Port *        port;
     ConData                       down_stream_connection;
     Pdata():props(0),bufferCount(2),port(0){};
   };
@@ -134,7 +152,7 @@ CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
     TUPRINTF("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
     throw;                                                                \
   }                                                                        \
-  catch ( CPI::Util::EmbeddedException& eex ) {                                \
+  catch ( OCPI::Util::EmbeddedException& eex ) {                                \
     TUPRINTF(" gpp: Caught an embedded exception while %s:\n", msg);        \
     TUPRINTF( " error number = %d", eex.m_errorCode );                        \
     TUPRINTF( " aux info = %s\n", eex.m_auxInfo.c_str() );                \
@@ -163,10 +181,10 @@ CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
     throw std::string("WCI Write error");                                \
   }
 
-namespace CPI {
+namespace OCPI {
   namespace CONTAINER_TEST {
-    void  dumpPortData( CPI::Container::PortData * pd );
-    void testDispatch(CPI::Container::Interface* rcc_container, DataTransfer::EventManager* event_manager);
+    void  dumpPortData( OCPI::Container::PortData * pd );
+    void testDispatch(OCPI::Container::Interface* rcc_container, DataTransfer::EventManager* event_manager);
     void initWorkers(std::vector<CApp>& ca, std::vector<CWorker*>& workers );
     void enableWorkers( std::vector<CApp>& ca, std::vector<CWorker*>& workers );
     void disableWorkers( std::vector<CApp>& ca, std::vector<CWorker*>& workers );
@@ -175,7 +193,7 @@ namespace CPI {
     void destroyContainers( std::vector<CApp>& ca, std::vector<CWorker*>& workers );
     void createPorts( std::vector<CApp>& ca, std::vector<CWorker*>& workers );
     void connectWorkers(std::vector<CApp>& ca, std::vector<CWorker*>& workers );
-    std::vector<CApp> createContainers( std::vector<char*>& eps, 
+    std::vector<CApp> createContainers( std::vector<const char*>& eps, 
                                         DataTransfer::EventManager*& event_manager, bool use_polling );
 
     std::vector<CApp> createContainers( std::vector<ContainerDesc>& eps, 
@@ -186,7 +204,7 @@ namespace CPI {
       std::vector<CApp> containers;
       DataTransfer::EventManager* event_manager;
     };
-    CPI::Util::Thread* runTestDispatch( DThreadData& tdata );
+    OCPI::Util::Thread* runTestDispatch( DThreadData& tdata );
 
   }
 

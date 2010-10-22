@@ -1,25 +1,59 @@
 
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 
 /* Facility Interface Includes */
 #include <stdio.h>
 #include <stdlib.h>
 #include <xfer_if.h>
 #include <xfer_internal.h>
-#include <CpiOsAssert.h>
+#include <OcpiOsAssert.h>
 
 #define LocEQ(loc,place) strcmp(loc->getAddress(),place)==0
 
 long
 xfer_create(DataTransfer::SmemServices* src_ep,
             DataTransfer::SmemServices* dst_ep,
-            CPI::OS::int32_t,
+            OCPI::OS::int32_t,
             XF_template *xf_templatep)
 {
   /* Define the local template */
   struct xf_template_ *tp;
 
   /* Generic return code */
-  CPI::OS::int32_t rc=0;
+  OCPI::OS::int32_t rc=0;
 
   /* Calculate where the src and dst are */
   
@@ -47,16 +81,16 @@ xfer_create(DataTransfer::SmemServices* src_ep,
 
 long
 xfer_copy(XF_template xf_template,
-          CPI::OS::uint32_t src_os,
-          CPI::OS::uint32_t dst_os,
-          CPI::OS::uint32_t nbytes,
-          CPI::OS::int32_t flags,
+          OCPI::OS::uint32_t src_os,
+          OCPI::OS::uint32_t dst_os,
+          OCPI::OS::uint32_t nbytes,
+          OCPI::OS::int32_t flags,
           XF_transfer *xf_transferp)
 {
   struct xf_template_ *tp = (struct xf_template_ *)xf_template;
   struct xf_transfer_ *xf = new struct xf_transfer_;
 
-  CPI::OS::int32_t rc=0;
+  OCPI::OS::int32_t rc=0;
 
   /* Initialize the transfer's template member */
   xf->xf_template = tp;
@@ -104,10 +138,10 @@ xfer_copy(XF_template xf_template,
 
 
 long
-xfer_release(XF_transfer xf_handle, CPI::OS::int32_t)
+xfer_release(XF_transfer xf_handle, OCPI::OS::int32_t)
 {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)xf_handle;
-  CPI::OS::int32_t pio_rc=0;
+  OCPI::OS::int32_t pio_rc=0;
 
   /* Get the type of transfer */
   if (xf_transfer->first_pio_transfer) {
@@ -133,10 +167,10 @@ xfer_release(XF_transfer xf_handle, CPI::OS::int32_t)
 }
 
 long
-xfer_destroy(XF_template xf_handle, CPI::OS::int32_t)
+xfer_destroy(XF_template xf_handle, OCPI::OS::int32_t)
 {
   struct xf_template_ *xf_template = (struct xf_template_ *)xf_handle;
-  CPI::OS::int32_t rc;
+  OCPI::OS::int32_t rc;
 
   /* Get the type of template */
   if (xf_template->type == PIO) {
@@ -155,7 +189,7 @@ xfer_destroy(XF_template xf_handle, CPI::OS::int32_t)
 
 long
 xfer_group(XF_transfer *xf_members,
-           CPI::OS::int32_t flags,
+           OCPI::OS::int32_t flags,
            XF_transfer *xf_transferp)
 {
   /* Local Variables */
@@ -166,7 +200,7 @@ xfer_group(XF_transfer *xf_members,
 
   struct xf_transfer_ *xf = new struct xf_transfer_;
 
-  CPI::OS::int32_t i;
+  OCPI::OS::int32_t i;
 
   /* Initialize the transfers template */
   xf->xf_template = xf_template;
@@ -176,15 +210,15 @@ xfer_group(XF_transfer *xf_members,
   xf->first_pio_transfer = 0;
   xf->last_pio_transfer = 0;
 
-  CPI::OS::int32_t rc=0;
-  CPI::OS::int32_t nxf;
-  CPI::OS::int32_t pio=0;
+  OCPI::OS::int32_t rc=0;
+  OCPI::OS::int32_t nxf;
+  OCPI::OS::int32_t pio=0;
 
   /* Count the number of members */
   for (nxf=0; xf_members[nxf]; nxf++);
 
   /* Calculate the maximum size of the list */
-  CPI::OS::int32_t size = (sizeof(PIO_transfer) * (nxf + 1));
+  OCPI::OS::int32_t size = (sizeof(PIO_transfer) * (nxf + 1));
 
   /* Allocate the memory for the list */
   if (!(pio_members = (PIO_transfer *)malloc(size))) {
@@ -212,7 +246,7 @@ xfer_group(XF_transfer *xf_members,
 #ifndef NDEBUG
       printf("xfer_pio_group failed\n");
 #endif
-          cpiAssert(0);
+          ocpiAssert(0);
     }
   }
 
@@ -240,7 +274,7 @@ xfer_group(XF_transfer *xf_members,
 #ifndef NDEBUG
       printf("xfer_pio_group failed\n");
 #endif
-          cpiAssert(0);
+          ocpiAssert(0);
     }
   }
 
@@ -266,7 +300,7 @@ xfer_group(XF_transfer *xf_members,
 #ifndef NDEBUG
       printf("xfer_pio_group failed\n");
 #endif
-          cpiAssert(0);
+          ocpiAssert(0);
     }
   }
 
@@ -289,11 +323,11 @@ xfer_group(XF_transfer *xf_members,
 
 
 long
-xfer_start(XF_transfer xf_handle, CPI::OS::int32_t flags)
+xfer_start(XF_transfer xf_handle, OCPI::OS::int32_t flags)
 {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)xf_handle;
   
-  CPI::OS::int32_t pio_rc=0;
+  OCPI::OS::int32_t pio_rc=0;
 
 
   /* Process the first transfers */
@@ -319,7 +353,7 @@ xfer_start(XF_transfer xf_handle, CPI::OS::int32_t flags)
 }
 
 long 
-xfer_modify( XF_transfer xf_handle, CPI::OS::uint32_t* noff, CPI::OS::uint32_t* ooff )
+xfer_modify( XF_transfer xf_handle, OCPI::OS::uint32_t* noff, OCPI::OS::uint32_t* ooff )
 {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)xf_handle;
   if (xf_transfer->first_pio_transfer) {

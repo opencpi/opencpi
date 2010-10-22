@@ -1,7 +1,41 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 // -*- c++ -*-
 
-#ifndef CPI_SCA_CP289_GENERIC_PROXY_H__
-#define CPI_SCA_CP289_GENERIC_PROXY_H__
+#ifndef OCPI_SCA_CP289_GENERIC_PROXY_H__
+#define OCPI_SCA_CP289_GENERIC_PROXY_H__
 
 /**
  * \file
@@ -15,24 +49,24 @@
  */
 
 #include <map>
-#include "CpiContainerInterface.h"
-#include "CpiContainerPort.h"
-#include "CpiBaseProxy.h"
+#include "OcpiContainerInterface.h"
+#include "OcpiContainerPort.h"
+#include "OcpiBaseProxy.h"
 #include "Cp289ProviderPort.h"
-#include "CpiUtilIOP.h"
+#include "OcpiUtilIOP.h"
 
-namespace CPI {
+namespace OCPI {
   namespace SCA {
     // CORBA-specific for SCA (although it would be shared with other things like CCM)
     enum {
       /*
        * These ought to be registered with the OMG.
        */
-      CPI_PORT_INFO_TAG = 0x43504931,
-      //      CPI_TARGET_PORT_DATA_TAG = 0x43504931,
-      CPI_SOURCE_SHADOW_PORT_DATA_TAG = 0x43504932,
+      OCPI_PORT_INFO_TAG = 0x43504931,
+      //      OCPI_TARGET_PORT_DATA_TAG = 0x43504931,
+      OCPI_SOURCE_SHADOW_PORT_DATA_TAG = 0x43504932,
     };
-    namespace CC = CPI::Container;
+    namespace CC = OCPI::Container;
     /**
      * \brief CP289 Generic Proxy
      *
@@ -46,12 +80,12 @@ namespace CPI {
       Cp289GenericProxyPort(const std::string &portName, Cp289GenericProxy *proxy);
       ~Cp289GenericProxyPort() throw();
       
-      CC::Port &m_cpiPort;
+      CC::Port &m_ocpiPort;
       CORBA::Object_var m_scaPort;
       typedef std::set<std::string> ConnectionSet;
       ConnectionSet m_connections;
       inline CORBA::Object_var getScaPort() { return m_scaPort; }
-      void getProfile(CORBA::Object_ptr, CPI::Util::IOP::ProfileId, std::string &);
+      void getProfile(CORBA::Object_ptr, OCPI::Util::IOP::ProfileId, std::string &);
       Cp289ProviderPort::Octets* connectInitial(const Cp289ProviderPort::Octets& initialUserInfo);
       void connectFinal(const Cp289ProviderPort::Octets& finalUserInfo);
     public:
@@ -76,13 +110,13 @@ namespace CPI {
       /**
        * Constructor.
        *
-       * \param[in] orb  Used to shutdown the ORB if \a shutdownOrbOnRelease
+       * \param[in] orb  Used to shutdown the OCPI_CORBA_ORB if \a shutdownOrbOnRelease
        *                 is true.
        * \param[in] poa  Used to deactivate this generic proxy in
        *                 #releaseObject().
        * \param[in] identifier This resource's identifier attribute.
-       * \param[in] cpiDeviceId The device id where this worker is running.
-       * \param[in] cpiWorkerId The worker ordinal according to CPI.
+       * \param[in] ocpiDeviceId The device id where this worker is running.
+       * \param[in] ocpiWorkerId The worker ordinal according to OCPI.
        * \param[in] container The container that manages this worker.
        * \param[in] appContext The container's application context for this
        *                 worker.
@@ -95,7 +129,7 @@ namespace CPI {
        * \param[in] adoptLogger Whether to delete \a logger in the destructor.
        * \param[in] shutdownOrbOnRelease Whether to call orb->shutdown() from
        *                 the releaseObject() operation.  This is usually
-       *                 true in a stand-alone server and false if the ORB
+       *                 true in a stand-alone server and false if the OCPI_CORBA_ORB
        *                 is shared.
        * \throw std::string If initialization fails.
        */
@@ -114,7 +148,7 @@ namespace CPI {
                          const char *namingContextIor,
                          const char *nameBinding,
                          // Optional
-                         CPI::Logger::Logger * logger = 0,
+                         OCPI::Logger::Logger * logger = 0,
                          bool adoptLogger = true,
                          bool shutdownOrbOnRelease = false)
         throw (std::string);
@@ -156,7 +190,7 @@ namespace CPI {
         throw (std::string);
 
 #define CONTROL_OP(x,c,t,s1,s2,s3) virtual void x##Worker();
-CPI_CONTROL_OPS
+OCPI_CONTROL_OPS
 #undef CONTROL_OP      
 #if 0
       void controlWorker (WCI_control op,
@@ -164,14 +198,14 @@ CPI_CONTROL_OPS
         throw (std::string);
 #endif
 
-      const CPI::Metadata::Property * getProperties (unsigned int & numProperties)
+      const OCPI::Metadata::Property * getProperties (unsigned int & numProperties)
         throw ();
 
 #ifdef TEST
-      const CPI::SCA::Port * findPort (const char * name, unsigned int & portOrdinal)
+      const OCPI::SCA::Port * findPort (const char * name, unsigned int & portOrdinal)
         throw (std::string);
 
-      const CPI::SCA::Test * findTest (unsigned int testId)
+      const OCPI::SCA::Test * findTest (unsigned int testId)
         throw (CF::TestableObject::UnknownTest);
 
 #endif

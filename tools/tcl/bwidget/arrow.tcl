@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ------------------------------------------------------------------------------
 #  arrow.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -26,36 +62,36 @@ namespace eval ArrowButton {
     Widget::define ArrowButton arrow DynamicHelp
 
     Widget::tkinclude ArrowButton button .c \
-	    include [list \
-		-borderwidth -bd \
-		-relief -highlightbackground \
-		-highlightcolor -highlightthickness -takefocus]
+            include [list \
+                -borderwidth -bd \
+                -relief -highlightbackground \
+                -highlightcolor -highlightthickness -takefocus]
 
     Widget::declare ArrowButton [list \
-	    [list -type		Enum button 0 [list arrow button]] \
-	    [list -dir		Enum top    0 [list top bottom left right]] \
-	    [list -width	Int	15	0	"%d >= 0"] \
-	    [list -height	Int	15	0	"%d >= 0"] \
-	    [list -ipadx	Int	0	0	"%d >= 0"] \
-	    [list -ipady	Int	0	0	"%d >= 0"] \
-	    [list -clean	Int	2	0	"%d >= 0 && %d <= 2"] \
-	    [list -activeforeground	TkResource	""	0 button] \
-	    [list -activebackground	TkResource	""	0 button] \
-	    [list -disabledforeground 	TkResource	""	0 button] \
-	    [list -foreground		TkResource	""	0 button] \
-	    [list -background		TkResource	""	0 button] \
-	    [list -state		TkResource	""	0 button] \
-	    [list -troughcolor		TkResource	""	0 scrollbar] \
-	    [list -arrowbd	Int	1	0	"%d >= 0 && %d <= 2"] \
-	    [list -arrowrelief	Enum	raised	0	[list raised sunken]] \
-	    [list -command		String	""	0] \
-	    [list -armcommand		String	""	0] \
-	    [list -disarmcommand	String	""	0] \
-	    [list -repeatdelay		Int	0	0	"%d >= 0"] \
-	    [list -repeatinterval	Int	0	0	"%d >= 0"] \
-	    [list -fg	Synonym	-foreground] \
-	    [list -bg	Synonym	-background] \
-	    ]
+            [list -type                Enum button 0 [list arrow button]] \
+            [list -dir                Enum top    0 [list top bottom left right]] \
+            [list -width        Int        15        0        "%d >= 0"] \
+            [list -height        Int        15        0        "%d >= 0"] \
+            [list -ipadx        Int        0        0        "%d >= 0"] \
+            [list -ipady        Int        0        0        "%d >= 0"] \
+            [list -clean        Int        2        0        "%d >= 0 && %d <= 2"] \
+            [list -activeforeground        TkResource        ""        0 button] \
+            [list -activebackground        TkResource        ""        0 button] \
+            [list -disabledforeground         TkResource        ""        0 button] \
+            [list -foreground                TkResource        ""        0 button] \
+            [list -background                TkResource        ""        0 button] \
+            [list -state                TkResource        ""        0 button] \
+            [list -troughcolor                TkResource        ""        0 scrollbar] \
+            [list -arrowbd        Int        1        0        "%d >= 0 && %d <= 2"] \
+            [list -arrowrelief        Enum        raised        0        [list raised sunken]] \
+            [list -command                String        ""        0] \
+            [list -armcommand                String        ""        0] \
+            [list -disarmcommand        String        ""        0] \
+            [list -repeatdelay                Int        0        0        "%d >= 0"] \
+            [list -repeatinterval        Int        0        0        "%d >= 0"] \
+            [list -fg        Synonym        -foreground] \
+            [list -bg        Synonym        -background] \
+            ]
     DynamicHelp::include ArrowButton balloon
 
     bind BwArrowButtonC <Enter>           {ArrowButton::_enter %W}
@@ -132,7 +168,7 @@ proc ArrowButton::configure { path args } {
         $path.c configure \
             -width [expr {$w-$pad}] -height [expr {$h-$pad}] \
             -borderwidth $bd -highlightthickness $ht
-	set ch2 1
+        set ch2 1
     }
     if { $ch2 } {
         _redraw_whole $path [winfo width $path] [winfo height $path]
@@ -159,7 +195,7 @@ proc ArrowButton::cget { path option } {
 # ------------------------------------------------------------------------------
 proc ArrowButton::invoke { path } {
     if { ![string equal [winfo class $path] "ArrowButton"] } {
-	set path [winfo parent $path]
+        set path [winfo parent $path]
     }
     if { ![string equal [Widget::getoption $path -state] "disabled"] } {
         set oldstate [Widget::getoption $path -state]
@@ -170,11 +206,11 @@ proc ArrowButton::invoke { path } {
             set oldrelief [Widget::getoption $path -arrowrelief]
             configure $path -state active -arrowrelief sunken
         }
-	update idletasks
+        update idletasks
         if {[llength [set cmd [Widget::getoption $path -armcommand]]]} {
             uplevel \#0 $cmd
         }
-	after 10
+        after 10
         if { [string equal [Widget::getoption $path -type] "button"] } {
             configure $path -state $oldstate -relief $oldrelief
         } else {

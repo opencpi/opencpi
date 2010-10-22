@@ -1,16 +1,50 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef WIP_H
 #define WIP_H
 #include <stdint.h>
 #include <string.h>
-#include "CpiPValue.h"
-#include "CpiUtilProperty.h"
-#include "CpiUtilEzxml.h"
-#include "CpiMetadataWorker.h"
+#include "OcpiPValue.h"
+#include "OcpiUtilProperty.h"
+#include "OcpiUtilEzxml.h"
+#include "OcpiMetadataWorker.h"
 #include "ezxml.h"
 
-namespace CM=CPI::Metadata;
-namespace CP=CPI::Util::Prop;
-namespace CE=CPI::Util::EzXml;
+namespace CM=OCPI::Metadata;
+namespace CP=OCPI::Util::Prop;
+namespace CE=OCPI::Util::EzXml;
 
 #define myCalloc(t, n) ((t *)calloc(sizeof(t), (n)))
 inline void *myCrealloc_(void *p, size_t s, size_t o, size_t add) {
@@ -27,11 +61,11 @@ inline unsigned long roundup(unsigned long n, unsigned long grain) {
   return (n + grain - 1) & ~(grain - 1);
 }
 
-typedef CPI::Util::Prop::Scalar::Type PropertyType;
+typedef OCPI::Util::Prop::Scalar::Type PropertyType;
 
 enum ControlOp {
 #define CONTROL_OP(x, c, t, s1, s2, s3)  ControlOp##c,
-  CPI_CONTROL_OPS
+  OCPI_CONTROL_OPS
 #undef CONTROL_OP
   NoOp
 };
@@ -219,7 +253,7 @@ struct Operation {
   Simple *args;
 };
 
-typedef CPI::Util::Prop::Property Property;
+typedef OCPI::Util::Prop::Property Property;
 #if 0
 // missing from runtime:  is_test, ordinal, maxAlign;
 // A property is a structure, a sequence of structures, of a simple type,

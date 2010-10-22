@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  listbox.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -91,7 +127,7 @@ namespace eval ListBox {
         {-redraw           Boolean 1  0}
         {-multicolumn      Boolean 0  0}
         {-dropovermode     Flag    "wpi" 0 "wpi"}
-	{-selectmode       Enum none 1 {none single multiple}}
+        {-selectmode       Enum none 1 {none single multiple}}
         {-fg               Synonym -foreground}
         {-bg               Synonym -background}
         {-dropcmd          String  "ListBox::_drag_and_drop" 0}
@@ -122,7 +158,7 @@ proc ListBox::create { path args } {
     upvar 0  $path data
 
     frame $path -class ListBox -bd 0 -highlightthickness 0 -relief flat \
-	-takefocus 0
+        -takefocus 0
     # For 8.4+ we don't want to inherit the padding
     catch {$path configure -padx 0 -pady 0}
     # widget informations
@@ -144,11 +180,11 @@ proc ListBox::create { path args } {
     set data(dnd,item)     ""
 
     eval [list canvas $path.c] [Widget::subcget $path .c] \
-	[list -xscrollincrement 8]
+        [list -xscrollincrement 8]
     pack $path.c -expand yes -fill both
 
     DragSite::setdrag $path $path.c ListBox::_init_drag_cmd \
-	    [Widget::cget $path -dragendcmd] 1
+            [Widget::cget $path -dragendcmd] 1
     DropSite::setdrop $path $path.c ListBox::_over_cmd ListBox::_drop_cmd 1
 
     Widget::create ListBox $path
@@ -166,8 +202,8 @@ proc ListBox::create { path args } {
     # Let any click within the canvas focus on the canvas so that
     # MouseWheel scroll events will be properly handled by the canvas.
     if {[Widget::cget $path -autofocus]} {
-	lappend bindtags ListBoxFocus
-	BWidget::bindMouseWheel $path.c
+        lappend bindtags ListBoxFocus
+        BWidget::bindMouseWheel $path.c
     }
     bindtags $path.c $bindtags
 
@@ -177,20 +213,20 @@ proc ListBox::create { path args } {
     bind $path.c <Key-Down> {ListBox::_keyboard_navigation [winfo parent %W] 1}
 
     switch -exact -- [Widget::getoption $path -selectmode] {
-	single {
-	    $path bindText  <Button-1> [list ListBox::_mouse_select $path set]
-	    $path bindImage <Button-1> [list ListBox::_mouse_select $path set]
-	}
-	multiple {
-	    set cmd ListBox::_multiple_select
-	    $path bindText <Button-1>          [list $cmd $path n %x %y]
-	    $path bindText <Shift-Button-1>    [list $cmd $path s %x %y]
-	    $path bindText <Control-Button-1>  [list $cmd $path c %x %y]
+        single {
+            $path bindText  <Button-1> [list ListBox::_mouse_select $path set]
+            $path bindImage <Button-1> [list ListBox::_mouse_select $path set]
+        }
+        multiple {
+            set cmd ListBox::_multiple_select
+            $path bindText <Button-1>          [list $cmd $path n %x %y]
+            $path bindText <Shift-Button-1>    [list $cmd $path s %x %y]
+            $path bindText <Control-Button-1>  [list $cmd $path c %x %y]
 
-	    $path bindImage <Button-1>         [list $cmd $path n %x %y]
-	    $path bindImage <Shift-Button-1>   [list $cmd $path s %x %y]
-	    $path bindImage <Control-Button-1> [list $cmd $path c %x %y]
-	}
+            $path bindImage <Button-1>         [list $cmd $path n %x %y]
+            $path bindImage <Shift-Button-1>   [list $cmd $path s %x %y]
+            $path bindImage <Control-Button-1> [list $cmd $path c %x %y]
+        }
     }
 
     return $path
@@ -285,8 +321,8 @@ proc ListBox::insert { path index item args } {
 #  for inserts with many options.
 #
 # Syntax: path and index are as in the insert command
-#	args is a list of even numbered elements where the 1st of each pair
-#	corresponds to the item of 'insert' and the second to args of 'insert'.
+#        args is a list of even numbered elements where the 1st of each pair
+#        corresponds to the item of 'insert' and the second to args of 'insert'.
 # ----------------------------------------------------------------------------
 #  Command ListBox::multipleinsert
 # ----------------------------------------------------------------------------
@@ -296,31 +332,31 @@ proc ListBox::multipleinsert { path index args } {
 
     # If we got only one list as arg, take the first element as args
     # This enables callers to use 
-    #	$list multipleinsert index $thelist
+    #        $list multipleinsert index $thelist
     # instead of
-    #	eval $list multipleinsert index $thelist
+    #        eval $list multipleinsert index $thelist
 
     if {[llength $args] == 1} {
-	set args [lindex $args 0]
+        set args [lindex $args 0]
     }
 
     set count 0
     foreach {item iargs} $args {
-	if { [lsearch -exact $data(items) $item] != -1 } {
-	    return -code error "item \"$item\" already exists"
-	}
-	
-	if {$count==0} {
-	    Widget::init ListBox::Item $path.$item $iargs
-	    set firstpath $path.$item
-	} else {
-	    Widget::copyinit ListBox::Item $firstpath $path.$item $iargs
-	}
+        if { [lsearch -exact $data(items) $item] != -1 } {
+            return -code error "item \"$item\" already exists"
+        }
+        
+        if {$count==0} {
+            Widget::init ListBox::Item $path.$item $iargs
+            set firstpath $path.$item
+        } else {
+            Widget::copyinit ListBox::Item $firstpath $path.$item $iargs
+        }
 
-	set data(items) [linsert $data(items) $index $item]
-	set data(upd,create,$item) $item
+        set data(items) [linsert $data(items) $index $item]
+        set data(upd,create,$item) $item
 
-	incr count
+        incr count
     }
 
     _redraw_idle $path 2
@@ -372,7 +408,7 @@ proc ListBox::itemconfigure { path item args } {
             } else {
                 $path.c delete $idi
                 $path.c create window $x0 $y0 -window $win -anchor w \
-		    -tags [list win i:$item]
+                    -tags [list win i:$item]
             }
         } elseif { [string length $img] } {
             if { [string equal $type "img"] } {
@@ -380,7 +416,7 @@ proc ListBox::itemconfigure { path item args } {
             } else {
                 $path.c delete $idi
                 $path.c create image $x0 $y0 -image $img -anchor w \
-		    -tags [list img i:$item]
+                    -tags [list img i:$item]
             }
         } else {
             $path.c delete $idi
@@ -428,7 +464,7 @@ proc ListBox::bindText { path event script } {
     if { $script != "" } {
         set map [list %W $path]
         set script [string map $map $script]
-	append script " \[ListBox::_get_current [list $path]\]"
+        append script " \[ListBox::_get_current [list $path]\]"
     }
     $path.c bind "click" $event $script
 }
@@ -441,7 +477,7 @@ proc ListBox::bindImage { path event script } {
     if { $script != "" } {
         set map [list %W $path]
         set script [string map $map $script]
-	append script " \[ListBox::_get_current [list $path]\]"
+        append script " \[ListBox::_get_current [list $path]\]"
     }
     $path.c bind "img" $event $script
 }
@@ -662,7 +698,7 @@ proc ListBox::items { path {first ""} {last ""}} {
     upvar 0  $path data
 
     if { ![string length $first] } {
-	return $data(items)
+        return $data(items)
     }
 
     if { ![string length $last] } {
@@ -718,7 +754,7 @@ proc ListBox::edit { path item text {verifycmd ""} {clickres 0} {select 1}} {
         set w      [expr {[winfo width $path] - 2*$bd}]
         set wmax   [expr {[$path.c canvasx $w]-$x}]
 
-	$path.c itemconfigure $idn    -fill [Widget::getoption $path -background]
+        $path.c itemconfigure $idn    -fill [Widget::getoption $path -background]
         $path.c itemconfigure s:$item -fill {} -outline {}
 
         set _edit(text) $text
@@ -756,9 +792,9 @@ proc ListBox::edit { path item text {verifycmd ""} {clickres 0} {select 1}} {
         bindtags $ent [list $ent Entry]
         bind $ent <Escape> {set ListBox::_edit(wait) 0}
         bind $ent <Return> {set ListBox::_edit(wait) 1}
-	if { $clickres == 0 || $clickres == 1 } {
-	    bind $frame <Button>  [list set ListBox::_edit(wait) $clickres]
-	}
+        if { $clickres == 0 || $clickres == 1 } {
+            bind $frame <Button>  [list set ListBox::_edit(wait) $clickres]
+        }
 
         set ok 0
         while { !$ok } {
@@ -1061,16 +1097,16 @@ proc ListBox::_redraw_selection { path } {
     }
     $path.c delete sel
     if {$selfill && !$multi} {
-	# cache window width for use below
-	set width [winfo width $path]
+        # cache window width for use below
+        set width [winfo width $path]
     }
     foreach item $data(selitems) {
         set bbox [$path.c bbox "n:$item"]
         if { [llength $bbox] } {
-	    if { $selfill && !$multi } {
-		# With -selectfill, make box occupy full width of widget
-		set bbox [list 0 [lindex $bbox 1] $width [lindex $bbox 3]]
-	    }
+            if { $selfill && !$multi } {
+                # With -selectfill, make box occupy full width of widget
+                set bbox [list 0 [lindex $bbox 1] $width [lindex $bbox 3]]
+            }
             set tags [list sel s:$item click]
             set id [$path.c create rectangle $bbox \
                 -fill $selbg -outline $selbg -tags $tags]
@@ -1115,7 +1151,7 @@ proc ListBox::_redraw_idle { path level } {
         # widget is realized
         if { [Widget::getoption $path -redraw] && $data(upd,afterid) == "" } {
             set data(upd,afterid) \
-		[after idle [list ListBox::_redraw_listbox $path]]
+                [after idle [list ListBox::_redraw_listbox $path]]
         }
     }
     if { $level > $data(upd,level) } {
@@ -1443,48 +1479,48 @@ proc ListBox::_multiple_select { path mode x y idx } {
 
 
     if { ![info exists data(anchor)] || ![info exists data(sel_anchor)] } {
-	set data(anchor) $idx
-	set data(sel_anchor) {}
+        set data(anchor) $idx
+        set data(sel_anchor) {}
     }
 
     switch -exact -- $mode {
-	n {
-	    _mouse_select $path set $idx
-	    set data(anchor) $idx
-	    set data(sel_anchor) {}
-	}
-	c {
-	    set l [_mouse_select $path get]
-	    if { [lsearch -exact $l $idx] >= 0 } {
-		_mouse_select $path remove $idx
-	    } else {
-		_mouse_select $path add $idx
-	    }
-	    set data(anchor) $idx
-	    set data(sel_anchor) {}
-	}
-	s {
-	    eval [list $path _mouse_select remove] $data(sel_anchor)
+        n {
+            _mouse_select $path set $idx
+            set data(anchor) $idx
+            set data(sel_anchor) {}
+        }
+        c {
+            set l [_mouse_select $path get]
+            if { [lsearch -exact $l $idx] >= 0 } {
+                _mouse_select $path remove $idx
+            } else {
+                _mouse_select $path add $idx
+            }
+            set data(anchor) $idx
+            set data(sel_anchor) {}
+        }
+        s {
+            eval [list $path _mouse_select remove] $data(sel_anchor)
 
-	    set ix [$path index $idx]
-	    set ia [$path index $data(anchor)]
-	    if { $ix > $ia } {
-		set istart $ia
-		set iend $ix
-  	    } else {
-		set istart $ix
-		set iend $ia
-  	    }
+            set ix [$path index $idx]
+            set ia [$path index $data(anchor)]
+            if { $ix > $ia } {
+                set istart $ia
+                set iend $ix
+              } else {
+                set istart $ix
+                set iend $ia
+              }
 
-  	    for { set i $istart } { $i <= $iend } { incr i } {
-		set l [$path selection get]
-		set t [$path items $i]
-		set li [lsearch -exact $l $t]
-		if { $li < 0 } {
-		    _mouse_select $path add $t
-		    lappend data(sel_anchor) $t
- 		}
-  	    }
+              for { set i $istart } { $i <= $iend } { incr i } {
+                set l [$path selection get]
+                set t [$path items $i]
+                set li [lsearch -exact $l $t]
+                if { $li < 0 } {
+                    _mouse_select $path add $t
+                    lappend data(sel_anchor) $t
+                 }
+              }
         }
     }
 }
@@ -1501,7 +1537,7 @@ proc ListBox::_scroll { path cmd dir } {
          ($dir == 1  && [lindex [$path.c $cmd] 1] < 1) } {
         $path $cmd scroll $dir units
         set data(dnd,afterid) \
-	    [after 100 [list ListBox::_scroll $path $cmd $dir]]
+            [after 100 [list ListBox::_scroll $path $cmd $dir]]
     } else {
         set data(dnd,afterid) ""
         DropSite::setcursor dot
@@ -1510,15 +1546,15 @@ proc ListBox::_scroll { path cmd dir } {
 
 # ListBox::_set_help --
 #
-#	Register dynamic help for an item in the listbox.
+#        Register dynamic help for an item in the listbox.
 #
 # Arguments:
-#	path		ListBox to query
-#	item		Item in the listbox
-#       force		Optional argument to force a reset of the help
+#        path                ListBox to query
+#        item                Item in the listbox
+#       force                Optional argument to force a reset of the help
 #
 # Results:
-#	none
+#        none
 proc ListBox::_set_help { path node } {
     Widget::getVariable $path help
 
@@ -1531,19 +1567,19 @@ proc ListBox::_set_help { path node } {
     ## we need to setup help.  We also need to reset help if any of the
     ## options have changed.
     if { (![info exists help($node)] && $text != "") || $cty || $ctx || $cv } {
-	set help($node) 1
-	set type [Widget::getoption $item -helptype]
+        set help($node) 1
+        set type [Widget::getoption $item -helptype]
         switch $type {
             balloon {
-		DynamicHelp::register $path.c balloon n:$node $text
-		DynamicHelp::register $path.c balloon i:$node $text
-		DynamicHelp::register $path.c balloon b:$node $text
+                DynamicHelp::register $path.c balloon n:$node $text
+                DynamicHelp::register $path.c balloon i:$node $text
+                DynamicHelp::register $path.c balloon b:$node $text
             }
             variable {
-		set var [Widget::getoption $item -helpvar]
-		DynamicHelp::register $path.c variable n:$node $var $text
-		DynamicHelp::register $path.c variable i:$node $var $text
-		DynamicHelp::register $path.c variable b:$node $var $text
+                set var [Widget::getoption $item -helpvar]
+                DynamicHelp::register $path.c variable n:$node $var $text
+                DynamicHelp::register $path.c variable i:$node $var $text
+                DynamicHelp::register $path.c variable b:$node $var $text
             }
         }
     }
@@ -1559,7 +1595,7 @@ proc ListBox::_set_help { path node } {
 #       Standard arguments passed to a selection command.
 #
 # Results:
-#	none
+#        none
 proc ListBox::_mouse_select { path cmd args } {
     eval [linsert $args 0 selection $path $cmd]
     switch -- $cmd {
@@ -1578,7 +1614,7 @@ proc ListBox::_get_current { path } {
 
 # ListBox::_drag_and_drop --
 #
-#	A default command to handle drag-and-drop functions local to this
+#        A default command to handle drag-and-drop functions local to this
 #       listbox.  With this as the default -dropcmd, the user can simply
 #       enable drag-and-drop and be able to move items within this list
 #       with no further code.
@@ -1587,7 +1623,7 @@ proc ListBox::_get_current { path } {
 #       Standard arguments passed to a dropcmd.
 #
 # Results:
-#	none
+#        none
 proc ListBox::_drag_and_drop { path from endItem operation type startItem } {
     set items [$path items]
 
@@ -1626,11 +1662,11 @@ proc ListBox::_keyboard_navigation { path dir } {
 
     set sel [$path index [lindex [$path selection get] end]]
     if {$dir > 0} {
-	incr sel
-	if {$sel >= [llength $data(items)]} { return }
+        incr sel
+        if {$sel >= [llength $data(items)]} { return }
     } else {
-	incr sel -1
-	if {$sel < 0} { return }
+        incr sel -1
+        if {$sel < 0} { return }
     }
     set item [lindex $data(items) $sel]
     $path see $item

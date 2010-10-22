@@ -1,24 +1,45 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 #! /bin/sh
-# Copyright (c) 2009 Mercury Federal Systems.
-# 
-# This file is part of OpenCPI.
-# 
-# OpenCPI is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# OpenCPI is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public License
-# along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
 
 #
 # ----------------------------------------------------------------------
-# Test script for the CPI SCA RCC Executable Device using a "File I/O"
+# Test script for the OCPI SCA RCC Executable Device using a "File I/O"
 # test application.
 #
 # Revision History:
@@ -35,14 +56,14 @@ exec tclsh8.5 "$0" ${1+"$@"}
 
 #
 # /opt/local/TAO/5.6.6/linux-x86_64-gcc/ACE_wrappers/TAO/orbsvcs/Naming_Service/Naming_Service -ORBEndPoint iiop://:4332
-# /h/fpilhofe/soft/cpi/core/sca/sred/linux-bin/cpi-rcc-exec-device -ORBInitRef NameService=corbaloc::localhost:4332/NameService --identifier RCCed --label RCCed --cpiDeviceId=42 --endpoint=cpi-smb-pio://FPSMB:1048576.1.2 --writeIORFile=- --logFile=- --polled --registerWithNamingService=RCCed --defaultBufferSize=1024
-# /h/fpilhofe/soft/cpi/core/sca/gpped/linux-bin/cpi-gpp-exec-device -ORBInitRef NameService=corbaloc::localhost:4332/NameService --label=GPPed --identifier=GPPed --cpiDeviceId=46 --writeIORFile=- --logFile=- --registerWithNamingService=GPPed
+# /h/fpilhofe/soft/ocpi/core/sca/sred/linux-bin/ocpi-rcc-exec-device -ORBInitRef NameService=corbaloc::localhost:4332/NameService --identifier RCCed --label RCCed --ocpiDeviceId=42 --endpoint=ocpi-smb-pio://FPSMB:1048576.1.2 --writeIORFile=- --logFile=- --polled --registerWithNamingService=RCCed --defaultBufferSize=1024
+# /h/fpilhofe/soft/ocpi/core/sca/gpped/linux-bin/ocpi-gpp-exec-device -ORBInitRef NameService=corbaloc::localhost:4332/NameService --label=GPPed --identifier=GPPed --ocpiDeviceId=46 --writeIORFile=- --logFile=- --registerWithNamingService=GPPed
 #
 
 lappend auto_path \
-	$env(CPIDIR)/tools/tcl/combat \
-	$env(CPIDIR)/tools/tcl/cfutil \
-	$env(CPIDIR)/tools/tcl/tclkill
+        $env(OCPI_BASE_DIR)/tools/tcl/combat \
+        $env(OCPI_BASE_DIR)/tools/tcl/cfutil \
+        $env(OCPI_BASE_DIR)/tools/tcl/tclkill
 package require vfs
 package require vfs::zip
 package require cfutil
@@ -64,17 +85,17 @@ if {![file exists $appFile]} {
 if {$autoStart} {
     set nsPid [exec $env(TAO_ROOT)/orbsvcs/Naming_Service/Naming_Service -ORBEndPoint iiop://:4332 &]
     after 3000
-    set sredPid [exec $env(CPIDIR)/core/sca/sred/$env(OUTDIR)/cpi-rcc-exec-device \
-		     -ORBInitRef NameService=corbaloc::localhost:4332/NameService \
-		     --identifier RCCed --label RCCed --defaultBufferSize=4096 \
-		     --cpiDeviceId=42 --endpoint=cpi-smb-pio://fp-test:1048576.1.2 \
-		     --writeIORFile=- --logFile=- --polled \
-		     --registerWithNamingService=RCCed &]
-    set gppedPid [exec $env(CPIDIR)/core/sca/gpped/$env(OUTDIR)/cpi-gpp-exec-device \
-		      -ORBInitRef NameService=corbaloc::localhost:4332/NameService \
-		      --label=GPPed --identifier=GPPed --cpiDeviceId=46 \
-		      --writeIORFile=- --logFile=- \
-		      --registerWithNamingService=GPPed &]
+    set sredPid [exec $env(OCPI_BASE_DIR)/core/sca/sred/$env(OUTDIR)/ocpi-rcc-exec-device \
+                     -ORBInitRef NameService=corbaloc::localhost:4332/NameService \
+                     --identifier RCCed --label RCCed --defaultBufferSize=4096 \
+                     --ocpiDeviceId=42 --endpoint=ocpi-smb-pio://fp-test:1048576.1.2 \
+                     --writeIORFile=- --logFile=- --polled \
+                     --registerWithNamingService=RCCed &]
+    set gppedPid [exec $env(OCPI_BASE_DIR)/core/sca/gpped/$env(OUTDIR)/ocpi-gpp-exec-device \
+                      -ORBInitRef NameService=corbaloc::localhost:4332/NameService \
+                      --label=GPPed --identifier=GPPed --ocpiDeviceId=46 \
+                      --writeIORFile=- --logFile=- \
+                      --registerWithNamingService=GPPed &]
     after 3000
     set ncIor "corbaloc::localhost:4332/NameService"
 } else {
@@ -104,10 +125,10 @@ if {[catch {
     set app [$af create Foo]
 
     $app configure \
-	[list \
-	     [list id Source.fileName value [list string $sourceFile]] \
-	     [list id Tee.fileName value [list string $teeFile]] \
-	     [list id Sink.fileName value [list string $sinkFile]]]
+        [list \
+             [list id Source.fileName value [list string $sourceFile]] \
+             [list id Tee.fileName value [list string $teeFile]] \
+             [list id Sink.fileName value [list string $sinkFile]]]
     $app start
 
     puts "Letting the application run for a while ..."
@@ -121,15 +142,15 @@ if {[catch {
     vfs::zip::Unmount $zipFd $zipMount
 
     if {$autoStart} {
-	foreach ed $eds {
-	    $ed releaseObject
-	}
+        foreach ed $eds {
+            $ed releaseObject
+        }
 
-	after 1000
+        after 1000
 
-	catch {kill $sredPid}
-	catch {kill $gppedPid}
-	kill $nsPid
+        catch {kill $sredPid}
+        catch {kill $gppedPid}
+        kill $nsPid
     }
 
     catch {file delete /dev/shm/fp-test}
@@ -154,13 +175,13 @@ if {[catch {
     close $f
 
     if {[string compare $sourceData $teeData] != 0} {
-	puts "Data in $teeFile mismatch."
-	exit 1
+        puts "Data in $teeFile mismatch."
+        exit 1
     }
 
     if {[string compare $sourceData $sinkData] != 0} {
-	puts "Data in $sinkFile mismatch."
-	exit 1
+        puts "Data in $sinkFile mismatch."
+        exit 1
     }
 
     file delete $teeFile
@@ -168,9 +189,9 @@ if {[catch {
 } errMsg]} {
     set savedInfo $::errorInfo
     if {$autoStart} {
-	catch {kill $sredPid}
-	catch {kill $gppedPid}
-	catch {kill $nsPid}
+        catch {kill $sredPid}
+        catch {kill $gppedPid}
+        catch {kill $nsPid}
     }
     catch {file delete /dev/shm/fp-test}
     catch {file delete $teeFile}

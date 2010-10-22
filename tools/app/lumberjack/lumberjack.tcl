@@ -1,20 +1,39 @@
 #! /bin/sh
-# Copyright (c) 2009 Mercury Federal Systems.
-# 
-# This file is part of OpenCPI.
-# 
-# OpenCPI is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# OpenCPI is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public License
-# along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
 
 # the next line restarts using wish8.5 on unix \
 if type wish8.5 > /dev/null 2>&1 ; then exec wish8.5 "$0" ${1+"$@"} ; fi
@@ -34,56 +53,56 @@ foreach pd {. .. ../../tcl} {
     set pdp [file join [file dirname [info script]] $pd]
 
     foreach pkg {bwidget combat tktable} {
-	foreach pkd [glob -nocomplain -directory $pdp "${pkg}*"] {
-	    if {[file exists $pkd] && [file isdirectory $pkd]} {
-		lappend auto_path $pkd
-	    }
-	}
+        foreach pkd [glob -nocomplain -directory $pdp "${pkg}*"] {
+            if {[file exists $pkd] && [file isdirectory $pkd]} {
+                lappend auto_path $pkd
+            }
+        }
     }
 }
 
 if {[catch {package require Tcl 8.4}]} {
     wm withdraw .
     tk_messageBox -type ok -icon error -default ok \
-	-title "Wrong Tcl/Tk Version" \
-	-message "The Lumberjack Lightweight Log Viewer requires Tcl/Tk 8.4.\
-		This appears to be Tcl/Tk $::tcl_version."
+        -title "Wrong Tcl/Tk Version" \
+        -message "The Lumberjack Lightweight Log Viewer requires Tcl/Tk 8.4.\
+                This appears to be Tcl/Tk $::tcl_version."
     exit 1
 }
 
 if {[catch {package require BWidget}]} {
     wm withdraw .
     tk_messageBox -type ok -icon error -default ok \
-	-title "BWidget Required" \
-	-message "The Lumberjack Lightweight Log Viewer requires the \"BWidget\" package,\
-		which does not seem to be available."
+        -title "BWidget Required" \
+        -message "The Lumberjack Lightweight Log Viewer requires the \"BWidget\" package,\
+                which does not seem to be available."
     exit 1
 }
 
 if {[catch {package require Tktable}]} {
     wm withdraw .
     tk_messageBox -type ok -icon error -default ok \
-	-title "TkTable Required" \
-	-message "The Lumberjack Lightweight Log Viewer requires the \"TkTable\" package,\
-		which does not seem to be available."
+        -title "TkTable Required" \
+        -message "The Lumberjack Lightweight Log Viewer requires the \"TkTable\" package,\
+                which does not seem to be available."
     exit 1
 }
 
 if {[catch {package require Itcl}]} {
     wm withdraw .
     tk_messageBox -type ok -icon error -default ok \
-	-title "\[Incr Tcl\] Required" \
-	-message "The Lumberjack Lightweight Log Viewer requires the \"\[Incr Tcl\]\" package,\
-		which does not seem to be available."
+        -title "\[Incr Tcl\] Required" \
+        -message "The Lumberjack Lightweight Log Viewer requires the \"\[Incr Tcl\]\" package,\
+                which does not seem to be available."
     exit 1
 }
 
 if {[catch {package require combat}]} {
     wm withdraw .
     tk_messageBox -type ok -icon error -default ok \
-	-title "Combat Required" \
-	-message "The Lumberjack Lightweight Log Viewer requires the \"Combat\" package,\
-		which does not seem to be available."
+        -title "Combat Required" \
+        -message "The Lumberjack Lightweight Log Viewer requires the \"Combat\" package,\
+                which does not seem to be available."
     exit 1
 }
 
@@ -105,12 +124,12 @@ proc Init {} {
     array set ::tableData {}
     array unset ::tableData *
     array set ::tableData {
-	0,0 {Record Id}
-	0,1 {Timestamp}
-	0,2 {Producer Id}
-	0,3 {Producer Name}
-	0,4 {Log Level}
-	0,5 {Data}
+        0,0 {Record Id}
+        0,1 {Timestamp}
+        0,2 {Producer Id}
+        0,3 {Producer Name}
+        0,4 {Log Level}
+        0,5 {Data}
     }
 }
 
@@ -119,39 +138,39 @@ proc InitGui {} {
     option add *Menu*tearOff 0
 
     set menudesc {
-	"&File" "" "" 0 {	
-	    {command "E&xit" {} "Exit Lumberjack Lightweight Log Viewer" {Ctrl x} -command "Exit"}
-	}
-	"&Setup" "" "" 0 {
-	    {command "Find Log Service in &Naming Service" {} "Look up a Log Service in a Naming Service" {Ctrl a} -command "FindLogServiceInNamingService"}
-	    {command "Find Log Service by &URI ..." {} "Look up a Log Service by its Object URI" {Ctrl u} -command "FindLogServiceByURI"}
-	}
-	"&Admin" "" "" 0 {
-	    {command "&Write Record" {} "Write a record to the log" {} -command "WriteRecordToLog"}
-	    {command "&Status" {} "Log service status" {} -command "LogServiceStatus"}
-	}
-	"Font" "" "" 0 {
-	    {command "Courier" {} "Use Courier font" {} -command "SetFont family Courier"}
-	    {command "Helvetica" {} "Use Helvetica font" {} -command "SetFont family Helvetica"}
-	    {command "MS Sans Serif" {} "Use MS Sans Serif font" {} -command "SetFont family {MS Sans Serif}"}
-	    {separator}
-	    {command "Increase size" {} "Increase font size" {} -command "SetFont size 1"}
-	    {command "Decrease size" {} "Decrease font size" {} -command "SetFont size -1"}
-	}
-	"&Help" "" "" 0 {
-	    {command "&About" {} "About" {f1} -command "About"}
-	}
+        "&File" "" "" 0 {        
+            {command "E&xit" {} "Exit Lumberjack Lightweight Log Viewer" {Ctrl x} -command "Exit"}
+        }
+        "&Setup" "" "" 0 {
+            {command "Find Log Service in &Naming Service" {} "Look up a Log Service in a Naming Service" {Ctrl a} -command "FindLogServiceInNamingService"}
+            {command "Find Log Service by &URI ..." {} "Look up a Log Service by its Object URI" {Ctrl u} -command "FindLogServiceByURI"}
+        }
+        "&Admin" "" "" 0 {
+            {command "&Write Record" {} "Write a record to the log" {} -command "WriteRecordToLog"}
+            {command "&Status" {} "Log service status" {} -command "LogServiceStatus"}
+        }
+        "Font" "" "" 0 {
+            {command "Courier" {} "Use Courier font" {} -command "SetFont family Courier"}
+            {command "Helvetica" {} "Use Helvetica font" {} -command "SetFont family Helvetica"}
+            {command "MS Sans Serif" {} "Use MS Sans Serif font" {} -command "SetFont family {MS Sans Serif}"}
+            {separator}
+            {command "Increase size" {} "Increase font size" {} -command "SetFont size 1"}
+            {command "Decrease size" {} "Decrease font size" {} -command "SetFont size -1"}
+        }
+        "&Help" "" "" 0 {
+            {command "&About" {} "About" {f1} -command "About"}
+        }
     }
 
     if {![info exists ::status]} {
-	set ::status "Initializing ..."
+        set ::status "Initializing ..."
     }
 
     wm title . "Lumberjack Lightweight Log Viewer"
 
     set mainframe [MainFrame .mainframe \
-		       -textvariable ::status \
-		       -menu $menudesc]
+                       -textvariable ::status \
+                       -menu $menudesc]
     set allframe [$mainframe getframe]
 
     set queryframe [frame $allframe.query]
@@ -163,25 +182,25 @@ proc InitGui {} {
     label $timeframe.tl -text "Time:"
     entry $timeframe.time -width 12
     pack $timeframe.dl $timeframe.date $timeframe.tl $timeframe.time \
-	-side left -pady 5 -padx 5
+        -side left -pady 5 -padx 5
     pack $timeframe -side top -anchor w
 
     set filterframe [frame $entryframe.filter]
     label $filterframe.fl -text "Filter by:" -width 12
     ComboBox $filterframe.cb -width 16 \
-	-values {{(No Filter)} Level {Producer Id} {Producer Name}}
+        -values {{(No Filter)} Level {Producer Id} {Producer Name}}
     entry $filterframe.filter -width 40
     pack $filterframe.fl $filterframe.cb $filterframe.filter \
-	-side left -pady 5 -padx 5
+        -side left -pady 5 -padx 5
     pack $filterframe -side top -anchor w
 
     pack $entryframe -side left
 
     button $queryframe.go -text "Go" -width 12 -command RunQuery
     checkbutton $queryframe.cb -text "Dog Mode" -padx 10 \
-	-variable ::config(chaseTail) -command ToggleChaseTail
+        -variable ::config(chaseTail) -command ToggleChaseTail
     pack $queryframe.go $queryframe.cb \
-	-side left -anchor w -padx 10
+        -side left -anchor w -padx 10
     pack $queryframe -side top -fill x
 
     set sep1 [Separator $allframe.sep1 -orient horizontal]
@@ -190,14 +209,14 @@ proc InitGui {} {
     set findframe [frame $allframe.find]
     label $findframe.dl -text "Find:" -width 12
     ComboBox $findframe.cb -width 16 \
-	-values {{(Anywhere)} {Producer Id} {Producer Name} {Data}}
+        -values {{(Anywhere)} {Producer Id} {Producer Name} {Data}}
     entry $findframe.find -width 40
     button $findframe.go -text "Find" -width 12 -command RunFind
     button $findframe.clear -text "Clear" -width 12 -command "RunFind reset"
     pack $findframe.dl $findframe.cb $findframe.find \
-	-side left -pady 5 -padx 5
+        -side left -pady 5 -padx 5
     pack $findframe.go $findframe.clear \
-	-side left -pady 5 -padx 10
+        -side left -pady 5 -padx 10
     pack $findframe -side top -anchor w
 
     bind $findframe.find <Return> RunFind
@@ -207,15 +226,15 @@ proc InitGui {} {
 
     set tf [frame $allframe.tf]
     set scrollbar [scrollbar $tf.scroll -orient vertical \
-		       -command ScrollbarCallback]
+                       -command ScrollbarCallback]
     pack $scrollbar -side right -fill y
     set table [table $tf.table -multiline 0 -resizeborders col \
-		   -selectmode extended \
-		   -colseparator "\t" \
-		   -rowseparator "\n" \
-		   -cols 6 -colstretchmode last \
-		   -titlerows 2 -rows 20 \
-		   -variable ::tableData]
+                   -selectmode extended \
+                   -colseparator "\t" \
+                   -rowseparator "\n" \
+                   -cols 6 -colstretchmode last \
+                   -titlerows 2 -rows 20 \
+                   -variable ::tableData]
 
     $table width 0 10 1 12 2 20 3 20 4 20 5 40
     $table set row 0,0 {{Record Id} {Timestamp} {Producer Id} {Producer Name} {Log Level} {Data}}
@@ -243,11 +262,11 @@ proc InitGui {} {
     #
 
     set clientFilterButton [button $table.filter -text "Filter" \
-				-command "RunClientFilter set"]
+                                -command "RunClientFilter set"]
     $table window configure 1,0 -window $clientFilterButton -sticky nsew
 
     set resetFilterButton [button $table.reset -text "Reset" \
-				-command "RunClientFilter reset"]
+                                -command "RunClientFilter reset"]
     $table window configure 1,1 -window $resetFilterButton -sticky nsew
 
     set producerIdFilter [entry $table.producerId]
@@ -363,7 +382,7 @@ proc InitGui {} {
 
 proc TableResizeEvent {} {
     if {![info exists ::state(logRecords)]} {
-	return
+        return
     }
 
     UpdateTable $::state(firstRowRecordIdx)
@@ -377,16 +396,16 @@ proc TableResizeEvent {} {
     set numRows [expr {$totalRows - $titleRows}]
 
     if {$::state(firstEmptyRow) < $numRows} {
-	#
-	# If polling is in progress, we are all set. Otherwise, attempt to
-	# download more data.
-	#
+        #
+        # If polling is in progress, we are all set. Otherwise, attempt to
+        # download more data.
+        #
 
-	if {![info exists ::state(pollJobId)]} {
-	    set isThereMore [GetMoreRecords]
-	    UpdateTable $::state(firstRowRecordIdx)
-	    SchedulePoll $isThereMore
-	}
+        if {![info exists ::state(pollJobId)]} {
+            set isThereMore [GetMoreRecords]
+            UpdateTable $::state(firstRowRecordIdx)
+            SchedulePoll $isThereMore
+        }
     }
 }
 
@@ -420,21 +439,21 @@ set ::config(logLevelEnums) [list "0" \
 
 set ::config(logLevelNames) \
     [list "0" \
-	 "Security Alarm" \
-	 "Failure Alarm" \
-	 "Degraded Alarm" \
-	 "Exception Error" \
-	 "Flow Control Error" \
-	 "Range Error" \
-	 "Usage Error" \
-	 "Administrative Event" \
-	 "Statistic Report"]
+         "Security Alarm" \
+         "Failure Alarm" \
+         "Degraded Alarm" \
+         "Exception Error" \
+         "Flow Control Error" \
+         "Range Error" \
+         "Usage Error" \
+         "Administrative Event" \
+         "Statistic Report"]
 
 proc GetLogLevelName {level} {
     if {$level < [llength $::config(logLevelNames)]} {
-	return [lindex $::config(logLevelNames) $level]
+        return [lindex $::config(logLevelNames) $level]
     } elseif {$level >= 10 && $level < 26} {
-	return [format "Debug(%d)" [expr {$level-9}]]
+        return [format "Debug(%d)" [expr {$level-9}]]
     }
 
     return $level
@@ -444,34 +463,34 @@ proc GetLogLevelFromName {name} {
     set nl [string length $name]
 
     if {$nl > 0 && [string compare -nocase -length 5 $name "Debug"] == 0} {
-	set idx 5
-	while {$idx < $nl} {
-	    set c [string index $name $idx]
-	    if {[string is digit $c]} {
-		break
-	    }
-	    incr idx
-	}
-	if {[scan [string range $name $idx end] "%d" debugLevel] != 1} {
-	    set debugLevel 1
-	}
-	return [expr {$debugLevel + 9}]
+        set idx 5
+        while {$idx < $nl} {
+            set c [string index $name $idx]
+            if {[string is digit $c]} {
+                break
+            }
+            incr idx
+        }
+        if {[scan [string range $name $idx end] "%d" debugLevel] != 1} {
+            set debugLevel 1
+        }
+        return [expr {$debugLevel + 9}]
     }
 
     for {set idx 0} {$idx < [llength $::config(logLevelNames)]} {incr idx} {
-	if {$nl > 0 && [string compare -nocase -length $nl $name [lindex $::config(logLevelNames) $idx]] == 0} {
-	    return $idx
-	}
+        if {$nl > 0 && [string compare -nocase -length $nl $name [lindex $::config(logLevelNames) $idx]] == 0} {
+            return $idx
+        }
     }
 
     for {set idx 0} {$idx < [llength $::config(logLevelEnums)]} {incr idx} {
-	if {$nl > 0 && [string compare -nocase -length $nl $name [lindex $::config(logLevelEnums) $idx]] == 0} {
-	    return $idx
-	}
+        if {$nl > 0 && [string compare -nocase -length $nl $name [lindex $::config(logLevelEnums) $idx]] == 0} {
+            return $idx
+        }
     }
 
     if {[scan $name "%d" level] != 1} {
-	set level 0
+        set level 0
     }
 
     return $level
@@ -501,27 +520,27 @@ proc InitializeLogService {logService} {
     set ::state(logAdmin) [corba::duplicate $logService]
 
     if {[$::state(logService) _is_a IDL:omg.org/CosLwLog/LogStatus:1.0]} {
-	set ::state(oldLogService) 0
+        set ::state(oldLogService) 0
 
-	if {![$::state(logProducer) _is_a IDL:omg.org/CosLwLog/LogProducer:1.0]} {
-	    corba::release $::state(logProducer)
-	    set ::state(logProducer) 0
-	}
+        if {![$::state(logProducer) _is_a IDL:omg.org/CosLwLog/LogProducer:1.0]} {
+            corba::release $::state(logProducer)
+            set ::state(logProducer) 0
+        }
 
-	if {![$::state(logAdmin) _is_a IDL:omg.org/CosLwLog/LogAdministrator:1.0]} {
-	    corba::release $::state(logAdmin)
-	    set ::state(logAdmin) 0
-	}
+        if {![$::state(logAdmin) _is_a IDL:omg.org/CosLwLog/LogAdministrator:1.0]} {
+            corba::release $::state(logAdmin)
+            set ::state(logAdmin) 0
+        }
     } else {
-	set ::state(oldLogService) 1
+        set ::state(oldLogService) 1
     }
 
     if {$::state(oldLogService)} {
-	$::widgets(filterType) configure -state disabled
-	$::widgets(filterValue) configure -state disabled
+        $::widgets(filterType) configure -state disabled
+        $::widgets(filterValue) configure -state disabled
     } else {
-	$::widgets(filterType) configure -state normal
-	$::widgets(filterValue) configure -state normal
+        $::widgets(filterType) configure -state normal
+        $::widgets(filterValue) configure -state normal
     }
 
     RunQuery
@@ -535,21 +554,21 @@ proc InitializeLogService {logService} {
 
 proc RunQuery {} {
     if {![info exists ::state(logService)] || $::state(logService) == 0} {
-	set ::status "No log service."
-	return
+        set ::status "No log service."
+        return
     }
 
     set startDate [$::widgets(startDate) get]
     set startTime [$::widgets(startTime) get]
 
     if {[catch {
-	set seconds [clock scan "$startTime $startDate"]
+        set seconds [clock scan "$startTime $startDate"]
     }]} {
-	set ::status "Could not read start time or date."
-	tk_messageBox -parent . -type ok -icon error -default ok \
-	    -title "Invalid Time Spec" \
-	    -message $::status
-	return
+        set ::status "Could not read start time or date."
+        tk_messageBox -parent . -type ok -icon error -default ok \
+            -title "Invalid Time Spec" \
+            -message $::status
+        return
     }
 
     CancelPoll
@@ -562,24 +581,24 @@ proc RunQuery {} {
 
     array unset ::tableData *
     array set ::tableData {
-	0,0 {Record Id}
-	0,1 {Timestamp}
-	0,2 {Producer Id}
-	0,3 {Producer Name}
-	0,4 {Log Level}
-	0,5 {Data}
+        0,0 {Record Id}
+        0,1 {Timestamp}
+        0,2 {Producer Id}
+        0,3 {Producer Name}
+        0,4 {Log Level}
+        0,5 {Data}
     }
 
     corba::try {
-	set logTime [list seconds $seconds nanoseconds 0]
-	if {!$::state(oldLogService)} {
-	    set recordId [$::state(logService) get_record_id_from_time $logTime]
-	} else {
-	    set recordId [$::state(logService) getRecordIdFromTime $logTime]
-	}
+        set logTime [list seconds $seconds nanoseconds 0]
+        if {!$::state(oldLogService)} {
+            set recordId [$::state(logService) get_record_id_from_time $logTime]
+        } else {
+            set recordId [$::state(logService) getRecordIdFromTime $logTime]
+        }
     } catch {... ex} {
-	set ::status $ex
-	return
+        set ::status $ex
+        return
     }
 
     set ::state(nextRecordId) $recordId
@@ -596,48 +615,48 @@ proc RunQuery {} {
     set llft2 [string range $logLevelFilterTxt 0 1]
 
     switch -- $llft2 {
-	"==" -
-	">=" -
-	"!=" -
-	"<=" {
-	    set logLevelFilter [string range $logLevelFilterTxt 2 end]
-	    set ::state(logLevelFilterPredicate) $llft2
-	}
-	default {
-	    switch -- $llft1 {
-		">" -
-		"<" {
-		    set logLevelFilter [string range $logLevelFilterTxt 1 end]
-		    set ::state(logLevelFilterPredicate) $llft1
-		}
-		"!" {
-		    set logLevelFilter [string range $logLevelFilterTxt 1 end]
-		    if {[string tolower [string trim $logLevelFilter]] eq "debug"} {
-			set ::state(logLevelFilterPredicate) "<"
-		    } else {
-			set ::state(logLevelFilterPredicate) "!="
-		    }
-		}
-		"=" {
-		    set logLevelFilter [string range $logLevelFilterTxt 1 end]
-		    set ::state(logLevelFilterPredicate) "=="
-		}
-		default {
-		    set logLevelFilter $logLevelFilterTxt
-		    set ::state(logLevelFilterPredicate) "=="
-		}
-	    }
-	}
+        "==" -
+        ">=" -
+        "!=" -
+        "<=" {
+            set logLevelFilter [string range $logLevelFilterTxt 2 end]
+            set ::state(logLevelFilterPredicate) $llft2
+        }
+        default {
+            switch -- $llft1 {
+                ">" -
+                "<" {
+                    set logLevelFilter [string range $logLevelFilterTxt 1 end]
+                    set ::state(logLevelFilterPredicate) $llft1
+                }
+                "!" {
+                    set logLevelFilter [string range $logLevelFilterTxt 1 end]
+                    if {[string tolower [string trim $logLevelFilter]] eq "debug"} {
+                        set ::state(logLevelFilterPredicate) "<"
+                    } else {
+                        set ::state(logLevelFilterPredicate) "!="
+                    }
+                }
+                "=" {
+                    set logLevelFilter [string range $logLevelFilterTxt 1 end]
+                    set ::state(logLevelFilterPredicate) "=="
+                }
+                default {
+                    set logLevelFilter $logLevelFilterTxt
+                    set ::state(logLevelFilterPredicate) "=="
+                }
+            }
+        }
     }
 
     set ::state(logLevelFilter) [GetLogLevelFromName [string trim $logLevelFilter]]
 
     if {$::state(filterType) == 1} {
-	set filterLevels [list]
-	foreach name $::state(filterValue) {
-	    lappend filterLevels [GetLogLevelFromName $name]
-	}
-	set ::state(filterValue) $filterLevels
+        set filterLevels [list]
+        foreach name $::state(filterValue) {
+            lappend filterLevels [GetLogLevelFromName $name]
+        }
+        set ::state(filterValue) $filterLevels
     }
 
     set isThereMore [GetMoreRecords]
@@ -653,15 +672,15 @@ proc RunQuery {} {
 
 proc RunFind {{setOrReset "set"}} {
     if {$setOrReset eq "reset"} {
-	$::widgets(findType) configure -text ""
-	$::widgets(findValue) delete 0 end
+        $::widgets(findType) configure -text ""
+        $::widgets(findValue) delete 0 end
     }
 
     set ::state(findType) [$::widgets(findType) getvalue]
     set ::state(findValue) [string tolower [$::widgets(findValue) get]]
 
     if {![info exists ::state(logRecords)]} {
-	return
+        return
     }
 
     #
@@ -671,11 +690,11 @@ proc RunFind {{setOrReset "set"}} {
     set oldFound [$::widgets(table) tag cell found]
 
     if {[llength $oldFound]} {
-	eval $::widgets(table) tag cell \{\} $oldFound
+        eval $::widgets(table) tag cell \{\} $oldFound
     }
 
     if {$::state(findValue) eq ""} {
-	return
+        return
     }
 
     #
@@ -693,14 +712,14 @@ proc RunFind {{setOrReset "set"}} {
     set foundCount 0
 
     while {$row < $numRows && $recordIdx < $numRecords} {
-	incr foundCount [FindMarkRow $row $theRow $recordIdx]
-	incr row
-	incr theRow
-	incr recordIdx
+        incr foundCount [FindMarkRow $row $theRow $recordIdx]
+        incr row
+        incr theRow
+        incr recordIdx
     }
 
     if {$foundCount} {
-	return
+        return
     }
 
     #
@@ -716,51 +735,51 @@ proc RunFind {{setOrReset "set"}} {
     set wrapped 0
 
     if {$recordIdx >= $numRecords} {
-	set recordIdx 0
-	set wrapped 1
+        set recordIdx 0
+        set wrapped 1
     }
 
     while {$recordIdx != $::state(firstRowRecordIdx)} {
-	if {(($count+1) % 100) == 0} {
-	    set percent [expr {100*$count/$numRecords}]
-	    set ::status "Searching ... $percent %"
-	    update idletasks
-	}
+        if {(($count+1) % 100) == 0} {
+            set percent [expr {100*$count/$numRecords}]
+            set ::status "Searching ... $percent %"
+            update idletasks
+        }
 
-	set record_ [lindex $::state(logRecords) $recordIdx]
-	array set record $record_
-	array set info $record(info)
+        set record_ [lindex $::state(logRecords) $recordIdx]
+        array set record $record_
+        array set info $record(info)
 
-	if {$ft == -1 || $ft == 0 || $ft == 1} {
-	    if {[string first $fv [string tolower $info(producerId)]] != -1} {
-		break
-	    }
-	}
+        if {$ft == -1 || $ft == 0 || $ft == 1} {
+            if {[string first $fv [string tolower $info(producerId)]] != -1} {
+                break
+            }
+        }
 
-	if {$ft == -1 || $ft == 0 || $ft == 2} {
-	    if {[string first $fv [string tolower $info(producerName)]] != -1} {
-		break
-	    }
-	}
+        if {$ft == -1 || $ft == 0 || $ft == 2} {
+            if {[string first $fv [string tolower $info(producerName)]] != -1} {
+                break
+            }
+        }
 
-	if {$ft == -1 || $ft == 0 || $ft == 3} {
-	    if {[string first $fv [string tolower $info(logData)]] != -1} {
-		break
-	    }
-	}
+        if {$ft == -1 || $ft == 0 || $ft == 3} {
+            if {[string first $fv [string tolower $info(logData)]] != -1} {
+                break
+            }
+        }
 
-	incr count
-	incr recordIdx
+        incr count
+        incr recordIdx
 
-	if {$recordIdx >= $numRecords} {
-	    set recordIdx 0
-	    set wrapped 1
-	}
+        if {$recordIdx >= $numRecords} {
+            set recordIdx 0
+            set wrapped 1
+        }
     }
 
     if {$recordIdx == $::state(firstRowRecordIdx)} {
-	set ::status "Search string \"$fv\" not found."
-	return
+        set ::status "Search string \"$fv\" not found."
+        return
     }
 
     #
@@ -773,15 +792,15 @@ proc RunFind {{setOrReset "set"}} {
     set middleRow [expr {$numRows / 2}]
 
     if {$recordIdx < $middleRow} {
-	set newFirstRow 0
+        set newFirstRow 0
     } else {
-	set newFirstRow [expr {$recordIdx - $middleRow}]
+        set newFirstRow [expr {$recordIdx - $middleRow}]
     }
 
     if {$wrapped} {
-	set ::status "Search wrapped around."
+        set ::status "Search wrapped around."
     } else {
-	set ::status "Found."
+        set ::status "Found."
     }
 
     UpdateTable $newFirstRow
@@ -790,7 +809,7 @@ proc RunFind {{setOrReset "set"}} {
 
 proc FindMarkRow {row theRow recordIdx} {
     if {$::state(findValue) eq ""} {
-	return 0
+        return 0
     }
 
     set ft $::state(findType)
@@ -807,24 +826,24 @@ proc FindMarkRow {row theRow recordIdx} {
     set foundCount 0
 
     if {$ft == -1 || $ft == 0 || $ft == 1} {
-	if {[string first $fv [string tolower $::tableData($theRow,2)]] != -1} {
-	    $::widgets(table) tag cell found $theRow,2
-	    incr foundCount
-	}
+        if {[string first $fv [string tolower $::tableData($theRow,2)]] != -1} {
+            $::widgets(table) tag cell found $theRow,2
+            incr foundCount
+        }
     }
 
     if {$ft == -1 || $ft == 0 || $ft == 2} {
-	if {[string first $fv [string tolower $::tableData($theRow,3)]] != -1} {
-	    $::widgets(table) tag cell found $theRow,3
-	    incr foundCount
-	}
+        if {[string first $fv [string tolower $::tableData($theRow,3)]] != -1} {
+            $::widgets(table) tag cell found $theRow,3
+            incr foundCount
+        }
     }
 
     if {$ft == -1 || $ft == 0 || $ft == 3} {
-	if {[string first $fv [string tolower $::tableData($theRow,5)]] != -1} {
-	    $::widgets(table) tag cell found $theRow,5
-	    incr foundCount
-	}
+        if {[string first $fv [string tolower $::tableData($theRow,5)]] != -1} {
+            $::widgets(table) tag cell found $theRow,5
+            incr foundCount
+        }
     }
 
     return $foundCount
@@ -838,10 +857,10 @@ proc FindMarkRow {row theRow recordIdx} {
 
 proc RunClientFilter {{setOrReset "set"}} {
     if {$setOrReset eq "reset"} {
-	$::widgets(producerIdFilter) delete 0 end
-	$::widgets(producerNameFilter) delete 0 end
-	$::widgets(logLevelFilter) delete 0 end
-	$::widgets(dataFilter) delete 0 end
+        $::widgets(producerIdFilter) delete 0 end
+        $::widgets(producerNameFilter) delete 0 end
+        $::widgets(logLevelFilter) delete 0 end
+        $::widgets(dataFilter) delete 0 end
     }
 
     set ::state(producerIdFilter) [string tolower [$::widgets(producerIdFilter) get]]
@@ -853,181 +872,181 @@ proc RunClientFilter {{setOrReset "set"}} {
     set llft2 [string range $logLevelFilterTxt 0 1]
 
     switch -- $llft2 {
-	"==" -
-	">=" -
-	"!=" -
-	"<=" {
-	    set logLevelFilter [string range $logLevelFilterTxt 2 end]
-	    set ::state(logLevelFilterPredicate) $llft2
-	}
-	default {
-	    switch -- $llft1 {
-		">" -
-		"<" {
-		    set logLevelFilter [string range $logLevelFilterTxt 1 end]
-		    set ::state(logLevelFilterPredicate) $llft1
-		}
-		"!" {
-		    set logLevelFilter [string range $logLevelFilterTxt 1 end]
-		    if {[string tolower [string trim $logLevelFilter]] eq "debug"} {
-			set ::state(logLevelFilterPredicate) "<"
-		    } else {
-			set ::state(logLevelFilterPredicate) "!="
-		    }
-		}
-		"=" {
-		    set logLevelFilter [string range $logLevelFilterTxt 1 end]
-		    set ::state(logLevelFilterPredicate) "=="
-		}
-		default {
-		    set logLevelFilter $logLevelFilterTxt
-		    set ::state(logLevelFilterPredicate) "=="
-		}
-	    }
-	}
+        "==" -
+        ">=" -
+        "!=" -
+        "<=" {
+            set logLevelFilter [string range $logLevelFilterTxt 2 end]
+            set ::state(logLevelFilterPredicate) $llft2
+        }
+        default {
+            switch -- $llft1 {
+                ">" -
+                "<" {
+                    set logLevelFilter [string range $logLevelFilterTxt 1 end]
+                    set ::state(logLevelFilterPredicate) $llft1
+                }
+                "!" {
+                    set logLevelFilter [string range $logLevelFilterTxt 1 end]
+                    if {[string tolower [string trim $logLevelFilter]] eq "debug"} {
+                        set ::state(logLevelFilterPredicate) "<"
+                    } else {
+                        set ::state(logLevelFilterPredicate) "!="
+                    }
+                }
+                "=" {
+                    set logLevelFilter [string range $logLevelFilterTxt 1 end]
+                    set ::state(logLevelFilterPredicate) "=="
+                }
+                default {
+                    set logLevelFilter $logLevelFilterTxt
+                    set ::state(logLevelFilterPredicate) "=="
+                }
+            }
+        }
     }
 
     set ::state(logLevelFilter) [GetLogLevelFromName [string trim $logLevelFilter]]
 
     if {![info exists ::state(logRecords)]} {
-	return
+        return
     }
 
     CancelPoll
 
     if {$::state(producerIdFilter) eq ""} {
-	set filterByProducerId 0
+        set filterByProducerId 0
     } else {
-	set filterByProducerId 1
+        set filterByProducerId 1
     }
 
     if {$::state(producerNameFilter) eq ""} {
-	set filterByProducerName 0
+        set filterByProducerName 0
     } else {
-	set filterByProducerName 1
+        set filterByProducerName 1
     }
 
     if {$::state(logLevelFilter) eq "" || \
-	    $::state(logLevelFilter) == 0} {
-	set filterByLogLevel 0
+            $::state(logLevelFilter) == 0} {
+        set filterByLogLevel 0
     } else {
-	set filterByLogLevel 1
+        set filterByLogLevel 1
     }
 
     if {$::state(dataFilter) eq ""} {
-	set filterByData 0
+        set filterByData 0
     } else {
-	set filterByData 1
+        set filterByData 1
     }
 
     set numAllRecords [llength $::state(allLogRecords)]
     set newFirstRowRecordIdx -1
 
     if {!$filterByProducerId && \
-	    !$filterByProducerName && \
-	    !$filterByLogLevel && \
-	    !$filterByData} {
-	set filteredRecords $::state(allLogRecords)
+            !$filterByProducerName && \
+            !$filterByLogLevel && \
+            !$filterByData} {
+        set filteredRecords $::state(allLogRecords)
 
-	if {$::state(firstRowRecordIdx) < [llength $::state(logRecords)]} {
-	    set record_ [lindex $::state(logRecords) $::state(firstRowRecordIdx)]
-	    array set record $record_
-	    set firstRowRecordId $record(id)
-	    set count 0
+        if {$::state(firstRowRecordIdx) < [llength $::state(logRecords)]} {
+            set record_ [lindex $::state(logRecords) $::state(firstRowRecordIdx)]
+            array set record $record_
+            set firstRowRecordId $record(id)
+            set count 0
 
-	    foreach record_ $::state(allLogRecords) {
-		array set record $record_
-		if {$record(id) == $firstRowRecordId} {
-		    set newFirstRowRecordIdx $count
-		    break
-		}
-		incr count
-	    }
-	}
+            foreach record_ $::state(allLogRecords) {
+                array set record $record_
+                if {$record(id) == $firstRowRecordId} {
+                    set newFirstRowRecordIdx $count
+                    break
+                }
+                incr count
+            }
+        }
     } else {
-	set filteredRecords [list]
-	set count 0
+        set filteredRecords [list]
+        set count 0
 
-	if {$::state(firstRowRecordIdx) < [llength $::state(logRecords)]} {
-	    set record_ [lindex $::state(logRecords) $::state(firstRowRecordIdx)]
-	    array set record $record_
-	    set firstRowRecordId $record(id)
-	} else {
-	    set firstRowRecordId -1
-	}
+        if {$::state(firstRowRecordIdx) < [llength $::state(logRecords)]} {
+            set record_ [lindex $::state(logRecords) $::state(firstRowRecordIdx)]
+            array set record $record_
+            set firstRowRecordId $record(id)
+        } else {
+            set firstRowRecordId -1
+        }
 
-	foreach record_ $::state(allLogRecords) {
-	    if {(($count+1) % 100) == 0} {
-		set percent [expr {100*$count/$numAllRecords}]
-		set ::status "Filtering ... $percent %"
-		update idletasks
-	    }
+        foreach record_ $::state(allLogRecords) {
+            if {(($count+1) % 100) == 0} {
+                set percent [expr {100*$count/$numAllRecords}]
+                set ::status "Filtering ... $percent %"
+                update idletasks
+            }
 
-	    array set record $record_
-	    array set info $record(info)
+            array set record $record_
+            array set info $record(info)
 
-	    if {$record(id) == $firstRowRecordId} {
-		set newFirstRowRecordIdx [llength $filteredRecords]
-	    }
+            if {$record(id) == $firstRowRecordId} {
+                set newFirstRowRecordIdx [llength $filteredRecords]
+            }
 
-	    if {$filterByProducerId} {
-		if {[string first $::state(producerIdFilter) [string tolower $info(producerId)]] == -1} {
-		    continue
-		}
-	    }
+            if {$filterByProducerId} {
+                if {[string first $::state(producerIdFilter) [string tolower $info(producerId)]] == -1} {
+                    continue
+                }
+            }
 
-	    if {$filterByProducerName} {
-		if {[string first $::state(producerNameFilter) [string tolower $info(producerName)]] == -1} {
-		    continue
-		}
-	    }
+            if {$filterByProducerName} {
+                if {[string first $::state(producerNameFilter) [string tolower $info(producerName)]] == -1} {
+                    continue
+                }
+            }
 
-	    if {$filterByLogLevel} {
-		if {$::state(oldLogService)} {
-		    set level [GetLogLevelFromName $info(level)]
-		} else {
-		    set level $info(level)
-		}
+            if {$filterByLogLevel} {
+                if {$::state(oldLogService)} {
+                    set level [GetLogLevelFromName $info(level)]
+                } else {
+                    set level $info(level)
+                }
 
-		if {$::state(logLevelFilterPredicate) eq "=="} {
-		    if {$::state(logLevelFilter) != $level} {
-			continue
-		    }
-		} else {
-		    eval set pred \[expr $level $::state(logLevelFilterPredicate) $::state(logLevelFilter)\]
-		    if {!$pred} {
-			continue
-		    }
-		}
-	    }
+                if {$::state(logLevelFilterPredicate) eq "=="} {
+                    if {$::state(logLevelFilter) != $level} {
+                        continue
+                    }
+                } else {
+                    eval set pred \[expr $level $::state(logLevelFilterPredicate) $::state(logLevelFilter)\]
+                    if {!$pred} {
+                        continue
+                    }
+                }
+            }
 
-	    if {$filterByData} {
-		if {[string first $::state(dataFilter) [string tolower $info(logData)]] == -1} {
-		    continue
-		}
-	    }
+            if {$filterByData} {
+                if {[string first $::state(dataFilter) [string tolower $info(logData)]] == -1} {
+                    continue
+                }
+            }
 
-	    lappend filteredRecords $record_
-	    incr count
-	}
+            lappend filteredRecords $record_
+            incr count
+        }
     }
 
     set numFilteredRecords [llength $filteredRecords]
 
     if {$setOrReset eq "reset" || \
-	    (!$filterByProducerId && !$filterByProducerName && \
-		 !$filterByLogLevel && !$filterByData)} {
-	set ::status "Reset filter."
+            (!$filterByProducerId && !$filterByProducerName && \
+                 !$filterByLogLevel && !$filterByData)} {
+        set ::status "Reset filter."
     } elseif {$numFilteredRecords == $numAllRecords} {
-	set ::status "Filter matches all $numAllRecords records."
+        set ::status "Filter matches all $numAllRecords records."
     } else {
-	set ::status "Filter matches $numFilteredRecords of $numAllRecords records."
+        set ::status "Filter matches $numFilteredRecords of $numAllRecords records."
     }
 
     set ::state(logRecords) $filteredRecords
 
     if {![info exists newFirstRowRecordIdx]} {
-	set newFirstRowRecordIdx -1
+        set newFirstRowRecordIdx -1
     }
 
     UpdateTable $newFirstRowRecordIdx 1
@@ -1042,148 +1061,148 @@ proc RunClientFilter {{setOrReset "set"}} {
 
 proc GetMoreRecords {} {
     if {![info exists ::state(logService)] || $::state(logService) == 0} {
-	return 0
+        return 0
     }
 
     set currentId $::state(nextRecordId)
     set howMany $::config(maxRecords)
 
     corba::try {
-	if {!$::state(oldLogService)} {
-	    switch -- $::state(filterType) {
-		1 {
-		    set moreRecords [$::state(logService) \
-					 retrieve_records_by_level \
-					 currentId howMany \
-					 $::state(filterValue)]
-		}
-		2 {
-		    set moreRecords [$::state(logService) \
-					 retrieve_records_by_producer_id \
-					 currentId howMany \
-					 $::state(filterValue)]
-		}
-		3 {
-		    set moreRecords [$::state(logService) \
-					 retrieve_records_by_producer_name \
-					 currentId howMany \
-					 $::state(filterValue)]
-		}
-		default {
-		    set moreRecords [$::state(logService) \
-					 retrieve_records \
-					 currentId howMany]
-		}
-	    }
-	} else {
-	    set moreRecords [$::state(logService) \
-				 retrieveById \
-				 currentId $howMany]
-	    set howMany [llength $moreRecords]
-	}
+        if {!$::state(oldLogService)} {
+            switch -- $::state(filterType) {
+                1 {
+                    set moreRecords [$::state(logService) \
+                                         retrieve_records_by_level \
+                                         currentId howMany \
+                                         $::state(filterValue)]
+                }
+                2 {
+                    set moreRecords [$::state(logService) \
+                                         retrieve_records_by_producer_id \
+                                         currentId howMany \
+                                         $::state(filterValue)]
+                }
+                3 {
+                    set moreRecords [$::state(logService) \
+                                         retrieve_records_by_producer_name \
+                                         currentId howMany \
+                                         $::state(filterValue)]
+                }
+                default {
+                    set moreRecords [$::state(logService) \
+                                         retrieve_records \
+                                         currentId howMany]
+                }
+            }
+        } else {
+            set moreRecords [$::state(logService) \
+                                 retrieveById \
+                                 currentId $howMany]
+            set howMany [llength $moreRecords]
+        }
     } catch {... ex} {
-	set ::status $ex
-	return -1
+        set ::status $ex
+        return -1
     }
 
     if {$howMany == $::config(maxRecords)} {
-	set thereIsMore 1
+        set thereIsMore 1
     } else {
-	set thereIsMore 0
+        set thereIsMore 0
     }
 
     if {$::state(producerIdFilter) eq ""} {
-	set filterByProducerId 0
+        set filterByProducerId 0
     } else {
-	set filterByProducerId 1
+        set filterByProducerId 1
     }
 
     if {$::state(producerNameFilter) eq ""} {
-	set filterByProducerName 0
+        set filterByProducerName 0
     } else {
-	set filterByProducerName 1
+        set filterByProducerName 1
     }
 
     if {$::state(logLevelFilter) eq "" || \
-	    $::state(logLevelFilter) == 0} {
-	set filterByLogLevel 0
+            $::state(logLevelFilter) == 0} {
+        set filterByLogLevel 0
     } else {
-	set filterByLogLevel 1
+        set filterByLogLevel 1
     }
 
     if {$::state(dataFilter) eq ""} {
-	set filterByData 0
+        set filterByData 0
     } else {
-	set filterByData 1
+        set filterByData 1
     }
 
     set numNewFilteredRecords 0
 
     foreach oneRecord $moreRecords {
-	lappend ::state(allLogRecords) $oneRecord
+        lappend ::state(allLogRecords) $oneRecord
 
-	set match 1
+        set match 1
 
-	if {$filterByProducerId || \
-		$filterByProducerName || \
-		$filterByLogLevel || \
-		$filterByData} {
-	    array set record $oneRecord
-	    array set info $record(info)
+        if {$filterByProducerId || \
+                $filterByProducerName || \
+                $filterByLogLevel || \
+                $filterByData} {
+            array set record $oneRecord
+            array set info $record(info)
 
-	    if {$filterByProducerId} {
-		if {[string first $::state(producerIdFilter) [string tolower $info(producerId)]] == -1} {
-		    set match 0
-		}
-	    }
+            if {$filterByProducerId} {
+                if {[string first $::state(producerIdFilter) [string tolower $info(producerId)]] == -1} {
+                    set match 0
+                }
+            }
 
-	    if {$filterByProducerName} {
-		if {[string first $::state(producerNameFilter) [string tolower $info(producerName)]] == -1} {
-		    set match 0
-		}
-	    }
+            if {$filterByProducerName} {
+                if {[string first $::state(producerNameFilter) [string tolower $info(producerName)]] == -1} {
+                    set match 0
+                }
+            }
 
-	    if {$filterByLogLevel} {
-		if {$::state(logLevelFilterPredicate) eq "=="} {
-		    if {$::state(logLevelFilter) != $info(level)} {
-			set match 0
-		    }
-		} else {
-		    eval set pred \[expr $info(level) $::state(logLevelFilterPredicate) $::state(logLevelFilter)\]
-		    if {!$pred} {
-			set match 0
-		    }
-		}
-	    }
+            if {$filterByLogLevel} {
+                if {$::state(logLevelFilterPredicate) eq "=="} {
+                    if {$::state(logLevelFilter) != $info(level)} {
+                        set match 0
+                    }
+                } else {
+                    eval set pred \[expr $info(level) $::state(logLevelFilterPredicate) $::state(logLevelFilter)\]
+                    if {!$pred} {
+                        set match 0
+                    }
+                }
+            }
 
-	    if {$filterByData} {
-		if {[string first $::state(dataFilter) [string tolower $info(logData)]] == -1} {
-		    set match 0
-		}
-	    }
-	}
+            if {$filterByData} {
+                if {[string first $::state(dataFilter) [string tolower $info(logData)]] == -1} {
+                    set match 0
+                }
+            }
+        }
 
-	if {$match} {
-	    lappend ::state(logRecords) $oneRecord
-	    incr numNewFilteredRecords
-	}
+        if {$match} {
+            lappend ::state(logRecords) $oneRecord
+            incr numNewFilteredRecords
+        }
     }
 
     set ::state(nextRecordId) $currentId
 
     if {$howMany} {
-	if {$howMany > 1} {
-	    set records "records"
-	} else {
-	    set records "record"
-	}
-	if {$numNewFilteredRecords != $howMany} {
-	    set ::status "Retrieved $howMany $records ($numNewFilteredRecords filtered)."
-	} else {
-	    set ::status "Retrieved $howMany $records."
-	}
+        if {$howMany > 1} {
+            set records "records"
+        } else {
+            set records "record"
+        }
+        if {$numNewFilteredRecords != $howMany} {
+            set ::status "Retrieved $howMany $records ($numNewFilteredRecords filtered)."
+        } else {
+            set ::status "Retrieved $howMany $records."
+        }
     } else {
-	set ::status "No more records."
+        set ::status "No more records."
     }
 
     return $thereIsMore
@@ -1216,16 +1235,16 @@ proc PollMoreRecords {} {
 
 proc SchedulePoll {{isThereMore 1}} {
     if {$isThereMore == -1} {
-	#
-	# GetMoreRecords experienced an error.
-	#
+        #
+        # GetMoreRecords experienced an error.
+        #
 
-	CancelPoll
-	return
+        CancelPoll
+        return
     }
 
     if {[info exists ::state(pollJobId)]} {
-	return
+        return
     }
 
     set totalRows [$::widgets(table) cget -rows]
@@ -1242,12 +1261,12 @@ proc SchedulePoll {{isThereMore 1}} {
     #
 
     if {$row < $numRows} {
-	if {$isThereMore} {
-	    set nextPoll $::config(busyPollTime)
-	} else {
-	    set nextPoll $::config(idlePollTime)
-	}
-	set ::state(pollJobId) [after $nextPoll {PollMoreRecords}]
+        if {$isThereMore} {
+            set nextPoll $::config(busyPollTime)
+        } else {
+            set nextPoll $::config(idlePollTime)
+        }
+        set ::state(pollJobId) [after $nextPoll {PollMoreRecords}]
     }
 }
 
@@ -1259,8 +1278,8 @@ proc SchedulePoll {{isThereMore 1}} {
 
 proc CancelPoll {} {
     if {[info exists ::state(pollJobId)]} {
-	after cancel $::state(pollJobId)
-	unset ::state(pollJobId)
+        after cancel $::state(pollJobId)
+        unset ::state(pollJobId)
     }
 }
 
@@ -1284,14 +1303,14 @@ proc UpdateTable {newFirstRowRecordIdx {force 0}} {
     #
 
     if {$newFirstRowRecordIdx == $::state(firstRowRecordIdx) && \
-	    $::state(firstEmptyRow) < $numRows && \
-	    ($newFirstRowRecordIdx + $numRows) <= $numRecords && \
-	    $::config(chaseTail)} {
-	#
-	# Scroll so that the table will be half full.
-	#
+            $::state(firstEmptyRow) < $numRows && \
+            ($newFirstRowRecordIdx + $numRows) <= $numRecords && \
+            $::config(chaseTail)} {
+        #
+        # Scroll so that the table will be half full.
+        #
 
-	set newFirstRowRecordIdx [expr {$numRecords - $numRows / 2}]
+        set newFirstRowRecordIdx [expr {$numRecords - $numRows / 2}]
     }
 
     #
@@ -1299,43 +1318,43 @@ proc UpdateTable {newFirstRowRecordIdx {force 0}} {
     #
 
     if {$newFirstRowRecordIdx < 0} {
-	set newFirstRowRecordIdx 0
+        set newFirstRowRecordIdx 0
     } elseif {$newFirstRowRecordIdx >= $numRecords && $numRecords > 0} {
-	set newFirstRowRecordIdx [expr {$numRecords - 1}]
+        set newFirstRowRecordIdx [expr {$numRecords - 1}]
     }
 
     if {$newFirstRowRecordIdx != $::state(firstRowRecordIdx) || $force} {
-	#
-	# Need to update all rows.
-	#
+        #
+        # Need to update all rows.
+        #
 
-	set row 0
-	set theRow $titleRows
-	set recordIdx $newFirstRowRecordIdx
+        set row 0
+        set theRow $titleRows
+        set recordIdx $newFirstRowRecordIdx
 
-	#
-	# Reset "found" cells.
-	#
+        #
+        # Reset "found" cells.
+        #
 
-	set oldFound [$::widgets(table) tag cell found]
+        set oldFound [$::widgets(table) tag cell found]
 
-	if {[llength $oldFound]} {
-	    eval $::widgets(table) tag cell \{\} $oldFound
-	}
+        if {[llength $oldFound]} {
+            eval $::widgets(table) tag cell \{\} $oldFound
+        }
 
-	#
-	# Clear selection
-	#
+        #
+        # Clear selection
+        #
 
-	$::widgets(table) selection clear all
+        $::widgets(table) selection clear all
     } else {
-	#
-	# Only need to update bottom rows.
-	#
+        #
+        # Only need to update bottom rows.
+        #
 
-	set row $::state(firstEmptyRow)
-	set theRow [expr {$row + $titleRows}]
-	set recordIdx [expr {$::state(firstRowRecordIdx) + $row}]
+        set row $::state(firstEmptyRow)
+        set theRow [expr {$row + $titleRows}]
+        set recordIdx [expr {$::state(firstRowRecordIdx) + $row}]
     }
 
     #
@@ -1345,31 +1364,31 @@ proc UpdateTable {newFirstRowRecordIdx {force 0}} {
     set tableWidth [$::widgets(table) width 5]
 
     while {$row < $numRows && $recordIdx < $numRecords} {
-	set record_ [lindex $::state(logRecords) $recordIdx]
-	array set record $record_
-	array set time $record(time)
-	array set info $record(info)
+        set record_ [lindex $::state(logRecords) $recordIdx]
+        array set record $record_
+        array set time $record(time)
+        array set info $record(info)
 
-	set timestamp [clock format $time(seconds) -format "%H:%M:%S"]
-	append timestamp [format ".%03d" [expr {$time(nanoseconds)/1000000}]]
+        set timestamp [clock format $time(seconds) -format "%H:%M:%S"]
+        append timestamp [format ".%03d" [expr {$time(nanoseconds)/1000000}]]
 
-	array set ::tableData [list \
-				   $theRow,0 $record(id) \
-				   $theRow,1 $timestamp \
-				   $theRow,2 $info(producerId) \
-				   $theRow,3 $info(producerName) \
-				   $theRow,4 [GetLogLevelName $info(level)] \
-				   $theRow,5 $info(logData)]
+        array set ::tableData [list \
+                                   $theRow,0 $record(id) \
+                                   $theRow,1 $timestamp \
+                                   $theRow,2 $info(producerId) \
+                                   $theRow,3 $info(producerName) \
+                                   $theRow,4 [GetLogLevelName $info(level)] \
+                                   $theRow,5 $info(logData)]
 
-	if {[string length $info(logData)] > $tableWidth} {
-	    set tableWidth [string length $info(logData)]
-	}
+        if {[string length $info(logData)] > $tableWidth} {
+            set tableWidth [string length $info(logData)]
+        }
 
-	FindMarkRow $row $theRow $recordIdx
+        FindMarkRow $row $theRow $recordIdx
 
-	incr row
-	incr theRow
-	incr recordIdx
+        incr row
+        incr theRow
+        incr recordIdx
     }
 
     #
@@ -1377,10 +1396,10 @@ proc UpdateTable {newFirstRowRecordIdx {force 0}} {
     #
 
     if {$newFirstRowRecordIdx != $::state(firstRowRecordIdx) || $force} {
-	while {$theRow < $totalRows} {
-	    array unset ::tableData $theRow,*
-	    incr theRow
-	}
+        while {$theRow < $totalRows} {
+            array unset ::tableData $theRow,*
+            incr theRow
+        }
     }
 
     #
@@ -1396,7 +1415,7 @@ proc UpdateTable {newFirstRowRecordIdx {force 0}} {
     #
 
     if {$tableWidth > [$::widgets(table) width 5]} {
-	$::widgets(table) width 5 $tableWidth
+        $::widgets(table) width 5 $tableWidth
     }
 
     #
@@ -1443,22 +1462,22 @@ proc UpdateAfterCallback {newFirstRowRecordIdx} {
     #
 
     if {$::state(firstEmptyRow) < $numRows} {
-	#
-	# If polling is in progress, we are all set. Otherwise, attempt to
-	# download more data.
-	#
+        #
+        # If polling is in progress, we are all set. Otherwise, attempt to
+        # download more data.
+        #
 
-	if {![info exists ::state(pollJobId)]} {
-	    set isThereMore [GetMoreRecords]
-	    UpdateTable $newFirstRowRecordIdx
-	    SchedulePoll $isThereMore
-	}
+        if {![info exists ::state(pollJobId)]} {
+            set isThereMore [GetMoreRecords]
+            UpdateTable $newFirstRowRecordIdx
+            SchedulePoll $isThereMore
+        }
     }
 }
 
 proc ScrollbarCallback {cmd {where none} {unit {}}} {
     if {![info exists ::state(logRecords)]} {
-	return
+        return
     }
 
     #
@@ -1468,7 +1487,7 @@ proc ScrollbarCallback {cmd {where none} {unit {}}} {
     #
 
     if {$where eq "none"} {
-	return
+        return
     }
 
     set totalRows [$::widgets(table) cget -rows]
@@ -1480,26 +1499,26 @@ proc ScrollbarCallback {cmd {where none} {unit {}}} {
     #
 
     if {$cmd eq "moveto"} {
-	set numRecords [llength $::state(logRecords)]
-	set upperBound [expr {double($numRecords + $numRows - 1)}]
-	set newFirstRowRecordIdx [expr {int($where*$upperBound)}]
+        set numRecords [llength $::state(logRecords)]
+        set upperBound [expr {double($numRecords + $numRows - 1)}]
+        set newFirstRowRecordIdx [expr {int($where*$upperBound)}]
     } elseif {$cmd eq "scroll"} {
-	if {$unit eq "units"} {
-	    set newFirstRowRecordIdx [expr {$::state(firstRowRecordIdx) + $where}]
-	} elseif {$unit eq "pages"} {
-	    set newFirstRowRecordIdx [expr {$::state(firstRowRecordIdx) + $where*$numRows}]
+        if {$unit eq "units"} {
+            set newFirstRowRecordIdx [expr {$::state(firstRowRecordIdx) + $where}]
+        } elseif {$unit eq "pages"} {
+            set newFirstRowRecordIdx [expr {$::state(firstRowRecordIdx) + $where*$numRows}]
 
-	    #
-	    # If we scrolled by one page only, keep one line from the
-	    # current page on screen.
-	    #
+            #
+            # If we scrolled by one page only, keep one line from the
+            # current page on screen.
+            #
 
-	    if {$where == 1} {
-		incr newFirstRowRecordIdx -1
-	    } elseif {$where == -1} {
-		incr newFirstRowRecordIdx
-	    }
-	}
+            if {$where == 1} {
+                incr newFirstRowRecordIdx -1
+            } elseif {$where == -1} {
+                incr newFirstRowRecordIdx
+            }
+        }
     }
 
     #
@@ -1521,7 +1540,7 @@ proc ToggleChaseTail {} {
     set ::preferencesAreDirty 1
 
     if {![info exists ::state(logRecords)]} {
-	return
+        return
     }
 
     #
@@ -1530,7 +1549,7 @@ proc ToggleChaseTail {} {
     #
 
     if {!$::config(chaseTail)} {
-	return
+        return
     }
 
     set totalRows [$::widgets(table) cget -rows]
@@ -1563,8 +1582,8 @@ proc SendRecordToLog {} {
     set top .writeRecord
 
     if {![info exists ::state(logProducer)] || $::state(logProducer) == 0} {
-	set ::status "No log producer."
-	return
+        set ::status "No log producer."
+        return
     }
 
     set producerId [$top.producerId.e get]
@@ -1573,23 +1592,23 @@ proc SendRecordToLog {} {
     set data [$top.data.e get]
 
     if {$::state(oldLogService)} {
-	set logLevel [lindex $::config(logLevelEnums) $logLevel]
+        set logLevel [lindex $::config(logLevelEnums) $logLevel]
     }
 
     set logRecord [list \
-		       producerId $producerId \
-		       producerName $producerName \
-		       level $logLevel \
-		       logData $data]
+                       producerId $producerId \
+                       producerName $producerName \
+                       level $logLevel \
+                       logData $data]
 
     corba::try {
-	if {!$::state(oldLogService)} {
-	    $::state(logProducer) write_record $logRecord
-	} else {
-	    $::state(logProducer) writeRecords [list $logRecord]
-	}
+        if {!$::state(oldLogService)} {
+            $::state(logProducer) write_record $logRecord
+        } else {
+            $::state(logProducer) writeRecords [list $logRecord]
+        }
     } catch {... ex} {
-	set ::status $ex
+        set ::status $ex
     }
 }
 
@@ -1597,14 +1616,14 @@ proc WriteRecordToLog {} {
     set top .writeRecord
 
     if {![info exists ::state(logService)] || $::state(logService) == 0} {
-	set ::status "No log service."
-	return
+        set ::status "No log service."
+        return
     }
 
     if {[winfo exists $top]} {
-	wm deiconify $top
-	focus $top
-	return
+        wm deiconify $top
+        focus $top
+        return
     }
 
     toplevel $top
@@ -1649,9 +1668,9 @@ proc WriteRecordToLog {} {
 
     frame $top.buts
     button $top.buts.b1 -width 15 -text "Send" \
-	-command "SendRecordToLog"
+        -command "SendRecordToLog"
     button $top.buts.b2 -width 15 -text "Close" \
-	-command "wm withdraw $top"
+        -command "wm withdraw $top"
     pack $top.buts.b1 $top.buts.b2 -side left -pady 10 -padx 20
     pack $top.buts
 
@@ -1667,46 +1686,46 @@ proc WriteRecordToLog {} {
 
 proc AdministrateLogService {what {widget 0}} {
     if {![info exists ::state(logAdmin)] || $::state(logAdmin) == 0} {
-	set ::status "No log admin."
-	return
+        set ::status "No log admin."
+        return
     }
 
     if {$::state(oldLogService)} {
-	set ::status "Not supported with old log service."
-	return
+        set ::status "Not supported with old log service."
+        return
     }
 
     corba::try {
-	switch -- $what {
-	    maxSize {
-		set size [$widget get]
-		$::state(logAdmin) set_max_size $size
-	    }
-	    logFullAction {
-		set value [$widget cget -text]
-		if {$value eq "Wrap"} {
-		    $::state(logAdmin) set_log_full_action WRAP
-		} elseif {$value eq "Halt"} {
-		    $::state(logAdmin) set_log_full_action HALT
-		}
-	    }
-	    adminState {
-		set value [$widget cget -text]
-		if {$value eq "Locked"} {
-		    $::state(logAdmin) set_administrative_state locked
-		} elseif {$value eq "Unlocked"} {
-		    $::state(logAdmin) set_administrative_state unlocked
-		}
-	    }
-	    clearLog {
-		$::state(logAdmin) clear_log
-	    }
-	    destroy {
-		$::state(logAdmin) destroy
-	    }
-	}
+        switch -- $what {
+            maxSize {
+                set size [$widget get]
+                $::state(logAdmin) set_max_size $size
+            }
+            logFullAction {
+                set value [$widget cget -text]
+                if {$value eq "Wrap"} {
+                    $::state(logAdmin) set_log_full_action WRAP
+                } elseif {$value eq "Halt"} {
+                    $::state(logAdmin) set_log_full_action HALT
+                }
+            }
+            adminState {
+                set value [$widget cget -text]
+                if {$value eq "Locked"} {
+                    $::state(logAdmin) set_administrative_state locked
+                } elseif {$value eq "Unlocked"} {
+                    $::state(logAdmin) set_administrative_state unlocked
+                }
+            }
+            clearLog {
+                $::state(logAdmin) clear_log
+            }
+            destroy {
+                $::state(logAdmin) destroy
+            }
+        }
     } catch {... ex} {
-	set ::status $ex
+        set ::status $ex
     }
 }
 
@@ -1714,34 +1733,34 @@ proc UpdateLogServiceStatus {} {
     set top .logServiceStatus
 
     if {[info exists ::state(logServiceStatusUpdate)] && \
-	     $::state(logServiceStatusUpdate)} {
-	return
+             $::state(logServiceStatusUpdate)} {
+        return
     }
 
     if {![info exists ::state(logService)] || $::state(logService) == 0} {
-	set u "<no log service>"
-	$top.maxSize.e delete 0 end
-	$top.maxSize.e insert 0 $u
-	$top.currentSize.e configure -text $u
-	$top.numRecords.e configure -text $u
-	$top.logFullAction.e configure -text $u
-	$top.availStatus.e configure -text $u
-	$top.adminState.e configure -text $u
-	$top.opState.e configure -text $u
-	return
+        set u "<no log service>"
+        $top.maxSize.e delete 0 end
+        $top.maxSize.e insert 0 $u
+        $top.currentSize.e configure -text $u
+        $top.numRecords.e configure -text $u
+        $top.logFullAction.e configure -text $u
+        $top.availStatus.e configure -text $u
+        $top.adminState.e configure -text $u
+        $top.opState.e configure -text $u
+        return
     }
 
     set ::state(logServiceStatusUpdate) 1
     set logService $::state(logService)
 
     corba::try {
-	if {!$::state(oldLogService)} {
-	    set maxSize [$logService get_max_size]
-	} else {
-	    set maxSize [$logService getMaxSize]
-	}
+        if {!$::state(oldLogService)} {
+            set maxSize [$logService get_max_size]
+        } else {
+            set maxSize [$logService getMaxSize]
+        }
     } catch {...} {
-	set maxSize "<unavailable>"
+        set maxSize "<unavailable>"
     }
 
     $top.maxSize.e configure -state normal
@@ -1753,144 +1772,144 @@ proc UpdateLogServiceStatus {} {
     }
 
     corba::try {
-	if {!$::state(oldLogService)} {
-	    set currentSize [$logService get_current_size]
-	} else {
-	    set currentSize [$logService getCurrentSize]
-	}
+        if {!$::state(oldLogService)} {
+            set currentSize [$logService get_current_size]
+        } else {
+            set currentSize [$logService getCurrentSize]
+        }
     } catch {...} {
-	set currentSize "<unavailable>"
+        set currentSize "<unavailable>"
     }
 
     $top.currentSize.e configure -text $currentSize
 
     corba::try {
-	if {!$::state(oldLogService)} {
-	    set numRecords [$logService get_n_records]
-	} else {
-	    set numRecords [$logService getNumRecords]
-	}
+        if {!$::state(oldLogService)} {
+            set numRecords [$logService get_n_records]
+        } else {
+            set numRecords [$logService getNumRecords]
+        }
     } catch {...} {
-	set numRecords "<unavailable>"
+        set numRecords "<unavailable>"
     }
 
     $top.numRecords.e configure -text $currentSize
 
     corba::try {
-	if {!$::state(oldLogService)} {
-	    set logFullAction [$logService get_log_full_action]
-	} else {
-	    set logFullAction [$logService getLogFullAction]
-	}
+        if {!$::state(oldLogService)} {
+            set logFullAction [$logService get_log_full_action]
+        } else {
+            set logFullAction [$logService getLogFullAction]
+        }
 
-	switch -- $logFullAction {
-	    WRAP {
-		set logFullAction "Wrap"
-	    }
-	    HALT {
-		set logFullAction "Halt"
-	    }
-	    default {
-		set logFullAction "<unknown>"
-	    }
-	}
+        switch -- $logFullAction {
+            WRAP {
+                set logFullAction "Wrap"
+            }
+            HALT {
+                set logFullAction "Halt"
+            }
+            default {
+                set logFullAction "<unknown>"
+            }
+        }
     } catch {...} {
-	set logFullAction "<unavailable>"
+        set logFullAction "<unavailable>"
     }
 
     $top.logFullAction.e configure -text $logFullAction
 
     corba::try {
-	if {!$::state(oldLogService)} {
-	    array set as [$::state(logService) get_availability_status]
-	    if {$as(off_duty) && $as(log_full)} {
-		set availabilityStatus "Off duty, log full"
-	    } elseif {$as(off_duty)} {
-		set availabilityStatus "Off duty"
-	    } elseif {$as(log_full)} {
-		set availabilityStatus "Log full"
-	    } else {
-		set availabilityStatus "Available"
-	    }
-	} else {
-	    array set as [$::state(logService) getAvailabilityStatus]
-	    if {$as(offDuty) && $as(logFull)} {
-		set availabilityStatus "Off duty, log full"
-	    } elseif {$as(offDuty)} {
-		set availabilityStatus "Off duty"
-	    } elseif {$as(logFull)} {
-		set availabilityStatus "Log full"
-	    } else {
-		set availabilityStatus "Available"
-	    }
-	}
+        if {!$::state(oldLogService)} {
+            array set as [$::state(logService) get_availability_status]
+            if {$as(off_duty) && $as(log_full)} {
+                set availabilityStatus "Off duty, log full"
+            } elseif {$as(off_duty)} {
+                set availabilityStatus "Off duty"
+            } elseif {$as(log_full)} {
+                set availabilityStatus "Log full"
+            } else {
+                set availabilityStatus "Available"
+            }
+        } else {
+            array set as [$::state(logService) getAvailabilityStatus]
+            if {$as(offDuty) && $as(logFull)} {
+                set availabilityStatus "Off duty, log full"
+            } elseif {$as(offDuty)} {
+                set availabilityStatus "Off duty"
+            } elseif {$as(logFull)} {
+                set availabilityStatus "Log full"
+            } else {
+                set availabilityStatus "Available"
+            }
+        }
 
     } catch {...} {
-	set availabilityStatus "<unavailable>"
+        set availabilityStatus "<unavailable>"
     }
 
     $top.availStatus.e configure -text $availabilityStatus
 
     corba::try {
-	if {!$::state(oldLogService)} {
-	    switch -- [$logService get_administrative_state] {
-		locked {
-		    set adminState "Locked"
-		}
-		unlocked {
-		    set adminState "Unlocked"
-		}
-		default {
-		    set adminState "<unknown>"
-		}
-	    }
-	} else {
-	    switch -- [$logService getAdministrativeState] {
-		LOCKED {
-		    set adminState "Locked"
-		}
-		UNLOCKED {
-		    set adminState "Unlocked"
-		}
-		default {
-		    set adminState "<unknown>"
-		}
-	    }
-	}
+        if {!$::state(oldLogService)} {
+            switch -- [$logService get_administrative_state] {
+                locked {
+                    set adminState "Locked"
+                }
+                unlocked {
+                    set adminState "Unlocked"
+                }
+                default {
+                    set adminState "<unknown>"
+                }
+            }
+        } else {
+            switch -- [$logService getAdministrativeState] {
+                LOCKED {
+                    set adminState "Locked"
+                }
+                UNLOCKED {
+                    set adminState "Unlocked"
+                }
+                default {
+                    set adminState "<unknown>"
+                }
+            }
+        }
     } catch {...} {
-	set adminState "<unavailable>"
+        set adminState "<unavailable>"
     }
 
     $top.adminState.e configure -text $adminState
 
     corba::try {
-	if {!$::state(oldLogService)} {
-	    switch -- [$logService get_operational_state] {
-		disabled {
-		    set opState "Disabled"
-		}
-		enabled {
-		    set opState "Enabled"
-		}
-		default {
-		    set opState "<unknown>"
-		}
-	    }
-	} else {
-	    switch -- [$logService getOperationalState] {
-		DISABLED {
-		    set opState "Disabled"
-		}
-		ENABLED {
-		    set opState "Enabled"
-		}
-		default {
-		    set opState "<unknown>"
-		}
-	    }
-	}
+        if {!$::state(oldLogService)} {
+            switch -- [$logService get_operational_state] {
+                disabled {
+                    set opState "Disabled"
+                }
+                enabled {
+                    set opState "Enabled"
+                }
+                default {
+                    set opState "<unknown>"
+                }
+            }
+        } else {
+            switch -- [$logService getOperationalState] {
+                DISABLED {
+                    set opState "Disabled"
+                }
+                ENABLED {
+                    set opState "Enabled"
+                }
+                default {
+                    set opState "<unknown>"
+                }
+            }
+        }
     } catch {...} {
-	set opState "<unavailable>"
+        set opState "<unavailable>"
     }
 
     $top.opState.e configure -text $opState
@@ -1906,8 +1925,8 @@ proc WithdrawLogServiceStatus {} {
     #
 
     if {[info exists ::state(logServiceStatusUpdate)] && \
-	     $::state(logServiceStatusUpdate)} {
-	vwait ::state(logServiceStatusUpdate)
+             $::state(logServiceStatusUpdate)} {
+        vwait ::state(logServiceStatusUpdate)
     }
 
     wm withdraw $top
@@ -1917,15 +1936,15 @@ proc LogServiceStatus {} {
     set top .logServiceStatus
 
     if {![info exists ::state(logService)] || $::state(logService) == 0} {
-	set ::status "No log service."
-	return
+        set ::status "No log service."
+        return
     }
 
     if {[winfo exists $top]} {
-	wm deiconify $top
-	focus $top
-	UpdateLogServiceStatus
-	return
+        wm deiconify $top
+        focus $top
+        UpdateLogServiceStatus
+        return
     }
 
     toplevel $top
@@ -1959,7 +1978,7 @@ proc LogServiceStatus {} {
     frame $top.logFullAction
     label $top.logFullAction.l -text "Log Full Action" -width 20
     ComboBox $top.logFullAction.e -width 16 -values {Wrap Halt} \
-	-modifycmd "AdministrateLogService logFullAction $top.logFullAction.e"
+        -modifycmd "AdministrateLogService logFullAction $top.logFullAction.e"
     pack $top.logFullAction.l $top.logFullAction.e -side left -padx 5 -pady 5
     pack $top.logFullAction -side top -anchor w
     bind $top.logFullAction.e <Return> "AdministrateLogService logFullAction $top.logFullAction.e"
@@ -1973,7 +1992,7 @@ proc LogServiceStatus {} {
     frame $top.adminState
     label $top.adminState.l -text "Administrative State" -width 20
     ComboBox $top.adminState.e -width 16 -values {Locked Unlocked} \
-	-modifycmd "AdministrateLogService adminState $top.adminState.e"
+        -modifycmd "AdministrateLogService adminState $top.adminState.e"
     pack $top.adminState.l $top.adminState.e -side left -padx 5 -pady 5
     pack $top.adminState -side top -anchor w
     bind $top.adminState.e <Return> "AdministrateLogService adminState $top.adminState.e"
@@ -1989,9 +2008,9 @@ proc LogServiceStatus {} {
 
     frame $top.adminButs
     button $top.adminButs.b1 -width 15 -text "Clear Log" \
-	-command "AdministrateLogService clearLog"
+        -command "AdministrateLogService clearLog"
     button $top.adminButs.b2 -width 15 -text "Destroy" \
-	-command "AdministrateLogService destroy"
+        -command "AdministrateLogService destroy"
     pack $top.adminButs.b1 $top.adminButs.b2 -side left -pady 10 -padx 20
     pack $top.adminButs
 
@@ -2000,14 +2019,14 @@ proc LogServiceStatus {} {
 
     frame $top.buts
     button $top.buts.b1 -width 15 -text "Update" \
-	-command "UpdateLogServiceStatus"
+        -command "UpdateLogServiceStatus"
     button $top.buts.b2 -width 15 -text "Close" \
-	-command "WithdrawLogServiceStatus"
+        -command "WithdrawLogServiceStatus"
     pack $top.buts.b1 $top.buts.b2 -side left -pady 10 -padx 20
     pack $top.buts
 
     if {![info exists ::state(logServiceStatusUpdate)]} {
-	set ::state(logServiceStatusUpdate) 0
+        set ::state(logServiceStatusUpdate) 0
     }
 
     UpdateLogServiceStatus
@@ -2026,19 +2045,19 @@ proc FindLogServiceInNamingService {} {
     set top .flsDlg
 
     if {[winfo exists $top]} {
-	wm deiconify $top
-	focus $top
-	return
+        wm deiconify $top
+        focus $top
+        return
     }
 
     if {![info exists ::config(NamingServiceIOR)]} {
-	set ::config(NamingServiceIOR) "corbaloc::"
-	append ::config(NamingServiceIOR) [string tolower [info hostname]]
-	append ::config(NamingServiceIOR) ":2809/NameService"
+        set ::config(NamingServiceIOR) "corbaloc::"
+        append ::config(NamingServiceIOR) [string tolower [info hostname]]
+        append ::config(NamingServiceIOR) ":2809/NameService"
     }
 
     if {![info exists ::config(LogServiceName)]} {
-	set ::config(LogServiceName) "Domain Name/Log Name"
+        set ::config(LogServiceName) "Domain Name/Log Name"
     }
 
     set origNamingServiceIOR $::config(NamingServiceIOR)
@@ -2054,13 +2073,13 @@ proc FindLogServiceInNamingService {} {
     pack $sep1 -side top -fill x -pady 10
 
     LabelEntry $top.ns -label "Naming Service" \
-	-labelwidth 18 -width 40 -labelanchor w \
-	-textvariable ::config(NamingServiceIOR)
+        -labelwidth 18 -width 40 -labelanchor w \
+        -textvariable ::config(NamingServiceIOR)
     pack $top.ns -side top -expand yes -fill x -pady 5 -padx 10
 
     LabelEntry $top.lsn -label "Log Service Name" \
-	-labelwidth 18 -width 40 -labelanchor w \
-	-textvariable ::config(LogServiceName)
+        -labelwidth 18 -width 40 -labelanchor w \
+        -textvariable ::config(LogServiceName)
     pack $top.lsn -side top -expand yes -fill x -pady 5 -padx 10
 
     set sep2 [Separator $top.sep2 -orient horizontal]
@@ -2068,9 +2087,9 @@ proc FindLogServiceInNamingService {} {
 
     frame $top.buts
     set but1 [button $top.buts.b1 -width 15 -text "OK" \
-		  -command "set ::lsnguimutex 1"]
+                  -command "set ::lsnguimutex 1"]
     set but2 [button $top.buts.b2 -width 15 -text "Cancel" \
-		  -command "set ::lsnguimutex 2"]
+                  -command "set ::lsnguimutex 2"]
     pack $but1 $but2 -side left -pady 10 -padx 20
     pack $top.buts
 
@@ -2085,7 +2104,7 @@ proc FindLogServiceInNamingService {} {
     destroy $top
 
     if {$::lsnguimutex != 1} {
-	return
+        return
     }
 
     set ::status "Contacting Naming Service ..."
@@ -2093,20 +2112,20 @@ proc FindLogServiceInNamingService {} {
 
     set ::state(NamingService) 0
     corba::try {
-	set ::state(NamingService) [corba::string_to_object $::config(NamingServiceIOR)]
-	if {![$::state(NamingService) _is_a IDL:omg.org/CosNaming/NamingContextExt:1.0]} {
-	    set ::state(NamingService) 0
-	}
+        set ::state(NamingService) [corba::string_to_object $::config(NamingServiceIOR)]
+        if {![$::state(NamingService) _is_a IDL:omg.org/CosNaming/NamingContextExt:1.0]} {
+            set ::state(NamingService) 0
+        }
     } catch {... ex} {
-	set ::state(NamingService) 0
+        set ::state(NamingService) 0
     }
 
     if {$::state(NamingService) == 0} {
-	set ::status "Could not contact the naming service."
-	tk_messageBox -parent . -type ok -icon error -default ok \
-	    -title "No Naming Service" \
-	    -message $::status
-	return
+        set ::status "Could not contact the naming service."
+        tk_messageBox -parent . -type ok -icon error -default ok \
+            -title "No Naming Service" \
+            -message $::status
+        return
     }
 
     set ::status "Looking up log service ..."
@@ -2115,18 +2134,18 @@ proc FindLogServiceInNamingService {} {
     set logService 0
 
     corba::try {
-	set logService [corba::dii $::state(NamingService) {Object resolve_str {{in string}}} \
-			    $::config(LogServiceName)]
+        set logService [corba::dii $::state(NamingService) {Object resolve_str {{in string}}} \
+                            $::config(LogServiceName)]
     } catch {...} {
-	set logService 0
+        set logService 0
     }
 
     if {$logService == 0} {
-	set ::status "Could not find log service \"$::config(LogServiceName)\" in naming service."
-	tk_messageBox -parent . -type ok -icon error -default ok \
-	    -title "Not found" \
-	    -message $::status
-	return
+        set ::status "Could not find log service \"$::config(LogServiceName)\" in naming service."
+        tk_messageBox -parent . -type ok -icon error -default ok \
+            -title "Not found" \
+            -message $::status
+        return
     }
 
     #
@@ -2137,23 +2156,23 @@ proc FindLogServiceInNamingService {} {
     update
 
     corba::try {
-	if {![$logService _is_a IDL:omg.org/CosLwLog/Log:1.0]} {
-	    if {![$logService _is_a IDL:omg.org/CosLwLog/LogConsumer:1.0]} {
-		if {![$logService _is_a IDL:LogService/Log:1.0]} {
-		    set logService 0
-		}
-	    }
-	}
+        if {![$logService _is_a IDL:omg.org/CosLwLog/Log:1.0]} {
+            if {![$logService _is_a IDL:omg.org/CosLwLog/LogConsumer:1.0]} {
+                if {![$logService _is_a IDL:LogService/Log:1.0]} {
+                    set logService 0
+                }
+            }
+        }
     } catch {...} {
-	set logService 0
+        set logService 0
     }
 
     if {$logService == 0} {
-	set ::status "Could not contact log service."
-	tk_messageBox -parent . -type ok -icon error -default ok \
-	    -title "Not found" \
-	    -message $::status
-	return
+        set ::status "Could not contact log service."
+        tk_messageBox -parent . -type ok -icon error -default ok \
+            -title "Not found" \
+            -message $::status
+        return
     }
 
     #
@@ -2168,8 +2187,8 @@ proc FindLogServiceInNamingService {} {
     #
 
     if {$origNamingServiceIOR != $::config(NamingServiceIOR) || \
-	    $origLogServiceName != $::config(LogServiceName)} {
-	set ::preferencesAreDirty 1
+            $origLogServiceName != $::config(LogServiceName)} {
+        set ::preferencesAreDirty 1
     }
 }
 
@@ -2183,15 +2202,15 @@ proc FindLogServiceByURI {} {
     set top .fls2Dlg
 
     if {[winfo exists $top]} {
-	wm deiconify $top
-	focus $top
-	return
+        wm deiconify $top
+        focus $top
+        return
     }
 
     if {![info exists ::config(LogServiceIOR)]} {
-	set ::config(LogServiceIOR) "corbaname:"
-	append ::config(LogServiceIOR) [string tolower [info hostname]]
-	append ::config(LogServiceIOR) ":2809\#Domain Name/Log Name"
+        set ::config(LogServiceIOR) "corbaname:"
+        append ::config(LogServiceIOR) [string tolower [info hostname]]
+        append ::config(LogServiceIOR) ":2809\#Domain Name/Log Name"
     }
 
     set origLogServiceIOR $::config(LogServiceIOR)
@@ -2206,8 +2225,8 @@ proc FindLogServiceByURI {} {
     pack $sep1 -side top -fill x -pady 10
 
     LabelEntry $top.uri -label "Log Service URI" \
-	-labelwidth 18 -width 60 -labelanchor w \
-	-textvariable ::config(LogServiceIOR)
+        -labelwidth 18 -width 60 -labelanchor w \
+        -textvariable ::config(LogServiceIOR)
     pack $top.uri -side top -expand yes -fill x -pady 5 -padx 10
 
     set sep2 [Separator $top.sep2 -orient horizontal]
@@ -2215,9 +2234,9 @@ proc FindLogServiceByURI {} {
 
     frame $top.buts
     set but1 [button $top.buts.b1 -width 15 -text "OK" \
-		  -command "set ::fls2guimutex 1"]
+                  -command "set ::fls2guimutex 1"]
     set but2 [button $top.buts.b2 -width 15 -text "Cancel" \
-		  -command "set ::fls2guimutex 2"]
+                  -command "set ::fls2guimutex 2"]
     pack $but1 $but2 -side left -pady 10 -padx 20
     pack $top.buts
 
@@ -2231,7 +2250,7 @@ proc FindLogServiceByURI {} {
     destroy $top
 
     if {$::fls2guimutex != 1} {
-	return
+        return
     }
 
     set ::status "Looking up log service ..."
@@ -2240,17 +2259,17 @@ proc FindLogServiceByURI {} {
     set logService 0
 
     corba::try {
-	set logService [corba::string_to_object $::config(LogServiceIOR)]
+        set logService [corba::string_to_object $::config(LogServiceIOR)]
     } catch {...} {
-	set logService 0
+        set logService 0
     }
 
     if {$logService == 0} {
-	set ::status "Invalid log service URI."
-	tk_messageBox -parent . -type ok -icon error -default ok \
-	    -title "Not Found" \
-	    -message $::status
-	return
+        set ::status "Invalid log service URI."
+        tk_messageBox -parent . -type ok -icon error -default ok \
+            -title "Not Found" \
+            -message $::status
+        return
     }
 
     #
@@ -2261,23 +2280,23 @@ proc FindLogServiceByURI {} {
     update
 
     corba::try {
-	if {![$logService _is_a IDL:omg.org/CosLwLog/Log:1.0]} {
-	    if {![$logService _is_a IDL:omg.org/CosLwLog/LogConsumer:1.0]} {
-		if {![$logService _is_a IDL:LogService/Log:1.0]} {
-		    set logService 0
-		}
-	    }
-	}
+        if {![$logService _is_a IDL:omg.org/CosLwLog/Log:1.0]} {
+            if {![$logService _is_a IDL:omg.org/CosLwLog/LogConsumer:1.0]} {
+                if {![$logService _is_a IDL:LogService/Log:1.0]} {
+                    set logService 0
+                }
+            }
+        }
     } catch {...} {
-	set logService 0
+        set logService 0
     }
 
     if {$logService == 0} {
-	set ::status "Could not contact log service."
-	tk_messageBox -parent . -type ok -icon error -default ok \
-	    -title "Not found" \
-	    -message $::status
-	return
+        set ::status "Could not contact log service."
+        tk_messageBox -parent . -type ok -icon error -default ok \
+            -title "Not found" \
+            -message $::status
+        return
     }
 
     #
@@ -2293,7 +2312,7 @@ proc FindLogServiceByURI {} {
     #
 
     if {$origLogServiceIOR != $::config(LogServiceIOR)} {
-	set ::preferencesAreDirty 1
+        set ::preferencesAreDirty 1
     }
 }
 
@@ -2317,22 +2336,22 @@ set preferencesAreDirty 0
 
 proc LoadPreferencesFromRegistry {} {
     if {![info exists ::tcl_platform(platform)] || \
-	    $::tcl_platform(platform) != "windows" || \
-	    [catch {package require registry}]} {
-	return 0
+            $::tcl_platform(platform) != "windows" || \
+            [catch {package require registry}]} {
+        return 0
     }
 
     if {[catch {registry values $::registryKey}]} {
-	return 0
+        return 0
     }
 
     foreach {pref type rtype} $::preferences {
-	if {[llength [registry values $::registryKey $pref]] == 1} {
-	    set value [registry get $::registryKey $pref]
-	    if {[string is $type $value]} {
-		set ::config($pref) $value
-	    }
-	}
+        if {[llength [registry values $::registryKey $pref]] == 1} {
+            set value [registry get $::registryKey $pref]
+            if {[string is $type $value]} {
+                set ::config($pref) $value
+            }
+        }
     }
 
     return 1
@@ -2340,68 +2359,68 @@ proc LoadPreferencesFromRegistry {} {
 
 proc LoadPreferencesFromRCFile {} {
     if {[info exists ::env(HOME)] && [file isdirectory $::env(HOME)]} {
-	set homeDir $::env(HOME)
+        set homeDir $::env(HOME)
     } else {
-	set homeDir "~"
+        set homeDir "~"
     }
 
     set fileName [file join $homeDir $::prefsFile]
 
     if {[catch {
-	set f [open $fileName]
+        set f [open $fileName]
     }]} {
-	return 0
+        return 0
     }
 
     while {![eof $f]} {
-	set line [string trim [gets $f]]
+        set line [string trim [gets $f]]
 
-	if {[string index $line 0] == "#"} {
-	    continue
-	}
+        if {[string index $line 0] == "#"} {
+            continue
+        }
 
-	if {[set index [string first "=" $line]] < 1} {
-	    continue
-	}
+        if {[set index [string first "=" $line]] < 1} {
+            continue
+        }
 
-	set pref [string trim [string range $line 0 [expr {$index-1}]]]
-	set value [string trim [string range $line [expr {$index+1}] end]]
+        set pref [string trim [string range $line 0 [expr {$index-1}]]]
+        set value [string trim [string range $line [expr {$index+1}] end]]
 
-	if {[string index $value 0] == "\""} {
-	    set i 1
-	    set prefValue ""
+        if {[string index $value 0] == "\""} {
+            set i 1
+            set prefValue ""
 
-	    while {$i < [string length $value]} {
-		set c [string index $value $i]
-		if {$c == "\\"} {
-		    set c [string index $value [incr i]]
-		    switch -exact -- $c {
-			t {
-			    set d "\t"
-			}
-			default {
-			    set d $c
-			}
-		    }
-		    append prefValue $c
-		} elseif {$c == "\""} {
-		    break
-		} else {
-		    append prefValue $c
-		}
-		incr i
-	    }
+            while {$i < [string length $value]} {
+                set c [string index $value $i]
+                if {$c == "\\"} {
+                    set c [string index $value [incr i]]
+                    switch -exact -- $c {
+                        t {
+                            set d "\t"
+                        }
+                        default {
+                            set d $c
+                        }
+                    }
+                    append prefValue $c
+                } elseif {$c == "\""} {
+                    break
+                } else {
+                    append prefValue $c
+                }
+                incr i
+            }
 
-	    set value $prefValue
-	}
+            set value $prefValue
+        }
 
-	if {[set idx [lsearch $::preferences $pref]] != -1 && \
-		[expr {($idx % 3) == 0}]} {
-	    set type [lindex $::preferences [expr {$idx + 1}]]
-	    if {[string is $type $value]} {
-		set ::config($pref) $value
-	    }
-	}
+        if {[set idx [lsearch $::preferences $pref]] != -1 && \
+                [expr {($idx % 3) == 0}]} {
+            set type [lindex $::preferences [expr {$idx + 1}]]
+            if {[string is $type $value]} {
+                set ::config($pref) $value
+            }
+        }
     }
 
     catch {close $f}
@@ -2411,15 +2430,15 @@ proc LoadPreferencesFromRCFile {} {
 
 proc SavePreferencesToRegistry {} {
     if {![info exists ::tcl_platform(platform)] || \
-	    $::tcl_platform(platform) != "windows" || \
-	    [catch {package require registry}]} {
-	return 0
+            $::tcl_platform(platform) != "windows" || \
+            [catch {package require registry}]} {
+        return 0
     }
 
     foreach {pref type rtype} $::preferences {
-	if {[info exists ::config($pref)]} {
-	    registry set $::registryKey $pref $::config($pref) $rtype
-	}
+        if {[info exists ::config($pref)]} {
+            registry set $::registryKey $pref $::config($pref) $rtype
+        }
     }
 
     return 1
@@ -2427,52 +2446,52 @@ proc SavePreferencesToRegistry {} {
 
 proc SavePreferencesToRCFile {} {
     if {[info exists ::tcl_platform(platform)] && \
-	    $::tcl_platform(platform) == "windows"} {
-	return 0
+            $::tcl_platform(platform) == "windows"} {
+        return 0
     }
 
     if {[info exists ::env(HOME)] && [file isdirectory $::env(HOME)]} {
-	set homeDir $::env(HOME)
+        set homeDir $::env(HOME)
     } else {
-	set homeDir "~"
+        set homeDir "~"
     }
 
     set fileName [file join $homeDir $::prefsFile]
 
     if {[catch {
-	set f [open $fileName "w"]
+        set f [open $fileName "w"]
     }]} {
-	return 0
+        return 0
     }
 
     foreach {pref type rtype} $::preferences {
-	if {[info exists ::config($pref)]} {
-	    puts $f "$pref=\"$::config($pref)\""
-	}
+        if {[info exists ::config($pref)]} {
+            puts $f "$pref=\"$::config($pref)\""
+        }
     }
 
     catch {
-	close $f
+        close $f
     }
 }
 
 proc LoadPreferences {} {
     if {[LoadPreferencesFromRegistry]} {
-	return 1
+        return 1
     } elseif {[LoadPreferencesFromRCFile]} {
-	return 1
+        return 1
     }
 }
 
 proc SavePreferences {} {
     if {!$::preferencesAreDirty} {
-	return 1
+        return 1
     }
 
     if {[SavePreferencesToRegistry]} {
-	return 1
+        return 1
     } elseif {[SavePreferencesToRCFile]} {
-	return 1
+        return 1
     }
 
     return 0
@@ -2488,21 +2507,21 @@ proc About {} {
     set top .about
 
     if {[winfo exists $top]} {
-	wm deiconify $top
-	focus $top
-	return
+        wm deiconify $top
+        focus $top
+        return
     }
 
     toplevel $top -bg "#ffffff"
     wm title $top "About Lumberjack"
 
     label $top.title -anchor center -bg "#ffffff" \
-	-width 30 \
-	-text "Lumberjack"
+        -width 30 \
+        -text "Lumberjack"
     pack $top.title -side top -fill x -pady 10
 
     label $top.subtitle -anchor center -bg "#ffffff" \
-	-text "Cutting through logs most efficiently."
+        -text "Cutting through logs most efficiently."
     pack $top.subtitle -side top -fill x -pady 10
 
     Separator $top.topsep -orient horizontal
@@ -2510,10 +2529,10 @@ proc About {} {
 
     frame $top.imgs -bg "#ffffff"
     label $top.imgs.lab -anchor center \
-	-font {Arial 14 bold} -bg "#ffffff" \
-	-text "Copyright \u00a9 2009"
+        -font {Arial 14 bold} -bg "#ffffff" \
+        -text "Copyright \u00a9 2009"
     label $top.imgs.img -bg "#ffffff" -anchor center \
-	-image $::images(mercury)
+        -image $::images(mercury)
     pack $top.imgs.lab $top.imgs.img -side top -pady 10
     pack $top.imgs -side top -fill x -pady 10
 
@@ -2521,18 +2540,18 @@ proc About {} {
     pack $top.botsep -side top -fill x -pady 10
 
     catch {
-	set revision "unknown"
-	regexp {\$[[:alpha:]]+: ([^\$]*)\$$} $::cvsRevision dummy revision
+        set revision "unknown"
+        regexp {\$[[:alpha:]]+: ([^\$]*)\$$} $::cvsRevision dummy revision
     }
     catch {
-	set lastModified "unknown"
-	regexp {\$[[:alpha:]]+: ([^\$]*)\$$} $::cvsDate dummy lastModified
+        set lastModified "unknown"
+        regexp {\$[[:alpha:]]+: ([^\$]*)\$$} $::cvsDate dummy lastModified
     }
 
     label $top.revision -anchor center -bg "#ffffff" \
-	-text "Revision: $revision"
+        -text "Revision: $revision"
     label $top.lastModified -anchor center -bg "#ffffff" \
-	-text "Last Modified: $lastModified"
+        -text "Last Modified: $lastModified"
     pack $top.revision -side top -fill x
     pack $top.lastModified -side top -fill x
 
@@ -2541,7 +2560,7 @@ proc About {} {
 
     frame $top.botframe -bg "#ffffff"
     button $top.botframe.but -width 10 -text "OK" \
-	-command "destroy $top"
+        -command "destroy $top"
     pack $top.botframe.but
     pack $top.botframe -side top -fill x -pady 10
 
@@ -2561,16 +2580,16 @@ proc Reload {} {
     update
     uplevel #0 {source $::argv0}
     if {[info exists ::state(logRecords)]} {
-	SchedulePoll
+        SchedulePoll
     }
     set ::status "Reloading Done."
 }
 
 proc ToggleConsole {} {
     if {![catch {package require tkcon}]} {
-	tkcon show
+        tkcon show
     } elseif {[info commands console] eq "console"} {
-	console show
+        console show
     }
 }
 
@@ -2581,8 +2600,8 @@ proc Refresh {} {
     catch {destroy $::widgets(main)}
     InitGui
     if {[info exists ::state(logRecords)]} {
-	UpdateTable $::state(firstRowRecordIdx)
-	SchedulePoll
+        UpdateTable $::state(firstRowRecordIdx)
+        SchedulePoll
     }
     set ::status "Refreshing Done."
 }
@@ -2596,7 +2615,7 @@ proc Exit {} {
 
 proc SetFont {cmd what} {
     if {![info exists ::widgets(table)]} {
-	return
+        return
     }
 
     set currentFont [$::widgets(table) cget -font]
@@ -2605,22 +2624,22 @@ proc SetFont {cmd what} {
     set weight [lindex $currentFont 2]
 
     if {$size < 0} {
-	set size [expr {-$size}]
+        set size [expr {-$size}]
     }
 
     switch -- $cmd {
-	family {
-	    set family $what
-	}
-	size {
-	    incr size $what
-	}
+        family {
+            set family $what
+        }
+        size {
+            incr size $what
+        }
     }
 
     if {$weight ne ""} {
-	set newFont [list $family $size]
+        set newFont [list $family $size]
     } else {
-	set newFont [list $family $size $weight]
+        set newFont [list $family $size $weight]
     }
 
     set ::status "Using $family-$size font."
@@ -2629,7 +2648,7 @@ proc SetFont {cmd what} {
 
 #
 # ----------------------------------------------------------------------
-# Init the ORB
+# Init the OCPI_CORBA_ORB
 # ----------------------------------------------------------------------
 #
 
@@ -2922,8 +2941,8 @@ if {$init == 0} {
     LoadPreferences
 
     corba::try {
-	set log [corba::resolve_initial_references LogService]
-	InitializeLogService $log
+        set log [corba::resolve_initial_references LogService]
+        InitializeLogService $log
     } catch {...} {
     }
 }

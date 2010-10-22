@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 /**
    @file
@@ -29,33 +47,33 @@
    2/18/2009 - John Miller
    Removed exception monitor class.
 
-   ************************************************************************** */
+************************************************************************** */
 
 
 #include <DtSharedMemoryInternal.h>
 #include <string.h>
-#include <CpiUtilHash.h>
+#include <OcpiUtilHash.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <CpiRes.h>
-#include <CpiOsAssert.h>
+#include <OcpiRes.h>
+#include <OcpiOsAssert.h>
 
 using namespace DataTransfer;
 
-EndPoint::EndPoint( std::string& end_point, CPI::OS::uint32_t psize )
+EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize )
  :mailbox(0),maxCount(0),size(psize),local(false),resources(0)
 {
   setEndpoint( end_point);
 }
 
-EndPoint::EndPoint(CPI::OS::uint32_t psize)
+EndPoint::EndPoint(OCPI::OS::uint32_t psize)
    :mailbox(0),maxCount(0),size(psize),local(false),resources(0)
 {
 
 }
 
 // Sets smem location data based upon the specified endpoint
-CPI::OS::int32_t EndPoint::setEndpoint( std::string& ep )
+OCPI::OS::int32_t EndPoint::setEndpoint( std::string& ep )
 {
   char buf[30];
   end_point = ep;
@@ -94,15 +112,15 @@ const char* EndPoint::getProtocolFromString( const char* ep, char *proto )
 
 void EndPoint::getResourceValuesFromString( const char* ep, 
                                             char* cs, 
-                                            CPI::OS::uint32_t* mailBox, 
-                                            CPI::OS::uint32_t* maxMb, 
-                                            CPI::OS::uint32_t* size
+                                            OCPI::OS::uint32_t* mailBox, 
+                                            OCPI::OS::uint32_t* maxMb, 
+                                            OCPI::OS::uint32_t* size
                                             )
 {
   *size = 0;
   int item_count = 0;
   int cs_index = 0;
-  for ( size_t n=strlen(ep)-1; n>=0; n-- ) {
+  for ( ssize_t n=strlen(ep)-1; n>=0; n-- ) {
     if ( ep[n] == '.' ) { 
       if ( item_count == 1 ) { //  mailbox value
         if ( cs_index > 1 ) {
@@ -156,11 +174,11 @@ class ResourceServicesImpl : public DataTransfer::ResourceServices
 {
 public:
   // Create a local resource pool
-  CPI::OS::int32_t createLocal (CPI::OS::uint32_t size)
+  OCPI::OS::int32_t createLocal (OCPI::OS::uint32_t size)
   {
     (void)terminate ();
     try {
-      m_pool = new CPI::Util::MemBlockMgr( 0, size );
+      m_pool = new OCPI::Util::MemBlockMgr( 0, size );
     }
     catch( ... ) {
       return -1;
@@ -169,7 +187,7 @@ public:
   }
 
   // Allocate from pool
-  CPI::OS::int32_t alloc (CPI::OS::uint32_t nbytes, CPI::OS::uint32_t alignment, CPI::OS::uint64_t* addr_p)
+  OCPI::OS::int32_t alloc (OCPI::OS::uint32_t nbytes, OCPI::OS::uint32_t alignment, OCPI::OS::uint64_t* addr_p)
   {
     int  retval;
     retval = m_pool->alloc ( nbytes, alignment, *addr_p );
@@ -177,13 +195,14 @@ public:
   }
 
   // Free back to pool
-  CPI::OS::int32_t free (CPI::OS::uint32_t addr, CPI::OS::uint32_t nbytes)
+  OCPI::OS::int32_t free (OCPI::OS::uint32_t addr, OCPI::OS::uint32_t nbytes)
   {
+    ( void ) nbytes;
     return m_pool->free ( addr );
   }
 
   // Destroy resource pool
-  CPI::OS::int32_t destroy ()
+  OCPI::OS::int32_t destroy ()
   {
     terminate ();
     return 0;
@@ -199,7 +218,7 @@ public:
     terminate ();
   }
 private:
-  CPI::Util::MemBlockMgr* m_pool;
+  OCPI::Util::MemBlockMgr* m_pool;
 
 private:
   void terminate ()

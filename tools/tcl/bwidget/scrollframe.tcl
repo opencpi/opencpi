@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  scrollframe.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -56,12 +92,12 @@ proc ScrollableFrame::create { path args } {
                     -highlightthickness 0 -borderwidth 0 -relief flat]
 
     if {[Widget::theme]} {
-	set frame [eval [list ttk::frame $path.frame] \
-		       [Widget::subcget $path .frame]]
+        set frame [eval [list ttk::frame $path.frame] \
+                       [Widget::subcget $path .frame]]
     } else {
-	set frame [eval [list frame $path.frame] \
-		       [Widget::subcget $path .frame] \
-		       -highlightthickness 0 -borderwidth 0 -relief flat]
+        set frame [eval [list frame $path.frame] \
+                       [Widget::subcget $path .frame] \
+                       -highlightthickness 0 -borderwidth 0 -relief flat]
     }
 
     $canvas create window 0 0 -anchor nw -window $frame -tags win \
@@ -69,7 +105,7 @@ proc ScrollableFrame::create { path args } {
         -height [Widget::cget $path -areaheight]
 
     bind $frame <Configure> \
-	    [list ScrollableFrame::_frameConfigure $canvas $frame %w %h]
+            [list ScrollableFrame::_frameConfigure $canvas $frame %w %h]
     bindtags $path [list $path BwScrollableFrame [winfo toplevel $path] all]
 
     return [Widget::create ScrollableFrame $path]
@@ -139,44 +175,44 @@ proc ScrollableFrame::see { path widget {vert top} {horz left} {xOffset 0} {yOff
     set dy  0
     
     if { [string equal $horz "left"] } {
-	if { $x1 > $xb1 } {
-	    set dx [expr {$x1-$xb1}]
-	}
-	if { $x0 < $xb0+$dx } {
-	    set dx [expr {$x0-$xb0}]
-	}
+        if { $x1 > $xb1 } {
+            set dx [expr {$x1-$xb1}]
+        }
+        if { $x0 < $xb0+$dx } {
+            set dx [expr {$x0-$xb0}]
+        }
     } elseif { [string equal $horz "right"] } {
-	if { $x0 < $xb0 } {
-	    set dx [expr {$x0-$xb0}]
-	}
-	if { $x1 > $xb1+$dx } {
-	    set dx [expr {$x1-$xb1}]
-	}
+        if { $x0 < $xb0 } {
+            set dx [expr {$x0-$xb0}]
+        }
+        if { $x1 > $xb1+$dx } {
+            set dx [expr {$x1-$xb1}]
+        }
     }
 
     if { [string equal $vert "top"] } {
-	if { $y1 > $yb1 } {
-	    set dy [expr {$y1-$yb1}]
-	}
-	if { $y0 < $yb0+$dy } {
-	    set dy [expr {$y0-$yb0}]
-	}
+        if { $y1 > $yb1 } {
+            set dy [expr {$y1-$yb1}]
+        }
+        if { $y0 < $yb0+$dy } {
+            set dy [expr {$y0-$yb0}]
+        }
     } elseif { [string equal $vert "bottom"] } {
-	if { $y0 < $yb0 } {
-	    set dy [expr {$y0-$yb0}]
-	}
-	if { $y1 > $yb1+$dy } {
-	    set dy [expr {$y1-$yb1}]
-	}
+        if { $y0 < $yb0 } {
+            set dy [expr {$y0-$yb0}]
+        }
+        if { $y1 > $yb1+$dy } {
+            set dy [expr {$y1-$yb1}]
+        }
     }
 
     if {($dx + $xOffset) != 0} {
-	set x [expr {($xb0+$dx+$xOffset)/[winfo width $path.frame]}]
-	$path:cmd xview moveto $x
+        set x [expr {($xb0+$dx+$xOffset)/[winfo width $path.frame]}]
+        $path:cmd xview moveto $x
     }
     if {($dy + $yOffset) != 0} {
-	set y [expr {($yb0+$dy+$yOffset)/[winfo height $path.frame]}]
-	$path:cmd yview moveto $y
+        set y [expr {($yb0+$dy+$yOffset)/[winfo height $path.frame]}]
+        $path:cmd yview moveto $y
     }
 }
 
@@ -217,10 +253,10 @@ proc ScrollableFrame::_frameConfigure {canvas frame width height} {
     # This ensures that we don't get funny scrollability in the frame
     # when it is smaller than the canvas space
     if {[winfo height $frame] < [winfo height $canvas]} {
-	set height [winfo height $canvas]
+        set height [winfo height $canvas]
     }
     if {[winfo width $frame] < [winfo width $canvas]} {
-	set width [winfo width $canvas]
+        set width [winfo width $canvas]
     }
     $canvas:cmd configure -scrollregion [list 0 0 $width $height]
 }

@@ -1,3 +1,37 @@
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -147,7 +181,7 @@ openOutput(const char *name, const char *outDir, const char *prefix, const char 
     char *otherFile;
     asprintf(&otherFile, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
 	    prefix, other, suffix, ext);
-    // Put all this junk in CpiOs
+    // Put all this junk in OcpiOs
     char dummy;
     ssize_t length = readlink(otherFile, &dummy, 1);
     if (length != -1) {
@@ -348,15 +382,15 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	if (w->language == VHDL) {
 	  fprintf(f, "VHDL PARAMETERS HERE\n");
 	} else {
-	  int64_t i64;
+	  int64_t i64 = 0;
 	  switch (pr->members->type.scalar) {
-#define CPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
-	    case CP::Scalar::CPI_##pretty: i64 = (int64_t)pr->members->defaultValue.v##pretty; break;
-CPI_PROPERTY_DATA_TYPES
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
+	    case CP::Scalar::OCPI_##pretty: i64 = (int64_t)pr->members->defaultValue.v##pretty; break;
+OCPI_PROPERTY_DATA_TYPES
 	  default:;
 	  }
 	  unsigned bits =
-	    pr->members->type.scalar == CP::Scalar::CPI_Bool ?
+	    pr->members->type.scalar == CP::Scalar::OCPI_Bool ?
 	    1 : pr->members->bits;
 	  fprintf(f, "  parameter [%u:0] %s = %u'b%lld;\n",
 		  bits - 1, pr->name, bits, (long long)i64);
@@ -890,7 +924,7 @@ emitAssyHDL(Worker *w, const char *outDir)
   // simple expressions when there is a simple adaptation.
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     if (c->nExtConsumers == 0 && c->nExtProducers == 0) {
-      InstancePort *master, *slave, *producer, *consumer;
+      InstancePort *master = 0, *slave = 0, *producer = 0, *consumer = 0;
       for (ip = c->ports; ip; ip = ip->nextConn) {
 	if (ip->port->master)
 	  master = ip;
@@ -1070,7 +1104,7 @@ emitBsvHDL(Worker *w, const char *outDir) {
 	  comment, comment, w->specName, w->implName, comment, comment, w->pattern);
   fprintf(f,
 	  "package I_%s; // Package name is the implementation name of the worker\n\n"
-	  "import OCWip::*; // Include the OpenCPI BSV WIP package\n\n"
+	  "import OCWip::*; // Include the OpenOCPI BSV WIP package\n\n"
 	  "import Vector::*;\n"
 	  "// Define parameterized types for each worker port\n"
 	  "//  with parameters derived from WIP attributes\n\n",
@@ -1395,7 +1429,7 @@ emitWorker(FILE *f, Worker *w)
     if (prop->isParameter)
       continue;
     fprintf(f, "<property name=\"%s\"", prop->name);
-    if (prop->members->type.scalar != CP::Scalar::CPI_ULong)
+    if (prop->members->type.scalar != CP::Scalar::OCPI_ULong)
       fprintf(f, " type=\"%s\"", CP::Scalar::names[prop->members->type.scalar]);
     if (prop->isReadable)
       fprintf(f, " readable=\"true\"");
@@ -1409,7 +1443,7 @@ emitWorker(FILE *f, Worker *w)
       fprintf(f, " readError=\"true\"");
     if (prop->writeError)
       fprintf(f, " writeError=\"true\"");
-    if (prop->members->type.scalar == CP::Scalar::CPI_String)
+    if (prop->members->type.scalar == CP::Scalar::OCPI_String)
       fprintf(f, " size=\"%u\"", prop->members->type.stringLength);
     if (prop->members->type.isSequence)
       fprintf(f, " sequenceSize=\"%u\"\n", prop->members->type.length);
@@ -1522,7 +1556,7 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
   for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
     if (!ac->external) {
       InstancePort *aip;
-      InstancePort *from, *to;
+      InstancePort *from = 0, *to = 0;
       for (aip = ac->ports; aip; aip = aip->nextConn)
 	if (aip->isProducer)
 	  from = aip;

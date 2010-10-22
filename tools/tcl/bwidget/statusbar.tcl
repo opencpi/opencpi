@@ -1,6 +1,42 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ------------------------------------------------------------------------
 #  statusbar.tcl
-#	Create a status bar Tk widget
+#        Create a status bar Tk widget
 #
 #  Provides a status bar to be placed at the bottom of a toplevel.
 #  Currently does not support being placed in a toplevel that has
@@ -32,7 +68,7 @@ if {0} {
 
     # BWidget's progressbar
     set w [ProgressBar $f.bpbar -orient horizontal \
-	       -variable ::PROGRESS -bd 1 -relief sunken]
+               -variable ::PROGRESS -bd 1 -relief sunken]
     set ::PROGRESS 50
     $sbar add $w
     }
@@ -42,33 +78,33 @@ namespace eval StatusBar {
     Widget::define StatusBar statusbar
 
     Widget::declare StatusBar {
-	{-background  TkResource ""	0 frame}
-	{-borderwidth TkResource 0	0 frame}
-	{-relief      TkResource flat	0 frame}
-	{-showseparator Boolean	 1	0}
-	{-showresizesep Boolean	 0	0}
-	{-showresize  Boolean	 1	0}
-	{-width	      TkResource 100	0 frame}
-	{-height      TkResource 18	0 frame}
-	{-ipad	      String	 1	0}
-	{-pad	      String	 0	0}
-	{-bg	      Synonym	 -background}
-	{-bd	      Synonym	 -borderwidth}
+        {-background  TkResource ""        0 frame}
+        {-borderwidth TkResource 0        0 frame}
+        {-relief      TkResource flat        0 frame}
+        {-showseparator Boolean         1        0}
+        {-showresizesep Boolean         0        0}
+        {-showresize  Boolean         1        0}
+        {-width              TkResource 100        0 frame}
+        {-height      TkResource 18        0 frame}
+        {-ipad              String         1        0}
+        {-pad              String         0        0}
+        {-bg              Synonym         -background}
+        {-bd              Synonym         -borderwidth}
     }
 
     # -background, -borderwidth and -relief apply to outer frame, but relief
     # should be left flat for proper look
     Widget::addmap StatusBar "" :cmd {
-	-background {} -width {} -height {} -borderwidth {} -relief {}
+        -background {} -width {} -height {} -borderwidth {} -relief {}
     }
     Widget::addmap StatusBar "" .sbar {
-	-background {}
+        -background {}
     }
     Widget::addmap StatusBar "" .resize {
-	-background {}
+        -background {}
     }
     Widget::addmap StatusBar "" .hsep {
-	-background {}
+        -background {}
     }
 
     # -pad provides general padding around the status bar
@@ -76,33 +112,33 @@ namespace eval StatusBar {
     # Padding can be a list of {padx pady}
 
     variable HaveMarlett \
-	[expr {[lsearch -exact [font families] "Marlett"] != -1}]
+        [expr {[lsearch -exact [font families] "Marlett"] != -1}]
 
     bind StatusResize <1> \
-	[namespace code [list begin_resize %W %X %Y]]
+        [namespace code [list begin_resize %W %X %Y]]
     bind StatusResize <B1-Motion> \
-	[namespace code [list continue_resize %W %X %Y]]
+        [namespace code [list continue_resize %W %X %Y]]
     bind StatusResize <ButtonRelease-1> \
-	[namespace code [list end_resize %W %X %Y]]
+        [namespace code [list end_resize %W %X %Y]]
 
     bind StatusBar <Destroy> [list StatusBar::_destroy %W]
 
     # PNG version has partial alpha transparency for better look
     variable pngdata {
-	iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAFM0aXcAAAABGdBTUEAAYagM
-	eiWXwAAAGJJREFUGJW9kVEOgCAMQzs8GEezN69fkKlbUAz2r3l5NGTA+pCU+Q
-	IA5sv39wGgZKClZGBhJMVTklRr3VNwMz04mVfQzQiEm79EkrYZycxIkq8kkv2
-	v6RFGku9TUrj8RGr9AGy6mhv2ymLwAAAAAElFTkSuQmCC
+        iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAFM0aXcAAAABGdBTUEAAYagM
+        eiWXwAAAGJJREFUGJW9kVEOgCAMQzs8GEezN69fkKlbUAz2r3l5NGTA+pCU+Q
+        IA5sv39wGgZKClZGBhJMVTklRr3VNwMz04mVfQzQiEm79EkrYZycxIkq8kkv2
+        v6RFGku9TUrj8RGr9AGy6mhv2ymLwAAAAAElFTkSuQmCC
     }
     variable gifdata {
-	R0lGODlhDwAPAJEAANnZ2f///4CAgD8/PyH5BAEAAAAALAAAAAAPAA8AAAJEh
-	I+py+1IQvh4IZlG0Qg+QshkAokGQfAvZCBIhG8hA0Ea4UPIQJBG+BAyEKQhCH
-	bIQAgNEQCAIA0hAyE0AEIGgjSEDBQAOw==
+        R0lGODlhDwAPAJEAANnZ2f///4CAgD8/PyH5BAEAAAAALAAAAAAPAA8AAAJEh
+        I+py+1IQvh4IZlG0Qg+QshkAokGQfAvZCBIhG8hA0Ea4UPIQJBG+BAyEKQhCH
+        bIQAgNEQCAIA0hAyE0AEIGgjSEDBQAOw==
     }
     if {[package provide img::png] != ""} {
-	image create photo ::StatusBar::resizer -format PNG -data $pngdata
+        image create photo ::StatusBar::resizer -format PNG -data $pngdata
     } else {
-	image create photo ::StatusBar::resizer -format GIF -data $gifdata
+        image create photo ::StatusBar::resizer -format GIF -data $gifdata
     }
 }
 
@@ -116,8 +152,8 @@ proc StatusBar::create { path args } {
 
     # Allow for img::png loaded after initial source
     if {[package provide img::png] != ""} {
-	variable pngdata
-	::StatusBar::resizer configure -format PNG -data $pngdata
+        variable pngdata
+        ::StatusBar::resizer configure -format PNG -data $pngdata
     }
 
     Widget::init StatusBar $path $args
@@ -125,35 +161,35 @@ proc StatusBar::create { path args } {
     eval [list frame $path -class StatusBar] [Widget::subcget $path :cmd]
 
     foreach {padx pady} [_padval [Widget::cget $path -pad]] \
-	{ipadx ipady} [_padval [Widget::cget $path -ipad]] { break }
+        {ipadx ipady} [_padval [Widget::cget $path -ipad]] { break }
 
     if {[Widget::theme]} {
-	set sbar   [ttk::frame $path.sbar -padding [list $padx $pady]]
+        set sbar   [ttk::frame $path.sbar -padding [list $padx $pady]]
     } else {
-	set sbar   [eval [list frame $path.sbar -padx $padx -pady $pady] \
-			[Widget::subcget $path .sbar]]
+        set sbar   [eval [list frame $path.sbar -padx $padx -pady $pady] \
+                        [Widget::subcget $path .sbar]]
     }
     if {[string equal $::tcl_platform(platform) "windows"]} {
-	set cursor size_nw_se
+        set cursor size_nw_se
     } else {
-	set cursor sizing; # bottom_right_corner ??
+        set cursor sizing; # bottom_right_corner ??
     }
     set resize [eval [list label $path.resize] \
-		    [Widget::subcget $path .resize] \
-		    [list -borderwidth 0 -relief flat -anchor se \
-			 -cursor $cursor -anchor se -padx 0 -pady 0]]
+                    [Widget::subcget $path .resize] \
+                    [list -borderwidth 0 -relief flat -anchor se \
+                         -cursor $cursor -anchor se -padx 0 -pady 0]]
     if {$HaveMarlett} {
-	$resize configure -font "Marlett -16" -text \u006f
+        $resize configure -font "Marlett -16" -text \u006f
     } else {
-	$resize configure -image ::StatusBar::resizer
+        $resize configure -image ::StatusBar::resizer
     }
     bindtags $resize [list all [winfo toplevel $path] StatusResize $resize]
 
     if {[Widget::theme]} {
-	set fsep [ttk::separator $path.hsep -orient horizontal]
+        set fsep [ttk::separator $path.hsep -orient horizontal]
     } else {
-	set fsep [eval [list frame $path.hsep -bd 1 -height 2 -relief sunken] \
-		      [Widget::subcget $path .hsep]]
+        set fsep [eval [list frame $path.hsep -bd 1 -height 2 -relief sunken] \
+                      [Widget::subcget $path .hsep]]
     }
     set sep  [_sep $path sepresize {}]
 
@@ -163,12 +199,12 @@ proc StatusBar::create { path args } {
     grid $resize -row 1 -column 2 -sticky news
     grid columnconfigure $path 0 -weight 1
     if {![Widget::cget $path -showseparator]} {
-	grid remove $fsep
+        grid remove $fsep
     }
     if {![Widget::cget $path -showresize]} {
-	grid remove $sep $resize
+        grid remove $sep $resize
     } elseif {![Widget::cget $path -showresizesep]} {
-	grid remove $sep
+        grid remove $sep
     }
     set _widget($path,items) {}
 
@@ -185,41 +221,41 @@ proc StatusBar::configure { path args } {
     set res [Widget::configure $path $args]
 
     foreach {chshow chshowrsep chshowsep chipad chpad} \
-	[Widget::hasChangedX $path -showresize -showresizesep -showseparator \
-	     -ipad -pad] { break }
+        [Widget::hasChangedX $path -showresize -showresizesep -showseparator \
+             -ipad -pad] { break }
 
     if {$chshow} {
-	set show [Widget::cget $path -showresize]
-	set showrsep [Widget::cget $path -showresizesep]
+        set show [Widget::cget $path -showresize]
+        set showrsep [Widget::cget $path -showresizesep]
         if {$show} {
-	    if {$showrsep} {
-		grid $path.sepresize
-	    }
-	    grid $path.resize
+            if {$showrsep} {
+                grid $path.sepresize
+            }
+            grid $path.resize
         } else {
-	    grid remove $path.sepresize $path.resize
-	}
+            grid remove $path.sepresize $path.resize
+        }
     }
     if {$chshowsep} {
         if {$show} {
-	    grid $path.hsep
+            grid $path.hsep
         } else {
-	    grid remove $path.hsep
-	}
+            grid remove $path.hsep
+        }
     }
     if {$chipad} {
-	foreach {ipadx ipady} [_padval [Widget::cget $path -ipad]] { break }
-	foreach w [grid slaves $path.sbar] {
-	    grid configure $w -padx $ipadx -pady $ipady
-	}
+        foreach {ipadx ipady} [_padval [Widget::cget $path -ipad]] { break }
+        foreach w [grid slaves $path.sbar] {
+            grid configure $w -padx $ipadx -pady $ipady
+        }
     }
     if {$chpad} {
-	foreach {padx pady} [_padval [Widget::cget $path -pad]] { break }
-	if {[string equal [winfo class $path.sbar] "TFrame"]} {
-	    $path.sbar configure -padding [list $padx $pady]
-	} else {
-	    $path.sbar configure -padx $padx -pady $pady
-	}
+        foreach {padx pady} [_padval [Widget::cget $path -pad]] { break }
+        if {[string equal [winfo class $path.sbar] "TFrame"]} {
+            $path.sbar configure -padding [list $padx $pady]
+        } else {
+            $path.sbar configure -padx $padx -pady $pady
+        }
     }
     return $res
 }
@@ -247,19 +283,19 @@ proc StatusBar::add {path w args} {
     variable _widget
 
     array set opts [list \
-			-weight    0 \
-			-separator 1 \
-			-sticky    news \
-			-pad       [Widget::cget $path -ipad] \
-			]
+                        -weight    0 \
+                        -separator 1 \
+                        -sticky    news \
+                        -pad       [Widget::cget $path -ipad] \
+                        ]
     foreach {key val} $args {
-	if {[info exists opts($key)]} {
-	    set opts($key) $val
-	} else {
-	    set msg "unknown option \"$key\", must be one of: "
-	    append msg [join [lsort [array names opts]] {, }]
-	    return -code error $msg
-	}
+        if {[info exists opts($key)]} {
+            set opts($key) $val
+        } else {
+            set msg "unknown option \"$key\", must be one of: "
+            append msg [join [lsort [array names opts]] {, }]
+            return -code error $msg
+        }
     }
     foreach {ipadx ipady} [_padval $opts(-pad)] { break }
 
@@ -267,17 +303,17 @@ proc StatusBar::add {path w args} {
     foreach {cols rows} [grid size $sbar] break
     # Add separator if requested, and we aren't the first element
     if {$opts(-separator) && $cols != 0} {
-	set sep [_sep $path sep[winfo name $w]]
-	# only append name, to distinguish us from them
-	lappend _widget($path,items) [winfo name $sep]
-	grid $sep -in $sbar -row 0 -column $cols \
-	    -sticky ns -padx $ipadx -pady $ipady
-	incr cols
+        set sep [_sep $path sep[winfo name $w]]
+        # only append name, to distinguish us from them
+        lappend _widget($path,items) [winfo name $sep]
+        grid $sep -in $sbar -row 0 -column $cols \
+            -sticky ns -padx $ipadx -pady $ipady
+        incr cols
     }
 
     lappend _widget($path,items) $w
     grid $w -in $sbar -row 0 -column $cols -sticky $opts(-sticky) \
-	-padx $ipadx -pady $ipady
+        -padx $ipadx -pady $ipady
     grid columnconfigure $sbar $cols -weight $opts(-weight)
 
     return $w
@@ -291,40 +327,40 @@ proc StatusBar::remove {path args} {
 
     set destroy [string equal [lindex $args 0] "-destroy"]
     if {$destroy} {
-	set args [lrange $args 1 end]
+        set args [lrange $args 1 end]
     }
     foreach w $args {
-	set idx [lsearch -exact $_widget($path,items) $w]
-	if {$idx == -1 || ![winfo exists $w]} {
-	    # ignore unknown or non-widget items (like our separators)
-	    continue
-	}
-	# separator is always previous item
-	set sidx [expr {$idx - 1}]
-	set sep  [lindex $_widget($path,items) $sidx]
-	if {[string match .* $sep]} {
-	    # not one of our separators
-	    incr sidx
-	} elseif {$sep != ""} {
-	    # destroy separator too
-	    set sep $path.sbar.$sep
-	    destroy $sep
-	}
-	if {$destroy} {
-	    destroy $w
-	} else {
-	    grid forget $w
-	}
-	if {$idx == 0} {
-	    # separator of next item is no longer necessary
-	    set sep [lindex $_widget($path,items) [expr {$idx + 1}]]
-	    if {$sep != "" && ![string match .* $sep]} {
-		incr idx
-		set sep $path.sbar.$sep
-		destroy $sep
-	    }
-	}
-	set _widget($path,items) [lreplace $_widget($path,items) $sidx $idx]
+        set idx [lsearch -exact $_widget($path,items) $w]
+        if {$idx == -1 || ![winfo exists $w]} {
+            # ignore unknown or non-widget items (like our separators)
+            continue
+        }
+        # separator is always previous item
+        set sidx [expr {$idx - 1}]
+        set sep  [lindex $_widget($path,items) $sidx]
+        if {[string match .* $sep]} {
+            # not one of our separators
+            incr sidx
+        } elseif {$sep != ""} {
+            # destroy separator too
+            set sep $path.sbar.$sep
+            destroy $sep
+        }
+        if {$destroy} {
+            destroy $w
+        } else {
+            grid forget $w
+        }
+        if {$idx == 0} {
+            # separator of next item is no longer necessary
+            set sep [lindex $_widget($path,items) [expr {$idx + 1}]]
+            if {$sep != "" && ![string match .* $sep]} {
+                incr idx
+                set sep $path.sbar.$sep
+                destroy $sep
+            }
+        }
+        set _widget($path,items) [lreplace $_widget($path,items) $sidx $idx]
     }
 }
 
@@ -345,9 +381,9 @@ proc StatusBar::items {path} {
 
 proc StatusBar::_sep {path name {sub .sbar}} {
     if {[Widget::theme]} {
-	return [ttk::separator $path$sub.$name -orient vertical]
+        return [ttk::separator $path$sub.$name -orient vertical]
     } else {
-	return [frame $path$sub.$name -bd 1 -width 2 -relief sunken]
+        return [frame $path$sub.$name -bd 1 -width 2 -relief sunken]
     }
 }
 
@@ -355,12 +391,12 @@ proc StatusBar::_padval {padval} {
     set len [llength $padval]
     foreach {a b} $padval { break }
     if {$len == 0 || $len > 2} {
-	return -code error \
-	    "invalid pad value \"$padval\", must be 1 or 2 pixel values"
+        return -code error \
+            "invalid pad value \"$padval\", must be 1 or 2 pixel values"
     } elseif {$len == 1} {
-	return [list $a $a]
+        return [list $a $a]
     } elseif {$len == 2} {
-	return $padval
+        return $padval
     }
 }
 
@@ -399,8 +435,8 @@ proc StatusBar::begin_resize {w rootx rooty} {
 proc StatusBar::continue_resize {w rootx rooty} {
     variable resize
     if {[llength $resize($w,grid)]} {
-	# at this time, we don't know how to handle gridded resizing
-	return
+        # at this time, we don't know how to handle gridded resizing
+        return
     }
     set t      [winfo toplevel $w]
     set relx   [expr {$rootx - [winfo rootx $t]}]

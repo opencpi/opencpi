@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  progressbar.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -34,7 +70,7 @@ namespace eval ProgressBar {
 
     Widget::addmap ProgressBar "" :cmd {-background {} -width {} -height {}}
     Widget::addmap ProgressBar "" .bar {
-	-troughcolor -background -borderwidth {} -relief {}
+        -troughcolor -background -borderwidth {} -relief {}
     }
 
     variable _widget
@@ -50,7 +86,7 @@ proc ProgressBar::create { path args } {
     array set maps [list ProgressBar {} :cmd {} .bar {}]
     array set maps [Widget::parseArgs ProgressBar $args]
     eval frame $path $maps(:cmd) -class ProgressBar -bd 0 \
-	    -highlightthickness 0 -relief flat
+            -highlightthickness 0 -relief flat
     Widget::initFromODB ProgressBar $path $maps(ProgressBar)
 
     set c  [eval [list canvas $path.bar] $maps(.bar) -highlightthickness 0]
@@ -66,9 +102,9 @@ proc ProgressBar::create { path args } {
     set _widget($path,var) [Widget::cget $path -variable]
     if {$_widget($path,var) != ""} {
         GlobalVar::tracevar variable $_widget($path,var) w \
-		[list ProgressBar::_modify $path]
+                [list ProgressBar::_modify $path]
         set _widget($path,afterid) \
-	    [after idle [list ProgressBar::_modify $path]]
+            [after idle [list ProgressBar::_modify $path]]
     }
 
     bind $path.bar <Destroy>   [list ProgressBar::_destroy $path]
@@ -87,35 +123,35 @@ proc ProgressBar::configure { path args } {
     set res [Widget::configure $path $args]
 
     if { [Widget::hasChangedX $path -variable] } {
-	set newv [Widget::cget $path -variable]
+        set newv [Widget::cget $path -variable]
         if { $_widget($path,var) != "" } {
             GlobalVar::tracevar vdelete $_widget($path,var) w \
-		    [list ProgressBar::_modify $path]
+                    [list ProgressBar::_modify $path]
         }
         if { $newv != "" } {
             set _widget($path,var) $newv
             GlobalVar::tracevar variable $newv w \
-		    [list ProgressBar::_modify $path]
-	    if {![info exists _widget($path,afterid)]} {
-		set _widget($path,afterid) \
-		    [after idle [list ProgressBar::_modify $path]]
-	    }
+                    [list ProgressBar::_modify $path]
+            if {![info exists _widget($path,afterid)]} {
+                set _widget($path,afterid) \
+                    [after idle [list ProgressBar::_modify $path]]
+            }
         } else {
             set _widget($path,var) ""
         }
     }
 
     foreach {cbd cor cma} [Widget::hasChangedX $path -borderwidth \
-	    -orient -maximum] break
+            -orient -maximum] break
 
     if { $cbd || $cor || $cma } {
-	if {![info exists _widget($path,afterid)]} {
-	    set _widget($path,afterid) \
-		[after idle [list ProgressBar::_modify $path]]
-	}
+        if {![info exists _widget($path,afterid)]} {
+            set _widget($path,afterid) \
+                [after idle [list ProgressBar::_modify $path]]
+        }
     }
     if { [Widget::hasChangedX $path -foreground] } {
-	set fg [Widget::cget $path -foreground]
+        set fg [Widget::cget $path -foreground]
         $path.bar itemconfigure rect -fill $fg -outline $fg
     }
     return $res
@@ -138,50 +174,50 @@ proc ProgressBar::_modify { path args } {
 
     catch {unset _widget($path,afterid)}
     if { ![GlobalVar::exists $_widget($path,var)] ||
-	 [set val [GlobalVar::getvar $_widget($path,var)]] < 0 } {
+         [set val [GlobalVar::getvar $_widget($path,var)]] < 0 } {
         catch {place forget $path.bar}
     } else {
-	place $path.bar -relx 0 -rely 0 -relwidth 1 -relheight 1
-	set type [Widget::getoption $path -type]
-	if { $val != 0 && $type != "normal" && \
-		$type != "nonincremental_infinite"} {
-	    set val [expr {$val+$_widget($path,val)}]
-	}
-	set _widget($path,val) $val
-	set max [Widget::getoption $path -maximum]
-	set bd  [expr {2*[$path.bar cget -bd]}]
-	set w   [winfo width  $path.bar]
-	set h   [winfo height $path.bar]
-	if {$type == "infinite" || $type == "nonincremental_infinite"} {
-	    # JDC: New infinite behaviour
-	    set tval [expr {$val % $max}]
-	    if { $tval < ($max / 2.0) } {
-		set x0 [expr {double($tval) / double($max) * 1.5}]
-	    } else {
-		set x0 [expr {(1.0-(double($tval) / double($max))) * 1.5}]
-	    }
-	    set x1 [expr {$x0 + 0.25}]
-	    # convert coords to ints to prevent triggering canvas refresh
-	    # bug related to fractional coords
-	    if {[Widget::getoption $path -orient] == "horizontal"} {
-		$path.bar coords rect [expr {int($x0*$w)}] 0 \
-		    [expr {int($x1*$w)}] $h
-	    } else {
-		$path.bar coords rect 0 [expr {int($h-$x0*$h)}] $w \
-		    [expr {int($x1*$h)}]
-	    }
-	} else {
-	    if { $val > $max } {set val $max}
-	    if {[Widget::getoption $path -orient] == "horizontal"} {
-		$path.bar coords rect -1 0 [expr {int(double($val)*$w/$max)}] $h
-	    } else {
-		$path.bar coords rect 0 [expr {$h+1}] $w \
-		    [expr {int($h*(1.0 - double($val)/$max))}]
-	    }
-	}
+        place $path.bar -relx 0 -rely 0 -relwidth 1 -relheight 1
+        set type [Widget::getoption $path -type]
+        if { $val != 0 && $type != "normal" && \
+                $type != "nonincremental_infinite"} {
+            set val [expr {$val+$_widget($path,val)}]
+        }
+        set _widget($path,val) $val
+        set max [Widget::getoption $path -maximum]
+        set bd  [expr {2*[$path.bar cget -bd]}]
+        set w   [winfo width  $path.bar]
+        set h   [winfo height $path.bar]
+        if {$type == "infinite" || $type == "nonincremental_infinite"} {
+            # JDC: New infinite behaviour
+            set tval [expr {$val % $max}]
+            if { $tval < ($max / 2.0) } {
+                set x0 [expr {double($tval) / double($max) * 1.5}]
+            } else {
+                set x0 [expr {(1.0-(double($tval) / double($max))) * 1.5}]
+            }
+            set x1 [expr {$x0 + 0.25}]
+            # convert coords to ints to prevent triggering canvas refresh
+            # bug related to fractional coords
+            if {[Widget::getoption $path -orient] == "horizontal"} {
+                $path.bar coords rect [expr {int($x0*$w)}] 0 \
+                    [expr {int($x1*$w)}] $h
+            } else {
+                $path.bar coords rect 0 [expr {int($h-$x0*$h)}] $w \
+                    [expr {int($x1*$h)}]
+            }
+        } else {
+            if { $val > $max } {set val $max}
+            if {[Widget::getoption $path -orient] == "horizontal"} {
+                $path.bar coords rect -1 0 [expr {int(double($val)*$w/$max)}] $h
+            } else {
+                $path.bar coords rect 0 [expr {$h+1}] $w \
+                    [expr {int($h*(1.0 - double($val)/$max))}]
+            }
+        }
     }
     if {![Widget::cget $path -idle]} {
-	update idletasks
+        update idletasks
     }
 }
 
@@ -193,15 +229,15 @@ proc ProgressBar::_destroy { path } {
     variable _widget
 
     if {[info exists _widget($path,afterid)]} {
-	after cancel $_widget($path,afterid)
-	unset _widget($path,afterid)
+        after cancel $_widget($path,afterid)
+        unset _widget($path,afterid)
     }
     if {[info exists _widget($path,var)]} {
-	if {$_widget($path,var) != ""} {
-	    GlobalVar::tracevar vdelete $_widget($path,var) w \
-		[list ProgressBar::_modify $path]
-	}
-	unset _widget($path,var)
+        if {$_widget($path,var) != ""} {
+            GlobalVar::tracevar vdelete $_widget($path,var) w \
+                [list ProgressBar::_modify $path]
+        }
+        unset _widget($path,var)
     }
     unset _widget($path,dir)
     Widget::destroy $path

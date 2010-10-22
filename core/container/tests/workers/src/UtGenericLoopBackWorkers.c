@@ -1,19 +1,37 @@
-// Copyright (c) 2009 Mercury Federal Systems.
-// 
-// This file is part of OpenCPI.
-// 
-// OpenCPI is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// OpenCPI is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public License
-// along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 
 /*
@@ -30,7 +48,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <CpiTimeEmitC.h>
+#include <OcpiTimeEmitC.h>
 #include "UtGenericLoopbackWorkers.h"
 
 
@@ -51,14 +69,16 @@ static RCCResult UTGProducerInitialize(RCCWorker *this_)
 
 static RCCResult release(RCCWorker *this_)
 {
+  ( void ) this_;
   return RCC_OK;
 }
-
+#if 0 /* Unused */
 static RCCResult test(RCCWorker *this_ )
 {
+  ( void ) this_;
   return RCC_OK;
 }
-
+#endif
 
 #ifdef TEST_ONE_SHOT
 volatile int PROD_PRODUCE=0;
@@ -66,6 +86,8 @@ volatile int PROD_PRODUCE=0;
 
 static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
   uint32_t n;
   uint32_t len;
   int      *b;
@@ -93,7 +115,7 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   }
 
 
-  CPI_TIME_EMIT_C( "Producer Start" );
+  OCPI_TIME_EMIT_C( "Producer Start" );
 
 #ifndef NDEBUG
   printf("Producing buffer number %d\n", props->buffersProcessed );
@@ -111,7 +133,7 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
 
   props->buffersProcessed++; 
  
-  CPI_TIME_EMIT_C( "Producer Start Send" );
+  OCPI_TIME_EMIT_C( "Producer Start Send" );
 
 #ifndef NDEBUG
   printf("Producer is producing\n"); 
@@ -122,18 +144,18 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   this_->container->send( &this_->ports[UTGProducerWorker_Data_Out_Port0], 
                           &this_->ports[UTGProducerWorker_Data_Out_Port0].current, 0x54, len );
 
-  CPI_TIME_EMIT_C( "Producer Start End" );
+  OCPI_TIME_EMIT_C( "Producer Start End" );
         
   return RCC_OK;
 
 }
 
 #define PROD_PROPERTY_SIZE  sizeof( UTGProducerWorkerProperties )
-static int32_t ProdportRunConditions[] = { (1<<UTGProducerWorker_Data_Out_Port0) , 0 };
-static RCCRunCondition RCCRunConditions[] = { {ProdportRunConditions}, {0} , {0} };
-static RCCPortInfo ProdPortInfo[] = { {0, 1024*2, 1}, {RCC_NO_ORDINAL, 0, 0} };
-static int32_t UTGProducerPortRunConditions[] = { (1<<UTGProducerWorker_Data_Out_Port0) , 0 };
-static RCCRunCondition UTGProducerWorkerRunConditions[] = { UTGProducerPortRunConditions, 0 , 0 };
+//static uint32_t ProdportRunConditions[] = { (1<<UTGProducerWorker_Data_Out_Port0) , 0, 0 };
+//static RCCRunCondition RCCRunConditions[] = { {ProdportRunConditions,0,0}, {0,0,0} , {0,0,0} };
+//static RCCPortInfo ProdPortInfo[] = { {0, 1024*2, 1}, {RCC_NO_ORDINAL, 0, 0} };
+static uint32_t UTGProducerPortRunConditions[] = { (1<<UTGProducerWorker_Data_Out_Port0), 0, 0 };
+static RCCRunCondition UTGProducerWorkerRunConditions[] = { {UTGProducerPortRunConditions,0,0}, {0, 0, 0} , {0,0,0} };
 #define NUM_OUTPUTS 3
 #define OPTIONAL_CONNECTIONS_MASK 0xe
 RCCDispatch UTGProducerWorkerDispatchTable = { RCC_VERSION, 0, NUM_OUTPUTS, 
@@ -159,7 +181,7 @@ enum UTGConsumerPortIds {
 
 static RCCResult UTGConsumerInitialize(RCCWorker *this_)
 {
-  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
+//  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
   UTGConsumerWorkerProperties *props = this_->properties;
   props->buffersProcessed = 0;
   props->passfail = 1;
@@ -179,7 +201,7 @@ static RCCResult UTGConsumerInitialize(RCCWorker *this_)
 
 static RCCResult UTGConsumerStart(RCCWorker *this_)
 {
-  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
+//  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
   UTGConsumerWorkerProperties *props = this_->properties;
   if ( props->testControlErrors == 1 ) {
     this_->errorString = ERROR_TEST_STRING;
@@ -196,7 +218,7 @@ static RCCResult UTGConsumerStart(RCCWorker *this_)
 
 static RCCResult UTGConsumerStop(RCCWorker *this_)
 {
-  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
+//  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
   UTGConsumerWorkerProperties *props = this_->properties;
   if ( props->testControlErrors == 1 ) {
     this_->errorString = ERROR_TEST_STRING;
@@ -213,7 +235,7 @@ static RCCResult UTGConsumerStop(RCCWorker *this_)
 
 static RCCResult UTGConsumerRelease(RCCWorker *this_)
 {
-  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
+//  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
   UTGConsumerWorkerProperties *props = this_->properties;
   if ( props->testControlErrors == 1 ) {
     this_->errorString = ERROR_TEST_STRING;
@@ -230,7 +252,7 @@ static RCCResult UTGConsumerRelease(RCCWorker *this_)
 
 static RCCResult UTGConsumerTest(RCCWorker *this_)
 {
-  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
+//  UTGConsumerWorkerStaticMemory *mem = (UTGConsumerWorkerStaticMemory*)this_->memories[0];
   UTGConsumerWorkerProperties *props = this_->properties;
   if ( props->testControlErrors == 1 ) {
     this_->errorString = ERROR_TEST_STRING;
@@ -250,7 +272,7 @@ static RCCResult UTGConsumerTest(RCCWorker *this_)
 static RCCResult UTGConsumerAfterConfigure( RCCWorker *this_ )
 {
   /* This only works for simple memory configurations */
-  UTGConsumerWorkerStaticMemory *static_mem = this_->memories[0];
+//  UTGConsumerWorkerStaticMemory *static_mem = this_->memories[0];
   UTGConsumerWorkerProperties *props = this_->properties;
 
   if ( props->testConfigErrors == 1 ) {
@@ -269,7 +291,7 @@ static RCCResult UTGConsumerAfterConfigure( RCCWorker *this_ )
 static RCCResult UTGConsumerBeforeQuery(RCCWorker *this_ )
 {
   /* This only works for simple memory configurations */
-  UTGConsumerWorkerStaticMemory *static_mem = this_->memories[0];
+//  UTGConsumerWorkerStaticMemory *static_mem = this_->memories[0];
   UTGConsumerWorkerProperties *props = this_->properties;
 
   if ( props->testConfigErrors == 1 ) {
@@ -287,9 +309,12 @@ static RCCResult UTGConsumerBeforeQuery(RCCWorker *this_ )
 
 static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
+  ( void ) timedout;
+  ( void ) newRunCondition;
+
   int ncount, *b;
   uint32_t len,n;
-  UTGConsumerWorkerStaticMemory *mem = this_->memories[0];
+//  UTGConsumerWorkerStaticMemory *mem = this_->memories[0];
   UTGConsumerWorkerProperties *props = this_->properties;
   int passed = 1;
 
@@ -300,7 +325,7 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
 
   char* in_buffer = (char*)this_->ports[UTGConsumerWorker_Data_In_Port0].current.data;
 
-  CPI_TIME_EMIT_C( "Consumer Start" );
+  OCPI_TIME_EMIT_C( "Consumer Start" );
 
 #ifdef TIME_TP
   if ( mem->b_count == 0 ) {
@@ -320,7 +345,7 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   len -= 4;
   
   b = (int*)(in_buffer);
-  if ( *b != props->buffersProcessed ) {
+  if ( *b != (int)props->buffersProcessed ) {
 #ifndef NDEBUG
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
            *b, props->buffersProcessed );
@@ -366,9 +391,9 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   }
 #endif
 
-  CPI_TIME_EMIT_C( "Consumer Start Release" );
+  OCPI_TIME_EMIT_C( "Consumer Start Release" );
   this_->container->release( &this_->ports[UTGConsumerWorker_Data_In_Port0].current ); 
-  CPI_TIME_EMIT_C( "Consumer End Release" );
+  OCPI_TIME_EMIT_C( "Consumer End Release" );
   return RCC_OK;
 }
 
@@ -379,12 +404,12 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
 
 #define CON_PROPERTY_SIZE  sizeof( UTGConsumerWorkerProperties )
 static uint32_t memSizes[] = {sizeof(UTGConsumerWorkerStaticMemory), 1024*10, 0 };
-static int32_t CPortRunConditions[] = { (1<<UTGConsumerWorker_Data_In_Port0)  , 0 }; 
-static RCCRunCondition CWorkerRunConditions[] = { CPortRunConditions, 0 , 0 };
+//static uint32_t CPortRunConditions[] = { (1<<UTGConsumerWorker_Data_In_Port0) , 0, 0 }; 
+//static RCCRunCondition CWorkerRunConditions[] = { {CPortRunConditions,0,0}, {0,0,0} , {0,0,0} };
 #define CoptionalPorts (                                                \
                         (1<<UTGConsumerWorker_Data_In_Port1) | (1<<UTGConsumerWorker_Data_In_Port2) \
                         | (1<<UTGConsumerWorker_Data_In_Port3) )
-static RCCPortInfo UTGConsumerPortInfo[] = { {0, 1024*2, 3}, {RCC_NO_ORDINAL, 0, 0} };
+//static RCCPortInfo UTGConsumerPortInfo[] = { {0, 1024*2, 3}, {RCC_NO_ORDINAL, 0, 0} };
 #define COPTIONAL_CONNECTIONS_MASK 0xe
 RCCDispatch UTGConsumerWorkerDispatchTable = { RCC_VERSION, 4, 0, 
                                                CON_PROPERTY_SIZE, memSizes, 0, 
@@ -418,8 +443,7 @@ enum PortIds {
 
 static RCCResult LBInitialize(RCCWorker *this_)
 {
-  UTGLoopbackWorkerStaticMemory *mem = (UTGLoopbackWorkerStaticMemory*)this_->memories[0];
-  UTGLoopbackWorkerProperties *props = this_->properties;
+  ( void ) this_;
   return RCC_OK;
 }
 
@@ -427,17 +451,14 @@ static RCCResult LBInitialize(RCCWorker *this_)
 
 static RCCResult LBAfterConfigure(RCCWorker *this_ )
 {
-  /* This only works for simple memory configurations */
-  UTGLoopbackWorkerStaticMemory *static_mem = this_->memories[0];
-  UTGLoopbackWorkerProperties *props = this_->properties;
+  ( void ) this_;
   return RCC_OK;
 }
 
 
 static RCCResult LBBeforeQuery(RCCWorker *this_ )
 {
-  UTGLoopbackWorkerStaticMemory *static_mem = this_->memories[0];
-  UTGLoopbackWorkerProperties *props = this_->properties;
+  ( void ) this_;
   return RCC_OK;
 }
 
@@ -445,10 +466,13 @@ static RCCResult LBBeforeQuery(RCCWorker *this_ )
 static int runc=0;
 static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
-  uint32_t len;
+   ( void ) timedout;
+   ( void ) newRunCondition;
 
-  UTGLoopbackWorkerStaticMemory *mem = this_->memories[0];
-  UTGLoopbackWorkerProperties *props = this_->properties;
+    uint32_t len;
+
+//  UTGLoopbackWorkerStaticMemory *mem = this_->memories[0];
+//  UTGLoopbackWorkerProperties *props = this_->properties;
 
   char* in_buffer = (char*)this_->ports[UTGLoopbackWorker_Data_In_Port0].current.data;
   char* out_buffer = (char*)this_->ports[UTGLoopbackWorker_Data_Out_Port0].current.data;
@@ -518,9 +542,9 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
 
 #define LB_PROPERTY_SIZE      sizeof( UTGLoopbackWorkerProperties )
 static uint32_t LBmemSizes[] = {sizeof(UTGLoopbackWorkerStaticMemory), 0 };
-static int32_t LBPortRunConditions[] = { (1<<UTGLoopbackWorker_Data_In_Port0) /* | (1<<UTGLoopbackWorker_Data_Out_Port)*/ , 0 };
-static RCCRunCondition LBWorkerRunConditions[] = { LBPortRunConditions, 0 , 0 };
-static RCCPortInfo portInfo[] = { {0, 1024*3, 1}, {RCC_NO_ORDINAL, 0, 0} };
+static uint32_t LBPortRunConditions[] = { (1<<UTGLoopbackWorker_Data_In_Port0) /* | (1<<UTGLoopbackWorker_Data_Out_Port)*/, 0 };
+static RCCRunCondition LBWorkerRunConditions[] = { {LBPortRunConditions, 0, 0 } };
+//static RCCPortInfo portInfo[] = { {0, 1024*3, 1}, {RCC_NO_ORDINAL, 0, 0} };
 RCCDispatch UTGLoopbackWorkerDispatchTable = { RCC_VERSION, 2, 3, 
                                                LB_PROPERTY_SIZE, LBmemSizes, 0,
                                                LBInitialize, NULL, NULL, release, NULL, LBAfterConfigure, LBBeforeQuery, 
@@ -532,10 +556,10 @@ RCCDispatch UTGLoopbackWorkerDispatchTable = { RCC_VERSION, 2, 3,
 
 
 RCCEntryTable  GenericLoopbackWorkerDispatchTables[] = {
-  "Consumer", &UTGConsumerWorkerDispatchTable,
-  "Loopback", &UTGLoopbackWorkerDispatchTable,
-  "Producer", &UTGProducerWorkerDispatchTable,
-  NULL
+  {"Consumer", &UTGConsumerWorkerDispatchTable},
+  {"Loopback", &UTGLoopbackWorkerDispatchTable},
+  {"Producer", &UTGProducerWorkerDispatchTable},
+  {NULL,NULL}
 };
 
 

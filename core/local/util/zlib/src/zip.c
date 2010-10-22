@@ -1,3 +1,4 @@
+
 /* zip.c -- IO on .zip files using zlib
    Version 1.01e, February 12th, 2005
 
@@ -188,14 +189,14 @@ local void init_linkedlist(ll)
 {
     ll->first_block = ll->last_block = NULL;
 }
-
+#if 0
 local void free_linkedlist(ll)
     linkedlist_data* ll;
 {
     free_datablock(ll->first_block);
     ll->first_block = ll->last_block = NULL;
 }
-
+#endif 
 
 local int add_data_in_datablock(ll,buf,len)
     linkedlist_data* ll;
@@ -318,7 +319,8 @@ local void ziplocal_putValue_inmemory (dest, x, nbByte)
 local uLong ziplocal_TmzDateToDosDate(ptm,dosDate)
     const tm_zip* ptm;
     uLong dosDate;
-{
+{ 
+    ( void ) dosDate;
     uLong year = (uLong)ptm->tm_year;
     if (year>1980)
         year-=1980;

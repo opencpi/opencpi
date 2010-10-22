@@ -1,3 +1,39 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
 # ----------------------------------------------------------------------------
 #  mainframe.tcl
 #  This file is part of Unifix BWidget Toolkit
@@ -26,29 +62,29 @@ namespace eval MainFrame {
     Widget::define MainFrame mainframe ProgressBar
 
     Widget::bwinclude MainFrame ProgressBar .status.prg \
-	    remove {
-	-fg -bg -bd -troughcolor -background -borderwidth
-	-relief -orient -width -height
+            remove {
+        -fg -bg -bd -troughcolor -background -borderwidth
+        -relief -orient -width -height
     } \
-	    rename {
-	-maximum    -progressmax
-	-variable   -progressvar
-	-type       -progresstype
-	-foreground -progressfg
+            rename {
+        -maximum    -progressmax
+        -variable   -progressvar
+        -type       -progresstype
+        -foreground -progressfg
     }
 
     Widget::declare MainFrame {
-	{-width        TkResource 0      0 frame}
-	{-height       TkResource 0      0 frame}
-	{-background   TkResource ""     0 frame}
-	{-textvariable String     ""     0}
-	{-menu         String     {}     1}
-	{-separator    Enum       both   1 {none top bottom both}}
-	{-bg           Synonym    -background}
+        {-width        TkResource 0      0 frame}
+        {-height       TkResource 0      0 frame}
+        {-background   TkResource ""     0 frame}
+        {-textvariable String     ""     0}
+        {-menu         String     {}     1}
+        {-separator    Enum       both   1 {none top bottom both}}
+        {-bg           Synonym    -background}
 
-	{-menubarfont   String     ""  0}
-	{-menuentryfont String     ""  0}
-	{-statusbarfont String     ""  0}
+        {-menubarfont   String     ""  0}
+        {-menuentryfont String     ""  0}
+        {-statusbarfont String     ""  0}
     }
 
     Widget::addmap MainFrame "" .frame  {-width {} -height {} -background {}}
@@ -72,9 +108,9 @@ proc MainFrame::create { path args } {
     variable _widget
 
     if {[Widget::theme]} {
-	set path [ttk::frame $path]
+        set path [ttk::frame $path]
     } else {
-	set path [frame $path -takefocus 0 -highlightthickness 0]
+        set path [frame $path -takefocus 0 -highlightthickness 0]
     }
     set top  [winfo parent $path]
     if { ![string equal [winfo toplevel $path] $top] } {
@@ -91,68 +127,68 @@ proc MainFrame::create { path args } {
         set bd     0
     }
     if {[Widget::theme]} {
-	set userframe [eval [list ttk::frame $path.frame] \
-			   [Widget::subcget $path .frame]]
-	set topframe  [ttk::frame $path.topf]
-	set botframe  [ttk::frame $path.botf]
+        set userframe [eval [list ttk::frame $path.frame] \
+                           [Widget::subcget $path .frame]]
+        set topframe  [ttk::frame $path.topf]
+        set botframe  [ttk::frame $path.botf]
     } else {
-	set userframe [eval [list frame $path.frame] \
-			   [Widget::subcget $path .frame] \
-			   -relief $relief -borderwidth $bd]
-	set topframe  [eval [list frame $path.topf] \
-			   [Widget::subcget $path .topf]]
-	set botframe  [eval [list frame $path.botf] \
-			   -relief $relief -borderwidth $bd \
-			   [Widget::subcget $path .botf]]
+        set userframe [eval [list frame $path.frame] \
+                           [Widget::subcget $path .frame] \
+                           -relief $relief -borderwidth $bd]
+        set topframe  [eval [list frame $path.topf] \
+                           [Widget::subcget $path .topf]]
+        set botframe  [eval [list frame $path.botf] \
+                           -relief $relief -borderwidth $bd \
+                           [Widget::subcget $path .botf]]
     }
 
     pack $topframe -fill x
     grid columnconfigure $topframe 0 -weight 1
 
     if {![Widget::theme]} {
-	set bg [Widget::cget $path -background]
-	$path configure -background $bg
+        set bg [Widget::cget $path -background]
+        $path configure -background $bg
     }
     if { $tcl_platform(platform) != "unix" } {
         set sepopt [Widget::getoption $path -separator]
         if { $sepopt == "both" || $sepopt == "top" } {
-	    if {[Widget::theme]} {
-		set sep [ttk::separator $path.sep -orient horizontal]
-	    } else {
-		set sep [Separator::create $path.sep -orient horizontal -background $bg]
-	    }
+            if {[Widget::theme]} {
+                set sep [ttk::separator $path.sep -orient horizontal]
+            } else {
+                set sep [Separator::create $path.sep -orient horizontal -background $bg]
+            }
             pack $sep -fill x
         }
         if { $sepopt == "both" || $sepopt == "bottom" } {
-	    if {[Widget::theme]} {
-		set sep [ttk::separator $botframe.sep -orient horizontal]
-	    } else {
-		set sep [Separator::create $botframe.sep -orient horizontal -background $bg]
-	    }
+            if {[Widget::theme]} {
+                set sep [ttk::separator $botframe.sep -orient horizontal]
+            } else {
+                set sep [Separator::create $botframe.sep -orient horizontal -background $bg]
+            }
             pack $sep -fill x
         }
     }
 
     # --- status bar ---------------------------------------------------------
     if {[string length [Widget::getoption $path -statusbarfont]]} {
-	set sbfnt [list -font [Widget::getoption $path -statusbarfont]]
+        set sbfnt [list -font [Widget::getoption $path -statusbarfont]]
     } else {
-	set sbfnt ""
+        set sbfnt ""
     }
 
     if {[Widget::theme]} {
-	set status   [ttk::frame $path.status]
-	set label    [eval [list ttk::label $status.label \
-				-textvariable [Widget::getoption $path -textvariable]] $sbfnt]
-	set indframe [ttk::frame $status.indf]
-	set prgframe [ttk::frame $status.prgf]
+        set status   [ttk::frame $path.status]
+        set label    [eval [list ttk::label $status.label \
+                                -textvariable [Widget::getoption $path -textvariable]] $sbfnt]
+        set indframe [ttk::frame $status.indf]
+        set prgframe [ttk::frame $status.prgf]
     } else {
-	set status   [frame $path.status -background $bg]
-	set label    [eval [list label $status.label \
-				-textvariable [Widget::getoption $path -textvariable] \
-				-background $bg] $sbfnt]
-	set indframe [frame $status.indf -background $bg]
-	set prgframe [frame $status.prgf -background $bg]
+        set status   [frame $path.status -background $bg]
+        set label    [eval [list label $status.label \
+                                -textvariable [Widget::getoption $path -textvariable] \
+                                -background $bg] $sbfnt]
+        set indframe [frame $status.indf -background $bg]
+        set prgframe [frame $status.prgf -background $bg]
     }
 
     place $label    -anchor w -x 0 -rely 0.5
@@ -161,7 +197,7 @@ proc MainFrame::create { path args } {
     $status configure -height [winfo reqheight $label]
 
     set progress [eval [list ProgressBar::create $status.prg] \
-		      [Widget::subcget $path .status.prg] \
+                      [Widget::subcget $path .status.prg] \
                       -width       50 \
                       -height      [expr {[winfo reqheight $label]-2}] \
                       -borderwidth 1 \
@@ -199,78 +235,78 @@ proc MainFrame::configure { path args } {
 
     # The ttk frame has no -background
     if {![Widget::theme] && [Widget::hasChanged $path -background bg] } {
-	if {$::tcl_platform(platform) == "unix"} {
-	    set listmenu [$_widget($path,top) cget -menu]
-	    while { [llength $listmenu] } {
-		set newlist {}
-		foreach menu $listmenu {
-		    $menu configure -background $bg
-		    set newlist [concat $newlist [winfo children $menu]]
-		}
-		set listmenu $newlist
-	    }
-	}
-	foreach sep {.sep .botf.sep} {
-	    if {[winfo exists $path.$sep]} {
-		Separator::configure $path.$sep -background $bg
-	    }
-	}
-	foreach w [winfo children $path.topf] {
-	    $w configure -background $bg
-	}
+        if {$::tcl_platform(platform) == "unix"} {
+            set listmenu [$_widget($path,top) cget -menu]
+            while { [llength $listmenu] } {
+                set newlist {}
+                foreach menu $listmenu {
+                    $menu configure -background $bg
+                    set newlist [concat $newlist [winfo children $menu]]
+                }
+                set listmenu $newlist
+            }
+        }
+        foreach sep {.sep .botf.sep} {
+            if {[winfo exists $path.$sep]} {
+                Separator::configure $path.$sep -background $bg
+            }
+        }
+        foreach w [winfo children $path.topf] {
+            $w configure -background $bg
+        }
     }
 
     if { [Widget::hasChanged $path -menubarfont newmbfnt] } {
-	if {[string length $newmbfnt]} {
-	    set mbfnt [list -font $newmbfnt]
-	} else {
-	    set mbfnt ""
-	}
-	set top     $_widget($path,top)
-	if {[string equal $top .]} {
-	    eval [list .menubar configure] $mbfnt
-	} else {
-	    eval [list $top.menubar configure] $mbfnt
-	}
+        if {[string length $newmbfnt]} {
+            set mbfnt [list -font $newmbfnt]
+        } else {
+            set mbfnt ""
+        }
+        set top     $_widget($path,top)
+        if {[string equal $top .]} {
+            eval [list .menubar configure] $mbfnt
+        } else {
+            eval [list $top.menubar configure] $mbfnt
+        }
     }
     if { [Widget::hasChanged $path -menuentryfont newmefnt] } {
-	if {[string length $newmefnt]} {
-	    set mefnt [list -font $newmefnt]
-	} else {
-	    set mefnt ""
-	}
-	set top     $_widget($path,top)
-	if {[string equal $top .]} {
-	    set mb .menubar
-	} else {
-	    set mb $top.menubar
-	}
-	set l [winfo children $mb]
-	while {[llength $l]} {
-	    set e [lindex $l 0]
-	    set l [lrange $l 1 end]
-	    if {[string length $e] == 0} {continue}
-	    lappend l [winfo children $e]
-	    eval [list $e configure] $mefnt
-	}
+        if {[string length $newmefnt]} {
+            set mefnt [list -font $newmefnt]
+        } else {
+            set mefnt ""
+        }
+        set top     $_widget($path,top)
+        if {[string equal $top .]} {
+            set mb .menubar
+        } else {
+            set mb $top.menubar
+        }
+        set l [winfo children $mb]
+        while {[llength $l]} {
+            set e [lindex $l 0]
+            set l [lrange $l 1 end]
+            if {[string length $e] == 0} {continue}
+            lappend l [winfo children $e]
+            eval [list $e configure] $mefnt
+        }
     }
 
 
     if { [Widget::hasChanged $path -statusbarfont newsbfnt] } {
-	if {[string length $newsbfnt]} {
-	    set sbfnt [list -font $newsbfnt]
-	} else {
-	    set sbfnt ""
-	}
-	for {set index 0} {$index<$_widget($path,nindic)} {incr index} {
-	    set indic $path.status.indf.f$index
-	    eval [list $indic configure] $sbfnt
-	}
-	eval [list $path.status.label configure] $sbfnt
-	$path.status configure -height [winfo reqheight $path.status.label]
+        if {[string length $newsbfnt]} {
+            set sbfnt [list -font $newsbfnt]
+        } else {
+            set sbfnt ""
+        }
+        for {set index 0} {$index<$_widget($path,nindic)} {incr index} {
+            set indic $path.status.indf.f$index
+            eval [list $indic configure] $sbfnt
+        }
+        eval [list $path.status.label configure] $sbfnt
+        $path.status configure -height [winfo reqheight $path.status.label]
 
-	$path.status.prg configure \
-		-height [expr {[winfo reqheight $path.status.label]-2}]
+        $path.status.prg configure \
+                -height [expr {[winfo reqheight $path.status.label]-2}]
     }
 
     return $res
@@ -305,28 +341,28 @@ proc MainFrame::addtoolbar { path } {
     set toolbar   $path.topf.tb$index
     set bg        [Widget::getoption $path -background]
     if { $tcl_platform(platform) == "unix" } {
-	if {[Widget::theme]} {
-	    ttk::frame $toolframe -padding 1
-	} else {
-	    frame $toolframe -relief raised -borderwidth 1 \
-		-takefocus 0 -highlightthickness 0 -background $bg
-	}
+        if {[Widget::theme]} {
+            ttk::frame $toolframe -padding 1
+        } else {
+            frame $toolframe -relief raised -borderwidth 1 \
+                -takefocus 0 -highlightthickness 0 -background $bg
+        }
     } else {
-	if {[Widget::theme]} {
-	    ttk::frame $toolframe
-	    set sep [ttk::separator $toolframe.sep -orient horizontal]
-	} else {
-	    frame $toolframe -relief flat -borderwidth 0 -takefocus 0 \
-		-highlightthickness 0 -background $bg
-	    set sep [Separator::create $toolframe.sep -orient horizontal -background $bg]
-	}
+        if {[Widget::theme]} {
+            ttk::frame $toolframe
+            set sep [ttk::separator $toolframe.sep -orient horizontal]
+        } else {
+            frame $toolframe -relief flat -borderwidth 0 -takefocus 0 \
+                -highlightthickness 0 -background $bg
+            set sep [Separator::create $toolframe.sep -orient horizontal -background $bg]
+        }
         pack $sep -fill x
     }
     if {[Widget::theme]} {
-	set toolbar [ttk::frame $toolbar -padding 2]
+        set toolbar [ttk::frame $toolbar -padding 2]
     } else {
-	set toolbar [frame $toolbar -relief flat -borderwidth 2 \
-			 -takefocus 0 -highlightthickness 0 -background $bg]
+        set toolbar [frame $toolbar -relief flat -borderwidth 2 \
+                         -takefocus 0 -highlightthickness 0 -background $bg]
     }
     pack $toolbar -in $toolframe -anchor w -expand yes -fill x
     incr _widget($path,ntoolbar)
@@ -350,9 +386,9 @@ proc MainFrame::addindicator { path args } {
     variable _widget
 
     if {[string length [Widget::getoption $path -statusbarfont]]} {
-	set sbfnt [list -font [Widget::getoption $path -statusbarfont]]
+        set sbfnt [list -font [Widget::getoption $path -statusbarfont]]
     } else {
-	set sbfnt ""
+        set sbfnt ""
     }
 
     set index $_widget($path,nindic)
@@ -410,23 +446,23 @@ proc MainFrame::setmenustate { path tag state } {
 
     # First see if this is a real tag
     if { [info exists _widget($path,tagstate,$tag)] } {
-	if { ![string equal $state "disabled"] } {
-	    set _widget($path,tagstate,$tag) 1
-	} else {
-	    set _widget($path,tagstate,$tag) 0
-	}
-	foreach {menu entry} $_widget($path,tags,$tag) {
-	    set expression "1"
-	    foreach menutag $_widget($path,menutags,[list $menu $entry]) {
-		append expression " && $_widget($path,tagstate,$menutag)"
-	    }
-	    if { [expr $expression] } {
-		set state normal
-	    } else {
-		set state disabled
-	    }
-	    $menu entryconfigure $entry -state $state
-	}
+        if { ![string equal $state "disabled"] } {
+            set _widget($path,tagstate,$tag) 1
+        } else {
+            set _widget($path,tagstate,$tag) 0
+        }
+        foreach {menu entry} $_widget($path,tags,$tag) {
+            set expression "1"
+            foreach menutag $_widget($path,menutags,[list $menu $entry]) {
+                append expression " && $_widget($path,tagstate,$menutag)"
+            }
+            if { [expr $expression] } {
+                set state normal
+            } else {
+                set state disabled
+            }
+            $menu entryconfigure $entry -state $state
+        }
     }
     return
 }
@@ -495,7 +531,7 @@ proc MainFrame::_destroy { path } {
 
     # Unset all of the state vars associated with this main frame.
     foreach index [array names _widget $path,*] {
-	unset _widget($index)
+        unset _widget($index)
     }
 }
 
@@ -510,18 +546,18 @@ proc MainFrame::_create_menubar { path descmenu } {
     set top $_widget($path,top)
 
     foreach {v x} {mbfnt -menubarfont mefnt -menuentryfont} {
-	if {[string length [Widget::getoption $path $x]]} {
-	    set $v [list -font [Widget::getoption $path $x]]
-	} else {
-	    set $v ""
-	}
+        if {[string length [Widget::getoption $path $x]]} {
+            set $v [list -font [Widget::getoption $path $x]]
+        } else {
+            set $v ""
+        }
     }
 
     if {![Widget::theme] && $tcl_platform(platform) == "unix"} {
-	set menuopts [list -background [Widget::getoption $path -background] \
-			  -borderwidth 1]
+        set menuopts [list -background [Widget::getoption $path -background] \
+                          -borderwidth 1]
     } else {
-	set menuopts [list]
+        set menuopts [list]
     }
     set menubar [eval [list menu $top.menubar -tearoff 0] $menuopts $mbfnt]
     $top configure -menu $menubar
@@ -530,25 +566,25 @@ proc MainFrame::_create_menubar { path descmenu } {
     foreach {name tags menuid tearoff entries} $descmenu {
         set opt  [_parse_name $name]
         if {[string length $menuid]
-	    && ![info exists _widget($path,menuid,$menuid)] } {
+            && ![info exists _widget($path,menuid,$menuid)] } {
             # menu has identifier
-	    # we use it for its pathname, to enable special menu entries
-	    # (help, system, ...)
-	    set menu $menubar.$menuid
+            # we use it for its pathname, to enable special menu entries
+            # (help, system, ...)
+            set menu $menubar.$menuid
         } else {
-	    set menu $menubar.menu$count
-	}
+            set menu $menubar.menu$count
+        }
         eval [list $menubar add cascade] $opt [list -menu $menu]
         eval [list menu $menu -tearoff $tearoff] $menuopts $mefnt
         foreach tag $tags {
             lappend _widget($path,tags,$tag) $menubar $count
-	    # ericm@scriptics:  Add a tagstate tracker
-	    if { ![info exists _widget($path,tagstate,$tag)] } {
-		set _widget($path,tagstate,$tag) 1
-	    }
+            # ericm@scriptics:  Add a tagstate tracker
+            if { ![info exists _widget($path,tagstate,$tag)] } {
+                set _widget($path,tagstate,$tag) 1
+            }
         }
-	# ericm@scriptics:  Add mapping from menu items to tags
-	set _widget($path,menutags,[list $menubar $count]) $tags
+        # ericm@scriptics:  Add mapping from menu items to tags
+        set _widget($path,menutags,[list $menubar $count]) $tags
 
         if { [string length $menuid] } {
             # menu has identifier
@@ -583,13 +619,13 @@ proc MainFrame::_create_entries { path menu menuopts entries } {
         set tags [lindex $entry 2]
         foreach tag $tags {
             lappend _widget($path,tags,$tag) $menu $count
-	    # ericm@scriptics:  Add a tagstate tracker
-	    if { ![info exists _widget($path,tagstate,$tag)] } {
-		set _widget($path,tagstate,$tag) 1
-	    }
+            # ericm@scriptics:  Add a tagstate tracker
+            if { ![info exists _widget($path,tagstate,$tag)] } {
+                set _widget($path,tagstate,$tag) 1
+            }
         }
-	# ericm@scriptics:  Add mapping from menu items to tags
-	set _widget($path,menutags,[list $menu $count]) $tags
+        # ericm@scriptics:  Add mapping from menu items to tags
+        set _widget($path,menutags,[list $menu $count]) $tags
 
         if {[string equal $type "cascade"] || [string equal $type "cascad"]} {
             set menuid  [lindex $entry 3]
@@ -655,57 +691,57 @@ proc MainFrame::_parse_name { menuname } {
 
 # MainFrame::_parse_accelerator --
 #
-#	Given a key combo description, construct an appropriate human readable
-#	string (for display on as a menu accelerator) and the corresponding
-#	bind event.
+#        Given a key combo description, construct an appropriate human readable
+#        string (for display on as a menu accelerator) and the corresponding
+#        bind event.
 #
 # Arguments:
-#	desc	a list with the following format:
-#			?sequence? key
-#		sequence may be None, Ctrl, Alt, or CtrlAlt
-#		key may be any key
+#        desc        a list with the following format:
+#                        ?sequence? key
+#                sequence may be None, Ctrl, Alt, or CtrlAlt
+#                key may be any key
 #
 # Results:
-#	{accel event}	a list containing the accelerator string and the event
+#        {accel event}        a list containing the accelerator string and the event
 
 proc MainFrame::_parse_accelerator { desc } {
     if { [llength $desc] == 1 } {
-	set seq None
-	set key [string tolower [lindex $desc 0]]
-	# If the key is an F key (ie, F1, F2, etc), it has to be capitalized
-	if {[regexp {^f([1-9]|([12][0-9]|3[0-5]))$} $key]} {
-	    set key [string toupper $key]
-	}
+        set seq None
+        set key [string tolower [lindex $desc 0]]
+        # If the key is an F key (ie, F1, F2, etc), it has to be capitalized
+        if {[regexp {^f([1-9]|([12][0-9]|3[0-5]))$} $key]} {
+            set key [string toupper $key]
+        }
     } elseif { [llength $desc] == 2 } {
         set seq [lindex $desc 0]
         set key [string tolower [lindex $desc 1]]
-	# If the key is an F key (ie, F1, F2, etc), it has to be capitalized
-	if {[regexp {^f([1-9]|([12][0-9]|3[0-5]))$} $key]} {
-	    set key [string toupper $key]
-	}
+        # If the key is an F key (ie, F1, F2, etc), it has to be capitalized
+        if {[regexp {^f([1-9]|([12][0-9]|3[0-5]))$} $key]} {
+            set key [string toupper $key]
+        }
     } else {
-	return {}
+        return {}
     }
     switch -- $seq {
-	None {
-	    set accel "[string toupper $key]"
-	    set event "<Key-$key>"
-	}
-	Ctrl {
-	    set accel "Ctrl+[string toupper $key]"
-	    set event "<Control-Key-$key>"
-	}
-	Alt {
-	    set accel "Alt+[string toupper $key]"
-	    set event "<Alt-Key-$key>"
-	}
-	CtrlAlt {
-	    set accel "Ctrl+Alt+[string toupper $key]"
-	    set event "<Control-Alt-Key-$key>"
-	}
-	default {
-	    return -code error "invalid accelerator code $seq"
-	}
+        None {
+            set accel "[string toupper $key]"
+            set event "<Key-$key>"
+        }
+        Ctrl {
+            set accel "Ctrl+[string toupper $key]"
+            set event "<Control-Key-$key>"
+        }
+        Alt {
+            set accel "Alt+[string toupper $key]"
+            set event "<Alt-Key-$key>"
+        }
+        CtrlAlt {
+            set accel "Ctrl+Alt+[string toupper $key]"
+            set event "<Control-Alt-Key-$key>"
+        }
+        default {
+            return -code error "invalid accelerator code $seq"
+        }
     }
     return [list $accel $event]
 }
