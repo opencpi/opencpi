@@ -37,5 +37,5 @@
 Libraries=$(foreach l,bsv ocpi,$(OCPI_CDK_DIR)/lib/hdl/$(l))
 # Force the target.  Don't build for any others
 # override Target=xc5vsx95t-2-ff1136
-OocpiCores=$(OCPI_CDK_DIR)/lib/hdl/xfft_v7_1
+OcpiCores=$(OCPI_CDK_DIR)/lib/hdl/xfft_v7_1
 include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk

@@ -34,23 +34,26 @@
 #
 ########################################################################### #
 
+AT=@
 APPS=demoappC demoappE testpsd testddc
 # testwbr
-all: $(APPS)
 
 TARGETS=xc5vlx50t-1-ff1136 xc5vsx95t-2-ff1136 xc6vlx240t-1-ff1156
 
+all: $(APPS)
+
 .PHONY: $(APPS) clean
+
 $(APPS):
-	for a in $(APPS); do \
-		for t  in $(TARGETS); do \
-			make -C $$a Target=$$t; \
-		done; \
+	$(AT)for t  in $(TARGETS); do \
+		echo Making $@ for target $$t. ; \
+		make -C $@ Target=$$t; \
 	done
 
 clean:
-	for a in $(APPS); do \
+	$(AT)for a in $(APPS); do \
 		for t  in $(TARGETS); do \
+			echo Cleaning $$a for target $$t. ; \
 			make -C $$a Target=$$t clean; \
 		done \
 	done
