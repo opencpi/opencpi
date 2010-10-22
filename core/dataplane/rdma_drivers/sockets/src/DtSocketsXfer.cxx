@@ -73,7 +73,7 @@ using namespace OCPI::OS;
 
 OCPI::Util::VList SocketXferServices::m_map(0);
 
-#define SOCKET_RDMA_SUPPORT
+#undef SOCKET_RDMA_SUPPORT
 #ifdef SOCKET_RDMA_SUPPORT
 // Used to register with the data transfer system;
 SocketXferFactory *g_socketsFactory = new SocketXferFactory;

@@ -49,7 +49,7 @@
    07/20/04 - John Miller
    Initial version.
 
- * 
+ *
  *
  */
 
@@ -81,24 +81,30 @@ XferFactoryManager& XferFactoryManager::getFactoryManager()
 // Register the Data transfer class
 void XferFactoryManager::registerFactory( XferFactory* dt )
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
   insert_to_list( &m_registeredTransfers, dt, 64,8);
 }
 
 // Register the Data transfer class
 void XferFactoryManager::unregisterFactory( XferFactory* dt )
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
   remove_from_list( &m_registeredTransfers, dt);
 }
 
 
 // This method is used to retreive all of the available endpoints that have been registered
-// in the system.  Note that some of the endpoints may not be finalized. 
+// in the system.  Note that some of the endpoints may not be finalized.
 std::vector<std::string> XferFactoryManager::getListOfSupportedEndpoints()
 {
-  OCPI::OS::uint32_t default_ep_size = 10*1024*1024;
+  OCPI::OS::uint32_t default_ep_size = 1024*1024;
 
+  const char* env = getenv ( "OCPI_SMB_SIZE" );
+
+  if ( env && ( env [ 0 ] != 0 ) )
+  {
+    default_ep_size = atoi ( env );
+  }
 
   XferFactory* factory;
   std::vector<std::string> l;
@@ -112,7 +118,7 @@ std::vector<std::string> XferFactoryManager::getListOfSupportedEndpoints()
 
 
 bool XferFactory::supportsEndPoints(
-                                    std::string& end_point1, 
+                                    std::string& end_point1,
                                     std::string& end_point2 )
 {
 #ifndef NDEBUG
@@ -174,7 +180,7 @@ XferFactory* XferFactoryManager::find( const char* ep1, const char* ep2 )
 XferFactory* XferFactoryManager::find( std::string& ep1, std::string& ep2 )
 {
   XferFactory* factory;
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
 
   for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
     factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
@@ -204,7 +210,7 @@ XferFactoryManager::~XferFactoryManager()
 
 void XferFactoryManager::startup()
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
 
   // We will find any drivers that were statically registered and add them
   // to our list
@@ -225,7 +231,7 @@ void XferFactoryManager::startup()
 // Shuts down the transer sub-system
 void XferFactoryManager::shutdown()
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
   m_refCount--;
   if ( m_refCount == 0 ) {
     clearCache();
@@ -256,11 +262,11 @@ XferFactory::~XferFactory()
  *  TEMPLATE MANAGEMENT
  ******/
 
-// Constant declarations 
+// Constant declarations
 #define TLIST_INITIAL_SIZE  64
 #define TLIST_INCREMENT     8
 
-// Transfer Template List data entity 
+// Transfer Template List data entity
 struct template_list_item_
 {
   XferServices* xf_template;
@@ -290,7 +296,7 @@ void XferFactoryManager::clearCache()
     delete res;
   }
   m_resources.destroyList();
-  
+
 }
 
 int
@@ -329,7 +335,7 @@ XferFactoryManager::add_template(std::string& src, std::string& dst, XferService
 
   /* allocate memory for the template item */
   item = new TList_Item;
-    
+
   /* Set the reference count */
   item->rcount = 1;
 
@@ -359,7 +365,7 @@ XferFactoryManager::add_template(std::string& src, std::string& dst, XferService
 
 SMBResources* XferFactoryManager::findResource(const char* ep)
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
   for ( OCPI::OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
     SMBResources* res = static_cast<SMBResources*>(m_resources.getEntry(n));
     if ( res->sMemServices->getEndPoint()->end_point == ep ) {
@@ -374,23 +380,23 @@ void XferFactoryManager::deleteSMBResources(
                                             EndPoint* loc)
 {
 
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
 
-  SMBResources* sr;        
-  sr = findResource( loc->end_point.c_str() );  
+  SMBResources* sr;
+  sr = findResource( loc->end_point.c_str() );
   ocpiAssert( sr );
-  m_resources.remove(sr);  
+  m_resources.remove(sr);
   delete sr;
 }
 
 // create a transfer compatible SMB
-SMBResources* XferFactoryManager::createSMBResources( 
+SMBResources* XferFactoryManager::createSMBResources(
                                                      EndPoint* loc)
 
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
 
-  SMBResources* sr;        
+  SMBResources* sr;
   sr = findResource( loc->end_point.c_str() );
   if ( sr ) {
     return sr;
@@ -410,11 +416,11 @@ SMBResources* XferFactoryManager::createSMBResources(
   if ( !sr->sMemServices ) {
     throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
-     
+
   sr->sMemResourceMgr = CreateResourceServices();
   sr->sMemResourceMgr->createLocal( loc->size );
   OCPI::OS::uint64_t offset;
-  if ( sr->sMemResourceMgr->alloc( sizeof(ContainerComms), 
+  if ( sr->sMemResourceMgr->alloc( sizeof(ContainerComms),
                                    0, &offset) != 0 ) {
     throw OCPI::Util::EmbeddedException(  NO_MORE_SMB, loc->end_point.c_str() );
   }
@@ -435,7 +441,7 @@ SMBResources* XferFactoryManager::createSMBResources(
 
 
 // create a transfer compatible SMB
-SMBResources* XferFactoryManager::getSMBResources(        
+SMBResources* XferFactoryManager::getSMBResources(
                                                   EndPoint* ep )
 {
   ocpiAssert( ep );
@@ -452,10 +458,10 @@ SMBResources* XferFactoryManager::getSMBResources(
 
 
 // create a transfer compatible SMB
-SMBResources* XferFactoryManager::getSMBResources(        
+SMBResources* XferFactoryManager::getSMBResources(
                                                   std::string& ep)
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
 
   if ( ep.length() == 0 ) {
     throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, "Null Endpoint");
@@ -468,7 +474,7 @@ SMBResources* XferFactoryManager::getSMBResources(
     sr = new SMBResources;
   }
 
-  // Find the factory that knows how to create the shared memory block for 
+  // Find the factory that knows how to create the shared memory block for
   // this address
   std::string nuls;
   XferFactory* factory = find( ep, nuls );
@@ -484,13 +490,13 @@ SMBResources* XferFactoryManager::getSMBResources(
 }
 
 
-// This method makes a request to the 
+// This method makes a request to the
 bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 {
 
 #ifndef NDEBUG
-  printf("In makerequest from %s to %s\n", 
-         source->sMemServices->getEndPoint()->end_point.c_str(), 
+  printf("In makerequest from %s to %s\n",
+         source->sMemServices->getEndPoint()->end_point.c_str(),
          target->sMemServices->getEndPoint()->end_point.c_str() );
 #endif
 
@@ -502,9 +508,9 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 #endif
 
   /* Attempt to get or make a transfer template */
-  XferServices* ptemplate = 
-    XferFactoryManager::getFactoryManager().getService( 
-                                   source->sMemServices->getEndPoint(), 
+  XferServices* ptemplate =
+    XferFactoryManager::getFactoryManager().getService(
+                                   source->sMemServices->getEndPoint(),
                                    target->sMemServices->getEndPoint() );
   if ( ! ptemplate ) {
     ocpiAssert(0);
@@ -554,11 +560,11 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 // Statically available allocation routine
 std::string XferFactoryManager::allocateEndpoint(std::string& protocol, OCPI::OS::uint32_t *size)
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
-                
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
+
   XferFactory* factory;
   if ( protocol.length() == 0 ) {
-                
+
     // We will simply ask the first factory for an address
     factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, 0));
   }
@@ -566,7 +572,7 @@ std::string XferFactoryManager::allocateEndpoint(std::string& protocol, OCPI::OS
     std::string nuls;
     factory = find(protocol,nuls);
   }
-        
+
   if ( ! factory ) {
     return NULL;
   }
@@ -576,7 +582,7 @@ std::string XferFactoryManager::allocateEndpoint(std::string& protocol, OCPI::OS
 
 
 XferServices* XferFactoryManager::getService(
-                                             EndPoint *s_endpoint,                        
+                                             EndPoint *s_endpoint,
                                              EndPoint *t_endpoint)
 {
 
@@ -584,13 +590,13 @@ XferServices* XferFactoryManager::getService(
   SMBResources* target_info;
   XferServices* pxfer;
 
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
 
   /* Check to see if we already have a transfer template */
   if (get_template(s_endpoint->end_point.c_str(), t_endpoint->end_point.c_str(), pxfer)) {
 
     // Find the factory that supports the endpoints
-    XferFactory* factory = find( s_endpoint->end_point, 
+    XferFactory* factory = find( s_endpoint->end_point,
                                                      t_endpoint->end_point);
     if ( factory == NULL ) {
       printf("Enpoint connection, %s to %s not supported\n", s_endpoint->end_point.c_str(),
@@ -621,7 +627,7 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
   SMBResources* target_info;
   XferServices* pxfer;
 
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::AutoMutex guard ( m_mutex, true );
 
   /* Check to see if we already have a transfer template */
   if (get_template(source_sname.c_str(), target_sname.c_str(), pxfer)) {

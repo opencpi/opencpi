@@ -446,7 +446,7 @@ bool InputBuffer::isEmpty()
   }
 #endif
 
-#ifndef NDEBUG
+#ifdef DEBUG_L2
   printf("Shadow(%d), Buffer state = %x\n", (isShadow() == true) ? 1:0, state->bufferFull );
 #endif
 
