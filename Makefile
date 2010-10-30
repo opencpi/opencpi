@@ -35,15 +35,21 @@
 ########################################################################### #
 
 
+#$(info $(shell pwd))
+#empty:=
+#space:=$(empty) $(empty)
+#$(info $(notdir a/b$$(space)v/h))
+
 
 ifneq ($(OCPI_OS),)
 SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
 endif
 
 # defaults
-OCPI_BASE_DIR := $(shell pwd)
+OCPI_BASE_DIR :=
+OCPI_ABS_DIR := $(shell pwd|sed 's/ /\\ /g')
 CLIENT_IDL_ONLY := 1
-LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(OCPI_BASE_DIR)/lib
+LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(OCPI_ABS_DIR)/lib
 export LD_LIBRARY_PATH
 export CLIENT_IDL_ONLY
 export OCPI_BASE_DIR
@@ -143,27 +149,34 @@ prims:
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 
+everything: packages rcc hdl
 compile build: $(PACKAGES)
 packages: $(PACKAGES)
 
 $(PACKAGES):
-	if test -f $@/Makefile.ocpi ; then \
-		$(MAKE) -C $@ $(SYSTEMOPTION) -f Makefile.ocpi ; \
+	$(AT)if test -f $@/Makefile.ocpi ; then \
+		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f Makefile.ocpi ; \
 	else \
-		$(MAKE) -C $@ $(SYSTEMOPTION) -f ../../../Makefile.ocpi.for-pkg ; \
+		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)Makefile.ocpi.for-pkg ; \
 	fi
 
 clean distclean:
-	for package in $(ALLPACKAGES) ; do \
-		if test -f $$package/Makefile.ocpi ; then \
-			$(MAKE) -C $$package -f Makefile.ocpi $@ ; \
+	$(AT)$(foreach p,$(ALLPACKAGES),\
+		if test -f $p/Makefile.ocpi ; then \
+			$(MAKE) $(call DescendMake,$p) -f Makefile.ocpi $@ ; \
 		else \
-			$(MAKE) -C $$package -f ../../../Makefile.ocpi.for-pkg $@ ; \
+			$(MAKE) $(call DescendMake,$p) -f $(call AdjustRelative,$p,)Makefile.ocpi.for-pkg $@ ; \
 		fi ; \
-	done
+	)
 	find . -name '*~' -exec rm {} \;
 	-rm -f diff diff.q
 	-rm -f *.exe *.obj *.o *.ilk *.sbr *.suo *.sln *.pdb *.bsc *~
+	-rm -r -f lib
+
+cleaneverything: clean
+	make -C hdl/prims clean
+	make -C components clean
+	make -C hdl/apps clean
 
 tar:
 	tar cvf ocpi.tar MakeVars.ocpi Makefile.ocpi Makefile.ocpi.for-* $(ALLPACKAGES)

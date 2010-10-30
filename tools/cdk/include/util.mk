@@ -40,7 +40,9 @@ __UTIL_MK__=x
 # Allow us to include this early by establishing the default initial target (all).
 all:
 Cwd=$(realpath .)
-CwdName=$(notdir $(Cwd))
+CwdWords=$(subst /, ,$(Cwd))
+CwdName=$(word $(words $(CwdWords)),$(CwdWords))
+#$(info cwd $(Cwd) words =$(CwdWords)= name $(CwdName))
 Models=xm rcc hdl
 Model=$(strip $(subst ., ,$(suffix $(CwdName))))
 AT=@

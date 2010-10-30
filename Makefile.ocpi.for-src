@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -38,13 +37,13 @@
 
 all: objects
 
-include $(OCPI_BASE_DIR)/MakeVars.ocpi
+include $(OCPI_BASE_DIR)MakeVars.ocpi
 ifneq ($(OCPI_OUT_DIR),)
 OBJDIR = ../../$(OCPI_OUT_DIR)
 else
 OBJDIR = .
 endif
-include $(OCPI_BASE_DIR)/Makefile.ocpi.common
+include $(OCPI_BASE_DIR)Makefile.ocpi.common
 
 ifneq ($(wildcard ../../Makefile.ocpi.imports),)
 include ../../Makefile.ocpi.imports
@@ -86,7 +85,7 @@ CPPDEPENDS = $(patsubst %.cpp,%.d,$(CPPSOURCES))
 .PHONY: objdir objects depends generated clean distclean cleanup distcleanup
 
 objdir:
-	if test "x$(OCPI_OUT_DIR)" != "x" ; then mkdir -p $(OBJDIR) ; fi
+	$(AT)if test "x$(OCPI_OUT_DIR)" != "x" -a ! -d $(OBJDIR) ; then echo Creating object directory $(OBJDIR); mkdir -p $(OBJDIR) ; fi
 
 depends: $(CDEPENDS) $(CXXDEPENDS) $(CPPDEPENDS)
 generated: depends

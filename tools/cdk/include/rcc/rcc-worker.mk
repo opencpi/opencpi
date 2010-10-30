@@ -64,7 +64,7 @@ ArtifactFile=$(BinaryFile)
 ArtifactXmlFile = $(GeneratedDir)/$(word 1,$(Workers))_art.xml
 GCC=gcc
 GCCLINK=gcc
-$(info Target is $(Target))
+#$(info Target is $(Target))
 ifeq ($(Target),Linux-MCS_864x)
 GCC=/opt/timesys/toolchains/ppc86xx-linux/bin/ppc86xx-linux-gcc
 GCCLINK=$(GCC)

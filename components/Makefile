@@ -62,6 +62,10 @@ Implementations = \
 HdlTargets=xc5vsx95t-2-ff1136 xc5vlx50t-1-ff1136 xc6vlx240t-1-ff1156 
 #  xc5vlx330t-2-ff1738
 
-RccTargets=$(OCPI_RUNTIME_HOST)
+ifndef OCPI_RUNTIME_HOST
+RccTargets=$(HostTarget)
+else
+RccTargets=$(OCPI_RUINTIME_HOST)
+endif
 
 include $(OCPI_CDK_DIR)/include/lib.mk

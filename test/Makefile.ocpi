@@ -44,27 +44,26 @@ TESTS_TO_BUILD_1 = $(dir $(wildcard */*/Makefile.ocpi))
 TESTS_TO_BUILD_2 = $(dir $(shell find . -name Makefile -print))
 
 .PHONY: test
-.EXPORT_ALL_VARIABLES:
-RUN_VIA_MAKEFILE=1
+export RUN_VIA_MAKEFILE=1
 
 build:
-	for dir in $(TESTS_TO_BUILD_1) ; do \
-		$(MAKE) -C $$dir -f Makefile.ocpi || exit 1 ; \
-	done
-	for dir in $(TESTS_TO_BUILD_2) ; do \
-		$(MAKE) -C $$dir -f Makefile || exit 1 ; \
-	done
+	$(AT)set -e;\
+		$(foreach dir,$(TESTS_TO_BUILD_1),\
+			$(MAKE) $(call DescendMake,$(dir)) -f Makefile.ocpi;)
+	$(AT)set -e;\
+		$(foreach dir,$(TESTS_TO_BUILD_2),\
+			$(MAKE) $(call DescendMake,$(dir)) -f Makefile;)
 
 test:
 	./run-all-tests
 
 clean:
-	for dir in $(TESTS_TO_BUILD_1) ; do \
-		$(MAKE) -C $$dir -f Makefile.ocpi clean || exit 1 ; \
-	done
-	for dir in $(TESTS_TO_BUILD_2) ; do \
-		$(MAKE) -C $$dir -f Makefile clean || exit 1 ; \
-	done
+	$(AT)set -e;\
+		$(foreach dir,$(TESTS_TO_BUILD_1),\
+			$(MAKE) $(call DescendMake,$(dir)) -f Makefile.ocpi clean;)
+	$(AT)set -e;\
+		$(foreach dir,$(TESTS_TO_BUILD_2),\
+			$(MAKE) $(call DescendMake,$(dir)) -f Makefile clean;)
 
 distclean: clean
 	rm -rf log-*

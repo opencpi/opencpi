@@ -41,22 +41,20 @@
 # Else (when called directly), load MakeVars.ocpi.
 #
 
-ifeq ($(OCPI_OS),)
-include ../../../MakeVars.ocpi
-endif
+include $(OCPI_BASE_DIR)MakeVars.ocpi
 
 #
 # These must exist natively on the build host.  Assume that the build host
 # is Linux, and that it was built using $(OCPI_OUT_DIR)=linux-bin.
 #
 
-OCPI_RCC_BINDER = $(OCPI_BASE_DIR)/tools/local/binder/$(OCPI_OS)-bin/ocpi-rcc-binder
+OCPI_RCC_BINDER = $(OCPI_BASE_DIR)tools/local/binder/$(OCPI_OUT_DIR)/ocpi-rcc-binder
 DO_OCPI_RCC_BINDER=\
-  export $(ENV)=$(OCPI_BASE_DIR)/lib/$(OCPI_OS)-bin;\
+  export $(OCPI_DYLIB_ENV)=$(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR);\
   $(OCPI_RCC_BINDER)
-OCPI_RCC_GEN = $(OCPI_BASE_DIR)/tools/local/binder/$(OCPI_OS)-bin/ocpi-rcc-gen
+OCPI_RCC_GEN = $(OCPI_BASE_DIR)tools/local/binder/$(OCPI_OUT_DIR)/ocpi-rcc-gen
 DO_OCPI_RCC_GEN=\
-  export $(ENV)=$(OCPI_BASE_DIR)/lib/$(OCPI_OS)-bin;\
+  export $(OCPI_DYLIB_ENV)=$(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR);\
    $(OCPI_RCC_GEN)
 CFLAGS += -I.
 
@@ -64,7 +62,7 @@ ifeq ($(shell if test -x $(OCPI_RCC_BINDER) ; then echo "ok" ; fi),ok)
 ifeq ($(OCPI_OS),linux)
 EXT=so
 ENV=LD_LIBRARY_PATH
-else ifeq ($(OCPI_OS),macos)
+else ifeq ($(OCPI_OS),darwin)
 EXT=dylib
 ENV=DYLD_LIBRARY_PATH
 else
@@ -75,7 +73,7 @@ ifeq ($(OCPI_OUT_DIR),)
 OCPI_OUT_DIR=.
 endif
 
-all: objdir $(OCPI_OUT_DIR)/FileCopy.zip
+all: $(OCPI_OUT_DIR)/FileCopy.zip | $(OCPI_OUT_DIR)
 
 ifeq ($(OCPI_OS),vxworksdkm)
 SGAC_FILES = $(OCPI_BASE_DIR)/core/sca/sgac/$(OCPI_OUT_DIR)/ocpi-generic-assy-controller.out \
@@ -84,8 +82,8 @@ else
 SGAC_FILES = $(OCPI_BASE_DIR)/core/sca/sgac/$(OCPI_OUT_DIR)/ocpi-generic-assy-controller
 endif
 
-objdir:
-	if test "x$(OCPI_OUT_DIR)" != "x." ; then mkdir -p $(OCPI_OUT_DIR) ; fi
+$(OCPI_OUT_DIR):
+	$(AT)echo Creating object directory $(OCPI_OUT_DIR); mkdir -p $(OCPI_OUT_DIR)
 
 $(OCPI_OUT_DIR)/FileCopy.zip: $(OCPI_OUT_DIR)/FileSource.zip $(OCPI_OUT_DIR)/FileSink.zip $(OCPI_OUT_DIR)/FileTee.zip $(SGAC_FILES)
 	-rm -f $@
@@ -118,11 +116,11 @@ FileSink.h: output/FileSink.scd.xml output/FileSinkComponent.prf.xml
 FileTee.h: output/FileTee.scd.xml output/FileTeeComponent.prf.xml
 	$(DO_OCPI_RCC_GEN) --name FileTee --gen-header-file=$@ $<
 
-$(OCPI_OUT_DIR)/FileSource.o: FileSource.c FileSource.h
-$(OCPI_OUT_DIR)/FileSink.o: FileSink.c FileSink.h
-$(OCPI_OUT_DIR)/FileTee.o: FileTee.c FileTee.h
+$(OCPI_OUT_DIR)/FileSource.o: FileSource.c FileSource.h | $(OCPI_OUT_DIR)
+$(OCPI_OUT_DIR)/FileSink.o: FileSink.c FileSink.h | $(OCPI_OUT_DIR)
+$(OCPI_OUT_DIR)/FileTee.o: FileTee.c FileTee.h | $(OCPI_OUT_DIR)
 
-ifneq ($(filter linux macos,$(OCPI_OS)),)
+ifneq ($(filter linux darwin,$(OCPI_OS)),)
 
 ifeq ($(OCPI_CROSS_HOST),)
 CC = gcc

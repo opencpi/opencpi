@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -137,7 +136,10 @@ endif
 .PHONY: objdir executables depends generated clean distclean cleanup distcleanup
 
 objdir:
-	if test "x$(OCPI_OUT_DIR)" != "x" ; then mkdir -p $(OBJDIR) ; fi
+	$(AT)if test "x$(OCPI_OUT_DIR)" != "x" -a ! -d $(OBJDIR); then \
+		echo Creating object directory $(OBJDIR); \
+		mkdir -p $(OBJDIR) ; \
+	fi
 
 depends: $(CDEPENDS) $(CXXDEPENDS)
 generated: depends $(ALLGENERATED)
@@ -176,6 +178,10 @@ else
 ifneq ($(filter linux darwin,$(OCPI_OS)),)
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 $(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
+#$(info $(OBJDIR) ccc)
+#$(info $(ORIGEXECUTABLES) eee)
+#$(info $(LIBDIR) lll)
+#$(info $(wildcard $(LIBDIR)/lib*.$(SO)) xxx)
 $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(LIBDIR)/lib*.$(SO)) \
 	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(patsubst %,lib%.$(SO),$(notdir $(ALLLIBS))))
 else

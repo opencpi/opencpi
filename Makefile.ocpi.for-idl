@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -75,7 +74,10 @@ endif
 .PHONY: objdir objects depends generated clean distclean cleanup distcleanup
 
 objdir:
-	if test "x$(OCPI_OUT_DIR)" != "x" ; then mkdir -p $(OBJDIR) ; fi
+	$(AT)if test "x$(OCPI_OUT_DIR)" != "x" -a ! -d $(OBJDIR); then \
+		echo Creating object directory $(OBJDIR). ; \
+		mkdir -p $(OBJDIR) ;\
+	fi
 
 depends: $(IDLHEADERS) $(IDLDEPENDS)
 generated: depends $(IDLSOURCES)

@@ -133,13 +133,34 @@ XstOptions += -sd { .. \
                     $(foreach l,$(OcpiLibraries),$(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(Target)))\
 		    $(foreach c,$(OcpiCores),$(call FindRelative,$(TargetDir),$(c)/$(Target))) \
                   }
-$(foreach l,$(Libraries:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found.)))
-$(foreach l,$(OcpiCores:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "OcpiCores" variable, was not found.)))
+XstNgcOptions += $(foreach c,$(OcpiCores),-sd $(call FindRelative,$(TargetDir),$(c)/$(Target)))
 
+#$(foreach l,$(Libraries:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found.)))
+#$(foreach l,$(OcpiCores:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "OcpiCores" variable, was not found.)))
+
+ifndef OCPI_XILINX_TOOLS_DIR
+XilinxVersions=$(shell echo $(wildcard /opt/Xilinx/*/ISE_DS) | tr ' ' '\n' | sort -r)
+OCPI_XILINX_TOOLS_DIR=$(firstword $(XilinxVersions))
+endif
 Xilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh
 Compile=\
+  $(foreach l,$(Libraries:%=%/$(call LibraryAccessTarget,$(Target))),\
+     $(if $(wildcard $(l)),,\
+          $(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found.))) \
+  $(foreach l,$(OcpiCores:%=%/$(call LibraryAccessTarget,$(Target))),\
+     $(if $(wildcard $(l)),,\
+          $(error Error: Specified library: "$(l)", in the "OcpiCores" variable, was not found.))) \
   $(AT)echo Building $@  with top == $(Top)\; details in $(TargetDir)/xst.out.;\
   cd $(TargetDir);$(XstMakePrj)$(XstMakeLso)$(XstMakeIni)$(XstMakeScr)\
   ($(Xilinx) ; $(TIME) xst -ifn $(XstScrFile)) > xst.out;\
   grep -i error xst.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
-  if grep -q 'Number of errors   :    0 ' xst.out; then exit 0; else exit 1; fi
+  if grep -q 'Number of errors   :    0 ' xst.out; then \
+    exit 0; \
+  else \
+    exit 1; \
+  fi
+
+# in case we need to run ngcbuild after xst
+#    echo ngcbuild $(XstNgcOptions) temp.ngc $(Core).ngc; \
+#    echo ngcbuild -verbose $(XstNgcOptions) temp.ngc $(Core).ngc; \
+#

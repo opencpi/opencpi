@@ -140,7 +140,8 @@ rcc: specs | $(OutDir)lib/rcc
 hdl: specs | $(OutDir)lib/hdl $(OutDir)gen/hdl
 	$(call BuildModel,hdl)
 	$(AT)echo Building HDL stub libraries for this component library
-	$(AT)$(MAKE) -C $(OutDir)gen/hdl -L -f $(abspath $(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) LibName=components
+	$(AT)$(MAKE) -C $(OutDir)gen/hdl -L -f $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk \
+		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) LibName=components
 	$(AT)echo Exporting the stub library $(foreach t,$(HdlTargets),$(call LibraryAccessTarget,$(t)))
 	$(AT)$(foreach f,$(sort $(foreach t,$(HdlTargets),$(call LibraryAccessTarget,$(t)))),\
 		rm -r -f $(LibDir)/hdl/$(f);\

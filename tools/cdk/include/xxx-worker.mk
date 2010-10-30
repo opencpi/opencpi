@@ -72,13 +72,15 @@ ObjectFiles=$(foreach s,$(AuthoredSourceFiles) $(GeneratedSourceFiles),\
 #OtherLibraries=
 
 ToolsTarget=$(HostTarget)
-ToolsDir=$(OCPI_CDK_DIR)/bin/$(OCPI_BUILD_HOST)
+ToolsDir=$(OCPI_CDK_DIR)/bin/$(HostTarget)
 IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
 CleanFiles += $(GeneratedSourceFiles)
 override XmlIncludeDirs:=. $(XmlIncludeDirs)
 # We assume all outputs are in the generated directory, so -M goes in that directory
 ifeq ($(HostSystem),darwin)
 DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/../lib/$(HostTarget)-bin
+else
+DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/../lib/$(HostTarget)-bin
 endif
 OcpiGen= $(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(GeneratedDir)/$(@F).deps -D $(GeneratedDir) $(XmlIncludeDirs:%=-I%)
 

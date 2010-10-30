@@ -80,7 +80,11 @@ all: $(LibDir)/$(call LibraryAccessTarget,$(Target))/$(call LibraryFileTarget,$(
 
 $(LibDir)/$(call LibraryAccessTarget,$(Target))/$(call LibraryFileTarget,$(Target)): $(DefsFiles) | $(GeneratedDir)/hdl
 	$(AT)echo Building HDL stub libraries for this component library
-	$(AT)$(MAKE) -C $(OutDir)gen/hdl -L -f $(abspath $(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk LibName=work SourceFiles=$(call AdjustRelative2,$(DefsFiles)) OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) Targets=$(call LibraryAccessTarget,$(Target)) LibName=app
+	$(AT)$(MAKE) -C $(OutDir)gen/hdl -L \
+		-f $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk LibName=work \
+		SourceFiles=$(call AdjustRelative2,$(DefsFiles)) \
+		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) \
+		Targets=$(call LibraryAccessTarget,$(Target)) LibName=app
 	$(AT)$(foreach f,$(call LibraryAccessTarget,$(Target)),\
 		echo Exporting the stub library for the app $(AppName) target $(f);\
 		rm -r -f $(LibDir)/$(f);\

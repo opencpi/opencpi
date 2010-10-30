@@ -7,7 +7,7 @@
 #define CONFIG_H
 
 //#define _CPU_POWERPC
-//#define _CPU_IA64
+#define _CPU_IA64
 
 #include <stdint.h>
 

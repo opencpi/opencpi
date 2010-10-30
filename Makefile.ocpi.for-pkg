@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -42,25 +41,26 @@ ifneq ($(OCPI_OS),)
 SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
 endif
 
-include $(OCPI_BASE_DIR)/MakeVars.ocpi
+include $(OCPI_BASE_DIR)MakeVars.ocpi
 ifneq ($(OCPI_OUT_DIR),)
 OBJDIR = $(OCPI_OUT_DIR)
 else
 OBJDIR = .
 endif
-include $(OCPI_BASE_DIR)/Makefile.ocpi.common
+include $(OCPI_BASE_DIR)Makefile.ocpi.common
 
 ifneq ($(wildcard Makefile.ocpi.imports),)
 include Makefile.ocpi.imports
 endif
 
-PACKAGE = $(notdir $(shell pwd))
+PACKAGE = $(shell pwd|sed 's-.*/\([^/]*$$\)-\1-')
+#$(info PACKAGE $(PACKAGE))
 WINLIB = $(patsubst %,$(OBJDIR)/%.lib,$(PACKAGE))
 WINDLL = $(patsubst %,$(OBJDIR)/%.dll,$(PACKAGE))
-UNIXLIB = $(patsubst %,$(OBJDIR)/lib%.a,$(PACKAGE))
-UNIXSHLIB = $(patsubst %,$(OBJDIR)/lib%.$(SO),$(PACKAGE))
-EXPORTSHLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB))
-EXPORTLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXLIB))
+UNIXLIB = $(OBJDIR)/lib$(PACKAGE).a
+UNIXSHLIB = $(OBJDIR)/lib$(PACKAGE).$(SO)
+EXPORTSHLIB=$(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXSHLIB))
+EXPORTLIB=$(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXLIB))
 VXWORKSDKM = $(patsubst %,$(OBJDIR)/lib%.out,$(PACKAGE))
 
 ifeq ($(OCPI_OS),winnt)
@@ -129,20 +129,20 @@ ifeq ($(findstring bin,$(EXCLUDE_FACILITIES)),bin)
 bin: lib
 else
 bin: lib
-	if test -d bin/src ; then \
+	$(AT)if test -d bin/src ; then \
 		if test -f bin/src/Makefile.ocpi ; then \
-			$(MAKE) -C bin/src -f Makefile.ocpi $(SYSTEMOPTION) ; \
+			$(MAKE) $(call DescendMake2,bin/src) -f Makefile.ocpi $(SYSTEMOPTION) ; \
 		else \
-			$(MAKE) -C bin/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-bin $(SYSTEMOPTION) ; \
+			$(MAKE) $(call DescendMake2,bin/src) -f ../../$(OCPI_BASE_DIR)Makefile.ocpi.for-bin $(SYSTEMOPTION) ; \
 		fi ; \
 	fi
 endif
 
 lib: objects
-	if test -f Makefile.ocpi ; then \
+	$(AT)if test -f Makefile.ocpi ; then \
 		$(MAKE) -f Makefile.ocpi $(PACKAGELIB) $(SYSTEMOPTION) ; \
 	else \
-		$(MAKE) -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-pkg $(SYSTEMOPTION) $(PACKAGELIB) ; \
+		$(MAKE) -f $(OCPI_BASE_DIR)Makefile.ocpi.for-pkg $(SYSTEMOPTION) $(PACKAGELIB) ; \
 	fi
 
 ifneq ($(filter linux darwin,$(OCPI_OS)),)
@@ -151,19 +151,20 @@ $(UNIXLIB): $(OBJECTS)
 	ar r $@ $(OBJECTS)
 
 $(EXPORTSHLIB): $(UNIXSHLIB)
-	if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir $(OCPI_BASE_DIR)/lib; fi
-	if ! test -d $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); then mkdir $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); fi
-	cp -p $(UNIXSHLIB) $@
+	if ! test -d $(OCPI_BASE_DIR)lib; then mkdir $(OCPI_BASE_DIR)lib; fi
+	if ! test -d $(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR); then mkdir $(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR); fi
+	cp -p $(UNIXSHLIB) "$@"
 
 $(EXPORTLIB): $(UNIXLIB)
-	if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir $(OCPI_BASE_DIR)/lib; fi
-	if ! test -d $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); then mkdir $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); fi
-	cp -p $(UNIXLIB) $@
+	if ! test -d $(OCPI_BASE_DIR)lib; then mkdir $(OCPI_BASE_DIR)lib; fi
+	if ! test -d $(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR); then mkdir $(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR); fi
+	cp -p $(UNIXLIB) "$@"
 
+# Note the "sort" below.  It gets rid of duplicates, but messes with the ordering.
 $(UNIXSHLIB): $(OBJECTS)
-	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o $@ $(OBJECTS) \
+	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(OBJECTS) \
 	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
-		$(addprefix -L,$(dir $(SYSLIBS))) \
+		$(sort $(addprefix -L,$(dir $(SYSLIBS)))) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS)))
 endif
 
@@ -219,75 +220,78 @@ $(VXWORKSDKM): $(OBJECTS)
 endif
 
 objects: generated
-	if test "x$(OCPI_OUT_DIR)" != "x" ; then mkdir -p $(OCPI_OUT_DIR) ; fi
-	for facility in $(GENERATED) ; do \
+	$(AT)if test "x$(OCPI_OUT_DIR)" != "x" -a ! -d $(OCPI_OUT_DIR); then \
+		echo Creating object directory $(OCPI_OUT_DIR); \
+		mkdir -p $(OCPI_OUT_DIR) ; \
+	fi
+	$(AT)for facility in $(GENERATED) ; do \
 		if test -d $$facility/idl ; then \
 			if test -f $$facility/idl/Makefile.ocpi ; then \
-				$(MAKE) -C $$facility/idl -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 			else \
-				$(MAKE) -C $$facility/idl -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/idl) -f ../../$(OCPI_BASE_DIR)Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done && \
 	for facility in $(FACILITIES) ; do \
 		if test -d $$facility/src ; then \
 			if test -f $$facility/src/Makefile.ocpi ; then \
-				$(MAKE) -C $$facility/src -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 			else \
-				$(MAKE) -C $$facility/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/src) -f ../../$(OCPI_BASE_DIR)Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done
 
 generated:
-	for facility in $(GENERATED) ; do \
+	$(AT)for facility in $(GENERATED) ; do \
 		if test -d $$facility/idl ; then \
 			if test -f $$facility/idl/Makefile.ocpi ; then \
-				$(MAKE) -C $$facility/idl -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 			else \
-				$(MAKE) -C $$facility/idl -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/idl) -f ../../$(OCPI_BASE_DIR)Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done && \
 	for facility in $(FACILITIES) ; do \
 		if test -d $$facility/src ; then \
 			if test -f $$facility/src/Makefile.ocpi ; then \
-				$(MAKE) -C $$facility/src -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 			else \
-				$(MAKE) -C $$facility/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/src) -f ../../$(OCPI_BASE_DIR)Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done && \
 	if test -d bin/src ; then \
 		if test -f bin/src/Makefile.ocpi ; then \
-			$(MAKE) -C bin/src -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+			$(MAKE) $(call DescendMake2,bin/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 		else \
-			$(MAKE) -C bin/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-bin $(SYSTEMOPTION) $@ ; \
+			$(MAKE) $(call DescendMake2,bin/src) -f ../../$(OCPI_BASE_DIR)Makefile.ocpi.for-bin $(SYSTEMOPTION) $@ ; \
 		fi ; \
 	fi
 
 clean distclean:
-	for facility in $(FACILITIES) $(EXCLUDE_FACILITIES) ; do \
+	$(AT)for facility in $(FACILITIES) $(EXCLUDE_FACILITIES) ; do \
 		if test -d $$facility/idl ; then \
 			if test -f $$facility/idl/Makefile.ocpi ; then \
-				$(MAKE) -C $$facility/idl -f Makefile.ocpi $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $@ ; \
 			else \
-				$(MAKE) -C $$facility/idl -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-idl $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/idl) -f ../../$(OCPI_BASE_DIR)Makefile.ocpi.for-idl $@ ; \
 			fi ; \
 		fi && \
 		if test -d $$facility/src ; then \
 			if test -f $$facility/src/Makefile.ocpi ; then \
-				$(MAKE) -C $$facility/src -f Makefile.ocpi $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $@ ; \
 			else \
-				$(MAKE) -C $$facility/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-src $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/src) -f ../../$(OCPI_BASE_DIR)Makefile.ocpi.for-src $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done && \
 	if test -d bin/src ; then \
 		if test -f bin/src/Makefile.ocpi ; then \
-			$(MAKE) -C bin/src -f Makefile.ocpi $@ ; \
+			$(MAKE) $(call DescendMake2,bin/src) -f Makefile.ocpi $@ ; \
 		else \
-			$(MAKE) -C bin/src -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-bin $@ ; \
+			$(MAKE) $(call DescendMake2,bin/src) -f ../../$(OCPI_BASE_DIR)Makefile.ocpi.for-bin $@ ; \
 		fi ; \
 	fi
 	-rm -f *vxdkm-ctdc* *.vxe *.exe *.obj *.out *.map *.o *.so *.dylib *.ilk *.sbr *.suo *.sln *.pdb *.bsc core* *.d *~
@@ -296,5 +300,4 @@ clean distclean:
 	-rm -f $(WINLIB) $(WINDLL) $(UNIXLIB) $(UNIXSHLIB) $(VXWORKSDKM)
 	-if test "x$(OCPI_OUT_DIR)" != "x" ; then rm -rf $(OCPI_OUT_DIR) ; fi
 	find . -name '*~' -exec rm {} \;
-	rm -rf $(OCPI_BASE_DIR)/lib/*.so;
 

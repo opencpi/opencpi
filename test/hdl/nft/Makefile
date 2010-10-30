@@ -34,10 +34,17 @@
 #
 ########################################################################### #
 
+ifndef OCPI_OS
+OCPI_OS=$(shell uname -s | tr A-Z a-z)
+endif
 ifneq ($(OCPI_OS),darwin)
 DOSTATIC=-static
 endif
-all:
-	g++ $(DOSTATIC) -Wall -g nft.cxx -lpthread
+all: nft
+
+nft: nft.cxx
+	g++ -o $@ $(DOSTATIC) -Wall -g nft.cxx -lpthread
 
 clean:
+	rm -f nft
+

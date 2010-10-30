@@ -98,7 +98,7 @@ endif
 #		CompiledSourceFiles="$(CoreBlackBoxFile) $(OCPI_CDK_DIR)/include/hdl/onewire.v"\
 #		OCPI_CDK_DIR=$(OCPI_CDK_DIR)
 
-$(LibResults): $(CoreBlackBoxFile)
+$(sort $(LibResults)): $(CoreBlackBoxFile)
 	$(AT)echo Building core \"$(Core)\" stub/blackbox library for target \"$(Target)\" from \"$(CoreBlackBoxFile)\"
 	$(Compile)
 
@@ -123,9 +123,9 @@ install: | $(InstallDir)
 	$(foreach f,$(sort $(foreach t,$(Targets),$(call LibraryAccessTarget,$(t)))),\
 		rm -r -f $(InstallDir)/$(f);\
 		mkdir $(InstallDir)/$(f);\
-		cp -r -p $(OutDir)$(f)/$(LibName)/* $(InstallDir)/$(f);)
+		cp -r -p -L $(OutDir)$(f)/$(LibName)/* $(InstallDir)/$(f);)
 	$(AT)echo Installing core file for core $(Core)
 	$(foreach t,$(Targets),\
 		rm -r -f $(InstallDir)/$(t);\
 		mkdir $(InstallDir)/$(t);\
-		cp -r -p $(OutDir)$(t)/$(Core)$(BF) $(InstallDir)/$(t);)
+		cp -r -p -L $(OutDir)$(t)/$(Core)$(BF) $(InstallDir)/$(t);)

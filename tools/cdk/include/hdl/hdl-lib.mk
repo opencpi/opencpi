@@ -41,7 +41,7 @@
 # "Family" is used here when it isn't quite accurate.  We are really talking about pre-v6 and v6-post.
 # This file is xst-specific.  It should be split so the XST-specifics are elsewhere.
 ifndef LibName
-LibName=$(notdir $(abspath .))
+LibName=$(CwdName)
 endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
 Core=onewire

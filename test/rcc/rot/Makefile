@@ -35,14 +35,13 @@
 ########################################################################### #
 
 
-
 #
 # When called from test/Makefile.ocpi, MakeVars.ocpi has already been loaded.
 # Else (when called directly), load MakeVars.ocpi.
 #
 
 ifeq ($(OCPI_OS),)
-include ../../../MakeVars.ocpi
+include $(OCPI_BASE_DIR)MakeVars.ocpi
 endif
 
 #
@@ -50,36 +49,21 @@ endif
 # is Linux, and that it was built using $(OCPI_OUT_DIR)=linux-bin.
 #
 
-OCPI_RCC_BINDER=$(OCPI_BASE_DIR)/tools/local/binder/$(OCPI_OS)-bin/ocpi-rcc-binder
+OCPI_RCC_BINDER=$(OCPI_BASE_DIR)tools/local/binder/$(OCPI_OUT_DIR)/ocpi-rcc-binder
 DO_OCPI_RCC_BINDER=\
-  export $(ENV)=$(OCPI_BASE_DIR)/lib/$(OCPI_OS)-bin;\
+  export $(OCPI_DYLIB_ENV)=$(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR);\
   $(OCPI_RCC_BINDER)
-OCPI_RCC_GEN = $(OCPI_BASE_DIR)/tools/local/binder/$(OCPI_OS)-bin/ocpi-rcc-gen
+OCPI_RCC_GEN = $(OCPI_BASE_DIR)tools/local/binder/$(OCPI_OUT_DIR)/ocpi-rcc-gen
 DO_OCPI_RCC_GEN=\
-  export $(ENV)=$(OCPI_BASE_DIR)/lib/$(OCPI_OS)-bin;\
+  export $(OCPI_DYLIB_ENV)=$(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR);\
   $(OCPI_RCC_GEN)
 CFLAGS += -I.
+EXT=$(OCPI_LIB_EXT)
 
-ifeq ($(shell if test -x $(OCPI_RCC_BINDER) ; then echo "ok" ; fi),ok)
-ifeq ($(OCPI_OS),linux)
-EXT=so
-ENV=LD_LIBRARY_PATH
-else ifeq ($(OCPI_OS),macos)
-EXT=dylib
-ENV=DYLD_LIBRARY_PATH
-else
-EXT=out
-endif
-
-ifeq ($(OCPI_OUT_DIR),)
-OCPI_OUT_DIR=.
-endif
-
-$(info OCPI_OUT_DIR is $(OCPI_OUT_DIR))
 all: $(OCPI_OUT_DIR)/rot.zip | objdir $(OCPI_OUT_DIR)
 
 objdir $(OCPI_OUT_DIR):
-	if test "x$(@)" != "x." ; then mkdir -p $(@) ; fi
+	$(AT)if test "x$(@)" != "x." ; then echo Creating object directory $@; mkdir -p $@ ; fi
 
 
 $(OCPI_OUT_DIR)/rot.zip: $(OCPI_OUT_DIR)/rot.$(EXT) output/rot.scd.xml output/rot_SCD.prf.xml
@@ -93,10 +77,6 @@ rot.h: output/rot.scd.xml output/rot_SCD.prf.xml
 
 $(OCPI_OUT_DIR)/rot.o: rot.c rot.h | $(OCPI_OUT_DIR)
 
-$(info x-$(filter macos linux,$(OCPI_OS))-y)
-ifneq ($(filter macos linux,$(OCPI_OS)),)
-$(info z-$(filter macos linux,$(OCPI_OS))-y)
-
 ifeq ($(OCPI_CROSS_HOST),)
 CC = gcc
 else
@@ -108,8 +88,7 @@ $(OCPI_OUT_DIR)/%.$(EXT) : $(OCPI_OUT_DIR)/%.o
 
 $(OCPI_OUT_DIR)/%.o : %.c
 	$(CC) -fPIC -c -o $@ $(CFLAGS) $<
-else
-$(info yy-$(filter macos linux,$(OCPI_OS))-y)
+ifneq (,)
 WIND_HOME := /opt/WindRiver
 WIND_BASE := $(WIND_HOME)/vxworks-6.3
 WIND_HOST_TYPE := x86-linux2
@@ -130,12 +109,6 @@ $(OCPI_OUT_DIR)/%.o : %.c
 		-I/opt/WindRiver/vxworks-6.3/target/h \
 		-I/opt/WindRiver/vxworks-6.3/target/h/wrn/coreip \
 		-I. $<
-endif
-else
-#
-# $(OCPI_RCC_BINDER) does not exist.  Don't build this test.
-#
-all:
 endif
 
 clean:

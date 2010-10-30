@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -82,23 +81,30 @@ ifndef OCPI_OS
     OCPI_OS=$(shell uname -s | tr A-Z a-z)
   endif
 endif
+ifeq ($(OCPI_OS),darwin)
+  OCPI_DYLIB_ENV:=DYLD_LIBRARY_PATH
+  OCPI_DYLIB_EXT:=dylib
+else
+  OCPI_DYLIB_ENV:=LD_LIBRARY_PATH
+  OCPI_DYLIB_EXT:=so
+endif
 # #### Use Frank's directory if OCPI_BASE_DIR is not provided #################### #
 
-ifeq ($(OCPI_BASE_DIR),)
+ifeq ($(origin OCPI_BASE_DIR),undefined)
 
   ifeq ($(OCPI_OS),winnt)
-    OCPI_BASE_DIR = c:/Frank/soft/ocpi
+    OCPI_BASE_DIR = c:/Frank/soft/ocpi/
   endif
 
   ifeq ($(OCPI_OS),linux)
-    OCPI_BASE_DIR = /view/jmiller_ocpi/vobs/ocpi
+    OCPI_BASE_DIR = /view/jmiller_ocpi/vobs/ocpi/
   endif
 
   ifeq ($(OCPI_OS),vxworksdkm)
-    OCPI_BASE_DIR = c:/Frank/soft/ocpi
+    OCPI_BASE_DIR = c:/Frank/soft/ocpi/
   endif
 
-endif # End: ifeq "$(OCPI_BASE_DIR)" ""
+endif
 
 #
 # Location of the OCPI view.  Only used for "make diff" at this point.
@@ -141,7 +147,7 @@ endif
 #
 
 ifeq "$(MKDEPEND)" ""
-  MKDEPEND = $(OCPI_BASE_DIR)/mkdepend
+  MKDEPEND = $(OCPI_BASE_DIR)mkdepend
 endif
 
 #
@@ -306,6 +312,14 @@ endif # End: ifeq ($(OCPI_CORBA_ORB),TAO)
 #
 ifeq ($(OCPI_CORBA_ORB),OMNI)
 ORBSVCS=
+ifeq ($(OCPI_OMNI_BIN_DIR),)
+OCPI_OMNI_BIN_DIR:=$(patsubst %/,%,$(dir $(shell which omniidl)))
+OCPI_OMNI_IDL_DIR:=$(dir $(OCPI_OMNI_BIN_DIR))share/idl/omniORB
+OCPI_OMNI_INCLUDE_DIR:=$(dir $(OCPI_OMNI_BIN_DIR))include/omniORB4
+endif
+export OCPI_OMNI_BIN_DIR
+export OCPI_OMNI_IDL_DIR
+export OCPI_OMNI_INCLUDE_DIR
 endif
 
 # SCAVERSION: Can be either 2.2 or 2.2.2.
@@ -324,3 +338,14 @@ CFLAGS += -Wall -Wextra -Wfloat-equal -fno-strict-aliasing
 CXXFLAGS += -Wall -Wextra -Wfloat-equal -fno-strict-aliasing
 
 SCAVERSION = 2.2.2
+
+# function to add a ../ to pathnames, avoiding changing absolute ones
+#AdjustRelative2=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),../../$(patsubst ./%,%,$(filter-out .,$(i)))))
+#AdjustRelative1=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),..$(patsubst %,/%,$(patsubst ./%,%,$(filter-out .,$(i))))))
+# the argument is assumed to be relative
+AdjustRelative=$(foreach d,$(dir $(1)),$(if $(filter ./,$(d)),$(2)../,$(call AdjustRelative,$(d:%/=%),$(2)../)))
+TrimDir=$(if $(filter %/,$(1)),$(1:%/=%),$(1))
+DescendMake=$(foreach d,$(call TrimDir,$(1)),-C $(d) OCPI_BASE_DIR=$(call AdjustRelative,$(d),$(OCPI_BASE_DIR)))
+DescendMake2=-C $(1) OCPI_BASE_DIR=../../$(OCPI_BASE_DIR)
+DescendMake1=-C $(1) OCPI_BASE_DIR=../$(OCPI_BASE_DIR)
+export AT=@
