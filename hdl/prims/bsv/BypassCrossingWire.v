@@ -25,7 +25,6 @@
 
 module BypassCrossingWire(WGET, WVAL);
 
-   // synopsys template
    
    parameter width = 1;
             

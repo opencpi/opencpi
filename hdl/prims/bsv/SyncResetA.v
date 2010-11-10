@@ -19,8 +19,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 17872 $
-// $Date: 2009-09-18 14:32:56 +0000 (Fri, 18 Sep 2009) $
+// $Revision: 20862 $
+// $Date: 2010-06-07 18:20:35 +0000 (Mon, 07 Jun 2010) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
@@ -36,9 +36,9 @@ module SyncResetA (
                    CLK,
                    OUT_RST_N
                    );
-  
+
    parameter          RSTDELAY = 1  ; // Width of reset shift reg
-   
+
    input              CLK ;
    input              IN_RST_N ;
    output             OUT_RST_N ;
@@ -49,16 +49,16 @@ module SyncResetA (
 
    always @( posedge CLK or negedge IN_RST_N )
      begin
-        if (IN_RST_N == 0)
+        if (!IN_RST_N)
            begin
-              reset_hold <= `BSV_ASSIGNMENT_DELAY 0 ;
+              reset_hold <= `BSV_ASSIGNMENT_DELAY 'b0 ;
            end
         else
           begin
-             reset_hold <= `BSV_ASSIGNMENT_DELAY ( reset_hold << 1 ) | 'b1 ;
+             reset_hold <= `BSV_ASSIGNMENT_DELAY ( reset_hold << 1'b1 ) | 'b1 ;
           end
      end // always @ ( posedge CLK or negedge IN_RST_N )
-   
+
 `ifdef BSV_NO_INITIAL_BLOCKS
 `else // not BSV_NO_INITIAL_BLOCKS
    // synopsys translate_off
@@ -70,5 +70,5 @@ module SyncResetA (
      end
    // synopsys translate_on
 `endif // BSV_NO_INITIAL_BLOCKS
-   
+
 endmodule // SyncResetA
