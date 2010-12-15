@@ -60,7 +60,7 @@ static const char *rccTypes[] = {"none",
   "uint32_t", "uint16_t", "int64_t", "uint64_t", "RCCChar" };
 
 static void
-printSimple(FILE *f, Simple *t, const char *prefix, unsigned &offset, unsigned &pad)
+printMember(FILE *f, CP::Member *t, const char *prefix, unsigned &offset, unsigned &pad)
 {
   unsigned rem = offset & (t->align - 1);
   if (rem)
@@ -134,11 +134,10 @@ methodName(Worker *w, const char *method, const char *&mName) {
 }
 
 static void
-emitStructRCC(FILE *f, unsigned nMembers, Simple *types, const char *indent) {
-  Simple *t = types;
+emitStructRCC(FILE *f, unsigned nMembers, CP::Member *members, const char *indent) {
   unsigned align = 0, pad = 0;
-  for (unsigned n = 0; n < nMembers; n++, t++)
-    printSimple(f, t, indent, align, pad);
+  for (unsigned n = 0; n < nMembers; n++, members++)
+    printMember(f, members, indent, align, pad);
 }
 
 const char *
@@ -163,6 +162,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  "#endif\n",
 	  w->implName, upper, upper);
   const char *last;
+  Port *port = w->ports;
   if (w->nPorts) {
     fprintf(f,
 	    "/*\n"
@@ -170,7 +170,6 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	    " */\n"
 	    "typedef enum {\n",
 	    w->implName);
-    Port *port = w->ports;
     unsigned in = 0, out = 0;
     last = "";
     for (unsigned n = 0; n < w->nPorts; n++, port++) {
@@ -187,154 +186,153 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	    "#define %s_N_INPUT_PORTS %u\n"
 	    "#define %s_N_OUTPUT_PORTS %u\n",
 	    upper, in, upper, out);
-    if (w->ctl.nProperties) {
-      fprintf(f,
-	      "/*\n"
-	      " * Property structure for worker %s\n"
-	      " */\n"
-	      "typedef struct {\n",
-	      w->implName);
-      Property *p = w->ctl.properties;
-      unsigned pad = 0, align = 0;
-      for (unsigned n = 0; n < w->ctl.nProperties; n++, p++) {
-	if (p->isStructSequence) {
-	  fprintf(f, "  uint32_t     %s_length;\n", p->name);
-	  if (p->maxAlign > sizeof(uint32_t))
-	    fprintf(f, "  char   pad%u_[%u];\n",
-		    pad++, p->maxAlign - (unsigned)sizeof(uint32_t));
-	  align += p->maxAlign;
-	}
-	if (p->isStruct) {
-	  fprintf(f, "  struct %c%s%c%s {\n",
-		  toupper(w->implName[0]), w->implName+1,
-		  toupper(p->name[0]), p->name + 1);
-	  emitStructRCC(f, p->nMembers, p->members, "  ");
-	  fprintf(f, "  } %s", p->name);
-	  if (p->isStructSequence)
-	    fprintf(f, "[%u]", p->nStructs);
-	  fprintf(f, ";\n");
-	} else
-	  printSimple(f, p->members, "", align, pad);
+  }
+  if (w->ctl.nProperties) {
+    fprintf(f,
+	    "/*\n"
+	    " * Property structure for worker %s\n"
+	    " */\n"
+	    "typedef struct {\n",
+	    w->implName);
+    Property *p = w->ctl.properties;
+    unsigned pad = 0, align = 0;
+    for (unsigned n = 0; n < w->ctl.nProperties; n++, p++) {
+      if (p->isStructSequence) {
+	fprintf(f, "  uint32_t     %s_length;\n", p->name);
+	if (p->maxAlign > sizeof(uint32_t))
+	  fprintf(f, "  char   pad%u_[%u];\n",
+		  pad++, p->maxAlign - (unsigned)sizeof(uint32_t));
+	align += p->maxAlign;
       }
-      fprintf(f,
-	      "} %c%sProperties;\n\n",
-	      toupper(w->implName[0]), w->implName + 1);
+      if (p->isStruct) {
+	fprintf(f, "  struct %c%s%c%s {\n",
+		toupper(w->implName[0]), w->implName+1,
+		toupper(p->name[0]), p->name + 1);
+	emitStructRCC(f, p->nMembers, p->members, "  ");
+	fprintf(f, "  } %s", p->name);
+	if (p->isStructSequence)
+	  fprintf(f, "[%u]", p->nStructs);
+	fprintf(f, ";\n");
+      } else
+	printMember(f, p->members, "", align, pad);
     }
-    const char *mName;
-    if ((err = methodName(w, "run", mName)))
-      return err;
     fprintf(f,
-	    "/*\n"
-	    " * Use this macro, followed by a semicolon, to declare methods before\n"
-	    " * implementing them, and before defining the RCCDispatch for the worker\n"
-	    " * e.g.:\n"
-	    " *  %s_METHOD_DECLARATIONS;\n"
-	    " */\n"
-	    "#define %s_METHOD_DECLARATIONS \\\n",
-	    upper, upper);
-    unsigned op = 0;
-    const char **cp;
-    if (w->ctl.controlOps) {
-      last = "";
-      fprintf(f, "  %s RCCMethod ", w->pattern ? "extern" : "static");
-      for (cp = controlOperations; *cp; cp++, op++)
-	if (w->ctl.controlOps & (1 << op)) {
-	  if ((err = methodName(w, *cp, mName)))
-	    return err;
-	  fprintf(f, "%s%s", last, mName);
-	  last = ", ";
-	}
-      fprintf(f, ";\\\n");
-    }
-    if ((err = methodName(w, "run", mName)))
-      return err;
-    fprintf(f,
-	    "  %s RCCRunMethod %s\\\n",
-	    w->pattern ? "extern" : "static", mName);
-    fprintf(f, "/**/\n");
-    fprintf(f,
-	    "/*\n"
-	    " * This macro defines the initialization of the RCCDispatch structure\n"
-	    " * for the %s worker.  Insert it AFTER any customized initializations\n"
-	    " * of members: memSizes, runCondition.\n"
-	    " * E.g.: \n"
-	    " *  static RCCRunCondition myRunCondition { ... };\n"
-	    " *  %s_METHOD_DECLARATIONS;\n"
-	    " *  RCCDispatch xyz_dispatch = {\n"
-	    " *     .runCondition = &myRunCondition,\n"
-	    " *     %s_DISPATCH\n"
-	    " *  };\n"
-	    " */\n"
-	    "#define %s_DISPATCH \\\n"
-	    "  .version = RCC_VERSION,\\\n"
-	    "  .numInputs = %s_N_INPUT_PORTS,\\\n"
-	    "  .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
-	    "  .threadProfile = %u,\\\n",
-	    w->implName, upper, upper, upper, upper, upper, w->rcc.isThreaded ? 1 : 0);
-    if (w->ctl.nProperties)
-      fprintf(f, "  .propertySize = sizeof(%c%sProperties),\\\n",
-	      toupper(w->implName[0]), w->implName + 1);
-    for (op = 0, cp = controlOperations; *cp; cp++, op++)
+	    "} %c%sProperties;\n\n",
+	    toupper(w->implName[0]), w->implName + 1);
+  }
+  const char *mName;
+  if ((err = methodName(w, "run", mName)))
+    return err;
+  fprintf(f,
+	  "/*\n"
+	  " * Use this macro, followed by a semicolon, to declare methods before\n"
+	  " * implementing them, and before defining the RCCDispatch for the worker\n"
+	  " * e.g.:\n"
+	  " *  %s_METHOD_DECLARATIONS;\n"
+	  " */\n"
+	  "#define %s_METHOD_DECLARATIONS \\\n",
+	  upper, upper);
+  unsigned op = 0;
+  const char **cp;
+  if (w->ctl.controlOps) {
+    last = "";
+    fprintf(f, "  %s RCCMethod ", w->pattern ? "extern" : "static");
+    for (cp = controlOperations; *cp; cp++, op++)
       if (w->ctl.controlOps & (1 << op)) {
 	if ((err = methodName(w, *cp, mName)))
 	  return err;
-	fprintf(f, "  .%s = %s,\\\n", *cp, mName);
+	fprintf(f, "%s%s", last, mName);
+	last = ", ";
       }
-    if ((err = methodName(w, "run", mName)))
-      return err;
-    fprintf(f, "  .run = %s,\\\n", mName);
-    port = w->ports;
-    uint32_t optionals = 0;
-    for (unsigned n = 0; n < w->nPorts; n++, port++)
-      if (port->wdi.isOptional)
-	optionals |= 1 << n;
-    if (optionals)
-      fprintf(f, "  .optionallyConnectedPorts = 0x%x,\\\n", optionals);
-    fprintf(f, "/**/\n");
-    if (w->nPorts) {
-      port = w->ports;
-      for (unsigned n = 0; n < w->nPorts; n++, port++)
-	if (port->wdi.nOperations) {
-	  fprintf(f,
-		  "/*\n"
-		  " * Enumeration of operations on port %s of worker %s\n"
-		  " */\n"
-		  "typedef enum {\n",
-		  port->name, w->implName);
-	  Operation *o = port->wdi.operations;
-	  const char *puName = upperdup(port->name);
-	  for (unsigned nn = 0; nn < port->wdi.nOperations; nn++, o++)
-	    fprintf(f, "  %s_%s_%s,\n", upper, puName, upperdup(o->name));
-	  fprintf(f, "} %c%s%c%sOperation;\n",
-		  toupper(w->implName[0]), w->implName+1,
-		  toupper(port->name[0]), port->name+1);
-	  // Now emit structs for messages
-	  o = port->wdi.operations;
-	  for (unsigned nn = 0; nn < port->wdi.nOperations; nn++, o++)
-	    if (o->nArgs) {
-	      fprintf(f,
-		      "/*\n"
-		      " * Structure for the %s operation on port %s\n"
-		      " */\n"
-		      "typedef struct {\n",
-		      o->name, port->name);
-	      emitStructRCC(f, o->nArgs, o->args, "");
-	      fprintf(f, "} %c%s%c%s%c%s;\n",
-		      toupper(w->implName[0]), w->implName + 1,
-		      toupper(port->name[0]), port->name + 1,
-		      toupper(o->name[0]), o->name + 1);
-	    }
-	}
-      
+    fprintf(f, ";\\\n");
+  }
+  if ((err = methodName(w, "run", mName)))
+    return err;
+  fprintf(f,
+	  "  %s RCCRunMethod %s\\\n",
+	  w->pattern ? "extern" : "static", mName);
+  fprintf(f, "/**/\n");
+  fprintf(f,
+	  "/*\n"
+	  " * This macro defines the initialization of the RCCDispatch structure\n"
+	  " * for the %s worker.  Insert it AFTER any customized initializations\n"
+	  " * of members: memSizes, runCondition.\n"
+	  " * E.g.: \n"
+	  " *  static RCCRunCondition myRunCondition { ... };\n"
+	  " *  %s_METHOD_DECLARATIONS;\n"
+	  " *  RCCDispatch xyz_dispatch = {\n"
+	  " *     .runCondition = &myRunCondition,\n"
+	  " *     %s_DISPATCH\n"
+	  " *  };\n"
+	  " */\n"
+	  "#define %s_DISPATCH \\\n"
+	  "  .version = RCC_VERSION,\\\n"
+	  "  .numInputs = %s_N_INPUT_PORTS,\\\n"
+	  "  .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
+	  "  .threadProfile = %u,\\\n",
+	  w->implName, upper, upper, upper, upper, upper, w->rcc.isThreaded ? 1 : 0);
+  if (w->ctl.nProperties)
+    fprintf(f, "  .propertySize = sizeof(%c%sProperties),\\\n",
+	    toupper(w->implName[0]), w->implName + 1);
+  for (op = 0, cp = controlOperations; *cp; cp++, op++)
+    if (w->ctl.controlOps & (1 << op)) {
+      if ((err = methodName(w, *cp, mName)))
+	return err;
+      fprintf(f, "  .%s = %s,\\\n", *cp, mName);
     }
-    fprintf(f,
-	    "\n"
-	    "#if defined (__cplusplus)\n"
-	    "}\n"
-	    "#endif\n"
-	    "#endif /* ifndef RCC_WORKER_%s_H__ */\n",
-	    upper);
-  }  
+  if ((err = methodName(w, "run", mName)))
+    return err;
+  fprintf(f, "  .run = %s,\\\n", mName);
+  port = w->ports;
+  uint32_t optionals = 0;
+  for (unsigned n = 0; n < w->nPorts; n++, port++)
+    if (port->wdi.isOptional)
+      optionals |= 1 << n;
+  if (optionals)
+    fprintf(f, "  .optionallyConnectedPorts = 0x%x,\\\n", optionals);
+  fprintf(f, "/**/\n");
+  if (w->nPorts) {
+    Port *port = w->ports;
+    for (unsigned n = 0; n < w->nPorts; n++, port++)
+      if (port->wdi.nOperations) {
+	fprintf(f,
+		"/*\n"
+		" * Enumeration of operations on port %s of worker %s\n"
+		" */\n"
+		"typedef enum {\n",
+		port->name, w->implName);
+	Operation *o = port->wdi.operations;
+	const char *puName = upperdup(port->name);
+	for (unsigned nn = 0; nn < port->wdi.nOperations; nn++, o++)
+	  fprintf(f, "  %s_%s_%s,\n", upper, puName, upperdup(o->name));
+	fprintf(f, "} %c%s%c%sOperation;\n",
+		toupper(w->implName[0]), w->implName+1,
+		toupper(port->name[0]), port->name+1);
+	// Now emit structs for messages
+	o = port->wdi.operations;
+	for (unsigned nn = 0; nn < port->wdi.nOperations; nn++, o++)
+	  if (o->nArgs) {
+	    fprintf(f,
+		    "/*\n"
+		    " * Structure for the %s operation on port %s\n"
+		    " */\n"
+		    "typedef struct {\n",
+		    o->name, port->name);
+	    emitStructRCC(f, o->nArgs, o->args, "");
+	    fprintf(f, "} %c%s%c%s%c%s;\n",
+		    toupper(w->implName[0]), w->implName + 1,
+		    toupper(port->name[0]), port->name + 1,
+		    toupper(o->name[0]), o->name + 1);
+	  }
+      }
+  }
+  fprintf(f,
+	  "\n"
+	  "#if defined (__cplusplus)\n"
+	  "}\n"
+	  "#endif\n"
+	  "#endif /* ifndef RCC_WORKER_%s_H__ */\n",
+	  upper);
   fclose(f);
   if ((err = openOutput(w->fileName, outDir, "", RCCMAP, HEADER, NULL, f)))
     return err;
@@ -365,7 +363,7 @@ emitSkelRCC(Worker *w, const char *outDir) {
 	  "};\n\n"
 	  "/*\n"
 	  " * Methods to implement for worker %s, based on metadata.\n"
-	  "*/\n",
+	  " */\n",
 	  w->implName, w->implName, upper, w->implName, upper, w->implName);
   unsigned op = 0;
   const char **cp;
@@ -376,7 +374,7 @@ emitSkelRCC(Worker *w, const char *outDir) {
 	return err;
       fprintf(f,
 	      "\n"
-	      "%s RCCResult %s(RCCWorker *self) {\n"
+	      "%s RCCResult\n%s(RCCWorker *self) {\n"
 	      "  return RCC_OK;\n"
 	      "}\n",
 	      w->pattern ? "extern" : "static", mName);
@@ -385,13 +383,10 @@ emitSkelRCC(Worker *w, const char *outDir) {
     return err;
   fprintf(f,
 	  "\n"
-	  "%s RCCResult %s(RCCWorker *self,\n"
-	  "                 %*s RCCBoolean timedOut,\n"
-	  "                 %*s RCCBoolean *newRunCondition) {\n"
+	  "%s RCCResult\n%s(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {\n"
 	  "  return RCC_ADVANCE;\n"
 	  "}\n",
-	  w->pattern ? "extern" : "static", mName,
-	  (int)strlen(mName), "", (int)strlen(mName), "");
+	  w->pattern ? "extern" : "static", mName);
   // FIXME PortMemberMacros?
   // FIXME Compilable - any initial functionality??? cool.
   fclose(f);

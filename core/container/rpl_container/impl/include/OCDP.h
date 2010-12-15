@@ -34,7 +34,7 @@
 
 #ifndef OCDP_H
 #define OCDP_H
-struct OcdpProperties {
+typedef struct {
   uint32_t
   nLocalBuffers,        // 0x00
     nRemoteBuffers,        // 0x04
@@ -58,7 +58,7 @@ struct OcdpProperties {
     remoteFlagPitch,    // 0x64
     control,            // 0x68
     flowDiagCount;      // 0x6c
-};
+} OcdpProperties;
 #define OCDP_CONTROL_DISABLED 0
 #define OCDP_CONTROL_PRODUCER 1
 #define OCDP_CONTROL_CONSUMER 2
@@ -66,13 +66,13 @@ struct OcdpProperties {
 #define OCDP_LOCAL_BUFFER_ALIGN 16     // The constraint on the alignment of local buffers
 #define OCDP_FAR_BUFFER_ALIGN 4        // The constraint on the alignment of far buffers
 
-struct OcdpMetadata {
+typedef struct {
   uint32_t
     length,
     opCode,
     tag,
     interval;
-};
+} OcdpMetadata;
 #define OCDP_METADATA_SIZE sizeof(OcdpMetadata)
 enum OcdpRole {
   OCDP_PASSIVE = 0,

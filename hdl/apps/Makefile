@@ -35,7 +35,7 @@
 ########################################################################### #
 
 AT=@
-APPS=demoappC demoappE testpsd testddc
+APPS=demoappC demoappE testpsd testddc testbias
 # testwbr
 
 TARGETS=xc5vlx50t-1-ff1136 xc5vsx95t-2-ff1136 xc6vlx240t-1-ff1156

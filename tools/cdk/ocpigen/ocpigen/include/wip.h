@@ -250,7 +250,7 @@ struct Operation {
   const char *name;
   bool isTwoWay; // not supported much...
   unsigned nArgs;
-  Simple *args;
+  CP::Member *args; // This class is overkill here, but we need most of it.
 };
 
 typedef OCPI::Util::Prop::Property Property;

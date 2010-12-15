@@ -36,9 +36,11 @@
 #define OCCP_H
 #include <stdint.h>
 
+#ifdef __cplusplus
 namespace OCPI {
   namespace RPL {
-    struct OccpAdminRegisters {
+#endif
+    typedef struct {
       const uint32_t
         magic1,
         magic2,
@@ -60,8 +62,8 @@ namespace OCPI {
         msiData;
       const uint32_t
         mbz;
-    };
-    struct OccpWorkerRegisters {
+    } OccpAdminRegisters;
+    typedef struct {
       const uint32_t
         initialize,
         start,
@@ -79,7 +81,7 @@ namespace OCPI {
       uint32_t
         clearError,
         reserved[4];
-    };
+    } OccpWorkerRegisters;
 #define OCCP_CONTROL_ENABLE 0x80000000
 #define OCCP_WORKER_CONTROL_SIZE 0x10000
 #define OCCP_ADMIN_SIZE OCCP_WORKER_CONTROL_SIZE
@@ -113,6 +115,8 @@ namespace OCPI {
       OccpWorker worker[OCCP_MAX_WORKERS];
       uint8_t config[OCCP_MAX_WORKERS][OCCP_WORKER_CONFIG_SIZE];
     } OccpSpace;
+#ifdef __cplusplus
   }
 }
+#endif
 #endif

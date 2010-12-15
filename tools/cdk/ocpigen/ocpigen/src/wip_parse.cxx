@@ -280,7 +280,7 @@ tryChildInclude(ezxml_t top, const char *parent, const char *element,
   if (err || *parsed)
     return err;
   // No xi:include, of the right type, try to find it directly
-  if ((*parsed = ezxml_child(top, element))) {
+  if ((*parsed = ezxml_cchild(top, element))) {
     if (childFile)
       *childFile = parent;
     return 0;
@@ -380,7 +380,7 @@ doSpecProp(ezxml_t prop, void *arg) {
 const char *
 parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
   // Now we do the rest of the control interface
-  ezxml_t xctl = ezxml_child(impl, "ControlInterface");
+  ezxml_t xctl = ezxml_cchild(impl, "ControlInterface");
   const char *err;
   if (xctl) {
     unsigned sizeOfConfigSpace;
@@ -432,7 +432,7 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
   if (xctlp)
     *xctlp = xctl;
   // parseing the impl control interface means we have visited all the properties,
-  // both spec and impl, so now we know the whole confid space.
+  // both spec and impl, so now we know the whole config space.
   w->ctl.sizeOfConfigSpace = w->ctl.offset;
   return 0;
 }
@@ -475,7 +475,7 @@ doOperation(ezxml_t op, void *arg) {
   const char *name = ezxml_name(op);
   if (!name || strcasecmp(name, "Operation"))
     return "Element under Protocol is neither Operation, Protocol or or xi:include";
-  // Now actually process a property element
+  // Now actually process an Operation element
   if ((err = CE::checkAttrs(op, "Name", "Twoway", (void*)0)))
     return err;
   // If this is NULL we're just counting properties.
@@ -489,25 +489,19 @@ doOperation(ezxml_t op, void *arg) {
     return "Missing \"Name\" attribute for operation";
   if ((err = CE::getBoolean(op, "TwoWay", &o->isTwoWay)))
     return err;
-  for (ezxml_t m = ezxml_child(op, "Argument"); m ; m = ezxml_next(m))
-    o->nArgs++;
-  // No support for twoway yet, so no exceptions, return values, inout, out
+  unsigned maxAlign = 1, myOffset = 0;
+  bool sub32 = false;
+  if ((err = CP::Member::parseMembers(op, o->nArgs, o->args, maxAlign, myOffset, sub32, "argument")))
+    return err;
   if (o->nArgs) {
-    o->args = myCalloc(Simple, o->nArgs);
-    Simple *mem = o->args;
-    unsigned myOffset = 0, maxAlign = 1;
-    bool sub32 = false;
-    for (ezxml_t m = ezxml_child(op, "Argument"); m ; m = ezxml_next(m), mem++) {
-      if ((err = CE::checkAttrs(m, "Name", "Type", "StringLength",
-			    "ArrayLength", "SequenceLength", (void*)0)) ||
-	  (err = mem->parse(m, maxAlign, myOffset, sub32)))
-	return err;
+    CP::Member *arg = o->args;
+    for (unsigned i = 0; i < o->nArgs; i++, arg++) {
       if (p->wdi.dataValueWidth &&
-	  mem->bits != p->wdi.dataValueWidth)
+	  arg->bits != p->wdi.dataValueWidth)
 	p->wdi.diverseDataSizes = true;
       if (!p->wdi.dataValueWidth ||
-	  mem->bits < p->wdi.dataValueWidth)
-	p->wdi.dataValueWidth = mem->bits;
+	  arg->bits < p->wdi.dataValueWidth)
+	p->wdi.dataValueWidth = arg->bits;
     }
     if (p->wdi.maxMessageValues &&
 	p->wdi.maxMessageValues != myOffset)
@@ -557,7 +551,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
   if ((err = tryChildInclude(spec, file, "PropertySummary", &ps, NULL, true)))
     return err;
   if (ps) {
-    if (ezxml_child(spec, "Properties") || ezxml_child(spec, "Property"))
+    if (ezxml_cchild(spec, "Properties") || ezxml_cchild(spec, "Property"))
       return "cannot have both PropertySummary and Properties";
     props = 0;
   } else if ((err = tryChildInclude(spec, file, "Properties", &props, NULL, true)))
@@ -568,11 +562,11 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
   } else if ((err = parseSpecControl(w, ps, props)))
     return err;
   // Now parse the data aspects, allocating (data) ports.
-  for (ezxml_t x = ezxml_child(spec, "DataInterfaceSpec"); x; x = ezxml_next(x))
+  for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x))
     w->nPorts++;
   // Allocate all the data ports
   Port *p = w->ports = myCalloc(Port, w->nPorts);
-  for (ezxml_t x = ezxml_child(spec, "DataInterfaceSpec"); x; x = ezxml_next(x), p++) {
+  for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x), p++) {
     if ((err = CE::checkAttrs(x, "Name", "Producer", "Count", "Optional", (void*)0)) ||
 	(err = CE::getBoolean(x, "Producer", &p->wdi.isProducer)) ||
 	(err = CE::getBoolean(x, "Optional", &p->wdi.isOptional)))
@@ -590,7 +584,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
     if ((err = tryChildInclude(x, file, "ProtocolSummary", &pSum, &protFile, true)))
       return err;
     if (pSum) {
-      if (ezxml_child(spec, "Protocol"))
+      if (ezxml_cchild(spec, "Protocol"))
 	return "cannot have both Protocol and ProtocolSummary";
       prot = 0;
       if ((err = CE::checkAttrs(pSum, "DataValueWidth", "DataValueGranularity",
@@ -941,10 +935,10 @@ parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
   aw->implName = ezxml_cattr(xml, "Name");
   if (!aw->implName)
     aw->implName = "RccAssembly";
-  for (ezxml_t x = ezxml_child(xml, "Worker"); x; x = ezxml_next(x))
+  for (ezxml_t x = ezxml_cchild(xml, "Worker"); x; x = ezxml_next(x))
     a->nWorkers++;
   Worker *w = a->workers = myCalloc(Worker, a->nWorkers);
-  for (ezxml_t x = ezxml_child(xml, "Worker"); x; x = ezxml_next(x), w++) {
+  for (ezxml_t x = ezxml_cchild(xml, "Worker"); x; x = ezxml_next(x), w++) {
     const char *wXmlName = ezxml_cattr(x, "File");
     if (!wXmlName)
       return "Missing \"File\" attribute is \"Worker\" element";
@@ -962,12 +956,12 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
      return err;
   a->isContainer = !strcasecmp(xml->name, "HdlContainer");
   // Count instances and workers
-  for (ezxml_t x = ezxml_child(xml, "Instance"); x; x = ezxml_next(x))
+  for (ezxml_t x = ezxml_cchild(xml, "Instance"); x; x = ezxml_next(x))
     a->nInstances++;
   Instance *i = a->instances = myCalloc(Instance, a->nInstances);
   // Overallocate workers - they won't exceed nInstances.
   Worker *w = a->workers = myCalloc(Worker, a->nInstances); // may overallocate
-  for (ezxml_t x = ezxml_child(xml, "Instance"); x; x = ezxml_next(x), i++) {
+  for (ezxml_t x = ezxml_cchild(xml, "Instance"); x; x = ezxml_next(x), i++) {
     err = 
       a->isContainer ?
       CE::checkAttrs(x, "Worker", "Name", "Index", "Interconnect", "IO",
@@ -1054,16 +1048,16 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
       if (!strcmp(ii->name, i->name))
 	return esprintf("Duplicate instance named \"%s\" in assembly", i->name);
   }
-  for (ezxml_t x = ezxml_child(xml, "Connection"); x; x = ezxml_next(x)) {
+  for (ezxml_t x = ezxml_cchild(xml, "Connection"); x; x = ezxml_next(x)) {
     if ((err = CE::checkAttrs(x, "Name", "External", (void*)0)))
       return err;
     a->nConnections++;
   }
   Connection *c = a->connections = myCalloc(Connection, a->nConnections);
   Port *p;
-  for (ezxml_t x = ezxml_child(xml, "Connection"); x; x = ezxml_next(x), c++) {
+  for (ezxml_t x = ezxml_cchild(xml, "Connection"); x; x = ezxml_next(x), c++) {
     c->name = ezxml_cattr(x, "Name");
-    for (ezxml_t at = ezxml_child(x, "Attach"); at; at = ezxml_next(at)) {
+    for (ezxml_t at = ezxml_cchild(x, "Attach"); at; at = ezxml_next(at)) {
       const char *instName = ezxml_cattr(at, "Instance");
       if (!instName)
 	return
@@ -1425,7 +1419,7 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
       (err = CE::getBoolean(xml, "Threaded", &w->rcc.isThreaded)))
     return err;
   // Parse data port implementation metadata: maxlength, minbuffers.
-  for (ezxml_t x = ezxml_child(xml, "Port"); x; x = ezxml_next(x)) {
+  for (ezxml_t x = ezxml_cchild(xml, "Port"); x; x = ezxml_next(x)) {
     if ((err = CE::checkAttrs(x, "Name", "MinBuffers", (void*)0)))
       return err;
     const char *name = ezxml_cattr(x, "Name");

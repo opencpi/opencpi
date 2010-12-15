@@ -34,17 +34,7 @@
 #
 ########################################################################### #
 
-ifndef OCPI_OS
-OCPI_OS=$(shell uname -s | tr A-Z a-z)
-endif
-ifneq ($(OCPI_OS),darwin)
-DOSTATIC=-static
-endif
-all: nft
-
-nft: nft.c
-	gcc -o $@ -I../../../core/container/rpl_container/impl/include $(DOSTATIC) -Wall -g nft.c -lpthread
-
-clean:
-	rm -f nft
-
+OCPI_CDK_DIR=../../../ocpi
+# Set this if some of the xml files are elsewhere, like a spec file that is being
+# shared with other implementers
+include $(OCPI_CDK_DIR)/include/rcc/rcc-worker.mk

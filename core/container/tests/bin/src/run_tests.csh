@@ -1,3 +1,4 @@
+#!/bin/csh -f
 
 # #####
 #
@@ -34,17 +35,23 @@
 #
 ########################################################################### #
 
-ifndef OCPI_OS
-OCPI_OS=$(shell uname -s | tr A-Z a-z)
+# quick hack to run all tests
+# run this in the binary executables directory by doing: ../bin/src/run_tests.csh
+set t =  `uname -s`-`uname -m`
+setenv OCPI_RCC_TARGET `echo $t | tr A-Z a-z`
+if $OCPI_RCC_TARGET == darwin-i386 then
+  setenv OCPI_RCC_SUFFIX dylib
+  setenv DYLD_LIBRARY_PATH ../../../../lib/$OCPI_RCC_TARGET-bin
+else
+  setenv OCPI_RCC_SUFFIX so
+  setenv LD_LIBRARY_PATH ../../../../lib/$OCPI_RCC_TARGET-bin
 endif
-ifneq ($(OCPI_OS),darwin)
-DOSTATIC=-static
+if $#argv == 1 then
+  ./$argv[1] | grep Test:
+else
+foreach i ( `ls test* | grep -v '_main' | grep -v '.obj'`)
+  echo Running $i...
+  ./$i | grep Test:
+end
 endif
-all: nft
-
-nft: nft.c
-	gcc -o $@ -I../../../core/container/rpl_container/impl/include $(DOSTATIC) -Wall -g nft.c -lpthread
-
-clean:
-	rm -f nft
 

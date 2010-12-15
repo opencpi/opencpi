@@ -70,17 +70,22 @@ namespace OCPI {
 	Scalar::Value defaultValue; // union for member values
 	const char *parse(ezxml_t xp, unsigned &maxAlign,
 			  unsigned &argOffset, bool &sub32);
+	static const char *
+	  parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
+		       unsigned &maxAlign, unsigned &myOffset, bool &sub32, const char *tag);
       };
       class Property {
 	const char *parseImplAlso(ezxml_t x);
       public:
 	// Describe structure member that might be the whole property
-	const char *name;  // Name of the overall property independent of members
-	Member *members;   // More than one when type is struct.
-	unsigned maxAlign; // Largest alignment reqmnt based on type (up to 64b)
-	unsigned nBytes;   // maximum size in bytes
-	unsigned nMembers; // How many members
-	unsigned offset;   // Offset within all properties
+	const char *name;     // Name of the overall property independent of members
+	Member *members;      // More than one when type is struct.
+	unsigned maxAlign;    // Largest alignment reqmnt based on type (up to 64b)
+	unsigned nBytes;      // Maximum size in bytes
+	unsigned nMembers;    // How many members
+	unsigned offset;      // Offset within all properties
+	unsigned smallest;    // Smallest unit of storage
+	unsigned granularity; // Granularity of smallest unit
 	// Caller needs these to decide to do beforeQuery/afterConfigure
 	bool needReadSync, needWriteSync, isWritable, isReadable;
 	bool isParameter;  // For compile-time parameter
@@ -96,7 +101,7 @@ namespace OCPI {
 			  bool &readableConfigs,
 			  bool &writableConfigs,
 			  bool &sub32Configs,
-			  bool includeImpl
+			  bool includeImpl = false
 			  );
 	const char *parseImpl(ezxml_t x);
 	const char *parse(ezxml_t x);

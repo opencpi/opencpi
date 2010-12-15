@@ -34,22 +34,13 @@
 #
 ########################################################################### #
 
-#!/bin/csh -f
-# quick hack to run all tests
-# run this in the binary executables directory
-set t =  `uname -s`-`uname -m`
-setenv OCPI_RCC_TARGET `echo $t | tr A-Z a-z`
-if $OCPI_RCC_TARGET == darwin-i386 then
-  setenv OCPI_RCC_SUFFIX dylib
-else
-  setenv OCPI_RCC_SUFFIX so
-endif
-if $#argv == 1 then
-  ./$argv[1] | grep Test:
-else
-foreach i ( `ls test* | grep -v '_main' | grep -v '.obj'`)
-  echo Running $i...
-  ./$i | grep Test:
-end
-endif
-
+OCPI_CDK_DIR=../../../ocpi
+# Which component libraries should be referenced to build this app?
+OcpiLibraries=../../../components
+XmlIncludeDirs += ../../platform
+# For which containers should the runtime xml be generated?
+# These (for now) just xml files containing HdlContainer elements.
+Containers=testbiasCont
+#Target=xc5vlx50t-ff1136-1
+#Target=xc5vsx95t-2-ff1136
+include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk
