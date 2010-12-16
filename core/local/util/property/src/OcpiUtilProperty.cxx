@@ -130,17 +130,17 @@ Member::parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
 		     unsigned &maxAlign, unsigned &myOffset, bool &sub32, const char *tag) {
   for (ezxml_t m = ezxml_cchild(prop, tag); m ; m = ezxml_next(m))
     nMembers++;
-  if (nMembers == 0)
-    return "No Property elements in Property with type == \"struct\"";
-  members = myCalloc(Member, nMembers);
-  Member *mem = members;
-  const char *err = NULL;
-  for (ezxml_t m = ezxml_cchild(prop, "Member"); m ; m = ezxml_next(m), mem++)
-    if ((err = OCPI::Util::EzXml::checkAttrs(m, "Name", "Type", "StringLength",
-					     "ArrayLength", "SequenceLength", "Default",
-					     (void*)0)) ||
-	(err = mem->parse(m, maxAlign, myOffset, sub32)))
-      return err;
+  if (nMembers) {
+    members = myCalloc(Member, nMembers);
+    Member *mem = members;
+    const char *err = NULL;
+    for (ezxml_t m = ezxml_cchild(prop, tag); m ; m = ezxml_next(m), mem++)
+      if ((err = OCPI::Util::EzXml::checkAttrs(m, "Name", "Type", "StringLength",
+					       "ArrayLength", "SequenceLength", "Default",
+					       (void*)0)) ||
+	  (err = mem->parse(m, maxAlign, myOffset, sub32)))
+	return err;
+  }
   return NULL;
 }
 
@@ -162,6 +162,8 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
   if (typeName && !strcasecmp(typeName, "Struct")) {
     if ((err = Member::parseMembers(prop, nMembers, members, maxAlign, myOffset, sub32Configs, "member")))
       return err;
+    if (nMembers == 0)
+      return "No Property elements in Property with type == \"struct\"";
     isStruct = true;
     bool structArray = false;
     if ((err = CE::getNumber(prop, "SequenceLength", &nStructs, &isStructSequence,

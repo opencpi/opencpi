@@ -433,7 +433,8 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
     *xctlp = xctl;
   // parseing the impl control interface means we have visited all the properties,
   // both spec and impl, so now we know the whole config space.
-  w->ctl.sizeOfConfigSpace = w->ctl.offset;
+  if (w->ctl.offset > w->ctl.sizeOfConfigSpace)
+    w->ctl.sizeOfConfigSpace = w->ctl.offset;
   return 0;
 }
 
@@ -485,7 +486,7 @@ doOperation(ezxml_t op, void *arg) {
   }
   Operation *o = p->wdi.op++;
   o->name = ezxml_cattr(op, "Name");
-  if (!p->name)
+  if (!o->name)
     return "Missing \"Name\" attribute for operation";
   if ((err = CE::getBoolean(op, "TwoWay", &o->isTwoWay)))
     return err;
