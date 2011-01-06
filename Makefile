@@ -90,6 +90,9 @@ PACKAGES += tools/cdk/ocpigen
 PACKAGES += tools/cdk/ocpixm
 PACKAGES += test
 
+PACKAGES += tests/facilities/os
+PACKAGES += tests/framework/framework
+
 #
 # ----------------------------------------------------------------------
 # A list of all packages for make clean.  Sorted alphabetically.
@@ -117,6 +120,8 @@ ALLPACKAGES = \
 	core/sca/sgac \
 	core/sca/srpl \
 	test \
+	tests/facilities/os \
+	tests/framework/main \
 	tools/local/binder \
 	tools/local/tester \
 	tools/cdk/ocpigen \

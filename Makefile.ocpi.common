@@ -695,94 +695,102 @@ OCPI_EXTERNAL_EXPORTS = \
 	$(OCPI_BASE_DIR)core/dataplane/rdma_driver_interface/interfaces/include
 
 
-OCPIOS_EXPORTS = $(OCPI_BASE_DIR)adapt/os/ocpios/interfaces/include
-OCPIOS_LIBS = $(OCPI_BASE_DIR)adapt/os/ocpios/ocpios
+OCPIOS_EXPORTS = $(OCPI_BASE_DIR)/adapt/os/ocpios/interfaces/include
+OCPIOS_LIBS = $(OCPI_BASE_DIR)/adapt/os/ocpios/ocpios
 
 DATA_TRANSFER_EXPORTS = \
-	$(OCPI_BASE_DIR)core/$(DATAPLANE)/rdma_driver_interface/interfaces/include
-DATA_TRANSFER_LIBS = $(OCPI_BASE_DIR)core/$(DATAPLANE)/rdma_driver_interface/rdma_driver_interface
+	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_driver_interface/interfaces/include
+DATA_TRANSFER_LIBS = $(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_driver_interface/rdma_driver_interface
 
-TX_TRANSFER_LIBS = $(OCPI_BASE_DIR)core/$(DATAPLANE)/rdma_drivers/rdma_drivers
+TX_TRANSFER_LIBS = $(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_drivers/rdma_drivers
 
 DATA_TRANSPORT_EXPORTS = \
-	$(OCPI_BASE_DIR)core/$(DATAPLANE)/transport/interface/include \
-	$(OCPI_BASE_DIR)core/$(DATAPLANE)/transport/client_server/include \
-	$(OCPI_BASE_DIR)core/$(DATAPLANE)/transport/impl/include \
-	$(OCPI_BASE_DIR)core/$(DATAPLANE)/transport/ddnp/include
-DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)core/$(DATAPLANE)/transport/transport
+	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/interface/include \
+	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/client_server/include \
+	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/impl/include \
+	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/ddnp/include
+DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/transport
 
 
 CONTAINER_EXPORTS = \
-	$(OCPI_BASE_DIR)core/container/interfaces/api/include \
-	$(OCPI_BASE_DIR)core/container/cp289_container/cp289/include
+	$(OCPI_BASE_DIR)/core/container/interfaces/api/include \
+	$(OCPI_BASE_DIR)/core/container/cp289_container/cp289/include
 CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)core/container/interfaces/interfaces
+	$(OCPI_BASE_DIR)/core/container/interfaces/interfaces
 
 CP289_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)core/container/cp289_container/cp289_container
+	$(OCPI_BASE_DIR)/core/container/cp289_container/cp289_container
 
 RPL_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)core/container/rpl_container/rpl_container
+	$(OCPI_BASE_DIR)/core/container/rpl_container/rpl_container
 
 
-LOGGER_EXPORTS = $(OCPI_BASE_DIR)core/local/logger/logger/include
-LOGGER_LIBS = $(OCPI_BASE_DIR)core/local/logger/logger
+LOGGER_EXPORTS = $(OCPI_BASE_DIR)/core/local/logger/logger/include
+LOGGER_LIBS = $(OCPI_BASE_DIR)/core/local/logger/logger
 
 UTIL_EXPORTS = \
-	$(OCPI_BASE_DIR)core/local/util/driver/include \
-	$(OCPI_BASE_DIR)core/local/util/ezxml/include \
-	$(OCPI_BASE_DIR)core/local/util/filefs/include \
-	$(OCPI_BASE_DIR)core/local/util/http/include \
-	$(OCPI_BASE_DIR)core/local/util/ior/include \
-	$(OCPI_BASE_DIR)core/local/util/memfs/include \
-	$(OCPI_BASE_DIR)core/local/util/misc/include \
-	$(OCPI_BASE_DIR)core/local/util/parentChild/include \
-	$(OCPI_BASE_DIR)core/local/util/property/include \
-	$(OCPI_BASE_DIR)core/local/util/streamfs/include \
-	$(OCPI_BASE_DIR)core/local/util/tcp/include \
-	$(OCPI_BASE_DIR)core/local/util/timeEmit/include \
-	$(OCPI_BASE_DIR)core/local/util/vfs/include \
-	$(OCPI_BASE_DIR)core/local/util/zipfs/include \
-	$(OCPI_BASE_DIR)core/local/util/res/include \
-	$(OCPI_BASE_DIR)core/local/util/list/include \
-	$(OCPI_BASE_DIR)core/local/util/thread/include \
-	$(OCPI_BASE_DIR)core/local/util/fasttime/include \
-	$(OCPI_BASE_DIR)core/local/util/sockets/include
-UTIL_LIBS = $(OCPI_BASE_DIR)core/local/util/util
+	$(OCPI_BASE_DIR)/core/local/util/driver/include \
+	$(OCPI_BASE_DIR)/core/local/util/ezxml/include \
+	$(OCPI_BASE_DIR)/core/local/util/filefs/include \
+	$(OCPI_BASE_DIR)/core/local/util/http/include \
+	$(OCPI_BASE_DIR)/core/local/util/ior/include \
+	$(OCPI_BASE_DIR)/core/local/util/memfs/include \
+	$(OCPI_BASE_DIR)/core/local/util/misc/include \
+	$(OCPI_BASE_DIR)/core/local/util/parentChild/include \
+	$(OCPI_BASE_DIR)/core/local/util/property/include \
+	$(OCPI_BASE_DIR)/core/local/util/streamfs/include \
+	$(OCPI_BASE_DIR)/core/local/util/tcp/include \
+	$(OCPI_BASE_DIR)/core/local/util/timeEmit/include \
+	$(OCPI_BASE_DIR)/core/local/util/vfs/include \
+	$(OCPI_BASE_DIR)/core/local/util/zipfs/include \
+	$(OCPI_BASE_DIR)/core/local/util/res/include \
+	$(OCPI_BASE_DIR)/core/local/util/list/include \
+	$(OCPI_BASE_DIR)/core/local/util/thread/include \
+	$(OCPI_BASE_DIR)/core/local/util/fasttime/include \
+	$(OCPI_BASE_DIR)/core/local/util/sockets/include
+UTIL_LIBS = $(OCPI_BASE_DIR)/core/local/util/util
+
+TEST_FRAMEWORK_EXPORTS = $(OCPI_BASE_DIR)/tests/framework/framework/support/include
+TEST_FRAMEWORK_LIBS = $(OCPI_BASE_DIR)/tests/framework/framework/framework
 
 ifeq ($(SCAVERSION),2.2)
-ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)core/corba/orb_services/cf22log/idl
+ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)/core/corba/orb_services/cf22log/idl
 else
-ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)core/corba/orb_services/lwlog/idl
+ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)/core/corba/orb_services/lwlog/idl
 endif
 
 ORB_SERVICES_EXPORTS += \
-	$(OCPI_BASE_DIR)core/corba/orb_services/corba/include \
-	$(OCPI_BASE_DIR)core/corba/orb_services/naming/idl \
-	$(OCPI_BASE_DIR)core/corba/orb_services/event/idl
-ORB_SERVICES_LIBS = $(OCPI_BASE_DIR)core/corba/orb_services/orb_services
+	$(OCPI_BASE_DIR)/core/corba/orb_services/corba/include \
+	$(OCPI_BASE_DIR)/core/corba/orb_services/naming/idl \
+	$(OCPI_BASE_DIR)/core/corba/orb_services/event/idl
+ORB_SERVICES_LIBS = $(OCPI_BASE_DIR)/core/corba/orb_services/orb_services
 
-CORBA_UTIL_EXPORTS = $(OCPI_BASE_DIR)core/corba/corba_util/misc/include
-CORBA_UTIL_LIBS = $(OCPI_BASE_DIR)core/corba/corba_util/corba_util
+CORBA_UTIL_EXPORTS = $(OCPI_BASE_DIR)/core/corba/corba_util/misc/include
+CORBA_UTIL_LIBS = $(OCPI_BASE_DIR)/core/corba/corba_util/corba_util
 
 ifeq ($(SCAVERSION),2.2)
-SCA_CF_EXPORTS = $(OCPI_BASE_DIR)core/sca/cf/cf22/idl
+SCA_CF_EXPORTS = $(OCPI_BASE_DIR)/core/sca/cf/cf22/idl
 else
-SCA_CF_EXPORTS = $(OCPI_BASE_DIR)core/sca/cf/cf222/idl
+SCA_CF_EXPORTS = $(OCPI_BASE_DIR)/core/sca/cf/cf222/idl
 endif
 
-SCA_CF_LIBS = $(OCPI_BASE_DIR)core/sca/cf/cf
+SCA_CF_LIBS = $(OCPI_BASE_DIR)/core/sca/cf/cf
 
 CF_UTIL_EXPORTS = \
-	$(OCPI_BASE_DIR)core/sca/cf_util/misc/include \
-	$(OCPI_BASE_DIR)core/sca/cf_util/device_base/include \
-	$(OCPI_BASE_DIR)core/sca/cf_util/vfs/include
-CF_UTIL_LIBS = $(OCPI_BASE_DIR)core/sca/cf_util/cf_util
+	$(OCPI_BASE_DIR)/core/sca/cf_util/misc/include \
+	$(OCPI_BASE_DIR)/core/sca/cf_util/device_base/include \
+	$(OCPI_BASE_DIR)/core/sca/cf_util/vfs/include
+CF_UTIL_LIBS = $(OCPI_BASE_DIR)/core/sca/cf_util/cf_util
 
 
-WCI_API_BASE = $(OCPI_BASE_DIR)core/control/wci_api
+WCI_API_BASE = $(OCPI_BASE_DIR)/core/control/wci_api
 WCI_API_EXPORTS = $(WCI_API_BASE)/interface/include \
 	$(WCI_API_BASE)/rpl/include \
 	$(WCI_API_BASE)/api/include
 WCI_API_LIBS = $(WCI_API_BASE)/wci_api
+
+TESTS_OS_LIBS = $(OCPI_BASE_DIR)/tests/facilities/os/os
+
+TEST_LIBS = \
+	$(TESTS_OS_LIBS)
 

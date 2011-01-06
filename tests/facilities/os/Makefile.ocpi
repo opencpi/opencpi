@@ -34,5 +34,4 @@
 #
 ########################################################################### #
 
-ALLINC += $(OCPIOS_EXPORTS)
-ALLLIBS += $(OCPIOS_LIBS)
+include ../../../Makefile.ocpi.for-pkg
