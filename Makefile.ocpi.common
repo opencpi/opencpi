@@ -750,9 +750,6 @@ UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/local/util/sockets/include
 UTIL_LIBS = $(OCPI_BASE_DIR)/core/local/util/util
 
-TEST_FRAMEWORK_EXPORTS = $(OCPI_BASE_DIR)/tests/framework/framework/support/include
-TEST_FRAMEWORK_LIBS = $(OCPI_BASE_DIR)/tests/framework/framework/framework
-
 ifeq ($(SCAVERSION),2.2)
 ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)/core/corba/orb_services/cf22log/idl
 else
@@ -789,8 +786,12 @@ WCI_API_EXPORTS = $(WCI_API_BASE)/interface/include \
 	$(WCI_API_BASE)/api/include
 WCI_API_LIBS = $(WCI_API_BASE)/wci_api
 
-TESTS_OS_LIBS = $(OCPI_BASE_DIR)/tests/facilities/os/os
+TEST_FRAMEWORK_EXPORTS = $(OCPI_BASE_DIR)/tests/framework/framework/support/include
+TEST_FRAMEWORK_LIBS = $(OCPI_BASE_DIR)/tests/framework/framework/framework
+
+TEST_OS_LIBS = $(OCPI_BASE_DIR)/tests/facilities/os/os
 
 TEST_LIBS = \
-	$(TESTS_OS_LIBS)
+	$(TEST_OS_LIBS) \
+	$(TEST_FRAMEWORK_LIBS)
 
