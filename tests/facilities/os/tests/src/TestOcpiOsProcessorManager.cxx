@@ -276,7 +276,7 @@ namespace
 } // End: namespace<unamed>
 
 // Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( TestOcpiOsProcessManager, "os" );
+// CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( TestOcpiOsProcessManager, "os" );
 
 void TestOcpiOsProcessManager::setUp ( )
 {
