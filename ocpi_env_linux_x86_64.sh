@@ -35,7 +35,6 @@
 ########################################################################### #
 
 
-
 # Build from 32-bit x86 Linux for Linux
 
 # #### Absolute path to the base directory of the OpenCPI installation #### #
