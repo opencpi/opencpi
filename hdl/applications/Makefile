@@ -35,19 +35,31 @@
 ########################################################################### #
 
 AT=@
-APPS=demoappC demoappE testpsd testddc testbias
+APPS=testbias demoappC demoappE testpsd testddc 
 # testwbr
 
-TARGETS=xc5vlx50t-1-ff1136 xc5vsx95t-2-ff1136 xc6vlx240t-1-ff1156
+PLATFORMS=ml605
+# xc5vsx95t-2-ff1136 xc6vlx240t-1-ff1156
 
-all: $(APPS)
+all: targets
 
 .PHONY: $(APPS) clean
 
-$(APPS):
-	$(AT)for t  in $(TARGETS); do \
-		echo Making $@ for target $$t. ; \
-		make -C $@ Target=$$t; \
+targets:
+	$(AT)echo Building all apps for all mentioned targets.
+	$(AT)for a in $(APPS); do \
+	       for t in $(TARGETS); do \
+		 echo Making $$a for target $$t. ; \
+		 make -C $$a Target=$$t; \
+	       done; \
+	done
+
+platforms:
+	$(AT)echo Building all apps for all mentioned platforms.
+	$(AT)for a in $(APPS); do \
+	       for t in $(TARGETS); do \
+		 echo Making $$a for target $$t. ; \
+		 make -C $$a Target=$$t; \
 	done
 
 clean:

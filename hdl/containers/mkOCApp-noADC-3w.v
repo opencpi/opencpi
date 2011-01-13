@@ -1,6 +1,6 @@
 // This is a wrapper that maps the module ports from what mkCTop wants to see (as of 6/29/2010) into
 // what the automation tools want to see, which is WIP compliance.
-module mkOCApp(RST_N_rst_0,
+module mkOCApp4B(RST_N_rst_0,
 	       RST_N_rst_1,
 	       RST_N_rst_2,
 	       RST_N_rst_3,
@@ -861,7 +861,7 @@ module mkOCApp(RST_N_rst_0,
        wsi_s_adc_SReset_n,
        wsi_s_adc_SThreadBusy;
   // Instantiate the wip-compliant app
-  ocpi_app #(.hasDebugLogic(hasDebugLogic)) app(
+  ocpi_app app(
 				      .wci0_MReset_n(RST_N_rst_2),
 				      .wci1_MReset_n(RST_N_rst_3),
 				      .wci2_MReset_n(RST_N_rst_4),
@@ -978,6 +978,42 @@ module mkOCApp(RST_N_rst_0,
 //				      .dac_MByteEn(wsi_m_dac_MByteEn),
 //				      .dac_MReqInfo(wsi_m_dac_MReqInfo),
 //				      .dac_MReset_n(wsi_m_dac_MReset_n));
+
+// Tieoffs for unused WCI signals
+assign wci_s_0_SResp = 2'b0;
+assign wci_s_0_SThreadBusy = 1'b0;
+assign wci_s_0_SFlag = 2'b0;
+assign wci_s_0_SAddr = 32'b0;
+assign wci_s_0_SData = 32'b0;
+assign wci_s_1_SResp = 2'b0;
+assign wci_s_1_SThreadBusy = 1'b0;
+assign wci_s_1_SFlag = 2'b0;
+assign wci_s_1_SAddr = 32'b0;
+assign wci_s_1_SData = 32'b0;
+assign wci_s_5_SResp = 2'b0;
+assign wci_s_5_SThreadBusy = 1'b0;
+assign wci_s_5_SFlag = 2'b0;
+assign wci_s_5_SAddr = 32'b0;
+assign wci_s_5_SData = 32'b0;
+assign wci_s_6_SResp = 2'b0;
+assign wci_s_6_SThreadBusy = 1'b0;
+assign wci_s_6_SFlag = 2'b0;
+assign wci_s_6_SAddr = 32'b0;
+assign wci_s_6_SData = 32'b0;
+assign wci_s_7_SResp = 2'b0;
+assign wci_s_7_SThreadBusy = 1'b0;
+assign wci_s_7_SFlag = 2'b0;
+assign wci_s_7_SAddr = 32'b0;
+assign wci_s_7_SData = 32'b0;
+assign wmemiM_MCmd = 0;
+assign wmemiM_MReqLast = 0;
+assign wmemiM_MAddr = 0;
+assign wmemiM_MBurstLength = 0;
+assign wmemiM_MDataValid = 0;
+assign wmemiM_MDataLast = 0;
+assign wmemiM_MData = 0;
+assign wmemiM_MDataByteEn = 0;
+assign wmemiM_MReset_n = 1'b1;
 
 
 endmodule  // mkOCApp

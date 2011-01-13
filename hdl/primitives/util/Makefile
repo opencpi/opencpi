@@ -34,24 +34,12 @@
 #
 ########################################################################### #
 
-This tree holds code and tools specific to the HDL model.
+# Pick only what we need for now since the libsrc/hdl/ocpi is a kitchen sink
+Imports=\
+$(foreach x,\
+arSRLFIFOD arSRLFIFO ClockInvToBool ddrInput2 ddrOutput2 IDELAYCTRL_GRP,\
+$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/$(x).v)
+include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives
 
-The "primitives" directory supplies low level/primitive utility libraries
-and cores used to build application workers, device workers and other infrastructure modules.
 
-The "applications" directory holds application configurations consisting of
-workers, which will build/synthesize whole "apps" ready to be put into bitstream builds for
-particular platforms.
-
-The "devices" directory holds device workers that may use primitives.
-
-The "platforms" directory holds platform ip and parameters used to build "platform cores" that then get combined with applications to make bitstreams.
-
-The "containers" directory hold container rtl: the glue between applications and platforms.
-
-HDL OCPI components are not built here since they are built under the
-top level "components" directory where multiple model implementations
-of the same components are built (a heterogeneous component library).
-
-At this time all the building is for synthesis only, not simulation.
 

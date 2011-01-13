@@ -34,24 +34,15 @@
 #
 ########################################################################### #
 
-This tree holds code and tools specific to the HDL model.
+# This core was generated for one target
+Targets=xc5vtx240t-1-ff1759
+Top=endpoint_blk_plus_v1_14
+ImportCore=$(OCPI_HDL_IMPORTS_DIR)/coregen/pcie-4243-v5-gtx-x8-125/endpoint_blk_plus_v1_14.ngc
+#ImportBlackBox=$(OCPI_HDL_IMPORTS_DIR)/coregen/pcie-4243-v5-gtx-x8-125/pci_exp_8_lane_64b_ep.v
+include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk # We are a (compiled) core
 
-The "primitives" directory supplies low level/primitive utility libraries
-and cores used to build application workers, device workers and other infrastructure modules.
 
-The "applications" directory holds application configurations consisting of
-workers, which will build/synthesize whole "apps" ready to be put into bitstream builds for
-particular platforms.
 
-The "devices" directory holds device workers that may use primitives.
 
-The "platforms" directory holds platform ip and parameters used to build "platform cores" that then get combined with applications to make bitstreams.
 
-The "containers" directory hold container rtl: the glue between applications and platforms.
-
-HDL OCPI components are not built here since they are built under the
-top level "components" directory where multiple model implementations
-of the same components are built (a heterogeneous component library).
-
-At this time all the building is for synthesis only, not simulation.
 

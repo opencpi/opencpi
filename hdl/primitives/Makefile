@@ -34,24 +34,27 @@
 #
 ########################################################################### #
 
-This tree holds code and tools specific to the HDL model.
+OCPI_CDK_DIR=../../ocpi
+include $(OCPI_CDK_DIR)/include/util.mk
+Libs=bsv util util_virtex6 util_virtex5
+Cores=xfft_v7_1 duc_ddc_compiler_v1_0 \
+ dram_mig33_v6 dram_mig34_v5 \
+ temac_v6 \
+ pcie_v6_x4_250 pcie_v5_gtp_x1_125 pcie_v5_gtp_x8_125 pcie_v5_gtx_x8_125 pcie_s6_x1_125
+all: $(Libs) $(Cores)
+# enable cores to use libs
+$(Cores): $(Libs)
 
-The "primitives" directory supplies low level/primitive utility libraries
-and cores used to build application workers, device workers and other infrastructure modules.
+clean:
+	$(AT)$(foreach l,$(Libs) $(Cores),\
+		$(MAKE) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) clean;)
 
-The "applications" directory holds application configurations consisting of
-workers, which will build/synthesize whole "apps" ready to be put into bitstream builds for
-particular platforms.
+install:
+	$(AT)set -e;$(foreach l,$(Libs) $(Cores),$(MAKE) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install;)
 
-The "devices" directory holds device workers that may use primitives.
+.PHONY: $(Libs) $(Cores)
 
-The "platforms" directory holds platform ip and parameters used to build "platform cores" that then get combined with applications to make bitstreams.
-
-The "containers" directory hold container rtl: the glue between applications and platforms.
-
-HDL OCPI components are not built here since they are built under the
-top level "components" directory where multiple model implementations
-of the same components are built (a heterogeneous component library).
-
-At this time all the building is for synthesis only, not simulation.
-
+$(Libs) $(Cores):
+	$(AT)echo ============== For library/core $@:
+	$(AT)$(MAKE) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR))
+	$(AT)$(MAKE) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install

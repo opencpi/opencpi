@@ -34,24 +34,20 @@
 #
 ########################################################################### #
 
-This tree holds code and tools specific to the HDL model.
+# This core was generated for one target
+Top=v5_mig34
+Targets=xc5vsx95t-2-ff1136
+Imports= \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v5-mig34/mig_v3_4/user_design/rtl/*.v \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v5-mig34/ddr2_idelay_ctrl_eco20100514.v \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v5-mig34/ddr2_infrastructure_eco20100512.v \
+  $(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/v5_mig34.v
+# Remove files that we have patched with other names
+ExcludeImports=ddr2_chipscope.v ddr2_idelay_ctrl.v ddr2_infrastructure.v mig_v3_4.v
+include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk # We are a (compiled) core
 
-The "primitives" directory supplies low level/primitive utility libraries
-and cores used to build application workers, device workers and other infrastructure modules.
 
-The "applications" directory holds application configurations consisting of
-workers, which will build/synthesize whole "apps" ready to be put into bitstream builds for
-particular platforms.
 
-The "devices" directory holds device workers that may use primitives.
 
-The "platforms" directory holds platform ip and parameters used to build "platform cores" that then get combined with applications to make bitstreams.
 
-The "containers" directory hold container rtl: the glue between applications and platforms.
-
-HDL OCPI components are not built here since they are built under the
-top level "components" directory where multiple model implementations
-of the same components are built (a heterogeneous component library).
-
-At this time all the building is for synthesis only, not simulation.
 

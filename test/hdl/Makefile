@@ -34,24 +34,25 @@
 #
 ########################################################################### #
 
-This tree holds code and tools specific to the HDL model.
+ifndef OCPI_OS
+OCPI_OS=$(shell uname -s | tr A-Z a-z)
+endif
+ifneq ($(OCPI_OS),darwin)
+DOSTATIC=-static
+endif
+OCPI_OUT_DIR = $(OCPI_OS)-$(shell uname -m)-bin
+ALL=$(basename $(notdir $(wildcard src/*.c)))
+ALLBIN=$(ALL:%=$(OCPI_OUT_DIR)/%)
+$(OCPI_OUT_DIR)/cosgen: LIBS=-lm
+$(OCPI_OUT_DIR)/nft: LIBS=-lpthread
+all: $(ALLBIN)
+$(OCPI_OUT_DIR):
+	mkdir $@
 
-The "primitives" directory supplies low level/primitive utility libraries
-and cores used to build application workers, device workers and other infrastructure modules.
+$(ALLBIN): $(OCPI_OUT_DIR)/%: src/%.c | $(OCPI_OUT_DIR)
+	gcc -o $@ -std=c99 -Iinclude $(DOSTATIC) -Wall -g $^ $(LIBS)
 
-The "applications" directory holds application configurations consisting of
-workers, which will build/synthesize whole "apps" ready to be put into bitstream builds for
-particular platforms.
+clean:
+	rm -r -f *-bin
 
-The "devices" directory holds device workers that may use primitives.
-
-The "platforms" directory holds platform ip and parameters used to build "platform cores" that then get combined with applications to make bitstreams.
-
-The "containers" directory hold container rtl: the glue between applications and platforms.
-
-HDL OCPI components are not built here since they are built under the
-top level "components" directory where multiple model implementations
-of the same components are built (a heterogeneous component library).
-
-At this time all the building is for synthesis only, not simulation.
 
