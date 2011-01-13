@@ -35,6 +35,7 @@
 ########################################################################### #
 
 ifndef __UTIL_MK__
+.DELETE_ON_ERROR:
 __UTIL_MK__=x
 # Utilities used by many other makefile files
 # Allow us to include this early by establishing the default initial target (all).
@@ -45,6 +46,7 @@ CwdName=$(word $(words $(CwdWords)),$(CwdWords))
 #$(info cwd $(Cwd) words =$(CwdWords)= name $(CwdName))
 Models=xm rcc hdl
 Model=$(strip $(subst ., ,$(suffix $(CwdName))))
+UCModel=$(call ToUpper,$(Model))
 AT=@
 RM=rm
 TIME=/usr/bin/time -f %E
@@ -64,17 +66,18 @@ HostSystem=$(shell uname | tr A-Z a-z)
 HostTarget=$(shell echo `uname -s`-`uname -m` | tr A-Z a-z)
 # helper function to FindRelative, recursive
 # arg 1 is from-list of path components, arg 2 is to-list
+#$(info frs 1 $(1) 2 $(2))
 FindRelativeStep=\
     $(if $(filter $(firstword $(1)),$(firstword $(2))),\
         $(call FindRelativeStep,$(wordlist 2,$(words $(1)),$(1)),$(wordlist 2,$(words $(2)),$(2))),\
-	$(if $(1),$(subst $(Space),/,$(strip $(patsubst %,..,$(1))))$(if $(2),/))$(subst $(Space),/,$(2)))
+	$(if $(1),$(subst $(Space),/,$(strip $(patsubst %,..,$(1))))$(if $(2),/),$(if $(2),,.))$(subst $(Space),/,$(2)))
 
 # helper function for FindRelative
 # arg1 is absolute-from arg2 is absolute-to arg3 is original from, arg4 is original to
-#	$(info 1 $(1) 2 $(2) 3 $(3) 4 $(4))
+#$(info 1 $(1) 2 $(2) 3 $(3) 4 $(4))
 FindRelativeTop=\
-        $(if $(1),\
-            $(if $(2),\
+        $(if $(realpath $(1)),\
+            $(if $(realpath $(2)),\
 	        $(if $(filter $(firstword $(strip $(subst /, ,$(1)))),$(firstword $(strip $(subst /, ,$(2))))),\
                     $(call FindRelativeStep, $(strip $(subst /, ,$(1))), $(strip $(subst /, ,$(2)))),\
 		    $(2)),\
@@ -83,7 +86,13 @@ FindRelativeTop=\
 
 # Function: return the relative path to get from $(1) to $(2).  Useful for creating symlinks
 # Note return value must be nicely stripped
-FindRelative=$(strip $(call FindRelativeTop,$(realpath $(1)),$(realpath $(2)),$(1),$(2)))
+#$(info findrel 1 $(1) 2 $(2))
+FindRelative=$(strip $(call FindRelativeTop,$(abspath $(1)),$(abspath $(2)),$(1),$(2)))
+#FindRelative=$(strip \
+#               $(info findrel 1 $(1) 2 $(2))\
+#               $(call FindRelativeTop,$(realpath $(1)),$(realpath $(2)),$(strip $(1)),$(strip $(2))))
+
+#               $(foreach i,$(call FindRelativeTop,$(realpath $(1)),$(realpath $(2)),$(strip $(1)),$(strip $(2))),$(info FR:$(i))$(i)))
 
 # Function: retrieve the contents of a symlink - is this ugly or what!
 # It would be easier using csh
@@ -107,12 +116,18 @@ MakeSymLink=$(call MakeSymLink2,$(1),$(2),$(notdir $(1)))
 MakeTemp=$(shell export TMPDIR=$(TargetDir);TF=`mktemp -t -u`;echo "$(1)" | tr " " "\n"> $$TF;echo $$TF)
 
 # Output directory processing.  OutDir is the internal variable used everywhere.
-# It is set based on the public OCPI_COMPONENT_OUT_DIR, and is created as needed
+# It is set based on the public OCPI_OUTPUT_DIR, and is created as needed
 ifndef OutDir
-ifdef OCPI_COMPONENT_OUT_DIR
+ifdef OCPI_OUTPUT_DIR
 OutDir=$(OCPI_COMPONENT_OUT_DIR)/$(CwdName)/
 $(OutDir):
 	$(AT)mkdir $@
 endif
 endif
+
+# Make all target dirs
+TargetDir=$(OutDir)target-$(Target)
+$(OutDir)target-%: | $(OutDIr)
+	$(AT)echo Creating target dir $@
+	$(AT)mkdir $@
 endif

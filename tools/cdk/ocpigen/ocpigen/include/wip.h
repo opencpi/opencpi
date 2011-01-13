@@ -78,10 +78,10 @@ struct WDI {
   bool diverseDataSizes;
   unsigned maxMessageValues;
   unsigned numberOfOpcodes;
+  bool continuous;
   bool isProducer;
   bool variableMessageLength;
   bool zeroLengthMessages;
-  bool continuous;
   bool isOptional;
   unsigned minBuffers, maxLength;
   unsigned nOperations;
@@ -107,7 +107,7 @@ struct WDI {
   OCP_SIGNAL_MS(MDataValid) \
   OCP_SIGNAL_MV(MFlag, 0) \
   OCP_SIGNAL_MSR(MBurstPrecise) \
-  OCP_SIGNAL_MVR(MReqInfo, 0) \
+  OCP_SIGNAL_MVR(MReqInfo, 0)		\
   OCP_SIGNAL_MSR(MReqLast) \
   OCP_SIGNAL_MS(MReset_n) \
   OCP_SIGNAL_MS(MRespAccept) \
@@ -129,6 +129,12 @@ struct OcpSignalDesc {
   unsigned width;
   bool type;
   bool request;
+};
+// A bit redundant from the above, but for adhoc signals
+struct Signal {
+  const char *name;
+  enum { IN, OUT, INOUT } direction;
+  unsigned width;
 };
 #define OCP_SIGNAL_MT(n,w) OCP_SIGNAL_MV(n,w)
 #define OCP_SIGNAL_ST(n,w) OCP_SIGNAL_SV(n,w)
@@ -186,13 +192,12 @@ struct WSI {
 };
 struct WMI {
   WDI wdi;
-  bool continuous;
   bool talkBack;
   bool bidirectional;
   uint32_t mflagWidth;// kludge for shep - FIXME
 };
 struct WMemI {
-  bool writeDataFlowControl, readDataFlowControl;
+  bool writeDataFlowControl, readDataFlowControl, isSlave;
   uint64_t memoryWords;
   uint32_t maxBurstLength;
 };
@@ -308,6 +313,10 @@ struct Connection {
   const char *masterName, *slaveName;
   InstancePort *external; // external assembly port
 };
+struct InstanceProperty {
+  Property *property;
+  CP::Scalar::Value value;
+};
 struct Instance {
   const char *name;
   const char *wName;
@@ -317,6 +326,8 @@ struct Instance {
   uint32_t index;      // index within container
   bool isInterconnect; // instance is acting in the container to attach to an interconnect
   const char *attach;  // external node port this worker is attached to for io or interconnect
+  unsigned nValues;    // number of property values
+  InstanceProperty *properties;
 };
 struct OcpAdapt {
   const char *expr;
@@ -374,17 +385,19 @@ struct Worker {
   unsigned instances;
   Language language;
   Assembly assembly;
+  unsigned nSignals;
+  Signal *signals;
 };
 
 
 // Are master signals inputs at this port?
 static inline bool masterIn(Port *p) {
   return
-      p->type == WCIPort ? 1 :
-      p->type == WMemIPort ? 0 :
-      p->type == WMIPort ? 0 :
-      p->type == WSIPort ? (p->wdi.isProducer ? 0 : 1) :
-      false;
+    p->type == WCIPort ? 1 :
+    p->type == WMemIPort ? (p->wmemi.isSlave ? 1 : 0) :
+    p->type == WMIPort ? 0 :
+    p->type == WSIPort ? (p->wdi.isProducer ? 0 : 1) :
+    false;
 }
 
 #define SKEL "_skel"
@@ -393,7 +406,8 @@ static inline bool masterIn(Port *p) {
 #define ASSY "_assy"
 #define VHD ".vhd"
 #define VER ".v"
-
+#define VERH ".vh"
+#define BOOL(b) ((b) ? "true" : "false")
 extern const char
   *dumpDeps(const char *top),
   **includes, *depFile,

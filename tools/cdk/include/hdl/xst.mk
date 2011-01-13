@@ -58,17 +58,22 @@ include $(OCPI_CDK_DIR)/include/util.mk
 
 # there is no such thing
 OBJ:=.xxx
-BF:=.ngc
 # Options that the user should not specify
 XstBadOptions=\
-    -ifn -ofn -top -xsthdpini -p -ifmt -iobuf -sd -vlgincdir -vlgpath -lso
+    -ifn -ofn -top -xsthdpini -p -ifmt -sd -vlgincdir -vlgpath -lso
 # Options that the user may specify/override
-XstGoodOptions=-bufg -opt_mode -opt_level -read_cores
+XstGoodOptions=-bufg -opt_mode -opt_level -read_cores -iobuf
 # Our default options, some of which may be overridden
+# This is the set for building cores, not chips.
 XstDefaultOptions=\
     -ifmt mixed -bufg 0 -iobuf no -opt_mode speed -opt_level 2 -ofmt NGC \
-    -keep_hierarchy soft -netlist_hierarchy rebuilt -read_cores optimize
+    -keep_hierarchy soft -netlist_hierarchy rebuilt -read_cores optimize \
+    -hierarchy_separator /
 
+# Extra default ones:\
+ -xor_collapse TRUE -verilog2001 TRUE -slice_packing TRUE \
+ -shift_extract TRUE -register_balancing No -priority_extract Yes \
+ -mux_style Auto -mux_extract Yes -decoder_extract TRUE
 # check the first option in the list and recurse
 XstCheckOption=\
 $(if $(filter -%,$(word 1,$(1))),\
@@ -86,79 +91,83 @@ XstCheckOptions=\
             $(error XST option "$(option)" not allowed here)))\
     $(call XstCheckOption,$(1))
 
-ifneq ($(origin XSTOPTIONS),undefined)
-# User has specified all options
-$(eval $(call XstCheckOptions,$(XSTOPTIONS)))
-XstOptions=$(XSTOPTIONS)
-else
-# User has not specified all options
-ifdef XSTEXTRAOPTIONS
-# User has specified extra options to add-to or override our defaults
-$(eval $(call XstCheckOptions,$(XSTEXTRAOPTIONS)))
-# Accept or reject first option and then recurse.  List already checked
 XstPruneOption=\
-    $(if $(filter $(word 1,$(1)),$(XSTEXTRAOPTIONS)),,$(wordlist 1,2,$(1))) \
+    $(if $(filter $(word 1,$(1)),$(XstExtraOptions)),,$(wordlist 1,2,$(1))) \
     $(if $(word 3,$(1)),\
         $(call XstPruneOption,$(wordlist 3,$(words $(1)),$(1))))
-XstOptions = $(strip $(call XstPruneOption,$(XstDefaultOptions)))
-XstOptions += $(XSTEXTRAOPTIONS)
-else # neither XSTOPTIONS nor XSTEXTRAOPTIONS is set
-XstOptions=$(XstDefaultOptions)
-endif
-endif
+
+XstOptions=\
+$(call XstCheckOptions,$(XstExtraOptions))\
+$(call XstPruneOption,$(XstDefaultOptions)) $(XstExtraOptions) $(XstInternalOptions)
+
 # Options and temp files if we have any libraries
 # Note that "Libraries" is for precompiled libraries, whereas "OcpiLibraries" are for cores (in the -sd path),
 # BUT! the empty module declarations must be in the lso list so to get cores we need the bb in a library too.
-ifneq ($(Libraries)$(OcpiLibraries)$(OcpiCores),)
-Family=$(if $(findstring xc5,$(Target))$(findstring virtex5,$(Target)),virtex5,virtex6)
-XstLsoFile=$(Worker).lso
-XstIniFile=$(Worker).ini
+ifneq ($(Libraries)$(ComponentLibraries)$(Cores),)
+
+Family:=$(if $(findstring xc5,$(or $(Part),$(Target)))$(findstring virtex5,$(or $(Part),$(Target))),virtex5,virtex6)
+XstLsoFile=$(Core).lso
+XstIniFile=$(Core).ini
 XstMakeIni=\
-  ($(foreach l,$(Libraries) $(OcpiCores),echo $(notdir $(l))=$(strip $(call FindRelative,$(TargetDir),$(l)/$(call LibraryAccessTarget,$(Target))));)\
-   $(foreach l,$(OcpiLibraries),echo $(notdir $(l))=$(strip $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(call LibraryAccessTarget,$(Target))));)\
-  ) > $(XstIniFile);
+  ($(foreach l,$(Libraries) $(Cores),\
+      echo $(lastword $(subst -, ,$(notdir $(l))))=$(call FindRelative,$(TargetDir),$(call LibraryRefDir,$(l),$(Family)));) \
+   $(foreach l,$(ComponentLibraries),echo $(notdir $(l))=$(strip $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(call LibraryAccessTarget,$(Family))));)\
+  echo) > $(XstIniFile);
 XstMakeLso=\
-  (echo work;$(foreach l,$(Libraries) $(OcpiLibraries) $(OcpiCores),echo $(notdir $(l));)) > $(XstLsoFile);
+  (echo $(LibName);$(foreach l,$(Libraries) $(ComponentLibraries) $(Cores),echo $(lastword $(subst -, ,$(notdir $(l))));)) > $(XstLsoFile);
 XstOptions += -lso $(XstLsoFile) 
 endif
 XstPrjFile=$(Core).prj
-XstMakePrj=($(foreach f,$(CompiledSourceFiles),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),.)/$(f)"';)) > $(XstPrjFile);
+XstMakePrj=($(foreach f,$(filter %.v %.V,$^),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) > $(XstPrjFile);
 XstScrFile=$(Core).scr
 XstMakeScr=(echo set -xsthdpdir . -xsthdpini $(XstIniFile);echo run $(XstOptions)) > $(XstScrFile);
 # The options we directly specify
-Top=$(if $(Application),ocpi_app,$(Core))
-XstOptions += -ifn $(XstPrjFile) -ofn $(Core) -top $(Top) -p $(Target) \
-               -vlgincdir { $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) }
-XstOptions += -sd { .. \
-                    $(foreach l,$(OcpiLibraries),$(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(Target)))\
-		    $(foreach c,$(OcpiCores),$(call FindRelative,$(TargetDir),$(c)/$(Target))) \
+ifndef Top
+Top=$(Core)
+endif
+#$(info TARGETDIR: $(TargetDir))
+XstOptions += -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) -p $(or $(Part),$(Target)) \
+               $(and $(VerilogIncludeDirs),-vlgincdir { $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) }) \
+                -sd { \
+                    $(foreach l,$(ComponentLibraries),$(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(Part),$(Target))))\
+		    $(foreach c,$(Cores),$(call FindRelative,$(TargetDir),$(call CoreRefDir,$(c),$(or $(Part),$(Target)))))\
                   }
-XstNgcOptions += $(foreach c,$(OcpiCores),-sd $(call FindRelative,$(TargetDir),$(c)/$(Target)))
-
-#$(foreach l,$(Libraries:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found.)))
-#$(foreach l,$(OcpiCores:%=%/$(call LibraryAccessTarget,$(Target))),$(if $(wildcard $(l)),,$(error Error: Specified library: "$(l)", in the "OcpiCores" variable, was not found.)))
+XstNgcOptions= $(foreach l,$(ComponentLibraries), -sd \
+                 $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(Part) $(Target))))\
+	       $(foreach c,$(Cores), -sd \
+                 $(call FindRelative,$(TargetDir),$(call CoreRefDir,$(c),$(or $(Part),$(Target))))) 
 
 ifndef OCPI_XILINX_TOOLS_DIR
 XilinxVersions=$(shell echo $(wildcard /opt/Xilinx/*/ISE_DS) | tr ' ' '\n' | sort -r)
 OCPI_XILINX_TOOLS_DIR=$(firstword $(XilinxVersions))
 endif
 Xilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh
+#$(info lib=$(Libraries)= cores=$(Cores)= Comps=$(ComponentLibraries)= td=$(TargetDir)= @=$(@))
 Compile=\
-  $(foreach l,$(Libraries:%=%/$(call LibraryAccessTarget,$(Target))),\
-     $(if $(wildcard $(l)),,\
+  $(foreach l,$(Libraries),\
+     $(if $(wildcard $(call LibraryRefDir,$(l),$(Family))),,\
           $(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found.))) \
-  $(foreach l,$(OcpiCores:%=%/$(call LibraryAccessTarget,$(Target))),\
-     $(if $(wildcard $(l)),,\
-          $(error Error: Specified library: "$(l)", in the "OcpiCores" variable, was not found.))) \
-  $(AT)echo Building $@  with top == $(Top)\; details in $(TargetDir)/xst.out.;\
-  cd $(TargetDir);$(XstMakePrj)$(XstMakeLso)$(XstMakeIni)$(XstMakeScr)\
-  ($(Xilinx) ; $(TIME) xst -ifn $(XstScrFile)) > xst.out;\
-  grep -i error xst.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
-  if grep -q 'Number of errors   :    0 ' xst.out; then \
+  $(foreach l,$(Cores),\
+     $(if $(wildcard $(call LibraryRefDir,$(l),$(or $(Part) $(Target)))),,\
+          $(error Error: Specified core library: "$(call LibraryRefDir,$(l),$(or $(Part) $(Target)))", in the "Cores" variable, was not found.))) \
+  $(AT)echo '  'Creating $@  with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\
+  cd $(TargetDir);\
+  $(XstMakePrj)\
+  $(XstMakeLso)\
+  $(XstMakeIni)\
+  $(XstMakeScr)\
+  $(Xilinx)> xst-$(Core).out ; (echo Command: xst -ifn $(XstScrFile); $(TIME) xst -ifn $(XstScrFile)) >> xst-$(Core).out;\
+  grep -i error xst-$(Core).out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
+  if grep -q 'Number of errors   :    0 ' xst-$(Core).out; then \
+    ngc2edif -w $(Core).ngc >> xst-$(Core).out; \
     exit 0; \
   else \
     exit 1; \
   fi
+
+#    mv $(Core).ngc temp.ngc; \
+#    echo doing: ngcbuild -verbose $(XstNgcOptions) temp.ngc $(Core).ngc >> xst-$(Core).out; \
+#    ngcbuild -verbose $(XstNgcOptions) temp.ngc $(Core).ngc >> xst-$(Core).out; \
 
 # in case we need to run ngcbuild after xst
 #    echo ngcbuild $(XstNgcOptions) temp.ngc $(Core).ngc; \

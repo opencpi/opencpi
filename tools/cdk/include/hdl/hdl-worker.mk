@@ -34,15 +34,12 @@
 #
 ########################################################################### #
 
-ifndef Target
-$(error The "Target" variable has not been set.)
-endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
 # Makefile fragment for HDL workers
 
-ImplSuffix=_impl.v
+ImplSuffix=_impl.vh
 SkelSuffix=_skel.v
-DefsSuffix=_defs.v
+DefsSuffix=_defs.vh
 # BF:=.edif
 # LinkBinary=cp $< $@
 # Compile should ultimately be compile for synthesis, not simulation
@@ -72,9 +69,10 @@ endif
 include $(OCPI_CDK_DIR)/include/hdl/xst.mk
 endif
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
-
+ifneq ($(filter $(Target),$(Targets)),)
 ArtifactFile=
 $(BinaryFile): $(AuthoredSourceFiles) $(GeneratedSourceFiles) $(DefsFiles) $(ImplHeaderFiles)
+	$(AT)echo Building HDL $(if $(Application),application,worker) $(Worker) for target $(Target)
 	$(Compile)
 
 ifdef LibDir
@@ -111,4 +109,4 @@ $(DefsFiles): $(GeneratedDir)/%$(DefsSuffix): %.xml | $(GeneratedDir)
 
 $(foreach w,$(Workers),$(TargetDir)/$(w)$(OBJ)): $(TargetDir)/%$(OBJ): $(GeneratedDir)/%$(DefsSuffix) $(Libraries)
 
-
+endif

@@ -51,6 +51,15 @@ $(info Worker name is $(Worker) from its directory name $(CwdName))
 Workers=$(Worker)
 endif
 endif
+ifndef Target
+$(error The "Target" variable has not been set.)
+endif
+ifndef Targets
+Targets=$(Target)
+endif
+ifeq ($(filter $(Target),$(Targets)),)
+$(info $(UCModel) worker $(Worker) will not be built for target $(Target) (only for $(Targets)))
+else
 GeneratedDir=$(OutDir)gen
 TargetDir=$(OutDir)target-$(Target)
 ImplXmlFiles=$(Workers:%=%.xml)
@@ -75,7 +84,7 @@ ToolsTarget=$(HostTarget)
 ToolsDir=$(OCPI_CDK_DIR)/bin/$(HostTarget)
 IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
 CleanFiles += $(GeneratedSourceFiles)
-override XmlIncludeDirs:=. $(XmlIncludeDirs)
+XmlIncludeDirs+=. $(XmlIncludeDirsInternal)
 # We assume all outputs are in the generated directory, so -M goes in that directory
 ifeq ($(HostSystem),darwin)
 DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/../lib/$(HostTarget)-bin
@@ -157,7 +166,7 @@ endif
 
 endif
 
-clean:
+clean::
 	$(AT)for s in $(AuthoredSourceFiles); do \
 	    sk=$(GeneratedDir)/`echo $$s | sed s~$(SourceSuffix)$$~$(SkelSuffix)~`; \
 	    if test -e $$s -a -e $$sk; then \
@@ -178,3 +187,4 @@ clean:
 	$(ModelSpecificCleanupHook)
 
 -include $(GeneratedDir)/*.deps
+endif

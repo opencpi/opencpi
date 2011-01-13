@@ -34,44 +34,19 @@
 #
 ########################################################################### #
 
-include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+ifndef __HDL_PRE_MK__
+include $(OCPI_CDK_DIR)/include/util.mk
 # Makefile fragment for HDL primitives, cores, and workers etc.
-ifndef SourceFiles
-CompiledSourceFiles:= $(wildcard *.[vV]) $(wildcard *.vhd) $(wildcard *.vhdl)
-#$(info csf1: $(CompiledSourceFiles) ok: $(wildcard *.v))
-else
-CompiledSourceFiles:= $(SourceFiles)
-endif
-# if no one else does anything, the default library name
-# (the library into which the source files are compiled)
-# will be the work library - generally when you are not exporting the library
-ifndef LibName
-LibName=work
-else
-ifndef InstallDir
-InstallDir=$(OCPI_CDK_DIR)/lib/hdl/$(LibName)
-$(OCPI_CDK_DIR)/lib/hdl $(OCPI_CDK_DIR)/lib $(InstallDir):
-	$(AT)mkdir $@
 
-$(InstallDir): | $(OCPI_CDK_DIR)/lib/hdl
-$(OCPI_CDK_DIR)/lib/hdl: | $(OCPI_CDK_DIR)/lib
-
+Model=hdl
+SourceSuffix=.v
+# The directory of the library (given a lib and a target)
+LibraryRefDir=$(if $(findstring /,$(1)),$(1),$(OCPI_CDK_DIR)/lib/hdl/$(1))/$(call LibraryAccessTarget,$(2))
+CoreRefDir=$(if $(findstring /,$(1)),$(1),$(OCPI_CDK_DIR)/lib/hdl/$(1))/$(2)
+LibraryAccessTarget=$(if $(findstring xc5,$(1))$(findstring virtex5,$(1)),virtex5,$(if $(findstring xc6,$(1))$(findstring virtex6,$(1)),virtex6,$(error No family can be determined from "$(1)")))
+LibraryFileTarget2=$(if $(filter virtex5,$(1))$(findstring xc5,$(1)),hdllib.ref,$(2).sdbl)
+LibraryFileTarget=$(if $(filter virtex5,$(1))$(findstring xc5,$(1)),hdllib.ref,$(LibName).sdbl)
+LibraryCleanTargets=$(if $(filter virtex5,$(1))$(findstring xc5,$(1)),hdllib.ref vlg??,*.sdb?)
+TargetFamily=$(call LibraryAccessTarget,$(1))
+BF:=.ngc
 endif
-endif
-
-# Support for oddly named targets that are not exactly parts
-ifndef Parts
-Parts=$(Targets)
-endif
-Families=$(sort $(foreach t,$(Parts),$(call LibraryAccessTarget,$(t))))
-ifneq ($(filter-out $(Parts),$(Families)),)
-$(foreach t,$(filter-out $(Parts),$(Families)),$(OutDir)target-$(t)): | $(OutDir)
-	$(AT)mkdir $@
-endif
-include $(OCPI_CDK_DIR)/include/hdl/xst.mk
-
-ImportsDir=$(OutDir)imports
-$(ImportsDir)::
-	$(AT)echo -n
-clean::
-	rm -r -f $(OutDir)target-* $(OutDir)imports

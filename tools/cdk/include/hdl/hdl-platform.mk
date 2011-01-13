@@ -34,44 +34,34 @@
 #
 ########################################################################### #
 
+# This Makefile is to prebuild platform cores, which will have an unresolved
+# reference to mkOCApp.  We build with combinations of devices (which are the
+# optional elements of the platform).
+
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
-# Makefile fragment for HDL primitives, cores, and workers etc.
-ifndef SourceFiles
-CompiledSourceFiles:= $(wildcard *.[vV]) $(wildcard *.vhd) $(wildcard *.vhdl)
-#$(info csf1: $(CompiledSourceFiles) ok: $(wildcard *.v))
-else
-CompiledSourceFiles:= $(SourceFiles)
+ifeq ($(Part),)
+$(error No "Part" specified for this platform)
 endif
-# if no one else does anything, the default library name
-# (the library into which the source files are compiled)
-# will be the work library - generally when you are not exporting the library
-ifndef LibName
-LibName=work
-else
-ifndef InstallDir
-InstallDir=$(OCPI_CDK_DIR)/lib/hdl/$(LibName)
-$(OCPI_CDK_DIR)/lib/hdl $(OCPI_CDK_DIR)/lib $(InstallDir):
-	$(AT)mkdir $@
+Parts=$(Part)
+ifndef Platform
+Platform=$(CwdName)
+endif
+Top=fpgaTop
+SourceFiles+=../common/mkOCApp_bb.v
+ComponentLibraries=../../devices
+Targets=$(Platform) $(foreach c,$(Configurations),$(Platform)-$(subst -, ,$(c)))
+$(info Platform: $(Platform) Targets: $(Targets))
+SourceFiles+=$(wildcard ../common/*.v)
+LibName=$(Platform)
+XstExtraOptions=-iobuf yes -bufg 32
+XstInternalOptions=-uc ../$(Platform).xcf
+NoBlackBoxLib=yes
+include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk
+ifneq (,)
+BBLinks=$(Targets:target-%=%/$(Family))
+$(BBLinks): | $(dir $(@))
+	ln -s . target-$(Platform)/$(Part)
+	ln -s ../target-$(Family) $@
+all: $(BBLinks)
+endif
 
-$(InstallDir): | $(OCPI_CDK_DIR)/lib/hdl
-$(OCPI_CDK_DIR)/lib/hdl: | $(OCPI_CDK_DIR)/lib
-
-endif
-endif
-
-# Support for oddly named targets that are not exactly parts
-ifndef Parts
-Parts=$(Targets)
-endif
-Families=$(sort $(foreach t,$(Parts),$(call LibraryAccessTarget,$(t))))
-ifneq ($(filter-out $(Parts),$(Families)),)
-$(foreach t,$(filter-out $(Parts),$(Families)),$(OutDir)target-$(t)): | $(OutDir)
-	$(AT)mkdir $@
-endif
-include $(OCPI_CDK_DIR)/include/hdl/xst.mk
-
-ImportsDir=$(OutDir)imports
-$(ImportsDir)::
-	$(AT)echo -n
-clean::
-	rm -r -f $(OutDir)target-* $(OutDir)imports

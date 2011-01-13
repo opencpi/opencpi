@@ -217,7 +217,7 @@ deriveOCP(Worker *w) {
       }
       break;
     case WMemIPort:
-      p->master = true;
+      p->master = !p->wmemi.isSlave;
       ocp->MAddr.width =
 	ceilLog2(p->wmemi.memoryWords) + ceilLog2(p->dataWidth/p->byteWidth);
       ocp->MAddr.value = s;

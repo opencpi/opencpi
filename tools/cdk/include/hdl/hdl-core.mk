@@ -35,97 +35,125 @@
 ########################################################################### #
 
 # This file is for building a core, which will also build the library for it...
-# The core must 
-include $(OCPI_CDK_DIR)/include/util.mk
+# A "core" may be imported, and thus the "import" target, usually based on OCPI_HDL_IMPORT_DIR,
+# (re)populates the source files here under the "import" dir, to highlight the fact that
+# they are not really edited in place here.
+
+# Constant definitions and those trivially based on the Makefile
+include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+
 ifndef Core
 Core=$(CwdName)
-$(info Core name "$(Core)" inferred from directory name.)
+endif
+LibName=$(Core)
+ifdef ImportCore
+PreBuiltCore=yes
+Imports += $(ImportCore)
+CoreFile=$(notdir $(ImportCore))
+else
+CoreFile=$(Core)$(BF)
 endif
 
-ifdef CoreBlackBoxFile
+ifndef Top
+Top:=$(Core)
+endif
+
+ifndef Targets
+  $(error Variable \"Targets\" for $(Core) must be defined)
+endif
+
+ifndef NoBlackBoxLib
+ifdef ImportBlackBox
+Imports += $(ImportBlackBox)
+CoreBlackBoxFile:= $(OutDir)imports/$(notdir $(ImportBlackBox))
+else
+ifndef CoreBlackBoxFile
+  CoreBlackBoxFile:=$(Top)_bb.v
+endif
 ifeq ($(realpath $(CoreBlackBoxFile)),)
-$(error CoreBlackBoxFile "$(CoreBlackBoxFile)" does not exist)
+  $(error Core BlackBox File "$(CoreBlackBoxFile)" does not exist)
 endif
-else
-$(error Variable "CoreBlackBoxFile" for $(Core) must be defined)
 endif
-ifndef Target
-$(errr Variable \"Target\" for $(Core) must be defined)
 endif
 
-LibName=$(CwdName)
 include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
-# Avoid compiling the black box file.
-SourceFiles:=$(filter-out $(CoreBlackBoxFile),$(SourceFiles))
-AuthoredSourceFiles=$(sort $(SourceFiles))
 
-# More explicitly build the obj file, not as a side effect of the library
-
-define DoCoreTarget
-
-# The stub library
-LibResults+=$(OutDir)$(call LibraryAccessTarget,$(1))/$(LibName)/$(call LibraryFileTarget,$(1))
-$(OutDir)$(call LibraryAccessTarget,$(1))/$(LibName)/$(call LibraryFileTarget,$(1)): TargetDir=$(call LibraryAccessTarget,$(1))
-$(OutDir)$(call LibraryAccessTarget,$(1))/$(LibName)/$(call LibraryFileTarget,$(1)): Target=$(call LibraryAccessTarget,$(1))
-$(OutDir)$(call LibraryAccessTarget,$(1))/$(LibName)/$(call LibraryFileTarget,$(1)): SourceFiles=$(CoreBlackBoxFile) 
-$(OutDir)$(call LibraryAccessTarget,$(1))/$(LibName)/$(call LibraryFileTarget,$(1)): | $(OutDir)$(call LibraryAccessTarget,$(1))
-$(OutDir)$(call LibraryAccessTarget,$(1)): | $(OutDir)
-	$(AT)mkdir $$@
-
-
-CoreResults+=$(OutDir)$(1)/$(Core)$(BF)
-$(OutDir)$(1)/$(Core)$(SourceSuffix): Target=$(1)
-$(OutDir)$(1)/$(Core)$(BF): Target=$(1)
-$(OutDir)$(1)/$(Core)$(BF): TargetDir=$(1)
-$(OutDir)$(1)/$(Core)$(BF): $(SourceFiles) | $(OutDir)$(1)
-$(OutDir)$(1): | $(OutDir)
-	$(AT)mkdir $$@
+ifndef NoBlackBoxLib
+# List of families from these targets
+define DoFamilyTarget
+LibResults+=$(OutDir)target-$(1)/$(Core)/$(call LibraryFileTarget,$(1))
+$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): | $(OutDir)target-$(1)
+$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): LibName=$(Core)
+$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): Core=dummy
+$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): Target=$(1)
+$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): TargetDir=$(OutDir)target-$(1)
+$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): CompiledSourceFiles=$(CoreBlackBoxFile) 
+$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): $(CoreBlackBoxFile) 
 endef
-
-$(foreach t,$(Targets),$(eval $(call DoCoreTarget,$(t))))
-
-ifdef DontBuildCores
-$(CoreResults):
-	$(AT)echo Exporting pre-built coregen NGC file $(Core).ngc for target \"$(Target)\"
-	cd $(Target); rm -f $(Core).ngc; ln -s ../$(Core)-$(Target).ngc $(Core).ngc
-else
-$(CoreResults):
-	$(AT)echo Building core \"$(Core)\" for target \"$(Target)\"
-	$(Compile)
-endif
-
-#	$(MAKE) -f $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk \
-#		CompiledSourceFiles="$(CoreBlackBoxFile) $(OCPI_CDK_DIR)/include/hdl/onewire.v"\
-#		OCPI_CDK_DIR=$(OCPI_CDK_DIR)
+$(foreach f,$(Families),$(eval $(call DoFamilyTarget,$(f))))
 
 $(sort $(LibResults)): $(CoreBlackBoxFile)
-	$(AT)echo Building core \"$(Core)\" stub/blackbox library for target \"$(Target)\" from \"$(CoreBlackBoxFile)\"
+	$(AT)echo Building stub/blackbox library for target \"$(Family)\" from \"$(CoreBlackBoxFile)\"
+	$(AT)rm -f $(TargetDir)/$(Core)$(BF) $(TargetDir)/*.lso
+	$(AT)rm -r -f $(TargetDir)/work
 	$(Compile)
+endif
 
-#$(CoreBBs): $(CoreResults)
-#	$(AT)echo Creating link to $(CoreBlackBoxFile) to expose the black box file for core "$(Core)".
-#	$(AT)$(call MakeSymLink2,$(CoreBlackBoxFile),$(Target),$(Core)$(SourceSuffix))
+# I'm not sure this does anything...
+$(info: Targets: $(Targets))
+.SECONDEXPANSION:
+CoreResults=$(Targets:%=$(OutDir)target-%/$(Core)$(BF))
+#$(info cr $(CoreResults))
+$(CoreResults): Target=$(@:$(OutDir)target-%/$(Core)$(BF)=%)
+$(CoreResults): LibName=work
+$(CoreResults): TargetDir=$(@:%/$(Core)$(BF)=%)
 
-# Create stub library after core is built
-#$(LibBBs): $(CoreResults)
-#	$(AT)echo Building core $(Core) for $(Target)
-#	$(Compile)
+# Dependencies for all types
+$(CoreResults): $(ImportsDir) | $$(TargetDir)
+#$(info LR $(LibResults) CR $(CoreResults) F $(Families))
+all:$(LibResults) $(CoreResults)
 
-all: $(CoreResults) $(LibResults)
+ifdef PreBuiltCore
+$(CoreResults): $(OutDir)imports/$(CoreFile)
+	$(AT)if test ! -L $@; then \
+		echo Exporting pre-built coregen NGC file $(Core)$(BF) for target \"$(Part)\"; \
+	     fi
+	$(AT)$(call MakeSymLink2,$(OutDir)imports/$(CoreFile),$(TargetDir),$(Core)$(BF))
+else
+#	$(AT)echo sf1: $@ asf $(CompiledSourceFiles). sf $(SourceFiles)
+$(CoreResults): $$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles)) 
+	$(AT)echo Building core \"$(Core)\" for target \"$(Target)\" part \"$(Part)\"
+	$(AT)rm -f $@ $(TargetDir)/*.lso
+	$(Compile)
+endif
 
-clean:
-	rm -r -f $(foreach t,$(Targets),$(OutDir)$(t) $(OutDir)$(call LibraryAccessTarget,$(t)))
+ifndef NoBlackBox
 
 # Need to install both the stub library and the core itself
-install: | $(InstallDir)
-	$(AT)echo Installing stub library for core $(Core) for targets: $(Targets)
-	$(AT)echo Family targets: $(foreach t,$(Targets),$(call LibraryAccessTarget,$(t)))
-	$(foreach f,$(sort $(foreach t,$(Targets),$(call LibraryAccessTarget,$(t)))),\
-		rm -r -f $(InstallDir)/$(f);\
-		mkdir $(InstallDir)/$(f);\
-		cp -r -p -L $(OutDir)$(f)/$(LibName)/* $(InstallDir)/$(f);)
-	$(AT)echo Installing core file for core $(Core)
-	$(foreach t,$(Targets),\
-		rm -r -f $(InstallDir)/$(t);\
-		mkdir $(InstallDir)/$(t);\
-		cp -r -p -L $(OutDir)$(t)/$(Core)$(BF) $(InstallDir)/$(t);)
+# but the core needs to be installed before the Top-named link
+install_core:
+	$(AT)for f in $(Targets); do \
+	       if ! cmp -s $(OutDir)target-$$f/$(Core)$(BF) $(InstallDir)/$$f/$(Core)$(BF); then \
+	         echo Installing core $(Core) for target: $$f; \
+		 if ! test -d $(InstallDir); then mkdir $(InstallDir); fi; \
+		 if ! test -d $(InstallDir)/$$f; then mkdir $(InstallDir)/$$f; fi; \
+		 rm -f $(InstallDir)/$$f/$(Core)$(BF); \
+		 cp -r -p -L $(OutDir)target-$$f/$(Core)$(BF) $(InstallDir)/$$f; \
+	       fi; \
+	     done
+install: install_core | $(InstallDir)
+	$(AT)for f in $(Families); do \
+	       if ! diff -q -r --exclude='*.ngc' $(OutDir)target-$$f/$(LibName) $(InstallDir)/$$f >/dev/null 2>&1; then \
+	         echo Installing stub/bb library for core $(Core) for target: $$f; \
+	         rm -f -r $(InstallDir)/$$f; \
+		 cp -r -p -L $(OutDir)target-$$f/$(LibName) $(InstallDir)/$$f; \
+	       fi; \
+	     done
+	$(AT)$(foreach f,$(Targets),\
+		$(if $(findstring $(Core),$(Top)),,\
+		  $(call MakeSymLink2,$(InstallDir)/$(f)/$(Core)$(BF),$(InstallDir)/$(f),$(Top)$(BF));))\
+# endif
+ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
+include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk
+endif
+endif

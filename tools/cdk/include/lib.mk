@@ -43,6 +43,9 @@
 # We also list the targets per model.
 # A component library, consisting of different models built for different targets
 include $(OCPI_CDK_DIR)/include/util.mk
+ifndef LibName
+LibName=$(CwdName)
+endif
 # we need to factor the model-specifics our of here...
 include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
 XmImplementations=$(filter %.xm,$(Implementations))
@@ -53,7 +56,7 @@ GenDir=gen
 Models=xm rcc hdl
 CapModels=$(foreach m,$(Models),$(call Capitalize,$(m)))
 LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call UnCapitalize,$(m))/$(ht)))
-XmlIncludeDirs=.
+XmlIncludeDirs+=specs
 export AT
 # default is what we are running on
 
@@ -88,7 +91,7 @@ BuildImplementation=\
 	       GenDir=$(call AdjustRelative,$(OutDir)gen/$(1)) \
 	       $(PassOutDir) \
                VerilogIncludeDirs=$(call AdjustRelative,$(VerilogIncludeDirs)) \
-               XmlIncludeDirs=$(call AdjustRelative,$(XmlIncludeDirs));\
+               XmlIncludeDirsInternal=$(call AdjustRelative,$(XmlIncludeDirs));\
     done; \
 
 BuildModel=\
@@ -118,7 +121,7 @@ CleanModel=\
 all: $(build_targets)
 
 specs: | $(OutDir)lib
-	$(AT)$(foreach f,$(wildcard *_spec.xml) $(wildcard *_protocol*.xml),$(call MakeSymLink,$(f),$(OutDir)lib);)
+	$(AT)$(foreach f,$(wildcard specs/*_spec.xml) $(wildcard specs/*_protocol*.xml),$(call MakeSymLink,$(f),$(OutDir)lib);)
 
 $(OutDir)lib $(OutDir)gen: |$(OutDir)
 	$(AT)mkdir $@
@@ -139,14 +142,14 @@ rcc: specs | $(OutDir)lib/rcc
 # to find the black box empty modue definitions for the synthesized cores in this component library
 hdl: specs | $(OutDir)lib/hdl $(OutDir)gen/hdl
 	$(call BuildModel,hdl)
-	$(AT)echo Building HDL stub libraries for this component library
+	$(AT)echo Building HDL stub libraries for this component library named \"$(LibName)\"
 	$(AT)$(MAKE) -C $(OutDir)gen/hdl -L -f $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk \
-		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) LibName=components
+		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) LibName=$(LibName)
 	$(AT)echo Exporting the stub library $(foreach t,$(HdlTargets),$(call LibraryAccessTarget,$(t)))
 	$(AT)$(foreach f,$(sort $(foreach t,$(HdlTargets),$(call LibraryAccessTarget,$(t)))),\
 		rm -r -f $(LibDir)/hdl/$(f);\
 		mkdir $(LibDir)/hdl/$(f);\
-		cp -r -p $(GenDir)/hdl/$(f)/components/* $(LibDir)/hdl/$(f);)
+		cp -r -p $(GenDir)/hdl/target-$(f)/$(LibName)/* $(LibDir)/hdl/$(f);)
 
 cleanxm:
 	$(call CleanModel,xm)
@@ -157,7 +160,7 @@ cleanrcc:
 cleanhdl:
 	$(call CleanModel,hdl)
 
-clean: cleanxm cleanrcc cleanhdl
+clean:: cleanxm cleanrcc cleanhdl
 	$(AT)echo Cleaning library directory for all targets.
 	$(AT)rm -fr $(OutDir)lib $(OutDir)gen $(OutDir)
 

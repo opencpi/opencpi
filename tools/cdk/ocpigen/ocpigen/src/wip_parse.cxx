@@ -92,6 +92,8 @@ addDep(const char *dep, bool child) {
 
 const char *
 dumpDeps(const char *top) {
+  if (!depFile)
+    return 0;
   FILE *out = fopen(depFile, "w");
   if (out == NULL)
     return esprintf("Cannot open dependency file \"%s\" for writing", top);
@@ -102,6 +104,8 @@ dumpDeps(const char *top) {
   for (unsigned n = 0; n < nDeps; n++)
     if (depChild[n])
       fprintf(out, "\n%s:\n", deps[n]);
+  fclose(out);
+  depFile = 0;
   return 0;
 }
 
@@ -165,10 +169,10 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
       p->clock = &w->clocks[w->nClocks++];
       asprintf((char **)&p->clock->name, "%s_Clk", p->name); // fixme
       p->clock->port = p;
-    } else if (w->ports->type == WCIPort)
+    } else if (w->ports->type == WCIPort) {
       // If no clock, and we have a WCI then assume the WCI's clock.
-      p->clock = w->ports->clock;
-    else
+      p->clockPort = w->ports;
+    } else
       // If no clock, and no wci port, we're hosed.
       return "Interface has no clock declared, and there is no control interface";
   } else {
@@ -220,6 +224,10 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
 	       "does not match a DataInterfaceSpec", name);
   if ((err = checkClock(w, impl, dp)) ||
       (err = CE::getNumber(impl, "DataWidth", &dp->dataWidth, 0, dp->wdi.dataValueWidth)) ||
+      (err = CE::getNumber(impl, "NumberOfOpcodes", &dp->wdi.numberOfOpcodes,
+			   0, dp->wdi.numberOfOpcodes)) ||
+      (err = CE::getNumber(impl, "MaxMessageValues", &dp->wdi.maxMessageValues,
+			   0, dp->wdi.maxMessageValues)) ||
       (err = CE::getBoolean(impl, "Continuous", &dp->wdi.continuous)) ||
       (err = CE::getBoolean(impl, "ImpreciseBurst", &dp->impreciseBurst)) ||
       (err = CE::getBoolean(impl, "PreciseBurst", &dp->preciseBurst)))
@@ -291,7 +299,7 @@ tryChildInclude(ezxml_t top, const char *parent, const char *element,
 	     element, top->name, parent);
 }
 
-// Yes, using STL would be saner..
+
 static const char *
 addProperty(Worker *w, ezxml_t prop, bool includeImpl)
 {
@@ -648,23 +656,33 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
       wci->name = "ctl";
     wci->type = WCIPort;
   }
+  unsigned nMem = 0, nTime = 0, memOrd = 0, timeOrd = 0;
   // Count up and allocate the ports that are HDL-specific
   for (ezxml_t x = ezxml_cchild(xml, "MemoryInterface"); x; x = ezxml_next(x))
-    extraPorts++;
+    nMem++;
   for (ezxml_t x = ezxml_cchild(xml, "TimeInterface"); x; x = ezxml_next(x))
-    extraPorts++;
+    nTime++;
+  extraPorts += nMem + nTime;
   // Reallocate all the ports
   w->ports = myCrealloc(Port, w->ports, w->nPorts, extraPorts);
   wci = w->ports;
   Port *p = w->ports + w->nPorts ;
   w->nPorts += extraPorts;
   // Clocks depend on port names, so get those names in first pass(non-control ports)
-  for (ezxml_t x = ezxml_cchild(xml, "MemoryInterface"); x; x = ezxml_next(x), p++)
+  for (ezxml_t x = ezxml_cchild(xml, "MemoryInterface"); x;
+       x = ezxml_next(x), p++, memOrd++)
     if (!(p->name = ezxml_cattr(x, "Name")))
-      return "Missing \"Name\" attribute in MemoryInterface";
-  for (ezxml_t x = ezxml_cchild(xml, "TimeInterface"); x; x = ezxml_next(x), p++)
+      if (nMem == 1)
+	p->name = "mem";
+      else
+	asprintf((char **)&p->name, "mem%u", memOrd);
+  for (ezxml_t x = ezxml_cchild(xml, "TimeInterface"); x;
+       x = ezxml_next(x), p++, timeOrd++)
     if (!(p->name = ezxml_cattr(x, "Name")))
-      return "Missing \"Name\" attribute in TimeInterface";
+      if (nTime == 1)
+	p->name = "time";
+      else
+	asprintf((char **)&p->name, "time%u", memOrd);
   // Now we do clocks before interfaces since they may refer to clocks
   for (ezxml_t xc = ezxml_cchild(xml, "Clock"); xc; xc = ezxml_next(xc))
     w->nClocks++;
@@ -692,13 +710,12 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     if ((err = CE::checkAttrs(s, "Name", "Clock", "DataWidth", "PreciseBurst",
 			      "ImpreciseBurst", "Continuous", "Abortable",
 			      "EarlyRequest", "MyClock", "RegRequest", "Pattern",
-			      "NumberOfOpcodes",
+			      "NumberOfOpcodes", "MaxMessageValues",
 			      (void*)0)) ||
 	(err = checkDataPort(w, s, &dp)) ||
 	(err = CE::getBoolean(s, "Abortable", &dp->wsi.abortable)) ||
 	(err = CE::getBoolean(s, "RegRequest", &dp->wsi.regRequest)) ||
-	(err = CE::getBoolean(s, "EarlyRequest", &dp->wsi.earlyRequest)) ||
-	(err = CE::getNumber(s, "NumberOfOpcodes", &p->wdi.numberOfOpcodes, 0, p->wdi.numberOfOpcodes)))
+	(err = CE::getBoolean(s, "EarlyRequest", &dp->wsi.earlyRequest)))
       return err;
     dp->type = WSIPort;
     if ((dp->wdi.dataValueWidth * dp->wdi.dataValueGranularity) % dp->dataWidth &&
@@ -709,9 +726,12 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   }
   for (ezxml_t m = ezxml_cchild(xml, "MessageInterface"); m; m = ezxml_next(m)) {
     Port *dp;
-    if ((err = CE::checkAttrs(m, "Name", "Clock", "MyClock", "DataWidth", "PreciseBurst",
-			  "MFlagWidth", "ImpreciseBurst", "Continuous", "ByteWidth",
-			  "TalkBack", "Bidirectional", "Pattern", (void*)0)) ||
+    if ((err = CE::checkAttrs(m, "Name", "Clock", "MyClock", "DataWidth",
+			      "PreciseBurst", "MFlagWidth", "ImpreciseBurst",
+			      "Continuous", "ByteWidth", "TalkBack",
+			      "Bidirectional", "Pattern",
+			      "NumberOfOpcodes", "MaxMessageValues",
+			      (void*)0)) ||
 	(err = checkDataPort(w, m, &dp)) ||
 	(err = CE::getNumber(m, "ByteWidth", &dp->byteWidth, 0, dp->dataWidth)) ||
 	(err = CE::getBoolean(m, "TalkBack", &dp->wmi.talkBack)) ||
@@ -727,14 +747,15 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     mp->type = WMemIPort;
     bool memFound = false;
     if ((err = CE::checkAttrs(m, "Name", "Clock", "DataWidth", "PreciseBurst", "ImpreciseBurst",
-			  "MemoryWords", "ByteWidth", "MaxBurstLength", "WriteDataFlowControl",
-			  "ReadDataFlowControl", "Count", "Pattern", (void*)0)) ||
+			      "MemoryWords", "ByteWidth", "MaxBurstLength", "WriteDataFlowControl",
+			      "ReadDataFlowControl", "Count", "Pattern", "Slave", (void*)0)) ||
 	(err = checkClock(w, m, mp)) ||
 	(err = CE::getNumber(m, "Count", &mp->count, 0, 0)) ||
 	(err = CE::getNumber64(m, "MemoryWords", &mp->wmemi.memoryWords, &memFound, 0)) ||
 	(err = CE::getNumber(m, "DataWidth", &mp->dataWidth, 0, 8)) ||
 	(err = CE::getNumber(m, "ByteWidth", &mp->byteWidth, 0, 8)) ||
 	(err = CE::getNumber(m, "MaxBurstLength", &mp->wmemi.maxBurstLength, 0, 0)) ||
+	(err = CE::getBoolean(m, "Slave", &mp->wmemi.isSlave)) ||
 	(err = CE::getBoolean(m, "ImpreciseBurst", &mp->impreciseBurst)) ||
 	(err = CE::getBoolean(m, "PreciseBurst", &mp->preciseBurst)) ||
 	(err = CE::getBoolean(m, "WriteDataFlowControl", &mp->wmemi.writeDataFlowControl)) ||
@@ -793,6 +814,27 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     if (p->count == 0)
       p->count = 1;
   }
+  // process ad hoc signals
+  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
+    if ((err = CE::checkAttrs(xs, "Input", "Output", "Inout", "Width", (void*)0)))
+      return err;
+    w->nSignals++;
+  }
+  if (w->nSignals) {
+    Signal *s = w->signals = myCalloc(Signal, w->nSignals);
+    for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs), s++) {
+      if ((s->name = ezxml_cattr(xs, "Input")))
+	s->direction = Signal::IN;
+      else if ((s->name = ezxml_cattr(xs, "Output")))
+	s->direction = Signal::OUT;
+      else if ((s->name = ezxml_cattr(xs, "Inout")))
+	s->direction = Signal::INOUT;
+      else
+	s->direction = Signal::IN;
+      if ((err = CE::getNumber(xs, "Width", &s->width, 0, 0)))
+	return err;
+    }
+  }
   return 0;
 }     
 
@@ -838,7 +880,7 @@ getConnPort(ezxml_t x, Assembly *a, const char *wAttr, const char *pAttr,
   return getPort(w, x, pAttr, pp);
 }
 
-// Attach a port to a connection
+// Attach an instance port to a connection
 static void
 attachPort(Connection *c, InstancePort *ip, const char *name, bool isProducer,
 	   bool isExternal) {
@@ -925,7 +967,8 @@ doAssyClock(Worker *aw, Instance *i, Port *p) {
   }
 }
 #endif
-const char *
+// This is a parsed for the assembly of what does into a single worker binary
+ const char *
 parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
   const char *err;
   Assembly *a = &aw->assembly;
@@ -948,14 +991,22 @@ parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
   }    
   return 0;
 }
-const char *
-parseHdlAssy(ezxml_t xml, Worker *aw) {
+
+// The generic assembly parser
+ static const char *
+parseAssy(ezxml_t xml, const char *defName, Worker *aw,
+	  const char **topAttrs, const char **instAttrs, bool noWorkerOk) {
   const char *err;
   Assembly *a = &aw->assembly;
   aw->isAssembly = true;
-  if ((err = CE::checkAttrs(xml, "Name", "Pattern", "Language", (void*)0)))
-     return err;
-  a->isContainer = !strcasecmp(xml->name, "HdlContainer");
+  if ((err = CE::checkAttrsV(xml, topAttrs)))
+    return err;
+  aw->implName = ezxml_cattr(xml, "Name");
+  if (!aw->implName)
+    if (defName)
+      aw->implName = defName;
+    else
+      return esprintf("Missing \"Name\" attribute for \"%s\"", xml->name);
   // Count instances and workers
   for (ezxml_t x = ezxml_cchild(xml, "Instance"); x; x = ezxml_next(x))
     a->nInstances++;
@@ -963,62 +1014,51 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   // Overallocate workers - they won't exceed nInstances.
   Worker *w = a->workers = myCalloc(Worker, a->nInstances); // may overallocate
   for (ezxml_t x = ezxml_cchild(xml, "Instance"); x; x = ezxml_next(x), i++) {
-    err = 
-      a->isContainer ?
-      CE::checkAttrs(x, "Worker", "Name", "Index", "Interconnect", "IO",
-		 (void*)0) :
-      CE::checkAttrs(x, "Worker", "Name", (void*)0);
-    if (err)
+    if ((err = CE::checkAttrsV(x, instAttrs)))
       return err;
     i->name = ezxml_cattr(x, "Name");   // Name attribute is in fact optional
     i->wName = ezxml_cattr(x, "Worker"); // Worker attribute is pathname
-    if (a->isContainer) {
-      bool idxFound;
-      if ((err = CE::getNumber(x, "Index", &i->index, &idxFound, 0)))
-	return err;
-      if (!idxFound)
-	return "Missing o\"Index\" attribute in instance in container assembly";
-      const char
-	*ic = ezxml_cattr(x, "Interconnect"),
-	*io = ezxml_cattr(x, "IO");
-      if (!i->wName) {
-	// No worker means application instance
-	if (!i->name)
-	  return "Missing \"Name\" attribute for application instance in container";
-	if (io || ic)
-	  return "Application workers in container can't be interconnects or io";
-	continue; // for app instances we just capture index.
-      }
-      if (ic) {
-	if (io)
-	  return "Container workers cannot be both IO and Interconnect";
-	i->attach = ic;
-	i->isInterconnect = true;
-      } else if (io)
-	i->attach = io;
-      // we do allow for containers to have workers that are not io or interconnect
-    } else {
-      // Not a container, just the application
-      if (!i->wName)
-	esprintf("Missing \"Worker\" attribute for instance \"%s\"",
-		 i->name ? i->name : "<no Name>");
+    if (!i->wName) {
+      if (noWorkerOk) // caller's business to deal with this
+	continue;
+      return esprintf("Missing \"Worker\" attribute for instance \"%s\"",
+		      i->name ? i->name : "<no Name>");
     }
     // So we have an instance with a real live worker
     for (Instance *ii = a->instances; ii < i; ii++)
-      if (!strcmp(i->wName, ii->wName))
+      if (ii->wName && !strcmp(i->wName, ii->wName))
 	i->worker = ii->worker;
     if (!i->worker) {
-      if ((err = parseWorker(i->wName, w->file, w)) ||
-	  (err = deriveOCP(w)))
+      if ((err = parseWorker(i->wName, w->file, w)))
 	return esprintf("in file %s: %s", i->wName, err);
       i->worker = w++;
     }
-    // Allocate the instance-clock-to-assembly-clock map
-    i->clocks = myCalloc(Clock *, i->worker->nClocks);
     i->ports = myCalloc(InstancePort, i->worker->nPorts);
     for (unsigned n = 0; n < i->worker->nPorts; n++) {
       i->ports[n].port = &i->worker->ports[n];
       i->ports[n].instance = i;
+    }
+    // Parse instance property values
+    for (ezxml_t pv = ezxml_cchild(x, "PropertyValue"); pv; pv = ezxml_next(pv))
+      i->nValues++;
+    InstanceProperty *ipv = i->properties =
+      myCalloc(InstanceProperty, i->nValues);
+    for (ezxml_t pv = ezxml_cchild(x, "PropertyValue"); pv;
+	 pv = ezxml_next(pv), ipv++) {
+      const char *name = ezxml_cattr(pv, "Name");
+      if (!name)
+	return "PropertyValue has no \"Name\" attribute";
+      Property *p = i->worker->ctl.properties;
+      for (unsigned n = 0; n < i->worker->ctl.nProperties; n++, p++)
+	if (!strcmp(p->name, name)) {
+	  ipv->property = p;
+	  break;
+	}
+      if (!ipv->property)
+	return esprintf("Unknown property \"%s\" for worker \"%s\"", name,
+			w->implName);
+      if ((err = ipv->property->parseValue(pv, ipv->value)))
+	return err;
     }
   }
   a->nWorkers = w - a->workers;
@@ -1074,6 +1114,9 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	      esprintf("Missing \"Interface\" attribute in Attach subelement of"
 		       "connection \"%s\"", c->name);
 	  unsigned nn = 0;
+	  if (!i->worker)
+	    return esprintf("Instance \"%s\" of connection \"%s\" has no worker",
+			    i->name, c->name);
 	  for (p = i->worker->ports; nn < i->worker->nPorts; p++, nn++)
 	    if (!strcmp(p->name, iName)) {
 	      if (p->type != WSIPort && p->type != WMIPort)
@@ -1122,34 +1165,142 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
   if ((err = ezxml_children(xml, doImplProp, aw)))
     return err;
-  // Compute nPorts, at least 1 (wci) 
-  aw->nPorts = 1;
   // add data plane external ports
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     aw->nPorts += c->nExtProducers + c->nExtConsumers;
+  p = aw->ports = myCalloc(Port, aw->nPorts);
+  // Create the external data ports on the assembly worker
+  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+    if (c->nExtProducers || c->nExtConsumers) {
+      Port *extPort = 0, *intPort = 0;
+      for (InstancePort *ip = c->ports; ip; ip = ip->nextConn)
+	if (ip->isExternal) {
+	  assert(!extPort); // for now only one
+	  ip->port = p++;
+	  extPort = ip->port;
+	} else {
+	  assert(!intPort); // for now only one
+	  intPort = ip->port;  // remember the last one
+	}
+      // Start by copying everything.
+      *extPort = *intPort;
+      extPort->clock = 0;
+      extPort->clockPort = 0;
+      extPort->pattern = 0;
+      extPort->name = c->name;
+      extPort->isExternal = true;
+      extPort->count = 1;
+      extPort->worker = aw;
+    }
+  // Check for unconnected non-optional data ports
+  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+    if (i->worker) {
+      InstancePort *ip = i->ports;
+      for (unsigned nn = 0; nn < i->worker->nPorts; nn++, ip++) {
+	Port *pp = ip->port;
+	if (pp->isData &&
+	    !pp->wdi.isOptional &&
+	    !ip->connection)
+	  return
+	    esprintf("Port %s of instance %s of worker %s"
+	       " is not connected and not optional",
+	       pp->name, i->name, i->worker->implName);
+      }
+    }
+  return 0;
+}
+
+const char *
+parseHdlAssy(ezxml_t xml, Worker *aw) {
+  const char *err;
+  Assembly *a = &aw->assembly;
+  a->isContainer = !strcasecmp(xml->name, "HdlContainer");
+  static const char
+    *topAttrs[] = {"Name", "Pattern", "Language", 0},
+    *instAttrs[] = {"Worker", "Name", 0},
+    *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", 0};
+  // Do the generic assembly parsing, then to more specific to HDL
+  if ((err = parseAssy(xml, NULL, aw, topAttrs,
+		       a->isContainer ? contInstAttrs : instAttrs, true)))
+      return err;
+  unsigned n = 0;
+  // Do the OCP derivation for all workers
+  for (Worker *w = a->workers; n < a->nWorkers; n++, w++)
+    if ((err = deriveOCP(w)))
+      return err;
+  ezxml_t x = ezxml_cchild(xml, "Instance");
+  Instance *i;
+  for (i = a->instances; x; i++, x = ezxml_next(x)) {
+    if (a->isContainer) {
+      bool idxFound;
+      if ((err = CE::getNumber(x, "Index", &i->index, &idxFound, 0)))
+	return err;
+      if (!idxFound)
+	return "Missing o\"Index\" attribute in instance in container assembly";
+      const char
+	*ic = ezxml_cattr(x, "Interconnect"),
+	*io = ezxml_cattr(x, "IO");
+      if (!i->wName) {
+	// No worker means application instance in container
+	if (!i->name)
+	  return "Missing \"Name\" attribute for application instance in container";
+	if (io || ic)
+	  return "Application workers in container can't be interconnects or io";
+	continue; // for app instances we just capture index.
+      } else {
+	if (ic) {
+	  if (io)
+	    return "Container workers cannot be both IO and Interconnect";
+	  i->attach = ic;
+	  i->isInterconnect = true;
+	} else if (io)
+	  i->attach = io;
+	// we do allow for containers to have workers that are not io or interconnect
+      }
+    } // end of container processing
+    // Now we are doing HDL processing per instance
+    // Allocate the instance-clock-to-assembly-clock map
+    i->clocks = myCalloc(Clock *, i->worker->nClocks);
+  }
+  // Rejuggle the ports because the generic parser only deals with data ports
+  // Make the first one wci, then data, then others
+  unsigned morePorts = 0;
   // add time and memory services (even though they might be coalesced)
   for (n = 0, i = a->instances; n < a->nInstances; n++, i++) 
     if (i->worker) {
-      unsigned nn;
-      for (nn = 0, p = i->worker->ports; nn < i->worker->nPorts; nn++, p++)
+      Port *p = i->worker->ports;
+      for (unsigned nn = 0; nn < i->worker->nPorts; nn++, p++)
 	if (p->type == WTIPort || p->type == WMemIPort)
-	  aw->nPorts++;
+	  morePorts++;
     }
-  p = aw->ports = myCalloc(Port, aw->nPorts);
+  Port *dataPorts = aw->ports;
+  unsigned nDataPorts = aw->nPorts;
+  aw->nPorts += 1 + morePorts;
+  aw->ports = myCalloc(Port, aw->nPorts); // +1 for wci
+  memcpy(aw->ports + 1, dataPorts, nDataPorts * sizeof(Port));
+  // Ugliness because we have to change pointers into the ports
+  Connection *c;
+  InstancePort *ip;
+  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
+    for (ip = c->ports; ip; ip = ip->nextConn)
+      if (ip->isExternal)
+	ip->port = aw->ports + (ip->port - dataPorts + 1);
+  // Now we have an empty port at the beginning for wci, and extras at the end
+  // for time and memory.
   // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
   aw->nClocks = 1; // first clock for all instance WCIs.
   Clock *clk = aw->clocks = myCalloc(Clock, aw->nPorts); // overallocate
   clk->signal = clk->name = "wci_Clk";
-  Port *wci = p++;
+  Port *wci = aw->ports;
   clk->port = wci;
   wci->name = "wci";
   wci->type = WCIPort;
   wci->myClock = true;
   wci->clock = clk++;
+  wci->clock->port = wci;
   for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
     if (i->worker && i->worker->ports->type == WCIPort)
       i->ports->ordinal = wci->count++;
-  InstancePort *ip;
   // Check for WCI and nonWCI clocks on a connection.  Set wci clocks where we can.
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++) {
     for (ip = c->ports; ip; ip = ip->nextConn)
@@ -1183,10 +1334,10 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	  else {
 	    // The connection has no clock, and the port's clock is not mapped.
 	    // We need a new top level clock
-	    asprintf((char **)&clk->name, "%s_%s", i->name,
+	    asprintf((char **)&clk->name, "%s_%s", ip->instance->name,
 		     ip->port->clock->name);
 	    if (ip->port->clock->signal)
-	      asprintf((char **)&clk->signal, "%s_%s", i->name, ip->port->clock->signal);
+	      asprintf((char **)&clk->signal, "%s_%s", ip->instance->name, ip->port->clock->signal);
 	    else
 	      clk->signal = clk->name;
 	    clk->assembly = true;
@@ -1205,10 +1356,6 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	  ip->instance->clocks[nc] = c->clock;
 	}
       }
-  // Now all data ports that are connected have mapped clocks and
-  // all ports with WCI clocks are connected.  All that's left is
-  // non-WCI: WTI, WMemI
-  unsigned nWti = 0, nWmemi = 0;
   bool cantDataResetWhileSuspended = false;
   for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
     if (i->worker) {
@@ -1231,7 +1378,13 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	}
       }
     }
-  // Now all clocks are done.  We create all the external ports.
+  // Now all clocks are done.  We process the non-data external ports.
+  // Now all data ports that are connected have mapped clocks and
+  // all ports with WCI clocks are connected.  All that's left is
+  // non-WCI: WTI, WMemI
+  // Start "p" to be used as we add non-data, non-wci ports
+  Port *p = aw->ports + 1 + nDataPorts;
+  unsigned nWti = 0, nWmemi = 0;
   for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
     if (i->worker) {
       unsigned nn;
@@ -1285,13 +1438,6 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	  break;
 	case WSIPort:
 	case WMIPort:
-	  // Data ports.  Check for unconnected ports that are not optional
-	  if (!pp->wdi.isOptional &&
-	      !ip->connection)
-	    return
-	      esprintf("Port %s of instance %s of worker %s"
-		       " is not connected and not optional",
-		       pp->name, i->name, i->worker->implName);
 	  break;
 	default:
 	  return "Bad port type";
@@ -1300,39 +1446,24 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
     }
   if (!cantDataResetWhileSuspended)
     wci->wci.resetWhileSuspended = true;
-  // Create the external data ports on the assembly worker
+  // Finalize actual external port count
+  aw->nPorts = p - aw->ports;
+  // Process the external data ports on the assembly worker
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
-    if (c->nExtProducers || c->nExtConsumers) {
-      Port *extPort = 0, *intPort = 0;
+    if (c->nExtProducers || c->nExtConsumers)
       for (ip = c->ports; ip; ip = ip->nextConn)
 	if (ip->isExternal) {
-	  assert(!extPort); // for now only one
-	  ip->port = p++;
-	  extPort = ip->port;
-	} else {
-	  assert(!intPort); // for now only one
-	  intPort = ip->port;  // remember the last one
+	  p = ip->port;
+	  p->clock = c->clock;
+	  if (!p->clock->port) {
+	    p->clock->port = p;
+	    p->myClock = true;
+	  }
+	  if (p->clock->port != p)
+	    p->clockPort = p->clock->port;
+	  if (p->type == WSIPort)
+	    p->wsi.regRequest = false;
 	}
-      // Start by copying everything.
-      *extPort = *intPort;
-      extPort->pattern = 0;
-      extPort->name = c->name;
-      extPort->isExternal = true;
-      extPort->clock = c->clock;
-      if (!extPort->clock->port) {
-	extPort->clock->port = extPort;
-	extPort->myClock = true;
-      }
-      if (extPort->type == WSIPort)
-	extPort->wsi.regRequest = false;
-    }
-  aw->nPorts = p - aw->ports;
-  // Finish up initializing ports
-  for (n = 0, p = aw->ports; n < aw->nPorts; n++, p++) {
-    if (p->type != WCIPort)
-      p->count = 1;
-    p->worker = aw;
-  }
   return 0;
 }
 

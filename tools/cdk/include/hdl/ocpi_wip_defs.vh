@@ -32,7 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-`include "ocpi_ocp_defs.v"
+`include "ocpi_ocp_defs.vh"
 localparam OCPI_WCI_CONFIG =       1'b1;
 localparam OCPI_WCI_CONTROL =      1'b0;
 localparam OCPI_WCI_EXISTS =       0;

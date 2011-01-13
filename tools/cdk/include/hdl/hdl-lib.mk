@@ -43,40 +43,29 @@
 ifndef LibName
 LibName=$(CwdName)
 endif
-include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
-Core=onewire
-override SourceFiles+=$(OCPI_CDK_DIR)/include/hdl/onewire.v
-AuthoredSourceFiles=$(sort $(SourceFiles))
-WorkLibrarySources+=$(OCPI_CDK_DIR)/include/hdl/onewire.v
-# If build does not have any HDL components do not try to build any HDL
-# components.
-ifndef HdlTargets
-Targets=
-endif
 ifndef Targets
 # These libraries need to be built for "families", which really just means that the format of the library
 # depends on the target to some extent.
 Targets=virtex5 virtex6
 endif
+include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
+Core=onewire
+CompiledSourceFiles:= $(OCPI_CDK_DIR)/include/hdl/onewire.v $(CompiledSourceFiles)
+WorkLibrarySources:=$(WorkLibrarySources) $(OCPI_CDK_DIR)/include/hdl/onewire.v
 
-# all the per-family stuff
-define DoLibraryTarget
-OutLibFiles+=$(OutDir)$(1)/$(LibName)/$(call LibraryFileTarget,$(1))
-
-$(OutDir)$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): TargetDir=$(1)
-$(OutDir)$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): Target=$(1)
-$(OutDir)$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): SourceFiles+=$(SourceFiles_$(1))
-$(OutDir)$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): $(SourceFiles) $(SourceFiles_$(1)) | $(OutDir)$(1)
-
-$(OutDir)$(1): | $(OutDir)
-	$(AT)mkdir $$@
-
+.SECONDEXPANSION:
+# Determine families based on targets
+OutLibFile=$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1))
+define DoFamily
+OutLibFiles+=$(call OutLibFile,$(1))
+$(call OutLibFile,$(1)): TargetDir=$(OutDir)target-$(1)
+$(call OutLibFile,$(1)): Target=$(1)
 endef
 
-$(foreach t,$(Targets),$(eval $(call DoLibraryTarget,$(t))))
+$(foreach f,$(Families),$(eval $(call DoFamily,$(f))))
 
-$(OutLibFiles):
-	$(AT)echo Building the $(LibName) library for $(Target)
+$(OutLibFiles): $(ImportsDir) $$(CompiledSourceFiles) | $$(TargetDir)
+	$(AT)echo Building the $(LibName) primitive library for $(Target)
 	$(Compile)
 
 all: $(OutLibFiles)
@@ -90,9 +79,13 @@ all: $(OutLibFiles)
 #	cd $(OutDir)$(Family); $(TIME) xst -ifn bsv.xst > xst.out; grep -i error xst.out
 
 install: | $(InstallDir)
-	rm -f -r $(foreach f,$(Targets),$(foreach t,$(call FamilyCleanTargets,$(f)),$(InstallDir)/$(f)/$(t)))
-	$(foreach f,$(Targets),if ! test -d $(InstallDir)/$(f); then mkdir $(InstallDir)/$(f); fi;\
-		cp -r -p $(OutDir)$(f)/$(LibName)/* $(InstallDir)/$(f);)
-
-clean:
-	rm -r -f $(foreach f,$(Targets),$(OutDir)$(f))
+	$(AT)for f in $(Targets); do \
+	       if ! diff -q -r $(OutDir)target-$$f/$(LibName) $(InstallDir)/$$f >/dev/null; then \
+	         echo Installing primitive library $(LibName) for target: $$f; \
+	         rm -f -r $(InstallDir)/$$f; \
+		 cp -L -r -p $(OutDir)target-$$f/$(LibName) $(InstallDir)/$$f; \
+	       fi; \
+	     done
+ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
+include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk
+endif
