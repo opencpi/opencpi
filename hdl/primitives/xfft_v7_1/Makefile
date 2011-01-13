@@ -35,7 +35,7 @@
 ########################################################################### #
 
 # This is what the core was generated for
-Targets=xc5vsx95t-2-ff1136
+Targets=xc5vsx95t-2-ff1136 xc5vlx50t-1-ff1136
 ImportCore=$(OCPI_HDL_IMPORTS_DIR)/coregen/fft-v5-4k-strm-nat/xfft_v7_1.ngc
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk # We are a core
 

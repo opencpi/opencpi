@@ -135,6 +135,8 @@ $(CoreBaseName): Cores=
 $(CoreBaseName): ComponentLibraries=$(MyComponentLibraries)
 $(CoreBaseName): $(BBLib)
 $(CoreBaseName): TargetDir=target-$(PART)
+# Put this into xst.mk..
+$(CoreBaseName): $(foreach i,$(ComponentLibraries),$(i)/lib/hdl/$(call LibraryAccessTarget,$(Family)))
 CoreLink=$(OutDir)target-$(Family)/$(Worker)/$(PART)
 $(CoreLink):
 	$(AT)ln -s ../../target-$(PART) $@	
@@ -163,7 +165,7 @@ Container=mkOCApp-noADC-3w.v
 endif
 ContainerRtl=$(OCPI_HDL_PLATFORMS_DIR)/../containers/$(Container)
 # FIXME:  App must specify this wrapper file until...?
-APP_RTL=$(PlatformSpecDir)/mkOCApp.v
+APP_RTL=$(PlatformDir)/mkOCApp.v
 $(APP_RTL): $(ContainerRtl) | $(PlatformDir)
 	$(AT)sed s/ocpi_app/$(Worker)/ $(ContainerRtl) > $@
 

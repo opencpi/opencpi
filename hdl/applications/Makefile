@@ -35,13 +35,14 @@
 ########################################################################### #
 
 AT=@
-APPS=testbias demoappC demoappE testpsd testddc 
+APPS=testbias testpsd testddc 
+# These require adc/dac: demoappC demoappE
 # testwbr
 
-PLATFORMS=ml605
+Platforms=ml555 ml605
 # xc5vsx95t-2-ff1136 xc6vlx240t-1-ff1156
 
-all: targets
+all: platforms
 
 .PHONY: $(APPS) clean
 
@@ -57,10 +58,11 @@ targets:
 platforms:
 	$(AT)echo Building all apps for all mentioned platforms.
 	$(AT)for a in $(APPS); do \
-	       for t in $(TARGETS); do \
+	       for t in $(Platforms); do \
 		 echo Making $$a for target $$t. ; \
-		 make -C $$a Target=$$t; \
-	done
+		 make -C $$a Platform=$$t; \
+	       done; \
+	     done
 
 clean:
 	$(AT)for a in $(APPS); do \

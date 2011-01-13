@@ -35,6 +35,7 @@
 ########################################################################### #
 
 ifndef __HDL_PRE_MK__
+__HDL_PRE_MK__=x
 include $(OCPI_CDK_DIR)/include/util.mk
 # Makefile fragment for HDL primitives, cores, and workers etc.
 

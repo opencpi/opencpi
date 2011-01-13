@@ -34,22 +34,25 @@
 #
 ########################################################################### #
 
-This tree holds code and tools specific to the HDL model.
+This tree holds code and tools specific to the HDL model and associated hardware (FPGAs).
 
 The "primitives" directory supplies low level/primitive utility libraries
 and cores used to build application workers, device workers and other infrastructure modules.
 
 The "applications" directory holds application configurations consisting of
-workers, which will build/synthesize whole "apps" ready to be put into bitstream builds for
+workers, which will build/synthesize whole "apps" into bitstream builds for
 particular platforms.
 
-The "devices" directory holds device workers that may use primitives.
+The "devices" directory holds device workers that may use primitives, and are optionally
+used in platforms (i.e. they are included when an app needs them, but not otherwise).
+Examples are dram (with memory controller), gbe, adc, dac, flash memory, etc.
 
-The "platforms" directory holds platform ip and parameters used to build "platform cores" that then get combined with applications to make bitstreams.
+The "platforms" directory holds platform ip and parameters used to build "platform cores" that then get combined with applications to make bitstreams.  A "platform" is a particular chip on a board with various devices attached.  Since most currently supported boards have one FPGA, normally a platform is a chip on a board, but when there are multiple supported FPGAs on a board, a "platform" is not a board, but one of the chips on the board.
 
-The "containers" directory hold container rtl: the glue between applications and platforms.
+The "containers" directory holds container rtl: the glue between applications and platforms.
+These source files are not automated yet, but will be at some point.
 
-HDL OCPI components are not built here since they are built under the
+HDL OCPI components/workers are not built here since they are built under the
 top level "components" directory where multiple model implementations
 of the same components are built (a heterogeneous component library).
 

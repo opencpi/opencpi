@@ -35,7 +35,7 @@
 ########################################################################### #
 
 # This core was generated for one target
-Targets=xc5vlx50t-1-ff1136
+Targets=xc5vlx50t-1-ff1136 xc5vsx95t-2-ff1136
 Top=endpoint_blk_plus_v1_14
 ImportCore=$(OCPI_HDL_IMPORTS_DIR)/coregen/pcie-4243-v5-gtp-x8-125/endpoint_blk_plus_v1_14.ngc
 #ImportBlackBox=$(OCPI_HDL_IMPORTS_DIR)/coregen/pcie-4243-v5-gtp-x8-125/pci_exp_8_lane_64b_ep.v

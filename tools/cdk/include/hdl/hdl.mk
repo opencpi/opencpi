@@ -33,7 +33,8 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-
+ifndef __HDL_MK__
+__HDL_MK__=x
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 # Makefile fragment for HDL primitives, cores, and workers etc.
 ifndef SourceFiles
@@ -74,4 +75,8 @@ ImportsDir=$(OutDir)imports
 $(ImportsDir)::
 	$(AT)echo -n
 clean::
-	rm -r -f $(OutDir)target-* $(OutDir)imports
+	rm -r -f $(OutDir)target-* 
+
+cleanimports:
+	rm -r -f imports
+endif

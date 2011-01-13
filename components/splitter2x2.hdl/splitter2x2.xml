@@ -19,8 +19,8 @@
     <Property Name="ctrlInit" Parameter="true"/>
     <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
   </ControlInterface>
-  <StreamInterface Name="in0" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
-  <StreamInterface Name="in1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
-  <StreamInterface Name="out0" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
-  <StreamInterface Name="out1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+  <StreamInterface Name="in0" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
+  <StreamInterface Name="in1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
+  <StreamInterface Name="out0" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
+  <StreamInterface Name="out1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
 </HdlImplementation>

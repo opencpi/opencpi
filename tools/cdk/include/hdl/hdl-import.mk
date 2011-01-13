@@ -1,10 +1,14 @@
-# This file should be included if a primitive library or core imports sources from elsewhere
+# This file is bypassed if imports are already present.
+# Thus imports only happen after: make cleanimports
+ifdef Imports
+ImportsDir:=$(OutDir)imports
+#$(info WILD=$(wildcard $(ImportsDir)/*)=)
+ifeq ($(wildcard $(ImportsDir)/*),)
 ifndef OCPI_HDL_IMPORTS_DIR
 $(error This primitive requires OCPI_HDL_IMPORTS_DIR to have a value, and it doesn't)
 endif
 .SECONDEXPANSION:
 
-ImportsDir:=$(OutDir)imports
 WImports:=$(wildcard $(Imports))
 #$(info x$(WImports)y)
 ifeq ($(strip $(WImports)),)
@@ -41,7 +45,9 @@ $(if $(out),$(info $(out)))
 #$(info hdl-import1a sf $(wildcard $(ImportsDir)/*))
 #AAA:=$(sort $(wildcard $(ImportsDir)/*) $(CompiledSourceFiles))
 #$(info aaa $(AAA))
-CompiledSourceFiles:=$(sort $(CompiledSourceFiles) $(shell echo $(ImportsDir)/*.[vV]))
 #$(info hdl-import2 csf $(CompiledSourceFiles))
 #$(info sf is $(flavor CompiledSourceFiles) $(origin CompiledSourceFiles))
 #$(info aaa is $(flavor AAA) $(origin AAA))
+endif
+CompiledSourceFiles:=$(sort $(CompiledSourceFiles) $(shell echo $(ImportsDir)/*.[vV]))
+endif

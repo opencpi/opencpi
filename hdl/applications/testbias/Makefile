@@ -42,5 +42,5 @@ Containers=testbiasCont
 #Targets=xc6vlx240t-1-ff1156
 #Target=xc5vlx50t-ff1136-1
 #Target=xc5vsx95t-2-ff1136
-Platforms=ml605 ml555
+Platforms=ml555 ml605
 include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk
