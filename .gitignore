@@ -17,6 +17,7 @@
 target-*/
 *.deps
 gen/
+imports/
 virtex5/
 virtex6/
 # temporary, until we rename targets

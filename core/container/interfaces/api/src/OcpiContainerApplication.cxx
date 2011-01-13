@@ -34,7 +34,7 @@
 
 #include "OcpiContainerInterface.h"
 #include "OcpiArtifact.h"
-#include "OcpiApplication.h"
+#include "OcpiContainerApplication.h"
 #include "OcpiPValue.h"
 
 
