@@ -35,7 +35,6 @@
 ########################################################################### #
 
 
-
 # Build from 32-bit x86 Linux for Linux
 
 # #### Absolute path to the base directory of the OpenCPI installation #### #
@@ -57,15 +56,19 @@ export OCPI_ARCH=x86_64
 export OCPI_BUILD_HOST=linux-x86_64
 export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
-# #### Location of the Xilinx tools # ##################################### #
+# #### Location of the Xilinx tools ####################################### #
 
 export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/12.1/ISE_DS/
+
+# #### Location of CppUnit ################################################ #
+
+export OCPI_CPPUNIT_DIR=/opt/opencpi/linux-x86_64/prerequisites/cppunit
 
 # #### Build output location ############################################## #
 
 export OCPI_OUT_DIR=$OCPI_OS-$OCPI_ARCH-bin
 
-export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_CPPUNIT_DIR/lib:$LD_LIBRARY_PATH
 
 # #### Compiler linker flags ############################################## #
 
@@ -93,15 +96,11 @@ export HAVE_CORBA=1
 
 # OpenCPI uses OmniORB exclusivly
 export OCPI_CORBA_ORB=OMNI
-export OCPI_OMNI_DIR=/usr/local/omniORB_$OCPI_ARCH
+export OCPI_OMNI_DIR=/opt/opencpi/linux-x86_64/prerequisites/omniorb
 export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/bin
-export OCPI_OMNI_IDL_DIR=$OCPI_OMNI_DIR/idl
-export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/lib64
+export OCPI_OMNI_IDL_DIR=$OCPI_OMNI_DIR/share/idl/omniORB
+export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/lib
 export OCPI_OMNI_INCLUDE_DIR=$OCPI_OMNI_DIR/include
-
-# OpenCPI no longer uses the ACE/TAO OCPI_CORBA_ORB
-# export OCPI_ACE_ROOT=$OCPI_BASE/../ACE_wrappers/linux-x86_64-bin
-# export OCPI_HOST_ROOT=/opt/TAO/5.6.6/linux-$ARCH-gcc/ACE_wrappers
 
 # #### Path to Mercury tools and libraries ################################ #
 
@@ -112,5 +111,5 @@ export OCPI_PPP_INCLUDE_DIR=
 
 # ######################################################################### #
 
-echo "OpenCPI Environment settings"
+echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

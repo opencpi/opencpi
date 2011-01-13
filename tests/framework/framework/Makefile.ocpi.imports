@@ -34,5 +34,9 @@
 #
 ########################################################################### #
 
-ALLINC += $(OCPIOS_EXPORTS)
-ALLLIBS += $(OCPIOS_LIBS)
+ALLINC += $(UTIL_EXPORTS) $(OCPI_CPPUNIT_DIR)/include
+
+BASICLIBS += -L$(OCPI_CPPUNIT_DIR)/lib -lcppunit
+
+ALLLIBS += $(UTIL_LIBS) $(TEST_LIBS)
+

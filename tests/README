@@ -34,5 +34,41 @@
 #
 ########################################################################### #
 
-ALLINC += $(OCPIOS_EXPORTS)
-ALLLIBS += $(OCPIOS_LIBS)
+  Introduction
+  ------------
+
+  This directory contains the unit test suite for OpenCPI. The unit test
+  suite is implemented using CppUnit.
+
+  Please see the OpenCPI Test Framework Functional Specification at the link
+  below for more information about the test framework design and
+  organization.
+  https://docs.google.com/a/opencpi.org/document/d/12kCqy9TNmcIC97hNNN8cRuGBZBfwXNFrIhb7Ie4flzE/edit?hl=en#heading=h.meop2h-m9zz7r
+
+  How to build the OpenCPI Test Suite
+  -----------------------------------
+
+  After building the OpenCPI library, the OpenCPI tools, the OpenCPI
+  HDL, and the OpenCPI components use the command "make -f Makefile.ocpi" in
+  $OCPI_BASE_DIR/tests to build the OpenCPI test suite.
+
+  How to run the OpenCPI Test Suite
+  ---------------------------------
+
+  $ ocpi_unit_test --suite=<suite 1>,<suite 2>,...<suite n>
+
+    Where "suite X" is the name of a test suite.
+
+  Example:
+
+  1. This example prints the "usage" statement.
+
+     $ ocpi_unit_test --help
+
+  2. This command runs the "OS" test suite.
+
+     $ ocpi_unit_test --suite=os
+
+
+
+
