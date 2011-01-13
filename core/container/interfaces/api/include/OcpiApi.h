@@ -37,7 +37,7 @@
 
 #include "OcpiDriver.h"
 #include "OcpiContainerInterface.h"
-#include "OcpiApplication.h"
+#include "OcpiContainerApplication.h"
 #include "OcpiArtifact.h"
 #include "OcpiWorker.h"
 #include "OcpiContainerPort.h"

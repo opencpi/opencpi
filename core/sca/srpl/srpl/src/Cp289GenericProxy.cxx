@@ -57,7 +57,7 @@
 #include <OcpiCFUtilLegacyErrorNumbers.h>
 #include <CF.h>
 #include <Cp289ProviderPort.h>
-#include "OcpiApplication.h"
+#include "OcpiContainerApplication.h"
 #include "OcpiProperty.h"
 #include "Cp289GenericProxy.h"
 

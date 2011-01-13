@@ -58,7 +58,7 @@
 #include <OcpiDriver.h>
 #include <OcpiParentChild.h>
 #include <OcpiContainerDataTypes.h>
-#include <OcpiApplication.h>
+#include <OcpiContainerApplication.h>
 
 
 #include <DtIntEventHandler.h>

@@ -53,7 +53,7 @@
 #include <OcpiList.h>
 #include <OcpiOsDataTypes.h>
 #include <OcpiContainerDataTypes.h>
-#include <OcpiApplication.h>
+#include <OcpiContainerApplication.h>
 #include <OcpiArtifact.h>
 #include <RCC_Worker.h>
 #include <OcpiOsLoadableModule.h>

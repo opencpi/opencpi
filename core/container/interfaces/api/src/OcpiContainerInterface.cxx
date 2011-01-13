@@ -41,7 +41,7 @@
 #include <OcpiOsAssert.h>
 #include <OcpiUtilCDR.h>
 #include <OcpiPortMetaData.h>
-#include <OcpiApplication.h>
+#include <OcpiContainerApplication.h>
 #include <OcpiArtifact.h>
 #include <string>
 #include <cstring>

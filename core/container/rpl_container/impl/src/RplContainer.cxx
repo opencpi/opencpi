@@ -64,7 +64,7 @@
 #include "PciScanner.h"
 #include "OcpiContainerInterface.h"
 #include "OcpiWorker.h"
-#include "OcpiApplication.h"
+#include "OcpiContainerApplication.h"
 #include "OcpiArtifact.h"
 #include "OcpiProperty.h"
 #include "OcpiContainerPort.h"

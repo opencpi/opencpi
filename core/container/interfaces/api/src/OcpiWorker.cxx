@@ -32,7 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "OcpiApplication.h"
+#include "OcpiContainerApplication.h"
 #include "OcpiWorker.h"
 #include "OcpiProperty.h"
 #include "OcpiContainerPort.h"
@@ -103,20 +103,24 @@ namespace OCPI {
       if (prop.isStruct)
 	throw ApiError("No support yet for setting struct properties", NULL);
       CP::ValueType &vt = prop.myMeta.members->type;
-      if (vt.length > 1)
-	throw ApiError("No support yet for setting sequence/array properties",
-		       NULL);
-      const char *err = v.parse(value, vt.scalar, vt.stringLength);
+      const char *err = vt.parseValue(value, v);
       if (err)
         throw ApiError("Error parsing property value", NULL);
       switch (vt.scalar) {
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                  \
-	case CP::Scalar::OCPI_##pretty: prop.set##pretty##Value(v.run); break; \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+	case CP::Scalar::OCPI_##pretty:					\
+	  if (vt.length > 1)						\
+	    prop.set##pretty##SequenceValue((const run*)(v.pv##pretty), \
+					    v.length);			\
+	  else								\
+	    prop.set##pretty##Value(v.v##pretty);			\
+          break;
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
       default:
 	ocpiAssert(!"unknown data type");
       }
+      vt.destroyValue(v);
     }
   }
 }

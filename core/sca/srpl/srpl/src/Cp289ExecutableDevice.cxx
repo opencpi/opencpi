@@ -56,7 +56,7 @@
 #include <OcpiUtilAutoMutex.h>
 #include "OcpiContainerInterface.h"
 #include "OcpiPValue.h"
-#include "OcpiApplication.h"
+#include "OcpiContainerApplication.h"
 #include "OcpiDriver.h"
 #include "OcpiContainerMisc.h"
 #include <OcpiCFUtilMisc.h>

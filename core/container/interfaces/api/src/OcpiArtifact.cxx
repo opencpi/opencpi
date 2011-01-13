@@ -33,7 +33,7 @@
  */
 
 #include "OcpiContainerMisc.h"
-#include "OcpiApplication.h"
+#include "OcpiContainerApplication.h"
 #include "OcpiArtifact.h"
 
 namespace OCPI {
