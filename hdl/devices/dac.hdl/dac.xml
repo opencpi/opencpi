@@ -1,0 +1,38 @@
+<HdlImplementation Name="dac" Language="Verilog" Pattern="%w%M%0_">
+  <ComponentSpec Name="dac">
+    <Properties >
+      <Property Name="Control" Type="ULong" Readable="true" Writable="true"/>
+      <Property Name="Controlbyte" Type="UChar" Readable="true" Writable="true"/>
+    </Properties>
+    <DataInterfaceSpec Name="in">
+      <xi:include href="stream_protocol.xml"/>
+    </DataInterfaceSpec>
+  </ComponentSpec>
+  <StreamInterface Name="in" ImpreciseBurst="True" PreciseBurst="true" DataWidth="32"/>
+  <Signal Input="CLK_dac_clk"/>
+  <Signal Input="RST_N_dac_rst"/>
+  <Signal Input="wtiS0_req" Width="67"/>
+  <Signal Output="wtiS0_SThreadBusy"/>
+  <Signal Output="dac0_dap" Width="12"/>
+  <Signal Output="dac0_dan" Width="12"/>
+  <Signal Output="dac0_dbp" Width="12"/>
+  <Signal Output="dac0_dbn" Width="12"/>
+  <Signal Output="dac0_dcp" Width="12"/>
+  <Signal Output="dac0_dcn" Width="12"/>
+  <Signal Output="dac0_ddp" Width="12"/>
+  <Signal Output="dac0_ddn" Width="12"/>
+  <Signal Output="dac0_dacClkDiv"/>
+  <Signal Output="dac0_dacDelay"/>
+  <Signal Output="dac0_dacRf"/>
+  <Signal Output="dac0_dacRz"/>
+  <Signal Output="dac0_dacCal"/>
+  <Signal Output="dac0_syncOutp"/>
+  <Signal Output="dac0_syncOutn"/>
+  <Signal Output="dac0_syncMutep"/>
+  <Signal Output="dac0_syncMuten"/>
+  <Signal Output="CLK_dac0_dacSdrClk"/>
+  <Signal Output="CLK_GATE_dac0_dacSdrClk"/>
+  <Signal Output="RST_N_dac0_dacSdrRst"/>
+</HdlImplementation>
+
+

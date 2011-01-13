@@ -1,0 +1,53 @@
+<HdlImplementation Name="flash" Language="Verilog" Pattern="%w%M%0_">
+  <ComponentSpec Name="flash">
+    <Properties>
+      <property name="dramStatus" readable="true"/>
+      <property name="drmCtrl" readable="true" writable="true"/>
+      <property name="dbg_calib_done" readable="true"/>
+      <property name="dbg_calib_err" readable="true"/>
+      <property name="dbg_calib_dq_tap_cnt" readable="true"/>
+      <property name="dbg_calib_dqs_tap_cnt" readable="true"/>
+      <property name="dbg_calib_gate_tap_cnt" readable="true"/>
+      <property name="dbg_calib_rd_data_sel" readable="true"/>
+      <property name="dbg_calib_ren_delay" readable="true"/>
+      <property name="dbg_calib_gate_delay" readable="true"/>
+      <property name="32hcode_babe" readable="true"/>
+      <property name="wmemiWrReq" readable="true"/>
+      <property name="wmemiRdReq" readable="true"/>
+      <property name="wmemiRdResp" readable="true"/>
+      <property name="wmemi_status" readable="true"/>
+      <property name="wmemi_ReadInFlight" readable="true"/>
+      <property name="reserved0" readable="true"/>
+      <property name="reserved1" readable="true"/>
+      <property name="requestCount" readable="true"/>
+      <property name="reserved2" readable="true"/>
+      <property name="pReg" readable="true" writable="true"/>
+      <property name="4b_write_pio" writable="true"/>
+      <property name="4b_read_pio" writable="true"/>
+      <property name="mReg" readable="true" writable="true"/>
+      <property name="wdReg_0" readable="true"/>
+      <property name="wdReg_1" readable="true"/>
+      <property name="wdReg_2" readable="true"/>
+      <property name="wdReg_3" readable="true"/>
+      <property name="rdReg_0" readable="true"/>
+      <property name="rdReg_1" readable="true"/>
+      <property name="rdReg_2" readable="true"/>
+      <property name="rdReg_3" readable="true"/>
+      <property name="reserved3" readable="true" ArrayLength="131040"/>
+      <property name="data" readable="true" ArrayLength="131072"/>
+    </Properties>
+  </ComponentSpec>
+  <ControlInterface ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>
+  <!--  Non-OCP Signals -->
+  <Signal Input="flash_fwait_i"/>
+  <Signal Inout="flash_io_dq" Width="16"/>
+  <Signal Output="flash_addr" Width="24"/>
+  <Signal Output="flash_ce_n"/>
+  <Signal Output="flash_oe_n"/>
+  <Signal Output="flash_we_n"/>
+  <Signal Output="flash_wp_n"/>
+  <Signal Output="flash_rst_n"/>
+  <Signal Output="flash_adv_n"/>
+</HdlImplementation>
+
+

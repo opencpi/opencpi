@@ -1,0 +1,457 @@
+## ML605 UCF
+## Shepard Siegel for Atomic Rules LLC
+## 2009-09-10 Creation
+## 2009-09-12 Progression for oc1001 design
+## 2009-09-14 Add other ml605 LEDs for debug
+## 2010-01-31 Correct sense of sys0_clk +/- J9/H9
+## 2010-02-05 Move from PCIe Gen1 to Gen2 (250 MHz pci0 clk)
+## 2010-03-04 GbE signals added
+## 2010-03-12 DDR3 DRAM signals added
+## 2010-11-25 Moved ppsOut   to ML605 J57 SMA Connector
+## 2010-11-29 Moved ppsExtIn to ML605 J56 SMA Connector
+## 2010-12-19 pci core path changed
+
+CONFIG PART = XC6VLX240T-FF1156-1 ;
+
+NET  "sys0_clkp"     LOC = J9 | IOSTANDARD = LVDS_25;
+NET  "sys0_clkn"     LOC = H9 | IOSTANDARD = LVDS_25;
+NET  "sys1_clkp"     LOC = H6;
+NET  "sys1_clkn"     LOC = H5;
+NET  "pci0_clkp"      LOC = V6;  # 250 MHz from U9
+NET  "pci0_clkn"      LOC = V5;
+#NET  "pci0_clkp"     LOC = P6;  # 100 MHz from U14 Jitter Attenuator
+#NET  "pci0_clkn"     LOC = P5;
+#NET "pci0_clkp"      LOC = AA3; # Direct PCI edge 100 MHz
+#NET "pci0_clkn"      LOC = AA4;
+
+INST "ftop/pciw_pci0_clk"  LOC = IBUFDS_GTXE1_X0Y4;  # 250 MHz Receiver from U9  ICS874001
+#INST "ftop/pci0_clk" LOC = IBUFDS_GTXE1_X0Y6;  # 100 MHz Receiver from U14 ICS854104
+#INST "ftop/pci0_clk" LOC = IBUFDS_GTXE1_X0Y7;  # Direct PCI edge 100 MHz
+
+NET  "pci0_reset_n"  LOC = AE13 | IOSTANDARD = LVCMOS25 | PULLUP | NODELAY;
+
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_block_i"                   LOC = PCIE_X0Y1;
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[0].GTX" LOC = GTXE1_X0Y15;
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[1].GTX" LOC = GTXE1_X0Y14;
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[2].GTX" LOC = GTXE1_X0Y13;
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[3].GTX" LOC = GTXE1_X0Y12;
+
+# Timing Constraints...
+NET "sys0_clkp"      TNM_NET = "SYS0CLK";  # 200 MHz sys0 XO
+TIMESPEC "TS_SYS0CLK" = PERIOD "SYS0CLK"     200 MHz HIGH 50 % ;
+
+NET "pci0_clkp" TNM_NET = "PCICLK" ;
+NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/clk_125" TNM_NET = "CLK_125" ;
+NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/clk_250" TNM_NET = "CLK_250" ;
+TIMESPEC "TS_PCICLK"   = PERIOD "PCICLK"  250 MHz HIGH 50 % ;
+TIMESPEC "TS_CLK_125"  = PERIOD "CLK_125" TS_PCICLK/2 HIGH 50 % PRIORITY 100 ;
+TIMESPEC "TS_CLK_250"  = PERIOD "CLK_250" TS_PCICLK*1 HIGH 50 % PRIORITY 1;
+NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/sel_lnk_rate_d" TIG ;
+PIN "ftop/pciw_pci0_pcie_ep/ep_trn_reset_n_int_i.CLR"          TIG ;
+PIN "ftop/pciw_pci0_pcie_ep/ep_trn_reset_n_i.CLR"              TIG ;
+PIN "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/mmcm_adv_i.RST" TIG ;
+#TIMESPEC "TS_RESETN" = FROM FFS(*) TO FFS(trn_reset_n_i) 8 ns;
+
+# LEDs and Switches...
+NET "led[0]"    LOC = AC22   | IOSTANDARD = "LVCMOS25"; ## User D0
+NET "led[1]"    LOC = AC24   | IOSTANDARD = "LVCMOS25"; ## User D1
+NET "led[2]"    LOC = AE22   | IOSTANDARD = "LVCMOS25"; ## User D2
+NET "led[3]"    LOC = AE23   | IOSTANDARD = "LVCMOS25"; ## User D3
+NET "led[4]"    LOC = AB23   | IOSTANDARD = "LVCMOS25"; ## User D4
+NET "led[5]"    LOC = AG23   | IOSTANDARD = "LVCMOS25"; ## User D5
+NET "led[6]"    LOC = AE24   | IOSTANDARD = "LVCMOS25"; ## User D6
+NET "led[7]"    LOC = AD24   | IOSTANDARD = "LVCMOS25"; ## User D7
+NET "led[8]"    LOC = AP24   | IOSTANDARD = "LVCMOS25"; ## User Center
+NET "led[9]"    LOC = AE21   | IOSTANDARD = "LVCMOS25"; ## User East
+NET "led[10]"   LOC = AH27   | IOSTANDARD = "LVCMOS25"; ## User North
+NET "led[11]"   LOC = AH28   | IOSTANDARD = "LVCMOS25"; ## User South
+NET "led[12]"   LOC = AD21   | IOSTANDARD = "LVCMOS25"; ## User West
+#NET "pb_sw[0]"  LOC = G26    | IOSTANDARD = "LVCMOS25"; ## User Center
+#NET "pb_sw[1]"  LOC = G17    | IOSTANDARD = "LVCMOS25"; ## User East
+#NET "pb_sw[2]"  LOC = A19    | IOSTANDARD = "LVCMOS25"; ## User North
+#NET "pb_sw[3]"  LOC = A18    | IOSTANDARD = "LVCMOS25"; ## User South
+#NET "pb_sw[4]"  LOC = H17    | IOSTANDARD = "LVCMOS25"; ## User West
+
+#NET  "ppsExtIn"  LOC = H30  | IOSTANDARD = "LVCMOS25"; #FMC LPC H8 on J63
+#NET  "ppsOut"    LOC = AD20 | IOSTANDARD = "LVCMOS25"; #FMC HPC H8 on J64
+NET  "ppsOut"     LOC = V34 | IOSTANDARD = "LVCMOS25"; #ML605 Board J57 (user_sma_gpio_p)
+NET  "ppsExtIn"   LOC = W34 | IOSTANDARD = "LVCMOS25"; #ML605 Board J56 (user_sma_gpio_n)
+
+PIN "ftop/pciw_pci0_pcie_ep/ep_trn_reset_n_int_i.CLR" TIG ;
+PIN "ftop/pciw_pci0_pcie_ep/ep_trn_reset_n_i.CLR" TIG ;
+PIN "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/mmcm_adv_i.RST" TIG ;
+
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/*" AREA_GROUP = "AG_pcie0" ;
+AREA_GROUP "AG_pcie0" RANGE = SLICE_X136Y147:SLICE_X155Y120 ;
+
+## GbE GMII...
+NET "gmii_txd[0]"     LOC = "AM11" | IOSTANDARD=LVCMOS25; ## 18 on U80
+NET "gmii_txd[1]"     LOC = "AL11" | IOSTANDARD=LVCMOS25; ## 19 on U80
+NET "gmii_txd[2]"     LOC = "AG10" | IOSTANDARD=LVCMOS25; ## 20 on U80
+NET "gmii_txd[3]"     LOC = "AG11" | IOSTANDARD=LVCMOS25; ## 24 on U80
+NET "gmii_txd[4]"     LOC = "AL10" | IOSTANDARD=LVCMOS25; ## 25 on U80
+NET "gmii_txd[5]"     LOC = "AM10" | IOSTANDARD=LVCMOS25; ## 26 on U80
+NET "gmii_txd[6]"     LOC = "AE11" | IOSTANDARD=LVCMOS25; ## 28 on U80
+NET "gmii_txd[7]"     LOC = "AF11" | IOSTANDARD=LVCMOS25; ## 29 on U80
+NET "gmii_tx_en"      LOC = "AJ10" | IOSTANDARD=LVCMOS25; ## 16 on U80
+NET "gmii_tx_er"      LOC = "AH10" | IOSTANDARD=LVCMOS25; ## 13 on U80
+NET "gmii_tx_clk"     LOC = "AD12" | IOSTANDARD=LVCMOS25; ## 10 on U80
+NET "gmii_rxd[0]"     LOC = "AN13" | IOSTANDARD=LVCMOS25; ## 3 on U80
+NET "gmii_rxd[1]"     LOC = "AF14" | IOSTANDARD=LVCMOS25; ## 128 on U80
+NET "gmii_rxd[2]"     LOC = "AE14" | IOSTANDARD=LVCMOS25; ## 126 on U80
+NET "gmii_rxd[3]"     LOC = "AN12" | IOSTANDARD=LVCMOS25; ## 125 on U80
+NET "gmii_rxd[4]"     LOC = "AM12" | IOSTANDARD=LVCMOS25; ## 124 on U80
+NET "gmii_rxd[5]"     LOC = "AD11" | IOSTANDARD=LVCMOS25; ## 123 on U80
+NET "gmii_rxd[6]"     LOC = "AC12" | IOSTANDARD=LVCMOS25; ## 121 on U80
+NET "gmii_rxd[7]"     LOC = "AC13" | IOSTANDARD=LVCMOS25; ## 120 on U80
+NET "gmii_rx_dv"      LOC = "AM13" | IOSTANDARD=LVCMOS25; ## 4 on U80
+NET "gmii_rx_er"      LOC = "AG12" | IOSTANDARD=LVCMOS25; ## 9 on U80
+NET "gmii_rx_clk"     LOC = "AP11" | IOSTANDARD=LVCMOS25; ## 7 on U80
+NET "gmii_COL"        LOC = "AK13" | IOSTANDARD=LVCMOS25; ## 114 on U80
+NET "gmii_CRS"        LOC = "AL13" | IOSTANDARD=LVCMOS25; ## 115 on U80
+NET "gmii_INT"        LOC = "AH14" | IOSTANDARD=LVCMOS25; ## 32 on U80
+NET "gmii_MDC"        LOC = "AP14" | IOSTANDARD=LVCMOS25; ## 35 on U80
+NET "gmii_MDIO"       LOC = "AN14" | IOSTANDARD=LVCMOS25; ## 33 on U80
+NET "gmii_RESET"      LOC = "AH13" | IOSTANDARD=LVCMOS25; ## 36 on U80
+NET "gmii_TXC_GTXCLK" LOC = "AH12" | IOSTANDARD=LVCMOS25; ## 14 on U80
+
+
+# ADC...
+# Source Synchronous Input Clocks...
+#NET "adc0_clkp" TNM_NET = "ADC0_rxclk";
+#NET "adc1_clkp" TNM_NET = "ADC1_rxclk";
+#TIMESPEC TS_adc0_rxclk_p = PERIOD "ADC0_rxclk" 250.00 MHz HIGH 50 %;
+#TIMESPEC TS_adc1_rxclk_p = PERIOD "ADC1_rxclk" 250.00 MHz HIGH 50 %;
+# From TI AD6149 datasheet (page10) min 800pS setup and 250pS hold...
+# Typical setting observed for closure: ClockDly(0 clicks), DataDly(19 clicks) click=78.125pS
+#NET "adc0_dd*" OFFSET = IN 800 ps VALID 1050 ps BEFORE "adc0_clkp" RISING;
+#NET "adc0_dd*" OFFSET = IN 800 ps VALID 1050 ps BEFORE "adc0_clkp" FALLING;
+#NET "adc1_dd*" OFFSET = IN 800 ps VALID 1050 ps BEFORE "adc1_clkp" RISING;
+#NET "adc1_dd*" OFFSET = IN 800 ps VALID 1050 ps BEFORE "adc1_clkp" FALLING;
+# From TI AD6249 datasheet (page10) min 550pS setup and hold...
+#NET "adc0_dd*" OFFSET = IN 550 ps VALID 1100 ps BEFORE "adc0_clkp" RISING;
+#NET "adc0_dd*" OFFSET = IN 550 ps VALID 1100 ps BEFORE "adc0_clkp" FALLING;
+#NET "adc1_dd*" OFFSET = IN 550 ps VALID 1100 ps BEFORE "adc1_clkp" RISING;
+#NET "adc1_dd*" OFFSET = IN 550 ps VALID 1100 ps BEFORE "adc1_clkp" FALLING;
+## Group ADC Source-Sync Capture controller domains together...
+#INST "ftop/adcW10/adcIdc"                                   IODELAY_GROUP = "ADC_IODELAY";
+#INST "ftop/adcW10/adcCore0_ddrC_ddrV/IODELAY_INST"          IODELAY_GROUP = "ADC_IODELAY";
+#INST "ftop/adcW10/adcCore0_ddrC_ddrV/DDR_g[*].IODELAY_INST" IODELAY_GROUP = "ADC_IODELAY";
+#INST "ftop/adcW10/adcCore1_ddrC_ddrV/IODELAY_INST"          IODELAY_GROUP = "ADC_IODELAY";
+#INST "ftop/adcW10/adcCore1_ddrC_ddrV/DDR_g[*].IODELAY_INST" IODELAY_GROUP = "ADC_IODELAY";
+#
+
+
+## FMC Connection (E.G. 4DSP-FCM104 or similar)
+#NET "adc_sen"   LOC = "K32" ; # AD9510_N_CS
+#NET "adc_sdata" LOC = "M25" ; # AD9510_SDATA
+#NET "adc_sclk"  LOC = "N25" ; # AD9510_SCLK
+#NET "MUX_n_STANDBY"    LOC = "G33" ;
+#NET "CMOS_n_LVDS"      LOC = "F33" ;
+#NET "TRIGGER_TO_FPGA"  LOC = "K31" ;
+#NET "FMC_N_PRESENT"    LOC = "AD9" ;
+#NET "FMC_PWR_GOOD_C2M" LOC = "K9"  ;
+#NET "adc_clkn"    LOC = "B10" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE; #EXT_CLK_TO_FPGA_N
+#NET "adc_clkp"    LOC = "A10" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE; #EXT_CLK_TO_FPGA_P
+#NET "adc0_clkn"   LOC = "K27" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_clkp"   LOC = "K26" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_clkn"   LOC = "E31" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_clkp"   LOC = "F31" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_clkn"   LOC = "N29" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_clkp"   LOC = "N28" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_clkn"   LOC = "L30" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_clkp"   LOC = "L29" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddn[0]" LOC = "J29" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddp[0]" LOC = "K28" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddn[1]" LOC = "J32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddp[1]" LOC = "J31" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddn[2]" LOC = "H30" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddp[2]" LOC = "G31" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddn[3]" LOC = "J34" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddp[3]" LOC = "K33" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddn[4]" LOC = "H33" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddp[4]" LOC = "H34" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddn[5]" LOC = "H32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddp[5]" LOC = "G32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddn[6]" LOC = "K29" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc0_ddp[6]" LOC = "J30" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddn[0]" LOC = "D32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddp[0]" LOC = "D31" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddn[1]" LOC = "E33" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddp[1]" LOC = "E32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddn[2]" LOC = "G30" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddp[2]" LOC = "F30" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddn[3]" LOC = "L26" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddp[3]" LOC = "L25" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddn[4]" LOC = "C34" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddp[4]" LOC = "D34" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddn[5]" LOC = "B32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddp[5]" LOC = "C32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddn[6]" LOC = "B34" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc1_ddp[6]" LOC = "C33" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddn[0]" LOC = "R27" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddp[0]" LOC = "R28" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddn[1]" LOC = "N30" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddp[1]" LOC = "M30" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddn[2]" LOC = "R29" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddp[2]" LOC = "P29" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddn[3]" LOC = "B33" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddp[3]" LOC = "A33" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddn[4]" LOC = "P27" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddp[4]" LOC = "N27" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddn[5]" LOC = "M32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddp[5]" LOC = "L33" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddn[6]" LOC = "T26" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc2_ddp[6]" LOC = "R26" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddn[0]" LOC = "P34" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddp[0]" LOC = "N34" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddn[1]" LOC = "R32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddp[1]" LOC = "R31" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddn[2]" LOC = "P32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddp[2]" LOC = "N32" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddn[3]" LOC = "P30" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddp[3]" LOC = "P31" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddn[4]" LOC = "M33" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddp[4]" LOC = "N33" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddn[5]" LOC = "M27" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddp[5]" LOC = "M26" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddn[6]" LOC = "L31" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+#NET "adc3_ddp[6]" LOC = "M31" |IOSTANDARD = "LVDS_25" |DIFF_TERM = TRUE;
+
+
+
+################################################################################
+# FMC signals (e.g. FMC150 on ML605, LPC site)
+################################################################################
+# flp = FMC LPC Connector for 4DSP FMC150
+# com = Common
+# cdc = TI CDCE72010
+# mon = TI AMC7823
+# adc = TI ADS62P49
+# dac = TI DAC3283
+
+# Serial Control of FMC150 devices...
+NET "flp_com_sclk"   LOC = "N34" | IOSTANDARD = "LVTTL";   # Common SPI SCLK
+NET "flp_com_sdc2m"  LOC = "P34" | IOSTANDARD = "LVTTL";   # Common SPI Data from Carrier to Mezzanine (FPGA Out to all Serial Inputs)
+NET "flp_cdc_sdm2c"  LOC = "M27" | IOSTANDARD = "LVTTL";   # CDC SDO    Individual Mezzanine to Carrier SDOs...
+NET "flp_mon_sdm2c"  LOC = "N25" | IOSTANDARD = "LVTTL";   # MON SDO     ibid
+NET "flp_adc_sdm2c"  LOC = "C32" | IOSTANDARD = "LVTTL";   # ADC SDO     ibid
+NET "flp_dac_sdm2c"  LOC = "M33" | IOSTANDARD = "LVTTL";   # DAC SDO     ibid
+NET "flp_cdc_sen_n"  LOC = "M26" | IOSTANDARD = "LVTTL";   # CDC EN_N   Individual active-low enables...
+NET "flp_mon_sen_n"  LOC = "R31" | IOSTANDARD = "LVTTL";   # MON EN_N    ibid
+NET "flp_adc_sen_n"  LOC = "A23" | IOSTANDARD = "LVTTL";   # ADC EN_N    ibid
+NET "flp_dac_sen_n"  LOC = "N33" | IOSTANDARD = "LVTTL";   # DAC EN_N    ibid
+
+## CDC TI CDCE72010...
+NET "flp_cdc_rstn"   LOC = "M31" | IOSTANDARD = "LVTTL";   # CDC RST_N
+NET "flp_cdc_pdn"    LOC = "L31" | IOSTANDARD = "LVTTL";   # CDC PD_N
+#NET "CLK_TO_FPGA_N_0" LOC="B10";
+#NET "CLK_TO_FPGA_P_0" LOC="A10";
+#NET "PLL_STATUS_0" LOC="K31";
+#NET "REF_EN_0" LOC="K32";
+
+## MON TI AMC7823 and Misc...
+NET "flp_mon_rstn"   LOC = "R32" | IOSTANDARD = "LVTTL";   # MON RST_N
+NET "flp_mon_intn"   LOC = "M25" | IOSTANDARD = "LVTTL";   # MON GALR_N
+#NET "flp_pg_c2m"     LOC = "K9"  | IOSTANDARD = "LVTTL";   # Power Good Carrier to Mezzanine
+#NET "flp_prsnt_m2c"  LOC = "AD9" | IOSTANDARD = "LVTTL";   # Low when Carrier is Inserted
+#NET "flp_xtrig_n"    LOC = "G33" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE; # External Trigger
+#NET "flp_xtrig_p"    LOC = "F33" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+
+## ADC TI ADS62P49...
+NET "flp_adc_rstn"   LOC = "B32" | IOSTANDARD = "LVTTL";   # ADC RSTN
+#NET "adc_clkn"    LOC = "K27" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc_clkp"    LOC = "K26" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddn[0]" LOC = "E31" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddp[0]" LOC = "F31" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddn[1]" LOC = "H30" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddp[1]" LOC = "G31" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddn[2]" LOC = "J32" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddp[2]" LOC = "J31" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddn[3]" LOC = "J29" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddp[3]" LOC = "K28" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddn[4]" LOC = "H33" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddp[4]" LOC = "H34" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddn[5]" LOC = "J34" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddp[5]" LOC = "K33" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddn[6]" LOC = "H32" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc0_ddp[6]" LOC = "G32" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddn[0]" LOC = "K29" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddp[0]" LOC = "J30" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddn[1]" LOC = "L26" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddp[1]" LOC = "L25" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddn[2]" LOC = "G30" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddp[2]" LOC = "F30" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddn[3]" LOC = "D32" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddp[3]" LOC = "D31" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddn[4]" LOC = "E33" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddp[4]" LOC = "E32" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddn[5]" LOC = "C34" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddp[5]" LOC = "D34" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddn[6]" LOC = "B34" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+#NET "adc1_ddp[6]" LOC = "C33" | IOSTANDARD = "LVDS_25" | DIFF_TERM = TRUE;
+
+## DAC TI DAC3283...
+#NET "DAC_DCLK_N_0" LOC="T26";
+#NET "DAC_DCLK_P_0" LOC="R26";
+#NET "FRAME_N_0" LOC="P27";
+#NET "FRAME_P_0" LOC="N27";
+#NET "TXENABLE_0" LOC="B33";
+#NET "dac0_dan[0]" LOC = "M32"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dap[0]" LOC = "L33"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dan[1]" LOC = "P30"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dap[1]" LOC = "P31"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dan[2]" LOC = "P32"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dap[2]" LOC = "N32"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dan[3]" LOC = "R27"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dap[3]" LOC = "R28"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dan[4]" LOC = "R29"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dap[4]" LOC = "P29"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dan[5]" LOC = "N30"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dap[5]" LOC = "M30"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dan[6]" LOC = "L30"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dap[6]" LOC = "L29"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dan[7]" LOC = "N29"  | IOSTANDARD = "LVDS_25";
+#NET "dac0_dap[7]" LOC = "N28"  | IOSTANDARD = "LVDS_25";
+
+
+
+
+
+
+################################################################################
+## ML605 DDR3 MIG for OpenCPI...
+############################################################################
+##  Xilinx, Inc. 2006            www.xilinx.com 
+##  Fri Dec 11 13:34:50 2009
+##  Generated by MIG Version 3.3
+############################################################################
+##  File name :       example_top.ucf
+##  Details :     Constraints file
+##                    FPGA family:       virtex6
+##                    FPGA:              xc6vlx240t-ff1156
+##                    Speedgrade:        -1
+##                    Design Entry:      VERILOG
+##                    Frequency:         400 MHz
+##                    Time Period:         2500 ps
+##                    Design:            with Test bench
+##                    No.Of Controllers: 1
+############################################################################ 
+##  Modifications for ML605 with LX240T FPGA (single clock design 800 Mbps)
+##  Start with UCF file generated by MIG 3.3 (ISE 11.3 build L.68.3.0)
+##  1. Delete all memory pin LOCS and replace with ML605 specific LOCS
+##     A. MIG 3.3 design doesn't produce LOCS for ML605 board pin assignments
+##        (see section "Location Constraints")
+##  2. Delete "sda" and "scl" signals (not supported by MIG 3.3)
+##  3. Board specific clocking and reset definitions. Default MIG 3.3 
+##     example design assumes 2 clock inputs to design.  
+##        - clk_ref to IDELAY_CTRL element (200 MHz input)
+##        - sys_clk to PLL circuit (system clock input)
+##     This design uses a single 200 MHz LVDS clock input to the top level
+##     block. Modifications to HDL explained to example_top.v. FOr UCF file:
+##        A. Top level use LVDS clock "sys_clk" input for 800 Mbps data rate. 
+##        B. Delete clk_ref_p and clk_ref_n inputs (HDL and LOC constraints)
+##        C. Comment out PERIOD constraint on "sys_clk_ibufg" (not used)
+##        D. Change IOSTANDARD on sys_clk differential inputs to LVDS_25
+##  4. Use CPU_RESET for sys_reset input (HDL code option defines reset polarity)      
+##  5. Edit DCI_CASCADE line to define ML605 implementation. Note MIG 3.3
+##     GUI doesn't permit definition, however manual edits are done here.
+##  6. Comment out CONFIG_PROHIBIT lines (pins reserved for MIG)
+##     Since this design has LOC'ed I/O don't need to reserve these pins.
+##     If adding addition function to a design, leave CONFIG_PROHIBIT lines
+##     in constraint file as these pins must not be used by other logic!
+##  7. Add "dbg_display_driver.v" module LEDS for ML605 
+##     A. GPIO_LED0  "ON" when memory test running and no errors
+##     B. GPIO_LED1  "flashing" heartbeat divided down counter 
+##     C. GPIO_LED2  "OFF" when no memory errors detected
+##     D. GPIO_LED3  "ON" when calibration and initialization complete
+##     E. IOSTANDARD for LEDS is LVCMOS25
+##  8. Replace MIG 3.3 generated LOCS for reserved "NC" pins with ML605 specific LOCS:
+##     A. RSYNC (OSERDES, IODELAY and BUFR) LOC assignments specific to ML605 design
+##     B. CPT (OSERDES and IODELAY) DQS(7:0)LOC assignments specific to ML605 design
+##     C. OCB monitor LOC assignments specific to ML605 design 
+##        
+############################################################################
+# Timing constraints                                                        #
+#  200 MHz (5ns) for IDELAY_CTRL and SYS_CLK                          #
+############################################################################
+
+## ML605 single clock design comment out "sys_clk_p" PERIOD constraint that follows.
+## NET "sys_clk_p" TNM_NET = TNM_sys_clk;
+## TIMESPEC "TS_sys_clk" = PERIOD "TNM_sys_clk" 2.5 ns;
+
+#NET "ftop/dram0/memc/u_iodelay_ctrl/clk_ref_ibufg" TNM_NET = TNM_clk_ref;
+#TIMESPEC "TS_clk_ref" = PERIOD "TNM_clk_ref" 5 ns ;
+
+# Constrain BUFR clocks used to synchronize data from IOB to fabric logic
+# Note that ISE cannot infer this from other PERIOD constraints because
+# of the use of OSERDES blocks in the BUFR clock generation path
+#NET "ftop/dram0/memc/u_memc_ui_top/u_mem_intfc/phy_top0/clk_rsync[?]" TNM_NET = TNM_clk_rsync;
+#TIMESPEC "TS_clk_rsync" = PERIOD "TNM_clk_rsync" 5 ns;
+
+# Signal to select between controller and physical layer signals. Four divided by two clock
+# cycles (8 memory clock cycles) are provided by design for the signal to settle down.
+# Used only by the phy modules.
+#INST "ftop/dram0/memc/u_memc_ui_top/u_mem_intfc/phy_top0/u_phy_init/u_ff_phy_init_data_sel" TNM = "TNM_PHY_INIT_SEL";
+#TIMESPEC "TS_MC_PHY_INIT_SEL" = FROM "TNM_PHY_INIT_SEL" TO FFS = "TS_sys_clk"*8;
+
+disable = reg_sr_o;
+disable = reg_sr_r;
+
+##########Removed DDR3 section entirely to ml605-dram.ucf file
+# The following 2 lines are kept from the ddr3 section in case they are needed
+# even when the ddr3 is not presnt.
+ CONFIG DCI_CASCADE = "26 25";
+ CONFIG DCI_CASCADE = "36 35";
+##########End of removed DDR3 section
+
+## Flash for ML605
+
+
+# Flash...
+NET "flash_addr[0]"          LOC = "AL8";    ## 29 on U4, A1 on U27
+NET "flash_addr[1]"          LOC = "AK8";    ## 25 on U4, B1 on U27
+NET "flash_addr[2]"          LOC = "AC9";    ## 24 on U4, C1 on U27
+NET "flash_addr[3]"          LOC = "AD10";   ## 23 on U4, D1 on U27
+NET "flash_addr[4]"          LOC = "C8";     ## 22 on U4, D2 on U27
+NET "flash_addr[5]"          LOC = "B8";     ## 21 on U4, A2 on U27
+NET "flash_addr[6]"          LOC = "E9";     ## 20 on U4, C2 on U27
+NET "flash_addr[7]"          LOC = "E8";     ## 19 on U4, A3 on U27
+NET "flash_addr[8]"          LOC = "A8";     ## 8  on U4, B3 on U27
+NET "flash_addr[9]"          LOC = "A9";     ## 7  on U4, C3 on U27
+NET "flash_addr[10]"         LOC = "D9";     ## 6  on U4, D3 on U27
+NET "flash_addr[11]"         LOC = "C9";     ## 5  on U4, C4 on U27
+NET "flash_addr[12]"         LOC = "D10";    ## 4  on U4, A5 on U27
+NET "flash_addr[13]"         LOC = "C10";    ## 3  on U4, B5 on U27
+NET "flash_addr[14]"         LOC = "F10";    ## 2  on U4, C5 on U27
+NET "flash_addr[15]"         LOC = "F9";     ## 1  on U4, D7 on U27
+NET "flash_addr[16]"         LOC = "AH8";    ## 55 on U4, D8 on U27
+NET "flash_addr[17]"         LOC = "AG8";    ## 18 on U4, A7 on U27
+NET "flash_addr[18]"         LOC = "AP9";    ## 17 on U4, B7 on U27
+NET "flash_addr[19]"         LOC = "AN9";    ## 16 on U4, C7 on U27
+NET "flash_addr[20]"         LOC = "AF10";   ## 11 on U4, C8 on U27
+NET "flash_addr[21]"         LOC = "AF9";    ## 10 on U4, A8 on U27
+NET "flash_addr[22]"         LOC = "AL9";    ## 9  on U4, G1 on U27
+NET "flash_addr[23]"         LOC = "AA23";   ## 26 on U4
+NET "flash_io_dq[0]"         LOC = "AF24";   ## 34 on U4, F2 on U27
+NET "flash_io_dq[1]"         LOC = "AF25";   ## 36 on U4, E2 on U27
+NET "flash_io_dq[2]"         LOC = "W24";    ## 39 on U4, G3 on U27
+NET "flash_io_dq[3]"         LOC = "V24";    ## 41 on U4, E4 on U27
+NET "flash_io_dq[4]"         LOC = "H24";    ## 47 on U4, E5 on U27
+NET "flash_io_dq[5]"         LOC = "H25";    ## 49 on U4, G5 on U27
+NET "flash_io_dq[6]"         LOC = "P24";    ## 51 on U4, G6 on U27
+NET "flash_io_dq[7]"         LOC = "R24";    ## 53 on U4, H7 on U27
+NET "flash_io_dq[8]"         LOC = "G23";    ## 35 on U4, E1 on U27
+NET "flash_io_dq[9]"         LOC = "H23";    ## 37 on U4, E3 on U27
+NET "flash_io_dq[10]"        LOC = "N24";    ## 40 on U4, F3 on U27
+NET "flash_io_dq[11]"        LOC = "N23";    ## 42 on U4, F4 on U27
+NET "flash_io_dq[12]"        LOC = "F23";    ## 48 on U4, F5 on U27
+NET "flash_io_dq[13]"        LOC = "F24";    ## 50 on U4, H5 on U27
+NET "flash_io_dq[14]"        LOC = "L24";    ## 52 on U4, G7 on U27
+NET "flash_io_dq[15]"        LOC = "M23";    ## 54 on U4, E7 on U27
+NET "flash_wait"             LOC = "J26";    ## 56 on U4
+NET "flash_we_n"             LOC = "AF23";   ## 14 on U4, G8 on U27
+NET "flash_oe_n"             LOC = "AA24";   ## 32 on U4, F8 on U27
+NET "flash_ce_n"             LOC = "Y24";    ## 30 on U4, B4 on U27 (U10 and switch S2.2 setting select either U4 or U27)
+#NET "FPGA_CCLK"                     LOC = "K8";     ##           F1 on U27
+#NET "PLATFLASH_L_B"                 LOC = "AC23";   ##           H1 on U27

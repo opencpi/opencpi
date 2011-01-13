@@ -1,0 +1,62 @@
+<HdlImplementation Name="gbe" Language="Verilog" >
+  <ComponentSpec Name="gbe">
+    <Properties>
+      <property name="dramStatus" readable="true"/>
+      <property name="drmCtrl" readable="true" writable="true"/>
+      <property name="dbg_calib_done" readable="true"/>
+      <property name="dbg_calib_err" readable="true"/>
+      <property name="dbg_calib_dq_tap_cnt" readable="true"/>
+      <property name="dbg_calib_dqs_tap_cnt" readable="true"/>
+      <property name="dbg_calib_gate_tap_cnt" readable="true"/>
+      <property name="dbg_calib_rd_data_sel" readable="true"/>
+      <property name="dbg_calib_ren_delay" readable="true"/>
+      <property name="dbg_calib_gate_delay" readable="true"/>
+      <property name="32hcode_babe" readable="true"/>
+      <property name="wmemiWrReq" readable="true"/>
+      <property name="wmemiRdReq" readable="true"/>
+      <property name="wmemiRdResp" readable="true"/>
+      <property name="wmemi_status" readable="true"/>
+      <property name="wmemi_ReadInFlight" readable="true"/>
+      <property name="reserved0" readable="true"/>
+      <property name="reserved1" readable="true"/>
+      <property name="requestCount" readable="true"/>
+      <property name="reserved2" readable="true"/>
+      <property name="pReg" readable="true" writable="true"/>
+      <property name="4b_write_pio" writable="true"/>
+      <property name="4b_read_pio" writable="true"/>
+      <property name="mReg" readable="true" writable="true"/>
+      <property name="wdReg_0" readable="true"/>
+      <property name="wdReg_1" readable="true"/>
+      <property name="wdReg_2" readable="true"/>
+      <property name="wdReg_3" readable="true"/>
+      <property name="rdReg_0" readable="true"/>
+      <property name="rdReg_1" readable="true"/>
+      <property name="rdReg_2" readable="true"/>
+      <property name="rdReg_3" readable="true"/>
+      <property name="reserved3" readable="true" ArrayLength="131040"/>
+      <property name="data" readable="true" ArrayLength="131072"/>
+    </Properties>
+    <DataInterface Name="wsiM0"/>
+  </ComponentSpec>
+  <StreamInterface Name="wsiM0" DataWidth="32"/>
+  <ControlInterface Name="wci_s" ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>
+  <!--  Non-OCP Signals -->
+  <Signal Input="CLK_gmii_rx_clk"/>
+  <Signal Input="CLK_sys1_clk"/>
+  <Signal Input="RST_N_sys1_rst"/>
+  <SIgnal Input="wtiS0_req" Width="67"/>
+  <Signal Input="gmii_rxd_i" Width="8"/>
+  <Signal Input="gmii_rx_dv_i"/>
+  <Signal Input="gmii_rx_er_i"/>
+  <Signal Output="wtiS0_SThreadBusy"/>
+  <Signal Output="gmii_txd" Width="8"/>
+  <Signal Output="gmii_tx_en"/>
+  <Signal Output="gmii_tx_er"/>
+  <Signal Output="CLK_gmii_tx_clk"/>
+  <Signal Output="CLK_GATE_gmii_tx_clk"/>
+  <Signal Output="CLK_rxclk"/>
+  <Signal Output="CLK_GATE_rxclk"/>
+  <Signal Output="RST_N_mrst_n"/>
+</HdlImplementation>
+
+

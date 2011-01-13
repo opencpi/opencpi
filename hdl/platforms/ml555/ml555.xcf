@@ -1,0 +1,7 @@
+## OC1001-ML555 125 MHz XCF
+## Shepard Siegel for Atomic Rules LLC
+## 2009-10-23 Creadtion to convey 125 MHz core constraint to XST
+
+# Timing Constraints...
+NET "ftop/pciw_pci0_pcie_ep/trn_clk" TNM_NET = "TRNCLK";
+TIMESPEC "TS_TRNCLK"  = PERIOD "TRNCLK" 125.00 MHz HIGH 50 % ;

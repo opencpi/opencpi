@@ -1,0 +1,11 @@
+#!/bin/csh -f
+# Update all the known bsv-generated verilog workers.
+# run this from the top level of the device worker library
+set ib=$OCPI_CDK_DIR/scripts/importBsv
+$ib dram_v6 mkDramServer_v6
+$ib dram_v5 mkDramServer_v5
+$ib flash mkFlashWorker
+$ib icap mkICAPWorker
+$ib gbe mkGbeWorker
+$ib adc mkADCWorker
+$ib dac mkDACWorker

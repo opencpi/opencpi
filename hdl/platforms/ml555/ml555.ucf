@@ -1,0 +1,54 @@
+## ML555 Generic UCF
+## Shepard Siegel for Atomic Rules LLC
+## 2009-03-17 oc1001
+## 2009-05-11 changes for PCIe BPEP v1.10
+## 2009-09-20 v5/v6 rename pci0 commonality
+## 2009-10-22 PCIe path rename to move from v1.11 to v1.12 PCIe BPEP
+## 2009-10-30 Add pins for PPS IO on P47 connector
+## 2010-03-04 GbE signals added
+
+CONFIG PART = XC5VLX50T-FF1136-1 ;
+
+## Pinout...
+NET  "sys0_clkp"     LOC = K17; # 200 MHz X0
+NET  "sys0_clkn"     LOC = L18;
+NET  "sys1_clkp"     LOC = G15; # 125 MHz X0 to BUFG
+NET  "sys1_clkn"     LOC = G16;
+NET  "sfp1_clkp"     LOC = H4;  # 125 MHz X0 to MGT_REFCLK
+NET  "sfp1_clkn"     LOC = H3;
+NET  "pci0_clkp"     LOC = Y4;  # From PCIe edge
+NET  "pci0_clkn"     LOC = Y3;
+INST "ftop/pciw_pci0_clk" DIFF_TERM = "TRUE";
+NET  "pci0_rstn"     LOC = AE14 | IOSTANDARD = "LVCMOS25" | PULLUP | NODELAY;
+
+# try xil:3210 ocpi:2130 ocpi has less negative slack in PCIe BPEP
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/SIO/.pcie_gt_wrapper_i/GTD[0].GT_i" LOC = GTP_DUAL_X0Y2; 
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/SIO/.pcie_gt_wrapper_i/GTD[2].GT_i" LOC = GTP_DUAL_X0Y1;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/SIO/.pcie_gt_wrapper_i/GTD[4].GT_i" LOC = GTP_DUAL_X0Y3;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/SIO/.pcie_gt_wrapper_i/GTD[6].GT_i" LOC = GTP_DUAL_X0Y0;
+
+# BlockRAM placement...
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/pcie_mim_wrapper_i/bram_tl_tx/generate_tdp2[1].ram_tdp2_inst" LOC = RAMB36_X1Y9 ;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/pcie_mim_wrapper_i/bram_tl_rx/generate_tdp2[1].ram_tdp2_inst" LOC = RAMB36_X1Y8 ;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/pcie_mim_wrapper_i/bram_tl_tx/generate_tdp2[0].ram_tdp2_inst" LOC = RAMB36_X1Y7 ;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/pcie_mim_wrapper_i/bram_tl_rx/generate_tdp2[0].ram_tdp2_inst" LOC = RAMB36_X1Y6 ;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/pcie_mim_wrapper_i/bram_retry/generate_sdp.ram_sdp_inst"      LOC = RAMB36_X1Y5 ;
+
+# Timing critical placements...
+
+# Timing Constraints...
+NET "ftop/pciw_pci0_clk_O" PERIOD = 10ns;
+NET "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/SIO/.pcie_gt_wrapper_i/gt_refclk_out[0]" TNM_NET = "PCI0CLK";
+TIMESPEC "TS_PCI0CLK"  = PERIOD "PCI0CLK" 100.00 MHz HIGH 50 % ;
+
+# LEDs and Switches...
+NET "led[0]"    LOC = H8   | IOSTANDARD = "LVCMOS25"; ## User  D1
+NET "led[1]"    LOC = G8   | IOSTANDARD = "LVCMOS25"; ## User  D2
+NET "led[2]"    LOC = G10  | IOSTANDARD = "LVCMOS25"; ## User  D3
+##NET "SWITCH[0]" LOC = AF21 | IOSTANDARD = "LVCMOS25"; ## User SW1
+##NET "SWITCH[1]" LOC = AF20 | IOSTANDARD = "LVCMOS25"; ## User SW2
+##NET "SWITCH[2]" LOC = AF14 | IOSTANDARD = "LVCMOS25"; ## User SW3
+
+# RPL Time Service Signals..
+NET  "ppsExtIn"  LOC = K14 | IOSTANDARD = "LVCMOS25" | PULLUP | NODELAY; #P47 Pin1
+NET  "ppsOut"    LOC = L14 | IOSTANDARD = "LVCMOS25";                    #P47 Pin2

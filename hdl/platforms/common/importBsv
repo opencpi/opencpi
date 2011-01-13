@@ -1,0 +1,18 @@
+#!/bin/csh -f
+
+# import all the common bsv files to here.
+foreach i (\
+mkTLPSM.v \
+mkTLPCM.v \
+mkPktFork.v \
+mkPktMerge.v \
+mkOCCP.v \
+mkOCDP4B.v \
+mkOCInf4B.v \
+mkWciMonitor.v \
+mkCTop4B.v\
+mkUUID.v\
+)
+cp $OCPI_HDL_IMPORTS_DIR/rtl/$i .
+end
+

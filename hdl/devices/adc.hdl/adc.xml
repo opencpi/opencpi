@@ -1,0 +1,59 @@
+<HdlImplementation Name="adc" Language="Verilog" Pattern="%w%M%0_">
+  <ComponentSpec Name="adc">
+    <Properties >
+      <Property Name="Control" Type="ULong" Readable="true" Writable="true"/>
+      <Property Name="Controlbyte" Type="UChar" Readable="true" Writable="true"/>
+    </Properties>
+    <DataInterfaceSpec Name="out" Producer="true">
+      <xi:include href="stream_protocol.xml"/>
+    </DataInterfaceSpec>
+  </ComponentSpec>
+  <StreamInterface Name="out" ImpreciseBurst="True" PreciseBurst="True" DataWidth="32"/>
+  <Signal Input="CLK_sys0_clk"/>
+  <Signal Input="RST_N_sys0_rst"/>
+  <Signal Input="CLK_adc_clk"/>
+  <Signal Input="CLK_adc0_clk"/>
+  <Signal Input="CLK_adc1_clk"/>
+  <Signal Input="RST_N_adcx_rst"/>
+  <Signal Input="wtiS0_req" Width="67"/>
+  <Signal Input="adx_sdi_arg"/>
+  <Signal Input="adx_status_arg"/>
+  <Signal Input="adc0_ddp_arg" Width="7"/>
+  <Signal Input="adc0_ddn_arg" Width="7"/>
+  <Signal Input="adc0_sdout_arg"/>
+  <Signal Input="adc1_ddp_arg" Width="7"/>
+  <Signal Input="adc1_ddn_arg" Width="7"/>
+  <Signal Input="adc1_sdout_arg"/>
+  <Signal Output="wtiS0_SThreadBusy"/>
+  <Signal Output="adx_csb"/>
+  <Signal Output="adx_sdo"/>
+  <Signal Output="adx_funct"/>
+  <Signal Output="adc0_oe"/>
+  <Signal Output="adc0_resetp"/>
+  <Signal Output="adc0_sen"/>
+  <Signal Output="adc0_sdata"/>
+  <Signal Output="adc1_oe"/>
+  <Signal Output="adc1_resetp"/>
+  <Signal Output="adc1_sen"/>
+  <Signal Output="adc1_sdata"/>
+  <Signal Output="CLK_adx_sclk"/>
+  <Signal Output="CLK_GATE_adx_sclk"/>
+  <Signal Output="CLK_adx_sclkn"/>
+  <Signal Output="CLK_GATE_adx_sclkn"/>
+  <Signal Output="CLK_adc0_sclk"/>
+  <Signal Output="CLK_GATE_adc0_sclk"/>
+  <Signal Output="CLK_adc0_sclkn"/>
+  <Signal Output="CLK_GATE_adc0_sclkn"/>
+  <Signal Output="CLK_adc1_sclk"/>
+  <Signal Output="CLK_GATE_adc1_sclk"/>
+  <Signal Output="CLK_adc1_sclkn"/>
+  <Signal Output="CLK_GATE_adc1_sclkn"/>
+  <Signal Output="CLK_adcSdrClk"/>
+  <Signal Output="CLK_GATE_adcSdrClk"/>
+  <Signal Output="RST_N_adx_srst"/>
+  <Signal Output="RST_N_adc0_rst"/>
+  <Signal Output="RST_N_adc1_rst"/>
+  <Signal Output="RST_N_adcSdrRst"/>
+</HdlImplementation>
+
+

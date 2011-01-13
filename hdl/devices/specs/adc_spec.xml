@@ -1,0 +1,37 @@
+<ComponentSpec Name="adc">
+  <Properties>
+    <Property Name="wsiMStatus" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="adcStatusLS" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="maxMesgLength" Readable="true" Writable="true" Type="ULong"/>
+    <Property Name="adcControl" Readable="true" Writable="true" Type="ULong"/>
+    <Property Name="reserved0" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="fcAdc" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="adcSampleEng" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="sampleSpy0" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="sampleSpy1" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="spiClock" Readable="false" Writable="true" Type="ULong"/>
+    <Property Name="spiAdc0" Readable="false" Writable="true" Type="ULong"/>
+    <Property Name="spiAdc1" Readable="false" Writable="true" Type="ULong"/>
+    <Property Name="spiResponse" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="mesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="reserved1" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="stats_dwellStarts" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="stats_dwellFails" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="lastOverflowMesg" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="phaseCmdAdc0" Readable="false" Writable="true" Type="ULong"/>
+    <Property Name="phaseCmdAdc1" Readable="false" Writable="true" Type="ULong"/>
+    <Property Name="extStatus_pMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="extStatus_iMesgCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="stats_dropCount" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="dwellFails" Readable="true" Writable="false" Type="ULong"/>
+    <Property Name="reserved2" Readable="true" Writable="false" Type="ULong" SequenceLength="232"/>
+    <Property Name="adc0spi" Readable="true" Writable="false" Type="ULong" SequenceLength="64"/>
+    <Property Name="reserved3" Readable="true" Writable="false" Type="ULong" SequenceLength="192"/>
+    <Property Name="adc1spi" Readable="true" Writable="false" Type="ULong" SequenceLength="64"/>
+    <Property Name="reserved4" Readable="true" Writable="false" Type="ULong" SequenceLength="256"/>
+    <Property Name="clockspi" Readable="true" Writable="false" Type="ULong" SequenceLength="64"/>
+  </Properties>
+  <DataInterfaceSpec Name="WSIout" Producer="true">
+    <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+</ComponentSpec>
