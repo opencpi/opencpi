@@ -105,6 +105,7 @@ namespace OCPI {
 			  );
 	const char *parseImpl(ezxml_t x);
 	const char *parse(ezxml_t x);
+	const char *parseValue(ezxml_t x, Scalar::Value &value);
 	// Check when accessing with scalar type and sequence length
 #ifdef NDEBUG
 	inline const char *checkType(Scalar::Type ctype, unsigned n, bool write)

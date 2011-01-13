@@ -109,6 +109,7 @@ getNum64(const char *s, int64_t *valp) {
 OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 
+#if 0
  const char *
 Scalar::Value::parse(const char *value, Scalar::Type type, unsigned length) {
   switch (type) {
@@ -124,6 +125,7 @@ OCPI_PROPERTY_DATA_TYPES
   }
   return 0;
 }
+#endif
 
   bool
 parseBool(const char *a, unsigned length, bool *b)
@@ -243,6 +245,92 @@ parseString(const char*cp, unsigned length, char**vp) {
   return false;
 }
 
+// Parse a value, which may be a sequence/array/string, but not a struct
+const char *
+ValueType::parseValue(const char *unparsed, Scalar::Value &value) {
+  switch (scalar) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	\
+    case Scalar::OCPI_##pretty:				\
+      if (length > 1)					\
+	value.pv##pretty = myCalloc(run, length);	\
+    break;
+    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+    default:
+      return "Unexpected illegal type in parsing value";
+  }
+  unsigned n;
+  for (n = 0; n < length && *unparsed; n++) {
+    // Skip initial white space
+    while (isspace(*unparsed))
+      unparsed++;
+    // Find end
+    const char *start = unparsed;
+    while (*unparsed && *unparsed != ',') {
+      if (*unparsed == '\\' && unparsed[1])
+	unparsed++;
+      unparsed++;
+    }
+    char *unparsedSingle = (char *)malloc(unparsed - start + 1);
+    char *tmp = unparsedSingle;
+    char *lastSpace = 0;
+    for (tmp = unparsedSingle; *start && *start != ','; start++) {
+      if (*start == '\\' && start[1]) {
+	start++;
+	lastSpace = 0;
+      } else if (isspace(*start)) {
+	if (!lastSpace)
+	  lastSpace = tmp;
+      } else
+	lastSpace = 0;
+      *tmp++ = *start;
+    }
+    if (lastSpace)
+      lastSpace = 0;
+    else
+      *tmp = 0;
+    const char *err = 0;
+    switch (scalar) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
+      case Scalar::OCPI_##pretty:					\
+	if (parse##pretty(unparsedSingle, stringLength,			\
+			  length > 1 ?					\
+			  &value.pv##pretty[n] : &value.v##pretty))	\
+	  err = #pretty;						\
+        break;
+      OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+      default:
+        err ="Unexpected illegal type in parsing value";
+    }
+    if (err)
+      asprintf((char **)&err, "Bad value \"%s\" for value of type \"%s\"",
+	       unparsedSingle, err);
+    free(unparsedSingle);
+    if (err)
+      return err;
+    if (*start)
+      start++;
+  }
+  if (*unparsed)
+    return esprintf("Too many values (> %d) for property value", length);
+  value.length = n;
+  return 0;
+}
+void
+ValueType::destroyValue(Scalar::Value &value) {
+  if (length > 1)
+    switch (scalar) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
+      case Scalar::OCPI_##pretty:		   \
+	free(value.pv##pretty);			   \
+        break;
+      OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+      default:
+      ;
+    }
+}
     }
   }
 }

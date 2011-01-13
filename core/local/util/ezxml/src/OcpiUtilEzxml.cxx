@@ -308,6 +308,21 @@ checkAttrs(ezxml_t x, ...) {
   }
   return 0;
 }
+const char *
+OCPI::Util::EzXml::
+checkAttrsV(ezxml_t x, const char **attrs) {
+  if (!x->attr)
+    return 0;
+  for (char **a = x->attr; *a; a += 2) {
+    const char **va;
+    for (va = attrs; *va; va++)
+      if (!strcasecmp(*a, *va))
+	break;
+    if (!*va)
+      return esprintf("Invalid attribute name: \"%s\", in a %s element", *a, x->name);
+  }
+  return 0;
+}
 bool
 OCPI::Util::EzXml::
 getUNum(const char *s, uint32_t *valp) {

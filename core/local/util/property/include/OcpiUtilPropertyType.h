@@ -108,10 +108,13 @@ namespace OCPI {
 	public:
 	  union {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run v##pretty;
-	  OCPI_PROPERTY_DATA_TYPES
+	    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run *pv##pretty;
+	    OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 	  };
-	  const char *parse(const char *value, Type type, unsigned stringLength);
+	  unsigned length; // for sequence values.
 	};
 	static uint8_t sizes[];
 	static const char *names[];
@@ -122,6 +125,8 @@ namespace OCPI {
 	uint32_t
 	  stringLength, // maximum strlen (terminating null not included)
 	  length;       // maximum for sequences, specific length for arrays
+	const char *parseValue(const char *value, Scalar::Value &value);
+	void destroyValue(Scalar::Value &value);
       };
       // These obviously do not belong here and needs storage management
 #define myCalloc(t, n) ((t *)calloc(sizeof(t), (n)))

@@ -94,6 +94,8 @@ Member::parse(ezxml_t xp,
   if ((type.isSequence || type.isArray) && type.length == 0)
     return esprintf("Property/argumnt %s: Array or Sequence length cannot be zero",
 		    name);
+  if (!type.length)
+    type.length = 1;
   // Calculate the number of bytes in each element of an array/sequence
   nBytes =
     type.scalar == Scalar::OCPI_String ?
@@ -108,13 +110,26 @@ Member::parse(ezxml_t xp,
   // Process default values
   const char *defValue = ezxml_cattr(xp, "Default");
   if (defValue) {
-    if ((err = defaultValue.parse(defValue, type.scalar, type.stringLength)))
-      return esprintf("%s: \"%s\" of type %s", err, defValue,
-		      Scalar::names[type.scalar]);
+    if ((err = type.parseValue(defValue, defaultValue)))
+      return esprintf("for member %s:", name);
     hasDefault = true;
   }
   return 0;
 }
+
+// parse a value from xml for this property, which may be a struct
+const char *
+Property::parseValue(ezxml_t x, Scalar::Value &value) {
+  // For now, forget about structures
+  const char *unparsed = ezxml_cattr(x, "Value");
+  if (!unparsed)
+    return esprintf("Missing \"value\" attribute for \"%s\" property value",
+		    name);
+  if (isStruct)
+    return "Struct property values unimplemented";
+  return members->type.parseValue(unparsed, value);
+}
+
 const char *
 Property::parse(ezxml_t prop) {
   unsigned argOffset = 0;
@@ -147,7 +162,8 @@ Member::parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
 const char *
 Property::parse(ezxml_t prop, unsigned &argOffset,
 		bool &readableConfigs, bool &writableConfigs,
-		bool &sub32Configs,  bool includeImpl) {
+		bool &argSub32Configs,  bool includeImpl) {
+  bool sub32Configs = false;
   name = ezxml_cattr(prop, "Name");
   if (!name)
     return "Missing Name attribute for property";
@@ -180,19 +196,24 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
       return err;
   }
   nBytes = myOffset;
-  argOffset = roundup(argOffset, maxAlign);
-  offset = argOffset;
-  argOffset += myOffset;
-  //printf("%s at %x(word) %x(byte)\n", p->name, p->offset/4, p->offset);
-  if ((err = CE::getBoolean(prop, "Readable", &isReadable)) ||
-      (err = CE::getBoolean(prop, "Writable", &isWritable)))
+  if (includeImpl &&
+      (err = parseImplAlso(prop)))
     return err;
-  if (isReadable)
-    readableConfigs = true;
-  if (isWritable)
-    writableConfigs = true;
-  if (includeImpl)
-    return parseImplAlso(prop);
+  if (!isParameter) {
+    argOffset = roundup(argOffset, maxAlign);
+    offset = argOffset;
+    argOffset += myOffset;
+    //printf("%s at %x(word) %x(byte)\n", p->name, p->offset/4, p->offset);
+    if ((err = CE::getBoolean(prop, "Readable", &isReadable)) ||
+	(err = CE::getBoolean(prop, "Writable", &isWritable)))
+      return err;
+    if (isReadable)
+      readableConfigs = true;
+    if (isWritable)
+      writableConfigs = true;
+    if (sub32Configs)
+      argSub32Configs = true;
+  }
   return 0;
 }
 #ifndef NDEBUG

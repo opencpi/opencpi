@@ -211,6 +211,7 @@ namespace OCPI {
       extern const char
         *getBoolean(ezxml_t x, const char *name, bool *b),
         *checkAttrs(ezxml_t x, ...),
+	*checkAttrsV(ezxml_t x, const char **attrs),
         *checkElements(ezxml_t x, ...),
         *getNumber(ezxml_t x, const char *attr, uint32_t *np, bool *found,
 		   uint32_t defaultValue, bool setDefault = true),
