@@ -34,6 +34,6 @@
 #
 ########################################################################### #
 
-Libraries=$(OCPI_CDK_DIR)/lib/hdl/bsv
-OocpiCores=$(OCPI_CDK_DIR)/lib/hdl/wb_rcvr
+Libraries=bsv
+Cores=$(OCPI_CDK_DIR)/lib/hdl/wb_rcvr
 include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk

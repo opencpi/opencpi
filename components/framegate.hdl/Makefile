@@ -34,5 +34,5 @@
 #
 ########################################################################### #
 
-Libraries=$(foreach l,bsv ocpi,$(OCPI_CDK_DIR)/lib/hdl/$(l))
+Libraries=bsv util
 include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk

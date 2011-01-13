@@ -1,10 +1,10 @@
-<HdlImplementation Name="bias" Language="Verilog">
+<HdlImplementation Name="bias" Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="bias_spec.xml"/>
-  <ControlInterface SizeOfConfigSpace="1m" ControlOperations="start,initialize" Timeout="444">
-    <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+  <ControlInterface SizeOfConfigSpace="1m" Sub32BitConfigProperties="true" ControlOperations="initialize" Timeout="444">
+    <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
   </ControlInterface>
-  <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" RegRequest="true" NumberOfOpcodes="256"/>
-  <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" RegRequest="true"/>
+  <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
+  <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
 </ComponentImplementation>
 
 

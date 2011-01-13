@@ -34,4 +34,4 @@
 #
 ########################################################################### #
 
-include $(OCPI_CDK_DIR)/include/worker.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk

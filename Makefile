@@ -140,7 +140,7 @@ hdlcomps: prims
 	make -C components hdl
 
 hdlapps: hdlcomps
-	make -C hdl/apps
+	make -C hdl/applications
 
 hdl: hdlapps
 
@@ -149,8 +149,7 @@ rcc:
 
 .PHONY: prims
 prims:
-	make -C hdl/prims
-	make -C hdl/prims install
+	make -C hdl/primitives
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 

@@ -1,4 +1,0 @@
-<RccImplementation>
-  <xi:include href="adc_spec.xml"/>
-  <ControlInterface Name="adc" SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop,release" Timeout="60"/>
-</RccImplementation>

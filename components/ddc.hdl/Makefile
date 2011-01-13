@@ -34,8 +34,9 @@
 #
 ########################################################################### #
 
-Libraries=$(foreach l,bsv ocpi,$(OCPI_CDK_DIR)/lib/hdl/$(l))
+Libraries=bsv util
 # Force the target.  Don't build for any others
 # override Target=xc5vsx95t-2-ff1136
-OcpiCores=$(OCPI_CDK_DIR)/lib/hdl/duc_ddc_compiler_v1_0
+Cores=$(OCPI_CDK_DIR)/lib/hdl/duc_ddc_compiler_v1_0
+Targets=xc5vlx50t-1-ff1136 xc5vsx95t-2-ff1136
 include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk

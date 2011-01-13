@@ -144,7 +144,7 @@ module wbr (
   wire   chan_MreqInfo;  // chan_req[0:0]
 `else
 `define NOT_EMPTY_wbr
-`include "wbr_defs.v"
+`include "wbr_defs.vh"
 `endif
   mkRcvrWorker _mkRcvrWorker ( 
    .dif_Clk( dif_Clk ),

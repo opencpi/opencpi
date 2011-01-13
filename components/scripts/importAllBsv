@@ -1,0 +1,12 @@
+#!/bin/csh -f
+# Update all the known bsv-generated verilog workers.
+# run this from the top level of the component libraries
+set ib=$OCPI_CDK_DIR/scripts/importBsv
+$ib bias mkBiasWorker4B
+$ib ddc mkDDCWorker
+$ib delay mkDelayWorker4B
+$ib framegate mkFrameGate4B
+$ib psd mkPSD
+$ib sma mkSMAdapter4B
+$ib splitter2x2 mkWsiSplitter2x24B
+
