@@ -65,7 +65,7 @@ using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
 
-static int   OCPI_RCC_DATA_BUFFER_SIZE   = 1024;
+static int   OCPI_RCC_DATA_BUFFER_SIZE   = 128;
 static int   OCPI_USE_POLLING            = 1;
 
 static CWorker PRODUCER(0,1),  LOOPBACK(1,1), CONSUMER(1,0);
@@ -205,8 +205,11 @@ static void createPorts( std::vector<CApp>& ca )
 static void connectWorkers(std::vector<CApp>& ca )
 { 
   ( void ) ca;
+
+
   PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->connect( *LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port,0,0 );
   LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].port->connect( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port,0,0 );
+
 }
 
 
@@ -329,8 +332,6 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
   wcie = CONSUMER.worker->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
   CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
-
-
 
 
 }
@@ -573,6 +574,7 @@ int config_and_run_ap_container_test3(std::vector<CApp>& ca, std::vector<CWorker
 }
 
 
+
 static int bcmap[][4] = {
   { 4,5,10,1 },
   { 1,1,1,1 },
@@ -643,9 +645,12 @@ int  main( int argc, char** argv)
   workers.push_back( &LOOPBACK );
 
   test_rc &= config_and_run_ap_container_test1(ca,workers,cmap, bcmap[1] );
+
+
+  /*
   test_rc &= config_and_run_ap_container_test2(ca,workers,cmap, bcmap[1] );
   test_rc &= config_and_run_ap_container_test3(ca,workers,cmap, bcmap[1] );
-
+  */
 
   tdata.run=0;
   t->join();

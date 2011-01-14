@@ -34,9 +34,6 @@
 #
 ########################################################################### #
 
-
-
-
 ALLINC += $(WCI_API_EXPORTS) $(OCPIOS_EXPORTS) \
  $(UTIL_EXPORTS) $(CONTAINER_EXPORTS) \
  $(DATA_TRANSFER_EXPORTS) $(DATA_TRANSPORT_EXPORTS)

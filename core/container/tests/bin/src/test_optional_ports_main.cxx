@@ -55,6 +55,7 @@
 #include <OcpiUtilCommandLineConfiguration.h>
 #include "UtGenericLoopbackWorkers.h"
 #include <OcpiThread.h>
+#include <DtTransferInternal.h>
 
 using namespace OCPI::DataTransport;
 using namespace DataTransport::Interface;
@@ -400,6 +401,9 @@ int  main( int argc, char** argv)
   DataTransfer::EventManager* event_manager;
   int cmap[3];
   const char* test_name;
+
+  DataTransfer::XferFactoryManager & fm = DataTransfer::XferFactoryManager::getFactoryManager();
+  fm.configure( NULL );
 
   try {
     config.configure (argc, argv);

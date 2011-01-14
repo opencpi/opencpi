@@ -59,8 +59,6 @@
 #include <OcpiCP289Container.h>
 #include <OcpiTransportGlobal.h>
 
-//#include <DtTransferInternal.h>
-
 using namespace OCPI::Container;
 
 static int event_range_start=0;

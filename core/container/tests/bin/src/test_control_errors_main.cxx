@@ -1016,9 +1016,6 @@ int  main( int argc, char** argv)
     return false;
   }
   g_testUtilVerbose = config.verbose;
-
-
-
   cmap[0] = cmap[1] = cmap[2] = 0;
 
   if ( config.verbose ) {
