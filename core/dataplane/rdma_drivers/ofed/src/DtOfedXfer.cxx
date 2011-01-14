@@ -1,3 +1,4 @@
+#define RXE_BUG
 
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -851,7 +852,7 @@ namespace DataTransfer {
       wr->send_flags = IBV_SEND_SIGNALED;
 
       if (  (flags & DataTransfer::XferRequest::LastTransfer) == DataTransfer::XferRequest::LastTransfer ) {
-#define RXE_BUG
+
 #ifndef RXE_BUG
 	wr->send_flags |= IBV_SEND_FENCE;
 #endif
@@ -933,8 +934,10 @@ namespace DataTransfer {
 	  }
 	}
       }
-      
+
+#ifdef RXE_BUG      
       OCPI::OS::sleep( 0 );
+#endif
 
       if ( m_lastWr ) {	
 	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_lastWr, &m_badWr )) ) {
