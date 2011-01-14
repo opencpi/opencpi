@@ -433,7 +433,7 @@ updateInputs()
     for ( OCPI::OS::uint32_t i=0; i<ps->getPortCount(); i++ ) {
       OCPI::DataTransport::Port* port = static_cast<OCPI::DataTransport::Port*>(ps->getPortFromIndex(i));
       // Ignore local ports
-      if ( m_transport->isLocalEndpoint( port->getRealShemServices()->getEndPoint()->end_point.c_str() ) ) {
+      if ( m_transport->isLocalEndpoint( port->getRealShemServices()->endpoint()->end_point.c_str() ) ) {
         if ( port->getCircuit()->getOutputPortSet()->getPortFromIndex(0) != output_port ) {
 #ifndef NDEBUG
           printf("**** ERROR We have a local connection to a different circuit !!\n");
@@ -742,7 +742,7 @@ setFlowControlDescriptor( OCPI::DataTransport::Port* p, OCPI::RDT::Descriptors& 
       std::string s(pdesc.desc.oob.oep);
       SMBResources* res =   XferFactoryManager::getFactoryManager().getSMBResources(s);
       if ( res ) {
-        res->sMemServices->getEndPoint()->event_id = (int)((pdesc.desc.emptyFlagValue>>32) & 0xfff);
+        res->sMemServices->endpoint()->event_id = (int)((pdesc.desc.emptyFlagValue>>32) & 0xfff);
       }
     }
     catch(...) {
@@ -906,7 +906,7 @@ addInputPort( OCPI::RDT::Descriptors& pdesc, const char* our_ep, OCPI::RDT::Desc
   if ( pdesc.desc.oob.oep[0] ) {
     SMBResources* res = m_transport->getEndpointResources(  pdesc.desc.oob.oep );
     if ( res ) {
-      res->sMemServices->getEndPoint()->event_id = (int)((pdesc.desc.fullFlagValue>>32) & 0xfff);
+      res->sMemServices->endpoint()->event_id = (int)((pdesc.desc.fullFlagValue>>32) & 0xfff);
     }
   }
 

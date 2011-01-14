@@ -58,15 +58,12 @@ namespace DataTransfer {
   {
   public:
 
-    // Constructors
-    PCIEndPoint(long s=0)
-      :EndPoint(s){};
       virtual ~PCIEndPoint();
       PCIEndPoint( std::string& ep, OCPI::OS::uint32_t size=0)
-        :EndPoint(ep,size){setEndpoint(ep);};
+        :EndPoint(ep,size){parse(ep);};
 
         // Sets smem location data based upon the specified endpoint
-        virtual OCPI::OS::int32_t setEndpoint( std::string& ep );
+        OCPI::OS::int32_t parse( std::string& ep );
 
         // Get the address from the endpoint
         virtual const char* getAddress(){return p_virt_addr;}
@@ -114,18 +111,12 @@ namespace DataTransfer {
         return m_location->getAddress();
       }
 
-    //        getEndPoint - the location of the shared area as an enumeration
-    EndPoint* getEndPoint ()
-      {
-        return m_location;
-      }
-
     //        GetHandle - platform dependent opaque handle for current mapping
     void* getHandle ();
 
     // Ctor/dtor
-    PCISmemServices ( EndPoint* loc ) 
-      : DataTransfer::SmemServices( loc ), m_init(false),m_fd(-1)
+    PCISmemServices ( XferFactory * p, EndPoint* loc ) 
+      : DataTransfer::SmemServices( p, loc ), m_init(false),m_fd(-1)
       {
         m_location = dynamic_cast<PCIEndPoint*>(loc);
         create( loc, loc->size);

@@ -109,6 +109,9 @@ export OCPI_PPP_INCLUDE_DIR=
 
 # #### Other settings ##################################################### #
 
+# Set this to "1" to include the OFED IBVERBS transfer driver
+export OCPI_HAVE_IBVERBS=0
+
 # ######################################################################### #
 
 echo ""; echo " *** OpenCPI Environment settings"; echo ""

@@ -301,7 +301,7 @@ produce()
 
   // Remote transfers
   for ( OCPI::OS::uint32_t n=0; n<n_transfers; n++ ) {
-    m_xferReq[n]->start();
+    m_xferReq[n]->post();
   }
 
   // Now increment our gated transfer control
@@ -340,7 +340,7 @@ consume()
 
   // Remote transfers
   for ( OCPI::OS::uint32_t n=0; n<n_transfers; n++ ) {
-    m_xferReq[n]->start();
+    m_xferReq[n]->post();
   }
 
   return rb;

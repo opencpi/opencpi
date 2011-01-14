@@ -87,7 +87,7 @@ namespace DataTransfer {
     /***************************************
      * This method is used to allocate a transfer compatible SMB
      ***************************************/
-    SmemServices* createSmemServices( EndPoint* ep );
+    SmemServices* getSmemServices( EndPoint* ep );
 
 
     /***************************************
@@ -99,7 +99,7 @@ namespace DataTransfer {
     /***************************************
      *  Get the location via the endpoint
      ***************************************/
-    EndPoint* getEndPoint( std::string& end_point  );
+    EndPoint* getEndPoint( std::string& end_point, bool local  );
     void releaseEndPoint( EndPoint* loc );
 
 
@@ -108,7 +108,7 @@ namespace DataTransfer {
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(OCPI::OS::uint32_t *size);
+    std::string allocateEndpoint( OCPI::Util::Device * d=NULL, OCPI::Util::PValue *props=NULL);
 
     /***************************************
      *  This method is used to flush any cached items in the factoy
@@ -118,6 +118,7 @@ namespace DataTransfer {
   protected:
 
     OCPI::OS::Mutex  m_mutex;
+
 
   };
 

@@ -256,9 +256,8 @@ PCISmemServices::~PCISmemServices ()
 
 
 // Sets smem location data based upon the specified endpoint
-OCPI::OS::int32_t PCIEndPoint::setEndpoint( std::string& ep )
+OCPI::OS::int32_t PCIEndPoint::parse( std::string& ep )
 {
-  EndPoint::setEndpoint(ep);
 
   printf("Scaning %s\n", ep.c_str() );
   if (sscanf(ep.c_str(), "ocpi-pci-pio://%x.%" SCNu64 ":%" SCNu64 ".3.10", 
