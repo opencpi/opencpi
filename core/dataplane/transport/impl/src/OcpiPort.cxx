@@ -115,7 +115,7 @@ void OCPI::DataTransport::Port::initialize()
   }
         
   // Set the SMB name
-  m_data->m_real_location = m_realSMemResources->sMemServices->getEndPoint();
+  m_data->m_real_location = m_realSMemResources->sMemServices->endpoint();
 
   // Determine if we are a shadow port
   // Get our transport class
@@ -148,11 +148,11 @@ void OCPI::DataTransport::Port::initialize()
                                     sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS, 0, &m_offsetsOffset ) ) {
     throw OCPI::Util::EmbeddedException ( 
                                       NO_MORE_SMB, 
-                                      m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+                                      m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
   }
 
   // Now get our mailbox
-  m_mailbox = m_localSMemResources->sMemServices->getEndPoint()->mailbox;
+  m_mailbox = m_localSMemResources->sMemServices->endpoint()->mailbox;
 
   // map our meta-data
   m_portDependencyData.offsets = static_cast<PortMetaData::BufferOffsets*>
@@ -230,6 +230,23 @@ setFlowControlDescriptor( OCPI::RDT::Descriptors& d )
   getCircuit()->setFlowControlDescriptor(this, d);
 }
 
+/**********************************
+ * Finalize the port
+ *********************************/
+void 
+Port::
+finalize( OCPI::RDT::Descriptors& d)
+{
+  SmemServices * smem = getRealShemServices();
+  ocpiAssert( smem );
+
+  std::string s2(d.desc.oob.oep);
+  XferServices * xfers =   
+    XferFactoryManager::getFactoryManager().getService( getEndpoint()->end_point, s2 );
+  xfers->finalize( d.desc.oob.cookie );
+
+}
+
 
 
 void 
@@ -249,7 +266,7 @@ setFlowControlDescriptorInternal( OCPI::RDT::Descriptors & desc )
   PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
   OCPI::DataTransport::Port* output_port = 
     static_cast<OCPI::DataTransport::Port*>(s_ps->getPortFromIndex(0));
-  int idx = output_port->m_realSMemResources->sMemServices->getEndPoint()->mailbox;
+  int idx = output_port->m_realSMemResources->sMemServices->endpoint()->mailbox;
   for ( OCPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
     InputBuffer* tb = static_cast<InputBuffer*>(getBuffer(n));
     if ( desc.desc.emptyFlagPitch == 0 ) {
@@ -275,7 +292,7 @@ setFlowControlDescriptorInternal( OCPI::RDT::Descriptors & desc )
  * Get port dependency data.  This is the data that is needed by an
  * external circuit to connect to this port.
  *********************************/
-void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc )
+void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc, OCPI::RDT::Descriptors * other  )
 {
 
   // If we are not a shadow port, we fill in all of the real descriptor dependency information
@@ -284,6 +301,17 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc 
   // buffer state" information.  This is descriptor information that is used on the consumer side to tell us
   // we a remote input buffer becomes available.
   if ( ! this->isShadow() ) {
+
+    if ( other ) {
+      // Get the connection cookie
+      std::string mep(desc.desc.oob.oep);
+      std::string tep(other->desc.oob.oep);
+      XferServices * xfers = 
+      XferFactoryManager::getFactoryManager().getService( mep, tep);
+      ocpiAssert( xfers );
+      desc.desc.oob.cookie = 
+	xfers->getConnectionCookie();
+    }
 
     if ( ! isOutput() ) { 
 
@@ -346,7 +374,7 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc 
 #endif
 
     desc.desc.oob.port_id = reinterpret_cast<uint64_t>(this);
-    strcpy(desc.desc.oob.oep, m_realSMemResources->sMemServices->getEndPoint()->end_point.c_str());
+    strcpy(desc.desc.oob.oep, m_realSMemResources->sMemServices->endpoint()->end_point.c_str());
     desc.desc.nBuffers = getPortSet()->getBufferCount();
     desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
 
@@ -645,7 +673,7 @@ bool OCPI::DataTransport::Port::ready()
 
         PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
         OCPI::DataTransport::Port* output_port = static_cast<OCPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
-        int idx = output_port->m_realSMemResources->sMemServices->getEndPoint()->mailbox;
+        int idx = output_port->m_realSMemResources->sMemServices->endpoint()->mailbox;
         if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.myShadowsRemoteStateOffsets[idx] ) {
                                         
           // Make sure this output port is not co-located
@@ -687,11 +715,11 @@ bool OCPI::DataTransport::Port::ready()
 
 #ifndef NDEBUG
           printf("Making return address to %s\n", 
-                 m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+                 m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
 #endif
 
           strncpy( mb->request.reqShadowOffsets.url, 
-                   m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str(), 128 );
+                   m_localSMemResources->sMemServices->endpoint()->end_point.c_str(), 128 );
           mb->return_offset = m_offsetsOffset;
           mb->return_size = sizeof( PortMetaData::BufferOffsets );
           mb->returnMailboxId = getMailbox();
@@ -733,7 +761,7 @@ bool OCPI::DataTransport::Port::ready()
 
 
         SMBResources* s_res = 
-          XferFactoryManager::getFactoryManager().getSMBResources( m_localSMemResources->sMemServices->getEndPoint() );
+          XferFactoryManager::getFactoryManager().getSMBResources( m_localSMemResources->sMemServices->endpoint() );
         SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
         XferMailBox xmb( getMailbox() );
         if ( ! xmb.mailBoxAvailable(s_res) ) {
@@ -760,11 +788,11 @@ bool OCPI::DataTransport::Port::ready()
 
 #ifndef NDEBUG
         printf("Making return address to %s\n", 
-               m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+               m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
 #endif
 
         strncpy( mb->request.reqInputOffsets.url, 
-                   m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str(), 128 );
+                   m_localSMemResources->sMemServices->endpoint()->end_point.c_str(), 128 );
         mb->return_offset = m_offsetsOffset;
         mb->return_size = sizeof( PortMetaData::BufferOffsets );
         mb->returnMailboxId = getMailbox();
@@ -817,11 +845,11 @@ bool OCPI::DataTransport::Port::ready()
 
 #ifndef NDEBUG
           printf("Making return address to %s\n", 
-                 m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+                 m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
 #endif
 
           strncpy( mb->request.reqShadowOffsets.url, 
-                   m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str(), 128 );
+                   m_localSMemResources->sMemServices->endpoint()->end_point.c_str(), 128 );
           mb->return_offset = m_offsetsOffset;
           mb->return_size = sizeof( PortMetaData::BufferOffsets );
           mb->returnMailboxId = getMailbox();
@@ -868,11 +896,11 @@ bool OCPI::DataTransport::Port::ready()
 
         // Need to tell it how to get back with us
         strcpy(mb->request.reqOutputContOffset.shadow_end_point,
-               m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+               m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
 
 #ifndef NDEBUG
         printf("Making return address to %s\n", 
-               m_localSMemResources->sMemServices->getEndPoint()->end_point.c_str() );
+               m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
         printf("Setting port id = %lld\n", (long long)mb->request.reqShadowOffsets.portId );
 #endif
 
@@ -905,7 +933,7 @@ void OCPI::DataTransport::Port::writeOffsets( PortMetaData::BufferOffsets* offse
                         
       if ( m_shadow ) {
 
-        int idx = m_localSMemResources->sMemServices->getEndPoint()->mailbox;
+        int idx = m_localSMemResources->sMemServices->endpoint()->mailbox;
 
         offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx ] =
           m_data->m_bufferData[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
@@ -985,7 +1013,7 @@ void OCPI::DataTransport::Port::getOffsets( OCPI::OS::uint32_t to_base_offset, O
                         
       if ( m_shadow ) {
 
-        int idx = m_localSMemResources->sMemServices->getEndPoint()->mailbox;
+        int idx = m_localSMemResources->sMemServices->endpoint()->mailbox;
 
         ToFrom* tf = new ToFrom;
         tf->from_offset = (OCPI::OS::uint64_t)&from_offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx];

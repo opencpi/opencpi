@@ -71,7 +71,6 @@ using namespace OCPI::OS;
 
 #define TCP_BUFSIZE_READ 4096
 
-OCPI::Util::VList SocketXferServices::m_map(0);
 
 #undef SOCKET_RDMA_SUPPORT
 #ifdef SOCKET_RDMA_SUPPORT
@@ -91,8 +90,8 @@ struct SocketDataHeader {
 class SocketSmemServices : public DataTransfer::SmemServices
   {
   public:
-    SocketSmemServices (EndPoint* ep)
-      :DataTransfer::SmemServices(ep),m_socketServerT(NULL),m_ep(ep)
+    SocketSmemServices (XferFactory * p, EndPoint* ep)
+      :DataTransfer::SmemServices(p, ep),m_socketServerT(NULL),m_ep(ep)
     {
       m_mem = new char[ep->size];
       memset( m_mem, 0, ep->size );
@@ -136,7 +135,7 @@ public:
   ClientSocketT( SocketStartupParams& sp )
     :m_startupParms(sp)
   {
-    SocketEndPoint *rsep = static_cast<DataTransfer::SocketEndPoint*>(m_startupParms.rsmem->getEndPoint());
+    SocketEndPoint *rsep = static_cast<DataTransfer::SocketEndPoint*>(m_startupParms.rsmem->endpoint());
     m_socket =   OCPI::OS::ClientSocket::connect(rsep->ipAddress,rsep->portNum);
     m_socket.linger(false);
   }
@@ -232,7 +231,7 @@ public:
   ~SocketServerT(){}
 
   void run() {
-    int portNum = static_cast<DataTransfer::SocketEndPoint*>(m_startupParms.lsmem->getEndPoint())->portNum;
+    int portNum = static_cast<DataTransfer::SocketEndPoint*>(m_startupParms.lsmem->endpoint())->portNum;
    
     try {
       m_server.bind(portNum,false);
@@ -324,11 +323,14 @@ void SocketXferFactory::releaseEndPoint( EndPoint* )
 
 
 // This method is used to allocate a transfer compatible SMB
-SmemServices* SocketXferFactory::createSmemServices(EndPoint* loc )
+SmemServices* SocketXferFactory::getSmemServices(EndPoint* loc )
 {
   SocketStartupParams sp;
+  if ( loc->smem ) {
+    return loc->smem;
+  }
 
-  sp.lsmem = new SocketSmemServices(loc);
+  sp.lsmem = new SocketSmemServices(this, loc);
   SocketSmemServices * smem = static_cast<SocketSmemServices*>(sp.lsmem);
 
   if ( loc->local ) {
@@ -347,7 +349,12 @@ SmemServices* SocketXferFactory::createSmemServices(EndPoint* loc )
  ***************************************/
 XferServices* SocketXferFactory::getXferServices(SmemServices* source, SmemServices* target)
 {
-  return new SocketXferServices(source, target);
+  return new SocketXferServices(this, source, target);
+}
+
+XferRequest* SocketXferServices::createXferRequest()
+{
+  return new SocketXferRequest( this );
 }
 
 
@@ -357,24 +364,7 @@ XferServices* SocketXferFactory::getXferServices(SmemServices* source, SmemServi
  *  node.
  ***************************************/
 
-
-static OCPI::OS::int32_t mailbox=1;
 static OCPI::OS::int32_t portNum=40001;
-static OCPI::OS::int32_t getNextMailBox()
-{
-
-  if ( mailbox == 1 ) {
-    const char* env = getenv("OCPI_TRANSFER_MAILBOX");
-    if( !env || (env[0] == 0)) {
-      printf("Set ""OCPI_TRANSFER_MAILBOX"" environment varible to control mailbox\n");
-    }
-    else {
-      mailbox = atoi(env);
-    }
-  }
-
-  return mailbox++;
-}
 static OCPI::OS::int32_t getNextPortNum()
 {
   return portNum++;
@@ -435,9 +425,8 @@ std::string SocketXferFactory::allocateEndpoint(OCPI::OS::uint32_t *size )
 // Sets smem location data based upon the specified endpoint
 OCPI::OS::int32_t 
 SocketEndPoint::
-setEndpoint( std::string& ep )
+parse( std::string& ep )
 {
-  EndPoint::setEndpoint(ep);
 
   OCPI::OS::uint32_t n,i=0;
   OCPI::OS::int32_t start=0;
@@ -479,33 +468,6 @@ SocketEndPoint::
 
 
 
-void SocketXferRequest::init (Creator cr, 
-                           Flags flags, 
-                           OCPI::OS::uint32_t srcoffs, 
-                           Shape *psrcshape, 
-                           OCPI::OS::uint32_t dstoffs, 
-                           Shape *pdstshape, 
-                           OCPI::OS::uint32_t length)
-{
-  m_creator = cr;
-  m_flags = flags;
-  m_srcoffset = srcoffs;
-  m_dstoffset = dstoffs;
-  m_length = length;
-  m_thandle = 0;
-  memset (&m_srcshape, 0, sizeof (m_srcshape));
-  if (psrcshape)
-    {
-      memcpy (&m_srcshape, psrcshape, sizeof (m_srcshape));
-    }
-  memset (&m_dstshape, 0, sizeof (m_dstshape));
-  if (pdstshape)
-    {
-      memcpy (&m_dstshape, pdstshape, sizeof (m_dstshape));
-    }
-}
-
-
 void SocketXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )
 {
   int n=0;
@@ -519,12 +481,9 @@ void SocketXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint
 // SocketXferRequest destructor implementation
 SocketXferRequest::~SocketXferRequest ()
 {
-  // remove self from the map and release xfer handle.
-  SocketXferServices::remove (this);
-  if (m_thandle)
-    {
-      (void)xfer_release (m_thandle, 0);
-    }
+  if (m_thandle) {
+    (void)xfer_release (m_thandle, 0);
+  }
 }
 
 
@@ -547,143 +506,50 @@ void SocketXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 }
 
 // Create a transfer request
-XferRequest* SocketXferServices::copy (OCPI::OS::uint32_t srcoffs, 
+XferRequest* SocketXferRequest::copy (OCPI::OS::uint32_t srcoffs, 
                                     OCPI::OS::uint32_t dstoffs, 
                                     OCPI::OS::uint32_t nbytes, 
-                                    XferRequest::Flags flags,
-                                    XferRequest*
+                                    XferRequest::Flags flags
                                     )
 {
-  // Create a transfer request instance and save in list
-  SocketXferRequest* pXferReq = new SocketXferRequest (this);
-  pXferReq->init (XferRequest::Copy, flags, srcoffs, 0, dstoffs, 0, nbytes);
-  add (pXferReq);
-
-  // Begin exception block
   OCPI::OS::int32_t retVal = 0;
-  OCPI_TRY
-    {
-      // map flags
-      OCPI::OS::int32_t newflags = 0;
-      if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
-      if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
-
-#ifndef NDEBUG
-      printf("\n\n Creating tx request, src = %d, dst = %d, size = %d\n", srcoffs, dstoffs, nbytes );
-#endif
-      // Invoke original code.
-      retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &pXferReq->getHandle());
-      if (retVal)
-        {
-          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-        }
+  OCPI::OS::int32_t newflags = 0;
+  if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
+  if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
+  if ( getHandle() == NULL ) {
+    retVal = xfer_copy ( static_cast<SocketXferServices*>(myParent)->m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &getHandle());
+    if (retVal){
+      return NULL;
     }
-  OCPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
-    {
-      remove (pXferReq);
-      delete pXferReq;
-      pXferReq = 0;
+  }
+  else {
+    XF_transfer handle;
+    retVal = xfer_copy ( static_cast<SocketXferServices*>(myParent)->m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &handle);
+    if (retVal){
+      return NULL;
     }
-  return pXferReq;
-
-}
-
-
-// Create a 2-dimensional transfer request
-XferRequest* SocketXferServices::copy2D (OCPI::OS::uint32_t srcoffs, Shape* psrc, 
-                                      OCPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
-{
-  // Create a transfer request instance and save in list
-  SocketXferRequest* pXferReq = new SocketXferRequest (this);
-  pXferReq->init (XferRequest::Copy2D, (XferRequest::Flags)0, srcoffs, psrc, dstoffs, pdst, 0);
-  add (pXferReq);
-
-  // Begin exception block
-  OCPI::OS::int32_t retVal = 0;
-  try
-    {
-      // Invoke original code.
-      // We simple cast "XferServices::Shape" to "EP_shape" since they must have the
-      // exact same definitions. We don't specify any flags (they weren't used in the original).
-      //                        retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
-      if (retVal)
-        {
-          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-        }
+    XF_transfer handles[3];
+    handles[0] = handle;
+    handles[1] = getHandle();
+    handles[2] = 0;
+    retVal = xfer_group ( handles, 0, &getHandle());
+    if (retVal) {
+      return NULL;
     }
-  catch( ... )
-    {
-      remove (pXferReq);
-      delete pXferReq;
-      pXferReq = 0;
-    }
-  return pXferReq;
+  }
+  return this;
 }
 
 
 // Group data transfer requests
-XferRequest* SocketXferServices::group (XferRequest* preqs[])
+XferRequest & SocketXferRequest::group (XferRequest* lhs )
 {
-  // Create a transfer request instance and save in list
-  SocketXferRequest* pXferReq = new SocketXferRequest (this);
-  pXferReq->init (XferRequest::Group, (XferRequest::Flags)0, 0, 0, 0, 0, 0);
-  add (pXferReq);
-
-  // Begin exception handler
-  OCPI::OS::int32_t retVal = 0;
-  XF_transfer* handles = 0;
-  try 
-    {
-      // Make a list of existing XF_transfer from the XferRequest* [] argument.
-      int numHandles = 0;
-      while (preqs[numHandles]) { numHandles++;}
-      handles = new XF_transfer [numHandles + 1] ;
-      for (int i = 0; i < numHandles; i++)
-        {
-          handles[i] = ((SocketXferRequest*)preqs[i])->getHandle();
-        }
-      handles[numHandles] = 0;
-
-      // Invoke original code.
-      retVal = xfer_group (handles, 0, &pXferReq->getHandle());
-      if (retVal)
-        {
-          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-        }
-    }
-  catch( ... )
-    {
-      remove (pXferReq);
-      delete pXferReq;
-      pXferReq = 0;
-      delete handles;
-    }
-  delete[] handles;
-  return pXferReq;
-}
-
-// Release a transfer request
-void SocketXferServices::release (XferRequest* preq)
-{
-  // Delete of request insures list removal.
-  delete preq;
-}
-
-
-// remove all transfer request instances from the list for "this"
-void SocketXferServices::releaseAll ()
-{
-  for ( OCPI::OS::uint32_t n=0; n<m_map.size(); n++ ) {
-    SocketXferRequest* req = static_cast<SocketXferRequest*>(m_map[n]);
-    delete req;
-  }
-}
-
-
-// remove a specified transfer request instance from the list
-void SocketXferServices::remove (SocketXferRequest* pXferReq )
-{
-  m_map.remove( pXferReq );
+  XF_transfer handles[3];
+  handles[0] = static_cast<SocketXferRequest*>(lhs)->getHandle();
+  handles[1] = getHandle();
+  handles[2] = 0;
+  xfer_group ( handles, 0, &getHandle());
+  return *this;
 }
 
 
@@ -691,8 +557,6 @@ void SocketXferServices::remove (SocketXferRequest* pXferReq )
 SocketXferServices::
 ~SocketXferServices ()
 {
-  // Release all transfer requests
-  releaseAll ();
 
   // Invoke destroy without flags.
   xfer_destroy (m_xftemplate, 0);
@@ -720,7 +584,7 @@ namespace DataTransfer {
 }
 void 
 SocketXferRequest::
-start(Shape* , Shape*)
+post()
 {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)m_thandle;  
   OCPI::OS::int32_t pio_rc=0;
@@ -765,7 +629,7 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
   unsigned  trys = 10;
   unsigned long idx=0;
   char* chdr = (char*)&hdr;
-  while ( ((nb=req->m_xferServices->m_clientSocketT->socket().send((const char*)&chdr[idx],(size_t)btt) ) != 0) && trys-- ) {
+  while ( ((nb=static_cast<SocketXferServices*>(req->myParent)->m_clientSocketT->socket().send((const char*)&chdr[idx],(size_t)btt) ) != 0) && trys-- ) {
     btt -= nb;
     idx += nb;
   }
@@ -783,7 +647,7 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
   btt = transfer->nbytes;
   trys = 10;
   idx=0;
-  while ( ((nb=req->m_xferServices->m_clientSocketT->socket().send((const char*)&src1[idx],(size_t)btt) ) != 0) && trys-- ) {
+  while ( ((nb=static_cast<SocketXferServices*>(req->myParent)->m_clientSocketT->socket().send((const char*)&src1[idx],(size_t)btt) ) != 0) && trys-- ) {
     btt -= nb;
     idx += nb;
   }
