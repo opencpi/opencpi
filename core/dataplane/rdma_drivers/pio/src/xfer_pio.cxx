@@ -242,58 +242,6 @@ action_pio_transfer(PIO_transfer transfer)
 #endif
 
 
-static OCPI::OS::int32_t
-is_contiguous(Shape *shape)
-{
-  if ((shape->x.stride == 1) &&
-      (shape->x.length == shape->y.stride) &&
-      (shape->y.length * shape->y.stride == shape->z.stride)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
-static OCPI::OS::uint32_t
-calc_shape_size(Shape *s)
-{
-  return (s->x.length * s->y.length * s->z.length * s->element_size);
-}
-
-static OCPI::OS::int32_t
-process_shapes(Shape *src, Shape *dst, PIO_template pio_template,
-               OCPI::OS::uint32_t src_os, OCPI::OS::uint32_t dst_os, PIO_transfer *xf_transfers)
-{
-  /* Get the shape sizes */
-  OCPI::OS::uint32_t src_shape_size = calc_shape_size(src);
-  OCPI::OS::uint32_t dst_shape_size = calc_shape_size(dst);
-
-  /* Check the sizes are equal */
-  if (src_shape_size != dst_shape_size)
-    return 1;
-
-  /* Check to see if shape is contiguous */
-  if (is_contiguous(src)) {
-    if (is_contiguous(dst)) {
-      /* Create a transfer */
-      PIO_transfer pio_transfer = new struct pio_transfer_;
-      /* Populate the transfer structure */
-      pio_transfer->src_va = ((char *)pio_template->src_va + src_os);
-      pio_transfer->src_stride = 1 * src->element_size;
-      pio_transfer->dst_va = ((char *)pio_template->dst_va + dst_os);
-      pio_transfer->dst_stride = 1 * src->element_size;
-      pio_transfer->nbytes = src_shape_size;
-      /* Set the transfers next pointer */
-      pio_transfer->next = 0;
-      /* Set the out parameter */
-      *xf_transfers = pio_transfer;
-    }
-  }
-
-  return 0;
-}
-
 OCPI::OS::int32_t
 xfer_pio_create(DataTransfer::SmemServices* src, DataTransfer::SmemServices* dst, PIO_template *pio_templatep)
 {
@@ -386,19 +334,6 @@ xfer_pio_copy(PIO_template pio_template, OCPI::OS::uint32_t src_os, OCPI::OS::ui
   return 0;
 }
 
-OCPI::OS::int32_t
-xfer_pio_copy_2d(PIO_template pio_template, OCPI::OS::uint32_t src_os, Shape *src,
-                 OCPI::OS::uint32_t dst_os, Shape *dst, OCPI::OS::int32_t, 
-                 PIO_transfer *pio_transferp)
-{
-
-  /* Process the shapes */
-  if (process_shapes(src, dst, pio_template, 
-                     src_os, dst_os, pio_transferp))
-    return 1;
-
-  return 0;
-}
 
 OCPI::OS::int32_t
 xfer_pio_group(PIO_transfer *members, OCPI::OS::int32_t, PIO_transfer *pio_transferp)

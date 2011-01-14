@@ -65,7 +65,7 @@ void Client::init()
     }
                 
     // Get our endpoint
-    m_end_point = res->sMemServices->getEndPoint();
+    m_end_point = res->sMemServices->endpoint();
     m_transport->setListeningEndpoint( m_end_point );
                 
     m_init=true;
@@ -169,7 +169,8 @@ Client::Client(
 #define CLIENT_DEFAULT_BUFFER_SIZE 1024*10
 MessageCircuit* Client::createCircuit( std::string& server_end_point )
 {
-  OCPI::OS::uint32_t buffer_size = CLIENT_DEFAULT_BUFFER_SIZE;
+  OCPI::Util::PValue props[] = {OCPI::Util::PVULong("SMBSize",CLIENT_DEFAULT_BUFFER_SIZE),
+				OCPI::Util::PVEnd };
 
 #ifdef CONTAINER_MULTI_THREADED
   m_mutex->lock();
@@ -179,7 +180,7 @@ MessageCircuit* Client::createCircuit( std::string& server_end_point )
   if ( m_endpoint_string.length() == 0 ) {
     // Ask the transfer factory to give me an endpoint that we can support
     std::string nuls;
-    m_endpoint_string = XferFactoryManager::getFactoryManager().allocateEndpoint(nuls, &buffer_size);
+    m_endpoint_string = XferFactoryManager::getFactoryManager().allocateEndpoint(nuls,NULL, props);
     init();
   }
 

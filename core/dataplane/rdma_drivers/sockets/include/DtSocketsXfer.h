@@ -71,15 +71,12 @@ namespace DataTransfer {
   {
   public:
 
-    // Constructors
-    SocketEndPoint(OCPI::OS::int32_t s=0)
-      :EndPoint(s){};
       virtual ~SocketEndPoint();
       SocketEndPoint( std::string& ep, OCPI::OS::uint32_t size=0)
-        :EndPoint(ep,size){setEndpoint(ep);};
+        :EndPoint(ep,size){parse(ep);};
 
         // Sets smem location data based upon the specified endpoint
-        virtual OCPI::OS::int32_t setEndpoint( std::string& ep );
+        OCPI::OS::int32_t parse( std::string& ep );
 
         // Get the address from the endpoint
         virtual const char* getAddress(){return ipAddress.c_str();}
@@ -116,7 +113,7 @@ namespace DataTransfer {
     /***************************************
      * This method is used to allocate a transfer compatible SMB
      ***************************************/
-    SmemServices* createSmemServices(EndPoint* ep );
+    SmemServices* getSmemServices(EndPoint* ep );
 
 
     /***************************************
@@ -163,28 +160,17 @@ namespace DataTransfer {
 
     // Public methods available to clients
   public:
-    SocketXferRequest( SocketXferServices *s)
-      :m_xferServices(s){}
-
-    // General init
-    void init (
-               Creator cr, 
-               Flags flags, 
-               OCPI::OS::uint32_t srcoffs, 
-               Shape *psrcshape, 
-               OCPI::OS::uint32_t dstoffs, 
-               Shape *pdstshape, 
-               OCPI::OS::uint32_t length );
+    SocketXferRequest( XferServices * s )
+      :XferRequest(*s),m_thandle(0) {}
 
     // Queue data transfer request
-    void start (Shape* s_shape=NULL, Shape* t_shape=NULL);
+    void post();
 
     // Get Information about a Data Transfer Request
-    OCPI::OS::int32_t getStatus();
+    DataTransfer::XferRequest::CompletionStatus getStatus();
 
     // Get the transfer handle
     XF_transfer& getHandle();
-
 
     // Destructor - implementation at end of file
     virtual ~SocketXferRequest ();
@@ -192,18 +178,23 @@ namespace DataTransfer {
 
     void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] );
 
-    SocketXferServices*                 m_xferServices;
+
+    XferRequest & group( XferRequest* lhs );
+
+    XferRequest* copy (OCPI::OS::uint32_t srcoff, 
+		       OCPI::OS::uint32_t dstoff, 
+		       OCPI::OS::uint32_t nbytes, 
+		       XferRequest::Flags flags
+		       );
 
     // Data members accessible from this/derived class
   protected:
-    Creator                                                m_creator;                // What  method created this instance
-    Flags                                                m_flags;                // Flags used during creation
+    Flags                                     m_flags;                // Flags used during creation
     OCPI::OS::uint32_t                        m_srcoffset;        // The source memory offset
-    Shape                                                m_srcshape;                // The source shape
     OCPI::OS::uint32_t                        m_dstoffset;        // The destination memory offset
-    Shape                                                m_dstshape;                // The destination memory shape
     OCPI::OS::uint32_t                        m_length;                // The length of the request in bytes
-    XF_transfer                                        m_thandle;                // Transfer handle returned by xfer_xxx etal
+
+    XF_transfer                               m_thandle;                // Transfer handle returned by xfer_xxx etal
 
   };
 
@@ -214,34 +205,28 @@ namespace DataTransfer {
   class SocketSmemServices;
   class SocketXferServices : public XferServices
   {
+
     // So the destructor can invoke "remove"
-    friend SocketXferRequest::~SocketXferRequest ();
+    friend class SocketXferRequest;
 
   public:
 
-    SocketXferServices(SmemServices* source, SmemServices* target)
-      :XferServices(source,target){createTemplate( source, target);}
+    SocketXferServices( XferFactory * parent, SmemServices* source, SmemServices* target)
+      :XferServices( *parent, source,target){createTemplate( source, target);}
+
+    /*
+     * Create tranfer request object
+     */
+     XferRequest* createXferRequest();
+
+    // Destructor
+    virtual ~SocketXferServices ();
+
+    // Socket thread handler
+    ClientSocketT * m_clientSocketT;
 
 
-      // Create tranfer services template
-      void createTemplate (SmemServices* p1, SmemServices* p2);
-
-      // Create a transfer request
-      XferRequest* copy (OCPI::OS::uint32_t srcoffs, OCPI::OS::uint32_t dstoffs, 
-                         OCPI::OS::uint32_t nbytes, XferRequest::Flags flags, XferRequest* add_to);
-
-      // Create a 2-dimensional transfer request
-      XferRequest* copy2D (OCPI::OS::uint32_t srcoffs, Shape* psrc, 
-                           OCPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest* add_to);
-
-      // Group data transfer requests
-      XferRequest* group (XferRequest* preqs[]);
-
-      // Release a transfer request
-      void release (XferRequest* preq);
-
-      // Destructor
-      virtual ~SocketXferServices ();
+  protected:
 
       // Source SMB services pointer
       SocketSmemServices* m_sourceSmb;
@@ -249,35 +234,17 @@ namespace DataTransfer {
       // Target SMB services pointer
       SocketSmemServices* m_targetSmb;
 
-      // Socket thread handler
-      ClientSocketT * m_clientSocketT;
-
-  protected:
-
-      // add a new transfer request instance to the list
-      void add (SocketXferRequest* pXferReq);
-
-      // remove a specified transfer request instance from the list
-      static void remove (SocketXferRequest* pXferReq);
-
-      // remove all transfer request instances from the list for "this"
-      void releaseAll ();
-
+      // Create tranfer services template
+      void createTemplate (SmemServices* p1, SmemServices* p2);
 
 
   private:
-
-      // A map of data transfer requests to the instance that created it
-      // to support rundow. Note that list access is not thread-safe.
-      static OCPI::Util::VList m_map;
 
       // The handle returned by xfer_create
       XF_template        m_xftemplate;
 
       // Our transfer request
       XferRequest* m_txRequest;
-
-
 
   };
 
@@ -292,13 +259,12 @@ namespace DataTransfer {
 
   // inline methods for SocketXferFactory
   inline const char* SocketXferFactory::getProtocol(){return "ocpi-socket-rdma";}
- 
+
   // inline methods for SocketXferRequest
   inline XF_transfer& SocketXferRequest::getHandle(){return m_thandle;}
-  inline OCPI::OS::int32_t SocketXferRequest::getStatus(){return xfer_get_status (m_thandle);}
 
-  // inline methods for SocketXferServices
-  inline void SocketXferServices::add (SocketXferRequest* pXferReq){m_map.insert(pXferReq);}
+  inline DataTransfer::XferRequest::CompletionStatus SocketXferRequest::getStatus()
+    { return xfer_get_status (m_thandle) == 0 ? DataTransfer::XferRequest::CompleteSuccess : DataTransfer::XferRequest::Pending;}
 
 }
 

@@ -106,7 +106,8 @@ namespace OCPI {
        * Get port descriptor.  This is the data that is needed by an
        * external port to connect to this port.
        *********************************/
-      void getPortDescriptor( OCPI::RDT::Descriptors& );
+      void getPortDescriptor( OCPI::RDT::Descriptors & my_desc, OCPI::RDT::Descriptors * other );
+
 
 
       /**********************************
@@ -147,6 +148,11 @@ namespace OCPI {
        * Sets the feedback descriptor for this port.
        *********************************/
       virtual void setFlowControlDescriptor( OCPI::RDT::Descriptors& );
+
+      /**********************************
+       * Finalize the port
+       *********************************/
+      virtual void finalize( OCPI::RDT::Descriptors& );
 
       /**************************************
        * Get the buffer by index
