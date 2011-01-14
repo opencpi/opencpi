@@ -367,7 +367,7 @@ xfer_modify( XF_transfer xf_handle, OCPI::OS::uint32_t* noff, OCPI::OS::uint32_t
 long
 xfer_get_status(XF_transfer )
 {
-  /* Get the type of transfer */
+  // PIO is synchronous
   return 0;
 }
 

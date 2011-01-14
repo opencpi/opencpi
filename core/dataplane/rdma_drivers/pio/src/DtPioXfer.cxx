@@ -57,12 +57,12 @@
 #include <OcpiOsAssert.h>
 #include <OcpiUtilAutoMutex.h>
 #include <DtExceptions.h>
+#include <OcpiPValue.h>
 
 using namespace DataTransfer;
 using namespace OCPI::Util;
 using namespace OCPI::OS;
 
-OCPI::Util::VList PIOXferServices::m_map(0);
 
 // Used to register with the data transfer system;
 PIOXferFactory *g_pioFactory = new PIOXferFactory;
@@ -100,7 +100,7 @@ void PIOXferFactory::clearCache()
 
 
 // Get the location via the endpoint
-EndPoint* PIOXferFactory::getEndPoint( std::string& end_point  )
+EndPoint* PIOXferFactory::getEndPoint( std::string& end_point, bool /* local */ )
 { 
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
@@ -126,9 +126,12 @@ void PIOXferFactory::releaseEndPoint( EndPoint* )
 
 
 // This method is used to allocate a transfer compatible SMB
-SmemServices* PIOXferFactory::createSmemServices(EndPoint* loc )
+SmemServices* PIOXferFactory::getSmemServices(EndPoint* loc )
 {
-  return CreateSmemServices(loc);
+  if ( loc->smem ) {
+    return loc->smem;
+  }
+  return CreateSmemServices( this, loc);
 }
 
 
@@ -137,7 +140,7 @@ SmemServices* PIOXferFactory::createSmemServices(EndPoint* loc )
  ***************************************/
 XferServices* PIOXferFactory::getXferServices(SmemServices* source, SmemServices* target)
 {
-  return new PIOXferServices(source, target);
+  return new PIOXferServices( *this, source, target);
 }
 
 
@@ -146,29 +149,23 @@ XferServices* PIOXferFactory::getXferServices(SmemServices* source, SmemServices
  *  an endpoint for an application running on "this"
  *  node.
  ***************************************/
-static OCPI::OS::int32_t mailbox=1;
 static OCPI::OS::int32_t pid;
 static OCPI::OS::int32_t smb_count=0;
-std::string PIOXferFactory::allocateEndpoint(OCPI::OS::uint32_t *size )
+std::string 
+PIOXferFactory::
+allocateEndpoint(OCPI::Util::Device * , OCPI::Util::PValue * /* props */ )
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   std::string ep;
 
-#ifdef USE_ENV_FOR_MAILBOX
-  if ( mailbox == -1 ) {
-    const char* env = getenv("OCPI_TRANSFER_MAILBOX");
-    if( !env || (env[0] == 0)) {
-      OCPI_THROWNULL( DataTransferEx(PROPERTY_NOT_SET, "OCPI_TRANSFER_MAILBOX" ) ) ;
-    }
-    mailbox = atoi(env);
-    pid++;
-  }
-#endif
+  int mailbox = getNextMailBox();
+  pid++;
 
+  unsigned int size = m_config->m_SMBSize;
 
   pid = getpid();
   char tep[128];
-  snprintf(tep,128,"ocpi-smb-pio://pioXfer%d%d:%d.%d.20",pid,smb_count++,*size, mailbox);
+  snprintf(tep,128,"ocpi-smb-pio://pioXfer%d%d:%d.%d.%d",pid,smb_count++,size, mailbox,getMaxMailBox());
   ep = tep;
   mailbox++;
 
@@ -179,9 +176,8 @@ std::string PIOXferFactory::allocateEndpoint(OCPI::OS::uint32_t *size )
 
 
 // Sets smem location data based upon the specified endpoint
-OCPI::OS::int32_t GppEndPoint::setEndpoint( std::string& ep )
+OCPI::OS::int32_t GppEndPoint::parse( std::string& ep )
 {
-  EndPoint::setEndpoint(ep);
 
   OCPI::OS::uint32_t n,i=0;
   OCPI::OS::int32_t start=0;
@@ -208,35 +204,6 @@ GppEndPoint::~GppEndPoint()
 {
 }
 
-
-
-void PIOXferRequest::init (Creator cr, 
-                           Flags flags, 
-                           OCPI::OS::uint32_t srcoffs, 
-                           Shape *psrcshape, 
-                           OCPI::OS::uint32_t dstoffs, 
-                           Shape *pdstshape, 
-                           OCPI::OS::uint32_t length)
-{
-  m_creator = cr;
-  m_flags = flags;
-  m_srcoffset = srcoffs;
-  m_dstoffset = dstoffs;
-  m_length = length;
-  m_thandle = 0;
-  memset (&m_srcshape, 0, sizeof (m_srcshape));
-  if (psrcshape)
-    {
-      memcpy (&m_srcshape, psrcshape, sizeof (m_srcshape));
-    }
-  memset (&m_dstshape, 0, sizeof (m_dstshape));
-  if (pdstshape)
-    {
-      memcpy (&m_dstshape, pdstshape, sizeof (m_dstshape));
-    }
-}
-
-
 void PIOXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )
 {
   int n=0;
@@ -250,8 +217,6 @@ void PIOXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_
 // PIOXferRequest destructor implementation
 PIOXferRequest::~PIOXferRequest ()
 {
-  // remove self from the map and release xfer handle.
-  PIOXferServices::remove (this);
   if (m_thandle)
     {
       (void)xfer_release (m_thandle, 0);
@@ -273,155 +238,68 @@ void PIOXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 
 
 
-
-
-// Create a transfer request
-XferRequest* PIOXferServices::copy (OCPI::OS::uint32_t srcoffs, 
-                                    OCPI::OS::uint32_t dstoffs, 
-                                    OCPI::OS::uint32_t nbytes, 
-                                    XferRequest::Flags flags,
-                                    XferRequest*
-                                    )
+XferRequest* PIOXferServices::createXferRequest()
 {
-  // Create a transfer request instance and save in list
-  PIOXferRequest* pXferReq = new PIOXferRequest ();
-  pXferReq->init (XferRequest::Copy, flags, srcoffs, 0, dstoffs, 0, nbytes);
-  add (pXferReq);
-
-  // Begin exception block
-  OCPI::OS::int32_t retVal = 0;
-  OCPI_TRY
-    {
-      // map flags
-      OCPI::OS::int32_t newflags = 0;
-      if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
-      if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
-
-      // Invoke original code.
-      retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &pXferReq->getHandle());
-      if (retVal)
-        {
-          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-        }
-    }
-  OCPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
-    {
-      remove (pXferReq);
-      delete pXferReq;
-      pXferReq = 0;
-    }
-  return pXferReq;
-
+  return new PIOXferRequest ( *this );
 }
 
 
-// Create a 2-dimensional transfer request
-XferRequest* PIOXferServices::copy2D (OCPI::OS::uint32_t srcoffs, Shape* psrc, 
-                                      OCPI::OS::uint32_t dstoffs, Shape* pdst, XferRequest*)
+// Create a transfer request
+XferRequest* PIOXferRequest::copy (OCPI::OS::uint32_t srcoffs, 
+                                    OCPI::OS::uint32_t dstoffs, 
+                                    OCPI::OS::uint32_t nbytes, 
+                                    XferRequest::Flags flags
+                                    )
 {
-  // Create a transfer request instance and save in list
-  PIOXferRequest* pXferReq = new PIOXferRequest ();
-  pXferReq->init (XferRequest::Copy2D, (XferRequest::Flags)0, srcoffs, psrc, dstoffs, pdst, 0);
-  add (pXferReq);
 
-  // Begin exception block
   OCPI::OS::int32_t retVal = 0;
-  OCPI_TRY
-    {
-      // Invoke original code.
-      // We simple cast "XferServices::Shape" to "EP_shape" since they must have the
-      // exact same definitions. We don't specify any flags (they weren't used in the original).
-      //                        retVal = xfer_copy_2d (m_xftemplate, srcoffs, (Shape*)psrc, dstoffs, (Shape*)pdst, 0, &pXferReq->m_thandle);
-      if (retVal)
-        {
-          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-        }
+  OCPI::OS::int32_t newflags = 0;
+  if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
+  if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
+  if ( getHandle() == NULL ) {
+    retVal = xfer_copy ( static_cast<PIOXferServices*>(myParent)->m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &getHandle());
+    if (retVal){
+      return NULL;
     }
-  OCPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
-    {
-      remove (pXferReq);
-      delete pXferReq;
-      pXferReq = 0;
+  }
+  else {
+    XF_transfer handle;
+    retVal = xfer_copy ( static_cast<PIOXferServices*>(myParent)->m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &handle);
+    if (retVal){
+      return NULL;
     }
-  return pXferReq;
+    XF_transfer handles[3];
+    handles[0] = handle;
+    handles[1] = getHandle();
+    handles[2] = 0;
+    retVal = xfer_group ( handles, 0, &getHandle());
+    if (retVal) {
+      return NULL;
+    }
+  }
+  return this;
 }
 
 
 // Group data transfer requests
-XferRequest* PIOXferServices::group (XferRequest* preqs[])
+XferRequest & PIOXferRequest::group (XferRequest* lhs )
 {
-  // Create a transfer request instance and save in list
-  PIOXferRequest* pXferReq = new PIOXferRequest ();
-  pXferReq->init (XferRequest::Group, (XferRequest::Flags)0, 0, 0, 0, 0, 0);
-  add (pXferReq);
-
-  // Begin exception handler
-  OCPI::OS::int32_t retVal = 0;
-  XF_transfer* handles = 0;
-  OCPI_TRY
-    {
-      // Make a list of existing XF_transfer from the XferRequest* [] argument.
-      int numHandles = 0;
-      while (preqs[numHandles]) { numHandles++;}
-      handles = new XF_transfer [numHandles + 1] ;
-      for (int i = 0; i < numHandles; i++)
-        {
-          handles[i] = ((PIOXferRequest*)preqs[i])->getHandle();
-        }
-      handles[numHandles] = 0;
-
-      // Invoke original code.
-      retVal = xfer_group (handles, 0, &pXferReq->getHandle());
-      if (retVal)
-        {
-          OCPI_RETHROW_TO_NEXT_LEVEL(LEVEL1);
-        }
-    }
-  OCPI_CATCH_LEVEL( m_exceptionMonitor, LEVEL1 )
-    {
-      remove (pXferReq);
-      delete pXferReq;
-      pXferReq = 0;
-      delete handles;
-    }
-  delete[] handles;
-  return pXferReq;
-}
-
-// Release a transfer request
-void PIOXferServices::release (XferRequest* preq)
-{
-  // Delete of request insures list removal.
-  delete preq;
+  XF_transfer handles[3];
+  handles[0] = static_cast<PIOXferRequest*>(lhs)->getHandle();
+  handles[1] = getHandle();
+  handles[2] = 0;
+  xfer_group ( handles, 0, &getHandle());
+  return *this;
 }
 
 
-// remove all transfer request instances from the list for "this"
-void PIOXferServices::releaseAll ()
-{
-  for ( OCPI::OS::uint32_t n=0; n<m_map.size(); n++ ) {
-    PIOXferRequest* req = static_cast<PIOXferRequest*>(m_map[n]);
-    delete req;
-  }
-}
-
-
-// remove a specified transfer request instance from the list
-void PIOXferServices::remove (PIOXferRequest* pXferReq )
-{
-  m_map.remove( pXferReq );
-}
 
 
 // Destructor
 PIOXferServices::~PIOXferServices ()
 {
-  // Release all transfer requests
-  releaseAll ();
-
   // Invoke destroy without flags.
   xfer_destroy (m_xftemplate, 0);
-
 }
 
 

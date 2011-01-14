@@ -124,8 +124,8 @@ namespace DataTransfer {
   public:
 
     // Ctor/dtor
-    BaseSmemServices (const EndPoint* loc ) 
-      : DataTransfer::SmemServices( loc ), m_pSmem (0) 
+    BaseSmemServices (  DataTransfer::XferFactory * p,  EndPoint* loc ) 
+      : DataTransfer::SmemServices( p, loc ), m_pSmem (0) 
       {
       }
       virtual ~BaseSmemServices () {}

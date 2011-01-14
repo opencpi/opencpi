@@ -72,9 +72,12 @@ namespace OCPI {
       MaxOption
     };
 
+    const uint32_t MAX_EPS_SIZE=256;
+    const uint32_t MAX_PROTOS_SIZE=64;
     struct OutOfBandData {
       OCPI::OS::uint64_t  port_id;     // Port Id
-      char               oep[128];    // Originators endpoint
+      char                oep[MAX_EPS_SIZE];    // Originators endpoint
+      OCPI::OS::uint64_t  cookie;      // Optional opaque connection cookie
     };
 
     struct Desc_t {
