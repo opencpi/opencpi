@@ -76,7 +76,8 @@ PACKAGES += \
 	 core/container/interfaces \
 	 core/container/cp289_container \
 	 core/container/rpl_container \
-	 core/container/tests
+	 core/container/tests \
+	 core/$(DATAPLANE)/tests
 
 ifeq ($(OCPI_HAVE_CORBA),1)
 PACKAGES += core/corba/orb_services core/corba/corba_util
@@ -125,7 +126,8 @@ ALLPACKAGES = \
 	tools/local/binder \
 	tools/local/tester \
 	tools/cdk/ocpigen \
-	tools/cdk/ocpixm
+	tools/cdk/ocpixm \
+	core/$(DATAPLANE)/tests
 
 #
 # ----------------------------------------------------------------------

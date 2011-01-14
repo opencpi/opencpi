@@ -160,6 +160,9 @@ void  OCPI::CONTAINER_TEST::testDispatch(OCPI::Container::Interface* rcc_contain
         rcc_container->dispatch( event_manager );
         break;
       }
+      
+      OCPI::OS::sleep( 1000 );
+
     } while(1);
   }
   else {
@@ -185,7 +188,7 @@ namespace {
         for ( it=m_dtd->containers.begin(); it != m_dtd->containers.end(); it++ ) {
           OCPI::CONTAINER_TEST::testDispatch( (*it).container, m_dtd->event_manager );
         }
-        OCPI::OS::sleep(1);
+        OCPI::OS::sleep(0);
       }
     }
 
@@ -238,7 +241,8 @@ OCPI::Util::Thread*  OCPI::CONTAINER_TEST::runTestDispatch(  OCPI::CONTAINER_TES
 }
 
 
-static OCPI::Util::DriverManager dm("Container");
+
+OCPI::Util::DriverManager dm("Container");
 std::vector<CApp> OCPI::CONTAINER_TEST::createContainers( std::vector<ContainerDesc>& eps, 
                                                          DataTransfer::EventManager*& event_manager,
                                                          bool polling )

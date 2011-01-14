@@ -58,18 +58,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ezxml.h>
 #include <OcpiOsAssert.h>
 #include <OcpiOsMisc.h>
 #include <OcpiUtilHash.h>
 #include <OcpiUtilAutoMutex.h>
 #include <DtTransferInternal.h>
+#include <OcpiPValue.h>
 
 using namespace DataTransfer;
 using namespace OCPI::Util;
 using namespace OCPI::OS;
 
 
-XferFactoryManager& XferFactoryManager::getFactoryManager()
+namespace DataTransfer {
+  void configureSubSystem( ezxml_t config )
+  {
+    DataTransfer::XferFactoryManager::getFactoryManager().configure( config );
+  }
+}
+
+XferFactoryManager& 
+XferFactoryManager::
+getFactoryManager()
 {
   static XferFactoryManager * fm = NULL;
   if ( !fm ) {
@@ -79,48 +90,230 @@ XferFactoryManager& XferFactoryManager::getFactoryManager()
 }
 
 // Register the Data transfer class
-void XferFactoryManager::registerFactory( XferFactory* dt )
+void XferFactoryManager::
+registerFactory( XferFactory* dt )
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true );
   insert_to_list( &m_registeredTransfers, dt, 64,8);
 }
 
 // Register the Data transfer class
-void XferFactoryManager::unregisterFactory( XferFactory* dt )
+void XferFactoryManager::
+unregisterFactory( XferFactory* dt )
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true );
   remove_from_list( &m_registeredTransfers, dt);
 }
 
 
+
+OCPI::OS::int32_t 
+XferFactory::
+getNextMailBox()
+{
+  static OCPI::OS::int32_t mailbox=1;
+  static bool mb_once=false;
+  if ( ! mb_once ) {
+    const char* env = getenv("OCPI_TRANSFER_MAILBOX");
+    if( !env || (env[0] == 0)) {
+      printf("Set ""OCPI_TRANSFER_MAILBOX"" environment varible to control mailbox\n");
+    }
+    else {
+      mailbox = atoi(env);
+    }
+    mb_once = true;
+  }
+  return mailbox++;
+}
+
+
+
+OCPI::OS::int32_t 
+XferFactory::
+getMaxMailBox()
+{
+  static bool mmb_once=false;
+  static int max_mb=10;
+  if ( ! mmb_once ) {
+    const char* env = getenv("OCPI_MAX_MAILBOX");
+    if( !env || (env[0] == 0)) {
+      printf("Set ""OCPI_MAX_MAILBOX"" environment varible to control max mailbox\n");
+    }
+    else {
+      max_mb = atoi(env);
+    }
+    mmb_once = true;
+  }
+  return max_mb;
+}
+
+
+
 // This method is used to retreive all of the available endpoints that have been registered
 // in the system.  Note that some of the endpoints may not be finalized.
-std::vector<std::string> XferFactoryManager::getListOfSupportedEndpoints()
+std::vector<std::string> 
+XferFactoryManager::
+getListOfSupportedEndpoints()
 {
-  OCPI::OS::uint32_t default_ep_size = 1024*1024;
-
-  const char* env = getenv ( "OCPI_SMB_SIZE" );
-
-  if ( env && ( env [ 0 ] != 0 ) )
-  {
-    default_ep_size = atoi ( env );
-  }
-
+  checkConf();
   XferFactory* factory;
   std::vector<std::string> l;
   for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
     factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
-    l.push_back( factory->allocateEndpoint( &default_ep_size ) );
+    OCPI::Util::Device * d = factory->getNextDevice(0);
+    do { 
+      l.push_back( factory->allocateEndpoint( d,  NULL ) );
+      d = factory->getNextDevice(d);
+    } while ( d );    
   }
   return l;
 }
 
 
 
-bool XferFactory::supportsEndPoints(
-                                    std::string& end_point1,
-                                    std::string& end_point2 )
+ezxml_t 
+XferFactory::
+getNode( ezxml_t tn, const char* name )
 {
+  ezxml_t node = tn;
+  while ( node ) {
+    if ( node->name ) printf("node %s\n", node->name );
+    if ( node->name && (strcmp( node->name, name) == 0 ) ) {
+      return node;
+    }
+    node = ezxml_next( node );
+  }
+  if ( tn ) {
+    if(tn->child)if((node=getNode(tn->child,name)))return node;
+    if(tn->sibling)if((node=getNode(tn->sibling,name)))return node;	 
+  }
+  return NULL;
+}
+
+
+FactoryConfig::
+FactoryConfig()
+  : m_xml( NULL ), m_SMBSize(32*1024),m_retryCount(2)
+{
+  const char* env = getenv("OCPI_SMB_SIZE");
+  if ( env ) m_SMBSize = atol(env);
+}
+
+
+bool 
+FactoryConfig::
+getLProp( ezxml_t node, const char* name, const char * attr, uint32_t & value )
+{
+  // Process the properites
+  ezxml_t p =ezxml_child(node,"Property");
+  while( p ) {
+    const char * pname = ezxml_attr(p, "name" );
+    if ( pname && (strcmp(pname, name)==0) ) {
+      const char * c;
+      if ( (c=ezxml_attr(p, attr )) ) value=atol(c);
+      return true;
+    }
+    p = ezxml_next(p);
+  }
+  return false;
+}
+
+
+bool 
+FactoryConfig::
+getStringProp( ezxml_t node, const char* name, const char * attr, const char * & value )
+{
+  // Process the properites
+  ezxml_t p =ezxml_child(node,"Property");
+  while( p ) {
+    const char * pname = ezxml_attr(p, "name" );
+    if ( pname && (strcmp(pname, name)==0) ) {
+      value = ezxml_attr(p, attr );
+      return true;
+    }
+    p = ezxml_next(p);
+  }
+  return false;
+}
+
+void
+FactoryConfig::
+parse( ezxml_t dtag )
+{
+  m_xml = dtag;
+  if ( dtag ) {
+
+    const char *name = ezxml_name(dtag);
+    if ( name ) 
+      printf("XML node name = %s\n", name );
+
+    getLProp( dtag, "SMBSize", "value", m_SMBSize );
+    getLProp( dtag, "TxRetryCount", "value", m_retryCount);
+
+  }
+}
+
+
+FactoryConfig::
+~FactoryConfig()
+{
+  // Empty
+}
+
+
+// Configure the drivers
+void 
+XferFactoryManager::
+configure(  ezxml_t config )
+{
+  m_configured = true;
+
+  // We will find any drivers that were statically registered and add them
+  // to our list
+  std::vector<OCPI::Util::Driver*> & list = getDrivers();
+  std::vector<OCPI::Util::Driver*>::iterator it;
+  for (it=list.begin(); it!=list.end(); it++ ) {
+    registerFactory( static_cast<XferFactory*>( (*it) ) );
+  }
+
+  m_config = new FactoryConfig();
+  ezxml_t dtag = XferFactory::getNode( config, "DtDriverConfig" );
+  m_config->parse( dtag );
+  XferFactory* factory;
+  for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
+    factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
+    factory->configure( *m_config );
+  }
+  startup();
+}
+
+
+
+// This method is used to retreive all of the available endpoints that have been registered
+// in the system.  Note that some of the endpoints may not be finalized.
+std::vector<std::string> 
+XferFactoryManager::
+getListOfSupportedProtocols()
+{
+  checkConf();
+  XferFactory* factory;
+  std::vector<std::string> l;
+  for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
+    factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
+    l.push_back( factory->getProtocol() );
+  }
+  return l;
+}
+
+
+
+bool 
+XferFactory::
+supportsEndPoints(
+		  std::string& end_point1,
+		  std::string& end_point2 )
+{
+
 #ifndef NDEBUG
   printf("In  XferFactory::supportsEndPoints, (%s) (%s)\n",
          end_point1.c_str(), end_point2.c_str() );
@@ -158,9 +351,22 @@ bool XferFactory::supportsEndPoints(
 }
 
 
+OCPI::Util::Device * 
+XferFactory::
+getNextDevice( OCPI::Util::Device * d )
+{
+  if ( ! d ) {
+    return  OCPI::Util::Parent<OCPI::Util::Device>::firstChild();
+  }
+  return static_cast<OCPI::Util::Device*>( d->next );
+}
+
+
 
 // Register the Data transfer class
-XferFactory* XferFactoryManager::find( const char* ep1, const char* ep2 )
+XferFactory* 
+XferFactoryManager::
+find( const char* ep1, const char* ep2 )
 {
   std::string sep1, sep2;
   if ( ep1 && ep2 ) {
@@ -176,12 +382,14 @@ XferFactory* XferFactoryManager::find( const char* ep1, const char* ep2 )
   return XferFactoryManager::find( sep1 , sep2);
 }
 
-// Register the Data transfer class
-XferFactory* XferFactoryManager::find( std::string& ep1, std::string& ep2 )
+
+XferFactory* 
+XferFactoryManager::
+find( std::string& ep1, std::string& ep2 )
 {
+  checkConf();
   XferFactory* factory;
   OCPI::Util::AutoMutex guard ( m_mutex, true );
-
   for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
     factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
     if ( factory->supportsEndPoints( ep1, ep2)  ) {
@@ -193,39 +401,43 @@ XferFactory* XferFactoryManager::find( std::string& ep1, std::string& ep2 )
 }
 
 
-XferFactoryManager::XferFactoryManager()
+XferFactoryManager::
+XferFactoryManager()
   :OCPI::Util::DriverManager("DataTransfer"),
    m_refCount(0),m_init(false),m_mutex(true),
-  m_resources(0)
+   m_resources(0),m_configured(false)
 {
-  startup();
+
+}
+
+void
+XferFactoryManager::
+checkConf()
+{
+  if (! m_configured )configure(NULL);
 }
 
 
-XferFactoryManager::~XferFactoryManager()
+XferFactoryManager::
+~XferFactoryManager()
 {
   shutdown();
 }
 
 
-void XferFactoryManager::startup()
+void 
+XferFactoryManager::
+startup()
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true );
-
-  // We will find any drivers that were statically registered and add them
-  // to our list
-  std::vector<OCPI::Util::Driver*> & list = getDrivers();
-  std::vector<OCPI::Util::Driver*>::iterator it;
-  for (it=list.begin(); it!=list.end(); it++ ) {
-    registerFactory( static_cast<XferFactory*>( (*it) ) );
-  }
-
-  m_refCount++;
 
 #ifndef NDEBUG
   printf("++++++++ In void XferFactoryManager::startup(), ref count = %d\n", m_refCount );
 #endif
 
+
+  discoverDevices(NULL,NULL);
+  m_refCount++;
 }
 
 // Shuts down the transer sub-system
@@ -243,7 +455,8 @@ void XferFactoryManager::shutdown()
 
 
 // Default constructor
-XferFactory::XferFactory(const char* name )
+XferFactory::
+XferFactory(const char* name )
   throw()
   : OCPI::Util::Driver( "DataTransfer", name, true )
 {
@@ -363,12 +576,15 @@ XferFactoryManager::add_template(std::string& src, std::string& dst, XferService
   return 0;
 }
 
-SMBResources* XferFactoryManager::findResource(const char* ep)
+SMBResources* 
+XferFactoryManager::
+findResource(const char* ep)
 {
+  checkConf();
   OCPI::Util::AutoMutex guard ( m_mutex, true );
   for ( OCPI::OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
     SMBResources* res = static_cast<SMBResources*>(m_resources.getEntry(n));
-    if ( res->sMemServices->getEndPoint()->end_point == ep ) {
+    if ( res->sMemServices->endpoint()->end_point == ep ) {
       return res;
     }
   }
@@ -376,12 +592,11 @@ SMBResources* XferFactoryManager::findResource(const char* ep)
 }
 
 
-void XferFactoryManager::deleteSMBResources(
-                                            EndPoint* loc)
+void 
+XferFactoryManager::
+deleteSMBResources( EndPoint* loc)
 {
-
   OCPI::Util::AutoMutex guard ( m_mutex, true );
-
   SMBResources* sr;
   sr = findResource( loc->end_point.c_str() );
   ocpiAssert( sr );
@@ -389,12 +604,16 @@ void XferFactoryManager::deleteSMBResources(
   delete sr;
 }
 
+
 // create a transfer compatible SMB
-SMBResources* XferFactoryManager::createSMBResources(
-                                                     EndPoint* loc)
+SMBResources* 
+XferFactoryManager::
+createSMBResources(
+		   EndPoint* loc)
 
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true );
+  checkConf();
 
   SMBResources* sr;
   sr = findResource( loc->end_point.c_str() );
@@ -412,7 +631,7 @@ SMBResources* XferFactoryManager::createSMBResources(
     throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
 
-  sr->sMemServices = factory->createSmemServices( loc );
+  sr->sMemServices = factory->getSmemServices( loc );
   if ( !sr->sMemServices ) {
     throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
@@ -441,8 +660,10 @@ SMBResources* XferFactoryManager::createSMBResources(
 
 
 // create a transfer compatible SMB
-SMBResources* XferFactoryManager::getSMBResources(
-                                                  EndPoint* ep )
+SMBResources* 
+XferFactoryManager::
+getSMBResources(
+		EndPoint* ep )
 {
   ocpiAssert( ep );
   if ( ep->resources ) {
@@ -458,10 +679,13 @@ SMBResources* XferFactoryManager::getSMBResources(
 
 
 // create a transfer compatible SMB
-SMBResources* XferFactoryManager::getSMBResources(
-                                                  std::string& ep)
+SMBResources* 
+XferFactoryManager::
+getSMBResources(
+		std::string& ep)
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true );
+  checkConf();
 
   if ( ep.length() == 0 ) {
     throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, "Null Endpoint");
@@ -482,7 +706,7 @@ SMBResources* XferFactoryManager::getSMBResources(
     throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, ep.c_str());
   }
   EndPoint* loc = factory->getEndPoint( ep );
-  sr->sMemServices = factory->createSmemServices(loc);
+  sr->sMemServices = factory->getSmemServices(loc);
   sr->sMemResourceMgr = NULL;
   sr->sMemServices->attach( loc );
   m_resources.insert(sr);
@@ -496,8 +720,8 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 
 #ifndef NDEBUG
   printf("In makerequest from %s to %s\n",
-         source->sMemServices->getEndPoint()->end_point.c_str(),
-         target->sMemServices->getEndPoint()->end_point.c_str() );
+         source->sMemServices->endpoint()->end_point.c_str(),
+         target->sMemServices->endpoint()->end_point.c_str() );
 #endif
 
 #ifdef MULTI_THREADED
@@ -510,8 +734,8 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
   /* Attempt to get or make a transfer template */
   XferServices* ptemplate =
     XferFactoryManager::getFactoryManager().getService(
-                                   source->sMemServices->getEndPoint(),
-                                   target->sMemServices->getEndPoint() );
+						       source->sMemServices->endpoint(),
+						       target->sMemServices->endpoint() );
   if ( ! ptemplate ) {
     ocpiAssert(0);
   }
@@ -522,45 +746,40 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
   printf("In make request with offset = %d\n", offset );
 #endif
 
+  XferRequest * ptransfer = ptemplate->createXferRequest();
+
   // create the copy in the template
-  XferRequest* ptransfer_a =
-    ptemplate->copy (
-                     offset + sizeof(ContainerComms::BasicReq),
-                     offset + sizeof(ContainerComms::BasicReq),
-                     sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
-                     XferRequest::FirstTransfer,0 );
+  ptransfer->copy (
+		   offset + sizeof(ContainerComms::BasicReq),
+		   offset + sizeof(ContainerComms::BasicReq),
+		   sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
+		   XferRequest::FirstTransfer );
 
-  XferRequest *ptransfer_b =
-    ptemplate->copy (
-                     offset,
-                     offset,
-                     sizeof(ContainerComms::BasicReq),
-                     XferRequest::LastTransfer, ptransfer_a );
-
-  // Create a list
-  XferRequest *grps[3];
-
-  grps[0] = ptransfer_a;
-  grps[1] = ptransfer_b;
-  grps[2] = 0;
-
-  // Group the transfer
-  XferRequest *ptransfer_c = ptemplate->group (grps);
+  ptransfer->copy (
+		   offset,
+		   offset,
+		   sizeof(ContainerComms::BasicReq),
+		   XferRequest::LastTransfer );
 
   // Start the transfer
-  ptransfer_c->start();
+  ptransfer->post();
 
-  while( ptransfer_c->getStatus() ) {
+  while( ptransfer->getStatus() ) {
     OCPI::OS::sleep(0);
   }
+
+  delete ptransfer;
 
   return true;
 }
 
 // Statically available allocation routine
-std::string XferFactoryManager::allocateEndpoint(std::string& protocol, OCPI::OS::uint32_t *size)
+std::string 
+XferFactoryManager::
+allocateEndpoint(std::string& protocol, OCPI::Util::Device * device, OCPI::Util::PValue * props )
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true );
+  checkConf();
 
   XferFactory* factory;
   if ( protocol.length() == 0 ) {
@@ -572,12 +791,10 @@ std::string XferFactoryManager::allocateEndpoint(std::string& protocol, OCPI::OS
     std::string nuls;
     factory = find(protocol,nuls);
   }
-
   if ( ! factory ) {
     return NULL;
   }
-
-  return factory->allocateEndpoint( size);
+  return factory->allocateEndpoint( device, props );
 }
 
 
