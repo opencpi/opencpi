@@ -108,7 +108,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   printf("Producing len = %d\n", len );
 #endif
 
-  len = len - (props->buffersProcessed%127);
+  len = len - (props->buffersProcessed%22);
 
   b = (int*)out_buffer;
   *b = props->buffersProcessed;

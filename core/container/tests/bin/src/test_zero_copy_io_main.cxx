@@ -130,13 +130,8 @@ static void createPorts( std::vector<CApp>& ca )
 static void connectWorkers(std::vector<CApp>& ca )
 {
   ( void ) ca;
-  std::string fb = PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->setFinalProviderInfo( 
-                                   LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port->getInitialProviderInfo() );
-  LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port->setFinalUserInfo( fb );
-
-  fb = LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].port->setFinalProviderInfo( 
-                               CONSUMER.pdata[CONSUMER_INPUT_PORT].port->getInitialProviderInfo() );
-  CONSUMER.pdata[CONSUMER_INPUT_PORT].port->setFinalUserInfo( fb );
+  PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->connect( *LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port,0,0 );
+  LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].port->connect( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port,0,0 );
 }
 
 

@@ -543,9 +543,10 @@ int  main( int argc, char** argv)
   PRODUCER.pdata[PRODUCER_OUTPUT_PORT].props = t2props;
 
   //  static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
-      static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
-                                                                                  OCPI::Util::PVEnd };
-  CONSUMER.pdata[CONSUMER_INPUT_PORT].props = c_port_props;
+  //      static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
+  //                                                                                  OCPI::Util::PVEnd };
+
+  //  CONSUMER.pdata[CONSUMER_INPUT_PORT].props = c_port_props;
 
 
   test_rc &= config_and_run_ap_container_test1(ca,workers,cmap, bcmap[1] );

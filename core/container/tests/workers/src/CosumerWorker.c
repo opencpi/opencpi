@@ -156,6 +156,16 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
 #define RESYNC
 #ifdef RESYNC
+
+  /*
+  if ( *b != (int)mem->b_count ) {
+    printf("MAYBE!! Dropped a buffer, got buffer %d, expected %d\n", 
+           *b, mem->b_count );    
+    sleep(2);
+  }
+  */
+
+
   if ( *b != (int)mem->b_count ) {
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
            *b, mem->b_count );
@@ -175,9 +185,8 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   }
   props->startIndex++;
   if ( passed ) {
-    if ( (mem->b_count%5000) == 0 ) { 
+    if ( (mem->b_count%500) == 0 ) 
       printf("Buffer %d data integrity test passed\n", mem->b_count);
-    } 
   }
 #endif
 

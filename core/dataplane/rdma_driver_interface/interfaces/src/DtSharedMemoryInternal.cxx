@@ -50,6 +50,7 @@
 ************************************************************************** */
 
 
+#include <DtTransferInternal.h>
 #include <DtSharedMemoryInternal.h>
 #include <string.h>
 #include <OcpiUtilHash.h>
@@ -57,42 +58,42 @@
 #include <stdlib.h>
 #include <OcpiRes.h>
 #include <OcpiOsAssert.h>
+#include <OcpiRDTInterface.h>
 
 using namespace DataTransfer;
 
-EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize )
- :mailbox(0),maxCount(0),size(psize),local(false),resources(0)
+SmemServices::
+SmemServices (XferFactory * parent, EndPoint* ep)
+  :OCPI::Util::Child<XferFactory,SmemServices>(*parent), m_endpoint(ep)
 {
-  setEndpoint( end_point);
+
 }
 
-EndPoint::EndPoint(OCPI::OS::uint32_t psize)
-   :mailbox(0),maxCount(0),size(psize),local(false),resources(0)
+SmemServices::
+~SmemServices()
 {
 
+
+}
+
+EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
+  :smem(0),mailbox(0),maxCount(0),size(psize),local(l),resources(0)
+{
+  if ( ! size ) {
+    size = XferFactoryManager::getFactoryManager().getConfig().m_SMBSize;
+  }
+  setEndpoint( end_point);
 }
 
 // Sets smem location data based upon the specified endpoint
 OCPI::OS::int32_t EndPoint::setEndpoint( std::string& ep )
 {
-  char buf[30];
+  char buf[OCPI::RDT::MAX_PROTOS_SIZE];
   end_point = ep;
   char* proto = (char*)getProtocolFromString(ep.c_str(),buf);
   protocol = proto;
   getResourceValuesFromString(ep.c_str() ,buf,&mailbox,&maxCount,&size);
   return 0;
-}
-
-
-EndPoint& EndPoint::operator=(EndPoint& rhs)
-{
-  return operator=( &rhs );
-}
-
-EndPoint& EndPoint::operator=(EndPoint* rhs)
-{
-  this->setEndpoint( rhs->end_point );
-  return *this;
 }
 
 
