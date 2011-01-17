@@ -44,7 +44,7 @@
 # one -- until we have a good naming convension.
 
 Implementations = \
-	adc.hdl \
+	adcx.hdl \
 	adc.rcc \
 	dac.hdl \
 	dac.rcc \

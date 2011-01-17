@@ -47,7 +47,7 @@ endif
 else
 ifeq ($(Workers),)
 Worker=$(basename $(CwdName))
-$(info Worker name is $(Worker) from its directory name $(CwdName))
+#$(info Worker name is $(Worker) from its directory name $(CwdName))
 Workers=$(Worker)
 endif
 endif

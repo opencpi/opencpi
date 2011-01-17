@@ -1,5 +1,4 @@
-// This is a wrapper that maps the module ports from what mkCTop wants to see (as of 6/29/2010) into
-// what the automation tools want to see, which is WIP compliance.
+// The container RTL for an app with 3 workers and no adc or memory connections
 module mkOCApp4B(RST_N_rst_0,
 	       RST_N_rst_1,
 	       RST_N_rst_2,
@@ -10,309 +9,157 @@ module mkOCApp4B(RST_N_rst_0,
 	       RST_N_rst_7,
 	       CLK,
 	       RST_N,
-
 	       wci_s_0_MCmd,
-
 	       wci_s_0_MAddrSpace,
-
 	       wci_s_0_MByteEn,
-
 	       wci_s_0_MAddr,
-
 	       wci_s_0_MData,
-
 	       wci_s_0_SResp,
-
 	       wci_s_0_SData,
-
 	       wci_s_0_SThreadBusy,
-
 	       wci_s_0_SFlag,
-
 	       wci_s_0_MFlag,
-
 	       wci_s_1_MCmd,
-
 	       wci_s_1_MAddrSpace,
-
 	       wci_s_1_MByteEn,
-
 	       wci_s_1_MAddr,
-
 	       wci_s_1_MData,
-
 	       wci_s_1_SResp,
-
 	       wci_s_1_SData,
-
 	       wci_s_1_SThreadBusy,
-
 	       wci_s_1_SFlag,
-
 	       wci_s_1_MFlag,
-
 	       wci_s_2_MCmd,
-
 	       wci_s_2_MAddrSpace,
-
 	       wci_s_2_MByteEn,
-
 	       wci_s_2_MAddr,
-
 	       wci_s_2_MData,
-
 	       wci_s_2_SResp,
-
 	       wci_s_2_SData,
-
 	       wci_s_2_SThreadBusy,
-
 	       wci_s_2_SFlag,
-
 	       wci_s_2_MFlag,
-
 	       wci_s_3_MCmd,
-
 	       wci_s_3_MAddrSpace,
-
 	       wci_s_3_MByteEn,
-
 	       wci_s_3_MAddr,
-
 	       wci_s_3_MData,
-
 	       wci_s_3_SResp,
-
 	       wci_s_3_SData,
-
 	       wci_s_3_SThreadBusy,
-
 	       wci_s_3_SFlag,
-
 	       wci_s_3_MFlag,
-
 	       wci_s_4_MCmd,
-
 	       wci_s_4_MAddrSpace,
-
 	       wci_s_4_MByteEn,
-
 	       wci_s_4_MAddr,
-
 	       wci_s_4_MData,
-
 	       wci_s_4_SResp,
-
 	       wci_s_4_SData,
-
 	       wci_s_4_SThreadBusy,
-
 	       wci_s_4_SFlag,
-
 	       wci_s_4_MFlag,
-
 	       wci_s_5_MCmd,
-
 	       wci_s_5_MAddrSpace,
-
 	       wci_s_5_MByteEn,
-
 	       wci_s_5_MAddr,
-
 	       wci_s_5_MData,
-
 	       wci_s_5_SResp,
-
 	       wci_s_5_SData,
-
 	       wci_s_5_SThreadBusy,
-
 	       wci_s_5_SFlag,
-
 	       wci_s_5_MFlag,
-
 	       wci_s_6_MCmd,
-
 	       wci_s_6_MAddrSpace,
-
 	       wci_s_6_MByteEn,
-
 	       wci_s_6_MAddr,
-
 	       wci_s_6_MData,
-
 	       wci_s_6_SResp,
-
 	       wci_s_6_SData,
-
 	       wci_s_6_SThreadBusy,
-
 	       wci_s_6_SFlag,
-
 	       wci_s_6_MFlag,
-
 	       wci_s_7_MCmd,
-
 	       wci_s_7_MAddrSpace,
-
 	       wci_s_7_MByteEn,
-
 	       wci_s_7_MAddr,
-
 	       wci_s_7_MData,
-
 	       wci_s_7_SResp,
-
 	       wci_s_7_SData,
-
 	       wci_s_7_SThreadBusy,
-
 	       wci_s_7_SFlag,
-
 	       wci_s_7_MFlag,
-
 	       wmiM0_MCmd,
-
 	       wmiM0_MReqLast,
-
 	       wmiM0_MReqInfo,
-
 	       wmiM0_MAddrSpace,
-
 	       wmiM0_MAddr,
-
 	       wmiM0_MBurstLength,
-
 	       wmiM0_MDataValid,
-
 	       wmiM0_MDataLast,
-
 	       wmiM0_MData,
-
 	       wmiM0_MDataByteEn,
-
 	       wmiM0_SResp,
-
 	       wmiM0_SData,
-
 	       wmiM0_SThreadBusy,
-
 	       wmiM0_SDataThreadBusy,
-
 	       wmiM0_SRespLast,
-
 	       wmiM0_SFlag,
-
 	       wmiM0_MFlag,
-
 	       wmiM0_MReset_n,
-
 	       wmiM0_SReset_n,
-
 	       wmiM1_MCmd,
-
 	       wmiM1_MReqLast,
-
 	       wmiM1_MReqInfo,
-
 	       wmiM1_MAddrSpace,
-
 	       wmiM1_MAddr,
-
 	       wmiM1_MBurstLength,
-
 	       wmiM1_MDataValid,
-
 	       wmiM1_MDataLast,
-
 	       wmiM1_MData,
-
 	       wmiM1_MDataByteEn,
-
 	       wmiM1_SResp,
-
 	       wmiM1_SData,
-
 	       wmiM1_SThreadBusy,
-
 	       wmiM1_SDataThreadBusy,
-
 	       wmiM1_SRespLast,
-
 	       wmiM1_SFlag,
-
 	       wmiM1_MFlag,
-
 	       wmiM1_MReset_n,
-
 	       wmiM1_SReset_n,
-
 	       wmemiM0_MCmd,
-
 	       wmemiM0_MReqLast,
-
 	       wmemiM0_MAddr,
-
 	       wmemiM0_MBurstLength,
-
 	       wmemiM0_MDataValid,
-
 	       wmemiM0_MDataLast,
-
 	       wmemiM0_MData,
-
 	       wmemiM0_MDataByteEn,
-
 	       wmemiM0_SResp,
-
 	       wmemiM0_SRespLast,
-
 	       wmemiM0_SData,
-
 	       wmemiM0_SCmdAccept,
-
 	       wmemiM0_SDataAccept,
-
 	       wmemiM0_MReset_n,
-
 	       wsi_s_adc_MCmd,
-
 	       wsi_s_adc_MReqLast,
-
 	       wsi_s_adc_MBurstPrecise,
-
 	       wsi_s_adc_MBurstLength,
-
 	       wsi_s_adc_MData,
-
 	       wsi_s_adc_MByteEn,
-
 	       wsi_s_adc_MReqInfo,
-
 	       wsi_s_adc_SThreadBusy,
-
 	       wsi_s_adc_SReset_n,
-
 	       wsi_s_adc_MReset_n,
-
 	       wsi_m_dac_MCmd,
-
 	       wsi_m_dac_MReqLast,
-
 	       wsi_m_dac_MBurstPrecise,
-
 	       wsi_m_dac_MBurstLength,
-
 	       wsi_m_dac_MData,
-
 	       wsi_m_dac_MByteEn,
-
 	       wsi_m_dac_MReqInfo,
-
 	       wsi_m_dac_SThreadBusy,
-
 	       wsi_m_dac_MReset_n,
-
 	       wsi_m_dac_SReset_n);
   parameter [0 : 0] hasDebugLogic = 1'b0;
   input  RST_N_rst_0;
@@ -336,7 +183,7 @@ module mkOCApp4B(RST_N_rst_0,
   input  [3 : 0] wci_s_0_MByteEn;
 
   // action method wci_s_0_mAddr
-  input  [19 : 0] wci_s_0_MAddr;
+  input  [31 : 0] wci_s_0_MAddr;
 
   // action method wci_s_0_mData
   input  [31 : 0] wci_s_0_MData;
@@ -366,7 +213,7 @@ module mkOCApp4B(RST_N_rst_0,
   input  [3 : 0] wci_s_1_MByteEn;
 
   // action method wci_s_1_mAddr
-  input  [19 : 0] wci_s_1_MAddr;
+  input  [31 : 0] wci_s_1_MAddr;
 
   // action method wci_s_1_mData
   input  [31 : 0] wci_s_1_MData;
@@ -396,7 +243,7 @@ module mkOCApp4B(RST_N_rst_0,
   input  [3 : 0] wci_s_2_MByteEn;
 
   // action method wci_s_2_mAddr
-  input  [19 : 0] wci_s_2_MAddr;
+  input  [31 : 0] wci_s_2_MAddr;
 
   // action method wci_s_2_mData
   input  [31 : 0] wci_s_2_MData;
@@ -426,7 +273,7 @@ module mkOCApp4B(RST_N_rst_0,
   input  [3 : 0] wci_s_3_MByteEn;
 
   // action method wci_s_3_mAddr
-  input  [19 : 0] wci_s_3_MAddr;
+  input  [31 : 0] wci_s_3_MAddr;
 
   // action method wci_s_3_mData
   input  [31 : 0] wci_s_3_MData;
@@ -456,7 +303,7 @@ module mkOCApp4B(RST_N_rst_0,
   input  [3 : 0] wci_s_4_MByteEn;
 
   // action method wci_s_4_mAddr
-  input  [19 : 0] wci_s_4_MAddr;
+  input  [31 : 0] wci_s_4_MAddr;
 
   // action method wci_s_4_mData
   input  [31 : 0] wci_s_4_MData;
@@ -486,7 +333,7 @@ module mkOCApp4B(RST_N_rst_0,
   input  [3 : 0] wci_s_5_MByteEn;
 
   // action method wci_s_5_mAddr
-  input  [19 : 0] wci_s_5_MAddr;
+  input  [31 : 0] wci_s_5_MAddr;
 
   // action method wci_s_5_mData
   input  [31 : 0] wci_s_5_MData;
@@ -516,7 +363,7 @@ module mkOCApp4B(RST_N_rst_0,
   input  [3 : 0] wci_s_6_MByteEn;
 
   // action method wci_s_6_mAddr
-  input  [19 : 0] wci_s_6_MAddr;
+  input  [31 : 0] wci_s_6_MAddr;
 
   // action method wci_s_6_mData
   input  [31 : 0] wci_s_6_MData;
@@ -546,7 +393,7 @@ module mkOCApp4B(RST_N_rst_0,
   input  [3 : 0] wci_s_7_MByteEn;
 
   // action method wci_s_7_mAddr
-  input  [19 : 0] wci_s_7_MAddr;
+  input  [31 : 0] wci_s_7_MAddr;
 
   // action method wci_s_7_mData
   input  [31 : 0] wci_s_7_MData;
@@ -979,7 +826,8 @@ module mkOCApp4B(RST_N_rst_0,
 //				      .dac_MReqInfo(wsi_m_dac_MReqInfo),
 //				      .dac_MReset_n(wsi_m_dac_MReset_n));
 
-// Tieoffs for unused WCI signals
+// Tieoffs for unused signals
+// First, the unused WSI slave signals
 assign wci_s_0_SResp = 2'b0;
 assign wci_s_0_SThreadBusy = 1'b0;
 assign wci_s_0_SFlag = 2'b0;
@@ -1005,16 +853,28 @@ assign wci_s_7_SThreadBusy = 1'b0;
 assign wci_s_7_SFlag = 2'b0;
 assign wci_s_7_SAddr = 32'b0;
 assign wci_s_7_SData = 32'b0;
-assign wmemiM0_MCmd = 0;
-assign wmemiM0_MReqLast = 0;
-assign wmemiM0_MAddr = 0;
-assign wmemiM0_MBurstLength = 0;
-assign wmemiM0_MDataValid = 0;
-assign wmemiM0_MDataLast = 0;
-assign wmemiM0_MData = 0;
-assign wmemiM0_MDataByteEn = 0;
-assign wmemiM0_MReset_n = 1'b1;
-
+// Unused memory master signals
+assign wmemiM0_MCmd = 3'b0;
+assign wmemiM0_MReqLast = 1'b0;
+assign wmemiM0_MAddr = 36'b0;
+assign wmemiM0_MBurstLength = 12'b0;
+assign wmemiM0_MDataValid = 1'b0;
+assign wmemiM0_MDataLast = 1'b0;
+assign wmemiM0_MData = 128'b0;
+assign wmemiM0_MDataByteEn = 16'b0;
+assign wmemiM0_MReset_n = 0'b1;
+// Unused adc slave signals
+assign wsi_s_adc_SThreadBusy = 1'b1;
+assign wsi_s_adc_SReset_n = 1'b0;
+// Unusd dac master signals
+assign wsi_m_dac_MCmd = 3'b0;
+assign wsi_m_dac_MReqLast = 1'b0;
+assign wsi_m_dac_MBurstPrecise = 1'b0;
+assign wsi_m_dac_MBurstLength = 12'b0;
+assign wsi_m_dac_MData = 32'b0;
+assign wsi_m_dac_MByteEn = 4'b0;
+assign wsi_m_dac_MReqInfo = 8'b0;
+assign wsi_m_dac_MReset_n = 1'b0;
 
 endmodule  // mkOCApp
 

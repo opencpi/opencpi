@@ -7,5 +7,5 @@ $ib dram_v5 mkDramServer_v5
 $ib flash mkFlashWorker
 $ib icap mkICAPWorker
 $ib gbe mkGbeWorker
-$ib adc mkADCWorker
+$ib adcx mkADCWorker
 $ib dac mkDACWorker

@@ -34,14 +34,16 @@
 ########################################################################### #
 
 AT=@
-Platforms=ml605 ml555
+Platforms=ml605 ml555 shist
 
-all:
-	$(AT)echo Building all platforms
-	$(AT)for p in $(Platforms); do \
-	       echo Making platform $$p. ; \
-	       make -C $$p; \
-	     done
+.PHONY: $(Platforms)
+
+
+all: $(Platforms)
+
+$(Platforms):
+	$(AT)echo Building platform $@
+	make -C $@
 
 clean:
 	$(AT)echo Cleaning all platforms

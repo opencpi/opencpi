@@ -109,7 +109,10 @@ $(CoreResults): LibName=work
 $(CoreResults): TargetDir=$(@:%/$(Core)$(BF)=%)
 
 # Dependencies for all types
-$(CoreResults): $(ImportsDir) | $$(TargetDir)
+ifdef Imports
+$(CoreResults): $(ImportsDir)
+endif
+$(CoreResults): | $$(TargetDir)
 #$(info LR $(LibResults) CR $(CoreResults) F $(Families))
 all:$(LibResults) $(CoreResults)
 
@@ -151,7 +154,7 @@ install: install_core | $(InstallDir)
 	     done
 	$(AT)$(foreach f,$(Targets),\
 		$(if $(findstring $(Core),$(Top)),,\
-		  $(call MakeSymLink2,$(InstallDir)/$(f)/$(Core)$(BF),$(InstallDir)/$(f),$(Top)$(BF));))\
+		  $(call MakeSymLink2,$(InstallDir)/$(f)/$(Core)$(BF),$(InstallDir)/$(f),$(Top)$(BF));))
 # endif
 ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk

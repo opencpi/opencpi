@@ -48,6 +48,9 @@ $(Cores): $(Libs)
 clean:
 	$(AT)$(foreach l,$(Libs) $(Cores),\
 		$(MAKE) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) clean;)
+cleanimports:
+	$(AT)$(foreach l,$(Libs) $(Cores),\
+		$(MAKE) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) cleanimports;)
 
 install:
 	$(AT)set -e;$(foreach l,$(Libs) $(Cores),$(MAKE) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install;)

@@ -135,21 +135,25 @@ ALLPACKAGES = \
 
 all: packages
 
-.PHONY: hdlcomps hdlapps
-hdlcomps: prims
-	make -C components hdl
+.PHONY: hdl hdlcomps hdlapps hdlclean
+hdlcomps:
+	$(MAKE) -C hdl components
 
-hdlapps: hdlcomps
-	make -C hdl/applications
+hdlapps: hdlcomps hdl
+	$(MAKE) -C hdl applications
 
-hdl: hdlapps
+hdl:
+	$(MAKE) -C hdl
+
+hdlclean:
+	$(MAKE) -C hdl clean
 
 rcc:
 	make -C components rcc
 
 .PHONY: prims
-prims:
-	make -C hdl/primitives
+hdlprims:
+	$(MAKE) -C hdl primitives
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 

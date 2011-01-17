@@ -51,8 +51,8 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))
 HdlImplementations=$(filter %.hdl,$(Implementations))
-LibDir=lib
-GenDir=gen
+LibDir=$(OutDir)lib
+GenDir=$(OutDir)gen
 Models=xm rcc hdl
 CapModels=$(foreach m,$(Models),$(call Capitalize,$(m)))
 LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call UnCapitalize,$(m))/$(ht)))
@@ -60,7 +60,7 @@ XmlIncludeDirs+=specs
 export AT
 # default is what we are running on
 
-build_targets := specs
+build_targets := speclinks
 
 ifneq "$(XmTargets)" ""
 build_targets += xm
@@ -82,13 +82,13 @@ PassOutDir=OCPI_COMPONENT_OUT_DIR=$(call AdjustRelative,$(OutDir:%/=%))
 endif
 BuildImplementation=\
     set -e; for t in $($(call Capitalize,$(1))Targets); do \
-	if ! test -d $(OutDir)lib/$(1)/$$t; then \
-            mkdir $(OutDir)lib/$(1)/$$t; \
+	if ! test -d $(LibDir)/$(1)/$$t; then \
+            mkdir $(LibDir)/$(1)/$$t; \
 	fi; \
         $(ECHO) Building $(call ToUpper,$(1)) implementation $(2) for target $$t; \
 	$(MAKE) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) Target=$$t \
-	       LibDir=$(call AdjustRelative,$(OutDir)lib/$(1)) \
-	       GenDir=$(call AdjustRelative,$(OutDir)gen/$(1)) \
+	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
+	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
                VerilogIncludeDirs=$(call AdjustRelative,$(VerilogIncludeDirs)) \
                XmlIncludeDirsInternal=$(call AdjustRelative,$(XmlIncludeDirs));\
@@ -120,7 +120,7 @@ CleanModel=\
 
 all: $(build_targets)
 
-specs: | $(OutDir)lib
+speclinks: | $(OutDir)lib
 	$(AT)$(foreach f,$(wildcard specs/*_spec.xml) $(wildcard specs/*_protocol*.xml),$(call MakeSymLink,$(f),$(OutDir)lib);)
 
 $(OutDir)lib $(OutDir)gen: |$(OutDir)
@@ -132,24 +132,37 @@ $(Models:%=$(OutDir)lib/%): | $(OutDir)lib
 $(Models:%=$(OutDir)gen/%): | $(OutDir)gen
 	$(AT)mkdir $@
 
-xm: specs | $(OutDir)lib/xm
+xm: speclinks | $(OutDir)lib/xm
 	$(call BuildModel,xm)
 
-rcc: specs | $(OutDir)lib/rcc
+rcc: speclinks | $(OutDir)lib/rcc
 	$(call BuildModel,rcc)
 
-# The submake below is to create the library of stubs that allow the application assembly
-# to find the black box empty modue definitions for the synthesized cores in this component library
-hdl: specs | $(OutDir)lib/hdl $(OutDir)gen/hdl
-	$(call BuildModel,hdl)
-	$(AT)echo Building HDL stub libraries for this component library named \"$(LibName)\"
-	$(AT)$(MAKE) -C $(OutDir)gen/hdl -L -f $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk \
-		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) LibName=$(LibName)
-	$(AT)echo Exporting the stub library $(foreach t,$(HdlTargets),$(call LibraryAccessTarget,$(t)))
-	$(AT)$(foreach f,$(sort $(foreach t,$(HdlTargets),$(call LibraryAccessTarget,$(t)))),\
-		rm -r -f $(LibDir)/hdl/$(f);\
-		mkdir $(LibDir)/hdl/$(f);\
-		cp -r -p $(GenDir)/hdl/target-$(f)/$(LibName)/* $(LibDir)/hdl/$(f);)
+# The stubs library depend only on the generated hdl defs files
+# Someday we'll need the VHDL -or- Verilog defs files
+define DoDefs
+hdldefs+=$(1).hdl/gen/$(1)_defs.vh
+$(1).hdl/gen/$(1)_defs.vh: $(1).hdl
+endef
+$(foreach i,$(HdlImplementations),$(eval $(call DoDefs,$(firstword $(subst ., ,$(i))))))
+
+define DoFamily
+hdlstubs+=$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName))
+$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName))): Family=$(1)
+$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName))): $(hdldefs) | $(LibDir) $(LibDir)/hdl $(GenDir)/hdl
+	$(AT)echo Building HDL stub library for $(1) for this component library: \"$(LibName)\"
+	$(AT)$(MAKE) -C $(GenDir)/hdl -L -f $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk \
+		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) LibName=$(LibName) Targets=$(1)
+	$(AT)echo Exporting the stub library for $(1)
+	$(AT)rm -r -f $(LibDir)/hdl/$(1)
+	$(AT)mkdir $(LibDir)/hdl/$(1)
+	$(AT)cp -r -p $(GenDir)/hdl/target-$(1)/$(LibName)/* $(LibDir)/hdl/$(1)
+endef
+$(foreach f,\
+          $(sort $(foreach t,$(HdlTargets),$(call LibraryAccessTarget,$(t)))),\
+	  $(eval $(call DoFamily,$(f))))
+
+hdl: $(HdlImplementations) $(hdlstubs)
 
 cleanxm:
 	$(call CleanModel,xm)
@@ -173,4 +186,4 @@ $(RccImplementations): | $(OutDir)lib/rcc
 $(XmImplementations): | $(OutDir)lib/xm
 	$(AT)$(call BuildImplementation,xm,$@)
 
-.PHONY: $(XmImplementations) $(RccImplementations) $(HdlImplementations) specs
+.PHONY: $(XmImplementations) $(RccImplementations) $(HdlImplementations) speclinks

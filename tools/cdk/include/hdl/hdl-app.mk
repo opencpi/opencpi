@@ -39,6 +39,7 @@
 # This multi-target mode uses recursion, and is entered when there is a
 # Targets or Platforms variable defined in the makefile or on the command line,
 # and there is NO Target or Platform defined at all.
+include $(OCPI_CDK_DIR)/include/util.mk
 AT=@
 MyComponentLibraries:=$(ComponentLibraries)
 ifeq ($(Target)$(Platform),)
@@ -59,14 +60,27 @@ else
 $(error No Targets or Platforms specified)
 endif
 else
+AppName=$(CwdName)
+Worker=$(AppName)
+ifneq ($(and $(Platforms),$(Platform)),)
+ifeq ($(strip $(filter $(Platform),$(Platforms))),)
+$(info Application $(Worker) not built for platform $(Platform), only for platforms: $(Platforms))
+Abort=yes
+endif
+endif
+ifneq ($(and $(Targets),$(Target)),)
+ifeq ($(strip $(filter $(Target),$(Targets))),)
+$(info Application $(Worker) not built for target $(Target), only for targets: $(Targets))
+Abort=yes
+endif
+endif
+ifndef Abort
 all: target
 # This section of the makefile is for building the single target or platform
 # Makefile for an hdl assembly, which is a lot like a worker...
 # We run this for one platform/target
 include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
 
-AppName=$(CwdName)
-Worker=$(AppName)
 Application=yes
 GeneratedSourceFiles+=$(GeneratedDir)/$(Worker)$(SourceSuffix)
 #LibDir=$(OutDir)lib/hdl
@@ -125,7 +139,7 @@ $(BBLib): Top=$(Worker)
 $(BBLib): $(BBFile) | $(OutDir)target-$(Family)
 	$(AT)echo Building stub/blackbox library for target \"$(Target)\" from \"$(BBFile)\"
 	$(Compile)
-	$(AT)ln -s . $(TargetDir)/$(Worker)/$(Family)
+	$(AT)rm -f $(TargetDir)/$(Worker)/$(Family); ln -s . $(TargetDir)/$(Worker)/$(Family)
 
 CoreBaseName=$(OutDir)target-$(Target)/$(Worker)$(BF)
 $(CoreBaseName): LibName=work
@@ -158,15 +172,18 @@ ifdef Platform
   PcfName=$(AppBaseName).pcf
 
 
+ifdef PROMARGS
 platform: $(PromName) 
-
+else
+platform: $(BitName)
+endif
 ifndef Container
 Container=mkOCApp-noADC-3w.v
 endif
 ContainerRtl=$(OCPI_HDL_PLATFORMS_DIR)/../containers/$(Container)
 # FIXME:  App must specify this wrapper file until...?
 APP_RTL=$(PlatformDir)/mkOCApp.v
-$(APP_RTL): $(ContainerRtl) | $(PlatformDir)
+$(APP_RTL): $(ContainerRtl) Makefile | $(PlatformDir)
 	$(AT)sed s/ocpi_app/$(Worker)/ $(ContainerRtl) > $@
 
 ifndef OCPI_XILINX_TOOLS_DIR
@@ -183,9 +200,12 @@ XilinxAfter=grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
 	     fi
 # Use default pattern to find error string in tool output
 DoXilinx=$(call DoXilinxPat,$1,$2,'Number of error.*s: *0')
-DoXilinxPat=echo " "Details in $1.out; cd $(PlatformDir); $(InitXilinx); \
-	echo Command: $1 $2; \
-         /usr/bin/time -f %E -o $1.time sh -c "$1 $2; echo $$? > $1.status" > $1.out 2>&1;$(call XilinxAfter,$1,$3)
+DoXilinxPat=\
+	echo " "Details in $1.out; cd $(PlatformDir); $(InitXilinx); \
+	echo Command: $1 $2 > $1.out; \
+	/usr/bin/time -f %E -o $1.time sh -c "$1 $2; echo $$? > $1.status" >> $1.out 2>&1;\
+	(echo -n Time:; cat $1.time) >> $1.out; echo -n Time:; cat $1.time; \
+	$(call XilinxAfter,$1,$3)
 
 # This creates a path for the bb library
 $(PlatformDir)/$(Worker):
@@ -233,7 +253,7 @@ $(TopNgcName): $(NgcName)
 # Chipscope insertion (optional)
 $(ChipScopeName): $(NgcName)
 	$(AT)$(if $(DoChipScope), \
-	         echo -n Inserting chipscope into $< to produce $@ using '"inserter"'.; \
+	         echo -n For $(Worker) on $(Platform): inserting chipscope into $< to produce $@ using '"inserter"'.; \
 	         $(call DoXilinx,inserter,-insert $(CSIN) -p $(Target) -i $(notdir $(NgcName)) $(notdir $(ChipScopeName))), \
 	         echo Skipping chipscope insertion as it is disabled. ; \
 	         cp $< $@)
@@ -242,34 +262,34 @@ $(ChipScopeName): $(NgcName)
 TopNgcName=$(PlatformSpecDir)/target-$(Platform)/$(Platform).ngc
 $(NgdName): Cores=
 $(NgdName): $(NgcName) $(PlatformSpecDir)/$(Platform).ucf $(TopNgcName)
-	$(AT)echo -n Creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"' for $(Platform) platform.
+	$(AT)echo -n For $(Worker) on $(Platform): creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
 	$(AT)$(call DoXilinx,ngdbuild,\
 	        -aul -aut -uc $(PlatformSpecDir)/$(Platform).ucf -p $(Target) \
 	        $(call FindRelative,$(PlatformDir),$(PlatformSpecDir)/target-$(Platform))/$(Platform).ngc $(notdir $(NgdName)))
 
 # Map to physical elements
 $(MapName): $(NgdName)
-	$(AT)echo -n Creating mapped NCD '(Native Circuit Description)' file for $(Platform) platform using '"map"'.
+	$(AT)echo -n For $(Worker) on $(Platform): creating mapped NCD '(Native Circuit Description)' file using '"map"'.
 	$(AT)$(call DoXilinx,map,-p $(Target) -w -logic_opt on -xe n -mt on -t 1 -register_duplication on \
 	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(MapName)) \
 	                         $(notdir $(NgdName)) $(notdir $(PcfName)))
 
 # Place-and-route, and generate timing report
 $(ParName): $(MapName) $(PcfName)
-	$(AT)echo -n Creating PAR\'d NCD file for $(Platform) platform, using '"par"'.
+	$(AT)echo -n For $(Worker) on $(Platform): creating PAR\'d NCD file using '"par"'.
 	$(AT)$(call DoXilinx,par,-w -xe n $(notdir $(MapName)) $(notdir $(ParName)) $(notdir $(PcfName)))
 	$(AT)echo -n Generating timing report '(TWR)' for $(Platform) platform design.
 	$(AT)-$(call DoXilinx,trce,-v 20 -fastpaths -xml fpgaTop.twx -o fpgaTop.twr $(notdir $(ParName)) $(notdir $(PcfName)))
 
 # Generate bitstream
 $(BitName): $(ParName) $(PcfName)
-	$(AT)echo -n Generating bitstream file $@ for $(Platform) platform design.
+	$(AT)echo -n For $(Worker) on $(Platform): Generating bitstream file $@.
 	$(AT)$(call DoXilinxPat,bitgen,-f $(OCPI_HDL_PLATFORMS_DIR)/common/bitgen_bit.ut \
 	                               $(notdir $(ParName)) $(notdir $(BitName)) $(notdir $(PcfName)),\
 	                               'DRC detected 0 errors')
 
 $(PromName): $(BitName) | $(PlatformDir)
-	$(AT)echo -n Generating PROM file $@ for $(Platform) platform design.
+	$(AT)echo -n For $(Worker) on $(Platform): Generating PROM file $@.
 	$(AT)$(call DoXilinxPat,promgen, -w -p mcs -c FF $(PROMARGS) $(notdir $(BitName)),'.*')
 
 clean::
@@ -332,5 +352,6 @@ $(LibDir)/$(call LibraryAccessTarget,$(Target))/$(call LibraryFileTarget,$(Targe
 		mkdir $(LibDir)/$(f);\
 		cp -r -p $(GeneratedDir)/hdl/$(f)/app/* $(LibDir)/$(f);)
 
+endif
 endif
 endif

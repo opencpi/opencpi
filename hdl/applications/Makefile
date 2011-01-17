@@ -35,39 +35,45 @@
 ########################################################################### #
 
 AT=@
-APPS=testbias testpsd testddc 
+Applications=testbias testpsd testddc 
 # These require adc/dac: demoappC demoappE
 # testwbr
 
-Platforms=ml555 ml605
-# xc5vsx95t-2-ff1136 xc6vlx240t-1-ff1156
+Platforms=shist ml555 ml605 
+Targets= xc5vsx95t-2-ff1136 xc6vlx240t-1-ff1156 xc5vlx50t-1-ff1136
 
-all: platforms
+all: $(Platforms)
 
-.PHONY: $(APPS) clean
+.PHONY: $(Applications) $(Platforms) $(Targets) clean
 
-targets:
-	$(AT)echo Building all apps for all mentioned targets.
+$(Applications):
+	$(AT)echo Building application $@ for all targets and platforms
+	$(AT)for t in $(Targets); do \
+		 echo Making $@ for target $$t. ; \
+		 make -C $@ Target=$$t; \
+	       done
+	$(AT)for p in $(Platforms); do \
+		 echo Making $@ for platform $$p. ; \
+		 make -C $@ Platform=$$p; \
+	       done
+
+$(Targets):
+	$(AT)echo Building all apps for target $@ \(not platforms\)
 	$(AT)for a in $(APPS); do \
-	       for t in $(TARGETS); do \
-		 echo Making $$a for target $$t. ; \
-		 make -C $$a Target=$$t; \
+		 echo Making $$a for target $@. ; \
+		 make -C $$a Target=$@; \
 	       done; \
 	done
 
-platforms:
-	$(AT)echo Building all apps for all mentioned platforms.
-	$(AT)for a in $(APPS); do \
-	       for t in $(Platforms); do \
-		 echo Making $$a for target $$t. ; \
-		 make -C $$a Platform=$$t; \
-	       done; \
+$(Platforms):
+	$(AT)echo Building all apps for platform $@
+	$(AT)for a in $(Applications); do \
+		 echo Making $$a for platform $@. ; \
+		 make -C $$a Platform=$@; \
 	     done
 
 clean:
 	$(AT)for a in $(APPS); do \
-		for t  in $(TARGETS); do \
-			echo Cleaning $$a for target $$t. ; \
-			make -C $$a Target=$$t clean; \
-		done \
-	done
+			echo Cleaning $$a ; \
+			make -C $$a clean; \
+		done
