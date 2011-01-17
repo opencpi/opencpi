@@ -98,20 +98,20 @@ namespace OCPI {
         ReceptacleHelperServantCallback * m_cb;
       };
 
-      ReceptacleHelperPortServant::
+      inline ReceptacleHelperPortServant::
       ReceptacleHelperPortServant (ReceptacleHelperServantCallback * cb)
         throw ()
         : m_cb (cb)
       {
       }
 
-      ReceptacleHelperPortServant::
+      inline ReceptacleHelperPortServant::
       ~ReceptacleHelperPortServant ()
         throw ()
       {
       }
 
-      void
+      inline void
       ReceptacleHelperPortServant::
       connectPort (CORBA::Object_ptr connection,
                    const char * connectionId)
@@ -122,7 +122,7 @@ namespace OCPI {
         m_cb->connectPort (connection, connectionId);
       }
 
-      void
+      inline void
       ReceptacleHelperPortServant::
       disconnectPort (const char * connectionId)
         throw (CF::Port::InvalidPort,
