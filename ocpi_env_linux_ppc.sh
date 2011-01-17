@@ -1,7 +1,7 @@
 
 # #####
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
 #
 #    Mercury Federal Systems, Incorporated
 #    1901 South Bell Street
@@ -64,6 +64,13 @@ export OCPI_BUILD_HOST=$OCPI_BUILD_HOST_OS-$OCPI_BUILD_HOST_ARCH
 
 export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/12.1/ISE_DS/
 
+<<<<<<< HEAD
+# #### Location of Google Test (gtest) #################################### #
+
+export OCPI_GTEST_DIR=/opt/opencpi/linux-MPC8641D/prerequisites/gtest
+
+=======
+>>>>>>> d35f0cc955f8ce02a5c49d24f1542a31dcd9337e
 # #### Location of the PowerPC cross-bulid tools ########################## #
 
 export OCPI_CROSS_HOST=ppc86xx-linux
@@ -73,7 +80,11 @@ export OCPI_CROSS_BUILD_BIN_DIR=/opt/timesys/toolchains/$OCPI_CROSS_HOST/bin
 
 export OCPI_OUT_DIR=$OCPI_OS-$OCPI_ARCH-bin
 
+<<<<<<< HEAD
+export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_GTEST_DIR/lib:$LD_LIBRARY_PATH
+=======
 export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$LD_LIBRARY_PATH
+>>>>>>> d35f0cc955f8ce02a5c49d24f1542a31dcd9337e
 
 # #### Compiler linker flags ############################################## #
 

@@ -1,7 +1,7 @@
 
 # #####
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
 #
 #    Mercury Federal Systems, Incorporated
 #    1901 South Bell Street
@@ -61,15 +61,15 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/12.3/ISE_DS/
 
-# #### Location of CppUnit ################################################ #
+# #### Location of Google Test (gtest) #################################### #
 
-export OCPI_CPPUNIT_DIR=/opt/opencpi/linux-i686/prerequisites/cppunit
+export OCPI_GTEST_DIR=/opt/opencpi/linux-i686/prerequisites/gtest
 
 # #### Build output location ############################################## #
 
 export OCPI_OUT_DIR=$OCPI_OS-$OCPI_ARCH-bin
 
-export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_CPPUNIT_DIR/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_GTEST_DIR/lib:$LD_LIBRARY_PATH
 
 # #### Compiler linker flags ############################################## #
 
