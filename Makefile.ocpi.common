@@ -786,7 +786,6 @@ WCI_API_EXPORTS = $(WCI_API_BASE)/interface/include \
 	$(WCI_API_BASE)/api/include
 WCI_API_LIBS = $(WCI_API_BASE)/wci_api
 
-TEST_FRAMEWORK_EXPORTS = $(OCPI_BASE_DIR)/tests/framework/framework/support/include
 TEST_FRAMEWORK_LIBS = $(OCPI_BASE_DIR)/tests/framework/framework/framework
 
 TEST_OS_LIBS = $(OCPI_BASE_DIR)/tests/facilities/os/os
