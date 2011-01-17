@@ -88,7 +88,7 @@ export OCPI_ASSERT=1
 export OCPI_SHARED_LIBRARIES_FLAGS="-m64 -m elf_x86_64"
 
 # Set to 0 to build static libraries
-export OCPI_BUILD_SHARED_LIBRARIES=0
+export OCPI_BUILD_SHARED_LIBRARIES=1
 
 # #### CORBA OCPI_CORBA_ORB/IDL tools ################################################ #
 
