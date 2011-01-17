@@ -1,6 +1,6 @@
 // This is a wrapper that maps the module ports from what mkCTop wants to see (as of 6/29/2010) into
 // what the automation tools want to see, which is WIP compliance.
-module mkOCApp(RST_N_rst_0,
+module mkOCApp4B(RST_N_rst_0,
 	       RST_N_rst_1,
 	       RST_N_rst_2,
 	       RST_N_rst_3,
@@ -247,33 +247,33 @@ module mkOCApp(RST_N_rst_0,
 
 	       wmiM1_SReset_n,
 
-	       wmemiM_MCmd,
+	       wmemiM0_MCmd,
 
-	       wmemiM_MReqLast,
+	       wmemiM0_MReqLast,
 
-	       wmemiM_MAddr,
+	       wmemiM0_MAddr,
 
-	       wmemiM_MBurstLength,
+	       wmemiM0_MBurstLength,
 
-	       wmemiM_MDataValid,
+	       wmemiM0_MDataValid,
 
-	       wmemiM_MDataLast,
+	       wmemiM0_MDataLast,
 
-	       wmemiM_MData,
+	       wmemiM0_MData,
 
-	       wmemiM_MDataByteEn,
+	       wmemiM0_MDataByteEn,
 
-	       wmemiM_SResp,
+	       wmemiM0_SResp,
 
-	       wmemiM_SRespLast,
+	       wmemiM0_SRespLast,
 
-	       wmemiM_SData,
+	       wmemiM0_SData,
 
-	       wmemiM_SCmdAccept,
+	       wmemiM0_SCmdAccept,
 
-	       wmemiM_SDataAccept,
+	       wmemiM0_SDataAccept,
 
-	       wmemiM_MReset_n,
+	       wmemiM0_MReset_n,
 
 	       wsi_s_adc_MCmd,
 
@@ -336,7 +336,7 @@ module mkOCApp(RST_N_rst_0,
   input  [3 : 0] wci_s_0_MByteEn;
 
   // action method wci_s_0_mAddr
-  input  [19 : 0] wci_s_0_MAddr;
+  input  [31 : 0] wci_s_0_MAddr;
 
   // action method wci_s_0_mData
   input  [31 : 0] wci_s_0_MData;
@@ -366,7 +366,7 @@ module mkOCApp(RST_N_rst_0,
   input  [3 : 0] wci_s_1_MByteEn;
 
   // action method wci_s_1_mAddr
-  input  [19 : 0] wci_s_1_MAddr;
+  input  [31 : 0] wci_s_1_MAddr;
 
   // action method wci_s_1_mData
   input  [31 : 0] wci_s_1_MData;
@@ -396,7 +396,7 @@ module mkOCApp(RST_N_rst_0,
   input  [3 : 0] wci_s_2_MByteEn;
 
   // action method wci_s_2_mAddr
-  input  [19 : 0] wci_s_2_MAddr;
+  input  [31 : 0] wci_s_2_MAddr;
 
   // action method wci_s_2_mData
   input  [31 : 0] wci_s_2_MData;
@@ -426,7 +426,7 @@ module mkOCApp(RST_N_rst_0,
   input  [3 : 0] wci_s_3_MByteEn;
 
   // action method wci_s_3_mAddr
-  input  [19 : 0] wci_s_3_MAddr;
+  input  [31 : 0] wci_s_3_MAddr;
 
   // action method wci_s_3_mData
   input  [31 : 0] wci_s_3_MData;
@@ -456,7 +456,7 @@ module mkOCApp(RST_N_rst_0,
   input  [3 : 0] wci_s_4_MByteEn;
 
   // action method wci_s_4_mAddr
-  input  [19 : 0] wci_s_4_MAddr;
+  input  [31 : 0] wci_s_4_MAddr;
 
   // action method wci_s_4_mData
   input  [31 : 0] wci_s_4_MData;
@@ -486,7 +486,7 @@ module mkOCApp(RST_N_rst_0,
   input  [3 : 0] wci_s_5_MByteEn;
 
   // action method wci_s_5_mAddr
-  input  [19 : 0] wci_s_5_MAddr;
+  input  [31 : 0] wci_s_5_MAddr;
 
   // action method wci_s_5_mData
   input  [31 : 0] wci_s_5_MData;
@@ -516,7 +516,7 @@ module mkOCApp(RST_N_rst_0,
   input  [3 : 0] wci_s_6_MByteEn;
 
   // action method wci_s_6_mAddr
-  input  [19 : 0] wci_s_6_MAddr;
+  input  [31 : 0] wci_s_6_MAddr;
 
   // action method wci_s_6_mData
   input  [31 : 0] wci_s_6_MData;
@@ -546,7 +546,7 @@ module mkOCApp(RST_N_rst_0,
   input  [3 : 0] wci_s_7_MByteEn;
 
   // action method wci_s_7_mAddr
-  input  [19 : 0] wci_s_7_MAddr;
+  input  [31 : 0] wci_s_7_MAddr;
 
   // action method wci_s_7_mData
   input  [31 : 0] wci_s_7_MData;
@@ -684,47 +684,47 @@ module mkOCApp(RST_N_rst_0,
   // action method wmiM1_sReset_n
   input  wmiM1_SReset_n;
 
-  // value method wmemiM_mCmd
-  output [2 : 0] wmemiM_MCmd;
+  // value method wmemiM0_mCmd
+  output [2 : 0] wmemiM0_MCmd;
 
-  // value method wmemiM_mReqLast
-  output wmemiM_MReqLast;
+  // value method wmemiM0_mReqLast
+  output wmemiM0_MReqLast;
 
-  // value method wmemiM_mAddr
-  output [35 : 0] wmemiM_MAddr;
+  // value method wmemiM0_mAddr
+  output [35 : 0] wmemiM0_MAddr;
 
-  // value method wmemiM_mBurstLength
-  output [11 : 0] wmemiM_MBurstLength;
+  // value method wmemiM0_mBurstLength
+  output [11 : 0] wmemiM0_MBurstLength;
 
-  // value method wmemiM_mDataValid
-  output wmemiM_MDataValid;
+  // value method wmemiM0_mDataValid
+  output wmemiM0_MDataValid;
 
-  // value method wmemiM_mDataLast
-  output wmemiM_MDataLast;
+  // value method wmemiM0_mDataLast
+  output wmemiM0_MDataLast;
 
-  // value method wmemiM_mData
-  output [127 : 0] wmemiM_MData;
+  // value method wmemiM0_mData
+  output [127 : 0] wmemiM0_MData;
 
-  // value method wmemiM_mDataByteEn
-  output [15 : 0] wmemiM_MDataByteEn;
+  // value method wmemiM0_mDataByteEn
+  output [15 : 0] wmemiM0_MDataByteEn;
 
-  // action method wmemiM_sResp
-  input  [1 : 0] wmemiM_SResp;
+  // action method wmemiM0_sResp
+  input  [1 : 0] wmemiM0_SResp;
 
-  // action method wmemiM_sRespLast
-  input  wmemiM_SRespLast;
+  // action method wmemiM0_sRespLast
+  input  wmemiM0_SRespLast;
 
-  // action method wmemiM_sData
-  input  [127 : 0] wmemiM_SData;
+  // action method wmemiM0_sData
+  input  [127 : 0] wmemiM0_SData;
 
-  // action method wmemiM_sCmdAccept
-  input  wmemiM_SCmdAccept;
+  // action method wmemiM0_sCmdAccept
+  input  wmemiM0_SCmdAccept;
 
-  // action method wmemiM_sDataAccept
-  input  wmemiM_SDataAccept;
+  // action method wmemiM0_sDataAccept
+  input  wmemiM0_SDataAccept;
 
-  // value method wmemiM_mReset_n
-  output wmemiM_MReset_n;
+  // value method wmemiM0_mReset_n
+  output wmemiM0_MReset_n;
 
   // action method wsi_s_adc_mCmd
   input  [2 : 0] wsi_s_adc_MCmd;
@@ -791,8 +791,8 @@ module mkOCApp(RST_N_rst_0,
   input  wsi_m_dac_SReset_n;
 
   // signals for module outputs
-  wire [127 : 0] wmemiM_MData;
-  wire [35 : 0] wmemiM_MAddr;
+  wire [127 : 0] wmemiM0_MData;
+  wire [35 : 0] wmemiM0_MAddr;
   wire [31 : 0] wci_s_0_SData,
 		wci_s_1_SData,
 		wci_s_2_SData,
@@ -806,15 +806,15 @@ module mkOCApp(RST_N_rst_0,
 		wmiM1_MData,
 		wmiM1_MFlag,
 		wsi_m_dac_MData;
-  wire [15 : 0] wmemiM_MDataByteEn;
+  wire [15 : 0] wmemiM0_MDataByteEn;
   wire [13 : 0] wmiM0_MAddr, wmiM1_MAddr;
-  wire [11 : 0] wmemiM_MBurstLength,
+  wire [11 : 0] wmemiM0_MBurstLength,
 		wmiM0_MBurstLength,
 		wmiM1_MBurstLength,
 		wsi_m_dac_MBurstLength;
   wire [7 : 0] wsi_m_dac_MReqInfo;
   wire [3 : 0] wmiM0_MDataByteEn, wmiM1_MDataByteEn, wsi_m_dac_MByteEn;
-  wire [2 : 0] wmemiM_MCmd, wmiM0_MCmd, wmiM1_MCmd, wsi_m_dac_MCmd;
+  wire [2 : 0] wmemiM0_MCmd, wmiM0_MCmd, wmiM1_MCmd, wsi_m_dac_MCmd;
   wire [1 : 0] wci_s_0_SFlag,
 	       wci_s_0_SResp,
 	       wci_s_1_SFlag,
@@ -839,10 +839,10 @@ module mkOCApp(RST_N_rst_0,
        wci_s_5_SThreadBusy,
        wci_s_6_SThreadBusy,
        wci_s_7_SThreadBusy,
-       wmemiM_MDataLast,
-       wmemiM_MDataValid,
-       wmemiM_MReqLast,
-       wmemiM_MReset_n,
+       wmemiM0_MDataLast,
+       wmemiM0_MDataValid,
+       wmemiM0_MReqLast,
+       wmemiM0_MReset_n,
        wmiM0_MAddrSpace,
        wmiM0_MDataLast,
        wmiM0_MDataValid,
@@ -906,8 +906,8 @@ module mkOCApp(RST_N_rst_0,
 				      .wci5_MData(wci_s_7_MData),
 				      .wci5_MFlag(wci_s_7_MFlag),
 `ifdef NOTHERE
-				      .wmemi0_SData(wmemiM_SData),
-				      .wmemi0_SResp(wmemiM_SResp),
+				      .wmemi0_SData(wmemiM0_SData),
+				      .wmemi0_SResp(wmemiM0_SResp),
 `endif
 				      .FC_SData(wmiM0_SData),
 				      .FC_SFlag(wmiM0_SFlag),
@@ -931,9 +931,9 @@ module mkOCApp(RST_N_rst_0,
 				      .FP_SRespLast(wmiM1_SRespLast),
 				      .FP_SReset_n(wmiM1_SReset_n),
 `ifdef NOTHERE
-				      .wmemi0_SRespLast(wmemiM_SRespLast),
-				      .wmemi0_SCmdAccept(wmemiM_SCmdAccept),
-				      .wmemi0_SDataAccept(wmemiM_SDataAccept),
+				      .wmemi0_SRespLast(wmemiM0_SRespLast),
+				      .wmemi0_SCmdAccept(wmemiM0_SCmdAccept),
+				      .wmemi0_SDataAccept(wmemiM0_SDataAccept),
 				      .adc_MReqLast(wsi_s_adc_MReqLast),
 				      .adc_MBurstPrecise(wsi_s_adc_MBurstPrecise),
 				      .adc_MReset_n(wsi_s_adc_MReset_n),
@@ -989,15 +989,15 @@ module mkOCApp(RST_N_rst_0,
 				      .FP_MFlag(wmiM1_MFlag),
 				      .FP_MReset_n(wmiM1_MReset_n)
 `ifdef NOTTHERE
-				      .wmemi0_MCmd(wmemiM_MCmd),
-				      .wmemi0_MReqLast(wmemiM_MReqLast),
-				      .wmemi0_MAddr(wmemiM_MAddr),
-				      .wmemi0_MBurstLength(wmemiM_MBurstLength),
-				      .wmemi0_MDataValid(wmemiM_MDataValid),
-				      .wmemi0_MDataLast(wmemiM_MDataLast),
-				      .wmemi0_MData(wmemiM_MData),
-				      .wmemi0_MDataByteEn(wmemiM_MDataByteEn),
-				      .wmemi0_MReset_n(wmemiM_MReset_n)
+				      .wmemi0_MCmd(wmemiM0_MCmd),
+				      .wmemi0_MReqLast(wmemiM0_MReqLast),
+				      .wmemi0_MAddr(wmemiM0_MAddr),
+				      .wmemi0_MBurstLength(wmemiM0_MBurstLength),
+				      .wmemi0_MDataValid(wmemiM0_MDataValid),
+				      .wmemi0_MDataLast(wmemiM0_MDataLast),
+				      .wmemi0_MData(wmemiM0_MData),
+				      .wmemi0_MDataByteEn(wmemiM0_MDataByteEn),
+				      .wmemi0_MReset_n(wmemiM0_MReset_n)
 `endif
 );
 
@@ -1012,6 +1012,26 @@ module mkOCApp(RST_N_rst_0,
 //				      .dac_MReqInfo(wsi_m_dac_MReqInfo),
 //				      .dac_MReset_n(wsi_m_dac_MReset_n));
 
+// Tieoffs for unused WCI signals
+assign wci_s_0_SResp = 2'b0;
+assign wci_s_0_SThreadBusy = 1'b0;
+assign wci_s_0_SFlag = 2'b0;
+assign wci_s_0_SAddr = 32'b0;
+assign wci_s_0_SData = 32'b0;
+assign wci_s_1_SResp = 2'b0;
+assign wci_s_1_SThreadBusy = 1'b0;
+assign wci_s_1_SFlag = 2'b0;
+assign wci_s_1_SAddr = 32'b0;
+assign wci_s_1_SData = 32'b0;
+assign wmemiM0_MCmd = 0;
+assign wmemiM0_MReqLast = 0;
+assign wmemiM0_MAddr = 0;
+assign wmemiM0_MBurstLength = 0;
+assign wmemiM0_MDataValid = 0;
+assign wmemiM0_MDataLast = 0;
+assign wmemiM0_MData = 0;
+assign wmemiM0_MDataByteEn = 0;
+assign wmemiM0_MReset_n = 1'b1;
 
 endmodule  // mkOCApp
 

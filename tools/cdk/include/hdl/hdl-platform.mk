@@ -47,7 +47,7 @@ ifndef Platform
 Platform=$(CwdName)
 endif
 Top=fpgaTop
-SourceFiles+=../common/mkOCApp_bb.v
+SourceFiles+=../../containers/mkOCApp_bb.v
 ComponentLibraries=../../devices
 Targets=$(Platform) $(foreach c,$(Configurations),$(Platform)-$(subst -, ,$(c)))
 $(info Platform: $(Platform) Targets: $(Targets))

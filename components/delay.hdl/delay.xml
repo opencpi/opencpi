@@ -1,6 +1,6 @@
 <HdlImplementation Name="delay" Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="delay_spec.xml"/>
-  <ControlInterface SizeOfConfigSpace="1m" Sub32BitConfigProperties="true" ControlOperations="start,initialize" Timeout="444" Pattern="%w%M%0_">
+  <ControlInterface SizeOfConfigSpace="4g" Sub32BitConfigProperties="true" ControlOperations="start,initialize" Timeout="444" Pattern="%w%M%0_">
     <Property Name="mesgWtCount" Readable="true" Writable="false" Type="ULong"/>
     <Property Name="mesgRdCount" Readable="true" Writable="false" Type="ULong"/>
     <Property Name="bytesWritten" Readable="true" Writable="false" Type="ULong"/>
@@ -33,7 +33,7 @@
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
-  <MemoryInterface Name="wmemiM" DataWidth="128" ByteWidth="8" MemoryWords="4g" MaxBurstLength="4k-1" PreciseBurst="true" WriteDataFlowControl="true" Pattern="%w%M_"/>
+  <MemoryInterface DataWidth="128" ByteWidth="8" MemoryWords="4g" MaxBurstLength="4k-1" PreciseBurst="true" WriteDataFlowControl="true"/>
 </ComponentImplementation>
 
 

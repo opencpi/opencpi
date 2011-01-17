@@ -1,4 +1,4 @@
-// fpgaTop_v5.v - ssiegel 2009-03-17
+// fpgaTop_ml555.v - ssiegel 2009-03-17
 
 module fpgaTop(
   input  wire        sys0_clkp,     // sys0 Clock +
@@ -16,7 +16,7 @@ module fpgaTop(
 );
 
 // Instance and connect mkFTop...
- mkFTop ftop(
+ mkFTop_ml555 ftop(
   .sys0_clkp         (sys0_clkp),
   .sys0_clkn         (sys0_clkn),
   .pci0_clkp         (pci0_clkp),

@@ -38,5 +38,7 @@ ComponentLibraries=../../../components
 # For which containers should the runtime xml be generated?
 # These (for now) just xml files containing HdlContainer elements.
 Containers=testpsdCont
-Platform=ml555
+Container=mkOCApp-noADC-6w.v
+# We know this app will not fit on the ml555
+Platforms=shist
 include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk

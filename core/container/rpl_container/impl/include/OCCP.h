@@ -80,7 +80,8 @@ namespace OCPI {
         lastConfig;
       uint32_t
         clearError,
-        reserved[4];
+	window,
+        reserved[3];
     } OccpWorkerRegisters;
 #define OCCP_CONTROL_ENABLE 0x80000000
 #define OCCP_WORKER_CONTROL_SIZE 0x10000

@@ -36,6 +36,7 @@
 
 ifndef __UTIL_MK__
 .DELETE_ON_ERROR:
+.SUFFIXES:
 __UTIL_MK__=x
 # Utilities used by many other makefile files
 # Allow us to include this early by establishing the default initial target (all).
@@ -104,7 +105,11 @@ SymLinkContents= `X=(\`ls -l $(1)\`);echo $${X[$${\#X[*]}-1]}`
 #  e.g. $(call MakeSymLink,foo,linkdir) makes a link: dir/$(notdir foo) link to foo
 # Funky because it might be executed in a loop
 MakeSymLink2=	SL=$(2)/$(3); SLC=$(call FindRelative,$(2),$(1)); \
-		if test -L $$SL; then OSLC="$(call SymLinkContents,$(2)/$(3))"; fi;\
+		if test -L $$SL; then \
+		  OSLC="$(call SymLinkContents,$(2)/$(3))"; \
+		else \
+		  OSLC=; \
+		fi;\
 		if test "$$OSLC" != $$SLC; then \
 		  rm -f $$SL; \
 		  ln -s $$SLC $$SL; \

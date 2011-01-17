@@ -64,7 +64,10 @@ endef
 
 $(foreach f,$(Families),$(eval $(call DoFamily,$(f))))
 
-$(OutLibFiles): $(ImportsDir) $$(CompiledSourceFiles) | $$(TargetDir)
+ifdef Imports
+$(OutLibFiles): $(ImportsDir)
+endif
+$(OutLibFiles): $$(CompiledSourceFiles) | $$(TargetDir)
 	$(AT)echo Building the $(LibName) primitive library for $(Target)
 	$(Compile)
 

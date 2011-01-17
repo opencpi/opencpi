@@ -8,7 +8,7 @@
    Foreach external connection:  define IO or Interconnect worker (and props)
    Foreach worker (including io and interconnect) define index.
   -->
-<HdlContainer>
+<HdlContainer Name="testddc">
   <Instance Worker="dp.xml" Index="13" Interconnect="pcie"/>
   <Instance Worker="dp.xml" Index="14" Interconnect="pcie"/>
   <Instance Name="sma0" Index="2"/>

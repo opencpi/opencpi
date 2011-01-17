@@ -1,4 +1,4 @@
-<HdlImplementation Name="adc" Language="Verilog" Pattern="%w%M%0_">
+<HdlImplementation Name="adcx" Language="Verilog" Pattern="%w%M%0_">
   <ComponentSpec Name="adc">
     <Properties >
       <Property Name="Control" Type="ULong" Readable="true" Writable="true"/>
