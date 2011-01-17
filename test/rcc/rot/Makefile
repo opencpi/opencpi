@@ -40,9 +40,7 @@
 # Else (when called directly), load MakeVars.ocpi.
 #
 
-ifeq ($(OCPI_OS),)
 include $(OCPI_BASE_DIR)MakeVars.ocpi
-endif
 
 #
 # These must exist natively on the build host.  Assume that the build host

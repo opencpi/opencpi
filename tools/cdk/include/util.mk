@@ -63,8 +63,13 @@ ToUpper=$(shell echo $(1)|tr a-z A-Z)
 # function to add a ../ to pathnames, avoiding changing absolute ones
 AdjustRelative2=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),../../$(patsubst ./%,%,$(filter-out .,$(i)))))
 AdjustRelative=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),..$(patsubst %,/%,$(patsubst ./%,%,$(filter-out .,$(i))))))
-HostSystem=$(shell uname | tr A-Z a-z)
-HostTarget=$(shell echo `uname -s`-`uname -m` | tr A-Z a-z)
+HostSystem=$(shell uname -s | tr A-Z a-z)
+HostProcessor=$(shell uname -m | tr A-Z a-z)
+# Patch darwin's notion of x86 to linux's.  Assumes 64 bit machine...
+ifeq ($(HostProcessor),i386)
+HostProcessor=x86_64
+endif
+HostTarget=$(HostSystem)-$(HostProcessor)
 # helper function to FindRelative, recursive
 # arg 1 is from-list of path components, arg 2 is to-list
 #$(info frs 1 $(1) 2 $(2))

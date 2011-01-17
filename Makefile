@@ -76,7 +76,7 @@ PACKAGES += \
 	 core/container/interfaces \
 	 core/container/cp289_container \
 	 core/container/rpl_container \
-	 core/container/tests \
+	 core/container/ctests \
 	 core/$(DATAPLANE)/tests
 
 ifeq ($(OCPI_HAVE_CORBA),1)
