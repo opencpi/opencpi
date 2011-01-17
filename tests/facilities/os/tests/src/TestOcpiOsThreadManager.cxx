@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -34,24 +34,13 @@
 
 #include "OcpiOsThreadManager.h"
 
-#include <cppunit/extensions/HelperMacros.h>
+#include "gtest/gtest.h"
 
 namespace
 {
-  class TestOcpiOsThreadManager : public CppUnit::TestFixture
+  class TestOcpiOsThreadManager : public ::testing::Test
   {
-    private:
-      CPPUNIT_TEST_SUITE( TestOcpiOsThreadManager );
-      CPPUNIT_TEST( test_1 );
-      CPPUNIT_TEST( test_2 );
-      CPPUNIT_TEST_SUITE_END();
-
-    public:
-      void setUp ( );
-      void tearDown ( );
-
-     void test_2 ( );
-     void test_1 ( );
+    // Empty
   };
 
   bool g_variable_to_modify;
@@ -69,39 +58,24 @@ namespace
     g_passed_argument = opaque;
   }
 
-} // End: namespace<unamed>
-
-// Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( TestOcpiOsThreadManager, "os" );
-
-void TestOcpiOsThreadManager::setUp ( )
-{
-  // Empty
-}
-
-
-void TestOcpiOsThreadManager::tearDown ( )
-{
-  // Empty
-}
+  // Test 1: Observe a thread modifying a variable
+  TEST( TestOcpiOsThreadManager, test_1 )
+  {
+    g_variable_to_modify = false;
+    OCPI::OS::ThreadManager tm ( thread_fn_variable_modification, 0 );
+    tm.join ( );
+    EXPECT_EQ( g_variable_to_modify, true );
+  }
 
 
-// Test 1: Observe a thread modifying a variable
-void TestOcpiOsThreadManager::test_1 ( )
-{
-  g_variable_to_modify = false;
-  OCPI::OS::ThreadManager tm ( thread_fn_variable_modification, 0 );
-  tm.join ( );
-  CPPUNIT_ASSERT( g_variable_to_modify == true );
-}
+  // Test 2: Verify thread received its argument
+  TEST( TestOcpiOsThreadManager, test_2 )
+  {
+    g_passed_argument = 0;
+    OCPI::OS::ThreadManager tm ( thread_fn_argument_passing,
+                                 ( void* ) thread_fn_argument_passing );
+    tm.join ( );
+    EXPECT_EQ( g_passed_argument, ( void* ) thread_fn_argument_passing );
+  }
 
-
-// Test 2: Verify thread received its argument
-void TestOcpiOsThreadManager::test_2 ( )
-{
-  g_passed_argument = 0;
-  OCPI::OS::ThreadManager tm ( thread_fn_argument_passing,
-                               ( void* ) thread_fn_argument_passing );
-  tm.join ( );
-  CPPUNIT_ASSERT( g_passed_argument == ( void* ) thread_fn_argument_passing );
-}
+} // End: namespace<unnamed>

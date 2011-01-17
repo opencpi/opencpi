@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -37,26 +37,13 @@
 #include "OcpiOsDebug.h"
 #include "OcpiOsThreadManager.h"
 
-#include <cppunit/extensions/HelperMacros.h>
+#include "gtest/gtest.h"
 
 namespace
 {
-  class TestOcpiOsMutex : public CppUnit::TestFixture
+  class TestOcpiOsMutex : public ::testing::Test
   {
-    private:
-      CPPUNIT_TEST_SUITE( TestOcpiOsMutex );
-      CPPUNIT_TEST( test_1 );
-      CPPUNIT_TEST( test_2 );
-      CPPUNIT_TEST( test_3 );
-      CPPUNIT_TEST_SUITE_END();
-
-    public:
-      void setUp ( );
-      void tearDown ( );
-
-     void test_1 ( );
-     void test_2 ( );
-     void test_3 ( );
+    // Empty
   };
 
   struct Test2Data
@@ -92,60 +79,44 @@ namespace
     t3d->m.unlock ( );
   }
 
-} // End: namespace<unamed>
-
-// Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( TestOcpiOsMutex, "os" );
-
-void TestOcpiOsMutex::setUp ( )
-{
-
-}
-
-
-void TestOcpiOsMutex::tearDown ( )
-{
-  // Empty
-}
+  // Test 1: Locking and Unlocking Mutex
+  TEST( TestOcpiOsMutex, test_1 )
+  {
+    OCPI::OS::Mutex m;
+    m.lock ( );
+    m.unlock ( );
+    EXPECT_EQ( true, true );
+  }
 
 
-// Test 1: Locking and Unlocking Mutex
-void TestOcpiOsMutex::test_1 ( )
-{
-  OCPI::OS::Mutex m;
-  m.lock ( );
-  m.unlock ( );
-  CPPUNIT_ASSERT( true );
-}
+  // Test 2: Attempting to lock mutex in another thread
+  TEST( TestOcpiOsMutex, test_2 )
+  {
+    Test2Data t2d;
+    t2d.flag = false;
+    t2d.m.lock ( );
+    OCPI::OS::ThreadManager tm ( test2Thread, &t2d );
+    EXPECT_EQ( t2d.flag, false );
+    t2d.m.unlock ( );
+    tm.join ( );
+    EXPECT_EQ( t2d.flag, true );
+  }
 
 
-// Test 2: Attempting to lock mutex in another thread
-void TestOcpiOsMutex::test_2 ( )
-{
-  Test2Data t2d;
-  t2d.flag = false;
-  t2d.m.lock ( );
-  OCPI::OS::ThreadManager tm ( test2Thread, &t2d );
-  CPPUNIT_ASSERT( !t2d.flag );
-  t2d.m.unlock ( );
-  tm.join ( );
-  CPPUNIT_ASSERT( t2d.flag );
-}
+  // Test 3: Using a recursive mutex
+  TEST( TestOcpiOsMutex, test_3 )
+  {
+    Test3Data t3d;
+    t3d.flag = false;
+    t3d.m.lock ( );
+    t3d.m.lock ( );
+    OCPI::OS::ThreadManager tm ( test3Thread, &t3d );
+    t3d.m.unlock ( );
+    OCPI::OS::sleep ( 100 ); // give the other thread a chance to run
+    EXPECT_EQ( t3d.flag, false );
+    t3d.m.unlock ( );
+    tm.join ( );
+    EXPECT_EQ( t3d.flag, true );
+  }
 
-
-// Test 3: Using a recursive mutex
-void TestOcpiOsMutex::test_3 ( )
-{
-  Test3Data t3d;
-  t3d.flag = false;
-  t3d.m.lock ( );
-  t3d.m.lock ( );
-  OCPI::OS::ThreadManager tm ( test3Thread, &t3d );
-  t3d.m.unlock ( );
-  OCPI::OS::sleep ( 100 ); // give the other thread a chance to run
-  CPPUNIT_ASSERT( !t3d.flag );
-  t3d.m.unlock ( );
-  tm.join ( );
-  CPPUNIT_ASSERT( t3d.flag );
-}
-
+} // End: namespace<unnamed>

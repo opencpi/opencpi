@@ -38,7 +38,7 @@
   ------------
 
   This directory contains the unit test suite for OpenCPI. The unit test
-  suite is implemented using CppUnit.
+  suite is implemented using Google Test (gtest).
 
   Please see the OpenCPI Test Framework Functional Specification at the link
   below for more information about the test framework design and
@@ -68,7 +68,4 @@
   2. This command runs the "OS" test suite.
 
      $ ocpi_unit_test --suite=os
-
-
-
 

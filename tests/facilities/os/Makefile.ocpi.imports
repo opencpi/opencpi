@@ -34,6 +34,7 @@
 #
 ########################################################################### #
 
-ALLINC += $(OCPIOS_EXPORTS) $(OCPI_CPPUNIT_DIR)/include
-#ALLLIBS += $(LOGGER_LIBS)
+
+ALLINC += $(OCPIOS_EXPORTS) $(OCPI_GTEST_DIR)/include
+ALLLIBS += $(LOGGER_LIBS) 
 
