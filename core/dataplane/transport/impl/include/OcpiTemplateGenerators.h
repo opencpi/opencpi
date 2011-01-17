@@ -108,12 +108,12 @@ namespace OCPI {
                                          OCPI::DataTransport::PortSet* input, TransferController* cont  )=0;
 
       // These methods are hooks to add additional transfers
-      virtual DataTransfer::XferRequest* addTransferPreData( 
-                                                            TDataInterface& tdi);
-      virtual DataTransfer::XferRequest* addTransferPostData(         
-                                                             TDataInterface& tdi);
-      virtual DataTransfer::XferRequest* addTransferPreState(         
-                                                             TDataInterface& tdi);
+      virtual bool  addTransferPreData( DataTransfer::XferRequest*,
+					TDataInterface& tdi);
+      virtual bool addTransferPostData( DataTransfer::XferRequest*,
+							      TDataInterface& tdi);
+      virtual bool  addTransferPreState( DataTransfer::XferRequest*,
+							      TDataInterface& tdi);
 
       // Create the output broadcast template for this set
       virtual void createOutputBroadcastTemplates(OCPI::DataTransport::Port* output, 
@@ -294,8 +294,8 @@ namespace OCPI {
     protected:
 
         // These methods are hooks to add additional transfers
-        virtual DataTransfer::XferRequest* addTransferPreState( 
-                                                               TDataInterface& tdi);
+        virtual bool  addTransferPreState( DataTransfer::XferRequest*,
+					   TDataInterface& tdi);
 
     };
 

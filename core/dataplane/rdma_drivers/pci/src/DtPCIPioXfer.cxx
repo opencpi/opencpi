@@ -57,6 +57,7 @@
 #include <string>
 #include <stdio.h>
 #include <OcpiOsAssert.h>
+#include <OcpiPValue.h>
 
 using namespace DataTransfer;
 using namespace OCPI::Util;
@@ -92,7 +93,7 @@ void PCIPIOXferFactory::clearCache()
 
 
 // Get the location via the endpoint
-EndPoint* PCIPIOXferFactory::getEndPoint( std::string& end_point  )
+EndPoint* PCIPIOXferFactory::getEndPoint( std::string& end_point, bool /* local */  )
 { 
   PCIEndPoint *loc;
   for ( OCPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
@@ -123,9 +124,12 @@ void PCIPIOXferFactory::releaseEndPoint( EndPoint* loc )
 
 
 // This method is used to allocate a transfer compatible SMB
-SmemServices* PCIPIOXferFactory::createSmemServices(EndPoint* loc )
+SmemServices* PCIPIOXferFactory::getSmemServices( EndPoint* loc )
 {
-  return new DataTransfer::PCISmemServices((EndPoint*)loc);
+  if ( loc->smem ) {
+    return loc->smem;
+  }
+  return new DataTransfer::PCISmemServices( this, loc);
 }
 
 
@@ -135,7 +139,7 @@ SmemServices* PCIPIOXferFactory::createSmemServices(EndPoint* loc )
  ***************************************/
 XferServices* PCIPIOXferFactory::getXferServices(SmemServices* source, SmemServices* target)
 {
-  return new PIOXferServices(source, target);
+  return new PIOXferServices( *this, source, target);
 }
 
 
@@ -146,28 +150,21 @@ XferServices* PCIPIOXferFactory::getXferServices(SmemServices* source, SmemServi
  *  an endpoint for an application running on "this"
  *  node.
  ***************************************/
-static OCPI::OS::int32_t mailbox=1;
 static OCPI::OS::int32_t pid;
-std::string PCIPIOXferFactory::allocateEndpoint(OCPI::OS::uint32_t *size )
+std::string PCIPIOXferFactory::allocateEndpoint( OCPI::Util::Device * , OCPI::Util::PValue * /* props */)
 {
   std::string ep;
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
-#ifdef USE_ENV_FOR_MAILBOX
-  if ( mailbox == -1 ) {
-    const char* env = getenv("OCPI_TRANSFER_MAILBOX");
-    if( !env || (env[0] == 0)) {
-      OCPI_THROWNULL( DataTransferEx(PROPERTY_NOT_SET, "OCPI_TRANSFER_MAILBOX" ) ) ;
-    }
-    mailbox = atoi(env);
-    pid++;
-  }
-#endif
+  int mailbox = getNextMailBox();
+  pid++;
+
+  unsigned int size = m_config->m_SMBSize;
 
   char tep[128];
   pid = getpid();
   int bus_id = 0;
-  snprintf(tep,128,"ocpi-pci-pio://%d.0:%d.%d.20",bus_id,*size, mailbox);
+  snprintf(tep,128,"ocpi-pci-pio://%d.0:%d.%d.%d",bus_id, size, mailbox,getMaxMailBox());
   ep = tep;
 
   mailbox++;

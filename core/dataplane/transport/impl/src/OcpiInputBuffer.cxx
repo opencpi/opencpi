@@ -181,7 +181,7 @@ void InputBuffer::update(bool critical)
       continue;
     }
 
-    int idx = shadow_port->getRealShemServices()->getEndPoint()->mailbox;
+    int idx = shadow_port->getRealShemServices()->endpoint()->mailbox;
 
     // A shadow for a output may not exist if they are co-located
     if ( !m_rssVaddr[idx] && input_offsets->myShadowsRemoteStateOffsets[idx] ) {

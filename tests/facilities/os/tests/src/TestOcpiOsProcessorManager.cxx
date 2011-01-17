@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -37,6 +37,8 @@
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileSystem.h"
 
+#include "gtest/gtest.h"
+
 #include <ctime>
 #include <csignal>
 #include <cstdlib>
@@ -46,33 +48,16 @@
 #include <string>
 #include <iostream>
 
-#include <cppunit/extensions/HelperMacros.h>
-
 namespace
 {
-  class TestOcpiOsProcessManager : public CppUnit::TestFixture
+  class TestOcpiOsProcessManager : public ::testing::Test
   {
-    private:
+    protected:
       std::string d_argv0;
+      bool d_perform_test;
 
-    private:
-      CPPUNIT_TEST_SUITE( TestOcpiOsProcessManager );
-      CPPUNIT_TEST( test_1 );
-      CPPUNIT_TEST( test_2 );
-      CPPUNIT_TEST( test_3 );
-      CPPUNIT_TEST( test_4 );
-      CPPUNIT_TEST( test_5 );
-      CPPUNIT_TEST_SUITE_END();
-
-    public:
-      void setUp ( );
-      void tearDown ( );
-
-     void test_1 ( );
-     void test_2 ( );
-     void test_3 ( );
-     void test_4 ( );
-     void test_5 ( );
+      virtual void SetUp ( );
+      virtual void TearDown ( );
   };
 
   char i2sDigits [ 16 ] =
@@ -273,109 +258,126 @@ namespace
     return 0;
   }
 
-} // End: namespace<unamed>
-
-// Registers the fixture into the 'registry'
-// CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( TestOcpiOsProcessManager, "os" );
-
-void TestOcpiOsProcessManager::setUp ( )
-{
-  std::string d_argv0 ( "testProcessManagerInt" );
-
-}
-
-
-void TestOcpiOsProcessManager::tearDown ( )
-{
-  // Empty
-}
-
-
-// Test 1: Starting and waiting for a process
-void TestOcpiOsProcessManager::test_1 ( )
-{
-  OCPI::OS::ProcessManager::ParameterList p;
-  p.push_back ( "1" );
-  OCPI::OS::ProcessManager pm ( d_argv0, p );
-  pm.wait ( );
-  CPPUNIT_ASSERT( true );
-}
-
-
-// Test 2: Check exit code
-void TestOcpiOsProcessManager::test_2 ( )
-{
-  OCPI::OS::ProcessManager::ParameterList p;
-  p.push_back ( "2" );
-  OCPI::OS::ProcessManager pm ( d_argv0, p );
-  pm.wait ( );
-  int ec = pm.getExitCode ( );
-  CPPUNIT_ASSERT( ec == 42 );
-}
-
-
-// Test 3: Shutdown process
-void TestOcpiOsProcessManager::test_3 ( )
-{
-  OCPI::OS::ProcessManager::ParameterList p;
-  p.push_back ( "3" );
-  OCPI::OS::ProcessManager pm ( d_argv0, p );
-  pm.wait ( 1000 );
-  pm.shutdown ( );
-  pm.wait ( );
-  CPPUNIT_ASSERT( true );
-}
-
-
-// Test 4: Run multiple processes
-void TestOcpiOsProcessManager::test_4 ( )
-{
-  OCPI::OS::ProcessManager::ParameterList p;
-  p.push_back ( "4" );
-  OCPI::OS::ProcessManager pm1 ( d_argv0, p );
-  OCPI::OS::ProcessManager pm2 ( d_argv0, p );
-  pm1.detach  ();
-  OCPI::OS::ProcessManager pm3 ( d_argv0, p );
-  pm3.wait ( );
-  pm2.wait ( );
-
-  /*
-   * The process returns time() as its exit code.  That should tell us that
-   * the above actually happened in parallel (their exit codes are the same
-   * or at least very similar) rather than sequentially (their exit codes
-   * are 10 or more apart).
-   */
-
-  unsigned int ec2 = static_cast<unsigned int>( pm2.getExitCode ( ) );
-  unsigned int ec3 = static_cast<unsigned int>( pm3.getExitCode ( ) );
-  CPPUNIT_ASSERT( ( ( ec3 - ec2 ) % 128 ) < 2 );
-}
-
-
-// Test 5: Command-line parameters
-void TestOcpiOsProcessManager::test_5 ( )
-{
-  unsigned int numTests = sizeof ( test5CommandLines ) / sizeof ( char** );
-
-  for ( unsigned int testIdx = 0; testIdx < numTests; testIdx++ )
+  void TestOcpiOsProcessManager::SetUp ( )
   {
-    const char* const* commandLine = test5CommandLines [ testIdx ];
+    std::string d_argv0 ( "testProcessManagerInt" );
+    d_perform_test = false;
+  }
 
-    unsigned int testNo = testIdx + 1;
 
-    OCPI::OS::ProcessManager::ParameterList p;
-    p.push_back ( "5" );
-    p.push_back ( unsignedToString ( testNo ) );
+  void TestOcpiOsProcessManager::TearDown ( )
+  {
+    // Empty
+  }
 
-    for ( unsigned int pi = 0; commandLine [ pi ]; pi++ )
+
+  // Test 1: Starting and waiting for a process
+  TEST_F( TestOcpiOsProcessManager, test_1 )
+  {
+    if ( !d_perform_test )
     {
-      p.push_back ( commandLine [ pi ] );
+      return;
     }
-
+    OCPI::OS::ProcessManager::ParameterList p;
+    p.push_back ( "1" );
     OCPI::OS::ProcessManager pm ( d_argv0, p );
     pm.wait ( );
-
-    int ec = pm.getExitCode ( );
-    CPPUNIT_ASSERT( static_cast<unsigned int>( ec ) == testNo );
+    EXPECT_EQ( true, true );
   }
-}
+
+
+  // Test 2: Check exit code
+  TEST_F( TestOcpiOsProcessManager, test_2 )
+  {
+    if ( !d_perform_test )
+    {
+      return;
+    }
+    OCPI::OS::ProcessManager::ParameterList p;
+    p.push_back ( "2" );
+    OCPI::OS::ProcessManager pm ( d_argv0, p );
+    pm.wait ( );
+    int ec = pm.getExitCode ( );
+    EXPECT_EQ( ec, 42 );
+  }
+
+
+  // Test 3: Shutdown process
+  TEST_F( TestOcpiOsProcessManager, test_3 )
+  {
+    if ( !d_perform_test )
+    {
+      return;
+    }
+    OCPI::OS::ProcessManager::ParameterList p;
+    p.push_back ( "3" );
+    OCPI::OS::ProcessManager pm ( d_argv0, p );
+    pm.wait ( 1000 );
+    pm.shutdown ( );
+    pm.wait ( );
+    EXPECT_EQ( true, true );
+  }
+
+
+  // Test 4: Run multiple processes
+  TEST_F( TestOcpiOsProcessManager, test_4 )
+  {
+    if ( !d_perform_test )
+    {
+      return;
+    }
+    OCPI::OS::ProcessManager::ParameterList p;
+    p.push_back ( "4" );
+    OCPI::OS::ProcessManager pm1 ( d_argv0, p );
+    OCPI::OS::ProcessManager pm2 ( d_argv0, p );
+    pm1.detach  ();
+    OCPI::OS::ProcessManager pm3 ( d_argv0, p );
+    pm3.wait ( );
+    pm2.wait ( );
+
+    /*
+     * The process returns time() as its exit code.  That should tell us that
+     * the above actually happened in parallel (their exit codes are the same
+     * or at least very similar) rather than sequentially (their exit codes
+     * are 10 or more apart).
+     */
+
+    unsigned int ec2 = static_cast<unsigned int>( pm2.getExitCode ( ) );
+    unsigned int ec3 = static_cast<unsigned int>( pm3.getExitCode ( ) );
+    EXPECT_LT( ( ( ec3 - ec2 ) % 128 ), 2 );
+  }
+
+
+  // Test 5: Command-line parameters
+  TEST_F( TestOcpiOsProcessManager, test_5 )
+  {
+    if ( !d_perform_test )
+    {
+      return;
+    }
+    unsigned int numTests = sizeof ( test5CommandLines ) / sizeof ( char** );
+
+    for ( unsigned int testIdx = 0; testIdx < numTests; testIdx++ )
+    {
+      const char* const* commandLine = test5CommandLines [ testIdx ];
+
+      unsigned int testNo = testIdx + 1;
+
+      OCPI::OS::ProcessManager::ParameterList p;
+      p.push_back ( "5" );
+      p.push_back ( unsignedToString ( testNo ) );
+
+      for ( unsigned int pi = 0; commandLine [ pi ]; pi++ )
+      {
+        p.push_back ( commandLine [ pi ] );
+      }
+
+      OCPI::OS::ProcessManager pm ( d_argv0, p );
+      pm.wait ( );
+
+      int ec = pm.getExitCode ( );
+      EXPECT_EQ( static_cast<unsigned int>( ec ), testNo );
+    }
+  }
+
+} // End: namespace<unnamed>

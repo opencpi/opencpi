@@ -60,7 +60,7 @@
 
 // const char* OCPI_RCC_CONT_EP          = "ocpi-smb-pio://GPPSMB:900000.18.20";
 // const char* OCPI_RCC_CONT_EP          = "ocpi-pci-pio://1.0:900000.3.20";
-const char* OCPI_RCC_CONT_EP          = "ocpi-pci-pio://1.0.900000:900000.3.20";
+//const char* OCPI_RCC_CONT_EP          = "ocpi-pci-pio://1.0.900000:900000.3.20";
 
 
 class OcpiRccBinderConfigurator
@@ -91,8 +91,8 @@ OcpiRccBinderConfigurator ()
     verbose (false),
     standalone(false),
     msgSize( OCPI_RCC_DATA_BUFFER_SIZE ),
-    nBuffers(2),
-    endpoint(OCPI_RCC_CONT_EP)
+    nBuffers(2)
+			  //    endpoint(OCPI_RCC_CONT_EP)
 {
 }
 
@@ -335,7 +335,7 @@ void setupForPCMode()
 
 
     static OCPI::Util::PValue tprops[] = {
-      OCPI::Util::PVString("endpoint","ocpi-pci-pio://0.0:300000.1.10"),
+      //      OCPI::Util::PVString("endpoint","ocpi-pci-pio://0.0:300000.1.10"),
       OCPI::Util::PVEnd };
 
     inputPort = & WORKER_INPUT_ID->createInputPort(  PORT_0,

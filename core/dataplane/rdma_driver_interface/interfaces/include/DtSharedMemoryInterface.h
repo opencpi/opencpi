@@ -53,6 +53,7 @@
 #ifndef OCPI_DataTransfer_SharedMemoryInterface_H_
 #define OCPI_DataTransfer_SharedMemoryInterface_H_
 
+#include <OcpiParentChild.h>
 #include <OcpiOsDataTypes.h>
 #include <string>
 
@@ -63,27 +64,27 @@ namespace DataTransfer {
 
   // Protocol specific location class
   struct SMBResources;
+  class SmemServices;
   struct EndPoint
   {
 
-    std::string  end_point;                // deep copy of the endpoint string
-    std::string  protocol;                // protocol string
-    OCPI::OS::uint32_t     mailbox;        // endpoint mailbox
-    OCPI::OS::uint32_t          maxCount;        // Number of mailboxes in communication domain
-    OCPI::OS::uint32_t     size;                // Size of endpoint area in bytes
-    OCPI::OS::uint32_t     event_id;     
-    bool                  local;        // local endpoint
-    SMBResources*          resources;        // SMB resources associated with this endpoint
+    std::string          end_point;                // deep copy of the endpoint string
+    SmemServices         * smem;         // Shared memory 
+    std::string          protocol;                // protocol string
+    OCPI::OS::uint32_t   mailbox;        // endpoint mailbox
+    OCPI::OS::uint32_t   maxCount;        // Number of mailboxes in communication domain
+    OCPI::OS::uint32_t   size;                // Size of endpoint area in bytes
+    OCPI::OS::uint32_t   event_id;     
+    bool                 local;        // local endpoint
+    SMBResources*        resources;        // SMB resources associated with this endpoint
 
-    // Constructors
-    EndPoint(OCPI::OS::uint32_t size=0);
-    EndPoint( std::string& ep, OCPI::OS::uint32_t size=0);
+    EndPoint( std::string& ep, OCPI::OS::uint32_t size=0, bool local=false);
     EndPoint& operator=(EndPoint&);
     EndPoint& operator=(EndPoint*);
     virtual ~EndPoint(){};
 
     // Sets smem location data based upon the specified endpoint
-    virtual OCPI::OS::int32_t setEndpoint( std::string& ep );
+    OCPI::OS::int32_t setEndpoint( std::string& ep );
 
     // Get the address from the endpoint
     virtual const char* getAddress()=0;
@@ -103,10 +104,14 @@ namespace DataTransfer {
 
 
   // Shared memory services.  
-  class SmemServices
+  class XferFactory;
+  class SmemServices : public OCPI::Util::Child<XferFactory,SmemServices>
   {
+  private:
+    EndPoint * m_endpoint;
+
   public:
-    SmemServices (const EndPoint* ){};
+    SmemServices (XferFactory * parent, EndPoint* ep);
 
     /*
      * Attach to an existing shared memory object by name.
@@ -151,14 +156,14 @@ namespace DataTransfer {
     /*
      *        GetEndPoint - Returns the endpoint of the shared memory area
      */
-    virtual EndPoint* getEndPoint () = 0;
+    EndPoint * endpoint(){return m_endpoint;}
 
 
 
   public:
 
     // Destructor
-    virtual ~SmemServices () {};
+    virtual ~SmemServices ();
   };
 
 }

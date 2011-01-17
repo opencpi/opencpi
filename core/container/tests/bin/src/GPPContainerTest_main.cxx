@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -58,6 +57,7 @@
 #include <ProdWorker.h>
 #include <LoopbackWorker.h>
 #include <test_utilities.h>
+#include <OcpiDriver.h>
 
 #include <OcpiTransportServer.h>
 #include <OcpiTransportClient.h>
@@ -112,7 +112,7 @@ const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-socket-rdma://172.16.89.93;40006:6
 */
 
 
-int  OCPI_RCC_DATA_BUFFER_SIZE   = 128;
+int  OCPI_RCC_DATA_BUFFER_SIZE   = 1024;
 int  OCPI_RCC_CONT_NBUFFERS      = 1;
 extern volatile bool OCPI_TRACE_TX;
 
@@ -195,7 +195,7 @@ public:
 };
 
 
-const char* fpath = "/h/jmiller/tmp/";
+const char* fpath = "./tmp/";
 const int MAX_DESC_LEN = 1024;
 
 void writeDesc( std::string& desc, const char* file_name )
@@ -208,7 +208,7 @@ void writeDesc( std::string& desc, const char* file_name )
 #ifndef O_DIRECT
 #define O_DIRECT 0
 #endif
-  if ( (fd = open( fn.c_str(), O_CREAT | O_RDWR | O_DIRECT | O_DSYNC, 0666 )) < 0 ) {
+  if ( (fd = open( fn.c_str(), O_CREAT | O_RDWR , 0666 )) < 0 ) {
     printf("Could not read the port descriptor file (%s)\n",  fn.c_str() );
     printf("Good bye\n");
     exit(-1);
@@ -427,7 +427,8 @@ void setupForPCMode()
 
 
     //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
-    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ppp-dma"),
+    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
+						//    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
                                                                                   OCPI::Util::PVEnd };
   pc_inputPort = &WORKER_CONSUMER_ID->createInputPort( PORT_0,
                                                        OCPI_RCC_CONT_NBUFFERS,
@@ -443,34 +444,23 @@ void setupForPCMode()
 
   try {
 
-    // We will write our input desc to a file named pc_input.desc
-    writeDesc( pc_inputPort, "pc_input.desc" );
+    std::string desc, fb;
 
-    std::string s_lb_tDesc;
-    // We will read the loopback input descriptor  lb_input.desc 
-    s_lb_tDesc = readDesc( "lb_input.desc" );  
-
-
-    printf("Got the input descriptor from lb !!\n");
-
-    // Connect our output to the remote input port
-    localShadowPort = pc_outputPort->setFinalProviderInfo( s_lb_tDesc );
-
-    printf("Done setting the IP\n");
-
-    // We will write our output descriptor pc_output.desc
-    writeDesc(localShadowPort, "pc_output.desc" );
+    desc = pc_inputPort->getInitialProviderInfo(NULL);
+    writeDesc( desc, "pc_input1.desc" );
+    desc = readDesc( "lb_output1.desc" );  
+    fb = pc_inputPort->setInitialUserInfo( desc );
+    writeDesc( fb, "pc_input2.desc" );
+    desc = readDesc( "lb_output2.desc" );  
+    pc_inputPort->setFinalUserInfo( desc );
 
 
-    std::string s_lb_sDesc;
-    // We will wait until the loopback writes its descriptor in lb_output.desc
-    s_lb_sDesc =  readDesc( "lb_output.desc" );
-
-    printf("Got the output descriptor from lb !!\n");
-
-    // Setup our input to provide flow control to the connected output
-    pc_inputPort->setFinalUserInfo( s_lb_sDesc );
-
+    desc = readDesc( "lb_input1.desc" );  
+    fb  = pc_outputPort->setInitialProviderInfo( NULL, desc );
+    writeDesc(fb, "pc_output1.desc" );
+    desc = readDesc( "lb_input2.desc" );  
+    fb = pc_outputPort->setFinalProviderInfo( desc);
+    writeDesc(fb, "pc_output2.desc" );
 
     printf("Done setting fc\n");
 
@@ -508,8 +498,9 @@ void setupForLoopbackMode()
                                                           OCPI_RCC_CONT_NBUFFERS,
                                                           OCPI_RCC_DATA_BUFFER_SIZE, NULL);
 
-    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
-                                               //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ppp-dma"),
+    //        static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
+    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
+                     //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ppp-dma"),
                                                OCPI::Util::PVEnd };
     lb_inputPort = &WORKER_LOOPBACK_ID->createInputPort( PORT_1,
                                                           OCPI_RCC_CONT_NBUFFERS,
@@ -520,53 +511,25 @@ void setupForLoopbackMode()
   CATCH_ALL_RETHROW( "creating ports");
 
 
-  printf("*** write desc 1\n");
-
-
-  // We will write our output descriptor pc_output.desc
-  writeDesc(lb_inputPort, "lb_input.desc" );
-
-
-  printf("*** read desc 1\n");
-
-  // Now wait till we get our producers' consumer descriptor
-  std::string pc_tDesc;
-  pc_tDesc = readDesc("pc_input.desc" );  
-
-
-  // We will connect our producer to the remote consumer.  We got the consumers descriptor out of band
-  // but it is complete and will allow us to establish this connection without any other information.  The
-  // Consumer however is waiting for us to provide it with feedback control information so that it can complete
-  // its portion of this conection.  We are not able to provide this information until we create the connections
-  // since it is dependent on our "shadow" input buffers.
-
-  printf("*** connect input\n");
-
-  std::string localShadowPort;
   try {
-    localShadowPort = lb_outputPort->setFinalProviderInfo( pc_tDesc );
+    std::string desc, fb;
+
+    desc = readDesc( "pc_input1.desc" );  
+    fb  = lb_outputPort->setInitialProviderInfo( NULL, desc );
+    writeDesc(fb, "lb_output1.desc" );
+    desc = readDesc( "pc_input2.desc" );  
+    fb = lb_outputPort->setFinalProviderInfo( desc);
+    writeDesc(fb, "lb_output2.desc" );
+
+    desc = lb_inputPort->getInitialProviderInfo(NULL);
+    writeDesc( desc, "lb_input1.desc" );
+    desc = readDesc( "pc_output1.desc" );  
+    fb = lb_inputPort->setInitialUserInfo( desc );
+    writeDesc( fb, "lb_input2.desc" );
+    desc = readDesc( "pc_output2.desc" );  
+    lb_inputPort->setFinalUserInfo( desc );
   }
-  CATCH_ALL_RETHROW( "connecting input port");
-
-  printf("*** write desc 2\n");
-
-  // So now we can send the "shadow" port descriptor back to the consumer so that they can complete the 
-  // circuit
-  writeDesc( localShadowPort, "lb_output.desc");
-
-
-  printf("*** read desc 1\n");
-
-  // Now we will block until we get the producer's "buffer empty" flag descriptor back.
-  std::string pc_sDesc;
-  pc_sDesc = readDesc("pc_output.desc" );
-
-  try {
-    lb_inputPort->setFinalUserInfo( pc_sDesc );
-  }
-  CATCH_ALL_RETHROW( "configuring output flow control");
-
-  printf("Setup is complete\n");
+  CATCH_ALL_RETHROW( "connecting ports");
 
 }
 
@@ -588,10 +551,13 @@ bool parseArgs( int argc, char** argv)
 }
 
 
-static OCPI::Util::DriverManager dm("Container");
+extern OCPI::Util::DriverManager dm;
 int gpp_cont(int argc, char** argv)
 {
   printf("In gpp_cont, Instrumentation turned on\n");
+
+  //  OCPI::Util::DriverManager dm("Container");
+
   DataTransfer::EventManager* event_manager = NULL;
 
     try {
@@ -642,12 +608,6 @@ int gpp_cont(int argc, char** argv)
       // First thing here on the GPP container is that we need to create the workers and
       // the worker ports.  We will use OCPIRDT mode 3 for this test. 
       if ( ! loopback ) {
-
-
-        // Bootstrap the communications
-        
-
-
 
 
         try { 
@@ -720,7 +680,6 @@ int gpp_cont(int argc, char** argv)
         printf("Running without a event manager\n");
       }      
       
-
       while( OCPI_RUN_TEST ) {
                         
         if (!loopback) {
@@ -733,21 +692,12 @@ int gpp_cont(int argc, char** argv)
           if ( event_manager ) {
             do {
               gpp_container->dispatch(event_manager);
-
-              /*
-              if ( event_manager->wait_for_event( 100, event_id, evalue ) == DataTransfer::EventTimeout ) {
-                printf("We have not recieved an event for 100 uSec.\n");
-              }
-              else {
-                gpp_container->dispatch( event_manager );
-                break;
-              }
-              */
-
             } while(1);
           }
           else {
             gpp_container->dispatch( event_manager );
+
+	    //	    OCPI::OS::sleep( 100 );
           }
 
         }
@@ -783,6 +733,7 @@ int gpp_cont(int argc, char** argv)
     catch ( OCPI::Util::EmbeddedException& eex ) {                        
       printf(" \n gpp main: Caught an embedded exception");  
       printf( " error number = %d", eex.m_errorCode );                        
+      printf(" Error = %s\n", eex.getAuxInfo() );
     }                                                               
     catch( ... ) {
       printf("gpp: Caught an unknown exception\n" );

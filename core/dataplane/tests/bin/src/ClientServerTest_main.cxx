@@ -107,7 +107,7 @@ public:
     gpp_circuits[circuit_count++] = new_circuit;
   }
 
-  void dataAvailable( MessageCircuit* circuit ) {
+  void dataAvailable( MessageCircuit* /* circuit */ ) {
 
   }
 
@@ -129,7 +129,7 @@ public:
   /**********************************
    *  This method gets called when data is available on a circuit
    **********************************/        
-  void dataAvailable( MessageCircuit* circuit )
+  void dataAvailable( MessageCircuit* /* circuit */ )
   {
 
   }
@@ -137,7 +137,7 @@ public:
   /**********************************
    * This method gets called when an error gets generated
    *********************************/
-  virtual void error( OCPI::Util::EmbeddedException& ex )
+  virtual void error( OCPI::Util::EmbeddedException& /* ex */ )
   {
 
   }
@@ -184,8 +184,6 @@ int gpp_cont(int argc, char** argv)
         OCPI::OS::sleep( 500 );
         printf("Waiting for a client to connect\n");
       }
-
-      
 
       printf("***** Got a new client !! \n");
       for (int n=0; n<10; n++) {

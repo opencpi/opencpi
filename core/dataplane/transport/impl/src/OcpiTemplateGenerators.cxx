@@ -82,36 +82,6 @@ TransferTemplateGenerator::
 }
 
 
-static 
-XferRequest* 
-Group( XferServices* temp, XferRequest* xfr1, XferRequest* t2 )
-{
-
-  /* Group with the existing transfer */
-  XferRequest* groups[3];
-  XferRequest* ptmp;
-
-  /* Build the list of transfers */
-  groups[0] = xfr1;
-  groups[1] = t2;
-  groups[2] = 0;
-
-  /* Group the transfers */
-  ptmp = temp->group (groups);
-
-  /* Release the previous transfer */
-  if ( ptmp != t2 )
-    delete t2;
-
-  /* Release the just grouped transfer */
-  if ( ptmp != xfr1 ) 
-    delete xfr1;
-
-  /* Copy the transfer */
-  return ptmp;
-}
-
-
 // Call appropriate creator
 void  
 TransferTemplateGenerator::
@@ -125,11 +95,16 @@ create( Transport* transport, PortSet* output, PortSet* input, TransferControlle
 
     Port* s_port = output->getPort(s_n);
 
+
+    if ( s_port->isShadow() ) {
+      continue;
+    }
+
 #ifndef NDEBUG
     printf("s port endpoints = %s, %s, %s\n", 
-           s_port->getRealShemServices()->getEndPoint()->end_point.c_str(),
-           s_port->getShadowShemServices()->getEndPoint()->end_point.c_str(),           
-           s_port->getLocalShemServices()->getEndPoint()->end_point.c_str() );
+           s_port->getRealShemServices()->endpoint()->end_point.c_str(),
+           s_port->getShadowShemServices()->endpoint()->end_point.c_str(),           
+           s_port->getLocalShemServices()->endpoint()->end_point.c_str() );
 #endif
 
 
@@ -149,15 +124,15 @@ create( Transport* transport, PortSet* output, PortSet* input, TransferControlle
 
 #ifndef NDEBUG
     printf("t port endpoints = %s, %s, %s\n", 
-           t_port->getRealShemServices()->getEndPoint()->end_point.c_str(),
-           t_port->getShadowShemServices()->getEndPoint()->end_point.c_str(),           
-           t_port->getLocalShemServices()->getEndPoint()->end_point.c_str() );
+           t_port->getRealShemServices()->endpoint()->end_point.c_str(),
+           t_port->getShadowShemServices()->endpoint()->end_point.c_str(),           
+           t_port->getLocalShemServices()->endpoint()->end_point.c_str() );
 #endif
 
 
     // If the output port is not local, but the transfer role requires us to move data, we need to create transfers
     // for the remote port
-    if ( ! transport->isLocalEndpoint( t_port->getRealShemServices()->getEndPoint()->end_point.c_str()  ) ) {
+    if ( ! transport->isLocalEndpoint( t_port->getRealShemServices()->endpoint()->end_point.c_str()  ) ) {
       break;
     }
 
@@ -178,23 +153,20 @@ create( Transport* transport, PortSet* output, PortSet* input, TransferControlle
 }
 
 // These methods are hooks to add additional transfers
-XferRequest* TransferTemplateGenerator::addTransferPreData( TDataInterface& tdi )
+bool TransferTemplateGenerator::addTransferPreData( XferRequest*, TDataInterface&)
 {
-  ( void ) tdi;
-  return NULL;
+  return false;
 }
 
 
-XferRequest* TransferTemplateGenerator::addTransferPostData( TDataInterface& tdi)
+bool TransferTemplateGenerator::addTransferPostData( XferRequest*, TDataInterface& )
 {
-  ( void ) tdi;
-  return NULL;
+  return false;
 }
 
-XferRequest* TransferTemplateGenerator::addTransferPreState( TDataInterface& tdi)                                                                                        
+bool TransferTemplateGenerator::addTransferPreState( XferRequest*, TDataInterface& )          
 {
-  ( void ) tdi;
-  return NULL;
+  return false;
 }
 
 
@@ -245,6 +217,11 @@ void TransferTemplateGenerator::createInputBroadcastTemplates(PortSet* output,
       // We dont need to do anything for co-location
       if ( m_zcopyEnabled && s_port->supportsZeroCopy( input ) ) {
         temp->addZeroCopyTransfer( NULL, t_buf );
+
+	//h
+	continue;
+
+
       }
 
       /* Attempt to get or make a transfer template */
@@ -264,14 +241,13 @@ void TransferTemplateGenerator::createInputBroadcastTemplates(PortSet* output,
 #endif
 
       // Create the copy in the template
-      XferRequest* ptransfer;
+      XferRequest* ptransfer = ptemplate->createXferRequest();
       try {
-        ptransfer = 
-          ptemplate->copy (
-                           input_offsets->localStateOffset,
-                           input_offsets->myShadowsRemoteStateOffsets[s_pid],
-                           sizeof(BufferState),
-                           XferRequest::FirstTransfer, NULL);
+        ptransfer->copy (
+			 input_offsets->localStateOffset,
+			 input_offsets->myShadowsRemoteStateOffsets[s_pid],
+			 sizeof(BufferState),
+			 XferRequest::FirstTransfer );
       }
       catch ( ... ) {
         FORMAT_TRANSFER_EC_RETHROW( input, s_port );
@@ -370,36 +346,33 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
           FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
         }
 
-        // Create the transfer that copys the output data to the input data
-        XferRequest* grouped_ptransfer;
+
+	XferRequest* ptransfer;
 
         try {
 
-          XferRequest* ptransfer = 
-            ptemplate->copy (
-                             output_offsets->bufferOffset,
-                             input_offsets->bufferOffset,
-                             output_offsets->bufferSize,
-                             XferRequest::FirstTransfer, NULL);
+	  ptransfer = ptemplate->createXferRequest();
+
+	  ptransfer->copy (
+			   output_offsets->bufferOffset,
+			   input_offsets->bufferOffset,
+			   output_offsets->bufferSize,
+			   XferRequest::FirstTransfer );
 
           // Create the transfer that copys the output meta-data to the input meta-data
-          XferRequest* ptransfer_2 =
-            ptemplate->copy (
-                             output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-                             input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-                             sizeof(OCPI::OS::int64_t),
-                             XferRequest::None, ptransfer);
+	  ptransfer->copy (
+			   output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			   input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			   sizeof(OCPI::OS::int64_t),
+			   XferRequest::None );
 
-          grouped_ptransfer = Group( ptemplate, ptransfer, ptransfer_2 );
 
           // Create the transfer that copys the output state to the remote input state
-          ptransfer = ptemplate->copy (
-                                       output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                       input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                       sizeof(BufferState),
-                                       XferRequest::LastTransfer, ptransfer_2);
-
-          grouped_ptransfer = Group(ptemplate, grouped_ptransfer, ptransfer );
+          ptransfer->copy (
+			   output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   sizeof(BufferState),
+			   XferRequest::LastTransfer );
 
         }
         catch ( ... ) {
@@ -408,7 +381,7 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
 
 
         // Add the transfer 
-        temp->addTransfer( grouped_ptransfer );
+        temp->addTransfer( ptransfer );
 
       } // end for each input buffer
 
@@ -417,8 +390,7 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
 
       // A output braodcast must also send to all other outputs to update them as well
       // Now we need to pass the output control baton onto the next output port
-      XferRequest* p_transfer[2];
-      p_transfer[0] = p_transfer[1] = NULL;
+      XferRequest* ptransfer2=NULL;
       for ( OCPI::OS::uint32_t ns=0; ns<s_port->getPortSet()->getPortCount(); ns++ ) {
         Port* next_sp = 
           static_cast<Port*>(s_port->getPortSet()->getPortFromIndex(ns));
@@ -437,29 +409,24 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
           FORMAT_TRANSFER_EC_RETHROW( s_port, next_sp );
         }
 
+	ptransfer2 = ptemplate->createXferRequest();
+
         // Create the transfer from out output contol state to the next
         try {
-          p_transfer[0] = ptemplate->copy (
-                                           output_offsets->portSetControlOffset,
-                                           next_output_offsets->portSetControlOffset,
-                                           sizeof(OutputPortSetControl),
-                                           XferRequest::None, NULL);
-
-          if ( p_transfer[1] ) {
-            p_transfer[1] = Group( ptemplate, p_transfer[0], p_transfer[1] );
-          }
-          else {
-            p_transfer[1] = p_transfer[0];
-          }
-        }
-        catch( ... ) {
-          FORMAT_TRANSFER_EC_RETHROW( s_port, next_sp );
-        }
+          ptransfer2->copy (
+			   output_offsets->portSetControlOffset,
+			   next_output_offsets->portSetControlOffset,
+			   sizeof(OutputPortSetControl),
+			   XferRequest::None );
+	}
+	catch( ... ) {
+	  FORMAT_TRANSFER_EC_RETHROW( s_port, next_sp );
+	}
       }
 
       // Add the transfer 
-      if ( p_transfer[1] ) {
-        temp->addTransfer( p_transfer[1] );
+      if ( ptransfer2 ) {
+	temp->addTransfer( ptransfer2 );
       }
 
     } // end for each output buffer
@@ -467,6 +434,8 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
   }  // end for each input port
 
 }
+
+
 
 
 
@@ -516,7 +485,7 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
       // output ports, the offsets are indexed via the output port ordinals.
       // If the output is co-located with us, no shadow exists.
       Port* s_port = output->getPort(n);
-      int s_pid = s_port->getRealShemServices()->getEndPoint()->mailbox;
+      int s_pid = s_port->getRealShemServices()->endpoint()->mailbox;
 
       if ( sent[s_pid] ) {
         continue;
@@ -535,6 +504,11 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
         printf("Adding Zery copy for input response\n");
 #endif
         temp->addZeroCopyTransfer( NULL, t_buf );
+
+	//h
+	continue;
+
+
       }
 
       sent[s_pid] = 1;
@@ -547,15 +521,14 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
         FORMAT_TRANSFER_EC_RETHROW( input, s_port );
       }
 
-      XferRequest* ptransfer;
+      XferRequest* ptransfer = ptemplate->createXferRequest();
       try {
         // Create the copy in the template
-        ptransfer = 
-          ptemplate->copy (
-                           input_offsets->localStateOffset + (sizeof(BufferState) * MAX_PCONTRIBS) + (sizeof(BufferState)* input->getPortId()),
-                           input_offsets->myShadowsRemoteStateOffsets[s_pid],
-                           sizeof(BufferState),
-                           XferRequest::LastTransfer, NULL);
+        ptransfer->copy (
+			 input_offsets->localStateOffset + (sizeof(BufferState) * MAX_PCONTRIBS) + (sizeof(BufferState)* input->getPortId()),
+			 input_offsets->myShadowsRemoteStateOffsets[s_pid],
+			 sizeof(BufferState),
+			 XferRequest::LastTransfer );
       }
       catch( ... ) {
         FORMAT_TRANSFER_EC_RETHROW( input, s_port );
@@ -686,41 +659,37 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
         }
 
         // Create the transfer that copys the output data to the input data
-        XferRequest* grouped_ptransfer;
+        XferRequest* ptransfer = ptemplate->createXferRequest();
 
         try {
-          XferRequest* ptransfer = 
-            ptemplate->copy (
-                             output_offsets->bufferOffset,
-                             input_offsets->bufferOffset,
-                             output_offsets->bufferSize,
-                             XferRequest::FirstTransfer, NULL);
+          ptransfer->copy (
+			   output_offsets->bufferOffset,
+			   input_offsets->bufferOffset,
+			   output_offsets->bufferSize,
+			   XferRequest::FirstTransfer );
 
           // Create the transfer that copys the output meta-data to the input meta-data
-          XferRequest* ptransfer_2 =
-            ptemplate->copy (
-                             output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-                             input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-                             sizeof(OCPI::OS::int64_t),
-                             XferRequest::DataOffset, ptransfer );
+          ptransfer->copy (
+			   output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			   input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			   sizeof(OCPI::OS::int64_t),
+			   XferRequest::DataOffset  );
 
-          grouped_ptransfer = Group( ptemplate, ptransfer, ptransfer_2 );
 
           // Create the transfer that copys the output state to the remote input state
-          ptransfer = ptemplate->copy (
-                                       output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                       input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                       sizeof(BufferState),
-                                       XferRequest::LastTransfer, grouped_ptransfer);
+          ptransfer->copy (
+			   output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   sizeof(BufferState),
+			   XferRequest::LastTransfer );
 
-          grouped_ptransfer = Group(ptemplate, grouped_ptransfer, ptransfer );
         }
         catch( ... ) {
           FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
         }
 
         // Add the transfer 
-        temp->addTransfer( grouped_ptransfer );
+        temp->addTransfer( ptransfer );
 
       } // end for each input buffer
 
@@ -854,19 +823,18 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
         }
 
         // Create the transfer that copys the output data to the input data
-        XferRequest* ptransfer;
+        XferRequest* ptransfer = ptemplate->createXferRequest();
 
         // Note that in the ActiveFlowControl mode we only send the state to indicate that our
         // buffer is ready for the remote actor to pull data.
         try {
 
           // Create the transfer that copys the output state to the remote input state
-          ptransfer = 
-            ptemplate->copy (
-                             output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                             input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                             sizeof(BufferState),
-                             XferRequest::LastTransfer, NULL);
+          ptransfer->copy (
+			   output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   sizeof(BufferState),
+			   XferRequest::LastTransfer );
 
         }
         catch( ... ) {
@@ -919,12 +887,7 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
 
     //Add the template to the controller
     cont->addTemplate( temp, 0, 0, input->getPortId(), t_tid, false, TransferController::INPUT );
-
-#ifdef NEEDED
-    struct PortMetaData::InputPortBufferControlMap *input_offsets = 
-      &input->getMetaData()->m_bufferData[t_tid].inputOffsets;
-#endif
-
+ 
     // Since there may be multiple output ports on 1 processs, we need to make sure we dont send
     // more than 1 time
     int sent[MAX_PCONTRIBS];
@@ -937,7 +900,7 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
       // output ports, the offsets are indexed via the output port ordinals.
       // If the output is co-located with us, no shadow exists.
       Port* s_port = output->getPort(n);
-      int s_pid = s_port->getRealShemServices()->getEndPoint()->mailbox;
+      int s_pid = s_port->getRealShemServices()->endpoint()->mailbox;
 
       if ( sent[s_pid] ) {
         continue;
@@ -1062,39 +1025,33 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
         }
 
         // Create the transfer that copys the output data to the input data
-        XferRequest* grouped_ptransfer;
+        XferRequest* ptransfer = ptemplate->createXferRequest();
 
         try {
 
           // Create the data buffer transfer
-          XferRequest* ptransfer = 
-            ptemplate->copy (
-                             output_offsets->bufferOffset,
-                             input_offsets->bufferOffset,
-                             output_offsets->bufferSize,
-                             XferRequest::FirstTransfer, NULL);
+          ptransfer->copy (
+			   output_offsets->bufferOffset,
+			   input_offsets->bufferOffset,
+			   output_offsets->bufferSize,
+			   XferRequest::FirstTransfer );
 
           // Create the transfer that copies the output meta-data to the input meta-data 
-          XferRequest* ptransfer_2 =
-            ptemplate->copy (
-                             output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-                             input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-                             sizeof(OCPI::OS::int64_t),
-                             XferRequest::DataOffset, ptransfer );
-
-          grouped_ptransfer = Group( ptemplate, ptransfer, ptransfer_2 );
+          ptransfer->copy (
+			   output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			   input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			   sizeof(OCPI::OS::int64_t),
+			   XferRequest::DataOffset  );
 
           // FIXME.  We need to allocate a separate local flag for this.  (most dma engines dont have
           // an immediate mode).
           // Create the transfer that copies our state to back to the output to indicate that its buffer
           // is now available for re-use.
-          ptransfer = ptemplate->copy (
-                                       input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                       output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                       sizeof(BufferState),
-                                       XferRequest::LastTransfer, grouped_ptransfer);
-
-          grouped_ptransfer = Group(ptemplate, grouped_ptransfer, ptransfer );
+          ptransfer->copy (
+			   input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   sizeof(BufferState),
+			   XferRequest::LastTransfer );
 
         }
         catch( ... ) {
@@ -1102,7 +1059,7 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
         }
 
         // Add the transfer 
-        temp->addTransfer( grouped_ptransfer );
+        temp->addTransfer( ptransfer );
 
       } // end for each input buffer
 
@@ -1233,7 +1190,7 @@ createOutputTransfers(Port* s_port,
         }
 
         /* Attempt to get or make a transfer template */
-        XferRequest* ptransfer[2];
+        XferRequest* ptransfer;
         XferRequest::Flags flags;
         XferServices* ptemplate = 0; // init to suppress warning...
         if ( standard_transfer ) {
@@ -1246,55 +1203,41 @@ createOutputTransfers(Port* s_port,
             FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
           }
         }
+	ptransfer = ptemplate->createXferRequest();
 
         // Pre-data transfer hook
-        ptransfer[0] = addTransferPreData( tdi );
-        flags = ptransfer[0] ? XferRequest::None : XferRequest::FirstTransfer;
+        bool added = addTransferPreData( ptransfer, tdi );
+        flags =added ? XferRequest::None : XferRequest::FirstTransfer;
 
 
         // Create the transfer that copys the output data to the input data
         if ( standard_transfer ) {
 
           try {
-            ptransfer[1] = ptemplate->copy (
-                                            output_offsets->bufferOffset,
-                                            input_offsets->bufferOffset,
-                                            output_offsets->bufferSize,
-                                            (XferRequest::Flags)(flags | XferRequest::DataOffset), ptransfer[0]);
-
-            if ( ptransfer[0] ) { 
-              ptransfer[0] = Group( ptemplate, ptransfer[0], ptransfer[1] );
-            }
-            else {
-              ptransfer[0] = ptransfer[1];
-            }
+            ptransfer->copy (
+			     output_offsets->bufferOffset,
+			     input_offsets->bufferOffset,
+			     output_offsets->bufferSize,
+			     (XferRequest::Flags)(flags | XferRequest::DataOffset) );
           }
           catch ( ... ) {
             FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
           }
-  
 
         }
 
         // Post-data transfer hook
-        ptransfer[1] = addTransferPostData(tdi);
-        if ( ptransfer[1] && ptransfer[0]) { 
-          ptransfer[0] = Group( ptemplate, ptransfer[0], ptransfer[1] );
-        }
-        else if ( ptransfer[1] ) {
-          ptransfer[0] = ptransfer[1];
-        }
+        addTransferPostData( ptransfer, tdi);
 
         // Create the transfer that copys the output meta-data to the input meta-data
         if ( standard_transfer ) {
 
           try {
-            ptransfer[1] = ptemplate->copy (
-                                            output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-                                            input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-                                            sizeof(OCPI::OS::int64_t),
-                                            XferRequest::None, ptransfer[0]);
-            ptransfer[0] = Group( ptemplate, ptransfer[0], ptransfer[1] );
+            ptransfer->copy (
+			     output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			     input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			     sizeof(OCPI::OS::int64_t),
+			     XferRequest::None );
           }
           catch ( ... ) {
             FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
@@ -1303,23 +1246,16 @@ createOutputTransfers(Port* s_port,
         }
 
         // Pre-state transfer hook
-        ptransfer[1] = addTransferPreState(  tdi );
-        if ( ptransfer[1] && ptransfer[0] ) { 
-          ptransfer[0] = Group( ptemplate, ptransfer[0], ptransfer[1] );
-        }
-        else if ( ptransfer[1] ) {
-          ptransfer[0] = ptransfer[1];
-        }
+        addTransferPreState(  ptransfer, tdi );
 
         // Create the transfer that copys the output state to the remote input state
         if ( standard_transfer ) {
           try {
-            ptransfer[1] = ptemplate->copy (
-                                            output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                            input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                            sizeof(BufferState),
-                                            XferRequest::LastTransfer, ptransfer[0]);
-            ptransfer[0] = Group(ptemplate, ptransfer[0], ptransfer[1] );
+            ptransfer->copy (
+			     output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			     input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			     sizeof(BufferState),
+			     XferRequest::LastTransfer );
           }
           catch ( ... ) {
             FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
@@ -1327,9 +1263,7 @@ createOutputTransfers(Port* s_port,
         }
 
         // Add the transfer 
-        if ( ptransfer[0] ) {
-          temp->addTransfer( ptransfer[0] );
-        }
+	temp->addTransfer( ptransfer );
 
       } // end for each input buffer
 
@@ -1350,15 +1284,12 @@ createOutputTransfers(Port* s_port,
  ************************************************************************************
  *
  */
-XferRequest* TransferTemplateGeneratorPattern3::addTransferPreState( TDataInterface& tdi)
+bool TransferTemplateGeneratorPattern3::addTransferPreState( XferRequest* pt, TDataInterface& tdi)
 {
 
 #ifndef NDEBUG
   printf("*** In TransferTemplateGeneratorPattern3::addTransferPreState() \n");
 #endif
-
-  XferRequest* ptransfer[2];
-  ptransfer[0] = ptransfer[1] = NULL;
 
   // We need to update all of the shadow buffers for all "real" output ports
   // to let them know that the input buffer for this input port has been allocated
@@ -1395,22 +1326,18 @@ XferRequest* TransferTemplateGeneratorPattern3::addTransferPreState( TDataInterf
         FORMAT_TRANSFER_EC_RETHROW( tdi.s_port, shadow_port );
       }
 
+      XferRequest* ptransfer = ptemplate->createXferRequest();
+      pt->group(ptransfer);
+
       try {
 
         // Create the transfer that copys the local shadow buffer state to the remote
         // shadow buffers state
-        ptransfer[0] = ptemplate->copy (
-                                        input_offsets->myShadowsRemoteStateOffsets[our_smb_id],
-                                        input_offsets->myShadowsRemoteStateOffsets[idx],
-                                        sizeof(BufferState),
-                                        XferRequest::None, ptransfer[1]);
-
-        if ( ptransfer[1] ) {
-          ptransfer[1] = Group( ptemplate, ptransfer[0], ptransfer[1] );
-        }
-        else {
-          ptransfer[1] = ptransfer[0];
-        }
+        ptransfer->copy (
+			 input_offsets->myShadowsRemoteStateOffsets[our_smb_id],
+			 input_offsets->myShadowsRemoteStateOffsets[idx],
+			 sizeof(BufferState),
+			 XferRequest::None );
 
       }
       catch ( ... ) {
@@ -1438,27 +1365,24 @@ XferRequest* TransferTemplateGeneratorPattern3::addTransferPreState( TDataInterf
     FORMAT_TRANSFER_EC_RETHROW( tdi.s_port, next_sp );
   }
 
+  XferRequest * ptransfer2 = ptemplate->createXferRequest();
+
   // Create the transfer from out output contol state to the next
 
   try {
-    ptransfer[0] = ptemplate->copy (
-                                    output_offsets->portSetControlOffset,
-                                    next_output_offsets->portSetControlOffset,
-                                    sizeof(OutputPortSetControl),
-                                    XferRequest::LastTransfer, ptransfer[1]);
-
-    if ( ptransfer[1] ) {
-      ptransfer[1] = Group( ptemplate, ptransfer[0], ptransfer[1] );
-    }
-    else {
-      ptransfer[1] = ptransfer[0];
-    }
+    ptransfer2->copy (
+		      output_offsets->portSetControlOffset,
+		      next_output_offsets->portSetControlOffset,
+		      sizeof(OutputPortSetControl),
+		      XferRequest::LastTransfer );
   }
   catch ( ... ) {
     FORMAT_TRANSFER_EC_RETHROW(  tdi.s_port, next_sp );
   }
 
-  return ptransfer[1];
+  pt->group(ptransfer2);
+
+  return true;
 }
 
 
@@ -1608,34 +1532,27 @@ createOutputTransfers(Port* s_port,
               FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
             }
 
+            XferRequest* ptransfer = ptemplate->createXferRequest();
+
             // Now we need to go to the data partition class and ask for some offsets
             DataPartition::BufferInfo *bi_tmp, *buffer_info;
             dpart->calculateBufferOffsets( transfer_count, s_buf, t_buf, &buffer_info);
 
-            XferRequest* ptransfer[2];
+
             bi_tmp = buffer_info;
-            ptransfer[0] = ptransfer[1] = NULL;
             int total_bytes=0;
             while ( bi_tmp ) {
-
-              ptransfer[1] = ptransfer[0];
 
               try {
 
                 // Create the transfer that copys the output data to the input data
-                ptransfer[0] = ptemplate->copy (
-                                                output_offsets->bufferOffset + bi_tmp->output_offset,
-                                                input_offsets->bufferOffset + bi_tmp->input_offset,
-                                                bi_tmp->length,
-                                                XferRequest::FirstTransfer, NULL);
+                ptransfer->copy (
+				 output_offsets->bufferOffset + bi_tmp->output_offset,
+				 input_offsets->bufferOffset + bi_tmp->input_offset,
+				 bi_tmp->length,
+				 XferRequest::FirstTransfer );
 
                 total_bytes += bi_tmp->length;
-
-                // Group the transfers if needed
-                if ( ptransfer[0] && ptransfer[1] ) {
-                  ptransfer[0] =  Group( ptemplate, ptransfer[0], ptransfer[1] );
-                  ptransfer[1] = NULL;
-                }
 
               }
               catch ( ... ) {
@@ -1663,28 +1580,25 @@ createOutputTransfers(Port* s_port,
             try {
 
               // Create the transfer that copys the output meta-data to the input meta-data
-              ptransfer[1] = ptemplate->copy (
-                                              output_offsets->metaDataOffset + t_port->getPortId() * sizeof(BufferMetaData),
-                                              input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-                                              sizeof(OCPI::OS::uint64_t),
-                                              XferRequest::None, ptransfer[0]);
-              ptransfer[0] = Group( ptemplate, ptransfer[0], ptransfer[1] );
+              ptransfer->copy (
+			       output_offsets->metaDataOffset + t_port->getPortId() * sizeof(BufferMetaData),
+			       input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			       sizeof(OCPI::OS::uint64_t),
+			       XferRequest::None );
 
               // Create the transfer that copys the output state to the remote input state
-              ptransfer[1] = ptemplate->copy (
-                                              output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                              input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-                                              sizeof(BufferState),
-                                              XferRequest::LastTransfer, ptransfer[0]);
-
-              ptransfer[0] = Group( ptemplate, ptransfer[0], ptransfer[1] );
+              ptransfer->copy (
+			       output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			       input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			       sizeof(BufferState),
+			       XferRequest::LastTransfer );
             }
             catch ( ... ) {
               FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
             }
 
             // Add the transfer 
-            temp->addTransfer( ptransfer[0] );
+            temp->addTransfer( ptransfer );
 
           } // end for each input port
 

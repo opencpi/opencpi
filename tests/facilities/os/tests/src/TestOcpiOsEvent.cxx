@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -37,30 +37,13 @@
 #include "OcpiOsDebug.h"
 #include "OcpiOsThreadManager.h"
 
-#include <cppunit/extensions/HelperMacros.h>
+#include "gtest/gtest.h"
 
 namespace
 {
-  class TestOcpiOsEvent : public CppUnit::TestFixture
+  class TestOcpiOsEvent : public ::testing::Test
   {
-    private:
-      CPPUNIT_TEST_SUITE( TestOcpiOsEvent );
-      CPPUNIT_TEST( test_1 );
-      CPPUNIT_TEST( test_2 );
-      CPPUNIT_TEST( test_3 );
-      CPPUNIT_TEST( test_4 );
-      CPPUNIT_TEST( test_5 );
-      CPPUNIT_TEST_SUITE_END();
-
-    public:
-      void setUp ( );
-      void tearDown ( );
-
-     void test_1 ( );
-     void test_2 ( );
-     void test_3 ( );
-     void test_4 ( );
-     void test_5 ( );
+    // Empty
   };
 
   void test3Thread ( void* opaque )
@@ -88,75 +71,60 @@ namespace
     }
   }
 
-} // End: namespace<unamed>
-
-// Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( TestOcpiOsEvent, "os" );
-
-void TestOcpiOsEvent::setUp ( )
-{
-  // Empty
-}
-
-
-void TestOcpiOsEvent::tearDown ( )
-{
-  // Empty
-}
-
-
-// Test 1: Setting and waiting for the event
-void TestOcpiOsEvent::test_1 ( )
-{
-  OCPI::OS::Event e;
-  e.set ( );
-  e.wait ( );
-  CPPUNIT_ASSERT( true );
-}
-
-
-// Test 2: Initializing event to "set", then waiting for the event
-void TestOcpiOsEvent::test_2 ( )
-{
-  OCPI::OS::Event e ( true );
-  e.wait ( );
-  CPPUNIT_ASSERT( true );
-}
-
-// Test 3: Setting the event in another thread
-void TestOcpiOsEvent::test_3 ( )
-{
-  OCPI::OS::Event e;
-  OCPI::OS::ThreadManager tm ( test3Thread, &e );
-  e.wait ( );
-  tm.join ( );
-  CPPUNIT_ASSERT( true );
-}
-
-// Test 4: Leader and follower
-void TestOcpiOsEvent::test_4 ( )
-{
-  Test4Data t4d;
-  OCPI::OS::ThreadManager tm ( test4Thread, &t4d );
-
-  for ( int i = 0; i < 42; i++ )
+  // Test 1: Setting and waiting for the event
+  TEST( TestOcpiOsEvent, test_1 )
   {
-    t4d.e1.wait ( );
-    CPPUNIT_ASSERT ( t4d.i == i );
-    t4d.e2.set ( );
+    OCPI::OS::Event e;
+    e.set ( );
+    e.wait ( );
+    EXPECT_EQ( true, true );
   }
 
-  tm.join ();
-  CPPUNIT_ASSERT( true );
-}
 
-// Test 5: Waiting with a timeout
-void TestOcpiOsEvent::test_5 ( )
-{
-  OCPI::OS::Event e;
-  e.set ( );
-  bool to = e.wait ( 100 );
-  CPPUNIT_ASSERT( to );
-  to = e.wait ( 100 );
-  CPPUNIT_ASSERT ( !to );
-}
+  // Test 2: Initializing event to "set", then waiting for the event
+  TEST( TestOcpiOsEvent, test_2 )
+  {
+    OCPI::OS::Event e ( true );
+    e.wait ( );
+    EXPECT_EQ( true, true );
+  }
+
+  // Test 3: Setting the event in another thread
+  TEST( TestOcpiOsEvent, test_3 )
+  {
+    OCPI::OS::Event e;
+    OCPI::OS::ThreadManager tm ( test3Thread, &e );
+    e.wait ( );
+    tm.join ( );
+    EXPECT_EQ( true, true );
+  }
+
+  // Test 4: Leader and follower
+  TEST( TestOcpiOsEvent, test_4 )
+  {
+    Test4Data t4d;
+    OCPI::OS::ThreadManager tm ( test4Thread, &t4d );
+
+    for ( int i = 0; i < 42; i++ )
+    {
+      t4d.e1.wait ( );
+      EXPECT_EQ( t4d.i, i );
+      t4d.e2.set ( );
+    }
+
+    tm.join ();
+    EXPECT_EQ( true, true );
+  }
+
+  // Test 5: Waiting with a timeout
+  TEST( TestOcpiOsEvent, test_5 )
+  {
+    OCPI::OS::Event e;
+    e.set ( );
+    bool to = e.wait ( 100 );
+    EXPECT_EQ( to, true );
+    to = e.wait ( 100 );
+    EXPECT_EQ ( to, false );
+  }
+
+} // End: namespace<unnamed>

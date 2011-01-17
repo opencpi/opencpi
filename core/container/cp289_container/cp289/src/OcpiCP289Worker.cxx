@@ -483,12 +483,10 @@ createInputPort(
     endpoint = MyParent->getTransport().getEndpointFromProtocol( protocol.c_str() );
   }
   else if ( getenv("OCPI_DEFAULT_PROTOCOL") ) {
-    
     const char * pe = getenv("OCPI_DEFAULT_PROTOCOL");
-    printf("&&&& $$$$ Forcing protocol = %s \n", pe);
+    printf("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment\n", pe);
     protocol = pe;
     endpoint = MyParent->getTransport().getEndpointFromProtocol( protocol.c_str() );
-
   }
   else {
 
@@ -499,13 +497,14 @@ createInputPort(
     if ( p && (p->type != OCPI::Util::Prop::Scalar::OCPI_String)) {
       throw OCPI::Util::EmbeddedException("\"endpoint\" property has wrong type, should be String");
     }
+
     if (! p) {
       endpoint = MyParent->getTransport().getDefaultEndPoint();
     }
     else{
       endpoint = p->vString;
     }
-    endpoint = MyParent->getTransport().addLocalEndpoint( endpoint.c_str() )->sMemServices->getEndPoint()->end_point;
+    endpoint = MyParent->getTransport().addLocalEndpoint( endpoint.c_str() )->sMemServices->endpoint()->end_point;
   }
 
 

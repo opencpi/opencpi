@@ -111,6 +111,7 @@ namespace OCPI {
       if ( oob ) { 
         packer.putULongLong (oob->port_id);
         packer.putString (oob->oep);
+        packer.putULongLong (oob->cookie);
       }
       else {
         return false;
@@ -168,6 +169,7 @@ namespace OCPI {
         if ( oob ) {
           unpacker.getULongLong (oob->port_id);
           unpacker.getString (oep);
+          unpacker.getULongLong (oob->cookie);
         }
         else {
           return false;

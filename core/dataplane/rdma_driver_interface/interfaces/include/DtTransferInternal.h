@@ -120,17 +120,22 @@ namespace DataTransfer {
   class XferFactoryManager : public OCPI::Util::DriverManager {
 
   public:
-
+    friend class XferFactory;
     static XferFactoryManager& getFactoryManager();
 
     // This method is used to retreive all of the available endpoints that have been registered
     // in the system.  Note that some of the endpoints may not be finalized. 
     std::vector<std::string> getListOfSupportedEndpoints();  
+    std::vector<std::string> getListOfSupportedProtocols();  
 
     // This method allocates an endpoint based upon the requested protocol.  The size is the
     // requested size of the memory block to associate with the endpoint, this call is responsible
     // for setting the actual size that was allocated.
-    std::string allocateEndpoint(std::string& protocol, OCPI::OS::uint32_t *size);
+    std::string allocateEndpoint(std::string& protocol, OCPI::Util::Device * device=NULL, OCPI::Util::PValue * props=NULL);
+
+
+    // Configure the drivers
+    void configure(  ezxml_t config );
 
     // Create a transfer compatible SMB and associated resources
     SMBResources* createSMBResources(EndPoint* loc);
@@ -158,14 +163,21 @@ namespace DataTransfer {
     // UnRegister the Data transfer class
     void unregisterFactory( XferFactory* dt );
 
-    // Clears all cached data
-    void clearCache();
+    // Get the FM system configuration object
+    FactoryConfig & getConfig(){return *m_config;}
+
+
+  protected:
 
     // Constructors/Destructors
     XferFactoryManager();
     ~XferFactoryManager();
 
-  protected:
+    // Clears all cached data
+    void clearCache();
+
+    void checkConf();
+    FactoryConfig * m_config;
 
     // Starts up the transfer sub-system
     void startup();
@@ -182,10 +194,12 @@ namespace DataTransfer {
 
     // Reference counter
     OCPI::OS::uint32_t m_refCount;
-    bool              m_init;
+    bool               m_init;
     OCPI::OS::Mutex    m_mutex;
     OCPI::Util::VList  m_resources;
-    List              m_templatelist;
+    List               m_templatelist;
+
+    bool            m_configured;
 
   };
 }

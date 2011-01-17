@@ -406,8 +406,8 @@ namespace DataTransfer {
 
   public:
     // Ctor/dtor
-    HostSmemServices (const EndPoint* cloc )
-      :BaseSmemServices(cloc)
+    HostSmemServices ( DataTransfer::XferFactory * p, EndPoint* cloc )
+      :BaseSmemServices(p, cloc)
     {
       EndPoint* loc = (EndPoint*)cloc;
       create(loc);
@@ -422,9 +422,9 @@ namespace DataTransfer {
 
 
   // Platform dependent global that creates an instance
-  SmemServices* CreateSmemServices (EndPoint* loc )
+  SmemServices* CreateSmemServices (DataTransfer::XferFactory * p, EndPoint* loc )
   {
-    return new HostSmemServices (loc);
+    return new HostSmemServices (p, loc);
   }
 
 }

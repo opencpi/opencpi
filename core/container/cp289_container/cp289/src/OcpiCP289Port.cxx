@@ -167,7 +167,7 @@ initInputPort()
   }
 
   // We need to get the port descriptor
-  m_dtPort->getPortDescriptor( connectionData.data );
+  m_dtPort->getPortDescriptor( connectionData.data, NULL );
 
 }
 
@@ -238,6 +238,8 @@ getInitialProviderInfo(OCPI::Util::PValue* props)
   connectionData.data.desc.dataBufferSize = myDesc.dataBufferSize;
   initInputPort();
   m_ourFinalDescriptor = MyParent->myParent->myParent->packPortDesc( *this );
+
+  // url only, no cc
   return m_ourFinalDescriptor;
 }
 
@@ -252,7 +254,22 @@ setInitialProviderInfo(OCPI::Util::PValue* props, const std::string & user )
   myContainer.unpackPortDesc(user, &otherPortData);
   establishRoles(otherPortData.connectionData.data);
   finishConnection(otherPortData.connectionData.data);
-  return setFinalProviderInfo( user );
+
+  PortData tpdata;
+  MyParent->myParent->myParent->unpackPortDesc( user, &tpdata );
+  connectInputPort( &tpdata, m_localShadowPort, NULL  );
+  if ( connectionData.data.role == OCPI::RDT::ActiveMessage ) {
+    return m_localShadowPort;
+  }
+  else {
+    PortData desc;
+    m_dtPort->getPortDescriptor( desc.connectionData.data, &tpdata.connectionData.data );
+    desc.connectionData.container_id = MyParent->myParent->myParent->getId();
+    myInitialPortInfo = MyParent->myParent->myParent->packPortDesc( desc );
+  }
+
+  myInitialPortInfo = MyParent->myParent->myParent->packPortDesc( *this );
+  return myInitialPortInfo;
 }
 
 const std::string& 
@@ -263,32 +280,37 @@ setFinalProviderInfo(const std::string & input_port )
   ocpiAssert( ! isProvider() );
   PortData tpdata;
   MyParent->myParent->myParent->unpackPortDesc( input_port, &tpdata );
-  connectInputPort( &tpdata, m_localShadowPort, NULL  );
 
-  if ( connectionData.data.role == OCPI::RDT::ActiveMessage ) {
-    return m_localShadowPort;
-  }
-  else {
-    PortData desc;
-    m_dtPort->getPortDescriptor( desc.connectionData.data );
-    desc.connectionData.container_id = MyParent->myParent->myParent->getId();
-    myInitialPortInfo = MyParent->myParent->myParent->packPortDesc( desc );
-  }
-  return myInitialPortInfo;
+  if ( m_dtPort ) 
+    m_dtPort->finalize( tpdata.connectionData.data );
+
+  m_ourFinalDescriptor = MyParent->myParent->myParent->packPortDesc( *this );
+  return m_ourFinalDescriptor;
 }
 
-static std::string nul_s;
+
 const std::string& 
 OCPI::CP289::Port::
 setInitialUserInfo(const std::string& user)
 {
   OCPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
   ocpiAssert( isProvider() );
-  setFinalUserInfo(user );
-  // Nothing more to do
-  return nul_s;
-}
 
+  initInputPort();
+  PortData src;
+  PortData * pd;
+  if ( ! (pd=MyParent->myParent->myParent->unpackPortDesc( user, &src ))) {
+    throw OCPI::Util::EmbeddedException("Input Port descriptor is invalid");
+  }
+  setOutputFlowControl( pd );  
+  m_dtPort->finalize( src.connectionData.data );
+  PortData desc;
+  strncpy( desc.connectionData.data.desc.oob.oep,  connectionData.data.desc.oob.oep, OCPI::RDT::MAX_EPS_SIZE);
+  m_dtPort->getPortDescriptor( desc.connectionData.data, &src.connectionData.data );
+  connectionData.data.desc.oob.cookie = desc.connectionData.data.desc.oob.cookie;
+  myInitialPortInfo = MyParent->myParent->myParent->packPortDesc( *this );
+  return myInitialPortInfo;
+}
 
 void 
 OCPI::CP289::Port::
@@ -296,15 +318,13 @@ setFinalUserInfo(const std::string& srcPort )
 {
   OCPI::Util::AutoMutex guard ( MyApp->mutex(),  true ); 
   ocpiAssert( isProvider() );
-  initInputPort();
   PortData src;
   PortData * pd;
   if ( ! (pd=MyParent->myParent->myParent->unpackPortDesc( srcPort, &src ))) {
     throw OCPI::Util::EmbeddedException("Input Port descriptor is invalid");
   }
-  setOutputFlowControl( pd );
-}
 
+}
 
 namespace OCPI {
   namespace CP289 {
@@ -629,6 +649,12 @@ connectExternalInputPort( PortData *           inputPort,
   flowControl.port = (PortDesc)inputPort;
   MyParent->m_rcc_worker->m_context->connectedPorts |= (1<<m_portId);
   flowControl.container_id = MyParent->myParent->myParent->getId();
+
+  PortData desc;
+  strncpy( desc.connectionData.data.desc.oob.oep,  connectionData.data.desc.oob.oep, OCPI::RDT::MAX_EPS_SIZE );
+  m_dtPort->getPortDescriptor( desc.connectionData.data, &inputPort->connectionData.data );
+  flowControl.data.desc.oob.cookie = desc.connectionData.data.desc.oob.cookie;
+
   return flowControl;
 }
 
@@ -649,7 +675,7 @@ connectInputPort( PortData *    inputPort,
   // At this point the output ports reoutputs are not yet created, we need to 
   // create a local endpoint that is compatible with the remote.
   std::string s = MyParent->getTransport().getLocalCompatibleEndpoint( inputPort->connectionData.data.desc.oob.oep );
-  s = MyParent->getTransport().addLocalEndpoint( s.c_str() )->sMemServices->getEndPoint()->end_point;
+  s = MyParent->getTransport().addLocalEndpoint( s.c_str() )->sMemServices->endpoint()->end_point;
   strcpy( connectionData.data.desc.oob.oep, s.c_str());  
 
   // At some point we may want to make this smarter, but we want to make sure

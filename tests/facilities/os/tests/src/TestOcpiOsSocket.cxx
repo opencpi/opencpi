@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -39,40 +39,17 @@
 #include "OcpiOsServerSocket.h"
 #include "OcpiOsThreadManager.h"
 
+#include "gtest/gtest.h"
+
 #include <ctime>
 #include <cstring>
 
-#include <cppunit/extensions/HelperMacros.h>
-
 namespace
 {
-  class TestOcpiOsSocket : public CppUnit::TestFixture
+  class TestOcpiOsSocket : public ::testing::Test
   {
-    private:
+    protected:
       std::string d_argv0;
-
-    private:
-      CPPUNIT_TEST_SUITE( TestOcpiOsSocket );
-      CPPUNIT_TEST( test_1 );
-      CPPUNIT_TEST( test_2 );
-      CPPUNIT_TEST( test_3 );
-      CPPUNIT_TEST( test_4 );
-      CPPUNIT_TEST( test_5 );
-      CPPUNIT_TEST( test_6 );
-      CPPUNIT_TEST( test_7 );
-      CPPUNIT_TEST_SUITE_END();
-
-    public:
-      void setUp ( );
-      void tearDown ( );
-
-     void test_1 ( );
-     void test_2 ( );
-     void test_3 ( );
-     void test_4 ( );
-     void test_5 ( );
-     void test_6 ( );
-     void test_7 ( );
   };
 
   void test03Thread ( void* opaque )
@@ -186,144 +163,131 @@ namespace
     cs.close ( );
   }
 
-} // End: namespace<unamed>
-
-// Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION( TestOcpiOsSocket, "os" );
-
-void TestOcpiOsSocket::setUp ( )
-{
-
-}
-
-
-void TestOcpiOsSocket::tearDown ( )
-{
-  // Empty
-}
-
-
-// Test 1: Binding ServerSocket to random port
-void TestOcpiOsSocket::test_1 ( )
-{
-  OCPI::OS::ServerSocket so ( 0 );
-  unsigned int portNo = so.getPortNo ( );
-  so.close ( );
-  CPPUNIT_ASSERT( portNo > 0 && portNo < 65536 );
-}
-
-
-// Test 2: Binding ServerSocket to specific port
-void TestOcpiOsSocket::test_2 ( )
-{
-  OCPI::OS::ServerSocket so ( 6274, true );
-  unsigned int portNo = so.getPortNo ( );
-  so.close ( );
-  CPPUNIT_ASSERT( portNo == 6274 );
-}
-
-
-// Test 3: Accepting connection
-void TestOcpiOsSocket::test_3 ( )
-{
-  unsigned int portNo = 6275;
-  OCPI::OS::ServerSocket se ( portNo, true );
-  OCPI::OS::ThreadManager tm ( test03Thread, &portNo );
-  OCPI::OS::Socket so = se.accept ( );
-  so.close ( );
-  se.close ( );
-  tm.join ( );
-  CPPUNIT_ASSERT( true );
-}
-
-
-// Test 4: Receiving data
-void TestOcpiOsSocket::test_4 ( )
-{
-  unsigned int portNo = 6276;
-  OCPI::OS::ServerSocket se ( portNo, true );
-  OCPI::OS::ThreadManager tm ( test04Thread, &portNo );
-  OCPI::OS::Socket so = se.accept ( );
-  char buf [ 16 ];
-  unsigned long long count = so.recv ( buf, 16 );
-  CPPUNIT_ASSERT( count == 13 );
-  CPPUNIT_ASSERT(std::strcmp ( buf, "Hello World!" ) == 0 );
-  so.close ( );
-  se.close ( );
-  tm.join ( );
-}
-
-
-// Test 5: Shutting down one side of a connection
-void TestOcpiOsSocket::test_5 ( )
-{
-  unsigned int portNo = 6277;
-  OCPI::OS::ServerSocket se ( portNo, true );
-  OCPI::OS::ThreadManager tm ( test05Thread, &portNo );
-  OCPI::OS::Socket so = se.accept ( );
-
-  const char * ptr = "Hello World!";
-  unsigned long long count;
-
-  while ( *ptr )
+  // Test 1: Binding ServerSocket to random port
+  TEST( TestOcpiOsSocket, test_1 )
   {
-    count = so.send ( ptr, 1 );
-    CPPUNIT_ASSERT( count == 1 );
-    ptr++;
+    OCPI::OS::ServerSocket so ( 0 );
+    unsigned int portNo = so.getPortNo ( );
+    so.close ( );
+    EXPECT_GT( portNo, 0 );
+    EXPECT_LT( portNo, 65536 );
   }
 
-  so.shutdown ( );
 
-  char buf [ 16 ];
-
-  char *ptr2 = buf;
-
-  do
+  // Test 2: Binding ServerSocket to specific port
+  TEST( TestOcpiOsSocket, test_2 )
   {
-    count = so.recv ( ptr2, 2 );
-    ptr2 += count;
+    OCPI::OS::ServerSocket so ( 6274, true );
+    unsigned int portNo = so.getPortNo ( );
+    so.close ( );
+    EXPECT_EQ( portNo, 6274 );
   }
-  while ( count > 0 );
-
-  *ptr2 = 0;
-
-  CPPUNIT_ASSERT( std::strcmp ( buf, "Hello World!" ) == 0 );
-  so.close ( );
-  se.close ( );
-  tm.join ( );
-}
 
 
-// Test 6: Wake up a thread that is blocked in accept
-void TestOcpiOsSocket::test_6 ( )
-{
-  OCPI::OS::ServerSocket se ( 0 );
-  Test06Data td;
-  td.sock = &se;
-  td.timeWaited = -1;
-  td.gotException = false;
-  OCPI::OS::ThreadManager tm ( test06Thread, &td );
-  OCPI::OS::sleep ( 500 );
-  se.close ( );
-  tm.join ( );
-  CPPUNIT_ASSERT( td.timeWaited != -1 );
-  CPPUNIT_ASSERT( td.timeWaited < 5 );
-  CPPUNIT_ASSERT( td.gotException );
-}
+  // Test 3: Accepting connection
+  TEST( TestOcpiOsSocket, test_3 )
+  {
+    unsigned int portNo = 6275;
+    OCPI::OS::ServerSocket se ( portNo, true );
+    OCPI::OS::ThreadManager tm ( test03Thread, &portNo );
+    OCPI::OS::Socket so = se.accept ( );
+    so.close ( );
+    se.close ( );
+    tm.join ( );
+    EXPECT_EQ( true, true );
+  }
 
 
-// Test 7: Use dotted decimal IP address
-void TestOcpiOsSocket::test_7 ( )
-{
-  unsigned int portNo = 6276;
-  OCPI::OS::ServerSocket se ( portNo, true) ;
-  OCPI::OS::ThreadManager tm ( test07Thread, &portNo );
-  OCPI::OS::Socket so = se.accept ( );
-  char buf [ 16 ];
-  unsigned long long count = so.recv ( buf, 16 );
-  CPPUNIT_ASSERT( count == 13 );
-  CPPUNIT_ASSERT( std::strcmp ( buf, "Hello World!" ) == 0 );
-  so.close ( );
-  se.close ( );
-  tm.join ( );
-}
+  // Test 4: Receiving data
+  TEST( TestOcpiOsSocket, test_4 )
+  {
+    unsigned int portNo = 6276;
+    OCPI::OS::ServerSocket se ( portNo, true );
+    OCPI::OS::ThreadManager tm ( test04Thread, &portNo );
+    OCPI::OS::Socket so = se.accept ( );
+    char buf [ 16 ];
+    unsigned long long count = so.recv ( buf, 16 );
+    EXPECT_EQ( count, 13 );
+    EXPECT_EQ(std::strcmp ( buf, "Hello World!" ), 0 );
+    so.close ( );
+    se.close ( );
+    tm.join ( );
+  }
+
+
+  // Test 5: Shutting down one side of a connection
+  TEST( TestOcpiOsSocket, test_5 )
+  {
+    unsigned int portNo = 6277;
+    OCPI::OS::ServerSocket se ( portNo, true );
+    OCPI::OS::ThreadManager tm ( test05Thread, &portNo );
+    OCPI::OS::Socket so = se.accept ( );
+
+    const char * ptr = "Hello World!";
+    unsigned long long count;
+
+    while ( *ptr )
+    {
+      count = so.send ( ptr, 1 );
+      EXPECT_EQ( count, 1 );
+      ptr++;
+    }
+
+    so.shutdown ( );
+
+    char buf [ 16 ];
+
+    char *ptr2 = buf;
+
+    do
+    {
+      count = so.recv ( ptr2, 2 );
+      ptr2 += count;
+    }
+    while ( count > 0 );
+
+    *ptr2 = 0;
+
+    EXPECT_EQ( std::strcmp ( buf, "Hello World!" ), 0 );
+    so.close ( );
+    se.close ( );
+    tm.join ( );
+  }
+
+
+  // Test 6: Wake up a thread that is blocked in accept
+  TEST( TestOcpiOsSocket, test_6 )
+  {
+    OCPI::OS::ServerSocket se ( 0 );
+    Test06Data td;
+    td.sock = &se;
+    td.timeWaited = -1;
+    td.gotException = false;
+    OCPI::OS::ThreadManager tm ( test06Thread, &td );
+    OCPI::OS::sleep ( 500 );
+    se.close ( );
+    tm.join ( );
+    EXPECT_NE( td.timeWaited, -1 );
+    EXPECT_LT( td.timeWaited, 5 );
+    EXPECT_EQ( td.gotException, true );
+  }
+
+
+  // Test 7: Use dotted decimal IP address
+  TEST( TestOcpiOsSocket, test_7 )
+  {
+    unsigned int portNo = 6276;
+    OCPI::OS::ServerSocket se ( portNo, true) ;
+    OCPI::OS::ThreadManager tm ( test07Thread, &portNo );
+    OCPI::OS::Socket so = se.accept ( );
+    char buf [ 16 ];
+    unsigned long long count = so.recv ( buf, 16 );
+    EXPECT_EQ( count, 13 );
+    EXPECT_EQ( std::strcmp ( buf, "Hello World!" ), 0 );
+    so.close ( );
+    se.close ( );
+    tm.join ( );
+  }
+
+} // End: namespace<unnamed>
+

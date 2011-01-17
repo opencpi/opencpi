@@ -68,6 +68,12 @@ DYNOBJS += ../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj \
 endif
 endif
 
+ifeq ($(OCPI_HAVE_IBVERBS),1)
+DYNOBJS += ../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
+SYSLIBS += ibverbs	
+endif
+
+
 ifneq ($(OCPI_PPP_LIBRARY_DIR),)
 BASICLIBS += -L$(OCPI_PPP_LIBRARY_DIR) -lrose
 endif

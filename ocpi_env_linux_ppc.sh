@@ -1,7 +1,7 @@
 
 # #####
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
 #
 #    Mercury Federal Systems, Incorporated
 #    1901 South Bell Street
@@ -34,6 +34,8 @@
 #
 ########################################################################### #
 
+
+
 # Build from 32-bit x86 Linux for Linux
 
 # #### Absolute path to the base directory of the OpenCPI installation #### #
@@ -62,9 +64,9 @@ export OCPI_BUILD_HOST=$OCPI_BUILD_HOST_OS-$OCPI_BUILD_HOST_ARCH
 
 export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/12.1/ISE_DS/
 
-# #### Location of CppUnit ################################################ #
+# #### Location of Google Test (gtest) #################################### #
 
-export OCPI_CPPUNIT_DIR=/opt/opencpi/linux-MPC8641D/prerequisites/cppunit
+export OCPI_GTEST_DIR=/opt/opencpi/linux-MPC8641D/prerequisites/gtest
 
 # #### Location of the PowerPC cross-bulid tools ########################## #
 
@@ -75,7 +77,7 @@ export OCPI_CROSS_BUILD_BIN_DIR=/opt/timesys/toolchains/$OCPI_CROSS_HOST/bin
 
 export OCPI_OUT_DIR=$OCPI_OS-$OCPI_ARCH-bin
 
-export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_CPPUNIT_DIR/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_GTEST_DIR/lib:$LD_LIBRARY_PATH
 
 # #### Compiler linker flags ############################################## #
 
@@ -103,11 +105,15 @@ export HAVE_CORBA=1
 
 # OpenCPI uses OmniORB exclusivly
 export OCPI_CORBA_ORB=OMNI
-export OCPI_OMNI_DIR=/opt/opencpi/linux-MPC8641D/prerequisites/omniorb
-export OCPI_OMNI_BIN_DIR=/opt/opencpi/$OCPI_BUILD_HOST_ARCH/prerequisites/omniorb/bin
+export OCPI_OMNI_DIR=/opt/omniORB
+export OCPI_OMNI_BIN_DIR=/usr/local/omniORB_$OCPI_BUILD_HOST_ARCH/bin
 export OCPI_OMNI_IDL_DIR=$OCPI_OMNI_DIR/idl
 export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/lib
 export OCPI_OMNI_INCLUDE_DIR=$OCPI_OMNI_DIR/include
+
+# OpenCPI no longer uses the ACE/TAO OCPI_CORBA_ORB
+# export OCPI_ACE_ROOT=$OCPI_BASE/../ACE_wrappers/linux-x86_64-bin
+# export OCPI_HOST_ROOT=/opt/TAO/5.6.6/linux-$ARCH-gcc/ACE_wrappers
 
 # #### Path to Mercury tools and libraries ################################ #
 
@@ -116,7 +122,10 @@ export OCPI_PPP_LIBRARY_DIR=/opt/mercury/linux-MPC8641D/lib
 
 # #### Other settings ##################################################### #
 
+# Set this to "1" to include the OFED IBVERBS transfer driver
+export OCPI_HAVE_IBVERBS=0
+
 # ######################################################################### #
 
-echo ""; echo " *** OpenCPI Environment settings"; echo ""
+echo "OpenCPI Environment settings"
 env | grep OCPI_

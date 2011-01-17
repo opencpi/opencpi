@@ -39,6 +39,7 @@
 # run this in the binary executables directory by doing: ../bin/src/run_tests.csh
 set t =  `uname -s`-`uname -m`
 setenv OCPI_RCC_TARGET `echo $t | tr A-Z a-z`
+setenv OCPI_SMB_SIZE 3000000
 if $OCPI_RCC_TARGET == darwin-i386 then
   setenv OCPI_RCC_SUFFIX dylib
   setenv DYLD_LIBRARY_PATH ../../../../lib/$OCPI_RCC_TARGET-bin

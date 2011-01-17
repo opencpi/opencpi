@@ -70,8 +70,8 @@ namespace OCPI {
     // This is the "internal" template that simply provide a linked list among children.
     template <class TChild> class ChildI  {
       friend class Parent<TChild>; // Allow the parent to use this link
-      ChildI<TChild> *next;
     public:
+      ChildI<TChild> *next;
       virtual ~ChildI<TChild>(){};
     };
 

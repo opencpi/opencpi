@@ -58,11 +58,14 @@ namespace DataTransfer {
   const OCPI::OS::uint32_t DT_EX_SOURCE_ID = 0x03;
   const OCPI::OS::uint32_t MAIL_BOX_NOT_ALLOCATED   = (DT_EX_SOURCE_ID << 16) + 1;
   const OCPI::OS::uint32_t PROPERTY_NOT_SET         = (DT_EX_SOURCE_ID << 16) + 2;
-  const OCPI::OS::uint32_t RESOURCE_EXCEPTION           = (DT_EX_SOURCE_ID << 16) + 3;
-  const OCPI::OS::uint32_t UNSUPPORTED_ENDPOINT           = (DT_EX_SOURCE_ID << 16) + 4;
-  const OCPI::OS::uint32_t NO_MORE_SMB                   = (DT_EX_SOURCE_ID << 16) + 5;
-  const OCPI::OS::uint32_t SMB_MAP_ERROR                 = (DT_EX_SOURCE_ID << 16) + 6;
+  const OCPI::OS::uint32_t RESOURCE_EXCEPTION       = (DT_EX_SOURCE_ID << 16) + 3;
+  const OCPI::OS::uint32_t UNSUPPORTED_ENDPOINT     = (DT_EX_SOURCE_ID << 16) + 4;
+  const OCPI::OS::uint32_t NO_MORE_SMB              = (DT_EX_SOURCE_ID << 16) + 5;
+  const OCPI::OS::uint32_t SMB_MAP_ERROR            = (DT_EX_SOURCE_ID << 16) + 6;
   const OCPI::OS::uint32_t EM_NOT_SUPPORTED_FOR_EP  = (DT_EX_SOURCE_ID << 16) + 7; // Event Manager not supported
+  const OCPI::OS::uint32_t DEV_NOT_FOUND            = (DT_EX_SOURCE_ID << 16) + 8; // Deice not found
+  const OCPI::OS::uint32_t COULD_NOT_OPEN_DEVICE    = (DT_EX_SOURCE_ID << 16) + 9; // Could not open device
+  const OCPI::OS::uint32_t API_ERROR                = (DT_EX_SOURCE_ID << 16) + 10; // API error
 
   /**********************************
    * Data Transfer exception base class

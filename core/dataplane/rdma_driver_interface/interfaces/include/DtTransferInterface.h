@@ -54,52 +54,34 @@
 #define DataTransfer_TransferInterface_H_
 
 #include <string.h>
+#include "ezxml.h"
 #include <OcpiOsDataTypes.h>
 #include <OcpiList.h>
 #include <OcpiDriver.h>
+#include <OcpiParentChild.h>
 
 namespace DataTransfer {
 
   // Forward references
   class SmemServices;
+  class XferServices;
+  class XferFactory;
   struct EndPoint;
-
-  // EndPoint shape (basically equivalent to EP_shape but not dependent on MCOS).
-  // The layout and field names are identical to EP_shape to simplify MCOE-capable platforms.
-  typedef struct {
-    OCPI::OS::uint32_t element_size;   /* Element size in bytes */
-    struct {
-      OCPI::OS::uint32_t offset;       
-      OCPI::OS::uint32_t length;       /* Number of elements in X dimension */
-      OCPI::OS::uint32_t stride;       /* X element stride */
-    } x;                              /* X dimension (i.e. rows) */
-    struct {
-      OCPI::OS::uint32_t offset;       
-      OCPI::OS::uint32_t length;       /* Number of elements in Y dimension */
-      OCPI::OS::uint32_t stride;       /* Y element stride */
-    } y;                              /* Y dimension (i.e. columns) */
-    struct {
-      OCPI::OS::uint32_t offset;       
-      OCPI::OS::uint32_t length;       /* Number of elements in Z dimension */
-      OCPI::OS::uint32_t stride;       /* Z element stride */
-    } z;                              /* Z dimension (i.e. columns) */
-  } Shape;
-         
 
   // A single request to perform a data transfer, this is effectively a transfer template
   // that is used aOCPI::OS::int32_t with a transfer service object to describe a transfer.
-  class XferRequest
+  class XferRequest : public OCPI::Util::Child<XferServices, XferRequest>
   {
-    // Types
   public:
+   
+    // Constructor
+    XferRequest( XferServices & parent )
+      :OCPI::Util::Child<XferServices, XferRequest>(parent){}
 
-    // XferServices method used to create this request
-    typedef enum { Copy, Copy2D, Group } Creator;
-                 
     // Flags used when created
     typedef enum { 
       None = 0, 
-      FlagTransfer       = 0x01,         // 
+      FlagTransfer       = 0x01, 
       FirstTransfer      = 0x02, // First transfer in list
       LastTransfer       = 0x04, // Last transfer in list
       SizeModifiable     = 0x06, // Size of this transfer is modifiable on start
@@ -107,20 +89,21 @@ namespace DataTransfer {
       WakeupNotification = 0x10  // Notification transfer
     }  Flags;
 
+    typedef enum {
+      CompleteSuccess = 0,
+      CompleteFailure = 1,
+      Pending = 2
+    } CompletionStatus;
+
     /*
      * Queue Data Transfer Request
-     *        Arguments:
-     *    s_shape - Used to modify the source shape for all requests created using
-     *                                the SizeModifiable flag.
-     *    t_shape - Used to modify the target shape for all requests created using
-     *                                the SizeModifiable flag.
      *    
      * Returns: void
      *        
      *        Throws:
      *                DataTransferEx for all exception conditions
      */
-    virtual void start ( Shape* s_shape=NULL, Shape* t_shape=NULL) = 0;
+    virtual void post () = 0;
 
     /*
      * Get Information about a Data Transfer Request
@@ -131,7 +114,7 @@ namespace DataTransfer {
      *        Throws:
      *                DataTransferEx for all exception conditions
      */
-    virtual OCPI::OS::int32_t getStatus () = 0;
+    virtual CompletionStatus  getStatus () = 0;
 
 
     /*
@@ -148,38 +131,8 @@ namespace DataTransfer {
      *                DataTransferEx for all exception conditions
      */
     virtual void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )=0;
-                 
 
-    // Destructor - Note that invoking OcpiXferServices::Release is the preferred method.
-    virtual ~XferRequest () {};
 
-  };
-
-         
-  // Platform dependent data transfer services.  This class is responsible for 
-  // creating the appropriate transfer service that is capable of transfering data
-  // to and from the specifed shared memory objects.
-  class XferServices
-  {
-                
-  public:
-                 
-    /*
-     * Create tranfer services template
-     *        Arguments:
-     *                p1        - Source memory instance
-     *                p2        - Destination memory instance
-     *        Returns: void
-     *
-     *        Errors:
-     *                DataTransferEx for all exception conditions
-     */
-    XferServices (SmemServices* source, SmemServices* target)
-    {
-      ( void ) source;
-      ( void ) target;
-    }
-                 
     /*
      * Create a transfer request.
      *        Arguments:
@@ -196,33 +149,9 @@ namespace DataTransfer {
     virtual XferRequest* copy (OCPI::OS::uint32_t srcoff, 
                                OCPI::OS::uint32_t dstoff, 
                                OCPI::OS::uint32_t nbytes, 
-                               XferRequest::Flags flags,
-                               XferRequest* add_to
+                               XferRequest::Flags flags
                                ) = 0;
-                 
-    /*
-     * Create a 2-dimensional transfer request.
-     *        Arguments:
-     *                srcoffs        - Source memory offset
-     *                psrc        - Source shape
-     *                dstoffs        - Destination memory offset
-     *                pdst        - Destination shape
-     *                nbytes        - number of bytes in request
-     *                flags        - Copy "flags"
-     *                xfer        - receives transfer request instance
-     *        Returns: void
-     *
-     *        Errors:
-     *                DataTransferEx for all exception conditions
-     */
-    virtual XferRequest* copy2D (OCPI::OS::uint32_t srcoffs, 
-                                 Shape* psrc, 
-                                 OCPI::OS::uint32_t dstoffs,
-                                 Shape* pdst,
-                                 XferRequest* add_to
-                                 ) = 0;
-                 
-                 
+
     /*
      * Group data transfer requests.
      *        Arguments:
@@ -233,31 +162,86 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    virtual XferRequest* group (XferRequest* preqs[]) = 0;
+    virtual XferRequest & group( XferRequest* lhs ) = 0;
                  
+
+    // Destructor - Note that invoking OcpiXferServices::Release is the preferred method.
+    virtual ~XferRequest () {};
+
+  };
+
+         
+  // Platform dependent data transfer services.  This class is responsible for 
+  // creating the appropriate transfer service that is capable of transfering data
+  // to and from the specifed shared memory objects.
+  class XferServices : public OCPI::Util::Parent<XferRequest>, public OCPI::Util::Child<XferFactory, XferServices>
+  {
+                
+  public:
                  
     /*
-     * Release a transfer request that was created using Copy, Copy2D, or Group.
+     * Create tranfer services template
      *        Arguments:
-     *                preq        - transfer request instance to release.
+     *                p1        - Source memory instance
+     *                p2        - Destination memory instance
      *        Returns: void
      *
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    virtual void release (XferRequest* preq) = 0;
+    XferServices ( XferFactory & parent, SmemServices * /* source */ , SmemServices * /* target */ )
+      :OCPI::Util::Child<XferFactory, XferServices>(parent){}
+
+
+
+    /*
+     * If this service requires a cookie for the remote connection, this method will return it.
+     */
+    virtual uint64_t getConnectionCookie(){return 0;}
+
+
+    /*
+     * Finalize the connection with the remote cookie
+     */
+    virtual void finalize( uint64_t /* cookie */ ){}
+
                  
+    /*
+     * Create tranfer request object
+     */
+    virtual XferRequest* createXferRequest() = 0;
+
                  
-    // Destructor - implementations are required to track all OcpiXferRequests that they
-    // produce (via Copy, Copy2D, and Group) and dispose of them when destructed.
+    /*
+     * Destructor - implementations are required to track all OcpiXferRequests that they
+     * produce (via Copy, Copy2D, and Group) and dispose of them when destructed.
+     */
     virtual ~XferServices () {};
+
+  };
+
+
+  // This is the base class for a factory configuration sheet
+  class FactoryConfig {
+  public:
+    FactoryConfig();
+    void parse(ezxml_t config );
+    static bool getLProp( ezxml_t node, const char* name, const char * attr, uint32_t & value );
+    static bool getStringProp( ezxml_t node, const char* name, const char * attr, const char * & value );
+    ~FactoryConfig();
+
+    ezxml_t  m_xml;
+    uint32_t m_SMBSize;
+    uint32_t m_retryCount;
 
   };
          
          
          
   // Each transfer implementation must implement a factory class
-  class XferFactory : public OCPI::Util::Driver {
+  class XferFactory : public OCPI::Util::Driver, public OCPI::Util::Parent<XferServices>,
+    public OCPI::Util::Parent<SmemServices>  
+    {
                  
   public:
 
@@ -272,12 +256,26 @@ namespace DataTransfer {
     // Get our protocol string
     virtual const char* getProtocol()=0;
 
-    // Transfer factories may not need these, so we will provide defaults
+    // Some Transfer factories may not need these, so we will provide defaults
     virtual OCPI::Util::Device *probe(const OCPI::Util::PValue* props, const char *which )
       throw ( OCPI::Util::EmbeddedException ){ ( void ) props; ( void ) which; return NULL;}
 
     virtual unsigned search(const OCPI::Util::PValue* props, const char **exclude)
       throw (OCPI::Util::EmbeddedException) { ( void ) props; ( void ) exclude; return 1;}
+
+
+    /***************************************
+     * Get the next device created by this factory
+     ***************************************/
+    OCPI::Util::Device * getNextDevice( OCPI::Util::Device * );
+
+
+    /***************************************
+     * Configure the factory using the specified xml data
+     ***************************************/
+    virtual void configure(  FactoryConfig & config  )
+    {m_config=&config;}
+
 
     /***************************************
      * This method is called on this factory to dertermine if it supports
@@ -288,26 +286,26 @@ namespace DataTransfer {
                                    std::string& end_point1, 
                                    std::string& end_point2 );
                  
-                
     /***************************************
      * This method creates a specialized SmeLocation object.  This call should
      * cache locations and return the same location object for identical strings.
      ***************************************/
-    virtual EndPoint* getEndPoint( std::string& endpoint )=0;
-    virtual void releaseEndPoint( EndPoint* loc ) = 0;
-                 
+    virtual EndPoint* getEndPoint( std::string& endpoint, bool local=false )=0;
+
+
     /***************************************
      *  This method is used to dynamically allocate
      *  a source endpoint for an application running on "this"
      *  node.  This endpoint does not need to be finalized until
      * it has beed passed to the finalizeEndpoint().
      ***************************************/
-    virtual std::string allocateEndpoint(OCPI::OS::uint32_t *size) = 0;
+    virtual std::string allocateEndpoint( OCPI::Util::Device * d=NULL, OCPI::Util::PValue *props=NULL) = 0;
+
 
     /***************************************
      *  This method is used to allocate a transfer compatible SMB
      ***************************************/
-    virtual SmemServices* createSmemServices( EndPoint* ep )=0;
+    virtual SmemServices* getSmemServices( EndPoint* ep )=0;
 
     /***************************************
      *  This method is used to get a transfer service object. The implementation
@@ -315,6 +313,21 @@ namespace DataTransfer {
      * can be re-used.
      ***************************************/
     virtual XferServices* getXferServices(SmemServices* source, SmemServices* target)=0;
+
+
+    /***************************************
+     *  Gets the first node specified by name, otherwise null
+     ***************************************/    
+    static ezxml_t getNode( ezxml_t tn, const char* name );
+
+
+    protected:
+    int getNextMailBox();
+    int getMaxMailBox();
+
+
+    FactoryConfig       * m_config;
+
 
   };
         

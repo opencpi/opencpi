@@ -1,6 +1,8 @@
 
+
+
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -32,50 +34,36 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "OcpiOsThreadManager.h"
 
-#include "gtest/gtest.h"
+/**
+   @file
 
-namespace
-{
-  class TestOcpiOsThreadManager : public ::testing::Test
-  {
-    // Empty
-  };
+   @brief
+   This file contains the Interface that allows an application to configure
+   the DT sub-system.
 
-  bool g_variable_to_modify;
+   Revision History:
 
-  void thread_fn_variable_modification ( void* opaque )
-  {
-    ( void ) opaque;
-    g_variable_to_modify = true;
-  }
+   1/1/2011 - John Miller
+   Initial version.
 
-  void* g_passed_argument;
+************************************************************************** */
 
-  void thread_fn_argument_passing ( void* opaque )
-  {
-    g_passed_argument = opaque;
-  }
+#ifndef DataTransfer_TransferConfig_H_
+#define DataTransfer_TransferConfig_H_
 
-  // Test 1: Observe a thread modifying a variable
-  TEST( TestOcpiOsThreadManager, test_1 )
-  {
-    g_variable_to_modify = false;
-    OCPI::OS::ThreadManager tm ( thread_fn_variable_modification, 0 );
-    tm.join ( );
-    EXPECT_EQ( g_variable_to_modify, true );
-  }
+#include <ezxml.h>
+
+namespace DataTransfer {
+  void configureSubSystem( ezxml_t config );
+}
 
 
-  // Test 2: Verify thread received its argument
-  TEST( TestOcpiOsThreadManager, test_2 )
-  {
-    g_passed_argument = 0;
-    OCPI::OS::ThreadManager tm ( thread_fn_argument_passing,
-                                 ( void* ) thread_fn_argument_passing );
-    tm.join ( );
-    EXPECT_EQ( g_passed_argument, ( void* ) thread_fn_argument_passing );
-  }
+#endif
 
-} // End: namespace<unnamed>
+
+
+
+
+
+

@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -129,8 +128,11 @@ OCPI::DataTransport::Transport::
 getDefaultEndPoint()
 {
   if ( m_defEndpoint == "" ) {
-    m_defEndpoint =  m_endpoints[0] = 
-      addLocalEndpoint( m_endpoints[0].c_str() )->sMemServices->getEndPoint()->end_point; 
+    m_defEndpoint = getEndpointFromProtocol("ocpi-smb-pio");
+    if ( m_defEndpoint == "" ) {
+      m_defEndpoint =  m_endpoints[0] = 
+	addLocalEndpoint( m_endpoints[0].c_str() )->sMemServices->endpoint()->end_point; 
+    }
   }
   return m_defEndpoint;
 }
@@ -161,7 +163,7 @@ getLocalCompatibleEndpoint( const char* ep )
 
         // Make sure that the endpoint is finalized
         (*it) = 
-          addLocalEndpoint( (*it).c_str() )->sMemServices->getEndPoint()->end_point; 
+          addLocalEndpoint( (*it).c_str() )->sMemServices->endpoint()->end_point; 
 #ifndef NDEBUG
         printf("Found %s for %s\n", (*it).c_str(), ep );
 #endif
@@ -445,7 +447,7 @@ createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc )
     ens +=  desc.desc.oob.oep;
     throw OCPI::Util::EmbeddedException( ens.c_str() );
   }
-  eps = res->sMemServices->getEndPoint()->end_point;
+  eps = res->sMemServices->endpoint()->end_point;
   
   // For sake of efficiency we make sure to re-use the circuits that relate 
   // to the same connecton
@@ -590,76 +592,37 @@ void OCPI::DataTransport::Transport::clearRemoteMailbox( OCPI::OS::uint32_t offs
       ocpiAssert(0);
     }
 
+    XferRequest* ptransfer = ptemplate->createXferRequest();
+
     // Create the copy in the template
-    XferRequest* ptransfer_a =
-      ptemplate->copy (
-                       offset + sizeof(ContainerComms::BasicReq),
-                       offset + sizeof(ContainerComms::BasicReq),
-                       sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
-                       XferRequest::FirstTransfer, NULL);
+
+    ptransfer->copy (
+		     offset + sizeof(ContainerComms::BasicReq),
+		     offset + sizeof(ContainerComms::BasicReq),
+		     sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
+		     XferRequest::FirstTransfer );
                 
-    XferRequest* ptransfer_b =
-      ptemplate->copy (
-                       offset,
-                       offset,
-                       sizeof(ContainerComms::BasicReq),
-                       XferRequest::LastTransfer, ptransfer_a);
+    ptransfer->copy (
+		     offset,
+		     offset,
+		     sizeof(ContainerComms::BasicReq),
+		     XferRequest::LastTransfer );
 
-    XferRequest* grps[3] = { ptransfer_a, ptransfer_b, 0 };
-    XferRequest* ptransfer_c = ptemplate->group(grps);
-
-    ptransfer_c->start();
+    ptransfer->post();
 
     // Cache it
     TransferDesc *trd = new TransferDesc;
     trd->loc = loc;
     trd->offset = offset;
-    trd->xfer = ptransfer_c;
+    trd->xfer = ptransfer;
     m_cached_transfers.push_back( trd );
 
-    delete ptransfer_a;
-    delete ptransfer_b;
   }
   else {
     ocpiAssert( td->xfer->getStatus() == 0 );
-    td->xfer->start();
+    td->xfer->post();
   }
 }
-
-
-static XferRequest* Group( XferServices* temp, XferRequest* xfr1, XferRequest* t2 )
-{
-        
-  /* Group with the existing transfer */
-  XferRequest* groups[3];
-  XferRequest* ptmp;
-        
-  /* Build the list of transfers */
-  groups[0] = xfr1;
-  groups[1] = t2;
-  groups[2] = 0;
-        
-  /* Group the transfers */
-  //        auto_ptr<XferRequest> ptransferPtr (xfr1);
-        
-  /* Group the transfers */
-  ptmp = temp->group ( groups );
-  //        auto_ptr<XferRequest> ptmpPtr (ptmp);
-        
-  /* Release the previous transfer */
-  delete t2;
-        
-  /* Release the just grouped transfer */
-  delete xfr1;
-        
-  /* Copy the transfer */
-  //        ptransferPtr.release ();
-  //        ptmpPtr.release ();
-        
-  /* Copy the transfer */
-  return ptmp;
-}
-
 
 
 void OCPI::DataTransport::Transport::sendOffsets( OCPI::Util::VList& offsets, std::string& remote_ep )
@@ -693,8 +656,7 @@ void OCPI::DataTransport::Transport::sendOffsets( OCPI::Util::VList& offsets, st
   }
 
   // Create the copy in the template
-  XferRequest* ptransfer[2];ptransfer[0]=ptransfer[1]=NULL;
-  int n=0;
+  XferRequest* ptransfer = ptemplate->createXferRequest();
   int count=0;
 
   for ( OCPI::OS::uint32_t y=0; y<offsets.getElementCount(); y++, count++ ) {
@@ -705,31 +667,15 @@ void OCPI::DataTransport::Transport::sendOffsets( OCPI::Util::VList& offsets, st
 #ifdef DEBUG_L3
     printf("Adding copy to transfer list, 0x%x to 0x%x\n", tf->from_offset,tf->to_offset );
 #endif
-    if ( count < 1 ) {
-      ptransfer[n] = ptemplate->copy (
-                                      tf->from_offset,
-                                      tf->to_offset,
-                                      sizeof(OCPI::OS::uint32_t),
-                                      XferRequest::FirstTransfer, NULL );
-    }
-    else {
-      ptransfer[n] = ptemplate->copy (
-                                      tf->from_offset,
-                                      tf->to_offset,
-                                      sizeof(OCPI::OS::uint32_t),
-                                      XferRequest::LastTransfer, ptransfer[0]);
-    }
+    ptransfer->copy (
+		     tf->from_offset,
+		     tf->to_offset,
+		     sizeof(OCPI::OS::uint32_t),
+		     XferRequest::None );
 
-    if ( count >= 1 ) {
-      ptransfer[0] = Group( ptemplate, ptransfer[0], ptransfer[1] );
-      n=1;
-      continue;
-    }
-
-    n++;
   }
-  ptransfer[0]->start();
-  active_transfers.push_back( ptransfer[0] );
+  ptransfer->post();
+  active_transfers.push_back( ptransfer );
 }
 
 
@@ -903,8 +849,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
           CircuitId circuit_id = comms->mailBox[n].request.reqOutputContOffset.circuitId;
           int port_id = comms->mailBox[n].request.reqOutputContOffset.portId;
 
-          addRemoteEndpoint( 
-                            comms->mailBox[n].request.reqOutputContOffset.shadow_end_point );
+          addRemoteEndpoint( comms->mailBox[n].request.reqOutputContOffset.shadow_end_point );
 
           // Get the circuit 
           Circuit* c = getCircuit( circuit_id );
@@ -925,7 +870,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
           OCPI::Util::VList offsetv;
 
           port->getOffsets( comms->mailBox[n].return_offset, offsetv);
-          sendOffsets( offsetv, res->sMemServices->getEndPoint()->end_point);
+          sendOffsets( offsetv, res->sMemServices->endpoint()->end_point);
           port->releaseOffsets( offsetv );
 
           // Clear our mailbox
@@ -934,7 +879,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
           // We will copy our copy of their mailbox back to them
           int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
-          clearRemoteMailbox( offset, res->sMemServices->getEndPoint() );
+          clearRemoteMailbox( offset, res->sMemServices->endpoint() );
 
         }
         break;
@@ -972,7 +917,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
           OCPI::Util::VList offsetv;
           port->getOffsets( comms->mailBox[n].return_offset, offsetv);
-          sendOffsets( offsetv, res->sMemServices->getEndPoint()->end_point );
+          sendOffsets( offsetv, res->sMemServices->endpoint()->end_point );
           port->releaseOffsets( offsetv );
 
           // Clear our mailbox
@@ -981,7 +926,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
           // We will copy our copy of their mailbox back to them
           int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
-          clearRemoteMailbox( offset, res->sMemServices->getEndPoint() );
+          clearRemoteMailbox( offset, res->sMemServices->endpoint() );
 
         }
         break;
@@ -1016,7 +961,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
           OCPI::Util::VList offsetv;
           port->getOffsets( comms->mailBox[n].return_offset, offsetv);
-          sendOffsets( offsetv, res->sMemServices->getEndPoint()->end_point );
+          sendOffsets( offsetv, res->sMemServices->endpoint()->end_point );
           port->releaseOffsets( offsetv );
 
           // Clear our mailbox
@@ -1025,7 +970,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
           // We will copy our copy of their mailbox back to them
           int offset = sizeof(UpAndRunningMarker)+sizeof(ContainerComms::MailBox)*n;
-          clearRemoteMailbox( offset, res->sMemServices->getEndPoint() );
+          clearRemoteMailbox( offset, res->sMemServices->endpoint() );
 
         }
         break;
@@ -1100,20 +1045,31 @@ getEndpointFromProtocol( const char* protocol )
   if ( !tfactory ) {
     return NULL;
   }
-  const char* env = getenv("OCPI_SMB_SIZE");
-  uint32_t size=1024*1024;
-  if( env && (env[0] != 0)) {
-    size = atoi(env);
-  }
-  std::string sep = tfactory->allocateEndpoint( &size );
-  return addLocalEndpoint( sep.c_str() )->sMemServices->getEndPoint()->end_point;
+  std::string sep = tfactory->allocateEndpoint( NULL, NULL );
+  return addLocalEndpoint( sep.c_str() ) ->sMemServices->endpoint()->end_point; 
+
 }
 
 
 SMBResources* 
 Transport::
-addLocalEndpoint( const char *ep  )
+addLocalEndpoint( const char *nfep  )
 {
+
+  // finalize it
+  std::string loc(nfep);
+  std::string nuls;
+  XferFactory* tfactory = 
+    XferFactoryManager::getFactoryManager().find( loc, nuls );
+  if ( !tfactory ) {
+    return NULL;
+  }
+  DataTransfer::EndPoint * lep = tfactory->getEndPoint( loc, true );
+  // Force create
+  tfactory->getSmemServices( lep );
+  const char* ep = lep->end_point.c_str();
+  loc = ep;
+
   SMBResources* res = getEndpointResources( ep );
   if ( res ) {
     return res;
@@ -1125,15 +1081,6 @@ addLocalEndpoint( const char *ep  )
 
   GEndPoint* gep = new GEndPoint;
   gep->ep = ep;
-
-  std::string loc(ep);
-  std::string nuls;
-  XferFactory* tfactory = 
-    XferFactoryManager::getFactoryManager().find( loc, nuls );
-  if ( ! tfactory ) {
-    delete gep;
-    return NULL;
-  }
   gep->loc = tfactory->getEndPoint(loc);
   if ( gep->loc->maxCount >= MAX_ENDPOINTS ) {
     delete gep;
@@ -1184,12 +1131,12 @@ SMBResources* Transport::getEndpointResources(const char* ep)
 {
   unsigned int n;
   for ( n=0; n<m_remoteEndpoints.getElementCount(); n++ ) {
-    if ( static_cast<GEndPoint*>(m_remoteEndpoints[n])->res->sMemServices->getEndPoint()->end_point == ep ) {
+    if ( static_cast<GEndPoint*>(m_remoteEndpoints[n])->res->sMemServices->endpoint()->end_point == ep ) {
       return static_cast<GEndPoint*>(m_remoteEndpoints[n])->res;
     }
   }
   for ( n=0; n<m_localEndpoints.getElementCount(); n++ ) {
-    if ( static_cast<GEndPoint*>(m_localEndpoints[n])->res->sMemServices->getEndPoint()->end_point == ep ) {
+    if ( static_cast<GEndPoint*>(m_localEndpoints[n])->res->sMemServices->endpoint()->end_point == ep ) {
       return static_cast<GEndPoint*>(m_localEndpoints[n])->res;
     }
   }

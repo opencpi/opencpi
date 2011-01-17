@@ -248,7 +248,7 @@ Server::Server(
 #endif
 
   // Get our endpoint
-  m_end_point = res->sMemServices->getEndPoint();
+  m_end_point = res->sMemServices->endpoint();
   m_transport->setListeningEndpoint( m_end_point );
 
   // Create the dispatch thread

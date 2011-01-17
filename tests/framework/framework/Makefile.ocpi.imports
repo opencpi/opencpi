@@ -1,7 +1,7 @@
 
 # #####
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
 #
 #    Mercury Federal Systems, Incorporated
 #    1901 South Bell Street
@@ -34,9 +34,9 @@
 #
 ########################################################################### #
 
-ALLINC += $(UTIL_EXPORTS) $(OCPI_CPPUNIT_DIR)/include
+ALLINC += $(UTIL_EXPORTS) $(OCPI_GTEST_DIR)/include
 
-BASICLIBS += -L$(OCPI_CPPUNIT_DIR)/lib -lcppunit
+BASICLIBS += -L$(OCPI_GTEST_DIR)/lib -lgtest
 
 ALLLIBS += $(UTIL_LIBS) $(TEST_LIBS) $(LOGGER_LIBS) $(OCPIOS_LIBS)
 

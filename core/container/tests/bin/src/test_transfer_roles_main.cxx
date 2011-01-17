@@ -58,6 +58,8 @@
 #include <UtZeroCopyIOWorkers.h>
 #include <OcpiTimeEmit.h>
 
+#include <DtTransferConfig.h>
+
 #include <OcpiThread.h>
 
 using namespace OCPI::DataTransport;
@@ -66,7 +68,7 @@ using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
 
-static int   OCPI_RCC_DATA_BUFFER_SIZE   = 1024;
+static int   OCPI_RCC_DATA_BUFFER_SIZE   = 512;
 static int   OCPI_USE_POLLING            = 1;
 
 static CWorker PRODUCER(0,1),  CONSUMER(1,0);
@@ -164,17 +166,11 @@ static void createPorts( std::vector<CApp>& ca )
 static void connectWorkers(std::vector<CApp>& ca )
 {
   ( void ) ca;
-#ifdef WAS
-  std::string p = CONSUMER.pdata[CONSUMER_INPUT_PORT].port->getInitialProviderInfo() ;
-  std::string flowc = PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->setFinalProviderInfo( p );
-  CONSUMER.pdata[CONSUMER_INPUT_PORT].port->setFinalUserInfo( flowc );
-#else
   PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->connect( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port );
-#endif
 }
 
 
-#define BUFFERS_2_PROCESS 200;
+#define BUFFERS_2_PROCESS 1000;
 static void initWorkerProperties(int mode, std::vector<CApp>& ca )
 {
   ( void ) ca;
@@ -444,8 +440,9 @@ int test_ap_main( int argc, char** argv)
 int  main( int argc, char** argv)
 #endif
 {
-
   SignalHandler sh(sig_handler);
+
+  DataTransfer::configureSubSystem( NULL );
 
   int test_rc = 1;
   DataTransfer::EventManager* event_manager;
@@ -505,7 +502,8 @@ int  main( int argc, char** argv)
   PRODUCER.pdata[PRODUCER_OUTPUT_PORT].props = t2props;
 
   //  static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
-      static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
+  static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
+  //  static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
                                                                                   OCPI::Util::PVEnd };
   CONSUMER.pdata[CONSUMER_INPUT_PORT].props = c_port_props;
 
