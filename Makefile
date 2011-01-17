@@ -91,7 +91,8 @@ PACKAGES += tools/cdk/ocpigen
 PACKAGES += tools/cdk/ocpixm
 PACKAGES += test
 
-PACKAGES += tests/facilities/os
+PACKAGES += tests/facilities/test_os
+PACKAGES += tests/facilities/test_logger
 PACKAGES += tests/framework/framework
 
 #
@@ -121,8 +122,9 @@ ALLPACKAGES = \
 	core/sca/sgac \
 	core/sca/srpl \
 	test \
-	tests/facilities/os \
-	tests/framework/main \
+	tests/facilities/test_os \
+	tests/facilities/test_logger \
+	tests/framework/framework \
 	tools/local/binder \
 	tools/local/tester \
 	tools/cdk/ocpigen \

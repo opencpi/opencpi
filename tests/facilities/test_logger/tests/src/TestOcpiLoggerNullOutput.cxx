@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -32,81 +32,31 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "OcpiOsDebug.h"
+#include "OcpiLoggerNullOutput.h"
 
-#include <OcpiOsDebug.h>
-#include <OcpiLoggerNullOutput.h>
-#include "OcpiUtilTest.h"
+#include "gtest/gtest.h"
 
-namespace NullOutputTests {
+namespace
+{
+  class TestOcpiLoggerNullOutput : public ::testing::Test
+  {
+    // Empty
+  };
 
-  /*
-   * ----------------------------------------------------------------------
-   * Test 1
-   * ----------------------------------------------------------------------
-   */
-
-  class Test1 : public OCPI::Util::Test::Test {
-  public:
-    Test1 ()
-      : OCPI::Util::Test::Test ("Testing the NullOutput logger")
-    {
-    }
-
-    void run ()
-    {
+  // Test 1: Null output test
+  TEST( TestOcpiLoggerNullOutput, test_1 )
+  {
       OCPI::Logger::NullOutput null;
+
       null.setProducerId ("01-NullOutput");
+
       null << OCPI::Logger::Level::ADMINISTRATIVE_EVENT
            << OCPI::Logger::ProducerName ("runNullTest")
            << "Hello World"
            << std::flush;
-      test (null.good());
-    }
-  };
 
-}
-
-static
-int
-testNullOutputInt (int, char *[])
-{
-  OCPI::Util::Test::Suite tests ("NullOutput tests");
-  int n_failed;
-  tests.add_test (new NullOutputTests::Test1);
-  tests.run ();
-  n_failed = tests.report ();
-  return n_failed;
-}
-
-/*
- * Entrypoint for the VxWorks command line.
- */
-
-extern "C" {
-  int
-  testNullOutput (int argc, char * argv[])
-  {
-    return testNullOutputInt (argc, argv);
+      EXPECT_EQ( null.good(), true );
   }
-}
 
-/*
- * Entrypoint for everybody else.
- */
-
-int
-main (int argc, char * argv[])
-{
-#if !defined (NDEBUG)
-  {
-    for (int i=1; i<argc; i++) {
-      if (std::strcmp (argv[i], "--break") == 0) {
-        OCPI::OS::debugBreak ();
-        break;
-      }
-    }
-  }
-#endif
-
-  return testNullOutputInt (argc, argv);
-}
+} // End: namespace<unnamed>
