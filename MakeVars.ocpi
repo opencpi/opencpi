@@ -343,9 +343,10 @@ SCAVERSION = 2.2.2
 #AdjustRelative2=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),../../$(patsubst ./%,%,$(filter-out .,$(i)))))
 #AdjustRelative1=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),..$(patsubst %,/%,$(patsubst ./%,%,$(filter-out .,$(i))))))
 # the argument is assumed to be relative
-AdjustRelative=$(foreach d,$(dir $(1)),$(if $(filter ./,$(d)),$(2)../,$(call AdjustRelative,$(d:%/=%),$(2)../)))
+AdjustRelative=$(if $(filter /%,$(1)),$(1),$(foreach d,$(patsubst %/,%,$(dir $(1))),$(if $(filter .,$(d)),..,../$(call AdjustRelative,$(d)))))
 TrimDir=$(if $(filter %/,$(1)),$(1:%/=%),$(1))
-DescendMake=$(foreach d,$(call TrimDir,$(1)),-C $(d) OCPI_BASE_DIR=$(call AdjustRelative,$(d),$(OCPI_BASE_DIR)))
-DescendMake2=-C $(1) OCPI_BASE_DIR=../../$(OCPI_BASE_DIR)
-DescendMake1=-C $(1) OCPI_BASE_DIR=../$(OCPI_BASE_DIR)
+DescendMake=$(foreach d,$(call TrimDir,$(1)),-C $(d) $(if $(filter /%,$(OCPI_BASE_DIR)),,OCPI_BASE_DIR=$(OCPI_BASE_DIR)/$(call AdjustRelative,$(d))))
+DescendMake2=-C $(1) $(if $(filter /%,$(OCPI_BASE_DIR)),,OCPI_BASE_DIR=../../$(OCPI_BASE_DIR))
+DescendMake1=-C $(1) $(if $(filter /%,$(OCPI_BASE_DIR)),,OCPI_BASE_DIR=../$(OCPI_BASE_DIR))
+DescendFile2=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,../..)
 export AT=@

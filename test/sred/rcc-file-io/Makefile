@@ -41,7 +41,7 @@
 # Else (when called directly), load MakeVars.ocpi.
 #
 
-include $(OCPI_BASE_DIR)MakeVars.ocpi
+include $(OCPI_BASE_DIR)/MakeVars.ocpi
 
 #
 # These must exist natively on the build host.  Assume that the build host

@@ -47,7 +47,7 @@ endif
 
 # defaults
 ifndef OCPI_BASE_DIR
-OCPI_BASE_DIR := $(shell pwd)
+export OCPI_BASE_DIR := .
 endif
 OCPI_ABS_DIR := $(shell pwd|sed 's/ /\\ /g')
 CLIENT_IDL_ONLY := 1
@@ -174,7 +174,7 @@ $(PACKAGES):
 	$(AT)if test -f $@/Makefile.ocpi ; then \
 		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f Makefile.ocpi ; \
 	else \
-		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)Makefile.ocpi.for-pkg ; \
+		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
 	fi
 
 clean distclean:
@@ -182,7 +182,7 @@ clean distclean:
 		if test -f $p/Makefile.ocpi ; then \
 			$(MAKE) $(call DescendMake,$p) -f Makefile.ocpi $@ ; \
 		else \
-			$(MAKE) $(call DescendMake,$p) -f $(call AdjustRelative,$p,)Makefile.ocpi.for-pkg $@ ; \
+			$(MAKE) $(call DescendMake,$p) -f $(call AdjustRelative,$p,)/Makefile.ocpi.for-pkg $@ ; \
 		fi ; \
 	)
 	find . -name '*~' -exec rm {} \;

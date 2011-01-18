@@ -133,7 +133,7 @@ bin: lib
 		if test -f bin/src/Makefile.ocpi ; then \
 			$(MAKE) $(call DescendMake2,bin/src) -f Makefile.ocpi $(SYSTEMOPTION) ; \
 		else \
-			$(MAKE) $(call DescendMake2,bin/src) -f ../../$(OCPI_BASE_DIR)/Makefile.ocpi.for-bin $(SYSTEMOPTION) ; \
+			$(MAKE) $(call DescendMake2,bin/src) -f $(DescendFile2)/Makefile.ocpi.for-bin $(SYSTEMOPTION) ; \
 		fi ; \
 	fi
 endif
@@ -229,7 +229,7 @@ objects: generated
 			if test -f $$facility/idl/Makefile.ocpi ; then \
 				$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 			else \
-				$(MAKE) $(call DescendMake2,$$facility/idl) -f ../../$(OCPI_BASE_DIR)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/idl) -f $(DescendFile2)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done && \
@@ -238,7 +238,7 @@ objects: generated
 			if test -f $$facility/src/Makefile.ocpi ; then \
 				$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 			else \
-				$(MAKE) $(call DescendMake2,$$facility/src) -f ../../$(OCPI_BASE_DIR)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done
@@ -249,7 +249,7 @@ generated:
 			if test -f $$facility/idl/Makefile.ocpi ; then \
 				$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 			else \
-				$(MAKE) $(call DescendMake2,$$facility/idl) -f ../../$(OCPI_BASE_DIR)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/idl) -f  $(DescendFile2)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done && \
@@ -258,7 +258,7 @@ generated:
 			if test -f $$facility/src/Makefile.ocpi ; then \
 				$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 			else \
-				$(MAKE) $(call DescendMake2,$$facility/src) -f ../../$(OCPI_BASE_DIR)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done && \
@@ -266,7 +266,7 @@ generated:
 		if test -f bin/src/Makefile.ocpi ; then \
 			$(MAKE) $(call DescendMake2,bin/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 		else \
-			$(MAKE) $(call DescendMake2,bin/src) -f ../../$(OCPI_BASE_DIR)/Makefile.ocpi.for-bin $(SYSTEMOPTION) $@ ; \
+			$(MAKE) $(call DescendMake2,bin/src) -f $(DescendFile2)/Makefile.ocpi.for-bin $(SYSTEMOPTION) $@ ; \
 		fi ; \
 	fi
 
@@ -276,14 +276,14 @@ clean distclean:
 			if test -f $$facility/idl/Makefile.ocpi ; then \
 				$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $@ ; \
 			else \
-				$(MAKE) $(call DescendMake2,$$facility/idl) -f ../../$(OCPI_BASE_DIR)/Makefile.ocpi.for-idl $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/idl) -f $(DescendFile2)/Makefile.ocpi.for-idl $@ ; \
 			fi ; \
 		fi && \
 		if test -d $$facility/src ; then \
 			if test -f $$facility/src/Makefile.ocpi ; then \
 				$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $@ ; \
 			else \
-				$(MAKE) $(call DescendMake2,$$facility/src) -f ../../$(OCPI_BASE_DIR)/Makefile.ocpi.for-src $@ ; \
+				$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $@ ; \
 			fi ; \
 		fi || exit 1 ; \
 	done && \
@@ -291,7 +291,7 @@ clean distclean:
 		if test -f bin/src/Makefile.ocpi ; then \
 			$(MAKE) $(call DescendMake2,bin/src) -f Makefile.ocpi $@ ; \
 		else \
-			$(MAKE) $(call DescendMake2,bin/src) -f ../../$(OCPI_BASE_DIR)/Makefile.ocpi.for-bin $@ ; \
+			$(MAKE) $(call DescendMake2,bin/src) -f $(DescendFile2)/Makefile.ocpi.for-bin $@ ; \
 		fi ; \
 	fi
 	-rm -f *vxdkm-ctdc* *.vxe *.exe *.obj *.out *.map *.o *.so *.dylib *.ilk *.sbr *.suo *.sln *.pdb *.bsc core* *.d *~

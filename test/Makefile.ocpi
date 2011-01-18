@@ -48,11 +48,11 @@ export RUN_VIA_MAKEFILE=1
 
 build:
 	$(AT)set -e;\
-		$(foreach dir,$(TESTS_TO_BUILD_1),\
-			$(MAKE) $(call DescendMake,$(dir)) -f Makefile.ocpi;)
+		$(foreach d,$(TESTS_TO_BUILD_1),\
+			$(MAKE) $(call DescendMake,$(d)) -f Makefile.ocpi;)
 	$(AT)set -e;\
-		$(foreach dir,$(TESTS_TO_BUILD_2),\
-			$(MAKE) $(call DescendMake,$(dir)) -f Makefile;)
+		$(foreach d,$(TESTS_TO_BUILD_2),\
+			$(MAKE) $(call DescendMake,$(d)) -f Makefile;)
 
 test:
 	./run-all-tests
