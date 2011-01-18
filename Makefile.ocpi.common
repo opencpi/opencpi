@@ -631,7 +631,7 @@ MKDEPENDFLAGS += \
 endif # End: ifeq ($(OCPI_CORBA_ORB),TAO)
 
 ifeq ($(OCPI_CORBA_ORB),OMNI)
-  IDL=$(OCPI_BASE_DIR)do_omniidl.csh
+  IDL=$(OCPI_BASE_DIR)/do_omniidl.csh
   IDLOPTS=
   ALLDEFS += OCPI_USES_OMNI
   ORBINCDIRS = $(OCPI_OMNI_INCLUDE_DIR)
@@ -689,10 +689,10 @@ distcleanup:	cleanup
 #
 
 OCPI_EXTERNAL_EXPORTS = \
-	$(OCPI_BASE_DIR)core/local/util/misc/include \
-	$(OCPI_BASE_DIR)core/local/util/driver/include \
-	$(OCPI_BASE_DIR)core/dataplane/rdma_drivers/pio/include \
-	$(OCPI_BASE_DIR)core/dataplane/rdma_driver_interface/interfaces/include
+	$(OCPI_BASE_DIR)/core/local/util/misc/include \
+	$(OCPI_BASE_DIR)/core/local/util/driver/include \
+	$(OCPI_BASE_DIR)/core/dataplane/rdma_drivers/pio/include \
+	$(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/interfaces/include
 
 
 OCPIOS_EXPORTS = $(OCPI_BASE_DIR)/adapt/os/ocpios/interfaces/include

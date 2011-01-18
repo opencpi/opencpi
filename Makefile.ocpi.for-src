@@ -37,13 +37,13 @@
 
 all: objects
 
-include $(OCPI_BASE_DIR)MakeVars.ocpi
+include $(OCPI_BASE_DIR)/MakeVars.ocpi
 ifneq ($(OCPI_OUT_DIR),)
 OBJDIR = ../../$(OCPI_OUT_DIR)
 else
 OBJDIR = .
 endif
-include $(OCPI_BASE_DIR)Makefile.ocpi.common
+include $(OCPI_BASE_DIR)/Makefile.ocpi.common
 
 ifneq ($(wildcard ../../Makefile.ocpi.imports),)
 include ../../Makefile.ocpi.imports

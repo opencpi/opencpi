@@ -93,15 +93,15 @@ endif
 ifeq ($(origin OCPI_BASE_DIR),undefined)
 
   ifeq ($(OCPI_OS),winnt)
-    OCPI_BASE_DIR = c:/Frank/soft/ocpi/
+    OCPI_BASE_DIR = c:/Frank/soft/ocpi
   endif
 
   ifeq ($(OCPI_OS),linux)
-    OCPI_BASE_DIR = /view/jmiller_ocpi/vobs/ocpi/
+    OCPI_BASE_DIR = /view/jmiller_ocpi/vobs/ocpi
   endif
 
   ifeq ($(OCPI_OS),vxworksdkm)
-    OCPI_BASE_DIR = c:/Frank/soft/ocpi/
+    OCPI_BASE_DIR = c:/Frank/soft/ocpi
   endif
 
 endif
@@ -147,7 +147,7 @@ endif
 #
 
 ifeq "$(MKDEPEND)" ""
-  MKDEPEND = $(OCPI_BASE_DIR)mkdepend
+  MKDEPEND = $(OCPI_BASE_DIR)/mkdepend
 endif
 
 #
