@@ -192,7 +192,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
   if (!cp)
     return "Corrupted interface repository";
   cp++;
-  char *end = strstr(cp, "</Protocol>\n");
+  const char *end = strstr(cp, "</Protocol>\n");
   if (!end)
     return "Corrupted interface repository";
   end = strchr(end, '\n');
