@@ -151,7 +151,7 @@ $(UNIXLIB): $(OBJECTS)
 	ar r $@ $(OBJECTS)
 
 $(EXPORTSHLIB): $(UNIXSHLIB)
-	if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir -p $(OCPI_BASE_DIR)lib; fi
+	if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir -p $(OCPI_BASE_DIR)/lib; fi
 	if ! test -d $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); then mkdir -p $(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR); fi
 	cp -p $(UNIXSHLIB) "$@"
 

@@ -148,8 +148,8 @@ $(foreach i,$(HdlImplementations),$(eval $(call DoDefs,$(firstword $(subst ., ,$
 
 define DoFamily
 hdlstubs+=$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName))
-$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName))): Family=$(1)
-$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName))): $(hdldefs) | $(LibDir) $(LibDir)/hdl $(GenDir)/hdl
+$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName)): Family=$(1)
+$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName)): $(hdldefs) | $(LibDir) $(LibDir)/hdl $(GenDir)/hdl
 	$(AT)echo Building HDL stub library for $(1) for this component library: \"$(LibName)\"
 	$(AT)$(MAKE) -C $(GenDir)/hdl -L -f $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk \
 		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) LibName=$(LibName) Targets=$(1)
