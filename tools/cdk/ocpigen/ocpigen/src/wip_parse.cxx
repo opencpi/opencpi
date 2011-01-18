@@ -1581,7 +1581,7 @@ parseWorker(const char *file, const char *parent, Worker *w) {
   if (!cp)
     cp = file;
   w->fileName = strdup(cp);
-  char *lp = strrchr(w->fileName, '.');
+  const char *lp = strrchr(w->fileName, '.');
   if (lp)
     *lp = 0;
   w->implName = ezxml_cattr(xml, "Name");
