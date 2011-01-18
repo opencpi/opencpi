@@ -55,6 +55,9 @@
 #include <OcpiOsDataTypes.h>
 #include <OcpiOsMisc.h>
 #include <string>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 #include <cstdio>
 #include <sys/wait.h>

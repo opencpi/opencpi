@@ -419,7 +419,7 @@ extern const char
   *parseRccAssy(ezxml_t xml, const char *file, Worker *aw),
   *parseFile(const char *file, const char *parent, const char *element,
 	     ezxml_t *xp, const char **xfile, bool optional = false),
-  *pattern(Worker *w, Port *p, int n, unsigned n, bool in, bool master, char **suff),
+  *pattern(Worker *w, Port *p, int n0, unsigned n1, bool in, bool master, char **suff),
   *parseWorker(const char *file, const char *parent, Worker *),
   *deriveOCP(Worker *w),
   *emitDefsHDL(Worker*, const char *, bool wrap = false),

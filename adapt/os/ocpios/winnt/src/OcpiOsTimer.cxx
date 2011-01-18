@@ -37,6 +37,7 @@
 #include <OcpiOsSizeCheck.h>
 #include <OcpiOsAssert.h>
 #include <windows.h>
+#include <cstdlib>
 
 namespace {
   struct TimerData {

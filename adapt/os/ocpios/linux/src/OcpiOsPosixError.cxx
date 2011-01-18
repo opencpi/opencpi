@@ -38,6 +38,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <string>
+#include <cstring>
 #include <pthread.h>
 
 namespace {

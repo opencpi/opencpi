@@ -39,6 +39,7 @@
 #include <OcpiOsDataTypes.h>
 #include <cstdlib>
 #include <string>
+#include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

@@ -35,6 +35,7 @@
 #include <OcpiOsDataTypes.h>
 #include <OcpiRes.h>
 #include <list>
+#include <cstdio>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 

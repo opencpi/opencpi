@@ -51,9 +51,10 @@
     Initial version.
 
 ************************************************************************** */
+#include <climits>
 #include <unistd.h>
 #include <fcntl.h>
-#include <assert.h>
+#include <cassert>
 #include <errno.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

@@ -38,6 +38,7 @@
 #include <OcpiOsClientSocket.h>
 #include <OcpiOsDataTypes.h>
 #include <string>
+#include <cstring>
 #include <cstdlib>
 #include <winsock2.h>
 #include "OcpiOsWin32Socket.h"

@@ -46,6 +46,9 @@
 #include <iostream>
 #include <stack>
 #include "OcpiExpParser.h"
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 
 using namespace std;
 

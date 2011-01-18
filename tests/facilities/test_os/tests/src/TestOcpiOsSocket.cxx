@@ -54,10 +54,24 @@ namespace
 
   void test03Thread ( void* opaque )
   {
-    unsigned int* portNoPtr = reinterpret_cast<unsigned int*> ( opaque );
-    OCPI::OS::Socket cs = OCPI::OS::ClientSocket::connect ( OCPI::OS::getHostname ( ),
+    try
+    {
+      unsigned int* portNoPtr = reinterpret_cast<unsigned int*> ( opaque );
+      OCPI::OS::Socket cs = OCPI::OS::ClientSocket::connect ( OCPI::OS::getHostname ( ),
                                                             *portNoPtr );
-    cs.close ( );
+      cs.close ( );
+    }
+    catch ( const std::string& s )
+    {
+      std::cout << "Exception(s) " << s << std::endl;
+      FAIL();
+    }
+    catch ( ... )
+    {
+      std::cout << "Exception(u) unknown" << std::endl;
+      FAIL();
+    }
+ 
   }
 
   void test04Thread ( void* opaque )
@@ -187,71 +201,110 @@ namespace
   // Test 3: Accepting connection
   TEST( TestOcpiOsSocket, test_3 )
   {
-    unsigned int portNo = 6275;
-    OCPI::OS::ServerSocket se ( portNo, true );
-    OCPI::OS::ThreadManager tm ( test03Thread, &portNo );
-    OCPI::OS::Socket so = se.accept ( );
-    so.close ( );
-    se.close ( );
-    tm.join ( );
-    EXPECT_EQ( true, true );
+    try
+    {
+      unsigned int portNo = 6275;
+      OCPI::OS::ServerSocket se ( portNo, true );
+      OCPI::OS::ThreadManager tm ( test03Thread, &portNo );
+      OCPI::OS::Socket so = se.accept ( );
+      so.close ( );
+      se.close ( );
+      tm.join ( );
+      EXPECT_EQ( true, true );
+    }
+    catch ( const std::string& s )
+    {
+      std::cout << "Exception(s) " << s << std::endl;
+      FAIL();
+    } 
+    catch ( ... )
+    {
+      std::cout << "Exception(u) unknown" << std::endl;
+      FAIL();
+    }
   }
 
 
   // Test 4: Receiving data
   TEST( TestOcpiOsSocket, test_4 )
   {
-    unsigned int portNo = 6276;
-    OCPI::OS::ServerSocket se ( portNo, true );
-    OCPI::OS::ThreadManager tm ( test04Thread, &portNo );
-    OCPI::OS::Socket so = se.accept ( );
-    char buf [ 16 ];
-    unsigned long long count = so.recv ( buf, 16 );
-    EXPECT_EQ( count, 13 );
-    EXPECT_EQ(std::strcmp ( buf, "Hello World!" ), 0 );
-    so.close ( );
-    se.close ( );
-    tm.join ( );
+    try
+    {
+      unsigned int portNo = 6276;
+      OCPI::OS::ServerSocket se ( portNo, true );
+      OCPI::OS::ThreadManager tm ( test04Thread, &portNo );
+      OCPI::OS::Socket so = se.accept ( );
+      char buf [ 16 ];
+      unsigned long long count = so.recv ( buf, 16 );
+      EXPECT_EQ( count, 13 );
+      EXPECT_EQ(std::strcmp ( buf, "Hello World!" ), 0 );
+      so.close ( );
+      se.close ( );
+      tm.join ( );
+    }
+    catch ( const std::string& s )
+    {
+      std::cout << "Exception(s) " << s << std::endl;
+      FAIL();
+    } 
+    catch ( ... )
+    {
+      std::cout << "Exception(u) unknown" << std::endl;
+      FAIL();
+    }
   }
 
 
   // Test 5: Shutting down one side of a connection
   TEST( TestOcpiOsSocket, test_5 )
   {
-    unsigned int portNo = 6277;
-    OCPI::OS::ServerSocket se ( portNo, true );
-    OCPI::OS::ThreadManager tm ( test05Thread, &portNo );
-    OCPI::OS::Socket so = se.accept ( );
-
-    const char * ptr = "Hello World!";
-    unsigned long long count;
-
-    while ( *ptr )
+    try
     {
-      count = so.send ( ptr, 1 );
-      EXPECT_EQ( count, 1 );
-      ptr++;
+      unsigned int portNo = 6277;
+      OCPI::OS::ServerSocket se ( portNo, true );
+      OCPI::OS::ThreadManager tm ( test05Thread, &portNo );
+      OCPI::OS::Socket so = se.accept ( );
+
+      const char * ptr = "Hello World!";
+      unsigned long long count;
+
+      while ( *ptr )
+      {
+        count = so.send ( ptr, 1 );
+        EXPECT_EQ( count, 1 );
+        ptr++;
+      }
+
+      so.shutdown ( );
+
+      char buf [ 16 ];
+
+      char *ptr2 = buf;
+
+      do
+      {
+        count = so.recv ( ptr2, 2 );
+        ptr2 += count;
+      }
+      while ( count > 0 );
+
+      *ptr2 = 0;
+
+      EXPECT_EQ( std::strcmp ( buf, "Hello World!" ), 0 );
+      so.close ( );
+      se.close ( );
+      tm.join ( );
     }
-
-    so.shutdown ( );
-
-    char buf [ 16 ];
-
-    char *ptr2 = buf;
-
-    do
+    catch ( const std::string& s )
     {
-      count = so.recv ( ptr2, 2 );
-      ptr2 += count;
+      std::cout << "Exception(s) " << s << std::endl;
+      FAIL();
+    } 
+    catch ( ... )
+    {
+      std::cout << "Exception(u) unknown" << std::endl;
+      FAIL();
     }
-    while ( count > 0 );
-
-    *ptr2 = 0;
-
-    EXPECT_EQ( std::strcmp ( buf, "Hello World!" ), 0 );
-    so.close ( );
-    se.close ( );
-    tm.join ( );
   }
 
 

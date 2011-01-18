@@ -39,6 +39,7 @@
 #include <string>
 #include <cctype>
 #include <ctime>
+#include <cstdio>
 #include <windows.h>
 #include "OcpiOsWin32Error.h"
 

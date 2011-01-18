@@ -50,6 +50,8 @@
 
 ************************************************************************** */
 
+#include <cstdio>
+
 #include "DtIntEventHandler.h"
 #include "OcpiUtilAutoMutex.h"
 #include "OcpiOsAssert.h"

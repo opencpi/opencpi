@@ -381,7 +381,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
       fprintf(f, "  //   ByteWidth: %u\n", p->byteWidth);  
       fprintf(f, "  //   ImpreciseBurst: %s\n", BOOL(p->impreciseBurst));
       fprintf(f, "  //   Preciseburst: %s\n", BOOL(p->preciseBurst));
-      fprintf(f, "  //   MemoryWords: %llu\n", p->wmemi.memoryWords);
+      fprintf(f, "  //   MemoryWords: %llu\n", (unsigned long long )p->wmemi.memoryWords);
       fprintf(f, "  //   MaxBurstLength: %u\n", p->wmemi.maxBurstLength);
       fprintf(f, "  //   WriteDataFlowControl: %s\n", BOOL(p->wmemi.writeDataFlowControl));
       fprintf(f, "  //   ReadDataFlowControl: %s\n", BOOL(p->wmemi.readDataFlowControl));
@@ -474,7 +474,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
     // Now we emit parameters.
     Property *pr = w->ctl.properties;
     for (unsigned i = 0; i < w->ctl.nProperties; i++, pr++)
-      if (pr->isParameter)
+      if (pr->isParameter) {
 	if (w->language == VHDL) {
 	  fprintf(f, "VHDL PARAMETERS HERE\n");
 	} else {
@@ -493,6 +493,7 @@ OCPI_PROPERTY_DATA_TYPES
 	  fprintf(f, "  parameter [%u:0] %s = %u'b%lld;\n",
 		  bits - 1, pr->name, bits, (long long)i64);
 	}
+      }
     // Now we emit the declarations (input, output, width) for each module port
     c = w->clocks;
     for (unsigned i = 0; i < w->nClocks; i++, c++)
@@ -721,7 +722,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	fprintf(f,
 		"  %s Aliases for interface \"%s\"\n", comment, p->name);
 	if (p->ocp.MReqInfo.width) {
-	  if (n == 0)
+	  if (n == 0) {
 	    if (w->language == VHDL)
 	      fprintf(f, 
 		      "  subtype %s%s_OpCode_t is std_logic_vector(%d downto 0);\n",
@@ -730,6 +731,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	      fprintf(f, 
 		      "  localparam %sOpCodeWidth = %d;\n",
 		      mIn ? pin : pout, p->ocp.MReqInfo.width);
+          }
 	  if (w->language == VHDL)
 	    fprintf(f, 
 		    "  alias %s_Opcode: %sOpCode_t is %s.MReqInfo(%d downto 0);\n",
@@ -746,7 +748,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		    "  %s [%d:0] %sOpcode; assign %sMReqInfo = %sOpcode;\n",
 		    p->wsi.regRequest ? "reg" : "wire", p->ocp.MReqInfo.width - 1, pout, pout, pout);
 	}
-	if (p->ocp.MFlag.width)
+	if (p->ocp.MFlag.width) {
 	  if (w->language == VHDL)
 	    fprintf(f, 
 		    "  alias %sAbort : std_logic is %s.MFlag(0);\n",
@@ -759,6 +761,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	    fprintf(f, 
 		    "  wire %sAbort; assign %sMFlag[0] = %sAbort;\n",
 		    pout, pout, pout);
+        }
 	break;
       case WMIPort:
 	fprintf(f,
@@ -1089,7 +1092,7 @@ emitAssyHDL(Worker *w, const char *outDir)
       unsigned n = 0;
       for (InstanceProperty *pv = i->properties; n < i->nValues; n++, pv++) {
 	Property *pr = pv->property;
-	if (pr->isParameter)
+	if (pr->isParameter) {
 	  if (w->language == VHDL) {
 	    fprintf(f, "VHDL PARAMETERS HERE\n");
 	  } else {
@@ -1111,6 +1114,7 @@ OCPI_PROPERTY_DATA_TYPES
 	    fprintf(f, ".%s(%u'b%lld)",
 		    pr->name, bits, (long long)i64);
 	  }
+        }
       }
       if (any)
 	fprintf(f, ")");

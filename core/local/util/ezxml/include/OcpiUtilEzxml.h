@@ -48,6 +48,8 @@
  */
 
 #include <iostream>
+#include <cstring>
+#include <stdint.h>
 #include <OcpiUtilVfs.h>
 #include "ezxml.h"
 

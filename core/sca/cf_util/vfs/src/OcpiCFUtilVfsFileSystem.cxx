@@ -34,6 +34,7 @@
 
 #include <ctime>
 #include <string>
+#include <cstring>
 #include <cctype>
 #include <iostream>
 #include <OcpiOsAssert.h>

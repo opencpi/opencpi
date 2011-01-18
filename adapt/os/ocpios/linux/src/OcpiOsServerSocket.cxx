@@ -40,6 +40,7 @@
 #include <OcpiOsDataTypes.h>
 #include <cstdlib>
 #include <string>
+#include <cstring>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>

@@ -50,6 +50,7 @@
 
 #include "OcpiHostFileMappingServices.h"
 #include <string>
+#include <cstdio>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

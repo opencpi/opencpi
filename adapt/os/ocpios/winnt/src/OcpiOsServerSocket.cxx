@@ -40,6 +40,7 @@
 #include <OcpiOsDataTypes.h>
 #include <cstdlib>
 #include <string>
+#include <cstring>
 #include <winsock2.h>
 #include "OcpiOsWin32Socket.h"
 

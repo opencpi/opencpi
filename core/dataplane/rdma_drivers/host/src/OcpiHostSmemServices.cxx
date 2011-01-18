@@ -48,6 +48,7 @@
 #ifndef OCPI_NT_SMEM_SERVICES_H_
 #define OCPI_NT_SMEM_SERVICES_H_
 
+#include <cstdio>
 #include <OcpiHostFileMappingServices.h>
 #include <DtExceptions.h>
 #include <DtSharedMemoryInterface.h>

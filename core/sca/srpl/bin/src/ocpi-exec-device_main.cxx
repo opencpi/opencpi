@@ -58,6 +58,7 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <cstdlib>
 #include <fstream>
 #include <OcpiOsMisc.h>
 #include <OcpiOsDebug.h>

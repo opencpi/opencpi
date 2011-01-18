@@ -41,6 +41,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <cstring>
+#include <cstdlib>
 
 #ifdef __APPLE__
 #include <sys/time.h>

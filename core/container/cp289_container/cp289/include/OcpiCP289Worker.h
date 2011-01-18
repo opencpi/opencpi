@@ -51,6 +51,7 @@
 #ifndef OCPI_CP289_WORKER_H_
 #define OCPI_CP289_WORKER_H_
 
+#include <climits>
 #include <OcpiCP289Port.h>
 
 namespace OCPI {

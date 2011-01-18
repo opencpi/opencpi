@@ -35,6 +35,7 @@
 
 #include "OcpiOsPosixSocket.h"
 #include <string>
+#include <cstring>
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>

@@ -33,6 +33,7 @@
  */
 
 #include <string>
+#include <cstring>
 #include <OcpiOsAssert.h>
 #include <OcpiOsDataTypes.h>
 #include <OcpiOsMutex.h>

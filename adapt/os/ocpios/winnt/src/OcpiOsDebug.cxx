@@ -35,6 +35,7 @@
 
 #include <OcpiOsDebug.h>
 #include <iostream>
+#include <cstdlib>
 #include <windows.h>
 #include "OcpiOsWin32DumpStack.h"
 

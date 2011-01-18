@@ -34,6 +34,7 @@
 
 
 
+#include <cstdio>
 #include <OcpiParentChild.h>
 
 class Child1;

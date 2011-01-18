@@ -36,6 +36,7 @@
 #include <OcpiOsDebug.h>
 #include <iostream>
 #include <signal.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <execinfo.h>
 

@@ -48,6 +48,7 @@
  */
 
 #include <string>
+#include <cstdio>
 #include <istream>
 #include <functional>
 

@@ -125,7 +125,7 @@ namespace OCPI {
 	uint32_t
 	  stringLength, // maximum strlen (terminating null not included)
 	  length;       // maximum for sequences, specific length for arrays
-	const char *parseValue(const char *value, Scalar::Value &value);
+	const char *parseValue(const char *value0, Scalar::Value &value1);
 	void destroyValue(Scalar::Value &value);
       };
       // These obviously do not belong here and needs storage management

@@ -32,7 +32,11 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <time.h>
+#include <ctime>
+#include <cstdio>
+#include <cstdlib>
+#include <memory>
+#include <algorithm>
 #include <fasttime.h>
 #include <OcpiTimeEmit.h>
 #include <OcpiOsAssert.h>

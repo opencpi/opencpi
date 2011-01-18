@@ -32,9 +32,10 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cstring>
+#include <cstdio>
+#include <cassert>
+#include <climits>
 #include <OcpiOsAssert.h>
 #include <OcpiUtilProperty.h>
 #include <OcpiUtilEzxml.h>
@@ -74,8 +75,8 @@ Member::parse(ezxml_t xp,
     sub32 = true;
   if (type.scalar == Scalar::OCPI_String) {
     if ((err = CE::getNumber(xp, "StringLength", &type.stringLength, &found, 0, false)) ||
-	!found &&
-	(err = CE::getNumber(xp, "size", &type.stringLength, &found, 0, false)))
+	( !found &&
+	(err = CE::getNumber(xp, "size", &type.stringLength, &found, 0, false))))
       return err;
     if (!found)
       return "Missing StringLength attribute for string type";
@@ -84,9 +85,9 @@ Member::parse(ezxml_t xp,
   } else if (ezxml_cattr(xp, "StringLength"))
     return "StringLength attribute only valid for string types";
   if ((err = CE::getNumber(xp, "SequenceLength", &type.length, &type.isSequence, 0, false)) ||
-      !type.isSequence &&
-      (err = CE::getNumber(xp, "SequenceSize", &type.length, &type.isSequence, 0, false)) ||
-      (err = CE::getNumber(xp, "ArrayLength", &type.length, &type.isArray, 0, false)))
+      ( !type.isSequence &&
+      ((err = CE::getNumber(xp, "SequenceSize", &type.length, &type.isSequence, 0, false)) ||
+      (err = CE::getNumber(xp, "ArrayLength", &type.length, &type.isArray, 0, false)))))
     return err;
   if (type.isSequence && type.isArray)
     return esprintf("Property/argument %s has both Array and Sequence length",

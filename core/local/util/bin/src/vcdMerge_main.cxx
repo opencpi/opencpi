@@ -32,14 +32,16 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <stdio.h>
+#include <ctime>
+#include <cstdio>
 #include <sstream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include <vector>
+#include <stdint.h>
 #include <OcpiUtilCommandLineConfiguration.h>
 #include <OcpiOsAssert.h>
 

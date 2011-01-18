@@ -38,6 +38,9 @@
 #include <OcpiOsSizeCheck.h>
 #include <OcpiOsDataTypes.h>
 #include <string>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 #include <windows.h>
 #include "OcpiOsWin32Error.h"

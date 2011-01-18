@@ -44,6 +44,7 @@
  *
  */
 
+#include <algorithm>
 #include <DtHandshakeControl.h>
 #include <DtTransferInternal.h>
 #include <OcpiIntTransportExceptions.h>

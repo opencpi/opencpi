@@ -119,6 +119,7 @@
 
 #include <cctype>
 #include <cstring>
+#include <climits>
 
 #include <errno.h>
 #include <stdint.h>

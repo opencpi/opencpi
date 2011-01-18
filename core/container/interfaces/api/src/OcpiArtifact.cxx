@@ -32,6 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <climits>
 #include "OcpiContainerMisc.h"
 #include "OcpiContainerApplication.h"
 #include "OcpiArtifact.h"

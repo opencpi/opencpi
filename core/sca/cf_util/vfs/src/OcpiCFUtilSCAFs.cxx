@@ -55,6 +55,7 @@
 
 #include <ctime>
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <OcpiOsAssert.h>
 #include <OcpiOsMutex.h>
