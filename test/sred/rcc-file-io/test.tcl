@@ -1,7 +1,8 @@
+#! /bin/sh
 
 # #####
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
 #
 #    Mercury Federal Systems, Incorporated
 #    1901 South Bell Street
@@ -34,9 +35,6 @@
 #
 ########################################################################### #
 
-#! /bin/sh
-
-
 #
 # ----------------------------------------------------------------------
 # Test script for the OCPI SCA RCC Executable Device using a "File I/O"
@@ -52,7 +50,7 @@
 # \
 export LD_LIBRARY_PATH=$ACE_ROOT/lib:$LD_LIBRARY_PATH
 # the next line restarts using tclsh \
-exec tclsh8.5 "$0" ${1+"$@"}
+exec tclsh "$0" ${1+"$@"}
 
 #
 # /opt/local/TAO/5.6.6/linux-x86_64-gcc/ACE_wrappers/TAO/orbsvcs/Naming_Service/Naming_Service -ORBEndPoint iiop://:4332

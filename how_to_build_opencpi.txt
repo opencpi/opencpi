@@ -5,6 +5,10 @@ Contents
  1. Building OpenCPI with OmniOrb for x86 Linux
  2. Building OpenCPI with OmniOrb for PowerPC on Timesys Linux
 
+The steps below assume:
+ 1. The use of a Bash shell.
+ 2. The build machine is RHEL5 64-bit x86.
+
 Building OpenCPI with OmniOrb for x86 Linux
 -------------------------------------------
 
@@ -19,6 +23,8 @@ Building OpenCPI with OmniOrb for x86 Linux
  3. Start the build.
 
     $ make
+    $ make rcc
+    $ make hdl
 
  4. Cleaning the build
 
@@ -45,6 +51,8 @@ Building OpenCPI with OmniOrb for PowerPC on Timesys Linux
 
     $ cd $CPIDIR
     $ make
+    $ make rcc
+    $ make hdl
 
  4. Cleaning the build
 
