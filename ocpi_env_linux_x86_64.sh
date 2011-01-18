@@ -58,7 +58,7 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 # #### Location of the Xilinx tools ####################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/12.1/ISE_DS/
+export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/12.4/ISE_DS/
 
 # #### Location of Google Test (gtest) #################################### #
 
