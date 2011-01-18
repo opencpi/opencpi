@@ -54,6 +54,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <unistd.h>
 
 namespace DataTransfer {
 
@@ -73,9 +74,13 @@ namespace DataTransfer {
       int rc = InitMapping (strFilePath, strMapName, eAccess, O_CREAT);
       if (rc == 0)
 	{
-	  // Set the size of the shared area
-	  rc = ftruncate (m_fd, iMaxSize);
-	  m_errno = rc;
+	  // Set the size of the shared area if not already large enough
+	  // Note Darwin/MacOS doesn't allow truncating it more than once, so it can't expand either
+	  struct stat statbuf;
+	  rc = fstat (m_fd, &statbuf);
+	  if (rc == 0 && statbuf.st_size < iMaxSize)
+	    rc = ftruncate (m_fd, iMaxSize);
+	  m_errno = errno;
 	  if (rc != 0)
 	    {
 	      printf("OcpiPosixFileMappingServices::CreateMapping: ftruncate failed with errno %d\n", m_errno);

@@ -46,7 +46,9 @@ SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
 endif
 
 # defaults
-OCPI_BASE_DIR :=
+ifndef OCPI_BASE_DIR
+OCPI_BASE_DIR := $(shell pwd)
+endif
 OCPI_ABS_DIR := $(shell pwd|sed 's/ /\\ /g')
 CLIENT_IDL_ONLY := 1
 LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(OCPI_ABS_DIR)/lib
@@ -149,11 +151,14 @@ hdlapps: hdlcomps hdl
 hdl:
 	$(MAKE) -C hdl
 
-hdlclean:
+cleanhdl:
 	$(MAKE) -C hdl clean
 
 rcc:
 	make -C components rcc
+
+cleanrcc:
+	make -C components cleanrcc
 
 .PHONY: prims
 hdlprims:

@@ -230,10 +230,8 @@ $(NgcName): $(BBLib) $(CoreBaseName) $(APP_RTL) | $(PlatformDir)/$(Target) $(Cor
 	$(AT)echo Building $@: container core for application '"$(AppName)"' on platform '"$(Platform)"' using '"xst"'
 	$(AT)$(Compile)
 
-$(TopNgcName): $(NgcName)
-	$(AT)echo Building top-level ngc for application '"$(AppName)"' on platform '"$(Platform)"' using '"xst"' tar =$@= +$(NgcName)+
-
-
+#$(TopNgcName): $(NgcName)
+#	$(AT)echo Building top-level ngc for application '"$(AppName)"' on platform '"$(Platform)"' using '"xst"' tar =$@= +$(NgcName)+
 #	$(AT)$(call DoXilinx,ngcbuild,-sd . \
                 $(foreach l,$(ComponentLibraries),-sd $(call FindRelative,$(PlatformDir),$(l)/lib/hdl/$(Target)))\
 		$(foreach c,$(Cores),-sd $(call FindRelative,$(PlatformDir),$(call CoreRefDir,$(c),$(Target))))\
