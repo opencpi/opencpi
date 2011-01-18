@@ -47,13 +47,13 @@ include $(OCPI_BASE_DIR)/MakeVars.ocpi
 # is Linux, and that it was built using $(OCPI_OUT_DIR)=linux-bin.
 #
 
-OCPI_RCC_BINDER=$(OCPI_BASE_DIR)tools/local/binder/$(OCPI_OUT_DIR)/ocpi-rcc-binder
+OCPI_RCC_BINDER=$(OCPI_BASE_DIR)/tools/local/binder/$(OCPI_OUT_DIR)/ocpi-rcc-binder
 DO_OCPI_RCC_BINDER=\
-  export $(OCPI_DYLIB_ENV)=$(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR);\
+  export $(OCPI_DYLIB_ENV)=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR);\
   $(OCPI_RCC_BINDER)
-OCPI_RCC_GEN = $(OCPI_BASE_DIR)tools/local/binder/$(OCPI_OUT_DIR)/ocpi-rcc-gen
+OCPI_RCC_GEN = $(OCPI_BASE_DIR)/tools/local/binder/$(OCPI_OUT_DIR)/ocpi-rcc-gen
 DO_OCPI_RCC_GEN=\
-  export $(OCPI_DYLIB_ENV)=$(OCPI_BASE_DIR)lib/$(OCPI_OUT_DIR);\
+  export $(OCPI_DYLIB_ENV)=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR);\
   $(OCPI_RCC_GEN)
 CFLAGS += -I.
 EXT=$(OCPI_LIB_EXT)
