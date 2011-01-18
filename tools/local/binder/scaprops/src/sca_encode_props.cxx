@@ -184,7 +184,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
   ( void ) debug;
   char *rid;
   asprintf(&rid, "\n%s\n", p->repid);
-  char *cp = strcasestr(repo, rid);
+  const char *cp = strcasestr(repo, rid);
   if (!cp)
     return esprintf("Didn't find interface definition for REPID: %s in IDL files provided", p->repid);
   cp += strlen(rid);
@@ -383,7 +383,7 @@ const char *emit_ocpi_xml(const char *specFile, const char *implFile,
 	  "     YOU MAY WANT TO EDIT IT to add implementation-specific aspects\n"
 	  " -->\n",
 	  ct, local->tm_zone, parentFile);
-  char *specFileName = strrchr(specFile, '/');
+  const char *specFileName = strrchr(specFile, '/');
   fprintf(f,
 	  "<%sImplementation Name=\"%s\">\n"
 	  "  <xi:include href=\"%s\">\n",
