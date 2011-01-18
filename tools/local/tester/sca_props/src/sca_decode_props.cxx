@@ -69,7 +69,7 @@ decode_props(const char *props,
              Test **testsp, unsigned *ntestsp)
 {
   unsigned nprops, namesize, nmembers, size, nports, ntests, ntestps, n;
-  char *cp;
+  const char *cp;
 
   n = sscanf (props, "%u/%u/%u/%u/%u/%u/%u$",
               &nports, &nprops, &size, &nmembers, &namesize,
