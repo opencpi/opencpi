@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <errno.h>
-#define __USE_GNU
+//#define __USE_GNU   // SSiegel - commented out to allow RHEL6 compile
 #include <pthread.h>
 #ifdef __APPLE__
 #define pthread_yield pthread_yield_np

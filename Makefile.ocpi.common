@@ -791,6 +791,5 @@ TEST_LOGGER_LIBS = $(OCPI_BASE_DIR)/tests/facilities/test_logger/test_logger
 
 TEST_LIBS = \
 	$(TEST_OS_LIBS) \
-	$(TEST_LOGGER_LIBS) \
-	$(TEST_FRAMEWORK_LIBS)
+	$(TEST_LOGGER_LIBS) 
 
