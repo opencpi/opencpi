@@ -80,7 +80,7 @@ OcpiLibDir=$(OCPI_CDK_DIR)/../lib/$(Target)-bin
 LinkBinary=$(GCCLINK) $(SharedLibLinkOptions) -o $@ $(ObjectFiles) \
 $(OtherLibraries) $(AEPLibraries) \
 $(foreach ol,$(OcpiLibraries),$(or $(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
-Compile_c=$(GCC) -MMD -MP -MF $(GeneratedDir)/$$(@F).deps -c -Wall -Wextra -g $(SharedLibCompileOptions) $(IncludeDirs:%=-I%) -o $$@ $$<
+Compile_c=$(GCC) -MMD -MP -MF $(TargetDir)/$$(@F).deps -c -Wall -Wextra -g $(SharedLibCompileOptions) $(IncludeDirs:%=-I%) -o $$@ $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 

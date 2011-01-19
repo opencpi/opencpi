@@ -88,7 +88,7 @@ objdir:
 	$(AT)if test "x$(OCPI_OUT_DIR)" != "x" -a ! -d $(OBJDIR) ; then echo Creating object directory $(OBJDIR); mkdir -p $(OBJDIR) ; fi
 
 depends: $(CDEPENDS) $(CXXDEPENDS) $(CPPDEPENDS)
-generated: depends
+#generated: depends
 objects: generated objdir $(OBJECTS)
 clean: cleanup
 	-rm -f $(OBJECTS)
@@ -106,13 +106,15 @@ $(ASMOBJECTS): $(OBJDIR)/%.obj: %.asm
 $(CDEPENDS): %.d: %.c
 $(CXXDEPENDS): %.d: %.cxx 
 $(CPPDEPENDS): %.d: %.cpp
-
+-include $(OBJDIR)/*.deps
 #
 # Include generated dependency files
 #
 
+ifneq (,)
 ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
 ifneq ($(wildcard *.d),)
 include *.d
+endif
 endif
 endif

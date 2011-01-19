@@ -187,4 +187,5 @@ clean::
 	$(ModelSpecificCleanupHook)
 
 -include $(GeneratedDir)/*.deps
+-include $(TargetDir)/*.deps
 endif

@@ -56,7 +56,7 @@ DO_OCPI_RCC_GEN=\
   export $(OCPI_DYLIB_ENV)=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR);\
   $(OCPI_RCC_GEN)
 CFLAGS += -I.
-EXT=$(OCPI_LIB_EXT)
+EXT=$(OCPI_DYLIB_EXT)
 
 all: $(OCPI_OUT_DIR)/rot.zip | objdir $(OCPI_OUT_DIR)
 

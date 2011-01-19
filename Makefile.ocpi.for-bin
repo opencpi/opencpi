@@ -142,7 +142,7 @@ objdir:
 	fi
 
 depends: $(CDEPENDS) $(CXXDEPENDS)
-generated: depends $(ALLGENERATED)
+generated: $(ALLGENERATED)
 executables: generated objdir $(EXECUTABLES)
 clean: cleanup
 	rm -f $(OBJECTS) $(ALLEXECUTABLES)
@@ -214,13 +214,16 @@ $(CXXOBJECTS): $(OBJDIR)/%.obj: %.cxx
 $(ASMOBJECTS): $(OBJDIR)/%.obj: %.asm
 $(CDEPENDS): %.d: %.c
 $(CXXDEPENDS): %.d: %.cxx
+-include $(OBJDIR)/*.deps
 
 #
 # Include generated dependency files
 #
 
+ifneq (,)
 ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
 ifneq ($(wildcard *.d),)
 include *.d
+endif
 endif
 endif
