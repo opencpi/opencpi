@@ -132,11 +132,9 @@ $(Models:%=$(OutDir)lib/%): | $(OutDir)lib
 $(Models:%=$(OutDir)gen/%): | $(OutDir)gen
 	$(AT)mkdir $@
 
-xm: speclinks | $(OutDir)lib/xm
-	$(call BuildModel,xm)
+xm: speclinks $(XmImplementations)
 
-rcc: speclinks | $(OutDir)lib/rcc
-	$(call BuildModel,rcc)
+rcc: speclinks $(RccImplementations)
 
 # The stubs library depend only on the generated hdl defs files
 # Someday we'll need the VHDL -or- Verilog defs files
@@ -162,7 +160,7 @@ $(foreach f,\
           $(sort $(foreach t,$(HdlTargets),$(call LibraryAccessTarget,$(t)))),\
 	  $(eval $(call DoFamily,$(f))))
 
-hdl: $(HdlImplementations) $(hdlstubs)
+hdl: speclinks $(HdlImplementations) $(hdlstubs)
 
 cleanxm:
 	$(call CleanModel,xm)
