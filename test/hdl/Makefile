@@ -37,9 +37,11 @@
 ifndef OCPI_OS
 OCPI_OS=$(shell uname -s | tr A-Z a-z)
 endif
-ifneq ($(OCPI_OS),darwin)
-DOSTATIC=-static
-endif
+# Use of -static requires optional glibc-static package
+# Red Hat advises against the use of -static
+#ifneq ($(OCPI_OS),darwin)
+#DOSTATIC=-static
+#endif
 OCPI_OUT_DIR = $(OCPI_OS)-$(shell uname -m)-bin
 ALL=$(basename $(notdir $(wildcard src/*.c)))
 ALLBIN=$(ALL:%=$(OCPI_OUT_DIR)/%)
