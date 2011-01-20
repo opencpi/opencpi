@@ -204,7 +204,7 @@ DoXilinxPat=\
 	echo " "Details in $1.out; cd $(PlatformDir); $(InitXilinx); \
 	echo Command: $1 $2 > $1.out; \
 	/usr/bin/time -f %E -o $1.time sh -c "$1 $2; echo $$? > $1.status" >> $1.out 2>&1;\
-	(echo -n Time:; cat $1.time) >> $1.out; echo -n Time:; cat $1.time; \
+	(echo -n Time:; cat $1.time) >> $1.out; \
 	$(call XilinxAfter,$1,$3)
 
 # This creates a path for the bb library

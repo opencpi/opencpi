@@ -57,8 +57,11 @@ Empty=
 #default is to only compile things that are NOT generated
 CompiledSourceFiles=$(AuthoredSourceFiles)
 Space=$(Empty) $(Empty)
-Capitalize=$(shell csh -f -c 'echo $${1:u}' $(1))
-UnCapitalize=$(shell csh -f -c 'echo $${1:l}' $(1))
+# Just for history (thanks Andrew): this only works with tcsh, not traditional csh.  And csh isn't posix anywah
+#Capitalize=$(shell csh -f -c 'echo $${1:u}' $(1))
+#UnCapitalize=$(shell csh -f -c 'echo $${1:l}' $(1))
+Capitalize=$(shell awk -v x=$(1) 'BEGIN {print toupper(substr(x,1,1)) substr(x,2,length(x)-1) }')
+UnCapitalize=$(shell awk -v x=$(1) 'BEGIN {print tolower(substr(x,1,1)) tolower(x,2,length(x)-1) }')
 ToUpper=$(shell echo $(1)|tr a-z A-Z)
 # function to add a ../ to pathnames, avoiding changing absolute ones
 AdjustRelative2=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),../../$(patsubst ./%,%,$(filter-out .,$(i)))))
