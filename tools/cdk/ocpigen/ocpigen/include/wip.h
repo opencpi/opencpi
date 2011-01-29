@@ -277,7 +277,7 @@ struct Property {
 #endif
 
 struct Control {
-  unsigned sizeOfConfigSpace;
+  uint64_t sizeOfConfigSpace;
   bool writableConfigProperties;
   bool readableConfigProperties;
   bool sub32BitConfigProperties;

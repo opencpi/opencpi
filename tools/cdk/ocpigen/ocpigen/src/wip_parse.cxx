@@ -391,18 +391,8 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
   ezxml_t xctl = ezxml_cchild(impl, "ControlInterface");
   const char *err;
   if (xctl) {
-    unsigned sizeOfConfigSpace;
-    bool haveSize;
     if (w->noControl)
       return "Worker has a ControlInterface element, but also has NoControl=true";
-    // Allow overriding sizeof config space
-    if ((err = CE::getNumber(xctl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
-      return err;
-    if (haveSize) {
-      if (sizeOfConfigSpace < w->ctl.sizeOfConfigSpace)
-	return "SizeOfConfigSpace attribute of ControlInterface smaller than properties";
-      w->ctl.sizeOfConfigSpace = sizeOfConfigSpace;
-    }
     // Allow overriding byte enables
     bool sub32;
     if ((err = CE::getBoolean(xctl, "Sub32BitConfigProperties", &sub32)))
@@ -437,12 +427,24 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
       if ((err = ezxml_children(xctl, doImplProp, w)))
 	return err;
   }
-  if (xctlp)
-    *xctlp = xctl;
   // parseing the impl control interface means we have visited all the properties,
   // both spec and impl, so now we know the whole config space.
   if (w->ctl.offset > w->ctl.sizeOfConfigSpace)
     w->ctl.sizeOfConfigSpace = w->ctl.offset;
+  // Allow overriding sizeof config space
+  if (xctl) {
+    uint64_t sizeOfConfigSpace;
+    bool haveSize;
+    if ((err = CE::getNumber64(xctl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
+      return err;
+    if (haveSize) {
+      if (sizeOfConfigSpace < w->ctl.sizeOfConfigSpace)
+	return "SizeOfConfigSpace attribute of ControlInterface smaller than properties";
+      w->ctl.sizeOfConfigSpace = sizeOfConfigSpace;
+    }
+  }
+  if (xctlp)
+    *xctlp = xctl;
   return 0;
 }
 
@@ -454,7 +456,7 @@ parseSpecControl(Worker *w, ezxml_t ps, ezxml_t props) {
     if ((err = CE::checkAttrs(ps, "SizeOfConfigSpace", "WritableConfigProperties",
 			  "ReadableConfigProperties", "Sub32BitConfigProperties",
 			  "Count", (void*)0)) ||
-	(err = CE::getNumber(ps, "SizeOfConfigSpace", &w->ctl.sizeOfConfigSpace, 0, 0)) ||
+	(err = CE::getNumber64(ps, "SizeOfConfigSpace", &w->ctl.sizeOfConfigSpace, 0, 0)) ||
 	(err = CE::getBoolean(ps, "WritableConfigProperties", &w->ctl.writableConfigProperties)) ||
 	(err = CE::getBoolean(ps, "ReadableConfigProperties", &w->ctl.readableConfigProperties)) ||
 	(err = CE::getBoolean(ps, "Sub32BitConfigProperties", &w->ctl.sub32BitConfigProperties)))

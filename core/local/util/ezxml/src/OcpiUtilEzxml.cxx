@@ -336,6 +336,9 @@ getUNum(const char *s, uint32_t *valp) {
     } else if (*endptr == 'M' || *endptr == 'm') {
       endptr++;
       val *= 1024*1024;
+    } else if (*endptr == 'G' || *endptr == 'g') {
+      endptr++;
+      val *= 1024ul*1024ul*1024ul;
     }
     while (isspace(*endptr))
       endptr++;

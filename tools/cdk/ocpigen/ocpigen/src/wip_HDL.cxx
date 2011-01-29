@@ -306,7 +306,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 		"  // Clocks not associated with one specific interface:\n");
       first = false;
       fprintf(f, "  %s, %*s// input\n",
-	      c->signal, (int)(20 - strlen(c->signal)), "");
+	      c->signal, (int)(22 - strlen(c->signal)), "");
     }
   }
   char *last = 0;
@@ -337,7 +337,9 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
       fprintf(f, "  //   Clock: this interface uses the worker's clock named \"%s\"\n", p->clock->name);
     switch (p->type) {
       case WCIPort:
-	fprintf(f, "  //   SizeOfConfigSpace: %u\n", w->ctl.sizeOfConfigSpace);
+	fprintf(f, "  //   SizeOfConfigSpace: %llu (0x%llx)\n",
+		(unsigned long long)w->ctl.sizeOfConfigSpace,
+		(unsigned long long)w->ctl.sizeOfConfigSpace);
 	fprintf(f, "  //   WritableConfigProperties: %s\n", BOOL(w->ctl.writableConfigProperties));
 	fprintf(f, "  //   ReadableConfigProperties: %s\n", BOOL(w->ctl.readableConfigProperties));
 	fprintf(f, "  //   Sub32BitConfigProperties: %s\n", BOOL(w->ctl.sub32BitConfigProperties));
@@ -398,7 +400,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	  fprintf(f, "    %-20s: in  std_logic;\n", p->clock->signal);
 	else
 	  fprintf(f, "  %s, %*s// input\n",
-		  p->clock->signal, (int)(20 - strlen(p->clock->signal)), "");
+		  p->clock->signal, (int)(22 - strlen(p->clock->signal)), "");
 	p->ocp.Clk.signal = p->clock->signal;
       } else if (n == 0)
 	fprintf(f,
@@ -413,7 +415,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	  if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
 	    char *name;
 	    asprintf(&name, os->signal, n);
-	    fprintf(f, "  %s, %*s// input  ", name, (int)(20 - strlen(name)), "");
+	    fprintf(f, "  %s, %*s// input  ", name, (int)(22 - strlen(name)), "");
 	    //if (osd->type)
 	    //fprintf(f, "%s_t", osd->name);
 	    //else
@@ -435,7 +437,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    char *name;
 	    asprintf(&name, os->signal, n);
 	    asprintf(&last, "  %s%%c %*s// output ", name,
-		     (int)(20 - strlen(name)), "");
+		     (int)(22 - strlen(name)), "");
 	    if (osd->vector)
 	      asprintf(&last, "%s[%3u:0]\n", last, os->width - 1);
 	    else
@@ -454,7 +456,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
       if (last)
 	fprintf(f, last, ',');
       asprintf(&last, "  %s%%c %*s// %s ", s->name,
-	       (int)(20 - strlen(s->name)), " ",
+	       (int)(22 - strlen(s->name)), " ",
 	       s->direction == Signal::IN ? "input " :
 	       (s->direction == Signal::OUT ? "output" : "inout "));
       if (s->width)
@@ -692,19 +694,19 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		    "  localparam %sPropertyWidth = %d;\n", pin, p->ocp.MAddr.width);
 	  if (n == 0) {
 	    Property *pr = w->ctl.properties;
-	    for (unsigned np = 0; np < w->ctl.nProperties; np++, pr++) {
-	      if (w->language == VHDL) {
-		fprintf(f,
-			"  constant %-20s : Property_t := b\"", pr->name);
-		for (int b = p->ocp.MAddr.width-1; b >= 0; b--)
-		  fprintf(f, "%c", pr->offset & (1 << b) ? '1' : '0');
-		fprintf(f, "\"; -- 0x%0*x\n",
-			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
-	      } else
-		fprintf(f, "  localparam [%d:0] %sAddr = %d'h%0*x;\n",
-			p->ocp.MAddr.width - 1, pr->name, p->ocp.MAddr.width,
-			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
-	    }
+	    for (unsigned np = 0; np < w->ctl.nProperties; np++, pr++)
+	      if (!pr->isParameter)
+		if (w->language == VHDL) {
+		  fprintf(f,
+			  "  constant %-20s : Property_t := b\"", pr->name);
+		  for (int b = p->ocp.MAddr.width-1; b >= 0; b--)
+		    fprintf(f, "%c", pr->offset & (1 << b) ? '1' : '0');
+		  fprintf(f, "\"; -- 0x%0*x\n",
+			  (int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
+		} else
+		  fprintf(f, "  localparam [%d:0] %sAddr = %d'h%0*x;\n",
+			  p->ocp.MAddr.width - 1, pr->name, p->ocp.MAddr.width,
+			  (int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
 	  }
 	}
 	break;
@@ -1128,7 +1130,7 @@ OCPI_PROPERTY_DATA_TYPES
 	// If the signal is in the interface
 	if (os->value) {
 	  char *signal = 0; // The signal to connect this port to.
-	  char *thisComment = "";
+	  const char *thisComment = "";
 	  if (os == &ip->port->ocp.Clk)
 	    signal = strdup(i->clocks[ip->port->clock - i->worker->clocks]->signal);
 	  else if (ip->connection)
@@ -1285,8 +1287,9 @@ emitBsvHDL(Worker *w, const char *outDir) {
     fprintf(f, " WIP Attributes are:\n");
     switch (p->type) {
     case WCIPort:
-      fprintf(f, "// SizeOfConfigSpace: %u (0x%x)\n", w->ctl.sizeOfConfigSpace,
-	      w->ctl.sizeOfConfigSpace);
+      fprintf(f, "// SizeOfConfigSpace: %llu (0x%llx)\fn",
+	      (unsigned long long)w->ctl.sizeOfConfigSpace,
+	      (unsigned long long)w->ctl.sizeOfConfigSpace);
       break;
     case WSIPort:
       fprintf(f, "// DataValueWidth: %u\n", p->wdi.dataValueWidth);
