@@ -1,3 +1,4 @@
+#define SOCKET_RDMA_SUPPORT
 
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -72,7 +73,7 @@ using namespace OCPI::OS;
 #define TCP_BUFSIZE_READ 4096
 
 
-#undef SOCKET_RDMA_SUPPORT
+
 #ifdef SOCKET_RDMA_SUPPORT
 // Used to register with the data transfer system;
 SocketXferFactory *g_socketsFactory = new SocketXferFactory;
@@ -303,7 +304,7 @@ void SocketXferFactory::clearCache()
 
 
 // Get the location via the endpoint
-EndPoint* SocketXferFactory::getEndPoint( std::string& end_point  )
+EndPoint* SocketXferFactory::getEndPoint( std::string& end_point, bool  )
 { 
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   SocketEndPoint *loc;
@@ -330,7 +331,7 @@ SmemServices* SocketXferFactory::getSmemServices(EndPoint* loc )
     return loc->smem;
   }
 
-  sp.lsmem = new SocketSmemServices(this, loc);
+  loc->smem = sp.lsmem = new SocketSmemServices(this, loc);
   SocketSmemServices * smem = static_cast<SocketSmemServices*>(sp.lsmem);
 
   if ( loc->local ) {
@@ -371,18 +372,12 @@ static OCPI::OS::int32_t getNextPortNum()
 }
 
 static std::string sep;
-std::string SocketXferFactory::allocateEndpoint(OCPI::OS::uint32_t *size )
+std::string SocketXferFactory::allocateEndpoint(OCPI::Util::Device*, OCPI::Util::PValue*)
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   std::string ep;
   char ip_addr[128];
 
-  /*
-  // Only one socket based endpoint per process
-  if ( sep.length() ) {
-    return sep;
-  }
-  */
 
   //#define USE_LOOPBACK
 #ifdef USE_LOOPBACK
@@ -414,7 +409,8 @@ std::string SocketXferFactory::allocateEndpoint(OCPI::OS::uint32_t *size )
   }
 
   char tep[128];
-  snprintf(tep,128,"ocpi-socket-rdma://%s;%d:%d.%d.20",ip_addr,port,*size, getNextMailBox());
+  unsigned int size = m_config->m_SMBSize;
+  snprintf(tep,128,"ocpi-socket-rdma://%s;%d:%d.%d.20",ip_addr,port,size, getNextMailBox());
   sep = ep = tep;  
   return ep;
 }

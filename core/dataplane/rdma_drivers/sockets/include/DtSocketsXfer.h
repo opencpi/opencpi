@@ -125,7 +125,7 @@ namespace DataTransfer {
     /***************************************
      *  Get the location via the endpoint
      ***************************************/
-    EndPoint* getEndPoint( std::string& end_point );
+    EndPoint* getEndPoint( std::string& end_point, bool );
     void releaseEndPoint( EndPoint* loc );
 
 
@@ -134,7 +134,7 @@ namespace DataTransfer {
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(OCPI::OS::uint32_t *size);
+    std::string allocateEndpoint(OCPI::Util::Device*, OCPI::Util::PValue*);
 
     /***************************************
      *  This method is used to flush any cached items in the factoy

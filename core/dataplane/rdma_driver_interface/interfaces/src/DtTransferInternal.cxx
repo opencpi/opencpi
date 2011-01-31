@@ -162,7 +162,21 @@ getListOfSupportedEndpoints()
     factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
     OCPI::Util::Device * d = factory->getNextDevice(0);
     do { 
-      l.push_back( factory->allocateEndpoint( d,  NULL ) );
+      std::string url;
+      bool found=false;
+      try {
+	url = factory->allocateEndpoint( d,  NULL );
+	found = true;
+      }
+      catch( OCPI::Util::EmbeddedException & ex ) {
+	fprintf(stderr, "Could not allocate endpoint for %s, error = %s\n", factory->getProtocol(), ex.getAuxInfo() );
+      }
+      catch( ... ) {
+	fprintf(stderr, "Caught an unknown exception while allocating an endpoint from %s\n", factory->getProtocol() );
+      }
+      if ( found ) {
+	l.push_back( url );
+      }
       d = factory->getNextDevice(d);
     } while ( d );    
   }
@@ -193,7 +207,7 @@ getNode( ezxml_t tn, const char* name )
 
 FactoryConfig::
 FactoryConfig()
-  : m_xml( NULL ), m_SMBSize(32*1024),m_retryCount(2)
+  : m_xml( NULL ), m_SMBSize(3*1024*1024),m_retryCount(10)
 {
   const char* env = getenv("OCPI_SMB_SIZE");
   if ( env ) m_SMBSize = atol(env);

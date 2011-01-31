@@ -1,4 +1,3 @@
-#define RXE_BUG
 
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -33,7 +32,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef OFED_RDMA_SUPPORT
 
 /*
  *  John Miller -  12/2010
@@ -71,9 +69,8 @@ using namespace OCPI::Util;
 using namespace OCPI::OS;
 
 // Create tranfer services template
-const int MAX_TX_DEPTH = 100;
-const int MAX_Q_DEPTH = 100;
-
+const int MAX_TX_DEPTH = 3*1024;
+const int MAX_Q_DEPTH = 3*1024;
 namespace DataTransfer {
   namespace OFED {
 
@@ -116,6 +113,7 @@ namespace DataTransfer {
       ibv_send_wr * m_firstWr;
       ibv_send_wr * m_lastWr;
       ibv_send_wr * m_badWr;
+      int m_PCount, m_PComplete;
       DataTransfer::XferRequest::CompletionStatus m_status;
     };
 
@@ -557,6 +555,7 @@ namespace DataTransfer {
     getXferServices( DataTransfer::SmemServices * s, 
 		     DataTransfer::SmemServices * t )
     {
+      OCPI::Util::AutoMutex guard ( m_mutex, true ); 
       return new XferServices( *this, s, t );
     }
 
@@ -659,6 +658,10 @@ namespace DataTransfer {
     }
 
 
+
+    static int post_count=0;
+    static int cq_count=0;
+    static int cq_mod=0;
     void
     XferServices::
     status()
@@ -667,6 +670,7 @@ namespace DataTransfer {
       const int WC_COUNT=30;
       ibv_wc wc[WC_COUNT];
       int c = ibv_poll_cq( m_sourceSmb->getCq(), WC_COUNT, wc );
+      cq_count += c;
       int index=0;
       while ( c ) {
 #ifndef NDEBUG
@@ -677,14 +681,21 @@ namespace DataTransfer {
 	  throw DataTransfer::DataTransferEx( API_ERROR, "ibv_poll_cq()");
 	}
 	if ( wc[index].status == IBV_WC_SUCCESS ) {
+	  reinterpret_cast<XferRequest*>(wc[index].wr_id)->m_PComplete++;
 	  reinterpret_cast<XferRequest*>(wc[index].wr_id)->m_status = DataTransfer::XferRequest::CompleteSuccess;
 	}
 	else {
 	  reinterpret_cast<XferRequest*>(wc[index].wr_id)->m_status = DataTransfer::XferRequest::CompleteFailure;
+	  ocpiAssert( 0 );
 	}
 	index++;
 	c--;
       }
+      
+      cq_mod++;
+      //      if ( (cq_mod%10000) == 0 ) 
+	printf("got %d completions, posted %d\n", cq_count, post_count);
+
     }
 
 
@@ -827,6 +838,7 @@ namespace DataTransfer {
 	  DataTransfer::XferRequest::Flags flags 
 	  )
     {
+      m_PCount++;
       ibv_send_wr * wr  = (ibv_send_wr*)malloc( sizeof(ibv_send_wr) );
       memset( wr,0,sizeof( ibv_send_wr));
        ibv_sge     * sge = (ibv_sge*)malloc( sizeof(ibv_sge ) );
@@ -854,7 +866,7 @@ namespace DataTransfer {
       if (  (flags & DataTransfer::XferRequest::LastTransfer) == DataTransfer::XferRequest::LastTransfer ) {
 
 #ifndef RXE_BUG
-	wr->send_flags |= IBV_SEND_FENCE;
+	//	wr->send_flags |= IBV_SEND_FENCE;
 #endif
 	m_lastWr = wr;
       }
@@ -912,10 +924,12 @@ namespace DataTransfer {
     XferRequest::
     post ()
     {
+      m_PComplete = 0;
       m_status = DataTransfer::XferRequest::Pending;
       int errno;
 
       if ( m_firstWr ) {
+	post_count++;
 	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_firstWr, &m_badWr )) ) {
 	  OCPI::OS::sleep( 1 );	  
 	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_firstWr, &m_badWr )) ) {
@@ -926,6 +940,7 @@ namespace DataTransfer {
       }
 
       if ( m_wr ) {
+	post_count++;
 	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_wr, &m_badWr )) ) {
 	  OCPI::OS::sleep( 1 );	  
 	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_wr, &m_badWr )) ) {
@@ -940,6 +955,7 @@ namespace DataTransfer {
 #endif
 
       if ( m_lastWr ) {	
+	post_count++;
 	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_lastWr, &m_badWr )) ) {
 	  OCPI::OS::sleep( 1 );	  
 	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_lastWr, &m_badWr )) ) {
@@ -949,6 +965,7 @@ namespace DataTransfer {
 	}
       }
 
+
     }
 
 
@@ -957,13 +974,18 @@ namespace DataTransfer {
     getStatus()
     {
       static_cast<XferServices*>(myParent)->status();
-      return m_status;
+      if ( (m_status==DataTransfer::XferRequest::CompleteSuccess)
+	   && (m_PComplete == m_PCount ) ) {
+	return m_status;
+      }
+      return DataTransfer::XferRequest::Pending;
     }
 
 
     XferRequest::
     XferRequest( XferServices *s)
-      : DataTransfer::XferRequest(*s),m_wr(NULL),m_nextWr(NULL),m_firstWr(NULL),m_lastWr(NULL)
+      : DataTransfer::XferRequest(*s),m_wr(NULL),m_nextWr(NULL),m_firstWr(NULL),m_lastWr(NULL),
+        m_PCount(0), m_PComplete(0)
     {
 
     }
@@ -1041,6 +1063,6 @@ namespace DataTransfer {
 
 // Used to register with the data transfer system;
 DataTransfer::OFED::XferFactory *g_ofed_singlton_factory = new DataTransfer::OFED::XferFactory;
-#endif
+
 
 

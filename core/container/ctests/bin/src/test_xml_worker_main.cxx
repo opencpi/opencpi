@@ -203,9 +203,15 @@ int  main( int argc, char** argv)
   OCPI::Container::Port & pout = producer.getPort( "Out" );
   OCPI::Container::Port & cin = consumer.getPort( "In" );
 
-  std::string p = cin.getInitialProviderInfo() ;
-  std::string flowc = pout.setFinalProviderInfo( p );
-  cin.setFinalUserInfo( flowc );
+
+  //  std::string p = cin.getInitialProviderInfo() ;
+  //  std::string flowc = pout.setFinalProviderInfo( p );
+  //  cin.setFinalUserInfo( flowc );
+
+  static OCPI::Util::PValue props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
+				       OCPI::Util::PVEnd };
+  
+  cin.connect( pout, props );
 
   OCPI::Container::Property doubleT ( consumer, "doubleT" );
   OCPI::Container::Property passFail ( consumer, "passfail" );
