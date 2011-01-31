@@ -50,7 +50,7 @@
 #include <string.h>
 #include <ezxml.h>
 
-#include <infiniband/verbs.h>
+#include <verbs.h>
 
 #include <OcpiOsDataTypes.h>
 #include <OcpiOsMutex.h>
