@@ -1,4 +1,4 @@
-
+#if 0
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -1064,5 +1064,5 @@ namespace DataTransfer {
 // Used to register with the data transfer system;
 DataTransfer::OFED::XferFactory *g_ofed_singlton_factory = new DataTransfer::OFED::XferFactory;
 
-
+#endif
 
