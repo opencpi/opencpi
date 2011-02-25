@@ -48,18 +48,18 @@ all: $(Platforms)
 
 $(Applications):
 	$(AT)echo Building application $@ for all targets and platforms
-	$(AT)for t in $(Targets); do \
+	$(AT)set -e;for t in $(Targets); do \
 		 echo Making $@ for target $$t. ; \
 		 make -C $@ Target=$$t; \
 	       done
-	$(AT)for p in $(Platforms); do \
+	$(AT)set -e;for p in $(Platforms); do \
 		 echo Making $@ for platform $$p. ; \
 		 make -C $@ Platform=$$p; \
 	       done
 
 $(Targets):
 	$(AT)echo Building all apps for target $@ \(not platforms\)
-	$(AT)for a in $(APPS); do \
+	$(AT)set -e; for a in $(APPS); do \
 		 echo Making $$a for target $@. ; \
 		 make -C $$a Target=$@; \
 	       done; \
@@ -67,13 +67,13 @@ $(Targets):
 
 $(Platforms):
 	$(AT)echo Building all apps for platform $@
-	$(AT)for a in $(Applications); do \
+	$(AT)set -e; for a in $(Applications); do \
 		 echo Making $$a for platform $@. ; \
 		 make -C $$a Platform=$@; \
 	     done
 
 clean:
-	$(AT)for a in $(APPS); do \
+	$(AT)set -e;for a in $(APPS); do \
 			echo Cleaning $$a ; \
 			make -C $$a clean; \
 		done
