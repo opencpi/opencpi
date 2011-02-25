@@ -152,7 +152,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   char* out_buffer = (char*)this_->ports[ProducerWorker_Data_Out_Port].current.data;
 
 #ifndef NDEBUG
-  printf("Out maxlen = %d\n", this_->ports[ProducerWorker_Data_Out_Port].current.maxLength ); 
+  /*  printf("Out maxlen = %d\n", this_->ports[ProducerWorker_Data_Out_Port].current.maxLength ); */
 #endif
 
   OCPI_TIME_EMIT_C( "Producer Start" );
@@ -169,7 +169,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #endif
 
 #ifndef NDEBUG
-    printf("Producing buffer number %d\n", mem->b_count );
+  /*    printf("Producing buffer number %d\n", mem->b_count ); */
 #endif
 
   len = this_->ports[ProducerWorker_Data_Out_Port].current.maxLength;

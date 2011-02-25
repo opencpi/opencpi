@@ -207,12 +207,23 @@ getNode( ezxml_t tn, const char* name )
 
 FactoryConfig::
 FactoryConfig()
-  : m_xml( NULL ), m_SMBSize(3*1024*1024),m_retryCount(10)
+  : m_xml( NULL ), m_SMBSize(3*1024*1024),m_retryCount(128)
 {
   const char* env = getenv("OCPI_SMB_SIZE");
   if ( env ) m_SMBSize = atol(env);
 }
 
+
+
+
+bool 
+FactoryConfig::
+getu8Prop( ezxml_t node, const char* name, const char * attr, uint8_t & value )
+{
+  uint32_t v;
+  getLProp( node,name,attr,v);
+  return (uint8_t)v;
+}
 
 bool 
 FactoryConfig::

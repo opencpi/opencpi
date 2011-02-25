@@ -80,11 +80,8 @@ struct  PortSetupMessage_t {
   OCPI::OS::uint32_t                length;
 };
 
-
-
 using namespace OCPI::Container;
 using namespace OCPI;
-
 
 // Constants
 static Worker * WORKER_PRODUCER_ID;
@@ -93,27 +90,8 @@ static Worker * WORKER_LOOPBACK_ID;
 static bool loopback;
 
 
-/*
- *  These are the global parameters that are configured in the vxWorks startup script
- */
-
-/*
-const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-smb-pio://s:300000.1.2";
-const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-smb-pio://lb:300000.2.2";
-*/
-
-
-const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-socket-rdma://172.16.89.91;40005:600000.1.4";
-const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-socket-rdma://172.16.89.93;40006:600000.2.4";
-
-/*
-//const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-ppp-pio://1.0:300000.1.2";
-//const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-ppp-pio://17.0:300000.2.2";
-*/
-
-
-int  OCPI_RCC_DATA_BUFFER_SIZE   = 1024;
-int  OCPI_RCC_CONT_NBUFFERS      = 1;
+int  OCPI_RCC_DATA_BUFFER_SIZE   = 1*1024;
+int  OCPI_RCC_CONT_NBUFFERS      = 4;
 extern volatile bool OCPI_TRACE_TX;
 
 volatile int OCPI_RUN_TEST = 1;
@@ -138,11 +116,7 @@ static std::string server_end_point;
 static std::string loopback_end_point;
 static volatile int circuit_count=0;
 static OCPI::DataTransport::MessageCircuit  *gpp_circuits[10];
-// static OCPI::DataTransport::MessageCircuit  *loopback_circuit;
 static OCPI::DataTransport::MessageCircuit  *circuit;
-// static OCPI::DataTransport::Server *server=NULL;
-// static OCPI::DataTransport::Client *client=NULL;
-
 
 #define CS_DISPATCH if (server)server->dispatch();if(client)client->dispatch();
 
@@ -705,7 +679,8 @@ int gpp_cont(int argc, char** argv)
           loopback_container->dispatch( event_manager );
         }
 
-        //        OCPI::OS::sleep( 10 );        
+	// Give the network driver some time
+	OCPI::OS::sleep( 0 );        
 
       }
 
@@ -743,14 +718,6 @@ int gpp_cont(int argc, char** argv)
 
     return 0;
 }
-
-
-int gpp_lb()
-{
-  const char* argv[] = {"main","-loopback","-ep", OCPI_RCC_CONT_COMMS_EP, 0};
-  return gpp_cont( 2, (char**)argv );
-}
-
 
 
 void ocpi_stop()

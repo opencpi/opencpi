@@ -227,6 +227,7 @@ namespace DataTransfer {
     FactoryConfig();
     void parse(ezxml_t config );
     static bool getLProp( ezxml_t node, const char* name, const char * attr, uint32_t & value );
+    static bool getu8Prop( ezxml_t node, const char* name, const char * attr, uint8_t & value );
     static bool getStringProp( ezxml_t node, const char* name, const char * attr, const char * & value );
     ~FactoryConfig();
 

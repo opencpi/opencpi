@@ -1,4 +1,3 @@
-#if 0
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -49,6 +48,7 @@
 #include <time.h>
 #include <string.h>
 #include <ezxml.h>
+#include <list>
 
 #include <verbs.h>
 
@@ -69,8 +69,8 @@ using namespace OCPI::Util;
 using namespace OCPI::OS;
 
 // Create tranfer services template
-const int MAX_TX_DEPTH = 3*1024;
-const int MAX_Q_DEPTH = 3*1024;
+const int MAX_TX_DEPTH = 8*1024;
+const int MAX_Q_DEPTH = 4*1024;
 namespace DataTransfer {
   namespace OFED {
 
@@ -112,7 +112,7 @@ namespace DataTransfer {
       ibv_send_wr ** m_nextWr;
       ibv_send_wr * m_firstWr;
       ibv_send_wr * m_lastWr;
-      ibv_send_wr * m_badWr;
+      ibv_send_wr * m_badWr[3];
       int m_PCount, m_PComplete;
       DataTransfer::XferRequest::CompletionStatus m_status;
     };
@@ -154,10 +154,28 @@ namespace DataTransfer {
      // Create tranfer services template
      void createTemplate (DataTransfer::SmemServices* p1, DataTransfer::SmemServices* p2);
 
+#ifndef NDEBUG
+      // Add/Remove posted transfer
+      void addPost( XferRequest *r ) {m_xfers.push_back(r);}
+      void remPost( XferRequest *r ) {m_xfers.remove(r);}
+      std::list<XferRequest*> m_xfers;
+#else
+      void addPost( XferRequest * ) {}
+      void remPost( XferRequest * ) {}
+#endif
+
+
       OCPI::OS::Mutex     m_mutex;     
       ibv_qp            * m_qp;
       uint32_t            m_tqpn;
       bool                m_finalized;
+      int                 m_post_count;
+      int                 m_cq_count;
+
+#ifdef L1_DEBUG
+      int cq_mod;
+#endif
+
     };
 
 
@@ -435,7 +453,8 @@ namespace DataTransfer {
     class FactoryConfig {
     public:
       FactoryConfig( const DataTransfer::FactoryConfig & lhs, ezxml_t dnode )
-	: m_port(1),m_timeout(10),m_hopLimit(1)
+	: m_port(1),m_hopLimit(3),m_ibv_qp_timeout(14),m_ibv_qp_retry_cnt(12),
+	  m_ibv_qp_rnr_retry(1),m_ibv_qp_rnr_timer(14)
       {
 	m_sys = lhs;
 	if ( dnode ) {
@@ -445,16 +464,25 @@ namespace DataTransfer {
 	    printf("Processing device %s\n", ezxml_attr(dnode,"name") );
 #endif
 	    DataTransfer::FactoryConfig::getLProp( dnode, "port", "value", m_port);
-	    DataTransfer::FactoryConfig::getLProp( dnode, "timeout", "value", m_timeout);
 	    DataTransfer::FactoryConfig::getLProp( dnode, "hopLimit", "value", m_hopLimit);
+
+	    DataTransfer::FactoryConfig::getu8Prop( dnode, "IBV_QP_TIMEOUT", "value", m_ibv_qp_timeout);
+	    DataTransfer::FactoryConfig::getu8Prop( dnode, "IBV_QP_RETRY_CNT", "value", m_ibv_qp_retry_cnt);
+	    DataTransfer::FactoryConfig::getu8Prop( dnode, "IBV_QP_RNR_RETRY", "value", m_ibv_qp_rnr_retry);
+	    DataTransfer::FactoryConfig::getu8Prop( dnode, "IBV_QP_RNR_TIMER", "value", m_ibv_qp_rnr_timer);
+
 	  }
 	}
       }
       DataTransfer::FactoryConfig m_sys;
  
       uint32_t m_port;
-      uint32_t m_timeout;
       uint32_t m_hopLimit;
+      uint8_t  m_ibv_qp_timeout;
+      uint8_t  m_ibv_qp_retry_cnt;
+      uint8_t  m_ibv_qp_rnr_retry;
+      uint8_t  m_ibv_qp_rnr_timer;
+
       ezxml_t  m_node;
     };
 
@@ -658,23 +686,27 @@ namespace DataTransfer {
     }
 
 
-
-    static int post_count=0;
-    static int cq_count=0;
-    static int cq_mod=0;
     void
     XferServices::
     status()
     {
       OCPI::Util::AutoMutex guard ( m_mutex, true ); 
-      const int WC_COUNT=30;
+      if ( ! m_post_count ) {
+	return;
+      }
+      const int WC_COUNT=1;
       ibv_wc wc[WC_COUNT];
       int c = ibv_poll_cq( m_sourceSmb->getCq(), WC_COUNT, wc );
-      cq_count += c;
+      if ( ! c ) {
+	OCPI::OS::sleep( 0 );
+	c = ibv_poll_cq( m_sourceSmb->getCq(), WC_COUNT, wc );
+      }
+      
+      m_cq_count += c;
       int index=0;
       while ( c ) {
 #ifndef NDEBUG
-	printf("*** Got a completion event\n");
+	//	printf("*** Got a completion event\n");
 #endif
 	if ( c < 0 ) {
 	  fprintf(stderr,"OFED::XferServices ERROR: Couldn't poll completion Q()\n");
@@ -683,6 +715,10 @@ namespace DataTransfer {
 	if ( wc[index].status == IBV_WC_SUCCESS ) {
 	  reinterpret_cast<XferRequest*>(wc[index].wr_id)->m_PComplete++;
 	  reinterpret_cast<XferRequest*>(wc[index].wr_id)->m_status = DataTransfer::XferRequest::CompleteSuccess;
+	  if ( reinterpret_cast<XferRequest*>(wc[index].wr_id)->m_PComplete ==
+	       reinterpret_cast<XferRequest*>(wc[index].wr_id)->m_PCount) {
+	    remPost( reinterpret_cast<XferRequest*>(wc[index].wr_id) );
+	  }
 	}
 	else {
 	  reinterpret_cast<XferRequest*>(wc[index].wr_id)->m_status = DataTransfer::XferRequest::CompleteFailure;
@@ -692,9 +728,12 @@ namespace DataTransfer {
 	c--;
       }
       
+#ifdef L1_DEBUG
       cq_mod++;
-      //      if ( (cq_mod%10000) == 0 ) 
-	printf("got %d completions, posted %d\n", cq_count, post_count);
+      if ( (cq_mod%10000) == 0 ) 
+	printf("got %d completions, posted %d\n", m_cq_count, m_post_count);
+#endif
+
 
     }
 
@@ -783,7 +822,7 @@ namespace DataTransfer {
       attr.rq_psn       = tep->m_psn;
       attr.ah_attr.dlid   = tep->m_lid;
       attr.max_dest_rd_atomic     = 1;
-      attr.min_rnr_timer          = 12;
+      attr.min_rnr_timer          = 127;
       attr.ah_attr.is_global  = 1;
       attr.ah_attr.grh.dgid   = tep->m_gid;
 #ifndef NDEBUG
@@ -812,9 +851,10 @@ namespace DataTransfer {
 
       attr.qp_state 	      = IBV_QPS_RTS;
       attr.sq_psn 	      = sep->m_psn;
-      attr.timeout            = sep->m_device->m_config->m_timeout;
-      attr.retry_cnt          = sep->m_device->m_config->m_sys.m_retryCount;
-      attr.rnr_retry          = sep->m_device->m_config->m_sys.m_retryCount;
+      attr.timeout            = sep->m_device->m_config->m_ibv_qp_timeout;
+      attr.retry_cnt          = sep->m_device->m_config->m_ibv_qp_retry_cnt;
+      attr.rnr_retry          = sep->m_device->m_config->m_ibv_qp_rnr_retry;
+      attr.min_rnr_timer      = sep->m_device->m_config->m_ibv_qp_rnr_timer;
       attr.max_rd_atomic  = 1;
       if ( (errno=ibv_modify_qp( m_qp, &attr,
 		      IBV_QP_STATE              |
@@ -864,10 +904,7 @@ namespace DataTransfer {
       wr->send_flags = IBV_SEND_SIGNALED;
 
       if (  (flags & DataTransfer::XferRequest::LastTransfer) == DataTransfer::XferRequest::LastTransfer ) {
-
-#ifndef RXE_BUG
-	//	wr->send_flags |= IBV_SEND_FENCE;
-#endif
+	wr->send_flags |= IBV_SEND_FENCE;
 	m_lastWr = wr;
       }
       else if (  (flags & DataTransfer::XferRequest::LastTransfer) == DataTransfer::XferRequest::FirstTransfer ) {
@@ -928,11 +965,13 @@ namespace DataTransfer {
       m_status = DataTransfer::XferRequest::Pending;
       int errno;
 
+      static_cast<XferServices*>(myParent)->addPost( this );      
+
       if ( m_firstWr ) {
-	post_count++;
-	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_firstWr, &m_badWr )) ) {
+	static_cast<XferServices*>(myParent)->m_post_count++;
+	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_firstWr, &m_badWr[0] )) ) {
 	  OCPI::OS::sleep( 1 );	  
-	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_firstWr, &m_badWr )) ) {
+	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_firstWr, &m_badWr[0] )) ) {
 	    fprintf(stderr,"OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s\n", strerror(errno));
 	    throw DataTransfer::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
@@ -940,31 +979,26 @@ namespace DataTransfer {
       }
 
       if ( m_wr ) {
-	post_count++;
-	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_wr, &m_badWr )) ) {
+	static_cast<XferServices*>(myParent)->m_post_count++;
+	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_wr, &m_badWr[1] )) ) {
 	  OCPI::OS::sleep( 1 );	  
-	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_wr, &m_badWr )) ) {
+	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_wr, &m_badWr[1] )) ) {
 	    fprintf(stderr,"OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s\n", strerror(errno));
 	    throw DataTransfer::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
 	}
       }
-
-#ifdef RXE_BUG      
-      OCPI::OS::sleep( 0 );
-#endif
-
+      
       if ( m_lastWr ) {	
-	post_count++;
-	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_lastWr, &m_badWr )) ) {
+	static_cast<XferServices*>(myParent)->m_post_count++;
+	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_lastWr, &m_badWr[2] )) ) {
 	  OCPI::OS::sleep( 1 );	  
-	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_lastWr, &m_badWr )) ) {
+	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_lastWr, &m_badWr[2] )) ) {
 	    fprintf(stderr,"OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s\n", strerror(errno));
 	    throw DataTransfer::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
 	}
       }
-
 
     }
 
@@ -974,6 +1008,12 @@ namespace DataTransfer {
     getStatus()
     {
       static_cast<XferServices*>(myParent)->status();
+
+      
+
+
+
+
       if ( (m_status==DataTransfer::XferRequest::CompleteSuccess)
 	   && (m_PComplete == m_PCount ) ) {
 	return m_status;
@@ -992,7 +1032,7 @@ namespace DataTransfer {
 
     XferServices::
     XferServices( DataTransfer::XferFactory & parent, DataTransfer::SmemServices* source, DataTransfer::SmemServices* target)
-      : DataTransfer::XferServices(parent, source,target),m_finalized(false)
+      : DataTransfer::XferServices(parent, source,target),m_finalized(false), m_post_count(0),m_cq_count(0)
     {
       createTemplate( source, target);
     }
@@ -1064,5 +1104,4 @@ namespace DataTransfer {
 // Used to register with the data transfer system;
 DataTransfer::OFED::XferFactory *g_ofed_singlton_factory = new DataTransfer::OFED::XferFactory;
 
-#endif
 
