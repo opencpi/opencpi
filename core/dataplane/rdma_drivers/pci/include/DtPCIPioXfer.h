@@ -52,6 +52,14 @@
 #include <DtTransferInterface.h>
 #include <xfer_if.h>
 
+#include "DtSharedMemoryInterface.h"
+#include <map>
+#include <vector>
+#include <string>
+#include "DtExceptions.h"
+#include <OcpiOsMutex.h>
+
+
 namespace OCPI {
   namespace OS {
     class Mutex;
@@ -59,6 +67,110 @@ namespace OCPI {
 }
 
 namespace DataTransfer {
+
+  /**********************************
+   * This is our PCI shared memory location implementation.  The format of the 
+   * address is as follows:
+   *     "ocpi-pci-pio://bid.base.size:300000.1.2"
+   *  Where:
+   *      bid:  is the PCI bus id
+   *      name: is the name of the endpoint
+   *********************************/
+  class  PCIEndPoint : public EndPoint 
+  {
+  public:
+
+      virtual ~PCIEndPoint();
+      PCIEndPoint( std::string& ep, OCPI::OS::uint32_t size=0)
+        :EndPoint(ep,size){parse(ep);};
+
+        // Sets smem location data based upon the specified endpoint
+        OCPI::OS::int32_t parse( std::string& ep );
+
+        // Get the address from the endpoint
+        virtual const char* getAddress(){return p_virt_addr;}
+        char*              p_virt_addr;
+
+        int bus_id;
+        OCPI::OS::uint64_t bus_offset;
+        OCPI::OS::uint64_t map_size;
+
+  };
+
+
+  class PCISmemServices : public DataTransfer::SmemServices
+  {
+    // Public methods available to clients
+  public:
+
+    // Create the service
+    void create (EndPoint* loc, OCPI::OS::uint32_t size);
+
+    // Close shared memory object.
+    void close ();
+
+    // Attach to an existing shared memory object by name.
+    OCPI::OS::int32_t attach (EndPoint*);
+
+    // Detach from shared memory object
+    OCPI::OS::int32_t detach ();
+
+    // Map a view of the shared memory area at some offset/size and return the virtual address.
+    void* map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size );
+
+    // Unmap the current mapped view.
+    OCPI::OS::int32_t unMap ();
+
+    // Enable mapping
+    void* enable ();
+
+    // Disable mapping
+    OCPI::OS::int32_t disable ();
+
+    //        GetName - the name of the shared memory object
+    const char* getName ()
+      {
+        return m_location->getAddress();
+      }
+
+    //        GetHandle - platform dependent opaque handle for current mapping
+    void* getHandle ();
+
+    // Ctor/dtor
+    PCISmemServices ( XferFactory * p, EndPoint* loc ) 
+      : DataTransfer::SmemServices( p, loc ), m_init(false),m_fd(-1)
+      {
+        m_location = dynamic_cast<PCIEndPoint*>(loc);
+        create( loc, loc->size);
+
+      }
+      PCISmemServices ();
+      virtual ~PCISmemServices ();
+
+  protected:
+
+      //        Our thread safe mutex
+      OCPI::OS::Mutex m_threadSafeMutex;
+
+      // Our location
+      PCIEndPoint      *m_location;
+      bool              m_init;
+      OCPI::OS::uint64_t m_last_offset;
+      unsigned int      m_size;
+      int               m_fd;
+
+      struct Map {
+        OCPI::OS::uint64_t offset;
+        unsigned int size;
+        void*        vaddr;
+        Map( OCPI::OS::uint64_t o,unsigned int s, void* v ):offset(o),size(s),vaddr(v){};
+      };
+      std::vector<Map> m_map;
+
+      // Our virtual address
+      void* m_vaddr;
+
+  };
 
   /**********************************
    * Each transfer implementation must implement a factory class.  This factory

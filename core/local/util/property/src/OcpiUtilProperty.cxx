@@ -217,7 +217,7 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
   }
   return 0;
 }
-#ifndef NDEBUG
+
 const char *Property::
 checkType(Scalar::Type ctype, unsigned n, bool write) {
   if (write && !isWritable)
@@ -234,7 +234,7 @@ checkType(Scalar::Type ctype, unsigned n, bool write) {
     return "sequence or array not large enough for this property";
   return 0;
 }
-#endif
+
 const char *Property::
 parseImplAlso(ezxml_t prop) {
   const char *err;
