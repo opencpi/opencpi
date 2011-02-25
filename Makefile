@@ -73,13 +73,15 @@ PACKAGES += core/control/wci_api
 
 PACKAGES += \
 	 core/$(DATAPLANE)/rdma_driver_interface \
+	 core/$(DATAPLANE)/rdma_utils \
+	 core/$(DATAPLANE)/rdma_smb \
 	 core/$(DATAPLANE)/rdma_drivers \
 	 core/$(DATAPLANE)/transport \
 	 core/container/interfaces \
 	 core/container/cp289_container \
 	 core/container/rpl_container \
 	 core/container/ctests \
-	 core/$(DATAPLANE)/tests
+	 core/$(DATAPLANE)/rdma_tests
 
 ifeq ($(OCPI_HAVE_CORBA),1)
 PACKAGES += core/corba/orb_services core/corba/corba_util
@@ -112,6 +114,8 @@ ALLPACKAGES = \
 	core/corba/corba_util \
 	core/corba/orb_services \
 	core/$(DATAPLANE)/rdma_driver_interface \
+	core/$(DATAPLANE)/rdma_utils \
+	core/$(DATAPLANE)/rdma_smb \
 	core/$(DATAPLANE)/rdma_drivers \
 	core/$(DATAPLANE)/transport \
 	core/container/interfaces \
@@ -131,7 +135,7 @@ ALLPACKAGES = \
 	tools/local/tester \
 	tools/cdk/ocpigen \
 	tools/cdk/ocpixm \
-	core/$(DATAPLANE)/tests
+	core/$(DATAPLANE)/rdma_tests
 
 #
 # ----------------------------------------------------------------------
