@@ -135,6 +135,7 @@ ALLPACKAGES = \
 	tools/local/tester \
 	tools/cdk/ocpigen \
 	tools/cdk/ocpixm \
+	core/container/ctests \
 	core/$(DATAPLANE)/rdma_tests
 
 #
