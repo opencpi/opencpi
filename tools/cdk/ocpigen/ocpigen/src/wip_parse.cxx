@@ -1303,52 +1303,69 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
     if (i->worker && i->worker->ports->type == WCIPort)
       i->ports->ordinal = wci->count++;
-  // Check for WCI and nonWCI clocks on a connection.  Set wci clocks where we can.
+  // Map all the wci clocks to the assy's wci clock
+  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+    // Map the instance's WCI clock to the assembly's WCI clock if it has a wci port
+    if (i->worker && i->worker->ports->type == WCIPort)
+      i->clocks[i->worker->ports->clock - i->worker->clocks] = wci->clock;
+  // Assign the wci clock to connections where we can
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++) {
     for (ip = c->ports; ip; ip = ip->nextConn)
       if (!ip->isExternal &&
+	  // If the worker of this connected port has a WCI port
 	  ip->instance->worker->ports->type == WCIPort &&
+	  // If this port on the worker uses the worker's wci clock
 	  ip->port->clock == ip->instance->worker->ports->clock)
 	break;
     if (ip) {
+      // So this case is when some port on the connection uses the wci clock
+      // So we assign the wci clock as the clock for this whole connection
       c->clock = wci->clock;
+      if (c->external)
+	c->external->port->clock = c->clock;
+      // And force the clock for each connected port to BE the wci clock
+      // This will potentialy connect an independent clock to the wci clock
       for (ip = c->ports; ip; ip = ip->nextConn)
 	if (!ip->isExternal)
+	  // FIXME: check for compatible clock constraints? insert synchronizer?
 	  ip->instance->clocks[ip->port->clock - ip->instance->worker->clocks] =
 	    wci->clock;
     }
   }
-  // Map all the wci clocks to the assy's wci clock
-  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
-    // Map the instance's WCI clock to the assembly's WCI clock
-    if (i->worker && i->worker->ports->type == WCIPort)
-      i->clocks[i->worker->ports->clock - i->worker->clocks] = wci->clock;
-  // Combine all the connection clocks that are not WCI clocks
+  // Deal with all the internal connection clocks that are not WCI clocks
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     for (ip = c->ports; ip; ip = ip->nextConn)
       if (!ip->isExternal) {
 	unsigned nc = ip->port->clock - ip->instance->worker->clocks;
-	if (!c->clock)
-	  // This connection doesn't have a clock yet, so its not on the WCI clock either
+	if (!c->clock) {
+	  // This connection doesn't have a clock yet,
+	  // so its not using the WCI clock either
 	  if (ip->instance->clocks[nc])
 	    // The clock of the port is already mapped, so we just use it.
 	    c->clock = ip->instance->clocks[nc];
 	  else {
 	    // The connection has no clock, and the port's clock is not mapped.
-	    // We need a new top level clock
-	    asprintf((char **)&clk->name, "%s_%s", ip->instance->name,
-		     ip->port->clock->name);
-	    if (ip->port->clock->signal)
-	      asprintf((char **)&clk->signal, "%s_%s", ip->instance->name, ip->port->clock->signal);
-	    else
+	    // We need a new top level clock.
+	    if (ip->port->clock->port) {
+	      // This clock is owned by a port, so it is a "port clock". So name it
+	      // after the connection (and external port).
+	      asprintf((char **)&clk->name, "%s_Clk", c->name);
 	      clk->signal = clk->name;
+	      clk->port = c->external->port;
+	      c->external->port->myClock = true;
+	    } else {
+	      // This port's clock is a separately defined clock
+	      // We might as well keep the name since we have none better
+	      clk->name = strdup(ip->port->clock->name);
+	      clk->signal = strdup(ip->port->clock->signal);
+	    }
 	    clk->assembly = true;
 	    aw->nClocks++;
 	    c->clock = clk++;	
 	    ip->instance->clocks[nc] = c->clock;
 	    // FIXME inherit ip->port->clock constraints
 	  }
-	else if (ip->instance->clocks[nc]) {
+	} else if (ip->instance->clocks[nc]) {
 	  // This port already has a mapped clock
 	  if (ip->instance->clocks[nc] != c->clock)
 	    return esprintf("Connection %s at interface %s of instance %s has clock conflict",
@@ -1457,11 +1474,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	if (ip->isExternal) {
 	  p = ip->port;
 	  p->clock = c->clock;
-	  if (!p->clock->port) {
-	    p->clock->port = p;
-	    p->myClock = true;
-	  }
-	  if (p->clock->port != p)
+	  if (p->clock->port && p->clock->port != p)
 	    p->clockPort = p->clock->port;
 	  if (p->type == WSIPort)
 	    p->wsi.regRequest = false;

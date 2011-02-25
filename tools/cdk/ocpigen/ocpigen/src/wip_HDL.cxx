@@ -329,12 +329,12 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
     if (p->clockPort)
       fprintf(f, "  //   Clock: uses the clock from interface named \"%s\"\n",
 	      p->clockPort->name);
-    else if (p->myClock) {
+    else if (p->myClock)
       fprintf(f, "  //   Clock: this interface has its own clock, named \"%s\"\n",
-	      p->clock->name);
-      fprintf(f, "  //   ClockSignal: %s\n", p->clock->signal);
-    } else
-      fprintf(f, "  //   Clock: this interface uses the worker's clock named \"%s\"\n", p->clock->name);
+	      p->clock->signal);
+    else
+      fprintf(f, "  //   Clock: this interface uses the worker's clock named \"%s\"\n",
+	      p->clock->signal);
     switch (p->type) {
       case WCIPort:
 	fprintf(f, "  //   SizeOfConfigSpace: %llu (0x%llx)\n",
@@ -1045,7 +1045,7 @@ emitAssyHDL(Worker *w, const char *outDir)
   InstancePort *ip;
   fprintf(f, "// Define signals for connections that are not externalized\n\n");
   fprintf(f, "wire[255: 0] nowhere; // for passing output ports\n");
-  // We define the internal-to-assembly signals, and also figure out the necessary tieoffs or 
+  // Define the inside-the-assembly signals, and also figure out the necessary tieoffs or 
   // simple expressions when there is a simple adaptation.
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     if (c->nExtConsumers == 0 && c->nExtProducers == 0) {
@@ -1086,12 +1086,14 @@ emitAssyHDL(Worker *w, const char *outDir)
 	  // Fall through the switch to enable the signal
 	}
     }
+  // Create the instances
   Instance *i;
   for (n = 0, i = a->instances; n < a->nInstances; n++, i++) {
     fprintf(f, "%s", i->worker->implName);
     if (i->nValues) {
       bool any = false;
       unsigned n = 0;
+      // Emit the compile-time properties (a.k.a. parameter properties).
       for (InstanceProperty *pv = i->properties; n < i->nValues; n++, pv++) {
 	Property *pr = pv->property;
 	if (pr->isParameter) {
@@ -1122,11 +1124,21 @@ OCPI_PROPERTY_DATA_TYPES
 	fprintf(f, ")");
     }
     fprintf(f, " %s (\n",i->name);
-    const char *last = "", *comment = "";
     unsigned nn;
+    // For the instance, define the clock signals that are defined separate from
+    // any interface/port.
+    Clock *c = i->worker->clocks;
+    for (nn = 0; nn < i->worker->nClocks; nn++, c++) {
+      if (!c->port) {
+	fprintf(f, "  .%s(%s)\n", c->signal,
+		i->clocks[c - i->worker->clocks]->signal);
+      }
+    }
+    const char *last = "", *comment = "";
     OcpAdapt *oa;
     for (ip = i->ports, nn = 0; nn < i->worker->nPorts; nn++, ip++)
-      for (osd = ocpSignals, os = ip->port->ocp.signals, oa = ip->ocp; osd->name; os++, osd++, oa++)
+      for (osd = ocpSignals, os = ip->port->ocp.signals, oa = ip->ocp;
+	   osd->name; os++, osd++, oa++)
 	// If the signal is in the interface
 	if (os->value) {
 	  char *signal = 0; // The signal to connect this port to.
@@ -1135,7 +1147,8 @@ OCPI_PROPERTY_DATA_TYPES
 	    signal = strdup(i->clocks[ip->port->clock - i->worker->clocks]->signal);
 	  else if (ip->connection)
 	    // If the signal is attached to a connection
-	    if (ip->connection->nExtConsumers == 0 && ip->connection->nExtProducers == 0) {
+	    if (ip->connection->nExtConsumers == 0 &&
+		ip->connection->nExtProducers == 0) {
 	      // If it is internal
 	      if (oa->expr) {
 		const char *other;
