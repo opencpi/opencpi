@@ -1,0 +1,4 @@
+<ComponentSpec Name="matrixMul">
+  <DataInterfaceSpec Name="in"/>
+  <DataInterfaceSpec Name="out" Producer="true"/>
+</ComponentSpec>
