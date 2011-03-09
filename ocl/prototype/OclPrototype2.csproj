@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="OCLException.cs" />
     <Compile Include="OCLBuffer.cs" />
+    <Compile Include="OCLKernelInstance.cs" />
     <Compile Include="OCLPort.cs" />
     <Compile Include="OCLWorker.cs" />
     <Compile Include="OCLContainer.cs" />
