@@ -27,7 +27,7 @@ namespace OclPrototype2
         private string m_componentDirectory;
         private string m_componentBaseName;
         public OCLContainer m_container;
-        private ComputeKernel m_kernel;
+        private ComputeProgram m_program;
         public Dictionary<string, OCLPort> portDictionary;
 //        private Dictionary<string, GCHandle> m_propertyDictionary;
 
@@ -44,21 +44,29 @@ namespace OclPrototype2
             public int wA;
 //            [MarshalAs(UnmanagedType.U4)]
             public int wB;
+            public int test;
+        }
+
+        const uint START = 0;
+        public const uint MATRIXMUL_N_LOCAL_MEMORIES = 2;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KernelControlStruct
+        {
+            // written by the kernel
+            // This should be layed out as a fixed array - but that is considered
+            // unsafe in C# -- therefore do it this way instead.
+            public uint lMemSize0;
+            public uint lMemSize1;
         }
         private PropertyStruct[] m_properties;
         private ComputeBuffer<PropertyStruct> m_computeBufferProperties;
         private GCHandle m_propertyHandle;
-
-        // Structure contains information for the current buffer on a port
-        [StructLayout(LayoutKind.Sequential)]
-        public struct OCLBufferInfoStruct
-        {
-            public uint length;
-            public uint operation_or_exception_ordinal;
-        }
-        private OCLBufferInfoStruct[] m_currentBufferInfo;         // One of these per port
-        private ComputeBuffer<OCLBufferInfoStruct> m_computeBufferCurrentBufferInfo;
-        private GCHandle m_currentBufferInfoHandle;
+        private List<OCLPort> m_portRunConditionList;
+        private KernelControlStruct[] m_kernelControl;
+        private ComputeBuffer<KernelControlStruct> m_computeBufferKernelControl;
+        private GCHandle m_kernelControlHandle;
+        private OCLKernelInstance m_kernelInstance;
 
         // Constructor
         public OCLWorker(string componentDirectory_, string componentBaseName_, OCLContainer container_)
@@ -67,8 +75,7 @@ namespace OclPrototype2
             m_componentBaseName = componentBaseName_;
             m_container = container_;
             portDictionary = new Dictionary<string, OCLPort>();
-//            m_eventListQueue = new Queue<ICollection<ComputeEventBase>>();
-
+            m_portRunConditionList = new List<OCLPort>();
 #if BLAH
             // Concatentate directory name with file name and extension
             string completeFile = m_componentDirectory + @"\" + m_componentBaseName + ".bin";
@@ -93,32 +100,48 @@ namespace OclPrototype2
             kernelSource.Append(file1.ReadToEnd());
             kernelSource.Append(file2.ReadToEnd());
 
-            ComputeProgram program = new ComputeProgram(m_container.m_context, kernelSource.ToString());
-            program.Build(null, "-cl-fast-relaxed-math", null, IntPtr.Zero);
+            m_program = new ComputeProgram(m_container.m_context, kernelSource.ToString());
+            m_program.Build(null, "-cl-fast-relaxed-math", null, IntPtr.Zero);
 #endif
 
             // Note, if you were using source code, you would need to do program.Build here.
             // However, we are using binary, so it shouldn't be necessary.
 
-            // All kernels, by design, will have the name "ocpiKernel"
-            //            m_kernel = program.CreateKernel("ocpiKernel");
-            m_kernel = program.CreateKernel("matrixMul");
-
             generatePortList();
 
             setupProperties();
 
+            setupKernelControlStruct();
+
+        }
+
+        public void addPortToRunCondition(OCLPort port_)
+        {
+            m_portRunConditionList.Add(port_);
+        }
+
+        public void removePortFromRunCondition(OCLPort port_)
+        {
+            m_portRunConditionList.Remove(port_);
+        }
+
+        private bool isPortInRunConditionList(OCLPort port_)
+        {
+            return m_portRunConditionList.Contains(port_);
         }
 
         private void setupProperties()
         {
-//            m_propertyDictionary = new Dictionary<string, GCHandle>();
             m_properties = new PropertyStruct[1];
             m_propertyHandle = GCHandle.Alloc(m_properties, GCHandleType.Pinned);
             m_computeBufferProperties = new ComputeBuffer<PropertyStruct>(m_container.m_context, ComputeMemoryFlags.ReadWrite, 1);
+        }
 
-//            m_propertyDictionary.Add("WA", GCHandle.Alloc(m_properties.wA, GCHandleType.Pinned));
-//            m_propertyDictionary.Add("WB", GCHandle.Alloc(m_properties.wB, GCHandleType.Pinned));
+        private void setupKernelControlStruct()
+        {
+            m_kernelControl = new KernelControlStruct[1];
+            m_kernelControlHandle = GCHandle.Alloc(m_kernelControl, GCHandleType.Pinned);
+            m_computeBufferKernelControl = new ComputeBuffer<KernelControlStruct>(m_container.m_context, ComputeMemoryFlags.ReadWrite, 1);
         }
 
         // Generate the list of ports assocated with the worker component
@@ -179,103 +202,144 @@ namespace OclPrototype2
 
             }
 
-            // Create one of these per port, signifying the information pertaining to 
-            // the current buffer for that port
-            m_currentBufferInfo = new OCLBufferInfoStruct[portDictionary.Count];
-            m_currentBufferInfoHandle = GCHandle.Alloc(m_currentBufferInfo, GCHandleType.Pinned);
-            m_computeBufferCurrentBufferInfo = new ComputeBuffer<OCLBufferInfoStruct>(m_container.m_context, ComputeMemoryFlags.ReadOnly, portDictionary.Count);
-
         }
 
         public void start()
         {
             // Start the worker
-        }
 
-        public void run(OCLBuffer buffer_)
-        {
-            // Call this function when you want to run the kernel
-            // Note: buffer_ represents the input buffer that has new data
+            // Write the worker properties structure to the device -- blocking
+            m_container.m_commandQueue.Write<PropertyStruct>(m_computeBufferProperties, true, 0, 1, m_propertyHandle.AddrOfPinnedObject(), null);
 
-            ICollection<ComputeEventBase> events = new Collection<ComputeEventBase>();
-
-            // Write the buffer to the device
-            buffer_.m_port.write(events, buffer_);
-            
-            // Write the worker properties structure to the device -- non blocking
-            m_container.m_commandQueue.Write<PropertyStruct>(m_computeBufferProperties, false, 0, 1, m_propertyHandle.AddrOfPinnedObject(), events);
-
-            // A list of output buffers from the device
-            List<OCLBuffer> outputBufferList = new List<OCLBuffer>();
+            // Create the kernel
+            ComputeKernel kernel = m_program.CreateKernel("matrixMulOther");
 
             int index = 0;
-            // Setup all of the kernel arguments
 
-            // The port data goes first
-            foreach (KeyValuePair<string, OCLPort> pair in portDictionary)
+            // Set the arguments
+            kernel.SetMemoryArgument(index++, m_computeBufferProperties);
+            kernel.SetMemoryArgument(index++, m_computeBufferKernelControl);
+            kernel.SetValueArgument<uint>(index++, START);
+
+            // One dimensional for the start method
+            long[] globalWorkOffset = { 0 };
+            long[] globalWorkSize = { (long)1 };
+            long[] localWorkSize = { (long)1 };
+
+            // Execute
+            m_container.m_commandQueue.Execute(kernel, globalWorkOffset, globalWorkSize, localWorkSize, null);
+
+            // Wait for execution to complete
+            m_container.m_commandQueue.Finish();
+
+            // Read down the kernel control structure. Blocking call
+            m_container.m_commandQueue.Read<KernelControlStruct>(m_computeBufferKernelControl, true, 0, 1, m_kernelControlHandle.AddrOfPinnedObject(),
+                null);
+
+            // Read down the properties - blocking call
+            m_container.m_commandQueue.Read<PropertyStruct>(m_computeBufferProperties, true, 0, 1, m_propertyHandle.AddrOfPinnedObject(), 
+                null);
+
+            kernel.Dispose();
+        }
+
+        public void writeBufferToDeviceAndRunWorkerIfWarranted(OCLBuffer buffer_)
+        {
+            // Call this function when you want to write a buffer to the device and run the kernel (if warranted by the run conditions)
+            // Note: buffer_ represents the input buffer that has new data
+
+            // Start a new kernel instance if needed
+            if (m_kernelInstance == null)
+                m_kernelInstance = new OCLKernelInstance(m_program);
+            
+            ICollection<ComputeEventBase> inputBufferWriteEvent = new Collection<ComputeEventBase>();
+
+            // Write the buffer to the device
+            buffer_.m_port.write(inputBufferWriteEvent, buffer_);
+
+            // Add this event to the list of events that must occur before executing the kernel
+            m_kernelInstance.addToKernelEventDependencies(inputBufferWriteEvent);
+            // Associate buffer with the kernel prior to its execution
+            m_kernelInstance.tieBufferToKernelExecutionEventPriorToKernelExecution(buffer_);
+
+            writeBufferInfoToDevice(buffer_.m_port);
+            
+            // If the port is in the run condition list, then execute the kernel
+            if (isPortInRunConditionList(buffer_.m_port))
             {
-                OCLPort port = pair.Value;
+                ICollection<ComputeEventBase> propertiesWriteEvent = new Collection<ComputeEventBase>();
 
-                // If an output port exists, allocate an output buffer
-                if (port.m_type == OCLPort.Type.OUTPUT)
+                // Write the worker properties structure to the device -- non blocking
+                m_container.m_commandQueue.Write<PropertyStruct>(m_computeBufferProperties, false, 0, 1, m_propertyHandle.AddrOfPinnedObject(), propertiesWriteEvent);
+
+                // Add to the list of events that must complete before executing the kernel
+                m_kernelInstance.addToKernelEventDependencies(propertiesWriteEvent);
+
+                // A list of output buffers from the device
+                List<OCLBuffer> outputBufferList = new List<OCLBuffer>();
+
+                // Allocate the output buffers associated with the kernel execution
+                // Transfer the output buffer info to the device prior to kernel execution
+                foreach (KeyValuePair<string, OCLPort> pair in portDictionary)
                 {
-                    OCLBuffer outputBuffer;
-                    outputBuffer = port.allocateOutputBuffForSystem();
-                    outputBufferList.Add(outputBuffer);
-                }
-                else
-                {
-                    // Place the length of the input buffer in the current buffer info array.
-                    // This will be written to the kernel side.
-                    m_currentBufferInfo[index].length = port.m_currentBufferForKernelInstance.m_size;
-                    // Need to set the ordinal here some how.
+                    OCLPort port = pair.Value;
+
+                    // If an output port exists, allocate an output buffer
+                    if (port.m_type == OCLPort.Type.OUTPUT)
+                    {
+                        OCLBuffer outputBuffer;
+                        outputBuffer = port.allocateOutputBuffForSystem();
+                        outputBufferList.Add(outputBuffer);
+
+                        // Write the buffer info at this time only for the output port -- it was already done previously for input ports
+                        writeBufferInfoToDevice(port);
+                    }
                 }
 
-                m_kernel.SetMemoryArgument(index++, port.m_computeBufferArray[port.m_currentBufferForKernelInstance.m_index]);
+                m_kernelInstance.execute(portDictionary, m_kernelControl, m_computeBufferProperties, m_container);
+  
+                ICollection<ComputeEventBase> propertyReadEvents = new Collection<ComputeEventBase>();
+
+                foreach (ComputeEventBase thePrecedingEvent in m_kernelInstance.m_kernelExecutionEventDependencies)
+                    propertyReadEvents.Add(thePrecedingEvent);
+
+                // Read down the properties
+                m_container.m_commandQueue.Read<PropertyStruct>(m_computeBufferProperties, false, 0, 1, m_propertyHandle.AddrOfPinnedObject(), propertyReadEvents);
+
+                foreach (OCLBuffer buffer in outputBufferList)
+                {
+                    // One new event list per port is needed
+                    // Make sure to copy the original events into this one
+
+                    ICollection<ComputeEventBase> outputBufferEvents = new Collection<ComputeEventBase>();
+                    foreach (ComputeEventBase thePrecedingEvent in m_kernelInstance.m_kernelExecutionEventDependencies)
+                        outputBufferEvents.Add(thePrecedingEvent);
+
+                    // Read the output port data
+                    buffer.m_port.read(outputBufferEvents, buffer);
+
+                    // Read down the updated output buffer info structure information that was modified by the kernel
+                    m_container.m_commandQueue.Read<OCLBuffer.OCLBufferInfoStruct>(buffer.m_computeBufferCurrentBufferInfo, false, 0, 1,
+                        buffer.m_currentBufferInfoHandle.AddrOfPinnedObject(), outputBufferEvents);
+
+                    buffer.m_port.makeBufferAvailableOnEventsCompletion(buffer, outputBufferEvents, m_kernelInstance);
+                }
+
+                m_kernelInstance = null;
             }
 
-            // The current buffer info structure array -- to be passed to the kernel
-            m_kernel.SetMemoryArgument(index++, m_computeBufferCurrentBufferInfo);
+        }
 
-            // This stuff applies to the application
-            // It is cheating.  We need to come back and fix this.
-            m_kernel.SetLocalArgument(index++, sizeof(float) * BLOCK_SIZE * BLOCK_SIZE);
-            m_kernel.SetLocalArgument(index++, sizeof(float) * BLOCK_SIZE * BLOCK_SIZE);
+        private void writeBufferInfoToDevice(OCLPort port_)
+        {
+            ICollection<ComputeEventBase> bufferInfoWriteEvent = new Collection<ComputeEventBase>();
 
-            // Properties struct
-            m_kernel.SetMemoryArgument(index++, m_computeBufferProperties);
+            // Write the buffer info data to the device
+            m_container.m_commandQueue.Write<OCLBuffer.OCLBufferInfoStruct>(port_.m_currentBufferForKernelInstance.m_computeBufferCurrentBufferInfo,
+                false, 0, 1, port_.m_currentBufferForKernelInstance.m_currentBufferInfoHandle.AddrOfPinnedObject(), bufferInfoWriteEvent);
 
-            // Now write the buffer info array to the device -- non blocking
-            // There should be one of these structures per port
-            m_container.m_commandQueue.Write<OCLBufferInfoStruct>(m_computeBufferCurrentBufferInfo, false, 0, m_currentBufferInfo.Length, 
-                m_currentBufferInfoHandle.AddrOfPinnedObject(), events);
+            m_kernelInstance.addToKernelEventDependencies(bufferInfoWriteEvent);
 
-//            m_kernel.SetValueArgument<uint>(index++, WA);
-//            m_kernel.SetValueArgument<uint>(index++, WB);
-
-            long[] globalWorkOffset = { 0, 0 };
-            long[] globalWorkSize = { (long)WC, (long)HC };
-            long[] localWorkSize = { (long)BLOCK_SIZE, (long)BLOCK_SIZE };
-
-            // Execute the kernel
-            m_container.m_commandQueue.Execute(m_kernel, globalWorkOffset, globalWorkSize, localWorkSize, events);
-
-            buffer_.m_port.makeBufferAvailableOnEventsCompletion(buffer_, events);
-
-            foreach (OCLBuffer buffer in outputBufferList)
-            {
-                // One new event list per port is needed
-                // Make sure to copy the original events into this one
-                
-                IList<ComputeEventBase> precedingEventList = new List<ComputeEventBase>();
-                foreach (ComputeEventBase thePrecedingEvent in events)
-                    precedingEventList.Add(thePrecedingEvent);
-
-                ICollection<ComputeEventBase> outputBufferEvents = new Collection<ComputeEventBase>(precedingEventList);
- 
-                buffer.m_port.read(outputBufferEvents, buffer);
-                buffer.m_port.makeBufferAvailableOnEventsCompletion(buffer, outputBufferEvents);
-            }
         }
 
         public void setProperty(string propertyName_, int value_)
