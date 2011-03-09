@@ -27,10 +27,12 @@
 #define MATRIXMUL_N_PORTS (2)
 #define MATRIXMUL_IN0 (0)
 #define MATRIXMUL_OUT0 (1)
+#define MATRIXMUL_N_LOCAL_MEMORIES (2)
 
 typedef struct {
   int WA;
   int WB;
+  int test;
 } MatrixMulProperties;
 
 typedef unsigned int uint32_t;
@@ -38,11 +40,18 @@ typedef unsigned int uint32_t;
 typedef struct {
   uint32_t length;
   uint32_t operation_or_exception_ordinal;
+  uint32_t maxLength;
 } OCLBufferInfo;
+
+#define START (0)
+
+typedef struct {
+  uint32_t lMemSize[MATRIXMUL_N_LOCAL_MEMORIES];	// written by kernel
+} OCLKernelControl;
 
 typedef struct {
   __global void *data;
-//  uint32_t maxLength;
+  uint32_t maxLength;
 } OCLBuffer;
 
 typedef struct {
@@ -71,9 +80,12 @@ typedef struct {
 //  RCCPortMask              connectedPorts;
 //  char                   * errorString;
   OCLPort                  ports[MATRIXMUL_N_PORTS];
+  __local void*			   lMemories[MATRIXMUL_N_LOCAL_MEMORIES];	
+  __global OCLKernelControl* controlInfo;  
 } OCLWorker;
 
-void run (OCLWorker* self, __local float* As, __local float* Bs);
+void run (OCLWorker* self);
+void start (OCLWorker* self);
 
 #endif // _MATRIXMUL_H_
 
