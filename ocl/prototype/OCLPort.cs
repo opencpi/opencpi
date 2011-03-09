@@ -14,10 +14,12 @@ namespace OclPrototype2
     {
         public ICollection<ComputeEventBase> theEvents;
         public OCLBuffer theBuffer;
-        public OclBufferAvailableEvent(OCLBuffer buffer_, ICollection<ComputeEventBase> theEvents_)
+        public OCLKernelInstance theKernelInstance;
+        public OclBufferAvailableEvent(OCLBuffer buffer_, ICollection<ComputeEventBase> theEvents_, OCLKernelInstance kernelInstance_)
         {
             theBuffer = buffer_;
             theEvents = theEvents_;
+            theKernelInstance = kernelInstance_;
         }
     }
 
@@ -26,20 +28,24 @@ namespace OclPrototype2
         public enum Type { OUTPUT, INPUT };
         private string m_name;
         public Type m_type;
-        private OCLContainer m_container;
+        public OCLContainer m_container;
         public OCLWorker m_worker;
         public ComputeBuffer<float>[] m_computeBufferArray;
         // This is an array of arrays (known as a jagged array)
         public float[][] m_bufferArray;
+#if MAP_UNMAP_APPROACH
+#else
         private GCHandle[] m_bufferArrayHandle;
+#endif
         private Queue<OCLBuffer> m_buffersAvailable;
         private Queue<OclBufferAvailableEvent> m_eventQueueTiedToBufferAvailability;
         public OCLBuffer m_currentBufferForKernelInstance;
+        public uint m_operation_or_exception_ordinal;
 
         // The number and length of the buffers should probably be put in metadata somewhere,
         // but since this is a prototype, we will make it simple
         public const int NUM_BUFFERS = 2;
-        const int BUFFER_LEN = 19200;
+        public const int BUFFER_LEN = 19200;
 
         public OCLPort(string name_, Type type_, OCLWorker worker_)
         {
@@ -65,7 +71,10 @@ namespace OclPrototype2
 
             m_computeBufferArray = new ComputeBuffer<float>[NUM_BUFFERS];
             m_bufferArray = new float[NUM_BUFFERS][];
+#if MAP_UNMAP_APPROACH
+#else
             m_bufferArrayHandle = new GCHandle[NUM_BUFFERS];
+#endif
 
             for (uint i = 0; i < NUM_BUFFERS; i++)
             {
@@ -73,7 +82,10 @@ namespace OclPrototype2
 
                 // For C#, we'll also need to keep a managed array of buffers
                 m_bufferArray[i] = new float[BUFFER_LEN];
+#if MAP_UNMAP_APPROACH
+#else
                 m_bufferArrayHandle[i] = GCHandle.Alloc(m_bufferArray[i], GCHandleType.Pinned);
+#endif
 
                 OCLBuffer buffer = new OCLBuffer(i, this);
                 m_buffersAvailable.Enqueue(buffer);
@@ -115,6 +127,8 @@ namespace OclPrototype2
             ICollection<ComputeEventBase> theEventsToWaitOn = theEvent.theEvents;
             ComputeEventList.Wait(theEventsToWaitOn);
             buffer = theEvent.theBuffer;
+            // Dispose of the kernel associated with this buffer (if not already disposed)
+            theEvent.theKernelInstance.disposeOfKernel();
 
             buffer.allocateByUser();
 
@@ -136,22 +150,44 @@ namespace OclPrototype2
         }
         public void write(ICollection<ComputeEventBase> events_, OCLBuffer buffer_)
         {
-            // Non blocking write
-            m_container.m_commandQueue.Write<float>(m_computeBufferArray[buffer_.m_index], false, 0, BUFFER_LEN, 
-                m_bufferArrayHandle[buffer_.m_index].AddrOfPinnedObject(), events_);
+            if (m_type == Type.INPUT)
+            {
+#if MAP_UNMAP_APPROACH
+                // Copy the data from the managed array to the mapped area before executing the unmap
+                // This is a C# thing only
+                Marshal.Copy(m_bufferArray[buffer_.m_index], 0, buffer_.m_mappedPtr, BUFFER_LEN);
+
+                m_container.m_commandQueue.Unmap(m_computeBufferArray[buffer_.m_index], ref buffer_.m_mappedPtr,
+                    events_);
+#else
+                // Non blocking write
+                m_container.m_commandQueue.Write<float>(m_computeBufferArray[buffer_.m_index], false, 0, buffer_.m_currentBufferInfo[0].length, 
+                    m_bufferArrayHandle[buffer_.m_index].AddrOfPinnedObject(), events_);
+#endif
+            }
+            else
+                throw new OCLException("You shouldn't be writing to an output port");
         }
 
         public void read(ICollection<ComputeEventBase> events_, OCLBuffer buffer_)
         {
+            if (m_type == Type.OUTPUT)
+#if MAP_UNMAP_APPROACH
+                buffer_.m_mappedPtr = m_container.m_commandQueue.Map<float>(m_computeBufferArray[buffer_.m_index],
+                    false, ComputeMemoryMappingFlags.Read, 0, BUFFER_LEN, events_);
+#else
             // Non blocking read
             // All previous events must complete before the read is performed
             m_container.m_commandQueue.Read<float>(m_computeBufferArray[buffer_.m_index], false, 0, BUFFER_LEN, 
                 m_bufferArrayHandle[buffer_.m_index].AddrOfPinnedObject(), events_);
+#endif
+            else
+                throw new OCLException("You shouldn't be reading from an input port");
         }
 
-        public void makeBufferAvailableOnEventsCompletion(OCLBuffer buffer_, ICollection<ComputeEventBase> events_)
+        public void makeBufferAvailableOnEventsCompletion(OCLBuffer buffer_, ICollection<ComputeEventBase> events_, OCLKernelInstance kernelInstance_)
         {
-            OclBufferAvailableEvent theNewEvent = new OclBufferAvailableEvent(buffer_, events_);
+            OclBufferAvailableEvent theNewEvent = new OclBufferAvailableEvent(buffer_, events_, kernelInstance_);
             m_eventQueueTiedToBufferAvailability.Enqueue(theNewEvent);
         }
 
@@ -160,6 +196,11 @@ namespace OclPrototype2
             // You would only call this for an output buffer
 
             m_buffersAvailable.Enqueue(buffer_);
+        }
+
+        public void setOperationOrExceptionOrdinal(uint value_)
+        {
+            m_operation_or_exception_ordinal = value_;
         }
     }
 }
