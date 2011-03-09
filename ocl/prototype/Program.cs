@@ -49,6 +49,9 @@ namespace OclPrototype2
             OCLPort matrixInput = worker.portDictionary["in"];
             OCLPort result = worker.portDictionary["out"];
 
+            // When data is put to the matrixInput port, then execute the worker
+            worker.addPortToRunCondition(matrixInput);
+
             // Start the worker
             worker.start();
 
@@ -91,7 +94,7 @@ namespace OclPrototype2
             for (buffIndex = 0; buffIndex < OCLPort.NUM_BUFFERS; buffIndex++)
             {
                 // Place the A,B matrix data into the component input port
-                matrixInputBuffer[buffIndex].put(size_A + size_B);
+                matrixInputBuffer[buffIndex].put(0,size_A + size_B);
             }
 
             buffIndex = 0;
@@ -123,7 +126,7 @@ namespace OclPrototype2
                 // Normally would place something in the buffer here, but we'll skip that step
                 // since the same data should be there already.
 
-                matrixInputBuffer[0].put();
+                matrixInputBuffer[0].put(0,size_A + size_B);
 
                 buffIndex = (buffIndex + 1) % OCLPort.NUM_BUFFERS;
 
