@@ -13,16 +13,6 @@ namespace OclPrototype2
 
     class OCLWorker
     {
-        // This is cheating for now
-        // Using constants from the application
-        // Doing this temporarily for testing
-        const uint BLOCK_SIZE = 16;
-        const uint WA = (5 * BLOCK_SIZE); // Matrix A width
-        const uint HA = (10 * BLOCK_SIZE); // Matrix A height
-        const uint WB = (5 * BLOCK_SIZE); // Matrix B width
-        const uint HB = WA;  // Matrix B height
-        const uint WC = WB;  // Matrix C width 
-        const uint HC = HA;  // Matrix C height
 
         private string m_componentDirectory;
         private string m_componentBaseName;
@@ -67,6 +57,8 @@ namespace OclPrototype2
         private ComputeBuffer<KernelControlStruct> m_computeBufferKernelControl;
         private GCHandle m_kernelControlHandle;
         private OCLKernelInstance m_kernelInstance;
+        private long[] m_localWorkSize;
+        private long[] m_globalWorkSize;
 
         // Constructor
         public OCLWorker(string componentDirectory_, string componentBaseName_, OCLContainer container_)
@@ -77,6 +69,19 @@ namespace OclPrototype2
             portDictionary = new Dictionary<string, OCLPort>();
             m_portRunConditionList = new List<OCLPort>();
 #if BLAH
+            StringBuilder kernelSource = new StringBuilder();
+            StreamReader file1 = new StreamReader("OCL_Worker.h");
+            StreamReader file2 = new StreamReader("matrixMul_Worker.h");
+            StreamReader file3 = new StreamReader("matrixMul_library.cl");
+            StreamReader file4 = new StreamReader("matrixMul.cl");
+            kernelSource.Append(file1.ReadToEnd());
+            kernelSource.Append(file2.ReadToEnd());
+            kernelSource.Append(file3.ReadToEnd());
+            kernelSource.Append(file4.ReadToEnd());
+
+            m_program = new ComputeProgram(m_container.m_context, kernelSource.ToString());
+            m_program.Build(null, "-cl-fast-relaxed-math", null, IntPtr.Zero);
+#else
             // Concatentate directory name with file name and extension
             string completeFile = m_componentDirectory + @"\" + m_componentBaseName + ".bin";
             
@@ -92,15 +97,7 @@ namespace OclPrototype2
             devices.Add(m_container.m_device);
 
             // Define the program
-            ComputeProgram program = new ComputeProgram(m_container.m_context, binaries, devices);
-#else
-            StringBuilder kernelSource = new StringBuilder();
-            StreamReader file1 = new StreamReader("matrixMul.h");
-            StreamReader file2 = new StreamReader("matrixMul.cl");
-            kernelSource.Append(file1.ReadToEnd());
-            kernelSource.Append(file2.ReadToEnd());
-
-            m_program = new ComputeProgram(m_container.m_context, kernelSource.ToString());
+            m_program = new ComputeProgram(m_container.m_context, binaries, devices);
             m_program.Build(null, "-cl-fast-relaxed-math", null, IntPtr.Zero);
 #endif
 
@@ -156,6 +153,18 @@ namespace OclPrototype2
             {
                 XDocument doc = XDocument.Load(owdFile);
 
+                XElement controlInterface = doc.Root.Element("ControlInterface");
+
+                char[] separator = { ',' };
+
+                string localWorkSizeString = controlInterface.Attribute("LocalWorkSize").Value.ToString();
+                string[] localWorkSizeStringArray = localWorkSizeString.Split(separator);
+                m_localWorkSize = localWorkSizeStringArray.Select(x => long.Parse(x)).ToArray();
+                
+                string globalWorkSizeString = controlInterface.Attribute("GlobalWorkSize").Value.ToString();
+                string[] globalWorkSizeStringArray = globalWorkSizeString.Split(separator);
+                m_globalWorkSize = globalWorkSizeStringArray.Select(x => long.Parse(x)).ToArray();
+                
                 string ocsFileNameBase = doc.Root.Element("xi_include").Attribute("href").Value.ToString();
 
                 // The ocs is one directory up in the tree
@@ -212,7 +221,7 @@ namespace OclPrototype2
             m_container.m_commandQueue.Write<PropertyStruct>(m_computeBufferProperties, true, 0, 1, m_propertyHandle.AddrOfPinnedObject(), null);
 
             // Create the kernel
-            ComputeKernel kernel = m_program.CreateKernel("matrixMulOther");
+            ComputeKernel kernel = m_program.CreateKernel(m_componentBaseName + "Other");
 
             int index = 0;
 
@@ -250,7 +259,7 @@ namespace OclPrototype2
 
             // Start a new kernel instance if needed
             if (m_kernelInstance == null)
-                m_kernelInstance = new OCLKernelInstance(m_program);
+                m_kernelInstance = new OCLKernelInstance(m_program, m_componentBaseName);
             
             ICollection<ComputeEventBase> inputBufferWriteEvent = new Collection<ComputeEventBase>();
 
@@ -296,7 +305,7 @@ namespace OclPrototype2
                     }
                 }
 
-                m_kernelInstance.execute(portDictionary, m_kernelControl, m_computeBufferProperties, m_container);
+                m_kernelInstance.execute(portDictionary, m_kernelControl, m_computeBufferProperties, m_container, m_localWorkSize, m_globalWorkSize);
   
                 ICollection<ComputeEventBase> propertyReadEvents = new Collection<ComputeEventBase>();
 
