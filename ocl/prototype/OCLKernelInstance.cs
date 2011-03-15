@@ -13,24 +13,14 @@ namespace OclPrototype2
 
     class OCLKernelInstance
     {
-        // This is cheating for now
-        // Using constants from the application
-        // Doing this temporarily for testing
-        const uint BLOCK_SIZE = 16;
-        const uint WA = (5 * BLOCK_SIZE); // Matrix A width
-        const uint HA = (10 * BLOCK_SIZE); // Matrix A height
-        const uint WB = (5 * BLOCK_SIZE); // Matrix B width
-        const uint HB = WA;  // Matrix B height
-        const uint WC = WB;  // Matrix C width 
-        const uint HC = HA;  // Matrix C height
 
         private ComputeKernel m_kernel;
         public ICollection<ComputeEventBase> m_kernelExecutionEventDependencies;
         private Queue<OCLBuffer> m_buffersTiedToKernelExecution;
 
-        public OCLKernelInstance(ComputeProgram program_)
+        public OCLKernelInstance(ComputeProgram program_, string componentBaseName_)
         {
-            m_kernel = program_.CreateKernel("matrixMulRun");
+            m_kernel = program_.CreateKernel(componentBaseName_ + "Run");
             m_kernelExecutionEventDependencies = new Collection<ComputeEventBase>();
             m_buffersTiedToKernelExecution = new Queue<OCLBuffer>();
         }
@@ -57,7 +47,8 @@ namespace OclPrototype2
         }
 
         public void execute(Dictionary<string, OCLPort> portDictionary_, OCLWorker.KernelControlStruct[] kernelControl_,
-            ComputeBuffer<OCLWorker.PropertyStruct> computeBufferProperties_, OCLContainer container_)
+            ComputeBuffer<OCLWorker.PropertyStruct> computeBufferProperties_, OCLContainer container_,
+            long[] localWorkSize_, long[] globalWorkSize_)
         {
             int index = 0;
             // Setup all of the kernel arguments
@@ -84,13 +75,16 @@ namespace OclPrototype2
 
             // Properties struct
             m_kernel.SetMemoryArgument(index++, computeBufferProperties_);
+            
+            long[] globalWorkOffset = new long[globalWorkSize_.Length];
+            for (int i = 0; i < globalWorkSize_.Length; i++)
+                globalWorkOffset[i] = 0;
 
-            long[] globalWorkOffset = { 0, 0 };
-            long[] globalWorkSize = { (long)WC, (long)HC };
-            long[] localWorkSize = { (long)BLOCK_SIZE, (long)BLOCK_SIZE };
+//            long[] globalWorkSize = { (long)WC, (long)HC };
+//            long[] localWorkSize = { (long)BLOCK_SIZE, (long)BLOCK_SIZE };
 
             // Execute the kernel
-            container_.m_commandQueue.Execute(m_kernel, globalWorkOffset, globalWorkSize, localWorkSize, m_kernelExecutionEventDependencies);
+            container_.m_commandQueue.Execute(m_kernel, globalWorkOffset, globalWorkSize_, localWorkSize_, m_kernelExecutionEventDependencies);
 
             // Now that m_kernelExecutionEventDependencies also contains the kernel execution event itself, lets
             // setup all the buffers that can be used again once the kernel terminates
