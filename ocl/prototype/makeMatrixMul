@@ -1,0 +1,3 @@
+#!/bin/bash
+../OCLGen_prototype/bin/Debug/OCLGen "./components/matrixMul.ocl/matrixMul.xml" -max_num_dyn_local_buffs 2 -outdir  "./components/matrixMul.ocl"
+../OCLcc_prototype/bin/Debug/OCLcc OCL_Worker.h ./components/matrixMul.ocl/gen/matrixMul_Worker.h ./components/matrixMul.ocl/gen/matrixMul_library.cl matrixMul.cl -o  ./components/matrixMul.ocl/matrixMul.bin -build_options -cl-fast-relaxed-math

@@ -1,4 +1,9 @@
 <ComponentSpec Name="matrixMul">
+  <Properties>
+    <Property Name="WA" Readable="true" Writable="true" Type="Long"/>
+    <Property Name="WB" Readable="true" Writable="true" Type="Long"/>
+    <Property Name="test" Readable="true" Writable="true" Type="Long"/>
+  </Properties>
   <DataInterfaceSpec Name="in"/>
   <DataInterfaceSpec Name="out" Producer="true"/>
 </ComponentSpec>
