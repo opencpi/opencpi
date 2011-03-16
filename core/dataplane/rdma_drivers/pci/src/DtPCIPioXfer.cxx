@@ -46,7 +46,7 @@
 #include <DtSharedMemoryInternal.h>
 #include <DtPCIPioXfer.h>
 #include <DtPioXfer.h>
-#include <OcpiPCISMemServices.h>
+//#include <OcpiPCISMemServices.h>
 #include <xfer_if.h>
 #include <OcpiList.h>
 #include <OcpiUtilHash.h>

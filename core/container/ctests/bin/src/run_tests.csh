@@ -37,13 +37,7 @@
 
 # quick hack to run all tests
 # run this in the binary executables directory by doing: ../bin/src/run_tests.csh
-set m = `uname -m | tr A-Z a-z`
-if ($m == i386) then
-  set m=x86_64
-endif
-set t =  `uname -s`-$m
-echo T is $t
-setenv OCPI_RCC_TARGET `echo $t | tr A-Z a-z`
+setenv OCPI_RCC_TARGET $OCPI_BUILD_HOST
 setenv OCPI_SMB_SIZE 3000000
 if $OCPI_RCC_TARGET == darwin-x86_64 then
   setenv OCPI_RCC_SUFFIX dylib

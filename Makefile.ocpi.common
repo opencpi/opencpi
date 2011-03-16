@@ -270,13 +270,15 @@ ifneq ($(filter linux darwin,$(OCPI_OS)),)
 
 ifeq ($(OCPI_OS),darwin)
 SO=dylib
+SHARED_ALLOW_UNDEFINED=-dynamic -undefined dynamic_lookup
 SHARED=-dynamiclib
 BASICLIBS=
 CXXFLAGS += -Wall
 # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
 else
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-SHARED=-shared
+SHARED_ALLOW_UNDEFINED=-shared
+SHARED=-shared -Xlinker --no-undefined
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC -Wall
 endif

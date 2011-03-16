@@ -37,7 +37,7 @@
 Libraries=bsv util
 # Force the target.  Don't build for any others
 # override Target=xc5vsx95t-2-ff1136
-Cores=$(OCPI_CDK_DIR)/lib/hdl/xfft_v7_1
+Cores=xfft_v7_1
 # Limit targets since core is only for this one
-Targets=xc5vsx95t-2-ff1136 xc5vlx50t-1-ff1136
-include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+ExcludeTargets=virtex6 icarus
+include $(OCPI_CDK_DIR)/include/worker.mk

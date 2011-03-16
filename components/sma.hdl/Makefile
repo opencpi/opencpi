@@ -36,5 +36,5 @@
 
 # suppress wildcard search for sources
 Libraries=bsv
-include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+include $(OCPI_CDK_DIR)/include/worker.mk
 

@@ -77,7 +77,7 @@ ifneq ($(filter linux darwin,$(OCPI_OS)),)
 
 EXCLUDE_FACILITIES += winnt vxworksdkm
 ifeq ($(OCPI_OS),darwin)
-EXCLUDE_FACILITIES += pci smb_pcig
+#EXCLUDE_FACILITIES += pci smb_pcig
 endif
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 PACKAGELIB = $(EXPORTSHLIB)
@@ -165,7 +165,8 @@ $(UNIXSHLIB): $(OBJECTS)
 	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(OBJECTS) \
 	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
 		$(sort $(addprefix -L,$(dir $(SYSLIBS)))) \
-		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS)))
+		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
+		$(BASICLIBS)
 endif
 
 ifeq ($(OCPI_OS),winnt)

@@ -43,7 +43,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
-#include <malloc.h>
 #include <getopt.h>
 #include <time.h>
 #include <string.h>
@@ -1073,8 +1072,7 @@ namespace DataTransfer {
 	m_mem = new char[m_ofed_ep->size];
 	memset( m_mem, 0, m_ofed_ep->size );
 	int page_size = sysconf(_SC_PAGESIZE);
-	m_mem = (char*)memalign(page_size, m_ofed_ep->size );
-	if (!m_mem) {
+	if (posix_memalign((void**)m_mem, page_size, m_ofed_ep->size) != 0) {
 	  fprintf(stderr, "OFED::SmemServices Error: Couldn't allocate SMB.\n");
 	  throw DataTransfer::DataTransferEx( NO_MORE_SMB, "memalign failed" );
 	}

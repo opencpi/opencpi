@@ -37,4 +37,4 @@
 Workers = split1x2
 IncludeDirs=./ 
 SourceFiles=
-include $(OCPI_CDK_DIR)/include/rcc/rcc-worker.mk
+include $(OCPI_CDK_DIR)/include/worker.mk

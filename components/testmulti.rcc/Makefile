@@ -40,4 +40,4 @@ OCPI_CDK_DIR=../../ocpi
 # shared with other implementers
 IncludeDirs=../../core/local/util/timeEmit/include
 # OocpiLibraries=util - not until we have an AEP
-include $(OCPI_CDK_DIR)/include/rcc/rcc-worker.mk
+include $(OCPI_CDK_DIR)/include/worker.mk

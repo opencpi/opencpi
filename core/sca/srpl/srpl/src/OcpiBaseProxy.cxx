@@ -352,6 +352,7 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
       }
     }
 
+    // FIXME: allow default values of input properties for tests?
     /*
      * Did the test get all input values that it expects?
      */

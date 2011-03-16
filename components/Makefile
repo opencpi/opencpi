@@ -34,7 +34,9 @@
 #
 ########################################################################### #
 
+ifndef OCPI_CDK_DIR
 OCPI_CDK_DIR=../ocpi
+endif
 
 Implementations = \
 	adc_unpack.rcc \
@@ -59,10 +61,7 @@ Implementations = \
 
 #	wbr.hdl 
 
-#HdlTargets=xc5vlx50t-1-ff1136
-#HdlTargets=xc5vsx95t-2-ff1136 xc5vlx50t-1-ff1136 xc6vlx240t-1-ff1156 
-HdlTargets=xc6vlx240t-1-ff1156 xc5vsx95t-2-ff1136 xc5vlx50t-1-ff1136
-#  xc5vlx330t-2-ff1738
+HdlTargets=all
 
 ifndef OCPI_RUNTIME_HOST
 RccTargets=$(HostTarget)
