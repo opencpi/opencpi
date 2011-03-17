@@ -33,7 +33,6 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-Libraries=bsv util xfft_v7_1
 # Which component libraries should be referenced to build this app?
 ComponentLibraries=../../../components
 # For which containers should the runtime xml be generated?

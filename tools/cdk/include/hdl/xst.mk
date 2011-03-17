@@ -211,8 +211,11 @@ XstOptions +=\
        $(call FindRelative,$(TargetDir),\
          $(l)/lib/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
      $(foreach c,$(Cores),$(sort \
-	 $(and $(HdlPart),$(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(c),$(HdlPart),$(HdlPart)))) \
-         $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(c),$(HdlTarget)))))\
+	$(foreach d,$(sort \
+	   $(and $(HdlPart),$(call HdlLibraryRefDir,$(c),$(HdlPart),$(HdlPart))) \
+	   $(if $(findstring $(HdlTarget),$(HdlAllFamilies)),,$(call HdlLibraryRefDir,$(c),$(HdlTarget),$(HdlTarget))) \
+           $(call HdlLibraryRefDir,$(c),$(HdlTarget))),\
+	   $(and $(realpath $d),$(call FindRelative,$(TargetDir),$d)))))\
       })
 
 XstNgcOptions=\

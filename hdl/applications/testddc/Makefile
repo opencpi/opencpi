@@ -34,7 +34,6 @@
 #
 ########################################################################### #
 
-Libraries=bsv util duc_ddc_compiler_v1_0
 # Which component libraries should be referenced to build this app?
 ComponentLibraries=../../../components
 # For which containers should the runtime xml be generated?
