@@ -35,8 +35,13 @@
 ########################################################################### #
 
 # This is what the core was generated for
-Targets=xc5vsx95t-2-ff1136 xc5vlx50t-1-ff1136
-ImportCore=$(OCPI_HDL_IMPORTS_DIR)/coregen/fft-v5-4k-strm-nat/xfft_v7_1.ngc
+#Targets=xc5vsx95t-2-ff1136 xc5vlx50t-1-ff1136
+SimLibraries=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
+#SimFiles=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
+ExcludeTargets=virtex6 icarus
+ImportCore=$(OCPI_HDL_IMPORTS_DIR)/coregen/fft_v5_4k_strm_nat/xfft_v7_1.ngc
+# For simulation, overridden by ImportCore for synthesis
+Imports=$(OCPI_HDL_IMPORTS_DIR)/coregen/fft_v5_4k_strm_nat/xfft_v7_1.v
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk # We are a core
 
 

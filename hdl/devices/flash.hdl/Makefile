@@ -34,6 +34,10 @@
 #
 ########################################################################### #
 
+SimLibraries=\
+ $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
+SimFiles=\
+ $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
 Libraries=bsv util
-Target=xc6vlx240t-1-ff1156
-include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+ExcludeTargets=virtex5
+include $(OCPI_CDK_DIR)/include/worker.mk

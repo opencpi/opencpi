@@ -35,9 +35,7 @@
 ########################################################################### #
 
 # Makefile fragment for all workers
-# TODO:  implement a library search path so only library names can be used.
-include $(OCPI_CDK_DIR)/include/util.mk
-# Default is that you are building in a subdirectory of all implementations
+
 ifneq ($(Worker),)
 ifneq ($(Workers),)
 $(error Cannot set both Worker and Workers variables in Makefile)
@@ -46,146 +44,193 @@ Workers=$(Worker)
 endif
 else
 ifeq ($(Workers),)
-Worker=$(basename $(CwdName))
-#$(info Worker name is $(Worker) from its directory name $(CwdName))
+Worker=$(CwdName)
 Workers=$(Worker)
 endif
 endif
-ifndef Target
-$(error The "Target" variable has not been set.)
-endif
-ifndef Targets
-Targets=$(Target)
-endif
-ifeq ($(filter $(Target),$(Targets)),)
-$(info $(UCModel) worker $(Worker) will not be built for target $(Target) (only for $(Targets)))
-else
-GeneratedDir=$(OutDir)gen
-TargetDir=$(OutDir)target-$(Target)
-ImplXmlFiles=$(Workers:%=%.xml)
-ifndef Application
-ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
-SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
-ifeq ($(origin WorkerSourceFiles),undefined)
-WorkerSourceFiles=$(foreach w,$(Workers),$(w)$(SourceSuffix))
-endif
-AuthoredSourceFiles=$(sort $(SourceFiles) $(WorkerSourceFiles))
-endif
-ifndef BinaryName
-BinaryName=$(word 1,$(Workers))
-endif
-BinaryFile=$(TargetDir)/$(BinaryName)$(BF)
-ObjectFiles=$(foreach s,$(AuthoredSourceFiles) $(GeneratedSourceFiles),\
-              $(TargetDir)/$(basename $(notdir $(s)))$(OBJ))
-#AEPLibraries=
-#OtherLibraries=
+$(call OcpiDbgVar,Workers)
+$(call OcpiDbgVar,Worker)
 
+################################################################################
+# Tools for metadata and generated files
 ToolsTarget=$(HostTarget)
 ToolsDir=$(OCPI_CDK_DIR)/bin/$(HostTarget)
-IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
-CleanFiles += $(GeneratedSourceFiles)
-XmlIncludeDirs+=. $(XmlIncludeDirsInternal)
-# We assume all outputs are in the generated directory, so -M goes in that directory
 ifeq ($(HostSystem),darwin)
 DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/../lib/$(HostTarget)-bin
 else
 DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/../lib/$(HostTarget)-bin
 endif
-OcpiGen= $(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(GeneratedDir)/$(@F).deps -D $(GeneratedDir) $(XmlIncludeDirs:%=-I%)
+OcpiGen=\
+  $(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(GeneratedDir)/$(@F).deps \
+    -D $(GeneratedDir) $(XmlIncludeDirs:%=-I%)
 
-.SUFFIXES:
-
-# If we are supposed to deposit a link into a library directory, then it should be the first/default target
-ifdef LibDir
-all: $(LibDir)/$(Target)/$(notdir $(BinaryFile))
-
-
-$(LibDir)/$(Target)/$(notdir $(BinaryFile)): $(BinaryFile) | $(LibDir)/$(Target)
-	$(AT)echo Creating link from $(LibDir)/$(Target) to $(BinaryFile) to expose the component binary.
-	$(AT)$(call MakeSymLink,$(BinaryFile),$(LibDir)/$(Target))
-else
-all: $(ModelSpecificBuildHook) $(BinaryFile)
-endif
-
-# If the binary file is the same as the artifact file, then build it here
-ifeq ($(BinaryFile),$(ArtifactFile))
-$(BinaryFile): $(filter-out $(BinaryFile),$(ObjectFiles)) $(OtherLibraries) $(AEPLibraries) $(ArtifactXmlFile)
-	$(LinkBinary)
-	$(AT)if test "$(ArtifactXmlFile)"; then \
-		(cat $(ArtifactXmlFile); sh -c 'echo X$$4' `ls -l $(ArtifactXmlFile)`) >> $@; \
-	fi
-endif
-
-# All individual object files are created based on compiling
-# based on suffix
-define doSource
-$(TargetDir)/$(basename $(notdir $(1)))$(OBJ): $(1)
-	$(Compile_$(subst .,,$(suffix $(1))))
-endef
-$(foreach s,$(AuthoredSourceFiles) $(GeneratedSourceFiles),$(eval $(call doSource,$(s))))
-
+################################################################################
+# metadata and generated files that are target-independent
+ImplXmlFiles=$(Workers:%=%.xml)
+ImplSuffix=$($(CapModel)ImplSuffix)
+SkelSuffix=$($(CapModel)SkelSuffix)
+SourceSuffix=$($(CapModel)SourceSuffix)
 ifndef Application
-# worker object files need impl headers
-$(foreach w,$(Workers),$(TargetDir)/$(w)$(OBJ)): $(TargetDir)/%$(OBJ): $(GeneratedDir)/%$(ImplSuffix)
-
-$(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : %.xml
+ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
+SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
+$(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : %.xml | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@
 	$(AT)$(OcpiGen) -i  $<
 
-$(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : %.xml
+skeleton: $(SkelFiles)
+
+$(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : %.xml | $(GeneratedDir)
 	$(AT)echo Generating the implementation skeleton file: $@
 	$(AT)$(OcpiGen) -s $<
 endif
+IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
+override XmlIncludeDirs+=. $(XmlIncludeDirsInternal)
+-include $(GeneratedDir)/*.deps
 
-$(ObjectFiles): $(ImplHeaderFiles) $(SkelFiles)
-$(ObjectFiles) $(BinaryFile): | $(TargetDir)
+clean::
+	$(AT)rm -r -f $(GeneratedDir)
 
-$(SkelFiles) $(ImplHeaderFiles): | $(GeneratedDir)
-
-$(TargetDir) $(GeneratedDir): | $(OutDir)
-
-$(TargetDir): | $(GeneratedDir)
-	$(AT)echo Target directory \($@\) does not exist -- creating it.
-	$(AT)mkdir $@
-
-$(GeneratedDir):
-	$(AT)echo Generated directory \($@\) does not exist -- creating it.
-	$(AT)mkdir $@
-
-# only when source file does not exist
+################################################################################
+# source files that are target-independent
 ifndef Application
-
+ifeq ($(origin WorkerSourceFiles),undefined)
+WorkerSourceFiles=$(foreach w,$(Workers),$(w)$(SourceSuffix))
 ifeq ($(origin ModelSpecificBuildHook),undefined)
-
+$(call OcpiDbgVar,SourceSuffix)
+$(call OcpiDbgVar,WorkerSourceFiles)
+# This rule get's run a lot, since it is basically sees that the generated
+# skeleton is newer than the source file.
+skeleton: $(WorkerSourceFiles)
 $(WorkerSourceFiles): %$(SourceSuffix) : $(GeneratedDir)/%$(SkelSuffix)
 	$(AT)if test ! -e $@; then \
 		echo No source file exists. Copying skeleton \($<\) to $@. ; \
 		cp $< $@;\
 	fi
 endif
+endif
+endif
+# The files we need to compile
+AuthoredSourceFiles=$(sort $(SourceFiles) $(WorkerSourceFiles))
 
+################################################################################
+# Compilation of source to binary into target directories
+# We assume all outputs are in the generated directory, so -M goes in that directory
+ifndef WkrBinaryName
+ifdef BinaryName
+WkrBinaryName=$(BinaryName)
+else
+WkrBinaryName=$(word 1,$(Workers))
+endif
+endif
+$(call OcpiDbgVar,ModelSpecificBuildHook,Before all: )
+all: $(ModelSpecificBuildHook) 
+
+# Function to generate target dir from target: $(call WkrTargetDir,target)
+WkrTargetDir=$(OutDir)target-$(1)
+
+# Function to generate final binary from target: $(call WkrBinary,target)
+WkrBinary=$(call WkrTargetDir,$(1))/$(WkrBinaryName)$(BF)
+
+# Function to generate object file name from source: $(call WkrObject,src,target)
+WkrObject=$(call WkrTargetDir,$(2))/$(basename $(notdir $(1)))$(OBJ)
+
+# Function to make an object from source: $(call WkrMakeObject,src,target)
+define WkrMakeObject
+# A line is needed here for the "define" to work (no extra eval)
+ObjectFiles_$(2) += $(call WkrTargetDir,$(2))/$(basename $(notdir $(1)))$(OBJ)
+$(call WkrObject,$(1),$(2)): $(1) $(ImplHeaderFiles) | $(call WkrTargetDir,$(2))
+	$(Compile_$(subst .,,$(suffix $(1))))
+
+endef
+
+# Function to make worker objects depend on impl headers: 
+# $(call WkrWorkerDep,worker,target)
+define WkrWorkerDep
+
+$(call WkrObject,$(1),$(2)): $(GeneratedDir)/$(1)$(ImplSuffix)
+
+endef
+
+################################################################################
+# Function to do stuff per target: $(eval $(call WkrDoTarget,target))
+define WkrDoTarget
+# The target directory
+$(call WkrTargetDir,$(1)): | $(OutDir) $(GeneratedDir)
+	$(AT)mkdir $$@
+
+# If object files are separate from the final binary,
+# Make them individually, and then link them together
+ifdef ToolSeparateObjects
+$$(call OcpiDbgVar,AuthoredSourceFiles)
+$$(call OcpiDbgVar,GeneratedSourceFiles)
+$(foreach s,$(AuthoredSourceFiles) $(GeneratedSourceFiles),\
+          $(call WkrMakeObject,$(s),$(1)))
+
+$(call WkrBinary,$(1)): $$(ObjectFiles_$(1)) $(ArtifactXmlFile) \
+			| $(call WkrTargetDir,$(1))
+	$(LinkBinary) $$(ObjectFiles_$(1))
+	$(AT)if test -f "$(ArtifactXmlFile)"; then \
+		(cat $(ArtifactXmlFile); \
+                 sh -c 'echo X$$$$4' `ls -l $(ArtifactXmlFile)`) >> $$@; \
+	fi
+endif
+# If not an application, make the worker object files depend on the impl headers
+ifndef Application
+$(foreach w,$(Workers),$(call WkrWorkerDep,$(w),$(1)))
+endif
+# Make sure we actuall make the final binary for this target
+$(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$(1))")
+all: $(call WkrBinary,$(1))
+endef
+# Do all the targets
+$(foreach t,$($(CapModel)Targets),$(eval $(call WkrDoTarget,$(t))))
+
+################################################################################
+# Export support - what we put into the (export) library above us
+
+ifdef LibDir
+# The default for things in the target dir to export into the component library's
+# export directory for this target
+ifndef WkrExportNames
+WkrExportNames=$(WkrBinaryName)$(BF)
 endif
 
+define DoLink
+LibLinks+=$(LibDir)/$(1)/$(notdir $(2))
+$(LibDir)/$(1)/$(notdir $(2)): $(OutDir)target-$(1)/$(2) | $(LibDir)/$(1)
+	$(AT)$$(call MakeSymLink,$$^,$(LibDir)/$(1))
+endef
+
+define DoLinks
+
+LibDirs+=$(LibDir)/$(1)
+$(LibDir)/$(1): | $(LibDir)
+$(foreach n,$(WkrExportNames),$(call DoLink,$(1),$(n)))
+endef
+
+$(foreach t,$($(CapModel)Targets),$(eval $(call DoLinks,$(t))))
+
+
+$(call OcpiDbgVar,LibLinks,Before all:)
+all: $(LibLinks)
+
+$(LibDir) $(LibDirs):
+	$(AT)mkdir $@
+
+endif # LibDir to export into
+
+################################################################################
+# Cleanup.  Tricky/careful removal of skeletons that were copied up into the 
+#           directory.
 clean::
 	$(AT)for s in $(AuthoredSourceFiles); do \
-	    sk=$(GeneratedDir)/`echo $$s | sed s~$(SourceSuffix)$$~$(SkelSuffix)~`; \
-	    if test -e $$s -a -e $$sk; then \
-	        sed 's/GENERATED ON.*$$//' < $$s > $(GeneratedDir)/$$s; \
-	        if (sed 's/GENERATED ON.*$$//' < $$sk | cmp -s - $(GeneratedDir)/$$s); then \
-		    echo Source file \($$s\) identical to skeleton file \($$sk\).  Removing it.; \
-	            rm $$s; \
-		fi; \
+	   sk=$(GeneratedDir)/`echo $$s | sed s~$(SourceSuffix)$$~$(SkelSuffix)~`; \
+	   if test -e $$s -a -e $$sk; then \
+	      sed 's/GENERATED ON.*$$//' < $$s > $(GeneratedDir)/$$s; \
+	      if (sed 's/GENERATED ON.*$$//' < $$sk | \
+                  cmp -s - $(GeneratedDir)/$$s); then \
+		echo Source file \($$s\) identical to skeleton file \($$sk\).  Removing it.; \
+	        rm $$s; \
+	      fi; \
 	    fi; \
 	done
-	$(AT)rm -r -f $(ObjectFiles) $(ImplHeaderFiles) $(SkelFiles) $(GeneratedDir) $(TargetDir) $(CleanFiles)
-	$(AT)for t in $(OutDir)target-*-*; do \
-	  if test -d $$t; then \
-	    rm -r -f $$t; \
-	  fi; \
-	done
-	$(AT)rm -r -f $(OutDir)
-	$(ModelSpecificCleanupHook)
-
--include $(GeneratedDir)/*.deps
--include $(TargetDir)/*.deps
-endif

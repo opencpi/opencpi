@@ -49,20 +49,16 @@ endif
 ifndef LibName
 LibName=work
 else
-ifndef InstallDir
-InstallDir=$(OCPI_CDK_DIR)/lib/hdl/$(LibName)
-$(OCPI_CDK_DIR)/lib/hdl $(OCPI_CDK_DIR)/lib $(InstallDir):
-	$(AT)mkdir $@
-
-$(InstallDir): | $(OCPI_CDK_DIR)/lib/hdl
-$(OCPI_CDK_DIR)/lib/hdl: | $(OCPI_CDK_DIR)/lib
-
+ifndef InstallLibDir
+InstallLibDir=$(OCPI_CDK_DIR)/lib/hdl/$(LibName)
+$(InstallLibDir):
+	$(AT)mkdir -p $@
 endif
 endif
 
 # Support for oddly named targets that are not exactly parts
 ifndef Parts
-Parts=$(Targets)
+Parts=$(HdlTargets)
 endif
 Families=$(sort $(foreach t,$(Parts),$(call LibraryAccessTarget,$(t))))
 ifneq ($(filter-out $(Parts),$(Families)),)
@@ -74,6 +70,7 @@ include $(OCPI_CDK_DIR)/include/hdl/xst.mk
 ImportsDir=$(OutDir)imports
 $(ImportsDir)::
 	$(AT)echo -n
+
 clean::
 	rm -r -f $(OutDir)target-* 
 

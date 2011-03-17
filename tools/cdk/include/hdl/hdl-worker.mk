@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -34,79 +33,79 @@
 #
 ########################################################################### #
 
-include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
 # Makefile fragment for HDL workers
 
-ImplSuffix=_impl.vh
-SkelSuffix=_skel.v
-DefsSuffix=_defs.vh
-# BF:=.edif
-# LinkBinary=cp $< $@
-# Compile should ultimately be compile for synthesis, not simulation
-# and we should have the separate sim build.
-# for now this is indeed compile for sim, but really just a syntax check
-#Compile=iverilog -Wall -Wextra $(IncludeDirs:%=-I%) $(IncludeDirs:%=-y%) $(VerilogIncludeDirs:%=-I%) -o $@ $<
-# Issues:
-# Compile a library of primitives
-# Generate a stub with outputs tied.
-# Build the component, referring to library for primtives lile BSV.
-# lso says which libraries to search, and the lso mapping mentiones remote dirs for libraries.
-# xst (-ifn foo.xst) 
+ifndef HdlMode
+HdlMode:=worker
+endif
+include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+ifndef HdlSkip
 
-# HDL workers are one per binary
-ImplXmlFile=$(firstword $(ImplXmlFiles))
+HdlSkelSuffix=_skel.v
+HdlDefsSuffix=_defs.vh
+HdlImplSuffix=_impl.vh
+ifneq ($(word 2,$(Workers)),)
+$(error Only one HDL worker can be built.  Workers is: $(Workers))
+endif
 
-DefsFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(DefsSuffix))
-override VerilogIncludeDirs += $(IncludeDirs)
-
-ifeq ($(HostTarget),Darwin-i386)
-OBJ=.o
-Compile=iverilog -Wall -Wextra $(VerilogIncludeDirs:%=-I%) $(OcpiLibraries:%=-y%/lib/hdl) -o $@ $<
-else
 ifndef Core
 Core=$(Worker)
 endif
-include $(OCPI_CDK_DIR)/include/hdl/xst.mk
-endif
-include $(OCPI_CDK_DIR)/include/xxx-worker.mk
-ifneq ($(filter $(Target),$(Targets)),)
+
+Compile=$(HdlCompile)
+$(call OcpiDbgVar,HdlBin)
+BF:=$(HdlBin)
+# This could change someday if any hdl tools have separate object files.
+OBJ:=$(HdlBin)
+# We don't build independent standalone worker binaries (no artifact file here)
 ArtifactFile=
-$(BinaryFile): $(AuthoredSourceFiles) $(GeneratedSourceFiles) $(DefsFiles) $(ImplHeaderFiles)
-	$(AT)echo Building HDL $(if $(Application),application,worker) $(Worker) for target $(Target)
-	$(Compile)
+include $(OCPI_CDK_DIR)/include/xxx-worker.mk
+$(call OcpiDbgVar,Worker)
 
-ifdef LibDir
+################################################################################
+# Generated files: impl depends on defs, worker depends on impl
+# map the generic "IncludeDirs" into the verilog
+override VerilogIncludeDirs += $(IncludeDirs)
+ImplXmlFile=$(firstword $(ImplXmlFiles))
+DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
+$(DefsFile): $(Worker).xml | $(GeneratedDir)
+	$(AT)echo Generating the definition file: $@
+	$(AT)$(OcpiGen) -d $<
 
+$(ImplHeaderFiles): $(DefsFile)
+
+
+################################################################################
+# Include this to build the core or the library
+include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
+
+
+################################################################################
+# If not an application, we have to contribute to the exports for the library
+# we are a part of.
 ifndef Application
+# Expose the implementation xml file for apps that instantiate this worker core
+ifdef LibDir
+$(call OcpiDbg,Before all: "$(LibDir)/$(ImplXmlFile)")
 all: $(LibDir)/$(ImplXmlFile)
 
 $(LibDir)/$(ImplXmlFile):
 	$(AT)echo Creating link from $(LibDir) to $(ImplXmlFile) to expose the $(CwdName) xml.
 	$(AT)$(call MakeSymLink,$(ImplXmlFile),$(LibDir))
-
-endif
 endif
 
-# Generate the stub files
 ifdef GenDir
-ifndef Application
-$(GenDir)/$(Worker)$(SourceSuffix): $(DefsFiles)
-	$(AT)echo Creating link from $(GenDir) to $(DefsFiles) to expose the stub for worker "$(Worker)".
-	$(AT)$(call MakeSymLink2,$(DefsFiles),$(GenDir),$(Worker)$(SourceSuffix))
+$(GenDir):
+	mkdir $(GenDir)
+# Generate the stub files by providing a link from gen/worker.v to gen/worker_defs.v
+$(call OcpiDbgVar,DefsFiles)
+$(GenDir)/$(Worker)$(HdlSourceSuffix): $(DefsFile) | $(GenDir)
+	$(AT)echo Creating link from $(GenDir) to $(DefsFile) to expose the stub for worker "$(Worker)" "$@".
+	$(AT)$(call MakeSymLink2,$(DefsFile),$(GenDir),$(Worker)$(HdlSourceSuffix))
 
-all: $(GenDir)/$(Worker)$(SourceSuffix)
-
+$(call OcpiDbg,Before all: "$(GenDir)/$(Worker)$(HdlSourceSuffix)")
+all: $(GenDir)/$(Worker)$(HdlSourceSuffix)
 endif
-endif
+endif # if not an application
 
-
-$(patsubst %,$(TargetDir)/%$(OBJ),$(basename $(notdir $(AuthoredSourceFiles)))): \
-	 $(TargetDir)/%$(OBJ): %.v
-
-$(DefsFiles): $(GeneratedDir)/%$(DefsSuffix): %.xml | $(GeneratedDir)
-	$(AT)echo Generating the definition file: $@
-	$(AT)$(OcpiGen) -d $<
-
-$(foreach w,$(Workers),$(TargetDir)/$(w)$(OBJ)): $(TargetDir)/%$(OBJ): $(GeneratedDir)/%$(DefsSuffix) $(Libraries)
-
-endif
+endif # HdlSkip

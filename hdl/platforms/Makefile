@@ -33,21 +33,17 @@
 #
 ########################################################################### #
 
-AT=@
-Platforms=ml605 ml555 shist
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
-.PHONY: $(Platforms)
+.PHONY: $(HdlPlatforms)
 
+all: $(HdlPlatforms)
 
-all: $(Platforms)
-
-$(Platforms):
+$(HdlPlatforms):
 	$(AT)echo Building platform $@
-	make -C $@
+	$(AT)$(MAKE) --no-print-directory -C $@
 
 clean:
-	$(AT)echo Cleaning all platforms
-	$(AT)for p in $(Platforms); do \
-	       echo Cleaning platform $$p. ; \
-	       make -C $$p clean; \
+	$(AT)for p in $(HdlPlatforms); do \
+	      $(MAKE) --no-print-directory -C $$p clean; \
 	     done

@@ -34,8 +34,12 @@
 #
 ########################################################################### #
 
+SimLibraries=\
+ $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
+SimFiles=\
+ $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
 Libraries=bsv util
-# Force the target.  Don't build for any others
-# override Target=xc5vsx95t-2-ff1136
+# include for protocols etc.
+ExcludeTargets=icarus
 XmlIncludeDirs+=../../../components/specs
-include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+include $(OCPI_CDK_DIR)/include/worker.mk

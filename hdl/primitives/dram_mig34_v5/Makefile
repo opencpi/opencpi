@@ -36,11 +36,11 @@
 
 # This core was generated for one target
 Top=v5_mig34
-Targets=xc5vsx95t-2-ff1136
+OnlyTargets=xc5vsx95t
 Imports= \
-  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v5-mig34/mig_v3_4/user_design/rtl/*.v \
-  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v5-mig34/ddr2_idelay_ctrl_eco20100514.v \
-  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v5-mig34/ddr2_infrastructure_eco20100512.v \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v5_mig34/mig_v3_4/user_design/rtl/*.v \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v5_mig34/ddr2_idelay_ctrl_eco20100514.v \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v5_mig34/ddr2_infrastructure_eco20100512.v \
   $(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/v5_mig34.v
 # Remove files that we have patched with other names
 ExcludeImports=ddr2_chipscope.v ddr2_idelay_ctrl.v ddr2_infrastructure.v mig_v3_4.v

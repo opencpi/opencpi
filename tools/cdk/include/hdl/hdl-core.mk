@@ -34,35 +34,56 @@
 #
 ########################################################################### #
 
-# This file is for building a core, which will also build the library for it...
-# A "core" may be imported, and thus the "import" target, usually based on OCPI_HDL_IMPORT_DIR,
-# (re)populates the source files here under the "import" dir, to highlight the fact that
-# they are not really edited in place here.
+# This file should be include in makefiles for hdl primitive cores
+# compiled from sources or imported as ngc/edif.
+# At the moment, pure edif cores are only for single targets.
+# There are potentially three different "results" from a core:
+# 1. The actual binary file representing a core (like an edif)
+# 2. The "stub library" that is needed by some tools to find the core (e.g. xst)
+# 3. A library containing the actual implementation
+#    (when the tool cannot do layered builds with cores, like most simulators)
+#
+# The use cases are:
+# - Import a prebuilt core
+# - Simply drop a prebuilt core into the directory
+# - Built a core from sources, imported or not
+#
+# Depending on the tool:
+# - create a black-box stub library to access the tool, using a stub source file
+# - export an implementation library if the tool can't really produce a "core"
 
-# Constant definitions and those trivially based on the Makefile
+HdlMode:=core
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+ifndef HdlSkip
 
 ifndef Core
 Core=$(CwdName)
 endif
-LibName=$(Core)
-ifdef ImportCore
-PreBuiltCore=yes
-Imports += $(ImportCore)
-CoreFile=$(notdir $(ImportCore))
-else
-CoreFile=$(Core)$(BF)
-endif
-
 ifndef Top
 Top:=$(Core)
 endif
 
-ifndef Targets
-  $(error Variable \"Targets\" for $(Core) must be defined)
+ifdef ImportCore
+ifdef PreBuiltCore
+$(error Cannot set both "PreBuiltCore" and "ImportCore")
 endif
+PreBuiltCore=$(ImportCore)
+Imports += $(ImportCore)
+# We don't rename the file when we import it.
+CoreFile=$(notdir $(ImportCore))
+else
+# But if it isn't imported, its named properly
+CoreFile=$(Core)$(HdlBin)
+endif
+HdlCoreInstallDir=$(HdlInstallDir)/$(Core)
+$(HdlCoreInstallDir): | $(HdlInstallDir)
+	$(AT)mkdir $@
 
-ifndef NoBlackBoxLib
+################################################################################
+# First get the black box source file.  We need to get this even if this
+# tool won't use it, since that file must be filtered out of the 
+# source files actually used to build the core.
+# It must be defined before we include the file below
 ifdef ImportBlackBox
 Imports += $(ImportBlackBox)
 CoreBlackBoxFile:= $(OutDir)imports/$(notdir $(ImportBlackBox))
@@ -70,93 +91,46 @@ else
 ifndef CoreBlackBoxFile
   CoreBlackBoxFile:=$(Top)_bb.v
 endif
-ifeq ($(realpath $(CoreBlackBoxFile)),)
-  $(error Core BlackBox File "$(CoreBlackBoxFile)" does not exist)
 endif
-endif
-endif
+$(call OcpiDbgVar,CoreBlackBoxFile)
 
-include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
+################################################################################
+# include the shared file (shared with workers) that 
+# builds the real core or just a library for the core
+include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
 
-ifndef NoBlackBoxLib
-# List of families from these targets
-define DoFamilyTarget
-LibResults+=$(OutDir)target-$(1)/$(Core)/$(call LibraryFileTarget,$(1))
-$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): | $(OutDir)target-$(1)
-$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): LibName=$(Core)
-$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): Core=dummy
-$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): Target=$(1)
-$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): TargetDir=$(OutDir)target-$(1)
-$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): CompiledSourceFiles=$(CoreBlackBoxFile) 
-$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1)): $(CoreBlackBoxFile) 
-endef
-$(foreach f,$(Families),$(eval $(call DoFamilyTarget,$(f))))
+ifdef HdlToolRealCore
+# Install the core, however it was buit
+install_core: | $(HdlCoreInstallDir)
+	$(AT)echo Installing core for targets: $(HdlActualTargets)
+	$(AT)for f in $(HdlActualTargets); do \
+	  $(call ReplaceIfDifferent,$(OutDir)target-$$f/$(Core)$(HdlBin),$(strip \
+		$(HdlCoreInstallDir)/$$f));\
+	  done
+install: install_core
 
-$(sort $(LibResults)): $(CoreBlackBoxFile)
-	$(AT)echo Building stub/blackbox library for target \"$(Family)\" from \"$(CoreBlackBoxFile)\"
-	$(AT)rm -f $(TargetDir)/$(Core)$(BF) $(TargetDir)/*.lso
-	$(AT)rm -r -f $(TargetDir)/work
-	$(Compile)
-endif
-
-# I'm not sure this does anything...
-$(info: Targets: $(Targets))
-.SECONDEXPANSION:
-CoreResults=$(Targets:%=$(OutDir)target-%/$(Core)$(BF))
-#$(info cr $(CoreResults))
-$(CoreResults): Target=$(@:$(OutDir)target-%/$(Core)$(BF)=%)
-$(CoreResults): LibName=work
-$(CoreResults): TargetDir=$(@:%/$(Core)$(BF)=%)
-
-# Dependencies for all types
-ifdef Imports
-$(CoreResults): $(ImportsDir)
-endif
-$(CoreResults): | $$(TargetDir)
-#$(info LR $(LibResults) CR $(CoreResults) F $(Families))
-all:$(LibResults) $(CoreResults)
-
-ifdef PreBuiltCore
-$(CoreResults): $(OutDir)imports/$(CoreFile)
-	$(AT)if test ! -L $@; then \
-		echo Exporting pre-built coregen NGC file $(Core)$(BF) for target \"$(Part)\"; \
-	     fi
-	$(AT)$(call MakeSymLink2,$(OutDir)imports/$(CoreFile),$(TargetDir),$(Core)$(BF))
+# If the core name is not the same as its "top", make links
+ifneq ($(Core),$(Top))
+install_link: install_core
+	$(AT)$(foreach f,$(HdlActualTargets),\
+		 $(call MakeSymLink2,$(strip \
+                     $(HdlCoreInstallDir)/$(f)/$(Core)$(HdlBin)),$(strip \
+                     $(HdlCoreInstallDir)/$(f)),$(Top)$(HdlBin));)
+install: install_link
+endif # for links
 else
-#	$(AT)echo sf1: $@ asf $(CompiledSourceFiles). sf $(SourceFiles)
-$(CoreResults): $$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles)) 
-	$(AT)echo Building core \"$(Core)\" for target \"$(Target)\" part \"$(Part)\"
-	$(AT)rm -f $@ $(TargetDir)/*.lso
-	$(Compile)
-endif
+# Installation is not recursive
+install: | $(HdlInstallDir)
+	$(AT)for f in $(HdlActualTargets); do \
+	  $(call ReplaceIfDifferent,$(strip \
+             $(OutDir)target-$$f/$(HdlToolLibraryResult)),$(strip \
+             $(HdlInstallDir)/$(LibName)/$$f)); \
+	done
+endif # for building a real core
 
-ifndef NoBlackBox
-
-# Need to install both the stub library and the core itself
-# but the core needs to be installed before the Top-named link
-install_core:
-	$(AT)for f in $(Targets); do \
-	       if ! cmp -s $(OutDir)target-$$f/$(Core)$(BF) $(InstallDir)/$$f/$(Core)$(BF); then \
-	         echo Installing core $(Core) for target: $$f; \
-		 if ! test -d $(InstallDir); then mkdir $(InstallDir); fi; \
-		 if ! test -d $(InstallDir)/$$f; then mkdir $(InstallDir)/$$f; fi; \
-		 rm -f $(InstallDir)/$$f/$(Core)$(BF); \
-		 cp -r -p -L $(OutDir)target-$$f/$(Core)$(BF) $(InstallDir)/$$f; \
-	       fi; \
-	     done
-install: install_core | $(InstallDir)
-	$(AT)for f in $(Families); do \
-	       if ! diff -q -r --exclude='*.ngc' $(OutDir)target-$$f/$(LibName) $(InstallDir)/$$f >/dev/null 2>&1; then \
-	         echo Installing stub/bb library for core $(Core) for target: $$f; \
-	         rm -f -r $(InstallDir)/$$f; \
-		 cp -r -p -L $(OutDir)target-$$f/$(LibName) $(InstallDir)/$$f; \
-	       fi; \
-	     done
-	$(AT)$(foreach f,$(Targets),\
-		$(if $(findstring $(Core),$(Top)),,\
-		  $(call MakeSymLink2,$(InstallDir)/$(f)/$(Core)$(BF),$(InstallDir)/$(f),$(Top)$(BF));))
-# endif
 ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk
-endif
-endif
+endif # imports
+else
+install:
+endif # HdlSkip

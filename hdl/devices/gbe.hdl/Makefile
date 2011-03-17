@@ -35,6 +35,5 @@
 ########################################################################### #
 
 Libraries=bsv util
-Cores=dram_mig33_v6
-Targets=xc6vlx240t-1-ff1156
-include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+OnlyTargets=xc6vlx240t
+include $(OCPI_CDK_DIR)/include/worker.mk

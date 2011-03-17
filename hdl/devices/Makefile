@@ -42,7 +42,7 @@
 
 # The names of the device workers are only qualified when we have more than
 # one -- until we have a good naming convension.
-
+XmlIncludeDirs=../../components/specs
 Implementations = \
 	adcx.hdl \
 	adc.rcc \
@@ -55,6 +55,4 @@ Implementations = \
 
 #	gbe \ - we need to clean up wti, and deal with multiple control ifcs.
 
-HdlTargets=xc6vlx240t-1-ff1156 xc5vlx50t-1-ff1136 xc5vsx95t-2-ff1136
-#  xc5vlx330t-2-ff1738
 include $(OCPI_CDK_DIR)/include/lib.mk

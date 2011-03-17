@@ -35,29 +35,41 @@
 ########################################################################### #
 
 OCPI_CDK_DIR=../../ocpi
-include $(OCPI_CDK_DIR)/include/util.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 Libs=bsv util util_virtex6 util_virtex5
 Cores=xfft_v7_1 duc_ddc_compiler_v1_0 \
  dram_mig33_v6 dram_mig34_v5 \
  temac_v6 \
- pcie_v6_x4_250 pcie_v5_gtp_x1_125 pcie_v5_gtp_x8_125 pcie_v5_gtx_x8_125 pcie_s6_x1_125
+ pcie_4243_axi_v6_gtx_x4_250 \
+ pcie_4243_trn_s6_x1_125 \
+ pcie_4243_trn_v5_gtp_x1_125 \
+ pcie_4243_trn_v5_gtp_x8_125 \
+ pcie_4243_trn_v5_gtx_x8_125 \
+ pcie_4243_trn_v6es_gtx_x4_250 \
+ pcie_4243_trn_v6_gtx_x4_250 \
+
+MyMake=$(MAKE) HdlTargets="$(HdlTargets)" --no-print-directory
 all: $(Libs) $(Cores)
 # enable cores to use libs
 $(Cores): $(Libs)
 
 clean:
 	$(AT)$(foreach l,$(Libs) $(Cores),\
-		$(MAKE) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) clean;)
+		$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) clean;)
 cleanimports:
 	$(AT)$(foreach l,$(Libs) $(Cores),\
-		$(MAKE) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) cleanimports;)
+		$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) cleanimports;)
 
 install:
-	$(AT)set -e;$(foreach l,$(Libs) $(Cores),$(MAKE) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install;)
+	$(AT)set -e;$(foreach l,$(Libs) $(Cores),$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install;)
+
+uninstall:
+	$(AT)echo Removing all installed HDL primitives and codes from $(OCPI_CDK_DIR)/lib
+	$(AT)rm -r -f $(OCPI_CDK_DIR)/lib/hdl
 
 .PHONY: $(Libs) $(Cores)
 
 $(Libs) $(Cores):
 	$(AT)echo ============== For library/core $@:
-	$(AT)$(MAKE) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR))
-	$(AT)$(MAKE) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install
+	$(AT)$(MyMake) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR))
+	$(AT)$(MyMake) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install

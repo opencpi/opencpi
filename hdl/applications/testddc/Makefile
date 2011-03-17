@@ -34,11 +34,13 @@
 #
 ########################################################################### #
 
+Libraries=bsv util duc_ddc_compiler_v1_0
 # Which component libraries should be referenced to build this app?
 ComponentLibraries=../../../components
 # For which containers should the runtime xml be generated?
 # These (for now) just xml files containing HdlContainer elements.
 Containers=testddcCont
 # We know that this app does not fit on the ml555
-Platforms=shist
+ExcludeTargets=icarus
+HdlOnlyPlatforms=schist
 include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk

@@ -50,4 +50,5 @@ $(if $(out),$(info $(out)))
 #$(info aaa is $(flavor AAA) $(origin AAA))
 endif
 CompiledSourceFiles:=$(sort $(CompiledSourceFiles) $(shell echo $(ImportsDir)/*.[vV]))
+$(call OcpiDbgVar,CompiledSourceFiles)
 endif

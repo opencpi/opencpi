@@ -34,162 +34,138 @@
 #
 ########################################################################### #
 
-# This Makefile type has two distinct modes.
-# The first is to loop through multiple specified platforms and targets.
-# This multi-target mode uses recursion, and is entered when there is a
-# Targets or Platforms variable defined in the makefile or on the command line,
-# and there is NO Target or Platform defined at all.
-include $(OCPI_CDK_DIR)/include/util.mk
-AT=@
-MyComponentLibraries:=$(ComponentLibraries)
-ifeq ($(Target)$(Platform),)
-ifneq ($(Targets)$(Platforms),)
-$(info Platforms are \"$(Platforms)\")
-# We must recurse
-all: targets platforms
+# This makefile is for building applications and bitstreams.
 
-targets:
-	$(AT)for t in $(Targets); do $(MAKE) --no-print-directory Target=$$t target; done
+HdlMode:=application
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
-platforms:
-	$(AT)for p in $(Platforms); do $(MAKE) --no-print-directory Platform=$$p platform; done
+################################################################################
+# Deal with platform issues if there are specified platforms
+ifdef HdlPlatforms
+# Filter platforms
+ifdef HdlOnlyPlatforms
+override HdlPlatforms:=$(filter $(HdlOnlyPlatforms),$(HdlPlatforms))
+endif
 
-clean::
-	rm -r -f target-* platform-* gen imports
-else
-$(error No Targets or Platforms specified)
-endif
-else
-AppName=$(CwdName)
-Worker=$(AppName)
-ifneq ($(and $(Platforms),$(Platform)),)
-ifeq ($(strip $(filter $(Platform),$(Platforms))),)
-$(info Application $(Worker) not built for platform $(Platform), only for platforms: $(Platforms))
-Abort=yes
-endif
-endif
-ifneq ($(and $(Targets),$(Target)),)
-ifeq ($(strip $(filter $(Target),$(Targets))),)
-$(info Application $(Worker) not built for target $(Target), only for targets: $(Targets))
-Abort=yes
-endif
-endif
-ifndef Abort
-all: target
-# This section of the makefile is for building the single target or platform
-# Makefile for an hdl assembly, which is a lot like a worker...
-# We run this for one platform/target
-include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
+# Skip synthesis targets that aren't for any specified platform
+# (and mention what we are skipping)
+$(call OcpiDbgVar,HdlTargets,Before filtering out non-platform targets)
+$(call OcpiDbgVar,HdlPlatforms,Before filtering out non-platform targets)
+override HdlTargets:=$(sort\
+   $(foreach ht,$(HdlTargets),\
+    $(if $(findstring $(ht),$(HdlSimTools)),\
+      $(ht),$(strip \
+      $(or \
+       $(foreach p,$(HdlPlatforms),\
+         $(foreach part,$(call HdlGetPart,$p),\
+           $(or $(findstring $(part),$(ht)),\
+                $(findstring $(call HdlGetFamily,$(part)),$(ht))))),\
+      $(info Skipping target $(ht), not in specified platforms: $(HdlPlatforms)))))))
 
-Application=yes
-GeneratedSourceFiles+=$(GeneratedDir)/$(Worker)$(SourceSuffix)
-#LibDir=$(OutDir)lib/hdl
-# If there is a platform defined, we infer the target from it
-ifdef Platform
-all: platform
-  ifdef Target
-    ifeq ($(origin Target),$(origin Plaform))
-      $(error You cannot specify a "Target" ($(Target))and a "Platform" ($(Platform)).  One or the other.)
-    else ifeq ($(origin Platform),command line)
-      Target=
+$(call OcpiDbgVar,HdlTargets,After filtering out non-platform targets )
+
+# Establish where the platforms are
+ifndef HdlPlatformsDir
+  HdlPlatformsDir:=$(OCPI_CDK_DIR)/lib/hdl/platforms
+  ifeq ($(realpath $(HdlPlatformsDir)),)
+    HdlPlatformsDir:=$(OCPI_BASE_DIR)/hdl/platforms
+    ifeq ($(realpath $(HdlPlatformsDir)),)
+      $(error No HDL platforms found.  Looked in $(OCPI_CDK_DIR)/lib/hdl/platforms and $(OCPI_BASE_DIR)/hdl/platforms.)
     endif
   endif
-  ifndef OCPI_HDL_PLATFORMS_DIR
-    OCPI_HDL_PLATFORMS_DIR=$(OCPI_CDK_DIR)/lib/hdl/platforms
-    ifeq ($(wildcard $(OCPI_HDL_PLATFORMS_DIR)),)
-      OCPI_HDL_PLATFORMS_DIR=$(OCPI_BASE_DIR)/hdl/platforms
-      ifeq ($(wildcard $(OCPI_HDL_PLATFORMS_DIR)/*),)
-        $(error No HDL platforms found.  Looked in $(OCPI_CDK_DIR)/lib/hdl/platforms and $(OCPI_BASE_DIR)/hdl/platforms.)
-      endif
-    endif
-  endif
-  PlatformBase=$(firstword $(subst +, ,$(Platform)))
-  PlatformSpecDir=$(OCPI_HDL_PLATFORMS_DIR)/$(PlatformBase)
-  ifeq ($(wildcard $(PlatformSpecDir)/*),)
-    $(error Platform $(Platform) not found in $(OCPI_HDL_PLATFORMS_DIR))
-  endif
-  ifeq ($(wildcard $(PlatformSpecDir)/$(PlatformBase).mk),)
-    $(error File $(PlatformBase).mk not found in $(PlatformSpecDir))
-  endif
-  include $(PlatformSpecDir)/$(PlatformBase).mk
-  ifndef Target
-    Target=$(PART)
-  endif
-  ifndef Target
-    $(error No Target specified, either directly or inferred from platform $(Platform)).
-  endif
 endif
-Family:=$(call TargetFamily,$(Target))
-$(info Target is $(Target), Family is $(Family))
+$(call OcpiDbgVar,HdlPlatformsDir)
+
+# Make sure all the platforms are present
+$(foreach p,$(HdlPlatforms),\
+  $(if $(realpath $(HdlPlatformsDir)/$(p)),,\
+     $(error No $(p) platform found in $(HdlPlatformsDir))))
+endif
+
+################################################################################
+# We are a lot like an HDL worker (and thus a core)
+# The implementation xml file is HdlAssembly, not HdlImplementation
+# Otherwise we pretty much just build the worker
+Core:=$(CwdName)
+# In case the tools need a black box to find this core we are building,
+# The empty module will just be a link to the defs file.
+CoreBlackBoxFile:=$(GeneratedDir)/$(Core)_bb$(HdlSourceSuffix)
+$(CoreBlackBoxFile): $$(DefsFile) | $(OutDir)gen
+	$(AT)$(call MakeSymLink2,$(DefsFile),$(GeneratedDir),$(notdir $(CoreBlackBoxFile)))
+
+# Generate the source code for this "assembly worker" implementation file.
+ImplFile:=$(GeneratedDir)/$(CwdName)$(HdlSourceSuffix)
+$(ImplFile): $$(ImplXmlFiles) | $$(GeneratedDir)
+	$(AT)echo Generating the application source file: $@
+	$(AT)$(OcpiGen) -a  $<
+	$(AT)mv $(GeneratedDir)/$(Worker)_assy.v $@
+# The source code for this "worker" is the generated assembly file.
+SourceFiles:=$(ImplFile)
+
+# When parsing the HdlAssembly file, we need access to the xml from the 
+# workers in the assembly, both at the implementation level and the spec level
+override XmlIncludeDirs += \
+  $(ComponentLibraries:%=%/lib/hdl) \
+  $(ComponentLibraries:%=%/lib)
+
 include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
-clean::
-	rm -r -f target-* platform-* gen
-BBName=$(Worker)_bb.v
-BBFile=$(GeneratedDir)/$(BBName)
-$(BBFile): | $(GeneratedDir)/$(Worker)_defs.vh
-	$(AT)ln -s $(Worker)_defs.vh $@
 
-BBLib=$(OutDir)target-$(Family)/$(Worker)/$(call LibraryFileTarget2,$(Family),$(Worker))
-$(BBLib): LibName=$(Worker)
-$(BBLib): Target=$(Family)
-$(BBLib): TargetDir=target-$(Family)
-$(BBLib): Cores=
-$(BBLib): Core=$(Worker)
-$(BBLib): Top=$(Worker)
-$(BBLib): $(BBFile) | $(OutDir)target-$(Family)
-	$(AT)echo Building stub/blackbox library for target \"$(Target)\" from \"$(BBFile)\"
-	$(Compile)
-	$(AT)rm -f $(TargetDir)/$(Worker)/$(Family); ln -s . $(TargetDir)/$(Worker)/$(Family)
-
-CoreBaseName=$(OutDir)target-$(Target)/$(Worker)$(BF)
-$(CoreBaseName): LibName=work
-$(CoreBaseName): Top=$(Worker)
-$(CoreBaseName): Core=$(Worker)
-$(CoreBaseName): Cores=
-$(CoreBaseName): ComponentLibraries=$(MyComponentLibraries)
-$(CoreBaseName): $(BBLib)
-$(CoreBaseName): TargetDir=target-$(PART)
-# Put this into xst.mk..
-$(CoreBaseName): $(foreach i,$(ComponentLibraries),$(i)/lib/hdl/$(call LibraryAccessTarget,$(Family)))
-CoreLink=$(OutDir)target-$(Family)/$(Worker)/$(PART)
-$(CoreLink):
-	$(AT)ln -s ../../target-$(PART) $@	
-
-target: $(CoreBaseName) | $(CoreLink)
-ifdef Platform
-  $(info Target for platform $(Platform) is $(Target))
-  PlatformDir=$(OutDir)target-$(PlatformBase)
-  $(PlatformDir): | $(OutDir)
-	mkdir $@
-  AppBaseName=$(PlatformDir)/$(Worker)-$(Platform)
-  PromName=$(AppBaseName).mcs
-  BitName=$(AppBaseName).bit
-  NgdName=$(AppBaseName).ngd
-  NgcName=$(PlatformDir)/mkOCApp4B.ngc
-  MapName=$(AppBaseName)_map.ncd
-  ParName=$(AppBaseName)_par.ncd
-  ChipScopeName=$(AppBaseName)_csi.ngc
-  PcfName=$(AppBaseName).pcf
-
-
-ifdef PROMARGS
-platform: $(PromName) 
+################################################################################
+# At this point we have basically built the app cores, and if needed, the
+# black box libraries, and we have recursed for the various tools.
+# (i.e. run make per tool, with all the targets for a tool built in one "make").
+# Now we build the container core on top of the app, only for synthesis.
+ifndef HdlSkip
+ifdef HdlSimTool
+$(info No container core built for simulation tool $(HdlToolSet))
 else
-platform: $(BitName)
-endif
 ifndef Container
 Container=mkOCApp-noADC-3w.v
 endif
-ContainerRtl=$(OCPI_HDL_PLATFORMS_DIR)/../containers/$(Container)
-# FIXME:  App must specify this wrapper file until...?
-APP_RTL=$(PlatformDir)/mkOCApp.v
-$(APP_RTL): $(ContainerRtl) Makefile | $(PlatformDir)
-	$(AT)sed s/ocpi_app/$(Worker)/ $(ContainerRtl) > $@
+ContainerRtl=$(HdlPlatformsDir)/../containers/$(Container)
+# Too bad we can't reuse what is in hdl-core2.mk
+ContainerModule:=mkOCApp4B
+define DoContainer
 
-ifndef OCPI_XILINX_TOOLS_DIR
-XilinxVersions=$(shell echo $(wildcard /opt/Xilinx/*/ISE_DS) | tr ' ' '\n' | sort -r)
-OCPI_XILINX_TOOLS_DIR=$(firstword $(XilinxVersions))
-endif
+$(OutDir)target-$(1)/$(Worker)_bb/$(call HdlToolLibRef,$(Worker)_bb,$(1)):
+	$(AT)ln -s . $(OutDir)target-$(1)/$(Worker)_bb/$(1)
+
+$(OutDir)target-$(1)/$(Worker):
+	$(AT)mkdir $$@
+
+$(OutDir)target-$(1)/$(Worker)/$(call HdlToolLibRef,$(Worker)_bb,$(1)): \
+   | $(OutDir)target-$(1)/$(Worker)
+	$(AT)ln -s .. $(OutDir)target-$(1)/$(Worker)/$(1)
+
+Containers+=$(OutDir)target-$(1)/$(ContainerModule).v
+$(OutDir)target-$(1)/container.v: | $(OutDir)target-$(1)
+ContainerCores+=$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin)
+$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): Core=$(ContainerModule)
+$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): Top=$(ContainerModule)
+$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): Cores=$(OutDir)target-$(1)/$(Worker)
+$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): LibName=$(ContainerModule)
+$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): override HdlTarget:=$(1)
+$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): TargetDir=$(OutDir)target-$(1)
+$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): | $$$$(TargetDir)
+$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): HdlSources=$(OutDir)target-$(1)/$(ContainerModule).v
+$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): \
+   $(OutDir)target-$(1)/$(ContainerModule).v \
+   $(OutDir)target-$(1)/$(Worker)_bb/$(call HdlToolLibRef,$(Worker)_bb,$(1)) \
+   | $(OutDir)target-$(1)/$(Worker)/$(call HdlToolLibRef,$(Worker)_bb,$(1))
+	$(AT)echo Building container core \"$(ContainerModule)\" for target \"$$(HdlTarget)\"
+	$(AT)$$(HdlCompile)
+endef
+
+#$(info HAT=$(HdlActualTargets)=)
+$(foreach t,$(HdlActualTargets),$(eval $(call DoContainer,$(t),$(Core)_cont)))
+# Make copies of the container for each target dir changing
+# the app module name from "ocpi_app" to the specific one.
+$(Containers): $(ContainerRtl) Makefile
+	$(AT)sed s/ocpi_app/$(Worker)/ $(ContainerRtl) > $@
+all: $(ContainerCores)
+
+################################################################################
+# Generate the per-platform files into platform-specific target dirs
 InitXilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh > /dev/null
 XilinxAfter=grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
 	     if grep -q $2 $1.out; then \
@@ -199,157 +175,82 @@ XilinxAfter=grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
 	       exit 1; \
 	     fi
 # Use default pattern to find error string in tool output
-DoXilinx=$(call DoXilinxPat,$1,$2,'Number of error.*s: *0')
+DoXilinx=$(call DoXilinxPat,$1,$2,$3,'Number of error.*s: *0')
 DoXilinxPat=\
-	echo " "Details in $1.out; cd $(PlatformDir); $(InitXilinx); \
-	echo Command: $1 $2 > $1.out; \
-	/usr/bin/time -f %E -o $1.time sh -c "$1 $2; echo $$? > $1.status" >> $1.out 2>&1;\
+	echo " "Details in $1.out; cd $(call PlatformDir,$2); $(InitXilinx); \
+	echo Command: $1 $3 > $1.out; \
+	/usr/bin/time -f %E -o $1.time sh -c "$1 $3; echo $$? > $1.status" >> $1.out 2>&1;\
 	(echo -n Time:; cat $1.time) >> $1.out; \
-	$(call XilinxAfter,$1,$3)
+	$(call XilinxAfter,$1,$4)
+PlatformDir=$(OutDir)target-$1
+AppName=$(Worker)-$1
+#AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)
+PromName=$(call PlatformDir,$1)/$(call AppName,$1).mcs
+BitName=$(call PlatformDir,$1)/$(call AppName,$1).bit
+BitZName=$(call PlatformDir,$1)/$(call AppName,$1).gz
+NgdName=$(call PlatformDir,$1)/$(call AppName,$1).ngd
+AppNgcName=$(OurDir)target-$(call HdlGetFamily,$(call HdlGetPart,$1))/$(ContainerModule).ngc
+MapName=$(call PlatformDir,$1)/$(call AppName,$1)_map.ncd
+ParName=$(call PlatformDir,$1)/$(call AppName,$1)_par.ncd
+ChipScopeName=$(call PlatformDir,$1)/$(call AppName,$1)_csi.ngc
+PcfName=$(call PlatformDir,$1)/$(call AppName,$1).pcf
+TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
 
-# This creates a path for the bb library
-$(PlatformDir)/$(Worker):
-	$(AT)mkdir $@
-	$(AT)ln -s ../../target-$(Target)/$(Worker) $@/$(Family)
+define DoPlatform
 
-# This creates a path for the core search (-sd)
-$(PlatformDir)/$(Target): | $(PlatformDir)
-	$(AT)mkdir $@
-	$(AT)ln -s ../../target-$(Target)/ $@
-
-# This is the container core.  One level above the app.
-$(NgcName): Top=mkOCApp4B
-$(NgcName): | $(PlatformDir)/$(Worker)
-$(NgcName): Core=mkOCApp4B
-$(NgcName): LibName=work
-$(NgcName): Cores=target-$(Family)/$(Worker)
-$(NgcName): Libraries=
-#$(NgcName): ComponentLibraries=
-$(NgcName): TargetDir=$(PlatformDir)
-$(NgcName): $(BBLib) $(CoreBaseName) $(APP_RTL) | $(PlatformDir)/$(Target) $(CoreLink)
-	$(AT)echo Building $@: container core for application '"$(AppName)"' on platform '"$(Platform)"' using '"xst"'
-	$(AT)$(Compile)
-
-#$(TopNgcName): $(NgcName)
-#	$(AT)echo Building top-level ngc for application '"$(AppName)"' on platform '"$(Platform)"' using '"xst"' tar =$@= +$(NgcName)+
-#	$(AT)$(call DoXilinx,ngcbuild,-sd . \
-                $(foreach l,$(ComponentLibraries),-sd $(call FindRelative,$(PlatformDir),$(l)/lib/hdl/$(Target)))\
-		$(foreach c,$(Cores),-sd $(call FindRelative,$(PlatformDir),$(call CoreRefDir,$(c),$(Target))))\
-	        -aul -aut -uc $(PlatformSpecDir)/$(Platform).ucf -p $(Target) $(notdir $(ChipScopeName)) $(notdir $(NgdName)))
-
-#$(NgcName): XstExtraOptions=-iobuf yes -bufg 32
-#$(NgcName): XstInternalOptions=$(if $(wildcard $(PlatformSpecDir)/$(Platform).xcf),-uc $(PlatformSpecDir)/$(Platform).xcf,)
-
-#$(AT)($(foreach i,$(ALL_RTLS),echo verilog work "$(call FindRelative,$(PlatformDir),$(i))";)) > $(PlatformDir)/fpgaTop.prj
-#$(AT)(echo bsv=$(call FindRelative,$(PlatformDir),$(OCPI_CDK_DIR)/lib/hdl/bsv/$(Family)) ;\
-#      echo util=$(call FindRelative,$(PlatformDir),$(OCPI_CDK_DIR)/lib/hdl/util/$(Family)); \
-#	      echo util_$(Family)=$(call FindRelative,$(PlatformDir),$(OCPI_CDK_DIR)/lib/hdl/util_$(Family)/$(Family)); \
-#	      echo app=$(call FindRelative,$(PlatformDir),$(TargetDir)/work)) > $(PlatformDir)/fpgaTop.ini
-#	$(AT)(echo bsv; echo util; echo util_$(Family); echo app; echo work) > $(PlatformDir)/fpgatop.lso
-#$(call DoXilinx,xst,-ifn $(PlatformSpecDir)/$(Platform).xst)
-
-# Chipscope insertion (optional)
-$(ChipScopeName): $(NgcName)
-	$(AT)$(if $(DoChipScope), \
-	         echo -n For $(Worker) on $(Platform): inserting chipscope into $< to produce $@ using '"inserter"'.; \
-	         $(call DoXilinx,inserter,-insert $(CSIN) -p $(Target) -i $(notdir $(NgcName)) $(notdir $(ChipScopeName))), \
-	         echo Skipping chipscope insertion as it is disabled. ; \
-	         cp $< $@)
-
-# Reduce synthesis to Xilinx primitives
-TopNgcName=$(PlatformSpecDir)/target-$(Platform)/$(Platform).ngc
-$(NgdName): Cores=
-$(NgdName): $(NgcName) $(PlatformSpecDir)/$(Platform).ucf $(TopNgcName)
-	$(AT)echo -n For $(Worker) on $(Platform): creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
-	$(AT)$(call DoXilinx,ngdbuild,\
-	        -aul -aut -uc $(PlatformSpecDir)/$(Platform).ucf -p $(Target) \
-	        $(call FindRelative,$(PlatformDir),$(PlatformSpecDir)/target-$(Platform))/$(Platform).ngc $(notdir $(NgdName)))
-
+$(call NgdName,$1): $(call AppNgcName,$1) $(HdlPlatformsDir)/$1/$1.ucf $(call TopNgcName,$1) | $(call PlatformDir,$1)
+	$(AT)echo -n For $(Worker) on $1: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
+	$(AT)$(call DoXilinx,ngdbuild,$1,\
+	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
+	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgdName,$1)))
 # Map to physical elements
-$(MapName): $(NgdName)
-	$(AT)echo -n For $(Worker) on $(Platform): creating mapped NCD '(Native Circuit Description)' file using '"map"'.
-	$(AT)$(call DoXilinx,map,-p $(Target) -w -logic_opt on -xe n -mt on -t 1 -register_duplication on \
-	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(MapName)) \
-	                         $(notdir $(NgdName)) $(notdir $(PcfName)))
+$(call MapName,$1): $(call NgdName,$1)
+	$(AT)echo -n For $(Worker) on $1: creating mapped NCD '(Native Circuit Description)' file using '"map"'.
+	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$1) -w -logic_opt on -xe n -mt on -t 1 -register_duplication on \
+	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(call MapName,$1)) \
+	                         $(notdir $(call NgdName,$1)) $(notdir $(call PcfName,$1)))
 
 # Place-and-route, and generate timing report
-$(ParName): $(MapName) $(PcfName)
-	$(AT)echo -n For $(Worker) on $(Platform): creating PAR\'d NCD file using '"par"'.
-	$(AT)$(call DoXilinx,par,-w -xe n $(notdir $(MapName)) $(notdir $(ParName)) $(notdir $(PcfName)))
-	$(AT)echo -n Generating timing report '(TWR)' for $(Platform) platform design.
-	$(AT)-$(call DoXilinx,trce,-v 20 -fastpaths -xml fpgaTop.twx -o fpgaTop.twr $(notdir $(ParName)) $(notdir $(PcfName)))
+$(call ParName,$1): $(call MapName,$1) $(call PcfName,$1)
+	$(AT)echo -n For $(Worker) on $1: creating PAR\'d NCD file using '"par"'.
+	$(AT)$(call DoXilinx,par,$1,-w -xe n $(notdir $(call MapName,$1)) \
+		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
+	$(AT)echo -n Generating timing report '(TWR)' for $1 platform design.
+	$(AT)-$(call DoXilinx,trce,$1,-v 20 -fastpaths -xml fpgaTop.twx \
+		-o fpgaTop.twr \
+		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
 
 # Generate bitstream
-$(BitName): $(ParName) $(PcfName)
-	$(AT)echo -n For $(Worker) on $(Platform): Generating bitstream file $@.
-	$(AT)$(call DoXilinxPat,bitgen,-f $(OCPI_HDL_PLATFORMS_DIR)/common/bitgen_bit.ut \
-	                               $(notdir $(ParName)) $(notdir $(BitName)) $(notdir $(PcfName)),\
-	                               'DRC detected 0 errors')
+$(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
+	$(AT)echo -n For $(Worker) on $1: Generating bitstream file $@.
+	$(AT)$(call DoXilinxPat,bitgen,$1,-f $(HdlPlatformsDir)/common/bitgen_bit.ut \
+                $(notdir $(call ParName,$1)) $(notdir $(call BitName,$1)) \
+		$(notdir $(call PcfName,$1)), 'DRC detected 0 errors')
 
-$(PromName): $(BitName) | $(PlatformDir)
-	$(AT)echo -n For $(Worker) on $(Platform): Generating PROM file $@.
-	$(AT)$(call DoXilinxPat,promgen, -w -p mcs -c FF $(PROMARGS) $(notdir $(BitName)),'.*')
+$(call BitZName,$1): $(call BitName,$1)
+	$(AT)echo Making compressed bit file: $@
+	$(AT)gzip $(call BitName,$1)
+
+
+-include $(HdlPlatformsDir)/$1/$1.mk
+ifdef HdlPromArgs_$1
+$(call PromName,$1): $(call BitName,$1)
+	$(AT)echo -n For $(Worker) on $1: Generating PROM file $@.
+	$(AT)$(call DoXilinxPat,promgen,$1, -w -p mcs -c FF $$(HdlPromArgs_$1) $(notdir $(call BitName,$1)),'.*')
+#$$(info have prom for $1=$$(HdlPromArgs_$1)=)
+all: $(call PromName,$1)
+endif
+
+all: $(call BitZName,$1)
+
+endef
+
+$(foreach p,$(HdlPlatforms),$(eval $(call DoPlatform,$(p))))
+
+endif # of else of ifdef HdlSimTool
 
 clean::
 	rm -r -f fpgaTop*.* *.out *.time *.status xst 
 
+endif # end of HDL skip
 
-
-endif
-
-ifneq (,)
-$(LibDir): | $(OutDir)lib
-$(LibDir)/$(Target): | $(LibDir)
-$(LibDir) $(OutDir)lib $(LibDir)/$(Target) $(GeneratedDir)/hdl:
-	mkdir $@
-
-all: $(OutDir)/$(Target)/$(Worker).ngc
-
-$(LibDir)/$(Target)/$(Worker).ngc:
-	ln -s $(notdir $(BinaryFile)) $@
-all: | $(LibDir)/$(Target)
-endif
-CompiledSourceFiles+=$(GeneratedDir)/$(Worker)$(SourceSuffix)
-#$(info XML1 $(XmlIncludeDirs))
-override XmlIncludeDirs += $(ComponentLibraries:%=%/lib/hdl) $(ComponentLibraries:%=%/lib) $(OCPI_HDL_PLATFORMS_DIR)/common
-#$(info XML2 $(XmlIncludeDirs))
-# We generate the verilog assembly based on the "implementation XML" which is HdlAssembly
-$(GeneratedSourceFiles): $(ImplXmlFiles) | $(GeneratedDir)
-	$(AT)echo Generating the application source file: $@
-	$(AT)$(OcpiGen) -a  $<
-	$(AT)mv $(GeneratedDir)/$(Worker)_assy.v $@
-
-
-ifdef Containers
-define doContainer
-$(GeneratedDir)/$(1)_art.xml: override XmlIncludeDirs += ../../devices/specs
-$(GeneratedDir)/$(1)_art.xml: $(1).xml $(AppName).xml
-	$(AT)echo Generating the container/bitstream runtime xml file: $$@
-	$(AT)$$(OcpiGen) -A -h $(1).xml $(AppName).xml
-
-all: $(GeneratedDir)/$(1)_art.xml
-endef
-$(foreach c,$(Containers),$(eval $(call doContainer,$(c))))
-endif
-
-CleanFiles += $(OutDir)lib
-# Build the stub library
-ifneq (,)
-all: $(LibDir)/$(call LibraryAccessTarget,$(Target))/$(call LibraryFileTarget,$(Target))
-
-$(LibDir)/$(call LibraryAccessTarget,$(Target))/$(call LibraryFileTarget,$(Target)): $(DefsFiles) | $(GeneratedDir)/hdl
-	$(AT)echo Building HDL stub libraries for this component library
-	$(AT)$(MAKE) -C $(OutDir)gen/hdl -L \
-		-f $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk LibName=work \
-		SourceFiles=$(call AdjustRelative2,$(DefsFiles)) \
-		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) \
-		Targets=$(call LibraryAccessTarget,$(Target)) LibName=app
-	$(AT)$(foreach f,$(call LibraryAccessTarget,$(Target)),\
-		echo Exporting the stub library for the app $(AppName) target $(f);\
-		rm -r -f $(LibDir)/$(f);\
-		mkdir $(LibDir)/$(f);\
-		cp -r -p $(GeneratedDir)/hdl/$(f)/app/* $(LibDir)/$(f);)
-
-endif
-endif
-endif

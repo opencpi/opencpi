@@ -34,6 +34,9 @@
 #
 ########################################################################### #
 
-Targets=xc5vlx50t-1-ff1136 xc5vsx95t-2-ff1136
-ImportCore=$(OCPI_HDL_IMPORTS_DIR)/coregen/ddc-4243-4ch-v5/duc_ddc_compiler_v1_0.ngc
+ExcludeTargets=virtex6 icarus
+SimLibraries=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
+ImportCore=$(OCPI_HDL_IMPORTS_DIR)/coregen/ddc_4243_4ch_v5/duc_ddc_compiler_v1_0.ngc
+# For simulation, overridden by ImportCore for synthesis
+Imports=$(OCPI_HDL_IMPORTS_DIR)/coregen/ddc_4243_4ch_v5/duc_ddc_compiler_v1_0.v
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk

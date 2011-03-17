@@ -36,7 +36,11 @@
 
 # This library is for v5-specific primitives, that may shadow things in other libraries
 # Pick only what we need for now since the libsrc/hdl/ocpi is a kitchen sink
-Targets=virtex5
+SimLibraries=\
+ $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
+SimFiles=\
+ $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
+OnlyTargets=virtex5 isim
 Imports=$(foreach i,Ethernet_v5 xilinx_v5_pcie_wrapper,$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/$(i).v)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives
 

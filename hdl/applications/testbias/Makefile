@@ -35,12 +35,9 @@
 ########################################################################### #
 
 # Which component libraries should be referenced to build this app?
+Libraries=bsv util
 ComponentLibraries=../../../components
 # For which containers should the runtime xml be generated?
 # These (for now) just xml files containing HdlContainer elements.
 Containers=testbiasCont
-#Targets=xc6vlx240t-1-ff1156
-#Target=xc5vlx50t-ff1136-1
-#Target=xc5vsx95t-2-ff1136
-Platforms=ml555 ml605 shist
 include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk

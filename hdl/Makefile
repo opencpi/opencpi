@@ -1,26 +1,32 @@
 # Make the hdl assets
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+
+MyMake=echo ===================$(or $(3),Making) HDL $(1); $(MAKE) --no-print-directory HdlTargets="$(HdlTargets)" -C $(2)$(1)
 .PHONY: primitives devices platforms components applications
 ifndef OCPI_CDK_DIR
 export OCPI_CDK_DIR=$(shell pwd)/../ocpi
 $(info Setting OCPI_CDK_DIR to $(OCPI_CDK_DIR))
 endif
+all:applications
+
 applications: platforms components
-	$(AT)$(MAKE) -C applications
+	$(AT)$(call MyMake,applications) Platforms=$(Platforms)
 
 components: primitives
-	$(AT)$(MAKE) -C ../components hdl
+	$(AT)$(call MyMake,components,../) hdl
 
 devices: primitives
-	$(AT)$(MAKE) -C devices
+	$(AT)$(call MyMake,devices)
 
 platforms: primitives devices
-	$(AT)$(MAKE) -C platforms
+	$(AT)$(call MyMake,platforms) Platforms=$(Platforms)
 
 primitives:
-	$(AT)$(MAKE) -C primitives
+	$(AT)$(call MyMake,primitives)
 
 clean:
-	$(AT)for i in primitives devices platforms applications; do \
-		$(MAKE) -C $$i clean; \
+	$(AT)for i in primitives devices platforms; do \
+		$(call MyMake,$$i,,Cleaning) clean; \
 		done
-	$(AT)$(MAKE) -C ../components cleanhdl
+	$(AT)$(call MyMake,components,../,Cleaning) cleanhdl
+	$(AT)$(call MyMake,applications,,Cleaning) clean

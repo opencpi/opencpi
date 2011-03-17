@@ -35,29 +35,25 @@
 ########################################################################### #
 
 # A component library, consisting of different models built for different targets
-# The expectation is that a library has spec XML in the top level, and subdirectories for each implementation.
+# The expectation is that a library has spec XML in the top level "specs" dir,
+# and subdirectories for each implementation.
 # Active implementations are lists in the Implementations variable
-# This this makefile just names the library and lists implementations to be built.
-# The name of an implementation subdirectory includes its authoring model as the file extension.
-# This specification of model is redundant with the "include" line in the makefile inside the directory
+# Thus this makefile just names the library and lists implementations to be built.
+# The name of an implementation subdirectory includes its authoring model as the
+# file extension.
 # We also list the targets per model.
-# A component library, consisting of different models built for different targets
-include $(OCPI_CDK_DIR)/include/util.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 ifndef LibName
 LibName=$(CwdName)
 endif
 # we need to factor the model-specifics our of here...
-include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))
 HdlImplementations=$(filter %.hdl,$(Implementations))
 LibDir=$(OutDir)lib
 GenDir=$(OutDir)gen
-Models=xm rcc hdl
-CapModels=$(foreach m,$(Models),$(call Capitalize,$(m)))
-LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call UnCapitalize,$(m))/$(ht)))
+#LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call UnCapitalize,$(m))/$(ht)))
 XmlIncludeDirs+=specs
-export AT
 # default is what we are running on
 
 build_targets := speclinks
@@ -73,26 +69,26 @@ endif
 ifneq "$(HdlTargets)" ""
 build_targets += hdl
 endif
-
+$(call OcpiDbgVar,build_targets)
 # function to build the targets for an implemention.
 #  First arg is model
 #  second is implementation directory
-ifdef OCPI_COMPONENT_OUT_DIR 
-PassOutDir=OCPI_COMPONENT_OUT_DIR=$(call AdjustRelative,$(OutDir:%/=%))
+ifdef OCPI_OUTPUT_DIR 
+PassOutDir=OCPI_OUTPUT_DIR=$(call AdjustRelative,$(OutDir:%/=%))
 endif
+MyMake=$(MAKE) --no-print-directory
 BuildImplementation=\
-    set -e; for t in $($(call Capitalize,$(1))Targets); do \
-	if ! test -d $(LibDir)/$(1)/$$t; then \
-            mkdir $(LibDir)/$(1)/$$t; \
-	fi; \
-        $(ECHO) Building $(call ToUpper,$(1)) implementation $(2) for target $$t; \
-	$(MAKE) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) Target=$$t \
+    set -e; \
+    tn="$(call Capitalize,$(1))Targets"; \
+    t="$($(call Capitalize,$(1))Targets)"; \
+    $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for targets $$t; \
+    $(MyMake) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
+               $$tn="$$t" \
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
                VerilogIncludeDirs=$(call AdjustRelative,$(VerilogIncludeDirs)) \
-               XmlIncludeDirsInternal=$(call AdjustRelative,$(XmlIncludeDirs));\
-    done; \
+               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
 
 BuildModel=\
 	$(AT)set -e;if test "$($(call Capitalize,$(1))Implementations)"; then \
@@ -107,24 +103,24 @@ BuildModel=\
         fi
 
 CleanModel=\
-	$(AT)if test "$($(call Capitalize,$(1))Implementations)"; then \
-	  for i in $($(call Capitalize,$(1))Implementations); do \
-		if test -d $$i; then \
-			for t in $($(call Capitalize,$(1))Targets); do \
-				$(ECHO) Cleaning $(call ToUpper,$(1)) implementation $$i for target $$t; \
-				$(MAKE) -C $$i $(PassOutDir) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) Target=$$t clean; \
-			done; \
-		fi;\
-	  done; \
-        fi
+  $(AT)if test "$($(call Capitalize,$(1))Implementations)"; then \
+    for i in $($(call Capitalize,$(1))Implementations); do \
+      if test -d $$i; then \
+	tn=$(call Capitalize,$(1)); \
+        t="$($(call Capitalize,$(1))Targets)"; \
+        $(ECHO) Cleaning $(call ToUpper,$(1)) implementation $$i for targets $$t; \
+	$(MyMake) -C $$i $(PassOutDir) \
+           OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) $$tn="$$t" clean; \
+      fi;\
+    done; \
+  fi
 
 all: $(build_targets)
 
+$(OutDir)lib:
+	$(AT)mkdir $@
 speclinks: | $(OutDir)lib
 	$(AT)$(foreach f,$(wildcard specs/*_spec.xml) $(wildcard specs/*_protocol*.xml),$(call MakeSymLink,$(f),$(OutDir)lib);)
-
-$(OutDir)lib $(OutDir)gen: |$(OutDir)
-	$(AT)mkdir $@
 
 $(Models:%=$(OutDir)lib/%): | $(OutDir)lib
 	$(AT)mkdir $@
@@ -136,31 +132,22 @@ xm: speclinks $(XmImplementations)
 
 rcc: speclinks $(RccImplementations)
 
-# The stubs library depend only on the generated hdl defs files
-# Someday we'll need the VHDL -or- Verilog defs files
-define DoDefs
-hdldefs+=$(1).hdl/gen/$(1)_defs.vh
-$(1).hdl/gen/$(1)_defs.vh: $(1).hdl
-endef
-$(foreach i,$(HdlImplementations),$(eval $(call DoDefs,$(firstword $(subst ., ,$(i))))))
+# this is HDL-specific:  for some HDL targets, we need to build a stub library
+# so that higher level builds can reference cores using such a library.
+# (e.g. xilinx xst).
+# We have all the empty module definitions in the "gen/hdl" directory.
+MyHdlMake=$(MyMake) HdlTargets="$(HdlTargets)"
+hdlstubs: $(HdlImplementations)
+	$(AT)echo Building HDL stub libraries for this component library \($(LibName)\)
+	$(AT)echo include \
+	  $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk > \
+	  $(GenDir)/hdl/Makefile
+	$(AT)$(MyHdlMake) -C $(GenDir)/hdl -L LibName=$(LibName) \
+		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) \
+		HdlInstallLibDir=$(call AdjustRelative2,$(LibDir)/hdl/stubs) \
+		stublibrary
 
-define DoFamily
-hdlstubs+=$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName))
-$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName)): Family=$(1)
-$(LibDir)/hdl/$(1)/$(call LibraryFileTarget,$(1),$(LibName)): $(hdldefs) | $(LibDir) $(LibDir)/hdl $(GenDir)/hdl
-	$(AT)echo Building HDL stub library for $(1) for this component library: \"$(LibName)\"
-	$(AT)$(MAKE) -C $(GenDir)/hdl -L -f $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk \
-		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) LibName=$(LibName) Targets=$(1)
-	$(AT)echo Exporting the stub library for $(1)
-	$(AT)rm -r -f $(LibDir)/hdl/$(1)
-	$(AT)mkdir $(LibDir)/hdl/$(1)
-	$(AT)cp -r -p $(GenDir)/hdl/target-$(1)/$(LibName)/* $(LibDir)/hdl/$(1)
-endef
-$(foreach f,\
-          $(sort $(foreach t,$(HdlTargets),$(call LibraryAccessTarget,$(t)))),\
-	  $(eval $(call DoFamily,$(f))))
-
-hdl: speclinks $(HdlImplementations) $(hdlstubs)
+hdl: speclinks $(HdlImplementations) hdlstubs
 
 cleanxm:
 	$(call CleanModel,xm)
@@ -185,3 +172,46 @@ $(XmImplementations): | $(OutDir)lib/xm
 	$(AT)$(call BuildImplementation,xm,$@)
 
 .PHONY: $(XmImplementations) $(RccImplementations) $(HdlImplementations) speclinks
+
+# Worker should only be specified when the target is "new".
+ifeq ($(origin Worker),command line)
+ifneq ($(MAKECMDGOALS),new)
+$(error You can't set the "Worker" variable unless the make goal is "new")
+endif
+Words:=$(subst ., ,$(Worker))
+$(if $(or $(word 3,$(Words)),$(strip \
+          $(if $(word 2,$(Words)),,ok))), \
+     $(error The Worker must be of the form "Worker=name.model"))
+Model:=$(word 2,$(Words))
+ifeq ($(findstring $(Model),$(Models)),)
+$(error The suffix of "$(Worker)", which is "$(Model)" doesn't match any known model.)
+endif
+ifneq ($(wildcard $(Worker)),)
+$(error The worker "$(Worker)" already exists)
+endif
+Name:=$(word 1,$(Words))
+UCModel=$(call ToUpper,$(Model))
+SpecName:=$(Name)_spec.xml
+ifeq ($(wildcard specs/$(SpecName)),)
+$(error Can't create worker $(Worker) when specs/$(SpecName) doesn't exist)
+endif
+else ifdef Worker
+$(error Worker definition invalid)
+endif
+new:
+	$(AT)$(if $(Worker),,\
+	   $(error The "Worker=" variable must be specified when "new" is specified))\
+	  echo Creating worker named $(Worker).
+	$(AT)mkdir $(Worker)
+	$(AT)echo include $$\(OCPI_CDK_DIR\)/include/worker.mk > $(Worker)/Makefile
+	$(AT)(\
+	  echo '<$(UCModel)Implementation>';\
+	  echo '  <xi:include href="$(SpecName)"/>';\
+	  echo '</$(UCModel)Implementation>') > $(Worker)/$(Name).xml
+	$(AT)echo Building worker to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model))
+	$(AT)$(MAKE) -C $(Worker) \
+		OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
+		XmlIncludeDirs=../specs \
+		Worker=$(Name)
+
+#		skeleton

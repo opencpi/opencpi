@@ -35,12 +35,13 @@
 ########################################################################### #
 
 # Makefile for an RCC worker
+include $(OCPI_CDK_DIR)/include/util.mk
 Model=rcc
 # Default is that you are building in a subdirectory of all implementations
 # Target:=$(shell uname -s)=$(shell uname -r)=$(shell uname -p)=gcc=$(shell gcc -dumpversion)=$(shell gcc -dumpmachine)
-ImplSuffix=_Worker.h
-SkelSuffix=_skel.c
-SourceSuffix=.c
+RccImplSuffix=_Worker.h
+RccSkelSuffix=_skel.c
+RccSourceSuffix=.c
 OBJ:=.o
 
 ifeq ($(shell uname),Linux)
@@ -64,23 +65,39 @@ ArtifactFile=$(BinaryFile)
 ArtifactXmlFile = $(GeneratedDir)/$(word 1,$(Workers))_art.xml
 GCC=gcc
 GCCLINK=gcc
-#$(info Target is $(Target))
-ifeq ($(Target),Linux-MCS_864x)
+ifneq ($(RccTargets),)
+RccTarget:=$(RccTargets)
+endif
+ifeq ($(RccTarget),Linux-MCS_864x)
 GCC=/opt/timesys/toolchains/ppc86xx-linux/bin/ppc86xx-linux-gcc
 GCCLINK=$(GCC)
-else ifeq ($(Target),Linux-x86_32)
+else ifeq ($(RccTarget),Linux-x86_32)
 GCC=gcc -m32
 GCCLINK=gcc -m32 -m elf_i386
 else
-Target=$(HostTarget)
+RccTarget=$(HostTarget)
 endif
-
-
-OcpiLibDir=$(OCPI_CDK_DIR)/../lib/$(Target)-bin
-LinkBinary=$(GCCLINK) $(SharedLibLinkOptions) -o $@ $(ObjectFiles) \
+$(call OcpiDbgVar,RccTarget)
+ifeq ($(RccTargets),)
+RccTargets=$(RccTarget)
+endif
+ToolSeparateObjects:=yes
+OcpiLibDir=$(OCPI_CDK_DIR)/../lib/$(RccTarget)-bin
+LinkBinary=$(GCCLINK) $(SharedLibLinkOptions) -o $$@ \
 $(OtherLibraries) $(AEPLibraries) \
-$(foreach ol,$(OcpiLibraries),$(or $(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
-Compile_c=$(GCC) -MMD -MP -MF $(TargetDir)/$$(@F).deps -c -Wall -Wextra -g $(SharedLibCompileOptions) $(IncludeDirs:%=-I%) -o $$@ $$<
+$(foreach ol,$(Libraries),$(or $(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
+CompilerWarnings= -Wall -Wextra
+CompilerDebugFlags=-g
+CompilerOptimizeFlags=-O
+ifeq ($(OCPI_DEBUG),1)
+CompilerOptions=$(CompilerDebugFlags)
+else
+CompilerOptions=$(CompilerOptimizeFlags)
+endif
+Compile_c=\
+  $(GCC) -MMD -MP -MF $(TargetDir)/$$(@F).deps -c \
+  $(CompilerWarnings) $(CompilerOptions) \
+  $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$<
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 

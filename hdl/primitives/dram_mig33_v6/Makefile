@@ -36,14 +36,14 @@
 
 # This core was generated for one target
 Top=v6_mig33
-Targets=xc6vlx240t-1-ff1156
+OnlyTargets=xc6vlx240t
 Imports= \
- $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v6-mig34/mig_v3_4/user_design/rtl/controller/*.v \
- $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v6-mig34/mig_v3_4/user_design/rtl/ecc/*.v \
- $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v6-mig34/mig_v3_4/user_design/rtl/ip_top/*.v \
- $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v6-mig34/mig_v3_4/user_design/rtl/phy/*.v \
- $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v6-mig34/mig_v3_4/user_design/rtl/ui/*.v \
- $(OCPI_HDL_IMPORTS_DIR)/coregen/dram-v6-mig34/iodelay_ctrl_eco20100428.v \
+ $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34/mig_v3_4/user_design/rtl/controller/*.v \
+ $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34/mig_v3_4/user_design/rtl/ecc/*.v \
+ $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34/mig_v3_4/user_design/rtl/ip_top/*.v \
+ $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34/mig_v3_4/user_design/rtl/phy/*.v \
+ $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34/mig_v3_4/user_design/rtl/ui/*.v \
+ $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34/iodelay_ctrl_eco20100428.v \
  $(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/v6_mig34.v
 # Remove files that we have patched with other names
 ExcludeImports=iodelay_ctrl.v mig_v3_4.v

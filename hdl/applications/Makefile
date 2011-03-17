@@ -34,20 +34,36 @@
 #
 ########################################################################### #
 
-AT=@
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+
+# We make this sort of like building a component library because
+# for each application we are indeed making a "worker", and then we go
+# on to make bitstreams for platforms.
+LibDir=$(OutDir)lib
+GenDir=$(OutDir)gen
+ifndef OutDir
+ifdef OCPI_OUTPUT_DIR 
+PassOutDir=OutDir=$(call AdjustRelative,$(OutDir:%/=%))/$@
+endif
+endif
+
 Applications=testbias testpsd testddc 
 # These require adc/dac: demoappC demoappE
 # testwbr
 
-Platforms=shist ml555 ml605 
-Targets= xc5vsx95t-2-ff1136 xc6vlx240t-1-ff1156 xc5vlx50t-1-ff1136
-
-all: $(Platforms)
+all: $(Applications)
 
 .PHONY: $(Applications) $(Platforms) $(Targets) clean
 
 $(Applications):
-	$(AT)echo Building application $@ for all targets and platforms
+	$(AT)echo =============Building application $@ for all targets/platforms
+	$(AT)$(MAKE) -C $@ HdlPlatforms="$(HdlPlatforms)" \
+	       LibDir=$(call AdjustRelative,$(LibDir)) \
+	       GenDir=$(call AdjustRelative,$(GenDir)) \
+	       $(PassOutDir)
+
+
+ifneq (,)
 	$(AT)set -e;for t in $(Targets); do \
 		 echo Making $@ for target $$t. ; \
 		 make -C $@ Target=$$t; \
@@ -71,9 +87,11 @@ $(Platforms):
 		 echo Making $$a for platform $@. ; \
 		 make -C $$a Platform=$@; \
 	     done
+endif
 
 clean:
-	$(AT)set -e;for a in $(APPS); do \
-			echo Cleaning $$a ; \
-			make -C $$a clean; \
+	$(AT)set -e;for a in $(Applications); do \
+		echo Cleaning $$a ; \
+		$(MAKE) -C $$a clean; \
 		done
+	$(AT)rm -r -f $(LibDir) $(GenDir)

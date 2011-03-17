@@ -35,10 +35,10 @@
 ########################################################################### #
 
 # This core was generated for one target
-Targets=xc5vtx240t-1-ff1759
+OnlyTargets=xc5vlx110t
 Top=endpoint_blk_plus_v1_14
-ImportCore=$(OCPI_HDL_IMPORTS_DIR)/coregen/pcie-4243-v5-gtx-x8-125/endpoint_blk_plus_v1_14.ngc
-#ImportBlackBox=$(OCPI_HDL_IMPORTS_DIR)/coregen/pcie-4243-v5-gtx-x8-125/pci_exp_8_lane_64b_ep.v
+ImportCore=$(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v5_gtp_x1_125/endpoint_blk_plus_v1_14.ngc
+ImportBlackBox=$(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v5_gtp_x1_125/pci_exp_1_lane_64b_ep.v
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk # We are a (compiled) core
 
 

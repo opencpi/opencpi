@@ -38,30 +38,31 @@
 # reference to mkOCApp.  We build with combinations of devices (which are the
 # optional elements of the platform).
 
+HdlMode:=platform
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+# extra level of pre-filtering targets - we are only doing the ONE
+ifeq ($(origin HdlPlatforms),undefined)
+HdlPlatforms:=all
+endif
+ifneq ($(findstring all,$(HdlPlatforms)),)
+override HdlPlatforms:=$(CwdName)
+endif
+ifeq ($(findstring $(CwdName),$(HdlPlatforms)),)
+ $(info Platform $(CwdName) skipped.)
+else
+HdlExactPart:=$(HdlPart_$(CwdName))
+HdlPart:=$(call HdlGetPart,$(CwdName))
+$(call OcpiDbgVar,HdlPart)
+override HdlTargets:=$(HdlPart)
+$(call OcpiDbgVar,HdlTargets,After HdlGetPart )
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
-ifeq ($(Part),)
-$(error No "Part" specified for this platform)
-endif
-Parts=$(Part)
-ifndef Platform
-Platform=$(CwdName)
-endif
+LibName=$(CwdName)
+Core=$(CwdName)
+HdlPlatform:=$(CwdName)
+HdlTarget:=$(HdlActualTarget)
 Top=fpgaTop
-SourceFiles+=../../containers/mkOCApp_bb.v
+CompiledSourceFiles+=../../containers/mkOCApp_bb.v
+CompiledSourceFiles+=$(wildcard ../common/*.v)
 ComponentLibraries=../../devices
-Targets=$(Platform) $(foreach c,$(Configurations),$(Platform)-$(subst -, ,$(c)))
-$(info Platform: $(Platform) Targets: $(Targets))
-SourceFiles+=$(wildcard ../common/*.v)
-LibName=$(Platform)
-XstExtraOptions=-iobuf yes -bufg 32
-XstInternalOptions=-uc ../$(Platform).xcf
-NoBlackBoxLib=yes
-include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk
-ifneq (,)
-BBLinks=$(Targets:target-%=%/$(Family))
-$(BBLinks): | $(dir $(@))
-	ln -s . target-$(Platform)/$(Part)
-	ln -s ../target-$(Family) $@
-all: $(BBLinks)
+include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
 endif
-

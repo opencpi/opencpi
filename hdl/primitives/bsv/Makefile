@@ -36,6 +36,7 @@
 
 # This primitive library contains verilog primitive modules that are used
 # and usable by BSV code, and supplied by BSV.
+# All targets should be happy
 Imports=$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/bsv/*.[vV]
 ExcludeImports=main.v
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library

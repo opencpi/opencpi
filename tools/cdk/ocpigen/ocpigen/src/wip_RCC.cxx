@@ -384,6 +384,7 @@ emitSkelRCC(Worker *w, const char *outDir) {
   fprintf(f,
 	  "\n"
 	  "%s RCCResult\n%s(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {\n"
+	  "  (void)self;(void)timedOut;(void)newRunCondition;\n"
 	  "  return RCC_ADVANCE;\n"
 	  "}\n",
 	  w->pattern ? "extern" : "static", mName);

@@ -1,7 +1,6 @@
 # The ml605 platform.
 # Other aspects are in ml605.mk: those needed for final bitstream
-Part=xc6vlx240t-1-ff1156
-Cores=pcie_v6_x4_250
+Cores=pcie_4243_trn_v6_gtx_x4_250
 Libraries=bsv util_virtex6 util
 # Configurations=....
 SourceFiles=fpgaTop_ml605.v mkFTop_ml605.v 

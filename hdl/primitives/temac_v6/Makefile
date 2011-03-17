@@ -36,7 +36,9 @@
 
 # This core was generated for one target
 Top=v6_emac_v1_3_block
-Targets=xc6vlx240t-1-ff1156
+# Can't do icarus due to parsing problems and secure ip
+OnlyTargets=virtex6 isim 
+SimLibraries=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
 Imports=$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/Ethernet_v6.v
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk # We are a (compiled) core
 

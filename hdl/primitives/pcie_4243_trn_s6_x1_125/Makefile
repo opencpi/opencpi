@@ -35,13 +35,9 @@
 ########################################################################### #
 
 # This core was generated for one target
-Top=v6_pcie_v1_5
-Targets=xc6vlx240t-1-ff1156
-Imports= \
- $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie-4243-v6-x4-250/source/*.v \
- $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie-4243-v6-x4-250/v6_pcie_v1_5_eco20100428.v \
-# Remove files that we have patched with other names
-ExcludeImports=v6_pcie_v1_4.v v6_pcie_v1_5.v
+Top=s6_pcie_v1_2
+OnlyTargets=xc6slx45t
+Imports= $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_s6_x1_125/source/*.v
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk # We are a (compiled) core
 
 

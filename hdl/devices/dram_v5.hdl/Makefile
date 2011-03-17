@@ -36,5 +36,5 @@
 
 Libraries=bsv util
 Cores=dram_mig34_v5
-Targets=xc5vsx95t-2-ff1136
-include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+OnlyTargets=xc5vsx95t
+include $(OCPI_CDK_DIR)/include/worker.mk

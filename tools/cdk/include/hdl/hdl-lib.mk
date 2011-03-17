@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -34,61 +33,40 @@
 #
 ########################################################################### #
 
-# Define the SourceFiles variable in a directory full of sources.
-# This makefile will create precompiled libraries in both old (pre-v6) and new (v6+)
-# formats.  If this library is named "foo", then the created libraries will be in $(OutDir)virtex5/foo
-# and $(OutDir)virtex6/foo.  Then "make install" will install them in $(InstallDir)/lib/hdl/foo/virtex{5,6}
-# "Family" is used here when it isn't quite accurate.  We are really talking about pre-v6 and v6-post.
-# This file is xst-specific.  It should be split so the XST-specifics are elsewhere.
+# This file should be include in makefiles for hdl primitive libraries,
+# compiled from sources.  The idea is to as much precompilation as possible.
+# Some tools do more than others, but this is a LIBRARY, which means we are not
+# combining things together such that they can't be used separately.
+
+# Tell all the general purpose and toolset make scripts we are building libraries
+HdlMode:=library
+include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+.PHONY: stublibrary
+ifndef HdlSkip
 ifndef LibName
 LibName=$(CwdName)
 endif
-ifndef Targets
-# These libraries need to be built for "families", which really just means that the format of the library
-# depends on the target to some extent.
-Targets=virtex5 virtex6
+ifdef HdlToolNeedBB
+stublibrary: install
+else
+stublibrary:
+	$(AT)echo No stub library necessary for: $(HdlActualTargets)
 endif
-include $(OCPI_CDK_DIR)/include/hdl/hdl.mk
-Core=onewire
-CompiledSourceFiles:= $(OCPI_CDK_DIR)/include/hdl/onewire.v $(CompiledSourceFiles)
-WorkLibrarySources:=$(WorkLibrarySources) $(OCPI_CDK_DIR)/include/hdl/onewire.v
+include $(OCPI_CDK_DIR)/include/hdl/hdl-lib2.mk
 
-.SECONDEXPANSION:
-# Determine families based on targets
-OutLibFile=$(OutDir)target-$(1)/$(LibName)/$(call LibraryFileTarget,$(1))
-define DoFamily
-OutLibFiles+=$(call OutLibFile,$(1))
-$(call OutLibFile,$(1)): TargetDir=$(OutDir)target-$(1)
-$(call OutLibFile,$(1)): Target=$(1)
-endef
+# This can be overriden
+HdlInstallLibDir=$(HdlInstallDir)/$(LibName)
+$(HdlInstallLibDir):
+	$(AT)mkdir -p $@
 
-$(foreach f,$(Families),$(eval $(call DoFamily,$(f))))
+install: $(OutLibFiles) | $(HdlInstallLibDir)
+	$(AT)for f in $(HdlActualTargets); do \
+	  $(call ReplaceIfDifferent,$(strip \
+             $(OutDir)target-$$f/$(HdlToolLibraryResult)),$(strip \
+             $(HdlInstallLibDir)/$$f)); \
+	done
 
-ifdef Imports
-$(OutLibFiles): $(ImportsDir)
-endif
-$(OutLibFiles): $$(CompiledSourceFiles) | $$(TargetDir)
-	$(AT)echo Building the $(LibName) primitive library for $(Target)
-	$(Compile)
-
-all: $(OutLibFiles)
-
-#	$(AT)(for i in $(SourceFiles);\
-#		do echo verilog $(LibName) $(call FindRelative,$(OutDir)$(Family),.)/$$i;\
-#	      done;\
-#	      echo verilog work $(call FindRelative,$(OutDir)$(Family),$(OCPI_CDK_DIR)/include/hdl)/onewire.v)\
-#	         >$(OutDir)$(Family)/bsv.prj
-#	$(AT)echo -e set -xsthdpdir . \\n $(XstCmd) -ifn bsv.prj > $(OutDir)$(Family)/bsv.xst
-#	cd $(OutDir)$(Family); $(TIME) xst -ifn bsv.xst > xst.out; grep -i error xst.out
-
-install: | $(InstallDir)
-	$(AT)for f in $(Targets); do \
-	       if ! diff -q -r $(OutDir)target-$$f/$(LibName) $(InstallDir)/$$f >/dev/null; then \
-	         echo Installing primitive library $(LibName) for target: $$f; \
-	         rm -f -r $(InstallDir)/$$f; \
-		 cp -L -r -p $(OutDir)target-$$f/$(LibName) $(InstallDir)/$$f; \
-	       fi; \
-	     done
 ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk
+endif
 endif

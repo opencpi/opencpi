@@ -1,4 +1,3 @@
-
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -34,7 +33,75 @@
 #
 ########################################################################### #
 
-include $(OCPI_CDK_DIR)/include/util.mk
+# This file has the HDL tool details for xst
+
+include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
+
+################################################################################
+# $(call HdlToolLibraryFile,target,libname)
+# Function required by toolset: return the file to use as the file that gets
+# built when the library is built.
+HdlToolLibraryFile=$(strip \
+  $(2)/$(strip \
+    $(if $(filter virtex5,$(call HdlGetFamily,$(1))),hdllib.ref,$(2).sdbl)))
+################################################################################
+# Function required by toolset: given a list of targets for this tool set
+# Reduce it to the set of library targets.
+HdlToolLibraryTargets=$(sort $(foreach t,$(1),$(call HdlGetFamilies,$(t))))
+################################################################################
+# Variable required by toolset: what is the name of the file or directory that
+# is the thing created when a library is created. The thing that will be installed
+HdlToolLibraryResult=$(LibName)
+################################################################################
+# Variable required by toolset: HdlToolCoreLibName
+# What library name should we give to the library when a core is built from
+# sources
+HdlToolCoreLibName=work
+################################################################################
+# Variable required by toolset: HdlBin
+# What suffix to give to the binary file result of building a core
+HdlBin=.ngc
+################################################################################
+# Variable required by toolset: HdlToolRealCore
+# Set if the tool can build a real "core" file when building a core
+# I.e. it builds a singular binary file that can be used in upper builds.
+# If not set, it implies that only a library containing the implementation is
+# possible
+HdlToolRealCore=yes
+################################################################################
+# Variable required by toolset: HdlToolNeedBB=yes
+# Set if the tool set requires a black-box library to access a core
+HdlToolNeedBB=yes
+################################################################################
+# Function required by toolset: $(call HdlToolLibRef,libname)
+# This is the name after library name in a path
+# It might adjust (genericize?) the target
+HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
+
+
+################################################################################
+# $(call XstLibraryFileTarget2(target,libname)
+# Return the actual file to depend on when it is built
+XstLibraryFileTarget=$(if $(filter virtex5,$(call HdlGetFamily,$(1))),hdllib.ref,$(2).sdbl)
+XstLibraryCleanTargets=$(strip \
+  $(if $(filter virtex5,$(call HdlFamily,$(1))),hdllib.ref vlg??,*.sdb?))
+# When making a library, xst still wants a "top" since we can't precompile 
+# separately from synthesis (e.g. it can't do what vlogcomp can with isim)
+# Need to be conditional on libraries
+ifeq ($(HdlMode),library)
+ifeq ($(Core),)
+Core=onewire
+Top=onewire
+endif
+CompiledSourceFiles:= $(OCPI_CDK_DIR)/include/hdl/onewire.v $(CompiledSourceFiles)
+WorkLibrarySources:=$(WorkLibrarySources) $(OCPI_CDK_DIR)/include/hdl/onewire.v
+else ifeq ($(HdlMode),platform)
+XstExtraOptions=-iobuf yes -bufg 32
+XstInternalOptions=-uc ../$(HdlPlatform).xcf
+endif
+$(call OcpiDbgVar,Core)
+$(call OcpiDbgVar,HdlMode)
+
 # TODO: tempdir,xsthdpdir?, -p family vs part?, sim
 # XST parameters controlled by the user should NOT include these:
 # ifn:       because we generate the project file
@@ -105,65 +172,81 @@ $(call XstPruneOption,$(XstDefaultOptions)) $(XstExtraOptions) $(XstInternalOpti
 # BUT! the empty module declarations must be in the lso list so to get cores we need the bb in a library too.
 ifneq ($(Libraries)$(ComponentLibraries)$(Cores),)
 
-Family:=$(if $(findstring xc5,$(or $(Part),$(Target)))$(findstring virtex5,$(or $(Part),$(Target))),virtex5,virtex6)
 XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
 XstMakeIni=\
-  ($(foreach l,$(Libraries) $(Cores),\
-      echo $(lastword $(subst -, ,$(notdir $(l))))=$(call FindRelative,$(TargetDir),$(call LibraryRefDir,$(l),$(Family)));) \
-   $(foreach l,$(ComponentLibraries),echo $(notdir $(l))=$(strip $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(call LibraryAccessTarget,$(Family))));)\
-  echo) > $(XstIniFile);
+  ($(foreach l,$(Libraries),\
+      echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
+        $(call FindRelative,$(TargetDir),$(strip \
+           $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
+   $(foreach l,$(Cores),\
+      echo $(lastword $(subst -, ,$(notdir $(l))))_bb=$(strip \
+        $(call FindRelative,$(TargetDir),$(strip \
+           $(call HdlLibraryRefDir,$(l)_bb,$(HdlTarget)))));) \
+   $(foreach l,$(ComponentLibraries),echo $(notdir $(l))=$(strip \
+     $(call FindRelative,$(TargetDir),$(l)/lib/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));))\
+   > $(XstIniFile);
 XstMakeLso=\
-  (echo $(LibName);$(foreach l,$(Libraries) $(ComponentLibraries) $(Cores),echo $(lastword $(subst -, ,$(notdir $(l))));)) > $(XstLsoFile);
+  (echo $(LibName);$(foreach l,$(Libraries) $(ComponentLibraries),\
+                      echo $(lastword $(subst -, ,$(notdir $(l))));)\
+  $(foreach l,$(Cores),\
+            echo $(lastword $(subst -, ,$(notdir $(l))_bb));)) > $(XstLsoFile);
 XstOptions += -lso $(XstLsoFile) 
 endif
 XstPrjFile=$(Core).prj
-XstMakePrj=($(foreach f,$(filter %.v %.V,$^),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) > $(XstPrjFile);
+XstMakePrj=($(foreach f,$(HdlSources),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) > $(XstPrjFile);
 XstScrFile=$(Core).scr
-XstMakeScr=(echo set -xsthdpdir . -xsthdpini $(XstIniFile);echo run $(XstOptions)) > $(XstScrFile);
-# The options we directly specify
-ifndef Top
-Top=$(Core)
-endif
-#$(info TARGETDIR: $(TargetDir))
-XstOptions += -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) -p $(or $(Part),$(Target)) \
-               $(and $(VerilogIncludeDirs),-vlgincdir { $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) }) \
-                -sd { \
-                    $(foreach l,$(ComponentLibraries),$(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(Part),$(Target))))\
-		    $(foreach c,$(Cores),$(call FindRelative,$(TargetDir),$(call CoreRefDir,$(c),$(or $(Part),$(Target)))))\
-                  }
-XstNgcOptions= $(foreach l,$(ComponentLibraries), -sd \
-                 $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(Part) $(Target))))\
-	       $(foreach c,$(Cores), -sd \
-                 $(call FindRelative,$(TargetDir),$(call CoreRefDir,$(c),$(or $(Part),$(Target))))) 
 
-ifndef OCPI_XILINX_TOOLS_DIR
-XilinxVersions=$(shell echo $(wildcard /opt/Xilinx/*/ISE_DS) | tr ' ' '\n' | sort -r)
-OCPI_XILINX_TOOLS_DIR=$(firstword $(XilinxVersions))
-endif
-Xilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh
+XstMakeScr=(echo set -xsthdpdir . -xsthdpini $(XstIniFile);echo run $(strip $(XstOptions))) > $(XstScrFile);
+# The options we directly specify
+#$(info TARGETDIR: $(TargetDir))
+XstOptions +=\
+-ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) -p $(or $(HdlExactPart),$(HdlTarget)) \
+ $(and $(VerilogIncludeDirs),$(strip\
+   -vlgincdir { \
+     $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
+    })) \
+  $(and $(ComponentLibraries)$(Cores),-sd { \
+     $(foreach l,$(ComponentLibraries),$(strip \
+       $(call FindRelative,$(TargetDir),\
+         $(l)/lib/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
+     $(foreach c,$(Cores),$(sort \
+	 $(and $(HdlPart),$(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(c),$(HdlPart),$(HdlPart)))) \
+         $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(c),$(HdlTarget)))))\
+      })
+
+XstNgcOptions=\
+  $(foreach l,$(ComponentLibraries), -sd \
+    $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(HdlPart) $(HdlTarget))))\
+  $(foreach c,$(Cores), -sd \
+    $(call FindRelative,$(TargetDir),$(call CoreRefDir,$(c),$(or $(HdlPart),$(HdlTarget))))) 
+
 #$(info lib=$(Libraries)= cores=$(Cores)= Comps=$(ComponentLibraries)= td=$(TargetDir)= @=$(@))
-Compile=\
+
+HdlToolCompile=\
   $(foreach l,$(Libraries),\
-     $(if $(wildcard $(call LibraryRefDir,$(l),$(Family))),,\
-          $(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found.))) \
+     $(if $(wildcard $(call HdlLibraryRefDir,$(l),$(HdlTarget))),,\
+          $(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found for $(HdlTarget).))) \
   $(foreach l,$(Cores),\
-     $(if $(wildcard $(call LibraryRefDir,$(l),$(or $(Part) $(Target)))),,\
-          $(error Error: Specified core library: "$(call LibraryRefDir,$(l),$(or $(Part) $(Target)))", in the "Cores" variable, was not found.))) \
-  $(AT)echo '  'Creating $@  with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\
-  cd $(TargetDir);\
+     $(if $(wildcard $(call HdlLibraryRefDir,$(l)_bb,$(or $(HdlTarget),$(info NONE2)))),,\
+          $(error Error: Specified core library:$@: "$(call HdlLibraryRefDir,$(l)_bb,$(HdlTarget))", in the "Cores" variable, was not found.))) \
+  echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\
+  rm -f $(notdir $@);\
   $(XstMakePrj)\
   $(XstMakeLso)\
   $(XstMakeIni)\
   $(XstMakeScr)\
-  $(Xilinx)> xst-$(Core).out ; (echo Command: xst -ifn $(XstScrFile); $(TIME) xst -ifn $(XstScrFile)) >> xst-$(Core).out;\
-  grep -i error xst-$(Core).out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
-  if grep -q 'Number of errors   :    0 ' xst-$(Core).out; then \
-    ngc2edif -w $(Core).ngc >> xst-$(Core).out; \
-    exit 0; \
+  $(Xilinx) xst -ifn $(XstScrFile)
+
+# We can't trust xst's exit code so we conservatively check for zero errors
+# Plus we create the edif all the time...
+HdlToolPost=\
+  if grep -q 'Number of errors   :    0 ' $(HdlLog); then \
+    ($(Xilinx) ngc2edif -w $(Core).ngc) >> $(HdlLog) 2>&1 ; \
+    HdlExit=0; \
   else \
-    exit 1; \
-  fi
+    HdlExit=1; \
+  fi;
 
 #    mv $(Core).ngc temp.ngc; \
 #    echo doing: ngcbuild -verbose $(XstNgcOptions) temp.ngc $(Core).ngc >> xst-$(Core).out; \
