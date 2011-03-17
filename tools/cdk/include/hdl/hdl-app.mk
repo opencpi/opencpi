@@ -187,7 +187,7 @@ AppName=$(Worker)-$1
 #AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)
 PromName=$(call PlatformDir,$1)/$(call AppName,$1).mcs
 BitName=$(call PlatformDir,$1)/$(call AppName,$1).bit
-BitZName=$(call PlatformDir,$1)/$(call AppName,$1).gz
+BitZName=$(call PlatformDir,$1)/$(call AppName,$1).bit.gz
 NgdName=$(call PlatformDir,$1)/$(call AppName,$1).ngd
 AppNgcName=$(OurDir)target-$(call HdlGetFamily,$(call HdlGetPart,$1))/$(ContainerModule).ngc
 MapName=$(call PlatformDir,$1)/$(call AppName,$1)_map.ncd
@@ -228,8 +228,8 @@ $(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
 		$(notdir $(call PcfName,$1)), 'DRC detected 0 errors')
 
 $(call BitZName,$1): $(call BitName,$1)
-	$(AT)echo Making compressed bit file: $@
-	$(AT)gzip $(call BitName,$1)
+	$(AT)echo Making compressed bit file: $$@
+	$(AT)gzip -c $(call BitName,$1) > $$@
 
 
 -include $(HdlPlatformsDir)/$1/$1.mk
