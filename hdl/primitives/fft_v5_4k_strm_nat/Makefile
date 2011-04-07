@@ -1,4 +1,4 @@
-Core=xfft_v7_1
+Core=fft_v5_4k_strm_nat
 Top=xfft_v7_1
 ExcludeTargets=
 OnlyTargets=virtex5 isim

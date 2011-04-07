@@ -10,6 +10,7 @@ define FindImportCoreNames
 ifdef ImportCoreDir_$$(notdir $1)
   $$(error Two directories ($1 and $(ImportCoreDir_$(notdir $1))) in ImportCoreDirs have the same name)
 endif
+ImportCoreName_$(notdir $1):=$(notdir $1)
 ifeq ($(realpath $1/opencpi-core.mk),)
 #$$(error NO OPENCPI $1/opencpi-core.mk)
 # Not an error here...
@@ -28,7 +29,6 @@ endif
 ifndef Top
 Top:=$$(Core)
 endif
-ImportCoreName_$(notdir $1):=$$(Core)
 ImportCoreTop_$(notdir $1):=$$(Top)
 ImportCoreDir_$(notdir $1):=$1
 ImportCoreFiles_$(notdir $1):=$$(SourceFiles)
@@ -97,10 +97,10 @@ clean_core_$4:
 
 import_cores: import_core_$4
 cleanimports: clean_core_$4
-ImportCores:=$(ImportCores) $2
+ImportCores:=$$(ImportCores) $2
 endef
 $(foreach d,$(ImportCoreDirs),\
   $(foreach n,$(notdir $d),\
     $(eval $(call DoImportCore,$d,$(ImportCoreName_$n),$(ImportCoreTop_$n),$n))))
-
+$(info IPC $(ImportCores).$(ImportCoreDirs))
 endif
