@@ -1,7 +1,7 @@
 Core=xfft_v7_1
 Top=xfft_v7_1
 ExcludeTargets=
-OnlyTargets=virtex5
+OnlyTargets=virtex5 isim
 SourceFiles=\
  xfft_v7_1.v\
 # end of files
