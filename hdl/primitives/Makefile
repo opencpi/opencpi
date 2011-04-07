@@ -36,28 +36,46 @@
 
 OCPI_CDK_DIR=../../ocpi
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+
+# Process the imported cores, which will end up in the
+# list $(ImportCores).
+ImportCoreDirs=\
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/temac_v6 \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34 \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v5_mig34 \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/fft_v5_4k_strm_nat \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v6_gtx_x4_250 \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v5_gtp_x8_125 \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v5_gtx_x8_125 \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/ddc_4243_4ch_v5
+
+include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
+
 Libs=bsv util util_virtex6 util_virtex5
-Cores=xfft_v7_1 duc_ddc_compiler_v1_0 \
- dram_mig33_v6 dram_mig34_v5 \
+
+#LocalCores=xfft_v7_1 \
  temac_v6 \
  pcie_4243_axi_v6_gtx_x4_250 \
  pcie_4243_trn_s6_x1_125 \
  pcie_4243_trn_v5_gtp_x1_125 \
  pcie_4243_trn_v5_gtp_x8_125 \
  pcie_4243_trn_v5_gtx_x8_125 \
- pcie_4243_trn_v6es_gtx_x4_250 \
- pcie_4243_trn_v6_gtx_x4_250 \
+
+# pcie_4243_trn_v6_gtx_x4_250 
+# pcie_4243_trn_v6es_gtx_x4_250 
+
+Cores=$(LocalCores) $(ImportCores)
 
 MyMake=$(MAKE) HdlTargets="$(HdlTargets)" --no-print-directory
 all: $(Libs) $(Cores)
 # enable cores to use libs
-$(Cores): $(Libs)
+$(LocalCores): $(Libs)
 
 clean:
 	$(AT)$(foreach l,$(Libs) $(Cores),\
 		$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) clean;)
 cleanimports:
-	$(AT)$(foreach l,$(Libs) $(Cores),\
+	$(AT)$(foreach l,$(Libs) $(LocalCores),\
 		$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) cleanimports;)
 
 install:
@@ -69,7 +87,21 @@ uninstall:
 
 .PHONY: $(Libs) $(Cores)
 
-$(Libs) $(Cores):
-	$(AT)echo ============== For library/core $@:
+define MakeCoreOrLib
 	$(AT)$(MyMake) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR))
 	$(AT)$(MyMake) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install
+endef
+
+$(Libs):
+	$(AT)echo ============== For library $@:
+	$(MakeCoreOrLib)
+
+$(LocalCores):
+	$(AT)echo ============== For core $@:
+	$(MakeCoreOrLib)
+
+$(ImportCores):
+	$(AT)echo ============== For imported core $@:
+	$(MakeCoreOrLib)
+
+

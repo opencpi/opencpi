@@ -19,15 +19,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 17872 $
-// $Date: 2009-09-18 14:32:56 +0000 (Fri, 18 Sep 2009) $
+// $Revision: 22999 $
+// $Date: 2011-01-25 14:22:55 +0000 (Tue, 25 Jan 2011) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
  `define BSV_ASSIGNMENT_DELAY
 `endif
 
-// Dual-Ported BRAM
+// Dual-Ported BRAM (READ FIRST)
 module BRAM2(CLKA,
              ENA,
              WEA,
@@ -62,17 +62,10 @@ module BRAM2(CLKA,
    output [DATA_WIDTH-1:0]        DOB;
 
    reg [DATA_WIDTH-1:0]           RAM[0:MEMSIZE-1] /* synthesis syn_ramstyle="no_rw_check" */ ;
-   reg [ADDR_WIDTH-1:0]           ADDRA_R;
-   reg [ADDR_WIDTH-1:0]           ADDRB_R;
    reg [DATA_WIDTH-1:0]           DOA_R;
    reg [DATA_WIDTH-1:0]           DOB_R;
-
-   wire [DATA_WIDTH-1:0] 	  DOA_noreg;
-   wire [DATA_WIDTH-1:0] 	  DOB_noreg;
-
-   wire [ADDR_WIDTH-1:0] 	  ADDRA_muxed;
-   wire [ADDR_WIDTH-1:0] 	  ADDRB_muxed;
-
+   reg [DATA_WIDTH-1:0]           DOA_D1_R;
+   reg [DATA_WIDTH-1:0]           DOB_D1_R;
 
 `ifdef BSV_NO_INITIAL_BLOCKS
 `else
@@ -83,49 +76,41 @@ module BRAM2(CLKA,
       for (i = 0; i < MEMSIZE; i = i + 1) begin
          RAM[i] = { ((DATA_WIDTH+1)/2) { 2'b10 } };
       end
-      ADDRA_R = { ((ADDR_WIDTH+1)/2) { 2'b10 } };
-      ADDRB_R = { ((ADDR_WIDTH+1)/2) { 2'b10 } };
       DOA_R = { ((DATA_WIDTH+1)/2) { 2'b10 } };
       DOB_R = { ((DATA_WIDTH+1)/2) { 2'b10 } };
+      DOA_D1_R = { ((DATA_WIDTH+1)/2) { 2'b10 } };
+      DOB_D1_R = { ((DATA_WIDTH+1)/2) { 2'b10 } };
    end
    // synopsys translate_on
 `endif // !`ifdef BSV_NO_INITIAL_BLOCKS
 
-
    always @(posedge CLKA) begin
-      ADDRA_R <= `BSV_ASSIGNMENT_DELAY ADDRA_muxed;
+      DOA_R <= `BSV_ASSIGNMENT_DELAY RAM[ADDRA];
       if (ENA) begin
-         if (WEA)
-           RAM[ADDRA_muxed] <= `BSV_ASSIGNMENT_DELAY DIA;
+         if (WEA) begin
+           RAM[ADDRA] <= `BSV_ASSIGNMENT_DELAY DIA;
+	 end
       end
    end
 
    always @(posedge CLKB) begin
-      ADDRB_R <= `BSV_ASSIGNMENT_DELAY ADDRB_muxed;
+      DOB_R <= `BSV_ASSIGNMENT_DELAY RAM[ADDRB];
       if (ENB) begin
-         if (WEB)
-           RAM[ADDRB_muxed] <= `BSV_ASSIGNMENT_DELAY DIB;
+         if (WEB) begin
+           RAM[ADDRB] <= `BSV_ASSIGNMENT_DELAY DIB;
+	 end
       end
    end
 
-
-   // ENA workaround for Synplify
-   assign ADDRA_muxed = (ENA) ? ADDRA : ADDRA_R;
-   assign ADDRB_muxed = (ENB) ? ADDRB : ADDRB_R;
-
-   // Memory read
-   assign DOA_noreg = RAM[ADDRA_R];
-   assign DOB_noreg = RAM[ADDRB_R];
-
    // Pipeline
    always @(posedge CLKA)
-      DOA_R <= DOA_noreg;
+      DOA_D1_R <= DOA_R;
 
    always @(posedge CLKB)
-      DOB_R <= DOB_noreg;
+      DOB_D1_R <= DOB_R;
 
    // Output drivers
-   assign DOA = (PIPELINED) ? DOA_R : DOA_noreg;
-   assign DOB = (PIPELINED) ? DOB_R : DOB_noreg;
+   assign DOA = (PIPELINED) ? DOA_D1_R : DOA_R;
+   assign DOB = (PIPELINED) ? DOB_D1_R : DOB_R;
 
 endmodule // BRAM2

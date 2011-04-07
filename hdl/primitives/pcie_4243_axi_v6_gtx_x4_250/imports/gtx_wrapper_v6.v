@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// (c) Copyright 2009-2010 Xilinx, Inc. All rights reserved.
+// (c) Copyright 2009-2011 Xilinx, Inc. All rights reserved.
 //
 // This file contains confidential and proprietary information
 // of Xilinx, Inc. and is protected under U.S. and
@@ -49,7 +49,8 @@
 //-----------------------------------------------------------------------------
 // Project    : Virtex-6 Integrated Block for PCI Express
 // File       : gtx_wrapper_v6.v
-// Version    : 2.1
+// Version    : 2.3
+
 //-- Description: GTX module for Virtex6 PCIe Block
 //--
 //--
@@ -345,7 +346,7 @@ module gtx_wrapper_v6 (
           .TX_MARGIN_FULL_0(7'b100_1101),
 
           .TX_CLK_SOURCE("RXPLL"),
-          .POWER_SAVE(10'b0000100100),
+          .POWER_SAVE(10'b0000110100),
           .CM_TRIM ( 2'b01 ),
           .PMA_CDR_SCAN ( 27'h640404C ),
           .PMA_CFG( 76'h0040000040000000003 ),
@@ -445,7 +446,7 @@ module gtx_wrapper_v6 (
           .TXPLL_LKDET_CFG (3'b101),
           .RX_EYE_SCANMODE (2'b00),
           .RX_EYE_OFFSET (8'h4C),
-          .PMA_RX_CFG ( 25'h05ce008 ),
+          .PMA_RX_CFG ( 25'h05ce049 ),
           .TRANS_TIME_NON_P2(8'h2),               // Reduced simulation time
           .TRANS_TIME_FROM_P2(12'h03c),            // Reduced simulation time
           .TRANS_TIME_TO_P2(10'h064),              // Reduced simulation time

@@ -1,4 +1,3 @@
-
 // Copyright (c) 2000-2009 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,8 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 17872 $
-// $Date: 2009-09-18 14:32:56 +0000 (Fri, 18 Sep 2009) $
+// $Revision: 23378 $
+// $Date: 2011-03-07 20:31:42 +0000 (Mon, 07 Mar 2011) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
@@ -34,7 +33,7 @@ module BRAM1BE(CLK,
                ADDR,
                DI,
                DO
-               );
+              );
 
    parameter                      PIPELINED  = 0;
    parameter                      ADDR_WIDTH = 1;

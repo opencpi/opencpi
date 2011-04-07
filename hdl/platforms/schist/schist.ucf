@@ -58,21 +58,21 @@ NET "ftop/pciw_pci0_clk_O" PERIOD = 10ns;
 NET "ftop/pciw_pci0_pcie_ep/ep/pcie_ep0/pcie_blk/SIO/.pcie_gt_wrapper_i/gt_refclk_out[0]" TNM_NET = "PCI0CLK";
 TIMESPEC "TS_PCI0CLK"  = PERIOD "PCI0CLK" 100.00 MHz HIGH 50 % ;
 
-#NET "ftop/adc_clk_O" PERIOD = 200MHz;
-#NET "ftop/adc_clk_O" TNM_NET = "ADC_CLK";
-#TIMESPEC "TS_ADC_CLK"  = PERIOD "ADC_CLK" 200.00 MHz HIGH 50 % ;
+NET "ftop/adc_clk_O" PERIOD = 200MHz;
+NET "ftop/adc_clk_O" TNM_NET = "ADC_CLK";
+TIMESPEC "TS_ADC_CLK"  = PERIOD "ADC_CLK" 200.00 MHz HIGH 50 % ;
 
 # Source Synchronous Input Clocks...
-#NET "adc0_clkp" TNM_NET = "ADC0_rxclk";
-#NET "adc1_clkp" TNM_NET = "ADC1_rxclk";
-#TIMESPEC TS_adc0_rxclk_p = PERIOD "ADC0_rxclk" 200.00 MHz HIGH 50 %;
-#TIMESPEC TS_adc1_rxclk_p = PERIOD "ADC1_rxclk" 200.00 MHz HIGH 50 %;
+NET "adc0_clkp" TNM_NET = "ADC0_rxclk";
+NET "adc1_clkp" TNM_NET = "ADC1_rxclk";
+TIMESPEC TS_adc0_rxclk_p = PERIOD "ADC0_rxclk" 200.00 MHz HIGH 50 %;
+TIMESPEC TS_adc1_rxclk_p = PERIOD "ADC1_rxclk" 200.00 MHz HIGH 50 %;
 # From TI AD6149 datasheet (page10) min 800pS setup and 260pS hold...
 # Typical setting observed for closure: ClockDly(0 clicks), DataDly(18 clicks) click=78.125pS
-#NET "adc0_dd*" OFFSET = IN 800 ps VALID 1060 ps BEFORE "adc0_clkp" RISING;
-#NET "adc0_dd*" OFFSET = IN 800 ps VALID 1060 ps BEFORE "adc0_clkp" FALLING;
-#NET "adc1_dd*" OFFSET = IN 800 ps VALID 1060 ps BEFORE "adc1_clkp" RISING;
-#NET "adc1_dd*" OFFSET = IN 800 ps VALID 1060 ps BEFORE "adc1_clkp" FALLING;
+NET "adc0_dd*" OFFSET = IN 800 ps VALID 1060 ps BEFORE "adc0_clkp" RISING;
+NET "adc0_dd*" OFFSET = IN 800 ps VALID 1060 ps BEFORE "adc0_clkp" FALLING;
+NET "adc1_dd*" OFFSET = IN 800 ps VALID 1060 ps BEFORE "adc1_clkp" RISING;
+NET "adc1_dd*" OFFSET = IN 800 ps VALID 1060 ps BEFORE "adc1_clkp" FALLING;
 # From TI AD6249 datasheet (page10) min 550pS setup and hold...
 #NET "adc0_dd*" OFFSET = IN 550 ps VALID 1100 ps BEFORE "adc0_clkp" RISING;
 #NET "adc0_dd*" OFFSET = IN 550 ps VALID 1100 ps BEFORE "adc0_clkp" FALLING;
@@ -213,60 +213,60 @@ NET "dac0_dacRz"      LOC = AE22 | IOSTANDARD = "LVTTL";
 NET "dac0_dacCal"     LOC = AF23 | IOSTANDARD = "LVTTL";
 
 # Clock Distribution Control...
-#NET "adx_sclk"    LOC = AE13  | IOSTANDARD = "LVTTL";
-#NET "adx_csb"     LOC = AE12  | IOSTANDARD = "LVTTL";
-#NET "adx_sdo"     LOC = AE14  | IOSTANDARD = "LVTTL";
-#NET "adx_sdi"     LOC = AG23  | IOSTANDARD = "LVTTL";
-#NET "adx_funct"   LOC = AF14  | IOSTANDARD = "LVTTL";
-#NET "adx_status"  LOC = AE23  | IOSTANDARD = "LVTTL";
+NET "adx_sclk"    LOC = AE13  | IOSTANDARD = "LVTTL";
+NET "adx_csb"     LOC = AE12  | IOSTANDARD = "LVTTL";
+NET "adx_sdo"     LOC = AE14  | IOSTANDARD = "LVTTL";
+NET "adx_sdi"     LOC = AG23  | IOSTANDARD = "LVTTL";
+NET "adx_funct"   LOC = AF14  | IOSTANDARD = "LVTTL";
+NET "adx_status"  LOC = AE23  | IOSTANDARD = "LVTTL";
 
 # ADCs...
-#NET "adc_clkn"    LOC = G16   | IOSTANDARD = "LVPECL_25";
-#NET "adc_clkp"    LOC = G15   | IOSTANDARD = "LVPECL_25";
-#NET "adc0_clkn"   LOC = J9    | IOSTANDARD = "LVDS_25";
-#NET "adc0_clkp"   LOC = J10   | IOSTANDARD = "LVDS_25";
-#NET "adc0_oe"     LOC = G5    | IOSTANDARD = "LVTTL";
-#NET "adc0_ddn[0]" LOC = N9    | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddp[0]" LOC = N10   | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddn[1]" LOC = J11   | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddp[1]" LOC = K11   | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddn[2]" LOC = L9    | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddp[2]" LOC = M10   | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddn[3]" LOC = K9    | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddp[3]" LOC = K8    | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddn[4]" LOC = L11   | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddp[4]" LOC = L10   | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddn[5]" LOC = H8    | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddp[5]" LOC = G8    | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddn[6]" LOC = H9    | IOSTANDARD = "LVDS_25";
-#NET "adc0_ddp[6]" LOC = H10   | IOSTANDARD = "LVDS_25";
-#NET "adc0_reset"  LOC = E7    | IOSTANDARD = "LVTTL";
-#NET "adc0_sclk"   LOC = E6    | IOSTANDARD = "LVTTL";
-#NET "adc0_sen"    LOC = F5    | IOSTANDARD = "LVTTL";
-#NET "adc0_sdata"  LOC = F6    | IOSTANDARD = "LVTTL";
-#NET "adc0_sdout"  LOC = D11   | IOSTANDARD = "LVCMOS25";  # set by DVRDD voltage
-#NET "adc1_clkn"   LOC = B12   | IOSTANDARD = "LVDS_25";
-#NET "adc1_clkp"   LOC = A13   | IOSTANDARD = "LVDS_25";
-#NET "adc1_oe"     LOC = J5    | IOSTANDARD = "LVTTL";
-#NET "adc1_ddn[0]" LOC = G10   | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddp[0]" LOC = F10   | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddn[1]" LOC = F8    | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddp[1]" LOC = F9    | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddn[2]" LOC = E8    | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddp[2]" LOC = E9    | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddn[3]" LOC = E11   | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddp[3]" LOC = F11   | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddn[4]" LOC = E13   | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddp[4]" LOC = E12   | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddn[5]" LOC = C12   | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddp[5]" LOC = D12   | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddn[6]" LOC = C13   | IOSTANDARD = "LVDS_25";
-#NET "adc1_ddp[6]" LOC = B13   | IOSTANDARD = "LVDS_25";
-#NET "adc1_reset"  LOC = J6    | IOSTANDARD = "LVTTL";
-#NET "adc1_sclk"   LOC = G7    | IOSTANDARD = "LVTTL";
-#NET "adc1_sen"    LOC = H7    | IOSTANDARD = "LVTTL";
-#NET "adc1_sdata"  LOC = G6    | IOSTANDARD = "LVTTL";
-#NET "adc1_sdout"  LOC = M8    | IOSTANDARD = "LVCMOS25";  # set by DVRDD voltage
+NET "adc_clkn"    LOC = G16   | IOSTANDARD = "LVPECL_25";
+NET "adc_clkp"    LOC = G15   | IOSTANDARD = "LVPECL_25";
+NET "adc0_clkn"   LOC = J9    | IOSTANDARD = "LVDS_25";
+NET "adc0_clkp"   LOC = J10   | IOSTANDARD = "LVDS_25";
+NET "adc0_oe"     LOC = G5    | IOSTANDARD = "LVTTL";
+NET "adc0_ddn[0]" LOC = N9    | IOSTANDARD = "LVDS_25";
+NET "adc0_ddp[0]" LOC = N10   | IOSTANDARD = "LVDS_25";
+NET "adc0_ddn[1]" LOC = J11   | IOSTANDARD = "LVDS_25";
+NET "adc0_ddp[1]" LOC = K11   | IOSTANDARD = "LVDS_25";
+NET "adc0_ddn[2]" LOC = L9    | IOSTANDARD = "LVDS_25";
+NET "adc0_ddp[2]" LOC = M10   | IOSTANDARD = "LVDS_25";
+NET "adc0_ddn[3]" LOC = K9    | IOSTANDARD = "LVDS_25";
+NET "adc0_ddp[3]" LOC = K8    | IOSTANDARD = "LVDS_25";
+NET "adc0_ddn[4]" LOC = L11   | IOSTANDARD = "LVDS_25";
+NET "adc0_ddp[4]" LOC = L10   | IOSTANDARD = "LVDS_25";
+NET "adc0_ddn[5]" LOC = H8    | IOSTANDARD = "LVDS_25";
+NET "adc0_ddp[5]" LOC = G8    | IOSTANDARD = "LVDS_25";
+NET "adc0_ddn[6]" LOC = H9    | IOSTANDARD = "LVDS_25";
+NET "adc0_ddp[6]" LOC = H10   | IOSTANDARD = "LVDS_25";
+NET "adc0_reset"  LOC = E7    | IOSTANDARD = "LVTTL";
+NET "adc0_sclk"   LOC = E6    | IOSTANDARD = "LVTTL";
+NET "adc0_sen"    LOC = F5    | IOSTANDARD = "LVTTL";
+NET "adc0_sdata"  LOC = F6    | IOSTANDARD = "LVTTL";
+NET "adc0_sdout"  LOC = D11   | IOSTANDARD = "LVCMOS25";  # set by DVRDD voltage
+NET "adc1_clkn"   LOC = B12   | IOSTANDARD = "LVDS_25";
+NET "adc1_clkp"   LOC = A13   | IOSTANDARD = "LVDS_25";
+NET "adc1_oe"     LOC = J5    | IOSTANDARD = "LVTTL";
+NET "adc1_ddn[0]" LOC = G10   | IOSTANDARD = "LVDS_25";
+NET "adc1_ddp[0]" LOC = F10   | IOSTANDARD = "LVDS_25";
+NET "adc1_ddn[1]" LOC = F8    | IOSTANDARD = "LVDS_25";
+NET "adc1_ddp[1]" LOC = F9    | IOSTANDARD = "LVDS_25";
+NET "adc1_ddn[2]" LOC = E8    | IOSTANDARD = "LVDS_25";
+NET "adc1_ddp[2]" LOC = E9    | IOSTANDARD = "LVDS_25";
+NET "adc1_ddn[3]" LOC = E11   | IOSTANDARD = "LVDS_25";
+NET "adc1_ddp[3]" LOC = F11   | IOSTANDARD = "LVDS_25";
+NET "adc1_ddn[4]" LOC = E13   | IOSTANDARD = "LVDS_25";
+NET "adc1_ddp[4]" LOC = E12   | IOSTANDARD = "LVDS_25";
+NET "adc1_ddn[5]" LOC = C12   | IOSTANDARD = "LVDS_25";
+NET "adc1_ddp[5]" LOC = D12   | IOSTANDARD = "LVDS_25";
+NET "adc1_ddn[6]" LOC = C13   | IOSTANDARD = "LVDS_25";
+NET "adc1_ddp[6]" LOC = B13   | IOSTANDARD = "LVDS_25";
+NET "adc1_reset"  LOC = J6    | IOSTANDARD = "LVTTL";
+NET "adc1_sclk"   LOC = G7    | IOSTANDARD = "LVTTL";
+NET "adc1_sen"    LOC = H7    | IOSTANDARD = "LVTTL";
+NET "adc1_sdata"  LOC = G6    | IOSTANDARD = "LVTTL";
+NET "adc1_sdout"  LOC = M8    | IOSTANDARD = "LVCMOS25";  # set by DVRDD voltage
 #NET "adcSyncInp"  LOC = K16  | IOSTANDARD = "LVDS_25";
 #NET "adcSyncInn"  LOC = J15  | IOSTANDARD = "LVDS_25";
 #NET "adcSyncOutp" LOC = J12  | IOSTANDARD = "LVDS_25";
@@ -282,7 +282,7 @@ NET "dac0_dacCal"     LOC = AF23 | IOSTANDARD = "LVTTL";
 #INST "ftop/adcW10/adcCore1_ddrC_ddrV/IODELAY_INST"          IODELAY_GROUP = "IODELAY_ADC";
 #INST "ftop/adcW10/adcCore1_ddrC_ddrV/DDR_g[*].IODELAY_INST" IODELAY_GROUP = "IODELAY_ADC";
 #
-INST "ftop/adcW10_adcIdc"   LOC=IDELAYCTRL_X2Y6;
+INST "ftop/adcW10/adcIdc"   LOC=IDELAYCTRL_X2Y6;
 
 
 
@@ -308,7 +308,7 @@ INST "ftop/adcW10_adcIdc"   LOC=IDELAYCTRL_X2Y6;
 #NET  "ddr2_dqs_n[*]"                            IOSTANDARD = DIFF_SSTL18_II_DCI;
 #NET  "ddr2_ck_p[*]"                             IOSTANDARD = DIFF_SSTL18_II_DCI;
 #NET  "ddr2_ck_n[*]"                             IOSTANDARD = DIFF_SSTL18_II_DCI;
-
+#
 #NET  "ddr2_dq[0]"                                LOC = "K24" ;          #Bank 19
 #NET  "ddr2_dq[1]"                                LOC = "L24" ;          #Bank 19
 #NET  "ddr2_dq[2]"                                LOC = "L25" ;          #Bank 19
@@ -382,8 +382,8 @@ INST "ftop/adcW10_adcIdc"   LOC=IDELAYCTRL_X2Y6;
 #NET  "ddr2_ck_p[1]"                              LOC = "H30" ;          #Bank 15
 #NET  "ddr2_ck_n[1]"                              LOC = "G31" ;          #Bank 15
 
-#INST "ftop/dram0_memc_memc/u_ddr2_idelay_ctrl/u_idelayctrl_x0y5"   LOC=IDELAYCTRL_X0Y5;
-#INST "ftop/dram0_memc_memc/u_ddr2_idelay_ctrl/u_idelayctrl_x0y6"   LOC=IDELAYCTRL_X0Y6;
+#INST "ftop/dram0/memc_memc/u_ddr2_idelay_ctrl/u_idelayctrl_x0y5"   LOC=IDELAYCTRL_X0Y5;
+#INST "ftop/dram0/memc_memc/u_ddr2_idelay_ctrl/u_idelayctrl_x0y6"   LOC=IDELAYCTRL_X0Y6;
 
 
 ###############################################################################

@@ -1,7 +1,7 @@
 
 //-----------------------------------------------------------------------------
 //
-// (c) Copyright 2009-2010 Xilinx, Inc. All rights reserved.
+// (c) Copyright 2009-2011 Xilinx, Inc. All rights reserved.
 //
 // This file contains confidential and proprietary information
 // of Xilinx, Inc. and is protected under U.S. and
@@ -50,7 +50,7 @@
 //-----------------------------------------------------------------------------
 // Project    : Virtex-6 Integrated Block for PCI Express
 // File       : gtx_drp_chanalign_fix_3752_v6.v
-// Version    : 2.1
+// Version    : 2.3
 //--
 //-- Description: Virtex6 Workaround for deadlock due lane-lane skew Bug
 //--

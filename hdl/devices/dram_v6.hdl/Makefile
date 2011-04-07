@@ -35,6 +35,6 @@
 ########################################################################### #
 
 Libraries=bsv util
-Cores=dram_mig33_v6
-OnlyTargets=xc6vlx240t
+Cores=dram_v6_mig34
+OnlyTargets=virtex6
 include $(OCPI_CDK_DIR)/include/worker.mk

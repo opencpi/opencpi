@@ -63,17 +63,21 @@ ifndef Top
 Top:=$(Core)
 endif
 
+#$(info ImportCore=$(ImportCore) PreBuiltCore=$(PreBuiltCore))
 ifdef ImportCore
 ifdef PreBuiltCore
 $(error Cannot set both "PreBuiltCore" and "ImportCore")
 endif
-PreBuiltCore=$(ImportCore)
 Imports += $(ImportCore)
 # We don't rename the file when we import it.
 CoreFile=$(notdir $(ImportCore))
+PreBuiltCore=$(CoreFile)
 else
-# But if it isn't imported, its named properly
+ifdef PreBuiltCore
+CoreFile=$(PreBuiltCore)
+else
 CoreFile=$(Core)$(HdlBin)
+endif
 endif
 HdlCoreInstallDir=$(HdlInstallDir)/$(Core)
 $(HdlCoreInstallDir): | $(HdlInstallDir)
@@ -128,6 +132,7 @@ install: | $(HdlInstallDir)
 	done
 endif # for building a real core
 
+#$(info ===$(Imports)=$(ImportCore)=$(ImportBlackBox))
 ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk
 endif # imports

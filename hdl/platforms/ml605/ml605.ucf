@@ -30,19 +30,19 @@ INST "ftop/pciw_pci0_clk"  LOC = IBUFDS_GTXE1_X0Y4;  # 250 MHz Receiver from U9 
 
 NET  "pci0_reset_n"  LOC = AE13 | IOSTANDARD = LVCMOS25 | PULLUP | NODELAY;
 
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_block_i"                   LOC = PCIE_X0Y1;
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[0].GTX" LOC = GTXE1_X0Y15;
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[1].GTX" LOC = GTXE1_X0Y14;
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[2].GTX" LOC = GTXE1_X0Y13;
-INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[3].GTX" LOC = GTXE1_X0Y12;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_block_i"                   LOC = PCIE_X0Y1;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[0].GTX" LOC = GTXE1_X0Y15;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[1].GTX" LOC = GTXE1_X0Y14;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[2].GTX" LOC = GTXE1_X0Y13;
+INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[3].GTX" LOC = GTXE1_X0Y12;
 
 # Timing Constraints...
 NET "sys0_clkp"      TNM_NET = "SYS0CLK";  # 200 MHz sys0 XO
 TIMESPEC "TS_SYS0CLK" = PERIOD "SYS0CLK"     200 MHz HIGH 50 % ;
 
 NET "pci0_clkp" TNM_NET = "PCICLK" ;
-NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/clk_125" TNM_NET = "CLK_125" ;
-NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/clk_250" TNM_NET = "CLK_250" ;
+NET "ftop/pciw_pci0_pcie_ep/ep/pcie_clocking_i/clk_125" TNM_NET = "CLK_125" ;
+NET "ftop/pciw_pci0_pcie_ep/ep/pcie_clocking_i/clk_250" TNM_NET = "CLK_250" ;
 TIMESPEC "TS_PCICLK"   = PERIOD "PCICLK"  250 MHz HIGH 50 % ;
 TIMESPEC "TS_CLK_125"  = PERIOD "CLK_125" TS_PCICLK/2 HIGH 50 % PRIORITY 100 ;
 TIMESPEC "TS_CLK_250"  = PERIOD "CLK_250" TS_PCICLK*1 HIGH 50 % PRIORITY 1;
@@ -84,7 +84,37 @@ PIN "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/mmcm_adv_i.RST" TIG ;
 INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/*" AREA_GROUP = "AG_pcie0" ;
 AREA_GROUP "AG_pcie0" RANGE = SLICE_X136Y147:SLICE_X155Y120 ;
 
-#######Remove all GBE-related constraints
+## GbE GMII...
+NET "gmii_txd[0]"     LOC = "AM11" | IOSTANDARD=LVCMOS25; ## 18 on U80
+NET "gmii_txd[1]"     LOC = "AL11" | IOSTANDARD=LVCMOS25; ## 19 on U80
+NET "gmii_txd[2]"     LOC = "AG10" | IOSTANDARD=LVCMOS25; ## 20 on U80
+NET "gmii_txd[3]"     LOC = "AG11" | IOSTANDARD=LVCMOS25; ## 24 on U80
+NET "gmii_txd[4]"     LOC = "AL10" | IOSTANDARD=LVCMOS25; ## 25 on U80
+NET "gmii_txd[5]"     LOC = "AM10" | IOSTANDARD=LVCMOS25; ## 26 on U80
+NET "gmii_txd[6]"     LOC = "AE11" | IOSTANDARD=LVCMOS25; ## 28 on U80
+NET "gmii_txd[7]"     LOC = "AF11" | IOSTANDARD=LVCMOS25; ## 29 on U80
+NET "gmii_tx_en"      LOC = "AJ10" | IOSTANDARD=LVCMOS25; ## 16 on U80
+NET "gmii_tx_er"      LOC = "AH10" | IOSTANDARD=LVCMOS25; ## 13 on U80
+NET "gmii_tx_clk"     LOC = "AD12" | IOSTANDARD=LVCMOS25; ## 10 on U80
+NET "gmii_rxd[0]"     LOC = "AN13" | IOSTANDARD=LVCMOS25; ## 3 on U80
+NET "gmii_rxd[1]"     LOC = "AF14" | IOSTANDARD=LVCMOS25; ## 128 on U80
+NET "gmii_rxd[2]"     LOC = "AE14" | IOSTANDARD=LVCMOS25; ## 126 on U80
+NET "gmii_rxd[3]"     LOC = "AN12" | IOSTANDARD=LVCMOS25; ## 125 on U80
+NET "gmii_rxd[4]"     LOC = "AM12" | IOSTANDARD=LVCMOS25; ## 124 on U80
+NET "gmii_rxd[5]"     LOC = "AD11" | IOSTANDARD=LVCMOS25; ## 123 on U80
+NET "gmii_rxd[6]"     LOC = "AC12" | IOSTANDARD=LVCMOS25; ## 121 on U80
+NET "gmii_rxd[7]"     LOC = "AC13" | IOSTANDARD=LVCMOS25; ## 120 on U80
+NET "gmii_rx_dv"      LOC = "AM13" | IOSTANDARD=LVCMOS25; ## 4 on U80
+NET "gmii_rx_er"      LOC = "AG12" | IOSTANDARD=LVCMOS25; ## 9 on U80
+NET "gmii_rx_clk"     LOC = "AP11" | IOSTANDARD=LVCMOS25; ## 7 on U80
+NET "gmii_COL"        LOC = "AK13" | IOSTANDARD=LVCMOS25; ## 114 on U80
+NET "gmii_CRS"        LOC = "AL13" | IOSTANDARD=LVCMOS25; ## 115 on U80
+NET "gmii_INT"        LOC = "AH14" | IOSTANDARD=LVCMOS25; ## 32 on U80
+NET "gmii_MDC"        LOC = "AP14" | IOSTANDARD=LVCMOS25; ## 35 on U80
+NET "gmii_MDIO"       LOC = "AN14" | IOSTANDARD=LVCMOS25; ## 33 on U80
+NET "gmii_RESET"      LOC = "AH13" | IOSTANDARD=LVCMOS25; ## 36 on U80
+NET "gmii_TXC_GTXCLK" LOC = "AH12" | IOSTANDARD=LVCMOS25; ## 14 on U80
+
 
 # ADC...
 # Source Synchronous Input Clocks...
@@ -368,12 +398,344 @@ NET "flp_adc_rstn"   LOC = "B32" | IOSTANDARD = "LVTTL";   # ADC RSTN
 disable = reg_sr_o;
 disable = reg_sr_r;
 
-##########Removed DDR3 section entirely to ml605-dram.ucf file
-# The following 2 lines are kept from the ddr3 section in case they are needed
-# even when the ddr3 is not presnt.
+# Temporary workaround to prevent tools from performing timing analysis on
+# ck_p/ck_n feedback path through the MMCM to the MMCM.LOCK signal (which in
+# turn is in reset logic within the CLB fabric). This analysis is not
+# necessary because the MMCM.LOCK signal is synchronized to the BUFG clock
+# before being used.
+
+#SPOFFORD - not necessary with 3.4
+#NET "ddr3_ck_n[*]" TIG;
+#NET "ddr3_ck_p[*]" TIG;
+############################################################################
+########################################################################
+# Controller 0
+# Memory Device: DDR3_SDRAM->SODIMMs->MT4JSF6464HY-1G1
+# Data Width:     64
+# Frequency:      400
+# Time Period:      2500
+# Data Mask:     1
+########################################################################
+
+
+################################################################################
+# I/O STANDARDS
+################################################################################
+
+#NET  "ddr3_dq[*]"                               IOSTANDARD = SSTL15_T_DCI;
+#NET  "ddr3_addr[*]"                             IOSTANDARD = SSTL15;
+#NET  "ddr3_ba[*]"                               IOSTANDARD = SSTL15;
+#NET  "ddr3_ras_n"                               IOSTANDARD = SSTL15;
+#NET  "ddr3_cas_n"                               IOSTANDARD = SSTL15;
+#NET  "ddr3_we_n"                                IOSTANDARD = SSTL15;
+#NET  "ddr3_reset_n"                             IOSTANDARD = SSTL15;
+#NET  "ddr3_cs_n[*]"                             IOSTANDARD = SSTL15;
+#NET  "ddr3_odt[*]"                              IOSTANDARD = SSTL15;
+#NET  "ddr3_cke[*]"                              IOSTANDARD = SSTL15;
+#NET  "ddr3_dm[*]"                               IOSTANDARD = SSTL15;
+
+## ML605 200 MHz LVDS oscillator - single input clock design (2.5V bank)
+##FIXMESS NET  "sys_clk_p"                                IOSTANDARD = LVDS_25;
+##FIXMESS NET  "sys_clk_n"                                IOSTANDARD = LVDS_25;
+
+## ML605 CPU_RESET switch (1.5V bank)
+##NOTUSED NET  "sys_rst"           IOSTANDARD = SSTL15;   
+
+#NET  "ddr3_dqs_p[*]"                            IOSTANDARD = DIFF_SSTL15_T_DCI;
+#NET  "ddr3_dqs_n[*]"                            IOSTANDARD = DIFF_SSTL15_T_DCI;
+#SPOFFORD
+#NET  "ddr3_ck_p[*]"                             IOSTANDARD = DIFF_SSTL15_T_DCI;
+#NET  "ddr3_ck_n[*]"                             IOSTANDARD = DIFF_SSTL15_T_DCI;
+#NET  "ddr3_ck_p[*]"                             IOSTANDARD = DIFF_SSTL15;
+#NET  "ddr3_ck_n[*]"                             IOSTANDARD = DIFF_SSTL15;
+
+################################################################################
+## DCI_CASCADING
+## Syntax : CONFIG DCI_CASCADE = "<master> <slave1> <slave2> ..";
+################################################################################
+##   MIG 3.3 GUI does not permit selection of proper master DCI banks
+##   Define ML605 DCI bank cascade function as implemented on the board
+##      Bank 26 and Bank 36 have DCI support ( = DCI masters)
+##      Bank 25 and Bank 35 do not have DCI support ( = DCI slaves)
+###############################################################################
+ 
  CONFIG DCI_CASCADE = "26 25";
  CONFIG DCI_CASCADE = "36 35";
-##########End of removed DDR3 section
+
+##################################################################################
+# Location Constraints
+##################################################################################
+##
+##  Note: Deleted MIG 3.3 generated DDR3 FPGA LOC assignments.
+##        Replace MIG constraint file with ML605 specific SODIMM constraints below.
+##        LOC constraints organized by BANK numbers, per schematics.
+##        SODIMM part number = MT41JSF6464HY-1G1 (512MB)
+##
+#############################################
+## Bank 35 DDR3 SODIMM I/F pin assignments 
+## 3 data bytes:
+#############################################
+## Data Byte 0
+#NET "ddr3_dq[0]"     LOC = "J11";          
+#NET "ddr3_dq[1]"     LOC = "E13";          
+#NET "ddr3_dq[2]"     LOC = "F13";          
+#NET "ddr3_dq[3]"     LOC = "K11";          
+#NET "ddr3_dq[4]"     LOC = "L11";          
+#NET "ddr3_dq[5]"     LOC = "K13";          
+#NET "ddr3_dq[6]"     LOC = "K12";          
+#NET "ddr3_dq[7]"     LOC = "D11";  
+#NET "ddr3_dm[0]"     LOC = "E11";
+#NET "ddr3_dqs_p[0]"  LOC = "D12";     
+#NET "ddr3_dqs_n[0]"  LOC = "E12";
+### Data Byte 1
+#NET  "ddr3_dq[8]"    LOC = "M13";          
+#NET  "ddr3_dq[9]"    LOC = "J14";          
+#NET  "ddr3_dq[10]"   LOC = "B13";          
+#NET  "ddr3_dq[11]"   LOC = "B12";          
+#NET  "ddr3_dq[12]"   LOC = "G10";          
+#NET  "ddr3_dq[13]"   LOC = "M11";          
+#NET  "ddr3_dq[14]"   LOC = "C12";          
+#NET  "ddr3_dq[15]"   LOC = "A11";
+#NET  "ddr3_dm[1]"    LOC = "B11";
+#NET  "ddr3_dqs_p[1]" LOC = "H12";          
+#NET  "ddr3_dqs_n[1]" LOC = "J12";
+### Data Byte 2
+#NET  "ddr3_dq[16]"   LOC = "G11";          
+#NET  "ddr3_dq[17]"   LOC = "F11";          
+#NET  "ddr3_dq[18]"   LOC = "D14";          
+#NET  "ddr3_dq[19]"   LOC = "C14";          
+#NET  "ddr3_dq[20]"   LOC = "G12";          
+#NET  "ddr3_dq[21]"   LOC = "G13";          
+#NET  "ddr3_dq[22]"   LOC = "F14";          
+#NET  "ddr3_dq[23]"   LOC = "H14"; 
+#NET  "ddr3_dm[2]"    LOC = "E14";
+#NET  "ddr3_dqs_p[2]" LOC = "A13";          
+#NET  "ddr3_dqs_n[2]" LOC = "A14";
+#############################################
+## Bank 26 DDR3 SODIMM I/F pin assignments 
+## 2 data bytes:
+#############################################       
+## Data Byte 3
+#NET  "ddr3_dq[24]"   LOC = "C19";
+#NET  "ddr3_dq[25]"   LOC = "G20";          
+#NET  "ddr3_dq[26]"   LOC = "E19";          
+#NET  "ddr3_dq[27]"   LOC = "F20";          
+#NET  "ddr3_dq[28]"   LOC = "A20";          
+#NET  "ddr3_dq[29]"   LOC = "A21";          
+#NET  "ddr3_dq[30]"   LOC = "E22";          
+#NET  "ddr3_dq[31]"   LOC = "E23";
+#NET  "ddr3_dm[3]"    LOC = "D19";
+#NET  "ddr3_dqs_p[3]" LOC = "H19";          
+#NET  "ddr3_dqs_n[3]" LOC = "H20";
+## Data Byte 4
+#NET  "ddr3_dq[32]"   LOC = "G21";          
+#NET  "ddr3_dq[33]"   LOC = "B21";          
+#NET  "ddr3_dq[34]"   LOC = "A23";          
+#NET  "ddr3_dq[35]"   LOC = "A24";          
+#NET  "ddr3_dq[36]"   LOC = "C20";          
+#NET  "ddr3_dq[37]"   LOC = "D20";          
+#NET  "ddr3_dq[38]"   LOC = "J20";          
+#NET  "ddr3_dq[39]"   LOC = "G22";
+#NET  "ddr3_dm[4]"    LOC = "B22";
+#NET  "ddr3_dqs_p[4]" LOC = "B23";          
+#NET  "ddr3_dqs_n[4]" LOC = "C23";
+#############################################
+## Bank 24 DDR3 SODIMM I/F pin assignments 
+## 3 data bytes:
+#############################################
+## Data Byte 5
+#NET  "ddr3_dq[40]"   LOC = "D26";          
+#NET  "ddr3_dq[41]"   LOC = "F26";          
+#NET  "ddr3_dq[42]"   LOC = "B26";          
+#NET  "ddr3_dq[43]"   LOC = "E26";          
+#NET  "ddr3_dq[44]"   LOC = "C24";          
+#NET  "ddr3_dq[45]"   LOC = "D25";          
+#NET  "ddr3_dq[46]"   LOC = "D27";          
+#NET  "ddr3_dq[47]"   LOC = "C25";
+#NET  "ddr3_dm[5]"    LOC = "A26";
+#NET  "ddr3_dqs_p[5]" LOC = "B25";          
+#NET  "ddr3_dqs_n[5]" LOC = "A25";
+### Data Byte 6
+#NET  "ddr3_dq[48]"   LOC = "C27";          
+#NET  "ddr3_dq[49]"   LOC = "B28";          
+#NET  "ddr3_dq[50]"   LOC = "D29";          
+#NET  "ddr3_dq[51]"   LOC = "B27";          
+#NET  "ddr3_dq[52]"   LOC = "G27";          
+#NET  "ddr3_dq[53]"   LOC = "A28";          
+#NET  "ddr3_dq[54]"   LOC = "E24";          
+#NET  "ddr3_dq[55]"   LOC = "G25";
+#NET  "ddr3_dm[6]"    LOC = "A29";
+#NET  "ddr3_dqs_p[6]" LOC = "H27";          
+#NET  "ddr3_dqs_n[6]" LOC = "G28";
+### Data Byte 7
+#NET  "ddr3_dq[56]"   LOC = "F28";          
+#NET  "ddr3_dq[57]"   LOC = "B31";          
+#NET  "ddr3_dq[58]"   LOC = "H29";          
+#NET  "ddr3_dq[59]"   LOC = "H28";          
+#NET  "ddr3_dq[60]"   LOC = "B30";          
+#NET  "ddr3_dq[61]"   LOC = "A30";          
+#NET  "ddr3_dq[62]"   LOC = "E29";          
+#NET  "ddr3_dq[63]"   LOC = "F29";
+#NET  "ddr3_dm[7]"    LOC = "A31";
+#NET  "ddr3_dqs_p[7]" LOC = "C30";          
+#NET  "ddr3_dqs_n[7]" LOC = "D30";
+##############################################
+### Bank 36 DDR3 SODIMM I/F pin assignments
+### Address and Control:
+##############################################
+### Addresses: (LOCS for 512MB SODIMM only)
+###
+#NET "ddr3_addr[12]"  LOC = "H15"; 
+#NET "ddr3_addr[11]"  LOC = "M15"; 
+#NET "ddr3_addr[10]"  LOC = "M16"; 
+#NET "ddr3_addr[9]"   LOC = "F15"; 
+#NET "ddr3_addr[8]"   LOC = "G15"; 
+#NET "ddr3_addr[7]"   LOC = "B15"; 
+#NET "ddr3_addr[6]"   LOC = "A15"; 
+#NET "ddr3_addr[5]"   LOC = "J17"; 
+#NET "ddr3_addr[4]"   LOC = "D16"; 
+#NET "ddr3_addr[3]"   LOC = "E16"; 
+#NET "ddr3_addr[2]"   LOC = "B16";  
+#NET "ddr3_addr[1]"   LOC = "A16"; 
+#NET "ddr3_addr[0]"   LOC = "L14"; 
+## Bank addresses:
+#NET "ddr3_ba[2]"     LOC = "L15"; 
+#NET "ddr3_ba[1]"     LOC = "J19"; 
+#NET "ddr3_ba[0]"     LOC = "K19"; 
+### Controls:
+#NET "ddr3_ras_n"     LOC = "L19"; 
+#NET "ddr3_cas_n"     LOC = "C17"; 
+#NET "ddr3_we_n" 	   LOC = "B17"; 
+#NET "ddr3_reset_n"   LOC = "E18"; 
+#NET "ddr3_cs_n[0]"   LOC = "K18"; 
+#NET "ddr3_odt[0]"    LOC = "F18"; 
+#NET "ddr3_cke[0]"    LOC = "M18"; 
+### FPGA differential clock output (400 MHz):
+#NET "ddr3_ck_p[0]"   LOC = "G18"; 
+#NET "ddr3_ck_n[0]"   LOC = "H18"; 
+##
+#########################################################
+###  ML605 clocks and system reset inputs and GPIO LEDS
+#########################################################
+## 
+##FIXMESS NET "sys_clk_p"     LOC = "J9"; 	# Epson 200 MHz LVDS oscillator P
+##FIXMESS NET "sys_clk_n"     LOC = "H9"; 	# Epson 200 MHz LVDS oscillator N
+##FIXMESS NET "sys_rst"       LOC = "H10";    # CPU_RESET switch (active high reset)           
+         
+
+##FIXMESS NET "led[0]"        LOC = "AC22";  # ML605 GPIO_LED0 = ON when test running, no errors     
+##FIXMESS NET "led[1]"        LOC = "AC24";  # ML605 GPIO_LED1 = divided down CLK should be blinking
+##FIXMESS NET "led[2]"        LOC = "AE22";  # ML605 GPIO_LED2 = error (should be OFF)
+##FIXMESS NET "led[3]"        LOC = "AE23";  # ML605 GPIO_LED3 = ON when initialization and calibration complete
+##FIXMESS NET "led[*]"        IOSTANDARD = LVCMOS25;
+
+
+## ML605 (replace MIG 3.3 output with ML605 specific LOCS)
+
+##################################################################################################
+##The following locations must be reserved and cannot be used for external I/O because          ##
+##the I/O elements associated with these sites (IODELAY, OSERDES, and associated routing)       ##
+##are used to generate and route the clocks necessary for read data capture and synchronization ##
+##to the core clock domain. These pins should not be routed out on the user's PCB               ##
+##################################################################################################
+
+##################################################################################################
+##The logic of this pin is used internally to drive a BUFR in the column. This chosen pin must  ##
+##be a clock pin capable of spanning to all of the banks containing data bytes in the particular##
+##column. That is, all byte groups must be within +/- 1 bank of this pin. This pin cannot be    ##
+##used for other functions and should not be connected externally. If a different pin is chosen,##
+##he corresponding LOC constraint must also be changed.                                         ##
+##################################################################################################
+
+###############################################################################################
+## Note: ML605 optional to comment out these lines. If design has more I/O than just MIG 3.3
+##       example design, leave CONFIG PROHIBIT definitions in design to permit reservation of
+##       these I/O pins for MIG use.
+###############################################################################################
+## CONFIG PROHIBIT = F19,G18;
+
+######################################################################################
+## Place RSYNC OSERDES and IODELAY:     (locations for ML605)                       ##
+######################################################################################
+
+# CLK_RSYNC[0]: Site M12
+INST "*/u_phy_rdclk_gen/gen_loop_col0.u_oserdes_rsync"  LOC = "OLOGIC_X2Y139";
+INST "*/u_phy_rdclk_gen/gen_loop_col0.u_odelay_rsync"   LOC = "IODELAY_X2Y139";
+INST "*/u_phy_rdclk_gen/gen_loop_col0.u_bufr_rsync"     LOC = "BUFR_X2Y6";
+
+# CLK_RSYNC[1]: Site C29
+INST "*/u_phy_rdclk_gen/gen_loop_col1.u_oserdes_rsync"  LOC = "OLOGIC_X1Y139";
+INST "*/u_phy_rdclk_gen/gen_loop_col1.u_odelay_rsync"   LOC = "IODELAY_X1Y139";
+INST "*/u_phy_rdclk_gen/gen_loop_col1.u_bufr_rsync"     LOC = "BUFR_X1Y6";
+
+##################################################################################################
+##The logic of this pin is used internally to drive a BUFIO for the byte group. Any clock       ##
+##capable pin in the same bank as the data byte group (DQS, DQ, DM if used) can be used for     ##
+##this pin. This pin cannot be used for other functions and should not be connected externally. ##
+##If a different pin is chosen, the corresponding LOC constraint must also be changed.          ##
+##################################################################################################
+
+## CONFIG PROHIBIT = B20,C28,C29,F21,F25,H19,L13,M12;
+
+######################################################################################
+##Place CPT OSERDES and IODELAY:                                                    ##
+######################################################################################
+
+# DQS[0]: Site C13
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[0].u_oserdes_cpt"  LOC = "OLOGIC_X2Y137";
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[0].u_odelay_cpt"   LOC = "IODELAY_X2Y137";
+
+# DQS[1]: Site L13
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[1].u_oserdes_cpt"  LOC = "OLOGIC_X2Y141";
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[1].u_odelay_cpt"   LOC = "IODELAY_X2Y141";
+
+# DQS[2]: Site K14
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[2].u_oserdes_cpt"  LOC = "OLOGIC_X2Y143";
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[2].u_odelay_cpt"   LOC = "IODELAY_X2Y143";
+
+# DQS[3]: Site F21
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[3].u_oserdes_cpt"  LOC = "OLOGIC_X1Y179";
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[3].u_odelay_cpt"   LOC = "IODELAY_X1Y179";
+
+# DQS[4]: Site B20
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[4].u_oserdes_cpt"  LOC = "OLOGIC_X1Y181";
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[4].u_odelay_cpt"   LOC = "IODELAY_X1Y181";
+
+# DQS[5]: Site F25  
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[5].u_oserdes_cpt"  LOC = "OLOGIC_X1Y137";
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[5].u_odelay_cpt"   LOC = "IODELAY_X1Y137";
+
+# DQS[6]: Site C28
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[6].u_oserdes_cpt"  LOC = "OLOGIC_X1Y141";
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[6].u_odelay_cpt"   LOC = "IODELAY_X1Y141";
+
+# DQS[7]: Site D24
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[7].u_oserdes_cpt"  LOC = "OLOGIC_X1Y143";
+INST "*/u_phy_rdclk_gen/gen_ck_cpt[7].u_odelay_cpt"   LOC = "IODELAY_X1Y143";
+
+#########################################################################################
+## The output clock phase monitor must be on a pin that is within +/- 1 bank vertically##
+## relative to the memory interface system ("write") MMCM. The pad is not used.To      ##
+## minimize pin usage, MIG picks a Vref pin which can be used as Vref while the ILOGIC ##
+## and OLOGIC are used for the output clock phase monitor.  If a different pin is      ##
+## chosen, the corresponding LOC constraint must also be changed.                      ##
+#########################################################################################
+
+#########################################################################################
+## SITE CONSTRAINT FOR OUTPUT CLOCK PHASE MONITOR (USE "SPARE" OLOGIC)                 ##
+## Site:J16 -- Bank: 36                                                                ##
+#########################################################################################
+
+INST "*/gen_enable_ocb_mon.u_phy_ocb_mon_top/u_oserdes_ocb_mon" LOC = "OLOGIC_X2Y130";
+
+######################################################################################
+## MMCM_ADV CONSTRAINTS                                                             ##
+######################################################################################
+
+# prepended ftop/dram0/memc/
+INST "ftop/dram0/memc/u_infrastructure/u_mmcm_adv"      LOC = "MMCM_ADV_X0Y9"; #Banks 16, 26, 36
+INST "ftop/dram0/memc/u_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/u_mmcm_clk_base" LOC = "MMCM_ADV_X0Y8"; #Banks 16, 26, 36
+
 
 ## Flash for ML605
 
