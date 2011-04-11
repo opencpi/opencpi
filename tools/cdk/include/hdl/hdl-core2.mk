@@ -52,13 +52,13 @@ $(OutDir)target-$(1)/$(2)$(HdlBin): LibName=$(HdlToolCoreLibName)
 $(OutDir)target-$(1)/$(2)$(HdlBin): TargetDir=$(OutDir)target-$(1)
 $(OutDir)target-$(1)/$(2)$(HdlBin): | $$$$(TargetDir)
 ifdef PreBuiltCore
-$(OutDir)target-$(1)/$(2)$(HdlBin): $(OutDir)imports/$(CoreFile)
+$(OutDir)target-$(1)/$(2)$(HdlBin): $(PreBuiltCore)
 	$(AT)if test ! -L $@; then \
 		$(ECHO) -n Establishing pre-built core file $(2)$(HdlBin) for; \
 	        $(ECHO) ' 'target \"$(HdlTarget)\"; \
 	     fi
 	$(AT)$$(call MakeSymLink2,$(strip \
-                $(OutDir)imports/$(CoreFile)),$(strip \
+                $(PreBuiltCore)),$(strip \
                 $$(TargetDir)),$(2)$(HdlBin))
 
 else

@@ -44,9 +44,9 @@
 # one -- until we have a good naming convension.
 XmlIncludeDirs=../../components/specs
 Implementations = \
+	dac.hdl \
 	adcx.hdl \
 	adc.rcc \
-	dac.hdl \
 	dac.rcc \
 	dram_v5.hdl \
 	dram_v6.hdl \

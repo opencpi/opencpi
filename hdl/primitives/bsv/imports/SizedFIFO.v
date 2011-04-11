@@ -19,8 +19,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 20862 $
-// $Date: 2010-06-07 18:20:35 +0000 (Mon, 07 Jun 2010) $
+// $Revision: 22838 $
+// $Date: 2010-12-21 17:05:29 +0000 (Tue, 21 Dec 2010) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
@@ -35,6 +35,7 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
    parameter               p3cntr_width = 1; // log(p2depth-1)
    // The -1 is allowed since this model has a fast output register
    parameter               guarded = 1;
+   localparam              p2depth2 = p2depth -2 ;
 
    input                   CLK;
    input                   RST_N;
@@ -58,12 +59,12 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
 
    // if the depth is too small, don't create an ill-sized array;
    // instead, make a 1-sized array and let the initial block report an error
-   reg [p1width - 1 : 0]     arr[0: ((p2depth >= 2) ? (p2depth-2) : 0)];
+   reg [p1width - 1 : 0]     arr[0: ((p2depth >= 2) ? (p2depth2) : 0)];
 
    reg [p1width - 1 : 0]     D_OUT;
    reg                       hasodata;
 
-   wire [p3cntr_width-1:0]   depthLess2 = p2depth[p3cntr_width-1:0] - 'h2 ;
+   wire [p3cntr_width-1:0]   depthLess2 = p2depth2[p3cntr_width-1:0] ;
 
    wire [p3cntr_width-1 : 0] incr_tail;
    wire [p3cntr_width-1 : 0] incr_head;
@@ -71,8 +72,8 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
    assign                    incr_tail = tail + 1'b1 ;
    assign                    incr_head = head + 1'b1 ;
 
-   assign    next_head = (head == depthLess2 ) ? 'b0 : incr_head ;
-   assign    next_tail = (tail == depthLess2 ) ? 'b0 : incr_tail ;
+   assign    next_head = (head == depthLess2 ) ? {p3cntr_width{1'b0}} : incr_head ;
+   assign    next_tail = (tail == depthLess2 ) ? {p3cntr_width{1'b0}} : incr_tail ;
 
    assign    EMPTY_N = hasodata;
    assign    FULL_N  = not_ring_full;
@@ -91,7 +92,7 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
         head          = {p3cntr_width {1'b0}} ;
         tail          = {p3cntr_width {1'b0}} ;
 
-        for (i = 0; i <= p2depth - 2 && p2depth > 2; i = i + 1)
+        for (i = 0; i <= p2depth2 && p2depth > 2; i = i + 1)
           begin
              arr[i]   = D_OUT ;
           end
@@ -114,7 +115,7 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
              // Uncomment to initialize array
              /*
              D_OUT    <= `BSV_ASSIGNMENT_DELAY {p1width {1'b0}} ;
-             for (i = 0; i <= p2depth - 2 && p2depth > 2; i = i + 1)
+             for (i = 0; i <= p2depth2 && p2depth > 2; i = i + 1)
                begin
                    arr[i]  <= `BSV_ASSIGNMENT_DELAY {p1width {1'b0}} ;
                end

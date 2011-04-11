@@ -185,7 +185,7 @@ module xilinx_v6_pcie_wrapper
 
    
    // endpoint instance
-   v6_pcie_v1_5 #(
+   v6_pcie_v1_7 #(
 		   .PL_FAST_TRAIN       ( PL_FAST_TRAIN )
 		   )
    ep

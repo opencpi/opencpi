@@ -1,7 +1,7 @@
 
 //-----------------------------------------------------------------------------
 //
-// (c) Copyright 2009-2010 Xilinx, Inc. All rights reserved.
+// (c) Copyright 2009-2011 Xilinx, Inc. All rights reserved.
 //
 // This file contains confidential and proprietary information
 // of Xilinx, Inc. and is protected under U.S. and
@@ -50,7 +50,7 @@
 //-----------------------------------------------------------------------------
 // Project    : Virtex-6 Integrated Block for PCI Express
 // File       : gtx_tx_sync_rate_v6.v
-// Version    : 2.1
+// Version    : 2.3
 // Module TX_SYNC
 
 `timescale 1ns / 1ps
@@ -92,34 +92,39 @@ module GTX_TX_SYNC_RATE_V6
   reg [7:0]         nextwaitcounter2;
   reg [7:0]         waitcounter;
   reg [7:0]         nextwaitcounter;
-  reg [21:0]        state;
-  reg [21:0]        nextstate;
+  reg [24:0]        state;
+  reg [24:0]        nextstate;
   reg               ratedone_r, ratedone_r2;
   wire              ratedone_pulse_i;
   reg               gt_phystatus_q;
 
 
-  localparam    IDLE                             =  22'b0000000000000000000001;
-  localparam    PHASEALIGN                       =  22'b0000000000000000000010;
-  localparam    RATECHANGE_DIVRESET              =  22'b0000000000000000000100;
-  localparam    RATECHANGE_DIVRESET_POST         =  22'b0000000000000000001000;
-  localparam    RATECHANGE_ENPMADISABLE          =  22'b0000000000000000010000;
-  localparam    RATECHANGE_ENPMADISABLE_POST     =  22'b0000000000000000100000;
-  localparam    RATECHANGE_PMARESET              =  22'b0000000000000001000000;
-  localparam    RATECHANGE_IDLE                  =  22'b0000000000000010000000;
-  localparam    RATECHANGE_PCSRESET              =  22'b0000000000000100000000;
-  localparam    RATECHANGE_PCSRESET_POST         =  22'b0000000000001000000000;
-  localparam    RATECHANGE_ASSERTPHY             =  22'b0000000000010000000000;
-  localparam    RESET_STATE                      =  22'b0000000000100000000000;
-  localparam    WAIT_PHYSTATUS                   =  22'b0000000010000000000000;
-  localparam    RATECHANGE_PMARESET_POST         =  22'b0000000100000000000000;
-  localparam    RATECHANGE_DISABLEPHASE          =  22'b0000001000000000000000;
-  localparam    DELAYALIGNRST                    =  22'b0000010000000000000000;
-  localparam    SETENPMAPHASEALIGN               =  22'b0000100000000000000000;
-  localparam    TXALIGNDISABLEDEASSERT           =  22'b0001000000000000000000;
-  localparam    RATECHANGE_TXDLYALIGNDISABLE     =  22'b0010000000000000000000;
-  localparam    OUTDIVRESET                      =  22'b0100000000000000000000;
-  localparam    RATECHANGE_DISABLE_TXALIGNDISABLE=  22'b1000000000000000000000;
+  localparam    IDLE                              =  25'b0000000000000000000000001;
+  localparam    PHASEALIGN                        =  25'b0000000000000000000000010;
+  localparam    RATECHANGE_DIVRESET               =  25'b0000000000000000000000100;
+  localparam    RATECHANGE_DIVRESET_POST          =  25'b0000000000000000000001000;
+  localparam    RATECHANGE_ENPMADISABLE           =  25'b0000000000000000000010000;
+  localparam    RATECHANGE_ENPMADISABLE_POST      =  25'b0000000000000000000100000;
+  localparam    RATECHANGE_PMARESET               =  25'b0000000000000000001000000;
+  localparam    RATECHANGE_IDLE                   =  25'b0000000000000000010000000;
+  localparam    RATECHANGE_PCSRESET               =  25'b0000000000000000100000000;
+  localparam    RATECHANGE_PCSRESET_POST          =  25'b0000000000000001000000000;
+  localparam    RATECHANGE_ASSERTPHY              =  25'b0000000000000010000000000;
+  localparam    RESET_STATE                       =  25'b0000000000000100000000000;
+  localparam    WAIT_PHYSTATUS                    =  25'b0000000000010000000000000;
+  localparam    RATECHANGE_PMARESET_POST          =  25'b0000000000100000000000000;
+  localparam    RATECHANGE_DISABLEPHASE           =  25'b0000000001000000000000000;
+  localparam    DELAYALIGNRST                     =  25'b0000000010000000000000000;
+  localparam    SETENPMAPHASEALIGN                =  25'b0000000100000000000000000;
+  localparam    TXALIGNDISABLEDEASSERT            =  25'b0000001000000000000000000;
+  localparam    RATECHANGE_TXDLYALIGNDISABLE      =  25'b0000010000000000000000000;
+  localparam    GTXTEST_PULSE_1                   =  25'b0000100000000000000000000;
+  localparam    RATECHANGE_DISABLE_TXALIGNDISABLE =  25'b0001000000000000000000000;
+  localparam    BEFORE_GTXTEST_PULSE1_1024CLKS    =  25'b0010000000000000000000000;
+  localparam    BETWEEN_GTXTEST_PULSES            =  25'b0100000000000000000000000;
+  localparam    GTXTEST_PULSE_2                   =  25'b1000000000000000000000000;
+
+
 
   localparam SYNC_IDX = C_SIMULATION ? 0 : 2;
   localparam PMARESET_IDX = C_SIMULATION ? 0: 7;
@@ -181,19 +186,71 @@ module GTX_TX_SYNC_RATE_V6
 
         TXALIGNDISABLE_c=1;
         ENPMAPHASEALIGN_c=0;
-        nextstate=OUTDIVRESET;
+        nextstate=BEFORE_GTXTEST_PULSE1_1024CLKS;
         nextwaitcounter=0;
         nextwaitcounter2=0;
 
       end
-      // Assert OUTDIVRESET
-      OUTDIVRESET : begin
+      
+      // Have to hold for 1024 clocks before asserting GTXTEST[1]
+      BEFORE_GTXTEST_PULSE1_1024CLKS : begin
+
+        OUT_DIV_RESET_c=0;
+        TXALIGNDISABLE_c=1;
+        ENPMAPHASEALIGN_c=0;
+
+        if(waitcounter2[1]) begin
+
+          nextstate=GTXTEST_PULSE_1;
+          nextwaitcounter=0;
+          nextwaitcounter2=0;
+
+        end
+
+      end
+
+      // Assert GTXTEST[1] for 256 clocks.  Figure 3-9 UG366
+      GTXTEST_PULSE_1: begin
 
         OUT_DIV_RESET_c=1;
         TXALIGNDISABLE_c=1;
         ENPMAPHASEALIGN_c=0;
 
-        if(waitcounter[4]) begin
+        if(waitcounter[7]) begin
+
+          nextstate=BETWEEN_GTXTEST_PULSES;
+          nextwaitcounter=0;
+          nextwaitcounter2=0;
+
+        end
+
+      end
+
+      // De-assert GTXTEST[1] for 256 clocks. Figure 3-9 UG366
+      BETWEEN_GTXTEST_PULSES: begin
+
+        OUT_DIV_RESET_c=0;
+        TXALIGNDISABLE_c=1;
+        ENPMAPHASEALIGN_c=0;
+
+        if(waitcounter[7]) begin
+
+          nextstate=GTXTEST_PULSE_2;
+          nextwaitcounter=0;
+          nextwaitcounter2=0;
+
+        end
+
+      end
+
+      // Assert GTXTEST[1] for 256 clocks a second time.  Figure 3-9 UG366 
+      GTXTEST_PULSE_2: begin
+
+        OUT_DIV_RESET_c=1;
+        TXALIGNDISABLE_c=1;
+        ENPMAPHASEALIGN_c=0;
+
+        if(waitcounter[7]) begin
 
           nextstate=DELAYALIGNRST;
           nextwaitcounter=0;
@@ -202,6 +259,8 @@ module GTX_TX_SYNC_RATE_V6
         end
 
       end
+
+
 
       // ASSERT TXDLYALIGNRESET FOR 16 CLOCK CYCLES
       DELAYALIGNRST : begin

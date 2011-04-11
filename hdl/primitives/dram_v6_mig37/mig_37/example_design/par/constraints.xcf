@@ -1,0 +1,17 @@
+MODEL ui_rd_data max_fanout = 20;
+
+BEGIN MODEL ui_wr_data
+NET app_wdf_rdy_r max_fanout=20;
+END;
+
+BEGIN MODEL phy_rdclk_gen
+NET rst_oserdes max_fanout=10;
+END;
+
+BEGIN MODEL phy_data_io
+NET rst_r max_fanout=1;
+END;
+
+BEGIN MODEL phy_control_io
+NET rst_r max_fanout=1;
+END;

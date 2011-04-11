@@ -1,0 +1,1775 @@
+<FpgaSignalList terr_6per="200" trfc="110" tis="200" tmax="3300" tras="37.5" terr_10per="231" trp="13.13" fmax="533" terr_5per="188" type="DDR3" tfaw="45" terr_4per="175" tipw="780" trcd="13.13" twr="15" taon="300" tqsh="0.38" terr_12per="242" terr_3per="157" tjit="90" tqsl="0.38" trefi="7.8" tdipw="490" terr_11per="237" trtp="7.5" terr_2per="132" txp="7.5" taa_min="13125" twlh="245" tdqsq="200" tjit_duty="180" tdh="150" twtr="7.5" tdqss="0.25" tdsh="0.2" twlo="9" terr_8per="217" base="MT4JSF6464XX-1G1" tdqsck="400" tmrd="4" twls="245" tmin="1875" tds="75" tck_min="1875" tjit_cc="75" tih="275" tdss="0.2" terr_7per="209" trrd="7.5" terr_9per="224" cl_time="13125" fmin="303" tcke="5.625" trc="50.625" name="MT4JSF6464XX-1G1" twpre="0.9" >
+ <SignalGroup IOVoltage="1.5V" DCIStandard="SSTL15_DCI" virtex6_DCIStandard="SSTL15_T_DCI" standard="SSTL15" name="Data" IOType="inout" >
+  <!--  Showing the maximum number of Data pins here for DDR3 Family, if user decide to change to less , they can do it so  -->
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[0]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[1]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[2]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[3]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[4]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[5]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[6]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[7]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[8]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[9]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[10]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[11]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[12]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[13]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[14]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[15]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[16]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[17]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[18]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[19]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[20]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[21]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[22]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[23]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[24]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[25]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[26]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[27]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[28]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[29]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[30]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[31]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[32]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[33]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[34]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[35]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[36]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[37]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[38]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[39]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[40]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[41]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[42]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[43]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[44]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[45]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[46]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[47]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[48]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[49]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[50]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[51]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[52]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[53]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[54]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[55]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[56]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[57]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[58]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[59]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[60]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[61]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[62]" IOType="inout" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_WIDTH" name="ddr3_dq[63]" IOType="inout" src="user_design" ></SignalName>
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="SSTL15_DCI" virtex6_DCIStandard="SSTL15" type="Row" standard="SSTL15" name="Address" IOType="output" >
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[12]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[11]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[10]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[9]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[8]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[7]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[6]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[5]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[4]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[3]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[2]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[1]" IOType="output" ></SignalName>
+  <SignalName keyword="ROW_ADDRESS" name="ddr3_addr[0]" IOType="output" ></SignalName>
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="SSTL15_DCI" virtex6_DCIStandard="SSTL15" type="Bank" standard="SSTL15" name="BankAddress" IOType="output" >
+  <SignalName keyword="BANK_ADDRESS" name="ddr3_ba[2]" IOType="output" ></SignalName>
+  <SignalName keyword="BANK_ADDRESS" name="ddr3_ba[1]" IOType="output" ></SignalName>
+  <SignalName keyword="BANK_ADDRESS" name="ddr3_ba[0]" IOType="output" ></SignalName>
+ </SignalGroup>
+ <!-- Removed the T_DCI Standard and provided the normal Standard for the Attribute virtex6_DCIStandard as suggested by designers
+		 Dated: 11/02/10
+		 By Prasad -->
+ <SignalGroup IOVoltage="1.5V" DCIStandard="SSTL15_DCI" virtex6_DCIStandard="SSTL15" standard="SSTL15" name="Control" IOType="output" >
+  <SignalName name="ddr3_ras#" IOType="output" />
+  <SignalName name="ddr3_cas#" IOType="output" />
+  <SignalName name="ddr3_we#" IOType="output" />
+  <!-- As per memory datasheets, voltage standard for ddr3_reset should
+             be LVCMOS15. So provoided standard for ddr3_reset separately. -->
+  <SignalName DCIStandard="LVCMOS15" virtex6_DCIStandard="LVCMOS15" standard="LVCMOS15" name="ddr3_reset#" IOType="output" />
+  <SignalName option=" " keyword="CKE_WIDTH" name="ddr3_cke[0]" IOType="output" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="" name="ddr3_odt[0]" IOType="output" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="" name="ddr3_cs#[0]" IOType="output" src="user_design" ></SignalName>
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="SSTL15_DCI" virtex6_DCIStandard="SSTL15" standard="SSTL15" name="Mask" IOType="output" >
+  <SignalName option=" " keyword="DATA_MASK_WIDTH" name="ddr3_dm[0]" IOType="output" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_MASK_WIDTH" name="ddr3_dm[1]" IOType="output" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_MASK_WIDTH" name="ddr3_dm[2]" IOType="output" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_MASK_WIDTH" name="ddr3_dm[3]" IOType="output" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_MASK_WIDTH" name="ddr3_dm[4]" IOType="output" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_MASK_WIDTH" name="ddr3_dm[5]" IOType="output" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_MASK_WIDTH" name="ddr3_dm[6]" IOType="output" src="user_design" ></SignalName>
+  <SignalName option=" " keyword="DATA_MASK_WIDTH" name="ddr3_dm[7]" IOType="output" src="user_design" ></SignalName>
+ </SignalGroup>
+ <ClockingType name="ClockingType" >
+  <id name="Direct_clocking" />
+  <id name="Serdes" />
+  <id name="Local clocking" />
+ </ClockingType>
+ <!-- Mode Register 0-->
+ <!-- Mode Register 1-->
+ <!-- Mode Register 2-->
+ <mr2PartialArraySelfRefresh>
+  <value>Partial-Array Self Refresh=PARTIAL_ARRAY_SELF_REFRESH</value>
+  <value>Full Array(000)</value>
+  <value>Half Array(001) (BA[2:0]= 000,001,010, 011)</value>
+  <value>Quarter Array(010) (BA[2:0]= 000,011)</value>
+  <value>1/8th Array(011) (BA[2:0]= 000)</value>
+  <value>3/4 Array(100) (BA[2:0]= 010,011,100,101,110, 111)</value>
+  <value>Half Array(101)(BA[2:0]= 100,101,110, 111)</value>
+  <value>Quarter Array(110) (BA[2:0]= 110,111)</value>
+  <value>1/8th Array(111) (BA[2:0]=111)</value>
+ </mr2PartialArraySelfRefresh>
+ <mr2CasWriteLatency>
+  <value>CAS write latency=CAS_WRITE_LATENCY</value>
+  <value fmin="303" fmax="400" tmin="2500" tmax="3300" >5(000)</value>
+  <value fmin="401" fmax="533" tmin="1875" tmax="2499" >6(001)</value>
+  <value>Reserved(010)</value>
+  <value>Reserved(011)</value>
+  <value>Reserved(100)</value>
+  <value>Reserved(101)</value>
+  <value>Reserved(110)</value>
+  <value>Reserved(111)</value>
+ </mr2CasWriteLatency>
+ <mr2AutoSelfRefresh>
+  <value>Auto Self Refresh=AUTO_SELF_REFRESH</value>
+  <value>Disabled(0)</value>
+  <value>Enabled(1)</value>
+ </mr2AutoSelfRefresh>
+ <mr2SelfRefreshTempRange>
+  <value>High Temparature Self Refresh Rate=SELF_REFRESH_TEMP_RANGE</value>
+  <value>Normal(0)</value>
+  <value>Extended(1)</value>
+ </mr2SelfRefreshTempRange>
+ <mr2RTTWR>
+  <value>RTT_WR - Dynamic On Die Termination (ODT)=RTT_WR</value>
+  <!-- <value>RZQ/4(01)</value> -->
+  <!-- <value>RZQ/2(10)</value> -->
+  <value>Dynamic ODT off(00)</value>
+  <!-- <value>Reserved(11)</value> -->
+ </mr2RTTWR>
+ <!-- Mode Register 3-->
+ <mr3MPRLOC>
+  <value>MPR Loc=MPR_LOC</value>
+  <value>Predefined Pattern(00)</value>
+  <value>RFU(01)</value>
+  <value>RFU(10)</value>
+  <value>RFU(11)</value>
+ </mr3MPRLOC>
+ <mr3MPRC>
+  <value>MPR=MPRC</value>
+  <value>Normal Operation(0)</value>
+  <value>Dataflow from MPR(1)</value>
+ </mr3MPRC>
+ <!-- Design frequency range (Time Period) values for various FPGA series are
+     added for each FPGA speed grade. -->
+ <!-- To fix CR #527099, frequency equivalent min and max time period values
+     are added. -->
+ <DesignFreq subType="lx,sx,hx" >
+  <SG-1 fmin="303" fmax="400" tmin="2500" tmax="3300" />
+  <SG-2 fmin="303" fmax="533" tmin="1875" tmax="3300" />
+  <SG-3 fmin="303" fmax="533" tmin="1875" tmax="3300" />
+ </DesignFreq>
+ <DesignFreq subType="cx" >
+  <SG-1 fmin="303" fmax="333" tmin="3000" tmax="3300" />
+  <SG-2 fmin="303" fmax="400" tmin="2500" tmax="3300" />
+ </DesignFreq>
+ <DesignFreq subType="lxl,sxl" >
+  <SG-1L fmin="303" fmax="400" tmin="2500" tmax="3300" />
+ </DesignFreq>
+ <!-- IODELAY Power Versus Performance selection is controlled in GUI based on
+     design frequncy selection. Frequency range (Time Period) values are added
+     for each FPGA speed grade. -->
+ <High_Perfromance_Mode>
+  <SG-1 falsePeriod="5000" truePeriod="3750" trueFreq="266" falseFreq="200" />
+  <SG-2 falsePeriod="5000" truePeriod="3333" trueFreq="300" falseFreq="200" />
+  <SG-3 falsePeriod="5000" truePeriod="3300" trueFreq="333" falseFreq="200" />
+ </High_Perfromance_Mode>
+ <Ref_Clock_Frequency>
+  <Freq timePeriod_range="1875-3300" speedgrade="-1,-1L" frequency_range="303-533" ref_clock_frequency="200" />
+  <Freq timePeriod_range="2084-3300" speedgrade="-2,-3" frequency_range="303-479" ref_clock_frequency="200" />
+  <Freq timePeriod_range="1250-2083" speedgrade="-2,-3" frequency_range="480-800" ref_clock_frequency="300" />
+ </Ref_Clock_Frequency>
+ <!--This parameter indicates the marginal frequency for Enabiling the
+        phase detector and its corresponding constraints.
+        The freq mentioned belongs to the upper limit(Phase detector is ON).
+        For Eg:- If the Freq. selected in the GUI is less then mentioned freq.
+        Phase detector is OFF. If selected freq. in GUI is greater then or
+        equal to mentioned freq. Phase detector is ON-->
+ <Phase_Detector_Frequency>
+  <Freq timePeriod_margin="4000" frequency_margin="250" />
+ </Phase_Detector_Frequency>
+ <!-- Parameter names are different for DDR2 and DDR3, but since there is
+         only on mig_memc_ui_top module and it needs these parameter values to be replaced,
+         a parameter name common to both DDR2 and DDR3 is used here-->
+ <!-- These parameter declarations are the design parameters which are not
+         declared in design top rtl file. These can deleted safely, just for
+         the reference these list of parameters are maintained here -->
+ <unused>
+  <Content>
+   parameter DRAM_TYPE               = "DDR3",
+                                       // SDRAM type. # = "DDR3", "DDR2".
+   parameter DQ_CNT_WIDTH            = %DQ_CNT_WIDTH,
+                                       // # = ceil(log2(DQ_WIDTH)).
+   parameter DRAM_WIDTH              = %DATABITSPERSTROBE,
+                                       // # of DQ bits per DQS.
+   parameter AL                      = %ADDITIVE_LATENCY_VALUE,
+                                       // Additive Latency (Mode Register 1).
+                                       // # = "0", "CL-1", "CL-2".
+   parameter BURST_TYPE              = %BURST_TYPE,
+                                       // Burst Type (Mode Register 0).
+                                       // # = "SEQ" - (Sequential),
+                                       //   = "INT" - (Interleaved).
+   parameter IBUF_LPWR_MODE          = "OFF",
+                                       // to phy_top
+   parameter IODELAY_HP_MODE         = %HIGH_PERFORMANCE_MODE,
+                                       // to phy_top
+   parameter nAL                     = 0,
+                                       // # Additive Latency in number of clock
+                                       // cycles.
+   parameter CL                      = %CAS_LATENCY_VALUE,
+                                       // CAS Latency (Mode Register 0).
+   parameter CWL                     = %CAS_WRITE_LATENCY,
+                                       // CAS Write Latency (Mode Register 2).
+   parameter DATA_BUF_ADDR_WIDTH     = 8,
+                                       // # = 8,9,10,11,12.
+   parameter DATA_BUF_OFFSET_WIDTH   = 1,
+                                       // # = 0,1.
+   parameter DELAY_WR_DATA_CNTRL     = 0,
+                                       // # = 0,1.
+   parameter nBANK_MACHS             = 4,
+                                       // # = 2,3,4,5,6,7,8.
+   parameter RANKS                   = %RANKS,
+                                       // # of Ranks.
+   parameter CAL_WIDTH               = "FULL",
+                                       // # = "HALF", "FULL".
+   parameter tFAW                    = %FAW_COUNT_VALUE,
+                                       // memory tRAW paramter.
+   parameter tPRDI                   = 1_000_000,
+                                       // memory tPRDI paramter.
+   parameter tRRD                    = %RRD_COUNT_VALUE,
+                                       // memory tRRD paramter.
+   parameter tRAS                    = %RAS_COUNT_VALUE,
+                                       // memory tRAS paramter.
+   parameter tRCD                    = %RCD_COUNT_VALUE,
+                                       // memory tRCD paramter.
+   parameter tREFI                   = %TREFI_PS,
+                                       // memory tREFI paramter.
+   parameter tRFC                    = %RFC_COUNT_VALUE,
+                                       // memory tRFC paramter.
+   parameter tRP                     = %RP_COUNT_VALUE,
+                                       // memory tRP paramter.
+   parameter tRTP                    = %TRTP_COUNT_VALUE,
+                                       // memory tRTP paramter.
+   parameter tWTR                    = %TWTR_COUNT_VALUE,
+                                       // memory tWTR paramter.
+   parameter tZQI                    = 128,
+                                       // memory tZQI paramter.
+   parameter tZQCS                   = 64,
+                                       // memory tZQCS paramter.
+   parameter SLOT_0_CONFIG           = 8'b0000_0001,
+                                       // Mapping of Ranks.
+   parameter SLOT_1_CONFIG           = 8'b0000_0000,
+                                       // Mapping of Ranks.
+   parameter ECC                     = %ECC_ENABLE,
+   parameter DATA_WIDTH              = %DQ_WIDTH,
+                                       // # = DQ_WIDTH + ECC_WIDTH, if ECC="ON";
+                                       //   = DQ_WIDTH, if ECC="OFF".
+      </Content>
+ </unused>
+ <MemTopSubSignals type="REF_CLK_CODE" name="REFCLK_Parameter" >
+  <Content>   parameter REFCLK%refClk_FREQ             = %REFCLK_FREQ,
+                                       // # = 200 when design frequency &lt;= 533 MHz,
+                                       //   = 300 when design frequency > 533 MHz.
+   parameter IODELAY%refClk_GRP             = "IODELAY%refClk_MIG",
+                                       // It is associated to a set of IODELAYs with
+                                       // an IDELAYCTRL that have same IODELAY CONTROLLER
+                                       // clock frequency.</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals type="SYS_CLK_CODE" name="SYSCLK_Parameters" >
+  <Content>
+   parameter MMCM_ADV_BANDWIDTH%sysClk_u      = %MMCM_ADV_BANDWIDTH,
+                                       // MMCM programming algorithm
+   parameter CLK%sysClk_uFBOUT_MULT_F         = %CLKFBOUT_MULT_F,
+                                       // write PLL VCO multiplier.
+   parameter DIVCLK%sysClk_u_DIVIDE           = %DIVCLK_DIVIDE,
+                                       // write PLL VCO divisor.
+   parameter CLK%sysClk_uOUT_DIVIDE           = %CLKOUT_DIVIDE,
+                                       // VCO output divisor for fast (memory) clocks.</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals type1="common" type="SYS_CLK_CODE" name="SYSCLK_Parameters_com" >
+  <Content>
+   parameter nCK_PER_CLK%sysClk_u             = 2,
+                                       // # of memory CKs per fabric clock.
+                                       // # = 2, 1.
+   parameter tCK%sysClk_u                     = %CLK_PERIOD,
+                                       // memory tCK paramter.
+                                       // # = Clock Period.</Content>
+ </MemTopSubSignals>
+ <MemTopSignals type="controller" name="ParameterDeclarations" >
+  <Content>#REFCLK_Parameter##SYSCLK_Parameters##SYSCLK_Parameters_com#
+   parameter %cntInfo_u%memType_uDEBUG_PORT              = %DEBUG_EN,
+                                       // # = "ON" Enable debug signals/controls.
+                                       //   = "OFF" Disable debug signals/controls.
+   parameter %cntInfo_u%memType_uSIM_BYPASS_INIT_CAL     = "OFF",
+                                       // # = "OFF" -  Complete memory init &amp;
+                                       //              calibration sequence
+                                       // # = "SKIP" - Skip memory init &amp;
+                                       //              calibration sequence
+                                       // # = "FAST" - Skip memory init &amp; use
+                                       //              abbreviated calib sequence
+   parameter %cntInfo_u%memType_unCS_PER_RANK            = %COMPONENT_WIDTH,
+                                       // # of unique CS outputs per Rank for
+                                       // phy.
+   parameter %cntInfo_u%memType_uDQS_CNT_WIDTH           = %DQS_CNT_WIDTH,
+                                       // # = ceil(log2(DQS_WIDTH)).
+   parameter %cntInfo_u%memType_uRANK_WIDTH              = %RANK_WIDTH,
+                                       // # = ceil(log2(RANKS)).
+   parameter %cntInfo_u%memType_uBANK_WIDTH              = %BANK_ADDRESS,
+                                       // # of memory Bank Address bits.
+   parameter %cntInfo_u%memType_uCK_WIDTH                = %CLK_WIDTH,
+                                       // # of CK/CK# outputs to memory.
+   parameter %cntInfo_u%memType_uCKE_WIDTH               = %CKE_WIDTH,
+                                       // # of CKE outputs to memory.
+   parameter %cntInfo_u%memType_uCOL_WIDTH               = %COLUMN_ADDRESS,
+                                       // # of memory Column Address bits.
+   parameter %cntInfo_u%memType_uCS_WIDTH                = %RANKS,
+                                       // # of unique CS outputs to memory.#DM_parameter_declaration#
+   parameter %cntInfo_u%memType_uDQ_WIDTH                = %DATA_WIDTH,
+                                       // # of Data (DQ) bits.
+   parameter %cntInfo_u%memType_uDQS_WIDTH               = %DATA_STROBE_WIDTH,
+                                       // # of DQS/DQS# bits.
+   parameter %cntInfo_u%memType_uROW_WIDTH               = %ROW_ADDRESS,
+                                       // # of memory Row Address bits.
+   parameter %cntInfo_u%memType_uBURST_MODE              = %BURST_LENGTH,
+                                       // Burst Length (Mode Register 0).
+                                       // # = "8", "4", "OTF".
+   parameter %cntInfo_u%memType_uBM_CNT_WIDTH            = 2,
+                                       // # = ceil(log2(nBANK_MACHS)).
+   parameter %cntInfo_u%memType_uADDR_CMD_MODE           = %ADDR_CMD_MODE,
+                                       // # = "2T", "1T".
+   parameter %cntInfo_u%memType_uORDERING                = %ORDERING,
+                                       // # = "NORM", "STRICT", "RELAXED".
+   parameter %cntInfo_u%memType_uWRLVL                   = %WRLVL,
+                                       // # = "ON" - DDR3 SDRAM
+                                       //   = "OFF" - DDR2 SDRAM.
+   parameter %cntInfo_u%memType_uPHASE_DETECT            = %PHASE_DETECT,
+                                       // # = "ON", "OFF".
+   parameter %cntInfo_u%memType_uRTT_NOM                 = %ODT_ENABLE,
+                                       // RTT_NOM (ODT) (Mode Register 1).
+                                       // # = "DISABLED" - RTT_NOM disabled,
+                                       //   = "120" - RZQ/2,
+                                       //   = "60"  - RZQ/4,
+                                       //   = "40"  - RZQ/6.
+   parameter %cntInfo_u%memType_uRTT_WR                  = %RTT_WR,
+                                       // RTT_WR (ODT) (Mode Register 2).
+                                       // # = "OFF" - Dynamic ODT off,
+                                       //   = "120" - RZQ/2,
+                                       //   = "60"  - RZQ/4,
+   parameter %cntInfo_u%memType_uOUTPUT_DRV              = %OP_DRIVE_STRENGTH,
+                                       // Output Driver Impedance Control (Mode Register 1).
+                                       // # = "HIGH" - RZQ/7,
+                                       //   = "LOW" - RZQ/6.
+   parameter %cntInfo_u%memType_uREG_CTRL                = %REGISTERED,
+                                       // # = "ON" - RDIMMs,
+                                       //   = "OFF" - Components, SODIMMs, UDIMMs.
+   parameter %cntInfo_u%memType_unDQS_COL0               = %nDQS_COL0,
+                                       // Number of DQS groups in I/O column #1.
+   parameter %cntInfo_u%memType_unDQS_COL1               = %nDQS_COL1,
+                                       // Number of DQS groups in I/O column #2.
+   parameter %cntInfo_u%memType_unDQS_COL2               = %nDQS_COL2,
+                                       // Number of DQS groups in I/O column #3.
+   parameter %cntInfo_u%memType_unDQS_COL3               = %nDQS_COL3,
+                                       // Number of DQS groups in I/O column #4.
+   parameter %cntInfo_u%memType_uDQS_LOC_COL0            = %DQS_LOC_COL0,
+                                       // DQS groups in column #1.
+   parameter %cntInfo_u%memType_uDQS_LOC_COL1            = %DQS_LOC_COL1,
+                                       // DQS groups in column #2.
+   parameter %cntInfo_u%memType_uDQS_LOC_COL2            = %DQS_LOC_COL2,
+                                       // DQS groups in column #3.
+   parameter %cntInfo_u%memType_uDQS_LOC_COL3            = %DQS_LOC_COL3,
+                                       // DQS groups in column #4.
+   parameter %cntInfo_u%memType_utPRDI                   = 1_000_000,
+                                       // memory tPRDI paramter.
+   parameter %cntInfo_u%memType_utREFI                   = %TREFI_PS,
+                                       // memory tREFI paramter.
+   parameter %cntInfo_u%memType_utZQI                    = 128_000_000,
+                                       // memory tZQI paramter.
+   parameter %cntInfo_u%memType_uADDR_WIDTH              = %ADDR_WIDTH,
+                                       // # = RANK_WIDTH + BANK_WIDTH
+                                       //     + ROW_WIDTH + COL_WIDTH;
+   parameter %cntInfo_u%memType_uECC_TEST                = "OFF",#TG_parameter_declaration_controller##AXI_parameter_declaration_controller#</Content>
+ </MemTopSignals>
+ <MemTopSubSignals optional="MASK_ENABLE" type="controller" name="DM_parameter_declaration" >
+  <Content>
+   parameter %cntInfo_u%memType_uDM_WIDTH                = %DATA_MASK_WIDTH,
+                                       // # of Data Mask bits.</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="AXI" name="AXI_parameter_declaration_controller" interface="AXI" >
+  <Content>
+   parameter %cntInfo_u%memType_uINTERFACE               = %INTERFACE,
+                                       // Port Interface.
+                                       // # = UI - User Interface,
+                                       //   = AXI4 - AXI4 Interface.
+   parameter %cntInfo_u%memType_uC_S_AXI_ID_WIDTH          = %S_AXI_ID_WIDTH,
+                                       // Width of all master and slave ID signals.
+                                       // # = >= 1.
+   parameter %cntInfo_u%memType_uC_S_AXI_ADDR_WIDTH        = %S_AXI_ADDR_WIDTH,
+                                       // Width of S_AXI_AWADDR, S_AXI_ARADDR, M_AXI_AWADDR and
+                                       // M_AXI_ARADDR for all SI/MI slots.
+                                       // # = 32.
+   parameter %cntInfo_u%memType_uC_S_AXI_DATA_WIDTH        = %S_AXI_DATA_WIDTH,
+                                       // Width of WDATA and RDATA on SI slot.
+                                       // Must be less or equal to APP_DATA_WIDTH.
+                                       // # = 32, 64, 128, 256.
+   parameter %cntInfo_u%memType_uC_S_AXI_SUPPORTS_NARROW_BURST  = %S_AXI_SUPPORTS_NARROW_BURST,
+                                       // Indicates whether to instatiate upsizer
+                                       // Range: 0, 1
+   parameter %cntInfo_u%memType_uENFORCE_RD_WR             = 0,
+   parameter %cntInfo_u%memType_uENFORCE_RD_WR_CMD         = 8'h11,
+   parameter %cntInfo_u%memType_uENFORCE_RD_WR_PATTERN     = 3'b000,
+   parameter %cntInfo_u%memType_uC_EN_WRAP_TRANS           = 0,
+   parameter %cntInfo_u%memType_uC_AXI_NBURST_TEST         = 0,
+   // calibration Address. The address given below will be used for calibration
+   // read and write operations. 
+   parameter %cntInfo_u%memType_uCALIB_ROW_ADD             = 16'h0000,// Calibration row address
+   parameter %cntInfo_u%memType_uCALIB_COL_ADD             = 12'h000, // Calibration column address
+   parameter %cntInfo_u%memType_uCALIB_BA_ADD              = 3'h0,    // Calibration bank address</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_DISABLE" name="TG_parameter_declaration_controller" >
+  <Content>
+   parameter %cntInfo_u%memType_uTCQ                     = 100,
+   parameter %cntInfo_u%memType_uDATA_WIDTH              = %DQ_WIDTH,
+   parameter %cntInfo_u%memType_uPAYLOAD_WIDTH           = (%cntInfo_u%memType_uECC_TEST == "OFF") ? %cntInfo_u%memType_uDATA_WIDTH : %cntInfo_u%memType_uDQ_WIDTH,</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_ENABLE" name="TG_parameter_declaration_controller" interface="NATIVE" >
+  <Content>
+   parameter %cntInfo_u%memType_uTCQ                     = 100,
+   // Traffic Gen related parameters
+   parameter %cntInfo_u%memType_uEYE_TEST                = "FALSE",
+                                       // set EYE_TEST = "TRUE" to probe memory
+                                       // signals. Traffic Generator will only
+                                       // write to one single location and no
+                                       // read transactions will be generated.
+   parameter %cntInfo_u%memType_uDATA_PATTERN            = "DGEN_ALL",
+                                        // "DGEN_HAMMER", "DGEN_WALKING1",
+                                        // "DGEN_WALKING0","DGEN_ADDR","
+                                        // "DGEN_NEIGHBOR","DGEN_PRBS","DGEN_ALL"
+   parameter %cntInfo_u%memType_uCMD_PATTERN             = "CGEN_ALL",
+                                        // "CGEN_PRBS","CGEN_FIXED","CGEN_BRAM",
+                                        // "CGEN_SEQUENTIAL", "CGEN_ALL"
+
+   parameter %cntInfo_u%memType_uBEGIN_ADDRESS           = 32'h00000000,
+   parameter %cntInfo_u%memType_uPRBS_SADDR_MASK_POS     = 32'h00000000,
+   parameter %cntInfo_u%memType_uEND_ADDRESS             = 32'h00ffffff,
+   parameter %cntInfo_u%memType_uPRBS_EADDR_MASK_POS     = 32'hff000000,
+   parameter %cntInfo_u%memType_uSEL_VICTIM_LINE         = 11,</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_ENABLE" name="TG_parameter_declaration_controller" interface="AXI" >
+  <Content>
+   parameter %cntInfo_u%memType_uTCQ                     = 100,</Content>
+ </MemTopSubSignals>
+ <MemTopSignals type="controller" name="SignalsWithDirectionAndWidth" >
+  <Content>#Design_Clock_ports##IODELAY_CONTROLLER_Clock_ports#
+   inout  [%cntInfo_u%memType_uDQ_WIDTH-1:0]                %cntInfo_lddr3_dq,
+   output [%cntInfo_u%memType_uROW_WIDTH-1:0]               %cntInfo_lddr3_addr,
+   output [%cntInfo_u%memType_uBANK_WIDTH-1:0]              %cntInfo_lddr3_ba,
+   output                               %cntInfo_lddr3_ras_n,
+   output                               %cntInfo_lddr3_cas_n,
+   output                               %cntInfo_lddr3_we_n,
+   output                               %cntInfo_lddr3_reset_n,
+   output [(%cntInfo_u%memType_uCS_WIDTH*%cntInfo_u%memType_unCS_PER_RANK)-1:0] %cntInfo_lddr3_cs_n,
+   output [(%cntInfo_u%memType_uCS_WIDTH*%cntInfo_u%memType_unCS_PER_RANK)-1:0] %cntInfo_lddr3_odt,
+   output [%cntInfo_u%memType_uCKE_WIDTH-1:0]               %cntInfo_lddr3_cke,#DM_port_declaration#
+   inout  [%cntInfo_u%memType_uDQS_WIDTH-1:0]               %cntInfo_lddr3_dqs_p,
+   inout  [%cntInfo_u%memType_uDQS_WIDTH-1:0]               %cntInfo_lddr3_dqs_n,
+   output [%cntInfo_u%memType_uCK_WIDTH-1:0]                %cntInfo_lddr3_ck_p,
+   output [%cntInfo_u%memType_uCK_WIDTH-1:0]                %cntInfo_lddr3_ck_n,#ParityPortDeclaration##SPDPortDeclaration##ECCPortDeclaration#
+#TBSignalsWithDirectionandWidth#
+   output                               %cntInfo_l%memType_lphy_init_done,
+</Content>
+ </MemTopSignals>
+ <MemTopSubSignals optional="SINGLE_ENDED" type="SYS_CLK_CODE" name="Design_Clock_ports" >
+  <Content>
+  input                             sys_clk%sysClk,    //single ended system clocks</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="DIFFERENTIAL" type="SYS_CLK_CODE" name="Design_Clock_ports" >
+  <Content>
+  input                             sys_clk%sysClk_p,    //differential system clocks
+  input                             sys_clk%sysClk_n,</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="SINGLE_ENDED" type="REF_CLK_CODE" name="IODELAY_CONTROLLER_Clock_ports" >
+  <Content>
+  input                             clk%refClk_ref,     //single ended iodelayctrl clk</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="DIFFERENTIAL" type="REF_CLK_CODE" name="IODELAY_CONTROLLER_Clock_ports" >
+  <Content>
+  input                             clk%refClk_ref_p,     //differential iodelayctrl clk
+  input                             clk%refClk_ref_n,</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="MASK_ENABLE" type="controller" name="DM_port_declaration" >
+  <Content>
+   output [%cntInfo_u%memType_uDM_WIDTH-1:0]                 %cntInfo_lddr3_dm,</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="REGISTERED" value="ON" name="ParityPortDeclaration" >
+  <Content>
+   output                               %cntInfo_lddr3_parity,</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="DIMM" name="SPDPortDeclaration" >
+  <Content>
+   inout                                %cntInfo_l%memType_lsda,
+   output                               %cntInfo_l%memType_lscl,</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="ECC_ENABLE" value="ON" name="ECCPortDeclaration" >
+  <Content>
+   output                             %cntInfo_l%memType_lapp_ecc_multiple_err,</Content>
+ </MemTopSubSignals>
+ <!--<MemTopSignals name="SignalsWithDirectionAndWidth" type="common">
+      <Content>#dummy_inout_pin#</Content>
+    </MemTopSignals>-->
+ <!--<MemTopSubSignals name="dummy_inout_pin" optional="MASTERBANK_ALLOC" >
+      <Content>
+   inout [%memType_uMASTERBANK_PIN_WIDTH-1:0]     %memType_lmasterbank_sel_pin,</Content>
+    </MemTopSubSignals>-->
+ <MemTopSubSignals optional="TB_ENABLE" name="TBSignalsWithDirectionandWidth" >
+  <Content>   output                               %cntInfo_l%memType_lerror,</Content>
+ </MemTopSubSignals>
+ <SubSubSignals optional="MASK_ENABLE" name="app_wdf_mask_port" >
+  <Content>
+   input [(4*%cntInfo_u%memType_uPAYLOAD_WIDTH)/8-1:0]      %cntInfo_l%memType_lapp_wdf_mask,</Content>
+ </SubSubSignals>
+ <MemTopSubSignals optional="TB_DISABLE" name="TBSignalsWithDirectionandWidth" interface="NATIVE" >
+  <Content>   input                                %cntInfo_l%memType_lapp_wdf_wren,
+   input [(4*%cntInfo_u%memType_uPAYLOAD_WIDTH)-1:0]        %cntInfo_l%memType_lapp_wdf_data,#app_wdf_mask_port#
+   input                                %cntInfo_l%memType_lapp_wdf_end,
+   input [%cntInfo_u%memType_uADDR_WIDTH-1:0]               %cntInfo_l%memType_lapp_addr,
+   input [2:0]                          %cntInfo_l%memType_lapp_cmd,
+   input                                %cntInfo_l%memType_lapp_en,
+   output                               %cntInfo_l%memType_lapp_rdy,
+   output                               %cntInfo_l%memType_lapp_wdf_rdy,
+   output [(4*%cntInfo_u%memType_uPAYLOAD_WIDTH)-1:0]       %cntInfo_l%memType_lapp_rd_data,
+   output                               %cntInfo_l%memType_lapp_rd_data_valid,
+   output                               %cntInfo_l%memType_ltb_rst,
+   output                               %cntInfo_l%memType_ltb_clk,</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_DISABLE" name="TBSignalsWithDirectionandWidth" interface="AXI" >
+  <Content>   input                                %cntInfo_l%memType_laresetn,
+   input  [%cntInfo_u%memType_uC_S_AXI_ID_WIDTH-1:0]        %cntInfo_l%memType_ls_axi_awid,
+   input  [%cntInfo_u%memType_uC_S_AXI_ADDR_WIDTH-1:0]      %cntInfo_l%memType_ls_axi_awaddr,
+   input  [7:0]                         %cntInfo_l%memType_ls_axi_awlen,
+   input  [2:0]                         %cntInfo_l%memType_ls_axi_awsize,
+   input  [1:0]                         %cntInfo_l%memType_ls_axi_awburst,
+   input  [0:0]                         %cntInfo_l%memType_ls_axi_awlock,
+   input  [3:0]                         %cntInfo_l%memType_ls_axi_awcache,
+   input  [2:0]                         %cntInfo_l%memType_ls_axi_awprot,
+   input  [3:0]                         %cntInfo_l%memType_ls_axi_awqos,
+   input                                %cntInfo_l%memType_ls_axi_awvalid,
+   output                               %cntInfo_l%memType_ls_axi_awready,
+   // Slave Interface Write Data Ports
+   input  [%cntInfo_u%memType_uC_S_AXI_DATA_WIDTH-1:0]      %cntInfo_l%memType_ls_axi_wdata,
+   input  [%cntInfo_u%memType_uC_S_AXI_DATA_WIDTH/8-1:0]    %cntInfo_l%memType_ls_axi_wstrb,
+   input                                %cntInfo_l%memType_ls_axi_wlast,
+   input                                %cntInfo_l%memType_ls_axi_wvalid,
+   output                               %cntInfo_l%memType_ls_axi_wready,
+   // Slave Interface Write Response Ports
+   output [%cntInfo_u%memType_uC_S_AXI_ID_WIDTH-1:0]        %cntInfo_l%memType_ls_axi_bid,
+   output [1:0]                         %cntInfo_l%memType_ls_axi_bresp,
+   output                               %cntInfo_l%memType_ls_axi_bvalid,
+   input                                %cntInfo_l%memType_ls_axi_bready,
+   // Slave Interface Read Address Ports
+   input  [%cntInfo_u%memType_uC_S_AXI_ID_WIDTH-1:0]        %cntInfo_l%memType_ls_axi_arid,
+   input  [%cntInfo_u%memType_uC_S_AXI_ADDR_WIDTH-1:0]      %cntInfo_l%memType_ls_axi_araddr,
+   input  [7:0]                         %cntInfo_l%memType_ls_axi_arlen,
+   input  [2:0]                         %cntInfo_l%memType_ls_axi_arsize,
+   input  [1:0]                         %cntInfo_l%memType_ls_axi_arburst,
+   input  [0:0]                         %cntInfo_l%memType_ls_axi_arlock,
+   input  [3:0]                         %cntInfo_l%memType_ls_axi_arcache,
+   input  [2:0]                         %cntInfo_l%memType_ls_axi_arprot,
+   input  [3:0]                         %cntInfo_l%memType_ls_axi_arqos,
+   input                                %cntInfo_l%memType_ls_axi_arvalid,
+   output                               %cntInfo_l%memType_ls_axi_arready,
+   // Slave Interface Read Data Ports
+   output [%cntInfo_u%memType_uC_S_AXI_ID_WIDTH-1:0]        %cntInfo_l%memType_ls_axi_rid,
+   output [%cntInfo_u%memType_uC_S_AXI_DATA_WIDTH-1:0]      %cntInfo_l%memType_ls_axi_rdata,
+   output [1:0]                         %cntInfo_l%memType_ls_axi_rresp,
+   output                               %cntInfo_l%memType_ls_axi_rlast,
+   output                               %cntInfo_l%memType_ls_axi_rvalid,
+   input                                %cntInfo_l%memType_ls_axi_rready,
+   output                               %cntInfo_l%memType_ltb_rst,
+   output                               %cntInfo_l%memType_ltb_clk,</Content>
+ </MemTopSubSignals>
+ <MemTopSignals optional="TB_ENABLE" type="common" name="FunctionDeclaration" >
+  <Content>  function integer STR_TO_INT;
+    input [7:0] in;
+    begin
+      if(in == "8")
+        STR_TO_INT = 8;
+      else if(in == "4")
+        STR_TO_INT = 4;
+      else
+        STR_TO_INT = 0;
+    end
+  endfunction</Content>
+ </MemTopSignals>
+ <MemTopSignals type="controller" name="LocalParamDeclarations" >
+  <Content>#sysclk_period##wtg_localparam##TrafficGen_params#
+  localparam %cntInfo_u%memType_uAPP_DATA_WIDTH      = %cntInfo_u%memType_uPAYLOAD_WIDTH * 4;
+  localparam %cntInfo_u%memType_uAPP_MASK_WIDTH      = %cntInfo_u%memType_uAPP_DATA_WIDTH / 8;</Content>
+ </MemTopSignals>
+ <MemTopSubSignals optional="AXI" name="TrafficGen_params" interface="AXI" >
+  <Content>
+   // Traffic Gen related parameters
+   localparam %cntInfo_u%memType_uEYE_TEST                = "FALSE";
+                                       // set EYE_TEST = "TRUE" to probe memory
+                                       // signals. Traffic Generator will only
+                                       // write to one single location and no
+                                       // read transactions will be generated.
+   localparam %cntInfo_u%memType_uDATA_PATTERN            = "DGEN_ALL";
+                                        // "DGEN_HAMMER", "DGEN_WALKING1",
+                                        // "DGEN_WALKING0","DGEN_ADDR","
+                                        // "DGEN_NEIGHBOR","DGEN_PRBS","DGEN_ALL"
+   localparam %cntInfo_u%memType_uCMD_PATTERN             = "CGEN_ALL";
+                                        // "CGEN_PRBS","CGEN_FIXED","CGEN_BRAM",
+                                        // "CGEN_SEQUENTIAL", "CGEN_ALL"
+
+   localparam %cntInfo_u%memType_uBEGIN_ADDRESS           = 32'h00000000;
+   localparam %cntInfo_u%memType_uPRBS_SADDR_MASK_POS     = 32'h00000000;
+   localparam %cntInfo_u%memType_uEND_ADDRESS             = 32'h00ffffff;
+   localparam %cntInfo_u%memType_uPRBS_EADDR_MASK_POS     = 32'hff000000;
+   localparam %cntInfo_u%memType_uSEL_VICTIM_LINE         = 11;
+   localparam %cntInfo_u%memType_uDBG_WR_STS_WIDTH        = 32;
+   localparam %cntInfo_u%memType_uDBG_RD_STS_WIDTH        = 32;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals type1="common" type="SYS_CLK_CODE" name="sysclk_period" >
+  <Content>  localparam SYSCLK%sysClk_u_PERIOD          = tCK%sysClk_u * nCK_PER_CLK%sysClk_u;
+</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_ENABLE" name="wtg_localparam" >
+  <Content>
+  localparam %cntInfo_u%memType_uDATA_WIDTH          = %DQ_WIDTH;
+  localparam %cntInfo_u%memType_uPAYLOAD_WIDTH       = (%cntInfo_u%memType_uECC_TEST == "OFF") ? %cntInfo_u%memType_uDATA_WIDTH : %cntInfo_u%memType_uDQ_WIDTH;
+  localparam %cntInfo_u%memType_uBURST_LENGTH        = STR_TO_INT(%cntInfo_u%memType_uBURST_MODE);</Content>
+ </MemTopSubSignals>
+ <!-- wire declarations that are output in <top_module> for various
+     configurations selected in GUI. -->
+ <MemTopSubSignals optional="REGISTERED" value="OFF" name="ParityWireDeclaration" >
+  <Content>
+  wire                                %cntInfo_lddr3_parity;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_ENABLE" name="app_wdf_mask_dec" >
+  <Content>
+  wire [%cntInfo_u%memType_uAPP_MASK_WIDTH-1:0]           %cntInfo_l%memType_lapp_wdf_mask;</Content>
+ </MemTopSubSignals>
+ <SubSubSignals optional="MASK_DISABLE" name="app_wdf_mask_dec_nodm" interface="NATIVE" >
+  <Content>
+  wire [%cntInfo_u%memType_uAPP_MASK_WIDTH-1:0]           %cntInfo_l%memType_lapp_wdf_mask;</Content>
+ </SubSubSignals>
+ <MemTopSubSignals optional="TB_DISABLE" name="app_wdf_mask_dec" >
+  <Content>#app_wdf_mask_dec_nodm#</Content>
+ </MemTopSubSignals>
+ <MemTopSignals type="controller" name="StatementDeclarations" >
+  <Content>#iodelay_clock_wire_declaration##design_clock_wire_declaration##iodelay_wire_declaration##SPD_dummywire_declaration#
+  wire                                %cntInfo_l%memType_lrst;
+  wire                                %cntInfo_l%memType_lclk;
+  wire                                %cntInfo_l%memType_lclk_mem;
+  wire                                %cntInfo_l%memType_lclk_rd_base;
+  wire                                %cntInfo_l%memType_lpd_PSDONE;
+  wire                                %cntInfo_l%memType_lpd_PSEN;
+  wire                                %cntInfo_l%memType_lpd_PSINCDEC;
+  wire  [(%cntInfo_u%memType_uBM_CNT_WIDTH)-1:0]          %cntInfo_l%memType_lbank_mach_next;#ParityWireDeclaration#
+  wire                                %cntInfo_l%memType_lapp_rd_data_end;
+  wire                                %cntInfo_l%memType_lapp_hi_pri;#app_wdf_mask_dec#
+  wire [3:0]                          %cntInfo_l%memType_lapp_ecc_multiple_err_i;
+  wire [47:0]                         %cntInfo_l%memType_ltraffic_wr_data_counts;
+  wire [47:0]                         %cntInfo_l%memType_ltraffic_rd_data_counts;#TGwiredeclarations#</Content>
+ </MemTopSignals>
+ <MemTopSignals type="controller" name="StaticDebugSignals" >
+  <Content>
+  wire [5*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_cpt_first_edge_cnt;
+  wire [5*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_cpt_second_edge_cnt;
+  wire [5*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_cpt_tap_cnt;
+  wire                                %cntInfo_l%memType_ldbg_dec_cpt;
+  wire                                %cntInfo_l%memType_ldbg_dec_rd_dqs;
+  wire                                %cntInfo_l%memType_ldbg_dec_rd_fps;
+  wire [5*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_dq_tap_cnt;
+  wire [5*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_dqs_tap_cnt;
+  wire                                %cntInfo_l%memType_ldbg_inc_cpt;
+  wire [%cntInfo_u%memType_uDQS_CNT_WIDTH-1:0]            %cntInfo_l%memType_ldbg_inc_dec_sel;
+  wire                                %cntInfo_l%memType_ldbg_inc_rd_dqs;
+  wire                                %cntInfo_l%memType_ldbg_inc_rd_fps;
+  wire                                %cntInfo_l%memType_ldbg_ocb_mon_off;
+  wire                                %cntInfo_l%memType_ldbg_pd_off;
+  wire                                %cntInfo_l%memType_ldbg_pd_maintain_off;
+  wire                                %cntInfo_l%memType_ldbg_pd_maintain_0_only;
+  wire [4:0]                          %cntInfo_l%memType_ldbg_rd_active_dly;
+  wire [3*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_rd_bitslip_cnt;
+  wire [2*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_rd_clkdly_cnt;
+  wire [4*%cntInfo_u%memType_uDQ_WIDTH-1:0]               %cntInfo_l%memType_ldbg_rddata;
+  wire [1:0]                          %cntInfo_l%memType_ldbg_rdlvl_done;
+  wire [1:0]                          %cntInfo_l%memType_ldbg_rdlvl_err;
+  wire [1:0]                          %cntInfo_l%memType_ldbg_rdlvl_start;
+  wire [%cntInfo_u%memType_uDQS_WIDTH-1:0]                %cntInfo_l%memType_ldbg_wl_dqs_inverted;
+  wire [5*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_wl_odelay_dq_tap_cnt;
+  wire [5*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_wl_odelay_dqs_tap_cnt;
+  wire [2*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_wr_calib_clk_delay;
+  wire [5*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_wr_dq_tap_set;
+  wire [5*%cntInfo_u%memType_uDQS_WIDTH-1:0]              %cntInfo_l%memType_ldbg_wr_dqs_tap_set;
+  wire                                %cntInfo_l%memType_ldbg_wr_tap_set_en;
+  wire                                %cntInfo_l%memType_ldbg_idel_up_all;
+  wire                                %cntInfo_l%memType_ldbg_idel_down_all;
+  wire                                %cntInfo_l%memType_ldbg_idel_up_cpt;
+  wire                                %cntInfo_l%memType_ldbg_idel_down_cpt;
+  wire                                %cntInfo_l%memType_ldbg_idel_up_rsync;
+  wire                                %cntInfo_l%memType_ldbg_idel_down_rsync;
+  wire                                %cntInfo_l%memType_ldbg_sel_all_idel_cpt;
+  wire                                %cntInfo_l%memType_ldbg_sel_all_idel_rsync;
+  wire                                %cntInfo_l%memType_ldbg_pd_inc_cpt;
+  wire                                %cntInfo_l%memType_ldbg_pd_dec_cpt;
+  wire                                %cntInfo_l%memType_ldbg_pd_inc_dqs;
+  wire                                %cntInfo_l%memType_ldbg_pd_dec_dqs;
+  wire                                %cntInfo_l%memType_ldbg_pd_disab_hyst;
+  wire                                %cntInfo_l%memType_ldbg_pd_disab_hyst_0;
+  wire                                %cntInfo_l%memType_ldbg_wrlvl_done;
+  wire                                %cntInfo_l%memType_ldbg_wrlvl_err;
+  wire                                %cntInfo_l%memType_ldbg_wrlvl_start;
+  wire [4:0]                          %cntInfo_l%memType_ldbg_tap_cnt_during_wrlvl;
+  wire [19:0]                         %cntInfo_l%memType_ldbg_rsync_tap_cnt;
+  wire [255:0]                        %cntInfo_l%memType_ldbg_phy_pd;
+  wire [255:0]                        %cntInfo_l%memType_ldbg_phy_read;
+  wire [255:0]                        %cntInfo_l%memType_ldbg_phy_rdlvl;
+  wire [255:0]                        %cntInfo_l%memType_ldbg_phy_top;
+  wire [3:0]                          %cntInfo_l%memType_ldbg_pd_msb_sel;
+  wire [%cntInfo_u%memType_uDQS_WIDTH-1:0]                %cntInfo_l%memType_ldbg_rd_data_edge_detect;
+  wire [%cntInfo_u%memType_uDQS_CNT_WIDTH-1:0]            %cntInfo_l%memType_ldbg_sel_idel_cpt;
+  wire [%cntInfo_u%memType_uDQS_CNT_WIDTH-1:0]            %cntInfo_l%memType_ldbg_sel_idel_rsync;
+  wire [%cntInfo_u%memType_uDQS_CNT_WIDTH-1:0]            %cntInfo_l%memType_ldbg_pd_byte_sel;#debug_axi_signals#</Content>
+ </MemTopSignals>
+ <MemTopSubSignals optional="AXI" name="debug_axi_signals" interface="AXI" >
+  <Content>
+  wire                                %cntInfo_l%memType_ldbg_wr_sts_vld;
+  wire [%cntInfo_u%memType_uDBG_WR_STS_WIDTH-1:0]         %cntInfo_l%memType_ldbg_wr_sts;
+  wire                                %cntInfo_l%memType_ldbg_rd_sts_vld;
+  wire [%cntInfo_u%memType_uDBG_RD_STS_WIDTH-1:0]         %cntInfo_l%memType_ldbg_rd_sts;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="SINGLE_ENDED" type="REF_CLK_CODE" name="iodelay_clock_wire_declaration" >
+  <Content>  wire                                clk%refClk_ref_p;
+  wire                                clk%refClk_ref_n;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="DIFFERENTIAL" type="REF_CLK_CODE" name="iodelay_clock_wire_declaration" >
+  <Content>  wire                                clk%refClk_ref;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="SINGLE_ENDED" type="SYS_CLK_CODE" name="design_clock_wire_declaration" >
+  <Content>
+  wire                                sys_clk%sysClk_p;
+  wire                                sys_clk%sysClk_n;
+  wire                                mmcm_clk%sysClk;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="DIFFERENTIAL" type="SYS_CLK_CODE" name="design_clock_wire_declaration" >
+  <Content>
+  wire                                sys_clk%sysClk;
+  wire                                mmcm_clk%sysClk;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals type="REF_CLK_CODE" name="iodelay_wire_declaration" >
+  <Content>
+  wire                                iodelay%refClk_ctrl_rdy;
+      </Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="DIMM" name="SPD_dummywire_declaration" >
+  <Content>
+  (* KEEP = "TRUE" *) wire            %cntInfo_l%memType_lsda_i;
+  (* KEEP = "TRUE" *) wire            %cntInfo_l%memType_lscl_i;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_ENABLE" name="TGwiredeclarations" >
+  <Content>#native_wire_declarations##traffic_gen_wires#</Content>
+ </MemTopSubSignals>
+ <SubSubSignals name="native_wire_declarations" >
+  <Content>
+  wire [%cntInfo_u%memType_uADDR_WIDTH-1:0]               %cntInfo_l%memType_lapp_addr;
+  wire [2:0]                          %cntInfo_l%memType_lapp_cmd;
+  wire                                %cntInfo_l%memType_lapp_en;
+  wire                                %cntInfo_l%memType_lapp_rdy;
+  wire [%cntInfo_u%memType_uAPP_DATA_WIDTH-1:0]           %cntInfo_l%memType_lapp_rd_data;
+  wire                                %cntInfo_l%memType_lapp_rd_data_valid;
+  wire [%cntInfo_u%memType_uAPP_DATA_WIDTH-1:0]           %cntInfo_l%memType_lapp_wdf_data;
+  wire                                %cntInfo_l%memType_lapp_wdf_end;
+  wire                                %cntInfo_l%memType_lapp_wdf_rdy;
+  wire                                %cntInfo_l%memType_lapp_wdf_wren;</Content>
+ </SubSubSignals>
+ <SubSubSignals name="traffic_gen_wires" interface="NATIVE" >
+  <Content>
+  wire                                %cntInfo_l%memType_lmodify_enable_sel;
+  wire [2:0]                          %cntInfo_l%memType_ldata_mode_manual_sel;
+  wire [2:0]                          %cntInfo_l%memType_laddr_mode_manual_sel;
+  wire                                %cntInfo_l%memType_lt_gen_run_traffic;
+  wire  [3:0]                         %cntInfo_l%memType_lt_gen_instr_mode;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_start_addr;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_end_addr;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_cmd_seed;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_data_seed;
+  wire                                %cntInfo_l%memType_lt_gen_load_seed;
+  wire [2:0]                          %cntInfo_l%memType_lt_gen_addr_mode;
+  wire [1:0]                          %cntInfo_l%memType_lt_gen_bl_mode;
+  wire [3:0]                          %cntInfo_l%memType_lt_gen_data_mode;
+  wire                                %cntInfo_l%memType_lt_gen_mode_load;
+  wire [5:0]                          %cntInfo_l%memType_lt_gen_fixed_bl;
+  wire [2:0]                          %cntInfo_l%memType_lt_gen_fixed_instr;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_fixed_addr;
+  wire                                %cntInfo_l%memType_lmanual_clear_error;
+  wire [6:0]                          %cntInfo_l%memType_ltg_wr_fifo_counts;
+  wire [6:0]                          %cntInfo_l%memType_ltg_rd_fifo_counts;</Content>
+ </SubSubSignals>
+ <SubSubSignals optional="AXI" name="traffic_gen_wires" interface="AXI" >
+  <Content>
+  reg                                 %cntInfo_l%memType_laresetn;
+  wire                                %cntInfo_l%memType_lmodify_enable_sel;
+  wire [2:0]                          %cntInfo_l%memType_ldata_mode_manual_sel;
+  wire [2:0]                          %cntInfo_l%memType_laddr_mode_manual_sel;
+  wire                                %cntInfo_l%memType_lt_gen_run_traffic;
+  wire  [3:0]                         %cntInfo_l%memType_lt_gen_instr_mode;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_start_addr;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_end_addr;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_cmd_seed;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_data_seed;
+  wire                                %cntInfo_l%memType_lt_gen_load_seed;
+  wire [2:0]                          %cntInfo_l%memType_lt_gen_addr_mode;
+  wire [1:0]                          %cntInfo_l%memType_lt_gen_bl_mode;
+  wire [3:0]                          %cntInfo_l%memType_lt_gen_data_mode;
+  wire                                %cntInfo_l%memType_lt_gen_mode_load;
+  wire [5:0]                          %cntInfo_l%memType_lt_gen_fixed_bl;
+  wire [2:0]                          %cntInfo_l%memType_lt_gen_fixed_instr;
+  wire [31:0]                         %cntInfo_l%memType_lt_gen_fixed_addr;
+  wire                                %cntInfo_l%memType_lmanual_clear_error;
+  wire [6:0]                          %cntInfo_l%memType_ltg_wr_fifo_counts;
+  wire [6:0]                          %cntInfo_l%memType_ltg_rd_fifo_counts;
+
+  wire                                %cntInfo_l%memType_lcmd_err;
+  wire                                %cntInfo_l%memType_ldata_msmatch_err;
+  wire                                %cntInfo_l%memType_lwrite_err;
+  wire                                %cntInfo_l%memType_lread_err;
+  wire                                %cntInfo_l%memType_ltest_cmptd;
+  wire                                %cntInfo_l%memType_lwrite_cmptd;
+  wire                                %cntInfo_l%memType_lread_cmptd;
+
+  // Slave Interface Write Address Ports
+  wire [%cntInfo_u%memType_uC_S_AXI_ID_WIDTH-1:0]         %cntInfo_l%memType_ls_axi_awid;
+  wire [%cntInfo_u%memType_uC_S_AXI_ADDR_WIDTH-1:0]       %cntInfo_l%memType_ls_axi_awaddr;
+  wire [7:0]                          %cntInfo_l%memType_ls_axi_awlen;
+  wire [2:0]                          %cntInfo_l%memType_ls_axi_awsize;
+  wire [1:0]                          %cntInfo_l%memType_ls_axi_awburst;
+  wire [0:0]                          %cntInfo_l%memType_ls_axi_awlock;
+  wire [3:0]                          %cntInfo_l%memType_ls_axi_awcache;
+  wire [2:0]                          %cntInfo_l%memType_ls_axi_awprot;
+  wire [3:0]                          %cntInfo_l%memType_ls_axi_awqos;
+  wire                                %cntInfo_l%memType_ls_axi_awvalid;
+  wire                                %cntInfo_l%memType_ls_axi_awready;
+   // Slave Interface Write Data Ports
+  wire [%cntInfo_u%memType_uC_S_AXI_DATA_WIDTH-1:0]       %cntInfo_l%memType_ls_axi_wdata;
+  wire [%cntInfo_u%memType_uC_S_AXI_DATA_WIDTH/8-1:0]     %cntInfo_l%memType_ls_axi_wstrb;
+  wire                                %cntInfo_l%memType_ls_axi_wlast;
+  wire                                %cntInfo_l%memType_ls_axi_wvalid;
+  wire                                %cntInfo_l%memType_ls_axi_wready;
+  wire [3:0]                          %cntInfo_l%memType_ls_axi_wid;
+   // Slave Interface Write Response Ports
+  wire                                %cntInfo_l%memType_ls_axi_bready;
+  wire [%cntInfo_u%memType_uC_S_AXI_ID_WIDTH-1:0]         %cntInfo_l%memType_ls_axi_bid;
+  wire [1:0]                          %cntInfo_l%memType_ls_axi_bresp;
+  wire                                %cntInfo_l%memType_ls_axi_bvalid;
+   // Slave Interface Read Address Ports
+  wire [%cntInfo_u%memType_uC_S_AXI_ID_WIDTH-1:0]         %cntInfo_l%memType_ls_axi_arid;
+  wire [%cntInfo_u%memType_uC_S_AXI_ADDR_WIDTH-1:0]       %cntInfo_l%memType_ls_axi_araddr;
+  wire [7:0]                          %cntInfo_l%memType_ls_axi_arlen;
+  wire [2:0]                          %cntInfo_l%memType_ls_axi_arsize;
+  wire [1:0]                          %cntInfo_l%memType_ls_axi_arburst;
+  wire [0:0]                          %cntInfo_l%memType_ls_axi_arlock;
+  wire [3:0]                          %cntInfo_l%memType_ls_axi_arcache;
+  wire [2:0]                          %cntInfo_l%memType_ls_axi_arprot;
+  wire [3:0]                          %cntInfo_l%memType_ls_axi_arqos;
+  wire                                %cntInfo_l%memType_ls_axi_arvalid;
+  wire                                %cntInfo_l%memType_ls_axi_arready;
+   // Slave Interface Read Data Ports
+  wire                                %cntInfo_l%memType_ls_axi_rready;
+  wire [%cntInfo_u%memType_uC_S_AXI_ID_WIDTH-1:0]         %cntInfo_l%memType_ls_axi_rid;
+  wire [%cntInfo_u%memType_uC_S_AXI_DATA_WIDTH-1:0]       %cntInfo_l%memType_ls_axi_rdata;
+  wire [1:0]                          %cntInfo_l%memType_ls_axi_rresp;
+  wire                                %cntInfo_l%memType_ls_axi_rlast;
+  wire                                %cntInfo_l%memType_ls_axi_rvalid;</Content>
+ </SubSubSignals>
+ <!-- assign statements that are output in <top_module> for various
+     configurations selected in GUI. -->
+ <MemTopSignals type="controller" name="assignSignals" >
+  <Content>
+  assign %cntInfo_l%memType_lapp_hi_pri = 1'b0;#app_wdf_mask_assign#
+#ECC_status_signal##TGclkrst##TGassignSignals##SPD_dummy_logic##iodelay_clock_assignment##design_clock_assignment#</Content>
+ </MemTopSignals>
+ <MemTopSubSignals optional="TB_ENABLE" name="app_wdf_mask_assign" >
+  <Content>
+  assign %cntInfo_l%memType_lapp_wdf_mask = {%cntInfo_u%memType_uAPP_MASK_WIDTH{1'b0}};</Content>
+ </MemTopSubSignals>
+ <SubSubSignals optional="MASK_DISABLE" name="app_wdf_mask_assign_nodm" >
+  <Content>
+  assign %cntInfo_l%memType_lapp_wdf_mask = {%cntInfo_u%memType_uAPP_MASK_WIDTH{1'b0}};</Content>
+ </SubSubSignals>
+ <MemTopSubSignals optional="TB_DISABLE" name="app_wdf_mask_assign" >
+  <Content>#app_wdf_mask_assign_nodm#</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="ECC_ENABLE" value="ON" name="ECC_status_signal" >
+  <Content>  assign %cntInfo_l%memType_lapp_ecc_multiple_err = |(%cntInfo_l%memType_lapp_ecc_multiple_err_i);</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_DISABLE" type="controller" name="TGclkrst" >
+  <Content>  assign %cntInfo_l%memType_ltb_clk = %cntInfo_l%memType_lclk;
+  assign %cntInfo_l%memType_ltb_rst = %cntInfo_l%memType_lrst;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_ENABLE" type="controller" name="TGassignSignals" interface="NATIVE" >
+  <Content>
+  assign %cntInfo_l%memType_lmanual_clear_error     = 1'b0;
+  assign %cntInfo_l%memType_lmodify_enable_sel      = 1'b1;
+  assign %cntInfo_l%memType_ldata_mode_manual_sel   = 3'b010; // ADDR_DATA
+  assign %cntInfo_l%memType_laddr_mode_manual_sel   = 3'b011; //SEQUENTIAL_ADDR</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="TB_ENABLE" type="controller" name="TGassignSignals" interface="AXI" >
+  <Content>
+  assign %cntInfo_l%memType_lerror = %cntInfo_l%memType_lcmd_err | %cntInfo_l%memType_ldata_msmatch_err |
+                 %cntInfo_l%memType_lwrite_err | %cntInfo_l%memType_lread_err;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="DIMM" type="controller" name="SPD_dummy_logic" >
+  <Content>
+  MUXCY %cntInfo_l%memType_lscl_inst
+    (
+     .O  (%cntInfo_l%memType_lscl),
+     .CI (%cntInfo_l%memType_lscl_i),
+     .DI (1'b0),
+     .S  (1'b1)
+     );
+
+  MUXCY %cntInfo_l%memType_lsda_inst
+    (
+     .O  (%cntInfo_l%memType_lsda),
+     .CI (%cntInfo_l%memType_lsda_i),
+     .DI (1'b0),
+     .S  (1'b1)
+     );</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="SINGLE_ENDED" type="REF_CLK_CODE" name="iodelay_clock_assignment" >
+  <Content>
+  assign clk%refClk_ref_p = 1'b0;
+  assign clk%refClk_ref_n = 1'b0;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="DIFFERENTIAL" type="REF_CLK_CODE" name="iodelay_clock_assignment" >
+  <Content>
+  assign clk%refClk_ref = 1'b0;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="SINGLE_ENDED" type="SYS_CLK_CODE" name="design_clock_assignment" >
+  <Content>
+  assign sys_clk%sysClk_p = 1'b0;
+  assign sys_clk%sysClk_n = 1'b0;</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="DIFFERENTIAL" type="SYS_CLK_CODE" name="design_clock_assignment" >
+  <Content>
+  assign sys_clk%sysClk = 1'b0;</Content>
+ </MemTopSubSignals>
+ <!--<MemTopSignals name="DUMMY_LOGIC" type="common" optional="MASTERBANK_ALLOC">
+      <Content>  genvar %memType_ldpw_i;
+  generate
+    for(%memType_ldpw_i = 0; %memType_ldpw_i &lt; %memType_uMASTERBANK_PIN_WIDTH; %memType_ldpw_i=%memType_ldpw_i+1)begin : %memType_uDUMMY_INST1
+      IOBUF IOBUF_inst
+        (
+         .O(%memType_lmasterbank_sel_pin_out[%memType_ldpw_i]),
+         .IO(%memType_lmasterbank_sel_pin[%memType_ldpw_i]),
+         .I(1'b1),
+         .T(1'b0)
+         )/* synthesis syn_noprune = 1 */;
+    end
+  endgenerate
+</Content>
+    </MemTopSignals>-->
+ <!-- module instances that are output in <top_module> for various
+     configurations selected in GUI. If Attribute optional is not specified,
+     module instance will appear for both example_design and user_design.
+     If Attribute optional value is TB_ENABLE, module instace will appear
+     for example_design only. Modules iodelay_ctrl, clk_ibuf, infrastructure
+     and memc_ui_top instances appear for both example_design and user_design.
+     init_mem_pattern_ctr and mcb_traffic_gen instances appear for
+     example_design only. -->
+ <MemTopSignals type="controller" name="Infrastructure_mapping" >
+  <Content>#IODELAY_CTRL_mapping##Clock_IBUF_mapping#
+  infrastructure #
+    (
+     .TCQ                (%cntInfo_u%memType_uTCQ),
+     .CLK_PERIOD         (SYSCLK%sysClk_u_PERIOD),
+     .nCK_PER_CLK        (nCK_PER_CLK%sysClk_u),
+     .MMCM_ADV_BANDWIDTH (MMCM_ADV_BANDWIDTH%sysClk_u),
+     .CLKFBOUT_MULT_F    (CLK%sysClk_uFBOUT_MULT_F),
+     .DIVCLK_DIVIDE      (DIVCLK%sysClk_u_DIVIDE),
+     .CLKOUT_DIVIDE      (CLK%sysClk_uOUT_DIVIDE),
+     .RST_ACT_LOW        (RST_ACT_LOW)
+     )
+    %cntInfo_l%memType_lu_infrastructure
+      (
+       .clk_mem          (%cntInfo_l%memType_lclk_mem),
+       .clk              (%cntInfo_l%memType_lclk),
+       .clk_rd_base      (%cntInfo_l%memType_lclk_rd_base),
+       .rstdiv0          (%cntInfo_l%memType_lrst),
+       .mmcm_clk         (mmcm_clk%sysClk),
+       .sys_rst          (sys_rst),
+       .iodelay_ctrl_rdy (iodelay%refClk_ctrl_rdy),
+       .PSDONE           (%cntInfo_l%memType_lpd_PSDONE),
+       .PSEN             (%cntInfo_l%memType_lpd_PSEN),
+       .PSINCDEC         (%cntInfo_l%memType_lpd_PSINCDEC)
+       );</Content>
+ </MemTopSignals>
+ <MemTopSubSignals type="REF_CLK_CODE" name="IODELAY_CTRL_mapping" >
+  <Content>
+  iodelay_ctrl #
+    (
+     .TCQ            (%cntInfo_u%memType_uTCQ),
+     .IODELAY_GRP    (IODELAY%refClk_GRP),
+     .INPUT_CLK_TYPE (INPUT_CLK_TYPE),
+     .RST_ACT_LOW    (RST_ACT_LOW)
+     )
+    u%refClk_iodelay_ctrl
+      (
+       .clk_ref_p        (clk%refClk_ref_p),
+       .clk_ref_n        (clk%refClk_ref_n),
+       .clk_ref          (clk%refClk_ref),
+       .sys_rst          (sys_rst),
+       .iodelay_ctrl_rdy (iodelay%refClk_ctrl_rdy)
+       );</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals type="SYS_CLK_CODE" name="Clock_IBUF_mapping" >
+  <Content>
+  clk_ibuf #
+    (
+     .INPUT_CLK_TYPE (INPUT_CLK_TYPE)
+     )
+    u_clk%sysClk_ibuf
+      (
+       .sys_clk_p         (sys_clk%sysClk_p),
+       .sys_clk_n         (sys_clk%sysClk_n),
+       .sys_clk           (sys_clk%sysClk),
+       .mmcm_clk          (mmcm_clk%sysClk)
+       );</Content>
+ </MemTopSubSignals>
+ <MemTopSignals type="controller" name="SignalsInTop" >
+  <Content>
+  %cntInfo_lmemc_ui_top #
+  (
+   .ADDR_CMD_MODE        (%cntInfo_u%memType_uADDR_CMD_MODE),
+   .BANK_WIDTH           (%cntInfo_u%memType_uBANK_WIDTH),
+   .CK_WIDTH             (%cntInfo_u%memType_uCK_WIDTH),
+   .CKE_WIDTH            (%cntInfo_u%memType_uCKE_WIDTH),
+   .nCK_PER_CLK          (nCK_PER_CLK%sysClk_u),
+   .COL_WIDTH            (%cntInfo_u%memType_uCOL_WIDTH),
+   .CS_WIDTH             (%cntInfo_u%memType_uCS_WIDTH),#DM_parameter_mapping#
+   .nCS_PER_RANK         (%cntInfo_u%memType_unCS_PER_RANK),
+   .DEBUG_PORT           (%cntInfo_u%memType_uDEBUG_PORT),
+   .IODELAY_GRP          (IODELAY%refClk_GRP),
+   .DQ_WIDTH             (%cntInfo_u%memType_uDQ_WIDTH),
+   .DQS_WIDTH            (%cntInfo_u%memType_uDQS_WIDTH),
+   .DQS_CNT_WIDTH        (%cntInfo_u%memType_uDQS_CNT_WIDTH),
+   .ORDERING             (%cntInfo_u%memType_uORDERING),
+   .OUTPUT_DRV           (%cntInfo_u%memType_uOUTPUT_DRV),
+   .PHASE_DETECT         (%cntInfo_u%memType_uPHASE_DETECT),
+   .RANK_WIDTH           (%cntInfo_u%memType_uRANK_WIDTH),
+   .REFCLK_FREQ          (REFCLK%refClk_FREQ),
+   .REG_CTRL             (%cntInfo_u%memType_uREG_CTRL),
+   .ROW_WIDTH            (%cntInfo_u%memType_uROW_WIDTH),
+   .RTT_NOM              (%cntInfo_u%memType_uRTT_NOM),
+   .RTT_WR               (%cntInfo_u%memType_uRTT_WR),
+   .SIM_BYPASS_INIT_CAL  (%cntInfo_u%memType_uSIM_BYPASS_INIT_CAL),
+   .WRLVL                (%cntInfo_u%memType_uWRLVL),
+   .nDQS_COL0            (%cntInfo_u%memType_unDQS_COL0),
+   .nDQS_COL1            (%cntInfo_u%memType_unDQS_COL1),
+   .nDQS_COL2            (%cntInfo_u%memType_unDQS_COL2),
+   .nDQS_COL3            (%cntInfo_u%memType_unDQS_COL3),
+   .DQS_LOC_COL0         (%cntInfo_u%memType_uDQS_LOC_COL0),
+   .DQS_LOC_COL1         (%cntInfo_u%memType_uDQS_LOC_COL1),
+   .DQS_LOC_COL2         (%cntInfo_u%memType_uDQS_LOC_COL2),
+   .DQS_LOC_COL3         (%cntInfo_u%memType_uDQS_LOC_COL3),
+   .tPRDI                (%cntInfo_u%memType_utPRDI),
+   .tREFI                (%cntInfo_u%memType_utREFI),
+   .tZQI                 (%cntInfo_u%memType_utZQI),
+   .BURST_MODE           (%cntInfo_u%memType_uBURST_MODE),
+   .BM_CNT_WIDTH         (%cntInfo_u%memType_uBM_CNT_WIDTH),
+   .tCK                  (tCK%sysClk_u),
+   .ADDR_WIDTH           (%cntInfo_u%memType_uADDR_WIDTH),
+   .TCQ                  (%cntInfo_u%memType_uTCQ),
+   .ECC_TEST             (%cntInfo_u%memType_uECC_TEST),#AXI_parameters_mapping#
+   .PAYLOAD_WIDTH        (%cntInfo_u%memType_uPAYLOAD_WIDTH)
+   )
+  %cntInfo_l%memType_lu_memc_ui_top
+  (
+   .clk                              (%cntInfo_l%memType_lclk),
+   .clk_mem                          (%cntInfo_l%memType_lclk_mem),
+   .clk_rd_base                      (%cntInfo_l%memType_lclk_rd_base),
+   .rst                              (%cntInfo_l%memType_lrst),
+   .ddr_addr                         (%cntInfo_lddr3_addr),
+   .ddr_ba                           (%cntInfo_lddr3_ba),
+   .ddr_cas_n                        (%cntInfo_lddr3_cas_n),
+   .ddr_ck_n                         (%cntInfo_lddr3_ck_n),
+   .ddr_ck                           (%cntInfo_lddr3_ck_p),
+   .ddr_cke                          (%cntInfo_lddr3_cke),
+   .ddr_cs_n                         (%cntInfo_lddr3_cs_n),#DM_port_mapping#
+   .ddr_odt                          (%cntInfo_lddr3_odt),
+   .ddr_ras_n                        (%cntInfo_lddr3_ras_n),
+   .ddr_reset_n                      (%cntInfo_lddr3_reset_n),
+   .ddr_parity                       (%cntInfo_lddr3_parity),
+   .ddr_we_n                         (%cntInfo_lddr3_we_n),
+   .ddr_dq                           (%cntInfo_lddr3_dq),
+   .ddr_dqs_n                        (%cntInfo_lddr3_dqs_n),
+   .ddr_dqs                          (%cntInfo_lddr3_dqs_p),
+   .pd_PSEN                          (%cntInfo_l%memType_lpd_PSEN),
+   .pd_PSINCDEC                      (%cntInfo_l%memType_lpd_PSINCDEC),
+   .pd_PSDONE                        (%cntInfo_l%memType_lpd_PSDONE),
+   .phy_init_done                    (%cntInfo_l%memType_lphy_init_done),
+   .bank_mach_next                   (%cntInfo_l%memType_lbank_mach_next),
+   .app_ecc_multiple_err             (%cntInfo_l%memType_lapp_ecc_multiple_err_i),#user_interface_signals#
+   .dbg_wr_dqs_tap_set               (%cntInfo_l%memType_ldbg_wr_dqs_tap_set),
+   .dbg_wr_dq_tap_set                (%cntInfo_l%memType_ldbg_wr_dq_tap_set),
+   .dbg_wr_tap_set_en                (%cntInfo_l%memType_ldbg_wr_tap_set_en),
+   .dbg_wrlvl_start                  (%cntInfo_l%memType_ldbg_wrlvl_start),
+   .dbg_wrlvl_done                   (%cntInfo_l%memType_ldbg_wrlvl_done),
+   .dbg_wrlvl_err                    (%cntInfo_l%memType_ldbg_wrlvl_err),
+   .dbg_wl_dqs_inverted              (%cntInfo_l%memType_ldbg_wl_dqs_inverted),
+   .dbg_wr_calib_clk_delay           (%cntInfo_l%memType_ldbg_wr_calib_clk_delay),
+   .dbg_wl_odelay_dqs_tap_cnt        (%cntInfo_l%memType_ldbg_wl_odelay_dqs_tap_cnt),
+   .dbg_wl_odelay_dq_tap_cnt         (%cntInfo_l%memType_ldbg_wl_odelay_dq_tap_cnt),
+   .dbg_rdlvl_start                  (%cntInfo_l%memType_ldbg_rdlvl_start),
+   .dbg_rdlvl_done                   (%cntInfo_l%memType_ldbg_rdlvl_done),
+   .dbg_rdlvl_err                    (%cntInfo_l%memType_ldbg_rdlvl_err),
+   .dbg_cpt_tap_cnt                  (%cntInfo_l%memType_ldbg_cpt_tap_cnt),
+   .dbg_cpt_first_edge_cnt           (%cntInfo_l%memType_ldbg_cpt_first_edge_cnt),
+   .dbg_cpt_second_edge_cnt          (%cntInfo_l%memType_ldbg_cpt_second_edge_cnt),
+   .dbg_rd_bitslip_cnt               (%cntInfo_l%memType_ldbg_rd_bitslip_cnt),
+   .dbg_rd_clkdly_cnt                (%cntInfo_l%memType_ldbg_rd_clkdly_cnt),
+   .dbg_rd_active_dly                (%cntInfo_l%memType_ldbg_rd_active_dly),
+   .dbg_pd_off                       (%cntInfo_l%memType_ldbg_pd_off),
+   .dbg_pd_maintain_off              (%cntInfo_l%memType_ldbg_pd_maintain_off),
+   .dbg_pd_maintain_0_only           (%cntInfo_l%memType_ldbg_pd_maintain_0_only),
+   .dbg_inc_cpt                      (%cntInfo_l%memType_ldbg_inc_cpt),
+   .dbg_dec_cpt                      (%cntInfo_l%memType_ldbg_dec_cpt),
+   .dbg_inc_rd_dqs                   (%cntInfo_l%memType_ldbg_inc_rd_dqs),
+   .dbg_dec_rd_dqs                   (%cntInfo_l%memType_ldbg_dec_rd_dqs),
+   .dbg_inc_dec_sel                  (%cntInfo_l%memType_ldbg_inc_dec_sel),
+   .dbg_inc_rd_fps                   (%cntInfo_l%memType_ldbg_inc_rd_fps),
+   .dbg_dec_rd_fps                   (%cntInfo_l%memType_ldbg_dec_rd_fps),
+   .dbg_dqs_tap_cnt                  (%cntInfo_l%memType_ldbg_dqs_tap_cnt),
+   .dbg_dq_tap_cnt                   (%cntInfo_l%memType_ldbg_dq_tap_cnt),
+   .dbg_rddata                       (%cntInfo_l%memType_ldbg_rddata)
+   );</Content>
+ </MemTopSignals>
+ <MemTopSubSignals optional="MASK_ENABLE" name="DM_parameter_mapping" >
+  <Content>
+   .DM_WIDTH             (%cntInfo_u%memType_uDM_WIDTH),</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="MASK_DISABLE" name="DM_parameter_mapping" >
+  <Content>
+   .DM_WIDTH             (%DATA_MASK_WIDTH),</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="AXI" name="AXI_parameters_mapping" interface="AXI" >
+  <Content>
+   .INTERFACE            (%cntInfo_u%memType_uINTERFACE),
+   .C_S_AXI_ID_WIDTH     (%cntInfo_u%memType_uC_S_AXI_ID_WIDTH),
+   .C_S_AXI_ADDR_WIDTH   (%cntInfo_u%memType_uC_S_AXI_ADDR_WIDTH),
+   .C_S_AXI_DATA_WIDTH   (%cntInfo_u%memType_uC_S_AXI_DATA_WIDTH),
+   .C_S_AXI_SUPPORTS_NARROW_BURST   (%cntInfo_u%memType_uC_S_AXI_SUPPORTS_NARROW_BURST),
+   .CALIB_ROW_ADD        (%cntInfo_u%memType_uCALIB_ROW_ADD),
+   .CALIB_COL_ADD        (%cntInfo_u%memType_uCALIB_COL_ADD),
+   .CALIB_BA_ADD         (%cntInfo_u%memType_uCALIB_BA_ADD),</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="MASK_ENABLE" name="DM_port_mapping" >
+  <Content>
+   .ddr_dm                           (%cntInfo_lddr3_dm),</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="MASK_DISABLE" name="DM_port_mapping" >
+  <Content>
+   .ddr_dm                           (),</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="NATIVE" name="user_interface_signals" interface="NATIVE" >
+  <Content>
+   .app_rd_data                      (%cntInfo_l%memType_lapp_rd_data),
+   .app_rd_data_end                  (%cntInfo_l%memType_lapp_rd_data_end),
+   .app_rd_data_valid                (%cntInfo_l%memType_lapp_rd_data_valid),
+   .app_rdy                          (%cntInfo_l%memType_lapp_rdy),
+   .app_wdf_rdy                      (%cntInfo_l%memType_lapp_wdf_rdy),
+   .app_addr                         (%cntInfo_l%memType_lapp_addr),
+   .app_cmd                          (%cntInfo_l%memType_lapp_cmd),
+   .app_en                           (%cntInfo_l%memType_lapp_en),
+   .app_hi_pri                       (%cntInfo_l%memType_lapp_hi_pri),
+   .app_sz                           (1'b1),
+   .app_wdf_data                     (%cntInfo_l%memType_lapp_wdf_data),
+   .app_wdf_end                      (%cntInfo_l%memType_lapp_wdf_end),
+   .app_wdf_mask                     (%cntInfo_l%memType_lapp_wdf_mask),
+   .app_wdf_wren                     (%cntInfo_l%memType_lapp_wdf_wren),</Content>
+ </MemTopSubSignals>
+ <MemTopSubSignals optional="AXI" name="user_interface_signals" interface="AXI" >
+  <Content>
+   .app_raw_not_ecc_i                (4'h0),
+   .app_correct_en_i                 (1'b0),
+   .aresetn                          (%cntInfo_l%memType_laresetn),
+   .s_axi_awid                       (%cntInfo_l%memType_ls_axi_awid),
+   .s_axi_awaddr                     (%cntInfo_l%memType_ls_axi_awaddr),
+   .s_axi_awlen                      (%cntInfo_l%memType_ls_axi_awlen),
+   .s_axi_awsize                     (%cntInfo_l%memType_ls_axi_awsize),
+   .s_axi_awburst                    (%cntInfo_l%memType_ls_axi_awburst),
+   .s_axi_awlock                     (%cntInfo_l%memType_ls_axi_awlock),
+   .s_axi_awcache                    (%cntInfo_l%memType_ls_axi_awcache),
+   .s_axi_awprot                     (%cntInfo_l%memType_ls_axi_awprot),
+   .s_axi_awqos                      (%cntInfo_l%memType_ls_axi_awqos),
+   .s_axi_awvalid                    (%cntInfo_l%memType_ls_axi_awvalid),
+   .s_axi_awready                    (%cntInfo_l%memType_ls_axi_awready),
+   .s_axi_wdata                      (%cntInfo_l%memType_ls_axi_wdata),
+   .s_axi_wstrb                      (%cntInfo_l%memType_ls_axi_wstrb),
+   .s_axi_wlast                      (%cntInfo_l%memType_ls_axi_wlast),
+   .s_axi_wvalid                     (%cntInfo_l%memType_ls_axi_wvalid),
+   .s_axi_wready                     (%cntInfo_l%memType_ls_axi_wready),
+   .s_axi_bid                        (%cntInfo_l%memType_ls_axi_bid),
+   .s_axi_bresp                      (%cntInfo_l%memType_ls_axi_bresp),
+   .s_axi_bvalid                     (%cntInfo_l%memType_ls_axi_bvalid),
+   .s_axi_bready                     (%cntInfo_l%memType_ls_axi_bready),
+   .s_axi_arid                       (%cntInfo_l%memType_ls_axi_arid),
+   .s_axi_araddr                     (%cntInfo_l%memType_ls_axi_araddr),
+   .s_axi_arlen                      (%cntInfo_l%memType_ls_axi_arlen),
+   .s_axi_arsize                     (%cntInfo_l%memType_ls_axi_arsize),
+   .s_axi_arburst                    (%cntInfo_l%memType_ls_axi_arburst),
+   .s_axi_arlock                     (%cntInfo_l%memType_ls_axi_arlock),
+   .s_axi_arcache                    (%cntInfo_l%memType_ls_axi_arcache),
+   .s_axi_arprot                     (%cntInfo_l%memType_ls_axi_arprot),
+   .s_axi_arqos                      (%cntInfo_l%memType_ls_axi_arqos),
+   .s_axi_arvalid                    (%cntInfo_l%memType_ls_axi_arvalid),
+   .s_axi_arready                    (%cntInfo_l%memType_ls_axi_arready),
+   .s_axi_rid                        (%cntInfo_l%memType_ls_axi_rid),
+   .s_axi_rdata                      (%cntInfo_l%memType_ls_axi_rdata),
+   .s_axi_rresp                      (%cntInfo_l%memType_ls_axi_rresp),
+   .s_axi_rlast                      (%cntInfo_l%memType_ls_axi_rlast),
+   .s_axi_rvalid                     (%cntInfo_l%memType_ls_axi_rvalid),
+   .s_axi_rready                     (%cntInfo_l%memType_ls_axi_rready),</Content>
+ </MemTopSubSignals>
+ <MemTopSignals optional="TB_ENABLE" type="controller" name="SignalsInTB" interface="NATIVE" >
+  <Content>
+  // Traffic Gen Modules
+  init_mem_pattern_ctr #
+    (
+     .FAMILY        ("VIRTEX6"),
+     .MEM_BURST_LEN (%cntInfo_u%memType_uBURST_LENGTH),
+     .BEGIN_ADDRESS (%cntInfo_u%memType_uBEGIN_ADDRESS),
+     .END_ADDRESS   (%cntInfo_u%memType_uEND_ADDRESS),
+     .DWIDTH        (%cntInfo_u%memType_uAPP_DATA_WIDTH),
+     .ADDR_WIDTH    (%cntInfo_u%memType_uADDR_WIDTH),
+     .EYE_TEST      (%cntInfo_u%memType_uEYE_TEST)
+     )
+    %cntInfo_linit_mem0
+      (
+       .clk_i                (%cntInfo_l%memType_lclk),
+       .rst_i                (%cntInfo_l%memType_lrst),
+       .mcb_cmd_en_i         (%cntInfo_l%memType_lapp_en),
+       .mcb_cmd_instr_i      (%cntInfo_l%memType_lapp_cmd[2:0]),
+       .mcb_cmd_addr_i       (%cntInfo_l%memType_lapp_addr),
+       .mcb_cmd_bl_i         (6'b001000),
+       .mcb_init_done_i      (%cntInfo_l%memType_lphy_init_done),
+       .cmp_error            (%cntInfo_l%memType_lerror),
+       .run_traffic_o        (%cntInfo_l%memType_lt_gen_run_traffic),
+       .start_addr_o         (%cntInfo_l%memType_lt_gen_start_addr),
+       .end_addr_o           (%cntInfo_l%memType_lt_gen_end_addr),
+       .cmd_seed_o           (%cntInfo_l%memType_lt_gen_cmd_seed),
+       .data_seed_o          (%cntInfo_l%memType_lt_gen_data_seed),
+       .load_seed_o          (%cntInfo_l%memType_lt_gen_load_seed),
+       .addr_mode_o          (%cntInfo_l%memType_lt_gen_addr_mode),
+       .instr_mode_o         (%cntInfo_l%memType_lt_gen_instr_mode),
+       .bl_mode_o            (%cntInfo_l%memType_lt_gen_bl_mode),
+       .data_mode_o          (%cntInfo_l%memType_lt_gen_data_mode),
+       .mode_load_o          (%cntInfo_l%memType_lt_gen_mode_load),
+       .fixed_bl_o           (%cntInfo_l%memType_lt_gen_fixed_bl),
+       .fixed_instr_o        (%cntInfo_l%memType_lt_gen_fixed_instr),
+       .fixed_addr_o         (%cntInfo_l%memType_lt_gen_fixed_addr),
+       .mcb_wr_en_i          (%cntInfo_l%memType_lapp_wdf_wren),
+       .vio_modify_enable    (%cntInfo_l%memType_lmodify_enable_sel),
+       .vio_data_mode_value  (%cntInfo_l%memType_ldata_mode_manual_sel),
+       .vio_addr_mode_value  (%cntInfo_l%memType_laddr_mode_manual_sel),
+       .vio_bl_mode_value    (2'b01),
+       .vio_fixed_bl_value   (6'b000010)
+       );
+
+  mcb_traffic_gen #
+    (
+     .FAMILY              ("VIRTEX6"),
+     .MEM_BURST_LEN       (%cntInfo_u%memType_uBURST_LENGTH),
+     .PORT_MODE           ("BI_MODE"),
+     .DATA_PATTERN        (%cntInfo_u%memType_uDATA_PATTERN),
+     .CMD_PATTERN         (%cntInfo_u%memType_uCMD_PATTERN),
+     .ADDR_WIDTH          (%cntInfo_u%memType_uADDR_WIDTH),
+     .MEM_COL_WIDTH       (%cntInfo_u%memType_uCOL_WIDTH),
+     .NUM_DQ_PINS         (%cntInfo_u%memType_uPAYLOAD_WIDTH),
+     .SEL_VICTIM_LINE     (%cntInfo_u%memType_uSEL_VICTIM_LINE),
+     .DWIDTH              (%cntInfo_u%memType_uAPP_DATA_WIDTH),
+     .DQ_ERROR_WIDTH      (%cntInfo_u%memType_uPAYLOAD_WIDTH/8),
+     .PRBS_SADDR_MASK_POS (%cntInfo_u%memType_uPRBS_SADDR_MASK_POS),
+     .PRBS_EADDR_MASK_POS (%cntInfo_u%memType_uPRBS_EADDR_MASK_POS),
+     .PRBS_SADDR          (%cntInfo_u%memType_uBEGIN_ADDRESS),
+     .PRBS_EADDR          (%cntInfo_u%memType_uEND_ADDRESS),
+     .EYE_TEST            (%cntInfo_u%memType_uEYE_TEST)
+     )
+    %cntInfo_lm_traffic_gen
+      (
+       .clk_i              (%cntInfo_l%memType_lclk),
+       .rst_i              (%cntInfo_l%memType_lrst),
+       .run_traffic_i      (%cntInfo_l%memType_lt_gen_run_traffic),
+       .manual_clear_error (%cntInfo_l%memType_lmanual_clear_error),
+       .start_addr_i       (%cntInfo_l%memType_lt_gen_start_addr),
+       .end_addr_i         (%cntInfo_l%memType_lt_gen_end_addr),
+       .cmd_seed_i         (%cntInfo_l%memType_lt_gen_cmd_seed),
+       .data_seed_i        (%cntInfo_l%memType_lt_gen_data_seed),
+       .load_seed_i        (%cntInfo_l%memType_lt_gen_load_seed),
+       .addr_mode_i        (%cntInfo_l%memType_lt_gen_addr_mode),
+       .instr_mode_i       (%cntInfo_l%memType_lt_gen_instr_mode),
+       .bl_mode_i          (%cntInfo_l%memType_lt_gen_bl_mode),
+       .data_mode_i        (%cntInfo_l%memType_lt_gen_data_mode),
+       .mode_load_i        (%cntInfo_l%memType_lt_gen_mode_load),
+       .fixed_bl_i         (%cntInfo_l%memType_lt_gen_fixed_bl),
+       .fixed_instr_i      (%cntInfo_l%memType_lt_gen_fixed_instr),
+       .fixed_addr_i       (%cntInfo_l%memType_lt_gen_fixed_addr),
+       .bram_cmd_i         (39'b0),
+       .bram_valid_i       (1'b0),
+       .bram_rdy_o         (),
+       .mcb_cmd_en_o       (%cntInfo_l%memType_lapp_en),
+       .mcb_cmd_instr_o    (%cntInfo_l%memType_lapp_cmd[2:0]),
+       .mcb_cmd_addr_o     (%cntInfo_l%memType_lapp_addr),
+       .mcb_cmd_bl_o       (),
+       .mcb_cmd_full_i     (~%cntInfo_l%memType_lapp_rdy),
+       .mcb_wr_en_o        (%cntInfo_l%memType_lapp_wdf_wren),
+       .mcb_wr_data_o      (%cntInfo_l%memType_lapp_wdf_data[%cntInfo_u%memType_uAPP_DATA_WIDTH-1:0]),
+       .mcb_wr_full_i      (~%cntInfo_l%memType_lapp_wdf_rdy),
+       .mcb_wr_data_end_o  (%cntInfo_l%memType_lapp_wdf_end),
+       .mcb_wr_fifo_counts (%cntInfo_l%memType_ltg_wr_fifo_counts),
+       .mcb_wr_mask_o      (),
+       .mcb_rd_en_o        (%cntInfo_l%memType_ltg_rd_en),
+       .mcb_rd_data_i      (%cntInfo_l%memType_lapp_rd_data[%cntInfo_u%memType_uAPP_DATA_WIDTH-1:0]),
+       .mcb_rd_empty_i     (~%cntInfo_l%memType_lapp_rd_data_valid),
+       .mcb_rd_fifo_counts (%cntInfo_l%memType_ltg_rd_fifo_counts),
+       .counts_rst         (%cntInfo_l%memType_lrst),
+       .wr_data_counts     (),
+       .rd_data_counts     (),
+       .cmp_data           (),
+       .cmp_error          (),
+       .cmp_data_valid     (),
+       .error              (%cntInfo_l%memType_lerror),
+       .error_status       (),
+       .mem_rd_data        (),
+       .fixed_data_i       ({%cntInfo_u%memType_uAPP_DATA_WIDTH{1'b0}}),
+       .dq_error_bytelane_cmp(),
+       .cumlative_dq_lane_error()
+       );</Content>
+ </MemTopSignals>
+ <MemTopSignals optional="TB_ENABLE" type="controller" name="SignalsInTB" interface="AXI" >
+  <Content>
+//***************************************************************************
+// The traffic generation module instantiated below drives traffic (patterns)
+// on the application interface of the memory controller
+//***************************************************************************
+
+   always @(posedge %cntInfo_l%memType_lclk) begin
+     %cntInfo_l%memType_laresetn &lt;= ~%cntInfo_l%memType_lrst;
+   end
+
+   axi4_tg #(
+
+     .C_AXI_ID_WIDTH                   (%cntInfo_u%memType_uC_S_AXI_ID_WIDTH),
+     .C_AXI_ADDR_WIDTH                 (%cntInfo_u%memType_uC_S_AXI_ADDR_WIDTH),
+     .C_AXI_DATA_WIDTH                 (%cntInfo_u%memType_uC_S_AXI_DATA_WIDTH),
+     .C_AXI_NBURST_SUPPORT             (%cntInfo_u%memType_uC_AXI_NBURST_TEST),
+     .C_EN_WRAP_TRANS                  (%cntInfo_u%memType_uC_EN_WRAP_TRANS),
+     .C_BEGIN_ADDRESS                  (%cntInfo_u%memType_uBEGIN_ADDRESS),
+     .C_END_ADDRESS                    (%cntInfo_u%memType_uEND_ADDRESS),
+     .DBG_WR_STS_WIDTH                 (%cntInfo_u%memType_uDBG_WR_STS_WIDTH),
+     .DBG_RD_STS_WIDTH                 (%cntInfo_u%memType_uDBG_RD_STS_WIDTH),
+     .ENFORCE_RD_WR                    (%cntInfo_u%memType_uENFORCE_RD_WR),
+     .ENFORCE_RD_WR_CMD                (%cntInfo_u%memType_uENFORCE_RD_WR_CMD),
+     .ENFORCE_RD_WR_PATTERN            (%cntInfo_u%memType_uENFORCE_RD_WR_PATTERN)
+
+   ) %cntInfo_laxi4_tg_inst
+   (
+     .aclk                             (%cntInfo_l%memType_lclk),
+     .aresetn                          (%cntInfo_l%memType_laresetn),
+
+// Input control signals
+     .init_cmptd                       (%cntInfo_l%memType_lphy_init_done),
+     .init_test                        (1'b0),
+     .wdog_mask                        (1'b0),
+     .wrap_en                          (1'b0),
+
+// AXI write address channel signals
+     .axi_wready                       (%cntInfo_l%memType_ls_axi_awready),
+     .axi_wid                          (%cntInfo_l%memType_ls_axi_awid),
+     .axi_waddr                        (%cntInfo_l%memType_ls_axi_awaddr),
+     .axi_wlen                         (%cntInfo_l%memType_ls_axi_awlen),
+     .axi_wsize                        (%cntInfo_l%memType_ls_axi_awsize),
+     .axi_wburst                       (%cntInfo_l%memType_ls_axi_awburst),
+     .axi_wlock                        (%cntInfo_l%memType_ls_axi_awlock),
+     .axi_wcache                       (%cntInfo_l%memType_ls_axi_awcache),
+     .axi_wprot                        (%cntInfo_l%memType_ls_axi_awprot),
+     .axi_wvalid                       (%cntInfo_l%memType_ls_axi_awvalid),
+
+// AXI write data channel signals
+     .axi_wd_wready                    (%cntInfo_l%memType_ls_axi_wready),
+     .axi_wd_wid                       (%cntInfo_l%memType_ls_axi_wid),
+     .axi_wd_data                      (%cntInfo_l%memType_ls_axi_wdata),
+     .axi_wd_strb                      (%cntInfo_l%memType_ls_axi_wstrb),
+     .axi_wd_last                      (%cntInfo_l%memType_ls_axi_wlast),
+     .axi_wd_valid                     (%cntInfo_l%memType_ls_axi_wvalid),
+
+// AXI write response channel signals
+     .axi_wd_bid                       (%cntInfo_l%memType_ls_axi_bid),
+     .axi_wd_bresp                     (%cntInfo_l%memType_ls_axi_bresp),
+     .axi_wd_bvalid                    (%cntInfo_l%memType_ls_axi_bvalid),
+     .axi_wd_bready                    (%cntInfo_l%memType_ls_axi_bready),
+
+// AXI read address channel signals
+     .axi_rready                       (%cntInfo_l%memType_ls_axi_arready),
+     .axi_rid                          (%cntInfo_l%memType_ls_axi_arid),
+     .axi_raddr                        (%cntInfo_l%memType_ls_axi_araddr),
+     .axi_rlen                         (%cntInfo_l%memType_ls_axi_arlen),
+     .axi_rsize                        (%cntInfo_l%memType_ls_axi_arsize),
+     .axi_rburst                       (%cntInfo_l%memType_ls_axi_arburst),
+     .axi_rlock                        (%cntInfo_l%memType_ls_axi_arlock),
+     .axi_rcache                       (%cntInfo_l%memType_ls_axi_arcache),
+     .axi_rprot                        (%cntInfo_l%memType_ls_axi_arprot),
+     .axi_rvalid                       (%cntInfo_l%memType_ls_axi_arvalid),
+
+// AXI read data channel signals
+     .axi_rd_bid                       (%cntInfo_l%memType_ls_axi_rid),
+     .axi_rd_rresp                     (%cntInfo_l%memType_ls_axi_rresp),
+     .axi_rd_rvalid                    (%cntInfo_l%memType_ls_axi_rvalid),
+     .axi_rd_data                      (%cntInfo_l%memType_ls_axi_rdata),
+     .axi_rd_last                      (%cntInfo_l%memType_ls_axi_rlast),
+     .axi_rd_rready                    (%cntInfo_l%memType_ls_axi_rready),
+
+// Error status signals
+     .cmd_err                          (%cntInfo_l%memType_lcmd_err),
+     .data_msmatch_err                 (%cntInfo_l%memType_ldata_msmatch_err),
+     .write_err                        (%cntInfo_l%memType_lwrite_err),
+     .read_err                         (%cntInfo_l%memType_lread_err),
+     .test_cmptd                       (%cntInfo_l%memType_ltest_cmptd),
+     .write_cmptd                      (%cntInfo_l%memType_lwrite_cmptd),
+     .read_cmptd                       (%cntInfo_l%memType_lread_cmptd),
+
+// Debug status signals
+     .dbg_wr_sts_vld                   (%cntInfo_l%memType_ldbg_wr_sts_vld),
+     .dbg_wr_sts                       (%cntInfo_l%memType_ldbg_wr_sts),
+     .dbg_rd_sts_vld                   (%cntInfo_l%memType_ldbg_rd_sts_vld),
+     .dbg_rd_sts                       (%cntInfo_l%memType_ldbg_rd_sts)
+);</Content>
+ </MemTopSignals>
+ <!-- System Clock and Control pins that are output in <top_module> for
+     various configurations selected in GUI are listed. This includes
+     the information about the voltage standard to be output in UCF for
+     System Clock group and control pins. -->
+ <SignalGroup IOVoltage="2.5V" type2="freq" DCIStandard="LVDS_25" DCI="NO" type="common" clk_type="Differential" standard="LVDS_25" name="System_Clock" >
+  <SignalName name="sys_clk_p" src="user_design" />
+  <SignalName name="sys_clk_n" src="user_design" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="2.5V" type2="freq" DCIStandard="LVCMOS25" DCI="NO" type="common" clk_type="Single-Ended" standard="LVCMOS25" name="System_Clock" >
+  <SignalName name="sys_clk" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="2.5V" type2="equal" DCIStandard="LVDS_25" DCI="NO" type="common" clk_type="Differential" standard="LVDS_25" name="System_Clock" >
+  <SignalName name="clk_ref_p" src="user_design" />
+  <SignalName name="clk_ref_n" src="user_design" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="2.5V" type2="equal" DCIStandard="LVCMOS25" DCI="NO" type="common" clk_type="Single-Ended" standard="LVCMOS25" name="System_Clock" >
+  <SignalName name="clk_ref" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="2.5V" DCIStandard="LVCMOS25" DCI="NO" type="SPD" standard="LVCMOS25" name="System_Control" IOType="output" >
+  <SignalName saveattrib="S" from="infrastructure" name="sda" IOType="input" >
+   <dest>infrastructure</dest>
+  </SignalName>
+  <SignalName saveattrib="S" from="infrastructure" name="scl" IOType="input" >
+   <dest>infrastructure</dest>
+  </SignalName>
+ </SignalGroup>
+ <SignalGroup IOVoltage="2.5V" DCIStandard="LVCMOS25" DCI="NO" type="RESET" standard="LVCMOS25" name="System_Control" IOType="output" >
+  <SignalName from="infrastructure" name="sys_rst" IOType="input" >
+   <dest>infrastructure</dest>
+  </SignalName>
+ </SignalGroup>
+ <SignalGroup IOVoltage="2.5V" DCIStandard="LVCMOS25" DCI="NO" type="controller" standard="LVCMOS25" name="System_Control" IOType="output" >
+  <SignalName name="phy_init_done" IOType="output" />
+ </SignalGroup>
+ <!--<SignalGroup name="MasterBank1" IOType="input" type="common" standard="SSTL15_T_DCI" DCIStandard="" IOVoltage="1.5V">
+ <SignalName name="masterbank_sel_pin[0]" IOType="input" keyword= "MASTERBANK_PIN_WIDTH" saveattrib="S">
+ </SignalName>
+</SignalGroup>
+
+<SignalGroup name="MasterBank2" IOType="input" type="common" standard="SSTL15_T_DCI" DCIStandard="" IOVoltage="1.5V">
+ <SignalName name="masterbank_sel_pin[1]" IOType="input" keyword= "MASTERBANK_PIN_WIDTH" saveattrib="S">
+ </SignalName>
+</SignalGroup>
+
+<SignalGroup name="MasterBank3" IOType="input" type="common" standard="SSTL15_T_DCI" DCIStandard="" IOVoltage="1.5V">
+ <SignalName name="masterbank_sel_pin[2]" IOType="input" keyword= "MASTERBANK_PIN_WIDTH" saveattrib="S">
+ </SignalName>
+</SignalGroup>
+
+<SignalGroup name="MasterBank4" IOType="input" type="common" standard="SSTL15_T_DCI" DCIStandard="" IOVoltage="1.5V">
+ <SignalName name="masterbank_sel_pin[3]" IOType="input" keyword= "MASTERBANK_PIN_WIDTH" saveattrib="S">
+ </SignalName>
+</SignalGroup>-->
+ <!-- Template for CORE_GENERATION_INFO attribute that is output in
+     <top_module> for various configurations selected in GUI. -->
+ <SignalDescription name="coreInfo" >
+  <group>INTERFACE_TYPE=%DRAM_TYPE, CLK_PERIOD=%CLK_PERIOD, MEMORY_TYPE=%MEMORY_TYPE, MEMORY_PART=%MEMORY_PART, DQ_WIDTH=%DATA_WIDTH, ECC=%ECC_ENABLE, DATA_MASK=%USE_DM_PORT, BURST_MODE=%BURST_LENGTH, BURST_TYPE=%BURST_TYPE, OUTPUT_DRV=%OP_DRIVE_STRENGTH, RTT_NOM=%ODT_ENABLE, REFCLK_FREQ=%REFCLK_FREQ, MMCM_ADV_BANDWIDTH=MMCM_ADV_BANDWIDTH, CLKFBOUT_MULT_F=%CLKFBOUT_MULT_F, CLKOUT_DIVIDE=%CLKOUT_DIVIDE, DEBUG_PORT=%DEBUG_EN, IODELAY_HP_MODE=%HIGH_PERFORMANCE_MODE, INTERNAL_VREF=%INTERNAL_VREF, DCI_INOUTS=%DCI_INOUTS, CLASS_ADDR=%CLASS_ADDR, INPUT_CLK_TYPE=%CLK_TYPE</group>
+ </SignalDescription>
+ <Internal_Vref_Syntax>CONFIG INTERNAL_VREF_BANK%1=0.75;</Internal_Vref_Syntax>
+ <!-- Templates for constrains that are output in UCF file for selected
+     configurations in GUI. Constraints path depends on HDL and Synthesis Tool
+     selection. So list of possible combinations for all UCF constraints
+     are listed. -->
+ <!-- MIG 3.4: MMCM read clock cosntraints and OCB Monitor constraints are
+     removed to match with the latest database. -->
+ <UCFConstraints>
+  <CommonCode optional="SINGLE_ENDED" flowvendor="ISE" type="SYS_CLK_CODE" name="Design_clock_constraints" >
+NET "sys_clk%sysClk" TNM_NET = TNM_sys_clk%sysClk;
+TIMESPEC "TS_sys_clk%sysClk" = PERIOD "TNM_sys_clk%sysClk" #FREQUENCY# ns;</CommonCode>
+  <CommonCode optional="DIFFERENTIAL" flowvendor="ISE" type="SYS_CLK_CODE" name="Design_clock_constraints" >
+NET "sys_clk%sysClk_p" TNM_NET = TNM_sys_clk%sysClk;
+TIMESPEC "TS_sys_clk%sysClk" = PERIOD "TNM_sys_clk%sysClk" #FREQUENCY# ns;</CommonCode>
+  <CommonCode optional="SINGLE_ENDED" flowvendor="ISE" type="REF_CLK_CODE" name="IODC_clock_constraints" >
+NET "clk%refClk_ref" TNM_NET = TNM_clk%refClk_ref;
+TIMESPEC "TS_clk%refClk_ref" = PERIOD "TNM_clk%refClk_ref" #REFFREQ# ns ;</CommonCode>
+  <CommonCode optional="DIFFERENTIAL" flowvendor="ISE" type="REF_CLK_CODE" name="IODC_clock_constraints" >
+NET "clk%refClk_ref_p" TNM_NET = TNM_clk%refClk_ref;
+TIMESPEC "TS_clk%refClk_ref" = PERIOD "TNM_clk%refClk_ref" #REFFREQ# ns ;</CommonCode>
+  <CommonCode flowvendor="ISE" type="controller" name="bufr_clock_constraints" >
+# Constrain BUFR clocks used to synchronize data from IOB to fabric logic
+# Note that ISE cannot infer this from other PERIOD constraints because
+# of the use of OSERDES blocks in the BUFR clock generation path
+NET "%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/clk_rsync[?]" TNM_NET = TNM_%cntInfo_u%memType_uclk_rsync;
+TIMESPEC "TS_%cntInfo_u%memType_uclk_rsync" = PERIOD "TNM_%cntInfo_u%memType_uclk_rsync" #DOUBLE_FREQUENCY# ns;
+
+# Paths between DQ/DQS ISERDES.Q outputs and CLB flops clocked by falling
+# edge of BUFR will by design only be used if DYNCLKDIVSEL is asserted for
+# that particular flop. Mark this path as being a full-cycle, rather than
+# a half cycle path for timing purposes. NOTE: This constraint forces full-
+# cycle timing to be applied globally for all rising->falling edge paths
+# in all resynchronizaton clock domains. If the user had modified the logic
+# in the resync clock domain such that other rising->falling edge paths
+# exist, then constraint below should be modified to utilize pattern
+# matching to specific affect only the DQ/DQS ISERDES.Q outputs
+TIMEGRP "TG_%cntInfo_u%memType_uclk_rsync_rise" = RISING  "TNM_%cntInfo_u%memType_uclk_rsync";
+TIMEGRP "TG_%cntInfo_u%memType_uclk_rsync_fall" = FALLING "TNM_%cntInfo_u%memType_uclk_rsync";
+TIMESPEC "TS_%cntInfo_u%memType_uclk_rsync_rise_to_fall" =
+  FROM "TG_%cntInfo_u%memType_uclk_rsync_rise" TO "TG_%cntInfo_u%memType_uclk_rsync_fall" "TS_sys_clk%sysClk" * 2;</CommonCode>
+  <CommonCode flowvendor="ISE" type="controller" name="constraints_1" >
+# Signal to select between controller and physical layer signals. Four divided by two clock
+# cycles (4 memory clock cycles) are provided by design for the signal to settle down.
+# Used only by the phy modules.
+INST "%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_init/u_ff_phy_init_data_sel" TNM = "TNM_%cntInfo_u%memType_uPHY_INIT_SEL";
+TIMESPEC "TS_%cntInfo_u%memType_uMC_PHY_INIT_SEL" = FROM "TNM_%cntInfo_u%memType_uPHY_INIT_SEL" TO FFS = "TS_sys_clk%sysClk"*4;</CommonCode>
+#  <CommonCode type="common" name="ignore_constraints" >
+#disable = reg_sr_o;
+#disable = reg_sr_r;</CommonCode>
+  <CommonCode flowvendor="ISE" type="controller" name="ck_constraints" >
+# Temporary workaround to prevent tools from performing timing analysis on
+# ck_p/ck_n feedback path through the MMCM to the MMCM.LOCK signal (which in
+# turn is in reset logic within the CLB fabric). This analysis is not
+# necessary because the MMCM.LOCK signal is synchronized to the BUFG clock
+# before being used.
+
+NET "%cntInfo_lddr3_ck_n[*]" TIG;
+NET "%cntInfo_lddr3_ck_p[*]" TIG;</CommonCode>
+  <CommonCode optional="SINGLE_ENDED" flowvendor="synplicity" type="SYS_CLK_CODE" name="Design_clock_constraints" >
+NET "sys_clk%sysClk" TNM_NET = TNM_sys_clk%sysClk;
+TIMESPEC "TS_sys_clk%sysClk" = PERIOD "TNM_sys_clk%sysClk" #FREQUENCY# ns;</CommonCode>
+  <CommonCode optional="DIFFERENTIAL" flowvendor="synplicity" type="SYS_CLK_CODE" name="Design_clock_constraints" >
+NET "sys_clk%sysClk_p" TNM_NET = TNM_sys_clk%sysClk;
+TIMESPEC "TS_sys_clk%sysClk" = PERIOD "TNM_sys_clk%sysClk" #FREQUENCY# ns;</CommonCode>
+  <CommonCode optional="SINGLE_ENDED" flowvendor="synplicity" type="REF_CLK_CODE" name="IODC_clock_constraints" >
+NET "clk%refClk_ref" TNM_NET = TNM_clk%refClk_ref;
+TIMESPEC "TS_clk%refClk_ref" = PERIOD "TNM_clk%refClk_ref" #REFFREQ# ns ;</CommonCode>
+  <CommonCode optional="DIFFERENTIAL" flowvendor="synplicity" type="REF_CLK_CODE" name="IODC_clock_constraints" >
+NET "clk%refClk_ref_p" TNM_NET = TNM_clk%refClk_ref;
+TIMESPEC "TS_clk%refClk_ref" = PERIOD "TNM_clk%refClk_ref" #REFFREQ# ns ;</CommonCode>
+  <CommonCode flowvendor="synplicity" type="controller" name="bufr_clock_constraints" >
+# Constrain BUFR clocks used to synchronize data from IOB to fabric logic
+# Note that ISE cannot infer this from other PERIOD constraints because
+# of the use of OSERDES blocks in the BUFR clock generation path
+NET "%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/clk_rsync[?]" TNM_NET = TNM_%cntInfo_u%memType_uclk_rsync;
+TIMESPEC "TS_%cntInfo_u%memType_uclk_rsync" = PERIOD "TNM_%cntInfo_u%memType_uclk_rsync" #DOUBLE_FREQUENCY# ns;
+
+# Paths between DQ/DQS ISERDES.Q outputs and CLB flops clocked by falling
+# edge of BUFR will by design only be used if DYNCLKDIVSEL is asserted for
+# that particular flop. Mark this path as being a full-cycle, rather than
+# a half cycle path for timing purposes. NOTE: This constraint forces full-
+# cycle timing to be applied globally for all rising->falling edge paths
+# in all resynchronizaton clock domains. If the user had modified the logic
+# in the resync clock domain such that other rising->falling edge paths
+# exist, then constraint below should be modified to utilize pattern
+# matching to specific affect only the DQ/DQS ISERDES.Q outputs
+TIMEGRP "TG_%cntInfo_u%memType_uclk_rsync_rise" = RISING  "TNM_%cntInfo_u%memType_uclk_rsync";
+TIMEGRP "TG_%cntInfo_u%memType_uclk_rsync_fall" = FALLING "TNM_%cntInfo_u%memType_uclk_rsync";
+TIMESPEC "TS_%cntInfo_u%memType_uclk_rsync_rise_to_fall" =
+  FROM "TG_%cntInfo_u%memType_uclk_rsync_rise" TO "TG_%cntInfo_u%memType_uclk_rsync_fall" "TS_sys_clk%sysClk" * 2;</CommonCode>
+  <CommonCode flowvendor="synplicity" type="controller" name="constraints_1" >
+# Signal to select between controller and physical layer signals. Four divided by two clock
+# cycles (4 memory clock cycles) are provided by design for the signal to settle down.
+# Used only by the phy modules.
+INST "%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_init/u_ff_phy_init_data_sel" TNM = "TNM_%cntInfo_u%memType_uPHY_INIT_SEL";
+TIMESPEC "TS_%cntInfo_u%memType_uMC_PHY_INIT_SEL" = FROM "TNM_%cntInfo_u%memType_uPHY_INIT_SEL" TO FFS = "TS_sys_clk%sysClk"*4;</CommonCode>
+#  <CommonCode type="common" name="ignore_constraints" >
+#disable = reg_sr_o;
+#disable = reg_sr_r;</CommonCode>
+  <CommonCode flowvendor="synplicity" type="controller" name="ck_constraints" >
+# Temporary workaround to prevent tools from performing timing analysis on
+# ck_p/ck_n feedback path through the MMCM to the MMCM.LOCK signal (which in
+# turn is in reset logic within the CLB fabric). This analysis is not
+# necessary because the MMCM.LOCK signal is synchronized to the BUFG clock
+# before being used.
+
+NET "%cntInfo_lddr3_ck_n[*]" TIG;
+NET "%cntInfo_lddr3_ck_p[*]" TIG;</CommonCode>
+  <CommonCode flowvendor="ISE" name="BUFR_oserdes" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/gen_loop_col%1.u_oserdes_rsync</CommonCode>
+  <CommonCode flowvendor="ISE" name="BUFR_iodelay" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/gen_loop_col%1.u_odelay_rsync</CommonCode>
+  <CommonCode flowvendor="ISE" name="BUFR_LOC" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/gen_loop_col%1.u_bufr_rsync</CommonCode>
+  <CommonCode flowvendor="ISE" name="BUFIO_oserdes" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/gen_ck_cpt[%1].u_oserdes_cpt</CommonCode>
+  <CommonCode flowvendor="ISE" name="BUFIO_iodelay" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/gen_ck_cpt[%1].u_odelay_cpt</CommonCode>
+  <CommonCode flowvendor="ISE" name="mmcm_clk" >%cntInfo_l%memType_lu_infrastructure/u_mmcm_adv</CommonCode>
+  <CommonCode flowvendor="synplicity" name="BUFR_oserdes" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/genblk*.gen_loop_col%1.u_oserdes_rsync</CommonCode>
+  <CommonCode flowvendor="synplicity" name="BUFR_iodelay" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/genblk*.gen_loop_col%1.u_odelay_rsync</CommonCode>
+  <CommonCode flowvendor="synplicity" name="BUFR_LOC" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/genblk*.gen_loop_col%1.u_bufr_rsync</CommonCode>
+  <CommonCode flowvendor="synplicity" name="BUFIO_oserdes" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/genblk*.gen_ck_cpt[%1].u_oserdes_cpt</CommonCode>
+  <CommonCode flowvendor="synplicity" name="BUFIO_iodelay" >%cntInfo_l%memType_lu_memc_ui_top/u_mem_intfc/phy_top0/u_phy_read/u_phy_rdclk_gen/genblk*.gen_ck_cpt[%1].u_odelay_cpt</CommonCode>
+  <CommonCode flowvendor="synplicity" name="mmcm_clk" >%cntInfo_l%memType_lu_infrastructure/u_mmcm_adv</CommonCode>
+ </UCFConstraints>
+ <!-- ISIM commands are included here and these are output in
+         "isim_files.prj" located in sim folder for user_design -->
+ <ISIM_Commands>verilog  work  ./afifo.v
+verilog  work  ./cmd_gen.v
+verilog  work  ./cmd_prbs_gen.v
+verilog  work  ./data_prbs_gen.v
+verilog  work  ./init_mem_pattern_ctr.v
+verilog  work  ./mcb_flow_control.v
+verilog  work  ./mcb_traffic_gen.v
+verilog  work  ./rd_data_gen.v
+verilog  work  ./read_data_path.v
+verilog  work  ./read_posted_fifo.v
+verilog  work  ./sp6_data_gen.v
+verilog  work  ./tg_status.v
+verilog  work  ./v6_data_gen.v
+verilog  work  ./wr_data_gen.v
+verilog  work  ./write_data_path.v
+    </ISIM_Commands>
+ <!-- Static debug code that is output in <top_module>. -->
+ <MemTopSignals name="ControllerDebugCode" >
+  <Content>
+  // If debug port is not enabled, then make certain control input
+  // to Debug Port are disabled
+  generate
+    if (%cntInfo_u%memType_uDEBUG_PORT == "OFF") begin: %cntInfo_l%memType_lgen_dbg_tie_off
+      assign %cntInfo_l%memType_ldbg_wr_dqs_tap_set     = 'b0;
+      assign %cntInfo_l%memType_ldbg_wr_dq_tap_set      = 'b0;
+      assign %cntInfo_l%memType_ldbg_wr_tap_set_en      = 1'b0;
+      assign %cntInfo_l%memType_ldbg_pd_off             = 1'b0;
+      assign %cntInfo_l%memType_ldbg_pd_maintain_off    = 1'b0;
+      assign %cntInfo_l%memType_ldbg_pd_maintain_0_only = 1'b0;
+      assign %cntInfo_l%memType_ldbg_ocb_mon_off        = 1'b0;
+      assign %cntInfo_l%memType_ldbg_inc_cpt            = 1'b0;
+      assign %cntInfo_l%memType_ldbg_dec_cpt            = 1'b0;
+      assign %cntInfo_l%memType_ldbg_inc_rd_dqs         = 1'b0;
+      assign %cntInfo_l%memType_ldbg_dec_rd_dqs         = 1'b0;
+      assign %cntInfo_l%memType_ldbg_inc_dec_sel        = 'b0;
+      assign %cntInfo_l%memType_ldbg_inc_rd_fps         = 1'b0;
+      assign %cntInfo_l%memType_ldbg_pd_msb_sel         = 'b0 ;
+      assign %cntInfo_l%memType_ldbg_sel_idel_cpt       = 'b0 ;
+      assign %cntInfo_l%memType_ldbg_sel_idel_rsync     = 'b0 ;
+      assign %cntInfo_l%memType_ldbg_pd_byte_sel        = 'b0 ;
+      assign %cntInfo_l%memType_ldbg_dec_rd_fps         = 1'b0;
+    end
+  endgenerate</Content>
+ </MemTopSignals>
+ <ECC>
+  <value>Disabled</value>
+  <value>Enabled</value>
+ </ECC>
+ <!-- List of Mode regsiters that are supported for DDR3 SDRAM memory are
+     listed and along with this only allowed values for Virtex-6 DDR3 SDRAM
+     design are only provided. -->
+ <!-- Mode Register 0-->
+ <!-- Mode Register 1-->
+ <!-- Mode Register 2-->
+ <mr2PartialArraySelfRefresh>
+  <value>Partial-Array Self Refresh=PARTIAL_ARRAY_SELF_REFRESH</value>
+  <value>Full Array(000)</value>
+ </mr2PartialArraySelfRefresh>
+ <mr2CasWriteLatency>
+  <value>CAS write latency=CAS_WRITE_LATENCY</value>
+  <value>5(000)</value>
+  <value>6(001)</value>
+  <value>7(010)</value>
+ </mr2CasWriteLatency>
+ <mr2AutoSelfRefresh>
+  <value>Auto Self Refresh=AUTO_SELF_REFRESH</value>
+  <value>Enabled(1)</value>
+ </mr2AutoSelfRefresh>
+ <mr2SelfRefreshTempRange>
+  <value>High Temparature Self Refresh Rate=SELF_REFRESH_TEMP_RANGE</value>
+  <value>Normal(0)</value>
+ </mr2SelfRefreshTempRange>
+ <mr2RTTWR>
+  <value>RTT_WR - Dynamic On Die Termination (ODT)=RTT_WR</value>
+  <value>Dynamic ODT off(00)</value>
+  <value>RZQ/4(01)</value>
+  <value>RZQ/2(10)</value>
+  <value>Reserved(11)</value>
+ </mr2RTTWR>
+ <!-- Mode Register 3-->
+ <mr3MPRLOC>
+  <value>MPR Loc=MPR_LOC</value>
+  <value>Predefined Pattern(00)</value>
+ </mr3MPRLOC>
+ <mr3MPRC>
+  <value>MPR=MPRC</value>
+  <value>Normal Operation(0)</value>
+ </mr3MPRC>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="DIFF_SSTL15_DCI" virtex6_DCIStandard="DIFF_SSTL15_T_DCI" standard="DIFF_SSTL15" name="Strobe" IOType="inout" >
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs_p[0]" IOType="inout" virtex6name="ddr3_dqs_p" />
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs#[0]" IOType="inout" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="DIFF_SSTL15_DCI" virtex6_DCIStandard="DIFF_SSTL15_T_DCI" standard="DIFF_SSTL15" name="Strobe" IOType="inout" >
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs_p[1]" IOType="inout" virtex6name="ddr3_dqs_p" />
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs#[1]" IOType="inout" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="DIFF_SSTL15_DCI" virtex6_DCIStandard="DIFF_SSTL15_T_DCI" standard="DIFF_SSTL15" name="Strobe" IOType="inout" >
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs_p[2]" IOType="inout" virtex6name="ddr3_dqs_p" />
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs#[2]" IOType="inout" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="DIFF_SSTL15_DCI" virtex6_DCIStandard="DIFF_SSTL15_T_DCI" standard="DIFF_SSTL15" name="Strobe" IOType="inout" >
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs_p[3]" IOType="inout" virtex6name="ddr3_dqs_p" />
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs#[3]" IOType="inout" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="DIFF_SSTL15_DCI" virtex6_DCIStandard="DIFF_SSTL15_T_DCI" standard="DIFF_SSTL15" name="Strobe" IOType="inout" >
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs_p[4]" IOType="inout" virtex6name="ddr3_dqs_p" />
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs#[4]" IOType="inout" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="DIFF_SSTL15_DCI" virtex6_DCIStandard="DIFF_SSTL15_T_DCI" standard="DIFF_SSTL15" name="Strobe" IOType="inout" >
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs_p[5]" IOType="inout" virtex6name="ddr3_dqs_p" />
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs#[5]" IOType="inout" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="DIFF_SSTL15_DCI" virtex6_DCIStandard="DIFF_SSTL15_T_DCI" standard="DIFF_SSTL15" name="Strobe" IOType="inout" >
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs_p[6]" IOType="inout" virtex6name="ddr3_dqs_p" />
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs#[6]" IOType="inout" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="DIFF_SSTL15_DCI" virtex6_DCIStandard="DIFF_SSTL15_T_DCI" standard="DIFF_SSTL15" name="Strobe" IOType="inout" >
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs_p[7]" IOType="inout" virtex6name="ddr3_dqs_p" />
+  <SignalName keyword="DATA_STROBE_WIDTH" name="ddr3_dqs#[7]" IOType="inout" />
+ </SignalGroup>
+ <SignalGroup IOVoltage="1.5V" DCIStandard="DIFF_SSTL15_DCI" virtex6_DCIStandard="DIFF_SSTL15" standard="DIFF_SSTL15" name="Clock" IOType="output" >
+  <SignalName keyword="CLK_WIDTH" name="ddr3_ck_p[0]" IOType="output" virtex6name="ddr3_ck_p" />
+  <SignalName keyword="CLK_WIDTH" name="ddr3_ck#[0]" IOType="output" />
+ </SignalGroup>
+</FpgaSignalList>

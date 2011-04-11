@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2010 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,8 +19,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 20012 $
-// $Date: 2010-03-29 19:43:16 +0000 (Mon, 29 Mar 2010) $
+// $Revision: 22847 $
+// $Date: 2010-12-23 15:54:03 +0000 (Thu, 23 Dec 2010) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
@@ -51,8 +51,6 @@ module SyncFIFO(
    parameter                 dataWidth = 1 ;
    parameter                 depth = 2 ; // minimum 2
    parameter                 indxWidth = 1 ; // minimum 1
-   parameter                 regFull = 1;
-   parameter                 regEmpty = 1;
 
    // input clock domain ports
    input                     sCLK ;
@@ -68,25 +66,23 @@ module SyncFIFO(
    output [dataWidth -1 : 0] dD_OUT ;
 
    // constants for bit masking of the gray code
-   wire [indxWidth : 0]      msbset = 'b1 << indxWidth ;
-   wire [indxWidth - 1 : 0]  msb2set = 'b1 << (indxWidth -1) ;
+   wire [indxWidth : 0]      msbset  = ~({(indxWidth + 1){1'b1}} >> 1) ;
+   wire [indxWidth - 1 : 0]  msb2set = ~({(indxWidth + 0){1'b1}} >> 1) ;
    wire [indxWidth : 0]      msb12set = msbset | {1'b0, msb2set} ; // 'b11000...
 
    // FIFO Memory
    reg [dataWidth -1 : 0]    fifoMem [0: depth -1 ] ;
+   reg [dataWidth -1 : 0]    dDoutReg ;
 
    // Enqueue Pointer support
-   reg [indxWidth : 0]       sGEnqPtr, sGEnqPtr1 ; // Flops
+   reg [indxWidth +1 : 0]    sGEnqPtr, sGEnqPtr1 ; // Flops
    reg                       sNotFullReg ;
-   reg                       sGToggle;
    wire                      sNextNotFull, sFutureNotFull ;
 
    // Dequeue Pointer support
-   reg [indxWidth : 0]       dGDeqPtr, dGDeqPtr1 ; // Flops
+   reg [indxWidth+1 : 0]       dGDeqPtr, dGDeqPtr1 ; // Flops
    reg                       dNotEmptyReg ;
-   reg                       dGToggle;
-
-   wire                      dNextNotEmpty, dFutureNotEmpty;
+   wire                      dNextNotEmpty;
 
    // Reset generation
    wire                      dRST_N ;
@@ -101,14 +97,13 @@ module SyncFIFO(
    assign                    dRST_N = sRST_N ;
 
    // Outputs
-   assign                    dD_OUT   = fifoMem[dDeqPtrIndx] ;
-   assign                    dEMPTY_N = regEmpty ? dNotEmptyReg : dNextNotEmpty ;
-   assign                    sFULL_N  = regFull  ? sNotFullReg  : sNextNotFull ;
+   assign                    dD_OUT   = dDoutReg     ;
+   assign                    dEMPTY_N = dNotEmptyReg ;
+   assign                    sFULL_N  = sNotFullReg  ;
 
-
-   // Indexes are truncated from the Gray counter
-   assign                    sEnqPtrIndx = sGEnqPtr[indxWidth-1:0] ^ (sGEnqPtr[indxWidth:1] & msb2set ) ;
-   assign                    dDeqPtrIndx = dGDeqPtr[indxWidth-1:0] ^ (dGDeqPtr[indxWidth:1] & msb2set ) ;
+   // Indexes are truncated from the Gray counter with parity
+   assign                    sEnqPtrIndx  = sGEnqPtr[indxWidth-1:0];
+   assign                    dDeqPtrIndx  = dGDeqPtr[indxWidth-1:0];
 
    // Fifo memory write
    always @(posedge sCLK)
@@ -119,25 +114,23 @@ module SyncFIFO(
 
    ////////////////////////////////////////////////////////////////////////
    // Enqueue Pointer and increment logic
-   assign sNextNotFull   = (sGEnqPtr  ^ msb12set) != sDeqPtr ;
-   assign sFutureNotFull = (sGEnqPtr1 ^ msb12set) != sDeqPtr ;
+   assign sNextNotFull   = (sGEnqPtr [indxWidth+1:1] ^ msb12set) != sDeqPtr ;
+   assign sFutureNotFull = (sGEnqPtr1[indxWidth+1:1] ^ msb12set) != sDeqPtr ;
 
    always @(posedge sCLK or negedge sRST_N)
      begin
         if (sRST_N == 0)
           begin
-             sGEnqPtr    <= `BSV_ASSIGNMENT_DELAY {(indxWidth +1 ) {1'b0}} ;
-             sGEnqPtr1   <= `BSV_ASSIGNMENT_DELAY { {indxWidth {1'b0}}, 1'b1} ;
-             sGToggle    <= `BSV_ASSIGNMENT_DELAY 1'b1 ;
+             sGEnqPtr    <= `BSV_ASSIGNMENT_DELAY {(indxWidth +2 ) {1'b0}} ;
+             sGEnqPtr1   <= `BSV_ASSIGNMENT_DELAY { {indxWidth {1'b0}}, 2'b11} ;
              sNotFullReg <= `BSV_ASSIGNMENT_DELAY 1'b0 ; // Mark as full during reset to avoid spurious loads
           end // if (sRST_N == 0)
         else
            begin
               if ( sENQ )
                 begin
-                   sGEnqPtr1   <= `BSV_ASSIGNMENT_DELAY incrGray( sGEnqPtr1, sGToggle ) ;
+                   sGEnqPtr1   <= `BSV_ASSIGNMENT_DELAY incrGrayP( sGEnqPtr1 ) ;
                    sGEnqPtr    <= `BSV_ASSIGNMENT_DELAY sGEnqPtr1 ;
-                   sGToggle    <= `BSV_ASSIGNMENT_DELAY ~ sGToggle ;
                    sNotFullReg <= `BSV_ASSIGNMENT_DELAY sFutureNotFull ;
                 end // if ( sENQ )
               else
@@ -158,7 +151,7 @@ module SyncFIFO(
           end // if (dRST_N == 0)
         else
           begin
-             dSyncReg1 <= `BSV_ASSIGNMENT_DELAY sGEnqPtr ; // Clock domain crossing
+             dSyncReg1 <= `BSV_ASSIGNMENT_DELAY sGEnqPtr[indxWidth+1:1] ; // Clock domain crossing
              dEnqPtr   <= `BSV_ASSIGNMENT_DELAY dSyncReg1 ;
           end // else: !if(dRST_N == 0)
      end // always @ (posedge dCLK  or negedge dRST_N)
@@ -167,31 +160,27 @@ module SyncFIFO(
 
    ////////////////////////////////////////////////////////////////////////
    // Enqueue Pointer and increment logic
-   assign dFutureNotEmpty = dGDeqPtr1 != dEnqPtr ;
-   assign dNextNotEmpty   = dGDeqPtr  != dEnqPtr ;
+   assign dNextNotEmpty   = dGDeqPtr[indxWidth+1:1]  != dEnqPtr ;
 
    always @(posedge dCLK or negedge dRST_N)
      begin
         if (dRST_N == 0)
           begin
-             dGDeqPtr     <= `BSV_ASSIGNMENT_DELAY {(indxWidth + 1) {1'b0}} ;
-             dGDeqPtr1    <= `BSV_ASSIGNMENT_DELAY {{indxWidth {1'b0}}, 1'b1 } ;
-             dGToggle     <= `BSV_ASSIGNMENT_DELAY 1'b1 ;
+             dGDeqPtr     <= `BSV_ASSIGNMENT_DELAY {(indxWidth + 2) {1'b0}} ;
+             dGDeqPtr1    <= `BSV_ASSIGNMENT_DELAY {{indxWidth {1'b0}}, 2'b11 } ;
              dNotEmptyReg <= `BSV_ASSIGNMENT_DELAY 1'b0 ;
           end // if (dRST_N == 0)
         else
            begin
-              if ( dDEQ )
-                begin
-                   dGDeqPtr     <= `BSV_ASSIGNMENT_DELAY dGDeqPtr1 ;
-                   dGDeqPtr1    <= `BSV_ASSIGNMENT_DELAY incrGray( dGDeqPtr1, dGToggle );
-                   dGToggle     <= `BSV_ASSIGNMENT_DELAY ~ dGToggle ;
-                   dNotEmptyReg <= `BSV_ASSIGNMENT_DELAY dFutureNotEmpty ;
-                end // if ( dDEQ )
-              else
-                begin
-                   dNotEmptyReg <= `BSV_ASSIGNMENT_DELAY dNextNotEmpty ;
-                end // else: !if( dDEQ )
+              if ((!dNotEmptyReg || dDEQ) && dNextNotEmpty) begin
+                 dGDeqPtr     <= `BSV_ASSIGNMENT_DELAY dGDeqPtr1 ;
+                 dGDeqPtr1    <= `BSV_ASSIGNMENT_DELAY incrGrayP( dGDeqPtr1 );
+                 dDoutReg     <= `BSV_ASSIGNMENT_DELAY fifoMem[dDeqPtrIndx] ;
+                 dNotEmptyReg <= `BSV_ASSIGNMENT_DELAY 1'b1;
+              end
+              else if (dDEQ && !dNextNotEmpty) begin
+                 dNotEmptyReg <= `BSV_ASSIGNMENT_DELAY 1'b0;
+              end
            end // else: !if(dRST_N == 0)
      end // always @ (posedge dCLK or negedge dRST_N)
 
@@ -201,11 +190,11 @@ module SyncFIFO(
          if (sRST_N == 0)
            begin
               sSyncReg1 <= `BSV_ASSIGNMENT_DELAY {(indxWidth + 1) {1'b0}} ;
-              sDeqPtr   <= `BSV_ASSIGNMENT_DELAY regFull ? {(indxWidth + 1) {1'b0}} : msb12set ; // When reset mark as not empty
+              sDeqPtr   <= `BSV_ASSIGNMENT_DELAY {(indxWidth + 1) {1'b0}} ; // When reset mark as not empty
            end // if (sRST_N == 0)
          else
            begin
-              sSyncReg1 <= `BSV_ASSIGNMENT_DELAY dGDeqPtr ; // clock domain crossing
+              sSyncReg1 <= `BSV_ASSIGNMENT_DELAY dGDeqPtr[indxWidth+1:1] ; // clock domain crossing
               sDeqPtr   <= `BSV_ASSIGNMENT_DELAY sSyncReg1 ;
            end // else: !if(sRST_N == 0)
       end // always @ (posedge sCLK  or negedge sRST_N)
@@ -223,9 +212,10 @@ module SyncFIFO(
           begin
              fifoMem[i] = {((dataWidth + 1)/2){2'b10}} ;
           end
+        dDoutReg     = {((dataWidth + 1)/2){2'b10}} ;
 
         // initialize the pointer
-        sGEnqPtr = {((indxWidth + 1)/2){2'b10}} ;
+        sGEnqPtr = {((indxWidth + 2)/2){2'b10}} ;
         sGEnqPtr1 = sGEnqPtr ;
         sNotFullReg = 1'b0 ;
 
@@ -273,23 +263,37 @@ module SyncFIFO(
    // synopsys translate_on
 `endif // BSV_NO_INITIAL_BLOCKS
 
+   function [indxWidth+1:0] incrGrayP ;
+      input [indxWidth+1:0] grayPin;
+
+      begin: incrGrayPBlock
+         reg [indxWidth :0] g;
+         reg                p ;
+         reg [indxWidth :0] i;
+
+         g = grayPin[indxWidth+1:1];
+         p = grayPin[0];
+         i = incrGray (g,p);
+         incrGrayP = {i,~p};
+      end
+   endfunction
    function [indxWidth:0] incrGray ;
       input [indxWidth:0] grayin;
-      input toggle ;
+      input parity ;
 
       begin: incrGrayBlock
          integer               i;
          reg [indxWidth: 0]    tempshift;
          reg [indxWidth: 0]    flips;
 
-         flips[0] = ! toggle ;
+         flips[0] = ! parity ;
          for ( i = 1 ; i < indxWidth ; i = i+1 )
            begin
               tempshift = grayin << (2 + indxWidth - i ) ;
-              flips[i]  = toggle & grayin[i-1] & ~(| tempshift ) ;
+              flips[i]  = parity & grayin[i-1] & ~(| tempshift ) ;
            end
          tempshift = grayin << 2 ;
-         flips[indxWidth] = toggle & ~(| tempshift ) ;
+         flips[indxWidth] = parity & ~(| tempshift ) ;
 
          incrGray = flips ^ grayin ;
       end
@@ -325,7 +329,7 @@ module testSyncFIFO() ;
         $display( "running test" ) ;
 
         $dumpfile("SyncFIFO.vcd");
-        $dumpvars(5) ;
+        $dumpvars(5,testSyncFIFO) ;
         $dumpon ;
         #200 ;
         sRST_N = 1 ;
@@ -343,7 +347,7 @@ module testSyncFIFO() ;
 
       end
 
-   SyncFIFO #(dsize,fifodepth,fifoidx,0,0)
+   SyncFIFO #(dsize,fifodepth,fifoidx)
      dut( sCLK, sRST_N, dCLK, sENQ, sDIN,
           sFULL_N, // sCLR,
           dDEQ, dDOUT, dEMPTY_N );

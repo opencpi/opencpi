@@ -232,7 +232,8 @@ HdlToolCompile=\
           $(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found for $(HdlTarget).))) \
   $(foreach l,$(Cores),\
      $(if $(wildcard $(call HdlLibraryRefDir,$(l)_bb,$(or $(HdlTarget),$(info NONE2)))),,\
-          $(error Error: Specified core library:$@: "$(call HdlLibraryRefDir,$(l)_bb,$(HdlTarget))", in the "Cores" variable, was not found.))) \
+	  $(info Error: Specified core library "$l", in the "Cores" variable, was not found.) \
+          $(error Error:   after looking for "$(call HdlLibraryRefDir,$l_bb,$(HdlTarget))"))) \
   echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\
   rm -f $(notdir $@);\
   $(XstMakePrj)\

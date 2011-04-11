@@ -7,11 +7,11 @@ mkTLPCM.v \
 mkPktFork.v \
 mkPktMerge.v \
 mkOCCP.v \
+mkWciMonitor.v \
+mkUUID.v\
 mkOCDP4B.v \
 mkOCInf4B.v \
-mkWciMonitor.v \
 mkCTop4B.v\
-mkUUID.v\
 )
 cp $OCPI_HDL_IMPORTS_DIR/rtl/$i .
 end

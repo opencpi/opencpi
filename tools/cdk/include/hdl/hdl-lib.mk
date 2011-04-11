@@ -66,7 +66,7 @@ install: $(OutLibFiles) | $(HdlInstallLibDir)
              $(HdlInstallLibDir)/$$f)); \
 	done
 
+endif
 ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk
-endif
 endif

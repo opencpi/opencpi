@@ -35,6 +35,6 @@
 ########################################################################### #
 
 Libraries=bsv util
-Cores=dram_mig34_v5
-OnlyTargets=xc5vsx95t
+Cores=dram_v5_mig34
+OnlyTargets=virtex5
 include $(OCPI_CDK_DIR)/include/worker.mk
