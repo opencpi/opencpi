@@ -42,6 +42,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/temac_v6 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34 \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig37 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v5_mig34 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/fft_v5_4k_strm_nat \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v6_gtx_x4_250 \
