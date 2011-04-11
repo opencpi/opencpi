@@ -77,9 +77,9 @@ namespace
     t.stop ( );
     t.getValue ( e );
     unsigned int msecs = e.seconds * 1000 + e.nanoseconds / 1000000;
-    // Allow for a 1% skew
-    EXPECT_GE( msecs, 2970 );
-    EXPECT_LE( msecs, 3030 );
+    // Allow for a 2% skew
+    EXPECT_GE( msecs, 2940 );
+    EXPECT_LE( msecs, 3060 );
   }
 
 
