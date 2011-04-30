@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <errno.h>
-//#define __USE_GNU   // SSiegel - commented out to allow RHEL6 compile
+// This macro is necessary to expose pthread_yield on RHEL5
+#define __USE_GNU   // SSiegel claims this breaks RHEL6 - we need to figure this out
 #include <pthread.h>
 #ifdef __APPLE__
 #define pthread_yield pthread_yield_np
@@ -16,6 +17,7 @@
 #include <sys/time.h>
 #include "OCCP.h"
 #include "OCDP.h"
+#include "getPci.h"
 
 #define WORKER_DP0 (13)
 #define WORKER_DP1 (14)
@@ -30,9 +32,6 @@
 #define assert(foo) (foo)
 #endif
 
-typedef int bool;
-const bool false = 0;
-const bool true = 1;
 // Packet of arguments required to process a stream endpoint on the cpu side
 typedef struct {
   bool isToCpu;
@@ -64,7 +63,7 @@ uint64_t bytes;
 main(int argc, char *argv[])
 {
   unsigned dmaMeg;
-  unsigned long long dmaBase, bar0Base, bar1Base, bar1Size;
+  unsigned long long dmaBase;
   int fd;
   OccpSpace *occp;
   uint8_t *bar1, *cpuBase;
@@ -78,7 +77,30 @@ main(int argc, char *argv[])
   uint32_t dmaOffset = 0; // this is our "dma buffer allocation" pointer...
   pthread_t readThread;
   struct timeval tv0, tv1, tv2;
+  Bar bars[MAXBARS];
+  unsigned nbars;
+  const char *err;
+  const char *name;
+  char *cp = strrchr(argv[0], '/');
+  name = cp ? cp + 1 : argv[0];
 
+  if (argc == 1) {
+    fprintf(stderr,
+	    "Usage is: %s PCI-Device\n"
+	    "  %s reads standard input and writes standard output\n"
+	    "  routing the data through the specified FPGA board\n"
+	    "Options are:\n"
+	    "  -d        don't actually move, read or write any data\n"
+	    "  -C<nbufs> set number of cpu-side buffers - default is %u\n"
+	    "  -F<nbufs> set number of fpga-side buffers - default is %u\n"
+	    "  -c        don't check opcodes for proper sequencing\n"
+	    "  -m<nmsgs> number of messages to move (default is all of std input)\n"
+	    "  -b<bsize> size of buffers (rounded up to 16 byte boundary)\n"
+	    "  -v        verbose\n"
+	    "  -s        single thread\n"
+	    , name, name, nCpuBufs, nFpgaBufs);
+    return 1;
+  }
   while (argv[1][0] == '-') {
     switch (argv[1][1]) {
     case 'd':
@@ -108,23 +130,36 @@ main(int argc, char *argv[])
       single = true;
       break;
     default:
-      assert(!"bad flag");
-      break;
+      fprintf(stderr, "Base option flag: %s\n", argv[1]);
+      return 1;
     }
     argv++;
   }
+  if (geteuid()) {
+    fprintf(stderr, "You must run this program with \"sudo -E\", as in \"sudo -E %s pci-dev\"\n",
+	    name);
+    return 1;
+  }
+  if (!(dmaEnv = getenv("OCPI_DMA_MEMORY"))) {
+    fprintf(stderr, "You must set the OCPI_DMA_MEMORY variable before running this program\n");
+    return 1;
+  }
+  if (sscanf(dmaEnv, "%uM$0x%llx", &dmaMeg, (unsigned long long *) &dmaBase) != 2) {
+    fprintf(stderr, "The OCPI_DMA_MEMORY environment variable is not formatted correctly\n");
+    return 1;
+  }
+
+  if ((err = getOpenCPI(argv[1], bars, &nbars, verbose)) || nbars != 2) {
+    fprintf(stderr, "Couldn't get PCI information about PCI device %s.  Try ocfrp_check.\n", argv[1]);
+    return 1;
+  }
   fprintf(stderr, "BufSize=%d, CpuBufs %d FpgaBufs %d\n", bufSize, nCpuBufs, nFpgaBufs);
   errno = 0;
-  bar0Base = strtoull(argv[1], NULL, 0);
-  bar1Base = strtoull(argv[2], NULL, 0);
-  bar1Size = strtoull(argv[3], NULL, 0);
-  assert(errno == 0);
   assert ((fd = open("/dev/mem", O_RDWR|O_SYNC)) >= 0);
   assert((occp = (OccpSpace *)mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE,
-				   MAP_SHARED, fd, bar0Base)) != MAP_FAILED);
-  assert((bar1 = (uint8_t*)mmap(NULL, bar1Size, PROT_READ|PROT_WRITE,
-				MAP_SHARED, fd, bar1Base)) != MAP_FAILED);
-  assert((dmaEnv = getenv("CPI_DMA_MEMORY")) != NULL);
+				   MAP_SHARED, fd, bars[0].address)) != MAP_FAILED);
+  assert((bar1 = (uint8_t*)mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE,
+				MAP_SHARED, fd, bars[1].address)) != MAP_FAILED);
   assert(sscanf(dmaEnv, "%uM$0x%llx", &dmaMeg, (unsigned long long *) &dmaBase) == 2);
   assert((cpuBase = (uint8_t*)mmap(NULL, (unsigned long long)dmaMeg * 1024 * 1024,
 				   PROT_READ|PROT_WRITE, MAP_SHARED, fd, dmaBase)) !=
@@ -251,10 +286,8 @@ checkStream(Stream *s) {
       n = s->bufSize;
     else {
       if ((n = s->metadata[s->bufIdx].length)) {
-	if (!noData) {
-	  memcpy(s->buf, (void*)&s->buffers[s->bufIdx * s->bufSize], n);
-	  assert(write(1, s->buf, n) == n);
-	}
+	memcpy(s->buf, (void*)&s->buffers[s->bufIdx * s->bufSize], n);
+	assert(write(1, s->buf, n) == n);
       }
     }
     if (!noCheck) {

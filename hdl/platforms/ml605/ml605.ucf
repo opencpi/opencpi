@@ -30,19 +30,19 @@ INST "ftop/pciw_pci0_clk"  LOC = IBUFDS_GTXE1_X0Y4;  # 250 MHz Receiver from U9 
 
 NET  "pci0_reset_n"  LOC = AE13 | IOSTANDARD = LVCMOS25 | PULLUP | NODELAY;
 
-INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_block_i"                   LOC = PCIE_X0Y1;
-INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[0].GTX" LOC = GTXE1_X0Y15;
-INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[1].GTX" LOC = GTXE1_X0Y14;
-INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[2].GTX" LOC = GTXE1_X0Y13;
-INST "ftop/pciw_pci0_pcie_ep/ep/pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[3].GTX" LOC = GTXE1_X0Y12;
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_block_i"                   LOC = PCIE_X0Y1;
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[0].GTX" LOC = GTXE1_X0Y15;
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[1].GTX" LOC = GTXE1_X0Y14;
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[2].GTX" LOC = GTXE1_X0Y13;
+INST "ftop/pciw_pci0_pcie_ep/ep_pcie_2_0_i/pcie_gt_i/gtx_v6_i/GTXD[3].GTX" LOC = GTXE1_X0Y12;
 
 # Timing Constraints...
 NET "sys0_clkp"      TNM_NET = "SYS0CLK";  # 200 MHz sys0 XO
 TIMESPEC "TS_SYS0CLK" = PERIOD "SYS0CLK"     200 MHz HIGH 50 % ;
 
 NET "pci0_clkp" TNM_NET = "PCICLK" ;
-NET "ftop/pciw_pci0_pcie_ep/ep/pcie_clocking_i/clk_125" TNM_NET = "CLK_125" ;
-NET "ftop/pciw_pci0_pcie_ep/ep/pcie_clocking_i/clk_250" TNM_NET = "CLK_250" ;
+NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/clk_125" TNM_NET = "CLK_125" ;
+NET "ftop/pciw_pci0_pcie_ep/ep_pcie_clocking_i/clk_250" TNM_NET = "CLK_250" ;
 TIMESPEC "TS_PCICLK"   = PERIOD "PCICLK"  250 MHz HIGH 50 % ;
 TIMESPEC "TS_CLK_125"  = PERIOD "CLK_125" TS_PCICLK/2 HIGH 50 % PRIORITY 100 ;
 TIMESPEC "TS_CLK_250"  = PERIOD "CLK_250" TS_PCICLK*1 HIGH 50 % PRIORITY 1;

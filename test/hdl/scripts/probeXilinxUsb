@@ -1,0 +1,111 @@
+#!/bin/sh
+# bitgen option.userid...biggen_bin.ut "userid on line 21 - feed5200".
+if [[ $# == 0 ]]; then
+  echo Usage is: `basename $0` '[all|auto]'
+  echo '  'This script scans usb ports for Xilinx JTAG cables/pods and
+  echo '  'prints which parts are at which positions on each one found.
+  echo '  Use "all" to scan for up to 9 cables.  Use "auto" to find the first.'
+  exit 1
+fi
+temp=/tmp/cpibitstream$$
+tlog=$temp.1
+tmp=$temp.2
+port=${1:-auto}
+function good {
+  #rm -f $temp.*
+  exit 0
+}
+function bad {
+  rm -f $tmp
+  echo Look at $tlog for details.
+  exit 1
+}
+#part=${1:-xc5vlx50t}
+#pos=${2:-1}
+#echo part "$part" pos "$pos" port "$port"
+if [[ $port == all ]]; then
+  ports="usb21 usb22 usb23 usb24 usb25 usb26 usb27 usb28 usb29"
+else
+  ports=$port
+fi
+anyport=
+for p in $ports; do
+if [[ $p == auto ]]; then
+  echo -n Looking for first Xilinx USB port...
+else
+  echo -n Trying port $p...
+fi
+imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
+echo setMode -bs/setCable -p $p | tr / \\n | $imp  2> $tlog 1>&2
+if test $? == 0; then
+  #cat $tlog
+   if grep -q '^Cable connection established.' $tlog; then
+      ed $tlog <<EOF > /dev/null 2>&1
+      /Usb Port -/
+      .=
+      s/^.*Usb Port - \(USB[^)]*\).*\$/\1/
+      .=
+      1,-d
+      2,\$d
+      w $tmp
+EOF
+      myport=`cat $tmp`
+      if [[ $myport == USB* ]]; then
+         echo USB Cable Connection verified on port $myport.
+	 anyport=yes
+      else
+	 echo USB Cable Connection on port $p verified, but actual port not discovered \(port = $myport\?\)
+	 bad
+      fi
+   else
+      echo USB Cable connection on port $p not successfully verified.
+      bad
+   fi
+else
+   echo USB Cable connection not verified.
+   continue
+fi
+any=
+for pos in 1 2 3 4 5 6 7 8 9; do
+  echo setMode -bs/setCable -p $p/identify/readidcode -p $pos | tr / \\n | $imp  2> $tlog 1>&2
+  last=$?
+  #echo status:$? $tlog 
+  if test $last == 0; then
+    ed $tlog <<EOF > /dev/null 2>&1
+      $
+      ?IDCODE?+
+      s/^.*Xilinx \([^,]*\),.*\$/\1/p
+      1,-d
+      2,\$d
+      w $tmp
+EOF
+    mypart=`cat $tmp`
+#    ed $tlog <<EOF > /dev/null 2>&1
+#      $
+#      ?: Usercode is ?
+#      s/^.*Usercode is '\([^']*\)'.*\$/\1/p
+#      1,-d
+#      2,\$d
+#      w $tmp
+#EOF
+#    myusercode=`cat $tmp`
+    echo Part at position $pos on $myport: $mypart
+    mv $tlog $tlog.$myport.$pos
+    any=yes
+  else
+    if [[ $any == "" ]]; then
+      echo Didn\'t find any parts at any position.
+      bad
+    fi
+  fi
+done
+if [[ $any != yes ]]; then
+  echo No valid positions found on port $myport.
+fi
+done
+if [[ $anyport != yes ]]; then
+  bad
+else
+  good
+fi
+

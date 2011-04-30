@@ -222,7 +222,7 @@ $(call ParName,$1): $(call MapName,$1) $(call PcfName,$1)
 
 # Generate bitstream
 $(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
-	$(AT)echo -n For $(Worker) on $1: Generating bitstream file $@.
+	$(AT)echo -n For $(Worker) on $1: Generating bitstream file $$@.
 	$(AT)$(call DoXilinxPat,bitgen,$1,-f $(HdlPlatformsDir)/common/bitgen_bit.ut \
                 $(notdir $(call ParName,$1)) $(notdir $(call BitName,$1)) \
 		$(notdir $(call PcfName,$1)), 'DRC detected 0 errors')
@@ -235,7 +235,7 @@ $(call BitZName,$1): $(call BitName,$1)
 -include $(HdlPlatformsDir)/$1/$1.mk
 ifdef HdlPromArgs_$1
 $(call PromName,$1): $(call BitName,$1)
-	$(AT)echo -n For $(Worker) on $1: Generating PROM file $@.
+	$(AT)echo -n For $(Worker) on $1: Generating PROM file $$@.
 	$(AT)$(call DoXilinxPat,promgen,$1, -w -p mcs -c FF $$(HdlPromArgs_$1) $(notdir $(call BitName,$1)),'.*')
 #$$(info have prom for $1=$$(HdlPromArgs_$1)=)
 all: $(call PromName,$1)
