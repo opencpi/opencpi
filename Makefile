@@ -78,7 +78,6 @@ PACKAGES += \
 	 core/$(DATAPLANE)/rdma_smb \
 	 core/$(DATAPLANE)/rdma_drivers \
 	 core/$(DATAPLANE)/transport \
-	 core/application \
 	 core/library \
 	 core/container/interfaces \
 	 core/container/hdl_container \
@@ -128,7 +127,6 @@ ALLPACKAGES = \
 	core/container/ocl_container \
 	core/container/rcc_container \
 	core/container/ctests \
-	core/application \
 	core/sca/cf \
 	core/sca/cf_util \
 	core/sca/gpped \
