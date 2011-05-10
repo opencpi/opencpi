@@ -85,14 +85,14 @@ namespace OCPI {
     unsigned Worker::whichProperty(const char *id) {
       Property *p = myProps;
       for (unsigned n=0; n < nProps; n++, p++)
-        if (!strcmp(p->name, id))
+        if (!strcmp(p->m_name, id))
           return n;
       throw CC::ApiError("Unknown property: \"", id, "\"", 0);
     }
     Property &Worker::findProperty(const char *id) {
       return *(myProps + whichProperty(id));
     }
-    Port *Worker::findPort(const char *id) {
+    Port *Worker::findMetaPort(const char *id) {
       Port *p = myPorts;
       for (unsigned int n=nPorts; n; n--, p++) {
         if ( strcmp(p->name,id)==0 )
@@ -104,13 +104,13 @@ namespace OCPI {
        (void)testId;
       assert(0); static Test *t; return *t;
     }
-    bool Port::decode(ezxml_t x, int pid) {
+    bool Port::decode(ezxml_t x, PortOrdinal aOrdinal) {
       myXml = x;
       name = ezxml_cattr(x, "name");
 
-      printf("Port %s has pid = %d\n", name, pid );
+      ordinal = aOrdinal;
+      printf("Port %s has ordinal = %d\n", name, ordinal );
 
-      m_pid = pid;
       if ( name == NULL )
         return true;
       if (CE::getBoolean(x, "twoWay", &twoway) ||
@@ -154,10 +154,10 @@ namespace OCPI {
 			       sub32Configs, true)))
           throw CC::ApiError("Invalid xml property description:", err, NULL);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
-      unsigned pid = 0;
+      unsigned n = 0;
       Port *p = myPorts;
-      for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++)
-        if (p->decode(x, pid++))
+      for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++, n++)
+        if (p->decode(x, n))
           throw CC::ApiError("Invalid xml port description", 0);
     }
   }

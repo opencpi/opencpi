@@ -38,9 +38,10 @@
 
 #include "ezxml.h"
 #include "OcpiParentChild.h"
+#include "OcpiOsMutex.h"
 #include "OcpiContainerDataTypes.h"
 #include "OcpiMetadataWorker.h"
-#include <OcpiWciWorker.h>
+#include "OcpiContainerApi.h"
 
 namespace OCPI {
 
@@ -49,32 +50,59 @@ namespace OCPI {
   }
   namespace Container {
     // This class is a small module of behavior used by workers, but available for other uses
+    // Unfortunately, it is virtually inheritable (see HDL container's use of it).
     class Controllable {
+    public:
+      inline OCPI::Metadata::Worker::ControlState getState() { return m_state; }
+      inline uint32_t getControlMask() { return m_controlMask; }
+      inline void setControlMask(uint32_t mask) { m_controlMask = mask; }
+      inline void setControlState(OCPI::Metadata::Worker::ControlState state) {
+	m_state = state;
+      }	
+      inline OCPI::Metadata::Worker::ControlState getControlState() {
+	return m_state;
+      }	
     protected:
-      OCPI::Metadata::Worker::ControlState myState;
-      uint32_t controlMask;
-      Controllable(const char *controlOperations);
+      Controllable();
+      void setControlOperations(const char *controlOperations);
+    private:
+      OCPI::Metadata::Worker::ControlState m_state;
+      uint32_t m_controlMask;
     };
 
     class Application;
     class Port;
-    class Property;
-    class Worker : public OCPI::Util::Parent<Port>, public OCPI::Util::Child<Application, Worker>,
-      public OCPI::Metadata::Worker,  public Controllable, public WCI__worker, public OCPI::WCI::WorkerOO {
+    class Artifact;
+    // This is the base class for all workers
+    // It supports the API, and is a child of the Worker template class inherited by 
+    // concrete workers
+    class Worker
+      : public OCPI::API::Worker,
+	public OCPI::Metadata::Worker,  virtual public Controllable {
 
-      friend class Property;
+      friend class OCPI::API::Property;
       friend class Artifact;
       friend class Application;
+      Artifact *m_artifact;
+      ezxml_t m_xml;
+      std::string m_implTag, m_instTag;
+      // Our thread safe mutex for the worker itself
+      OCPI::OS::Mutex m_workerMutex;
+      void controlOp(OCPI::Metadata::Worker::ControlOperation);
     protected:
-      ezxml_t myXml;
-      const char *myImplTag, *myInstTag;
-
-      // Provide hardware-related property information
-      Worker(Application &, ezxml_t impl, ezxml_t inst);
-      virtual void prepareProperty(Metadata::Property &p, Property &) = 0;
-      virtual Port &createPort(OCPI::Metadata::Port &metaport) = 0;
+      inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
+      virtual Port *findPort(const char *name) = 0;
+      inline const std::string &instTag() const { return m_instTag; }
+      inline const std::string &implTag() const { return m_implTag; }
+      inline ezxml_t myXml() const { return m_xml; }
+      Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props);
+      void setupProperty(const char *name, OCPI::API::Property &prop);
+      virtual void prepareProperty(OCPI::Util::Prop::Property &p, OCPI::API::Property &) = 0;
+      virtual Port &createPort(OCPI::Metadata::Port &metaport, const OCPI::Util::PValue *props = NULL) = 0;
 
     public:
+      virtual Application &application() = 0;
+      void setProperty(const char *name, const char *value);
 
         /**
            @brief
@@ -89,92 +117,37 @@ namespace OCPI {
            @retval std::string - last control error
 
            ****************************************************************** */
+#if 0
       virtual std::string getLastControlError()
         throw ( OCPI::Util::EmbeddedException )=0;
-
+#endif
 
       bool hasImplTag(const char *tag);
       bool hasInstTag(const char *tag);
       typedef unsigned Ordinal;
       // Generic setting method
-      void setProperty(const char *name, const char *value);
-      // generate the simple-type-specific setting methods
-      // this also works fine for strings
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                 \
-      virtual void set##pretty##Property(Metadata::Property &,const run) = 0; \
-      inline void set##pretty##Property(const char *name, const run val) {    \
-        set##pretty##Property(findProperty(name), val);                       \
-      }                                                                       \
-      virtual void set##pretty##SequenceProperty(Metadata::Property &,        \
-						 const run *,	              \
-						 unsigned length) = 0;        \
-      inline void set##pretty##SequenceProperty(const char *name,             \
-						const run* vals,              \
-						unsigned length) {	      \
-        set##pretty##SequenceProperty(findProperty(name), vals, length);      \
-      }
-    OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-#undef OCPI_DATA_TYPE_S
-      // generate the simple-type-specific getting methods
-      // need a special item for strings
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                    \
-      virtual run get##pretty##Property(Metadata::Property &) = 0;	         \
-      inline run get##pretty##Property(const char *name) {                       \
-        return get##pretty##Property(findProperty(name));                        \
-      }                                                                          \
-      virtual unsigned get##pretty##SequenceProperty(Metadata::Property&, run *, \
-						     unsigned length) = 0;       \
-      inline unsigned get##pretty##SequenceProperty(const char *name,            \
-						    run* vals,                   \
-						    unsigned length) {	         \
-        return get##pretty##SequenceProperty(findProperty(name), vals, length);  \
-      }
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void get##pretty##Property(Metadata::Property &, run,            \
-					 unsigned length) = 0;		       \
-      inline void get##pretty##Property(const char *name, run val,             \
-					unsigned length) {	               \
-        get##pretty##Property(findProperty(name), val, length);                \
-      }                                                                        \
-      virtual unsigned get##pretty##SequenceProperty                           \
-        (Metadata::Property &, run *, unsigned length, char *buf,              \
-	 unsigned space) = 0;						       \
-      inline unsigned get##pretty##SequenceProperty                            \
-        (const char *name, run *vals, unsigned length, char *buf,              \
-	 unsigned space) {						       \
-        return get##pretty##SequenceProperty(findProperty(name), vals, length, \
-					     buf, space);		       \
-      }
 
-    OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-#undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
-
-      Worker(ezxml_t metadata);
       virtual ~Worker();
-      virtual Port &getPort(const char *name);
+      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props);
 
-
-
-      virtual Port & createOutputPort(PortId portId,
+      virtual Port & createOutputPort(OCPI::Metadata::PortOrdinal portId,
                                      OCPI::OS::uint32_t bufferCount,
                                      OCPI::OS::uint32_t bufferSize, 
-                                      OCPI::Util::PValue* props=NULL) 
+                                      const OCPI::Util::PValue* props=NULL) 
         throw ( OCPI::Util::EmbeddedException ) = 0;
 
-      virtual Port & createInputPort(PortId portId,
+      virtual Port & createInputPort(OCPI::Metadata::PortOrdinal portId,
                                      OCPI::OS::uint32_t bufferCount,
                                      OCPI::OS::uint32_t bufferSize, 
-                                     OCPI::Util::PValue* props=NULL) 
+                                     const OCPI::Util::PValue* props=NULL) 
         throw ( OCPI::Util::EmbeddedException ) = 0;
-
-
-
-#define CONTROL_OP(x,c,t,s1,s2,s3) virtual void x() = 0;
-OCPI_CONTROL_OPS
-#undef CONTROL_OP      
+      virtual void read(uint32_t offset, uint32_t size, void *data) = 0;
+      virtual void write(uint32_t offset, uint32_t size, const void *data) = 0;
+#define CONTROL_OP(x, c, t, s1, s2, s3) \
+      void x();
+    OCPI_CONTROL_OPS
+#undef CONTROL_OP
+      virtual void controlOperation(OCPI::Metadata::Worker::ControlOperation) = 0;
     };
   }
 }

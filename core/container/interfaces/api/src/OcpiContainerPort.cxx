@@ -34,33 +34,33 @@
 
 #include "OcpiContainerPort.h"
 #include "OcpiWorker.h"
-#include "OcpiArtifact.h"
 #include "OcpiContainerApplication.h"
 #include "OcpiContainerMisc.h"
 #include "OcpiPValue.h"
 
 namespace OCPI {
   namespace Container {
+    namespace OA = OCPI::API;
     namespace CM = OCPI::Metadata;
     namespace CP = OCPI::Util::Prop;
-    BasePort::BasePort(OCPI::Metadata::Port & metaData ) :
+    BasicPort::BasicPort(const OCPI::Metadata::Port & metaData ) :
       PortData(metaData), myDesc(connectionData.data.desc)
     {
       // FIXME: put these in the default PortData constructor
       myDesc.nBuffers = DEFAULT_NBUFFERS;
       myDesc.dataBufferSize = DEFAULT_BUFFER_SIZE;
       OCPI::RDT::Descriptors &d = connectionData.data;
-      d.type = myMetaPort.provider ? OCPI::RDT::ConsumerDescT : OCPI::RDT::ProducerDescT;
+      d.type = m_metaPort.provider ? OCPI::RDT::ConsumerDescT : OCPI::RDT::ProducerDescT;
       d.role = OCPI::RDT::NoRole;
     }
-    BasePort::~BasePort(){}
+    BasicPort::~BasicPort(){}
 
     // This base class constructor for generic initialization
-    Port::Port(Worker &w, OCPI::Metadata::Port &mPort) :
-      BasePort( mPort ),
-      OCPI::Util::Child<Worker,Port>(w),
-      canBeExternal(true),
-      myContainer(*myParent->myParent->myParent)
+    // FIXME: parse buffer count here at least? (check that others don't do it).
+    Port::Port(Container &container, const OCPI::Metadata::Port &mPort, const OCPI::Util::PValue *) :
+      BasicPort( mPort ),
+      m_container(container),
+      m_canBeExternal(true)
     {
       uint32_t n;
       bool found;
@@ -70,32 +70,37 @@ namespace OCPI {
       if ( mPort.myXml ) {
         n = getAttrNum(mPort.myXml, "minBufferSize", true, &found);
         if (found)
-          myMetaPort.minBufferSize = n;
+          m_metaPort.minBufferSize = n;
         n = getAttrNum(mPort.myXml, "maxBufferSize", true, &found);
         if (found)
-          myMetaPort.maxBufferSize = n; // no max if not specified.
+          m_metaPort.maxBufferSize = n; // no max if not specified.
         n = getAttrNum(mPort.myXml, "minNumBuffers", true, &found);
         if (found)
-          myMetaPort.minBufferCount = n;
+          m_metaPort.minBufferCount = n;
       }
       connectionData.port = (intptr_t)this;
     }
 
-    void Port::loopback(Port &) {}
+    Container &Port::container() const { return m_container; }
+
+    void Port::loopback(OA::Port &) {}
 
     bool Port::hasName(const char *name) {
-      return (name == myMetaPort.name );
+      return (name == m_metaPort.name );
     }
 
     // The default behavior is that there is nothing special to do between
     // ports of like containers.
-    bool Port::connectLike(Port &other, OCPI::Util::PValue *myProps,  OCPI::Util::PValue *otherProps) {
+    bool Port::connectLike(Port &other, const OCPI::Util::PValue *myProps,
+			   const OCPI::Util::PValue *otherProps) {
       (void)other;(void)myProps;(void)otherProps;
       return false;
     }
 
     // The general case of connecting ports that are in the same process.
-    void Port::connect(Port &other, OCPI::Util::PValue *myProps, OCPI::Util::PValue *otherProps) {
+    void Port::connect(OCPI::API::Port &apiOther, const OCPI::Util::PValue *myProps,
+		       const OCPI::Util::PValue *otherProps) {
+      Port &other = *static_cast<Port*>(&apiOther);
       if (isProvider())
         if (other.isProvider())
           throw ApiError("Cannot connect two provider ports", NULL);
@@ -105,14 +110,14 @@ namespace OCPI {
         throw ApiError("Cannot connect to user ports", NULL);
       }
       else {
-        Interface
-          *pContainer = other.myParent->myParent->myParent;
+        Container
+          &otherContainer = other.container();
         // Containers know how to do internal connections
-        if (&myContainer == pContainer) {
+        if (&m_container == &otherContainer) {
           connectInside(other, myProps, otherProps);
         }
         // Container MAY know how to do intercontainer connections between like containers.
-        else if (myContainer.myParent == pContainer->myParent &&
+        else if (&container().driver() == &otherContainer.driver() &&
                  connectLike( other, myProps, otherProps)) {
 	  return;
         }
@@ -138,23 +143,24 @@ namespace OCPI {
     // FIXME: Need simpler protocol to connect between containers in same process
     // without all this pack/unpack overhead.
     // We do not set up the OCDP here since we don't know everything.
-    const std::string &Port::getInitialProviderInfo(OCPI::Util::PValue *props) {
+    const std::string &Port::getInitialProviderInfo(const OCPI::Util::PValue *props) {
       ocpiAssert(isProvider());
-      if (!canBeExternal)
+      if (!m_canBeExternal)
 	throw ApiError("Port \", name, \" cannot be connected external to container", NULL);
       applyConnectParams(props);
-      myInitialPortInfo = myContainer.packPortDesc(*this);
-      return myInitialPortInfo;
+      m_initialPortInfo = m_container.packPortDesc(*this);
+      return m_initialPortInfo;
     }
 
     // User side initial method, that carries provider info and returns user info
-    const std::string &Port::setInitialProviderInfo(OCPI::Util::PValue *props, const std::string &ipi) {
+    const std::string &Port::setInitialProviderInfo(const OCPI::Util::PValue *props,
+						    const std::string &ipi) {
       // User side, producer side.
       ocpiAssert(!isProvider());
-      if (!canBeExternal)
+      if (!m_canBeExternal)
 	throw ApiError("Port \", name, \" cannot be connected external to container", NULL);
       PortData otherPortData;
-      myContainer.unpackPortDesc(ipi, &otherPortData);
+      m_container.unpackPortDesc(ipi, &otherPortData);
       // Adjust any parameters from connection metadata
       applyConnectParams(props);
       // We now know the role aspects of both sides.  Make the decision so we know what
@@ -163,24 +169,24 @@ namespace OCPI {
       finishConnection(otherPortData.connectionData.data);
       // We're done but other size still needs info.
       // FIXME done here?
-      myInitialPortInfo = myContainer.packPortDesc(*this);
-      return myInitialPortInfo;
+      m_initialPortInfo = m_container.packPortDesc(*this);
+      return m_initialPortInfo;
     }
 
-    const std::string Port::empty;    // Provider Only
+    const std::string Port::s_empty;    // Provider Only
     const std::string &Port::setInitialUserInfo(const std::string &iui) {
       ocpiAssert(isProvider());
       PortData otherPortData;
-      myContainer.unpackPortDesc(iui, &otherPortData);
+      m_container.unpackPortDesc(iui, &otherPortData);
       establishRoles(otherPortData.connectionData.data);
       // Adjust any parameters from connection metadata
       finishConnection(otherPortData.connectionData.data);
-      return empty;
+      return s_empty;
     }
 
     // User only
     const std::string &Port::setFinalProviderInfo(const std::string &) {
-      return Port::empty;
+      return s_empty;
     }
     // Provider Only
     void Port::setFinalUserInfo(const std::string &) {
@@ -197,13 +203,13 @@ namespace OCPI {
         {"NoRole", "ActiveMessage", "ActiveFlowControl", "ActiveOnly", "Passive", "MaxRole"};
       printf("Port %s, a %s, has options 0x%x, initial role %s\n"
              "  other has options 0x%x, initial role %s\n",
-             myMetaPort.name, isProvider() ? "provider/consumer" : "user/producer",
+             m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
              connectionData.data.options, roleName[connectionData.data.role],
              other.options, roleName[other.role]);
       chooseRoles(uDesc.role, uDesc.options, pDesc.role, pDesc.options);
       printf("  after negotiation, port %s, a %s, has role %s\n"
              "  other has role %s\n",
-             myMetaPort.name, isProvider() ? "provider/consumer" : "user/producer",
+             m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
              roleName[connectionData.data.role], roleName[other.role]);
       // We must make sure other side doesn't mess with roles anymore.
       uDesc.options |= 1 << OCPI::RDT::MandatedRole;
@@ -211,22 +217,22 @@ namespace OCPI {
     }
     // Convert PValues into descriptor values, with constraint checking
     // A static method to be able use in other contexts for objects that are not this class.
-    void BasePort::setConnectParams(OCPI::Util::PValue *props) {
+    void BasicPort::setConnectParams(const OCPI::Util::PValue *props) {
       if (!props)
         return;
-      for (OCPI::Util::PValue *p = props; p->name; p++) {
+      for (const OCPI::Util::PValue *p = props; p->name; p++) {
         if (strcasecmp(p->name, "bufferCount") == 0) {
           if (p->type != CP::Scalar::OCPI_ULong)
             throw ApiError("bufferCount property has wrong type, should be ULong", NULL);
-          if (p->vULong < myMetaPort.minBufferCount)
+          if (p->vULong < m_metaPort.minBufferCount)
             throw ApiError("bufferCount is below worker's minimum", NULL);
           myDesc.nBuffers = p->vULong;
         } else if (strcasecmp(p->name, "bufferSize") == 0) {
           if (p->type != CP::Scalar::OCPI_ULong)
             throw ApiError("bufferSize property has wrong type, should be ULong", NULL);
-          if (p->vULong < myMetaPort.minBufferSize)
+          if (p->vULong < m_metaPort.minBufferSize)
             throw ApiError("bufferSize is below worker's minimum", NULL);
-          if (myMetaPort.maxBufferSize && p->vULong > myMetaPort.maxBufferSize)
+          if (m_metaPort.maxBufferSize && p->vULong > m_metaPort.maxBufferSize)
             throw ApiError("bufferSize exceeds worker's maximum", NULL);
           myDesc.dataBufferSize = p->vULong;
         } else if (strcasecmp(p->name, "xferRole") == 0 && p->vString) {
@@ -246,24 +252,24 @@ namespace OCPI {
           else
             throw ApiError("xferRole property must be passive|active|flowcontrol|activeonly", NULL);
           if (!(connectionData.data.options & (1 << role)))
-            throw ApiError("xferRole of \"%s\" not supported by port \"%s\"", p->vString, myMetaPort.name);
+            throw ApiError("xferRole of \"%s\" not supported by port \"%s\"", p->vString, m_metaPort.name);
           connectionData.data.role = role;
         }
       }
     }
     // Default = we don't check or do anything here as generic parameters are set.
-    void BasePort::checkConnectParams() {}
+    void BasicPort::checkConnectParams() {}
     // Do the work on this port when connection properties are specified.
     // This is still prior to receiving info from the other side, thus this is not necessarily
     // the final info.
     // FIXME: we should error check against bitstream-fixed parameters
-    void BasePort::applyConnectParams(OCPI::Util::PValue *props) {
+    void BasicPort::applyConnectParams(const OCPI::Util::PValue *props) {
       setConnectParams(props);
       checkConnectParams();
     }
     // coming in, specified roles are preferences or explicit instructions.
     // The existing settings are either NoRole, a preference, or a mandate
-    void BasePort::chooseRoles(int32_t &uRole, uint32_t uOptions, int32_t &pRole, uint32_t pOptions) {
+    void BasicPort::chooseRoles(int32_t &uRole, uint32_t uOptions, int32_t &pRole, uint32_t pOptions) {
       // FIXME this relies on knowledge of the values of the enum constants
       static OCPI::RDT::PortRole otherRoles[] =
         {OCPI::RDT::NoRole, OCPI::RDT::ActiveFlowControl, OCPI::RDT::ActiveMessage,
@@ -378,6 +384,14 @@ namespace OCPI {
         }
       throw ApiError("No compatible combination of roles exist", NULL);
     }            
-    
+    ExternalPort::ExternalPort(const OCPI::Metadata::Port & metaPort, const OCPI::Util::PValue *)
+      : BasicPort(metaPort) {
+    }
+    void ExternalPort::checkConnectParams() {}
+  }
+  namespace API {
+    ExternalBuffer::~ExternalBuffer(){}
+    ExternalPort::~ExternalPort(){}
+    Port::~Port(){}
   }
 }

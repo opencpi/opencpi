@@ -39,25 +39,26 @@
 #include "OcpiPValue.h"
 #include "OcpiContainerPort.h"
 #include "OcpiContainerMisc.h"
-#include "OcpiDriver.h"
 #include <OcpiContainerErrorCodes.h>
 
 using namespace OCPI::Util;
 
 namespace OCPI {
   namespace Container {
-
-// Convenience for single line, multi-string, API exceptions (API called badly)
-// Its easy to scan all callers for the terminating null
-    ApiError::ApiError(const char *err, ...) :
-      OCPI::Util::EmbeddedException(APPLICATION_EXCEPTION, "", ApplicationFatal) {
+    // Convenience for single line, multi-string, API exceptions (API called badly)
+    // Its easy to scan all callers for the terminating null
+    ApiError::ApiError(const char *err, ...)
+      : OCPI::Util::EmbeddedException(OCPI::Container::APPLICATION_EXCEPTION, "", OCPI::Container::ApplicationFatal)
+    {
       va_list ap;
       va_start(ap, err);
       m_auxInfo = err;
       const char *s;
       while ((s = va_arg(ap, const char*)))
         m_auxInfo += s;
+      m_error = m_auxInfo; // FIXME later
     }
+
     unsigned long getNum(const char *s) {
       char *endptr;
       errno = 0;
@@ -85,7 +86,6 @@ namespace OCPI {
         return 0;
       throw ApiError("Attribute value \"", attr, a ? "\" invalid: \"" : "\" missing", a, "\"", 0);
     }
-    
-    
   }
+  API::Error::Error(){}
 }

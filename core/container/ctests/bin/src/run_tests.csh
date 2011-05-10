@@ -39,6 +39,7 @@
 # run this in the binary executables directory by doing: ../bin/src/run_tests.csh
 setenv OCPI_RCC_TARGET $OCPI_BUILD_HOST
 setenv OCPI_SMB_SIZE 3000000
+setenv OCPI_LIBRARY_PATH ../../../../components/lib/rcc
 if $OCPI_RCC_TARGET == darwin-x86_64 then
   setenv OCPI_RCC_SUFFIX dylib
   setenv DYLD_LIBRARY_PATH ../../../../lib/$OCPI_RCC_TARGET-bin
@@ -49,7 +50,7 @@ endif
 if $#argv == 1 then
   ./$argv[1] | grep Test:
 else
-foreach i ( `ls test* | grep -v '_main' | grep -v '.obj'`)
+foreach i ( `ls -d test* | grep -v '_main' | grep -v '\.'`)
   echo Running $i...
   ./$i | grep Test:
 end

@@ -51,6 +51,7 @@
 
 #include <OcpiOsDataTypes.h>
 #include <OcpiOsMutex.h>
+#include <DtDriver.h>
 #include <DtTransferInterface.h>
 #include <DtSharedMemoryInterface.h>
 #include <xfer_if.h>
@@ -90,8 +91,13 @@ namespace DataTransfer {
    * implementation creates a named resource compatible SMB and a programmed I/O
    * based transfer driver.
    *********************************/
-  class PIOXferFactory : public XferFactory {
-
+  class PIOXferFactory;
+  class PIODevice : public OCPI::Driver::DeviceBase<PIOXferFactory,PIODevice> {
+  };
+  class PIOXferServices;
+  extern const char *pio;
+  class PIOXferFactory : public DriverBase<PIOXferFactory, PIODevice,PIOXferServices,pio> {
+    friend class PIOXferServices;
   public:
 
     // Default constructor
@@ -130,7 +136,7 @@ namespace DataTransfer {
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(OCPI::Util::Device * d, OCPI::Util::PValue * props );
+    std::string allocateEndpoint( const OCPI::Util::PValue * props );
 
     /***************************************
      *  This method is used to flush any cached items in the factoy
@@ -150,14 +156,15 @@ namespace DataTransfer {
   /**********************************
    * This is the Programmed I/O transfer request class
    *********************************/
-  class PIOXferRequest : public XferRequest
+  class PIOXferRequest : public TransferBase<PIOXferServices,PIOXferRequest>
   {
 
   public:
 
     // Constructor
-    PIOXferRequest( XferServices & parent )
-      :XferRequest(parent),m_thandle(NULL){}
+    PIOXferRequest( PIOXferServices & parent )
+      : TransferBase<PIOXferServices,PIOXferRequest>(parent),
+      m_thandle(NULL){}
 
     XferRequest & group( XferRequest* lhs );
 
@@ -190,7 +197,7 @@ namespace DataTransfer {
 
 
   // PIOXferServices specializes for MCOE-capable platforms
-  class PIOXferServices : public XferServices
+  class PIOXferServices : public ConnectionBase<PIOXferFactory,PIOXferServices,PIOXferRequest>
   {
     // So the destructor can invoke "remove"
     friend class PIOXferRequest;
@@ -198,8 +205,11 @@ namespace DataTransfer {
 
   public:
 
-    PIOXferServices(XferFactory & parent, SmemServices* source, SmemServices* target)
-      :XferServices(parent,source,target){createTemplate( source, target);}
+    PIOXferServices(SmemServices* source, SmemServices* target)
+      : ConnectionBase<PIOXferFactory,PIOXferServices,PIOXferRequest>(source,target)
+      {
+	createTemplate( source, target);
+      }
 
       virtual XferRequest* createXferRequest();
 

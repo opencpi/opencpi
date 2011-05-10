@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -47,13 +46,13 @@
 #include <sstream>
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
+#include <OcpiUtilMisc.h>
 #include <DtIntEventHandler.h>
 #include <OcpiRDTInterface.h>
-#include <OcpiDriver.h>
 #include <OcpiPValue.h>
-#include <test_utilities.h>
 #include <OcpiWorker.h>
 #include <OcpiContainerPort.h>
+#include <test_utilities.h>
 
 using namespace OCPI::DataTransport;
 using namespace DataTransport::Interface;
@@ -142,9 +141,11 @@ void OCPI::CONTAINER_TEST::connectWorkers(std::vector<CApp>& ca, std::vector<CWo
 
 
 
-void  OCPI::CONTAINER_TEST::testDispatch(OCPI::Container::Interface* rcc_container, DataTransfer::EventManager* event_manager)
+void  OCPI::CONTAINER_TEST::testDispatch(OCPI::API::Container* rcc_container)
 {
 
+  rcc_container->run(100, true);
+#if 0
   // Block here until we get a wakeup notification
   // We will get a notification for the following reasons
   // 1) One of our target buffers has been filled
@@ -168,7 +169,7 @@ void  OCPI::CONTAINER_TEST::testDispatch(OCPI::Container::Interface* rcc_contain
   else {
     rcc_container->dispatch( event_manager );
   }
-
+#endif
 }
 
 
@@ -186,7 +187,7 @@ namespace {
       while(m_dtd->run) {
         std::vector<CApp>::iterator it;
         for ( it=m_dtd->containers.begin(); it != m_dtd->containers.end(); it++ ) {
-          OCPI::CONTAINER_TEST::testDispatch( (*it).container, m_dtd->event_manager );
+          OCPI::CONTAINER_TEST::testDispatch( (*it).container );
         }
         OCPI::OS::sleep(0);
       }
@@ -242,12 +243,10 @@ OCPI::Util::Thread*  OCPI::CONTAINER_TEST::runTestDispatch(  OCPI::CONTAINER_TES
 
 
 
-OCPI::Util::DriverManager dm("Container");
 std::vector<CApp> OCPI::CONTAINER_TEST::createContainers( std::vector<ContainerDesc>& eps, 
-                                                         DataTransfer::EventManager*& event_manager,
-                                                         bool polling )
+                                                         DataTransfer::EventManager*& ,
+                                                         bool )
 {
-  ( void ) polling;
   TUPRINTF( "In  OCPI::CONTAINER_TEST::createContainers\n");
 
   CApp ca;
@@ -256,22 +255,18 @@ std::vector<CApp> OCPI::CONTAINER_TEST::createContainers( std::vector<ContainerD
   static OCPI::Util::PValue cprops[] = {
                                        OCPI::Util::PVBool("polling",1),
                                        OCPI::Util::PVEnd };
-
-
-  dm.discoverDevices(0,0);
   // Create the container
   try { 
     for ( unsigned int n=0; n<eps.size();n++) { 
 
-      OCPI::Util::Device* d = dm.getDevice( cprops, eps[n].type.c_str());
-      if ( ! d ) {
-        throw OCPI::Util::EmbeddedException("No Containers found\n");
-      }
-      ca.container = static_cast<OCPI::Container::Interface*>(d);
-      ca.wci_worker = dynamic_cast<OCPI::WCI::Worker*>(ca.container);
+      OCPI::API::Container *c = OCPI::API::ContainerManager::find("rcc", NULL, cprops);
+      if ( ! c )
+	throw OCPI::Util::EmbeddedException("No Containers found\n");
+      ca.container = static_cast<OCPI::Container::Container*>(c);
+      ca.worker = dynamic_cast<OCPI::Container::Worker*>(ca.container);
       ca.app = ca.container->createApplication();
       containers.push_back(ca);
-      event_manager = ca.container->getEventManager();
+      //event_manager = ca.container->getEventManager();
     }
   }
   CATCH_ALL_RETHROW( "creating containers");
@@ -284,6 +279,7 @@ std::vector<CApp> OCPI::CONTAINER_TEST::createContainers( std::vector<const char
 {
   ( void ) eps;
   ( void ) polling;
+  ( void ) event_manager;
   CApp ca;
   int ccount=3;
 
@@ -294,20 +290,19 @@ std::vector<CApp> OCPI::CONTAINER_TEST::createContainers( std::vector<const char
                                        OCPI::Util::PVBool("polling",1),
                                        OCPI::Util::PVEnd };
 
-  dm.discoverDevices(0,0);
   // Create the container
   try { 
     for ( int n=0; n<ccount;n++) { 
-
-      OCPI::Util::Device* d = dm.getDevice( cprops, "RCC");
-      if ( ! d ) {
-        throw OCPI::Util::EmbeddedException("No Containers found\n");
-      }
-      ca.container = static_cast<OCPI::Container::Interface*>(d);
-      ca.wci_worker = dynamic_cast<OCPI::WCI::Worker*>(ca.container);
+      std::string name;
+      OCPI::Util::Misc::formatString(name, "rcc%u", n);
+      OCPI::API::Container *c = OCPI::API::ContainerManager::find("rcc", name.c_str(), cprops);
+      if ( ! c )
+	throw OCPI::Util::EmbeddedException("No Containers found\n");
+      ca.container = c;
+      ca.worker = dynamic_cast<OCPI::Container::Worker*>(ca.container);
       ca.app = ca.container->createApplication();
       containers.push_back(ca);
-      event_manager = ca.container->getEventManager();
+      //      event_manager = ca.container->getEventManager();
     }
   }
   CATCH_ALL_RETHROW( "creating containers");
@@ -338,8 +333,13 @@ void OCPI::CONTAINER_TEST::destroyWorkers( std::vector<CApp>& ca, std::vector<CW
   for ( cait=ca.begin(); cait!= ca.end(); cait++ ) {
     if ( cait->container ) {
       delete cait->app;
-      cait->app = cait->container->createApplication();
+      cait->app = NULL;
+      //      cait->app = cait->container->createApplication();
     }
+  }
+  std::vector<CWorker*>::iterator it;
+  for ( it = workers.begin(); it != workers.end(); it++ ) {
+    (*it)->worker = NULL;
   }
 }
 
@@ -353,38 +353,21 @@ void OCPI::CONTAINER_TEST::destroyContainers( std::vector<CApp>& ca, std::vector
   std::vector<CApp>::iterator cait;
   for ( cait=ca.begin(); cait!= ca.end(); cait++ ) {
     if ( cait->container ) {
-      delete cait->app;
-      delete  cait->container;
-      cait->container = NULL;
+      if (cait->app)
+	delete cait->app;
+      delete cait->container;
     }
   }
   ca.clear();
-}
-
-
-void OCPI::CONTAINER_TEST::initWorkers(std::vector<CApp>& ca, std::vector<CWorker*>& workers )
-{
-  ( void ) ca;
-  WCI_error wcie;
-  std::vector<CWorker*>::iterator it;
-  for ( it = workers.begin(); it != workers.end(); it++ ) {
-    CWorker& cw = *(*it);
-    wcie = (*it)->worker->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
-    CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_INITIALIZE, ca, cw );
-
-  }
 }
 
 void OCPI::CONTAINER_TEST::enableWorkers( std::vector<CApp>& ca, std::vector<CWorker*>& workers )
 
 {
   ( void ) ca;
-  WCI_error wcie;
   std::vector<CWorker*>::iterator it;
   for ( it = workers.begin(); it != workers.end(); it++ ) {
-    CWorker& cw = *(*it);
-    wcie = (*it)->worker->control(  WCI_CONTROL_START, WCI_DEFAULT );
-    CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_START, ca, cw );
+    (*it)->worker->start();
   }
 }
 
@@ -392,13 +375,20 @@ void OCPI::CONTAINER_TEST::enableWorkers( std::vector<CApp>& ca, std::vector<CWo
 void OCPI::CONTAINER_TEST::disableWorkers( std::vector<CApp>& ca, std::vector<CWorker*>& workers )
 {
   ( void ) ca;
-  WCI_error wcie;
   std::vector<CWorker*>::iterator it;
   for ( it = workers.begin(); it != workers.end(); it++ ) {
-    CWorker& cw = *(*it);
-    wcie = (*it)->worker->control(  WCI_CONTROL_STOP, WCI_DEFAULT );
-    CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_STOP, ca, cw );
+    (*it)->worker->stop();
   }
+}
+OCPI::Container::Worker *OCPI::CONTAINER_TEST::createWorker(OCPI::API::ContainerApplication *app, RCCDispatch *rccd) {
+  OCPI::API::Worker &w = app->createWorker(NULL, NULL, (const char *)rccd, NULL, NULL, NULL);
+  return static_cast<OCPI::Container::Worker *>(&w);
+}
+
+OCPI::Container::Worker *OCPI::CONTAINER_TEST::createWorker(CApp &ca, RCCDispatch *rccd) {
+  if (!ca.app)
+      ca.app = ca.container->createApplication();
+  return createWorker(ca.app, rccd);
 }
 
 

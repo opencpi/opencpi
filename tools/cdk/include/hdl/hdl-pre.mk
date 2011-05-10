@@ -127,14 +127,6 @@ HdlGetToolSet=$(strip \
        $(call $(HdlError),Cannot infer tool set from '$(1)'))))
 
 ################################################################################
-# $(call HdlGetFamilies,hdl-target)
-# Return all the families for this target
-HdlGetFamilies=$(strip \
-  $(sort $(foreach t,$(1),$(if $(findstring $(t),all),\
-                              $(HdlAllFamilies),\
-                              $(call HdlGetFamily,$(t),x)))))
-
-################################################################################
 # $(call HdlGetTargetsForToolSet,toolset,targets)
 # Return all the targets that work with this too
 HdlGetTargetsForToolSet=$(sort \
@@ -161,9 +153,9 @@ $(call OcpiDbgVar,OnlyTargets)
 # Map "all" and top level targets down into "families"
 HdlActualTargets:=$(sort \
               $(foreach t,$(HdlTargets),\
-                 $(if $(findstring $(t),all)$(findstring $(t),$(HdlTopTargets)),\
-                    $(call HdlGetFamily,$(t),x),\
-                    $(t))))
+                 $(if $(findstring $t,all)$(findstring $t,$(HdlTopTargets)),\
+                    $(call HdlGetFamily,$t,x),\
+                    $t)))
 $(call OcpiDbgVar,HdlActualTargets)
 # Map "only" targets down to families too
 HdlOnlyTargets:=$(sort \
@@ -182,6 +174,7 @@ $(call OcpiDbgVar,HdlOnlyTargets)
 # target is part, only is family
 #  -- replace with part
 HdlPreExcludeTargets:=$(HdlActualTargets)
+$(call OcpiDbgVar,HdlPreExcludeTargets,Before only: )
 HdlActualTargets:=$(sort \
               $(foreach t,$(HdlActualTargets),\
 		 $(or $(findstring $(t),$(HdlOnlyTargets)), \
@@ -190,20 +183,28 @@ HdlActualTargets:=$(sort \
 		       $(if $(findstring $(t),$(call HdlGetFamily,$(o))),$(o)))), \
                    $(foreach o,$(HdlOnlyTargets),\
 		      $(if $(findstring $(o),$(call HdlGetFamily,$(t))),$(t))))))
-$(call OcpiDbgVar,HdlActualTargets)
+$(call OcpiDbgVar,HdlActualTargets,After only: )
 # Now prune to exclude targets mentioned in ExcludeTargets
 # We don't expand families into constituents, but we do
 # convert a family into its parts if some of the parts are excluded
+$(call OcpiDbgVar,ExcludeTargets,Makefile exclusions: )
+$(call OcpiDbgVar,OCPI_EXCLUDE_TARGETS,Environment exclusions: )
+ExcludeTargetsInternal:=\
+$(sort $(foreach t,$(ExcludeTargets) $(OCPI_EXCLUDE_TARGETS),\
+         $(if $(and $(findstring $t,$(HdlTopTargets)),$(HdlTargets_$t)),\
+             $(HdlTargets_$t),$t)))
+
+$(call OcpiDbgVar,ExcludeTargetsInternal)
 HdlActualTargets:=$(sort \
  $(foreach t,$(HdlActualTargets),\
-   $(if $(findstring $(t),$(ExcludeTargets)),,\
-      $(if $(findstring $(t),$(HdlAllFamilies)),\
-        $(if $(findstring $(t),$(call HdlGetFamilies,$(ExcludeTargets))),\
-	   $(foreach p,$(HdlTargets_$(t)),\
-             $(if $(findstring $(p),$(ExcludeTargets)),,$(p))),\
-           $(t)),\
-        $(if $(findstring $(call HdlFamily,$(t)),$(ExcludeTargets)),,$(t))))))
-$(call OcpiDbgVar,HdlActualTargets)
+   $(if $(findstring $t,$(ExcludeTargetsInternal)),,\
+      $(if $(findstring $t,$(HdlAllFamilies)),\
+	  $(if $(filter $(HdlTargets_$t),$(ExcludeTargetsInternal)),\
+	      $(filter-out $(ExcludeTargetsInternal),$(HdlTargets_$t)),\
+              $(t)),\
+          $(if $(findstring $(call HdlGetFamily,$t),$(ExcludeTargetsInternal)),,\
+               $t)))))
+$(call OcpiDbgVar,HdlActualTargets,After exclusion: )
 override HdlTargets:=$(HdlActualTargets)
 
 HdlFamilies=$(call HdlGetFamilies,$(HdlActualTargets))
@@ -269,7 +270,7 @@ else
 ################################################################################
 # Here we are NOT recursing, but simply build targets for one toolset in this 
 # make.
-$(call OcpiDbg,=============Performing for one tool set: $(HdlToolSets).$(HdlPlatforms))
+$(call OcpiDbg,=============Performing for one tool set: $(HdlToolSets). $(HdlPlatforms))
 HdlSkip=
 HdlToolSet=$(HdlToolSets)
 $(call OcpiDbgVar,HdlToolSet)

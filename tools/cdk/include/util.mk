@@ -225,7 +225,7 @@ ReplaceIfDifferent=\
     if test -f $(1); then \
       cp -L -p $(1) $(2); \
     else \
-      cp -L -r -p $(1)/* $(2); \
+      cp -L -R -p $(1)/* $(2); \
     fi; \
     break;\
   done
@@ -246,7 +246,7 @@ ReplaceContentsIfDifferent=\
       mkdir -p $(2); \
     fi; \
     echo Installing $(1) -\> $(2); \
-    cp -L -r -p $(1)/* $(2); \
+    cp -L -R -p $(1)/* $(2); \
     break;\
   done
 

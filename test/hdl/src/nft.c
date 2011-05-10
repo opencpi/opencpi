@@ -206,7 +206,7 @@ main(int argc, char *argv[])
   start(sma1);
 
   if (single) {
-    unsigned nFrom, nTo;
+    unsigned nFrom = 1, nTo = 1;
     fprintf(stderr, "Single\n");
     gettimeofday(&tv0, 0);
     gettimeofday(&tv1, 0);

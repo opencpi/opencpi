@@ -465,7 +465,7 @@ canProduce( Buffer* buffer )
 {
 
 #ifndef NDEBUG
-  printf(" In TransferController1::canProduce \n");
+  //  printf(" In TransferController1::canProduce \n");
 #endif
 
   // When s DD = whole only port 0 of the output port set can produce

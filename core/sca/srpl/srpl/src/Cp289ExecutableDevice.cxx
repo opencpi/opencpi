@@ -57,7 +57,6 @@
 #include "OcpiContainerInterface.h"
 #include "OcpiPValue.h"
 #include "OcpiContainerApplication.h"
-#include "OcpiDriver.h"
 #include "OcpiContainerMisc.h"
 #include <OcpiCFUtilMisc.h>
 #include <OcpiCFUtilDeviceBase.h>
@@ -165,7 +164,7 @@ namespace OCPI {
                                  logger,
                                  adoptLogger,
                                  shutdownOrbOnRelease),
-        m_driverManager( ocpiDeviceType.c_str() ),
+        m_containerType( ocpiDeviceType.c_str() ),
         m_osName(osName), m_processorName(processorName),
         m_ocpiDeviceId(ocpiDeviceId),
         m_ocpiDeviceType(ocpiDeviceType),
@@ -190,12 +189,10 @@ namespace OCPI {
         OCPI::Util::PValue cprops[] = {OCPI::Util::PVString("endpoint",(const char*)endpoint.c_str() ),
                                       OCPI::Util::PVBool("polling",polled),
                                       OCPI::Util::PVEnd };
-        CC::Interface *container = static_cast< CC::Interface * >( 
-                                  m_driverManager.getDevice( cprops, ocpiDeviceUnit.c_str() ));
-
-
-
-
+        CC::Container *container =
+	  static_cast< CC::Container * >(OCPI::API::ContainerManager::find(m_containerType.c_str(),
+									   ocpiDeviceUnit.c_str(),
+									   cprops));
         if (!container)
           throw CC::ApiError("Couldn't find or create container of type \"",
                              ocpiDeviceType.c_str(), "\" with name \"", aIdentifier.c_str(), "\"", NULL);
@@ -540,7 +537,7 @@ namespace OCPI {
         // We'll just load the primary artifact again later.  It will be forgotten when the
         // Application is torn down.
         // FIXME:  we might tear down the app when Nworkers goes to 0 from non-zero...
-        m_application->loadArtifact(fileName, 0);
+        m_container->loadArtifact(fileName, 0);
       } catch (CC::ApiError &e) {
         std::string msg;
         msg  = "Can not load file \"";

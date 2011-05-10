@@ -42,7 +42,13 @@ endif
 #ifneq ($(OCPI_OS),darwin)
 #DOSTATIC=-static
 #endif
-OCPI_OUT_DIR = $(OCPI_OS)-$(shell uname -m)-bin
+PROC:=$(shell uname -m)
+ifeq ($(OCPI_OS),darwin)
+ifeq ($(PROC),i386)
+PROC:=x86_64
+endif
+endif
+OCPI_OUT_DIR = $(OCPI_OS)-$(PROC)-bin
 ALL=$(basename $(notdir $(wildcard src/*.c)))
 ALLBIN=$(ALL:%=$(OCPI_OUT_DIR)/%)
 $(OCPI_OUT_DIR)/cosgen: LIBS=-lm

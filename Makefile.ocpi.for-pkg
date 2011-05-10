@@ -51,6 +51,10 @@ include $(OCPI_BASE_DIR)/Makefile.ocpi.common
 
 ifneq ($(wildcard Makefile.ocpi.imports),)
 include Makefile.ocpi.imports
+else
+ifneq ($(wildcard ../Makefile.ocpi.imports),)
+include ../Makefile.ocpi.imports
+endif
 endif
 
 PACKAGE = $(shell pwd|sed 's-.*/\([^/]*$$\)-\1-')
@@ -102,11 +106,14 @@ endif
 GENERATED = $(filter-out $(EXCLUDE_FACILITIES),$(patsubst %/idl,%,$(wildcard */idl)))
 FACILITIES = $(filter-out bin lib Makefile $(EXCLUDE_FACILITIES),$(patsubst %,%,$(wildcard *)))
 
-CSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.c,$(FACILITIES))))
-CXXSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.cxx,$(FACILITIES)))) \
-	$(patsubst %.idl,%.cxx,$(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
-CPPSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.cpp,$(FACILITIES)))) \
-	$(patsubst %.idl,%.cpp,$(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
+CSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
+                        $(wildcard src/*.c) $(wildcard $(patsubst %,%/src/*.c,$(FACILITIES))))
+CXXSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
+                        $(wildcard src/*.cxx) $(wildcard $(patsubst %,%/src/*.cxx,$(FACILITIES)))) \
+			$(patsubst %.idl,%.cxx,$(wildcard idl/*.idl) $(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
+CPPSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),\
+                          $(wildcard src/*.cpp) $(wildcard $(patsubst %,%/src/*.cpp,$(FACILITIES)))) \
+			  $(patsubst %.idl,%.cpp,$(wildcard idl/*.idl) $(wildcard $(patsubst %,%/idl/*.idl,$(FACILITIES)))) 
 
 ASMSOURCES = $(filter-out $(addprefix %/,$(EXCLUDE_SOURCES)),$(wildcard $(patsubst %,%/src/*.asm,$(FACILITIES))))
 
@@ -145,10 +152,11 @@ lib: objects
 		$(MAKE) -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-pkg $(SYSTEMOPTION) $(PACKAGELIB) ; \
 	fi
 
+FILTEROBJS=$(foreach o,$1,$(if $(foreach f,$2,$(findstring $f.,$(notdir $o))),,$o))
 ifneq ($(filter linux darwin,$(OCPI_OS)),)
 $(UNIXLIB): $(OBJECTS)
 	-rm -f $@
-	ar r $@ $(OBJECTS)
+	ar r $@ $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS))
 
 $(EXPORTSHLIB): $(UNIXSHLIB)
 	if ! test -d $(OCPI_BASE_DIR)/lib; then mkdir -p $(OCPI_BASE_DIR)/lib; fi
@@ -162,7 +170,7 @@ $(EXPORTLIB): $(UNIXLIB)
 
 # Note the "sort" below.  It gets rid of duplicates, but messes with the ordering.
 $(UNIXSHLIB): $(OBJECTS)
-	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(OBJECTS) \
+	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) \
 	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
 		$(sort $(addprefix -L,$(dir $(SYSLIBS)))) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
@@ -222,53 +230,55 @@ endif
 
 objects: generated
 	$(AT)if test "x$(OCPI_OUT_DIR)" != "x" -a ! -d $(OCPI_OUT_DIR); then \
-		echo Creating object directory $(OCPI_OUT_DIR); \
-		mkdir -p $(OCPI_OUT_DIR) ; \
+	  echo Creating object directory $(OCPI_OUT_DIR); \
+	  mkdir -p $(OCPI_OUT_DIR) ; \
 	fi
-	$(AT)for facility in $(GENERATED) ; do \
-		if test -d $$facility/idl ; then \
-			if test -f $$facility/idl/Makefile.ocpi ; then \
-				$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
-			else \
-				$(MAKE) $(call DescendMake2,$$facility/idl) -f $(DescendFile2)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
-			fi ; \
-		fi || exit 1 ; \
-	done && \
-	for facility in $(FACILITIES) ; do \
-		if test -d $$facility/src ; then \
-			if test -f $$facility/src/Makefile.ocpi ; then \
-				$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
-			else \
-				$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
-			fi ; \
-		fi || exit 1 ; \
-	done
+	$(AT)set -e; \
+	if test -d src; then \
+	  if test -f src/Makefile.ocpi; then \
+	    $(MAKE) $(call DescendMake1,src) -f Makefile.ocpi \
+	      OBJDIR=../$(OCPI_OUT_DIR) $(SYSTEMOPTION) $@ ; \
+	  else \
+	    $(MAKE) $(call DescendMake1,src) -f $(DescendFile1)/Makefile.ocpi.for-src \
+	      OBJDIR=../$(OCPI_OUT_DIR) $(SYSTEMOPTION) $@ ; \
+	  fi; \
+	else \
+	  for facility in $(FACILITIES) ; do \
+	    if test -d $$facility/idl ; then \
+	      if test -f $$facility/idl/Makefile.ocpi ; then \
+		$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+	      else \
+		$(MAKE) $(call DescendMake2,$$facility/idl) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+	      fi ; \
+	    fi; \
+	    if test -d $$facility/src ; then \
+	      if test -f $$facility/src/Makefile.ocpi ; then \
+		$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+	      else \
+		$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+	      fi ; \
+	    fi; \
+	   done; \
+	fi
 
 generated:
-	$(AT)for facility in $(GENERATED) ; do \
-		if test -d $$facility/idl ; then \
-			if test -f $$facility/idl/Makefile.ocpi ; then \
-				$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
-			else \
-				$(MAKE) $(call DescendMake2,$$facility/idl) -f  $(DescendFile2)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
-			fi ; \
-		fi || exit 1 ; \
-	done && \
-	for facility in $(FACILITIES) ; do \
-		if test -d $$facility/src ; then \
-			if test -f $$facility/src/Makefile.ocpi ; then \
-				$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
-			else \
-				$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
-			fi ; \
-		fi || exit 1 ; \
-	done && \
-	if test -d bin/src ; then \
-		if test -f bin/src/Makefile.ocpi ; then \
-			$(MAKE) $(call DescendMake2,bin/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
-		else \
-			$(MAKE) $(call DescendMake2,bin/src) -f $(DescendFile2)/Makefile.ocpi.for-bin $(SYSTEMOPTION) $@ ; \
-		fi ; \
+	$(AT)set -e; \
+	if test -d idl; then \
+	  if test -f idl/Makefile.ocpi; then \
+	    $(MAKE) $(call DescendMake1,idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+	  else \
+	    $(MAKE) $(call DescendMake1,idl) -f $(DescendFile1)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
+	  fi; \
+	else \
+	  for facility in $(GENERATED) ; do \
+	    if test -d $$facility/idl ; then \
+	      if test -f $$facility/idl/Makefile.ocpi ; then \
+	        $(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
+	      else \
+	        $(MAKE) $(call DescendMake2,$$facility/idl) -f $(DescendFile2)/Makefile.ocpi.for-idl $(SYSTEMOPTION) $@ ; \
+	      fi ; \
+	    fi; \
+	  done ;\
 	fi
 
 clean distclean:

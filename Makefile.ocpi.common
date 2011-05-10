@@ -33,6 +33,26 @@
 #
 ########################################################################### #
 
+# Here we define the preprocessor definitions that tell the
+# source code about the compilation environment
+# We use "platform" rather than "arch" so that it can be more specific than
+# just the cpu of the compilation someday
+# The OCPI prefix on the OCPI_OS variable is to avoid the BRAINDEAD definition
+# of the symbol "linux", in g++ on linux.
+TARGET_CPPFLAGS=\
+  -DOCPI_OS_$(OCPI_OS) \
+  -DOCPI_OS=OCPI$(OCPI_OS) \
+  -DOCPI_OS_VERSION_$(OCPI_OS_VERSION) \
+  -DOCPI_OS_VERSION=$(OCPI_OS_VERSION) \
+  -DOCPI_PLATFORM_$(OCPI_ARCH) \
+  -DOCPI_PLATFORM=$(OCPI_ARCH) \
+  -DOCPI_ARCH_$(OCPI_ARCH) \
+  -DOCPI_ARCH=$(OCPI_ARCH) \
+
+CFLAGS += $(TARGET_CPPFLAGS)
+CXXFLAGS += $(TARGET_CPPFLAGS)
+
+
 #
 # ----------------------------------------------------------------------
 # The rest should work.
@@ -147,7 +167,7 @@ $(OBJDIR)/%.obj : %.cpp
 		$(MKDEPENDFLAGS) \
 		-o "$@"
 
-$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
 	$(LD) $(LDFLAGS) -o "$@" \
 		$(filter %.obj,$^) \
 		$(DYNOBJS) \
@@ -246,7 +266,7 @@ $(OBJDIR)/%.obj : %.cpp
 		$(MKDEPENDFLAGS) \
 		-o "$@"
 
-$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
 	$(LD) $(LDFLAGS) /OUT:"$@" \
 		$(filter %.obj,$^) \
 		$(DYNOBJS) \
@@ -270,8 +290,8 @@ ifneq ($(filter linux darwin,$(OCPI_OS)),)
 
 ifeq ($(OCPI_OS),darwin)
 SO=dylib
-SHARED_ALLOW_UNDEFINED=-dynamic -undefined dynamic_lookup
-SHARED=-dynamiclib
+SHARED_ALLOW_UNDEFINED=-dynamiclib -undefined dynamic_lookup -install_name $(notdir $@)
+SHARED=-dynamiclib -install_name $(notdir $@)
 BASICLIBS=
 CXXFLAGS += -Wall
 # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
@@ -337,13 +357,13 @@ $(OBJDIR)/%.obj : %.asm
 		"$<"
 
 $(OBJDIR)/%.obj : %.c
-	$(CC) -c -o "$@" $(CFLAGS) -MMD -MF "$@.deps" \
+	$(CC) -c -o "$@" $(CFLAGS) -MMD -MP -MF "$@.deps" \
 		$(patsubst %,-D%=1,$(ALLDEFS)) \
 		$(addprefix -I,$(ALLINC)) \
 		"$<"
 
 $(OBJDIR)/%.obj : %.cxx
-	$(CXX) -c -o "$@" $(CXXFLAGS) -MMD -MF "$@.deps" \
+	$(CXX) -c -o "$@" $(CXXFLAGS) -MMD -MP -MF "$@.deps" \
 		$(patsubst %,-D%=1,$(ALLDEFS)) \
 		$(addprefix -I,$(ALLINC)) \
 		"$<"
@@ -390,11 +410,10 @@ $(OBJDIR)/%.obj : %.cpp
 		--target "$@" \
 		$(MKDEPENDFLAGS) \
 		-o "$@"
-
-$(OBJDIR)/%.exe : $(OBJDIR)/%.obj
+#$(info WE ARE HERE: $(OBJDIR))
+$(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
 	$(LD) $(LDFLAGS) -o "$@" \
 		$(filter %.obj,$^) \
-		$(DYNOBJS) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(dir $(SYSLIBS)) $(SYSLIBDIRS)) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \
@@ -698,6 +717,12 @@ OCPI_EXTERNAL_EXPORTS = \
 OCPIOS_EXPORTS = $(OCPI_BASE_DIR)/adapt/os/ocpios/interfaces/include
 OCPIOS_LIBS = $(OCPI_BASE_DIR)/adapt/os/ocpios/ocpios
 
+APPLICATION_EXPORTS = \
+	$(OCPI_BASE_DIR)/core/application/api/include
+
+LIBRARY_EXPORTS = \
+	$(OCPI_BASE_DIR)/core/library/include
+
 DATA_TRANSFER_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_driver_interface/interfaces/include \
 	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_utils/utils/include 
@@ -717,15 +742,24 @@ DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/transport
 
 CONTAINER_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/container/interfaces/api/include \
-	$(OCPI_BASE_DIR)/core/container/cp289_container/cp289/include
+	$(OCPI_BASE_DIR)/core/container/rcc_container/include
 CONTAINER_LIBS = \
 	$(OCPI_BASE_DIR)/core/container/interfaces/interfaces
 
-CP289_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/container/cp289_container/cp289_container
+APPLICATION_LIBS = \
+	$(OCPI_BASE_DIR)/core/application/application
 
-RPL_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/container/rpl_container/rpl_container
+LIBRARY_LIBS = \
+	$(OCPI_BASE_DIR)/core/library/library
+
+RCC_CONTAINER_LIBS = \
+	$(OCPI_BASE_DIR)/core/container/rcc_container/rcc_container
+
+HDL_CONTAINER_LIBS = \
+	$(OCPI_BASE_DIR)/core/container/hdl_container/hdl_container
+
+OCL_CONTAINER_LIBS = \
+	$(OCPI_BASE_DIR)/core/container/ocl_container/ocl_container
 
 
 LOGGER_EXPORTS = $(OCPI_BASE_DIR)/core/local/logger/logger/include
@@ -750,7 +784,8 @@ UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/local/util/list/include \
 	$(OCPI_BASE_DIR)/core/local/util/thread/include \
 	$(OCPI_BASE_DIR)/core/local/util/fasttime/include \
-	$(OCPI_BASE_DIR)/core/local/util/sockets/include
+	$(OCPI_BASE_DIR)/core/local/util/sockets/include \
+	$(OCPI_BASE_DIR)/core/include
 UTIL_LIBS = $(OCPI_BASE_DIR)/core/local/util/util
 
 ifeq ($(SCAVERSION),2.2)

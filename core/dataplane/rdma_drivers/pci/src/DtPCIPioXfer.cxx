@@ -71,18 +71,18 @@
 #include <inttypes.h>
 
 
-using namespace DataTransfer;
+namespace DataTransfer {
 using namespace OCPI::Util;
 using namespace OCPI::OS;
 
+
 // Used to register with the data transfer system;
-PCIPIOXferFactory *g_pciFactory = new PCIPIOXferFactory;
 static VList g_locations;
 
 
+const char *pci = "pci"; // name passed to inherited template class
 PCIPIOXferFactory::PCIPIOXferFactory()
   throw ()
-  : XferFactory("PCI Programmed I/O transfer driver")
 {
   printf("In PCIPIOXferFactory::PCIPIOXferFactory()\n");
 }
@@ -141,7 +141,7 @@ SmemServices* PCIPIOXferFactory::getSmemServices( EndPoint* loc )
   if ( loc->smem ) {
     return loc->smem;
   }
-  return new DataTransfer::PCISmemServices( this, loc);
+  return new PCISmemServices( this, loc);
 }
 
 
@@ -151,7 +151,7 @@ SmemServices* PCIPIOXferFactory::getSmemServices( EndPoint* loc )
  ***************************************/
 XferServices* PCIPIOXferFactory::getXferServices(SmemServices* source, SmemServices* target)
 {
-  return new PIOXferServices( *this, source, target);
+  return new PIOXferServices(source, target);
 }
 
 
@@ -163,7 +163,7 @@ XferServices* PCIPIOXferFactory::getXferServices(SmemServices* source, SmemServi
  *  node.
  ***************************************/
 static OCPI::OS::int32_t pid;
-std::string PCIPIOXferFactory::allocateEndpoint( OCPI::Util::Device * , OCPI::Util::PValue * /* props */)
+std::string PCIPIOXferFactory::allocateEndpoint( const OCPI::Util::PValue * /* props */)
 {
   std::string ep;
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
@@ -171,7 +171,7 @@ std::string PCIPIOXferFactory::allocateEndpoint( OCPI::Util::Device * , OCPI::Ut
   int mailbox = getNextMailBox();
   pid++;
 
-  unsigned int size = m_config->m_SMBSize;
+  unsigned int size = m_SMBSize;
 
   char tep[128];
   pid = getpid();
@@ -396,3 +396,5 @@ OCPI::OS::int32_t PCIEndPoint::parse( std::string& ep )
 
 PCIEndPoint::~PCIEndPoint(){}
 
+  RegisterTransferDriver<PCIPIOXferFactory> pciDriver;
+}

@@ -60,7 +60,6 @@
 #include <string>
 #include <CF.h>
 #include <CF_s.h>
-#include <wci.h>
 #include <OcpiOsMutex.h>
 #include <OcpiLoggerLogger.h>
 #include "OcpiMetadataWorker.h"
@@ -68,6 +67,12 @@
 namespace OCPI {
   namespace SCA {
 
+
+    enum StartStopState {
+      InitialState,
+      StartedState,
+      StoppedState
+    };
     class BaseProxyPort;
 
     /**
@@ -79,9 +84,13 @@ namespace OCPI {
     class BaseProxy : public POA_CF::Resource {
       friend class BaseProxyPort;
 
+#undef CONTROL_OP_I
+#define CONTROL_OP_I(x,c,t,s1,s2,s3)
 #define CONTROL_OP(x,c,t,s1,s2,s3) virtual void x##Worker() = 0;
 OCPI_CONTROL_OPS
 #undef CONTROL_OP      
+#undef CONTROL_OP_I
+#define CONTROL_OP_I CONTROL_OP
     public:
 
       /**
@@ -220,7 +229,7 @@ OCPI_CONTROL_OPS
       typedef std::set<std::string> StringSet;
 
     protected:
-      WCI_control m_state;
+      StartStopState m_state;
       std::string m_identifier;
 
       bool m_adoptLogger;

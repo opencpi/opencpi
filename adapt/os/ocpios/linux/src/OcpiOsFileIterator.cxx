@@ -207,6 +207,7 @@ OCPI::OS::FileIterator::FileIterator (const FileIterator & other)
 OCPI::OS::FileIterator::~FileIterator ()
   throw ()
 {
+  close();
   FileIteratorData & data = o2fid (m_osOpaque);
   data.FileIteratorData::~FileIteratorData ();
 }

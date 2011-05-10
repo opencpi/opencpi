@@ -80,7 +80,7 @@ namespace OCPI {
       Cp289GenericProxyPort(const std::string &portName, Cp289GenericProxy *proxy);
       ~Cp289GenericProxyPort() throw();
       
-      CC::Port &m_ocpiPort;
+      OCPI::Container::Port &m_ocpiPort;
       CORBA::Object_var m_scaPort;
       typedef std::set<std::string> ConnectionSet;
       ConnectionSet m_connections;
@@ -144,7 +144,7 @@ namespace OCPI {
                          // spd:softpkg/implementation/code/entrypoint
                          const char *functionName,
                          const char *instanceName,
-                         CC::Application &appContext,
+                         OCPI::API::ContainerApplication &appContext,
                          const char *namingContextIor,
                          const char *nameBinding,
                          // Optional
@@ -189,9 +189,13 @@ namespace OCPI {
                         bool & haveSync)
         throw (std::string);
 
+#undef CONTROL_OP_I
+#define CONTROL_OP_I(x,c,t,s1,s2,s3)
 #define CONTROL_OP(x,c,t,s1,s2,s3) virtual void x##Worker();
 OCPI_CONTROL_OPS
 #undef CONTROL_OP      
+#undef CONTROL_OP_I
+#define CONTROL_OP_I CONTROL_OP
 #if 0
       void controlWorker (WCI_control op,
                           WCI_options flags = WCI_DEFAULT)
@@ -246,8 +250,8 @@ OCPI_CONTROL_OPS
       typedef std::map<std::string, Cp289GenericProxyPort*> PortMap;
 
     private:
-      CC::Application &m_application;
-      CC::Worker &m_worker;
+      OCPI::API::ContainerApplication &m_application;
+      OCPI::API::Worker &m_worker;
       std::string m_name;
       CORBA::Object_var m_scaResource;
       CF::ExecutableDevice::ProcessID_Type m_scaPid;

@@ -98,6 +98,9 @@ OCPI::OS::ServerSocket::bind (unsigned int portNo, bool reuse)
   memset (&sin, 0, sizeof (struct sockaddr_in));
 
   sin.sin_family = AF_INET;
+#ifdef OCPI_OS_darwin
+  sin.sin_len = sizeof(sin);
+#endif
   sin.sin_port = htons (portNo);
   sin.sin_addr.s_addr = INADDR_ANY;
 

@@ -194,7 +194,7 @@ volatile BufferState* OutputBuffer::getState()
   }
 
 #ifndef NDEBUG
-  printf("Output buffer state = 0x%llx\n", (long long)m_state[0][m_pid].bufferFull );
+  //  printf("Output buffer state = 0x%llx\n", (long long)m_state[0][m_pid].bufferFull );
 #endif
 
   return &m_state[0][m_pid];
@@ -241,7 +241,7 @@ bool OutputBuffer::isEmpty()
   if ( ! m_slave ) {
 
 #ifndef NDEBUG
-    printf("Not Slave port, manually setting DMA complete flag\n");
+    //    printf("Not Slave port, manually setting DMA complete flag\n");
 #endif
 
     if ( n_pending == 0 ) {

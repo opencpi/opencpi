@@ -39,13 +39,15 @@
 #include <stdint.h>
 #include "ezxml.h"
 #include "OcpiWorker.h"
+#include "OcpiContainerApi.h"
 
 namespace OCPI {
   namespace Container {
-    class ApiError : public OCPI::Util::EmbeddedException {
+    class ApiError : public OCPI::Util::EmbeddedException, public OCPI::API::Error {
     public:
       ApiError(const char *err, ...);
     };
+
     inline unsigned long roundup(unsigned long n, unsigned long grain) {
       return (n + grain - 1) & ~(grain - 1);
     }

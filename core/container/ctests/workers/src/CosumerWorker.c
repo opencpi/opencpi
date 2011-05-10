@@ -178,8 +178,8 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   ncount = 0;
   for (n=4; n<len+4; n++) {
     if ( (in_buffer[n] != (char)(n+mem->b_count)%23) && (ncount++ < 100000) ) {
-      printf("Consumer(b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
-             mem->b_count,n, (char)(n+mem->b_count)%23, in_buffer[n]);
+      printf("Consumer(%lu, %lu, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
+             props->startIndex, len, mem->b_count,n, (char)(n+mem->b_count)%23, in_buffer[n]);
       passed = 0;
     }
   }

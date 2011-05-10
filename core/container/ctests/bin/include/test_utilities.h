@@ -51,11 +51,13 @@
 #include <OcpiTransportServer.h>
 #include <OcpiTransportClient.h>
 #include <OcpiContainerInterface.h>
+#include <OcpiContainerErrorCodes.h>
 #include <OcpiWorker.h>
 #include <OcpiContainerPort.h>
 #include <OcpiRDTInterface.h>
 #include <OcpiThread.h>
 #include <OcpiPValue.h>
+#include <RCC_Worker.h>
 #include <list>
 
 extern bool g_testUtilVerbose;
@@ -75,7 +77,7 @@ class SignalHandler {
       signal (SIGINT,my_catcher);
       signal (SIGHUP,my_catcher);
       signal (SIGQUIT,my_catcher);
-      signal (SIGTSTP,my_catcher);
+      //      signal (SIGTSTP,my_catcher);
     }
 
   static void my_catcher( int signum )
@@ -103,9 +105,9 @@ struct ContainerDesc {
 };
 
 struct CApp {
-  OCPI::Container::Interface*         container;
-  OCPI::WCI::Worker*                  wci_worker;
-  OCPI::Container::Application *      app;
+  OCPI::API::Container*         container;
+  OCPI::Container::Worker*      worker;
+  OCPI::API::ContainerApplication *      app;
 };
 
 struct CWorker {
@@ -163,7 +165,7 @@ CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
     throw;                                                                \
   }
 
-
+#if 0
 
 #define CHECK_WCI_CONROL_ERROR(err, op, ca, w)                                \
   if ( err != WCI_SUCCESS ) {                                                \
@@ -180,11 +182,27 @@ CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
     TUPRINTF("ERROR: WCI write returned %d, error string = %s\n", err, err_str.c_str() ); \
     throw std::string("WCI Write error");                                \
   }
+#endif
+
+
+#define TRY_AND_SET(var, str, exp, code)		 \
+  do {							 \
+    var = OC::NO_ERROR_;				 \
+    try {						 \
+      code;						 \
+    }  catch (OCPI::Util::EmbeddedException &ee_) {	 \
+      var = ee_.getErrorCode(); str = ee_.m_auxInfo;	 \
+    }  catch (...) {					 \
+      var = OC::LAST_ERROR_ID;				 \
+    }							 \
+    TUPRINTF("Expected error string (%s) got %u (%s)\n", \
+	     exp, var, str.c_str() );			 \
+  } while (0)
 
 namespace OCPI {
   namespace CONTAINER_TEST {
     void  dumpPortData( OCPI::Container::PortData * pd );
-    void testDispatch(OCPI::Container::Interface* rcc_container, DataTransfer::EventManager* event_manager);
+    void testDispatch(OCPI::API::Container* rcc_container);
     void initWorkers(std::vector<CApp>& ca, std::vector<CWorker*>& workers );
     void enableWorkers( std::vector<CApp>& ca, std::vector<CWorker*>& workers );
     void disableWorkers( std::vector<CApp>& ca, std::vector<CWorker*>& workers );
@@ -206,6 +224,8 @@ namespace OCPI {
     };
     OCPI::Util::Thread* runTestDispatch( DThreadData& tdata );
 
+    OCPI::Container::Worker *createWorker(CApp &capp, ::RCCDispatch *rccd);
+    OCPI::Container::Worker *createWorker(OCPI::API::ContainerApplication *app, ::RCCDispatch *rccd);
   }
 
 }

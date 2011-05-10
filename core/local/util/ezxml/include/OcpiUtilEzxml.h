@@ -162,6 +162,21 @@ namespace OCPI {
           throw (std::string);
 
         /**
+         * Parse XML from a modifiable character array this will be owned
+         * by this object (ownership transferred in).
+         * \param[in] data XML data in a char array with transferred ownership.
+         * \return The document root element.
+         * \throw std::string If \a data can not be parsed as an XML
+         * document.
+         *
+         * \pre This instance is unused.
+         * \post This instance is in use.
+         */
+
+        ezxml_t parse (char *data)
+          throw (std::string);
+
+        /**
          * Parse XML from an input stream.
          *
          * \param[in] in An input stream containing XML data starting at
@@ -210,16 +225,25 @@ namespace OCPI {
         ezxml_t m_rootNode;
       };
 
+      extern ezxml_t
+	findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
+			  const char *value);
       extern const char
         *getBoolean(ezxml_t x, const char *name, bool *b),
         *checkAttrs(ezxml_t x, ...),
 	*checkAttrsV(ezxml_t x, const char **attrs),
         *checkElements(ezxml_t x, ...),
-        *getNumber(ezxml_t x, const char *attr, uint32_t *np, bool *found,
-		   uint32_t defaultValue, bool setDefault = true),
-        *getNumber64(ezxml_t x, const char *attr, uint64_t *np, bool *found,
-		     uint64_t defaultValue, bool setDefault = true);
+        *getNumber(ezxml_t x, const char *attr, uint32_t *np,
+		   bool *found = NULL, uint32_t defaultValue = 0,
+		   bool setDefault = true),
+        *getNumber8(ezxml_t x, const char *attr, uint8_t *np,
+		    bool *found = NULL, uint32_t defaultValue = 0,
+		    bool setDefault = true),
+        *getNumber64(ezxml_t x, const char *attr, uint64_t *np,
+		     bool *found = NULL, uint64_t defaultValue = 0,
+		     bool setDefault = true);
       extern bool
+	hasAttrEq(ezxml_t x, const char *attrName, const char *val),
         getUNum(const char *s, uint32_t *valp),
         getUNum64(const char *s, uint64_t *valp),
         parseBool(const char *a, unsigned length, bool *b);

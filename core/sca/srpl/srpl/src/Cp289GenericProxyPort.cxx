@@ -80,7 +80,7 @@ namespace OCPI {
     Cp289GenericProxyPort::
     Cp289GenericProxyPort(const std::string &portName, Cp289GenericProxy *proxy) :
       BaseProxyPort(portName, proxy),
-      m_ocpiPort(proxy->m_worker.getPort(portName.c_str()))
+      m_ocpiPort(*static_cast<CC::Port*>(&proxy->m_worker.getPort(portName.c_str())))
     {
       // Externalize us.
       m_scaPort = proxy->m_poa->id_to_reference(*proxy->m_poa->activate_object(this));

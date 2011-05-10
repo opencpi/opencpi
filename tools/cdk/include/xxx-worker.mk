@@ -56,10 +56,11 @@ $(call OcpiDbgVar,Worker)
 ToolsTarget=$(HostTarget)
 ToolsDir=$(OCPI_CDK_DIR)/bin/$(HostTarget)
 ifeq ($(HostSystem),darwin)
-DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/../lib/$(HostTarget)-bin
+DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(HostTarget)
 else
-DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/../lib/$(HostTarget)-bin
+DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(HostTarget)
 endif
+#$(info OCDK $(OCPI_CDK_DIR))
 OcpiGen=\
   $(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(GeneratedDir)/$(@F).deps \
     -D $(GeneratedDir) $(XmlIncludeDirs:%=-I%)
@@ -86,9 +87,10 @@ endif
 IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
 override XmlIncludeDirs+=. $(XmlIncludeDirsInternal)
 -include $(GeneratedDir)/*.deps
+-include $(TargetDir)/*.deps
 
 clean::
-	$(AT)rm -r -f $(GeneratedDir)
+	$(AT)rm -r -f $(GeneratedDir) $(TargetDir)
 
 ################################################################################
 # source files that are target-independent

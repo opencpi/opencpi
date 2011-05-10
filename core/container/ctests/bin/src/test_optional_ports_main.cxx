@@ -138,101 +138,75 @@ printUsage (OcpiRccBinderConfigurator & config,
 static void createWorkers(std::vector<CApp>& ca )
 {
   try {
-    PRODUCER.worker = &ca[PRODUCER.cid].app->createWorker( NULL,NULL, (char *)&UTGProducerWorkerDispatchTable );
-    LOOPBACK.worker = &ca[LOOPBACK.cid].app->createWorker( NULL,NULL, (char *)&UTGLoopbackWorkerDispatchTable );
-    CONSUMER.worker = &ca[CONSUMER.cid].app->createWorker( NULL,NULL, (char *)&UTGConsumerWorkerDispatchTable );
+    PRODUCER.worker = OCPI::CONTAINER_TEST::createWorker(ca[PRODUCER.cid], &UTGProducerWorkerDispatchTable );
+    LOOPBACK.worker = OCPI::CONTAINER_TEST::createWorker(ca[LOOPBACK.cid], &UTGLoopbackWorkerDispatchTable );
+    CONSUMER.worker = OCPI::CONTAINER_TEST::createWorker(ca[CONSUMER.cid], &UTGConsumerWorkerDispatchTable );
   }
   CATCH_ALL_RETHROW( "creating workers" )
     }
-
 
 
 #define BUFFERS_2_PROCESS 200;
 static void initWorkerProperties( std::vector<CApp>& ca )
 {
   ( void ) ca;
-  WCI_error wcie;
   int32_t  tprop[5], offset, nBytes;
 
   // Set the producer buffer run count property to 0
   offset = offsetof(UTGProducerWorkerProperties,run2BufferCount);
   nBytes = sizeof( uint32_t );
   tprop[0] = BUFFERS_2_PROCESS;
-  wcie =  PRODUCER.worker->write(  offset,
-                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER);
-  wcie =  PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER);
+  PRODUCER.worker->write(  offset, nBytes, &tprop[0]);
+  PRODUCER.worker->afterConfigure();
 
   // Set the producer buffers processed count
   offset = offsetof(UTGProducerWorkerProperties,buffersProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie =  PRODUCER.worker->write(  offset,
-                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER);
-  wcie =  PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER);
+  PRODUCER.worker->write(  offset, nBytes, &tprop[0]);
+  PRODUCER.worker->afterConfigure();
 
   // Set the producer bytes processed count
   offset = offsetof(UTGProducerWorkerProperties,bytesProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie =  PRODUCER.worker->write(  offset,
-                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER);
-  wcie =  PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER);
+  PRODUCER.worker->write(  offset, nBytes, &tprop[0]);
+  PRODUCER.worker->afterConfigure();
 
   // Set the consumer passfail property to passed
   offset = offsetof(UTGConsumerWorkerProperties,passfail);
   nBytes = sizeof( uint32_t );
   tprop[0] = 1;
-  wcie =  CONSUMER.worker->write(  offset,
-                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER);
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER);
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the consumer dropped buffers count
   offset = offsetof(UTGConsumerWorkerProperties,droppedBuffers);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER);
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER);
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the consumer buffer run count property to 0
   offset = offsetof(UTGConsumerWorkerProperties,run2BufferCount);
   nBytes = sizeof( uint32_t );
   tprop[0] = BUFFERS_2_PROCESS;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER);
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER);
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the consumer buffers processed count
   offset = offsetof(UTGConsumerWorkerProperties,buffersProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER);
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER);
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the consumer buffers processed count
   offset = offsetof(UTGConsumerWorkerProperties,bytesProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER);
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER);
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
 }
 
@@ -265,9 +239,8 @@ static bool run_lb_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers )
   while ( count > 0 ) {
 
     // Read the consumer properties to monitor progress
-    CONSUMER.worker->read(   0,
-                                        sizeof(UTGConsumerWorkerProperties),
-                                        WCI_DATA_TYPE_U8, WCI_DEFAULT, &cprops);
+    CONSUMER.worker->read( 0, sizeof(UTGConsumerWorkerProperties),
+			   &cprops);
 
     if ( cprops.buffersProcessed == cprops.run2BufferCount  ) {
 
@@ -279,8 +252,8 @@ static bool run_lb_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers )
 
       // Make sure that the consumer got the same data
       PRODUCER.worker->read(   0,
-                                          sizeof(UTGProducerWorkerProperties),
-                                          WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
+			       sizeof(UTGProducerWorkerProperties),
+			       &pprops);
 
       if ( cprops.bytesProcessed != pprops.bytesProcessed ) {
         printf("Producer produced %d bytes of data, consumer got %d bytes of data\n",
@@ -304,8 +277,8 @@ static bool run_lb_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers )
 
   if ( ! passed ) {
     PRODUCER.worker->read(   0,
-                                        sizeof(UTGProducerWorkerProperties),
-                                        WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
+			     sizeof(UTGProducerWorkerProperties),
+			     &pprops);
     printf("\nTest failed results:\n");
     printf("   Producer produced %d buffers, consumer received %d buffers\n",
            pprops.buffersProcessed, cprops.buffersProcessed );
@@ -337,43 +310,37 @@ int config_and_run_optports_test(const char *test_name, std::vector<CApp>& ca,
   int testPassed = 1;
 
   try {
-    createWorkers( ca );
-  }
-  catch ( ... ) {
-    printf("Failed to create workers\n");
+    try {
+      createWorkers( ca );
+    }
+    catch ( ... ) {
+      printf("Failed to create workers\n");
+      throw;
+    }
+
+    try {
+      createPorts( ca, workers );
+    }
+    catch ( ... ) {
+      printf("Failed to create ports\n");
+      throw;
+    }
+
+    try {
+      connectWorkers( ca, workers);
+    }
+    catch ( ... ) {
+      printf("Failed to connect worker ports\n");
+      throw;
+    }
+
+    test_rc = run_lb_test(ca, workers );
+    if ( test_rc == false ) testPassed = 0;
+  } catch(...) {
+    disconnectPorts( ca, workers );
+    destroyWorkers( ca, workers );
     throw;
   }
-
-  try {
-    createPorts( ca, workers );
-  }
-  catch ( ... ) {
-    printf("Failed to create ports\n");
-    throw;
-  }
-
-  try {
-    connectWorkers( ca, workers);
-  }
-  catch ( ... ) {
-    printf("Failed to connect worker ports\n");
-    throw;
-  }
-
-
-  try {
-    initWorkers( ca, workers );
-  }
-  catch( ... ) {
-    printf("Failed to init workers\n");
-    throw;
-  }
-
-  test_rc = run_lb_test(ca, workers );
-  if ( test_rc == false ) testPassed = 0;
-
-  disconnectPorts( ca, workers );
-  destroyWorkers( ca, workers );
 
   return testPassed;
 }
@@ -447,6 +414,7 @@ int  main( int argc, char** argv)
     exit( -1 );
   }
 
+#if 0
   // Create a dispatch thread
   DThreadData tdata;
   tdata.run =1;
@@ -454,7 +422,7 @@ int  main( int argc, char** argv)
   tdata.event_manager = event_manager;
 
   OCPI::Util::Thread* t = runTestDispatch(tdata);
-
+#endif
   std::vector<CWorker*> workers;
   workers.push_back( &PRODUCER );
   workers.push_back( &CONSUMER );
@@ -519,12 +487,15 @@ int  main( int argc, char** argv)
     test_rc &= config_and_run_optports_test( test_name, ca, workers, cmap, bcmap[3]);
   }
   catch( OCPI::Util::EmbeddedException& ex ) {
-    printf("failed with an exception. errorno = %d, aux = %s (NOT EXPECTED)",
-           ex.getErrorCode(), ex.getAuxInfo() );
+    if (ex.getErrorCode() == OCPI::Container::PORT_NOT_CONNECTED) {
+      printf("got the PORT_NOT_CONNECTED error (EXPECTED)");
+      test_rc = 0;
+    } else
+      printf("failed with an exception. errorno = %d, aux = %s (NOT EXPECTED)",
+	     ex.getErrorCode(), ex.getAuxInfo() );
   }
   catch ( std::string& str ) {
-    printf("got exception ""%s"", (EXPECTED)", str.c_str() );
-    test_rc = 0;
+    printf("got exception ""%s"", (NOT EXPECTED)", str.c_str() );
   }
   catch ( ... ) {
     printf("failed with an unknown exception (NOT EXPECTED)\n");
@@ -607,12 +578,15 @@ int  main( int argc, char** argv)
     test_rc &= config_and_run_optports_test( test_name, ca, workers, cmap, bcmap[3]);
   }
   catch( OCPI::Util::EmbeddedException& ex ) {
-    printf("failed with an exception. errorno = %d, aux = %s (NOT EXPECTED)",
-           ex.getErrorCode(), ex.getAuxInfo() );
+    if (ex.getErrorCode() == OCPI::Container::PORT_NOT_CONNECTED) {
+      printf("got the PORT_NOT_CONNECTED error (EXPECTED)");
+      test_rc = 0;
+    } else
+      printf("failed with an exception. errorno = %d, aux = %s (NOT EXPECTED)",
+	     ex.getErrorCode(), ex.getAuxInfo() );
   }
   catch ( std::string& str ) {
-    printf("got exception ""%s"", (EXPECTED)", str.c_str() );
-    test_rc = 0;
+    printf("got exception ""%s"", (NOT EXPECTED)", str.c_str() );
   }
   catch ( ... ) {
     printf("failed with an unknown exception (NOT EXPECTED)\n");
@@ -630,8 +604,10 @@ int  main( int argc, char** argv)
   oa_test_rc &= test_rc; test_rc=1;
 
 
+#if 0
   tdata.run=0;
   t->join();
+#endif
   destroyContainers( ca, workers );
 
   return !oa_test_rc;

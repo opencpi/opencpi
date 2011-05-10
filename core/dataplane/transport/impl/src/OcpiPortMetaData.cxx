@@ -57,6 +57,9 @@ using namespace DataTransfer;
 void PortMetaData::
 init()
 {
+  if (m_init)
+    return;
+  m_init = true;
   // A circuit is created in parts, so we may not know the real location of this
   // port just yet
   std::string nuls;

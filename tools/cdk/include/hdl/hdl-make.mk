@@ -30,29 +30,34 @@ $(call OcpiDbgVar,HdlAllFamilies)
 # If it is a top level target with one family, return that family
 # Otherwise return the family of the supplied part
 # If the second argument is present,it is ok to return multiple families
-HdlGetFamily=$(strip \
-  $(or $(findstring $(1),$(HdlAllFamilies)),$(strip \
-     $(if $(findstring $(1),all), \
-        $(if $(2),$(HdlAllFamilies),\
-         $(call $(HdlError),$(strip \
-             HdlFamily is ambigous for '$(1)'))))),$(strip \
-     $(and $(findstring $(1),$(HdlTopTargets)),$(strip \
-        $(if $(and $(if $(2),,x),$(word 2,$(HdlTargets_$(1)))),\
-          $(call $(HdlError),$(strip \
-             HdlFamily is ambigous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
-          $(or $(HdlTargets_$(1)),$(1)))))),$(strip \
-      $(foreach f,$(HdlAllFamilies), \
-         $(and $(findstring $(1),$(HdlTargets_$(f))),$(f)))),$(strip \
-      $(call $(HdlError),$(strip \
-          The build target '$(1)' is not a family or a part in any family)))))
+HdlGetFamily=$(call OcpiDbg,Entering HdlGetFamily($1,$2))$(strip \
+  $(foreach gf,\
+     $(or $(findstring $(1),$(HdlAllFamilies)),$(strip \
+          $(if $(findstring $(1),all), \
+	      $(if $(2),$(HdlAllFamilies),\
+		   $(call $(HdlError),$(strip \
+	                  HdlFamily is ambigous for '$(1)'))))),$(strip \
+          $(and $(findstring $(1),$(HdlTopTargets)),$(strip \
+	        $(if $(and $(if $(2),,x),$(word 2,$(HdlTargets_$(1)))),\
+                   $(call $(HdlError),$(strip \
+	             HdlFamily is ambigous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
+	           $(or $(HdlTargets_$(1)),$(1)))))),$(strip \
+	  $(foreach f,$(HdlAllFamilies),\
+	     $(and $(findstring $1,$(HdlTargets_$f)),$f))),$(strip \
+	  $(call $(HdlError),$(strip \
+	     The build target '$(1)' is not a family or a part in any family)))),\
+     $(call OcpiDbg,HdlGetFamily($1,$2)->$(gf))$(gf)))
+
 
 ################################################################################
 # $(call HdlGetFamilies,hdl-target)
 # Return all the families for this target
-HdlGetFamilies=$(strip \
-  $(sort $(foreach t,$(1),$(if $(findstring $(t),all),\
-                              $(HdlAllFamilies),\
-                              $(call HdlGetFamily,$(t),x)))))
+HdlGetFamilies=$(call OcpiDbg,Entering HdlGetFamilies($1))$(strip \
+  $(foreach fs,$(sort $(foreach t,$1,\
+                         $(if $(findstring $(t),all),\
+                             $(HdlAllFamilies),\
+                             $(call HdlGetFamily,$t,x)))),\
+     $(call OcpiDbg,HdlGetFamilies($1)->$(fs))$(fs)))
 
 ################################################################################
 # $(call HdlGetPart,platform)

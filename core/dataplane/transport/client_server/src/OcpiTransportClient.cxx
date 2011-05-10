@@ -180,7 +180,7 @@ MessageCircuit* Client::createCircuit( std::string& server_end_point )
   if ( m_endpoint_string.length() == 0 ) {
     // Ask the transfer factory to give me an endpoint that we can support
     std::string nuls;
-    m_endpoint_string = XferFactoryManager::getFactoryManager().allocateEndpoint(nuls,NULL, props);
+    m_endpoint_string = XferFactoryManager::getFactoryManager().allocateEndpoint(nuls, props);
     init();
   }
 

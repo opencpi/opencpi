@@ -65,7 +65,8 @@
 #include <OcpiOsServerSocket.h>
 #include <OcpiOsClientSocket.h>
 
-using namespace DataTransfer;
+namespace DataTransfer {
+
 using namespace OCPI::Util;
 using namespace OCPI::OS;
 
@@ -74,12 +75,6 @@ using namespace OCPI::OS;
 
 
 
-#ifdef SOCKET_RDMA_SUPPORT
-// Used to register with the data transfer system;
-SocketXferFactory *g_socketsFactory = new SocketXferFactory;
-#endif
-
-namespace DataTransfer {
 
 struct SocketDataHeader {
   uint64_t   offset;
@@ -87,12 +82,13 @@ struct SocketDataHeader {
 };
 
 
+class SocketServerT;
 // Shared memory services.  
-class SocketSmemServices : public DataTransfer::SmemServices
+class SocketSmemServices : public SmemServices
   {
   public:
     SocketSmemServices (XferFactory * p, EndPoint* ep)
-      :DataTransfer::SmemServices(p, ep),m_socketServerT(NULL),m_ep(ep)
+      :SmemServices(p, ep),m_socketServerT(NULL),m_ep(ep)
     {
       m_mem = new char[ep->size];
       memset( m_mem, 0, ep->size );
@@ -104,7 +100,7 @@ class SocketSmemServices : public DataTransfer::SmemServices
       return &m_mem[offset];
     }
     OCPI::OS::int32_t unMap (){return 0;}
-    DataTransfer::EndPoint* getEndPoint (){return m_ep;}
+    EndPoint* getEndPoint (){return m_ep;}
     virtual ~SocketSmemServices ();
 
   public: 
@@ -113,7 +109,7 @@ class SocketSmemServices : public DataTransfer::SmemServices
 
 
   private:
-    DataTransfer::EndPoint* m_ep;
+    EndPoint* m_ep;
     char* m_mem;
   };
 
@@ -136,7 +132,7 @@ public:
   ClientSocketT( SocketStartupParams& sp )
     :m_startupParms(sp)
   {
-    SocketEndPoint *rsep = static_cast<DataTransfer::SocketEndPoint*>(m_startupParms.rsmem->endpoint());
+    SocketEndPoint *rsep = static_cast<SocketEndPoint*>(m_startupParms.rsmem->endpoint());
     m_socket =   OCPI::OS::ClientSocket::connect(rsep->ipAddress,rsep->portNum);
     m_socket.linger(false);
   }
@@ -185,23 +181,28 @@ public:
   void processBuffer( unsigned int len )
   {
     // Its a header
-    uint64_t off;
     if ( m_bytes_left == 0 ) {
       if ( len >= sizeof(SocketDataHeader) ) {
         SocketDataHeader* hdr = reinterpret_cast<SocketDataHeader*>(&m_buf[m_bidx]);
         m_current_ptr = (char*)m_startupParms.lsmem->map(hdr->offset,hdr->length);
-        off = hdr->offset;
         m_bytes_left = hdr->length;
-        len -= sizeof(SocketDataHeader);
         m_bidx += sizeof(SocketDataHeader);
-      }        
+        len -= sizeof(SocketDataHeader);
+	if (len == 0)
+	  return;
+      } else {
+	printf("Got a socket error (header fragment), terminating connection\n");
+	m_socket.close();
+	throw EmbeddedException("Got a socket communication error: header fragment\n");
+      }
     }
 
     unsigned int copy_len = (len <= m_bytes_left) ? len : m_bytes_left;
 #ifndef NDEBUG
-    printf("Copying socket data to %lld, size = %u\n", (long long)off, copy_len );
+    printf("Copying socket data to %lld, size = %u\n", (long long)m_current_ptr, copy_len );
 #endif
     memcpy( m_current_ptr, &m_buf[m_bidx], copy_len );
+    m_current_ptr += copy_len;
     m_bytes_left -= copy_len;
     len -= copy_len;
     m_bidx += copy_len;
@@ -232,10 +233,10 @@ public:
   ~SocketServerT(){}
 
   void run() {
-    int portNum = static_cast<DataTransfer::SocketEndPoint*>(m_startupParms.lsmem->endpoint())->portNum;
+    SocketEndPoint *sep = static_cast<SocketEndPoint*>(m_startupParms.lsmem->endpoint());
    
     try {
-      m_server.bind(portNum,false);
+      m_server.bind(sep->portNum,false);
     }
     catch( std::string & err ) {
       m_error=true;
@@ -247,6 +248,12 @@ public:
       m_error=true;
       ocpiAssert(!"Unable to bind to socket");
       return;
+    }
+    if (sep->portNum == 0) {
+      // We now know the real port, so we need to change the endpoint string.
+      sep->portNum = m_server.getPortNo();
+      SocketXferFactory::setEndpointString(sep->end_point, sep->ipAddress.c_str(),
+					   sep->portNum, sep->size, sep->mailbox);
     }
     m_started = true;
     while ( ! m_stop )  {
@@ -272,11 +279,10 @@ private:
 };
 
 
-}
 
+const char *socket = "socket"; // name passed to inherited template class
 SocketXferFactory::SocketXferFactory()
   throw ()
-  : XferFactory("Network Socket transfer driver")
 {
   // Empty
 }
@@ -304,7 +310,7 @@ void SocketXferFactory::clearCache()
 
 
 // Get the location via the endpoint
-EndPoint* SocketXferFactory::getEndPoint( std::string& end_point, bool  )
+EndPoint* SocketXferFactory::getEndPoint( std::string& end_point, bool local )
 { 
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   SocketEndPoint *loc;
@@ -314,7 +320,7 @@ EndPoint* SocketXferFactory::getEndPoint( std::string& end_point, bool  )
       return loc;
     }
   }
-  loc = new SocketEndPoint(end_point);
+  loc = new SocketEndPoint(end_point, local);
   g_locations.insert( loc );
   return loc;
 }
@@ -350,12 +356,12 @@ SmemServices* SocketXferFactory::getSmemServices(EndPoint* loc )
  ***************************************/
 XferServices* SocketXferFactory::getXferServices(SmemServices* source, SmemServices* target)
 {
-  return new SocketXferServices(this, source, target);
+  return new SocketXferServices(source, target);
 }
 
 XferRequest* SocketXferServices::createXferRequest()
 {
-  return new SocketXferRequest( this );
+  return new SocketXferRequest( *this );
 }
 
 
@@ -371,8 +377,18 @@ static OCPI::OS::int32_t getNextPortNum()
   return portNum++;
 }
 
+
 static std::string sep;
-std::string SocketXferFactory::allocateEndpoint(OCPI::Util::Device*, OCPI::Util::PValue*)
+
+void SocketXferFactory::
+setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
+		   unsigned size, unsigned mbox)
+{
+  char tep[128];
+  snprintf(tep, 128, "ocpi-socket-rdma://%s;%u:%u.%u.20", ipAddr, port, size, mbox);
+  ep = tep;
+}
+std::string SocketXferFactory::allocateEndpoint( const OCPI::Util::PValue*)
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   std::string ep;
@@ -398,7 +414,7 @@ std::string SocketXferFactory::allocateEndpoint(OCPI::Util::Device*, OCPI::Util:
   const char* penv = getenv("OCPI_TRANSFER_PORT");
   if( !penv || (penv[0] == 0)) {
     printf("Set ""OCPI_TRANSFER_PORT"" environment varible to set socket IP address\n");
-    port = getNextPortNum();
+    port = 0;//getNextPortNum();
   }
   else {
     static int m_port = 0;
@@ -407,11 +423,15 @@ std::string SocketXferFactory::allocateEndpoint(OCPI::Util::Device*, OCPI::Util:
     }
     port = m_port++;
   }
-
+  setEndpointString(ep, ip_addr, port, parent().getSMBSize(), getNextMailBox());
+#if 0
   char tep[128];
-  unsigned int size = m_config->m_SMBSize;
-  snprintf(tep,128,"ocpi-socket-rdma://%s;%d:%d.%d.20",ip_addr,port,size, getNextMailBox());
+  unsigned int size = parent().getSMBSize();
+  snprintf(tep, 128, "ocpi-socket-rdma://%s;%d:%d.%d.20", ip_addr, port,
+	   size, getNextMailBox());
   sep = ep = tep;  
+#endif
+  sep = ep;
   return ep;
 }
 
@@ -488,8 +508,8 @@ void SocketXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 {
 
   m_txRequest = NULL;
-  m_sourceSmb = static_cast<DataTransfer::SocketSmemServices*>(p1);
-  m_targetSmb = static_cast<DataTransfer::SocketSmemServices*>(p2);
+  m_sourceSmb = static_cast<SocketSmemServices*>(p1);
+  m_targetSmb = static_cast<SocketSmemServices*>(p2);
 
   xfer_create (p1, p2, 0, &m_xftemplate);
 
@@ -513,14 +533,14 @@ XferRequest* SocketXferRequest::copy (OCPI::OS::uint32_t srcoffs,
   if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
   if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
   if ( getHandle() == NULL ) {
-    retVal = xfer_copy ( static_cast<SocketXferServices*>(myParent)->m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &getHandle());
+    retVal = xfer_copy ( parent().m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &getHandle());
     if (retVal){
       return NULL;
     }
   }
   else {
     XF_transfer handle;
-    retVal = xfer_copy ( static_cast<SocketXferServices*>(myParent)->m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &handle);
+    retVal = xfer_copy ( parent().m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &handle);
     if (retVal){
       return NULL;
     }
@@ -575,9 +595,8 @@ SocketSmemServices::
 }
 
 
-namespace DataTransfer {
-  OCPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t, SocketXferRequest* req);
-}
+OCPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t, SocketXferRequest* req);
+
 void 
 SocketXferRequest::
 post()
@@ -585,21 +604,18 @@ post()
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)m_thandle;  
   OCPI::OS::int32_t pio_rc=0;
   if (xf_transfer->first_pio_transfer) {
-    pio_rc = xfer_socket_starti(xf_transfer->first_pio_transfer, 0, this);
+    pio_rc = xfer_socket_starti(xf_transfer->first_pio_transfer, 0);
   }
   if (xf_transfer->pio_transfer) {
-    pio_rc = xfer_socket_starti(xf_transfer->pio_transfer, 0, this);
+    pio_rc = xfer_socket_starti(xf_transfer->pio_transfer, 0);
   }
   if (xf_transfer->last_pio_transfer) {
-    pio_rc = xfer_socket_starti(xf_transfer->last_pio_transfer, 0, this);
+    pio_rc = xfer_socket_starti(xf_transfer->last_pio_transfer, 0);
   }
 }
 
-
-namespace DataTransfer {
-
-static void
-action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
+void SocketXferRequest::
+action_socket_transfer(PIO_transfer transfer)
 {
   // OCPI::OS::int32_t nwords = ((transfer->nbytes + 5) / 8) ;
   OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
@@ -617,7 +633,9 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
 
 
 #ifndef NDEBUG
-  printf("Sending IP header\n");
+  printf("Sending IP header %lu %x\n",
+	 (unsigned long)sizeof(SocketDataHeader),
+	 *(uint32_t*)&hdr);
   OCPI::OS::sleep( 100 );
 #endif
   long long nb=0;  
@@ -625,7 +643,7 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
   unsigned  trys = 10;
   unsigned long idx=0;
   char* chdr = (char*)&hdr;
-  while ( ((nb=static_cast<SocketXferServices*>(req->myParent)->m_clientSocketT->socket().send((const char*)&chdr[idx],(size_t)btt) ) != 0) && trys-- ) {
+  while ( ((nb=parent().m_clientSocketT->socket().send((const char*)&chdr[idx],(size_t)btt) ) != 0) && trys-- ) {
     btt -= nb;
     idx += nb;
   }
@@ -634,7 +652,8 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
   }
 
 #ifndef NDEBUG
-  printf("Sending IP data\n");
+  printf("Sending IP data %u %x\n", transfer->nbytes,
+	 *(uint32_t*)src1);
   OCPI::OS::sleep( 100 );
 #endif
 
@@ -643,7 +662,7 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
   btt = transfer->nbytes;
   trys = 10;
   idx=0;
-  while ( ((nb=static_cast<SocketXferServices*>(req->myParent)->m_clientSocketT->socket().send((const char*)&src1[idx],(size_t)btt) ) != 0) && trys-- ) {
+  while ( ((nb=parent().m_clientSocketT->socket().send((const char*)&src1[idx],(size_t)btt) ) != 0) && trys-- ) {
     btt -= nb;
     idx += nb;
   }
@@ -663,16 +682,19 @@ action_socket_transfer(PIO_transfer transfer,SocketXferRequest* req)
 }
 
 
-OCPI::OS::int32_t
-xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t, SocketXferRequest* req)
+OCPI::OS::int32_t SocketXferRequest::
+xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t)
 {
   PIO_transfer transfer = pio_transfer;
   do {
-    action_socket_transfer(transfer,req);
+    action_socket_transfer(transfer);
   } while ((transfer = transfer->next));
   return 0;
 }
 
-
+#ifdef SOCKET_RDMA_SUPPORT
+// Used to register with the data transfer system;
+  RegisterTransferDriver<SocketXferFactory> socketDriver;
+#endif
 
 }

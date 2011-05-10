@@ -53,7 +53,7 @@ class Child1 : public Child<Parent1,Child1>
 {
 public:
   Child1( Parent1& p )
-    : Child<Parent1,Child1>(p){}
+    : Child<Parent1,Child1>(p, "Child1"){}
 };
 
 
@@ -61,7 +61,7 @@ class Child2 : public Child<Parent1,Child2>
 {
 public:
   Child2( Parent1& p )
-    : Child<Parent1,Child2>(p){}
+    : Child<Parent1,Child2>(p, "Child2"){}
 };
 
 int main()

@@ -32,13 +32,14 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <OcpiUtilMisc.h>
+#include <stdarg.h>
 #include <istream>
 #include <string>
 #include <cstdlib>
 #include <cerrno>
 #include <cctype>
 #include <assert.h>
+#include <OcpiUtilMisc.h>
 
 /*
  * ----------------------------------------------------------------------
@@ -490,4 +491,16 @@ OCPI::Util::Misc::isXMLDocument (std::istream * istr)
 
   istr->seekg (-4, std::ios_base::cur);
   return result;
+}
+
+void OCPI::Util::Misc::
+formatString(std::string &out, const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  char *cp;
+  vasprintf(&cp, fmt, ap);
+  va_end(ap);
+  assert(cp); // or better generic memory exception
+  out = cp;
+  free(cp);
 }

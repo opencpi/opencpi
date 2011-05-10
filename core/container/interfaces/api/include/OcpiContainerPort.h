@@ -37,6 +37,7 @@
 #define OCPI_CONTAINER_PORT_H
 
 #include "OcpiParentChild.h"
+#include "OcpiContainerApi.h"
 #include "OcpiContainerInterface.h"
 #include "OcpiMetadataWorker.h"
 
@@ -68,9 +69,11 @@ namespace OCPI {
      *********************************/  
     class PortData
     {
+    protected:
+      OCPI::Metadata::Port m_metaPort;  // Deep copy to support all constructors
+      inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
     public:
 
-      OCPI::Metadata::Port myMetaPort;  // Deep copy to support all constructors
       OCPI::OS::uint8_t    external;               // connected externally ?
       PortConnectionDesc  connectionData;      // Port Connection Dependency data
 
@@ -79,13 +82,13 @@ namespace OCPI {
           connectionData.port = reinterpret_cast<PortDesc>(this);
         }
 
-      PortData( OCPI::Metadata::Port & pmd ): myMetaPort(pmd) , external(0)
+      PortData( const OCPI::Metadata::Port & pmd ): m_metaPort(pmd) , external(0)
         {
           connectionData.port = reinterpret_cast<PortDesc>(this);
         }
         PortData & operator = ( const PortData & lhs )
           {
-            myMetaPort = lhs.myMetaPort;
+            m_metaPort = lhs.m_metaPort;
             memcpy(&connectionData,&lhs.connectionData,sizeof(PortConnectionDesc));
             external = lhs.external;
             return *this;
@@ -98,71 +101,60 @@ namespace OCPI {
 
 
     // The class used by both ExternalPorts (not associated with a worker) and Ports (owned by worker)
-    class BasePort : public PortData {
+    class BasicPort : public PortData {
     protected:
-      BasePort(OCPI::Metadata::Port & metaData );
-      virtual ~BasePort();
+      BasicPort(const OCPI::Metadata::Port & metaData );
+      virtual ~BasicPort();
       OCPI::RDT::Desc_t &myDesc; // convenience
       // called after connection parameters have changed.
       virtual void checkConnectParams() = 0;
-      void setConnectParams(OCPI::Util::PValue *props);
+      void setConnectParams(const OCPI::Util::PValue *props);
       static void chooseRoles(int32_t &uRole, uint32_t uOptions,
                               int32_t &pRole, uint32_t pOptions);
     public:
-      void applyConnectParams(OCPI::Util::PValue *props);
+      void applyConnectParams(const OCPI::Util::PValue *props);
     };
 
 
 
-    class Port : public BasePort, public OCPI::Util::Child<Worker,Port> {
+    class Port : public BasicPort, public OCPI::API::Port {
 
-      static const std::string empty;
-
-
+      static const std::string s_empty;
     protected:
+      Container &m_container;
+      std::string m_initialPortInfo;
+      bool m_canBeExternal;
       // This is here so we own this storage while we pass back references.
-      std::string myInitialPortInfo;
-      bool canBeExternal;
-      Interface &myContainer;
-      Port(Worker &, OCPI::Metadata::Port &mport);
-
-      /*
-      Port(Worker &, bool provider);
-      */
-
+      Port(Container &container, const OCPI::Metadata::Port &mport,
+	   const OCPI::Util::PValue *props = NULL);
       virtual ~Port(){}
-
-    public:
-
-    protected:
+      Container &container() const;
 
       // connect inside the container (colocated ports)
-      virtual void connectInside(Port &other, OCPI::Util::PValue *myProps=NULL, OCPI::Util::PValue *otherProps=NULL) = 0;
+      virtual void connectInside(Port &other, const OCPI::Util::PValue *myProps=NULL,
+				 const OCPI::Util::PValue *otherProps=NULL) = 0;
 
       // other port is the same container type.  Return true if you do it.
-      virtual bool connectLike(Port &other, OCPI::Util::PValue *myProps=NULL,  OCPI::Util::PValue *otherProps=NULL);
+      virtual bool connectLike(Port &other, const OCPI::Util::PValue *myProps=NULL,
+			       const OCPI::Util::PValue *otherProps=NULL);
 
       virtual void finishConnection(OCPI::RDT::Descriptors &other) = 0;
 
     public:
       void establishRoles(OCPI::RDT::Descriptors &other);
 
-      virtual void loopback(Port &);
+      void loopback(OCPI::API::Port &);
 
       bool hasName(const char *name);
 
-      inline bool isProvider() { return myMetaPort.provider; }
+      inline bool isProvider() { return m_metaPort.provider; }
 
-      inline bool isTwoWay() { return myMetaPort.twoway; }
+      inline bool isTwoWay() { return m_metaPort.twoway; }
 
       //      inline ezxml_t getXml() { return myXml; }
       // Local (possibly among different containers) connection: 1 step operation on the user port
-      virtual void connect( Port &other, OCPI::Util::PValue *myProps=NULL, OCPI::Util::PValue *otherProps=NULL);
-
-
-      virtual void disconnect( )
-        throw ( OCPI::Util::EmbeddedException )=0;
-
+      void connect( OCPI::API::Port &other, const OCPI::Util::PValue *myProps,
+		    const OCPI::Util::PValue *otherProps);
 
       // Local connection within a container
       // Remote connection: up to 5 steps! worst case.
@@ -179,7 +171,7 @@ namespace OCPI {
       // Best case: (only one method for user->provider)
       //     final user->provider target info and provider->user target info
 
-      virtual const std::string &getInitialProviderInfo(OCPI::Util::PValue *p=NULL);
+      virtual const std::string &getInitialProviderInfo(const OCPI::Util::PValue *p=NULL);
 
       // Step 2: (after passing initialProviderInfo to user side)
       // Give remote initial provider info to this local user port.
@@ -190,7 +182,7 @@ namespace OCPI {
       // Best case:
       //     we're done.  no further info exchange needed, return 0;
 
-      virtual const std::string &setInitialProviderInfo(OCPI::Util::PValue *p, const std::string &);
+      virtual const std::string &setInitialProviderInfo(const OCPI::Util::PValue *p, const std::string &);
 
       // Step 3: (after passing initialUserInfo to provider side)
       // Give remote initial user info to this local provider port.
@@ -221,58 +213,17 @@ namespace OCPI {
       // Worst case:
       //     (user-target FIXED at provider: 8 of 8);
       virtual void setFinalUserInfo(const std::string &);
-
-      // Connect directly to this port, which creates a UserPort object.
-      virtual ExternalPort &connectExternal(const char *name, OCPI::Util::PValue *props=NULL, OCPI::Util::PValue *uprops=NULL) = 0;
-
     };
 
-
+    typedef OCPI::API::ExternalBuffer ExternalBuffer;
 
     // The direct interface for non-components to talk directly to the port,
     // in a non-blocking fashion.
-    class ExternalBuffer : public OCPI::Util::Child<ExternalPort, ExternalBuffer> {
-
-    public:
-      ExternalBuffer( ExternalPort& p )
-        :OCPI::Util::Child<ExternalPort,ExternalBuffer>(p){}
-      ExternalBuffer(){}
-      // For consumer buffers
-      virtual void release() = 0;
-      // For producer buffers
-      virtual void put(uint8_t opCode, uint32_t length, bool endOfData) = 0;
-
+    class ExternalPort : public BasicPort, public OCPI::API::ExternalPort {
     protected:
-      virtual ~ExternalBuffer(){};
-
-    };
-
-    class ExternalPort : public OCPI::Util::Parent<ExternalBuffer> {
-    protected:
-      ExternalPort( const char *name )
-        :m_ExName(name){};
+      ExternalPort(const OCPI::Metadata::Port & metaPort, const OCPI::Util::PValue *props);
       virtual ~ExternalPort(){};
-    public:
-      // Return zero if there is no buffer ready
-      // data pointer may be null if end-of-data is true.
-      // This means NO MESSAGE, not a zero length message.
-      // I.e. if "data" is null, length is not valid.
-      virtual ExternalBuffer *
-        getBuffer(uint8_t &opCode, uint8_t *&data, uint32_t &length, bool &endOfData) = 0;
-      // Return zero when no buffers are available.
-      virtual ExternalBuffer *getBuffer(uint8_t *&data, uint32_t &length) = 0;
-      // Use this when end of data indication happens AFTER the last message.
-      // Use the endOfData argument to put, when it is known at that time
-      virtual void endOfData() = 0;
-      // Return whether there are still buffers to send that can't be flushed now.
-      virtual bool tryFlush() = 0;
-
-      std::string & externalName(){return m_ExName;}
-
-    private:
-      std::string m_ExName;
-
-
+      void checkConnectParams();
     };
   }
 }

@@ -38,6 +38,7 @@
 #define OCPI_PROPERTY_H
 #include "OcpiUtilProperty.h"
 #include "OcpiContainerMisc.h"
+#include "OcpiContainerApi.h"
 
 namespace OCPI {
   namespace Container {
@@ -45,7 +46,7 @@ namespace OCPI {
     // Optimized for scalar and/or memory mapped access
     // Note that the API for this has the user typically constructing this structure
     // on their stack so that access to members (in inline methods) has no indirection.
-    class Property {
+    class Property : OCPI::API::Property {
       friend class Worker;
       Worker &worker;                     // which worker do I belong to
       OCPI::Util::Prop::Property &myMeta;  // reference to info about me

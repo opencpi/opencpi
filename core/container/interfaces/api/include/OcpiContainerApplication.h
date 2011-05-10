@@ -52,37 +52,37 @@
 #include "OcpiWorker.h"
 #include "OcpiPValue.h"
 
-
-
 namespace OCPI {
-
   namespace Container {
 
     // A (local) application running in this container
-    class Interface;
     class Artifact;
-
-    class Application : public OCPI::Util::Child<Interface, Application>, public OCPI::Util::Parent<Worker> {
-      friend class Interface;
-      const char *m_name;
+    class Application :
+      public OCPI::API::ContainerApplication
+    {
+      friend class Container;
+      friend class Artifact;
     protected:
-      Application(Interface &, const char *name=0, OCPI::Util::PValue *props = 0);
+      Application(const OCPI::Util::PValue *props = 0);
+      // This is the internal method called after XML processing
     public:
+      virtual Container &container() = 0;
+      virtual Worker & createWorker(Artifact *, const char *appInstName,
+				    ezxml_t impl, ezxml_t inst,
+				    const OCPI::Util::PValue *wparams) = 0;
       virtual ~Application();
 
-      // convenience.
-      Artifact & loadArtifact(const char *url, OCPI::Util::PValue *artifactParams = 0);
-
-      // Convenience method that does loadArtifact(url), artifact->createWorker
-
-      virtual Worker & createWorker(const char *url, OCPI::Util::PValue *aparams,
-				    const char *entryPoint, const char * inst=NULL, OCPI::Util::PValue *wparams = NULL);
-
-
-      virtual Worker & createWorker(Artifact &, const char * impl, const char * inst=NULL,
-                                    OCPI::Util::PValue *wparams = NULL);
-
-
+      // This the API method using explicit artifact file names
+      OCPI::API::Worker & createWorker(const char *url,
+				       const OCPI::API::PValue *aparams,
+				       const char *appInstName,
+				       const char *entryPoint,
+				       const char * inst,
+				       const OCPI::API::PValue *wparams);
+      // This is the API method to create a worker from libraries
+      OCPI::API::Worker &createWorker(const char *name, const char *impl,
+				      const OCPI::API::PValue *wProps = NULL,
+				      const OCPI::API::Connection *connections = NULL);
     };
   } // Container
 } // OCPI

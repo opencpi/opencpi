@@ -33,33 +33,50 @@
  */
 
 #include "OcpiContainerInterface.h"
-#include "OcpiArtifact.h"
 #include "OcpiContainerApplication.h"
+#include "OcpiContainerArtifact.h"
 #include "OcpiPValue.h"
 
 
+namespace OA = OCPI::API;
+namespace OL = OCPI::Library;
+
 namespace OCPI {
   namespace Container {
-    Application::Application(Interface &i, const char *name, OCPI::Util::PValue *) :
-      OCPI::Util::Child<Interface, Application>(i), m_name(name) {
+    Application::Application(const OA::PValue *) {
     }
     Application::~Application() {
     }
 
-    Artifact & Application::loadArtifact(const char *url, OCPI::Util::PValue *artifactParams ) {
-      return myParent->loadArtifact(url, artifactParams);
+    OA::Worker &Application::
+    createWorker(const char *url, const OA::PValue *aParams, const char *name,
+		 const char *impl, const char *inst,
+		 const OA::PValue *wParams) {
+      if (url)
+	return container().loadArtifact(url, aParams).createWorker(*this, name,
+								   impl, inst,
+								   wParams);
+      // This is the special hack for passing in a dispatch table for RCC workers.
+      else {
+	Worker &w = createWorker(NULL, name, NULL, NULL, aParams);
+	w.initialize();
+	return w;
+      }
     }
-
-    // Convenience if caller doesn't want Artifact objects.
-    Worker &Application::createWorker(const char *url, OCPI::Util::PValue *aParams,
-                                      const char *entry, const char *inst,
-                                      OCPI::Util::PValue *wParams) {
-      Artifact &a = loadArtifact(url, aParams);
-      return a.createWorker(*this, (const char*)entry, inst, wParams);
+    OA::Worker &Application::
+    createWorker(const char *name, const char *impl,
+		 const OA::PValue *wProps,
+		 const OA::Connection *connections) {
+      // Find an artifact (and instance within the artifact), for this worker
+      const char *inst = NULL;
+      OL::Artifact &a =
+	OL::Manager::findArtifact(container(), impl, wProps, connections, inst);
+      // Load the artifact and create the worker
+      return
+	container().loadArtifact(a).createWorker(*this, name, impl, inst, wProps);
     }
-    Worker &Application::createWorker(Artifact &a, const char* impl, const char *inst, 
-                                      OCPI::Util::PValue *wParams) {
-      return a.createWorker(*this, impl, inst, wParams);
-    }
+  }
+  namespace API {
+    ContainerApplication::~ContainerApplication(){}
   }
 }

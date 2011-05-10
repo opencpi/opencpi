@@ -108,7 +108,6 @@ namespace OCPI {
     class Transport : public OCPI::Util::Parent<Circuit> , public OCPI::Time::Emit
 
     {
-
     public:
 
       friend class Circuit;
@@ -249,7 +248,7 @@ namespace OCPI {
       NewCircuitRequestListener* m_newCircuitListener;
 
       // Our lock
-      static OCPI::OS::Mutex m_mutex;
+      OCPI::OS::Mutex &m_mutex;
 
       // used to name circuits
       OCPI::OS::int32_t m_nextCircuitId;

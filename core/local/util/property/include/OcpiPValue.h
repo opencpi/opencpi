@@ -49,60 +49,36 @@
 #define OCPI_PVALUE_H
 
 #include <cstring>
-#include "OcpiUtilPropertyType.h"
+#include "OcpiUtilException.h"
+#include "OcpiPValueApi.h"
 
 
 namespace OCPI {
-
+  
   namespace Util {
-
-    // Convenience class for type safe property values for "simplest" api.
-    // Only non-type-safe aspect is PVEnd()
-    // Typical syntax would be like:
-    // PValue props[] = { PVString("label", "foolabel"), PVULong("nbuffers", 10), PVEnd()};
-    // A less type-safe would be to use varargs, which only saves a single character per property...
-    // PVList props("label", PVString, "foolabel", "nbuffers", PVUlong, 10, 0);
-
-    class PValue {
-    public:
-      inline PValue(const char *aName, OCPI::Util::Prop::Scalar::Type aType, unsigned aWidth) :
-      name(aName), type(aType), width(aWidth) {}
-      const char *name;
-      OCPI::Util::Prop::Scalar::Type type;
-      unsigned width;
-      // Anonymous union here for convenience even though redundant with above.
-      union {
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run v##pretty;
-OCPI_PROPERTY_DATA_TYPES
+    typedef OCPI::API::PValue PValue;
+#define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)	\
+      bool find##pretty(const PValue* p, const char* name, run &value);
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S(sca, corba, letter, bits, run, pretty, store)	\
+      bool find##pretty(const PValue* p, const char* name, const run &value);
+      OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-      };
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) friend class PV##pretty;
-OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE  
-     static inline const PValue* find( const PValue* p, const char* name ) {
-     if (!p ) return NULL;
-     for ( int n=0; p[n].name; n++) {
-         if (strcmp(p[n].name, name ) == 0) {
-           return &p[n];
-         }
-       }
-       return NULL;
-     }
-    };
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)   \
-    class PV##pretty : public PValue {                          \
-    public:                                                     \
-      inline PV##pretty(const char *aname, const run val) :	\
-        PValue(aname,                                           \
-               OCPI::Util::Prop::Scalar::OCPI_##pretty,           \
-	       sizeof(v##pretty)) {				\
-	  v##pretty = (run)val;					\
-      }         						\
-    };
-    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
+    typedef OCPI::API::PV##pretty PV##pretty;
+#if 0
+  class PV##pretty : public OCPI::API::PV##pretty { \
+  public: \
+  PV##pretty(const char *name, const run val) : \
+    OCPI::API::PV##pretty(name, val) {} \
+  };
+#endif
+  OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
     extern PVULong PVEnd;
-  } // Container
+  }
 } // OCPI
 #endif
 

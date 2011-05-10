@@ -1,0 +1,26 @@
+ifndef OCPI_CDK_DIR
+OCPI_CDK_DIR=../..
+endif
+
+LIBDIR=$(OCPI_CDK_DIR)/lib/$(HostTarget)
+LIBS=interfaces rcc_container rdma_drivers 
+ifeq ($(OSTYPE),darwin)
+LIB_PATH=export DYLD_LIBRARY_PATH=$(LIBDIR);
+else
+LIB_PATH=export LD_LIBRARY_PATH=$(LIBDIR);
+endif
+
+all: hello
+
+hello: hello.cxx
+	$(LIB_PATH) g++ -g -o $@ -I$(OCPI_CDK_DIR)/include $^ -L$(LIBDIR) $(LIBS:%=-l%)
+
+run: hello workers
+	$(LIB_PATH) export OCPI_LIBRARY_PATH=lib/rcc; ./hello > /dev/null	
+
+clean::
+	rm -f hello
+
+# These make the worker library for this application
+Implementations = hello.rcc
+include $(OCPI_CDK_DIR)/include/lib.mk

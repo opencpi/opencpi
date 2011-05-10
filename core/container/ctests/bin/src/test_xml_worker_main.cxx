@@ -57,7 +57,6 @@
 #include <OcpiUtilCommandLineConfiguration.h>
 #include <UtZeroCopyIOWorkers.h>
 #include <OcpiTimeEmit.h>
-#include <OcpiProperty.h>
 
 #include <OcpiThread.h>
 
@@ -174,13 +173,15 @@ int  main( int argc, char** argv)
   }
 
   // Create a dispatch thread
+#if 0
   DThreadData tdata;
   tdata.run =1;
   tdata.containers = ca;
   tdata.event_manager = event_manager;
   OCPI::Util::Thread* t = runTestDispatch(tdata);
+#endif
 
-
+#if 0
   // Create an artifact
 #if 1
   // Someday make this a utility function in ocpios FIXME
@@ -196,39 +197,43 @@ int  main( int argc, char** argv)
 #else
   const char * w1Url = "../../../../components/lib/rcc/Linux-x86_64/zcworkers.so";
 #endif
-  Artifact & art1 = ca[0].app-> loadArtifact(w1Url);
-  Worker & consumer = ca[0].app->createWorker( art1,"Consumer",0 );
-  Worker & producer = ca[0].app->createWorker( art1,"Producer",0 );
-
-  OCPI::Container::Port & pout = producer.getPort( "Out" );
-  OCPI::Container::Port & cin = consumer.getPort( "In" );
+  OCPI::API::Worker & consumer = ca[0].app->createWorker( w1Url, NULL, "testConsumer", "Consumer" );
+  OCPI::API::Worker & producer = ca[0].app->createWorker( w1Url, NULL, "testProducer", "Producer" );
+#else
+  // New library-based components
+  OCPI::API::Worker
+    & consumer = ca[0].app->createWorker("testConsumer", "Consumer" ),
+    & producer = ca[0].app->createWorker("testProducer", "Producer" );
+#endif
+  OCPI::API::Port & pout = producer.getPort( "Out" );
+  OCPI::API::Port & cin = consumer.getPort( "In" );
 
 
   //  std::string p = cin.getInitialProviderInfo() ;
   //  std::string flowc = pout.setFinalProviderInfo( p );
   //  cin.setFinalUserInfo( flowc );
 
-  static OCPI::Util::PValue props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
+  static OCPI::API::PValue props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
 				       OCPI::Util::PVEnd };
   
   cin.connect( pout, props );
 
-  OCPI::Container::Property doubleT ( consumer, "doubleT" );
-  OCPI::Container::Property passFail ( consumer, "passfail" );
-  OCPI::Container::Property boolT ( consumer, "boolT" );
-  OCPI::Container::Property run2BufferCount ( consumer, "run2BufferCount" );
-  OCPI::Container::Property longlongT ( consumer, "longlongT" );
-  OCPI::Container::Property buffersProcessed ( consumer, "buffersProcessed" );
-  OCPI::Container::Property floatST ( consumer, "floatST" );
-  OCPI::Container::Property droppedBuffers ( consumer, "droppedBuffers" );
-  OCPI::Container::Property bytesProcessed ( consumer, "bytesProcessed" );
-  OCPI::Container::Property transferMode ( consumer, "transferMode" );
+  OCPI::API::Property doubleT ( consumer, "doubleT" );
+  OCPI::API::Property passFail ( consumer, "passfail" );
+  OCPI::API::Property boolT ( consumer, "boolT" );
+  OCPI::API::Property run2BufferCount ( consumer, "run2BufferCount" );
+  OCPI::API::Property longlongT ( consumer, "longlongT" );
+  OCPI::API::Property buffersProcessed ( consumer, "buffersProcessed" );
+  OCPI::API::Property floatST ( consumer, "floatST" );
+  OCPI::API::Property droppedBuffers ( consumer, "droppedBuffers" );
+  OCPI::API::Property bytesProcessed ( consumer, "bytesProcessed" );
+  OCPI::API::Property transferMode ( consumer, "transferMode" );
 
 
-  OCPI::Container::Property Prun2BufferCount ( producer, "run2BufferCount" );
-  OCPI::Container::Property PbuffersProcessed ( producer, "buffersProcessed" );
-  OCPI::Container::Property PbytesProcessed ( producer, "bytesProcessed" );
-  OCPI::Container::Property PtransferMode ( producer, "transferMode" );
+  OCPI::API::Property Prun2BufferCount ( producer, "run2BufferCount" );
+  OCPI::API::Property PbuffersProcessed ( producer, "buffersProcessed" );
+  OCPI::API::Property PbytesProcessed ( producer, "bytesProcessed" );
+  OCPI::API::Property PtransferMode ( producer, "transferMode" );
 
 
   // Extra for test case only
@@ -278,9 +283,11 @@ int  main( int argc, char** argv)
   }
 
 
+#if 0
   tdata.run=0;
   t->join();
   delete t;
+#endif
 
   return !test_rc;
 }

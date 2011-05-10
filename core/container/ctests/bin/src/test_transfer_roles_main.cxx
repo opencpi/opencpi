@@ -57,9 +57,6 @@
 #include <OcpiUtilCommandLineConfiguration.h>
 #include <UtZeroCopyIOWorkers.h>
 #include <OcpiTimeEmit.h>
-
-#include <DtTransferConfig.h>
-
 #include <OcpiThread.h>
 
 using namespace OCPI::DataTransport;
@@ -131,8 +128,8 @@ printUsage (OcpiRccBinderConfigurator & config,
 static void createWorkers(std::vector<CApp>& ca )
 {
   try {
-    PRODUCER.worker = &ca[PRODUCER.cid].app->createWorker( NULL,NULL, (char *)&UTZCopyProducerWorkerDispatchTable );
-    CONSUMER.worker = &ca[CONSUMER.cid].app->createWorker( NULL,NULL, (char *)&UTZCopyConsumerWorkerDispatchTable );
+    PRODUCER.worker = OCPI::CONTAINER_TEST::createWorker(ca[PRODUCER.cid], &UTZCopyProducerWorkerDispatchTable );
+    CONSUMER.worker = OCPI::CONTAINER_TEST::createWorker(ca[CONSUMER.cid], &UTZCopyConsumerWorkerDispatchTable );
   }
   CATCH_ALL_RETHROW( "creating workers" )
 
@@ -160,13 +157,13 @@ static void createPorts( std::vector<CApp>& ca )
     }
   CATCH_ALL_RETHROW("creating consumer target port")
 
-    }
+}
 
 
 static void connectWorkers(std::vector<CApp>& ca )
 {
   ( void ) ca;
-  PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->connect( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port );
+  PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->connect( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port, NULL, NULL );
 }
 
 
@@ -175,110 +172,78 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
 {
   ( void ) ca;
   ( void ) mode;
-  WCI_error wcie;
   int32_t  tprop[5], offset, nBytes;
 
   // Set the producer buffer run count property to 0
   offset = offsetof(ProducerWorkerProperties,run2BufferCount);
   nBytes = sizeof( uint32_t );
   tprop[0] = BUFFERS_2_PROCESS;
-  wcie =  PRODUCER.worker->write(  offset,
-                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
-  wcie =  PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER );
+  PRODUCER.worker->write(  offset,
+			   nBytes, &tprop[0]);
+  PRODUCER.worker->afterConfigure();
 
   // Set the producer buffers processed count
   offset = offsetof(ProducerWorkerProperties,buffersProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie =  PRODUCER.worker->write(  offset,
-                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
-  wcie =  PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER );
-
+  PRODUCER.worker->write(  offset, nBytes, &tprop[0]);
+  PRODUCER.worker->afterConfigure();
+  
   // Set the producer bytes processed count
   offset = offsetof(ProducerWorkerProperties,bytesProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie =  PRODUCER.worker->write(  offset,
-                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
-  wcie =  PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER );
+  PRODUCER.worker->write(  offset, nBytes, &tprop[0]);
+  PRODUCER.worker->afterConfigure();
 
   // Set the consumer passfail property to passed
   offset = offsetof(ConsumerWorkerProperties,passfail);
   nBytes = sizeof( uint32_t );
   tprop[0] = 1;
-  wcie =  CONSUMER.worker->write(  offset,
-                                              nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the consumer dropped buffers count
   offset = offsetof(ConsumerWorkerProperties,droppedBuffers);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the consumer buffer run count property to 0
   offset = offsetof(ConsumerWorkerProperties,run2BufferCount);
   nBytes = sizeof( uint32_t );
   tprop[0] = BUFFERS_2_PROCESS;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the consumer buffers processed count
   offset = offsetof(ConsumerWorkerProperties,buffersProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
+  CONSUMER.worker->write( offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the consumer buffers processed count
   offset = offsetof(ConsumerWorkerProperties,bytesProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
-
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the producer mode
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerSend;
-  wcie = PRODUCER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
-  wcie = PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER );
-
+  PRODUCER.worker->write(  offset, nBytes, &tprop[0]);
+  PRODUCER.worker->afterConfigure();
 
   // Set the consumer mode
   offset = offsetof(ConsumerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerConsume;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
 }
 
@@ -298,9 +263,7 @@ static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, i
     //    OCPI::OS::sleep( 2000 );
 
     // Read the consumer properties to monitor progress
-    CONSUMER.worker->read(   0,
-                                        sizeof(ConsumerWorkerProperties),
-                                        WCI_DATA_TYPE_U8, WCI_DEFAULT, &cprops);
+    CONSUMER.worker->read(   0, sizeof(ConsumerWorkerProperties), &cprops);
 
     if ( cprops.buffersProcessed == cprops.run2BufferCount  ) {
 
@@ -312,8 +275,8 @@ static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, i
 
       // Make sure that the consumer got the same data
       PRODUCER.worker->read(   0,
-                                          sizeof(ProducerWorkerProperties),
-                                          WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
+			       sizeof(ProducerWorkerProperties),
+			       &pprops);
 
       if ( cprops.bytesProcessed != pprops.bytesProcessed ) {
         printf("Producer produced %d bytes of data, consumer got %d bytes of data\n",
@@ -337,8 +300,8 @@ static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, i
 
   if ( ! passed ) {
     PRODUCER.worker->read(   0,
-                                        sizeof(ProducerWorkerProperties),
-                                        WCI_DATA_TYPE_U8, WCI_DEFAULT, &pprops);
+			     sizeof(ProducerWorkerProperties),
+			     &pprops);
     printf("\nTest failed results:\n");
     printf("   Producer produced %d buffers, consumer received %d buffers\n",
            pprops.buffersProcessed, cprops.buffersProcessed );
@@ -377,33 +340,23 @@ int config_and_run_ap_container_test1(std::vector<CApp>& ca, std::vector<CWorker
   createWorkers( ca );
   createPorts( ca );
   connectWorkers( ca );
-  initWorkers( ca, workers );
   initWorkerProperties(LBSendOnly, ca);
 
-  WCI_error wcie;
   int32_t  tprop[5], offset, nBytes;
 
   // Set the consumer mode
   offset = offsetof(ConsumerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerConsume;
-  wcie = CONSUMER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, CONSUMER );
-  wcie = CONSUMER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, CONSUMER );
-
+  CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
+  CONSUMER.worker->afterConfigure();
 
   // Set the producer mode
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerSend;
-  wcie = PRODUCER.worker->write(  offset,
-                                             nBytes, WCI_DATA_TYPE_U32, WCI_DEFAULT, &tprop[0]);
-  CHECK_WCI_WRITE_ERROR( wcie, ca, PRODUCER );
-  wcie = PRODUCER.worker->control(  WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-  CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG, ca, PRODUCER );
-
+  PRODUCER.worker->write(  offset, nBytes, &tprop[0]);
+  PRODUCER.worker->afterConfigure();
 
   sprintf(tnamebuf, "Advanced port managment test (using send): container map %d,%d,%d buffer map %d,%d,%d,%d\n Test:  ",
           cmap[0], cmap[1], cmap[2], bcmap[0], bcmap[1], bcmap[2], bcmap[3] );
@@ -441,8 +394,6 @@ int  main( int argc, char** argv)
 #endif
 {
   SignalHandler sh(sig_handler);
-
-  DataTransfer::configureSubSystem( NULL );
 
   int test_rc = 1;
   DataTransfer::EventManager* event_manager;
@@ -482,12 +433,14 @@ int  main( int argc, char** argv)
     exit(-1);
   }
 
+#if 0
   // Create a dispatch thread
   DThreadData tdata;
   tdata.run =1;
   tdata.containers = ca;
   tdata.event_manager = event_manager;
   OCPI::Util::Thread* t = runTestDispatch(tdata);
+#endif
 
   std::vector<CWorker*> workers;
   workers.push_back( &PRODUCER );
@@ -511,9 +464,11 @@ int  main( int argc, char** argv)
   test_rc &= config_and_run_ap_container_test1(ca,workers,cmap, bcmap[1] );
   PRODUCER.pdata[PRODUCER_OUTPUT_PORT].props = NULL;
 
+#if 0
   tdata.run=0;
   t->join();
   delete t;
+#endif
   destroyContainers( ca, workers );
 
   //  OCPI::Time::EmitFormatter tfb(OCPI::Time::EmitFormatter::VCDFormat);

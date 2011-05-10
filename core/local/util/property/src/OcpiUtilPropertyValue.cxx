@@ -247,12 +247,12 @@ parseString(const char*cp, unsigned length, char**vp) {
 
 // Parse a value, which may be a sequence/array/string, but not a struct
 const char *
-ValueType::parseValue(const char *unparsed, Scalar::Value &value) {
-  switch (scalar) {
+parseValue(ValueType &vt, const char *unparsed, OCPI::API::ScalarValue &value) {
+  switch (vt.scalar) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	\
     case Scalar::OCPI_##pretty:				\
-      if (length > 1)					\
-	value.pv##pretty = myCalloc(run, length);	\
+      if (vt.length > 1)				\
+	value.pv##pretty = myCalloc(run, vt.length);	\
     break;
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
@@ -260,7 +260,7 @@ ValueType::parseValue(const char *unparsed, Scalar::Value &value) {
       return "Unexpected illegal type in parsing value";
   }
   unsigned n;
-  for (n = 0; n < length && *unparsed; n++) {
+  for (n = 0; n < vt.length && *unparsed; n++) {
     // Skip initial white space
     while (isspace(*unparsed))
       unparsed++;
@@ -290,11 +290,11 @@ ValueType::parseValue(const char *unparsed, Scalar::Value &value) {
     else
       *tmp = 0;
     const char *err = 0;
-    switch (scalar) {
+    switch (vt.scalar) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
       case Scalar::OCPI_##pretty:					\
-	if (parse##pretty(unparsedSingle, stringLength,			\
-			  length > 1 ?					\
+	if (parse##pretty(unparsedSingle, vt.stringLength,		\
+			  vt.length > 1 ?				\
 			  &value.pv##pretty[n] : &value.v##pretty))	\
 	  err = #pretty;						\
         break;
@@ -313,14 +313,14 @@ ValueType::parseValue(const char *unparsed, Scalar::Value &value) {
       start++;
   }
   if (*unparsed)
-    return esprintf("Too many values (> %d) for property value", length);
+    return esprintf("Too many values (> %d) for property value", vt.length);
   value.length = n;
   return 0;
 }
 void
-ValueType::destroyValue(Scalar::Value &value) {
-  if (length > 1)
-    switch (scalar) {
+destroyValue(ValueType &vt, Scalar::Value &value) {
+  if (vt.length > 1)
+    switch (vt.scalar) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
       case Scalar::OCPI_##pretty:		   \
 	free(value.pv##pretty);			   \

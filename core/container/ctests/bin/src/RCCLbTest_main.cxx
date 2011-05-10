@@ -52,9 +52,8 @@
 #include <ProdWorker.h>
 #include <OcpiThread.h>
 #include <OcpiPValue.h>
-#include <OcpiDriver.h>
 #include <OcpiUtilCommandLineConfiguration.h>
-
+#include "test_utilities.h"
 
 #define OCPI_RCC_DATA_BUFFER_SIZE 32
 
@@ -133,37 +132,11 @@ printUsage (OcpiRccBinderConfigurator & config,
 }
 
 
-
-#define CHECK_WCI_CONROL_ERROR(err, op) \
-        if ( err != WCI_SUCCESS ) { \
-        printf("ERROR: WCI control(%d) returned %d\n", op, err );\
-        throw 1;\
-        }
-
 #define PORT_0 0
 #define PORT_1 1
 
 #define GPP_CONT_UID 1
 
-#define CATCH_ALL_RETHROW( msg )                                        \
-  catch ( int& ii ) {                                                        \
-    printf("gpp: Caught an int exception while %s = %d\n", msg,ii );        \
-    throw;                                                                \
-  }                                                                        \
-  catch( std::string& stri ) {                                                \
-    printf("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
-    throw;                                                                \
-  }                                                                        \
-  catch ( OCPI::Util::EmbeddedException& eex ) {                                \
-    printf(" gpp: Caught an embedded exception while %s:\n", msg);                \
-    printf( " error number = %d", eex.m_errorCode );                        \
-    printf( " aux info = %s\n", eex.m_auxInfo.c_str() );                \
-    throw;                                                                \
-  }                                                                        \
-  catch( ... ) {                                                        \
-    printf("gpp: Caught an unknown exception while %s\n",msg );                \
-    throw;                                                                \
-  }
 
 // using namespace OCPI::DataTransport;
 
@@ -178,8 +151,8 @@ static Worker * WORKER_INPUT_ID;
 int OCPI_USE_POLLING=1;
 
 // Program globals
-static OCPI::Container::Interface* gpp_container;
-static Application *gpp_app;
+static OCPI::API::Container* gpp_container;
+static OCPI::API::ContainerApplication *gpp_app;
 Port *inputPort, *outputPort;
 
 #ifdef NEED_CI
@@ -317,8 +290,8 @@ void writePortDecsFile( std::string& rpl_output, std::string& rpl_input )
 void setupForPCMode()
 {
   try {
-    WORKER_INPUT_ID = &gpp_app->createWorker( NULL, NULL, (const char*)&ConsumerWorkerDispatchTable  );
-    WORKER_OUTPUT_ID = &gpp_app->createWorker( NULL, NULL, (const char*)&ProducerWorkerDispatchTable );
+    WORKER_INPUT_ID = OCPI::CONTAINER_TEST::createWorker( gpp_app, &ConsumerWorkerDispatchTable  );
+    WORKER_OUTPUT_ID = OCPI::CONTAINER_TEST::createWorker( gpp_app, &ProducerWorkerDispatchTable );
   }
   CATCH_ALL_RETHROW( "creating workers" )
 
@@ -348,8 +321,8 @@ void setupForPCMode()
 
 
   if ( config.standalone ) {
-    std::string spd = gpp_container->packPortDesc( *outputPort );
-    std::string cpd = gpp_container->packPortDesc( *inputPort );
+    std::string spd = OCPI::Container::Container::packPortDesc( *outputPort );
+    std::string cpd = OCPI::Container::Container::packPortDesc( *inputPort );
     writePortDecsFile( spd , cpd );
   }
 
@@ -391,7 +364,7 @@ void setupForPCMode()
 
   // Here we eat the shadow port info since the rpl is currently passive
   if ( config.standalone ) {
-    std::string scp = gpp_container->packPortDesc(*inputPort);
+    std::string scp = OCPI::Container::Container::packPortDesc(*inputPort);
     writePortDecsFile( localShadowPort, scp );
     readPortDecsFile( remoteSourcePort, remoteTargetPort );
   }
@@ -420,17 +393,23 @@ int gpp_cont(int argc, char** argv)
 {
   ( void ) argc;
   ( void ) argv; 
-  DataTransfer::EventManager* gpp_event_manager;
+  //  DataTransfer::EventManager* gpp_event_manager;
   static OCPI::Util::PValue container_props[] = {OCPI::Util::PVString("endpoint",""), OCPI::Util::PVEnd };
-  OCPI::Util::DriverManager dm("Container");
-  dm.discoverDevices(0,0);
-  OCPI::Util::Device* d = dm.getDevice( container_props, 0 );
 
+#if 0
   gpp_container = static_cast<OCPI::Container::Interface*>(d);
   ocpiAssert( dynamic_cast<OCPI::Container::Interface*>(d) );
   gpp_event_manager = gpp_container->getEventManager();
   gpp_app = gpp_container->createApplication();
-
+#else
+      try { 
+	gpp_container =  OCPI::API::ContainerManager::find("rcc", NULL, container_props);
+	if ( ! gpp_container)
+	  throw OCPI::Util::EmbeddedException("No Containers found\n");
+	gpp_app = gpp_container->createApplication();
+      }
+      CATCH_ALL_RETHROW( "creating container");
+#endif
 
   try {
 
@@ -461,27 +440,13 @@ int gpp_cont(int argc, char** argv)
     }
     CATCH_ALL_RETHROW("setting mode");
 
-    WCI_error wcie;
     try {
 
       // Enable the workers
-      wcie = WORKER_OUTPUT_ID->control(  WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
-      CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_INITIALIZE );
-
-      wcie = WORKER_INPUT_ID->control(  WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
-      CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_INITIALIZE );
-
-      wcie = WORKER_OUTPUT_ID->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-      CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG );
-
-      wcie = WORKER_INPUT_ID->control( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT );
-      CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_AFTER_CONFIG );
-
-      wcie = WORKER_OUTPUT_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
-      CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_START );
-
-      wcie = WORKER_INPUT_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
-      CHECK_WCI_CONROL_ERROR( wcie, WCI_CONTROL_START );
+      WORKER_OUTPUT_ID->afterConfigure();
+      WORKER_INPUT_ID->afterConfigure();
+      WORKER_OUTPUT_ID->start();
+      WORKER_INPUT_ID->start();
 
     }
     CATCH_ALL_RETHROW("initializing workers");
@@ -493,15 +458,19 @@ int gpp_cont(int argc, char** argv)
     OCPI::OS::uint64_t evalue;
     int OCPI_RUN_TEST = 1;
 
+#if 0
     if ( gpp_event_manager ) {
       printf("Running with an event manager\n");
     }
     else {
       printf("Running without a event manager\n");
     }
+#endif
 
     while( OCPI_RUN_TEST ) {
 
+      gpp_container->run(100, true);
+#if 0
       if ( gpp_event_manager ) {
         do {
           gpp_container->dispatch( gpp_event_manager);
@@ -517,6 +486,7 @@ int gpp_cont(int argc, char** argv)
       else {
         gpp_container->dispatch( gpp_event_manager );
       }
+#endif
 
       OCPI::OS::sleep( 500 );
       lc++;
@@ -536,7 +506,7 @@ int gpp_cont(int argc, char** argv)
     // Cleanup
     OCPI::OS::sleep( 3000 );
     delete gpp_app;
-    gpp_container->stop( gpp_event_manager );
+    gpp_container->stop();
     delete gpp_container;
     gpp_container = NULL;
 

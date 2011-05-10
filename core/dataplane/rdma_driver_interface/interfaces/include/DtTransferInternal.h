@@ -58,7 +58,7 @@
 #include <OcpiList.h>
 #include <DtHandshakeControl.h>
 #include <DtExceptions.h>
-#include <OcpiDriver.h>
+#include <OcpiDriverManager.h>
 #include <DtTransferInterface.h>
 #include <DtSharedMemoryInternal.h>
 
@@ -116,25 +116,31 @@ namespace DataTransfer {
 
   };
 
-  // This is the transfer factory manager class. 
-  class XferFactoryManager : public OCPI::Util::DriverManager {
-
+  // This is the transfer factory manager
+  // - the driver manager for transfer drivers
+  extern const char *transfer;
+  class XferFactoryManager : 
+    public OCPI::Driver::ManagerBase<XferFactoryManager, XferFactory, transfer>,
+    public FactoryConfig
+  {
   public:
     friend class XferFactory;
-    static XferFactoryManager& getFactoryManager();
+    inline static XferFactoryManager& getFactoryManager() {
+      return getSingleton();
+    }
+    inline uint32_t getSMBSize() { return m_SMBSize; }
 
-    // This method is used to retreive all of the available endpoints that have been registered
-    // in the system.  Note that some of the endpoints may not be finalized. 
+    // This method is used to retreive all of the available endpoints that have been
+    // registered in the system.  Note: some of the endpoints may not be finalized. 
     std::vector<std::string> getListOfSupportedEndpoints();  
     std::vector<std::string> getListOfSupportedProtocols();  
 
     // This method allocates an endpoint based upon the requested protocol.  The size is the
     // requested size of the memory block to associate with the endpoint, this call is responsible
     // for setting the actual size that was allocated.
-    std::string allocateEndpoint(std::string& protocol, OCPI::Util::Device * device=NULL, OCPI::Util::PValue * props=NULL);
+    std::string allocateEndpoint(std::string& protocol, const OCPI::Util::PValue *props=NULL);
 
-
-    // Configure the drivers
+    // Configure the manager and it drivers
     void configure(  ezxml_t config );
 
     // Create a transfer compatible SMB and associated resources
@@ -157,27 +163,14 @@ namespace DataTransfer {
     XferServices* getService(std::string& s_endpoint,  std::string& t_endpoint);        
     XferServices* getService(EndPoint *s_endpoint, EndPoint *t_endpoint);        
 
-    // Register the Data transfer class
-    void registerFactory( XferFactory* dt );
-
-    // UnRegister the Data transfer class
-    void unregisterFactory( XferFactory* dt );
-
-    // Get the FM system configuration object
-    FactoryConfig & getConfig(){return *m_config;}
-
-
-  protected:
-
     // Constructors/Destructors
     XferFactoryManager();
     ~XferFactoryManager();
 
+  protected:
+
     // Clears all cached data
     void clearCache();
-
-    void checkConf();
-    FactoryConfig * m_config;
 
     // Starts up the transfer sub-system
     void startup();
@@ -189,19 +182,19 @@ namespace DataTransfer {
     int add_template(std::string& src, std::string& dst, XferServices* xf_template);
     SMBResources* findResource(const char* );
     
-    // List of registered services
-    List m_registeredTransfers;
-
     // Reference counter
     OCPI::OS::uint32_t m_refCount;
     bool               m_init;
     OCPI::OS::Mutex    m_mutex;
     OCPI::Util::VList  m_resources;
     List               m_templatelist;
+    FactoryConfig      m_config;
 
     bool            m_configured;
 
   };
+
+
 }
 
 #endif

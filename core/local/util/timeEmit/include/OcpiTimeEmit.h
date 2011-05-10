@@ -325,7 +325,7 @@ namespace OCPI {
                        EventType type=OCPI::Time::Emit::Transient,
                        DataType dt=OCPI::Time::Emit::u
                        );
-        RegisterEvent( OCPI::Util::PValue& pvstr );
+        RegisterEvent( OCPI::API::PValue& pvstr );
         static int registerEvent( const char* event_name,
                            int width=1, 
                            EventType type=OCPI::Time::Emit::Transient,
@@ -337,6 +337,8 @@ namespace OCPI {
       private:
         EventId m_eid;
 
+	// FIXME:  we can't possibly create a mutex for every event???
+	// FIXME:  which calls separate static destructors per event?
         OCPI::OS::Mutex m_mutex;
         
       };
@@ -398,7 +400,7 @@ namespace OCPI {
       // Trace method
       void emit( EventId id, OCPI::OS::uint64_t v, EventTriggerRole role=NoTrigger );
       void emit( EventId id, EventTriggerRole role=NoTrigger );
-      void emit( EventId id, OCPI::Util::PValue& p, EventTriggerRole role=NoTrigger );
+      void emit( EventId id, OCPI::API::PValue& p, EventTriggerRole role=NoTrigger );
 
       static Emit& getSEmit();
       static void sEmit( EventId id, OCPI::OS::uint64_t v, EventTriggerRole role=NoTrigger );

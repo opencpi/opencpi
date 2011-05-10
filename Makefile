@@ -69,7 +69,8 @@ include MakeVars.ocpi
 #
 
 PACKAGES += adapt/os/ocpios core/local/logger core/local/util
-PACKAGES += core/control/wci_api
+
+#PACKAGES += core/control/wci_api
 
 PACKAGES += \
 	 core/$(DATAPLANE)/rdma_driver_interface \
@@ -77,9 +78,12 @@ PACKAGES += \
 	 core/$(DATAPLANE)/rdma_smb \
 	 core/$(DATAPLANE)/rdma_drivers \
 	 core/$(DATAPLANE)/transport \
+	 core/application \
+	 core/library \
 	 core/container/interfaces \
-	 core/container/cp289_container \
-	 core/container/rpl_container \
+	 core/container/hdl_container \
+	 core/container/ocl_container \
+	 core/container/rcc_container \
 	 core/container/ctests \
 	 core/$(DATAPLANE)/rdma_tests
 
@@ -105,12 +109,12 @@ PACKAGES += tests/framework/framework
 # ----------------------------------------------------------------------
 #
 
+#	core/control/wci_api
 
 ALLPACKAGES = \
 	adapt/os/ocpios \
 	core/local/logger \
 	core/local/util \
-	core/control/wci_api \
 	core/corba/corba_util \
 	core/corba/orb_services \
 	core/$(DATAPLANE)/rdma_driver_interface \
@@ -118,10 +122,13 @@ ALLPACKAGES = \
 	core/$(DATAPLANE)/rdma_smb \
 	core/$(DATAPLANE)/rdma_drivers \
 	core/$(DATAPLANE)/transport \
+	core/library \
 	core/container/interfaces \
-	core/container/cp289_container \
-	core/container/rpl_container \
-	core/container/tests \
+	core/container/hdl_container \
+	core/container/ocl_container \
+	core/container/rcc_container \
+	core/container/ctests \
+	core/application \
 	core/sca/cf \
 	core/sca/cf_util \
 	core/sca/gpped \
@@ -223,8 +230,11 @@ diff.q:
 core/local/logger: adapt/os/ocpios
 core/local/util: core/local/logger
 core/$(DATAPLANE)/tests: \
-	core/container/cp289_container core/$(DATAPLANE)/transport \
-	core/$(DATAPLANE)/rdma_driver_interface core/control/wci_api
+	core/container/rcc_container core/$(DATAPLANE)/transport \
+	core/$(DATAPLANE)/rdma_driver_interface
+
+#core/control/wci_api
+
 core/corba/corba_util: core/corba/orb_services core/local/util
 core/sca/cf_util: core/sca/cf core/corba/corba_util core/corba/orb_services \
 	core/local/util
@@ -232,6 +242,6 @@ core/sca/sgac: core/sca/cf_util
 core/sca/gpped: core/sca/cf_util
 tools/local/binder: core/local/util
 tools/local/tester: \
-	core/container/cp289_container core/$(DATAPLANE)/transport \
-	core/$(DATAPLANE)/rdma_driver_interface core/control/wci_api
+	core/container/rcc_container core/$(DATAPLANE)/transport \
+	core/$(DATAPLANE)/rdma_driver_interface
 test: tools/local/binder tools/local/tester

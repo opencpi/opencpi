@@ -52,7 +52,6 @@
 #include <ProdWorker.h>
 #include <LoopbackWorker.h>
 #include <test_utilities.h>
-#include <OcpiDriver.h>
 #include <OcpiUtilCommandLineConfiguration.h>
 
 using namespace OCPI::Container;
@@ -70,10 +69,10 @@ int  OCPI_RCC_CONT_NBUFFERS      = 3;
 volatile int OCPI_RUN_TEST = 1;
 volatile int OCPI_YIELD = 1;
 
-static OCPI::Container::Interface*     gpp_container;
-static OCPI::Container::Application*   gpp_app;
-static OCPI::Container::Interface*     loopback_container;
-static OCPI::Container::Application*   loopback_app;
+static OCPI::API::Container*     gpp_container;
+static OCPI::API::ContainerApplication*   gpp_app;
+static OCPI::API::Container*     loopback_container;
+static OCPI::API::ContainerApplication*   loopback_app;
 
 Port *pc_inputPort, *pc_outputPort, *lb_inputPort, *lb_outputPort;
 
@@ -271,7 +270,7 @@ int server_connect(int port)
 }
 
 static 
-int swrite( std::string & s )
+void swrite( std::string & s )
 {
   uint32_t  l = s.size();
   write( socket_fd, &l, 4 );  
@@ -294,30 +293,26 @@ sread( std::string & s  )
 }
 
 static 
-void setupForPCMode()
+void setupForPCMode(const OCPI::API::PValue *props)
 {
   try {
-    WORKER_CONSUMER_ID = &gpp_app->createWorker( NULL,NULL, (const char*)&ConsumerWorkerDispatchTable, NULL );
-    WORKER_PRODUCER_ID = &gpp_app->createWorker( NULL,NULL, (const char*)&ProducerWorkerDispatchTable, NULL);
+    WORKER_CONSUMER_ID = OCPI::CONTAINER_TEST::createWorker(gpp_app, &ConsumerWorkerDispatchTable);
+    WORKER_PRODUCER_ID = OCPI::CONTAINER_TEST::createWorker(gpp_app,&ProducerWorkerDispatchTable );
   }
   CATCH_ALL_RETHROW( "creating workers" )
   try { 
     pc_outputPort = &WORKER_PRODUCER_ID->createOutputPort( 0,
                                                           OCPI_RCC_CONT_NBUFFERS,
-                                                          OCPI_RCC_DATA_BUFFER_SIZE, NULL);
+                                                          OCPI_RCC_DATA_BUFFER_SIZE, props);
   }
   CATCH_ALL_RETHROW( "creating output port" );
         
   try {
 
-    //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
-    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
-    //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
-                                                                                  OCPI::Util::PVEnd };
   pc_inputPort = &WORKER_CONSUMER_ID->createInputPort( 0,
                                                        OCPI_RCC_CONT_NBUFFERS,
                                                        OCPI_RCC_DATA_BUFFER_SIZE,
-                                                       c_port_props
+                                                       props
                                                        );
   }
   CATCH_ALL_RETHROW("creating input port")
@@ -352,11 +347,11 @@ void setupForPCMode()
 }
 
 static 
-void setupForLoopbackMode() 
+void setupForLoopbackMode(const OCPI::API::PValue *props)
 {
   printf("*** Create worker\n");
   try {
-    WORKER_LOOPBACK_ID = &loopback_app->createWorker(NULL,NULL, (const char*)&LoopbackWorkerDispatchTable, NULL );
+    WORKER_LOOPBACK_ID = OCPI::CONTAINER_TEST::createWorker(loopback_app, &LoopbackWorkerDispatchTable);
   }
   CATCH_ALL_RETHROW( "creating workers");
 
@@ -364,15 +359,15 @@ void setupForLoopbackMode()
   try {
     lb_outputPort = &WORKER_LOOPBACK_ID->createOutputPort( 0,
                                                           OCPI_RCC_CONT_NBUFFERS,
-                                                          OCPI_RCC_DATA_BUFFER_SIZE, NULL);
+                                                          OCPI_RCC_DATA_BUFFER_SIZE, props);
 
-    //        static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
-    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
-                                               OCPI::Util::PVEnd };
+    //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
+    //						//static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
+    //                                               OCPI::Util::PVEnd };
     lb_inputPort = &WORKER_LOOPBACK_ID->createInputPort( 1,
 							 OCPI_RCC_CONT_NBUFFERS,
                                                          OCPI_RCC_DATA_BUFFER_SIZE,
-                                                         c_port_props
+                                                         props
                                                          );
   }
   CATCH_ALL_RETHROW( "creating ports");
@@ -397,7 +392,7 @@ void setupForLoopbackMode()
   CATCH_ALL_RETHROW( "connecting ports");
 
 }
-
+#if 0
 static 
 bool parseArgs( int argc, char** argv)
 {
@@ -410,10 +405,9 @@ bool parseArgs( int argc, char** argv)
   }
   return ret;
 }
-
-extern OCPI::Util::DriverManager dm;
+#endif
 static 
-int gpp_cont(int /* argc */, char** /* argv */)
+int gpp_cont(int /* argc */, char** /* argv */, const char *protocol)
 {
 
   DataTransfer::EventManager* event_manager = NULL;
@@ -424,54 +418,51 @@ int gpp_cont(int /* argc */, char** /* argv */)
           OCPI::Util::PVBool("polling",1),
           OCPI::Util::PVEnd };
 
-        dm.discoverDevices(0,0);
+      OCPI::API::Container *c;
+      OCPI::API::ContainerApplication *a;
 
+      try { 
+	c =  OCPI::API::ContainerManager::find("rcc", NULL, cprops);
+	if ( ! c )
+	  throw OCPI::Util::EmbeddedException("No Containers found\n");
+	a = c->createApplication();
+      }
+      CATCH_ALL_RETHROW( "creating container");
 
-      // First thing here on the GPP container is that we need to create the workers and
+      
       // the worker ports.  We will use OCPIRDT mode 3 for this test. 
       if ( ! loopback ) {
-        try { 
-
-          // Create the container
-          OCPI::Util::Device* d = dm.getDevice( cprops, "RCC");
-          if ( ! d ) {
-            throw OCPI::Util::EmbeddedException("No Containers found\n");
-          }
-          gpp_container = static_cast<OCPI::Container::Interface*>(d);
-          gpp_app = gpp_container->createApplication();
-
-        }
-        CATCH_ALL_RETHROW( "creating container");
-
+          gpp_container = c;
+          gpp_app = a;
       }
       else {
-
-        OCPI::Util::Device* d = dm.getDevice( cprops, "RCC" );
-        if ( ! d ) {
-          throw OCPI::Util::EmbeddedException("No Containers found\n");
-        }
-        loopback_container = static_cast<OCPI::Container::Interface*>(d);
-        loopback_app = loopback_container->createApplication();
-
+        loopback_container = c;
+	loopback_app = a;
       }
 
+      
       // We can either take on the role of the producer/consumer or the loopback
+      OCPI::Container::Worker *worker;
+      //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
+      // static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
+      // static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
+      const OCPI::API::PValue port_props[] = {OCPI::Util::PVString("protocol", protocol),
+					       OCPI::Util::PVEnd };
       if ( loopback ) {
-        setupForLoopbackMode();
-        WORKER_LOOPBACK_ID->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
-        WORKER_LOOPBACK_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
+        setupForLoopbackMode(port_props);
+	worker = WORKER_LOOPBACK_ID;
+        WORKER_LOOPBACK_ID->start();
       }
       else {
         try {
-          setupForPCMode();
+          setupForPCMode(port_props);
         }
         CATCH_ALL_RETHROW("setting mode");
 
+	worker = WORKER_CONSUMER_ID;
         try {
-          WORKER_PRODUCER_ID->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
-          WORKER_PRODUCER_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
-          WORKER_CONSUMER_ID->control( WCI_CONTROL_INITIALIZE, WCI_DEFAULT );
-          WORKER_CONSUMER_ID->control( WCI_CONTROL_START, WCI_DEFAULT );
+          WORKER_PRODUCER_ID->start();
+          WORKER_CONSUMER_ID->start();
         }
         CATCH_ALL_RETHROW("initializing workers");
 
@@ -486,25 +477,13 @@ int gpp_cont(int /* argc */, char** /* argv */)
         printf("Running without a event manager\n");
       }      
       
+      unsigned count = 0;
       while( OCPI_RUN_TEST ) {
-        if (!loopback) {
-          if ( event_manager ) {
-            do {
-              gpp_container->dispatch(event_manager);
-            } while(1);
-          }
-          else {
-            gpp_container->dispatch( event_manager );
-          }
-        }
-        else {
-          loopback_container->dispatch( event_manager );
-        }
-
-	// Give the network driver some time
-	OCPI::OS::sleep( 0 );        
-
-      }
+	uint32_t sofar;
+	worker->read(0, sizeof(uint32_t), &sofar);
+	fprintf(stderr, " %u%s", sofar, ++count%10 ? "" : "\n");
+	sleep(2);
+      }	
 
       // Cleanup
       if ( loopback ) {
@@ -585,12 +564,13 @@ int main( int argc, char** argv)
   if ( config.show_drivers ) {
     exit(1);
   }
-  if ( config.protocol_index > 0 ) {
+  if ( config.protocol_index >= 0 ) {
     if ( config.protocol_index >= (int)protolist.size() ) {
       printf("Invalid --pe argument, maximum value is %d\n", (int)protolist.size() );
       exit(-1);
     }
     std::string p = protolist[config.protocol_index];
+    config.protocol = p;
     std::vector<std::string>::iterator it;
     int n=0;
     for ( it=eplist.begin(); it!=eplist.end(); it++ ) {      
@@ -617,7 +597,7 @@ int main( int argc, char** argv)
   }
 
   // Start the container in a thead
-  gpp_cont(argc,argv);
+  gpp_cont(argc,argv, config.protocol.c_str());
 
 }
 

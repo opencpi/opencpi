@@ -43,6 +43,7 @@
 # file extension.
 # We also list the targets per model.
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 ifndef LibName
 LibName=$(CwdName)
 endif
@@ -62,12 +63,14 @@ ifneq "$(XmTargets)" ""
 build_targets += xm
 endif
 
-ifneq "$(RccTargets)" ""
+ifneq ($(RccImplementations),)
 build_targets += rcc
 endif
 
-ifneq "$(HdlTargets)" ""
+ifneq ($(HdlTargets),)
+ifneq ($(HdlImplementations),)
 build_targets += hdl
+endif
 endif
 $(call OcpiDbgVar,build_targets)
 # function to build the targets for an implemention.
@@ -106,16 +109,18 @@ CleanModel=\
   $(AT)if test "$($(call Capitalize,$(1))Implementations)"; then \
     for i in $($(call Capitalize,$(1))Implementations); do \
       if test -d $$i; then \
-	tn=$(call Capitalize,$(1)); \
+	tn=$(call Capitalize,$(1))Targets; \
         t="$($(call Capitalize,$(1))Targets)"; \
-        $(ECHO) Cleaning $(call ToUpper,$(1)) implementation $$i for targets $$t; \
+        $(ECHO) Cleaning $(call ToUpper,$(1)) implementation $$i for targets: $$t; \
 	$(MyMake) -C $$i $(PassOutDir) \
            OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) $$tn="$$t" clean; \
       fi;\
     done; \
   fi
 
-all: $(build_targets)
+
+all: workers
+workers: $(build_targets)
 
 $(OutDir)lib:
 	$(AT)mkdir $@
@@ -191,9 +196,11 @@ $(error The worker "$(Worker)" already exists)
 endif
 Name:=$(word 1,$(Words))
 UCModel=$(call ToUpper,$(Model))
-SpecName:=$(Name)_spec.xml
-ifeq ($(wildcard specs/$(SpecName)),)
-$(error Can't create worker $(Worker) when specs/$(SpecName) doesn't exist)
+ifndef SpecFile
+SpecFile:=specs/$(Name)_spec.xml
+endif
+ifeq ($(wildcard $(SpecFile)),)
+$(error Can't create worker $(Worker) when spec file: $(SpecFile) doesn't exist)
 endif
 else ifdef Worker
 $(error Worker definition invalid)
@@ -206,7 +213,7 @@ new:
 	$(AT)echo include $$\(OCPI_CDK_DIR\)/include/worker.mk > $(Worker)/Makefile
 	$(AT)(\
 	  echo '<$(UCModel)Implementation>';\
-	  echo '  <xi:include href="$(SpecName)"/>';\
+	  echo '  <xi:include href="$(notdir $(SpecFile))"/>';\
 	  echo '</$(UCModel)Implementation>') > $(Worker)/$(Name).xml
 	$(AT)echo Building worker to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model))
 	$(AT)$(MAKE) -C $(Worker) \

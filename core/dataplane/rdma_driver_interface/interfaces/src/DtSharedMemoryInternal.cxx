@@ -50,12 +50,12 @@
 ************************************************************************** */
 
 
-#include <DtTransferInternal.h>
-#include <DtSharedMemoryInternal.h>
 #include <string.h>
-#include <OcpiUtilHash.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <DtTransferInternal.h>
+#include <DtSharedMemoryInternal.h>
+#include <OcpiUtilHash.h>
 #include <OcpiRes.h>
 #include <OcpiOsAssert.h>
 #include <OcpiRDTInterface.h>
@@ -64,7 +64,7 @@ using namespace DataTransfer;
 
 SmemServices::
 SmemServices (XferFactory * parent, EndPoint* ep)
-  :OCPI::Util::Child<XferFactory,SmemServices>(*parent), m_endpoint(ep)
+  : OCPI::Util::Child<XferFactory,SmemServices>(*parent), m_endpoint(ep)
 {
 
 }
@@ -80,7 +80,7 @@ EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
   :smem(0),mailbox(0),maxCount(0),size(psize),local(l),resources(0)
 {
   if ( ! size ) {
-    size = XferFactoryManager::getFactoryManager().getConfig().m_SMBSize;
+    size = XferFactoryManager::getFactoryManager().getSMBSize();
   }
   setEndpoint( end_point);
 }

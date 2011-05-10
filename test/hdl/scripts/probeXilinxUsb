@@ -50,8 +50,9 @@ if test $? == 0; then
       w $tmp
 EOF
       myport=`cat $tmp`
+      myportlc=`echo $myport | tr A-Z a-z`
       if [[ $myport == USB* ]]; then
-         echo USB Cable Connection verified on port $myport.
+         echo USB Cable Connection verified on port $myportlc.
 	 anyport=yes
       else
 	 echo USB Cable Connection on port $p verified, but actual port not discovered \(port = $myport\?\)
@@ -67,6 +68,7 @@ else
 fi
 any=
 for pos in 1 2 3 4 5 6 7 8 9; do
+#  echo Trying position $pos
   echo setMode -bs/setCable -p $p/identify/readidcode -p $pos | tr / \\n | $imp  2> $tlog 1>&2
   last=$?
   #echo status:$? $tlog 
@@ -80,27 +82,51 @@ for pos in 1 2 3 4 5 6 7 8 9; do
       w $tmp
 EOF
     mypart=`cat $tmp`
-#    ed $tlog <<EOF > /dev/null 2>&1
-#      $
-#      ?: Usercode is ?
-#      s/^.*Usercode is '\([^']*\)'.*\$/\1/p
-#      1,-d
-#      2,\$d
-#      w $tmp
-#EOF
-#    myusercode=`cat $tmp`
-    echo Part at position $pos on $myport: $mypart
-    mv $tlog $tlog.$myport.$pos
-    any=yes
+    echo -n Part at position $pos on $myportlc: Part $mypart
+    echo setMode -bs/setCable -p $p/identify/readidcode -p $pos/readusercode -p $pos | tr / \\n | $imp  2> $tlog 1>&2
+    last=$?
+    if test $last == 0; then
+      ed $tlog <<EOF > /dev/null 2>&1
+        $
+        ?: Usercode is ?
+        s/^.*Usercode is '\([^']*\)'.*\$/\1/p
+        1,-d
+        2,\$d
+        w $tmp
+EOF
+      myusercode=`cat $tmp`
+      echo -n ', 'UserID code is $myusercode
+      #cat $tlog
+      #mv $tlog $tlog.$myport.$pos
+      any=yes
+    else
+      echo -n ', no UserID'
+    fi
+    echo setMode -bs/setCable -p $p/identify/readdna -p $pos | tr / \\n | $imp  2> $tlog 1>&2
+    last=$?
+    if test $last == 0; then
+      #cat $tlog
+      ed $tlog <<EOF > /dev/null 2>&1
+        $
+        ?ESN option:?
+        s/^.*ESN option: *\([^.]*\).*\$/\1/p
+        1,-d
+        2,\$d
+        w $tmp
+EOF
+      mydna=`cat $tmp`
+      echo ', 'DNA code is $mydna
+    else
+      echo ', 'no DNA code
+    fi
   else
     if [[ $any == "" ]]; then
-      echo Didn\'t find any parts at any position.
-      bad
+      echo No part with user id at position $pos
     fi
   fi
 done
 if [[ $any != yes ]]; then
-  echo No valid positions found on port $myport.
+  echo No valid positions found on port $myportlc.
 fi
 done
 if [[ $anyport != yes ]]; then

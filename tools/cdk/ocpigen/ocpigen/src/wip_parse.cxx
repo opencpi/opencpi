@@ -109,30 +109,37 @@ dumpDeps(const char *top) {
   return 0;
 }
 
- const char *
-parseFile(const char *file, const char *parent, const char *element, ezxml_t *xp,
-	  const char **xfile, bool optional) {
+const char *
+parseFile(const char *file, const char *parent, const char *element,
+	  ezxml_t *xp, const char **xfile, bool optional) {
+  char *myFile;
+  const char *slash = strrchr(file, '/');
+  const char *dot = strrchr(file, '.');
+  if (!dot || slash && slash > dot)
+    asprintf(&myFile, "%s.xml", file);
+  else
+    myFile = strdup(file);
   const char *cp = parent ? strrchr(parent, '/') : 0;
-  if (file[0] != '/' && cp)
+  if (myFile[0] != '/' && cp)
     asprintf((char**)&cp, "%.*s%s", (int)(cp - parent + 1), parent, file);
   else
-    cp = file;
+    cp = myFile;
   int fd = open(cp, O_RDONLY);
   if (fd < 0) {
     // file was not where parent file was, and not local.
-    // Try the incude paths
-    if (file[0] != '/' && includes) {
+    // Try the include paths
+    if (myFile[0] != '/' && includes) {
       for (const char **ap = includes; *ap; ap++) {
 	if (!(*ap)[0] || !strcmp(*ap, "."))
-	  cp = file;
+	  cp = myFile;
 	else
-	  asprintf((char **)&cp, "%s/%s", *ap, file);
+	  asprintf((char **)&cp, "%s/%s", *ap, myFile);
 	if ((fd = open(cp, O_RDONLY)) >= 0)
 	  break;
       }
     }
     if (fd < 0)
-      return esprintf("File \"%s\" could not be opened for reading/parsing", cp);
+      return esprintf("File \"%s\" could not be opened for reading/parsing", file);
   }
   if (xfile)
     *xfile = cp;
@@ -332,7 +339,7 @@ doImplProp(ezxml_t prop, void *arg) {
   Property *p = w->ctl.properties;
   bool found = false;
   for (unsigned n = 0; n < w->ctl.nProperties; n++, p++)
-    if (!strcmp(p->name, name)) {
+    if (!strcmp(p->m_name, name)) {
       found = true;
       break;
     }
@@ -1052,7 +1059,7 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
 	return "PropertyValue has no \"Name\" attribute";
       Property *p = i->worker->ctl.properties;
       for (unsigned n = 0; n < i->worker->ctl.nProperties; n++, p++)
-	if (!strcmp(p->name, name)) {
+	if (!strcmp(p->m_name, name)) {
 	  ipv->property = p;
 	  break;
 	}

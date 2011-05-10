@@ -48,17 +48,17 @@
 #ifndef DataTransfer_PCI_PioTransfer_H_
 #define DataTransfer_PCI_PioTransfer_H_
 
-#include <OcpiOsDataTypes.h>
-#include <DtTransferInterface.h>
-#include <xfer_if.h>
-
-#include "DtSharedMemoryInterface.h"
 #include <map>
 #include <vector>
 #include <string>
-#include "DtExceptions.h"
+#include <OcpiOsDataTypes.h>
 #include <OcpiOsMutex.h>
-
+#include <DtDriver.h>
+#include <DtTransferInterface.h>
+#include <xfer_if.h>
+#include "DtSharedMemoryInterface.h"
+#include "DtExceptions.h"
+#include "DtPioXfer.h"
 
 namespace OCPI {
   namespace OS {
@@ -177,7 +177,11 @@ namespace DataTransfer {
    * implementation creates a named resource compatible SMB and a programmed I/O
    * based transfer driver.
    *********************************/
-  class PCIPIOXferFactory : public XferFactory {
+  class PCIPIOXferFactory;
+  class PCIPIODevice : public OCPI::Driver::DeviceBase<PCIPIOXferFactory,PCIPIODevice> {
+  };
+  extern const char *pci;
+  class PCIPIOXferFactory : public DriverBase<PCIPIOXferFactory, PCIPIODevice,PIOXferServices,pci> {
 
   public:
 
@@ -220,7 +224,7 @@ namespace DataTransfer {
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint( OCPI::Util::Device * d=NULL, OCPI::Util::PValue *props=NULL);
+    std::string allocateEndpoint( const OCPI::Util::PValue *props=NULL);
 
     /***************************************
      *  This method is used to flush any cached items in the factoy

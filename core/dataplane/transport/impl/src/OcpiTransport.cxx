@@ -76,7 +76,7 @@ struct GEndPoint {
 
 
 static uint32_t         g_nextCircuitId=0;
-OCPI::OS::Mutex     OCPI::DataTransport::Transport::m_mutex(true);
+//OCPI::OS::Mutex     OCPI::DataTransport::Transport::m_mutex(true);
 OCPI::Util::VList   OCPI::DataTransport::Transport::m_cached_transfers;
 OCPI::Util::VList   OCPI::DataTransport::Transport::active_transfers;
 
@@ -95,10 +95,12 @@ getListOfSupportedEndpoints()
 }
 
 
+// FIXME have recursive mutex with default constructor
 // Constructors
 OCPI::DataTransport::Transport::
 Transport( TransportGlobal* tpg, bool uses_mailboxes )
-  : OCPI::Time::Emit("Transport"), m_uses_mailboxes(uses_mailboxes), m_transportGlobal(tpg)
+  : OCPI::Time::Emit("Transport"), m_mutex(*new OCPI::OS::Mutex(true)),
+    m_uses_mailboxes(uses_mailboxes), m_transportGlobal(tpg)
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
@@ -194,7 +196,7 @@ struct MailBoxLock {
 
 OCPI::DataTransport::Transport::~Transport()
 {
-
+  {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   OCPI::OS::uint32_t m;
 
@@ -217,9 +219,9 @@ OCPI::DataTransport::Transport::~Transport()
   m_mailbox_locks.destroyList();
 
   // Remove our children before our reference is removed
-  Circuit * c = static_cast<Circuit *>(firstChild());
+  Circuit * c = firstChild();
   while ( c ) {
-    Circuit * next_c =  static_cast<Circuit *>(nextChild( c ));
+    Circuit * next_c =  c->nextChild();
     c->release();
     c = next_c;
   }
@@ -231,6 +233,8 @@ OCPI::DataTransport::Transport::~Transport()
   for ( n=0; n<m_localEndpoints.getElementCount(); n++ ) { 
     delete static_cast<GEndPoint*>(m_localEndpoints[n]);
   }
+  }
+  delete &m_mutex;
 }
 
 
@@ -1044,9 +1048,9 @@ getEndpointFromProtocol( const char* protocol )
   XferFactory* tfactory = 
     XferFactoryManager::getFactoryManager().find( loc, nuls );
   if ( !tfactory ) {
-    return NULL;
+    return "";
   }
-  std::string sep = tfactory->allocateEndpoint( NULL, NULL );
+  std::string sep = tfactory->allocateEndpoint( NULL );
   return addLocalEndpoint( sep.c_str() ) ->sMemServices->endpoint()->end_point; 
 
 }

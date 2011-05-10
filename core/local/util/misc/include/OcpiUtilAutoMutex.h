@@ -74,7 +74,7 @@ namespace OCPI {
        * shall not manipulate \a mutex directly.
        */
 
-      AutoMutex (OCPI::OS::Mutex & mutex, bool locked = true)
+      AutoMutex(OCPI::OS::Mutex & mutex, bool locked = true)
         throw (std::string);
 
       /**

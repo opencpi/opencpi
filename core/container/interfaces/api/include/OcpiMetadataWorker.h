@@ -57,8 +57,10 @@
 #include <OcpiUtilProperty.h>
 #include "ezxml.h"
 
+//!!!!!!! There is also this list in the OcpiContainerApi.h
+#define CONTROL_OP_I CONTROL_OP
 #define OCPI_CONTROL_OPS                                                        \
-  CONTROL_OP(initialize,     Initialize,     INITIALIZED, EXISTS,      NONE,        NONE) \
+  CONTROL_OP_I(initialize,   Initialize,     INITIALIZED, EXISTS,      NONE,        NONE) \
   CONTROL_OP(start,          Start,          OPERATING,   SUSPENDED,   INITIALIZED, NONE) \
   CONTROL_OP(stop,           Stop,           SUSPENDED,   OPERATING,   NONE,        NONE) \
   CONTROL_OP(release,        Release,        EXISTS,      INITIALIZED, OPERATING,   SUSPENDED) \
@@ -70,13 +72,14 @@
 namespace OCPI {
   namespace Metadata {
 
+    typedef uint32_t PortOrdinal;
     class Port {
       friend class Worker;
       // Describe a port
-      bool decode(ezxml_t x, int pid);
+      bool decode(ezxml_t x, PortOrdinal ord);
     public:
       const char *   name;
-      int            m_pid;
+      PortOrdinal    ordinal;
       bool           provider;
       bool           twoway;
 
@@ -90,7 +93,7 @@ namespace OCPI {
 
       ezxml_t        myXml;
 
-    Port(bool prov=true): name(NULL),m_pid(0),provider(prov),twoway(false), minBufferSize(DEFAULT_BUFFER_SIZE), minBufferCount(1), maxBufferSize(0), myXml(0){}
+    Port(bool prov=true): name(NULL),ordinal(0),provider(prov),twoway(false), minBufferSize(DEFAULT_BUFFER_SIZE), minBufferCount(1), maxBufferSize(0), myXml(0){}
 
     };
 
@@ -121,7 +124,7 @@ namespace OCPI {
         ocpiAssert(which < nProps);
         return myProps[which];
       }
-      Port *findPort(const char *id);
+      Port *findMetaPort(const char *id);
       inline Port & 
         port(unsigned long which) 
       {
@@ -141,12 +144,12 @@ namespace OCPI {
         UNUSABLE,
         NONE
       };
+      enum ControlOperation {
 #define CONTROL_OP(x, c, t, s1, s2, s3)  Op##c,
-      enum Ops {
       OCPI_CONTROL_OPS
+#undef CONTROL_OP
       OpsLimit
       };
-#undef CONTROL_OP
       Property &findProperty(const char *id);
       unsigned whichProperty(const char *id);
       //      Worker(const char *workerMetadata);
@@ -154,13 +157,5 @@ namespace OCPI {
       ~Worker();
     };
   }
-#if 0
-  namespace Container {
-    class ApiError : public OCPI::Util::EmbeddedException {
-    public:
-      ApiError(const char *err, ...);
-    };
-  }
-#endif
 }
 #endif

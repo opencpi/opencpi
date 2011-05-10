@@ -38,7 +38,7 @@
    @file
 
    @brief
-   The OCPI::Container::Interface class is used to defined the API for Container implementations.
+   The OCPI::Container::Container class as the base class for Container implementations.
 
    Revision History:
 
@@ -55,44 +55,42 @@
 
 #include <vector>
 #include <OcpiOsDataTypes.h>
-#include <OcpiDriver.h>
 #include <OcpiParentChild.h>
-#include <OcpiContainerDataTypes.h>
-#include <OcpiContainerApplication.h>
-
-
+#include <OcpiOsThreadManager.h>
+#include "OcpiUtilSelfMutex.h"
 #include <DtIntEventHandler.h>
-
+#include <OcpiContainerDataTypes.h>
+#include <OcpiContainerApi.h>
+#include <OcpiLibraryManager.h>
 
 namespace OCPI {
 
-  namespace Util {
-    class PValue;
-  }
-
   namespace Container {
 
-    class Port;
+    class Driver;
     class PortData;
     class Application;
     class Artifact;
 
     /**
-       @class Interface
+       @class Container
 
        @brief
-       Container Interface class.
+       Container base class.
 
        This class provides the interface definition for container implementations.
 
-       @sa OCPI::Container::Interface
+       @sa OCPI::Container::Container
 
        ********************************************************************** */
-    class Interface : public OCPI::Util::Parent<Application>, public OCPI::Util::Parent<Artifact>, public OCPI::Util::Device
+    class Artifact; // the class representing a loaded artifact on the container
+    class Container
+      : public OCPI::API::Container, public OCPI::Library::Capabilities, virtual protected OCPI::Util::SelfMutex
     {
 
+      bool runInternal(uint32_t usecs = 0, bool verbose = false);
     public:
-
+      virtual Driver &driver() = 0;
 
       //!< Dispatch thread return codes
       enum DispatchRetCode {
@@ -101,10 +99,6 @@ namespace OCPI {
         DispatchNoMore,   // No more dispatching required
         Stopped           // Container is stopped
       };
-
-      //!< Default constructor
-      Interface(OCPI::Util::Driver &, const char *)
-        throw ( OCPI::Util::EmbeddedException );
 
       /**
          @brief
@@ -116,12 +110,13 @@ namespace OCPI {
          @throw  OCPI::Util::EmbeddedException  If an error is detected during construction
 
          ****************************************************************** */
-      Interface( OCPI::Util::Driver &, const char *, const OCPI::Util::PValue* props )
+      Container(const OCPI::Util::PValue* props = NULL)
         throw ( OCPI::Util::EmbeddedException );
 
-      //!< Destructor
-      virtual ~Interface()
-        throw ( );
+      ~Container();
+      // These are the two things managed by the class that inherits me
+      //      virtual Driver *myDriver() = 0;
+      //      virtual const std::string &myName() = 0;
 
       /**
          @brief
@@ -132,9 +127,9 @@ namespace OCPI {
          @throw OCPI::Util::EmbeddedException  If an error is detected during the creation of the .
 
          ****************************************************************** */        
-      virtual Application * createApplication()
-        throw ( OCPI::Util::EmbeddedException );
-
+      virtual OCPI::API::ContainerApplication *
+	createApplication(const char *name = NULL, const OCPI::Util::PValue *props = NULL)
+        throw ( OCPI::Util::EmbeddedException ) = 0;
 
       /**
          @brief
@@ -146,10 +141,8 @@ namespace OCPI {
       virtual std::vector<std::string> getSupportedEndpoints()
         throw ();
 
-
       OCPI::Util::PValue *getProperties();
       OCPI::Util::PValue *getProperty(const char *);
-
 
       /**
          @brief
@@ -166,13 +159,25 @@ namespace OCPI {
          @throw OCPI::Util::EmbeddedException  If an error is detected during dispatch
 
          ****************************************************************** */        
-      virtual DispatchRetCode dispatch(DataTransfer::EventManager* event_manager)
+      virtual DispatchRetCode dispatch(DataTransfer::EventManager*)
         throw ( OCPI::Util::EmbeddedException );
+      bool run(uint32_t usecs = 0, bool verbose = false);
+      void thread();
+      virtual bool needThread() = 0;
 
-      Artifact & loadArtifact(const char *url, OCPI::Util::PValue *artifactParams = 0);
-      virtual Artifact & createArtifact(const char *url, OCPI::Util::PValue *artifactParams = 0)=0;
+      // Load from url
+      Artifact & loadArtifact(const char *url,
+			      const OCPI::Util::PValue *artifactParams = NULL);
+      // Load from library artifact
+      Artifact & loadArtifact(OCPI::Library::Artifact &art,
+			      const OCPI::Util::PValue *artifactParams = NULL);
+      
+      virtual Artifact *findLoadedArtifact(const char *url) = 0;
+      virtual Artifact *findLoadedArtifact(const OCPI::Library::Artifact &a) = 0;
+      virtual Artifact &createArtifact(OCPI::Library::Artifact &,
+				       const OCPI::API::PValue *props = NULL) = 0;
 
-
+      
       /**
          @brief
          packPortDesc
@@ -186,7 +191,7 @@ namespace OCPI {
          @retval std::string packed port descriptor
 
          ****************************************************************** */
-      virtual std::string packPortDesc( PortData&  port )
+      static std::string packPortDesc( PortData&  port )
         throw ();
 
 
@@ -206,9 +211,9 @@ namespace OCPI {
          @retval bool true if method successful.
 
          ****************************************************************** */
-      virtual PortData * unpackPortDesc( const std::string& desc, PortData* desc_storage )
+      static PortData * unpackPortDesc( const std::string& desc, PortData* desc_storage )
         throw ();
-      virtual int portDescSize();
+      static int portDescSize();
 
      
       //!< Start/Stop the container
@@ -217,6 +222,8 @@ namespace OCPI {
       virtual void stop(DataTransfer::EventManager* event_manager)
         throw();
 
+      void stop();
+      void start();
       //! get the event manager for this container
       virtual DataTransfer::EventManager*  getEventManager(){return NULL;}
 
@@ -225,27 +232,17 @@ namespace OCPI {
       inline OCPI::OS::uint32_t getId(){return m_ourUID;}
 
     protected:
-      const std::string m_name;
+      void shutdown();
+      //      const std::string m_name;
 
       //! This containers unique id
       OCPI::OS::uint32_t m_ourUID;
 
       // Start/Stop flag for this container
-      bool m_start;
-
+      bool m_enabled;
+      bool m_ownThread;
+      OCPI::OS::ThreadManager *m_thread;
     };
-
-    /**********************************
-     ****
-     * inline declarations
-     ****
-     *********************************/
-    inline OCPI::Container::Interface::DispatchRetCode Interface::dispatch(DataTransfer::EventManager* event_manager)
-      throw ( OCPI::Util::EmbeddedException ) 
-    { 
-      (void) event_manager;
-       return OCPI::Container::Interface::DispatchNoMore;
-    }
   }
 }
 

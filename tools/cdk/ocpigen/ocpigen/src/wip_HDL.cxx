@@ -481,19 +481,20 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	  fprintf(f, "VHDL PARAMETERS HERE\n");
 	} else {
 	  int64_t i64 = 0;
-	  switch (pr->members->type.scalar) {
+	  if (pr->members->hasDefault)
+	    switch (pr->members->type.scalar) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
-	    case CP::Scalar::OCPI_##pretty: \
-	      i64 = (int64_t)pr->members->defaultValue.v##pretty; break;
-OCPI_PROPERTY_DATA_TYPES
+	      case CP::Scalar::OCPI_##pretty:	   \
+		i64 = (int64_t)pr->members->defaultValue.v##pretty; break;
+	      OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 	  default:;
 	  }
 	  unsigned bits =
 	    pr->members->type.scalar == CP::Scalar::OCPI_Bool ?
 	    1 : pr->members->bits;
-	  fprintf(f, "  parameter [%u:0] %s = %u'b%lld;\n",
-		  bits - 1, pr->name, bits, (long long)i64);
+	  fprintf(f, "  parameter [%u:0] %s = %u'h%llx;\n",
+		  bits - 1, pr->m_name, bits, (long long)i64);
 	}
       }
     // Now we emit the declarations (input, output, width) for each module port
@@ -698,15 +699,15 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	      if (!pr->isParameter)
 		if (w->language == VHDL) {
 		  fprintf(f,
-			  "  constant %-20s : Property_t := b\"", pr->name);
+			  "  constant %-20s : Property_t := b\"", pr->m_name);
 		  for (int b = p->ocp.MAddr.width-1; b >= 0; b--)
-		    fprintf(f, "%c", pr->offset & (1 << b) ? '1' : '0');
+		    fprintf(f, "%c", pr->m_offset & (1 << b) ? '1' : '0');
 		  fprintf(f, "\"; -- 0x%0*x\n",
-			  (int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
+			  (int)roundup(p->ocp.MAddr.width, 4)/4, pr->m_offset);
 		} else
 		  fprintf(f, "  localparam [%d:0] %sAddr = %d'h%0*x;\n",
-			  p->ocp.MAddr.width - 1, pr->name, p->ocp.MAddr.width,
-			  (int)roundup(p->ocp.MAddr.width, 4)/4, pr->offset);
+			  p->ocp.MAddr.width - 1, pr->m_name, p->ocp.MAddr.width,
+			  (int)roundup(p->ocp.MAddr.width, 4)/4, pr->m_offset);
 	  }
 	}
 	break;
@@ -1116,7 +1117,7 @@ OCPI_PROPERTY_DATA_TYPES
 	      pr->members->type.scalar == CP::Scalar::OCPI_Bool ?
 	      1 : pr->members->bits;
 	    fprintf(f, ".%s(%u'b%lld)",
-		    pr->name, bits, (long long)i64);
+		    pr->m_name, bits, (long long)i64);
 	  }
         }
       }
@@ -1198,7 +1199,7 @@ OCPI_PROPERTY_DATA_TYPES
 	    if (!signal)
 	      signal = strdup(externalName);
 	  } else {
-	    // A trule unconnected port.  All we want is a tieoff if it is an input
+	    // A truly unconnected port.  All we want is a tieoff if it is an input
 	    // We can always use zero since that will assert reset
 	    if (osd->master != ip->port->master)
 	      asprintf(&signal,"%u'b0", os->width);
@@ -1222,12 +1223,6 @@ OCPI_PROPERTY_DATA_TYPES
   for (unsigned i = 0; i < a->nWorkers; i++, ww++) {
     fprintf(f, "instance: %s\n"
     // Define the signals that are not already established as external to the assembly.
-    
-
-
-
-
-
     Port *p = ww->ports;
     for (unsigned i = 0; i < ww->nPorts; i++, p++) {
       if (!p->connection)
@@ -1593,9 +1588,8 @@ emitWorker(FILE *f, Worker *w)
     for (unsigned op = 0; op < NoOp; op++)
       if (op != ControlOpStart &&
 	  w->ctl.controlOps & (1 << op)) {
-	if (first)
-	  fprintf(f, " controlOperations=\"");
-	fprintf(f, "%s%s", first ? " controlOperations=\"" : ",", controlOperations[op]);
+	fprintf(f, "%s%s", first ? " controlOperations=\"" : ",",
+		controlOperations[op]);
 	first = false;
       }
     if (!first)
@@ -1609,20 +1603,20 @@ emitWorker(FILE *f, Worker *w)
   for (prop = w->ctl.properties, nn = 0; nn < w->ctl.nProperties; nn++, prop++) {
     if (prop->isParameter)
       continue;
-    fprintf(f, "<property name=\"%s\"", prop->name);
+    fprintf(f, "<property name=\"%s\"", prop->m_name);
     if (prop->members->type.scalar != CP::Scalar::OCPI_ULong)
       fprintf(f, " type=\"%s\"", CP::Scalar::names[prop->members->type.scalar]);
-    if (prop->isReadable)
+    if (prop->m_isReadable)
       fprintf(f, " readable=\"true\"");
-    if (prop->isWritable)
+    if (prop->m_isWritable)
       fprintf(f, " writable=\"true\"");
-    if (prop->needReadSync)
+    if (prop->m_readSync)
       fprintf(f, " readSync=\"true\"");
-    if (prop->needWriteSync)
+    if (prop->m_writeSync)
       fprintf(f, " writeSync=\"true\"");
-    if (prop->readError)
+    if (prop->m_readError)
       fprintf(f, " readError=\"true\"");
-    if (prop->writeError)
+    if (prop->m_writeError)
       fprintf(f, " writeError=\"true\"");
     if (prop->members->type.scalar == CP::Scalar::OCPI_String)
       fprintf(f, " size=\"%u\"", prop->members->type.stringLength);

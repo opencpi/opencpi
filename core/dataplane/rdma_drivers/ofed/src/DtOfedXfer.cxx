@@ -43,29 +43,30 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
-#include <getopt.h>
 #include <time.h>
-#include <string.h>
-#include <ezxml.h>
+#include <map>
 #include <list>
-
+#include <vector>
 #include <verbs.h>
+#include <ezxml.h>
 
 #include <OcpiOsDataTypes.h>
 #include <OcpiOsMutex.h>
-#include <DtTransferInterface.h>
-#include <DtSharedMemoryInterface.h>
-#include <DtSharedMemoryInternal.h>
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
 #include <OcpiUtilAutoMutex.h>
-#include <DtExceptions.h>
+#include <OcpiUtilEzxml.h>
 #include <OcpiPValue.h>
+#include <DtDriver.h>
+#include <DtTransferInterface.h>
+#include <DtSharedMemoryInternal.h>
+#include <DtExceptions.h>
 
 #define MASK_ADDR( x ) if(sizeof(char*)==4)((x) &= 0x00000000ffffffffL);
 
 using namespace OCPI::Util;
 using namespace OCPI::OS;
+namespace OX = OCPI::Util::EzXml;
 
 // Create tranfer services template
 const int MAX_TX_DEPTH = 8*1024;
@@ -77,13 +78,13 @@ namespace DataTransfer {
      * This is the Programmed I/O transfer request class
      *********************************/
     class XferServices;
-    class XferRequest : public DataTransfer::XferRequest
+    class XferRequest : public DataTransfer::TransferBase<XferServices,XferRequest>
     {
     public:
       friend class XferServices;
 
       // Constructor
-      XferRequest( XferServices *s);
+      XferRequest( XferServices &s);
 
       DataTransfer::XferRequest & group( DataTransfer::XferRequest* lhs );
       
@@ -119,13 +120,14 @@ namespace DataTransfer {
 
     // XferServices specializes 
     class SmemServices;
-    class XferServices : public DataTransfer::XferServices
+    class XferFactory;
+    class XferServices : public DataTransfer::ConnectionBase<XferFactory,XferServices,XferRequest>
     {
       friend class XferRequest;
     public:
 
       // Constructor
-      XferServices( XferFactory & parent, DataTransfer::SmemServices* source, DataTransfer::SmemServices* target);
+      XferServices( DataTransfer::SmemServices* source, DataTransfer::SmemServices* target);
 
       // Destructor
      virtual ~XferServices ();
@@ -248,13 +250,64 @@ namespace DataTransfer {
     };
 
 
+#define OFED_DEVICE_ATTRS \
+    "port", "hop_limit", "ibv_qp_timeout", "ibv_qp_retry_cnt", \
+    "ibv_qp_rnr_retry", "ibv_qp_rnr_timer"
+
+
+    // Configuration for both the driver (defaults) and the devices
+    class FactoryConfig
+    {
+    public:
+      // Constructor happens after the driver is configured so we have
+      // any XML as well as the parent's configuration available
+      // The xml passed in is for the driver or device
+      FactoryConfig()
+	: m_port(1),m_hopLimit(3),m_ibv_qp_timeout(14),m_ibv_qp_retry_cnt(12),
+	  m_ibv_qp_rnr_retry(1),m_ibv_qp_rnr_timer(14)
+      {}
+      void parse(FactoryConfig *defs, ezxml_t x)
+      {
+	if (defs)
+	  *this = *defs;
+	if (!x)
+	  return;
+#ifndef NDEBUG
+	printf("Processing device %s\n", ezxml_attr(x,"name") );
+#endif
+	const char *err;
+	if ((err = OX::checkAttrs(x, OFED_DEVICE_ATTRS, NULL)) ||
+	    (err = OX::getNumber(x, "port", &m_port, NULL, 0, false)) ||
+	    (err = OX::getNumber(x, "hop_limit", &m_hopLimit, NULL, 0, false)) ||
+	    (err = OX::getNumber8(x, "ibv_qp_timeout", &m_ibv_qp_timeout,
+				  NULL, 0, false)) ||
+	    (err = OX::getNumber8(x, "ibv_qp_retry_cnt", &m_ibv_qp_retry_cnt,
+				  NULL, 0, false)) ||
+	    (err = OX::getNumber8(x, "ibv_qp_rnr_retry", &m_ibv_qp_rnr_retry,
+				  NULL, 0, false)) ||
+	    (err = OX::getNumber8(x, "ibv_qp_rnr_timer", &m_ibv_qp_rnr_timer,
+				  NULL, 0, false)))
+	  throw err; // FIXME API configuration error exception
+      }
+ 
+      uint32_t m_port;
+      uint32_t m_hopLimit;
+      uint8_t  m_ibv_qp_timeout;
+      uint8_t  m_ibv_qp_retry_cnt;
+      uint8_t  m_ibv_qp_rnr_retry;
+      uint8_t  m_ibv_qp_rnr_timer;
+    };
+
     /**********************************
      * Each transfer implementation must implement a factory class.  This factory
      * implementation creates a named resource compatible SMB and a programmed I/O
      * based transfer driver.
      *********************************/
-    class FactoryConfig;
-    class XferFactory : public DataTransfer::XferFactory {
+    const char *ofed = "ofed"; // name passed to inherited template class
+    class XferFactory
+      : public DataTransfer::DriverBase<XferFactory, Device,XferServices,ofed>,
+	public FactoryConfig
+    {
 
     public:
 
@@ -266,14 +319,11 @@ namespace DataTransfer {
       virtual ~XferFactory()
 	throw ();
 
+      // Configuration
+      void configure(ezxml_t);
+
       // Get our protocol string
       inline const char* getProtocol(){return "ocpi-ofed-rdma";};
-
-      /***************************************
-       * Configure the factory using the specified xml data
-       ***************************************/
-      virtual void configure(  DataTransfer::FactoryConfig & config );
-
 
       /***************************************
        * This method is used to allocate a transfer compatible SMB
@@ -297,7 +347,8 @@ namespace DataTransfer {
        *  an endpoint for an application running on "this"
        *  node.
        ***************************************/
-      std::string allocateEndpoint(OCPI::Util::Device * device, OCPI::Util::PValue * props );
+      std::string allocateEndpoint(const OCPI::Util::PValue * props );
+      void allocateEndpoints(std::vector<std::string> &l);
 
       // From driver base class
       unsigned search(const OCPI::Util::PValue* props, const char **exclude)
@@ -306,23 +357,21 @@ namespace DataTransfer {
     protected:
       OCPI::OS::Mutex                  m_mutex;
       std::map<std::string, EndPoint * > m_map;
-      std::map<std::string, FactoryConfig * > m_config;
     };
-
-
-    class FactoryConfig;
-    class Device : public OCPI::Util::Device {
+    // Note that there is no base class for DT devices
+    class Device
+      : public DataTransfer::DeviceBase<XferFactory,Device>,
+	public FactoryConfig
+    {
     public:
 
-      std::string        m_name;
       ibv_context      * m_context;
       ibv_pd           * m_pd;
       ibv_device       * m_dev;     
       ibv_device_attr    m_device_attribute;
-      FactoryConfig    * m_config;
       
-      Device( XferFactory * parent, const char* name, FactoryConfig * config ) 
-	:OCPI::Util::Device( *parent, name ),m_name(name),m_config(config)
+      Device(const char* name)
+	: DataTransfer::DeviceBase<XferFactory,Device>(name)
       {
 	m_dev = find( name );
 	if ( ! m_dev ) {
@@ -340,6 +389,11 @@ namespace DataTransfer {
 	  fprintf(stderr, "OFED::Device ERROR: Couldn't allocate verbs protection domain\n");
 	  throw DataTransfer::DataTransferEx( RESOURCE_EXCEPTION, "protection domain" );	  
 	}
+      }
+      void configure(ezxml_t x) {
+	DataTransfer::Device::configure(x);
+	// Parse for ofed properties
+	FactoryConfig::parse(&parent(), x);
       }
 
       virtual ~Device()
@@ -432,7 +486,6 @@ namespace DataTransfer {
     XferFactory::
     XferFactory()
       throw()
-      :DataTransfer::XferFactory("OFED IB-Verbs enabled data transfer driver")
     {
 #ifndef NDEBUG
       printf("In OFED::XferFactory()\n");
@@ -449,60 +502,15 @@ namespace DataTransfer {
     }
 
 
-    class FactoryConfig {
-    public:
-      FactoryConfig( const DataTransfer::FactoryConfig & lhs, ezxml_t dnode )
-	: m_port(1),m_hopLimit(3),m_ibv_qp_timeout(14),m_ibv_qp_retry_cnt(12),
-	  m_ibv_qp_rnr_retry(1),m_ibv_qp_rnr_timer(14)
-      {
-	m_sys = lhs;
-	if ( dnode ) {
-	  m_sys.parse( dnode );
-	  if ( ezxml_attr(dnode,"name") ) {
-#ifndef NDEBUG
-	    printf("Processing device %s\n", ezxml_attr(dnode,"name") );
-#endif
-	    DataTransfer::FactoryConfig::getLProp( dnode, "port", "value", m_port);
-	    DataTransfer::FactoryConfig::getLProp( dnode, "hopLimit", "value", m_hopLimit);
-
-	    DataTransfer::FactoryConfig::getu8Prop( dnode, "IBV_QP_TIMEOUT", "value", m_ibv_qp_timeout);
-	    DataTransfer::FactoryConfig::getu8Prop( dnode, "IBV_QP_RETRY_CNT", "value", m_ibv_qp_retry_cnt);
-	    DataTransfer::FactoryConfig::getu8Prop( dnode, "IBV_QP_RNR_RETRY", "value", m_ibv_qp_rnr_retry);
-	    DataTransfer::FactoryConfig::getu8Prop( dnode, "IBV_QP_RNR_TIMER", "value", m_ibv_qp_rnr_timer);
-
-	  }
-	}
-      }
-      DataTransfer::FactoryConfig m_sys;
- 
-      uint32_t m_port;
-      uint32_t m_hopLimit;
-      uint8_t  m_ibv_qp_timeout;
-      uint8_t  m_ibv_qp_retry_cnt;
-      uint8_t  m_ibv_qp_rnr_retry;
-      uint8_t  m_ibv_qp_rnr_timer;
-
-      ezxml_t  m_node;
-    };
-
+    // We assume we are configured before any devices exist.
     void 
     XferFactory::
-    configure(  DataTransfer::FactoryConfig & config )
+    configure(ezxml_t x)
     {
-      m_config[ "default" ]  = new FactoryConfig( config, NULL );	  
-      // Find our node
-      ezxml_t m_node = XferFactory::getNode( config.m_xml, "ocpi-ofed-rdma");
-      if ( m_node ) {
-	// Under our node are the devices
-	ezxml_t dnode = ezxml_child( m_node, "Device");
-	while ( dnode ) {
-	  const char * name = ezxml_attr(dnode, "name");
-	  if ( name ) {
-	    m_config[ name ]  = new FactoryConfig( config, dnode );	  
-	  }
-	  dnode = ezxml_next(dnode);
-	}
-      }
+      // First parse generic properties and default from parent's
+      DataTransfer::FactoryConfig::parse(&parent(), x);
+      // Next parse our own driver-specific configuration
+      FactoryConfig::parse(NULL, x);
     }
 
     unsigned 
@@ -521,9 +529,11 @@ namespace DataTransfer {
       }
       for (; (ib_dev = *dev_list); ++dev_list) {
 	const char * dname = ibv_get_device_name(ib_dev);
-	FactoryConfig * config = m_config[ dname ] ? m_config[ dname ] : m_config[ "default" ];
-	new Device( this, dname, config );
+	ezxml_t devXml = OX::findChildWithAttr(m_xml, "device", "name", dname);
+	Device *d = new Device(dname);
+	d->configure(devXml);
       }
+      // FIXME:  report devices that don't match in xml?
       return num_of_device;
     }
 
@@ -540,15 +550,24 @@ namespace DataTransfer {
 	EndPoint * ep =  new EndPoint( end_point, local );
 	m_map[ end_point ] = ep;
 	if ( local ) {
+#if 1
+	  for (Device *d = firstDevice(); d; d = d->nextDevice())
+	    if ( d->name() == ep->m_dev ) {
+	      ep->m_device = d;
+	      break;
+	    }
+	    
+#else
 	  Device * d = NULL;
 	  do {
 	    d = static_cast<Device*>(getNextDevice(d));
 	    ocpiAssert(d);
-	    if ( d->m_name == ep->m_dev ) {
+	    if ( d->name() == ep->m_dev ) {
 	      ep->m_device = d;
 	      break;
 	    }
 	  } while ( d );
+#endif
 	}
 	return ep;
       }
@@ -583,36 +602,46 @@ namespace DataTransfer {
 		     DataTransfer::SmemServices * t )
     {
       OCPI::Util::AutoMutex guard ( m_mutex, true ); 
-      return new XferServices( *this, s, t );
+      return new XferServices( s, t );
     }
 
 
     std::string 
     XferFactory::
-    allocateEndpoint(OCPI::Util::Device * d, OCPI::Util::PValue * )
+    allocateEndpoint( const OCPI::Util::PValue *props )
     {
       OCPI::Util::AutoMutex guard ( m_mutex, true ); 
-      if ( ! d ) {
-	d = getNextDevice(NULL);
-      }
-      if ( ! d ) {
+      Device *d;
+      const char *deviceName = 0;
+      if (OCPI::Util::findString(props, "Device", deviceName))
+	d = findDevice(deviceName);
+      else
+	d = firstDevice();
+      if ( ! d )
 	throw DataTransfer::DataTransferEx( DEV_NOT_FOUND , "OFED" );
-      }
-      Device * device = static_cast<Device*>(d);
-
       // First get the entry point from the properties
-      unsigned int port = device->m_config->m_port;
-      unsigned int size = device->m_config->m_sys.m_SMBSize;
+      unsigned int port = d->m_port;
+      unsigned int size = d->m_SMBSize;
 
       // This will be the non-finalized version of the ep
       char buf[512];
       int mailbox = getNextMailBox();
-      snprintf( buf, 512, "ocpi-ofed-rdma://%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d", device->m_name.c_str(),
-		port, (long long)0,(long long)0,0,0,0,(unsigned long long)0,size,mailbox,getMaxMailBox());
+      snprintf( buf, 512, "ocpi-ofed-rdma://%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d",
+		d->name().c_str(), port, (long long)0, (long long)0, 0, 0, 0,
+		(unsigned long long)0, size, mailbox, getMaxMailBox());
       std::string ep = buf;
       return ep;
     }
 
+    // Provide endpoints for all devices
+    void
+    XferFactory::
+    allocateEndpoints(std::vector<std::string> &l) {
+      for (Device *d = firstDevice(); d; d = d->nextDevice()) {
+	PValue props[] = {PVString("device", d->name().c_str()), PVEnd };
+	l.push_back(allocateEndpoint(props));
+      }
+    }
 
     void
     EndPoint::
@@ -620,7 +649,9 @@ namespace DataTransfer {
     {
       // This will be the non-finalized version of the ep
       char buf[512];
-      snprintf( buf, 512, "ocpi-ofed-rdma://%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d", m_device->m_name.c_str(),
+      snprintf( buf, 512,
+		"ocpi-ofed-rdma://%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d",
+		m_device->name().c_str(),
 		m_port, (long long)m_gid.global.subnet_prefix,
 		(long long)m_gid.global.interface_id, m_lid,
 		m_psn, m_rkey,(unsigned long long)m_vaddr,size,mailbox,maxCount);
@@ -663,9 +694,9 @@ namespace DataTransfer {
       ibv_send_wr * wr = m_wr;
       while ( wr && new_offsets[n] ) {
 	ocpiAssert(wr->sg_list);
-	XferServices * xferServices = static_cast<XferServices*>(myParent);
-	old_offsets[n] = wr->sg_list->addr - (uint64_t)xferServices->m_sourceSmb->map(0,1);
-	wr->sg_list->addr = (uint64_t)xferServices->m_sourceSmb->map(0,1) + new_offsets[n];
+	XferServices &xferServices = parent();
+	old_offsets[n] = wr->sg_list->addr - (uint64_t)xferServices.m_sourceSmb->map(0,1);
+	wr->sg_list->addr = (uint64_t)xferServices.m_sourceSmb->map(0,1) + new_offsets[n];
 	MASK_ADDR( wr->sg_list->addr );
 	n++;
       }
@@ -829,7 +860,7 @@ namespace DataTransfer {
 	     (long long)attr.ah_attr.grh.dgid.global.subnet_prefix, (long long)attr.ah_attr.grh.dgid.global.interface_id );
 #endif
       attr.ah_attr.grh.sgid_index = 0;
-      attr.ah_attr.grh.hop_limit = sep->m_device->m_config->m_hopLimit;
+      attr.ah_attr.grh.hop_limit = sep->m_device->m_hopLimit;
       attr.ah_attr.sl         = 0;
       attr.ah_attr.src_path_bits = 0;
       ocpiAssert( tep->m_port == 1 );
@@ -850,10 +881,10 @@ namespace DataTransfer {
 
       attr.qp_state 	      = IBV_QPS_RTS;
       attr.sq_psn 	      = sep->m_psn;
-      attr.timeout            = sep->m_device->m_config->m_ibv_qp_timeout;
-      attr.retry_cnt          = sep->m_device->m_config->m_ibv_qp_retry_cnt;
-      attr.rnr_retry          = sep->m_device->m_config->m_ibv_qp_rnr_retry;
-      attr.min_rnr_timer      = sep->m_device->m_config->m_ibv_qp_rnr_timer;
+      attr.timeout            = sep->m_device->m_ibv_qp_timeout;
+      attr.retry_cnt          = sep->m_device->m_ibv_qp_retry_cnt;
+      attr.rnr_retry          = sep->m_device->m_ibv_qp_rnr_retry;
+      attr.min_rnr_timer      = sep->m_device->m_ibv_qp_rnr_timer;
       attr.max_rd_atomic  = 1;
       if ( (errno=ibv_modify_qp( m_qp, &attr,
 		      IBV_QP_STATE              |
@@ -882,24 +913,24 @@ namespace DataTransfer {
       memset( wr,0,sizeof( ibv_send_wr));
        ibv_sge     * sge = (ibv_sge*)malloc( sizeof(ibv_sge ) );
       memset( sge,0,sizeof( ibv_sge));
-      XferServices       * xferServices = static_cast<XferServices*>(myParent);
-      sge->addr = (uint64_t)xferServices->m_sourceSmb->map(0,nbytes) + srcoffs;
+      XferServices       & xferServices = parent();
+      sge->addr = (uint64_t)xferServices.m_sourceSmb->map(0,nbytes) + srcoffs;
       MASK_ADDR( sge->addr );
 #ifndef NDEBUG
       printf("local addr = %llu\n", (unsigned long long )sge->addr );
 #endif
       sge->length = nbytes;
-      sge->lkey = xferServices->m_sourceSmb->getMr()->lkey;
+      sge->lkey = xferServices.m_sourceSmb->getMr()->lkey;
       wr->wr_id = (uint64_t)this;
       wr->sg_list = sge;
       wr->num_sge = 1;
       wr->opcode = IBV_WR_RDMA_WRITE;
       wr->next = NULL;
-      wr->wr.rdma.remote_addr =  static_cast<EndPoint*>(xferServices->m_targetSmb->endpoint())->m_vaddr + dstoffs;
+      wr->wr.rdma.remote_addr =  static_cast<EndPoint*>(xferServices.m_targetSmb->endpoint())->m_vaddr + dstoffs;
 #ifndef NDEBUG
       printf("***** Remote vaddr = %llu, offset = %d, nbytes = %d\n",(long long) wr->wr.rdma.remote_addr, dstoffs, nbytes );
 #endif
-      wr->wr.rdma.rkey = static_cast<EndPoint*>(xferServices->m_targetSmb->endpoint())->m_rkey;
+      wr->wr.rdma.rkey = static_cast<EndPoint*>(xferServices.m_targetSmb->endpoint())->m_rkey;
       wr->send_flags = IBV_SEND_SIGNALED;
 
       if (  (flags & DataTransfer::XferRequest::LastTransfer) == DataTransfer::XferRequest::LastTransfer ) {
@@ -964,13 +995,13 @@ namespace DataTransfer {
       m_status = DataTransfer::XferRequest::Pending;
       int errno;
 
-      static_cast<XferServices*>(myParent)->addPost( this );      
+      parent().addPost( this );      
 
       if ( m_firstWr ) {
-	static_cast<XferServices*>(myParent)->m_post_count++;
-	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_firstWr, &m_badWr[0] )) ) {
+	parent().m_post_count++;
+	if ( (errno=ibv_post_send( parent().m_qp, m_firstWr, &m_badWr[0] )) ) {
 	  OCPI::OS::sleep( 1 );	  
-	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_firstWr, &m_badWr[0] )) ) {
+	  if ( (errno=ibv_post_send( parent().m_qp, m_firstWr, &m_badWr[0] )) ) {
 	    fprintf(stderr,"OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s\n", strerror(errno));
 	    throw DataTransfer::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
@@ -978,10 +1009,10 @@ namespace DataTransfer {
       }
 
       if ( m_wr ) {
-	static_cast<XferServices*>(myParent)->m_post_count++;
-	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_wr, &m_badWr[1] )) ) {
+	parent().m_post_count++;
+	if ( (errno=ibv_post_send( parent().m_qp, m_wr, &m_badWr[1] )) ) {
 	  OCPI::OS::sleep( 1 );	  
-	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_wr, &m_badWr[1] )) ) {
+	  if ( (errno=ibv_post_send( parent().m_qp, m_wr, &m_badWr[1] )) ) {
 	    fprintf(stderr,"OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s\n", strerror(errno));
 	    throw DataTransfer::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
@@ -989,10 +1020,10 @@ namespace DataTransfer {
       }
       
       if ( m_lastWr ) {	
-	static_cast<XferServices*>(myParent)->m_post_count++;
-	if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_lastWr, &m_badWr[2] )) ) {
+	parent().m_post_count++;
+	if ( (errno=ibv_post_send(parent().m_qp, m_lastWr, &m_badWr[2] )) ) {
 	  OCPI::OS::sleep( 1 );	  
-	  if ( (errno=ibv_post_send( static_cast<XferServices*>(myParent)->m_qp, m_lastWr, &m_badWr[2] )) ) {
+	  if ( (errno=ibv_post_send( parent().m_qp, m_lastWr, &m_badWr[2] )) ) {
 	    fprintf(stderr,"OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s\n", strerror(errno));
 	    throw DataTransfer::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
@@ -1006,7 +1037,7 @@ namespace DataTransfer {
     XferRequest::
     getStatus()
     {
-      static_cast<XferServices*>(myParent)->status();
+      parent().status();
 
       
 
@@ -1022,16 +1053,17 @@ namespace DataTransfer {
 
 
     XferRequest::
-    XferRequest( XferServices *s)
-      : DataTransfer::XferRequest(*s),m_wr(NULL),m_nextWr(NULL),m_firstWr(NULL),m_lastWr(NULL),
-        m_PCount(0), m_PComplete(0)
+    XferRequest(XferServices &s)
+      : DataTransfer::TransferBase<XferServices,XferRequest>(s),
+	m_wr(NULL),m_nextWr(NULL),m_firstWr(NULL),m_lastWr(NULL), m_PCount(0), m_PComplete(0)
     {
 
     }
 
     XferServices::
-    XferServices( DataTransfer::XferFactory & parent, DataTransfer::SmemServices* source, DataTransfer::SmemServices* target)
-      : DataTransfer::XferServices(parent, source,target),m_finalized(false), m_post_count(0),m_cq_count(0)
+    XferServices( DataTransfer::SmemServices* source, DataTransfer::SmemServices* target)
+      : DataTransfer::ConnectionBase<XferFactory,XferServices,XferRequest>(source,target),
+	m_finalized(false), m_post_count(0),m_cq_count(0)
     {
       createTemplate( source, target);
     }
@@ -1051,7 +1083,7 @@ namespace DataTransfer {
 #endif
 
       ocpiAssert( m_finalized );
-      return new XferRequest( this );
+      return new XferRequest( *this );
     }
 
 
@@ -1069,10 +1101,7 @@ namespace DataTransfer {
     {
 
       if ( m_ofed_ep->local ) {
-	m_mem = new char[m_ofed_ep->size];
-	memset( m_mem, 0, m_ofed_ep->size );
-	int page_size = sysconf(_SC_PAGESIZE);
-	if (posix_memalign((void**)m_mem, page_size, m_ofed_ep->size) != 0) {
+	if (posix_memalign((void**)&m_mem, sysconf(_SC_PAGESIZE), m_ofed_ep->size)) {
 	  fprintf(stderr, "OFED::SmemServices Error: Couldn't allocate SMB.\n");
 	  throw DataTransfer::DataTransferEx( NO_MORE_SMB, "memalign failed" );
 	}
@@ -1096,10 +1125,10 @@ namespace DataTransfer {
       m_ofed_ep->m_device->destroyMemContext( this );
       delete [] m_mem;
     }
+#ifndef OCPI_OS_darwin
+    RegisterTransferDriver<XferFactory> driver;
+#endif
   }
 }
-
-// Used to register with the data transfer system;
-DataTransfer::OFED::XferFactory *g_ofed_singlton_factory = new DataTransfer::OFED::XferFactory;
 
 

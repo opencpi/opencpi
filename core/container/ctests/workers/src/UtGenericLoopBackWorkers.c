@@ -157,7 +157,7 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
 static uint32_t UTGProducerPortRunConditions[] = { (1<<UTGProducerWorker_Data_Out_Port0), 0, 0 };
 static RCCRunCondition UTGProducerWorkerRunConditions[] = { {UTGProducerPortRunConditions,0,0}, {0, 0, 0} , {0,0,0} };
 #define NUM_OUTPUTS 3
-#define OPTIONAL_CONNECTIONS_MASK 0xe
+#define OPTIONAL_CONNECTIONS_MASK 0x6
 RCCDispatch UTGProducerWorkerDispatchTable = { RCC_VERSION, 0, NUM_OUTPUTS, 
                                                PROD_PROPERTY_SIZE, 0 , 0,
                                                UTGProducerInitialize, NULL, NULL, release, NULL, NULL, NULL, UTGProducerWorker_run,

@@ -172,6 +172,7 @@ OCPI::Time::Emit::
 Emit( TimeSource& ts, const char* class_name, 
       const char* instance_name, QConfig* config )
   throw ( OCPI::Util::EmbeddedException )
+  : m_parent(NULL), m_q(NULL), m_ts(NULL)
 {
   AUTO_MUTEX(OCPI::Time::Emit::getGMutex() );
   m_ts = &ts;
@@ -187,7 +188,7 @@ Emit( const char* class_name,
               const char* instance_name, 
               QConfig* config )
   throw ( OCPI::Util::EmbeddedException )
-    : m_level(1),m_parent(NULL)
+  : m_level(1),m_parent(NULL), m_q(NULL), m_ts(NULL)
 {
   AUTO_MUTEX(OCPI::Time::Emit::getGMutex() );
   pre_init( class_name, instance_name, config );
@@ -204,7 +205,7 @@ Emit( Emit* parent,
               const char* instance_name, 
               QConfig* config )
   throw ( OCPI::Util::EmbeddedException )
-  :m_parent(parent)
+  :m_parent(parent), m_q(NULL), m_ts(NULL)
 {
   AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
   if ( class_name ) {
@@ -386,7 +387,7 @@ OCPI::Time::Emit::RegisterEvent::RegisterEvent( const char* event_name, int widt
 
 
 
-OCPI::Time::Emit::RegisterEvent::RegisterEvent( OCPI::Util::PValue& p )
+OCPI::Time::Emit::RegisterEvent::RegisterEvent( OCPI::API::PValue& p )
 {
   AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
   m_eid = getHeader().nextEventId++;
@@ -1038,7 +1039,8 @@ FastSystemTime()
     }
 
     /* Check availability */
-    while (fasttime_getstatistics(NULL, &stats) != 0);
+    while (fasttime_getstatistics(NULL, &stats) != 0)
+      ;
 
     if (!stats.ready)
     {

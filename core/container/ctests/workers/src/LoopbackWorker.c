@@ -120,7 +120,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     uint32_t len;
 
 //  LoopbackWorkerStaticMemory *mem = this_->memories[0];
-//  LoopbackWorkerProperties *props = this_->properties;
+  LoopbackWorkerProperties *props = this_->properties;
 
   char* in_buffer = (char*)this_->ports[LoopbackWorker_Data_In_Port].current.data;
   char* out_buffer = (char*)this_->ports[LoopbackWorker_Data_Out_Port].current.data;
@@ -133,6 +133,47 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   /*  printf("LB len = %d\n", len ); */
 
 
+#define CHECK_DATA
+#ifdef CHECK_DATA
+  { int *b = (int*)(in_buffer);
+    int *mem = (int *)&props->longProperty;
+    int ncount, n, passed = 0;
+#define RESYNC
+#ifdef RESYNC
+
+  /*
+  if ( *b != (int)mem->b_count ) {
+    printf("MAYBE!! Dropped a buffer, got buffer %d, expected %d\n", 
+           *b, mem->b_count );    
+    sleep(2);
+  }
+  */
+
+
+  if ( *b != *mem ) {
+    printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
+           *b, *mem );
+    //dropped_b++;
+    /* resync */
+    *mem = *b;
+  }
+#endif
+
+  ncount = 0;
+  for (n=4; n<len; n++) {
+    if ( (in_buffer[n] != (char)(n+*mem)%23) && (ncount++ < 100000) ) {
+      printf("Consumer(%lu, %lu, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
+             props->startIndex, len, *mem, n, (char)(n+*mem)%23, in_buffer[n]);
+      passed = 0;
+    }
+  }
+  if ( passed ) {
+    if ( (*mem%500) == 0 ) 
+      printf("Buffer %d data integrity test passed\n", *mem);
+  }
+    (*mem)++;
+  }
+#endif
 #ifdef DATA_CHECK
   for (n=0; n<len; n++) {
           if ( in_buffer[n] != (char)n%256 ) {
@@ -145,6 +186,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #define LOOPBACK_DATA
 #ifdef LOOPBACK_DATA
   memcpy(out_buffer,in_buffer,len);
+  this_->ports[LoopbackWorker_Data_Out_Port].output.length = len;
 #endif
 
 
@@ -162,6 +204,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   */
 
 
+  props->startIndex++;
   return RCC_ADVANCE;
 
 }

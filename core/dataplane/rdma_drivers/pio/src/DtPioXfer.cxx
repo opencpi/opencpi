@@ -45,33 +45,30 @@
  *
  */
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <string>
 #include <DtSharedMemoryInternal.h>
 #include <DtPioXfer.h>
 #include <xfer_if.h>
 #include <OcpiList.h>
 #include <OcpiUtilHash.h>
 #include <OcpiOsMisc.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include <OcpiOsAssert.h>
 #include <OcpiUtilAutoMutex.h>
 #include <DtExceptions.h>
 #include <OcpiPValue.h>
 
-using namespace DataTransfer;
+namespace DataTransfer {
 using namespace OCPI::Util;
 using namespace OCPI::OS;
 
 
-// Used to register with the data transfer system;
-PIOXferFactory *g_pioFactory = new PIOXferFactory;
-
-
+const char *pio = "pio"; // name passed to inherited template class
 PIOXferFactory::PIOXferFactory()
   throw ()
-  : XferFactory("Host SMB Programmed I/O transfer driver")
-{
+ {
   printf("In PIOXferFactory::PIOXferFactory()\n");
 
   // Empty
@@ -140,7 +137,7 @@ SmemServices* PIOXferFactory::getSmemServices(EndPoint* loc )
  ***************************************/
 XferServices* PIOXferFactory::getXferServices(SmemServices* source, SmemServices* target)
 {
-  return new PIOXferServices( *this, source, target);
+  return new PIOXferServices(source, target);
 }
 
 
@@ -153,7 +150,7 @@ static OCPI::OS::int32_t pid;
 static OCPI::OS::int32_t smb_count=0;
 std::string 
 PIOXferFactory::
-allocateEndpoint(OCPI::Util::Device * , OCPI::Util::PValue * /* props */ )
+allocateEndpoint( const PValue * /* props */ )
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   std::string ep;
@@ -161,7 +158,7 @@ allocateEndpoint(OCPI::Util::Device * , OCPI::Util::PValue * /* props */ )
   int mailbox = getNextMailBox();
   pid++;
 
-  unsigned int size = m_config->m_SMBSize;
+  unsigned int size = m_SMBSize;
 
   pid = getpid();
   char tep[128];
@@ -240,6 +237,7 @@ void PIOXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 
 XferRequest* PIOXferServices::createXferRequest()
 {
+  OCPI::Util::AutoMutex guard ( parent().m_mutex, true ); 
   return new PIOXferRequest ( *this );
 }
 
@@ -257,14 +255,14 @@ XferRequest* PIOXferRequest::copy (OCPI::OS::uint32_t srcoffs,
   if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
   if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
   if ( getHandle() == NULL ) {
-    retVal = xfer_copy ( static_cast<PIOXferServices*>(myParent)->m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &getHandle());
+    retVal = xfer_copy ( parent().m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &getHandle());
     if (retVal){
       return NULL;
     }
   }
   else {
     XF_transfer handle;
-    retVal = xfer_copy ( static_cast<PIOXferServices*>(myParent)->m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &handle);
+    retVal = xfer_copy ( parent().m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &handle);
     if (retVal){
       return NULL;
     }
@@ -302,8 +300,6 @@ PIOXferServices::~PIOXferServices ()
   xfer_destroy (m_xftemplate, 0);
 }
 
+    RegisterTransferDriver<PIOXferFactory> pioDriver;
 
-
-
-
-
+}

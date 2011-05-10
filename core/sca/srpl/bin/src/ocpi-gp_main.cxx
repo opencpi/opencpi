@@ -54,10 +54,8 @@
 #include <OcpiStringifyCorbaException.h>
 #include <OcpiCORBAUtilNameServiceBind.h>
 #include <OcpiUtilCommandLineConfiguration.h>
-#include <wci.h>
 #include "OcpiMetadataWorker.h"
 #include "Cp289GenericProxy.h"
-#include "OcpiDriver.h"
 /*
  * ----------------------------------------------------------------------
  * "Main"
@@ -135,8 +133,6 @@ printUsage (StandaloneGenericProxyConfigurator & config,
  * Start the Generic Proxy when started from the command line.
  */
 
-static  OCPI::Util::DriverManager* dm;
-
 static
 bool
 startGenericProxyCmdInt (CORBA::ORB_ptr orb,
@@ -173,15 +169,12 @@ startGenericProxyCmdInt (CORBA::ORB_ptr orb,
     const char * codeLocalFileName = argv[4];
     char **ap = &argv[5];
 
-    dm = new OCPI::Util::DriverManager( driverName );
-    dm->discoverDevices(0, 0);
     OCPI::Util::PValue cprops[] = {OCPI::Util::PVString("endpoint",(char*)endpoint),
                                   OCPI::Util::PVBool("polling",1),
                                   OCPI::Util::PVEnd };
-    OCPI::Container::Interface *container =
-      static_cast<OCPI::Container::Interface*>(dm->getDevice( cprops, instanceName ));
+    OCPI::API::Container *container = OCPI::API::ContainerManager::find(driverName, instanceName, cprops);
     ocpiAssert(container);
-    OCPI::Container::Application *application= container->createApplication( /* "gpmain" */ );
+    OCPI::API::ContainerApplication *application= container->createApplication("gpmain" );
     while (*ap) {
       char
         *functionName = ap[0],

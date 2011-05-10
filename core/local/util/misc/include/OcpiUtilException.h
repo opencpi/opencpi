@@ -120,8 +120,10 @@ namespace OCPI {
                                                 OCPI::OS::uint32_t errorCode, 
                                                 const char* auxInfo,
                                                 OCPI::OS::uint32_t errorLevel )
-      : m_errorCode(errorCode), m_auxInfo(auxInfo), m_errorLevel(errorLevel)
+      : m_errorCode(errorCode), m_errorLevel(errorLevel)
       {
+	if (auxInfo)
+	  m_auxInfo = auxInfo;
       }
       // String error only (error code zero)
     inline EmbeddedException::EmbeddedException( const char* auxInfo )
@@ -233,6 +235,10 @@ namespace OCPI {
 
 #endif
 
+    class ApiError : public EmbeddedException {
+    public:
+      ApiError(const char *err, ...);
+    };
   }
 
 

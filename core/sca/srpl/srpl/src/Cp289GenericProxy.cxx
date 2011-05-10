@@ -58,7 +58,6 @@
 #include <CF.h>
 #include <Cp289ProviderPort.h>
 #include "OcpiContainerApplication.h"
-#include "OcpiProperty.h"
 #include "Cp289GenericProxy.h"
 
 /*
@@ -92,7 +91,7 @@ namespace OCPI {
                        // spd:softpkg/implementation/code/entrypoint
                        const char *functionName,
                        const char *instanceName,
-                       CC::Application &application,
+                       OCPI::API::ContainerApplication &application,
                        const char *namingContextIor,
                        const char *nameBinding,
                        // Optional
@@ -127,7 +126,8 @@ namespace OCPI {
       releasePorts();
       // This is only because something like JTAP would not want to wait until
       // the app is torn down, when it would actually be a better time..
-      delete &m_worker;
+      //delete &m_worker; FIXME: mark for deletion (release), and take down the app
+      // when the last one is gone
     }
 
     /*
@@ -295,10 +295,10 @@ namespace OCPI {
     {
       // There is a slight amount of caching optimization possible
       // if we had a (redundant) name mapping to pre-established CC:Property objects.
-      CC::Property p(m_worker, name);
-      needSync = p.needWriteSync();
+      OCPI::API::Property p(m_worker, name);
+      needSync = p.needsWriteSync();
       const char *oops = 0;
-      switch (p.getType()) {
+      switch (p.type()) {
         OCPI_PROPERTY_DATA_TYPES
       case CP::Scalar::OCPI_none:
       case CP::Scalar::OCPI_scalar_type_limit:
@@ -372,12 +372,12 @@ namespace OCPI {
                  bool & haveSync)
       throw (std::string)
     {
-      CC::Property p(m_worker, name);
+      OCPI::API::Property p(m_worker, name);
       if (!haveSync &&
-          ((haveSync = p.needReadSync())))
+          ((haveSync = p.needsReadSync())))
         m_worker.beforeQuery();
       const char * oops;
-      switch (p.getType()) {
+      switch (p.type()) {
         OCPI_PROPERTY_DATA_TYPES
       case CP::Scalar::OCPI_none:
       case CP::Scalar::OCPI_scalar_type_limit:
@@ -392,13 +392,16 @@ namespace OCPI {
     getProperties (unsigned int & numProperties)
       throw ()
     {
-      return m_worker.getProperties (numProperties);
+      return static_cast<OCPI::Container::Worker *>(&m_worker)->getProperties (numProperties);
     }
 
+#undef CONTROL_OP_I
+#define CONTROL_OP_I(x,c,t,s1,s2,s3)
 #define CONTROL_OP(x,c,t,s1,s2,s3) void OCPI::SCA::Cp289GenericProxy::x##Worker() {m_worker.x();}
     OCPI_CONTROL_OPS
 #undef CONTROL_OP      
-
+#undef CONTROL_OP_I
+#define CONTROL_OP_I CONTROL_OP
   }
 }
 

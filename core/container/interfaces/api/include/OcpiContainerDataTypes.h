@@ -59,8 +59,8 @@ namespace OCPI {
   namespace Container {
 
     // The Application class is used as a context for applications to group and manage workers.
-    class Application;
-    class Worker;
+    //    class Application;
+    //    class Worker;
 
     // The Connection cookie is used to manage the lifecycle of a port connection created
     // by an application.
@@ -73,7 +73,7 @@ namespace OCPI {
     typedef OCPI::OS::int64_t ConnectionId;
 
     // Worker id
-    typedef Worker* WorkerId;
+    //    typedef uint64_t *WorkerId;
 
     // Port id
     typedef OCPI::OS::int64_t PortId;

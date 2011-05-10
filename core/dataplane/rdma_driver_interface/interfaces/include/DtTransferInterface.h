@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -53,12 +52,12 @@
 #ifndef DataTransfer_TransferInterface_H_
 #define DataTransfer_TransferInterface_H_
 
+#include <vector>
 #include <string.h>
 #include "ezxml.h"
 #include <OcpiOsDataTypes.h>
 #include <OcpiList.h>
-#include <OcpiDriver.h>
-#include <OcpiParentChild.h>
+#include <OcpiDriverManager.h>
 
 namespace DataTransfer {
 
@@ -68,15 +67,15 @@ namespace DataTransfer {
   class XferFactory;
   struct EndPoint;
 
-  // A single request to perform a data transfer, this is effectively a transfer template
-  // that is used aOCPI::OS::int32_t with a transfer service object to describe a transfer.
-  class XferRequest : public OCPI::Util::Child<XferServices, XferRequest>
+  // A single request to perform a data transfer, this is effectively a transfer 
+  // template that is used aOCPI::OS::int32_t with a transfer service object to 
+  // describe a transfer.  This base class is specialized by each transfer driver
+  class XferRequest
   {
   public:
    
     // Constructor
-    XferRequest( XferServices & parent )
-      :OCPI::Util::Child<XferServices, XferRequest>(parent){}
+    XferRequest(){};
 
     // Flags used when created
     typedef enum { 
@@ -130,7 +129,8 @@ namespace DataTransfer {
      *        Throws:
      *                DataTransferEx for all exception conditions
      */
-    virtual void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )=0;
+    virtual void modify( OCPI::OS::uint32_t new_offsets[],
+			 OCPI::OS::uint32_t old_offsets[] )=0;
 
 
     /*
@@ -171,10 +171,11 @@ namespace DataTransfer {
   };
 
          
-  // Platform dependent data transfer services.  This class is responsible for 
-  // creating the appropriate transfer service that is capable of transfering data
-  // to and from the specifed shared memory objects.
-  class XferServices : public OCPI::Util::Parent<XferRequest>, public OCPI::Util::Child<XferFactory, XferServices>
+  // Driver dependent data transfer services.  Instances of the driver classes that
+  // inherit this base class manage a connection between a local and remote 
+  // endpoint and create transfers between them (instances of the driver class that 
+  // inherits from XferRequest above).
+  class XferServices
   {
                 
   public:
@@ -189,10 +190,7 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    XferServices ( XferFactory & parent, SmemServices * /* source */ , SmemServices * /* target */ )
-      :OCPI::Util::Child<XferFactory, XferServices>(parent){}
-
-
+    XferServices ( SmemServices * /* source */ , SmemServices * /* target */ ){};
 
     /*
      * If this service requires a cookie for the remote connection, this method will return it.
@@ -222,61 +220,39 @@ namespace DataTransfer {
 
 
   // This is the base class for a factory configuration sheet
+  // that is common to the manager, drivers, and devices
   class FactoryConfig {
   public:
-    FactoryConfig();
-    void parse(ezxml_t config );
-    static bool getLProp( ezxml_t node, const char* name, const char * attr, uint32_t & value );
-    static bool getu8Prop( ezxml_t node, const char* name, const char * attr, uint8_t & value );
-    static bool getStringProp( ezxml_t node, const char* name, const char * attr, const char * & value );
-    ~FactoryConfig();
-
-    ezxml_t  m_xml;
+    // These are arguments to allow different defaults
+    FactoryConfig(uint32_t smbSize = 0, uint32_t retryCount = 0);
+    void parse(FactoryConfig *p, ezxml_t config );
     uint32_t m_SMBSize;
     uint32_t m_retryCount;
-
+    ezxml_t  m_xml; // the element that these attributes were parsed from
   };
          
-         
-         
-  // Each transfer implementation must implement a factory class
-  class XferFactory : public OCPI::Util::Driver, public OCPI::Util::Parent<XferServices>,
-    public OCPI::Util::Parent<SmemServices>  
-    {
-                 
+  // This class is the transfer driver base class.
+  // All drivers indirectly inherit this by using the template class in DtDriver.h
+  // Its parent relationship with actual devices is managed by that transfer driver
+  // template and thus is not evident here.
+  class XferFactoryManager;
+  class XferFactory
+    : public OCPI::Driver::DriverType<XferFactoryManager, XferFactory>,
+      public OCPI::Util::Parent<SmemServices>,
+      public FactoryConfig
+  {
   public:
 
-    // Default constructor
-    XferFactory(const char*)
-      throw ();
+    XferFactory(const char *);
                  
     // Destructor
-    virtual ~XferFactory()
-      throw ();
+    virtual ~XferFactory();
                  
+    // Configure from xml
+    void configure(ezxml_t x);
+
     // Get our protocol string
     virtual const char* getProtocol()=0;
-
-    // Some Transfer factories may not need these, so we will provide defaults
-    virtual OCPI::Util::Device *probe(const OCPI::Util::PValue* props, const char *which )
-      throw ( OCPI::Util::EmbeddedException ){ ( void ) props; ( void ) which; return NULL;}
-
-    virtual unsigned search(const OCPI::Util::PValue* props, const char **exclude)
-      throw (OCPI::Util::EmbeddedException) { ( void ) props; ( void ) exclude; return 1;}
-
-
-    /***************************************
-     * Get the next device created by this factory
-     ***************************************/
-    OCPI::Util::Device * getNextDevice( OCPI::Util::Device * );
-
-
-    /***************************************
-     * Configure the factory using the specified xml data
-     ***************************************/
-    virtual void configure(  FactoryConfig & config  )
-    {m_config=&config;}
-
 
     /***************************************
      * This method is called on this factory to dertermine if it supports
@@ -298,10 +274,17 @@ namespace DataTransfer {
      *  This method is used to dynamically allocate
      *  a source endpoint for an application running on "this"
      *  node.  This endpoint does not need to be finalized until
-     * it has beed passed to the finalizeEndpoint().
+     * it has been passed to finalizeEndpoint().
      ***************************************/
-    virtual std::string allocateEndpoint( OCPI::Util::Device * d=NULL, OCPI::Util::PValue *props=NULL) = 0;
+    virtual std::string allocateEndpoint(const OCPI::Util::PValue *props=NULL) = 0;
 
+    /***************************************
+     *  This method is used to dynamically allocate
+     *  source endpoints for all this driver's devices, for an application running on "this"
+     *  node.  These endpoints do not need to be finalized until
+     *  then have been passed to finalizeEndpoint().
+     ***************************************/
+    virtual void allocateEndpoints(std::vector<std::string> &l);
 
     /***************************************
      *  This method is used to allocate a transfer compatible SMB
@@ -326,12 +309,15 @@ namespace DataTransfer {
     int getNextMailBox();
     int getMaxMailBox();
 
-
-    FactoryConfig       * m_config;
-
-
   };
-        
+  // OCPI::Driver::Device is virtually inherited to give access
+  // to the class that is not normally inherited here.
+  // This also delays the calling of the destructor
+  class Device : public FactoryConfig, virtual public OCPI::Driver::Device {
+    virtual XferFactory &driverBase() = 0;
+  protected:
+    void configure(ezxml_t x);
+  };
 }
 
 

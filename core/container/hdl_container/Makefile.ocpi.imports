@@ -1,0 +1,82 @@
+
+# #####
+#
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#
+#    Mercury Federal Systems, Incorporated
+#    1901 South Bell Street
+#    Suite 402
+#    Arlington, Virginia 22202
+#    United States of America
+#    Telephone 703-413-0781
+#    FAX 703-413-0784
+#
+#  This file is part of OpenCPI (www.opencpi.org).
+#     ____                   __________   ____
+#    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+#  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+#      /_/                                             /____/
+#
+#  OpenCPI is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  OpenCPI is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################### #
+
+ALLIDLINC += $(SCA_CF_EXPORTS)
+
+ALLINC += $(CONTAINER_EXPORTS) \
+        $(LIBRARY_EXPORTS) \
+	$(DATA_TRANSPORT_EXPORTS) \
+	$(DATA_TRANSFER_EXPORTS) \
+	$(UTIL_EXPORTS) \
+	$(LOGGER_EXPORTS) \
+	$(OCPIOS_EXPORTS)
+
+ALLLIBS += $(CONTAINER_LIBS) \
+        $(LIBRARY_LIBS) \
+	$(DATA_TRANSPORT_LIBS) \
+	$(TX_DRIVER_SUPPORT_LIBS) \
+	$(DATA_TRANSFER_LIBS) \
+	$(UTIL_LIBS) \
+	$(LOGGER_LIBS) \
+	$(OCPIOS_LIBS)
+
+
+EXTRAOBJS += ../../linux-bin/RplContainer.obj 
+
+ifeq ($(OCPI_CROSS_HOST),ppc86xx-linux)
+else
+ifeq ($(OCPI_OS),darwin)
+#DYNOBJS += ../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj \
+#	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj
+else
+#../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj 
+DYNOBJS += \
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj
+endif
+endif
+
+ifeq ($(OCPI_HAVE_IBVERBS),1)
+DYNOBJS += ../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
+SYSLIBS += ibverbs	
+endif
+
+
+ifneq ($(OCPI_PPP_LIBRARY_DIR),)
+BASICLIBS += -L$(OCPI_PPP_LIBRARY_DIR) -lrose
+endif
+
+SYSLIBS += dl

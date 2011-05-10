@@ -50,14 +50,16 @@
 
 #include <OcpiOsDataTypes.h>
 #include <OcpiOsMutex.h>
+#include <DtDriver.h>
 #include <DtTransferInterface.h>
 #include <DtSharedMemoryInterface.h>
+#include <xfer_internal.h>
 #include <xfer_if.h>
 
 
 namespace DataTransfer {
 
-  long  xfer_socket_start(XF_transfer xf_handle, OCPI::OS::int32_t flags);
+  //  long  xfer_socket_start(XF_transfer xf_handle, OCPI::OS::int32_t flags);
 
   /**********************************
    * This is our GPP shared memory location implementation.  This class
@@ -72,8 +74,8 @@ namespace DataTransfer {
   public:
 
       virtual ~SocketEndPoint();
-      SocketEndPoint( std::string& ep, OCPI::OS::uint32_t size=0)
-        :EndPoint(ep,size){parse(ep);};
+    SocketEndPoint( std::string& ep, bool local, OCPI::OS::uint32_t size=0)
+      : EndPoint(ep, size, local) { parse(ep);}
 
         // Sets smem location data based upon the specified endpoint
         OCPI::OS::int32_t parse( std::string& ep );
@@ -92,9 +94,14 @@ namespace DataTransfer {
    * implementation creates a named resource compatible SMB and a programmed I/O
    * based transfer driver.
    *********************************/
-  class SocketServerT;
+  //  class SocketServerT;
   class ClientSocketT;
-  class SocketXferFactory : public XferFactory {
+  class SocketXferFactory;
+  class SocketDevice : public OCPI::Driver::DeviceBase<SocketXferFactory,SocketDevice> {
+  };
+  class SocketXferServices;
+  extern const char *socket;
+  class SocketXferFactory : public DriverBase<SocketXferFactory, SocketDevice,SocketXferServices,socket> {
 
   public:
 
@@ -130,11 +137,16 @@ namespace DataTransfer {
 
 
     /***************************************
+     *  Set (unparse, snprintf) the endpoint string
+     ***************************************/
+    static void setEndpointString(std::string &str, const char *ipAddr, unsigned port,
+				  unsigned size, unsigned mbox);
+    /***************************************
      *  This method is used to dynamically allocate
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(OCPI::Util::Device*, OCPI::Util::PValue*);
+    std::string allocateEndpoint(const OCPI::Util::PValue*);
 
     /***************************************
      *  This method is used to flush any cached items in the factoy
@@ -155,13 +167,14 @@ namespace DataTransfer {
    * This is the Programmed I/O transfer request class
    *********************************/
   class SocketXferServices;
-  class SocketXferRequest : public XferRequest
+  class SocketXferRequest : public TransferBase<SocketXferServices,SocketXferRequest>
   {
 
     // Public methods available to clients
   public:
-    SocketXferRequest( XferServices * s )
-      :XferRequest(*s),m_thandle(0) {}
+    SocketXferRequest( SocketXferServices & parent )
+      : TransferBase<SocketXferServices,SocketXferRequest>(parent),
+	m_thandle(0) {}
 
     // Queue data transfer request
     void post();
@@ -188,6 +201,9 @@ namespace DataTransfer {
 		       );
 
     // Data members accessible from this/derived class
+  private:
+    OCPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t);
+    void action_socket_transfer(PIO_transfer transfer);
   protected:
     Flags                                     m_flags;                // Flags used during creation
     OCPI::OS::uint32_t                        m_srcoffset;        // The source memory offset
@@ -203,7 +219,7 @@ namespace DataTransfer {
 
   // SocketXferServices specializes for MCOE-capable platforms
   class SocketSmemServices;
-  class SocketXferServices : public XferServices
+  class SocketXferServices : public ConnectionBase<SocketXferFactory,SocketXferServices,SocketXferRequest>
   {
 
     // So the destructor can invoke "remove"
@@ -211,8 +227,11 @@ namespace DataTransfer {
 
   public:
 
-    SocketXferServices( XferFactory * parent, SmemServices* source, SmemServices* target)
-      :XferServices( *parent, source,target){createTemplate( source, target);}
+    SocketXferServices(SmemServices* source, SmemServices* target)
+      : ConnectionBase<SocketXferFactory,SocketXferServices,SocketXferRequest>(source,target)
+    {
+      createTemplate( source, target);
+    }
 
     /*
      * Create tranfer request object

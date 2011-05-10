@@ -45,7 +45,11 @@ OBJDIR = .
 endif
 include $(OCPI_BASE_DIR)/Makefile.ocpi.common
 
-ifneq ($(wildcard ../../Makefile.ocpi.imports),)
+ifneq ($(wildcard Makefile.ocpi.imports),)
+include Makefile.ocpi.imports
+else ifneq ($(wildcard ../Makefile.ocpi.imports),)
+include ../Makefile.ocpi.imports
+else ifneq ($(wildcard ../../Makefile.ocpi.imports),)
 include ../../Makefile.ocpi.imports
 endif
 

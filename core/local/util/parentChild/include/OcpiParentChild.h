@@ -56,117 +56,193 @@
 // I wish that 
 #ifndef OCPI_PARENTCHILD_H
 #define OCPI_PARENTCHILD_H
-#include <stdint.h>
+//#include <stdint.h>
 #include <assert.h>
-#include <set>
+//#include <set>
 #include <string>
 
+#define PCOLD 1
 namespace OCPI {
   namespace Util {
 
-  
+    extern std::string childName(const char *name, const char *prefix);
     template <class TChild> class Parent;
-
-    // This is the "internal" template that simply provide a linked list among children.
-    template <class TChild> class ChildI  {
-      friend class Parent<TChild>; // Allow the parent to use this link
+    // This is the behavior of being a sibling that doesn't know
+    // anything about its parent, only its name and its next
+    // sibling.
+    // TChild is the class inheriting this.
+    // prefix is the string prefix to use when no name is provided
+    template <class TChild> class Sibling {
+      friend class Parent<TChild>;
+      TChild *m_next;
+    protected:
+      Sibling<TChild>() : m_next(NULL) {}
+      virtual ~Sibling<TChild>(){};
     public:
-      ChildI<TChild> *next;
-      virtual ~ChildI<TChild>(){};
+      // virtual TChild *child() = 0;
+      inline TChild *nextChild() { return *nextChildP(); }
+      inline TChild **nextChildP() { return &m_next; }
+      virtual const std::string &name() const = 0;
     };
-
-    // This is the class inherited by the child, given the parent's type and the child's type
-    template <class TParent,class TChild> class Child : public ChildI<TChild> {
-    public:
-      // These are public because you can't use "friend class TChild"
-      TParent *myParent;
-      std::string m_cname;
-      Child<TParent,TChild> (TParent & p, const char* childname=NULL) :
-        myParent(&p) {
-        ( void ) childname;
-        myParent->Parent<TChild>::addChild(*this);
-      };
-        Child<TParent,TChild> (const char* childname=NULL) : 
-          myParent(NULL)  
-          {
-            if ( childname ) {
-              m_cname = childname;
-            }
-          }
-          void setParent( TParent & p ) {
-            myParent = &p;
-            myParent->addChild(*this);
-          }
-          ~Child<TParent,TChild> () {
-	    if (myParent) // FIXME:  contructor should never have this be NULL
-	      myParent->Parent<TChild>::releaseChild(*this);
-          }
-    };
-
-
-
+    template <class TParent, class TChild, const char *&prefix> class ChildOnly;
     // This is the class inherited by the parent, given the child's type
     template <class TChild>  class Parent {
-      ChildI<TChild> * myChildren;
-      bool done;
+      TChild * m_children;
+      bool m_done;
     public:
-      Parent<TChild>(const char* instancename=NULL) :
-        myChildren(0), done(false) { ( void ) instancename; }
-        void releaseChild(ChildI<TChild>& child) {
-          if (done)
-            return;
-          for (ChildI<TChild> **cp = &myChildren; *cp; cp = &(*cp)->next)
-            if (*cp == &child) {
-              *cp = child.next;
-              return;
-            }
-          assert(!"child missing from parent");
-        }
-        // call a function on all children, stopping if it returns true
-        // it should not add or remove anything.
-        bool doChildren(bool (*func)(TChild &)) {
-          for (ChildI<TChild> *cp = myChildren; cp; cp = cp->next)
-            if ((*func)(*static_cast<TChild *>(cp)))
-              return true;
-          return false;
-        }
-
-
-        TChild *firstChild() {
-          return static_cast<TChild *>(myChildren);
-        }
-        TChild *nextChild( ChildI<TChild>* c) {
-          return static_cast<TChild *>(c->next);
-        }
-
-
-        // call a function on all children, stopping if it returns true
-        // it should not add or remove anything.
-        TChild *findChild(bool (TChild::*doChild)(const char*), const char* arg) {
-          for (ChildI<TChild> *cp = myChildren; cp; cp = cp->next)
-            if ((static_cast<TChild *>(cp)->*doChild)(arg))
-              return static_cast<TChild *>(cp);
-          return 0;
-        }
-        void addChild(ChildI<TChild> &child) {
+      Parent<TChild>()
+      : m_children(NULL), m_done(false) {}
+      // FIXME: add in order with "last" ptr etc.
+      void addChild(TChild *child) {
 #ifndef NDEBUG
-          for (ChildI<TChild> **cp = &myChildren; *cp; cp = &(*cp)->next)
-            if (*cp == static_cast<ChildI<TChild> *>(&child))
-              assert(!"duplicate child in parent");
+	for (TChild *cp = m_children; cp; cp = cp->nextChild())
+	  if (cp == child)
+	    assert(!"duplicate child in parent");
 #endif
-          child.next = myChildren;
-          myChildren = &child;
-        }
-        virtual ~Parent<TChild> () {
-          done = true; // suppress release
-          while (myChildren) {
-            ChildI<TChild> *child = myChildren;
-            myChildren = child->next;
-            delete child; // this should call most derived class
-          }
-        }
+	child->m_next = m_children;
+	m_children = child;
+      }
+      // called by child destructor
+      void releaseChild(TChild *child) {
+	if (!m_done) {
+	  for (TChild **c = &m_children; *c; c = (*c)->nextChildP())
+	    if (*c == child) {
+	      *c = *child->nextChildP();
+	      return;
+	    }
+          assert(!"child missing from parent");
+	}
+      }
+#if 0
+      // call a function on all children, stopping if it returns true
+      // it should not add or remove anything.
+      TChild * doChildren(bool (*func)(TChild &)) {
+	for (TChild *cp = m_children; cp; cp = *cp->nextChildP())
+	  if ((*func)(*cp))
+	    return cp;
+	return NULL;
+      }
+#endif
+      TChild *firstChild() {
+	return static_cast<TChild *>(m_children);
+      }
+
+      // call a function on all children, stopping if it returns true
+      // it should not add or remove anything.
+      TChild *findChild(bool (TChild::*doChild)(const void*), const void* arg) {
+	for (TChild *cp = m_children; cp; cp = *cp->nextChildP())
+	  if ((cp->*doChild)(arg))
+            return cp;
+	return 0;
+      }
+      TChild *findChildByName(const char *argName) {
+	for (TChild *cp = m_children; cp; cp = *cp->nextChildP())
+	  if (!strcmp(cp->name().c_str(), argName))
+	    return cp;
+	return 0;
+      }
+#if 0
+      inline TChild *findChildByName(const std::string &name) {
+	return findChildByName(name.c_str());
+	for (TChild *cp = m_children; cp; cp = *cp->nextChildP())
+	  if (cp->m_childName == name)
+	    return cp;
+	return 0;
+      }
+#endif
+      void deleteChildren() {
+	if (!m_done) {
+	  m_done = true; // suppress release
+	  for (TChild *child = m_children; child; child = m_children) {
+	    m_children = *child->nextChildP();
+	    delete child; // this should call most derived class
+	  }
+	}
+      }
+      virtual ~Parent<TChild> () {
+	deleteChildren();
+      }
 
     };
+#if 0
+    // This template class is inherited by base classes of children when such a 
+    // base class is the child class of the parent.  This arrangement,
+    // where the parent's children are base classes of actual child classes,
+    // is appropriate when the relationship between parent and child is
+    // that the parent is dealing generically with its children
+    template <class TChild>
+    class BaseChild : public virtual AbstractChild<TChild> {
+      // This works because this template class is inherited by the
+      // TChild parameter class
+    public:
+      virtual TChild *child() { return static_cast<TChild *>(this);}
+    };
+#endif
+    template <class TParent,class TChild, const char *&prefix> class Child;
+    // This class is the behavior of knowing your parent
+    template <class TParent, class TChild, const char *&prefix>
+    class ChildOnly {
+      TParent &m_parent;
+      std::string m_childName;
+      bool m_released; // testing this 
+      friend class Parent<TChild>;
+    protected:
+      ChildOnly<TParent,TChild, prefix>(TParent &p, const char *name)
+      : m_parent(p), m_childName(childName(name, prefix)), m_released(false) {
+	m_parent.
+	  Parent<TChild>::addChild(static_cast<TChild*>(this));
+      }
+      void releaseFromParent() {
+	if (!m_released) {
+	  m_parent.
+	    Parent<TChild>::releaseChild(static_cast<TChild*>(this));
+	  m_released = true;
+	}
+      }
+      ~ChildOnly<TParent, TChild, prefix>() {
+	releaseFromParent();
+      }
+    public:
+      virtual const std::string &name() const { return m_childName; }
+      inline TParent &parent() { return m_parent; }
+    };
+      
+    // This is the child where the derived TChild is inherited from here
+    extern const char *child;
+    template <class TParent,class TChild,const char *&prefix = child>
+    class ChildWithBase : public ChildOnly<TParent,TChild,prefix>, public TChild {
+      friend class Parent<TChild>;
+      //      virtual TChild *child() = 0;
+    public:
+      // These are public because you can't use "friend class TChild"
+      ChildWithBase<TParent,TChild,prefix> (TParent & p, const char *name)
+      : ChildOnly<TParent, TChild,prefix>(p, name) {
+      }
+      //      virtual ~ChildWithBase<TParent,TChild,prefix> () {
+      //	releaseDerived(this->child());
+      //      }
+      virtual const std::string &name() const {
+	return ChildOnly<TParent,TChild,prefix>::name();
+      }
+    };
+
+    // This is the child where the TChild inherits from this template
+    // Note Sibling is inherited before ChildOnly so it is initialized first.
+    // which it must be (m_next must be NULL before child it added to parent)
+    template <class TParent,class TChild, const char *&prefix = child>
+    class Child : public Sibling<TChild>, public ChildOnly<TParent,TChild,prefix> {
+      friend class Parent<TChild>;
+    public:
+      // These are public because you can't use "friend class TChild"
+      // Let's not put in a null string name so that any usage is more obvious
+      Child<TParent,TChild,prefix> (TParent & p, const char *name = "unknown")
+      : ChildOnly<TParent, TChild,prefix>(p, name)
+      {}
+      virtual const std::string &name() const {
+	return ChildOnly<TParent,TChild,prefix>::name();
+      }
+    };
+
   }
 }
 

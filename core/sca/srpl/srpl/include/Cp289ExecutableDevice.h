@@ -202,15 +202,15 @@ namespace OCPI {
 #endif
 
     protected:
-      OCPI::Util::DriverManager  m_driverManager;
+      std::string m_containerType;
       std::string m_osName, m_processorName;
       unsigned int m_ocpiDeviceId;
       std::string m_ocpiDeviceType;
       // Map pid to proxy
       typedef std::map<CF::ExecutableDevice::ProcessID_Type,Cp289GenericProxy *> PidMap;
       PidMap m_pidMap;
-      OCPI::Container::Interface *m_container;
-      OCPI::Container::Application *m_application;
+      OCPI::Container::Container *m_container;
+      OCPI::API::ContainerApplication *m_application;
       DataTransfer::EventManager * m_eventManager;
       std::string m_tempDir;
       //      OCPI::OS::ThreadManager m_dispatchThreadMgr;

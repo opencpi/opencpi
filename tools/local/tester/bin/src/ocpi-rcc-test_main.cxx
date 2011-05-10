@@ -77,7 +77,6 @@
 #include <OcpiContainerInterface.h>
 #include <OcpiContainerPort.h>
 #include <OcpiWorker.h>
-#include <OcpiWciWorker.h>
 #include <RCC_Worker.h>
 #include "sca_props.h"
 
@@ -90,6 +89,8 @@
 #if defined (__linux__)
 #include <unistd.h>
 #endif
+#define CREATE_WORKER(app, disp) \
+  (static_cast<OCPI::Container::Worker *>(&app->createWorker (NULL, NULL, (char*)disp, NULL)))
 
 /*
  * ----------------------------------------------------------------------
@@ -253,70 +254,6 @@ printUsage (TestWorkerCommandLineConfigurator & config,
 
 /*
  * ----------------------------------------------------------------------
- * Dispatch thread helper.
- * ----------------------------------------------------------------------
- */
-
-namespace {
-
-  struct DispatchThreadData {
-    OCPI::Container::Interface * container;
-    DataTransfer::EventManager * eventManager;
-  };
-
-  void
-  dispatchThread (void * opaque)
-  {
-    DispatchThreadData * dtd = static_cast<DispatchThreadData *> (opaque);
-    OCPI::Container::Interface::DispatchRetCode rc;
-    bool keepWorking = true;
-
-    while (keepWorking) {
-      rc = dtd->container->dispatch (dtd->eventManager);
-
-      switch (rc) {
-      case OCPI::Container::Interface::DispatchNoMore:
-        // All done, exit from dispatch thread.
-        keepWorking = false;
-        break;
-
-      case OCPI::Container::Interface::MoreWorkNeeded:
-        // No-op. To prevent blocking the CPU, yield.
-        OCPI::OS::sleep (0);
-        break;
-
-      case OCPI::Container::Interface::Stopped:
-        // Exit from dispatch thread, it will be restarted.
-        keepWorking = false;
-        break;
-
-      case OCPI::Container::Interface::Spin:
-        /*
-         * If we have an event manager, ask it to go to sleep and wait for
-         * an event.  If we are not event driven, the event manager will
-         * tell us that it is spinning.  In that case, yield to give other
-         * threads a chance to run.
-         */
-
-        if (dtd->eventManager) {
-          if (dtd->eventManager->waitForEvent (0) == DataTransfer::EventSpin) {
-            OCPI::OS::sleep (0);
-          }
-        }
-        else {
-          OCPI::OS::sleep (0);
-        }
-        break;
-      }
-    }
-
-    delete dtd;
-  }
-
-}
-
-/*
- * ----------------------------------------------------------------------
  * Signal handler.
  * ----------------------------------------------------------------------
  */
@@ -399,7 +336,7 @@ private:
 
     bool connected;
     std::string fileName;
-    OCPI::Container::WorkerId fileIoWorkerId;
+    OCPI::Container::Worker *fileIoWorkerId;
     OCPI::Container::Port * fileIoPort;
   };
 
@@ -422,13 +359,10 @@ private:
 private:
   const TestWorkerCommandLineConfigurator & m_config;
 
-  OCPI::Container::Interface * m_container;
+  OCPI::API::Container * m_container;
 
-  OCPI::Container::Application * m_appContext;
-  DataTransfer::EventManager * m_eventManager;
-  OCPI::OS::ThreadManager * m_dispatchThreadMgr;
-
-  OCPI::Container::WorkerId m_containerWorkerId;
+  OCPI::API::ContainerApplication * m_appContext;
+  OCPI::Container::Worker *m_containerWorkerId;
 
   std::string workerProperties;
   LoadedDllInfos m_loadedDlls;
@@ -460,8 +394,6 @@ TestWorker (const TestWorkerCommandLineConfigurator & config)
   : m_config (config),
     m_container (0),
     m_appContext (0),
-    m_eventManager (0),
-    m_dispatchThreadMgr (0),
     m_containerWorkerId (0),
     m_props (0),
     m_ports (0),
@@ -477,16 +409,9 @@ TestWorker::
   throw ()
 {
   try {
-    if (m_eventManager) {
-      m_container->stop (m_eventManager);
-    }
+    m_container->stop();
   }
   catch (...) {
-  }
-
-  if (m_dispatchThreadMgr) {
-    m_dispatchThreadMgr->join ();
-    delete m_dispatchThreadMgr;
   }
 
   for (PortMap::iterator spit = m_portMap.begin(); spit != m_portMap.end(); spit++) {
@@ -552,8 +477,6 @@ TestWorker::
 }
 
 
-static OCPI::Util::DriverManager dm("Container");
-
 void
 TestWorker::
 runTest ()
@@ -574,13 +497,11 @@ runTest ()
   }
 
   try {
-    dm.discoverDevices(0,0);
     OCPI::Util::PValue cprops[] = {OCPI::Util::PVString("endpoint",(char*)endpoint.c_str() ),
                                   OCPI::Util::PVBool("polling",m_config.polled),
+                                  OCPI::Util::PVBool("ownThread",true),
                                   OCPI::Util::PVEnd };
-    OCPI::Util::Device* d = dm.getDevice( cprops, "RCC" );
-    m_container = static_cast<OCPI::Container::Interface*>(d);
-    m_eventManager = m_container->getEventManager ();
+    m_container = OCPI::API::ContainerManager::find("rcc", NULL, cprops);
     m_appContext = m_container->createApplication ();
   }
   catch (const OCPI::Util::EmbeddedException & oops) {
@@ -776,7 +697,7 @@ runTest ()
   }
 
   try {
-    m_containerWorkerId = & m_appContext->createWorker (NULL, NULL, (char*)epPtr);
+    m_containerWorkerId = CREATE_WORKER(m_appContext, epPtr);
   }
   catch (const OCPI::Util::EmbeddedException & oops) {
     const char * auxInfo = oops.getAuxInfo ();
@@ -799,16 +720,6 @@ runTest ()
   }
 
   createAllPorts ();
-
-  if (m_verbose) {
-    std::cout << "done." << std::endl;
-  }
-
-  if (m_verbose) {
-    std::cout << "Initializing worker ... " << std::flush;
-  }
-
-  m_containerWorkerId->control ( WCI_CONTROL_INITIALIZE, WCI_DEFAULT);
 
   if (m_verbose) {
     std::cout << "done." << std::endl;
@@ -869,8 +780,6 @@ runTest ()
     std::cout << "Starting the RCC container ... " << std::flush;
   }
 
-  m_container->start (m_eventManager);
-
   if (m_verbose) {
     std::cout << "done." << std::endl;
   }
@@ -882,12 +791,6 @@ runTest ()
   if (m_verbose) {
     std::cout << "Starting the dispatch thread ... " << std::flush;
   }
-
-  DispatchThreadData * dtd = new DispatchThreadData;
-  dtd->container = m_container;
-  dtd->eventManager = m_eventManager;
-  m_dispatchThreadMgr = new OCPI::OS::ThreadManager;
-  m_dispatchThreadMgr->start (dispatchThread, dtd);
 
   if (m_verbose) {
     std::cout << "done." << std::endl;
@@ -901,7 +804,9 @@ runTest ()
     PortData & pd = (*spit).second;
 
     if (pd.connected) {
-      if ( pd.fileIoWorkerId->control ( WCI_CONTROL_START, WCI_DEFAULT) != WCI_SUCCESS) {
+      try {
+	pd.fileIoWorkerId->start();
+      } catch (...) {
         std::string msg = "Failed to open ";
         msg += pd.provider ? "output" : "input";
         msg += " file \"";
@@ -922,7 +827,9 @@ runTest ()
     std::cout << "Starting worker ... " << std::flush;
   }
 
-  if ( m_containerWorkerId->control ( WCI_CONTROL_START, WCI_DEFAULT) != WCI_SUCCESS) {
+  try {
+    m_containerWorkerId->start();
+  } catch (...)  {
     throw std::string ("Failed to start worker");
   }
 
@@ -951,12 +858,11 @@ runTest ()
       PortData & pd = (*spit).second;
 
       if (pd.connected && pd.provider) {
-        WCI_u8 atEof;
+        uint8_t atEof;
 
         pd.fileIoWorkerId->read (
                                   offsetof (FileSourceProperties, atEof),
-                                  1, WCI_DATA_TYPE_U8,
-                                  WCI_DEFAULT, &atEof);
+                                  1, &atEof);
 
         if (!atEof) {
           allInputWorkersAtEof = false;
@@ -1011,7 +917,9 @@ runTest ()
     std::cout << "Stopping worker ... " << std::flush;
   }
 
-  if (  m_containerWorkerId->control (  WCI_CONTROL_STOP, WCI_DEFAULT) != WCI_SUCCESS) {
+  try {
+    m_containerWorkerId->stop();
+  } catch (...) {
     throw std::string ("Failed to stop worker");
   }
 
@@ -1036,7 +944,9 @@ runTest ()
     PortData & pd = (*spit).second;
 
     if (pd.connected) {
-      if ( pd.fileIoWorkerId->control (WCI_CONTROL_STOP, WCI_DEFAULT) != WCI_SUCCESS) {
+      try {
+	pd.fileIoWorkerId->stop();
+      } catch (...) {
         std::string msg = "Failed to stop ";
         msg += pd.provider ? "output" : "input";
         msg += " file \"";
@@ -1057,7 +967,7 @@ runTest ()
     std::cout << "Stopping the RCC container ... " << std::flush;
   }
 
-  m_container->stop (m_eventManager);
+  m_container->stop ();
 
   if (m_verbose) {
     std::cout << "done." << std::endl;
@@ -1070,10 +980,6 @@ runTest ()
   if (m_verbose) {
     std::cout << "Stopping the dispatch thread ... " << std::flush;
   }
-
-  m_dispatchThreadMgr->join ();
-  delete m_dispatchThreadMgr;
-  m_dispatchThreadMgr = 0;
 
   if (m_verbose) {
     std::cout << "done." << std::endl;
@@ -1181,7 +1087,7 @@ connectInputPorts ()
        * Instantiate file input worker.
        */
 
-      pd.fileIoWorkerId = & m_appContext->createWorker ( NULL, NULL, (char*)&TestWorkerFileSourceWorker);
+      pd.fileIoWorkerId = CREATE_WORKER(m_appContext, &TestWorkerFileSourceWorker);
 
       /*
        * Connect file input worker to worker port.
@@ -1201,35 +1107,27 @@ connectInputPorts ()
        * Configure file input worker.
        */
 
-      pd.fileIoWorkerId->control ( WCI_CONTROL_INITIALIZE, WCI_DEFAULT);
-
       ocpiAssert (fileName.length()+1 <= 256);
       pd.fileIoWorkerId->write (
                                  offsetof (FileSourceProperties, fileName),
                                  fileName.length() + 1,
-                                 WCI_DATA_TYPE_U8,
-                                 WCI_DEFAULT,
                                  fileName.c_str());
 
       ocpiAssert (portName.length()+1 <= 256);
       pd.fileIoWorkerId->write (
                                  offsetof (FileSourceProperties, portName),
                                  portName.length() + 1,
-                                 WCI_DATA_TYPE_U8,
-                                 WCI_DEFAULT,
                                  portName.c_str());
 
-      WCI_u8 data = m_verbose ? 1 : 0;
+      uint8_t data = m_verbose ? 1 : 0;
       pd.fileIoWorkerId->write (
                                  offsetof (FileSourceProperties, verbose),
-                                 1, WCI_DATA_TYPE_U8,
-                                 WCI_DEFAULT, &data);
+                                 1, &data);
 
       if (packetSize) {
         pd.fileIoWorkerId->write (
                                    offsetof (FileSourceProperties, bytesPerPacket),
-                                   4, WCI_DATA_TYPE_U32,
-                                   WCI_DEFAULT, &packetSize);
+                                   4, &packetSize);
       }
 
       if (m_verbose) {
@@ -1290,7 +1188,7 @@ connectOutputPorts ()
        * Instantiate file output worker.
        */
 
-      pd.fileIoWorkerId = & m_appContext->createWorker (NULL, NULL, (char*)&TestWorkerFileSinkWorker);
+      pd.fileIoWorkerId = CREATE_WORKER(m_appContext, &TestWorkerFileSinkWorker);
 
       /*
        * Connect file input worker to worker port.
@@ -1312,28 +1210,21 @@ connectOutputPorts ()
        * Configure file output worker.
        */
 
-      pd.fileIoWorkerId->control (WCI_CONTROL_INITIALIZE, WCI_DEFAULT);
-
       ocpiAssert (fileName.length()+1 <= 256);
       pd.fileIoWorkerId->write (offsetof (FileSinkProperties, fileName),
                                  fileName.length() + 1,
-                                 WCI_DATA_TYPE_U8,
-                                 WCI_DEFAULT,
                                  fileName.c_str());
 
       ocpiAssert (portName.length()+1 <= 256);
       pd.fileIoWorkerId->write (
                                  offsetof (FileSinkProperties, portName),
                                  portName.length() + 1,
-                                 WCI_DATA_TYPE_U8,
-                                 WCI_DEFAULT,
                                  portName.c_str());
 
-      WCI_u8 data = m_verbose ? 1 : 0;
+      uint8_t data = m_verbose ? 1 : 0;
       pd.fileIoWorkerId->write (
                                  offsetof (FileSinkProperties, verbose),
-                                 1, WCI_DATA_TYPE_U8,
-                                 WCI_DEFAULT, &data);
+                                 1, &data);
 
       if (m_verbose) {
         std::cout << "done." << std::endl;
@@ -1391,13 +1282,12 @@ configureWorker ()
 
     ocpiAssert (p.num_members == 1);
     OCPI::SCA::SimpleType & pt = p.types[0];
-    WCI_error e = WCI_SUCCESS;
 
     if (!p.is_sequence) {
       switch (pt.data_type) {
       case OCPI::SCA::SCA_boolean:
         {
-          WCI_u8 data;
+          uint8_t data;
 
           if (value == "true" || value == "TRUE" || value == "1") {
             data = 1;
@@ -1409,9 +1299,8 @@ configureWorker ()
             throw std::string ("Failed to extract value of type boolean");
           }
 
-          e = m_containerWorkerId->write ( p.offset,
-                                         1, WCI_DATA_TYPE_U8,
-                                         WCI_DEFAULT, &data);
+          m_containerWorkerId->write ( p.offset,
+                                         1, &data);
         }
         break;
 
@@ -1420,9 +1309,8 @@ configureWorker ()
           int idata = OCPI::Util::Misc::stringToInteger (value);
           int16_t data = static_cast<int16_t> (idata);
 
-          e = m_containerWorkerId->write ( p.offset,
-                                         2, WCI_DATA_TYPE_U16,
-                                         WCI_DEFAULT, &data);
+          m_containerWorkerId->write ( p.offset,
+                                         2, &data);
         }
         break;
 
@@ -1431,9 +1319,8 @@ configureWorker ()
           int idata = OCPI::Util::Misc::stringToInteger (value);
           int32_t data = static_cast<int32_t> (idata);
 
-          e = m_containerWorkerId->write (  p.offset,
-                                         4, WCI_DATA_TYPE_U32,
-                                         WCI_DEFAULT, &data);
+          m_containerWorkerId->write (  p.offset,
+                                         4, &data);
         }
         break;
 
@@ -1442,9 +1329,8 @@ configureWorker ()
           unsigned int idata = OCPI::Util::Misc::stringToUnsigned (value);
           uint32_t data = static_cast<uint32_t> (idata);
 
-          e = m_containerWorkerId->write (  p.offset,
-                                         4, WCI_DATA_TYPE_U32,
-                                         WCI_DEFAULT, &data);
+          m_containerWorkerId->write (  p.offset,
+                                         4, &data);
         }
         break;
 
@@ -1453,9 +1339,8 @@ configureWorker ()
           unsigned int idata = OCPI::Util::Misc::stringToUnsigned (value);
           uint16_t data = static_cast<uint16_t> (idata);
 
-          e = m_containerWorkerId->write ( p.offset,
-                                         2, WCI_DATA_TYPE_U16,
-                                         WCI_DEFAULT, &data);
+          m_containerWorkerId->write ( p.offset,
+                                         2, &data);
         }
         break;
 
@@ -1467,10 +1352,8 @@ configureWorker ()
             throw std::string ("String exceeds maximum length");
           }
 
-          e = m_containerWorkerId->write ( p.offset,
-                                         len, WCI_DATA_TYPE_U8,
-                                         WCI_DEFAULT,
-                                         value.c_str ());
+          m_containerWorkerId->write ( p.offset,
+                                         len, value.c_str ());
         }
         break;
 
@@ -1484,7 +1367,8 @@ configureWorker ()
   }
 
   if (needSync) {
-    if (m_containerWorkerId->control ( WCI_CONTROL_AFTER_CONFIG, WCI_DEFAULT) != WCI_SUCCESS) {
+    try { m_containerWorkerId->afterConfigure(); }
+    catch (...) {
       throw std::string ("Failed to configure worker");
     }
   }
@@ -1513,7 +1397,8 @@ printWorkerProperties ()
     const OCPI::SCA::Property & p = m_props[n];
 
     if (p.write_sync && !haveSync) {
-      if (m_containerWorkerId->control ( WCI_CONTROL_BEFORE_QUERY, WCI_DEFAULT) != WCI_SUCCESS) {
+      try { m_containerWorkerId->beforeQuery(); }
+      catch (...) {
         throw std::string ("Failed to query worker");
       }
 
@@ -1529,66 +1414,62 @@ printWorkerProperties ()
 
     ocpiAssert (p.num_members == 1);
     OCPI::SCA::SimpleType & pt = p.types[0];
-    WCI_error e = WCI_SUCCESS;
 
     try {
       if (!p.is_sequence) {
 
 #define PRINTPROPERTY(type,wcitype,printitem) do {        \
           type data;                                        \
-          e = m_containerWorkerId->read ( \
+          m_containerWorkerId->read ( \
                                         p.offset,        \
                                         sizeof(type),        \
-                                        wcitype,        \
-                                        WCI_DEFAULT,        \
                                         &data);                \
           std::cout << (printitem);                        \
         } while (0)
 
         switch (pt.data_type) {
         case OCPI::SCA::SCA_boolean:
-          PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, (data ? "true" : "false"));
+          PRINTPROPERTY(uint8_t, WCI_DATA_TYPE_U8, (data ? "true" : "false"));
           break;
 
         case OCPI::SCA::SCA_char:
-          PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, ((int) data));
+          PRINTPROPERTY(uint8_t, WCI_DATA_TYPE_U8, ((int) data));
           break;
 
         case OCPI::SCA::SCA_double:
-          PRINTPROPERTY(WCI_f64, WCI_DATA_TYPE_F64, data);
+          PRINTPROPERTY(double, WCI_DATA_TYPE_F64, data);
           break;
 
         case OCPI::SCA::SCA_float:
-          PRINTPROPERTY(WCI_f32, WCI_DATA_TYPE_F32, data);
+          PRINTPROPERTY(float, WCI_DATA_TYPE_F32, data);
           break;
 
         case OCPI::SCA::SCA_short:
-          PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, static_cast<OCPI::OS::int16_t> (data));
+          PRINTPROPERTY(uint16_t, WCI_DATA_TYPE_U16, static_cast<OCPI::OS::int16_t> (data));
           break;
 
         case OCPI::SCA::SCA_long:
-          PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, static_cast<OCPI::OS::int32_t> (data));
+          PRINTPROPERTY(uint32_t, WCI_DATA_TYPE_U32, static_cast<OCPI::OS::int32_t> (data));
           break;
 
         case OCPI::SCA::SCA_octet:
-          PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, data);
+          PRINTPROPERTY(uint8_t, WCI_DATA_TYPE_U8, data);
           break;
 
         case OCPI::SCA::SCA_ulong:
-          PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, data);
+          PRINTPROPERTY(uint32_t, WCI_DATA_TYPE_U32, data);
           break;
 
         case OCPI::SCA::SCA_ushort:
-          PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, data);
+          PRINTPROPERTY(uint16_t, WCI_DATA_TYPE_U16, data);
           break;
 
         case OCPI::SCA::SCA_string:
           {
             char * buf = new char[pt.size+1];
 
-            e = m_containerWorkerId->read ( p.offset,
-                                          pt.size, WCI_DATA_TYPE_U8,
-                                          WCI_DEFAULT, buf);
+            m_containerWorkerId->read ( p.offset,
+                                          pt.size, buf);
 
             buf[pt.size] = '\0';
             std::cout << buf;
@@ -1604,11 +1485,10 @@ printWorkerProperties ()
 
       }
       else {
-        WCI_u32 length;
+        uint32_t length;
 
-        if ((e = m_containerWorkerId->read ( p.offset,
-                                           4, WCI_DATA_TYPE_U32,
-                                           WCI_DEFAULT, &length)) != WCI_SUCCESS) {
+        try { m_containerWorkerId->read ( p.offset, 4, &length); }
+	catch (...) {{
           std::cout << "{Failed to read sequence length}";
           continue;
         }
@@ -1621,7 +1501,7 @@ printWorkerProperties ()
         }
 
 #define PRINTSEQ(printitem) do {                \
-          for (WCI_u32 i=0; i<length; i++) {        \
+          for (unsigned i=0; i<length; i++) {        \
             if (i) {                                \
               std::cout << ", ";                \
             }                                        \
@@ -1631,11 +1511,9 @@ printWorkerProperties ()
 
 #define PRINTPROPERTY(type,wcitype,printitem) do {                \
           type * data = new type [length];                        \
-          e = m_containerWorkerId->read (                \
+          m_containerWorkerId->read (                \
                                         p.data_offset,                \
                                         sizeof(type)*length,        \
-                                        wcitype,                \
-                                        WCI_DEFAULT,                \
                                         data);                        \
           PRINTSEQ(printitem);                                        \
           delete [] data;                                        \
@@ -1643,16 +1521,15 @@ printWorkerProperties ()
 
         switch (pt.data_type) {
         case OCPI::SCA::SCA_boolean:
-          PRINTPROPERTY(WCI_u8, WCI_DATA_TYPE_U8, (data[i] ? "true" : "false"));
+          PRINTPROPERTY(uint8_t, WCI_DATA_TYPE_U8, (data[i] ? "true" : "false"));
           break;
 
         case OCPI::SCA::SCA_char:
         case OCPI::SCA::SCA_octet:
           {
-            WCI_u8 * data = new WCI_u8 [length];
-            e = m_containerWorkerId->read ( p.data_offset,
-                                          length, WCI_DATA_TYPE_U8,
-                                          WCI_DEFAULT, data);
+            uint8_t * data = new uint8_t [length];
+            m_containerWorkerId->read ( p.data_offset,
+                                          length, data);
             std::cout << std::endl;
             dumpOctets (data, length);
             delete [] data;
@@ -1660,27 +1537,27 @@ printWorkerProperties ()
           break;
 
         case OCPI::SCA::SCA_double:
-          PRINTPROPERTY(WCI_f64, WCI_DATA_TYPE_F64, data[i]);
+          PRINTPROPERTY(double, WCI_DATA_TYPE_F64, data[i]);
           break;
 
         case OCPI::SCA::SCA_float:
-          PRINTPROPERTY(WCI_f32, WCI_DATA_TYPE_F32, data[i]);
+          PRINTPROPERTY(float, WCI_DATA_TYPE_F32, data[i]);
           break;
 
         case OCPI::SCA::SCA_short:
-          PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, static_cast<OCPI::OS::int16_t> (data[i]));
+          PRINTPROPERTY(uint16_t, WCI_DATA_TYPE_U16, static_cast<OCPI::OS::int16_t> (data[i]));
           break;
 
         case OCPI::SCA::SCA_long:
-          PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, static_cast<OCPI::OS::int32_t> (data[i]));
+          PRINTPROPERTY(int32_t, WCI_DATA_TYPE_U32, static_cast<OCPI::OS::int32_t> (data[i]));
           break;
 
         case OCPI::SCA::SCA_ulong:
-          PRINTPROPERTY(WCI_u32, WCI_DATA_TYPE_U32, data[i]);
+          PRINTPROPERTY(uint32_t, WCI_DATA_TYPE_U32, data[i]);
           break;
 
         case OCPI::SCA::SCA_ushort:
-          PRINTPROPERTY(WCI_u16, WCI_DATA_TYPE_U16, data[i]);
+          PRINTPROPERTY(uint16_t, WCI_DATA_TYPE_U16, data[i]);
           break;
 
         case OCPI::SCA::SCA_string:
@@ -1696,11 +1573,8 @@ printWorkerProperties ()
 
       }
 
-      if (e != WCI_SUCCESS) {
-        std::cout << "{" << wci_strerror (e) << "}";
-      }
-
       std::cout << std::endl;
+    }
     }
     catch (const std::bad_alloc & oops) {
       std::cout << "{" << oops.what() << "}" << std::endl;

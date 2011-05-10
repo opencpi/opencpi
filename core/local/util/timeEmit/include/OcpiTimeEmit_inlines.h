@@ -83,21 +83,24 @@ namespace OCPI {
     struct Emit::EventQ {
       QConfig      config;
       EventQEntry*  start;
+      OCPI::OS::uint8_t* base;
       OCPI::OS::uint8_t* end;
       EventQEntry* current;
       bool         full;
       bool         done;
       EventTriggerRole    role;
-      EventQ():start(NULL),current(NULL),full(false),done(false),role(NoTrigger){}
+    EventQ():start(NULL),base(NULL),end(NULL),current(NULL),full(false),done(false),role(NoTrigger){}
       void allocate()
       {
-        start = (EventQEntry*) new OCPI::OS::uint8_t[config.size];
-        end   = (OCPI::OS::uint8_t*)start + config.size;
-        memset( start,0,config.size);
+        base = new uint8_t[config.size];
+        start = (EventQEntry*) base;
+        end   = base + config.size;
+        memset(base,0,config.size);
       };
       ~EventQ() 
       {
-        delete [] start;
+	if (base)
+	  delete [] base;
       }
     };
 
@@ -282,7 +285,7 @@ inline void OCPI::Time::Emit::emit( OCPI::Time::Emit::EventId id,
   //  FINI_EVENT;
 }
 
-inline void OCPI::Time::Emit::emit( EventId id, OCPI::Util::PValue& p, EventTriggerRole role )
+inline void OCPI::Time::Emit::emit( EventId id, OCPI::API::PValue& p, EventTriggerRole role )
 {
   INIT_EVENT(id, role, sizeof(OCPI::OS::uint64_t) );
 

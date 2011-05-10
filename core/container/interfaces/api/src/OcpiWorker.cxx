@@ -32,83 +32,82 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "OcpiUtilAutoMutex.h"
 #include "OcpiContainerApplication.h"
+#include "OcpiContainerErrorCodes.h"
 #include "OcpiWorker.h"
-#include "OcpiProperty.h"
 #include "OcpiContainerPort.h"
 #include "OcpiContainerInterface.h"
 #include "OcpiContainerMisc.h"
+#include "OcpiContainerArtifact.h"
 
+namespace OA = OCPI::API;
+namespace OP = OCPI::Util::Prop;
+namespace OU = OCPI::Util;
+namespace OM = OCPI::Metadata;
 namespace OCPI {
-  namespace CP = Util::Prop;
-  namespace CM = Metadata;
   namespace Container {
-    // This is user-visible, initialized from information in the metadata
-    // It is intended to be constructed on the user's stack - a cache of
-    // just the items needed for fastest access
-    Property::Property(Worker &w, const char *aname) :
-      worker(w), myMeta(w.findProperty(aname)) {
-      // Get the metadata about this property from the worker's database.
-      if (myMeta.isStruct) {
-	type.scalar = CP::Scalar::OCPI_none; // Make all scalar type checks fail
-	isStruct = true;
-      } else
-	type = myMeta.members->type;
-      myWriteSync = myMeta.needWriteSync;
-      myReadSync = myMeta.needReadSync;
-      readVaddr = 0;
-      writeVaddr = 0;
-      // Now ask the underlying implementation to tell us what we can do
-      w.prepareProperty(myMeta, *this);
+    Controllable::Controllable()
+      : m_state(OM::Worker::EXISTS), m_controlMask(0) {
     }
-    Controllable::Controllable(const char *ops)
-      : myState(CM::Worker::EXISTS)  {
+    void Controllable::setControlOperations(const char *ops) {
+      if (ops) {
 #define CONTROL_OP(x, c, t, s1, s2, s3) \
-      if (ops && strstr(ops, #x)) \
-	controlMask |= 1 << CM::Worker::Op##c;
-      OCPI_CONTROL_OPS
+	if (strstr(ops, #x))				\
+	  m_controlMask |= 1 << OM::Worker::Op##c;
+	OCPI_CONTROL_OPS
 #undef CONTROL_OP
+      }
     }
 
-    Worker::Worker(Application &a, ezxml_t impl, ezxml_t inst) :
-      OCPI::Util::Child<Application,Worker>(a), CM::Worker(impl),
-      Controllable(ezxml_cattr(impl, "controlOperations")),
-      myXml(impl),
-      myImplTag(impl ? ezxml_cattr(impl, "name") : 0),
-      myInstTag(inst ? ezxml_cattr(inst, "name") : 0) {
+    // Due to class hierarchy issues..
+    Worker::Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OA::PValue *) 
+      : OM::Worker::Worker(impl),
+	m_artifact(art), m_workerMutex(true)
+    {
+      setControlOperations(ezxml_cattr(impl, "controlOperations"));
+      //      m_artifact = &art; // can't use a reference here...
+      m_xml = impl;
+      if (impl)
+	m_implTag = ezxml_cattr(impl, "name");
+      if (inst)
+	m_instTag = ezxml_cattr(inst, "name");
     }
 
-    Worker::~Worker(){}
-    bool Worker::hasImplTag(const char *tag) {
-      return strcmp(tag, myImplTag) == 0;
+    Worker::~Worker()
+    {
+      if (m_artifact)
+	m_artifact->removeWorker(*this);
     }
-    bool Worker::hasInstTag(const char *tag) {
-      return strcmp(tag, myInstTag) == 0;
-    }
-    Port &Worker::
-    getPort(const char *name) {
-      Port *p = findChild(&Port::hasName, name);
+
+    OA::Port &Worker::
+    getPort(const char *name, const OA::PValue *props ) {
+      Port *p = findPort(name);
       if (p)
         return *p;
-      OCPI::Metadata::Port *metaPort = findPort(name);
+      OM::Port *metaPort = findMetaPort(name);
       if (!metaPort)
         throw ApiError("no port found with name \"", name, "\"", NULL);
-      return createPort(*metaPort);
+      return createPort(*metaPort, props);
     }
-
-
+    void Worker::setupProperty(const char *name, OA::Property &apiProp) {
+      Metadata::Property &prop = findProperty(name);
+      apiProp.m_info = prop;
+      apiProp.m_type = prop.members->type;
+      prepareProperty(prop, apiProp);
+    }
     void Worker::setProperty(const char *name, const char *value) {
-      Property prop(*this, name);
-      CP::Scalar::Value v; // FIXME storage when not scalar
-      if (prop.isStruct)
+      OA::Property prop(*this, name);
+      OP::Scalar::Value v; // FIXME storage when not scalar
+      if (prop.m_info.m_isStruct)
 	throw ApiError("No support yet for setting struct properties", NULL);
-      CP::ValueType &vt = prop.myMeta.members->type;
-      const char *err = vt.parseValue(value, v);
+      OP::ValueType &vt = prop.m_type;
+      const char *err = OP::parseValue(vt, value, v);
       if (err)
         throw ApiError("Error parsing property value", NULL);
       switch (vt.scalar) {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-	case CP::Scalar::OCPI_##pretty:					\
+	case OP::Scalar::OCPI_##pretty:					\
 	  if (vt.length > 1)						\
 	    prop.set##pretty##SequenceValue((const run*)(v.pv##pretty), \
 					    v.length);			\
@@ -120,7 +119,50 @@ namespace OCPI {
       default:
 	ocpiAssert(!"unknown data type");
       }
-      vt.destroyValue(v);
+      OP::destroyValue(vt, v);
     }
+    // Common top level implementation for control operations
+    // Note that the m_controlMask does not apply at this level
+    // since the container might want to know anyway, even if the
+    // worker doesn't have an implementation
+#define CONTROL_OP(x, c, t, s1, s2, s3)	\
+    void Worker::x() { controlOp(Op##c); }
+    OCPI_CONTROL_OPS
+#undef CONTROL_OP
+
+    struct ControlTransition {
+      OM::Worker::ControlState valid[3];
+      OM::Worker::ControlState next;
+    } controlTransitions[] = {
+#define CONTROL_OP(x, c, t, s1, s2, s3)  \
+      {{OM::Worker::s1, OM::Worker::s2, OM::Worker::s3}, OM::Worker::t},
+	OCPI_CONTROL_OPS
+#undef CONTROL_OP
+    };
+    void Worker::controlOp(OM::Worker::ControlOperation op) {
+      OU::AutoMutex guard (m_workerMutex, true);
+      OM::Worker::ControlState cs = getControlState();
+      ControlTransition ct = controlTransitions[op];
+      if (cs == ct.valid[0] ||
+	  (ct.valid[1] != OM::Worker::NONE && cs == ct.valid[1]) ||
+	  (ct.valid[2] != OM::Worker::NONE && cs == ct.valid[2])) {
+        controlOperation(op);
+	if (ct.next != OM::Worker::NONE)
+	  setControlState(ct.next);
+      } else
+	throw OU::EmbeddedException(cs == OM::Worker::UNUSABLE ?
+				    WORKER_UNUSABLE :
+				    INVALID_CONTROL_SEQUENCE,
+				    "Illegal control state for operation",
+				     ApplicationRecoverable);
+      Application &a = application();
+      Container &c = a.container();
+      c.start();
+    }
+
+    //      application().container().start(); 
+  }
+  namespace API {
+    Worker::~Worker(){}
   }
 }

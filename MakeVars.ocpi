@@ -81,7 +81,13 @@ ifndef OCPI_OS
     OCPI_OS=$(shell uname -s | tr A-Z a-z)
   endif
 endif
+ifndef OCPI_ARCH
+  OCPI_ARCH := $(shell uname -m)
+endif
 ifeq ($(OCPI_OS),darwin)
+  ifeq ($(OCPI_ARCH),i386)
+      OCPI_ARCH:=x86_64
+  endif
   OCPI_DYLIB_ENV:=DYLD_LIBRARY_PATH
   OCPI_DYLIB_EXT:=dylib
 else
@@ -115,7 +121,7 @@ ifeq "$(VOBDIR)" ""
 endif
 
 ifeq "$(OCPI_OUT_DIR)" ""
-  OCPI_OUT_DIR = $(OCPI_OS)-$(shell uname -m)-bin
+  OCPI_OUT_DIR = $(OCPI_OS)-$(OCPI_ARCH)-bin
 endif
 
 ifeq "$(DATAPLANE)" ""
@@ -349,4 +355,5 @@ DescendMake=$(foreach d,$(call TrimDir,$(1)),-C $(d) $(if $(filter /%,$(OCPI_BAS
 DescendMake2=-C $(1) $(if $(filter /%,$(OCPI_BASE_DIR)),,OCPI_BASE_DIR=../../$(OCPI_BASE_DIR))
 DescendMake1=-C $(1) $(if $(filter /%,$(OCPI_BASE_DIR)),,OCPI_BASE_DIR=../$(OCPI_BASE_DIR))
 DescendFile2=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,../..)
+DescendFile1=$(OCPI_BASE_DIR)/$(if $(filter /%,$(OCPI_BASE_DIR)),,..)
 export AT=@

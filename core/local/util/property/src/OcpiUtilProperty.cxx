@@ -41,10 +41,27 @@
 #include <OcpiUtilEzxml.h>
 
 namespace OCPI {
+  namespace API {
+    PropertyInfo::PropertyInfo()
+      : m_readSync(false), m_writeSync(false), m_isWritable(false),
+	m_isReadable(false), m_readError(false), m_writeError(false),
+	m_offset(0), m_maxAlign(0), m_name(NULL), m_isStruct(false),
+	m_isStructSequence(false)
+      {}
+  }
   namespace Util {
     namespace CE = EzXml;
     namespace Prop {
 
+Member::Member()
+  : name(NULL), offset(0), bits(0), align(0), nBytes(0), hasDefault(false)
+{
+  type.scalar = OCPI::API::OCPI_scalar_type_limit;
+  type.isSequence = false;
+  type.isArray = false;
+  type.stringLength = 0;
+  type.length = 0;
+}
 const char *
 Member::parse(ezxml_t xp,
 	      unsigned &maxAlign,
@@ -111,13 +128,22 @@ Member::parse(ezxml_t xp,
   // Process default values
   const char *defValue = ezxml_cattr(xp, "Default");
   if (defValue) {
-    if ((err = type.parseValue(defValue, defaultValue)))
+    if ((err = parseValue(type, defValue, defaultValue)))
       return esprintf("for member %s:", name);
     hasDefault = true;
   }
   return 0;
 }
 
+Property::Property()
+  : members(NULL), nBytes(0), nMembers(0), smallest(0), granularity(0),
+    isParameter(false), isStruct(false), isStructSequence(false),
+    nStructs(0), isTest(false), sequenceLength(0), dataOffset(0) {
+}
+Property::~Property() {
+  if (members)
+    delete [] members;
+}
 // parse a value from xml for this property, which may be a struct
 const char *
 Property::parseValue(ezxml_t x, Scalar::Value &value) {
@@ -125,10 +151,10 @@ Property::parseValue(ezxml_t x, Scalar::Value &value) {
   const char *unparsed = ezxml_cattr(x, "Value");
   if (!unparsed)
     return esprintf("Missing \"value\" attribute for \"%s\" property value",
-		    name);
-  if (isStruct)
+		    m_name);
+  if (m_isStruct)
     return "Struct property values unimplemented";
-  return members->type.parseValue(unparsed, value);
+  return OCPI::Util::Prop::parseValue(members->type, unparsed, value);
 }
 
 const char *
@@ -147,7 +173,7 @@ Member::parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
   for (ezxml_t m = ezxml_cchild(prop, tag); m ; m = ezxml_next(m))
     nMembers++;
   if (nMembers) {
-    members = myCalloc(Member, nMembers);
+    members = new Member[nMembers];
     Member *mem = members;
     const char *err = NULL;
     for (ezxml_t m = ezxml_cchild(prop, tag); m ; m = ezxml_next(m), mem++)
@@ -165,8 +191,8 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
 		bool &readableConfigs, bool &writableConfigs,
 		bool &argSub32Configs,  bool includeImpl) {
   bool sub32Configs = false;
-  name = ezxml_cattr(prop, "Name");
-  if (!name)
+  m_name = ezxml_cattr(prop, "Name");
+  if (!m_name)
     return "Missing Name attribute for property";
   const char *err;
   if ((err = includeImpl ?
@@ -174,10 +200,10 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
        CE::checkAttrs(prop, "Name", SPEC_PROPERTIES, NULL)))
     return err;
   const char *typeName = ezxml_cattr(prop, "Type");
-  maxAlign = 1;
+  m_maxAlign = 1;
   unsigned myOffset = 0;
   if (typeName && !strcasecmp(typeName, "Struct")) {
-    if ((err = Member::parseMembers(prop, nMembers, members, maxAlign, myOffset, sub32Configs, "member")))
+    if ((err = Member::parseMembers(prop, nMembers, members, m_maxAlign, myOffset, sub32Configs, "member")))
       return err;
     if (nMembers == 0)
       return "No Property elements in Property with type == \"struct\"";
@@ -192,8 +218,8 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
   } else {
     nMembers = 1;
     isStruct = false;
-    members = myCalloc(Member, nMembers);
-    if ((err = members->parse(prop, maxAlign, myOffset, sub32Configs)))
+    members = new Member[nMembers];
+    if ((err = members->parse(prop, m_maxAlign, myOffset, sub32Configs)))
       return err;
   }
   nBytes = myOffset;
@@ -201,16 +227,16 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
       (err = parseImplAlso(prop)))
     return err;
   if (!isParameter) {
-    argOffset = roundup(argOffset, maxAlign);
-    offset = argOffset;
+    argOffset = roundup(argOffset, m_maxAlign);
+    m_offset = argOffset;
     argOffset += myOffset;
     //printf("%s at %x(word) %x(byte)\n", p->name, p->offset/4, p->offset);
-    if ((err = CE::getBoolean(prop, "Readable", &isReadable)) ||
-	(err = CE::getBoolean(prop, "Writable", &isWritable)))
+    if ((err = CE::getBoolean(prop, "Readable", &m_isReadable)) ||
+	(err = CE::getBoolean(prop, "Writable", &m_isWritable)))
       return err;
-    if (isReadable)
+    if (m_isReadable)
       readableConfigs = true;
-    if (isWritable)
+    if (m_isWritable)
       writableConfigs = true;
     if (sub32Configs)
       argSub32Configs = true;
@@ -218,6 +244,7 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
   return 0;
 }
 
+#if 0
 const char *Property::
 checkType(Scalar::Type ctype, unsigned n, bool write) {
   if (write && !isWritable)
@@ -234,19 +261,20 @@ checkType(Scalar::Type ctype, unsigned n, bool write) {
     return "sequence or array not large enough for this property";
   return 0;
 }
+#endif
 
 const char *Property::
 parseImplAlso(ezxml_t prop) {
   const char *err;
-  if ((err = CE::getBoolean(prop, "ReadSync", &needReadSync)) ||
-      (err = CE::getBoolean(prop, "WriteSync", &needWriteSync)) ||
-      (err = CE::getBoolean(prop, "ReadError", &readError)) ||
-      (err = CE::getBoolean(prop, "WriteError", &writeError)) ||
+  if ((err = CE::getBoolean(prop, "ReadSync", &m_readSync)) ||
+      (err = CE::getBoolean(prop, "WriteSync", &m_writeSync)) ||
+      (err = CE::getBoolean(prop, "ReadError", &m_readError)) ||
+      (err = CE::getBoolean(prop, "WriteError", &m_writeError)) ||
       (err = CE::getBoolean(prop, "IsTest", &isTest)) ||
       (err = CE::getBoolean(prop, "Parameter", &isParameter)))
     return err;
-  if (isParameter && isWritable)
-    return esprintf("Property \"%s\" is a parameter and can't be writable", name);
+  if (isParameter && m_isWritable)
+    return esprintf("Property \"%s\" is a parameter and can't be writable", m_name);
   return 0;
 }
 const char *Property::
@@ -256,8 +284,6 @@ parseImpl(ezxml_t x) {
     return err;
   return parseImplAlso(x);
 }
-
-
 
     }}}
 

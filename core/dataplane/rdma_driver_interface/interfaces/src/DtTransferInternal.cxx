@@ -63,55 +63,21 @@
 #include <OcpiOsMisc.h>
 #include <OcpiUtilHash.h>
 #include <OcpiUtilAutoMutex.h>
-#include <DtTransferInternal.h>
+#include <OcpiUtilEzxml.h>
 #include <OcpiPValue.h>
+#include <DtTransferInternal.h>
 
-using namespace DataTransfer;
-using namespace OCPI::Util;
-using namespace OCPI::OS;
-
+namespace OX = OCPI::Util::EzXml;
+namespace OU = OCPI::Util;
+namespace OS = OCPI::OS;
+namespace OD = OCPI::Driver;
 
 namespace DataTransfer {
-  void configureSubSystem( ezxml_t config )
-  {
-    DataTransfer::XferFactoryManager::getFactoryManager().configure( config );
-  }
-}
-
-XferFactoryManager& 
-XferFactoryManager::
-getFactoryManager()
-{
-  static XferFactoryManager * fm = NULL;
-  if ( !fm ) {
-    fm = new XferFactoryManager;
-  }
-  return *fm;
-}
-
-// Register the Data transfer class
-void XferFactoryManager::
-registerFactory( XferFactory* dt )
-{
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
-  insert_to_list( &m_registeredTransfers, dt, 64,8);
-}
-
-// Register the Data transfer class
-void XferFactoryManager::
-unregisterFactory( XferFactory* dt )
-{
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
-  remove_from_list( &m_registeredTransfers, dt);
-}
-
-
-
-OCPI::OS::int32_t 
+OS::int32_t 
 XferFactory::
 getNextMailBox()
 {
-  static OCPI::OS::int32_t mailbox=1;
+  static OS::int32_t mailbox=1;
   static bool mb_once=false;
   if ( ! mb_once ) {
     const char* env = getenv("OCPI_TRANSFER_MAILBOX");
@@ -128,7 +94,7 @@ getNextMailBox()
 
 
 
-OCPI::OS::int32_t 
+OS::int32_t 
 XferFactory::
 getMaxMailBox()
 {
@@ -147,6 +113,12 @@ getMaxMailBox()
   return max_mb;
 }
 
+// Default implementation for drivers that have no devices.
+void
+XferFactory::
+allocateEndpoints(std::vector<std::string> &l) {
+  l.push_back(allocateEndpoint());
+}
 
 
 // This method is used to retreive all of the available endpoints that have been registered
@@ -155,30 +127,22 @@ std::vector<std::string>
 XferFactoryManager::
 getListOfSupportedEndpoints()
 {
-  checkConf();
-  XferFactory* factory;
+  parent().configure();
   std::vector<std::string> l;
-  for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
-    factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
-    OCPI::Util::Device * d = factory->getNextDevice(0);
-    do { 
-      std::string url;
-      bool found=false;
-      try {
-	url = factory->allocateEndpoint( d,  NULL );
-	found = true;
-      }
-      catch( OCPI::Util::EmbeddedException & ex ) {
-	fprintf(stderr, "Could not allocate endpoint for %s, error = %s\n", factory->getProtocol(), ex.getAuxInfo() );
-      }
-      catch( ... ) {
-	fprintf(stderr, "Caught an unknown exception while allocating an endpoint from %s\n", factory->getProtocol() );
-      }
-      if ( found ) {
-	l.push_back( url );
-      }
-      d = factory->getNextDevice(d);
-    } while ( d );    
+  // Loop over transfer drivers
+  for (XferFactory *factory = firstDriver(); factory;
+       factory = factory->nextDriver()) {
+    try {
+      factory->allocateEndpoints(l);
+    }
+    catch( OU::EmbeddedException & ex ) {
+      fprintf(stderr, "Could not allocate endpoint for %s, error = %s\n",
+	      factory->getProtocol(), ex.getAuxInfo() );
+    }
+    catch( ... ) {
+      fprintf(stderr, "Caught an unknown exception while allocating an endpoint from %s\n",
+	      factory->getProtocol() );
+    }
   }
   return l;
 }
@@ -204,129 +168,67 @@ getNode( ezxml_t tn, const char* name )
   return NULL;
 }
 
-
+// These defaults are pre-configuration
 FactoryConfig::
-FactoryConfig()
-  : m_xml( NULL ), m_SMBSize(3*1024*1024),m_retryCount(128)
+FactoryConfig(uint32_t smbSize, uint32_t retryCount)
+  : m_SMBSize(3*1024*1024), m_retryCount(128)
 {
-  const char* env = getenv("OCPI_SMB_SIZE");
-  if ( env ) m_SMBSize = atol(env);
+  if (smbSize)
+    m_SMBSize = smbSize;
+  if (retryCount)
+    m_retryCount = retryCount;
 }
 
-
-
-
-bool 
-FactoryConfig::
-getu8Prop( ezxml_t node, const char* name, const char * attr, uint8_t & value )
-{
-  uint32_t v;
-  getLProp( node,name,attr,v);
-  return (uint8_t)v;
-}
-
-bool 
-FactoryConfig::
-getLProp( ezxml_t node, const char* name, const char * attr, uint32_t & value )
-{
-  // Process the properites
-  ezxml_t p =ezxml_child(node,"Property");
-  while( p ) {
-    const char * pname = ezxml_attr(p, "name" );
-    if ( pname && (strcmp(pname, name)==0) ) {
-      const char * c;
-      if ( (c=ezxml_attr(p, attr )) ) value=atol(c);
-      return true;
-    }
-    p = ezxml_next(p);
-  }
-  return false;
-}
-
-
-bool 
-FactoryConfig::
-getStringProp( ezxml_t node, const char* name, const char * attr, const char * & value )
-{
-  // Process the properites
-  ezxml_t p =ezxml_child(node,"Property");
-  while( p ) {
-    const char * pname = ezxml_attr(p, "name" );
-    if ( pname && (strcmp(pname, name)==0) ) {
-      value = ezxml_attr(p, attr );
-      return true;
-    }
-    p = ezxml_next(p);
-  }
-  return false;
-}
-
-void
-FactoryConfig::
-parse( ezxml_t dtag )
-{
-  m_xml = dtag;
-  if ( dtag ) {
-
-    const char *name = ezxml_name(dtag);
-    if ( name ) 
-      printf("XML node name = %s\n", name );
-
-    getLProp( dtag, "SMBSize", "value", m_SMBSize );
-    getLProp( dtag, "TxRetryCount", "value", m_retryCount);
-
+// Parse and default from parent
+void FactoryConfig::
+parse(FactoryConfig *parent, ezxml_t x) {
+  if (parent)
+    *this = *parent;
+  m_xml = x;
+  if (x) {
+    const char *err;
+    // Note we are not writing defaults here because they are set
+    // in the constructor, and they need to be set even when there is no xml
+    if ((err = OX::checkAttrs(x, "SMBSize", "TxRetryCount", NULL)) ||
+	(err = OX::getNumber(x, "SMBSize", &m_SMBSize, NULL, 0, false)) ||
+	(err = OX::getNumber(x, "TxRetryCount", &m_retryCount, NULL, 0, false)))
+      throw err; // FIXME configuration api error exception class
   }
 }
 
 
-FactoryConfig::
-~FactoryConfig()
-{
-  // Empty
-}
-
-
-// Configure the drivers
+// Configure this manager.  The drivers will be configured by the base class
 void 
 XferFactoryManager::
-configure(  ezxml_t config )
+configure( ezxml_t x)
 {
-  m_configured = true;
+  if (!m_configured) {
+    m_configured = true;
+    parse(NULL, x);
+    // Allow the environment to override config files here
+    const char* env = getenv("OCPI_SMB_SIZE");
+    if ( env && OX::getUNum(env, &m_SMBSize))
+      throw "Invalid OCPI_SMB_SIZE value";
 
-  // We will find any drivers that were statically registered and add them
-  // to our list
-  std::vector<OCPI::Util::Driver*> & list = getDrivers();
-  std::vector<OCPI::Util::Driver*>::iterator it;
-  for (it=list.begin(); it!=list.end(); it++ ) {
-    registerFactory( static_cast<XferFactory*>( (*it) ) );
+    // Now configure the drivers
+    OD::Manager::configure(x);
+    startup();
   }
-
-  m_config = new FactoryConfig();
-  ezxml_t dtag = XferFactory::getNode( config, "DtDriverConfig" );
-  m_config->parse( dtag );
-  XferFactory* factory;
-  for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
-    factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
-    factory->configure( *m_config );
-  }
-  startup();
 }
 
 
 
-// This method is used to retreive all of the available endpoints that have been registered
-// in the system.  Note that some of the endpoints may not be finalized.
+// This method is used to retreive all of the available endpoints that have
+// been registered in the system.  Note that some of the endpoints may not
+// be finalized.
 std::vector<std::string> 
 XferFactoryManager::
 getListOfSupportedProtocols()
 {
-  checkConf();
-  XferFactory* factory;
+  parent().configure();
   std::vector<std::string> l;
-  for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
-    factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
-    l.push_back( factory->getProtocol() );
-  }
+  for (XferFactory* d = firstDriver(); d; d = d->nextDriver())
+    l.push_back(d->getProtocol());
   return l;
 }
 
@@ -375,20 +277,7 @@ supportsEndPoints(
   return false;
 }
 
-
-OCPI::Util::Device * 
-XferFactory::
-getNextDevice( OCPI::Util::Device * d )
-{
-  if ( ! d ) {
-    return  OCPI::Util::Parent<OCPI::Util::Device>::firstChild();
-  }
-  return static_cast<OCPI::Util::Device*>( d->next );
-}
-
-
-
-// Register the Data transfer class
+// Find the Data transfer class
 XferFactory* 
 XferFactoryManager::
 find( const char* ep1, const char* ep2 )
@@ -412,36 +301,23 @@ XferFactory*
 XferFactoryManager::
 find( std::string& ep1, std::string& ep2 )
 {
-  checkConf();
-  XferFactory* factory;
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
-  for (int i=0; i < get_nentries(&m_registeredTransfers); i++) {
-    factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, i));
-    if ( factory->supportsEndPoints( ep1, ep2)  ) {
-      return factory;
-    }
-  }
-
+  parent().configure();
+  OU::AutoMutex guard ( m_mutex, true );
+  for (XferFactory* d = firstDriver(); d; d = d->nextDriver())
+    if (d->supportsEndPoints(ep1, ep2))
+      return d;
   return NULL;
 }
 
 
+const char *transfer = "transfer";
 XferFactoryManager::
 XferFactoryManager()
-  :OCPI::Util::DriverManager("DataTransfer"),
-   m_refCount(0),m_init(false),m_mutex(true),
-   m_resources(0),m_configured(false)
+  : m_refCount(0),m_init(false),m_mutex(true),
+    m_resources(0),m_configured(false)
 {
 
 }
-
-void
-XferFactoryManager::
-checkConf()
-{
-  if (! m_configured )configure(NULL);
-}
-
 
 XferFactoryManager::
 ~XferFactoryManager()
@@ -454,47 +330,48 @@ void
 XferFactoryManager::
 startup()
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
+  OU::AutoMutex guard ( m_mutex, true );
 
 #ifndef NDEBUG
   printf("++++++++ In void XferFactoryManager::startup(), ref count = %d\n", m_refCount );
 #endif
 
-
-  discoverDevices(NULL,NULL);
   m_refCount++;
 }
 
 // Shuts down the transer sub-system
 void XferFactoryManager::shutdown()
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
+  OU::AutoMutex guard ( m_mutex, true );
   m_refCount--;
   if ( m_refCount == 0 ) {
     clearCache();
-    destroy_list(&m_registeredTransfers);
     m_resources.destroyList();
     m_init = false;
   }
 }
 
-
-// Default constructor
 XferFactory::
-XferFactory(const char* name )
-  throw()
-  : OCPI::Util::Driver( "DataTransfer", name, true )
+XferFactory(const char *name)
+  : OD::DriverType<XferFactoryManager,XferFactory>(name)
 {
 }
 
 // Destructor
 XferFactory::~XferFactory()
-  throw()
 {
   // Factory life cycles are managed by the factory Manager, nothing to do here.
 }
 
-
+// This default implementation is just to parse generic properties,
+// defaulting from our parent
+void XferFactory::
+configure(ezxml_t x) {
+  // parse generic attributes and default from parent
+  parse(&XferFactoryManager::getFactoryManager(), x);
+  // base class does device config if present
+  OD::Driver::configure(x); 
+}
 
 /******
  *  TEMPLATE MANAGEMENT
@@ -523,13 +400,13 @@ typedef struct template_list_item_ TList_Item;
 
 void XferFactoryManager::clearCache()
 {
-  for (OCPI::OS::int32_t i=0; i<get_nentries(&m_templatelist); i++) {
+  for (OS::int32_t i=0; i<get_nentries(&m_templatelist); i++) {
     TList_Item *item = static_cast<TList_Item*>(get_entry(&m_templatelist, i));
     delete item;
   }
   destroy_list(&m_templatelist);
 
-  for ( OCPI::OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
+  for ( OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
     SMBResources* res = static_cast<SMBResources*>(m_resources.getEntry(n));
     delete res;
   }
@@ -605,9 +482,9 @@ SMBResources*
 XferFactoryManager::
 findResource(const char* ep)
 {
-  checkConf();
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
-  for ( OCPI::OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
+  parent().configure();
+  OU::AutoMutex guard ( m_mutex, true );
+  for ( OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
     SMBResources* res = static_cast<SMBResources*>(m_resources.getEntry(n));
     if ( res->sMemServices->endpoint()->end_point == ep ) {
       return res;
@@ -621,7 +498,7 @@ void
 XferFactoryManager::
 deleteSMBResources( EndPoint* loc)
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
+  OU::AutoMutex guard ( m_mutex, true );
   SMBResources* sr;
   sr = findResource( loc->end_point.c_str() );
   ocpiAssert( sr );
@@ -637,8 +514,8 @@ createSMBResources(
 		   EndPoint* loc)
 
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
-  checkConf();
+  parent().configure();
+  OU::AutoMutex guard ( m_mutex, true );
 
   SMBResources* sr;
   sr = findResource( loc->end_point.c_str() );
@@ -653,27 +530,27 @@ createSMBResources(
   std::string nuls;
   XferFactory* factory = find( loc->end_point, nuls );
   if ( ! factory ) {
-    throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
+    throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
 
   sr->sMemServices = factory->getSmemServices( loc );
   if ( !sr->sMemServices ) {
-    throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
+    throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
 
   sr->sMemResourceMgr = CreateResourceServices();
   sr->sMemResourceMgr->createLocal( loc->size );
-  OCPI::OS::uint64_t offset;
+  OS::uint64_t offset;
   if ( sr->sMemResourceMgr->alloc( sizeof(ContainerComms),
                                    0, &offset) != 0 ) {
-    throw OCPI::Util::EmbeddedException(  NO_MORE_SMB, loc->end_point.c_str() );
+    throw OU::EmbeddedException(  NO_MORE_SMB, loc->end_point.c_str() );
   }
 
   sr->m_comms = static_cast<DataTransfer::ContainerComms*>
     (sr->sMemServices->map(offset,sizeof(ContainerComms)));
 
   if ( ! sr->m_comms ) {
-    throw OCPI::Util::EmbeddedException(  SMB_MAP_ERROR, loc->end_point.c_str());
+    throw OU::EmbeddedException(  SMB_MAP_ERROR, loc->end_point.c_str());
   }
 
   memset( sr->m_comms, 0, sizeof(ContainerComms) );
@@ -709,11 +586,11 @@ XferFactoryManager::
 getSMBResources(
 		std::string& ep)
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
-  checkConf();
+  parent().configure();
+  OU::AutoMutex guard ( m_mutex, true );
 
   if ( ep.length() == 0 ) {
-    throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, "Null Endpoint");
+    throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, "Null Endpoint");
   }
   SMBResources* sr = findResource( ep.c_str() );
   if ( sr ) {
@@ -728,7 +605,7 @@ getSMBResources(
   std::string nuls;
   XferFactory* factory = find( ep, nuls );
   if ( ! factory ) {
-    throw OCPI::Util::EmbeddedException( UNSUPPORTED_ENDPOINT, ep.c_str());
+    throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, ep.c_str());
   }
   EndPoint* loc = factory->getEndPoint( ep );
   sr->sMemServices = factory->getSmemServices(loc);
@@ -765,7 +642,7 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
     ocpiAssert(0);
   }
 
-  OCPI::OS::uint32_t offset = sizeof(ContainerComms::MailBox) * m_slot + sizeof(OCPI::OS::uint32_t);
+  OS::uint32_t offset = sizeof(ContainerComms::MailBox) * m_slot + sizeof(OS::uint32_t);
 
 #ifndef NDEBUG
   printf("In make request with offset = %d\n", offset );
@@ -790,7 +667,7 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
   ptransfer->post();
 
   while( ptransfer->getStatus() ) {
-    OCPI::OS::sleep(0);
+    OS::sleep(0);
   }
 
   delete ptransfer;
@@ -801,16 +678,16 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 // Statically available allocation routine
 std::string 
 XferFactoryManager::
-allocateEndpoint(std::string& protocol, OCPI::Util::Device * device, OCPI::Util::PValue * props )
+allocateEndpoint(std::string& protocol, const OCPI::Util::PValue * props )
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
-  checkConf();
+  parent().configure();
+  OU::AutoMutex guard ( m_mutex, true );
 
   XferFactory* factory;
   if ( protocol.length() == 0 ) {
 
     // We will simply ask the first factory for an address
-    factory = static_cast<XferFactory*>(get_entry(&m_registeredTransfers, 0));
+    factory = firstDriver();
   }
   else {
     std::string nuls;
@@ -819,9 +696,8 @@ allocateEndpoint(std::string& protocol, OCPI::Util::Device * device, OCPI::Util:
   if ( ! factory ) {
     return NULL;
   }
-  return factory->allocateEndpoint( device, props );
+  return factory->allocateEndpoint( props );
 }
-
 
 XferServices* XferFactoryManager::getService(
                                              EndPoint *s_endpoint,
@@ -832,7 +708,7 @@ XferServices* XferFactoryManager::getService(
   SMBResources* target_info;
   XferServices* pxfer;
 
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
+  OU::AutoMutex guard ( m_mutex, true );
 
   /* Check to see if we already have a transfer template */
   if (get_template(s_endpoint->end_point.c_str(), t_endpoint->end_point.c_str(), pxfer)) {
@@ -869,7 +745,7 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
   SMBResources* target_info;
   XferServices* pxfer;
 
-  OCPI::Util::AutoMutex guard ( m_mutex, true );
+  OU::AutoMutex guard ( m_mutex, true );
 
   /* Check to see if we already have a transfer template */
   if (get_template(source_sname.c_str(), target_sname.c_str(), pxfer)) {
@@ -897,3 +773,10 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
   return pxfer;
 }
 
+  void Device::
+  configure(ezxml_t x)
+  {
+    OD::Device::configure(x); // give the base class a chance to do generic configuration
+    parse(&driverBase(), x);
+  }
+}

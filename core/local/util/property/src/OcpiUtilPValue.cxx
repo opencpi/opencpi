@@ -36,10 +36,50 @@
 #include <memory>
 #include <unistd.h>
 #include <OcpiPValue.h>
+#include <OcpiUtilPropertyType.h>
 
+OCPI::API::PVULong OCPI::API::PVEnd(0,0);
 
 namespace OCPI {
   namespace Util {
     PVULong PVEnd(0,0);
+    static const PValue *
+    find(const PValue* p, const char* name) {
+      if (p)
+	for (; p->name; p++)
+	  if (!strcmp(p->name, name))
+	    return p;
+      return NULL;
+    }
+ 
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)	\
+    bool 							\
+    find##pretty(const PValue* p, const char* name, run &value) {	\
+      const PValue *fp = find(p, name);					\
+      if (fp)								\
+        if (fp->type == OCPI::API::OCPI_##pretty) {	\
+          value = fp->v##pretty;					\
+          return true;							\
+	} else								\
+	  throw ApiError("Property \"", name, "\" is not a ", #pretty, NULL); \
+      return false;							\
+    }
+#define OCPI_DATA_TYPE_S(sca, corba, letter, bits, run, pretty, store)	\
+    bool 							\
+    find##pretty(const PValue* p, const char* name, const run &value) {	\
+      const PValue *fp = find(p, name);					\
+      if (fp)								\
+        if (fp->type == OCPI::API::OCPI_##pretty) {	\
+          value = fp->v##pretty;					\
+          return true;							\
+	} else								\
+	  throw ApiError("Property \"", name, "\" is not a ", #pretty, NULL); \
+      return false;							\
+    }
+    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
   }
 }

@@ -52,6 +52,7 @@
 #include <OcpiHostFileMappingServices.h>
 #include <DtExceptions.h>
 #include <DtSharedMemoryInterface.h>
+#include <DtTransferInterface.h>
 #include <OcpiBaseSmemServices.h>
 #include <map>
 

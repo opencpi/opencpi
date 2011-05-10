@@ -61,16 +61,16 @@
 #include <OcpiCFUtilLegacyErrorNumbers.h>
 #include <CF.h>
 #include <CF_s.h>
-#include <wci.h>
 #include "OcpiBaseProxy.h"
 
+namespace OCPI {
+  namespace SCA {
 /*
  * ----------------------------------------------------------------------
  * Constructor and Destructor
  * ----------------------------------------------------------------------
  */
-
-OCPI::SCA::BaseProxy::
+BaseProxy::
 BaseProxy (CORBA::ORB_ptr orb,
               PortableServer::POA_ptr poa,
               const std::string & aIdentifier,
@@ -83,7 +83,7 @@ BaseProxy (CORBA::ORB_ptr orb,
     m_poa (PortableServer::POA::_duplicate (poa)),
     m_logger (logger),
     m_logProducerName (aIdentifier),
-    m_state (static_cast<WCI_control> (-1)),
+    m_state (InitialState),
     m_identifier (aIdentifier),
     m_adoptLogger (adoptLogger),
     m_shutdownOrbOnRelease (shutdownOrbOnRelease)
@@ -106,7 +106,7 @@ BaseProxy (CORBA::ORB_ptr orb,
         << std::flush;
 }
 
-OCPI::SCA::BaseProxy::
+BaseProxy::
 ~BaseProxy ()
   throw ()
 {
@@ -125,7 +125,7 @@ OCPI::SCA::BaseProxy::
  */
 
 void
-OCPI::SCA::BaseProxy::
+BaseProxy::
 initialize ()
   throw (CF::LifeCycle::InitializeError,
          CORBA::SystemException)
@@ -142,28 +142,11 @@ initialize ()
         << "initialize ()"
         << std::flush;
 
-  try {
-    initializeWorker();//controlWorker (WCI_CONTROL_INITIALIZE);
-  }
-  catch (const std::string & oops) {
-    *m_logger << OCPI::Logger::Level::EXCEPTION_ERROR
-              << m_logProducerName
-              << "Failed to initialize: "
-              << oops
-              << "."
-              << std::flush;
-
-    CF::LifeCycle::InitializeError ie;
-    ie.errorMessages.length (1);
-    ie.errorMessages[0] = oops.c_str();
-    throw ie;
-  }
-
-  m_state = WCI_CONTROL_INITIALIZE;
+  m_state = InitialState; // redundant with constructor?
 }
 
 void
-OCPI::SCA::BaseProxy::
+BaseProxy::
 releaseObject ()
   throw (CF::LifeCycle::ReleaseError,
          CORBA::SystemException)
@@ -226,7 +209,7 @@ releaseObject ()
     throw re;
   }
 
-  m_state = WCI_CONTROL_RELEASE;
+  m_state = InitialState;
 }
 
 /*
@@ -236,7 +219,7 @@ releaseObject ()
  */
 
 void
-OCPI::SCA::BaseProxy::
+BaseProxy::
 runTest (CORBA::ULong testId, CF::Properties & testValues)
   throw (CF::TestableObject::UnknownTest,
          CF::UnknownProperties,
@@ -269,7 +252,7 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
   debug << ")" << std::flush;
 
 #ifdef TEST
-  const OCPI::SCA::Test * td;
+  const Test * td;
 
   try {
     td = findTest (testId);
@@ -442,7 +425,7 @@ runTest (CORBA::ULong testId, CF::Properties & testValues)
  */
 
 void
-OCPI::SCA::BaseProxy::
+BaseProxy::
 configure (const CF::Properties & props)
   throw (CF::PropertySet::InvalidConfiguration,
          CF::PropertySet::PartialConfiguration,
@@ -513,7 +496,7 @@ configure (const CF::Properties & props)
 }
 
 void
-OCPI::SCA::BaseProxy::
+BaseProxy::
 query (CF::Properties & props)
   throw (CF::UnknownProperties,
          CORBA::SystemException)
@@ -552,6 +535,9 @@ query (CF::Properties & props)
      */
 
     unsigned int numProperties;
+
+
+
     const OCPI::Metadata::Property * cprops = getProperties (numProperties);
 
     numProps = numProperties;
@@ -559,8 +545,8 @@ query (CF::Properties & props)
     CORBA::ULong pc = 0;
 
     for (CORBA::ULong pi=0; pi<numProps; pi++) {
-      if (cprops[pi].isReadable && !cprops[pi].isTest) {
-        props[pc++].id = CORBA::string_dup (cprops[pi].name);
+      if (cprops[pi].m_isReadable && !cprops[pi].isTest) {
+        props[pc++].id = CORBA::string_dup (cprops[pi].m_name);
       }
     }
 
@@ -602,7 +588,7 @@ query (CF::Properties & props)
  */
 
 char *
-OCPI::SCA::BaseProxy::
+BaseProxy::
 identifier ()
   throw (CORBA::SystemException)
 {
@@ -614,7 +600,7 @@ identifier ()
 }
 
 void
-OCPI::SCA::BaseProxy::
+BaseProxy::
 start ()
   throw (CF::Resource::StartError,
          CORBA::SystemException)
@@ -631,7 +617,7 @@ start ()
         << "start ()"
         << std::flush;
 
-  if (m_state == WCI_CONTROL_START) {
+  if (m_state == StartedState) {
     // Ignore "start" when already started.
     return;
   }
@@ -652,11 +638,11 @@ start ()
     throw se;
   }
 
-  m_state = WCI_CONTROL_START;
+  m_state = StartedState;
 }
 
 void
-OCPI::SCA::BaseProxy::
+BaseProxy::
 stop ()
   throw (CF::Resource::StopError,
          CORBA::SystemException)
@@ -673,7 +659,7 @@ stop ()
         << "stop ()"
         << std::flush;
 
-  if (m_state == WCI_CONTROL_STOP) {
+  if (m_state == StoppedState) {
     // Ignore "stop" when already stopped.
     return;
   }
@@ -694,7 +680,7 @@ stop ()
     throw se;
   }
 
-  m_state = WCI_CONTROL_STOP;
+  m_state = StoppedState;
 }
 
 /*
@@ -703,9 +689,9 @@ stop ()
  * ----------------------------------------------------------------------
  */
 
-OCPI::SCA::BaseProxyPort::
+BaseProxyPort::
 BaseProxyPort (const std::string & portName,
-                  OCPI::SCA::BaseProxy * proxy)
+                  BaseProxy * proxy)
   throw ()
   : m_portName (portName),
     m_proxy (proxy)
@@ -715,13 +701,13 @@ BaseProxyPort (const std::string & portName,
 
 // This is NOT the SCA release, but a lot like it.
 // SCA ports do not implement releaseObject
-void OCPI::SCA::BaseProxyPort::
+void BaseProxyPort::
 release()
 {
   m_proxy->m_poa->deactivate_object(*m_proxy->m_poa->servant_to_id (this));
 }
 
-OCPI::SCA::BaseProxyPort::
+BaseProxyPort::
 ~BaseProxyPort ()
   throw ()
 {
@@ -729,7 +715,7 @@ OCPI::SCA::BaseProxyPort::
 }
 
 void
-OCPI::SCA::BaseProxyPort::
+BaseProxyPort::
 connectPort (CORBA::Object_ptr connection, const char * connectionId)
   throw (CF::Port::InvalidPort,
          CF::Port::OccupiedPort,
@@ -744,7 +730,7 @@ connectPort (CORBA::Object_ptr connection, const char * connectionId)
 }
 
 void
-OCPI::SCA::BaseProxyPort::
+BaseProxyPort::
 disconnectPort (const char * connectionId)
   throw (CF::Port::InvalidPort,
          CORBA::SystemException)
@@ -755,4 +741,6 @@ disconnectPort (const char * connectionId)
   (void)connectionId;
   ocpiAssert(0);
 #endif
+}
+  }
 }

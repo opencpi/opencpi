@@ -295,6 +295,14 @@ namespace OCPI {
 
       bool isXMLDocument (std::istream * str);
 
+      /**
+       * \brief do vasprintf into a std::string
+       *
+       * \param[inout] out is referenced std::string where the output goes
+       *
+       */
+
+      void formatString(std::string &out, const char *fmt, ...);
     }
   }
 }

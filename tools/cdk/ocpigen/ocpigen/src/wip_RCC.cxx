@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -40,6 +39,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <sys/time.h>
+#include "OcpiUtilCppMacros.h"
 #include "wip.h"
 // Generate the readonly implementation file.
 // What implementations must explicitly (verilog) or implicitly (VHDL) include.
@@ -198,18 +198,18 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
     unsigned pad = 0, align = 0;
     for (unsigned n = 0; n < w->ctl.nProperties; n++, p++) {
       if (p->isStructSequence) {
-	fprintf(f, "  uint32_t     %s_length;\n", p->name);
-	if (p->maxAlign > sizeof(uint32_t))
+	fprintf(f, "  uint32_t     %s_length;\n", p->m_name);
+	if (p->m_maxAlign > sizeof(uint32_t))
 	  fprintf(f, "  char   pad%u_[%u];\n",
-		  pad++, p->maxAlign - (unsigned)sizeof(uint32_t));
-	align += p->maxAlign;
+		  pad++, p->m_maxAlign - (unsigned)sizeof(uint32_t));
+	align += p->m_maxAlign;
       }
       if (p->isStruct) {
 	fprintf(f, "  struct %c%s%c%s {\n",
 		toupper(w->implName[0]), w->implName+1,
-		toupper(p->name[0]), p->name + 1);
+		toupper(p->m_name[0]), p->m_name + 1);
 	emitStructRCC(f, p->nMembers, p->members, "  ");
-	fprintf(f, "  } %s", p->name);
+	fprintf(f, "  } %s", p->m_name);
 	if (p->isStructSequence)
 	  fprintf(f, "[%u]", p->nStructs);
 	fprintf(f, ";\n");
@@ -406,7 +406,21 @@ emitArtRCC(Worker *aw, const char *outDir) {
 	  " named \"%s\". It must be attached (appended) to the shared object file\n",
 	  aw->implName);
   fprintf(f, "  -->\n");
-  fprintf(f, "<artifact>\n");
+  // This assumes native compilation of course
+  fprintf(f,
+	  "<artifact os=\"%s\" osVersion=\"%s\" platform=\"%s\" "
+	  "runtime=\"%s\" runtimeVersion=\"%s\" "
+	  "tool=\"%s\" toolVersion=\"%s\">\n",
+	  OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
+	  OCPI_CPP_STRINGIFY(OCPI_OS_VERSION),
+	  OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
+	  "", "", "", "");
+#if 0
+	  OCPI_CPP_STRINGIFY(OCPI_RUNTIME),
+	  OCPI_CPP_STRINGIFY(OCPI_RUNTIME_VERSION),
+	  OCPI_CPP_STRINGIFY(OCPI_TOOL),
+	  OCPI_CPP_STRINGIFY(OCPI_TOOL_VERSION));
+#endif
   // Define all workers
   Worker *w;
   unsigned n;

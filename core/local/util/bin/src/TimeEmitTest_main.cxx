@@ -39,7 +39,7 @@
 #include <OcpiTimeEmitC.h>
 #include <OcpiUtilCommandLineConfiguration.h>
 
-using namespace OCPI::Util;
+using namespace OCPI::API;
 using namespace OCPI::Time;
 
 
