@@ -102,19 +102,22 @@ EOF
     else
       echo -n ', no UserID'
     fi
-    echo setMode -bs/setCable -p $p/identify/readdna -p $pos | tr / \\n | $imp  2> $tlog 1>&2
+    echo setMode -bs/setCable -p $p/identify/readdna -p $pos | tr / \\n | $imp  2> $tlog.$p.$pos 1>&2
     last=$?
     if test $last == 0; then
       #cat $tlog
-      ed $tlog <<EOF > /dev/null 2>&1
+      ed $tlog.$p.$pos <<EOF > /dev/null 2>&1
         $
-        ?ESN option:?
-        s/^.*ESN option: *\([^.]*\).*\$/\1/p
+        ?DNA *= *'?
+        s/^.*DNA *= *'\([^']*\)'.*\$/\1/p
         1,-d
         2,\$d
         w $tmp
 EOF
       mydna=`cat $tmp`
+      if [[ $mydna == "111111111111111111111111111111111111111111111111111111111" ]]; then
+         mydna=unavailable
+      fi
       echo ', 'DNA code is $mydna
     else
       echo ', 'no DNA code
