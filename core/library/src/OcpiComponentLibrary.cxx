@@ -3,7 +3,7 @@
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilException.h"
-#include "OcpiUtilEzXml.h"
+#include "OcpiUtilEzxml.h"
 #include "OcpiLibraryManager.h"
 
 // This file is the (loadable) driver for ocpi component libraries.
