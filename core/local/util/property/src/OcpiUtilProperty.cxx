@@ -80,7 +80,7 @@ Member::parse(ezxml_t xp,
       if (!strcasecmp(typeName, *tp))
 	break;
     if (!*tp)
-      return esprintf("Unknown property/argument type: \"%s\"", type);
+      return esprintf("Unknown property/argument type: \"%s\"", typeName);
     type.scalar = (Scalar::Type)(tp - Scalar::names);
   } else
     type.scalar = Scalar::OCPI_ULong;
