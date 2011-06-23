@@ -215,7 +215,8 @@ xfer_group(XF_transfer *xf_members,
   OCPI::OS::int32_t pio=0;
 
   /* Count the number of members */
-  for (nxf=0; xf_members[nxf]; nxf++);
+  for (nxf=0; xf_members[nxf]; nxf++)
+    ;
 
   /* Calculate the maximum size of the list */
   OCPI::OS::int32_t size = (sizeof(PIO_transfer) * (nxf + 1));

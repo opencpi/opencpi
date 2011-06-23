@@ -178,5 +178,6 @@ namespace OCPI {
       } // end of processing dir entry
       return err;
     } // end of search
+    Driver::~Driver() {}
   } // namespace PCI
 } // namespace OCPI

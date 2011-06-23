@@ -372,6 +372,7 @@ ExternalBuffer::
 put(uint32_t length, uint8_t opCode, bool endOfData)
 {        
   OU::AutoMutex guard ( *m_mutex, true ); 
+  // FIXME:  check for value opcode and length values.
   if ( endOfData ) length = 0;
   m_buffer->getMetaData()->ocpiMetaDataWord.opCode = opCode;
   m_dtPort->advance(m_buffer,length);

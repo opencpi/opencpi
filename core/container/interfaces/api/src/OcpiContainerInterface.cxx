@@ -371,6 +371,7 @@ namespace OCPI {
       return Container::DispatchNoMore;
     }
     bool Container::run(uint32_t usecs, bool verbose) {
+      (void)usecs; (void)verbose;
       if (m_ownThread)
 	throw OU::EmbeddedException( CONTAINER_HAS_OWN_THREAD,
 				     "Can't use container->run when container has own thread",

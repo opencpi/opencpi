@@ -137,7 +137,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #ifdef CHECK_DATA
   { int *b = (int*)(in_buffer);
     int *mem = (int *)&props->longProperty;
-    int ncount, n, passed = 0;
+    unsigned ncount, n, passed = 0;
 #define RESYNC
 #ifdef RESYNC
 
@@ -162,7 +162,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   ncount = 0;
   for (n=4; n<len; n++) {
     if ( (in_buffer[n] != (char)(n+*mem)%23) && (ncount++ < 100000) ) {
-      printf("Consumer(%lu, %lu, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
+      printf("Consumer(%u, %u, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
              props->startIndex, len, *mem, n, (char)(n+*mem)%23, in_buffer[n]);
       passed = 0;
     }

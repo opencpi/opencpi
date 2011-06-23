@@ -37,6 +37,7 @@
 #ifndef OCPI_CONTAINER_API_H
 #define OCPI_CONTAINER_API_H
 #include <stdarg.h>
+#include <string>
 #include "OcpiPValueApi.h"
 #include "OcpiUtilPropertyApi.h"
 namespace OCPI {

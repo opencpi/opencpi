@@ -44,6 +44,8 @@ namespace OCPI {
       unsigned addressSize;
     };
     class Driver {
+    protected:
+      virtual ~Driver();
     public:
       virtual bool found(const char *name, Bar *bars, unsigned nBars) = 0;
     };

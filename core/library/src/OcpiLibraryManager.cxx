@@ -108,6 +108,7 @@ namespace OCPI {
       return NULL;
     }
 
+    Library::~Library(){}
     Artifact * Library::
     findArtifact(const Capabilities &caps,
 		 const char *impl,

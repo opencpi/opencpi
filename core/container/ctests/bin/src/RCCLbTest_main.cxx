@@ -454,11 +454,11 @@ int gpp_cont(int argc, char** argv)
 
     // Now we will just enter a processing loop
     int lc=0;
+    int OCPI_RUN_TEST = 1;
+#if 0
     int event_id;
     OCPI::OS::uint64_t evalue;
-    int OCPI_RUN_TEST = 1;
 
-#if 0
     if ( gpp_event_manager ) {
       printf("Running with an event manager\n");
     }

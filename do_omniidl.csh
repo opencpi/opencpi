@@ -37,6 +37,6 @@
 
 #set echo
 #set verbose
-set l=$argv[$#]
+set l=$argv[$#argv]
 $OCPI_OMNI_BIN_DIR/omniidl -bcxx -Wbh=.h -Wbd=.cxx -Wbs=.cxx -Wba -I$OCPI_OMNI_IDL_DIR $*
 cp $l:r.h $l:r_s.h

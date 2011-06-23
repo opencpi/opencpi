@@ -179,6 +179,8 @@ namespace OCPI {
     };
     // This is the base class for all libraries for all drivers.
     class Library {
+    protected:
+      virtual ~Library();
     public:
       Artifact *
       findArtifact(const Capabilities &caps,

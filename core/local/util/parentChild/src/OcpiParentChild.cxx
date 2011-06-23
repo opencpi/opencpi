@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <OcpiUtilMisc.h>
 #include <OcpiParentChild.h>
 namespace OCPI {

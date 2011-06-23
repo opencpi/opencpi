@@ -65,16 +65,23 @@ export AT
 # Allow us to include this early by establishing the default initial target (all).
 all:
 Cwd:=$(realpath .)
-CwdDirName:=$(notdir $(Cwd))
+$(call OcpiDbgVar,Cwd)
+Empty:=
+Space:=$(Empty) $(Empty)
+# This variable is set to the character that is invalid in pathnames.
+# It should be the one printable character that we will not support in pathnames.
+Invalid:="
+CwdDirName:=$(subst $(Invalid),$(Space),$(notdir $(subst $(Space),$(Invalid),$(Cwd))))
 CwdName:=$(basename $(CwdDirName))
+$(call OcpiDbgVar,CwdName)
 
 Model:=$(strip $(subst ., ,$(suffix $(CwdDirName))))
+$(call OcpiDbgVar,Model)
 Models=xm rcc hdl
 Suffix_rcc=c
 Suffix_hdl=v
 Suffix_ocl=cl
 SUffix_xm=xm
-CwdName:=$(basename $(CwdName))
 CapModels=$(foreach m,$(Models),$(call Capitalize,$(m)))
 UCModel=$(call ToUpper,$(Model))
 CapModel=$(call Capitalize,$(Model))

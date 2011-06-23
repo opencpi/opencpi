@@ -1600,9 +1600,7 @@ parseWorker(const char *file, const char *parent, Worker *w) {
   if ((err = parseFile(file, parent, NULL, &xml, &w->file)))
     return err;
   const char *cp = strrchr(file, '/');
-  if (!cp)
-    cp = file;
-  w->fileName = strdup(cp);
+  w->fileName = strdup(cp ? cp + 1 : file);
   char *lp = strrchr(w->fileName, '.');
   if (lp)
     *lp = 0;

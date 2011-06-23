@@ -36,6 +36,7 @@
 // except those constructing children, which are *declared* in the class definition, but
 // *defined* outside, after the child's class definition.
 
+#include <limits.h>
 #include "OcpiContainerManager.h"
 
 namespace OCPI {

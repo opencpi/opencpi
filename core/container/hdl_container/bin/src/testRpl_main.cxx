@@ -34,6 +34,7 @@
 
 #include <unistd.h>
 #include <assert.h>
+#include <string.h>
 #include <stdio.h>
 #include <memory>
 #include <math.h>

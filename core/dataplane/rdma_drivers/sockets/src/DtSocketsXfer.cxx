@@ -371,12 +371,13 @@ XferRequest* SocketXferServices::createXferRequest()
  *  node.
  ***************************************/
 
+#if 0
 static OCPI::OS::int32_t portNum=40001;
 static OCPI::OS::int32_t getNextPortNum()
 {
   return portNum++;
 }
-
+#endif
 
 static std::string sep;
 

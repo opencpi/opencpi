@@ -48,7 +48,7 @@
 #define RAND_MAX 31
 
 struct LoopbackWorkerProperties_ {
-  int32_t startIndex;
+  uint32_t startIndex;
   uint32_t longProperty;
 
 };

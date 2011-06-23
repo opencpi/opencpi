@@ -4,12 +4,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <errno.h>
-// This macro is necessary to expose pthread_yield on RHEL5
-#define __USE_GNU   // SSiegel claims this breaks RHEL6 - we need to figure this out
 #include <pthread.h>
-#ifdef __APPLE__
-#define pthread_yield pthread_yield_np
-#endif
 #include <sched.h>
 #include <string.h>
 #include <stdlib.h>
@@ -332,7 +327,7 @@ doStream(void *args) {
     if (verbose)
       fprintf(stderr, "%s cpu %d\n", s->isToCpu ? "to" : "from", s->opCode);
     while (s->flags[s->bufIdx] == 0)
-      pthread_yield();
+      sched_yield();
     n = checkStream(s);
   } while (n != 0 && (maxFrames == 0 || s->opCode < maxFrames));// On a big end);
   return 0;

@@ -109,11 +109,11 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 {
   ( void ) timedout;
   ( void ) newRunCondition;
-  int ncount, *b;
+  uint32_t ncount, *b;
   uint32_t len,n;
   ConsumerWorkerStaticMemory *mem = this_->memories[0];
   ConsumerWorkerProperties *props = this_->properties;
-  int passed = 1;
+  unsigned passed = 1;
 
 #ifdef TIME_TP
   double          usecs;
@@ -152,7 +152,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   
 #define CHECK_DATA
 #ifdef CHECK_DATA
-  b = (int*)(in_buffer);
+  b = (unsigned*)(in_buffer);
 
 #define RESYNC
 #ifdef RESYNC
@@ -166,7 +166,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   */
 
 
-  if ( *b != (int)mem->b_count ) {
+  if ( *b != mem->b_count ) {
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
            *b, mem->b_count );
     dropped_b++;
@@ -178,7 +178,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   ncount = 0;
   for (n=4; n<len+4; n++) {
     if ( (in_buffer[n] != (char)(n+mem->b_count)%23) && (ncount++ < 100000) ) {
-      printf("Consumer(%lu, %lu, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
+      printf("Consumer(%u, %u, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
              props->startIndex, len, mem->b_count,n, (char)(n+mem->b_count)%23, in_buffer[n]);
       passed = 0;
     }

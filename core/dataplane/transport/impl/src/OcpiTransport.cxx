@@ -99,8 +99,8 @@ getListOfSupportedEndpoints()
 // Constructors
 OCPI::DataTransport::Transport::
 Transport( TransportGlobal* tpg, bool uses_mailboxes )
-  : OCPI::Time::Emit("Transport"), m_mutex(*new OCPI::OS::Mutex(true)),
-    m_uses_mailboxes(uses_mailboxes), m_transportGlobal(tpg)
+  : OCPI::Time::Emit("Transport"), m_uses_mailboxes(uses_mailboxes),
+    m_mutex(*new OCPI::OS::Mutex(true)), m_transportGlobal(tpg)
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 

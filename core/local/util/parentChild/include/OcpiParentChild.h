@@ -56,9 +56,7 @@
 // I wish that 
 #ifndef OCPI_PARENTCHILD_H
 #define OCPI_PARENTCHILD_H
-//#include <stdint.h>
 #include <assert.h>
-//#include <set>
 #include <string>
 
 #define PCOLD 1
@@ -199,7 +197,8 @@ namespace OCPI {
 	  m_released = true;
 	}
       }
-      ~ChildOnly<TParent, TChild, prefix>() {
+      // virtual just to quiet the compiler warning
+      virtual ~ChildOnly<TParent, TChild, prefix>() {
 	releaseFromParent();
       }
     public:

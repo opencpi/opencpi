@@ -64,6 +64,7 @@ static
 RCCResult
 rotStart (RCCWorker * wctx)
 {
+  (void)wctx;
   return RCC_OK;
 }
 
@@ -71,6 +72,7 @@ static
 RCCResult
 rotStop (RCCWorker * wctx)
 {
+  (void)wctx;
   return RCC_OK;
 }
 
@@ -80,6 +82,7 @@ rotRun (RCCWorker * wctx,
         RCCBoolean timedout,
         RCCBoolean * newRunCondition)
 {
+  (void)timedout;(void)newRunCondition;
   RotProperties * props = (RotProperties *) wctx->properties;
 
   RCCPort * pDataIn = &wctx->ports[ROT_DATAIN];
