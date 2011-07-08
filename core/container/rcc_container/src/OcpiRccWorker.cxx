@@ -704,6 +704,7 @@ void Worker::run(bool &anyone_run) {
 // Note we are already under a mutex here
 void Worker::controlOperation(OM::Worker::ControlOperation op) {
   RCCResult rc = RCC_OK;
+  OU::AutoMutex guard (mutex(), true);
   switch (op) {
   case OM::Worker::OpInitialize:
     if (m_dispatch->initialize)

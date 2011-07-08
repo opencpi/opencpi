@@ -72,6 +72,7 @@ namespace OCPI {
     protected:
       OCPI::Metadata::Port m_metaPort;  // Deep copy to support all constructors
       inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
+
     public:
 
       OCPI::OS::uint8_t    external;               // connected externally ?
@@ -153,8 +154,8 @@ namespace OCPI {
 
       //      inline ezxml_t getXml() { return myXml; }
       // Local (possibly among different containers) connection: 1 step operation on the user port
-      void connect( OCPI::API::Port &other, const OCPI::Util::PValue *myProps,
-		    const OCPI::Util::PValue *otherProps);
+      void connect( OCPI::API::Port &other, const OCPI::Util::PValue *myProps=NULL,
+		    const OCPI::Util::PValue *otherProps=NULL);
 
       // Local connection within a container
       // Remote connection: up to 5 steps! worst case.

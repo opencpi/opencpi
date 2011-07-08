@@ -157,6 +157,7 @@ dispatch(DataTransfer::EventManager* event_manager)
     return Stopped;
   }
   OU::SelfAutoMutex guard(this);
+
 #ifndef NDEBUG
   if ( ocpi_dbg_run ) {
     printf("WORKER RUN: Entry\n");

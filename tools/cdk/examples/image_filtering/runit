@@ -1,0 +1,3 @@
+export OCPI_SMB_SIZE=100000000
+./image_filtering boston_small.jpg erode
+

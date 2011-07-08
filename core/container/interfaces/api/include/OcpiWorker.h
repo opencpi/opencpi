@@ -103,32 +103,13 @@ namespace OCPI {
     public:
       virtual Application &application() = 0;
       void setProperty(const char *name, const char *value);
-
-        /**
-           @brief
-           getLastControlError
-
-           This method is used to get the last error that occured during a control
-           operation.
-
-           @param [ in ] workerId
-           Container worker id.
-
-           @retval std::string - last control error
-
-           ****************************************************************** */
-#if 0
-      virtual std::string getLastControlError()
-        throw ( OCPI::Util::EmbeddedException )=0;
-#endif
-
       bool hasImplTag(const char *tag);
       bool hasInstTag(const char *tag);
       typedef unsigned Ordinal;
       // Generic setting method
 
       virtual ~Worker();
-      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props);
+      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props=NULL);
 
       virtual Port & createOutputPort(OCPI::Metadata::PortOrdinal portId,
                                      OCPI::OS::uint32_t bufferCount,

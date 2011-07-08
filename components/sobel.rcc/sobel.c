@@ -25,11 +25,13 @@ typedef struct {
 } SobelState;
 
 static uint32_t sizes[] = {sizeof(SobelState), 0};
+static RCCPortInfo pinfo[] = { {0,4000000,KERNEL_SIZE+1},{-1,0,0} };
 
 SOBEL_METHOD_DECLARATIONS;
 RCCDispatch sobel = {
   /* insert any custom initializations here */
   .memSizes = sizes,
+  .portInfo = pinfo,
   SOBEL_DISPATCH
 };
 
@@ -76,7 +78,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     return RCC_DONE;
   }
   // Normal state (not first, not end)
-  if (s->oldest) {
+  if (s->oldest && s->oldest->data ) {
     // except for initial condition, we always output a buffer. first and last per image are zeroes.
     if (s->inLine == 1 || s->inLine == p->height)
       memset(out->current.data, 0, LINE_BYTES);
@@ -100,8 +102,10 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   // Note that s->oldest will be initially NULL so the first time
   // "take" is called, no old buffer is released
   c->take(in, s->oldest, &s->buffers[s->next]);
-  if (++s->next >= HISTORY_SIZE)
-    s->next = 0;
   s->oldest = &s->buffers[s->next];
+  s->next++;
+  if (s->next >= HISTORY_SIZE) {
+    s->next = 0;
+  }
   return RCC_OK;
 }

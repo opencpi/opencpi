@@ -200,7 +200,6 @@ namespace OCPI {
       Port           *    port;
       OCPI::DataTransport::Buffer *    buffer;
       bool                            readyToAdvance;
-      //      Worker                     *    worker;
       OpaquePortData():cp289Port(NULL),port(NULL),buffer(NULL),readyToAdvance(1) {}
     };
 

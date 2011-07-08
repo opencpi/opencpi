@@ -109,7 +109,6 @@ PACKAGES += tests/framework/framework
 #
 
 #	core/control/wci_api
-
 ALLPACKAGES = \
 	adapt/os/ocpios \
 	core/local/logger \
@@ -127,11 +126,6 @@ ALLPACKAGES = \
 	core/container/ocl_container \
 	core/container/rcc_container \
 	core/container/ctests \
-	core/sca/cf \
-	core/sca/cf_util \
-	core/sca/gpped \
-	core/sca/sgac \
-	core/sca/srpl \
 	test \
 	tests/facilities/test_os \
 	tests/facilities/test_logger \
@@ -142,6 +136,15 @@ ALLPACKAGES = \
 	tools/cdk/ocpixm \
 	core/container/ctests \
 	core/$(DATAPLANE)/rdma_tests
+
+ifeq ($(OCPI_HAVE_CORBA),1)
+ALLPACKAGES += \
+	core/sca/cf \
+	core/sca/cf_util \
+	core/sca/gpped \
+	core/sca/sgac \
+	core/sca/srpl
+endif
 
 #
 # ----------------------------------------------------------------------

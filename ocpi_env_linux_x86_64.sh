@@ -96,7 +96,7 @@ export OCPI_BUILD_SHARED_LIBRARIES=1
 
 # #### CORBA OCPI_CORBA_ORB/IDL tools ################################################ #
 
-export HAVE_CORBA=1
+export OCPI_HAVE_CORBA=0
 
 # OpenCPI uses OmniORB exclusivly
 export OCPI_CORBA_ORB=OMNI
@@ -117,6 +117,13 @@ export OCPI_PPP_INCLUDE_DIR=
 export OCPI_HAVE_IBVERBS=0
 
 # ######################################################################### #
+
+export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/rep
+export OCPI_SMB_SIZE=100000000
+
+# #########  OpenCV 
+export OCPI_HAVE_OPENCV=0
+export OCPI_OPENCV_HOME=/usr/local
 
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

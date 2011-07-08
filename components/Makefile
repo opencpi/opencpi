@@ -42,15 +42,27 @@ Implementations = \
 	adc_unpack.rcc \
 	bias.hdl \
 	bias_ver.hdl \
+	blur.rcc \
+	canny.rcc \
+	canny_partial.rcc \
 	convert_s16_f32.rcc \
+	corner_eigen_vals_vecs.rcc\
 	copy.rcc \
 	delay.hdl \
 	delay.rcc \
+	dilate.rcc \
+	erode.rcc \
 	framegate.hdl \
 	framegate.rcc \
+	gaussian_blur.rcc \
+	good_features_to_track.rcc \
+	min_eigen_val.rcc \
 	morph_mean.rcc \
+	optical_flow_pyr_lk.rcc \
+	scharr.rcc \
 	sma.hdl \
 	sobel.rcc \
+	sobel_32f.rcc \
 	split1x2.rcc \
 	splitter2x2.hdl \
 	splitter2x2.rcc \

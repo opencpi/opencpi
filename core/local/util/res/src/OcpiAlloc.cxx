@@ -75,6 +75,8 @@ namespace OCPI {
 #ifndef NDEBUG
 static void dumpList( std::list<OCPI::Util::Block>& list )
 {
+
+#ifdef DEBUG_LISTS
   std::list<OCPI::Util::Block>::iterator it;
   for ( it=list.begin(); it !=list.end(); it++ ) {
     printf("addr = %" PRIx64 ", aligned_addr = %" PRIx64 ", size = %" PRIu64 "\n", 
@@ -82,6 +84,8 @@ static void dumpList( std::list<OCPI::Util::Block>& list )
             (*it).aligned_addr, 
             (*it).size );
   }
+#endif
+
 }
 #endif
 
@@ -118,7 +122,7 @@ void OCPI::Util::ResPool::defrag()
   while ( not_done );
   sort_by_size = true;  
 
-#ifndef NDEBUG
+#ifdef DEBUG_LISTS
   printf("Alloc list\n");
   dumpList(alloc_list);
   printf("Free list\n");

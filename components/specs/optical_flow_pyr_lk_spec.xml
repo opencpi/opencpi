@@ -1,0 +1,59 @@
+<ComponentSpec Name="optical_flow_pyr_lk">
+  <Properties>
+    <Property Name="height" readable="true" writable="true"/>
+    <Property Name="width" readable="true" writable="true"/>
+    <Property Name="win_height" readable="true" writable="true"/>
+    <Property Name="win_width" readable="true" writable="true"/>
+    <Property Name="level" readable="true" writable="true"/>
+    <Property Name="term_max_count" readable="true" writable="true"/>
+    <Property Name="term_epsilon" type="double" readable="true" writable="true"/>
+    <Property Name="deriv_lambda" type="double" readable="true" writable="true"/>
+    <Property Name="images" readable="true"/>
+  </Properties>
+
+  <DataInterfaceSpec Name="in_A">
+    <xi:include href="image8_lines.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="in_Adx">
+    <xi:include href="image32f_lines.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="in_Ady">
+    <xi:include href="image32f_lines.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="in_Ad2x">
+    <xi:include href="image32f_lines.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="in_Ad2y">
+    <xi:include href="image32f_lines.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="in_Adxdy">
+    <xi:include href="image32f_lines.xml"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="in_B">
+    <xi:include href="image8_lines.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="in_Bdx">
+    <xi:include href="image32f_lines.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="in_Bdy">
+    <xi:include href="image32f_lines.xml"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="in_feature">
+    <xi:include href="feature32f.xml"/>
+  </DataInterfaceSpec>
+
+
+  <DataInterfaceSpec Name="out" Producer="true">
+    <xi:include href="feature32f.xml"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="out_status" Producer="true">
+    <xi:include href="image8_lines.xml"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="out_err" Producer="true">
+    <xi:include href="image32f_lines.xml"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

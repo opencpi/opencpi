@@ -479,11 +479,6 @@ connectExternal(const char * name, const OU::PValue * myprops, const OU::PValue 
       (&w.createOutputPort(0, connectionData.data.desc.nBuffers,
 			   connectionData.data.desc.dataBufferSize ));
     p->connect( *this, myprops, oprops );
-
-    /*
-    std::string fb = p->setFinalProviderInfo( getInitialProviderInfo(0) );
-    setFinalUserInfo( fb );
-    */
   }
   else {
     p = static_cast<Port*>
@@ -491,12 +486,6 @@ connectExternal(const char * name, const OU::PValue * myprops, const OU::PValue 
 			  connectionData.data.desc.nBuffers,
 			  connectionData.data.desc.dataBufferSize ));
     this->connect( *p, myprops, oprops );
-
-    /*
-    std::string fb = setFinalProviderInfo( p->getInitialProviderInfo(0) );
-    p->setFinalUserInfo( fb );
-    */
-
   }
   return *new ExternalPort(*p, name, NULL, metaPort(), m_mutex);
 }

@@ -117,11 +117,15 @@ namespace OCPI {
         if (boolAttrValue(impl, "connected"))
           throw ApiError("specified implementation \"", implTag,
                              "\", is already connected", NULL);
+
+#ifdef JK_LOOK_AT_ME
         if (!boolAttrValue(impl, "reusable"))
 	  for (WorkersIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	    if (!strcmp((*wi)->implTag().c_str(), implTag))
 	      throw ApiError("non-reusable worker named \"", implTag,
                              "\" already used", NULL);
+#endif
+
       }
       Worker &w = app.createWorker(this, appInstName, impl, inst, execProps);
       m_workers.push_back(&w);

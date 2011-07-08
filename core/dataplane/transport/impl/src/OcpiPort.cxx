@@ -1373,6 +1373,9 @@ hasEmptyOutputBuffer()
   if ( getCircuit()->isCircuitOpen() ) {
     return false;
   }
+  if ( !getPortSet() || !getPortSet()->getTxController() ) {
+    return false;
+  }
   return getPortSet()->getTxController()->hasEmptyOutputBuffer(this);
 }
 

@@ -1,0 +1,2 @@
+export OCPI_SMB_SIZE=100000000
+./canny boston_small.jpg

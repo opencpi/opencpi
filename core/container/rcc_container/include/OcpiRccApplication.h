@@ -119,18 +119,6 @@ namespace OCPI {
        *********************************/  
         virtual ~Application();
 
-#if 0
-      /**********************************
-       * Get the worker info from the worker id
-       *********************************/ 
-      Worker* getWorker( OCPI::Container::WorkerId& worker );
-#endif
-
-      /**********************************
-       * Get the transport object
-       *********************************/ 
-      //a temp test      OCPI::DataTransport::Transport & getTransport();
-
       /**********************************
        * Add a circuit to our managed list
        *********************************/ 
