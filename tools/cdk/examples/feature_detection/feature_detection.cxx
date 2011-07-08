@@ -150,15 +150,6 @@ int main ( int argc, char* argv [ ] )
 		      facades.rend ( ),
 		      Demo::start );
 
-#ifdef WAS
-      // Note: We must call dispatch before the first call to 
-      // ExternalPort::getBuffer or else it will seg fault
-      std::for_each ( interfaces.begin(),
-		      interfaces.end(),
-		      Demo::dispatch );
-#endif
-
-
       printf(">>> DONE STARTING!\n");
 
       // Output info
@@ -183,16 +174,8 @@ int main ( int argc, char* argv [ ] )
       // Call dispatch so the worker can "act" on its input data
       // Get input data
       OA::ExternalBuffer* myInput = NULL;
-      while((myInput = myIn.getBuffer( idata, ilength, opcode, isEndOfData)) == NULL) {
-
-#ifdef WAS
-	std::for_each ( interfaces.begin(), interfaces.end(), Demo::dispatch );
-#endif
-
-      }
-
+      while((myInput = myIn.getBuffer( idata, ilength, opcode, isEndOfData)) == NULL);
       std::cout << "My input buffer is size " << ilength << std::endl;
-
       myInput->release();
       // Mark features
       size_t ncorners = ilength / (2 * sizeof(float));

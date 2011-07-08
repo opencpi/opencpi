@@ -102,15 +102,8 @@ void calcOpticalFlowPyrLK(
     size_t derivJCols = W+2*winWidth;
 
     float *derivIBuf = malloc( (H+2*winHeight)*(W+2*winWidth)*sizeof(float)*6 );
-
-#ifdef WAS
-    float *derivJBuf = malloc( (H+2*winHeight)*(W+2*winWidth)*sizeof(float)*3);
-    float *derivIWinBuf = malloc( winHeight*winWidth*sizeof(float) );
-#else
     float *derivJBuf = malloc( (H+2*winHeight)*(W+2*winWidth)*sizeof(float)*6 );
     float *derivIWinBuf = malloc( winHeight*winWidth*sizeof(float)*6 );
-#endif
-
 
     const char *derivIData = (const char *) derivIBuf;
     const char *derivJData = (const char *) derivJBuf;
