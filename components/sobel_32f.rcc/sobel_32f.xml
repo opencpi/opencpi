@@ -1,4 +1,5 @@
 <RccImplementation>
+  <ControlInterface ControlOperations="start, release"/>
   <xi:include href="sobel_32f_spec.xml"/>
 </RccImplementation>
 

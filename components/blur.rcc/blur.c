@@ -31,6 +31,7 @@
 
 // Algorithm specifics:
 typedef uint8_t Pixel;      // the data type of pixels
+#define FRAME_BYTES (p->height * p->width * sizeof(Pixel)) // pixels per frame
 typedef int16_t PixelTemp;  // the data type for intermediate pixel math
 #define MAX UINT8_MAX       // the maximum pixel value
 #define KERNEL_SIZE 3       // the size of the kernel
@@ -52,13 +53,6 @@ RCCDispatch blur = {
   BLUR_DISPATCH
 };
 
-static RCCResult start(RCCWorker *self)
-{
-  BlurState *s = self->memories[0];  
-  s->inLine = 0;
-  return RCC_OK;
-}
-
 // Compute one line of output
 inline static void
 doLine(Pixel *l0, Pixel *l1, Pixel *l2, Pixel *out, unsigned width, unsigned normalize) {
@@ -79,13 +73,12 @@ doLine(Pixel *l0, Pixel *l1, Pixel *l2, Pixel *out, unsigned width, unsigned nor
 // A run condition for flushing zero-length message
 // Basically we only wait for an output buffer, not an input
 // This will be unnecessary when we have a separate EOS indication.
-static RCCPortMask endMask[] = {(1 << BLUR_OUT) | (1 << BLUR_IN), 0};
+static RCCPortMask endMask[] = {1 << BLUR_OUT, 0};
 static RCCRunCondition end = {endMask, 0, 0};
 
 /*
  * Methods to implement for worker blur, based on metadata.
  */
-
 static RCCResult run(RCCWorker *self,
                      RCCBoolean timedOut,
                      RCCBoolean *newRunCondition) {
@@ -93,13 +86,21 @@ static RCCResult run(RCCWorker *self,
   BlurState *s = self->memories[0];
   RCCPort *in = &self->ports[BLUR_IN],
     *out = &self->ports[BLUR_OUT];
-  const RCCContainer *c = self->container;
-  
+  const RCCContainer *c = self->container;  
   (void)timedOut;
+
+  if ( (in->input.length>0) && (in->input.length>FRAME_BYTES) ) {
+    return RCC_ERROR;
+  }
+
+  // Arrange to send the zero-length message after the last line of last image
+  // This will be unnecessary when EOS indication is fixed
 
   // End state:  just send the zero length message to indicate "done"
   // This will be unnecessary when EOS indication is fixed
-  if (self->runCondition == &end) {
+  if (in->input.length == 0) {
+    self->runCondition = &end;
+    *newRunCondition = 1;
     out->output.length = 0;
     c->advance(out, 0);
     return RCC_DONE;
@@ -137,11 +138,5 @@ static RCCResult run(RCCWorker *self,
   }
   s->inLine++;
 
-  // Arrange to send the zero-length message after the last line of last image
-  // This will be unnecessary when EOS indication is fixed
-  if (in->input.length == 0) {
-    self->runCondition = &end;
-    *newRunCondition = 1;
-  }
   return RCC_OK;
 }

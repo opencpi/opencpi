@@ -37,15 +37,54 @@ typedef uint16_t PixelTemp;  // the data type for intermediate pixel math
 #define MAX UINT8_MAX        // the maximum pixel value
 #define FRAME_BYTES (p->height * p->width * sizeof(Pixel)) // pixels per frame
 
+typedef struct {
+  uint16_t init;
+  uint16_t *dx,*dy;
+  char* buffer;
+  uchar **stack;
+} CState;
+
+static uint32_t sizes[] = {sizeof(CState), 0 };
+
 CANNY_METHOD_DECLARATIONS;
 RCCDispatch canny = {
   /* insert any custom initializations here */
+  .memSizes = sizes,
   CANNY_DISPATCH
 };
 
+
+static RCCResult start(RCCWorker *self)
+{
+  CState *myState = self->memories[0];  
+  CannyProperties *p = self->properties;
+  if ( myState->init == 0 ) {
+    myState->dx = (uint16_t *) malloc( p->width * p->height * sizeof(uint16_t) );
+    myState->dy = (uint16_t *) malloc( p->width * p->height * sizeof(uint16_t) );
+    myState->buffer =  (char *) malloc( (p->width+2)*(p->height+2) + (p->width+2)*3*sizeof(int) );
+    myState->stack = (uchar **) malloc( p->width*p->height*sizeof(uchar) );
+  }
+  myState->init = 1;
+  return RCC_OK;
+}
+
+
+static RCCResult release(RCCWorker *self)
+{
+  CState *myState = self->memories[0];  
+  if ( myState->init ) {
+    free( myState->dx );
+    free( myState->dy );
+    free( myState->stack );
+    free( myState->buffer );
+  }
+  return RCC_OK;
+}
+
 // Compute one line of output
 static void
-doFrame(int H, int W, Pixel *srcdata, Pixel *dstdata,
+doFrame( CState *myState,
+	int H, int W, Pixel *srcdata, Pixel *dstdata,
         double low_thresh, double high_thresh) {
 
   // sanity checks
@@ -59,31 +98,26 @@ doFrame(int H, int W, Pixel *srcdata, Pixel *dstdata,
     low_thresh = temp;
   }
 
-
   int i, j;
   int mapstep, maxsize;
-
-  // Sobel kernels for calculating gradients (default aperture size 3)
-  uint16_t *dx = (uint16_t *) malloc( H * W * sizeof(uint16_t) );
-  uint16_t *dy = (uint16_t *) malloc( H * W * sizeof(uint16_t) );
 
 #define ind(i,j) ((i)*W+(j))
 
   for(i = 1; i + 1 < H; i++) {
     for(j = 1; j + 1 < W; j++) {
-      dx[ind(i, j)] = srcdata[ind(i-1, j+1)] - srcdata[ind(i-1, j-1)]
+      myState->dx[ind(i, j)] = srcdata[ind(i-1, j+1)] - srcdata[ind(i-1, j-1)]
                   + 2 * ( srcdata[ind(i, j+1)] - srcdata[ind(i, j-1)] )
                   + srcdata[ind(i+1, j+1)] - srcdata[ind(i+1, j-1)];
-      dy[ind(i, j)] = srcdata[ind(i+1, j-1)] - srcdata[ind(i-1, j-1)]
+      myState->dy[ind(i, j)] = srcdata[ind(i+1, j-1)] - srcdata[ind(i-1, j-1)]
                   + 2 * ( srcdata[ind(i+1, j)] - srcdata[ind(i-1, j)] )
                   + srcdata[ind(i+1, j+1)] - srcdata[ind(i-1, j+1)];
     }
   }
   // fill in edges
   for(i = 0; i < H; i++)
-    dx[ind(i, 0)] = dx[ind(i, W-1)] = dy[ind(i, 0)] = dy[ind(i, W-1)] = 0;
+    myState->dx[ind(i, 0)] = myState->dx[ind(i, W-1)] = myState->dy[ind(i, 0)] = myState->dy[ind(i, W-1)] = 0;
   for(j = 0; j < W; j++)
-    dx[ind(0, j)] = dx[ind(H-1, j)] = dy[ind(0, j)] = dy[ind(H-1, j)] = 0;
+    myState->dx[ind(0, j)] = myState->dx[ind(H-1, j)] = myState->dy[ind(0, j)] = myState->dy[ind(H-1, j)] = 0;
 
 #undef ind
 
@@ -92,24 +126,19 @@ doFrame(int H, int W, Pixel *srcdata, Pixel *dstdata,
   low = (int) low_thresh;
   high = (int) high_thresh;
 
-  char *buffer;
-  buffer = (char *) malloc( (W+2)*(H+2) + (W+2)*3*sizeof(int) );
-
   uchar* map;
   int* mag_buf[3];
-  mag_buf[0] = (int*)buffer;
+  mag_buf[0] = (int*)myState->buffer;
   mag_buf[1] = mag_buf[0] + W + 2;
   mag_buf[2] = mag_buf[1] + W + 2;
   map = (uchar*)(mag_buf[2] + W + 2);
   mapstep = W + 2;
 
   // allocate stack directly
-  uchar **stack = 0;
   uchar **stack_top = 0, **stack_bottom = 0;
 
   maxsize = H * W;
-  stack = (uchar **) malloc( maxsize*sizeof(uchar) );
-  stack_top = stack_bottom = &stack[0];
+  stack_top = stack_bottom = &myState->stack[0];
 
   memset( mag_buf[0], 0, (W+2)*sizeof(int) );
   memset( map, 1, mapstep );
@@ -139,8 +168,8 @@ doFrame(int H, int W, Pixel *srcdata, Pixel *dstdata,
   for( i = 0; i <= H; i++ )
   {
     int* _mag = mag_buf[(i > 0) + 1] + 1;
-    const short* _dx = (short*)(dx + W*i);
-    const short* _dy = (short*)(dy + W*i);
+    const short* _dx = (short*)(myState->dx + W*i);
+    const short* _dy = (short*)(myState->dy + W*i);
     uchar* _map;
     int x, y;
     int magstep1, magstep2;
@@ -166,8 +195,8 @@ doFrame(int H, int W, Pixel *srcdata, Pixel *dstdata,
     _map[-1] = _map[W] = 1;
 
     _mag = mag_buf[1] + 1; // take the central row
-    _dx = (short*)(dx + W*(i-1));
-    _dy = (short*)(dy + W*(i-1));
+    _dx = (short*)(myState->dx + W*(i-1));
+    _dy = (short*)(myState->dy + W*(i-1));
 
     magstep1 = (int)(mag_buf[2] - mag_buf[1]);
     magstep2 = (int)(mag_buf[0] - mag_buf[1]);
@@ -246,10 +275,6 @@ doFrame(int H, int W, Pixel *srcdata, Pixel *dstdata,
     mag_buf[2] = _mag;
   }
 
-  // cleanup
-  free( dx );
-  free( dy );
-
   // now track the edges (hysteresis thresholding)
   while( stack_top > stack_bottom )
   {
@@ -285,9 +310,6 @@ doFrame(int H, int W, Pixel *srcdata, Pixel *dstdata,
       _dst[j] = (uchar)-(_map[j] >> 1);
   }
 
-  // more cleanup
-  free( stack );
-  free( buffer );
 }
 
 /*
@@ -299,12 +321,18 @@ static RCCResult run(RCCWorker *self,
                      RCCBoolean *newRunCondition) {
   ( void ) timedOut;
   ( void ) newRunCondition;
+  CState *myState = self->memories[0];  
   CannyProperties *p = self->properties;
   RCCPort *in = &self->ports[CANNY_IN],
           *out = &self->ports[CANNY_OUT];
 
+  if ( (in->input.length>0) && (in->input.length>FRAME_BYTES) ) {
+    return RCC_ERROR;
+  }
+
   // Run Canny edge detection
-  doFrame(p->height, p->width,
+  doFrame(myState,
+	  p->height, p->width,
           in->current.data,
           out->current.data,
           p->low_thresh, p->high_thresh);

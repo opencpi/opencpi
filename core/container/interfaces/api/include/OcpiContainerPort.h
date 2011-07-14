@@ -154,8 +154,8 @@ namespace OCPI {
 
       //      inline ezxml_t getXml() { return myXml; }
       // Local (possibly among different containers) connection: 1 step operation on the user port
-      void connect( OCPI::API::Port &other, const OCPI::Util::PValue *myProps=NULL,
-		    const OCPI::Util::PValue *otherProps=NULL);
+      void connect( OCPI::API::Port &other, const OCPI::Util::PValue *myProps,
+		    const OCPI::Util::PValue *otherProps);
 
       // Local connection within a container
       // Remote connection: up to 5 steps! worst case.
@@ -172,7 +172,7 @@ namespace OCPI {
       // Best case: (only one method for user->provider)
       //     final user->provider target info and provider->user target info
 
-      virtual const std::string &getInitialProviderInfo(const OCPI::Util::PValue *p=NULL);
+      virtual const std::string &getInitialProviderInfo(const OCPI::Util::PValue *p);
 
       // Step 2: (after passing initialProviderInfo to user side)
       // Give remote initial provider info to this local user port.

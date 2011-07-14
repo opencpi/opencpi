@@ -98,7 +98,7 @@ namespace OCPI {
       Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props);
       void setupProperty(const char *name, OCPI::API::Property &prop);
       virtual void prepareProperty(OCPI::Util::Prop::Property &p, OCPI::API::Property &) = 0;
-      virtual Port &createPort(OCPI::Metadata::Port &metaport, const OCPI::Util::PValue *props = NULL) = 0;
+      virtual Port &createPort(OCPI::Metadata::Port &metaport, const OCPI::Util::PValue *props) = 0;
 
     public:
       virtual Application &application() = 0;
@@ -109,18 +109,18 @@ namespace OCPI {
       // Generic setting method
 
       virtual ~Worker();
-      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props=NULL);
+      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props);
 
       virtual Port & createOutputPort(OCPI::Metadata::PortOrdinal portId,
                                      OCPI::OS::uint32_t bufferCount,
                                      OCPI::OS::uint32_t bufferSize, 
-                                      const OCPI::Util::PValue* props=NULL) 
+                                      const OCPI::Util::PValue* props) 
         throw ( OCPI::Util::EmbeddedException ) = 0;
 
       virtual Port & createInputPort(OCPI::Metadata::PortOrdinal portId,
                                      OCPI::OS::uint32_t bufferCount,
                                      OCPI::OS::uint32_t bufferSize, 
-                                     const OCPI::Util::PValue* props=NULL) 
+                                     const OCPI::Util::PValue* props) 
         throw ( OCPI::Util::EmbeddedException ) = 0;
       virtual void read(uint32_t offset, uint32_t size, void *data) = 0;
       virtual void write(uint32_t offset, uint32_t size, const void *data) = 0;

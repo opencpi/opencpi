@@ -32,6 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <math.h>
 
+#define FRAME_BYTES (p->height * p->width * sizeof(float)) // pixels per frame
+
 MIN_EIGEN_VAL_METHOD_DECLARATIONS;
 RCCDispatch min_eigen_val = {
   /* insert any custom initializations here */
@@ -70,7 +72,6 @@ static RCCResult run(RCCWorker *self,
   Min_eigen_valProperties *p = self->properties;
   RCCPort *in = &self->ports[MIN_EIGEN_VAL_IN],
           *out = &self->ports[MIN_EIGEN_VAL_OUT];
-  const RCCContainer *c = self->container;
 
   calc_min_eigen_val( p->height, p->width,
                     (float *) in->current.data,

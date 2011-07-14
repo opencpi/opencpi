@@ -311,6 +311,7 @@ initializeContext()
   while( wd->memSizes && wd->memSizes[idx] ) {
     try {
       m_context->memories[idx] = new char*[wd->memSizes[idx]];
+      memset(m_context->memories[idx], 0, wd->memSizes[idx]);
     }
     catch( std::bad_alloc ) {
       delete[] m_context;
@@ -321,7 +322,6 @@ initializeContext()
   
   // Now create and initialize the worker properties
   m_context->properties = new char[wd->propertySize + 4];
-
   memset(m_context->properties, 0, sizeof(char)*wd->propertySize);
         
 }
@@ -552,8 +552,6 @@ RCCPortMask Worker::getReadyPorts() {
 	    wport->current.id_ = opd->buffer;
 	    wport->input.length = opd->buffer->getMetaData()->ocpiMetaDataWord.length;
 	    wport->input.u.operation = opd->buffer->getMetaData()->ocpiMetaDataWord.opCode;
-
-	    ocpiAssert( wport->input.length <= wport->current.maxLength );
 
 #ifndef NDEBUG
 	    printf("max = %d, actual = %d\n", wport->current.maxLength, wport->input.length );

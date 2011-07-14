@@ -1,7 +1,0 @@
-<!-- An 32 bit floating protocol. -->
-<!-- The first opcode sets the 32 bit image protocol. -->
-<Protocol>
-  <Operation Name="Line">
-    <Argument Name="Pixels" Type="float" SequenceLength="1M"/>
-  </Operation>
-</Protocol>

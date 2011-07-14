@@ -107,7 +107,7 @@ static void createPorts( std::vector<CApp>& ca )
         CONSUMER.worker->createInputPort( 
                                          CONSUMER_INPUT_PORT,
                                          CONSUMER.pdata[CONSUMER_INPUT_PORT].bufferCount,
-                                         OCPI_RCC_DATA_BUFFER_SIZE);
+                                         OCPI_RCC_DATA_BUFFER_SIZE,NULL);
     }
   CATCH_ALL_RETHROW("creating consumer target port")
 
@@ -121,7 +121,7 @@ static void createPorts( std::vector<CApp>& ca )
         LOOPBACK.worker->createInputPort(
                                          LOOPBACK_INPUT_PORT,
                                          LOOPBACK.pdata[LOOPBACK_INPUT_PORT].bufferCount,
-                                         OCPI_RCC_DATA_BUFFER_SIZE);
+                                         OCPI_RCC_DATA_BUFFER_SIZE,NULL);
     }
   CATCH_ALL_RETHROW( "creating loopback ports")
     }

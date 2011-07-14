@@ -1010,14 +1010,14 @@ createAllPorts ()
     try {
       if (portInfo->provider) {
         pd.localPort = & m_containerWorkerId->createInputPort (  portOrdinal,
-                                                               m_numBuffers,
-                                                               m_bufferSize);
+								 m_numBuffers,
+								 m_bufferSize, NULL);
       }
       else {
         pd.localPort = & m_containerWorkerId->createOutputPort (
                                                           portOrdinal,
                                                           m_numBuffers,
-                                                          m_bufferSize);
+                                                          m_bufferSize, NULL);
       }
     }
     catch (const OCPI::Util::EmbeddedException & oops) {
@@ -1095,10 +1095,10 @@ connectInputPorts ()
 
       pd.fileIoPort = & pd.fileIoWorkerId->createOutputPort ( 0,
                                                          m_numBuffers,
-                                                         m_bufferSize);
+							      m_bufferSize,NULL);
 
-      shadowPort = pd.fileIoPort->setFinalProviderInfo( pd.localPort->getInitialProviderInfo() );
-      pd.localPort->setFinalUserInfo ( shadowPort);
+      shadowPort = pd.fileIoPort->setFinalProviderInfo( pd.localPort->getInitialProviderInfo(NULL) );
+      pd.localPort->setFinalUserInfo ( shadowPort );
 
       pd.connected = true;
       pd.fileName = fileName;
@@ -1197,10 +1197,10 @@ connectOutputPorts ()
       pd.fileIoPort = & pd.fileIoWorkerId->createInputPort (
                                                          0,
                                                          m_numBuffers,
-                                                         m_bufferSize);
+                                                         m_bufferSize, NULL);
 
 
-      shadowPort = pd.localPort->setFinalProviderInfo( pd.fileIoPort->getInitialProviderInfo() );
+      shadowPort = pd.localPort->setFinalProviderInfo( pd.fileIoPort->getInitialProviderInfo(NULL) );
       pd.fileIoPort->setFinalUserInfo ( shadowPort );
 
       pd.connected = true;

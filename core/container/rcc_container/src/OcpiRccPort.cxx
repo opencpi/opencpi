@@ -477,14 +477,14 @@ connectExternal(const char * name, const OU::PValue * myprops, const OU::PValue 
   if ( isProvider() ) {
     p = static_cast<Port*>
       (&w.createOutputPort(0, connectionData.data.desc.nBuffers,
-			   connectionData.data.desc.dataBufferSize ));
+			   connectionData.data.desc.dataBufferSize,NULL ));
     p->connect( *this, myprops, oprops );
   }
   else {
     p = static_cast<Port*>
       (&w.createInputPort(0, 
 			  connectionData.data.desc.nBuffers,
-			  connectionData.data.desc.dataBufferSize ));
+			  connectionData.data.desc.dataBufferSize,NULL ));
     this->connect( *p, myprops, oprops );
   }
   return *new ExternalPort(*p, name, NULL, metaPort(), m_mutex);

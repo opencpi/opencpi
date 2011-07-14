@@ -1,5 +1,4 @@
 <RccImplementation>
-  <ControlInterface ControlOperations="initialize,start"/>
   <xi:include href="gaussian_blur_spec.xml"/>
   <Port Name="in" MinBuffers="3"/>
 </RccImplementation>

@@ -32,6 +32,7 @@
 
 // Algorithm specifics:
 typedef uint8_t Pixel;      // the data type of pixels
+#define FRAME_BYTES (p->height * p->width * sizeof(Pixel)) // pixels per frame
 typedef double PixelTemp;  // the data type for intermediate pixel math
 #define MAX UINT8_MAX       // the maximum pixel value
 #define KERNEL_SIZE 3       // the size of the kernel
@@ -45,7 +46,7 @@ typedef struct {
 } Gaussian_blurState;
 
 static uint32_t sizes[] = {sizeof(Gaussian_blurState), 0};
-static RCCPortInfo pinfo[] = { {0,2000000,KERNEL_SIZE+1},{1,2000000,2},{-1,0,0} };
+static RCCPortInfo pinfo[] = { {GAUSSIAN_BLUR_IN,0,KERNEL_SIZE+1},{GAUSSIAN_BLUR_OUT,0,2},{-1,0,0} };
 
 GAUSSIAN_BLUR_METHOD_DECLARATIONS;
 RCCDispatch gaussian_blur = {
@@ -57,19 +58,6 @@ RCCDispatch gaussian_blur = {
 
 // Gaussian kernel
 static double gaussian[3][3];
-
-
-static RCCResult initialize(RCCWorker *self)
-{
-  return RCC_OK;
-}
-
-static RCCResult start(RCCWorker *self)
-{
-  Gaussian_blurState *s = self->memories[0];  
-  s->inLine = 0;
-  return RCC_OK;
-}
 
 inline void
 initKernel(double sigmaX, double sigmaY) {
@@ -122,7 +110,7 @@ doLine(Pixel *l0, Pixel *l1, Pixel *l2, Pixel *out, unsigned width) {
 // A run condition for flushing zero-length message
 // Basically we only wait for an output buffer, not an input
 // This will be unnecessary when we have a separate EOS indication.
-static RCCPortMask endMask[] = {(1<<GAUSSIAN_BLUR_OUT) | (1<<GAUSSIAN_BLUR_IN) , 0};
+static RCCPortMask endMask[] = {1<<GAUSSIAN_BLUR_OUT, 0};
 static RCCRunCondition end = {endMask, 0, 0};
 
 /*
@@ -136,13 +124,21 @@ static RCCResult run(RCCWorker *self,
   Gaussian_blurState *s = self->memories[0];
   RCCPort *in = &self->ports[GAUSSIAN_BLUR_IN],
     *out = &self->ports[GAUSSIAN_BLUR_OUT];
-  const RCCContainer *c = self->container;
-  
+  const RCCContainer *c = self->container;  
   (void)timedOut;
+
+  if ( (in->input.length>0) && (in->input.length>FRAME_BYTES) ) {
+    return RCC_ERROR;
+  }
 
   // End state:  just send the zero length message to indicate "done"
   // This will be unnecessary when EOS indication is fixed
-  if (self->runCondition == &end) {
+
+  // Arrange to send the zero-length message after the last line of last image
+  // This will be unnecessary when EOS indication is fixed
+  if (in->input.length == 0) {
+    self->runCondition = &end;
+    *newRunCondition = 1;
     out->output.length = 0;
     c->advance(out, 0);
     return RCC_DONE;
@@ -172,13 +168,9 @@ static RCCResult run(RCCWorker *self,
     c->advance(out, LINE_BYTES);
   }
 
-
-
   // Go to next
   unsigned prev = (cur - HISTORY_SIZE) % HISTORY_SIZE;
   
-  printf("^^ cur = %d, prev = %d\n", cur, prev );
-
   if(s->inLine < (HISTORY_SIZE - 1)) {
     c->take(in, NULL, &s->buffers[cur]);
   }
@@ -187,14 +179,5 @@ static RCCResult run(RCCWorker *self,
   }
   s->inLine++;
 
-  // Arrange to send the zero-length message after the last line of last image
-  // This will be unnecessary when EOS indication is fixed
-  if (in->input.length == 0) {
-    
-    printf("^^ Got an EOD\n");
-
-    self->runCondition = &end;
-    *newRunCondition = 1;
-  }
   return RCC_OK;
 }

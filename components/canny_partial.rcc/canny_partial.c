@@ -17,51 +17,35 @@ typedef uint16_t PixelTemp;  // the data type for intermediate pixel math
 #define MAX UINT8_MAX        // the maximum pixel value
 #define FRAME_BYTES (p->height * p->width * sizeof(Pixel)) // pixels per frame
 
+
+typedef struct {
+  uint16_t init;
+  uint16_t *dx;
+  uint16_t *dy;
+  unsigned lineAt;
+  int mapstep, maxsize;
+  int low, high;
+  char *buffer;
+  uchar* map;
+  int* mag_buf[3];
+  uchar **stack;
+  uchar **stack_top, **stack_bottom;
+} CPState;
+
+static uint32_t sizes[] = {sizeof(CPState), 0 };
+
 CANNY_PARTIAL_METHOD_DECLARATIONS;
 RCCDispatch canny_partial = {
   /* insert any custom initializations here */
+  .memSizes = sizes,
   CANNY_PARTIAL_DISPATCH
 };
 
 
-// Canny edge detection:
-unsigned lineAt = 0;
-
-uint16_t *dx = NULL;
-uint16_t *dy = NULL;
-
-int mapstep, maxsize;
-int low, high;
-char *buffer;
-uchar* map;
-int* mag_buf[3];
-uchar **stack = 0;
-uchar **stack_top = 0, **stack_bottom = 0;
-
-// updates data (dx and dy)
-static void
-updateFrame(int H, int W, int lines,
-            Pixel *src_dx, Pixel *src_dy) {
-
-  if( !dx || !dy ) {
-    dx = (uint16_t *) malloc( H * W * sizeof(uint16_t) );
-    dy = (uint16_t *) malloc( H * W * sizeof(uint16_t) );
-  }
-
-  int i, j;
-  for(i = 0; i < lines; i++) {
-    int at = (lineAt + i) * W;
-    int src_at = i * W;
-    for(j = 0; j < W; j++) {
-      dx[at+j] = src_dx[src_at+j];
-      dy[at+j] = src_dy[src_at+j];
-    }
-  }
-}
-
 // sets up algorithm
 static void
-cannyInit(int H, int W,
+cannyInit(CPState *myState,
+	  int H, int W,
           double low_thresh, double high_thresh) {
 
   // sanity checks
@@ -75,31 +59,79 @@ cannyInit(int H, int W,
     low_thresh = temp;
   }
 
+  myState->dx = (uint16_t *) malloc( H * W * sizeof(uint16_t) );
+  myState->dy = (uint16_t *) malloc( H * W * sizeof(uint16_t) );
+
   // setting thresholds
-  low = (int) low_thresh;
-  high = (int) high_thresh;
+  myState->low = (int) low_thresh;
+  myState->high = (int) high_thresh;
 
-  buffer = (char *) malloc( (W+2)*(H+2) + (W+2)*3*sizeof(int) );
+  myState->buffer = (char *) malloc( (W+2)*(H+2) + (W+2)*3*sizeof(int) );
 
-  mag_buf[0] = (int*)buffer;
-  mag_buf[1] = mag_buf[0] + W + 2;
-  mag_buf[2] = mag_buf[1] + W + 2;
-  map = (uchar*)(mag_buf[2] + W + 2);
-  mapstep = W + 2;
+  myState->mag_buf[0] = (int*)myState->buffer;
+  myState->mag_buf[1] = myState->mag_buf[0] + W + 2;
+  myState->mag_buf[2] = myState->mag_buf[1] + W + 2;
+  myState->map = (uchar*)(myState->mag_buf[2] + W + 2);
+  myState->mapstep = W + 2;
 
   // allocate stack directly
-  maxsize = H * W;
-  stack = (uchar **) malloc( maxsize*sizeof(uchar) );
-  stack_top = stack_bottom = &stack[0];
+  myState->maxsize = H * W;
+  myState->stack = (uchar **) malloc( myState->maxsize*sizeof(uchar) );
+  myState->stack_top = myState->stack_bottom = &myState->stack[0];
 
-  memset( mag_buf[0], 0, (W+2)*sizeof(int) );
-  memset( map, 1, mapstep );
-  memset( map + mapstep*(H + 1), 1, mapstep );
+  memset( myState->mag_buf[0], 0, (W+2)*sizeof(int) );
+  memset( myState->map, 1, myState->mapstep );
+  memset( myState->map + myState->mapstep*(H + 1), 1, myState->mapstep );
+}
+
+
+static RCCResult start(RCCWorker *self)
+{
+  CPState *myState = self->memories[0];  
+  Canny_partialProperties *p = self->properties;
+  if ( myState->init == 0 ) {
+    cannyInit(myState, p->height, p->width, p->low_thresh, p->high_thresh);
+  }
+  myState->init = 1;
+  return RCC_OK;
+}
+
+
+static RCCResult release(RCCWorker *self)
+{
+  CPState *myState = self->memories[0];  
+  if ( myState->init ) {
+    free( myState->stack );
+    free( myState->buffer );
+    free( myState->dx );
+    free( myState->dy );
+  }
+  return RCC_OK;
+}
+
+
+
+
+// updates data (dx and dy)
+static void
+updateFrame(CPState *myState,
+	    int H, int W, int lines,
+            Pixel *src_dx, Pixel *src_dy) {
+  ( void )H;
+  int i, j;
+  for(i = 0; i < lines; i++) {
+    int at = (myState->lineAt + i) * W;
+    int src_at = i * W;
+    for(j = 0; j < W; j++) {
+      myState->dx[at+j] = src_dx[src_at+j];
+      myState->dy[at+j] = src_dy[src_at+j];
+    }
+  }
 }
 
 // Compute one line of main loop
 static void
-cannyLoop(int H, int W, int i) {
+cannyLoop(CPState* myState, int H, int W, int i) {
 
   /* sector numbers 
      (Top-Left Origin)
@@ -113,8 +145,8 @@ cannyLoop(int H, int W, int i) {
    3   2   1
    */
 
-#define CANNY_PUSH(d)    *(d) = (uchar)2, *stack_top++ = (d)
-#define CANNY_POP(d)     (d) = *--stack_top
+#define CANNY_PUSH(d)    *(d) = (uchar)2, *myState->stack_top++ = (d)
+#define CANNY_POP(d)     (d) = *--myState->stack_top
   
   int j;
 
@@ -124,9 +156,9 @@ cannyLoop(int H, int W, int i) {
   //   1 - the pixel can not belong to an edge
   //   2 - the pixel does belong to an edge
   {
-    int* _mag = mag_buf[(i > 0) + 1] + 1;
-    const short* _dx = (short*)(dx + W*i);
-    const short* _dy = (short*)(dy + W*i);
+    int* _mag = myState->mag_buf[(i > 0) + 1] + 1;
+    const short* _dx = (short*)(myState->dx + W*i);
+    const short* _dy = (short*)(myState->dy + W*i);
     uchar* _map;
     int x, y;
     int magstep1, magstep2;
@@ -148,15 +180,15 @@ cannyLoop(int H, int W, int i) {
     if( i == 0 )
       return;
 
-    _map = map + mapstep*i + 1;
+    _map = myState->map + myState->mapstep*i + 1;
     _map[-1] = _map[W] = 1;
 
-    _mag = mag_buf[1] + 1; // take the central row
-    _dx = (short*)(dx + W*(i-1));
-    _dy = (short*)(dy + W*(i-1));
+    _mag = myState->mag_buf[1] + 1; // take the central row
+    _dx = (short*)(myState->dx + W*(i-1));
+    _dy = (short*)(myState->dy + W*(i-1));
 
-    magstep1 = (int)(mag_buf[2] - mag_buf[1]);
-    magstep2 = (int)(mag_buf[0] - mag_buf[1]);
+    magstep1 = (int)(myState->mag_buf[2] - myState->mag_buf[1]);
+    magstep2 = (int)(myState->mag_buf[0] - myState->mag_buf[1]);
 
     for( j = 0; j < W; j++ )
     {
@@ -170,7 +202,7 @@ cannyLoop(int H, int W, int i) {
 
       x = abs(x);
       y = abs(y);
-      if( m > low )
+      if( m > myState->low )
       {
         int tg22x = x * TG22;
         int tg67x = tg22x + ((x + x) << CANNY_SHIFT);
@@ -181,7 +213,7 @@ cannyLoop(int H, int W, int i) {
         {
           if( m > _mag[j-1] && m >= _mag[j+1] )
           {
-            if( m > high && !prev_flag && _map[j-mapstep] != 2 )
+            if( m > myState->high && !prev_flag && _map[j-myState->mapstep] != 2 )
             {
               CANNY_PUSH( _map + j );
               prev_flag = 1;
@@ -195,7 +227,7 @@ cannyLoop(int H, int W, int i) {
         {
           if( m > _mag[j+magstep2] && m >= _mag[j+magstep1] )
           {
-            if( m > high && !prev_flag && _map[j-mapstep] != 2 )
+            if( m > myState->high && !prev_flag && _map[j-myState->mapstep] != 2 )
             {
               CANNY_PUSH( _map + j );
               prev_flag = 1;
@@ -210,7 +242,7 @@ cannyLoop(int H, int W, int i) {
           s = s < 0 ? -1 : 1;
           if( m > _mag[j+magstep2-s] && m > _mag[j+magstep1+s] )
           {
-            if( m > high && !prev_flag && _map[j-mapstep] != 2 )
+            if( m > myState->high && !prev_flag && _map[j-myState->mapstep] != 2 )
             {
               CANNY_PUSH( _map + j );
               prev_flag = 1;
@@ -226,21 +258,18 @@ cannyLoop(int H, int W, int i) {
     }
 
     // scroll the ring buffer
-    _mag = mag_buf[0];
-    mag_buf[0] = mag_buf[1];
-    mag_buf[1] = mag_buf[2];
-    mag_buf[2] = _mag;
+    _mag = myState->mag_buf[0];
+    myState->mag_buf[0] = myState->mag_buf[1];
+    myState->mag_buf[1] = myState->mag_buf[2];
+    myState->mag_buf[2] = _mag;
   }
 }
 
 static void
-cannyEnd(int H, int W, Pixel *dst) {
-  // cleanup
-  free( dx );
-  free( dy );
+cannyEnd(CPState *myState, int H, int W, Pixel *dst) {
 
   // now track the edges (hysteresis thresholding)
-  while( stack_top > stack_bottom )
+  while( myState->stack_top > myState->stack_bottom )
   {
     uchar* m;
 
@@ -250,34 +279,31 @@ cannyEnd(int H, int W, Pixel *dst) {
       CANNY_PUSH( m - 1 );
     if( !m[1] )
       CANNY_PUSH( m + 1 );
-    if( !m[-mapstep-1] )
-      CANNY_PUSH( m - mapstep - 1 );
-    if( !m[-mapstep] )
-      CANNY_PUSH( m - mapstep );
-    if( !m[-mapstep+1] )
-      CANNY_PUSH( m - mapstep + 1 );
-    if( !m[mapstep-1] )
-      CANNY_PUSH( m + mapstep - 1 );
-    if( !m[mapstep] )
-      CANNY_PUSH( m + mapstep );
-    if( !m[mapstep+1] )
-      CANNY_PUSH( m + mapstep + 1 );
+    if( !m[-myState->mapstep-1] )
+      CANNY_PUSH( m - myState->mapstep - 1 );
+    if( !m[-myState->mapstep] )
+      CANNY_PUSH( m - myState->mapstep );
+    if( !m[-myState->mapstep+1] )
+      CANNY_PUSH( m - myState->mapstep + 1 );
+    if( !m[myState->mapstep-1] )
+      CANNY_PUSH( m + myState->mapstep - 1 );
+    if( !m[myState->mapstep] )
+      CANNY_PUSH( m + myState->mapstep );
+    if( !m[myState->mapstep+1] )
+      CANNY_PUSH( m + myState->mapstep + 1 );
   }
 
   // the final pass, form the final image
   int i, j;
   for( i = 0; i < H; i++ )
   {
-    const uchar* _map = map + mapstep*(i+1) + 1;
+    const uchar* _map = myState->map + myState->mapstep*(i+1) + 1;
     uchar* _dst = dst + i*W;
 
     for( j = 0; j < W; j++ )
       _dst[j] = (uchar)-(_map[j] >> 1);
   }
 
-  // more cleanup
-  free( stack );
-  free( buffer );
 }
 
 /*
@@ -294,31 +320,34 @@ static RCCResult run(RCCWorker *self,
           *in_dy = &self->ports[CANNY_PARTIAL_IN_DY],
           *out = &self->ports[CANNY_PARTIAL_OUT];
   const RCCContainer *c = self->container;
+  CPState * myState = (CPState*)self->memories[0];
+
+  if ( (in_dx->input.length>0) && (in_dx->input.length>FRAME_BYTES) ) {
+    return RCC_ERROR;
+  }
+  if ( (in_dy->input.length>0) && (in_dy->input.length>FRAME_BYTES) ) {
+    return RCC_ERROR;
+  }
 
   // Run Canny edge detection
   int lines = in_dx->input.length / p->width;
-  int lineEnd = lineAt + lines;
-  updateFrame(p->height, p->width, lines,
+  int lineEnd = myState->lineAt + lines;
+  updateFrame(myState, p->height, p->width, lines,
               in_dx->current.data, in_dy->current.data);
 
   c->advance( in_dx, FRAME_BYTES );
   c->advance( in_dy, FRAME_BYTES );
 
-  // init
-  if(lineAt == 0) {
-    cannyInit(p->height, p->width, p->low_thresh, p->high_thresh);
-  }
-
   // loop
-  while(lineAt < lineEnd) {
-    cannyLoop(p->height, p->width, lineAt++);
+  while(myState->lineAt < (unsigned)lineEnd) {
+    cannyLoop(myState, p->height, p->width, myState->lineAt++);
   }
 
   // finish
-  if(lineAt == p->height - 1) {
-    cannyLoop(p->height, p->width, lineAt++);
-    cannyLoop(p->height, p->width, lineAt++);
-    cannyEnd(p->height, p->width, out->current.data);
+  if(myState->lineAt == p->height - 1) {
+    cannyLoop(myState, p->height, p->width, myState->lineAt++);
+    cannyLoop(myState, p->height, p->width, myState->lineAt++);
+    cannyEnd(myState, p->height, p->width, out->current.data);
 
     out->output.u.operation = in_dx->input.u.operation;
     out->output.length = FRAME_BYTES;

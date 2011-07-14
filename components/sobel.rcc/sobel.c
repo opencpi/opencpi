@@ -10,6 +10,7 @@
 
 // Algorithm specifics:
 typedef uint8_t Pixel;      // the data type of pixels
+#define FRAME_BYTES (p->height * p->width * sizeof(Pixel)) // pixels per frame
 typedef int16_t PixelTemp;  // the data type for intermediate pixel math
 #define MAX UINT8_MAX       // the maximum pixel value
 #define KERNEL_SIZE 3       // the size of the kernel
@@ -25,7 +26,7 @@ typedef struct {
 } SobelState;
 
 static uint32_t sizes[] = {sizeof(SobelState), 0};
-static RCCPortInfo pinfo[] = { {0,4000000,KERNEL_SIZE+1},{-1,0,0} };
+static RCCPortInfo pinfo[] = { {SOBEL_IN,0,KERNEL_SIZE+1},{-1,0,0} };
 
 SOBEL_METHOD_DECLARATIONS;
 RCCDispatch sobel = {
@@ -66,17 +67,26 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   SobelState *s = self->memories[0];
   RCCPort *in = &self->ports[SOBEL_IN],
           *out = &self->ports[SOBEL_OUT];
-  const RCCContainer *c = self->container;
-  
+  const RCCContainer *c = self->container;  
   (void)timedOut;
 
   // End state:  just send the zero length message to indicate "done"
   // This will be unnecessary when EOS indication is fixed
-  if (self->runCondition == &end) {
+
+  // Arrange to send the zero-length message after the last line of last image
+  // This will be unnecessary when EOS indication is fixed
+  if (in->input.length == 0) {
+    self->runCondition = &end;
+    *newRunCondition = 1;
     out->output.length = 0;
     c->advance(out, 0);
     return RCC_DONE;
   }
+
+  if ( (in->input.length>0) && (in->input.length>FRAME_BYTES) ) {
+    return RCC_ERROR;
+  }
+
   // Normal state (not first, not end)
   if (s->oldest && s->oldest->data ) {
     // except for initial condition, we always output a buffer. first and last per image are zeroes.
@@ -92,12 +102,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     out->output.length = LINE_BYTES;
     c->advance(out, LINE_BYTES);
   }
-  // Arrange to send the zero-length message after the last line of last image
-  // This will be unnecessary when EOS indication is fixed
-  if (in->input.length == 0) {
-    self->runCondition = &end;
-    *newRunCondition = 1;
-  }
+
   // Manage a history of HISTORY_SIZE buffers in our state structure
   // Note that s->oldest will be initially NULL so the first time
   // "take" is called, no old buffer is released

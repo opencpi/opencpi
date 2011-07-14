@@ -31,6 +31,7 @@
 
 // Algorithm specifics:
 typedef uint8_t Pixel;      // the data type of pixels
+#define FRAME_BYTES (p->height * p->width * sizeof(Pixel)) // pixels per frame
 #define MAX UINT8_MAX       // the maximum pixel value
 #define KERNEL_SIZE 3       // the size of the kernel
 
@@ -50,14 +51,6 @@ RCCDispatch erode = {
   .memSizes = sizes,
   ERODE_DISPATCH
 };
-
-
-static RCCResult start(RCCWorker *self)
-{
-  ErodeState *s = self->memories[0];  
-  s->inLine = 0;
-  return RCC_OK;
-}
 
 
 // Compute one line of output
@@ -98,13 +91,21 @@ static RCCResult run(RCCWorker *self,
   ErodeState *s = self->memories[0];
   RCCPort *in = &self->ports[ERODE_IN],
     *out = &self->ports[ERODE_OUT];
-  const RCCContainer *c = self->container;
-  
+  const RCCContainer *c = self->container;  
   (void)timedOut;
+
+  if ( (in->input.length>0) && (in->input.length>FRAME_BYTES) ) {
+    return RCC_ERROR;
+  }
+
+  // Arrange to send the zero-length message after the last line of last image
+  // This will be unnecessary when EOS indication is fixed
 
   // End state:  just send the zero length message to indicate "done"
   // This will be unnecessary when EOS indication is fixed
-  if (self->runCondition == &end) {
+  if (in->input.length == 0) {
+    self->runCondition = &end;
+    *newRunCondition = 1;
     out->output.length = 0;
     c->advance(out, 0);
     return RCC_DONE;
@@ -139,11 +140,5 @@ static RCCResult run(RCCWorker *self,
     c->take(in, &s->buffers[prev], &s->buffers[cur]);
   s->inLine++;
 
-  // Arrange to send the zero-length message after the last line of last image
-  // This will be unnecessary when EOS indication is fixed
-  if (in->input.length == 0) {
-    self->runCondition = &end;
-    *newRunCondition = 1;
-  }
   return RCC_OK;
 }
