@@ -3,8 +3,7 @@
 set log=testDMA$$.log
 echo Start with $argv >& $log
 echo Log is: `pwd`/$log
-set tree=$OCPI_BASE_DIR
-set cmd="sudo -E LD_LIBRARY_PATH=$tree/lib/linux-x86_64-bin:/usr/local $tree/core/container/hdl_container/linux-x86_64-bin/testRpl"
+set cmd="sudo -E "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" testRpl"
 #set cmd="sudo -E testRpl"
 
 if ($#argv == 0) then

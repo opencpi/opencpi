@@ -40,6 +40,7 @@
 #include <math.h>
 #include <time.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/uio.h>
 #include <sys/time.h>
 #include "OcpiThread.h"
@@ -424,21 +425,21 @@ int main(int argc, char *argv[])
       OA::Worker *w[14] = {
 	((OA::Worker *)0),
 	// SMA0 in first FPGA
-	&a.createWorker(xfile, 0, "w2c1", "FC", "FCi"),                                 // w2# 1
+	&a.createWorker(xfile, 0, "w2c1", "sma", "sma0"),                                 // w2# 1
 	// MIddle worker in first FPGA
-	&a.createWorker(xfile, 0, "w3c2", "Bias", "BIASi"),                             // w3# 2
+	&a.createWorker(xfile, 0, "w3c1", "bias", "bias0"),                             // w3# 2
 	// SMA1 in first FPGA
-	&a.createWorker(xfile, 0, "w4c3", "FP", "FPi"),                                 // w4# 3
+	&a.createWorker(xfile, 0, "w4c1", "sma", "sma1"),                                 // w4# 3
 	// ADC in first FPGA
 	acquire ? &a.createWorker(xfile, 0, "w10c1", "ADC", "ADCi") : 0,                 //w10# 4
 	// DAC in first FPGA
 	emit ? &a.createWorker(xfile, 0, "w11c1", "DAC", "DACi") : 0,                    //w11# 5
 	// SMA0 in second FPGA
-	two ? &a2.createWorker(xfile, 0, "w2c2", "FC", "FCi") : 0,                      // w2# 6
+	two ? &a2.createWorker(xfile, 0, "w2c2", "sma", "sma0") : 0,                      // w2# 6
 	// Middle worker in second FPGA
-	two ? &a2.createWorker(xfile, 0, "w3c2", "Bias", "BIASi") : 0,                  // w3# 7
+	two ? &a2.createWorker(xfile, 0, "w3c2", "bias", "bias0") : 0,                  // w3# 7
 	// SMA1 in second FPGA
-	two ? &a2.createWorker(xfile, 0, "w4c2", "FP", "FPi") : 0,                      // w4# 8
+	two ? &a2.createWorker(xfile, 0, "w4c2", "sma", "sma1") : 0,                      // w4# 8
 	// Splitter from (SMA0|ADC) to (Middle|Framgate) in first FPGA
 	psd ? &a.createWorker(xfile, 0, "w?c1", "WsiSplitter2x2", "WsiSplitter2x2i") :
 	// Splitter from (SMA0|nothing) to (split1|Middle) in first FPGA
@@ -455,31 +456,31 @@ int main(int argc, char *argv[])
 	rccFile ? &rcca.createWorker(rccFile, 0, "wNcRcc", rccName, 0) : 0                //   #13
       };
 
-      OA::Port &w1in = w[1]->getPort("WMIin");
+      OA::Port &w1in = w[1]->getPort("message");
 
-      OA::Port &w1out = w[1]->getPort("WSIout");
+      OA::Port &w1out = w[1]->getPort("out");
 
-      OA::Port &w1sin = w[1]->getPort("WSIin");
+      OA::Port &w1sin = w[1]->getPort("in");
 
-      OA::Port &w2in = w[2]->getPort("WSIin");
+      OA::Port &w2in = w[2]->getPort("in");
 
-      OA::Port &w2out = w[2]->getPort("WSIout");
+      OA::Port &w2out = w[2]->getPort("out");
 
-      OA::Port &w3in = w[3]->getPort("WSIin");
+      OA::Port &w3in = w[3]->getPort("in");
 
-      OA::Port &w3out = w[3]->getPort("WMIout");
-      OA::Port &w3sout = w[3]->getPort("WSIout");
+      OA::Port &w3out = w[3]->getPort("message");
+      OA::Port &w3sout = w[3]->getPort("out");
 
       OA::Port &w4out = acquire ? w[4]->getPort("ADCout") : *(OA::Port *)0;
 
       OA::Port &w5in = emit ? w[5]->getPort("DACin") : *(OA::Port *)0;
 
-      OA::Port &w6in = two ? w[6]->getPort("WMIin") : *(OA::Port *)0;
-      OA::Port &w6out = two ? w[6]->getPort("WSIout") : *(OA::Port *)0;
-      OA::Port &w7in = two ? w[7]->getPort("WSIin") : *(OA::Port *)0;
-      OA::Port &w7out = two ? w[7]->getPort("WSIout") : *(OA::Port *)0;
-      OA::Port &w8in = two ? w[8]->getPort("WSIin") : *(OA::Port *)0;
-      OA::Port &w8out = two ? w[8]->getPort("WMIout") : *(OA::Port *)0;
+      OA::Port &w6in = two ? w[6]->getPort("message") : *(OA::Port *)0;
+      OA::Port &w6out = two ? w[6]->getPort("out") : *(OA::Port *)0;
+      OA::Port &w7in = two ? w[7]->getPort("in") : *(OA::Port *)0;
+      OA::Port &w7out = two ? w[7]->getPort("out") : *(OA::Port *)0;
+      OA::Port &w8in = two ? w[8]->getPort("in") : *(OA::Port *)0;
+      OA::Port &w8out = two ? w[8]->getPort("message") : *(OA::Port *)0;
       OA::Port &w9in0 = psd ? w[9]->getPort("WSIinB") : *(OA::Port *)0;
       OA::Port &w9in1 = psd ? w[9]->getPort("WSIinA") : *(OA::Port *)0;
       OA::Port &w9out0 = psd ? w[9]->getPort("WSIoutC") : *(OA::Port *)0;
@@ -607,7 +608,7 @@ int main(int argc, char *argv[])
           fprintf(stderr, "Can't open file \"%s\" for input\n", file);
           return 1;
         }
-        inLeft = bytes - (bytes % ioSize);
+        inLeft = bytes;// - (bytes % ioSize); don't read partial buffers
       } else {
 	if (cosine)
 	  doCosine(cosineBuf, sizeof(cosineBuf));
@@ -633,21 +634,25 @@ int main(int argc, char *argv[])
         uint32_t length;
         uint8_t *data;
         OA::ExternalBuffer *cBuffer;
+	uint32_t nIO; // number actually read or written
+	size_t n;
         if (!acquire) {
           OA::ExternalBuffer *pBuffer;
           // While output to do, do all that can be done
           for (;outLeft && (pBuffer = myOut->getBuffer(data, length));
-               outLeft -= ioSize, outN++) {
+               outLeft -= nIO, outN++) {
 	    if (doTick)
 	      get_tick_count(&ticks[tick++]);
             assert(length >= ioSize);
+	    nIO = outLeft > ioSize ? ioSize : outLeft;
             if (file) {
-              if (read(ifd, data, ioSize) != (int)ioSize) {
-                fprintf(stderr, "Error reading input file\n");
+              if ((n = read(ifd, data, nIO)) != (size_t)nIO) {
+                fprintf(stderr, "Error reading input file: wanted %u, got %d, errno %d\n",
+			nIO, n, errno);
                 return 1;
               }
             } else if (cosine)
-	      memcpy64((uint64_t*)data, (uint64_t*)cosineBuf, ioSize);
+	      memcpy64((uint64_t*)data, (uint64_t*)cosineBuf, nIO);
 	    else if (!dummy)
               for (unsigned i = 0; i < ioSize/sizeof(uint32_t); i++)
                 ((uint32_t *)(data))[i] = outN * (ioSize/sizeof(uint32_t)) + i;
@@ -667,43 +672,45 @@ int main(int argc, char *argv[])
           continue;
         uint8_t opCode;
         bool end;
-        for (;inLeft && (cBuffer = myIn.getBuffer(data, length, opCode, end));
-             inLeft -= ioSize, inN++) {
+        for (;inLeft && (cBuffer = myIn.getBuffer(data, nIO, opCode, end));
+             inLeft -= nIO, inN++) {
           uint32_t *d32 = (uint32_t*)data;
           const char *oops = 0;
+	  uint32_t nWant = inLeft > ioSize ? ioSize : inLeft;
           if (acquire) {
 #if 0
             if (inN == 0) {
-              if (opCode != 1 || length != 0) {
+              if (opCode != 1 || nIO != 0) {
                 oops = "Initial Acquire opcode/length not 1/0";
-                fprintf(stderr, "Bad opcode %d, len %d inN %d should be 1\n",
-                      opCode, length, inN);
+                fprintf(stderr, "Bad opcode %u, len %u inN %u should be 1\n",
+                      opCode, nIO, inN);
               }
             } else
 #endif
               if (opCode != 0) {
                 oops = "Acquire opcode after first not 0";
-                fprintf(stderr, "Bad opcode %d, len %d inN %d should be 0\n",
-                      opCode, length, inN);
+                fprintf(stderr, "Bad opcode %u, len %u inN %u should be 0\n",
+                      opCode, nIO, inN);
             }
           } else {
             if (opCode != (inN & 0xff)) {
-              fprintf(stderr, "Bad opcode %d, len %d inN %d should be 0x%x\n",
-                      opCode, length, inN, inN & 0xff);
+              fprintf(stderr, "Bad opcode %u, len %u inN %u should be 0x%x\n",
+                      opCode, nIO, inN, inN & 0xff);
               oops = "Opcode mismatch on input";
             }
-            if (length != ioSize) {
-              fprintf(stderr, "Len (%d) should be %ld (d[0] %x, inN %d op %d)\n",
-                      length, ioSize, d32[0], inN, opCode);
+            if (nIO != nWant) {
+              fprintf(stderr, "Len (%u) should be %u (d[0] %x, inN %u op %u)\n",
+                      nIO, nWant, d32[0], inN, opCode);
               oops = "Length mismatch on input";
             }
           }
           if (file && !ofile) {
-            if (read(cfd, cbuf, ioSize) != (int)ioSize) {
-              fprintf(stderr, "Error reading input file\n");
+            if ((n = read(cfd, cbuf, nWant)) != (size_t)nWant) {
+                fprintf(stderr, "Error reading input file for compare: wanted %u, got %d, errno %d\n",
+			nWant, n, errno);
               return 1;
             }
-            if (memcmp(cbuf, data, ioSize))
+            if (memcmp(cbuf, data, nWant))
               oops = "Data mismatch on file data";
           } else if (ofile) {
             struct {
@@ -713,29 +720,29 @@ int main(int argc, char *argv[])
             head.opcode = opCode;
             struct iovec io[2] = {
               {&head, sizeof(head)},
-              {data, ioSize}
+              {data, nWant}
             };
 	    unsigned nVecs, vecOffset;
 	    ssize_t nBytes;
 	    if (metadata) {
 	      nVecs = ioSize ? 2 : 1;
-	      nBytes = sizeof(head) + ioSize;
+	      nBytes = sizeof(head) + nWant;
 	      vecOffset = 0;
 	    } else {
 	      nVecs = ioSize ? 1 : 0;
-	      nBytes = ioSize;
+	      nBytes = nWant;
 	      vecOffset = 1;
 	    }
 	    if (nBytes &&
-		writev(ofd, io + vecOffset, nVecs) != nBytes) {
-              fprintf(stderr, "Error writing output file\n");
+		(n = writev(ofd, io + vecOffset, nVecs)) != nBytes) {
+              fprintf(stderr, "Error writing output file:  wanted %u got %d errno %d \n", nBytes, n, errno);
               return 1;
             }
           } else if (!dummy)
-            for (unsigned i = 0; i < ioSize/sizeof(uint32_t); i++)
-              if (d32[i] != inN * ioSize/sizeof(uint32_t) + i) {
+            for (unsigned i = 0; i < nIO/sizeof(uint32_t); i++)
+              if (d32[i] != inN * nIO/sizeof(uint32_t) + i) {
                 fprintf(stderr, "Bad data 0x%x, len %d w %d inN %d should be 0x%lx\n",
-                        d32[i], length, i, inN, inN * ioSize/sizeof(uint32_t) + i);
+                        d32[i], length, i, inN, inN * nIO/sizeof(uint32_t) + i);
                 oops = "Data mismatch on input";
               }
           cBuffer->release();

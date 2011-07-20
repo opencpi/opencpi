@@ -119,6 +119,7 @@ namespace OCPI {
                              "\", is already connected", NULL);
 
 #ifdef JK_LOOK_AT_ME
+        ALSO ALLOW NO INSTANCE TAG WHEN THERE IS ONLY ONE ANYWAY
         if (!boolAttrValue(impl, "reusable"))
 	  for (WorkersIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	    if (!strcmp((*wi)->implTag().c_str(), implTag))

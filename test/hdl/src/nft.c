@@ -299,7 +299,7 @@ checkStream(Stream *s) {
       assert(n >= 0);
       if (n)
 	memcpy((void *)&s->buffers[s->bufIdx * s->bufSize], s->buf, n);
-      s->metadata[s->bufIdx].length = n & ~3; // bitstream doesn't preserve bytes in words.
+      s->metadata[s->bufIdx].length = n;// & ~3; // bitstream doesn't preserve bytes in words.
     }
     if (!noCheck)
       s->metadata[s->bufIdx].opCode = s->opCode;
