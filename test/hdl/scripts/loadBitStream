@@ -62,8 +62,10 @@ else
 endif
 if ( $bitfile =~ *[,\.-]gz) then
   echo The bitstream file \"$bitfile\" is compressed.  Expanding it to a temporary file.
-  gunzip -c < $bitfile > $temp.bit    
-  if ($status != 0) then
+  gunzip -q -c < $bitfile > $temp.bit    
+  # Note that gunzip issues warnings and returns status == 2 when there is
+  # junk at the end of the file - which we use for artifact metadata of course.
+  if ($status != 0 && $status != 2) then
     echo Decompression failed.; exit 1
   endif
   echo Bitstream file decompressed into $temp.bit

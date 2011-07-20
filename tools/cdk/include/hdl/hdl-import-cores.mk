@@ -102,5 +102,5 @@ endef
 $(foreach d,$(ImportCoreDirs),\
   $(foreach n,$(notdir $d),\
     $(eval $(call DoImportCore,$d,$(ImportCoreName_$n),$(ImportCoreTop_$n),$n))))
-$(info IPC $(ImportCores).$(ImportCoreDirs))
+#$(info IPC $(ImportCores).$(ImportCoreDirs))
 endif

@@ -60,6 +60,10 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.1/ISE_DS
 
+# #### Location of the Altera tools ####################################### #
+
+export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/11.0
+
 # #### Location of Google Test (gtest) #################################### #
 
 export OCPI_GTEST_DIR=/opt/opencpi/linux-x86_64/prerequisites/gtest

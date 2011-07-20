@@ -357,8 +357,10 @@ namespace OCPI {
       // the key members are "readVaddr" and "writeVaddr"
       virtual void prepareProperty(OP::Property &md, OA::Property &cp) {
         if (myRegisters)
-          if (!md.isStruct && !md.members->type.isSequence && !md.members->type.scalar != OP::Scalar::OCPI_String &&
+          if (!md.isStruct && !md.members->type.isSequence &&
+	      !md.members->type.scalar != OP::Scalar::OCPI_String &&
               OP::Scalar::sizes[md.members->type.scalar] <= 32 &&
+	      md.m_offset < OCCP_WORKER_CONFIG_SIZE &&
               !md.m_writeError)
             cp.m_writeVaddr = myProperties + md.m_offset;
       }
@@ -445,10 +447,12 @@ namespace OCPI {
 	WciControl::controlOperation(op);
       }
 
-      void read(uint32_t, uint32_t, void*){}
-      void write(uint32_t, uint32_t, const void*){}
-
-
+      // FIXME: These (and sequence/string stuff above) need to be sensitive to
+      // addresing windows in OCCP.
+      void read(uint32_t, uint32_t, void*) {
+      }
+      void write(uint32_t, uint32_t, const void*) {
+      }
 
       OC::Port & createPort(OM::Port &metaport, const OA::PValue *props);
 

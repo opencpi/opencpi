@@ -39,7 +39,7 @@ module MakeResetA (
                   );
 
    parameter          RSTDELAY = 2  ; // Width of reset shift reg
-   parameter          init = 1 ;
+   parameter          init = 1'b1 ;
 
    input              CLK ;
    input              RST_N ;
@@ -54,7 +54,8 @@ module MakeResetA (
 
    assign ASSERT_OUT = !rst ;
 
-   SyncResetA #(RSTDELAY) rstSync (.CLK(DST_CLK),
+//   SyncResetA #(RSTDELAY) rstSync (.CLK(DST_CLK),
+   SyncResetA  rstSync (.CLK(DST_CLK),
 				   .IN_RST_N(rst),
 				   .OUT_RST_N(OUT_RST_N));
 

@@ -12,7 +12,7 @@
   <Instance Worker="dp.xml" Index="13" Interconnect="pcie"/>
   <Instance Worker="dp.xml" Index="14" Interconnect="pcie"/>
   <Instance Name="sma0" Index="2"/>
-  <Instance Name="ddc" Index="3"/>
+  <Instance Name="bias" Index="3"/>
   <Instance Name="sma1" Index="4"/>
   <Connection Name="FC" External="producer">
     <Attach Instance="dp0" Interface="wmi"/>

@@ -36,7 +36,7 @@ module ddrOutput2#(
   input [nbo-1:0]     sdrDataE,          // SDR Data                       sdr125    0th Bit#(12) Value
   input [nbo-1:0]     sdrDataF           // SDR Data                       sdr125    0th Bit#(12) Value
 );
-
+wire dcm_out, dcm_div, outClk;
 // DCM and BUFGs...
   DCM_ADV #(
     .CLKDV_DIVIDE(2.0),            // Divide by: 1.5,2.0,2.5...

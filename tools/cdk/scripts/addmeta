@@ -1,2 +1,2 @@
 #!/bin/sh
-(cat $1; sh -c 'echo X$4' `ls -l $1`) >> $2
+(cat $1 && sh -c 'echo X$4' `ls -l $1`) >> $2

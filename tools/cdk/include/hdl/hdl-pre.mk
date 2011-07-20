@@ -62,7 +62,7 @@ HdlCompile=\
   HdlExit=$$?; \
   cat $(HdlTime) >> $(HdlLog); \
   grep -i error $(HdlLog)| grep -v Command: |\
-    grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
+    grep -v '^WARNING:'|grep -v " 0 errors," | grep -i -v '[_a-z]error'; \
   $(HdlToolPost) \
   if test "$$OCPI_HDL_VERBOSE_OUTPUT" != ''; then \
     cat $(HdlLog); \
@@ -81,7 +81,11 @@ HdlCompile=\
 HdlSimPost=\
   rm -r -f links; \
   if test $$HdlExit = 0; then \
-    mkdir $(LibName); \
+    if ! test -d $(LibName); then \
+      mkdir $(LibName); \
+    else \
+      rm $(LibName)/*; \
+    fi;\
     for s in $(HdlToolLinkFiles); do \
       if [[ $$s == /* ]]; then \
         ln -s $$s $(LibName); \
@@ -103,9 +107,9 @@ endef
 
 ################################################################################
 # $(call HdlLibraryRefDir,location-dir)
-# $(call HdlCoreRefDir,location-dir,library-name)
-# These function take a user-specified (friendly, target-independent) library
-# location, and a library name.  They return the actual directory of that
+# $(call HdlCoreRefDir,location-dir,target)
+# These functions take a user-specified (friendly, target-independent) library
+# or core location and a target name.  They return the actual directory of that
 # library/core that the tool wants to see for that target.
 # These are not for component libraries, but a primitive libraries and cores
 HdlLibraryRefDir=$(strip \

@@ -38,5 +38,5 @@ Libraries=bsv util
 # Force the target.  Don't build for any others
 # override Target=xc5vsx95t-2-ff1136
 Cores=ddc_4243_4ch_v5
-ExcludeTargets=virtex6 icarus 
+OnlyTargets=virtex5 isim 
 include $(OCPI_CDK_DIR)/include/worker.mk

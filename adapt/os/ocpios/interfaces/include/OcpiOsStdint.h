@@ -39,12 +39,13 @@
 #define OCPIOSSTDINT_H__
 
 // This file is used rather than stdint.h to do it "right"
-// Some OSs don't provide it
+// Some OSs don't provide it: FIXME: actually change the code to use this rather than stdint.h
+// when we re-enablea platform that needs it...
 // Some systems insist on STDC_LIMIT_MACROS be defined to get the LIMITS macros for C++
 // But to use it, you just do what C99 says
 
 #if defined (WIN32) || defined (_WRS_KERNEL)
-// When it is not provided at all
+// When it is not provided at all: this must be augmented with LIMIT_MACROS etc.
     typedef signed char int8_t;
     typedef unsigned char uint8_t;
     typedef short int16_t;
@@ -56,6 +57,7 @@
     typedef long intptr_t;
     typedef unsigned long uintptr_t;
 #else
+// True C++ standards code will know to do this itself, but its more convenient this way.
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS
 #endif

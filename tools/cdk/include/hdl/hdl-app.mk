@@ -95,7 +95,7 @@ $(CoreBlackBoxFile): $$(DefsFile) | $(OutDir)gen
 
 # Generate the source code for this "assembly worker" implementation file.
 ImplFile:=$(GeneratedDir)/$(CwdName)$(HdlSourceSuffix)
-$(ImplFile): $$(ImplXmlFiles) | $$(GeneratedDir)
+$(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
 	$(AT)echo Generating the application source file: $@
 	$(AT)$(OcpiGen) -a  $<
 	$(AT)mv $(GeneratedDir)/$(Worker)_assy.v $@
@@ -187,6 +187,10 @@ AppName=$(Worker)-$1
 #AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)
 PromName=$(call PlatformDir,$1)/$(call AppName,$1).mcs
 BitName=$(call PlatformDir,$1)/$(call AppName,$1).bit
+ContainerXmlFile=$(Worker)_cont.xml
+# FIXME: allow for multiple container mappings, possible platform-specific, possibly not
+ArtifactXmlName=$(call PlatformDir,$1)/$(Worker)_cont_art.xml
+ArtifactXmlDirs=$(XmlIncludeDirs) ../../devices/specs ../../devices/lib/hdl
 BitZName=$(call PlatformDir,$1)/$(call AppName,$1).bit.gz
 NgdName=$(call PlatformDir,$1)/$(call AppName,$1).ngd
 AppNgcName=$(OurDir)target-$(call HdlGetFamily,$(call HdlGetPart,$1))/$(ContainerModule).ngc
@@ -227,9 +231,16 @@ $(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
                 $(notdir $(call ParName,$1)) $(notdir $(call BitName,$1)) \
 		$(notdir $(call PcfName,$1)), 'DRC detected 0 errors')
 
-$(call BitZName,$1): $(call BitName,$1)
+# Different since it is in the targetdir
+$(call ArtifactXmlName,$1): $(ContainerXmlFile) $(ImplXmlFile)
+	@echo Generating artifact xml file \($(ArtifactXmlFile)\) from $(ImplXmlFile) and $(ContainerXmlFile) files.
+	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call PlatformDir,$1)/$(@F).deps \
+	  -D $(call PlatformDir,$1) $(ArtifactXmlDirs:%=-I%) -A -h $(ContainerXmlFile) $(ImplXmlFile)
+
+$(call BitZName,$1): $(call BitName,$1) $(call ArtifactXmlName,$1)
 	$(AT)echo Making compressed bit file: $$@
 	$(AT)gzip -c $(call BitName,$1) > $$@
+	$(AT)$(ToolsDir)/addmeta $(call ArtifactXmlName,$1) $$@
 
 
 -include $(HdlPlatformsDir)/$1/$1.mk

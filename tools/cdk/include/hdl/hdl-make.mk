@@ -63,6 +63,13 @@ HdlGetFamilies=$(call OcpiDbg,Entering HdlGetFamilies($1))$(strip \
 # $(call HdlGetPart,platform)
 HdlGetPart=$(firstword $(subst -, ,$(HdlPart_$1)))
 
+
+$(call OcpiDbgVar,HdlPlatforms)
+$(call OcpiDbgVar,HdlTargets)
+
+ifeq ($(origin HdlPlatforms),undefined)
+HdlPlatforms:=all
+endif
 ifeq ($(origin HdlTargets),undefined)
 HdlTargets:=all
 endif
@@ -70,16 +77,12 @@ ifeq ($(HdlTargets),all)
 override HdlTargets:=$(HdlAllFamilies)
 endif
 
-ifeq ($(origin HdlPlatforms),undefined)
-HdlPlatforms:=all
-endif
-
-$(call OcpiDbgVar,HdlTargets)
 ifeq ($(HdlPlatforms),all)
 override HdlPlatforms:=$(HdlAllPlatforms)
 override HdlTargets:=$(sort $(HdlTargets) \
 	               $(call HdlGetFamilies,$(HdlAllPlatformParts)))
 endif
+
 
 $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)

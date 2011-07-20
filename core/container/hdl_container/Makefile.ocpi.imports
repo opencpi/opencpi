@@ -54,7 +54,7 @@ ALLLIBS += $(CONTAINER_LIBS) \
 	$(OCPIOS_LIBS)
 
 
-EXTRAOBJS += ../../linux-bin/RplContainer.obj 
+EXTRAOBJS += ../../linux-bin/HdlContainer.obj 
 
 ifeq ($(OCPI_CROSS_HOST),ppc86xx-linux)
 else
@@ -65,7 +65,10 @@ else
 #../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj 
 DYNOBJS += \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
+        ../../../../../core/container/hdl_container/$(OCPI_OUT_DIR)/HdlContainer.obj \
+        ../../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
+
 endif
 endif
 

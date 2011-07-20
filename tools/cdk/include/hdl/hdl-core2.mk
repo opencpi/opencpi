@@ -72,7 +72,9 @@ $(OutDir)target-$(1)/$(2)$(HdlBin): \
 	$(AT)$$(HdlCompile)
 endif
 endef
+
 $(call OcpiDbgVar,CompiledSourceFiles,b2 )
+$(call OcpiDbgVar,HdlActualTargets)
 $(foreach t,$(HdlActualTargets),$(eval $(call DoCore,$(t),$(Core))))
 $(call OcpiDbgVar,CompiledSourceFiles,b3 )
 

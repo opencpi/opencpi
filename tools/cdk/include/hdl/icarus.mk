@@ -48,7 +48,8 @@ endif
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
-# built when the library is built.
+# built when the library is built - whose date will change if the library is
+# rebuilt.
 # In verilator the result is a library directory full of links
 # So there not a specific file name we can look for
 HdlToolLibraryFile=$(LibName)
@@ -88,7 +89,7 @@ HdlToolNeedBB=
 HdlToolLibRef=$(HdlTarget)
 
 # $(OCPI_CDK_DIR)/include/hdl/onewire.v
-CompiledSourceFiles:= $(CompiledSourceFiles)
+#CompiledSourceFiles:= $(CompiledSourceFiles)
 HdlToolFiles=\
   $(SimFiles) \
   $(foreach f,$(HdlSources),\

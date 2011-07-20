@@ -38,8 +38,8 @@ SimLibraries=\
  $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
 SimFiles=\
  $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
-Libraries=bsv util
+Libraries=bsv util util_virtex5
 # include for protocols etc.
-ExcludeTargets=icarus
+OnlyTargets=isim virtex5
 XmlIncludeDirs+=../../../components/specs
 include $(OCPI_CDK_DIR)/include/worker.mk

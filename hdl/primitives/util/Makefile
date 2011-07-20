@@ -40,6 +40,6 @@ SimLibraries=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
 SimFiles=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
 Imports=\
 $(foreach x,\
-arSRLFIFOD arSRLFIFO ClockInvToBool ddrInput2 ddrOutput2 IDELAYCTRL_GRP,\
+arSRLFIFOD arSRLFIFO ClockInvToBool,\
 $(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/$(x).v)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives

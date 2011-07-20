@@ -185,8 +185,8 @@ namespace OCPI {
       bool m_released; // testing this 
       friend class Parent<TChild>;
     protected:
-      ChildOnly<TParent,TChild, prefix>(TParent &p, const char *name)
-      : m_parent(p), m_childName(childName(name, prefix)), m_released(false) {
+      ChildOnly<TParent,TChild, prefix>(TParent &p, const char *myName)
+      : m_parent(p), m_childName(childName(myName, prefix)), m_released(false) {
 	m_parent.
 	  Parent<TChild>::addChild(static_cast<TChild*>(this));
       }
