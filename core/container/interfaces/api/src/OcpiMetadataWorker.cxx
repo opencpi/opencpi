@@ -114,6 +114,7 @@ namespace OCPI {
       if ( name == NULL )
         return true;
       if (CE::getBoolean(x, "twoWay", &twoway) ||
+	  CE::getBoolean(x, "bidirectional", &bidirectional) ||
 	  CE::getBoolean(x, "provider", &provider))
 	return true;
       bool found;

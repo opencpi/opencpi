@@ -243,6 +243,7 @@ namespace OCPI {
 		     bool *found = NULL, uint64_t defaultValue = 0,
 		     bool setDefault = true);
       extern bool
+	inList(const char *item, const char *list),
 	hasAttrEq(ezxml_t x, const char *attrName, const char *val),
         getUNum(const char *s, uint32_t *valp),
         getUNum64(const char *s, uint64_t *valp),

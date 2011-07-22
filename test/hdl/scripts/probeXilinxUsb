@@ -6,6 +6,12 @@ if [[ $# == 0 ]]; then
   echo '  'prints which parts are at which positions on each one found.
   echo '  Use "all" to scan for up to 9 cables.  Use "auto" to find the first.'
   exit 1
+elif [[ "$OCPI_XILINX_TOOLS_DIR" == "" ]] ; then
+  echo Error: environment variable OCPI_XILINX_TOOLS_DIR not set.
+  exit 1
+elif test ! -x $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact; then
+  echo Error: \$OCPI_XLINX_TOOLS_DIR/ISE/bin/lin64/impact not found
+  exit 1
 fi
 temp=/tmp/cpibitstream$$
 tlog=$temp.1

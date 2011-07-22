@@ -180,35 +180,35 @@ deriveOCP(Worker *w) {
 	} else
 	  ocp->MBurstLength.width = 2;
       }
-      if (p->wdi.isProducer || p->wmi.talkBack)
+      if (p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional) {
 	ocp->MData.width =
 	  p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
 	  8 * p->dataWidth / p->byteWidth : p->dataWidth;
-      if ((p->wdi.isProducer || p->wmi.talkBack) && p->byteWidth != p->dataWidth)
-	ocp->MDataByteEn.width = p->dataWidth / p->byteWidth;
-      if ((p->wdi.isProducer || p->wmi.talkBack) &&
-	  p->byteWidth != p->dataWidth && p->byteWidth != 8)
-	ocp->MDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
-      ocp->MDataLast.value = s;
-      ocp->MDataValid.value = s;
-      if ((p->wdi.isProducer || p->wmi.bidirectional) &&
+	if (p->byteWidth != p->dataWidth)
+	  ocp->MDataByteEn.width = p->dataWidth / p->byteWidth;
+	if (p->byteWidth != p->dataWidth && p->byteWidth != 8)
+	  ocp->MDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
+	ocp->MDataLast.value = s;
+	ocp->MDataValid.value = s;
+      }
+      if ((p->wdi.isProducer || p->wdi.isBidirectional) &&
 	  (p->wdi.numberOfOpcodes > 1 || p->wdi.variableMessageLength))
 	ocp->MFlag.width = 8 + ceilLog2(p->wdi.maxMessageValues + 1);
       ocp->MReqInfo.width = 1;
       ocp->MReqLast.value = s;
       ocp->MReset_n.value = s;
-      if (!p->wdi.isProducer || p->wmi.talkBack)
+      if (!p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional)
 	ocp->SData.width = p->dataWidth;
-      if (p->wdi.isProducer || p->wmi.talkBack)
+      if (p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional)
 	ocp->SDataThreadBusy.value = s;
-      if ((!p->wdi.isProducer || p->wmi.bidirectional) &&
+      if ((!p->wdi.isProducer || p->wdi.isBidirectional) &&
 	  (p->wdi.numberOfOpcodes > 1 || p->wdi.variableMessageLength))
 	ocp->SFlag.width = 8 + ceilLog2(p->wdi.maxMessageValues + 1);
       ocp->SReset_n.value = s;
-      if (!p->wdi.isProducer || p->wmi.talkBack)
+      if (!p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional)
 	ocp->SResp.value = s;
       if ((p->impreciseBurst || p->preciseBurst) &&
-	  (!p->wdi.isProducer || p->wmi.talkBack))
+	  (!p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional))
 	ocp->SRespLast.value = s;
       ocp->SThreadBusy.value = s;
       if (p->wmi.mflagWidth) {

@@ -1049,7 +1049,7 @@ emitAssyHDL(Worker *w, const char *outDir)
   // Define the inside-the-assembly signals, and also figure out the necessary tieoffs or 
   // simple expressions when there is a simple adaptation.
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
-    if (c->nExtConsumers == 0 && c->nExtProducers == 0) {
+    if (c->nExternals == 0) {
       InstancePort *master = 0, *slave = 0, *producer = 0, *consumer = 0;
       for (ip = c->ports; ip; ip = ip->nextConn) {
 	if (ip->port->master)
@@ -1148,8 +1148,7 @@ OCPI_PROPERTY_DATA_TYPES
 	    signal = strdup(i->clocks[ip->port->clock - i->worker->clocks]->signal);
 	  else if (ip->connection)
 	    // If the signal is attached to a connection
-	    if (ip->connection->nExtConsumers == 0 &&
-		ip->connection->nExtProducers == 0) {
+	    if (ip->connection->nExternals == 0) {
 	      // If it is internal
 	      if (oa->expr) {
 		const char *other;
@@ -1174,11 +1173,11 @@ OCPI_PROPERTY_DATA_TYPES
 		return err;
 	      asprintf((char **)&signal, "%s%s", suff, osd->name);
 	    }
-	  else if (ip->external) {
+	  else if (ip->externalPort) {
 	    // This port is indeed connected to an external, non-data-plane wip interface
 	    OcpSignal *exf =
 	      // was: &i->ports[ip->port - i->worker->ports].external->ocp.signals[os - ip->port->ocp.signals];
-	      &ip->external->ocp.signals[os - ip->port->ocp.signals];
+	      &ip->externalPort->ocp.signals[os - ip->port->ocp.signals];
 	    const char *externalName;
 
 	    asprintf((char **)&externalName, exf->signal, n);
@@ -1627,9 +1626,13 @@ emitWorker(FILE *f, Worker *w)
   Port *p;
   for (p = w->ports, nn = 0; nn < w->nPorts; nn++, p++)
     if (p->isData) {
-      fprintf(f, "<port name=\"%s\" provider=\"%s\" minBufferSize=\"%u\"",
-	      p->name, p->wdi.isProducer ? "false" : "true",
+      fprintf(f, "<port name=\"%s\" minBufferSize=\"%u\"",
+	      p->name, 
 	      (p->wdi.maxMessageValues * p->wdi.dataValueWidth + 7) / 8);
+      if (p->wdi.isBidirectional)
+	fprintf(f, " bidirectional=\"true\"");
+      else if (!p->wdi.isProducer)
+	fprintf(f, " provider=\"true\"");
       if (p->wdi.minBuffers)
 	fprintf(f, " minNumBuffers=\"%u\"", p->wdi.minBuffers);
       fprintf(f, "/>\n");
@@ -1643,6 +1646,26 @@ emitInstance(Instance *i, FILE *f)
   fprintf(f, "<%s name=\"%s\" worker=\"%s\" occpIndex=\"%u\"",
 	  i->isInterconnect ? "interconnect" : "instance",
 	  i->name, i->worker->implName, i->index);
+#if 0 
+  bool any = false;
+  Port *p = i->worker->ports;
+  for (unsigned n = 0; n < i->worker->nPorts; n++, p++)
+    if (p->isData && !p->wdi.isProducer && p->wdi.isProducer) {
+      fprintf(f, "%s%s", any ? "," : "inputs=\"", p->name);
+      any = true;
+    }
+  if (any)
+    fprintf(f, "\"");
+  any = false;
+  p = i->worker->ports;
+  for (unsigned n = 0; n < i->worker->nPorts; n++, p++)
+    if (p->isData && i->ports[n].isProducer && !p->wdi.isProducer) {
+      fprintf(f, "%s%s", any ? "," : "outputs=\"", p->name);
+      any = true;
+    }
+  if (any)
+    fprintf(f, "\"");
+#endif
   if (i->attach)
     fprintf(f, " attachment=\"%s\"", i->attach);
   if (i->isInterconnect) // FIXME!!!! when shep puts regions in the bitstream
@@ -1682,6 +1705,8 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
   unsigned n;
   for (w = aw->assembly.workers, n = 0; n < aw->assembly.nWorkers; n++, w++)
     emitWorker(f, w);
+  for (w = dw->assembly.workers, n = 0; n < dw->assembly.nWorkers; n++, w++)
+    emitWorker(f, w);
   Instance *i, *di;
   unsigned nn;
   // For each app instance, we need to retrieve the index within the container
@@ -1707,8 +1732,15 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
   for (cc = dw->assembly.connections, n = 0; n < dw->assembly.nConnections; n++, cc++)
     for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
       if (!strcmp(ac->name, cc->name)) {
-	if (ac->external->isProducer == cc->external->isProducer)
-	  return "container connection same direction as application connection";
+	if (ac->external->port->wdi.isProducer) {
+	  if (cc->external->port->wdi.isProducer)
+	    return esprintf("container connection \"%s\" has same direction (is producer) as application connection",
+			    cc->name);
+	} else if (!ac->external->port->wdi.isBidirectional &&
+		   !cc->external->port->wdi.isProducer &&
+		   !cc->external->port->wdi.isBidirectional)
+	    return esprintf("container connection \"%s\" has same direction (is consumer) as application connection",
+			    cc->name);
 	InstancePort *aip, *cip;
 	for (aip = ac->ports; aip; aip = aip->nextConn)
 	  if (aip != ac->external)
@@ -1716,7 +1748,7 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
 	for (cip = cc->ports; cip; cip = cip->nextConn)
 	  if (cip != cc->external)
 	    break;
-	if (ac->external->isProducer)
+	if (ac->external->port->wdi.isProducer)
 	  // Application is producing to an external consumer
 	  fprintf(f, "<connection from=\"%s\" out=\"%s\" to=\"%s\" in=\"%s\"/>\n",
 		  aip->instance->name, aip->port->name,
@@ -1733,7 +1765,7 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
       InstancePort *aip;
       InstancePort *from = 0, *to = 0;
       for (aip = ac->ports; aip; aip = aip->nextConn)
-	if (aip->isProducer)
+	if (aip->port->wdi.isProducer)
 	  from = aip;
         else
 	  to = aip;

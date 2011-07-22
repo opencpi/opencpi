@@ -43,8 +43,8 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace CM = OCPI::Metadata;
     namespace CP = OCPI::Util::Prop;
-    BasicPort::BasicPort(const OCPI::Metadata::Port & metaData ) :
-      PortData(metaData), myDesc(connectionData.data.desc)
+    BasicPort::BasicPort(const OCPI::Metadata::Port & metaData, bool isProvider ) :
+      PortData(metaData, isProvider), myDesc(connectionData.data.desc)
     {
       // FIXME: put these in the default PortData constructor
       myDesc.nBuffers = DEFAULT_NBUFFERS;
@@ -57,8 +57,9 @@ namespace OCPI {
 
     // This base class constructor for generic initialization
     // FIXME: parse buffer count here at least? (check that others don't do it).
-    Port::Port(Container &container, const OCPI::Metadata::Port &mPort, const OCPI::Util::PValue *) :
-      BasicPort( mPort ),
+    Port::Port(Container &container, const OCPI::Metadata::Port &mPort, bool isProvider,
+	       const OCPI::Util::PValue *) :
+      BasicPort( mPort, isProvider ),
       m_container(container),
       m_canBeExternal(true)
     {
@@ -384,8 +385,9 @@ namespace OCPI {
         }
       throw ApiError("No compatible combination of roles exist", NULL);
     }            
-    ExternalPort::ExternalPort(const OCPI::Metadata::Port & metaPort, const OCPI::Util::PValue *)
-      : BasicPort(metaPort) {
+    ExternalPort::ExternalPort(const OCPI::Metadata::Port & metaPort,
+			       bool isProvider, const OCPI::Util::PValue *)
+      : BasicPort(metaPort, isProvider) {
     }
     void ExternalPort::checkConnectParams() {}
   }

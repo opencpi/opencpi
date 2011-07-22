@@ -39,8 +39,9 @@ ifndef HdlMode
 HdlMode:=worker
 endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
-ifndef HdlSkip
-
+ifdef HdlSkip
+$(call OcpiDbg, Skipping)
+else
 HdlSkelSuffix=_skel.v
 HdlDefsSuffix=_defs.vh
 HdlImplSuffix=_impl.vh
@@ -87,9 +88,10 @@ ifndef Application
 # Expose the implementation xml file for apps that instantiate this worker core
 ifdef LibDir
 $(call OcpiDbg,Before all: "$(LibDir)/$(ImplXmlFile)")
+
 all: $(LibDir)/$(ImplXmlFile)
 
-$(LibDir)/$(ImplXmlFile):
+$(LibDir)/$(ImplXmlFile): $(LibDir)
 	$(AT)echo Creating link from $(LibDir) to $(ImplXmlFile) to expose the $(CwdName) xml.
 	$(AT)$(call MakeSymLink,$(ImplXmlFile),$(LibDir))
 endif

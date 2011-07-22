@@ -161,7 +161,7 @@ initInputPort()
 Port::
 Port(Worker& w, const OU::PValue *props,
      OCPI::Metadata::Port & pmd,  const char * endpoint)
-  : OC::PortBase<Worker, Port, ExternalPort>(w, props, pmd),
+  : OC::PortBase<Worker, Port, ExternalPort>(w, props, pmd, pmd.provider),
     m_dtPort(NULL), m_portOrdinal(pmd.ordinal), m_circuit(NULL), m_props(NULL),
     m_mutex(m_container)
 {
@@ -332,7 +332,8 @@ class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
 public:
   friend class ExternalBuffer;
   ExternalPort(Port &p, const char* name, const OU::PValue *props, const OM::Port &mPort, OS::Mutex & mutex ) 
-    : OC::ExternalPortBase<Port,ExternalPort>(p, name, props, mPort), m_mutex(mutex)
+    : OC::ExternalPortBase<Port,ExternalPort>(p, name, props, mPort, !p.isProvider()),
+      m_mutex(mutex)
   {
     unsigned nBuffers = p.dtPort()->getBufferCount();
     // Use an array here for scalability

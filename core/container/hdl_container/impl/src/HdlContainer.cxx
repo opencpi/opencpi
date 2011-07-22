@@ -382,21 +382,21 @@ namespace OCPI {
 	    const char *oops;
 	    switch (result) {
 	    case OCCP_TIMEOUT_RESULT:
-	      oops = "worker timed out performing control operation";
+	      oops = "timed out performing control operation";
 	      break;
 	    case OCCP_ERROR_RESULT:
-	      oops = "worker indicated an error from control operation";
+	      oops = "indicated an error from control operation";
 	      break;
 	    case OCCP_RESET_RESULT:
-	      oops = "worker was in a reset state when control operation was requested";
+	      oops = "was in a reset state when control operation was requested";
 	      break;
 	    case OCCP_FATAL_RESULT:
-	      oops = "worker indicated a fatal error from control operation";
+	      oops = "indicated a fatal error from control operation";
 	      break;
 	    default:
-	      oops = "unknown result value from control operation";
+	      oops = "returned unknown result value from control operation";
 	    }
-	    throw OC::ApiError("Worker \"", implName, ":", instName, "\"", oops, 0);
+	    throw OC::ApiError("Worker \"", implName, ":", instName, "\" ", oops, 0);
 	  }
 	}
       }
@@ -733,8 +733,9 @@ namespace OCPI {
            const OM::Port &mPort, // the parsed port metadata
            ezxml_t connXml, // the xml connection for this port
            ezxml_t icwXml,  // the xml interconnect/infrastructure worker attached to this port if any
-           ezxml_t icXml) : // the xml interconnect instance attached to this port if any
-        OC::PortBase<Worker,Port,ExternalPort>(w, props, mPort),
+           ezxml_t icXml, // the xml interconnect instance attached to this port if any
+	   bool argIsProvider) :
+        OC::PortBase<Worker,Port,ExternalPort>(w, props, mPort, argIsProvider),
         WciControl(w.m_container, icwXml, icXml),
         m_connection(connXml),
         myOcdpRegisters((volatile OcdpProperties *)myProperties),
@@ -939,11 +940,21 @@ namespace OCPI {
 					const OA::PValue *props);
     };
     int Port::dumpFd = -1;
-    // OCPI API
+
+    // The port may be bidirectional.  If so we need to defer its direction.
     OC::Port &Worker::
     createPort(OM::Port &metaPort, const OA::PValue *props) {
+      const char *myName = metaPort.name;
       bool isProvider = metaPort.provider;
-      const char *name = metaPort.name;
+#if 0
+      // Process direction overrides for the instance
+      if (myInstXml()) {
+	if (OU::EzXml::inList(name, ezxml_cattr(myInstXml(), "inputs")))
+	  isProvider = true;
+	if (OU::EzXml::inList(name, ezxml_cattr(myInstXml(), "outputs")))
+	  isProvider = false;
+      }
+#endif
       // Find connections attached to this port
       ezxml_t conn, ic = 0, icw = 0;
       for (conn = ezxml_child(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
@@ -952,15 +963,20 @@ namespace OCPI {
           *to = ezxml_attr(conn,"to"),     // instance with provider port
           *out = ezxml_attr(conn, "out"),  // user port name
           *in = ezxml_attr(conn, "in");    // provider port name
-        if (from && to && out && in &&
-            (isProvider && !strcmp(instTag().c_str(), to) && !strcmp(in, name) ||
-             !isProvider && !strcmp(instTag().c_str(), from) && !strcmp(out, name))) {
+        if (from && to && out && in) {
+	  bool iAmTo;
+	  if (!strcmp(instTag().c_str(), to) && !strcmp(in, myName))
+	    iAmTo = true;
+	  else if (!strcmp(instTag().c_str(), from) && !strcmp(out, myName))
+	    iAmTo = false;
+	  else
+	    continue;
           // We have a connection.  See if it is to an external interconnect.  FIXME i/o later
           for (ic = ezxml_child(myXml()->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
             const char *icName = ezxml_attr(ic, "name");
             if (icName &&
-                (isProvider && !strcmp(icName, from) ||
-                 !isProvider && !strcmp(icName, to))) {
+                (iAmTo && !strcmp(icName, from) ||
+                 !iAmTo && !strcmp(icName, to))) {
               // We have a connection on this port to an interconnect worker!
               // Find its details
               const char *icwName = ezxml_attr(ic, "worker");
@@ -971,15 +987,18 @@ namespace OCPI {
                     break;
                 }
               if (!icw)
-                throw OC::ApiError("For port \"", name,
+                throw OC::ApiError("For port \"", myName,
                                    "\": interconnect worker missing for connection", NULL);
+	      // If we are bidirectional, this external connection sets our direction
+	      if (metaPort.bidirectional)
+		isProvider = iAmTo;
               break; // we found an external connection
             }
-          }
-          break; // we found a connection
-        }
-      }
-      return *new Port(*this, props, metaPort, conn, icw, ic);
+          } // loop over interconnects
+	  break; // we found a connection
+	}
+      } // loop over all connections
+      return *new Port(*this, props, metaPort, conn, icw, ic, isProvider);
     }
     // Here because these depend on Port
     OC::Port &Worker::
@@ -1040,8 +1059,8 @@ namespace OCPI {
       uint8_t *localData;
       friend class Port;
 
-      ExternalPort(Port &port, const char *name, const OA::PValue *props) :
-        OC::ExternalPortBase<Port,ExternalPort>(port, name, props, port.metaPort())
+      ExternalPort(Port &port, const char *name, bool isProvider, const OA::PValue *props) :
+        OC::ExternalPortBase<Port,ExternalPort>(port, name, props, port.metaPort(), isProvider)
       {
         // Default is active only (host is master, never slave)
         connectionData.data.options =
@@ -1353,14 +1372,17 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       // Tell the other side that the buffer has become available
       myExternalPort->advanceLocal();
     }
-    OC::ExternalPort &Port::connectExternal(const char *name, const OA::PValue *userProps,
+    OC::ExternalPort &Port::connectExternal(const char *extName, const OA::PValue *userProps,
 					    const OA::PValue *props) {
       if (!m_canBeExternal)
-        throw OC::ApiError ( "Port is locally connected in the bitstream.",
-                             "Port name is: ", name, 0 ); 
+        throw OC::ApiError ("For external port \"", extName, "\", port \"",
+			    name().c_str(), "\" of worker \"",
+			    parent().implTag().c_str(), "/", parent().instTag().c_str(), "/",
+			    parent().name().c_str(),
+			    "\" is locally connected in the HDL bitstream. ", NULL);
       applyConnectParams(props);
       // UserPort constructor must know the roles.
-      ExternalPort *myExternalPort = new ExternalPort(*this, name, userProps);
+      ExternalPort *myExternalPort = new ExternalPort(*this, extName, !isProvider(), userProps);
       finishConnection(myExternalPort->connectionData.data);
       return *myExternalPort;
     }

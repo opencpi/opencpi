@@ -69,12 +69,13 @@ namespace OCPI {
      *********************************/  
     class PortData
     {
+      bool m_isProvider; // perhaps overriding bidirectional
     protected:
       OCPI::Metadata::Port m_metaPort;  // Deep copy to support all constructors
       inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
 
     public:
-
+      inline bool isProvider() { return m_isProvider; }
       OCPI::OS::uint8_t    external;               // connected externally ?
       PortConnectionDesc  connectionData;      // Port Connection Dependency data
 
@@ -83,7 +84,8 @@ namespace OCPI {
           connectionData.port = reinterpret_cast<PortDesc>(this);
         }
 
-      PortData( const OCPI::Metadata::Port & pmd ): m_metaPort(pmd) , external(0)
+    PortData( const OCPI::Metadata::Port & pmd, bool isProvider )
+      : m_isProvider(isProvider), m_metaPort(pmd) , external(0)
         {
           connectionData.port = reinterpret_cast<PortDesc>(this);
         }
@@ -104,7 +106,7 @@ namespace OCPI {
     // The class used by both ExternalPorts (not associated with a worker) and Ports (owned by worker)
     class BasicPort : public PortData {
     protected:
-      BasicPort(const OCPI::Metadata::Port & metaData );
+      BasicPort(const OCPI::Metadata::Port & metaData, bool isProvider);
       virtual ~BasicPort();
       OCPI::RDT::Desc_t &myDesc; // convenience
       // called after connection parameters have changed.
@@ -126,7 +128,7 @@ namespace OCPI {
       std::string m_initialPortInfo;
       bool m_canBeExternal;
       // This is here so we own this storage while we pass back references.
-      Port(Container &container, const OCPI::Metadata::Port &mport,
+      Port(Container &container, const OCPI::Metadata::Port &mport, bool isProvider,
 	   const OCPI::Util::PValue *props = NULL);
       virtual ~Port(){}
       Container &container() const;
@@ -147,8 +149,6 @@ namespace OCPI {
       void loopback(OCPI::API::Port &);
 
       bool hasName(const char *name);
-
-      inline bool isProvider() { return m_metaPort.provider; }
 
       inline bool isTwoWay() { return m_metaPort.twoway; }
 
@@ -222,7 +222,8 @@ namespace OCPI {
     // in a non-blocking fashion.
     class ExternalPort : public BasicPort, public OCPI::API::ExternalPort {
     protected:
-      ExternalPort(const OCPI::Metadata::Port & metaPort, const OCPI::Util::PValue *props);
+      ExternalPort(const OCPI::Metadata::Port & metaPort, bool isProvider,
+		   const OCPI::Util::PValue *props);
       virtual ~ExternalPort(){};
       void checkConnectParams();
     };

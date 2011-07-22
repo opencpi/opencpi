@@ -8,7 +8,7 @@
     <DataInterfaceSpec Name="out" Producer="true" Optional="true">
       <xi:include href="stream_protocol.xml"/>
     </DataInterfaceSpec>
-    <DataInterfaceSpec Name="message" Producer="true">
+    <DataInterfaceSpec Name="message">
       <xi:include href="stream_protocol.xml"/>
     </DataInterfaceSpec>
   </ComponentSpec>

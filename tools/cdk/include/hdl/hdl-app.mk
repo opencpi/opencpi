@@ -233,14 +233,14 @@ $(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
 
 # Different since it is in the targetdir
 $(call ArtifactXmlName,$1): $(ContainerXmlFile) $(ImplXmlFile)
-	@echo Generating artifact xml file \($(ArtifactXmlFile)\) from $(ImplXmlFile) and $(ContainerXmlFile) files.
+	@echo Generating artifact xml file \($(call ArtifactXmlName,$1)\) from $(ImplXmlFile) and $(ContainerXmlFile) files.
 	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call PlatformDir,$1)/$(@F).deps \
 	  -D $(call PlatformDir,$1) $(ArtifactXmlDirs:%=-I%) -A -h $(ContainerXmlFile) $(ImplXmlFile)
 
 $(call BitZName,$1): $(call BitName,$1) $(call ArtifactXmlName,$1)
 	$(AT)echo Making compressed bit file: $$@
 	$(AT)gzip -c $(call BitName,$1) > $$@
-	$(AT)$(ToolsDir)/addmeta $(call ArtifactXmlName,$1) $$@
+	$(AT)$(ToolsDir)/../../scripts/addmeta $(call ArtifactXmlName,$1) $$@
 
 
 -include $(HdlPlatformsDir)/$1/$1.mk

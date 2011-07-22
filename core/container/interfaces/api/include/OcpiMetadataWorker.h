@@ -81,6 +81,7 @@ namespace OCPI {
       const char *   name;
       PortOrdinal    ordinal;
       bool           provider;
+      bool           bidirectional;
       bool           twoway;
 
 

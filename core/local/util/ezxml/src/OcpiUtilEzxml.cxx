@@ -500,6 +500,23 @@ namespace OCPI {
 	    return c;
 	return 0;
       }
+      bool
+      inList(const char *item, const char *list) {
+	if (list) {
+	  char
+	    *mylist = strdup(list),
+	    *base = mylist, 
+	    *last = 0,
+	    *tok;
+	  for (base = mylist; (tok = strtok_r(base, ", \t", &last)); base = NULL)
+	    if (!strcasecmp(tok, item))
+	      break;
+	  free(mylist);
+	  if (tok)
+	    return true;
+	}
+        return false;
+      }
     }
   }
 }

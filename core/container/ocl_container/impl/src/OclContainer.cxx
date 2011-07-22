@@ -369,8 +369,9 @@ namespace OCPI {
       Port(Worker &w,
 	   const OA::PValue *props,
            const OM::Port &mPort, // the parsed port metadata
+	   bool argIsProvider,
            ezxml_t connXml) // the xml connection for this port if any?
-        : OC::PortBase<Worker,Port,ExternalPort>(w, props, mPort),
+        : OC::PortBase<Worker,Port,ExternalPort>(w, props, mPort, argIsProvider),
 	  m_connection(connXml)
       {
         m_canBeExternal = true;
@@ -447,7 +448,7 @@ namespace OCPI {
           break; // we found a connection
         }
       }
-      return *new Port(*this, props, metaPort, conn);
+      return *new Port(*this, props, metaPort, metaPort.provider, conn);
     }
 
     // Buffers directly used by the "user" (non-container/component) API
@@ -487,7 +488,7 @@ namespace OCPI {
       friend class Port;
 
       ExternalPort(Port &port, const char *name, const OA::PValue *props) :
-        OC::ExternalPortBase<Port,ExternalPort>(port, name, props, port.metaPort())
+        OC::ExternalPortBase<Port,ExternalPort>(port, name, props, port.metaPort(), !port.isProvider())
       {
         applyConnectParams(props);
         unsigned nFar = parent().connectionData.data.desc.nBuffers;

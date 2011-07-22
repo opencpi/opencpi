@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
   unsigned long bufferCount[10][2] =
     {{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2}};
   const char *active[10][2] = {{0}};
-  unsigned long bufferSize = 2048, ioCount = 1, ioSize = 16, memorySize = 0, delay = 0;
+  unsigned long bufferSize = 9000, ioCount = 1, ioSize = 16, memorySize = 0, delay = 0;
 #define NTICKS 100
   uint64_t memoryBase = 0;
   bool probe = false, loop = false, doread = true, two = false, same = true,
@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
 	// SMA0 in first FPGA
 	&a.createWorker(xfile, 0, "w2c1", "sma", "sma0"),                                 // w2# 1
 	// MIddle worker in first FPGA
-	&a.createWorker(xfile, 0, "w3c1", "bias", "bias0"),                             // w3# 2
+	&a.createWorker(xfile, 0, "w3c1", "bias", "bias"),                             // w3# 2
 	// SMA1 in first FPGA
 	&a.createWorker(xfile, 0, "w4c1", "sma", "sma1"),                                 // w4# 3
 	// ADC in first FPGA
@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
 	// SMA0 in second FPGA
 	two ? &a2.createWorker(xfile, 0, "w2c2", "sma", "sma0") : 0,                      // w2# 6
 	// Middle worker in second FPGA
-	two ? &a2.createWorker(xfile, 0, "w3c2", "bias", "bias0") : 0,                  // w3# 7
+	two ? &a2.createWorker(xfile, 0, "w3c2", "bias", "bias") : 0,                  // w3# 7
 	// SMA1 in second FPGA
 	two ? &a2.createWorker(xfile, 0, "w4c2", "sma", "sma1") : 0,                      // w4# 8
 	// Splitter from (SMA0|ADC) to (Middle|Framgate) in first FPGA
@@ -516,8 +516,8 @@ int main(int argc, char *argv[])
                  OA::PVULong("bufferSize", bufferSize), OA::PVEnd};
 
 
-      OA::Property pfc(*w[1], "control");
-      OA::Property pfp(*w[3], "control");
+      OA::Property pfc(*w[1], "smaCtrl");
+      OA::Property pfp(*w[3], "smaCtrl");
       if (psd) {
 	OA::Property splitCtrl(*w[9], "splitCtrl");
 	const unsigned IN_FROM_ADC = 0x1, IN_FROM_SMA0 = 0x100;

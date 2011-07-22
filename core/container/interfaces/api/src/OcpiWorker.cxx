@@ -63,11 +63,9 @@ namespace OCPI {
     // Due to class hierarchy issues..
     Worker::Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OA::PValue *) 
       : OM::Worker::Worker(impl),
-	m_artifact(art), m_workerMutex(true)
+	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true)
     {
       setControlOperations(ezxml_cattr(impl, "controlOperations"));
-      //      m_artifact = &art; // can't use a reference here...
-      m_xml = impl;
       if (impl)
 	m_implTag = ezxml_cattr(impl, "name");
       if (inst)

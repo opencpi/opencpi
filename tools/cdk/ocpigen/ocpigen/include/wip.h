@@ -80,6 +80,7 @@ struct WDI {
   unsigned numberOfOpcodes;
   bool continuous;
   bool isProducer;
+  bool isBidirectional;
   bool variableMessageLength;
   bool zeroLengthMessages;
   bool isOptional;
@@ -193,7 +194,6 @@ struct WSI {
 struct WMI {
   WDI wdi;
   bool talkBack;
-  bool bidirectional;
   uint32_t mflagWidth;// kludge for shep - FIXME
 };
 struct WMemI {
@@ -307,8 +307,9 @@ struct InstancePort;
 struct Connection {
   const char *name;   // signal
   InstancePort *ports;
-  unsigned nConsumers, nProducers, nPorts;
-  unsigned nExtConsumers, nExtProducers;
+  //  unsigned nConsumers, nProducers, nBidirectionals, 
+  unsigned nPorts;
+  unsigned nExternals;
   Clock *clock;
   const char *masterName, *slaveName;
   InstancePort *external; // external assembly port
@@ -340,10 +341,11 @@ struct InstancePort {
   Connection *connection;
   InstancePort *nextConn;
   Port *port;  // The actual port of the instance's or assembly's worker
-  bool isExternal, isProducer;
+  const char *externalRole; // external role
+  // bool isProducer, isBidirectional;
   const char *name;
   unsigned ordinal; // ordinal for external array ports (e.g. WCI)
-  Port *external;
+  Port *externalPort;
   // Information for making the connection, perhaps tieoff etc.
   OcpAdapt ocp[N_OCP_SIGNALS];
 };

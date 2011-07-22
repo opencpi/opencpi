@@ -1,7 +1,6 @@
 <HdlAssembly Name="testbias" Language="Verilog">
   <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
-  <Instance Worker="sma.xml">
-  </Instance>
+  <Instance Worker="sma.xml"/>
   <Instance Worker="bias.xml"/>
   <Instance Worker="sma.xml"/>
   <Connection Name="FC" External="consumer">

@@ -181,8 +181,9 @@ namespace OCPI {
         public Port {
     protected:
       PortBase<Wrk,Prt,Ext>(Wrk &worker, const OCPI::Util::PValue *props,
-			    const OCPI::Metadata::Port &mport)
-      : Child<Wrk,Prt,port>(worker, mport.name), Port(worker.parent().parent(), mport, props) {}
+			    const OCPI::Metadata::Port &mport, bool isProvider)
+      : Child<Wrk,Prt,port>(worker, mport.name), Port(worker.parent().parent(), mport,
+						      isProvider, props) {}
     };
     extern const char *externalPort;
     template<class Prt, class Ext>
@@ -192,8 +193,10 @@ namespace OCPI {
     protected:
       ExternalPortBase<Prt,Ext>(Prt &port, const char *name,
 				const OCPI::Util::PValue *props,
-				const OCPI::Metadata::Port &metaPort)
-      : Child<Prt,Ext,externalPort>(port, name), ExternalPort(metaPort, props) {}
+				const OCPI::Metadata::Port &metaPort,
+				bool isProvider)
+      : Child<Prt,Ext,externalPort>(port, name),
+	ExternalPort(metaPort, isProvider, props) {}
     };
   }
 }

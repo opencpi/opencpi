@@ -1,6 +1,6 @@
 <HdlImplementation Name="sma" Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="sma_spec.xml"/>
-  <ControlInterface Sub32BitConfigProperties="true" SizeOfConfigSpace="4g">
+  <ControlInterface Sub32BitConfigProperties="true" SizeOfConfigSpace="4g" ControlOperations="initialize">
     <Property Name="mesgCount" Readable="true"/>
     <Property Name="abortCount" Readable="true"/>
     <Property Name="dummy0"/>

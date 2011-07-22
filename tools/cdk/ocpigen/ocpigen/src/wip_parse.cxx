@@ -389,6 +389,39 @@ doSpecProp(ezxml_t prop, void *arg) {
   return 0;
 }
 
+// parse an attribute value as a list separated by comma, space or tab
+// and call a function with the given arg for each token found
+static const char *parseList(const char *list,
+			     const char * (*doit)(const char *tok, void *arg),
+			     void *arg) {
+  const char *err = 0;
+  if (list) {
+    char
+      *mylist = strdup(list),
+      *base = mylist, 
+      *last = 0,
+      *tok;
+    for (base = mylist; (tok = strtok_r(base, ", \t", &last)); base = NULL)
+      if ((err = doit(tok, arg)))
+	break;
+    free(mylist);
+  }
+  return err;
+}
+
+static const char *parseControlOp(const char *op, void *arg) {
+  Worker *w = (Worker *)arg;
+  unsigned n = 0;
+  const char **p;
+  for (p = controlOperations; *p; p++, n++)
+    if (!strcasecmp(*p, op)) {
+      w->ctl.controlOps |= 1 << n;
+      break;
+    }
+  return
+    *p ? NULL : "Invalid control operation name in ControlOperations attribute";
+}
+
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
@@ -406,6 +439,10 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
       return err;
     if (sub32)
       w->ctl.sub32BitConfigProperties = true;
+#if 1
+    if ((err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, w)))
+      return err;
+#else
     const char *ops = ezxml_cattr(xctl, "ControlOperations");
     if (ops) {
       char *last = 0, *o;
@@ -422,6 +459,7 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
 	  return "Invalid control operation name in ControlOperations attribute";
       }
     }
+#endif
     ezxml_t props;
     if ((err = tryChildInclude(xctl, file, "Properties", &props, NULL, true)))
       return err;
@@ -744,7 +782,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
 	(err = checkDataPort(w, m, &dp)) ||
 	(err = CE::getNumber(m, "ByteWidth", &dp->byteWidth, 0, dp->dataWidth)) ||
 	(err = CE::getBoolean(m, "TalkBack", &dp->wmi.talkBack)) ||
-	(err = CE::getBoolean(m, "Bidirectional", &dp->wmi.bidirectional)) ||
+	(err = CE::getBoolean(m, "Bidirectional", &dp->wdi.isBidirectional)) ||
 	(err = CE::getNumber(m, "MFlagWidth", &dp->wmi.mflagWidth, 0, 0)))
       return err;
     dp->type = WMIPort;
@@ -891,29 +929,29 @@ getConnPort(ezxml_t x, Assembly *a, const char *wAttr, const char *pAttr,
 
 // Attach an instance port to a connection
 static void
-attachPort(Connection *c, InstancePort *ip, const char *name, bool isProducer,
-	   bool isExternal) {
-  if (isProducer) {
+attachPort(Connection *c, InstancePort *ip, const char *name,
+	   const char *externalRole) {
+  if (externalRole)
+    c->nExternals++;
+#if 0
+  if (isProducer)
     c->nProducers++;
-    if (isExternal)
-      c->nExtProducers++;
-  } else {
+  else if (isBidirectional)
+    c->nBidirectionals++;
+  else
     c->nConsumers++;
-    if (isExternal)
-      c->nExtConsumers++;
-  }
+#endif
   // Append to list for connection
   InstancePort **pp;
   for (pp = &c->ports; *pp; pp = &(*pp)->nextConn)
     ;
   *pp = ip;
   ip->connection = c;
-  ip->isExternal = isExternal;
-  ip->isProducer = isProducer;
+  ip->externalRole = externalRole;
   ip->name = name;
   c->nPorts++;
-  if (isExternal)
-    c->external = ip;
+  if (externalRole)
+    c->external = ip; // last one if there are more than one
 }
 
 #if 0
@@ -1001,6 +1039,29 @@ parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
   return 0;
 }
 
+#if 0
+static const char *
+doInOut(const char *tok, Instance *i, bool isProducer) {
+  Worker *w = i->worker;
+  Port *p = w->ports;
+  for (unsigned n = 0; n < w->nPorts; n++, p++)
+    if (!strcmp(tok, p->name))
+      if (p->wdi.isBidirectional)
+	i->ports[n].isProducer = isProducer;
+      else
+	return esprintf("Port \"%s\" is neither WMI nor bidirectional", p->name);
+  return esprintf("Unknown port \"%s\" in \"inputs\" attribute of instance", tok);
+}
+static const char *
+doInputs(const char *tok, void *arg) {
+  return doInOut(tok, (Instance *)arg, false);
+}
+static const char *
+doOutputs(const char *tok, void *arg) {
+  return doInOut(tok, (Instance *)arg, true);
+}
+#endif
+
 // The generic assembly parser
  static const char *
 parseAssy(ezxml_t xml, const char *defName, Worker *aw,
@@ -1047,6 +1108,12 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
       i->ports[n].port = &i->worker->ports[n];
       i->ports[n].instance = i;
     }
+#if 0
+    // Override bidirectional ports in the instance
+    if ((err = parseList(ezxml_cattr(x, "inputs"), doInputs, i)) ||
+	(err = parseList(ezxml_cattr(x, "outputs"), doOutputs, i)))
+      return err;
+#endif
     // Parse instance property values
     for (ezxml_t pv = ezxml_cchild(x, "PropertyValue"); pv; pv = ezxml_next(pv))
       i->nValues++;
@@ -1120,7 +1187,7 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
 	  const char *iName = ezxml_cattr(at, "Interface");
 	  if (!iName)
 	    return
-	      esprintf("Missing \"Interface\" attribute in Attach subelement of"
+	      esprintf("Missing \"Interface\" attribute in \"attach\" subelement of"
 		       "connection \"%s\"", c->name);
 	  unsigned nn = 0;
 	  if (!i->worker)
@@ -1146,7 +1213,7 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
       if (n >= a->nInstances)
 	return esprintf("Instance \"%s\" not found for connection  \"%s\"",
 			instName, c->name);
-      attachPort(c, ip, p->name, p->wdi.isProducer, false);
+      attachPort(c, ip, p->name, NULL);
     } // all (local) attachments to the connection
     if (!c->name)
       asprintf((char **)&c->name, "conn%d", (int)(c - a->connections));
@@ -1156,16 +1223,13 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
 			c->name);
     const char *ext = ezxml_cattr(x, "External");
     if (ext) {
-      bool isProducer;
-      if (!strcasecmp(ext, "producer"))
-	isProducer = true;
-      else if (!strcasecmp(ext, "consumer"))
-	isProducer = false;
-      else
+      if (strcasecmp(ext, "producer") &&
+	  strcasecmp(ext, "consumer") &&
+	  strcasecmp(ext, "bidirectional"))
 	return esprintf("Value of \"External\" attribute of connection \"%s\" is not "
 			"\"consumer\" or \"producer\"", c->name);
       InstancePort *ip = myCalloc(InstancePort, 1);
-      attachPort(c, ip, c->name, isProducer, true);
+      attachPort(c, ip, c->name, ext);
     }
   } // all connections
   // All parsing is done.
@@ -1176,14 +1240,16 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
     return err;
   // add data plane external ports
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
-    aw->nPorts += c->nExtProducers + c->nExtConsumers;
+    aw->nPorts += c->nExternals;
   p = aw->ports = myCalloc(Port, aw->nPorts);
   // Create the external data ports on the assembly worker
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
-    if (c->nExtProducers || c->nExtConsumers) {
+    if (c->nExternals) {
       Port *extPort = 0, *intPort = 0;
+      const char *role;
       for (InstancePort *ip = c->ports; ip; ip = ip->nextConn)
-	if (ip->isExternal) {
+	if (ip->externalRole) {
+	  role = ip->externalRole;
 	  assert(!extPort); // for now only one
 	  ip->port = p++;
 	  extPort = ip->port;
@@ -1200,6 +1266,26 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
       extPort->isExternal = true;
       extPort->count = 1;
       extPort->worker = aw;
+      // See how we expose this externally
+      if (!strcasecmp(role, "producer")) {
+	if (!intPort->wdi.isProducer && !intPort->wdi.isBidirectional)
+	  return esprintf("Connection %s has external producer role incompatible "
+			  "with port %s of worker %s",
+			  c->name, intPort->name, intPort->worker->implName);
+	extPort->wdi.isProducer = true;
+	extPort->wdi.isBidirectional = false;
+      } else if (!strcasecmp(role, "bidirectional")) {
+	if (!intPort->wdi.isBidirectional)
+	  return esprintf("Connection %s has external bidirectional role incompatible "
+			  "with port %s of worker %s",
+			  c->name, intPort->name, intPort->worker->implName);
+      } else if (!strcasecmp(role, "consumer")) {
+	if (intPort->wdi.isProducer)
+	  return esprintf("Connection %s has external consumer role incompatible "
+			  "with port %s of worker %s",
+			  c->name, intPort->name, intPort->worker->implName);
+	extPort->wdi.isBidirectional = false;
+      }
     }
   // Check for unconnected non-optional data ports
   for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
@@ -1226,8 +1312,8 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   a->isContainer = !strcasecmp(xml->name, "HdlContainer");
   static const char
     *topAttrs[] = {"Name", "Pattern", "Language", 0},
-    *instAttrs[] = {"Worker", "Name", 0},
-    *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", 0};
+    *instAttrs[] = {"Worker", "Name", "Inputs", "Outputs", 0},
+    *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", "Inputs", "Outputs", 0};
   // Do the generic assembly parsing, then to more specific to HDL
   if ((err = parseAssy(xml, NULL, aw, topAttrs,
 		       a->isContainer ? contInstAttrs : instAttrs, true)))
@@ -1292,7 +1378,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   InstancePort *ip;
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     for (ip = c->ports; ip; ip = ip->nextConn)
-      if (ip->isExternal)
+      if (ip->externalRole)
 	ip->port = aw->ports + (ip->port - dataPorts + 1);
   // Now we have an empty port at the beginning for wci, and extras at the end
   // for time and memory.
@@ -1318,7 +1404,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   // Assign the wci clock to connections where we can
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++) {
     for (ip = c->ports; ip; ip = ip->nextConn)
-      if (!ip->isExternal &&
+      if (!ip->externalRole &&
 	  // If the worker of this connected port has a WCI port
 	  ip->instance->worker->ports->type == WCIPort &&
 	  // If this port on the worker uses the worker's wci clock
@@ -1333,7 +1419,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
       // And force the clock for each connected port to BE the wci clock
       // This will potentialy connect an independent clock to the wci clock
       for (ip = c->ports; ip; ip = ip->nextConn)
-	if (!ip->isExternal)
+	if (!ip->externalRole)
 	  // FIXME: check for compatible clock constraints? insert synchronizer?
 	  ip->instance->clocks[ip->port->clock - ip->instance->worker->clocks] =
 	    wci->clock;
@@ -1342,7 +1428,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   // Deal with all the internal connection clocks that are not WCI clocks
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     for (ip = c->ports; ip; ip = ip->nextConn)
-      if (!ip->isExternal) {
+      if (!ip->externalRole) {
 	unsigned nc = ip->port->clock - ip->instance->worker->clocks;
 	if (!c->clock) {
 	  // This connection doesn't have a clock yet,
@@ -1438,7 +1524,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	  // just reset the dataplane infrastructure.
 	  if (!pp->wci.resetWhileSuspended)
 	    cantDataResetWhileSuspended = true;
-	  ip->external = wci;
+	  ip->externalPort = wci;
 	  break;
 	case WTIPort:
 	  // We don't share ports since the whole point of WTi is to get
@@ -1449,7 +1535,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	    Port *wti = p++;
 	    *wti = *pp;
 	    asprintf((char **)&wti->name, "wti%u", nWti++);
-	    ip->external = wti;
+	    ip->externalPort = wti;
 	    wti->clock = i->clocks[pp->clock - i->worker->clocks];
 	  }
 	  break;
@@ -1458,7 +1544,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 	    Port *wmemi = p++;
 	    *wmemi = *pp;
 	    asprintf((char **)&wmemi->name, "wmemi%u", nWmemi++);
-	    ip->external = wmemi;
+	    ip->externalPort = wmemi;
 	    wmemi->clock = i->clocks[pp->clock - i->worker->clocks];
 	  }
 	  break;
@@ -1476,9 +1562,9 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   aw->nPorts = p - aw->ports;
   // Process the external data ports on the assembly worker
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
-    if (c->nExtProducers || c->nExtConsumers)
+    if (c->nExternals)
       for (ip = c->ports; ip; ip = ip->nextConn)
-	if (ip->isExternal) {
+	if (ip->externalRole) {
 	  p = ip->port;
 	  p->clock = c->clock;
 	  if (p->clock->port && p->clock->port != p)

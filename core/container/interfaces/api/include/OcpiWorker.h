@@ -84,7 +84,7 @@ namespace OCPI {
       friend class Artifact;
       friend class Application;
       Artifact *m_artifact;
-      ezxml_t m_xml;
+      ezxml_t m_xml, m_instXml;
       std::string m_implTag, m_instTag;
       // Our thread safe mutex for the worker itself
       OCPI::OS::Mutex m_workerMutex;
@@ -95,6 +95,7 @@ namespace OCPI {
       inline const std::string &instTag() const { return m_instTag; }
       inline const std::string &implTag() const { return m_implTag; }
       inline ezxml_t myXml() const { return m_xml; }
+      inline ezxml_t myInstXml() const { return m_instXml; }
       Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props);
       void setupProperty(const char *name, OCPI::API::Property &prop);
       virtual void prepareProperty(OCPI::Util::Prop::Property &p, OCPI::API::Property &) = 0;
