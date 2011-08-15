@@ -47,6 +47,8 @@ ifeq ($(OCPI_OS),darwin)
 ifeq ($(PROC),i386)
 PROC:=x86_64
 endif
+else
+BASICLIBS=-luuid # ocfrp_check needs this, only on linux
 endif
 OCPI_OUT_DIR = $(OCPI_OS)-$(PROC)-bin
 ALL=$(basename $(notdir $(wildcard src/*.c)))
@@ -58,7 +60,7 @@ $(OCPI_OUT_DIR):
 	mkdir $@
 
 $(ALLBIN): $(OCPI_OUT_DIR)/%: src/%.c | $(OCPI_OUT_DIR)
-	gcc -o $@ -std=c99 -Iinclude $(DOSTATIC) -Wall -g $^ $(LIBS)
+	gcc -o $@ -std=c99 -I../../core/container/hdl_container/impl/include $(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
 
 clean:
 	rm -r -f *-bin

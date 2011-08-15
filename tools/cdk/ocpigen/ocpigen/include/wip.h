@@ -36,8 +36,10 @@
 #define WIP_H
 #include <stdint.h>
 #include <string.h>
+#include <vector>
 #include "OcpiPValue.h"
 #include "OcpiUtilProperty.h"
+#include "OcpiUtilProtocol.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiMetadataWorker.h"
 #include "ezxml.h"
@@ -45,6 +47,7 @@
 namespace CM=OCPI::Metadata;
 namespace CP=OCPI::Util::Prop;
 namespace CE=OCPI::Util::EzXml;
+namespace OU=OCPI::Util;
 
 #define myCalloc(t, n) ((t *)calloc(sizeof(t), (n)))
 inline void *myCrealloc_(void *p, size_t s, size_t o, size_t add) {
@@ -70,24 +73,28 @@ enum ControlOp {
   NoOp
 };
 
-struct Operation;
+class Port;
+
+// We derive a class to implement xi:include parsing
+class Protocol : public CM::Protocol {
+ public:
+  Port *m_port;
+  const char *parseOperation(ezxml_t op);
+};
 
 struct WDI {
-  unsigned dataValueWidth;
-  unsigned dataValueGranularity;
-  bool diverseDataSizes;
-  unsigned maxMessageValues;
-  unsigned numberOfOpcodes;
+  //  unsigned dataValueWidth;
+  //  unsigned dataValueGranularity;
+  // bool diverseDataSizes;
+  // unsigned maxMessageValues;
   bool continuous;
   bool isProducer;
   bool isBidirectional;
-  bool variableMessageLength;
-  bool zeroLengthMessages;
+  // bool variableMessageLength;
+  // bool zeroLengthMessages;
   bool isOptional;
-  unsigned minBuffers, maxLength;
-  unsigned nOperations;
-  Operation *operations;
-  Operation *op; // temporaruy during parsing
+  unsigned minBufferCount;
+  unsigned nOpcodes;
 };
 // OCP_SIGNAL_I(name, 
 // OCP_SIGNAL_IV(name,
@@ -211,7 +218,6 @@ enum WIPType{
   WTIPort,
   NWIPTypes
 };
-struct Port;
 struct Clock {
   const char *name;
   const char *signal;
@@ -220,7 +226,16 @@ struct Clock {
 };
 struct Worker;
 struct Connection;
-struct Port {
+union Profiles {
+    WDI wdi;
+    WSI wsi;
+    WMI wmi;
+    WCI wci;
+    WMemI wmemi;
+    WTI wti;
+};
+class Port {
+public:
   const char *name;
   const char *fullNameIn, *fullNameOut; // used during HDL generation
   Worker *worker;
@@ -239,42 +254,38 @@ struct Port {
   OcpSignals ocp;
   uint8_t *values;
   bool master;
-  union {
+  Protocol *protocol; // a pointer to make copying easier
+  union Profiles {
     WDI wdi;
     WSI wsi;
     WMI wmi;
     WCI wci;
     WMemI wmemi;
     WTI wti;
-  };
+  } u;
+  Port();
+  // Are master signals inputs at this port?
+  inline bool masterIn() {
+  return
+    type == WCIPort ? 1 :
+    type == WMemIPort ? (u.wmemi.isSlave ? 1 : 0) :
+    type == WMIPort ? 0 :
+    type == WSIPort ? (u.wdi.isProducer ? 0 : 1) :
+    false;
+  }
 };
 
 typedef CP::Member Simple;
 
+#if 0
 struct Operation {
   const char *name;
   bool isTwoWay; // not supported much...
   unsigned nArgs;
   CP::Member *args; // This class is overkill here, but we need most of it.
 };
-
-typedef OCPI::Util::Prop::Property Property;
-#if 0
-// missing from runtime:  is_test, ordinal, maxAlign;
-// A property is a structure, a sequence of structures, of a simple type,
-// which can itself be a sequence or an array.
-struct Property {
-  const char *name;
-  bool isReadable, isWritable, isStruct, isTest, isStructSequence,
-    readSync, writeSync, readError, writeError, isParameter;
-  unsigned nStructs; // for struct sequence
-  unsigned nTypes; // for struct
-  unsigned nBytes;
-  unsigned offset;
-  unsigned maxAlign;
-  Simple *types;
-};
 #endif
+typedef OCPI::Util::Prop::Property Property;
 
 struct Control {
   uint64_t sizeOfConfigSpace;
@@ -298,6 +309,7 @@ enum Endian {
 };
 
 enum Language {
+  NoLanguage,
   Verilog,
   VHDL
 };
@@ -361,10 +373,13 @@ struct Assembly {
 };
 
 enum Model {
+  NoModel,
   HdlModel,
   RccModel
 };
-struct Worker {
+class  Worker {
+ public:
+  Worker();
   Model model;
   bool isDevice;
   bool noControl; // no control port on this one.
@@ -372,19 +387,16 @@ struct Worker {
   const char *implName;
   const char *specName;
   const char *fileName;
-  struct {
-    bool isThreaded;
-  } rcc;
+  bool isThreaded;
   Control ctl;
-  unsigned nPorts;
-  Port *ports;
+  std::vector<Port*> ports;
   unsigned nClocks;
   Clock *clocks;
   Endian endian;
   const char *pattern;
   const char *staticPattern;      // pattern for rcc static methods
   bool isAssembly;
-  unsigned instances;
+  unsigned nInstances;
   Language language;
   Assembly assembly;
   unsigned nSignals;
@@ -396,9 +408,9 @@ struct Worker {
 static inline bool masterIn(Port *p) {
   return
     p->type == WCIPort ? 1 :
-    p->type == WMemIPort ? (p->wmemi.isSlave ? 1 : 0) :
+    p->type == WMemIPort ? (p->u.wmemi.isSlave ? 1 : 0) :
     p->type == WMIPort ? 0 :
-    p->type == WSIPort ? (p->wdi.isProducer ? 0 : 1) :
+    p->type == WSIPort ? (p->u.wdi.isProducer ? 0 : 1) :
     false;
 }
 
@@ -412,7 +424,7 @@ static inline bool masterIn(Port *p) {
 #define BOOL(b) ((b) ? "true" : "false")
 extern const char
   *dumpDeps(const char *top),
-  **includes, *depFile,
+  **includes, *container, *platform, *device, *depFile, *load,
   *openOutput(const char *name, const char *outDir, const char *prefix,
 	      const char *suffix, const char *ext, const char *other, FILE *&f),
   *propertyTypes[],
@@ -430,7 +442,7 @@ extern const char
   *emitSkelHDL(Worker*, const char *),
   *emitSkelRCC(Worker*, const char *),
   *emitBsvHDL(Worker*, const char *),
-  *emitArtHDL(Worker *, const char *root, const char *hdlDep),
+  *emitArtHDL(Worker *, const char *root),
   *emitArtRCC(Worker *, const char *root),
   *emitAssyHDL(Worker*, const char *);
 

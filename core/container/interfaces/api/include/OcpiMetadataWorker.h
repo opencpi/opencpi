@@ -52,10 +52,12 @@
 #ifndef OCPI_WORKER_METADATA_H
 #define OCPI_WORKER_METADATA_H
 
-#include <OcpiOsAssert.h>
-#include <OcpiUtilException.h>
-#include <OcpiUtilProperty.h>
 #include "ezxml.h"
+#include "OcpiOsAssert.h"
+#include "OcpiUtilException.h"
+#include "OcpiUtilProperty.h"
+#include "OcpiUtilProtocol.h"
+#include "OcpiMetadataPort.h"
 
 //!!!!!!! There is also this list in the OcpiContainerApi.h
 #define CONTROL_OP_I CONTROL_OP
@@ -71,32 +73,6 @@
 
 namespace OCPI {
   namespace Metadata {
-
-    typedef uint32_t PortOrdinal;
-    class Port {
-      friend class Worker;
-      // Describe a port
-      bool decode(ezxml_t x, PortOrdinal ord);
-    public:
-      const char *   name;
-      PortOrdinal    ordinal;
-      bool           provider;
-      bool           bidirectional;
-      bool           twoway;
-
-
-      static const unsigned
-        DEFAULT_NBUFFERS = 1,
-        DEFAULT_BUFFER_SIZE = 2*1024;
-      uint32_t minBufferSize;
-      uint32_t minBufferCount;
-      uint32_t maxBufferSize;
-
-      ezxml_t        myXml;
-
-    Port(bool prov=true): name(NULL),ordinal(0),provider(prov),twoway(false), minBufferSize(DEFAULT_BUFFER_SIZE), minBufferCount(1), maxBufferSize(0), myXml(0){}
-
-    };
 
     class Test {
       friend class Worker;

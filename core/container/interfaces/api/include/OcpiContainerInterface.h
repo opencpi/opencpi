@@ -110,7 +110,7 @@ namespace OCPI {
          @throw  OCPI::Util::EmbeddedException  If an error is detected during construction
 
          ****************************************************************** */
-      Container(const OCPI::Util::PValue* props = NULL)
+      Container(const ezxml_t config = NULL, const OCPI::Util::PValue* props = NULL)
         throw ( OCPI::Util::EmbeddedException );
 
       ~Container();
@@ -222,8 +222,9 @@ namespace OCPI {
       virtual void stop(DataTransfer::EventManager* event_manager)
         throw();
 
-      void stop();
-      void start();
+      virtual void stop();
+      // FIXME: default start behavior is for software containers.
+      virtual void start();
       //! get the event manager for this container
       virtual DataTransfer::EventManager*  getEventManager(){return NULL;}
 

@@ -339,7 +339,7 @@ endif
 
 ifeq ($(OCPI_OS),linux)
 # Linux libraries
-BASICLIBS = -lpthread -lrt -ldl
+BASICLIBS = -lpthread -lrt -ldl -luuid
 #ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 #BASICLIBS += -ldl
 #endif
@@ -743,6 +743,10 @@ DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/transport
 CONTAINER_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/container/interfaces/api/include \
 	$(OCPI_BASE_DIR)/core/container/rcc_container/include
+
+HDL_CONTAINER_EXPORTS = \
+	$(OCPI_BASE_DIR)/core/container/hdl_container/impl/include
+
 CONTAINER_LIBS = \
 	$(OCPI_BASE_DIR)/core/container/interfaces/interfaces
 

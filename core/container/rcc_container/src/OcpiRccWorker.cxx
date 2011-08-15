@@ -94,6 +94,7 @@ namespace OCPI {
 #define SET_LAST_ERROR_TO_PROPTERY_OVERRUN(x) x->m_lastError = "Property Overrun error"
 #endif
 
+#if 0
 void 
 Worker::
 overRidePortInfo( OM::Port & portData )
@@ -120,6 +121,7 @@ overRidePortInfo( OM::Port & portData )
 
   }
 }
+#endif
 
 Worker::
 Worker( Application & app, Artifact *art, const char *name,
@@ -326,6 +328,7 @@ initializeContext()
         
 }
 
+#if 0
 // FIXME:  parse buffer counts (at least) from PValue
 OC::Port & 
 Worker::
@@ -342,8 +345,120 @@ createPort(OCPI::Metadata::Port& mp, const OCPI::Util::PValue * )
   }
 
 }
+#else
+// Called from the generic getPort when the port is not found.
+// Also called from createInputPort and createOutputPort locally
+OC::Port & 
+Worker::
+createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *props)
+{
+  TRACE(" OCPI::RCC::Container::createPort()");
+  if ( mp.minBufferSize == 0 || mp.minBufferCount == 0)
+    throw OU::EmbeddedException( OC::BAD_PORT_CONFIGURATION, "0 buffer count or size",
+				 OC::ApplicationRecoverable);
+  OU::AutoMutex guard (m_mutex);
+  if (mp.ordinal >= m_dispatch->numInputs + m_dispatch->numOutputs)
+    throw OU::EmbeddedException(OC::PORT_NOT_FOUND,
+				"Port id exceeds port count", OC::ApplicationFatal);
+  if (mp.ordinal > 32)
+    throw OU::EmbeddedException(OC::PORT_NOT_FOUND,
+				"Port id exceeds max port count of 32", OC::ApplicationFatal);
+  // If the worker binary has port info, check it against the metadata for consistency
+  if (m_dispatch->portInfo)
+    for (RCCPortInfo* pi = m_dispatch->portInfo; pi->port != RCC_NO_ORDINAL; pi++)
+      if (pi->port == mp.ordinal) {
+#ifndef NDEBUG
+        printf("\nWorker PortInfo for port %d, bc,s: %d,%d, metadata is %d,%d\n",
+	       mp.ordinal, pi->minBuffers, pi->maxLength, mp.minBufferCount, mp.minBufferSize);
+#endif
+	if (pi->minBuffers > mp.minBufferCount || // bad: worker needs more than metadata
+	    pi->maxLength &&
+	    (!mp.maxBufferSize ||                 // bad: worker has limit, metadatadoesn't
+	     pi->maxLength < mp.maxBufferSize))   // bad: worker has lower limit than metadata
+	  throw OU::EmbeddedException(OC::PORT_NOT_FOUND,
+				      "Worker metadata inconsistent with RCC PortInfo",
+				      OC::ContainerFatal);
+      }
+  const char *endpoint = NULL;
+  if (mp.provider) { // input
+    if (++targetPortCount > m_dispatch->numInputs)
+      throw OU::EmbeddedException(OC::PORT_NOT_FOUND,
+				  "Target Port count exceeds configuration", OC::ApplicationFatal);
+    // The caller can also be less specific and just specify the protocol 
+    // FIXME:  someday we need to specify that at either end
+    const char *protocol = NULL;
+    if (OU::findString(props, "protocol", protocol))
+      endpoint = m_transport.getEndpointFromProtocol( protocol).c_str();
+    else if ((protocol = getenv("OCPI_DEFAULT_PROTOCOL"))) {
+      printf("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment\n", protocol);
+      endpoint = m_transport.getEndpointFromProtocol( protocol ).c_str();
+    }
+    else {
+      // It is up to the caller to specify the endpoint which implicitly defines
+      // the QOS.  If the caller does not provide the endpoint, we will pick one
+      // by default.
+      if (!OU::findString(props, "endpoint", endpoint))
+	endpoint = m_transport.getDefaultEndPoint().c_str();
+      endpoint = m_transport.addLocalEndpoint( endpoint)->sMemServices->endpoint()->end_point.c_str();
+    }
+  } else if (++sourcePortCount > m_dispatch->numOutputs )
+    throw OU::EmbeddedException(OC::PORT_NOT_FOUND,
+				"Source Port count exceeds configuration", OC::ApplicationFatal);
+  Port *port;
+  try {
+    port = new Port(*this, props, mp, endpoint);
+  }
+  catch(std::bad_alloc) {
+    throw OU::EmbeddedException( OC::NO_MORE_MEMORY, "new", OC::ContainerFatal);
+  }
+  // We know the metadata is more contrained than port info
+  // FIXME: RccPort Object should know about its C RCCPort and do this itself
+  m_context->ports[mp.ordinal].current.maxLength = 
+    (mp.minBufferSize > mp.maxBufferSize) ? mp.minBufferSize : mp.maxBufferSize;
+  if (mp.provider) { // input
+    // Add the port to the worker
+    port->opaque() = static_cast<OpaquePortData*>(m_context->ports[mp.ordinal].opaque);
+    port->opaque()->port = port;
+    targetPorts.insertToPosition(port, mp.ordinal);
+    
+  } else          // output
+    // Defer the real work until the port is connected.
+    sourcePorts.insertToPosition(port, mp.ordinal);
+
+  return *port;
+}
+#endif
 
 
+// Common code for the test API to create ports by ordinal
+// We add the explicitly specified buffer count and size to the
+// list of properties.
+static  OC::Port &
+createTestPort( Worker *w, OM::PortOrdinal portId,
+                OS::uint32_t bufferCount,
+                OS::uint32_t bufferSize, 
+		bool isProvider,
+		const OU::PValue* props) {
+  // Add runtime properties if buffer count and size are being adjusted
+  unsigned n = props->length();
+  OA::PVarray myProps(n + 3);
+  unsigned i;
+  for (i = 0; i < n; i++)
+    myProps[i] = props[i];
+  //  assert(bufferCount);
+  //  assert(bufferSize);
+  if (bufferCount)
+    myProps[i++] = OA::PVULong("bufferCount", bufferCount);
+  if (bufferSize)
+    myProps[i++] = OA::PVULong("bufferSize", bufferSize);
+  myProps[i] = OA::PVEnd;
+
+  OCPI::Metadata::Port pmd;
+  pmd.ordinal = portId;
+  pmd.provider = isProvider;
+  pmd.maxBufferSize = bufferSize;
+  return w->createPort(pmd, myProps);
+}
  OC::Port &
 Worker::
 createOutputPort( 
@@ -354,46 +469,9 @@ createOutputPort(
                  )
   throw ( OU::EmbeddedException )
 {
-  ( void ) props;
   TRACE(" OCPI::RCC::Container::createOutputPort()");
-  OU::AutoMutex guard (m_mutex);
 
-  sourcePortCount++;
-
-  if ( sourcePortCount > m_dispatch->numOutputs  ) {
-    throw OU::EmbeddedException( OC::PORT_NOT_FOUND, "Source Port count exceeds configuration", OC::ApplicationFatal);
-  }
-  if ( portId >= (m_dispatch->numInputs + m_dispatch->numOutputs) ) {
-    throw OU::EmbeddedException( OC::PORT_NOT_FOUND, "Port id exceeds port count", OC::ApplicationFatal);
-  }
-  if ( portId > 32 ) {
-    throw OU::EmbeddedException( OC::PORT_NOT_FOUND, "Port id exceeds max port count of 32", OC::ApplicationFatal);
-  }
-
-  OCPI::Metadata::Port pmd;
-  pmd.ordinal = portId;
-  pmd.provider = false;
-  pmd.minBufferCount = bufferCount;
-  pmd.minBufferSize = bufferSize;
-
-  // Check to see if the worker requested specific port information
-  overRidePortInfo( pmd );
-
-  Port *port;
-  try {
-    port = new Port(*this, props, pmd, NULL);
-  }
-  catch( std::bad_alloc ) {
-    throw OU::EmbeddedException( OC::NO_MORE_MEMORY, "new", OC::ContainerFatal);
-  }
-
-  m_context->ports[portId].current.maxLength = 
-    (pmd.minBufferSize > pmd.maxBufferSize) ? pmd.minBufferSize : pmd.maxBufferSize;
-
-  // Defer the real work until the port is connected.
-  sourcePorts.insertToPosition(port, portId);
-
-  return *port;
+  return createTestPort(this, portId, bufferCount, bufferSize, false, props);
 }
 
 
@@ -410,66 +488,8 @@ createInputPort(
   throw ( OU::EmbeddedException )
 {
   TRACE("OCPI::RCC::Container::createInputPort()");
-  OU::AutoMutex guard (m_mutex); 
-  if ( (bufferSize == 0) || (bufferCount == 0) ) {
-    throw OU::EmbeddedException( OC::BAD_PORT_CONFIGURATION, "0 buffer count or size", OC::ApplicationRecoverable);
-  }
-  targetPortCount++;
-  if ( targetPortCount > m_dispatch->numInputs  ) {
-    throw OU::EmbeddedException( OC::PORT_NOT_FOUND, "Target Port count exceeds configuration", OC::ApplicationFatal);
-  }
-  if ( portId >= (m_dispatch->numInputs + m_dispatch->numOutputs) ) {
-    throw OU::EmbeddedException( OC::PORT_NOT_FOUND, "Port id exceeds port count", OC::ApplicationFatal);
-  }
-  if ( portId > 32 ) {
-    throw OU::EmbeddedException( OC::PORT_NOT_FOUND, "Port id exceeds max port count of 32", OC::ApplicationFatal);
-  }
 
-  // The caller can also be less specific and just specify the protocol 
-  const char *protocol = NULL, *endpoint = NULL;
-  if (OU::findString(props, "protocol", protocol))
-    endpoint = m_transport.getEndpointFromProtocol( protocol).c_str();
-  else if ((protocol = getenv("OCPI_DEFAULT_PROTOCOL"))) {
-    printf("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment\n", protocol);
-    endpoint = m_transport.getEndpointFromProtocol( protocol ).c_str();
-  }
-  else {
-    // It is up to the caller to specify the endpoint which implicitly defines
-    // the QOS.  If the caller does not provide the endpoint, we will pick one
-    // by default.
-    if (!OU::findString(props, "endpoint", endpoint))
-      endpoint = m_transport.getDefaultEndPoint().c_str();
-    endpoint = m_transport.addLocalEndpoint( endpoint)->sMemServices->endpoint()->end_point.c_str();
-  }
-
-
-  OCPI::Metadata::Port pmd;
-  pmd.ordinal = portId;
-  pmd.provider = true;
-  pmd.minBufferCount = bufferCount;
-  pmd.minBufferSize = bufferSize;
-
-  // Check to see if the worker requested specific port information
-  overRidePortInfo( pmd );
-
-  Port *port;
-  try {
-    port = new Port(*this, props, pmd, endpoint);
-  }
-  catch( std::bad_alloc ) {
-    throw OU::EmbeddedException( OC::NO_MORE_MEMORY, "new", OC::ContainerFatal);
-  }
-
-  // Add the port to the worker
-  OpaquePortData * opaque =   
-    static_cast<OpaquePortData*>(m_context->ports[portId].opaque);  
-  port->opaque() = opaque;
-  opaque->port = port;
-  m_context->ports[portId].current.maxLength = 
-    (pmd.minBufferSize > pmd.maxBufferSize) ? pmd.minBufferSize : pmd.maxBufferSize;
-  targetPorts.insertToPosition(port, portId);
-
-  return *port;
+  return createTestPort(this, portId, bufferCount, bufferSize, true, props);
 }
 
 

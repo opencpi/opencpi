@@ -41,6 +41,14 @@ namespace OCPI {
   namespace HDL {
 #endif
     typedef struct {
+      uint32_t birthday; // The time the final build was started
+      uint8_t uuid[16];  // The official UUID of the bitstream
+      char platform[16]; // The name of the platform the bitstream was built for
+      char device[16];   // The name of the device the bitstream was built for
+      char load[4];      // Information to load this particular device on this platform
+      char dna[8];       // The serial number of this particular device
+    } HdlUUID;
+    typedef struct {
       const uint32_t
         magic1,
         magic2,
@@ -48,20 +56,26 @@ namespace OCPI {
         birthday,
         config,
         pciDevice,
-        attention;
-      uint32_t
-        ppsCount,
-        scratch20,
-        scratch24;
-      const uint32_t
-        counter,
+        attention,
         status;
       uint32_t
-        msiHigh,
-        msiLow,
-        msiData;
+        scratch20,
+        scratch24,
+        control;
       const uint32_t
-        mbz;
+        mbz0,
+	timeStatus;
+      uint32_t
+        timeControl;
+      uint64_t
+        time,
+        timeDelta;
+      const uint32_t
+        timeClksPerPps,
+	pad[12],     // 4c5054585c6064686c707478
+        numRegions,
+        regions[16]; // 8084888c9094989ca0a4a8acb0b4b8bc
+      HdlUUID uuid;
     } OccpAdminRegisters;
     typedef struct {
       const uint32_t

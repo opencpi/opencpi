@@ -73,6 +73,7 @@ namespace OCPI {
 	Scalar::Value defaultValue; // union for member values
 	const char *parse(ezxml_t xp, unsigned &maxAlign,
 			  unsigned &argOffset, bool &sub32);
+	void printXml(FILE *f);
 	static const char *
 	  parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
 		       unsigned &maxAlign, unsigned &myOffset, bool &sub32, const char *tag);

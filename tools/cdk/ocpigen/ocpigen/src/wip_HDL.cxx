@@ -41,6 +41,13 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <uuid/uuid.h>
+// FIXME: integrate this into our UUID utility properly
+#ifndef _UUID_STRING_T
+#define _UUID_STRING_T
+typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
+#endif
+#include "HdlOCCP.h"
 #include "wip.h"
 /*
  * todo
@@ -230,11 +237,11 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    "package %s_defs is\n",
 	    w->implName);
   // Generate record types for interfaces
-  Port *p = w->ports;
   OcpSignalDesc *osd;
   if (lang == VHDL)
-    for (unsigned i = 0; i < w->nPorts; i++, p++) {
-      bool mIn = masterIn(p);
+    for (unsigned i = 0; i < w->ports.size(); i++) {
+      Port *p = w->ports[i];
+      bool mIn = p->masterIn();
       fprintf(f,
 	      "\n"
 	      "-- These 2 records correspond to the input and output sides of the OCP bundle\n"
@@ -310,20 +317,20 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
     }
   }
   char *last = 0;
-  p = w->ports;
-  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+  for (unsigned i = 0; i < w->ports.size(); i++) {
+    Port *p = w->ports[i];
     if (last) {
       fprintf(f, last, ',');
       last = 0;
     }
-    bool mIn = masterIn(p);
+    bool mIn = p->masterIn();
     char *nbuf;
     asprintf(&nbuf, " %d", p->count);
     fprintf(f,
 	    "\n  %s%s The%s %s %sinterface%s named \"%s\", with \"%s\" acting as OCP %s:\n",
 	    lang == VHDL ? "  " : "", comment, p->count > 1 ? nbuf : "", wipNames[p->type],
 	    p->type == WMIPort || p->type == WSIPort ?
-	    (p->wdi.isProducer ? "producer " : "consumer ") : "",
+	    (p->u.wdi.isProducer ? "producer " : "consumer ") : "",
 	    p->count > 1 ? "s" : "", p->name, w->implName, mIn ? "slave" : "master");
     fprintf(f, "  // WIP attributes for this %s interface are:\n", wipNames[p->type]);
     if (p->clockPort)
@@ -352,29 +359,29 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	      fprintf(f, "%s%s", first ? "" : ",", controlOperations[op]);
 	}
 	fprintf(f, "\n");
-	fprintf(f, "  //   ResetWhileSuspended: %s\n", BOOL(p->wci.resetWhileSuspended));
+	fprintf(f, "  //   ResetWhileSuspended: %s\n", BOOL(p->u.wci.resetWhileSuspended));
 	break;
     case WSIPort:
     case WMIPort:
       // Do common WDI attributes first
-      fprintf(f, "  //   DataValueWidth: %u\n", p->wdi.dataValueWidth);  
-      fprintf(f, "  //   DataValueGranularity: %u\n", p->wdi.dataValueGranularity);  
-      fprintf(f, "  //   DiverseDataSizes: %s\n", BOOL(p->wdi.diverseDataSizes));
-      fprintf(f, "  //   MaxMessageValues: %u\n", p->wdi.maxMessageValues);  
-      fprintf(f, "  //   NumberOfOpcodes: %u\n", p->wdi.numberOfOpcodes);  
-      fprintf(f, "  //   Producer: %s\n", BOOL(p->wdi.isProducer));  
-      fprintf(f, "  //   VariableMessageLength: %s\n", BOOL(p->wdi.variableMessageLength));  
-      fprintf(f, "  //   ZeroLengthMessages: %s\n", BOOL(p->wdi.zeroLengthMessages));
-      fprintf(f, "  //   Continuous: %s\n", BOOL(p->wdi.continuous));  
+      fprintf(f, "  //   DataValueWidth: %u\n", p->protocol->m_dataValueWidth);  
+      fprintf(f, "  //   DataValueGranularity: %u\n", p->protocol->m_dataValueGranularity);  
+      fprintf(f, "  //   DiverseDataSizes: %s\n", BOOL(p->protocol->m_diverseDataSizes));
+      fprintf(f, "  //   MaxMessageValues: %u\n", p->protocol->m_maxMessageValues);  
+      fprintf(f, "  //   NumberOfOpcodes: %u\n", p->u.wdi.nOpcodes);  
+      fprintf(f, "  //   Producer: %s\n", BOOL(p->u.wdi.isProducer));  
+      fprintf(f, "  //   VariableMessageLength: %s\n", BOOL(p->protocol->m_variableMessageLength));  
+      fprintf(f, "  //   ZeroLengthMessages: %s\n", BOOL(p->protocol->m_zeroLengthMessages));
+      fprintf(f, "  //   Continuous: %s\n", BOOL(p->u.wdi.continuous));  
       fprintf(f, "  //   DataWidth: %u\n", p->dataWidth);  
       fprintf(f, "  //   ByteWidth: %u\n", p->byteWidth);  
       fprintf(f, "  //   ImpreciseBurst: %s\n", BOOL(p->impreciseBurst));
       fprintf(f, "  //   Preciseburst: %s\n", BOOL(p->preciseBurst));
       if (p->type == WSIPort) {
-	fprintf(f, "  //   Abortable: %s\n", BOOL(p->wsi.abortable));  
-	fprintf(f, "  //   EarlyRequest: %s\n", BOOL(p->wsi.earlyRequest));  
+	fprintf(f, "  //   Abortable: %s\n", BOOL(p->u.wsi.abortable));  
+	fprintf(f, "  //   EarlyRequest: %s\n", BOOL(p->u.wsi.earlyRequest));  
       } else if (p->type == WMIPort)
-	fprintf(f, "  //   TalkBack: %s\n", BOOL(p->wmi.talkBack));  
+	fprintf(f, "  //   TalkBack: %s\n", BOOL(p->u.wmi.talkBack));  
       break;
     case WTIPort:
       break;
@@ -383,10 +390,10 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
       fprintf(f, "  //   ByteWidth: %u\n", p->byteWidth);  
       fprintf(f, "  //   ImpreciseBurst: %s\n", BOOL(p->impreciseBurst));
       fprintf(f, "  //   Preciseburst: %s\n", BOOL(p->preciseBurst));
-      fprintf(f, "  //   MemoryWords: %llu\n", (unsigned long long )p->wmemi.memoryWords);
-      fprintf(f, "  //   MaxBurstLength: %u\n", p->wmemi.maxBurstLength);
-      fprintf(f, "  //   WriteDataFlowControl: %s\n", BOOL(p->wmemi.writeDataFlowControl));
-      fprintf(f, "  //   ReadDataFlowControl: %s\n", BOOL(p->wmemi.readDataFlowControl));
+      fprintf(f, "  //   MemoryWords: %llu\n", (unsigned long long )p->u.wmemi.memoryWords);
+      fprintf(f, "  //   MaxBurstLength: %u\n", p->u.wmemi.maxBurstLength);
+      fprintf(f, "  //   WriteDataFlowControl: %s\n", BOOL(p->u.wmemi.writeDataFlowControl));
+      fprintf(f, "  //   ReadDataFlowControl: %s\n", BOOL(p->u.wmemi.readDataFlowControl));
     default:
       ;
     }
@@ -427,7 +434,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
       }
       if (lang == VHDL)
 	fprintf(f, "    %-20s: out %s_t%s\n", p->fullNameOut, p->fullNameOut,
-		i < w->nPorts-1 || p->count > n+1 ? ";" : "");
+		i < w->ports.size() - 1 || p->count > n+1 ? ";" : "");
       else {
 	osd = ocpSignals;
 	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
@@ -502,8 +509,8 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
     for (unsigned i = 0; i < w->nClocks; i++, c++)
       if (!c->port)
 	fprintf(f, "  input          %s;\n", c->signal);
-    p = w->ports;
-    for (unsigned i = 0; i < w->nPorts; i++, p++) {
+    for (unsigned i = 0; i < w->ports.size(); i++) {
+      Port *p = w->ports[i];
       bool mIn = masterIn(p);
       for (unsigned n = 0; n < p->count; n++) {
 	if (p->clock->port == p && n == 0)
@@ -598,22 +605,22 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
   // For VHDL we need to basically replicate the port declarations that are part of the 
   // component: there is no way to just use what the component decl says.
   // For Verilog we just include the module declaration so don't need anything here.
-  Port *p = w->ports;
   if (w->language == VHDL) {
     // port name is scoped by entity, just has to avoid record name
     // _in or _out
     // type conventions _t or _Typ or T or..
     // port signal (wsi consumer port foo):
     //  foo_s_out: out spec_impl.foo_s_t;
-    for (unsigned i = 0; i < w->nPorts; i++, p++) {
-      bool mIn = masterIn(p);
+    for (unsigned i = 0; i < w->ports.size(); i++) {
+      Port *p = w->ports[i];
+      bool mIn = p->masterIn();
       char *nbuf;
       asprintf(&nbuf, " %d", p->count);
       fprintf(f,
 	      "\n    %s For the %s%s %sinterface%s named \"%s\", with %s acting as OCP %s\n",
 	      comment, p->count > 1 ? nbuf : "", wipNames[p->type],
 	      p->type == WMIPort || p->type == WSIPort ?
-	      (p->wdi.isProducer ? "producer " : "consumer ") : "",
+	      (p->u.wdi.isProducer ? "producer " : "consumer ") : "",
 	      p->count > 1 ? "s" : "", p->name,
 	      w->implName, mIn ? "slave" : "master");
       for (unsigned n = 0; n < p->count; n++) {
@@ -630,15 +637,15 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	fprintf(f, "    %-20s: in  %s_t;\n",
 		pin, pin);
 	fprintf(f, "    %-20s: out %s_t%s\n", pout, pout,
-		i < w->nPorts-1 || p->count > n+1 ? ";" : "");
+		i < w->ports.size() - 1 || p->count > n+1 ? ";" : "");
       }
     }
     fprintf(f, "  );\n");
   }
   // Aliases for OCP signals
-  p = w->ports;
-  for (unsigned i = 0; i < w->nPorts; i++, p++) {
-    bool mIn = masterIn(p);
+  for (unsigned i = 0; i < w->ports.size(); i++) {
+    Port *p = w->ports[i];
+    bool mIn = p->masterIn();
     for (unsigned n = 0; n < p->count; n++) {
       char *pin, *pout;
       if ((err = pattern(w, p, n, 0, true, !mIn, &pin)) ||
@@ -712,13 +719,13 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	}
 	break;
       case WSIPort:
-	if (p->wsi.regRequest) {
+	if (p->u.wsi.regRequest) {
 	  fprintf(f,
 		  "  %s Register declarations for request phase signals for interface \"%s\"\n",
 		  comment, p->name);
 	  OcpSignalDesc *osd = ocpSignals;
 	  for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-	    if (osd->request && p->wdi.isProducer && p->wsi.regRequest && os->value &&
+	    if (osd->request && p->u.wdi.isProducer && p->u.wsi.regRequest && os->value &&
 		strcmp("MReqInfo", osd->name)) // fixme add "aliases" attribute somewhere
 	      fprintf(f, "  reg %s%s;\n", pout, osd->name);
 	}
@@ -749,7 +756,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		    //"  wire [%d:0] %s_Opcode; always@(posedge %s) %s_MReqInfo = %s_Opcode;\n",
 		    // p->ocp.MReqInfo.width - 1, pout, p->clock->signal, pout, pout);
 		    "  %s [%d:0] %sOpcode; assign %sMReqInfo = %sOpcode;\n",
-		    p->wsi.regRequest ? "reg" : "wire", p->ocp.MReqInfo.width - 1, pout, pout, pout);
+		    p->u.wsi.regRequest ? "reg" : "wire", p->ocp.MReqInfo.width - 1, pout, pout, pout);
 	}
 	if (p->ocp.MFlag.width) {
 	  if (w->language == VHDL)
@@ -784,20 +791,20 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		  "  wire %sNodata = %sMAddrSpace[0];\n"
 		  "  wire %sDone   = %sMReqInfo[0];\n",
 		  pin, pin, pin, pin);
-	if (p->wdi.numberOfOpcodes) {
+	if (p->u.wdi.nOpcodes > 1) {
 	  if (w->language == VHDL) {
 	    if (n == 0)
 	      fprintf(f,
 		      "  subtype %s%sOpCode_t is std_logic_vector(7 downto 0);\n",
-		      p->name, p->wdi.isProducer ? pout : pin);
+		      p->name, p->u.wdi.isProducer ? pout : pin);
 	    fprintf(f,
 		    "  alias %sOpcode: %s%sOpCode_t is %s.%cFlag(7 downto 0);\n",
-		    p->wdi.isProducer ? pout : pin,
-		    p->name, p->wdi.isProducer ? pout : pin,
-		    p->wdi.isProducer ? pout : pin,
-		    p->wdi.isProducer ? 'M' : 'S');
+		    p->u.wdi.isProducer ? pout : pin,
+		    p->name, p->u.wdi.isProducer ? pout : pin,
+		    p->u.wdi.isProducer ? pout : pin,
+		    p->u.wdi.isProducer ? 'M' : 'S');
 	  } else {
-	    if (p->wdi.isProducer) // opcode is an output
+	    if (p->u.wdi.isProducer) // opcode is an output
 	      fprintf(f,
 		      "  wire [7:0] %sOpcode; assign %s%cFlag[7:0] = %sOpcode;\n",
 		      pout, pout, p->master ? 'M' : 'S', pout);
@@ -807,22 +814,22 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		      pin, pin, p->master ? 'S' : 'M');
 	  }
 	}
-	if (p->wdi.variableMessageLength) {
+	if (p->protocol->m_variableMessageLength) {
 	  if (w->language == VHDL) {
 	    if (n == 0)
 	      fprintf(f,
 		      "  subtype %s%sLength_t is std_logic_vector(%d downto 8);\n",
-		      p->name, p->wdi.isProducer ? pout : pin,
-		      (p->wdi.isProducer ? p->ocp.MFlag.width : p->ocp.MFlag.width) - 1);
+		      p->name, p->u.wdi.isProducer ? pout : pin,
+		      (p->u.wdi.isProducer ? p->ocp.MFlag.width : p->ocp.MFlag.width) - 1);
 	    fprintf(f,
 		    "  alias %sLength: %s%s_Length_t is %s.%cFlag(%d downto 0);\n",
-		    p->wdi.isProducer ? pout : pin,
-		    p->name, p->wdi.isProducer ? pout : pin,
-		    p->wdi.isProducer ? pout : pin,
-		    p->wdi.isProducer ? 'M' : 'S',
-		    (p->wdi.isProducer ? p->ocp.MFlag.width : p->ocp.MFlag.width) - 9);
+		    p->u.wdi.isProducer ? pout : pin,
+		    p->name, p->u.wdi.isProducer ? pout : pin,
+		    p->u.wdi.isProducer ? pout : pin,
+		    p->u.wdi.isProducer ? 'M' : 'S',
+		    (p->u.wdi.isProducer ? p->ocp.MFlag.width : p->ocp.MFlag.width) - 9);
 	  } else {
-	    if (p->wdi.isProducer) { // length is an output
+	    if (p->u.wdi.isProducer) { // length is an output
 	      unsigned width =
 		(p->master ? p->ocp.MFlag.width : p->ocp.SFlag.width) - 8;
 	      fprintf(f,
@@ -881,17 +888,18 @@ emitSkelHDL(Worker *w, const char *outDir) {
 	    "// This file contains the implementation skeleton for worker: %s\n\n"
 	    "`include \"%s_impl%s\"\n\n",
 	    w->implName, w->implName, VERH);
-    Port *p = w->ports;
-    for (unsigned i = 0; i < w->nPorts; i++, p++)
+    for (unsigned i = 0; i < w->ports.size(); i++) {
+      Port *p = w->ports[i];
       switch (p->type) {
       case WSIPort:
-	if (p->wsi.regRequest)
+	if (p->u.wsi.regRequest)
 	  fprintf(f,
 		  "// GENERATED: OCP request phase signals for interface \"%s\" are registered\n",
 		  p->name);
       default:
 	;
       }
+    }
     fprintf(f, "\n\nendmodule //%s\n",  w->implName);
   }
   fclose(f);
@@ -902,26 +910,26 @@ const char *
 adjustConnection(InstancePort *consumer, InstancePort *producer) {
   // Check WDI compatibility
   Port *prod = producer->port, *cons = consumer->port;
-  if (prod->wdi.dataValueWidth != cons->wdi.dataValueWidth)
+  if (prod->protocol->m_dataValueWidth != cons->protocol->m_dataValueWidth)
     return "dataValueWidth incompatibility for connection";
-  if (prod->wdi.dataValueGranularity < cons->wdi.dataValueGranularity ||
-      prod->wdi.dataValueGranularity % cons->wdi.dataValueGranularity)
+  if (prod->protocol->m_dataValueGranularity < cons->protocol->m_dataValueGranularity ||
+      prod->protocol->m_dataValueGranularity % cons->protocol->m_dataValueGranularity)
     return "dataValueGranularity incompatibility for connection";
-  if (prod->wdi.maxMessageValues > cons->wdi.maxMessageValues)
+  if (prod->protocol->m_maxMessageValues > cons->protocol->m_maxMessageValues)
     return "maxMessageValues incompatibility for connection";
-  if (prod->wdi.numberOfOpcodes > cons->wdi.numberOfOpcodes)
+  if (prod->u.wdi.nOpcodes > cons->u.wdi.nOpcodes)
     return "numberOfOpcodes incompatibility for connection";
-  if (prod->wdi.variableMessageLength && !cons->wdi.variableMessageLength)
+  if (prod->protocol->m_variableMessageLength && !cons->protocol->m_variableMessageLength)
     return "variable length producer vs. fixed length consumer incompatibility";
-  if (prod->wdi.zeroLengthMessages && !cons->wdi.zeroLengthMessages)
+  if (prod->protocol->m_zeroLengthMessages && !cons->protocol->m_zeroLengthMessages)
     return "zero length message incompatibility";
   if (prod->type != cons->type)
     return "profile incompatibility";
-  if (cons->wdi.continuous && !prod->wdi.continuous)
+  if (cons->u.wdi.continuous && !prod->u.wdi.continuous)
     return "continuous incompatibility";
   if (prod->dataWidth != prod->dataWidth)
     return "dataWidth incompatibility";
-  if (cons->wdi.continuous && !prod->wdi.continuous)
+  if (cons->u.wdi.continuous && !prod->u.wdi.continuous)
     return "producer is not continuous, but consumer requires it";
   // Profile-specific error checks and adaptations
   OcpAdapt *oa;
@@ -974,17 +982,17 @@ adjustConnection(InstancePort *consumer, InstancePort *producer) {
       oa->other = OCP_MBurstLength;
     }
     // Abortable compatibility and adaptation
-    if (cons->wsi.abortable) {
-      if (!prod->wsi.abortable) {
+    if (cons->u.wsi.abortable) {
+      if (!prod->u.wsi.abortable) {
 	oa = &consumer->ocp[OCP_MFlag];
 	oa->expr = "0";
 	oa->comment = "Tell consumer no frames are ever aborted";
       }
-    } else if (prod->wsi.abortable)
+    } else if (prod->u.wsi.abortable)
       return "consumer cannot handle aborts from producer";
     // EarlyRequest compatibility and adaptation
-    if (cons->wsi.earlyRequest) {
-      if (!prod->wsi.earlyRequest) {
+    if (cons->u.wsi.earlyRequest) {
+      if (!prod->u.wsi.earlyRequest) {
 	oa = &consumer->ocp[OCP_MDataLast];
 	oa->other = OCP_MReqLast;
 	oa->expr = "%s";
@@ -994,7 +1002,7 @@ adjustConnection(InstancePort *consumer, InstancePort *producer) {
 	oa->expr = "%s == OCPI_OCP_MCMD_WRITE ? 1 : 0";
 	oa->comment = "Tell consumer data is valid when request is MCMD_WRITE";
       }
-    } else if (prod->wsi.earlyRequest)
+    } else if (prod->u.wsi.earlyRequest)
       return "producer emits early requests, but consumer doesn't support them";
     break;
   case WMIPort:
@@ -1056,7 +1064,7 @@ emitAssyHDL(Worker *w, const char *outDir)
 	  master = ip;
 	else
 	  slave = ip;
-	if (ip->port->wdi.isProducer)
+	if (ip->port->u.wdi.isProducer)
 	  producer = ip;
 	else
 	  consumer = ip;
@@ -1137,7 +1145,7 @@ OCPI_PROPERTY_DATA_TYPES
     }
     const char *last = "", *comment = "";
     OcpAdapt *oa;
-    for (ip = i->ports, nn = 0; nn < i->worker->nPorts; nn++, ip++)
+    for (ip = i->ports, nn = 0; nn < i->worker->ports.size(); nn++, ip++)
       for (osd = ocpSignals, os = ip->port->ocp.signals, oa = ip->ocp;
 	   osd->name; os++, osd++, oa++)
 	// If the signal is in the interface
@@ -1169,7 +1177,7 @@ OCPI_PROPERTY_DATA_TYPES
 	      // This port is connected to the external port of the connection
 	      char *suff;
 	      Port *p = ip->connection->external->port;
-	      if ((err = pattern(w, p, 0, 0, p->wdi.isProducer, p->master, &suff)))
+	      if ((err = pattern(w, p, 0, 0, p->u.wdi.isProducer, p->master, &suff)))
 		return err;
 	      asprintf((char **)&signal, "%s%s", suff, osd->name);
 	    }
@@ -1281,9 +1289,9 @@ emitBsvHDL(Worker *w, const char *outDir) {
 	  "// Define parameterized types for each worker port\n"
 	  "//  with parameters derived from WIP attributes\n\n",
 	  w->implName);
-  Port *p;
   unsigned n, nn;
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     const char *num;
     if (p->count == 1) {
       fprintf(f, "// For worker interface named \"%s\"", p->name);
@@ -1299,26 +1307,26 @@ emitBsvHDL(Worker *w, const char *outDir) {
 	      (unsigned long long)w->ctl.sizeOfConfigSpace);
       break;
     case WSIPort:
-      fprintf(f, "// DataValueWidth: %u\n", p->wdi.dataValueWidth);
-      fprintf(f, "// MaxMessageValues: %u\n", p->wdi.maxMessageValues);
+      fprintf(f, "// DataValueWidth: %u\n", p->protocol->m_dataValueWidth);
+      fprintf(f, "// MaxMessageValues: %u\n", p->protocol->m_maxMessageValues);
       fprintf(f, "// ZeroLengthMessages: %s\n",
-	      p->wdi.zeroLengthMessages ? "true" : "false");
-      fprintf(f, "// NumberOfOpcodes: %u\n", p->wdi.numberOfOpcodes);
+	      p->protocol->m_zeroLengthMessages ? "true" : "false");
+      fprintf(f, "// NumberOfOpcodes: %u\n", p->u.wdi.nOpcodes);
       fprintf(f, "// DataWidth: %u\n", p->dataWidth);
       break;
     case WMIPort:
-      fprintf(f, "// DataValueWidth: %u\n", p->wdi.dataValueWidth);
-      fprintf(f, "// MaxMessageValues: %u\n", p->wdi.maxMessageValues);
+      fprintf(f, "// DataValueWidth: %u\n", p->protocol->m_dataValueWidth);
+      fprintf(f, "// MaxMessageValues: %u\n", p->protocol->m_maxMessageValues);
       fprintf(f, "// ZeroLengthMessages: %s\n",
-	      p->wdi.zeroLengthMessages ? "true" : "false");
-      fprintf(f, "// NumberOfOpcodes: %u\n", p->wdi.numberOfOpcodes);
+	      p->protocol->m_zeroLengthMessages ? "true" : "false");
+      fprintf(f, "// NumberOfOpcodes: %u\n", p->u.wdi.nOpcodes);
       fprintf(f, "// DataWidth: %u\n", p->dataWidth);
       break;
     case WMemIPort:
       fprintf(f, "// DataWidth: %u\n// MemoryWords: %llu (0x%llx)\n// ByteWidth: %u\n",
-	      p->dataWidth, (unsigned long long)p->wmemi.memoryWords,
-	      (unsigned long long)p->wmemi.memoryWords, p->byteWidth);
-      fprintf(f, "// MaxBurstLength: %u\n", p->wmemi.maxBurstLength);
+	      p->dataWidth, (unsigned long long)p->u.wmemi.memoryWords,
+	      (unsigned long long)p->u.wmemi.memoryWords, p->byteWidth);
+      fprintf(f, "// MaxBurstLength: %u\n", p->u.wmemi.maxBurstLength);
       break;
     case WTIPort:
       break;
@@ -1366,7 +1374,8 @@ emitBsvHDL(Worker *w, const char *outDir) {
       fprintf(f, "  Clock %s;\n", p->clock->signal);
   }
 #endif
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     const char *num = "";
     for (nn = 0; nn < p->count; nn++) {
       if (p->count > 1)
@@ -1383,13 +1392,16 @@ emitBsvHDL(Worker *w, const char *outDir) {
 	  w->implName, w->implName);
   // Now we must enumerate the various input clocks and input resets as parameters
   const char *last = "";
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     if (p->clock->port == p) {
       fprintf(f, "%sClock i_%sClk", last, p->name);
       last = ", ";
     }
+  }
   // Now we must enumerate the various reset inputs as parameters
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
 			       !p->master && p->ocp.MReset_n.value)) {
       if (p->count > 1)
@@ -1406,14 +1418,17 @@ emitBsvHDL(Worker *w, const char *outDir) {
 	  "  // Input clocks on specific worker interfaces\n",
 	  w->implName);
   
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     if (p->clock->port == p)
       fprintf(f, "  input_clock  i_%sClk(%s) = i_%sClk;\n",
 	      p->name, p->clock->signal, p->name);
     else
       fprintf(f, "  // Interface \"%s\" uses clock on interface \"%s\"\n", p->name, p->clock->port->name);
+  }
   fprintf(f, "\n  // Reset inputs for worker interfaces that have one\n");
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     const char *num = "";
     for (nn = 0; nn < p->count; nn++) {
       if (p->count > 1)
@@ -1433,7 +1448,8 @@ emitBsvHDL(Worker *w, const char *outDir) {
     }
   }
   unsigned en = 0;
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     const char *num = "";
     for (nn = 0; nn < p->count; nn++) {
       if (p->count > 1)
@@ -1492,7 +1508,8 @@ emitBsvHDL(Worker *w, const char *outDir) {
   // warning suppression...
   fprintf(f, "schedule (\n");
   last = "";
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     const char *num = "";
     for (nn = 0; nn < p->count; nn++) {
       if (p->count > 1)
@@ -1511,7 +1528,8 @@ emitBsvHDL(Worker *w, const char *outDir) {
   }
   fprintf(f, ")\n   CF  (\n");
   last = "";
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     const char *num = "";
     for (nn = 0; nn < p->count; nn++) {
       if (p->count > 1)
@@ -1537,13 +1555,16 @@ emitBsvHDL(Worker *w, const char *outDir) {
 	  "module mk%s#(", w->implName);
   // Now we must enumerate the various input clocks and input resets as parameters
   last = "";
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     if (p->clock->port == p) {
       fprintf(f, "%sClock i_%sClk", last, p->name);
       last = ", ";
     }
+  }
   // Now we must enumerate the various reset inputs as parameters
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
 			       !p->master && p->ocp.MReset_n.value)) {
       if (p->count > 1)
@@ -1558,12 +1579,15 @@ emitBsvHDL(Worker *w, const char *outDir) {
 	  "  let _ifc <- vMk%s(",
 	  w->implName);
   last = "";
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++)
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     if (p->clock->port == p) {
       fprintf(f, "%si_%sClk", last, p->name);
       last = ", ";
     }
-  for (p = w->ports, n = 0; n < w->nPorts; n++, p++) {
+  }
+  for (n = 0; n < w->ports.size(); n++) {
+    Port *p = w->ports[n];
     if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
 			       !p->master && p->ocp.MReset_n.value)) {
       fprintf(f, "%si_%sRst", last, p->name);
@@ -1594,17 +1618,16 @@ emitWorker(FILE *f, Worker *w)
     if (!first)
       fprintf(f, "\"");
   }
-  if (w->ports->type == WCIPort && w->ports->wci.timeout)
-    fprintf(f, " Timeout=\"%u\"", w->ports->wci.timeout);
+  if (w->ports[0]->type == WCIPort && w->ports[0]->u.wci.timeout)
+    fprintf(f, " Timeout=\"%u\"", w->ports[0]->u.wci.timeout);
   fprintf(f, ">\n");
   unsigned nn;
   Property *prop;
   for (prop = w->ctl.properties, nn = 0; nn < w->ctl.nProperties; nn++, prop++) {
     if (prop->isParameter)
       continue;
-    fprintf(f, "<property name=\"%s\"", prop->m_name);
-    if (prop->members->type.scalar != CP::Scalar::OCPI_ULong)
-      fprintf(f, " type=\"%s\"", CP::Scalar::names[prop->members->type.scalar]);
+    fprintf(f, "  <property name=\"%s\"", prop->m_name);
+    prop->members->printXml(f);
     if (prop->m_isReadable)
       fprintf(f, " readable=\"true\"");
     if (prop->m_isWritable)
@@ -1617,26 +1640,50 @@ emitWorker(FILE *f, Worker *w)
       fprintf(f, " readError=\"true\"");
     if (prop->m_writeError)
       fprintf(f, " writeError=\"true\"");
-    if (prop->members->type.scalar == CP::Scalar::OCPI_String)
-      fprintf(f, " size=\"%u\"", prop->members->type.stringLength);
-    if (prop->members->type.isSequence)
-      fprintf(f, " sequenceSize=\"%u\"\n", prop->members->type.length);
     fprintf(f, "/>\n");
   }
-  Port *p;
-  for (p = w->ports, nn = 0; nn < w->nPorts; nn++, p++)
+  for (nn = 0; nn < w->ports.size(); nn++) {
+    Port *p = w->ports[nn];
     if (p->isData) {
-      fprintf(f, "<port name=\"%s\" minBufferSize=\"%u\"",
-	      p->name, 
-	      (p->wdi.maxMessageValues * p->wdi.dataValueWidth + 7) / 8);
-      if (p->wdi.isBidirectional)
+      fprintf(f, "  <port name=\"%s\" numberOfOpcodes=\"%u\"", p->name, p->u.wdi.nOpcodes);
+      if (p->protocol->m_maxMessageValues)
+	fprintf(f, " minBufferSize=\"%u\"",
+		(p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth + 7) / 8);
+      if (p->u.wdi.isBidirectional)
 	fprintf(f, " bidirectional=\"true\"");
-      else if (!p->wdi.isProducer)
+      else if (!p->u.wdi.isProducer)
 	fprintf(f, " provider=\"true\"");
-      if (p->wdi.minBuffers)
-	fprintf(f, " minNumBuffers=\"%u\"", p->wdi.minBuffers);
-      fprintf(f, "/>\n");
+      if (p->u.wdi.minBufferCount)
+	fprintf(f, " minBufferCount=\"%u\"", p->u.wdi.minBufferCount);
+      if (p->protocol->operations()) {
+	fprintf(f, ">\n    <protocol");
+	if (p->protocol->m_name)
+	  fprintf(f, " name=\"%s\"", p->protocol->m_name);
+	fprintf(f, ">\n");
+	CM::Operation *o = p->protocol->operations();
+	for (unsigned i = 0; i < p->protocol->nOperations(); i++, o++) {
+	  CP::Member *a = o->args();
+	  fprintf(f, "      <operation name=\"%s\"", o->name().c_str());
+	  if (o->isTwoWay())
+	    fprintf(f, " twoway=\"true\"");
+	  if (o->args()) {
+	    fprintf(f, ">\n");
+	    
+	    for (unsigned j = 0; j < o->nArgs(); j++, a++) {
+	      fprintf(f, "        <argument name=\"%s\"", a->name);
+	      a->printXml(f);
+	      fprintf(f, "/>\n");
+	    }	  
+	    fprintf(f, "      </operation>\n");
+	  } else
+	    fprintf(f, "/>\n");
+	}
+	fprintf(f, "    </protocol>\n  </port>\n");
+      } else {
+	fprintf(f, "/>\n");
+      }
     }
+  }
   fprintf(f, "</worker>\n");
 }
 
@@ -1650,7 +1697,7 @@ emitInstance(Instance *i, FILE *f)
   bool any = false;
   Port *p = i->worker->ports;
   for (unsigned n = 0; n < i->worker->nPorts; n++, p++)
-    if (p->isData && !p->wdi.isProducer && p->wdi.isProducer) {
+    if (p->isData && !p->u.wdi.isProducer && p->u.wdi.isProducer) {
       fprintf(f, "%s%s", any ? "," : "inputs=\"", p->name);
       any = true;
     }
@@ -1659,7 +1706,7 @@ emitInstance(Instance *i, FILE *f)
   any = false;
   p = i->worker->ports;
   for (unsigned n = 0; n < i->worker->nPorts; n++, p++)
-    if (p->isData && i->ports[n].isProducer && !p->wdi.isProducer) {
+    if (p->isData && i->ports[n].isProducer && !p->u.wdi.isProducer) {
       fprintf(f, "%s%s", any ? "," : "outputs=\"", p->name);
       any = true;
     }
@@ -1673,12 +1720,42 @@ emitInstance(Instance *i, FILE *f)
   fprintf(f, "/>\n");
 }
 
-// Emit the artifact XML.
-const char *
-emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
+static const char *
+emitUuidHDL(const Worker *aw, const char *outDir, const uuid_t &uuid) {
   const char *err;
   FILE *f;
-  char *cname = strdup(hdlDep);
+  if ((err = openOutput(aw->implName, outDir, "", "_UUID", aw->language == VHDL ? VHD : VER, NULL, f)))
+    return err;
+  const char *comment = aw->language == VHDL ? "--" : "//";
+  printgen(f, comment, aw->file, true);
+  OCPI::HDL::HdlUUID uuidRegs;
+  memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
+  uuidRegs.birthday = time(0);
+  strncpy(uuidRegs.platform, platform, sizeof(uuidRegs.platform));
+  strncpy(uuidRegs.device, device, sizeof(uuidRegs.device));
+  strncpy(uuidRegs.load, load ? load : "", sizeof(uuidRegs.load));
+  assert(sizeof(uuidRegs) * 8 == 512);
+  fprintf(f,
+	  "module mkUUID(uuid);\n"
+	  "output [511 : 0] uuid;\nwire [511 : 0] uuid = 512'h");
+  for (unsigned n = 0; n < sizeof(uuidRegs); n++)
+    fprintf(f, "%02x", ((char*)&uuidRegs)[n]&0xff);
+  fprintf(f, ";\nendmodule // mkUUID\n");
+  if (fclose(f))
+    return "Could close output file. No space?";
+  return NULL;
+}
+
+// Emit the artifact XML.
+const char *
+emitArtHDL(Worker *aw, const char *outDir) {
+  const char *err;
+  uuid_t uuid;
+  uuid_generate(uuid);
+  if ((err = emitUuidHDL(aw, outDir, uuid)))
+    return err;
+  FILE *f;
+  char *cname = strdup(container);
   char *cp = strrchr(cname, '/');
   if (cp)
     cname = cp+1;
@@ -1688,7 +1765,7 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
   if ((err = openOutput(cname, outDir, "", "_art", ".xml", NULL, f)))
     return err;
   fprintf(f, "<!--\n");
-  printgen(f, "", hdlDep);
+  printgen(f, "", container);
   fprintf(f,
 	  " This file contains the artifact descriptor XML for the application assembly\n"
 	  " named \"%s\". It must be attached (appended) to the bitstream\n",
@@ -1696,10 +1773,13 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
   fprintf(f, "  -->\n");
   ezxml_t dep;
   Worker *dw = myCalloc(Worker, 1);
-  if ((err = parseFile(hdlDep, 0, "HdlContainer", &dep, 0)) ||
+  if ((err = parseFile(container, 0, "HdlContainer", &dep, 0)) ||
       (err = parseHdlAssy(dep, dw)))
     return err;
-  fprintf(f, "<artifact>\n");
+  uuid_string_t uuid_string;
+  uuid_unparse_lower(uuid, uuid_string);
+  fprintf(f, "<artifact platform=\"%s\" device=\"%s\" uuid=\"%s\">\n",
+	  platform, device, uuid_string);
   // Define all workers
   Worker *w;
   unsigned n;
@@ -1732,13 +1812,13 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
   for (cc = dw->assembly.connections, n = 0; n < dw->assembly.nConnections; n++, cc++)
     for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
       if (!strcmp(ac->name, cc->name)) {
-	if (ac->external->port->wdi.isProducer) {
-	  if (cc->external->port->wdi.isProducer)
+	if (ac->external->port->u.wdi.isProducer) {
+	  if (cc->external->port->u.wdi.isProducer)
 	    return esprintf("container connection \"%s\" has same direction (is producer) as application connection",
 			    cc->name);
-	} else if (!ac->external->port->wdi.isBidirectional &&
-		   !cc->external->port->wdi.isProducer &&
-		   !cc->external->port->wdi.isBidirectional)
+	} else if (!ac->external->port->u.wdi.isBidirectional &&
+		   !cc->external->port->u.wdi.isProducer &&
+		   !cc->external->port->u.wdi.isBidirectional)
 	    return esprintf("container connection \"%s\" has same direction (is consumer) as application connection",
 			    cc->name);
 	InstancePort *aip, *cip;
@@ -1748,7 +1828,7 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
 	for (cip = cc->ports; cip; cip = cip->nextConn)
 	  if (cip != cc->external)
 	    break;
-	if (ac->external->port->wdi.isProducer)
+	if (ac->external->port->u.wdi.isProducer)
 	  // Application is producing to an external consumer
 	  fprintf(f, "<connection from=\"%s\" out=\"%s\" to=\"%s\" in=\"%s\"/>\n",
 		  aip->instance->name, aip->port->name,
@@ -1765,7 +1845,7 @@ emitArtHDL(Worker *aw, const char *outDir, const char *hdlDep) {
       InstancePort *aip;
       InstancePort *from = 0, *to = 0;
       for (aip = ac->ports; aip; aip = aip->nextConn)
-	if (aip->port->wdi.isProducer)
+	if (aip->port->u.wdi.isProducer)
 	  from = aip;
         else
 	  to = aip;

@@ -583,12 +583,8 @@ int  main( int argc, char** argv)
   workers.push_back( &LOOPBACK );
 
   test_rc &= config_and_run_ap_container_test1(ca,workers,cmap, bcmap[1] );
-
-
-  /*
   test_rc &= config_and_run_ap_container_test2(ca,workers,cmap, bcmap[1] );
-  test_rc &= config_and_run_ap_container_test3(ca,workers,cmap, bcmap[1] );
-  */
+  test_rc &= config_and_run_ap_container_test3(ca,workers,cmap, bcmap[3] );
 
   //  tdata.run=0;
   //  t->join();

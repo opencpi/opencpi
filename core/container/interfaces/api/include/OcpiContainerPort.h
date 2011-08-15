@@ -70,10 +70,6 @@ namespace OCPI {
     class PortData
     {
       bool m_isProvider; // perhaps overriding bidirectional
-    protected:
-      OCPI::Metadata::Port m_metaPort;  // Deep copy to support all constructors
-      inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
-
     public:
       inline bool isProvider() { return m_isProvider; }
       OCPI::OS::uint8_t    external;               // connected externally ?
@@ -84,31 +80,46 @@ namespace OCPI {
           connectionData.port = reinterpret_cast<PortDesc>(this);
         }
 
-    PortData( const OCPI::Metadata::Port & pmd, bool isProvider )
-      : m_isProvider(isProvider), m_metaPort(pmd) , external(0)
+    PortData( bool isProvider )
+      : m_isProvider(isProvider), external(0)
         {
           connectionData.port = reinterpret_cast<PortDesc>(this);
         }
+      // FIXME: why is his just not the default constructor?
         PortData & operator = ( const PortData & lhs )
           {
-            m_metaPort = lhs.m_metaPort;
             memcpy(&connectionData,&lhs.connectionData,sizeof(PortConnectionDesc));
             external = lhs.external;
             return *this;
           }
+      // FIXME: where is this happening?
         PortData( PortData& lhs ) 
+#if 0 // a test to see if it is used anywhere
           {
             *this = lhs;
           }
+#else
+	;
+#endif
     };
 
 
     // The class used by both ExternalPorts (not associated with a worker) and Ports (owned by worker)
     class BasicPort : public PortData {
     protected:
+#if 0
+      // These are values that are initialized from metadata, but can be overriden at runtime,
+      // or by the specific port type
+      uint32_t m_minBufferSize;
+      uint32_t m_minBufferCount;
+      uint32_t m_maxBufferSize;
+#endif
+      OCPI::RDT::Desc_t &myDesc; // convenience
+      const OCPI::Metadata::Port &m_metaPort;
+
       BasicPort(const OCPI::Metadata::Port & metaData, bool isProvider);
       virtual ~BasicPort();
-      OCPI::RDT::Desc_t &myDesc; // convenience
+      inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
       // called after connection parameters have changed.
       virtual void checkConnectParams() = 0;
       void setConnectParams(const OCPI::Util::PValue *props);
@@ -150,7 +161,7 @@ namespace OCPI {
 
       bool hasName(const char *name);
 
-      inline bool isTwoWay() { return m_metaPort.twoway; }
+      //      inline bool isTwoWay() { return m_metaPort.twoway; }
 
       //      inline ezxml_t getXml() { return myXml; }
       // Local (possibly among different containers) connection: 1 step operation on the user port

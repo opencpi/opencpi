@@ -84,7 +84,7 @@ namespace OCPI {
 
       Worker( Application & app, Artifact *art, const char *name,
 	      ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *wParams);
-      OCPI::Container::Port& createPort(OCPI::Metadata::Port&, const OCPI::Util::PValue *props);
+      OCPI::Container::Port& createPort(const OCPI::Metadata::Port&, const OCPI::Util::PValue *props);
       void controlOperation(OCPI::Metadata::Worker::ControlOperation);
 
       // These property access methods are called when the fast path

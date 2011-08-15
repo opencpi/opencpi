@@ -162,8 +162,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  "#endif\n",
 	  w->implName, upper, upper);
   const char *last;
-  Port *port = w->ports;
-  if (w->nPorts) {
+  if (w->ports.size()) {
     fprintf(f,
 	    "/*\n"
 	    " * Enumeration of port ordinals for worker %s\n"
@@ -172,11 +171,12 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	    w->implName);
     unsigned in = 0, out = 0;
     last = "";
-    for (unsigned n = 0; n < w->nPorts; n++, port++) {
+    for (unsigned n = 0; n < w->ports.size(); n++) {
+      Port *port = w->ports[n];
       fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name));
       // FIXME TWO WAY
       last = ",\n";
-      if (port->wdi.isProducer)
+      if (port->u.wdi.isProducer)
 	out++;
       else
 	in++;
@@ -270,7 +270,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  "  .numInputs = %s_N_INPUT_PORTS,\\\n"
 	  "  .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
 	  "  .threadProfile = %u,\\\n",
-	  w->implName, upper, upper, upper, upper, upper, w->rcc.isThreaded ? 1 : 0);
+	  w->implName, upper, upper, upper, upper, upper, w->isThreaded ? 1 : 0);
   if (w->ctl.nProperties)
     fprintf(f, "  .propertySize = sizeof(%c%sProperties),\\\n",
 	    toupper(w->implName[0]), w->implName + 1);
@@ -283,48 +283,51 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
   if ((err = methodName(w, "run", mName)))
     return err;
   fprintf(f, "  .run = %s,\\\n", mName);
-  port = w->ports;
   uint32_t optionals = 0;
-  for (unsigned n = 0; n < w->nPorts; n++, port++)
-    if (port->wdi.isOptional)
+  for (unsigned n = 0; n < w->ports.size(); n++) {
+    Port *port = w->ports[n];
+    if (port->u.wdi.isOptional)
       optionals |= 1 << n;
+  }
   if (optionals)
     fprintf(f, "  .optionallyConnectedPorts = 0x%x,\\\n", optionals);
   fprintf(f, "/**/\n");
-  if (w->nPorts) {
-    Port *port = w->ports;
-    for (unsigned n = 0; n < w->nPorts; n++, port++)
-      if (port->wdi.nOperations) {
+  if (w->ports.size()) {
+    for (unsigned n = 0; n < w->ports.size(); n++) {
+      Port *port = w->ports[n];
+      if (port->protocol->operations()) {
 	fprintf(f,
 		"/*\n"
 		" * Enumeration of operations on port %s of worker %s\n"
 		" */\n"
 		"typedef enum {\n",
 		port->name, w->implName);
-	Operation *o = port->wdi.operations;
+	CM::Operation *o = port->protocol->operations();
 	const char *puName = upperdup(port->name);
-	for (unsigned nn = 0; nn < port->wdi.nOperations; nn++, o++)
-	  fprintf(f, "  %s_%s_%s,\n", upper, puName, upperdup(o->name));
+	for (unsigned nn = 0; nn < port->protocol->nOperations(); nn++, o++)
+	  fprintf(f, "  %s_%s_%s,\n", upper, puName, upperdup(o->name().c_str()));
 	fprintf(f, "} %c%s%c%sOperation;\n",
 		toupper(w->implName[0]), w->implName+1,
 		toupper(port->name[0]), port->name+1);
 	// Now emit structs for messages
-	o = port->wdi.operations;
-	for (unsigned nn = 0; nn < port->wdi.nOperations; nn++, o++)
-	  if (o->nArgs) {
+	o = port->protocol->operations();
+	for (unsigned nn = 0; nn < port->protocol->nOperations(); nn++, o++)
+	  if (o->nArgs()) {
 	    fprintf(f,
 		    "/*\n"
 		    " * Structure for the %s operation on port %s\n"
 		    " */\n"
 		    "typedef struct {\n",
-		    o->name, port->name);
-	    emitStructRCC(f, o->nArgs, o->args, "");
+		    o->name().c_str(), port->name);
+	    emitStructRCC(f, o->nArgs(), o->args(), "");
+	    const char *oName = o->name().c_str();
 	    fprintf(f, "} %c%s%c%s%c%s;\n",
 		    toupper(w->implName[0]), w->implName + 1,
 		    toupper(port->name[0]), port->name + 1,
-		    toupper(o->name[0]), o->name + 1);
+		    toupper(oName[0]), oName + 1);
 	  }
       }
+    }
   }
   fprintf(f,
 	  "\n"

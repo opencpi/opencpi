@@ -168,7 +168,7 @@ namespace OCPI {
       void read(uint32_t, uint32_t, void*){}
       void write(uint32_t, uint32_t, const void*){}
 
-      OC::Port & createPort(OM::Port &metaport, const OA::PValue *props);
+      OC::Port & createPort(const OM::Port &metaport, const OA::PValue *props);
 
       virtual void prepareProperty(OP::Property &mp, OA::Property &cp) {
 	// fill out the API property structure for fastest access
@@ -411,7 +411,7 @@ namespace OCPI {
     };
     // OCPI API
     OC::Port &Worker::
-    createPort(OM::Port &metaPort, const OA::PValue *props) {
+    createPort(const OM::Port &metaPort, const OA::PValue *props) {
       bool isProvider = metaPort.provider;
       const char *name = metaPort.name;
       // Find connections attached to this port

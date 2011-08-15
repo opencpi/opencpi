@@ -69,7 +69,9 @@ typedef struct ProducerWorkerProperties_ ProducerWorkerProperties;
 #define ConsumerConsume 0 
 #define ConsumerTake    1
 
-#define MIN_CONSUMER_BUFFERS 4
+// This must not exceed the minimum that is explicitly requested or defined in metadata
+#define MIN_CONSUMER_BUFFERS 1
+#define CONSUMER_TAKE_COUNT 2
 
 /*
 struct  ConsumerWorkerProperties_ {
@@ -101,7 +103,7 @@ struct  ConsumerWorkerProperties_ {
   uint32_t     takenBufferIndex;
   uint32_t     releaseBufferIndex;
   RCCBoolean   boolT;
-  RCCBuffer    takenBuffers[MIN_CONSUMER_BUFFERS];
+  RCCBuffer    takenBuffers[CONSUMER_TAKE_COUNT];
 };
 
 typedef struct ConsumerWorkerProperties_ ConsumerWorkerProperties;

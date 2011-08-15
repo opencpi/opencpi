@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/time.h>
-#include "OCCP.h"
-#include "OCDP.h"
+#include "HdlOCCP.h"
+#include "HdlOCDP.h"
 #include "getPci.h"
 
 #define WORKER_DP0 (13)

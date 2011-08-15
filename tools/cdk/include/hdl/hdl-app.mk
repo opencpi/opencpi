@@ -125,39 +125,58 @@ endif
 ContainerRtl=$(HdlPlatformsDir)/../containers/$(Container)
 # Too bad we can't reuse what is in hdl-core2.mk
 ContainerModule:=mkOCApp4B
+
+
+# Test: is this needed?
+#$(OutDir)target-$1/$(Worker)_bb/$(call HdlToolLibRef,$(Worker)_bb,$1):
+#	$(AT)ln -s . $(OutDir)target-$1/$(Worker)_bb/$1
+
+# The container is built in the platform directory
+# First arg is platform
+# Second arg is part
+# Third arg is family
 define DoContainer
 
-$(OutDir)target-$(1)/$(Worker)_bb/$(call HdlToolLibRef,$(Worker)_bb,$(1)):
-	$(AT)ln -s . $(OutDir)target-$(1)/$(Worker)_bb/$(1)
+# The link that makes the bb library be in the right place
+# namely under the family
+$(info 11=$(call HdlLibraryRefDir,$(OutDir)target-$3/$(Worker)_bb,$3))
 
-$(OutDir)target-$(1)/$(Worker):
+$(OutDir)target-$3/$(Worker)_bb/$3:
+	$(AT)ln -s . $(OutDir)target-$3/$(Worker)_bb/$3
+
+# The link that makes the core be in the right place
+# namely: target-<family>/<family>/<foo>.ngc
+# so we make a simple link for the family name
+$(info 12=$(OutDir)target-$3/$3)
+$(OutDir)target-$3/$3:
+	$(AT)ln -s . $(OutDir)target-$3/$3
+
+$(OutDir)target-$1/$(Worker):
 	$(AT)mkdir $$@
 
-$(OutDir)target-$(1)/$(Worker)/$(call HdlToolLibRef,$(Worker)_bb,$(1)): \
-   | $(OutDir)target-$(1)/$(Worker)
-	$(AT)ln -s .. $(OutDir)target-$(1)/$(Worker)/$(1)
-
-Containers+=$(OutDir)target-$(1)/$(ContainerModule).v
-$(OutDir)target-$(1)/container.v: | $(OutDir)target-$(1)
-ContainerCores+=$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin)
-$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): Core=$(ContainerModule)
-$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): Top=$(ContainerModule)
-$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): Cores=$(OutDir)target-$(1)/$(Worker)
-$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): LibName=$(ContainerModule)
-$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): override HdlTarget:=$(1)
-$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): TargetDir=$(OutDir)target-$(1)
-$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): | $$$$(TargetDir)
-$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): HdlSources=$(OutDir)target-$(1)/$(ContainerModule).v
-$(OutDir)target-$(1)/$(ContainerModule)$(HdlBin): \
-   $(OutDir)target-$(1)/$(ContainerModule).v \
-   $(OutDir)target-$(1)/$(Worker)_bb/$(call HdlToolLibRef,$(Worker)_bb,$(1)) \
-   | $(OutDir)target-$(1)/$(Worker)/$(call HdlToolLibRef,$(Worker)_bb,$(1))
+Containers+=$(OutDir)target-$1/$(ContainerModule).v
+$(OutDir)target-$1/container.v: | $(OutDir)target-$1
+ContainerCores+=$(OutDir)target-$1/$(ContainerModule)$(HdlBin)
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): Core=$(ContainerModule)
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): Top=$(ContainerModule)
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): Cores=$(OutDir)target-$3/$(Worker)
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): LibName=$(ContainerModule)
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlTarget:=$2
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): TargetDir=$(OutDir)target-$1
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $$$$(TargetDir)
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): HdlSources=$(OutDir)target-$1/$(ContainerModule).v $(OutDir)target-$1/$(Worker)_UUID.v
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/$(ContainerModule).v
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/$(Worker)_UUID.v
+# Need the link to the bb lib
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $(OutDir)target-$3/$(Worker)_bb/$3
+# Need the link to the core
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $(OutDir)target-$3/$3
 	$(AT)echo Building container core \"$(ContainerModule)\" for target \"$$(HdlTarget)\"
 	$(AT)$$(HdlCompile)
 endef
 
 #$(info HAT=$(HdlActualTargets)=)
-$(foreach t,$(HdlActualTargets),$(eval $(call DoContainer,$(t),$(Core)_cont)))
+$(foreach t,$(HdlPlatforms),$(eval $(call DoContainer,$t,$(call HdlGetPart,$t),$(call HdlGetFamily,$(call HdlGetPart,$t)))))
 # Make copies of the container for each target dir changing
 # the app module name from "ocpi_app" to the specific one.
 $(Containers): $(ContainerRtl) Makefile
@@ -193,7 +212,7 @@ ArtifactXmlName=$(call PlatformDir,$1)/$(Worker)_cont_art.xml
 ArtifactXmlDirs=$(XmlIncludeDirs) ../../devices/specs ../../devices/lib/hdl
 BitZName=$(call PlatformDir,$1)/$(call AppName,$1).bit.gz
 NgdName=$(call PlatformDir,$1)/$(call AppName,$1).ngd
-AppNgcName=$(OurDir)target-$(call HdlGetFamily,$(call HdlGetPart,$1))/$(ContainerModule).ngc
+AppNgcName=$(call PlatformDir,$1)/$(ContainerModule).ngc
 MapName=$(call PlatformDir,$1)/$(call AppName,$1)_map.ncd
 ParName=$(call PlatformDir,$1)/$(call AppName,$1)_par.ncd
 ChipScopeName=$(call PlatformDir,$1)/$(call AppName,$1)_csi.ngc
@@ -232,10 +251,12 @@ $(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
 		$(notdir $(call PcfName,$1)), 'DRC detected 0 errors')
 
 # Different since it is in the targetdir
-$(call ArtifactXmlName,$1): $(ContainerXmlFile) $(ImplXmlFile)
+$(call ArtifactXmlName,$1) $(call PlatformDir,$1)/$(Worker)_UUID.v: $(ContainerXmlFile) $(ImplXmlFile)
 	@echo Generating artifact xml file \($(call ArtifactXmlName,$1)\) from $(ImplXmlFile) and $(ContainerXmlFile) files.
-	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call PlatformDir,$1)/$(@F).deps \
-	  -D $(call PlatformDir,$1) $(ArtifactXmlDirs:%=-I%) -A -h $(ContainerXmlFile) $(ImplXmlFile)
+	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call PlatformDir,$1)/$(notdir $(call ArtifactXmlName,$1)).deps \
+	  -D $(call PlatformDir,$1) $(ArtifactXmlDirs:%=-I%) -A \
+          -c $(ContainerXmlFile) -P $1 -e $(call HdlGetPart,$1) $(ImplXmlFile)
+
 
 $(call BitZName,$1): $(call BitName,$1) $(call ArtifactXmlName,$1)
 	$(AT)echo Making compressed bit file: $$@

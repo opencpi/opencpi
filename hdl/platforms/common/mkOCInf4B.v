@@ -587,7 +587,8 @@ module mkOCInf4B(pciDevice,
 		 RST_N_wci_m_9,
 		 RST_N_wci_m_10,
 		 RST_N_wci_m_11,
-		 RST_N_wci_m_12);
+		 RST_N_wci_m_12,
+		 uuid);
   input  [15 : 0] pciDevice;
   input  CLK_sys0_clk;
   input  RST_N_sys0_rst;
@@ -1142,7 +1143,7 @@ module mkOCInf4B(pciDevice,
   output RST_N_wci_m_10;
   output RST_N_wci_m_11;
   output RST_N_wci_m_12;
-
+  input [511 : 0] uuid;
   // signals for module outputs
   wire [152 : 0] server_response_get;
   wire [63 : 0] cpNow;
@@ -1284,7 +1285,7 @@ module mkOCInf4B(pciDevice,
   wire noc_chompCnt$EN;
 
   // ports of submodule cp
-  wire [511 : 0] cp$uuid_arg;
+//  wire [511 : 0] cp$uuid_arg;
   wire [152 : 0] cp$server_request_put, cp$server_response_get;
   wire [63 : 0] cp$cpNow;
   wire [31 : 0] cp$wci_Vm_0_MAddr,
@@ -1534,7 +1535,7 @@ module mkOCInf4B(pciDevice,
        dp1$wti_s_SThreadBusy;
 
   // ports of submodule id
-  wire [511 : 0] id$uuid;
+//  wire [511 : 0] id$uuid;
 
   // ports of submodule itc0_now
   wire [63 : 0] itc0_now$dD_OUT, itc0_now$sD_IN;
@@ -1924,7 +1925,7 @@ module mkOCInf4B(pciDevice,
 	    .gps_ppsSyncIn_x(cp$gps_ppsSyncIn_x),
 	    .server_request_put(cp$server_request_put),
 	    .switch_x(cp$switch_x),
-	    .uuid_arg(cp$uuid_arg),
+	    .uuid_arg(uuid),
 	    .wci_Vm_0_SData(cp$wci_Vm_0_SData),
 	    .wci_Vm_0_SFlag(cp$wci_Vm_0_SFlag),
 	    .wci_Vm_0_SResp(cp$wci_Vm_0_SResp),
@@ -2189,7 +2190,7 @@ module mkOCInf4B(pciDevice,
 	       .RDY_server_response_get(dp1$RDY_server_response_get));
 
   // submodule id
-  mkUUID id(.uuid(id$uuid));
+//  mkUUID id(.uuid(id$uuid));
 
   // submodule itc0_now
   SyncRegister #(.width(32'd64), .init(64'd0)) itc0_now(.sCLK(CLK_sys0_clk),
@@ -2307,7 +2308,7 @@ module mkOCInf4B(pciDevice,
   assign cp$gps_ppsSyncIn_x = gps_ppsSyncIn_x ;
   assign cp$server_request_put = noc_sm0$c0_request_get ;
   assign cp$switch_x = switch_x ;
-  assign cp$uuid_arg = id$uuid ;
+//  assign cp$uuid_arg = id$uuid ;
   assign cp$wci_Vm_0_SData = wci_m_0_SData ;
   assign cp$wci_Vm_0_SFlag = wci_m_0_SFlag ;
   assign cp$wci_Vm_0_SResp = wci_m_0_SResp ;

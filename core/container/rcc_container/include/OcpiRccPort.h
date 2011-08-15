@@ -85,7 +85,7 @@ namespace OCPI {
     class Port : public OCPI::Container::PortBase<Worker,Port,ExternalPort> {
     public:
 
-      Port(Worker& w, const OCPI::Util::PValue *props, OCPI::Metadata::Port & pmd,
+      Port(Worker& w, const OCPI::Util::PValue *props, const OCPI::Metadata::Port & pmd,
 	   const char * endpoint);
       virtual ~Port();
 
@@ -125,14 +125,14 @@ namespace OCPI {
 
         void connectInputPort( PortData *    inputPort,    
                                std::string&  lPort,
-                               OCPI::Util::PValue*       props
+                               const OCPI::Util::PValue*       props
                                )
           throw ( OCPI::Util::EmbeddedException );
 
 
         void initInputPort();
         void initOutputPort();
-        void processPortProperties( OCPI::Util::PValue* props );
+        void processPortProperties( const OCPI::Util::PValue* props );
         void disconnect( OCPI::Container::PortData* sp, OCPI::Container::PortData* input );
 
 
@@ -143,7 +143,7 @@ namespace OCPI {
         OCPI::Container::PortConnectionDesc 
           connectExternalInputPort( 
                                     OCPI::Container::PortData *     inputPort,
-                                    OCPI::Util::PValue*       props=NULL
+                                    const OCPI::Util::PValue*       props=NULL
                                     );
 
         /**********************************
@@ -152,7 +152,7 @@ namespace OCPI {
          *********************************/
         void connectInternalInputPort( 
                                        OCPI::Container::Port *          inputPort,  
-                                       OCPI::Util::PValue*       properties    
+                                       const OCPI::Util::PValue*       properties    
                                        );
 
 
@@ -165,9 +165,6 @@ namespace OCPI {
 
         // Our circuit
         OCPI::DataTransport::Circuit * m_circuit;   
-
-        // Port properties
-        OCPI::Util::PValue*  m_props;               
 
         // Opaque port data cross link
         OpaquePortData * m_opaque;

@@ -129,8 +129,11 @@ namespace OCPI {
     class Device;
     // The base class for all (singleton) drivers.
     class Driver {
+      ezxml_t m_config;
     protected:
+      Driver();
       virtual ~Driver();
+      ezxml_t getDeviceConfig(const char *name);
     public:
       virtual const std::string &name() const = 0;
       virtual Driver *nextDriverBase() = 0;

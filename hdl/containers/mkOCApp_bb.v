@@ -161,7 +161,8 @@ module mkOCApp4B(RST_N_rst_0,
 		 wsi_m_dac_MReqInfo,
 		 wsi_m_dac_SThreadBusy,
 		 wsi_m_dac_MReset_n,
-		 wsi_m_dac_SReset_n);
+		 wsi_m_dac_SReset_n,
+		 uuid);
   parameter [0 : 0] hasDebugLogic = 1'b0;
   input  RST_N_rst_0;
   input  RST_N_rst_1;
@@ -635,5 +636,8 @@ module mkOCApp4B(RST_N_rst_0,
 
   // action method wsi_m_dac_sReset_n
   input  wsi_m_dac_SReset_n;
+
+  output [511 : 0] uuid;
+
 endmodule  // mkOCApp4B
 

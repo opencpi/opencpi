@@ -1181,6 +1181,8 @@ module mkCTop4B(pciDevice,
   // value method gps_ppsSyncOut
   assign gps_ppsSyncOut = inf$gps_ppsSyncOut ;
 
+  wire [511 : 0] appUUID;
+
   // submodule app
   mkOCApp4B #(.hasDebugLogic(1'd1)) app(.RST_N_rst_0(inf$RST_N_wci_m_0),
 					.RST_N_rst_1(inf$RST_N_wci_m_1),
@@ -1343,7 +1345,9 @@ module mkCTop4B(pciDevice,
 					.wsi_m_dac_MData(),
 					.wsi_m_dac_MByteEn(),
 					.wsi_m_dac_MReqInfo(),
-					.wsi_m_dac_MReset_n());
+					.wsi_m_dac_MReset_n(),
+					.uuid(appUUID)
+					);
 
   // submodule inf
   mkOCInf4B inf(.pciDevice(pciDevice),
@@ -1543,7 +1547,8 @@ module mkCTop4B(pciDevice,
 		.RST_N_wci_m_9(inf$RST_N_wci_m_9),
 		.RST_N_wci_m_10(inf$RST_N_wci_m_10),
 		.RST_N_wci_m_11(inf$RST_N_wci_m_11),
-		.RST_N_wci_m_12(inf$RST_N_wci_m_12));
+		.RST_N_wci_m_12(inf$RST_N_wci_m_12),
+		.uuid(appUUID));
 
   // submodule app
   assign app$wci_s_0_MAddr = inf$wci_m_0_MAddr ;

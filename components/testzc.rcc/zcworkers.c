@@ -166,8 +166,8 @@ struct ConsumerStaticMemory_ {
 };
 typedef struct ConsumerStaticMemory_ ConsumerStaticMemory;
 
-static uint32_t memSizes[] = {sizeof(ConsumerStaticMemory), 1024*10, 0 };
-static RCCPortInfo ConsumerPortInfo[] = { {0,1024,MIN_CONSUMER_BUFFERS}, {RCC_NO_ORDINAL,0,0} };
+static uint32_t memSizes[] = {sizeof(ConsumerStaticMemory), 0 };
+static RCCPortInfo ConsumerPortInfo[] = { {0,0,MIN_CONSUMER_BUFFERS}, {RCC_NO_ORDINAL,0,0} };
 
 CONSUMER_METHOD_DECLARATIONS;
 RCCDispatch Consumer = {

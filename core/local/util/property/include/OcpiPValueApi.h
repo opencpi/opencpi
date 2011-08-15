@@ -59,11 +59,15 @@ namespace OCPI {
     // PValue props[] = { PVString("label", "foolabel"), PVULong("nbuffers", 10), PVEnd()};
     // A less type-safe would be to use varargs, which only saves a single character per property...
     // PVList props("label", PVString, "foolabel", "nbuffers", PVUlong, 10, 0);
+    // We avoid std::vector to theoretically support compile-time initialization
 
     class PValue {
     public:
-      inline PValue(const char *aName, ScalarType aType, unsigned aWidth) :
-      name(aName), type(aType), width(aWidth) {}
+      inline PValue(const char *aName, ScalarType aType, unsigned aWidth)
+	: name(aName), type(aType), width(aWidth) {}
+      inline PValue()
+	: name(0), type(OCPI_none), width(0) {}
+      unsigned length() const;
       const char *name;
       ScalarType type;
       unsigned width;
@@ -89,6 +93,15 @@ namespace OCPI {
     };
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
+    // an experiment: working maybe too hard to avoid std::vector and/or std__auto_ptr
+    class PVarray {
+      PValue *_p;
+    public:
+      inline PVarray(unsigned n) : _p(new PValue[n]){}
+      inline PValue &operator[](size_t n) { return *(_p + n); }
+      ~PVarray() { delete [] _p; }
+      operator PValue*() const { return _p; }
+    };
     extern PVULong PVEnd;
   }
 } // OCPI

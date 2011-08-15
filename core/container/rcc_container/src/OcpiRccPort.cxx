@@ -118,7 +118,7 @@ initOutputPort()
 
 void
 Port::
-processPortProperties(OU::PValue* props )
+processPortProperties(const OU::PValue* props )
 {
   const char *role = 0;
   OU::findString(props, "xferRole", role);
@@ -160,23 +160,23 @@ initInputPort()
 
 Port::
 Port(Worker& w, const OU::PValue *props,
-     OCPI::Metadata::Port & pmd,  const char * endpoint)
+     const OCPI::Metadata::Port & pmd,  const char * endpoint)
   : OC::PortBase<Worker, Port, ExternalPort>(w, props, pmd, pmd.provider),
-    m_dtPort(NULL), m_portOrdinal(pmd.ordinal), m_circuit(NULL), m_props(NULL),
+    m_dtPort(NULL), m_portOrdinal(pmd.ordinal), m_circuit(NULL),
     m_mutex(m_container)
 {
 
   connectionData.port = (OC::PortDesc)this;
   connectionData.container_id = m_container.getId();  
-  connectionData.data.desc.nBuffers = (pmd.minBufferCount == 0) ? pmd.DEFAULT_NBUFFERS : pmd.minBufferCount;
-  connectionData.data.desc.dataBufferSize = (pmd.minBufferSize == 0)  ? pmd.DEFAULT_BUFFER_SIZE : pmd.minBufferSize;
+  connectionData.data.desc.nBuffers = (pmd.minBufferCount == 0) ? OM::Port::DEFAULT_NBUFFERS : pmd.minBufferCount;
+  connectionData.data.desc.dataBufferSize = (pmd.minBufferSize == 0)  ? OM::Port::DEFAULT_BUFFER_SIZE : pmd.minBufferSize;
   connectionData.data.role = OCPI::RDT::ActiveMessage;
   connectionData.data.options =
     (1 << OCPI::RDT::ActiveFlowControl) |
     (1 << OCPI::RDT::ActiveMessage);
 
 
-  processPortProperties( m_props );
+  processPortProperties( props );
   if ( endpoint ) {
     strcpy( connectionData.data.desc.oob.oep, endpoint );
   }
@@ -210,7 +210,7 @@ connectInside(OC::Port & other, const OU::PValue * my_props,  const OU::PValue *
 {
   ( void ) my_props;
   std::string ref;
-  connectInputPort( &other, ref, m_props);
+  connectInputPort( &other, ref, my_props);
 }
 
 
@@ -581,7 +581,7 @@ disconnect( )
 OC::PortConnectionDesc
 Port::
 connectExternalInputPort( PortData *           inputPort,    
-                          OU::PValue*       props
+                          const OU::PValue*       props
                           )
 {
   ( void ) props;
@@ -614,7 +614,7 @@ void
 Port::
 connectInputPort( PortData *    inputPort,    
                    std::string&  lPort,
-                  OU::PValue*       props
+                  const OU::PValue*       props
                   )
   throw ( OU::EmbeddedException )
 {
@@ -704,7 +704,7 @@ setOutputFlowControl( PortData * srcPort )
 void
 Port::
 connectInternalInputPort( OC::Port *  tPort,
-                          OU::PValue*            props  )
+                          const OU::PValue*            props  )
 {
   ( void ) props;
   OU::AutoMutex guard ( m_mutex,  true ); 

@@ -118,8 +118,10 @@ namespace OCPI {
 	public Container
     {
     protected:
-      ContainerBase<Dri, Con, App, Art>(const char *name)
-      : OCPI::Driver::DeviceBase<Dri,Con>(name) {}
+      ContainerBase<Dri, Con, App, Art>(const char *name,
+					const ezxml_t config = NULL,
+					const OCPI::Util::PValue *props = NULL)
+	: OCPI::Driver::DeviceBase<Dri,Con>(name), Container(config, props) {}
       inline Driver &driver() { return OCPI::Driver::DeviceBase<Dri,Con>::parent(); }
       Artifact *findLoadedArtifact(const char *name) {
 	return Parent<Art>::findChildByName(name);

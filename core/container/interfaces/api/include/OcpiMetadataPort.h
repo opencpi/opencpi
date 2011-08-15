@@ -32,70 +32,40 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// -*- c++ -*-
+#ifndef OCPI_METADATA_PORT_H
+#define OCPI_METADATA_PORT_H
 
-#ifndef OCPIUTILUUID_H__
-#define OCPIUTILUUID_H__
-
-/**
- * \file
- * \brief Utilities related to Universally Unique Identifiers.
- *
- * Revision History:
- *
- *     12/16/2008 - Frank Pilhofer
- *                  Initial version.
- */
-
-#include <string>
+#include "OcpiUtilProtocol.h"
+#include "ezxml.h"
 
 namespace OCPI {
-  namespace Util {
+  namespace Metadata {
 
-    /**
-     * \brief Utilities related to Universally Unique Identifiers.
-     *
-     * See ITU-T X.667: Information technology - Open Systems Interconnection -
-     * Procedures for the operation of OSI Registration Authorities: Generation
-     * and registration of Universally Unique Identifiers (UUIDs) and their use
-     * as ASN.1 object identifier components.
-     */
+    typedef uint32_t PortOrdinal;
+    // FIXME:  use a pointer to a protocol, and share protocols in the artifact xml
+    class Port : public Protocol {
+      friend class Worker;
+      // Describe a port
+      bool decode(ezxml_t x, PortOrdinal ord);
+    public:
+      Port(bool prov=true);
+      virtual ~Port();
+      const char *   name;
+      PortOrdinal    ordinal;
+      bool           provider;
+      bool           bidirectional;
 
-    namespace UUID {
 
-      /**
-       * \brief Binary representation of a UUID.
-       */
+      static const unsigned
+        DEFAULT_NBUFFERS,
+        DEFAULT_BUFFER_SIZE;
+      uint32_t minBufferSize;
+      uint32_t minBufferCount;
+      uint32_t maxBufferSize;
 
-      struct BinaryUUID {
-        uint8_t data[16];
-      };
-
-      /**
-       * \brief Produce a random-number-based UUID.
-       *
-       * \return The UUID in binary representation.
-       *
-       * \note Pseudo-random numbers may produce the same value multiple
-       * times.
-       */
-
-      BinaryUUID produceRandomUUID ()
-        throw ();
-
-      /**
-       * \brief Convert a binary UUID to the hexadecimal representation.
-       *
-       * \param[in] uuid The UUID in binary representation.
-       * \return The UUID in hexadecimal representation.
-       */
-
-      std::string binaryToHex (const BinaryUUID &uuid)
-        throw ();
-
-    }
+      ezxml_t        myXml;
+    };
 
   }
 }
-
 #endif

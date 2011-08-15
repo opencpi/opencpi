@@ -160,7 +160,8 @@ module mkOCApp4B(RST_N_rst_0,
 	       wsi_m_dac_MReqInfo,
 	       wsi_m_dac_SThreadBusy,
 	       wsi_m_dac_MReset_n,
-	       wsi_m_dac_SReset_n);
+	       wsi_m_dac_SReset_n,
+	       uuid);
   parameter [0 : 0] hasDebugLogic = 1'b0;
   input  RST_N_rst_0;
   input  RST_N_rst_1;
@@ -637,6 +638,10 @@ module mkOCApp4B(RST_N_rst_0,
   // action method wsi_m_dac_sReset_n
   input  wsi_m_dac_SReset_n;
 
+  output [511 : 0] uuid;
+  wire [511 : 0]   myUUID;
+  wire [511 : 0]   uuid = myUUID;
+  
   // signals for module outputs
   wire [127 : 0] wmemiM0_MData;
   wire [35 : 0] wmemiM0_MAddr;
@@ -707,6 +712,7 @@ module mkOCApp4B(RST_N_rst_0,
        wsi_m_dac_MReset_n,
        wsi_s_adc_SReset_n,
        wsi_s_adc_SThreadBusy;
+  mkUUID id(.uuid(myUUID));
   // Instantiate the wip-compliant app
   ocpi_app app(
 				      .wci0_MReset_n(RST_N_rst_2),

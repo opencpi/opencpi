@@ -169,7 +169,6 @@ enum ConsumerPortIds {
 
 // #define CONSUMER_TAKE_COUNT (MIN_CONSUMER_BUFFERS-10)
 
-#define CONSUMER_TAKE_COUNT 2
 static RCCResult ConsumerInitialize(RCCWorker *this_)
 {
   uint32_t i;

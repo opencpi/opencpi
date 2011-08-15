@@ -61,7 +61,9 @@ HdlGetFamilies=$(call OcpiDbg,Entering HdlGetFamilies($1))$(strip \
 
 ################################################################################
 # $(call HdlGetPart,platform)
-HdlGetPart=$(firstword $(subst -, ,$(HdlPart_$1)))
+HdlGetPart=$(call OcpiDbg,Entering HdlGetPart($1))$(strip \
+$(foreach gp,$(firstword $(subst -, ,$(HdlPart_$1))),\
+   $(call OcpiDbg,HdlGetPart($1)->$(gp))$(gp)))
 
 
 $(call OcpiDbgVar,HdlPlatforms)

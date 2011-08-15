@@ -57,15 +57,18 @@ namespace OCPI {
     class Attributes {
     protected:
 	std::string
+	  m_uuid,
 	  m_os, m_osVersion,
 	  m_platform,
 	  m_tool, m_toolVersion,
-	  m_runtime, m_runtimeVersion,;
+	  m_runtime, m_runtimeVersion;
       // Parse from target string
       void parse(const char *pString);
       // Parse from xml
       void parse(ezxml_t x);
       void validate();
+    public:
+      inline const std::string &uuid() { return m_uuid; }
     };
     struct Implementation {
       ezxml_t m_worker;

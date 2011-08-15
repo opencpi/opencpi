@@ -38,9 +38,17 @@
 #include <OcpiPValue.h>
 #include <OcpiUtilPropertyType.h>
 
-OCPI::API::PVULong OCPI::API::PVEnd(0,0);
-
 namespace OCPI {
+  namespace API {
+    PVULong PVEnd(0,0);
+    unsigned PValue::length() const {
+      unsigned n = 0;
+      if (this)
+	for (const PValue *p = this; p->name; p++, n++)
+	  ;
+      return n;
+    }
+  }
   namespace Util {
     PVULong PVEnd(0,0);
     static const PValue *

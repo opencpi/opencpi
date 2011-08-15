@@ -60,6 +60,12 @@
 #include <sys/stat.h>
 #include <vector>
 #include <string>
+#include <uuid/uuid.h>
+// FIXME: integrate this into our UUID utility properly
+#ifndef _UUID_STRING_T
+#define _UUID_STRING_T
+typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
+#endif
 #include "ezxml.h"
 #include <OcpiOsMisc.h>
 #include "PciScanner.h"
@@ -67,8 +73,8 @@
 #include "OcpiWorker.h"
 #include "OcpiPValue.h"
 #include "OcpiContainerMisc.h"
-#include "OCCP.h"
-#include "OCDP.h"
+#include "HdlOCCP.h"
+#include "HdlOCDP.h"
 
 #define wmb()        asm volatile("sfence" ::: "memory"); usleep(0)
 #define clflush(p) asm volatile("clflush %0" : "+m" (*(char *)(p))) //(*(volatile char __force *)p))
@@ -101,7 +107,7 @@ namespace OCPI {
 
       // Create a container
       Container *create(const char *name, PCI::Bar *bars, unsigned nbars,
-                            const char *&err);
+			const char *&err, const OU::PValue *props = NULL);
 
       // Create a dummy container using shm_open for the device
       Container *createDummy(const char *name, const char *df, const OA::PValue *);
@@ -136,14 +142,19 @@ namespace OCPI {
       uint64_t basePaddr, bar1Offset;
       uint8_t *baseVaddr;     // base virtual address of whole region containing both BARs
       uint64_t endPointSize; // size in bytes of whole region containing both BARs.
+      std::string m_device, m_loadParams;
+      uuid_t m_loadedUUID;
       friend class WciControl;
       friend class Driver;
       friend class Port;
+      friend class Artifact;
     protected:
       Container(const char *name, uint64_t bar0Paddr,
-                volatile OccpSpace *aOccp, uint64_t bar1Paddr, uint8_t *aBar1Vaddr,
-                uint32_t bar1Size)  :
-        OC::ContainerBase<Driver,Container,Application,Artifact>(name), occp(aOccp), bar1Vaddr(aBar1Vaddr)
+                volatile OccpSpace *aOccp, uint64_t bar1Paddr,
+		uint8_t *aBar1Vaddr, uint32_t bar1Size, const ezxml_t config = NULL,
+		const OU::PValue *props = NULL) 
+        : OC::ContainerBase<Driver,Container,Application,Artifact>(name, config, props),
+	  occp(aOccp), bar1Vaddr(aBar1Vaddr)
       {
         if (bar0Paddr < bar1Paddr) {
           basePaddr = bar0Paddr;
@@ -155,12 +166,43 @@ namespace OCPI {
           baseVaddr = bar1Vaddr;
         }
         bar1Offset = bar1Paddr - basePaddr;
+	// Capture the UUID info that tells us about the platform
+	HdlUUID myUUID;
+	for (unsigned n = 0; n < sizeof(HdlUUID)/sizeof(uint32_t); n++)
+	  ((uint32_t*)&myUUID)[n] = ((volatile uint32_t *)&occp->admin.uuid)[n];
+	if (myUUID.platform[0] && myUUID.platform[1])
+	  m_platform.assign(myUUID.platform, sizeof(myUUID.platform));
+	if (myUUID.device[0] && myUUID.device[1])
+	  m_device.assign(myUUID.device, sizeof(myUUID.device));
+	if (myUUID.load[0])
+	  m_loadParams.assign(myUUID.load, sizeof(myUUID.load));
+	memcpy(m_loadedUUID, myUUID.uuid, sizeof(m_loadedUUID));
+	
+	if (config) {
+	  // what do I not know about this?
+	  // usb port for jtag loading
+	  // part type to look for artifacts
+	  // esn for checking/asserting that
+	  const char *cp = ezxml_cattr(config, "platform");
+	  if (cp)
+	    m_platform = cp;
+	  cp = ezxml_cattr(config, "loadParams");
+	  if (cp)
+	    m_loadParams = cp;
+	}
+      }
+      bool isLoadedUUID(const std::string &uuid) {
+	uuid_string_t parsed;
+	uuid_unparse(m_loadedUUID, parsed);
+	return uuid == parsed;
       }
     public:
       ~Container() {
 	this->lock();
         // FIXME: ref count driver static resources, like closing pciMemFd
       }
+      void start() {}
+      void stop() {}
       bool dispatch() { return false; }
       // friends
       void getWorkerAccess(unsigned index, volatile OccpWorkerRegisters *&r,
@@ -219,7 +261,7 @@ namespace OCPI {
       if (!PCI::probe(which, OCFRP0_VENDOR, OCFRP0_DEVICE,
 		      OCFRP0_CLASS, OCFRP0_SUBCLASS, bars, nbars, err) || err)
 	OC::ApiError("Error probing \"", which, "\": ", err, NULL);
-      Container *c = create(which, bars, nbars, err);
+      Container *c = create(which, bars, nbars, err, props);
       if (!c)
 	OC::ApiError("Error creating \"", which, "\" (which probed ok): ", err, NULL);
       return c;
@@ -247,7 +289,8 @@ namespace OCPI {
     // Internal driver method
     // Return container pointer OR null, and if NULL, set "err" output arg.
     Container *Driver::
-    create(const char *name, PCI::Bar *bars, unsigned nbars, const char *&err) {
+    create(const char *name, PCI::Bar *bars, unsigned nbars, const char *&err,
+	   const OU::PValue *props) {
       if (nbars != 2 || bars[0].io || bars[0].prefetch || bars[1].io || bars[1].prefetch ||
           bars[0].addressSize != 32 || bars[0].size != sizeof(OccpSpace))
         err = "OCFRP found but bars are misconfigured\n";
@@ -278,8 +321,9 @@ namespace OCPI {
             char tbuf[30];
             time_t bd = occp->admin.birthday;
             fprintf(stderr, "OCFRP: %s, with bitstream birthday: %s", name, ctime_r(&bd, tbuf));
-            return new Container(name, bars[0].address, occp, bars[1].address,
-                                         (uint8_t*)bar1, bars[1].size);
+	    return new Container(name, bars[0].address, occp, bars[1].address,
+				 (uint8_t*)bar1, bars[1].size, getDeviceConfig(name),
+				 props);
           }
         }
         if (bar0)
@@ -294,11 +338,47 @@ namespace OCPI {
       friend class Container;
       Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) :
         OC::ArtifactBase<Container,Artifact>(c, lart, artifactParams) {
+	if (!lart.uuid().empty() && c.isLoadedUUID(lart.uuid()))
+	  printf("For HDL container %s, when loading bitstream %s, uuid matches what is already loaded\n",
+		 c.name().c_str(), name().c_str());
+	else {
+	  printf("Loading bitstream %s on HDL container %s\n",
+		 name().c_str(), c.name().c_str());
+	  // FIXME: there should be a utility to run a script in this way
+	  char *command, *base = getenv("OCPI_CDK_DIR");
+	  if (!base)
+	    throw "OCPI_CDK_DIR environment variable not set";
+	  asprintf(&command, "%s/scripts/loadBitStreamOnPlatform \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+		   base, name().c_str(), c.name().c_str(), c.m_platform.c_str(), c.m_device.c_str(), c.m_loadParams.c_str());
+	  printf("Executing command to load bit stream for container %s: \"%s\"\n",
+		 c.name().c_str(), command);
+	  int rc = system(command);
+	  const char *err = 0;
+	  switch (rc) {
+	  case 127:
+	    err = "Couldn't execute bitstream loading command.  Bad OCPI_CDK_DIR environment variable?";
+	    break;
+	  case -1:
+	    err = esprintf("Unknown system error (errno %d) while executing bitstream loading command",
+			   errno);
+	    break;
+	  case 0:
+	    printf("Successfully loaded bitstream file: \"%s\" on HDL container \"%s\"\n",
+		   lart.name().c_str(), c.name().c_str());
+	    break;
+	  default:
+	    err = esprintf("Bitstream loading error (%d) loading \"%s\" on HDL container \"%s\"",
+			   rc, lart.name().c_str(), c.name().c_str());
+	  }
+	  if (err)
+	    throw OC::ApiError(err, NULL);
+	}
       }
     public:
       ~Artifact() {}
     };
 
+    // We know we have not already loaded it, but it still might be loaded on the device.
     OC::Artifact & Container::
     createArtifact(OCPI::Library::Artifact &lart, const OA::PValue *artifactParams)
     {
@@ -454,7 +534,7 @@ namespace OCPI {
       void write(uint32_t, uint32_t, const void*) {
       }
 
-      OC::Port & createPort(OM::Port &metaport, const OA::PValue *props);
+      OC::Port & createPort(const OM::Port &metaport, const OA::PValue *props);
 
       virtual void prepareProperty(OP::Property &mp, OA::Property &cp) {
         return WciControl::prepareProperty(mp, cp);
@@ -787,7 +867,7 @@ namespace OCPI {
                  (long long unsigned)w.m_container.endPointSize);
         if ( isProvider()) {
           // CONSUMER
-          connectionData.data.type = OCPI::RDT::ConsumerDescT;
+          // BasicPort does this: connectionData.data.type = OCPI::RDT::ConsumerDescT;
           // The flag is in the OCDP's register space.
           // "full" is the flag telling me (the consumer) a buffer has become full
           // Mode dependent usage:
@@ -805,7 +885,7 @@ namespace OCPI {
           myDesc.emptyFlagBaseAddr =
             (uint8_t*)&myOcdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
         } else {
-          connectionData.data.type = OCPI::RDT::ProducerDescT;
+          // BasicPort does this: connectionData.data.type = OCPI::RDT::ProducerDescT;
           // The flag is in the OCDP's register space.
           // "empty" is the flag telling me (the producer) a buffer has become empty
           // Mode dependent usage:
@@ -823,8 +903,6 @@ namespace OCPI {
             (uint8_t*)&myOcdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
         }
         userDataBaseAddr = myWciContainer.bar1Vaddr + myOcdpOffset;
-        // Set this provisionally, for debug mostly.
-        checkConnectParams();
         const char *df = getenv("OCPI_DUMP_PORTS");
         if (df) {
           if (dumpFd < 0)
@@ -834,6 +912,8 @@ namespace OCPI {
         }
         if (getenv("OCPI_OCFRP_DUMMY"))
           *(uint32_t*)&myOcdpRegisters->foodFace = 0xf00dface;
+	// Allow default connect params on port construction prior to connect
+	applyConnectParams(props);
       }
       // All the info is in.  Do final work to (locally) establish the connection
       void finishConnection(OCPI::RDT::Descriptors &other) {
@@ -943,7 +1023,7 @@ namespace OCPI {
 
     // The port may be bidirectional.  If so we need to defer its direction.
     OC::Port &Worker::
-    createPort(OM::Port &metaPort, const OA::PValue *props) {
+    createPort(const OM::Port &metaPort, const OA::PValue *props) {
       const char *myName = metaPort.name;
       bool isProvider = metaPort.provider;
 #if 0

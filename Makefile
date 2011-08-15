@@ -246,3 +246,9 @@ tools/local/tester: \
 	core/container/rcc_container core/$(DATAPLANE)/transport \
 	core/$(DATAPLANE)/rdma_driver_interface
 test: tools/local/binder tools/local/tester
+
+export_cdk:
+	mydate=`date +%G%m%d%H%M%S`; \
+	file=opencpi-cdk-$$mydate.tgz; \
+	echo Creating export file: $$file; \
+	tar -z -h -f $$file -c -C tools/cdk/export .

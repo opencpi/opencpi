@@ -130,13 +130,23 @@ namespace OCPI {
 	ManagerManager::cleanup();
       }
     } x;
-    // Default implementation for a driver is to configure devices
+    Driver::Driver() : m_config(NULL) {}
+    // Default implementation for a driver is to configure devices that exist
+    // at configuration time.
     void Driver::configure(ezxml_t x) {
-      if (x)
+      if (x) {
+	m_config = x;
 	for (ezxml_t dx = ezxml_cchild(x, "device"); dx; dx = ezxml_next(dx))
 	  for (Device *d = firstDeviceBase(); d; d = d->nextDeviceBase())
 	    if (d->name() == ezxml_name(dx))
 	      d->configure(dx);
+      }
+    }
+    ezxml_t Driver::getDeviceConfig(const char *name) {
+      for (ezxml_t dx = ezxml_cchild(m_config, "device"); dx; dx = ezxml_next(dx))
+	if (!strcmp(name, dx->name))
+	  return dx;
+      return NULL;
     }
     Driver::~Driver(){}
     const char *device = "device"; // template argument

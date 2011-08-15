@@ -99,7 +99,8 @@ namespace OCPI {
       Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props);
       void setupProperty(const char *name, OCPI::API::Property &prop);
       virtual void prepareProperty(OCPI::Util::Prop::Property &p, OCPI::API::Property &) = 0;
-      virtual Port &createPort(OCPI::Metadata::Port &metaport, const OCPI::Util::PValue *props) = 0;
+      virtual Port &createPort(const OCPI::Metadata::Port &metaport,
+			       const OCPI::Util::PValue *props) = 0;
 
     public:
       virtual Application &application() = 0;

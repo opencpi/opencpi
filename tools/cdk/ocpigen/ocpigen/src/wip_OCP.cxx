@@ -102,8 +102,8 @@ const char *
 deriveOCP(Worker *w) {
   //  printf("4095 %d 4096 %d\n", floorLog2(4095), floorLog2(4096));
   static uint8_t s[1]; // a non-zero string pointer
-  Port *p = w->ports;
-  for (unsigned i = 0; i < w->nPorts; i++, p++) {
+  for (unsigned i = 0; i < w->ports.size(); i++) {
+    Port *p = w->ports[i];
     OcpSignals *ocp = &p->ocp;
     if (p->myClock)
       ocp->Clk.value = s;
@@ -131,10 +131,10 @@ deriveOCP(Worker *w) {
       ocp->SThreadBusy.value = s;
       break;
     case WSIPort:
-      p->master = p->wdi.isProducer ? true : false;
+      p->master = p->u.wdi.isProducer ? true : false;
       if (p->preciseBurst) {
 	ocp->MBurstLength.width =
-	  floorLog2((p->wdi.maxMessageValues * p->wdi.dataValueWidth  + p->dataWidth - 1)/
+	  floorLog2((p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth  + p->dataWidth - 1)/
 		    p->dataWidth) + 1;
 	if (ocp->MBurstLength.width < 2)
 	  ocp->MBurstLength.width = 2;
@@ -142,7 +142,7 @@ deriveOCP(Worker *w) {
 	  ocp->MBurstPrecise.value = s;
       } else
 	ocp->MBurstLength.width = 2;
-      if (p->byteWidth != p->dataWidth || p->wdi.zeroLengthMessages) {
+      if (p->byteWidth != p->dataWidth || p->protocol->m_zeroLengthMessages) {
 	ocp->MByteEn.width = p->dataWidth / p->byteWidth;
 	ocp->MByteEn.value = s;
       }
@@ -152,14 +152,14 @@ deriveOCP(Worker *w) {
 	  8 * p->dataWidth / p->byteWidth : p->dataWidth;
       if (p->byteWidth != p->dataWidth && p->byteWidth != 8)
 	ocp->MDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);
-      if (p->wsi.earlyRequest) {
+      if (p->u.wsi.earlyRequest) {
 	ocp->MDataLast.value = s;
 	ocp->MDataValid.value = s;
       }
-      if (p->wsi.abortable)
+      if (p->u.wsi.abortable)
 	ocp->MFlag.width = 1;
-      if (p->wdi.numberOfOpcodes > 1)
-	ocp->MReqInfo.width = ceilLog2(p->wdi.numberOfOpcodes);
+      if (p->u.wdi.nOpcodes > 1)
+	ocp->MReqInfo.width = ceilLog2(p->u.wdi.nOpcodes);
       ocp->MReqLast.value = s;
       ocp->MReset_n.value = s;
       ocp->SReset_n.value = s;
@@ -168,7 +168,7 @@ deriveOCP(Worker *w) {
     case WMIPort:
       p->master = true;
       {
-	unsigned n = (p->wdi.maxMessageValues * p->wdi.dataValueWidth +
+	unsigned n = (p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth +
 		      p->dataWidth - 1) / p->dataWidth;
 	if (n > 1)
 	  ocp->MAddr.width = ceilLog2(n) + max(0, ceilLog2(p->dataWidth) - 3);
@@ -180,7 +180,7 @@ deriveOCP(Worker *w) {
 	} else
 	  ocp->MBurstLength.width = 2;
       }
-      if (p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional) {
+      if (p->u.wdi.isProducer || p->u.wmi.talkBack || p->u.wdi.isBidirectional) {
 	ocp->MData.width =
 	  p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
 	  8 * p->dataWidth / p->byteWidth : p->dataWidth;
@@ -191,38 +191,38 @@ deriveOCP(Worker *w) {
 	ocp->MDataLast.value = s;
 	ocp->MDataValid.value = s;
       }
-      if ((p->wdi.isProducer || p->wdi.isBidirectional) &&
-	  (p->wdi.numberOfOpcodes > 1 || p->wdi.variableMessageLength))
-	ocp->MFlag.width = 8 + ceilLog2(p->wdi.maxMessageValues + 1);
+      if ((p->u.wdi.isProducer || p->u.wdi.isBidirectional) &&
+	  (p->u.wdi.nOpcodes > 1 || p->protocol->m_variableMessageLength))
+	ocp->MFlag.width = 8 + ceilLog2(p->protocol->m_maxMessageValues + 1);
       ocp->MReqInfo.width = 1;
       ocp->MReqLast.value = s;
       ocp->MReset_n.value = s;
-      if (!p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional)
+      if (!p->u.wdi.isProducer || p->u.wmi.talkBack || p->u.wdi.isBidirectional)
 	ocp->SData.width = p->dataWidth;
-      if (p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional)
+      if (p->u.wdi.isProducer || p->u.wmi.talkBack || p->u.wdi.isBidirectional)
 	ocp->SDataThreadBusy.value = s;
-      if ((!p->wdi.isProducer || p->wdi.isBidirectional) &&
-	  (p->wdi.numberOfOpcodes > 1 || p->wdi.variableMessageLength))
-	ocp->SFlag.width = 8 + ceilLog2(p->wdi.maxMessageValues + 1);
+      if ((!p->u.wdi.isProducer || p->u.wdi.isBidirectional) &&
+	  (p->u.wdi.nOpcodes > 1 || p->protocol->m_variableMessageLength))
+	ocp->SFlag.width = 8 + ceilLog2(p->protocol->m_maxMessageValues + 1);
       ocp->SReset_n.value = s;
-      if (!p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional)
+      if (!p->u.wdi.isProducer || p->u.wmi.talkBack || p->u.wdi.isBidirectional)
 	ocp->SResp.value = s;
       if ((p->impreciseBurst || p->preciseBurst) &&
-	  (!p->wdi.isProducer || p->wmi.talkBack || p->wdi.isBidirectional))
+	  (!p->u.wdi.isProducer || p->u.wmi.talkBack || p->u.wdi.isBidirectional))
 	ocp->SRespLast.value = s;
       ocp->SThreadBusy.value = s;
-      if (p->wmi.mflagWidth) {
-	ocp->MFlag.width = p->wmi.mflagWidth; // FIXME remove when shep kludge unnecessary
-	ocp->SFlag.width = p->wmi.mflagWidth; // FIXME remove when shep kludge unnecessary
+      if (p->u.wmi.mflagWidth) {
+	ocp->MFlag.width = p->u.wmi.mflagWidth; // FIXME remove when shep kludge unnecessary
+	ocp->SFlag.width = p->u.wmi.mflagWidth; // FIXME remove when shep kludge unnecessary
       }
       break;
     case WMemIPort:
-      p->master = !p->wmemi.isSlave;
+      p->master = !p->u.wmemi.isSlave;
       ocp->MAddr.width =
-	ceilLog2(p->wmemi.memoryWords) + ceilLog2(p->dataWidth/p->byteWidth);
+	ceilLog2(p->u.wmemi.memoryWords) + ceilLog2(p->dataWidth/p->byteWidth);
       ocp->MAddr.value = s;
       if (p->preciseBurst)
-	ocp->MBurstLength.width = floorLog2(max(2, p->wmemi.maxBurstLength)) + 1;
+	ocp->MBurstLength.width = floorLog2(max(2, p->u.wmemi.maxBurstLength)) + 1;
       else if (p->impreciseBurst)
 	ocp->MBurstLength.width = 2;
       if (p->preciseBurst && p->impreciseBurst) {
@@ -246,13 +246,13 @@ deriveOCP(Worker *w) {
       }
       ocp->MReset_n.value = s;
       if ((p->preciseBurst || p->impreciseBurst) &&
-	  p->wmemi.readDataFlowControl)
+	  p->u.wmemi.readDataFlowControl)
 	ocp->MRespAccept.value = s;
       ocp->SCmdAccept.value = s;
       ocp->SData.width =
 	p->byteWidth != p->dataWidth && p->byteWidth != 8 ?
 	8 * p->dataWidth / p->byteWidth : p->dataWidth;
-      if ((p->preciseBurst || p->impreciseBurst) && p->wmemi.writeDataFlowControl)
+      if ((p->preciseBurst || p->impreciseBurst) && p->u.wmemi.writeDataFlowControl)
 	ocp->SDataAccept.value = s;
       if (p->byteWidth != p->dataWidth && p->byteWidth != 8)
 	ocp->SDataInfo.width = p->dataWidth - (8 * p->dataWidth / p->byteWidth);

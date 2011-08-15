@@ -186,10 +186,14 @@ namespace OCPI {
       return id++ + getpid();
     }
 
-    Container::Container(const OCPI::Util::PValue*props)
+    Container::Container(const ezxml_t config, const OCPI::Util::PValue *props)
       throw ( OCPI::Util::EmbeddedException )
       : m_ourUID(mkUID()), m_enabled(false), m_ownThread(true), m_thread(NULL)
     {
+      (void)config; // nothing to parse (yet)
+      // FIXME:  this should really be in a baseclass inherited by software containers
+      // It works because stuff can be overriden and no threads are created until
+      // "start", which is 
       OU::findBool(props, "ownthread", m_ownThread);
       if (getenv("OCPI_NO_THREADS"))
 	m_ownThread = false;

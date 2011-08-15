@@ -43,14 +43,22 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace CM = OCPI::Metadata;
     namespace CP = OCPI::Util::Prop;
-    BasicPort::BasicPort(const OCPI::Metadata::Port & metaData, bool isProvider ) :
-      PortData(metaData, isProvider), myDesc(connectionData.data.desc)
+    BasicPort::BasicPort(const OCPI::Metadata::Port & metaData, bool isProvider)
+      : PortData(isProvider),
+#if 0
+	// These copies are not only for convenience, but also they are not const.
+	m_minBufferSize(metaData.minBufferSize),
+	m_minBufferCount(metaData.minBufferCount),
+	m_maxBufferSize(metaData.maxBufferSize),
+#endif
+	myDesc(connectionData.data.desc),
+	m_metaPort(metaData)
     {
       // FIXME: put these in the default PortData constructor
       myDesc.nBuffers = DEFAULT_NBUFFERS;
       myDesc.dataBufferSize = DEFAULT_BUFFER_SIZE;
       OCPI::RDT::Descriptors &d = connectionData.data;
-      d.type = m_metaPort.provider ? OCPI::RDT::ConsumerDescT : OCPI::RDT::ProducerDescT;
+      d.type = isProvider ? OCPI::RDT::ConsumerDescT : OCPI::RDT::ProducerDescT;
       d.role = OCPI::RDT::NoRole;
     }
     BasicPort::~BasicPort(){}
@@ -63,22 +71,25 @@ namespace OCPI {
       m_container(container),
       m_canBeExternal(true)
     {
+#if 0
       uint32_t n;
       bool found;
       
       // Some of the tests use the default values of the meta-port so there may
       // not be xml associated with it.
       if ( mPort.myXml ) {
+	// FIXME: why is this stuff not already based on parsing the artifact metadata??
         n = getAttrNum(mPort.myXml, "minBufferSize", true, &found);
         if (found)
-          m_metaPort.minBufferSize = n;
+          m_minBufferSize = n;
         n = getAttrNum(mPort.myXml, "maxBufferSize", true, &found);
         if (found)
-          m_metaPort.maxBufferSize = n; // no max if not specified.
+          m_maxBufferSize = n; // no max if not specified.
         n = getAttrNum(mPort.myXml, "minNumBuffers", true, &found);
         if (found)
-          m_metaPort.minBufferCount = n;
+          m_minBufferCount = n;
       }
+#endif
       connectionData.port = (intptr_t)this;
     }
 
@@ -216,8 +227,7 @@ namespace OCPI {
       uDesc.options |= 1 << OCPI::RDT::MandatedRole;
       pDesc.options |= 1 << OCPI::RDT::MandatedRole;
     }
-    // Convert PValues into descriptor values, with constraint checking
-    // A static method to be able use in other contexts for objects that are not this class.
+    // Convert PValues into descriptor values, with metadata constraint checking
     void BasicPort::setConnectParams(const OCPI::Util::PValue *props) {
       if (!props)
         return;

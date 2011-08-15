@@ -184,6 +184,7 @@ namespace OCPI {
       if ((cp = ezxml_cattr(x, "runtimeVersion"))) m_runtimeVersion = cp;
       if ((cp = ezxml_cattr(x, "tool"))) m_tool = cp;
       if ((cp = ezxml_cattr(x, "toolVersion"))) m_toolVersion = cp;
+      if ((cp = ezxml_cattr(x, "uuid"))) m_uuid = cp;
       validate();
     }
     void Attributes::parse(const char *pString) {

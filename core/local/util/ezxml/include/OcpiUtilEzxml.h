@@ -229,6 +229,7 @@ namespace OCPI {
 	findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
 			  const char *value);
       extern const char
+	*ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg),
         *getBoolean(ezxml_t x, const char *name, bool *b),
         *checkAttrs(ezxml_t x, ...),
 	*checkAttrsV(ezxml_t x, const char **attrs),

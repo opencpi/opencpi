@@ -32,6 +32,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _POSIX_SOURCE // to force ctime_r to be defined on linux FIXME
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,10 +42,15 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <ctype.h>
 #include <sys/mman.h>
-#define __USE_POSIX
-#include <time.h>
-#include "OCCP.h"
+#include <uuid/uuid.h>
+// FIXME: integrate this into our UUID utility properly
+#ifndef _UUID_STRING_T
+#define _UUID_STRING_T
+typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
+#endif
+#include "HdlOCCP.h"
 #include "getPci.h" // this is actual code
 
 static const char *found(const char *name,Bar *bars, unsigned nBars, bool verbose);
@@ -85,8 +92,6 @@ found(const char *name, Bar *bars, unsigned nbars, bool verbose) {
   const char *err = 0;
   void *bar0 = 0, *bar1 = 0;
   volatile OccpSpace *occp;
-  char tbuf[30];
-  time_t bd;
 
   if (nbars != 2 || bars[0].io || bars[0].prefetch || bars[1].io || bars[1].prefetch ||
       bars[0].addressSize != 32 || bars[0].size < sizeof(OccpSpace))
@@ -115,9 +120,43 @@ found(const char *name, Bar *bars, unsigned nbars, bool verbose) {
       err = "Magic numbers do not match in region/bar 0";
       break;
     }
-    bd = occp->admin.birthday;
-    printf("Found an OpenOCPI FPGA at PCI %s with BSV birthday: %s",
-	   name, ctime_r(&bd, tbuf));
+    {
+      char tbuf[30], tbuf1[30];
+      HdlUUID myUUID;
+      char platform[sizeof(myUUID.platform)+1];
+      char device[sizeof(myUUID.device)+1];
+      char load[sizeof(myUUID.load)+1];
+      uuid_string_t textUUID;
+      time_t bsvbd, bsbd;
+      // Capture the UUID info that tells us about the platform
+      for (unsigned n = 0; n < sizeof(HdlUUID); n++)
+	((uint8_t*)&myUUID)[sizeof(HdlUUID) - 1 - n] = ((volatile uint8_t *)&occp->admin.uuid)[n];
+      strncpy(platform, myUUID.platform, sizeof(myUUID.platform));
+      platform[sizeof(myUUID.platform)] = '\0';
+      strncpy(device, myUUID.device, sizeof(myUUID.device));
+      device[sizeof(myUUID.device)] = '\0';
+      strncpy(load, myUUID.load, sizeof(myUUID.load));
+      load[sizeof(myUUID.load)] = '\0';
+      uuid_unparse_lower(myUUID.uuid, textUUID);
+      bsvbd = occp->admin.birthday;
+      bsbd = myUUID.birthday;
+      ctime_r(&bsvbd, tbuf);
+      tbuf[strlen(tbuf)-1] = 0;
+      ctime_r(&bsbd, tbuf1);
+      tbuf1[strlen(tbuf1)-1] = 0;
+#if 1
+      printf("OpenCPI FPGA at PCI %s: BSV date %s, bitstream date %s, "
+	     "platform \"%s\", device \"%s\", UUID %s, loadParam \"%s\"\n",
+	     name, tbuf, tbuf1, platform, device, textUUID, load);
+#else
+      printf("OpenCPI FPGA at PCI %s\n", name);
+      for (unsigned n = 0; n < sizeof(myUUID); n++) {
+	int c = ((char *)&myUUID)[n] & 0xff;
+	printf("%2u: %2x (%c)\n", n, c, isprint(c) ? c : '?');
+      }
+#endif
+      
+    }
     nFound++;
   } while (0);
   if (bar0)

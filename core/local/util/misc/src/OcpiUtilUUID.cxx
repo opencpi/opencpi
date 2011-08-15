@@ -89,7 +89,7 @@ OCPI::Util::UUID::produceRandomUUID ()
 }
 
 std::string
-OCPI::Util::UUID::binaryToHex (BinaryUUID uuid)
+OCPI::Util::UUID::binaryToHex (const BinaryUUID &uuid)
   throw ()
 {
   static const char * hexDigits = "0123456789abcdef";

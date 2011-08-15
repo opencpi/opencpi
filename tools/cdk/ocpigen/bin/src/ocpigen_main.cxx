@@ -70,37 +70,30 @@ add to tree.
 
 int
 main(int argc, char **argv) {
-    const char *library = "work", *hdlDep = 0, *outDir = 0;
+    const char *library = "work", *outDir = 0;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
     doBsv = false, doArt = false;
   if (argc <= 1) {
     fprintf(stderr,
-	    "Usage is: wipgen [-sdf] <owd>.xml\n"
-	    " This tool can produce any combination of 4 types of output files:\n"
-	    " 1. <www>_defs.{v|vhd}:  declarations used only to instantiate (read only).\n"
-	    "                         VHDL: the component declaration\n"
-	    "                         Verilog: the empty module declaration\n"
-	    "                         RCC: nothing to generate for instantiation\n"
-	    " 2. <www>_impl.{v|vhd}:  declarations used to implement (read only).\n"
-	    "                         VHDL: the entity declaration, etc.\n"
-	    "                         Verilog: the module declaration.\n"
-	    "                         RCC: the generated header file.\n"
-	    " 3. <www>.{v|vhd}:       a skeleton of an implementation file (read/write0.\n"
-	    "                         VHDL: the architecture body, etc.\n"
-	    "                         Verilog: the module body\n"
-	    "                         RCC: the actual skeleton\n"
-	    " 4. <www>_wrap.{v|vhd}:  a cross-language wrapper file\n"
-	    " Options are:\n"
-	    " -l <lib>     The VHDL library name that <www>_defs.vhd will be placed in\n"
-	    " -d           Generate the definition/instantiation file\n"
-	    " -i           Generate the implementation include file\n"
-	    " -s           Generate the skeleton file\n"
-	    " -a           Generate the assembly (composition) file\n"
-	    " -h <file>    Read an HDL container file for the assembly\n"
-	    " -A           Generate the artifact descriptor xml file\n"
-	    " -D <dir>     Specify the output directory\n"
-	    " -I <dir>     Specify an include directory\n"
+	    "Usage is: ocpigen [options] <owd>.xml\n"
+	    " Code generation options that determine which files are created:\n"
+	    " -d            Generate the definition/instantiation file: xyz_defs.[vh|vhd]\n"
+	    " -i            Generate the implementation include file: xyz_impl.[vh|vhd]\n"
+	    " -s            Generate the skeleton file: xyz_skel.[c|v|vhd]\n"
+	    " -a            Generate the assembly (composition) file: xyz.[v|vhd]\n"
+	    " -b            Generate the BSV interface file\n"
+	    " -A            Generate the artifact descriptor xml file\n"
+	    " Options for artifact XML and UUID source generation (-A):\n"
+	    " -c <file>     The HDL container file to use for the artifact XML\n"
+	    " -P <platform> The platform for the artifact\n"
+	    " -e <device>   The device for the artifact\n"
+	    " -L <loadinfo> The load information for the device\n"
+	    " Other options:\n"
+	    " -l <lib>      The VHDL library name that <www>_defs.vhd will be placed in (-i)\n"
+	    " -D <dir>      Specify the output directory for generated files\n"
+	    " -I <dir>      Specify an include search directory for XML processing\n"
+	    " -M <file>     Specify the file to write makefile dependencies to\n"
 	    );
     return 1;
   }
@@ -108,27 +101,6 @@ main(int argc, char **argv) {
   for (char **ap = argv+1; *ap; ap++)
     if (ap[0][0] == '-')
       switch (ap[0][1]) {
-      case 'I':
-	if (ap[0][2])
-	  addInclude(&ap[0][2]);
-	else
-	  addInclude(*++ap);
-	break;
-      case 'l':
-	library = *++ap;
-	break;
-      case 'h':
-	hdlDep = *++ap;
-	break;
-      case 'D':
-	outDir = *++ap;
-	break;
-      case 'A':
-	doArt = true;
-	break;
-      case 'b':
-	doBsv = true;
-	break;
       case 'd':
 	doDefs = true;
 	break;
@@ -141,11 +113,41 @@ main(int argc, char **argv) {
       case 'a':
 	doAssy = true;
 	break;
+      case 'A':
+	doArt = true;
+	break;
+      case 'b':
+	doBsv = true;
+	break;
       case 'w':
 	doWrap = true;
 	break;
       case 'M':
 	depFile = *++ap;
+	break;
+      case 'I':
+	if (ap[0][2])
+	  addInclude(&ap[0][2]);
+	else
+	  addInclude(*++ap);
+	break;
+      case 'l':
+	library = *++ap;
+	break;
+      case 'c':
+	container = *++ap;
+	break;
+      case 'D':
+	outDir = *++ap;
+	break;
+      case 'L':
+	load = *++ap;
+	break;
+      case 'e':
+	device = *++ap;
+	break;
+      case 'P':
+	platform = *++ap;
 	break;
       default:
 	fprintf(stderr, "Unknown flag: %s\n", *ap);
@@ -184,11 +186,11 @@ main(int argc, char **argv) {
       else if (doArt)
 	switch (w->model) {
 	case HdlModel:
-	  if (!hdlDep) {
+	  if (!container || !platform || !device) {
 	    fprintf(stderr,
-		    "%s: No -h file specified when requesting an artifact descriptor", *ap);
+		    "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
 	    return 1;
-	  } else if ((err = emitArtHDL(w, root, hdlDep)))
+	  } else if ((err = emitArtHDL(w, root)))
 	    fprintf(stderr, "%s: Error generating bitstream artifact XML: %s\n",
 		    *ap, err);
 	  break;
@@ -196,6 +198,8 @@ main(int argc, char **argv) {
 	  if ((err = emitArtRCC(w, root)))
 	    fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
 		    *ap, err);
+	case NoModel:
+	  ;
 	}
       cleanWIP(w);
     }

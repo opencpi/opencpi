@@ -244,6 +244,16 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
   return 0;
 }
 
+void Member::
+printXml(FILE *f) {
+    if (type.scalar != Scalar::OCPI_ULong)
+    fprintf(f, " type=\"%s\"", Scalar::names[type.scalar]);
+  if (type.scalar == Scalar::OCPI_String)
+    fprintf(f, " size=\"%u\"", type.stringLength);
+  if (type.isSequence)
+    fprintf(f, " sequenceSize=\"%u\"", type.length);
+}
+
 #if 0
 const char *Property::
 checkType(Scalar::Type ctype, unsigned n, bool write) {
