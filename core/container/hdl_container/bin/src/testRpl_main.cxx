@@ -797,6 +797,7 @@ int main(int argc, char *argv[])
 catch ( ... )
 {
   printf ( "Got an exception\n" );
+  return 1;
 }
 return 0;
 }

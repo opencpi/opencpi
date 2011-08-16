@@ -120,7 +120,9 @@ namespace OCPI {
 	OCPI::Library::Artifact *
 	addArtifact(const char *url, const OCPI::API::PValue *props) {
 	  // return NULL if this doesn't look like an artifact we can support
-	  return new Artifact(*this, url, props);
+	  Artifact *a = new Artifact(*this, url, props);
+	  a->configure(); // FIXME: there could be config info in the platform.xml
+	  return a;
 	}
       };
 

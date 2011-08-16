@@ -43,80 +43,10 @@
 #include <string.h>
 #include <time.h>
 #include <stddef.h>
-typedef struct {
-  uint32_t 
-    Open,
-    OCPI,
-    revision,
-    birthday,
-    workerMask,
-    pci_id,
-    attention,
-    cpStatus,
-    scratch20,
-    scratch24,
-    cpControl,
-    rsvd2C,
-    timeStatus,
-    timeControl,
-    gpsTimeMS,
-    gpsTimeLS,
-    deltaTimeMS,
-    deltaTimeLS,
-    refPerPPS,
-    buf4C,
-    buf50; 
-} OCCP_Admin;
-
-typedef struct {
-  uint32_t
-    initialize,
-    start,
-    stop,
-    release,
-    test,
-    before_query,
-    after_config,
-    reserved7,
-    status,
-    control,
-    config_addr,
-    pad[5];
-} OCCP_WorkerControl;
-
-#define OCCP_WORKER_CONFIG_SIZE (1<<20)
-#define OCCP_WORKER_CONTROL_SIZE (1<<16)
-#define OCCP_NWORKERS 15
-
-typedef struct {
-  OCCP_WorkerControl wc;
-  uint8_t pad[OCCP_WORKER_CONTROL_SIZE - sizeof(OCCP_WorkerControl)];
-} OCCP_WorkerControlSpace;
-
-typedef struct {
-  OCCP_Admin admin;
-  uint8_t pad[OCCP_WORKER_CONTROL_SIZE - sizeof(OCCP_Admin)];
-  OCCP_WorkerControlSpace control[OCCP_NWORKERS];
-  uint8_t config[OCCP_NWORKERS][OCCP_WORKER_CONFIG_SIZE];
-} OCCP_Space;
-
-typedef struct {
-  uint32_t
-    start, // write to cause event, indicating start of movement, data not used
-    done,  // movement done event, data not used
-    remoteAvailable, // a remote buffer has become available EVENT, data not used
-    scratch,
-    ready, // a transfer can be started BOOL, LSBit
-    remoteCurrent; // if a transfer is in progress (between start and done) this is the remote buffer ordinal that is active.  if no transfer in progress (outside of start->done), it is the buffer that will be used by "start".
-} OCDP_Control;
-typedef struct {
-  uint32_t
-    length,
-    opcode,
-    counter,
-    deltaClks;
-} OCDP_Meta;
-
+#include "HdlOCCP.h"
+#include "HdlOCDP.h"
+#include "getPci.h"
+#if 0
 #define OCDP_SIZE (32*1024)
 #define OCDP_NBUFFERS 4
 #define OCDP_BUFFER_SIZE (2*1024)
@@ -125,15 +55,16 @@ typedef struct {
 #define OCDP_MESSAGE_SIZE 16
 typedef struct {
   uint8_t buffers[OCDP_BUFFER_SPACE_SIZE];
-  OCDP_Meta meta[4];
+  OcdpMetadata meta[4];
   uint8_t pad0[OCDP_META_SIZE - sizeof(OCDP_Meta)*4];
-  OCDP_Control control;
-  uint8_t pad1[OCDP_SIZE - OCDP_BUFFER_SPACE_SIZE - OCDP_META_SIZE - sizeof(OCDP_Control)];
+  //  OCDP_Control control;
+  //  uint8_t pad1[OCDP_SIZE - OCDP_BUFFER_SPACE_SIZE - OCDP_META_SIZE - sizeof(OCDP_Control)];
 } OCDP_Space;
+#endif
 
-
-typedef int func(volatile OCCP_Space *, char **, volatile OCCP_WorkerControl *, volatile uint8_t *, volatile OCDP_Space *);
-static func admin, wdump, wread, wwrite, wadmin, settime, deltatime, wop, wwctl, dtest, smtest, dmeta, dpnd, dread, dwrite, wunreset, wreset;
+#define WN(p,w) ((OccpWorker *)(w) - (p)->worker)
+typedef int func(volatile OccpSpace *, char **, volatile OccpWorkerRegisters *, volatile uint8_t *, volatile uint8_t *);
+static func admin, wdump, wread, wwrite, wadmin, radmin, settime, deltatime, wop, wwctl, wwpage, dtest, smtest, dmeta, dpnd, dread, dwrite, wunreset, wreset;
 
 typedef struct {
   char *name;
@@ -142,26 +73,29 @@ typedef struct {
 } OCCP_Command;
 
 static OCCP_Command commands[] = {
-  {"admin", admin},	// dump admin
-  {"wdump", wdump, 1},  // dump worker controls
-  {"wread", wread, 1},  // read worker config
-  {"wwrite", wwrite, 1},// write worker config
-  {"wadmin", wadmin},   // write admin space
-  {"settime", settime}, // set the FPGA to system time
-  {"deltatime", deltatime}, // Measure the difference of FPGA-Host (+ means FPGA leading)
-  {"wop", wop, 1},      // do control op
-  {"wwctl", wwctl, 1},  // write worker control register
-  {"dtest", dtest, 1},     // Perform test on data memory
-  {"smtest", smtest, 1},   // Perform test on SelectMAP ICAP 
-  {"dmeta", dmeta},     // Dump metadata
-  {"dpnd", dpnd}, // Pull without copying data
-  {"dread", dread}, // Dump some data plane
-  {"dwrite", dwrite}, // Write some data plane
+  {"admin", admin},	         // dump admin
+  {"wdump", wdump, 1},       // dump worker controls
+  {"wread", wread, 1},       // read worker config
+  {"wwrite", wwrite, 1},     // write worker config
+  {"wadmin", wadmin},        // write admin space
+  {"radmin", radmin},        // read  admin space
+  {"settime", settime},      // set the FPGA to system time
+  {"deltatime", deltatime},  // Measure the difference of FPGA-Host (+ means FPGA leading)
+  {"wop", wop, 1},           // do control op
+  {"wwctl", wwctl, 1},       // write worker control register
+  {"wwpage", wwpage, 1},     // write worker pageWindow register
+  {"dtest", dtest, 1},       // Perform test on data memory
+  {"smtest", smtest, 1},     // Perform test on SelectMAP ICAP 
+  {"dmeta", dmeta},          // Dump metadata
+  {"dpnd", dpnd},            // Pull without copying data
+  {"dread", dread},          // Dump some data plane
+  {"dwrite", dwrite},        // Write some data plane
   {"wunreset", wunreset, 1}, // deassert reset for worker
-  {"wreset", wreset, 1}, // assert reset for worker
+  {"wreset", wreset, 1},     // assert reset for worker
   {0}
 };
 
+#if 0 
 typedef struct {
   char *name;     // From table 6-26 in UG360 (v3.1)
   int address;    // 5b to fill Type 1 packet bits [17:13]
@@ -169,7 +103,6 @@ typedef struct {
   int writable;   // 1 if register is writable
 } XIL_T1_PacketRegisters;
 
-#if 0
 static XIL_T1_PacketRegisters xt1pr[] = {
   {"CRC",    0x00, 1, 1},
   {"FAR",    0x01, 1, 1},
@@ -227,21 +160,34 @@ atoi_any(char *arg, uint8_t *sizep)
  main(int argc, char **argv)
  {
    int fd;
-   off_t off, dp;
-   volatile OCCP_Space *p;
+   volatile OccpSpace *p;
    OCCP_Command *c;
-   volatile OCDP_Space *d;
+   volatile uint8_t *d;
    char **ap = argv + 1;
+   Bar bars[MAXBARS];
+   unsigned nbars;
+   const char *err;
 
 
-   assert(argc >= 3);
+   if (argc == 1) {
+     fprintf(stderr, "Usage is: sudo swctl pci-dev command [worker-number] [command-specific-args]\n");
+     return 0;
+   }
+  if (geteuid()) {
+    fprintf(stderr, "You must run this program with sudo, as in sudo swctl ...\n");
+    return 1;
+  }
+  if ((err = getOpenCPI(argv[1], bars, &nbars, false)) || nbars != 2) {
+    fprintf(stderr, "Couldn't get PCI information about PCI device %s.  Try ocfrp_check.\n", argv[1]);
+    return 1;
+  }
+   assert(argc >= 2);
    errno = 0;
-   off = strtoul(*ap++, NULL, 16);
-   dp = strtoul(*ap++, NULL, 16);
    assert(errno == 0);
    assert((fd = open("/dev/mem", O_RDWR)) != -1);
-   assert ((p = mmap(NULL, sizeof(OCCP_Space), PROT_READ|PROT_WRITE, MAP_SHARED, fd, off)) != (void*)-1);
-   assert ((d = mmap(NULL, sizeof(OCDP_Space) * 2, PROT_READ|PROT_WRITE, MAP_SHARED, fd, dp)) != (void*)-1);
+   assert ((p = mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED, fd, bars[0].address)) != (void*)-1);
+   assert ((d = mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, bars[1].address)) != (void*)-1);
+   ap = &argv[2];
    for (c = commands; c->name; c++)
      if (strcmp(c->name, *ap) == 0) {
        if (c->worker) {
@@ -251,11 +197,11 @@ atoi_any(char *arg, uint8_t *sizep)
 
 	 do {
 	   unsigned n = strtoul(cp, &cp, 10);
-	   if (n > OCCP_NWORKERS-1) {
+	   if (n > OCCP_MAX_WORKERS-1) {
 	     fprintf(stderr, "Worker number `%s' invalid\n", *ap ? *ap : "<null>");
 	     return 1;
 	   }
-	   if (c->command(p, arg, &p->control[n].wc, p->config[n], d))
+	   if (c->command(p, arg, &p->worker[n].control, p->config[n], d))
 	     return 1;
 	 } while (*cp++);
 	 return 0;
@@ -267,9 +213,9 @@ atoi_any(char *arg, uint8_t *sizep)
  }
 
  static int
-admin(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *d)
+admin(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
-  uint32_t i, j;
+  uint32_t i, j, k;
   time_t epochtime, nowtime;
   struct tm *etime, *ntime;
   static union {
@@ -284,25 +230,25 @@ admin(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
   etime = gmtime(&epochtime); 
   //printf("%lld%lld\n", (long long)x, (long long)y);
   printf("OCCP Admin Space\n");
-  u.uint = p->admin.Open;
+  u.uint = p->admin.magic1;
   printf(" Open:         0x%08x \"%s\"\n", u.uint, u.c);
-  u.uint = p->admin.OCPI;
-  printf(" OCPI:         0x%08x \"%s\"\n", u.uint, u.c);
+  u.uint = p->admin.magic2;
+  printf(" CPI:          0x%08x \"%s\"\n", u.uint, u.c);
   printf(" revision:     0x%08x\n", p->admin.revision);
   printf(" birthday:     0x%08x %s", p->admin.birthday, asctime(etime));
-  printf(" workerMask:   0x%08x workers", (j = p->admin.workerMask));
+  printf(" workerMask:   0x%08x workers", (j = p->admin.config));
   for (i = 0; i < sizeof(uint32_t) * 8; i++)
     if (j & (1 << i))
       printf(" %d", i);
   printf(" exist\n");
-  printf(" pci_dev_id:   0x%08x\n", p->admin.pci_id);
+  printf(" pci_dev_id:   0x%08x\n", p->admin.pciDevice);
   printf(" attention:    0x%08x\n", p->admin.attention);
-  printf(" cpStatus:     0x%08x\n", p->admin.cpStatus);
+  printf(" cpStatus:     0x%08x\n", p->admin.status);
   printf(" scratch20:    0x%08x\n", p->admin.scratch20);
   printf(" scratch24:    0x%08x\n", p->admin.scratch24);
-  printf(" cpControl:    0x%08x\n", p->admin.cpControl);
+  printf(" cpControl:    0x%08x\n", p->admin.control);
 
-  nowtime = (time_t)p->admin.gpsTimeMS;
+  nowtime = (time_t)(p->admin.time & 0xffffffffull); // FIXME WRONG ENDIAN IN FPGA
   ntime = gmtime(&nowtime); 
   printf(" timeStatus:   0x%08x ", p->admin.timeStatus);
     if(p->admin.timeStatus&0x80000000) printf("ppsLostSticky ");
@@ -313,17 +259,37 @@ admin(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
     if(p->admin.timeStatus&0x04000000) printf("ppsLost ");
   printf("\n");
   printf(" timeControl:  0x%08x\n", p->admin.timeControl);
-  printf(" gpsTimeMS:    0x%08x (%u) %s", p->admin.gpsTimeMS,  p->admin.gpsTimeMS, asctime(ntime));
-  printf(" gpsTimeLS:    0x%08x (%u)\n",  p->admin.gpsTimeLS,  p->admin.gpsTimeLS);
-  printf(" deltaTimeMS:  0x%08x\n", p->admin.deltaTimeMS);
-  printf(" deltaTimeLS:  0x%08x\n", p->admin.deltaTimeLS);
-  printf(" refPerPPS:    0x%08x (%d)\n", p->admin.refPerPPS, p->admin.refPerPPS);
+  {
+    uint64_t gpsTime = p->admin.time;
+    uint32_t gpsTimeMS = gpsTime >> 32;
+    uint32_t gpsTimeLS = gpsTime & 0xffffffffll;
+    uint64_t deltaTime = p->admin.timeDelta;
+    uint32_t deltaTimeMS = deltaTime >> 32;
+    uint32_t deltaTimeLS = deltaTime & 0xffffffffll;
+    printf(" gpsTimeMS:    0x%08x (%u) %s", gpsTimeMS,  gpsTimeMS, asctime(ntime));
+    printf(" gpsTimeLS:    0x%08x (%u)\n",  gpsTimeLS,  gpsTimeLS);
+    printf(" deltaTimeMS:  0x%08x\n", deltaTimeMS);
+    printf(" deltaTimeLS:  0x%08x\n", deltaTimeLS);
+  }
+  printf(" refPerPPS:    0x%08x (%d)\n", p->admin.timeClksPerPps, p->admin.timeClksPerPps);
+  printf(" numDPMemReg:  0x%08x (%d)\n", p->admin.numRegions, p->admin.numRegions);
+  if (p->admin.numRegions < 16) 
+    for (k=0; k<p->admin.numRegions; k++)
+      printf(" DP%2d:      0x%08x\n", k, p->admin.regions[k]);
+
+  // Print out the 64B 16DW UUID in little-endian looking format...
+  {
+    uint32_t *uuid = (uint32_t *)&p->admin.uuid;
+    for (k=0;k<16;k+=4)
+      printf(" UUID[%2d:%2d]: 0x%08x 0x%08x 0x%08x 0x%08x\n",
+	     k+3, k, uuid[k+3], uuid[k+2], uuid[k+1], uuid[k]);
+  }
 
   return 0;
 }
 
  static int
- wadmin(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+ wadmin(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   unsigned off = atoi_any(*ap++, 0);
   unsigned val = atoi_any(*ap, 0);
@@ -335,7 +301,17 @@ admin(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
 }
 
  static int
- settime(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+ radmin(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
+{
+  unsigned off = atoi_any(*ap, 0);
+  uint32_t *pv = (uint32_t *)((uint8_t *)&p->admin + off);
+
+  printf("Admin space, offset 0x%x, read value: 0x%x\n", off, *pv);
+  return 0;
+}
+
+ static int
+ settime(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   struct timeval tv;
   gettimeofday(&tv, NULL); 
@@ -349,9 +325,9 @@ admin(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
 #define FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU 1
 
 #if FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU
-  *(uint64_t *)(&p->admin.gpsTimeMS) = ((uint64_t)fraction << 32) | tv.tv_sec;
+  p->admin.time = ((uint64_t)fraction << 32) | tv.tv_sec;
 #else
-  *(uint64_t *)(&p->admin.gpsTimeMS) = ((uint64_t)tv.tv_sec << 32) | fraction;
+  p->admin.time = ((uint64_t)tv.tv_sec << 32) | fraction;
 #endif
 
   /*
@@ -368,7 +344,7 @@ admin(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
 }
 
  static int
- deltatime(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+ deltatime(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
 
   int i;
@@ -386,15 +362,15 @@ admin(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
 #define FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU 1
 
 #if FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU
-    *(uint64_t *)(&p->admin.deltaTimeMS) = ((uint64_t)fraction << 32) | tv.tv_sec;
+    p->admin.timeDelta = ((uint64_t)fraction << 32) | tv.tv_sec;
 #else
-    *(uint64_t *)(&p->admin.deltaTimeMS) = ((uint64_t)tv.tv_sec << 32) | fraction;
+    p->admin.timeDelta = ((uint64_t)tv.tv_sec << 32) | fraction;
 #endif
 
     //printf(" deltaTimeMS:  0x%08x\n", p->admin.deltaTimeMS);
     //printf(" deltaTimeLS:  0x%08x\n", p->admin.deltaTimeLS);
 
-    uint64_t del64  = ((uint64_t)(p->admin.deltaTimeMS)<<32) | (p->admin.deltaTimeLS);
+    uint64_t del64  = p->admin.timeDelta;
     double delD = ((double) del64) / 4294967296.0 ;
     printf(" deltaTime:  %lf\n", delD);
   }
@@ -402,7 +378,7 @@ admin(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
 }
 
 static int
-wread(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+wread(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   uint8_t size;
   uint64_t val;
@@ -431,7 +407,7 @@ wread(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
       val = *((uint64_t *)p8);
     }
     printf("Worker %ld, offset:0x%08x(%d), hexVal:0x%08llx decVal:%lld, %d\n",
-	   (OCCP_WorkerControlSpace *)w - p->control, off, size, (long long)val, (long long)val, (int)sizeof(val));
+	   WN(p, w), off, size, (long long)val, (long long)val, (int)sizeof(val));
   }
   return 0;
 }
@@ -440,26 +416,26 @@ static struct {
   char *name;
   unsigned off;
 } ops[] = {
-  {"initialize", offsetof(OCCP_WorkerControl,initialize) },
-  {"start", offsetof(OCCP_WorkerControl,start) },
-  {"stop", offsetof(OCCP_WorkerControl,stop) },
-  {"release", offsetof(OCCP_WorkerControl,release) },
-  {"test", offsetof(OCCP_WorkerControl,test) },
-  {"before", offsetof(OCCP_WorkerControl,before_query) },
-  {"after", offsetof(OCCP_WorkerControl,after_config) },
-  {"reserved7", offsetof(OCCP_WorkerControl,reserved7) },
+  {"initialize", offsetof(OccpWorkerRegisters,initialize) },
+  {"start", offsetof(OccpWorkerRegisters,start) },
+  {"stop", offsetof(OccpWorkerRegisters,stop) },
+  {"release", offsetof(OccpWorkerRegisters,release) },
+  {"test", offsetof(OccpWorkerRegisters,test) },
+  {"before", offsetof(OccpWorkerRegisters,beforeQuery) },
+  {"after", offsetof(OccpWorkerRegisters,afterConfigure) },
+  {"reserved7", offsetof(OccpWorkerRegisters,reserved7) },
   {0}
 };
 
 static int
-wop(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+wop(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   unsigned i;
   for (i = 0; ops[i].name; i++)
     if (*ap && strcmp(*ap, ops[i].name) == 0) {
       unsigned off = ops[i].off;
       uint32_t v, *cp = (uint32_t *)((uint8_t *)w + off);
-      printf("Worker %ld control op: %s(%x)\n", (OCCP_WorkerControlSpace *)w - p->control, *ap, off);
+      printf("Worker %ld control op: %s(%x)\n", WN(p,w), *ap, off);
       v = *cp;
       printf("Result: 0x%08x\n", v);
       return 0;
@@ -469,7 +445,7 @@ wop(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile 
 }
 
 static int
-wwrite(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+wwrite(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   uint8_t size;
   unsigned off = atoi_any(*ap++, &size);
@@ -481,7 +457,7 @@ wwrite(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volati
   }
 #endif
   uint32_t *p32 = (uint32_t *)&config[off];
-  printf("Worker %ld, offset 0x%x, writing value: 0x%x\n", (OCCP_WorkerControlSpace *)w - p->control, off, val);
+  printf("Worker %ld, offset 0x%x, writing value: 0x%x\n", WN(p,w), off, val);
   
   switch(size) {
     case 1:
@@ -502,7 +478,7 @@ wwrite(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volati
 #define DRAM_PAGESZ    (1<<DRAM_L2PAGESZ)  
 
 static int
-dtest(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+dtest(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   uint8_t size;
   unsigned  off = atoi_any(*ap++,  &size);
@@ -511,8 +487,11 @@ dtest(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
   uint32_t *p32 = (uint32_t *)&config[off];
   uint32_t *c32 = (uint32_t *)&config[coff];
 
+  printf("dtest\n"); fflush(stdout);
+
   printf("npages:2^%d  pagesz(4B words):2^%d  memoryBytes:2^%d\n", DRAM_L2NPAGES, DRAM_L2PAGESZ, DRAM_L2NPAGES+DRAM_L2PAGESZ+2);
-  printf("Worker %ld, memory test offset 0x%x, test loop count: %d\n", (OCCP_WorkerControlSpace *)w - p->control, off, val);
+  printf("Worker %ld, memory test offset 0x%x, test loop count: %d\n", WN(p,w), off, val);
+  fflush(stdout);
   
   unsigned int exp, got, i, j, k, pg;
   int errors = 0;
@@ -546,7 +525,7 @@ dtest(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
 }
 
 static int
-smtest(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+smtest(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   uint8_t size;
   //  unsigned  off  = atoi_any(*ap++,  &size);
@@ -566,7 +545,7 @@ smtest(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volati
   unsigned int ugot32;
   unsigned int pollCount = 0;
 
-  printf("Worker %ld, SelectMAP ICAP Communication Test \n", (OCCP_WorkerControlSpace *)w - p->control);
+  printf("Worker %ld, SelectMAP ICAP Communication Test \n", WN(p,w));
 
   printf("Worker Status  is: 0x%08x\n", *s32);
   printf("Enabling Write ICAP\n");
@@ -640,48 +619,62 @@ smtest(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volati
 
 
 static int
-wwctl(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+wwctl(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   unsigned val = atoi_any(*ap, 0);
   uint32_t *p32 = (uint32_t *)&w->control;
-  printf("Worker %ld, writing control register value: 0x%x\n", (OCCP_WorkerControlSpace *)w - p->control, val);
+  printf("Worker %ld, writing control register value: 0x%x\n", WN(p,w), val);
   
   *p32 = val;
   return 0;
 }
+
 static int
-wunreset(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+wwpage(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
+{
+  unsigned val = atoi_any(*ap, 0);
+  uint32_t *p32 = (uint32_t *)&w->window;
+  printf("Worker %ld, pageWindow register value: 0x%x\n", WN(p,w), val);
+  
+  *p32 = val;
+  return 0;
+}
+
+static int
+wunreset(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   volatile uint32_t *p32 = (uint32_t *)&w->control;
   uint32_t val = *p32;
-  printf("Worker %ld, writing control register value to unreset: 0x%x\n", (OCCP_WorkerControlSpace *)w - p->control, val | 0x8000000);
+  printf("Worker %ld, writing control register value to unreset: 0x%x\n", WN(p,w), val | 0x8000000);
   
   *p32 = val | 0x80000000;
   return 0;
 }
+
 static int
-wreset(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+wreset(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   volatile uint32_t *p32 = (uint32_t *)&w->control;
   uint32_t val = *p32;
-  printf("Worker %ld, writing control register value to reset: 0x%x\n", (OCCP_WorkerControlSpace *)w - p->control, val & ~0x8000000);
+  printf("Worker %ld, writing control register value to reset: 0x%x\n", WN(p,w), val & ~0x8000000);
   
   *p32 = val & ~0x80000000;
   return 0;
 }
 
 static int
-wdump(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+wdump(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
-  printf("Worker %ld\n", (OCCP_WorkerControlSpace *)w - p->control);
+  printf("Worker %ld\n", WN(p,w));
   printf(" Status:     0x%08x\n", w->status);
   printf(" Control:    0x%08x\n", w->control);
-  printf(" ConfigAddr: 0x%08x\n", w->config_addr);
+  printf(" ConfigAddr: 0x%08x\n", w->lastConfig);
+  printf(" pageWindow: 0x%08x\n", w->window);
   return 0;
 }
 
  static int
-dmeta(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *d)
+dmeta(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
   uint32_t *pv = (uint32_t *)((uint8_t *)&p->admin);
   unsigned int  mb, b, dp;
@@ -700,11 +693,12 @@ dmeta(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
 }
 
  static int
- dpnd(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+ dpnd(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dp)
 {
+#if 0
   unsigned chan = atoi_any(*ap++, 0);
   unsigned n = *ap ? atoi_any(*ap++, 0) : 0;
-  volatile OCDP_Space *d = dp + chan;
+  volatile OCDP_Space *d = (OCDP_Space *)(dp) + chan;
   unsigned b;
   printf("BEFORE\n");
   printf("Control: Scratch 0x%x ready %x remoteCurrent %d\n",
@@ -755,12 +749,13 @@ dmeta(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
 	   d->meta[b].counter,
 	   d->meta[b].deltaClks);
   }
+#endif
   return 0;
 }
 
 
 static int
-dread(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+dread(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dp)
 {
   unsigned start = atoi_any(*ap++, 0);
   unsigned n = *ap ? atoi_any(*ap++, 0) : 1;
@@ -785,7 +780,7 @@ dread(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatil
 }
 
 static int
-dwrite(volatile OCCP_Space *p, char **ap, volatile OCCP_WorkerControl *w, volatile uint8_t *config, volatile OCDP_Space *dp)
+dwrite(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dp)
 {
   uint32_t *mp = (uint32_t *)dp;
   unsigned start = atoi_any(*ap++, 0);

@@ -168,8 +168,8 @@ namespace OCPI {
         bar1Offset = bar1Paddr - basePaddr;
 	// Capture the UUID info that tells us about the platform
 	HdlUUID myUUID;
-	for (unsigned n = 0; n < sizeof(HdlUUID)/sizeof(uint32_t); n++)
-	  ((uint32_t*)&myUUID)[n] = ((volatile uint32_t *)&occp->admin.uuid)[n];
+	for (unsigned n = 0; n < sizeof(HdlUUID); n++)
+	  ((uint8_t*)&myUUID)[sizeof(HdlUUID) - 1 - n] = ((volatile uint8_t *)&occp->admin.uuid)[n];
 	if (myUUID.platform[0] && myUUID.platform[1])
 	  m_platform.assign(myUUID.platform, sizeof(myUUID.platform));
 	if (myUUID.device[0] && myUUID.device[1])

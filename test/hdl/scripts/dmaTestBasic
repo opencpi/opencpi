@@ -1,16 +1,11 @@
 #!/bin/sh
 # dmaTestBasic - a script for dma "sanity" that runs in less than a minute
 
-SLOT3_BAR0=0xF1000000
-SLOT3_BAR1=0xF2FF0000
-SLOT4_BAR0=0xDE000000
-SLOT4_BAR1=0xDFFF0000
-
 echo "admin probe: "
-bin=./linux-x86_64-bin
-scripts=./scripts
-sudo $bin/swctl $SLOT3_BAR0 $SLOT3_BAR1 settime
-sudo $bin/swctl $SLOT3_BAR0 $SLOT3_BAR1 admin
+XX=($*)
+LAST=${XX[$#-1]}
+sudo swctl $LAST settime
+sudo swctl $LAST admin
 
 #./testDMA "p f m" "3" "0 4112 8176" "100" $*
 #./testDMA "p f m" "3" "0 4096 8192" "100" $*
@@ -18,7 +13,7 @@ sudo $bin/swctl $SLOT3_BAR0 $SLOT3_BAR1 admin
 #./testDMA "p m" "3" "0 16 1024 4096 8192" "100" $*
 #./testDMA "p m f" "3" "0 16 1024 2048" "200" $*
 #./testDMA "p m f" "3" "0 4096 8176" "1000" $*
-$scripts/testDMA "p m f" "3" "0 4096 8192" "500" $*
+testDMA "p m f" "3" "0 4096 8192" "500" $*
 
 # TODO: Understand system "hiccup" or full stall with 4096 or 8192 and 100+ iterations
 # observed only with m+m
