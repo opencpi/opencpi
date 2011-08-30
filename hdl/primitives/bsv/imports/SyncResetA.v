@@ -37,7 +37,7 @@ module SyncResetA (
                    OUT_RST_N
                    );
 
-   parameter          RSTDELAY = 2  ; // Width of reset shift reg
+   parameter          RSTDELAY = 1  ; // Width of reset shift reg
 
    input              CLK ;
    input              IN_RST_N ;

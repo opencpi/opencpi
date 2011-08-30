@@ -1,6 +1,6 @@
 <RccImplementation>
   <xi:include href="sobel_spec.xml"/>
-  <Port Name="in" MinBuffers="3"/>
+  <Port Name="in" MinBuffers="4"/>
 </RccImplementation>
 
 

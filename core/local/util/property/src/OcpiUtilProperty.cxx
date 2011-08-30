@@ -128,7 +128,7 @@ Member::parse(ezxml_t xp,
   // Process default values
   const char *defValue = ezxml_cattr(xp, "Default");
   if (defValue) {
-    if ((err = parseValue(type, defValue, defaultValue)))
+    if ((err = defaultValue.parse(type, defValue)))
       return esprintf("for member %s:", name);
     hasDefault = true;
   }
@@ -146,7 +146,7 @@ Property::~Property() {
 }
 // parse a value from xml for this property, which may be a struct
 const char *
-Property::parseValue(ezxml_t x, Scalar::Value &value) {
+Property::parseValue(ezxml_t x, OCPI::API::Value &value) {
   // For now, forget about structures
   const char *unparsed = ezxml_cattr(x, "Value");
   if (!unparsed)
@@ -154,7 +154,7 @@ Property::parseValue(ezxml_t x, Scalar::Value &value) {
 		    m_name);
   if (m_isStruct)
     return "Struct property values unimplemented";
-  return OCPI::Util::Prop::parseValue(members->type, unparsed, value);
+  return value.parse(members->type, unparsed);
 }
 
 const char *

@@ -2299,8 +2299,7 @@ module mkADCWorker(CLK_sys0_clk,
 
   // submodule adcCore0_colGate_sampF
   arSRLFIFO #(.width(32'd39),
-	      .l2depth(32'd4),
-	      .depth(32'd16)) adcCore0_colGate_sampF(.CLK(adcCore0_ddrC_ddrV$sdrClk),
+	      .l2depth(32'd4)) adcCore0_colGate_sampF(.CLK(adcCore0_ddrC_ddrV$sdrClk),
 						     .RST_N(adcCore0_sdrRst$OUT_RST_N),
 						     .D_IN(adcCore0_colGate_sampF$D_IN),
 						     .ENQ(adcCore0_colGate_sampF$ENQ),
@@ -2473,8 +2472,7 @@ module mkADCWorker(CLK_sys0_clk,
 
   // submodule adcCore1_colGate_sampF
   arSRLFIFO #(.width(32'd39),
-	      .l2depth(32'd4),
-	      .depth(32'd16)) adcCore1_colGate_sampF(.CLK(adcCore1_ddrC_ddrV$sdrClk),
+	      .l2depth(32'd4)) adcCore1_colGate_sampF(.CLK(adcCore1_ddrC_ddrV$sdrClk),
 						     .RST_N(adcCore1_sdrRst$OUT_RST_N),
 						     .D_IN(adcCore1_colGate_sampF$D_IN),
 						     .ENQ(adcCore1_colGate_sampF$ENQ),

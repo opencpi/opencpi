@@ -512,7 +512,7 @@ disconnect(    OC::PortData* sp,
       return;
     }
     if ( p->parent().enabled ) {
-      throw OU::EmbeddedException( OC::ONP_WORKER_STARTED, NULL, OC::ApplicationRecoverable);
+      throw OU::EmbeddedException( OU::ONP_WORKER_STARTED, NULL, OU::ApplicationRecoverable);
     }
     port->reset();
     p->parent().m_context->connectedPorts &= ~(1<<p->m_portOrdinal);
@@ -528,11 +528,11 @@ disconnect(    OC::PortData* sp,
     port = p->m_dtPort;
 
     if ( p->parent().enabled ) {
-      throw OU::EmbeddedException( OC::ONP_WORKER_STARTED, NULL, OC::ApplicationRecoverable);
+      throw OU::EmbeddedException( OU::ONP_WORKER_STARTED, NULL, OU::ApplicationRecoverable);
     }
     if ( !tcircuit || tcircuit->isCircuitOpen() ) {
-      throw OU::EmbeddedException( OC::BAD_CONNECTION_COOKIE, "Worker not found for input port",
-				   OC::ApplicationRecoverable);
+      throw OU::EmbeddedException( OU::BAD_CONNECTION_COOKIE, "Worker not found for input port",
+				   OU::ApplicationRecoverable);
     }
     port->reset();
     p->parent().m_context->connectedPorts &= ~(1<<p->m_portOrdinal);
@@ -661,7 +661,7 @@ connectInputPort( PortData *    inputPort,
     }
   }
   catch( std::bad_alloc ) {
-    throw OU::EmbeddedException( OC::NO_MORE_MEMORY, "new", OC::ContainerFatal);
+    throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
   }
   lPort = OC::Container::packPortDesc( localShadowPort );
 }
@@ -683,7 +683,7 @@ setOutputFlowControl( PortData * srcPort )
       m_connectionCookie.init( srcPort,true, this,true );
     }
     catch( std::bad_alloc ) {
-      throw OU::EmbeddedException( OC::NO_MORE_MEMORY, "new", OC::ContainerFatal);
+      throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
     }
     return;
   }
@@ -692,7 +692,7 @@ setOutputFlowControl( PortData * srcPort )
     m_connectionCookie.init( srcPort,false,this,true );
   }
   catch( std::bad_alloc ) {
-    throw OU::EmbeddedException( OC::NO_MORE_MEMORY, "new", OC::ContainerFatal);
+    throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
   }
 }
 

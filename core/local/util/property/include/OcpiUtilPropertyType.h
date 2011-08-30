@@ -52,7 +52,7 @@ namespace OCPI {
     namespace Prop {
       namespace Scalar {
 	typedef OCPI::API::ScalarType Type;
-	typedef OCPI::API::ScalarValue Value;
+	typedef OCPI::API::Value Value;
 	const Type OCPI_none = OCPI::API::OCPI_none;
 	const Type OCPI_scalar_type_limit = OCPI::API::OCPI_scalar_type_limit;
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) const Type OCPI_##pretty = OCPI::API::OCPI_##pretty;
@@ -63,8 +63,10 @@ namespace OCPI {
 	extern const char *names[];
       }
       typedef OCPI::API::ValueType ValueType;
+#if 0
       const char *parseValue(ValueType &vt, const char *value0, OCPI::API::ScalarValue &value1);
       void destroyValue(ValueType &vt, OCPI::API::ScalarValue &value);
+#endif
     }
     // These obviously do not belong here and needs storage management
 #define myCalloc(t, n) ((t *)calloc(sizeof(t), (n)))

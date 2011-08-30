@@ -710,8 +710,8 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
     };
     OC::Worker & Application::createWorker(OC::Artifact *art, const char *appInstName,
-				ezxml_t impl, ezxml_t inst,
-				const OCPI::Util::PValue *wParams) {
+					   ezxml_t impl, ezxml_t inst,
+					   const OCPI::Util::PValue *wParams) {
 	return *new Worker(*this, art, appInstName, impl, inst, wParams);
       }
     // This port class really has two cases: externally connected ports and

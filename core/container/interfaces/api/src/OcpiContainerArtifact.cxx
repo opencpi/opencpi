@@ -89,7 +89,8 @@ namespace OCPI {
     Worker & Artifact::
     createWorker(Application &app, const char *appInstName,
 		 const char *implTag, const char *instTag,
-		 const OA::PValue* execProps) {
+		 const OA::PValue* wProps,
+		 const OA::PValue* wParams) {
       ezxml_t impl, inst, xml = m_libArtifact.xml();
 
       if (!implTag ||
@@ -128,9 +129,11 @@ namespace OCPI {
 #endif
 
       }
-      Worker &w = app.createWorker(this, appInstName, impl, inst, execProps);
+      Worker &w = app.createWorker(this, appInstName, impl, inst, wParams);
       m_workers.push_back(&w);
       w.initialize();
+      if (wProps)
+	w.setProperties(wProps);
       return w;
     }
     void Artifact::removeWorker(Worker &w) {

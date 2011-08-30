@@ -146,8 +146,10 @@ found(const char *name, Bar *bars, unsigned nbars, bool verbose) {
       tbuf1[strlen(tbuf1)-1] = 0;
 #if 1
       printf("OpenCPI FPGA at PCI %s: BSV date %s, bitstream date %s, "
-	     "platform \"%s\", device \"%s\", UUID %s, loadParam \"%s\"\n",
-	     name, tbuf, tbuf1, platform, device, textUUID, load);
+	     //	     "platform \"%s\", device \"%s\", UUID %s, loadParam \"%s\"\n",
+	     // name, tbuf, tbuf1, platform, device, textUUID, load);
+	     "platform \"%s\", device \"%s\", UUID %s\n",
+	     name, tbuf, tbuf1, platform, device, textUUID);
 #else
       printf("OpenCPI FPGA at PCI %s\n", name);
       for (unsigned n = 0; n < sizeof(myUUID); n++) {

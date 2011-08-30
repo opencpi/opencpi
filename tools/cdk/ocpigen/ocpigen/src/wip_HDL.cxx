@@ -492,7 +492,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    switch (pr->members->type.scalar) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
 	      case CP::Scalar::OCPI_##pretty:	   \
-		i64 = (int64_t)pr->members->defaultValue.v##pretty; break;
+		i64 = (int64_t)pr->members->defaultValue.m_##pretty; break;
 	      OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 	  default:;
@@ -1115,7 +1115,7 @@ emitAssyHDL(Worker *w, const char *outDir)
 	    switch (pr->members->type.scalar) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
 	    case CP::Scalar::OCPI_##pretty:				\
-	      i64 = (int64_t)pv->value.v##pretty;			\
+	      i64 = (int64_t)pv->value.m_##pretty;			\
 	      break;
 OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE

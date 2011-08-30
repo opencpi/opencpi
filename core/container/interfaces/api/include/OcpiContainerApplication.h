@@ -64,7 +64,6 @@ namespace OCPI {
       friend class Artifact;
     protected:
       Application(const OCPI::Util::PValue *props = 0);
-      // This is the internal method called after XML processing
     public:
       virtual Container &container() = 0;
       virtual Worker & createWorker(Artifact *, const char *appInstName,
@@ -77,12 +76,16 @@ namespace OCPI {
 				       const OCPI::API::PValue *aparams,
 				       const char *appInstName,
 				       const char *entryPoint,
-				       const char * inst,
+				       const char *inst,
+				       const OCPI::Util::PValue *wprops,
 				       const OCPI::API::PValue *wparams);
       // This is the API method to create a worker from libraries
       OCPI::API::Worker &createWorker(const char *name, const char *impl,
-				      const OCPI::API::PValue *wProps = NULL,
+				      const OCPI::API::PValue *wParams = NULL,
+				      const OCPI::Util::PValue *wprops = NULL,
 				      const OCPI::API::Connection *connections = NULL);
+      virtual Worker *firstWorker() const = 0;
+      void start();
     };
   } // Container
 } // OCPI

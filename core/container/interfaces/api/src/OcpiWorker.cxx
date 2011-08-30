@@ -100,24 +100,98 @@ namespace OCPI {
       if (prop.m_info.m_isStruct)
 	throw ApiError("No support yet for setting struct properties", NULL);
       OP::ValueType &vt = prop.m_type;
-      const char *err = OP::parseValue(vt, value, v);
+      const char *err = v.parse(vt, value);
       if (err)
-        throw ApiError("Error parsing property value", NULL);
+        throw ApiError("Error parsing property value:\"", value, "\"", NULL);
       switch (vt.scalar) {
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		 \
+	case OA::OCPI_##pretty:					         \
+	  if (v.m_vector)						 \
+	    prop.set##pretty##SequenceValue((const run*)(v.m_p##pretty), \
+					    v.m_length);		 \
+	  else								 \
+	    prop.set##pretty##Value(v.m_##pretty);			 \
+          break;
+      OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+      case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
+      }
+    }
+    bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value) {
+      unsigned nProps;
+      OM::Property *props = getProperties(nProps);
+      if (ordinal >= nProps)
+	return false;
+      OM::Property &p = props[ordinal];
+      if (p.m_isStruct || p.m_isStructSequence)
+	throw OU::Error("Struct properties are unsupported");
+      OP::Member &m = p.members[0];
+      OA::Value v(m.type);
+      OA::Property a(*this, p.m_name); // FIXME clumsy because get methods take API props
+      switch (m.type.scalar) {
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                         \
+      case OA::OCPI_##pretty:		                                               \
+	if (v.m_vector)							               \
+	  v.m_length = get##pretty##SequenceProperty(a, v.m_p##pretty, m.type.length); \
+	else								               \
+	  v.m_##pretty = get##pretty##Property(a);                                     \
+	break;
+      OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+      case OA::OCPI_String:
+	if (v.m_vector)
+	  v.m_length = getStringSequenceProperty(a, v.m_pString, m.type.length,
+						 v.m_stringSpace,
+						 (m.type.stringLength + 1) * m.type.length);
+	else
+	  getStringProperty(a, v.m_String, m.type.stringLength + 1);
+	break;
+      case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
+      }
+      v.unparse(value);
+      name = p.m_name;
+      return true;
+    }
+#if 0
+    void Worker::setProperty(OA::Property &prop, const OA::PValue &val) {
+      switch (prop.m_type.scalar) {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
 	case OP::Scalar::OCPI_##pretty:					\
-	  if (vt.length > 1)						\
-	    prop.set##pretty##SequenceValue((const run*)(v.pv##pretty), \
-					    v.length);			\
-	  else								\
-	    prop.set##pretty##Value(v.v##pretty);			\
-          break;
+	    prop.set##pretty##Value(val.v##pretty);			\
+            break;
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
       default:
 	ocpiAssert(!"unknown data type");
       }
-      OP::destroyValue(vt, v);
+    }
+#endif
+    // batch setting with lots of error checking - all or nothing
+    void Worker::setProperties(const OA::PValue *props) {
+      if (props)
+	for (const OA::PValue *p = props; p->name; p++) {
+	  OA::Property prop(*this, p->name); // exception goes out
+	  prop.checkTypeAlways(p->type, 1, true);
+	  switch (prop.m_type.scalar) {
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+	    case OP::Scalar::OCPI_##pretty:				\
+	      prop.set##pretty##Value(p->v##pretty);			\
+	      break;
+            OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+            default:
+	      ocpiAssert(!"unknown data type");
+	  }
+	}
+    }
+    // batch setting with lots of error checking - all or nothing
+    void Worker::setProperties(const char *props[][2]) {
+      for (const char *(*p)[2] = props; (*p)[0]; p++)
+	setProperty((*p)[0], (*p)[1]);
     }
     // Common top level implementation for control operations
     // Note that the m_controlMask does not apply at this level
@@ -149,10 +223,10 @@ namespace OCPI {
 	  setControlState(ct.next);
       } else
 	throw OU::EmbeddedException(cs == OM::Worker::UNUSABLE ?
-				    WORKER_UNUSABLE :
-				    INVALID_CONTROL_SEQUENCE,
+				    OU::WORKER_UNUSABLE :
+				    OU::INVALID_CONTROL_SEQUENCE,
 				    "Illegal control state for operation",
-				     ApplicationRecoverable);
+				    OU::ApplicationRecoverable);
       Application &a = application();
       Container &c = a.container();
       c.start();

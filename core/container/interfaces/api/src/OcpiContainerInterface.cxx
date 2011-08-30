@@ -187,7 +187,7 @@ namespace OCPI {
     }
 
     Container::Container(const ezxml_t config, const OCPI::Util::PValue *props)
-      throw ( OCPI::Util::EmbeddedException )
+      throw ( OU::EmbeddedException )
       : m_ourUID(mkUID()), m_enabled(false), m_ownThread(true), m_thread(NULL)
     {
       (void)config; // nothing to parse (yet)
@@ -370,16 +370,16 @@ namespace OCPI {
     }
 
     Container::DispatchRetCode Container::dispatch(DataTransfer::EventManager*)
-      throw ( OCPI::Util::EmbeddedException )
+      throw ( OU::EmbeddedException )
     {
       return Container::DispatchNoMore;
     }
     bool Container::run(uint32_t usecs, bool verbose) {
       (void)usecs; (void)verbose;
       if (m_ownThread)
-	throw OU::EmbeddedException( CONTAINER_HAS_OWN_THREAD,
+	throw OU::EmbeddedException( OU::CONTAINER_HAS_OWN_THREAD,
 				     "Can't use container->run when container has own thread",
-				     ApplicationRecoverable);
+				     OU::ApplicationRecoverable);
       return runInternal();
     }
 

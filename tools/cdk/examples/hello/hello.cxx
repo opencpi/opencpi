@@ -6,6 +6,7 @@
 namespace OA = OCPI::API;
 
 int main(int argc, char **argv) {
+  try {
   // Find a container to run our worker
   // (it returns a pointer since it might return NULL)
   OA::Container *c = OA::ContainerManager::find("rcc");
@@ -37,4 +38,7 @@ int main(int argc, char **argv) {
   // hence it is a pointer.  But it doesn't HAVE to be deleted since it will
   // automatically be deleted on exit.
   return 1;
+  } catch (std::string &e) {
+    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+  }
 }

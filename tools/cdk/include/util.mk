@@ -90,8 +90,10 @@ AT=@
 RM=rm
 ifneq ($(HostSystem),darwin)
 TIME=/usr/bin/time -f %E
+OcpiLibraryPathEnv=LD_LIBRARY_PATH
 else
 TIME=/usr/bin/time
+OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
 endif
 # this is to ensure support for the -n flag
 ECHO=/bin/echo
@@ -114,6 +116,7 @@ ifeq ($(HostProcessor),i386)
 HostProcessor=x86_64
 endif
 HostTarget=$(HostSystem)-$(HostProcessor)
+OcpiHostTarget=$(HostTarget)
 # helper function to FindRelative, recursive
 # arg 1 is from-list of path components, arg 2 is to-list
 #$(info frs 1 $(1) 2 $(2))

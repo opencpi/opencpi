@@ -41,8 +41,7 @@
 
 namespace OCPI {
   namespace API {
-#if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
-    void Property::checkType(ScalarType ctype, unsigned n, bool write) {
+    void Property::checkTypeAlways(ScalarType ctype, unsigned n, bool write) {
       if (write && !m_info.m_isWritable)
 	throw "trying to write a non-writable property";
       if (!write && !m_info.m_isReadable)
@@ -56,7 +55,6 @@ namespace OCPI {
       if (!write && n < m_type.length)
 	throw "sequence or array not large enough for this property";
     }
-#endif
     // This is user-visible, initialized from information in the metadata
     // It is intended to be constructed on the user's stack - a cache of
     // just the items needed for fastest access

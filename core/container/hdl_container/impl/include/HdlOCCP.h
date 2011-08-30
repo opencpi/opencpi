@@ -72,8 +72,11 @@ namespace OCPI {
         timeDelta;
       const uint32_t
         timeClksPerPps,
-	pad[12],     // 4c5054585c6064686c707478
-        numRegions,
+	pad[1];
+      const uint64_t dna; // 5054
+      const uint32_t
+        pad1[9],     // 585c6064686c707478
+        numRegions,  // 7c
         regions[16]; // 8084888c9094989ca0a4a8acb0b4b8bc
       HdlUUID uuid;
     } OccpAdminRegisters;

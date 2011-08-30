@@ -647,7 +647,7 @@ int main(int argc, char *argv[])
 	    nIO = outLeft > ioSize ? ioSize : outLeft;
             if (file) {
               if ((n = read(ifd, data, nIO)) != (size_t)nIO) {
-                fprintf(stderr, "Error reading input file: wanted %u, got %d, errno %d\n",
+                fprintf(stderr, "Error reading input file: wanted %u, got %zd, errno %d\n",
 			nIO, n, errno);
                 return 1;
               }
@@ -706,7 +706,7 @@ int main(int argc, char *argv[])
           }
           if (file && !ofile) {
             if ((n = read(cfd, cbuf, nWant)) != (size_t)nWant) {
-                fprintf(stderr, "Error reading input file for compare: wanted %u, got %d, errno %d\n",
+                fprintf(stderr, "Error reading input file for compare: wanted %u, got %zd, errno %d\n",
 			nWant, n, errno);
               return 1;
             }
@@ -734,8 +734,8 @@ int main(int argc, char *argv[])
 	      vecOffset = 1;
 	    }
 	    if (nBytes &&
-		(n = writev(ofd, io + vecOffset, nVecs)) != nBytes) {
-              fprintf(stderr, "Error writing output file:  wanted %u got %d errno %d \n", nBytes, n, errno);
+		(n = writev(ofd, io + vecOffset, nVecs)) != (size_t)nBytes) {
+              fprintf(stderr, "Error writing output file:  wanted %zd got %zd errno %d \n", nBytes, n, errno);
               return 1;
             }
           } else if (!dummy)
@@ -786,7 +786,7 @@ int main(int argc, char *argv[])
       }
       return 0;
     } catch (OA::Error &e) {
-      fprintf(stderr, "API Error: %s\n", e.m_error.c_str());
+      fprintf(stderr, "API Error: %s\n", e.error().c_str());
       return 1;
     }
   } else {

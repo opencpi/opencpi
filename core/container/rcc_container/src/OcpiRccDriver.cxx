@@ -21,7 +21,7 @@ namespace OCPI {
     // Look for a container that doesn't exist yet.
     OC::Container *Driver::
     probeContainer(const char *which, const OA::PValue *props)
-	throw ( OCPI::Util::EmbeddedException )
+	throw ( OU::EmbeddedException )
     {
       static unsigned event_range_start = 0;
       bool polled = true;
@@ -34,14 +34,14 @@ namespace OCPI {
 	  *tpg = new OCPI::DataTransport::TransportGlobal( event_range_start++, !polled );
 	rcc = new Container(which, *tpg, props);
       } catch( std::bad_alloc ) {
-	throw OCPI::Util::EmbeddedException( OC::NO_MORE_MEMORY, "new", OC::ContainerFatal);
+	throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
       }
       return rcc;
     }
     // Per driver discovery routine to create devices
     unsigned Driver::
     search(const OA::PValue* props, const char **exclude)
-      throw ( OCPI::Util::EmbeddedException ) {
+      throw ( OU::EmbeddedException ) {
       (void) props; (void)exclude;
       return 1;
     }

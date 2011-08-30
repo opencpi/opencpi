@@ -70,7 +70,7 @@ namespace OCPI {
 	uint32_t offset;    // for structure members
 	unsigned bits, align, nBytes;
 	bool hasDefault;
-	Scalar::Value defaultValue; // union for member values
+	OCPI::API::Value defaultValue; // union for member values
 	const char *parse(ezxml_t xp, unsigned &maxAlign,
 			  unsigned &argOffset, bool &sub32);
 	void printXml(FILE *f);

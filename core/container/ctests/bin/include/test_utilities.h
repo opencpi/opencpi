@@ -187,13 +187,13 @@ CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
 
 #define TRY_AND_SET(var, str, exp, code)		 \
   do {							 \
-    var = OC::NO_ERROR_;				 \
+    var = OU::NO_ERROR_;				 \
     try {						 \
       code;						 \
     }  catch (OCPI::Util::EmbeddedException &ee_) {	 \
       var = ee_.getErrorCode(); str = ee_.m_auxInfo;	 \
     }  catch (...) {					 \
-      var = OC::LAST_ERROR_ID;				 \
+      var = OU::LAST_ERROR_ID;				 \
     }							 \
     TUPRINTF("Expected error string (%s) got %u (%s)\n", \
 	     exp, var, str.c_str() );			 \

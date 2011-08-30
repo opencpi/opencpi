@@ -19,12 +19,11 @@
   ======
 */
 
+#include <iostream>
+#include "cv.h"
+#include "highgui.h"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
-#include <iostream>
-#include "DemoWorkerFacade.h"
-#include "highgui.h"
-#include "cv.h"
 
 namespace OA = OCPI::API;
 
@@ -52,31 +51,13 @@ int main ( int argc, char* argv [ ] )
 
   try
     {
-      ( void ) argc;
-      ( void ) argv;
-
       /* ---- Create the shared RCC container and application -------------- */
-      OCPI::API::Container* rcc_container ( Demo::get_rcc_interface ( ) );
-
-      // Holds RCC worker interfaces passed to the RCC dispatch thread
-      std::vector<OCPI::API::Container*> interfaces;
-      interfaces.push_back ( rcc_container );
-
-      OA::ContainerApplication*
-	rcc_application ( rcc_container->createApplication ( ) );
-
-      // Holds facades for group operations
-      std::vector<Demo::WorkerFacade*> facades;
+      OA::Container *rcc_container = OA::ContainerManager::find("rcc");
+      OA::ContainerApplication *rcc_application = rcc_container->createApplication( );
 
       /* ---- Create the workers --------------------------------- */
       // good_features_to_track
-      Demo::WorkerFacade features_worker (
-					  "GoodFeaturesToTrack (RCC)",
-					  rcc_application,
-					  "good_features_to_track",
-					  "good_features_to_track" );
-
-      OCPI::API::PValue features_worker_pvlist[] = {
+      OCPI::API::PValue features_pvlist[] = {
 	OCPI::API::PVULong("height", imgA->height),
 	OCPI::API::PVULong("width", imgA->width),
 	OCPI::API::PVULong("max_corners", 50),
@@ -84,235 +65,149 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVDouble("min_distance", 5.0),
 	OCPI::API::PVEnd
       };
-      features_worker.set_properties( features_worker_pvlist );
-      facades.push_back ( &features_worker );
-
+      OA::Worker &features_worker =
+	rcc_application->createWorker("good_features_to_track", "good_features_to_track",
+				      features_pvlist);
       OA::Port
-	&featuresOut = features_worker.port("out"),
-	&featuresIn = features_worker.port("in");
+	&featuresOut = features_worker.getPort("out"),
+	&featuresIn = features_worker.getPort("in");
 
       // min_eigen_val
-      Demo::WorkerFacade min_worker (
-				     "MinEigenVal (RCC)",
-				     rcc_application,
-				     "min_eigen_val",
-				     "min_eigen_val" );
-
-      OCPI::API::PValue min_worker_pvlist[] = {
+      OCPI::API::PValue min_pvlist[] = {
 	OCPI::API::PVULong("height", imgA->height),
 	OCPI::API::PVULong("width", imgA->width),
 	OCPI::API::PVEnd
       };
-      min_worker.set_properties( min_worker_pvlist );
-      facades.push_back ( &min_worker );
-
+      OA::Worker &min_worker =
+	rcc_application->createWorker("min_eigen_val", "min_eigen_val",
+				      min_pvlist);
       OA::Port
-	&minOut = min_worker.port("out"),
-	&minIn = min_worker.port("in");
+	&minOut = min_worker.getPort("out"),
+	&minIn = min_worker.getPort("in");
 
       // corner_eigen_vals_vecs
-      Demo::WorkerFacade corner_worker (
-					"CornerEigenValsVecs (RCC)",
-					rcc_application,
-					"corner_eigen_vals_vecs",
-					"corner_eigen_vals_vecs" );
-
-      OCPI::API::PValue corner_worker_pvlist[] = {
+      OCPI::API::PValue corner_pvlist[] = {
 	OCPI::API::PVULong("height", imgA->height),
 	OCPI::API::PVULong("width", imgA->width),
 	OCPI::API::PVEnd
       };
-      corner_worker.set_properties( corner_worker_pvlist );
-      facades.push_back ( &corner_worker );
-
+      OA::Worker &corner_worker =
+	rcc_application->createWorker("corner_eigen_vals_vecs", "corner_eigen_vals_vecs",
+				      corner_pvlist);
       OA::Port
-	&cornerOut = corner_worker.port("out"),
-	&cornerIn = corner_worker.port("in");
+	&cornerOut = corner_worker.getPort("out"),
+	&cornerIn = corner_worker.getPort("in");
 
       // good_features_to_track (copy)
-      Demo::WorkerFacade features_workerA (
-					   "GoodFeaturesToTrackA (RCC)",
-					   rcc_application,
-					   "good_features_to_track",
-					   "good_features_to_track" );
-
-      features_workerA.set_properties( features_worker_pvlist );
-      facades.push_back ( &features_workerA );
+      OA::Worker &features_workerA =
+	rcc_application->createWorker("good_features_to_track", "good_features_to_track",
+				      features_pvlist);
 
       OA::Port
-	&featuresAOut = features_workerA.port("out"),
-	&featuresAIn = features_workerA.port("in");
+	&featuresAOut = features_workerA.getPort("out"),
+	&featuresAIn = features_workerA.getPort("in");
 
       // min_eigen_val (copy)
-      Demo::WorkerFacade min_workerA (
-				      "MinEigenValA (RCC)",
-				      rcc_application,
-				      "min_eigen_val",
-				      "min_eigen_val" );
-
-      min_workerA.set_properties( min_worker_pvlist );
-      facades.push_back ( &min_workerA );
-
+      OA::Worker &min_workerA =
+	rcc_application->createWorker("min_eigen_val", "min_eigen_val",
+				      min_pvlist);
       OA::Port
-	&minAOut = min_workerA.port("out"),
-	&minAIn = min_workerA.port("in");
+	&minAOut = min_workerA.getPort("out"),
+	&minAIn = min_workerA.getPort("in");
 
       // corner_eigen_vals_vecs (copy)
-      Demo::WorkerFacade corner_workerA (
-					 "CornerEigenValsVecsA (RCC)",
-					 rcc_application,
-					 "corner_eigen_vals_vecs",
-					 "corner_eigen_vals_vecs" );
-
-      corner_workerA.set_properties( corner_worker_pvlist );
-      facades.push_back ( &corner_workerA );
-
+      OA::Worker &corner_workerA =
+	rcc_application->createWorker("corner_eigen_vals_vecs", "corner_eigen_vals_vecs",
+				      corner_pvlist);
       OA::Port
-	&cornerAOut = corner_workerA.port("out"),
-	&cornerAIn = corner_workerA.port("in");
+	&cornerAOut = corner_workerA.getPort("out"),
+	&cornerAIn = corner_workerA.getPort("in");
 
       // sobel_32f (A_dx)
-      Demo::WorkerFacade sobel_adx_worker (
-					   "Sobel 32f A_dx (RCC)",
-					   rcc_application,
-					   "sobel_32f",
-					   "sobel_32f" );
-
-      OCPI::API::PValue sobel_dx_worker_pvlist[] = {
+      OCPI::API::PValue sobel_dx_pvlist[] = {
 	OCPI::API::PVULong("height", imgA->height),
 	OCPI::API::PVULong("width", imgA->width),
 	OCPI::API::PVBool("xderiv", 1),
 	OCPI::API::PVEnd
       };
-
-      sobel_adx_worker.set_properties( sobel_dx_worker_pvlist );
-      facades.push_back ( &sobel_adx_worker );
+      OA::Worker &sobel_adx_worker =
+	rcc_application->createWorker("sobel_32f", "sobel_32f",  sobel_dx_pvlist);
 
       OA::Port
-	&sobelAdxOut = sobel_adx_worker.port("out_32f"),
-	&sobelAdx8UOut = sobel_adx_worker.port("out"),
-	&sobelAdxIn = sobel_adx_worker.port("in");
+	&sobelAdxOut = sobel_adx_worker.getPort("out_32f"),
+	&sobelAdx8UOut = sobel_adx_worker.getPort("out"),
+	&sobelAdxIn = sobel_adx_worker.getPort("in");
 
       // sobel_32f (A_dy)
-      Demo::WorkerFacade sobel_ady_worker (
-					   "Sobel 32f A_dy (RCC)",
-					   rcc_application,
-					   "sobel_32f",
-					   "sobel_32f1" );
-
-      OCPI::API::PValue sobel_dy_worker_pvlist[] = {
+      OCPI::API::PValue sobel_dy_pvlist[] = {
 	OCPI::API::PVULong("height", imgA->height),
 	OCPI::API::PVULong("width", imgA->width),
 	OCPI::API::PVBool("xderiv", 0),
 	OCPI::API::PVEnd
       };
-
-      sobel_ady_worker.set_properties( sobel_dy_worker_pvlist );
-      facades.push_back ( &sobel_ady_worker );
-
+      OA::Worker &sobel_ady_worker =
+	rcc_application->createWorker("sobel_32f1", "sobel_32f",  sobel_dy_pvlist);
       OA::Port
-	&sobelAdyOut = sobel_ady_worker.port("out_32f"),
-	&sobelAdy8UOut = sobel_ady_worker.port("out"),
-	&sobelAdyIn = sobel_ady_worker.port("in");
+	&sobelAdyOut = sobel_ady_worker.getPort("out_32f"),
+	&sobelAdy8UOut = sobel_ady_worker.getPort("out"),
+	&sobelAdyIn = sobel_ady_worker.getPort("in");
 
       // sobel_32f (A_d2x)
-      Demo::WorkerFacade sobel_ad2x_worker (
-					    "Sobel 32f A_d2x (RCC)",
-					    rcc_application,
-					    "sobel_32f",
-					    "sobel_32f2" );
-
-      sobel_ad2x_worker.set_properties( sobel_dx_worker_pvlist );
-      facades.push_back ( &sobel_ad2x_worker );
+      OA::Worker &sobel_ad2x_worker =
+	rcc_application->createWorker("sobel_32f2", "sobel_32f",  sobel_dx_pvlist);
 
       OA::Port
-	&sobelAd2xOut = sobel_ad2x_worker.port("out_32f"),
-	&sobelAd2x8UOut = sobel_ad2x_worker.port("out"),
-	&sobelAd2xIn = sobel_ad2x_worker.port("in");
+	&sobelAd2xOut = sobel_ad2x_worker.getPort("out_32f"),
+	&sobelAd2x8UOut = sobel_ad2x_worker.getPort("out"),
+	&sobelAd2xIn = sobel_ad2x_worker.getPort("in");
 
       // sobel_32f (A_d2y)
-      Demo::WorkerFacade sobel_ad2y_worker (
-					    "Sobel 32f A_d2y (RCC)",
-					    rcc_application,
-					    "sobel_32f",
-					    "sobel_32f3" );
-
-      sobel_ad2y_worker.set_properties( sobel_dy_worker_pvlist );
-      facades.push_back ( &sobel_ad2y_worker );
+      OA::Worker &sobel_ad2y_worker =
+	rcc_application->createWorker("sobel_32f3", "sobel_32f",  sobel_dy_pvlist);
 
       OA::Port
-	&sobelAd2yOut = sobel_ad2y_worker.port("out_32f"),
-	&sobelAd2y8UOut = sobel_ad2y_worker.port("out"),
-	&sobelAd2yIn = sobel_ad2y_worker.port("in");
+	&sobelAd2yOut = sobel_ad2y_worker.getPort("out_32f"),
+	&sobelAd2y8UOut = sobel_ad2y_worker.getPort("out"),
+	&sobelAd2yIn = sobel_ad2y_worker.getPort("in");
 
       // sobel_32f (A_dxdy_x)
-      Demo::WorkerFacade sobel_adxdy_x_worker (
-					       "Sobel 32f A_dxdy (RCC)",
-					       rcc_application,
-					       "sobel_32f",
-					       "sobel_32f4" );
-
-      sobel_adxdy_x_worker.set_properties( sobel_dx_worker_pvlist );
-      facades.push_back ( &sobel_adxdy_x_worker );
+      OA::Worker &sobel_adxdy_x_worker =
+	rcc_application->createWorker("sobel_32f4", "sobel_32f",  sobel_dx_pvlist);
 
       OA::Port
-	&sobelAdxdyXOut = sobel_adxdy_x_worker.port("out_32f"),
-	&sobelAdxdyX8UOut = sobel_adxdy_x_worker.port("out"),
-	&sobelAdxdyXIn = sobel_adxdy_x_worker.port("in");
+	&sobelAdxdyXOut = sobel_adxdy_x_worker.getPort("out_32f"),
+	&sobelAdxdyX8UOut = sobel_adxdy_x_worker.getPort("out"),
+	&sobelAdxdyXIn = sobel_adxdy_x_worker.getPort("in");
 
       // sobel_32f (A_dxdy_y)
-      Demo::WorkerFacade sobel_adxdy_y_worker (
-					       "Sobel 32f A_dxdy (RCC)",
-					       rcc_application,
-					       "sobel_32f",
-					       "sobel_32f5" );
-
-      sobel_adxdy_y_worker.set_properties( sobel_dy_worker_pvlist );
-      facades.push_back ( &sobel_adxdy_y_worker );
+      OA::Worker &sobel_adxdy_y_worker =
+	rcc_application->createWorker("sobel_32f5", "sobel_32f",  sobel_dy_pvlist);
 
       OA::Port
-	&sobelAdxdyYOut = sobel_adxdy_y_worker.port("out_32f"),
-	&sobelAdxdyY8UOut = sobel_adxdy_y_worker.port("out"),
-	&sobelAdxdyYIn = sobel_adxdy_y_worker.port("in");
+	&sobelAdxdyYOut = sobel_adxdy_y_worker.getPort("out_32f"),
+	&sobelAdxdyY8UOut = sobel_adxdy_y_worker.getPort("out"),
+	&sobelAdxdyYIn = sobel_adxdy_y_worker.getPort("in");
 
       // sobel_32f (B_dx)
-      Demo::WorkerFacade sobel_bdx_worker (
-					   "Sobel 32f B_dx (RCC)",
-					   rcc_application,
-					   "sobel_32f",
-					   "sobel_32f6" );
-
-      sobel_bdx_worker.set_properties( sobel_dx_worker_pvlist );
-      facades.push_back ( &sobel_bdx_worker );
+      OA::Worker &sobel_bdx_worker =
+	rcc_application->createWorker("sobel_32f6", "sobel_32f",  sobel_dx_pvlist);
 
       OA::Port
-	&sobelBdxOut = sobel_bdx_worker.port("out_32f"),
-	&sobelBdx8UOut = sobel_bdx_worker.port("out"),
-	&sobelBdxIn = sobel_bdx_worker.port("in");
+	&sobelBdxOut = sobel_bdx_worker.getPort("out_32f"),
+	&sobelBdx8UOut = sobel_bdx_worker.getPort("out"),
+	&sobelBdxIn = sobel_bdx_worker.getPort("in");
 
       // sobel_32f (B_dy)
-      Demo::WorkerFacade sobel_bdy_worker (
-					   "Sobel 32f B_dy (RCC)",
-					   rcc_application,
-					   "sobel_32f",
-					   "sobel_32f7" );
-
-      sobel_bdy_worker.set_properties( sobel_dy_worker_pvlist );
-      facades.push_back ( &sobel_bdy_worker );
+      OA::Worker &sobel_bdy_worker =
+	rcc_application->createWorker("sobel_32f7", "sobel_32f",  sobel_dy_pvlist);
 
       OA::Port
-	&sobelBdyOut = sobel_bdy_worker.port("out_32f"),
-	&sobelBdy8UOut = sobel_bdy_worker.port("out"),
-	&sobelBdyIn = sobel_bdy_worker.port("in");
+	&sobelBdyOut = sobel_bdy_worker.getPort("out_32f"),
+	&sobelBdy8UOut = sobel_bdy_worker.getPort("out"),
+	&sobelBdyIn = sobel_bdy_worker.getPort("in");
 
       // optical_flow_pyr_lk
-      Demo::WorkerFacade optical_flow_worker (
-					      "Optical Flow Pyr LK (RCC)",
-					      rcc_application,
-					      "optical_flow_pyr_lk",
-					      "optical_flow_pyr_lk" );
-
-      OCPI::API::PValue optical_flow_worker_pvlist[] = {
+      OCPI::API::PValue optical_flow_pvlist[] = {
 	OCPI::API::PVULong("height", imgA->height),
 	OCPI::API::PVULong("width", imgA->width),
 	OCPI::API::PVULong("win_height", 10),
@@ -323,23 +218,23 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVDouble("deriv_lambda", 0.5),
 	OCPI::API::PVEnd
       };
-      optical_flow_worker.set_properties( optical_flow_worker_pvlist );
-      facades.push_back ( &optical_flow_worker );
+      OA::Worker &optical_flow_worker =
+	rcc_application->createWorker("optical_flow_pyr_lk", "optical_flow_pyr_lk", optical_flow_pvlist);
 
       OA::Port
-	&opticalFlowInA = optical_flow_worker.port("in_A"),
-	&opticalFlowInAdx = optical_flow_worker.port("in_Adx"),
-	&opticalFlowInAdy = optical_flow_worker.port("in_Ady"),
-	&opticalFlowInAd2x = optical_flow_worker.port("in_Ad2x"),
-	&opticalFlowInAd2y = optical_flow_worker.port("in_Ad2y"),
-	&opticalFlowInAdxdy = optical_flow_worker.port("in_Adxdy"),
-	&opticalFlowInB = optical_flow_worker.port("in_B"),
-	&opticalFlowInBdx = optical_flow_worker.port("in_Bdx"),
-	&opticalFlowInBdy = optical_flow_worker.port("in_Bdy"),
-	&opticalFlowInFeature = optical_flow_worker.port("in_feature"),
-	&opticalFlowOut = optical_flow_worker.port("out"),
-	&opticalFlowStatusOut = optical_flow_worker.port("out_status"),
-	&opticalFlowErrOut = optical_flow_worker.port("out_err");
+	&opticalFlowInA = optical_flow_worker.getPort("in_A"),
+	&opticalFlowInAdx = optical_flow_worker.getPort("in_Adx"),
+	&opticalFlowInAdy = optical_flow_worker.getPort("in_Ady"),
+	&opticalFlowInAd2x = optical_flow_worker.getPort("in_Ad2x"),
+	&opticalFlowInAd2y = optical_flow_worker.getPort("in_Ad2y"),
+	&opticalFlowInAdxdy = optical_flow_worker.getPort("in_Adxdy"),
+	&opticalFlowInB = optical_flow_worker.getPort("in_B"),
+	&opticalFlowInBdx = optical_flow_worker.getPort("in_Bdx"),
+	&opticalFlowInBdy = optical_flow_worker.getPort("in_Bdy"),
+	&opticalFlowInFeature = optical_flow_worker.getPort("in_feature"),
+	&opticalFlowOut = optical_flow_worker.getPort("out"),
+	&opticalFlowStatusOut = optical_flow_worker.getPort("out_status"),
+	&opticalFlowErrOut = optical_flow_worker.getPort("out_err");
 
       printf(">>> DONE INIT!\n");
 
@@ -408,10 +303,9 @@ int main ( int argc, char* argv [ ] )
       printf(">>> DONE CONNECTING (all)!\n");
 
       /* ---- Start all of the workers ------------------------------------- */
-      std::for_each ( facades.rbegin ( ), facades.rend ( ), Demo::start );
+      rcc_application->start();
 
       printf(">>> DONE STARTING!\n");
-      printf(">>> WORKERS: %lld\n", (size_t)facades.size());
 
       // Output info
       uint8_t *odata;
@@ -426,39 +320,39 @@ int main ( int argc, char* argv [ ] )
       // Set output data
       OA::ExternalBuffer* myOutput;
     
-      myOutput = myOutFeature.getBuffer(odata, olength);
+      while (!(myOutput = myOutFeature.getBuffer(odata, olength)));
       memcpy(odata, imgA->imageData, imgA->height * imgA->width);
       myOutput->put(0, imgA->height * imgA->width, false);
 
-      myOutput = myOutFeatureA.getBuffer(odata, olength);
+      while (!(myOutput = myOutFeatureA.getBuffer(odata, olength)));
       memcpy(odata, imgA->imageData, imgA->height * imgA->width);
       myOutput->put(0, imgA->height * imgA->width, false);
 
-      myOutput = myOutA.getBuffer(odata, olength);
+      while (!(myOutput = myOutA.getBuffer(odata, olength)));
       memcpy(odata, imgA->imageData, imgA->height * imgA->width);
       myOutput->put(0, imgA->height * imgA->width, false);
 
-      myOutput = myOutAdx.getBuffer(odata, olength);
+      while (!(myOutput = myOutAdx.getBuffer(odata, olength)));
       memcpy(odata, imgA->imageData, imgA->height * imgA->width);
       myOutput->put(0, imgA->height * imgA->width, false);
 
-      myOutput = myOutAdy.getBuffer(odata, olength);
+      while (!(myOutput = myOutAdy.getBuffer(odata, olength)));
       memcpy(odata, imgA->imageData, imgA->height * imgA->width);
       myOutput->put(0, imgA->height * imgA->width, false);
 
-      myOutput = myOutAdxdy.getBuffer(odata, olength);
+      while (!(myOutput = myOutAdxdy.getBuffer(odata, olength)))
       memcpy(odata, imgA->imageData, imgA->height * imgA->width);
       myOutput->put(0, imgA->height * imgA->width, false);
 
-      myOutput = myOutB.getBuffer(odata, olength);
+      while (!(myOutput = myOutB.getBuffer(odata, olength)));
       memcpy(odata, imgB->imageData, imgB->height * imgB->width);
       myOutput->put(0, imgB->height * imgB->width, false);
 
-      myOutput = myOutBdx.getBuffer(odata, olength);
+      while (!(myOutput = myOutBdx.getBuffer(odata, olength)));
       memcpy(odata, imgB->imageData, imgB->height * imgB->width);
       myOutput->put(0, imgB->height * imgB->width, false);
 
-      myOutput = myOutBdy.getBuffer(odata, olength);
+      while (!(myOutput = myOutBdy.getBuffer(odata, olength)));
       memcpy(odata, imgB->imageData, imgB->height * imgB->width);
       myOutput->put(0, imgB->height * imgB->width, false);
 

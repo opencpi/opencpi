@@ -47,21 +47,81 @@
 #define OcpiUtilException_h
 
 #include <string.h>
-#include <OcpiOsDataTypes.h>
+#include <stdarg.h>
 #include <string>
+#include "OcpiOsDataTypes.h"
+#include "OcpiUtilExceptionApi.h"
 
 namespace OCPI {
 
   namespace Util {
 
 
+      // This is the implementation class of the API error class
+      class Error : public OCPI::API::Error, public std::string {
+      public:
+	Error(const char *err, ...); // sprintf if there is an unescaped %%, concatenation otherw        virtual ~Error();
+      protected:
+	Error();
+	void setFormatV(const char *fmt, va_list ap);
+	void setFormat(const char *fmt, ...);
+	void setConcatenateV(const char *fmt, va_list ap);
+	inline const std::string &error() const { return *this; }
+      };
+
+    const OCPI::OS::uint32_t NO_ERROR_                   = 0;
+    const OCPI::OS::uint32_t ARTIFACT_LOAD_ERROR         = 1;
+    const OCPI::OS::uint32_t WORKER_CREATE_ERROR         = 2;   
+    const OCPI::OS::uint32_t PROPERTY_NOT_SET            = 3;  
+    const OCPI::OS::uint32_t MAIL_BOX_NOT_ALLOCATED      = 4;  
+    const OCPI::OS::uint32_t RESOURCE_EXCEPTION          = 5;
+    const OCPI::OS::uint32_t APPLICATION_EXCEPTION       = 6;
+    const OCPI::OS::uint32_t WORKER_NOT_FOUND            = 7;
+    const OCPI::OS::uint32_t PORT_NOT_FOUND              = 8;
+    const OCPI::OS::uint32_t BAD_CONNECTION_COOKIE       = 9;
+    const OCPI::OS::uint32_t ARTIFACT_NOT_FOUND          = 10;
+    const OCPI::OS::uint32_t PORT_ALREADY_CONNECTED      = 11;
+    const OCPI::OS::uint32_t BAD_CONNECTION_REQUEST      = 12;
+    const OCPI::OS::uint32_t PORT_NOT_CONNECTED          = 13;
+    const OCPI::OS::uint32_t PORT_CONFIG_ERROR           = 14;
+    const OCPI::OS::uint32_t NOT_YET_IMPLEMENTED         = 15;
+    const OCPI::OS::uint32_t NO_MORE_MEMORY              = 16;
+    const OCPI::OS::uint32_t CONTROL_PLANE_EXCEPTION     = 17;
+    const OCPI::OS::uint32_t PROPERTY_SET_EXCEPTION      = 18;
+    const OCPI::OS::uint32_t PROPERTY_GET_EXCEPTION      = 19;
+    const OCPI::OS::uint32_t CIRCUIT_NOT_FOUND           = 20;
+    const OCPI::OS::uint32_t ONP_WORKER_STARTED          = 21; // Operation not permitted while worker started
+    const OCPI::OS::uint32_t BAD_PORT_CONFIGURATION      = 22;
+    const OCPI::OS::uint32_t WORKER_ERROR                = 23; // and maybe string from worker
+    const OCPI::OS::uint32_t WORKER_FATAL                = 24; // and maybe string from worker
+    const OCPI::OS::uint32_t WORKER_API_ERROR            = 25;
+    const OCPI::OS::uint32_t TEST_NOT_IMPLEMENTED        = 26;
+    const OCPI::OS::uint32_t INVALID_CONTROL_SEQUENCE    = 27;
+    const OCPI::OS::uint32_t PORT_COUNT_MISMATCH         = 28;
+    const OCPI::OS::uint32_t WORKER_UNUSABLE             = 29;
+    const OCPI::OS::uint32_t ARTIFACT_UNSUPPORTED        = 30;
+    const OCPI::OS::uint32_t NO_ARTIFACT_FOR_WORKER      = 31;
+    const OCPI::OS::uint32_t CONTAINER_HAS_OWN_THREAD    = 32;
+
+
+    const OCPI::OS::uint32_t INTERNAL_PROGRAMMING_ERROR  = 50;
+
+    const OCPI::OS::uint32_t LAST_ERROR_ID               = 100;
+
+
+    // Our error levels
+    enum ErrorLevel {
+      ApplicationRecoverable,
+      ApplicationFatal,
+      ContainerFatal
+    };
     /*
      * To control footprint, the embedded system uses error codes to report well known
      * error conditions. 
      *
      * Error code 0 is reserved for string errors.
      */
-    class EmbeddedException {
+    class EmbeddedException : public Error {
     public:
 
 
@@ -74,7 +134,7 @@ namespace OCPI {
       // String error only
       EmbeddedException( const char* auxInfo );
 
-      EmbeddedException( const EmbeddedException& cpy );
+      //      EmbeddedException( const EmbeddedException& cpy );
 
       virtual ~EmbeddedException();
 
@@ -107,7 +167,6 @@ namespace OCPI {
       ExceptionMonitor( const ExceptionMonitor& rhs);
       EmbeddedException& operator =(EmbeddedException& ex);
 
-    protected:
     };
 
 
@@ -116,29 +175,15 @@ namespace OCPI {
      * inline declarations
      ****
      *********************************/
-    inline EmbeddedException::EmbeddedException( 
-                                                OCPI::OS::uint32_t errorCode, 
-                                                const char* auxInfo,
-                                                OCPI::OS::uint32_t errorLevel )
-      : m_errorCode(errorCode), m_errorLevel(errorLevel)
-      {
-	if (auxInfo)
-	  m_auxInfo = auxInfo;
-      }
-      // String error only (error code zero)
-    inline EmbeddedException::EmbeddedException( const char* auxInfo )
-      : m_errorCode(0), m_auxInfo(auxInfo), m_errorLevel(0)
-      {
-      }
-    inline EmbeddedException::~EmbeddedException(){}
     inline OCPI::OS::uint32_t EmbeddedException::getErrorCode() const {return m_errorCode;}
     inline const char* EmbeddedException::getAuxInfo() const {return m_auxInfo.c_str();}
     inline void  EmbeddedException::setAuxInfo( const char* info ){m_auxInfo=info;}
+#if 0
     inline         EmbeddedException::EmbeddedException( const EmbeddedException& cpy )
       : m_errorCode(cpy.m_errorCode), m_auxInfo(cpy.m_auxInfo), m_errorLevel(cpy.m_errorLevel)
       {
       }
-
+#endif
 
     inline bool ExceptionMonitor::error(){return m_ex;}
     inline void ExceptionMonitor::setError( EmbeddedException* ex )
@@ -235,13 +280,14 @@ namespace OCPI {
 
 #endif
 
-    class ApiError : public EmbeddedException {
-    public:
-      ApiError(const char *err, ...);
-    };
+      // Class that appends error strings rather than sprintfs them, sort of "legacy"
+      class ApiError : public Error {
+      public:
+	std::string m_auxInfo; // legacy compatibility FIXME
+	ApiError(const char *err, ...);
+	virtual ~ApiError();
+      };
   }
-
-
 }
 
 #endif

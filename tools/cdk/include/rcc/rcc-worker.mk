@@ -46,18 +46,21 @@ RccSkelSuffix=_skel.c
 RccSourceSuffix=.c
 OBJ:=.o
 
+ifneq ($(OCPI_DEBUG),0)
+SharedLibLinkOptions+=-g
+endif
 ifeq ($(shell uname),Linux)
 BF=.so
 SOEXT=.so
 AREXT=.a
-SharedLibLinkOptions=-shared
+SharedLibLinkOptions+=-shared
 SharedLibCompileOptions=-fPIC
 else
 ifeq ($(shell uname),Darwin)
 BF=.dylib
 SOEXT=.dylib
 AREXT=.a
-SharedLibLinkOptions=-dynamiclib
+SharedLibLinkOptions+=-dynamiclib
 SharedLibCompileOptions=
 endif
 endif

@@ -91,7 +91,7 @@ namespace OCPI {
       unsigned nProps, nPorts, nTests, size;
       Test &findTest(unsigned int testId);
     public:
-      inline Property *getProperties(unsigned &np) {
+      inline Property *getProperties(unsigned &np) const {
         np = nProps;
         return myProps;
       }

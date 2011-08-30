@@ -20,12 +20,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 
+#include <iostream>
+#include "cv.h"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
-#include <iostream>
-#include "DemoWorkerFacade.h"
 #include "highgui.h"
-#include "cv.h"
 
 namespace OA = OCPI::API;
 
@@ -40,9 +39,6 @@ int main ( int argc, char* argv [ ] )
 
   try
   {
-    ( void ) argc;
-    ( void ) argv;
-
     /* ---- Load the image from file (grayscale) -------------- */
     IplImage* inImg = cvLoadImage( argv[1], 0 );
     // Create image with 8U pixel depth, single color channel
@@ -62,80 +58,60 @@ int main ( int argc, char* argv [ ] )
         );
     cvNamedWindow( "Output", CV_WINDOW_AUTOSIZE );
 
-    /* ---- Create the shared RCC container and application -------------- */
-    OCPI::API::Container* rcc_container ( Demo::get_rcc_interface ( ) );
-
-    // Holds RCC worker interfaces passed to the RCC dispatch thread
-    std::vector<OCPI::API::Container*> interfaces;
-    interfaces.push_back ( rcc_container );
-
-    OCPI::API::ContainerApplication*
-      rcc_application ( rcc_container->createApplication ( ) );
-
-    // Holds facades for group operations
-    std::vector<Demo::WorkerFacade*> facades;
+    /* ---- Create the RCC container and application -------------- */
+    OA::Container *rcc_container = OA::ContainerManager::find("rcc");
+    OA::ContainerApplication *rcc_application = rcc_container->createApplication( );
 
     /* ---- Create the workers --------------------------------- */
     // canny_partial
-    Demo::WorkerFacade canny_worker (
-        "Canny (RCC)",
-        rcc_application,
-        "canny_partial",
-        "canny_partial" );
 
-    OCPI::API::PValue canny_worker_pvlist[] = {
+    OCPI::API::PValue canny_pvlist[] = {
       OCPI::API::PVULong("height", img->height),
       OCPI::API::PVULong("width", img->width),
       OCPI::API::PVDouble("low_thresh", 10), // Canny
       OCPI::API::PVDouble("high_thresh", 100), // Canny
       OCPI::API::PVEnd
     };
-    canny_worker.set_properties( canny_worker_pvlist );
-    facades.push_back ( &canny_worker );
+    OA::Worker &canny_worker =
+      rcc_application->createWorker("canny", "canny_partial", canny_pvlist );
 
+    OCPI::API::PValue canny_in_dx_pvlist[] = {
+      OCPI::API::PVString("protocol", "ocpi-socket-rdma"),
+      OCPI::API::PVEnd
+    };
     OA::Port
-      &cOut = canny_worker.port("out"),
-      &cIn_dx = canny_worker.port("in_dx"),
-      &cIn_dy = canny_worker.port("in_dy");
+      &cOut = canny_worker.getPort("out"),
+      &cIn_dx = canny_worker.getPort("in_dx", canny_in_dx_pvlist),
+      &cIn_dy = canny_worker.getPort("in_dy");
 
     // sobel_x
-    Demo::WorkerFacade sobel_x_worker (
-        "Sobel X (RCC)",
-        rcc_application,
-        "sobel",
-	"sobel_x");
 
-    OCPI::API::PValue sobel_x_worker_pvlist[] = {
+    OCPI::API::PValue sobel_x_pvlist[] = {
       OCPI::API::PVULong("height", img->height),
       OCPI::API::PVULong("width", img->width),
       OCPI::API::PVBool("xderiv", 1),
       OCPI::API::PVEnd
     };
-    sobel_x_worker.set_properties( sobel_x_worker_pvlist );
-    facades.push_back ( &sobel_x_worker );
-
+    OA::Worker &sobel_x_worker =
+      rcc_application->createWorker("sobel_x", "sobel",  sobel_x_pvlist );
     OA::Port
-      &sxOut = sobel_x_worker.port("out"),
-      &sxIn = sobel_x_worker.port("in");
+      &sxOut = sobel_x_worker.getPort("out"),
+      &sxIn = sobel_x_worker.getPort("in");
 
     // sobel_y
-    Demo::WorkerFacade sobel_y_worker (
-        "Sobel Y (RCC)",
-        rcc_application,
-	"sobel", "sobel_y" );
-
-    OCPI::API::PValue sobel_y_worker_pvlist[] = {
+    OCPI::API::PValue sobel_y_pvlist[] = {
       OCPI::API::PVULong("height", img->height),
       OCPI::API::PVULong("width", img->width),
       OCPI::API::PVBool("xderiv", 0),
       OCPI::API::PVEnd
     };
-    sobel_y_worker.set_properties( sobel_y_worker_pvlist );
-    facades.push_back ( &sobel_y_worker );
+    OA::Worker &sobel_y_worker =
+      rcc_application->createWorker("sobel_y", "sobel",  sobel_y_pvlist );
+
 
     OA::Port
-      &syOut = sobel_y_worker.port("out"),
-      &syIn = sobel_y_worker.port("in");
+      &syOut = sobel_y_worker.getPort("out"),
+      &syIn = sobel_y_worker.getPort("in");
 
     /* ---- Create connections --------------------------------- */
 
@@ -149,9 +125,7 @@ int main ( int argc, char* argv [ ] )
       &myIn = cOut.connectExternal("aci_in");
 
     /* ---- Start all of the workers ------------------------------------- */
-    std::for_each ( facades.rbegin ( ),
-        facades.rend ( ),
-        Demo::start );
+    rcc_application->start();
 
     // Output info
     uint8_t *odata;
@@ -199,8 +173,9 @@ int main ( int argc, char* argv [ ] )
 
     std::cout << "My input buffer is size " << ilength << std::endl;
 
-    myInput->release();
     memcpy((uint8_t *) outImg->imageData, idata, outImg->height * outImg->widthStep);
+
+    myInput->release();
 
     // Show image
     cvShowImage( "Output", outImg );
@@ -220,10 +195,6 @@ int main ( int argc, char* argv [ ] )
   catch ( const std::string& s )
   {
     std::cerr << "\n\nException(s): " << s << "\n" << std::endl;
-  }
-  catch ( const OCPI::API::Error& e )
-  {
-    std::cerr << "\nException(e): rc=" << e.error( ) << std::endl;
   }
   catch ( std::exception& g )
   {

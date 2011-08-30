@@ -19,12 +19,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 ======
 */
 
-#include "OcpiContainerApi.h"
-#include "OcpiPValueApi.h"
 #include <iostream>
-#include "DemoWorkerFacade.h"
-#include "highgui.h"
 #include "cv.h"
+#include "highgui.h"
+#include "OcpiContainerApi.h"
 
 namespace OA = OCPI::API;
 
@@ -63,24 +61,10 @@ int main ( int argc, char* argv [ ] )
       cvNamedWindow( "Output", CV_WINDOW_AUTOSIZE );
 
       /* ---- Create the shared RCC container and application -------------- */
-      OCPI::API::Container* rcc_container ( Demo::get_rcc_interface ( ) );
-
-      // Holds RCC worker interfaces passed to the RCC dispatch thread
-      std::vector<OCPI::API::Container*> interfaces;
-      interfaces.push_back ( rcc_container );
-
-      OCPI::API::ContainerApplication*
-	rcc_application ( rcc_container->createApplication ( ) );
-
-      // Holds facades for group operations
-      std::vector<Demo::WorkerFacade*> facades;
+      OA::Container *rcc_container = OA::ContainerManager::find("rcc");
+      OA::ContainerApplication *rcc_application = rcc_container->createApplication( );
 
       /* ---- Create the worker --------------------------------- */
-      Demo::WorkerFacade worker ( worker_name,//_full,
-				  rcc_application,
-				  worker_name ,
-				  worker_name );
-
       // Set properties
       
       OCPI::API::PValue worker_pvlist[] = {
@@ -88,8 +72,8 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVULong("width", img->width),
 	OCPI::API::PVEnd
       };
-      worker.set_properties(worker_pvlist);
-
+      OA::Worker &worker =
+	rcc_application->createWorker(worker_name, worker_name, worker_pvlist );
 
       // filter specific
       if ( worker_name == "gaussian_blur" ) {
@@ -98,29 +82,27 @@ int main ( int argc, char* argv [ ] )
 	  OCPI::API::PVDouble("sigmaY", 0.8), // Gaussian blur
 	  OCPI::API::PVEnd
 	};      
-	worker.set_properties(wpvlist);
+	worker.setProperties(wpvlist);
       }
       else if ( worker_name == "blur" ) {
 	OCPI::API::PValue wpvlist[] = {
 	  OCPI::API::PVBool("normalize", 1), // Blur only
 	  OCPI::API::PVEnd
 	};      
-	worker.set_properties(wpvlist);
+	worker.setProperties(wpvlist);
       }
       else if ( worker_name == "sobel" || worker_name == "scharr" ) {
 	OCPI::API::PValue wpvlist[] = {
 	  OCPI::API::PVBool("xderiv", 1), // Sobel/Scharr only
 	  OCPI::API::PVEnd
 	};      
-	worker.set_properties(wpvlist);
+	worker.setProperties(wpvlist);
       }
-
-      facades.push_back ( &worker );
 
       // Set ports
       OA::Port
-	&wOut = worker.port("out"),
-	&wIn = worker.port("in");
+	&wOut = worker.getPort("out"),
+	&wIn = worker.getPort("in");
 
       // Set external ports (need 3 buffers for out)
       OA::ExternalPort
@@ -128,9 +110,7 @@ int main ( int argc, char* argv [ ] )
 	&myIn = wOut.connectExternal("aci_in");
 
       /* ---- Start all of the workers ------------------------------------- */
-      std::for_each ( facades.rbegin ( ),
-		      facades.rend ( ),
-		      Demo::start );
+      rcc_application->start();
 
       // Output info
       uint8_t *odata;
@@ -171,8 +151,8 @@ int main ( int argc, char* argv [ ] )
 
 	std::cout << "My input buffer is size " << ilength << std::endl;
 
-	myInput->release();
 	memcpy(outImgLine, idata, img->widthStep);
+	myInput->release();
 	outImgLine += img->widthStep;
       }
 

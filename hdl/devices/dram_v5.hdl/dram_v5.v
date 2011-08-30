@@ -1114,8 +1114,7 @@ module mkDramServer_v5(CLK_sys0_clk,
 
   // submodule splaF
   arSRLFIFO #(.width(32'd2),
-	      .l2depth(32'd4),
-	      .depth(32'd16)) splaF(.CLK(wciS0_Clk),
+	      .l2depth(32'd4)) splaF(.CLK(wciS0_Clk),
 				    .RST_N(wciS0_MReset_n),
 				    .D_IN(splaF$D_IN),
 				    .ENQ(splaF$ENQ),
