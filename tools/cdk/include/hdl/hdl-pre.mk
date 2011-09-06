@@ -70,7 +70,7 @@ HdlCompile=\
   if test $$HdlExit != 0; then \
     $(ECHO) Error: $(HdlToolSet) failed\($$HdlExit\). See $(TargetDir)/$(HdlLog); \
   else \
-    $(ECHO) -n ' '$(HdlToolSet) succeeded.; \
+    $(ECHO) -n ' '$(HdlToolSet) succeeded.'  '; \
     cat $(HdlTime); \
   fi; \
   rm -f $(HdlTime); \

@@ -794,6 +794,11 @@ int main(int argc, char *argv[])
     return 1;
   }
 }
+  catch ( std::string &s )
+{
+  printf ( "Got an exception: %s\n", s.c_str() );
+  return 1;
+}
 catch ( ... )
 {
   printf ( "Got an exception\n" );

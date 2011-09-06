@@ -1,0 +1,17 @@
+PROMGEN: Xilinx Prom Generator O.61xd
+Copyright (c) 1995-2011 Xilinx, Inc.  All rights reserved.
+
+promgen -w -p mcs -c FF -x xcf128x -data_width 16 -u 00000000 testbias-ml605.bit 
+
+PROM testbias-ml605.prm map: Sun Sep  4 11:34:22 2011
+
+Calculating PROM checksum with fill value ff
+
+Format        Mcs86 (32-bit)
+Size          16384K
+PROM start    0000:0000
+PROM end      00ff:ffff
+PROM checksum 75bf129e
+
+        Addr1        Addr2                     Date File(s)
+    0000:0000    008c:e03b     Sep  4 11:34:09 2011 testbias-ml605.bit

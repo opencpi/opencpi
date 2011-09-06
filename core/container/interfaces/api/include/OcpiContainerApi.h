@@ -161,7 +161,8 @@ namespace OCPI {
 				   const char *name, const char *impl,
 				   const char *inst = NULL,
 				   const PValue *wProps = NULL,
-				   const PValue *wParams = NULL) = 0;
+				   const PValue *wParams = NULL,
+				   const Connection *connections = NULL) = 0;
       // Simpler method to create a worker by name, with the artifact
       // found from looking at libraries in the library path, finding
       // what implementation will run on the container of this container-app.

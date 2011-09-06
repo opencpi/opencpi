@@ -58,7 +58,7 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 # #### Location of the Xilinx tools ####################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.1/ISE_DS
+export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.2/ISE_DS
 
 # #### Location of Icarus Verilog ######################################### #
 
@@ -118,7 +118,7 @@ export OCPI_HAVE_IBVERBS=0
 
 # ######################################################################### #
 
-export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/rep
+export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/lib/rcc
 export OCPI_SMB_SIZE=100000000
 
 # #########  OpenCV 

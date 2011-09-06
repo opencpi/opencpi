@@ -18,12 +18,12 @@ set bitfile = $argv[1]
 set device = $argv[2]
 set usbport = $argv[3]
 set part = $argv[4]
-set temp = /tmp/cpibitstream$$
+set temp = /tmp/ocpibitstream$$
 set tscript =  $temp.1
 set tbar = $temp.2
 set tlog = $temp.3
 set tmp = $temp.3
-set golden = /opt/cpi/ocfrp/pci-config-snapshots/$device
+set golden = /opt/opencpi/ocfrp/pci-config-snapshots/$device
 echo Loading bit file $bitfile onto PCI device $device via usb port $usbport.
 if ( ! ( -f $bitfile && -r $bitfile ) ) then
   echo Bitstream file \"$bitfile\" does not exist or is inaccessible.
