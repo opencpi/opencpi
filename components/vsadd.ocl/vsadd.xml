@@ -1,0 +1,4 @@
+<OclImplementation>
+  <xi:include href="vsadd_spec.xml"/>
+  <ControlInterface Name="vsadd"/>
+</OclImplementation>

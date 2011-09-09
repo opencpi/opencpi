@@ -1,0 +1,4 @@
+<OclImplementation>
+  <xi:include href="fft1d_spec.xml"/>
+  <ControlInterface Name="fft1d"/>
+</OclImplementation>

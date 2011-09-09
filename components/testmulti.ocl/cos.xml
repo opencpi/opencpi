@@ -1,0 +1,4 @@
+<OclImplementation>
+  <xi:include href="cos_spec.xml"/>
+  <ControlInterface Name="cos"/>
+</OclImplementation>

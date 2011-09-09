@@ -1,0 +1,15 @@
+<ComponentSpec Name="mmul">
+  <Properties>
+    <Property Name="widthA" Type="Long" Readable="true" Writable="true"/>
+    <Property Name="widthB" Type="Long" Readable="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="A" Producer="false">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="B" Producer="false">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="C" Producer="true">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+</ComponentSpec>
