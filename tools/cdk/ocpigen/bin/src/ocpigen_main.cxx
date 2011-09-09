@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -50,7 +50,7 @@
  * component declaration.  We will use this for instantiating assemblies into infrastructure
  * since our assemblies will be VHDL.
  *
- * case rules for module and port names may be funky.  isim says port names are case 
+ * case rules for module and port names may be funky.  isim says port names are case
  * insensitive..
  * Thus we must define case rules to enable this to work properly...
 
@@ -173,9 +173,9 @@ main(int argc, char **argv) {
 	fprintf(stderr, "For file %s: %s\n", *ap, err);
       else if (doDefs && (err = emitDefsHDL(w, root)))
 	fprintf(stderr, "%s: Error generating definition/declaration file: %s\n", *ap, err);
-      else if (doImpl && (err = (w->model == HdlModel ? emitImplHDL : emitImplRCC)(w, root, library)))
+      else if (doImpl && (err = (w->model == HdlModel ? emitImplHDL : (w->model == RccModel) ? emitImplRCC : emitImplOCL)(w, root, library)))
 	fprintf(stderr, "%s: Error generating implementation declaration file: %s\n", *ap, err);
-      else if (doSkel && (err = (w->model == HdlModel ? emitSkelHDL : emitSkelRCC)(w, root)))
+      else if (doSkel && (err = (w->model == HdlModel ? emitSkelHDL : (w->model == RccModel) ? emitSkelRCC : emitSkelOCL)(w, root)))
 	fprintf(stderr, "%s: Error generating implementation skeleton file: %s\n", *ap, err);
       else if (doWrap && (err = emitDefsHDL(w, root, true)))
 	fprintf(stderr, "%s: Error generating wrapper file: %s\n", *ap, err);
@@ -198,6 +198,12 @@ main(int argc, char **argv) {
 	  if ((err = emitArtRCC(w, root)))
 	    fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
 		    *ap, err);
+    break;
+	case OclModel:
+	  if ((err = emitArtOCL(w, root)))
+	    fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
+		    *ap, err);
+    break;
 	case NoModel:
 	  ;
 	}

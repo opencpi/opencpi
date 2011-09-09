@@ -113,8 +113,8 @@ namespace OCPI {
     template <class Dri, class Con, class App, class Art>
     class ContainerBase
       : public OCPI::Driver::DeviceBase<Dri,Con>, // for the relationship with our driver
-	public Parent<App>,
 	public Parent<Art>,
+	public Parent<App>,
 	public Container
     {
     protected:

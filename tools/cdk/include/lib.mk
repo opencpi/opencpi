@@ -1,7 +1,7 @@
 
 # #####
 #
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
 #
 #    Mercury Federal Systems, Incorporated
 #    1901 South Bell Street
@@ -44,6 +44,7 @@
 # We also list the targets per model.
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
+include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 ifndef LibName
 LibName=$(CwdName)
 endif
@@ -51,6 +52,7 @@ endif
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))
 HdlImplementations=$(filter %.hdl,$(Implementations))
+OclImplementations=$(filter %.ocl,$(Implementations))
 LibDir=$(OutDir)lib
 GenDir=$(OutDir)gen
 #LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call UnCapitalize,$(m))/$(ht)))
@@ -67,6 +69,10 @@ ifneq ($(RccImplementations),)
 build_targets += rcc
 endif
 
+ifneq ($(OclImplementations),)
+build_targets += ocl
+endif
+
 ifneq ($(HdlTargets),)
 ifneq ($(HdlImplementations),)
 build_targets += hdl
@@ -76,7 +82,7 @@ $(call OcpiDbgVar,build_targets)
 # function to build the targets for an implemention.
 #  First arg is model
 #  second is implementation directory
-ifdef OCPI_OUTPUT_DIR 
+ifdef OCPI_OUTPUT_DIR
 PassOutDir=OCPI_OUTPUT_DIR=$(call AdjustRelative,$(OutDir:%/=%))
 endif
 MyMake=$(MAKE) --no-print-directory
@@ -137,6 +143,8 @@ xm: speclinks $(XmImplementations)
 
 rcc: speclinks $(RccImplementations)
 
+ocl: speclinks $(OclImplementations)
+
 # this is HDL-specific:  for some HDL targets, we need to build a stub library
 # so that higher level builds can reference cores using such a library.
 # (e.g. xilinx xst).
@@ -160,10 +168,13 @@ cleanxm:
 cleanrcc:
 	$(call CleanModel,rcc)
 
+cleanocl:
+	$(call CleanModel,ocl)
+
 cleanhdl:
 	$(call CleanModel,hdl)
 
-clean:: cleanxm cleanrcc cleanhdl
+clean:: cleanxm cleanrcc cleanocl cleanhdl
 	$(AT)echo Cleaning library directory for all targets.
 	$(AT)rm -fr $(OutDir)lib $(OutDir)gen $(OutDir)
 
@@ -173,10 +184,13 @@ $(HdlImplementations): | $(OutDir)lib/hdl $(OutDir)gen/hdl
 $(RccImplementations): | $(OutDir)lib/rcc
 	$(AT)$(call BuildImplementation,rcc,$@)
 
+$(OclImplementations): | $(OutDir)lib/ocl
+	$(AT)$(call BuildImplementation,ocl,$@)
+
 $(XmImplementations): | $(OutDir)lib/xm
 	$(AT)$(call BuildImplementation,xm,$@)
 
-.PHONY: $(XmImplementations) $(RccImplementations) $(HdlImplementations) speclinks
+.PHONY: $(XmImplementations) $(RccImplementations) $(OclImplementations) $(HdlImplementations) speclinks
 
 # Worker should only be specified when the target is "new".
 ifeq ($(origin Worker),command line)

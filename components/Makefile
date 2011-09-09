@@ -70,6 +70,12 @@ Implementations = \
 	testzc.rcc \
 	psd.hdl \
 	ddc.hdl \
+	fft1d.ocl \
+	mmul.ocl \
+	vadd.ocl \
+	vsadd.ocl \
+	power_spectrum_1d.ocl \
+	testmulti.ocl
 
 #	wbr.hdl 
 

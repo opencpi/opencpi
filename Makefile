@@ -95,6 +95,7 @@ endif
 
 PACKAGES += tools/local/binder tools/local/tester
 PACKAGES += tools/cdk/ocpigen
+PACKAGES += tools/cdk/ocpiocl
 PACKAGES += tools/cdk/ocpixm
 PACKAGES += test
 
@@ -133,6 +134,7 @@ ALLPACKAGES = \
 	tools/local/binder \
 	tools/local/tester \
 	tools/cdk/ocpigen \
+	tools/cdk/ocpiocl \
 	tools/cdk/ocpixm \
 	core/container/ctests \
 	core/$(DATAPLANE)/rdma_tests

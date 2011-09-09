@@ -18,7 +18,7 @@
  *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
  *      /_/                                             /____/
  *
- *  OpenCPI is free software: you can redistribute it and/or modify
+ *  OpenCPI is free software: you can redistribute it and/for modify
  *  it under the terms of the GNU Lesser General Public License as published
  *  by the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
@@ -209,7 +209,7 @@ openOutput(const char *name, const char *outDir, const char *prefix, const char 
   }
   return 0;
 }
-										
+
 // Emit the file that can be used to instantiate the worker
  const char *
 emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
@@ -364,30 +364,30 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
     case WSIPort:
     case WMIPort:
       // Do common WDI attributes first
-      fprintf(f, "  //   DataValueWidth: %u\n", p->protocol->m_dataValueWidth);  
-      fprintf(f, "  //   DataValueGranularity: %u\n", p->protocol->m_dataValueGranularity);  
+      fprintf(f, "  //   DataValueWidth: %u\n", p->protocol->m_dataValueWidth);
+      fprintf(f, "  //   DataValueGranularity: %u\n", p->protocol->m_dataValueGranularity);
       fprintf(f, "  //   DiverseDataSizes: %s\n", BOOL(p->protocol->m_diverseDataSizes));
-      fprintf(f, "  //   MaxMessageValues: %u\n", p->protocol->m_maxMessageValues);  
-      fprintf(f, "  //   NumberOfOpcodes: %u\n", p->u.wdi.nOpcodes);  
-      fprintf(f, "  //   Producer: %s\n", BOOL(p->u.wdi.isProducer));  
-      fprintf(f, "  //   VariableMessageLength: %s\n", BOOL(p->protocol->m_variableMessageLength));  
+      fprintf(f, "  //   MaxMessageValues: %u\n", p->protocol->m_maxMessageValues);
+      fprintf(f, "  //   NumberOfOpcodes: %u\n", p->u.wdi.nOpcodes);
+      fprintf(f, "  //   Producer: %s\n", BOOL(p->u.wdi.isProducer));
+      fprintf(f, "  //   VariableMessageLength: %s\n", BOOL(p->protocol->m_variableMessageLength));
       fprintf(f, "  //   ZeroLengthMessages: %s\n", BOOL(p->protocol->m_zeroLengthMessages));
-      fprintf(f, "  //   Continuous: %s\n", BOOL(p->u.wdi.continuous));  
-      fprintf(f, "  //   DataWidth: %u\n", p->dataWidth);  
-      fprintf(f, "  //   ByteWidth: %u\n", p->byteWidth);  
+      fprintf(f, "  //   Continuous: %s\n", BOOL(p->u.wdi.continuous));
+      fprintf(f, "  //   DataWidth: %u\n", p->dataWidth);
+      fprintf(f, "  //   ByteWidth: %u\n", p->byteWidth);
       fprintf(f, "  //   ImpreciseBurst: %s\n", BOOL(p->impreciseBurst));
       fprintf(f, "  //   Preciseburst: %s\n", BOOL(p->preciseBurst));
       if (p->type == WSIPort) {
-	fprintf(f, "  //   Abortable: %s\n", BOOL(p->u.wsi.abortable));  
-	fprintf(f, "  //   EarlyRequest: %s\n", BOOL(p->u.wsi.earlyRequest));  
+	fprintf(f, "  //   Abortable: %s\n", BOOL(p->u.wsi.abortable));
+	fprintf(f, "  //   EarlyRequest: %s\n", BOOL(p->u.wsi.earlyRequest));
       } else if (p->type == WMIPort)
-	fprintf(f, "  //   TalkBack: %s\n", BOOL(p->u.wmi.talkBack));  
+	fprintf(f, "  //   TalkBack: %s\n", BOOL(p->u.wmi.talkBack));
       break;
     case WTIPort:
       break;
     case WMemIPort:
-      fprintf(f, "  //   DataWidth: %u\n", p->dataWidth);  
-      fprintf(f, "  //   ByteWidth: %u\n", p->byteWidth);  
+      fprintf(f, "  //   DataWidth: %u\n", p->dataWidth);
+      fprintf(f, "  //   ByteWidth: %u\n", p->byteWidth);
       fprintf(f, "  //   ImpreciseBurst: %s\n", BOOL(p->impreciseBurst));
       fprintf(f, "  //   Preciseburst: %s\n", BOOL(p->preciseBurst));
       fprintf(f, "  //   MemoryWords: %llu\n", (unsigned long long )p->u.wmemi.memoryWords);
@@ -601,8 +601,8 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	    "`include \"%s%s%s\"\n"
 	    "`include \"ocpi_wip_defs%s\"\n",
 	    w->implName, w->implName, DEFS, VERH, w->implName, DEFS, VERH, VERH);
-	    
-  // For VHDL we need to basically replicate the port declarations that are part of the 
+
+  // For VHDL we need to basically replicate the port declarations that are part of the
   // component: there is no way to just use what the component decl says.
   // For Verilog we just include the module declaration so don't need anything here.
   if (w->language == VHDL) {
@@ -734,25 +734,25 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	if (p->ocp.MReqInfo.width) {
 	  if (n == 0) {
 	    if (w->language == VHDL)
-	      fprintf(f, 
+	      fprintf(f,
 		      "  subtype %s%s_OpCode_t is std_logic_vector(%d downto 0);\n",
 		      p->name, mIn ? pin : pout, p->ocp.MReqInfo.width - 1);
 	    else
-	      fprintf(f, 
+	      fprintf(f,
 		      "  localparam %sOpCodeWidth = %d;\n",
 		      mIn ? pin : pout, p->ocp.MReqInfo.width);
           }
 	  if (w->language == VHDL)
-	    fprintf(f, 
+	    fprintf(f,
 		    "  alias %s_Opcode: %sOpCode_t is %s.MReqInfo(%d downto 0);\n",
 		    mIn ? pin : pout, mIn ? pin : pout,
 		    mIn ? pin : pout, p->ocp.MReqInfo.width - 1);
 	  else if (mIn)
-	    fprintf(f, 
+	    fprintf(f,
 		    "  wire [%d:0] %sOpcode = %sMReqInfo;\n",
 		    p->ocp.MReqInfo.width - 1, pin, pin);
 	  else
-	    fprintf(f, 
+	    fprintf(f,
 		    //"  wire [%d:0] %s_Opcode; always@(posedge %s) %s_MReqInfo = %s_Opcode;\n",
 		    // p->ocp.MReqInfo.width - 1, pout, p->clock->signal, pout, pout);
 		    "  %s [%d:0] %sOpcode; assign %sMReqInfo = %sOpcode;\n",
@@ -760,15 +760,15 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	}
 	if (p->ocp.MFlag.width) {
 	  if (w->language == VHDL)
-	    fprintf(f, 
+	    fprintf(f,
 		    "  alias %sAbort : std_logic is %s.MFlag(0);\n",
 		    mIn ? pin : pout, mIn ? pin : pout);
 	  else if (mIn)
-	    fprintf(f, 
+	    fprintf(f,
 		    "  wire %sAbort = %sMFlag[0];\n",
 		    pin, pin);
 	  else
-	    fprintf(f, 
+	    fprintf(f,
 		    "  wire %sAbort; assign %sMFlag[0] = %sAbort;\n",
 		    pout, pout, pout);
         }
@@ -970,7 +970,7 @@ adjustConnection(InstancePort *consumer, InstancePort *producer) {
 	  oa->other = OCP_MBurstLength;
 	  asprintf((char **)&oa->expr, "{%u'b0,%%s}", cons->ocp.MBurstLength.width - 2);
 	  oa->comment = "Consumer only needs imprecise burstlength (2 bits)";
-	}	
+	}
       }
     }
     if (prod->preciseBurst && cons->preciseBurst &&
@@ -1054,7 +1054,7 @@ emitAssyHDL(Worker *w, const char *outDir)
   InstancePort *ip;
   fprintf(f, "// Define signals for connections that are not externalized\n\n");
   fprintf(f, "wire[255: 0] nowhere; // for passing output ports\n");
-  // Define the inside-the-assembly signals, and also figure out the necessary tieoffs or 
+  // Define the inside-the-assembly signals, and also figure out the necessary tieoffs or
   // simple expressions when there is a simple adaptation.
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     if (c->nExternals == 0) {
@@ -1161,7 +1161,7 @@ OCPI_PROPERTY_DATA_TYPES
 	      if (oa->expr) {
 		const char *other;
 		if (oa->other) {
-		  asprintf((char **)&other, "%s%s", 
+		  asprintf((char **)&other, "%s%s",
 			   ocpSignals[oa->other].master ?
 			   ip->connection->masterName : ip->connection->slaveName,
 			   ocpSignals[oa->other].name);
@@ -1332,7 +1332,7 @@ emitBsvHDL(Worker *w, const char *outDir) {
       break;
     default:
       ;
-    }    
+    }
     for (nn = 0; nn < p->count; nn++) {
       if (p->count > 1)
 	asprintf((char **)&num, "%u", nn);
@@ -1417,7 +1417,7 @@ emitBsvHDL(Worker *w, const char *outDir) {
 	  "  default_reset no_reset;\n\n"
 	  "  // Input clocks on specific worker interfaces\n",
 	  w->implName);
-  
+
   for (n = 0; n < w->ports.size(); n++) {
     Port *p = w->ports[n];
     if (p->clock->port == p)
@@ -1436,7 +1436,7 @@ emitBsvHDL(Worker *w, const char *outDir) {
       if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
 				 !p->master && p->ocp.MReset_n.value)) {
 	const char *signal;
-	asprintf((char **)&signal, 
+	asprintf((char **)&signal,
 		 p->master ? p->ocp.SReset_n.signal : p->ocp.MReset_n.signal, nn);
 	if (p->count > 1)
 	  fprintf(f, "  input_reset  i_%s%sRst(%s) = i_%sRst[%u];\n",
@@ -1461,14 +1461,14 @@ emitBsvHDL(Worker *w, const char *outDir) {
       const char *reset;
       if (p->type == WCIPort && (p->master && p->ocp.SReset_n.value ||
 				 !p->master && p->ocp.MReset_n.value)) {
-	asprintf((char **)&reset, "i_%s%sRst", p->name, num); 
+	asprintf((char **)&reset, "i_%s%sRst", p->name, num);
       } else
 	reset = "no_reset";
       for (o = 0, os = p->ocp.signals, osd = ocpSignals; osd->name; osd++, os++, o++)
 	if (os->value) {
 	  char *signal;
 	  asprintf(&signal, os->signal, nn);
-	  
+
 	  // Inputs
 	  if (p->master != osd->master && o != OCP_Clk &&
 	      (p->type != WCIPort || o != OCP_MReset_n && o != OCP_SReset_n)) {
@@ -1497,7 +1497,7 @@ emitBsvHDL(Worker *w, const char *outDir) {
 		      tolower(osd->name[0]), osd->name + 1, signal, en++,
 		      p->clock->port->name, reset);
 	  }
-	  if (p->master == osd->master) 
+	  if (p->master == osd->master)
 	    fprintf(f, "  method %s %c%s clocked_by(i_%sClk) reset_by(%s);\n",
 		    signal, tolower(osd->name[0]), osd->name + 1,
 		    p->clock->port->name, reset);
@@ -1603,7 +1603,7 @@ emitBsvHDL(Worker *w, const char *outDir) {
 }
 
   void
-emitWorker(FILE *f, Worker *w) 
+emitWorker(FILE *f, Worker *w)
 {
   fprintf(f, "<worker name=\"%s\"", w->implName);
   if (w->ctl.controlOps) {
@@ -1649,6 +1649,8 @@ emitWorker(FILE *f, Worker *w)
       if (p->protocol->m_maxMessageValues)
 	fprintf(f, " minBufferSize=\"%u\"",
 		(p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth + 7) / 8);
+	fprintf(f, " dataValueWidthInBytes=\"%u\"",
+	           p->protocol->m_dataValueWidth / 8 );
       if (p->u.wdi.isBidirectional)
 	fprintf(f, " bidirectional=\"true\"");
       else if (!p->u.wdi.isProducer)
@@ -1668,12 +1670,12 @@ emitWorker(FILE *f, Worker *w)
 	    fprintf(f, " twoway=\"true\"");
 	  if (o->args()) {
 	    fprintf(f, ">\n");
-	    
+
 	    for (unsigned j = 0; j < o->nArgs(); j++, a++) {
 	      fprintf(f, "        <argument name=\"%s\"", a->name);
 	      a->printXml(f);
 	      fprintf(f, "/>\n");
-	    }	  
+	    }
 	    fprintf(f, "      </operation>\n");
 	  } else
 	    fprintf(f, "/>\n");
@@ -1684,6 +1686,10 @@ emitWorker(FILE *f, Worker *w)
       }
     }
   }
+	for (nn = 0; nn < w->localMemories.size(); nn++) {
+		LocalMemory* m = w->localMemories[nn];
+		fprintf(f, "  <localMemory name=\"%s\" size=\"%u\"/>\n", m->name, m->sizeOfLocalMemory);
+	}
   fprintf(f, "</worker>\n");
 }
 
@@ -1693,7 +1699,7 @@ emitInstance(Instance *i, FILE *f)
   fprintf(f, "<%s name=\"%s\" worker=\"%s\" occpIndex=\"%u\"",
 	  i->isInterconnect ? "interconnect" : "instance",
 	  i->name, i->worker->implName, i->index);
-#if 0 
+#if 0
   bool any = false;
   Port *p = i->worker->ports;
   for (unsigned n = 0; n < i->worker->nPorts; n++, p++)

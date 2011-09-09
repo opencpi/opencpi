@@ -77,7 +77,7 @@ $(call OcpiDbgVar,CwdName)
 
 Model:=$(strip $(subst ., ,$(suffix $(CwdDirName))))
 $(call OcpiDbgVar,Model)
-Models=xm rcc hdl
+Models=xm rcc hdl ocl
 Suffix_rcc=c
 Suffix_hdl=v
 Suffix_ocl=cl

@@ -75,12 +75,12 @@ namespace OCPI {
 
     const unsigned Port::DEFAULT_NBUFFERS = 1;
     const unsigned Port::DEFAULT_BUFFER_SIZE = 2*1024;
-    
+
     Port::Port(bool prov)
-      : name(NULL), ordinal(0), provider(prov), minBufferSize(DEFAULT_BUFFER_SIZE),
-	minBufferCount(1), maxBufferSize(0), myXml(0) {
+      : name(NULL), ordinal(0), provider(prov), optional(false), minBufferSize(DEFAULT_BUFFER_SIZE),
+	minBufferCount(1), maxBufferSize(0), dataValueWidthInBytes(1), myXml(0) {
     }
-    
+
     bool Port::decode(ezxml_t x, PortOrdinal aOrdinal) {
       myXml = x;
       name = ezxml_cattr(x, "name");
@@ -108,6 +108,12 @@ namespace OCPI {
       n = CC::getAttrNum(x, "minBuffers", true, &found);
       if (found)
 	minBufferCount = n;
+      n = CC::getAttrNum(x, "optional", true, &found);
+      if (found)
+	optional = n;
+      n = CC::getAttrNum(x, "dataValueWidthInBytes", true, &found);
+      if (found)
+	dataValueWidthInBytes = n;
       ezxml_t protocol = ezxml_cchild(x, "protocol");
       if (protocol)
 	Protocol::parse(protocol);

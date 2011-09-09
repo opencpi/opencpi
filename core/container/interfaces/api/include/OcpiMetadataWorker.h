@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -58,6 +58,7 @@
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilProtocol.h"
 #include "OcpiMetadataPort.h"
+#include "OcpiMetadataLocalMemory.h"
 
 //!!!!!!! There is also this list in the OcpiContainerApi.h
 #define CONTROL_OP_I CONTROL_OP
@@ -88,7 +89,9 @@ namespace OCPI {
       Property *myProps;
       Port *myPorts;
       Test *myTests;
-      unsigned nProps, nPorts, nTests, size;
+      LocalMemory* myLocalMemories;
+      unsigned nProps, nPorts, nTests, nLocalMemories, size;
+      size_t totalPropertySize;
       Test &findTest(unsigned int testId);
     public:
       inline Property *getProperties(unsigned &np) const {
@@ -112,6 +115,19 @@ namespace OCPI {
       {
         n_ports = nPorts;
         return myPorts;
+      }
+      inline unsigned int getTotalNumPorts ( ) const
+      {
+        return nPorts;
+      }
+      inline LocalMemory* getLocalMemories ( unsigned int& n_local_memories )
+      {
+        n_local_memories = nLocalMemories;
+        return myLocalMemories;
+      }
+      inline size_t getTotalPropertySize ( ) const
+      {
+        return totalPropertySize;
       }
       enum ControlState {
         EXISTS,
