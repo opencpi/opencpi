@@ -202,39 +202,44 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
       } else
         printMember(f, p->members, "", align, pad);
     }
+
     fprintf(f,
             "\n} %c%sProperties;\n\n",
             toupper(w->implName[0]), w->implName + 1);
+    }
 
-    fprintf(f,
-            "/*\n"
-            " * Worker context structure for worker %s\n"
-            " */\n"
-            "typedef struct {\n",
-            w->implName);
+  fprintf(f,
+          "/*\n"
+          " * Worker context structure for worker %s\n"
+          " */\n"
+          "typedef struct {\n",
+          w->implName);
+
+  if (w->ctl.nProperties) {
     fprintf(f,"  __global %c%sProperties* properties;\n",
-                  toupper(w->implName[0]), w->implName + 1);
-    fprintf(f,"  OCLRunCondition runCondition;\n");
-
-    if (w->localMemories.size()) {
-      for (unsigned n = 0; n < w->localMemories.size(); n++) {
-        LocalMemory* mem = w->localMemories[n];
-        fprintf(f, "  __global void* %s;\n", mem->name );
-      }
-    }
-
-    if (w->ports.size()) {
-      for (unsigned n = 0; n < w->ports.size(); n++) {
-        Port *port = w->ports[n];
-        fprintf(f, "  OCLPort %s;\n", port->name );
-        /* FIXME how do we deal with two-way ports */
-      }
-    }
-
-    fprintf(f,
-            "\n} OCLWorker%c%s;\n\n",
             toupper(w->implName[0]), w->implName + 1);
   }
+
+  fprintf(f,"  OCLRunCondition runCondition;\n");
+
+  if (w->localMemories.size()) {
+    for (unsigned n = 0; n < w->localMemories.size(); n++) {
+      LocalMemory* mem = w->localMemories[n];
+      fprintf(f, "  __global void* %s;\n", mem->name );
+    }
+  }
+
+  if (w->ports.size()) {
+    for (unsigned n = 0; n < w->ports.size(); n++) {
+      Port *port = w->ports[n];
+      fprintf(f, "  OCLPort %s;\n", port->name );
+      /* FIXME how do we deal with two-way ports */
+    }
+  }
+
+  fprintf(f,
+          "\n} OCLWorker%c%s;\n\n",
+          toupper(w->implName[0]), w->implName + 1);
 
   fprintf(f,
           "\n"
@@ -290,7 +295,7 @@ emitSkelOCL(Worker *w, const char *outDir) {
         w->implName + 1 );
     }
 
-  const size_t pad_len = 10 + strlen ( w->implName ) + strlen ( mName );
+  const size_t pad_len = 14 + strlen ( w->implName ) + 3;
   char pad [ pad_len + 1 ];
   memset ( pad, ' ', pad_len );
   pad [ pad_len ] = '\0';
@@ -299,14 +304,13 @@ emitSkelOCL(Worker *w, const char *outDir) {
     return err;
   fprintf(f,
 	  "\n"
-	  "OCLResult %s_%s ( __local OCLWorker%c%s* self,\n"
+	  "OCLResult %s_run ( __local OCLWorker%c%s* self,\n"
 	  "%sOCLBoolean timedOut,\n"
 	  "%s__global OCLBoolean* newRunCondition )\n{\n"
 	  "  (void)self;(void)timedOut;(void)newRunCondition;\n"
 	  "  return OCL_ADVANCE;\n"
 	  "}\n",
 	  w->implName,
-	  mName,
     toupper(w->implName[0]),
     w->implName + 1,
     pad,
@@ -380,7 +384,7 @@ static const char* emitEntryPointOCL ( Worker* w,
 
   fprintf ( f, "/* ----- Single function to dispatch both run() and control operations. -- */\n\n" );
 
-  const size_t pad_len = 29 + strlen ( w->implName );
+  const size_t pad_len = 20 + strlen ( w->implName );
   char pad [ pad_len + 1 ];
   memset ( pad, ' ', pad_len );
   pad [ pad_len ] = '\0';
@@ -449,9 +453,16 @@ static const char* emitEntryPointOCL ( Worker* w,
 
   fprintf ( f, "  /* ---- Initialize the property pointer -------------------------------- */\n\n" );
 
-  fprintf ( f, "  self.properties = ( __global %c%sProperties* ) properties;\n\n",
-            toupper ( w->implName [ 0 ] ),
-            w->implName + 1 );
+  if (w->ctl.nProperties)
+  {
+    fprintf ( f, "  self.properties = ( __global %c%sProperties* ) properties;\n\n",
+              toupper ( w->implName [ 0 ] ),
+              w->implName + 1 );
+  }
+  else
+  {
+    fprintf ( f, "  ( void ) properties;\n\n" );
+  }
 
   fprintf ( f, "  /* ---- Initialize the run condition ----------------------------------- */\n\n" );
 

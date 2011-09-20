@@ -10,6 +10,13 @@
 
 #define BLOCK_SIZE 64
 
+/*
+ * Required work group size for worker fft1d run() function.
+ */
+#define OCL_WG_X BLOCK_SIZE
+#define OCL_WG_Y 1
+#define OCL_WG_Z 1
+
 void realfft( __global float* src_dst,
               const unsigned n )
 {
