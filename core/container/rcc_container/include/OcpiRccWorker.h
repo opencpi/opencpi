@@ -64,6 +64,7 @@ namespace OCPI {
     class Controller;
     class Application;
     class Port;
+    class RDMAPort;
     class Artifact;
 
     // Worker instance information structure
@@ -75,7 +76,8 @@ namespace OCPI {
     protected:
       friend class Application;
       friend class Controller;
-      friend class Port;
+      friend class RDMAPort;
+      friend class MessagePort;
       ::RCCPortMask getReadyPorts();
       void run(bool &anyRun);
       void checkDeadLock();
@@ -318,7 +320,7 @@ namespace OCPI {
       void overRidePortInfo( OCPI::Metadata::Port & portData );
 
       // Update a ports information (as a result of a connection)
-      void updatePort( Port &port );
+      void updatePort( RDMAPort &port );
     };
 
 

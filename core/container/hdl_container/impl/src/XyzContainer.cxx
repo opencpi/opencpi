@@ -345,6 +345,7 @@ namespace OCPI {
       friend class ExternalPort;
       ezxml_t m_connection;
 
+      void setMode( ConnectionMode ){};
       void disconnect()
         throw ( OCPI::Util::EmbeddedException )
       {
@@ -400,9 +401,9 @@ namespace OCPI {
         ocpiAssert(m_canBeExternal && pport.m_canBeExternal);
         pport.applyConnectParams(pProps);
         applyConnectParams(uProps);
-        establishRoles(provider.connectionData.data);
-        finishConnection(provider.connectionData.data);
-        pport.finishConnection(connectionData.data);
+        establishRoles(provider.getData().data);
+        finishConnection(provider.getData().data);
+        pport.finishConnection(getData().data);
         return true;
       }
       // Directly connect to this port
@@ -492,10 +493,10 @@ namespace OCPI {
         OC::ExternalPortBase<Port,ExternalPort>(port, name, props, port.metaPort(), !port.isProvider())
       {
         applyConnectParams(props);
-        unsigned nFar = parent().connectionData.data.desc.nBuffers;
+        unsigned nFar = parent().getData().data.desc.nBuffers;
         unsigned nLocal = myDesc.nBuffers;
-        myDesc.dataBufferPitch = parent().connectionData.data.desc.dataBufferPitch;
-        myDesc.metaDataPitch = parent().connectionData.data.desc.metaDataPitch;
+        myDesc.dataBufferPitch = parent().getData().data.desc.dataBufferPitch;
+        myDesc.metaDataPitch = parent().getData().data.desc.metaDataPitch;
         myDesc.fullFlagPitch = sizeof(uint32_t);
         myDesc.emptyFlagPitch = sizeof(uint32_t);
         myDesc.emptyFlagValue = 1;
@@ -557,7 +558,7 @@ namespace OCPI {
       applyConnectParams(props);
       // UserPort constructor must know the roles.
       ExternalPort *myExternalPort = new ExternalPort(*this, name, userProps);
-      finishConnection(myExternalPort->connectionData.data);
+      finishConnection(myExternalPort->getData().data);
       return *myExternalPort;
     }
   }

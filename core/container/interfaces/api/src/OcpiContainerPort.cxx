@@ -51,13 +51,13 @@ namespace OCPI {
 	m_minBufferCount(metaData.minBufferCount),
 	m_maxBufferSize(metaData.maxBufferSize),
 #endif
-	myDesc(connectionData.data.desc),
+	myDesc(getData().data.desc),
 	m_metaPort(metaData)
     {
       // FIXME: put these in the default PortData constructor
       myDesc.nBuffers = DEFAULT_NBUFFERS;
       myDesc.dataBufferSize = DEFAULT_BUFFER_SIZE;
-      OCPI::RDT::Descriptors &d = connectionData.data;
+      OCPI::RDT::Descriptors &d = getData().data;
       d.type = isProvider ? OCPI::RDT::ConsumerDescT : OCPI::RDT::ProducerDescT;
       d.role = OCPI::RDT::NoRole;
     }
@@ -90,7 +90,7 @@ namespace OCPI {
           m_minBufferCount = n;
       }
 #endif
-      connectionData.port = (intptr_t)this;
+      getData().port = (intptr_t)this;
     }
 
     Container &Port::container() const { return m_container; }
@@ -113,6 +113,8 @@ namespace OCPI {
     void Port::connect(OCPI::API::Port &apiOther, const OCPI::Util::PValue *myProps,
 		       const OCPI::Util::PValue *otherProps) {
       Port &other = *static_cast<Port*>(&apiOther);
+      setMode( CON_TYPE_RDMA );
+      other.setMode( CON_TYPE_RDMA );
       if (isProvider())
         if (other.isProvider())
           throw ApiError("Cannot connect two provider ports", NULL);
@@ -151,6 +153,15 @@ namespace OCPI {
       }
     }
 
+
+    // The general case of connecting ports that are in the same process.
+    void Port::connectURL(const char* url, const OCPI::Util::PValue *myProps,
+		       const OCPI::Util::PValue *otherProps) {
+      printf("connectURL not allowed on this container !!\n");
+      ocpiAssert( 0 );
+    }
+
+
     // Start the remote/intercontainer connection process
     // FIXME: Need simpler protocol to connect between containers in same process
     // without all this pack/unpack overhead.
@@ -177,8 +188,8 @@ namespace OCPI {
       applyConnectParams(props);
       // We now know the role aspects of both sides.  Make the decision so we know what
       // resource allocations to make in finishConnection.
-      establishRoles(otherPortData.connectionData.data);
-      finishConnection(otherPortData.connectionData.data);
+      establishRoles(otherPortData.getData().data);
+      finishConnection(otherPortData.getData().data);
       // We're done but other size still needs info.
       // FIXME done here?
       m_initialPortInfo = m_container.packPortDesc(*this);
@@ -190,9 +201,9 @@ namespace OCPI {
       ocpiAssert(isProvider());
       PortData otherPortData;
       m_container.unpackPortDesc(iui, &otherPortData);
-      establishRoles(otherPortData.connectionData.data);
+      establishRoles(otherPortData.getData().data);
       // Adjust any parameters from connection metadata
-      finishConnection(otherPortData.connectionData.data);
+      finishConnection(otherPortData.getData().data);
       return s_empty;
     }
 
@@ -209,20 +220,20 @@ namespace OCPI {
     void Port::establishRoles(OCPI::RDT::Descriptors &other) {
 
       OCPI::RDT::Descriptors
-        &pDesc = isProvider() ? connectionData.data : other,
-        &uDesc = isProvider() ? other : connectionData.data;
+        &pDesc = isProvider() ? getData().data : other,
+        &uDesc = isProvider() ? other : getData().data;
       static const char *roleName[] =
         {"NoRole", "ActiveMessage", "ActiveFlowControl", "ActiveOnly", "Passive", "MaxRole"};
       printf("Port %s, a %s, has options 0x%x, initial role %s\n"
              "  other has options 0x%x, initial role %s\n",
              m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
-             connectionData.data.options, roleName[connectionData.data.role],
+             getData().data.options, roleName[getData().data.role],
              other.options, roleName[other.role]);
       chooseRoles(uDesc.role, uDesc.options, pDesc.role, pDesc.options);
       printf("  after negotiation, port %s, a %s, has role %s\n"
              "  other has role %s\n",
              m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
-             roleName[connectionData.data.role], roleName[other.role]);
+             roleName[getData().data.role], roleName[other.role]);
       // We must make sure other side doesn't mess with roles anymore.
       uDesc.options |= 1 << OCPI::RDT::MandatedRole;
       pDesc.options |= 1 << OCPI::RDT::MandatedRole;
@@ -262,9 +273,9 @@ namespace OCPI {
             role = OCPI::RDT::ActiveOnly;
           else
             throw ApiError("xferRole property must be passive|active|flowcontrol|activeonly", NULL);
-          if (!(connectionData.data.options & (1 << role)))
+          if (!(getData().data.options & (1 << role)))
             throw ApiError("xferRole of \"%s\" not supported by port \"%s\"", p->vString, m_metaPort.name);
-          connectionData.data.role = role;
+          getData().data.role = role;
         }
       }
     }

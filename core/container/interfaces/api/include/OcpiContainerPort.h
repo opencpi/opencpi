@@ -70,10 +70,14 @@ namespace OCPI {
     class PortData
     {
       bool m_isProvider; // perhaps overriding bidirectional
+      PortConnectionDesc  connectionData;      // Port Connection Dependency data
+
     public:
+      virtual ~PortData(){};
       inline bool isProvider() { return m_isProvider; }
       OCPI::OS::uint8_t    external;               // connected externally ?
-      PortConnectionDesc  connectionData;      // Port Connection Dependency data
+      virtual inline PortConnectionDesc &  getData(){return connectionData;}
+
 
       PortData() : external(0) 
         {
@@ -85,6 +89,7 @@ namespace OCPI {
         {
           connectionData.port = reinterpret_cast<PortDesc>(this);
         }
+#ifdef NEEDED
       // FIXME: why is his just not the default constructor?
         PortData & operator = ( const PortData & lhs )
           {
@@ -101,21 +106,19 @@ namespace OCPI {
 #else
 	;
 #endif
+#endif
+
     };
 
 
     // The class used by both ExternalPorts (not associated with a worker) and Ports (owned by worker)
     class BasicPort : public PortData {
     protected:
-#if 0
-      // These are values that are initialized from metadata, but can be overriden at runtime,
-      // or by the specific port type
-      uint32_t m_minBufferSize;
-      uint32_t m_minBufferCount;
-      uint32_t m_maxBufferSize;
-#endif
+
       OCPI::RDT::Desc_t &myDesc; // convenience
-      const OCPI::Metadata::Port &m_metaPort;
+
+      // Need a deep copy of the metaport
+      const OCPI::Metadata::Port m_metaPort;
 
       BasicPort(const OCPI::Metadata::Port & metaData, bool isProvider);
       virtual ~BasicPort();
@@ -163,10 +166,20 @@ namespace OCPI {
 
       //      inline bool isTwoWay() { return m_metaPort.twoway; }
 
+
+      // This is a hook for implementations to specialize the port
+      enum ConnectionMode {CON_TYPE_RDMA, CON_TYPE_MESSAGE};
+      virtual void setMode( ConnectionMode mode ) = 0;
+
       //      inline ezxml_t getXml() { return myXml; }
       // Local (possibly among different containers) connection: 1 step operation on the user port
       void connect( OCPI::API::Port &other, const OCPI::Util::PValue *myProps,
 		    const OCPI::Util::PValue *otherProps);
+
+
+      // Connect to a URL based port.  This is currently used for DDS but may also be used for CORBA etc.
+      void connectURL( const char* url, const OCPI::Util::PValue *myProps,
+		       const OCPI::Util::PValue *otherProps);
 
       // Local connection within a container
       // Remote connection: up to 5 steps! worst case.

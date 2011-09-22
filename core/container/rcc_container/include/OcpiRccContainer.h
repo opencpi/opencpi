@@ -90,8 +90,10 @@ namespace OCPI {
       public:
         friend class Controller;
         friend class Port;
+        friend class RDMAPort;
         friend class Worker;
         friend class Application;
+	friend class PortDelegator;
 
         /**********************************
          * Constructors

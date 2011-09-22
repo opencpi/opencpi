@@ -733,6 +733,7 @@ namespace OCPI {
       bool userConnected;
       static int dumpFd;
 
+      void setMode( ConnectionMode ){};
       void disconnect()
         throw ( OCPI::Util::EmbeddedException )
       {
@@ -767,8 +768,8 @@ namespace OCPI {
         ocpiAssert(isProvider());
         ocpiAssert(! uPort.isProvider());
         // default to something useful
-        connectionData.data.role = OCPI::RDT::Passive;
-        uPort.connectionData.data.role = OCPI::RDT::Passive;
+        getData().data.role = OCPI::RDT::Passive;
+        uPort.getData().data.role = OCPI::RDT::Passive;
         applyConnectParams(pProps);
         uPort.applyConnectParams(uProps);
         // We must initialize the emulated register file for use by other software
@@ -837,8 +838,8 @@ namespace OCPI {
         // Fill in the transport information with defaults.
         // It will be updated at connect time.
         // FIXME: do we need to assert a preference here?
-        connectionData.data.role = OCPI::RDT::NoRole;
-        connectionData.data.options =
+        getData().data.role = OCPI::RDT::NoRole;
+        getData().data.options =
           (1 << OCPI::RDT::Passive) |
           (1 << OCPI::RDT::ActiveFlowControl) |
           (1 << OCPI::RDT::ActiveMessage);
@@ -867,7 +868,7 @@ namespace OCPI {
                  (long long unsigned)w.m_container.endPointSize);
         if ( isProvider()) {
           // CONSUMER
-          // BasicPort does this: connectionData.data.type = OCPI::RDT::ConsumerDescT;
+          // BasicPort does this: getData().data.type = OCPI::RDT::ConsumerDescT;
           // The flag is in the OCDP's register space.
           // "full" is the flag telling me (the consumer) a buffer has become full
           // Mode dependent usage:
@@ -885,7 +886,7 @@ namespace OCPI {
           myDesc.emptyFlagBaseAddr =
             (uint8_t*)&myOcdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
         } else {
-          // BasicPort does this: connectionData.data.type = OCPI::RDT::ProducerDescT;
+          // BasicPort does this: getData().data.type = OCPI::RDT::ProducerDescT;
           // The flag is in the OCDP's register space.
           // "empty" is the flag telling me (the producer) a buffer has become empty
           // Mode dependent usage:
@@ -924,7 +925,7 @@ namespace OCPI {
         myOcdpRegisters->localBufferBase = 0;
         myOcdpRegisters->localMetadataBase = myOcdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
         OcdpRole myOcdpRole;
-        OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole)connectionData.data.role;
+        OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole)getData().data.role;
         // FIXME - can't we avoid string processing here?
         unsigned busId;
         uint64_t busAddress, busSize;
@@ -1009,9 +1010,9 @@ namespace OCPI {
         ocpiAssert(m_canBeExternal && pport.m_canBeExternal);
         pport.applyConnectParams(pProps);
         applyConnectParams(uProps);
-        establishRoles(provider.connectionData.data);
-        finishConnection(provider.connectionData.data);
-        pport.finishConnection(connectionData.data);
+        establishRoles(provider.getData().data);
+        finishConnection(provider.getData().data);
+        pport.finishConnection(getData().data);
         return true;
       }
       // Directly connect to this port
@@ -1143,16 +1144,16 @@ namespace OCPI {
         OC::ExternalPortBase<Port,ExternalPort>(port, name, props, port.metaPort(), isProvider)
       {
         // Default is active only (host is master, never slave)
-        connectionData.data.options =
+        getData().data.options =
           (1 << OCPI::RDT::ActiveFlowControl) |
           (1 << OCPI::RDT::ActiveMessage) |
           (1 << OCPI::RDT::ActiveOnly);
         applyConnectParams(props);
-        port.establishRoles(connectionData.data);
-        unsigned nFar = parent().connectionData.data.desc.nBuffers;
+        port.establishRoles(getData().data);
+        unsigned nFar = parent().getData().data.desc.nBuffers;
         unsigned nLocal = myDesc.nBuffers;
-        myDesc.dataBufferPitch = parent().connectionData.data.desc.dataBufferPitch;
-        myDesc.metaDataPitch = parent().connectionData.data.desc.metaDataPitch;
+        myDesc.dataBufferPitch = parent().getData().data.desc.dataBufferPitch;
+        myDesc.metaDataPitch = parent().getData().data.desc.metaDataPitch;
         myDesc.fullFlagPitch = sizeof(uint32_t);
         myDesc.emptyFlagPitch = sizeof(uint32_t);
         myDesc.emptyFlagValue = 1;
@@ -1187,7 +1188,7 @@ namespace OCPI {
                  "ocpi-pci-pio://%s.%lld:%lld.3.10", "0", (unsigned long long)base,
                  (unsigned long long)nAlloc);
         // If we are ActiveOnly we need no DMAable memory at all, so get it from the heap.
-        if (connectionData.data.role == OCPI::RDT::ActiveOnly)
+        if (getData().data.role == OCPI::RDT::ActiveOnly)
           allocation = new uint8_t[nAlloc];
         else {
           if (!dma)
@@ -1222,7 +1223,7 @@ namespace OCPI {
         uint32_t *remoteFlags = (uint32_t*)allocation;
         allocation += OC::roundup(sizeof(uint32_t) * nLocal, LOCAL_BUFFER_ALIGN);
         uint32_t *farFlags = (uint32_t*)allocation;
-        switch (connectionData.data.role) {
+        switch (getData().data.role) {
         case OCPI::RDT::ActiveMessage:
           // my exposed addresses are the flags in my memory that indicate far buffer state
           myDesc.emptyFlagBaseAddr =
@@ -1334,7 +1335,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       // Try to move some data, return if there is data that can't be moved
       void tryMove() {
         // Try to advance my remote side
-        switch (connectionData.data.role) {
+        switch (getData().data.role) {
         case OCPI::RDT::ActiveOnly:
           // Use far side "ready" register to determine whether far buffers are ready
           // Thus we need to do a remote PCIe read to know far size status
@@ -1363,8 +1364,8 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
         tryMove();
         if (!*nextLocal->readyForLocal)
           return false;
-        ocpiAssert(connectionData.data.role == OCPI::RDT::ActiveFlowControl ||
-                  connectionData.data.role == OCPI::RDT::Passive ||
+        ocpiAssert(getData().data.role == OCPI::RDT::ActiveFlowControl ||
+                  getData().data.role == OCPI::RDT::Passive ||
                   !*nextLocal->readyForRemote);
         ocpiAssert(!nextLocal->busy);
         nextLocal->busy = true; // to ensure callers use the API correctly
@@ -1398,7 +1399,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       bool tryFlush() {
         ocpiAssert(parent().isProvider());
         tryMove();
-        switch (connectionData.data.role) {
+        switch (getData().data.role) {
         case OCPI::RDT::ActiveOnly:
         case OCPI::RDT::ActiveMessage:
 	  return *nextRemote->readyForRemote != 0;
@@ -1422,7 +1423,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
 	return false;
       }
       void advanceLocal() {
-        if (connectionData.data.role == OCPI::RDT::ActiveFlowControl) {
+        if (getData().data.role == OCPI::RDT::ActiveFlowControl) {
           //          if (parent().myOcdpRegisters->foodFace != 0xf00dface)
           //            abort();
           //          wmb();
@@ -1439,8 +1440,8 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
 
     // FIXME make readyForRemote zero when active flow control
     void ExternalBuffer::release() {
-      ocpiAssert(myExternalPort->connectionData.data.role == OCPI::RDT::ActiveFlowControl ||
-                myExternalPort->connectionData.data.role == OCPI::RDT::Passive ||
+      ocpiAssert(myExternalPort->getData().data.role == OCPI::RDT::ActiveFlowControl ||
+                myExternalPort->getData().data.role == OCPI::RDT::Passive ||
                 !*readyForRemote);
       // The buffer is not ready for local processing
       //      *readyForLocal = false;
@@ -1463,7 +1464,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       applyConnectParams(props);
       // UserPort constructor must know the roles.
       ExternalPort *myExternalPort = new ExternalPort(*this, extName, !isProvider(), userProps);
-      finishConnection(myExternalPort->connectionData.data);
+      finishConnection(myExternalPort->getData().data);
       return *myExternalPort;
     }
     int Driver::pciMemFd = -1;

@@ -360,20 +360,20 @@ void dumpPd( PortData& pd )
 */
 
       printf(" Desscriptor:\n");
-      printf("   nBuffers = %d\n", pd.connectionData.data.desc.nBuffers );
-      printf("   data off = %lld\n", (long long)pd.connectionData.data.desc.dataBufferBaseAddr );
-      printf("   data pitch = %d\n", pd.connectionData.data.desc.dataBufferPitch );
-      printf("   data size = %d\n", pd.connectionData.data.desc.dataBufferSize );
-      printf("   meta off = %lld\n", (long long)pd.connectionData.data.desc.metaDataBaseAddr );
-      printf("   metapitch = %d\n", pd.connectionData.data.desc.metaDataPitch );
-      printf("   full flag off = %lld\n", (long long)pd.connectionData.data.desc.fullFlagBaseAddr );
-      printf("   ff size = %d\n", pd.connectionData.data.desc.fullFlagSize);
-      printf("   ff pitch = %d\n", pd.connectionData.data.desc.fullFlagPitch );
-      printf("   ff value = %lld\n", (long long)pd.connectionData.data.desc.fullFlagValue );
-      printf("   empty flag off = %lld\n", (long long)pd.connectionData.data.desc.emptyFlagBaseAddr );
-      printf("   ef size = %d\n", pd.connectionData.data.desc.emptyFlagSize);
-      printf("   ef pitch = %d\n", pd.connectionData.data.desc.emptyFlagPitch );
-      printf("   ef value = %lld\n", (long long)pd.connectionData.data.desc.emptyFlagValue );
+      printf("   nBuffers = %d\n", pd.getData().data.desc.nBuffers );
+      printf("   data off = %lld\n", (long long)pd.getData().data.desc.dataBufferBaseAddr );
+      printf("   data pitch = %d\n", pd.getData().data.desc.dataBufferPitch );
+      printf("   data size = %d\n", pd.getData().data.desc.dataBufferSize );
+      printf("   meta off = %lld\n", (long long)pd.getData().data.desc.metaDataBaseAddr );
+      printf("   metapitch = %d\n", pd.getData().data.desc.metaDataPitch );
+      printf("   full flag off = %lld\n", (long long)pd.getData().data.desc.fullFlagBaseAddr );
+      printf("   ff size = %d\n", pd.getData().data.desc.fullFlagSize);
+      printf("   ff pitch = %d\n", pd.getData().data.desc.fullFlagPitch );
+      printf("   ff value = %lld\n", (long long)pd.getData().data.desc.fullFlagValue );
+      printf("   empty flag off = %lld\n", (long long)pd.getData().data.desc.emptyFlagBaseAddr );
+      printf("   ef size = %d\n", pd.getData().data.desc.emptyFlagSize);
+      printf("   ef pitch = %d\n", pd.getData().data.desc.emptyFlagPitch );
+      printf("   ef value = %lld\n", (long long)pd.getData().data.desc.emptyFlagValue );
 
 
 

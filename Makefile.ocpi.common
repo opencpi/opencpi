@@ -711,7 +711,8 @@ OCPI_EXTERNAL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/local/util/misc/include \
 	$(OCPI_BASE_DIR)/core/local/util/driver/include \
 	$(OCPI_BASE_DIR)/core/dataplane/rdma_drivers/pio/include \
-	$(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/interfaces/include
+	$(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/interfaces/include 
+
 
 
 OCPIOS_EXPORTS = $(OCPI_BASE_DIR)/adapt/os/ocpios/interfaces/include
@@ -724,20 +725,24 @@ LIBRARY_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/library/include
 
 DATA_TRANSFER_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_driver_interface/interfaces/include \
-	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_utils/utils/include 
+	$(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/interfaces/include \
+	$(OCPI_BASE_DIR)/core/dataplane/rdma_utils/utils/include \
+	$(OCPI_BASE_DIR)/core/dataplane//msg_driver_interface/include/
 
-DATA_TRANSFER_LIBS = $(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_driver_interface/rdma_driver_interface \
-		$(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_utils/rdma_utils 
+DATA_TRANSFER_LIBS = $(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/rdma_driver_interface \
+		$(OCPI_BASE_DIR)/core/dataplane/rdma_utils/rdma_utils \
 
-TX_DRIVER_SUPPORT_LIBS = $(OCPI_BASE_DIR)/core/$(DATAPLANE)/rdma_smb/rdma_smb
+MSG_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/dataplane/msg_driver_interface/msg_driver_interface
+
+TX_DRIVER_SUPPORT_LIBS = $(OCPI_BASE_DIR)/core/dataplane/rdma_smb/rdma_smb
 
 DATA_TRANSPORT_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/interface/include \
-	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/client_server/include \
-	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/impl/include \
-	$(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/ddnp/include
-DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/$(DATAPLANE)/transport/transport
+	$(OCPI_BASE_DIR)/core/dataplane/transport/interface/include \
+	$(OCPI_BASE_DIR)/core/dataplane/transport/client_server/include \
+	$(OCPI_BASE_DIR)/core/dataplane/transport/impl/include \
+	$(OCPI_BASE_DIR)/core/dataplane/transport/ddnp/include
+
+DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/dataplane/transport/transport
 
 
 CONTAINER_EXPORTS = \

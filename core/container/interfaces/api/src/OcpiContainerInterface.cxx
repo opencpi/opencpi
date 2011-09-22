@@ -309,10 +309,10 @@ namespace OCPI {
       std::string s;
       OCPI::Util::CDR::Encoder packer;
       packer.putBoolean (OCPI::Util::CDR::nativeByteorder());
-      packer.putULong (port.connectionData.container_id);
-      packer.putULongLong( port.connectionData.port );
+      packer.putULong (port.getData().container_id);
+      packer.putULongLong( port.getData().port );
   
-      packDescriptor( packer, port.connectionData.data );
+      packDescriptor( packer, port.getData().data );
       return packer.data();
     }
 
@@ -323,14 +323,14 @@ namespace OCPI {
       throw ()
     {
       OCPI::Util::CDR::Decoder unpacker (data);
-      Descriptors *desc = &port->connectionData.data;
+      Descriptors *desc = &port->getData().data;
       bool bo;
 
       try { 
 	unpacker.getBoolean (bo);
 	unpacker.byteorder (bo);
-	unpacker.getULong (port->connectionData.container_id);
-	unpacker.getULongLong ((uint64_t&)port->connectionData.port);
+	unpacker.getULong (port->getData().container_id);
+	unpacker.getULongLong ((uint64_t&)port->getData().port);
 	bool good = unpackDescriptor ( unpacker, *desc);
 	if ( ! good ) {
 	  return 0;

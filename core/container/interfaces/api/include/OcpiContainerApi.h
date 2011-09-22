@@ -86,6 +86,9 @@ namespace OCPI {
     public:
       virtual void connect(Port &other, const PValue *myProps = NULL,
 			   const PValue *otherProps = NULL) = 0;
+      virtual void connectURL(const char* url, const PValue *myProps = NULL,
+			   const PValue *otherProps = NULL) = 0;
+
       virtual void disconnect() = 0;
       // Connect directly to this port, which creates a UserPort object.
       virtual ExternalPort &connectExternal(const char *name = NULL, const PValue *props = NULL,

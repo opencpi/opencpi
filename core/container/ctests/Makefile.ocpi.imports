@@ -45,15 +45,22 @@ ALLINC += $(OCPIOS_EXPORTS) \
  $(DATA_TRANSFER_EXPORTS) $(DATA_TRANSPORT_EXPORTS) \
  $(CONTAINER_EXPORTS) /opt/mercury/include/
 
-#../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj 
 
 DYNOBJS += \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj 
+
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 	SYSLIBS += dl 
+endif
+
+
+ifeq ($(OCPI_HAVE_OPENSPLICE__),1)
+LDFLAGS += -L$(OSPL_HOME)/lib 
+DYNOBJS += ../../../../../core/dataplane/msg_drivers/$(OCPI_OUT_DIR)/OcpiDDSTransport.obj
+SYSLIBS += ddsdatabase dcpsgapi dcpssacpp ddsos ddsutil ddsserialization ddskernel ddsuser ddsconf ddsconfparser
 endif
 
 ifeq ($(OCPI_HAVE_IBVERBS),1)
