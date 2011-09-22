@@ -73,18 +73,20 @@ PACKAGES += adapt/os/ocpios core/local/logger core/local/util
 #PACKAGES += core/control/wci_api
 
 PACKAGES += \
-	 core/$(DATAPLANE)/rdma_driver_interface \
-	 core/$(DATAPLANE)/rdma_utils \
-	 core/$(DATAPLANE)/rdma_smb \
-	 core/$(DATAPLANE)/rdma_drivers \
-	 core/$(DATAPLANE)/transport \
+	 core/dataplane/rdma_driver_interface \
+	 core/dataplane/rdma_utils \
+	 core/dataplane/rdma_smb \
+	 core/dataplane/rdma_drivers \
+	 core/dataplane/msg_driver_interface \
+	 core/dataplane/msg_drivers \
+	 core/dataplane/transport \
 	 core/library \
 	 core/container/interfaces \
 	 core/container/hdl_container \
 	 core/container/ocl_container \
 	 core/container/rcc_container \
 	 core/container/ctests \
-	 core/$(DATAPLANE)/rdma_tests
+	 core/dataplane/rdma_tests
 
 ifeq ($(OCPI_HAVE_CORBA),1)
 PACKAGES += core/corba/orb_services core/corba/corba_util
@@ -115,11 +117,13 @@ ALLPACKAGES = \
 	core/local/util \
 	core/corba/corba_util \
 	core/corba/orb_services \
-	core/$(DATAPLANE)/rdma_driver_interface \
-	core/$(DATAPLANE)/rdma_utils \
-	core/$(DATAPLANE)/rdma_smb \
-	core/$(DATAPLANE)/rdma_drivers \
-	core/$(DATAPLANE)/transport \
+	core/dataplane/rdma_driver_interface \
+	core/dataplane/rdma_utils \
+	core/dataplane/rdma_smb \
+	core/dataplane/rdma_drivers \
+	core/dataplane/msg_driver_interface \
+	core/dataplane/msg_drivers \
+	core/dataplane/transport \
 	core/library \
 	core/container/interfaces \
 	core/container/hdl_container \
@@ -135,7 +139,7 @@ ALLPACKAGES = \
 	tools/cdk/ocpigen \
 	tools/cdk/ocpixm \
 	core/container/ctests \
-	core/$(DATAPLANE)/rdma_tests
+	core/dataplane/rdma_tests
 
 ifeq ($(OCPI_HAVE_CORBA),1)
 ALLPACKAGES += \
@@ -230,9 +234,9 @@ diff.q:
 
 core/local/logger: adapt/os/ocpios
 core/local/util: core/local/logger
-core/$(DATAPLANE)/tests: \
-	core/container/rcc_container core/$(DATAPLANE)/transport \
-	core/$(DATAPLANE)/rdma_driver_interface
+core/dataplane/tests: \
+	core/container/rcc_container core/dataplane/transport \
+	core/dataplane/rdma_driver_interface
 
 #core/control/wci_api
 
@@ -243,8 +247,8 @@ core/sca/sgac: core/sca/cf_util
 core/sca/gpped: core/sca/cf_util
 tools/local/binder: core/local/util
 tools/local/tester: \
-	core/container/rcc_container core/$(DATAPLANE)/transport \
-	core/$(DATAPLANE)/rdma_driver_interface
+	core/container/rcc_container core/dataplane/transport \
+	core/dataplane/rdma_driver_interface
 test: tools/local/binder tools/local/tester
 
 export_cdk:
