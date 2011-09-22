@@ -1,0 +1,5 @@
+<ComponentSpec Name="dds_producer">
+  <DataInterfaceSpec Name="out" Producer="true">
+    <xi:include href="topic.xml"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

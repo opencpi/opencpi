@@ -1,0 +1,13 @@
+<Protocol>
+  <Operation Name="Samples">
+    <Argument Name="LongT" Type="ULong"/>
+    <Argument Name="LongT2" Type="ULong"/>
+    <Argument Name="LongTSeq" Type="ULong" SequenceSize="567"/>
+    <Argument Name="StringT" Type="string" StringLength="100"/>
+    <Argument Name="OctetTSeq" Type="UChar" SequenceSize="253"/>
+    <Argument Name="DoubleTSeq" Type="Double" SequenceSize="128"/>
+    <Argument Name="ShortArrayT" Type="short" ArrayLength="4k"/>
+    <Argument Name="ULongLongT" Type="ULongLong"/>
+    <Argument Name="CharT" Type="UChar"/>
+  </Operation>
+</Protocol>
