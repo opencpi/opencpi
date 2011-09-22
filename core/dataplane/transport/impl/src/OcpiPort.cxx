@@ -1496,12 +1496,21 @@ void
 Port::
 advance( Buffer* buffer, unsigned int len )
 {
+  buffer->getMetaData()->ocpiMetaDataWord.length = len;
   if ( isOutput() ) {
     sendOutputBuffer( buffer, len );
   }
   else {
     inputAvailable( buffer);
   }
+}
+
+
+OCPI::OS::uint32_t 
+Port::
+getBufferLength()
+{
+  return getPortSet()->getBufferLength();
 }
 
 void 

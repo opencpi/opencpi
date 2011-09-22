@@ -61,7 +61,27 @@ namespace OCPI {
 
     class  Port;
 
-    class Buffer
+
+    
+    class BufferUserFacet {
+    public:
+      BufferUserFacet(){}
+      virtual ~BufferUserFacet(){}
+
+      // Generic user data pointer
+      void * m_ud;  
+
+
+      virtual volatile void * getBuffer()=0;      
+      virtual uint32_t getLength()=0;
+      virtual uint32_t getDataLength()=0;
+      virtual uint32_t opcode()=0;
+      virtual uint32_t getTid()=0;
+    };
+
+
+
+    class Buffer : public BufferUserFacet
     {
 
     public:
@@ -107,6 +127,12 @@ namespace OCPI {
        * Marks buffer as full
        *********************************/
       virtual void markBufferEmpty()=0;
+
+
+      /**********************************
+       * Get the opcode 
+       *********************************/      
+      uint32_t opcode();
 
       /**********************************
        * Get this buffers local state structure
@@ -177,6 +203,11 @@ namespace OCPI {
        OCPI::OS::uint32_t getLength();
 
       /**********************************
+       * Get the actual data length
+       *********************************/
+       OCPI::OS::uint32_t getDataLength();
+
+      /**********************************
        * Get the parent port/port set
        *********************************/
       Port*    getPort();
@@ -184,7 +215,7 @@ namespace OCPI {
       /**********************************
        * Get this buffers temporal id
        *********************************/
-      OCPI::OS::int32_t getTid();
+      uint32_t getTid();
 
       // If we are in a Zero Copy state, this is our output buffer
       Buffer* m_zeroCopyFromBuffer;
@@ -208,7 +239,7 @@ namespace OCPI {
       OCPI::DataTransport::Buffer*  m_attachedZBuffer;
 
       // Opaque pointer for our control class
-      void* opaque;
+      //      void* opaque;
 
       // temporal id
       OCPI::OS::int32_t m_tid;
@@ -291,11 +322,14 @@ namespace OCPI {
     inline List& Buffer::getPendingTxList(){return m_pendingTransfers;}
     inline OCPI::OS::uint32_t Buffer::getPendingTransferCount(){return get_nentries(&m_pendingTransfers);}
     inline Port* Buffer::getPort(){return m_port;}
-    inline OCPI::OS::int32_t Buffer::getTid(){return m_tid;}
+    inline uint32_t Buffer::getTid(){return m_tid;}
     inline OCPI::OS::uint32_t Buffer::getLength(){return m_length;}
+    inline OCPI::OS::uint32_t Buffer::getDataLength(){return getMetaData()->ocpiMetaDataWord.length;}
+    inline uint32_t Buffer::opcode(){return getMetaData()->ocpiMetaDataWord.opCode;}
 
   }
 }
 
 
 #endif
+

@@ -403,7 +403,7 @@ updateInputs( void* data )
 }
 
 
-Port*    
+Port *    
 OCPI::DataTransport::Circuit::
 getOutputPort(int ord)
 {

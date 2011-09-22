@@ -166,6 +166,7 @@ int main ( int argc, char* argv [ ] )
     // Current line
     uint8_t *imgLine = (uint8_t *) img->imageData;
 
+    static int pc = 0;
     for(int i = 0; i < img->height; i++) {
       // Set output data
       OCPI::API::ExternalBuffer* myOutput;
@@ -173,7 +174,9 @@ int main ( int argc, char* argv [ ] )
       do {
 	myOutput = myOutX.getBuffer(odata, olength);
 	if ( ! myOutput ) {
-	  printf("Waiting for an X output buffer\n");
+	  if ( (pc++%10000) == 0 ) {
+	    //	    printf("Waiting for an X output buffer\n");
+	  }
 	}
       }
       while( ! myOutput );

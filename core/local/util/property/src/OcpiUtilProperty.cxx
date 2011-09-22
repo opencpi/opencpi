@@ -103,8 +103,9 @@ Member::parse(ezxml_t xp,
     return "StringLength attribute only valid for string types";
   if ((err = CE::getNumber(xp, "SequenceLength", &type.length, &type.isSequence, 0, false)) ||
       ( !type.isSequence &&
-      ((err = CE::getNumber(xp, "SequenceSize", &type.length, &type.isSequence, 0, false)) ||
-      (err = CE::getNumber(xp, "ArrayLength", &type.length, &type.isArray, 0, false)))))
+	((err = CE::getNumber(xp, "SequenceSize", &type.length, &type.isSequence, 0, false)) )))
+    return err;
+  if (err = CE::getNumber(xp, "ArrayLength", &type.length, &type.isArray, 0, false))
     return err;
   if (type.isSequence && type.isArray)
     return esprintf("Property/argument %s has both Array and Sequence length",
@@ -177,8 +178,8 @@ Member::parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
     Member *mem = members;
     const char *err = NULL;
     for (ezxml_t m = ezxml_cchild(prop, tag); m ; m = ezxml_next(m), mem++)
-      if ((err = OCPI::Util::EzXml::checkAttrs(m, "Name", "Type", "StringLength",
-					       "ArrayLength", "SequenceLength", "Default",
+      if ((err = OCPI::Util::EzXml::checkAttrs(m, "Name", "Type", "StringLength","Size",
+					       "ArrayLength", "SequenceSize", "Default",
 					       (void*)0)) ||
 	  (err = mem->parse(m, maxAlign, myOffset, sub32)))
 	return err;

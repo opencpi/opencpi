@@ -64,8 +64,11 @@ using namespace DataTransfer;
  *********************************/
 Buffer::Buffer( OCPI::DataTransport::Port* port, OCPI::OS::uint32_t tid )
     : m_zeroCopyFromBuffer(NULL),m_port(port),
+#ifdef NEEDED
       m_zCopyPort(0),m_attachedZBuffer(0),opaque(0),m_tid(tid),m_buffer(0),
-    m_dependentZeroCopyPorts(1),  m_dependentZeroCopyCount(0), 
+#endif
+      m_zCopyPort(0),m_attachedZBuffer(0),m_tid(tid),m_buffer(0),
+      m_dependentZeroCopyPorts(1),  m_dependentZeroCopyCount(0), 
       m_InUse(false),m_remoteZCopy(false), m_threadSafeMutex(true)
 {
   m_pullTransferInProgress = NULL;

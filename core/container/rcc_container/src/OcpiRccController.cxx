@@ -89,12 +89,12 @@ Controller::
 
 void CP289Release( RCCBuffer* buffer )
 {
-  OCPI::DataTransport::Buffer* dti_buffer = static_cast<OCPI::DataTransport::Buffer*>(buffer->id_);
-  OpaquePortData * id = static_cast<OpaquePortData*>( dti_buffer->opaque );
-  ocpiAssert( ! id->port->dtPort()->isOutput() );
+  OCPI::DataTransport::BufferUserFacet* dti_buffer = static_cast<OCPI::DataTransport::BufferUserFacet*>(buffer->id_);
+  OpaquePortData * id = static_cast<OpaquePortData*>( dti_buffer->m_ud );
+  ocpiAssert( ! id->port->isOutput() );
   id->readyToAdvance = true;
   if ( dti_buffer ) {
-    id->port->dtPort()->advance(dti_buffer);    
+    id->port->advance(dti_buffer);    
   }
   if ( id->buffer == dti_buffer ) {
     id->cp289Port->current.data = NULL;
@@ -111,10 +111,10 @@ void CP289SendZCopy( ::RCCPort* port, ::RCCBuffer* buffer, ::RCCOrdinal op, ::ui
 {
   ( void ) op;
   OpaquePortData*  bopq = 
-    static_cast<OpaquePortData*>( static_cast<OCPI::DataTransport::Buffer*>(buffer->id_)->opaque );
+    static_cast<OpaquePortData*>( static_cast<OCPI::DataTransport::BufferUserFacet*>(buffer->id_)->m_ud );
   OpaquePortData* popq = static_cast<OpaquePortData*>(port->opaque);
   popq->readyToAdvance = true;
-  popq->port->dtPort()->sendZcopyInputBuffer(  bopq->buffer, len);
+  popq->port->sendZcopyInputBuffer(  bopq->buffer, len);
 }
 
 
@@ -126,29 +126,24 @@ void CP289Send( ::RCCPort* port, ::RCCBuffer* buffer, ::RCCOrdinal op, ::uint32_
   if ( !opq ) {
     printf ( "tatic_cast<OpaquePortData*>(port->opaque) is null\n" );
   }
-  if ( ! static_cast<OpaquePortData*>(port->opaque)->port->dtPort()->isOutput() ) {
+  if ( ! static_cast<OpaquePortData*>(port->opaque)->port->isOutput() ) {
     return;
   }
 
   // If this is one of our input buffers, it means that the worker wants to 
   // send it instead of a output buffer to eliminate a copy.
-  OpaquePortData*  bopq = 
-    static_cast<OpaquePortData*>( static_cast<OCPI::DataTransport::Buffer*>(buffer->id_)->opaque );
-  OCPI::DataTransport::Port* t_port = static_cast<OpaquePortData*>(port->opaque)->port->dtPort();
+  OpaquePortData*  bopq = static_cast<OpaquePortData*>
+    ( static_cast<OCPI::DataTransport::BufferUserFacet*>(buffer->id_)->m_ud );
 
   static_cast<OpaquePortData*>(port->opaque)->readyToAdvance = true;
   bopq->readyToAdvance = true;
-  if ( ! bopq->port->dtPort()->isOutput() ) {
+  if ( ! bopq->port->isOutput() ) {
     CP289SendZCopy( port, buffer, op, len );
     port->current.data = NULL;
     bopq->cp289Port->current.data = NULL;
     return;
   }
-
-  static_cast<OpaquePortData*>(port->opaque)->buffer->
-    getMetaData()->ocpiMetaDataWord.opCode = op;
-
-  t_port->advance( static_cast<OpaquePortData*>(port->opaque)->buffer, len );
+  opq->port->advance( static_cast<OpaquePortData*>(port->opaque)->buffer, op, len );
   port->current.data = NULL;
 }
 
@@ -158,8 +153,7 @@ RCCBoolean CP289Advance( ::RCCPort* wport, ::uint32_t max )
   OpaquePortData *opd = static_cast<OpaquePortData*>(wport->opaque); 
   opd->readyToAdvance = true;
   if ( opd->buffer ) {
-    opd->buffer->getMetaData()->ocpiMetaDataWord.opCode = opd->cp289Port->output.u.operation;
-    opd->port->dtPort()->advance( opd->buffer, opd->cp289Port->output.length );
+    opd->port->advance( opd->buffer, opd->cp289Port->output.u.operation, opd->cp289Port->output.length );
     wport->current.data = NULL;
     return true;
   }
@@ -173,20 +167,23 @@ RCCBoolean CP289Request( ::RCCPort* port, ::uint32_t max )
   OpaquePortData* opq = static_cast<OpaquePortData*>(port->opaque);
 
   // If this is an output port, set the mask if it has a free buffer
-  if ( opq->port->dtPort()->isOutput() ) {
+  if ( opq->port->isOutput() ) {
 
     if ( port->current.data ) {
       return CP289Advance( port, max);
     }
-    else if ( opq->port->dtPort()->hasEmptyOutputBuffer() ) {
+    else if ( opq->port->hasEmptyOutputBuffer() ) {
       if ( opq->readyToAdvance ) {
-        opq->buffer = opq->port->dtPort()->getNextEmptyOutputBuffer();
+        opq->buffer = opq->port->getNextEmptyOutputBuffer();
         if ( opq->buffer ) {
           port->current.data = (void*)opq->buffer->getBuffer();
-          opq->buffer->opaque = opq;
+          opq->buffer->m_ud = opq;
           port->current.id_ = opq->buffer;
+#ifdef NEEDED
           port->output.length = opq->buffer->getMetaData()->ocpiMetaDataWord.length;
-          port->output.u.operation =  opq->buffer->getMetaData()->ocpiMetaDataWord.opCode;
+#endif
+          port->output.length = opq->buffer->getDataLength();
+          port->output.u.operation =  opq->buffer->opcode();
         }
         else {
           port->current.data = NULL;
@@ -202,16 +199,16 @@ RCCBoolean CP289Request( ::RCCPort* port, ::uint32_t max )
     if ( port->current.data ) {
       return CP289Advance( port, max);
     }
-    else if ( opq->port->dtPort()->hasFullInputBuffer() ) {
+    else if ( opq->port->hasFullInputBuffer() ) {
       if ( opq->readyToAdvance ) {
-        opq->buffer = opq->port->dtPort()->getNextFullInputBuffer();
+        opq->buffer = opq->port->getNextFullInputBuffer();
         if ( opq->buffer ) {
 
           port->current.data = (void*)opq->buffer->getBuffer();
-          opq->buffer->opaque = opq;
+          opq->buffer->m_ud = opq;
           port->current.id_ = opq->buffer;
-          port->input.length = opq->buffer->getMetaData()->ocpiMetaDataWord.length;
-          port->input.u.operation = opq->buffer->getMetaData()->ocpiMetaDataWord.opCode;
+          port->input.length = opq->buffer->getDataLength();
+          port->input.u.operation = opq->buffer->opcode();
 
         }
         else {
@@ -240,7 +237,7 @@ RCCBoolean CP289Wait( ::RCCPort* port, ::uint32_t max, ::uint32_t usec )
 void CP289Take(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
 {
   OpaquePortData *opq = static_cast<OpaquePortData*>(rccPort->opaque);
-  if ( opq->port->dtPort()->isOutput() ) {
+  if ( opq->port->isOutput() ) {
     return;
   }
  

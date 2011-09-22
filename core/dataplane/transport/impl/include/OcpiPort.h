@@ -77,8 +77,104 @@ namespace OCPI {
     class InputBuffer;
     class Circuit;
 
+
+
+
+
+
+
+#ifdef NEEDED
+
+    class PortInterface {
+
+    public:
+
+      /**********************************
+       * Advance the ports buffer 
+       *********************************/
+      virtual void advance( Buffer* buffer, unsigned int len=0) = 0;
+
+      /**********************************
+       * Get port descriptor.  This is the data that is needed by an
+       * external port to connect to this port.
+       *********************************/
+      virtual void getPortDescriptor( OCPI::RDT::Descriptors & my_desc, OCPI::RDT::Descriptors * other ) = 0;
+
+      /**********************************
+       * This method determines if there is an empty output buffer, but does not affect the
+       * state of the object.
+       *********************************/
+      virtual bool hasEmptyOutputBuffer() = 0;
+
+      /**********************************
+       * This method determines if there is data available, but does not affect the
+       * state of the object.
+       *********************************/
+      virtual bool hasFullInputBuffer() = 0;
+
+      /**********************************
+       * Reteives the next available input buffer.
+       *********************************/
+      virtual Buffer* getNextFullInputBuffer() = 0;
+
+      /**********************************
+       * This method retreives the next available buffer from the local (our)
+       * port set.  A NULL port indicates local context.
+       *********************************/
+      virtual Buffer* getNextEmptyOutputBuffer() = 0;
+
+      /**********************************
+       * Sets the feedback descriptor for this port.
+       *********************************/
+      virtual void setFlowControlDescriptor( OCPI::RDT::Descriptors& ) =0;
+
+      /**********************************
+       * Finalize the port
+       *********************************/
+      virtual void finalize( OCPI::RDT::Descriptors& ) = 0;
+
+
+      /**************************************
+       * Get buffer count
+       ***************************************/
+      virtual OCPI::OS::uint32_t getBufferCount() = 0;
+      virtual OCPI::OS::uint32_t getBufferLength() = 0;
+
+      /**************************************
+       * Get the buffer by index
+       ***************************************/
+      virtual Buffer* getBuffer( OCPI::OS::uint32_t index ) = 0;
+
+      /**************************************
+       * Are we a shadow port ?
+       ***************************************/
+      virtual bool isShadow() = 0;
+
+      /**************************************
+       * Are we a Output port ?
+       ***************************************/
+      virtual bool isOutput() = 0;
+
+      /***********************************
+       * This method is used to send an input buffer thru an output port with Zero copy, 
+       * if possible.
+       *********************************/
+      virtual void sendZcopyInputBuffer( Buffer* src_buf, unsigned int len ) = 0;
+
+      /**************************************
+       * Reset the port
+       ***************************************/
+      virtual void reset() = 0;
+
+      virtual ~PortInterface(){};
+
+    };
+
+#endif
+
+
     // This is the OCPI specialized port class definition
-    class Port : public OCPI::Util::Child<PortSet,Port>
+    class Port :  public OCPI::Util::Child<PortSet,Port>
     {
 
     public:
@@ -97,7 +193,7 @@ namespace OCPI {
 
 
       /**********************************
-       * Advance the ports buffer buffer
+       * Advance the ports buffer 
        *********************************/
       void advance( Buffer* buffer, unsigned int len=0);
 
@@ -185,6 +281,7 @@ namespace OCPI {
        * Get buffer count
        ***************************************/
       OCPI::OS::uint32_t getBufferCount();
+      OCPI::OS::uint32_t getBufferLength();
 
       /**********************************
        * Get port data
@@ -356,6 +453,13 @@ namespace OCPI {
       void setEOS();
       void resetEOS();
 
+
+      /**************************************
+       * Reset the port
+       ***************************************/
+      void reset();
+
+
       // Get/Set rank for scaled ports
       inline void setRank( OCPI::OS::uint32_t r ){m_data->rank=r;}
       inline OCPI::OS::uint32_t getRank(){return m_data->rank;}
@@ -427,11 +531,6 @@ namespace OCPI {
        ***************************************/
       void setBusyFactor(OCPI::OS::uint32_t bf );
       OCPI::OS::uint32_t getBusyFactor();
-
-      /**************************************
-       * Reset the port
-       ***************************************/
-      void reset();
 
       inline PortSet* getPortSet(){return m_portSet;}
       void addBuffer( Buffer* buf );
