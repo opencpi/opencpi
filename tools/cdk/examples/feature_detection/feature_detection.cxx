@@ -20,12 +20,12 @@
 */
 
 
+#include <iostream>
+#include <string>
+#include "cv.h"
 #include "OcpiApi.h"
 #include "OcpiPValueApi.h"
-#include <iostream>
-#include "DemoWorkerFacade.h"
 #include "highgui.h"
-#include "cv.h"
 
 namespace OA = OCPI::API;
 
@@ -40,9 +40,6 @@ int main ( int argc, char* argv [ ] )
 
   try
     {
-      ( void ) argc;
-      ( void ) argv;
-
       /* ---- Load the image from file (grayscale) -------------- */
       IplImage* inImg = cvLoadImage( argv[1], 0 );
       // Create image with 8U pixel depth, single color channel
@@ -59,79 +56,56 @@ int main ( int argc, char* argv [ ] )
       IplImage* outImg = cvLoadImage( argv[1] );
       cvNamedWindow( "Output", CV_WINDOW_AUTOSIZE );
 
-      /* ---- Create the shared RCC container and application -------------- */
-      OCPI::API::Container* rcc_container ( Demo::get_rcc_interface ( ) );
-
-      // Holds RCC worker interfaces passed to the RCC dispatch thread
-      std::vector<OCPI::API::Container*> interfaces;
-      interfaces.push_back ( rcc_container );
-
-      OA::ContainerApplication*
-	rcc_application ( rcc_container->createApplication ( ) );
-
-      // Holds facades for group operations
-      std::vector<Demo::WorkerFacade*> facades;
+      /* ---- Create the RCC container and application -------------- */
+      OA::Container *rcc_container = OA::ContainerManager::find("rcc");
+      OA::ContainerApplication *rcc_application = rcc_container->createApplication( );
 
       /* ---- Create the workers --------------------------------- */
       // good_features_to_track
-      Demo::WorkerFacade features_worker (
-					  "GoodFeaturesToTrack (RCC)",
-					  rcc_application,
-					  "good_features_to_track",
-					  "good_features_to_track" );
 
-      OCPI::API::PValue features_worker_pvlist[] = {
-	OCPI::API::PVULong("height", img->height),
-	OCPI::API::PVULong("width", img->width),
-	OCPI::API::PVULong("max_corners", 50),
-	OCPI::API::PVDouble("quality_level", 0.03),
-	OCPI::API::PVDouble("min_distance", 5.0),
-	OCPI::API::PVEnd
+      OA::PValue features_pvlist[] = {
+	OA::PVULong("height", img->height),
+	OA::PVULong("width", img->width),
+	OA::PVULong("max_corners", 50),
+	OA::PVDouble("quality_level", 0.03),
+	OA::PVDouble("min_distance", 5.0),
+	OA::PVEnd
       };
-      features_worker.set_properties( features_worker_pvlist );
-      facades.push_back ( &features_worker );
+      OA::Worker &features_worker =
+	rcc_application->createWorker("features", "good_features_to_track", features_pvlist);
+      // features_worker.setProperties( features_worker_pvlist );
+      std::string name, value;
+      for (unsigned n = 0; features_worker.getProperty(n, name, value); n++)
+	fprintf(stderr, "Property %u: name: %s, value: %s\n", n, name.c_str(), value.c_str());
 
       OA::Port
-	&featuresOut = features_worker.port("out"),
-	&featuresIn = features_worker.port("in");
+	&featuresOut = features_worker.getPort("out"),
+	&featuresIn = features_worker.getPort("in");
 
-      // min_eigen_val
-      Demo::WorkerFacade min_worker (
-				     "MinEigenVal (RCC)",
-				     rcc_application,
-				     "min_eigen_val",
-				     "min_eigen_val" );
-
-      OCPI::API::PValue min_worker_pvlist[] = {
-	OCPI::API::PVULong("height", img->height),
-	OCPI::API::PVULong("width", img->width),
-	OCPI::API::PVEnd
+      // min_eigen_val worker
+      OA::PValue min_pvlist[] = {
+	OA::PVULong("height", img->height),
+	OA::PVULong("width", img->width),
+	OA::PVEnd
       };
-      min_worker.set_properties( min_worker_pvlist );
-      facades.push_back ( &min_worker );
-
+      OA::Worker &min_worker =
+	rcc_application->createWorker("min", "min_eigen_val", min_pvlist);
       OA::Port
-	&minOut = min_worker.port("out"),
-	&minIn = min_worker.port("in");
+	&minOut = min_worker.getPort("out"),
+	&minIn = min_worker.getPort("in");
 
       // corner_eigen_vals_vecs
-      Demo::WorkerFacade corner_worker (
-					"CornerEigenValsVecs (RCC)",
-					rcc_application,
-					"corner_eigen_vals_vecs" ,
-					"corner_eigen_vals_vecs" );
-
-      OCPI::API::PValue corner_worker_pvlist[] = {
-	OCPI::API::PVULong("height", img->height),
-	OCPI::API::PVULong("width", img->width),
-	OCPI::API::PVEnd
+      OA::PValue corner_pvlist[] = {
+	OA::PVULong("height", img->height),
+	OA::PVULong("width", img->width),
+	OA::PVEnd
       };
-      corner_worker.set_properties( corner_worker_pvlist );
-      facades.push_back ( &corner_worker );
+      OA::Worker &corner_worker =
+	rcc_application->createWorker("corner", "corner_eigen_vals_vecs", corner_pvlist);
 
       OA::Port
-	&cornerOut = corner_worker.port("out"),
-	&cornerIn = corner_worker.port("in");
+	&cornerOut = corner_worker.getPort("out"),
+	&cornerIn = corner_worker.getPort("in");
 
       /* ---- Create connections --------------------------------- */
 
@@ -139,16 +113,14 @@ int main ( int argc, char* argv [ ] )
       minIn.connect( cornerOut );
 
       // Set external ports
-      OCPI::API::ExternalPort
+      OA::ExternalPort
 	&myOut = cornerIn.connectExternal("aci_out"),
 	&myIn = featuresOut.connectExternal("aci_in");
 
       printf(">>> DONE CONNECTING!\n");
 
       /* ---- Start all of the workers ------------------------------------- */
-      std::for_each ( facades.rbegin ( ),
-		      facades.rend ( ),
-		      Demo::start );
+      rcc_application->start();
 
       printf(">>> DONE STARTING!\n");
 
@@ -171,12 +143,10 @@ int main ( int argc, char* argv [ ] )
       std::cout << "My output buffer is size " << olength << std::endl;
 
 
-      // Call dispatch so the worker can "act" on its input data
       // Get input data
       OA::ExternalBuffer* myInput = NULL;
       while((myInput = myIn.getBuffer( idata, ilength, opcode, isEndOfData)) == NULL);
       std::cout << "My input buffer is size " << ilength << std::endl;
-      myInput->release();
       // Mark features
       size_t ncorners = ilength / (2 * sizeof(float));
       float *corners = (float *) idata;
@@ -188,6 +158,7 @@ int main ( int argc, char* argv [ ] )
 	CvScalar color = CV_RGB(255, 0, 0);
 	cvCircle( outImg, p, 5, color, 2 );
       }
+      myInput->release();
 
       // Show image
       cvShowImage( "Output", outImg );

@@ -40,17 +40,9 @@
 #include <string>
 #include "OcpiPValueApi.h"
 #include "OcpiUtilPropertyApi.h"
+#include "OcpiUtilExceptionApi.h"
 namespace OCPI {
   namespace API {
-    // simplest error
-    class Error {
-    public:
-      Error();
-      Error(const char *fmt, ...);
-      Error(const char *fmt, va_list a);
-      std::string m_error;
-      inline const std::string &error() const { return m_error; }
-    };
     // The abstract class for exposed API functionality for containers
     //    class Application;
     class ExternalBuffer {
@@ -99,6 +91,7 @@ namespace OCPI {
     class Worker {
       friend class Property;
       virtual void setupProperty(const char *name, Property &prop) = 0;
+      //      virtual void setProperty(Property &prop, const PValue &val) = 0;
     protected:
       virtual ~Worker();
     public:
@@ -111,13 +104,17 @@ namespace OCPI {
       virtual void afterConfigure() = 0;
       virtual void test() = 0;
       virtual void setProperty(const char *name, const char *value) = 0;
+      //      virtual void setProperty(const PValue &value) = 0;
+      virtual void setProperties(const PValue *props) =  0;
+      virtual void setProperties(const char *props[][2]) =  0;
+      virtual bool getProperty(unsigned ordinal, std::string &name, std::string &value) = 0;
     protected:
       // These macros are used by the Property methods below when the
       // fast path using memory-mapped access cannot be used.
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                 \
-      virtual void set##pretty##Property(Property &,const run) = 0; \
-      virtual void set##pretty##SequenceProperty(Property &,        \
-						 const run *,	              \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)        \
+      virtual void set##pretty##Property(Property &,const run) = 0;   \
+      virtual void set##pretty##SequenceProperty(Property &,          \
+						 const run *,	      \
 						 unsigned length) = 0;
 
     OCPI_PROPERTY_DATA_TYPES
@@ -125,15 +122,15 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
       // generate the simple-type-specific getting methods
       // need a special item for strings
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                    \
-      virtual run get##pretty##Property(Property &) = 0;	         \
-      virtual unsigned get##pretty##SequenceProperty(Property&, run *, \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+      virtual run get##pretty##Property(Property &) = 0;		\
+      virtual unsigned get##pretty##SequenceProperty(Property&, run *,	\
 						     unsigned length) = 0;
 
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)     \
       virtual void get##pretty##Property(Property &, run,            \
-					 unsigned length) = 0;		       \
-      virtual unsigned get##pretty##SequenceProperty                           \
+					 unsigned length) = 0;	     \
+      virtual unsigned get##pretty##SequenceProperty                 \
         (Property &, run *, unsigned length, char *buf,              \
 	 unsigned space) = 0;
     OCPI_PROPERTY_DATA_TYPES
@@ -161,11 +158,14 @@ namespace OCPI {
       // name - instance name within the application
       // impl - implementation name within the artifact (e.g. which worker)
       // inst - instance name within artifact that has fixed instances
-      // wProps - worker creation properties
+      // wProps - initial values of worker properties
+      // wParams - extensible parameters for worker creation
       virtual Worker &createWorker(const char *file, const PValue *aProps,
 				   const char *name, const char *impl,
 				   const char *inst = NULL,
-				   const PValue *wProps = NULL) = 0;
+				   const PValue *wProps = NULL,
+				   const PValue *wParams = NULL,
+				   const Connection *connections = NULL) = 0;
       // Simpler method to create a worker by name, with the artifact
       // found from looking at libraries in the library path, finding
       // what implementation will run on the container of this container-app.
@@ -175,7 +175,9 @@ namespace OCPI {
       // The list is terminated with the "port" member == NULL
       virtual Worker &createWorker(const char *name, const char *impl,
 				   const PValue *wProps = NULL,
+				   const PValue *wParams = NULL,
 				   const Connection *connections = NULL) = 0;
+      virtual void start() = 0;
     };
     class Container {
     public:
@@ -205,12 +207,13 @@ namespace OCPI {
     // on their stack so that access to members (in inline methods) has no indirection.
     class Property {
       Worker &m_worker;               // which worker do I belong to
-#if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
-      void checkType(ScalarType ctype, unsigned n, bool write);
-#else
-      inline void checkType(ScalarType ctype, unsigned n, bool write) {}
-#endif
     public:
+      void checkTypeAlways(ScalarType ctype, unsigned n, bool write);
+      inline void checkType(ScalarType ctype, unsigned n, bool write) {
+#if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
+        checkTypeAlways(ctype, n, write);
+#endif
+      }
       volatile void 
         *m_writeVaddr, *m_readVaddr;  // pointers non-null if directly usable.
       ValueType m_type;               // cached info when not a struct
@@ -229,51 +232,51 @@ namespace OCPI {
       // types are supported explicitly.
       // The "m_writeVaddr" member is only non-zero if the implementation does
       // not produce errors and it is atomic at this data size
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                  \
-      inline void set##pretty##Value(run val) {                                \
-        checkType(OCPI_##pretty, 1, true);      \
-        if (m_writeVaddr)                                                        \
-          *(store *)m_writeVaddr= *(store*)((void*)&(val));                      \
-        else                                                                   \
-          m_worker.set##pretty##Property(*this, val);			\
-      }                                                                        \
-      inline void set##pretty##SequenceValue(const run *vals, unsigned n) {    \
-        checkType(OCPI_##pretty, n, true);      \
-        m_worker.set##pretty##SequenceProperty(*this, vals, n);                 \
-      }                                                                        \
-      inline run get##pretty##Value() {                                        \
-        checkType(OCPI_##pretty, 1, false);     \
-        if (m_readVaddr) {                                                       \
-          union { store s; run r; }u;                                          \
-          u.s = *(store *)m_readVaddr;                                           \
-          return u.r;                                                          \
-        } else                                                                 \
-          return m_worker.get##pretty##Property(*this);                         \
-      }                                                                        \
-      inline unsigned get##pretty##SequenceValue(run *vals, unsigned n) {      \
-        checkType(OCPI_##pretty, n, false);     \
-        return m_worker.get##pretty##SequenceProperty(*this, vals, n);          \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)              \
+      inline void set##pretty##Value(run val) {                             \
+        checkType(OCPI_##pretty, 1, true);				    \
+        if (m_writeVaddr)                                                   \
+          *(store *)m_writeVaddr= *(store*)((void*)&(val));                 \
+        else                                                                \
+          m_worker.set##pretty##Property(*this, val);			    \
+      }                                                                     \
+      inline void set##pretty##SequenceValue(const run *vals, unsigned n) { \
+        checkType(OCPI_##pretty, n, true);				    \
+        m_worker.set##pretty##SequenceProperty(*this, vals, n);             \
+      }                                                                     \
+      inline run get##pretty##Value() {                                     \
+        checkType(OCPI_##pretty, 1, false);				    \
+        if (m_readVaddr) {                                                  \
+          union { store s; run r; }u;                                       \
+          u.s = *(store *)m_readVaddr;                                      \
+          return u.r;                                                       \
+        } else                                                              \
+          return m_worker.get##pretty##Property(*this);                     \
+      }                                                                     \
+      inline unsigned get##pretty##SequenceValue(run *vals, unsigned n) {   \
+        checkType(OCPI_##pretty, n, false);				    \
+        return m_worker.get##pretty##SequenceProperty(*this, vals, n);      \
       }
 #undef OCPI_DATA_TYPE_S
       // for a string we will take a function call
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)             \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)            \
       inline void set##pretty##Value(const run val) {                       \
-        checkType(OCPI_##pretty, 1, true);   \
-        m_worker.set##pretty##Property(*this, val);                          \
+        checkType(OCPI_##pretty, 1, true);				    \
+        m_worker.set##pretty##Property(*this, val);                         \
       }                                                                     \
       inline void set##pretty##SequenceValue(const run *vals, unsigned n) { \
-        checkType(OCPI_##pretty, n, true);   \
-        m_worker.set##pretty##SequenceProperty(*this, vals, n);              \
+        checkType(OCPI_##pretty, n, true);				    \
+        m_worker.set##pretty##SequenceProperty(*this, vals, n);             \
       }                                                                     \
       inline void get##pretty##Value(char *val, unsigned length) {          \
-        checkType(OCPI_##pretty, 1, false);  \
-        m_worker.get##pretty##Property(*this, val, length);                  \
+        checkType(OCPI_##pretty, 1, false);				    \
+        m_worker.get##pretty##Property(*this, val, length);                 \
       }                                                                     \
       inline unsigned get##pretty##SequenceValue                            \
         (run *vals, unsigned n, char *buf, unsigned space) {                \
-        checkType(OCPI_##pretty, n, false);  \
-        return m_worker.get##pretty##SequenceProperty                         \
-          (*this, vals, n, buf, space);                                    \
+        checkType(OCPI_##pretty, n, false);				    \
+        return m_worker.get##pretty##SequenceProperty                       \
+          (*this, vals, n, buf, space);                                     \
       }
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S

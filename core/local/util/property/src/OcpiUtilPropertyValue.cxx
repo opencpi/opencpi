@@ -109,24 +109,6 @@ getNum64(const char *s, int64_t *valp) {
 OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 
-#if 0
- const char *
-Scalar::Value::parse(const char *value, Scalar::Type type, unsigned length) {
-  switch (type) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
-    case Scalar::OCPI_##pretty:		       \
-      if (parse##pretty(value, length, &v##pretty)) \
-	return "Error parsing value";\
-      break;
-OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-  default:
-    return "Unexpected illegal type in parsing value";
-  }
-  return 0;
-}
-#endif
-
   bool
 parseBool(const char *a, unsigned length, bool *b)
 {
@@ -245,92 +227,249 @@ parseString(const char*cp, unsigned length, char**vp) {
   return false;
 }
 
-// Parse a value, which may be a sequence/array/string, but not a struct
-const char *
-parseValue(ValueType &vt, const char *unparsed, OCPI::API::ScalarValue &value) {
-  switch (vt.scalar) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	\
-    case Scalar::OCPI_##pretty:				\
-      if (vt.length > 1)				\
-	value.pv##pretty = myCalloc(run, vt.length);	\
-    break;
-    OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-    default:
-      return "Unexpected illegal type in parsing value";
-  }
-  unsigned n;
-  for (n = 0; n < vt.length && *unparsed; n++) {
-    // Skip initial white space
-    while (isspace(*unparsed))
-      unparsed++;
-    // Find end
-    const char *start = unparsed;
-    while (*unparsed && *unparsed != ',') {
-      if (*unparsed == '\\' && unparsed[1])
-	unparsed++;
-      unparsed++;
+    } // close Prop
+  } // close Util
+
+  namespace API {
+
+    Value::Value() : m_vector(false), m_stringSpace(NULL) { clear(); }
+    Value::Value(const ValueType &vt) : m_vector(false), m_stringSpace(NULL) {
+      allocate(vt);
     }
-    char *unparsedSingle = (char *)malloc(unparsed - start + 1);
-    char *tmp = unparsedSingle;
-    char *lastSpace = 0;
-    for (tmp = unparsedSingle; *start && *start != ','; start++) {
-      if (*start == '\\' && start[1]) {
-	start++;
-	lastSpace = 0;
-      } else if (isspace(*start)) {
-	if (!lastSpace)
-	  lastSpace = tmp;
-      } else
-	lastSpace = 0;
-      *tmp++ = *start;
-    }
-    if (lastSpace)
-      lastSpace = 0;
-    else
-      *tmp = 0;
-    const char *err = 0;
-    switch (vt.scalar) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
-      case Scalar::OCPI_##pretty:					\
-	if (parse##pretty(unparsedSingle, vt.stringLength,		\
-			  vt.length > 1 ?				\
-			  &value.pv##pretty[n] : &value.v##pretty))	\
-	  err = #pretty;						\
-        break;
-      OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-      default:
-        err ="Unexpected illegal type in parsing value";
-    }
-    if (err)
-      asprintf((char **)&err, "Bad value \"%s\" for value of type \"%s\"",
-	       unparsedSingle, err);
-    free(unparsedSingle);
-    if (err)
-      return err;
-    if (*start)
-      start++;
-  }
-  if (*unparsed)
-    return esprintf("Too many values (> %d) for property value", vt.length);
-  value.length = n;
-  return 0;
-}
-void
-destroyValue(ValueType &vt, Scalar::Value &value) {
-  if (vt.length > 1)
-    switch (vt.scalar) {
+    // Parse a value, which may be a sequence/array/string, but not a struct (yet)
+    // We expect to parse into the value more that once.
+    void Value::
+    clear() {
+      if (m_vector) {
+	switch(m_type) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
-      case Scalar::OCPI_##pretty:		   \
-	free(value.pv##pretty);			   \
-        break;
-      OCPI_PROPERTY_DATA_TYPES
+	  case OCPI_##pretty:			   \
+	    delete [] m_p##pretty;		   \
+	    break;
+	  OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-      default:
-      ;
+	case OCPI_none: case OCPI_scalar_type_limit:;
+	}
+	m_vector = false;
+      }
+      m_length = 0;
+      if (m_stringSpace) {
+	delete [] m_stringSpace;
+	m_stringSpace = NULL;
+      }
     }
-}
+    Value::~Value() {
+      clear();
+    }
+
+    void Value::allocate(const ValueType &vt) {
+      clear();
+      if (vt.isSequence || vt.isArray) {
+	switch (vt.scalar) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	\
+	case OCPI_##pretty:				\
+	    m_p##pretty = new run[vt.length];		\
+	    break;
+	  OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+	case OCPI_none: case OCPI_scalar_type_limit:;
+	}
+      } else
+	m_length = 1;
+      m_type = vt.scalar;
+      if (vt.scalar == OCPI_String) {
+	if (vt.isSequence || vt.isArray)
+	  m_stringSpace = new char[(vt.stringLength + 1) * vt.length];
+	else
+	  m_String = m_stringSpace = new char[vt.stringLength + 1];
+      }
+    }
+    const char *
+    Value::parse(const ValueType &vt, const char *unparsed) {
+      const char *err = 0;
+      allocate(vt);
+      unsigned n;
+      for (n = 0; n < vt.length && *unparsed; n++) {
+	// Skip initial white space
+	while (isspace(*unparsed))
+	  unparsed++;
+	if (!m_vector && !*unparsed)
+	  return "Empty scalar value";
+	// Find end
+	const char *start = unparsed;
+	while (*unparsed && *unparsed != ',') {
+	  if (*unparsed == '\\' && unparsed[1])
+	    unparsed++;
+	  unparsed++;
+	}
+	char *unparsedSingle = new char[unparsed - start + 1];
+	char *tmp = unparsedSingle;
+	char *lastSpace = 0;
+	for (tmp = unparsedSingle; *start && *start != ','; start++) {
+	  if (*start == '\\' && start[1]) {
+	    start++;
+	    lastSpace = 0;
+	  } else if (isspace(*start)) {
+	    if (!lastSpace)
+	      lastSpace = tmp;
+	  } else
+	    lastSpace = 0;
+	  *tmp++ = *start;
+	}
+	if (lastSpace)
+	  *lastSpace = 0;
+	else
+	  *tmp = 0;
+	if (!m_vector && *unparsed)
+	  err = "multiple values supplied for (single) scalar value";
+	else switch (vt.scalar) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
+	    case OCPI_##pretty:					\
+	      if (OCPI::Util::Prop::parse##pretty(unparsedSingle, vt.stringLength, \
+					    m_vector ? &m_p##pretty[n] : \
+					    &m_##pretty))		\
+		err = #pretty;						\
+	      break;
+	    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+	  default:
+	    err ="Unexpected illegal type in parsing value";
+	  }
+	if (err)
+	  asprintf((char **)&err, "Bad value \"%s\" for value of type \"%s\"",
+		   unparsedSingle, err);
+	delete [] unparsedSingle;
+	if (err)
+	  break;
+	if (*start)
+	  start++;
+      }
+      if (!err && *unparsed)
+	err = esprintf("Too many values (> %d) for value", vt.length);
+      if (err)
+	clear();
+      else
+	m_length = n;
+      return err;
+    }
+    void Value::unparse(std::string &s) const {
+      char *cp = 0;
+      switch (m_type) {
+      case OCPI_Float:
+	asprintf(&cp, "%g", (double)m_Float);
+	break;
+      case OCPI_Double:
+	asprintf(&cp, "%g", m_Double);
+	break;
+#if 0
+      case OCPI_LongDouble:
+	asprintf(&cp, "%Lg", m_LongDouble);
+	break;
+#endif
+      case OCPI_Short:
+	asprintf(&cp, "%ld", (long)m_Short);
+	break;
+      case OCPI_Long:
+	asprintf(&cp, "%ld", (long)m_Long);
+	break;
+      case OCPI_LongLong:
+	asprintf(&cp, "%lld", (long long)m_LongLong);
+	break;
+      case OCPI_UShort:
+	asprintf(&cp, "%lu", (unsigned long)m_UShort);
+	break;
+      case OCPI_ULong:
+	asprintf(&cp, "%lu", (unsigned long)m_ULong);
+	break;
+      case OCPI_ULongLong:
+	asprintf(&cp, "%llu", (unsigned long long)m_ULongLong);
+	break;
+      case OCPI_Char:
+	cp = new char[10];
+	if (isprint(m_Char)) {
+	  switch (m_Char) {
+	  case '\\':
+	  case '"':
+	  case '?':
+	  case '\'':
+	    *cp++ = '\\';
+	    break;
+	  default:
+	    ;
+	  }
+	  *cp++ = m_Char;
+	} else {
+	  *cp++ = '\\';
+	  switch (m_Char) {
+	  case '\a':
+	    *cp++ = 'a';
+	    break;
+	  case 'b':
+	    *cp++ = 'b';
+	    break;
+	  case 'f':
+	    *cp++ = 'f';
+	    break;
+	  case 'n':
+	    *cp++ = 'n';
+	    break;
+	  case 'r':
+	    *cp++ = 'r';
+	    break;
+	  case 't':
+	    *cp++ = 't';
+	    break;
+	  case 'v':
+	    *cp++ = 'v';
+	    break;
+	  default:
+	    *cp++ = '0' + ((m_Char >> 6) & 7);
+	    *cp++ = '0' + ((m_Char >> 3) & 7);
+	    *cp++ = '0' + (m_Char & 7);
+	  }
+	case OCPI_none: case OCPI_scalar_type_limit:;
+	}
+	*cp = 0;
+	break;
+#if 0
+      case OCPI_WChar:
+	cp = (char *)malloc(MB_LEN_MAX + 1);
+	wctomb(cp, m_wchar); // FIXME: could worry about escapes in this string?
+	break;
+#endif
+      case OCPI_Bool:
+	asprintf(&cp, m_Bool ? "true" : "false");
+	break;
+      case OCPI_UChar:
+	asprintf(&cp, "0x%x", m_UChar);
+	break;
+#if 0
+      case OCPI_Objref:
+#endif
+      case OCPI_String:
+	s = m_String;
+	break;
+#if 0
+      case Type::WSTRING:
+      case Type::FIXED:
+      case Type::ENUM:
+      case Type::UNION:
+	// These are not used for properties.
+	break;
+      case Type::STRUCT:
+	assert(0); // unimplemented yet.
+      case Type::ANY:
+      case Type::VOID:
+      case Type::NONE:
+      default:
+	// These are not used for properties.
+	;
+#endif
+      }
+      if (cp) {
+	s = cp;
+	delete []cp;
+      }
     }
   }
 }

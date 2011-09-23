@@ -121,7 +121,7 @@ namespace OCPI {
 	return NULL;
       }
 #endif
-      TChild *firstChild() {
+      TChild *firstChild() const {
 	return static_cast<TChild *>(m_children);
       }
 

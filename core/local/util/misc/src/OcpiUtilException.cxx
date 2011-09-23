@@ -33,17 +33,64 @@
  */
 #include <stdarg.h>
 #include "OcpiUtilException.h"
+
 namespace OCPI {
 
+  namespace API {
+    Error::~Error(){}
+  }
   namespace Util {
-    ApiError::ApiError(const char *err, ...) :
-      OCPI::Util::EmbeddedException(0, "", 0) {
+    // Convenience for single line, multi-string, API exceptions (API called badly)
+    // Its easy to scan all callers for the terminating null
+    ApiError::ApiError(const char *err, ...)
+    {
       va_list ap;
       va_start(ap, err);
-      m_auxInfo = err;
+      setConcatenateV(err, ap);
+      m_auxInfo = *this; // backward compatibility...
+    }
+    ApiError::~ApiError(){}
+    Error::Error(){}
+    Error::Error(const char *err, ...) {
+      va_list ap;
+      va_start(ap, err);
+      setFormatV(err, ap);
+      va_end(ap);
+    }      
+    void Error::setConcatenateV(const char *err, va_list ap) {
+      append(err);
       const char *s;
       while ((s = va_arg(ap, const char*)))
-        m_auxInfo += s;
+	append(s);
     }
+    void Error::setFormat(const char *err, ...) {
+      va_list ap;
+      va_start(ap, err);
+      setFormatV(err, ap);
+      va_end(ap);
+    }
+    void Error::setFormatV(const char *err, va_list ap) {
+      char *s;
+      vasprintf(&s, err, ap);
+      append(s);
+    }
+
+    EmbeddedException::EmbeddedException( 
+					 OCPI::OS::uint32_t errorCode, 
+					 const char* auxInfo,
+					 OCPI::OS::uint32_t errorLevel )
+      : m_errorCode(errorCode), m_errorLevel(errorLevel)
+    {
+      if (auxInfo)
+	m_auxInfo = auxInfo;
+      setFormat("Code 0x%x, level %u, error: %s", errorCode, errorLevel, auxInfo);
+    }
+      // String error only (error code zero)
+    EmbeddedException::EmbeddedException( const char* auxInfo )
+      : m_errorCode(0), m_auxInfo(auxInfo), m_errorLevel(0)
+    {
+      append(auxInfo);
+    }
+    EmbeddedException::~EmbeddedException(){}
   }
 }

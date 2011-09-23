@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -96,7 +96,7 @@ struct WDI {
   unsigned minBufferCount;
   unsigned nOpcodes;
 };
-// OCP_SIGNAL_I(name, 
+// OCP_SIGNAL_I(name,
 // OCP_SIGNAL_IV(name,
 // OCP_SIGNAL_O(
 // OCP_SIGNAL_OV(
@@ -129,7 +129,7 @@ struct WDI {
   OCP_SIGNAL_SS(SRespLast) \
   OCP_SIGNAL_SS(SReset_n) \
   OCP_SIGNAL_SV(SThreadBusy, 1) \
-  /**/  
+  /**/
 struct OcpSignalDesc {
   const char *name;
   bool vector;
@@ -275,6 +275,18 @@ public:
   }
 };
 
+class LocalMemory {
+  public:
+    LocalMemory ( )
+      : name ( 0 ),
+        sizeOfLocalMemory ( 0 )
+    {
+      // Empty
+    }
+    const char* name;
+    unsigned int sizeOfLocalMemory;
+};
+
 typedef CP::Member Simple;
 
 #if 0
@@ -319,7 +331,7 @@ struct InstancePort;
 struct Connection {
   const char *name;   // signal
   InstancePort *ports;
-  //  unsigned nConsumers, nProducers, nBidirectionals, 
+  //  unsigned nConsumers, nProducers, nBidirectionals,
   unsigned nPorts;
   unsigned nExternals;
   Clock *clock;
@@ -375,7 +387,8 @@ struct Assembly {
 enum Model {
   NoModel,
   HdlModel,
-  RccModel
+  RccModel,
+  OclModel
 };
 class  Worker {
  public:
@@ -390,6 +403,7 @@ class  Worker {
   bool isThreaded;
   Control ctl;
   std::vector<Port*> ports;
+  std::vector<LocalMemory*> localMemories;
   unsigned nClocks;
   Clock *clocks;
   Endian endian;
@@ -431,6 +445,7 @@ extern const char
   *controlOperations[],
   *parseHdlAssy(ezxml_t xml, Worker *aw),
   *parseRccAssy(ezxml_t xml, const char *file, Worker *aw),
+  *parseOclAssy(ezxml_t xml, const char *file, Worker *aw),
   *parseFile(const char *file, const char *parent, const char *element,
 	     ezxml_t *xp, const char **xfile, bool optional = false),
   *pattern(Worker *w, Port *p, int n0, unsigned n1, bool in, bool master, char **suff),
@@ -439,11 +454,14 @@ extern const char
   *emitDefsHDL(Worker*, const char *, bool wrap = false),
   *emitImplHDL(Worker*, const char *, const char *),
   *emitImplRCC(Worker*, const char *, const char *),
+  *emitImplOCL(Worker*, const char *, const char *),
   *emitSkelHDL(Worker*, const char *),
   *emitSkelRCC(Worker*, const char *),
+  *emitSkelOCL(Worker*, const char *),
   *emitBsvHDL(Worker*, const char *),
   *emitArtHDL(Worker *, const char *root),
   *emitArtRCC(Worker *, const char *root),
+  *emitArtOCL(Worker *, const char *root),
   *emitAssyHDL(Worker*, const char *);
 
 extern void

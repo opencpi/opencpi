@@ -107,34 +107,47 @@ namespace OCPI {
 
     // Decode based on XML, determining offsets
     Worker::Worker(ezxml_t xml)
-      : myProps(0), myPorts(0), myTests(0), nProps(0), nPorts(0), nTests(0),
-	size(0)
+      : myProps(0), myPorts(0), myTests(0), nProps(0), myLocalMemories(0),
+        nPorts(0), nTests(0), nLocalMemories(0),
+        totalPropertySize(0),
+        size(0)
     {
       ezxml_t x;
       // First pass - just count for allocation
-      for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x)) 
+      for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x))
         nProps++;
       for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x))
         nPorts++;
+      for (x = ezxml_cchild(xml, "localMemory"); x; x = ezxml_next(x))
+        nLocalMemories++;
       if (nProps)
 	myProps = new Property[nProps];
       if (nPorts)
 	myPorts = new Port[nPorts];
+     if (nLocalMemories)
+        myLocalMemories = new LocalMemory[nLocalMemories];
       const char *err;
       // Second pass - decode all information
       Property *prop = myProps;
       unsigned offset = 0;
       bool readableConfigs, writableConfigs, sub32Configs; // all unused
       for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x), prop++)
+      {
         if ((err = prop->parse(x, offset, readableConfigs, writableConfigs,
-			       sub32Configs, true)))
+             sub32Configs, true)))
           throw CC::ApiError("Invalid xml property description:", err, NULL);
+        totalPropertySize += prop->nBytes;
+      }
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
       unsigned n = 0;
       Port *p = myPorts;
       for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++, n++)
         if (p->decode(x, n))
           throw CC::ApiError("Invalid xml port description", 0);
+      LocalMemory* m = myLocalMemories;
+      for (x = ezxml_cchild(xml, "localMemory"); x; x = ezxml_next(x), m++ )
+        if (m->decode(x))
+          throw CC::ApiError("Invalid xml local memory description", 0);
     }
   }
 }

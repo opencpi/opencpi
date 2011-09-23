@@ -62,6 +62,7 @@ using namespace DataTransport::Interface;
 using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
+namespace OU = OCPI::Util;
 
 static const char* g_ep1    = "ocpi-smb-pio://test1:900000.1.20";
 static const char* g_ep2    = "ocpi-smb-pio://test2:900000.2.20";
@@ -487,7 +488,7 @@ int  main( int argc, char** argv)
     test_rc &= config_and_run_optports_test( test_name, ca, workers, cmap, bcmap[3]);
   }
   catch( OCPI::Util::EmbeddedException& ex ) {
-    if (ex.getErrorCode() == OCPI::Container::PORT_NOT_CONNECTED) {
+    if (ex.getErrorCode() == OU::PORT_NOT_CONNECTED) {
       printf("got the PORT_NOT_CONNECTED error (EXPECTED)");
       test_rc = 0;
     } else
@@ -578,7 +579,7 @@ int  main( int argc, char** argv)
     test_rc &= config_and_run_optports_test( test_name, ca, workers, cmap, bcmap[3]);
   }
   catch( OCPI::Util::EmbeddedException& ex ) {
-    if (ex.getErrorCode() == OCPI::Container::PORT_NOT_CONNECTED) {
+    if (ex.getErrorCode() == OU::PORT_NOT_CONNECTED) {
       printf("got the PORT_NOT_CONNECTED error (EXPECTED)");
       test_rc = 0;
     } else

@@ -18,27 +18,22 @@ endif
 endif
 
 
-LIBDIR=$(OCPI_CDK_DIR)/lib/$(HostTarget)
-LIBS=interfaces rcc_container rdma_drivers opencv_core opencv_highgui opencv_ml
-ifeq ($(OSTYPE),darwin)
-LIB_PATH=export DYLD_LIBRARY_PATH=$(LIBDIR);
-else
-LIB_PATH=export LD_LIBRARY_PATH=$(LIBDIR);
-endif
-
-INCS += -I$(OCPI_OPENCV_HOME)/include/opencv -I../image_utils
+LIBDIR=$(OCPI_CDK_DIR)/lib/$(OcpiHostTarget)
+LIBS=interfaces rcc_container rdma_drivers opencv_core opencv_highgui opencv_ml util
+LIB_PATH=export $(OcpiLibraryPathEnv)=$(LIBDIR):$(OCPI_OPENCV_HOME)/lib; export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/../components/lib;
+INCS += -I$(OCPI_OPENCV_HOME)/include/opencv 
 LIBRARY_PATH 	+= -L$(OCPI_OPENCV_HOME)/lib -L$(OCPI_BASE_DIR)/lib
 
 all: optical_flow
 
-../image_utils/image_utils.o: ../image_utils/DemoWorkerFacade.cxx ../image_utils/DemoWorkerFacade.h
-	cd ../image_utils; make
-
-optical_flow: optical_flow.cxx ../image_utils/image_utils.o
+optical_flow: optical_flow.cxx
 	$(LIB_PATH) g++ -g -o $@ $(INCS) -I$(OCPI_CDK_DIR)/include $^ -L$(LIBDIR) $(LIBS:%=-l%)
 
 run: optical_flow
-	$(LIB_PATH) export OCPI_LIBRARY_PATH=lib/rcc; ./optical_flow > /dev/null	
+	$(LIB_PATH) \
+	export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components; \
+	export OCPI_SMB_SIZE=400000000; \
+	./optical_flow uavA.jpg uavB.jpg # > /dev/null	
 
 clean::
 	rm -f optical_flow *.*~ *~ output_image.jpg *.o *.d

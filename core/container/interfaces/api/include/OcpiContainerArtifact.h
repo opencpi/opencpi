@@ -78,6 +78,7 @@ namespace OCPI {
       bool hasArtifact(const void *art);
       Worker &createWorker(Application &a,  const char *instName,
 			   const char *impltag, const char *instTag,
+			   const OCPI::Util::PValue *props = NULL,
 			   const OCPI::Util::PValue *params = NULL);
     protected:
       virtual ~Artifact();

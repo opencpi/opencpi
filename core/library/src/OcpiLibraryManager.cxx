@@ -47,9 +47,8 @@ namespace OCPI {
       for (Driver *d = firstDriver(); d; d = d->nextDriver())
 	if ((a = d->findArtifact(caps, impl, props, conns, inst)))
 	  return *a;
-      throw OU::EmbeddedException(OC::NO_ARTIFACT_FOR_WORKER,
-				  "No artifact found for worker",
-				  OC::ApplicationRecoverable);
+      throw OU::Error("No usable artifact found in any library in OCPI_LIBRARY_PATH, "
+		      "for worker named \"%s\"", impl);
     }
 
     Artifact &Manager::getArtifact(const char *url, const OA::PValue *props) {
@@ -72,9 +71,9 @@ namespace OCPI {
       for (Driver *d = firstChild(); d; d = d->nextChild())
 	if ((a = d->addArtifact(url, props)))
 	  return *a;
-      throw OU::EmbeddedException(OC::ARTIFACT_UNSUPPORTED,
+      throw OU::EmbeddedException(OU::ARTIFACT_UNSUPPORTED,
 				  "No library driver supports this file",
-				  OC::ApplicationRecoverable);
+				  OU::ApplicationRecoverable);
     }
 
 

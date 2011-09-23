@@ -99,6 +99,12 @@ namespace OCPI {
 	  : OL::LibraryBase<Driver,Library,Artifact>(name) {}
 	// Recursive.
 	void doDir(const std::string &dirName) {
+	  bool isDir;
+	  if (!OS::FileSystem::exists(dirName, &isDir) ||
+	      !isDir)
+	    throw OU::Error("Directory name in OCPI_LIBRARY_PATH, \"%s\", "
+			    "is not a directory", dirName.c_str());
+
 	  static const std::string pattern("*");
 	  OS::FileIterator dir(dirName, "*");
 	  for (; !dir.end(); dir.next()) {
@@ -106,10 +112,15 @@ namespace OCPI {
 	      std::string subDir =
 		OS::FileSystem::joinNames(dirName, dir.relativeName());
 	      doDir(subDir);
-	    } else
-	      // FIXME: supply library level xml for the artifact
-	      (new Artifact(*this, dir.absoluteName().c_str(), NULL))
-		->configure();
+	    } else {
+	      std::string absolute = dir.absoluteName();
+	      const char *absName = absolute.c_str();
+	      unsigned len = strlen(absName), xlen = strlen(".xml");
+	      
+	      if (len < xlen || strcasecmp(absName + len - xlen, ".xml"))
+		// FIXME: supply library level xml for the artifact
+		(new Artifact(*this, absName, NULL))->configure();
+	    }
 	  }
 	}
       public:

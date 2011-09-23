@@ -36,6 +36,7 @@
 #include "OcpiDriverApi.h"
 namespace OCPI {
   namespace Driver {
+    namespace OU = OCPI::Util;
     void debug_hook() {} // easier static constructor debug
     Manager::~Manager(){}
     // If a manager has no configuration method, this is the default implementation.
@@ -47,8 +48,7 @@ namespace OCPI {
 	ezxml_t found = NULL;
 	for (ezxml_t c = ezxml_cchild(x, d->name().c_str()); c; c = ezxml_next(c))
 	  if (found)
-	    throw OCPI::Util::ApiError("Duplicate XML driver element for: "
-				       "\"%s\"", d->name().c_str(), NULL);
+	    throw OU::Error("Duplicate XML driver element for: \"%s\"", d->name().c_str());
 	  else
 	    found = c;
 	d->configure(found);
@@ -79,15 +79,14 @@ namespace OCPI {
 	m_configured = true;
 	bool optional = false;
 	if (!file)
-	  file = getenv("OCPI_PLATFORM_CONFIG");
+	  file = getenv("OCPI_SYSTEM_CONFIG");
 	if (!file) {
 	  file = "/opt/opencpi/platform.xml";
 	  optional = true;
 	}
 	ezxml_t x = ezxml_parse_file(file);
 	if (!x && !optional)
-	  throw OCPI::Util::ApiError("OpenCPI system configuration file: \"%s\""
-				     " couldn't be opened", file);
+	  throw OU::Error("OpenCPI system configuration file: \"%s\" couldn't be opened", file);
 	// First perform any top-level loads.
 	if (x) {
 	  for (ezxml_t l = ezxml_cchild(x, "load"); l; l = ezxml_next(l))

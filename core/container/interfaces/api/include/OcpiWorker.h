@@ -101,10 +101,14 @@ namespace OCPI {
       virtual void prepareProperty(OCPI::Util::Prop::Property &p, OCPI::API::Property &) = 0;
       virtual Port &createPort(const OCPI::Metadata::Port &metaport,
 			       const OCPI::Util::PValue *props) = 0;
+      virtual Worker *nextWorker() = 0;
 
     public:
       virtual Application &application() = 0;
       void setProperty(const char *name, const char *value);
+      void setProperties(const char *props[][2]);
+      void setProperties(const OCPI::API::PValue *props);
+      bool getProperty(unsigned ordinal, std::string &name, std::string &value);
       bool hasImplTag(const char *tag);
       bool hasInstTag(const char *tag);
       typedef unsigned Ordinal;

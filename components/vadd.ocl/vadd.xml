@@ -1,0 +1,4 @@
+<OclImplementation>
+  <xi:include href="vadd_spec.xml"/>
+  <ControlInterface Name="vadd"/>
+</OclImplementation>

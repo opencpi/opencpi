@@ -113,8 +113,8 @@ namespace OCPI {
     template <class Dri, class Con, class App, class Art>
     class ContainerBase
       : public OCPI::Driver::DeviceBase<Dri,Con>, // for the relationship with our driver
-	public Parent<App>,
 	public Parent<Art>,
+	public Parent<App>,
 	public Container
     {
     protected:
@@ -145,6 +145,9 @@ namespace OCPI {
       : Child<Con, App, application>(con, name), Application(props) {}
     public:
       Container &container() { return Child<Con,App,application>::parent(); }
+      Worker *firstWorker() const {
+	return Parent<Wrk>::firstChild();
+      }
     };
     class Worker;
     // The template inherited by concrete artifact classes that represent LOADED artifacts.
@@ -174,6 +177,7 @@ namespace OCPI {
       }
       Application &application() { return Child<App,Wrk,worker>::parent(); }
       Port *findPort(const char *name) { return Parent<Prt>::findChildByName(name); }
+      Worker *nextWorker() { return Child<App,Wrk,worker>::nextChild(); }
     };
     extern const char *port;
     template<class Wrk, class Prt, class Ext>

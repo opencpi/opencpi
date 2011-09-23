@@ -45,6 +45,7 @@
 #define __STDC_LIMIT_MACROS // wierd standards goof up
 #endif
 #include <stdint.h>
+#include <string>
 /*
   These are the "simple" property data types
   The list is built from two sources, the SCA, and CORBA IDL,
@@ -102,27 +103,40 @@ namespace OCPI {
       OCPI_scalar_type_limit
     };
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) typedef run pretty;
-      OCPI_PROPERTY_DATA_TYPES
+    OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-    // A typed value
-    class ScalarValue {
-    public:
-      union {
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run v##pretty;
-	OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run *pv##pretty;
-	OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-      };
-      unsigned length; // for sequence values.
-    };
     struct ValueType {
       ScalarType scalar;
       bool isSequence, isArray;
       uint32_t
       stringLength, // maximum strlen (terminating null not included)
-	length;     // maximum for sequences, specific length for arrays
+	length;     // maximum for sequences, specific length for arrays, 1 for scalars!
+    };
+
+    // A typed value
+    class Value {
+    public:
+      ScalarType m_type;     // What type is here?
+      bool m_vector;         // It is an array or sequence?
+      unsigned m_length;     // How many values? 1 if not a sequence/array.
+      char *m_stringSpace;   // space for vector of strings
+      union {
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run m_##pretty;
+	OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run *m_p##pretty;
+	OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+      };
+      Value();
+      Value(const ValueType &vt);
+      ~Value();
+      const char *parse(const ValueType &vt, const char *unparsed);
+      void unparse(std::string &) const;
+      inline bool isVector() const { return m_vector; }
+      void allocate(const ValueType &vt);
+    private:
+      void clear();
     };
   }
 }

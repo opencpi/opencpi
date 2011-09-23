@@ -256,13 +256,16 @@ public:
 					   sep->portNum, sep->size, sep->mailbox);
     }
     m_started = true;
-    while ( ! m_stop )  {
-      OCPI::OS::Socket s = m_server.accept();
-      s.linger(false);
-      ServerSocketHandler * ssh = new ServerSocketHandler(s,m_startupParms);
-      m_sockets.push_back( ssh );
-      ssh->start();
-    }
+    while ( ! m_stop )
+      // block for a while, and if we time out, check m_stop again
+      if (m_server.wait(500)) {
+	OCPI::OS::Socket s = m_server.accept();
+	s.linger(false);
+	ServerSocketHandler * ssh = new ServerSocketHandler(s,m_startupParms);
+	m_sockets.push_back( ssh );
+	ssh->start();
+      }
+    m_server.close();
   }
   void stop(){m_stop=true;}
   void btr(){while (!m_started)OCPI::OS::sleep(10);}

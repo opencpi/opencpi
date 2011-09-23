@@ -104,7 +104,7 @@ Container(const char *name,
     m_transport = new OCPI::DataTransport::Transport( tpg, false );
   }
   catch( std::bad_alloc ) {
-    throw OU::EmbeddedException( OC::NO_MORE_MEMORY, "new", OC::ContainerFatal);
+    throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
   }
 
   const char* monitorIPAddress = NULL;
@@ -195,7 +195,7 @@ createApplication(const char *name, const OCPI::Util::PValue *props)
     ca = new Application(*this, name, props);
   }
   catch( std::bad_alloc ) {
-    throw OU::EmbeddedException( OC::NO_MORE_MEMORY, "new", OC::ContainerFatal);
+    throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
   }
   return ca;
 }

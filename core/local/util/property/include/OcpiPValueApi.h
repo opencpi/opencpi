@@ -71,7 +71,7 @@ namespace OCPI {
       const char *name;
       ScalarType type;
       unsigned width;
-      // Anonymous union here for convenience even though redundant with above.
+      // Anonymous union here for convenience even though redundant with ValueType.
       union {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run v##pretty;
 	OCPI_PROPERTY_DATA_TYPES

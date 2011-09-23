@@ -747,10 +747,14 @@ DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/dataplane/transport/transport
 
 CONTAINER_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/container/interfaces/api/include \
+	$(OCPI_BASE_DIR)/core/container/ocl_container/include \
 	$(OCPI_BASE_DIR)/core/container/rcc_container/include
 
 HDL_CONTAINER_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/container/hdl_container/impl/include
+
+OCL_CONTAINER_EXPORTS = \
+	$(OCPI_BASE_DIR)/core/container/ocl_container/impl/include
 
 CONTAINER_LIBS = \
 	$(OCPI_BASE_DIR)/core/container/interfaces/interfaces
@@ -794,7 +798,7 @@ UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/local/util/thread/include \
 	$(OCPI_BASE_DIR)/core/local/util/fasttime/include \
 	$(OCPI_BASE_DIR)/core/local/util/sockets/include \
-	$(OCPI_BASE_DIR)/core/include
+	$(OCPI_BASE_DIR)/core/include 
 UTIL_LIBS = $(OCPI_BASE_DIR)/core/local/util/util
 
 ifeq ($(SCAVERSION),2.2)

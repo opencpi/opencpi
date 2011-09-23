@@ -63,7 +63,7 @@ using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
 namespace OM = OCPI::Metadata;
-namespace OC = OCPI::Container;
+namespace OU = OCPI::Util;
 
 static const char* g_ep[]    =  {
   "ocpi-smb-pio://test1:9000000.1.20",
@@ -277,7 +277,7 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
 {
   ( void ) test_name;
   int testPassed = 1;
-  uint32_t err_code = OC::NO_ERROR_;
+  uint32_t err_code = OU::NO_ERROR_;
   std::string err_str;
   int tmpi = 0;
 
@@ -298,7 +298,7 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
   }
 
   TRY_AND_SET(err_code, err_str, "", PRODUCER.worker->test());
-  if ( err_code != OC::TEST_NOT_IMPLEMENTED ) {  // Test failed, there should have been an error reported
+  if ( err_code != OU::TEST_NOT_IMPLEMENTED ) {  // Test failed, there should have been an error reported
     TUPRINTF("Testing worker test method, without test defined returned success\n");
     testPassed = false;
     goto done;
@@ -314,7 +314,7 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
   }
 
   TRY_AND_SET(err_code, err_str, "", PRODUCER.worker->start());
-  if ( err_code != OC::PORT_NOT_CONNECTED ) {
+  if ( err_code != OU::PORT_NOT_CONNECTED ) {
     TUPRINTF("Bad error code returned\n");
     testPassed = false;
     goto done;
@@ -332,7 +332,7 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
   tmpi = UTGProducerWorkerDispatchTable.numInputs;
   UTGProducerWorkerDispatchTable.numInputs = 10;
   TRY_AND_SET(err_code, err_str, "", PRODUCER.worker->start());
-  if ( err_code != OC::PORT_COUNT_MISMATCH ) {
+  if ( err_code != OU::PORT_COUNT_MISMATCH ) {
     UTGProducerWorkerDispatchTable.numInputs  = tmpi;
     TUPRINTF("Bad error code returned, not port_count_mismatch\n");
     testPassed = false;
@@ -399,13 +399,13 @@ static int config_and_run_BA_method(const char *test_name, std::vector<CApp>& ca
   TRY_AND_SET(err_code, err_str, "",
 	      CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
 	      CONSUMER.worker->afterConfigure(););
-  if ( err_code != OC::NO_ERROR_) {
+  if ( err_code != OU::NO_ERROR_) {
     TUPRINTF("returned failure code, not success\n");
     testPassed = false;
     goto done;
   }
   TRY_AND_SET(err_code, err_str, "", CONSUMER.worker->beforeQuery());
-  if ( err_code != OC::NO_ERROR_ ) {  // Test failed, there should have been an error reported
+  if ( err_code != OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
     TUPRINTF("returned failure code, not success\n");
     testPassed = false;
     goto done;
@@ -418,7 +418,7 @@ static int config_and_run_BA_method(const char *test_name, std::vector<CApp>& ca
   if ( err_str != ERROR_TEST_STRING ) {
     testPassed = false;
   }
-  if ( err_code == OC::NO_ERROR_ ) {  // Test failed, there should have been an error reported
+  if ( err_code == OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
     TUPRINTF("Expected error return code, not success\n");
     testPassed = false;
     goto done;
@@ -428,7 +428,7 @@ static int config_and_run_BA_method(const char *test_name, std::vector<CApp>& ca
   if ( err_str != ERROR_TEST_STRING ) {
     testPassed = false;
   }
-  if ( err_code == OC::NO_ERROR_ ) {  // Test failed, there should have been an error reported
+  if ( err_code == OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
     TUPRINTF("Expected error return code, not success\n");
     testPassed = false;
     goto done;
@@ -482,7 +482,7 @@ static int config_and_run_read_write_method(const char *test_name, std::vector<C
   tprop[0] = 10;
   TRY_AND_SET(err_code, err_str, "",
 	      CONSUMER.worker->write(  offset, nBytes, &tprop[0]));
-  if ( err_code != OC::NO_ERROR_ ) {
+  if ( err_code != OU::NO_ERROR_ ) {
     TUPRINTF("returned failure code, not success\n");
     testPassed = false;
     goto done;
@@ -494,7 +494,7 @@ static int config_and_run_read_write_method(const char *test_name, std::vector<C
   tprop[0] = 0;
   TRY_AND_SET(err_code, err_str, "",
 	      CONSUMER.worker->read( offset, nBytes, &tprop[0]));
-  if ( err_code != OC::NO_ERROR_ ) {
+  if ( err_code != OU::NO_ERROR_ ) {
     TUPRINTF("returned failure code, not success\n");
     testPassed = false;
     goto done;
@@ -511,7 +511,7 @@ static int config_and_run_read_write_method(const char *test_name, std::vector<C
   tprop[0] = 0;
   TRY_AND_SET(err_code, err_str, "",
 	      CONSUMER.worker->write( offset, nBytes, &tprop[0]));
-  if ( err_code == OC::NO_ERROR_ ) {
+  if ( err_code == OU::NO_ERROR_ ) {
     TUPRINTF("Expected error return code, not success\n");
     testPassed = false;
     goto done;
@@ -522,7 +522,7 @@ static int config_and_run_read_write_method(const char *test_name, std::vector<C
   tprop[0] = 0;
   TRY_AND_SET(err_code, err_str, "",
 	      CONSUMER.worker->read( offset, nBytes, &tprop[0]));
-  if ( err_code == OC::NO_ERROR_ ) {
+  if ( err_code == OU::NO_ERROR_ ) {
     TUPRINTF("Expected error return code, not success\n");
     testPassed = false;
     goto done;
@@ -577,7 +577,7 @@ static int config_and_run_test_method(const char *test_name, std::vector<CApp>& 
 	      CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
 	      // Try setting the state
 	      CONSUMER.worker->test());
-  if ( err_code != OC::NO_ERROR_ ) {  // Test failed, there should have been an error reported
+  if ( err_code != OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
     TUPRINTF("test() returned failure code, not success\n");
     testPassed = false;
     goto done;
@@ -595,7 +595,7 @@ static int config_and_run_test_method(const char *test_name, std::vector<CApp>& 
 	      CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
 	      // Now test should fail and return a string
 	      CONSUMER.worker->test());
-  if ( err_code == OC::NO_ERROR_ ) {  // Test failed, there should have been an error reported
+  if ( err_code == OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
     TUPRINTF("Expected error return code, not success\n");
     testPassed = false;
     goto done;
@@ -664,7 +664,7 @@ static int config_and_run_state_error_test1(const char *test_name, std::vector<C
   tprop[0] = 0;
   TRY_AND_SET(err_code, err_str, "",
 	      CONSUMER.worker->write(  offset, nBytes, &tprop[0]));
-  if ( err_code != OC::NO_ERROR_ ) {  // Test failed, there should have been an error reported
+  if ( err_code != OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
     TUPRINTF("return() to return failure code, not success\n");
     testPassed = false;
     goto done;
@@ -705,7 +705,7 @@ static int config_and_run_state_error_test1(const char *test_name, std::vector<C
 		case OM::Worker::OpStop:   CONSUMER.worker->stop(); break;
 		default:;
 		});
-    if ( err_code != OC::NO_ERROR_ ) {  // Test failed, there should have been an error reported
+    if ( err_code != OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
       TUPRINTF("init() to return failure code, not success\n");
       testPassed = false;
       goto done;
@@ -723,7 +723,7 @@ static int config_and_run_state_error_test1(const char *test_name, std::vector<C
 	      case OM::Worker::OpStop:   CONSUMER.worker->stop(); break;
 	      default:;
 	      });
-  if ( err_code != OC::INVALID_CONTROL_SEQUENCE ) {  // Test failed, there should have been an error reported
+  if ( err_code != OU::INVALID_CONTROL_SEQUENCE ) {  // Test failed, there should have been an error reported
     TUPRINTF("Wrong return code\n");
     testPassed = false;
     goto done;
@@ -811,7 +811,7 @@ static int config_and_run_state_error_test2(const char *test_name, std::vector<C
 	      case OM::Worker::OpStop:   CONSUMER.worker->stop(); break;
 	      default:;
 	      });
-  if ( err_code == OC::NO_ERROR_ ) {  // Test failed, there should have been an error reported
+  if ( err_code == OU::NO_ERROR_ ) {  // Test failed, there should have been an error reported
     TUPRINTF("Expected error return code, not success\n");
     testPassed = false;
   }
@@ -827,7 +827,7 @@ static int config_and_run_state_error_test2(const char *test_name, std::vector<C
 	      case OM::Worker::OpStop:   CONSUMER.worker->stop(); break;
 	      default:;
 	      });
-  if ( err_code == OC::NO_ERROR_ ) {
+  if ( err_code == OU::NO_ERROR_ ) {
     TUPRINTF("Expected worker to return FATAL falure\n");
     testPassed = false;
   }
@@ -841,11 +841,11 @@ static int config_and_run_state_error_test2(const char *test_name, std::vector<C
 	      case OM::Worker::OpStop:   CONSUMER.worker->stop(); break;
 	      default:;
 	      });
-  if ( err_code == OC::NO_ERROR_ ) {
+  if ( err_code == OU::NO_ERROR_ ) {
     TUPRINTF("Expected worker to be unusable\n");
     testPassed = false;
   }
-  if ( err_code != OC::WORKER_UNUSABLE) {
+  if ( err_code != OU::WORKER_UNUSABLE) {
     testPassed = false;
   }
 

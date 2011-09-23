@@ -10,10 +10,10 @@ elif [[ "$OCPI_XILINX_TOOLS_DIR" == "" ]] ; then
   echo Error: environment variable OCPI_XILINX_TOOLS_DIR not set.
   exit 1
 elif test ! -x $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact; then
-  echo Error: \$OCPI_XLINX_TOOLS_DIR/ISE/bin/lin64/impact not found
+  echo Error: \$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact not found
   exit 1
 fi
-temp=/tmp/cpibitstream$$
+temp=/tmp/ocpibitstream$$
 tlog=$temp.1
 tmp=$temp.2
 port=${1:-auto}

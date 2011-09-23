@@ -36,16 +36,19 @@
 
 ALLIDLINC += $(SCA_CF_EXPORTS)
 
-ALLINC += $(CONTAINER_EXPORTS) \
-        $(LIBRARY_EXPORTS) \
+ALLINC += \
+	$(CONTAINER_EXPORTS) \
+	$(LIBRARY_EXPORTS) \
 	$(DATA_TRANSPORT_EXPORTS) \
 	$(DATA_TRANSFER_EXPORTS) \
 	$(UTIL_EXPORTS) \
 	$(LOGGER_EXPORTS) \
-	$(OCPIOS_EXPORTS)
+	$(OCPIOS_EXPORTS) \
+	$(OPENCL_EXPORTS)
 
-ALLLIBS += $(CONTAINER_LIBS) \
-        $(LIBRARY_LIBS) \
+ALLLIBS += \
+	$(CONTAINER_LIBS) \
+	$(LIBRARY_LIBS) \
 	$(DATA_TRANSPORT_LIBS) \
 	$(TX_DRIVER_SUPPORT_LIBS) \
 	$(DATA_TRANSFER_LIBS) \
@@ -53,29 +56,13 @@ ALLLIBS += $(CONTAINER_LIBS) \
 	$(LOGGER_LIBS) \
 	$(OCPIOS_LIBS)
 
+EXTRAOBJS +=
 
-EXTRAOBJS += ../../linux-bin/RplContainer.obj 
 
-ifeq ($(OCPI_CROSS_HOST),ppc86xx-linux)
-else
-ifeq ($(OCPI_OS),darwin)
-#DYNOBJS += ../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj \
-#	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj
-else
-DYNOBJS += ../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj
+ifeq ($(OCPI_HAVE_OPENCL),1)
+SYSLIBS += dl OpenCL
 endif
-endif
-
-ifeq ($(OCPI_HAVE_IBVERBS),1)
-DYNOBJS += ../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
-SYSLIBS += ibverbs	
-endif
+SHARED=$(SHARED_ALLOW_UNDEFINED)
 
 
-ifneq ($(OCPI_PPP_LIBRARY_DIR),)
-BASICLIBS += -L$(OCPI_PPP_LIBRARY_DIR) -lrose
-endif
 
-SYSLIBS += dl

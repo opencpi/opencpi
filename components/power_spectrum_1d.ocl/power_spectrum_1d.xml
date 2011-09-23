@@ -1,0 +1,4 @@
+<OclImplementation>
+  <xi:include href="power_spectrum_1d_spec.xml"/>
+  <ControlInterface Name="power_spectrum_1d"/>
+</OclImplementation>

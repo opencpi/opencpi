@@ -97,6 +97,7 @@ endif
 
 PACKAGES += tools/local/binder tools/local/tester
 PACKAGES += tools/cdk/ocpigen
+PACKAGES += tools/cdk/ocpiocl
 PACKAGES += tools/cdk/ocpixm
 PACKAGES += test
 
@@ -137,6 +138,7 @@ ALLPACKAGES = \
 	tools/local/binder \
 	tools/local/tester \
 	tools/cdk/ocpigen \
+	tools/cdk/ocpiocl \
 	tools/cdk/ocpixm \
 	core/container/ctests \
 	core/dataplane/rdma_tests
@@ -177,6 +179,9 @@ rcc:
 cleanrcc:
 	make -C components cleanrcc
 
+cleancomponents:
+	make -C components clean
+
 .PHONY: prims
 hdlprims:
 	$(MAKE) -C hdl primitives
@@ -194,7 +199,7 @@ $(PACKAGES):
 		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
 	fi
 
-clean distclean:
+clean distclean: cleancomponents
 	$(AT)$(foreach p,$(ALLPACKAGES),\
 		if test -f $p/Makefile.ocpi ; then \
 			$(MAKE) $(call DescendMake,$p) -f Makefile.ocpi $@ ; \

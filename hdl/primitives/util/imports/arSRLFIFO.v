@@ -1,15 +1,16 @@
 // arSRLFIFO.v
-// Copyright (c) 2009 Atomic Rules LLC, ALL RIGHTS RESERVED
+// Copyright (c) 2009, 2010, 2011 Atomic Rules LLC, ALL RIGHTS RESERVED
 //
 // 2009-05-10 ssiegel Creation in VHDL
 // 2009-11-01 ssiegel Converted to Verilog from VHDL
 // 2010-07-23 ssiegel Logic change for empty and full
+// 2011-06-17 ssiegel No logic change, scrub comments, formatting
 
 module arSRLFIFO (CLK,RST_N,ENQ,DEQ,FULL_N,EMPTY_N,D_IN,D_OUT,CLR);
 
-  parameter width  = 128;
-  parameter l2depth = 5;
-  parameter depth  = 2**l2depth;
+  parameter  width   = 128;
+  parameter  l2depth = 5;
+  localparam depth   = 2**l2depth;
 
   input             CLK;
   input             RST_N;
@@ -22,7 +23,7 @@ module arSRLFIFO (CLK,RST_N,ENQ,DEQ,FULL_N,EMPTY_N,D_IN,D_OUT,CLR);
   output[width-1:0] D_OUT;
 
   reg[l2depth-1:0]  pos;             // head position
-  reg[width-1:0]    dat[depth-1:0];  // SRL and output DFFs wed together
+  reg[width-1:0]    dat[depth-1:0];  // SRL FIFO
   reg               empty, full;
 
   integer i;
@@ -39,10 +40,6 @@ module arSRLFIFO (CLK,RST_N,ENQ,DEQ,FULL_N,EMPTY_N,D_IN,D_OUT,CLR);
         for(i=depth-1;i>0;i=i-1) dat[i] <= dat[i-1];
         dat[0] <= D_IN;
       end
-      //was... (1-cycle "late" in updating empty after ENQ or full after DEQ)
-      //empty <= (pos==0 || (pos==1 && (DEQ&&!ENQ)));
-      //full  <= (pos==(depth-1) || (pos==(depth-2) && (ENQ&&!DEQ)));
-      //is...
       empty <= ((pos==0         && !ENQ) || (pos==1         && (DEQ&&!ENQ)));
       full  <= ((pos==(depth-1) && !DEQ) || (pos==(depth-2) && (ENQ&&!DEQ)));
     end

@@ -54,6 +54,7 @@ namespace OCPI {
       PortOrdinal    ordinal;
       bool           provider;
       bool           bidirectional;
+      bool           optional;
 
 
       static const unsigned
@@ -62,7 +63,7 @@ namespace OCPI {
       uint32_t minBufferSize;
       uint32_t minBufferCount;
       uint32_t maxBufferSize;
-
+      uint32_t dataValueWidthInBytes;
       ezxml_t        myXml;
     };
 

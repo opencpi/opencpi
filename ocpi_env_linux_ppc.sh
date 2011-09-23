@@ -62,7 +62,7 @@ export OCPI_BUILD_HOST=$OCPI_BUILD_HOST_OS-$OCPI_BUILD_HOST_ARCH
 
 # #### Location of the Xilinx tools # ##################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.1/ISE_DS/
+export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.2/ISE_DS/
 
 # #### Location of Icarus Verilog ######################################### #
 
