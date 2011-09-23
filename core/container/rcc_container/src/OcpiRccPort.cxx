@@ -308,9 +308,6 @@ namespace OCPI {
     private:
       friend class ExternalPort;
       OCPI::DataTransport::BufferUserFacet  *m_buffer;
-#ifdef NEEDED
-      OCPI::DataTransport::Port            *m_dtPort;
-#endif
       Port                                 *m_port;
       OS::Mutex                            *m_mutex; // not a reference since we construct as an array
     };

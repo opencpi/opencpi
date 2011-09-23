@@ -133,6 +133,9 @@ namespace OCPI {
          *********************************/
         DataTransfer::EventManager* getEventManager();
         bool                        useEvents();
+
+	// Init flag
+	static bool m_init;
                         
         // polling or events
         P_STATIC bool m_useEvents;

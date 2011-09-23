@@ -71,8 +71,7 @@ namespace OCPI {
     namespace DDS {
 
       class TopicData : public OCPI::Metadata::Protocol {
-      private:
-	int         m_maxMsgSize;
+
       public:
 	std::string name;
 	std::string module_name;
@@ -81,13 +80,14 @@ namespace OCPI {
 	std::string key;
 	std::string format;
 	std::string participant;
+	static const int DEFAULT_MAX_MSG_SIZE=30000;
 
 	TopicData()
 	  :participant("OCPI"),m_currentOffset(0),m_OffsetOffset(0),m_unbounded(false){}
 
 	TopicData & operator=( const OCPI::Metadata::Protocol * p )
 	{
-	  static_cast<OCPI::Metadata::Protocol&>(*this) = *p;
+	  static_cast<OCPI::Metadata::Protocol&>(*this) = p;
 	  for ( int n=0; n<nMembers(); n++ ) {
 	    OCPI::Util::Prop::Member & m = member(n);
 	    if ( m.type.isSequence && ( m.type.length == 0 ) ) {
@@ -100,7 +100,7 @@ namespace OCPI {
 	    m_maxMsgSize = atoi(mms);
 	  }
 	  else {
-	    m_maxMsgSize = 30000;
+	    m_maxMsgSize = DEFAULT_MAX_MSG_SIZE;
 	  }
 	  return *this;
 	}
@@ -141,8 +141,6 @@ namespace OCPI {
 	  }
 	  return NULL;
 	}
-
-
 
 	const char * ddsSubType( OCPI::API::ScalarType t ) {
 	  switch ( t ) {
@@ -289,11 +287,17 @@ namespace OCPI {
 	  else {
 	    m_currentOffset = m.offset;	    
 	  }
+	  if ( m_unbounded ) {
+	    if ( m_currentOffset >= m_maxMsgSize ) {
+	      throw std::string("DDS Message size exceeds maximum");
+	    }
+	  }
 	  return m_currentOffset;
 
 	}
       
       private:
+	int         m_maxMsgSize;
 	int m_currentOffset;
 	int m_OffsetOffset;
 	bool m_unbounded;
@@ -319,11 +323,7 @@ namespace OCPI {
 	uint8_t * align( int align, uint8_t * orig, uint8_t * cur )
 	{
 	  int offset = cur-orig;
-	  cout << offset << endl;
-	  int padding = align - (offset & (align - 1));
-	  cout << padding << endl;
 	  int noffset = (offset + align - 1) & ~(align - 1);
-	  cout << noffset << endl;
 	  return orig + noffset;
 	}
 
@@ -384,7 +384,6 @@ namespace OCPI {
 		  long size;
 		  c_long ** src = (c_long**)tf;
 		  size = c_arraySize(c_sequence(*src));	
-		  cout << size << endl;
 		  *((uint32_t*)(tt + m_data.mOffset(n,size))) = size; // set length
 		  int len =m_data.mLength(n,size);
 		  int clen = size < len ? size : len;
@@ -400,7 +399,6 @@ namespace OCPI {
 		}
 		else {
 		  int len =m_data.mLength(n);
-		  cout << len << endl;
 		  memcpy( tt + m_data.mOffset(n) , tf, len); tf+=len;
 		}
 
@@ -412,7 +410,6 @@ namespace OCPI {
 		tf = align(sizeof(void*),orig,tf);
 		char* dst = (char*)tt + m_data.mOffset(n);
 		char** src = (char**)tf;	
-		cout << *src << endl;
 		uint32_t slen = strlen(*src) + 1;
 		ocpiAssert( (uint32_t)m_data.mLength(n) > slen );		  
 		strncpy((char*)dst,*src,slen);
@@ -480,7 +477,6 @@ namespace OCPI {
 		if ( m_data.member(n).type.isSequence ) {
 		  tt = align(8,orig,tt);
 		  c_long len  = (c_long)*(tf+m_data.mOffset(n));
-		  cout << len <<endl;
 		  ocpiAssert( len < m_data.mLength(n) );
 		  c_long * dest = m_data.toSequence( base, m_data.member(n).type.scalar , sizeof(c_long), len, tf+m_data.mOffset(n)+4 );
 		  c_sequence * tseq = (c_sequence*)tt;
@@ -489,7 +485,6 @@ namespace OCPI {
 		}
 		else {  // also process's arrays here
 		  int len =m_data.mLength(n);
-		  cout << len << endl;
 		  memcpy( tt, tf + m_data.mOffset(n) ,len); tt+=len;
 		}
 	      }
@@ -865,8 +860,8 @@ namespace OCPI {
 	{
 	  m_subscriber->delete_datareader(m_reader);
 	  m_publisher->delete_datawriter(m_writer);
+	  m_topic->getParticipant()->delete_subscriber(m_subscriber.in());
 	  m_topic->getParticipant()->delete_publisher(m_publisher.in());
-	  m_topic->getParticipant()->delete_subscriber(m_subscriber);
 	}
 	  
 	void post (OCPI::DataTransport::BufferUserFacet* b, uint32_t msg_size )
@@ -1070,7 +1065,7 @@ namespace OCPI {
 	{
 
 #ifndef NDEBUG
-	  if ( protocol->m_name )
+	  if ( protocol->m_name.length() )
 	    cout << "Protocol name = " << protocol->m_name << endl;
 	  cout << "  Operation count = " << protocol->nOperations() << endl;
 	  cout << "  Op 1 info " << endl;

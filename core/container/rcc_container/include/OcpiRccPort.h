@@ -186,56 +186,53 @@ namespace OCPI {
 	}
 	return false;
       }
-      virtual void checkConnectParams()
+      virtual inline void checkConnectParams()
       {
 	if(m_delegateTo) {
 	  m_delegateTo->checkConnectParams();
 	}
-
       }
-      virtual void connectInside(OCPI::Container::Port & other, const OCPI::Util::PValue * my_props,
+      virtual inline void connectInside(OCPI::Container::Port & other, const OCPI::Util::PValue * my_props,
 				 const OCPI::Util::PValue * other_props)
       {
 	ocpiAssert ( m_delegateTo);
 	m_delegateTo->connectInside(other,my_props,other_props);
       }
-      virtual void finishConnection(OCPI::RDT::Descriptors& d)
+      virtual inline void finishConnection(OCPI::RDT::Descriptors& d)
       {
 	ocpiAssert ( m_delegateTo);
 	m_delegateTo->finishConnection(d);
       }
 
       // Connection routines
-      virtual const std::string& getInitialProviderInfo(const OCPI::API::PValue*p)
+      virtual inline const std::string& getInitialProviderInfo(const OCPI::API::PValue*p)
       {
 	// only supported in RDMA mode
 	if ( ! m_delegateTo ) setMode( OCPI::Container::Port::CON_TYPE_RDMA );
 	return m_delegateTo->getInitialProviderInfo(p);
       }
-      virtual const std::string& setInitialProviderInfo(const OCPI::API::PValue*p, const std::string&s)
+      virtual inline const std::string& setInitialProviderInfo(const OCPI::API::PValue*p, const std::string&s)
       {
 	// only supported in RDMA mode
 	if ( ! m_delegateTo ) setMode( OCPI::Container::Port::CON_TYPE_RDMA );
 	return m_delegateTo->setInitialProviderInfo(p,s);
       }
-      virtual const std::string& setInitialUserInfo(const std::string&s) 
+      virtual inline const std::string& setInitialUserInfo(const std::string&s) 
       {
 	// only supported in RDMA mode
 	if ( ! m_delegateTo ) setMode( OCPI::Container::Port::CON_TYPE_RDMA );
 	return m_delegateTo->setInitialUserInfo(s);
       }
-      virtual const std::string& setFinalProviderInfo(const std::string&s) 
+      virtual inline const std::string& setFinalProviderInfo(const std::string&s) 
       {
 	ocpiAssert ( m_delegateTo);
 	return m_delegateTo->setFinalProviderInfo(s);
       }
-      virtual void setFinalUserInfo(const std::string&s)
+      virtual inline void setFinalUserInfo(const std::string&s)
       {
 	ocpiAssert ( m_delegateTo);
 	m_delegateTo->setFinalUserInfo(s);
       }
-
-
 
       // Port control methods
       virtual inline OCPI::DataTransport::BufferUserFacet* getBuffer( uint32_t tid )

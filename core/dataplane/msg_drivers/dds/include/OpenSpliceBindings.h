@@ -65,10 +65,6 @@ namespace OpenSpliceBindings {
     DDS::DomainParticipant_ptr getParticipant();
 
     // One per topic
-#ifdef NEEDED
-    DDSEntityManager( OCPI::Msg::DDS::TopicData & td )
-      : m_td(td){}
-#endif
     DDSEntityManager(){};
 
     void registerType(DDS::TypeSupport *ts);

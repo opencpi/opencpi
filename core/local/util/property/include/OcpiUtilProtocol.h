@@ -52,7 +52,10 @@ namespace OCPI  {
       bool m_sub32;
       const char *parse(ezxml_t op);
       Operation();
+      Operation(const Operation & p );
       ~Operation();
+      Operation & operator=(const Operation * p );
+      Operation & operator=(const Operation & p );
     public:
       inline bool isTwoWay() { return m_isTwoWay; }
       inline OCPI::Util::Prop::Member *args() { return m_args; }
@@ -64,7 +67,7 @@ namespace OCPI  {
       Operation *m_operations;
       Operation *m_op; // used during parsing
     public:
-      const char *m_name;
+      std::string m_name;
       unsigned m_dataValueWidth; // the smallest atomic data size in any message
       unsigned m_maxMessageValues; // the largest size, in values, in any message
       unsigned m_dataValueGranularity;
@@ -74,7 +77,10 @@ namespace OCPI  {
       bool m_isTwoWay;
       
       Protocol();
+      Protocol(const Protocol & p );
       virtual ~Protocol();
+      Protocol & operator=( const Protocol & p );
+      Protocol & operator=( const Protocol * p );
       virtual const char *parseOperation(ezxml_t op);
       inline bool isTwoWay() { return m_isTwoWay; } // Are any operations twoway?
       inline unsigned &nOperations() { return m_nOperations; }

@@ -580,7 +580,8 @@ namespace OpenSpliceBindings {
 
   DomainParticipant_ptr DDSEntityManager::getParticipant()
   {
-    return participant._retn();
+    //    return participant._retn();
+    return participant.in();
   }
 
   DDSEntityManager::~DDSEntityManager(){
@@ -611,12 +612,13 @@ namespace OpenSpliceBindings {
    **/
   void checkStatus(DDS::ReturnCode_t status, const char *info)
   {
-
-
     if (status != DDS::RETCODE_OK && status != DDS::RETCODE_NO_DATA)
       {
-	cerr << "Error in " << info << ": " << getErrorName(status).c_str() << endl;
-	ocpiAssert(!"Bad DDS operation");
+	std::string err("Error in ");
+	err += info;
+	err += ": ";
+	err +=  getErrorName(status);
+	throw err;
       }
   }
 
@@ -624,12 +626,13 @@ namespace OpenSpliceBindings {
    * Check whether a valid handle has been returned. If not, then terminate.
    **/
   void checkHandle(void *handle, string info)
-  {
-
+  {    
     if (!handle)
       {
-	cerr << "Error in " << info.c_str() << ": Creation failed: invalid handle" << endl;
-	ocpiAssert(!"Bad DDS operation");
+	std::string err("Error in ");
+	err += info;
+	err += ": Creation failed: invalid handle";
+	throw err;	  
       }
   }
 

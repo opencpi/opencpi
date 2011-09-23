@@ -63,10 +63,10 @@ namespace OCPI {
       class Property;
       class Member {
 	friend class Property;
-	Member();
       public:
+	Member();
 	ValueType type;
-	const char *name;   // Member name if struct member
+	const char * name;   // Member name if struct member
 	uint32_t offset;    // for structure members
 	unsigned bits, align, nBytes;
 	bool hasDefault;
@@ -83,6 +83,9 @@ namespace OCPI {
       public:
 	Property();
 	~Property();
+	Property & operator=( Property & p );
+	Property & operator=( Property * p );
+
 	// Describe structure member that might be the whole property
 	Member *members;      // More than one when type is struct.
 	unsigned nBytes;      // Maximum size in bytes

@@ -58,15 +58,73 @@ namespace OCPI {
       return err;
     }
     Protocol::Protocol()
-      : m_nOperations(0), m_operations(NULL), m_op(NULL), m_name(0), m_dataValueWidth(8),
+      : m_nOperations(0), m_operations(NULL), m_op(NULL), m_dataValueWidth(8),
 	m_maxMessageValues(0), m_dataValueGranularity(1), m_variableMessageLength(false),
 	m_zeroLengthMessages(false), m_diverseDataSizes(false), m_isTwoWay(false)
     {
+    }
+    Protocol::
+    Protocol(const Protocol & p )
+    {
+      *this = p;
     }
     Protocol::~Protocol() {
       if (m_operations)
 	delete [] m_operations;
     }
+    Protocol & 
+    Protocol::
+    operator=( const Protocol & p ) 
+    {
+      return operator=(&p);
+    }
+    Protocol & 
+    Protocol::
+    operator=( const Protocol * p )
+    {
+      m_nOperations = p->m_nOperations;
+      m_name = p->m_name;
+      m_dataValueWidth = p->m_dataValueWidth;
+      m_maxMessageValues = p->m_maxMessageValues;
+      m_dataValueGranularity = p->m_dataValueGranularity;
+      m_variableMessageLength = p->m_variableMessageLength;
+      m_zeroLengthMessages = p->m_zeroLengthMessages;
+      m_diverseDataSizes = p->m_diverseDataSizes;
+      m_isTwoWay = p->m_isTwoWay;
+      m_operations = new Operation[m_nOperations];
+      for ( unsigned int n=0; n<m_nOperations; n++ ) {
+	m_operations[n] = p->m_operations[n];
+      }
+      return *this;
+    }
+
+
+    Operation & 
+    Operation::
+    operator=(const Operation & p )
+    {
+      return operator=(&p);
+    }
+    
+    Operation & 
+    Operation::
+    operator=(const Operation * p )
+    {
+      m_name = p->m_name;
+      m_isTwoWay = p->m_isTwoWay;
+      m_nArgs = p->m_nArgs;
+      m_maxAlign = p->m_maxAlign;
+      m_myOffset = p->m_myOffset;
+      m_sub32 = p->m_sub32;
+      m_args = new OCPI::Util::Prop::Member[ m_nArgs ];
+      for (unsigned int n=0; n<m_nArgs; n++ ) {
+	m_args[n] = p->m_args[n];
+      }
+      return *this;
+    }
+
+
+
     const char *Protocol::
     parseOperation(ezxml_t op) {
       const char *name = ezxml_name(op);
@@ -111,7 +169,8 @@ namespace OCPI {
       const char *err;
       if ((err = OE::checkAttrs(prot, "Name", (void*)0)))
 	return err;
-      m_name = ezxml_cattr(prot, "name");
+      const char* n = ezxml_cattr(prot, "name");
+      if (n) m_name = n;
 
       // First time we call this it will just be for counting.
       if (!(err = OE::ezxml_children(prot, doOperation, this))) {

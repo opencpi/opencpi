@@ -1659,8 +1659,8 @@ emitWorker(FILE *f, Worker *w)
 	fprintf(f, " minBufferCount=\"%u\"", p->u.wdi.minBufferCount);
       if (p->protocol->operations()) {
 	fprintf(f, ">\n    <protocol");
-	if (p->protocol->m_name)
-	  fprintf(f, " name=\"%s\"", p->protocol->m_name);
+	if (p->protocol->m_name.length())
+	  fprintf(f, " name=\"%s\"", p->protocol->m_name.c_str());
 	fprintf(f, ">\n");
 	CM::Operation *o = p->protocol->operations();
 	for (unsigned i = 0; i < p->protocol->nOperations(); i++, o++) {

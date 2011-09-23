@@ -155,8 +155,8 @@ namespace OCPI {
 
 
     // The general case of connecting ports that are in the same process.
-    void Port::connectURL(const char* url, const OCPI::Util::PValue *myProps,
-		       const OCPI::Util::PValue *otherProps) {
+    void Port::connectURL(const char*, const OCPI::Util::PValue *,
+			  const OCPI::Util::PValue *) {
       printf("connectURL not allowed on this container !!\n");
       ocpiAssert( 0 );
     }

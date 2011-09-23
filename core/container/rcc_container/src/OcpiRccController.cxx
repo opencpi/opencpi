@@ -179,9 +179,6 @@ RCCBoolean CP289Request( ::RCCPort* port, ::uint32_t max )
           port->current.data = (void*)opq->buffer->getBuffer();
           opq->buffer->m_ud = opq;
           port->current.id_ = opq->buffer;
-#ifdef NEEDED
-          port->output.length = opq->buffer->getMetaData()->ocpiMetaDataWord.length;
-#endif
           port->output.length = opq->buffer->getDataLength();
           port->output.u.operation =  opq->buffer->opcode();
         }

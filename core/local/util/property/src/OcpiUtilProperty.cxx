@@ -54,7 +54,7 @@ namespace OCPI {
     namespace Prop {
 
 Member::Member()
-  : name(NULL), offset(0), bits(0), align(0), nBytes(0), hasDefault(false)
+  : offset(0), bits(0), align(0), nBytes(0), hasDefault(false)
 {
   type.scalar = OCPI::API::OCPI_scalar_type_limit;
   type.isSequence = false;
@@ -70,9 +70,10 @@ Member::parse(ezxml_t xp,
 {
   bool found;
   const char *err;
-  name = ezxml_cattr(xp, "Name");
-  if (!name)
+  const char * n =  ezxml_cattr(xp, "Name");
+  if (!n)
     return "Missing Name attribute in Property or Argument element";
+  name = n;
   const char *typeName = ezxml_cattr(xp, "Type");
   if (typeName) {
     const char **tp;
@@ -105,7 +106,7 @@ Member::parse(ezxml_t xp,
       ( !type.isSequence &&
 	((err = CE::getNumber(xp, "SequenceSize", &type.length, &type.isSequence, 0, false)) )))
     return err;
-  if (err = CE::getNumber(xp, "ArrayLength", &type.length, &type.isArray, 0, false))
+  if ( (err = CE::getNumber(xp, "ArrayLength", &type.length, &type.isArray, 0, false)) )
     return err;
   if (type.isSequence && type.isArray)
     return esprintf("Property/argument %s has both Array and Sequence length",
@@ -145,6 +146,45 @@ Property::~Property() {
   if (members)
     delete [] members;
 }
+      
+
+Property & 
+Property::
+operator=( Property & p )
+{
+  return operator=(&p);
+}
+      
+
+Property & 
+Property::
+operator=( Property * p )
+{
+  nBytes = p->nBytes;
+  nMembers = p->nMembers;
+  smallest = p->smallest;
+  granularity = p->granularity;
+  isParameter = p->isParameter;
+  isStruct = p->isStruct;
+  isStructSequence = p->isStructSequence;
+  nStructs = p->nStructs;
+  isTest = p->isTest;
+  sequenceLength = p->sequenceLength;
+  dataOffset = p->dataOffset;
+  
+  // Need deep copy of members
+  members = new Member[nMembers];
+  for ( unsigned int n=0; n<nMembers; n++ ) {
+    members[n] = p->members[n];
+  }
+  return *this;
+}
+
+
+
+
+
+
 // parse a value from xml for this property, which may be a struct
 const char *
 Property::parseValue(ezxml_t x, OCPI::API::Value &value) {
@@ -179,7 +219,7 @@ Member::parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
     const char *err = NULL;
     for (ezxml_t m = ezxml_cchild(prop, tag); m ; m = ezxml_next(m), mem++)
       if ((err = OCPI::Util::EzXml::checkAttrs(m, "Name", "Type", "StringLength","Size",
-					       "ArrayLength", "SequenceSize", "Default",
+					       "ArrayLength", "SequenceSize", "SequenceLength", "Default",
 					       (void*)0)) ||
 	  (err = mem->parse(m, maxAlign, myOffset, sub32)))
 	return err;
@@ -192,9 +232,10 @@ Property::parse(ezxml_t prop, unsigned &argOffset,
 		bool &readableConfigs, bool &writableConfigs,
 		bool &argSub32Configs,  bool includeImpl) {
   bool sub32Configs = false;
-  m_name = ezxml_cattr(prop, "Name");
-  if (!m_name)
+  const char * n = ezxml_cattr(prop, "Name");
+  if (!n)
     return "Missing Name attribute for property";
+  m_name = n;
   const char *err;
   if ((err = includeImpl ?
        CE::checkAttrs(prop, "Name", SPEC_PROPERTIES, IMPL_PROPERTIES, NULL) :

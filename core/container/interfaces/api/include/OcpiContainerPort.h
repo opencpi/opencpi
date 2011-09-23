@@ -117,7 +117,6 @@ namespace OCPI {
 
       OCPI::RDT::Desc_t &myDesc; // convenience
 
-      // Need a deep copy of the metaport
       const OCPI::Metadata::Port m_metaPort;
 
       BasicPort(const OCPI::Metadata::Port & metaData, bool isProvider);

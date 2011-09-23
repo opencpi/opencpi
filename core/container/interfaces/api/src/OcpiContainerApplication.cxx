@@ -52,7 +52,7 @@ namespace OCPI {
     createWorker(const char *url, const OA::PValue *aParams, const char *name,
 		 const char *impl, const char *inst,
 		 const OA::PValue *wProps, const OA::PValue *wParams,
-		 const OA::Connection *connections) {
+		 const OA::Connection * /* connections */) {
       if (url)
 	return container().loadArtifact(url, aParams).createWorker(*this, name,
 								   impl, inst,

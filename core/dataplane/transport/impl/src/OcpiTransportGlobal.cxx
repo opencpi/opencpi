@@ -89,9 +89,26 @@ void TransportGlobal::clearGlobalCache()
 /**********************************
  * Init method
  *********************************/
+bool TransportGlobal::m_init=false;
 void TransportGlobal::init()
 {
 
+  if ( ! m_init ) {
+    m_init = true;
+    m_gen_pat1AFC = NULL;
+    m_gen_pat1AFCShadow = NULL;
+    m_gen_temp_gen = NULL;
+    m_gen_pat1 = NULL;
+    m_gen_pat2 = NULL;
+    m_gen_pat3 = NULL;
+    m_gen_pat4 = NULL;
+    m_gen_control = NULL;
+    m_cont1 = NULL;
+    m_cont1AFCShadow = NULL;
+    m_cont2 = NULL;
+    m_cont3 = NULL;
+    m_cont4 = NULL;
+  }
 }
 
 

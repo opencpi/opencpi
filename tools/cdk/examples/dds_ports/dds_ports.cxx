@@ -41,8 +41,16 @@ int main ( int argc, char* argv [ ] )
     producer.start();
     consumer.start();
 
-    while( 1 ) { sleep(1); };
+    int count = 4;
+    while( count > 0 ) 
+      { 
+	sleep(1); 
+	count--;
+      };
 
+    producer.stop();
+    consumer.stop();
+    sleep(1);
 
 
   }
