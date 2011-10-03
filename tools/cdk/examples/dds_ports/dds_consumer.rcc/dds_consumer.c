@@ -28,7 +28,7 @@ run(RCCWorker *self, RCCBoolean timeout, RCCBoolean *newRunCondition) {
 
   Dds_consumerInSamples * sample = (Dds_consumerInSamples *)in->current.data;
 
-  printf( "Consumer got a message\n");
+  printf( "\n\nConsumer got a message\n");
   printf( "  userId = %d\n", sample->userId);
   printf( "  u1 = %d\n", sample->u1 );
   printf( "  long seq len = %d\n", sample->long_seq_length );
@@ -43,7 +43,7 @@ run(RCCWorker *self, RCCBoolean timeout, RCCBoolean *newRunCondition) {
     //    printf("    s[%d] = %c\n", n,sample->v_oct_array[n] );
   }
   printf( "  v_longlong = %lld\n", sample->v_longlong );
-  printf( "  v_double = %finde\n", sample->v_double);
+  printf( "  v_double = %f\n", sample->v_double);
 
   return RCC_ADVANCE;
 }

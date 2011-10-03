@@ -912,8 +912,8 @@ namespace OCPI {
 	  Buffer * buf = getFreeRcvBuffer();
 	  ocpiAssert( buf->m_msgList.length() == 0 );
 	  ::DDS::ReturnCode_t status;
-	  status = m_reader->take( &buf->m_msgList, buf->m_infoSeq, 1,
-				   ::DDS::ANY_SAMPLE_STATE, ::DDS::ANY_VIEW_STATE, ::DDS::ANY_INSTANCE_STATE);
+	  status = m_reader->read( &buf->m_msgList, buf->m_infoSeq, 1,
+				   ::DDS::NOT_READ_SAMPLE_STATE, ::DDS::ANY_VIEW_STATE, ::DDS::ALIVE_INSTANCE_STATE);
 	  checkStatus(status, "msgDataReader::take");
 	  if ( buf->m_msgList.length() ) {
 	    ocpiAssert( buf->m_msgList.length() == 1 );
@@ -922,12 +922,9 @@ namespace OCPI {
 	    m_fullRcvBuffers.push_back( buf );
 	    return true;
 	  }
+	  status = m_reader->return_loan(&buf->m_msgList, buf->m_infoSeq);
+	  checkStatus(status, "MsgDataReader::return_loan");
 	  m_freeRcvBuffers.push_back( buf );
-
-	  // OpenSlice bug work around, same work around in all of their examples
-	  os_time delay_200ms = { 0, 200000000 };
-	  os_nanoSleep(delay_200ms);
-
 	  return false;
 	}
 
