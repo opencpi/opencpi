@@ -1,0 +1,16 @@
+module JTest
+{
+   struct Msg1
+   {
+     long   userId;
+     unsigned long   u1;
+     sequence <long> long_seq;
+     boolean v_bool;
+     string  v_message;
+     short   v_short;
+     long long v_longlong;
+     double    v_double;
+
+   };
+   #pragma keylist Msg1 u1
+};

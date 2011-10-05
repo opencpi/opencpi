@@ -35,13 +35,13 @@ int main ( int argc, char* argv [ ] )
     OA::Port & out = producer.getPort("out");
     OA::Port & in = consumer.getPort("in");
 
-    in.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest;Msg1;u1");
-    out.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest;Msg1;u1");
+    in.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest::Msg1;u1");
+    out.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest::Msg1;u1");
 
     producer.start();
     consumer.start();
 
-    int count = 4;
+    int count = 10;
     while( count > 0 ) 
       { 
 	sleep(1); 
@@ -50,7 +50,7 @@ int main ( int argc, char* argv [ ] )
 
     producer.stop();
     consumer.stop();
-    sleep(1);
+    sleep(2);
 
 
   }

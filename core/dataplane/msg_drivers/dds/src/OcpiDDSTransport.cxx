@@ -725,27 +725,36 @@ namespace OCPI {
 	EndPoint( const char * ep ) 
 	  : m_url(ep)
 	{
-	  char m[128];
+	  char ms[128];
 	  char k[128];
 	  char t[128];
-	  char s[128];
 
 	  /* ocpi-dds-msg://topic-name:key */
-	  int c = sscanf(ep,"ocpi-dds-msg://%[^;];%[^;];%[^;];%s", t, m,s, k );
+	  //	  int c = sscanf(ep,"ocpi-dds-msg://%[^;];%[^;];%[^;];%s", t, m,s, k );
+	  int c = sscanf(ep,"ocpi-dds-msg://%[^;];%[^;];%s", t, ms, k );
 	  if ( c == 1 ) {
 	    topic = t;	      
 	  }
-	  else if ( c != 4 ) {
+	  else if ( c != 3 ) {
 	    fprintf( stderr, "DDS::EndPoint  ERROR: Bad DDS endpoint format (%s)\n", ep );
 	    throw DataTransfer::DataTransferEx( DataTransfer::UNSUPPORTED_ENDPOINT, ep );	  
 	  }
 	  else {
+	    c = strlen(ms)-1;
+	    if ( ms[c] == ',' ) ms[c] = 0;
+	    while ( c > 0 ) {
+	      if ( ms[c] == ':' ) {
+		struct_name = &ms[c+1];
+		ms[c-1] = 0;
+		module_name = ms;
+		break;
+	      }		   
+	      c--;
+	    }
 	    topic = t;
-	    module_name = m;
-	    struct_name = s;
-	    type = m;
+	    type = module_name;
 	    type += "::";
-	    type += s;
+	    type += struct_name;
 	    key = k;
 	  }
 	}
