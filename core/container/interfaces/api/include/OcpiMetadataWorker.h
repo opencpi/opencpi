@@ -75,6 +75,7 @@
 namespace OCPI {
   namespace Metadata {
 
+    typedef OCPI::Util::Property Property;
     class Test {
       friend class Worker;
       unsigned int testId;
@@ -84,14 +85,13 @@ namespace OCPI {
     };
 
     // Dealing with worker meta as a bundle
-    typedef OCPI::Util::Prop::Property Property;
     class Worker {
       Property *myProps;
       Port *myPorts;
       Test *myTests;
       LocalMemory* myLocalMemories;
       unsigned nProps, nPorts, nTests, nLocalMemories, size;
-      size_t totalPropertySize;
+      uint32_t totalPropertySize;
       Test &findTest(unsigned int testId);
     public:
       inline Property *getProperties(unsigned &np) const {
@@ -145,7 +145,6 @@ namespace OCPI {
       };
       Property &findProperty(const char *id);
       unsigned whichProperty(const char *id);
-      //      Worker(const char *workerMetadata);
       Worker(ezxml_t xml);
       ~Worker();
     };

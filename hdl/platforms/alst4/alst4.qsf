@@ -1,0 +1,160 @@
+# alst4.qsf - top level Quartus2 Settings File (qsf) for the Altera S4GX board
+# Copyright (c) 2011 Atomic Rules LLC - ALL RIGHTS RESERVED
+#
+# This file used to be named fpgaTop_alst4.qsf when it was in the tactical build dir.
+# The SignalTap statements were trimmed off; and the file placed in the "ucf" dir
+
+set_global_assignment -name FAMILY "Stratix IV"
+set_global_assignment -name DEVICE EP4SGX230KF40C2
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "10.1 SP1"
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "15:29:49  FEBRUARY 11, 2011"
+set_global_assignment -name LAST_QUARTUS_VERSION "11.0 SP1"
+set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON
+set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON
+set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON
+set_global_assignment -name OPTIMIZATION_TECHNIQUE SPEED
+set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 2
+set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON
+set_global_assignment -name OPTIMIZE_HOLD_TIMING "ALL PATHS"
+set_global_assignment -name ENABLE_CLOCK_LATENCY ON
+set_global_assignment -name ENABLE_RECOVERY_REMOVAL_ANALYSIS ON
+
+set_global_assignment -name SDC_FILE fpgaTop_alst4.sdc
+#set_global_assignment -name QIP_FILE fpgaTop_alst4.qip
+
+set_global_assignment -name SEARCH_PATH ../../../coregen/pcie_4243_hip_s4gx_gen2_x4_128
+set_global_assignment -name SEARCH_PATH "../../../coregen/pcie_4243_hip_s4gx_gen2_x4_128/pci_express_compiler-library"
+set_global_assignment -name SEARCH_PATH ../../../rtl
+set_global_assignment -name SEARCH_PATH ../../../libsrc/hdl/bsv
+set_global_assignment -name SEARCH_PATH ../../../libsrc/hdl/ocpi
+set_global_assignment -name TOP_LEVEL_ENTITY fpgaTop
+set_global_assignment -name VERILOG_FILE fpgaTop_alst4.v
+set_global_assignment -name VERILOG_FILE pcie_hip_s4gx_gen2_x4_128_wrapper.v
+set_global_assignment -name VERILOG_FILE pcie_hip_s4gx_gen2_x4_128.v
+set_global_assignment -name VERILOG_FILE pcie_hip_s4gx_gen2_x4_128_core.v
+set_global_assignment -name VERILOG_FILE pcie_hip_s4gx_gen2_x4_128_serdes.v
+set_global_assignment -name VERILOG_FILE pll1.v
+set_global_assignment -name VERILOG_FILE pcie_hip_s4gx_gen2_x4_128_rs_hip.v
+set_global_assignment -name VERILOG_FILE altpcie_reconfig_4sgx.v
+set_global_assignment -name VERILOG_FILE altpcie_rs_serdes.v
+
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED WITH WEAK PULL-UP"
+
+set_location_assignment PIN_A21 -to sys0_clk
+set_location_assignment PIN_AK35 -to sys0_rstn
+
+set_location_assignment PIN_AN38 -to pcie_clk
+set_location_assignment PIN_R32 -to pcie_rstn
+set_location_assignment PIN_AU38 -to pcie_rx[0]
+set_location_assignment PIN_AR38 -to pcie_rx[1]
+set_location_assignment PIN_AJ38 -to pcie_rx[2]
+set_location_assignment PIN_AG38 -to pcie_rx[3]
+#set_location_assignment PIN_AE38 -to pcie_rx[4]
+#set_location_assignment PIN_AC38 -to pcie_rx[5]
+#set_location_assignment PIN_U38  -to pcie_rx[6]
+#set_location_assignment PIN_R38  -to pcie_rx[7]
+set_location_assignment PIN_AT36 -to pcie_tx[0]
+set_location_assignment PIN_AP36 -to pcie_tx[1]
+set_location_assignment PIN_AH36 -to pcie_tx[2]
+set_location_assignment PIN_AF36 -to pcie_tx[3]
+#set_location_assignment PIN_AD36 -to pcie_tx[4] 
+#set_location_assignment PIN_AB36 -to pcie_tx[5]
+#set_location_assignment PIN_T36  -to pcie_tx[6]
+#set_location_assignment PIN_P36  -to pcie_tx[7]
+
+set_location_assignment PIN_AL35 -to usr_sw[0]
+set_location_assignment PIN_AC35 -to usr_sw[1]
+set_location_assignment PIN_J34 -to usr_sw[2]
+set_location_assignment PIN_AN35 -to usr_sw[3]
+set_location_assignment PIN_G33 -to usr_sw[4]
+set_location_assignment PIN_K35 -to usr_sw[5]
+set_location_assignment PIN_AG34 -to usr_sw[6]
+set_location_assignment PIN_AG31 -to usr_sw[7]
+
+set_location_assignment PIN_F33 -to led[0]
+set_location_assignment PIN_AK33 -to led[1]
+set_location_assignment PIN_W28 -to led[2]
+set_location_assignment PIN_L34 -to led[3]
+set_location_assignment PIN_AM34 -to led[4]
+set_location_assignment PIN_M32 -to led[5]
+set_location_assignment PIN_L35 -to led[6]
+set_location_assignment PIN_AM35 -to led[7]
+set_location_assignment PIN_N34 -to led[8]
+set_location_assignment PIN_W35 -to led[9]
+set_location_assignment PIN_AE30 -to led[10]
+set_location_assignment PIN_V30 -to led[11]
+set_location_assignment PIN_AG30 -to led[12]
+set_location_assignment PIN_AD29 -to led[13]
+set_location_assignment PIN_U31 -to led[14]
+set_location_assignment PIN_U35 -to led[15]
+
+set_instance_assignment -name IO_STANDARD LVDS -to sys0_clk
+set_instance_assignment -name INPUT_TERMINATION OFF -to sys0_clk
+set_instance_assignment -name IO_STANDARD "2.5 V" -to sys0_rstn
+
+set_instance_assignment -name IO_STANDARD HCSL -to pcie_clk
+set_instance_assignment -name INPUT_TERMINATION OFF -to pcie_clk
+set_instance_assignment -name IO_STANDARD "2.5 V" -to pcie_rstn
+set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_rx[0]
+set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_rx[1]
+set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_rx[2]
+set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_rx[3]
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_rx[4]
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_rx[5]
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_rx[6]
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_rx[7]
+set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_tx[0]
+set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_tx[1]
+set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_tx[2]
+set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_tx[3]
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_tx[4]
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_tx[5]
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_tx[6]
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to pcie_tx[7]
+
+set_instance_assignment -name IO_STANDARD "2.5 V" -to usr_sw[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to usr_sw[1]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to usr_sw[2]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to usr_sw[3]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to usr_sw[4]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to usr_sw[5]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to usr_sw[6]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to usr_sw[7]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to led[*]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[0]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[1]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[2]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[3]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[4]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[5]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[6]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[7]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[8]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[9]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[10]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[11]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[12]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[13]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[14]
+#set_instance_assignment -name IO_STANDARD "2.5 V" -to led[15]
+
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led[*]
+#set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led[0]
+#set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led[1]
+#set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led[2]
+#set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led[3]
+#set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led[4]
+#set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led[5]
+#set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led[6]
+#set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led[7]
+
+set_instance_assignment -name SLEW_RATE 0 -to led[*]
+#set_instance_assignment -name SLEW_RATE 0 -to led[0]
+#set_instance_assignment -name SLEW_RATE 0 -to led[1]
+#set_instance_assignment -name SLEW_RATE 0 -to led[2]
+#set_instance_assignment -name SLEW_RATE 0 -to led[3]
+#set_instance_assignment -name SLEW_RATE 0 -to led[4]
+#set_instance_assignment -name SLEW_RATE 0 -to led[5]
+#set_instance_assignment -name SLEW_RATE 0 -to led[6]
+#set_instance_assignment -name SLEW_RATE 0 -to led[7]
+#

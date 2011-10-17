@@ -42,20 +42,23 @@
 #include <OcpiOsAssert.h>
 #include "OcpiOsDataTypes.h"
 
-extern "C" {
-  int OcpiTimeARegister( char* signal_name );
-  void OcpiEmit( int sig );
-};
 
-int OcpiTimeARegister( char* signal_name )
-{
-  return OCPI::Time::Emit::RegisterEvent::registerEvent( signal_name );
-}
-void OcpiEmit( int sig ) 
-{
-  OCPI::Time::Emit::getSEmit().emit(sig);
-}
+namespace OA = OCPI::API;
+namespace OU = OCPI::Util;
 
+namespace OCPI {
+  namespace Time {
+
+    extern "C" {
+      int OcpiTimeARegister( char* signal_name )
+      {
+	return Emit::RegisterEvent::registerEvent( signal_name );
+      }
+      void OcpiEmit( int sig ) 
+      {
+	Emit::getSEmit().emit(sig);
+      }
+    }
 
 
 static 
@@ -65,17 +68,17 @@ exitHandler()
   static bool once=false;
   if ( ! once ) {
     once = true;
-    OCPI::Time::EmitFormatter ef( OCPI::Time::Emit::getHeader().dumpFormat  );
-    OCPI::Time::Emit::getHeader().dumpFileStream << ef;
+    EmitFormatter ef( Emit::getHeader().dumpFormat  );
+    Emit::getHeader().dumpFileStream << ef;
   }
 }
 
 void
-OCPI::Time::Emit::
+Emit::
 init()
-  throw ( OCPI::Util::EmbeddedException )
+  throw ( OU::EmbeddedException )
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+  AUTO_MUTEX(Emit::getGMutex());
   if ( getHeader().init == true ) {
     return;
   }
@@ -119,7 +122,7 @@ init()
     if ( ! getHeader().dumpFileStream.is_open() ) {
       std::string err("Unable to open Time::Emit dump file ");
       err += getHeader().dumpFileName;
-      throw OCPI::Util::EmbeddedException( err.c_str() );
+      throw OU::EmbeddedException( err.c_str() );
     }
   }
 
@@ -127,11 +130,11 @@ init()
 }
 
 void 
-OCPI::Time::Emit::
+Emit::
 pre_init( const char* class_name, 
               const char* instance_name, 
               QConfig* config )
-  throw ( OCPI::Util::EmbeddedException )
+  throw ( OU::EmbeddedException )
 {
   if ( class_name ) {
     m_className = class_name;
@@ -168,13 +171,13 @@ pre_init( const char* class_name,
 }
 
 
-OCPI::Time::Emit::
+Emit::
 Emit( TimeSource& ts, const char* class_name, 
       const char* instance_name, QConfig* config )
-  throw ( OCPI::Util::EmbeddedException )
+  throw ( OU::EmbeddedException )
   : m_parent(NULL), m_q(NULL), m_ts(NULL)
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex() );
+  AUTO_MUTEX(Emit::getGMutex() );
   m_ts = &ts;
   pre_init( class_name, instance_name, config );
   init();
@@ -183,14 +186,14 @@ Emit( TimeSource& ts, const char* class_name,
   }
 }
 
-OCPI::Time::Emit::
+Emit::
 Emit( const char* class_name, 
               const char* instance_name, 
               QConfig* config )
-  throw ( OCPI::Util::EmbeddedException )
+  throw ( OU::EmbeddedException )
   : m_level(1),m_parent(NULL), m_q(NULL), m_ts(NULL)
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex() );
+  AUTO_MUTEX(Emit::getGMutex() );
   pre_init( class_name, instance_name, config );
   init();
   if ( getHeader().traceCD ) {
@@ -199,15 +202,15 @@ Emit( const char* class_name,
 }
 
 
-OCPI::Time::Emit::
+Emit::
 Emit( Emit* parent, 
               const char* class_name, 
               const char* instance_name, 
               QConfig* config )
-  throw ( OCPI::Util::EmbeddedException )
+  throw ( OU::EmbeddedException )
   :m_parent(parent), m_q(NULL), m_ts(NULL)
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+  AUTO_MUTEX(Emit::getGMutex());
   if ( class_name ) {
     m_className = class_name;
   }
@@ -236,15 +239,15 @@ Emit( Emit* parent,
 
 
 void 
-OCPI::Time::Emit::
+Emit::
 stop( bool globally )
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+  AUTO_MUTEX(Emit::getGMutex());
 
   if ( globally ) {
     std::vector<EventQ*>::iterator it;    
-    for( it=OCPI::Time::Emit::getHeader().eventQ.begin();
-         it!=OCPI::Time::Emit::getHeader().eventQ.end(); it++ ) {
+    for( it=Emit::getHeader().eventQ.begin();
+         it!=Emit::getHeader().eventQ.end(); it++ ) {
       (*it)->done = true;
     }
   }
@@ -255,8 +258,8 @@ stop( bool globally )
 
 
 
-OCPI::Time::Emit::OwnerId 
-OCPI::Time::Emit::
+Emit::OwnerId 
+Emit::
 addHeader( Emit* t ) 
 {
   // mutex protected at call site
@@ -269,11 +272,11 @@ addHeader( Emit* t )
 }
 
 void 
-OCPI::Time::Emit::
-getHeaderInfo( OCPI::Time::Emit* t, 
+Emit::
+getHeaderInfo( Emit* t, 
                int& instance  ) 
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+  AUTO_MUTEX(Emit::getGMutex());
   std::vector<HeaderEntry>::iterator it;
   instance=1;
   for ( it=getHeader().classDefs.begin(); it != getHeader().classDefs.end(); it++ ) {
@@ -292,10 +295,10 @@ getHeaderInfo( OCPI::Time::Emit* t,
 
 
 bool 
-OCPI::Time::Emit::
+Emit::
 isChild( Emit::OwnerId id ) {
 
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+  AUTO_MUTEX(Emit::getGMutex());
   if ( id >= getHeader().classDefs.size() ) {
     return false;
   }
@@ -313,7 +316,7 @@ isChild( Emit::OwnerId id ) {
 }
 
 
-OCPI::Time::Emit::~Emit()
+Emit::~Emit()
   throw ()
 {
 
@@ -324,11 +327,11 @@ OCPI::Time::Emit::~Emit()
 }
 
 void
-OCPI::Time::Emit::
+Emit::
 shutdown()
   throw()
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+  AUTO_MUTEX(Emit::getGMutex());
 
   if ( getHeader().dumpOnExit ) {
     exitHandler();
@@ -356,13 +359,13 @@ shutdown()
 
 
 int 
-OCPI::Time::Emit::RegisterEvent::
+Emit::RegisterEvent::
 registerEvent( const char* event_name, int width,
                EventType type,
                DataType dtype)
 {
   int e;
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+  AUTO_MUTEX(Emit::getGMutex());
   // Make sure this event does not already exist
   std::vector<EventMap>::iterator it;
   for( it =Emit::getHeader().eventMap.begin();
@@ -378,7 +381,7 @@ registerEvent( const char* event_name, int width,
   return e;
 }
 
-OCPI::Time::Emit::RegisterEvent::RegisterEvent( const char* event_name, int width,
+Emit::RegisterEvent::RegisterEvent( const char* event_name, int width,
                                                        EventType type,
                                                        DataType dtype)
 {
@@ -387,57 +390,60 @@ OCPI::Time::Emit::RegisterEvent::RegisterEvent( const char* event_name, int widt
 
 
 
-OCPI::Time::Emit::RegisterEvent::RegisterEvent( OCPI::API::PValue& p )
+Emit::RegisterEvent::RegisterEvent( OCPI::API::PValue& p )
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+  AUTO_MUTEX(Emit::getGMutex());
   m_eid = getHeader().nextEventId++;
   int width = p.width*8;
-  DataType dtype=OCPI::Time::Emit::i;
+  DataType dtype=Emit::i;
   switch( p.type ){
-  case OCPI::Util::Prop::Scalar::OCPI_Short:
-  case OCPI::Util::Prop::Scalar::OCPI_Long:
-  case OCPI::Util::Prop::Scalar::OCPI_Char:
-  case OCPI::Util::Prop::Scalar::OCPI_LongLong:
-    dtype = OCPI::Time::Emit::i;
+  case OA::OCPI_Short:
+  case OA::OCPI_Long:
+  case OA::OCPI_Char:
+  case OA::OCPI_LongLong:
+    dtype = Emit::i;
     break;
 
-  case OCPI::Util::Prop::Scalar::OCPI_Bool:
-  case OCPI::Util::Prop::Scalar::OCPI_ULong:
-  case OCPI::Util::Prop::Scalar::OCPI_UShort:
-  case OCPI::Util::Prop::Scalar::OCPI_ULongLong:
-  case OCPI::Util::Prop::Scalar::OCPI_UChar:
-    dtype = OCPI::Time::Emit::u;
+  case OA::OCPI_Bool:
+  case OA::OCPI_ULong:
+  case OA::OCPI_UShort:
+  case OA::OCPI_ULongLong:
+  case OA::OCPI_UChar:
+    dtype = Emit::u;
     break;
 
-  case OCPI::Util::Prop::Scalar::OCPI_Double:
-  case OCPI::Util::Prop::Scalar::OCPI_Float:
-    dtype = OCPI::Time::Emit::d;
+  case OA::OCPI_Double:
+  case OA::OCPI_Float:
+    dtype = Emit::d;
     break;
 
-  case OCPI::Util::Prop::Scalar::OCPI_String:
-    dtype = OCPI::Time::Emit::c;
+  case OA::OCPI_String:
+    dtype = Emit::c;
     break;
 
-  case OCPI::Util::Prop::Scalar::OCPI_none:
-  case OCPI::Util::Prop::Scalar::OCPI_scalar_type_limit:
+  case OA::OCPI_none:
+  case OA::OCPI_Struct:
+  case OA::OCPI_Enum:
+  case OA::OCPI_Type:
+  case OA::OCPI_scalar_type_limit:
     ocpiAssert(0);
     break;
 
 
   }
   Emit::getHeader().eventMap.push_back( EventMap(m_eid,p.name,width,
-                                                         OCPI::Time::Emit::Value, dtype
+                                                         Emit::Value, dtype
                                                          ) );
 }
 
-OCPI::Time::EmitFormatter::EmitFormatter( DumpFormat format)
+EmitFormatter::EmitFormatter( DumpFormat format)
   :m_dumpFormat(format)
 {
 
 };
 
-const char* OCPI::Time::EmitFormatter::getEventDescription( Emit::EventId id ) {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+const char* EmitFormatter::getEventDescription( Emit::EventId id ) {
+  AUTO_MUTEX(Emit::getGMutex());
   std::vector<Emit::EventMap>::iterator it;
   for ( it=m_traceable->getHeader().eventMap.begin(); 
         it!=m_traceable->getHeader().eventMap.end(); it++) {
@@ -448,8 +454,8 @@ const char* OCPI::Time::EmitFormatter::getEventDescription( Emit::EventId id ) {
   return NULL;
 }
 
-std::string OCPI::Time::EmitFormatter::formatEventString ( Emit::EventQEntry& eqe, 
-                                                                  OCPI::Time::Emit::Time time_ref ) 
+std::string EmitFormatter::formatEventString ( Emit::EventQEntry& eqe, 
+                                                                  Emit::Time time_ref ) 
 {
   std::string str;
   const char* ed =  getEventDescription(eqe.eid);
@@ -465,8 +471,8 @@ std::string OCPI::Time::EmitFormatter::formatEventString ( Emit::EventQEntry& eq
   return str;
 }      
 
-std::string OCPI::Time::EmitFormatter::formatEventStringRaw ( Emit::EventQEntry& eqe, 
-                                                                  OCPI::Time::Emit::Time time_ref ) 
+std::string EmitFormatter::formatEventStringRaw ( Emit::EventQEntry& eqe, 
+                                                                  Emit::Time time_ref ) 
 {
   std::string str;
   const char* ed =  getEventDescription(eqe.eid);
@@ -483,12 +489,12 @@ std::string OCPI::Time::EmitFormatter::formatEventStringRaw ( Emit::EventQEntry&
 
 
 
-static OCPI::Time::Emit::EventMap* getEventMap( OCPI::Time::Emit::EventQEntry* e ) 
+static Emit::EventMap* getEventMap( Emit::EventQEntry* e ) 
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
-  std::vector<OCPI::Time::Emit::EventMap>::iterator it;
-  for ( it=OCPI::Time::Emit::getHeader().eventMap.begin();
-        it != OCPI::Time::Emit::getHeader().eventMap.end(); it++ ) {
+  AUTO_MUTEX(Emit::getGMutex());
+  std::vector<Emit::EventMap>::iterator it;
+  for ( it=Emit::getHeader().eventMap.begin();
+        it != Emit::getHeader().eventMap.end(); it++ ) {
     if ( (*it).id == e->eid ) {
       return &(*it);
     }
@@ -496,18 +502,18 @@ static OCPI::Time::Emit::EventMap* getEventMap( OCPI::Time::Emit::EventQEntry* e
   return NULL;
 }
 
-static inline OCPI::Time::Emit::EventQEntry* getNextEntry( OCPI::Time::Emit::EventQEntry * ce, OCPI::Time::Emit::EventQ * q )
+static inline Emit::EventQEntry* getNextEntry( Emit::EventQEntry * ce, Emit::EventQ * q )
 {
   ( void ) q;
-  OCPI::Time::Emit::EventQEntry * ne = reinterpret_cast<OCPI::Time::Emit::EventQEntry *>( 
-               ( (OCPI::OS::uint8_t*)((OCPI::OS::uint8_t*)ce + sizeof(OCPI::Time::Emit::EventQEntry) + ce->size) ));
+  Emit::EventQEntry * ne = reinterpret_cast<Emit::EventQEntry *>( 
+               ( (OCPI::OS::uint8_t*)((OCPI::OS::uint8_t*)ce + sizeof(Emit::EventQEntry) + ce->size) ));
   return ne;
 }
 
 
 
-OCPI::Time::Emit& 
-OCPI::Time::Emit::
+Emit& 
+Emit::
 getSEmit() 
 {
   static SEmit t;
@@ -517,14 +523,14 @@ getSEmit()
 
 
 // NOT mutex protected, the caller needs to handle this !!
-OCPI::Time::Emit::Time getStartTime() 
+Emit::Time getStartTime() 
 {
-  std::vector<OCPI::Time::Emit::EventQ*>::iterator it;
-  OCPI::Time::Emit::Time time=0;
-  for( it=OCPI::Time::Emit::getHeader().eventQ.begin();
-       it!=OCPI::Time::Emit::getHeader().eventQ.end(); it++ ) {
+  std::vector<Emit::EventQ*>::iterator it;
+  Emit::Time time=0;
+  for( it=Emit::getHeader().eventQ.begin();
+       it!=Emit::getHeader().eventQ.end(); it++ ) {
 
-    OCPI::Time::Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
+    Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
     while( qe && qe->size ) {
 
       if ( time == 0 ) {
@@ -541,16 +547,16 @@ OCPI::Time::Emit::Time getStartTime()
 }
 
 
-std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamRaw( std::ostream& out ) 
+std::ostream& EmitFormatter::formatDumpToStreamRaw( std::ostream& out ) 
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
+  AUTO_MUTEX(Emit::getGMutex());
 
-  std::vector<OCPI::Time::Emit::EventQ*>::iterator it;
-  for( it=OCPI::Time::Emit::getHeader().eventQ.begin();
-       it!=OCPI::Time::Emit::getHeader().eventQ.end(); it++ ) {
+  std::vector<Emit::EventQ*>::iterator it;
+  for( it=Emit::getHeader().eventQ.begin();
+       it!=Emit::getHeader().eventQ.end(); it++ ) {
 
-    OCPI::Time::Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
-    OCPI::Time::Emit::Time time_ref = getStartTime();
+    Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
+    Emit::Time time_ref = getStartTime();
 
     while( qe && qe->size ) {
 
@@ -560,20 +566,20 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamRaw( std::ostream& ou
       formatOwnerString( qe->owner, ostr );
       out << ostr.c_str() << ",";
 
-      OCPI::Time::Emit::EventMap* emap = getEventMap( qe );
-      OCPI::Time::SValue* d = (OCPI::Time::SValue*)(qe + 1);
+      Emit::EventMap* emap = getEventMap( qe );
+      SValue* d = (SValue*)(qe + 1);
 
       switch ( emap->dtype ) {
-      case OCPI::Time::Emit::u:
+      case Emit::u:
         out << d->uvalue  << std::endl;
         break;
-      case OCPI::Time::Emit::i:
+      case Emit::i:
         out << d->ivalue  << std::endl;
         break;
-      case OCPI::Time::Emit::c:
+      case Emit::c:
         out << d->ivalue  << std::endl;
         break;
-      case OCPI::Time::Emit::d:
+      case Emit::d:
         out << d->dvalue  << std::endl;
         break;
       }
@@ -584,21 +590,21 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamRaw( std::ostream& ou
   return out;  
 }
 
-OCPI::Time::Emit::Header& OCPI::Time::Emit::getHeader() {
+Emit::Header& Emit::getHeader() {
   static Header h;
   return h;
 }
 
 
-std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamReadable( std::ostream& out ) 
+std::ostream& EmitFormatter::formatDumpToStreamReadable( std::ostream& out ) 
 {
-  AUTO_MUTEX(OCPI::Time::Emit::getGMutex());
-  std::vector<OCPI::Time::Emit::EventQ*>::iterator it;
-  for( it=OCPI::Time::Emit::getHeader().eventQ.begin();
-       it!=OCPI::Time::Emit::getHeader().eventQ.end(); it++ ) {
+  AUTO_MUTEX(Emit::getGMutex());
+  std::vector<Emit::EventQ*>::iterator it;
+  for( it=Emit::getHeader().eventQ.begin();
+       it!=Emit::getHeader().eventQ.end(); it++ ) {
 
-    OCPI::Time::Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
-    OCPI::Time::Emit::Time time_ref = getStartTime();
+    Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
+    Emit::Time time_ref = getStartTime();
     while( qe && qe->size ) {
 
       std::string str = formatEventString( *qe, time_ref );
@@ -610,20 +616,20 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamReadable( std::ostrea
       formatOwnerString( qe->owner, ostr );
       out << ostr.c_str() << "  ";
 
-      OCPI::Time::Emit::EventMap* emap = getEventMap( qe );
-      OCPI::Time::SValue* d = (OCPI::Time::SValue*)(qe + 1);
+      Emit::EventMap* emap = getEventMap( qe );
+      SValue* d = (SValue*)(qe + 1);
 
       switch ( emap->dtype ) {
-      case OCPI::Time::Emit::u:
+      case Emit::u:
         out << d->uvalue  << std::endl;
         break;
-      case OCPI::Time::Emit::i:
+      case Emit::i:
         out << d->ivalue  << std::endl;
         break;
-      case OCPI::Time::Emit::c:
+      case Emit::c:
         out << d->ivalue  << std::endl;
         break;
-      case OCPI::Time::Emit::d:
+      case Emit::d:
         out << d->dvalue  << std::endl;
         break;
       }
@@ -634,7 +640,7 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamReadable( std::ostrea
   return out;
 }
 
-std::ostream& OCPI::Time::EmitFormatter::formatDumpToStream( std::ostream& out ) 
+std::ostream& EmitFormatter::formatDumpToStream( std::ostream& out ) 
 {
   switch ( m_dumpFormat ) {
   case OCPIReadable:
@@ -654,29 +660,29 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStream( std::ostream& out )
 }
       
 
-void OCPI::Time::EmitFormatter::formatOwnerString( Emit::OwnerId id, std::string& str, bool full_path ) {
-  if ( id >= OCPI::Time::Emit::getHeader().classDefs.size() ) {
+void EmitFormatter::formatOwnerString( Emit::OwnerId id, std::string& str, bool full_path ) {
+  if ( id >= Emit::getHeader().classDefs.size() ) {
     return;
   }
   
-  if ( full_path && OCPI::Time::Emit::getHeader().classDefs[id].parentIndex != -1 ) {
-    formatOwnerString( OCPI::Time::Emit::getHeader().classDefs[id].parentIndex, str );
+  if ( full_path && Emit::getHeader().classDefs[id].parentIndex != -1 ) {
+    formatOwnerString( Emit::getHeader().classDefs[id].parentIndex, str );
   }
 
-  if ( OCPI::Time::Emit::getHeader().classDefs[id].className != "" ) {
-    str.append(  OCPI::Time::Emit::getHeader().classDefs[id].className + ":" );
+  if ( Emit::getHeader().classDefs[id].className != "" ) {
+    str.append(  Emit::getHeader().classDefs[id].className + ":" );
   }
   else {
     str.append( "Class:" );
   }
-  if ( OCPI::Time::Emit::getHeader().classDefs[id].instanceName != "" ) {
-    str.append(  OCPI::Time::Emit::getHeader().classDefs[id].instanceName + ":" );          
+  if ( Emit::getHeader().classDefs[id].instanceName != "" ) {
+    str.append(  Emit::getHeader().classDefs[id].instanceName + ":" );          
   }
   else {
     str.append(  ":" );          
   }
   char buf[10];
-  sprintf(buf,"%d::",OCPI::Time::Emit::getHeader().classDefs[id].instanceId );
+  sprintf(buf,"%d::",Emit::getHeader().classDefs[id].instanceId );
   str.append(buf);
 
 }
@@ -684,7 +690,7 @@ void OCPI::Time::EmitFormatter::formatOwnerString( Emit::OwnerId id, std::string
 namespace {
   struct ecmp
   {
-    bool operator()(const OCPI::Time::Emit::EventId e1, const  OCPI::Time::Emit::EventId e2) const
+    bool operator()(const Emit::EventId e1, const  Emit::EventId e2) const
     {
       return e1 < e2;
     }
@@ -694,13 +700,13 @@ namespace {
 #define SYMSTART 33
 #define SYMEND   126
 #define SYMLEN (SYMEND-SYMSTART)
-void getVCDVarSyms( OCPI::Time::Emit& t,
-                           std::map<OCPI::Time::Emit::EventId,std::string,ecmp> & varsyms )
+void getVCDVarSyms( Emit& t,
+                           std::map<Emit::EventId,std::string,ecmp> & varsyms )
 {
   unsigned int n;
   char syms[SYMLEN];
   for( n=0; n<SYMLEN; n++)syms[n]=static_cast<char>(n+SYMSTART);
-  std::vector<OCPI::Time::Emit::EventMap>::iterator it;
+  std::vector<Emit::EventMap>::iterator it;
   int scount=0;
   int * sindex = new int[t.getHeader().eventMap.size()/SYMLEN+1];
   std::auto_ptr<int> del(sindex);
@@ -731,12 +737,12 @@ void getVCDVarSyms( OCPI::Time::Emit& t,
 
 }
 
-static bool eventProducedBy( OCPI::Time::Emit::EventId event, OCPI::Time::Emit::OwnerId owner )
+static bool eventProducedBy( Emit::EventId event, Emit::OwnerId owner )
 {
-  std::vector<OCPI::Time::Emit::EventQ*>::iterator it;
-  for( it=OCPI::Time::Emit::getHeader().eventQ.begin();
-       it!=OCPI::Time::Emit::getHeader().eventQ.end(); it++ ) {
-    OCPI::Time::Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
+  std::vector<Emit::EventQ*>::iterator it;
+  for( it=Emit::getHeader().eventQ.begin();
+       it!=Emit::getHeader().eventQ.end(); it++ ) {
+    Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
     while( qe && qe->size ) {
       if ( (event == qe->eid ) && (owner == qe->owner ) ) {
         return true;
@@ -748,11 +754,11 @@ static bool eventProducedBy( OCPI::Time::Emit::EventId event, OCPI::Time::Emit::
 }
 
 struct EventInstance {
-  OCPI::Time::Emit::OwnerId     owner;
-  OCPI::Time::Emit::EventId     id;
+  Emit::OwnerId     owner;
+  Emit::EventId     id;
   std::string                       sym;
-  EventInstance(OCPI::Time::Emit::OwnerId     o,
-                OCPI::Time::Emit::EventId     i,
+  EventInstance(Emit::OwnerId     o,
+                Emit::EventId     i,
                 std::string                       s):owner(0),id(i),sym(s)
   {
     ( void ) o;
@@ -762,20 +768,20 @@ struct EventInstance {
 
 
 
-static void dumpVCDScope( std::ostream& out, OCPI::Time::Emit::OwnerId owner,
-                          std::map< OCPI::Time::Emit::EventId, std::string, ecmp > & varsyms,
+static void dumpVCDScope( std::ostream& out, Emit::OwnerId owner,
+                          std::map< Emit::EventId, std::string, ecmp > & varsyms,
                           std::vector<EventInstance> & allEis )
 {
     std::string pname;
-    OCPI::Time::EmitFormatter::formatOwnerString( owner, pname, false );
+    EmitFormatter::formatOwnerString( owner, pname, false );
     std::replace(pname.begin(),pname.end(),' ','_');
     out << "$scope module " << pname.c_str() << " $end" << std::endl; 
-    OCPI::Time::Emit::HeaderEntry & he = OCPI::Time::Emit::getHeader().classDefs[owner];
+    Emit::HeaderEntry & he = Emit::getHeader().classDefs[owner];
     for( int n=0; n<=owner/SYMLEN; n++) he.outputPostFix=static_cast<char>((SYMSTART+owner)%SYMLEN);
     // Dump the variables for this object
-    std::vector<OCPI::Time::Emit::EventMap>::iterator it;
-    for ( it=OCPI::Time::Emit::getHeader().eventMap.begin();
-          it!=OCPI::Time::Emit::getHeader().eventMap.end();  it++ ) {
+    std::vector<Emit::EventMap>::iterator it;
+    for ( it=Emit::getHeader().eventMap.begin();
+          it!=Emit::getHeader().eventMap.end();  it++ ) {
       if ( eventProducedBy( (*it).id, owner ) ) {
         std::string tn((*it).eventName);
         std::replace(tn.begin(),tn.end(),' ','_');
@@ -791,9 +797,9 @@ static void dumpVCDScope( std::ostream& out, OCPI::Time::Emit::OwnerId owner,
     }
     
     // Now dump our children
-    OCPI::Time::Emit::OwnerId id;
-    for ( id=0; id<OCPI::Time::Emit::getHeader().classDefs.size(); id++ ) {
-      if ( OCPI::Time::Emit::getHeader().classDefs[id].parentIndex == owner ) {
+    Emit::OwnerId id;
+    for ( id=0; id<Emit::getHeader().classDefs.size(); id++ ) {
+      if ( Emit::getHeader().classDefs[id].parentIndex == owner ) {
         dumpVCDScope( out, id, varsyms, allEis );
       }
     }
@@ -802,13 +808,13 @@ static void dumpVCDScope( std::ostream& out, OCPI::Time::Emit::OwnerId owner,
 
 
 static 
-OCPI::Time::Emit::EventType 
-getEventType( OCPI::Time::Emit::EventQEntry* e ) 
+Emit::EventType 
+getEventType( Emit::EventQEntry* e ) 
 {
-  OCPI::Time::Emit::EventType rtype = OCPI::Time::Emit::Transient;
-  std::vector<OCPI::Time::Emit::EventMap>::iterator it;
-  for ( it=OCPI::Time::Emit::getHeader().eventMap.begin();
-        it != OCPI::Time::Emit::getHeader().eventMap.end(); it++ ) {
+  Emit::EventType rtype = Emit::Transient;
+  std::vector<Emit::EventMap>::iterator it;
+  for ( it=Emit::getHeader().eventMap.begin();
+        it != Emit::getHeader().eventMap.end(); it++ ) {
     if ( (*it).id == e->eid ) {
       rtype = (*it).type;
     }
@@ -820,7 +826,7 @@ getEventType( OCPI::Time::Emit::EventQEntry* e )
 
 
 struct TimeLineData {
-  OCPI::Time::Emit::Time t;
+  Emit::Time t;
   std::string                time;
   std::string                values;
 };
@@ -829,11 +835,11 @@ bool SortPredicate( const TimeLineData& tl1, const TimeLineData& tl2 )
   return tl1.t < tl2.t;
 }
 
-std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& out )
+std::ostream& EmitFormatter::formatDumpToStreamVCD( std::ostream& out )
 {
 
   std::vector<Emit::HeaderEntry>::iterator hit;
-  std::map< OCPI::Time::Emit::EventId, std::string, ecmp > varsyms;
+  std::map< Emit::EventId, std::string, ecmp > varsyms;
   std::vector<EventInstance> allEis;
   Emit::OwnerId owner;
 
@@ -881,17 +887,17 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& ou
   out << "$end" << std::endl;  
 
   // Now emit the events
-  OCPI::Time::Emit::Time start_time = 0;
-  std::vector<OCPI::Time::Emit::EventQ*>::iterator it;
+  Emit::Time start_time = 0;
+  std::vector<Emit::EventQ*>::iterator it;
   std::vector<TimeLineData> tldv;
-  for ( it=OCPI::Time::Emit::getHeader().eventQ.begin();
-        it!=OCPI::Time::Emit::getHeader().eventQ.end();  it++ ) {
+  for ( it=Emit::getHeader().eventQ.begin();
+        it!=Emit::getHeader().eventQ.end();  it++ ) {
 
-    OCPI::Time::Emit::EventQEntry* e = (*it)->full ? (*it)->current : (*it)->start;
-    OCPI::Time::SValue* d = (OCPI::Time::SValue*)(e + 1);
+    Emit::EventQEntry* e = (*it)->full ? (*it)->current : (*it)->start;
+    SValue* d = (SValue*)(e + 1);
     while( e && e->size ) {
     
-      OCPI::Time::Emit::HeaderEntry & he = OCPI::Time::Emit::getHeader().classDefs[e->owner];
+      Emit::HeaderEntry & he = Emit::getHeader().classDefs[e->owner];
       if ( start_time == 0 ) {
         start_time = e->time;
       }
@@ -900,13 +906,13 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& ou
 
       // event time
       char tbuf[256];
-      OCPI::Time::Emit::Time ctime = e->time-start_time;
+      Emit::Time ctime = e->time-start_time;
       snprintf(tbuf,256,"\n#%lld\n",(long long)ctime);
       tld.t = ctime;
       tld.time = tbuf;
 
       switch ( getEventType( e )  ) {
-      case OCPI::Time::Emit::Transient:
+      case Emit::Transient:
         {
           tld.values += "1" + varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
           snprintf(tbuf,256,"#%lld\n",(long long)(ctime+1));
@@ -914,23 +920,23 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& ou
           tld.values += "0" + varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
         }
         break;
-      case OCPI::Time::Emit::State:
+      case Emit::State:
         {
           snprintf(tbuf,256,"%d ",(d->uvalue == 0) ? 0 : 1);
           tld.values += tbuf;
           tld.values += varsyms[e->eid] + he.outputPostFix.c_str() + "\n";
         }
         break;
-      case OCPI::Time::Emit::Value:
+      case Emit::Value:
         {
           tld.values += "b";
 
-          OCPI::Time::Emit::EventMap* emap = getEventMap( e ) ;
+          Emit::EventMap* emap = getEventMap( e ) ;
 
             switch ( emap->dtype ) {
-            case OCPI::Time::Emit::u:
-            case OCPI::Time::Emit::i:
-            case OCPI::Time::Emit::c:
+            case Emit::u:
+            case Emit::i:
+            case Emit::c:
               {
                 OCPI::OS::uint32_t* ui = reinterpret_cast<OCPI::OS::uint32_t*>(&d->uvalue);
                 ui++;
@@ -943,7 +949,7 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& ou
                 }
               }
               break;
-            case OCPI::Time::Emit::d:
+            case Emit::d:
               {
                 OCPI::OS::uint32_t* ui = reinterpret_cast<OCPI::OS::uint32_t*>(&d->dvalue);
                 ui++;
@@ -1001,8 +1007,8 @@ std::ostream& OCPI::Time::EmitFormatter::formatDumpToStreamVCD( std::ostream& ou
 }
 
 
-OCPI::Time::Emit::Time 
-OCPI::Time::Emit::SimpleSystemTime::
+Emit::Time 
+Emit::SimpleSystemTime::
 getTime()
 {
   struct timespec tv;
@@ -1012,7 +1018,7 @@ getTime()
 }
 
 
-OCPI::Time::Emit::FastSystemTime::
+Emit::FastSystemTime::
 FastSystemTime()
 {
   int wait_time;
@@ -1065,8 +1071,8 @@ FastSystemTime()
 }
 
 
-OCPI::Time::Emit::Time 
-OCPI::Time::Emit::FastSystemTime::
+Emit::Time 
+Emit::FastSystemTime::
 getTime()
 {
   struct timespec tv;
@@ -1076,10 +1082,12 @@ getTime()
 }
 
 
-OCPI::Time::Emit::TimeSource::
+Emit::TimeSource::
 TimeSource()
 {
   // Empty
 }
 
 
+}
+}

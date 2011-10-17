@@ -34,35 +34,24 @@
 
 
 /*
-
- Definitions for worker metadata encoding,decoding.
- Offline, in tools, this information is encoded into a string format 
- suitable for program level arguments (argv).  All properties are encoded into
- a single string.  This relieves runtime of any parsing overhead (time or space)
- or dependencies on external parsing libraries.
-
- The "scope" of this property support is configuration properties for CP289
- components.  Thus it is not (yet) intended to support SCA GPP components.
-
- This file defines the binary (non-string) format of SCA component properties,
- as well as the functions to encode (binary to string) and decode 
- (string to binary).
-
- 
+ Definitions exposed to the API for property metadata
 */
+
 #ifndef OCPI_UTIL_PROPERTY_API_H
 #define OCPI_UTIL_PROPERTY_API_H
 
+#include "OcpiUtilDataTypesApi.h"
+
 namespace OCPI {
   namespace API {
+#if 0 
+    // This class is the runtime metadata for a property other than the data type info
     class PropertyInfo {
     public:
       PropertyInfo();
       bool m_readSync, m_writeSync, m_isWritable, m_isReadable, m_readError, m_writeError;
-      unsigned m_offset, m_maxAlign;      // Offset within all properties
-      const char *m_name;     // Name of the overall property independent of members
-      bool m_isStruct, m_isStructSequence;
     };
+#endif
   }
 }
 #endif

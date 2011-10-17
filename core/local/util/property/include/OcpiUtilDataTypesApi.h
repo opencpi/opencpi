@@ -38,29 +38,28 @@
 
 
 
-#ifndef OCPI_PROPERTY_TYPES_API_H
-#define OCPI_PROPERTY_TYPES_API_H
-#include <stdarg.h>
+#ifndef OCPI_UTIL_DATA_TYPES_API_H
+#define OCPI_UTIL_DATA_TYPES_API_H
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS // wierd standards goof up
 #endif
 #include <stdint.h>
-#include <string>
 /*
-  These are the "simple" property data types
-  The list is built from two sources, the SCA, and CORBA IDL,
+  These are the "simple" scalar property data types we support
+  The list is built from several sources, the SCA, and CORBA IDL,
   although it does not precisely depend on either one.
 
   The different macro names mean:
-  OCPI_DATA_TYPE_H - // very CORBA-specific, the "H" indicates that a CORBA "helper" is required in "type any" processing
-  OCPI_DATA_TYPE_S - // the special case of "string"
-  OCPI_DATA_TYPE_X - // names that are not in SCA
+  OCPI_DATA_TYPE_H - very CORBA-specific, the "H" indicates that a CORBA "helper"
+                     is required in "type any" processing
+  OCPI_DATA_TYPE_S - the special case of "string"
+  OCPI_DATA_TYPE_X - names that are not in SCA
   The different arguments to the macro are:
-  1. SCA simple name, or made up similar name for OCPI_DATA_TYPE_X
+  1. SCA simple name (from the property spec), or made up similar name for OCPI_DATA_TYPE_X
   2. CORBA C++ name from C++ language mapping
   3. the prefix of the fixed size type: u for integers, f floats, x string
   4. the size in bits
-  5. the runtime C++ type
+  5. the runtime C++ type we have chosen, consistent with CDR
   6. the uppercased typename used for OCPI user APIs specific to types
   7. the mapped, sized, C++ (including stdint.h) C++ typename
   
@@ -71,8 +70,9 @@
   Blind casts/conversions are done from the corba types to the c++ types
 */
 
-#define OCPI_PROPERTY_DATA_TYPES \
-  /*                sca        CORBA      ? bits c++/run   Pretty     Storage */\
+#define OCPI_PROPERTY_DATA_TYPES OCPI_DATA_TYPES
+#define OCPI_DATA_TYPES \
+  /*                 sca        CORBA/IDL  ? bits c++/run   Pretty     Storage */\
     OCPI_DATA_TYPE_H(boolean,   Boolean,   u,  8, bool,     Bool,      uint8_t)  \
     OCPI_DATA_TYPE_H(char,      Char,      u,  8, char,     Char,      uint8_t)  \
     OCPI_DATA_TYPE(  double,    Double,    f, 64, double,   Double,    uint64_t) \
@@ -84,7 +84,7 @@
     OCPI_DATA_TYPE(  ushort,    UShort,    u, 16, uint16_t, UShort,    uint16_t) \
     OCPI_DATA_TYPE_X(longlong,  LongLong,  u, 64, int64_t,  LongLong,  uint64_t) \
     OCPI_DATA_TYPE_X(ulonglong, ULongLong, u, 64, uint64_t, ULongLong, uint64_t) \
-    OCPI_DATA_TYPE_S(string,    String,    @, 32, char*,    String,    %^&)      \
+    OCPI_DATA_TYPE_S(string,    String,    @, 32, OCPI::API::CharP,    String,    %^&) \
     /**/
 // NOTE above that strings are aligned at 32 bits
 
@@ -94,50 +94,23 @@
 
 namespace OCPI {
   namespace API {
-    // Enumerated type for scalar typed values
-    enum ScalarType {
+    // Enumerated type for base builtin types
+    typedef const char *CharP;
+    enum BaseType {
       OCPI_none, // 0 isn't a valid type
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) OCPI_##pretty,
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
+      OCPI_Struct,  // type that is a struct
+      OCPI_Enum,    // type that is an enum
+      OCPI_Type,    // recursive type that is not a struct
       OCPI_scalar_type_limit
     };
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) typedef run pretty;
-    OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-    struct ValueType {
-      ScalarType scalar;
-      bool isSequence, isArray;
-      uint32_t
-      stringLength, // maximum strlen (terminating null not included)
-	length;     // maximum for sequences, specific length for arrays, 1 for scalars!
-    };
+// Missing types that ARE in minimum IDL: longdouble, wchar, wstring, fixed, enum, union, any
 
-    // A typed value
-    class Value {
-    public:
-      ScalarType m_type;     // What type is here?
-      bool m_vector;         // It is an array or sequence?
-      unsigned m_length;     // How many values? 1 if not a sequence/array.
-      char *m_stringSpace;   // space for vector of strings
-      union {
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run m_##pretty;
-	OCPI_PROPERTY_DATA_TYPES
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) typedef run pretty;
+    OCPI_DATA_TYPES
 #undef OCPI_DATA_TYPE
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run *m_p##pretty;
-	OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-      };
-      Value();
-      Value(const ValueType &vt);
-      ~Value();
-      const char *parse(const ValueType &vt, const char *unparsed);
-      void unparse(std::string &) const;
-      inline bool isVector() const { return m_vector; }
-      void allocate(const ValueType &vt);
-    private:
-      void clear();
-    };
   }
 }
 #endif

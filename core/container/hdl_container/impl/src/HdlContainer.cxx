@@ -87,7 +87,6 @@ namespace OCPI {
     namespace OS = OCPI::OS;
     namespace OM = OCPI::Metadata;
     namespace OU = OCPI::Util;
-    namespace OP = OCPI::Util::Prop;
 
     static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
     // This is the alignment constraint of DMA buffers in the processor's memory.
@@ -435,14 +434,17 @@ namespace OCPI {
       // Add the hardware considerations to the property object that supports
       // fast memory-mapped property access directly to users
       // the key members are "readVaddr" and "writeVaddr"
-      virtual void prepareProperty(OP::Property &md, OA::Property &cp) {
+      virtual void prepareProperty(OU::Property &md, 
+				   volatile void *&writeVaddr,
+				   const volatile void *&readVaddr) {
+	(void)readVaddr;
         if (myRegisters)
-          if (!md.isStruct && !md.members->type.isSequence &&
-	      !md.members->type.scalar != OP::Scalar::OCPI_String &&
-              OP::Scalar::sizes[md.members->type.scalar] <= 32 &&
+          if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence &&
+	      !md.m_baseType != OA::OCPI_String &&
+              OU::baseTypeSizes[md.m_baseType] <= 32 &&
 	      md.m_offset < OCCP_WORKER_CONFIG_SIZE &&
               !md.m_writeError)
-            cp.m_writeVaddr = myProperties + md.m_offset;
+            writeVaddr = myProperties + md.m_offset;
       }
       // Map the control op numbers to structure members
       static const unsigned controlOffsets[];
@@ -536,8 +538,10 @@ namespace OCPI {
 
       OC::Port & createPort(const OM::Port &metaport, const OA::PValue *props);
 
-      virtual void prepareProperty(OP::Property &mp, OA::Property &cp) {
-        return WciControl::prepareProperty(mp, cp);
+      virtual void prepareProperty(OU::Property &mp,
+				   volatile void *&writeVaddr,
+				   const volatile void *&readVaddr) {
+        return WciControl::prepareProperty(mp, writeVaddr, readVaddr);
       }
 
       OC::Port &
@@ -556,6 +560,7 @@ namespace OCPI {
       // return errors.  OCCP has MMIO, so it must be the latter
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
+
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
       void set##pretty##Property(OA::Property &p, const run val) {                \
         if (p.m_info.m_writeError &&                                                \
@@ -576,7 +581,7 @@ namespace OCPI {
         if (p.m_info.m_writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before write */                        \
-        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_maxAlign), vals, length * sizeof(run)); \
+        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_align), vals, length * sizeof(run)); \
         *(volatile uint32_t *)(myProperties + p.m_info.m_offset) = length;                \
         if (p.m_info.m_writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
@@ -589,13 +594,13 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
       virtual void set##pretty##Property(OA::Property &p, const run val) {        \
         unsigned ocpi_length;                                                \
-        if (!val || (ocpi_length = strlen(val)) > p.m_type.stringLength)                \
+        if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength)                \
           throw; /*"string property too long"*/;                        \
         if (p.m_info.m_writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before write */                        \
         uint32_t *p32 = (uint32_t *)(myProperties + p.m_info.m_offset);                \
-        /* if length to be written is more than 32 bits */                \
+        /* add 1 for null, if length to be written is more than 32 bits */                \
         if (++ocpi_length > 32/CHAR_BIT)                                        \
           memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT); \
         uint32_t i;                                                        \
@@ -606,7 +611,7 @@ namespace OCPI {
           throw; /*"worker has errors after write */                        \
       }                                                                        \
       void set##pretty##SequenceProperty(OA::Property &p,const run *vals, unsigned length) { \
-        if (length > p.m_type.length)                                        \
+        if (length > p.m_info.m_sequenceLength)                                        \
           throw;                                                        \
         if (p.m_info.m_writeError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
@@ -614,7 +619,7 @@ namespace OCPI {
         char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT);        \
         for (unsigned i = 0; i < length; i++) {                                \
           unsigned len = strlen(vals[i]);                                \
-          if (len > p.m_type.length)                                        \
+          if (len > p.m_info.m_sequenceLength)                                        \
             throw; /* "string in sequence too long" */                        \
           memcpy(cp, vals[i], len+1);                                        \
         }                                                                \
@@ -651,7 +656,7 @@ namespace OCPI {
         uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset);                \
         if (n > length)                                                        \
           throw; /* sequence longer than provided buffer */                \
-        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_maxAlign),        \
+        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_align),        \
                n * sizeof(run));                                        \
         if (p.m_info.m_readError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
@@ -664,7 +669,7 @@ namespace OCPI {
       // and structure padding are assumed to do this. FIXME redundant length check
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
       virtual void get##pretty##Property(OA::Property &p, char *cp, unsigned length) { \
-        unsigned stringLength = p.m_type.stringLength;		\
+        unsigned stringLength = p.m_info.m_stringLength;		\
         if (length < stringLength + 1)                                        \
           throw; /*"string buffer smaller than property"*/;                \
         if (p.m_info.m_readError &&                                                \
@@ -679,13 +684,13 @@ namespace OCPI {
           throw; /*"worker has errors after write */                        \
       }                                                                        \
       unsigned get##pretty##SequenceProperty                                \
-      (OA::Property &p, run *vals, unsigned length, char *buf, unsigned space) { \
+      (OA::Property &p, char **vals, unsigned length, char *buf, unsigned space) { \
         if (p.m_info.m_readError &&                                                \
             myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
           throw; /*"worker has errors before read */                        \
         uint32_t                                                        \
           n = *(uint32_t *)(myProperties + p.m_info.m_offset),                        \
-          wlen = p.m_type.stringLength + 1;                            \
+          wlen = p.m_info.m_stringLength + 1;                            \
         if (n > length)                                                        \
           throw; /* sequence longer than provided buffer */                \
         char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT);        \
@@ -810,18 +815,23 @@ namespace OCPI {
         }
       }
       Port(Worker &w,
-	   const OA::PValue *props,
+	   const OA::PValue *params,
            const OM::Port &mPort, // the parsed port metadata
            ezxml_t connXml, // the xml connection for this port
            ezxml_t icwXml,  // the xml interconnect/infrastructure worker attached to this port if any
            ezxml_t icXml, // the xml interconnect instance attached to this port if any
 	   bool argIsProvider) :
-        OC::PortBase<Worker,Port,ExternalPort>(w, props, mPort, argIsProvider),
+        OC::PortBase<Worker,Port,ExternalPort>(w, mPort, argIsProvider,
+					       (1 << OCPI::RDT::Passive) |
+					       (1 << OCPI::RDT::ActiveFlowControl) |
+					       (1 << OCPI::RDT::ActiveMessage), params),
         WciControl(w.m_container, icwXml, icXml),
         m_connection(connXml),
         myOcdpRegisters((volatile OcdpProperties *)myProperties),
         userConnected(false)
       {
+	getData().port = (OC::PortDesc)this; // make this our derived class
+
         if (!icXml) {
           m_canBeExternal = false;
           return;
@@ -830,19 +840,6 @@ namespace OCPI {
         // This will eventually be in the IP:  FIXME
         uint32_t myOcdpOffset = OC::getAttrNum(icXml, "ocdpOffset");
         myOcdpSize = myOcdpRegisters->memoryBytes;
-        // myOcdpSize = OC::getAttrNum(icXml, "ocdpSize");
-        //FIXME:  extra level of port metadata from worker, to impl, to instance?
-        // get buffer sizes from port from somewhere.
-        // from port xml? myMinBuffersize = getAttrNum(icXml, "minBufferSize", true);
-        // from port xml? myMinNumBuffers = getAttrNum(icXml, "minNumBuffers", true);
-        // Fill in the transport information with defaults.
-        // It will be updated at connect time.
-        // FIXME: do we need to assert a preference here?
-        getData().data.role = OCPI::RDT::NoRole;
-        getData().data.options =
-          (1 << OCPI::RDT::Passive) |
-          (1 << OCPI::RDT::ActiveFlowControl) |
-          (1 << OCPI::RDT::ActiveMessage);
         const char *busId = "0";
         // These will be determined at connection time
         myDesc.dataBufferPitch   = 0;
@@ -914,7 +911,7 @@ namespace OCPI {
         if (getenv("OCPI_OCFRP_DUMMY"))
           *(uint32_t*)&myOcdpRegisters->foodFace = 0xf00dface;
 	// Allow default connect params on port construction prior to connect
-	applyConnectParams(props);
+	applyConnectParams(params);
       }
       // All the info is in.  Do final work to (locally) establish the connection
       void finishConnection(OCPI::RDT::Descriptors &other) {

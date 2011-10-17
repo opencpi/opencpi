@@ -35,12 +35,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <time.h>
 #include <assert.h>
 #include <ctype.h>
-#include <unistd.h>
-#include <sys/time.h>
 #include <uuid/uuid.h>
 // FIXME: integrate this into our UUID utility properly
 #ifndef _UUID_STRING_T
@@ -49,6 +45,7 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
 #include "HdlOCCP.h"
 #include "wip.h"
+
 /*
  * todo
  * generate WIP attribute constants for use by code (widths, etc.)
@@ -159,56 +156,6 @@ const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master
 }
 
 
-void
-printgen(FILE *f, const char *comment, const char *file, bool orig) {
-  time_t now = time(0);
-  char *ct = ctime(&now);
-  ct[strlen(ct) - 1] = '\0';
-  struct tm *local = localtime(&now);
-  fprintf(f,
-	  "%s THIS FILE WAS %sGENERATED ON %s %s\n"
-	  "%s BASED ON THE FILE: %s\n"
-	  "%s YOU %s EDIT IT\n",
-	  comment, orig ? "ORIGINALLY " : "", ct, local->tm_zone,
-	  comment, file,
-	  comment, orig ? "ARE EXPECTED TO" : "PROBABLY SHOULD NOT");
-}
-
-const char *
-openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
-	   const char *ext, const char *other, FILE *&f) {
-  char *file;
-  asprintf(&file, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
-	  prefix, name, suffix, ext);
-  if ((f = fopen(file, "w")) == NULL)
-    return esprintf("Can't not open file %s for writing (%s)\n",
-		    file, strerror(errno));
-  dumpDeps(file);
-  if (other && strcmp(other, name)) {
-    char *otherFile;
-    asprintf(&otherFile, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
-	    prefix, other, suffix, ext);
-    // Put all this junk in OcpiOs
-    char dummy;
-    ssize_t length = readlink(otherFile, &dummy, 1);
-    if (length != -1) {
-      char *buf = (char*)malloc(length + 1);
-      if (readlink(otherFile, buf, length) != length)
-	return "Unexpected system error reading symlink";
-      buf[length] = '\0';
-      if (!strcmp(otherFile, buf))
-	return 0;
-      if (unlink(otherFile))
-	return "Cannot remove symlink to replace it";
-    } else if (errno != ENOENT)
-      return "Unexpected error reading symlink";
-    char *contents = strrchr(file, '/');
-    contents = contents ? contents + 1 : file;
-    if (symlink(contents, otherFile))
-      return "Cannot create symlink";
-  }
-  return 0;
-}
 
 // Emit the file that can be used to instantiate the worker
  const char *
@@ -481,27 +428,27 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	fprintf(f, last, ' ');
     fprintf(f, ");\n");
     // Now we emit parameters.
-    Property *pr = w->ctl.properties;
-    for (unsigned i = 0; i < w->ctl.nProperties; i++, pr++)
-      if (pr->isParameter) {
+    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+      if ((*pi)->m_isParameter) {
+	OU::Property *pr = *pi;
 	if (w->language == VHDL) {
 	  fprintf(f, "VHDL PARAMETERS HERE\n");
 	} else {
 	  int64_t i64 = 0;
-	  if (pr->members->hasDefault)
-	    switch (pr->members->type.scalar) {
+	  if (pr->m_defaultValue)
+	    switch (pr->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
-	      case CP::Scalar::OCPI_##pretty:	   \
-		i64 = (int64_t)pr->members->defaultValue.m_##pretty; break;
+	      case OA::OCPI_##pretty:	   \
+		i64 = (int64_t)pr->m_defaultValue->m_##pretty; break;
 	      OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 	  default:;
 	  }
 	  unsigned bits =
-	    pr->members->type.scalar == CP::Scalar::OCPI_Bool ?
-	    1 : pr->members->bits;
+	    pr->m_baseType == OA::OCPI_Bool ?
+	    1 : pr->m_nBits;
 	  fprintf(f, "  parameter [%u:0] %s = %u'h%llx;\n",
-		  bits - 1, pr->m_name, bits, (long long)i64);
+		  bits - 1, pr->m_name.c_str(), bits, (long long)i64);
 	}
       }
     // Now we emit the declarations (input, output, width) for each module port
@@ -689,7 +636,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		  "  reg %sAttention; assign %sSFlag[0] = %sAttention;\n",
 		  pin, pout, pout, pout, pout);
 	}
-	if (w->ctl.nProperties) {
+	if (w->ctl.properties.size() && n == 0) {
 	  fprintf(f,
 		  "  %s Constants for %s's property addresses\n",
 		  comment, w->implName);
@@ -700,22 +647,21 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	  else
 	    fprintf(f,
 		    "  localparam %sPropertyWidth = %d;\n", pin, p->ocp.MAddr.width);
-	  if (n == 0) {
-	    Property *pr = w->ctl.properties;
-	    for (unsigned np = 0; np < w->ctl.nProperties; np++, pr++)
-	      if (!pr->isParameter)
-		if (w->language == VHDL) {
-		  fprintf(f,
-			  "  constant %-20s : Property_t := b\"", pr->m_name);
-		  for (int b = p->ocp.MAddr.width-1; b >= 0; b--)
-		    fprintf(f, "%c", pr->m_offset & (1 << b) ? '1' : '0');
-		  fprintf(f, "\"; -- 0x%0*x\n",
-			  (int)roundup(p->ocp.MAddr.width, 4)/4, pr->m_offset);
-		} else
-		  fprintf(f, "  localparam [%d:0] %sAddr = %d'h%0*x;\n",
-			  p->ocp.MAddr.width - 1, pr->m_name, p->ocp.MAddr.width,
-			  (int)roundup(p->ocp.MAddr.width, 4)/4, pr->m_offset);
-	  }
+	  for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+	    if (!(*pi)->m_isParameter) {
+	      OU::Property *pr = *pi;
+	      if (w->language == VHDL) {
+		fprintf(f,
+			"  constant %-20s : Property_t := b\"", pr->m_name.c_str());
+		for (int b = p->ocp.MAddr.width-1; b >= 0; b--)
+		  fprintf(f, "%c", pr->m_offset & (1 << b) ? '1' : '0');
+		fprintf(f, "\"; -- 0x%0*x\n",
+			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->m_offset);
+	      } else
+		fprintf(f, "  localparam [%d:0] %sAddr = %d'h%0*x;\n",
+			p->ocp.MAddr.width - 1, pr->m_name.c_str(), p->ocp.MAddr.width,
+			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->m_offset);
+	    }
 	}
 	break;
       case WSIPort:
@@ -1104,17 +1050,17 @@ emitAssyHDL(Worker *w, const char *outDir)
       unsigned n = 0;
       // Emit the compile-time properties (a.k.a. parameter properties).
       for (InstanceProperty *pv = i->properties; n < i->nValues; n++, pv++) {
-	Property *pr = pv->property;
-	if (pr->isParameter) {
+	OU::Property *pr = pv->property;
+	if (pr->m_isParameter) {
 	  if (w->language == VHDL) {
 	    fprintf(f, "VHDL PARAMETERS HERE\n");
 	  } else {
 	    fprintf(f, "%s", any ? ", " : " #(");
 	    any = true;
 	    int64_t i64 = 0;
-	    switch (pr->members->type.scalar) {
+	    switch (pr->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
-	    case CP::Scalar::OCPI_##pretty:				\
+	    case OA::OCPI_##pretty:				\
 	      i64 = (int64_t)pv->value.m_##pretty;			\
 	      break;
 OCPI_PROPERTY_DATA_TYPES
@@ -1122,10 +1068,10 @@ OCPI_PROPERTY_DATA_TYPES
             default:;
 	    }
 	    unsigned bits =
-	      pr->members->type.scalar == CP::Scalar::OCPI_Bool ?
-	      1 : pr->members->bits;
+	      pr->m_baseType == OA::OCPI_Bool ?
+	      1 : pr->m_nBits;
 	    fprintf(f, ".%s(%u'b%lld)",
-		    pr->m_name, bits, (long long)i64);
+		    pr->m_name.c_str(), bits, (long long)i64);
 	  }
         }
       }
@@ -1605,7 +1551,7 @@ emitBsvHDL(Worker *w, const char *outDir) {
   void
 emitWorker(FILE *f, Worker *w)
 {
-  fprintf(f, "<worker name=\"%s\"", w->implName);
+  fprintf(f, "<worker name=\"%s\" sizeOfConfigSpace=\"%llu\"", w->implName, w->ctl.sizeOfConfigSpace);
   if (w->ctl.controlOps) {
     bool first = true;
     for (unsigned op = 0; op < NoOp; op++)
@@ -1622,12 +1568,11 @@ emitWorker(FILE *f, Worker *w)
     fprintf(f, " Timeout=\"%u\"", w->ports[0]->u.wci.timeout);
   fprintf(f, ">\n");
   unsigned nn;
-  Property *prop;
-  for (prop = w->ctl.properties, nn = 0; nn < w->ctl.nProperties; nn++, prop++) {
-    if (prop->isParameter)
+  for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
+    OU::Property *prop = *pi;
+    if (prop->m_isParameter)
       continue;
-    fprintf(f, "  <property name=\"%s\"", prop->m_name);
-    prop->members->printXml(f);
+    prop->printAttrs(f, "property");
     if (prop->m_isReadable)
       fprintf(f, " readable=\"true\"");
     if (prop->m_isWritable)
@@ -1640,56 +1585,29 @@ emitWorker(FILE *f, Worker *w)
       fprintf(f, " readError=\"true\"");
     if (prop->m_writeError)
       fprintf(f, " writeError=\"true\"");
-    fprintf(f, "/>\n");
+    prop->printChildren(f, "property");
   }
   for (nn = 0; nn < w->ports.size(); nn++) {
     Port *p = w->ports[nn];
     if (p->isData) {
       fprintf(f, "  <port name=\"%s\" numberOfOpcodes=\"%u\"", p->name, p->u.wdi.nOpcodes);
-      if (p->protocol->m_maxMessageValues)
-	fprintf(f, " minBufferSize=\"%u\"",
-		(p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth + 7) / 8);
-	fprintf(f, " dataValueWidthInBytes=\"%u\"",
-	           p->protocol->m_dataValueWidth / 8 );
       if (p->u.wdi.isBidirectional)
 	fprintf(f, " bidirectional=\"true\"");
       else if (!p->u.wdi.isProducer)
 	fprintf(f, " provider=\"true\"");
       if (p->u.wdi.minBufferCount)
 	fprintf(f, " minBufferCount=\"%u\"", p->u.wdi.minBufferCount);
-      if (p->protocol->operations()) {
-	fprintf(f, ">\n    <protocol");
-	if (p->protocol->m_name.length())
-	  fprintf(f, " name=\"%s\"", p->protocol->m_name.c_str());
-	fprintf(f, ">\n");
-	CM::Operation *o = p->protocol->operations();
-	for (unsigned i = 0; i < p->protocol->nOperations(); i++, o++) {
-	  CP::Member *a = o->args();
-	  fprintf(f, "      <operation name=\"%s\"", o->name().c_str());
-	  if (o->isTwoWay())
-	    fprintf(f, " twoway=\"true\"");
-	  if (o->args()) {
-	    fprintf(f, ">\n");
-
-	    for (unsigned j = 0; j < o->nArgs(); j++, a++) {
-	      fprintf(f, "        <argument name=\"%s\"", a->name);
-	      a->printXml(f);
-	      fprintf(f, "/>\n");
-	    }
-	    fprintf(f, "      </operation>\n");
-	  } else
-	    fprintf(f, "/>\n");
-	}
-	fprintf(f, "    </protocol>\n  </port>\n");
-      } else {
-	fprintf(f, "/>\n");
-      }
+      if (p->u.wdi.bufferSize)
+	fprintf(f, " bufferSize=\"%u\"", p->u.wdi.bufferSize);
+      fprintf(f, ">\n");
+      p->protocol->printXML(f, 2);
+      fprintf(f, "</port>\n");
     }
   }
-	for (nn = 0; nn < w->localMemories.size(); nn++) {
-		LocalMemory* m = w->localMemories[nn];
-		fprintf(f, "  <localMemory name=\"%s\" size=\"%u\"/>\n", m->name, m->sizeOfLocalMemory);
-	}
+  for (nn = 0; nn < w->localMemories.size(); nn++) {
+    LocalMemory* m = w->localMemories[nn];
+    fprintf(f, "  <localMemory name=\"%s\" size=\"%u\"/>\n", m->name, m->sizeOfLocalMemory);
+  }
   fprintf(f, "</worker>\n");
 }
 
@@ -1787,14 +1705,14 @@ emitArtHDL(Worker *aw, const char *outDir) {
   fprintf(f, "<artifact platform=\"%s\" device=\"%s\" uuid=\"%s\">\n",
 	  platform, device, uuid_string);
   // Define all workers
-  Worker *w;
-  unsigned n;
-  for (w = aw->assembly.workers, n = 0; n < aw->assembly.nWorkers; n++, w++)
-    emitWorker(f, w);
-  for (w = dw->assembly.workers, n = 0; n < dw->assembly.nWorkers; n++, w++)
-    emitWorker(f, w);
+  for (WorkersIter wi = aw->assembly.workers.begin();
+       wi != aw->assembly.workers.end(); wi++)
+    emitWorker(f, *wi);
+  for (WorkersIter wi = dw->assembly.workers.begin();
+       wi != dw->assembly.workers.end(); wi++)
+    emitWorker(f, *wi);
   Instance *i, *di;
-  unsigned nn;
+  unsigned nn, n;
   // For each app instance, we need to retrieve the index within the container
   // Then emit that app instance's info
   for (i = aw->assembly.instances, n = 0; n < aw->assembly.nInstances; n++, i++) {

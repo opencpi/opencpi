@@ -46,7 +46,6 @@ namespace OCPI {
     namespace OS = OCPI::OS;
     namespace OM = OCPI::Metadata;
     namespace OU = OCPI::Util;
-    namespace OP = OCPI::Util::Prop;
 
     class ExternalPort;
     class Container;
@@ -171,7 +170,9 @@ namespace OCPI {
 
       OC::Port & createPort(const OM::Port &metaport, const OA::PValue *props);
 
-      virtual void prepareProperty(OP::Property &mp, OA::Property &cp) {
+      virtual void prepareProperty(OU::Property &mp,
+				   volatile void *&writeVaddr,
+				   const volatile void *&readVaddr) {
 	// fill out the API property structure for fastest access
       }
 
@@ -214,7 +215,7 @@ namespace OCPI {
       void set##pretty##SequenceProperty(OA::Property &p,const run *vals, unsigned length) { \
         if (p.m_info.m_writeError)					\
           throw; /*"worker has errors before write */                        \
-        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_maxAlign), vals, length * sizeof(run)); \
+        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_align), vals, length * sizeof(run)); \
         *(volatile uint32_t *)(myProperties + p.m_info.m_offset) = length;                \
         if (p.m_info.m_writeError)					\
           throw; /*"worker has errors after write */                        \
@@ -226,7 +227,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
       virtual void set##pretty##Property(OA::Property &p, const run val) {        \
         unsigned ocpi_length;                                                \
-        if (!val || (ocpi_length = strlen(val)) > p.m_type.stringLength)                \
+        if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength)                \
           throw; /*"string property too long"*/;                        \
         if (p.m_info.m_writeError)					\
           throw; /*"worker has errors before write */                        \
@@ -241,14 +242,14 @@ namespace OCPI {
           throw; /*"worker has errors after write */                        \
       }                                                                        \
       void set##pretty##SequenceProperty(OA::Property &p,const run *vals, unsigned length) { \
-        if (length > p.m_type.length)                                        \
+        if (length > p.m_info.m_sequenceLength)                                        \
           throw;                                                        \
         if (p.m_info.m_writeError)					\
           throw; /*"worker has errors before write */                        \
         char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT);        \
         for (unsigned i = 0; i < length; i++) {                                \
           unsigned len = strlen(vals[i]);                                \
-          if (len > p.m_type.length)                                        \
+          if (len > p.m_info.m_sequenceLength)                                        \
             throw; /* "string in sequence too long" */                        \
           memcpy(cp, vals[i], len+1);                                        \
         }                                                                \
@@ -282,7 +283,7 @@ namespace OCPI {
         uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset);                \
         if (n > length)                                                        \
           throw; /* sequence longer than provided buffer */                \
-        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_maxAlign),        \
+        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_align),        \
                n * sizeof(run));                                        \
         if (p.m_info.m_readError)					\
           throw; /*"worker has errors after read */                        \
@@ -294,7 +295,7 @@ namespace OCPI {
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
       virtual void get##pretty##Property(OA::Property &p, char *cp, unsigned length) { \
-        unsigned stringLength = p.m_type.stringLength;		\
+        unsigned stringLength = p.m_info.m_stringLength;		\
         if (length < stringLength + 1)                                        \
           throw; /*"string buffer smaller than property"*/;                \
         if (p.m_info.m_readError)					\
@@ -307,12 +308,12 @@ namespace OCPI {
           throw; /*"worker has errors after write */                        \
       }                                                                        \
       unsigned get##pretty##SequenceProperty                                \
-      (OA::Property &p, run *vals, unsigned length, char *buf, unsigned space) { \
+      (OA::Property &p, char **vals, unsigned length, char *buf, unsigned space) { \
         if (p.m_info.m_readError)					\
           throw; /*"worker has errors before read */                        \
         uint32_t                                                        \
           n = *(uint32_t *)(myProperties + p.m_info.m_offset),                        \
-          wlen = p.m_type.stringLength + 1;                            \
+          wlen = p.m_info.m_stringLength + 1;                            \
         if (n > length)                                                        \
           throw; /* sequence longer than provided buffer */                \
         char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT);        \
@@ -369,11 +370,11 @@ namespace OCPI {
 		    const OA::PValue *uProps) {}
 
       Port(Worker &w,
-	   const OA::PValue *props,
+	   const OA::PValue *params,
            const OM::Port &mPort, // the parsed port metadata
 	   bool argIsProvider,
            ezxml_t connXml) // the xml connection for this port if any?
-        : OC::PortBase<Worker,Port,ExternalPort>(w, props, mPort, argIsProvider),
+        : OC::PortBase<Worker,Port,ExternalPort>(w, mPort, argIsProvider, 0, params),
 	  m_connection(connXml)
       {
         m_canBeExternal = true;

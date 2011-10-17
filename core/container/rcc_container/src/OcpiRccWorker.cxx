@@ -67,7 +67,6 @@
 #include <OcpiMetadataWorker.h>
 
 namespace OM = OCPI::Metadata;
-namespace OP = OCPI::Util::Prop;
 namespace OC = OCPI::Container;
 namespace OS = OCPI::OS;
 namespace OU = OCPI::Util;
@@ -328,33 +327,15 @@ initializeContext()
         
 }
 
-#if 0
-// FIXME:  parse buffer counts (at least) from PValue
-OC::Port & 
-Worker::
-createPort(OCPI::Metadata::Port& mp, const OCPI::Util::PValue * )
-{
-
-  int bSize = ( mp.minBufferSize == 0 ) ? OCPI::Metadata::Port::DEFAULT_BUFFER_SIZE : mp.minBufferSize;
-  int bCount = ( mp.minBufferCount == 0 ) ? OCPI::Metadata::Port::DEFAULT_NBUFFERS : mp.minBufferCount;
-  if ( mp.provider ) {
-    return createInputPort( mp.ordinal, bCount, bSize, NULL );
-  }
-  else {
-    return createOutputPort( mp.ordinal, bCount, bSize, NULL );
-  }
-
-}
-#else
 // Called from the generic getPort when the port is not found.
 // Also called from createInputPort and createOutputPort locally
 OC::Port & 
 Worker::
-createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *props)
+createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
 {
   TRACE(" OCPI::RCC::Container::createPort()");
-  if ( mp.minBufferSize == 0 || mp.minBufferCount == 0)
-    throw OU::EmbeddedException( OU::BAD_PORT_CONFIGURATION, "0 buffer count or size",
+  if ( mp.minBufferCount == 0)
+    throw OU::EmbeddedException( OU::BAD_PORT_CONFIGURATION, "0 buffer count",
 				 OU::ApplicationRecoverable);
   OU::AutoMutex guard (m_mutex);
   if (mp.ordinal >= m_dispatch->numInputs + m_dispatch->numOutputs)
@@ -369,12 +350,9 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *props)
       if (pi->port == mp.ordinal) {
 #ifndef NDEBUG
         printf("\nWorker PortInfo for port %d, bc,s: %d,%d, metadata is %d,%d\n",
-	       mp.ordinal, pi->minBuffers, pi->maxLength, mp.minBufferCount, mp.minBufferSize);
+	       mp.ordinal, pi->minBuffers, pi->maxLength, mp.minBufferCount, mp.m_minBufferSize);
 #endif
-	if (pi->minBuffers > mp.minBufferCount || // bad: worker needs more than metadata
-	    pi->maxLength &&
-	    (!mp.maxBufferSize ||                 // bad: worker has limit, metadatadoesn't
-	     pi->maxLength < mp.maxBufferSize))   // bad: worker has lower limit than metadata
+	if (pi->minBuffers > mp.minBufferCount) // bad: worker needs more than metadata   
 	  throw OU::EmbeddedException(OU::PORT_NOT_FOUND,
 				      "Worker metadata inconsistent with RCC PortInfo",
 				      OU::ContainerFatal);
@@ -387,7 +365,7 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *props)
     // The caller can also be less specific and just specify the protocol 
     // FIXME:  someday we need to specify that at either end
     const char *protocol = NULL;
-    if (OU::findString(props, "protocol", protocol))
+    if (OU::findString(params, "protocol", protocol))
       endpoint = m_transport.getEndpointFromProtocol( protocol).c_str();
     else if ((protocol = getenv("OCPI_DEFAULT_PROTOCOL"))) {
       printf("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment\n", protocol);
@@ -397,7 +375,7 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *props)
       // It is up to the caller to specify the endpoint which implicitly defines
       // the QOS.  If the caller does not provide the endpoint, we will pick one
       // by default.
-      if (!OU::findString(props, "endpoint", endpoint))
+      if (!OU::findString(params, "endpoint", endpoint))
 	endpoint = m_transport.getDefaultEndPoint().c_str();
       endpoint = m_transport.addLocalEndpoint( endpoint)->sMemServices->endpoint()->end_point.c_str();
     }
@@ -406,34 +384,28 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *props)
 				"Source Port count exceeds configuration", OU::ApplicationFatal);
   Port *port;
   try {
-    port = new Port(*this, props, mp, endpoint);
+    port = new Port(*this, mp, params, endpoint);
   }
   catch(std::bad_alloc) {
     throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
   }
   // We know the metadata is more contrained than port info
   // FIXME: RccPort Object should know about its C RCCPort and do this itself
-  m_context->ports[mp.ordinal].current.maxLength = 
-    (mp.minBufferSize > mp.maxBufferSize) ? mp.minBufferSize : mp.maxBufferSize;
+  // FIXME: this can change on connections
+  m_context->ports[mp.ordinal].current.maxLength = port->getData().data.desc.dataBufferSize;
 
+  // Add the port to the worker
+  port->opaque() = static_cast<OpaquePortData*>(m_context->ports[mp.ordinal].opaque);
+  port->opaque()->port = port;
 
   if (mp.provider) { // input
-
-    // Add the port to the worker
-    port->opaque() = static_cast<OpaquePortData*>(m_context->ports[mp.ordinal].opaque);
-    port->opaque()->port = port;
     targetPorts.insertToPosition(port, mp.ordinal);    
-						  } 
-  else {         // output
+  } else            // output
     // Defer the real work until the port is connected.
-    port->opaque() = static_cast<OpaquePortData*>(m_context->ports[mp.ordinal].opaque);
-    port->opaque()->port = port;
     sourcePorts.insertToPosition(port, mp.ordinal);
-  }
 
   return *port;
 }
-#endif
 
 
 // Common code for the test API to create ports by ordinal
@@ -458,11 +430,11 @@ createTestPort( Worker *w, OM::PortOrdinal portId,
     myProps[i++] = OA::PVULong("bufferSize", bufferSize);
   myProps[i] = OA::PVEnd;
 
-  OCPI::Metadata::Port pmd;
-  pmd.ordinal = portId;
-  pmd.provider = isProvider;
-  pmd.maxBufferSize = bufferSize;
-  return w->createPort(pmd, myProps);
+  OM::Port *pmd = new OM::Port;;
+  pmd->ordinal = portId;
+  pmd->provider = isProvider;
+  pmd->bufferSize = bufferSize;
+  return w->createPort(*pmd, myProps); // FIXME: register these and delete them on destruction
 }
  OC::Port &
 Worker::
@@ -518,15 +490,18 @@ updatePort( RDMAPort &port )
 
 void 
 Worker::
-prepareProperty(OM::Property& md , OA::Property& cp)
+prepareProperty(OM::Property& md , 
+		volatile void *&writeVaddr,
+		const volatile void *&readVaddr)
 {
-  if (!md.isStruct && !md.members->type.isSequence && md.members->type.scalar != OP::Scalar::OCPI_String &&
-      OP::Scalar::sizes[md.members->type.scalar] <= 32 &&
+  (void)readVaddr;
+  if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence && md.m_baseType != OA::OCPI_String &&
+      OU::baseTypeSizes[md.m_baseType] <= 32 &&
       !md.m_writeError) {
-    if ( (md.m_offset+sizeof(md.members->type.scalar)) > m_dispatch->propertySize ) {
+    if ( (md.m_offset+sizeof(md.m_baseType)) > m_dispatch->propertySize ) {
       throw OU::EmbeddedException( OU::PROPERTY_SET_EXCEPTION, NULL, OU::ApplicationRecoverable);
     }
-    cp.m_writeVaddr = (uint8_t*)m_context->properties + md.m_offset;
+    writeVaddr = (uint8_t*)m_context->properties + md.m_offset;
   }
 }
 
@@ -814,7 +789,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       // Set a scalar property value
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                   \
   void Worker::set##pretty##Property(OCPI::API::Property &p, const run val) { \
-    assert(p.m_type.scalar == OCPI::API::OCPI_##pretty);		\
+    assert(p.m_info.m_baseType == OCPI::API::OCPI_##pretty);		\
         if (p.m_info.m_writeError)                                                       \
           throw; /*"worker has errors before write */                           \
         store *pp = (store *)(getPropertyVaddr() + p.m_info.m_offset);	\
@@ -832,7 +807,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 					 unsigned length) {		        \
         if (p.m_info.m_writeError)                                                       \
           throw; /*"worker has errors before write */                           \
-        memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_maxAlign), vals,      \
+        memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), vals,      \
 	       length * sizeof(run));					        \
         *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = length;                  \
         if (p.m_info.m_writeError)                                                     \
@@ -845,7 +820,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
   void Worker::set##pretty##Property(OCPI::API::Property &p, const run val) { \
         unsigned ocpi_length;                                                     \
-        if (!val || (ocpi_length = strlen(val)) > p.m_type.stringLength)   \
+        if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength)   \
           throw; /*"string property too long"*/;                                 \
         if (p.m_info.m_writeError)                                                       \
           throw; /*"worker has errors before write */                            \
@@ -866,7 +841,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
         char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT);        \
         for (unsigned i = 0; i < length; i++) {                                  \
           unsigned len = strlen(vals[i]);                                        \
-          if (len > p.m_type.stringLength)	                         \
+          if (len > p.m_info.m_stringLength)	                         \
             throw; /* "string in sequence too long" */                           \
           memcpy(cp, vals[i], len+1);                                            \
         }                                                                        \
@@ -903,7 +878,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
         if (n > length)							\
           throw; /* sequence longer than provided buffer */		\
         memcpy(vals,							\
-	       (void*)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_maxAlign),	\
+	       (void*)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align),	\
                n * sizeof(run));                                        \
         if (p.m_info.m_readError )						\
           throw; /*"worker has errors after read */			\
@@ -916,7 +891,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)		      \
       void Worker::get##pretty##Property(OCPI::API::Property &p, char *cp, \
 					   unsigned length) {		      \
-	  unsigned stringLength = p.m_type.stringLength;               \
+	  unsigned stringLength = p.m_info.m_stringLength;               \
 	  if (length < stringLength+1)			      \
 	    throw; /*"string buffer smaller than property"*/;		      \
 	  if (p.m_info.m_readError)						      \
@@ -929,13 +904,13 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 	    throw; /*"worker has errors after write */			      \
 	}								      \
       unsigned Worker::get##pretty##SequenceProperty			\
-	(OCPI::API::Property &p, run *vals, unsigned length, char *buf,        \
+	(OCPI::API::Property &p, char **vals, unsigned length, char *buf,        \
 	 unsigned space) {						      \
         if (p.m_info.m_readError)						      \
           throw; /*"worker has errors before read */                          \
         uint32_t                                                              \
           n = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset),                   \
-          wlen = p.m_type.stringLength + 1;                            \
+          wlen = p.m_info.m_stringLength + 1;                            \
         if (n > length)                                                       \
           throw; /* sequence longer than provided buffer */                   \
         char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT);     \

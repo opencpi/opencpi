@@ -52,70 +52,51 @@
 */
 #ifndef OCPI_METADATA_PROPERTY_H
 #define OCPI_METADATA_PROPERTY_H
-#include "OcpiUtilPropertyType.h"
-#include "OcpiUtilPropertyApi.h"
+
 #include "ezxml.h"
+#include "OcpiUtilDataTypes.h"
+#include "OcpiUtilPropertyApi.h"
 
 namespace OCPI {
-  namespace Util {
-    namespace Prop {
-      // This class is the runtime structure for property metadata
-      class Property;
-      class Member {
-	friend class Property;
-      public:
-	Member();
-	ValueType type;
-	const char * name;   // Member name if struct member
-	uint32_t offset;    // for structure members
-	unsigned bits, align, nBytes;
-	bool hasDefault;
-	OCPI::API::Value defaultValue; // union for member values
-	const char *parse(ezxml_t xp, unsigned &maxAlign,
-			  unsigned &argOffset, bool &sub32);
-	void printXml(FILE *f);
-	static const char *
-	  parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
-		       unsigned &maxAlign, unsigned &myOffset, bool &sub32, const char *tag);
-      };
-      class Property : public OCPI::API::PropertyInfo {
-	const char *parseImplAlso(ezxml_t x);
-      public:
-	Property();
-	~Property();
-	Property & operator=( Property & p );
-	Property & operator=( Property * p );
+  namespace API {
+    // This class is only exposed as a pointer in the API, hence it can be defined with OCPI::Util
+    class PropertyInfo : public OCPI::Util::Member {
+    public:
+      PropertyInfo();
+      bool m_readSync, m_writeSync, m_isWritable, m_isReadable, m_readError, m_writeError;
+    };
+  }
 
-	// Describe structure member that might be the whole property
-	Member *members;      // More than one when type is struct.
-	unsigned nBytes;      // Maximum size in bytes
-	unsigned nMembers;    // How many members
-	unsigned smallest;    // Smallest unit of storage
-	unsigned granularity; // Granularity of smallest unit
-	// Caller needs these to decide to do beforeQuery/afterConfigure
-	bool isParameter;  // For compile-time parameter
-	// Attributes for struct types
-	bool isStruct, isStructSequence;
-	unsigned nStructs; // sequence or array of structs
-	// Other property attributes
-	bool isTest;
-	unsigned long sequenceLength, dataOffset;
-	// Sizes in bits of the various types
-	const char *parse(ezxml_t x,
-			  unsigned &argOffset,
-			  bool &readableConfigs,
-			  bool &writableConfigs,
-			  bool &sub32Configs,
-			  bool includeImpl = false
-			  );
-	const char *parseImpl(ezxml_t x);
-	const char *parse(ezxml_t x);
-	const char *parseValue(ezxml_t x, Scalar::Value &value);
-	// Check when accessing with scalar type and sequence length
-	const char *checkType(Scalar::Type ctype, unsigned n, bool write);
-      private:
-      };
-    }
+  namespace Util {
+    class Property : public OCPI::API::PropertyInfo {
+      const char *parseImplAlso(ezxml_t x);
+    public:
+      Property();
+      ~Property();
+      // Describe structure member that might be the whole property
+      unsigned 
+	m_smallest,    // Smallest unit of storage
+	m_granularity; // Granularity of smallest unit
+      // Caller needs these to decide to do beforeQuery/afterConfigure
+      bool
+	m_isParameter,     // For compile-time parameter
+	m_isTest;
+      unsigned long m_dataOffset;
+      // Sizes in bits of the various types
+      const char *parse(ezxml_t x,
+			unsigned &argOffset,
+			bool &readableConfigs,
+			bool &writableConfigs,
+			bool &sub32Configs,
+			bool includeImpl = false
+			);
+      const char *parseImpl(ezxml_t x);
+      const char *parse(ezxml_t x);
+      const char *parseValue(ezxml_t x, const char *unparsed, Value &value);
+      // Check when accessing with scalar type and sequence length
+      const char *checkType(OCPI::API::BaseType ctype, unsigned n, bool write);
+    private:
+    };
   }
 }
 #endif

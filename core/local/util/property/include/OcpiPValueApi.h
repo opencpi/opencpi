@@ -48,7 +48,7 @@
 #ifndef OCPI_PVALUE_API_H
 #define OCPI_PVALUE_API_H
 
-#include "OcpiPropertyTypesApi.h"
+#include "OcpiUtilDataTypesApi.h"
 
 namespace OCPI {
   
@@ -63,13 +63,13 @@ namespace OCPI {
 
     class PValue {
     public:
-      inline PValue(const char *aName, ScalarType aType, unsigned aWidth)
+      inline PValue(const char *aName, BaseType aType, unsigned aWidth)
 	: name(aName), type(aType), width(aWidth) {}
       inline PValue()
 	: name(0), type(OCPI_none), width(0) {}
       unsigned length() const;
       const char *name;
-      ScalarType type;
+      BaseType type;
       unsigned width;
       // Anonymous union here for convenience even though redundant with ValueType.
       union {

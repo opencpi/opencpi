@@ -463,9 +463,8 @@ namespace OCPI {
       }
 
       bool
-      parseBool(const char *a, unsigned length, bool *b)
+      parseBool(const char *a, bool *b)
       {
-	(void)length;
 	if (!strcasecmp(a, "true") || !strcmp(a, "1"))
 	  *b = true;
 	else if (!strcasecmp(a, "false")  || !strcmp(a, "0"))
@@ -479,7 +478,7 @@ namespace OCPI {
       getBoolean(ezxml_t x, const char *name, bool *b) {
 	const char *a = ezxml_cattr(x, name);
 	if (a) {
-	  if (parseBool(a, 0, b))
+	  if (parseBool(a, b))
 	    return esprintf("parsing value \"%s\" as type Bool", a);
 	} else
 	  *b = false;

@@ -48,7 +48,7 @@
 #include <fstream>
 #include <iostream>
 #include <OcpiOsAssert.h>
-#include <OcpiUtilPropertyType.h>
+#include <OcpiUtilDataTypesApi.h>
 
 #ifndef OCPI_TIME_ANALYZER_INLINE_VALID_USE__
 #error "You are not permitted to include this file standalone"
@@ -65,7 +65,6 @@
 namespace OCPI {
 
   namespace Time {
-
     union SValue {
       OCPI::OS::uint64_t uvalue;
       OCPI::OS::int64_t  ivalue;
@@ -293,47 +292,50 @@ inline void OCPI::Time::Emit::emit( EventId id, OCPI::API::PValue& p, EventTrigg
 
   switch ( p.type ) {
 
-  case OCPI::Util::Prop::Scalar::OCPI_Short:
+  case OCPI::API::OCPI_Short:
     dp->ivalue = p.vShort;    
     break;
-  case OCPI::Util::Prop::Scalar::OCPI_Long:
+  case OCPI::API::OCPI_Long:
     dp->ivalue = p.vLong;
     break;
-  case OCPI::Util::Prop::Scalar::OCPI_Char:
+  case OCPI::API::OCPI_Char:
     dp->ivalue = p.vChar;
     break;    
-  case OCPI::Util::Prop::Scalar::OCPI_LongLong:
+  case OCPI::API::OCPI_LongLong:
     dp->ivalue = p.vLongLong;
     break;    
-  case OCPI::Util::Prop::Scalar::OCPI_Bool:
+  case OCPI::API::OCPI_Bool:
     dp->uvalue = p.vBool;
     break;    
-  case OCPI::Util::Prop::Scalar::OCPI_ULong:
+  case OCPI::API::OCPI_ULong:
     dp->uvalue = p.vULong;
     break;    
-  case OCPI::Util::Prop::Scalar::OCPI_UShort:
+  case OCPI::API::OCPI_UShort:
     dp->uvalue = p.vUShort;
     break;    
-  case OCPI::Util::Prop::Scalar::OCPI_ULongLong:
+  case OCPI::API::OCPI_ULongLong:
     dp->uvalue = p.vULongLong;
     break;    
-  case OCPI::Util::Prop::Scalar::OCPI_UChar:
+  case OCPI::API::OCPI_UChar:
     dp->uvalue = p.vUShort;
     break;    
-  case OCPI::Util::Prop::Scalar::OCPI_Double:
+  case OCPI::API::OCPI_Double:
     dp->dvalue = p.vDouble;
     break;    
-  case OCPI::Util::Prop::Scalar::OCPI_Float:
+  case OCPI::API::OCPI_Float:
     dp->dvalue = p.vFloat;
     break;    
 
-  case OCPI::Util::Prop::Scalar::OCPI_String:
+  case OCPI::API::OCPI_String:
     // NOTE:   NOT REALLY SURE WHAT TO DO WITH THIS YET !!
     //    memcpy( &m_q->current->uvalue, &p.vString, sizeof(OCPI::OS::uint64_t) );
     break;    
 
-  case OCPI::Util::Prop::Scalar::OCPI_none:
-  case OCPI::Util::Prop::Scalar::OCPI_scalar_type_limit:
+  case OCPI::API::OCPI_none:
+  case OCPI::API::OCPI_Struct:
+  case OCPI::API::OCPI_Type:
+  case OCPI::API::OCPI_Enum:
+  case OCPI::API::OCPI_scalar_type_limit:
     ocpiAssert(0);
   }
 

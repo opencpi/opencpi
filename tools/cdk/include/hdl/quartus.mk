@@ -13,7 +13,7 @@
 #  This file is part of OpenCPI (www.opencpi.org).
 #     ____                   __________   ____
 #    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
-#   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+#   / / / / __ \/ _ \/ __ \/ /   / /_/ /c / /  / __ \/ ___/ __ `/
 #  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
 #  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
 #      /_/                                             /____/
@@ -74,25 +74,30 @@ HdlToolRealCore=yes
 ################################################################################
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
-HdlToolNeedBB=no
+HdlToolNeedBB=
 ################################################################################
 # Function required by toolset: $(call HdlToolLibRef,libname)
 # This is the name after library name in a path
 # It might adjust (genericize?) the target
 #
-HdlToolLibRef=$(HdlTarget)
+HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
 
 # ?? What is the difference between SEARCH_PATH and USER_LIBRARIES???
 # Libraries can be built for specific targets, which just is for syntax checking
 # Note that a library can be designed for a specific target
 QuartusFamily_stratix4:=Stratix IV
 QuartusFamily_stratix5:=Stratix V
+QuartusMakePart1=$(firstword $1)$(word 3,$1)$(word 2,$1)
+QuartusMakePart=$(call QuartusMakePart1,$(subst -, ,$1))
 QuartusMakeQsf=\
  if test -f $(Core).qsf; then cp $(Core).qsf $(Core).qsf.bak; fi; \
  (echo '\#' Common assignments whether a library or a core; \
   echo set_global_assignment -name FAMILY '\"'$(QuartusFamily_$(call HdlGetFamily,$(HdlTarget)))'\"'; \
-  echo set_global_assignment -name DEVICE $(if $(findstring $(HdlTarget),$(HdlAllFamilies)),AUTO,$(HdlTarget)); \
-  echo set_global_assignment -name TOP_LEVEL_ENTITY $(Core); \
+  echo set_global_assignment -name DEVICE $(if $(findstring $(HdlTarget),$(HdlAllFamilies)),AUTO,\
+                                            $(if $(HdlExactPart),\
+                                             $(call QuartusMakePart,$(HdlExactPart)),\
+                                             $(HdlTarget))); \
+  echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   $(and $(VerilogIncludeDirs),echo '\#' Search paths for verilog includes;) \
   $(foreach d,$(VerilogIncludeDirs),\
     echo set_global_assignment -name SEARCH_PATH '\"'$(call FindRelative,$(TargetDir),$d)'\"';) \
@@ -102,18 +107,44 @@ QuartusMakeQsf=\
     $(foreach hlr,$(call HdlLibraryRefDir,$l,$(HdlTarget)),\
       $(if $(realpath $(hlr)),,$(error No altera library at $(abspath $(hlr))))\
         $(call FindRelative,$(TargetDir),$(hlr))))'\"';)\
-  $(foreach l,$(Cores),\
-    echo set_global_assignment -name QXP_FILE \
-    $(foreach hlc,$(call HdlCoreRefDir,$l,altera),\
-      $(if $(realpath $(hlr)),,$(error No altera core ($l.qxp) at $(abspath $(hlr))))\
-        $(call FindRelative,$(TargetDir),$(hlr))/$l.qxp);)\
+  $(and $(ComponentLibraries),echo '\#' Search paths for component libraries;) \
+  $(foreach l,$(ComponentLibraries),\
+    echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
+    $(foreach found,\
+      $(foreach t,$(sort $(HdlTarget) $(call HdlGetFamily,$(HdlTarget))),\
+	$(realpath $l/lib/hdl/$t)), \
+      $(if $(found),\
+        $(call FindRelative,$(TargetDir),$(found))'\"';,\
+	$(error No component library at $(abspath $t))))))\
   echo '\#' Assignments for source files; \
   $(foreach s,$(CompiledSourceFiles),$(strip \
      echo set_global_assignment -name VERILOG_FILE \
        '\"'$(call FindRelative,$(TargetDir),$(dir $s))/$(notdir $s)'\"';)) \
-  $(if $(findstring $(HdlMode),core worker),\
+  $(if $(AssemblyWorkers), \
+     echo '\#' Import file names for assembly workers; \
+    $(foreach l,$(sort $(foreach w,$(AssemblyWorkers),$(firstword $(subst :, ,$w)))), \
+      echo set_global_assignment -name QXP_FILE \
+        '\"'$(call FindRelative,$(TargetDir),$(ComponentLibraries)/lib/hdl/$(HdlTarget)/$l$(HdlBin))'\"';)\
+    $(foreach l,$(AssemblyWorkers),\
+      echo set_global_assignment -name PARTITION_IMPORT_FILE \
+        '\"'$(call FindRelative,$(TargetDir),$(ComponentLibraries)/lib/hdl/$(HdlTarget)/$(firstword $(subst :, ,$l))$(HdlBin))'\"' \
+        -section_id '\"'$l'\"';\
+      echo set_global_assignment -name PARTITION_HIERARCHY db/$(subst :,_,$l) -to '\"'$l'\"' \
+      -section_id '\"'$l'\"';))\
+  $(and $(Cores),echo '\#' Import file names for cores;) \
+  $(foreach l,$(Cores),\
+    echo set_global_assignment -name QXP_FILE \
+    $(foreach found,$(firstword \
+                       $(foreach c,$(call HdlCoreRefDir,$l,$(HdlTarget)) \
+                                   $(call HdlCoreRefDir,$l,$(call HdlGetFamily,$(HdlTarget))),\
+                                 $(if $(realpath $c),$c))),\
+	$(if $(found),\
+           $(call FindRelative,$(TargetDir),$(found))/$l.qxp,\
+           $(error No altera core ($l.qxp) at $(abspath $(call HdlCoreRefDir,$l,$(call HdlGetFamily,$(HdlTarget)))))));)\
+  $(if $(findstring $(HdlMode),core worker platform application),\
     echo '\#' Assignments for building cores; \
     echo set_global_assignment -name AUTO_EXPORT_INCREMENTAL_COMPILATION on; \
+    echo set_global_assignment -name INCREMENTAL_COMPILATION_EXPORT_FILE $(Core)$(HdlBin); \
     echo set_global_assignment -name INCREMENTAL_COMPILATION_EXPORT_NETLIST_TYPE POST_SYNTH;) \
   $(if $(findstring $(HdlMode),library),\
     echo '\#' Assignments for building libraries; \
@@ -124,15 +155,17 @@ QuartusMakeQsf=\
 HdlToolCompile=\
   echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/quartus-$(Core).out.;\
   rm -r -f db incremental_db *.qxp *.rpt *.summary *.qpf *.qdf $(notdir $@); \
-  $(QuartusMakeQsf)\
+  $(QuartusMakeQsf) cat -n $(Core).qsf;\
   set -e; $(call OcpiDbgVar,HdlMode,xc) \
-  $(if $(findstring $(HdlMode),core worker),\
+  $(if $(findstring $(HdlMode),core worker platform application),\
     $(call DoAltera,quartus_map --write_settings_files=off $(Core)); \
     $(call DoAltera,quartus_cdb --merge --write_settings_files=off $(Core)); \
     $(call DoAltera,quartus_cdb --incremental_compilation_export --write_settings_files=off $(Core))) \
   $(if $(findstring $(HdlMode),library),\
     $(call DoAltera,quartus_map --analysis_and_elaboration --write_settings_files=off $(Core))); \
 
+#    $(call DoAltera,quartus_map --analysis_and_elaboration --write_settings_files=off $(Core)); \
+#    $(call DoAltera,quartus_cdb --incremental_compilation_import=on --write_settings_files=off $(Core)); \
 # When making a library, quartus still wants a "top" since we can't precompile 
 # separately from synthesis (e.g. it can't do what vlogcomp can with isim)
 # Need to be conditional on libraries

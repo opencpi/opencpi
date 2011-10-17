@@ -67,8 +67,9 @@
 #include "Cp289ExecutableDevice.h"
 
 
-namespace CU = OCPI::Util;
-namespace CC = OCPI::Container;
+namespace OA = OCPI::API;
+namespace OU = OCPI::Util;
+namespace OC = OCPI::Container;
 
 #if 0
 /*
@@ -390,7 +391,7 @@ namespace OCPI {
       debug << ")" << std::flush;
 
       if (!numProps) {
-        CU::PValue *pvals = m_container->getProperties();
+        OA::PValue *pvals = m_container->getProperties();
         for (numProps = 0; pvals[numProps].name; numProps++)
           ;
         /*
@@ -419,7 +420,7 @@ namespace OCPI {
         else if (std::strcmp (propertyId, "PRODUCER_LOG_LEVEL") == 0)
           queryProducerLogLevel (property);
         else {
-          CU::PValue *p = m_container->getProperty(propertyId);
+          OA::PValue *p = m_container->getProperty(propertyId);
           if (p) {
             switch (p->type) {
 #undef OCPI_DATA_TYPE_H
@@ -430,12 +431,12 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
 #undef SCA_SIMPLE
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                        \
-              case CU::Prop::Scalar::OCPI_##pt: {		      \
+              case OA::OCPI_##pt: {	      \
               CORBA::c typed_value = p->v##pt;                \
               property.value <<= h; \
               break; }
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
-              case CU::Prop::Scalar::OCPI_String:        {        \
+              case OA::OCPI_String:        {        \
               property.value <<= p->vString; \
               break; }
               OCPI_PROPERTY_DATA_TYPES

@@ -48,7 +48,7 @@ namespace OCPI {
     class Worker;
     class ExternalPort;
 
-    // Port connection dependency data. 
+    // Port connection dependency data: what is communicated between containers
     struct PortConnectionDesc
     {
       OCPI::RDT::Descriptors        data;        // Connection data
@@ -67,47 +67,24 @@ namespace OCPI {
     /**********************************
      * Port data structure
      *********************************/  
+    const unsigned DEFAULT_NBUFFERS = 2;
+    const unsigned DEFAULT_BUFFER_SIZE = 2*1024;
     class PortData
     {
       bool m_isProvider; // perhaps overriding bidirectional
       PortConnectionDesc  connectionData;      // Port Connection Dependency data
+      // Defaults when no other source provides this.
+      // (protocol or port metadata, or port or connection params)
 
     public:
       virtual ~PortData(){};
       inline bool isProvider() { return m_isProvider; }
       OCPI::OS::uint8_t    external;               // connected externally ?
       virtual inline PortConnectionDesc &  getData(){return connectionData;}
-
-
-      PortData() : external(0) 
-        {
-          connectionData.port = reinterpret_cast<PortDesc>(this);
-        }
-
-    PortData( bool isProvider )
-      : m_isProvider(isProvider), external(0)
-        {
-          connectionData.port = reinterpret_cast<PortDesc>(this);
-        }
-#ifdef NEEDED
-      // FIXME: why is his just not the default constructor?
-        PortData & operator = ( const PortData & lhs )
-          {
-            memcpy(&connectionData,&lhs.connectionData,sizeof(PortConnectionDesc));
-            external = lhs.external;
-            return *this;
-          }
-      // FIXME: where is this happening?
-        PortData( PortData& lhs ) 
-#if 0 // a test to see if it is used anywhere
-          {
-            *this = lhs;
-          }
-#else
-	;
-#endif
-#endif
-
+      PortData();
+      PortData(const OCPI::Metadata::Port &mPort, bool isProvider, unsigned xferOptions,
+	       const OCPI::Util::PValue *params = NULL);
+      void setPortParams(const OCPI::Metadata::Port &mPort, const OCPI::Util::PValue *params);
     };
 
 
@@ -116,10 +93,10 @@ namespace OCPI {
     protected:
 
       OCPI::RDT::Desc_t &myDesc; // convenience
-
       const OCPI::Metadata::Port m_metaPort;
 
-      BasicPort(const OCPI::Metadata::Port & metaData, bool isProvider);
+      BasicPort(const OCPI::Metadata::Port &mPort, bool isProvider, unsigned xferOptions,
+		const OCPI::Util::PValue *params);
       virtual ~BasicPort();
       inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
       // called after connection parameters have changed.
@@ -142,7 +119,7 @@ namespace OCPI {
       bool m_canBeExternal;
       // This is here so we own this storage while we pass back references.
       Port(Container &container, const OCPI::Metadata::Port &mport, bool isProvider,
-	   const OCPI::Util::PValue *props = NULL);
+	   unsigned options, const OCPI::Util::PValue *params = NULL);
       virtual ~Port(){}
       Container &container() const;
 

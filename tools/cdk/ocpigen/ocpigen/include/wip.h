@@ -37,17 +37,19 @@
 #include <stdint.h>
 #include <string.h>
 #include <vector>
+#include <list>
 #include "OcpiPValue.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiMetadataWorker.h"
 #include "ezxml.h"
+#include "cdkutils.h"
 
-namespace CM=OCPI::Metadata;
-namespace CP=OCPI::Util::Prop;
-namespace CE=OCPI::Util::EzXml;
+namespace OM=OCPI::Metadata;
+namespace OE=OCPI::Util::EzXml;
 namespace OU=OCPI::Util;
+namespace OA=OCPI::API;
 
 #define myCalloc(t, n) ((t *)calloc(sizeof(t), (n)))
 inline void *myCrealloc_(void *p, size_t s, size_t o, size_t add) {
@@ -64,8 +66,6 @@ inline unsigned long roundup(unsigned long n, unsigned long grain) {
   return (n + grain - 1) & ~(grain - 1);
 }
 
-typedef OCPI::Util::Prop::Scalar::Type PropertyType;
-
 enum ControlOp {
 #define CONTROL_OP(x, c, t, s1, s2, s3)  ControlOp##c,
   OCPI_CONTROL_OPS
@@ -75,10 +75,12 @@ enum ControlOp {
 
 class Port;
 
-// We derive a class to implement xi:include parsing
-class Protocol : public CM::Protocol {
- public:
-  Port *m_port;
+// We derive a class to implement xi:include parsing, file names, etc.
+class Protocol : public OU::Protocol {
+public:
+  Protocol(Port &port);
+  Port &m_port;
+  const char *parse(const char *file, ezxml_t prot = NULL);
   const char *parseOperation(ezxml_t op);
 };
 
@@ -95,6 +97,7 @@ struct WDI {
   bool isOptional;
   unsigned minBufferCount;
   unsigned nOpcodes;
+  unsigned bufferSize;
 };
 // OCP_SIGNAL_I(name,
 // OCP_SIGNAL_IV(name,
@@ -224,7 +227,7 @@ struct Clock {
   Port *port;
   bool assembly; // This clock is at the assembly level
 };
-struct Worker;
+class Worker;
 struct Connection;
 union Profiles {
     WDI wdi;
@@ -287,28 +290,18 @@ class LocalMemory {
     unsigned int sizeOfLocalMemory;
 };
 
-typedef CP::Member Simple;
-
-#if 0
-struct Operation {
-  const char *name;
-  bool isTwoWay; // not supported much...
-  unsigned nArgs;
-  CP::Member *args; // This class is overkill here, but we need most of it.
-};
-#endif
-typedef OCPI::Util::Prop::Property Property;
-
-struct Control {
+typedef std::list<OU::Property *> Properties;
+typedef Properties::const_iterator PropertiesIter;
+class Control {
+ public:
+  Control();
   uint64_t sizeOfConfigSpace;
   bool writableConfigProperties;
   bool readableConfigProperties;
   bool sub32BitConfigProperties;
   uint32_t controlOps; // bit mask
-  unsigned nProperties;
-  Property *properties; // when null we're just counting
+  Properties properties;
   unsigned offset;// temporary while properties are being parsed.
-  Property *prop; // temporary while properties are being parsed;  When null we're just counting
 };
 
 enum Endian {
@@ -339,8 +332,8 @@ struct Connection {
   InstancePort *external; // external assembly port
 };
 struct InstanceProperty {
-  Property *property;
-  CP::Scalar::Value value;
+  OU::Property *property;
+  OU::Value value;
 };
 struct Instance {
   const char *name;
@@ -373,11 +366,14 @@ struct InstancePort {
   // Information for making the connection, perhaps tieoff etc.
   OcpAdapt ocp[N_OCP_SIGNALS];
 };
-struct Assembly {
+typedef std::list<Worker *> Workers;
+typedef Workers::const_iterator WorkersIter;
+class Assembly {
+ public:
+  Assembly();
   bool isContainer;
-  unsigned nWorkers;
   Worker *outside;
-  Worker *workers;
+  Workers workers;
   unsigned nInstances;
   Instance *instances;
   unsigned nConnections;
@@ -437,8 +433,7 @@ static inline bool masterIn(Port *p) {
 #define VERH ".vh"
 #define BOOL(b) ((b) ? "true" : "false")
 extern const char
-  *dumpDeps(const char *top),
-  **includes, *container, *platform, *device, *depFile, *load,
+  *container, *platform, *device, *load,
   *openOutput(const char *name, const char *outDir, const char *prefix,
 	      const char *suffix, const char *ext, const char *other, FILE *&f),
   *propertyTypes[],
@@ -468,9 +463,7 @@ extern void
   addInclude(const char *),
   addDep(const char *dep, bool child),
   emitWorker(FILE *f, Worker *w),
-  cleanWIP(Worker *w),
-  printgen(FILE *f, const char *comment, const char *file, bool orig = false);
+  cleanWIP(Worker *w);
 
-extern const char *esprintf(const char *fmt, ...);
 
 #endif

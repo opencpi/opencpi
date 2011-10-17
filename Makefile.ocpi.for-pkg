@@ -170,7 +170,7 @@ $(EXPORTLIB): $(UNIXLIB)
 
 # Note the "sort" below.  It gets rid of duplicates, but messes with the ordering.
 $(UNIXSHLIB): $(OBJECTS)
-	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) \
+	$(CXX) $(OCPI_SHARED_LIBRARIES_FLAGS) $(SHARED) -o "$@" $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS)) $(EXTRALIBOBJS) \
 	       	$(patsubst %,-L%$(OBJDIR),$(dir $(ALLLIBS))) \
 		$(sort $(addprefix -L,$(dir $(SYSLIBS)))) \
 		$(addprefix -l,$(notdir $(ALLLIBS) $(SYSLIBS))) \

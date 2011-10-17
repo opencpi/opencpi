@@ -84,6 +84,8 @@ static void dumpList( std::list<OCPI::Util::Block>& list )
             (*it).aligned_addr, 
             (*it).size );
   }
+#else
+  (void)list;
 #endif
 
 }

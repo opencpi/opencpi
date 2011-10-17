@@ -150,14 +150,14 @@ CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
     TUPRINTF("gpp: Caught an int exception while %s = %d\n", msg,ii );        \
     throw;                                                                \
   }                                                                        \
-  catch( std::string& stri ) {                                                \
-    TUPRINTF("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
-    throw;                                                                \
-  }                                                                        \
   catch ( OCPI::Util::EmbeddedException& eex ) {                                \
     TUPRINTF(" gpp: Caught an embedded exception while %s:\n", msg);        \
     TUPRINTF( " error number = %d", eex.m_errorCode );                        \
     TUPRINTF( " aux info = %s\n", eex.m_auxInfo.c_str() );                \
+    throw;                                                                \
+  }                                                                        \
+  catch( std::string& stri ) {                                                \
+    TUPRINTF("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
     throw;                                                                \
   }                                                                        \
   catch( ... ) {                                                        \

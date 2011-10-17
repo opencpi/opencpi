@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
  *    Mercury Federal Systems, Incorporated
  *    1901 South Bell Street
@@ -32,26 +32,13 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <limits.h>
-#include <stdio.h>
-#include "OcpiUtilPropertyType.h"
+#ifndef OCPIDDS_H
+#define ODPIDDS_H
+#include "cdkutils.h"
+extern const char
+  *emitProtocol(const char *outDir, const char *file, const char *structName),
+  *emitIDL(const char *outDir, const char *protoFile);
+extern void
+  addInclude(const char *inc);
+#endif
 
-namespace OCPI {
-  namespace Util {
-    namespace Prop {
-      const char *Scalar::names[] = {
-        "None",
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) #pretty,
-        OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-        0
-      };
-      uint8_t Scalar::sizes[] = {
-	0,// for OCPI_NONE
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) bits,
-	OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-      };
-    }
-  }
-}

@@ -168,7 +168,7 @@ main(int argc, char **argv) {
 	asprintf(&root, "%s/%s", outDir, slash ? slash + 1 : root);
       }
 #endif
-      Worker *w = myCalloc(Worker, 1);
+      Worker *w = new Worker();
       if ((err = parseWorker(*ap, NULL, w)))
 	fprintf(stderr, "For file %s: %s\n", *ap, err);
       else if (doDefs && (err = emitDefsHDL(w, root)))

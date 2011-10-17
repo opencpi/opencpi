@@ -801,6 +801,9 @@ UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/include 
 UTIL_LIBS = $(OCPI_BASE_DIR)/core/local/util/util
 
+CDKUTILS_EXPORTS = $(OCPI_BASE_DIR)/tools/cdk/cdkutils/include
+CDKUTILS_LIBS = $(OCPI_BASE_DIR)/tools/cdk/cdkutils/cdkutils
+
 ifeq ($(SCAVERSION),2.2)
 ORB_SERVICES_EXPORTS = $(OCPI_BASE_DIR)/core/corba/orb_services/cf22log/idl
 else

@@ -545,8 +545,8 @@ query (CF::Properties & props)
     CORBA::ULong pc = 0;
 
     for (CORBA::ULong pi=0; pi<numProps; pi++) {
-      if (cprops[pi].m_isReadable && !cprops[pi].isTest) {
-        props[pc++].id = CORBA::string_dup (cprops[pi].m_name);
+      if (cprops[pi].m_isReadable && !cprops[pi].m_isTest) {
+        props[pc++].id = CORBA::string_dup (cprops[pi].m_name.c_str());
       }
     }
 

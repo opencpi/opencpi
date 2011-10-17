@@ -501,14 +501,14 @@ int gpp_cont(int /* argc */, char** /* argv */, const char *protocol)
     catch ( int& ii ) {
       printf("gpp: Caught an int exception = %d\n", ii );
     }
-    catch( std::string& stri ) {
-      printf("gpp: Caught a string exception = %s\n", stri.c_str() );
-    }
     catch ( OCPI::Util::EmbeddedException& eex ) {                        
       printf(" \n gpp main: Caught an embedded exception");  
       printf( " error number = %d", eex.m_errorCode );                        
       printf(" Error = %s\n", eex.getAuxInfo() );
     }                                                               
+    catch( std::string& stri ) {
+      printf("gpp: Caught a string exception = %s\n", stri.c_str() );
+    }
     catch( ... ) {
       printf("gpp: Caught an unknown exception\n" );
     }

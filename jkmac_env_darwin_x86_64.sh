@@ -122,7 +122,20 @@ export OCPI_PPP_INCLUDE_DIR=
 # Set this to "1" to include the OFED IBVERBS transfer driver
 export OCPI_HAVE_IBVERBS=0
 
+# #### OpenCL exports ##################################################### #
+
+#export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
+export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl_container/impl/include
+export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
+export OCPI_OCL_OBJS=/Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/OpenCL.framework/Versions/Current/OpenCL
 # ######################################################################### #
+
+export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/lib/rcc
+export OCPI_SMB_SIZE=100000000
+
+# #########  OpenCV 
+export OCPI_HAVE_OPENCV=0
+export OCPI_OPENCV_HOME=/usr/local
 
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

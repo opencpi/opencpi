@@ -85,7 +85,8 @@ endif
 ################################################################################
 # We are a lot like an HDL worker (and thus a core)
 # The implementation xml file is HdlAssembly, not HdlImplementation
-# Otherwise we pretty much just build the worker
+# Otherwise we pretty much just build the worker -
+# which is the "app" without container or the platform
 Core:=$(CwdName)
 # In case the tools need a black box to find this core we are building,
 # The empty module will just be a link to the defs file.
@@ -113,8 +114,8 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
 ################################################################################
 # At this point we have basically built the app cores, and if needed, the
 # black box libraries, and we have recursed for the various tools.
-# (i.e. run make per tool, with all the targets for a tool built in one "make").
-# Now we build the container core on top of the app, only for synthesis.
+# (i.e. have run "make" per tool, with all the targets for a tool built in one "make").
+# Now we build the container core on top of the app core, only for synthesis.
 ifndef HdlSkip
 ifdef HdlSimTool
 $(info No container core built for simulation tool $(HdlToolSet))
@@ -123,7 +124,7 @@ ifndef Container
 Container=mkOCApp-noADC-3w.v
 endif
 ContainerRtl=$(HdlPlatformsDir)/../containers/$(Container)
-# Too bad we can't reuse what is in hdl-core2.mk
+# Too bad we can't reuse what is in hdl-core2.mk a second time here
 ContainerModule:=mkOCApp4B
 
 
@@ -131,25 +132,24 @@ ContainerModule:=mkOCApp4B
 #$(OutDir)target-$1/$(Worker)_bb/$(call HdlToolLibRef,$(Worker)_bb,$1):
 #	$(AT)ln -s . $(OutDir)target-$1/$(Worker)_bb/$1
 
-# The container is built in the platform directory
+# The container (core) is built in the platform directory
 # First arg is platform
 # Second arg is part
 # Third arg is family
 define DoContainer
+$(call OcpiDbg,DoContainer($1,$2,$3,$(HdlBin)))
 
+ifdef HdlToolNeedBB
 # The link that makes the bb library be in the right place
 # namely under the family
-$(info 11=$(call HdlLibraryRefDir,$(OutDir)target-$3/$(Worker)_bb,$3))
-
 $(OutDir)target-$3/$(Worker)_bb/$3:
 	$(AT)ln -s . $(OutDir)target-$3/$(Worker)_bb/$3
-
-# The link that makes the core be in the right place
+endif
+# The link that makes the app core be in the right place
 # namely: target-<family>/<family>/<foo>.ngc
 # so we make a simple link for the family name
-$(info 12=$(OutDir)target-$3/$3)
-$(OutDir)target-$3/$3:
-	$(AT)ln -s . $(OutDir)target-$3/$3
+$(OutDir)target-$3/$3: $(OutDir)target-$3/$(Core)$(HdlBin)
+	$(AT)pwd;ln -s . $(OutDir)target-$3/$3
 
 $(OutDir)target-$1/$(Worker):
 	$(AT)mkdir $$@

@@ -186,10 +186,10 @@ namespace OCPI {
         public Parent<Ext>,
         public Port {
     protected:
-      PortBase<Wrk,Prt,Ext>(Wrk &worker, const OCPI::Util::PValue *props,
-			    const OCPI::Metadata::Port &mport, bool isProvider)
+      PortBase<Wrk,Prt,Ext>(Wrk &worker, const OCPI::Metadata::Port &mport, bool isProvider,
+			    unsigned xferOptions, const OCPI::Util::PValue *params)
       : Child<Wrk,Prt,port>(worker, mport.name), Port(worker.parent().parent(), mport,
-						      isProvider, props) {}
+						      isProvider, xferOptions, params) {}
     };
     extern const char *externalPort;
     template<class Prt, class Ext>

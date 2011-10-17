@@ -59,28 +59,66 @@ static const char *rccTypes[] = {"none",
   "RCCBoolean", "RCCChar", "RCCDouble", "RCCFloat", "int16_t", "int32_t", "uint8_t",
   "uint32_t", "uint16_t", "int64_t", "uint64_t", "RCCChar" };
 
+static void camel(std::string &s, const char *s1, const char *s2 = NULL, const char *s3 = NULL) {
+  s = toupper(s1[0]);
+  s += s1 + 1;
+  if (s2) {
+    s += toupper(s2[0]);
+    s += s2 + 1;
+  }
+  if (s3) {
+    s += toupper(s3[0]);
+    s += s3 + 1;
+  }
+}
+
 static void
-printMember(FILE *f, CP::Member *t, const char *prefix, unsigned &offset, unsigned &pad)
+emitStructRCC(FILE *f, unsigned nMembers, OU::Member *members, const char *indent,
+	      const char *parent);
+
+// FIXME:  a tool-time member class should have this...OCPI::Tools::RCC::Member...
+static void
+printMember(FILE *f, OU::Member *m, const char *prefix, unsigned &offset, unsigned &pad,
+	    const char *parent)
 {
-  unsigned rem = offset & (t->align - 1);
+  unsigned rem = offset & (m->m_align - 1);
   if (rem)
     fprintf(f, "%s  char         pad%u_[%u];\n",
-	    prefix, pad++, t->align - rem);
-  offset = roundup(offset, t->align);
-  if (t->type.isSequence) {
-    fprintf(f, "%s  uint32_t     %s_length;\n", prefix, t->name);
-    if (t->align > sizeof(uint32_t))
+	    prefix, pad++, m->m_align - rem);
+  offset = roundup(offset, m->m_align);
+  assert(offset == m->m_offset);
+  if (m->m_isSequence) {
+    fprintf(f, "%s  uint32_t     %s_length;", prefix, m->m_name.c_str());
+    if (offset)
+      fprintf(f, " // offset %u, 0x%x; align %u", offset, offset, m->m_align);
+    fprintf(f, "\n");
+    if (m->m_align > sizeof(uint32_t))
       fprintf(f, "%s  char         pad%u_[%u];\n",
-	      prefix, pad++, t->align - (unsigned)sizeof(uint32_t));
-    offset += t->align;
+	      prefix, pad++, m->m_align - (unsigned)sizeof(uint32_t));
   }
-  fprintf(f, "%s  %-12s %s", prefix, rccTypes[t->type.scalar], t->name);
-  if (t->type.scalar == CP::Scalar::OCPI_String)
-    fprintf(f, "[%lu]", roundup(t->type.stringLength + 1, 4));
-  if (t->type.isSequence || t->type.isArray)
-    fprintf(f, "[%u]", t->type.length);
-  fprintf(f, "; // offset %u, 0x%x\n", offset, offset);
-  offset += t->nBytes;
+  if (m->m_baseType == OA::OCPI_Struct) {
+    std::string s;
+    camel(s, parent, m->m_name.c_str());
+    fprintf(f, "  struct %s {\n", s.c_str());
+    emitStructRCC(f, m->m_nMembers, m->m_members, "  ", s.c_str());
+    fprintf(f, "  }");
+  } else
+    fprintf(f, "%s  %-12s", prefix, rccTypes[m->m_baseType]);
+  fprintf(f, "  %s", m->m_name.c_str());
+  if (m->m_baseType == OA::OCPI_String)
+    fprintf(f, "[%lu]", roundup(m->m_stringLength + 1, 4));
+  if (m->m_arrayRank)
+    for (unsigned n = 0; n < m->m_arrayRank; n++)
+      fprintf(f, "[%u]", m->m_arrayDimensions[n]);
+  if (m->m_isSequence)
+    fprintf(f, "[%u]", m->m_sequenceLength); // FIXME:  unbounded end of struct
+  fprintf(f, ";");
+  if (offset) {
+    uint32_t off = offset + (m->m_isSequence ? m->m_align : 0);
+    fprintf(f, " // offset %u, 0x%x, %u, %u", off, off, m->m_align, m->m_nBytes);
+  }
+  fprintf(f, "\n");
+  offset += m->m_nBytes;
 }
 
 static const char *
@@ -134,10 +172,11 @@ methodName(Worker *w, const char *method, const char *&mName) {
 }
 
 static void
-emitStructRCC(FILE *f, unsigned nMembers, CP::Member *members, const char *indent) {
+emitStructRCC(FILE *f, unsigned nMembers, OU::Member *members, const char *indent,
+	      const char *parent) {
   unsigned align = 0, pad = 0;
   for (unsigned n = 0; n < nMembers; n++, members++)
-    printMember(f, members, indent, align, pad);
+    printMember(f, members, indent, align, pad, parent);
 }
 
 const char *
@@ -187,38 +226,17 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	    "#define %s_N_OUTPUT_PORTS %u\n",
 	    upper, in, upper, out);
   }
-  if (w->ctl.nProperties) {
+  if (w->ctl.properties.size()) {
     fprintf(f,
 	    "/*\n"
 	    " * Property structure for worker %s\n"
 	    " */\n"
 	    "typedef struct {\n",
 	    w->implName);
-    Property *p = w->ctl.properties;
     unsigned pad = 0, align = 0;
-    for (unsigned n = 0; n < w->ctl.nProperties; n++, p++) {
-      if (p->isStructSequence) {
-	fprintf(f, "  uint32_t     %s_length;\n", p->m_name);
-	if (p->m_maxAlign > sizeof(uint32_t))
-	  fprintf(f, "  char   pad%u_[%u];\n",
-		  pad++, p->m_maxAlign - (unsigned)sizeof(uint32_t));
-	align += p->m_maxAlign;
-      }
-      if (p->isStruct) {
-	fprintf(f, "  struct %c%s%c%s {\n",
-		toupper(w->implName[0]), w->implName+1,
-		toupper(p->m_name[0]), p->m_name + 1);
-	emitStructRCC(f, p->nMembers, p->members, "  ");
-	fprintf(f, "  } %s", p->m_name);
-	if (p->isStructSequence)
-	  fprintf(f, "[%u]", p->nStructs);
-	fprintf(f, ";\n");
-      } else
-	printMember(f, p->members, "", align, pad);
-    }
-    fprintf(f,
-	    "} %c%sProperties;\n\n",
-	    toupper(w->implName[0]), w->implName + 1);
+    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+      printMember(f, *pi, "", align, pad, w->implName);
+    fprintf(f, "} %c%sProperties;\n\n", toupper(w->implName[0]), w->implName + 1);
   }
   const char *mName;
   if ((err = methodName(w, "run", mName)))
@@ -271,7 +289,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  "  .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
 	  "  .threadProfile = %u,\\\n",
 	  w->implName, upper, upper, upper, upper, upper, w->isThreaded ? 1 : 0);
-  if (w->ctl.nProperties)
+  if (w->ctl.properties.size())
     fprintf(f, "  .propertySize = sizeof(%c%sProperties),\\\n",
 	    toupper(w->implName[0]), w->implName + 1);
   for (op = 0, cp = controlOperations; *cp; cp++, op++)
@@ -302,7 +320,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 		" */\n"
 		"typedef enum {\n",
 		port->name, w->implName);
-	CM::Operation *o = port->protocol->operations();
+	OU::Operation *o = port->protocol->operations();
 	const char *puName = upperdup(port->name);
 	for (unsigned nn = 0; nn < port->protocol->nOperations(); nn++, o++)
 	  fprintf(f, "  %s_%s_%s,\n", upper, puName, upperdup(o->name().c_str()));
@@ -319,12 +337,10 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 		    " */\n"
 		    "typedef struct {\n",
 		    o->name().c_str(), port->name);
-	    emitStructRCC(f, o->nArgs(), o->args(), "");
-	    const char *oName = o->name().c_str();
-	    fprintf(f, "} %c%s%c%s%c%s;\n",
-		    toupper(w->implName[0]), w->implName + 1,
-		    toupper(port->name[0]), port->name + 1,
-		    toupper(oName[0]), oName + 1);
+	    std::string s;
+	    camel(s, w->implName, port->name, o->name().c_str());
+	    emitStructRCC(f, o->nArgs(), o->args(), "", s.c_str());
+	    fprintf(f, "} %s;\n", s.c_str());
 	  }
       }
     }
@@ -425,10 +441,9 @@ emitArtRCC(Worker *aw, const char *outDir) {
 	  OCPI_CPP_STRINGIFY(OCPI_TOOL_VERSION));
 #endif
   // Define all workers
-  Worker *w;
-  unsigned n;
-  for (w = aw->assembly.workers, n = 0; n < aw->assembly.nWorkers; n++, w++)
-    emitWorker(f, w);
+  for (WorkersIter wi = aw->assembly.workers.begin();
+       wi != aw->assembly.workers.end(); wi++)
+    emitWorker(f, *wi);
   fprintf(f, "</artifact>\n");
   if (fclose(f))
     return "Could close output file. No space?";

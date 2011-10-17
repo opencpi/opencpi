@@ -41,32 +41,30 @@
 
 namespace OCPI {
   namespace API {
-    void Property::checkTypeAlways(ScalarType ctype, unsigned n, bool write) {
+    namespace OU = OCPI::Util;
+    void Property::checkTypeAlways(BaseType ctype, unsigned n, bool write) {
       if (write && !m_info.m_isWritable)
 	throw "trying to write a non-writable property";
       if (!write && !m_info.m_isReadable)
 	throw "trying to read a non-readable property";
-      if (m_info.m_isStruct)
+      if (m_info.m_baseType == OCPI_Struct)
 	throw "struct type used as scalar type";
-      if (ctype != m_type.scalar)
+      if (ctype != m_info.m_baseType)
 	throw "incorrect type for this property";
-      if (write && n > m_type.length)
-	throw "sequence or array too long for this property";
-      if (!write && n < m_type.length)
-	throw "sequence or array not large enough for this property";
+      if (m_info.m_isSequence) {
+	if (write && n > m_info.m_sequenceLength)
+	  throw "sequence or array too long for this property";
+	if (!write && n < m_info.m_sequenceLength)
+	  throw "sequence or array not large enough for this property";
+      } else if (n > 1)
+	throw "more than one value being read or written from non-array non-sequence type";
     }
     // This is user-visible, initialized from information in the metadata
     // It is intended to be constructed on the user's stack - a cache of
     // just the items needed for fastest access
     Property::Property(Worker &w, const char *aname) :
-      m_worker(w), m_writeVaddr(0), m_readVaddr(0)
-    {
-      w.setupProperty(aname, *this);
-      // Get the metadata about this property from the worker's database.
-      if (m_info.m_isStruct) {
-	m_type.scalar = OCPI_none; // Make all scalar type checks fail
-	m_info.m_isStruct = true;
-      }
-    }
+      m_worker(w), m_writeVaddr(0), m_readVaddr(0),
+      m_info(w.setupProperty(aname, m_writeVaddr, m_readVaddr))
+    {}
   }
 }

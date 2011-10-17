@@ -95,7 +95,8 @@ namespace OCPI {
     class Port;
     class PortDelegator : public OCPI::Container::PortBase<Worker, Port, ExternalPort> {
     public:
-      PortDelegator(  Worker& w, const OCPI::Util::PValue *props, const OCPI::Metadata::Port & pmd, const char* endpoint );
+      PortDelegator(  Worker& w, const OCPI::Metadata::Port & pmd, unsigned xferOptions,
+		      const OCPI::Util::PValue *params, const char* endpoint );
       virtual ~PortDelegator();
 
       virtual void checkConnectParams(){}
@@ -132,7 +133,7 @@ namespace OCPI {
 
     public:
 
-      Port( Worker& w, const OCPI::Util::PValue *props, const OCPI::Metadata::Port & pmd,
+      Port( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params,
 	    const char * endpoint);
       virtual ~Port();
 
@@ -146,8 +147,9 @@ namespace OCPI {
 
       virtual inline OCPI::Container::PortConnectionDesc &  getData()
       {
-	ocpiAssert( m_delegateTo );
-	return m_delegateTo->getData();
+	// FIXME:  we are relying on m_params being reparsed after delegation, which is weak...
+	// ocpiAssert( m_delegateTo );
+	return m_delegateTo ? m_delegateTo->getData() : PortData::getData();
       }
 
       void setMode( ConnectionMode mode );
@@ -297,7 +299,7 @@ namespace OCPI {
 
 
       // Our initial properties
-      const OCPI::Util::PValue * m_props;
+      const OCPI::Util::PValue * m_params;
 
       PortDelegator *  m_delegateTo;
 
@@ -310,7 +312,7 @@ namespace OCPI {
     class MessagePort : public PortDelegator  {    
 
     public:
-      MessagePort( Worker& w, const OCPI::Util::PValue *props, const OCPI::Metadata::Port & pmd );
+      MessagePort( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params);
       
       void connectURL( const char* url, const OCPI::Util::PValue *myProps,
 		       const OCPI::Util::PValue *otherProps);
@@ -341,7 +343,7 @@ namespace OCPI {
 
       friend class Port;
 
-      RDMAPort( Worker& w, const OCPI::Util::PValue *props, const OCPI::Metadata::Port & pmd,
+      RDMAPort( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params,
 		const char * endpoint );
       virtual ~RDMAPort();
 

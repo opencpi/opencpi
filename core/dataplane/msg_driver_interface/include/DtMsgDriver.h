@@ -102,7 +102,7 @@ namespace DataTransfer {
 	 * of this method should cache the service object if possible so that they
 	 * can be re-used.
 	 ***************************************/
-	virtual XferServices* getXferServices( OCPI::Metadata::Protocol * protocol,
+	virtual XferServices* getXferServices( OCPI::Util::Protocol * protocol,
 					       const char* other_url,
 					       const OCPI::Util::PValue *our_props=0,
 					       const OCPI::Util::PValue *other_props=0 )=0;
@@ -237,7 +237,7 @@ namespace DataTransfer {
        *        Errors:
        *                DataTransferEx for all exception conditions
        */
-      XferServices (  OCPI::Metadata::Protocol * p, 
+      XferServices (  OCPI::Util::Protocol * p, 
 		      const char  *url,
 		      const OCPI::Util::PValue *our_props=0,
 		      const OCPI::Util::PValue *other_props=0 )
@@ -268,14 +268,14 @@ namespace DataTransfer {
        * Member access
        */
       inline std::string & url(){return m_url;}
-      inline OCPI::Metadata::Protocol * protocol(){return m_protocol;}
+      inline OCPI::Util::Protocol * protocol(){return m_protocol;}
 
                  
       virtual ~XferServices () {};
 
     private:
       int m_use_count;
-      OCPI::Metadata::Protocol * m_protocol;
+      OCPI::Util::Protocol * m_protocol;
       std::string m_url;
 
 
@@ -317,7 +317,7 @@ namespace DataTransfer {
       public XferServices
       {
       protected:
-	ConnectionBase<ConcDri, ConcConn, ConcXfer>(OCPI::Metadata::Protocol * protocol,
+	ConnectionBase<ConcDri, ConcConn, ConcXfer>(OCPI::Util::Protocol * protocol,
 						    const char* other_url,
 				  const OCPI::Util::PValue *our_props=0,
 				  const OCPI::Util::PValue *other_props=0 )						    

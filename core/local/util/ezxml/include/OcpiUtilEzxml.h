@@ -248,7 +248,7 @@ namespace OCPI {
 	hasAttrEq(ezxml_t x, const char *attrName, const char *val),
         getUNum(const char *s, uint32_t *valp),
         getUNum64(const char *s, uint64_t *valp),
-        parseBool(const char *a, unsigned length, bool *b);
+        parseBool(const char *a, bool *b);
     }
 
   }

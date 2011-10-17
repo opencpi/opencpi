@@ -40,12 +40,12 @@
 setenv OCPI_RCC_TARGET $OCPI_BUILD_HOST
 setenv OCPI_SMB_SIZE 3000000
 setenv OCPI_LIBRARY_PATH ../../../../components/lib/rcc
-if $OCPI_RCC_TARGET == darwin-x86_64 then
+if $OCPI_RUNTIME_HOST == darwin-x86_64 then
   setenv OCPI_RCC_SUFFIX dylib
-  setenv DYLD_LIBRARY_PATH ../../../../lib/$OCPI_RCC_TARGET-bin
+  setenv DYLD_LIBRARY_PATH ../../../../lib/$OCPI_RUNTIME_HOST-bin
 else
   setenv OCPI_RCC_SUFFIX so
-  setenv LD_LIBRARY_PATH ../../../../lib/$OCPI_RCC_TARGET-bin
+  setenv LD_LIBRARY_PATH ../../../../lib/$OCPI_RUNTIME_HOST-bin
 endif
 if $#argv == 1 then
   ./$argv[1] | grep Test:

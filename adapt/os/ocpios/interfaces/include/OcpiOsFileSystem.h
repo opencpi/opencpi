@@ -400,6 +400,8 @@ namespace OCPI {
         throw (std::string);
 
       //@}
+      extern const char *slashes;
+
     }
 
   }

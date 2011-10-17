@@ -69,9 +69,7 @@
 #include "OcpiUtilEzxml.h"
 
 namespace OCPI {
-  namespace CC = OCPI::Container;
-  namespace CP = OCPI::Util::Prop;
-  namespace CE = OCPI::Util::EzXml;
+  namespace OU = OCPI::Util;
   namespace Metadata {
 
     Worker::~Worker() {
@@ -85,9 +83,9 @@ namespace OCPI {
     unsigned Worker::whichProperty(const char *id) {
       Property *p = myProps;
       for (unsigned n=0; n < nProps; n++, p++)
-        if (!strcmp(p->m_name, id))
+        if (!strcmp(p->m_name.c_str(), id))
           return n;
-      throw CC::ApiError("Unknown property: \"", id, "\"", 0);
+      throw OU::ApiError("Unknown property: \"", id, "\"", 0);
     }
     Property &Worker::findProperty(const char *id) {
       return *(myProps + whichProperty(id));
@@ -107,10 +105,9 @@ namespace OCPI {
 
     // Decode based on XML, determining offsets
     Worker::Worker(ezxml_t xml)
-      : myProps(0), myPorts(0), myTests(0), nProps(0), myLocalMemories(0),
-        nPorts(0), nTests(0), nLocalMemories(0),
-        totalPropertySize(0),
-        size(0)
+      : myProps(0), myPorts(0), myTests(0), myLocalMemories(0), nProps(0),
+        nPorts(0), nTests(0), nLocalMemories(0), size(0),
+        totalPropertySize(0)
     {
       ezxml_t x;
       // First pass - just count for allocation
@@ -135,19 +132,19 @@ namespace OCPI {
       {
         if ((err = prop->parse(x, offset, readableConfigs, writableConfigs,
              sub32Configs, true)))
-          throw CC::ApiError("Invalid xml property description:", err, NULL);
-        totalPropertySize += prop->nBytes;
+          throw OU::ApiError("Invalid xml property description:", err, NULL);
+        totalPropertySize += prop->m_nBytes;
       }
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
       unsigned n = 0;
       Port *p = myPorts;
       for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++, n++)
         if (p->decode(x, n))
-          throw CC::ApiError("Invalid xml port description", 0);
+          throw OU::ApiError("Invalid xml port description", 0);
       LocalMemory* m = myLocalMemories;
       for (x = ezxml_cchild(xml, "localMemory"); x; x = ezxml_next(x), m++ )
         if (m->decode(x))
-          throw CC::ApiError("Invalid xml local memory description", 0);
+          throw OU::ApiError("Invalid xml local memory description", 0);
     }
   }
 }

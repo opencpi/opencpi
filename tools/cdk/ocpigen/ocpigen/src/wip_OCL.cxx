@@ -64,27 +64,27 @@ static const char *oclTypes[] = {"none",
   "uint32_t", "uint16_t", "int64_t", "uint64_t", "OCLChar" };
 
 static void
-printMember(FILE *f, CP::Member *t, const char *prefix, unsigned &offset, unsigned &pad)
+printMember(FILE *f, OU::Member *t, const char *prefix, unsigned &offset, unsigned &pad)
 {
-  unsigned rem = offset & (t->align - 1);
+  unsigned rem = offset & (t->m_align - 1);
   if (rem)
     fprintf(f, "%s  char         pad%u_[%u];\n",
-	    prefix, pad++, t->align - rem);
-  offset = roundup(offset, t->align);
-  if (t->type.isSequence) {
-    fprintf(f, "%s  uint32_t     %s_length;\n", prefix, t->name);
-    if (t->align > sizeof(uint32_t))
+	    prefix, pad++, t->m_align - rem);
+  offset = roundup(offset, t->m_align);
+  if (t->m_isSequence) {
+    fprintf(f, "%s  uint32_t     %s_length;\n", prefix, t->m_name.c_str());
+    if (t->m_align > sizeof(uint32_t))
       fprintf(f, "%s  char         pad%u_[%u];\n",
-	      prefix, pad++, t->align - (unsigned)sizeof(uint32_t));
-    offset += t->align;
+	      prefix, pad++, t->m_align - (unsigned)sizeof(uint32_t));
+    offset += t->m_align;
   }
-  fprintf(f, "%s  %-12s %s", prefix, oclTypes[t->type.scalar], t->name);
-  if (t->type.scalar == CP::Scalar::OCPI_String)
-    fprintf(f, "[%lu]", roundup(t->type.stringLength + 1, 4));
-  if (t->type.isSequence || t->type.isArray)
-    fprintf(f, "[%u]", t->type.length);
+  fprintf(f, "%s  %-12s %s", prefix, oclTypes[t->m_baseType], t->m_name.c_str());
+  if (t->m_baseType == OA::OCPI_String)
+    fprintf(f, "[%lu]", roundup(t->m_stringLength + 1, 4));
+  if (t->m_isSequence || t->m_arrayRank)
+    fprintf(f, "[%u]", t->m_sequenceLength);
   fprintf(f, "; // offset %u, 0x%x\n", offset, offset);
-  offset += t->nBytes;
+  offset += t->m_nBytes;
 }
 
 static const char *
@@ -145,7 +145,7 @@ methodName(Worker *w, const char *method, const char *&mName) {
 
 */
 static void
-emitStructOCL(FILE *f, unsigned nMembers, CP::Member *members, const char *indent) {
+emitStructOCL(FILE *f, unsigned nMembers, OU::Member *members, const char *indent) {
   unsigned align = 0, pad = 0;
   for (unsigned n = 0; n < nMembers; n++, members++)
     printMember(f, members, indent, align, pad);
@@ -173,34 +173,34 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
           "#endif\n\n",
           w->implName, upper, upper);
 
-  if (w->ctl.nProperties) {
+  if (w->ctl.properties.size()) {
     fprintf(f,
             "/*\n"
             " * Property structure for worker %s\n"
             " */\n"
             "typedef struct {\n",
             w->implName);
-    Property *p = w->ctl.properties;
     unsigned pad = 0, align = 0;
-    for (unsigned n = 0; n < w->ctl.nProperties; n++, p++) {
-      if (p->isStructSequence) {
-        fprintf(f, "  uint32_t %s_length;\n", p->m_name);
-        if (p->m_maxAlign > sizeof(uint32_t))
+    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
+      OU::Property *p = *pi;
+      if (p->m_isSequence) {
+        fprintf(f, "  uint32_t %s_length;\n", p->m_name.c_str());
+        if (p->m_align > sizeof(uint32_t))
           fprintf(f, "  char pad%u_[%u];\n",
-                  pad++, p->m_maxAlign - (unsigned)sizeof(uint32_t));
-        align += p->m_maxAlign;
+                  pad++, p->m_align - (unsigned)sizeof(uint32_t));
+        align += p->m_align;
       }
-      if (p->isStruct) {
+      if (p->m_baseType == OA::OCPI_Struct) {
         fprintf(f, "  struct %c%s%c%s {\n",
                 toupper(w->implName[0]), w->implName+1,
-                toupper(p->m_name[0]), p->m_name + 1);
-        emitStructOCL(f, p->nMembers, p->members, "  ");
-        fprintf(f, "  } %s", p->m_name);
-        if (p->isStructSequence)
-          fprintf(f, "[%u]", p->nStructs);
+                toupper(p->m_name.c_str()[0]), p->m_name.c_str() + 1);
+        emitStructOCL(f, p->m_nMembers, p->m_members, "  ");
+        fprintf(f, "  } %s", p->m_name.c_str());
+        if (p->m_isSequence)
+          fprintf(f, "[%u]", p->m_sequenceLength);
         fprintf(f, ";\n");
       } else
-        printMember(f, p->members, "", align, pad);
+        printMember(f, p, "", align, pad);
     }
 
     fprintf(f,
@@ -215,7 +215,7 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
           "typedef struct {\n",
           w->implName);
 
-  if (w->ctl.nProperties) {
+  if (w->ctl.properties.size()) {
     fprintf(f,"  __global %c%sProperties* properties;\n",
             toupper(w->implName[0]), w->implName + 1);
   }
@@ -347,10 +347,9 @@ emitArtOCL(Worker *aw, const char *outDir) {
 	  OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
 	  "", "", "", "");
   // Define all workers
-  Worker *w;
-  unsigned n;
-  for (w = aw->assembly.workers, n = 0; n < aw->assembly.nWorkers; n++, w++)
-    emitWorker(f, w);
+  for (WorkersIter wi = aw->assembly.workers.begin();
+       wi != aw->assembly.workers.end(); wi++)
+    emitWorker(f, *wi);
   fprintf(f, "</artifact>\n");
   if (fclose(f))
     return "Could close output file. No space?";
@@ -453,7 +452,7 @@ static const char* emitEntryPointOCL ( Worker* w,
 
   fprintf ( f, "  /* ---- Initialize the property pointer -------------------------------- */\n\n" );
 
-  if (w->ctl.nProperties)
+  if (w->ctl.properties.size())
   {
     fprintf ( f, "  self.properties = ( __global %c%sProperties* ) properties;\n\n",
               toupper ( w->implName [ 0 ] ),
@@ -577,4 +576,5 @@ static const char* emitEntryPointOCL ( Worker* w,
 
   if (fclose(f))
     return "Could close output file. No space?";
+  return 0;
 }

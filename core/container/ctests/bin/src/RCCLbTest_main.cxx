@@ -514,13 +514,13 @@ int gpp_cont(int argc, char** argv)
   catch ( int& ii ) {
     printf("gpp: Caught an int exception while %s = %d\n", "main" ,ii );
   }
-  catch( std::string& stri ) {
-    printf("gpp: Caught a string exception while %s = %s\n","main", stri.c_str() );
-  }
   catch ( OCPI::Util::EmbeddedException& eex ) {
     printf(" gpp: Caught an embedded exception while %s:\n", "main");
     printf( " error number = %d", eex.m_errorCode );
     printf( " aux info = %s\n", eex.m_auxInfo.c_str() );
+  }
+  catch( std::string& stri ) {
+    printf("gpp: Caught a string exception while %s = %s\n","main", stri.c_str() );
   }
   catch( ... ) {
     printf("gpp: Caught an unknown exception while %s\n","main" );

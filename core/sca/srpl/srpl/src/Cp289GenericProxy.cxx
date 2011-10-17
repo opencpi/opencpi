@@ -43,20 +43,20 @@
 
 #include <new>
 #include <string>
-#include <OcpiOsAssert.h>
-#include <OcpiOsMutex.h>
-#include <OcpiUtilCDR.h>
-#include <OcpiUtilIOP.h>
-#include <OcpiUtilMisc.h>
-#include <OcpiUtilAutoMutex.h>
-#include <OcpiLoggerLogger.h>
-#include <OcpiLoggerNullOutput.h>
-#include <OcpiLoggerDebugLogger.h>
-#include <OcpiContainerInterface.h>
-#include <OcpiStringifyCorbaException.h>
-#include <OcpiCFUtilLegacyErrorNumbers.h>
-#include <CF.h>
-#include <Cp289ProviderPort.h>
+#include "OcpiOsAssert.h"
+#include "OcpiOsMutex.h"
+#include "OcpiUtilCDR.h"
+#include "OcpiUtilIOP.h"
+#include "OcpiUtilMisc.h"
+#include "OcpiUtilAutoMutex.h"
+#include "OcpiLoggerLogger.h"
+#include "OcpiLoggerNullOutput.h"
+#include "OcpiLoggerDebugLogger.h"
+#include "OcpiContainerInterface.h"
+#include "OcpiStringifyCorbaException.h"
+#include "OcpiCFUtilLegacyErrorNumbers.h"
+#include "CF.h"
+#include "Cp289ProviderPort.h"
 #include "OcpiContainerApplication.h"
 #include "Cp289GenericProxy.h"
 
@@ -70,10 +70,11 @@
 
 namespace OCPI {
   namespace SCA {
-    namespace CC = OCPI::Container;
-    namespace CM = OCPI::Metadata;
-    namespace CU = OCPI::Util;
-    namespace CP = CU::Prop;
+    namespace OC = OCPI::Container;
+    namespace OM = OCPI::Metadata;
+    namespace OU = OCPI::Util;
+    namespace OA = OCPI::API;
+
     /*
      * ----------------------------------------------------------------------
      * Constructor and Destructor
@@ -91,7 +92,7 @@ namespace OCPI {
                        // spd:softpkg/implementation/code/entrypoint
                        const char *functionName,
                        const char *instanceName,
-                       OCPI::API::ContainerApplication &application,
+                       OA::ContainerApplication &application,
                        const char *namingContextIor,
                        const char *nameBinding,
                        // Optional
@@ -146,7 +147,7 @@ namespace OCPI {
        * Disconnect and release all ports.
        */
 
-      CU::AutoMutex lock (m_mutex);
+      OU::AutoMutex lock (m_mutex);
       OCPI::Logger::DebugLogger debug (*m_logger);
       
       if (m_disabled) {
@@ -169,7 +170,7 @@ namespace OCPI {
       throw (CF::PortSupplier::UnknownPort,
              CORBA::SystemException)
     {
-      CU::AutoMutex lock (m_mutex);
+      OU::AutoMutex lock (m_mutex);
       OCPI::Logger::DebugLogger debug (*m_logger);
 
       if (m_disabled) {
@@ -240,8 +241,8 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
 
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-    case CP::Scalar::OCPI_##pretty:					\
-    if (p.isSequence()) {                                                \
+    case OA::OCPI_##pretty:					\
+    if (p.m_info.m_isSequence) {                                                \
       const CORBA::StringSeq *seq;                                        \
       if (!(any >>= seq))                                                \
         oops = "property value is not correct string sequence type";        \
@@ -261,14 +262,17 @@ namespace OCPI {
 
     // For simple types (not strings) and simple sequences (not strings)
 #undef OCPI_DATA_TYPE_H
+
 #define OCPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter,bits,CORBA::Any::to_##sca(typed_value), pretty, run)
+
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter, bits, typed_value, pretty, run)
+
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                                        \
-    case CP::Scalar::OCPI_##pt:					\
+    case OA::OCPI_##pt:					\
     /* now we know its not MMIO */                                        \
-    if (p.isSequence()) {                                                \
+    if (p.m_info.m_isSequence) {                                                \
       const CORBA::c##Seq *seq;                                                \
       if (any >>= seq)                                                        \
         p.set##pt##SequenceValue((const run *)seq->get_buffer(), seq->length()); \
@@ -295,13 +299,16 @@ namespace OCPI {
     {
       // There is a slight amount of caching optimization possible
       // if we had a (redundant) name mapping to pre-established CC:Property objects.
-      OCPI::API::Property p(m_worker, name);
-      needSync = p.needsWriteSync();
+      OA::Property p(m_worker, name);
+      needSync = p.m_info.m_writeSync;
       const char *oops = 0;
-      switch (p.type()) {
+      switch (p.m_info.m_baseType) {
         OCPI_PROPERTY_DATA_TYPES
-      case CP::Scalar::OCPI_none:
-      case CP::Scalar::OCPI_scalar_type_limit:
+      case OA::OCPI_none:
+      case OA::OCPI_Struct:
+      case OA::OCPI_Type:
+      case OA::OCPI_Enum:
+      case OA::OCPI_scalar_type_limit:
         ;
       }
       if (oops)
@@ -314,13 +321,14 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store)                \
     SCA_SIMPLE(sca,corba,letter,bits,CORBA::Any::from_##sca(typed_value), pretty, run)
 #undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 #undef SCA_SIMPLE
     // For simple types (not strings) and simple sequences (not strings)
     // We allocate storage - which we could in fact preallocate, but would that avoid an extra allocation?
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                                        \
-    case CP::Scalar::OCPI_##pt:					\
-    if (p.isSequence()) {                                                \
-      unsigned size = p.sequenceSize();                                        \
+    case OA::OCPI_##pt:					\
+    if (p.m_info.m_isSequence) {						\
+      unsigned size = p.m_info.m_sequenceLength;                                        \
       /* is a sequence FIXME trycatch for allocation unless cached*/        \
       /* cached is probaby better but must not consume into any */        \
       CORBA::c##Seq *seq = new CORBA::c##Seq(size);                        \
@@ -334,36 +342,6 @@ namespace OCPI {
         /**/  
 
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)        \
-    case CP::Scalar::OCPI_##pretty: {				       \
-      unsigned length = p.stringSize();                                \
-      if (p.isSequence()) {                                        \
-        uint32_t limit = p.sequenceSize();                        \
-        CORBA::corba##Seq *seq = new CORBA::corba##Seq(limit);        \
-        seq->length(limit);                                        \
-        char **data = seq->get_buffer();                        \
-        uint32_t nSpace = limit * (length + 1);                        \
-        char *space = new char[nSpace];                                \
-        p.getStringSequenceValue(data, limit, space, nSpace);        \
-        for (unsigned i = 0; i < limit; i++)                        \
-          if (!(data[i] = CORBA::string_dup(data[i]))) {        \
-            oops =  "can't allocate string for property value";        \
-            break;                                                \
-          }                                                        \
-        if (!oops)                                                \
-          any <<= seq;                                                \
-      } else {                                                        \
-        /* we have a string, not a sequence */                        \
-        char *cp = CORBA::string_alloc(length + 1);                \
-        if (!cp)                                                \
-          oops =  "can't allocate string for property value";        \
-        else {                                                        \
-          cp[length] = '\0';                                        \
-          p.getStringValue(cp, length + 1);                        \
-          any <<= cp;                                                \
-        }                                                        \
-      }                                                                \
-    }                                                                \
-        /**/
 
     void
     OCPI::SCA::Cp289GenericProxy::
@@ -372,15 +350,47 @@ namespace OCPI {
                  bool & haveSync)
       throw (std::string)
     {
-      OCPI::API::Property p(m_worker, name);
+      OA::Property p(m_worker, name);
       if (!haveSync &&
-          ((haveSync = p.needsReadSync())))
+          ((haveSync = p.m_info.m_readSync)))
         m_worker.beforeQuery();
       const char * oops;
-      switch (p.type()) {
+      switch (p.m_info.m_baseType) {
         OCPI_PROPERTY_DATA_TYPES
-      case CP::Scalar::OCPI_none:
-      case CP::Scalar::OCPI_scalar_type_limit:
+      case OA::OCPI_String: {
+	  unsigned length = p.m_info.m_stringLength;
+	  if (p.m_info.m_isSequence) {
+	    uint32_t limit = p.m_info.m_sequenceLength;
+	    CORBA::StringSeq *seq = new CORBA::StringSeq(limit);
+	    seq->length(limit);
+	    char **data = seq->get_buffer();
+	    uint32_t nSpace = limit * (length + 1);
+	    char *space = new char[nSpace];
+	    p.getStringSequenceValue(data, limit, space, nSpace);
+	    for (unsigned i = 0; i < limit; i++)
+	      if (!(data[i] = CORBA::string_dup(data[i]))) {
+		oops =  "can't allocate string for property value";
+		break;
+	      }
+	    if (!oops)
+	      any <<= seq;
+	  } else {
+	    /* we have a string, not a sequence */
+	    char *cp = CORBA::string_alloc(length + 1);
+	    if (!cp)
+	      oops =  "can't allocate string for property value";
+	    else {
+	      cp[length] = '\0';
+	      p.getStringValue(cp, length + 1);
+	      any <<= cp;
+	    }
+	  }
+	}
+      case OA::OCPI_none:
+      case OA::OCPI_Struct:
+      case OA::OCPI_Type:
+      case OA::OCPI_Enum:
+      case OA::OCPI_scalar_type_limit:
         ;
       }
       if (oops)

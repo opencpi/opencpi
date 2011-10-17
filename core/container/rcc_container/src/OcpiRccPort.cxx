@@ -115,27 +115,6 @@ namespace OCPI {
       parent().updatePort( *this );
     }
 
-
-    void
-    RDMAPort::
-    processPortProperties(const OU::PValue* props )
-    {
-      const char *role = 0;
-      OU::findString(props, "xferRole", role);
-      if (!role)
-	OU::findString(props, "role", role);
-      if (role && 
-	  (strcasecmp(role,"flowcontrol") == 0 ||
-	   strcasecmp(role,"activeflowcontrol") == 0))
-	getData().data.role = OCPI::RDT::ActiveFlowControl;
-      OA::ULong ul;
-      if (OU::findULong(props, "bufferCount", ul))
-	getData().data.desc.nBuffers = ul;
-
-      if (OU::findULong(props, "bufferSize", ul))
-	getData().data.desc.dataBufferSize = ul;
-    }
-
     void 
     RDMAPort::
     initInputPort()
@@ -157,25 +136,19 @@ namespace OCPI {
 
     }
 
-
-
     RDMAPort::
-    RDMAPort(Worker& w, const OU::PValue *props,
-	     const OCPI::Metadata::Port & pmd,  const char * endpoint )
-      :  PortDelegator(w,props,pmd,endpoint),m_circuit(NULL)
+    RDMAPort(Worker& w, const OCPI::Metadata::Port & pmd,  const OU::PValue *params,
+	     const char * endpoint )
+      :  PortDelegator(w, pmd,
+		       (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage), // options
+		       params, endpoint),
+	 m_circuit(NULL)
     {
-
+      // This must point to our derived port class - we assume it
       getData().port = (OC::PortDesc)this;
-      getData().container_id = m_container.getId();  
-      getData().data.desc.nBuffers = (pmd.minBufferCount == 0) ? OM::Port::DEFAULT_NBUFFERS : pmd.minBufferCount;
-      getData().data.desc.dataBufferSize = (pmd.minBufferSize == 0)  ? OM::Port::DEFAULT_BUFFER_SIZE : pmd.minBufferSize;
-      getData().data.role = OCPI::RDT::ActiveMessage;
-      getData().data.options =
-	(1 << OCPI::RDT::ActiveFlowControl) |
-	(1 << OCPI::RDT::ActiveMessage);
 
-
-      processPortProperties( props );
+      // For now, only the RCC containers can have optional endpoints.
+      // FIXME:  this needs to be generic
       if ( endpoint ) {
 	strcpy( getData().data.desc.oob.oep, endpoint );
       }
@@ -801,9 +774,9 @@ namespace OCPI {
     }
 
     Port::
-    Port( Worker& w, const OCPI::Util::PValue *props, const OCPI::Metadata::Port & pmd,
-	 const char * endpoint)
-      : PortDelegator( w, props, pmd, endpoint),m_props(props), m_delegateTo(NULL)
+    Port( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params, 
+	  const char * endpoint)
+      : PortDelegator( w, pmd, 0, params, endpoint), m_params(params), m_delegateTo(NULL)
     {
       if ( endpoint ){
 	m_endpoint = endpoint;
@@ -816,10 +789,10 @@ namespace OCPI {
     {
       if ( mode == CON_TYPE_RDMA ) {
 	if ( m_delegateTo ) delete m_delegateTo;
-	m_delegateTo = new RDMAPort( parent(), m_props, metaPort(), m_endpoint.c_str() );
+	m_delegateTo = new RDMAPort( parent(), metaPort(), m_params, m_endpoint.c_str() );
       }
       else {
-	m_delegateTo = new MessagePort( parent(), m_props, metaPort() );
+	m_delegateTo = new MessagePort( parent(), metaPort(), m_params );
       }
 
     }
@@ -840,10 +813,11 @@ namespace OCPI {
     }
 
     PortDelegator::
-    PortDelegator( Worker& w, const OCPI::Util::PValue *props, const OCPI::Metadata::Port & pmd, const char* /*endpoint*/ )
-      :  OCPI::Container::PortBase< Worker, OCPI::RCC::Port, ExternalPort>(w, props, pmd, pmd.provider),
-     m_dtPort(NULL), m_portOrdinal(pmd.ordinal), m_mutex(m_container) 
-      
+    PortDelegator( Worker& w, const OCPI::Metadata::Port & pmd, unsigned xferOptions,
+		   const OCPI::Util::PValue *params, const char* /*endpoint*/ )
+      :  OCPI::Container::PortBase< Worker, OCPI::RCC::Port, ExternalPort>
+	 (w, pmd, pmd.provider, xferOptions, params),
+	 m_dtPort(NULL), m_portOrdinal(pmd.ordinal), m_mutex(m_container) 
     {
       
     }
@@ -852,7 +826,12 @@ namespace OCPI {
     PortDelegator::    
     getBufferCount() 
     {
+#if 1
+      return getData().data.desc.nBuffers;
+#else
+    FIXME: refactor the parts of the RDMA descriptor that is common for message ports.
       return (m_metaPort.minBufferCount == 0) ? OM::Port::DEFAULT_NBUFFERS : m_metaPort.minBufferCount;
+#endif
     };
   
     PortDelegator::    

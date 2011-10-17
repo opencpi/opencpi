@@ -40,10 +40,10 @@
 
 namespace OCPI {
   namespace Metadata {
-
+    namespace OU = OCPI::Util;
     typedef uint32_t PortOrdinal;
     // FIXME:  use a pointer to a protocol, and share protocols in the artifact xml
-    class Port : public Protocol {
+    class Port : public OU::Protocol {
       friend class Worker;
       // Describe a port
       bool decode(ezxml_t x, PortOrdinal ord);
@@ -53,17 +53,10 @@ namespace OCPI {
       const char *   name;
       PortOrdinal    ordinal;
       bool           provider;
-      bool           bidirectional;
       bool           optional;
-
-
-      static const unsigned
-        DEFAULT_NBUFFERS,
-        DEFAULT_BUFFER_SIZE;
-      uint32_t minBufferSize;
-      uint32_t minBufferCount;
-      uint32_t maxBufferSize;
-      uint32_t dataValueWidthInBytes;
+      bool           bidirectional;   // implementation-defined value
+      uint32_t       minBufferCount;  // implementation-defined value
+      uint32_t       bufferSize;      // metadata protocol override, if non-zero
       ezxml_t        myXml;
     };
 

@@ -35,7 +35,6 @@
 #ifndef OCPI_METADATA_LOCAL_MEMORY_H
 #define OCPI_METADATA_LOCAL_MEMORY_H
 
-#include "OcpiUtilProtocol.h"
 #include "ezxml.h"
 
 #include <string>
@@ -44,7 +43,7 @@ namespace OCPI
 {
   namespace Metadata
   {
-    class LocalMemory : public Protocol
+    class LocalMemory
     {
       private:
         friend class Worker;

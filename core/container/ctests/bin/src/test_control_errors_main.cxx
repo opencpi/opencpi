@@ -912,14 +912,14 @@ int  main( int argc, char** argv)
     ca =
       createContainers(endpoints, event_manager, (bool)OCPI_USE_POLLING);
   }
-  catch( std::string& err ) {
-    printf("Got a string exception while creating containers = %s\n", err.c_str() );
-    exit( -1 );
-  }
   catch( OCPI::Util::EmbeddedException& ex ) {
     printf("Create containers failed with exception. errorno = %d, aux = %s\n",
            ex.getErrorCode(), ex.getAuxInfo() );
     exit(-1);
+  }
+  catch( std::string& err ) {
+    printf("Got a string exception while creating containers = %s\n", err.c_str() );
+    exit( -1 );
   }
   catch( ... ) {
     printf("Got an unknown exception while creating containers\n");

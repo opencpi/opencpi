@@ -52,6 +52,9 @@
  * ----------------------------------------------------------------------
  */
 
+namespace OCPI {
+  namespace OS {
+
 /*
  * Unix file names are very close to our "abstract" file names. In fact,
  * our abstract names can be used as a native name. In the other direction,
@@ -59,14 +62,14 @@
  */
 
 std::string
-OCPI::OS::FileSystem::toNativeName (const std::string & name)
+FileSystem::toNativeName (const std::string & name)
   throw (std::string)
 {
   return name;
 }
 
 std::string
-OCPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
+FileSystem::fromNativeName (const std::string & nativeName)
   throw (std::string)
 {
   std::string name;
@@ -235,7 +238,7 @@ OCPI::OS::FileSystem::fromNativeName (const std::string & nativeName)
  */
 
 std::string
-OCPI::OS::FileSystem::joinNames (const std::string & dir,
+FileSystem::joinNames (const std::string & dir,
                                 const std::string & name)
   throw (std::string)
 {
@@ -259,14 +262,14 @@ OCPI::OS::FileSystem::joinNames (const std::string & dir,
 }
 
 std::string
-OCPI::OS::FileSystem::absoluteName (const std::string & name)
+FileSystem::absoluteName (const std::string & name)
   throw (std::string)
 {
   return joinNames (cwd(), name);
 }
 
 std::string
-OCPI::OS::FileSystem::directoryName (const std::string & name)
+FileSystem::directoryName (const std::string & name)
   throw (std::string)
 {
   std::string::size_type slashPos = name.rfind ('/');
@@ -283,7 +286,7 @@ OCPI::OS::FileSystem::directoryName (const std::string & name)
 }
 
 std::string
-OCPI::OS::FileSystem::relativeName (const std::string & name)
+FileSystem::relativeName (const std::string & name)
   throw (std::string)
 {
   std::string::size_type slashPos = name.rfind ('/');
@@ -303,7 +306,7 @@ OCPI::OS::FileSystem::relativeName (const std::string & name)
 }
 
 std::string
-OCPI::OS::FileSystem::getPathElement (std::string & path,
+FileSystem::getPathElement (std::string & path,
                                      bool ignoreInvalid,
                                      char separator)
   throw (std::string)
@@ -356,48 +359,48 @@ OCPI::OS::FileSystem::getPathElement (std::string & path,
  */
 
 std::string
-OCPI::OS::FileSystem::cwd ()
+FileSystem::cwd ()
   throw (std::string)
 {
   char buffer[1024];
 
   if (!::getcwd (buffer, 1024)) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 
   return fromNativeName (buffer);
 }
 
 void
-OCPI::OS::FileSystem::cd (const std::string & name)
+FileSystem::cd (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
 
   if (::chdir (nativeName.c_str())) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 }
 
 void
-OCPI::OS::FileSystem::mkdir (const std::string & name)
+FileSystem::mkdir (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
 
   if (::mkdir (nativeName.c_str(), 0777)) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 }
 
 void
-OCPI::OS::FileSystem::rmdir (const std::string & name)
+FileSystem::rmdir (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
 
   if (::rmdir (nativeName.c_str())) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 }
 
@@ -407,8 +410,8 @@ OCPI::OS::FileSystem::rmdir (const std::string & name)
  * ----------------------------------------------------------------------
  */
 
-OCPI::OS::FileIterator
-OCPI::OS::FileSystem::list (const std::string & dir,
+FileIterator
+FileSystem::list (const std::string & dir,
                            const std::string & pattern)
   throw (std::string)
 {
@@ -422,7 +425,7 @@ OCPI::OS::FileSystem::list (const std::string & dir,
  */
 
 bool
-OCPI::OS::FileSystem::exists (const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtime)
+FileSystem::exists (const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtime)
   throw ()
 {
   std::string nativeName = toNativeName (name);
@@ -453,14 +456,14 @@ OCPI::OS::FileSystem::exists (const std::string & name, bool * isDir, uint64_t *
 }
 
 unsigned long long
-OCPI::OS::FileSystem::size (const std::string & name)
+FileSystem::size (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
 
   struct stat info;
   if (stat (nativeName.c_str(), &info)) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 
   if ((info.st_mode & S_IFREG) != S_IFREG) {
@@ -471,14 +474,14 @@ OCPI::OS::FileSystem::size (const std::string & name)
 }
 
 std::time_t
-OCPI::OS::FileSystem::lastModified (const std::string & name)
+FileSystem::lastModified (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
 
   struct stat info;
   if (stat (nativeName.c_str(), &info)) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 
   return info.st_mtime;
@@ -491,7 +494,7 @@ OCPI::OS::FileSystem::lastModified (const std::string & name)
  */
 
 void
-OCPI::OS::FileSystem::rename (const std::string & srcName,
+FileSystem::rename (const std::string & srcName,
                              const std::string & destName)
   throw (std::string)
 {
@@ -499,17 +502,20 @@ OCPI::OS::FileSystem::rename (const std::string & srcName,
   std::string destNativeName = toNativeName (destName);
 
   if (::rename (srcNativeName.c_str(), destNativeName.c_str())) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
 }
 
 void
-OCPI::OS::FileSystem::remove (const std::string & name)
+FileSystem::remove (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
 
   if (unlink (nativeName.c_str())) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+    throw Posix::getErrorMessage (errno);
   }
+}
+    const char *FileSystem::slashes = "/";
+}
 }

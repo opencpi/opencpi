@@ -36,7 +36,7 @@
 #include <memory>
 #include <unistd.h>
 #include <OcpiPValue.h>
-#include <OcpiUtilPropertyType.h>
+#include <OcpiUtilDataTypes.h>
 
 namespace OCPI {
   namespace API {
@@ -55,7 +55,7 @@ namespace OCPI {
     find(const PValue* p, const char* name) {
       if (p)
 	for (; p->name; p++)
-	  if (!strcmp(p->name, name))
+	  if (!strcasecmp(p->name, name))
 	    return p;
       return NULL;
     }
@@ -75,7 +75,7 @@ namespace OCPI {
     }
 #define OCPI_DATA_TYPE_S(sca, corba, letter, bits, run, pretty, store)	\
     bool 							\
-    find##pretty(const PValue* p, const char* name, const run &value) {	\
+    find##pretty(const PValue* p, const char* name, run &value) {	\
       const PValue *fp = find(p, name);					\
       if (fp)								\
         if (fp->type == OCPI::API::OCPI_##pretty) {	\

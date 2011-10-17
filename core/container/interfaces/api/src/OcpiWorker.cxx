@@ -42,7 +42,6 @@
 #include "OcpiContainerArtifact.h"
 
 namespace OA = OCPI::API;
-namespace OP = OCPI::Util::Prop;
 namespace OU = OCPI::Util;
 namespace OM = OCPI::Metadata;
 namespace OCPI {
@@ -88,54 +87,56 @@ namespace OCPI {
         throw ApiError("no port found with name \"", name, "\"", NULL);
       return createPort(*metaPort, props);
     }
-    void Worker::setupProperty(const char *name, OA::Property &apiProp) {
-      Metadata::Property &prop = findProperty(name);
-      apiProp.m_info = prop;
-      apiProp.m_type = prop.members->type;
-      prepareProperty(prop, apiProp);
+    OA::PropertyInfo & Worker::setupProperty(const char *name, 
+					     volatile void *&m_writeVaddr,
+					     const volatile void *&m_readVaddr) {
+      OU::Property &prop = findProperty(name);
+      prepareProperty(prop, m_writeVaddr, m_readVaddr);
+      return prop;
     }
     void Worker::setProperty(const char *name, const char *value) {
       OA::Property prop(*this, name);
-      OP::Scalar::Value v; // FIXME storage when not scalar
-      if (prop.m_info.m_isStruct)
+      OU::ValueType &vt = prop.m_info;
+      OU::Value v(vt); // FIXME storage when not scalar
+      if (vt.m_baseType == OA::OCPI_Struct)
 	throw ApiError("No support yet for setting struct properties", NULL);
-      OP::ValueType &vt = prop.m_type;
-      const char *err = v.parse(vt, value);
+      const char *err = v.parse(value);
       if (err)
         throw ApiError("Error parsing property value:\"", value, "\"", NULL);
-      switch (vt.scalar) {
+      switch (vt.m_baseType) {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		 \
 	case OA::OCPI_##pretty:					         \
-	  if (v.m_vector)						 \
+	  if (vt.m_isSequence)						 \
 	    prop.set##pretty##SequenceValue((const run*)(v.m_p##pretty), \
-					    v.m_length);		 \
+					    v.m_nElements);		 \
 	  else								 \
 	    prop.set##pretty##Value(v.m_##pretty);			 \
           break;
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-      case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
+      case OA::OCPI_none: case OA::OCPI_Struct: case OA::OCPI_Type: case OA::OCPI_Enum:
+      case OA::OCPI_scalar_type_limit:;
       }
     }
     bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value) {
       unsigned nProps;
-      OM::Property *props = getProperties(nProps);
+      OU::Property *props = getProperties(nProps);
       if (ordinal >= nProps)
 	return false;
-      OM::Property &p = props[ordinal];
-      if (p.m_isStruct || p.m_isStructSequence)
+      OU::Property &p = props[ordinal];
+      if (p.m_baseType == OA::OCPI_Struct)
 	throw OU::Error("Struct properties are unsupported");
-      OP::Member &m = p.members[0];
-      OA::Value v(m.type);
-      OA::Property a(*this, p.m_name); // FIXME clumsy because get methods take API props
-      switch (m.type.scalar) {
+      OU::Value v(p);
+      OA::Property a(*this, p.m_name.c_str()); // FIXME clumsy because get methods take API props
+      switch (p.m_baseType) {
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                         \
       case OA::OCPI_##pretty:		                                               \
-	if (v.m_vector)							               \
-	  v.m_length = get##pretty##SequenceProperty(a, v.m_p##pretty, m.type.length); \
-	else								               \
+	if (p.m_isSequence) {						\
+	  v.m_p##pretty = new run[p.m_sequenceLength]; \
+	  v.m_nElements = get##pretty##SequenceProperty(a, v.m_p##pretty, p.m_sequenceLength); \
+      } else								\
 	  v.m_##pretty = get##pretty##Property(a);                                     \
 	break;
       OCPI_PROPERTY_DATA_TYPES
@@ -143,14 +144,16 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
       case OA::OCPI_String:
-	if (v.m_vector)
-	  v.m_length = getStringSequenceProperty(a, v.m_pString, m.type.length,
-						 v.m_stringSpace,
-						 (m.type.stringLength + 1) * m.type.length);
-	else
-	  getStringProperty(a, v.m_String, m.type.stringLength + 1);
+	if (p.m_isSequence) {
+	  unsigned space = p.m_sequenceLength * (p.m_stringLength + 1);
+	  v.m_stringSpace = new char[space];
+	  v.m_nElements = getStringSequenceProperty(a, (char **)v.m_pString, p.m_sequenceLength,
+						    v.m_stringSpace, space);
+	} else
+	  getStringProperty(a, (char *)v.m_String, p.m_stringLength + 1);
 	break;
-      case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
+      case OA::OCPI_none: case OA::OCPI_Struct: case OA::OCPI_Type: case OA::OCPI_Enum:
+      case OA::OCPI_scalar_type_limit:;
       }
       v.unparse(value);
       name = p.m_name;
@@ -176,9 +179,9 @@ namespace OCPI {
 	for (const OA::PValue *p = props; p->name; p++) {
 	  OA::Property prop(*this, p->name); // exception goes out
 	  prop.checkTypeAlways(p->type, 1, true);
-	  switch (prop.m_type.scalar) {
+	  switch (prop.m_info.m_baseType) {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-	    case OP::Scalar::OCPI_##pretty:				\
+	    case OA::OCPI_##pretty:				\
 	      prop.set##pretty##Value(p->v##pretty);			\
 	      break;
             OCPI_PROPERTY_DATA_TYPES

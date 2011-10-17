@@ -55,7 +55,6 @@ namespace OCPI
     namespace OU = OCPI::Util;
     namespace OM = OCPI::Metadata;
     namespace OC = OCPI::Container;
-    namespace OP = OCPI::Util::Prop;
 
     const size_t OCLDP_LOCAL_BUFFER_ALIGN ( 16 );
 
@@ -803,22 +802,23 @@ namespace OCPI
           return isEnabled;
         }
 
-        virtual void prepareProperty ( OP::Property& md,
-                                       OA::Property& cp )
+        virtual void prepareProperty ( OU::Property& md,
+				   volatile void *&writeVaddr,
+				   const volatile void *&readVaddr)
         {
-          if ( !md.isStruct &&
-               !md.members->type.isSequence &&
-               ( md.members->type.scalar != OP::Scalar::OCPI_String ) &&
-               OP::Scalar::sizes [ md.members->type.scalar ] <= 32 &&
+          if ( md.m_baseType != OA::OCPI_Struct &&
+               !md.m_isSequence &&
+               ( md.m_baseType != OA::OCPI_String ) &&
+               OU::baseTypeSizes [ md.m_baseType ] <= 32 &&
               !md.m_writeError )
           {
-            if ( ( md.m_offset + sizeof ( md.members->type.scalar ) ) >
+            if ( ( md.m_offset + md.m_nBytes ) >
                  metadataImpl.getTotalPropertySize( ) )
             {
                throw OC::ApiError( "OCL property is out of bounds." );
             }
-            cp.m_readVaddr = (uint8_t*) myProperties + md.m_offset;
-            cp.m_writeVaddr = (uint8_t*) myProperties + md.m_offset;
+            readVaddr = (uint8_t*) myProperties + md.m_offset;
+            writeVaddr = (uint8_t*) myProperties + md.m_offset;
           }
         }
 
@@ -853,7 +853,7 @@ namespace OCPI
       void set##pretty##SequenceProperty(OA::Property &p,const run *vals, unsigned length) { \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors before write */ \
-        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_maxAlign), vals, length * sizeof(run)); \
+        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_align), vals, length * sizeof(run)); \
         *(volatile uint32_t *)(myProperties + p.m_info.m_offset) = length; \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors after write */ \
@@ -865,7 +865,7 @@ namespace OCPI
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
       virtual void set##pretty##Property(OA::Property &p, const run val) { \
         unsigned ocpi_length; \
-        if (!val || (ocpi_length = strlen(val)) > p.m_type.stringLength) \
+        if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength) \
           throw; /*"string property too long"*/; \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors before write */ \
@@ -880,14 +880,14 @@ namespace OCPI
           throw; /*"worker has errors after write */ \
       } \
       void set##pretty##SequenceProperty(OA::Property &p,const run *vals, unsigned length) { \
-        if (length > p.m_type.length) \
+        if (length > p.m_info.m_sequenceLength) \
           throw; \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors before write */ \
         char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT); \
         for (unsigned i = 0; i < length; i++) { \
           unsigned len = strlen(vals[i]); \
-          if (len > p.m_type.length) \
+          if (len > p.m_info.m_sequenceLength) \
             throw; /* "string in sequence too long" */ \
           memcpy(cp, vals[i], len+1); \
         } \
@@ -921,7 +921,7 @@ namespace OCPI
         uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset); \
         if (n > length) \
           throw; /* sequence longer than provided buffer */ \
-        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_maxAlign), \
+        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_align), \
                n * sizeof(run)); \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors after read */ \
@@ -933,7 +933,7 @@ namespace OCPI
       // and structure padding are assumed to do this. FIXME redundant length check
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
       virtual void get##pretty##Property(OA::Property &p, char *cp, unsigned length) { \
-        unsigned stringLength = p.m_type.stringLength; \
+        unsigned stringLength = p.m_info.m_stringLength; \
         if (length < stringLength + 1) \
           throw; /*"string buffer smaller than property"*/; \
         if (p.m_info.m_readError) \
@@ -946,12 +946,12 @@ namespace OCPI
           throw; /*"worker has errors after write */ \
       } \
       unsigned get##pretty##SequenceProperty \
-      (OA::Property &p, run *vals, unsigned length, char *buf, unsigned space) { \
+      (OA::Property &p, char **vals, unsigned length, char *buf, unsigned space) { \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors before read */ \
         uint32_t \
           n = *(uint32_t *)(myProperties + p.m_info.m_offset), \
-          wlen = p.m_type.stringLength + 1; \
+          wlen = p.m_info.m_stringLength + 1; \
         if (n > length) \
           throw; /* sequence longer than provided buffer */ \
         char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT); \
@@ -1069,10 +1069,13 @@ namespace OCPI
         }
 
         Port ( Worker& w,
-               const OA::PValue* props,
+               const OA::PValue* params,
                const OM::Port& mPort, // the parsed port metadata
                bool argIsProvider )
-          : OC::PortBase<Worker,Port,ExternalPort> ( w, props, mPort, argIsProvider ),
+          : OC::PortBase<Worker,Port,ExternalPort> ( w, mPort, argIsProvider,
+						     ( 1 << OCPI::RDT::ActiveFlowControl ) |
+						     ( 1 << OCPI::RDT::ActiveMessage ),
+						     params ),
             remoteIndex ( 0 ),
             m_connection ( 0 ),
             myPortOrdinal ( mPort.ordinal )
@@ -1080,20 +1083,10 @@ namespace OCPI
           m_canBeExternal = true;
 
           parent().myPorts [ myPortOrdinal ].attr->connected = false;
-          parent().myPorts [ myPortOrdinal ].dataValueWidthInBytes = mPort.dataValueWidthInBytes;
+          parent().myPorts [ myPortOrdinal ].dataValueWidthInBytes = (mPort.m_dataValueWidth + 7) / 8;
           parent().myPorts [ myPortOrdinal ].attr->optional = mPort.optional;
 
-          getData().data.role = OCPI::RDT::NoRole;
-
-          getData().data.options = ( 1 << OCPI::RDT::ActiveFlowControl ) |
-                                        ( 1 << OCPI::RDT::ActiveMessage );
-
-          bzero ( &myDesc, sizeof ( myDesc ) );
-
-          myDesc.nBuffers = mPort.minBufferCount;
-
-          myDesc.dataBufferPitch = std::max ( mPort.minBufferSize, mPort.maxBufferSize );
-          myDesc.dataBufferSize = myDesc.dataBufferPitch;
+          myDesc.dataBufferPitch = myDesc.dataBufferSize;
 
           myDesc.dataBufferBaseAddr = 0;
 
@@ -1170,7 +1163,7 @@ namespace OCPI
           myDesc.fullFlagBaseAddr = reinterpret_cast<uint64_t>( local );
 
           // Allow default connect params on port construction prior to connect
-          applyConnectParams ( props );
+          applyConnectParams ( params );
         }
 
         // All the info is in.  Do final work to (locally) establish the connection

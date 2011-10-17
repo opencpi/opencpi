@@ -68,7 +68,7 @@ $(OutDir)target-$(1)/$(2)$(HdlBin): \
    HdlSources=$$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles))
 $(OutDir)target-$(1)/$(2)$(HdlBin): \
       $$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles)) 
-	$(AT)echo Building core \"$(2)\" for target \"$$(HdlTarget)\"
+	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\"
 	$(AT)$$(HdlCompile)
 endif
 endef

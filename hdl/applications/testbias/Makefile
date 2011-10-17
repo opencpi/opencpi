@@ -37,6 +37,9 @@
 # Which component libraries should be referenced to build this app?
 Libraries=bsv util
 ComponentLibraries=../../../components
+# this line will be eliminated with a little more toolsmithing
+# at the moment there is no way for altera to search for cores.
+AssemblyWorkers=sma:sma0 sma:sma1 bias:bias
 # For which containers should the runtime xml be generated?
 # These (for now) just xml files containing HdlContainer elements.
 Containers=testbiasCont

@@ -96,7 +96,9 @@ PACKAGES += core/sca/srpl
 endif
 
 PACKAGES += tools/local/binder tools/local/tester
+PACKAGES += tools/cdk/cdkutils
 PACKAGES += tools/cdk/ocpigen
+PACKAGES += tools/cdk/ocpidds
 PACKAGES += tools/cdk/ocpiocl
 PACKAGES += tools/cdk/ocpixm
 PACKAGES += test
@@ -137,7 +139,9 @@ ALLPACKAGES = \
 	tests/framework/framework \
 	tools/local/binder \
 	tools/local/tester \
+	tools/cdk/cdkutils \
 	tools/cdk/ocpigen \
+	tools/cdk/ocpidds \
 	tools/cdk/ocpiocl \
 	tools/cdk/ocpixm \
 	core/container/ctests \
@@ -178,6 +182,12 @@ rcc:
 
 cleanrcc:
 	make -C components cleanrcc
+
+ocl:
+	make -C components ocl
+
+cleanocl:
+	make -C components cleanocl
 
 cleancomponents:
 	make -C components clean

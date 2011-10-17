@@ -121,7 +121,7 @@ namespace OCPI {
 	void get##pretty##Property(OCPI::API::Property &p, char *cp,   \
 				   unsigned length); \
       unsigned get##pretty##SequenceProperty                                  \
-	(OCPI::API::Property &p, run *vals, unsigned length, char *buf,        \
+	(OCPI::API::Property &p, char **vals, unsigned length, char *buf,        \
 	 unsigned space);
 
       OCPI_PROPERTY_DATA_TYPES
@@ -129,8 +129,9 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 
-        virtual void prepareProperty(OCPI::Metadata::Property&, OCPI::API::Property&);
-
+        virtual void prepareProperty(OCPI::Metadata::Property&,
+				     volatile void *&writeVaddr,
+				     const volatile void *&readVaddr);
 
       OCPI::Container::Port &  createInputPort(
 					       OCPI::Metadata::PortOrdinal   portId,      

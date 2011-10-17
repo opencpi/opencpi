@@ -70,53 +70,39 @@
 
 namespace OCPI {
   namespace CC = OCPI::Container;
-  namespace CE = OCPI::Util::EzXml;
+  namespace OE = OCPI::Util::EzXml;
   namespace Metadata {
 
-    const unsigned Port::DEFAULT_NBUFFERS = 1;
-    const unsigned Port::DEFAULT_BUFFER_SIZE = 2*1024;
+    //    const unsigned Port::DEFAULT_NBUFFERS = 1;
+    // const unsigned Port::DEFAULT_BUFFER_SIZE = 2*1024;
 
     Port::Port(bool prov)
-      : name(NULL), ordinal(0), provider(prov), optional(false), minBufferSize(DEFAULT_BUFFER_SIZE),
-	minBufferCount(1), maxBufferSize(0), dataValueWidthInBytes(1), myXml(0) {
+      : name(NULL), ordinal(0), provider(prov), optional(false),
+	bidirectional(false), minBufferCount(1), bufferSize(0), myXml(NULL) {
     }
 
     bool Port::decode(ezxml_t x, PortOrdinal aOrdinal) {
       myXml = x;
       name = ezxml_cattr(x, "name");
-
+      if (!name)
+	return true;
       ordinal = aOrdinal;
       printf("Port %s has ordinal = %d\n", name, ordinal );
 
-      if ( name == NULL )
-        return true;
-      if (CE::getBoolean(x, "twoWay", &m_isTwoWay) ||
-	  CE::getBoolean(x, "bidirectional", &bidirectional) ||
-	  CE::getBoolean(x, "provider", &provider))
-	return true;
-      bool found;
-      int n = CC::getAttrNum(x, "minBufferSize", true, &found);
-      if (found)
-	minBufferSize = n;
-      n = CC::getAttrNum(x, "maxBufferSize", true, &found);
-      if (found)
-	maxBufferSize = n; // no max if not specified.
-      n = CC::getAttrNum(x, "minBufferCount", true, &found);
-      if (found)
-	minBufferCount = n;
-      // backward compatibility
-      n = CC::getAttrNum(x, "minBuffers", true, &found);
-      if (found)
-	minBufferCount = n;
-      n = CC::getAttrNum(x, "optional", true, &found);
-      if (found)
-	optional = n;
-      n = CC::getAttrNum(x, "dataValueWidthInBytes", true, &found);
-      if (found)
-	dataValueWidthInBytes = n;
+      // Initialize everything from the protocol, then other attributes can override the protocol
       ezxml_t protocol = ezxml_cchild(x, "protocol");
       if (protocol)
 	Protocol::parse(protocol);
+      if (OE::getBoolean(x, "twoWay", &m_isTwoWay) ||           // protocol override
+	  OE::getBoolean(x, "bidirectional", &bidirectional) ||
+	  OE::getBoolean(x, "provider", &provider) ||
+	  OE::getBoolean(x, "optional", &optional) ||
+	  OE::getNumber(x, "minBufferCount", &minBufferCount, 0, 1) ||
+	  OE::getNumber(x, "bufferSize", &bufferSize, 0, 0))
+	return true;
+      if (bufferSize == 0)
+	bufferSize = m_defaultBufferSize; // from protocol
+	  
       // FIXME: do we need the separately overridable nOpcodes here?
       return false;
     }

@@ -88,28 +88,31 @@ namespace OCPI {
       virtual void loopback(Port &other) = 0;
     };
     class Property;
+    class PropertyInfo;
     class Worker {
       friend class Property;
-      virtual void setupProperty(const char *name, Property &prop) = 0;
-      //      virtual void setProperty(Property &prop, const PValue &val) = 0;
+      virtual PropertyInfo &setupProperty(const char *name,
+				 volatile void *&m_writeVaddr,
+				 const volatile void *&m_readVaddr) = 0;
     protected:
       virtual ~Worker();
     public:
       virtual Port &getPort(const char *name, const PValue *props = NULL) = 0;
-      // virtual void initialize() = 0; // NO THIS IS NOT ALLOWED BY THE API
       virtual void start() = 0;
       virtual void stop() = 0;
       virtual void release() = 0;
       virtual void beforeQuery() = 0;
       virtual void afterConfigure() = 0;
       virtual void test() = 0;
+      // Untyped property setting - slowest but convenient
       virtual void setProperty(const char *name, const char *value) = 0;
-      //      virtual void setProperty(const PValue &value) = 0;
-      virtual void setProperties(const PValue *props) =  0;
+      // Untyped property list setting - slow but convenient
       virtual void setProperties(const char *props[][2]) =  0;
+      // Typed property list setting - slightly safer, still slow
+      virtual void setProperties(const PValue *props) =  0;
       virtual bool getProperty(unsigned ordinal, std::string &name, std::string &value) = 0;
     protected:
-      // These macros are used by the Property methods below when the
+      // These methods are used by the Property methods below when the
       // fast path using memory-mapped access cannot be used.
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)        \
       virtual void set##pretty##Property(Property &,const run) = 0;   \
@@ -128,10 +131,10 @@ namespace OCPI {
 						     unsigned length) = 0;
 
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)     \
-      virtual void get##pretty##Property(Property &, run,            \
+      virtual void get##pretty##Property(Property &, char *,            \
 					 unsigned length) = 0;	     \
       virtual unsigned get##pretty##SequenceProperty                 \
-        (Property &, run *, unsigned length, char *buf,              \
+        (Property &, char **, unsigned length, char *buf,              \
 	 unsigned space) = 0;
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
@@ -208,30 +211,20 @@ namespace OCPI {
     class Property {
       Worker &m_worker;               // which worker do I belong to
     public:
-      void checkTypeAlways(ScalarType ctype, unsigned n, bool write);
-      inline void checkType(ScalarType ctype, unsigned n, bool write) {
+      void checkTypeAlways(BaseType ctype, unsigned n, bool write);
+      inline void checkType(BaseType ctype, unsigned n, bool write) {
 #if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
         checkTypeAlways(ctype, n, write);
 #endif
       }
-      volatile void 
-        *m_writeVaddr, *m_readVaddr;  // pointers non-null if directly usable.
-      ValueType m_type;               // cached info when not a struct
-      PropertyInfo m_info;            // to info about me FIXME
+      volatile void *m_writeVaddr;
+      const volatile void *m_readVaddr;
+      PropertyInfo &m_info;           // details about property, not defined in the API
       Property(Worker &, const char *);
-      inline const char *name() { return m_info.m_name; }
-      inline bool isWritable() { return m_info.m_isWritable; }
-      inline bool isReadable() { return m_info.m_isReadable; }
-      inline ScalarType type() { return m_type.scalar; }
-      inline bool needsWriteSync() { return m_info.m_writeSync; }
-      inline bool needsReadSync() { return m_info.m_readSync; }
-      inline unsigned sequenceSize() { return m_type.length; }
-      inline unsigned stringSize() { return m_type.stringLength; }
-      inline unsigned isSequence() { return m_type.length != 0; }
       // We don't use scalar-type-based templates (sigh) so we can control which
-      // types are supported explicitly.
-      // The "m_writeVaddr" member is only non-zero if the implementation does
-      // not produce errors and it is atomic at this data size
+      // types are supported explicitly.  C++ doesn't quite do the right thing.
+      // The "m_writeVaddr/m_readVaddr" members are only non-zero if the 
+      // implementation does not produce errors and it is atomic at this data size
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)              \
       inline void set##pretty##Value(run val) {                             \
         checkType(OCPI_##pretty, 1, true);				    \
@@ -273,7 +266,7 @@ namespace OCPI {
         m_worker.get##pretty##Property(*this, val, length);                 \
       }                                                                     \
       inline unsigned get##pretty##SequenceValue                            \
-        (run *vals, unsigned n, char *buf, unsigned space) {                \
+        (char **vals, unsigned n, char *buf, unsigned space) {                \
         checkType(OCPI_##pretty, n, false);				    \
         return m_worker.get##pretty##SequenceProperty                       \
           (*this, vals, n, buf, space);                                     \

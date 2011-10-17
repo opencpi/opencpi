@@ -36,306 +36,129 @@
 #include <cstdio>
 #include <cassert>
 #include <climits>
-#include <OcpiOsAssert.h>
-#include <OcpiUtilProperty.h>
-#include <OcpiUtilEzxml.h>
+#include "OcpiOsAssert.h"
+#include "OcpiUtilEzxml.h"
+#include "OcpiUtilProperty.h"
+
+#define PROPERTY_ATTRIBUTES OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest", "Default"
 
 namespace OCPI {
   namespace API {
     PropertyInfo::PropertyInfo()
       : m_readSync(false), m_writeSync(false), m_isWritable(false),
-	m_isReadable(false), m_readError(false), m_writeError(false),
-	m_offset(0), m_maxAlign(0), m_name(NULL), m_isStruct(false),
-	m_isStructSequence(false)
-      {}
+	m_isReadable(false), m_readError(false), m_writeError(false)
+    {}
   }
   namespace Util {
-    namespace CE = EzXml;
-    namespace Prop {
+    namespace OE = EzXml;
+    namespace OA = OCPI::API;
+    Property::Property()
+      : m_smallest(0), m_granularity(0), m_isParameter(false), m_isTest(false), m_dataOffset(0) {
+    }
+    Property::~Property() {
+    }
+    // parse a value from xml for this property, which may be a struct
+    // This actually works for any XML that might have a value for the property, including
+    // instance property values in an assembly.
+    const char *
+    Property::parseValue(ezxml_t vx, const char *unparsed, Value &value) {
+      (void)vx;
+      if (m_baseType == OA::OCPI_Struct)
+	return "Struct property values unimplemented";
+      return value.parse(unparsed);
+    }
 
-Member::Member()
-  : offset(0), bits(0), align(0), nBytes(0), hasDefault(false)
-{
-  type.scalar = OCPI::API::OCPI_scalar_type_limit;
-  type.isSequence = false;
-  type.isArray = false;
-  type.stringLength = 0;
-  type.length = 0;
-}
-const char *
-Member::parse(ezxml_t xp,
-	      unsigned &maxAlign,
-	      unsigned &argOffset,
-	      bool &sub32)
-{
-  bool found;
-  const char *err;
-  const char * n =  ezxml_cattr(xp, "Name");
-  if (!n)
-    return "Missing Name attribute in Property or Argument element";
-  name = n;
-  const char *typeName = ezxml_cattr(xp, "Type");
-  if (typeName) {
-    const char **tp;
-    for (tp = Scalar::names; *tp; tp++)
-      if (!strcasecmp(typeName, *tp))
-	break;
-    if (!*tp)
-      return esprintf("Unknown property/argument type: \"%s\"", typeName);
-    type.scalar = (Scalar::Type)(tp - Scalar::names);
-  } else
-    type.scalar = Scalar::OCPI_ULong;
-  bits = Scalar::sizes[type.scalar];
-  align = (bits + CHAR_BIT - 1) / CHAR_BIT;
-  if (align > maxAlign)
-    maxAlign = align;
-  if (align < 4)
-    sub32 = true;
-  if (type.scalar == Scalar::OCPI_String) {
-    if ((err = CE::getNumber(xp, "StringLength", &type.stringLength, &found, 0, false)) ||
-	( !found &&
-	(err = CE::getNumber(xp, "size", &type.stringLength, &found, 0, false))))
-      return err;
-    if (!found)
-      return "Missing StringLength attribute for string type";
-    if (type.stringLength == 0)
-      return "StringLength cannot be zero";
-  } else if (ezxml_cattr(xp, "StringLength"))
-    return "StringLength attribute only valid for string types";
-  if ((err = CE::getNumber(xp, "SequenceLength", &type.length, &type.isSequence, 0, false)) ||
-      ( !type.isSequence &&
-	((err = CE::getNumber(xp, "SequenceSize", &type.length, &type.isSequence, 0, false)) )))
-    return err;
-  if ( (err = CE::getNumber(xp, "ArrayLength", &type.length, &type.isArray, 0, false)) )
-    return err;
-  if (type.isSequence && type.isArray)
-    return esprintf("Property/argument %s has both Array and Sequence length",
-		    name);
-  if ((type.isSequence || type.isArray) && type.length == 0)
-    return esprintf("Property/argumnt %s: Array or Sequence length cannot be zero",
-		    name);
-  if (!type.length)
-    type.length = 1;
-  // Calculate the number of bytes in each element of an array/sequence
-  nBytes =
-    type.scalar == Scalar::OCPI_String ?
-    roundup(type.stringLength + 1, 4) : (bits + CHAR_BIT - 1) / CHAR_BIT;
-  if (type.length)
-    nBytes *= type.length;
-  if (type.isSequence)
-    nBytes += align > 4 ? align : 4;
-  argOffset = roundup(argOffset, align);
-  offset = argOffset;
-  argOffset += nBytes;
-  // Process default values
-  const char *defValue = ezxml_cattr(xp, "Default");
-  if (defValue) {
-    if ((err = defaultValue.parse(type, defValue)))
-      return esprintf("for member %s:", name);
-    hasDefault = true;
-  }
-  return 0;
-}
-
-Property::Property()
-  : members(NULL), nBytes(0), nMembers(0), smallest(0), granularity(0),
-    isParameter(false), isStruct(false), isStructSequence(false),
-    nStructs(0), isTest(false), sequenceLength(0), dataOffset(0) {
-}
-Property::~Property() {
-  if (members)
-    delete [] members;
-}
+    const char *
+    Property::parse(ezxml_t prop) {
+      unsigned argOffset = 0;
+      bool readableConfigs = false, writableConfigs = false, sub32Configs = false;
+      return parse(prop, argOffset, readableConfigs, writableConfigs, sub32Configs, true);
+    }
+#define IMPL_ATTRIBUTES \
+  "ReadSync", "WriteSync", "ReadError", "WriteError", "Parameter"
       
 
-Property & 
-Property::
-operator=( Property & p )
-{
-  return operator=(&p);
-}
-      
+    const char *
+    Property::parse(ezxml_t prop, unsigned &offset,
+		    bool &readableConfigs, bool &writableConfigs,
+		    bool &argSub32Configs,  bool includeImpl) {
+      const char *err;
+      bool sub32Configs;
+      unsigned maxAlign = 1; // dummy and not really used since property sheet is zero based anyway
+      unsigned minSize = 0;
+      bool diverseSizes = false;
+      bool unBoundedDummy;   // we are precluding unbounded
+      uint32_t myOffset = 0; // we can't let the member parser do this due to "parameter" properties
 
-Property & 
-Property::
-operator=( Property * p )
-{
-  nBytes = p->nBytes;
-  nMembers = p->nMembers;
-  smallest = p->smallest;
-  granularity = p->granularity;
-  isParameter = p->isParameter;
-  isStruct = p->isStruct;
-  isStructSequence = p->isStructSequence;
-  nStructs = p->nStructs;
-  isTest = p->isTest;
-  sequenceLength = p->sequenceLength;
-  dataOffset = p->dataOffset;
-  
-  // Need deep copy of members
-  members = new Member[nMembers];
-  for ( unsigned int n=0; n<nMembers; n++ ) {
-    members[n] = p->members[n];
-  }
-  return *this;
-}
-
-
-
-
-
-
-// parse a value from xml for this property, which may be a struct
-const char *
-Property::parseValue(ezxml_t x, OCPI::API::Value &value) {
-  // For now, forget about structures
-  const char *unparsed = ezxml_cattr(x, "Value");
-  if (!unparsed)
-    return esprintf("Missing \"value\" attribute for \"%s\" property value",
-		    m_name);
-  if (m_isStruct)
-    return "Struct property values unimplemented";
-  return value.parse(members->type, unparsed);
-}
-
-const char *
-Property::parse(ezxml_t prop) {
-  unsigned argOffset = 0;
-  bool readableConfigs = false, writableConfigs = false, sub32Configs = false;
-  return parse(prop, argOffset, readableConfigs, writableConfigs, sub32Configs, true);
-}
-#define SPEC_PROPERTIES "Type", "Readable", "Writable", "IsTest", "StringLength", "SequenceLength", "ArrayLength", "Default", "SequenceSize", "Size"
-#define IMPL_PROPERTIES "ReadSync", "WriteSync", "ReadError", "WriteError", "Parameter", "IsTest", "Default"
-      
-// This static method is shared between parsing members of a structure and parsing arguments to an operation
-const char *
-Member::parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
-		     unsigned &maxAlign, unsigned &myOffset, bool &sub32, const char *tag) {
-  for (ezxml_t m = ezxml_cchild(prop, tag); m ; m = ezxml_next(m))
-    nMembers++;
-  if (nMembers) {
-    members = new Member[nMembers];
-    Member *mem = members;
-    const char *err = NULL;
-    for (ezxml_t m = ezxml_cchild(prop, tag); m ; m = ezxml_next(m), mem++)
-      if ((err = OCPI::Util::EzXml::checkAttrs(m, "Name", "Type", "StringLength","Size",
-					       "ArrayLength", "SequenceSize", "SequenceLength", "Default",
-					       (void*)0)) ||
-	  (err = mem->parse(m, maxAlign, myOffset, sub32)))
+      if ((err = includeImpl ?
+	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, IMPL_ATTRIBUTES, NULL) :
+	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
+	  (err = Member::parse(prop, maxAlign, myOffset, minSize, diverseSizes, sub32Configs,
+			       unBoundedDummy, true, true, true)))
 	return err;
-  }
-  return NULL;
-}
-
-const char *
-Property::parse(ezxml_t prop, unsigned &argOffset,
-		bool &readableConfigs, bool &writableConfigs,
-		bool &argSub32Configs,  bool includeImpl) {
-  bool sub32Configs = false;
-  const char * n = ezxml_cattr(prop, "Name");
-  if (!n)
-    return "Missing Name attribute for property";
-  m_name = n;
-  const char *err;
-  if ((err = includeImpl ?
-       CE::checkAttrs(prop, "Name", SPEC_PROPERTIES, IMPL_PROPERTIES, NULL) :
-       CE::checkAttrs(prop, "Name", SPEC_PROPERTIES, NULL)))
-    return err;
-  const char *typeName = ezxml_cattr(prop, "Type");
-  m_maxAlign = 1;
-  unsigned myOffset = 0;
-  if (typeName && !strcasecmp(typeName, "Struct")) {
-    if ((err = Member::parseMembers(prop, nMembers, members, m_maxAlign, myOffset, sub32Configs, "member")))
-      return err;
-    if (nMembers == 0)
-      return "No Property elements in Property with type == \"struct\"";
-    isStruct = true;
-    bool structArray = false;
-    if ((err = CE::getNumber(prop, "SequenceLength", &nStructs, &isStructSequence,
-			     1)) ||
-	(err = CE::getNumber(prop, "ArrayLength", &nStructs, &structArray, 1)))
-      return err;
-    if (isStructSequence && structArray)
-      return "Cannot have both SequenceLength and ArrayLength on struct properties";
-  } else {
-    nMembers = 1;
-    isStruct = false;
-    members = new Member[nMembers];
-    if ((err = members->parse(prop, m_maxAlign, myOffset, sub32Configs)))
-      return err;
-  }
-  nBytes = myOffset;
-  if (includeImpl &&
-      (err = parseImplAlso(prop)))
-    return err;
-  if (!isParameter) {
-    argOffset = roundup(argOffset, m_maxAlign);
-    m_offset = argOffset;
-    argOffset += myOffset;
-    //printf("%s at %x(word) %x(byte)\n", p->name, p->offset/4, p->offset);
-    if ((err = CE::getBoolean(prop, "Readable", &m_isReadable)) ||
-	(err = CE::getBoolean(prop, "Writable", &m_isWritable)))
-      return err;
-    if (m_isReadable)
-      readableConfigs = true;
-    if (m_isWritable)
-      writableConfigs = true;
-    if (sub32Configs)
-      argSub32Configs = true;
-  }
-  return 0;
-}
-
-void Member::
-printXml(FILE *f) {
-    if (type.scalar != Scalar::OCPI_ULong)
-    fprintf(f, " type=\"%s\"", Scalar::names[type.scalar]);
-  if (type.scalar == Scalar::OCPI_String)
-    fprintf(f, " size=\"%u\"", type.stringLength);
-  if (type.isSequence)
-    fprintf(f, " sequenceSize=\"%u\"", type.length);
-}
+      if (includeImpl &&
+	  (err = parseImplAlso(prop)))
+	return err;
+      if (!m_isParameter) {
+	// Member::parse would have done this for us, but it doesn't know about parameters.
+	offset = roundup(offset, m_align);
+	m_offset = offset;
+	offset += m_nBytes;
+	//printf("%s at %x(word) %x(byte)\n", p->name, p->offset/4, p->offset);
+	if ((err = OE::getBoolean(prop, "Readable", &m_isReadable)) ||
+	    (err = OE::getBoolean(prop, "Writable", &m_isWritable)))
+	  return err;
+	if (m_isReadable)
+	  readableConfigs = true;
+	if (m_isWritable)
+	  writableConfigs = true;
+	if (sub32Configs)
+	  argSub32Configs = true;
+      }
+      return 0;
+    }
 
 #if 0
-const char *Property::
-checkType(Scalar::Type ctype, unsigned n, bool write) {
-  if (write && !isWritable)
-    return "trying to write a non-writable property";
-  if (!write && !isReadable)
-    return "trying to read a non-readable property";
-  if (isStruct)
-    return "struct type used as scalar type";
-  if (ctype != members->type.scalar)
-    return "incorrect type for this property";
-  if (write && n > members->type.length)
-    return "sequence or array too long for this property";
-  if (!write && n < members->type.length)
-    return "sequence or array not large enough for this property";
-  return 0;
-}
+    const char *Property::
+    checkType(Scalar::Type ctype, unsigned n, bool write) {
+      if (write && !isWritable)
+	return "trying to write a non-writable property";
+      if (!write && !isReadable)
+	return "trying to read a non-readable property";
+      if (isStruct)
+	return "struct type used as scalar type";
+      if (ctype != members->type.scalar)
+	return "incorrect type for this property";
+      if (write && n > members->type.length)
+	return "sequence or array too long for this property";
+      if (!write && n < members->type.length)
+	return "sequence or array not large enough for this property";
+      return 0;
+    }
 #endif
 
-const char *Property::
-parseImplAlso(ezxml_t prop) {
-  const char *err;
-  if ((err = CE::getBoolean(prop, "ReadSync", &m_readSync)) ||
-      (err = CE::getBoolean(prop, "WriteSync", &m_writeSync)) ||
-      (err = CE::getBoolean(prop, "ReadError", &m_readError)) ||
-      (err = CE::getBoolean(prop, "WriteError", &m_writeError)) ||
-      (err = CE::getBoolean(prop, "IsTest", &isTest)) ||
-      (err = CE::getBoolean(prop, "Parameter", &isParameter)))
-    return err;
-  if (isParameter && m_isWritable)
-    return esprintf("Property \"%s\" is a parameter and can't be writable", m_name);
-  return 0;
-}
-const char *Property::
-parseImpl(ezxml_t x) {
-  const char *err;
-  if ((err = CE::checkAttrs(x, "Name", IMPL_PROPERTIES, NULL)))
-    return err;
-  return parseImplAlso(x);
-}
+    const char *Property::
+    parseImplAlso(ezxml_t prop) {
+      const char *err;
+      if ((err = OE::getBoolean(prop, "ReadSync", &m_readSync)) ||
+	  (err = OE::getBoolean(prop, "WriteSync", &m_writeSync)) ||
+	  (err = OE::getBoolean(prop, "ReadError", &m_readError)) ||
+	  (err = OE::getBoolean(prop, "WriteError", &m_writeError)) ||
+	  (err = OE::getBoolean(prop, "IsTest", &m_isTest)) ||
+	  (err = OE::getBoolean(prop, "Parameter", &m_isParameter)))
+	return err;
+      if (m_isParameter && m_isWritable)
+	return esprintf("Property \"%s\" is a parameter and can't be writable", m_name.c_str());
+      return 0;
+    }
+    const char *Property::
+    parseImpl(ezxml_t x) {
+      const char *err;
+      if ((err = OE::checkAttrs(x, "Name", IMPL_ATTRIBUTES, NULL)))
+	return err;
+      return parseImplAlso(x);
+    }
 
-    }}}
+  }
+}
 

@@ -39,56 +39,73 @@
 #include "OcpiUtilEzxml.h"
 
 namespace OCPI  {
-  namespace Metadata {
+  namespace Util {
     // A class that represents information about the protocol at a port.
     class Protocol;
     class Operation {
+    public:
       friend class Protocol;
-      std::string m_name;
-      bool m_isTwoWay; // not supported much yet...
+      std::string m_name, m_qualifiedName;
+      bool m_isTwoWay;         // not supported much yet...
       unsigned m_nArgs;
-      OCPI::Util::Prop::Member *m_args; // This class is overkill here, but we need most of it.
-      unsigned m_maxAlign, m_myOffset;
-      bool m_sub32;
-      const char *parse(ezxml_t op);
+      Member *m_args;           // both input and output args.  if twoway, first is return value
+      unsigned m_nExceptions;
+      Operation *m_exceptions;  // if twoway
+      unsigned m_myOffset;      // for determining message sizes
+      const char *parse(ezxml_t op, Protocol &);
       Operation();
       Operation(const Operation & p );
       ~Operation();
+#if 1
       Operation & operator=(const Operation * p );
       Operation & operator=(const Operation & p );
-    public:
+#endif
       inline bool isTwoWay() { return m_isTwoWay; }
-      inline OCPI::Util::Prop::Member *args() { return m_args; }
+      inline Member *args() { return m_args; }
       inline unsigned nArgs() { return m_nArgs; }
       inline const std::string name() { return m_name; }
+      void printXML(FILE *f, unsigned indent);
     };
     class Protocol {
+    public:
       unsigned m_nOperations;
       Operation *m_operations;
-      Operation *m_op; // used during parsing
-    public:
-      std::string m_name;
-      unsigned m_dataValueWidth; // the smallest atomic data size in any message
-      unsigned m_maxMessageValues; // the largest size, in values, in any message
-      unsigned m_dataValueGranularity;
-      bool m_variableMessageLength;
-      bool m_zeroLengthMessages;
-      bool m_diverseDataSizes;
-      bool m_isTwoWay;
-      
+      Operation *m_op;                 // used during parsing
+      std::string
+	m_qualifiedName,               // IDL-style qualified name (double colon separators)
+	m_name;
+      // Summary attributes derived from protocols.  May be specified in the absense of protocol
+      unsigned m_defaultBufferSize;    // Allow the protocol to simply override the protocol size, if != 0
+                                       // and particularly when it is unbounded
+      unsigned m_minBufferSize;        // convenience - in bytes
+      unsigned m_dataValueWidth;       // the smallest atomic data size in any message
+      unsigned m_dataValueGranularity; // smallest multiple of atomic data size
+      bool m_diverseDataSizes;         // are there atomic types greater than m_dataValueWidth?
+      unsigned m_minMessageValues;     // the smallest valid message size for any operation
+                                       // this size would be adequate if you knew that only that
+                                       // operation would be used, and, if unbounded, the smallest
+                                       // possible message size for that operation. Might be zero
+      unsigned m_maxMessageValues;     // the largest size, in values, in any message
+                                       // for unbounded, defaults to zero, but can be overriden to
+                                       // to simply apply a bound anyway.
+      bool m_variableMessageLength;    // are there messages or different or unbounded sizes?
+      bool m_zeroLengthMessages;       // are there messages of zero length (min == 0)
+      bool m_isTwoWay;                 // are there operations that are two-way?
+      bool m_isUnbounded;              // are there messages with no upper bound?
       Protocol();
       Protocol(const Protocol & p );
       virtual ~Protocol();
       Protocol & operator=( const Protocol & p );
       Protocol & operator=( const Protocol * p );
       virtual const char *parseOperation(ezxml_t op);
-      inline bool isTwoWay() { return m_isTwoWay; } // Are any operations twoway?
+      inline bool isTwoWay() { return m_isTwoWay; }
       inline unsigned &nOperations() { return m_nOperations; }
       inline Operation *operations() { return m_operations; }
       const char *parse(ezxml_t x);
+      const char *parseSummary(ezxml_t x);
+      const char *finishParse();
+      void printXML(FILE *f, unsigned indent);
     };
-
-
   }
 }
 

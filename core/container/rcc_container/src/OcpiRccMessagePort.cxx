@@ -66,8 +66,8 @@ namespace OCPI {
   namespace RCC {
 
     MessagePort::
-    MessagePort( Worker& w, const OCPI::Util::PValue *props, const OCPI::Metadata::Port & pmd )
-      : PortDelegator( w, props, pmd, NULL )
+    MessagePort( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params )
+      : PortDelegator( w, pmd, 0, params, NULL )
     {      
       // Empty
     }
@@ -92,7 +92,7 @@ namespace OCPI {
 	err += url;
 	throw err;
       }
-      DTM::XferServices * msgService  = factory->getXferServices( (OCPI::Metadata::Protocol*)&m_metaPort, url, myProps, otherProps );
+      DTM::XferServices * msgService  = factory->getXferServices( (OCPI::Util::Protocol*)&m_metaPort, url, myProps, otherProps );
       ocpiAssert ( msgService );
       m_msgChannel = msgService->getMsgChannel(url,myProps,otherProps);
     }
@@ -160,6 +160,7 @@ namespace OCPI {
 		    const OCPI::Util::PValue*)
     {
       ocpiAssert( 0 );
+      return *(OCPI::Container::ExternalPort *)0;
     }
 
 

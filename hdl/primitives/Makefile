@@ -48,11 +48,12 @@ ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v6_gtx_x4_250 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v5_gtp_x8_125 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v5_gtx_x8_125 \
+  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/ddc_4243_4ch_v5
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
 
-Libs=bsv util util_virtex6 util_virtex5
+Libs=bsv util util_virtex6 util_virtex5 util_stratix4 vendor_altera
 
 #LocalCores=xfft_v7_1 \
  temac_v6 \

@@ -51,9 +51,6 @@ namespace OCPI {
     unsigned long getNum(const char *s);
     // Used for application and infrastructure WCI things.
     unsigned long getAttrNum(ezxml_t x, const char *attr, bool missingOK = false, bool *found = 0);
-    const unsigned
-      DEFAULT_NBUFFERS = 2,
-      DEFAULT_BUFFER_SIZE = 2*1024;
   }
 }
 #endif
