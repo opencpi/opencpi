@@ -8,7 +8,7 @@ _HDL_TARGETS_=here
 # The levels are: top, family, part, speed
 
 #Testing: HdlTopTargets=xilinx altera verilator test1
-HdlTopTargets:=xilinx icarus altera # verilator # altera
+HdlTopTargets:=xilinx # icarus altera # verilator # altera
 
 HdlTargets_xilinx:=isim virtex5 virtex6
 HdlTargets_virtex5:=xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t xc5vtx240t
