@@ -47,6 +47,7 @@ ALLINC += $(OCPIOS_EXPORTS) \
 
 
 DYNOBJS += \
+	../../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
 	../../../../../core/container/rcc_container/$(OCPI_OUT_DIR)/OcpiRccDriver.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
@@ -70,7 +71,7 @@ SYSLIBS += ibverbs
 endif
 
 ALLLIBS += $(RCC_CONTAINER_LIBS) $(CONTAINER_LIBS) $(DATA_TRANSPORT_LIBS) \
-	 $(LIBRARY_LIBS) \
+	 $(LIBRARY_LIBS) $(MSG_TRANSPORT_LIBS) \
 	$(TX_DRIVER_SUPPORT_LIBS) $(DATA_TRANSFER_LIBS) \
 	$(UTIL_LIBS) $(LOGGER_LIBS) $(OCPIOS_LIBS) 
 
