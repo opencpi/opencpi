@@ -53,7 +53,7 @@ namespace OCPI {
       d.type = isProvider ? OCPI::RDT::ConsumerDescT : OCPI::RDT::ProducerDescT;
       d.role = OCPI::RDT::NoRole;
       d.options = xferOptions;
-      bzero(d.desc, sizeof(d.desc));
+      bzero((void *)&d.desc, sizeof(d.desc));
       d.desc.nBuffers = DEFAULT_NBUFFERS > mPort.minBufferCount ? DEFAULT_NBUFFERS : mPort.minBufferCount;
       if (!(d.desc.dataBufferSize = mPort.bufferSize))
 	d.desc.dataBufferSize = DEFAULT_BUFFER_SIZE;
