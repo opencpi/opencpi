@@ -72,7 +72,7 @@ namespace OCPI {
     Member::parse(ezxml_t xm,
 		  unsigned &maxAlign,   // accumulating across the group we are a part of
 		  uint32_t &argOffset,  // ditto, so it is our offset, prealignment, coming in
-		  unsigned &minSize,    // min scalar size seen
+		  unsigned &minSizeBits,// min scalar size seen in bits
 		  bool &diverseSizes,
 		  bool &sub32,
 		  bool &unBounded,
@@ -96,7 +96,7 @@ namespace OCPI {
       if (!strcasecmp(typeName, "struct")) {
 	m_baseType = OA::OCPI_Struct;
 	if ((err = parseMembers(xm, m_nMembers, m_members, m_align, m_offset,
-				minSize, diverseSizes, sub32, unBounded,
+				minSizeBits, diverseSizes, sub32, unBounded,
 				"member", isFixed, hasDefault)))
 	  return err;
 	if (m_nMembers == 0)
@@ -110,7 +110,7 @@ namespace OCPI {
 	if (!xt)
 	  return "missing \"type\" child element under data type with type=\"type\"";
 	if ((err = OE::checkAttrs(xt, OCPI_UTIL_MEMBER_ATTRS, NULL)) ||
-	    (err = m_type->parse(xt, m_align, m_offset, minSize, diverseSizes, sub32,
+	    (err = m_type->parse(xt, m_align, m_offset, minSizeBits, diverseSizes, sub32,
 				 unBounded, isFixed, false, false)))
 	  return err;
 	nBytes = m_offset;
@@ -146,7 +146,7 @@ namespace OCPI {
 	}
 	m_nBits = baseTypeSizes[m_baseType];
 	m_align = (m_nBits + CHAR_BIT - 1) / CHAR_BIT;
-	unsigned size;
+	unsigned scalarBits;
 	if (m_baseType == OA::OCPI_String) {
 	  if ((err = OE::getNumber(xm, "StringLength", &m_stringLength, &found, 0, false)) ||
 	      (!found &&
@@ -159,19 +159,19 @@ namespace OCPI {
 	      return "StringLength cannot be zero";
 	  }
 	  nBytes = m_stringLength + 1;
-	  size = 1;
+	  scalarBits = CHAR_BIT;
 	} else {
 	  nBytes = m_align;
-	  size = m_align;
+	  scalarBits = m_align * CHAR_BIT;
 	}
 	// Now the scalar type is finished, and perhaps its a sequence (and perhaps its an array).
-	if (minSize) {
-	  if (minSize != size)
+	if (minSizeBits) {
+	  if (minSizeBits != scalarBits)
 	    diverseSizes = true;
-	  if (size < minSize)
-	    minSize = size;
+	  if (scalarBits < minSizeBits)
+	    minSizeBits = scalarBits;
 	} else
-	  minSize = size;
+	  minSizeBits = scalarBits;
       }
       if (ezxml_cattr(xm, "StringLength") && m_baseType != OA::OCPI_String)
 	return "StringLength attribute only valid for string types";
@@ -314,7 +314,7 @@ namespace OCPI {
     const char *
     Member::parseMembers(ezxml_t mems, unsigned &nMembers, Member *&members,
 			 unsigned &maxAlign, uint32_t &myOffset,
-			 unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded,
+			 unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded,
 			 const char *tag, bool isFixed, bool hasDefault) {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
 	nMembers++;
@@ -325,7 +325,7 @@ namespace OCPI {
 	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_next(mx), m++) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
 				    hasDefault ? "Default" : NULL, NULL)) ||
-	      (err = m->parse(mx, maxAlign, myOffset, minSize, diverseSizes, sub32,
+	      (err = m->parse(mx, maxAlign, myOffset, minSizeBits, diverseSizes, sub32,
 			      unBounded, isFixed, true, hasDefault)))
 	    return err;
 	}
@@ -353,7 +353,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) bits,
 	OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-	0, 32, 0
+	0, 32, 0 // enum size is 32 bits
       };
   }
 }

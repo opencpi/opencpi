@@ -1696,7 +1696,7 @@ emitArtHDL(Worker *aw, const char *outDir) {
 	  aw->implName);
   fprintf(f, "  -->\n");
   ezxml_t dep;
-  Worker *dw = myCalloc(Worker, 1);
+  Worker *dw = new Worker;
   if ((err = parseFile(container, 0, "HdlContainer", &dep, 0)) ||
       (err = parseHdlAssy(dep, dw)))
     return err;
