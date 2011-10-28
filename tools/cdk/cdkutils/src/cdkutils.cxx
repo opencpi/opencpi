@@ -85,7 +85,7 @@ parseFile(const char *file, const char *parent, const char *element,
   ezxml_t x = ezxml_parse_fd(fd);
   if (!x || !x->name)
     return esprintf("File \"%s\" (when looking for \"%s\") could not be parsed as XML (", cp, file);
-  if (element && strcmp(x->name, element)) {
+  if (element && strcasecmp(x->name, element)) {
     if (optional)
       *xp = 0;
     else

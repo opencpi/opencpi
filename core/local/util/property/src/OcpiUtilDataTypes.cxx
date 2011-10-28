@@ -200,8 +200,8 @@ namespace OCPI {
 	  return esprintf("Error parsing array dimensions: %s", err);
 	m_arrayRank = v.m_nElements;
 	m_arrayDimensions = v.m_pULong;
-	v.m_pULong = NULL;
 	uint32_t *p = v.m_pULong;
+	v.m_pULong = NULL;
 	for (unsigned n = 0; n < v.m_nElements; n++, p++)
 	  if (*p == 0)
 	    return "ArrayDimensions cannot have zero values";

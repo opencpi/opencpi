@@ -75,22 +75,40 @@ static void camel(std::string &s, const char *s1, const char *s2 = NULL, const c
 static void
 emitStructRCC(FILE *f, unsigned nMembers, OU::Member *members, const char *indent,
 	      const char *parent);
+static bool
+printMember(FILE *f, OU::Member *m, const char *prefix, unsigned &offset, unsigned &pad,
+	    const char *parent);
 
+static bool
+printType(FILE *f, OU::Member *m, const char *prefix, unsigned &offset, unsigned &pad,
+	    const char *parent) {
+  switch (m->m_type->m_baseType) {
+  case OA::OCPI_Struct:
+  case OA::OCPI_Type:
+  case OA::OCPI_Enum:
+  default:
+    ;
+  }
+  return printMember(f, m, prefix, offset, pad, parent);
+}
 // FIXME:  a tool-time member class should have this...OCPI::Tools::RCC::Member...
-static void
+// Returns true when something is variable length.
+// strings or sequences are like that unless then are bounded.
+static bool
 printMember(FILE *f, OU::Member *m, const char *prefix, unsigned &offset, unsigned &pad,
 	    const char *parent)
 {
+  bool last = false;
   unsigned rem = offset & (m->m_align - 1);
   if (rem)
-    fprintf(f, "%s  char         pad%u_[%u];\n",
+    fprintf(f, "%s  char           pad%u_[%u];\n",
 	    prefix, pad++, m->m_align - rem);
   offset = roundup(offset, m->m_align);
   assert(offset == m->m_offset);
   if (m->m_isSequence) {
-    fprintf(f, "%s  uint32_t     %s_length;", prefix, m->m_name.c_str());
+    fprintf(f, "%s  uint32_t      %s_length;", prefix, m->m_name.c_str());
     if (offset)
-      fprintf(f, " // offset %u, 0x%x; align %u", offset, offset, m->m_align);
+      fprintf(f, " // offset %4u, 0x%x; align %u", offset, offset, m->m_align);
     fprintf(f, "\n");
     if (m->m_align > sizeof(uint32_t))
       fprintf(f, "%s  char         pad%u_[%u];\n",
@@ -102,16 +120,27 @@ printMember(FILE *f, OU::Member *m, const char *prefix, unsigned &offset, unsign
     fprintf(f, "  struct %s {\n", s.c_str());
     emitStructRCC(f, m->m_nMembers, m->m_members, "  ", s.c_str());
     fprintf(f, "  }");
-  } else
+  } else if (m->m_baseType == OA::OCPI_Type)
+    printType(f, m, prefix, offset, pad, parent);
+  else
     fprintf(f, "%s  %-12s", prefix, rccTypes[m->m_baseType]);
   fprintf(f, "  %s", m->m_name.c_str());
-  if (m->m_baseType == OA::OCPI_String)
-    fprintf(f, "[%lu]", roundup(m->m_stringLength + 1, 4));
+  // Although we align strings on a 4 byte boundary, we don't pad them to anything.
+  if (m->m_baseType == OA::OCPI_String) {
+    fprintf(f, "[%lu]", m->m_stringLength + 1);
+    if (m->m_stringLength == 0)
+      last = true;
+  }
   if (m->m_arrayRank)
     for (unsigned n = 0; n < m->m_arrayRank; n++)
       fprintf(f, "[%u]", m->m_arrayDimensions[n]);
   if (m->m_isSequence)
-    fprintf(f, "[%u]", m->m_sequenceLength); // FIXME:  unbounded end of struct
+    if (m->m_sequenceLength)
+      fprintf(f, "[%u]", m->m_sequenceLength);
+    else {
+      fprintf(f, "[]");
+      last = true;
+    }
   fprintf(f, ";");
   if (offset) {
     uint32_t off = offset + (m->m_isSequence ? m->m_align : 0);
@@ -119,6 +148,7 @@ printMember(FILE *f, OU::Member *m, const char *prefix, unsigned &offset, unsign
   }
   fprintf(f, "\n");
   offset += m->m_nBytes;
+  return last;
 }
 
 static const char *
@@ -176,7 +206,8 @@ emitStructRCC(FILE *f, unsigned nMembers, OU::Member *members, const char *inden
 	      const char *parent) {
   unsigned align = 0, pad = 0;
   for (unsigned n = 0; n < nMembers; n++, members++)
-    printMember(f, members, indent, align, pad, parent);
+    if (printMember(f, members, indent, align, pad, parent))
+      return;
 }
 
 const char *
