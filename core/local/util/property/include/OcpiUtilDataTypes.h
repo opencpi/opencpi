@@ -58,6 +58,7 @@ namespace OCPI {
         m_arrayRank,                  // If > 0, we have an array
 	m_nMembers,                   // For structs
 	m_nBits,
+	m_dataAlign,                  // Alignment of data for this type (i.e. not sequence count)
 	m_align;                      // The alignment requirement for this type
       bool m_isSequence;              // Are we a sequence?
       uint32_t
@@ -69,55 +70,66 @@ namespace OCPI {
       Member *m_type;                 // if a recursive type, that type
       const char **m_enums;
       uint32_t m_nEnums;
+      uint32_t m_nItems;              // total number of fixed items
       // unions and enums
       ValueType(OCPI::API::BaseType bt = OCPI::API::OCPI_none);
       ~ValueType();
     };
-    // A struct value is a pointer to an array of pointers to values (to be sparse)
-    class Value;
-    typedef Value **StructValue;
-    // A type value is a pointer to a value
-    typedef Value *TypeValue;
-    // An enum value is a uint32_t
-    typedef uint32_t EnumValue;
-    // A typed value
-    class Value { //: public ValueType {
-      const ValueType &m_vt;
-    public:
-      unsigned m_nElements;        // How many sequence values?
-      // space for array of strings, and running pointer during parsing
-      char *m_stringSpace, *m_stringNext;
-      Value(const ValueType &vt);
-      ~Value();
-      // The value is either the thing itself (e.g. a float)
-      // Or for a sequence of floats it is a pointer
-      // Or for a sequence of arrays of floats it is a pointer-to-pointer
-      union {
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-        run m_##pretty, *m_p##pretty, **m_pp##pretty;
-	OCPI_PROPERTY_DATA_TYPES
-        OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
-        OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
-        OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
+    const unsigned testMaxStringLength = 10;
+    const unsigned maxDataTypeAlignment = 16;
+    union WriteDataPtr {
+      const uint8_t *data;
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE(sca,corba,u,bits,run,pretty,store) const run *p##pretty;
+#define OCPI_DATA_TYPE_S(sca,corba,u,bits,run,pretty,store) const run p##pretty;
+      OCPI_DATA_TYPES
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE
-      };
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-      bool parse##pretty(const char*cp, const char *end, run &vp);
-	OCPI_PROPERTY_DATA_TYPES
-        OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
-        OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
-        OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
+    };
+    union ReadDataPtr {
+      uint8_t *data;
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE(sca,corba,u,buts,run,pretty,store) run *p##pretty;
+#define OCPI_DATA_TYPE_S(sca,corba,u,buts,run,pretty,store) run p##pretty;
+      OCPI_DATA_TYPES
+#undef OCPI_DATA_TYPE_S
+#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE
-      const char *parse(const char *unparsed, const char *stop = NULL);
-      void unparse(std::string &) const;
-    private:
-      const char
-	*parseValue(const char *unparsed, const char *stop,
-		   unsigned nSeq, unsigned nArray),
-	*parseElement(const char *start, const char *end, unsigned nSeq),
-	*parseDimension(const char *unparsed, const char *stop,
-		       unsigned nseq, unsigned dim, unsigned offset);
-      void clear();
+    };
+    class Writer {
+    protected:
+      Writer();
+      virtual ~Writer();
+    public:      
+      virtual void 
+	writeOpcode(const char *name, uint8_t opcode),
+	beginSequence(Member &m, uint32_t nElements) = 0,
+	beginStruct(Member &m),
+	endStruct(Member &m),
+	beginType(Member &m),
+	endType(Member &m),
+	writeString(Member &m, WriteDataPtr p, uint32_t strLen, bool start) = 0,
+	writeData(Member &m, WriteDataPtr p, uint32_t nBytes, uint32_t nElements) = 0,
+	end();
+    };
+    class Reader {
+    protected:
+      Reader();
+      virtual ~Reader();
+    public:      
+      virtual unsigned
+	beginSequence(Member &m) = 0,
+	beginString(Member &m, const char *&chars, bool first) = 0;
+      virtual void 
+	endSequence(Member &m),
+	endString(Member &m),
+	beginStruct(Member &m),
+	endStruct(Member &m),
+	beginType(Member &m),
+	endType(Member &m),
+	readData(Member &m, ReadDataPtr p, uint32_t nBytes, uint32_t nElements) = 0,
+	end();
     };
     // There are the data type attributes allowed for members
 #define OCPI_UTIL_MEMBER_ATTRS						\
@@ -126,26 +138,34 @@ namespace OCPI {
     // A "member" is used for structure members, operation arguments, exception members, 
     // and properties.  Members have names, and offsets in their group, and possibly a
     // default value
+    class Value;
     class Member : public ValueType {
     public:
       uint32_t m_offset;              // in group
       std::string m_name;
       bool m_isIn, m_isOut, m_isKey;  // for arguments (could use another class, but not worth it)
       Value *m_defaultValue;          // A default value, if one is appropriate and there is one
+      unsigned m_ordinal;             // ordinal within group
       Member();
       virtual ~Member();
       void printAttrs(FILE *f, const char *tag, unsigned indent = 0);
       void printChildren(FILE *f, const char *tag, unsigned indent = 0);
       void printXML(FILE *f, const char *tag, unsigned indent);
+      void write(Writer &writer, const uint8_t *&data, uint32_t &length);
+      void read(Reader &reader, uint8_t *&data, uint32_t &length);
+      void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       const char *
-      parse(ezxml_t xp, unsigned &maxAlign, uint32_t &argOffset,
-	    unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded,
-	    bool isFixed, bool hasName, bool hasDefault);
+	parse(ezxml_t xp, bool isFixed, bool hasName, bool hasDefault, unsigned ordinal);
+      const char *
+      offset(unsigned &maxAlign, uint32_t &argOffset,
+	     unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded);
       static const char *
       parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
+		   bool isFixed, const char *tag, bool hasDefault);
+      static const char *
+      alignMembers(Member *m, unsigned nMembers,
 		   unsigned &maxAlign, uint32_t &myOffset,
-		   unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded,
-		   const char *tag, bool isFixed, bool hasDefault);
+		   unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded);
     };
     // These two are indexed by the BaseType
     extern const char *baseTypeNames[];

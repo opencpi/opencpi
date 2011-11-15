@@ -40,6 +40,7 @@
 #include "OcpiContainerInterface.h"
 #include "OcpiContainerMisc.h"
 #include "OcpiContainerArtifact.h"
+#include "OcpiUtilValue.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;

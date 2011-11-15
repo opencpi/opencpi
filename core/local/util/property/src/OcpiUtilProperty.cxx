@@ -39,7 +39,7 @@
 #include "OcpiOsAssert.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilProperty.h"
-
+#include "OcpiUtilValue.h"
 #define PROPERTY_ATTRIBUTES OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest", "Default"
 
 namespace OCPI {
@@ -69,10 +69,10 @@ namespace OCPI {
     }
 
     const char *
-    Property::parse(ezxml_t prop) {
+    Property::parse(ezxml_t prop, unsigned ordinal) {
       unsigned argOffset = 0;
       bool readableConfigs = false, writableConfigs = false, sub32Configs = false;
-      return parse(prop, argOffset, readableConfigs, writableConfigs, sub32Configs, true);
+      return parse(prop, argOffset, readableConfigs, writableConfigs, sub32Configs, true, ordinal);
     }
 #define IMPL_ATTRIBUTES \
   "ReadSync", "WriteSync", "ReadError", "WriteError", "Parameter"
@@ -81,7 +81,7 @@ namespace OCPI {
     const char *
     Property::parse(ezxml_t prop, unsigned &offset,
 		    bool &readableConfigs, bool &writableConfigs,
-		    bool &argSub32Configs,  bool includeImpl) {
+		    bool &argSub32Configs,  bool includeImpl, unsigned ordinal) {
       const char *err;
       bool sub32Configs;
       unsigned maxAlign = 1; // dummy and not really used since property sheet is zero based anyway
@@ -93,8 +93,9 @@ namespace OCPI {
       if ((err = includeImpl ?
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, IMPL_ATTRIBUTES, NULL) :
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
-	  (err = Member::parse(prop, maxAlign, myOffset, minSize, diverseSizes, sub32Configs,
-			       unBoundedDummy, true, true, true)))
+	  (err = Member::parse(prop, true, true, true, ordinal)) ||
+	  (err = Member::offset(maxAlign, myOffset, minSize, diverseSizes, sub32Configs,
+				unBoundedDummy)))
 	return err;
       if (includeImpl &&
 	  (err = parseImplAlso(prop)))

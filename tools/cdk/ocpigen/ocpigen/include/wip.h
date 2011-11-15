@@ -41,6 +41,7 @@
 #include "OcpiPValue.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilProtocol.h"
+#include "OcpiUtilValue.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiMetadataWorker.h"
 #include "ezxml.h"
@@ -302,6 +303,7 @@ class Control {
   uint32_t controlOps; // bit mask
   Properties properties;
   unsigned offset;// temporary while properties are being parsed.
+  unsigned ordinal; // ditto
 };
 
 enum Endian {

@@ -44,7 +44,7 @@ int
 main(int argc, char **argv) {
   const char *outDir = 0, *structName = 0;
   bool
-    doProto = false, doIDL = false;
+    doProto = false, doIDL = false, doTest = false;
   if (argc <= 1) {
     fprintf(stderr,
 	    "Usage is: ocpidds [options] <input-files> \n"
@@ -52,6 +52,7 @@ main(int argc, char **argv) {
 	    " -p            Generate the protocol XML file from  DDS IDL files.\n"
 	    " -d            Generate the DDS IDL file from an XML protocol file.\n"
 	    " -s            IDL struct name for DDS topic for -p option. Default is IDL file name\n"
+	    " -t            Internal test\n"
 	    " Other options:\n"
 	    " -O <dir>      Specify the output directory for generated files\n"
 	    " -DSYM         Specify preprocessor definition for IDL\n"
@@ -73,6 +74,9 @@ main(int argc, char **argv) {
 	break;
       case 's':
 	structName = *++ap;
+	break;
+      case 't':
+	doTest = true;
 	break;
       case 'M':
 	depFile = *++ap;
@@ -100,5 +104,7 @@ main(int argc, char **argv) {
       } else if (doIDL && (err = emitIDL(outDir, *ap)))
 	fprintf(stderr, "Error generating IDL file from OpenCPI protocol file \"%s\": %s\n", *ap, err);
     }
+  if (doTest)
+    dataTypeTest();
   return err ? 1 : 0;
 }

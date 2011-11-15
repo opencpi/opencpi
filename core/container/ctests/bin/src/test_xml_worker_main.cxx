@@ -181,6 +181,7 @@ int  main( int argc, char** argv)
   OCPI::Util::Thread* t = runTestDispatch(tdata);
 #endif
 
+  try {
 #if 0
   // Create an artifact
 #if 1
@@ -289,6 +290,10 @@ int  main( int argc, char** argv)
   delete t;
 #endif
 
+  } catch (std::string & oops) {
+    std::cerr << "Error: " << oops << std::endl;
+    return false;
+  }
   return !test_rc;
 }
 

@@ -88,10 +88,10 @@ namespace OCPI {
 			bool &readableConfigs,
 			bool &writableConfigs,
 			bool &sub32Configs,
-			bool includeImpl = false
-			);
+			bool includeImpl,
+			unsigned ordinal);
       const char *parseImpl(ezxml_t x);
-      const char *parse(ezxml_t x);
+      const char *parse(ezxml_t x, unsigned ordinal);
       const char *parseValue(ezxml_t x, const char *unparsed, Value &value);
       // Check when accessing with scalar type and sequence length
       const char *checkType(OCPI::API::BaseType ctype, unsigned n, bool write);

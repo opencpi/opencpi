@@ -31,7 +31,11 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <assert.h>
+#include <sys/time.h>
+#include "OcpiUtilException.h"
 #include "OcpiUtilProtocol.h"
+#include "OcpiUtilValue.h"
 
 namespace OCPI {
   namespace OA = OCPI::API;
@@ -89,9 +93,11 @@ namespace OCPI {
 	return err;
       if (m_isTwoWay)
 	p.m_isTwoWay = true;
-      return Member::parseMembers(op, m_nArgs, m_args, maxAlignDummy, m_myOffset,
-				  p.m_dataValueWidth, p.m_diverseDataSizes,
-				  sub32dummy, p.m_isUnbounded, "argument", false, false);
+      if (!(err = Member::parseMembers(op, m_nArgs, m_args, false, "argument", false)))
+	err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
+				   p.m_dataValueWidth, p.m_diverseDataSizes,
+				   sub32dummy, p.m_isUnbounded);
+      return err;
     }
 
     void Operation::printXML(FILE *f, unsigned indent) {
@@ -108,6 +114,76 @@ namespace OCPI {
 	fprintf(f, "%*s</operation>\n", indent * 2, "");
       } else
 	fprintf(f, "/>\n");
+    }
+    void Operation::write(Writer &writer, const uint8_t *data, uint32_t length) {
+      for (unsigned n = 0; n < m_nArgs; n++)
+	m_args[n].write(writer, data, length);
+    }
+
+    uint32_t Operation::read(Reader &reader, uint8_t *&data, uint32_t maxLength) {
+      uint32_t max = maxLength;
+      for (unsigned n = 0; n < m_nArgs; n++)
+	m_args[n].read(reader, data, maxLength);
+      return max - maxLength;
+    }
+
+    void Operation::generate(const char *name, Protocol &p) {
+      m_name = name;
+      m_nArgs = random() % 10;
+      Member *m = m_args = new Member[m_nArgs];
+      for (unsigned n = 0; n < m_nArgs; n++, m++) {
+	char *name;
+	asprintf(&name, "arg%d", n);
+	m->generate(name);
+	free(name);
+      }
+      const char *err;
+      bool sub32dummy = false;
+      unsigned maxAlignDummy = 1;
+      if ((err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
+				      p.m_dataValueWidth, p.m_diverseDataSizes,
+				      sub32dummy, p.m_isUnbounded)))
+	throw std::string(err);
+
+    }
+    void Operation::generateArgs(Value **&v) {
+      v = m_nArgs ? new Value *[m_nArgs] : 0;
+      for (unsigned n = 0; n < m_nArgs; n++) {
+	v[n] = new Value(m_args[n], NULL);
+	v[n]->generate();
+      }
+    }
+    void Operation::print(FILE *f, Value **v) {
+      fprintf(f, "%s\n", m_name.c_str());
+      for (unsigned n = 0; n < m_nArgs; n++) {
+	std::string s;
+	v[n]->unparse(s);
+	fprintf(f, "  %u: %s\n", n, s.c_str());
+      }
+    }
+    void Operation::testPrintParse(FILE *f, Value **v) {
+      for (unsigned n = 0; n < m_nArgs; n++) {
+	std::string s;
+	fprintf(f, "%s: ", m_args[n].m_name.c_str());
+	v[n]->unparse(s);
+	Value tv(m_args[n]);
+	const char *err;
+	if ((err = tv.parse(s.c_str(), NULL)))
+	  fprintf(f, "error: %s (%s)\n", err, s.c_str());
+	else {
+	  fprintf(f, "ok");
+	  std::string s1;
+	  tv.unparse(s1);
+	  if (s != s1)
+	    fprintf(f,
+		    "\n"
+		    "error: mismatch0: ***%s***\n"
+		    "error: mismatch1: ***%s***\n",
+		    s.c_str(), s1.c_str());
+	}
+      }
+      fprintf(f, "\n");
+      
     }
 
     // These defaults are for when there is no protocol at all.
@@ -160,7 +236,18 @@ namespace OCPI {
       return *this;
     }
 
-
+    void Protocol::
+    finishOperation(const Operation &op) {
+      if (m_isUnbounded ||
+	  m_maxMessageValues && m_maxMessageValues != op.m_myOffset)
+	m_variableMessageLength = true;
+      if (op.m_myOffset > m_maxMessageValues)
+	m_maxMessageValues = op.m_myOffset; // still in bytes until later
+      if (!op.m_nArgs)
+	m_zeroLengthMessages = true;
+      if (op.m_myOffset < m_minMessageValues)
+	m_minMessageValues = op.m_myOffset;
+    }
 
     const char *Protocol::
     parseOperation(ezxml_t op) {
@@ -175,26 +262,13 @@ namespace OCPI {
       }
       Operation *o = m_op++;
       const char *err = o->parse(op, *this);
-      if (!err) {
-	if (m_isUnbounded ||
-	    m_maxMessageValues && m_maxMessageValues != o->m_myOffset)
-	  m_variableMessageLength = true;
-	if (o->m_myOffset > m_maxMessageValues)
-	  m_maxMessageValues = o->m_myOffset; // still in bytes until later
-	if (!o->m_nArgs)
-	  m_zeroLengthMessages = true;
-	if (o->m_myOffset < m_minMessageValues)
-	  m_minMessageValues = o->m_myOffset;
-      }
+      if (!err)
+	finishOperation(*o);
       return err;
     }
     // Interface for C iterator in ezxml
     const char *doOperation(ezxml_t op, void *arg) {
       return ((Protocol *)arg)->parseOperation(op);
-    }
-    const char *Protocol::finishParse() {
-      m_minBufferSize = (m_dataValueWidth * m_minMessageValues + 7) / 8;
-      return NULL;
     }
     // Parse summary attributes, presumably when there is no explicit protocol
     // although possibly to forcibly override?
@@ -219,9 +293,46 @@ namespace OCPI {
 	m_variableMessageLength = true;
 	m_isUnbounded = true;
       }
-      return finishParse();
+      return false;
     }
 
+    const char *Protocol::finishParse() {
+      m_minBufferSize = (m_dataValueWidth * m_minMessageValues + 7) / 8;
+      return NULL;
+    }
+
+    void Protocol::generate(const char *name) {
+      struct timeval tv;
+      gettimeofday(&tv, NULL);
+      srandom(tv.tv_sec + tv.tv_usec);
+      m_name = name;
+      m_dataValueWidth = 0;
+      m_nOperations = random() % 10 + 1;
+      Operation *o = m_operations = new Operation[m_nOperations];
+      for (unsigned n = 0; n < m_nOperations; n++, o++) {
+	char *name;
+	asprintf(&name, "op%d", n);
+	o->generate(name, *this);
+	free(name);
+	finishOperation(*o);
+      }
+      finishParse();
+    }
+    // Generate a message for a random opcode
+    void Protocol::generateOperation(uint8_t &opcode, Value **&v) {
+      opcode = random() % m_nOperations;
+      m_operations[opcode].generateArgs(v);
+    }
+
+    void Protocol::printOperation(FILE *f, uint8_t opcode, Value **v) {
+      fprintf(f, "%u:", opcode);
+      m_operations[opcode].print(f, v);
+      fflush(f);
+    }
+    void Protocol::testOperation(FILE *f, uint8_t opcode, Value **v) {
+      fprintf(f, "testing %u:", opcode);
+      m_operations[opcode].testPrintParse(f, v);
+    }
     const char *Protocol::parse(ezxml_t prot) {
       const char *err;
       if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize", (void*)0))) 
@@ -286,5 +397,28 @@ namespace OCPI {
 	o->printXML(f, indent + 1);
       fprintf(f, "%*s</protocol>\n", indent * 2, "");
     }
+    // Send the data in the buffer to the writer
+    void Protocol::write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode) {
+      assert(!((intptr_t)data & (maxDataTypeAlignment - 1)));
+      if (!m_operations)
+	throw Error("No operations in protocol for writing");
+      if (opcode >= m_nOperations)
+	throw Error("Invalid Opcode for protocol");
+      writer.writeOpcode(m_operations[opcode].m_name.c_str(), opcode);
+      m_operations[opcode].write(writer, data, length);
+      writer.end();
+    }
+    uint32_t Protocol::read(Reader &reader, uint8_t *data, uint32_t maxLength, uint8_t opcode) {
+      assert(!((intptr_t)data & (maxDataTypeAlignment - 1)));
+      if (!m_operations)
+	throw Error("No operations in protocol for writing");
+      if (opcode >= m_nOperations)
+	throw Error("Invalid Opcode for protocol");
+      uint8_t *myData = data;
+      m_operations[opcode].read(reader, myData, maxLength);
+      reader.end();
+      return myData - data;
+    }
+
   }
 }

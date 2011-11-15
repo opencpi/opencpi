@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -33,19 +32,24 @@
  */
 
 #define __STDC_LIMIT_MACROS // wierd standards goof up
+#include <stdarg.h>
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include "OcpiOsAssert.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilAutoMutex.h"
+#include "OcpiUtilValue.h"
 #include "OcpiUtilDataTypes.h"
 
 namespace OCPI {
-
   namespace Util {
     namespace OA = OCPI::API;
+
+    static inline long myRandom() { return random() * (random() & 1 ? -1 : 1); }
     // Return true on error
     bool
     getUNum64(const char *s, uint64_t *valp) {
@@ -103,76 +107,173 @@ namespace OCPI {
       return true;
     }
 
-#if 0
+    // Find an element, which might be empty, trimming whitespace
+    // Return true if there is more
+    // "unparsed" is advanced past the found element.
+    // "start" and "end" is the element found
+    // The fundamental delimiter of elements is comma,
+    // but braces must be counted since they can have commas within
+    static const char *
+    doElement(const char *&unparsed, const char *stop, const char *&start, const char *&end, bool comma = true) {
+      // Skip initial white space
+      const char *tmp = unparsed;
+      while (unparsed != stop && isspace(*unparsed))
+	unparsed++;
+      start = unparsed;
+      end = stop;
+      unsigned nBraces = 0;
+      const char *last = start;
+      while (unparsed < stop && *unparsed)
+	switch (*unparsed++) {
+	case ',':
+	  if (nBraces == 0) {
+	    if (!comma)
+	      return "unexpected comma when parsing arrays";
+	    end = unparsed - 1;
+	    goto break2;
+	  }
+	  break;
+	case '\\':
+	  if (unparsed < stop)
+	    unparsed++;
+	  last = unparsed; // remember last white space to protect
+	  break;
+	case '{':
+	  nBraces++; break;
+	case '}':
+	  if (nBraces == 0)
+	    return esprintf("unbalanced braces - extra close brace for (%*s) (%u)",
+			    stop - tmp, tmp, stop - tmp);
+	  if (--nBraces == 0 && !comma) {
+	    end = unparsed;
+	    goto break2;
+	  }
+	}
+    break2:
+      while (end > last && isspace(end[-1]))
+	end --;
+      return NULL;
+    }
 
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)		\
-    bool Value::parse##pretty(const char *, const char *, unsigned length, run *);
-    OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
+    Value::Value(const ValueType &vt, Value *parent)
+      : m_vt(vt), m_nElements(0), m_nTotal(0), m_stringSpace(NULL), m_stringNext(NULL),
+	m_stringSpaceLength(0),	m_struct(NULL), m_structNext(NULL), m_types(NULL), m_typeNext(NULL),
+	m_parent(parent), m_next(0), m_length(0), m_ULongLong(0) {
+    }
 
-#endif
-
-    bool Value::
+    const char *Value::
     parseBool(const char *a, const char *end, bool &b)
     {
       (void)end;
-      return OCPI::Util::EzXml::parseBool(a, &b);
+      return OCPI::Util::EzXml::parseBool(a, end, &b) ? "bad Bool value" : NULL;
     }
-    bool Value::
-    parseChar(const char*cp, const char *end, char &vp) {
-      (void)end;
-      while (isspace(*cp))
-	cp++;
-      if (*cp == '\'') {
-	if (*++cp == '\\')
-	  cp++;
-	vp = *cp;
-      } else {
-	int64_t n;
-	if (getNum64(cp, &n) || n > INT8_MAX || n < INT8_MIN)
-	  return true;
-	vp = n;
-      }
+    static bool hex(char c, unsigned &n) {
+      if (!isxdigit(c))
+	return true;
+      c = tolower(c);
+      n = isdigit(c) ? c - '0' : c - 'a' + 10;
       return false;
     }
-    bool Value::
+    static bool octal(char c, unsigned &n) {
+      if (isdigit(c) && c <= '7') {
+	n = c - '0';
+	return false;
+      }
+      return true;
+    }
+    // We implement the defined escapes (in IDL, and C/C++), and we make sure
+    // escaping commas and braces works too
+    // We advance cp over the char
+    static bool
+    parseOneChar(const char*&cp, const char *end, char &vp) {
+      if (!*cp || cp == end)
+	return true;
+      if (*cp != '\\' || cp + 1 >= end)
+	vp = *cp;
+      else {
+	unsigned n, n1, n2;
+	switch (*++cp) {
+	case 'n': vp = '\n'; break;
+	case 't': vp = '\t'; break;
+	case 'v': vp = '\v'; break;
+	case 'b': vp = '\b'; break;
+	case 'r': vp = '\r'; break;
+	case 'f': vp = '\f'; break;
+	case 'a': vp = '\a'; break;
+	case 'x':
+	  if (cp + 2 > end ||
+	      hex(*++cp, n) ||
+	      hex(*++cp, n1))
+	    return true;
+	  vp = (n << 4) | n1;
+	  break;
+	case '0': case '1': case '2': case '3': 
+	case '4': case '5': case '6': case '7':
+	  if (cp + 3 > end ||
+	      octal(*cp++, n) ||
+	      octal(*cp++, n1) ||
+	      octal(*cp, n2))
+	    return true;
+	  vp = (n << 6) | (n1 << 3) | n2;
+	  break;
+	case '\\':
+	case '?':
+	case '\'':
+	case '\"':
+        case ',': case '{': case '}': case ' ':// these are ours, not from C/C++/IDL
+	  vp = *cp;
+	  break;
+	default:
+	  return true;
+	}
+      }
+      cp++;
+      return false;
+    }
+    const char *Value::
+    parseChar(const char*cp, const char *end, char &vp) {
+      const char *tmp = cp;
+      return parseOneChar(tmp, end, vp) || tmp != end ? "bad Char value" : NULL;
+    }
+    const char *Value::
     parseDouble(const char*cp, const char *end, double &vp) {
       (void)end;
       char *endptr;
       errno = 0;
       vp = strtod(cp, &endptr);
       if (endptr == cp || errno)
-	return true;
-      return false;
+	return "bad Double value";
+      return NULL;
     }
-    bool Value::
+    const char *Value::
     parseFloat(const char*cp, const char *end, float &vp) {
       (void)end;
       char *endptr;
+      errno = 0;
       vp = strtof(cp, &endptr);
       if (endptr == cp || errno)
-	return true;
-      return false;
+	return "bad Float value";
+      return NULL;
     }
-    bool Value::
+    const char *Value::
     parseShort(const char*cp, const char *end, int16_t &vp) {
       (void)end;
       int64_t n;
       if (getNum64(cp, &n) || n > INT16_MAX || n < INT16_MIN)
-	return true;
+	return "bad Short value";
       vp = n;
-      return false;
+      return NULL;
     }
-    bool Value::
+    const char *Value::
     parseLong(const char*cp, const char *end, int32_t &vp) {
       (void)end;
       int64_t n;
       if (getNum64(cp, &n) || n > INT32_MAX || n < INT32_MIN)
-	return true;
+	return "bad Long value";
       vp = n;
-      return false;
+      return NULL;
     }
-    bool Value::
+    const char *Value::
     parseUChar(const char*cp, const char *end, uint8_t &vp) {
       (void)end;
       while (isspace(*cp))
@@ -184,201 +285,269 @@ namespace OCPI {
       } else {
 	uint64_t n;
 	if (getUNum64(cp, &n) || n > UINT8_MAX)
-	  return true;
+	  return "bad UChar value";
 	vp = n;
       }
-      return false;
+      return NULL;
     }
-    bool Value::
+    const char *Value::
     parseULong(const char*cp, const char *end, uint32_t &vp) {
       (void)end;
       uint64_t n;
       if (getUNum64(cp, &n) || n > UINT32_MAX)
-	return true;
+	return "bad ULong value";
       vp = n;
-      return false;
+      return NULL;
     }
-    bool Value::
+    const char *Value::
     parseUShort(const char*cp, const char *end, uint16_t &vp) {
       (void)end;
       uint64_t n;
       if (getUNum64(cp, &n) || n > UINT16_MAX)
-	return true;
+	return "bad UShort value";
       vp = n;
-      return false;
+      return NULL;
     }
-    bool Value::
+    const char *Value::
     parseLongLong(const char*cp, const char *end, int64_t &vp) {
       (void)end;
       int64_t n;
       if (getNum64(cp, &n) || n > INT64_MAX || n < INT64_MIN)
-	return true;
+	return "bad LongLong value";
       vp = n;
-      return false;
+      return NULL;
     }
-    bool Value::
+    const char *Value::
     parseULongLong(const char*cp, const char *end, uint64_t &vp) {
       (void)end;
       uint64_t n;
       if (getUNum64(cp, &n))
-	return true;
+	return "bad ULongLong value";
       vp = n;
-      return false;
+      return NULL;
     }
-    bool Value::
+    // Strings can have double quotes
+    // In particular, "" is the only way to define an empty string that
+    // doesn't look like an empty sequence when you have a sequence of strings
+    // with one empty string in it.
+    const char *Value::
     parseString(const char*cp, const char *end, OA::CharP &vp) {
       // Check length if string is bounded
-      if (m_vt.m_stringLength && (end - cp) > m_vt.m_stringLength)
-	return true;
-      vp = m_stringNext;
-      while (cp < end)
-	*m_stringNext++ = *cp++;
+      
+      char *start = m_stringNext;
+      bool quoted;
+      if (*cp == '"') {
+	quoted = true;
+	cp++;
+      }
+      for (unsigned len = 0; cp < end; len++)
+	if (*cp == '"') {
+	  if (cp + 1 != end)
+	    return "double quoted string with invalid characters after the closing quote";
+	  break;
+	} else if (m_vt.m_stringLength && len >= m_vt.m_stringLength ||
+		   parseOneChar(cp, end, *m_stringNext++))
+	  return "bad String value";
       *m_stringNext++ = 0;
-      return false;
+      vp = (const char *)start;
+      return NULL;
     }
-    Value::Value(const ValueType &vt) : m_vt(vt), m_nElements(0), m_stringSpace(NULL) { clear(); }
+    // Parse the elements of the structure.  This is like the data-type-specific methods.
+    const char *Value::
+    parseStruct(const char *unparsed, const char *stop, StructValue &sv) {
+      sv = m_structNext;
+      m_structNext += m_vt.m_nMembers;
+      while (unparsed < stop) {
+	const char *start, *end;
+	doElement(unparsed, stop, start, end);
+	if (start == end)
+	  return "empty member value in struct value";
+	unsigned n, len;
+	for (n = 0; n < m_vt.m_nMembers; n++) {
+	  const char *mName = m_vt.m_members[n].m_name.c_str();
+	  len = strlen(mName);
+	  if (!strncmp(mName, start, len) && isspace(start[len]))
+	    break;
+	}
+	if (n >= m_vt.m_nMembers)
+	  return "unknown member name in struct value";
+	if (sv[n])
+	  return "duplicate member name in struct value";
+	Value *v = sv[n] = new Value(m_vt.m_members[n], this);
+	const char *err;
+	start += len;
+	while (isspace(*start) && start < end)
+	  start++;
+	if (v->needsComma()) {
+	  if (*start != '{' || end[-1] != '}')
+	    return esprintf("struct member value needs be enclosed in {} (%*s) (%u)",
+			    end - start, start, end - start);
+	  start++;
+	  end--;
+	}
+	if ((err = v->parse(start, end)))
+	  return err;
+      }
+      return NULL;
+    }
+    // Parse the elements of the structure.  This is like the data-type-specific methods.
+    const char *Value::
+    parseType(const char *unparsed, const char *stop, TypeValue &sv) {
+      sv = m_typeNext++;
+      if (sv->needsComma()) {
+	if (*unparsed != '{' || stop[-1] != '}')
+	  return "recursize type needs to be enclosed in {}";
+	unparsed++;
+	stop--;
+      }
+      //      if (!strncmp("{}", unparsed, 2))
+      // srand(0);
+      return sv->parse(unparsed, stop);
+    }
+    const char *Value::
+    parseEnum(const char *unparsed, const char *stop, EnumValue &sv) {
+      for (unsigned n = 0; n < m_vt.m_nEnums; n++) {
+	unsigned len = strlen(m_vt.m_enums[n]);
+	if (!strncasecmp(m_vt.m_enums[n], unparsed, len) &&
+	    unparsed + len == stop) {
+	  sv = n;
+	  return NULL;
+	}
+      }
+      return "unknown enum value";
+    }
 
     // We expect to parse into the value more that once.
     void Value::
     clear() {
-      if (m_nElements)
-	switch(m_vt.m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
-	  case OA::OCPI_##pretty:		   \
-	    delete [] m_p##pretty;		   \
-	    break;
-	  OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-	case OA::OCPI_Struct: case OA::OCPI_Type: case OA::OCPI_Enum:
-	case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
-	}
-      m_nElements = 0;
+      // Special storage for sparse structure values
+      if (m_struct) {
+	for (unsigned n = 0; n < m_nTotal; n++)
+	  if (m_struct[n]) {
+	    delete m_struct[n];
+	    m_struct[n] = 0;
+	  }
+	delete []m_struct;
+      }
+      // Special storage for string values
       if (m_stringSpace) {
 	delete [] m_stringSpace;
 	m_stringSpace = NULL;
+	m_stringSpaceLength = 0;
+      }
+      if (m_types) {
+	delete [] m_types;
+	m_types = NULL;
+      }
+      if (m_nTotal && (m_vt.m_isSequence || m_vt.m_arrayRank)) {
+	switch(m_vt.m_baseType) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	 \
+	case OA::OCPI_##pretty:			         \
+	  delete [] m_p##pretty;			 \
+	  break;
+	  OCPI_PROPERTY_DATA_TYPES
+	  OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
+          OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
+          OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
+#undef OCPI_DATA_TYPE
+	case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
+	}
+	m_nTotal = 0;
+	m_nElements = 0;
       }
     }
     Value::~Value() {
       clear();
     }
 
-#if 0
-    // No unbounded allowed
-    void Value::allocate(const ValueType &vt) {
-      clear();
-      if (vt.m_isSequence || vt.m_arrayRank) {
-	m_vector = true;
-	m_length = 1;
-	if (vt.m_arrayRank)
-	  for (unsigned n = 0; n < vt.m_arrayRank; n++)
-	    m_length *= vt.m_arrayDimensions[n];
-	if (vt.m_isSequence && vt.m_sequenceLength)
-	  m_length *= vt.m_sequenceLength;
-	switch (vt.m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	\
-	  case OA::OCPI_##pretty:			\
-	    m_p##pretty = new run[m_length];		\
-	    break;
-	  OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-	case OA::OCPI_none: case OA::OCPI_Struct: case OA::OCPI_scalar_type_limit:;
-	}
-      } else
-	m_length = 1;
-      m_baseType = vt.m_baseType;
-      if (vt.m_baseType == OA::OCPI_String) {
-	if (m_vector)
-	  m_stringSpace = new char[(vt.m_stringLength + 1) * m_length];
-	else
-	  m_String = m_stringSpace = new char[vt.m_stringLength + 1];
+    const ValueType *Value::s_vt;
+    Value *Value::s_parent;
+    OS::Mutex Value::s_mutex;
+
+    // This method is used both for parsing and for generating test values.
+    // m_nElements has been established
+    const char *
+    Value::allocate() {
+      if (m_vt.m_isSequence) {
+	if (m_nElements == 0)
+	  return NULL;
+	if (m_vt.m_sequenceLength && m_nElements > m_vt.m_sequenceLength)
+	  return esprintf("Too many elements (%u) in bounded sequence (%u)",
+			  m_nElements, m_vt.m_sequenceLength);
       }
-    }
-#endif
-    // Find an element, which might be empty, trimming whitespace
-    // Return true if there is more
-    static const char *
-    doElement(const char *&unparsed, const char *stop, const char *&start, const char *&end) {
-      // Skip initial white space
-      while (unparsed != stop && isspace(*unparsed))
-	unparsed++;
-      // Find end
-      start = unparsed;
-      if (*unparsed == '{') {
-	unsigned n = 1;
-	do 
-	  switch(*++unparsed) {
-	  case '\\':
-	    unparsed++; break;
-	  case '{':
-	    n++; break;
-	  case '}':
-	    n--; break;
-	  case 0:
-	    return "unbalanced curly braces in value";
-	  default:;
-	  }
-	while (n);
-	end = ++unparsed;
-	while (unparsed != stop && *unparsed && *unparsed != ',')
-	  if (!isspace(*unparsed++))
-	    return "illegal characters between '}' and ','";
-      } else {
-	while (unparsed != stop && *unparsed && *unparsed != ',') {
-	  if (*unparsed == '\\' && unparsed[1])
-	    unparsed++;
-	  unparsed++;
+      switch (m_vt.m_baseType) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
+      case OA::OCPI_##pretty:			   \
+	if (m_vt.m_isSequence || m_vt.m_arrayRank) \
+	  m_p##pretty = new run[m_nTotal];	   \
+	m_length = m_nTotal * sizeof(run);	   \
+	break;
+	OCPI_PROPERTY_DATA_TYPES
+	OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
+	OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
+	OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
+#undef OCPI_DATA_TYPE
+	case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
 	}
-	end = unparsed++;
-	while (end > start && isspace(end[-1]))
-	  end--;
+      if (m_vt.m_baseType == OA::OCPI_Struct) {
+	unsigned nElements = m_nTotal * m_vt.m_nMembers;
+	m_struct = m_structNext = new Value *[nElements];
+	for (unsigned n = 0; n < nElements; n++)
+	  m_struct[n] = 0;
+      } else if (m_vt.m_baseType == OA::OCPI_Type) {
+	// This mutex/static ugliness is to supply an argument to the default constructor of Value
+	AutoMutex am(s_mutex);
+	Value::s_vt = m_vt.m_type;
+	Value::s_parent = this;
+	m_types = m_typeNext = new Value[m_nTotal];
+      } else if (m_vt.m_baseType == OA::OCPI_String && !m_stringSpace) {
+	m_stringSpaceLength = m_nTotal * (testMaxStringLength + 1);
+	m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
       }
       return NULL;
     }
-
     const char *
     Value::parse(const char *unparsed, const char *stop) {
-      clear();
       const char *err = 0;
       if (!stop)
 	stop = unparsed + strlen(unparsed);
-      if (m_vt.m_baseType == OA::OCPI_String)
+      clear();
+      if (m_vt.m_baseType == OA::OCPI_String) {
 	// the space required will never be larger than the input...
-	m_stringNext = m_stringSpace = new char[stop - unparsed + 1];
+	m_stringSpaceLength = stop - unparsed + 1;
+	m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
+      }
+      const char *start, *end, *tmp = unparsed;
+      if (!stop)
+	stop = unparsed + strlen(unparsed);
+      m_nTotal = m_vt.m_nItems;
       if (m_vt.m_isSequence) {
-	const char *start, *end, *tmp = unparsed;
-	if (!stop)
-	  stop = unparsed + strlen(unparsed);
-
-	for (m_nElements = 0; tmp < stop; m_nElements++)
+	// Figure out how many elements in the sequence
+	m_nElements = 0;
+	unsigned len;
+	do {
 	  if ((err = doElement(tmp, stop, start, end)))
 	    return err;
-	if (m_nElements == 1 && start == end)
+	  len = end - start;
+	  while (end < tmp && isspace(*end))
+	    end++;
+	  m_nElements++;
+	} while (end < stop);
+	if (m_nElements == 1 && len == 0)
+	  //(len == 0 ||
+	  //len == 2 && !strncmp("{}", start, 2)))
 	  m_nElements = 0;
-	if (m_vt.m_sequenceLength && m_nElements > m_vt.m_sequenceLength)
-	  return "Too many elements in bounded sequence";
-	// Allocate sequence array
-	if (m_nElements) {
-	  switch (m_vt.m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)    \
-	    case OA::OCPI_##pretty:		      \
-	      if (m_vt.m_arrayRank)		      \
-		m_pp##pretty = new run*[m_nElements]; \
-	      else				      \
-		m_p##pretty = new run[m_nElements];   \
-	      break;
-	    OCPI_PROPERTY_DATA_TYPES
-	    OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
-            OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
-            OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
-#undef OCPI_DATA_TYPE
-	  case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
-	  }
-	}
+	m_nTotal *= m_nElements;
+      }
+      if ((err = allocate()))
+	return err;
+      if (m_vt.m_isSequence) {
 	// Now we have allocated the appropriate sequence array, so we can parse elements
 	for (unsigned n = 0; n < m_nElements; n++) {
 	  doElement(unparsed, stop, start, end);
-	  if (*start == '{') {
-	    assert(end[-1] == '}');
+	  if (needsCommaElement()) {
+	    if (*start != '{' || end[-1] != '}')
+	      return "sequence elements not enclosed in braces";
 	    start++;
 	    end--;
 	  }
@@ -387,22 +556,42 @@ namespace OCPI {
 	}
 	return NULL;
       }
-      return parseElement(unparsed, unparsed + strlen(unparsed), 0);
+      return parseElement(unparsed, stop, 0);
     }
     const char *Value::
     parseDimension(const char *unparsed, const char *stop,
-		   unsigned nseq, unsigned dim, unsigned offset) {
-      unsigned nextDim = dim + 1;
+		   unsigned nseq, unsigned dim, unsigned offset, unsigned nItems) {
+      unsigned
+	nextDim = dim + 1,
+	dimension = m_vt.m_arrayDimensions[dim],
+	skip = nItems/dimension;
       const char *err;
-      for (unsigned n = 0; unparsed != stop && n < m_vt.m_arrayDimensions[dim]; n++) {
+      const char *last = 0;
+      for (unsigned n = 0; n < m_vt.m_arrayDimensions[dim]; n++) {
 	const char *start, *end;
-	doElement(unparsed, stop, start, end);
+	doElement(unparsed, stop, start, end, nextDim == m_vt.m_arrayRank);
+	if (n && start == last)
+	  return "insufficient array elements";
+	last = start;
 	if (nextDim < m_vt.m_arrayRank) {
-	  if ((err = parseDimension(start, end, nseq, dim + 1, offset)))
+	  if (start == end || start[0] != '{' || end[-1] != '}')
+	    return esprintf("array elements not enclosed in {} for (%*s) (%u)",
+			    end - start, start, end - start);
+	  if ((err = parseDimension(start+1, end-1, nseq, nextDim, offset, skip)))
 	    return err;
-	  offset += m_vt.m_arrayDimensions[nextDim];
-	} else if ((err = parseValue(start, end, nseq, offset++)))
-	  return err;
+	  offset += skip;
+	} else {
+	  // strip braces if they were added
+	  if (needsCommaElement()) {
+	    if (start[0] != '{' || end[-1] != '}')
+	      return esprintf("struct as array element not enclosed in {} for (%*s) (%u)",
+			      end - start, start, end - start);
+	    start++;
+	    end--;
+	  }
+	  if ((err = parseValue(start, end, nseq, offset++)))
+	    return err;
+	}
       }
       return NULL;
     }
@@ -410,62 +599,34 @@ namespace OCPI {
     const char *Value::
     parseElement(const char *start, const char *end, unsigned nSeq) {
       return m_vt.m_arrayRank ?
-	parseDimension(start, end, nSeq, 0, 0) :
+	parseDimension(start, end, nSeq, 0, 0, m_vt.m_nItems) :
 	parseValue(start, end, nSeq, 0);
     }
     // A single value
     const char *Value::
-    parseValue(const char *unparsed, const char *stop, unsigned nSeq, unsigned nArray) {
-      const char *start, *end;
-      if (doElement(unparsed, stop, start, end))
-	return "Multiple values when a single value is expected (unescaped comma?)";
+    parseValue(const char *start, const char *end, unsigned nSeq, unsigned nArray) {
+      const char *err;
       switch (m_vt.m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			             \
-	case OA::OCPI_##pretty:						             \
-	  if (parse##pretty                 					     \
-	      (start, end,                       			             \
-	       (m_vt.m_isSequence ?					             \
-		(m_vt.m_arrayRank ? m_pp##pretty[nSeq][nArray] : m_p##pretty[nSeq]) :\
-		(m_vt.m_arrayRank ? m_p##pretty[nArray] : m_##pretty))))	     \
-	    return "Bad "#pretty" value";				             \
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			        \
+	case OA::OCPI_##pretty:						        \
+	  if ((err = parse##pretty(start, end,					\
+				   m_vt.m_isSequence || m_vt.m_arrayRank ?      \
+				   m_p##pretty[nSeq * m_vt.m_nItems + nArray] : \
+				   m_##pretty)))			        \
+	    return esprintf("%s for \"%*s\" (%u)", err, end-start, start, end-start);\
 	  break;
 	OCPI_PROPERTY_DATA_TYPES
+	OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
+        OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
+        OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
       default:
 	return "Unexpected illegal type in parsing value";
       }
       return NULL;
     }
-    // Parse the elements of the structure.  This is like the data-type-specific methods.
-    bool Value::
-    parseStruct(const char *unparsed, const char *stop, StructValue &sv) {
-      while (unparsed < stop) {
-	const char *start, *end;
-	doElement(unparsed, stop, start, end);
-	if (start == end)
-	  return "empty member value in struct value";
-	unsigned n;
-	for (n = 0; n < m_vt.m_nMembers; n++) {
-	  const char *mName = m_vt.m_members[n].m_name.c_str();
-	  unsigned len = strlen(mName);
-	  if (!strncmp(mName, start, len) && isspace(start[len]))
-	    break;
-	}
-	if (n >= m_vt.m_nMembers)
-	  return true; // "unknown member name in struct value";
-	if (sv[n])
-	  return true; // "duplicate member name in struct value";
-	sv[n] = new Value(m_vt.m_members[n]);
-	const char *err;
-	if ((err = sv[n]->parse(start, end)))
-	  return true;
-      }
-      return false;
-    }
 #if 0
       doElement
-	}
-
       allocate(vt);
       unsigned n;
       for (n = 0; n < m_length && *unparsed; n++) {
@@ -530,131 +691,483 @@ namespace OCPI {
       else
 	m_length = n;
       return err;
+#endif
+
+void Value::
+unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, unsigned nItems) const {
+  unsigned
+    nextDim = dim + 1,
+    dimension = m_vt.m_arrayDimensions[dim],
+    skip = nItems/dimension;
+  for (unsigned n = 0; n < m_vt.m_arrayDimensions[dim]; n++)
+    if (nextDim < m_vt.m_arrayRank) {
+      s += '{';
+      unparseDimension(s, nseq, nextDim, offset, skip);
+      s += '}';
+      offset += skip;
+    } else {
+      if (n != 0)
+	s+= ',';
+      if (needsCommaElement()) {
+	s += '{';
+	unparseValue(s, nseq, offset++);
+	s += '}';
+      } else
+	unparseValue(s, nseq, offset++);
     }
-#endif
-    void Value::unparse(std::string &s) const {
-      char *cp = 0;
-      switch (m_vt.m_baseType) {
-      case OA::OCPI_Float:
-	asprintf(&cp, "%g", (double)m_Float);
-	break;
-      case OA::OCPI_Double:
-	asprintf(&cp, "%g", m_Double);
-	break;
-#if 0
-      case OA::OCPI_LongDouble:
-	asprintf(&cp, "%Lg", m_LongDouble);
-	break;
-#endif
-      case OA::OCPI_Short:
-	asprintf(&cp, "%ld", (long)m_Short);
-	break;
-      case OA::OCPI_Long:
-	asprintf(&cp, "%ld", (long)m_Long);
-	break;
-      case OA::OCPI_LongLong:
-	asprintf(&cp, "%lld", (long long)m_LongLong);
-	break;
-      case OA::OCPI_UShort:
-	asprintf(&cp, "%lu", (unsigned long)m_UShort);
-	break;
-      case OA::OCPI_ULong:
-	asprintf(&cp, "%lu", (unsigned long)m_ULong);
-	break;
-      case OA::OCPI_ULongLong:
-	asprintf(&cp, "%llu", (unsigned long long)m_ULongLong);
-	break;
-      case OA::OCPI_Char:
-	cp = new char[10];
-	if (isprint(m_Char)) {
-	  switch (m_Char) {
-	  case '\\':
-	  case '"':
-	  case '?':
-	  case '\'':
-	    *cp++ = '\\';
-	    break;
-	  default:
-	    ;
-	  }
-	  *cp++ = m_Char;
-	} else {
-	  *cp++ = '\\';
-	  switch (m_Char) {
-	  case '\a':
-	    *cp++ = 'a';
-	    break;
-	  case 'b':
-	    *cp++ = 'b';
-	    break;
-	  case 'f':
-	    *cp++ = 'f';
-	    break;
-	  case 'n':
-	    *cp++ = 'n';
-	    break;
-	  case 'r':
-	    *cp++ = 'r';
-	    break;
-	  case 't':
-	    *cp++ = 't';
-	    break;
-	  case 'v':
-	    *cp++ = 'v';
-	    break;
-	  default:
-	    *cp++ = '0' + ((m_Char >> 6) & 7);
-	    *cp++ = '0' + ((m_Char >> 3) & 7);
-	    *cp++ = '0' + (m_Char & 7);
-	  }
-	case OA::OCPI_Struct: 
-	case OA::OCPI_Type: 
-	case OA::OCPI_Enum: 
-	case OA::OCPI_none:
-	case OA::OCPI_scalar_type_limit:;
-	}
-	*cp = 0;
-	break;
-#if 0
-      case OA::OCPI_WChar:
-	cp = (char *)malloc(MB_LEN_MAX + 1);
-	wctomb(cp, m_wchar); // FIXME: could worry about escapes in this string?
-	break;
-#endif
-      case OA::OCPI_Bool:
-	asprintf(&cp, m_Bool ? "true" : "false");
-	break;
-      case OA::OCPI_UChar:
-	asprintf(&cp, "0x%x", m_UChar);
-	break;
-#if 0
-      case OA::OCPI_Objref:
-#endif
-      case OA::OCPI_String:
-	s = m_String;
-	break;
-#if 0
-      case Type::WSTRING:
-      case Type::FIXED:
-      case Type::ENUM:
-      case Type::UNION:
-	// These are not used for properties.
-	break;
-      case Type::STRUCT:
-	assert(0); // unimplemented yet.
-      case Type::ANY:
-      case Type::VOID:
-      case Type::NONE:
-      default:
-	// These are not used for properties.
-	;
-#endif
+}
+
+void Value::
+unparseElement(std::string &s, unsigned nSeq) const {
+  if (m_vt.m_arrayRank)
+    unparseDimension(s, nSeq, 0, 0, m_vt.m_nItems);
+  else
+    unparseValue(s, nSeq, 0);
+}
+
+static void doFormat(std::string &s, const char *fmt, ...) {
+  char *cp;
+  va_list ap;
+  va_start(ap, fmt);
+  vasprintf(&cp, fmt, ap);
+  va_end(ap);
+  s += cp;
+  free(cp);
+}
+
+void Value::unparse(std::string &s) const {
+  if (m_vt.m_isSequence) {
+    // Now we have allocated the appropriate sequence array, so we can parse elements
+    //    doFormat(s, "\\<%lu\\>", m_nElements);
+    for (unsigned n = 0; n < m_nElements; n++) {
+      if (n)
+	s += ',';
+      if (needsCommaElement()) {
+	s += '{';
+	unparseElement(s, n);
+	s += '}';
+      } else
+	unparseElement(s, n);
+    }
+  } else
+    unparseElement(s, 0);
+}
+
+void Value::
+unparseValue(std::string &s, unsigned nSeq, unsigned nArray) const {
+  switch (m_vt.m_baseType) {
+#define OCPI_DATA_TYPE(sca,c,u,b,run,pretty,storage)		 \
+  case OA::OCPI_##pretty:					 \
+    unparse##pretty(s,						 \
+		    m_vt.m_isSequence || m_vt.m_arrayRank ?	 \
+		    m_p##pretty[nSeq * m_vt.m_nItems + nArray] : \
+		    m_##pretty);				 \
+      break;
+    OCPI_PROPERTY_DATA_TYPES
+    OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
+    OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
+    OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
+#undef OCPI_DATA_TYPE
+  case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
+  }
+}
+void Value::
+unparseBool(std::string &s, bool val) const {
+  s += val ? "true" : "false";
+}
+void Value::
+unparseChar(std::string &s, char argVal) const {
+  uint8_t val = argVal & 0xff;
+  if (isprint(val)) {
+    switch (val) {
+    case '\\':
+    case '"':
+    case ' ':
+    case ',':
+    case '}':
+    case '{':
+      s += '\\';
+      break;
+    default:
+      ;
+    }
+    s += val;
+  } else {
+    s += '\\';
+    char c;
+    switch (val) {
+    case '\n': c = 'n'; break;
+    case '\t': c = 't'; break;
+    case '\v': c = 'v'; break;
+    case '\b': c = 'b'; break;
+    case '\r': c = 'r'; break;
+    case '\f': c = 'f'; break;
+    case '\a': c = 'a'; break;
+    default:
+	s += '0' + ((val >> 6) & 7);
+	s += '0' + ((val >> 3) & 7);
+	c = '0' + (val & 7);
+    }
+    s += c;
+  }
+}
+void Value::
+unparseDouble(std::string &s, double val) const {
+  char *cp;
+  asprintf(&cp, "%g", val);
+  for (char *p = cp; *p; p++)
+    if (*p == 'e' || *p == 'E') {
+      while (p > cp && p[-1] == '0') {
+	strcpy(p - 1, p);
+	p--;
       }
-      if (cp) {
-	s = cp;
-	delete []cp;
-      }
+      break;
+    }
+  s += cp;
+  free(cp);
+  //  doFormat(s, "%g", val);
+}
+void Value::
+unparseFloat(std::string &s, float val) const {
+  unparseDouble(s, (double)val);
+  //  doFormat(s, "%g", (double)val);
+}
+void Value::
+unparseShort(std::string &s, int16_t val) const {
+  doFormat(s, "%ld", (long)val);
+}
+void Value::
+unparseLong(std::string &s, int32_t val) const {
+  doFormat(s, "%ld", (long)val);
+}
+void Value::
+unparseUChar(std::string &s, uint8_t val) const {
+  doFormat(s, "0x%0x", val);
+}
+void Value::
+unparseULong(std::string &s, uint32_t val) const {
+  doFormat(s, "%lu", (unsigned long)val);
+}
+void Value::
+unparseUShort(std::string &s, uint16_t val) const {
+  doFormat(s, "%lu", (unsigned long)val);
+}
+void Value::
+unparseLongLong(std::string &s, int64_t val) const {
+  doFormat(s, "%lld", (long long)val);
+}
+void Value::
+unparseULongLong(std::string &s, uint64_t val) const {
+  doFormat(s, "%llu", (unsigned long long)val);
+}
+void Value::
+unparseString(std::string &s, const char *val) const {
+  if (!*val)
+    s += "\"\"";
+  else
+    while (*val)
+      unparseChar(s, *val++);
+}
+bool Value::needsComma() const {
+  return m_vt.m_isSequence || m_vt.m_arrayRank == 1 || m_vt.m_baseType == OA::OCPI_Struct;
+}
+bool Value::needsCommaElement() const {
+  return m_vt.m_arrayRank == 1 || m_vt.m_baseType == OA::OCPI_Struct;
+}
+void Value::
+unparseStruct(std::string &s, StructValue val) const {
+  bool seenOne = false;
+  for (unsigned n = 0; n < m_vt.m_nMembers; n++) {
+    Value *v = *val++;
+    if (v) {
+      if (seenOne)
+	s += ',';
+      s += m_vt.m_members[n].m_name;
+      s += ' ';
+      if (v->needsComma()) {
+	s += '{';
+	v->unparse(s);
+	s += '}';
+      } else
+	v->unparse(s);
+      seenOne = true;
     }
   }
+}
+void Value::
+unparseType(std::string &s, TypeValue val) const {
+  if (val->needsComma()) {
+    s += '{';
+    val->unparse(s);
+    s += '}';
+  } else
+    val->unparse(s);
+}
+void Value::
+unparseEnum(std::string &s, EnumValue val) const {
+  s += m_vt.m_enums[val];
+}
+#if 0
+
+  char *cp = 0, *cp1 = 0;
+  switch (m_vt.m_baseType) {
+  case OA::OCPI_Float:
+    asprintf(&cp, "%g", (double)m_Float);
+    break;
+  case OA::OCPI_Double:
+    asprintf(&cp, "%g", m_Double);
+    break;
+#if 0
+  case OA::OCPI_LongDouble:
+    asprintf(&cp, "%Lg", m_LongDouble);
+    break;
+#endif
+  case OA::OCPI_Short:
+    asprintf(&cp, "%ld", (long)m_Short);
+    break;
+  case OA::OCPI_Long:
+    asprintf(&cp, "%ld", (long)m_Long);
+    break;
+  case OA::OCPI_LongLong:
+    asprintf(&cp, "%lld", (long long)m_LongLong);
+    break;
+  case OA::OCPI_UShort:
+    asprintf(&cp, "%lu", (unsigned long)m_UShort);
+    break;
+  case OA::OCPI_ULong:
+    asprintf(&cp, "%lu", (unsigned long)m_ULong);
+    break;
+  case OA::OCPI_ULongLong:
+    asprintf(&cp, "%llu", (unsigned long long)m_ULongLong);
+    break;
+  case OA::OCPI_Char:
+    cp1 = cp = (char*)malloc(10); // need to match asprintf
+    if (isprint(m_Char)) {
+      switch (m_Char) {
+      case '\\':
+      case '"':
+      case '?':
+      case '\'':
+	*cp1++ = '\\';
+	break;
+      default:
+	;
+      }
+      *cp1++ = m_Char;
+    } else {
+      *cp1++ = '\\';
+      switch (m_Char) {
+      case '\a':
+	*cp1++ = 'a';
+	break;
+      case 'b':
+	*cp1++ = 'b';
+	break;
+      case 'f':
+	*cp1++ = 'f';
+	break;
+      case 'n':
+	*cp1++ = 'n';
+	break;
+      case 'r':
+	*cp1++ = 'r';
+	break;
+      case 't':
+	*cp1++ = 't';
+	break;
+      case 'v':
+	*cp1++ = 'v';
+	break;
+      default:
+	*cp1++ = '0' + ((m_Char >> 6) & 7);
+	*cp1++ = '0' + ((m_Char >> 3) & 7);
+	*cp1++ = '0' + (m_Char & 7);
+      }
+      *cp1 = 0;
+      break;
+    case OA::OCPI_Struct: 
+    case OA::OCPI_Type: 
+      break;
+    case OA::OCPI_Enum: 
+      s = m_vt.m_enums[m_ULong];
+      break;
+    case OA::OCPI_none:
+    case OA::OCPI_scalar_type_limit:;
+    }
+    break;
+#if 0
+  case OA::OCPI_WChar:
+    cp = (char *)malloc(MB_LEN_MAX + 1);
+    wctomb(cp, m_wchar); // FIXME: could worry about escapes in this string?
+    break;
+#endif
+  case OA::OCPI_Bool:
+    asprintf(&cp, m_Bool ? "true" : "false");
+    break;
+  case OA::OCPI_UChar:
+    asprintf(&cp, "0x%x", m_UChar);
+    break;
+#if 0
+  case OA::OCPI_Objref:
+#endif
+  case OA::OCPI_String:
+    s = m_String;
+    break;
+#if 0
+  case Type::WSTRING:
+  case Type::FIXED:
+  case Type::ENUM:
+  case Type::UNION:
+    // These are not used for properties.
+    break;
+  case Type::STRUCT:
+    assert(0); // unimplemented yet.
+  case Type::ANY:
+  case Type::VOID:
+  case Type::NONE:
+  default:
+    // These are not used for properties.
+    ;
+#endif
+  }
+  if (cp) {
+    s = cp; // makes a copy
+    free(cp);
+  }
+}
+#endif    
+void Value::
+generateDimension(unsigned nseq, unsigned dim, unsigned offset, unsigned nItems) {
+  unsigned
+    nextDim = dim + 1,
+    dimension = m_vt.m_arrayDimensions[dim],
+    skip = nItems/dimension;
+  for (unsigned n = 0; n < dimension; n++)
+    if (nextDim < m_vt.m_arrayRank) {
+      generateDimension(nseq, nextDim, offset, skip);
+      offset += skip;
+    } else
+      generateValue(nseq, offset++);
+}
+
+// Parse a value that is a sequence element or a single standalone value.
+void Value::
+generateElement(unsigned nSeq) {
+  if (m_vt.m_arrayRank)
+    generateDimension(nSeq, 0, 0, m_vt.m_nItems);
+  else
+    generateValue(nSeq, 0);
+}
+
+void Value::generate() {
+  clear();
+  m_nTotal = m_vt.m_nItems;
+  if (m_vt.m_isSequence) {
+    m_nElements = random() % (m_vt.m_sequenceLength ? m_vt.m_sequenceLength : 5);
+    m_nTotal *= m_nElements;
+  }
+  // string space?
+  ocpiCheck(allocate() == 0);
+  if (m_vt.m_isSequence)
+    // Now we have allocated the appropriate sequence array, so we can parse elements
+    for (unsigned n = 0; n < m_nElements; n++)
+      generateElement(n);
+  else
+    generateElement(0);
+}
+
+// Generate a random value for this type
+void Value::
+generateValue(unsigned nSeq, unsigned nArray) {
+  switch (m_vt.m_baseType) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)  \
+    case OA::OCPI_##pretty:			    \
+      (m_vt.m_isSequence || m_vt.m_arrayRank ?      \
+       m_p##pretty[nSeq * m_vt.m_nItems + nArray] : \
+       m_##pretty) = generate##pretty();            \
+      break;
+    OCPI_PROPERTY_DATA_TYPES
+    OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
+    OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
+    OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
+#undef OCPI_DATA_TYPE
+  case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
+  }
+}
+bool Value::
+generateBool() {
+  return (random() & 1) != 0;
+}
+char Value::
+generateChar() {
+  return random();
+}
+double Value::
+generateDouble() {
+  return myRandom();
+}
+float Value::
+generateFloat() {
+  return myRandom();
+}
+int16_t Value::
+generateShort() {
+  return myRandom();
+}
+int32_t Value::
+generateLong() {
+  return myRandom();
+}
+uint8_t Value::
+generateUChar() {
+  return random();
+}
+uint32_t Value::
+generateULong() {
+  return myRandom();
+}
+uint16_t Value::
+generateUShort() {
+  return myRandom();
+}
+int64_t Value::
+generateLongLong() {
+  return myRandom();
+}
+uint64_t Value::
+generateULongLong() {
+  return myRandom();
+}
+OA::CharP Value::
+generateString() {
+  char *cp = m_stringNext;
+  for (unsigned len = random() % (m_vt.m_stringLength ? m_vt.m_stringLength + 1 : testMaxStringLength);
+       len; len--)
+    *m_stringNext++ = random() % (0177 - 036) + 036;
+  *m_stringNext++ = 0;
+  return cp;
+}
+StructValue Value::
+generateStruct() {
+  StructValue sv = m_structNext;
+  m_structNext += m_vt.m_nMembers;
+  for (unsigned n = 0; n < m_vt.m_nMembers; n++)
+    if (random() % 4) {
+      sv[n] = new Value(m_vt.m_members[n], this);
+      sv[n]->generate();
+    }
+  return sv;
+}
+TypeValue Value::
+generateType() {
+  TypeValue tv = m_typeNext++;
+  tv->generate();
+  return tv;
+}
+EnumValue Value::
+generateEnum() {
+  return random() % m_vt.m_nEnums;
+}
+}
 }
 

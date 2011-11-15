@@ -25,11 +25,11 @@ namespace OCPI {
 	: public OL::ArtifactBase<Library, Artifact>, OU::EzXml::Doc {
 	friend class Library;
 	char *m_metadata;
-	// The returned value must be deleted with delete[];
 	Artifact(Library &lib, const char *name, const OA::PValue *)
 	  : ArtifactBase<Library,Artifact>(lib, name),
 	    m_metadata(0)
 	{	
+	  // The returned value must be deleted with delete[];
 	  if (!(m_metadata = getMetadata()))
 	    throw ApiError("Cannot open or retrieve metadata from file \"",
 			   name, "\"", NULL);
@@ -50,6 +50,7 @@ namespace OCPI {
 	// The length of the appended file is appended on a line starting with X
 	// i.e. (cat meta; sh -c 'echo X$4' `ls -l meta`) >> artifact
 	// This scheme allows for binary metadata, but we are doing XML now.
+	// The returned value must be deleted with delete[];
 	char *getMetadata() {
 	  char *data = 0;
 	  int fd = open(name().c_str(), O_RDONLY);
