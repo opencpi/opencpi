@@ -93,7 +93,7 @@ namespace OCPI {
       if ((err = includeImpl ?
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, IMPL_ATTRIBUTES, NULL) :
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
-	  (err = Member::parse(prop, true, true, true, ordinal)) ||
+	  (err = Member::parse(prop, true, true, "default", ordinal)) ||
 	  (err = Member::offset(maxAlign, myOffset, minSize, diverseSizes, sub32Configs,
 				unBoundedDummy)))
 	return err;

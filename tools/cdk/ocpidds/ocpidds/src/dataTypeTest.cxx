@@ -17,16 +17,17 @@ class Reader : public OU::Reader {
 
 public:
   Reader(OU::Value **v)
-    : m_values(v), m_v(v ? v[0] : 0), m_parent(NULL), m_first(true), m_n(0) {
+    : m_values(v), m_v(0), m_parent(NULL), m_first(true), m_n(0) {
   }
 
   // Return the value we should use.
   void nextItem(OU::Member &m, bool seq = false) {
     if (m.m_isSequence && !seq)
       return; // sequences are explicitly started
-    if (m_first)
+    if (m_first) {
+      m_v = m_values[0];
       m_first = false;
-    else if (!m_parent)
+    } else if (!m_parent)
       m_v = m_values[++m_n];
     else if (m_parent->m_vt.m_baseType == OA::OCPI_Struct) {
       // We are driven by m_parent (the struct) and the ordinal of the incoming member
@@ -202,8 +203,8 @@ public:
 	   p.data, nBytes);
   }
 };
-void dataTypeTest() {
-  for (unsigned n = 0; n < 100000; n++) {
+void dataTypeTest(unsigned count) {
+  for (unsigned n = 0; n < count; n++) {
     OU::Protocol p;
     p.generate("test");
     p.printXML(stdout);
@@ -217,13 +218,32 @@ void dataTypeTest() {
     Reader r(v);
     unsigned len = 1000000;
     uint8_t *buf = new uint8_t[len];
-    printf("Length was %u\n", p.read(r, buf, len, opcode));
+    memset(buf, 0, len);
+    unsigned rlen = p.read(r, buf, len, opcode);
+    printf("Length was %u\n", rlen);
     unsigned nArgs = p.m_operations[opcode].m_nArgs;
     OU::Value **v1 = new OU::Value *[nArgs];
     Writer w(v1, nArgs);
     p.write(w, buf, len, opcode);
+    uint8_t *buf1 = new uint8_t[rlen];
+    memset(buf1, 0, rlen);
+    Reader r1(v1);
+    unsigned rlen1 = p.read(r1, buf1, rlen, opcode);
+    assert(rlen == rlen1);
+    int dif = memcmp(buf, buf1, rlen);
+    for (unsigned n = 0; n < rlen; n++)
+      if (buf[n] != buf1[n]) {
+	printf("Buffer differs at byte %u [%llx %llx]\n",
+	       n, &buf[n], &buf1[n]);
+	assert(!"buffers different");
+      }
+    for (unsigned n = 0; n < nArgs; n++) {
+      delete v[n];
+      delete v1[n];
+    }
     delete []v;
     delete []v1;
     delete []buf;
+    delete []buf1;
   }
 }

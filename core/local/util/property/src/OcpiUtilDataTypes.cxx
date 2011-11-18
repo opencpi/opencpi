@@ -90,7 +90,7 @@ namespace OCPI {
 	delete m_defaultValue;
     }
     const char *
-    Member::parse(ezxml_t xm, bool isFixed, bool hasName, bool hasDefault, unsigned ordinal) {
+    Member::parse(ezxml_t xm, bool isFixed, bool hasName, const char *hasDefault, unsigned ordinal) {
       bool found;
       const char *err;
       const char *name = ezxml_cattr(xm, "Name");
@@ -207,12 +207,13 @@ namespace OCPI {
       if (m_isSequence && isFixed && m_sequenceLength == 0)
 	return "Sequence must have a bounded size";
       // Process default values
-
-      const char *defValue = ezxml_cattr(xm, "Default");
-      if (defValue) {
-	m_defaultValue = new Value(*this);
-	if ((err = m_defaultValue->parse(defValue)))
-	  return esprintf("for member %s:", m_name.c_str());
+      if (hasDefault) {
+	const char *defValue = ezxml_cattr(xm, hasDefault);
+	if (defValue) {
+	  m_defaultValue = new Value(*this);
+	  if ((err = m_defaultValue->parse(defValue)))
+	    return esprintf("for member %s:", m_name.c_str());
+	}
       }
       return 0;
     }
@@ -244,6 +245,11 @@ namespace OCPI {
       }
       if (m_isKey)
 	fprintf(f, " key=\"true\"");
+      if (m_defaultValue) {
+	std::string val;
+	m_defaultValue->unparse(val);
+	fprintf(f, " default=\"%s\"", val.c_str()); // FIXME: string value properties may have extra quotes
+      }
     }
     void Member::
     printChildren(FILE *f, const char *tag, unsigned indent) {
@@ -279,6 +285,7 @@ namespace OCPI {
       uint8_t *tmp = (uint8_t *)(((uintptr_t)p + (n - 1)) & ~((uintptr_t)(n)-1));
       advance(p, tmp - p, length);
     }
+    // We clear bytes we skip
     inline void ralign(uint8_t *&p, unsigned n, uint32_t &length) {
       align(*(const uint8_t **)&p, n, length);
     }
@@ -420,6 +427,7 @@ namespace OCPI {
 	  asprintf(&e, "enum%u", n);
 	  m_enums[n] = new char[strlen(e) + 1];
 	  strcpy((char *)m_enums[n], e);
+	  free(e);
 	}
 	break;
       case OA::OCPI_Type:
@@ -451,7 +459,7 @@ namespace OCPI {
     // to an operation.
     const char *
     Member::parseMembers(ezxml_t mems, unsigned &nMembers, Member *&members,
-			 bool isFixed, const char *tag, bool hasDefault) {
+			 bool isFixed, const char *tag, const char *hasDefault) {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
 	nMembers++;
       if (nMembers) {
@@ -460,7 +468,7 @@ namespace OCPI {
 	const char *err = NULL;
 	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_next(mx), m++) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
-				    hasDefault ? "Default" : NULL, NULL)) ||
+				    hasDefault ? hasDefault : NULL, NULL)) ||
 	      (err = m->parse(mx, isFixed, true, hasDefault, m - members)))
 	    return err;
 	}

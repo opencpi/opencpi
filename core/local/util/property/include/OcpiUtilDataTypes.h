@@ -155,13 +155,13 @@ namespace OCPI {
       void read(Reader &reader, uint8_t *&data, uint32_t &length);
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       const char *
-	parse(ezxml_t xp, bool isFixed, bool hasName, bool hasDefault, unsigned ordinal);
+	parse(ezxml_t xp, bool isFixed, bool hasName, const char *hasDefault, unsigned ordinal);
       const char *
       offset(unsigned &maxAlign, uint32_t &argOffset,
 	     unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded);
       static const char *
       parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
-		   bool isFixed, const char *tag, bool hasDefault);
+		   bool isFixed, const char *tag, const char *vtag);
       static const char *
       alignMembers(Member *m, unsigned nMembers,
 		   unsigned &maxAlign, uint32_t &myOffset,

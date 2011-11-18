@@ -422,7 +422,7 @@ namespace OCPI {
     clear() {
       // Special storage for sparse structure values
       if (m_struct) {
-	for (unsigned n = 0; n < m_nTotal; n++)
+	for (unsigned n = 0; n < m_nTotal * m_vt.m_nMembers; n++)
 	  if (m_struct[n]) {
 	    delete m_struct[n];
 	    m_struct[n] = 0;

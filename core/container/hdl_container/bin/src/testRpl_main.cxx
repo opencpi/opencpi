@@ -179,6 +179,19 @@ namespace {
 
 }
 
+static OA::PValue *
+mkParams(unsigned long bufferCount, unsigned bufferSize, const char *xfer) {
+  OA::PValue *params, *p = params = new OA::PValue[4];
+  if (bufferCount)
+    *p++ = OA::PVULong("bufferCount", bufferCount);
+  if (bufferSize)
+    *p++ = OA::PVULong("bufferSize", bufferSize);
+  if (xfer)
+    *p++ = OA::PVString("xferRole", xfer);
+  *p++ = OA::PVEnd;
+  return params;
+}
+
 int main(int argc, char *argv[])
 {
   try
@@ -492,28 +505,14 @@ int main(int argc, char *argv[])
       OA::Port &w13out = rccFile ? w[13]->getPort("out") : *(OA::Port*)0;
 
       OA::PValue
-        p00[] = {OA::PVULong("bufferCount", bufferCount[0][0]),
-                 OA::PVString("xferRole", active[0][0]),
-                 OA::PVULong("bufferSize", bufferSize), OA::PVEnd},
-        p01[] = {OA::PVULong("bufferCount", bufferCount[0][1]),
-                 OA::PVString("xferRole", active[0][1]),
-                 OA::PVULong("bufferSize", bufferSize), OA::PVEnd},
-        p10[] = {OA::PVULong("bufferCount", bufferCount[1][0]),
-                 OA::PVString("xferRole", active[1][0]),
-                 OA::PVULong("bufferSize", bufferSize), OA::PVEnd},
-        p31[] = {OA::PVULong("bufferCount", bufferCount[3][1]),
-                 OA::PVString("xferRole", active[3][1]),
-                 OA::PVULong("bufferSize", bufferSize), OA::PVEnd},
-        p60[] = {OA::PVULong("bufferCount", bufferCount[6][0]),
-                 OA::PVString("xferRole", active[6][0]),
-                 OA::PVULong("bufferSize", bufferSize), OA::PVEnd},
-        p81[] = {OA::PVULong("bufferCount", bufferCount[8][1]),
-                 OA::PVString("xferRole", active[8][1]),
-                 OA::PVULong("bufferSize", bufferSize), OA::PVEnd},
-        p90[] = {OA::PVULong("bufferCount", bufferCount[9][0]),
-                 OA::PVULong("bufferSize", bufferSize), OA::PVEnd},
-        p91[] = {OA::PVULong("bufferCount", bufferCount[9][1]),
-                 OA::PVULong("bufferSize", bufferSize), OA::PVEnd};
+        *p00 = mkParams(bufferCount[0][0], bufferSize, active[0][0]),
+        *p01 = mkParams(bufferCount[0][1], bufferSize, active[0][1]),
+        *p10 = mkParams(bufferCount[1][0], bufferSize, active[1][0]),
+        *p31 = mkParams(bufferCount[3][1], bufferSize, active[3][1]),
+        *p60 = mkParams(bufferCount[6][0], bufferSize, active[6][0]),
+        *p81 = mkParams(bufferCount[8][1], bufferSize, active[8][1]),
+        *p90 = mkParams(bufferCount[9][0], bufferSize, active[9][0]),
+        *p91 = mkParams(bufferCount[9][1], bufferSize, active[9][1]);
 
 
       OA::Property pfc(*w[1], "smaCtrl");
