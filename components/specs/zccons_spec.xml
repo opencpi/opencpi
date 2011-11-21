@@ -1,4 +1,4 @@
-<ComponentSpec Name="zccons">
+<ComponentSpec Name="Consumer">
   <Properties>
     <Property Name="doubleT" Type="Double" Readable="true" Writable="true"/>
     <Property Name="passfail" Readable="true" Writable="true"/>

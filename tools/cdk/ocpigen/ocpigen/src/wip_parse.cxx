@@ -215,7 +215,8 @@ addProperty(Worker *w, ezxml_t prop, bool includeImpl)
   return w->ctl.properties.back()->
     parse(prop, w->ctl.offset, w->ctl.readableConfigProperties,
 	  w->ctl.writableConfigProperties, w->ctl.sub32BitConfigProperties,
-	  includeImpl);
+	  includeImpl, w->ctl.ordinal++);
+  
 }
 
 // Generic implementation properties
@@ -1691,7 +1692,7 @@ Assembly::Assembly()
 }
 Control::Control()
   : sizeOfConfigSpace(0), writableConfigProperties(false), readableConfigProperties(false),
-    sub32BitConfigProperties(false), controlOps(0), offset(0)
+    sub32BitConfigProperties(false), controlOps(0), offset(0), ordinal(0)
 {
 }
 Worker::Worker()

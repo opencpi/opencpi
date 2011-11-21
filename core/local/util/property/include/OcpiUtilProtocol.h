@@ -64,7 +64,14 @@ namespace OCPI  {
       inline Member *args() { return m_args; }
       inline unsigned nArgs() { return m_nArgs; }
       inline const std::string name() { return m_name; }
-      void printXML(FILE *f, unsigned indent);
+      void printXML(FILE *f, unsigned indent = 0);
+      void write(Writer &writer, const uint8_t *data, uint32_t length);
+      uint32_t read(Reader &reader, uint8_t *&data, uint32_t maxLength);
+      // for testing
+      void generate(const char *name, Protocol &p);
+      void generateArgs(Value **&);
+      void print(FILE *, Value **v);
+      void testPrintParse(FILE *f, Value **v);
     };
     class Protocol {
     public:
@@ -98,13 +105,21 @@ namespace OCPI  {
       Protocol & operator=( const Protocol & p );
       Protocol & operator=( const Protocol * p );
       virtual const char *parseOperation(ezxml_t op);
+      void finishOperation(const Operation &op);
       inline bool isTwoWay() { return m_isTwoWay; }
       inline unsigned &nOperations() { return m_nOperations; }
       inline Operation *operations() { return m_operations; }
       const char *parse(ezxml_t x);
       const char *parseSummary(ezxml_t x);
       const char *finishParse();
-      void printXML(FILE *f, unsigned indent);
+      void printXML(FILE *f, unsigned indent = 0);
+      void write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode);
+      uint32_t read(Reader &reader, uint8_t *data, uint32_t maxLength, uint8_t opcode);
+      void generate(const char *name);
+      void generateOperation(uint8_t &opcode, Value **&v);
+      void freeOperation(uint8_t operation, Value **v);
+      void printOperation(FILE *, uint8_t opcode, Value **v);
+      void testOperation(FILE *, uint8_t opcode, Value **v);
     };
   }
 }

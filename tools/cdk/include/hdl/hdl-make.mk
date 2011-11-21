@@ -70,10 +70,10 @@ $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)
 
 ifeq ($(origin HdlPlatforms),undefined)
-HdlPlatforms:=all
+HdlPlatforms:=ml605
 endif
 ifeq ($(origin HdlTargets),undefined)
-HdlTargets:=all
+HdlTargets:=virtex6
 endif
 ifeq ($(HdlTargets),all)
 override HdlTargets:=$(HdlAllFamilies)

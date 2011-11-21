@@ -91,8 +91,8 @@ $(call OcpiDbg,Before all: "$(LibDir)/$(ImplXmlFile)")
 
 all: $(LibDir)/$(ImplXmlFile)
 
-$(LibDir)/$(ImplXmlFile): $(LibDir)
-	$(AT)echo Creating link from $(LibDir) to $(ImplXmlFile) to expose the $(CwdName) xml.
+$(LibDir)/$(ImplXmlFile): | $(LibDir)
+	$(AT)echo Creating a link from $(LibDir) to $(ImplXmlFile) to expose the $(CwdName) xml.
 	$(AT)$(call MakeSymLink,$(ImplXmlFile),$(LibDir))
 endif
 

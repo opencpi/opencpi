@@ -33,9 +33,12 @@
  */
 
 #define __STDC_LIMIT_MACROS // wierd standards goof up
+#include <assert.h>
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilException.h"
 #include "OcpiUtilDataTypes.h"
 #include <string>
+#include "OcpiUtilValue.h"
 
 namespace OCPI {
   namespace Util {
@@ -45,7 +48,8 @@ namespace OCPI {
     ValueType::ValueType(OA::BaseType bt)
       : m_baseType(bt), m_arrayRank(0), m_nMembers(0), m_nBits(0), m_align(1),
 	m_isSequence(false), m_nBytes(0), m_arrayDimensions(NULL), m_stringLength(0),
-	m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL), m_nEnums(0)
+	m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL), m_nEnums(0),
+	m_nItems(1)
     {}
     ValueType::~ValueType() {
       if (m_arrayDimensions)
@@ -61,6 +65,24 @@ namespace OCPI {
       }
     }
 
+    Reader::Reader(){}
+    Reader::~Reader(){}
+    void Reader::endSequence(Member &){}
+    void Reader::endString(Member &){}
+    void Reader::beginStruct(Member &){}
+    void Reader::endStruct(Member &){}
+    void Reader::beginType(Member &){}
+    void Reader::endType(Member &){}
+    void Reader::end(){}
+    Writer::Writer(){}
+    Writer::~Writer(){}
+    void Writer::writeOpcode(const char *, uint8_t) {}
+    void Writer::beginStruct(Member &){}
+    void Writer::endStruct(Member &){}
+    void Writer::beginType(Member &){}
+    void Writer::endType(Member &){}
+    void Writer::end(){}
+
     Member::Member()
       :  m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_defaultValue(NULL)
     {
@@ -70,21 +92,11 @@ namespace OCPI {
 	delete m_defaultValue;
     }
     const char *
-    Member::parse(ezxml_t xm,
-		  unsigned &maxAlign,   // accumulating across the group we are a part of
-		  uint32_t &argOffset,  // ditto, so it is our offset, prealignment, coming in
-		  unsigned &minSizeBits,// min scalar size seen in bits
-		  bool &diverseSizes,
-		  bool &sub32,
-		  bool &unBounded,
-		  bool isFixed,         // should sequences and strings be bounded?
-		  bool hasName,
-		  bool hasDefault)
-    {
+    Member::parse(ezxml_t xm, bool isFixed, bool hasName, const char *hasDefault, unsigned ordinal) {
       bool found;
       const char *err;
-      uint64_t nBytes;
       const char *name = ezxml_cattr(xm, "Name");
+      m_ordinal = ordinal;
       if (name)
 	m_name = name;
       else if (hasName)
@@ -96,14 +108,10 @@ namespace OCPI {
 	return err;
       if (!strcasecmp(typeName, "struct")) {
 	m_baseType = OA::OCPI_Struct;
-	if ((err = parseMembers(xm, m_nMembers, m_members, m_align, m_offset,
-				minSizeBits, diverseSizes, sub32, unBounded,
-				"member", isFixed, hasDefault)))
+	if ((err = parseMembers(xm, m_nMembers, m_members, isFixed, "member", hasDefault)))
 	  return err;
 	if (m_nMembers == 0)
 	  return "No struct members under type == \"struct\"";
-	nBytes = m_offset;
-	m_nBits = m_offset * CHAR_BIT;
       } else if (!strcasecmp(typeName, "type")) {
 	m_baseType = OA::OCPI_Type;
 	m_type = new Member();
@@ -111,11 +119,8 @@ namespace OCPI {
 	if (!xt)
 	  return "missing \"type\" child element under data type with type=\"type\"";
 	if ((err = OE::checkAttrs(xt, OCPI_UTIL_MEMBER_ATTRS, NULL)) ||
-	    (err = m_type->parse(xt, m_align, m_offset, minSizeBits, diverseSizes, sub32,
-				 unBounded, isFixed, false, false)))
+	    (err = m_type->parse(xt, isFixed, false, false, 0)))
 	  return err;
-	nBytes = m_offset;
-	m_nBits = m_offset * CHAR_BIT;
       } else {
 	// A primitive/scalar type
 	const char **tp;
@@ -143,11 +148,9 @@ namespace OCPI {
 	    *ep = new char[strlen(v.m_pString[n]) + 1];
 	    strcpy((char *)*ep, v.m_pString[n]);
 	  }
+	  // FIXME:  check for duplicate enum values
 	  // enums have a baseTypeSize of 32 per IDL
 	}
-	m_nBits = baseTypeSizes[m_baseType];
-	m_align = (m_nBits + CHAR_BIT - 1) / CHAR_BIT;
-	unsigned scalarBits;
 	if (m_baseType == OA::OCPI_String) {
 	  if ((err = OE::getNumber(xm, "StringLength", &m_stringLength, &found, 0, false)) ||
 	      (!found &&
@@ -159,20 +162,7 @@ namespace OCPI {
 	    if (m_stringLength == 0)
 	      return "StringLength cannot be zero";
 	  }
-	  nBytes = m_stringLength + 1;
-	  scalarBits = CHAR_BIT;
-	} else {
-	  nBytes = m_align;
-	  scalarBits = m_align * CHAR_BIT;
 	}
-	// Now the scalar type is finished, and perhaps its a sequence (and perhaps its an array).
-	if (minSizeBits) {
-	  if (minSizeBits != scalarBits)
-	    diverseSizes = true;
-	  if (scalarBits < minSizeBits)
-	    minSizeBits = scalarBits;
-	} else
-	  minSizeBits = scalarBits;
       }
       if (ezxml_cattr(xm, "StringLength") && m_baseType != OA::OCPI_String)
 	return "StringLength attribute only valid for string types";
@@ -191,6 +181,7 @@ namespace OCPI {
 	m_arrayRank = 1;
 	m_arrayDimensions = new uint32_t[1];
 	*m_arrayDimensions = arrayLength;
+	m_nItems = arrayLength;
       } else if ((arrayDimensions = ezxml_cattr(xm, "ArrayDimensions"))) {
 	ValueType vt;
 	vt.m_baseType = OA::OCPI_ULong;
@@ -201,63 +192,31 @@ namespace OCPI {
 	  return esprintf("Error parsing array dimensions: %s", err);
 	m_arrayRank = v.m_nElements;
 	m_arrayDimensions = v.m_pULong;
-	v.m_pULong = NULL;
 	uint32_t *p = v.m_pULong;
+	v.m_pULong = NULL;
 	for (unsigned n = 0; n < v.m_nElements; n++, p++)
 	  if (*p == 0)
 	    return "ArrayDimensions cannot have zero values";
-      }
-      // Calculate the number of bytes in each element of an array/sequence
-      if (nBytes > UINT32_MAX)
-	return "Total member size in bytes is too large (> 4G)";
-      if (m_arrayRank) {
-	uint32_t *p = m_arrayDimensions;
-	nBytes = roundup(nBytes, m_align);
-	for (unsigned n = 0; n < m_arrayRank; n++, p++) {
-	  nBytes *= *p;
-	  if (nBytes > UINT32_MAX)
-	    return "Total array size in bytes is too large (> 4G)";
-	}
+	  else
+	    m_nItems *= *p;
       }
 
       // Deal with sequences after arrays (because arrays belong to declarators)
-
       if ((err = OE::getNumber(xm, "SequenceLength", &m_sequenceLength, &m_isSequence, 0, false)) ||
 	  (!m_isSequence &&
 	    ((err = OE::getNumber(xm, "SequenceSize", &m_sequenceLength, &m_isSequence, 0, false)))))
 	return err;
-      if (m_isSequence) {
-	nBytes = roundup(nBytes, m_align);
-	if (m_sequenceLength != 0)
-	  nBytes *= m_sequenceLength;
-	else if (isFixed)
-	  return "Sequence must have a bounded size";
-	if (m_align < 4)
-	  m_align = 4;
-	nBytes += m_align > 4 ? m_align : 4;
-	if (nBytes > UINT32_MAX)
-	  return "Total sequence size in bytes is too large (> 4G)";
-      }
-
+      if (m_isSequence && isFixed && m_sequenceLength == 0)
+	return "Sequence must have a bounded size";
       // Process default values
-
-      const char *defValue = ezxml_cattr(xm, "Default");
-      if (defValue) {
-	m_defaultValue = new Value(*this);
-	if ((err = m_defaultValue->parse(defValue)))
-	  return esprintf("for member %s:", m_name.c_str());
+      if (hasDefault) {
+	const char *defValue = ezxml_cattr(xm, hasDefault);
+	if (defValue) {
+	  m_defaultValue = new Value(*this);
+	  if ((err = m_defaultValue->parse(defValue)))
+	    return esprintf("for member %s:", m_name.c_str());
+	}
       }
-
-      // Final calcutions for offset and alignment
-
-      if (m_align > maxAlign)
-	maxAlign = m_align;
-      if (m_align < 4)
-	sub32 = true;
-      m_nBytes = (uint32_t)nBytes;
-      argOffset = roundup(argOffset, m_align);
-      m_offset = argOffset;
-      argOffset += m_nBytes;
       return 0;
     }
 
@@ -294,6 +253,11 @@ namespace OCPI {
       }
       if (m_isKey)
 	fprintf(f, " key=\"true\"");
+      if (m_defaultValue) {
+	std::string val;
+	m_defaultValue->unparse(val);
+	fprintf(f, " default=\"%s\"", val.c_str()); // FIXME: string value properties may have extra quotes
+      }
     }
     void Member::
     printChildren(FILE *f, const char *tag, unsigned indent) {
@@ -316,13 +280,194 @@ namespace OCPI {
       printAttrs(f, tag, indent);
       printChildren(f, tag, indent);
     }
+    inline void advance(const uint8_t *&p, unsigned nBytes, uint32_t &length) {
+      if (nBytes > length)
+	throw Error("Aligning data exceeds buffer when writing");
+      length -= nBytes;
+      p += nBytes;
+    }
+    inline void radvance(uint8_t *&p, unsigned nBytes, uint32_t &length) {
+      advance(*(const uint8_t **)&p, nBytes, length);
+    }
+    inline void align(const uint8_t *&p, unsigned n, uint32_t &length) {
+      uint8_t *tmp = (uint8_t *)(((uintptr_t)p + (n - 1)) & ~((uintptr_t)(n)-1));
+      advance(p, tmp - p, length);
+    }
+    // We clear bytes we skip
+    inline void ralign(uint8_t *&p, unsigned n, uint32_t &length) {
+      align(*(const uint8_t **)&p, n, length);
+    }
+    // Push the data in the linear buffer into a writer object
+    void Member::write(Writer &writer, const uint8_t *&data, uint32_t &length) {
+      unsigned nElements = 1;
+      if (m_isSequence) {
+	align(data, m_align, length);
+	nElements = *(uint32_t *)data;
+	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
+	  throw Error("Sequence in buffer exceeds max length (%u)", m_sequenceLength);
+	writer.beginSequence(*this, nElements);
+	advance(data, m_align, length); // skip over count, and align for data
+	if (!nElements)
+	  return;
+      }
+      nElements *= m_nItems;
+      align(data, m_dataAlign, length);
+      switch (m_baseType) {
+      case OA::OCPI_Struct:
+	writer.beginStruct(*this);
+	for (unsigned n = 0; n < nElements; n++)
+	  for (unsigned nn = 0; nn < m_nMembers; nn++)
+	    m_members[nn].write(writer, data, length);
+	writer.endStruct(*this);
+	break;
+      case OA::OCPI_Type:
+	writer.beginType(*this);
+	for (unsigned n = 0; n < nElements; n++)
+	  m_type->write(writer, data, length);
+	writer.endType(*this);
+	break;
+      case OA::OCPI_String:
+	for (unsigned n = 0; n < nElements; n++) {
+	  align(data, 4, length);
+	  WriteDataPtr p = {data};
+	  unsigned nBytes = strlen((const char *)data) + 1;
+	  advance(data, nBytes, length);
+	  writer.writeString(*this, p, nBytes - 1, n == 0);
+	}
+	break;
+      default:
+	{ // Scalar - write them all at once
+	  align(data, m_align, length);
+	  WriteDataPtr p = {data};
+	  unsigned nBytes = nElements * (m_nBits / 8);
+	  advance(data, nBytes, length);
+	  writer.writeData(*this, p, nBytes, nElements);
+	  break;
+	}
+      case OA::OCPI_none:
+      case OA::OCPI_scalar_type_limit:
+	assert(0);
+      }
+    }
+
+    // Fill the linear buffer from a reader object
+    void Member::read(Reader &reader, uint8_t *&data, uint32_t &length) {
+      unsigned nElements = 1;
+      if (m_isSequence) {
+	ralign(data, m_align, length);
+	uint32_t *start = (uint32_t *)data;
+	radvance(data, m_align, length); // skip over count, check for space
+	if (!(*start = nElements = reader.beginSequence(*this)))
+	  return;
+	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
+	  throw Error("Sequence in being read exceeds max length (%u)", m_sequenceLength);
+      }
+      nElements *= m_nItems;
+      ralign(data, m_dataAlign, length);
+      switch (m_baseType) {
+      case OA::OCPI_Struct:
+	reader.beginStruct(*this);
+	for (unsigned n = 0; n < nElements; n++)
+	  for (unsigned nn = 0; nn < m_nMembers; nn++)
+	    m_members[nn].read(reader, data, length);
+	reader.endStruct(*this);
+	break;
+      case OA::OCPI_Type:
+	reader.beginType(*this);
+	for (unsigned n = 0; n < nElements; n++)
+	  m_type->read(reader, data, length);
+	reader.endType(*this);
+	break;
+      case OA::OCPI_String:
+	for (unsigned n = 0; n < nElements; n++) {
+	  ralign(data, 4, length);
+	  const char *chars;
+	  uint32_t strLength = reader.beginString(*this, chars, n == 0);
+	  if (m_stringLength != 0 && strLength > m_stringLength)
+	    throw Error("String being read is larger than max length");
+	  uint8_t *start = data;
+	  radvance(data, strLength + 1, length); // perform error check
+	  memcpy(start, chars, strLength);
+	  start[strLength] = 0;
+	}
+	break;
+      default:
+	{ // Scalar - write them all at once
+	  ralign(data, m_align, length);
+	  ReadDataPtr p = {data};
+	  unsigned nBytes = nElements * (m_nBits / 8);
+	  radvance(data, nBytes, length);
+	  reader.readData(*this, p, nBytes, nElements);
+	  break;
+	}
+      case OA::OCPI_none:
+      case OA::OCPI_scalar_type_limit:
+	assert(0);
+      }
+    }
+    void Member::generate(const char *name, unsigned ordinal, unsigned depth) {
+      m_name = name;
+      m_ordinal = ordinal;
+      m_baseType = (OA::BaseType)((random() >> 24) % (OA::OCPI_scalar_type_limit - 1) + 1);
+      // printf(" %d", m_baseType);
+      if (++depth == 4 && (m_baseType == OA::OCPI_Type || m_baseType == OA::OCPI_Struct))
+	m_baseType = OA::OCPI_ULong;
+      m_isSequence = random() % 3 == 0;
+      if (m_isSequence)
+	m_sequenceLength = random() & 1 ? 0 : random() % 10;
+      if (random() & 1) {
+	m_arrayRank = random() % 3 + 1;
+	m_arrayDimensions = new uint32_t[m_arrayRank];
+	for (unsigned n = 0; n < m_arrayRank; n++) {
+	  m_arrayDimensions[n] = random() % 3 + 1;
+	  m_nItems *= m_arrayDimensions[n];
+	}
+      }
+      switch (m_baseType) {
+      case OA::OCPI_String:
+	m_stringLength = random() & 1 ? 0 : random() % testMaxStringLength;
+	break;
+      case OA::OCPI_Enum:
+	m_nEnums = random() % 5 + 1;
+	m_enums = new const char *[m_nEnums];
+	for (unsigned n = 0; n < m_nEnums; n++) {
+	  char *e;
+	  asprintf(&e, "enum%u", n);
+	  m_enums[n] = new char[strlen(e) + 1];
+	  strcpy((char *)m_enums[n], e);
+	  free(e);
+	}
+	break;
+      case OA::OCPI_Type:
+	if (m_isSequence) {
+	  m_type = new Member();
+	  m_type->generate("type", 0, depth);
+	  if (m_type->m_isSequence)
+	    break;
+	  delete m_type;
+	  m_type = 0;
+	}
+	m_baseType = OA::OCPI_Float;
+	break;
+      case OA::OCPI_Struct:
+	m_nMembers = random() % 6 + 1;
+	m_members = new Member[m_nMembers];
+	for (unsigned n = 0; n < m_nMembers; n++) {
+	  char *e;
+	  asprintf(&e, "member%u", n);
+	  m_members[n].generate(e, n, depth);
+	  free(e);
+	}
+	break;
+      default:
+	break;
+      }
+    }
     // This static method is shared between parsing members of a structure and parsing arguments
     // to an operation.
     const char *
     Member::parseMembers(ezxml_t mems, unsigned &nMembers, Member *&members,
-			 unsigned &maxAlign, uint32_t &myOffset,
-			 unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded,
-			 const char *tag, bool isFixed, bool hasDefault) {
+			 bool isFixed, const char *tag, const char *hasDefault) {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
 	nMembers++;
       if (nMembers) {
@@ -331,13 +476,100 @@ namespace OCPI {
 	const char *err = NULL;
 	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_next(mx), m++) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
-				    hasDefault ? "Default" : NULL, NULL)) ||
-	      (err = m->parse(mx, maxAlign, myOffset, minSizeBits, diverseSizes, sub32,
-			      unBounded, isFixed, true, hasDefault)))
+				    hasDefault ? hasDefault : NULL, NULL)) ||
+	      (err = m->parse(mx, isFixed, true, hasDefault, m - members)))
 	    return err;
 	}
       }
       return NULL;
+    }
+    const char *Member::
+    offset(unsigned &maxAlign, uint32_t &argOffset,
+	   unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded) {
+      const char *err;
+      uint64_t nBytes;
+      m_offset = 0;
+      switch (m_baseType) {
+      case OA::OCPI_Struct:
+	if ((err = alignMembers(m_members, m_nMembers, m_align, m_offset,
+				minSizeBits, diverseSizes, sub32, unBounded)))
+	  return err;
+	nBytes = m_offset;
+	m_nBits = m_offset * CHAR_BIT;
+	break;
+      case OA::OCPI_Type:
+	if ((err = m_type->offset(m_align, m_offset, minSizeBits, diverseSizes, sub32, unBounded)))
+	  return err;
+	nBytes = m_offset;
+	m_nBits = m_offset * CHAR_BIT;
+	break;
+      default:
+	// No special enum processing here
+	m_nBits = baseTypeSizes[m_baseType];
+	m_align = (m_nBits + CHAR_BIT - 1) / CHAR_BIT;
+	unsigned scalarBits;
+	if (m_baseType == OA::OCPI_String) {
+	  nBytes = m_stringLength + 1;
+	  scalarBits = CHAR_BIT;
+	  if (!m_stringLength)
+	    unBounded = true;
+	} else {
+	  nBytes = m_align;
+	  scalarBits = m_align * CHAR_BIT;
+	}
+	if (minSizeBits) {
+	  if (minSizeBits != scalarBits)
+	    diverseSizes = true;
+	  if (scalarBits < minSizeBits)
+	    minSizeBits = scalarBits;
+	} else
+	  minSizeBits = scalarBits;
+      }
+      // Calculate the number of bytes in each element of an array/sequence
+      if (nBytes > UINT32_MAX)
+	return "Total member size in bytes is too large (> 4G)";
+      // Array?
+      if (m_arrayRank) {
+	uint32_t *p = m_arrayDimensions;
+	nBytes = roundup(nBytes, m_align);
+	for (unsigned n = 0; n < m_arrayRank; n++, p++) {
+	  nBytes *= *p;
+	  if (nBytes > UINT32_MAX)
+	    return "Total array size in bytes is too large (> 4G)";
+	}
+      }
+      m_dataAlign = m_align; // capture this before adjusting it in the sequence case.
+      if (m_isSequence) {
+	nBytes = roundup(nBytes, m_align);
+	if (m_sequenceLength != 0)
+	  nBytes *= m_sequenceLength;
+	else
+	  unBounded = true;
+	if (m_align < 4)
+	  m_align = 4;
+	nBytes += m_align > 4 ? m_align : 4;
+	if (nBytes > UINT32_MAX)
+	  return "Total sequence size in bytes is too large (> 4G)";
+      }
+      if (m_align > maxAlign)
+	maxAlign = m_align;
+      if (m_align < 4)
+	sub32 = true;
+      m_nBytes = (uint32_t)nBytes;
+      argOffset = roundup(argOffset, m_align);
+      m_offset = argOffset;
+      argOffset += m_nBytes;
+      return 0;
+    }
+    const char *
+    Member::alignMembers(Member *m, unsigned nMembers, 
+			 unsigned &maxAlign, uint32_t &myOffset,
+			 unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded) {
+      const char *err;
+      for (unsigned n = 0; n < nMembers; n++, m++)
+	if ((err = m->offset(maxAlign, myOffset, minSizeBits, diverseSizes, sub32, unBounded)))
+	  return err;
+      return 0;
     }
       const char *baseTypeNames[] = {
         "None",

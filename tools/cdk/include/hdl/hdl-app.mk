@@ -41,26 +41,32 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 ################################################################################
 # Deal with platform issues if there are specified platforms
-ifdef HdlPlatforms
 # Filter platforms
+HdlPlatformsBeforeOnly:=$(HdlPlatforms)
 ifdef HdlOnlyPlatforms
 override HdlPlatforms:=$(filter $(HdlOnlyPlatforms),$(HdlPlatforms))
+$(call OcpiDbgVar,HdlPlatforms,After filtering out HdlOnlyPlatforms )
 endif
+
+ifndef HdlPlatforms
+ifdef HdlOnlyPlatforms
+$(info No platforms in HdlPlatforms ($(HdlPlatformsBeforeOnly)) built.)
+$(info This application only builds for these platforms: $(HdlOnlyPlatforms))
+endif
+else
 
 # Skip synthesis targets that aren't for any specified platform
 # (and mention what we are skipping)
-$(call OcpiDbgVar,HdlTargets,Before filtering out non-platform targets)
-$(call OcpiDbgVar,HdlPlatforms,Before filtering out non-platform targets)
+$(call OcpiDbgVar,HdlTargets,Before filtering out non-platform targets )
+$(call OcpiDbgVar,HdlPlatforms,Before filtering out non-platform targets )
 override HdlTargets:=$(sort\
    $(foreach ht,$(HdlTargets),\
-    $(if $(findstring $(ht),$(HdlSimTools)),\
-      $(ht),$(strip \
-      $(or \
+     $(or \
        $(foreach p,$(HdlPlatforms),\
          $(foreach part,$(call HdlGetPart,$p),\
            $(or $(findstring $(part),$(ht)),\
                 $(findstring $(call HdlGetFamily,$(part)),$(ht))))),\
-      $(info Skipping target $(ht), not in specified platforms: $(HdlPlatforms)))))))
+      $(info Skipping target $(ht), not in specified platforms: $(HdlPlatforms)))))
 
 $(call OcpiDbgVar,HdlTargets,After filtering out non-platform targets )
 
@@ -80,7 +86,6 @@ $(call OcpiDbgVar,HdlPlatformsDir)
 $(foreach p,$(HdlPlatforms),\
   $(if $(realpath $(HdlPlatformsDir)/$(p)),,\
      $(error No $(p) platform found in $(HdlPlatformsDir))))
-endif
 
 ################################################################################
 # We are a lot like an HDL worker (and thus a core)
@@ -285,4 +290,5 @@ clean::
 	rm -r -f fpgaTop*.* *.out *.time *.status xst 
 
 endif # end of HDL skip
+endif # end of else of ifndef HdlPlatforms
 

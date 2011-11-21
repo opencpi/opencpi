@@ -39,15 +39,15 @@
 
 # #### Absolute path to the base directory of the OpenCPI installation #### #
 
-if [ -z "$OCPI_BASE_DIR" ]
-then
+#if [ -z "$OCPI_BASE_DIR" ]
+#then
   export OCPI_BASE_DIR=`pwd`
-fi
+#fi
 
-if [ -z "$OCPI_CDK_DIR" ]
-then
+#if [ -z "$OCPI_CDK_DIR" ]
+#then
   export OCPI_CDK_DIR=$OCPI_BASE_DIR/ocpi
-fi
+#fi
 
 # #### Build target architecture and OS ################################### #
 
