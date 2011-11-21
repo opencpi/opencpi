@@ -1,34 +1,34 @@
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ * Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
+ * Mercury Federal Systems, Incorporated
+ * 1901 South Bell Street
+ * Suite 402
+ * Arlington, Virginia 22202
+ * United States of America
+ * Telephone 703-413-0781
+ * FAX 703-413-0784
  *
- *  This file is part of OpenCPI (www.opencpi.org).
- *     ____                   __________   ____
- *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
- *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
- *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
- *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
- *      /_/                                             /____/
+ * This file is part of OpenCPI (www.opencpi.org).
+ * ____ __________ ____
+ * / __ \____ ___ ____ / ____/ __ \ / _/ ____ _________ _
+ * / / / / __ \/ _ \/ __ \/ / / /_/ / / / / __ \/ ___/ __ `/
+ * / /_/ / /_/ / __/ / / / /___/ ____/_/ / _/ /_/ / / / /_/ /
+ * \____/ .___/\___/_/ /_/\____/_/ /___/(_)____/_/ \__, /
+ * /_/ /____/
  *
- *  OpenCPI is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ * OpenCPI is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  OpenCPI is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
+ * OpenCPI is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with OpenCPI. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -56,8 +56,8 @@ upperdup(const char *s) {
 }
 
 static const char *rccTypes[] = {"none",
-  "RCCBoolean", "RCCChar", "RCCDouble", "RCCFloat", "int16_t", "int32_t", "uint8_t",
-  "uint32_t", "uint16_t", "int64_t", "uint64_t", "RCCChar" };
+				 "RCCBoolean", "RCCChar", "RCCDouble", "RCCFloat", "int16_t", "int32_t", "uint8_t",
+				 "uint32_t", "uint16_t", "int64_t", "uint64_t", "RCCChar" };
 
 static void camel(std::string &s, const char *s1, const char *s2 = NULL, const char *s3 = NULL) {
   s = toupper(s1[0]);
@@ -89,7 +89,7 @@ static void printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast) {
     if (m->m_stringLength == 0)
       isLast = true;
   }
-  // End of declarator.  If we're a sequence we close off the struct.
+  // End of declarator. If we're a sequence we close off the struct.
   fprintf(f, ";\n");
 }
 
@@ -100,7 +100,7 @@ printType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &p
 // Just print the data type, not the "member", with names or arrays etc.
 static void
 printBaseType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &pad,
-	  const char *parent, bool isFixed, bool &isLast) {
+	      const char *parent, bool isFixed, bool &isLast) {
   if (m->m_baseType == OA::OCPI_Struct) {
     std::string s;
     camel(s, parent, m->m_name.c_str());
@@ -118,13 +118,13 @@ printType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &p
 	  const char *parent, bool isFixed, bool &isLast) {
   if (m->m_isSequence) {
     fprintf(f,
-	    "%*sstruct {\n"
-	    "%*s  uint32_t      length;     /* offset %4u, 0x%x */\n",
+"%*sstruct {\n"
+	    "%*s uint32_t length; /* offset %4u, 0x%x */\n",
 	    indent, "", indent, "", offset, offset);
     offset += 4;
     if (m->m_dataAlign > sizeof(uint32_t)) {
       unsigned align = m->m_dataAlign - (unsigned)sizeof(uint32_t);
-      fprintf(f, "%*s  char         pad%u_[%u];\n", indent, "", pad++, align);
+      fprintf(f, "%*s char pad%u_[%u];\n", indent, "", pad++, align);
       offset += align;
     }
     printBaseType(f, m, indent + 2, offset, pad, parent, isFixed, isLast);
@@ -138,32 +138,9 @@ printType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &p
     printArray(f, m, isFixed, isLast);
     fprintf(f, "%*s}", indent, "");
   } else
-
-    //    fprintf(f, "%s  %-12s", prefix, rccTypes[m->m_baseType]);
-  fprintf(f, "  %s", m->m_name.c_str());
-
-#ifdef FIX_ME
-  if (m->m_baseType == OA::OCPI_String)
-    fprintf(f, "[%lu]", roundup(m->m_stringLength + 1, 4));
-#endif
-
-  if (m->m_baseType == OA::OCPI_String)
-    fprintf(f, "[%lu]", m->m_stringLength);
-
-  if (m->m_arrayRank)
-    for (unsigned n = 0; n < m->m_arrayRank; n++)
-      fprintf(f, "[%u]", m->m_arrayDimensions[n]);
-  if (m->m_isSequence)
-    fprintf(f, "[%u]", m->m_sequenceLength); // FIXME:  unbounded end of struct
-  fprintf(f, ";");
-  if (offset) {
-    uint32_t off = offset + (m->m_isSequence ? m->m_align : 0);
-    fprintf(f, " // offset %u, 0x%x, %u, %u", off, off, m->m_align, m->m_nBytes);
-
     printBaseType(f, m, indent, offset, pad, parent, isFixed, isLast);
-  }
 }
-// FIXME:  a tool-time member class should have this...OCPI::Tools::RCC::Member...
+// FIXME: a tool-time member class should have this...OCPI::Tools::RCC::Member...
 // Returns true when something is variable length.
 // strings or sequences are like that unless then are bounded.
 static void
@@ -171,7 +148,7 @@ printMember(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned 
 	    const char *parent, bool isFixed, bool &isLast)
 {
   if (offset < m->m_offset) {
-    fprintf(f, "%*schar           pad%u_[%u];\n",
+    fprintf(f, "%*schar pad%u_[%u];\n",
 	    indent, "", pad++, m->m_offset - offset);
     offset = m->m_offset;
   }
@@ -198,34 +175,34 @@ methodName(Worker *w, const char *method, const char *&mName) {
     else if (!*pat)
       *s++ = '%';
     else switch (*pat++) {
-      case '%':
-	*s++ = '%';
-	break;
-      case 'm':
-	strcpy(s, method);
-	while (*s)
-	  s++;
-	break;
-      case 'M':
-	*s++ = toupper(method[0]);
-	strcpy(s, method + 1);
-	while (*s)
-	  s++;
-	break;
-      case 'w':
-	strcpy(s, w->implName);
-	while (*s)
-	  s++;
-	break;
-      case 'W':
-	*s++ = toupper(w->implName[0]);
-	strcpy(s, w->implName + 1);
-	while (*s)
-	  s++;
-	break;
-      default:
-	return esprintf("Invalid pattern rule: %s", w->pattern);
-      }
+    case '%':
+      *s++ = '%';
+      break;
+    case 'm':
+      strcpy(s, method);
+      while (*s)
+	s++;
+      break;
+    case 'M':
+      *s++ = toupper(method[0]);
+      strcpy(s, method + 1);
+      while (*s)
+	s++;
+      break;
+    case 'w':
+      strcpy(s, w->implName);
+      while (*s)
+	s++;
+      break;
+    case 'W':
+      *s++ = toupper(w->implName[0]);
+      strcpy(s, w->implName + 1);
+      while (*s)
+	s++;
+      break;
+    default:
+      return esprintf("Invalid pattern rule: %s", w->pattern);
+    }
   }
   *s++ = 0;
   return 0;
@@ -251,20 +228,20 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
   fprintf(f, " */\n");
   const char *upper = upperdup(w->implName);
   fprintf(f,
-	  "\n"
+"\n"
 	  "/* This file contains the implementation declarations for worker %s */\n\n"
-	  "#ifndef RCC_WORKER_%s_H__\n"
-	  "#define RCC_WORKER_%s_H__\n"
-	  "#include <RCC_Worker.h>\n"
-	  "#if defined (__cplusplus)\n"
-	  "extern \"C\" {\n"
+"#ifndef RCC_WORKER_%s_H__\n"
+"#define RCC_WORKER_%s_H__\n"
+"#include <RCC_Worker.h>\n"
+"#if defined (__cplusplus)\n"
+"extern \"C\" {\n"
 	  "#endif\n",
 	  w->implName, upper, upper);
   const char *last;
   if (w->ports.size()) {
     fprintf(f,
-	    "/*\n"
-	    " * Enumeration of port ordinals for worker %s\n"
+"/*\n"
+" * Enumeration of port ordinals for worker %s\n"
 	    " */\n"
 	    "typedef enum {\n",
 	    w->implName);
@@ -272,7 +249,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
     last = "";
     for (unsigned n = 0; n < w->ports.size(); n++) {
       Port *port = w->ports[n];
-      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name));
+      fprintf(f, "%s %s_%s", last, upper, upperdup(port->name));
       // FIXME TWO WAY
       last = ",\n";
       if (port->u.wdi.isProducer)
@@ -282,14 +259,14 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
     }
     fprintf(f, "\n} %c%sPort;\n", toupper(w->implName[0]), w->implName+1);
     fprintf(f,
-	    "#define %s_N_INPUT_PORTS %u\n"
+"#define %s_N_INPUT_PORTS %u\n"
 	    "#define %s_N_OUTPUT_PORTS %u\n",
 	    upper, in, upper, out);
   }
   if (w->ctl.properties.size()) {
     fprintf(f,
-	    "/*\n"
-	    " * Property structure for worker %s\n"
+"/*\n"
+" * Property structure for worker %s\n"
 	    " */\n"
 	    "typedef struct {\n",
 	    w->implName);
@@ -303,11 +280,11 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
   if ((err = methodName(w, "run", mName)))
     return err;
   fprintf(f,
-	  "/*\n"
-	  " * Use this macro, followed by a semicolon, to declare methods before\n"
-	  " * implementing them, and before defining the RCCDispatch for the worker\n"
-	  " * e.g.:\n"
-	  " *  %s_METHOD_DECLARATIONS;\n"
+"/*\n"
+" * Use this macro, followed by a semicolon, to declare methods before\n"
+" * implementing them, and before defining the RCCDispatch for the worker\n"
+" * e.g.:\n"
+" * %s_METHOD_DECLARATIONS;\n"
 	  " */\n"
 	  "#define %s_METHOD_DECLARATIONS \\\n",
 	  upper, upper);
@@ -315,7 +292,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
   const char **cp;
   if (w->ctl.controlOps) {
     last = "";
-    fprintf(f, "  %s RCCMethod ", w->pattern ? "extern" : "static");
+    fprintf(f, " %s RCCMethod ", w->pattern ? "extern" : "static");
     for (cp = controlOperations; *cp; cp++, op++)
       if (w->ctl.controlOps & (1 << op)) {
 	if ((err = methodName(w, *cp, mName)))
@@ -328,40 +305,40 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
   if ((err = methodName(w, "run", mName)))
     return err;
   fprintf(f,
-	  "  %s RCCRunMethod %s\\\n",
+	  " %s RCCRunMethod %s\\\n",
 	  w->pattern ? "extern" : "static", mName);
   fprintf(f, "/**/\n");
   fprintf(f,
-	  "/*\n"
-	  " * This macro defines the initialization of the RCCDispatch structure\n"
-	  " * for the %s worker.  Insert it AFTER any customized initializations\n"
-	  " * of members: memSizes, runCondition.\n"
-	  " * E.g.: \n"
-	  " *  static RCCRunCondition myRunCondition { ... };\n"
-	  " *  %s_METHOD_DECLARATIONS;\n"
-	  " *  RCCDispatch xyz_dispatch = {\n"
-	  " *     .runCondition = &myRunCondition,\n"
-	  " *     %s_DISPATCH\n"
-	  " *  };\n"
+"/*\n"
+" * This macro defines the initialization of the RCCDispatch structure\n"
+" * for the %s worker. Insert it AFTER any customized initializations\n"
+" * of members: memSizes, runCondition.\n"
+" * E.g.: \n"
+" * static RCCRunCondition myRunCondition { ... };\n"
+" * %s_METHOD_DECLARATIONS;\n"
+" * RCCDispatch xyz_dispatch = {\n"
+" * .runCondition = &myRunCondition,\n"
+" * %s_DISPATCH\n"
+" * };\n"
 	  " */\n"
-	  "#define %s_DISPATCH \\\n"
-	  "  .version = RCC_VERSION,\\\n"
-	  "  .numInputs = %s_N_INPUT_PORTS,\\\n"
-	  "  .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
-	  "  .threadProfile = %u,\\\n",
+"#define %s_DISPATCH \\\n"
+" .version = RCC_VERSION,\\\n"
+" .numInputs = %s_N_INPUT_PORTS,\\\n"
+" .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
+	  " .threadProfile = %u,\\\n",
 	  w->implName, upper, upper, upper, upper, upper, w->isThreaded ? 1 : 0);
   if (w->ctl.properties.size())
-    fprintf(f, "  .propertySize = sizeof(%c%sProperties),\\\n",
+    fprintf(f, " .propertySize = sizeof(%c%sProperties),\\\n",
 	    toupper(w->implName[0]), w->implName + 1);
   for (op = 0, cp = controlOperations; *cp; cp++, op++)
     if (w->ctl.controlOps & (1 << op)) {
       if ((err = methodName(w, *cp, mName)))
 	return err;
-      fprintf(f, "  .%s = %s,\\\n", *cp, mName);
+      fprintf(f, " .%s = %s,\\\n", *cp, mName);
     }
   if ((err = methodName(w, "run", mName)))
     return err;
-  fprintf(f, "  .run = %s,\\\n", mName);
+  fprintf(f, " .run = %s,\\\n", mName);
   uint32_t optionals = 0;
   for (unsigned n = 0; n < w->ports.size(); n++) {
     Port *port = w->ports[n];
@@ -369,22 +346,22 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
       optionals |= 1 << n;
   }
   if (optionals)
-    fprintf(f, "  .optionallyConnectedPorts = 0x%x,\\\n", optionals);
+    fprintf(f, " .optionallyConnectedPorts = 0x%x,\\\n", optionals);
   fprintf(f, "/**/\n");
   if (w->ports.size()) {
     for (unsigned n = 0; n < w->ports.size(); n++) {
       Port *port = w->ports[n];
       if (port->protocol->operations()) {
 	fprintf(f,
-		"/*\n"
-		" * Enumeration of operations on port %s of worker %s\n"
+"/*\n"
+" * Enumeration of operations on port %s of worker %s\n"
 		" */\n"
 		"typedef enum {\n",
 		port->name, w->implName);
 	OU::Operation *o = port->protocol->operations();
 	const char *puName = upperdup(port->name);
 	for (unsigned nn = 0; nn < port->protocol->nOperations(); nn++, o++)
-	  fprintf(f, "  %s_%s_%s,\n", upper, puName, upperdup(o->name().c_str()));
+	  fprintf(f, " %s_%s_%s,\n", upper, puName, upperdup(o->name().c_str()));
 	fprintf(f, "} %c%s%c%sOperation;\n",
 		toupper(w->implName[0]), w->implName+1,
 		toupper(port->name[0]), port->name+1);
@@ -393,8 +370,8 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	for (unsigned nn = 0; nn < port->protocol->nOperations(); nn++, o++)
 	  if (o->nArgs()) {
 	    fprintf(f,
-		    "/*\n"
-		    " * Structure for the %s operation on port %s\n"
+"/*\n"
+" * Structure for the %s operation on port %s\n"
 		    " */\n"
 		    "typedef struct {\n",
 		    o->name().c_str(), port->name);
@@ -408,10 +385,10 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
     }
   }
   fprintf(f,
-	  "\n"
-	  "#if defined (__cplusplus)\n"
-	  "}\n"
-	  "#endif\n"
+"\n"
+"#if defined (__cplusplus)\n"
+"}\n"
+"#endif\n"
 	  "#endif /* ifndef RCC_WORKER_%s_H__ */\n",
 	  upper);
   fclose(f);
@@ -433,17 +410,17 @@ emitSkelRCC(Worker *w, const char *outDir) {
   fprintf(f, " *\n");
   const char *upper = upperdup(w->implName);
   fprintf(f,
-	  " * This file contains the RCC implementation skeleton for worker: %s\n"
+" * This file contains the RCC implementation skeleton for worker: %s\n"
 	  " */\n"
-	  "#include \"%s_Worker.h\"\n\n"
+"#include \"%s_Worker.h\"\n\n"
 
-	  "%s_METHOD_DECLARATIONS;\n"
-	  "RCCDispatch %s = {\n"
-	  "  /* insert any custom initializations here */\n"
-	  "  %s_DISPATCH\n"
-	  "};\n\n"
-	  "/*\n"
-	  " * Methods to implement for worker %s, based on metadata.\n"
+"%s_METHOD_DECLARATIONS;\n"
+"RCCDispatch %s = {\n"
+	  " /* insert any custom initializations here */\n"
+" %s_DISPATCH\n"
+"};\n\n"
+"/*\n"
+" * Methods to implement for worker %s, based on metadata.\n"
 	  " */\n",
 	  w->implName, w->implName, upper, w->implName, upper, w->implName);
   unsigned op = 0;
@@ -454,19 +431,19 @@ emitSkelRCC(Worker *w, const char *outDir) {
       if ((err = methodName(w, *cp, mName)))
 	return err;
       fprintf(f,
-	      "\n"
-	      "%s RCCResult\n%s(RCCWorker *self) {\n"
-	      "  return RCC_OK;\n"
+"\n"
+"%s RCCResult\n%s(RCCWorker *self) {\n"
+" return RCC_OK;\n"
 	      "}\n",
 	      w->pattern ? "extern" : "static", mName);
     }
   if ((err = methodName(w, "run", mName)))
     return err;
   fprintf(f,
-	  "\n"
-	  "%s RCCResult\n%s(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {\n"
-	  "  (void)self;(void)timedOut;(void)newRunCondition;\n"
-	  "  return RCC_ADVANCE;\n"
+"\n"
+"%s RCCResult\n%s(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {\n"
+" (void)self;(void)timedOut;(void)newRunCondition;\n"
+" return RCC_ADVANCE;\n"
 	  "}\n",
 	  w->pattern ? "extern" : "static", mName);
   // FIXME PortMemberMacros?
@@ -483,31 +460,32 @@ emitArtRCC(Worker *aw, const char *outDir) {
   fprintf(f, "<!--\n");
   printgen(f, "", aw->file);
   fprintf(f,
-	  " This file contains the artifact descriptor XML for the application assembly\n"
+" This file contains the artifact descriptor XML for the application assembly\n"
 	  " named \"%s\". It must be attached (appended) to the shared object file\n",
 	  aw->implName);
-  fprintf(f, "  -->\n");
+  fprintf(f, " -->\n");
   // This assumes native compilation of course
   fprintf(f,
-	  "<artifact os=\"%s\" osVersion=\"%s\" platform=\"%s\" "
-	  "runtime=\"%s\" runtimeVersion=\"%s\" "
+"<artifact os=\"%s\" osVersion=\"%s\" platform=\"%s\" "
+"runtime=\"%s\" runtimeVersion=\"%s\" "
 	  "tool=\"%s\" toolVersion=\"%s\">\n",
 	  OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 	  OCPI_CPP_STRINGIFY(OCPI_OS_VERSION),
 	  OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
 	  "", "", "", "");
 #if 0
-	  OCPI_CPP_STRINGIFY(OCPI_RUNTIME),
-	  OCPI_CPP_STRINGIFY(OCPI_RUNTIME_VERSION),
-	  OCPI_CPP_STRINGIFY(OCPI_TOOL),
-	  OCPI_CPP_STRINGIFY(OCPI_TOOL_VERSION));
+  OCPI_CPP_STRINGIFY(OCPI_RUNTIME),
+    OCPI_CPP_STRINGIFY(OCPI_RUNTIME_VERSION),
+    OCPI_CPP_STRINGIFY(OCPI_TOOL),
+    OCPI_CPP_STRINGIFY(OCPI_TOOL_VERSION));
 #endif
-  // Define all workers
-  for (WorkersIter wi = aw->assembly.workers.begin();
-       wi != aw->assembly.workers.end(); wi++)
-    emitWorker(f, *wi);
-  fprintf(f, "</artifact>\n");
-  if (fclose(f))
-    return "Could close output file. No space?";
-  return 0;
+// Define all workers
+for (WorkersIter wi = aw->assembly.workers.begin();
+     wi != aw->assembly.workers.end(); wi++)
+  emitWorker(f, *wi);
+fprintf(f, "</artifact>\n");
+if (fclose(f))
+  return "Could close output file. No space?";
+return 0;
 }
+
