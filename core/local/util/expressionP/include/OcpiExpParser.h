@@ -108,6 +108,27 @@ public:
 
 };
 
+ class BooleanEvaluator {
+   friend class Parser;   
+ private:
+   ParsedExpression *m_exp[2];
+   enum Eval {
+     EQ,
+     NE,
+     LT,
+     LTE,
+     GT,
+     GTE
+   };
+   Eval m_eval;
+
+ public:
+   
+   bool evaluate();
+   ~BooleanEvaluator();
+
+ };
+
 
 // This is the main expression parser class
 class Parser {
@@ -125,6 +146,9 @@ class Parser {
    // Evaluate Expression, this routine creates the parse tree, but 
    // does not attempt to resolve any variables.
    ParsedExpression* parseExpression( const char* expression );
+
+   // This method parses an expression of the form "exp1 [<>=] exp2"
+   BooleanEvaluator* parseEvaluation( const char * expression );
 
    // destructor
    ~Parser();

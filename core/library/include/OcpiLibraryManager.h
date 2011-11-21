@@ -83,10 +83,10 @@ namespace OCPI {
     };
     // Note due to xml persistence we don't need strings in the map
     // but this multimap stuff is pretty ugly
-    typedef std::multimap<const char *, Implementation, Comp> WorkerMap;
-    typedef std::pair<const char *, Implementation> WorkerMapPair;
+    typedef std::multimap< const char *, Implementation, Comp > WorkerMap;
+    typedef std::pair< const char*, Implementation > WorkerMapPair;
     typedef WorkerMap::const_iterator WorkerIter;
-    typedef std::pair<WorkerIter,WorkerIter> WorkerRange;
+    typedef std::pair< WorkerIter,WorkerIter > WorkerRange;
     class Artifact : public Attributes {
     protected:
       ezxml_t m_xml;
@@ -95,12 +95,16 @@ namespace OCPI {
       virtual ~Artifact();
     public:
       void configure(ezxml_t x = NULL);
+      bool evaluateWorkerSuitability( const OCPI::API::PValue *p, int & score );
       // Can this artifact run on something with these capabilities?
       virtual bool meetsRequirements (const Capabilities &caps,
 				      const char *impl,
 				      const OCPI::API::PValue *props,
+				      const OCPI::API::PValue *selectCriteria,
 				      const OCPI::API::Connection *conns,
-				      const char *&inst);
+				      const char *&inst,
+				      int & score
+				      );
       inline const ezxml_t xml() const { return m_xml; }
       virtual const std::string &name() const = 0;
       virtual Artifact *nextArtifact() = 0;
@@ -115,6 +119,7 @@ namespace OCPI {
       Artifact &findArtifactX(const Capabilities &caps,
 			      const char *impl,
 			      const OCPI::API::PValue *props,
+			      const OCPI::API::PValue *selectCriteria,
 			      const OCPI::API::Connection *conns,
 			      const char *&inst);
       void setPath(const char *);
@@ -135,6 +140,7 @@ namespace OCPI {
       static Artifact &findArtifact(const Capabilities &caps,
 				    const char *impl,
 				    const OCPI::API::PValue *props,
+				    const OCPI::API::PValue *selectCriteria, 
 				    const OCPI::API::Connection *conns,
 				    const char *&inst);
     };
@@ -153,6 +159,7 @@ namespace OCPI {
       Artifact *findArtifact(const Capabilities &caps,
 			     const char *impl,
 			     const OCPI::API::PValue *props,
+			     const OCPI::API::PValue *selectCriteria,
 			     const OCPI::API::Connection *conns,
 			     const char *&inst);
     };
@@ -189,6 +196,7 @@ namespace OCPI {
       findArtifact(const Capabilities &caps,
 		   const char *impl,
 		   const OCPI::API::PValue *props,
+		   const OCPI::API::PValue *selectCriteria,
 		   const OCPI::API::Connection *conns,
 		   const char *&inst);
       virtual Artifact *firstArtifact() = 0;

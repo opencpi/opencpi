@@ -1,0 +1,4 @@
+<RCCImplementation>
+  <xi:include href="impl2_spec.xml"/>
+  <ControlInterface Name="impl2" ControlOperations="initialize,start" />
+</RCCImplementation>

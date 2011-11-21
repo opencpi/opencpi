@@ -35,6 +35,7 @@
 #define __STDC_LIMIT_MACROS // wierd standards goof up
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilDataTypes.h"
+#include <string>
 
 namespace OCPI {
   namespace Util {
@@ -278,6 +279,12 @@ namespace OCPI {
 	for (unsigned n = 0; n < m_arrayRank; n++)
 	  fprintf(f, "%s%u", n ? "," : "", m_arrayDimensions[n]);
 	fprintf(f, "\"");
+      }
+      if (m_defaultValue) {
+
+	std::string val;
+	m_defaultValue->unparse(val);
+	fprintf(f, " default=\"%s\"", val.c_str());
       }
       if (m_nEnums) {
 	fprintf(f, " enums=\"");

@@ -105,8 +105,15 @@ printMember(FILE *f, OU::Member *m, const char *prefix, unsigned &offset, unsign
   } else
     fprintf(f, "%s  %-12s", prefix, rccTypes[m->m_baseType]);
   fprintf(f, "  %s", m->m_name.c_str());
+
+#ifdef FIX_ME
   if (m->m_baseType == OA::OCPI_String)
     fprintf(f, "[%lu]", roundup(m->m_stringLength + 1, 4));
+#endif
+
+  if (m->m_baseType == OA::OCPI_String)
+    fprintf(f, "[%lu]", m->m_stringLength);
+
   if (m->m_arrayRank)
     for (unsigned n = 0; n < m->m_arrayRank; n++)
       fprintf(f, "[%u]", m->m_arrayDimensions[n]);

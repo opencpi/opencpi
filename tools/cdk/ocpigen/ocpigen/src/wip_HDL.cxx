@@ -1551,7 +1551,7 @@ emitBsvHDL(Worker *w, const char *outDir) {
   void
 emitWorker(FILE *f, Worker *w)
 {
-  fprintf(f, "<worker name=\"%s\" sizeOfConfigSpace=\"%llu\"", w->implName, w->ctl.sizeOfConfigSpace);
+  fprintf(f, "<worker name=\"%s\" sizeOfConfigSpace=\"%llu\"", w->specName, w->ctl.sizeOfConfigSpace);
   if (w->ctl.controlOps) {
     bool first = true;
     for (unsigned op = 0; op < NoOp; op++)

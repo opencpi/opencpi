@@ -79,11 +79,13 @@ namespace OCPI {
 				       const char *inst,
 				       const OCPI::Util::PValue *wprops,
 				       const OCPI::API::PValue *wparams,
+				       const OCPI::Util::PValue *selectCriteria,
 				       const OCPI::API::Connection *connections = NULL);
       // This is the API method to create a worker from libraries
       OCPI::API::Worker &createWorker(const char *name, const char *impl,
 				      const OCPI::API::PValue *wParams = NULL,
 				      const OCPI::Util::PValue *wprops = NULL,
+				      const OCPI::Util::PValue *selectCriteria = NULL,
 				      const OCPI::API::Connection *connections = NULL);
       virtual Worker *firstWorker() const = 0;
       void start();

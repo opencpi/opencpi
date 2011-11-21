@@ -61,6 +61,7 @@
 #include <iostream>
 #include <OcpiBuffer.h>
 #include <OpenSpliceBindings.h>
+#include <OcpiUtilProtocol.h>
 
 namespace OX = OCPI::Util::EzXml;
 using namespace std;
@@ -70,7 +71,7 @@ namespace OCPI {
   namespace Msg {
     namespace DDS {
 
-      class TopicData : public OCPI::Metadata::Protocol {
+      class TopicData : public OCPI::Util::Protocol {
 
       public:
 	std::string name;
@@ -85,12 +86,12 @@ namespace OCPI {
 	TopicData()
 	  :participant("OCPI"),m_currentOffset(0),m_OffsetOffset(0),m_unbounded(false){}
 
-	TopicData & operator=( const OCPI::Metadata::Protocol * p )
+	TopicData & operator=( const OCPI::Util::Protocol * p )
 	{
-	  static_cast<OCPI::Metadata::Protocol&>(*this) = p;
+	  static_cast<OCPI::Util::Protocol&>(*this) = p;
 	  for ( int n=0; n<nMembers(); n++ ) {
-	    OCPI::Util::Prop::Member & m = member(n);
-	    if ( m.type.isSequence && ( m.type.length == 0 ) ) {
+	    OCPI::Util::Member & m = member(n);
+	    if ( m.m_isSequence && ( m.m_sequenceLength == 0 ) ) {
 	      m_unbounded = true;
 	      break;
 	    }
@@ -106,8 +107,15 @@ namespace OCPI {
 	}
 
 
-	const char * ddsType( OCPI::API::ScalarType t ) {
+	const char * ddsType( OCPI::API::BaseType t ) {
 	  switch ( t ) {
+
+
+	  case OCPI::API::OCPI_Struct:
+	  case OCPI::API::OCPI_Enum:
+	  case OCPI::API::OCPI_Type:
+	    break;
+
 
 	  case OCPI::API::OCPI_Long:
 	    return "Long";
@@ -142,8 +150,13 @@ namespace OCPI {
 	  return NULL;
 	}
 
-	const char * ddsSubType( OCPI::API::ScalarType t ) {
+	const char * ddsSubType( OCPI::API::BaseType t ) {
 	  switch ( t ) {
+
+	  case OCPI::API::OCPI_Struct:
+	  case OCPI::API::OCPI_Enum:
+	  case OCPI::API::OCPI_Type:
+	    break;
 
 	  case OCPI::API::OCPI_Long:
 	    return "c_long";
@@ -154,9 +167,9 @@ namespace OCPI {
 	  case OCPI::API::OCPI_Char:
 	    return "c_char";
 	  case OCPI::API::OCPI_Double:
-	    return "c_ouble";
+	    return "c_double";
 	  case OCPI::API::OCPI_Float:
-	    return "c_loat";
+	    return "c_float";
 	  case OCPI::API::OCPI_UChar:
 	    return "c_octet";
 	  case OCPI::API::OCPI_ULong:
@@ -177,7 +190,7 @@ namespace OCPI {
 	  return NULL;
 	}
 
-	c_long * toSequence( c_base base, OCPI::API::ScalarType type, int size, c_long length, void * buf )
+	c_long * toSequence( c_base base, OCPI::API::BaseType type, int size, c_long length, void * buf )
 	{
 	  static c_type type0 = NULL;
 	  c_type subtype0;
@@ -204,15 +217,16 @@ namespace OCPI {
 	  format += buf;
 	  
 	  for ( int n=0; n<nMembers(); n++ ) {
-	    OCPI::Util::Prop::Member & m = member(n);
-	    if ( m.type.isSequence ) {
-	      sprintf( buf, "<Member name=\"%s\"><Sequence><%s/></Sequence></Member>", m.name, ddsType(m.type.scalar) );
+	    OCPI::Util::Member & m = member(n);
+	    if ( m.m_isSequence ) {
+	      sprintf( buf, "<Member name=\"%s\"><Sequence><%s/></Sequence></Member>", m.m_name.c_str(), ddsType(m.m_baseType) );
 	    }
-	    else if ( m.type.isArray ) {
-	      sprintf( buf, "<Member name=\"%s\"><Array size=\"%d\"><%s/></Array></Member>", m.name, m.type.length, ddsType(m.type.scalar) );
+	    else if ( m.m_arrayRank > 0 ) {
+	      sprintf( buf, "<Member name=\"%s\"><Array size=\"%d\"><%s/></Array></Member>", m.m_name.c_str(), m.m_arrayDimensions[0], 
+		       ddsType(m.m_baseType) );
 	    }
 	    else {
-	      sprintf( buf, "<Member name=\"%s\"><%s/></Member>", m.name, ddsType(m.type.scalar) );
+	      sprintf( buf, "<Member name=\"%s\"><%s/></Member>", m.m_name.c_str(), ddsType(m.m_baseType) );
 	    }
 	    format+= buf;
 	  }
@@ -235,57 +249,57 @@ namespace OCPI {
 	{
 	  int size=0;
 	  for ( int n=0; n<nMembers(); n++ ) {
-	    OCPI::Util::Prop::Member & m = member(n);
-	    if ( m.type.isSequence || m.type.isArray ) {
-	      if  (m.type.length == 0) {
+	    OCPI::Util::Member & m = member(n);
+	    if ( m.m_isSequence || (m.m_arrayRank>0) ) {
+	      if  (m.m_sequenceLength == 0) {
 		return -1;		
 	      }
 	      else {
-		size += m.nBytes * m.type.length;
+		size += m.m_nBytes * m.m_sequenceLength;
 	      }
 	    }
-	    size += m.nBytes;
+	    size += m.m_nBytes;
 	  }
 	  return size;
 	}
 
 	inline int nMembers(){return operations()[0].nArgs();}
 
-	inline OCPI::Util::Prop::Member & member(int index) { 
-	  OCPI::Util::Prop::Member &m = operations()[0].args()[index];
-	  if ( m.type.isSequence && (m.type.length == 0) ) {  // Unbounded sequence
+	inline OCPI::Util::Member & member(int index) { 
+	  OCPI::Util::Member &m = operations()[0].args()[index];
+	  if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {  // Unbounded sequence
 	    m_unbounded = true;
 	  }
 	  return m;
 	}
 	inline int mLength( int index, int vLen=0 ) {
 	  int len;
-	  OCPI::Util::Prop::Member &m = operations()[0].args()[index];
-	  if ( m.type.isSequence && (m.type.length == 0) ) {  
-	    len = vLen * m.nBytes;
+	  OCPI::Util::Member &m = operations()[0].args()[index];
+	  if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {  
+	    len = vLen * m.m_nBytes;
 	  }
 	  else {
-	    len = m.nBytes;
+	    len = m.m_nBytes;
 	  }
 	  return len;
 	}
 	inline int mOffset( int index, int vLen=0 ) {
-	  OCPI::Util::Prop::Member &m = operations()[0].args()[index];
+	  OCPI::Util::Member &m = operations()[0].args()[index];
 
 	  if ( m_unbounded ) {
 	    int off = m_OffsetOffset;
-	    if ( m.type.isSequence && (m.type.length == 0) ) {  
-	      off += vLen * m.nBytes;
+	    if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {  
+	      off += vLen * m.m_nBytes;
 	    }
 	    else {
-	      off += m.nBytes;
+	      off += m.m_nBytes;
 	    }
-	    int align = (m.bits + CHAR_BIT - 1) / CHAR_BIT;
+	    int align = (m.m_nBits + CHAR_BIT - 1) / CHAR_BIT;
 	    m_currentOffset += align;
 	    m_OffsetOffset = off;
 	  }
 	  else {
-	    m_currentOffset = m.offset;	    
+	    m_currentOffset = m.m_offset;	    
 	  }
 	  if ( m_unbounded ) {
 	    if ( m_currentOffset >= m_maxMsgSize ) {
@@ -345,20 +359,26 @@ namespace OCPI {
 	  for ( int n=0; n<m_data.nMembers(); n++ ) {
 
 #ifdef DEBUG_MEMBERS
-	    if (m_data.member(n).name )
-	      cout << n << " Name = " <<m_data.member(n).name << endl;
+	    if (m_data.member(n).m_name.length() )
+	      cout << n << " Name = " <<m_data.member(n).m_name << endl;
 	    cout << "      offset =  " <<m_data.member(n).offset << endl;
 	    cout << "      bits =  " <<m_data.member(n).bits << endl;
 	    cout << "      align =  " <<m_data.member(n).align << endl;
 	    cout << "      nBytes =  " <<m_data.member(n).nBytes << endl;
-	    cout << "      type =  " <<m_data.member(n).type.scalar << endl;	      
-	    cout << "       seq =  " <<m_data.member(n).type.isSequence << endl;	      
-	    cout << "       ary =  " <<m_data.member(n).type.isArray << endl;	      
-	    cout << "       strlen =  " <<m_data.member(n).type.stringLength << endl;	      
-	    cout << "       length =  " <<m_data.member(n).type.length << endl;	      
+	    cout << "      type =  " <<m_data.member(n).scalar << endl;	      
+	    cout << "       seq =  " <<m_data.member(n).m_isSequence << endl;	      
+	    cout << "       ary =  " <<m_data.member(n).isArray << endl;	      
+	    cout << "       strlen =  " <<m_data.member(n).stringLength << endl;	      
+	    cout << "       length =  " <<m_data.member(n).length << endl;	      
 #endif
 
-	    switch (m_data.member(n).type.scalar ) {
+	    switch (m_data.member(n).m_baseType ) {
+
+	    case OCPI::API::OCPI_Struct:
+	    case OCPI::API::OCPI_Enum:
+	    case OCPI::API::OCPI_Type:
+	      ocpiAssert(!"unsuporrted type");
+	    
 
 	    case OCPI::API::OCPI_Bool:
 	    case OCPI::API::OCPI_Char:
@@ -379,7 +399,7 @@ namespace OCPI {
 	    processScalar:
 	      {
 
-		if ( m_data.member(n).type.isSequence ) {
+		if ( m_data.member(n).m_isSequence ) {
 		  tf = align(sizeof(void*),orig,tf);
 		  long size;
 		  c_long ** src = (c_long**)tf;
@@ -391,7 +411,7 @@ namespace OCPI {
 		  memcpy( tt + m_data.mOffset(n,size) + 4, *src, clen); 
 		  tf += sizeof(c_sequence);
 		}
-		else if ( m_data.member(n).type.isArray ) {
+		else if ( m_data.member(n).m_arrayRank > 0 ) {
 		  c_long ** src = (c_long**)tf;
 		  int len =m_data.mLength(n);
 		  memcpy( tt + m_data.mOffset(n), *src, len); 
@@ -441,20 +461,25 @@ namespace OCPI {
 	  for ( int n=0; n<m_data.nMembers(); n++ ) {
 
 #ifdef DEBUG_MEMBERS
-	    if (m_data.member(n).name )
-	      cout << n << " Name = " <<m_data.member(n).name << endl;
+	    if (m_data.member(n).m_name.length() )
+	      cout << n << " Name = " <<m_data.member(n).m_name << endl;
 	    cout << "      offset =  " <<m_data.member(n).offset << endl;
 	    cout << "      bits =  " <<m_data.member(n).bits << endl;
 	    cout << "      align =  " <<m_data.member(n).align << endl;
 	    cout << "      nBytes =  " <<m_data.member(n).nBytes << endl;
-	    cout << "      type =  " <<m_data.member(n).type.scalar << endl;	      
-	    cout << "       seq =  " <<m_data.member(n).type.isSequence << endl;	      
-	    cout << "       ary =  " <<m_data.member(n).type.isArray << endl;	      
-	    cout << "       strlen =  " <<m_data.member(n).type.stringLength << endl;	      
-	    cout << "       length =  " <<m_data.member(n).type.length << endl;	      
+	    cout << "      type =  " <<m_data.member(n).scalar << endl;	      
+	    cout << "       seq =  " <<m_data.member(n).m_isSequence << endl;	      
+	    cout << "       ary =  " <<m_data.member(n).isArray << endl;	      
+	    cout << "       strlen =  " <<m_data.member(n).stringLength << endl;	      
+	    cout << "       length =  " <<m_data.member(n).length << endl;	      
 #endif
 
-	    switch (m_data.member(n).type.scalar ) {
+	    switch (m_data.member(n).m_baseType ) {
+
+	  case OCPI::API::OCPI_Struct:
+	  case OCPI::API::OCPI_Enum:
+	  case OCPI::API::OCPI_Type:
+	    ocpiAssert(!"unsuporrted type");
 
 	    case OCPI::API::OCPI_Bool:
 	    case OCPI::API::OCPI_Char:
@@ -474,11 +499,11 @@ namespace OCPI {
 
 	    processScalar:
 	      {
-		if ( m_data.member(n).type.isSequence ) {
+		if ( m_data.member(n).m_isSequence ) {
 		  tt = align(8,orig,tt);
 		  c_long len  = (c_long)*(tf+m_data.mOffset(n));
 		  ocpiAssert( len < m_data.mLength(n) );
-		  c_long * dest = m_data.toSequence( base, m_data.member(n).type.scalar , sizeof(c_long), len, tf+m_data.mOffset(n)+4 );
+		  c_long * dest = m_data.toSequence( base, m_data.member(n).m_baseType , sizeof(c_long), len, tf+m_data.mOffset(n)+4 );
 		  c_sequence * tseq = (c_sequence*)tt;
 		  *tseq = (c_sequence)dest;
 		  tt += sizeof(c_sequence);
@@ -964,7 +989,7 @@ namespace OCPI {
       class XferServices : public DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>
       {
       public:
-	XferServices ( OCPI::Metadata::Protocol * protocol , const char  * other_url, 
+	XferServices ( OCPI::Util::Protocol * protocol , const char  * other_url, 
 		       const OCPI::Util::PValue *our_props=0,
 		       const OCPI::Util::PValue *other_props=0 );
 
@@ -1064,7 +1089,7 @@ namespace OCPI {
 	}
 
 
-	virtual XferServices* getXferServices( OCPI::Metadata::Protocol * protocol,
+	virtual XferServices* getXferServices( OCPI::Util::Protocol * protocol,
 					       const char* url,
 					       const OCPI::Util::PValue *our_props=0,
 					       const OCPI::Util::PValue *other_props=0 )
@@ -1079,18 +1104,18 @@ namespace OCPI {
 	  cout << "    num args = " <<  protocol->operations()[0].nArgs() << endl;
 	  for ( unsigned n=0; n<protocol->operations()[0].nArgs(); n++ ) {
 
-	    if ( protocol->operations()[0].args()[n].name )
-	      cout << n << " Name = " << protocol->operations()[0].args()[n].name << endl;
-	    cout << "      offset =  " << protocol->operations()[0].args()[n].offset << endl;
-	    cout << "      bits =  " << protocol->operations()[0].args()[n].bits << endl;
-	    cout << "      align =  " << protocol->operations()[0].args()[n].align << endl;
-	    cout << "      nBytes =  " << protocol->operations()[0].args()[n].nBytes << endl;
+	    if ( protocol->operations()[0].args()[n].m_name.length() )
+	      cout << n << " Name = " << protocol->operations()[0].args()[n].m_name << endl;
+	    cout << "      offset =  " << protocol->operations()[0].args()[n].m_offset << endl;
+	    cout << "      bits =  " << protocol->operations()[0].args()[n].m_nBits << endl;
+	    cout << "      align =  " << protocol->operations()[0].args()[n].m_align << endl;
+	    cout << "      nBytes =  " << protocol->operations()[0].args()[n].m_nBytes << endl;
 
-	    cout << "      type =  " << protocol->operations()[0].args()[n].type.scalar << endl;	      
-	    cout << "       seq =  " << protocol->operations()[0].args()[n].type.isSequence << endl;	      
-	    cout << "       ary =  " << protocol->operations()[0].args()[n].type.isArray << endl;	      
-	    cout << "       strlen =  " << protocol->operations()[0].args()[n].type.stringLength << endl;	      
-	    cout << "       length =  " << protocol->operations()[0].args()[n].type.length << endl;	      
+	    cout << "      type =  " << protocol->operations()[0].args()[n].m_baseType << endl;	      
+	    cout << "       seq =  " << protocol->operations()[0].args()[n].m_isSequence << endl;	      
+	    cout << "       ary =  " << protocol->operations()[0].args()[n].m_arrayRank << endl;
+	    cout << "       strlen =  " << protocol->operations()[0].args()[n].m_stringLength << endl;	      
+	    cout << "       sequence length =  " << protocol->operations()[0].args()[n].m_sequenceLength << endl;	      
 	  }
 #endif
 
@@ -1114,7 +1139,7 @@ namespace OCPI {
 
 	
       XferServices::
-      XferServices ( OCPI::Metadata::Protocol * protocol , const char  * other_url,
+      XferServices ( OCPI::Util::Protocol * protocol , const char  * other_url,
 		     const OCPI::Util::PValue *our_props,
 		     const OCPI::Util::PValue *other_props)
 	: DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>(protocol,other_url,our_props,other_props)
