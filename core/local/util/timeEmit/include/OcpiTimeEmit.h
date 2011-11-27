@@ -32,7 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define OCPI_TIME_EMIT_SUPPORT
+//#define OCPI_TIME_EMIT_SUPPORT
 
 
 

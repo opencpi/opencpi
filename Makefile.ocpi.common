@@ -780,6 +780,7 @@ LOGGER_LIBS = $(OCPI_BASE_DIR)/core/local/logger/logger
 
 UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/local/util/driver/include \
+	$(OCPI_BASE_DIR)/core/local/util/expressionP/include \
 	$(OCPI_BASE_DIR)/core/local/util/ezxml/include \
 	$(OCPI_BASE_DIR)/core/local/util/filefs/include \
 	$(OCPI_BASE_DIR)/core/local/util/http/include \

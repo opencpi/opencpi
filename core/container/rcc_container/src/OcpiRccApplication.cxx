@@ -87,12 +87,24 @@ Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *props)
 
 RCCDispatch *Artifact::
 getDispatch(const char *implName) {
+#ifdef JWH
   for (::RCCEntryTable * et = m_entryTable; et->name; et++)
     if (!strcmp(et->name, implName))
       return et->dispatch;
  std::string error("Worker not found in DLL -> ");
  error += implName;
  throw OU::EmbeddedException( error.c_str() );
+#else
+
+ ::RCCEntryTable * et;
+
+  for (et = m_entryTable; et->name; et++)
+    std::cout << et->name << std::endl;
+
+  et = m_entryTable;
+ return et->dispatch;
+
+#endif
 }      
 
 #if 0

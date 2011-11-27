@@ -49,6 +49,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <OcpiOsAssert.h>
 
 using namespace std;
 
@@ -1015,9 +1016,106 @@ namespace OCPI {
 
 };
 
+OCPI::BooleanEvaluator::
+~BooleanEvaluator()
+{
+  delete m_exp[0];
+  delete m_exp[1];
+}
 
+OCPI::BooleanEvaluator* 
+OCPI::Parser::
+parseEvaluation( const char * expression )
+{
+  // Break up the expression into its 3 parts
+  std::string exp1;
+  std::string exp2;
+  
+  OCPI::BooleanEvaluator * be = new  OCPI::BooleanEvaluator();
 
+  /*  
+  const char* c = expression;
+  int n = sscanf(c,"%s %[== <= ] %s", exp1, eval, exp2); 
+  std::cout << "scanf returned " << n << std::endl;
+  ocpiAssert(n==3);
+  */
 
+  std::string e = expression;
+  size_t pos;
+  if ( (pos=e.find("==")) != std::string::npos ) {
+    be->m_eval = OCPI::BooleanEvaluator::EQ;
+  }
+  else if (  (pos=e.find("<=")) != std::string::npos ) {
+    be->m_eval = OCPI::BooleanEvaluator::LTE;
+  }
+  else if ( (pos=e.find(">=")) != std::string::npos ) {
+    be->m_eval = OCPI::BooleanEvaluator::GTE;
+  }
+  else if ( (pos=e.find("!=")) != std::string::npos ) {
+    be->m_eval = OCPI::BooleanEvaluator::NE;
+  }
+  else if ( (pos=e.find(">")) != std::string::npos ) {
+    be->m_eval = OCPI::BooleanEvaluator::GT;
+  }
+  else if ( (pos=e.find("<")) != std::string::npos ) {
+    be->m_eval = OCPI::BooleanEvaluator::LT;
+  }  
+  else {
+    throw std::string("Ill formatted evaluation string  = ") + expression;
+  }
+  exp1 = e.substr(0,pos);
+  exp2 = e.substr(pos+2);
+
+  std::cout << std::endl;
+  std::cout << "Expression = " << e << std::endl;
+  std::cout << " exp = "<< exp1 << " eval =  " << be->m_eval << " exp2 =  " << exp2 << std::endl;
+
+  be->m_exp[0] = parseExpression( exp1.c_str() );
+  be->m_exp[1] = parseExpression( exp2.c_str() );
+  return be;
+}
+
+bool 
+OCPI::BooleanEvaluator::
+evaluate()
+{
+  double e1 = m_exp[0]->evaluate();
+  double e2 = m_exp[1]->evaluate();
+
+  std::cout << "E1 = " << e1 << " E2 = " << e2 << std::endl;
+
+  switch( m_eval ) {
+
+  case OCPI::BooleanEvaluator::EQ:
+    return ( (uint64_t)(e1*100000) - (uint64_t)(e2*100000) ) == 0;
+    break;
+
+  case OCPI::BooleanEvaluator::NE:
+    return ( (uint64_t)(e1*100000) - (uint64_t)(e2*100000) ) != 0;
+    break;
+
+  case OCPI::BooleanEvaluator::GT:
+    return e1 > e2;
+    break;
+
+  case OCPI::BooleanEvaluator::GTE:
+    return e1 >= e2;
+    break;
+
+  case OCPI::BooleanEvaluator::LT:
+    return e1 < e2;
+    break;
+
+  case OCPI::BooleanEvaluator::LTE:
+    return e1 <= e2;
+    break;
+
+  }
+  
+  ocpiAssert(0);
+  return false;
+  
+}
 
 
 // Evaluate Expression, this routine creates the parse tree, but 
@@ -1390,15 +1488,16 @@ public:
 void run_exp_tests()
 {
 
-  double value;
+  //  double value;
   try {
     MyVarDefiner *my_var_definer = new MyVarDefiner;
     OCPI::Parser *exp_parser = new OCPI::Parser( my_var_definer );
-    OCPI::ParsedExpression* exp;
+    //    OCPI::ParsedExpression* exp;
+    OCPI::BooleanEvaluator * be;
     const char *ex;
 
         
-
+    /*
     // Some simple expression
     ex = "1";
     exp = exp_parser->parseExpression( ex );
@@ -1716,6 +1815,49 @@ void run_exp_tests()
     CHECK_VALUE( ex,value, -16);
     delete exp;
 
+
+
+    
+    ex = "1 > 3";
+    be = exp_parser->parseEvaluation( ex );
+    std::cout << ex << " evaluates to " << be->evaluate()  << std::endl;
+    delete be;
+
+    ex = "15 +5 == 20";
+    be = exp_parser->parseEvaluation( ex );
+    std::cout << ex << " evaluates to " << be->evaluate()  << std::endl;
+    delete be;
+
+    ex = "15 +5 == 21";
+    be = exp_parser->parseEvaluation( ex );
+    std::cout << ex << " evaluates to " << be->evaluate()  << std::endl;
+    delete be;
+
+    ex = "10 == 10";
+    be = exp_parser->parseEvaluation( ex );
+    std::cout << ex << " evaluates to " << be->evaluate()  << std::endl;
+    delete be;
+
+    ex = "10 != 10";
+    be = exp_parser->parseEvaluation( ex );
+    std::cout << ex << " evaluates to " << be->evaluate()  << std::endl;
+    delete be;
+
+    ex = "45 <= 10";
+    be = exp_parser->parseEvaluation( ex );
+    std::cout << ex << " evaluates to " << be->evaluate()  << std::endl;
+    delete be;
+     
+    ex = "45 > 10";
+    be = exp_parser->parseEvaluation( ex );
+    std::cout << ex << " evaluates to " << be->evaluate()  << std::endl;
+    delete be;
+    */
+
+    ex = "Wheight > 10";
+    be = exp_parser->parseEvaluation( ex );
+    std::cout << ex << " evaluates to " << be->evaluate()  << std::endl;
+    delete be;
      
 
   }

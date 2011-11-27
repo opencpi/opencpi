@@ -37,7 +37,9 @@
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilException.h"
 #include "OcpiUtilDataTypes.h"
+#include <string>
 #include "OcpiUtilValue.h"
+
 namespace OCPI {
   namespace Util {
     namespace OA = OCPI::API;
@@ -236,6 +238,12 @@ namespace OCPI {
 	for (unsigned n = 0; n < m_arrayRank; n++)
 	  fprintf(f, "%s%u", n ? "," : "", m_arrayDimensions[n]);
 	fprintf(f, "\"");
+      }
+      if (m_defaultValue) {
+
+	std::string val;
+	m_defaultValue->unparse(val);
+	fprintf(f, " default=\"%s\"", val.c_str());
       }
       if (m_nEnums) {
 	fprintf(f, " enums=\"");

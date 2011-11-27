@@ -94,8 +94,10 @@ namespace OCPI {
       ezxml_t impl, inst, xml = m_libArtifact.xml();
 
       if (!implTag ||
-          !(impl = findChildWithAttr(xml, "worker", "name", implTag)))
-        throw ApiError("No implementation found for \"", implTag, "\"", NULL);
+          !(impl = findChildWithAttr(xml, "worker", "name", implTag))) {
+	throw ApiError("No implementation found for \"", implTag, "\"", NULL);
+      }
+
       if (instTag) {
         inst = findChildWithAttr(xml, "instance", "name", instTag);
         if (!inst)

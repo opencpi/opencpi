@@ -1,0 +1,12 @@
+<ComponentSpec Name="bestfit">
+  <Properties>
+    <Property Name="throughput" readable="true" writable="true" default="10000"/>
+    <Property Name="memoryusage" readable="true" writable="true" default="500" />
+    <Property Name="distortion" readable="true" writable="true" Type="double" default=".001" />
+  </Properties>
+  <DataInterfaceSpec Name="out" Producer="true">
+    <Protocol>
+      <Operation Name="send"><Argument Name="Points" Type="long" SequenceLength="1000"/></Operation>
+    </Protocol>
+  </DataInterfaceSpec>
+</ComponentSpec>

@@ -52,6 +52,7 @@ namespace OCPI {
     createWorker(const char *url, const OA::PValue *aParams, const char *name,
 		 const char *impl, const char *inst,
 		 const OA::PValue *wProps, const OA::PValue *wParams,
+		 const OA::PValue * /* selectCriteria */ , 
 		 const OA::Connection * /* connections */) {
       if (url)
 	return container().loadArtifact(url, aParams).createWorker(*this, name,
@@ -59,7 +60,7 @@ namespace OCPI {
 								   wProps, wParams);
       // This is the special hack for passing in a dispatch table for RCC workers.
       else {
-	Worker &w = createWorker(NULL, name, NULL, NULL, aParams);
+	Worker &w = createWorker(NULL, name, (ezxml_t)NULL, (ezxml_t)NULL, aParams);
 	w.initialize();
 	return w;
       }
@@ -68,11 +69,12 @@ namespace OCPI {
     createWorker(const char *name, const char *impl,
 		 const OA::PValue *wProps,
 		 const OA::PValue *wParams,
+		 const OA::PValue *selectCriteria, 
 		 const OA::Connection *connections) {
       // Find an artifact (and instance within the artifact), for this worker
       const char *inst = NULL;
       OL::Artifact &a =
-	OL::Manager::findArtifact(container(), impl, wParams, connections, inst);
+	OL::Manager::findArtifact(container(), impl, wParams, selectCriteria,  connections, inst);
       // Load the artifact and create the worker
       return
 	container().loadArtifact(a).createWorker(*this, name, impl, inst, wProps, wParams);
