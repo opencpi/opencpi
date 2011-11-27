@@ -290,8 +290,8 @@ ifneq ($(filter linux darwin,$(OCPI_OS)),)
 
 ifeq ($(OCPI_OS),darwin)
 SO=dylib
-SHARED_ALLOW_UNDEFINED=-dynamiclib -undefined dynamic_lookup -install_name $(notdir $@)
-SHARED=-dynamiclib -install_name $(notdir $@)
+SHARED_ALLOW_UNDEFINED=-dynamiclib -undefined dynamic_lookup -install_name @rpath/$(notdir $@)
+SHARED=-dynamiclib -install_name @rpath/$(notdir $@)
 BASICLIBS=
 CXXFLAGS += -Wall
 # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...

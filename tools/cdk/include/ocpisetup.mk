@@ -18,7 +18,9 @@ ifeq ($(realpath $(shell echo $(OCPI_CDK_DIR))),)
 $(error The OCPI_CDK_DIR variable, "$(OCPI_CDK_DIR)", points to a nonexistent directory)
 endif
 ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFile)))
+ifneq ($(realpath $(OCPI_CDK_DIR)/ocpisetup.mk),$(realpath $(OcpiThisFile)))
 $(error Inconsistent usage of this file ($(OcpiThisFile)) vs. OCPI_CDK_DIR ($(OCPI_CDK_DIR)))
+endif
 endif
 export OCPI_RUNTIME_SYSTEM:=$(shell $(OCPI_CDK_DIR)/scripts/showRuntimeHost)
 #$(info export OCPI_RUNTIME_SYSTEM=$(OCPI_RUNTIME_SYSTEM))
