@@ -269,5 +269,13 @@ test: tools/local/binder tools/local/tester
 export_cdk:
 	mydate=`date +%G%m%d%H%M%S`; \
 	file=opencpi-cdk-$$mydate.tgz; \
+	(cd tools/cdk/export; find . -follow -type l) > $$file.exclude; \
+	if [ -s $$file.exclude ] ; then \
+	  echo ==== These symlinks are broken for this export: ; \
+	  cat $$file.exclude ; \
+	  echo ==== End of broken symlinks; \
+	fi; \
 	echo Creating export file: $$file; \
-	tar -z -h -f $$file -c -C tools/cdk/export .
+	tar -z -h -f $$file -c -X $$file.exclude -C tools/cdk/export .
+
+
