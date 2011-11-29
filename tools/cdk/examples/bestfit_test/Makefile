@@ -18,11 +18,13 @@ endif
 endif
 
 
-LIBDIR=$(OCPI_CDK_DIR)/lib/$(OcpiHostTarget)
+
 LIBS=interfaces rcc_container rdma_drivers opencv_core opencv_highgui opencv_ml opencv_objdetect util
 LIB_PATH=export $(OcpiLibraryPathEnv)=$(LIBDIR):$(OCPI_OPENCV_HOME)/lib; export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/../components/lib; 
+#LIB_PATH= export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/../components/lib; 
 INCS += -I$(OCPI_OPENCV_HOME)/include/opencv -I/home/work/ocpi/core/local/util/property/include/
-LIBRARY_PATH 	+= -L$(OCPI_OPENCV_HOME)/lib -L$(OCPI_BASE_DIR)/lib
+LIBRARY_PATH 	+= -L$(OCPI_OPENCV_HOME)/lib -L$(OCPI_BASE_DIR)/lib -L/home/work/ocpiMerge/lib/linux-x86_64-bin
+LIBDIR=$(OCPI_CDK_DIR)/lib/$(OcpiHostTarget) $(LIBRARY_PATH)
 
 all: bestfit
 
@@ -30,10 +32,8 @@ bestfit: bestfit.cxx
 	$(LIB_PATH) g++ -g -o $@ $(INCS) -I$(OCPI_CDK_DIR)/include $^ -L$(LIBDIR) $(LIBS:%=-l%)
 
 run: bestfit
-	$(LIB_PATH) \
-	export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components; \
-	export OCPI_SMB_SIZE=100000000; \
-	./bestfit boston_small.jpg > /dev/null	
+	export OCPI_LIBRARY_PATH=./lib/rcc/linux-x86_64/ 
+	./bestfit 9999 .001 10  > /dev/null	
 
 clean::
 	rm -f bestfit *.*~ *~ output_image.jpg *.o *.d

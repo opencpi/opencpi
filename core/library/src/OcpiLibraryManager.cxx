@@ -143,11 +143,10 @@ namespace OCPI {
     Artifact::Artifact() : m_xml(NULL) {}
     Artifact::~Artifact(){}
 
-
-
-    
     class MyVarDefiner : public OCPI::DefineExpVarInterface {
     public:
+
+      struct UndefinedVar : public std::string { UndefinedVar(const char* s):std::string(s){}};
 
       MyVarDefiner(  const OCPI::API::PValue *p, ezxml_t xml ) 
 	:m_props(p),m_xml(xml)
@@ -157,10 +156,9 @@ namespace OCPI {
 
       virtual double defineVariable( const char* var )
 	throw (std::string) {
-
+#ifndef NDEBUG
 	std::cout << "Defining var = " << var << std::endl;
-
-
+#endif
 	// First see if it is a worker property
 	ezxml_t x;
 	x = ezxml_cchild(m_xml, "worker");
@@ -173,10 +171,14 @@ namespace OCPI {
 	    if (strcmp(var,pname)!=0) continue;
 	    const char* value = ezxml_attr ( x, "default" );
 	    if ( !value ) {
-	      throw std::string("Invalid Worker xml property (must have a default value)");
+	      std::cerr << "Invalid Worker xml property (must have a default value)" << std::endl;
+	      throw UndefinedVar("No Default value");
+	      return 0;
 	    }
 	    double v = atof(value);
+#ifndef NDEBUG
 	    std::cout << "value s = " << value << " Value = " << v << std::endl;
+#endif
 	    return v;
 	  }
 
@@ -184,7 +186,6 @@ namespace OCPI {
 	unsigned int n=0;
 	const OCPI::API::PValue *p = m_props;
 	while (n<p->length() ) {
-	  if ( p->name ) std::cout << p->name << std::endl;
 	  if ( strcmp( p->name, var ) != 0) {
 	    n++;p++;
 	    continue;
@@ -200,73 +201,61 @@ namespace OCPI {
 	    }
 	  case OCPI::API::OCPI_Long:
 	    {
-	      std::cout << "Evaluating long = " << p->vLong  << std::endl;
 	      return (double)p->vLong;
 	    }
 	    break;
 	  case OCPI::API::OCPI_Short:
 	    {
-	      std::cout << "Evaluating short = " << p->vShort  << std::endl;
 	      return (double) p->vShort;
 	    }
 	    break;
 	  case OCPI::API::OCPI_Bool:
 	    {
-	      std::cout << "Evaluating bool = " << p->vBool  << std::endl;
 	      return (double)p->vBool;
 	    }
 	    break;
 	  case OCPI::API::OCPI_Char:
 	    {
-	      std::cout << "Evaluating Char = " << p->vChar  << std::endl;
 	      return (double)p->vChar;
 	    }
 	    break;
 	  case OCPI::API::OCPI_Double:
 	    {
-	      std::cout << "Evaluating double = " << p->vDouble << std::endl;
 	      return (double)p->vDouble;
 	    }
 	    break;
 	  case OCPI::API::OCPI_Float:
 	    {
-	      std::cout << "Evaluating float = " << p->vFloat  << std::endl;
 	      return (double) p->vFloat;
 	    }
 	    break;
 	  case OCPI::API::OCPI_UChar:
 	    {
-	      std::cout << "Evaluating UChar = " << p->vUChar  << std::endl;
 	      return (double)p->vUChar;
 	    }
 	    break;
 	  case OCPI::API::OCPI_ULong:
 	    {
-	      std::cout << "Evaluating Ulong = " << p->vULong  << std::endl;
 	      return (double)p->vULong;
 	    }
 	    break;
 	  case OCPI::API::OCPI_UShort:
 	    {
-	      std::cout << "Evaluating ushort = " << p->vUShort  << std::endl;
 	      return (double)p->vUShort;
 	    }
 	    break;
 	  case OCPI::API::OCPI_LongLong:
 	    {
-	      std::cout << "Evaluating long long = " << p->vLongLong  << std::endl;
 	      return (double) p->vLongLong;
 	    }
 	    break;
 	  case OCPI::API::OCPI_ULongLong:
 	    {
-	      std::cout << "Evaluating U long long = " << p->vULongLong  << std::endl;
 	      return (double)p->vULongLong;
 	    }
 	    break;
 	  case OCPI::API::OCPI_String:
 	    {
-	      std::cout << "Evaluating String = " << p->vString  << std::endl;
 	      return (double)0;
 	    }
 	    break;
@@ -294,22 +283,30 @@ namespace OCPI {
     Artifact::
     evaluateWorkerSuitability( const OCPI::API::PValue *p, int & score )
     {
-
       score = 0;
       MyVarDefiner vd(p,m_xml);
       OCPI::Parser exp_parser( &vd );
       OCPI::BooleanEvaluator * be;
-
       unsigned int n=0;
       const OCPI::API::PValue *prop = p;
       while (n<p->length() ) {
-	if ( prop->name ) std::cout << prop->name << std::endl;
 	std::string s = prop->name;
 	if ( s.find("__ocpi__") != std::string::npos ) {
 	  const char* ex = prop->vString;
 	  be = exp_parser.parseEvaluation( ex );
-	  bool result = be->evaluate();
+	  bool result;
+	  try {
+	    result = be->evaluate();
+	  }
+	  catch ( MyVarDefiner::UndefinedVar & e ) {
+	    result = false;
+	  }
+	  catch ( ... ) {
+	    throw;
+	  }
+#ifndef NDEBUG
 	  std::cout << "Result for " << ex << " = " << result << std::endl;
+#endif
 	  delete be;
 	  if ( ! result ) {
 	    if ( s.find("-required") != std::string::npos ) {
@@ -318,19 +315,14 @@ namespace OCPI {
 	  }
 	  else 	if ( s.find("-scored") != std::string::npos ) {
 	    int sval=0;
-	    std::cout << s << std::endl;
 	    sscanf(s.c_str(),"__ocpi__exp-scored %d",&sval);
-	    std::cout << "Adding " << sval << " to score" << std::endl;
 	    score += sval;
 	  }
 	}
 	n++;
 	prop++;
       }
-
-      std::cout << "***** Returning acore = " << score << std::endl;
       return true;
-
     }
 
     bool Artifact::
@@ -376,16 +368,12 @@ namespace OCPI {
 	const char *name = ezxml_cattr(w, "name");
 	bool instances = false;
 	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_next(i)) {
-
-	  std::cout << "inserting " << name << std::endl;
-
 	  if (!strcmp(name, ezxml_cattr(i, "worker"))) {
 	    instances = true;
 	    m_workers.insert(WorkerMapPair(name,Implementation(w,i)));
 	  }
 	}
 	if (!instances) {
-	  std::cout << "inserting " << name << std::endl;
 	  m_workers.insert(WorkerMapPair( name,Implementation(w)));
 	}
       }

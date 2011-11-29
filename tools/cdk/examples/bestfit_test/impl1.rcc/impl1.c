@@ -15,29 +15,12 @@ RCCDispatch impl1 = {
   IMPL1_DISPATCH
 };
 
-/*
- * Methods to implement for worker hello, based on metadata.
- */
-
-// The message we send all the time
-#define MESSAGE "Hello, world from impl 1\n"
-
 static RCCResult
 run(RCCWorker *self, RCCBoolean timeout, RCCBoolean *newRunCondition) {
   (void)timeout;(void)newRunCondition;
   RCCPort *out = &self->ports[IMPL1_OUT];
   unsigned int n;
-
-  if (sizeof(MESSAGE) > out->current.maxLength)
-    return RCC_FATAL;
-
-  /*
-  strcpy(out->current.data, MESSAGE);
-  out->output.length = sizeof(MESSAGE);
-  */
-
   printf("IMPL 1 selected\n");
-
   uint16_t *data = (uint16_t*)out->current.data;
   double freq=6;
   double gain=100;

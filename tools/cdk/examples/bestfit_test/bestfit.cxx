@@ -80,7 +80,6 @@ int main(int argc, char **argv) {
       cvShowImage( "Output", img );
 
       if ((b = ep.getBuffer((uint8_t*&)data, length, opcode, end))) {
-	//fprintf(stderr, "%s", (char *)data);
 	int l = length/sizeof(uint32_t);
 	CvPoint p0 = cvPoint(XPOS,YPOS(data[1]));
 	int x,old_x;
