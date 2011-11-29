@@ -672,8 +672,12 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	  OcpSignalDesc *osd = ocpSignals;
 	  for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	    if (osd->request && p->u.wdi.isProducer && p->u.wsi.regRequest && os->value &&
-		strcmp("MReqInfo", osd->name)) // fixme add "aliases" attribute somewhere
-	      fprintf(f, "  reg %s%s;\n", pout, osd->name);
+		strcmp("MReqInfo", osd->name)) { // fixme add "aliases" attribute somewhere
+	      if (osd->vector)
+		fprintf(f, "  reg [%3u:0] %s%s;\n", os->width - 1, pout, osd->name);
+	      else
+		fprintf(f, "  reg %s%s;\n", pout, osd->name);
+	    }
 	}
 	fprintf(f,
 		"  %s Aliases for interface \"%s\"\n", comment, p->name);

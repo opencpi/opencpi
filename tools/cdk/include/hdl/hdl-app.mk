@@ -52,6 +52,7 @@ ifndef HdlPlatforms
 ifdef HdlOnlyPlatforms
 $(info No platforms in HdlPlatforms ($(HdlPlatformsBeforeOnly)) built.)
 $(info This application only builds for these platforms: $(HdlOnlyPlatforms))
+clean::
 endif
 else
 

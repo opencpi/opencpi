@@ -40,8 +40,10 @@
 `include "bias_ver_impl.vh"
 // All outputs are registered except those that are aliased (that have WIP semantics) 
 // Someday we might be more clever and allow combi outputs.
-  reg ctl_SData, ctl_SThreadBusy, ctl_SResp;
-  reg out_MData;// not part of request, so not automatically declared.
+  reg [31:0] ctl_SData;
+  reg [0:0]  ctl_SThreadBusy;
+  reg [1:0]  ctl_SResp;
+  reg [31:0] out_MData; // not part of request, so not automatically declared.
   reg [31:0] biasValue;
   reg [1:0]  ctl_ctlSt;
 

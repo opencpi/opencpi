@@ -1,7 +1,7 @@
 #!/bin/sh
 echo "Icarus needs autoconf version > 2.59 and < 2.68, both of which don't work."
 echo "It will work successfully with 2.61 (what comes on MacOS 10.6)."
-echo "Icarus also needs gperf. 3.0.3 works (what comes on MacOs 10.6)
+echo "Icarus also needs gperf. 3.0.3 works (what comes on MacOs 10.6)"
 echo "Both are available from gnu.org, with: ./configure;make;sudo make install"
 set -ev
 . `dirname $0`/set_target.sh
