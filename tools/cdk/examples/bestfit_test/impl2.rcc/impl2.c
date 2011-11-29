@@ -24,14 +24,8 @@ RCCDispatch impl2 = {
   IMPL2_DISPATCH
 };
 
-/*
- * Methods to implement for worker hello, based on metadata.
- */
-
-
 static RCCResult initialize ( RCCWorker* self )
 {
-  //  Impl2Properties* p = ( Impl2Properties* ) self->properties;
   MyState *s = self->memories[0];
   double interval = 2.0*PI/S_SIZE;
   int n;
@@ -44,12 +38,6 @@ static RCCResult initialize ( RCCWorker* self )
 static RCCResult start ( RCCWorker* self )
 {
   (void)self;
-  /*  Impl2Properties* p = ( Impl2Properties* ) self->properties; 
-      MyState *s = self->memories[0];
-  */
-
-
-
   return RCC_OK;
 }
 
@@ -71,11 +59,7 @@ run(RCCWorker *self, RCCBoolean timeout, RCCBoolean *newRunCondition) {
   RCCPort *out = &self->ports[IMPL2_OUT];
   Impl2Properties* p = ( Impl2Properties* ) self->properties;
   MyState *s = self->memories[0];
-
   printf("IMPL 2 selected\n");
-
-
-
   double freq=6;
   double gain=100;
   double phase= 0;
@@ -87,9 +71,6 @@ run(RCCWorker *self, RCCBoolean timeout, RCCBoolean *newRunCondition) {
   for ( n=0; n<out->current.maxLength/2; n++) {
     data[n] = ( gain*sin_wave(interval*n,s) + phase)+ rand()*(noise/50*(gain/20)) + bias;    
   }
-
-
-
   return RCC_ADVANCE;
 }
 
