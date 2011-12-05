@@ -392,7 +392,7 @@ module v6_mig33 #
    .DQ_WIDTH        (DQ_WIDTH),
    .DQS_WIDTH       (DQS_WIDTH),
    .DQS_CNT_WIDTH   (DQS_CNT_WIDTH),
-   .OCB_MONITOR     (OCB_MONITOR),
+//   .OCB_MONITOR     (OCB_MONITOR), // JEK: 13.3 didn't like that this was not found
    .ORDERING        (ORDERING),
    .OUTPUT_DRV      (OUTPUT_DRV),
    .PHASE_DETECT    (PHASE_DETECT),

@@ -168,7 +168,7 @@ namespace OCPI {
 	// Capture the UUID info that tells us about the platform
 	HdlUUID myUUID;
 	for (unsigned n = 0; n < sizeof(HdlUUID); n++)
-	  ((uint8_t*)&myUUID)[sizeof(HdlUUID) - 1 - n] = ((volatile uint8_t *)&occp->admin.uuid)[n];
+	  ((uint8_t*)&myUUID)[n] = ((volatile uint8_t *)&occp->admin.uuid)[(n & ~3) + (3 - (n&3))];
 	if (myUUID.platform[0] && myUUID.platform[1])
 	  m_platform.assign(myUUID.platform, sizeof(myUUID.platform));
 	if (myUUID.device[0] && myUUID.device[1])

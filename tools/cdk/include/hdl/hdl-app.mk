@@ -218,6 +218,7 @@ ArtifactXmlName=$(call PlatformDir,$1)/$(Worker)_cont_art.xml
 ArtifactXmlDirs=$(XmlIncludeDirs) ../../devices/specs ../../devices/lib/hdl
 BitZName=$(call PlatformDir,$1)/$(call AppName,$1).bit.gz
 NgdName=$(call PlatformDir,$1)/$(call AppName,$1).ngd
+NgcName=$(call PlatformDir,$1)/$(call AppName,$1).ngc
 AppNgcName=$(call PlatformDir,$1)/$(ContainerModule).ngc
 MapName=$(call PlatformDir,$1)/$(call AppName,$1)_map.ncd
 ParName=$(call PlatformDir,$1)/$(call AppName,$1)_par.ncd
@@ -232,17 +233,20 @@ $(call NgdName,$1): $(call AppNgcName,$1) $(HdlPlatformsDir)/$1/$1.ucf $(call To
 	$(AT)$(call DoXilinx,ngdbuild,$1,\
 	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
 	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgdName,$1)))
+	$(AT)$(call DoXilinx,ngcbuild,$1,\
+	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
+	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgcName,$1)))
 # Map to physical elements
 $(call MapName,$1): $(call NgdName,$1)
 	$(AT)echo -n For $(Worker) on $1: creating mapped NCD '(Native Circuit Description)' file using '"map"'.
-	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$1) -w -logic_opt on -xe n -mt on -t 1 -register_duplication on \
+	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$1) -w -logic_opt on -xe c -mt on -t 1 -register_duplication on \
 	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(call MapName,$1)) \
 	                         $(notdir $(call NgdName,$1)) $(notdir $(call PcfName,$1)))
 
 # Place-and-route, and generate timing report
 $(call ParName,$1): $(call MapName,$1) $(call PcfName,$1)
 	$(AT)echo -n For $(Worker) on $1: creating PAR\'d NCD file using '"par"'.
-	$(AT)$(call DoXilinx,par,$1,-w -xe n $(notdir $(call MapName,$1)) \
+	$(AT)$(call DoXilinx,par,$1,-w -xe c $(notdir $(call MapName,$1)) \
 		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
 	$(AT)echo -n Generating timing report '(TWR)' for $1 platform design.
 	$(AT)-$(call DoXilinx,trce,$1,-v 20 -fastpaths -xml fpgaTop.twx \

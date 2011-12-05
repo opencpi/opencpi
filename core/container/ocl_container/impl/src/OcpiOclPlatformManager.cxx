@@ -1,4 +1,3 @@
-#ifdef OCPI_OPENCL_SUPPORT
 
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
@@ -246,6 +245,7 @@ namespace OCPI
         : id ( 0 ),
           context ( 0 ),
           type ( CL_DEVICE_TYPE_DEFAULT ),
+	  sizes( NULL ),
           cmdq ( 0 ),
           binaries ( )
       {
@@ -259,6 +259,12 @@ namespace OCPI
       cl_device_id id;
       cl_context context;
       cl_device_type type;
+      cl_uint vendorId, nUnits, nDimensions;
+      size_t *sizes, groupSize, argSize;
+      cl_bool available, compiler;
+      cl_device_exec_capabilities capabilities;
+      cl_command_queue_properties properties;
+      std::string name, vendor, driverVersion, profile, version, cVersion, extensions;
       cl_command_queue cmdq;
       BinaryTable binaries;
 
@@ -491,12 +497,12 @@ namespace OCPI
                                                        &rc );
       if ( rc )
       {
-        throw OCPI::Util::Error ( "clCreateProgramWithBinary() failed : %s", ocl_strerror ( rc ) );
+        throw OCPI::Util::Error ( "clCreateProgramWithBinary() failed rc: %s", ocl_strerror ( rc ) );
       }
 
       if ( binary_status )
       {
-        throw OCPI::Util::Error ( "clCreateProgramWithBinary() failed : %s", ocl_strerror ( binary_status ) );
+        throw OCPI::Util::Error ( "clCreateProgramWithBinary() failed status: %s", ocl_strerror ( binary_status ) );
       }
 
       cl_int build_rc = clBuildProgram ( program,
@@ -536,7 +542,7 @@ namespace OCPI
 
         build_log.push_back ( '\0' );
 
-        std::cout << "OCL build log : "
+        std::cout << "OCL build log : =====\n"
                   << &build_log[0]
                   << " for artifact "
                   << pathToBinary
@@ -681,8 +687,8 @@ namespace OCPI
                                          1,
                                          &id,
                                          compiler_options.c_str ( ),
-                                         0,
-                                         0 );
+                                         NULL,
+                                         NULL );
       {
         size_t build_log_n_bytes;
 
@@ -714,7 +720,7 @@ namespace OCPI
 
         build_log.push_back ( '\0' );
 
-        std::cout << "OCL build log : "
+        std::cout << "OCL compile log : =====\n"
                   << &build_log[0]
                   << std::endl;
 
@@ -914,6 +920,7 @@ namespace OCPI
       {
         cl_uint n_devices;
 
+        char device_string_info [ 1024 ];
         cl_int rc = clGetDeviceIDs ( d_platforms [ n ].id,
                                      CL_DEVICE_TYPE_ALL,
                                      0,
@@ -970,15 +977,34 @@ namespace OCPI
             throw OCPI::Util::Error ( "clCreateCommandQueue() failed : %s", ocl_strerror ( rc ) );
           }
 
-          rc = clGetDeviceInfo ( device_ids [ d ],
-                                 CL_DEVICE_TYPE,
-                                 sizeof ( device.type ),
-                                 &device.type,
-                                 0 );
-          if ( rc )
-          {
-            throw OCPI::Util::Error ( "clGetDeviceInfo() failed : %s", ocl_strerror ( rc ) );
-          }
+#define DEV_INFO(param_name, member) DEV_INFO_SIZE(param_name, sizeof(device.member), &device.member)
+	  //#define DEV_INFO_SIZE(param_name, member, size) DEV_INFO_SIZE2(param_name, member, size * sizeof(device.member), &device.member)
+#define DEV_INFO_STRING(param_name, member) do {			\
+	  DEV_INFO_SIZE(param_name, sizeof(device_string_info), device_string_info); \
+	  device.member = device_string_info; \
+          } while (0)
+#define DEV_INFO_SIZE(param_name, size, out) do {			\
+	    if ((rc = clGetDeviceInfo(device_ids[d], CL_DEVICE_##param_name, size, out, 0))) \
+              throw OCPI::Util::Error( "clGetDeviceInfo() failed for CL_DEVICE_" #param_name ": %s", ocl_strerror ( rc ) ); \
+          } while (0)  
+	  DEV_INFO(TYPE, type);
+	  DEV_INFO(VENDOR_ID, vendorId);
+	  DEV_INFO(MAX_COMPUTE_UNITS, nUnits);
+	  DEV_INFO(MAX_WORK_ITEM_DIMENSIONS, nDimensions);
+	  device.sizes = new size_t[device.nDimensions];
+	  DEV_INFO_SIZE(MAX_WORK_ITEM_SIZES, device.nDimensions * sizeof(size_t), device.sizes);
+	  DEV_INFO(MAX_WORK_GROUP_SIZE, groupSize);
+	  DEV_INFO(MAX_PARAMETER_SIZE, argSize);
+	  DEV_INFO(AVAILABLE, available);
+	  DEV_INFO(COMPILER_AVAILABLE, compiler);
+	  DEV_INFO(EXECUTION_CAPABILITIES, capabilities);
+	  DEV_INFO(QUEUE_PROPERTIES, properties);
+	  DEV_INFO_STRING(NAME, name);
+	  DEV_INFO_STRING(VENDOR, vendor);
+	  DEV_INFO_STRING(PROFILE, profile);
+	  DEV_INFO_STRING(VERSION, version);
+	  //	  DEV_INFO_STRING(OPENCL_C_VERSION, cVersion); not on Apple
+	  DEV_INFO_STRING(EXTENSIONS, extensions);
 
           d_platforms [ n ].devices.push_back ( device );
 
@@ -1548,4 +1574,3 @@ void OCPI::OCL::DeviceWorker::syncPtr ( void* ptr,
   d_impl->syncPtr ( ptr, flag );
 }
 
-#endif

@@ -412,8 +412,8 @@ namespace OCPI
                  const char* name,
                  ezxml_t implXml,
                  ezxml_t instXml,
-                 const OA::PValue* execProps )
-        : OC::WorkerBase<Application, Worker, Port> ( app, art, name, implXml, instXml, execProps ),
+                 const OA::PValue* execParams )
+        : OC::WorkerBase<Application, Worker, Port> ( app, art, name, implXml, instXml, execParams ),
           isEnabled ( false ),
           myContainer ( app.parent() ),
           implName ( ezxml_attr ( implXml, "name" ) ),
@@ -434,8 +434,6 @@ namespace OCPI
           myLocalMemories ( )
 
         {
-          ( void ) execProps;
-
           initializeContext ( );
 
           setControlOperations ( ezxml_cattr ( implXml, "controlOperations" ) );

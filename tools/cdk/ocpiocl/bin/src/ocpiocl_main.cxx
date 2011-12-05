@@ -1,4 +1,4 @@
-#ifdef OCPI_OPENCL_SUPPORT
+//#ifdef OCPI_OPENCL_SUPPORT
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
@@ -44,12 +44,14 @@
 
 ************************************************************************** */
 
-#include "OcpiOclPlatformManager.h"
-
 #include <string>
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+
+#include "OcpiOsLoadableModule.h"
+#include "OcpiOclPlatformManager.h"
+
 
 namespace
 {
@@ -108,9 +110,11 @@ namespace
   {
     if ( std::string ( argv [ n ] ).compare ( 0, 2, "-I" ) == 0 )
     {
-      includes += std::string ( argv [ n ] );
+      includes += "-I";//std::string ( argv [ n ] );
 
-      if ( *( argv [ n ] + 3 ) == ' ' ) // -I Path - note the space
+      if (argv[n][2]) // *( argv [ n ] + 3 ) == ' ' ) // -I Path - note the space
+	includes += &argv[n][2];
+      else
       {
         n++;
         if ( n < argc )
@@ -208,12 +212,17 @@ int main ( int argc, char* argv [ ] )
               << std::endl;
     return 0;
   }
+  
 
+  bool success = false;
   try
   {
+    const char *env = getenv("OCPI_OCL_OBJS");
+    OCPI::OS::LoadableModule lm(env ? env : "libOpenCL.so");
+    
     std::cout << "\nOCL worker compiler is running." << std::endl;
 
-    bool success = compile_ocl_worker ( argc, argv );
+    success = compile_ocl_worker ( argc, argv );
 
     std::cout << "\nOCL worker compile was "
               << ( ( success ) ? "successful." : "NOT successful." )
@@ -228,10 +237,10 @@ int main ( int argc, char* argv [ ] )
     std::cerr << "\nException(u): unknown" << std::endl;
   }
 
-  return 0;
+  return success ? 0 : 1;
 }
 
-#else 
-int main(){}
+//#else 
+//int main(){}
 
-#endif
+//#endif

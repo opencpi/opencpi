@@ -868,7 +868,7 @@ assign wmemiM0_MDataValid = 1'b0;
 assign wmemiM0_MDataLast = 1'b0;
 assign wmemiM0_MData = 128'b0;
 assign wmemiM0_MDataByteEn = 16'b0;
-assign wmemiM0_MReset_n = 0'b1;
+assign wmemiM0_MReset_n = 1'b1;
 // Unused adc slave signals
 assign wsi_s_adc_SThreadBusy = 1'b1;
 assign wsi_s_adc_SReset_n = 1'b0;

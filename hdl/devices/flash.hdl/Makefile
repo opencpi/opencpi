@@ -39,5 +39,5 @@ SimLibraries=\
 SimFiles=\
  $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
 Libraries=bsv util
-ExcludeTargets=virtex5
+OnlyTargets=xilinx
 include $(OCPI_CDK_DIR)/include/worker.mk

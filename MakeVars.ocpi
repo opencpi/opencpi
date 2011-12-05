@@ -179,7 +179,7 @@ endif
 # ----------------------------------------------------------------------
 #
 
-LDFLAGS := $(OCPI_LDFLAGS)
+LDFLAGS = $(OCPI_LDFLAGS) $(EXTRA_LDFLAGS)
 CFLAGS := $(OCPI_CFLAGS)
 CXXFLAGS := $(OCPI_CXXFLAGS)
 

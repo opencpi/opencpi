@@ -87,7 +87,7 @@ namespace OCPI {
        * \throw std::string See open().
        */
 
-      LoadableModule (const std::string & fileName)
+      LoadableModule (const std::string & fileName, bool global = false)
         throw (std::string);
 
       /**
@@ -117,7 +117,7 @@ namespace OCPI {
        * symbols.
        */
 
-      void open (const std::string & fileName)
+      void open (const std::string & fileName, bool global = false)
         throw (std::string);
 
       /**

@@ -130,7 +130,7 @@ found(const char *name, Bar *bars, unsigned nbars, bool verbose) {
       time_t bsvbd, bsbd;
       // Capture the UUID info that tells us about the platform
       for (unsigned n = 0; n < sizeof(HdlUUID); n++)
-	((uint8_t*)&myUUID)[sizeof(HdlUUID) - 1 - n] = ((volatile uint8_t *)&occp->admin.uuid)[n];
+	((uint8_t*)&myUUID)[n] = ((volatile uint8_t *)&occp->admin.uuid)[(n & ~3) + (3 - (n&3))];
       strncpy(platform, myUUID.platform, sizeof(myUUID.platform));
       platform[sizeof(myUUID.platform)] = '\0';
       strncpy(device, myUUID.device, sizeof(myUUID.device));

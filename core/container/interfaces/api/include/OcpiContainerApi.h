@@ -41,6 +41,7 @@
 #include "OcpiPValueApi.h"
 #include "OcpiUtilPropertyApi.h"
 #include "OcpiUtilExceptionApi.h"
+#include "OcpiLibraryApi.h"
 namespace OCPI {
   namespace API {
     // The abstract class for exposed API functionality for containers
@@ -142,12 +143,6 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
     };
 
-
-    // How to express how a worker will be connected in the application
-    struct Connection {
-      const char *port, *otherWorker, *otherPort;
-    };
-
     // This class is used when the application is being constructed using
     // API calls placing specific workers on specific containers.
     // When the ContainerApplication is deleted, all the workers placed on it
@@ -156,29 +151,31 @@ namespace OCPI {
     public:
       virtual ~ContainerApplication();
       // Create an application from an explicit artifact url
-      // specifying lots of details:
-      // aProps - artifact loading properties
-      // name - instance name within the application
-      // impl - implementation name within the artifact (e.g. which worker)
-      // inst - instance name within artifact that has fixed instances
+      // specifying lots of details, including a particular implementation and
+      // possibly a particular pre-existing instance:
+      //
+      // file - name of artifact file
+      // artifactParams - artifact loading parameters
+      // instName - instance name within the application
+      // implName - implementation name within the artifact (e.g. which worker)
+      // preInstName - name of the pre-existing instance within the artifact (if it has them)
       // wProps - initial values of worker properties
       // wParams - extensible parameters for worker creation
       // selectCriteria - implementation selection criteria
-      virtual Worker &createWorker(const char *file, const PValue *aProps,
-				   const char *name, const char *impl,
-				   const char *inst = NULL,
+      virtual Worker &createWorker(const char *file, const PValue *artifactParams,
+				   const char *instName, const char *implName,
+				   const char *preInstName = NULL,
 				   const PValue *wProps = NULL,
 				   const PValue *wParams = NULL,
-				   const PValue *selectCriteria = NULL,
-				   const Connection *connections = NULL) = 0;
-      // Simpler method to create a worker by name, with the artifact
-      // found from looking at libraries in the library path, finding
+				   const PValue *selectCriteria = NULL) = 0;
+      // Simpler method to create a worker by its spec name (name provided in the spec file),
+      // with the artifact found from looking at libraries in the library path, finding
       // what implementation will run on the container of this container-app.
       // Since some implementations might have connectivity contraints,
       // we also pass in a simple list of other workers destined for
       // the same container and how they are connected to this one.
       // The list is terminated with the "port" member == NULL
-      virtual Worker &createWorker(const char *name, const char *impl,
+      virtual Worker &createWorker(const char *instName, const char *specName,
 				   const PValue *wProps = NULL,
 				   const PValue *wParams = NULL,
 				   const PValue *selectCriteria = NULL,

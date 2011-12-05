@@ -172,8 +172,8 @@ namespace OCPI {
     {
     protected:
       WorkerBase<App,Wrk,Prt>(App &app, Artifact *art, const char *name,
-			  ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props)
-      : Child<App,Wrk,worker>(app, name), Worker(art, impl, inst, props) {
+			  ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *params)
+      : Child<App,Wrk,worker>(app, name), Worker(art, impl, inst, params) {
       }
       Application &application() { return Child<App,Wrk,worker>::parent(); }
       Port *findPort(const char *name) { return Parent<Prt>::findChildByName(name); }
