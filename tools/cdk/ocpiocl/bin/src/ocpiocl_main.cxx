@@ -218,7 +218,7 @@ int main ( int argc, char* argv [ ] )
   try
   {
     const char *env = getenv("OCPI_OCL_OBJS");
-    OCPI::OS::LoadableModule lm(env ? env : "libOpenCL.so");
+    OCPI::OS::LoadableModule lm(env ? env : "libOpenCL.so", true);
     
     std::cout << "\nOCL worker compiler is running." << std::endl;
 
