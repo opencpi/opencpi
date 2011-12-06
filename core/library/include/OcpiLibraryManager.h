@@ -25,9 +25,11 @@ That would mean that a hash of all the properties could map to the same bucket.
 // This file contains the common definitions for library drivers
 
 #include <map>
+#include "ezxml.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilUUID.h"
 #include "OcpiDriverManager.h"
+#include "OcpiUtilImplementation.h"
 #include "OcpiContainerApi.h"
 #include "OcpiLibraryApi.h"
 namespace OCPI {
@@ -46,6 +48,7 @@ namespace OCPI {
     // Eventually we will extended to multiple supported aspects
     // (like multiple compiler versions or something).
     struct Capabilities {
+      std::string m_model;
       std::string m_os;
       std::string m_osVersion;
       std::string m_platform;
@@ -58,7 +61,7 @@ namespace OCPI {
     protected:
 	std::string
 	  m_uuid,
-	  m_os, m_osVersion,
+	  m_model, m_os, m_osVersion,
 	  m_platform,
 	  m_tool, m_toolVersion,
 	  m_runtime, m_runtimeVersion;
@@ -70,11 +73,16 @@ namespace OCPI {
     public:
       inline const std::string &uuid() { return m_uuid; }
     };
+    // This object captures a potentially usable implementation in an artifact.
+    // And even in an artifact, there may be multiple pre-build instances,
+    // that may have fixed connectivity with other implementations.
     struct Implementation {
+      // This is the metadata description of the implementation.
+      OCPI::Util::Implementation *m_implementation; // not a reference due to array issues
+      ezxml_t m_instance;                   // prebuilt instances of this implementation
       ezxml_t m_worker;
-      ezxml_t m_instance;
-      inline Implementation(ezxml_t w, ezxml_t i = NULL)
-	: m_worker(w), m_instance(i) {}
+      inline Implementation(OCPI::Util::Implementation *i, ezxml_t instance = NULL)
+	: m_implementation(i), m_instance(instance), m_worker(i->m_xml) {}
     };
     struct Comp {
       inline bool operator() (const char *lhs, const char *rhs) const {
@@ -83,13 +91,16 @@ namespace OCPI {
     };
     // Note due to xml persistence we don't need strings in the map
     // but this multimap stuff is pretty ugly
-    typedef std::multimap< const char *, Implementation, Comp > WorkerMap;
-    typedef std::pair< const char*, Implementation > WorkerMapPair;
+    typedef std::multimap<const char *, Implementation *, Comp > WorkerMap;
+    typedef std::pair< const char*, Implementation *> WorkerMapPair;
     typedef WorkerMap::const_iterator WorkerIter;
-    typedef std::pair< WorkerIter,WorkerIter > WorkerRange;
+    typedef std::pair<WorkerIter,WorkerIter> WorkerRange;
     class Artifact : public Attributes {
     protected:
       ezxml_t m_xml;
+      // Map from spec name to implementations
+      unsigned m_nImplementations;
+      OCPI::Util::Implementation *m_implementations;
       WorkerMap m_workers;
       Artifact();
       virtual ~Artifact();

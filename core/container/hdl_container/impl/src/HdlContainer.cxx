@@ -165,6 +165,7 @@ namespace OCPI {
           baseVaddr = bar1Vaddr;
         }
         bar1Offset = bar1Paddr - basePaddr;
+	m_model = "hdl";
 	// Capture the UUID info that tells us about the platform
 	HdlUUID myUUID;
 	for (unsigned n = 0; n < sizeof(HdlUUID); n++)

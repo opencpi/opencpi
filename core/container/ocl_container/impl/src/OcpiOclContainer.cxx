@@ -191,7 +191,7 @@ namespace OCPI
           : OC::ContainerBase<Driver,Container,Application,Artifact>(name, config, props),
             d_device ( device )
         {
-          // Empty
+	  m_model = "ocl";
         }
 
       public:

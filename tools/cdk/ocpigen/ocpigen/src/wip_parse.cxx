@@ -915,6 +915,7 @@ parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
   const char *err;
   Assembly *a = &aw->assembly;
   aw->model = RccModel;
+  aw->modelString = "rcc";
   aw->isAssembly = true;
   if ((err = OE::checkAttrs(xml, "Name", (void*)0)))
     return err;
@@ -939,6 +940,7 @@ parseOclAssy(ezxml_t xml, const char *file, Worker *aw) {
   const char *err;
   Assembly *a = &aw->assembly;
   aw->model = OclModel;
+  aw->modelString = "ocl";
   aw->isAssembly = true;
   if ((err = OE::checkAttrs(xml, "Name", (void*)0)))
     return err;
@@ -1556,6 +1558,7 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
   if (w->ports.size() > 32)
     return "worker has more than 32 ports";
   w->model = HdlModel;
+  w->modelString = "hdl";
   return 0;
 }
 
@@ -1602,6 +1605,7 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
       return err;
   }
   w->model = RccModel;
+  w->modelString = "rcc";
   return 0;
 }
 /*
@@ -1645,6 +1649,7 @@ parseOcl(ezxml_t xml, const char *file, Worker *w) {
       return err;
   }
   w->model = OclModel;
+  w->modelString = "ocl";
   return 0;
 }
 // The most general case.  Could be any worker, or any assembly.
@@ -1696,7 +1701,7 @@ Control::Control()
 {
 }
 Worker::Worker()
-  : model(NoModel), isDevice(false), noControl(false), file(0), specFile(0),
+  : model(NoModel), modelString(NULL), isDevice(false), noControl(false), file(0), specFile(0),
     implName(0), specName(0), fileName(0), isThreaded(false), nClocks(0),
     clocks(0), endian(NoEndian), pattern(0), staticPattern(0), isAssembly(false),
     nInstances(0), language(NoLanguage), nSignals(0), signals(0)
