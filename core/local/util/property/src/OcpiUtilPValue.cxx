@@ -35,12 +35,17 @@
 
 #include <memory>
 #include <unistd.h>
-#include <OcpiPValue.h>
+#include <stdarg.h>
+#include <OcpiUtilEzxml.h>
 #include <OcpiUtilDataTypes.h>
+#include <OcpiUtilValue.h>
+#include <OcpiPValue.h>
 
+namespace OE = OCPI::Util::EzXml;
 namespace OCPI {
   namespace API {
     PVULong PVEnd(0,0);
+
     unsigned PValue::length() const {
       unsigned n = 0;
       if (this)
@@ -50,6 +55,21 @@ namespace OCPI {
     }
   }
   namespace Util {
+    // This list provides names and types and defaults
+    PValue allPVParams[] = {
+      PVString("xferrole"),
+      PVString("DLLEntryPoint"),
+      PVString("monitorIPAddress"),
+      PVString("protocol"),
+      PVString("endpoint"),
+      PVString("Device"),
+      PVBool("ownthread"),
+      PVBool("polled"),
+      PVULong("bufferCount"),
+      PVULong("bufferSize"),
+      PVEnd
+    };
+
     PVULong PVEnd(0,0);
     static const PValue *
     find(const PValue* p, const char* name) {
@@ -89,5 +109,63 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+
+    PValueList::PValueList() : m_list(NULL) {}
+    PValueList::~PValueList() { delete m_list; }
+    const char *PValueList::parse(ezxml_t x, ...) {
+      va_list ap;
+      va_start(ap, x);
+      const char *err = vParse(NULL, x, ap);
+      va_end(ap);
+      return err;
+    }
+    const char *PValueList::parse(const PValue * pvl, ezxml_t x, ...) {
+      va_list ap;
+      va_start(ap, x);
+      const char *err = vParse(pvl, x, ap);
+      va_end(ap);
+      return err;
+    }
+    const char *PValueList::vParse(const PValue *pvl, ezxml_t x, va_list ap) {
+      unsigned nPvl = pvl ? pvl->length() : 0;
+      unsigned nXml = OE::countAttributes(x);
+      unsigned n = nPvl + nXml;
+      if (!n) {
+	m_list = NULL;
+	return NULL;
+      }
+      PValue *p = m_list = new PValue[n + 1];
+      for (unsigned n = 0; n < nPvl; n++)
+	*p++ = pvl[n];
+      const char *name, *value;
+      EZXML_FOR_ALL_ATTRIBUTES(x, name, value) {
+	const char *attr;
+	bool found = false;
+	va_list dest;
+	va_copy(dest, ap);
+	while ((attr = va_arg(dest, const char *)))
+	  if (!strcasecmp(name, attr)) {
+	    found = true;
+	    break;
+	  }
+	va_end(dest);
+	if (!found) {
+	  const PValue *allP = find(allPVParams, name);
+	  if (!allP)
+	    return esprintf("parameter named \"%s\" not defined, misspelled?", name);
+	  p->name = allP->name;
+	  p->type = allP->type;
+	  ValueType type(allP->type);
+	  Value val(type);
+	  const char *err = val.parse(value);
+	  if (err)
+	    return err;
+	  p->vULongLong = val.m_ULongLong;
+	  p++;
+	}
+      }
+      p->name = NULL;
+      return NULL;
+    }
   }
 }

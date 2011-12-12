@@ -834,7 +834,7 @@ namespace OCPI
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-      void set##pretty##Property(OA::Property &p, const run val) { \
+      void set##pretty##Property(const OA::Property &p, const run val) const { \
         if (p.m_info.m_writeError ) \
           throw; /*"worker has errors before write */ \
         volatile store *pp = (volatile store *)(myProperties + p.m_info.m_offset); \
@@ -848,7 +848,7 @@ namespace OCPI
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors after write */ \
       } \
-      void set##pretty##SequenceProperty(OA::Property &p,const run *vals, unsigned length) { \
+      void set##pretty##SequenceProperty(const OA::Property &p,const run *vals, unsigned length) const { \
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors before write */ \
         memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_align), vals, length * sizeof(run)); \
@@ -861,7 +861,7 @@ namespace OCPI
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
-      virtual void set##pretty##Property(OA::Property &p, const run val) { \
+      virtual void set##pretty##Property(const OA::Property &p, const run val) const { \
         unsigned ocpi_length; \
         if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength) \
           throw; /*"string property too long"*/; \
@@ -877,7 +877,7 @@ namespace OCPI
         if (p.m_info.m_writeError) \
           throw; /*"worker has errors after write */ \
       } \
-      void set##pretty##SequenceProperty(OA::Property &p,const run *vals, unsigned length) { \
+      void set##pretty##SequenceProperty(const OA::Property &p, const run *vals, unsigned length) const { \
         if (length > p.m_info.m_sequenceLength) \
           throw; \
         if (p.m_info.m_writeError) \
@@ -898,7 +898,7 @@ namespace OCPI
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-      virtual run get##pretty##Property(OA::Property &p) { \
+      virtual run get##pretty##Property(const OA::Property &p) const { \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors before read "*/ \
         uint32_t *pp = (uint32_t *)(myProperties + p.m_info.m_offset); \
@@ -913,7 +913,7 @@ namespace OCPI
           throw; /*"worker has errors after read */ \
         return u.r; \
       } \
-      unsigned get##pretty##SequenceProperty(OA::Property &p, run *vals, unsigned length) { \
+      unsigned get##pretty##SequenceProperty(const OA::Property &p, run *vals, unsigned length) const { \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors before read "*/ \
         uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset); \
@@ -930,7 +930,7 @@ namespace OCPI
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this. FIXME redundant length check
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
-      virtual void get##pretty##Property(OA::Property &p, char *cp, unsigned length) { \
+      virtual void get##pretty##Property(const OA::Property &p, char *cp, unsigned length) const { \
         unsigned stringLength = p.m_info.m_stringLength; \
         if (length < stringLength + 1) \
           throw; /*"string buffer smaller than property"*/; \
@@ -944,7 +944,7 @@ namespace OCPI
           throw; /*"worker has errors after write */ \
       } \
       unsigned get##pretty##SequenceProperty \
-      (OA::Property &p, char **vals, unsigned length, char *buf, unsigned space) { \
+      (const OA::Property &p, char **vals, unsigned length, char *buf, unsigned space) const { \
         if (p.m_info.m_readError) \
           throw; /*"worker has errors before read */ \
         uint32_t \

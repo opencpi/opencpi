@@ -23,12 +23,8 @@ $(error Inconsistent usage of this file ($(OcpiThisFile)) vs. OCPI_CDK_DIR ($(OC
 endif
 endif
 export OCPI_RUNTIME_SYSTEM:=$(shell $(OCPI_CDK_DIR)/scripts/showRuntimeHost)
-#$(info export OCPI_RUNTIME_SYSTEM=$(OCPI_RUNTIME_SYSTEM))
 export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_RUNTIME_SYSTEM)
-#$(info export OCPI_LIB_DIR=$(OCPI_LIB_DIR))
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
-#$(info export OCPI_INC_DIR=$(OCPI_INC_DIR))
-#$(info OCPI_RUNTIME_SYSTEM=$(OCPI_RUNTIME_SYSTEM) =$(findstring,darwin,$(OCPI_RUNTIME_SYSTEM))=)
 ifneq ($(findstring darwin,$(OCPI_RUNTIME_SYSTEM)),)
 Ocpilibrarypathenv=DYLD_LIBRARY_PATH
 OCPI_OCL_LIBS=-locl_container -framework OpenCL
@@ -38,6 +34,6 @@ OCPI_OCL_LIBS=-locl_container -lOpenCL
 endif
 export OCPI_SET_LIB_PATH=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 #$(info export OCPI_SET_LIB_PATH=$(OCPI_SET_LIB_PATH))
-export OCPI_API_LIBS=interfaces rcc_container rdma_drivers util # ocpios
+export OCPI_API_LIBS=application interfaces rcc_container rdma_drivers util # ocpios
 #$(info export OCPI_API_LIBS=$(OCPI_API_LIBS))
 

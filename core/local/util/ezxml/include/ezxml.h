@@ -158,7 +158,7 @@ ezxml_t ezxml_insert(ezxml_t xml, ezxml_t dest, size_t off);
 // if not found.  Name is case INSENSITIVE - either will match, although in the
 // guts of ezxml, the children must be the same case
 extern ezxml_t ezxml_cchild(ezxml_t xml, const char *name);
-// CASE INSENSITIVE version of cattr
+// CASE INSENSITIVE version of attr
 extern const char *ezxml_cattr(ezxml_t xml, const char *attr);
 
 // Moves an existing tag to become a subtag of dest at the given offset from

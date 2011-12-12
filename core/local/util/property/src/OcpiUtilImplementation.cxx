@@ -40,10 +40,11 @@
 namespace OCPI {
   namespace Util {
 
+    namespace OE = OCPI::Util::EzXml;
     Implementation::Implementation()
-      : m_properties(0), m_ports(0), m_tests(0), m_memories(0),
-	m_nProperties(0), m_nPorts(0), m_nTests(0), m_nMemories(0),// size(0),
-        m_totalPropertySize(0), m_xml(NULL)
+      : m_ports(0), m_memories(0), m_tests(0),
+	m_nPorts(0), m_nTests(0), m_nMemories(0),// size(0),
+        m_totalPropertySize(0), m_nProperties(0), m_properties(0), m_xml(NULL)
     {}
 
     Implementation::~Implementation() {
@@ -65,7 +66,7 @@ namespace OCPI {
     Port *Implementation::findPort(const char *id) const {
       Port *p = m_ports;
       for (unsigned int n = m_nPorts; n; n--, p++)
-        if (m_name == id)
+        if (p->m_name == id)
           return p;
       return 0;
     }
@@ -74,27 +75,26 @@ namespace OCPI {
        ocpiAssert(0); return *m_tests;
     }
 
-    const char *Implementation::parse(ezxml_t xml) {
-      ezxml_t x;
-      // First pass - just count for allocation
-      for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x))
-        m_nProperties++;
-      for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x))
-        m_nPorts++;
-      for (x = ezxml_cchild(xml, "localMemory"); x; x = ezxml_next(x))
-        m_nMemories++;
-      for (x = ezxml_cchild(xml, "memory"); x; x = ezxml_next(x))
-        m_nMemories++;
-      if (m_nProperties)
+    const char *Implementation::parse(ezxml_t xml, Attributes &attr) {
+      m_attributes = &attr;
+      const char *err = OE::getRequiredString(xml, m_name, "name", "worker");
+      if (err ||
+	  (err = OE::getRequiredString(xml, m_model, "model", "worker")))
+	return err;
+      OE::getOptionalString(xml, m_specName, "specName");
+      if (m_specName.empty())
+	m_specName = m_name;
+      if ((m_nProperties = OE::countChildren(xml, "property")))
 	m_properties = new Property[m_nProperties];
-      if (m_nPorts)
+      if ((m_nPorts = OE::countChildren(xml, "port")))
 	m_ports = new Port[m_nPorts];
-     if (m_nMemories)
+      m_nMemories = OE::countChildren(xml, "localMemory");
+      if ((m_nMemories += OE::countChildren(xml, "memory")))
         m_memories = new Memory[m_nMemories];
-      const char *err;
       // Second pass - decode all information
       Property *prop = m_properties;
       unsigned offset = 0;
+      ezxml_t x;
       bool readableConfigs, writableConfigs, sub32Configs; // all unused
       for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x), prop++) {
         if ((err = prop->parse(x, offset, readableConfigs, writableConfigs,
@@ -118,6 +118,61 @@ namespace OCPI {
       m_xml = xml;
       return NULL;
     }
+    // Get a property value from the metadata
+    const char *Implementation::getValue(const std::string &sym, ExprValue &val) {
+      Property *p;
+      for (unsigned n = 0; n < m_nProperties; n++, p++)
+	if (p->m_name == sym)
+	  return p->getValue(val);
+      return esprintf("no property found for identifier \"%s\"", p->m_name.c_str());
+    }
+
+    void parse3(char *s, std::string &s1, std::string &s2,
+		std::string &s3) {
+      char *temp = strdup(s);
+      if ((s = strsep(&temp, "-"))) {
+	s1 = s;
+	if ((s = strsep(&temp, "-"))) {
+	  s2 = s;
+	  if ((s = strsep(&temp, "-")))
+	    s3 = s;
+	}
+      }
+      free(temp);
+    }
+
+    void Attributes::parse(ezxml_t x) {
+      const char *cp;
+      if ((cp = ezxml_cattr(x, "os"))) m_os = cp;
+      if ((cp = ezxml_cattr(x, "osVersion"))) m_osVersion = cp;
+      if ((cp = ezxml_cattr(x, "platform"))) m_platform = cp;
+      if ((cp = ezxml_cattr(x, "runtime"))) m_runtime = cp;
+      if ((cp = ezxml_cattr(x, "runtimeVersion"))) m_runtimeVersion = cp;
+      if ((cp = ezxml_cattr(x, "tool"))) m_tool = cp;
+      if ((cp = ezxml_cattr(x, "toolVersion"))) m_toolVersion = cp;
+      if ((cp = ezxml_cattr(x, "uuid"))) m_uuid = cp;
+      validate();
+    }
+
+    void Attributes::parse(const char *pString) {
+      std::string junk;
+      char *p = strdup(pString), *temp = p, *val;
+      
+      if ((val = strsep(&temp, "="))) {
+	parse3(val, m_os, m_osVersion, junk);
+	if ((val = strsep(&temp, "="))) {
+	  parse3(val, m_platform, junk, junk);
+	  if ((val = strsep(&temp, "="))) {
+	    parse3(val, m_tool, m_toolVersion, junk);
+	    if ((val = strsep(&temp, "=")))
+	      parse3(val, m_runtime, m_runtimeVersion, junk);
+	  }
+	}
+      }
+      free(p);
+      validate();
+    }
+    void Attributes::validate() { }
   }
 }
 

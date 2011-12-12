@@ -57,14 +57,10 @@ namespace OCPI {
     }
     Property::~Property() {
     }
-    // parse a value from xml for this property, which may be a struct
-    // This actually works for any XML that might have a value for the property, including
+    // parse a value for this property, which may be a struct
     // instance property values in an assembly.
     const char *
-    Property::parseValue(ezxml_t vx, const char *unparsed, Value &value) {
-      (void)vx;
-      if (m_baseType == OA::OCPI_Struct)
-	return "Struct property values unimplemented";
+    Property::parseValue(const char *unparsed, Value &value) {
       return value.parse(unparsed);
     }
 
@@ -159,7 +155,14 @@ namespace OCPI {
 	return err;
       return parseImplAlso(x);
     }
-
+    const char *Property::getValue(ExprValue &val) {
+      if (!m_defaultValue)
+	return esprintf("property \"%s\" has no value", m_name.c_str());
+      if (m_arrayRank || m_isSequence || m_baseType == OA::OCPI_Struct ||
+	  m_baseType == OA::OCPI_Type)
+	return esprintf("property \"%s\" is an array/sequence/struct", m_name.c_str());
+      return m_defaultValue->getValue(val);
+    }
   }
 }
 

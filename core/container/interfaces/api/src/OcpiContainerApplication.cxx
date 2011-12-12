@@ -78,10 +78,23 @@ namespace OCPI {
       return
 	container().loadArtifact(a).createWorker(*this, instName, specName, artInst, wProps, wParams);
     }
+    Worker &Application::
+    createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
+			 ezxml_t impl, ezxml_t inst,
+			 const OCPI::Util::PValue *wParams) {
+      // Load the artifact and create the worker
+      return
+	container().loadArtifact(art).createWorker(*this, appInstName, impl, inst, wParams);
+    }
     void Application::
     start() {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	w->start();
+    }
+    void Application::
+    stop() {
+      for (Worker *w = firstWorker(); w; w = w->nextWorker())
+	w->stop();
     }
   }
   namespace API {

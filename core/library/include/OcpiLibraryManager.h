@@ -1,37 +1,19 @@
 #ifndef OCPI_LIBRARY_MANAGER_H
 #define OCPI_LIBRARY_MANAGER_H
 /*
-librarymanager: init from environment, but have setPath.
-  library: has directory
-artifact
-  API: given a name, find the list of artifacts that match that name.
-  Q: should different implementations of the same component be found in different libraries?  
-  I suppose a given library should be tagged as to whether its implementations should be combined with others.
-  If the specs had uuids, then you could know whether the different implementations belonged to the same contract.  For now we can rely on specnames.
-
-  SO the tagging can be:  allow other libs to find impls I have
-  or allow me to back up up stream sparse libraries.
-  The SPD concept is a package of things with the same spec, which sucks because it
-
-  doesn't have the library concept.
-  So if our library is simply a bag of artifacts that can be scanned, we could indeed "rehash" the whole search path each time.
-  How hard would UUIDs on specs really be?  How about URLs like xml schema or java classes - yes much better.  So an "id" attribute could be good enough.
-
-  So given that each library can offer multiple implementations, the shodow affect could just add mode impls.  Thus there is a sort of tree structure to the artifacts that contain a component, so that two that serve the same purpose are ordered.
-That would mean that a hash of all the properties could map to the same bucket.
-
-
-*/
-// This file contains the common definitions for library drivers
-
+ * Notes:
+ * Should a given library should be tagged as to whether its implementations should be combined with others.
+ * Issue of stronger naming on specs - like class names or UUIDs
+ *
+ */
 #include <map>
 #include "ezxml.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilUUID.h"
 #include "OcpiDriverManager.h"
 #include "OcpiUtilImplementation.h"
-#include "OcpiContainerApi.h"
 #include "OcpiLibraryApi.h"
+
 namespace OCPI {
   namespace Library {
     using OCPI::Util::Child;
@@ -39,6 +21,7 @@ namespace OCPI {
     using OCPI::Util::PValue;
 
     class Driver;   // base class of all library drivers
+
     // This structure describes the capabilities of a container
     // as it relates to looking at an artifact's metadata to see if 
     // implementations in the artifact can in fact run on that
@@ -56,33 +39,21 @@ namespace OCPI {
       std::string m_runtimeVersion;
     };
 
-    // Attributes of an artifact
-    class Attributes {
-    protected:
-	std::string
-	  m_uuid,
-	  m_model, m_os, m_osVersion,
-	  m_platform,
-	  m_tool, m_toolVersion,
-	  m_runtime, m_runtimeVersion;
-      // Parse from target string
-      void parse(const char *pString);
-      // Parse from xml
-      void parse(ezxml_t x);
-      void validate();
-    public:
-      inline const std::string &uuid() { return m_uuid; }
-    };
-    // This object captures a potentially usable implementation in an artifact.
-    // And even in an artifact, there may be multiple pre-build instances,
+    // This object represents a potentially usable implementation in an artifact.
+    // And in any artifact, there may be multiple pre-build instances of the implementation,
     // that may have fixed connectivity with other implementations.
-    struct Implementation {
-      // This is the metadata description of the implementation.
-      OCPI::Util::Implementation *m_implementation; // not a reference due to array issues
+    class Artifact;
+    class Implementation {
+    public:
+      Artifact &m_artifact;                  
       ezxml_t m_instance;                   // prebuilt instances of this implementation
-      ezxml_t m_worker;
-      inline Implementation(OCPI::Util::Implementation *i, ezxml_t instance = NULL)
-	: m_implementation(i), m_instance(instance), m_worker(i->m_xml) {}
+      // This is the metadata description of the implementation.
+      OCPI::Util::Implementation &m_metadataImpl;
+      inline Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance = NULL)
+	: m_artifact(art), m_instance(instance), m_metadataImpl(i) {}
+      // Does this implementation satify the selection criteria?  and if so, what is the score?
+      bool satisfiesSelection(const char *selection, unsigned &score);
+      bool getValue(const std::string &symbol, OCPI::Util::ExprValue &val);
     };
     struct Comp {
       inline bool operator() (const char *lhs, const char *rhs) const {
@@ -95,7 +66,7 @@ namespace OCPI {
     typedef std::pair< const char*, Implementation *> WorkerMapPair;
     typedef WorkerMap::const_iterator WorkerIter;
     typedef std::pair<WorkerIter,WorkerIter> WorkerRange;
-    class Artifact : public Attributes {
+    class Artifact : public OCPI::Util::Attributes {
     protected:
       ezxml_t m_xml;
       // Map from spec name to implementations
@@ -106,7 +77,7 @@ namespace OCPI {
       virtual ~Artifact();
     public:
       void configure(ezxml_t x = NULL);
-      bool evaluateWorkerSuitability( const OCPI::API::PValue *p, int & score );
+      bool evaluateWorkerSuitability( const OCPI::API::PValue *p, unsigned & score );
       // Can this artifact run on something with these capabilities?
       virtual bool meetsRequirements (const Capabilities &caps,
 				      const char *impl,
@@ -114,17 +85,29 @@ namespace OCPI {
 				      const OCPI::API::PValue *selectCriteria,
 				      const OCPI::API::Connection *conns,
 				      const char *&inst,
-				      int & score
+				      unsigned & score
 				      );
       inline const ezxml_t xml() const { return m_xml; }
       virtual const std::string &name() const = 0;
       virtual Artifact *nextArtifact() = 0;
     };
 
+    // This class is what is used when looking for implementations.
+    // It is called back on implementations that are suitable.
+    // It returns true if the search should stop.
+    class ImplementationCallback {
+    protected:
+      virtual ~ImplementationCallback(){};
+    public:
+      // if true is returned, stop looking further.
+      virtual bool foundImplementation(const Implementation &i, unsigned score) = 0;
+    };
+
     // The manager/owner of all library drivers
     extern const char *library;
     class Manager : public OCPI::Driver::ManagerBase<Manager, Driver, library> {
       std::string m_libraryPath;
+      WorkerMap m_implementations;
       friend class OCPI::API::LibraryManager;
       Artifact &getArtifactX(const char *url, const OCPI::API::PValue *props);
       Artifact &findArtifactX(const Capabilities &caps,
@@ -149,11 +132,25 @@ namespace OCPI {
       // First, container capabilities (in a form established by this
       // library facility), then worker info.
       static Artifact &findArtifact(const Capabilities &caps,
-				    const char *impl,
+				    const char *specName,
 				    const OCPI::API::PValue *props,
 				    const OCPI::API::PValue *selectCriteria, 
 				    const OCPI::API::Connection *conns,
 				    const char *&inst);
+      // Inform the manager about an implementation
+      void addImplementation(Artifact &art, OCPI::Util::Implementation &, ezxml_t inst = NULL);
+    private:
+      // Find (and callback with) implementations for specName and selectCriteria
+      // Return true if any were found
+      bool findImplementationsX(ImplementationCallback &icb, const char *specName,
+				const char *selectCriteria);
+    public:
+      inline static bool findImplementations(ImplementationCallback &icb, const char *specName,
+					     const char *selectCriteria) {
+	return getSingleton().findImplementationsX(icb, specName, selectCriteria);
+      }
+      // Find one good implementation, return true one is found that satisfies the criteria
+      bool findImplementation(const char *specName, const char *selectCriteria, const Implementation *&impl);
     };
     class Library;
     // This is the base class for all library drivers
@@ -203,9 +200,11 @@ namespace OCPI {
     protected:
       virtual ~Library();
     public:
+      void findImplementations(ImplementationCallback &icb, const char *specName,
+			       const OCPI::API::PValue *selectCriteria);
       Artifact *
       findArtifact(const Capabilities &caps,
-		   const char *impl,
+		   const char *specName,
 		   const OCPI::API::PValue *props,
 		   const OCPI::API::PValue *selectCriteria,
 		   const OCPI::API::Connection *conns,

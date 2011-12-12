@@ -62,6 +62,7 @@
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilPort.h"
 #include "OcpiUtilMemory.h"
+#include "OcpiExprEvaluator.h"
 
 //!!!!!!! There is also this list in the OcpiContainerApi.h
 #define CONTROL_OP_I CONTROL_OP
@@ -78,6 +79,25 @@
 namespace OCPI {
   namespace Util {
 
+    // Attributes of an artifact and/or implementation
+    // Generally shared by all the implementations in an artifact
+    class Attributes {
+    public:
+	std::string
+	  m_uuid,
+	  m_os, m_osVersion,
+	  m_platform,
+	  m_tool, m_toolVersion,
+	  m_runtime, m_runtimeVersion;
+      inline const std::string &uuid() { return m_uuid; }
+    protected:
+      // Parse from target string
+      void parse(const char *pString);
+      // Parse from xml
+      void parse(ezxml_t x);
+      void validate();
+    };
+
     class Test {
       friend class Implementation;
       unsigned int m_testId;
@@ -88,22 +108,28 @@ namespace OCPI {
 
     // This class represents what we know, generically, about a component implementation
     // Currently there is no separate "spec" metadata - it is redundant in each implementation
-    class Implementation {
-      Property *m_properties;
+    class Implementation  : public IdentResolver {
+      std::string m_specName, m_name, m_model;
+      Attributes *m_attributes; // not a reference due to these being in arrays
       Port *m_ports;
-      std::string m_specName, m_name;
-      Test *m_tests;
       Memory *m_memories;
-      unsigned m_nProperties, m_nPorts, m_nTests, m_nMemories;//, size;
+      Test *m_tests;
+      unsigned m_nPorts, m_nTests, m_nMemories;//, size;
       uint32_t m_totalPropertySize;
       Test &findTest(unsigned int testId) const;
     public:
+      unsigned m_nProperties;
+      Property *m_properties;
       ezxml_t m_xml;
       Implementation();
       ~Implementation();
-      const char *parse(ezxml_t xml);
+      inline const std::string &model() const { return m_model; }
+      inline const std::string &specName() const { return m_specName; }
+      inline const Attributes &attributes() const { return *m_attributes; }
+      const char *parse(ezxml_t xml, Attributes &attr);
       Property &findProperty(const char *id) const;
       unsigned whichProperty(const char *id) const;
+      const char *getValue(const std::string &sym, ExprValue &val);
       inline Property *properties(unsigned &np) const {
         np = m_nProperties;
         return m_properties;

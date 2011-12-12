@@ -86,8 +86,14 @@ namespace OCPI {
 				      const OCPI::Util::PValue *wprops = NULL,
 				      const OCPI::Util::PValue *selectCriteria = NULL,
 				      const OCPI::API::Connection *connections = NULL);
+      Worker &createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
+			   const ezxml_t impl, const ezxml_t inst,
+			   const OCPI::Util::PValue *wparams = NULL);
+
+
       virtual Worker *firstWorker() const = 0;
       void start();
+      void stop();
     };
   } // Container
 } // OCPI

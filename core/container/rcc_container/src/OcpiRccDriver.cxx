@@ -43,6 +43,7 @@ namespace OCPI {
     search(const OA::PValue* props, const char **exclude)
       throw ( OU::EmbeddedException ) {
       (void) props; (void)exclude;
+      probeContainer("rcc0", NULL);
       return 1;
     }
     Driver::

@@ -29,22 +29,22 @@ public:
       m_first = false;
     } else if (!m_parent)
       m_v = m_values[++m_n];
-    else if (m_parent->m_vt.m_baseType == OA::OCPI_Struct) {
+    else if (m_parent->m_vt->m_baseType == OA::OCPI_Struct) {
       // We are driven by m_parent (the struct) and the ordinal of the incoming member
       if (m_parent->m_struct) {
-	OU::StructValue sv = m_parent->m_vt.m_arrayRank || m_parent->m_vt.m_isSequence ?
+	OU::StructValue sv = m_parent->m_vt->m_arrayRank || m_parent->m_vt->m_isSequence ?
 	  m_parent->m_pStruct[m_parent->m_next] : m_parent->m_Struct;
 	m_v = sv[m.m_ordinal];
       } else
 	m_v = NULL;
       if (!m_v)
 	m_v = m.m_defaultValue;
-      if (m.m_ordinal == m_parent->m_vt.m_nMembers - 1)
+      if (m.m_ordinal == m_parent->m_vt->m_nMembers - 1)
 	m_parent->m_next++;
-    } else if (m_parent->m_vt.m_baseType == OA::OCPI_Type) {
+    } else if (m_parent->m_vt->m_baseType == OA::OCPI_Type) {
       m_v =
 	m_parent->m_types ?
-	(m_parent->m_vt.m_arrayRank || m_parent->m_vt.m_isSequence ?
+	(m_parent->m_vt->m_arrayRank || m_parent->m_vt->m_isSequence ?
 	 m_parent->m_pType[m_parent->m_next] : m_parent->m_Type) :
 	NULL;
       if (!m_v)
@@ -131,24 +131,24 @@ class Writer : public OU::Writer {
     if (!m_parent) {
       assert(m_n < m_nArgs);
       m_values[m_n++] = m_v = new OU::Value(m, NULL);
-    } else if (m_parent->m_vt.m_baseType == OA::OCPI_Type) {
+    } else if (m_parent->m_vt->m_baseType == OA::OCPI_Type) {
       assert(m_parent->m_typeNext - m_parent->m_types < m_parent->m_nTotal);
       m_v = m_parent->m_typeNext++;
-    } else if (m_parent->m_vt.m_baseType == OA::OCPI_Struct)
+    } else if (m_parent->m_vt->m_baseType == OA::OCPI_Struct)
       m_v = new OU::Value(m, m_parent);
     else
       assert(!"recursive type not struct/type");
-    m_v->m_nTotal = m_v->m_vt.m_nItems;
-    if (m_v->m_vt.m_isSequence) {
+    m_v->m_nTotal = m_v->m_vt->m_nItems;
+    if (m_v->m_vt->m_isSequence) {
       m_v->m_nElements = m_nElements;
       m_v->m_nTotal *= m_nElements;
     }
     m_v->allocate();
-    if (m_parent && m_parent->m_vt.m_baseType == OA::OCPI_Struct) {
-      OU::StructValue sv = m_parent->m_vt.m_arrayRank || m_parent->m_vt.m_isSequence ?
+    if (m_parent && m_parent->m_vt->m_baseType == OA::OCPI_Struct) {
+      OU::StructValue sv = m_parent->m_vt->m_arrayRank || m_parent->m_vt->m_isSequence ?
 	m_parent->m_pStruct[m_parent->m_next] : m_parent->m_Struct;
       sv[m.m_ordinal] = m_v;
-      if (m.m_ordinal == m_parent->m_vt.m_nMembers - 1)
+      if (m.m_ordinal == m_parent->m_vt->m_nMembers - 1)
 	m_parent->m_next++;
     }
   }
@@ -234,7 +234,7 @@ void dataTypeTest(unsigned count) {
     for (unsigned n = 0; n < rlen; n++)
       if (buf[n] != buf1[n]) {
 	printf("Buffer differs at byte %u [%llx %llx]\n",
-	       n, &buf[n], &buf1[n]);
+	       n, (long long unsigned)&buf[n], (long long unsigned)&buf1[n]);
 	assert(!"buffers different");
       }
     for (unsigned n = 0; n < nArgs; n++) {

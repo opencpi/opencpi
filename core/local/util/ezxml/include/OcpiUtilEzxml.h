@@ -229,9 +229,12 @@ namespace OCPI {
 	findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
 			  const char *value);
       extern const char
+	*getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *element),
 	*ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg),
+	*ezxml_attrs(ezxml_t xml, const char* (*func)(const char *name, const char *value, void *arg), void *arg),
         *getBoolean(ezxml_t x, const char *name, bool *b),
         *checkAttrs(ezxml_t x, ...),
+        *checkElements(ezxml_t x, ...),
 	*checkAttrsV(ezxml_t x, const char **attrs),
         *checkElements(ezxml_t x, ...),
         *getNumber(ezxml_t x, const char *attr, uint32_t *np,
@@ -243,13 +246,21 @@ namespace OCPI {
         *getNumber64(ezxml_t x, const char *attr, uint64_t *np,
 		     bool *found = NULL, uint64_t defaultValue = 0,
 		     bool setDefault = true);
+      extern unsigned
+	countChildren(ezxml_t x, const char*cName),
+	countAttributes(ezxml_t x);
       extern bool
 	inList(const char *item, const char *list),
 	hasAttrEq(ezxml_t x, const char *attrName, const char *val),
         getUNum(const char *s, uint32_t *valp),
         getUNum64(const char *s, uint64_t *valp),
         parseBool(const char *a, const char *end, bool *b);
+      extern void
+	getNameWithDefault(ezxml_t x, std::string &s, const char *fmt, unsigned &ord),
+	getOptionalString(ezxml_t x, std::string &s, const char *attr);
     }
+#define EZXML_FOR_ALL_ATTRIBUTES(x, n, v) \
+    for (char **_ap = x ? x->attr : 0; _ap && *_ap ? (n = _ap[0], v = _ap[1], 1) : 0; _ap += 2)
 
   }
 }

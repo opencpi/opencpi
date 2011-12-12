@@ -801,6 +801,7 @@ UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/local/util/thread/include \
 	$(OCPI_BASE_DIR)/core/local/util/fasttime/include \
 	$(OCPI_BASE_DIR)/core/local/util/sockets/include \
+	$(OCPI_BASE_DIR)/core/local/util/assembly/include \
 	$(OCPI_BASE_DIR)/core/include 
 UTIL_LIBS = $(OCPI_BASE_DIR)/core/local/util/util
 

@@ -1055,7 +1055,7 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
       if (!unparsed)
 	return esprintf("Missing \"value\" attribute for \"%s\" property value", name);
 
-      if ((err = ipv->property->parseValue(pv, unparsed, ipv->value)))
+      if ((err = ipv->property->parseValue(unparsed, ipv->value)))
         return err;
     }
   }

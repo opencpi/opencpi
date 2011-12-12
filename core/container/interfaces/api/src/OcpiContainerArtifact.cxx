@@ -94,6 +94,7 @@ namespace OCPI {
       ezxml_t impl, inst, xml = m_libArtifact.xml();
 
       if (!implTag ||
+          !(impl = findChildWithAttr(xml, "worker", "specname", implTag)) &&
           !(impl = findChildWithAttr(xml, "worker", "name", implTag))) {
 	throw ApiError("No implementation found for \"", implTag, "\"", NULL);
       }
@@ -131,11 +132,19 @@ namespace OCPI {
 #endif
 
       }
+      Worker &w = createWorker(app, appInstName, impl, inst, wParams);
+      if (wProps)
+	w.setProperties(wProps);
+      return w;
+    }
+
+    Worker & Artifact::createWorker(Application &app,
+				    const char *appInstName,
+				    ezxml_t impl, ezxml_t inst,
+				    const OCPI::Util::PValue *wParams) {
       Worker &w = app.createWorker(this, appInstName, impl, inst, wParams);
       m_workers.push_back(&w);
       w.initialize();
-      if (wProps)
-	w.setProperties(wProps);
       return w;
     }
     void Artifact::removeWorker(Worker &w) {

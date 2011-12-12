@@ -93,36 +93,36 @@ namespace OCPI {
       // is not enabled, either due to no MMIO or that the property can
       // return errors. 
 #undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                   \
-      void set##pretty##Property(OCPI::API::Property &p, const run val); \
-      void set##pretty##SequenceProperty(OCPI::API::Property &p,const run *vals, \
-					 unsigned length);
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                         \
+      void set##pretty##Property(const OCPI::API::Property &p, const run val) const;   \
+      void set##pretty##SequenceProperty(const OCPI::API::Property &p,const run *vals, \
+					 unsigned length) const;
       // Set a string property value
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
-      void set##pretty##Property(OCPI::API::Property &p, const run val); \
-      void set##pretty##SequenceProperty(OCPI::API::Property &p,const run *vals,  \
-					 unsigned length);
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                       \
+      void set##pretty##Property(const OCPI::API::Property &p, const run val) const;   \
+      void set##pretty##SequenceProperty(const OCPI::API::Property &p,const run *vals, \
+					 unsigned length) const;
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-	run get##pretty##Property(OCPI::API::Property &p); \
-        unsigned get##pretty##SequenceProperty(OCPI::API::Property &p,	\
-					     run *vals,			\
-					       unsigned length);
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)	             \
+	run get##pretty##Property(const OCPI::API::Property &p) const;       \
+        unsigned get##pretty##SequenceProperty(const OCPI::API::Property &p, \
+					     run *vals,			     \
+					       unsigned length) const;
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)		      \
-	void get##pretty##Property(OCPI::API::Property &p, char *cp,   \
-				   unsigned length); \
-      unsigned get##pretty##SequenceProperty                                  \
-	(OCPI::API::Property &p, char **vals, unsigned length, char *buf,        \
-	 unsigned space);
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)		\
+	void get##pretty##Property(const OCPI::API::Property &p, char *cp,      \
+				   unsigned length) const;                      \
+      unsigned get##pretty##SequenceProperty                                    \
+	(const OCPI::API::Property &p, char **vals, unsigned length, char *buf, \
+	 unsigned space) const;
 
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
@@ -179,7 +179,7 @@ namespace OCPI {
       OCPI::OS::Mutex &m_mutex;
 
     protected:
-      inline uint8_t * getPropertyVaddr() { return  (uint8_t*)m_context->properties; }
+      inline uint8_t * getPropertyVaddr() const { return  (uint8_t*)m_context->properties; }
 
       bool enabled;                // Worker enabled flag
 

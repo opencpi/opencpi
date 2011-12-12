@@ -57,20 +57,16 @@ namespace OCPI {
     // Only non-type-safe aspect is PVEnd()
     // Typical syntax would be like:
     // PValue props[] = { PVString("label", "foolabel"), PVULong("nbuffers", 10), PVEnd()};
-    // A less type-safe would be to use varargs, which only saves a single character per property...
-    // PVList props("label", PVString, "foolabel", "nbuffers", PVUlong, 10, 0);
-    // We avoid std::vector to theoretically support compile-time initialization
 
     class PValue {
     public:
-      inline PValue(const char *aName, BaseType aType, unsigned aWidth)
-	: name(aName), type(aType), width(aWidth) {}
+      inline PValue(const char *aName, BaseType aType)
+	: name(aName), type(aType) {}
       inline PValue()
-	: name(0), type(OCPI_none), width(0) {}
+	: name(0), type(OCPI_none) {}
       unsigned length() const;
       const char *name;
       BaseType type;
-      unsigned width;
       // Anonymous union here for convenience even though redundant with ValueType.
       union {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run v##pretty;
@@ -84,10 +80,10 @@ namespace OCPI {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)   \
     class PV##pretty : public PValue {				 \
     public:							 \
-      inline PV##pretty(const char *aname, const run val) :	 \
+      inline PV##pretty(const char *aname, const run val = 0) :	 \
       PValue(aname,						 \
-	     OCPI_##pretty,					 \
-	     sizeof(v##pretty)) {				 \
+	     OCPI_##pretty/*,					 \
+			    sizeof(v##pretty)*/) {		 \
 	v##pretty = (run)val;					 \
       }								 \
     };

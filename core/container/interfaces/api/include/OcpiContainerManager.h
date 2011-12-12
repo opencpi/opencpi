@@ -66,6 +66,16 @@ namespace OCPI {
     using OCPI::Util::Parent;
     class Driver;
     extern const char *container;
+    // This class is what is used when looking for containers
+    // It is called back on containers that are suitable.
+    // It returns true if the search should stop.
+    class Callback {
+    protected:
+      virtual ~Callback(){};
+    public:
+      // if true is returned, stop looking further.
+      virtual bool foundContainer(Container &i) = 0;
+    };
     // The concrete class that manages container drivers
     class Manager : public OCPI::API::ContainerManager,
 		    public OCPI::Driver::ManagerBase<Manager, Driver, container> {
@@ -73,6 +83,10 @@ namespace OCPI {
     public:
       OCPI::API::Container *find(const char *model, const char *which,
 				 const OCPI::API::PValue *props);
+      bool findContainersX(Callback &cb, OCPI::Util::Implementation &i); 
+      inline static bool findContainers(Callback &cb, OCPI::Util::Implementation &i) {
+	return getSingleton().findContainersX(cb, i);
+      }
       void shutdown();
     };
 
@@ -81,6 +95,7 @@ namespace OCPI {
     protected:
       Driver(const char *);
     public:
+      virtual Container *firstContainer() const = 0;
       virtual Container *findContainer(const char *which) = 0;
       virtual Container *probeContainer(const char *which,
 					const OCPI::API::PValue *props = 0) = 0;
@@ -94,9 +109,10 @@ namespace OCPI {
       public OCPI::Driver::DriverBase
       <Manager, Driver, ConcreteDriver, ConcreteCont, name>
     {
+      Container *firstContainer() const { return Parent<ConcreteCont>::firstChild(); }
       virtual Container *findContainer(const char *which) {
 	if (!which)
-	  return Parent<ConcreteCont>::firstChild();
+	  return firstContainer();
 	return Parent<ConcreteCont>::findChildByName(which);
       }
     };
@@ -132,6 +148,7 @@ namespace OCPI {
       App *firstApplication() const {
 	return Parent<App>::firstChild();
       }
+      Container *nextContainer() { return OCPI::Driver::DeviceBase<Dri,Con>::nextDevice(); }
     };
     extern const char *application;
     template<class Con, class App, class Wrk>

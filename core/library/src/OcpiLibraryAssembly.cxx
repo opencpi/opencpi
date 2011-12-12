@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -31,11 +30,38 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "OcpiLibraryAssembly.h"
 
-// This file includes headers required to use the OpenCPI Control API
-
-#ifndef OCPIAPI_H
-#define OCPIAPI_H
-#include "OcpiContainerApi.h"
-#include "OcpiApplicationApi.h"
-#endif
+namespace OCPI {
+  namespace Library {
+    namespace OU = OCPI::Util;
+    Assembly::Assembly(const char *file)
+      : OU::Assembly(file) {
+      findImplementations();
+    }
+    Assembly::Assembly(const std::string &string)
+      : OU::Assembly(string) {
+      findImplementations();
+    }
+    Assembly::~Assembly() {
+      delete [] m_candidates;
+    }
+    //The callback for the findImplementations() method below.
+    bool Assembly::foundImplementation(const Implementation &i, unsigned score) {
+      m_tempCandidates->push_back(Candidate(i, score));
+      return false;
+    }
+    // A common method used by constructors
+    void Assembly::findImplementations() {
+      m_tempCandidates = m_candidates = new Candidates[m_instances.size()];
+      Instance *i = &m_instances[0];
+      for (unsigned n = 0; n < m_instances.size(); n++, m_tempCandidates++, i++)
+	if (!Manager::findImplementations(*this, i->m_specName.c_str(),
+					  i->m_selection.empty() ? NULL : i->m_selection.c_str()))
+	  throw OU::Error(i->m_selection.empty() ?
+			  "No implementations found in any libraries for \"%s\"" :
+			  "No acceptable implementations found in any libraries for \"%s\"",
+			  i->m_specName.c_str());
+    }
+  }
+}

@@ -109,13 +109,13 @@
 #ifdef OCPI_TIME_EMIT_SUPPORT
 
 #define OCPI_EMIT_REGISTER(  name )        \
-  static OCPI::Time::Emit::RegisterEvent re(name);
+  static OCPI::Time::Emit::RegisterEvent re(name)
 
 #define OCPI_EMIT_REGISTER_FULL(  name, dtype, width, etype )        \
-  static OCPI::Time::Emit::RegisterEvent re(name,width,etype,dtype);
+  static OCPI::Time::Emit::RegisterEvent re(name,width,etype,dtype)
 
 #define OCPI_EMIT_REGISTER_P( p )        \
-  static OCPI::Time::Emit::RegisterEvent re(p);
+  static OCPI::Time::Emit::RegisterEvent re(p)
 
 // The following macros are used to emit events within a class that has inherited from Time::Emit
 // They assume that they have access to "this" and they will preserve the class heirarchy information.
@@ -132,89 +132,90 @@
 }
 
 #define OCPI_EMIT_REGISTERED( re,v )                \
-{ \
+do { \
   OCPI::Time::Emit::getSEmit().emit(re,v);        \
-}
+ } while(0)
 #define OCPI_EMIT_REGISTERED_( re,v )                \
-{ \
+do { \
   this->emit(re,v);                                \
-}
+} while(0)
 
 #define OCPI_EMIT( name ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
   OCPI::Time::Emit::getSEmit().emit(re);                        \
-}
+} while(0)
+
 #define OCPI_EMIT_( name ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
   this->emit(re);           \
-}
+ } while(0)
 
 #define OCPI_EMIT_STATE( name, state )                        \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(state)); \
-}
+} while(0)
 #define OCPI_EMIT_STATE_( name, state )                \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(state)); \
-}
+ } while(0)
 
 #define OCPI_EMIT_PVALUE_( p ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_P( p ) \
   this->emit(re, p);        \
-}
+ } while(0)
 
 #define OCPI_EMIT_PVALUE( p ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_P( p ) \
   OCPI::Time::Emit::getSEmit().emit(re, p);        \
-}
+} while(0)
 
 
 #define OCPI_EMIT_UINT64_( name, value ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,64,OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
-}
+} while(0)
 #define OCPI_EMIT_UINT64( name, value ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,64,OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
-}
+} while(0)
 #define OCPI_EMIT_UINT32_( name, value ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,32,OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
-}
+} while(0)
 #define OCPI_EMIT_UINT32( name, value ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,32,OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
-}
+} while(0)
 #define OCPI_EMIT_UINT16_( name, value ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,16,OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
-}
+} while(0)
 #define OCPI_EMIT_UINT16( name, value ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,16,OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
-}
+} while(0)
 #define OCPI_EMIT_UINT8_( name, value ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,8,OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
-}
+} while(0)
 #define OCPI_EMIT_UINT8( name, value ) \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL(name,OCPI::Time::Emit::u,8,OCPI::Time::Emit::Value); \
   OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(value));                        \
-}
+} while(0)
 
 #else
 

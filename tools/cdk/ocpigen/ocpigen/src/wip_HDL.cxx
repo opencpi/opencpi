@@ -1557,7 +1557,7 @@ emitWorker(FILE *f, Worker *w)
 {
   fprintf(f, "<worker name=\"%s\" model=\"%s\"", w->implName, w->modelString);
   if (strcmp(w->specName, w->implName))
-    fprintf(f, "specname=\"%s\"", w->specName);
+    fprintf(f, " specname=\"%s\"", w->specName);
   if (w->ctl.sizeOfConfigSpace)
     fprintf(f, " sizeOfConfigSpace=\"%llu\"", (unsigned long long)w->ctl.sizeOfConfigSpace);
   if (w->ctl.controlOps) {

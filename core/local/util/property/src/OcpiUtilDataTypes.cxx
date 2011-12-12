@@ -404,6 +404,8 @@ namespace OCPI {
       case OA::OCPI_scalar_type_limit:
 	assert(0);
       }
+      if (m_isSequence)
+	reader.endSequence(*this);
     }
     void Member::generate(const char *name, unsigned ordinal, unsigned depth) {
       m_name = name;

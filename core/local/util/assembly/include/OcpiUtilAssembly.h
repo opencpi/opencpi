@@ -34,66 +34,87 @@
 
 
 /*
- Definitions for assembly metadata decoding, etc.
-*/
-#ifndef OCPI_ASSEMBLY_H
-#define OCPI_ASSEMBLY_H
+ * Definitions for assembly metadata decoding, etc.
+ * The result of parsing an xml assembly, in a vacuum (no access to impl metadata)
+ *
+ * After parsing this class does not depend on the existence of the xml from which it
+ * was parsed.
+ *
+ * Example:
+ * <assembly name="myapp">
+ *  <instance name="fred" specName="fft1d"/>
+ *  <instance name="i2" specName="sink" selection="select-expression">
+ *    <property name="knob1" value="4"/>
+ *  </instance>
+ *  <connection name=helpin>
+ *    <port name="input" instance="fred"/>
+ *    <external name="globin" provider="true" url="ddstopic:"/>
+ *  </connection>
+ * </assembly>
+ */
+#ifndef OCPI_UTIL_ASSEMBLY_H
+#define OCPI_UTIL_ASSEMBLY_H
+#include <string>
+#include <vector>
 #include "ezxml.h"
+#include "OcpiPValue.h"
 
 namespace OCPI {
   namespace Util {
-    namespace Assy {
-      class Instance {
-	
-      };
-      class Connection;
-      class Assembly {
+    class Assembly {
+    public:
+      struct Property {
 	std::string m_name;
-	Instance *m_instances;
-	Connection *m_connections;
-      };
-      class Property {
-	const char *parseImplAlso(ezxml_t x);
-      public:
-	// Describe structure member that might be the whole property
-	const char *name;     // Name of the overall property independent of members
-	Member *members;      // More than one when type is struct.
-	unsigned maxAlign;    // Largest alignment reqmnt based on type (up to 64b)
-	unsigned nBytes;      // Maximum size in bytes
-	unsigned nMembers;    // How many members
-	unsigned offset;      // Offset within all properties
-	unsigned smallest;    // Smallest unit of storage
-	unsigned granularity; // Granularity of smallest unit
-	// Caller needs these to decide to do beforeQuery/afterConfigure
-	bool needReadSync, needWriteSync, isWritable, isReadable;
-	bool isParameter;  // For compile-time parameter
-	// Attributes for struct types
-	bool isStruct, isStructSequence;
-	unsigned nStructs; // sequence or array of structs
-	// Other property attributes
-	bool readError, writeError, isTest;
-	unsigned long sequenceLength, dataOffset;
-	// Sizes in bits of the various types
-	const char *parse(ezxml_t x,
-			  unsigned &argOffset,
-			  bool &readableConfigs,
-			  bool &writableConfigs,
-			  bool &sub32Configs,
-			  bool includeImpl = false
-			  );
-	const char *parseImpl(ezxml_t x);
+	std::string m_value;
 	const char *parse(ezxml_t x);
-	const char *parseValue(ezxml_t x, Scalar::Value &value);
-	// Check when accessing with scalar type and sequence length
-#ifdef NDEBUG
-	inline const char *checkType(Scalar::Type ctype, unsigned n, bool write)
-	{ ( void ) ctype; ( void ) n; ( void ) write; return 0;}
-#else
-	const char *checkType(Scalar::Type ctype, unsigned n, bool write);
-#endif
-      private:
       };
-    }
+      typedef std::vector<Property> Properties;
+      struct Instance {
+	std::string
+	  m_name,      // name of the instance within the assembly
+	  m_specName,  // name of component being instantiated
+	  m_selection; // the selection expression
+	Properties m_properties;
+	PValueList m_parameters;
+	const char *parse(ezxml_t ix, ezxml_t ax);
+      };
+      struct External {
+	std::string m_name; // the nanme
+	std::string m_url;  // the URL that this external attachment has
+	bool m_provider;    // is this external attachment acting as a provider to the world?
+	PValueList m_parameters;
+	const char *parse(ezxml_t, unsigned&, const PValue *pvl);
+      };
+      // The attachment of a connection to external
+      struct Port {
+	std::string m_name;
+	unsigned m_instance;
+	PValueList m_parameters;
+	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl);
+      };
+      struct Connection {
+	std::string m_name;
+	std::vector<External> m_externals;
+	std::vector<Port> m_ports;
+	PValueList m_parameters;
+	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
+      };
+    private:
+      ezxml_t m_xml;
+      char *m_copy;
+    public:
+      static unsigned s_count;
+      std::string m_name;
+      std::vector<Instance> m_instances;
+      std::vector<Connection> m_connections;
+      // Provide a file name.
+      explicit Assembly(const char *file);
+      // Provide a string containing the xml
+      explicit Assembly(const std::string &string);
+      ~Assembly();
+      const char *parse(ezxml_t a);
+      const char *getInstance(const char *name, unsigned &);
+    };
   }
 }
 #endif

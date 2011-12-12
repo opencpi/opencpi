@@ -42,7 +42,7 @@
 namespace OCPI {
   namespace API {
     namespace OU = OCPI::Util;
-    void Property::checkTypeAlways(BaseType ctype, unsigned n, bool write) {
+    void Property::checkTypeAlways(BaseType ctype, unsigned n, bool write) const {
       if (write && !m_info.m_isWritable)
 	throw "trying to write a non-writable property";
       if (!write && !m_info.m_isReadable)
@@ -65,6 +65,12 @@ namespace OCPI {
     Property::Property(Worker &w, const char *aname) :
       m_worker(w), m_writeVaddr(0), m_readVaddr(0),
       m_info(w.setupProperty(aname, m_writeVaddr, m_readVaddr))
+    {}
+    // This is a sort of side-door from the application code
+    // that already knows the property ordinal
+    Property::Property(Worker &w, unsigned n) :
+      m_worker(w), m_writeVaddr(0), m_readVaddr(0),
+      m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr))
     {}
   }
 }

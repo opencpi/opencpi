@@ -114,10 +114,9 @@ namespace OCPI {
         throw ( OCPI::Util::EmbeddedException );
 
       ~Container();
-      // These are the two things managed by the class that inherits me
-      //      virtual Driver *myDriver() = 0;
-      //      virtual const std::string &myName() = 0;
 
+      virtual Container *nextContainer() = 0;
+      bool supportsImplementation(OCPI::Util::Implementation &);
       /**
          @brief
          createApplication
@@ -231,18 +230,25 @@ namespace OCPI {
       bool hasName(const char *name);
 
       inline OCPI::OS::uint32_t getId(){return m_ourUID;}
-
+      inline unsigned ordinal() const { return m_ordinal; }
+      static Container &nthContainer(unsigned n);
+      typedef uint32_t CMap;
+      static const unsigned maxContainer = sizeof(CMap) * 8;
     protected:
       void shutdown();
       //      const std::string m_name;
 
       //! This containers unique id
       OCPI::OS::uint32_t m_ourUID;
+      unsigned m_ordinal;
 
       // Start/Stop flag for this container
       bool m_enabled;
       bool m_ownThread;
       OCPI::OS::ThreadManager *m_thread;
+    private:
+      static Container **s_containers;
+      static unsigned s_maxContainer;
     };
   }
 }

@@ -787,12 +787,12 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       // return errors. 
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                   \
-  void Worker::set##pretty##Property(OCPI::API::Property &p, const run val) { \
-    assert(p.m_info.m_baseType == OCPI::API::OCPI_##pretty);		\
-        if (p.m_info.m_writeError)                                                       \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                  \
+  void Worker::set##pretty##Property(const OA::Property &p, const run val) const { \
+    assert(p.m_info.m_baseType == OCPI::API::OCPI_##pretty);		        \
+        if (p.m_info.m_writeError)                                              \
           throw; /*"worker has errors before write */                           \
-        store *pp = (store *)(getPropertyVaddr() + p.m_info.m_offset);	\
+        store *pp = (store *)(getPropertyVaddr() + p.m_info.m_offset);	        \
         if (bits > 32) {                                                        \
           assert(bits == 64);                                                   \
           uint32_t *p32 = (uint32_t *)pp;                                       \
@@ -800,133 +800,133 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
           p32[0] = ((const uint32_t *)&val)[0];                                 \
         } else                                                                  \
           *pp = *(const store *)&val;                                           \
-        if (p.m_info.m_writeError)					\
+        if (p.m_info.m_writeError)					        \
           throw; /*"worker has errors after write */                            \
       }                                                                         \
-  void Worker::set##pretty##SequenceProperty(OCPI::API::Property &p,const run *vals, \
-					 unsigned length) {		        \
-        if (p.m_info.m_writeError)                                                       \
+  void Worker::set##pretty##SequenceProperty(const OA::Property &p,const run *vals, \
+					 unsigned length) const {		\
+        if (p.m_info.m_writeError)                                              \
           throw; /*"worker has errors before write */                           \
-        memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), vals,      \
+        memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), vals, \
 	       length * sizeof(run));					        \
-        *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = length;                  \
-        if (p.m_info.m_writeError)                                                     \
+        *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = length;         \
+        if (p.m_info.m_writeError)                                              \
           throw; /*"worker has errors after write */                            \
       }
       // Set a string property value
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
-  void Worker::set##pretty##Property(OCPI::API::Property &p, const run val) { \
-        unsigned ocpi_length;                                                     \
-        if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength)   \
-          throw; /*"string property too long"*/;                                 \
-        if (p.m_info.m_writeError)                                                       \
-          throw; /*"worker has errors before write */                            \
-        uint32_t *p32 = (uint32_t *)(getPropertyVaddr() + p.m_info.m_offset);             \
-        /* if length to be written is more than 32 bits */                       \
-        if (++ocpi_length > 32/CHAR_BIT)                                          \
-          memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT);          \
-        uint32_t i;                                                              \
-        memcpy(&i, val, 32/CHAR_BIT);                                            \
-        p32[0] = i;                                                              \
-        if (p.m_info.m_writeError)                                                       \
-          throw; /*"worker has errors after write */                             \
-      }                                                                          \
-  void Worker::set##pretty##SequenceProperty(OCPI::API::Property &p,const run *vals, \
-					 unsigned length) {		         \
-        if (p.m_info.m_writeError)                                                       \
-          throw; /*"worker has errors before write */                            \
-        char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT);        \
-        for (unsigned i = 0; i < length; i++) {                                  \
-          unsigned len = strlen(vals[i]);                                        \
-          if (len > p.m_info.m_stringLength)	                         \
-            throw; /* "string in sequence too long" */                           \
-          memcpy(cp, vals[i], len+1);                                            \
-        }                                                                        \
-        *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = length;                   \
-        if (p.m_info.m_writeError)                                                       \
-          throw; /*"worker has errors after write */                             \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                   \
+  void Worker::set##pretty##Property(const OA::Property &p, const run val) const { \
+        unsigned ocpi_length;                                                      \
+        if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength)         \
+          throw; /*"string property too long"*/;                                   \
+        if (p.m_info.m_writeError)                                                 \
+          throw; /*"worker has errors before write */                              \
+        uint32_t *p32 = (uint32_t *)(getPropertyVaddr() + p.m_info.m_offset);      \
+        /* if length to be written is more than 32 bits */                         \
+        if (++ocpi_length > 32/CHAR_BIT)                                           \
+          memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT);           \
+        uint32_t i;                                                                \
+        memcpy(&i, val, 32/CHAR_BIT);                                              \
+        p32[0] = i;                                                                \
+        if (p.m_info.m_writeError)                                                 \
+          throw; /*"worker has errors after write */                               \
+      }                                                                            \
+  void Worker::set##pretty##SequenceProperty(const OA::Property &p,const run *vals,\
+					 unsigned length) const {		   \
+        if (p.m_info.m_writeError)                                                 \
+          throw; /*"worker has errors before write */                              \
+        char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT); \
+        for (unsigned i = 0; i < length; i++) {                                    \
+          unsigned len = strlen(vals[i]);                                          \
+          if (len > p.m_info.m_stringLength)	                                   \
+            throw; /* "string in sequence too long" */                             \
+          memcpy(cp, vals[i], len+1);                                              \
+        }                                                                          \
+        *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = length;            \
+        if (p.m_info.m_writeError)                                                 \
+          throw; /*"worker has errors after write */                               \
       }
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-      run Worker::get##pretty##Property(OCPI::API::Property &p) { \
-        if (p.m_info.m_readError )						\
-          throw; /*"worker has errors before read "*/			\
-        uint32_t *pp = (uint32_t *)(getPropertyVaddr() + p.m_info.m_offset);	\
-        union {								\
-	  run r;							\
-	  uint32_t u32[bits/32];                                        \
-        } u;								\
-        if (bits > 32)							\
-          u.u32[1] = pp[1];						\
-        u.u32[0] = pp[0];						\
-        if (p.m_info.m_readError )						\
-          throw; /*"worker has errors after read */			\
-        return u.r;							\
-      }									\
-      unsigned Worker::get##pretty##SequenceProperty(OCPI::API::Property &p, \
-					     run *vals,			\
-					     unsigned length) {		\
-        if (p.m_info.m_readError )						\
-          throw; /*"worker has errors before read "*/			\
-        uint32_t n = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset);	\
-        if (n > length)							\
-          throw; /* sequence longer than provided buffer */		\
-        memcpy(vals,							\
-	       (void*)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align),	\
-               n * sizeof(run));                                        \
-        if (p.m_info.m_readError )						\
-          throw; /*"worker has errors after read */			\
-        return n;							\
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		    \
+      run Worker::get##pretty##Property(const OA::Property &p) const {      \
+        if (p.m_info.m_readError )					    \
+          throw; /*"worker has errors before read "*/			    \
+        uint32_t *pp = (uint32_t *)(getPropertyVaddr() + p.m_info.m_offset);\
+        union {								    \
+	  run r;							    \
+	  uint32_t u32[bits/32];                                            \
+        } u;								    \
+        if (bits > 32)							    \
+          u.u32[1] = pp[1];						    \
+        u.u32[0] = pp[0];						    \
+        if (p.m_info.m_readError )					    \
+          throw; /*"worker has errors after read */			    \
+        return u.r;							    \
+      }									    \
+      unsigned Worker::get##pretty##SequenceProperty(const OA::Property &p, \
+					     run *vals,			    \
+					     unsigned length) const {	    \
+        if (p.m_info.m_readError )					    \
+          throw; /*"worker has errors before read "*/			    \
+        uint32_t n = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset); \
+        if (n > length)							    \
+          throw; /* sequence longer than provided buffer */		    \
+        memcpy(vals,							    \
+	       (void*)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), \
+               n * sizeof(run));                                            \
+        if (p.m_info.m_readError )					    \
+          throw; /*"worker has errors after read */			    \
+        return n;							    \
       }
 
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)		      \
-      void Worker::get##pretty##Property(OCPI::API::Property &p, char *cp, \
-					   unsigned length) {		      \
-	  unsigned stringLength = p.m_info.m_stringLength;               \
-	  if (length < stringLength+1)			      \
-	    throw; /*"string buffer smaller than property"*/;		      \
-	  if (p.m_info.m_readError)						      \
-	    throw; /*"worker has errors before write */			      \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	    \
+      void Worker::get##pretty##Property(const OA::Property &p, char *cp,   \
+					   unsigned length) const {	    \
+	  unsigned stringLength = p.m_info.m_stringLength;                  \
+	  if (length < stringLength+1)			                    \
+	    throw; /*"string buffer smaller than property"*/;		    \
+	  if (p.m_info.m_readError)					    \
+	    throw; /*"worker has errors before write */			    \
 	  uint32_t i32, *p32 = (uint32_t *)(getPropertyVaddr() + p.m_info.m_offset);   \
-	  memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT); \
-	  i32 = *p32;							      \
-	  memcpy(cp, &i32, 32/CHAR_BIT);				      \
-	  if (p.m_info.m_readError)						      \
-	    throw; /*"worker has errors after write */			      \
-	}								      \
-      unsigned Worker::get##pretty##SequenceProperty			\
-	(OCPI::API::Property &p, char **vals, unsigned length, char *buf,        \
-	 unsigned space) {						      \
-        if (p.m_info.m_readError)						      \
-          throw; /*"worker has errors before read */                          \
-        uint32_t                                                              \
-          n = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset),                   \
-          wlen = p.m_info.m_stringLength + 1;                            \
-        if (n > length)                                                       \
-          throw; /* sequence longer than provided buffer */                   \
-        char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT);     \
-        for (unsigned i = 0; i < n; i++) {                                    \
-          if (space < wlen)                                                   \
-            throw;                                                            \
-          memcpy(buf, cp, wlen);                                              \
-          cp += wlen;                                                         \
-          vals[i] = buf;                                                      \
-          unsigned slen = strlen(buf) + 1;                                    \
-          buf += slen;                                                        \
-          space -= slen;                                                      \
-        }                                                                     \
-        if (p.m_info.m_readError)                                             \
-          throw; /*"worker has errors after read */                           \
-        return n;                                                             \
+	  memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT);\
+	  i32 = *p32;							    \
+	  memcpy(cp, &i32, 32/CHAR_BIT);				    \
+	  if (p.m_info.m_readError)					    \
+	    throw; /*"worker has errors after write */			    \
+	}								    \
+      unsigned Worker::get##pretty##SequenceProperty			    \
+	(const OA::Property &p, char **vals, unsigned length, char *buf,    \
+	 unsigned space) const {					    \
+        if (p.m_info.m_readError)					    \
+          throw; /*"worker has errors before read */                        \
+        uint32_t                                                            \
+          n = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset),        \
+          wlen = p.m_info.m_stringLength + 1;                               \
+        if (n > length)                                                     \
+          throw; /* sequence longer than provided buffer */                 \
+        char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT); \
+        for (unsigned i = 0; i < n; i++) {                                  \
+          if (space < wlen)                                                 \
+            throw;                                                          \
+          memcpy(buf, cp, wlen);                                            \
+          cp += wlen;                                                       \
+          vals[i] = buf;                                                    \
+          unsigned slen = strlen(buf) + 1;                                  \
+          buf += slen;                                                      \
+          space -= slen;                                                    \
+        }                                                                   \
+        if (p.m_info.m_readError)                                           \
+          throw; /*"worker has errors after read */                         \
+        return n;                                                           \
       }
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S

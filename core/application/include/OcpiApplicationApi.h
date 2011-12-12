@@ -31,11 +31,37 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-// This file includes headers required to use the OpenCPI Control API
-
-#ifndef OCPIAPI_H
-#define OCPIAPI_H
+/*
+ * The user-level API for applications (via the ACI).
+ * Usage is:
+ * {
+ *    OA::Application app(filename_of_xml_file); // throws error relative to the xml_file
+ *    app.initialize();                          // throws errors relative to deploying the app
+ *    app.start();
+ *    // wait until you are happy with the result...
+ * }
+ */
 #include "OcpiContainerApi.h"
-#include "OcpiApplicationApi.h"
-#endif
+
+namespace OCPI {
+  namespace API {
+    class ApplicationI;
+    class Application {
+      ApplicationI &m_application;
+    public:
+      // The constructor does the planning, deciding what impl will run where
+      explicit Application(const char *file);
+      explicit Application(const std::string &string);
+      virtual ~Application();
+      // This does the setup - creating/instantiating workers, 
+      // setting initial properties, and making connections
+      virtual void initialize();
+      // This makes the application operational, and resumes after "stop"
+      virtual void start();
+      // Suspension, that can be resumed with "start".
+      virtual void stop();
+      ExternalPort &getPort(const char *);
+    };
+  }
+}
+

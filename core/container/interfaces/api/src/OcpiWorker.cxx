@@ -95,19 +95,19 @@ namespace OCPI {
       prepareProperty(prop, m_writeVaddr, m_readVaddr);
       return prop;
     }
-    void Worker::setProperty(const char *name, const char *value) {
-      OA::Property prop(*this, name);
-      OU::ValueType &vt = prop.m_info;
-      OU::Value v(vt); // FIXME storage when not scalar
-      if (vt.m_baseType == OA::OCPI_Struct)
-	throw ApiError("No support yet for setting struct properties", NULL);
-      const char *err = v.parse(value);
-      if (err)
-        throw ApiError("Error parsing property value:\"", value, "\"", NULL);
-      switch (vt.m_baseType) {
+    OA::PropertyInfo & Worker::setupProperty(unsigned n, 
+					     volatile void *&m_writeVaddr,
+					     const volatile void *&m_readVaddr) {
+      OU::Property &prop = property(n);
+      prepareProperty(prop, m_writeVaddr, m_readVaddr);
+      return prop;
+    }
+    // Internal used by others.
+    void Worker::setPropertyValue(const OA::Property &prop, const OU::Value &v) {
+      switch (prop.m_info.m_baseType) {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		 \
 	case OA::OCPI_##pretty:					         \
-	  if (vt.m_isSequence)						 \
+	  if (prop.m_info.m_isSequence)   	         		 \
 	    prop.set##pretty##SequenceValue((const run*)(v.m_p##pretty), \
 					    v.m_nElements);		 \
 	  else								 \
@@ -118,6 +118,17 @@ namespace OCPI {
       case OA::OCPI_none: case OA::OCPI_Struct: case OA::OCPI_Type: case OA::OCPI_Enum:
       case OA::OCPI_scalar_type_limit:;
       }
+    }
+    void Worker::setProperty(const char *name, const char *value) {
+      OA::Property prop(*this, name);
+      OU::ValueType &vt = prop.m_info;
+      OU::Value v(vt); // FIXME storage when not scalar
+      if (vt.m_baseType == OA::OCPI_Struct)
+	throw ApiError("No support yet for setting struct properties", NULL);
+      const char *err = v.parse(value);
+      if (err)
+        throw ApiError("Error parsing property value:\"", value, "\"", NULL);
+      setPropertyValue(prop, v);
     }
     bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value) {
       unsigned nProps;
@@ -160,20 +171,11 @@ namespace OCPI {
       name = p.m_name;
       return true;
     }
-#if 0
-    void Worker::setProperty(OA::Property &prop, const OA::PValue &val) {
-      switch (prop.m_type.scalar) {
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-	case OP::Scalar::OCPI_##pretty:					\
-	    prop.set##pretty##Value(val.v##pretty);			\
-            break;
-      OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-      default:
-	ocpiAssert(!"unknown data type");
-      }
+    void Worker::setProperty(unsigned ordinal, OCPI::Util::Value &value) {
+      OA::Property prop(*this, ordinal);
+      setPropertyValue(prop, value);
     }
-#endif
+
     // batch setting with lots of error checking - all or nothing
     void Worker::setProperties(const OA::PValue *props) {
       if (props)
