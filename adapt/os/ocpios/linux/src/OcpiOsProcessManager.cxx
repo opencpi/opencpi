@@ -677,27 +677,16 @@ OCPI::OS::ProcessManager::shutdown ()
 #endif
 
   volatile ProcessData & pd = *o2pd (m_osOpaque);
-  int res=0, serrno;
 
   pthread_mutex_lock (&g_pmDataMutex);
 
-  if (!pd.terminated) {
-    /*
-     * Send SIGINT signal
-     */
-
-    res = ::kill (pd.pid, SIGINT);
-
-    if (res != 0) {
-      serrno = errno;
-    }
-  }
+  int res = pd.terminated ? 0 : ::kill (pd.pid, SIGINT);
+  int serrno = errno;
 
   pthread_mutex_unlock (&g_pmDataMutex);
 
-  if (res != 0 && serrno != ESRCH) {
+  if (res != 0 && serrno != ESRCH)
     throw OCPI::OS::Posix::getErrorMessage (errno);
-  }
 }
 
 void
@@ -709,27 +698,17 @@ OCPI::OS::ProcessManager::kill ()
 #endif
 
   volatile ProcessData & pd = *o2pd (m_osOpaque);
-  int res=0, serrno;
+
 
   pthread_mutex_lock (&g_pmDataMutex);
 
-  if (!pd.terminated) {
-    /*
-     * Send SIGINT signal
-     */
-
-    res = ::kill (pd.pid, SIGKILL);
-
-    if (res != 0) {
-      serrno = errno;
-    }
-  }
+  int res = pd.terminated ? 0 : ::kill (pd.pid, SIGKILL);
+  int serrno = errno;
 
   pthread_mutex_unlock (&g_pmDataMutex);
 
-  if (res != 0 && serrno != ESRCH) {
+  if (res != 0 && serrno != ESRCH)
     throw OCPI::OS::Posix::getErrorMessage (errno);
-  }
 }
 
 void

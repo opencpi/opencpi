@@ -191,6 +191,15 @@ ocl:
 cleanocl:
 	make -C components cleanocl
 
+examples:
+	make -C tools/cdk/examples
+
+cleanexamples:
+	make -C tools/cdk/examples clean
+
+runexamples:
+	make -C tools/cdk/examples run
+
 cleancomponents:
 	make -C components clean
 

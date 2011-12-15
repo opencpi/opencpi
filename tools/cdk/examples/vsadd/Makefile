@@ -1,30 +1,33 @@
-
 ifndef OCPI_CDK_DIR
-OCPI_CDK_DIR=../..
+# if not set, assume we are either in the development tree or in an exported cdk
+OCPI_CDK_DIR=$(or $(wildcard ../../export),../..)
 endif
 
 include $(OCPI_CDK_DIR)/ocpisetup.mk
 
-INC_MISC := \
+ifndef OCPI_HAVE_OPENCL
+$(info The vsadd example requires OpenCL to be present, and it isn't)
+$(info It is usually found as an libOpenCL.so in the standard library path)
+all:
+run:
+else
+
+INCS := -I$(OCPI_INC_DIR) \
 	-I$(OCPI_BASE_DIR)/core/local/util/misc/include \
 	-I$(OCPI_BASE_DIR)/adapt/os/ocpios/interfaces/include \
 	-I$(OCPI_BASE_DIR)/core/container/ocl_container/include
 
-LDFLAGS=-Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" \
-         -L"$(OCPI_LIB_DIR)" \
-         $(OCPI_API_LIBS:%=-l%) $(OCPI_OCL_LIBS)
+LDFLAGS=$(OCPI_LD_FLAGS) $(OCPI_OCL_LIBS)
 
 all: test_vsadd
 
 test_vsadd: test_vsadd.cxx
-	g++ -g -o $@ -I$(OCPI_CDK_DIR)/include $(INC_MISC) $^ $(LDFLAGS)
+	g++ -g -o $@ $(INCS) $^ $(LDFLAGS)
 
 run: test_vsadd
 	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/ocl ./test_vsadd
 
 clean::
-	rm -f test_vsadd
+	rm -f -r *.dSYM test_vsadd
 
-# These make the worker library for this application
-#Implementations = vsadd.ocl
-#include $(OCPI_CDK_DIR)/include/lib.mk
+endif

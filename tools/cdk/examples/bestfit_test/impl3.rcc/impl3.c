@@ -5,6 +5,8 @@
  *
  * This file contains the RCC implementation skeleton for worker: hello
  */
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "impl3_Worker.h"
 #include <math.h>
@@ -57,7 +59,7 @@ static RCCResult
 run(RCCWorker *self, RCCBoolean timeout, RCCBoolean *newRunCondition) {
   (void)timeout;(void)newRunCondition;
   RCCPort *out = &self->ports[IMPL3_OUT];
-  Impl3Properties* p = ( Impl3Properties* ) self->properties;
+  // Impl3Properties* p = ( Impl3Properties* ) self->properties;
   MyState *s = self->memories[0];
   printf("IMPL 3 selected\n");
   double freq=6;

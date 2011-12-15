@@ -3,7 +3,9 @@
 ifdef Imports
 ImportsDir:=$(OutDir)imports
 #$(info WILD=$(wildcard $(ImportsDir)/*)=)
-ifeq ($(wildcard $(ImportsDir)/*),)
+
+ifneq ($(if $(wildcard $(ImportsDir)/*),$(DIFF_IMPORTS),),)
+
 ifndef OCPI_HDL_IMPORTS_DIR
 $(error This primitive requires OCPI_HDL_IMPORTS_DIR to have a value, and it doesn't)
 endif
@@ -33,12 +35,18 @@ $(foreach n,$(NetNames),$(if $(word 2,$(filter $(n),$(NetNames))),$(error Import
 #$(info wi $(WImports))
 #$(info nn $(NetNames))
 #$(info ni $(NetImports))
-out:=$(strip $(shell if test ! -d $(ImportsDir); then \
+ifdef DIFF_IMPORTS #1
+diff:
+	$(AT) echo ========Comparing imports for the $(LibName) $(CwdName) primitive library.
+	$(AT) for i in $(NetImports); do $(ECHO) Comparing $$i...; diff $$i $(OutDir)imports; done
+else
+out:=$(strip $(shell echo hihi; if test -d $(ImportsDir); then \
 		echo Making imports subdirectory to receive imported files for the $(LibName) primitive library. ; \
 	        mkdir $(ImportsDir); \
 		for i in $(NetImports); do cp $$i $(OutDir)imports; done; \
 	     fi))
 $(if $(out),$(info $(out)))
+endif
 #$(info xxx $(shell echo $(ImportsDir)/*.[vV]))
 #$(info yyy $(shell ls imports))
 #$(info hdl-import1 csf $(CompiledSourceFiles))

@@ -368,7 +368,7 @@ static RCCResult run(RCCWorker *self,
     *out      = &self->ports[OPTICAL_FLOW_PYR_LK_OUT],
     *out_status = &self->ports[OPTICAL_FLOW_PYR_LK_OUT_STATUS],
     *out_err    = &self->ports[OPTICAL_FLOW_PYR_LK_OUT_ERR];
-  const RCCContainer *c = self->container;
+  //  const RCCContainer *c = self->container;
 
   // set pointers to derivatives
   myState->adx = (float *) in_adx->current.data;

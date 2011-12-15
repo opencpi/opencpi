@@ -100,16 +100,18 @@ main(int argc, char *argv[])
 
     char
       *offset_arg = argv[1],
-      *nbytes_arg = argv[2],
-      *update_value_arg = argv[3] ;
+      *nbytes_arg = argv[2];
     int fd ;
     uint64_t offset = atoi_any(offset_arg) ;
     int nbytes = atoi_any(nbytes_arg) ;
     int mmoffset = offset&(PAGE-1) ;
     int mmbase = offset&(~(PAGE-1)) ;
+#ifdef MAPIT
+    char *update_value_arg = argv[3] ;
     int update_value = (argc>3)?atoi_any(update_value_arg):0 ;
     int update = (argc>3) ;
     void *ptr ;
+#endif
 
     printf("offset=%08llx nbytes=%d mmoffset=%08x mmbase=%08x\n",
 	   (long long)offset, nbytes, mmoffset, mmbase) ;
@@ -130,13 +132,13 @@ main(int argc, char *argv[])
       }
 
     ptr += mmoffset ;
-#endif
 
     if(update)
       {
         * (int *) ptr = update_value ;
 	nbytes=4 ;
       }
+#endif
 
       {
        int i, j ;

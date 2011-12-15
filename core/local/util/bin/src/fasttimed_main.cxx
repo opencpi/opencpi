@@ -49,22 +49,19 @@ static volatile int shutdown_flag;
 
 void signal_handler(int sig);
 
-const char *usage_msg = 
-  "Usage: fasttimed <options>\n"
-  "Start the fasttime daemon.\n"
-  "\n"
-  "Options:\n"
-  " -ldm  --loop-delay-min <val>      Minimum loop delay\n"
-  " -ldx  --loop-delay-max <val>      Maximum loop delay\n"
-  " -ldi  --loop-delay-initial <val>  Initial loop delay\n"
-  " -lda  --loop-delay-adjust <val>   Amount to inc/decrement loop delay by\n"
-  " -g    --pll-gain <val>            PLL gain constant\n"
-  " -d    --debug                     Print debug info to stdout\n";
-  
-
 void usage()
 {
-    fprintf(stderr, usage_msg);
+    fprintf(stderr,
+	    "Usage: fasttimed <options>\n"
+	    "Start the fasttime daemon.\n"
+	    "\n"
+	    "Options:\n"
+	    " -ldm  --loop-delay-min <val>      Minimum loop delay\n"
+	    " -ldx  --loop-delay-max <val>      Maximum loop delay\n"
+	    " -ldi  --loop-delay-initial <val>  Initial loop delay\n"
+	    " -lda  --loop-delay-adjust <val>   Amount to inc/decrement loop delay by\n"
+	    " -g    --pll-gain <val>            PLL gain constant\n"
+	    " -d    --debug                     Print debug info to stdout\n");
     exit(EXIT_SUCCESS);
 }
 

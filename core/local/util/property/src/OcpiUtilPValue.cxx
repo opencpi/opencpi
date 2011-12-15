@@ -82,11 +82,11 @@ namespace OCPI {
  
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)	\
-    bool 							\
+    bool 							        \
     find##pretty(const PValue* p, const char* name, run &value) {	\
       const PValue *fp = find(p, name);					\
       if (fp)								\
-        if (fp->type == OCPI::API::OCPI_##pretty) {	\
+        if (fp->type == OCPI::API::OCPI_##pretty) {	                \
           value = fp->v##pretty;					\
           return true;							\
 	} else								\
@@ -94,11 +94,11 @@ namespace OCPI {
       return false;							\
     }
 #define OCPI_DATA_TYPE_S(sca, corba, letter, bits, run, pretty, store)	\
-    bool 							\
+    bool 							        \
     find##pretty(const PValue* p, const char* name, run &value) {	\
       const PValue *fp = find(p, name);					\
       if (fp)								\
-        if (fp->type == OCPI::API::OCPI_##pretty) {	\
+        if (fp->type == OCPI::API::OCPI_##pretty) {	                \
           value = fp->v##pretty;					\
           return true;							\
 	} else								\

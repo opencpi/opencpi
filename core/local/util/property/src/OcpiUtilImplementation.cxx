@@ -120,7 +120,7 @@ namespace OCPI {
     }
     // Get a property value from the metadata
     const char *Implementation::getValue(const std::string &sym, ExprValue &val) {
-      Property *p;
+      Property *p = m_properties;
       for (unsigned n = 0; n < m_nProperties; n++, p++)
 	if (p->m_name == sym)
 	  return p->getValue(val);

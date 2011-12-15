@@ -15,7 +15,7 @@ namespace OA = OCPI::API;
 int main(int argc, char **argv) {
 
   if ( argc != 4 ) {
-    printf("Usage: %s, <min throughput: (frames per second)> <max distortion: (%)> <max memory: (bytes)>\n", argv[0]);
+    printf("Usage: %s, <min throughput: (frames per second)> <max distortion: (%%)> <max memory: (bytes)>\n", argv[0]);
     exit(-1);
   }
 
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
     // Note that the ContainerApplication object MAY be deleted by the program,
     // hence it is a pointer.  But it doesn't HAVE to be deleted since it will
     // automatically be deleted on exit.
-    return 1;
+    return 0;
   
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());

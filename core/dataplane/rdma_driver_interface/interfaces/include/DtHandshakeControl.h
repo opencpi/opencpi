@@ -153,7 +153,7 @@ namespace DataTransfer {
       RequestTypes            request;
       OCPI::OS::int32_t              error_code;
       OCPI::OS::uint32_t              returnMailboxId;
-      OCPI::OS::int32_t              return_offset;
+      OCPI::OS::int64_t              return_offset;
       OCPI::OS::uint32_t              return_size;
     };
 

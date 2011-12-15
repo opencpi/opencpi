@@ -88,8 +88,8 @@ namespace OCPI {
       for (unsigned n = 0; n < nInstances; n++, i++) {
 	OL::Candidates &cs = m_assembly.m_candidates[n];
 	CMap
-	  sum = 0,   // accumulate possible containers over candidates
-	  bestMap;   // save map of best candidate
+	  sum = 0,     // accumulate possible containers over candidates
+	  bestMap = 0; // save map of best candidate.  initialized to kill warning
 	unsigned bestScore = 0;
 	// For all candidate implementations knwon to be suitable for this instance
 	for (unsigned m = 0; m < cs.size(); m++) {
@@ -168,6 +168,7 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nContainers; n++) {
 	OC::Container &c = OC::Container::nthContainer(m_usedContainers[n]);
 	m_containers[n] = &c;
+	// FIXME: get rid of this cast...
 	m_containerApps[n] = static_cast<OC::Application*>(c.createApplication());
       }
       Instance *i = m_instances;

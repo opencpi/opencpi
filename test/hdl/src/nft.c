@@ -207,13 +207,13 @@ main(int argc, char *argv[])
   start(sma1);
 
   if (single) {
-    unsigned nFrom = 1, nTo = 1;
+    unsigned nTo = 1;
     fprintf(stderr, "Single\n");
     gettimeofday(&tv0, 0);
     gettimeofday(&tv1, 0);
     do {
       if (fromCpu.flags[fromCpu.bufIdx])
-	nFrom = checkStream(&fromCpu);
+	checkStream(&fromCpu);
       if (toCpu.flags[toCpu.bufIdx])
 	nTo = checkStream(&toCpu);
     } while (nTo != 0 && (maxFrames == 0 || toCpu.opCode < maxFrames));

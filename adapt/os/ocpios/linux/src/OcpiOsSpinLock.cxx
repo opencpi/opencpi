@@ -65,8 +65,8 @@ OCPI::OS::SpinLock::SpinLock ()
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (pthread_spinlock_t)> ()));
   ocpiAssert (sizeof (m_osOpaque) >= sizeof (pthread_spinlock_t));
 
-  int res;
 #ifndef __APPLE__
+  int res;
   if ((res = pthread_spin_init (o2pm (m_osOpaque), PTHREAD_PROCESS_PRIVATE))) {
     throw OCPI::OS::Posix::getErrorMessage (res);
   }
@@ -87,8 +87,8 @@ void
 OCPI::OS::SpinLock::lock ()
   throw (std::string)
 {
-  int res;
 #ifndef __APPLE__
+  int res;
   if ((res = pthread_spin_lock (o2pm (m_osOpaque)))) {
     throw OCPI::OS::Posix::getErrorMessage (res);
   }

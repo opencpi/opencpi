@@ -1,9 +1,6 @@
 
-To run the best fit test type
+To run the best fit test type, on three different test cases
 > make run
-
-Or to run the different test cases type
-> ./runit
 
 To run the test mabually type
 > ./bestfit <thoughput> <distortion> <memusage>

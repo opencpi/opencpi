@@ -914,6 +914,18 @@ namespace OCPI
       enumerate_devices ( );
     }
 
+    /*
+      Somenotes: we need a "target" name for a compilation target relevant to a particular device, and then we need
+      to map what we get from the "name" attribute of the device to that thing.  Thus we need a published table somewhere
+      that the compiler ocpiocl will have access to:  first is the vendor code, then some device class (ISA) within that.
+      So the devices might actually default from the platform you are running on, or you might specify it explicitly 
+      and then barf if the platform doesn't support it.  A utility to get the list of feasible targets as an initial
+      Makefile definition of OclTargets - so ocpiocl will have a little function to emit a list of targets.
+      the maqtching table should just accumulate: mapping device name into target name - something accessible 
+      from ocpiocl. also maybe some jit target too.
+    */
+
+
     void PlatformManager::enumerate_devices ( )
     {
       for ( size_t n = 0; n < d_platforms.size ( ); n++ )
@@ -1037,8 +1049,12 @@ namespace OCPI
         {
           ss << "\n    Device "
              << d
-             << "\n      Type "
-             << device_type_str ( d_platforms [ n ].devices [ d ].type );
+             << "\n      Type: "
+             << device_type_str ( d_platforms [ n ].devices [ d ].type )
+	     << "\n      Vendor id: 0x" << std::hex << d_platforms [ n ].devices [ d ].vendorId
+	     << " name: " << d_platforms [ n ].devices [ d ].vendor
+	     << "\n      Name: " << d_platforms [ n ].devices [ d ].name
+	    ;
         }
         ss << "\n";
       }

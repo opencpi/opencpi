@@ -68,13 +68,13 @@ const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master
       *s++ = '%';
     else {
       bool myMaster = master;
-      bool noOrdinal = false;
+      //      bool noOrdinal = false;
       if (*pat == '!') {
 	myMaster = !master;
 	pat++;
       }
       if (*pat == '*') {
-	noOrdinal = true;
+	//	noOrdinal = true;
 	pat++;
       }
       switch (*pat++) {

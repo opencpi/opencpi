@@ -132,5 +132,8 @@ export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 
 # ######################################################################### #
 
+export OCPI_HAVE_OPENCV=1
+export OCPI_OPENCV_HOME=/usr/local
+
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

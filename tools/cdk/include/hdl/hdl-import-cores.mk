@@ -53,6 +53,29 @@ $(info  Files: $(ImportCoreFiles_$(notdir $d))))
 define DoImportCore
 .PHONY: import_core_$4 clean_core_$4
 
+diff_core_$4:
+	$(AT)$(ECHO) ===========Comparing imported core $2 \(from $1, module $3\).
+	$(AT)if test ! -d $1; then \
+	       echo Imported core directory $1 nonexistent; exit 1; \
+	     elif test ! -f $1/opencpi-core.mk; then \
+	       echo Missing $1/opencpi-core.mk file; exit 1; \
+	     elif test ! -f $1/$(ImportCoreTop_$4)_bb.v; then \
+	       echo Missing $1/$(ImportCoreTop_$4)_bb.v file; exit 1; \
+	     fi
+	$(AT)r=0; \
+	     for sf in $(ImportCoreFiles_$4); do \
+	       if test ! -f $1/$$$$sf; then \
+		  r=1; echo Imported file $$$$sf missing from $1; \
+	       fi; \
+	     done; \
+	     exit $$$$r
+	$(AT)$(ECHO) Comparing black box $1/$3_bb.v to $2/$3_bb.v...
+	$(AT)diff $1/$3_bb.v $2/$3_bb.v
+	$(AT)$(ECHO) Comparing source files...
+	$(AT)for f in $(ImportCoreFiles_$4) $(ImportCorePreBuilt_$4); do \
+	       $(ECHO) $1/$$$$f...; diff $1/$$$$f $2; \
+	     done
+
 import_core_$4:
 	$(AT)if test ! -d $1; then \
 	       echo Imported core directory $1 nonexistent; exit 1; \
@@ -96,6 +119,7 @@ clean_core_$4:
 	$(AT)rm -r -f $2
 
 import_cores: import_core_$4
+diff_cores: diff_core_$4
 cleanimports: clean_core_$4
 ImportCores:=$$(ImportCores) $2
 endef

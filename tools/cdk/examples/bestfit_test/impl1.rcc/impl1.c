@@ -5,6 +5,8 @@
  *
  * This file contains the RCC implementation skeleton for worker: hello
  */
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "impl1_Worker.h"

@@ -212,29 +212,34 @@ int main ( int argc, char* argv [ ] )
               << std::endl;
     return 0;
   }
-  
-
+  bool test = argc == 2 && !strcmp(argv[1],"test");
+  const char *env = getenv("OCPI_OCL_OBJS");
   bool success = false;
   try
   {
-    const char *env = getenv("OCPI_OCL_OBJS");
     OCPI::OS::LoadableModule lm(env ? env : "libOpenCL.so", true);
+    if (test)
+      success = true;
+    else {
     
-    std::cout << "\nOCL worker compiler is running." << std::endl;
+      std::cout << "\nOCL worker compiler is running." << std::endl;
 
-    success = compile_ocl_worker ( argc, argv );
+      success = compile_ocl_worker ( argc, argv );
 
-    std::cout << "\nOCL worker compile was "
-              << ( ( success ) ? "successful." : "NOT successful." )
-              << std::endl;
+      std::cout << "\nOCL worker compile was "
+		<< ( ( success ) ? "successful." : "NOT successful." )
+		<< std::endl;
+    }
   }
   catch ( const std::string& s )
   {
-    std::cerr << "\nException(s): " << s << std::endl;
+    if (!test)
+      std::cerr << "\nException(s): " << s << std::endl;
   }
   catch ( ... )
   {
-    std::cerr << "\nException(u): unknown" << std::endl;
+    if (!test)
+      std::cerr << "\nException(u): unknown" << std::endl;
   }
 
   return success ? 0 : 1;

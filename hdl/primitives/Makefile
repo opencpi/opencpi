@@ -80,6 +80,11 @@ cleanimports:
 	$(AT)$(foreach l,$(Libs) $(LocalCores),\
 		$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) cleanimports;)
 
+diff: diff_cores
+	$(AT)$(foreach l,$(Libs),\
+		$(MyMake) -C $(l) DIFF_IMPORTS=sdf OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) diff;)
+
+
 install:
 	$(AT)set -e;$(foreach l,$(Libs) $(Cores),$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install;)
 

@@ -99,6 +99,7 @@ namespace OCPI {
     // except those in the "exclude" list
     unsigned Driver::search(const OA::PValue*, const char **exclude)
     {
+      (void)exclude;
       new Container("name", 456); // registration with driver is automatic
       return 0;
     }
@@ -106,6 +107,7 @@ namespace OCPI {
     // when this is called.
     OC::Container *Driver::probeContainer(const char *which, const OA::PValue *props)
     {
+      (void)props;
       if (!strcmp(which, "i like this"))
 	return new Container(which, 123456); // registration with driver is automatic
       return NULL;
@@ -173,6 +175,7 @@ namespace OCPI {
       virtual void prepareProperty(OU::Property &mp,
 				   volatile void *&writeVaddr,
 				   const volatile void *&readVaddr) {
+	(void)mp;(void)writeVaddr;(void)readVaddr;
 	// fill out the API property structure for fastest access
       }
 
@@ -182,6 +185,7 @@ namespace OCPI {
                        OS::uint32_t bufferCount,
                        OS::uint32_t bufferSize,
                        const OA::PValue* props) throw() {
+	(void)portId;(void)bufferCount;(void)bufferSize;(void)props;
 	return *(OC::Port *)0;
       }
       OC::Port &
@@ -189,6 +193,7 @@ namespace OCPI {
                       OS::uint32_t bufferCount,
                       OS::uint32_t bufferSize,
                       const OA::PValue* props) throw() {
+	(void)portId;(void)bufferCount;(void)bufferSize;(void)props;
 	return *(OC::Port *)0;
       }
 
@@ -365,9 +370,9 @@ namespace OCPI {
       // I am an input port, the other guy is an output port.
       // My job is to emulate a bitstream that consumes from me, and produces at otherPort
       // This is for testing
-      void loopback(const OA::PValue *pProps,
-		    OA::Port &apiUserPort,
-		    const OA::PValue *uProps) {}
+      void loopback(const OA::PValue *,
+		    OA::Port &,
+		    const OA::PValue *) {}
 
       Port(Worker &w,
 	   const OA::PValue *params,
@@ -382,6 +387,7 @@ namespace OCPI {
       }
       // All the info is in.  Do final work to (locally) establish the connection
       void finishConnection(OCPI::RDT::Descriptors &other) {
+	(void)other;
       }
       // Connection between two ports inside this container
       // We know they must be in the same artifact, and have a metadata-defined connection
@@ -466,7 +472,7 @@ namespace OCPI {
       bool last;                // last buffer in the set
       void release();
       void put(uint32_t dataLength, uint8_t opCode, bool endOfData) {
-	(void)endOfData;
+	(void)endOfData;(void)opCode;
         ocpiAssert(dataLength <= length);
         release();
       }
@@ -495,6 +501,7 @@ namespace OCPI {
       {
         applyConnectParams(props);
         unsigned nFar = parent().getData().data.desc.nBuffers;
+	(void)nFar;
         unsigned nLocal = myDesc.nBuffers;
         myDesc.dataBufferPitch = parent().getData().data.desc.dataBufferPitch;
         myDesc.metaDataPitch = parent().getData().data.desc.metaDataPitch;
@@ -533,10 +540,12 @@ namespace OCPI {
       // The input method = get a buffer that has data in it.
       OA::ExternalBuffer *
       getBuffer(uint8_t *&bdata, uint32_t &length, uint8_t &opCode, bool &end) {
+	(void)bdata;(void)length;(void)opCode;(void)end;
         ocpiAssert(!parent().isProvider());
 	return 0;
       }
       OC::ExternalBuffer *getBuffer(uint8_t *&bdata, uint32_t &length) {
+	(void)bdata;(void)length;
         ocpiAssert(parent().isProvider());
         return 0;
       }

@@ -1101,8 +1101,8 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
           esprintf("Missing \"Instance\" attribute in Attach subelement of "
                    "connection \"%s\"", c->name);
       n = 0;
-      InstancePort *ip;
-      Port *p;
+      InstancePort *ip = 0; // kill warning
+      Port *p = 0; // kill warning
       for (i = a->instances; n < a->nInstances; n++, i++)
         if (!strcmp(i->name, instName)) {
           const char *iName = ezxml_cattr(at, "Interface");
@@ -1165,7 +1165,7 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     if (c->nExternals) {
       Port *extPort = 0, *intPort = 0;
-      const char *role;
+      const char *role = 0; // kill warning. if c->nExternals, it will be set
       for (InstancePort *ip = c->ports; ip; ip = ip->nextConn)
         if (ip->externalRole) {
           role = ip->externalRole;
@@ -1589,7 +1589,7 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
     const char *name = ezxml_cattr(x, "Name");
     if (!name)
       return "Missing \"Name\" attribute on Port element if RccImplementation";
-    Port *p;
+    Port *p = 0; // kill warning
     unsigned n;
     for (n = 0; n < w->ports.size(); n++) {
       p = w->ports[n];
@@ -1635,7 +1635,7 @@ parseOcl(ezxml_t xml, const char *file, Worker *w) {
     const char *name = ezxml_cattr(x, "Name");
     if (!name)
       return "Missing \"Name\" attribute on Port element if OclImplementation";
-    Port *p;
+    Port *p = 0; // kill warning
     unsigned n;
     for (n = 0; n < w->ports.size(); n++) {
       p = w->ports[n];

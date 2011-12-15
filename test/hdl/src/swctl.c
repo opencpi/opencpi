@@ -222,9 +222,9 @@ admin(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatil
     uint32_t uint;
     char c[sizeof(uint32_t) + 1];
   } u;
-  uint64_t x, y, *z = (uint64_t*)p;
-  x = z[0];
-  y = z[1];
+  //  uint64_t x, y, *z = (uint64_t*)p;
+  //  x = z[0];
+  //  y = z[1];
 
   epochtime = (time_t)p->admin.birthday;
   etime = gmtime(&epochtime); 

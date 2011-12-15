@@ -231,12 +231,13 @@ void dataTypeTest(unsigned count) {
     unsigned rlen1 = p.read(r1, buf1, rlen, opcode);
     assert(rlen == rlen1);
     int dif = memcmp(buf, buf1, rlen);
-    for (unsigned n = 0; n < rlen; n++)
-      if (buf[n] != buf1[n]) {
-	printf("Buffer differs at byte %u [%llx %llx]\n",
-	       n, (long long unsigned)&buf[n], (long long unsigned)&buf1[n]);
-	assert(!"buffers different");
-      }
+    if (dif)
+      for (unsigned n = 0; n < rlen; n++)
+	if (buf[n] != buf1[n]) {
+	  printf("Buffer differs at byte %u [%llx %llx]\n",
+		 n, (long long unsigned)&buf[n], (long long unsigned)&buf1[n]);
+	  assert(!"buffers different");
+	}
     for (unsigned n = 0; n < nArgs; n++) {
       delete v[n];
       delete v1[n];

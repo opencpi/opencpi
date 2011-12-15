@@ -194,10 +194,8 @@ removeFilesRecursively (Vfs * fs,
           OCPI::Util::Vfs::Iterator * it2 =
             fs->list (it->absoluteName());
 
-          bool isempty;
-
           try {
-            isempty = it2->end ();
+            it2->end ();
           }
           catch (...) {
             fs->closeIterator (it2);
@@ -252,10 +250,9 @@ removeDirectoryRecursively (Vfs * fs,
 
   if (deleteEmptyDirectories) {
     OCPI::Util::Vfs::Iterator * it = fs->list (dir);
-    bool isempty;
 
     try {
-      isempty = it->end ();
+      it->end ();
     }
     catch (...) {
       fs->closeIterator (it);

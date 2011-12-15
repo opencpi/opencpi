@@ -63,7 +63,7 @@ using namespace OCPI::RDT;
 namespace OCPI {
   namespace Container {
 
-    std::string
+    void
     packDescriptor (OCPI::Util::CDR::Encoder& packer, const Descriptors & desc)
       throw ()
     {
@@ -106,14 +106,6 @@ namespace OCPI {
         packer.putString (oob->oep);
         packer.putULongLong (oob->cookie);
       }
-      else {
-        return false;
-      }
-      /*
-       * Return marshaled data.
-       */
-
-      return packer.data ();
     }
 
     bool

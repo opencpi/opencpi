@@ -77,7 +77,7 @@ namespace OCPI {
 	for (Container *c = d->firstContainer(); c; c = c->nextContainer())
 	  if (c->supportsImplementation(i))
 	    cb.foundContainer(*c);
-      return NULL;
+      return false;
     }
 
     Driver::Driver(const char *name) 

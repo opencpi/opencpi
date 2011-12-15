@@ -361,13 +361,14 @@ namespace OCPI {
       // Check length if string is bounded
       
       char *start = m_stringNext;
-      bool quoted;
+      bool quoted = false;
       if (*cp == '"') {
 	quoted = true;
 	cp++;
       }
+	
       for (unsigned len = 0; cp < end; len++)
-	if (*cp == '"') {
+	if (quoted && *cp == '"') {
 	  if (cp + 1 != end)
 	    return "double quoted string with invalid characters after the closing quote";
 	  break;
@@ -1199,8 +1200,8 @@ const char *Value::getValue(ExprValue &val) {
   switch (m_vt->m_baseType) {
   case OA::OCPI_Bool: val.number = m_Bool; break;
   case OA::OCPI_Char: val.isNumber = false; val.string.assign(1, m_Char); break;
-  case OA::OCPI_Double: val.number = m_Double; break;
-  case OA::OCPI_Float: val.number = m_Float; break;
+  case OA::OCPI_Double: val.number = (int64_t)m_Double; break;
+  case OA::OCPI_Float: val.number = (int64_t)m_Float; break;
   case OA::OCPI_Short: val.number = m_Short; break;
   case OA::OCPI_Long: val.number = m_Long; break;
   case OA::OCPI_UChar: val.number = m_UChar; break;

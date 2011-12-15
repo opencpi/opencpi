@@ -5,17 +5,17 @@ endif
 
 include $(OCPI_CDK_DIR)/ocpisetup.mk
 
-all: hello
+all: appHello
 
-hello: hello.cxx
+appHello: appHello.cxx
 	g++ -Wall -g -o $@ -I$(OCPI_INC_DIR) $(OCPI_LD_FLAGS) $^
 
 # OCPI_LIBRARY_PATH is like LD_LIBRARY_PATH, but for OpenCPI components.
-run: all
-	OCPI_LIBRARY_PATH=lib ./hello > /dev/null	
+run: appHello
+	OCPI_LIBRARY_PATH=lib/rcc ./appHello > /dev/null	
 
 clean::
-	rm -f -r hello hello.dSYM lib
+	rm -f -r appHello appHello.dSYM
 
 # These make the worker library for this application
 Implementations = hello.rcc
