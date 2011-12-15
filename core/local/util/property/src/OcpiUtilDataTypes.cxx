@@ -126,6 +126,8 @@ namespace OCPI {
 	if ((err = OE::checkAttrs(xt, OCPI_UTIL_MEMBER_ATTRS, NULL)) ||
 	    (err = m_type->parse(xt, isFixed, false, false, 0)))
 	  return err;
+	if (!m_type->m_isSequence)
+	  return "recursive \"type\" element must be a sequence";
       } else {
 	// A primitive/scalar type
 	const char **tp;

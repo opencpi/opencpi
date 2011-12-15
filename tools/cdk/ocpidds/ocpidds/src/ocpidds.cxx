@@ -526,6 +526,13 @@ void getType(OU::ValueType &t, const char *&cp, const char *term) {
   const char *save = cp;
   std::string kind;
   getString(kind, cp, term);
+  // Is this type a sequence of something
+  if (kind == "sequence") {
+    t.m_isSequence = true;
+    t.m_sequenceLength = getNum(cp);
+    save = cp;
+    getString(kind, cp, term);
+  }
   // Is this type a single or sequence of an array?
   if (kind == "array") {
     // An array of what comes after
@@ -537,13 +544,6 @@ void getType(OU::ValueType &t, const char *&cp, const char *term) {
     t.m_arrayDimensions = new uint32_t[t.m_arrayRank];
     for (unsigned i = 0; i < t.m_arrayRank; i++)
       t.m_arrayDimensions[i] = dimensions[i];
-    save = cp;
-    getString(kind, cp, term);
-  }
-  // Is this type a sequence of something
-  if (kind == "sequence") {
-    t.m_isSequence = true;
-    t.m_sequenceLength = getNum(cp);
     save = cp;
     getString(kind, cp, term);
   }
