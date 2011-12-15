@@ -144,7 +144,7 @@ xm: speclinks $(XmImplementations)
 rcc: speclinks $(RccImplementations)
 
 checkocl:
-	$(AT)if ! ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
+	$(AT)if ! $(OCPI_CDK_DIR)/bin/$(HostTarget)/ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
 
 ocl: checkocl speclinks $(OclImplementations)
 
