@@ -49,6 +49,8 @@
 #define OCPI_PVALUE_H
 
 #include <cstring>
+#include <stdarg.h>
+#include "ezxml.h"
 #include "OcpiUtilException.h"
 #include "OcpiPValueApi.h"
 
@@ -57,6 +59,7 @@ namespace OCPI {
   
   namespace Util {
     typedef OCPI::API::PValue PValue;
+    extern PValue allPVParams[];
 #define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)	\
       bool find##pretty(const PValue* p, const char* name, run &value);
 #undef OCPI_DATA_TYPE_S
@@ -71,6 +74,18 @@ namespace OCPI {
   OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
     extern PVULong PVEnd;
+    // A storage-managed list that originate from xml and can be used anywhere
+    // that a PValue * can be used.  The values come from attributes.
+    class PValueList {
+      PValue *m_list;
+      const char *vParse(const PValue *p, ezxml_t x, va_list ap);
+    public:
+      PValueList();
+      ~PValueList();
+      inline operator const PValue*() const { return m_list; }
+      const char *parse(ezxml_t x, ...);
+      const char *parse(const PValue *p, ezxml_t x, ...);
+    };
   }
 } // OCPI
 #endif

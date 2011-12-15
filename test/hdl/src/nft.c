@@ -30,7 +30,8 @@
 // Packet of arguments required to process a stream endpoint on the cpu side
 typedef struct {
   bool isToCpu;
-  unsigned bufSize, nBufs;
+  unsigned bufSize, nBufs, ramp;
+  uint64_t rampValue;
   volatile uint8_t *buffers;
   volatile OcdpMetadata *metadata;
   volatile uint32_t *flags;
@@ -38,6 +39,7 @@ typedef struct {
   // Then the dynamic state of the stream
   unsigned bufIdx, opCode;
   char *buf; // local buffer
+  char *cbuf; // local compare buffer
 } Stream;
 
 // Forward declarations
@@ -48,7 +50,7 @@ static void
   *doStream(void *args),
   setupStream(Stream *s, volatile OcdpProperties *p, bool isToCpu,
 	      unsigned nCpuBufs, unsigned nFpgaBufs, unsigned bufSize,
-	      uint8_t *cpuBase, unsigned long long dmaBase, uint32_t *offset);
+	      uint8_t *cpuBase, unsigned long long dmaBase, uint32_t *offset, unsigned ramp);
 
 static unsigned checkStream(Stream *s);
 bool noData = 0, noCheck = 0, verbose = 0, single = 0;
@@ -66,7 +68,7 @@ main(int argc, char *argv[])
   volatile OcdpProperties *dp0Props, *dp1Props;
   volatile uint32_t *sma0Props, *sma1Props, *biasProps;
   volatile OccpWorkerRegisters *dp0, *dp1, *sma0, *sma1, *bias;
-  unsigned nFpgaBufs = 2, nCpuBufs = 200;
+  unsigned nFpgaBufs = 2, nCpuBufs = 200, ramp = 0;
   // These structures define the cpu-side stream endpoints
   Stream fromCpu, toCpu;
   uint32_t dmaOffset = 0; // this is our "dma buffer allocation" pointer...
@@ -93,6 +95,7 @@ main(int argc, char *argv[])
 	    "  -b<bsize> size of buffers (rounded up to 16 byte boundary)\n"
 	    "  -v        verbose\n"
 	    "  -s        single thread\n"
+	    "  -r<size>  ramp the data.  <size> is size of ramp value (1/2/4/8).\n"
 	    , name, name, nCpuBufs, nFpgaBufs);
     return 1;
   }
@@ -124,6 +127,9 @@ main(int argc, char *argv[])
     case 's':
       single = true;
       break;
+    case 'r':
+      ramp = atoi(&argv[1][2]);
+      break;
     default:
       fprintf(stderr, "Base option flag: %s\n", argv[1]);
       return 1;
@@ -148,7 +154,7 @@ main(int argc, char *argv[])
     fprintf(stderr, "Couldn't get PCI information about PCI device %s.  Try ocfrp_check.\n", argv[1]);
     return 1;
   }
-  fprintf(stderr, "BufSize=%d, CpuBufs %d FpgaBufs %d\n", bufSize, nCpuBufs, nFpgaBufs);
+  fprintf(stderr, "BufSize=%d, CpuBufs %d FpgaBufs %d Ramp %d\n", bufSize, nCpuBufs, nFpgaBufs, ramp);
   errno = 0;
   assert ((fd = open("/dev/mem", O_RDWR|O_SYNC)) >= 0);
   assert((occp = (OccpSpace *)mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE,
@@ -190,9 +196,9 @@ main(int argc, char *argv[])
   *sma1Props = 2; // WSI input to WMI output
   // Configure streams, SW side and HW side
   setupStream(&fromCpu, dp0Props, false,
-	      nCpuBufs, nFpgaBufs, bufSize, cpuBase, dmaBase, &dmaOffset);
+	      nCpuBufs, nFpgaBufs, bufSize, cpuBase, dmaBase, &dmaOffset, ramp);
   setupStream(&toCpu, dp1Props, true,
-	      nCpuBufs, nFpgaBufs, bufSize, cpuBase, dmaBase, &dmaOffset);
+	      nCpuBufs, nFpgaBufs, bufSize, cpuBase, dmaBase, &dmaOffset, ramp);
   // start workers. Should be order independent
   start(dp0);
   start(dp1);
@@ -201,13 +207,13 @@ main(int argc, char *argv[])
   start(sma1);
 
   if (single) {
-    unsigned nFrom = 1, nTo = 1;
+    unsigned nTo = 1;
     fprintf(stderr, "Single\n");
     gettimeofday(&tv0, 0);
     gettimeofday(&tv1, 0);
     do {
       if (fromCpu.flags[fromCpu.bufIdx])
-	nFrom = checkStream(&fromCpu);
+	checkStream(&fromCpu);
       if (toCpu.flags[toCpu.bufIdx])
 	nTo = checkStream(&toCpu);
     } while (nTo != 0 && (maxFrames == 0 || toCpu.opCode < maxFrames));
@@ -230,7 +236,7 @@ main(int argc, char *argv[])
     uint64_t t0 = tv0.tv_sec * 1000000LL + tv0.tv_usec;
     uint64_t t1 = tv1.tv_sec * 1000000LL + tv1.tv_usec;
     uint64_t t2 = tv2.tv_sec * 1000000LL + tv2.tv_usec;
-    fprintf(stderr, "Bytes %lld, Time delta = %lld, %f MBytes/seconds, Framesize %d\n",
+    fprintf(stderr, "Bytes %lld, Time delta = %lld, %f MBytes/seconds, Message size %d\n",
 	    (long long)bytes,(long long)((t2 - t1) - (t1 - t0)),
 	    (double)bytes/(double)((t2-t1)-(t1-t0)), bufSize);
   }
@@ -283,6 +289,22 @@ checkStream(Stream *s) {
       if ((n = s->metadata[s->bufIdx].length)) {
 	memcpy(s->buf, (void*)&s->buffers[s->bufIdx * s->bufSize], n);
 	assert(write(1, s->buf, n) == n);
+	if (s->ramp) {
+	  for (unsigned nn = 0; nn < (s->bufSize / s->ramp); nn++) {
+	    uint64_t value = s->rampValue++;
+	    switch (s->ramp) {
+	    case 1: s->cbuf[nn] = value; break;
+	    case 2: ((uint16_t *)s->cbuf)[nn] = value; break;
+	    case 4: ((uint32_t *)s->cbuf)[nn] = value; break;
+	    case 8: ((uint64_t *)s->cbuf)[nn] = value; break;
+	    default:
+	      ;
+	    }
+	  }
+	  if (memcmp(s->buf, s->cbuf, n))
+	    fprintf(stderr, "Ramp mismatch: message %d, starts at %d offset in file. %d\n",
+		    s->opCode, s->opCode * s->bufSize, n);
+	}
       }
     }
     if (!noCheck) {
@@ -295,8 +317,23 @@ checkStream(Stream *s) {
       n = s->bufSize;
       s->metadata[s->bufIdx].length = n;
     } else {
-      n = read(0, s->buf, s->bufSize);
-      assert(n >= 0);
+      if (s->ramp) {
+	for (unsigned nn = 0; nn < (s->bufSize / s->ramp); nn++) {
+	  uint64_t value = s->rampValue++;
+	  switch (s->ramp) {
+	  case 1: s->buf[nn] = value; break;
+	  case 2: ((uint16_t *)s->buf)[nn] = value; break;
+	  case 4: ((uint32_t *)s->buf)[nn] = value; break;
+	  case 8: ((uint64_t *)s->buf)[nn] = value; break;
+	  default:
+	    ;
+	  }
+	}
+	n = s->bufSize;
+      } else {
+	n = read(0, s->buf, s->bufSize);
+	assert(n >= 0);
+      }
       if (n)
 	memcpy((void *)&s->buffers[s->bufIdx * s->bufSize], s->buf, n);
       s->metadata[s->bufIdx].length = n;// & ~3; // bitstream doesn't preserve bytes in words.
@@ -336,11 +373,16 @@ doStream(void *args) {
  static void
 setupStream(Stream *s, volatile OcdpProperties *p, bool isToCpu,
 	    unsigned nCpuBufs, unsigned nFpgaBufs, unsigned bufSize,
-	    uint8_t *cpuBase, unsigned long long dmaBase, uint32_t *offset)
+	    uint8_t *cpuBase, unsigned long long dmaBase, uint32_t *offset,
+	    unsigned ramp)
 {
+  uint64_t addr;
+  s->rampValue = 0;
+  s->ramp = ramp;
   s->bufIdx = 0;
   s->opCode = 0;
   s->buf = malloc(bufSize); // because linux can't read/write to/from dma memory
+  s->cbuf = malloc(bufSize);
   s->isToCpu = isToCpu;
   s->nBufs = nCpuBufs;
   s->bufSize = bufSize;
@@ -357,11 +399,17 @@ setupStream(Stream *s, volatile OcdpProperties *p, bool isToCpu,
   p->localBufferSize = bufSize;
   p->localMetadataSize = sizeof(OcdpMetadata);
   p->memoryBytes = 32*1024;
-  p->remoteBufferBase = dmaBase + (s->buffers - cpuBase);
-  p->remoteMetadataBase = dmaBase + ((uint8_t*)s->metadata - cpuBase);
+  addr = dmaBase + (s->buffers - cpuBase);
+  p->remoteBufferBase = addr;
+  p->remoteBufferHi = addr >> 32;
+  addr = dmaBase + ((uint8_t*)s->metadata - cpuBase);
+  p->remoteMetadataBase = addr;
+  p->remoteMetadataHi = addr >> 32;
+  addr = dmaBase + ((uint8_t*)s->flags - cpuBase);
+  p->remoteFlagBase = addr;
+  p->remoteFlagHi = addr >> 32;
   p->remoteBufferSize = bufSize;
   p->remoteMetadataSize = sizeof(OcdpMetadata);
-  p->remoteFlagBase = dmaBase + ((uint8_t*)s->flags - cpuBase);
   p->remoteFlagPitch = sizeof(uint32_t);
   p->control = OCDP_CONTROL(isToCpu ? OCDP_CONTROL_PRODUCER : OCDP_CONTROL_CONSUMER,
 			    OCDP_ACTIVE_MESSAGE);

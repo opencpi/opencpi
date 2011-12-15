@@ -134,7 +134,7 @@ export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/lib/rcc
 export OCPI_SMB_SIZE=100000000
 
 # #########  OpenCV 
-export OCPI_HAVE_OPENCV=0
+export OCPI_HAVE_OPENCV=1
 export OCPI_OPENCV_HOME=/usr/local
 
 echo ""; echo " *** OpenCPI Environment settings"; echo ""

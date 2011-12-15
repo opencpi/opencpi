@@ -1,44 +1,35 @@
-ifndef OCPI_HAVE_OPENCV
-OCPI_HAVE_OPENCV=0
-endif
+ifndef OCPI_OPENCV_HOME
+$(info Set OCPI_OPENCV_HOME to the OpenCV install location to use this example (e.g. /usr/local))
+$(info OpenCV not available.)
+all:
+run:
+else
 
 ifndef OCPI_CDK_DIR
-OCPI_CDK_DIR=../..
+# if not set, assume we are either in the development tree or in an exported cdk
+OCPI_CDK_DIR=$(or $(wildcard ../../export),../..)
 endif
 
+include $(OCPI_CDK_DIR)/ocpisetup.mk
 
-ifeq ($(OCPI_HAVE_OPENCV),0)
-f1::
-	echo This demo application requires OpenCV \
-	If OpenCV is already installed, set OCPI_HAVE_OPENCV=1 and OCPI_OPENCV_HOME
-else
-ifndef OCPI_OPENCV_HOME
-OCPI_OPENCV_HOME=/usr/local
-endif
-endif
+OPENCV_LIBS=opencv_core opencv_highgui opencv_ml opencv_objdetect
+OPENCV_LIB_DIR=$(OCPI_OPENCV_HOME)/lib
 
+LDFLAGS=$(OCPI_LD_FLAGS) \
+        -Xlinker -rpath -Xlinker $(OPENCV_LIB_DIR) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS:%=-l%)
 
-LIBDIR=$(OCPI_CDK_DIR)/lib/$(OcpiHostTarget)
-LIBS=interfaces rcc_container rdma_drivers opencv_core opencv_highgui opencv_ml util
-LIB_PATH=export $(OcpiLibraryPathEnv)=$(LIBDIR):$(OCPI_OPENCV_HOME)/lib; export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/../components/lib;
-INCS += -I$(OCPI_OPENCV_HOME)/include/opencv 
-LIBRARY_PATH 	+= -L$(OCPI_OPENCV_HOME)/lib -L$(OCPI_BASE_DIR)/lib
-
+INCS += -I$(OCPI_INC_DIR) -I$(OCPI_OPENCV_HOME)/include/opencv
 all: optical_flow
 
 optical_flow: optical_flow.cxx
-	$(LIB_PATH) g++ -g -o $@ $(INCS) -I$(OCPI_CDK_DIR)/include $^ -L$(LIBDIR) $(LIBS:%=-l%)
+	g++ -g -o $@ $(INCS) $^ $(LDFLAGS)
 
 run: optical_flow
-	$(LIB_PATH) \
 	export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components; \
-	export OCPI_SMB_SIZE=400000000; \
-	./optical_flow uavA.jpg uavB.jpg # > /dev/null	
+	export OCPI_SMB_SIZE=600000000; \
+	./optical_flow uavA.jpg uavB.jpg  > /dev/null	
 
 clean::
-	rm -f optical_flow *.*~ *~ output_image.jpg *.o *.d
+	rm -f -r *.dSYM optical_flow *.*~ *~ output_image.jpg *.o *.d
 
-
-# These make the worker library for this application
-#Implementations = hello.rcc
-include $(OCPI_CDK_DIR)/include/lib.mk
+endif

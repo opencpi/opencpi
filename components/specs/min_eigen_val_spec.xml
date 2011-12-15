@@ -1,4 +1,4 @@
-<ComponentSpec Name="min_eigen_val_spec">
+<ComponentSpec Name="min_eigen_val">
   <Properties>
     <Property Name="height" readable="true" writable="true"/>
     <Property Name="width" readable="true" writable="true"/>

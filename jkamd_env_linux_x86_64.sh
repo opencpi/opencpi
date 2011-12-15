@@ -58,7 +58,7 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 # #### Location of the Xilinx tools ####################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.2/ISE_DS
+export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.3/ISE_DS
 
 # #### Location of the Altera tools ####################################### #
 
@@ -131,6 +131,9 @@ export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl_container/impl/inclu
 export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 
 # ######################################################################### #
+
+export OCPI_HAVE_OPENCV=1
+export OCPI_OPENCV_HOME=/usr/local
 
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

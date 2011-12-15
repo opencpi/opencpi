@@ -87,7 +87,7 @@ Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *props)
 
 RCCDispatch *Artifact::
 getDispatch(const char *implName) {
-#ifdef JWH
+#if 1
   for (::RCCEntryTable * et = m_entryTable; et->name; et++)
     if (!strcmp(et->name, implName))
       return et->dispatch;

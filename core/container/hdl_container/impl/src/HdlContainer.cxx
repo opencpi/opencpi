@@ -165,10 +165,11 @@ namespace OCPI {
           baseVaddr = bar1Vaddr;
         }
         bar1Offset = bar1Paddr - basePaddr;
+	m_model = "hdl";
 	// Capture the UUID info that tells us about the platform
 	HdlUUID myUUID;
 	for (unsigned n = 0; n < sizeof(HdlUUID); n++)
-	  ((uint8_t*)&myUUID)[sizeof(HdlUUID) - 1 - n] = ((volatile uint8_t *)&occp->admin.uuid)[n];
+	  ((uint8_t*)&myUUID)[n] = ((volatile uint8_t *)&occp->admin.uuid)[(n & ~3) + (3 - (n&3))];
 	if (myUUID.platform[0] && myUUID.platform[1])
 	  m_platform.assign(myUUID.platform, sizeof(myUUID.platform));
 	if (myUUID.device[0] && myUUID.device[1])
@@ -561,153 +562,158 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
-      void set##pretty##Property(OA::Property &p, const run val) {                \
-        if (p.m_info.m_writeError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors before write */                        \
-        volatile store *pp = (volatile store *)(myProperties + p.m_info.m_offset);                        \
-        if (bits > 32) {                                                \
-          assert(bits == 64);                                                \
-          volatile uint32_t *p32 = (volatile uint32_t *)pp;                                \
-          p32[1] = ((const uint32_t *)&val)[1];                                \
-          p32[0] = ((const uint32_t *)&val)[0];                                \
-        } else                                                                \
-          *pp = *(const store *)&val;                                                \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                     \
+      void set##pretty##Property(const OA::Property &p, const run val) const {     \
+        if (p.m_info.m_writeError &&                                               \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
+          throw; /*"worker has errors before write */			           \
+        volatile store *pp = (volatile store *)(myProperties + p.m_info.m_offset); \
+        if (bits > 32) {                                                           \
+          assert(bits == 64);                                                      \
+          volatile uint32_t *p32 = (volatile uint32_t *)pp;                        \
+          p32[1] = ((const uint32_t *)&val)[1];                                    \
+          p32[0] = ((const uint32_t *)&val)[0];                                    \
+        } else                                                                     \
+          *pp = *(const store *)&val;                                              \
         if (p.m_info.m_writeError && myRegisters->status & OCCP_STATUS_ALL_ERRORS) \
-          throw; /*"worker has errors after write */                        \
-      }                                                                        \
-      void set##pretty##SequenceProperty(OA::Property &p,const run *vals, unsigned length) { \
-        if (p.m_info.m_writeError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors before write */                        \
-        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_align), vals, length * sizeof(run)); \
-        *(volatile uint32_t *)(myProperties + p.m_info.m_offset) = length;                \
-        if (p.m_info.m_writeError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors after write */                        \
+          throw; /*"worker has errors after write */                               \
+      }                                                                            \
+      void set##pretty##SequenceProperty(const OA::Property &p,const run *vals,    \
+					 unsigned length) const {	           \
+        if (p.m_info.m_writeError &&                                               \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
+          throw; /*"worker has errors before write */                              \
+        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_align), vals,\
+	       length * sizeof(run));					           \
+        *(volatile uint32_t *)(myProperties + p.m_info.m_offset) = length;         \
+        if (p.m_info.m_writeError &&                                               \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
+          throw; /*"worker has errors after write */                               \
       }
       // Set a string property value FIXME redundant length check??? 
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void set##pretty##Property(OA::Property &p, const run val) {        \
-        unsigned ocpi_length;                                                \
-        if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength)                \
-          throw; /*"string property too long"*/;                        \
-        if (p.m_info.m_writeError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors before write */                        \
-        uint32_t *p32 = (uint32_t *)(myProperties + p.m_info.m_offset);                \
-        /* add 1 for null, if length to be written is more than 32 bits */                \
-        if (++ocpi_length > 32/CHAR_BIT)                                        \
-          memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT); \
-        uint32_t i;                                                        \
-        memcpy(&i, val, 32/CHAR_BIT);                                        \
-        p32[0] = i;                                                        \
-        if (p.m_info.m_writeError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors after write */                        \
-      }                                                                        \
-      void set##pretty##SequenceProperty(OA::Property &p,const run *vals, unsigned length) { \
-        if (length > p.m_info.m_sequenceLength)                                        \
-          throw;                                                        \
-        if (p.m_info.m_writeError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors before write */                        \
-        char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT);        \
-        for (unsigned i = 0; i < length; i++) {                                \
-          unsigned len = strlen(vals[i]);                                \
-          if (len > p.m_info.m_sequenceLength)                                        \
-            throw; /* "string in sequence too long" */                        \
-          memcpy(cp, vals[i], len+1);                                        \
-        }                                                                \
-        *(uint32_t *)(myProperties + p.m_info.m_offset) = length;                \
-        if (p.m_info.m_writeError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors after write */                        \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                 \
+      virtual void set##pretty##Property(const OA::Property &p, const run val) const { \
+        unsigned ocpi_length;						         \
+        if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength)       \
+          throw; /*"string property too long"*/;                                 \
+        if (p.m_info.m_writeError &&                                             \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                        \
+          throw; /*"worker has errors before write */                            \
+        uint32_t *p32 = (uint32_t *)(myProperties + p.m_info.m_offset);          \
+        /* add 1 for null, if length to be written is more than 32 bits */       \
+        if (++ocpi_length > 32/CHAR_BIT)                                         \
+          memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT);         \
+        uint32_t i;                                                              \
+        memcpy(&i, val, 32/CHAR_BIT);                                            \
+        p32[0] = i;                                                              \
+        if (p.m_info.m_writeError &&                                             \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                        \
+          throw; /*"worker has errors after write */                             \
+      }                                                                          \
+      void set##pretty##SequenceProperty(const OA::Property &p,                    \
+					 const run *vals, unsigned length) const { \
+        if (length > p.m_info.m_sequenceLength)                                    \
+          throw;                                                                   \
+        if (p.m_info.m_writeError &&                                               \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
+          throw; /*"worker has errors before write */                              \
+        char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT);       \
+        for (unsigned i = 0; i < length; i++) {                                    \
+          unsigned len = strlen(vals[i]);                                          \
+          if (len > p.m_info.m_sequenceLength)   			           \
+            throw; /* "string in sequence too long" */                             \
+          memcpy(cp, vals[i], len+1);                                              \
+        }                                                                          \
+        *(uint32_t *)(myProperties + p.m_info.m_offset) = length;                  \
+        if (p.m_info.m_writeError &&                                               \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
+          throw; /*"worker has errors after write */                               \
       }
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                \
-      virtual run get##pretty##Property(OA::Property &p) {                        \
-        if (p.m_info.m_readError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors before read "*/                        \
-        uint32_t *pp = (uint32_t *)(myProperties + p.m_info.m_offset);                \
-        union {                                                                \
-                run r;                                                        \
-                uint32_t u32[bits/32];                                        \
-        } u;                                                                \
-        if (bits > 32)                                                        \
-          u.u32[1] = pp[1];                                                \
-        u.u32[0] = pp[0];                                                \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                    \
+      virtual run get##pretty##Property(const OA::Property &p) const {            \
+        if (p.m_info.m_readError &&                                               \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                         \
+          throw; /*"worker has errors before read "*/                             \
+        uint32_t *pp = (uint32_t *)(myProperties + p.m_info.m_offset);            \
+        union {                                                                   \
+                run r;                                                            \
+                uint32_t u32[bits/32];                                            \
+        } u;                                                                      \
+        if (bits > 32)                                                            \
+          u.u32[1] = pp[1];                                                       \
+        u.u32[0] = pp[0];                                                         \
         if (p.m_info.m_readError && myRegisters->status & OCCP_STATUS_ALL_ERRORS) \
-          throw; /*"worker has errors after read */                        \
-        return u.r;                                                        \
-      }                                                                        \
-      unsigned get##pretty##SequenceProperty(OA::Property &p, run *vals, unsigned length) { \
+          throw; /*"worker has errors after read */                               \
+        return u.r;                                                               \
+      }                                                                           \
+      unsigned get##pretty##SequenceProperty(const OA::Property &p, run *vals,     \
+					     unsigned length) const {	           \
         if (p.m_info.m_readError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors before read "*/                        \
-        uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset);                \
-        if (n > length)                                                        \
-          throw; /* sequence longer than provided buffer */                \
-        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_align),        \
-               n * sizeof(run));                                        \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
+          throw; /*"worker has errors before read "*/                              \
+        uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset);              \
+        if (n > length)                                                            \
+          throw; /* sequence longer than provided buffer */                        \
+        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_align), \
+               n * sizeof(run));                                                   \
         if (p.m_info.m_readError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors after read */                        \
-        return n;                                                        \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
+          throw; /*"worker has errors after read */                                \
+        return n;                                                                  \
       }
 
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this. FIXME redundant length check
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void get##pretty##Property(OA::Property &p, char *cp, unsigned length) { \
-        unsigned stringLength = p.m_info.m_stringLength;		\
-        if (length < stringLength + 1)                                        \
-          throw; /*"string buffer smaller than property"*/;                \
-        if (p.m_info.m_readError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
+      virtual void get##pretty##Property(const OA::Property &p, char *cp, unsigned length) const { \
+        unsigned stringLength = p.m_info.m_stringLength;		     \
+        if (length < stringLength + 1)                                       \
+          throw; /*"string buffer smaller than property"*/;                  \
+        if (p.m_info.m_readError &&                                          \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                    \
           throw; /*"worker has errors before write */                        \
-        uint32_t i32, *p32 = (uint32_t *)(myProperties + p.m_info.m_offset);        \
-        memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT); \
-        i32 = *p32;                                                        \
-        memcpy(cp, &i32, 32/CHAR_BIT);                                        \
-        if (p.m_info.m_readError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors after write */                        \
-      }                                                                        \
-      unsigned get##pretty##SequenceProperty                                \
-      (OA::Property &p, char **vals, unsigned length, char *buf, unsigned space) { \
-        if (p.m_info.m_readError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors before read */                        \
-        uint32_t                                                        \
-          n = *(uint32_t *)(myProperties + p.m_info.m_offset),                        \
-          wlen = p.m_info.m_stringLength + 1;                            \
-        if (n > length)                                                        \
-          throw; /* sequence longer than provided buffer */                \
-        char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT);        \
-        for (unsigned i = 0; i < n; i++) {                                \
-          if (space < wlen)                                                \
-            throw;                                                        \
-          memcpy(buf, cp, wlen);                                        \
+        uint32_t i32, *p32 = (uint32_t *)(myProperties + p.m_info.m_offset); \
+        memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT);   \
+        i32 = *p32;                                                          \
+        memcpy(cp, &i32, 32/CHAR_BIT);                                       \
+        if (p.m_info.m_readError &&                                          \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                    \
+          throw; /*"worker has errors after write */                         \
+      }                                                                      \
+      unsigned get##pretty##SequenceProperty                                 \
+      (const OA::Property &p, char **vals, unsigned length, char *buf,       \
+       unsigned space) const {						     \
+        if (p.m_info.m_readError &&                                          \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                    \
+          throw; /*"worker has errors before read */                         \
+        uint32_t                                                             \
+          n = *(uint32_t *)(myProperties + p.m_info.m_offset),               \
+          wlen = p.m_info.m_stringLength + 1;                                \
+        if (n > length)                                                      \
+          throw; /* sequence longer than provided buffer */                  \
+        char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT); \
+        for (unsigned i = 0; i < n; i++) {                                   \
+          if (space < wlen)                                                  \
+            throw;                                                           \
+          memcpy(buf, cp, wlen);                                             \
           cp += wlen;                                                        \
-          vals[i] = buf;                                                \
-          unsigned slen = strlen(buf) + 1;                                \
-          buf += slen;                                                        \
-          space -= slen;                                                \
-        }                                                                \
-        if (p.m_info.m_readError &&						\
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                \
-          throw; /*"worker has errors after read */                        \
-        return n;                                                        \
+          vals[i] = buf;                                                     \
+          unsigned slen = strlen(buf) + 1;                                   \
+          buf += slen;                                                       \
+          space -= slen;                                                     \
+        }                                                                    \
+        if (p.m_info.m_readError &&					     \
+            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                    \
+          throw; /*"worker has errors after read */                          \
+        return n;                                                            \
       }
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
@@ -944,18 +950,24 @@ namespace OCPI {
 
 
         switch (myRole) {
+	  uint64_t addr;
         case OCPI::RDT::ActiveFlowControl:
           myOcdpRole = OCDP_ACTIVE_FLOWCONTROL;
-          myOcdpRegisters->remoteFlagBase = busAddress +
-            (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+	  addr = busAddress + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+          myOcdpRegisters->remoteFlagBase = addr;
+          myOcdpRegisters->remoteFlagHi = addr > 32;
           myOcdpRegisters->remoteFlagPitch =
             (isProvider() ?
              other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
           break;
         case OCPI::RDT::ActiveMessage:
           myOcdpRole = OCDP_ACTIVE_MESSAGE;
-          myOcdpRegisters->remoteBufferBase = busAddress + other.desc.dataBufferBaseAddr;
-          myOcdpRegisters->remoteMetadataBase = busAddress + other.desc.metaDataBaseAddr;
+	  addr = busAddress + other.desc.dataBufferBaseAddr;
+          myOcdpRegisters->remoteBufferBase = addr;
+          myOcdpRegisters->remoteBufferHi = addr >> 32;
+	  addr = busAddress + other.desc.metaDataBaseAddr;
+          myOcdpRegisters->remoteMetadataBase = addr;
+          myOcdpRegisters->remoteMetadataHi = addr >> 32;
           if ( isProvider()) {
             if (other.desc.dataBufferSize > myDesc.dataBufferSize)
               throw OC::ApiError("At consumer, remote buffer size is larger than mine", NULL);
@@ -969,8 +981,9 @@ namespace OCPI {
 #else
           myOcdpRegisters->remoteMetadataSize = other.desc.metaDataPitch;
 #endif
-          myOcdpRegisters->remoteFlagBase = busAddress +
-            ( isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+          addr = busAddress + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+          myOcdpRegisters->remoteFlagBase = addr;
+          myOcdpRegisters->remoteFlagHi = addr >> 32;
           myOcdpRegisters->remoteFlagPitch =
             ( isProvider() ?
              other.desc.emptyFlagPitch : other.desc.fullFlagPitch);

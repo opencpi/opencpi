@@ -35,10 +35,12 @@
 #include <iostream>
 #include <errno.h>
 #include <strings.h>
-#include <ezxml.h>
-#include <OcpiOsAssert.h>
-#include <OcpiUtilVfs.h>
-#include <OcpiUtilEzxml.h>
+
+#include "ezxml.h"
+#include "OcpiOsAssert.h"
+#include "OcpiUtilVfs.h"
+#include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
 
 namespace OCPI {
   namespace Util {
@@ -312,6 +314,24 @@ namespace OCPI {
       }
 
       const char *
+      checkElements(ezxml_t x, ...) {
+	va_list ap;
+	if (!x || !x->child)
+	  return 0;
+	for (ezxml_t c = x->child; c; c = c->sibling) {
+	  va_start(ap, x);
+	  char *p;
+	  while ((p = va_arg(ap, char*)))
+	    if (!strcasecmp(p, c->name))
+	      break;
+	  va_end(ap);
+	  if (!p)
+	    return esprintf("Invalid element \"%s\", in a \"%s\" element", c->name, x->name);
+	}
+	return 0;
+      }
+
+      const char *
       checkAttrs(ezxml_t x, ...) {
 	va_list ap;
 	if (!x->attr)
@@ -500,6 +520,31 @@ namespace OCPI {
 	    return c;
 	return 0;
       }
+      unsigned countChildren(ezxml_t x, const char*cName) {
+	unsigned n = 0;
+	for (ezxml_t c = ezxml_cchild(x, cName); c; c = ezxml_next(c))
+	  n++;
+	return n;
+      }
+      void getNameWithDefault(ezxml_t x, std::string &s, const char *fmt, unsigned &ord) {
+	const char *name = ezxml_cattr(x, "name");
+	if (name)
+	  s = name;
+	else
+	  Misc::formatString(s, fmt, ord++);
+      }
+      const char *getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *element) {
+	const char *cp = ezxml_cattr(x, attr);
+	if (!cp)
+	  return esprintf("Missing %s attribute for %s element", attr, element);
+	s = cp;
+	return NULL;
+      }
+      void getOptionalString(ezxml_t x, std::string &s, const char *attr) {
+	const char *cp = ezxml_cattr(x, attr);
+	if (cp)
+	  s = cp;
+      }
       bool
       inList(const char *item, const char *list) {
 	if (list) {
@@ -524,6 +569,20 @@ namespace OCPI {
 	  if ((err = (*func)(xml, arg)))
 	    return err;
 	return 0;
+      }
+      const char *
+      ezxml_attrs(ezxml_t xml, const char* (*func)(const char *name, const char *value, void *arg), void *arg) {
+	const char *err;
+	for (char **ap = xml ? xml->attr : 0; ap && *ap; ap += 2)
+	  if ((err = (*func)(ap[0], ap[1], arg)))
+	    return err;
+	return 0;
+      }
+      unsigned countAttributes(ezxml_t xml) {
+	unsigned n = 0;
+	for (char **ap = xml ? xml->attr : 0; ap && *ap; ap += 2)
+	  n++;
+	return n;
       }
     }
   }

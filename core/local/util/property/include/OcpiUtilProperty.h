@@ -56,6 +56,7 @@
 #include "ezxml.h"
 #include "OcpiUtilDataTypes.h"
 #include "OcpiUtilPropertyApi.h"
+#include "OcpiExprEvaluator.h"
 
 namespace OCPI {
   namespace API {
@@ -92,9 +93,10 @@ namespace OCPI {
 			unsigned ordinal);
       const char *parseImpl(ezxml_t x);
       const char *parse(ezxml_t x, unsigned ordinal);
-      const char *parseValue(ezxml_t x, const char *unparsed, Value &value);
+      const char *parseValue(const char *unparsed, Value &value);
       // Check when accessing with scalar type and sequence length
       const char *checkType(OCPI::API::BaseType ctype, unsigned n, bool write);
+      const char *getValue(ExprValue &val);
     private:
     };
   }

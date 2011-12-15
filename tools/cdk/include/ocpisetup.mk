@@ -1,6 +1,5 @@
 # This make file fragment establishes environment variables for user Makefiles,
 # all based on OCPI_CDK_DIR, which might be set already.
-# The output (via $(info)), is a series of bash-style export assignments.
 # 
 OcpiThisFile=$(lastword $(MAKEFILE_LIST))
 #$(info OcpiThisFile set to $(OcpiThisFile), which is really $(realpath $(OcpiThisFile)))
@@ -23,18 +22,26 @@ $(error Inconsistent usage of this file ($(OcpiThisFile)) vs. OCPI_CDK_DIR ($(OC
 endif
 endif
 export OCPI_RUNTIME_SYSTEM:=$(shell $(OCPI_CDK_DIR)/scripts/showRuntimeHost)
-#$(info export OCPI_RUNTIME_SYSTEM=$(OCPI_RUNTIME_SYSTEM))
 export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_RUNTIME_SYSTEM)
-#$(info export OCPI_LIB_DIR=$(OCPI_LIB_DIR))
+export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_RUNTIME_SYSTEM)
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
-#$(info export OCPI_INC_DIR=$(OCPI_INC_DIR))
-ifneq ($(findstring,darwin,$(OCPI_RUNTIME_SYSTEM)),)
+ifneq ($(findstring darwin,$(OCPI_RUNTIME_SYSTEM)),)
 Ocpilibrarypathenv=DYLD_LIBRARY_PATH
+OCPI_OCL_LIBS=-locl_container -framework OpenCL
 else
 OcpiLibraryPathEnv=LD_LIBRARY_PATH
+OCPI_OCL_LIBS=-locl_container -lOpenCL
 endif
 export OCPI_SET_LIB_PATH=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 #$(info export OCPI_SET_LIB_PATH=$(OCPI_SET_LIB_PATH))
-export OCPI_API_LIBS=interfaces rcc_container rdma_drivers #util ocpios
+export OCPI_API_LIBS=application interfaces rcc_container rdma_drivers util # ocpios
 #$(info export OCPI_API_LIBS=$(OCPI_API_LIBS))
+
+# These linker flags tell the linker:
+# 1. When executed at runtime, look in OCPI_LIB_DIR to resolve shared libraries
+# 2. At link time, look in OCPI_LIB_DIR to find explicitly mentioned libraries
+# 3. At link time, look in OCPI_API_LIBS for functions called from the program
+export OCPI_LD_FLAGS= -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-l%)
+OCPI_HAVE_OPENCL:=$(shell $(OCPI_BIN_DIR)/ocpiocl test; if test $$? == 0; then echo 1; fi)
+#$(info OCL=$(OCPI_HAVE_OPENCL)=)
 

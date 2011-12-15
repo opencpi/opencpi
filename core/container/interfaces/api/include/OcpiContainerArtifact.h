@@ -80,6 +80,10 @@ namespace OCPI {
 			   const char *impltag, const char *instTag,
 			   const OCPI::Util::PValue *props = NULL,
 			   const OCPI::Util::PValue *params = NULL);
+      Worker &createWorker(Application &app,
+			   const char *appInstName,
+			   ezxml_t impl, ezxml_t inst,
+			   const OCPI::Util::PValue *wparams = NULL);
     protected:
       virtual ~Artifact();
     };

@@ -95,6 +95,7 @@ Container(const char *name,
   : OC::ContainerBase<Driver,Container,Application,Artifact>(name),
     Controller( this )
 {
+  m_model = "rcc";
   //temp  m_ourUID = g_unique_id;
 
   // The underlying tranport system has some number of endpoints registered.  Lets make sure

@@ -68,13 +68,13 @@ const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master
       *s++ = '%';
     else {
       bool myMaster = master;
-      bool noOrdinal = false;
+      //      bool noOrdinal = false;
       if (*pat == '!') {
 	myMaster = !master;
 	pat++;
       }
       if (*pat == '*') {
-	noOrdinal = true;
+	//	noOrdinal = true;
 	pat++;
       }
       switch (*pat++) {
@@ -1555,9 +1555,11 @@ emitBsvHDL(Worker *w, const char *outDir) {
   void
 emitWorker(FILE *f, Worker *w)
 {
-  fprintf(f, "<worker name=\"%s\" sizeOfConfigSpace=\"%llu\"", w->specName,
-	  (unsigned long long)w->ctl.sizeOfConfigSpace);
-
+  fprintf(f, "<worker name=\"%s\" model=\"%s\"", w->implName, w->modelString);
+  if (strcmp(w->specName, w->implName))
+    fprintf(f, " specname=\"%s\"", w->specName);
+  if (w->ctl.sizeOfConfigSpace)
+    fprintf(f, " sizeOfConfigSpace=\"%llu\"", (unsigned long long)w->ctl.sizeOfConfigSpace);
   if (w->ctl.controlOps) {
     bool first = true;
     for (unsigned op = 0; op < NoOp; op++)

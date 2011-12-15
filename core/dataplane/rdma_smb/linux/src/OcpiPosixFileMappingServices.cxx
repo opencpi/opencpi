@@ -153,19 +153,20 @@ namespace DataTransfer {
 
     // Constructor
     OcpiPosixFileMappingServices ()
-    {
-      m_fd = -1;
-      m_errno = 0;
-      m_length = 0;
-    }
+      : m_fd(-1), m_errno(0), m_length(0), m_created(false)
+    {}
 
     // Destructor
-    ~OcpiPosixFileMappingServices () {};
+    ~OcpiPosixFileMappingServices () {
+      TerminateMapping();
+    };
 
   private:
+    std::string m_name;
     int	m_fd;			// File descriptor
     int	m_errno;		// Last error.
-    int m_length;		// Length of last mapping
+    uint64_t m_length;		// Length of last mapping
+    bool m_created;             // did we create it?
 
   private:
 
@@ -180,28 +181,29 @@ namespace DataTransfer {
       int iOpenFlags = MapAccessTypeToOpen (eAccess);
 
       // A leading "/" is required.
-      std::basic_string <char>::iterator str_Iter = strMapName.begin ();
-      if (*str_Iter != '/')
-	{
-	  strMapName = "/" + strMapName;
-	}
-
+      m_name = strMapName[0] == '/' ? strMapName : "/" + strMapName;
+      
       // Open a shared memory object
-      m_fd = shm_open ((const char *)strMapName.c_str (), iOpenFlags | iFlags, 0666);
+      m_fd = shm_open (m_name.c_str (), iOpenFlags | iFlags, 0666);
       m_length = 0;
-      if (m_fd == -1)
-	{
+      if (m_fd == -1) {
 	  m_errno = errno;
-	  printf ("OcpiPosixFileMapping::InitMapping: shm_open of %s failed with errno %d\n", strMapName.c_str (), m_errno);
+	  printf ("OcpiPosixFileMapping::InitMapping: shm_open of %s failed with errno %d\n",
+		  m_name.c_str (), m_errno);
+	  return m_errno;
 	}
-      return (m_fd == -1) ? m_errno : 0;
+      m_created = iFlags == O_CREAT;
+      return 0;
     }
 
     // Terminate any existing mapping.
     int TerminateMapping ()
     {
-      if ( m_fd != -1 )
+      if ( m_fd != -1 ) {
+	if (m_created)
+	  shm_unlink(m_name.c_str());
 	close (m_fd);
+      }
       m_fd =  -1;
       return 0;
     }

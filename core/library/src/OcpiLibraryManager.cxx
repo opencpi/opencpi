@@ -13,6 +13,7 @@ namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OC = OCPI::Container; // only for error codes...
 namespace OD = OCPI::Driver;
+namespace OE = OCPI::Util::EzXml;
 
 namespace OCPI {
   namespace Library {
@@ -32,34 +33,34 @@ namespace OCPI {
     // The high level entry point to search all libraries in search of
     // an artifact that will support the worker and the offered capabilities
     Artifact &Manager::
-    findArtifact(const Capabilities &caps, const char *impl,
-		 const OCPI::API::PValue *props,
+    findArtifact(const Capabilities &caps, const char *specName,
+		 const OCPI::API::PValue *params,
 		 const OCPI::API::PValue *selectCriteria,
 		 const OCPI::API::Connection *conns,
-		 const char *&inst) {
-      return getSingleton().findArtifactX(caps, impl, props, selectCriteria, conns, inst);
+		 const char *&artInst) {
+      return getSingleton().findArtifactX(caps, specName, params, selectCriteria, conns, artInst);
     }
     Artifact &Manager::
-    findArtifactX(const Capabilities &caps, const char *impl,
-		  const OCPI::API::PValue *props,
+    findArtifactX(const Capabilities &caps, const char *specName,
+		  const OCPI::API::PValue *params,
 		  const OCPI::API::PValue *selectCriteria,
 		  const OCPI::API::Connection *conns,
-		  const char *&inst) {
+		  const char *&artInst) {
       parent().configureOnce();
       // If some driver already has it in one of its libraries, return it.
       Artifact *a;
       for (Driver *d = firstDriver(); d; d = d->nextDriver())
-	if ((a = d->findArtifact(caps, impl, props, selectCriteria, conns, inst)))
+	if ((a = d->findArtifact(caps, specName, params, selectCriteria, conns, artInst)))
 	  return *a;
       throw OU::Error("No usable artifact found in any library in OCPI_LIBRARY_PATH, "
-		      "for worker named \"%s\"", impl);
+		      "for worker implementing \"%s\"", specName);
     }
 
-    Artifact &Manager::getArtifact(const char *url, const OA::PValue *props) {
-      return getSingleton().getArtifactX(url, props);
+    Artifact &Manager::getArtifact(const char *url, const OA::PValue *params) {
+      return getSingleton().getArtifactX(url, params);
     }
 
-    Artifact &Manager::getArtifactX(const char *url, const OA::PValue *props) {
+    Artifact &Manager::getArtifactX(const char *url, const OA::PValue *params) {
       parent().configureOnce();
       OCPI::Library::Driver *d;
       Artifact *a;
@@ -73,13 +74,50 @@ namespace OCPI {
       // passing on the artifact.  If there is an error dealing with the
       // artifact, that will throw an exception.
       for (Driver *d = firstChild(); d; d = d->nextChild())
-	if ((a = d->addArtifact(url, props)))
+	if ((a = d->addArtifact(url, params)))
 	  return *a;
       throw OU::EmbeddedException(OU::ARTIFACT_UNSUPPORTED,
 				  "No library driver supports this file",
 				  OU::ApplicationRecoverable);
     }
 
+    // Inform the manager about an implementation
+    void Manager::addImplementation(Artifact &art, OU::Implementation &impl, ezxml_t inst) {
+      m_implementations.insert(WorkerMapPair(impl.specName().c_str(),
+					     new Implementation(art, impl, inst)));
+    }
+
+    // Find (and callback with) implementations for specName and selectCriteria
+    // Return true if any were found
+    bool Manager::findImplementationsX(ImplementationCallback &icb, const char *specName,
+				       const char *selectCriteria) {
+      parent().configureOnce();
+      bool found = false;
+      WorkerRange range = m_implementations.equal_range(specName);
+      for (WorkerIter wi = range.first; wi != range.second; wi++) {
+	unsigned score = 1; // default when no selection criteria
+	Implementation &impl = *wi->second;
+	if (!selectCriteria || impl.satisfiesSelection(selectCriteria, score)) {
+	  found = true;
+	  if (icb.foundImplementation(impl, score))
+	    return true;
+	}
+      }
+      return found;
+    }
+    // Find one good implementation, return true if one is found that satisfies the criteria
+    bool Manager::findImplementation(const char *specName, const char *selectCriteria,
+				     const Implementation *&impl) {
+      struct mine : public ImplementationCallback {
+	const Implementation *&m_impl;
+	mine(const Implementation *&impl) : m_impl(impl) {}
+	bool foundImplementation(const Implementation &i, unsigned) {
+	  m_impl = &i;
+	  return true;
+	}
+      } cb(impl);
+      return findImplementationsX(cb, specName, selectCriteria);
+    }
 
     // Libraries can be specified in the environment
     // We will be given "librarydrivers"
@@ -96,35 +134,46 @@ namespace OCPI {
       }
     }
 #endif
+    bool Implementation::satisfiesSelection(const char *selection, unsigned &score) {
+      OU::ExprValue val;
+      const char *err = OU::evalExpression(selection, val, &m_metadataImpl);
+      if (err)
+	throw OU::Error("Error parsing selection expression: %s", err);
+      if (!val.isNumber)
+	throw OU::Error("selection expression has string value");
+      score = val.number < 0 ? 0: val.number; // force non-negative
+      return val.number > 0;
+    }
+
     Driver::
     Driver(const char *name)
       : OD::DriverType<Manager,Driver>(name) {
     }
     Artifact *Driver::
     findArtifact(const Capabilities &caps,
-		 const char *impl,
-		 const OCPI::API::PValue *props,
+		 const char *specName,
+		 const OCPI::API::PValue *params,
 		 const OCPI::API::PValue *selectCriteria,
 		 const OCPI::API::Connection *conns,
-		 const char *&inst) {
+		 const char *&artInst) {
       for (Library *l = firstLibrary(); l; l = l->nextLibrary())
-	return l->findArtifact(caps, impl, props, selectCriteria, conns, inst);
+	return l->findArtifact(caps, specName, params, selectCriteria, conns, artInst);
       return NULL;
     }
 
     Library::~Library(){}
     Artifact * Library::
     findArtifact(const Capabilities &caps,
-		 const char *impl,
-		 const OCPI::API::PValue *props,
+		 const char *specName,
+		 const OCPI::API::PValue *params,
 		 const OCPI::API::PValue *selectCriteria,
 		 const OCPI::API::Connection *conns,
-		 const char *&inst) {
+		 const char *&artInst) {
 
       Artifact * best=NULL;
-      int score, best_score=0;
+      unsigned score, best_score=0;
       for (Artifact *a = firstArtifact(); a; a = a->nextArtifact()) {
-	if (a->meetsRequirements(caps, impl, props, selectCriteria, conns, inst, score)) {
+	if (a->meetsRequirements(caps, specName, params, selectCriteria, conns, artInst, score)) {
 	  if ( selectCriteria ) {
 	    if ( score >= best_score ) {
 	      best = a;
@@ -137,11 +186,13 @@ namespace OCPI {
 	}
       }
       return best;
-      }
+    }
 
     // The artifact base class
-    Artifact::Artifact() : m_xml(NULL) {}
-    Artifact::~Artifact(){}
+    Artifact::Artifact() : m_xml(NULL), m_nImplementations(0) {}
+    Artifact::~Artifact() {
+      delete [] m_implementations;
+    }
 
     class MyVarDefiner : public OCPI::DefineExpVarInterface {
     public:
@@ -281,7 +332,7 @@ namespace OCPI {
 
     bool 
     Artifact::
-    evaluateWorkerSuitability( const OCPI::API::PValue *p, int & score )
+    evaluateWorkerSuitability( const OCPI::API::PValue *p, unsigned & score )
     {
       score = 0;
       MyVarDefiner vd(p,m_xml);
@@ -327,19 +378,21 @@ namespace OCPI {
 
     bool Artifact::
     meetsRequirements (const Capabilities &caps,
-		       const char *impl,
+		       const char *specName,
 		       const OCPI::API::PValue * /*props*/,
 		       const OCPI::API::PValue *selectCriteria,
 		       const OCPI::API::Connection * /*conns*/,
-		       const char *& /* inst */,
-		       int & score ) {
+		       const char *& /* artInst */,
+		       unsigned & score ) {
       if (m_os == caps.m_os && m_platform == caps.m_platform) {
-	WorkerRange range = m_workers.equal_range(impl);
+	WorkerRange range = m_workers.equal_range(specName);
 
 	for (WorkerIter wi = range.first; wi != range.second; wi++) {
 	  //	  const Implementation &i = (*wi).second;
 	  // FIXME: more complex comparison for FPGAs with connectivity
-
+	  //	  const char *model = ezxml_cattr(wi->second->m_worker, "model");
+	  if (caps.m_model != wi->second->m_metadataImpl.model())
+	    continue;
 	  // Now we will test the selection criteria 
 	  if ( selectCriteria ) {
 	    const OCPI::API::PValue *p = selectCriteria;
@@ -349,7 +402,6 @@ namespace OCPI {
 	  else {
 	    return true;
 	  }
-	  
 	}
       }
       return false;
@@ -363,65 +415,31 @@ namespace OCPI {
     void Artifact::configure(ezxml_t /* x */) {
       // Retrieve attributes from artifact xml
       Attributes::parse(m_xml);
-      // First insert workers, and then
-      for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_next(w)) {
-	const char *name = ezxml_cattr(w, "name");
+      // First insert workers
+      m_nImplementations = OE::countChildren(m_xml, "worker");
+
+      Manager &mgr = Manager::getSingleton();
+      OU::Implementation *impl = m_implementations = new OU::Implementation[m_nImplementations];
+      for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_next(w), impl++) {
+	const char *err = impl->parse(w, *this);
+	if (err)
+	  throw OU::Error("Error processing implementation metadata: %s", err);
 	bool instances = false;
 	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_next(i)) {
-	  if (!strcmp(name, ezxml_cattr(i, "worker"))) {
+	  if (!strcasecmp(impl->specName().c_str(), ezxml_cattr(i, "worker"))) {
 	    instances = true;
-	    m_workers.insert(WorkerMapPair(name,Implementation(w,i)));
+	    m_workers.insert(WorkerMapPair(impl->specName().c_str(),
+					   new Implementation(*this, *impl, i)));
+	    mgr.addImplementation(*this, *impl, i);
 	  }
 	}
 	if (!instances) {
-	  m_workers.insert(WorkerMapPair( name,Implementation(w)));
+	  m_workers.insert(WorkerMapPair(impl->specName().c_str(),
+					 new Implementation(*this, *impl)));
+	  mgr.addImplementation(*this, *impl);
 	}
       }
     }
-    void parse3(char *s, std::string &s1, std::string &s2,
-		std::string &s3) {
-      char *temp = strdup(s);
-      if ((s = strsep(&temp, "-"))) {
-	s1 = s;
-	if ((s = strsep(&temp, "-"))) {
-	  s2 = s;
-	  if ((s = strsep(&temp, "-")))
-	    s3 = s;
-	}
-      }
-      free(temp);
-    }
-    void Attributes::parse(ezxml_t x) {
-      const char *cp;
-      if ((cp = ezxml_cattr(x, "os"))) m_os = cp;
-      if ((cp = ezxml_cattr(x, "osVersion"))) m_osVersion = cp;
-      if ((cp = ezxml_cattr(x, "platform"))) m_platform = cp;
-      if ((cp = ezxml_cattr(x, "runtime"))) m_runtime = cp;
-      if ((cp = ezxml_cattr(x, "runtimeVersion"))) m_runtimeVersion = cp;
-      if ((cp = ezxml_cattr(x, "tool"))) m_tool = cp;
-      if ((cp = ezxml_cattr(x, "toolVersion"))) m_toolVersion = cp;
-      if ((cp = ezxml_cattr(x, "uuid"))) m_uuid = cp;
-      validate();
-    }
-    void Attributes::parse(const char *pString) {
-      std::string junk;
-      char *p = strdup(pString), *temp = p, *val;
-      
-      if ((val = strsep(&temp, "="))) {
-	parse3(val, m_os, m_osVersion, junk);
-	if ((val = strsep(&temp, "="))) {
-	  parse3(val, m_platform, junk, junk);
-	  if ((val = strsep(&temp, "="))) {
-	    parse3(val, m_tool, m_toolVersion, junk);
-	    if ((val = strsep(&temp, "=")))
-	      parse3(val, m_runtime, m_runtimeVersion, junk);
-	  }
-	}
-      }
-      free(p);
-      validate();
-    }
-    void Attributes::validate() { }
   }
   namespace API {
     void LibraryManager::

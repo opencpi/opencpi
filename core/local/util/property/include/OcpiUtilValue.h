@@ -43,6 +43,7 @@
 #include <string>
 #include "OcpiUtilAutoMutex.h"
 #include "OcpiUtilDataTypes.h"
+#include "OcpiExprEvaluator.h"
 
 namespace OCPI {
   namespace Util {
@@ -56,7 +57,7 @@ namespace OCPI {
     class Value {
       static const ValueType *s_vt;
     public:
-      const ValueType &m_vt;
+      const ValueType *m_vt;
       static OS::Mutex s_mutex;
       static Value *s_parent;
       unsigned
@@ -72,8 +73,13 @@ namespace OCPI {
       Value *m_parent;       // for navigating upward
       unsigned m_next;       // for navigating horizontally
       unsigned m_length;     // for debugging - length of value buffer
-      Value(const ValueType &vt = *Value::s_vt, Value* parent = Value::s_parent);
+      Value(const ValueType &vt, Value* parent = Value::s_parent);
+      Value();
       ~Value();
+      void setType(const ValueType &vt);
+    private:
+      void init();
+    public:
       // The value is either the thing itself (e.g. a float)
       // Or for a sequence of floats it is a pointer
       // Or for a sequence of arrays of floats it is a pointer-to-pointer
@@ -102,6 +108,7 @@ namespace OCPI {
 	generateElement(unsigned nSeq),
 	generateDimension(unsigned nseq, unsigned dim, unsigned offset, unsigned nItems),
 	generateValue(unsigned nSeq, unsigned nArray);
+      const char *getValue(ExprValue &val);
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
       run generate##pretty();
 	OCPI_PROPERTY_DATA_TYPES

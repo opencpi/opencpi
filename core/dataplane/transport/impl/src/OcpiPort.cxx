@@ -1002,7 +1002,7 @@ void OCPI::DataTransport::Port::releaseOffsets( OCPI::Util::VList& offsets )
 /**********************************
  * get buffer offsets to dependent data
  *********************************/
-void OCPI::DataTransport::Port::getOffsets( OCPI::OS::uint32_t to_base_offset, OCPI::Util::VList& offsets )
+void OCPI::DataTransport::Port::getOffsets( OCPI::OS::uint64_t to_base_offset, OCPI::Util::VList& offsets )
 {
   PortMetaData::BufferOffsets* from_offset = (PortMetaData::BufferOffsets*)m_offsetsOffset;
   PortMetaData::BufferOffsets* to_offset = (PortMetaData::BufferOffsets*)to_base_offset;

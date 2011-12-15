@@ -401,7 +401,7 @@ namespace OCPI {
         OCPI::OS::uint64_t to_offset;
       };
       typedef ToFrom_ ToFrom;
-      void getOffsets( OCPI::OS::uint32_t to_base_offset, OCPI::Util::VList& offsets );
+      void getOffsets( OCPI::OS::uint64_t to_base_offset, OCPI::Util::VList& offsets );
       void releaseOffsets( OCPI::Util::VList& offsets );
 
 

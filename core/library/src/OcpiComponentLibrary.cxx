@@ -104,7 +104,7 @@ namespace OCPI {
 	  if (!OS::FileSystem::exists(dirName, &isDir) ||
 	      !isDir)
 	    throw OU::Error("Directory name in OCPI_LIBRARY_PATH, \"%s\", "
-			    "is not a directory", dirName.c_str());
+			    "is nonexistent or not a directory", dirName.c_str());
 
 	  static const std::string pattern("*");
 	  OS::FileIterator dir(dirName, "*");

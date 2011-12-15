@@ -39,6 +39,7 @@
 #include "ezxml.h"
 #include "OcpiParentChild.h"
 #include "OcpiOsMutex.h"
+#include "OcpiUtilProperty.h"
 #include "OcpiContainerDataTypes.h"
 #include "OcpiMetadataWorker.h"
 #include "OcpiContainerApi.h"
@@ -100,16 +101,22 @@ namespace OCPI {
       OCPI::API::PropertyInfo &setupProperty(const char *name,
 					     volatile void *&m_writeVaddr,
 					     const volatile void *&m_readVaddr);
+      OCPI::API::PropertyInfo &setupProperty(unsigned n,
+					     volatile void *&m_writeVaddr,
+					     const volatile void *&m_readVaddr);
       virtual void prepareProperty(OCPI::Util::Property &p,
 				   volatile void *&m_writeVaddr,
 				   const volatile void *&m_readVaddr) = 0;
       virtual Port &createPort(const OCPI::Metadata::Port &metaport,
 			       const OCPI::Util::PValue *props) = 0;
       virtual Worker *nextWorker() = 0;
+      void setPropertyValue(const OCPI::API::Property &p, const OCPI::Util::Value &v);
+
 
     public:
       virtual Application &application() = 0;
       void setProperty(const char *name, const char *value);
+      void setProperty(unsigned ordinal, OCPI::Util::Value &value);
       void setProperties(const char *props[][2]);
       void setProperties(const OCPI::API::PValue *props);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value);
@@ -119,7 +126,7 @@ namespace OCPI {
       // Generic setting method
 
       virtual ~Worker();
-      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props);
+      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props = NULL);
 
       virtual Port & createOutputPort(OCPI::Metadata::PortOrdinal portId,
                                      OCPI::OS::uint32_t bufferCount,

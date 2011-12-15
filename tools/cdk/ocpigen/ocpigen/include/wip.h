@@ -392,6 +392,7 @@ class  Worker {
  public:
   Worker();
   Model model;
+  const char *modelString;
   bool isDevice;
   bool noControl; // no control port on this one.
   const char *file, *specFile;

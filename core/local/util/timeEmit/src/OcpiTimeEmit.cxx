@@ -41,7 +41,7 @@
 #include <OcpiTimeEmit.h>
 #include <OcpiOsAssert.h>
 #include "OcpiOsDataTypes.h"
-
+#include "OcpiUtilDataTypes.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
@@ -321,8 +321,9 @@ Emit::~Emit()
 {
 
   if (   getHeader().traceCD ) {
-    if(!getHeader().shuttingDown) 
+    if(!getHeader().shuttingDown) {
       OCPI_EMIT_("Object Terminated");
+    }
   }
 }
 
@@ -394,7 +395,7 @@ Emit::RegisterEvent::RegisterEvent( OCPI::API::PValue& p )
 {
   AUTO_MUTEX(Emit::getGMutex());
   m_eid = getHeader().nextEventId++;
-  int width = p.width*8;
+  int width = OU::baseTypeSizes[p.type];
   DataType dtype=Emit::i;
   switch( p.type ){
   case OA::OCPI_Short:

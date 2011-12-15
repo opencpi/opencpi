@@ -199,26 +199,26 @@ int main(int argc, char *argv[])
   unsigned long bufferCount[10][2] =
     {{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2}};
   const char *active[10][2] = {{0}};
-  unsigned long bufferSize = 9000, ioCount = 1, ioSize = 16, memorySize = 0, delay = 0;
+  unsigned long bufferSize = 9000, ioCount = 1, ioSize = 16, delay = 0; // memorySize = 0
 #define NTICKS 100
-  uint64_t memoryBase = 0;
-  bool probe = false, loop = false, doread = true, two = false, same = true,
+  //  uint64_t memoryBase = 0;
+  bool loop = false, doread = true, two = false, //same = true, probe = false,
     acquire = false, emit = false, dummy = false, cosine = false, psd = false,
     test = false, doTicks = false, metadata = false;
   char *firstarg = 0, *secondarg = 0, *file = 0, *ofile = 0, *xfile = (char*)"file", *rccFile = 0,
     *rccName = 0, *setProp = 0;
-  uint32_t setValue;
+  uint32_t setValue = 0; // kill warning
   if (argc == 1) {
     fprintf(stderr, "Usage is: testRpl <options> [<container-name>][<second-container-name>]\n");
     fprintf(stderr, "  Options are:\n"
             "-a\t\tAcquire data from ADC, not file (-f) or pattern or cosien (-c)\n"
 	    "-c\t\tCosine data generator used for test data\n"
-            "-d\t\tProbe specific device, don't discover all\n"
+	    //            "-d\t\tProbe specific device, don't discover all\n"
             "-e\t\tEmit data to DAC, don't return it to SW\n"
             "-f <file>\tSpecify file to use for test data content\n"
             "-i <iocoiunt>\tSpecify number of message to send(default == 1)\n"
             "-l\t\tEnter the emulator loopback mode\n"
-            "-m <addr> <size>Specify pinned DMA memory address and size\n"
+	    //            "-m <addr> <size>Specify pinned DMA memory address and size\n"
             "-n <nbufs>\tSpecify number of buffers for all (default == 2)\n"
             "-o\t\tOutput file to write data into\n"
 	    "-p\t\tUse the PSD bitstream configuration\n"
@@ -253,9 +253,11 @@ int main(int argc, char *argv[])
 	if ((*ap)[2])
 	  freq = strtod(&(*ap)[2], NULL);
 	break;
+#if 0
       case 'd':
         probe = true;
         break;
+#endif
       case 'e':
 	emit = true;
 	doread = false;
@@ -269,10 +271,12 @@ int main(int argc, char *argv[])
       case 'l':
         loop = true;
         break;
+#if 0
       case 'm':
         memoryBase = atoll(*++ap);
         memorySize = atoi(*++ap);
         break;
+#endif
       case 'M':
         metadata = true;
         break;
@@ -353,7 +357,7 @@ int main(int argc, char *argv[])
         {
           unsigned n = 0, i = 0;
           if ((*ap)[2]) {
-            same = false;
+	    //            same = false;
             n = (*ap)[2] - '0';
             if ((*ap)[3] == 'o')
               i = 1;

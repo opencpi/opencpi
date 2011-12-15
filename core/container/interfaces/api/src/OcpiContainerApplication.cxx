@@ -49,40 +49,52 @@ namespace OCPI {
     }
 
     OA::Worker &Application::
-    createWorker(const char *url, const OA::PValue *aParams, const char *name,
-		 const char *impl, const char *inst,
+    createWorker(const char *url, const OA::PValue *aParams, const char *instName,
+		 const char *implName, const char *preInstName,
 		 const OA::PValue *wProps, const OA::PValue *wParams,
-		 const OA::PValue * /* selectCriteria */ , 
-		 const OA::Connection * /* connections */) {
+		 const OA::PValue * /* selectCriteria */ ) {
       if (url)
-	return container().loadArtifact(url, aParams).createWorker(*this, name,
-								   impl, inst,
+	return container().loadArtifact(url, aParams).createWorker(*this, instName,
+								   implName, preInstName,
 								   wProps, wParams);
       // This is the special hack for passing in a dispatch table for RCC workers.
       else {
-	Worker &w = createWorker(NULL, name, (ezxml_t)NULL, (ezxml_t)NULL, aParams);
+	Worker &w = createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, aParams);
 	w.initialize();
 	return w;
       }
     }
     OA::Worker &Application::
-    createWorker(const char *name, const char *impl,
+    createWorker(const char *instName, const char *specName,
 		 const OA::PValue *wProps,
 		 const OA::PValue *wParams,
 		 const OA::PValue *selectCriteria, 
 		 const OA::Connection *connections) {
       // Find an artifact (and instance within the artifact), for this worker
-      const char *inst = NULL;
+      const char *artInst = NULL;
       OL::Artifact &a =
-	OL::Manager::findArtifact(container(), impl, wParams, selectCriteria,  connections, inst);
+	OL::Manager::findArtifact(container(), specName, wParams, selectCriteria,  connections, artInst);
       // Load the artifact and create the worker
       return
-	container().loadArtifact(a).createWorker(*this, name, impl, inst, wProps, wParams);
+	container().loadArtifact(a).createWorker(*this, instName, specName, artInst, wProps, wParams);
+    }
+    Worker &Application::
+    createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
+			 ezxml_t impl, ezxml_t inst,
+			 const OCPI::Util::PValue *wParams) {
+      // Load the artifact and create the worker
+      return
+	container().loadArtifact(art).createWorker(*this, appInstName, impl, inst, wParams);
     }
     void Application::
     start() {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	w->start();
+    }
+    void Application::
+    stop() {
+      for (Worker *w = firstWorker(); w; w = w->nextWorker())
+	w->stop();
     }
   }
   namespace API {

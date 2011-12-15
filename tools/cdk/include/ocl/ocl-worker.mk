@@ -39,6 +39,7 @@ ifndef OCL_WORKER_MK
 OCL_WORKER_MK:=xxx
 include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 Model=ocl
+OBJ:=.clo
 # Default is that you are building in a subdirectory of all implementations
 OclImplSuffix=_Worker.h
 OclSkelSuffix=_skel.cl
@@ -66,7 +67,7 @@ OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(OclTarget)
 
 # OpenCL does not allow for individual objects to be assembled into one binary
 # So the link binary command becomes the "compile" command for OpenCL workers
-LinkBinary= $(ToolsDir)/ocpiocl $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@
+LinkBinary= $(ToolsDir)/ocpiocl $(ExtraCompilerOptions) $(foreach i,$(IncludeDirs),-I$(abspath $i)) -o $$@
 Compile_cl=(cat $$< )>$$@
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk

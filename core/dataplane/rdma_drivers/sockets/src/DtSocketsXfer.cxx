@@ -606,15 +606,15 @@ SocketXferRequest::
 post()
 {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)m_thandle;  
-  OCPI::OS::int32_t pio_rc=0;
+
   if (xf_transfer->first_pio_transfer) {
-    pio_rc = xfer_socket_starti(xf_transfer->first_pio_transfer, 0);
+    xfer_socket_starti(xf_transfer->first_pio_transfer, 0);
   }
   if (xf_transfer->pio_transfer) {
-    pio_rc = xfer_socket_starti(xf_transfer->pio_transfer, 0);
+    xfer_socket_starti(xf_transfer->pio_transfer, 0);
   }
   if (xf_transfer->last_pio_transfer) {
-    pio_rc = xfer_socket_starti(xf_transfer->last_pio_transfer, 0);
+    xfer_socket_starti(xf_transfer->last_pio_transfer, 0);
   }
 }
 

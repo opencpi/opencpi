@@ -64,6 +64,7 @@ namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 const char *
 emitIDL(const char *outDir, const char *protoFile) {
+  (void)outDir;
   OU::Protocol p;
   const char *err = 0;
   ezxml_t x;

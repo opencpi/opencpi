@@ -31,7 +31,8 @@ int main(int argc, char **argv) {
     if ((b = ep.getBuffer(data, length, opcode, end))) {
       fprintf(stderr, "%s", (char *)data);
       return 0;
-    }
+    } else
+      usleep(10000); // we have nothing useful to do, might as well give the CPU to components.
   }
   fprintf(stderr, "Worker never sent anything!\n");
   // Note that the ContainerApplication object MAY be deleted by the program,

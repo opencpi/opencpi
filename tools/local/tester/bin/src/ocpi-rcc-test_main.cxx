@@ -1067,10 +1067,9 @@ connectInputPorts ()
         std::cout << "Connecting file \"" << fileName << "\" to input port \"" << portName << "\" ... " << std::flush;
       }
 
-      const OCPI::SCA::Port * portInfo;
       unsigned int portOrdinal;
 
-      portInfo = findPort (portName.c_str(), portOrdinal);
+      findPort (portName.c_str(), portOrdinal);
 
       PortMap::iterator pit = m_portMap.find (portName);
       PortData & pd = (*pit).second;
@@ -1168,10 +1167,9 @@ connectOutputPorts ()
         std::cout << "Connecting output port \"" << portName << "\" to file \"" << fileName << "\" ... " << std::flush;
       }
 
-      const OCPI::SCA::Port * portInfo;
       unsigned int portOrdinal;
 
-      portInfo = findPort (portName.c_str(), portOrdinal);
+      findPort (portName.c_str(), portOrdinal);
 
       PortMap::iterator pit = m_portMap.find (portName);
       PortData & pd = (*pit).second;

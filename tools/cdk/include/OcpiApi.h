@@ -37,4 +37,5 @@
 #ifndef OCPIAPI_H
 #define OCPIAPI_H
 #include "OcpiContainerApi.h"
+#include "OcpiApplicationApi.h"
 #endif

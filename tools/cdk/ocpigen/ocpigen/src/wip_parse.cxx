@@ -915,6 +915,7 @@ parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
   const char *err;
   Assembly *a = &aw->assembly;
   aw->model = RccModel;
+  aw->modelString = "rcc";
   aw->isAssembly = true;
   if ((err = OE::checkAttrs(xml, "Name", (void*)0)))
     return err;
@@ -939,6 +940,7 @@ parseOclAssy(ezxml_t xml, const char *file, Worker *aw) {
   const char *err;
   Assembly *a = &aw->assembly;
   aw->model = OclModel;
+  aw->modelString = "ocl";
   aw->isAssembly = true;
   if ((err = OE::checkAttrs(xml, "Name", (void*)0)))
     return err;
@@ -1053,7 +1055,7 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
       if (!unparsed)
 	return esprintf("Missing \"value\" attribute for \"%s\" property value", name);
 
-      if ((err = ipv->property->parseValue(pv, unparsed, ipv->value)))
+      if ((err = ipv->property->parseValue(unparsed, ipv->value)))
         return err;
     }
   }
@@ -1099,8 +1101,8 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
           esprintf("Missing \"Instance\" attribute in Attach subelement of "
                    "connection \"%s\"", c->name);
       n = 0;
-      InstancePort *ip;
-      Port *p;
+      InstancePort *ip = 0; // kill warning
+      Port *p = 0; // kill warning
       for (i = a->instances; n < a->nInstances; n++, i++)
         if (!strcmp(i->name, instName)) {
           const char *iName = ezxml_cattr(at, "Interface");
@@ -1163,7 +1165,7 @@ parseAssy(ezxml_t xml, const char *defName, Worker *aw,
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     if (c->nExternals) {
       Port *extPort = 0, *intPort = 0;
-      const char *role;
+      const char *role = 0; // kill warning. if c->nExternals, it will be set
       for (InstancePort *ip = c->ports; ip; ip = ip->nextConn)
         if (ip->externalRole) {
           role = ip->externalRole;
@@ -1556,6 +1558,7 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
   if (w->ports.size() > 32)
     return "worker has more than 32 ports";
   w->model = HdlModel;
+  w->modelString = "hdl";
   return 0;
 }
 
@@ -1586,7 +1589,7 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
     const char *name = ezxml_cattr(x, "Name");
     if (!name)
       return "Missing \"Name\" attribute on Port element if RccImplementation";
-    Port *p;
+    Port *p = 0; // kill warning
     unsigned n;
     for (n = 0; n < w->ports.size(); n++) {
       p = w->ports[n];
@@ -1602,6 +1605,7 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
       return err;
   }
   w->model = RccModel;
+  w->modelString = "rcc";
   return 0;
 }
 /*
@@ -1631,7 +1635,7 @@ parseOcl(ezxml_t xml, const char *file, Worker *w) {
     const char *name = ezxml_cattr(x, "Name");
     if (!name)
       return "Missing \"Name\" attribute on Port element if OclImplementation";
-    Port *p;
+    Port *p = 0; // kill warning
     unsigned n;
     for (n = 0; n < w->ports.size(); n++) {
       p = w->ports[n];
@@ -1645,6 +1649,7 @@ parseOcl(ezxml_t xml, const char *file, Worker *w) {
       return err;
   }
   w->model = OclModel;
+  w->modelString = "ocl";
   return 0;
 }
 // The most general case.  Could be any worker, or any assembly.
@@ -1696,7 +1701,7 @@ Control::Control()
 {
 }
 Worker::Worker()
-  : model(NoModel), isDevice(false), noControl(false), file(0), specFile(0),
+  : model(NoModel), modelString(NULL), isDevice(false), noControl(false), file(0), specFile(0),
     implName(0), specName(0), fileName(0), isThreaded(false), nClocks(0),
     clocks(0), endian(NoEndian), pattern(0), staticPattern(0), isAssembly(false),
     nInstances(0), language(NoLanguage), nSignals(0), signals(0)

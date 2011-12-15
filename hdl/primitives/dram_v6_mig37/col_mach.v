@@ -320,7 +320,8 @@ endfunction // clogb2
   input [BANK_WIDTH-1:0] col_ba;
   input [ROW_WIDTH-1:0] col_row;
   input [ROW_WIDTH-1:0] col_a;
-  wire [11:0] col_a_full = {col_a[13], col_a[11], col_a[9:0]};
+//  wire [11:0] col_a_full = {col_a[13], col_a[11], col_a[9:0]};
+  wire [11:0] col_a_full = {0, col_a[11], col_a[9:0]};
   wire [COL_WIDTH-1:0] col_a_extracted = col_a_full[COL_WIDTH-1:0];
 
   localparam MC_ERR_LINE_WIDTH = MC_ERR_ADDR_WIDTH-DATA_BUF_OFFSET_WIDTH;

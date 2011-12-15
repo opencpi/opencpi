@@ -63,7 +63,7 @@ using namespace OCPI::RDT;
 namespace OCPI {
   namespace Container {
 
-    std::string
+    void
     packDescriptor (OCPI::Util::CDR::Encoder& packer, const Descriptors & desc)
       throw ()
     {
@@ -106,14 +106,6 @@ namespace OCPI {
         packer.putString (oob->oep);
         packer.putULongLong (oob->cookie);
       }
-      else {
-        return false;
-      }
-      /*
-       * Return marshaled data.
-       */
-
-      return packer.data ();
     }
 
     bool
@@ -190,6 +182,19 @@ namespace OCPI {
       throw ( OU::EmbeddedException )
       : m_ourUID(mkUID()), m_enabled(false), m_ownThread(true), m_thread(NULL)
     {
+      OU::SelfAutoMutex guard (this);
+      static unsigned ordinal;
+      m_ordinal = ordinal++;
+      if (m_ordinal >= s_maxContainer) {
+	Container **old = s_containers;
+	s_containers = new Container *[s_maxContainer + 10];
+	if (old) {
+	  memcpy(s_containers, old, s_maxContainer * sizeof(Container *));
+	  delete [] old;
+	}
+	s_maxContainer += 10;
+      }
+      s_containers[m_ordinal] = this;
       (void)config; // nothing to parse (yet)
       // FIXME:  this should really be in a baseclass inherited by software containers
       // It works because stuff can be overriden and no threads are created until
@@ -204,6 +209,13 @@ namespace OCPI {
       m_runtime = 0;
       m_runtimeVersion = 0;
 #endif
+    }
+
+    bool Container::supportsImplementation(OU::Implementation &i) {
+      return
+	m_model == i.model() &&
+	m_os == i.attributes().m_os &&
+	m_platform == i.attributes().m_platform;
     }
 
     Artifact & Container::
@@ -250,6 +262,7 @@ namespace OCPI {
     Container::~Container() {
       if (m_thread)
 	delete m_thread;
+      s_containers[m_ordinal] = 0;
     }
 
     bool m_start;
@@ -452,6 +465,15 @@ namespace OCPI {
 	}
 	start(getEventManager());
       }
+    }
+    Container **Container::s_containers;
+    unsigned Container::s_maxContainer;
+    Container &Container::nthContainer(unsigned n) {
+      if (!s_containers[n])
+	throw OU::Error("Missing container %u", n);
+      if (n >= s_maxContainer)
+	throw OU::Error("Invalid container %u", n);
+      return *s_containers[n];
     }
   }
   namespace API {

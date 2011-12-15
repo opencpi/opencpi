@@ -63,12 +63,10 @@ OCPI::OS::LoadableModule::LoadableModule ()
 {
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (void *)> ()));
   ocpiAssert (sizeof (m_osOpaque) >= sizeof (void *));
-#if !defined(NDEBUG)
   o2vp (m_osOpaque) = 0;
-#endif
 }
 
-OCPI::OS::LoadableModule::LoadableModule (const std::string & fileName)
+OCPI::OS::LoadableModule::LoadableModule (const std::string & fileName, bool global)
   throw (std::string)
 {
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (void *)> ()));
@@ -76,19 +74,21 @@ OCPI::OS::LoadableModule::LoadableModule (const std::string & fileName)
 #if !defined(NDEBUG)
   o2vp (m_osOpaque) = 0;
 #endif
-  open (fileName);
+  open (fileName, global);
 }
 
 OCPI::OS::LoadableModule::~LoadableModule ()
   throw ()
 {
+  if (o2vp (m_osOpaque))
+    close();
 #if !defined(NDEBUG)
   ocpiAssert (!o2vp (m_osOpaque));
 #endif
 }
 
 void
-OCPI::OS::LoadableModule::open (const std::string & fileName)
+OCPI::OS::LoadableModule::open (const std::string & fileName, bool global)
   throw (std::string)
 {
 #if !defined(NDEBUG)
@@ -96,8 +96,9 @@ OCPI::OS::LoadableModule::open (const std::string & fileName)
 #endif
 
   pthread_mutex_lock (&g_slMutex);
+  void *handle = dlopen (fileName.c_str(), RTLD_LAZY | (global ? RTLD_GLOBAL : RTLD_LOCAL));
 
-  if (!(o2vp (m_osOpaque) = dlopen (fileName.c_str(), RTLD_LAZY | RTLD_LOCAL))) {
+  if (!(o2vp (m_osOpaque) = handle)) {
     std::string reason = dlerror ();
     pthread_mutex_unlock (&g_slMutex);
     throw reason;

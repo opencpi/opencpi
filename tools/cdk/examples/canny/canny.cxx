@@ -174,7 +174,7 @@ int main ( int argc, char* argv [ ] )
     OCPI::API::ExternalBuffer* myInput = NULL;
     while((myInput = myIn.getBuffer( idata, ilength, opcode, isEndOfData)) == NULL);
 
-    std::cout << "My input buffer is size " << ilength << std::endl;
+    std::cerr << "My input buffer is size " << ilength << std::endl;
 
     memcpy((uint8_t *) outImg->imageData, idata, outImg->height * outImg->widthStep);
 
@@ -183,7 +183,7 @@ int main ( int argc, char* argv [ ] )
     // Show image
     cvShowImage( "Output", outImg );
 
-    std::cout << "\nOpenOCPI application is done\n" << std::endl;
+    std::cerr << "\nOpenOCPI application is done\n" << std::endl;
 
     // Save image
     cvSaveImage("output_image.jpg", outImg);

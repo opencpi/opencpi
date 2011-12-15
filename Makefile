@@ -86,7 +86,8 @@ PACKAGES += \
 	 core/container/ocl_container \
 	 core/container/rcc_container \
 	 core/container/ctests \
-	 core/dataplane/rdma_tests
+	 core/dataplane/rdma_tests \
+         core/application
 
 ifeq ($(OCPI_HAVE_CORBA),1)
 PACKAGES += core/corba/orb_services core/corba/corba_util
@@ -145,7 +146,8 @@ ALLPACKAGES = \
 	tools/cdk/ocpiocl \
 	tools/cdk/ocpixm \
 	core/container/ctests \
-	core/dataplane/rdma_tests
+	core/dataplane/rdma_tests \
+        core/application
 
 ifeq ($(OCPI_HAVE_CORBA),1)
 ALLPACKAGES += \
@@ -188,6 +190,15 @@ ocl:
 
 cleanocl:
 	make -C components cleanocl
+
+examples:
+	make -C tools/cdk/examples
+
+cleanexamples:
+	make -C tools/cdk/examples clean
+
+runexamples:
+	make -C tools/cdk/examples run
 
 cleancomponents:
 	make -C components clean

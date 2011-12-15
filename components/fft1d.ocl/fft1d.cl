@@ -152,8 +152,8 @@ OCLResult fft1d_run ( __local OCLWorkerFft1d* self,
   (void)timedOut;
   (void)newRunCondition;
 
-  CooleyTukey1DFFT ( ( __global const float* ) self->in_real.current.data,
-                     ( __global const float* ) self->in_imag.current.data,
+  CooleyTukey1DFFT ( ( __global float* const ) self->in_real.current.data,
+                     ( __global float* const ) self->in_imag.current.data,
                      ( __global float* ) self->out_real.current.data,
                      ( __global float* ) self->out_imag.current.data,
                      ( 1 << self->properties->log2n ),

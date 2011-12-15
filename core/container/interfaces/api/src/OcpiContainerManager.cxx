@@ -36,6 +36,7 @@ namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
     namespace OD = OCPI::Driver;
+    namespace OU = OCPI::Util;
     const char *container = "container";
 #if 0
     // The manager of all container drivers gets the "containers" element
@@ -70,6 +71,15 @@ namespace OCPI {
     void Manager::shutdown() {
       deleteChildren();
     }
+    bool Manager::findContainersX(Callback &cb, OU::Implementation &i) {
+      parent().configureOnce();
+      for (Driver *d = firstChild(); d; d = d->nextChild())
+	for (Container *c = d->firstContainer(); c; c = c->nextContainer())
+	  if (c->supportsImplementation(i))
+	    cb.foundContainer(*c);
+      return false;
+    }
+
     Driver::Driver(const char *name) 
       : OD::DriverType<Manager,Driver>(name) {
     }

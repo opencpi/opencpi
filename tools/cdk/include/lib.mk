@@ -143,7 +143,10 @@ xm: speclinks $(XmImplementations)
 
 rcc: speclinks $(RccImplementations)
 
-ocl: speclinks $(OclImplementations)
+checkocl:
+	$(AT)if ! ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
+
+ocl: checkocl speclinks $(OclImplementations)
 
 # this is HDL-specific:  for some HDL targets, we need to build a stub library
 # so that higher level builds can reference cores using such a library.
