@@ -201,8 +201,12 @@ namespace OCPI {
       *this = p;
     }
     Protocol::~Protocol() {
+
+#ifdef DONE
       if (m_operations)
 	delete [] m_operations;
+#endif
+
     }
     Protocol & 
     Protocol::
@@ -214,6 +218,7 @@ namespace OCPI {
     Protocol::
     operator=( const Protocol * p )
     {
+      
       m_nOperations = p->m_nOperations;
       m_qualifiedName = p->m_qualifiedName;
       m_name = p->m_name;

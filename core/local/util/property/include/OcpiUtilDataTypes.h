@@ -71,6 +71,7 @@ namespace OCPI {
       const char **m_enums;
       uint32_t m_nEnums;
       uint32_t m_nItems;              // total number of fixed items
+      std::string m_typeDef;          // If we were created from a typedef
       // unions and enums
       ValueType(OCPI::API::BaseType bt = OCPI::API::OCPI_none);
       ~ValueType();
@@ -105,6 +106,9 @@ namespace OCPI {
       virtual void 
 	writeOpcode(const char *name, uint8_t opcode),
 	beginSequence(Member &m, uint32_t nElements) = 0,
+	beginArray(Member &m, uint32_t nItems),
+	endArray(Member &m ),
+	endSequence(Member &m),
 	beginStruct(Member &m),
 	endStruct(Member &m),
 	beginType(Member &m),
@@ -122,6 +126,8 @@ namespace OCPI {
 	beginSequence(Member &m) = 0,
 	beginString(Member &m, const char *&chars, bool first) = 0;
       virtual void 
+	beginArray(Member &m, uint32_t nItems),
+	endArray(Member &m ),
 	endSequence(Member &m),
 	endString(Member &m),
 	beginStruct(Member &m),

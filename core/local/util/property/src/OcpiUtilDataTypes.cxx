@@ -70,14 +70,19 @@ namespace OCPI {
     void Reader::endSequence(Member &){}
     void Reader::endString(Member &){}
     void Reader::beginStruct(Member &){}
+    void Reader::beginArray(Member &, uint32_t){}
+    void Reader::endArray(Member &){}
     void Reader::endStruct(Member &){}
     void Reader::beginType(Member &){}
     void Reader::endType(Member &){}
     void Reader::end(){}
     Writer::Writer(){}
     Writer::~Writer(){}
+    void Writer::endSequence(Member &){}
     void Writer::writeOpcode(const char *, uint8_t) {}
     void Writer::beginStruct(Member &){}
+    void Writer::beginArray(Member &, uint32_t){}
+    void Writer::endArray(Member &){}
     void Writer::endStruct(Member &){}
     void Writer::beginType(Member &){}
     void Writer::endType(Member &){}
@@ -311,6 +316,12 @@ namespace OCPI {
 	  return;
       }
       nElements *= m_nItems;
+
+      if ( m_arrayRank ) {
+	writer.beginArray(*this, m_nItems);			  
+      }
+
+
       align(data, m_dataAlign, length);
       switch (m_baseType) {
       case OA::OCPI_Struct:
@@ -348,6 +359,12 @@ namespace OCPI {
       case OA::OCPI_scalar_type_limit:
 	assert(0);
       }
+      if (m_isSequence) {
+	writer.endSequence(*this);
+      }
+      if (m_arrayRank ) {
+	writer.endArray(*this);
+      }
     }
 
     // Fill the linear buffer from a reader object
@@ -362,6 +379,11 @@ namespace OCPI {
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
 	  throw Error("Sequence in being read exceeds max length (%u)", m_sequenceLength);
       }
+
+      if ( m_arrayRank ) {
+	reader.beginArray(*this, m_nItems);			  
+      }
+
       nElements *= m_nItems;
       ralign(data, m_dataAlign, length);
       switch (m_baseType) {
@@ -404,8 +426,12 @@ namespace OCPI {
       case OA::OCPI_scalar_type_limit:
 	assert(0);
       }
-      if (m_isSequence)
+      if (m_isSequence) {
 	reader.endSequence(*this);
+      }
+      if (m_arrayRank ) {
+	reader.endArray(*this);
+      }
     }
     void Member::generate(const char *name, unsigned ordinal, unsigned depth) {
       m_name = name;
