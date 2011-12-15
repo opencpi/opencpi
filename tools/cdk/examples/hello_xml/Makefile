@@ -11,7 +11,7 @@ appHello: appHello.cxx
 	g++ -Wall -g -o $@ -I$(OCPI_INC_DIR) $(OCPI_LD_FLAGS) $^
 
 # OCPI_LIBRARY_PATH is like LD_LIBRARY_PATH, but for OpenCPI components.
-run: appHello
+run: all
 	OCPI_LIBRARY_PATH=lib/rcc ./appHello > /dev/null	
 
 clean::
