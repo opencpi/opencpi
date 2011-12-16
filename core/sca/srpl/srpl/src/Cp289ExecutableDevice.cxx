@@ -817,7 +817,7 @@ namespace OCPI {
       try {
         gp = new Cp289GenericProxy(m_orb, m_poa, componentIdentifier, codeLocalFileName.c_str(),
                                    functionName, codeInstanceName.c_str(), *m_application,
-                                   0, false, false);
+                                   NULL, NULL);
         pid = gp->getPid();
       } catch (const OCPI::Util::EmbeddedException & oops) {
         const char * auxInfo = oops.getAuxInfo ();

@@ -1182,13 +1182,13 @@ namespace OCPI {
         uint8_t *allocation = 0;
         static const char *dma = getenv("OCPI_DMA_MEMORY");
         static bool done = false;  // FIXME not thread safe, and generates incorrect compiler error
-        static uint64_t base, size;
+        static uint64_t base;
         if (!done) {
           if (dma) {
             unsigned sizeM;
             ocpiCheck(sscanf(dma, "%uM$0x%llx", &sizeM,
                              (unsigned long long *) &base) == 2);
-            size = (unsigned long long)sizeM * 1024 * 1024;
+            //size = (unsigned long long)sizeM * 1024 * 1024;
             fprintf(stderr, "DMA Memory:  %uM at 0x%llx\n", sizeM,
                     (unsigned long long)base);
           }

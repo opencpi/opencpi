@@ -3,6 +3,7 @@ $(info Set OCPI_OPENCV_HOME to the OpenCV install location to use this example (
 $(info OpenCV not available.)
 all:
 run:
+clean:
 else
 
 ifndef OCPI_CDK_DIR

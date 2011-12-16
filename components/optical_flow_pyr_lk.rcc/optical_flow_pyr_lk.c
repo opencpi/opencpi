@@ -130,8 +130,8 @@ void calcOpticalFlowPyrLK( OFState *myState,
   size_t derivJElemSize1 = sizeof(float);
   size_t derivIRows = H+2*winHeight;
   size_t derivJRows = H+2*winHeight;
-  size_t derivICols = W+2*winWidth;
-  size_t derivJCols = W+2*winWidth;
+  int derivICols = W+2*winWidth;
+  int derivJCols = W+2*winWidth;
 
 
   const char *derivIData = (const char *) myState->derivIBuf;

@@ -136,7 +136,7 @@ int  main( int argc, char** argv)
 
   int test_rc = 1;
   DataTransfer::EventManager* event_manager;
-  int cmap[3];
+  //int cmap[3];
 
   try {
     config.configure (argc, argv);
@@ -150,7 +150,7 @@ int  main( int argc, char** argv)
     return false;
   }
   g_testUtilVerbose = config.verbose;
-  cmap[0] = 0; cmap[1] = 1; cmap[2] = 2;
+  //cmap[0] = 0; cmap[1] = 1; cmap[2] = 2;
 
   std::vector<const char*> endpoints;
   std::vector<CApp> ca;

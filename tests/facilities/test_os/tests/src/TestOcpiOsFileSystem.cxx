@@ -80,7 +80,7 @@ namespace
 
   void TestOcpiOsFileSystem::SetUp ( )
   {
-    d_a_file = "/etc/motd";
+    d_a_file = "/etc/hosts";
 
     // Go to a better place where we may have write permission.
     if ( OCPI::OS::FileSystem::exists ( "/tmp" ) )

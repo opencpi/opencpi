@@ -26,6 +26,7 @@ typedef int clockid_t;
 #define CLOCK_REALTIME ((clockid_t)0)
 static inline int clock_gettime(int id, struct timespec *tp) {
   struct timeval tv;
+  (void)id;
   gettimeofday(&tv, NULL);
   TIMEVAL_TO_TIMESPEC(&tv, tp);
   return 0;

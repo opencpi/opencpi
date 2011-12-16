@@ -544,7 +544,8 @@ getPrecision (ElapsedTime & prec)
     struct timespec res;
 
 #ifdef __APPLE__
-      now(&res);
+    res.tv_sec = 0;
+    res.tv_nsec = 10000000; // 10 ms
 #else
     if (clock_getres (CLOCK_MONOTONIC, &res) != 0) {
       ocpiAssert (0);

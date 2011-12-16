@@ -36,10 +36,10 @@ module JTest
     sequence <double> double_seq;
     sequence <string,3> sseq;
     seqString seq_sseq;
-    //    sequence<seqString> seqseq_sseq;
+    sequence<seqString> seqseq_sseq;
     sequence<long> lseqar[3];
-    // sequence<EmbMsg> v_embmsgseqar[2][3];
-    // enum xxx { a, b, c} v_enum;
+    sequence<EmbMsg> v_embmsgseqar[2][3];
+    enum xxx { a, b, c} v_enum;
   };
   #pragma keylist Samples u1
 };

@@ -507,7 +507,7 @@ seekpos (pos_type pos, std::ios_base::openmode)
   }
 
   if (gptr()) {
-    pos_type curpos = m_bufferBeginPos + static_cast <off_type> (gptr() - eback());
+    //    pos_type curpos = m_bufferBeginPos + static_cast <off_type> (gptr() - eback());
     pos_type endpos = m_bufferBeginPos + static_cast <off_type> (egptr() - eback());
 
     if (pos >= m_bufferBeginPos && pos < endpos) {

@@ -3,6 +3,7 @@ $(info Set OCPI_OPENSPLICE_HOME to the OpenSplice install location to use this e
 $(info OpenSplice/DDS not available.)
 all:
 run:
+clean:
 else
 
 ifndef OCPI_CDK_DIR

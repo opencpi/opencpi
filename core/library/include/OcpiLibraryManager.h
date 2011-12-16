@@ -87,7 +87,7 @@ namespace OCPI {
 				      const char *&inst,
 				      unsigned & score
 				      );
-      inline const ezxml_t xml() const { return m_xml; }
+      inline ezxml_t xml() const { return m_xml; }
       virtual const std::string &name() const = 0;
       virtual Artifact *nextArtifact() = 0;
     };

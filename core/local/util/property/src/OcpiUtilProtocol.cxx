@@ -93,7 +93,7 @@ namespace OCPI {
 	return err;
       if (m_isTwoWay)
 	p.m_isTwoWay = true;
-      if (!(err = Member::parseMembers(op, m_nArgs, m_args, false, "argument", false)))
+      if (!(err = Member::parseMembers(op, m_nArgs, m_args, false, "argument", NULL)))
 	err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
 				   p.m_dataValueWidth, p.m_diverseDataSizes,
 				   sub32dummy, p.m_isUnbounded);
