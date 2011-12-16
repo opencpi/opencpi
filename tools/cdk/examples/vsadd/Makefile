@@ -10,6 +10,7 @@ $(info The vsadd example requires OpenCL to be present, and it isn't)
 $(info It is usually found as an libOpenCL.so in the standard library path)
 all:
 run:
+clean:
 else
 
 INCS := -I$(OCPI_INC_DIR) \

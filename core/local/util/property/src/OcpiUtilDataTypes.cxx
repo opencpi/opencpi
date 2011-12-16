@@ -124,7 +124,7 @@ namespace OCPI {
 	if (!xt)
 	  return "missing \"type\" child element under data type with type=\"type\"";
 	if ((err = OE::checkAttrs(xt, OCPI_UTIL_MEMBER_ATTRS, NULL)) ||
-	    (err = m_type->parse(xt, isFixed, false, false, 0)))
+	    (err = m_type->parse(xt, isFixed, false, NULL, 0)))
 	  return err;
 	if (!m_type->m_isSequence)
 	  return "recursive \"type\" element must be a sequence";
