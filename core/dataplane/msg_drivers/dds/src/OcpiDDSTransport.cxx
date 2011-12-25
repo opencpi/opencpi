@@ -1,4 +1,6 @@
+
 #ifdef OPENSPLICE_MSG_SUPPORT
+
 
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -56,22 +58,79 @@
 #include <OcpiUtilEzxml.h>
 #include <OcpiPValue.h>
 #include <list>
+#include <stack>
 #include <map>
 #include <DtExceptions.h>
 #include <iostream>
 #include <OcpiBuffer.h>
 #include <OpenSpliceBindings.h>
 #include <OcpiUtilProtocol.h>
+#include "OcpiUtilValue.h"
+
+#define BUF_SIZE 1024
 
 namespace OX = OCPI::Util::EzXml;
 using namespace std;
 using namespace OpenSpliceBindings;
+namespace OU = OCPI::Util;
+namespace OA = OCPI::API;
 
 namespace OCPI {  
   namespace Msg {
     namespace DDS {
 
-      class TopicData : public OCPI::Util::Protocol {
+      struct EndPoint  {
+	EndPoint( const char * ep ) 
+	  : m_url(ep)
+	{
+	  char ms[128];
+	  char k[128];
+	  char t[128];
+
+	  /* ocpi-dds-msg://topic-name:key */
+	  //	  int c = sscanf(ep,"ocpi-dds-msg://%[^;];%[^;];%[^;];%s", t, m,s, k );
+	  int c = sscanf(ep,"ocpi-dds-msg://%[^;];%[^;];%s", t, ms, k );
+	  if ( c == 1 ) {
+	    topic = t;	      
+	  }
+	  else if ( c != 3 ) {
+	    fprintf( stderr, "DDS::EndPoint  ERROR: Bad DDS endpoint format (%s)\n", ep );
+	    throw DataTransfer::DataTransferEx( DataTransfer::UNSUPPORTED_ENDPOINT, ep );	  
+	  }
+	  else {
+	    c = strlen(ms)-1;
+	    if ( ms[c] == ',' ) ms[c] = 0;
+	    while ( c > 0 ) {
+	      if ( ms[c] == ':' ) {
+		struct_name = &ms[c+1];
+		ms[c-1] = 0;
+		module_name = ms;
+		break;
+	      }		   
+	      c--;
+	    }
+	    topic = t;
+	    type = module_name;
+	    type += "::";
+	    type += struct_name;
+	    key = k;
+	  }
+	}
+	std::string type;
+	std::string topic;
+	std::string module_name;
+	std::string struct_name;
+	std::string key;	  
+	std::string m_url;
+      };
+
+
+      //       class TopicData : public OCPI::Util::Protocol {
+      static std::string formatErrorMsg("Unable to generate DDS format string");
+      class TopicData {
+
+      private:
+	int m_enumid;
 
       public:
 	std::string name;
@@ -81,19 +140,62 @@ namespace OCPI {
 	std::string key;
 	std::string format;
 	std::string participant;
-	static const int DEFAULT_MAX_MSG_SIZE=30000;
+	static const int DEFAULT_MAX_MSG_SIZE=60000;
+	OCPI::Util::Protocol * m_proto;
+
 
 	TopicData()
-	  :participant("OCPI"),m_currentOffset(0),m_OffsetOffset(0),m_unbounded(false){}
+	  :m_enumid(0),participant("OCPI"),m_currentOffset(0),m_OffsetOffset(0),m_unbounded(false){}
 
+	void setEp( EndPoint & ep) {
+
+
+	  
+	  // Override the user data if available
+	  if (  ! ep.key.empty() ) {
+	    key = ep.key;
+	  }
+	  if ( ! ep.type.empty() ) {
+	    type = ep.type;
+	  }
+	  if ( ! ep.module_name.empty() ) {
+	    module_name = ep.module_name;
+	  }
+	  if ( ! ep.struct_name.empty() ) {
+	    struct_name = ep.struct_name;
+	  }
+
+	  if ( ! ep.topic.empty() ) {
+	    name = ep.topic;
+	  }
+	  else {
+	    name = struct_name;
+	  }
+	}
+
+
+	
 	TopicData & operator=( const OCPI::Util::Protocol * p )
 	{
+#ifdef G
 	  static_cast<OCPI::Util::Protocol&>(*this) = p;
+#else
+	  m_proto = (OCPI::Util::Protocol *)p;
+#endif
 	  for ( int n=0; n<nMembers(); n++ ) {
 	    OCPI::Util::Member & m = member(n);
 	    if ( m.m_isSequence && ( m.m_sequenceLength == 0 ) ) {
 	      m_unbounded = true;
 	      break;
+	    }
+	  }
+	  for ( int n=0; n<nMembers(); n++ ) {
+	    OCPI::Util::Member & m = member(n);
+	    if ( m.m_isKey ) {
+	      if ( ! key.empty() ) {
+		key += ",";
+	      }
+	      key += m.m_name;
 	    }
 	  }
 	  char * mms = getenv("OCPI_MAX_MESSAGE_SIZE");
@@ -103,20 +205,43 @@ namespace OCPI {
 	  else {
 	    m_maxMsgSize = DEFAULT_MAX_MSG_SIZE;
 	  }
+
+	  
+	  // Get defaults from protocol
+	  std::string tmp(p->m_qualifiedName);
+	  size_t pos = tmp.find_last_of("::");
+	  struct_name = tmp.substr(pos+1,tmp.length());
+	  module_name = tmp.substr(0,pos-1);
+
+	 
 	  return *this;
 	}
 
 
-	const char * ddsType( OCPI::API::BaseType t ) {
+	const char * ddsType( OU::Member & m ) {
+
+	  OCPI::API::BaseType t = m.m_baseType;
+	  if ( m.m_baseType == OCPI::API::OCPI_Type ) {
+	    OU::Member * tm = m.m_type;
+	    while ( tm ) {
+	      if ( tm->m_type == NULL ) {
+		t = tm->m_baseType;
+		break;
+	      }
+	      tm = tm->m_type;
+	    }
+	  }
+
+
 	  switch ( t ) {
 
-
-	  case OCPI::API::OCPI_Struct:
-	  case OCPI::API::OCPI_Enum:
 	  case OCPI::API::OCPI_Type:
+	    ocpiAssert(!"Not a valid type");
 	    break;
-
-
+	  case OCPI::API::OCPI_Struct:
+	    return "Struct";
+	  case OCPI::API::OCPI_Enum:
+	    return "Enum";
 	  case OCPI::API::OCPI_Long:
 	    return "Long";
 	  case OCPI::API::OCPI_Short:
@@ -150,97 +275,244 @@ namespace OCPI {
 	  return NULL;
 	}
 
-	const char * ddsSubType( OCPI::API::BaseType t ) {
-	  switch ( t ) {
 
-	  case OCPI::API::OCPI_Struct:
-	  case OCPI::API::OCPI_Enum:
-	  case OCPI::API::OCPI_Type:
-	    break;
 
-	  case OCPI::API::OCPI_Long:
-	    return "c_long";
-	  case OCPI::API::OCPI_Short:
-	    return "c_short";
-	  case OCPI::API::OCPI_Bool:
-	    return "c_boolean";
-	  case OCPI::API::OCPI_Char:
-	    return "c_char";
-	  case OCPI::API::OCPI_Double:
-	    return "c_double";
-	  case OCPI::API::OCPI_Float:
-	    return "c_float";
-	  case OCPI::API::OCPI_UChar:
-	    return "c_octet";
-	  case OCPI::API::OCPI_ULong:
-	    return "c_ulong";
-	  case OCPI::API::OCPI_UShort:
-	    return "c_ushort";
-	  case OCPI::API::OCPI_LongLong:
-	    return "c_longlong";
-	  case OCPI::API::OCPI_ULongLong:
-	    return "c_ulonglong";
-	  case OCPI::API::OCPI_String:
-	    return "c_string";
-	  case OCPI::API::OCPI_none:
-	  case OCPI::API::OCPI_scalar_type_limit:
-	    ocpiAssert(!"These type should never be defined in the protocol");
-	    return "BadBad";
+	std::string & formatType( OU::Member& m, std::string & format, bool typname=true ) {
+	  char buf[BUF_SIZE];
+
+	  if ( typname && m.m_isSequence && (m.m_arrayRank>0) ) { 
+	    if ( snprintf( buf, BUF_SIZE, "<Type name=\"%s::TypeDef%s\"/>", module_name.c_str(), m.m_name.c_str() ) < 0 ) {
+	      throw formatErrorMsg;
+	    }
+	    format += buf;
+	    if ( snprintf( buf, BUF_SIZE, "%s::TypeDef%s", module_name.c_str(), m.m_name.c_str() ) < 0 ) {
+	      throw formatErrorMsg;
+	    }
+	    m.m_typeDef = buf;
+	    return format;
 	  }
-	  return NULL;
+
+	  if (  m.m_baseType == OCPI::API::OCPI_Struct ) {
+	    if ( snprintf( buf, BUF_SIZE, "<Type name=\"%s::Struct%s\"/>", module_name.c_str(), m.m_name.c_str() ) < 0 ) {
+	      throw formatErrorMsg;
+	    }
+	    format += buf;
+	  }
+	  else if ( m.m_baseType == OCPI::API::OCPI_Type) {
+	    //	    ocpiAssert(!"types ??");
+
+	  }
+	  else {
+	    sprintf( buf, "<%s/>", ddsType(m) );
+	    format += buf;
+	  }	
+	  return format;
 	}
 
-	c_long * toSequence( c_base base, OCPI::API::BaseType type, int size, c_long length, void * buf )
+
+	std::string & formatSequence( OU::Member& m, std::string & format ) 
 	{
-	  static c_type type0 = NULL;
-	  c_type subtype0;
-	  c_long *dest0;
-	  const char* subt=ddsSubType(type);
-	  subtype0 = c_type(c_metaResolve (c_metaObject(base),subt));
-	  char  seq_type[128];
-	  snprintf(seq_type,128,"C_SEQUENCE<%s>", subt);
-	  type0 = c_metaSequenceTypeNew(c_metaObject(base), seq_type,subtype0,0);
-	  c_free(subtype0);
-	  dest0 = (c_long *)c_newSequence(c_collectionType(type0),length);
-	  memcpy (dest0,buf,length*size);
-	  return dest0;
+	  char buf[BUF_SIZE];
+	  if ( m.m_sequenceLength != 0 ) {
+	    if ( snprintf( buf, BUF_SIZE, "<Sequence size=\"%d\">", m.m_sequenceLength ) < 0 ) {
+	      throw formatErrorMsg;
+	    }
+	    format += buf;
+	  }
+	  else {
+	    format += "<Sequence>";
+	  }
+	  formatType(m,format);
+	  format += "</Sequence>";
 	}
+
+	std::string & formatMember( OU::Member& m, std::string & format, bool named=true ) 
+	{
+	  char buf[BUF_SIZE];
+
+	  if ( named ) {
+	    if ( snprintf( buf, BUF_SIZE, "<Member name=\"%s\">", m.m_name.c_str() ) < 0 ) {
+	      throw formatErrorMsg;
+	    }
+	    format += buf;
+	  }
+
+	  // In this case the sequence is the "outer" structure
+	  if ( m.m_isSequence && (m.m_arrayRank > 0) ) {
+	    formatSequence( m,format);
+	  }
+	  else if ( m.m_nEnums ) {
+	    if ( snprintf( buf, BUF_SIZE, "<Enum name=\"enum_%d\">", m_enumid ) < 0 ) {
+	      throw formatErrorMsg;
+	    }
+	    format += buf;
+	    for (unsigned int n=0; n<m.m_nEnums; n++ ) {
+	      if ( snprintf( buf, BUF_SIZE, "<Element name=\"%s\"/>", m.m_enums[n] ) < 0 ) {
+		throw formatErrorMsg;
+	      }
+	      format += buf;
+	    }	    
+	    format += "</Enum>";	    
+	  }
+	  else if ( m.m_arrayRank > 0 ) {
+	    for ( unsigned int y=0; y<m.m_arrayRank; y++ ) {
+	      if ( snprintf( buf, BUF_SIZE, "<Array size=\"%d\">", m.m_arrayDimensions[y] ) < 0 ) {
+		throw formatErrorMsg;
+	      }
+	      format += buf;
+	    }
+
+	    // Special case, and array of sequences
+	    if ( m.m_isSequence ) {
+	      formatSequence( m, format );
+	    }
+	    else {
+	      formatType(m,format);
+	    }
+	    if ( m.m_type ) {
+	      formatMember( *m.m_type, format, false );
+	    }
+	    for ( unsigned int y=0; y<m.m_arrayRank; y++ ) {
+	      format += "</Array>";
+	    }
+	  }
+	  else if ( m.m_isSequence ) {
+	    formatSequence( m,format);
+	  }
+	  else {
+	    formatType( m, format);
+	  }	  
+	  if ( named ) {
+	    format += "</Member>";
+	  }
+	  return format;
+	}
+
+
+
+	std::string & defineStruct( OU::Member &m, const char * name, std::string & format ) 
+	{
+	  char buf[BUF_SIZE];
+	    
+	  if (  m.m_baseType == OCPI::API::OCPI_Struct ) {
+
+	    if ( snprintf( buf, BUF_SIZE, "<Struct name=\"Struct%s\">", name  ) < 0 ) {
+	      throw formatErrorMsg;
+	    }
+	    format += buf;
+	    if ( m.m_name.empty() ) {
+	      if ( snprintf( buf, BUF_SIZE, "%s", name  ) < 0 ) {
+		throw formatErrorMsg;
+	      }
+	      m.m_name = buf;
+	      if ( snprintf( buf, BUF_SIZE, "%s::Struct%s", module_name.c_str(), name  ) < 0 ) {
+		throw formatErrorMsg;
+	      }
+	      m.m_typeDef = buf;
+	    }
+
+
+	    for ( unsigned int n=0; n<m.m_nMembers; n++ ) {
+	      formatMember( m.m_members[n], format );
+	    }
+	    format += "</Struct>";
+	  }
+
+	  // We also need to define Typedefs
+	  else if ( m.m_isSequence && (m.m_arrayRank>0) ) { 
+
+	    if ( snprintf( buf, BUF_SIZE, "<TypeDef name=\"TypeDef%s\">", name  ) < 0 ) {
+	      throw formatErrorMsg;
+	    }
+	    format += buf;
+	    if ( m.m_name.empty() ) {
+	      if ( snprintf( buf, BUF_SIZE, "%s", name  ) < 0 ) {
+		throw formatErrorMsg;
+	      }
+	      m.m_name = buf;
+	      if ( snprintf( buf, BUF_SIZE, "%s::TypeDef%s", module_name.c_str(), name  ) < 0 ) {
+		throw formatErrorMsg;
+	      }
+	      m.m_typeDef = buf;
+	    }
+
+	    for ( unsigned int y=0; y<m.m_arrayRank; y++ ) {
+	      if ( snprintf( buf, BUF_SIZE, "<Array size=\"%d\">", m.m_arrayDimensions[y] ) < 0 ) {
+		throw formatErrorMsg;
+	      }
+	      format += buf;
+	    }
+
+	    formatType( m,format, false);
+
+	    for ( unsigned int y=0; y<m.m_arrayRank; y++ ) {
+	      format += "</Array>";
+	    }
+	      
+	    format += "</TypeDef>";
+	  }
+
+	  return format;
+	}
+
+	std::string & defineStructs( std::string & format ) 
+	{
+	  char name[BUF_SIZE];
+	  for ( int n=0; n<nMembers(); n++ ) {	    
+	    OCPI::Util::Member & m = member(n);
+	    defineStruct ( m, m.m_name.c_str(), format );	    
+	    if ( m.m_type ) {
+	      OU::Member * mt = m.m_type;
+	      int count=0;
+	      while( mt ) {
+		if ( snprintf( name, BUF_SIZE, "%s%d", m.m_name.c_str(),count ) < 0 ) {
+		  throw formatErrorMsg;
+		}
+		defineStruct ( *mt, name, format );		
+		mt = mt->m_type;
+	      }
+	    }
+	  }
+	  return format;
+	}
+
+
 
 	void formatDDSMetaData()
 	{
 
-	  format += "<MetaData version=\"1.0.0\">";
-	  char buf[1024];
+	  // Header
+	  format = "<MetaData version=\"1.0.0\">";
+	  char buf[BUF_SIZE];
 	  sprintf( buf, "<Module name=\"%s\">", module_name.c_str() );
 	  format += buf;
+
+	  defineStructs(format);
+
 	  sprintf( buf, "<Struct name=\"%s\">", struct_name.c_str() );
 	  format += buf;
 	  
 	  for ( int n=0; n<nMembers(); n++ ) {
 	    OCPI::Util::Member & m = member(n);
-	    if ( m.m_isSequence ) {
-	      sprintf( buf, "<Member name=\"%s\"><Sequence><%s/></Sequence></Member>", m.m_name.c_str(), ddsType(m.m_baseType) );
-	    }
-	    else if ( m.m_arrayRank > 0 ) {
-	      sprintf( buf, "<Member name=\"%s\"><Array size=\"%d\"><%s/></Array></Member>", m.m_name.c_str(), m.m_arrayDimensions[0], 
-		       ddsType(m.m_baseType) );
-	    }
-	    else {
-	      sprintf( buf, "<Member name=\"%s\"><%s/></Member>", m.m_name.c_str(), ddsType(m.m_baseType) );
-	    }
-	    format+= buf;
+	    std::string fdata = formatMember( m, format );
 	  }
+
+	  // End Header
 	  format += "</Struct></Module></MetaData>";
 
 #ifndef NDEBUG
-	  cout << format << endl;
-#endif
+	  cout << endl << endl << endl << format << endl << endl << endl;
+#endif	  
 	}
 
 	int maxMsgSize() {
+
+#ifdef DONE
 	  if ( ! m_unbounded ) {
 	    return msgFixedSize();
 	  }
+#endif
+
 	  return m_maxMsgSize;
 	}
 
@@ -263,10 +535,10 @@ namespace OCPI {
 	  return size;
 	}
 
-	inline int nMembers(){return operations()[0].nArgs();}
+	inline int nMembers(){return m_proto->operations()[0].nArgs();}
 
 	inline OCPI::Util::Member & member(int index) { 
-	  OCPI::Util::Member &m = operations()[0].args()[index];
+	  OCPI::Util::Member &m = m_proto->operations()[0].args()[index];
 	  if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {  // Unbounded sequence
 	    m_unbounded = true;
 	  }
@@ -274,7 +546,7 @@ namespace OCPI {
 	}
 	inline int mLength( int index, int vLen=0 ) {
 	  int len;
-	  OCPI::Util::Member &m = operations()[0].args()[index];
+	  OCPI::Util::Member &m = m_proto->operations()[0].args()[index];
 	  if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {  
 	    len = vLen * m.m_nBytes;
 	  }
@@ -284,7 +556,7 @@ namespace OCPI {
 	  return len;
 	}
 	inline int mOffset( int index, int vLen=0 ) {
-	  OCPI::Util::Member &m = operations()[0].args()[index];
+	  OCPI::Util::Member &m = m_proto->operations()[0].args()[index];
 
 	  if ( m_unbounded ) {
 	    int off = m_OffsetOffset;
@@ -325,6 +597,414 @@ namespace OCPI {
 	gapi_readerCopy rc;
       };
 
+
+      class RWUtil {
+      public:
+	void align( int n,  uint8_t *& p )
+	{
+	  p  = (uint8_t *)(((uintptr_t)p + (n - 1)) & ~((uintptr_t)(n)-1));
+	}
+
+	const char * ddsSubType( OU::Member &m ) {
+
+	  if ( ! m.m_typeDef.empty() ) {
+	    return  m.m_typeDef.c_str();
+	  }
+
+	  switch ( m.m_baseType ) {
+
+	  case OCPI::API::OCPI_Type:
+	    ocpiAssert(!"Not a valid type");
+	    break;
+	  case OCPI::API::OCPI_Struct:
+	    return "c_struct";
+	  case OCPI::API::OCPI_Enum:
+	    return "c_enum";
+	  case OCPI::API::OCPI_Long:
+	    return "c_long";
+	  case OCPI::API::OCPI_Short:
+	    return "c_short";
+	  case OCPI::API::OCPI_Bool:
+	    return "c_boolean";
+	  case OCPI::API::OCPI_Char:
+	    return "c_char";
+	  case OCPI::API::OCPI_Double:
+	    return "c_double";
+	  case OCPI::API::OCPI_Float:
+	    return "c_float";
+	  case OCPI::API::OCPI_UChar:
+	    return "c_octet";
+	  case OCPI::API::OCPI_ULong:
+	    return "c_ulong";
+	  case OCPI::API::OCPI_UShort:
+	    return "c_ushort";
+	  case OCPI::API::OCPI_LongLong:
+	    return "c_longlong";
+	  case OCPI::API::OCPI_ULongLong:
+	    return "c_ulonglong";
+	  case OCPI::API::OCPI_String:
+	    return "c_string";
+	  case OCPI::API::OCPI_none:
+	  case OCPI::API::OCPI_scalar_type_limit:
+	    ocpiAssert(!"These type should never be defined in the protocol");
+	    return "BadBad";
+	  }
+	  return NULL;
+	}
+
+
+
+	c_long * toSequence( c_base base, OU::Member& m , int size, c_long length, void * buf, std::vector<std::string> & str)
+	{
+	  static c_type type0 = NULL;
+	  c_type subtype0;
+	  c_long *dest0;
+	  const char* subt=ddsSubType(m);
+	  subtype0 = c_type(c_metaResolve (c_metaObject(base),subt));
+	  char  seq_type[128];
+	  snprintf(seq_type,128,"C_SEQUENCE<%s>", subt);
+
+#ifndef NDEBUG	
+	  printf("To SEQ type = %s, sub_type = %s, len = %d, size = %d\n", seq_type, subt, length, size  );
+#endif
+	  
+	  type0 = c_metaSequenceTypeNew(c_metaObject(base), seq_type,subtype0,0);
+	  c_free(subtype0);
+	  dest0 = (c_long *)c_newSequence(c_collectionType(type0),length);
+
+	  if ( m.m_baseType == OCPI::API::OCPI_String ) {
+	    c_string *dest1 = (c_string*)dest0;
+	    std::vector<std::string>::iterator it;
+	    int n=0;
+	    for ( it=str.begin(); it!=str.end(); it++,n++ ) {
+	      dest1[n] = c_stringNew( base, (*it).c_str() );
+	    }
+	  }
+	  else {
+	    if ( size ) 
+	      memcpy (dest0,buf,length*size);
+	  }
+	  return dest0;
+	}
+
+      };
+
+
+
+      
+      class Reader : public OU::Reader , public RWUtil {
+
+	TopicData & m_td;
+	uint8_t * m_orig;
+	std::stack<uint8_t*> m_source;
+
+	struct Seq {
+	  Seq( int n, int i, uint8_t** s )
+	    :nElements(n),idx(i),source(s){}
+	  int nElements;
+	  int idx;
+	  uint8_t ** source;
+	};
+	std::stack<Seq> m_seq;
+
+      public:
+
+	  Reader( TopicData & td, uint8_t * s )
+	    :m_td(td),m_orig(s)  {
+	    m_source.push(s);
+	  }
+	
+	unsigned beginSequence(OU::Member &m) {
+
+#ifndef NDEBUG
+	  cout << endl << "**** In Begin Sequence !! " << m.m_name << " *** " << m_seq.size() << endl;
+#endif
+	  align( 8,m_source.top());
+	  long size;
+	  c_long ** seq  = (c_long**)m_source.top();
+	  size = c_arraySize(c_sequence(*seq));		    
+#ifndef NDEBUG
+	  cout << "Actual Sequence size = " << size << endl;
+#endif
+	  m_source.top() += sizeof(c_sequence);
+	  m_seq.push( Seq(size,0,(uint8_t**)seq ) );
+	  m_source.push( (uint8_t*)*seq );
+	  return size;
+	}
+
+	void endSequence( OU::Member &) {
+	  m_seq.pop();
+	  m_source.pop();
+	}
+
+	void beginStruct(OU::Member &m) {
+	  align( m.m_align,m_source.top());
+	}
+
+	void beginArray(OU::Member &m, uint32_t /* nItems */ ) {
+	  align( m.m_align,m_source.top());
+	}
+
+	void endArray(OU::Member & ) {
+	}
+
+	unsigned beginString(OU::Member &, const char *&chars, bool /* start */ ) {
+#ifndef NDEBUG
+	  cout << "In beginString !!" << endl;
+#endif
+
+	  uint32_t slen;
+	  if ( m_seq.size() == 0 ) { // Not within a sequence
+	    align(sizeof(void*),m_source.top());
+	    char** src = (char**)m_source.top();	
+#ifndef NDEBUG
+	  cout << "Returning " << *src << endl;
+#endif
+	    slen = strlen(*src);
+	    chars = *src;
+	    m_source.top() += sizeof(c_string*);
+	  }
+	  else {
+	    int idx = m_seq.top().idx;
+	    c_string * src = (c_string*)(*m_seq.top().source);	
+	    slen = strlen(src[idx]);
+	    chars = src[idx];
+	    m_seq.top().idx++;
+	  }
+	  return slen;;
+	}
+
+
+	void readData(OU::Member &m, OU::ReadDataPtr p, uint32_t nBytes, uint32_t /* nElements */) {
+	    uint8_t * t = p.data;
+
+	    switch (m.m_baseType ) {
+	    case OCPI::API::OCPI_Struct:
+	      ocpiAssert(!"unsuporrted type for atomic read");	    
+	    case OCPI::API::OCPI_Bool:
+	    case OCPI::API::OCPI_Char:
+	    case OCPI::API::OCPI_UChar:
+	      {align(1,m_source.top()); goto processScalar;}  // for completeness
+	    case OCPI::API::OCPI_Double:
+	    case OCPI::API::OCPI_Float:
+	    case OCPI::API::OCPI_LongLong:
+	    case OCPI::API::OCPI_ULongLong:
+	      {align(8,m_source.top()); goto processScalar;}
+	    case OCPI::API::OCPI_Short:
+	    case OCPI::API::OCPI_UShort:
+	      {align(2,m_source.top()); goto processScalar;}
+	    case OCPI::API::OCPI_Enum:
+	    case OCPI::API::OCPI_Long:
+	    case OCPI::API::OCPI_ULong:
+	      {align(4,m_source.top()); goto processScalar;}
+
+	    processScalar:
+	      {
+		memcpy( t, m_source.top(), nBytes); 
+		m_source.top() += nBytes;
+	      }
+	      break;
+
+	    case OCPI::API::OCPI_String:
+	      {
+		ocpiAssert(!"Should not be processing strings here");
+	      }
+	      break;
+
+	      // Satisfy the compiler
+	    case OCPI::API::OCPI_none:
+	    case OCPI::API::OCPI_Type:
+	    case OCPI::API::OCPI_scalar_type_limit:
+	      ocpiAssert( !"Should never see these types in protocol spec");
+	      break;
+	    }
+	  }
+	};
+
+
+
+      class Writer : public OU::Writer, public RWUtil  {
+
+	TopicData & m_td;
+	uint8_t * m_orig;
+	uint8_t * m_target; // DDS
+	c_base    m_base;
+	uint32_t  m_inSequence;
+	uint32_t  m_nElements;
+	std::vector<std::string> m_seqStrings;
+	int       m_inArray;
+	struct    Seq {
+	  Seq( int e, uint8_t*p)
+	    :nElements(e),target(p){}
+	  int     nElements;
+	  uint8_t *target;
+	};
+	std::stack<Seq> m_seq;
+	
+
+      public:
+
+	Writer( TopicData & td, uint8_t * t, c_base base )
+	  :m_td(td),m_orig(t),m_target(t),m_base(base),m_inSequence(0),m_inArray(0){}
+
+	// Writer
+	void beginSequence(OU::Member &m, uint32_t nElements) {
+
+	  m_inSequence++;
+	  m_nElements = nElements;
+#ifndef NDEBUG
+	  cout << "In beginSequence: name = " << m.m_name << " count = " << nElements << endl;
+	  cout << "Typdef = " << m.m_typeDef << " m_types = " << m.m_type << " members = " << m.m_nMembers << endl;
+#endif
+	  align(8,m_target);
+	  c_long * dest=NULL;
+	  if ( m.m_nMembers ) {
+	    dest = toSequence( m_base, m , 0, m_nElements, NULL, m_seqStrings );
+	    c_sequence * tseq = (c_sequence*)m_target;
+	    *tseq = (c_sequence)dest;
+	    m_target += sizeof(c_sequence);
+	    m_seq.push(Seq(nElements,(uint8_t*)dest));
+	  }
+
+
+	}
+
+	void beginArray(OU::Member &m, uint32_t nItems) {
+	  align(m.m_align,m_target);
+#ifndef NDEBUG
+	  printf("Array member offset = %d, items = %d, align = %d\n", m.m_offset, nItems, m.m_align );
+#endif
+	}
+
+	void endArray(OU::Member & ) {
+	  // no op
+	}
+
+	void beginStruct(OU::Member &m) {
+	  align(m.m_align,m_target);
+	}
+
+	void endSequence(OU::Member &m ) {	
+	  if ( m_seqStrings.size() ) {
+	    ocpiAssert(  m_seqStrings.size() == m_nElements );
+	    align(8,m_target);
+	    c_string * dest = (c_string*)toSequence( m_base, m ,1, m_nElements, NULL, m_seqStrings );
+	    c_sequence * tseq = (c_sequence*)m_target;
+	    *tseq = (c_sequence)dest;
+	    m_target += sizeof(c_sequence);
+	    m_seqStrings.clear();
+	  }
+	  if ( m.m_nMembers ) {
+	    m_seq.pop();
+	  }
+	  m_inSequence--;
+	}
+
+
+	void writeString(OU::Member &, OU::WriteDataPtr p, uint32_t strLen , bool /* start */) {
+	  c_char * msg = (c_char*)(p.data);
+	  if ( m_inSequence ) {
+	    m_seqStrings.push_back( std::string( msg ) );
+	    return;	    
+	  }	  
+	  align(8,m_target);
+	  c_string * st = (c_string*)m_target;
+	  *st = c_stringNew(m_base, (c_char*)msg);	  
+	  m_target += sizeof(c_string);
+	}
+
+	// Copying from p (worker buffer) to DDS
+	void writeData(OU::Member &m, OU::WriteDataPtr p, uint32_t nBytes, uint32_t ) {
+
+	  uint8_t * tf = (uint8_t*)p.data;
+
+#ifndef NDEBUG
+	  cout << "******* Writing in writeData nBytes = " << nBytes << endl;
+#endif
+
+	  uint8_t ** target;
+	  if ( m_seq.empty() ) {
+	    target = &m_target;
+	  }
+	  else {
+	    target = &m_seq.top().target;
+	  }
+	  int bytes=0;
+	  switch (m.m_baseType ) {
+	  case OCPI::API::OCPI_Type:
+	    ocpiAssert(!"unsuporrted type for atomic write");
+	  case OCPI::API::OCPI_Bool:
+	  case OCPI::API::OCPI_Char:
+	  case OCPI::API::OCPI_UChar:
+	    bytes = 1;
+	    if ( ! m_inArray ) 
+	      {align(1,*target); goto processScalar;}  // for completeness
+	  case OCPI::API::OCPI_Struct:
+	  case OCPI::API::OCPI_Double:
+	  case OCPI::API::OCPI_Float:
+	  case OCPI::API::OCPI_LongLong:
+	  case OCPI::API::OCPI_ULongLong:
+	    bytes = 8;
+	    if ( ! m_inArray ) 
+	      {align(8,*target); goto processScalar;}
+	  case OCPI::API::OCPI_Short:
+	  case OCPI::API::OCPI_UShort:
+	    bytes = 2;
+	    if ( ! m_inArray ) 
+	      {align(2,*target); goto processScalar;}
+	  case OCPI::API::OCPI_Enum:
+	  case OCPI::API::OCPI_Long:
+	  case OCPI::API::OCPI_ULong:
+	    bytes = 4;
+	    if ( ! m_inArray ) 
+	      {align(4,*target); goto processScalar;}
+
+
+	  processScalar:
+	    {
+
+	      if ( m.m_isSequence ) {
+
+		align(m.m_align,*target);
+#ifndef NDEBUG
+		cout << "Seq:: bytes = " << nBytes << " elems = " << m_nElements << endl;
+		cout << "RANK = " << m.m_arrayRank << endl;
+#endif
+		int f=1;
+		for ( unsigned int y=0; y<m.m_arrayRank; y++ ) {
+		  f *= m.m_arrayDimensions[y];
+		}
+		c_long * dest = toSequence( m_base, m , bytes*f, m_nElements, tf, m_seqStrings );
+		c_sequence * tseq = (c_sequence*)*target;
+		*tseq = (c_sequence)dest;
+		(*target) += sizeof(c_sequence);
+
+	      }
+	      else {  // also process's arrays here
+#ifndef NDEBUG
+		printf("Copying data, byes align = %d, nBytes = %d\n", bytes, nBytes );
+#endif
+		memcpy( *target, tf, nBytes); (*target)+=nBytes;
+	      }
+	    }
+	    break;
+
+	  case OCPI::API::OCPI_String:
+	    {
+	      ocpiAssert(!"Strings should not be wrtten here");
+	    }
+	    break;
+
+	    // Satisfy the compiler
+	  case OCPI::API::OCPI_none:
+	  case OCPI::API::OCPI_scalar_type_limit:
+	    ocpiAssert( !"Should never see these types in protocol spec");
+	    break;
+	  }
+	}
+      };
+
+
       class Topic : public ::OCPI::Util::Child<TopicManager,Topic>, public  DDSEntityManager
       {
       private:
@@ -346,195 +1026,35 @@ namespace OCPI {
 	inline CbFuncs & cbFunc(){return m_cbFuncs;} 
 
 
+
+	// Copy from DDS
 	void   copyOut( void* from, void * to ) 
 	{
-	  uint8_t * orig;
-	  uint8_t * tf = orig = (uint8_t*)from;
-	  uint8_t * tt = (uint8_t*)to;
-
 #ifndef NDEBUG
-	  printf("Op name = %s\n", m_data.operations()[0].name().c_str() );
+	  OU::Protocol & p = *m_data.m_proto;
+	  p.printXML(stdout);
+	  printf("Min Buffer Size: %u %u %u\n", p.m_minBufferSize, p.m_dataValueWidth, p.m_minMessageValues);
+
+	  fflush(stdout);
 #endif
-
-	  for ( int n=0; n<m_data.nMembers(); n++ ) {
-
-#ifdef DEBUG_MEMBERS
-	    if (m_data.member(n).m_name.length() )
-	      cout << n << " Name = " <<m_data.member(n).m_name << endl;
-	    cout << "      offset =  " <<m_data.member(n).offset << endl;
-	    cout << "      bits =  " <<m_data.member(n).bits << endl;
-	    cout << "      align =  " <<m_data.member(n).align << endl;
-	    cout << "      nBytes =  " <<m_data.member(n).nBytes << endl;
-	    cout << "      type =  " <<m_data.member(n).scalar << endl;	      
-	    cout << "       seq =  " <<m_data.member(n).m_isSequence << endl;	      
-	    cout << "       ary =  " <<m_data.member(n).isArray << endl;	      
-	    cout << "       strlen =  " <<m_data.member(n).stringLength << endl;	      
-	    cout << "       length =  " <<m_data.member(n).length << endl;	      
-#endif
-
-	    switch (m_data.member(n).m_baseType ) {
-
-	    case OCPI::API::OCPI_Struct:
-	    case OCPI::API::OCPI_Enum:
-	    case OCPI::API::OCPI_Type:
-	      ocpiAssert(!"unsuporrted type");
-	    
-
-	    case OCPI::API::OCPI_Bool:
-	    case OCPI::API::OCPI_Char:
-	    case OCPI::API::OCPI_UChar:
-	      {tf = align(1,orig,tf); goto processScalar;}  // for completeness
-	    case OCPI::API::OCPI_Double:
-	    case OCPI::API::OCPI_Float:
-	    case OCPI::API::OCPI_LongLong:
-	    case OCPI::API::OCPI_ULongLong:
-	      {tf = align(8,orig,tf); goto processScalar;}
-	    case OCPI::API::OCPI_Short:
-	    case OCPI::API::OCPI_UShort:
-	      {tf = align(2,orig,tf); goto processScalar;}
-	    case OCPI::API::OCPI_Long:
-	    case OCPI::API::OCPI_ULong:
-	      {tf = align(4,orig,tf); goto processScalar;}
-
-	    processScalar:
-	      {
-
-		if ( m_data.member(n).m_isSequence ) {
-		  tf = align(sizeof(void*),orig,tf);
-		  long size;
-		  c_long ** src = (c_long**)tf;
-		  size = c_arraySize(c_sequence(*src));	
-		  *((uint32_t*)(tt + m_data.mOffset(n,size))) = size; // set length
-		  int len =m_data.mLength(n,size);
-		  int clen = size < len ? size : len;
-		  clen *= m_data.mLength(n);
-		  memcpy( tt + m_data.mOffset(n,size) + 4, *src, clen); 
-		  tf += sizeof(c_sequence);
-		}
-		else if ( m_data.member(n).m_arrayRank > 0 ) {
-		  c_long ** src = (c_long**)tf;
-		  int len =m_data.mLength(n);
-		  memcpy( tt + m_data.mOffset(n), *src, len); 
-		  tf += sizeof(c_array);
-		}
-		else {
-		  int len =m_data.mLength(n);
-		  memcpy( tt + m_data.mOffset(n) , tf, len); tf+=len;
-		}
-
-	      }
-	      break;
-
-	    case OCPI::API::OCPI_String:
-	      {
-		tf = align(sizeof(void*),orig,tf);
-		char* dst = (char*)tt + m_data.mOffset(n);
-		char** src = (char**)tf;	
-		uint32_t slen = strlen(*src) + 1;
-		ocpiAssert( (uint32_t)m_data.mLength(n) > slen );		  
-		strncpy((char*)dst,*src,slen);
-		tf += sizeof(c_string);
-	      }
-	      break;
-
-	      // Satisfy the compiler
-	    case OCPI::API::OCPI_none:
-	    case OCPI::API::OCPI_scalar_type_limit:
-	      ocpiAssert( !"Should never see these types in protocol spec");
-	      break;
-
-	    }
-	  }
+	  Reader r(m_data,(uint8_t*)from);
+	  unsigned rlen = m_data.m_proto->read( r, (uint8_t*)to, m_data.maxMsgSize(), 0);
+	  return;
 	}
 
+
+	// Copy to DDS
 	c_bool copyIn( c_base base, void* from, void * to )
 	{
-	  c_bool ret = true;
-	  uint8_t * orig;
-	  uint8_t * tf = (uint8_t*)from;
-	  uint8_t * tt = orig = (uint8_t*)to;
-
 #ifndef NDEBUG
-	  printf("Op name = %s\n", m_data.operations()[0].name().c_str() );
+	  OU::Protocol & p = *m_data.m_proto;
+	  p.printXML(stdout);
+	  printf("Min Buffer Size: %u %u %u\n", p.m_minBufferSize, p.m_dataValueWidth, p.m_minMessageValues);
+	  fflush(stdout);
 #endif
-
-	  for ( int n=0; n<m_data.nMembers(); n++ ) {
-
-#ifdef DEBUG_MEMBERS
-	    if (m_data.member(n).m_name.length() )
-	      cout << n << " Name = " <<m_data.member(n).m_name << endl;
-	    cout << "      offset =  " <<m_data.member(n).offset << endl;
-	    cout << "      bits =  " <<m_data.member(n).bits << endl;
-	    cout << "      align =  " <<m_data.member(n).align << endl;
-	    cout << "      nBytes =  " <<m_data.member(n).nBytes << endl;
-	    cout << "      type =  " <<m_data.member(n).scalar << endl;	      
-	    cout << "       seq =  " <<m_data.member(n).m_isSequence << endl;	      
-	    cout << "       ary =  " <<m_data.member(n).isArray << endl;	      
-	    cout << "       strlen =  " <<m_data.member(n).stringLength << endl;	      
-	    cout << "       length =  " <<m_data.member(n).length << endl;	      
-#endif
-
-	    switch (m_data.member(n).m_baseType ) {
-
-	  case OCPI::API::OCPI_Struct:
-	  case OCPI::API::OCPI_Enum:
-	  case OCPI::API::OCPI_Type:
-	    ocpiAssert(!"unsuporrted type");
-
-	    case OCPI::API::OCPI_Bool:
-	    case OCPI::API::OCPI_Char:
-	    case OCPI::API::OCPI_UChar:
-	      {tt = align(1,orig,tt); goto processScalar;}  // for completeness
-	    case OCPI::API::OCPI_Double:
-	    case OCPI::API::OCPI_Float:
-	    case OCPI::API::OCPI_LongLong:
-	    case OCPI::API::OCPI_ULongLong:
-	      {tt = align(8,orig,tt); goto processScalar;}
-	    case OCPI::API::OCPI_Short:
-	    case OCPI::API::OCPI_UShort:
-	      {tt = align(2,orig,tt); goto processScalar;}
-	    case OCPI::API::OCPI_Long:
-	    case OCPI::API::OCPI_ULong:
-	      {tt = align(4,orig,tt); goto processScalar;}
-
-	    processScalar:
-	      {
-		if ( m_data.member(n).m_isSequence ) {
-		  tt = align(8,orig,tt);
-		  c_long len  = (c_long)*(tf+m_data.mOffset(n));
-		  ocpiAssert( len < m_data.mLength(n) );
-		  c_long * dest = m_data.toSequence( base, m_data.member(n).m_baseType , sizeof(c_long), len, tf+m_data.mOffset(n)+4 );
-		  c_sequence * tseq = (c_sequence*)tt;
-		  *tseq = (c_sequence)dest;
-		  tt += sizeof(c_sequence);
-		}
-		else {  // also process's arrays here
-		  int len =m_data.mLength(n);
-		  memcpy( tt, tf + m_data.mOffset(n) ,len); tt+=len;
-		}
-	      }
-	      break;
-
-	    case OCPI::API::OCPI_String:
-	      {
-		tt = align(8,orig,tt);
-		//		  uint32_t * len =  (uint32_t*)tf + m_data.mOffset(n);
-		// c_char * msg = (c_char*)(len+1);
-		c_char * msg = (c_char*)(tf + m_data.mOffset(n));
-		c_string * st = (c_string*)tt;
-		*st = c_stringNew(base, (c_char*)msg);	  
-		tt += sizeof(c_string);
-	      }
-	      break;
-
-	      // Satisfy the compiler
-	    case OCPI::API::OCPI_none:
-	    case OCPI::API::OCPI_scalar_type_limit:
-	      ocpiAssert( !"Should never see these types in protocol spec");
-	      break;
-	    }
-	  }
-	  return ret;
+	  Writer w(m_data,(uint8_t*)to, base);
+	  m_data.m_proto->write( w, (uint8_t*)from, m_data.maxMsgSize(), 0);
+	  return true;
 	}
 
 	char * getFreeBuffer() {
@@ -551,7 +1071,6 @@ namespace OCPI {
 
 	void   dataReaderCopy (gapi_dataSampleSeq *samples, gapi_readerInfo *info)
 	{
-
 	  unsigned int i, len;
 	  MsgSeq * data_seq = reinterpret_cast<MsgSeq *>(info->data_buffer);
 	  ::DDS::SampleInfoSeq *info_seq = reinterpret_cast< ::DDS::SampleInfoSeq * >(info->info_buffer);
@@ -704,6 +1223,10 @@ namespace OCPI {
 	std::list<Topic*> m_topics;
       public:
 	TopicManager() {}
+	~TopicManager() 
+	{
+	  m_topics.clear();
+	}
 	  
 	static TopicManager & manager() {
 	  static TopicManager * tp = NULL;
@@ -746,50 +1269,6 @@ namespace OCPI {
 	createTopic(m_data.name.c_str());	  
       };
 
-      struct EndPoint  {
-	EndPoint( const char * ep ) 
-	  : m_url(ep)
-	{
-	  char ms[128];
-	  char k[128];
-	  char t[128];
-
-	  /* ocpi-dds-msg://topic-name:key */
-	  //	  int c = sscanf(ep,"ocpi-dds-msg://%[^;];%[^;];%[^;];%s", t, m,s, k );
-	  int c = sscanf(ep,"ocpi-dds-msg://%[^;];%[^;];%s", t, ms, k );
-	  if ( c == 1 ) {
-	    topic = t;	      
-	  }
-	  else if ( c != 3 ) {
-	    fprintf( stderr, "DDS::EndPoint  ERROR: Bad DDS endpoint format (%s)\n", ep );
-	    throw DataTransfer::DataTransferEx( DataTransfer::UNSUPPORTED_ENDPOINT, ep );	  
-	  }
-	  else {
-	    c = strlen(ms)-1;
-	    if ( ms[c] == ',' ) ms[c] = 0;
-	    while ( c > 0 ) {
-	      if ( ms[c] == ':' ) {
-		struct_name = &ms[c+1];
-		ms[c-1] = 0;
-		module_name = ms;
-		break;
-	      }		   
-	      c--;
-	    }
-	    topic = t;
-	    type = module_name;
-	    type += "::";
-	    type += struct_name;
-	    key = k;
-	  }
-	}
-	std::string type;
-	std::string topic;
-	std::string module_name;
-	std::string struct_name;
-	std::string key;	  
-	std::string m_url;
-      };
 
       class Buffer : public OCPI::DataTransport::BufferUserFacet {
 	friend class MsgChannel;
@@ -825,8 +1304,8 @@ namespace OCPI {
 	MsgDataWriter_var  m_writer;
 	int m_bufCount;
 	
-	::DDS::Publisher_var  m_publisher;
-	::DDS::Subscriber_var m_subscriber;
+	::DDS::Publisher_ptr  m_publisher;
+	::DDS::Subscriber_ptr m_subscriber;
 	::DDS::DataWriter_ptr m_writer_ptr;
 	::DDS::DataReader_ptr m_reader_ptr;
 
@@ -845,13 +1324,10 @@ namespace OCPI {
 	{
 	  (void)our_props;
 	  (void)other_props;
-	  m_td.name = m_ep.topic;
-	  m_td.key = m_ep.key;
-	  m_td.type = m_ep.type;
-	  m_td.module_name = m_ep.module_name;
-	  m_td.struct_name = m_ep.struct_name;
+	  m_td.setEp( m_ep );
 	  m_td.formatDDSMetaData();
 	  m_topic = TopicManager::manager().getTopic( m_td );
+
 
 	  //create Subscriber
 	  m_subscriber = m_topic->createSubscriber();
@@ -892,10 +1368,20 @@ namespace OCPI {
 
 	virtual ~MsgChannel()
 	{
-	  m_subscriber->delete_datareader(m_reader);
-	  m_publisher->delete_datawriter(m_writer);
-	  m_topic->getParticipant()->delete_subscriber(m_subscriber.in());
-	  m_topic->getParticipant()->delete_publisher(m_publisher.in());
+
+	  /*
+	  try {
+	    m_subscriber->delete_datareader(m_reader);
+	    m_publisher->delete_datawriter(m_writer);
+	    m_topic->getParticipant()->delete_subscriber(m_subscriber);
+	    m_topic->getParticipant()->delete_publisher(m_publisher);
+
+	    m_subscriber = NULL;
+	    m_publisher = NULL;
+
+	  }
+	  catch ( ... ) {}
+	  */
 	}
 	  
 	void post (OCPI::DataTransport::BufferUserFacet* b, uint32_t msg_size )
@@ -951,7 +1437,7 @@ namespace OCPI {
 	  checkStatus(status, "msgDataReader::take");
 	  if ( buf->m_msgList.length() ) {
 	    ocpiAssert( buf->m_msgList.length() == 1 );
-	    buf->m_dLen = buf->m_bLen = m_td.msgFixedSize();
+	    buf->m_dLen = buf->m_bLen = m_td.maxMsgSize();
 	    buf->m_buf = &buf->m_msgList[0].data;
 	    m_fullRcvBuffers.push_back( buf );
 	    return true;
