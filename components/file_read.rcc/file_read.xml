@@ -1,0 +1,20 @@
+<!-- 
+The file reader reads a file and sends data to the "out" port.
+Properties:
+ messagesInFile: indicates that messages, including length and opcode, will be in the file
+ opcode: indicates a fixed opcode to use, defaults to zero
+ messageSize: indicates the size of messages
+ granularity: incidates that the last message will be truncated to be a multiple of this.
+-->
+<RccImplementation controloperations="start">
+  <ComponentSpec name='file_read'>
+    <DataInterfaceSpec Name="out" Producer="true"/>
+    <property name='messagesInFile' type='bool' readable='true'/>
+    <property name='opcode' type='uchar' readable='true'/>
+    <property name='messageSize' type='ulong' readable='true'/>
+    <property name='granularity' type='ulong' readable='true'/>
+    <property name='bytesRead' type='uLongLong' readable='true'/>
+    <property name='messagesWritten' type='uLongLong' readable='true'/>
+    <property name='fileName' type='string' stringLength='1024'/>
+  </ComponentSpec>
+</RccImplementation>
