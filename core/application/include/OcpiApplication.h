@@ -57,6 +57,7 @@ namespace OCPI {
       typedef OCPI::Container::Container::CMap CMap;
       const OCPI::Library::Assembly &m_assembly;
       bool m_ownAssembly;
+
       struct Instance {
 	const OCPI::Library::Implementation *m_impl; // The chosen, best implementation
 	unsigned m_container;                        // LOCAL ordinal - among those we are using
@@ -65,16 +66,35 @@ namespace OCPI {
 	Instance();
 	~Instance();
       } *m_instances;
+
+      // This class represents a mapping from an externally visible property of the assembly
+      // to an individual property of an instance. It must be at this layer
+      // (not util::assembly or library::assembly) because it potentially depends on the 
+      // implementation specific properties of the implementations selected.
+      struct Property {
+	std::string m_name;  // qualified name:   instance.property
+	unsigned m_instance; // ordinal of instance in assembly
+	unsigned m_property; // ordinal of property in implememtation of instance
+      } *m_properties;
+      unsigned m_nProperties;
       // The bits in the cmap show which containers are possible for that candidate implementation
       CMap m_curMap;   // A temporary that accumulates containers for a candidate
       CMap m_allMap;   // A map of all containers chosen/used
       unsigned m_nContainers;                         // how many containers have been used
-      unsigned *m_usedContainers;                     // per used container, its container ordinal (global ordinal)
+      unsigned *m_usedContainers;                     // per used container, its container ordinal (global)
       // Now the runtime state.
       OCPI::Container::Container **m_containers;      // the actual containers we are using
       OCPI::Container::Application **m_containerApps; // per used container, the container app
-      typedef std::map<const char*, ExternalPort *, OCPI::Library::Comp> Externals;
-      typedef std::pair<const char*, ExternalPort *> ExternalPair;
+      // External ports - recorded until we know whether it will be a ExternalPort, or a remote port
+      struct External {
+	Port &m_port; // The internal worker port
+	const PValue *m_params; //  Connection parameters from the OU::Assembly
+	ExternalPort *m_external; // The external port created from connectExternal.
+	inline External(Port &port, const PValue *params)
+	  : m_port(port), m_params(params), m_external(NULL) {}
+      };
+      typedef std::map<const char*, External, OCPI::Library::Comp> Externals;
+      typedef std::pair<const char*, External> ExternalPair;
       Externals m_externals;
       OCPI::Container::Worker **m_workers;
       OCPI::Container::ExternalPort **m_externalPorts;
@@ -89,7 +109,11 @@ namespace OCPI {
       void initialize();
       void start();
       void stop();
+      void wait();
       ExternalPort &getPort(const char *);
+      bool getProperty(unsigned ordinal, std::string &name, std::string &value);
+      // This will be used for the port connection protocol
+      OCPI::Container::Port &getRemote(const char *);
     };
   }
 }

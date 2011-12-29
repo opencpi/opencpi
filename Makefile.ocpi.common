@@ -33,6 +33,7 @@
 #
 ########################################################################### #
 
+MAIN_LDFLAGS=$(LDFLAGS)
 # Here we define the preprocessor definitions that tell the
 # source code about the compilation environment
 # We use "platform" rather than "arch" so that it can be more specific than
@@ -168,7 +169,7 @@ $(OBJDIR)/%.obj : %.cpp
 		-o "$@"
 
 $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
-	$(LD) $(LDFLAGS) -o "$@" \
+	$(LD) $(MAIN_LDFLAGS) -o "$@" \
 		$(filter %.obj,$^) \
 		$(DYNOBJS) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
@@ -267,7 +268,7 @@ $(OBJDIR)/%.obj : %.cpp
 		-o "$@"
 
 $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $$(DYNOBJS)
-	$(LD) $(LDFLAGS) /OUT:"$@" \
+	$(LD) $(MAIN_LDFLAGS) /OUT:"$@" \
 		$(filter %.obj,$^) \
 		$(DYNOBJS) \
 		$(patsubst %,/libpath:%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
@@ -288,13 +289,17 @@ ifneq ($(filter linux darwin,$(OCPI_OS)),)
 # Unix compile-time configuration
 #
 
+MAIN_LDFLAGS+=-Xlinker -rpath -Xlinker "$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)"
 ifeq ($(OCPI_OS),darwin)
 SO=dylib
 LD_ALLOW_UNDEFINED=-undefined dynamic_lookup
 SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOC_UNDEFINED) -install_name @rpath/$(notdir $@)
 SHARED=-dynamiclib -install_name @rpath/$(notdir $@)
 BASICLIBS=
-CXXFLAGS += -Wall
+CXXFLAGS += -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare
+# -Wuninitialized only usable with -O
+# not available on -Wunused-but-set-variable -Wignored-qualifiers -Wconversion-null -Wint-to-pointer-cast
+#CXXFLAGS += -Wall
 # CXXFLAGS += -mdynamic-no-pic ideally do this for main programs...
 else
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
@@ -414,7 +419,7 @@ $(OBJDIR)/%.obj : %.cpp
 		-o "$@"
 #$(info WE ARE HERE: $(OBJDIR) $(LDFLAGS))
 $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
-	$(LD) $(LDFLAGS) -o "$@" \
+	$(LD) $(MAIN_LDFLAGS) -o "$@" \
 		$(filter %.obj,$^) \
 		$(patsubst %,-L%$(OCPI_OUT_DIR),$(dir $(ALLLIBS))) \
 		$(addprefix -L,$(dir $(SYSLIBS)) $(SYSLIBDIRS)) \

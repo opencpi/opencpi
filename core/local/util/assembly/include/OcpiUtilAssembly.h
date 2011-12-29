@@ -79,7 +79,7 @@ namespace OCPI {
 	const char *parse(ezxml_t ix, ezxml_t ax);
       };
       struct External {
-	std::string m_name; // the nanme
+	std::string m_name; // the name
 	std::string m_url;  // the URL that this external attachment has
 	bool m_provider;    // is this external attachment acting as a provider to the world?
 	PValueList m_parameters;

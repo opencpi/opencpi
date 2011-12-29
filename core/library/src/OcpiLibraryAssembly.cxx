@@ -60,8 +60,42 @@ namespace OCPI {
 					  i->m_selection.empty() ? NULL : i->m_selection.c_str()))
 	  throw OU::Error(i->m_selection.empty() ?
 			  "No implementations found in any libraries for \"%s\"" :
-			  "No acceptable implementations found in any libraries for \"%s\"",
-			  i->m_specName.c_str());
+			  "No acceptable implementations found in any libraries "
+			  "for \"%s\" (for selection: \"%s\")",
+			  i->m_specName.c_str(), i->m_selection.c_str());
+
+      // Check for interface compatibility.
+      // We assume all implementations have the same protocol metadata
+      unsigned nConns = m_connections.size();
+      for (unsigned n = 0; n < nConns; n++) {
+	const OU::Assembly::Connection &c = m_connections[n];
+	if (c.m_ports.size() == 2) {
+	  const OU::Implementation // implementations on both sides of the connection
+	    &i0 = m_candidates[c.m_ports[0].m_instance][0].impl->m_metadataImpl,
+	    &i1 = m_candidates[c.m_ports[1].m_instance][0].impl->m_metadataImpl;
+	  OU::Port // ports on both sides of the connection
+	    *ap0 = i0.findPort(c.m_ports[0].m_name),
+	    *ap1 = i1.findPort(c.m_ports[1].m_name);
+	  if (!ap0 || !ap1)
+	    throw OU::Error("Port name (\"%s\") in connection does not match any port in implementation",
+			    (ap0 ? c.m_ports[1] : c.m_ports[0]).m_name.c_str());
+	  if (ap0->m_provider == ap1->m_provider)
+	    throw OU::Error("Port roles (ports \"%s\" and \"%s\") in connection are incompatible",
+			    ap0->m_name.c_str(), ap1->m_name.c_str());
+	  // Protocol on both sides of the connection
+	  OU::Protocol &p0 = *ap0, &p1 = *ap1;
+	  if (p0.m_name.size()  && p1.m_name.size() && p0.m_name != p1.m_name)
+	    throw OU::Error("Protocols (ports \"%s\" protocol \%s\" vs. port \"%s\" protocol \"%s\") "
+			    "in connection are incompatible",
+			    p0.m_name.c_str(), p1.m_name.c_str());
+	  
+	  // FIXME:  more robust naming, namespacing, UUIDs, hash etc.
+	    
+	}
+      }
+      
+      // Consolidate properties
+      
     }
   }
 }

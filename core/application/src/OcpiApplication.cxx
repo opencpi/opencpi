@@ -64,27 +64,24 @@ namespace OCPI {
       delete [] m_usedContainers;
       delete [] m_instances;
       delete [] m_containers;
-    }
-    bool ApplicationI::foundContainer(OCPI::Container::Container &c) {
-      m_curMap |= 1 << c.ordinal();
-      return false;
+      delete [] m_properties;
     }
     void ApplicationI::init() {
-      unsigned
-	nInstances = m_assembly.m_instances.size(),
-	currConn = 0; // for rotating placement
-      m_instances = new Instance[nInstances];
       m_allMap = m_curMap = 0;   // accumulate all containers actually used
       m_nContainers = 0;
-      m_usedContainers = new unsigned[nInstances]; // over allocated - could use less
       m_containers = NULL;
       m_containerApps = NULL;
       m_workers = NULL;
       m_externalPorts = NULL;
       m_externalNames = NULL;
-
+      m_properties = NULL;
+      m_nProperties = 0;
+      unsigned
+	nInstances = m_assembly.m_instances.size(),
+	currConn = 0; // for rotating placement
+      m_usedContainers = new unsigned[nInstances]; // over allocated - could use less
+      Instance *i = m_instances = new Instance[nInstances];
       // For all instances in the assembly
-      Instance *i = m_instances;
       for (unsigned n = 0; n < nInstances; n++, i++) {
 	OL::Candidates &cs = m_assembly.m_candidates[n];
 	CMap
@@ -112,11 +109,13 @@ namespace OCPI {
 			  "for instance %s of component (spec) %s",
 			  cs.size(), m_assembly.m_instances[n].m_name.c_str(),
 			  m_assembly.m_instances[n].m_specName.c_str());
-	// Now that we have an implementation we can finally check any assembly-supplied
-	// initial properties of the instance against the implementation metadata to
-	// see if the names and values are valid. We don't save the results,
-	// but later we can assume they are valid.
+	// The chosen, best, feasible implementation for the instance
 	const OL::Implementation &impl = *i->m_impl;
+
+	// Check any assembly-supplied initial properties of the
+	// instance against the implementation metadata to see if the
+	// names and values are valid. We don't save the results, but
+	// later we can assume they are valid.
 	const OU::Assembly::Properties &aProps = m_assembly.m_instances[n].m_properties;
 	unsigned nPropValues = aProps.size();
 	if (nPropValues) {
@@ -137,6 +136,7 @@ namespace OCPI {
 			      impl.m_metadataImpl.specName().c_str());
 	  }
 	}
+
 	// Now we must select the container for the best candidate.
 	// As a default, we will rotate through the possible containers to spread them out
 	// So, find the next (rotating) container for the best candidate
@@ -159,7 +159,43 @@ namespace OCPI {
 	      break;
 	    }
       }
+      // Now that we have specific implementations we can do property-aggregation work,
+      // since instances can have implementation-specific properties.
+      // First, we build the property map that exposes all instance properties as app properties.
+      // FIXME: allow XML expression of specific renamed mappings:
+      //       <property name="foo" instance="bar" [property="baz"]/>
+      i = m_instances;
+      // For all instances in the assembly
+      m_nProperties = 0;
+      for (unsigned n = 0; n < nInstances; n++, i++)
+	m_nProperties += i->m_impl->m_metadataImpl.m_nProperties;
+      Property *p = m_properties = new Property[m_nProperties];
+      i = m_instances;
+      for (unsigned n = 0; n < nInstances; n++, i++) {
+	unsigned nProps;
+	OU::Property *mp = i->m_impl->m_metadataImpl.properties(nProps);
+	for (unsigned nn = 0; nn < nProps; nn++, mp++, p++) {
+	  p->m_name = m_assembly.m_instances[n].m_name + ":" + mp->m_name;
+	  p->m_instance = n;
+	  p->m_property = nn;
+	}
+      }
+      // To prepare for remote containers, we need to organize the containers we are
+      // using by their server.  Then we essentially synthesize an "app" for each server.
+      // so the interface to the server is a subset of the info here.
+      // There is the top side and the bottom side.
+      // THe bottom side is recogniing that you have "remote" connections.
+      // The top side is decomposing and merging etc.
+      // Assuming that we send the server an XML assembly, it means we need to express remote
+      // connections in that xml.
+
+
     }
+    bool ApplicationI::foundContainer(OCPI::Container::Container &c) {
+      m_curMap |= 1 << c.ordinal();
+      return false;
+    }
+
     void ApplicationI::initialize() {
       unsigned nInstances = m_assembly.m_instances.size();
       m_containers = new OC::Container *[m_nContainers];
@@ -214,8 +250,9 @@ namespace OCPI {
 	  if (e.m_url.size())
 	    apiPort.connectURL(e.m_url.c_str(), assPort.m_parameters, e.m_parameters);
 	  else {
-	    ExternalPort &ep = apiPort.connectExternal(e.m_name.c_str(), assPort.m_parameters, e.m_parameters);
-	    m_externals.insert(ExternalPair(e.m_name.c_str(), &ep));
+	    //ExternalPort &ep = apiPort.connectExternal(e.m_name.c_str(), assPort.m_parameters, e.m_parameters);
+	    
+	    m_externals.insert(ExternalPair(e.m_name.c_str(), External(apiPort, e.m_parameters)));
 	  }
 	}
       }
@@ -228,11 +265,27 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nContainers; n++)
 	m_containerApps[n]->stop();
     }
+    void ApplicationI::wait() {
+      for (unsigned n = 0; n < m_nContainers; n++)
+	m_containerApps[n]->wait();
+    }
+
     ExternalPort &ApplicationI::getPort(const char *name) {
       Externals::iterator ei = m_externals.find(name);
       if (ei == m_externals.end())
 	throw OU::Error("Unknown external port name for application: \"%s\"", name);
-      return *ei->second;
+      External &ext = ei->second;
+      if (!ext.m_external)
+	ext.m_external = &ext.m_port.connectExternal(name, ext.m_params);
+      return *ext.m_external;
+    }
+    bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value) {
+      if (ordinal >= m_nProperties)
+	return false;
+      Property &p = m_properties[ordinal];
+      name = p.m_name;
+      std::string dummy;
+      return m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);
     }
 
     ApplicationI::Instance::Instance() :
@@ -252,10 +305,15 @@ namespace OCPI {
     Application::Application(const std::string &string)
       : m_application(*new ApplicationI(string)) {
     }
+    Application::~Application() { delete &m_application; }
     void Application::initialize() { m_application.initialize(); }
     void Application::start() { m_application.start(); }
     void Application::stop() { m_application.start(); }
+    void Application::wait() { m_application.wait(); }
     ExternalPort &Application::getPort(const char *name) { return m_application.getPort(name); }
-    Application::~Application() { delete &m_application; }
+    bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value) {
+      return m_application.getProperty(ordinal, name, value);
+    }
+
   }
 }

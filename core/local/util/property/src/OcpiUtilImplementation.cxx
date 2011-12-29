@@ -56,14 +56,14 @@ namespace OCPI {
     unsigned Implementation::whichProperty(const char *id) const {
       Property *p = m_properties;
       for (unsigned n=0; n < m_nProperties; n++, p++)
-        if (p->m_name == id)
+        if (!strcasecmp(p->m_name.c_str(), id))
           return n;
-      throw Error("Unknown property: \"%s\"", id);
+      throw Error("Unknown property: \"%s\" for worker \"%s\"", id, m_specName.c_str());
     }
     Property &Implementation::findProperty(const char *id) const {
       return *(m_properties + whichProperty(id));
     }
-    Port *Implementation::findPort(const char *id) const {
+    Port *Implementation::findPort(const std::string &id) const {
       Port *p = m_ports;
       for (unsigned int n = m_nPorts; n; n--, p++)
         if (p->m_name == id)
@@ -120,11 +120,28 @@ namespace OCPI {
     }
     // Get a property value from the metadata
     const char *Implementation::getValue(const std::string &sym, ExprValue &val) {
+      // Our builtin symbols take precendence, but can be overridden with $
+      if (sym == "model") {
+	val.number = false;
+	val.string = m_model;
+	return NULL;
+      } else if (sym == "platform") {
+	val.number = false;
+	val.string = m_attributes->m_platform;
+	return NULL;
+      } else if (sym == "os") {
+	val.number = false;
+	val.string = m_attributes->m_os;
+	return NULL;
+      }
       Property *p = m_properties;
+      const char *cSym = sym.c_str();
+      if (cSym[0] == '@')
+	cSym++;
       for (unsigned n = 0; n < m_nProperties; n++, p++)
-	if (p->m_name == sym)
+	if (p->m_name == cSym)
 	  return p->getValue(val);
-      return esprintf("no property found for identifier \"%s\"", p->m_name.c_str());
+      return esprintf("no property found for identifier \"%s\"", cSym);
     }
 
     void parse3(char *s, std::string &s1, std::string &s2,

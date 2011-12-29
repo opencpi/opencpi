@@ -104,6 +104,7 @@ namespace OCPI {
 	  (err = OE::checkElements(ix, "property", NULL)))
 	return err;
       OE::getOptionalString(ix, m_name, "name");
+      OE::getOptionalString(ix, m_selection, "selection");
       // default is worker%d unless there is only one, in which case it is "worker".
       if (m_name.empty()) {
 	unsigned me = 0, n = 0;

@@ -49,12 +49,14 @@
 
 namespace OCPI {
   namespace Library {
+    // This class represents a candidate implementation for an instance.
     struct Candidate {
       // The impl is not a reference since std::vector must copy it :-(
       const Implementation *impl; unsigned score;
       inline Candidate(const Implementation &impl, unsigned score) : impl(&impl), score(score) {}
     };
     typedef std::vector<Candidate> Candidates;   // a set of candidates for an instance
+
     class Assembly : public OCPI::Util::Assembly,  public ImplementationCallback {
       Candidates *m_tempCandidates;              // set currently being processed (for one instance)
     public:

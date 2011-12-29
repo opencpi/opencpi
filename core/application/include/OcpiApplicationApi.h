@@ -55,12 +55,14 @@ namespace OCPI {
       virtual ~Application();
       // This does the setup - creating/instantiating workers, 
       // setting initial properties, and making connections
-      virtual void initialize();
+      void initialize();
       // This makes the application operational, and resumes after "stop"
-      virtual void start();
+      void start();
+      void wait();
       // Suspension, that can be resumed with "start".
-      virtual void stop();
+      void stop();
       ExternalPort &getPort(const char *);
+      bool getProperty(unsigned ordinal, std::string &name, std::string &value);
     };
   }
 }

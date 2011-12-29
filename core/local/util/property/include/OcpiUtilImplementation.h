@@ -139,7 +139,7 @@ namespace OCPI {
         ocpiAssert(which < m_nProperties);
         return m_properties[which];
       }
-      Port *findPort(const char *id) const;
+      Port *findPort(const std::string &id) const;
       inline Port &port(unsigned long which) const
       {
         ocpiAssert(which < m_nPorts);
