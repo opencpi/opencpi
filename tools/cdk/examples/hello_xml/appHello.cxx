@@ -8,7 +8,7 @@ namespace OA = OCPI::API;
 int main(int argc, char **argv) {
   std::string hello("<application>"
 		    // instance name defaults to hello since there is only one
-		    "  <instance worker='hello' selection='os==\"darwin\"'/>"
+		    "  <instance worker='hello' selection='os==\"linux\"'/>"
 		    "  <connection>"
 		    "    <external name='out'/>"
 		    "    <port instance='hello' name='out'/>"
