@@ -1580,7 +1580,7 @@ emitWorker(FILE *f, Worker *w)
     OU::Property *prop = *pi;
     if (prop->m_isParameter)
       continue;
-    prop->printAttrs(f, "property");
+    prop->printAttrs(f, "property", 1);
     if (prop->m_isReadable)
       fprintf(f, " readable=\"true\"");
     if (prop->m_isWritable)

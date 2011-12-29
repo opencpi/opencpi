@@ -75,7 +75,10 @@ Implementations = \
 	vadd.ocl \
 	vsadd.ocl \
 	power_spectrum_1d.ocl \
-	testmulti.ocl
+	testmulti.ocl \
+        file_read.rcc \
+        file_write.rcc \
+	bias.rcc \
 
 #	wbr.hdl 
 

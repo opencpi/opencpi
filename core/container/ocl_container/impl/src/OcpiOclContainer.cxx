@@ -777,7 +777,7 @@ namespace OCPI
                 runTimer.stop();
               }
               isEnabled = false;
-              setControlState ( OM::Worker::UNUSABLE );
+              setControlState ( OC::UNUSABLE );
           }
           updatePortsPostRun();
         }

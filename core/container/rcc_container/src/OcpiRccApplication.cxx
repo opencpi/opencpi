@@ -208,8 +208,9 @@ run(DataTransfer::EventManager* event_manager, bool &more_to_do) {
 void Application::
 start() {
   for (Worker *w = firstChild(); w; w = w->nextChild())
-    if (w->getState() != OCPI::Metadata::Worker::EXISTS)
+    if (w->getState() != OC::EXISTS)
       w->start();
 }
+
   }
 }

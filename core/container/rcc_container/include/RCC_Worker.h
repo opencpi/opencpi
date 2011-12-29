@@ -127,7 +127,8 @@ typedef enum {
   RCC_ERROR,
   RCC_FATAL,
   RCC_DONE,
-  RCC_ADVANCE
+  RCC_ADVANCE,
+  RCC_ADVANCE_DONE
 } RCCResult;
 
 typedef uint32_t RCCPortMask;

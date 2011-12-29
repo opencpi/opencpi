@@ -43,7 +43,7 @@ namespace OCPI {
   namespace API {
     namespace OU = OCPI::Util;
     void Property::checkTypeAlways(BaseType ctype, unsigned n, bool write) const {
-      if (write && !m_info.m_isWritable)
+      if (write && !m_info.m_isWritable && !m_worker.beforeStart())
 	throw "trying to write a non-writable property";
       if (!write && !m_info.m_isReadable)
 	throw "trying to read a non-readable property";

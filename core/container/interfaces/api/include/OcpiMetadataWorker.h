@@ -129,14 +129,6 @@ namespace OCPI {
       {
         return totalPropertySize;
       }
-      enum ControlState {
-        EXISTS,
-        INITIALIZED,
-        OPERATING,
-        SUSPENDED,
-        UNUSABLE,
-        NONE
-      };
       enum ControlOperation {
 #define CONTROL_OP(x, c, t, s1, s2, s3)  Op##c,
       OCPI_CONTROL_OPS

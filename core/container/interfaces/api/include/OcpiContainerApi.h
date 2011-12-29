@@ -98,6 +98,7 @@ namespace OCPI {
       virtual PropertyInfo &setupProperty(unsigned n,
 					  volatile void *&m_writeVaddr,
 					  const volatile void *&m_readVaddr) = 0;
+      virtual bool beforeStart() = 0;
     protected:
       virtual ~Worker();
     public:

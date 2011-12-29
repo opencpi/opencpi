@@ -96,6 +96,11 @@ namespace OCPI {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	w->stop();
     }
+    void Application::
+    wait() {
+      for (Worker *w = firstWorker(); w; w = w->nextWorker())
+	w->wait();
+    }
   }
   namespace API {
     ContainerApplication::~ContainerApplication(){}

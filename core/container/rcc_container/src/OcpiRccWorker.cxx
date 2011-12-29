@@ -641,7 +641,7 @@ void Worker::run(bool &anyone_run) {
 					     RCC_OK) != RCC_OK) {
 	  enabled = false;
 	  // FIXME: do anything with timers?  release?
-	  setControlState(OM::Worker::UNUSABLE);
+	  setControlState(OC::UNUSABLE);
 	}
       }
     }
@@ -656,9 +656,12 @@ void Worker::run(bool &anyone_run) {
       case RCC_ADVANCE:
 	advanceAll();
 	break;
+      case RCC_ADVANCE_DONE:
+	advanceAll();
       case RCC_DONE:
 	// FIXME:  release all current buffers
 	enabled = false;
+	setControlState(OC::FINISHED);
 	break;
       case RCC_OK:
 	assert(enabled);
@@ -668,7 +671,7 @@ void Worker::run(bool &anyone_run) {
 	break;
       default:
 	enabled = false;
-	setControlState(OM::Worker::UNUSABLE);
+	setControlState(OC::UNUSABLE);
 	runTimer.stop();
       }
       checkDeadLock();
@@ -705,6 +708,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       rc = m_dispatch->initialize(m_context);
     break;
   case OM::Worker::OpStart:
+    // FIXME: ports that are not connected are not "created".
     // If a worker gets started before all of its ports are created: error
     if ( (int)(targetPortCount + sourcePortCount) != 
 	 (int)(m_dispatch->numInputs + m_dispatch->numOutputs ) )
@@ -771,7 +775,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
     break;
   case RCC_FATAL:
     enabled = false;
-    setControlState(OM::Worker::UNUSABLE);
+    setControlState(OC::UNUSABLE);
     throw OU::EmbeddedException( OU::WORKER_FATAL, m_context->errorString,
 				 OU::ApplicationFatal);
     break;

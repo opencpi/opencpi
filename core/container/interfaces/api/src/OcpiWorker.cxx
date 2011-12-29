@@ -48,7 +48,7 @@ namespace OM = OCPI::Metadata;
 namespace OCPI {
   namespace Container {
     Controllable::Controllable()
-      : m_state(OM::Worker::EXISTS), m_controlMask(0) {
+      : m_state(EXISTS), m_controlMask(0) {
     }
     void Controllable::setControlOperations(const char *ops) {
       if (ops) {
@@ -161,8 +161,10 @@ namespace OCPI {
 	  v.m_stringSpace = new char[space];
 	  v.m_nElements = getStringSequenceProperty(a, (char **)v.m_pString, p.m_sequenceLength,
 						    v.m_stringSpace, space);
-	} else
+	} else {
+	  v.m_String = v.m_stringSpace = new char[p.m_stringLength + 1];
 	  getStringProperty(a, (char *)v.m_String, p.m_stringLength + 1);
+	}
 	break;
       case OA::OCPI_none: case OA::OCPI_Struct: case OA::OCPI_Type: case OA::OCPI_Enum:
       case OA::OCPI_scalar_type_limit:;
@@ -209,26 +211,26 @@ namespace OCPI {
 #undef CONTROL_OP
 
     struct ControlTransition {
-      OM::Worker::ControlState valid[3];
-      OM::Worker::ControlState next;
+      ControlState valid[3];
+      ControlState next;
     } controlTransitions[] = {
 #define CONTROL_OP(x, c, t, s1, s2, s3)  \
-      {{OM::Worker::s1, OM::Worker::s2, OM::Worker::s3}, OM::Worker::t},
+      {{s1, s2, s3}, t},
 	OCPI_CONTROL_OPS
 #undef CONTROL_OP
     };
     void Worker::controlOp(OM::Worker::ControlOperation op) {
       OU::AutoMutex guard (m_workerMutex, true);
-      OM::Worker::ControlState cs = getControlState();
+      ControlState cs = getControlState();
       ControlTransition ct = controlTransitions[op];
       if (cs == ct.valid[0] ||
-	  (ct.valid[1] != OM::Worker::NONE && cs == ct.valid[1]) ||
-	  (ct.valid[2] != OM::Worker::NONE && cs == ct.valid[2])) {
+	  (ct.valid[1] != NONE && cs == ct.valid[1]) ||
+	  (ct.valid[2] != NONE && cs == ct.valid[2])) {
         controlOperation(op);
-	if (ct.next != OM::Worker::NONE)
+	if (ct.next != NONE)
 	  setControlState(ct.next);
       } else
-	throw OU::EmbeddedException(cs == OM::Worker::UNUSABLE ?
+	throw OU::EmbeddedException(cs == UNUSABLE ?
 				    OU::WORKER_UNUSABLE :
 				    OU::INVALID_CONTROL_SEQUENCE,
 				    "Illegal control state for operation",
@@ -236,6 +238,14 @@ namespace OCPI {
       Application &a = application();
       Container &c = a.container();
       c.start();
+    }
+    bool Worker::beforeStart() {
+      return getControlState() == INITIALIZED;
+    }
+    void Worker::wait() {
+      while (getControlState() != UNUSABLE &&
+	     getControlState() != FINISHED)
+	usleep(10000);
     }
 
     //      application().container().start(); 

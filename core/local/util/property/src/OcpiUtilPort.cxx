@@ -46,12 +46,9 @@ namespace OCPI {
     }
 
     const char *Port::parse(ezxml_t x, PortOrdinal ordinal) {
-      const char *err;
-      const char *name = ezxml_cattr(x, "name");
-      if (!name)
-	return "missing name attributes for port element";
-      //      printf("Port %s has ordinal = %d\n", name, ordinal );
-
+      const char *err = OE::getRequiredString(x, m_name, "name", "port");
+      if (err)
+	return err;
       // Initialize everything from the protocol, then other attributes can override the protocol
       ezxml_t protocol = ezxml_cchild(x, "protocol");
       if (protocol &&

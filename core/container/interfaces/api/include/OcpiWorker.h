@@ -50,24 +50,33 @@ namespace OCPI {
     class EmbeddedException;
   }
   namespace Container {
+      enum ControlState {
+        EXISTS,
+        INITIALIZED,
+        OPERATING,
+        SUSPENDED,
+	FINISHED,
+        UNUSABLE,
+        NONE
+      };
     // This class is a small module of behavior used by workers, but available for other uses
     // Unfortunately, it is virtually inheritable (see HDL container's use of it).
     class Controllable {
     public:
-      inline OCPI::Metadata::Worker::ControlState getState() { return m_state; }
+      inline ControlState getState() { return m_state; }
       inline uint32_t getControlMask() { return m_controlMask; }
       inline void setControlMask(uint32_t mask) { m_controlMask = mask; }
-      inline void setControlState(OCPI::Metadata::Worker::ControlState state) {
+      inline void setControlState(ControlState state) {
 	m_state = state;
       }	
-      inline OCPI::Metadata::Worker::ControlState getControlState() {
+      inline ControlState getControlState() {
 	return m_state;
       }	
     protected:
       Controllable();
       void setControlOperations(const char *controlOperations);
     private:
-      OCPI::Metadata::Worker::ControlState m_state;
+      ControlState m_state;
       uint32_t m_controlMask;
     };
 
@@ -90,6 +99,7 @@ namespace OCPI {
       // Our thread safe mutex for the worker itself
       OCPI::OS::Mutex m_workerMutex;
       void controlOp(OCPI::Metadata::Worker::ControlOperation);
+      bool beforeStart();
     protected:
       inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
       virtual Port *findPort(const char *name) = 0;
@@ -146,6 +156,7 @@ namespace OCPI {
     OCPI_CONTROL_OPS
 #undef CONTROL_OP
       virtual void controlOperation(OCPI::Metadata::Worker::ControlOperation) = 0;
+      virtual void wait();
     };
   }
 }

@@ -94,6 +94,8 @@ namespace OCPI {
       virtual Worker *firstWorker() const = 0;
       void start();
       void stop();
+      // This method should block until all the workers in the application are "done".
+      virtual void wait();
     };
   } // Container
 } // OCPI

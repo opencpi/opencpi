@@ -257,6 +257,22 @@ doImplProp(ezxml_t prop, void *arg) {
   }
   return 0;
 }
+// Do top level properties mixed with other children
+static const char *
+doTopProp(ezxml_t prop, void *arg) {
+  // Now actually process a property element
+  const char *name = ezxml_name(prop);
+  if (!name || strcasecmp(name, "Property"))
+    return NULL;
+  Worker *w = (Worker *)arg;
+  const char *err;
+  if (!(err = OE::checkAttrs(prop, OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest",
+			    "Default", NULL)))
+    err = addProperty(w, prop, false);
+  return 0;
+}
+
+
 // Process one element of a properties element, checking for xi:includes
 static const char *
 doSpecProp(ezxml_t prop, void *arg) {
@@ -276,13 +292,7 @@ doSpecProp(ezxml_t prop, void *arg) {
   const char *name = ezxml_name(prop);
   if (!name || strcasecmp(name, "Property"))
     return "Element under Properties is neither Property or xi:include";
-  // Now actually process a property element
-  if ((err = OE::checkAttrs(prop, OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest",
-			    "Default", NULL)))
-    return err;
-  if ((err = addProperty(w, prop, false)))
-    return err;
-  return 0;
+  return doTopProp(prop, (void*)w);
 }
 
 // parse an attribute value as a list separated by comma, space or tab
@@ -322,9 +332,9 @@ static const char *parseControlOp(const char *op, void *arg) {
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 const char *
-parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
+parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t &xctl) {
   // Now we do the rest of the control interface
-  ezxml_t xctl = ezxml_cchild(impl, "ControlInterface");
+  xctl = ezxml_cchild(impl, "ControlInterface");
   const char *err;
   if (xctl) {
     if (w->noControl)
@@ -384,8 +394,6 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t *xctlp) {
       w->ctl.sizeOfConfigSpace = sizeOfConfigSpace;
     }
   }
-  if (xctlp)
-    *xctlp = xctl;
   return 0;
 }
 
@@ -409,7 +417,7 @@ parseImplLocalMemory(ezxml_t impl, Worker *w) {
 
 // Parse the control information about the component spec
 const char *
-parseSpecControl(Worker *w, ezxml_t ps, ezxml_t props) {
+parseSpecControl(Worker *w, ezxml_t ps, ezxml_t props, ezxml_t spec) {
   const char *err;
   if (ps) {
     if ((err = OE::checkAttrs(ps, "SizeOfConfigSpace", "WritableConfigProperties",
@@ -424,7 +432,8 @@ parseSpecControl(Worker *w, ezxml_t ps, ezxml_t props) {
     // No property summary, must have something else.
     if ((err = OE::ezxml_children(props, doSpecProp, w)))
       return err;
-  }
+  } else if ((err = OE::ezxml_children(spec, doTopProp, w)))
+    return err;
   return 0;
 }
 
@@ -495,9 +504,9 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
   } else if ((err = tryChildInclude(spec, file, "Properties", &props, NULL, true)))
     return err;
   if (w->noControl) {
-    if (ps || props)
-      return "NoControl specified, PropertySummary or Properties cannot be specified";
-  } else if ((err = parseSpecControl(w, ps, props)))
+    if (ps || props || OE::countChildren(spec, "property"))
+      return "NoControl specified, PropertySummary, Properties, Property cannot be specified";
+  } else if ((err = parseSpecControl(w, ps, props, spec)))
     return err;
   // Now parse the data aspects, allocating (data) ports.
   for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x)) {
@@ -560,7 +569,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   const char *err;
   ezxml_t xctl;
   if ((err = parseSpec(xml, file, w)) ||
-      (err = parseImplControl(xml, file, w, &xctl)))
+      (err = parseImplControl(xml, file, w, xctl)))
     return err;
   Port *wci;
   if (!w->noControl) {
@@ -1571,7 +1580,8 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
 const char *
 parseRcc(ezxml_t xml, const char *file, Worker *w) {
   const char *err;
-  if ((err = OE::checkAttrs(xml, "Name", "ExternMethods", "StaticMethods", "Threaded", (void*)0)))
+  if ((err = OE::checkAttrs(xml, "Name", "ExternMethods", "StaticMethods", "Threaded",
+			    "ControlOperations", (void*)0)))
     return err;
   // We use the pattern value as the method naming for RCC
   // and its presence indicates "extern" methods.
@@ -1579,8 +1589,11 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
   w->staticPattern = ezxml_cattr(xml, "StaticMethods");
   ezxml_t xctl;
   if ((err = parseSpec(xml, file, w)) ||
-      (err = parseImplControl(xml, file, w, &xctl)) ||
+      (err = parseImplControl(xml, file, w, xctl)) ||
+      (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "Threaded", (void *)0))) ||
       (err = OE::getBoolean(xml, "Threaded", &w->isThreaded)))
+    return err;
+  if ((err = parseList(ezxml_cattr(xml, "ControlOperations"), parseControlOp, w)))
     return err;
   // Parse data port implementation metadata: maxlength, minbuffers.
   for (ezxml_t x = ezxml_cchild(xml, "Port"); x; x = ezxml_next(x)) {
@@ -1625,7 +1638,7 @@ parseOcl(ezxml_t xml, const char *file, Worker *w) {
   w->staticPattern = ezxml_cattr(xml, "StaticMethods");
   ezxml_t xctl;
   if ((err = parseSpec(xml, file, w)) ||
-      (err = parseImplControl(xml, file, w, &xctl)) ||
+      (err = parseImplControl(xml, file, w, xctl)) ||
       (err = parseImplLocalMemory(xml, w )))
     return err;
   // Parse data port implementation metadata: maxlength, minbuffers.

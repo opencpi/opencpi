@@ -1,4 +1,4 @@
 <RccImplementation>
   <xi:include href="adc_unpack_spec.xml"/>
-  <ControlInterface SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop" Timeout="60"/>
+  <ControlInterface SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop"/>
 </RccImplementation>

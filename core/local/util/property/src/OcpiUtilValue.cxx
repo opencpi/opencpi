@@ -763,6 +763,7 @@ static void doFormat(std::string &s, const char *fmt, ...) {
 }
 
 void Value::unparse(std::string &s) const {
+  s.clear();
   if (m_vt->m_isSequence) {
     // Now we have allocated the appropriate sequence array, so we can parse elements
     //    doFormat(s, "\\<%lu\\>", m_nElements);

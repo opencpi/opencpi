@@ -1,4 +1,4 @@
 <RccImplementation>
   <xi:include href="morph_mean_spec.xml"/>
-  <ControlInterface Name="morph_mean" SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop" Timeout="60"/>
+  <ControlInterface SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop"/>
 </RccImplementation>
