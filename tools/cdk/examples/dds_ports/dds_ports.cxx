@@ -36,7 +36,10 @@ int main ( int argc, char* argv [ ] )
     OA::Port & in = consumer.getPort("in");
 
     in.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest::Msg1;u1");
-    out.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest::Msg1;u1");
+    //    out.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest::Msg1;u1");
+
+    out.connectURL( "ocpi-dds-msg://JTest_Msg1");
+
 
     producer.start();
     consumer.start();
@@ -71,6 +74,9 @@ int main ( int argc, char* argv [ ] )
   {
     std::cerr << "\n\nException(u): unknown\n" << std::endl;
   }
+
+
+  
 
   return 0;
 }
