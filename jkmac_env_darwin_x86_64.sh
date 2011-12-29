@@ -63,7 +63,7 @@ export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.2/ISE_DS
 
 # #### Location of Google Test (gtest) #################################### #
 
-export OCPI_GTEST_DIR=/opt/opencpi/darwin-x86_64/prerequisites/gtest
+export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
 
 # #### Location of Verilator #################################### #
 

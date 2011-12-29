@@ -66,7 +66,7 @@ export OCPI_ICARUS_DIR=/opt/opencpi/linux-x86_64/prerequisites/icarus/
 
 # #### Location of Google Test (gtest) #################################### #
 
-export OCPI_GTEST_DIR=/opt/opencpi/linux-x86_64/prerequisites/gtest
+export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
 
 # #### Build output location ############################################## #
 
