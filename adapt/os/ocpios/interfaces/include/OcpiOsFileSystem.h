@@ -402,8 +402,18 @@ namespace OCPI {
       //@}
       extern const char *slashes;
 
-    }
+      class Dir;
+      Dir *openDir(const std::string &dir) throw(std::string);
 
+      class Dir {
+	intptr_t m_opaque;
+	std::string m_name;
+      public:
+	Dir(const std::string &dir) throw (std::string);
+	bool next(std::string &s, bool &isDir) throw(std::string);
+	~Dir() throw();
+      };
+    }
   }
 }
 

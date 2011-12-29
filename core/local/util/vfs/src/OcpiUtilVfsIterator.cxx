@@ -34,12 +34,85 @@
 
 #include <OcpiUtilVfsIterator.h>
 
-OCPI::Util::Vfs::Iterator::Iterator ()
-  throw ()
+namespace {
+  bool
+  glob (const std::string & str,
+        const std::string & pat)
+    throw ()
+  {
+    int strIdx = 0, strLen = str.length ();
+    int patIdx = 0, patLen = pat.length ();
+    const char * name = str.data ();
+    const char * pattern = pat.data ();
+
+    while (strIdx < strLen && patIdx < patLen) {
+      if (*pattern == '*') {
+        pattern++;
+        patIdx++;
+        while (strIdx < strLen) {
+          if (glob (name, pattern)) {
+            return true;
+          }
+          strIdx++;
+          name++;
+        }
+        return (patIdx < patLen) ? false : true;
+      }
+      else if (*pattern == '?' || *pattern == *name) {
+        pattern++;
+        patIdx++;
+        name++;
+        strIdx++;
+      }
+      else {
+        return false;
+      }
+    }
+    
+    while (*pattern == '*' && patIdx < patLen) {
+      pattern++;
+      patIdx++;
+    }
+    
+    if (patIdx < patLen || strIdx < strLen) {
+      return false;
+    }
+    
+    return true;
+  }
+
+}
+
+namespace OCPI { namespace Util { namespace Vfs {
+
+Iterator::Iterator(Vfs &fs, const std::string &dir, const char *pattern, bool recursive)
+  throw (std::string)
+  : m_fs(fs), m_dirName(dir), m_pattern(pattern), m_recursive(recursive), m_dir(&fs.openDir(dir)),
+    m_skipLength(dir == "/" ? 1 : dir.length() + 1)
 {
 }
 
-OCPI::Util::Vfs::Iterator::~Iterator ()
-  throw ()
+Iterator::~Iterator () throw ()
 {
+  delete m_dir;
+}
+
+bool Iterator::next (std::string &str, bool &isDir) throw (std::string) {
+  do {
+    std::string entry;
+    if (m_dir->next(entry, isDir)) {
+      if (m_recursive && isDir)
+	m_dir = m_dir->pushDir(joinNames(m_dir->m_name, entry));
+      else if (glob(entry, m_pattern)) {
+	str = joinNames(m_dir->m_name, entry).substr(m_skipLength);
+	return true;
+      }
+    } else 
+      m_dir = m_dir->popDir();
+  } while (m_dir);
+  return false;
+}
+
+    }
+  }
 }

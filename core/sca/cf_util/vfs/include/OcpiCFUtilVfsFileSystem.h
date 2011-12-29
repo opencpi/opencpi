@@ -51,9 +51,14 @@
 #include <ctime>
 #include <string>
 #include <iostream>
-#include <OcpiUtilVfs.h>
-#include <OcpiUtilVfsIterator.h>
-#include <CF_s.h>
+
+#ifndef __cf_hh__
+#ifndef __CF_hh__
+#include "CF_s.h"
+#endif
+#endif
+#include "OcpiUtilVfs.h"
+#include "OcpiUtilVfsIterator.h"
 
 namespace OCPI {
   namespace CFUtil {
@@ -64,20 +69,19 @@ namespace OCPI {
      * delegating to a OCPI::Util::Vfs::Vfs instance.
      */
 
-    class VfsFileSystem : public POA_CF::FileSystem {
+    class VfsFileSystem : virtual public POA_CF::FileSystem {
     public:
-      VfsFileSystem (CORBA::ORB_ptr orb,
+      VfsFileSystem (//CORBA::ORB_ptr orb,
                      PortableServer::POA_ptr poa,
-                     OCPI::Util::Vfs::Vfs * fs,
-                     bool adopt)
+                     OCPI::Util::Vfs::Vfs * fs = NULL,
+                     bool adopt = true)
         throw ();
 
       /**
        * Destructor.
        */
 
-      ~VfsFileSystem ()
-        throw ();
+      ~VfsFileSystem ();
 
       /**
        * \name Implementation of the CF::FileSystem interface.
@@ -137,7 +141,7 @@ namespace OCPI {
         throw (CF::InvalidFileName);
 
     protected:
-      CORBA::ORB_var m_orb;
+      //      CORBA::ORB_var m_orb;
       PortableServer::POA_var m_poa;
       OCPI::Util::Vfs::Vfs * m_fs;
       bool m_adopted;

@@ -58,9 +58,8 @@ main (int argc, char *argv[])
   }
 
   try {
-    std::string currentDir = OCPI::OS::FileSystem::cwd ();
     OCPI::Logger::OStreamOutput logger (std::cout);
-    OCPI::Util::FileFs::FileFs localFs (currentDir);
+    OCPI::Util::FileFs::FileFs localFs;
     OCPI::Util::Http::Server server (&localFs, &logger);
     OCPI::Util::Tcp::Server serverPort (portNo, true);
 

@@ -300,12 +300,12 @@ setFilePointer (CORBA::ULong filePointer)
  */
 
 OCPI::CFUtil::VfsFileSystem::
-VfsFileSystem (CORBA::ORB_ptr orb,
+VfsFileSystem (//CORBA::ORB_ptr orb,
                PortableServer::POA_ptr poa,
                OCPI::Util::Vfs::Vfs * fs,
                bool adopt)
   throw ()
-  : m_orb (CORBA::ORB::_duplicate (orb)),
+  : //m_orb (CORBA::ORB::_duplicate (orb)),
     m_poa (PortableServer::POA::_duplicate (poa)),
     m_fs (fs),
     m_adopted (adopt)
@@ -314,7 +314,6 @@ VfsFileSystem (CORBA::ORB_ptr orb,
 
 OCPI::CFUtil::VfsFileSystem::
 ~VfsFileSystem ()
-  throw ()
 {
   if (m_adopted) {
     delete m_fs;
@@ -409,72 +408,42 @@ list (const char * pattern)
 
   std::string dir = OCPI::Util::Vfs::directoryName (pat);
   std::string bp = OCPI::Util::Vfs::relativeName (pat);
-
-  OCPI::Util::Vfs::Iterator * vit;
-
-  try {
-    vit = m_fs->list (dir, bp);
-  }
-  catch (const std::string & oops) {
-    CF::FileException fe;
-    fe.errorNumber = CF::CF_EFAULT;
-    fe.msg = oops.c_str ();
-    throw fe;
-  }
-
   CF::FileSystem::FileInformationSequence_var fis =
     new CF::FileSystem::FileInformationSequence;
-  CORBA::ULong index = 0;
 
   try {
-    while (!vit->end()) {
+    std::auto_ptr<OCPI::Util::Vfs::Iterator> vit(m_fs->list(dir, bp, true));
+
+    std::string name;
+    bool isDir;
+
+    for (CORBA::ULong index = 0; vit->next(name, isDir); index++) {
       fis->length (index + 1);
       CF::FileSystem::FileInformationType & fi = fis[index];
-      std::string fn = vit->relativeName ();
-
-      if (vit->isDirectory()) {
-        fn += '/';
-        fi.name = fn.c_str ();
+      std::string absName(OCPI::Util::Vfs::joinNames(dir,name));
+      if (isDir) {
+        absName += '/';
+        fi.name = absName.c_str ();
         fi.kind = CF::FileSystem::DIRECTORY;
         fi.size = 0;
-      }
-      else {
-        fi.name = fn.c_str ();
+      } else {
+        fi.name = absName.c_str ();
         fi.kind = CF::FileSystem::PLAIN;
-        fi.size = vit->size ();
+        fi.size = m_fs->size(absName);
       }
-
-      std::time_t lm = vit->lastModified ();
+      std::time_t lm = m_fs->lastModified(absName);
 
       if (lm != static_cast<std::time_t> (-1)) {
         fi.fileProperties.length (1);
         fi.fileProperties[0].id = CF::FileSystem::MODIFIED_TIME_ID;
         fi.fileProperties[0].value <<= static_cast<CORBA::ULong> (lm);
       }
-
-      index++;
-      vit->next ();
     }
-  }
-  catch (const std::string & oops) {
-    try {
-      m_fs->closeIterator (vit);
-    }
-    catch (...) {
-      ocpiAssert (0);
-    }
-
+  } catch (const std::string & oops) {
     CF::FileException fe;
     fe.errorNumber = CF::CF_EFAULT;
     fe.msg = oops.c_str ();
     throw fe;
-  }
-
-  try {
-    m_fs->closeIterator (vit);
-  }
-  catch (...) {
-    ocpiAssert (0);
   }
 
   return fis._retn ();

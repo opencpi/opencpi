@@ -58,6 +58,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include "OcpiUtilVfs.h"
 
 namespace OCPI {
   namespace Util {
@@ -74,7 +75,13 @@ namespace OCPI {
        */
 
       class Iterator {
-      protected:
+	friend class Vfs;
+	Vfs &m_fs;
+	std::string m_dirName, m_pattern;
+	bool m_recursive;
+	Dir *m_dir;
+	unsigned m_skipLength;
+      public:
         /**
          * Constructor
          *
@@ -82,8 +89,8 @@ namespace OCPI {
          * and returned from OCPI::Util::Vfs::Vfs::list().
          */
 
-        Iterator ()
-          throw ();
+        Iterator (Vfs &fs, const std::string &dir, const char *pattern = "*", bool recursive = false)
+          throw (std::string);
 
         /**
          * Destructor
@@ -96,6 +103,7 @@ namespace OCPI {
           throw ();
 
       public:
+#if 0
         /**
          * Test whether the iterator has moved beyond the last
          * element in the set of files.
@@ -106,9 +114,9 @@ namespace OCPI {
          *         called.
          */
 
-        virtual bool end ()
+        virtual bool end()
           throw (std::string) = 0;
-
+#endif
         /**
          * Move the iterator to the next element in the set.
          *
@@ -120,9 +128,10 @@ namespace OCPI {
          * \post next() == ! end()
          */
 
-        virtual bool next ()
-          throw (std::string) = 0;
+        virtual bool next(std::string &, bool &isDir)
+          throw (std::string);
 
+#if 0
         /**
          * The relative name of the file that the iterator points to.
          *
@@ -188,6 +197,7 @@ namespace OCPI {
 
         virtual std::time_t lastModified ()
           throw (std::string) = 0;
+#endif
       };
 
     }

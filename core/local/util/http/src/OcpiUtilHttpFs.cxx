@@ -204,6 +204,7 @@ rmdir (const std::string &)
  * ----------------------------------------------------------------------
  */
 
+#if 0
 OCPI::Util::Vfs::Iterator *
 OCPI::Util::Http::HttpFsBase::
 list (const std::string &, const std::string &)
@@ -219,6 +220,12 @@ closeIterator (OCPI::Util::Vfs::Iterator *)
   throw (std::string)
 {
   throw std::string ("should not be here");
+}
+#endif
+
+OCPI::Util::Vfs::Dir &OCPI::Util::Http::HttpFsBase::openDir(const std::string &) throw(std::string) {
+  throw std::string ("cannot list files via HTTP");
+  return *(OCPI::Util::Vfs::Dir*)0; // silence some stupid compilers
 }
 
 /*

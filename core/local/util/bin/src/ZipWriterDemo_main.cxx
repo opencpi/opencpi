@@ -32,30 +32,35 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <OcpiUtilVfsIterator.h>
 #include <OcpiUtilZipFs.h>
 #include <OcpiUtilFileFs.h>
 #include <OcpiOsFileSystem.h>
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <memory>
 
 void
 copyFilesRecursively (OCPI::Util::Vfs::Vfs * fs1, const std::string & name1,
                       OCPI::Util::Vfs::Vfs * fs2, const std::string & name2)
 {
-  OCPI::Util::Vfs::Iterator * it = fs1->list (name1);
+  std::auto_ptr<OCPI::Util::Vfs::Iterator> it(fs1->list (name1));
+  std::string name;
+  bool isDir;
 
-  while (!it->end()) {
-    std::string targetName =
-      OCPI::Util::Vfs::joinNames (name2, it->relativeName());
+  while (!it->next(name, isDir)) {
+    std::string
+      targetName = OCPI::Util::Vfs::joinNames (name2, name),
+      absName = OCPI::Util::Vfs::joinNames(name1, name);
 
-    if (it->isDirectory()) {
+    if (isDir) {
       std::cout << "Recursing into "
                 << targetName
                 << "/"
                 << std::endl;
 
-      copyFilesRecursively (fs1, it->absoluteName(),
+      copyFilesRecursively (fs1, absName,
                             fs2, targetName);
 
       std::cout << "Done with "
@@ -66,16 +71,13 @@ copyFilesRecursively (OCPI::Util::Vfs::Vfs * fs1, const std::string & name1,
     else {
       std::cout << "Copying "
                 << targetName
-                << " (" << it->size() << " bytes) ... "
+                << " (" << fs1->size(name) << " bytes) ... "
                 << std::flush;
-      fs1->copy (it->absoluteName(), fs2, targetName);
+      fs1->copy (absName, fs2, targetName);
       std::cout << "done." << std::endl;
     }
-
-    it->next ();
   }
 
-  fs1->closeIterator (it);
 }
 
 int
@@ -113,42 +115,41 @@ main (int argc, char *argv[])
     return 1;
   }
 
-  OCPI::Util::Vfs::Iterator * toAdd = localFs.list (patDirName, patRelName);
+  std::auto_ptr<OCPI::Util::Vfs::Iterator> toAdd(localFs.list (patDirName, patRelName));
+  std::string name;
+  bool isDir;
 
   try {
-    while (!toAdd->end()) {
-      if (toAdd->isDirectory()) {
+    while (toAdd->next(name, isDir)) {
+      std::string absName(OCPI::Util::Vfs::joinNames(patDirName, name));
+      if (isDir) {
         std::cout << "Recursing into "
-                  << toAdd->relativeName()
+                  << name
                   << "/"
                   << std::endl;
         copyFilesRecursively (&localFs,
-                              toAdd->absoluteName(),
+                              absName,
                               &zipFs,
-                              toAdd->relativeName());
+                              name);
         std::cout << "Done with "
-                  << toAdd->relativeName()
+                  << name
                   << "/"
                   << std::endl;
       }
       else {
         std::cout << "Copying "
-                  << toAdd->relativeName()
-                  << " (" << toAdd->size() << " bytes) ... "
+                  << name
+                  << " (" << localFs.size(absName) << " bytes) ... "
                   << std::flush;
-        localFs.copy (toAdd->absoluteName(),
+        localFs.copy (absName,
                       &zipFs,
-                      toAdd->relativeName());
+                      name);
         std::cout << "done." << std::endl;
       }
-
-      toAdd->next ();
     }
   }
   catch (const std::string & oops) {
     std::cout << "oops: " << oops << std::endl;
   }
-
-  localFs.closeIterator (toAdd);
   return 0;
 }

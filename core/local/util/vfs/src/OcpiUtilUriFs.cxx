@@ -300,7 +300,7 @@ OCPI::Util::Vfs::UriFs::rmdir (const std::string & fileName)
 /*
  * Directory Listing
  */
-
+#if 0
 OCPI::Util::Vfs::Iterator *
 OCPI::Util::Vfs::UriFs::list (const std::string & dir,
                              const std::string & pattern)
@@ -329,7 +329,13 @@ OCPI::Util::Vfs::UriFs::closeIterator (OCPI::Util::Vfs::Iterator * it)
   m_openIterators.erase (openIt);
   mp->closeIterator (it);
 }
-
+#endif
+OCPI::Util::Vfs::Dir &OCPI::Util::Vfs::UriFs::openDir(const std::string &name) throw(std::string) {
+  OCPI::Util::AutoWRLock lock (m_lock);
+  std::string localName;
+  OCPI::Util::Vfs::Vfs * mp = findFs (name, localName);
+  return mp->openDir(localName);
+}
 /*
  * ----------------------------------------------------------------------
  * File information

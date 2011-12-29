@@ -32,12 +32,13 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <OcpiUtilVfsUtil.h>
-#include <OcpiUtilVfs.h>
-#include <OcpiUtilVfsIterator.h>
-#include <OcpiUtilMisc.h>
 #include <istream>
 #include <string>
+
+#include "OcpiUtilVfsUtil.h"
+#include "OcpiUtilVfs.h"
+#include "OcpiUtilVfsIterator.h"
+#include "OcpiUtilMisc.h"
 
 /*
  * ----------------------------------------------------------------------
@@ -95,59 +96,22 @@ copyFilesRecursively (Vfs * srcFs, const std::string & srcDir,
                       const std::string & pattern)
   throw (std::string)
 {
-  if (OCPI::Util::Vfs::relativeName (pattern) != pattern) {
+  if (OCPI::Util::Vfs::relativeName (pattern) != pattern)
     throw std::string ("pattern must not contain directory separator");
+
+  Iterator it(*srcFs, srcDir, pattern.c_str());
+  bool isDir;
+  std::string name;
+
+  while (it.next(name, isDir)) {
+    std::string
+      srcName(joinNames(srcDir, name)),
+      destName(joinNames(destDir, name));
+    if (isDir)
+      copyDirectoryRecursively(srcFs, srcName,	destFs, destName, pattern);
+    else
+      srcFs->copy(srcName, destFs, destName);
   }
-
-  /*
-   * Iterate over all subdirectories
-   */
-
-  OCPI::Util::Vfs::Iterator * it = srcFs->list (srcDir);
-
-  try {
-    while (!it->end()) {
-      if (it->isDirectory()) {
-        std::string newSrcDir =
-          OCPI::Util::Vfs::joinNames (srcDir, it->relativeName());
-        std::string newDestDir =
-          OCPI::Util::Vfs::joinNames (destDir, it->relativeName());
-        copyDirectoryRecursively (srcFs, newSrcDir,
-                                  destFs, newDestDir,
-                                  pattern);
-      }
-      it->next ();
-    }
-  }
-  catch (...) {
-    srcFs->closeIterator (it);
-    throw;
-  }
-
-  srcFs->closeIterator (it);
-
-  /*
-   * Copy all matching files
-   */
-
-  it = srcFs->list (srcDir, pattern);
-
-  try {
-    while (!it->end()) {
-      if (!it->isDirectory()) {
-        std::string destFileName =
-          OCPI::Util::Vfs::joinNames (destDir, it->relativeName());
-        srcFs->copy (it->absoluteName(), destFs, destFileName);
-      }
-      it->next ();
-    }
-  }
-  catch (...) {
-    srcFs->closeIterator (it);
-    throw;
-  }
-
-  srcFs->closeIterator (it);
 }
 
 void
@@ -169,73 +133,33 @@ removeFilesRecursively (Vfs * fs,
                         bool deleteEmptyDirectories)
   throw (std::string)
 {
-  if (OCPI::Util::Vfs::relativeName (pattern) != pattern) {
+  if (OCPI::Util::Vfs::relativeName (pattern) != pattern)
     throw std::string ("pattern must not contain directory separator");
-  }
 
-  /*
-   * Iterate over all subdirectories
-   */
+  Iterator it(*fs, dir, pattern.c_str());
+  bool isDir;
+  std::string name;
 
-  OCPI::Util::Vfs::Iterator * it = fs->list (dir);
-
-  try {
-    while (!it->end()) {
-      if (it->isDirectory()) {
-        removeFilesRecursively (fs, it->absoluteName(), pattern,
-                                deleteEmptyDirectories);
-
-        /*
-         * If deleteEmptyDirectories is true, see if that directory
-         * is now empty. If yes, delete it.
-         */
-
-        if (deleteEmptyDirectories) {
-          OCPI::Util::Vfs::Iterator * it2 =
-            fs->list (it->absoluteName());
-
-          try {
-            it2->end ();
-          }
-          catch (...) {
-            fs->closeIterator (it2);
-            throw;
-          }
-
-          fs->closeIterator (it2);
-          fs->rmdir (it->absoluteName());
-        }
+  while (it.next(name, isDir)) {
+    std::string fullName = joinNames(dir, name);
+    if (isDir) {
+      removeFilesRecursively(fs, fullName, pattern, deleteEmptyDirectories);
+      /*
+       * If deleteEmptyDirectories is true, see if that directory
+       * is now empty. If yes, delete it.
+       */
+      if (deleteEmptyDirectories) {
+	bool empty;
+	{
+	  Iterator it2(*fs, fullName);
+	  empty = !it2.next(name, isDir);
+	}
+	if (empty)
+          fs->rmdir(fullName);
       }
-      it->next ();
-    }
+    } else
+      fs->remove(fullName);
   }
-  catch (...) {
-    fs->closeIterator (it);
-    throw;
-  }
-
-  fs->closeIterator (it);
-
-  /*
-   * Delete all matching files
-   */
-
-  it = fs->list (dir, pattern);
-
-  try {
-    while (!it->end()) {
-      if (!it->isDirectory()) {
-        fs->remove (it->absoluteName());
-      }
-      it->next ();
-    }
-  }
-  catch (...) {
-    fs->closeIterator (it);
-    throw;
-  }
-
-  fs->closeIterator (it);
 }
 
 void
@@ -249,18 +173,14 @@ removeDirectoryRecursively (Vfs * fs,
   removeFilesRecursively (fs, dir, pattern, deleteEmptyDirectories);
 
   if (deleteEmptyDirectories) {
-    OCPI::Util::Vfs::Iterator * it = fs->list (dir);
-
-    try {
-      it->end ();
+    std::string name;
+    bool isDir, empty;
+    {
+      Iterator it(*fs, dir);
+      empty = !it.next(name, isDir);
     }
-    catch (...) {
-      fs->closeIterator (it);
-      throw;
-    }
-
-    fs->closeIterator (it);
-    fs->rmdir (dir);
+    if (empty)
+      fs->rmdir(dir);
   }
 }
 

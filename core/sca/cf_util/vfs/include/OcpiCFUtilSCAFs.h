@@ -65,7 +65,9 @@ namespace OCPI {
      * delegating to an SCA CF::FileSystem instance.
      */
 
+    class SCADir;
     class SCAFs : public OCPI::Util::Vfs::Vfs {
+      friend class SCADir;
     public:
       SCAFs (CORBA::ORB_ptr orb, CF::FileSystem_ptr fs)
         throw (std::string);
@@ -121,13 +123,15 @@ namespace OCPI {
        * Directory Listing
        */
 
+#if 0
       OCPI::Util::Vfs::Iterator * list (const std::string & dir,
                                        const std::string & pattern = "*")
         throw (std::string);
 
       void closeIterator (OCPI::Util::Vfs::Iterator *)
         throw (std::string);
-
+#endif
+      OCPI::Util::Vfs::Dir &openDir(const std::string &name) throw(std::string);
       /*
        * File Information
        */

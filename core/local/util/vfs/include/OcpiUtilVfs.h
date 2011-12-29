@@ -159,6 +159,7 @@ namespace OCPI {
        * See also the OCPI::Util::Vfs namespace.
        */
 
+      class Dir;
       class Vfs {
       public:
         /**
@@ -351,22 +352,10 @@ namespace OCPI {
          * the pattern is not valid.
          */
 
-        virtual Iterator * list (const std::string & dir,
-                                 const std::string & pattern = "*")
-          throw (std::string) = 0;
-
-        /**
-         * Close an iterator, and release associated resources.
-         *
-         * \param[in] it A pointer to an iterator object that was returned
-         *               from a call to list() on the same Vfs instance.
-         *
-         * \throw std::string If the iterator is not valid, or was not
-         * returned by a list() operation on this Vfs instance.
-         */
-
-        virtual void closeIterator (Iterator * it)
-          throw (std::string) = 0;
+        virtual Iterator * list(const std::string & dir,
+                                const std::string & pattern = "*",
+				bool recursive = false)
+          throw (std::string);
 
         //@}
 
@@ -571,6 +560,7 @@ namespace OCPI {
 
         //@}
 
+	virtual Dir &openDir(const std::string &) throw (std::string) = 0;
       private:
         /**
          * Not implemented.
@@ -583,6 +573,21 @@ namespace OCPI {
          */
 
         Vfs & operator= (const Vfs &);
+      };
+      // Inherited by implementations
+      class Iterator;
+      class Dir {
+	Dir *m_parent;
+	friend class Iterator;
+      protected:
+	Vfs &m_fs;
+	std::string m_name;
+	Dir(Vfs &fs, const std::string &name);
+	Dir *pushDir(const std::string &s) throw(std::string);
+	virtual bool next(std::string &name, bool &isDir) throw (std::string) = 0;
+	Dir *popDir();
+      public:
+	virtual ~Dir() throw();
       };
 
     }

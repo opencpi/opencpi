@@ -430,6 +430,7 @@ namespace {
  * ----------------------------------------------------------------------
  */
 
+#if 0
 namespace {
 
   class ZipFsIterator : public OCPI::Util::Vfs::Iterator {
@@ -665,6 +666,7 @@ ZipFsIterator::findFirstMatching ()
 
   return ((m_iterator != m_contents.end()) ? true : false);
 }
+#endif
 
 /*
  * ----------------------------------------------------------------------
@@ -967,6 +969,7 @@ OCPI::Util::ZipFs::ZipFs::rmdir (const std::string & fileName)
  * ----------------------------------------------------------------------
  */
 
+#if 0
 OCPI::Util::Vfs::Iterator *
 OCPI::Util::ZipFs::ZipFs::list (const std::string & dir,
                                const std::string & pattern)
@@ -990,6 +993,50 @@ OCPI::Util::ZipFs::ZipFs::closeIterator (OCPI::Util::Vfs::Iterator * it)
 
   delete zfi;
   m_lock.rdUnlock ();
+}
+#endif
+
+class OCPI::Util::ZipFs::Dir : public OCPI::Util::Vfs::Dir  {
+    ZipFs &m_zfs;
+    ZipFs::FileInfos::const_iterator m_iterator;
+    unsigned m_length;
+    std::set<std::string> m_seenDirectories;
+  public:
+    Dir(ZipFs &fs, std::string name)
+      : OCPI::Util::Vfs::Dir(fs, name), m_zfs(fs), m_length(name.length())
+    {
+      fs.m_lock.rdLock ();
+      m_iterator = m_zfs.m_contents.begin ();
+    }
+    ~Dir() throw() {
+      m_zfs.m_lock.rdUnlock();
+    }
+
+    bool next(std::string &s, bool &isDir) throw(std::string) {
+      while (m_iterator != m_zfs.m_contents.end()) {
+	const std::string & absFileName = (*m_iterator++).first;
+	if (m_length == 0 ||
+	    m_name.compare(0, m_length, absFileName) == 0 && absFileName[m_length] == '/') {
+	  std::size_t
+	    start = m_length ? m_length + 1 : 0,
+	    slash = absFileName.find('/', start);
+	  s.assign(absFileName, start, slash - start);
+	  if (slash == std::string::npos) {
+	    isDir = false;
+	    return true;
+	  } else if (m_seenDirectories.find(s) == m_seenDirectories.end()) {
+	    m_seenDirectories.insert(s);
+	    isDir = true;
+	    return true;
+	  }
+	}
+      }
+      return false;
+    }
+};
+
+OCPI::Util::Vfs::Dir &OCPI::Util::ZipFs::ZipFs::openDir(const std::string &name) throw(std::string) {
+  return *new OCPI::Util::ZipFs::Dir(*this, absoluteNameLocked(name));
 }
 
 /*
@@ -1685,3 +1732,4 @@ OCPI::Util::ZipFs::ZipFs::updateContents ()
     unzClose (zf);
   }
 }
+

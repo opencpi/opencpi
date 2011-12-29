@@ -49,8 +49,7 @@ main (int argc, char *argv[])
     return 1;
   }
 
-  std::string currentDir = OCPI::OS::FileSystem::cwd ();
-  OCPI::Util::FileFs::FileFs localFs (currentDir);
+  OCPI::Util::FileFs::FileFs localFs;
   OCPI::Util::Http::HttpFs<OCPI::Util::Tcp::Connector> remoteFs;
   OCPI::Util::Vfs::UriFs ufs;
 

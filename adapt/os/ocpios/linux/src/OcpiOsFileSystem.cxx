@@ -36,11 +36,13 @@
 #include <OcpiOsAssert.h>
 #include <OcpiOsFileSystem.h>
 #include <OcpiOsFileIterator.h>
+#include <OcpiOsSizeCheck.h>
 #include <string>
 #include <cctype>
 #include <ctime>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <cstdio>
 #include <unistd.h>
 #include <errno.h>
@@ -54,7 +56,7 @@
 
 namespace OCPI {
   namespace OS {
-
+    namespace FileSystem {
 /*
  * Unix file names are very close to our "abstract" file names. In fact,
  * our abstract names can be used as a native name. In the other direction,
@@ -62,14 +64,14 @@ namespace OCPI {
  */
 
 std::string
-FileSystem::toNativeName (const std::string & name)
+toNativeName (const std::string & name)
   throw (std::string)
 {
   return name;
 }
 
 std::string
-FileSystem::fromNativeName (const std::string & nativeName)
+fromNativeName (const std::string & nativeName)
   throw (std::string)
 {
   std::string name;
@@ -238,7 +240,7 @@ FileSystem::fromNativeName (const std::string & nativeName)
  */
 
 std::string
-FileSystem::joinNames (const std::string & dir,
+joinNames (const std::string & dir,
                                 const std::string & name)
   throw (std::string)
 {
@@ -262,14 +264,14 @@ FileSystem::joinNames (const std::string & dir,
 }
 
 std::string
-FileSystem::absoluteName (const std::string & name)
+absoluteName (const std::string & name)
   throw (std::string)
 {
   return joinNames (cwd(), name);
 }
 
 std::string
-FileSystem::directoryName (const std::string & name)
+directoryName (const std::string & name)
   throw (std::string)
 {
   std::string::size_type slashPos = name.rfind ('/');
@@ -286,7 +288,7 @@ FileSystem::directoryName (const std::string & name)
 }
 
 std::string
-FileSystem::relativeName (const std::string & name)
+relativeName (const std::string & name)
   throw (std::string)
 {
   std::string::size_type slashPos = name.rfind ('/');
@@ -306,7 +308,7 @@ FileSystem::relativeName (const std::string & name)
 }
 
 std::string
-FileSystem::getPathElement (std::string & path,
+getPathElement (std::string & path,
                                      bool ignoreInvalid,
                                      char separator)
   throw (std::string)
@@ -359,7 +361,7 @@ FileSystem::getPathElement (std::string & path,
  */
 
 std::string
-FileSystem::cwd ()
+cwd ()
   throw (std::string)
 {
   char buffer[1024];
@@ -372,7 +374,7 @@ FileSystem::cwd ()
 }
 
 void
-FileSystem::cd (const std::string & name)
+cd (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
@@ -383,7 +385,7 @@ FileSystem::cd (const std::string & name)
 }
 
 void
-FileSystem::mkdir (const std::string & name)
+mkdir (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
@@ -394,7 +396,7 @@ FileSystem::mkdir (const std::string & name)
 }
 
 void
-FileSystem::rmdir (const std::string & name)
+rmdir (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
@@ -411,7 +413,7 @@ FileSystem::rmdir (const std::string & name)
  */
 
 FileIterator
-FileSystem::list (const std::string & dir,
+list (const std::string & dir,
                            const std::string & pattern)
   throw (std::string)
 {
@@ -425,7 +427,7 @@ FileSystem::list (const std::string & dir,
  */
 
 bool
-FileSystem::exists (const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtime)
+exists (const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtime)
   throw ()
 {
   std::string nativeName = toNativeName (name);
@@ -456,7 +458,7 @@ FileSystem::exists (const std::string & name, bool * isDir, uint64_t *size, std:
 }
 
 unsigned long long
-FileSystem::size (const std::string & name)
+size (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
@@ -474,7 +476,7 @@ FileSystem::size (const std::string & name)
 }
 
 std::time_t
-FileSystem::lastModified (const std::string & name)
+lastModified (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
@@ -494,7 +496,7 @@ FileSystem::lastModified (const std::string & name)
  */
 
 void
-FileSystem::rename (const std::string & srcName,
+rename (const std::string & srcName,
                              const std::string & destName)
   throw (std::string)
 {
@@ -507,7 +509,7 @@ FileSystem::rename (const std::string & srcName,
 }
 
 void
-FileSystem::remove (const std::string & name)
+remove (const std::string & name)
   throw (std::string)
 {
   std::string nativeName = toNativeName (name);
@@ -516,6 +518,40 @@ FileSystem::remove (const std::string & name)
     throw Posix::getErrorMessage (errno);
   }
 }
-    const char *FileSystem::slashes = "/";
+const char *slashes = "/";
+
+Dir::Dir(const std::string &dir) throw (std::string)
+  : m_name(toNativeName(dir)) {
+  
+  ocpiAssert ((compileTimeSizeCheck<sizeof (m_opaque), sizeof(DIR *)> ()));
+  DIR *dfd = opendir(m_name.c_str());
+  if (dfd == NULL)
+    throw OCPI::OS::Posix::getErrorMessage (errno);
+  m_opaque = (intptr_t)dfd;
+  }
+
+Dir::~Dir() throw() {
+  closedir((DIR *)m_opaque);
+}
+
+bool Dir::next(std::string &s, bool &isDir) throw(std::string) {
+  struct dirent entry, *result;
+  DIR *dfd = (DIR *)m_opaque;
+  int errnum;
+  do
+    if ((errnum = readdir_r(dfd, &entry, &result)))
+      throw "Error reading diretory: " + OCPI::OS::Posix::getErrorMessage(errnum);
+  while (result && entry.d_name[0] == '.' &&
+	 (!entry.d_name[1] || entry.d_name[1] == '.' && !entry.d_name[2]));
+  if (result) {
+    s = entry.d_name;
+    // isDir = entry.d_type == DT_DIR; // for BSD...
+    exists(m_name + "/" + s, &isDir);
+    return true;
+  }
+  return false;
+}
+
+}
 }
 }

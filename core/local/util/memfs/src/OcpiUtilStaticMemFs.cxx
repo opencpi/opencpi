@@ -52,6 +52,7 @@
  * ----------------------------------------------------------------------
  */
 
+#if 0
 namespace {
 
   class StaticMemFsIterator : public OCPI::Util::Vfs::Iterator {
@@ -289,7 +290,7 @@ StaticMemFsIterator::findFirstMatching ()
 
   return ((m_iterator != m_contents.end()) ? true : false);
 }
-
+#endif
 /*
  * ----------------------------------------------------------------------
  * StaticMemFs
@@ -441,6 +442,7 @@ OCPI::Util::MemFs::StaticMemFs::rmdir (const std::string &)
  * Directory Listing
  * ----------------------------------------------------------------------
  */
+#if 0
 
 OCPI::Util::Vfs::Iterator *
 OCPI::Util::MemFs::StaticMemFs::list (const std::string & dir,
@@ -466,6 +468,7 @@ OCPI::Util::MemFs::StaticMemFs::closeIterator (OCPI::Util::Vfs::Iterator * it)
   delete smfi;
   m_lock.rdUnlock ();
 }
+#endif
 
 /*
  * ----------------------------------------------------------------------

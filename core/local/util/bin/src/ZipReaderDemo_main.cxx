@@ -32,12 +32,14 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <OcpiUtilVfsIterator.h>
 #include <OcpiUtilZipFs.h>
 #include <OcpiUtilFileFs.h>
 #include <OcpiOsFileSystem.h>
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <memory>
 
 int
 main (int argc, char *argv[])
@@ -63,25 +65,25 @@ main (int argc, char *argv[])
   std::cout << "Zip File Contents" << std::endl;
   std::cout << "-----------------" << std::endl;
 
-  OCPI::Util::Vfs::Iterator * contents = zipFs.list (zipFs.cwd());
+  std::auto_ptr<OCPI::Util::Vfs::Iterator> contents(zipFs.list (zipFs.cwd()));
 
-  while (!contents->end()) {
-    if (contents->isDirectory()) {
+  std::string name;
+  bool isDir;
+  while (contents->next(name, isDir)) {
+    if (isDir) {
       std::cout << "     (dir)";
     }
     else {
-      std::cout << std::setw (10) << contents->size();
+      std::cout << std::setw (10) << zipFs.size(name);
     }
 
     std::cout << "    "
-              << contents->relativeName ()
+              << name
               << std::endl;
 
-    contents->next ();
   }
 
   std::cout << std::endl;
-  zipFs.closeIterator (contents);
   
   if (argc == 3 || argc == 4) {
     std::string localNativeName;

@@ -54,6 +54,7 @@
  * ----------------------------------------------------------------------
  */
 
+#if 0
 namespace {
 
   class FileFsIterator : public OCPI::Util::Vfs::Iterator {
@@ -85,7 +86,7 @@ namespace {
 
   protected:
     std::string m_root;
-    OCPI::OS::FileIterator m_osIterator;
+    OS::FileIterator m_osIterator;
   };
 
 }
@@ -169,25 +170,29 @@ FileFsIterator::lastModified ()
 {
   return m_osIterator.lastModified ();
 }
-
+#endif
 /*
  * ----------------------------------------------------------------------
  * Constructor and Destructor
  * ----------------------------------------------------------------------
  */
 
-OCPI::Util::FileFs::FileFs::FileFs (const std::string & root)
+namespace OS = OCPI::OS;
+namespace OCPI { namespace Util { 
+FileFs::FileFs (const std::string & root)
   throw (std::string)
-  : m_root (root),
+  : m_root(OS::FileSystem::absoluteName(root)),
     m_cwd ("/")
 {
   /*
    * Our "root" must be an absolute directory name.
    */
+  for (unsigned n = m_root.length(); n > 1 && m_root[n-1] == '/'; )
+    m_root.resize(--n);
+  
+  testFilenameForValidity (m_root);
 
-  testFilenameForValidity (root);
-
-  if (!root.length() || root[0] != '/') {
+  if (!m_root.length() || m_root[0] != '/') {
     throw std::string ("root must be absolute");
   }
 
@@ -197,29 +202,37 @@ OCPI::Util::FileFs::FileFs::FileFs (const std::string & root)
 
   bool isDir;
 
-  if (!OCPI::OS::FileSystem::exists (m_root, &isDir)) {
+  if (!OS::FileSystem::exists (m_root, &isDir)) {
     throw std::string ("root directory does not exist");
   }
   else if (!isDir) {
     throw std::string ("root is not a directory");
   }
-
+  setURI();
+}
+FileFs::FileFs ()
+  throw ()
+  : m_root(OS::FileSystem::cwd()),
+    m_cwd ("/")
+{
+  setURI();
+}
+FileFs::~FileFs ()
+  throw ()
+{
+}
+void FileFs::setURI() throw() {
   /*
    * Compose base URI.
    */
   
   m_baseURI = "file://";
-  m_baseURI += OCPI::OS::getHostname ();
-  m_baseURI += OCPI::Util::Uri::encode (m_root, ":/");
+  m_baseURI += OS::getHostname ();
+  m_baseURI += Uri::encode (m_root, ":/");
 
   if (m_root != "/") {
     m_baseURI += "/";
   }
-}
-
-OCPI::Util::FileFs::FileFs::~FileFs ()
-  throw ()
-{
 }
 
 /*
@@ -229,7 +242,7 @@ OCPI::Util::FileFs::FileFs::~FileFs ()
  */
 
 std::string
-OCPI::Util::FileFs::FileFs::
+FileFs::
 nameToPath (const std::string & fileName) const
   throw (std::string)
 {
@@ -237,11 +250,11 @@ nameToPath (const std::string & fileName) const
 }
 
 std::string
-OCPI::Util::FileFs::FileFs::
+FileFs::
 pathToName (const std::string & pathName) const
   throw (std::string)
 {
-  std::string absPath = OCPI::OS::FileSystem::absoluteName (pathName);
+  std::string absPath = OS::FileSystem::absoluteName (pathName);
 
   if (m_root.length() == 1) {
     return absPath;
@@ -274,21 +287,21 @@ pathToName (const std::string & pathName) const
 }
 
 std::string
-OCPI::Util::FileFs::FileFs::
+FileFs::
 toNativeName (const std::string & fileName) const
   throw (std::string)
 {
   std::string fullPath = nativeFilename (fileName);
-  return OCPI::OS::FileSystem::toNativeName (fullPath);
+  return OS::FileSystem::toNativeName (fullPath);
 }
 
 std::string
-OCPI::Util::FileFs::FileFs::
+FileFs::
 fromNativeName (const std::string & nativeName) const
   throw (std::string)
 {
-  std::string path = OCPI::OS::FileSystem::fromNativeName (nativeName);
-  std::string absPath = OCPI::OS::FileSystem::absoluteName (path);
+  std::string path = OS::FileSystem::fromNativeName (nativeName);
+  std::string absPath = OS::FileSystem::absoluteName (path);
   return pathToName (absPath);
 }
 
@@ -299,14 +312,14 @@ fromNativeName (const std::string & nativeName) const
  */
 
 std::string
-OCPI::Util::FileFs::FileFs::baseURI () const
+FileFs::baseURI () const
   throw ()
 {
   return m_baseURI;
 }
 
 std::string
-OCPI::Util::FileFs::FileFs::nameToURI (const std::string & fileName) const
+FileFs::nameToURI (const std::string & fileName) const
   throw (std::string)
 {
   OCPI::Util::AutoMutex lock (m_lock);
@@ -318,7 +331,7 @@ OCPI::Util::FileFs::FileFs::nameToURI (const std::string & fileName) const
 }
 
 std::string
-OCPI::Util::FileFs::FileFs::URIToName (const std::string & struri) const
+FileFs::URIToName (const std::string & struri) const
   throw (std::string)
 {
   OCPI::Util::Uri uri (struri);
@@ -354,7 +367,7 @@ OCPI::Util::FileFs::FileFs::URIToName (const std::string & struri) const
        * The Authority must be a local host name.
        */
 
-      if (!OCPI::OS::isLocalhost (authority)) {
+      if (!OS::isLocalhost (authority)) {
         std::string reason = "authority \"";
         reason += authority;
         reason += "\" does not look like a local host name";
@@ -381,7 +394,7 @@ OCPI::Util::FileFs::FileFs::URIToName (const std::string & struri) const
  */
 
 std::string
-OCPI::Util::FileFs::FileFs::absoluteNameLocked (const std::string & name) const
+FileFs::absoluteNameLocked (const std::string & name) const
   throw (std::string)
 {
   return OCPI::Util::Vfs::joinNames (m_cwd, name);
@@ -394,7 +407,7 @@ OCPI::Util::FileFs::FileFs::absoluteNameLocked (const std::string & name) const
  */
 
 std::string
-OCPI::Util::FileFs::FileFs::cwd () const
+FileFs::cwd () const
   throw (std::string)
 {
   OCPI::Util::AutoMutex lock (m_lock);
@@ -402,14 +415,14 @@ OCPI::Util::FileFs::FileFs::cwd () const
 }
 
 void
-OCPI::Util::FileFs::FileFs::cd (const std::string & name)
+FileFs::cd (const std::string & name)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
   bool isDir, exists;
 
-  exists = OCPI::OS::FileSystem::exists (absName, &isDir);
+  exists = OS::FileSystem::exists (absName, &isDir);
 
   if (!exists) {
     throw std::string ("name does not exist");
@@ -423,21 +436,21 @@ OCPI::Util::FileFs::FileFs::cd (const std::string & name)
 }
 
 void
-OCPI::Util::FileFs::FileFs::mkdir (const std::string & name)
+FileFs::mkdir (const std::string & name)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  OCPI::OS::FileSystem::mkdir (absName);
+  OS::FileSystem::mkdir (absName);
 }
 
 void
-OCPI::Util::FileFs::FileFs::rmdir (const std::string & name)
+FileFs::rmdir (const std::string & name)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  OCPI::OS::FileSystem::rmdir (absName);
+  OS::FileSystem::rmdir (absName);
 }
 
 /*
@@ -445,7 +458,7 @@ OCPI::Util::FileFs::FileFs::rmdir (const std::string & name)
  * Directory Listing
  * ----------------------------------------------------------------------
  */
-
+#if 0
 OCPI::Util::Vfs::Iterator *
 OCPI::Util::FileFs::FileFs::list (const std::string & dir,
                                  const std::string & pattern)
@@ -469,7 +482,7 @@ OCPI::Util::FileFs::FileFs::closeIterator (OCPI::Util::Vfs::Iterator * it)
 
   delete ffi;
 }
-
+#endif
 /*
  * ----------------------------------------------------------------------
  * File Information
@@ -477,30 +490,30 @@ OCPI::Util::FileFs::FileFs::closeIterator (OCPI::Util::Vfs::Iterator * it)
  */
 
 bool
-OCPI::Util::FileFs::FileFs::exists (const std::string & name, bool * isDir)
+FileFs::exists (const std::string & name, bool * isDir)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  return OCPI::OS::FileSystem::exists (absName, isDir);
+  return OS::FileSystem::exists (absName, isDir);
 }
 
 unsigned long long
-OCPI::Util::FileFs::FileFs::size (const std::string & name)
+FileFs::size (const std::string & name)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  return OCPI::OS::FileSystem::size (absName);
+  return OS::FileSystem::size (absName);
 }
 
 std::time_t
-OCPI::Util::FileFs::FileFs::lastModified (const std::string & name)
+FileFs::lastModified (const std::string & name)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  return OCPI::OS::FileSystem::lastModified (absName);
+  return OS::FileSystem::lastModified (absName);
 }
 
 /*
@@ -510,13 +523,13 @@ OCPI::Util::FileFs::FileFs::lastModified (const std::string & name)
  */
 
 std::iostream *
-OCPI::Util::FileFs::FileFs::open (const std::string & name,
+FileFs::open (const std::string & name,
                                  std::ios_base::openmode mode)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  std::string nativeName = OCPI::OS::FileSystem::toNativeName (absName);
+  std::string nativeName = OS::FileSystem::toNativeName (absName);
 
   mode |= std::ios_base::in | std::ios_base::out;
 
@@ -534,13 +547,13 @@ OCPI::Util::FileFs::FileFs::open (const std::string & name,
 }
 
 std::istream *
-OCPI::Util::FileFs::FileFs::openReadonly (const std::string & name,
+FileFs::openReadonly (const std::string & name,
                                          std::ios_base::openmode mode)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  std::string nativeName = OCPI::OS::FileSystem::toNativeName (absName);
+  std::string nativeName = OS::FileSystem::toNativeName (absName);
 
   std::ifstream * is = new std::ifstream (nativeName.c_str(), mode);
 
@@ -556,13 +569,13 @@ OCPI::Util::FileFs::FileFs::openReadonly (const std::string & name,
 }
 
 std::ostream *
-OCPI::Util::FileFs::FileFs::openWriteonly (const std::string & name,
+FileFs::openWriteonly (const std::string & name,
                                           std::ios_base::openmode mode)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  std::string nativeName = OCPI::OS::FileSystem::toNativeName (absName);
+  std::string nativeName = OS::FileSystem::toNativeName (absName);
 
   std::ofstream * os = new std::ofstream (nativeName.c_str(), mode);
 
@@ -578,7 +591,7 @@ OCPI::Util::FileFs::FileFs::openWriteonly (const std::string & name,
 }
 
 void
-OCPI::Util::FileFs::FileFs::close (std::ios * str)
+FileFs::close (std::ios * str)
   throw (std::string)
 {
   if (dynamic_cast<std::fstream *> (str) == 0 &&
@@ -611,14 +624,14 @@ OCPI::Util::FileFs::FileFs::close (std::ios * str)
  */
 
 void
-OCPI::Util::FileFs::FileFs::move (const std::string & oldName,
+FileFs::move (const std::string & oldName,
                                  Vfs * destFs,
                                  const std::string & newName)
   throw (std::string)
 {
   /*
    * See if the target filesystem is a FileFs. If yes, we can
-   * use OCPI::OS::FileSystem::rename.
+   * use OS::FileSystem::rename.
    */
 
   FileFs * destFileFs = dynamic_cast<FileFs *> (destFs);
@@ -632,11 +645,11 @@ OCPI::Util::FileFs::FileFs::move (const std::string & oldName,
   testFilenameForValidity (newName);
   std::string oldAbsName = nativeFilename (oldName);
   std::string newAbsName = destFileFs->nativeFilename (newName);
-  OCPI::OS::FileSystem::rename (oldAbsName, newAbsName);
+  OS::FileSystem::rename (oldAbsName, newAbsName);
 }
 
 void
-OCPI::Util::FileFs::FileFs::rename (const std::string & oldName,
+FileFs::rename (const std::string & oldName,
                                    const std::string & newName)
   throw (std::string)
 {
@@ -644,16 +657,16 @@ OCPI::Util::FileFs::FileFs::rename (const std::string & oldName,
   testFilenameForValidity (newName);
   std::string oldAbsName = nativeFilename (oldName);
   std::string newAbsName = nativeFilename (newName);
-  OCPI::OS::FileSystem::rename (oldAbsName, newAbsName);
+  OS::FileSystem::rename (oldAbsName, newAbsName);
 }
 
 void
-OCPI::Util::FileFs::FileFs::remove (const std::string & name)
+FileFs::remove (const std::string & name)
   throw (std::string)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  OCPI::OS::FileSystem::remove (absName);
+  OS::FileSystem::remove (absName);
 }
 
 /*
@@ -667,7 +680,7 @@ OCPI::Util::FileFs::FileFs::remove (const std::string & name)
  */
 
 void
-OCPI::Util::FileFs::FileFs::testFilenameForValidity (const std::string & name)
+FileFs::testFilenameForValidity (const std::string & name)
   throw (std::string)
 {
   if (!name.length()) {
@@ -730,12 +743,12 @@ OCPI::Util::FileFs::FileFs::testFilenameForValidity (const std::string & name)
 
 /*
  * ----------------------------------------------------------------------
- * Compute the "native" file name to use with OCPI::OS::FileSystem
+ * Compute the "native" file name to use with OS::FileSystem
  * ----------------------------------------------------------------------
  */
 
 std::string
-OCPI::Util::FileFs::FileFs::nativeFilename (const std::string & name) const
+FileFs::nativeFilename (const std::string & name) const
   throw (std::string)
 {
   OCPI::Util::AutoMutex lock (m_lock);
@@ -753,4 +766,22 @@ OCPI::Util::FileFs::FileFs::nativeFilename (const std::string & name) const
   std::string fullName = m_root;
   fullName += absName;
   return fullName;
+}
+
+namespace {
+  class Dir : public Vfs::Dir, public OS::FileSystem::Dir {
+  public:
+    Dir(FileFs &fs, std::string name)
+      : Vfs::Dir(fs, name), OS::FileSystem::Dir(fs.nativeFilename(name))
+    {
+    }
+    bool next(std::string &s, bool &isdir) throw(std::string) {
+      return OS::FileSystem::Dir::next(s, isdir);
+    }
+  };
+}
+  Vfs::Dir &FileFs::openDir(const std::string &name) throw(std::string) {
+    return *new Dir(*this, name);
+  }
+}
 }

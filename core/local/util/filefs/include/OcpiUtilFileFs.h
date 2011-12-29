@@ -48,21 +48,19 @@
  *
  */
 
-#include <OcpiUtilVfs.h>
-#include <OcpiUtilVfsIterator.h>
-#include <OcpiOsMutex.h>
 #include <iostream>
 #include <string>
 #include <ctime>
+
+#include "OcpiOsMutex.h"
+
+#include "OcpiUtilVfs.h"
 
 namespace OCPI {
   namespace Util {
     /**
      * \brief Vfs implementation based on the local file system.
      */
-
-    namespace FileFs {
-
       /**
        * \brief Vfs implementation based on the local file system.
        *
@@ -77,7 +75,8 @@ namespace OCPI {
        * maintains its own working directory.
        */
 
-      class FileFs : public OCPI::Util::Vfs::Vfs {
+      class FileFs : public Vfs::Vfs {
+        void setURI() throw();
       public:
         /**
          * Constructor.
@@ -89,9 +88,11 @@ namespace OCPI {
          *             identifies an existing directory.  Since ".." is
          *             not a valid path component, only files within the
          *             \a root and its subdirectories will be accessible.
+	 *             The default constructor uses the cwd.
          */
-
-        FileFs (const std::string & root)
+        FileFs ()
+          throw ();
+        FileFs (const std::string &root)
           throw (std::string);
 
         /**
@@ -221,6 +222,8 @@ namespace OCPI {
         /*
          * Directory Listing
          */
+	OCPI::Util::Vfs::Dir &openDir(const std::string&) throw(std::string);
+#if 0
 
         OCPI::Util::Vfs::Iterator * list (const std::string & dir,
                                          const std::string & pattern = "*")
@@ -228,7 +231,7 @@ namespace OCPI {
 
         void closeIterator (OCPI::Util::Vfs::Iterator *)
           throw (std::string);
-
+#endif
         /*
          * File Information
          */
@@ -271,14 +274,15 @@ namespace OCPI {
         void remove (const std::string &)
           throw (std::string);
 
+        std::string nativeFilename (const std::string &) const
+          throw (std::string);
+
         //@}
 
       protected:
         /** \cond */
-        static void testFilenameForValidity (const std::string &)
-          throw (std::string);
 
-        std::string nativeFilename (const std::string &) const
+        static void testFilenameForValidity (const std::string &)
           throw (std::string);
 
         std::string absoluteNameLocked (const std::string &) const
@@ -306,7 +310,6 @@ namespace OCPI {
         FileFs & operator= (const FileFs &);
       };
 
-    }
   }
 }
 

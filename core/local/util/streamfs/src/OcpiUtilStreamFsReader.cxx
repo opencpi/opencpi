@@ -285,7 +285,7 @@ using namespace OcpiUtilStreamFsReader;
  * Iterator object for directory listings
  * ----------------------------------------------------------------------
  */
-
+#if 0
 namespace {
 
   class StreamFsIterator : public OCPI::Util::Vfs::Iterator {
@@ -520,7 +520,7 @@ namespace {
   }
 
 }
-
+#endif
 /*
  * ----------------------------------------------------------------------
  * StreamFsReader
@@ -857,6 +857,7 @@ rmdir (const std::string &)
   throw std::string ("not supported on this file system");
 }
 
+#if 0
 /*
  * ----------------------------------------------------------------------
  * Directory Listing
@@ -892,7 +893,7 @@ closeIterator (OCPI::Util::Vfs::Iterator * it)
   ocpiAssert (m_openIterators > 0);
   m_openIterators--;
 }
-
+#endif
 /*
  * ----------------------------------------------------------------------
  * File information

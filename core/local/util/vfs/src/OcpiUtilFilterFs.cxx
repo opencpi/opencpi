@@ -126,6 +126,7 @@ OCPI::Util::Vfs::FilterFs::rmdir (const std::string & fileName)
  * ----------------------------------------------------------------------
  */
 
+#if 0
 OCPI::Util::Vfs::Iterator *
 OCPI::Util::Vfs::FilterFs::list (const std::string & dir,
                                 const std::string & pattern)
@@ -144,7 +145,7 @@ OCPI::Util::Vfs::FilterFs::closeIterator (Iterator * it)
 {
   return m_delegatee.closeIterator (it);
 }
-
+#endif
 /*
  * ----------------------------------------------------------------------
  * File information

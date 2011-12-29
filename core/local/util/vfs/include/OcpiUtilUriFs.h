@@ -164,13 +164,15 @@ namespace OCPI {
         /*
          * Directory Listing
          */
-
+#if 0
         Iterator * list (const std::string & dir,
                          const std::string & pattern = "*")
           throw (std::string);
 
         void closeIterator (Iterator *)
           throw (std::string);
+#endif
+	OCPI::Util::Vfs::Dir &openDir(const std::string&) throw(std::string);
 
         /*
          * File Information

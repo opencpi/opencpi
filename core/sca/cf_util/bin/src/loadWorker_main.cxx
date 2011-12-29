@@ -234,7 +234,7 @@ loadWorkerInt (CORBA::ORB_ptr orb,
      */
 
     OCPI::CFUtil::VfsFileSystem * vfsFileSystem =
-      new OCPI::CFUtil::VfsFileSystem (orb, poa, fileFs, true);
+      new OCPI::CFUtil::VfsFileSystem (/*orb,*/ poa, fileFs, true);
     PortableServer::ObjectId_var fsOid;
     CF::FileSystem_var fileSystem;
 

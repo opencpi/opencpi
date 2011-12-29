@@ -57,6 +57,7 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <set>
 #include <OcpiOsAssert.h>
 #include <OcpiOsMutex.h>
 #include <OcpiUtilUri.h>
@@ -540,6 +541,7 @@ seekpos (pos_type pos, std::ios_base::openmode)
  * ----------------------------------------------------------------------
  */
 
+#if 0
 namespace {
 
   class SCAFsIterator : public OCPI::Util::Vfs::Iterator {
@@ -737,7 +739,7 @@ SCAFsIterator::lastModified ()
 
   return static_cast<std::time_t> (-1);
 }
-
+#endif
 /*
  * ----------------------------------------------------------------------
  * Constructor and Destructor
@@ -902,6 +904,7 @@ rmdir (const std::string & name)
  * ----------------------------------------------------------------------
  */
 
+#if 0
 OCPI::Util::Vfs::Iterator *
 OCPI::CFUtil::SCAFs::
 list (const std::string & dir,
@@ -942,6 +945,50 @@ closeIterator (OCPI::Util::Vfs::Iterator * it)
   }
 
   delete sfi;
+}
+#endif
+
+class OCPI::CFUtil::SCADir : public OCPI::Util::Vfs::Dir {
+  OCPI::CFUtil::SCAFs &m_scaFs;
+  std::string m_absName;
+  unsigned m_nameLength;
+  unsigned m_index;
+  CF::FileSystem::FileInformationSequence_var m_fis;
+  std::set<std::string> m_seenDirectories;
+public:
+  SCADir(OCPI::CFUtil::SCAFs &fs, std::string name)
+    : OCPI::Util::Vfs::Dir(fs, name), m_scaFs(fs), m_absName(fs.absoluteName(name)),
+      m_nameLength(m_absName.length()), m_index(0)
+  {
+    try {
+      std::string pattern(m_absName + "/*");
+      m_fis = m_scaFs.m_fs->list(pattern.c_str());
+    } catch (const CORBA::Exception & ex) {
+      throw OCPI::CFUtil::stringifyCFException (ex);
+    }
+  }
+  ~SCADir() throw() {}
+  bool next(std::string &s, bool &isDir) throw(std::string) {
+    while (m_index < m_fis->length()) {
+      std::string fileName(m_fis[m_index++].name.in());
+      std::size_t
+	start = m_nameLength + 1,
+	slash =fileName.find('/', start);
+      s.assign(fileName, start, slash - start);
+      if (slash == std::string::npos) {
+	isDir = false;
+	return true;
+      } else if (m_seenDirectories.find(s) == m_seenDirectories.end()) {
+	m_seenDirectories.insert(s);
+	isDir = true;
+	return true;
+      }
+    }      
+    return false;
+  }
+};
+OCPI::Util::Vfs::Dir &OCPI::CFUtil::SCAFs::openDir(const std::string &name) throw(std::string) {
+  return *new OCPI::CFUtil::SCADir(*this, name);
 }
 
 /*
