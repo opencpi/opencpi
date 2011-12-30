@@ -11,7 +11,9 @@ ifndef OCPI_CDK_DIR
 OCPI_CDK_DIR=$(or $(wildcard ../../export),../..)
 endif
 
-OPENSPLICE_LIBS= ddsdatabase dcpsgapi dcpssacpp ddsos ddsutil ddsserialization ddskernel ddsuser ddsconf ddsconfparser
+include $(OCPI_CDK_DIR)/ocpisetup.mk
+
+OPENSPLICE_LIBS= msg_drivers ddsdatabase dcpsgapi dcpssacpp ddsos ddsutil ddsserialization ddskernel ddsuser ddsconf ddsconfparser
 OPENSPLICE_LIB_DIR=$(OCPI_OPENSPLICE_HOME)/lib
 
 all: dds_ports

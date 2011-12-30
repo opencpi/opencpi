@@ -9,11 +9,13 @@ namespace OA = OCPI::API;
 
 int main ( int argc, char* argv [ ] )
 {
+
+  bool passed=true;
+
   try
   {
     ( void ) argc;
     ( void ) argv;
-
 
     OA::PValue props [ 2 ] = { OCPI::API::PVBool ( "polling", 1 ),
 			       OCPI::API::PVEnd };
@@ -31,19 +33,19 @@ int main ( int argc, char* argv [ ] )
     // This worker reads DDS messages
     OA::Worker & consumer  = app->createWorker( "dds_consumer", "dds_consumer" );
 
-
     OA::Port & out = producer.getPort("out");
     OA::Port & in = consumer.getPort("in");
 
     in.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest::Msg1;u1");
-    //    out.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest::Msg1;u1");
-
     out.connectURL( "ocpi-dds-msg://JTest_Msg1");
 
-
+    // Number of message the producer should publish
+    producer.setProperty( "msgs_to_produce", "30" );
+    
     producer.start();
     consumer.start();
 
+    printf("\n\nWaiting for 10 seconds for standalone DDS messages\n");
     int count = 10;
     while( count > 0 ) 
       { 
@@ -53,8 +55,16 @@ int main ( int argc, char* argv [ ] )
 
     producer.stop();
     consumer.stop();
-    sleep(2);
 
+    printf("\n\n\n");
+    std::string n[2], v[2];    
+    consumer.getProperty( 0, n[0], v[0] );    consumer.getProperty( 1, n[1], v[1] );
+    printf("Got %s OCPI message, %s were good\n", v[0].c_str(),v[1].c_str());
+    if (v[0] != v[1] ) passed = false;
+    consumer.getProperty( 2, n[0], v[0] );    consumer.getProperty( 3, n[1], v[1] );
+    printf("Got %s DDS message, %s were good\n", v[0].c_str(),v[1].c_str());
+    if ( v[0] != v[1] ) passed = false;
+    printf("******  The test has %s   *******\n", passed ? "Passed" : "Failed" );
 
   }
   catch ( const std::string& s )
@@ -75,10 +85,7 @@ int main ( int argc, char* argv [ ] )
     std::cerr << "\n\nException(u): unknown\n" << std::endl;
   }
 
-
-  
-
-  return 0;
+  return (passed ? 1 : -1);
 }
 
 

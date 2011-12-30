@@ -1,4 +1,7 @@
 <ComponentSpec Name="dds_producer">
+  <Properties>
+    <Property Name="msgs_to_produce" readable="true" writable="true"/>
+  </Properties>
   <DataInterfaceSpec Name="out" Producer="true">
     <xi:include href="topic.xml"/>
   </DataInterfaceSpec>

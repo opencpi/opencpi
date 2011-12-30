@@ -56,10 +56,8 @@ namespace OCPI  {
       Operation();
       Operation(const Operation & p );
       ~Operation();
-#if 1
       Operation & operator=(const Operation * p );
       Operation & operator=(const Operation & p );
-#endif
       inline bool isTwoWay() { return m_isTwoWay; }
       inline Member *args() { return m_args; }
       inline unsigned nArgs() { return m_nArgs; }

@@ -1,3 +1,4 @@
+#define NDEBUG 1
 
 #ifdef OPENSPLICE_MSG_SUPPORT
 

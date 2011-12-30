@@ -1,0 +1,43 @@
+module JTest
+{
+
+  struct EmbMsg {
+    long value;
+    sequence <double> sdbl;                                                                                                                               };
+  typedef sequence <string> seqString;
+  typedef long AR4[4];
+  typedef EmbMsg EmbMsgAr23[2][3];
+
+  struct Msg1
+  {
+
+    long   userId;
+    unsigned long   u1;
+    long long v_longlong1;
+    short   v_short;
+    long   v_l_array[3];
+    long   v_l_array1[3][4];
+    boolean v_bool;
+    double    v_double;
+    octet   v_oct_array[48];
+    long    v_long2;
+    EmbMsg v_embmsg;
+    string  v_message;
+    sequence <long> long_seq;
+    sequence <double> double_seq;
+    sequence <short> short_seq;
+    sequence <char>  char_seq;
+    sequence <octet> uchar_seq;
+    sequence <string> v_sseq;
+    EmbMsg v_embmsgar[3];
+    sequence<AR4> lseqar1;
+    sequence<EmbMsg> v_embmsgseqar[2][3];
+    enum xxx { a, b, c} v_enum;
+    sequence <string,3> sseq2;
+
+  };
+  #pragma keylist Msg1 u1
+};
+
+
+

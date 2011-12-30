@@ -1,4 +1,10 @@
 <ComponentSpec Name="dds_consumer">
+  <Properties>
+    <Property Name="ocpi_msgs" readable="true" writable="true"/>
+    <Property Name="ocpi_good_msgs" readable="true" writable="true"/>
+    <Property Name="dds_msgs" readable="true" writable="true"/>
+    <Property Name="dds_good_msgs" readable="true" writable="true"/>
+  </Properties>
   <DataInterfaceSpec Name="in" Producer="false">
     <xi:include href="topic.xml"/>
   </DataInterfaceSpec>

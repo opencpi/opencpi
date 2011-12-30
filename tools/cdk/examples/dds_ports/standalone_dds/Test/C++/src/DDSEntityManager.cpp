@@ -1,18 +1,6 @@
 
-/*
- *                         OpenSplice DDS
- *
- *   This software and documentation are Copyright 2006 to 2009 PrismTech
- *   Limited and its licensees. All rights reserved. See file:
- *
- *                     $OSPL_HOME/LICENSE
- *
- *   for full copyright notice and license terms.
- *
- */
-
 #include "DDSEntityManager.h"
-#include <iostream>
+
 
 void DDSEntityManager::createParticipant(const char *partitiontName)
 {
@@ -169,51 +157,4 @@ DomainParticipant_ptr DDSEntityManager::getParticipant()
 
 DDSEntityManager::~DDSEntityManager(){
 
-}
-
-
-/* Array to hold the names for all ReturnCodes. */
-string RetCodeName[13] = 
-{
-  "DDS_RETCODE_OK", "DDS_RETCODE_ERROR", "DDS_RETCODE_UNSUPPORTED", 
-    "DDS_RETCODE_BAD_PARAMETER", "DDS_RETCODE_PRECONDITION_NOT_MET", 
-    "DDS_RETCODE_OUT_OF_RESOURCES", "DDS_RETCODE_NOT_ENABLED", 
-    "DDS_RETCODE_IMMUTABLE_POLICY", "DDS_RETCODE_INCONSISTENT_POLICY", 
-    "DDS_RETCODE_ALREADY_DELETED", "DDS_RETCODE_TIMEOUT", "DDS_RETCODE_NO_DATA",
-    "DDS_RETCODE_ILLEGAL_OPERATION"
-};
-
-/**
- * Returns the name of an error code.
- **/
-string getErrorName(DDS::ReturnCode_t status)
-{
-  return RetCodeName[status];
-}
-
-/**
- * Check the return status for errors. If there is an error, then terminate.
- **/
-void checkStatus(DDS::ReturnCode_t status, const char *info)
-{
-
-
-  if (status != DDS::RETCODE_OK && status != DDS::RETCODE_NO_DATA)
-  {
-    cerr << "Error in " << info << ": " << getErrorName(status).c_str() << endl;
-    exit(0);
-  }
-}
-
-/**
- * Check whether a valid handle has been returned. If not, then terminate.
- **/
-void checkHandle(void *handle, string info)
-{
-
-  if (!handle)
-  {
-    cerr << "Error in " << info.c_str() << ": Creation failed: invalid handle" << endl;
-    exit(0);
-  }
 }
