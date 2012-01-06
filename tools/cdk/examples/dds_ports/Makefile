@@ -22,7 +22,7 @@ dds_ports: dds_ports.cxx
 	g++ -g -o $@ -I$(OCPI_INC_DIR) $^ -L$(OPENSPLICE_LIB_DIR) $(OCPI_LD_FLAGS) $(OPENSPLICE_LIBS:%=-l%)
 
 run: dds_ports workers
-	OCPI_LIBRARY_PATH=lib/rcc ./hello > /dev/null	
+	OCPI_LIBRARY_PATH=lib/rcc ./dds_ports
 
 clean::
 	rm -r -f dds_ports *.dSYM *.o
