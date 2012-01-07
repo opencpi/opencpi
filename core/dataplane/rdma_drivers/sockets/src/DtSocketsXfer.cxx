@@ -1,4 +1,7 @@
-#define SOCKET_RDMA_SUPPORT
+
+#ifndef NDEBUG
+#define NDEBUG 1
+#endif
 
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -153,7 +156,7 @@ class ServerSocketHandler : public Thread
 {
 public:
   ServerSocketHandler( OCPI::OS::Socket & socket, SocketStartupParams & sp  )
-    :m_run(true), m_startupParms(sp),m_socket(socket){}
+    :m_run(true), m_startupParms(sp),m_socket(socket),m_bytes_left(0){}
   virtual ~ServerSocketHandler()
   {
     m_socket.close();
@@ -217,10 +220,10 @@ private:
   bool   m_run;
   SocketStartupParams   m_startupParms;
   char * m_current_ptr;
-  unsigned int    m_bytes_left;
   char   m_buf[TCP_BUFSIZE_READ];
   int    m_bidx;
   OCPI::OS::Socket & m_socket;
+  unsigned int    m_bytes_left;
 
 };
 
@@ -696,6 +699,7 @@ xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t)
   return 0;
 }
 
+#define SOCKET_RDMA_SUPPORT
 #ifdef SOCKET_RDMA_SUPPORT
 // Used to register with the data transfer system;
   RegisterTransferDriver<SocketXferFactory> socketDriver;

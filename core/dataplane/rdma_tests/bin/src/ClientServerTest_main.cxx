@@ -78,8 +78,8 @@ char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-smb-pio://s:300000.1.20";
 char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-smb-pio://lb:300000.3.20";
 */
 
-const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-socket-rdma://mfs-openocpi-1;40005:600000.2.8";
-const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-socket-rdma://mfs-openocpi-1;40006:600000.4.8";
+const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-socket-rdma://10.0.1.29;40006:600000.2.8";
+const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-socket-rdma://10.0.1.29;40007:600000.3.8";
 
 int  OCPI_RCC_DATA_BUFFER_SIZE   = 1024;
 int  OCPI_RCC_CONT_NBUFFERS      = 1;
@@ -103,7 +103,7 @@ public:
 
   void newMessageCircuitAvailable( MessageCircuit* new_circuit )
   {
-    //                printf("TransportEventHandler::newCircuitAvailable new circuit available\n");
+    printf("TransportEventHandler::newCircuitAvailable new circuit available\n");
     gpp_circuits[circuit_count++] = new_circuit;
   }
 
@@ -185,26 +185,17 @@ int gpp_cont(int argc, char** argv)
         printf("Waiting for a client to connect\n");
       }
 
-      printf("***** Got a new client !! \n");
-      for (int n=0; n<10; n++) {
-        OCPI::OS::sleep( 500 );
-        server->dispatch();
-      }
-
-      printf("About to start sending data\n");
-      
       int msg_count = 0;
-      while( msg_count < 100 ) {
+      //      while( msg_count < 100 ) {
+      while (1) {
         OCPI::DataTransport::Buffer* buffer;        
         buffer = gpp_circuits[0]->getSendMessageBuffer();
         if ( buffer ) {
           sprintf((char*)buffer->getBuffer(),"message %d\n", msg_count++ );
           gpp_circuits[0]->sendMessage( buffer, strlen((char*)buffer->getBuffer()) + 1 );
         }
-        OCPI::OS::sleep( 5 );
         server->dispatch();
       }
-
 
     }
     else {
@@ -212,13 +203,11 @@ int gpp_cont(int argc, char** argv)
       eh = new TransportCEventHandler();
       client = new Client( loopback_end_point, 1024, eh );
       loopback_circuit = client->createCircuit( server_end_point );   
-
       printf("***** Established a new connection  !! \n");
 
       while( 1) {
         client->dispatch();
         OCPI::DataTransport::Buffer* buffer;        
-        OCPI::OS::sleep( 5 );
         if ( loopback_circuit->messageAvailable() ) {
           buffer = loopback_circuit->getNextMessage();
           if ( buffer ) {

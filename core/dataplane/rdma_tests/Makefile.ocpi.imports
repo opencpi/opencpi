@@ -45,13 +45,17 @@ ALLINC += $(OCPIOS_EXPORTS) \
  $(DATA_TRANSFER_EXPORTS) $(DATA_TRANSPORT_EXPORTS) \
  $(CONTAINER_EXPORTS) /opt/mercury/include/
 
-ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),0)
-DYNOBJS += ../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
+DYNOBJS += \
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj
-else
-	SYSLIBS += dl	
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj 
+
+ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+	SYSLIBS += dl 
 endif
+
+
+
 
 ifeq ($(OCPI_HAVE_IBVERBS),1)
 DYNOBJS += ../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtOfedXfer.obj 
