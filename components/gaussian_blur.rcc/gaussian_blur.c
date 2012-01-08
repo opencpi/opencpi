@@ -124,7 +124,7 @@ static RCCResult run(RCCWorker *self,
   Gaussian_blurState *s = self->memories[0];
   RCCPort *in = &self->ports[GAUSSIAN_BLUR_IN],
     *out = &self->ports[GAUSSIAN_BLUR_OUT];
-  const RCCContainer *c = self->container;  
+  const RCCContainer *c = &self->container;  
   (void)timedOut;
 
   if ( (in->input.length>0) && (in->input.length>FRAME_BYTES) ) {

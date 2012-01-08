@@ -79,7 +79,7 @@ namespace OCPI {
 		    bool &readableConfigs, bool &writableConfigs,
 		    bool &argSub32Configs,  bool includeImpl, unsigned ordinal) {
       const char *err;
-      bool sub32Configs;
+      bool sub32Configs = false;
       unsigned maxAlign = 1; // dummy and not really used since property sheet is zero based anyway
       unsigned minSize = 0;
       bool diverseSizes = false;

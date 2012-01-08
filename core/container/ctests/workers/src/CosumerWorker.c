@@ -208,7 +208,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #endif
 
   OCPI_TIME_EMIT_C("Consumer Start Release");
-  this_->container->release( &this_->ports[ConsumerWorker_Data_In_Port].current ); 
+  this_->container.release( &this_->ports[ConsumerWorker_Data_In_Port].current ); 
   OCPI_TIME_EMIT_C("Consumer End Release");
   return RCC_OK;
 }

@@ -137,7 +137,7 @@ findFactory( const char* url,
 }
 
 DTM::XferFactoryManager::
-XferFactoryManager()
+XferFactoryManager() : m_configured(false)
 {
 
 }

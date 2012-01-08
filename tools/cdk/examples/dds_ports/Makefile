@@ -13,16 +13,17 @@ endif
 
 include $(OCPI_CDK_DIR)/ocpisetup.mk
 
-OPENSPLICE_LIBS= msg_drivers ddsdatabase dcpsgapi dcpssacpp ddsos ddsutil ddsserialization ddskernel ddsuser ddsconf ddsconfparser
-OPENSPLICE_LIB_DIR=$(OCPI_OPENSPLICE_HOME)/lib
+OPENSPLICE_LIBS= dcpssacpp
+OPENSPLICE_LD_FLAGS=-L$(OCPI_OPENSPLICE_HOME)/lib -Xlinker -rpath -Xlinker $(OCPI_OPENSPLICE_HOME)/lib
+OCPI_API_LIBS+= msg_driver_interface msg_drivers
 
 all: dds_ports
 
 dds_ports: dds_ports.cxx
-	g++ -g -o $@ -I$(OCPI_INC_DIR) $^ -L$(OPENSPLICE_LIB_DIR) $(OCPI_LD_FLAGS) $(OPENSPLICE_LIBS:%=-l%)
+	g++ -g -o $@ -I$(OCPI_INC_DIR) $(OPENSPLICE_LD_FLAGS) $(OCPI_LD_FLAGS) $^ $(OPENSPLICE_LIBS:%=-l%)
 
 run: dds_ports workers
-	OCPI_LIBRARY_PATH=lib/rcc ./dds_ports
+	. $(OCPI_OPENSPLICE_HOME)/release.com; ospl start; OCPI_LIBRARY_PATH=lib/rcc ./dds_ports	
 
 clean::
 	rm -r -f dds_ports *.dSYM *.o

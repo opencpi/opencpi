@@ -61,7 +61,7 @@ static RCCResult run(RCCWorker *self,
     *in = &self->ports[COPY_IN],
     *out = &self->ports[COPY_OUT];
 #if 0
-  self->container->send(out, in->current, in->input.u.operation, in->input.length);
+  self->container.send(out, in->current, in->input.u.operation, in->input.length);
   return RCC_OK;
 #else
   memcpy(self->ports[COPY_OUT].current.data, in->current.data, in->input.length);

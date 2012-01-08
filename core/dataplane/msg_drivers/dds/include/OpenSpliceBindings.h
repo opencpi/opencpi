@@ -97,7 +97,7 @@ namespace OpenSpliceBindings {
   /**
    * Returns the name of an error code.
    **/
-  string getErrorName(DDS::ReturnCode_t status);
+  const char *getErrorName(DDS::ReturnCode_t status);
 
   /**
    * Check the return status for errors. If there is an error, then terminate.

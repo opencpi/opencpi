@@ -54,6 +54,7 @@
 #include <OcpiParentChild.h>
 #include <OcpiBuffer.h>
 #include <DtMsgDriver.h>
+#include <OcpiRccWorker.h>
 
 namespace OC = OCPI::Container;
 namespace OA = OCPI::API;
@@ -66,8 +67,8 @@ namespace OCPI {
   namespace RCC {
 
     MessagePort::
-    MessagePort( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params )
-      : PortDelegator( w, pmd, 0, params, NULL )
+    MessagePort( Worker &w, Port& p, const OCPI::Util::PValue *params )
+      : PortDelegator( w, p.metaPort(), 0, &p, params )
     {      
       // Empty
     }
@@ -95,55 +96,60 @@ namespace OCPI {
       DTM::XferServices * msgService  = factory->getXferServices( (OCPI::Util::Protocol*)&m_metaPort, url, myProps, otherProps );
       ocpiAssert ( msgService );
       m_msgChannel = msgService->getMsgChannel(url,myProps,otherProps);
+      parent().portIsConnected(portOrdinal());
     }
 
     void 
     MessagePort::
-    advance( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t opcode, uint32_t len)
+    sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t len, RCCOrdinal /*opcode*/)
     {
-      (void)opcode;
-      if ( ! m_metaPort.provider ) {
-	m_msgChannel->post( buffer, len );
-      }
-      else {
-	m_msgChannel->release( buffer );
-      }
+      m_msgChannel->post( buffer, len );
     }
 
-    bool 
+    void 
     MessagePort::
-    hasEmptyOutputBuffer()
+    releaseInputBuffer( OCPI::DataTransport::BufferUserFacet* buffer)
     {
-      return m_msgChannel->hasFreeBuffer();
+      ocpiAssert(m_metaPort.provider);
+      m_msgChannel->release( buffer );
     }
     
     OCPI::DataTransport::BufferUserFacet*
     MessagePort::
-    getNextEmptyOutputBuffer()
+    getNextEmptyOutputBuffer(void *&data, uint32_t &length)
     {
-      return m_msgChannel->getFreeBuffer();
+      if (m_msgChannel->hasFreeBuffer()) {
+	OCPI::DataTransport::BufferUserFacet *b = m_msgChannel->getFreeBuffer();
+	if (b) {
+	  data = (void*)b->getBuffer(); // cast off volatile
+	  length = b->getDataLength();
+	  return b;
+	}
+      } 
+      return NULL;
     }
     
-    bool 
-    MessagePort::
-    hasFullInputBuffer()
-    {
-      return m_msgChannel->msgReady();
-    }
-
     void 
     MessagePort::
-    sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet*, unsigned int  )
+    sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet*, unsigned int, RCCOrdinal /*op*/  )
     {
       ocpiAssert(!"sendZcopyInputBuffer not supported with message ports !!\n");
     }
     
     OCPI::DataTransport::BufferUserFacet*
     MessagePort::
-    getNextFullInputBuffer()
+    getNextFullInputBuffer(void *&data, uint32_t &length, RCCOrdinal &opcode)
     {
-      uint32_t length;
-      return m_msgChannel->getNextMsg( length );
+      
+      if (m_msgChannel->msgReady()) {
+	OCPI::DataTransport::BufferUserFacet *b = m_msgChannel->getNextMsg( length );
+	if (b) {
+	  opcode = 0;
+	  data = (void*)b->getBuffer(); // cast off volatile
+	  return b;
+	}
+      }
+      return NULL;
     }
 
     void 
@@ -172,13 +178,14 @@ namespace OCPI {
       return NULL;
     }
 
+#if 0
     uint32_t 
     MessagePort::
     getBufferLength()
     {
       return 0;
     }
-
+#endif
     uint32_t 
     MessagePort::
     getBufferCount()

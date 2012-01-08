@@ -186,10 +186,10 @@ namespace OCPI {
       // List of worker ports
       OCPI::OS::uint32_t sourcePortCount;
       OCPI::OS::uint32_t targetPortCount;
-
+      unsigned m_nPorts;
       // Sparse list, indexable by port ordinal
-      OCPI::Util::VList  sourcePorts;   
-      OCPI::Util::VList  targetPorts;        
+      //      OCPI::Util::VList  sourcePorts;   
+      //      OCPI::Util::VList  targetPorts;        
 
       // Worker run condition super-set
       OCPI::OS::uint32_t runConditionSS;
@@ -211,7 +211,7 @@ namespace OCPI {
       void overRidePortInfo( OCPI::Metadata::Port & portData );
 
       // Update a ports information (as a result of a connection)
-      void updatePort( RDMAPort &port );
+      void portIsConnected( unsigned ordinal );
     };
 
 

@@ -68,7 +68,7 @@ namespace OCPI {
     class PortSet;
 
     // Port Ordinal
-    typedef OCPI::OS::int32_t PortOrdinal;
+    typedef OCPI::OS::uint32_t PortOrdinal;
 
     struct PortMetaData : public OCPI::Util::Child<PortSetMetaData,PortMetaData>
     {
@@ -185,7 +185,7 @@ namespace OCPI {
       // Standard constructors
       PortMetaData( PortOrdinal pid, 
                     bool s, 
-                    OCPI::RDT::Descriptors& sPort,
+                    const OCPI::RDT::Descriptors& sPort,
                     const char * shadow_ep,
                     PortSetMetaData* psmd );
 
@@ -198,7 +198,7 @@ namespace OCPI {
 
 
       PortMetaData( PortOrdinal pid, 
-                    OCPI::RDT::Descriptors& portDesc,
+                    const OCPI::RDT::Descriptors& portDesc,
                     PortSetMetaData* psmd );
 
       // Dependency constructor
@@ -206,7 +206,7 @@ namespace OCPI {
                     bool s, 
                     const char* ep, 
                     const char* shadow_ep,
-                    OCPI::RDT::Descriptors& pd, 
+                    const OCPI::RDT::Descriptors& pd, 
                     OCPI::OS::uint32_t circuitId,
                     PortSetMetaData* psmd );
 

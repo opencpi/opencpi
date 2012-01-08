@@ -86,6 +86,7 @@ void OCPI::DataTransport::Port::reset()
   }
   m_sequence = 0;
   m_lastBufferOrd=-1;
+  getCircuit()->release();
 }
 
 /**********************************
@@ -221,37 +222,68 @@ SmemServices* OCPI::DataTransport::Port::getRealShemServices()
 }
 
 /**********************************
- * Sets the feedback descriptor for this port.
+ * Finalize the port - called when the roles are finally established and won't change any more
  *********************************/
 void 
 Port::
-setFlowControlDescriptor( OCPI::RDT::Descriptors& d )
+finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCPI::RDT::Descriptors *flow)
 {
-  getCircuit()->setFlowControlDescriptor(this, d);
+  Circuit &c = *getCircuit();
+  Port *otherPort;
+  if (m_data->output) {
+    switch (mine.role) {
+    case OCPI::RDT::ActiveFlowControl:
+      ocpiAssert(flow);
+      // If we, as output, are in "ActiveFlowControl" mode, we do not need to tell the input about
+      // our input shadow buffers since they do not need to indicate when they have consumed data.
+      // We don't care because we are not managing the transfers from our output to their inputs.
+      // Instead, we will send them the output descriptor so that they can "pull" data from us,
+      // and indicate when the data transfer has completed.
+      *flow = mine;
+      ocpiAssert(flow->type == OCPI::RDT::ProducerDescT);
+      break;
+    case OCPI::RDT::ActiveOnly:
+      printf("Found a Passive Consumer Port !!\n");
+      attachPullDriver(c.createPullDriver( other ));
+      break;
+    case OCPI::RDT::ActiveMessage:
+      if (flow) {
+	*flow = c.getInputPortSet(0)->getPort(0)->getMetaData()->m_shadowPortDescriptor;
+	flow->type = OCPI::RDT::ConsumerFlowControlDescT;
+	flow->desc.oob.cookie = mine.desc.oob.cookie;
+      }
+      break;
+    }
+    if (flow)
+      flow->desc.oob.cookie = mine.desc.oob.cookie;
+    otherPort = c.getInputPortSet(0)->getPort(0);
+  } else {
+    // We are input, other is output.
+    c.setFlowControlDescriptor(this, other);
+    ocpiAssert(getRealShemServices());
+
+    std::string s2(other.desc.oob.oep);
+    XferServices * xfers =   
+      XferFactoryManager::getFactoryManager().getService( getEndpoint()->end_point, s2 );
+    xfers->finalize( other.desc.oob.cookie );
+    otherPort = c.getOutputPortSet()->getPort(0);
+  }
+  getPortDescriptor(mine, &other);
+  ocpiAssert(m_data->m_descriptor.role != 5);
+  otherPort->m_data->m_descriptor = other;
+  ocpiAssert(otherPort->m_data->m_descriptor.role != 5);
+  c.m_openCircuit = false;
+}
+bool Port::
+isFinalized() {
+  OCPI::DataTransport::Circuit* c = getCircuit();
+  return c && !c->isCircuitOpen();
 }
 
-/**********************************
- * Finalize the port
- *********************************/
-void 
-Port::
-finalize( OCPI::RDT::Descriptors& d)
-{
-  SmemServices * smem = getRealShemServices();
-  ocpiAssert( smem );
-
-  std::string s2(d.desc.oob.oep);
-  XferServices * xfers =   
-    XferFactoryManager::getFactoryManager().getService( getEndpoint()->end_point, s2 );
-  xfers->finalize( d.desc.oob.cookie );
-
-}
-
-
 
 void 
 Port::
-setFlowControlDescriptorInternal( OCPI::RDT::Descriptors & desc )
+setFlowControlDescriptorInternal( const OCPI::RDT::Descriptors & desc )
 {
 
   initialize();
@@ -292,7 +324,8 @@ setFlowControlDescriptorInternal( OCPI::RDT::Descriptors & desc )
  * Get port dependency data.  This is the data that is needed by an
  * external circuit to connect to this port.
  *********************************/
-void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc, OCPI::RDT::Descriptors * other  )
+void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
+						   const OCPI::RDT::Descriptors * other  )
 {
 
   // If we are not a shadow port, we fill in all of the real descriptor dependency information
@@ -315,14 +348,14 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
 
     if ( ! isOutput() ) { 
 
-      desc.type = OCPI::RDT::ConsumerDescT;
+      ocpiAssert(desc.type == OCPI::RDT::ConsumerDescT);
       desc.role = OCPI::RDT::ActiveFlowControl;
-      desc.options |= 1 << OCPI::RDT::MandatedRole;
+      // desc.options |= 1 << OCPI::RDT::MandatedRole;
       desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
       desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
       desc.desc.metaDataBaseAddr = m_portDependencyData.offsets[0].inputOffsets.metaDataOffset;
       desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
-      desc.desc.nBuffers = getPortSet()->getBufferCount();
+      ocpiAssert(desc.desc.nBuffers == getPortSet()->getBufferCount());
       desc.desc.fullFlagBaseAddr = m_portDependencyData.offsets[0].inputOffsets.localStateOffset;
       desc.desc.fullFlagSize = sizeof(BufferState);
       desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
@@ -330,12 +363,16 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
     }
     else {  // We are an output port
 
-        desc.role = OCPI::RDT::ActiveFlowControl;
-	desc.options |= 1 << OCPI::RDT::MandatedRole;
+        ocpiAssert(desc.type == OCPI::RDT::ProducerDescT);
+        desc.role = OCPI::RDT::ActiveMessage;
+	//desc.options |= 1 << OCPI::RDT::MandatedRole;
         desc.desc.dataBufferBaseAddr = 	m_data->m_bufferData[0].outputOffsets.bufferOffset;
         desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
         desc.desc.metaDataBaseAddr = m_data->m_bufferData[0].outputOffsets.metaDataOffset;
         desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
+        if (desc.desc.nBuffers != getPortSet()->getBufferCount())
+	  printf("Buffer count mismatch.  Should be %u but will be forced to %u\n",
+		 desc.desc.nBuffers, getPortSet()->getBufferCount());
         desc.desc.nBuffers = getPortSet()->getBufferCount();
 	desc.desc.fullFlagBaseAddr = m_data->m_bufferData[0].outputOffsets.localStateOffset;
         desc.desc.fullFlagSize = sizeof(BufferState);
@@ -386,7 +423,7 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
   else {  // We are a shadow port 
     ocpiAssert(0);
   }
-
+  getMetaData()->m_descriptor = desc;
 }
 
 
@@ -1287,6 +1324,7 @@ createInputOffsets()
         throw OCPI::Util::EmbeddedException(
                                            NO_MORE_BUFFER_AVAILABLE, m_data->m_shadow_location->end_point.c_str());
       }
+      m_data->m_shadowPortDescriptor.role = OCPI::RDT::ActiveMessage;
       m_data->m_shadowPortDescriptor.type = OCPI::RDT::ConsumerFlowControlDescT;
       m_data->m_shadowPortDescriptor.desc.emptyFlagBaseAddr = soffset;
       m_data->m_shadowPortDescriptor.desc.emptyFlagSize = sizeof(BufferState);
@@ -1380,15 +1418,28 @@ hasEmptyOutputBuffer()
 }
 
 
+OCPI::DataTransport::BufferUserFacet* 
+OCPI::DataTransport::Port::
+getNextFullInputBuffer(void *&data, uint32_t &length, uint32_t &opcode)
+{
+  OCPI::DataTransport::Buffer* buf = getNextFullInputBuffer();
+  if (buf) {
+    data = (void*)buf->getBuffer(); // cast off the volatile
+    opcode = buf->getMetaData()->ocpiMetaDataWord.opCode;
+    length = buf->getDataLength();
+  }
+  return buf;
+}
+
 OCPI::DataTransport::Buffer* 
 OCPI::DataTransport::Port::
 getNextFullInputBuffer()
 {
-  if ( getCircuit()->isCircuitOpen() ) {
+  if (!hasFullInputBuffer())
     return NULL;
-  }
+  TransferController* txc = getPortSet()->getTxController();
   InputBuffer* buf = 
-    static_cast<InputBuffer*>(getPortSet()->getTxController()->getNextFullInputBuffer(this));
+    static_cast<InputBuffer*>(txc->getNextFullInputBuffer(this));
   if ( buf && buf->isEOS() ) {
     setEOS();
   }
@@ -1429,12 +1480,26 @@ inputAvailable( Buffer* input_buf )
  * This method retreives the next available buffer from the local (our)
  * port set.  A NULL port indicates local context.
  *********************************/
+OCPI::DataTransport::BufferUserFacet* 
+OCPI::DataTransport::Port::
+getNextEmptyOutputBuffer(void *&data, uint32_t &length)
+{
+  OCPI::DataTransport::Buffer *buf = getNextEmptyOutputBuffer();
+  if (buf) {
+    data = (void*)buf->getBuffer(); // cast off the volatile
+    length = buf->getLength(); // not really data length, but buffer length
+  }
+  return buf;
+}
 OCPI::DataTransport::Buffer* 
 OCPI::DataTransport::Port::
 getNextEmptyOutputBuffer()
 {
   if ( getCircuit()->isCircuitOpen() ) {
     return NULL;
+  }
+  if ( !getPortSet() || !getPortSet()->getTxController() ) {
+    return false;
   }
   OutputBuffer* buffer = static_cast<OutputBuffer*>
     (getPortSet()->getTxController()->getNextEmptyOutputBuffer(this));
@@ -1485,26 +1550,28 @@ getNextEmptyOutputBuffer()
 
 void 
 Port::
-sendZcopyInputBuffer( Buffer* src_buf, unsigned int len )
+sendZcopyInputBuffer( Buffer* src_buf, unsigned int len, unsigned op)
 {
   src_buf->getMetaData()->ocpiMetaDataWord.length = len;
+  src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
   getCircuit()->sendZcopyInputBuffer( this, src_buf, len );
 }
 
 
+#if 0
 void 
 Port::
 advance( Buffer* buffer, unsigned int len )
 {
   buffer->getMetaData()->ocpiMetaDataWord.length = len;
   if ( isOutput() ) {
-    sendOutputBuffer( buffer, len );
+    sendOutputBuffer( buffer, len, opcode );
   }
   else {
     inputAvailable( buffer);
   }
 }
-
+#endif
 
 OCPI::OS::uint32_t 
 Port::
@@ -1515,9 +1582,11 @@ getBufferLength()
 
 void 
 Port::
-sendOutputBuffer( Buffer* b, unsigned int length )
+sendOutputBuffer( BufferUserFacet* buf, unsigned int length, unsigned int opcode )
 {
-  // Put the actual data length in the meta-data
+  Buffer *b = static_cast<Buffer *>(buf);
+  // Put the actual opcode and data length in the meta-data
+  b->getMetaData()->ocpiMetaDataWord.opCode = opcode;
   b->getMetaData()->ocpiMetaDataWord.length = length;
 
   // If there were no available output buffers when the worker was last run on this port, then the

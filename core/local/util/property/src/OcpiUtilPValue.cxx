@@ -57,6 +57,7 @@ namespace OCPI {
   namespace Util {
     // This list provides names and types and defaults
     PValue allPVParams[] = {
+      PVString("transport"),
       PVString("xferrole"),
       PVString("DLLEntryPoint"),
       PVString("monitorIPAddress"),
@@ -111,7 +112,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 
     PValueList::PValueList() : m_list(NULL) {}
-    PValueList::~PValueList() { delete m_list; }
+    PValueList::~PValueList() { delete [] m_list; }
     const char *PValueList::parse(ezxml_t x, ...) {
       va_list ap;
       va_start(ap, x);
@@ -160,7 +161,11 @@ namespace OCPI {
 	  const char *err = val.parse(value);
 	  if (err)
 	    return err;
-	  p->vULongLong = val.m_ULongLong;
+	  if (p->type == OCPI::API::OCPI_String) {
+	    p->vString = strdup(val.m_String);
+	    p->owned = true;
+	  } else
+	    p->vULongLong = val.m_ULongLong;
 	  p++;
 	}
       }

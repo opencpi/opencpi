@@ -127,13 +127,13 @@ namespace OCPI {
       /**********************************
        * Is an endpoint local
        *********************************/
-      std::string getEndpointFromProtocol( const char* protocol );      
+      DataTransfer::SMBResources* addLocalEndpointFromProtocol( const char* protocol );      
       DataTransfer::SMBResources* addLocalEndpoint( const char* ep );
+      DataTransfer::SMBResources* addLocalCompatibleEndpoint( const char* ep );
       DataTransfer::SMBResources* addRemoteEndpoint( const char* ep );
       bool                        isLocalEndpoint( const char* ep );
       DataTransfer::SMBResources* getEndpointResources(const char* ep);
       void                        removeLocalEndpoint(  const char* ep );
-      std::string& getDefaultEndPoint();
 
 
       /**********************************
@@ -160,7 +160,17 @@ namespace OCPI {
       Circuit * createCircuit( OCPI::RDT::Descriptors& sPort );
 
 
-      Port * createInputPort( Circuit * &c,  OCPI::RDT::Descriptors& desc);
+      Port * createInputPort( Circuit * &c,  OCPI::RDT::Descriptors& desc, const OCPI::Util::PValue *);
+      // Use this one when you know there is only one input port
+      Port * createInputPort(OCPI::RDT::Descriptors& desc, const OCPI::Util::PValue *);
+      // Use this one when you know there is only one output port
+      // And the input port is remote
+      Port * createOutputPort(OCPI::RDT::Descriptors& outputDesc,
+			      const OCPI::RDT::Descriptors& inputDesc);
+      // Use this when you are connecting the new outport to 
+      // a local input port.
+      Port * createOutputPort(OCPI::RDT::Descriptors& outputDesc,
+			      Port& inputPort);
 
 
       /**********************************
@@ -178,7 +188,6 @@ namespace OCPI {
        * General house keeping 
        *********************************/
       void dispatch(DataTransfer::EventManager* event_manager=NULL);
-      std::string getLocalCompatibleEndpoint( const char* ep );
       std::vector<std::string> getListOfSupportedEndpoints();
 
       /**********************************
@@ -222,8 +231,8 @@ namespace OCPI {
 
     private:
 
+      DataTransfer::SMBResources *         m_defEndpoint; // FIXME: check lifecycle
       std::vector<std::string>             m_endpoints;
-      std::string                          m_defEndpoint;
       std::vector<DataTransfer::EndPoint*> m_finalized_endpoints;
       
 

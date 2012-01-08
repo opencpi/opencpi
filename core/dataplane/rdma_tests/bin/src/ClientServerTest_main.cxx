@@ -78,16 +78,13 @@ char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-smb-pio://s:300000.1.20";
 char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-smb-pio://lb:300000.3.20";
 */
 
-const char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-socket-rdma://10.0.1.29;40006:600000.2.8";
-const char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-socket-rdma://10.0.1.29;40007:600000.3.8";
-
 int  OCPI_RCC_DATA_BUFFER_SIZE   = 1024;
 int  OCPI_RCC_CONT_NBUFFERS      = 1;
 
 
 // Program globals
-static std::string server_end_point;
-static std::string loopback_end_point;
+static std::string server_end_point = "ocpi-socket-rdma://localhost;40006:600000.2.8";
+static std::string loopback_end_point = "ocpi-socket-rdma://localhost;0:600000.3.8";
 static volatile int circuit_count=0;
 static MessageCircuit     *gpp_circuits[10];
 static MessageCircuit     *loopback_circuit;
@@ -149,7 +146,10 @@ bool parseArgs( int argc, char** argv)
   bool ret =false;
   for ( int n=0; n<argc; n++ ) {
     if (strcmp(argv[n],"-loopback") == 0 ) {
-      printf("Setting up for loopback mode\n");
+      if (argv[n+1]) {
+	loopback_end_point = argv[n+1];
+	n++;
+      }
       ret = true;
     }
     else if ( strcmp(argv[n],"-sep") == 0 ) {
@@ -167,11 +167,11 @@ int gpp_cont(int argc, char** argv)
   bool loopback;
 
   try {
-    server_end_point = OCPI_RCC_CONT_COMMS_EP;
     loopback = parseArgs(argc,argv);
     TransportCEventHandler* eh=NULL;
     TransportSEventHandler *tcb=NULL;
     if ( !loopback ) {
+      printf("Setting up for server mode using %s\n", server_end_point.c_str());
 
       // Create the server endpoint and its processing thread
       tcb = new TransportSEventHandler();
@@ -199,7 +199,7 @@ int gpp_cont(int argc, char** argv)
 
     }
     else {
-      loopback_end_point = OCPI_RCC_LBCONT_COMMS_EP;
+      printf("Setting up for loopback mode using %s\n", loopback_end_point.c_str());
       eh = new TransportCEventHandler();
       client = new Client( loopback_end_point, 1024, eh );
       loopback_circuit = client->createCircuit( server_end_point );   

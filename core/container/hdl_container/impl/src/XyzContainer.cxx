@@ -408,7 +408,7 @@ namespace OCPI {
         ocpiAssert(m_canBeExternal && pport.m_canBeExternal);
         pport.applyConnectParams(pProps);
         applyConnectParams(uProps);
-        establishRoles(provider.getData().data);
+        determineRoles(provider.getData().data);
         finishConnection(provider.getData().data);
         pport.finishConnection(getData().data);
         return true;

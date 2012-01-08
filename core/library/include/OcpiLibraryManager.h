@@ -71,7 +71,7 @@ namespace OCPI {
       ezxml_t m_xml;
       // Map from spec name to implementations
       unsigned m_nImplementations;
-      OCPI::Util::Implementation *m_implementations;
+      OCPI::Util::Implementation *m_metaImplementations;
       WorkerMap m_workers;
       Artifact();
       virtual ~Artifact();
@@ -138,7 +138,7 @@ namespace OCPI {
 				    const OCPI::API::Connection *conns,
 				    const char *&inst);
       // Inform the manager about an implementation
-      void addImplementation(Artifact &art, OCPI::Util::Implementation &, ezxml_t inst = NULL);
+      void addImplementation(Implementation &imp);
     private:
       // Find (and callback with) implementations for specName and selectCriteria
       // Return true if any were found

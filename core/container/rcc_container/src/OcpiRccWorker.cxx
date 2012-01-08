@@ -47,8 +47,8 @@
 #define WORKER_INTERNAL
 #include <OcpiRccPort.h>
 #include <OcpiRccContainer.h>
-#include <OcpiRccController.h>
 #include <OcpiRccApplication.h>
+#include <OcpiRccWorker.h>
 #include <OcpiOsMisc.h>
 #include <OcpiTransport.h>
 #include <OcpiBuffer.h>
@@ -128,7 +128,8 @@ Worker( Application & app, Artifact *art, const char *name,
   : OC::WorkerBase<Application,Worker,Port>(app, art, name, impl, inst, wParams),
     // Note the "hack" to use "name" as dispatch when artifact is not present
     m_context(0), m_mutex(app.container()), enabled(false),sourcePortCount(0),targetPortCount(0),
-    sourcePorts(1), targetPorts(1), runConditionSS(0), worker_run_count(0),
+    m_nPorts(0),//sourcePorts(1), targetPorts(1),
+    runConditionSS(0), worker_run_count(0),
     m_transport(app.parent().getTransport())
 {
   if (art)
@@ -197,12 +198,7 @@ Worker::
     }
 #endif
 
-  unsigned nports = m_dispatch->numInputs + m_dispatch->numOutputs;
-  for (unsigned n=0; n<nports; n++ ) {
-    OpaquePortData *opd = static_cast<OpaquePortData*>(m_context->ports[n].opaque);
-    delete opd;
-  }
-
+  deleteChildren();
   OS::uint32_t m = 0;
   while ( m_context->memories && m_context->memories[m] ) {
     delete [] (char*)m_context->memories[m];
@@ -213,6 +209,79 @@ Worker::
   delete m_context->runCondition;
   delete[] (char*)m_context->properties;
   delete[] m_context;
+}
+
+static void
+  rccRelease(RCCBuffer *),
+  rccSend(RCCPort *, RCCBuffer*, RCCOrdinal op, uint32_t length),
+  rccTake(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
+static RCCBoolean
+  rccRequest(RCCPort *port, uint32_t maxlength),
+  rccAdvance(RCCPort *port, uint32_t maxlength),
+  rccWait(RCCPort *, uint32_t max, uint32_t usecs);
+
+static void rccRelease( RCCBuffer* buffer )
+{
+  OCPI::DataTransport::BufferUserFacet* dti_buffer = buffer->containerBuffer;
+  ocpiAssert(dti_buffer);
+  Port * port = static_cast<Port*>( dti_buffer->m_ud );
+  ocpiAssert(port);
+  // An API might be called incorrectly.
+  if (port->isOutput())
+    throw OU::Error("RCC release container function called on an output port, which is not supported");
+  port->release(dti_buffer);    
+}
+static void rccSend( ::RCCPort* rccPort, ::RCCBuffer* rccBuffer, ::RCCOrdinal op, ::uint32_t len )
+{
+  Port* port = rccPort->containerPort;
+  ocpiAssert(port);
+  if ( !port->isOutput() )
+    throw OU::Error("The 'send' container function cannot be called on an input port");
+  OCPI::DataTransport::BufferUserFacet *buffer = rccBuffer->containerBuffer;
+  Port *bufferPort = static_cast<Port*>(buffer->m_ud);
+  if (bufferPort != port && bufferPort->isOutput())
+    throw OU::Error("Cannot send a buffer from a different output port");
+  port->send(buffer, len, op);
+}
+static RCCBoolean rccAdvance( ::RCCPort* rccPort, ::uint32_t max )
+{
+  Port *port = rccPort->containerPort; 
+  ocpiAssert(port);
+  bool ready = port->advance();
+  if (ready && max && max > rccPort->current.maxLength)
+    throw OU::Error("Output buffer request/advance (size %u) greater than buffer size (%u)",
+		    max, rccPort->current.maxLength);
+  return ready;
+}
+
+static RCCBoolean rccRequest( ::RCCPort* rccPort, ::uint32_t max )
+{
+  if (rccPort->current.data )
+    return true;
+  Port* port = rccPort->containerPort;
+  ocpiAssert(port);
+  bool ready = port->request();
+  if (ready && max && port->isOutput() && max < rccPort->output.length)
+    throw OU::Error("Requested output buffer size is unavailable");
+  return ready;
+}
+
+static RCCBoolean rccWait( ::RCCPort* port, ::uint32_t max, ::uint32_t usec )
+{
+  // Not implemented yet
+  ( void ) port;
+  ( void ) max;
+  ( void ) usec;
+  return false;
+}
+static void rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
+{
+  Port *port = rccPort->containerPort;
+  if ( port->isOutput() )
+    throw OU::Error("The 'take' container function cannot be used on an output port");
+  if (!rccPort->current.data)
+    throw OU::Error("The 'take' container function cannot be called when there is no current buffer");
+  port->take(oldBuffer, newBuffer);
 }
 
 // FIXME:  recover memory on exceptions
@@ -231,8 +300,14 @@ initializeContext()
   int mcount = idx;
 
   // check masks for bad bits
-  unsigned nports = wd->numInputs+wd->numOutputs;
-  int32_t mask = -1 << nports;
+  m_nPorts = getNumPorts();
+  if (m_nPorts) {
+    if (m_nPorts != wd->numInputs + wd->numOutputs)
+      throw OU::Error("metadata port count (%u) and dispatch port count (in: %u + out: %u) differ",
+		      m_nPorts, wd->numInputs, wd->numOutputs);
+  } else if (wd->numInputs || wd->numOutputs)
+    m_nPorts = wd->numInputs + wd->numOutputs;
+  int32_t mask = -1 << m_nPorts;
   if (mask & wd->optionallyConnectedPorts)
     throw OU::EmbeddedException( OU::PORT_COUNT_MISMATCH,
 				 "optional port mask is invalid",
@@ -248,9 +323,10 @@ initializeContext()
     }
 
   // Create our context
-  m_context = (RCCWorker *)new char[sizeof(RCCWorker)+(nports)*sizeof(RCCPort)];
+  m_context = (RCCWorker *)new char[sizeof(RCCWorker) + m_nPorts*sizeof(RCCPort)];
   m_context->properties = 0;
-  m_context->container = &parent().parent();
+  static RCCContainer rccContainer = { rccRelease, rccSend, rccRequest, rccAdvance, rccWait, rccTake};
+  m_context->container = rccContainer;
   if ( mcount ) {
     try {
       m_context->memories = new void*[mcount+1];
@@ -297,15 +373,13 @@ initializeContext()
   for (unsigned n=0; n< rc_count; n++ )
     runConditionSS |= m_context->runCondition->portMasks[n];
 
-  // We create one of these structures for all of the ports that are defined in the worker.  However,
+  // We fill in one of these structures for all of the ports that are defined in the worker.  However,
   // the actual data ports may be optional at runtime.
-  for (unsigned n=0; n<nports; n++ ) {
-    m_context->ports[n].opaque = new OpaquePortData();
-    m_context->ports[n].current.data = 0;
+  for (unsigned n=0; n<m_nPorts; n++ ) {
+    m_context->ports[n].containerPort = NULL;
+    m_context->ports[n].current.data = NULL;
     m_context->ports[n].current.maxLength = 0;
     m_context->ports[n].callBack = 0;
-    //    static_cast<OpaquePortData*>(m_context->ports[n].opaque)->worker = wi;
-    static_cast<OpaquePortData*>(m_context->ports[n].opaque)->cp289Port = &m_context->ports[n];
   }
 
   idx=0;
@@ -333,7 +407,7 @@ OC::Port &
 Worker::
 createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
 {
-  TRACE(" OCPI::RCC::Container::createPort()");
+  TRACE(" OCPI::RCC::Worker::createPort()");
   if ( mp.minBufferCount == 0)
     throw OU::EmbeddedException( OU::BAD_PORT_CONFIGURATION, "0 buffer count",
 				 OU::ApplicationRecoverable);
@@ -357,34 +431,16 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
 				      "Worker metadata inconsistent with RCC PortInfo",
 				      OU::ContainerFatal);
       }
-  const char *endpoint = NULL;
   if (mp.provider) { // input
     if (++targetPortCount > m_dispatch->numInputs)
       throw OU::EmbeddedException(OU::PORT_NOT_FOUND,
 				  "Target Port count exceeds configuration", OU::ApplicationFatal);
-    // The caller can also be less specific and just specify the protocol 
-    // FIXME:  someday we need to specify that at either end
-    const char *protocol = NULL;
-    if (OU::findString(params, "protocol", protocol))
-      endpoint = m_transport.getEndpointFromProtocol( protocol).c_str();
-    else if ((protocol = getenv("OCPI_DEFAULT_PROTOCOL"))) {
-      printf("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment\n", protocol);
-      endpoint = m_transport.getEndpointFromProtocol( protocol ).c_str();
-    }
-    else {
-      // It is up to the caller to specify the endpoint which implicitly defines
-      // the QOS.  If the caller does not provide the endpoint, we will pick one
-      // by default.
-      if (!OU::findString(params, "endpoint", endpoint))
-	endpoint = m_transport.getDefaultEndPoint().c_str();
-      endpoint = m_transport.addLocalEndpoint( endpoint)->sMemServices->endpoint()->end_point.c_str();
-    }
   } else if (++sourcePortCount > m_dispatch->numOutputs )
     throw OU::EmbeddedException(OU::PORT_NOT_FOUND,
 				"Source Port count exceeds configuration", OU::ApplicationFatal);
   Port *port;
   try {
-    port = new Port(*this, mp, params, endpoint);
+    port = new Port(*this, mp, params, &m_context->ports[mp.ordinal]);
   }
   catch(std::bad_alloc) {
     throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
@@ -393,16 +449,15 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
   // FIXME: RccPort Object should know about its C RCCPort and do this itself
   // FIXME: this can change on connections
   m_context->ports[mp.ordinal].current.maxLength = port->getData().data.desc.dataBufferSize;
+  m_context->ports[mp.ordinal].containerPort = port;
 
-  // Add the port to the worker
-  port->opaque() = static_cast<OpaquePortData*>(m_context->ports[mp.ordinal].opaque);
-  port->opaque()->port = port;
-
+#if 0
   if (mp.provider) { // input
     targetPorts.insertToPosition(port, mp.ordinal);    
   } else            // output
     // Defer the real work until the port is connected.
     sourcePorts.insertToPosition(port, mp.ordinal);
+#endif
 
   return *port;
 }
@@ -431,10 +486,12 @@ createTestPort( Worker *w, OM::PortOrdinal portId,
   myProps[i] = OA::PVEnd;
 
   OM::Port *pmd = new OM::Port;;
+  pmd->name = isProvider ? "unnamed input" : "unnamed output";
   pmd->ordinal = portId;
   pmd->provider = isProvider;
   pmd->bufferSize = bufferSize;
-  return w->createPort(*pmd, myProps); // FIXME: register these and delete them on destruction
+ // FIXME: stash the params and the metadata for destruction to avoid a leak.
+  return w->createPort(*pmd, myProps);
 }
  OC::Port &
 Worker::
@@ -472,20 +529,9 @@ createInputPort(
 
 void 
 Worker::
-updatePort( RDMAPort &port )
+portIsConnected( unsigned ordinal )
 {
-  OM::PortOrdinal ord = port.portOrdinal();
-  // Add the port to the worker
-  OpaquePortData* opaque =
-    static_cast<OpaquePortData*>(m_context->ports[ord].opaque);
-  port.opaque() = opaque;
-  opaque->port = &port;
-  opaque->buffer = NULL;
-  opaque->readyToAdvance=1;
-  m_context->ports[ord].current.data = NULL;
-  m_context->ports[ord].current.maxLength = 
-    opaque->port->getBufferLength();
-  m_context->connectedPorts |= (1<<ord);
+  m_context->connectedPorts |= (1<<ordinal);
 }
 
 void 
@@ -507,61 +553,14 @@ prepareProperty(OM::Property& md ,
 
 RCCPortMask Worker::getReadyPorts() {
   // Create the active mask
-  ::RCCPortMask readyMask = 0;
-  for (Port *ocpiport = firstChild(); ocpiport; ocpiport = ocpiport->nextChild()) {
-    ::RCCPortMask myMask = 1 << ocpiport->portOrdinal();
-    if (runConditionSS & myMask && // if port has an active run condition
-	ocpiport->definitionComplete() ) {	   // if port is connected
-      RCCPort *wport = &m_context->ports[ocpiport->portOrdinal()];
-      OpaquePortData *opd = static_cast<OpaquePortData*>(wport->opaque);
-
-      // quick check that applies to input or output
-      if (wport->current.data )
-	readyMask |= myMask;
-      else if (ocpiport->isOutput()) {
-	if (ocpiport->hasEmptyOutputBuffer() ) {
-	  // If this is an output port, set the mask if it has a free buffer
-	  if ( opd->readyToAdvance ) {
-	    opd->buffer = ocpiport->getNextEmptyOutputBuffer();
-	    if ( opd->buffer ) {
-	      opd->buffer->m_ud = opd;
-	      wport->current.data = (void*)opd->buffer->getBuffer();
-	      wport->current.id_ = opd->buffer;
-	      wport->output.length = opd->buffer->getLength();
-	      wport->output.u.operation = opd->buffer->opcode();
-	    }
-	    else {
-	      wport->current.data = NULL;
-	    }
-	    opd->readyToAdvance = false;
-	  }
-	  readyMask |= myMask;
-	}
-      }
-      else if ( ocpiport->hasFullInputBuffer() ) {
-	ocpiAssert( opd->readyToAdvance );
-	if ( opd->readyToAdvance ) {
-	  opd->buffer = ocpiport->getNextFullInputBuffer();
-	  if ( opd->buffer ) {
-	    wport->current.data = (void*)opd->buffer->getBuffer();
-	    opd->buffer->m_ud = opd;
-	    wport->current.id_ = opd->buffer;
-	    wport->input.length = opd->buffer->getDataLength();
-	    wport->input.u.operation = opd->buffer->opcode();
-
-#ifndef NDEBUG
-	    printf("max = %d, actual = %d\n", wport->current.maxLength, wport->input.length );
-#endif
-	    readyMask |= myMask;
-	    opd->readyToAdvance = false;
-	  }
-	  else {
-	    wport->current.data = NULL;
-	  }
-	}
-      }
-    } // End for each port
-  }
+  RCCPortMask readyMask = 0;
+  RCCPort *rccPort = m_context->ports;
+  RCCPortMask portMask = 1;
+  for (unsigned n = 0; n < m_nPorts; n++, rccPort++, portMask <<= 1)
+    if ((m_context->connectedPorts & portMask & runConditionSS) &&
+	rccPort->containerPort &&
+	rccPort->containerPort->checkReady())
+      readyMask |= portMask;
   return readyMask;
 }
 
@@ -682,19 +681,10 @@ void Worker::run(bool &anyone_run) {
      void Worker::checkDeadLock() {}
      void Worker::advanceAll() {
        OCPI_EMIT_( "Start Advance All" );
-       int numPorts = m_dispatch->numInputs + m_dispatch->numOutputs;
-       for (int n=0; n<numPorts; n++ ) {
-	 RCCPort *wport = &(m_context->ports[n]);
-	 OpaquePortData *opd = static_cast<OpaquePortData*>(wport->opaque); 
-	 if ( wport->current.data == NULL ) {
-	   continue;
-	 }
-	 opd->readyToAdvance = true;    
-	 if ( opd->buffer ) {
-	   opd->port->advance( opd->buffer, 0, opd->cp289Port->output.length );
-	   wport->current.data = NULL;
-	 }
-       }
+       RCCPort *rccPort = m_context->ports;
+       for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
+	 if (rccPort->current.data)
+	   rccPort->containerPort->advance();
        OCPI_EMIT_( "End Advance All" );
      }
 

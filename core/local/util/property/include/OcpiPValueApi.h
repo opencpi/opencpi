@@ -61,12 +61,13 @@ namespace OCPI {
     class PValue {
     public:
       inline PValue(const char *aName, BaseType aType)
-	: name(aName), type(aType) {}
+	: name(aName), type(aType), owned(false) {}
       inline PValue()
-	: name(0), type(OCPI_none) {}
+	: name(0), type(OCPI_none), owned(false) {}
       unsigned length() const;
       const char *name;
       BaseType type;
+      bool owned;
       // Anonymous union here for convenience even though redundant with ValueType.
       union {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) run v##pretty;

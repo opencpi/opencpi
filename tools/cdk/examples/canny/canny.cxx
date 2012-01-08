@@ -195,7 +195,7 @@ int main ( int argc, char* argv [ ] )
     cvDestroyWindow( "Input" );
     cvDestroyWindow( "Output" );
   }
-  catch ( const std::string& s )
+  catch ( std::string s )
   {
     std::cerr << "\n\nException(s): " << s << "\n" << std::endl;
   }

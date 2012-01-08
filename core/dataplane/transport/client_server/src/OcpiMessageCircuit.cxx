@@ -108,6 +108,7 @@ bool MessageCircuit::messageAvailable()
   if ( m_full_buffer ) {
     return true;
   }
+  
   m_full_buffer = m_rcv_port->getNextFullInputBuffer();
   return m_full_buffer ? true : false;
 }
@@ -142,5 +143,5 @@ OCPI::DataTransport::Buffer* MessageCircuit::getNextMessage()
 
 void MessageCircuit::freeMessage( OCPI::DataTransport::Buffer* msg )
 {
-  m_rcv_port->advance( msg );
+  m_rcv_port->inputAvailable( msg );
 }

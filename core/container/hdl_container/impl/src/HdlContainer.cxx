@@ -836,7 +836,7 @@ namespace OCPI {
         myOcdpRegisters((volatile OcdpProperties *)myProperties),
         userConnected(false)
       {
-	getData().port = (OC::PortDesc)this; // make this our derived class
+	//	getData().port = (OC::PortDesc)this; // make this our derived class
 
         if (!icXml) {
           m_canBeExternal = false;
@@ -1020,7 +1020,7 @@ namespace OCPI {
         ocpiAssert(m_canBeExternal && pport.m_canBeExternal);
         pport.applyConnectParams(pProps);
         applyConnectParams(uProps);
-        establishRoles(provider.getData().data);
+        determineRoles(provider.getData().data);
         finishConnection(provider.getData().data);
         pport.finishConnection(getData().data);
         return true;
@@ -1159,7 +1159,7 @@ namespace OCPI {
           (1 << OCPI::RDT::ActiveMessage) |
           (1 << OCPI::RDT::ActiveOnly);
         applyConnectParams(props);
-        port.establishRoles(getData().data);
+        port.determineRoles(getData().data);
         unsigned nFar = parent().getData().data.desc.nBuffers;
         unsigned nLocal = myDesc.nBuffers;
         myDesc.dataBufferPitch = parent().getData().data.desc.dataBufferPitch;

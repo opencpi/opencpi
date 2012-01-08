@@ -66,7 +66,7 @@ export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/11.0
 
 # #### Location of Google Test (gtest) #################################### #
 
-export OCPI_GTEST_DIR=/opt/opencpi/linux-x86_64/prerequisites/gtest
+export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
 
 # #### Location of Verilator #################################### #
 
@@ -134,6 +134,8 @@ export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 
 export OCPI_HAVE_OPENCV=1
 export OCPI_OPENCV_HOME=/usr/local
+export OCPI_HAVE_OPENSPLICE=1
+export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
 
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

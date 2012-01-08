@@ -130,16 +130,6 @@ namespace OCPI {
 	createApplication(const char *name = NULL, const OCPI::Util::PValue *props = NULL)
         throw ( OCPI::Util::EmbeddedException ) = 0;
 
-      /**
-         @brief
-         getSupportedEndpoints
-
-         This is the method that gets called by the creator to get tge list of endpoints that this container supports.
-
-         ****************************************************************** */        
-      virtual std::vector<std::string> getSupportedEndpoints()
-        throw ();
-
       OCPI::Util::PValue *getProperties();
       OCPI::Util::PValue *getProperty(const char *);
 
@@ -158,8 +148,7 @@ namespace OCPI {
          @throw OCPI::Util::EmbeddedException  If an error is detected during dispatch
 
          ****************************************************************** */        
-      virtual DispatchRetCode dispatch(DataTransfer::EventManager*)
-        throw ( OCPI::Util::EmbeddedException );
+      virtual DispatchRetCode dispatch(DataTransfer::EventManager*);
       bool run(uint32_t usecs = 0, bool verbose = false);
       void thread();
       virtual bool needThread() = 0;
@@ -190,7 +179,7 @@ namespace OCPI {
          @retval std::string packed port descriptor
 
          ****************************************************************** */
-      static std::string packPortDesc( PortData&  port )
+      static void packPortDesc(PortConnectionDesc&  port, std::string &out )
         throw ();
 
 
@@ -210,10 +199,8 @@ namespace OCPI {
          @retval bool true if method successful.
 
          ****************************************************************** */
-      static PortData * unpackPortDesc( const std::string& desc, PortData* desc_storage )
+      static bool unpackPortDesc( const std::string& desc, PortConnectionDesc &desc_storage )
         throw ();
-      static int portDescSize();
-
      
       //!< Start/Stop the container
       virtual void start(DataTransfer::EventManager* event_manager)
@@ -229,17 +216,22 @@ namespace OCPI {
 
       bool hasName(const char *name);
 
-      inline OCPI::OS::uint32_t getId(){return m_ourUID;}
+      //      inline OCPI::OS::uint32_t getId(){return m_ourUID;}
       inline unsigned ordinal() const { return m_ordinal; }
       static Container &nthContainer(unsigned n);
       typedef uint32_t CMap;
       static const unsigned maxContainer = sizeof(CMap) * 8;
+      // Server - if a container is remote, it has a server.
+      class Server;
+      Server *m_server;
+      inline Server *server() const { return m_server; }
+      
     protected:
       void shutdown();
       //      const std::string m_name;
 
       //! This containers unique id
-      OCPI::OS::uint32_t m_ourUID;
+      //      OCPI::OS::uint32_t m_ourUID;
       unsigned m_ordinal;
 
       // Start/Stop flag for this container

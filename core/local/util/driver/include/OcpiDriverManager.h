@@ -55,6 +55,7 @@
 #include "OcpiOsMutex.h"
 #include "OcpiParentChild.h"
 #include "OcpiPValue.h"
+#include "OcpiOsAssert.h"
 #include "ezxml.h"
 
 namespace OCPI {
@@ -77,10 +78,10 @@ namespace OCPI {
 	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 	// This is hyper-conservative since static constructors are run in a single thread.
 	// But C++ doesn't actually say that...
-	assert(pthread_mutex_lock(&mutex) == 0);
+	ocpiCheck(pthread_mutex_lock(&mutex) == 0);
 	if (!theSingleton)
 	  theSingleton = new S;
-	assert(pthread_mutex_unlock(&mutex) == 0);
+	ocpiCheck(pthread_mutex_unlock(&mutex) == 0);
 	return *theSingleton;
       }
     };

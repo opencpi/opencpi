@@ -284,15 +284,17 @@ OCPI::OS::uint32_t OutputBuffer::getNumberOfBytesTransfered()
 void OutputBuffer::setMetaData()
 {
   for ( unsigned int b=0; b<reinterpret_cast<OCPI::DataTransport::Circuit*>(m_port->getCircuit())->getMaxPortOrd(); b++ ) {
-    memcpy((void*) &m_sbMd[0][b].ocpiMetaDataWord, (void*)&m_sbMd[0][m_pid].ocpiMetaDataWord, sizeof(RplMetaData) );
+    if (b != m_pid) {
+      memcpy((void*) &m_sbMd[0][b].ocpiMetaDataWord, (void*)&m_sbMd[0][m_pid].ocpiMetaDataWord, sizeof(RplMetaData) );
 
-    m_sbMd[0][b].zcopy           = m_sbMd[0][m_pid].zcopy;
-    m_sbMd[0][b].sequence       = m_sbMd[0][m_pid].sequence;
-    m_sbMd[0][b].broadCast      = m_sbMd[0][m_pid].broadCast;
-    m_sbMd[0][b].srcRank        = m_sbMd[0][m_pid].srcRank;
-    m_sbMd[0][b].srcTemporalId  = m_sbMd[0][m_pid].srcTemporalId;
-    m_sbMd[0][b].endOfWhole     = m_sbMd[0][m_pid].endOfWhole;
-    m_sbMd[0][b].endOfStream    = m_sbMd[0][m_pid].endOfStream;
+      m_sbMd[0][b].zcopy           = m_sbMd[0][m_pid].zcopy;
+      m_sbMd[0][b].sequence       = m_sbMd[0][m_pid].sequence;
+      m_sbMd[0][b].broadCast      = m_sbMd[0][m_pid].broadCast;
+      m_sbMd[0][b].srcRank        = m_sbMd[0][m_pid].srcRank;
+      m_sbMd[0][b].srcTemporalId  = m_sbMd[0][m_pid].srcTemporalId;
+      m_sbMd[0][b].endOfWhole     = m_sbMd[0][m_pid].endOfWhole;
+      m_sbMd[0][b].endOfStream    = m_sbMd[0][m_pid].endOfStream;
+    }
   }
 }
 

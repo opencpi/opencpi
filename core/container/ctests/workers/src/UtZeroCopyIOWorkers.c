@@ -121,19 +121,19 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #endif
 
 #ifndef NDEBUG
-  printf("Producer is producing\n"); 
+  printf("Producer is producing...\n"); 
 #endif
 
   this_->ports[ProducerWorker_Data_Out_Port].output.length = len;
   this_->ports[ProducerWorker_Data_Out_Port].output.u.operation = (props->buffersProcessed-1)%256;
 
   if ( props->transferMode == ProducerSend ) {
-    this_->container->send( &this_->ports[ProducerWorker_Data_Out_Port], 
+    this_->container.send( &this_->ports[ProducerWorker_Data_Out_Port], 
                           &this_->ports[ProducerWorker_Data_Out_Port].current, 
                             this_->ports[ProducerWorker_Data_Out_Port].output.u.operation, len );
   }
   else {
-     this_->container->advance( &this_->ports[ProducerWorker_Data_Out_Port], 0 );
+     this_->container.advance( &this_->ports[ProducerWorker_Data_Out_Port], 0 );
   }
 
   props->bytesProcessed += len;
@@ -321,7 +321,8 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #ifdef TIME_IT
     OCPI_TIME_EMIT_C( "Consumer Start Release" );
 #endif
-    this_->container->release( &this_->ports[ConsumerWorker_Data_In_Port].current ); 
+    // This used to be "release", but "release" is defined to not advance...
+    this_->container.advance( &this_->ports[ConsumerWorker_Data_In_Port], 0); 
 #ifdef TIME_IT
     OCPI_TIME_EMIT_C( "Consumer End Release" );
 #endif
@@ -329,12 +330,12 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   else {
 
           if ( props->takenBuffers[props->releaseBufferIndex].data ) {
-        this_->container->take( &this_->ports[ConsumerWorker_Data_In_Port],
+        this_->container.take( &this_->ports[ConsumerWorker_Data_In_Port],
                    &props->takenBuffers[props->releaseBufferIndex], &props->takenBuffers[props->takenBufferIndex] );
         props->releaseBufferIndex =  (props->releaseBufferIndex + 1)%CONSUMER_TAKE_COUNT;
           }
           else {
-        this_->container->take( &this_->ports[ConsumerWorker_Data_In_Port],
+        this_->container.take( &this_->ports[ConsumerWorker_Data_In_Port],
                    NULL, &props->takenBuffers[props->takenBufferIndex] );
           }
 
@@ -413,7 +414,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   oc  = this_->ports[LoopbackWorker_Data_In_Port].input.u.operation;
 
 #ifndef NDEBUG
-  printf("In LB run, len = %d\n", len);
+  printf("In LB run, len = %d...\n", len);
 #endif
 
   /*              
@@ -443,7 +444,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     // Send input buffer to output port
   case 0:
     {
-      this_->container->send( &this_->ports[LoopbackWorker_Data_Out_Port], 
+      this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
                               &this_->ports[LoopbackWorker_Data_In_Port].current, 0x54, len );
     }
     break;
@@ -453,7 +454,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     {
       // First we need to get an output buffer
       if ( ! out_buffer ) {
-        this_->container->request( &this_->ports[LoopbackWorker_Data_Out_Port], 0 );
+        this_->container.request( &this_->ports[LoopbackWorker_Data_Out_Port], 0 );
       }
       out_buffer = (char*)this_->ports[LoopbackWorker_Data_Out_Port].current.data;
       if ( ! out_buffer ) {
@@ -466,12 +467,12 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
       /*      printf("NOT SENDING LB DATA FOR DEBUG!!\n"); */
 
-      this_->container->send( &this_->ports[LoopbackWorker_Data_Out_Port], 
+      this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
                               &this_->ports[LoopbackWorker_Data_Out_Port].current, oc, len );
 
 
 
-      this_->container->release( &this_->ports[LoopbackWorker_Data_In_Port].current );
+      this_->container.advance( &this_->ports[LoopbackWorker_Data_In_Port], 0 );
     }
     break;
                       
@@ -481,7 +482,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     {
       // First we need to get an output buffer
       if ( ! out_buffer ) {
-        this_->container->request( &this_->ports[LoopbackWorker_Data_Out_Port], 0 );
+        this_->container.request( &this_->ports[LoopbackWorker_Data_Out_Port], 0 );
       }
       out_buffer = (char*)this_->ports[LoopbackWorker_Data_Out_Port].current.data;
       this_->ports[LoopbackWorker_Data_Out_Port].output.length = len;

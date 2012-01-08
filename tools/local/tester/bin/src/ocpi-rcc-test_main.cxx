@@ -1073,7 +1073,6 @@ connectInputPorts ()
 
       PortMap::iterator pit = m_portMap.find (portName);
       PortData & pd = (*pit).second;
-      std::string shadowPort;
 
       if (!pd.provider) {
         std::string msg = "Port \"";
@@ -1096,8 +1095,10 @@ connectInputPorts ()
                                                          m_numBuffers,
 							      m_bufferSize,NULL);
 
-      shadowPort = pd.fileIoPort->setFinalProviderInfo( pd.localPort->getInitialProviderInfo(NULL) );
-      pd.localPort->setFinalUserInfo ( shadowPort );
+      std::string initialProviderInfo, shadowPort;
+      pd.localPort->getInitialProviderInfo(NULL, initialProviderInfo);
+      pd.fileIoPort->setFinalProviderInfo(initialProviderInfo, shadowPort);
+      pd.localPort->setFinalUserInfo(shadowPort);
 
       pd.connected = true;
       pd.fileName = fileName;
@@ -1173,7 +1174,6 @@ connectOutputPorts ()
 
       PortMap::iterator pit = m_portMap.find (portName);
       PortData & pd = (*pit).second;
-      std::string shadowPort;
 
       if (pd.provider) {
         std::string msg = "Port \"";
@@ -1198,7 +1198,9 @@ connectOutputPorts ()
                                                          m_bufferSize, NULL);
 
 
-      shadowPort = pd.localPort->setFinalProviderInfo( pd.fileIoPort->getInitialProviderInfo(NULL) );
+      std::string shadowPort, initialProviderInfo;
+      pd.fileIoPort->getInitialProviderInfo(NULL, initialProviderInfo);
+      pd.localPort->setFinalProviderInfo(initialProviderInfo, shadowPort );
       pd.fileIoPort->setFinalUserInfo ( shadowPort );
 
       pd.connected = true;

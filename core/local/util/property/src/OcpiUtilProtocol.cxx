@@ -88,7 +88,7 @@ namespace OCPI {
       if (name)
 	m_qualifiedName = name;
       bool sub32dummy;
-      unsigned maxAlignDummy;
+      unsigned maxAlignDummy = 0;
       if ((err = OE::getBoolean(op, "TwoWay", &m_isTwoWay)))
 	return err;
       if (m_isTwoWay)
@@ -202,11 +202,8 @@ namespace OCPI {
     }
     Protocol::~Protocol() {
 
-#ifdef DONE
       if (m_operations)
 	delete [] m_operations;
-#endif
-
     }
     Protocol & 
     Protocol::

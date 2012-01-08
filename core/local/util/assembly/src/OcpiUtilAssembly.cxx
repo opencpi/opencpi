@@ -129,8 +129,10 @@ namespace OCPI {
 
     const char *Assembly::Connection::parse(ezxml_t cx, Assembly &a, unsigned &n) {
       const char *err;
-      if ((err = OE::checkElements(cx, "name", "port", "external", NULL)))
+      if ((err = OE::checkElements(cx, "port", "external", NULL)) ||
+	  (err = OE::checkAttrs(cx, "name", "transport", NULL)))
 	return err;
+      
       OE::getNameWithDefault(cx, m_name, "conn%u", n);
       if ((err = m_parameters.parse(cx, "name", NULL)))
 	return err;

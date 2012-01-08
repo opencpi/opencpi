@@ -51,6 +51,10 @@
 #ifndef OCPI_RCC_PORT_H_
 #define OCPI_RCC_PORT_H_
 
+#ifndef WORKER_INTERNAL
+#define WORKER_INTERNAL
+#endif
+
 #include <OcpiOsDataTypes.h>
 #include <OcpiContainerDataTypes.h>
 #include <OcpiContainerPort.h>
@@ -58,11 +62,6 @@
 #include <OcpiBuffer.h>
 #include <RCC_Worker.h>
 
-namespace DataTransport {
-  namespace Interface {
-    class Circuit;
-  }
-}
 
 namespace DataTransfer {
   namespace Msg {
@@ -70,14 +69,11 @@ namespace DataTransfer {
   }
 }
 
-namespace DtI = DataTransport::Interface;
-
 namespace OCPI {
 
   namespace DataTransport {
     class Buffer;
     class Port;
-    class Circuit;
   }
 
 
@@ -86,9 +82,7 @@ namespace OCPI {
     class Application;
     class Worker;
     class ExternalPort;
-    struct OpaquePortData;
     class ExternalBuffer;
-    class PortDelegator;
 
 
     // This port does the actual work;
@@ -96,62 +90,68 @@ namespace OCPI {
     class PortDelegator : public OCPI::Container::PortBase<Worker, Port, ExternalPort> {
     public:
       PortDelegator(  Worker& w, const OCPI::Metadata::Port & pmd, unsigned xferOptions,
-		      const OCPI::Util::PValue *params, const char* endpoint );
+		      Port *delegator, const OCPI::Util::PValue *params);
       virtual ~PortDelegator();
 
+      virtual inline OCPI::Container::PortConnectionDesc &  getData() {
+	return m_delegator ? m_delegator->getData() : OCPI::Container::PortData::getData();
+      }
       virtual void checkConnectParams(){}
       virtual void setMode( ConnectionMode ){}
       virtual void connectInside( OCPI::Container::Port &, const OCPI::Util::PValue *, const OCPI::Util::PValue *){}
       virtual void finishConnection(OCPI::RDT::Descriptors &){}
       virtual bool definitionComplete(){return true;}
 
-      virtual OpaquePortData *                     &opaque(){return m_opaque;}
       virtual inline OCPI::OS::Mutex               &mutex() { return m_mutex;}
       inline OCPI::Metadata::PortOrdinal           portOrdinal(){return m_portOrdinal;}
       inline bool isOutput() {return !m_metaPort.provider;}
 
       // Port control methods
-      virtual void advance( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t opcode=0, uint32_t length=0 )=0;
-      virtual bool hasEmptyOutputBuffer()=0;
-      virtual OCPI::DataTransport::BufferUserFacet* getNextEmptyOutputBuffer()=0;
-      virtual bool  hasFullInputBuffer()=0;
-      virtual OCPI::DataTransport::BufferUserFacet* getNextFullInputBuffer()=0;
-      virtual void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len )=0;
+      virtual void releaseInputBuffer( OCPI::DataTransport::BufferUserFacet *)
+      {ocpiAssert(0);}
+      virtual void sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* , uint32_t, RCCOrdinal )
+      {(void)ocpiAssert(0);}
+      virtual OCPI::DataTransport::BufferUserFacet* getNextEmptyOutputBuffer(void *&, uint32_t &)
+	{(void)ocpiAssert(0); return NULL;}
+
+      virtual OCPI::DataTransport::BufferUserFacet* getNextFullInputBuffer(void *&, uint32_t &, RCCOrdinal &)
+	{(void)ocpiAssert(0);return NULL;}
+      virtual void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* ,
+					 unsigned int , RCCOrdinal ) {ocpiAssert(0);}
       virtual uint32_t getBufferCount()=0;
       virtual OCPI::DataTransport::BufferUserFacet* getBuffer( uint32_t tid )=0;
-      virtual uint32_t getBufferLength() = 0;
-     
     protected:
-      OCPI::DataTransport::Port *m_dtPort;
       OCPI::Metadata::PortOrdinal  m_portOrdinal;
       OCPI::OS::Mutex &m_mutex;
-      OpaquePortData * m_opaque;
+      Port *m_delegator;
+
     };
 
-
+    class RDMAPort;
     class Port : public PortDelegator  {
-
+      friend class ExternalPort;
     public:
 
-      Port( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params,
-	    const char * endpoint);
+      Port( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params, RCCPort *rp);
       virtual ~Port();
 
       virtual inline OCPI::OS::Mutex &mutex() 
       { 
-	if(m_delegateTo) {
+	if (m_delegateTo) {
 	  return m_delegateTo->mutex();
 	}
 	return mutex();
       }
 
+#if 0
+      // JEK: inverted the sense of this: Port has the descriptor, delegatee does not.
       virtual inline OCPI::Container::PortConnectionDesc &  getData()
       {
 	// FIXME:  we are relying on m_params being reparsed after delegation, which is weak...
 	// ocpiAssert( m_delegateTo );
 	return m_delegateTo ? m_delegateTo->getData() : PortData::getData();
       }
-
+#endif
       void setMode( ConnectionMode mode );
       virtual void connect( OCPI::Container::Port &other, const OCPI::API::PValue *myProps=NULL,
 			    const OCPI::API::PValue *otherProps=NULL);
@@ -172,30 +172,23 @@ namespace OCPI {
 	}
       }
 
-      virtual inline OCPI::API::ExternalPort& connectExternal(const char* n, const OCPI::Util::PValue* p,
-							      const OCPI::Util::PValue* po)
-      {
-	// only supported in RDMA mode
-	if ( ! m_delegateTo ) {
-	  setMode( OCPI::Container::Port::CON_TYPE_RDMA );
-	}
-	return m_delegateTo->connectExternal(n,p,po);
-      }
+      virtual OCPI::API::ExternalPort& connectExternal(const char* n, const OCPI::Util::PValue* p,
+						       const OCPI::Util::PValue* po);
 
-      virtual inline bool definitionComplete(){
-	if(m_delegateTo) {
+      virtual inline bool definitionComplete() {
+	if (m_delegateTo) {
 	  return m_delegateTo->definitionComplete();
 	}
 	return false;
       }
       virtual inline void checkConnectParams()
       {
-	if(m_delegateTo) {
+	if (m_delegateTo) {
 	  m_delegateTo->checkConnectParams();
 	}
       }
       virtual inline void connectInside(OCPI::Container::Port & other, const OCPI::Util::PValue * my_props,
-				 const OCPI::Util::PValue * other_props)
+					const OCPI::Util::PValue * other_props)
       {
 	ocpiAssert ( m_delegateTo);
 	m_delegateTo->connectInside(other,my_props,other_props);
@@ -207,28 +200,28 @@ namespace OCPI {
       }
 
       // Connection routines
-      virtual inline const std::string& getInitialProviderInfo(const OCPI::API::PValue*p)
+      virtual inline void getInitialProviderInfo(const OCPI::API::PValue*p, std::string &out)
       {
 	// only supported in RDMA mode
 	if ( ! m_delegateTo ) setMode( OCPI::Container::Port::CON_TYPE_RDMA );
-	return m_delegateTo->getInitialProviderInfo(p);
+	return m_delegateTo->getInitialProviderInfo(p, out);
       }
-      virtual inline const std::string& setInitialProviderInfo(const OCPI::API::PValue*p, const std::string&s)
+      virtual inline void setInitialProviderInfo(const OCPI::API::PValue*p, const std::string&s, std::string &out)
       {
 	// only supported in RDMA mode
 	if ( ! m_delegateTo ) setMode( OCPI::Container::Port::CON_TYPE_RDMA );
-	return m_delegateTo->setInitialProviderInfo(p,s);
+	return m_delegateTo->setInitialProviderInfo(p,s, out);
       }
-      virtual inline const std::string& setInitialUserInfo(const std::string&s) 
+      virtual inline void setInitialUserInfo(const std::string&s, std::string &out) 
       {
 	// only supported in RDMA mode
 	if ( ! m_delegateTo ) setMode( OCPI::Container::Port::CON_TYPE_RDMA );
-	return m_delegateTo->setInitialUserInfo(s);
+	return m_delegateTo->setInitialUserInfo(s, out);
       }
-      virtual inline const std::string& setFinalProviderInfo(const std::string&s) 
+      virtual inline void setFinalProviderInfo(const std::string&s, std::string &out) 
       {
 	ocpiAssert ( m_delegateTo);
-	return m_delegateTo->setFinalProviderInfo(s);
+	return m_delegateTo->setFinalProviderInfo(s, out);
       }
       virtual inline void setFinalUserInfo(const std::string&s)
       {
@@ -243,58 +236,38 @@ namespace OCPI {
 	return m_delegateTo->getBuffer( tid );
       }
 
-      virtual inline uint32_t getBufferLength()
-      {
-	ocpiAssert ( m_delegateTo);
-	return m_delegateTo->getBufferLength();
-      }
-
       virtual inline uint32_t getBufferCount()
       {
 	ocpiAssert ( m_delegateTo);
 	return m_delegateTo->getBufferCount();
       }
 
-      virtual inline void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len )
-      {
-	ocpiAssert ( m_delegateTo);
-	m_delegateTo->sendZcopyInputBuffer(src_buf,len);
-      }
+      void release( OCPI::DataTransport::BufferUserFacet* buffer);
 
-      virtual inline void advance( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t opcode=0, uint32_t length=0 )
+      // Inlined since there is only one caller, that cannot be inline
+      inline void take( RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
       {
-	ocpiAssert ( m_delegateTo);
-	m_delegateTo->advance(buffer,opcode,length);
-      }
-      virtual inline bool hasEmptyOutputBuffer()
-      {
-	ocpiAssert ( m_delegateTo);
-	return m_delegateTo->hasEmptyOutputBuffer();
-      }
-      virtual inline OCPI::DataTransport::BufferUserFacet* getNextEmptyOutputBuffer()
-      {
-	ocpiAssert ( m_delegateTo);
-	return m_delegateTo->getNextEmptyOutputBuffer();
-      }
-      virtual inline bool  hasFullInputBuffer()
-      {
-	ocpiAssert ( m_delegateTo);
-	return m_delegateTo->hasFullInputBuffer();
-      }
-      virtual inline OCPI::DataTransport::BufferUserFacet* getNextFullInputBuffer()
-      {
-	ocpiAssert ( m_delegateTo);
-	return m_delegateTo->getNextFullInputBuffer();
-      }
-
-      inline OpaquePortData *                   &opaque()
-	{
-	  if ( m_delegateTo ) {
-	    return m_delegateTo->opaque();
-	  }
-	  return  m_opaque;
+	*newBuffer = m_rccPort->current;
+	m_rccPort->current.data = NULL;
+	m_buffer = NULL;
+	if ( oldBuffer ) {
+	  OCPI::DataTransport::BufferUserFacet* old = oldBuffer->containerBuffer;
+	  Port *bp = static_cast<Port *>(old->m_ud);
+	  bp->release(old);
 	}
+	request();
+      }
+      // return true if we are ready, and try to make us ready in the process
+      inline bool checkReady() {
+	return m_buffer ? true : (m_wantsBuffer ? request() : false);
+      }
+      bool request();
 
+      bool advance();
+
+      void send( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t length,
+		 RCCOrdinal opcode = 0 );
+      inline RDMAPort &getRDMAPort();
     protected:
 
 
@@ -303,16 +276,27 @@ namespace OCPI {
 
       PortDelegator *  m_delegateTo;
 
-      // Our initial endpoint
-      std::string m_endpoint;
-
+      ConnectionMode m_mode;
+      // This flag indicates that this port wants a new buffer, i.e. has requested one and not gotten one
+      // Thus there are three valid states:
+      //   m_wantsBuffer == true: we don't have a buffer, and we want one. m_buffer is false
+      //   m_wantsBuffer == false && !m_buffer: we don't have a buffer, and don't want one
+      //   m_wantsBuffer == false && m_buffer: we have a buffer
+      //   invalid: m_wantsBuffer && m_buffer
+      //  The initial state is m_wantsBuffer == true, which implies that there is no way for a worker
+      //  to start out NOT requesting any buffers...Someday that should be an option:  i.e. like
+      //  optionally connected ports, you have optionally requested ports so that no buffer resources
+      //  are used on a port until you specifically request buffers.
+      bool                                  m_wantsBuffer;
+      OCPI::DataTransport::BufferUserFacet *m_buffer;
+      RCCPort                              *m_rccPort;
     };
 
 
     class MessagePort : public PortDelegator  {    
 
     public:
-      MessagePort( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params);
+      MessagePort( Worker &w, Port& p, const OCPI::Util::PValue *params);
       
       void connectURL( const char* url, const OCPI::Util::PValue *myProps,
 		       const OCPI::Util::PValue *otherProps);
@@ -320,14 +304,14 @@ namespace OCPI {
         throw ( OCPI::Util::EmbeddedException );
       OCPI::Container::ExternalPort& connectExternal(const char*, const OCPI::Util::PValue*,
 						     const OCPI::Util::PValue*);
-      void advance( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t opcode, uint32_t length );
-      bool hasEmptyOutputBuffer();
-      OCPI::DataTransport::BufferUserFacet*  getNextEmptyOutputBuffer();
-      bool  hasFullInputBuffer();
-      OCPI::DataTransport::BufferUserFacet*  getNextFullInputBuffer();
-      void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len );
+      void releaseInputBuffer(OCPI::DataTransport::BufferUserFacet * buffer);
+      void sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t length, RCCOrdinal opcode );
+      OCPI::DataTransport::BufferUserFacet*  getNextEmptyOutputBuffer(void *&data, uint32_t &length);
+      OCPI::DataTransport::BufferUserFacet*  getNextFullInputBuffer(void *&data,
+								    uint32_t &length, RCCOrdinal &opcode);
+      void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len, RCCOrdinal op );
       OCPI::DataTransport::BufferUserFacet* getBuffer( uint32_t index );
-      uint32_t getBufferLength();
+      //      uint32_t getBufferLength();
       uint32_t getBufferCount();
 
       virtual ~MessagePort();
@@ -343,27 +327,25 @@ namespace OCPI {
 
       friend class Port;
 
-      RDMAPort( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params,
-		const char * endpoint );
+      RDMAPort( Worker &w, Port& p, const OCPI::Util::PValue *params);
       virtual ~RDMAPort();
-
-      inline OpaquePortData *  &opaque() {return m_opaque;}
 
       void disconnect()
         throw ( OCPI::Util::EmbeddedException );
 
       // Connection routines
-      const std::string& getInitialProviderInfo(const OCPI::API::PValue*);
-      const std::string& setInitialProviderInfo(const OCPI::API::PValue*, const std::string&);
-      const std::string& setInitialUserInfo(const std::string&);
-      const std::string& setFinalProviderInfo(const std::string&);
-      void setFinalUserInfo(const std::string&);
+      void
+	getInitialProviderInfo(const OCPI::API::PValue*, std::string &out),
+	setInitialProviderInfo(const OCPI::API::PValue*, const std::string&, std::string &out),
+	setInitialUserInfo(const std::string&, std::string &out),
+	setFinalProviderInfo(const std::string&, std::string &out),
+	setFinalUserInfo(const std::string&);
       void checkConnectParams(){}
       void connectInside(OCPI::Container::Port & other, const OCPI::Util::PValue * my_props,
 			 const OCPI::Util::PValue * other_props);
       void finishConnection(OCPI::RDT::Descriptors&){}
       OCPI::Container::ExternalPort& connectExternal(const char*, const OCPI::Util::PValue*,
-						     const OCPI::Util::PValue*);
+      						     const OCPI::Util::PValue*);
       virtual void connect( OCPI::Container::Port &other, const OCPI::API::PValue *myProps=NULL,
 			    const OCPI::API::PValue *otherProps=NULL);        
       virtual void connectURL( const char* url, const OCPI::Util::PValue *myProps,
@@ -371,91 +353,32 @@ namespace OCPI {
       bool definitionComplete();
       
       // Port Control methods      
-      void advance( OCPI::DataTransport::BufferUserFacet * buffer, uint32_t opcode, uint32_t length );
-      bool hasEmptyOutputBuffer();
-      OCPI::DataTransport::BufferUserFacet* getNextEmptyOutputBuffer();
-      bool  hasFullInputBuffer();
-      OCPI::DataTransport::BufferUserFacet* getNextFullInputBuffer();
-      void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len );
+      void releaseInputBuffer(OCPI::DataTransport::BufferUserFacet * buffer);
+      void sendOutputBuffer(OCPI::DataTransport::BufferUserFacet * buffer, uint32_t length, RCCOrdinal opcode );
+      OCPI::DataTransport::BufferUserFacet* getNextEmptyOutputBuffer(void *&data, uint32_t &length);
+      OCPI::DataTransport::BufferUserFacet* getNextFullInputBuffer(void *&data, uint32_t &length,
+									   RCCOrdinal &opcode);
+      void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len, RCCOrdinal op );
       OCPI::DataTransport::BufferUserFacet* getBuffer( uint32_t index );
-      uint32_t getBufferLength();
+      //      uint32_t getBufferLength();
       uint32_t getBufferCount();
       
-      // Member access methods
-      inline OCPI::DataTransport::Circuit *      &circuit(){return m_circuit;}
-
     private:
 
       inline OCPI::DataTransport::Port * dtPort(){return m_dtPort;}
 
-      void
-        setOutputFlowControl( OCPI::Container::PortData * srcPort )
-	throw ( OCPI::Util::EmbeddedException );
-
-      void connectInputPort( PortData *    inputPort,    
-			     std::string&  lPort,
-			     const OCPI::Util::PValue*       props
-			     )
-	throw ( OCPI::Util::EmbeddedException );
-
-      void initInputPort();
-      void initOutputPort();
+      void initInputPort(const OCPI::Util::PValue *);
       void processPortProperties( const OCPI::Util::PValue* props );
-      void disconnect( OCPI::Container::PortData* sp, OCPI::Container::PortData* input );
+      void disconnectInternal();
 
-
-      /**********************************
-       * This method is used to connect an external port decribed in the
-       * the PortDependencyData structure to a output port for the given worker.
-       *********************************/
-      OCPI::Container::PortConnectionDesc 
-	connectExternalInputPort( 
-				 OCPI::Container::PortData *     inputPort,
-				 const OCPI::Util::PValue*       props=NULL
-				 );
-
-      /**********************************
-       * This method is used to connect the external ports decribed in the
-       * the PortDependencyData structure to output port for the given worker.
-       *********************************/
-      void connectInternalInputPort( 
-				    OCPI::Container::Port *          inputPort,  
-				    const OCPI::Util::PValue*       properties    
-				    );
-
-      // Our circuit
-      OCPI::DataTransport::Circuit * m_circuit;   
-
-      // local shadow port descriptor (string form)
-      std::string m_localShadowPort;
-
-      // our descriptor (string form)
-      std::string m_ourFinalDescriptor;
-
-      // Our connection cookie
-      struct MyConnection {
-	MyConnection():connected(false),nosrcd(false){}
-	void init( PortData * src, bool slocal,  PortData * input, bool tlocal);
-	bool connected;
-	RDMAPort  *   lsrc;
-	bool                  nosrcd;
-	RDMAPort  *   linput;
-	OCPI::Container::PortData  rsrc;
-	OCPI::Container::PortData  rinput;          
-      };
-      MyConnection m_connectionCookie;
-
+      OCPI::DataTransport::Port *m_dtPort;
+      RDMAPort *m_localOther; // a connected local (same container) port.
     };
 
-    // Worker context port information
-    struct OpaquePortData {
-      RCCPort                     *    cp289Port;
-      PortDelegator               *    port;
-      OCPI::DataTransport::BufferUserFacet  *    buffer;
-      bool                            readyToAdvance;
-      OpaquePortData():cp289Port(NULL),port(NULL),buffer(NULL),readyToAdvance(1) {}
-    };
-
+    inline RDMAPort &Port::getRDMAPort() {
+      ocpiAssert(m_delegateTo && m_mode == CON_TYPE_RDMA);
+      return *static_cast<RDMAPort*>(m_delegateTo);
+    }
 
   }
 

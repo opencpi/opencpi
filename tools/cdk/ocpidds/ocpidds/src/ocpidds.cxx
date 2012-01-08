@@ -167,8 +167,8 @@ static const char omniidl_be[] = {
 "\n"
 "def ocpiType(t) :\n"
 "    tu = t.unalias()\n"
-"    #sys.stderr.write(repr(t))\n"
-"    #sys.stderr.write(repr(tu))\n"
+"    sys.stderr.write(repr(t))\n"
+"    sys.stderr.write(repr(tu))\n"
 "    k = tu.kind()\n"
 "    #sys.stderr.write(repr(k))\n"
 // If the unaliased type is an alias it means complex/array declarator
@@ -215,22 +215,23 @@ static const char omniidl_be[] = {
 "    f.write('\\n'.join(map(idlast.Pragma.text,s.pragmas()))+'\\n')\n"
 "    f.write('\\n')\n"
 "\n"
-
-"def doModule(m, f):\n"
-"    for i in m.definitions() :\n"
+"def doDecls(decls, f):\n"
+"    for i in decls :\n"
 "        if isinstance(i,idlast.Interface):\n"
 "            doInterface(i, f)\n"
 "        elif isinstance(i,idlast.Module):\n"
 "            doModule(i, f)\n"
 "        elif isinstance(i,idlast.Struct):\n"
 "            doStruct(i, f)\n"
-"        \n"
+"\n"
+"def doModule(m, f):\n"
+"    doDecls(m.definitions(),f)\n"
+"\n"
 "def run(tree, args):\n"
 "    sys.stdout.write(sys.version)\n"
 "    sys.stdout.write(repr(sys.path)+'\\n')\n"
-"    for m in tree.declarations():\n"
-"        if isinstance(m, idlast.Module):\n"
-"           doModule(m,sys.stdout)\n"
+"    doDecls(tree.declarations(),sys.stdout)\n"
+"\n"
 };
 
 // This is from the gnu library and BSD, and is in darwin
@@ -774,7 +775,7 @@ emitProtocol(const char *outDir, const char *file, const char *structName) {
       //      printf("Found Struct\n");
       if ((err = doStruct(p, cp)))
 	break;
-      if (p.m_name == structName) {
+      if (!strcasecmp(p.m_name.c_str(), structName)) {
 	FILE *f;
 	if (!(err = openOutput(structName, outDir, "", "_protocol", ".xml", NULL, f))) {
 	  printgen(f, "<!--", file, false, " -->");

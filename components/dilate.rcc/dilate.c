@@ -90,7 +90,7 @@ static RCCResult run(RCCWorker *self,
   DilateState *s = self->memories[0];
   RCCPort *in = &self->ports[DILATE_IN],
     *out = &self->ports[DILATE_OUT];
-  const RCCContainer *c = self->container;  
+  const RCCContainer *c = &self->container;  
   (void)timedOut;
 
   if ( (in->input.length>0) && (in->input.length>FRAME_BYTES) ) {

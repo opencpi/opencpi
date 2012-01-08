@@ -325,6 +325,7 @@ namespace OCPI {
 	  }
 	  formatType(m,format);
 	  format += "</Sequence>";
+	  return format;
 	}
 
 	std::string & formatMember( OU::Member& m, std::string & format, bool named=true ) 
@@ -1656,10 +1657,7 @@ namespace OCPI {
 	FactoryConfig::parse(&parent(), x);
       }
 
-
-#ifndef OCPI_OS_darwin
       DataTransfer::Msg::RegisterTransferDriver<XferFactory> driver;
-#endif
 
     }
   }

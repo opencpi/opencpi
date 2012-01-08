@@ -53,14 +53,10 @@ namespace OCPI {
     {
       OCPI::RDT::Descriptors        data;        // Connection data
 
-      // Cookie used to communicate the orignal port information from the user port
-      // back to the provider port.  I.E. to complete your flowcontrol here is the information
-      // that you need in the data parameter for your "port".
-      PortDesc                  port;   
-      
+      // JEK: I removed these to find out if they mattered to anyone.  Doesn't seem to.
+      //      PortDesc                  port;   
       // Container id that owns this port
-      OCPI::OS::uint32_t         container_id;
-
+      // OCPI::OS::uint32_t         container_id;
     };
 
 
@@ -72,6 +68,7 @@ namespace OCPI {
     class PortData
     {
       bool m_isProvider; // perhaps overriding bidirectional
+      PortConnectionDesc *m_connectionData;
       PortConnectionDesc  connectionData;      // Port Connection Dependency data
       // Defaults when no other source provides this.
       // (protocol or port metadata, or port or connection params)
@@ -79,26 +76,27 @@ namespace OCPI {
     public:
       virtual ~PortData(){};
       inline bool isProvider() { return m_isProvider; }
-      OCPI::OS::uint8_t    external;               // connected externally ?
-      virtual inline PortConnectionDesc &  getData(){return connectionData;}
-      PortData();
+      virtual inline PortConnectionDesc &  getData() {
+	return m_connectionData ? *m_connectionData : connectionData;
+      }
       PortData(const OCPI::Metadata::Port &mPort, bool isProvider, unsigned xferOptions,
-	       const OCPI::Util::PValue *params = NULL);
+	       const OCPI::Util::PValue *params = NULL, PortConnectionDesc *desc = NULL);
       void setPortParams(const OCPI::Metadata::Port &mPort, const OCPI::Util::PValue *params);
     };
 
 
     // The class used by both ExternalPorts (not associated with a worker) and Ports (owned by worker)
     class BasicPort : public PortData {
+    public:
+      inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
     protected:
 
       OCPI::RDT::Desc_t &myDesc; // convenience
-      const OCPI::Metadata::Port m_metaPort;
+      const OCPI::Metadata::Port &m_metaPort;
 
       BasicPort(const OCPI::Metadata::Port &mPort, bool isProvider, unsigned xferOptions,
-		const OCPI::Util::PValue *params);
+		const OCPI::Util::PValue *params, PortConnectionDesc *desc = NULL);
       virtual ~BasicPort();
-      inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
       // called after connection parameters have changed.
       virtual void checkConnectParams() = 0;
       void setConnectParams(const OCPI::Util::PValue *props);
@@ -119,7 +117,7 @@ namespace OCPI {
       bool m_canBeExternal;
       // This is here so we own this storage while we pass back references.
       Port(Container &container, const OCPI::Metadata::Port &mport, bool isProvider,
-	   unsigned options, const OCPI::Util::PValue *params = NULL);
+	   unsigned options, const OCPI::Util::PValue *params = NULL, PortConnectionDesc *desc = NULL);
       virtual ~Port(){}
       Container &container() const;
 
@@ -134,7 +132,7 @@ namespace OCPI {
       virtual void finishConnection(OCPI::RDT::Descriptors &other) = 0;
 
     public:
-      void establishRoles(OCPI::RDT::Descriptors &other);
+      void determineRoles(OCPI::RDT::Descriptors &other);
 
       void loopback(OCPI::API::Port &);
 
@@ -144,7 +142,7 @@ namespace OCPI {
 
 
       // This is a hook for implementations to specialize the port
-      enum ConnectionMode {CON_TYPE_RDMA, CON_TYPE_MESSAGE};
+      enum ConnectionMode {CON_TYPE_NONE, CON_TYPE_RDMA, CON_TYPE_MESSAGE};
       virtual void setMode( ConnectionMode mode ) = 0;
 
       //      inline ezxml_t getXml() { return myXml; }
@@ -172,7 +170,7 @@ namespace OCPI {
       // Best case: (only one method for user->provider)
       //     final user->provider target info and provider->user target info
 
-      virtual const std::string &getInitialProviderInfo(const OCPI::Util::PValue *p);
+      virtual  void getInitialProviderInfo(const OCPI::Util::PValue *p, std::string &out);
 
       // Step 2: (after passing initialProviderInfo to user side)
       // Give remote initial provider info to this local user port.
@@ -183,7 +181,7 @@ namespace OCPI {
       // Best case:
       //     we're done.  no further info exchange needed, return 0;
 
-      virtual const std::string &setInitialProviderInfo(const OCPI::Util::PValue *p, const std::string &);
+      virtual void setInitialProviderInfo(const OCPI::Util::PValue *p, const std::string &, std::string &out);
 
       // Step 3: (after passing initialUserInfo to provider side)
       // Give remote initial user info to this local provider port.
@@ -195,7 +193,7 @@ namespace OCPI {
       // Best case:
       //     we're done, no further info exchange needed, return 0;
 
-      virtual const std::string &setInitialUserInfo(const std::string &);
+      virtual void setInitialUserInfo(const std::string &, std::string &out);
 
       // Step 4: (after passing finalProviderInfo to user side)
       // Give remote final provider info to this local user port.
@@ -208,7 +206,7 @@ namespace OCPI {
       // Best case:
       //     we're done, no further info exchange needed, return 0;
 
-      virtual const std::string &setFinalProviderInfo(const std::string &);
+      virtual void setFinalProviderInfo(const std::string &, std::string &out);
 
       // Step 5: (after passing finalUserInfo to provider side)
       // Worst case:

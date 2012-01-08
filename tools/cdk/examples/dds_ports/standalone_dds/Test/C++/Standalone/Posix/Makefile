@@ -1,3 +1,4 @@
+OSPL_HOME=$(OCPI_OPENSPLICE_HOME)
 #
 # Include paths
 INCLUDES+=-I../../../idl
@@ -14,12 +15,12 @@ CXXFLAGS=-g -c -m64 -fPIC
 CPPFLAGS=$(INCLUDES)
 
 # Linker settings.
-LD_SO=$(CXX)
+LD_SO=source $(OSPL_HOME)/release.com; $(CXX)
 LD_FLAGS=-fPIC
 LD_LIBS=-lstdc++
 
 #OpenSplice idl preprocessor
-OSPLICE_COMP=$(OSPL_HOME)/bin/idlpp -S -l cpp -d bld
+OSPLICE_COMP= source $(OSPL_HOME)/release.com;  $(OSPL_HOME)/bin/idlpp -S -l cpp -d bld
 
 OSPLICE_LIBS=-lddsdatabase -ldcpsgapi -ldcpssacpp -lddsos
 
@@ -41,7 +42,7 @@ $(DCPS_SRC_FILES) : ../../../idl/JTest.idl
 	@echo "Compiling $< with SPLICE IDL compiler"
 	@mkdir -p bld
 	@$(OSPLICE_COMP) $(INCLUDES) $<
-	
+
 
 exec/TestPublisher : $(DCPS_OBJ_FILES) bld/TestPublisher.o bld/CheckStatus.o  bld/DDSEntityManager.o
 	@echo "Linking TestPublisher"
@@ -58,5 +59,4 @@ clean :
 	@rm -f *.o
 	@rm -rf bld
 	@rm -rf exec
-	
-	
+

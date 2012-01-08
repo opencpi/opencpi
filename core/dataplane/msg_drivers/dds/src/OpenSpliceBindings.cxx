@@ -601,7 +601,7 @@ namespace OpenSpliceBindings {
   }
 
   /* Array to hold the names for all ReturnCodes. */
-  string RetCodeName[13] = 
+  const char *RetCodeName[13] = 
     {
       "DDS_RETCODE_OK", "DDS_RETCODE_ERROR", "DDS_RETCODE_UNSUPPORTED", 
       "DDS_RETCODE_BAD_PARAMETER", "DDS_RETCODE_PRECONDITION_NOT_MET", 
@@ -614,7 +614,7 @@ namespace OpenSpliceBindings {
   /**
    * Returns the name of an error code.
    **/
-  string getErrorName(DDS::ReturnCode_t status)
+  const char *getErrorName(DDS::ReturnCode_t status)
   {
     return RetCodeName[status];
   }

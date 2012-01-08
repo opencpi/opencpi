@@ -169,7 +169,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   }
   if ( passed ) {
     if ( (*mem%500) == 0 ) 
-      printf("Buffer %d data integrity test passed\n", *mem);
+      printf("Loopback: Buffer %d data integrity test passed\n", *mem);
   }
     (*mem)++;
   }
@@ -194,18 +194,19 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
   /*
 #ifdef NZCOPYIO
-  this_->container->send( &this_->ports[LoopbackWorker_Data_Out_Port], 
+  this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
                         &this_->ports[LoopbackWorker_Data_Out_Port].current, 0x54, len );
-  this_->container->release( &this_->ports[LoopbackWorker_Data_In_Port].current );
+  this_->container.advance( &this_->ports[LoopbackWorker_Data_In_Port], 0 );
 #else
-  this_->container->send( &this_->ports[LoopbackWorker_Data_Out_Port], 
+  this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
                         &this_->ports[LoopbackWorker_Data_In_Port].current, 0x54, len );
 #endif
   */
 
 
   props->startIndex++;
-  return RCC_ADVANCE;
+  // Since we have used "send" in to out, or memcpy, send, and advance, we just return OK here.
+  return RCC_OK;
 
 }
 

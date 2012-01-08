@@ -104,6 +104,7 @@
 #endif
 
 #ifdef WORKER_INTERNAL
+namespace OCPI { namespace RCC { class Port; } namespace DataTransport { class BufferUserFacet;}}
 #define RCC_CONST
 #else
 #define RCC_CONST const
@@ -154,7 +155,11 @@ typedef struct {
   uint32_t maxLength;
 
   /* private member for container use */
+#ifdef WORKER_INTERNAL
+  OCPI::DataTransport::BufferUserFacet *containerBuffer;
+#else
   void *id_; 
+#endif
 } RCCBuffer;
 
 struct RCCPort {
@@ -177,7 +182,11 @@ struct RCCPort {
   RCCPortMethod *callBack;
 
   /* Used by the container */
+#ifdef WORKER_INTERNAL
+  OCPI::RCC::Port *containerPort;
+#else
   void* opaque;
+#endif
 };
 
 typedef struct {
@@ -192,7 +201,7 @@ typedef struct {
 struct RCCWorker {
   void * RCC_CONST         properties;
   void * RCC_CONST       * RCC_CONST memories;
-  RCC_CONST RCCContainer * container;
+  RCC_CONST RCCContainer   container;
   RCCRunCondition        * runCondition;
   RCCPortMask              connectedPorts;
   char                   * errorString;
@@ -232,4 +241,3 @@ typedef struct {
 } RCCEntryTable;
 
 #endif
-

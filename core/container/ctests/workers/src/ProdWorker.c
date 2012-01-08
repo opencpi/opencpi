@@ -190,7 +190,7 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   /*  printf("Producer is producing with a length = %d\n", len);  */
 
 
-  this_->container->send( &this_->ports[ProducerWorker_Data_Out_Port], 
+  this_->container.send( &this_->ports[ProducerWorker_Data_Out_Port], 
                           &this_->ports[ProducerWorker_Data_Out_Port].current, 0x54, len );
 
 #define DELAY_AFTER_SEND__

@@ -58,6 +58,7 @@
 #include <OcpiPortSet.h>
 #include <OcpiParentChild.h>
 #include <DtSharedMemoryInternal.h>
+#include "OcpiBuffer.h"
 
 
 namespace DataTransfer {
@@ -106,7 +107,7 @@ namespace OCPI {
        * Get port descriptor.  This is the data that is needed by an
        * external port to connect to this port.
        *********************************/
-      void getPortDescriptor( OCPI::RDT::Descriptors & my_desc, OCPI::RDT::Descriptors * other );
+      void getPortDescriptor( OCPI::RDT::Descriptors & my_desc, const OCPI::RDT::Descriptors * other );
 
 
 
@@ -128,16 +129,15 @@ namespace OCPI {
       /**********************************
        * Reteives the next available input buffer.
        *********************************/
+      BufferUserFacet* getNextFullInputBuffer(void *&data, uint32_t &length, uint32_t &opcode);
       Buffer* getNextFullInputBuffer();
-
 
       /**********************************
        * This method retreives the next available buffer from the local (our)
        * port set.  A NULL port indicates local context.
        *********************************/
+      BufferUserFacet* getNextEmptyOutputBuffer(void *&data, uint32_t &length);
       Buffer* getNextEmptyOutputBuffer();
-
-
 
       /**********************************
        * Get the port dependency data
@@ -145,14 +145,11 @@ namespace OCPI {
       PortMetaData::OcpiPortDependencyData& getPortDependencyData();
 
       /**********************************
-       * Sets the feedback descriptor for this port.
-       *********************************/
-      virtual void setFlowControlDescriptor( OCPI::RDT::Descriptors& );
-
-      /**********************************
        * Finalize the port
        *********************************/
-      virtual void finalize( OCPI::RDT::Descriptors& );
+      virtual void finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine,
+			     OCPI::RDT::Descriptors *flow = NULL);
+      bool isFinalized(); 
 
       /**************************************
        * Get the buffer by index
@@ -202,12 +199,7 @@ namespace OCPI {
        * This method is used to send an input buffer thru an output port with Zero copy, 
        * if possible.
        *********************************/
-      void sendZcopyInputBuffer( Buffer* src_buf, unsigned int len );
-
-      
-
-      // Advanced buffer management
-    protected:
+      void sendZcopyInputBuffer( Buffer* src_buf, unsigned int len, unsigned op );
 
       /**********************************
        * This method causes the specified input buffer to be marked
@@ -219,9 +211,11 @@ namespace OCPI {
       /**********************************
        * Send an output buffer
        *********************************/
-      void sendOutputBuffer( Buffer* b, unsigned int length );
+      void sendOutputBuffer( BufferUserFacet* b, unsigned int length, unsigned int opcode );
 
 
+      // Advanced buffer management
+    protected:
       /**********************************
        * Advance the ports circular buffer
        *********************************/
@@ -317,7 +311,7 @@ namespace OCPI {
       /**********************************
        * Sets the feedback descriptor for this port.
        *********************************/
-      virtual void setFlowControlDescriptorInternal( OCPI::RDT::Descriptors& );
+      virtual void setFlowControlDescriptorInternal( const OCPI::RDT::Descriptors& );
 
 
     public:

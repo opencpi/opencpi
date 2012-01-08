@@ -83,7 +83,7 @@ namespace OCPI {
     {
       if (auxInfo)
 	m_auxInfo = auxInfo;
-      setFormat("Code 0x%x, level %u, error: %s", errorCode, errorLevel, auxInfo);
+      setFormat("Code 0x%x, level %u, error: '%s'", errorCode, errorLevel, auxInfo);
     }
       // String error only (error code zero)
     EmbeddedException::EmbeddedException( const char* auxInfo )

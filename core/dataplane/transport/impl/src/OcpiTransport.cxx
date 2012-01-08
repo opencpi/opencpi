@@ -61,9 +61,9 @@
 #include "OcpiUtilAutoMutex.h"
 
 using namespace OCPI::DataTransport;
-using namespace OCPI::Util;
 using namespace OCPI::OS;
 using namespace DataTransfer;
+namespace OU = OCPI::Util;
 
 struct GEndPoint {
   EndPoint*     loc;
@@ -99,7 +99,7 @@ getListOfSupportedEndpoints()
 // Constructors
 OCPI::DataTransport::Transport::
 Transport( TransportGlobal* tpg, bool uses_mailboxes )
-  : OCPI::Time::Emit("Transport"), m_uses_mailboxes(uses_mailboxes),
+  : OCPI::Time::Emit("Transport"), m_defEndpoint(NULL), m_uses_mailboxes(uses_mailboxes),
     m_mutex(*new OCPI::OS::Mutex(true)), m_transportGlobal(tpg)
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
@@ -126,6 +126,8 @@ Transport( TransportGlobal* tpg, bool uses_mailboxes )
 }
 
 
+#if 0
+// FIXME: This is only used in addLocalEndpoint and should be collapsed into it.
 std::string& 
 OCPI::DataTransport::Transport::
 getDefaultEndPoint()
@@ -139,18 +141,17 @@ getDefaultEndPoint()
   }
   return m_defEndpoint;
 }
+#endif
 
-
-std::string
+SMBResources* 
 OCPI::DataTransport::Transport::
-getLocalCompatibleEndpoint( const char* ep )
+addLocalCompatibleEndpoint( const char* ep )
 {
 
 #ifndef NDEBUG
   printf("Finding compatible endpoint for %s\n", ep );
 #endif
 
-  std::string nuls;
   std::vector<std::string>::iterator it;
   for ( it=m_endpoints.begin(); it!=m_endpoints.end(); it++ ) {
 #ifndef NDEBUG
@@ -165,17 +166,19 @@ getLocalCompatibleEndpoint( const char* ep )
       if ( ( (*it).c_str()[m] == ':') || ep[m] == ':' ) {
 
         // Make sure that the endpoint is finalized
-        (*it) = 
-          addLocalEndpoint( (*it).c_str() )->sMemServices->endpoint()->end_point; 
+	SMBResources *res = addLocalEndpoint( (*it).c_str() );
+	
+        (*it) = res->sMemServices->endpoint()->end_point; 
 #ifndef NDEBUG
         printf("Found %s for %s\n", (*it).c_str(), ep );
 #endif
-        return (*it);
+        return res;
       }
       m++;
     }
   }
-  return nuls;
+  throw UnsupportedEndpointEx(ep);
+  return NULL;
 }
 
 
@@ -250,7 +253,7 @@ setNewCircuitRequestListener( NewCircuitRequestListener* listener )
 Mutex* OCPI::DataTransport::Transport::getMailBoxLock( const char* mbid )
 {
 
-  OCPI::OS::uint32_t hash = Misc::hashCode( mbid );
+  OCPI::OS::uint32_t hash = OU::Misc::hashCode( mbid );
   OCPI::OS::int32_t len = m_mailbox_locks.getElementCount();
   for ( int n=0; n<len; n++ ) {
     MailBoxLock* mb = static_cast<MailBoxLock*>(m_mailbox_locks.getEntry(n));
@@ -436,23 +439,83 @@ createCircuit( OCPI::RDT::Descriptors& sPortDesc )
   return c;
 }
 
+// Create an output given a descriptor from a remote input port
+// Also returning a flowcontrol descriptor to give to that remote port
+OCPI::DataTransport::Port * 
+OCPI::DataTransport::Transport::
+createOutputPort(OCPI::RDT::Descriptors& outputDesc,
+		 const OCPI::RDT::Descriptors& inputDesc)
+{
+  // Before creating the output port, we need to 
+  // create a local endpoint that is compatible with the remote.
+  strcpy(outputDesc.desc.oob.oep, 
+	 addLocalCompatibleEndpoint(inputDesc.desc.oob.oep )->
+	 sMemServices->endpoint()->end_point.c_str());
+  // Ensure that the input port endpoint is registered
+  addRemoteEndpoint(inputDesc.desc.oob.oep);
+  if (outputDesc.desc.dataBufferSize > inputDesc.desc.dataBufferSize)
+    outputDesc.desc.dataBufferSize = inputDesc.desc.dataBufferSize;
+
+  Circuit *c = createCircuit(outputDesc);
+  c->addInputPort(inputDesc, outputDesc.desc.oob.oep);
+  // flowDesc.desc.oob.cookie = outputDesc.desc.oob.cookie;
+
+  Port *p = c->getOutputPort();
+  p->getPortDescriptor(outputDesc, &inputDesc);
+  return p;
+}
+// Create an output port given an existing input port.
+OCPI::DataTransport::Port * 
+OCPI::DataTransport::Transport::
+createOutputPort(OCPI::RDT::Descriptors& outputDesc,
+		 OCPI::DataTransport::Port &inputPort)
+{
+  // With an inside connection, the endpoints are the same
+  strcpy(outputDesc.desc.oob.oep, inputPort.getEndpoint()->end_point.c_str());
+  if (outputDesc.desc.dataBufferSize > inputPort.getMetaData()->m_descriptor.desc.dataBufferSize) {
+    printf("Forcing output buffer size to %u from input size %u on local connection\n",
+	   inputPort.getMetaData()->m_descriptor.desc.dataBufferSize,
+	   outputDesc.desc.dataBufferSize);	   
+    outputDesc.desc.dataBufferSize = inputPort.getMetaData()->m_descriptor.desc.dataBufferSize;
+  }
+
+  inputPort.getCircuit()->finalize(outputDesc.desc.oob.oep);
+
+  Port *p = inputPort.getCircuit()->getOutputPort();
+  p->getPortDescriptor(outputDesc, NULL);
+  return p;
+}
 
 OCPI::DataTransport::Port * 
 OCPI::DataTransport::Transport::
-createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc )
+createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc, const OU::PValue *params )
 {
+  // First, process params to establish the right endpoint
+  DataTransfer::SMBResources *res = NULL;
+  const char *endpoint = NULL, *protocol = NULL;
+  bool found = false;
+  if ((found = OU::findString(params, "protocol", protocol)) ||
+      (found = OU::findString(params, "transport", protocol)) ||
+      (protocol = getenv("OCPI_DEFAULT_PROTOCOL"))) {
+    if (!found)
+      printf("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment\n", protocol);
+    res = addLocalEndpointFromProtocol(protocol);
+  } else {
+    // It is up to the caller to specify the endpoint which implicitly defines
+    // the QOS.  If the caller does not provide the endpoint, we will pick one
+    // by default.
+    OU::findString(params, "endpoint", endpoint);
+    res = addLocalEndpoint(endpoint);
+  }
+  if ( ! res ) {
+    throw OCPI::Util::Error("Endpoint not supported: protocol \"%s\" endpoint \"%s\"",
+			    protocol ? protocol : "", endpoint ? endpoint : "");
+  }
+  std::string &eps = res->sMemServices->endpoint()->end_point;
+  strcpy(desc.desc.oob.oep, eps.c_str());
+  
   int ord=-1;
   OCPI::DataTransport::Port * dtPort=NULL;  
-
-  // Make sure the endpoint is initialized
-  std::string eps;
-  DataTransfer::SMBResources* res = addLocalEndpoint( desc.desc.oob.oep );
-  if ( ! res ) {
-    std::string ens("Endpoint not supported ");
-    ens +=  desc.desc.oob.oep;
-    throw OCPI::Util::EmbeddedException( ens.c_str() );
-  }
-  eps = res->sMemServices->endpoint()->end_point;
   
   // For sake of efficiency we make sure to re-use the circuits that relate 
   // to the same connecton
@@ -475,7 +538,6 @@ createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc )
     else {
       psmd = circuit->getInputPortSet(0)->getPsMetaData();
     }
-    strcpy( desc.desc.oob.oep, eps.c_str() );
     dtPort = circuit->addPort( new OCPI::DataTransport::PortMetaData( ord, desc, psmd) );
     circuit->updatePort( dtPort );
   }
@@ -497,6 +559,19 @@ createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc )
   return dtPort;
 }
 
+OCPI::DataTransport::Port * 
+OCPI::DataTransport::Transport::
+createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
+{
+  Circuit *circuit = 0;
+  Port *port = createInputPort(circuit, desc, params);
+  circuit->attach(); // FIXME: why wouldn't port creation do the attach?
+  // Merge port descriptor info between what was passed in and what is determined here.
+  port->getPortDescriptor(desc, NULL);
+ // Make sure the dtport's descriptor is consistent
+  //port->getMetaData()->m_descriptor = desc;
+  return port;
+}
 
 OCPI::DataTransport::Circuit* 
 OCPI::DataTransport::Transport::
@@ -1039,20 +1114,18 @@ SMBResources* Transport::addRemoteEndpoint( const char* loc )
 }
 
 
-std::string
+SMBResources *
 Transport::
-getEndpointFromProtocol( const char* protocol )
+addLocalEndpointFromProtocol( const char* protocol )
 {
   std::string loc(protocol);
   std::string nuls;
   XferFactory* tfactory = 
     XferFactoryManager::getFactoryManager().find( loc, nuls );
-  if ( !tfactory ) {
-    return "";
-  }
+  if ( !tfactory )
+    throw UnsupportedEndpointEx(protocol);
   std::string sep = tfactory->allocateEndpoint( NULL );
-  return addLocalEndpoint( sep.c_str() ) ->sMemServices->endpoint()->end_point; 
-
+  return addLocalEndpoint( sep.c_str() );
 }
 
 
@@ -1060,7 +1133,16 @@ SMBResources*
 Transport::
 addLocalEndpoint( const char *nfep  )
 {
-
+  // If none specified, use the default endpoint
+  if (!nfep) {
+    if (!m_defEndpoint)
+      try {
+	m_defEndpoint = addLocalEndpointFromProtocol("ocpi-smb-pio");
+      } catch (...) {
+	m_defEndpoint = addLocalEndpoint(m_endpoints[0].c_str());
+      }
+    return m_defEndpoint;
+  }
   // finalize it
   std::string loc(nfep);
   std::string nuls;

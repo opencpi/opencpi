@@ -51,6 +51,7 @@
 #include <OcpiOsDataTypes.h>
 #include <OcpiList.h>
 #include <OcpiTransportConstants.h>
+#include <OcpiPortMetaData.h>
 #include <DtHandshakeControl.h>
 #include <OcpiOsMutex.h>
 
@@ -250,7 +251,7 @@ namespace OCPI {
     protected:
 
 
-      OCPI::OS::int32_t  m_pid;
+      PortOrdinal  m_pid;
 
       // Mapped pointer to our meta data
       volatile DataTransfer::BufferMetaData  (*m_sbMd)[MAX_PCONTRIBS];

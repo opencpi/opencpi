@@ -82,9 +82,8 @@ namespace OCPI {
     }
 
     // Inform the manager about an implementation
-    void Manager::addImplementation(Artifact &art, OU::Implementation &impl, ezxml_t inst) {
-      m_implementations.insert(WorkerMapPair(impl.specName().c_str(),
-					     new Implementation(art, impl, inst)));
+    void Manager::addImplementation(Implementation &impl) {
+      m_implementations.insert(WorkerMapPair(impl.m_metadataImpl.specName().c_str(), &impl));
     }
 
     // Find (and callback with) implementations for specName and selectCriteria
@@ -191,7 +190,11 @@ namespace OCPI {
     // The artifact base class
     Artifact::Artifact() : m_xml(NULL), m_nImplementations(0) {}
     Artifact::~Artifact() {
-      delete [] m_implementations;
+      for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++) {
+	WorkerMapPair wmp = *wi;
+	delete (*wi).second;
+      }
+      delete [] m_metaImplementations;
     }
 
     class MyVarDefiner : public OCPI::DefineExpVarInterface {
@@ -415,28 +418,29 @@ namespace OCPI {
     void Artifact::configure(ezxml_t /* x */) {
       // Retrieve attributes from artifact xml
       Attributes::parse(m_xml);
-      // First insert workers
-      m_nImplementations = OE::countChildren(m_xml, "worker");
-
+      // First implementations.
       Manager &mgr = Manager::getSingleton();
-      OU::Implementation *impl = m_implementations = new OU::Implementation[m_nImplementations];
-      for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_next(w), impl++) {
-	const char *err = impl->parse(w, *this);
+      m_nImplementations = OE::countChildren(m_xml, "worker");
+      OU::Implementation *metaImpl = m_metaImplementations = new OU::Implementation[m_nImplementations];
+      for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_next(w), metaImpl++) {
+	const char *err = metaImpl->parse(w, *this);
 	if (err)
-	  throw OU::Error("Error processing implementation metadata: %s", err);
+	  throw OU::Error("Error processing implementation metadata for %s: %s",
+			  name().c_str(), err);
 	bool instances = false;
 	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_next(i)) {
-	  if (!strcasecmp(impl->specName().c_str(), ezxml_cattr(i, "worker"))) {
+	  if (!strcasecmp(metaImpl->specName().c_str(), ezxml_cattr(i, "worker"))) {
 	    instances = true;
-	    m_workers.insert(WorkerMapPair(impl->specName().c_str(),
-					   new Implementation(*this, *impl, i)));
-	    mgr.addImplementation(*this, *impl, i);
+	    Implementation *impl = new Implementation(*this, *metaImpl, i);
+	    
+	    m_workers.insert(WorkerMapPair(metaImpl->specName().c_str(), impl));
+	    mgr.addImplementation(*impl);
 	  }
 	}
 	if (!instances) {
-	  m_workers.insert(WorkerMapPair(impl->specName().c_str(),
-					 new Implementation(*this, *impl)));
-	  mgr.addImplementation(*this, *impl);
+	  Implementation *impl = new Implementation(*this, *metaImpl);
+	  m_workers.insert(WorkerMapPair(metaImpl->specName().c_str(), impl));
+	  mgr.addImplementation(*impl);
 	}
       }
     }

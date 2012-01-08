@@ -235,7 +235,7 @@ void writeDesc( std::string& desc, const char* file_name )
 void writeDesc( Port * desc, const char* file_name )
 {
   std::string sdesc;
-  sdesc = OCPI::Container::Container::packPortDesc(*desc);
+  OCPI::Container::Container::packPortDesc(desc->getData(), sdesc);
   writeDesc( sdesc, file_name );
 }
 
@@ -421,20 +421,20 @@ void setupForPCMode()
 
     std::string desc, fb;
 
-    desc = pc_inputPort->getInitialProviderInfo(NULL);
+    pc_inputPort->getInitialProviderInfo(NULL, desc);
     writeDesc( desc, "pc_input1.desc" );
     desc = readDesc( "lb_output1.desc" );  
-    fb = pc_inputPort->setInitialUserInfo( desc );
+    pc_inputPort->setInitialUserInfo( desc, fb );
     writeDesc( fb, "pc_input2.desc" );
     desc = readDesc( "lb_output2.desc" );  
     pc_inputPort->setFinalUserInfo( desc );
 
 
     desc = readDesc( "lb_input1.desc" );  
-    fb  = pc_outputPort->setInitialProviderInfo( NULL, desc );
+    pc_outputPort->setInitialProviderInfo( NULL, desc, fb );
     writeDesc(fb, "pc_output1.desc" );
     desc = readDesc( "lb_input2.desc" );  
-    fb = pc_outputPort->setFinalProviderInfo( desc);
+    pc_outputPort->setFinalProviderInfo( desc, fb);
     writeDesc(fb, "pc_output2.desc" );
 
     printf("Done setting fc\n");
@@ -490,16 +490,16 @@ void setupForLoopbackMode()
     std::string desc, fb;
 
     desc = readDesc( "pc_input1.desc" );  
-    fb  = lb_outputPort->setInitialProviderInfo( NULL, desc );
+    lb_outputPort->setInitialProviderInfo( NULL, desc, fb );
     writeDesc(fb, "lb_output1.desc" );
     desc = readDesc( "pc_input2.desc" );  
-    fb = lb_outputPort->setFinalProviderInfo( desc);
+    lb_outputPort->setFinalProviderInfo( desc, fb);
     writeDesc(fb, "lb_output2.desc" );
 
-    desc = lb_inputPort->getInitialProviderInfo(NULL);
+    lb_inputPort->getInitialProviderInfo(NULL, desc);
     writeDesc( desc, "lb_input1.desc" );
     desc = readDesc( "pc_output1.desc" );  
-    fb = lb_inputPort->setInitialUserInfo( desc );
+    lb_inputPort->setInitialUserInfo( desc, fb );
     writeDesc( fb, "lb_input2.desc" );
     desc = readDesc( "pc_output2.desc" );  
     lb_inputPort->setFinalUserInfo( desc );

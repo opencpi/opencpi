@@ -67,7 +67,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   SobelState *s = self->memories[0];
   RCCPort *in = &self->ports[SOBEL_IN],
           *out = &self->ports[SOBEL_OUT];
-  const RCCContainer *c = self->container;  
+  const RCCContainer *c = &self->container;  
   (void)timedOut;
 
   // End state:  just send the zero length message to indicate "done"

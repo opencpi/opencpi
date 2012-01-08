@@ -472,7 +472,7 @@ namespace OCPI
             // No need to call syncPtr. Host does not touch "local memory"
           }
 
-          size_t n_ports = metadataImpl.getTotalNumPorts ( );
+          size_t n_ports = metadataImpl.getNumPorts ( );
 
           for ( size_t n = 0; n < n_ports; n++ )
           {
@@ -515,7 +515,7 @@ namespace OCPI
           device_worker.syncPtr ( myNewRunCondition,
                                   OCPI::OCL::DeviceWorker::DEVICE_TO_HOST );
 
-          for ( size_t n = 0; n < metadataImpl.getTotalNumPorts ( ); n++ )
+          for ( size_t n = 0; n < metadataImpl.getNumPorts ( ); n++ )
           {
             if ( myPorts [ n ].attr->connected && myPorts [ n ].current.data )
             {
@@ -529,7 +529,7 @@ namespace OCPI
 
         void initializeContext ( )
         {
-          uint32_t n_ports = metadataImpl.getTotalNumPorts ( );
+          uint32_t n_ports = metadataImpl.getNumPorts ( );
 
           myRunCondition = ( OCLRunCondition* ) calloc ( 1,  sizeof ( OCLRunCondition ) );
 
@@ -575,14 +575,14 @@ namespace OCPI
                                         sizeof ( OCLPortAttr ) );
           }
 
-          myProperties = ( uint8_t* ) calloc ( metadataImpl.getTotalPropertySize( ) + 4,
+          myProperties = ( uint8_t* ) calloc ( metadataImpl.getPropertySize( ) + 4,
                                                sizeof ( uint8_t ) );
           if ( !myProperties )
           {
             throw OC::ApiError( "OCL failed to allocate worker properties." );
           }
           device_worker.registerPtr ( (void*)myProperties,
-                                      metadataImpl.getTotalPropertySize( ) + 4 );
+                                      metadataImpl.getPropertySize( ) + 4 );
 
           myResult = ( OCLResult* ) calloc ( 1, sizeof ( OCLResult ) );
 
@@ -612,7 +612,7 @@ namespace OCPI
 
         void finalizeContext ( )
         {
-          for ( size_t n = 0; n < metadataImpl.getTotalNumPorts ( ); n++ )
+          for ( size_t n = 0; n < metadataImpl.getNumPorts ( ); n++ )
           {
             device_worker.unregisterPtr ( myPorts [ n ].attr );
             free ( myPorts [ n ].attr );
@@ -667,7 +667,7 @@ namespace OCPI
 
           if ( op == OM::Worker::OpStart )
           {
-            if ( nConnectedPorts != metadataImpl.getTotalNumPorts ( ) )
+            if ( nConnectedPorts != metadataImpl.getNumPorts ( ) )
             {
                throw OC::ApiError( "OCL worker cannot be started until all ports are connected." );
             }
@@ -811,7 +811,7 @@ namespace OCPI
               !md.m_writeError )
           {
             if ( ( md.m_offset + md.m_nBytes ) >
-                 metadataImpl.getTotalPropertySize( ) )
+                 metadataImpl.getPropertySize( ) )
             {
                throw OC::ApiError( "OCL property is out of bounds." );
             }
@@ -1279,7 +1279,7 @@ namespace OCPI
 
           pport.applyConnectParams ( pProps );
           applyConnectParams ( uProps );
-          establishRoles ( provider.getData().data );
+          determineRoles ( provider.getData().data );
           finishConnection ( provider.getData().data );
           pport.finishConnection ( getData().data );
           return true;
@@ -1545,7 +1545,7 @@ namespace OCPI
 
           applyConnectParams ( props );
 
-          port.establishRoles ( getData().data );
+          port.determineRoles ( getData().data );
 
           /*
               Buffer are shared between host and device so buffer count

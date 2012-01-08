@@ -141,7 +141,7 @@ namespace DataTransfer {
       protected:
 
 	OCPI::OS::Mutex    m_mutex;
-	FactoryConfig      m_config;
+	//	FactoryConfig      m_config;
 	bool            m_configured;
 
       };

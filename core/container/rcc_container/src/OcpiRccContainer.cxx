@@ -60,7 +60,6 @@
 #include <OcpiRDTInterface.h>
 #include <OcpiRccPort.h>
 #include <OcpiRccContainer.h>
-#include <OcpiRccController.h>
 #include <OcpiRccApplication.h>
 #include <OcpiPortMetaData.h>
 #include <OcpiUtilAutoMutex.h>
@@ -92,8 +91,7 @@ Container(const char *name,
 	  OCPI::DataTransport::TransportGlobal *tpg, 
 	  const OA::PValue* props )
   throw ( OU::EmbeddedException )
-  : OC::ContainerBase<Driver,Container,Application,Artifact>(name),
-    Controller( this )
+  : OC::ContainerBase<Driver,Container,Application,Artifact>(name)
 {
   m_model = "rcc";
   //temp  m_ourUID = g_unique_id;
@@ -151,7 +149,6 @@ volatile int ocpi_dbg_run=0;
 OC::Container::DispatchRetCode 
 Container::
 dispatch(DataTransfer::EventManager* event_manager)
-  throw ( OU::EmbeddedException )
 {
   bool more_to_do = false;
   if ( ! m_enabled ) {
@@ -199,15 +196,6 @@ createApplication(const char *name, const OCPI::Util::PValue *props)
     throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
   }
   return ca;
-}
-
-
-std::vector<std::string> 
-Container::
-getSupportedEndpoints()
-        throw ()
-{
-  return m_transport->getListOfSupportedEndpoints();
 }
 
 

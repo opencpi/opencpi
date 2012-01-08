@@ -15,11 +15,18 @@ int main(int argc, char **argv) {
 		    "  <instance worker='file_write'>"
 		    "    <property name='filename' value='out.file'/>"
 		    "  </instance>"
-		    "  <connection>"
-		    "    <port instance='file_read' name='out'/>"
+		    "  <connection ");
+  if (argv[1]) {
+    hello += "transport='";
+    hello += argv[1];
+    hello += "'";
+  }
+  hello +=          ">"
+                    "<port instance='file_read' name='out'/>"
 		    "    <port instance='file_write' name='in'/>"
 		    "  </connection>"
-		    "</application>");
+		    "</application>";
+
   try {
     OA::Application app(hello);
     fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");

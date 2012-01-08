@@ -203,7 +203,7 @@ static RCCResult run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCond
   /*  printf("Producer is producing with a length = %d\n", len);  */
 
 
-  this_->container->send( out, &out->current, 0x54, len );
+  this_->container.send( out, &out->current, 0x54, len );
 
 #define DELAY_AFTER_SEND__
 #ifdef DELAY_AFTER_SEND

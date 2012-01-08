@@ -321,8 +321,9 @@ void setupForPCMode()
 
 
   if ( config.standalone ) {
-    std::string spd = OCPI::Container::Container::packPortDesc( *outputPort );
-    std::string cpd = OCPI::Container::Container::packPortDesc( *inputPort );
+    std::string spd, cpd;
+    OCPI::Container::Container::packPortDesc( outputPort->getData(), spd );
+    OCPI::Container::Container::packPortDesc( inputPort->getData(), cpd );
     writePortDecsFile( spd , cpd );
   }
 
@@ -358,13 +359,15 @@ void setupForPCMode()
   if ( config.verbose )
     printf("About to connect target port\n");
   try {
-    localShadowPort = outputPort->setFinalProviderInfo( remoteTargetPort );
+
+    outputPort->setFinalProviderInfo( remoteTargetPort, localShadowPort );
   }
   CATCH_ALL_RETHROW("creating target port")
 
   // Here we eat the shadow port info since the rpl is currently passive
   if ( config.standalone ) {
-    std::string scp = OCPI::Container::Container::packPortDesc(*inputPort);
+    std::string scp;
+    OCPI::Container::Container::packPortDesc(inputPort->getData(), scp);
     writePortDecsFile( localShadowPort, scp );
     readPortDecsFile( remoteSourcePort, remoteTargetPort );
   }

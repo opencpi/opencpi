@@ -293,7 +293,7 @@ MAIN_LDFLAGS+=-Xlinker -rpath -Xlinker "$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)"
 ifeq ($(OCPI_OS),darwin)
 SO=dylib
 LD_ALLOW_UNDEFINED=-undefined dynamic_lookup
-SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOC_UNDEFINED) -install_name @rpath/$(notdir $@)
+SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOW_UNDEFINED) -install_name @rpath/$(notdir $@)
 SHARED=-dynamiclib -install_name @rpath/$(notdir $@)
 BASICLIBS=
 CXXFLAGS += -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare
@@ -339,6 +339,7 @@ endif
 ifeq ($(OCPI_DEBUG),1)
 CFLAGS += -g
 CXXFLAGS += -g
+LDFLAGS += -g
 else
 CFLAGS += -O2
 CXXFLAGS += -O2

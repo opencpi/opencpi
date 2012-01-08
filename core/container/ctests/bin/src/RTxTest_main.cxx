@@ -321,20 +321,20 @@ void setupForPCMode(const OCPI::API::PValue *props)
   // and the loopback consumer to our producer.
   try {
     std::string desc, fb;
-    desc = pc_inputPort->getInitialProviderInfo(NULL);
+    pc_inputPort->getInitialProviderInfo(NULL, desc);
     swrite( desc );
     sread( desc );
 
-    fb = pc_inputPort->setInitialUserInfo( desc );
+    pc_inputPort->setInitialUserInfo( desc, fb );
     swrite( fb );
     sread( desc );
     pc_inputPort->setFinalUserInfo( desc );
 
     sread( desc );
-    fb  = pc_outputPort->setInitialProviderInfo( NULL, desc );
+    pc_outputPort->setInitialProviderInfo( NULL, desc, fb );
     swrite( fb );
     sread( desc );
-    fb = pc_outputPort->setFinalProviderInfo( desc);
+    pc_outputPort->setFinalProviderInfo( desc, fb);
     swrite( fb );
     printf("Done setting fc\n");
 
@@ -376,15 +376,15 @@ void setupForLoopbackMode(const OCPI::API::PValue *props)
     std::string desc, fb;
     
     sread( desc );
-    fb  = lb_outputPort->setInitialProviderInfo( NULL, desc );
+    lb_outputPort->setInitialProviderInfo( NULL, desc, fb );
     swrite( fb );
     sread( desc );
-    fb = lb_outputPort->setFinalProviderInfo( desc);
+    lb_outputPort->setFinalProviderInfo( desc, fb);
     swrite( fb );
-    desc = lb_inputPort->getInitialProviderInfo(NULL);
+    lb_inputPort->getInitialProviderInfo(NULL,desc);
     swrite( desc );
     sread( desc );
-    fb = lb_inputPort->setInitialUserInfo( desc );
+    lb_inputPort->setInitialUserInfo( desc, fb );
     swrite( fb );
     sread( desc );
     lb_inputPort->setFinalUserInfo( desc );

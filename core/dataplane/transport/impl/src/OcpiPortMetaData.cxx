@@ -99,7 +99,7 @@ init()
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
               bool s, 
-              OCPI::RDT::Descriptors& port,
+              const OCPI::RDT::Descriptors& port,
               const char* shadow_ep,
               PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd), remoteCircuitId(-1),
@@ -124,7 +124,7 @@ PortMetaData( PortOrdinal pid,
 
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
-              OCPI::RDT::Descriptors& portDesc,
+              const OCPI::RDT::Descriptors& portDesc,
               PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd), remoteCircuitId(-1),
     remotePortId(-1),id(-1),rank(0),user_data(NULL),
@@ -134,7 +134,7 @@ PortMetaData( PortOrdinal pid,
   output =  (m_descriptor.type == OCPI::RDT::ProducerDescT) ? true : false;
   m_bufferData = NULL;
   m_shadow = true;
-  if ( portDesc.desc.oob.oep ) {
+  if ( portDesc.desc.oob.oep[0] ) {
     real_location_string = portDesc.desc.oob.oep;
   }
   id = pid;
@@ -154,7 +154,8 @@ PortMetaData( PortOrdinal pid,
     remotePortId(-1),id(-1),rank(0),output(s),user_data(NULL),
     m_init(false),m_real_location(NULL),m_shadow_location(NULL)
 {
-  m_descriptor.type = s = true ? OCPI::RDT::ProducerDescT : OCPI::RDT::ConsumerDescT;
+  m_descriptor.type = s ? OCPI::RDT::ProducerDescT : OCPI::RDT::ConsumerDescT;
+  m_descriptor.role = s ? OCPI::RDT::ActiveMessage : OCPI::RDT::ActiveFlowControl;
   m_bufferData = NULL;
   m_shadow = true;
   if ( ep ) {
@@ -175,7 +176,7 @@ PortMetaData( PortOrdinal pid,
               bool s, 
               const char* ep, 
               const char* shadow_ep,
-              OCPI::RDT::Descriptors&  pdd , 
+              const OCPI::RDT::Descriptors&  pdd , 
               OCPI::OS::uint32_t circuitId,
               PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd),

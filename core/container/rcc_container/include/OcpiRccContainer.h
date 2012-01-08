@@ -56,8 +56,8 @@
 #include <OcpiContainerManager.h>
 #include <RCC_Worker.h>
 #include <OcpiTransport.h>
-#include <OcpiRccController.h>
 #include <OcpiRccDriver.h>
+#include "OcpiRccApplication.h"
 
 namespace OCPI {
 
@@ -83,12 +83,10 @@ namespace OCPI {
     const OCPI::OS::uint32_t CP289_CSINTERNAL_ERROR          = (CP289_EX_SOURCE_ID << 16) + 6;
 
     class Container
-      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>,
-	public Controller
+      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>
     {
 
       public:
-        friend class Controller;
         friend class Port;
         friend class RDMAPort;
         friend class Worker;
@@ -106,8 +104,7 @@ namespace OCPI {
         virtual ~Container()
           throw ();
 
-	OCPI::Container::Container::DispatchRetCode dispatch(DataTransfer::EventManager* event_manager=NULL)
-          throw ( OCPI::Util::EmbeddedException );
+	OCPI::Container::Container::DispatchRetCode dispatch(DataTransfer::EventManager* event_manager=NULL);
 
         OCPI::API::ContainerApplication*
 	createApplication(const char *name, const OCPI::Util::PValue *props)
@@ -115,9 +112,6 @@ namespace OCPI {
 
 	OCPI::Container::Artifact &createArtifact(OCPI::Library::Artifact &lart,
 						  const OCPI::API::PValue *artifactParams);
-
-        std::vector<std::string> getSupportedEndpoints()
-          throw ();
       
         //!< Start/Stop the container
         void start(DataTransfer::EventManager* event_manager)

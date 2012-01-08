@@ -103,7 +103,7 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
 
 
   if ( ! out_buffer ) {
-    this_->container->request( &this_->ports[UTGProducerWorker_Data_Out_Port0], 0 );
+    this_->container.request( &this_->ports[UTGProducerWorker_Data_Out_Port0], 0 );
   }
   out_buffer = (char*)this_->ports[UTGProducerWorker_Data_Out_Port0].current.data;
   if ( ! out_buffer ) {
@@ -136,12 +136,12 @@ static RCCResult UTGProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
   OCPI_TIME_EMIT_C( "Producer Start Send" );
 
 #ifndef NDEBUG
-  printf("Producer is producing\n"); 
+  printf("Producer is producing..\n"); 
 #endif
 
   this_->ports[UTGProducerWorker_Data_Out_Port0].output.length = len;
   this_->ports[UTGProducerWorker_Data_Out_Port0].output.u.operation = props->buffersProcessed%256;
-  this_->container->send( &this_->ports[UTGProducerWorker_Data_Out_Port0], 
+  this_->container.send( &this_->ports[UTGProducerWorker_Data_Out_Port0], 
                           &this_->ports[UTGProducerWorker_Data_Out_Port0].current, 0x54, len );
 
   OCPI_TIME_EMIT_C( "Producer Start End" );
@@ -392,7 +392,7 @@ static RCCResult UTGConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
 #endif
 
   OCPI_TIME_EMIT_C( "Consumer Start Release" );
-  this_->container->release( &this_->ports[UTGConsumerWorker_Data_In_Port0].current ); 
+  this_->container.advance( &this_->ports[UTGConsumerWorker_Data_In_Port0], 0 ); 
   OCPI_TIME_EMIT_C( "Consumer End Release" );
   return RCC_OK;
 }
@@ -485,8 +485,9 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
     // Send input buffer to output port
   case 0:
     {
-      this_->container->send( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 
+      this_->container.send( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 
                               &this_->ports[UTGLoopbackWorker_Data_In_Port0].current, 0x54, len );
+      printf("LB len %u\n", len);
     }
     break;
 
@@ -495,7 +496,7 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
     {
       // First we need to get an output buffer
       if ( ! out_buffer ) {
-        this_->container->request( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 0 );
+        this_->container.request( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 0 );
       }
       out_buffer = (char*)this_->ports[UTGLoopbackWorker_Data_Out_Port0].current.data;
       if ( ! out_buffer ) {
@@ -503,9 +504,9 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
         return RCC_OK;
       }
       memcpy(out_buffer,in_buffer,len);
-      this_->container->send( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 
+      this_->container.send( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 
                               &this_->ports[UTGLoopbackWorker_Data_Out_Port0].current, 0x54, len );
-      this_->container->release( &this_->ports[UTGLoopbackWorker_Data_In_Port0].current );
+      this_->container.release( &this_->ports[UTGLoopbackWorker_Data_In_Port0].current );
     }
     break;
 
@@ -515,7 +516,7 @@ static RCCResult UTGLoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCB
     {
       // First we need to get an output buffer
       if ( ! out_buffer ) {
-        this_->container->request( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 0 );
+        this_->container.request( &this_->ports[UTGLoopbackWorker_Data_Out_Port0], 0 );
       }
       out_buffer = (char*)this_->ports[UTGLoopbackWorker_Data_Out_Port0].current.data;
       this_->ports[UTGLoopbackWorker_Data_Out_Port0].output.length = len;

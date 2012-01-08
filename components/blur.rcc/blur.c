@@ -86,7 +86,7 @@ static RCCResult run(RCCWorker *self,
   BlurState *s = self->memories[0];
   RCCPort *in = &self->ports[BLUR_IN],
     *out = &self->ports[BLUR_OUT];
-  const RCCContainer *c = self->container;  
+  const RCCContainer *c = &self->container;  
   (void)timedOut;
 
   if ( (in->input.length>0) && (in->input.length>FRAME_BYTES) ) {

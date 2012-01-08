@@ -143,11 +143,11 @@ Circuit(
     //        output dd : input dd : output part : input part : "output shadow" : output role : input role
     m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveMessage] 
+      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_gen_pat1;
     m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-      [true] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveMessage] 
+      [true] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_gen_pat1;
 
 
@@ -171,17 +171,17 @@ Circuit(
     // Fixme.  All other DD&P patterns have not yet beed ported to the new port "roles" paradigm
     m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::sequential]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveMessage] 
+      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_gen_pat2;
 
     m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::sequential][DataDistributionMetaData::sequential]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveMessage] 
+      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_gen_pat3;
 
     m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::BLOCK] 
-      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveMessage] 
+      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_gen_pat4;
         
 
@@ -207,12 +207,12 @@ Circuit(
     //        output dd : input dd : output part : input part : "output shadow" : output role : input role
     m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveMessage] 
+      [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_cont1;
 
     m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
-      [true] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveMessage] 
+      [true] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_cont1;
 
     // If the output port is AFC, the same controller is used for any input port role
@@ -606,7 +606,7 @@ namespace OCPI {
 
 OCPI::DataTransport::PullDataDriver* 
 OCPI::DataTransport::Circuit::
-createPullDriver( OCPI::RDT::Descriptors& pdesc, Port* p )
+createPullDriver( const OCPI::RDT::Descriptors& pdesc)
 {
 
   PullDataDriver *pdd=NULL;
@@ -630,8 +630,7 @@ createPullDriver( OCPI::RDT::Descriptors& pdesc, Port* p )
       }
     }
 
-    const char* ep = p->getEndpoint()->end_point.c_str();
-    tres = m_transport->getEndpointResources( ep );
+    tres = m_transport->getEndpointResources( pdesc.desc.oob.oep );
     PullDataInfo* pull_data_info = new PullDataInfo;
     // Get the local and remote vaddrs
     pull_data_info->src_buffer = (volatile OCPI::OS::uint8_t*)
@@ -701,7 +700,7 @@ createPullDriver( OCPI::RDT::Descriptors& pdesc, Port* p )
  *********************************/
 void 
 OCPI::DataTransport::Circuit::
-setFlowControlDescriptor( OCPI::DataTransport::Port* p, OCPI::RDT::Descriptors& pdesc )
+setFlowControlDescriptor( OCPI::DataTransport::Port* p, const OCPI::RDT::Descriptors& pdesc )
 {
 
   // If the output port for this circuit is a shadow, now is a good time to 
@@ -754,11 +753,11 @@ setFlowControlDescriptor( OCPI::DataTransport::Port* p, OCPI::RDT::Descriptors& 
   // Create a driver for it.
   if ( pdesc.role == OCPI::RDT::Passive ) {
     printf("Found a passive Output Port, creating a pull driver!!\n");
-    PullDataDriver *pd = createPullDriver( pdesc, p );
+    PullDataDriver *pd = createPullDriver( pdesc );
     static_cast<OCPI::DataTransport::Port*>(p)->attachPullDriver( pd );
   }
 
-  m_openCircuit = false;
+  //  m_openCircuit = false;
 }
 
 
@@ -871,9 +870,9 @@ getUserPortFlowControlDescriptor( OCPI::RDT::Descriptors * fb, unsigned int idx 
 /**********************************
  * Adds a port to the circuit
  *********************************/
-OCPI::DataTransport::Port* 
+void
 OCPI::DataTransport::Circuit::
-addInputPort( OCPI::RDT::Descriptors& pdesc, const char* our_ep, OCPI::RDT::Descriptors* fb )
+addInputPort( const OCPI::RDT::Descriptors& pdesc, const char* our_ep)
 {
 
 #ifndef NDEBUG
@@ -903,6 +902,7 @@ addInputPort( OCPI::RDT::Descriptors& pdesc, const char* our_ep, OCPI::RDT::Desc
     ord++;
   }
 
+  ocpiAssert(pdesc.desc.oob.oep[0]);
   if ( pdesc.desc.oob.oep[0] ) {
     SMBResources* res = m_transport->getEndpointResources(  pdesc.desc.oob.oep );
     if ( res ) {
@@ -910,8 +910,12 @@ addInputPort( OCPI::RDT::Descriptors& pdesc, const char* our_ep, OCPI::RDT::Desc
     }
   }
 
+#if 0
+  // This stuff is now deferred to "finalize"
+
   // Since we now have a complete circuit description, we need to tell the input ports
   // about us and about each other so they can complete their circuits
+  ocpiAssert(fb);
   if ( !fb ) {
     while ( ! updateInputs() ) {
     }
@@ -930,8 +934,7 @@ addInputPort( OCPI::RDT::Descriptors& pdesc, const char* our_ep, OCPI::RDT::Desc
     PullDataDriver* pd = createPullDriver( pdesc, port );
     static_cast<OCPI::DataTransport::Port*>(port)->attachPullDriver( pd );
   }
-  
-  return NULL;
+#endif
 }
 
 
@@ -942,9 +945,10 @@ bool
 OCPI::DataTransport::Circuit::
 ready()
 {
-  if ( m_ready || m_openCircuit ) {
+  if (m_openCircuit)
+    return false;
+  if (m_ready)
     return true;
-  }
 
   OCPI::OS::uint32_t n,y;
 
@@ -1068,13 +1072,20 @@ createCircuitTemplateGenerators()
     bool whole = output_port_set->getDataDistribution()->getMetaData()->distType ==
       DataDistributionMetaData::parallel ? true : false;
 
+    Port
+      *oport = output_port_set->getPort(0),
+      *iport = input_port_set->getPort(0);
+
+    int32_t
+      output_role = oport->getMetaData()->m_descriptor.role,
+      input_role = iport->getMetaData()->m_descriptor.role;
 #ifndef NDEBUG
-    printf("output port role = %d\n", output_port_set->getPort(0)->getMetaData()->m_descriptor.role );
-    printf("input port role = %d\n", input_port_set->getPort(0)->getMetaData()->m_descriptor.role );
+    printf("output port role = %d\n", output_role);
+    printf("input port role = %d\n", input_role);
 #endif
 
-    ocpiAssert( output_port_set->getPort(0)->getMetaData()->m_descriptor.role < OCPI::RDT::MaxRole );
-    ocpiAssert( input_port_set->getPort(0)->getMetaData()->m_descriptor.role < OCPI::RDT::MaxRole );
+    ocpiAssert( output_role < OCPI::RDT::MaxRole );
+    ocpiAssert( input_role < OCPI::RDT::MaxRole );
 
 
     // Fixme for DD&P, we need to get "our" port when scaled to support "mixed" role transfers.
@@ -1084,8 +1095,8 @@ createCircuitTemplateGenerators()
       [output_part->getData()->dataPartType]
       [input_part->getData()->dataPartType]
       [output_port_set->getPort(0)->isShadow()]
-      [output_port_set->getPort(0)->getMetaData()->m_descriptor.role]
-      [input_port_set->getPort(0)->getMetaData()->m_descriptor.role]
+      [output_role]
+      [input_role]
       ->
       createController( output_port_set, input_port_set, whole);
 

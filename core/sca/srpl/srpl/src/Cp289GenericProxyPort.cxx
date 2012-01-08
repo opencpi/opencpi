@@ -90,7 +90,8 @@ namespace OCPI {
        * roundtrip at connection time.
        */
       if (m_ocpiPort.isProvider()) {
-        const std::string &providerInfo = m_ocpiPort.getInitialProviderInfo(0);
+        std::string providerInfo;
+	m_ocpiPort.getInitialProviderInfo(0, providerInfo);
         /*
          * Unfortunately, the only portable way to get to the IOR is
          * by detour via IOR: string.
@@ -202,7 +203,8 @@ namespace OCPI {
             oops = "Unsupported connection to provider";
           else {
             // Tell our local port about the provider's initial information
-            const std::string &initialUserInfo = m_ocpiPort.setInitialProviderInfo(0, ipi);
+            std::string initialUserInfo;
+	    m_ocpiPort.setInitialProviderInfo(0, ipi, initialUserInfo);
             if (!initialUserInfo.empty()) {
 #if 1
               // We need to exchange information with the remote port using our private IDL.
@@ -216,15 +218,19 @@ namespace OCPI {
                 // some final information about the connection, we may still need some final
                 // information from the provider (like RDMA flow control for the
                 // provider-to-user data flow).
-                const Cp289ProviderPort::Octets iui(initialUserInfo.length(), initialUserInfo.length(), (CORBA::Octet*)initialUserInfo.data());
+                const Cp289ProviderPort::Octets iui(initialUserInfo.length(), initialUserInfo.length(),
+						    (CORBA::Octet*)initialUserInfo.data());
                 Cp289ProviderPort::Octets_var finalProviderInfo = remoteProvider->connectInitial(iui);
                 // Yes this copies it...
-                std::string fpi((const char*)finalProviderInfo->get_buffer(), (size_t)finalProviderInfo->length());
+                std::string fpi((const char*)finalProviderInfo->get_buffer(),
+				(size_t)finalProviderInfo->length());
                 if (!fpi.empty()) {
                   // The connection protocol has given us more/final information about the provider.
-                  const std::string &finalUserInfo = m_ocpiPort.setFinalProviderInfo(fpi);
+                  std::string finalUserInfo;
+		  m_ocpiPort.setFinalProviderInfo(fpi, finalUserInfo);
                   if (!finalUserInfo.empty()) {
-                    const Cp289ProviderPort::Octets fui(finalUserInfo.length(), finalUserInfo.length(), (CORBA::Octet*)finalUserInfo.data());
+                    const Cp289ProviderPort::Octets fui(finalUserInfo.length(), finalUserInfo.length(),
+							(CORBA::Octet*)finalUserInfo.data());
                     remoteProvider->connectFinal(fui);
                   }
                 }
@@ -298,7 +304,8 @@ namespace OCPI {
         try {
           // A copy here from corba to our string
           const std::string iui((const char*)initialUserInfo.get_buffer(), (size_t)initialUserInfo.length());
-          const std::string &finalProviderInfo = m_ocpiPort.setInitialUserInfo(iui);
+          std::string finalProviderInfo;
+	  m_ocpiPort.setInitialUserInfo(iui, finalProviderInfo);
           // String is not copied here
           Cp289ProviderPort::Octets* fpi =
             new Cp289ProviderPort::Octets(finalProviderInfo.length(), finalProviderInfo.length(),

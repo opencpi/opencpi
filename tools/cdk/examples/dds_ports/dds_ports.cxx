@@ -85,7 +85,7 @@ int main ( int argc, char* argv [ ] )
     std::cerr << "\n\nException(u): unknown\n" << std::endl;
   }
 
-  return (passed ? 1 : -1);
+  return passed ? 0 : 1;
 }
 
 

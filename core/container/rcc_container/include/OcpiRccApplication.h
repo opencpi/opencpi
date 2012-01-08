@@ -119,11 +119,15 @@ namespace OCPI {
        *********************************/  
         virtual ~Application();
 
+#if 0
+We are assuming that the circuits are lifecycle-managed based on ref counting from ports
+and thus this bookkeepping is not neededhere.
+It wasnt actually used anyway.
       /**********************************
        * Add a circuit to our managed list
        *********************************/ 
       inline void addCircuit( OCPI::DataTransport::Circuit* c ){m_circuits.push_back(c);}
-      
+#endif      
       void start(); // override default because we have funny workers for external ports.
       private:
 
@@ -131,7 +135,7 @@ namespace OCPI {
       RCCContainer *  m_rccContainer;
 
       // All circuits in this application
-      std::vector<OCPI::DataTransport::Circuit*> m_circuits;
+      //      std::vector<OCPI::DataTransport::Circuit*> m_circuits;
 
     };
 

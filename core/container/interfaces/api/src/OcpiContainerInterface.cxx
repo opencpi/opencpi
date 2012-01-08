@@ -173,14 +173,17 @@ namespace OCPI {
       return true;
     }
 
+#if 0
     static uint32_t mkUID() {
       static uint32_t id = 1;
       return id++ + getpid();
     }
+#endif
 
     Container::Container(const ezxml_t config, const OCPI::Util::PValue *props)
       throw ( OU::EmbeddedException )
-      : m_ourUID(mkUID()), m_enabled(false), m_ownThread(true), m_thread(NULL)
+      : //m_ourUID(mkUID()),
+      m_enabled(false), m_ownThread(true), m_thread(NULL)
     {
       OU::SelfAutoMutex guard (this);
       static unsigned ordinal;
@@ -315,38 +318,38 @@ namespace OCPI {
     */
 
 
-    std::string Container::packPortDesc(  PortData & port  )
+    void Container::packPortDesc(  PortConnectionDesc & port, std::string &out  )
       throw()
     {
 
       std::string s;
       OCPI::Util::CDR::Encoder packer;
       packer.putBoolean (OCPI::Util::CDR::nativeByteorder());
-      packer.putULong (port.getData().container_id);
-      packer.putULongLong( port.getData().port );
+      //      packer.putULong (port.container_id);
+      //      packer.putULongLong( port.port );
   
-      packDescriptor( packer, port.getData().data );
-      return packer.data();
+      packDescriptor( packer, port.data );
+      out = packer.data();
     }
 
 
-    int Container::portDescSize(){return sizeof(PortData);}
+    //    int Container::portDescSize(){return sizeof(PortData);}
 
-    PortData * Container::unpackPortDesc( const std::string& data, PortData* port )
+    bool Container::unpackPortDesc( const std::string& data, PortConnectionDesc &port)
       throw ()
     {
       OCPI::Util::CDR::Decoder unpacker (data);
-      Descriptors *desc = &port->getData().data;
+      Descriptors *desc = &port.data;
       bool bo;
 
       try { 
 	unpacker.getBoolean (bo);
 	unpacker.byteorder (bo);
-	unpacker.getULong (port->getData().container_id);
-	unpacker.getULongLong ((uint64_t&)port->getData().port);
+	//      unpacker.getULong (port.container_id);
+	//	unpacker.getULongLong ((uint64_t&)port.port);
 	bool good = unpackDescriptor ( unpacker, *desc);
 	if ( ! good ) {
-	  return 0;
+	  return false;
 	}
 
       }
@@ -354,7 +357,7 @@ namespace OCPI {
 	return false;
       }
 
-      return port;
+      return true;
     }
 
 
@@ -373,17 +376,7 @@ namespace OCPI {
       m_enabled = false;
     }
 
-    std::vector<std::string> 
-    Container::
-    getSupportedEndpoints()
-      throw ()
-    {
-      std::vector<std::string> l;
-      return l;
-    }
-
     Container::DispatchRetCode Container::dispatch(DataTransfer::EventManager*)
-      throw ( OU::EmbeddedException )
     {
       return Container::DispatchNoMore;
     }
@@ -454,7 +447,15 @@ namespace OCPI {
       for (int *sp = sigs; *sp; sp++)
 	sigaddset(&set, *sp);
       ocpiCheck(pthread_sigmask(SIG_BLOCK, &set, NULL) == 0);
-      ((Container *)arg)->thread();
+      try {
+	((Container *)arg)->thread();
+      } catch (const std::string s) {
+	std::cerr << "Container background thread exception: " << s << std::endl;
+	throw;
+      } catch (...) {
+	std::cerr << "Container background thread unknown exception" << std::endl;
+	throw;
+      }
     }
     void Container::start() {
       if (!m_enabled) {

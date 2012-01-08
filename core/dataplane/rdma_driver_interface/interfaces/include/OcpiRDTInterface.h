@@ -49,8 +49,8 @@ namespace OCPI {
     // These roles are not supported for all protocols, but those that need it
     // specify it.  Roughly, the order is the order of "goodness" when there is
     // no other basis for choosing a role
+    // !!!!****** Adjust the role name strings in OcpiContainerPort.cxx if you change this.
     enum PortRole {
-      NoRole,                 // Role is unspecified (during negotiation)
       ActiveMessage,     // Port will move data
                          // For a consumer, this means pulling data from the producer.
                          // For a producer, this means pushing data to the consumer.
@@ -62,13 +62,14 @@ namespace OCPI {
       ActiveOnly,        // Port can only be active, not a target for anything
       Passive,           // Port is passive, needs other side to access all status and
                          // indicate new buffer state
-      MaxRole
+      MaxRole,           // Number of valid roles
+      NoRole             // Role is unspecified (during negotiation)
     };
     // These options are smaller issues than port roles, and may apply across roles
     // The low order bits are used for what roles are possible for a port (during negotiation)
     enum ProtocolOptions {
       FeedbackIsCount = MaxRole, // The doorbell indicating feedback is a count of buffers rather than a constant
-      MandatedRole,                 // Role is not a preference, but a mandate
+      MandatedRole,              // Role is not a preference, but a mandate
       MaxOption
     };
 
@@ -104,7 +105,7 @@ namespace OCPI {
       OCPI::OS::int32_t   role;     // signed to suppress compiler warnings vs. enums
       OCPI::OS::uint32_t  options; // bit fields based on role.
       Desc_t desc;
-      Descriptors():role(ActiveMessage){}
+      Descriptors() : role(NoRole){}
     };
 
     // Debug utils

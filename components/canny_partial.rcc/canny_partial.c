@@ -319,7 +319,7 @@ static RCCResult run(RCCWorker *self,
   RCCPort *in_dx = &self->ports[CANNY_PARTIAL_IN_DX],
           *in_dy = &self->ports[CANNY_PARTIAL_IN_DY],
           *out = &self->ports[CANNY_PARTIAL_OUT];
-  const RCCContainer *c = self->container;
+  const RCCContainer *c = &self->container;
   CPState * myState = (CPState*)self->memories[0];
 
   if ( (in_dx->input.length>0) && (in_dx->input.length>FRAME_BYTES) ) {

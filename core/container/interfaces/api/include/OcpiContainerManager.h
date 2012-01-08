@@ -204,9 +204,10 @@ namespace OCPI {
         public Port {
     protected:
       PortBase<Wrk,Prt,Ext>(Wrk &worker, const OCPI::Metadata::Port &mport, bool isProvider,
-			    unsigned xferOptions, const OCPI::Util::PValue *params)
+			    unsigned xferOptions, const OCPI::Util::PValue *params,
+			    PortConnectionDesc *desc = NULL)
       : Child<Wrk,Prt,port>(worker, mport.name), Port(worker.parent().parent(), mport,
-						      isProvider, xferOptions, params) {}
+						      isProvider, xferOptions, params, desc) {}
     };
     extern const char *externalPort;
     template<class Prt, class Ext>

@@ -133,10 +133,9 @@ namespace OCPI {
       /**********************************
        * Adds a port to the circuit
        *********************************/
-      OCPI::DataTransport::Port* addInputPort(
-                                              OCPI::RDT::Descriptors&      portDep,
-                                              const char*                 our_ep,
-                                              OCPI::RDT::Descriptors*      feedBack);
+      void addInputPort(
+                                              const OCPI::RDT::Descriptors&      portDep,
+                                              const char*                 our_ep);
 
       /**********************************
        * Adds a port to the circuit
@@ -153,7 +152,7 @@ namespace OCPI {
        * Sets the feedback descriptor for this port.
        *********************************/
       void setFlowControlDescriptor( OCPI::DataTransport::Port* p, 
-                                     OCPI::RDT::Descriptors& desc);
+                                     const OCPI::RDT::Descriptors& desc);
 
 
       /**********************************
@@ -221,7 +220,7 @@ namespace OCPI {
        *********************************/
       OCPI::OS::uint32_t getMaxPortOrd();
 
-      PullDataDriver* createPullDriver( OCPI::RDT::Descriptors& pdesc, Port* p );
+      PullDataDriver* createPullDriver( const OCPI::RDT::Descriptors& pdesc);
 
       /**********************************
        * This method is used to print circuit information for debug

@@ -116,7 +116,7 @@ namespace OCPI {
         n_ports = nPorts;
         return myPorts;
       }
-      inline unsigned int getTotalNumPorts ( ) const
+      inline unsigned int getNumPorts ( ) const
       {
         return nPorts;
       }
@@ -125,7 +125,7 @@ namespace OCPI {
         n_local_memories = nLocalMemories;
         return myLocalMemories;
       }
-      inline size_t getTotalPropertySize ( ) const
+      inline size_t getPropertySize ( ) const
       {
         return totalPropertySize;
       }

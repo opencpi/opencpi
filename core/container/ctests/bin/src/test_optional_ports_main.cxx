@@ -295,8 +295,8 @@ int config_and_run_optports_test(const char *test_name, std::vector<CApp>& ca,
                                  int cmap[], int bcmap[] )
 {
   ( void ) test_name;
-  char tnamebuf[256];
-  sprintf(tnamebuf, "Optional ports TEST: container map %d,%d,%d buffer map %d,%d,%d,%d",
+  //char tnamebuf[256];
+  printf("Optional ports TEST: container map %d,%d,%d buffer map %d,%d,%d,%d\n",
           cmap[0], cmap[1], cmap[2], bcmap[0], bcmap[1], bcmap[2], bcmap[3] );
 
   PRODUCER = cmap[0];
@@ -429,7 +429,6 @@ int  main( int argc, char** argv)
   workers.push_back( &CONSUMER );
   workers.push_back( &LOOPBACK );
 
-
   // run the test with port 0 connected and make sure it works
   test_name = "Required port connected";
 
@@ -517,9 +516,14 @@ int  main( int argc, char** argv)
   // run the test with port 0 connected and make sure it works
   test_name = "Required port connected plus non-required ports";
 
-  // Patch the consumer dispatch table to make sure we have a NULL run-condition
+  // Patch the consumer dispatch table to NOT require the extra port we are connecting
+  // Since it will not be used (the loopback worker will not write to it)
   trc = UTGConsumerWorkerDispatchTable.runCondition;
-  UTGConsumerWorkerDispatchTable.runCondition = NULL;
+  {
+    static RCCPortMask masks[] = { 1 << PORT_0, 0};
+    static RCCRunCondition extraPorts = { masks, 0, 0 };
+    UTGConsumerWorkerDispatchTable.runCondition = &extraPorts;
+  }  
   try {
 
     // Setup connection info

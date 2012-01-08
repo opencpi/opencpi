@@ -150,7 +150,7 @@ static RCCResult run ( RCCWorker* self,
     *gate_n_bytes += n_bytes;
 
     /* Only adavance input port (not output was produced) */
-    self->container->advance ( &( self->ports [ FRAMEGATE_IN ] ), 0 );
+    self->container.advance ( &( self->ports [ FRAMEGATE_IN ] ), 0 );
 
     rc = RCC_OK;
   }

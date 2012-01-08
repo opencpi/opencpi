@@ -6,7 +6,7 @@ mkdir -p /opt/opencpi/prerequisites
 cd /opt/opencpi/prerequisites
 git clone http://git.veripool.org/git/verilator
 cd verilator
-git checkout verilator_3_811
+git checkout verilator_3_830
 autoconf
 PREFIX=`pwd`/$HostTarget
 ./configure --prefix=$PREFIX
