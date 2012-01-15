@@ -96,5 +96,15 @@ int main()
     printf("Improvement: %f times faster\n", 
         (double) actual_time / fast_time);
 
+#ifdef PRINT_LOOP
+    while ( 1 ) {
+      fasttime_gettime(&tp_end);  
+      fast_time = ((uint64_t) (tp_end.tv_sec - tp_start.tv_sec)) * 1000000000 +
+	(tp_end.tv_nsec - tp_start.tv_nsec);
+      printf( "Fasttime = %lld\n", fast_time );
+    };
+#endif
+
+
     return EXIT_SUCCESS;
 }

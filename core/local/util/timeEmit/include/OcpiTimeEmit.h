@@ -32,7 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//#define OCPI_TIME_EMIT_SUPPORT
+#define OCPI_TIME_EMIT_SUPPORT
 
 
 
@@ -105,7 +105,6 @@
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
-
 #ifdef OCPI_TIME_EMIT_SUPPORT
 
 #define OCPI_EMIT_REGISTER(  name )        \
@@ -121,15 +120,15 @@
 // They assume that they have access to "this" and they will preserve the class heirarchy information.
 
 #define OCPI_EMIT_HERE                \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL( __FILE__ "_line_"  TOSTRING(__LINE__), OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
   OCPI::Time::Emit::getSEmit().emit(re);                        \
-}
+ } while(0)
 #define OCPI_EMIT_HERE_                \
-{ \
+do { \
   OCPI_EMIT_REGISTER_FULL( __FILE__ "_line_"  TOSTRING(__LINE__), OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
   this->emit(re);                \
-}
+ } while(0)
 
 #define OCPI_EMIT_REGISTERED( re,v )                \
 do { \
@@ -165,13 +164,13 @@ do { \
 
 #define OCPI_EMIT_PVALUE_( p ) \
 do { \
-  OCPI_EMIT_REGISTER_P( p ) \
+  OCPI_EMIT_REGISTER_P( p );			\
   this->emit(re, p);        \
  } while(0)
 
 #define OCPI_EMIT_PVALUE( p ) \
 do { \
-  OCPI_EMIT_REGISTER_P( p ) \
+  OCPI_EMIT_REGISTER_P( p );			   \
   OCPI::Time::Emit::getSEmit().emit(re, p);        \
 } while(0)
 
@@ -338,25 +337,20 @@ namespace OCPI {
       private:
         EventId m_eid;
 
-	// FIXME:  we can't possibly create a mutex for every event???
-	// FIXME:  which calls separate static destructors per event?
-        OCPI::OS::Mutex m_mutex;
-        
       };
 
       // This is the base class for the time source that gets used by the emit class for time stamping events.
       class TimeSource {
       public:
         TimeSource();
-        virtual Time getTime()=0;
+        virtual Time getTime(  struct timespec & init_tv, bool init=false  )=0;
         virtual ~TimeSource(){}
       };
 
       // This class uses "gettimeofday" to get the time tag
       class SimpleSystemTime : public TimeSource {
       public:
-        Time getTime();
-      private:
+        Time getTime( struct timespec & init_tv, bool init );
         virtual ~SimpleSystemTime(){};
       };
 
@@ -365,7 +359,7 @@ namespace OCPI {
       class FastSystemTime : public TimeSource {
       public:
         FastSystemTime();
-        Time getTime();
+        Time getTime(  struct timespec & init_tv, bool init );
       private:
           int m_method;
           virtual ~FastSystemTime(){};
@@ -400,12 +394,17 @@ namespace OCPI {
 
       // Trace method
       void emit( EventId id, OCPI::OS::uint64_t v, EventTriggerRole role=NoTrigger );
+      void emitT( EventId id, OCPI::OS::uint64_t v, Time t, EventTriggerRole role=NoTrigger );
       void emit( EventId id, EventTriggerRole role=NoTrigger );
+      void emitT( EventId id, Time t, EventTriggerRole role=NoTrigger );
       void emit( EventId id, OCPI::API::PValue& p, EventTriggerRole role=NoTrigger );
+      void emitT( EventId id,  OCPI::API::PValue& p, Time t, EventTriggerRole role=NoTrigger );
 
       static Emit& getSEmit();
       static void sEmit( EventId id, OCPI::OS::uint64_t v, EventTriggerRole role=NoTrigger );
+      static void sEmitT( EventId id, OCPI::OS::uint64_t v, Time t, EventTriggerRole role=NoTrigger );
       static void sEmit( EventId id, EventTriggerRole role=NoTrigger );
+      static void sEmitT( EventId id, Time t, EventTriggerRole role=NoTrigger );
 
       // Stop collecting events now
       void stop( bool globally = true );
@@ -418,10 +417,7 @@ namespace OCPI {
       // Get Headers
       static Header& getHeader();
       // This mutex is used to protect the static header data
-      static inline OCPI::OS::Mutex& getGMutex() {
-        static OCPI::OS::Mutex m_g_mutex(true);
-        return m_g_mutex;
-      }
+      static OCPI::OS::Mutex& getGMutex();
 
       // Shutdown, deletes all global resources 
       static void shutdown()
@@ -438,7 +434,7 @@ namespace OCPI {
         throw ( OCPI::Util::EmbeddedException );
 
       // static class methods
-      static Time getTime();
+      Time getTime();
 
       // Get the header information
       void getHeaderInfo( Emit* t, int& instance  );
@@ -458,6 +454,7 @@ namespace OCPI {
       int            m_parentIndex;
       OCPI::OS::Mutex m_mutex;
       TimeSource*    m_ts;
+      static struct timespec m_init_tv;
     };
 
 
@@ -470,8 +467,9 @@ namespace OCPI {
 
       enum DumpFormat {
         OCPIReadable,
-        OCPIRaw,
-        VCDFormat
+        OCPIRAW,
+        VCDFormat,
+	CSVFormat,
       };
 
       EmitFormatter( DumpFormat df=OCPIReadable  );
@@ -485,21 +483,18 @@ namespace OCPI {
       // Utility format methods
       std::string formatEventString ( Emit::EventQEntry& eqe,
                                       Emit::Time time_ref );
-      std::string formatEventStringRaw ( Emit::EventQEntry& eqe,
-                                         Emit::Time time_ref );
+      std::string formatEventStringRAW ( Emit::EventQEntry& eqe );
+
 
       // Top level formatter methods
       std::ostream& formatDumpToStream( std::ostream& out );
-      std::ostream& formatDumpToStreamRaw( std::ostream& out );
-      std::ostream& formatDumpToStreamReadable( std::ostream& out );
-      std::ostream& formatDumpToStreamVCD( std::ostream& out );
+      std::ostream& formatDumpToStreamRAW( std::ostream& out );
 
     private:
       Emit* m_traceable;
       DumpFormat m_dumpFormat;
 
     };
-
   }
 }
 
