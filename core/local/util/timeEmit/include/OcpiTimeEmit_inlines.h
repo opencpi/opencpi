@@ -66,24 +66,25 @@ namespace OCPI {
 
   namespace Time {
     union SValue {
-      OCPI::OS::uint64_t uvalue;
-      OCPI::OS::int64_t  ivalue;
-      double            dvalue;
+      uint64_t uvalue;
+      int64_t  ivalue;
+      double   dvalue;
+      char *   cvalue;
     };
 
     struct Emit::EventQEntry {
       Time     time;
       EventId  eid;
       OwnerId  owner;
-      OCPI::OS::uint32_t   size;   // In bytes
+      uint32_t   size;   // In bytes
       // payload goes here
     };
 
     struct Emit::EventQ {
       QConfig      config;
       EventQEntry*  start;
-      OCPI::OS::uint8_t* base;
-      OCPI::OS::uint8_t* end;
+      uint8_t* base;
+      uint8_t* end;
       EventQEntry* current;
       bool         full;
       bool         done;
@@ -124,6 +125,7 @@ namespace OCPI {
     };
 
     struct Emit::Header {
+      OCPI::OS::Mutex *                    g_mutex;
       bool                                 init;
       EventId                              nextEventId;
       Time                                 startTime;
@@ -136,7 +138,32 @@ namespace OCPI {
       EmitFormatter::DumpFormat            dumpFormat;
       std::string                          dumpFileName;
       std::fstream                         dumpFileStream;
-      Header():init(false),nextEventId(1),shuttingDown(false),dumpOnExit(false){};
+      Emit::TimeSource                     *ts;
+      Header():init(false),nextEventId(0),shuttingDown(false),dumpOnExit(false)
+      {
+	g_mutex = new OCPI::OS::Mutex(true);
+
+	char * times = getenv("OCPI_EMIT_TIMESOURCE");
+	if ( times ) {
+	  if ( strcmp( times, "FAST" ) == 0 ) {
+	    ts = new Emit::FastSystemTime();
+	  }
+	  else {
+	    ts = new Emit::SimpleSystemTime();
+	  }
+	}
+	else {
+	  ts = new Emit::SimpleSystemTime();
+	}
+      };
+      ~Header() {
+	for ( unsigned int n=0; n<eventQ.size(); n++ ) {
+	  delete eventQ[n];
+	}
+	eventQ.clear();
+	delete g_mutex;
+	delete ts;
+      }
     };
 
   }
@@ -144,10 +171,7 @@ namespace OCPI {
 
 inline OCPI::Time::Emit::Time OCPI::Time::Emit::getTime()
 {
-  struct timeval tv;
-  gettimeofday(&tv,0);
-  Time t = (tv.tv_sec * 1000 * 1000) + tv.tv_usec;
-  return t;
+  return m_ts->getTime(m_init_tv);
 };
 
 
@@ -178,12 +202,9 @@ inline void OCPI::Time::Emit::processTrigger( EventTriggerRole role ) {
   case GlobalQGroupTrigger:
   case GlobalQMasterTrigger:
     {
-
-
       std::vector<OCPI::Time::Emit::EventQ*>::iterator it;
       for( it=OCPI::Time::Emit::getHeader().eventQ.begin();
-           it!=OCPI::Time::Emit::getHeader().eventQ.end(); it++ ) {  
-    
+           it!=OCPI::Time::Emit::getHeader().eventQ.end(); it++ ) {      
       }
     }
     break;
@@ -198,14 +219,14 @@ inline void OCPI::Time::Emit::processTrigger( EventTriggerRole role ) {
     m_q->current = m_q->start; \
   } \
   else { \
-  if ( (((OCPI::OS::uint8_t*)m_q->current) + size ) >= m_q->end ) { \
+  if ( (((uint8_t*)m_q->current) + size ) >= m_q->end ) { \
     m_q->current = m_q->start; \
     m_q->full = true; \
   } \
 }
 
 
-#define INIT_EVENT( id, role, s ) \
+#define INIT_EVENT( id, role, s, t )		\
   AUTO_MUTEX( m_mutex ); \
   if ( role != NoTrigger ) \
     processTrigger(role); \
@@ -214,16 +235,16 @@ inline void OCPI::Time::Emit::processTrigger( EventTriggerRole role ) {
   } \
   ADJUST_CURRENT( m_q, s ); \
   m_q->current->size = s; \
-  m_q->current->time  = getTime();        \
-  m_q->current->eid   = id;                \
+  m_q->current->time  = t;	\
+  m_q->current->eid   = id;     \
   m_q->current->owner = m_myId;
 
 
 
 #define FINI_EVENT \
-  m_q->current = reinterpret_cast<EventQEntry*>(((OCPI::OS::uint8_t*)m_q->current +  m_q->current->size )); \
+  m_q->current = reinterpret_cast<EventQEntry*>(((uint8_t*)m_q->current +  m_q->current->size )); \
   m_q->current++; \
-  if ( (OCPI::OS::uint8_t*)m_q->current >= m_q->end ) {                        \
+  if ( (uint8_t*)m_q->current >= m_q->end ) {                        \
     m_q->full = true; \
     if ( m_q->config.stopWhenFull ) { \
       m_q->done = true; \
@@ -235,12 +256,19 @@ inline void OCPI::Time::Emit::processTrigger( EventTriggerRole role ) {
 
 
 inline void OCPI::Time::Emit::emit( OCPI::Time::Emit::EventId id, 
-                                           OCPI::OS::uint64_t v,
-                                           EventTriggerRole role)
+				    uint64_t v,
+				    EventTriggerRole role)
 {        
-  //  INIT_EVENT(id, role, sizeof(OCPI::OS::uint64_t) );
+  emitT(id,v,getTime(),role);
+}
 
-  int size = sizeof(OCPI::OS::uint64_t);
+inline void OCPI::Time::Emit::emitT( OCPI::Time::Emit::EventId id, 
+				    uint64_t v,
+				    Time ptime,
+				    EventTriggerRole role)
+{        
+
+  int size = sizeof(uint64_t);
   AUTO_MUTEX( m_mutex ); 
   if ( role != NoTrigger ) 
     processTrigger(role); 
@@ -252,26 +280,23 @@ inline void OCPI::Time::Emit::emit( OCPI::Time::Emit::EventId id,
     m_q->current = m_q->start; 
   } 
   else { 
-    if ( (((OCPI::OS::uint8_t*)m_q->current) + size ) >= m_q->end ) { 
+    if ( (((uint8_t*)m_q->current) + size ) >= m_q->end ) { 
       m_q->current = m_q->start; 
       m_q->full = true; 
     } 
   }
 
   m_q->current->size = size; 
-  m_q->current->time  = getTime();        
+  m_q->current->time  = ptime;
   m_q->current->eid   = id;                
   m_q->current->owner = m_myId;
 
-
-
-  OCPI::OS::uint64_t* dp = (OCPI::OS::uint64_t*)(m_q->current + 1);
+  uint64_t* dp = (uint64_t*)(m_q->current + 1);
   *dp = v;
 
-
   m_q->current++; 
-  m_q->current = reinterpret_cast<EventQEntry*>(((OCPI::OS::uint8_t*)m_q->current + size )); 
-  if ( (OCPI::OS::uint8_t*)m_q->current >= m_q->end ) {                        
+  m_q->current = reinterpret_cast<EventQEntry*>(((uint8_t*)m_q->current + size )); 
+  if ( (uint8_t*)m_q->current >= m_q->end ) {                        
     m_q->full = true; 
     if ( m_q->config.stopWhenFull ) { 
       m_q->done = true; 
@@ -279,14 +304,16 @@ inline void OCPI::Time::Emit::emit( OCPI::Time::Emit::EventId id,
     } 
     m_q->current = m_q->start; 
   }
-
-
-  //  FINI_EVENT;
 }
 
 inline void OCPI::Time::Emit::emit( EventId id, OCPI::API::PValue& p, EventTriggerRole role )
 {
-  INIT_EVENT(id, role, sizeof(OCPI::OS::uint64_t) );
+  emitT(id,p,getTime(),role);
+}
+
+inline void OCPI::Time::Emit::emitT( EventId id, OCPI::API::PValue& p, Time t, EventTriggerRole role )
+{
+  INIT_EVENT(id, role, sizeof(uint64_t), t );
 
   OCPI::Time::SValue* dp = (OCPI::Time::SValue*)(m_q->current + 1);
 
@@ -327,8 +354,8 @@ inline void OCPI::Time::Emit::emit( EventId id, OCPI::API::PValue& p, EventTrigg
     break;    
 
   case OCPI::API::OCPI_String:
-    // NOTE:   NOT REALLY SURE WHAT TO DO WITH THIS YET !!
-    //    memcpy( &m_q->current->uvalue, &p.vString, sizeof(OCPI::OS::uint64_t) );
+    m_q->current->size = strlen(p.vString) + 1;
+    memcpy( &m_q->current[1], &p.vString, m_q->current->size );
     break;    
 
   case OCPI::API::OCPI_none:
@@ -339,14 +366,20 @@ inline void OCPI::Time::Emit::emit( EventId id, OCPI::API::PValue& p, EventTrigg
     ocpiAssert(0);
   }
 
-
   FINI_EVENT;
 }
 
 inline void OCPI::Time::Emit::emit( OCPI::Time::Emit::EventId id,
                                            EventTriggerRole role )
+{
+  emitT(id,getTime(),role);
+}
+
+inline void OCPI::Time::Emit::emitT( OCPI::Time::Emit::EventId id,
+				     Time t,
+				     EventTriggerRole role )
 {        
-  INIT_EVENT(id, role, sizeof(OCPI::OS::uint64_t) );
+  INIT_EVENT(id, role, sizeof(uint64_t),t );
   FINI_EVENT;
 }
 
@@ -355,7 +388,7 @@ namespace {
   public:
     SEmit()
       : OCPI::Time::Emit("Global"){}
-    ~SEmit(){shutdown();}
+    ~SEmit(){}
   };
 }
 
@@ -365,7 +398,7 @@ inline void OCPI::Time::Emit::sEmit( EventId id,
   getSEmit().emit( id, role );
 }
 
-inline void OCPI::Time::Emit::sEmit( EventId id, OCPI::OS::uint64_t v, EventTriggerRole role )
+inline void OCPI::Time::Emit::sEmit( EventId id, uint64_t v, EventTriggerRole role )
 {
   getSEmit().emit( id, v, role );
 }

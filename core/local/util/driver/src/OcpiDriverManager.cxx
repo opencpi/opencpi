@@ -34,6 +34,7 @@
 #include "OcpiUtilMisc.h"
 #include "OcpiDriverManager.h"
 #include "OcpiDriverApi.h"
+#include "OcpiTimeEmit.h"
 namespace OCPI {
   namespace Driver {
     namespace OU = OCPI::Util;
@@ -120,6 +121,7 @@ namespace OCPI {
 	  if (d->cleanupPosition() == i)
 	    delete d;
 	}
+      OCPI::Time::Emit::shutdown();
       delete mm;
     }
     // A static-destructor hook to perform manager cleanup.
