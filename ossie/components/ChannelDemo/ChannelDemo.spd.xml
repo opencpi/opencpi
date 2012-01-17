@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softpkg SYSTEM "../dtd/softpkg.dtd">
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<softpkg id="DCE:ac534fb0-8245-11dc-85c9-00123f63025f" name="ChannelDemo">
+    <title/>
+    <description>Adds white Gaussian noise to a signal</description> 
+    <author>
+        <name>OSSIE Project</name> 
+        <company>Mobile and Portable Radio Research Group</company> 
+        <webpage>http://www.mprg.org</webpage> 
+    </author>
+    <propertyfile type="PRF">
+        <localfile name="/xml/ChannelDemo/ChannelDemo.prf.xml"/>
+    </propertyfile>
+    <descriptor>
+        <localfile name="/xml/ChannelDemo/ChannelDemo.scd.xml"/>
+    </descriptor>
+    <implementation id="DCE:ac54cfa2-8245-11dc-afb5-00123f63025f">
+        <description>Linux implementation</description> 
+        <code type="Executable">
+            <localfile name="/bin/ChannelDemo"/>
+        </code>
+	<os name="Linux" version="2.6.26.3"/>
+        <processor name="x86"/>
+    </implementation>
+    <implementation id="DCE:89f5e5ce-33b2-4fab-8766-10d9cd8aaeca">
+	<description>Linux implementation for the powerpc architecture</description>
+	<code type="Executable">
+	    <localfile name="/bin/ChannelDemo_powerpc"/>
+	</code>
+	<os name="Linux" version="2.6.27-rc9-xlnx"/>
+	<processor name="powerpc"/>
+    </implementation>
+</softpkg>

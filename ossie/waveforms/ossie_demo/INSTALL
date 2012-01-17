@@ -1,0 +1,7 @@
+To install the waveform type:
+
+$ ./configure
+$ make
+$ make install
+
+Files will be installed relative to the /home/sca directory.

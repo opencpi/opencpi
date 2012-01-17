@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softwarecomponent SYSTEM "../xml/dtd/softwarecomponent.dtd">
+<softwarecomponent>
+	<corbaversion>2.2</corbaversion>
+	<componentrepid repid="IDL:CF/DomainManager:1.0"/>
+	<componenttype>domainmanager</componenttype>
+	<componentfeatures>
+		<supportsinterface repid="IDL:CF/DomainManager:1.0" supportsname="DomainManager"/>
+		<supportsinterface repid="IDL:CF/PropertySet:1.0" supportsname="PropertySet"/>
+	</componentfeatures>
+	<interfaces>
+		<interface repid="IDL:CF/DomainManager:1.0" name="DomainManager">
+			<inheritsinterface repid="IDL:CF/PropertySet:1.0"/>
+		</interface>
+		<interface repid="IDL:CF/PropertySet:1.0" name="PropertySet"/>
+	</interfaces>
+</softwarecomponent>

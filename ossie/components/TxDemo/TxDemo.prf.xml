@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "../dtd/properties.dtd">
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<properties>
+    <simple id="DCE:1b9ca208-8242-11dc-9ba3-00123f63025f" mode="readonly" name="packet_delay_ms" type="short">
+        <value>1000</value> 
+        <description>Delay between generated packets (milliseconds)</description> 
+        <kind kindtype="configure"/>
+    </simple>
+</properties>

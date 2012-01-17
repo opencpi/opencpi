@@ -1,0 +1,138 @@
+<!ELEMENT softpkg
+      ( title?
+	, author+
+	, description?
+	, propertyfile?
+	, descriptor?
+	, implementation+
+	, usesdevice*
+	)>
+<!ATTLIST softpkg
+	id		ID	#REQUIRED
+	name		CDATA	#REQUIRED
+	type		(sca_compliant | sca_non_compliant)  "sca_compliant"
+	version	CDATA	#IMPLIED >
+
+<!ELEMENT localfile EMPTY>
+<!ATTLIST localfile
+	name		CDATA	#REQUIRED>
+
+<!ELEMENT propertyfile
+	(localfile
+	)>
+<!ATTLIST propertyfile
+	type		CDATA	#IMPLIED>
+
+<!ELEMENT title (#PCDATA)>
+
+<!ELEMENT pkgtype (#PCDATA)>
+
+<!ELEMENT author 
+	( name*
+	, company?
+	, webpage?
+	)>
+
+<!ELEMENT name (#PCDATA)>
+
+<!ELEMENT company (#PCDATA)>
+
+<!ELEMENT webpage (#PCDATA)>
+
+<!ELEMENT description (#PCDATA)>
+
+<!ELEMENT descriptor
+	(localfile
+	)>
+<!ATTLIST descriptor
+	name		CDATA	#IMPLIED>
+
+<!ELEMENT implementation
+	( description?
+	, propertyfile?
+	, code
+	, compiler?
+	, programminglanguage?
+	, humanlanguage?
+	, runtime?
+	, ( os
+	  | processor
+	  | dependency
+	  )+
+	, usesdevice*
+	)>
+
+<!ATTLIST implementation
+	id		ID	#REQUIRED
+	aepcompliance (aep_compliant | aep_non_compliant) "aep_compliant">
+
+<!ELEMENT code 
+	( localfile
+	, entrypoint?
+	, stacksize?
+	, priority?
+	)>
+<!ATTLIST code
+	type		CDATA	#IMPLIED>
+
+<!ELEMENT entrypoint (#PCDATA)>
+
+<!ELEMENT stacksize (#PCDATA)>
+
+<!ELEMENT priority (#PCDATA)>
+
+<!ELEMENT compiler EMPTY>
+<!ATTLIST compiler
+	name		CDATA	#REQUIRED
+	version 	CDATA	#IMPLIED>
+
+<!ELEMENT programminglanguage EMPTY>
+<!ATTLIST programminglanguage
+	name		CDATA	#REQUIRED
+	version	CDATA	#IMPLIED>
+
+<!ELEMENT humanlanguage EMPTY>
+<!ATTLIST humanlanguage
+	name		CDATA	#REQUIRED >
+
+<!ELEMENT os EMPTY>
+<!ATTLIST os
+	name		CDATA	#REQUIRED
+	version	CDATA	#IMPLIED>
+
+<!ELEMENT processor EMPTY>
+<!ATTLIST processor
+	name		CDATA	#REQUIRED>
+
+<!ELEMENT dependency
+	( softpkgref
+	| propertyref
+	)>
+<!ATTLIST dependency
+	type		CDATA	#REQUIRED>
+
+<!ELEMENT runtime EMPTY>
+<!ATTLIST runtime
+	name		CDATA	#REQUIRED
+	version	CDATA	#IMPLIED>
+
+<!ELEMENT propertyref EMPTY>
+<!ATTLIST propertyref
+	refid		CDATA	#REQUIRED
+	value		CDATA	#REQUIRED>
+	
+<!ELEMENT softpkgref
+	( localfile
+	,  implref?
+	)>
+
+<!ELEMENT implref EMPTY>
+<!ATTLIST implref 
+	refid		CDATA	#REQUIRED>
+
+<!ELEMENT  usesdevice
+	( propertyref+
+	)>
+<!ATTLIST usesdevice
+	id		ID	#REQUIRED
+	type		CDATA	#REQUIRED>

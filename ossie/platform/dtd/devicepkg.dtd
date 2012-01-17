@@ -1,0 +1,70 @@
+<!ELEMENT devicepkg
+	( title?
+	, author+
+	, description?
+	, hwdeviceregistration 
+	)>
+<!ATTLIST devicepkg
+	id		ID	#REQUIRED
+	name		CDATA	#REQUIRED
+	version	CDATA	#IMPLIED >
+
+<!ELEMENT title (#PCDATA)>
+
+<!ELEMENT author 
+	( name*
+	| company?
+	| webpage?
+	)>
+
+<!ELEMENT name (#PCDATA)>
+
+<!ELEMENT company (#PCDATA)>
+
+<!ELEMENT webpage (#PCDATA)>
+
+<!ELEMENT description (#PCDATA)>
+
+<!ELEMENT hwdeviceregistration
+	( propertyfile?
+	, description
+	, manufacturer
+	, modelnumber
+	, deviceclass
+	, childhwdevice*
+     	)>
+<!ATTLIST hwdeviceregistration
+	id		ID	#REQUIRED
+	name		CDATA	#REQUIRED
+	version	CDATA	#IMPLIED>
+
+<!ELEMENT propertyfile
+	(localfile
+	)>
+<!ATTLIST propertyfile
+	type		CDATA	#IMPLIED>
+
+<!ELEMENT localfile EMPTY>
+<!ATTLIST localfile
+	name		CDATA	#REQUIRED>
+
+<!ELEMENT manufacturer (#PCDATA)>
+
+<!ELEMENT modelnumber (#PCDATA)>
+
+<!ELEMENT deviceclass 
+	(class+
+	)>
+
+<!ELEMENT class (#PCDATA)>
+
+<!ELEMENT childhwdevice
+	( hwdeviceregistration 
+	| devicepkgref
+	)>
+
+<!ELEMENT devicepkgref
+	( localfile
+	)>
+<!ATTLIST devicepkgref
+	type		CDATA	#IMPLIED>

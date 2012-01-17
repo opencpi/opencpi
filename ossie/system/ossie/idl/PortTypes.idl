@@ -1,0 +1,51 @@
+#ifndef __PORTTYPES_DEFINED
+#define __PORTTYPES_DEFINED
+/* CmIdentification
+%X% %Q% %Z% %W% */
+module PortTypes {
+
+/* This type is a CORBA unbounded sequence of Wstrings. */
+typedef sequence <wstring> WstringSequence;
+
+/* This type is a CORBA unbounded sequence of booleans. */
+typedef sequence <boolean> BooleanSequence;
+
+/* This type is a CORBA unbounded sequence of characters. */
+typedef sequence <char> CharSequence;
+
+/* This type is a CORBA unbounded sequence of doubles. */
+typedef sequence <double> DoubleSequence;
+
+#ifdef HAS_LongDouble
+/* This type is a CORBA unbounded sequence of long Doubles. */
+typedef sequence <long double> LongDoubleSequence;
+#endif
+
+#ifdef HAS_LongLong
+/* This type is a CORBA unbounded sequence of longlongs. */
+typedef sequence <long long> LongLongSequence;
+#endif
+
+/* This type is a CORBA unbounded sequence of longs. */
+typedef sequence <long> LongSequence;
+
+/* This type is a CORBA unbounded sequence of shorts. */
+typedef sequence <short> ShortSequence;
+
+/* This type is a CORBA unbounded sequence of unsigned lon longs. */
+typedef sequence <unsigned long long> UlongLongSequence;
+
+/* This type is a CORBA unbounded sequence of unsigned longs. */
+typedef sequence <unsigned long> UlongSequence;
+
+/* This type is a CORBA unbounded sequence of unsigned shorts. */
+typedef sequence <unsigned short> UshortSequence;
+
+/* This type is a CORBA unbounded sequence of wcharacters. */
+typedef sequence <wchar> WcharSequence;
+
+/* This type is a CORBA unbounded sequence of floats. */
+typedef sequence <float> FloatSequence;
+
+};
+#endif

@@ -1,0 +1,8 @@
+
+#ifndef _CUSTOMINTERFACES_IDL_
+#define _CUSTOMINTERFACES_IDL_
+
+#include "timingStatus.idl"
+#include "charArray.idl"
+
+#endif

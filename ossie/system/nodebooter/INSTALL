@@ -1,0 +1,19 @@
+The node booter installation process is the standard:
+
+./configure
+make
+su -c "make install"
+
+./configure --help returns the available configure options. The --with-omniorb
+is useful if configure can not find omniOrb on your system.
+
+Run the node booter with:
+
+nodeBooter -D -d Foo.dcd.xml
+
+This starts a Domain Manager and a Device Manager described by Foo.dcd.xml.
+
+Be sure to configure omniNames properly. For more information see:
+
+http://ossie.mprg.org/InstallOmniOrb
+

@@ -1,0 +1,10 @@
+prefix=/usr/local
+includedir=${prefix}/include
+libdir=${prefix}/lib
+
+Name: standardInterfaces-metadata
+Description: Interface descriptions for OSSIE core framework components
+Requires:
+Version: 0.6.0
+Libs: -L${libdir} -lstandardInterfaces_metadata
+Cflags: -I${includedir}

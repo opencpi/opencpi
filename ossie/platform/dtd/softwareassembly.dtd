@@ -1,0 +1,206 @@
+<!ELEMENT softwareassembly
+	( description?
+	, componentfiles
+	, partitioning
+	, assemblycontroller
+	, connections?
+	, externalports?
+	)>
+<!ATTLIST softwareassembly
+	id		ID	#REQUIRED
+	name		CDATA	#IMPLIED>
+
+<!ELEMENT description (#PCDATA)>
+
+<!ELEMENT componentfiles 
+	( componentfile+
+	)>
+
+<!ELEMENT componentfile
+	( localfile 
+	)>
+<!ATTLIST componentfile
+	id		ID	#REQUIRED
+	type		CDATA	#IMPLIED>
+
+<!ELEMENT localfile EMPTY>
+<!ATTLIST localfile
+	name		CDATA	#REQUIRED>
+
+<!ELEMENT partitioning 
+	( componentplacement
+	|  hostcollocation
+	)*>
+
+<!ELEMENT componentplacement 
+	( componentfileref
+	, componentinstantiation+
+	)>
+
+<!ELEMENT componentfileref  EMPTY>
+<!ATTLIST componentfileref
+	refid		CDATA	#REQUIRED>
+
+<!ELEMENT componentinstantiation
+	( usagename?
+	, componentproperties?
+	, findcomponent?
+	)>
+<!ATTLIST componentinstantiation
+	id		ID 	#REQUIRED>
+
+<!ELEMENT usagename (#PCDATA)>
+
+<!ELEMENT componentproperties 
+	( simpleref
+	| simplesequenceref
+	| structref
+	| structsequenceref
+	)+ >
+
+<!ELEMENT findcomponent
+	( componentresourcefactoryref
+	| namingservice
+	)>
+
+<!ELEMENT componentresourcefactoryref
+	( resourcefactoryproperties?
+	)>
+<!ATTLIST componentresourcefactoryref 
+	refid		CDATA	#REQUIRED>
+
+<!ELEMENT devicethatloadedthiscomponentref EMPTY>
+<!ATTLIST devicethatloadedthiscomponentref 
+	refid		CDATA	#REQUIRED>
+
+<!ELEMENT deviceusedbythiscomponentref EMPTY>
+<!ATTLIST deviceusedbythiscomponentref 
+	refid		CDATA	#REQUIRED
+	usesrefid	CDATA	#REQUIRED>
+
+<!ELEMENT resourcefactoryproperties 
+	( simpleref
+	| simplesequenceref
+	| structref
+	| structsequenceref
+	)+ >
+
+<!ELEMENT simpleref EMPTY>
+<!ATTLIST simpleref
+	refid		CDATA	#REQUIRED
+	value		CDATA	#REQUIRED>
+		
+<!ELEMENT simplesequenceref
+	(values
+	)>
+<!ATTLIST simplesequenceref
+	refid		CDATA	#REQUIRED>
+
+<!ELEMENT structref
+	(simpleref+        
+	)>
+<!ATTLIST structref
+	refid		CDATA	#REQUIRED>
+
+<!ELEMENT structsequenceref
+	( structvalue+
+	)>
+<!ATTLIST structsequenceref
+	refid		CDATA	#REQUIRED>
+
+<!ELEMENT structvalue
+	(simpleref+
+	)>
+		
+<!ELEMENT values
+	( value+ 
+	)>
+		
+<!ELEMENT value (#PCDATA)>
+
+<!ELEMENT componentinstantiationref EMPTY>
+<!ATTLIST componentinstantiationref 
+	refid		CDATA	#REQUIRED>
+
+<!ELEMENT findby
+	( namingservice
+	| stringifiedobjectref
+	| domainfinder
+	)>
+
+<!ELEMENT namingservice EMPTY>
+<!ATTLIST namingservice
+	name 		CDATA	#REQUIRED>
+
+<!ELEMENT stringifiedobjectref (#PCDATA)>
+
+<!ELEMENT domainfinder EMPTY>
+<!ATTLIST domainfinder
+	type		CDATA	#REQUIRED
+	name		CDATA	#IMPLIED>
+
+<!ELEMENT hostcollocation
+	( componentplacement
+	)+>
+<!ATTLIST hostcollocation
+	id		ID	#IMPLIED
+	name		CDATA	#IMPLIED>
+
+<!ELEMENT assemblycontroller
+	( componentinstantiationref
+	)>
+
+<!ELEMENT connections
+	( connectinterface*
+	)>
+
+<!ELEMENT connectinterface
+	( usesport
+	, ( providesport
+	  | componentsupportedinterface
+	  | findby
+	  )
+	)>
+<!ATTLIST connectinterface
+	id 		ID	#IMPLIED>
+
+<!ELEMENT usesport
+	( usesidentifier
+	, (componentinstantiationref
+	   | devicethatloadedthiscomponentref
+	   | deviceusedbythiscomponentref
+	   | findby
+	   )
+	)>
+
+<!ELEMENT usesidentifier (#PCDATA)>
+
+<!ELEMENT providesport
+	( providesidentifier
+	, ( componentinstantiationref
+	  | devicethatloadedthiscomponentref
+	  | deviceusedbythiscomponentref
+	  | findby 
+        )
+	)>
+
+<!ELEMENT providesidentifier (#PCDATA)>
+
+<!ELEMENT componentsupportedinterface
+	( supportedidentifier
+	, ( componentinstantiationref
+	  | findby
+	  )
+	)>
+
+<!ELEMENT supportedidentifier (#PCDATA)>
+
+<!ELEMENT externalports 
+	(port+
+	)>
+
+<!ELEMENT port
+	( description?
+	, (usesidentifier | providesidentifier | supportedidentifier)
+	, componentinstantiationref
+	)>

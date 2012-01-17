@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<deploymentenforcement>
+    <application id="DCE:438bffd7-cf7d-4f29-b0bc-e66303d25a84" name="ossie_demo"/>
+    <deviceassignmentsequence>
+        <deviceassignmenttype>
+            <componentid>DCE:9530783a-824a-11dc-9c95-00123f63025f</componentid> 
+            <assigndeviceid>DCE:5ba336ee-aaaa-aaaa-aaaa-00123f573a7f</assigndeviceid> 
+        </deviceassignmenttype>
+        <deviceassignmenttype>
+            <componentid>DCE:9a75af54-824a-11dc-9a77-00123f63025f</componentid> 
+            <assigndeviceid>DCE:5ba336ee-aaaa-aaaa-aaaa-00123f573a7f</assigndeviceid> 
+        </deviceassignmenttype>
+        <deviceassignmenttype>
+            <componentid>DCE:9c3f3972-824a-11dc-af99-00123f63025f</componentid> 
+            <assigndeviceid>DCE:5ba336ee-aaaa-aaaa-aaaa-00123f573a7f</assigndeviceid> 
+        </deviceassignmenttype>
+    </deviceassignmentsequence>
+</deploymentenforcement>

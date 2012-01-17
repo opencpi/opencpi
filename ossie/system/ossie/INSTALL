@@ -1,0 +1,39 @@
+##################################################
+# Instructions for Installing OSSIE
+# Date: 2-27-06
+##################################################
+
+Before installing the dependencies check the the path
+/usr/local/lib appears in the file /etc/ld.so.conf. If not, add the
+path to the bottom of the file.
+
+This is what a ld.so.conf looks like:
+
+include ld.so.conf.d/*.conf
+/usr/X11R6/lib
+/usr/lib/wine
+/usr/local/lib/img1.3
+/usr/local/lib
+
+
+Dependencies (see http://ossie.mprg.org for more on installing these)
+* OmniORB
+
+
+************************
+** Installing OSSIE **
+************************
+cd to directory where you want OSSIE to be installed
+suggested /home/<user>/src (we will assume this is where you are from here on out)
+
+download the tar.gz from
+http://ossie.mprg.org
+
+% cd /path/to/ossie_src
+% tar -xzvf <ossie tar.gz file>
+
+% cd ossie
+% ./configure
+% make
+% su -c "make install"
+

@@ -1,0 +1,17 @@
+Makefile
+Makefile.in
+complexDouble.h
+complexChar.h
+FM_Control.h
+realDouble.h
+realChar.h
+complexLong.h
+complexShort.h
+complexFloat.h
+Radio_Control.h
+stereoSound.h
+realLong.h
+realShort.h
+realFloat.h
+*.swp
+*.bak

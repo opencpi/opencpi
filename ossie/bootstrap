@@ -1,0 +1,41 @@
+#!/bin/sh
+
+TOPDIR=$PWD
+listdirs="system/standardInterfaces system/customInterfaces system/c_wavLoader system/SigProc platform/domain platform/dtd platform/nodes/default_GPP_node waveforms/ossie_demo components/amplifier components/ChannelDemo components/RxDemo components/TxDemo"
+listboostdirs="system/ossie system/nodebooter platform/GPP"
+listpythondirs=""
+for i in $TOPDIR ${listdirs}
+do
+ cd $i
+ echo $PWD
+ libtoolize --force
+ rm -f config.cache
+ aclocal
+ autoconf
+ automake --foreign --add-missing
+ cd $TOPDIR
+done
+
+for i in $TOPDIR ${listboostdirs}
+do
+ cd $i
+ echo $PWD
+ libtoolize --force
+ rm -f config.cache
+ aclocal -I $TOPDIR/boost_m4
+ autoconf
+ automake --foreign --add-missing
+ cd $TOPDIR
+done
+
+for j in ${listpythondirs}
+do
+ cd $j
+ echo $PWD
+ rm -f config.cache
+ aclocal
+ autoconf
+ automake --foreign --add-missing
+ cd $TOPDIR
+done
+

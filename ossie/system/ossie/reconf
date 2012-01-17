@@ -1,0 +1,7 @@
+#!/bin/sh
+
+libtoolize --force
+rm -f config.cache autom4te*.cache
+aclocal -I config
+autoconf
+automake --foreign --add-missing

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softpkg SYSTEM "../dtd/softpkg.dtd">
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<softpkg type="sca_compliant" name="amplifier" id="DCE:4411cf24-7a55-11db-9ed5-00123f573a7f">
+    <title>amplifier component version 0.6.2</title>
+    <description>amplifier with independent integer I and Q gains, v0.6.2</description>
+    <author>
+        <name>OSSIE Project</name> 
+        <company>Mobile and Portable Radio Research Group</company> 
+        <webpage>http://www.mprg.org</webpage> 
+    </author>
+    <propertyfile type="PRF">
+        <localfile name="/xml/amplifier/amplifier.prf.xml"/>
+    </propertyfile>
+    <descriptor>
+        <localfile name="/xml/amplifier/amplifier.scd.xml"/>
+    </descriptor>
+    <implementation id="DCE:4412b5ce-7a55-11db-9545-00123f573a7f" aepcompliance="aep_compliant">
+        <description>x86 Implementation</description> 
+        <code type="Executable">
+            <localfile name="/bin/amplifier"/>
+        </code>
+        <os name="Linux" version="2.6.26.3"/>
+        <processor name="x86"/>
+    </implementation>
+</softpkg>

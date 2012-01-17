@@ -1,0 +1,10 @@
+To install:
+
+    * run the setup.py script:
+        $ python setup.py install
+
+    * or run the autoconf scripts:
+        $ ./reconf
+        $ ./configure
+        $ make install
+

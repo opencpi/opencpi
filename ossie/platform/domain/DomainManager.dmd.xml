@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE domainmanagerconfiguration SYSTEM "../xml/dtd/domainmanagerconfiguration.dtd">
+<domainmanagerconfiguration id="OSSIE" name="ossieDomainManager">
+<description>OSSIE DomainManager Configuration File</description>
+<domainmanagersoftpkg >
+    <localfile name="/domain/DomainManager.spd.xml"/>
+</domainmanagersoftpkg>
+</domainmanagerconfiguration>
+
+

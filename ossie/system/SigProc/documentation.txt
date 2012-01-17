@@ -1,0 +1,94 @@
+/*=========================================================================
+
+         Documentation for the OSSIE Signal Processing Library
+
+=========================================================================*/
+
+/*! \mainpage Signal Processing Library
+
+\section description  Basic description
+The Signal Processing Library (SigProc) is intended to provide a library of
+DSP algorithms commonly used within radio communications.
+
+\section installation Installation
+
+\verbatim
+$ ./reconf
+$ ./configure
+$ make
+# make install
+\endverbatim
+
+If installing the libraries for the first time you will also need to link the
+libraries by running the following command with root permissions
+\verbatim
+# /sbin/ldconfig
+\endverbatim
+
+Additionally, you may verify that this version of SigProc passes the included
+autotest scripts by running cxxtest (http://cxxtest.sourceforge.net/), viz.
+
+\verbatim
+$ make check
+\endverbatim
+
+\subsection linking Linking to Components
+If generating a component with OWD, you will need to add the following to your
+\c configure.ac file between <tt>AC_LANG_PUSH([C++])</tt> and
+\c AC_LANG_POP,
+
+\verbatim
+AC_CHECK_LIB([sigproc], [main], [], [AC_MSG_ERROR([cannot find sigproc library])])
+AC_CHECK_HEADERS([sigproc/SigProc.h], [], [AC_MSG_ERROR([cannot find sigproc library header files])])
+\endverbatim
+
+\subsection dependencies Software Build Dependencies
+SigProc relies on the following external software packages...
+
+\section usage Usage
+
+Add the following to your class header file:
+\code
+#include "sigproc/SigProc.h"
+\endcode
+
+\subsection ExampleRRCFilter Example: design a root raised-cosine filter
+\code
+// A simple SigProc example: examplerrcfilter.cpp
+
+#include "sigproc/SigProc.h"
+
+int main() {
+    unsigned int k(4);              // samples per symbol
+    unsigned int m(3);              // filter delay (symbols)
+    float beta(0.3);                // excess bandwidth factor
+    
+    unsigned int h_len(2*k*m+1);    // filter length
+    float * h = new float[h_len];   // array for filter coefficients
+
+    // Calculate filter coefficients
+    SigProc::DesignRRCFilter(k, m, beta, h);
+
+    // Print filter coefficients to the screen
+    for (unsigned int i=0; i<h_len; i++) 
+        printf("h[%d] = %f\n", i, h[i]);
+    
+    // Clean up memory
+    delete [] h;
+    
+    return 0;
+}   
+\endcode
+
+Compile and run
+\verbatim
+$ g++ -lsigproc examplerrcfilter.cpp -o ExampleRRCFilter
+$ ./ExampleRRCFilter
+\endverbatim
+
+\section status Status and History
+
+\section references References
+For a complete list of references, please see the \ref cite page.
+*/
+

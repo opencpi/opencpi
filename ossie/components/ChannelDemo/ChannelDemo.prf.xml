@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "../dtd/properties.dtd">
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<properties>
+    <simple id="DCE:a337c5f0-8245-11dc-860f-00123f63025f" mode="readonly" name="noise_std_dev" type="short">
+        <value>1000</value> 
+        <description>Standard deviation of noise</description> 
+        <kind kindtype="configure"/>
+    </simple>
+    <simple id="DCE:1c4a3eb9-9e3a-4c20-849a-90c6eaef9e5a" mode="readonly" name="phase_offset" type="float">
+        <value>0</value> 
+        <description>Phase offset (degrees)</description> 
+        <kind kindtype="configure"/>
+    </simple>
+</properties>

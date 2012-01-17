@@ -1,0 +1,71 @@
+<!ELEMENT softwarecomponent
+	( corbaversion
+	, componentrepid
+	, componenttype
+	, componentfeatures
+	, interfaces
+	, propertyfile?
+	)>
+
+<!ELEMENT propertyfile
+	(localfile
+	)>
+<!ATTLIST propertyfile
+	type		CDATA	#IMPLIED>
+
+<!ELEMENT localfile EMPTY>
+<!ATTLIST localfile
+	name		CDATA	#REQUIRED>
+
+<!ELEMENT corbaversion (#PCDATA)> 
+
+<!ELEMENT componentrepid EMPTY>
+<!ATTLIST componentrepid
+	repid		CDATA	#REQUIRED>
+
+<!ELEMENT componenttype (#PCDATA)>
+
+<!ELEMENT componentfeatures
+	( supportsinterface* 
+	, ports
+	)>
+
+<!ELEMENT supportsinterface EMPTY>
+<!ATTLIST supportsinterface
+	repid			CDATA	#REQUIRED
+ 	supportsname	CDATA	#REQUIRED>
+
+<!ELEMENT ports
+	(provides   
+	| uses
+	)*> 
+
+<!ELEMENT provides
+	( porttype*)>
+<!ATTLIST provides
+	repid			CDATA	#REQUIRED
+	providesname	CDATA	#REQUIRED>
+
+<!ELEMENT uses
+	( porttype*)>
+<!ATTLIST uses
+	repid		CDATA	#REQUIRED
+	usesname	CDATA	#REQUIRED>
+
+<!ELEMENT porttype EMPTY>
+<!ATTLIST porttype
+    	type	( data | control | responses	| test ) 	#REQUIRED>
+
+<!ELEMENT interfaces
+	( interface+ 
+	)>
+
+<!ELEMENT interface
+	( inheritsinterface*)>
+<!ATTLIST interface
+	repid		CDATA	#REQUIRED
+	name		CDATA	#REQUIRED>
+
+<!ELEMENT inheritsinterface EMPTY>
+<!ATTLIST inheritsinterface
+	repid		CDATA	#REQUIRED>

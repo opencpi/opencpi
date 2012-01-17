@@ -1,0 +1,39 @@
+AC_INIT(nodebooter, 0.6.2)
+AM_INIT_AUTOMAKE(nostdinc)
+
+AC_DEFINE(_GNU_SOURCE) 
+AC_CONFIG_MACRO_DIR([m4])
+LT_INIT
+AC_PROG_CXX
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+AC_PROG_MAKE_SET
+
+AC_HEADER_SYS_WAIT
+
+AC_FUNC_FORK
+
+AC_LANG_PUSH([C++])
+
+AC_CHECK_LIB([omniORB4], [main], [], [AC_MSG_ERROR([cannot find omniORBi4 library])])
+AC_CHECK_LIB([omnithread], [main], [], [AC_MSG_ERROR([cannot find omnithread library])])
+AC_CHECK_LIB([omniDynamic4], [main], [], [AC_MSG_ERROR([cannot find omniDynamic4 library])])
+AC_CHECK_HEADERS([omniORB4/CORBA.h], [], [AC_MSG_ERROR([cannot find omniORB4 header files])])
+
+AX_BOOST_BASE([1.35])
+AX_BOOST_FILESYSTEM
+CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+CFLAGS="$CFLAGS $BOOST_CPPFLAGS"
+
+AC_LANG_POP
+
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig"
+# PKG_CHECK_MODULES(OSSIE, ossie >= 0.6.0,,exit)
+CXXFLAGS="$CXXFLAGS $OSSIE_CFLAGS"
+# LIBS="$LIBS $OSSIE_LIBS"
+# IDL_FLAGS="$OSSIE_CFLAGS"
+# AC_SUBST(IDL_FLAGS)
+
+AC_CONFIG_FILES(Makefile)
+
+AC_OUTPUT

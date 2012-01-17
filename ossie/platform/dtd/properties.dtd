@@ -1,0 +1,124 @@
+<!ELEMENT properties
+     	 ( description?
+     	 , 	( simple
+		| simplesequence
+		| test
+		| struct
+		| structsequence)+
+       )> 
+
+<!ELEMENT simple 
+	( description?
+	, value?
+	, units?
+	, range?
+	, enumerations?
+	, kind*
+	, action?
+	)>
+<!ATTLIST simple
+	id	ID							#REQUIRED
+	type	( boolean	| char	| double | float
+		| short	| long	| objref | octet
+		| string	| ulong	| ushort )		#REQUIRED
+	name	CDATA							#IMPLIED
+	mode	( readonly	| readwrite | writeonly)	"readwrite">
+
+<!ELEMENT description (#PCDATA)>
+
+<!ELEMENT value (#PCDATA)>
+
+<!ELEMENT units (#PCDATA)>
+
+<!ELEMENT range EMPTY>
+<!ATTLIST range
+	min		CDATA	#REQUIRED
+	max		CDATA	#REQUIRED>
+
+<!ELEMENT enumerations
+	( enumeration+
+	)>
+
+<!ELEMENT enumeration EMPTY>
+<!ATTLIST enumeration
+	label		CDATA	#REQUIRED
+	value		CDATA	#IMPLIED>
+
+<!ELEMENT kind EMPTY>
+<!ATTLIST kind
+	kindtype	(allocation | configure | test | execparam | factoryparam) 
+"configure">
+
+<!ELEMENT action EMPTY>
+<!ATTLIST action
+	type	( eq  | ne | gt  |  lt | ge | le | external ) "external">
+
+<!ELEMENT simplesequence 
+	( description?
+	, values?
+	, units?
+	, range?
+	, kind*
+	, action?
+	)>
+<!ATTLIST simplesequence
+	id	ID						#REQUIRED
+	type  ( boolean | char   | double | float
+	      | short  | long   | objref | octet
+	      | string | ulong  | ushort )		#REQUIRED
+	name	CDATA						#IMPLIED
+	mode	(readonly | readwrite | writeonly)	"readwrite">
+
+<!ELEMENT values
+	( value+ 
+	)>
+
+<!ELEMENT test 
+	( description
+      , inputValue?
+	, resultValue
+	)>
+<!ATTLIST test
+	id		CDATA #REQUIRED>
+
+<!ELEMENT inputValue
+	( simple+
+	)>
+
+<!ELEMENT resultValue
+	( simple+
+	)>
+
+<!ELEMENT struct 
+	( description?
+	, simple+
+	, configurationkind?
+	)>
+<!ATTLIST struct
+	id		ID	#REQUIRED
+	name		CDATA	#IMPLIED
+	mode		(readonly | readwrite | writeonly)  "readwrite">
+
+<!ELEMENT configurationkind EMPTY>
+<!ATTLIST configurationkind
+	kindtype	(configure | factoryparam)	"configure">
+
+<!ELEMENT structsequence
+	( description?
+	, structvalue+
+	, configurationkind?
+	)>
+<!ATTLIST structsequence
+	id       	ID	#REQUIRED
+	structrefid CDATA	#REQUIRED
+	name		CDATA	#IMPLIED
+	mode		(readonly | readwrite | writeonly)  "readwrite">
+		
+<!ELEMENT structvalue
+	(simpleref+	        
+	)>
+		
+<!ELEMENT simpleref EMPTY>
+<!ATTLIST simpleref
+	refid 	CDATA	#REQUIRED
+	value 	CDATA	#REQUIRED>

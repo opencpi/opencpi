@@ -1,0 +1,8 @@
+prefix=/sdr
+includedir=${prefix}/include
+
+Name: customInterfaces
+Description: Interface descriptions for components with non-standard interfaces
+Requires:
+Version: 0.6.2
+Cflags: -I${includedir}

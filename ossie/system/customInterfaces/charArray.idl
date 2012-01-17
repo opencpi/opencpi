@@ -1,0 +1,14 @@
+
+#ifndef _CHARARRAY_IDL_
+#define _CHARARRAY_IDL_
+
+#include "PortTypes.idl"
+
+module customInterfaces {
+
+    interface charArray {
+        void pushPacket(in PortTypes::CharSequence I);
+    };
+};
+
+#endif

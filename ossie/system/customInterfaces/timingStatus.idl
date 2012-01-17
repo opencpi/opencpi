@@ -1,0 +1,14 @@
+
+#ifndef _TIMINGSTATUS_IDL_
+#define _TIMINGSTATUS_IDL_
+
+#include "PortTypes.idl"
+
+module customInterfaces {
+
+  interface timingStatus {
+    void send_timing_event(in string component_name, in string port_name, in string function_name, in string description, in long time_s, in long time_us, in long number_samples);
+  };
+};
+
+#endif

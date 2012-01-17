@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softwarecomponent SYSTEM "../dtd/softwarecomponent.dtd">
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<softwarecomponent>
+    <corbaversion>2.2</corbaversion> 
+    <componentrepid repid="IDL:CF/Resource:1.0"/>
+    <componenttype>resource</componenttype> 
+    <componentfeatures>
+        <supportsinterface supportsname="Resource" repid="IDL:CF/Resource:1.0"/>
+        <supportsinterface supportsname="LifeCycle" repid="IDL:CF/LifeCycle:1.0"/>
+        <supportsinterface supportsname="PortSupplier" repid="IDL:CF/PortSupplier:1.0"/>
+        <supportsinterface supportsname="PropertySet" repid="IDL:CF/PropertySet:1.0"/>
+        <supportsinterface supportsname="TestableObject" repid="IDL:CF/TestableObject:1.0"/>
+        <ports>
+            <provides providesname="dataIn" repid="IDL:standardInterfaces/complexShort:1.0">
+                <porttype type="data"/>
+            </provides>
+            <uses usesname="dataOut" repid="IDL:standardInterfaces/complexShort:1.0">
+                <porttype type="data"/>
+            </uses>
+        </ports>
+    </componentfeatures>
+    <interfaces>
+        <interface name="Resource" repid="IDL:CF/Resource:1.0">
+            <!--[Inherited interface IDL:CF/LifeCycle:1.0]--> 
+            <inheritsinterface repid="IDL:CF/LifeCycle:1.0"/>
+            <!--[Inherited interface IDL:CF/PortSupplier:1.0]--> 
+            <inheritsinterface repid="IDL:CF/PortSupplier:1.0"/>
+            <!--[Inherited interface IDL:CF/PropertySet:1.0]--> 
+            <inheritsinterface repid="IDL:CF/PropertySet:1.0"/>
+            <!--[Inherited interface IDL:CF/TestableObject:1.0]--> 
+            <inheritsinterface repid="IDL:CF/TestableObject:1.0"/>
+        </interface>
+        <interface name="complexShort" repid="IDL:standardInterfaces/complexShort:1.0"/>
+    </interfaces>
+</softwarecomponent>

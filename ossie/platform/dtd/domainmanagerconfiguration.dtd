@@ -1,0 +1,26 @@
+<!ELEMENT domainmanagerconfiguration (description?, domainmanagersoftpkg, services?)>
+<!ATTLIST domainmanagerconfiguration
+	id ID #REQUIRED
+	name CDATA #REQUIRED
+>
+<!ELEMENT description (#PCDATA)>
+<!ELEMENT domainmanagersoftpkg (localfile)>
+<!ELEMENT localfile EMPTY>
+<!ATTLIST localfile
+	name CDATA #REQUIRED
+>
+<!ELEMENT services (service+)>
+<!ELEMENT service (usesidentifier, findby)>
+<!ELEMENT usesidentifier (#PCDATA)>
+<!ELEMENT findby (namingservice | stringifiedobjectref | domainfinder)>
+<!ELEMENT namingservice EMPTY>
+<!ATTLIST namingservice
+	name CDATA #REQUIRED
+>
+<!ELEMENT stringifiedobjectref (#PCDATA)>
+<!ELEMENT domainfinder EMPTY>
+<!ATTLIST domainfinder
+	type CDATA #REQUIRED
+	name CDATA #IMPLIED
+>
+

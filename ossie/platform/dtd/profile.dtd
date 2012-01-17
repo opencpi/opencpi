@@ -1,0 +1,4 @@
+<!ELEMENT profile EMPTY>
+<!ATTLIST profile
+        filename     CDATA #REQUIRED
+        type         CDATA #IMPLIED>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softpkg SYSTEM "../dtd/softpkg.dtd">
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<softpkg id="DCE:23ecc262-8242-11dc-9d05-00123f63025f" name="TxDemo">
+    <title/>
+    <description>This component generates QPSK symbols</description> 
+    <author>
+        <name>OSSIE Project</name> 
+        <company>Mobile and Portable Radio Research Group</company> 
+        <webpage>http://www.mprg.org</webpage> 
+    </author>
+    <propertyfile type="PRF">
+        <localfile name="/xml/TxDemo/TxDemo.prf.xml"/>
+    </propertyfile>
+    <descriptor>
+        <localfile name="/xml/TxDemo/TxDemo.scd.xml"/>
+    </descriptor>
+    <implementation id="DCE:23ed8652-8242-11dc-aba9-00123f63025f">
+        <description>Linux implementation</description> 
+        <code type="Executable">
+            <localfile name="/bin/TxDemo"/>
+        </code>
+	<os name="Linux" version="2.6.26.3"/>
+        <processor name="x86"/>
+    </implementation>
+    <implementation id="DCE:aa6fbbb6-72f1-484d-9f6d-c9cdb4ba9c53">
+	<description>Linux implementation for the powerpc architecture</description>
+	<code type="Executable">
+	    <localfile name="/bin/TxDemo_powerpc"/>
+	</code>
+	<os name="Linux" version="2.6.27-rc9-xlnx"/>
+	<processor name="powerpc"/>
+    </implementation>
+    <implementation id="DCE:f559a6a6-a1b3-4acd-b926-d194be1b9930">
+        <description>Virtex4 FPGA Implementation, Controller Component</description>
+        <propertyfile type="PRF">
+            <localfile name="/xml/TxDemo/TxDemo_v4.prf.xml"/>
+        </propertyfile>
+        <code type="Executable">
+            <localfile name="/bin/TxDemo_v4"/>
+        </code>
+        <os name="Linux" version="2.6.27-rc9-xlnx"/>
+        <processor name="powerpc"/>
+        <!-- this id points to the impl ID in the XilinxFPGA SPD -->
+        <dependency type="Device" softpkgref="DCE:e6d7ca42-e4c9-482c-a9ed-23901f15a465"/>
+    </implementation>    
+</softpkg>

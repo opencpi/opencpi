@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE deviceconfiguration SYSTEM "../../xml/dtd/deviceconfiguration.dtd">
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<deviceconfiguration name="DeviceManager" id="DCE:6bba314a-d95c-11db-a834-00123f573a7f">
+    <devicemanagersoftpkg>
+        <localfile name="/nodes/default_GPP_node/DeviceManager.spd.xml"/>
+    </devicemanagersoftpkg>
+    <componentfiles>
+        <!--Device Definitions--> 
+        <componentfile type="SPD" id="GPP1_51b862bc-d95c-11db-8b8d-00123f573a7f">
+            <localfile name="/xml/GPP/GPP.spd.xml"/>
+        </componentfile>
+    </componentfiles>
+    <partitioning>
+        <componentplacement>
+            <componentfileref refid="GPP1_51b862bc-d95c-11db-8b8d-00123f573a7f"/>
+            <componentinstantiation id="DCE:5ba336ee-aaaa-aaaa-aaaa-00123f573a7f">
+                <usagename>GPP1</usagename> 
+            </componentinstantiation>
+        </componentplacement>
+    </partitioning>
+    <domainmanager>
+        <namingservice name="DomainName1/DomainManager"/>
+    </domainmanager>
+</deviceconfiguration>

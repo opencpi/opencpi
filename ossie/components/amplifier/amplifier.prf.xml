@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "../dtd/properties.dtd">
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<properties>
+    <simple type="float" id="DCE:06b88d4f-dd38-44e6-bc49-82db0eba5bc6" name="I_gain" mode="readonly">
+        <description>Gain for the I channel.  Linear.</description> 
+        <value>1</value> 
+        <kind kindtype="configure"/>
+    </simple>
+    <simple type="float" id="DCE:df91b1a8-9c83-44b4-bf2c-0dbeacb2b6f4" name="Q_gain" mode="readonly">
+        <description>Gain for the Q channel.  Linear.</description> 
+        <value>1</value> 
+        <kind kindtype="configure"/>
+    </simple>
+</properties>

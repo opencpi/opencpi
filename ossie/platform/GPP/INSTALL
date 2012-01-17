@@ -1,0 +1,10 @@
+The GPP installation process is the standard:
+
+./configure
+make
+su -c "make install"
+
+./configure --help returns the available configure options. You can change
+the install directory from the default /home/sca using the --prefix=/var/sca
+option.
+

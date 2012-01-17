@@ -1,0 +1,38 @@
+This file outlines the necessary steps needed to take advantage of the wavLoader
+
+Requirements:
+
+1. Python v2.0 or better
+
+  - wavLoader requires the xml.dom.minidom package:
+      http://docs.python.org/lib/module-xml.dom.minidom.html
+
+
+2. Python bindings for omniORB
+
+  - download and install omniORBpy:
+      http://omniorb.sourceforge.net/index.html
+  - create a new directory in the OSSIE src directory
+    #cd <path to ossie src>/
+    #mkdir idl_py
+    #cd idl_py
+    #cp ../idl/*.idl .
+    #omniidl -bpython *.idl
+
+  - now let the python interpreter know about the new bindings
+    * create: /usr/lib/python2.X/site-packages/ossie.pth
+    * add the following two lines to the ossie.pth file:
+        /usr/local/lib/python2.X/site-packages
+        <path to ossie src>/idl_py
+   * in both of the above cases the 2.X should be replaced by your version of python
+
+3. Using wavLoader
+  
+  - install using automake:
+      $ ./reconf
+      $ ./configure
+      $ sudo make install
+
+  - currently you just call wavLoader with the device assignment sequence
+    as a command line argument
+    #python wavLoader.py <filename_DAS.xml> 

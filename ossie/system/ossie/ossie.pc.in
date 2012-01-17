@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: ossie
+Description: OSSIE Core Framework
+Requires:
+Version: @VERSION@
+Libs: -L${libdir} -lossieidl -lossieparser -lossiecf
+Cflags: -I${includedir}

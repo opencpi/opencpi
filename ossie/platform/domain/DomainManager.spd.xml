@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softpkg SYSTEM "../xml/dtd/softpkg.dtd">
+<softpkg id="DCE:82f6515a-de05-47f0-8e7a-1c9f621c00ee" name="DomainManager">
+	<author>Shereef Sayed</author>
+	<descriptor>
+		<localfile name="domain/DomainManager.scd.xml"/>
+	</descriptor>
+	<implementation id="DCE:d3e8aba5-4421-45c5-9be6-372b763883e7">
+		<description>implementation of a Domain Manager</description>
+		<code type="SharedLibrary">
+			<localfile name="/usr/local/lib/ossiecf.so"/>
+		</code>
+		<compiler name="gcc" version="4.3.0"/>
+		<programminglanguage name="c++"/>
+		<os name="Linux" version="2.6.26.3"/>
+	</implementation>
+</softpkg>

@@ -1,0 +1,69 @@
+//Source file: StandardEvent.idl
+#ifndef __STANDARDEVENT_DEFINED
+#define __STANDARDEVENT_DEFINED
+/* CmIdentification
+%X% %Q% %Z% %W% */
+module StandardEvent {
+/* Type StateChangeCategoryType is an enumeration that is utilized in the
+StateChangeEventType. It is used to identify the category of state change
+that has occurred. */
+enum StateChangeCategoryType {
+ADMINISTRATIVE_STATE_EVENT,
+OPERATIONAL_STATE_EVENT,
+USAGE_STATE_EVENT
+};
+/* Type StateChangeType is an enumeration that is utilized in the
+StateChangeEventType. It is used to identify the specific states of the
+event source before and after the state change occurred. */
+enum StateChangeType {
+LOCKED,
+UNLOCKED,
+SHUTTING_DOWN,
+ENABLED,
+DISABLED,
+IDLE,
+ACTIVE,
+BUSY
+};
+/* Type StateChangeEventType is a structure used to indicate that the state of the
+event source has changed. The event producer will send this structure into an
+event channel on behalf of the event source. */
+struct StateChangeEventType {
+string producerId;
+string sourceId;
+StateChangeCategoryType stateChangeCategory;
+StateChangeType stateChangeFrom;
+StateChangeType stateChangeTo;
+};
+/* Type SourceCategoryType is an enumeration that is utilized in the
+DomainManagementObjectAddedEventType and
+DomainManagementObjectRemovedEventType. Is is used to
+identify the type of object that has been added to or removed from the domain. */
+enum SourceCategoryType {
+DEVICE_MANAGER,
+DEVICE,
+APPLICATION_FACTORY,
+APPLICATION,
+SERVICE
+};
+/* Type DomainManagementObjectRemovedEventType is a structure used to
+indicate that the event source has been removed from the domain. The event
+producer will send this structure into an event channel on behalf of the event source. */
+struct DomainManagementObjectRemovedEventType {
+string producerId;
+string sourceId;
+string sourceName;
+SourceCategoryType sourceCategory;
+};
+/* Type DomainManagementObjectAddedEventType is a structure used to indicate
+that the event source has been added to the domain. The event
+producer will send this structure into an event channel on behalf of the event source. */
+struct DomainManagementObjectAddedEventType {
+string producerId;
+string sourceId;
+string sourceName;
+SourceCategoryType sourceCategory;
+Object sourceIOR;
+};
+};
+#endif

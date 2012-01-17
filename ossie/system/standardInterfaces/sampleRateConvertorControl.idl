@@ -1,0 +1,6 @@
+module standardInterfaces {
+
+    interface sampleRateConvertorControl {
+    };
+
+};

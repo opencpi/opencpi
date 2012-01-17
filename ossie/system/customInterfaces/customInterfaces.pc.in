@@ -1,0 +1,8 @@
+prefix=@prefix@
+includedir=${prefix}/include
+
+Name: customInterfaces
+Description: Interface descriptions for components with non-standard interfaces
+Requires:
+Version: @VERSION@
+Cflags: -I${includedir}

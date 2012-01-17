@@ -1,0 +1,12 @@
+AC_INIT(wavLoader, 0.6.2)
+AM_INIT_AUTOMAKE
+
+AC_PREFIX_DEFAULT("/usr/local/bin")
+
+AC_PROG_INSTALL
+INSTALL_DATA="/usr/bin/install -c -m 755"
+AC_SUBST(INSTALL_DATA)
+
+AC_CONFIG_FILES(Makefile)
+
+AC_OUTPUT

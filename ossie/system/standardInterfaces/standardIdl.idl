@@ -1,0 +1,47 @@
+/****************************************************************************
+
+Copyright 2005,2006 Virginia Polytechnic Institute and State University
+
+This file is part of the OSSIE Standard Interfaces.
+
+OSSIE Standard Interfaces are free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+OSSIE Standard Interfaces is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with OSSIE Standard Interfaces; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+****************************************************************************/
+
+
+// This IDL file includes all of the standard interfaces used by OSSIE
+// Components should include only the required IDL files. This file exists
+// so it is easy to preprocess the file for use y Zeligsoft CE.
+
+#include "realShort.idl"
+#include "complexShort.idl"
+
+#include "realLong.idl"
+#include "complexLong.idl"
+
+#include "realFloat.idl"
+#include "complexFloat.idl"
+
+#include "realDouble.idl"
+#include "complexDouble.idl"
+
+#include "realChar.idl"
+#include "complexChar.idl"
+
+#include "sampleRateConvertorControl.idl"
+#include "stereoSound.idl"
+#include "FM_Control.idl"
+#include "soundControl.idl"
+#include "Radio_Control.idl"

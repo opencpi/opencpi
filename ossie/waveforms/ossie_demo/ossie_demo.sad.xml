@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softwareassembly SYSTEM "../../xml/dtd/softwareassembly.dtd">
+<!--Created with OSSIE WaveDev Beta Version 0.6.0b-->
+<!--Powered by Python-->
+<softwareassembly id="DCE:e1a85dc2-824a-11dc-93f8-00123f63025f" name="OSSIE::ossie_demo">
+    <componentfiles>
+        <componentfile id="TxDemo_8f63a724-824a-11dc-bb02-00123f63025f" type="SPD">
+            <localfile name="/xml/TxDemo/TxDemo.spd.xml"/>
+        </componentfile>
+        <componentfile id="ChannelDemo_8f35b620-824a-11dc-8ba7-00123f63025f" type="SPD">
+            <localfile name="/xml/ChannelDemo/ChannelDemo.spd.xml"/>
+        </componentfile>
+        <componentfile id="RxDemo_8eec63da-824a-11dc-a9bb-00123f63025f" type="SPD">
+            <localfile name="/xml/RxDemo/RxDemo.spd.xml"/>
+        </componentfile>
+    </componentfiles>
+    <partitioning>
+        <componentplacement>
+            <componentfileref refid="TxDemo_8f63a724-824a-11dc-bb02-00123f63025f"/>
+            <componentinstantiation id="DCE:9530783a-824a-11dc-9c95-00123f63025f">
+                <componentproperties>
+                    <simpleref description="" name="packet_delay_ms" refid="DCE:1b9ca208-8242-11dc-9ba3-00123f63025f" value="500"/>
+                </componentproperties>
+                <usagename>TxDemo1</usagename> 
+                <findcomponent>
+                    <namingservice name="TxDemo1"/>
+                </findcomponent>
+            </componentinstantiation>
+        </componentplacement>
+        <componentplacement>
+            <componentfileref refid="ChannelDemo_8f35b620-824a-11dc-8ba7-00123f63025f"/>
+            <componentinstantiation id="DCE:9a75af54-824a-11dc-9a77-00123f63025f">
+                <componentproperties>
+                    <simpleref description="" name="noise_std_dev" refid="DCE:a337c5f0-8245-11dc-860f-00123f63025f" value="2500"/>
+                    <simpleref description="" name="phase_offset" refid="DCE:1c4a3eb9-9e3a-4c20-849a-90c6eaef9e5a" value="10"/>
+                </componentproperties>
+                <usagename>ChannelDemo1</usagename> 
+                <findcomponent>
+                    <namingservice name="ChannelDemo1"/>
+                </findcomponent>
+            </componentinstantiation>
+        </componentplacement>
+        <componentplacement>
+            <componentfileref refid="RxDemo_8eec63da-824a-11dc-a9bb-00123f63025f"/>
+            <componentinstantiation id="DCE:9c3f3972-824a-11dc-af99-00123f63025f">
+                <usagename>RxDemo1</usagename> 
+                <findcomponent>
+                    <namingservice name="RxDemo1"/>
+                </findcomponent>
+            </componentinstantiation>
+        </componentplacement>
+    </partitioning>
+    <assemblycontroller>
+        <componentinstantiationref refid="DCE:9530783a-824a-11dc-9c95-00123f63025f"/>
+    </assemblycontroller>
+    <connections>
+        <connectinterface id="DCE:e1aa5d66-824a-11dc-adea-00123f63025f">
+            <providesport>
+                <providesidentifier>samples_in</providesidentifier> 
+                <findby>
+                    <namingservice name="ChannelDemo1"/>
+                </findby>
+            </providesport>
+            <usesport>
+                <usesidentifier>symbols_out</usesidentifier> 
+                <findby>
+                    <namingservice name="TxDemo1"/>
+                </findby>
+            </usesport>
+        </connectinterface>
+        <connectinterface id="DCE:e1ad7154-824a-11dc-85b0-00123f63025f">
+            <providesport>
+                <providesidentifier>symbols_in</providesidentifier> 
+                <findby>
+                    <namingservice name="RxDemo1"/>
+                </findby>
+            </providesport>
+            <usesport>
+                <usesidentifier>samples_out</usesidentifier> 
+                <findby>
+                    <namingservice name="ChannelDemo1"/>
+                </findby>
+            </usesport>
+        </connectinterface>
+    </connections>
+</softwareassembly>

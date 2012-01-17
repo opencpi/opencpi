@@ -1,0 +1,69 @@
+/****************************************************************************
+
+Copyright 2005,2006 Virginia Polytechnic Institute and State University
+
+This file is part of the OSSIE Standard Interfaces.
+
+OSSIE Standard Interfaces are free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+OSSIE Standard Interfaces is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with OSSIE Standard Interfaces; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+****************************************************************************/
+
+
+#include "ossie/cf.idl"
+
+module standardInterfaces {
+
+  interface Radio_Control {
+    /// Set the number of active channels
+    void set_number_of_channels(in unsigned long num);
+    void get_number_of_channels(out unsigned long num);
+
+    /// Gain functions
+    void get_gain_range(in unsigned long channel, out float gmin, out float gmax, out float gstep);
+    void set_gain(in unsigned long channel, in float gain);
+    void get_gain(in unsigned long channel, out float gain);
+
+    /// Frequency tuning functions
+    void get_frequency_range(in unsigned long channel, out float fmin, out float fmax, out float fstep);
+    void set_frequency(in unsigned long channel, in float f);
+    void get_frequency(in unsigned long channel, out float f);
+
+    // Start/Stop Control
+    void start(in unsigned long channel);
+    void stop(in unsigned long channel);
+
+    // Set properties
+    void set_values(in CF::Properties values);
+
+  };
+
+  interface RX_Control : Radio_Control {
+    /// Set the receiver decimation rate
+    void set_decimation_rate(in unsigned long channel, in unsigned long M);
+    void get_decimation_range(in unsigned long channel, out unsigned long dmin, out unsigned long dmax, out unsigned long dstep);
+
+    /// Set data output size
+    void set_data_packet_size(in unsigned long channel, in unsigned long N);
+
+  };
+
+  interface TX_Control : Radio_Control {
+    /// Set the receiver decimation rate
+    void set_interpolation_rate(in unsigned long channel, in unsigned long M);
+    void get_interpolation_range(in unsigned long channel, out unsigned long dmin, out unsigned long dmax, out unsigned long dstep);
+
+  };
+};
+

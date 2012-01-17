@@ -1,0 +1,16 @@
+GPP
+aclocal.m4
+install-sh
+missing
+.deps
+config.guess
+config.sub
+Makefile
+config.log
+depcomp
+Makefile.in
+configure
+config.status
+autom4te.cache
+*.swp
+

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "../dtd/properties.dtd">
+<properties>
+    <simple id="DCE:3204f64f-216b-45a4-af8e-6b1e0aebfeea" mode="readonly" name="clb_logiccells" type="short">
+        <value>0</value>
+        <description>CLB Logic Cells</description>
+        <kind kindtype="allocation"/>
+        <action type="external"/>
+    </simple>
+    <simple id="DCE:e08d2794-d09f-419e-9f6b-7a1cd5da5955" mode="readonly" name="clb_slices" type="short">
+        <value>0</value>
+        <description>CLB Slices</description>
+        <kind kindtype="allocation"/>
+        <action type="external"/>
+    </simple>
+    <simple id="DCE:bca018e2-a454-4204-884e-d8fc841715e5" mode="readonly" name="dcms" type="short">
+        <value>0</value>
+        <description>Digital Clock Managers</description>
+        <kind kindtype="allocation"/>
+        <action type="external"/>
+    </simple>
+    <simple id="DCE:3ab4e104-d1a1-4d72-83d0-24346ebd4d7f" mode="readonly" name="pmcds" type="short">
+        <value>0</value>
+        <description>Phase Matched Clock Dividers</description>
+        <kind kindtype="allocation"/>
+        <action type="external"/>
+    </simple>
+    <simple id="DCE:2e7eb942-10cf-4faf-884c-71768cf98e68" mode="readonly" name="rocketio" type="short">
+        <value>0</value>
+        <description>RocketIO Transciever Blocks</description>
+        <kind kindtype="allocation"/>
+        <action type="external"/>
+    </simple>
+    <simple id="DCE:7e57bf6f-a2fa-4509-9bc2-aedd43ddd334" mode="readonly" name="IObanks" type="short">
+        <value>0</value>
+        <description>IO Banks</description>
+        <kind kindtype="allocation"/>
+        <action type="external"/>
+    </simple>
+    <simple id="DCE:fe474836-8346-4030-88da-3dfb952b1b2a" mode="readonly" name="IOpins" type="short">
+        <value>0</value>
+        <description>IO Pins</description>
+        <kind kindtype="allocation"/>
+        <action type="external"/>
+    </simple>
+</properties>
