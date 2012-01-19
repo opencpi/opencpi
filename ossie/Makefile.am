@@ -25,11 +25,15 @@ dist-hook:
 	-rm -rf `find $(distdir) -name .svn`
 
 install-data-hook:
-	-cp -rf $(prefix)/lib/* $(libdir)
-	-rm -rf $(prefix)/lib
+	-if [ $(prefix)/lib != $(libdir) ]; then \
+	    cp -rf $(prefix)/lib/* $(libdir); \
+	    rm -rf $(prefix)/lib; \
+	 fi
 	-cp -rf $(prefix)/dom/xml/dtd/ $(prefix)/dev/xml/
-	-mv $(prefix)/bin/nodeBooter $(nbdir)
-	-mv $(prefix)/bin/c_wavLoader $(nbdir)
+	-if [ $(prefix)/bin != $(nbdir) ]; then \
+	    mv $(prefix)/bin/nodeBooter $(nbdir); \
+	    mv $(prefix)/bin/c_wavLoader $(nbdir); \
+	 fi
 	-chown -R $(SUDO_USER).$(SUDO_USER) $(prefix)
 
 uninstall-hook:

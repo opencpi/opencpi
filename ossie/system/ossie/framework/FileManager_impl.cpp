@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "ossie/cf.h"
 #include "ossie/FileManager_impl.h"
 #include "ossie/debug.h"
+#include "ossie/ossieSupport.h"
 
 FileManager_impl::FileManager_impl ():FileSystem_impl ()
 {
@@ -234,7 +235,6 @@ FileManager_impl::list (const char *pattern) throw (CORBA::SystemException,
     int fit_length[numMounts];
     int result_length = 0;
     int tmp_length = 0;
-    try {
         for ( unsigned int i = 0; i < numMounts; i++ ) {
             DEBUG(4, FileManager, "Calling FileSystem->list");
             CF::FileSystem::FileInformationSequence_var fis = mount_table[i].fs->list (pattern);
@@ -265,20 +265,6 @@ FileManager_impl::list (const char *pattern) throw (CORBA::SystemException,
             new CF::FileSystem::FileInformationSequence(result_length, result_length, fit);
         DEBUG(4, FileManager, "About to return from list");
         return result._retn();
-    } catch (const fs::filesystem_error &ex) {
-#if BOOST_VERSION < 103400
-        DEBUG(9, FileManager, "Caught exception in list, error_code " << ex.error());
-        if (ex.error() == fs::other_error)
-#elif BOOST_VERSION < 103500
-        DEBUG(9, FileManager, "Caught exception in list, error_code " << ex.system_error());
-        if (ex.system_error() == EINVAL)
-#else
-        DEBUG(9, FileManager, "Caught exception in list, error_code " << ex.code().value()); ;
-        if (ex.code().value() == EINVAL)
-#endif
-            throw CF::InvalidFileName(CF::CFEINVAL, ex.what());
-        throw CF::FileException(CF::CFNOTSET, ex.what());
-    }
 }
 
 

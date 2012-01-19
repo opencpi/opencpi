@@ -1,11 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CXXFLAGS = -Wall \
--I/home/jek/clone1/opencpi/core/local/util/vfs/include \
--I/home/jek/clone1/opencpi/core/local/util/filefs/include \
--I/home/jek/clone1/opencpi/core/sca/cf/cf222/idl \
--I/home/jek/clone1/opencpi/core/sca/cf_util/vfs/include \
--I/home/jek/clone1/opencpi/adapt/os/ocpios/interfaces/include
+AM_CXXFLAGS = -Wall 
 
 ossieName = default_GPP_node
 

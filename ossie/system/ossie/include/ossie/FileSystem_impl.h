@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define __FILESYSTEM_IMPL__
 
 #include "ossie/cf.h"
-
+#include "ossie/ossieSupport.h"
 #ifdef USE_OPENCPI_FS
 
 #include "OcpiCFUtilVfsFileSystem.h"
@@ -109,5 +109,5 @@ private:
     std::vector<fileInfo> files;
 
 };                                                /* END CLASS DEFINITION FileSystem */
-#endif                                            /* end of else of ifdef USE_OPENCPI_FS
+#endif                                            /* end of else of ifdef USE_OPENCPI_FS */
 #endif                                            /* __FILESYSTEM__ */

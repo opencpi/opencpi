@@ -48,7 +48,6 @@ Craig Neely, Carlos Aguayo, 12 December 2003
 
 #include <errno.h>
 
-#include "ossie/ossieSupport.h"
 #include "ossie/ExecutableDevice_impl.h"
 
 //vector<CF::ExecutableDevice::ProcessID_Type> ExecutableDevice_impl::PID;

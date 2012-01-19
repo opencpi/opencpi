@@ -276,8 +276,23 @@ CF::FileSystem::FileInformationSequence* FileSystem_impl::list (const char *patt
     CF::FileSystem::FileInformationSequence_var result = new CF::FileSystem::FileInformationSequence;
     result->length(0);
 
-    recursiveList(rootDirPath, pattern, result);
-
+    try {
+      recursiveList(rootDirPath, pattern, result);
+    } catch (const fs::filesystem_error &ex) {
+      // Convert boost fs errors into SCA FileSystem errors
+#if BOOST_VERSION < 103400
+      DEBUG(9, FileManager, "Caught exception in list, error_code " << ex.error());
+      if (ex.error() == fs::other_error)
+#elif BOOST_VERSION < 103500
+      DEBUG(9, FileManager, "Caught exception in list, error_code " << ex.system_error());
+      if (ex.system_error() == EINVAL)
+#else
+      DEBUG(9, FileManager, "Caught exception in list, error_code " << ex.code().value()); ;
+      if (ex.code().value() == EINVAL)
+#endif
+	throw CF::InvalidFileName(CF::CFEINVAL, ex.what());
+      throw CF::FileException(CF::CFNOTSET, ex.what());
+    }
     return result._retn();
 }
 
@@ -431,4 +446,4 @@ void FileSystem_impl::query (CF::Properties & fileSysProperties) throw (CORBA::S
 }
 
 ///\todo Implement File object reference clean up.
-#endif /* end of else of ifdef USE_OPENCPI_FS
+#endif /* end of else of ifdef USE_OPENCPI_FS */

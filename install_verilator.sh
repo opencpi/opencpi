@@ -1,17 +1,17 @@
 #!/bin/sh
-set -ev
-. `dirname $0`/set_target.sh
-echo Target: $HostTarget
-mkdir -p /opt/opencpi/prerequisites
-cd /opt/opencpi/prerequisites
+set -e
+OCPI_VERILATOR_VERSION=3_830
+. setup_install.sh
+mkdir -p verilator
+cd verilator
+rm -r -f verilator* $OCPI_BUILD_HOST 
+mkdir verilator-$OCPI_VERILATOR_VERSION
+cd verilator-$OCPI_VERILATOR_VERSION
 git clone http://git.veripool.org/git/verilator
 cd verilator
-git checkout verilator_3_830
+git checkout verilator_$OCPI_VERILATOR_VERSION
 autoconf
-PREFIX=`pwd`/$HostTarget
-./configure --prefix=$PREFIX
+./configure --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/verilator/$OCPI_BUILD_HOST
 make
 make test
 make install
-ln -s /opt/opencpi/prerequisites/verilator/$HostTarget /opt/opencpi/$HostTarget/prerequisites/verilator
-

@@ -3,16 +3,10 @@ libossiecf_la_SOURCES = ApplicationFactory_impl.cpp File_impl.cpp Application_im
 
 EXTRA_DIST = ossiecf.cpp dirent.h
 
-libossiecf_la_LIBADD = $(BOOST_FILESYSTEM_LIB) -L/home/jek/clone1/opencpi/lib/linux-x86_64-bin -lutil -lcf_util
+libossiecf_la_LIBADD = $(BOOST_FILESYSTEM_LIB)
 libossiecf_la_LDFLAGS = -version-info 0:4:0
 
 AM_CXXFLAGS = $(BOOST_CPPFLAGS) -Wall -g
 AM_LDFLAGS = $(BOOST_LDFLAGS)
-INCLUDES = \
--I../include -I../parser \
--I/home/jek/clone1/opencpi/core/local/util/vfs/include \
--I/home/jek/clone1/opencpi/core/local/util/filefs/include \
--I/home/jek/clone1/opencpi/core/sca/cf/cf222/idl \
--I/home/jek/clone1/opencpi/core/sca/cf_util/vfs/include \
--I/home/jek/clone1/opencpi/adapt/os/ocpios/interfaces/include
+INCLUDES = -I../include -I../parser
 

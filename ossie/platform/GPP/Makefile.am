@@ -1,11 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-AM_CXXFLAGS = -Wall -I../../system/ossie/include \
--I/home/jek/clone1/opencpi/core/local/util/vfs/include \
--I/home/jek/clone1/opencpi/core/local/util/filefs/include \
--I/home/jek/clone1/opencpi/core/sca/cf/cf222/idl \
--I/home/jek/clone1/opencpi/core/sca/cf_util/vfs/include \
--I/home/jek/clone1/opencpi/adapt/os/ocpios/interfaces/include
-
+AM_CXXFLAGS = -Wall -I../../system/ossie/include 
 
 GPP_LDADD = ../../system/ossie/parser/libossieparser.la \
 	    ../../system/ossie/framework/libossiecf.la \
