@@ -183,8 +183,8 @@ namespace
     OCPI::OS::ServerSocket so ( 0 );
     unsigned int portNo = so.getPortNo ( );
     so.close ( );
-    EXPECT_GT( portNo, 0 );
-    EXPECT_LT( portNo, 65536 );
+    EXPECT_GT( portNo, 0u );
+    EXPECT_LT( portNo, 65536u );
   }
 
 
@@ -194,7 +194,7 @@ namespace
     OCPI::OS::ServerSocket so ( 6274, true );
     unsigned int portNo = so.getPortNo ( );
     so.close ( );
-    EXPECT_EQ( portNo, 6274 );
+    EXPECT_EQ( portNo, 6274u );
   }
 
 
@@ -236,7 +236,7 @@ namespace
       OCPI::OS::Socket so = se.accept ( );
       char buf [ 16 ];
       unsigned long long count = so.recv ( buf, 16 );
-      EXPECT_EQ( count, 13 );
+      EXPECT_EQ( count, 13u );
       EXPECT_EQ(std::strcmp ( buf, "Hello World!" ), 0 );
       so.close ( );
       se.close ( );
@@ -271,7 +271,7 @@ namespace
       while ( *ptr )
       {
         count = so.send ( ptr, 1 );
-        EXPECT_EQ( count, 1 );
+        EXPECT_EQ( count, 1u );
         ptr++;
       }
 
@@ -335,7 +335,7 @@ namespace
     OCPI::OS::Socket so = se.accept ( );
     char buf [ 16 ];
     unsigned long long count = so.recv ( buf, 16 );
-    EXPECT_EQ( count, 13 );
+    EXPECT_EQ( count, 13u );
     EXPECT_EQ( std::strcmp ( buf, "Hello World!" ), 0 );
     so.close ( );
     se.close ( );
