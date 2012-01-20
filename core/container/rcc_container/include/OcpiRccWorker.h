@@ -195,8 +195,8 @@ namespace OCPI {
       OCPI::OS::uint32_t runConditionSS;
 
       // Last time that the worker was run
-      OCPI::OS::Timer               runTimer;
-      OCPI::OS::Timer::ElapsedTime  runTimeout;
+      OCPI::OS::Timer        runTimer;
+      OCPI::OS::ElapsedTime  runTimeout;
                         
       // runtime control
       //      bool run_condition_met;

@@ -871,12 +871,9 @@ runTest ()
       }
     }
 
-    OCPI::OS::Timer::ElapsedTime et;
-    timer.stop ();
-    timer.getValue (et);
-    timer.start ();
+    OCPI::OS::ElapsedTime et = timer.getElapsed();
 
-    if (m_config.timeout && et.seconds >= static_cast<unsigned int> (m_config.timeout)) {
+    if (m_config.timeout && et.seconds() >= static_cast<unsigned int> (m_config.timeout)) {
       break;
     }
   }

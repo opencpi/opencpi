@@ -73,7 +73,7 @@ namespace OS = OCPI::OS;
 namespace OD = OCPI::Driver;
 
 namespace DataTransfer {
-OS::int32_t 
+uint32_t 
 XferFactory::
 getNextMailBox()
 {
@@ -94,12 +94,12 @@ getNextMailBox()
 
 
 
-OS::int32_t 
+uint32_t 
 XferFactory::
 getMaxMailBox()
 {
   static bool mmb_once=false;
-  static int max_mb=10;
+  static int max_mb=MAX_SYSTEM_SMBS;
   if ( ! mmb_once ) {
     const char* env = getenv("OCPI_MAX_MAILBOX");
     if( !env || (env[0] == 0)) {
@@ -117,7 +117,7 @@ getMaxMailBox()
 void
 XferFactory::
 allocateEndpoints(std::vector<std::string> &l) {
-  l.push_back(allocateEndpoint());
+  l.push_back(allocateEndpoint(NULL, getNextMailBox(), getMaxMailBox()));
 }
 
 
@@ -277,6 +277,8 @@ supportsEndPoints(
   return false;
 }
 
+std::string XferFactoryManager::null;
+
 // Find the Data transfer class
 XferFactory* 
 XferFactoryManager::
@@ -339,7 +341,7 @@ startup()
   m_refCount++;
 }
 
-// Shuts down the transer sub-system
+// Shuts down the transfer sub-system
 void XferFactoryManager::shutdown()
 {
   OU::AutoMutex guard ( m_mutex, true );
@@ -360,7 +362,10 @@ XferFactory(const char *name)
 // Destructor
 XferFactory::~XferFactory()
 {
-  // Factory life cycles are managed by the factory Manager, nothing to do here.
+  this->lock();
+  for (unsigned n = 0; n < m_locations.size(); n++)
+    if (m_locations[n])
+      delete m_locations[n];
 }
 
 // This default implementation is just to parse generic properties,
@@ -372,6 +377,62 @@ configure(ezxml_t x) {
   // base class does device config if present
   OD::Driver::configure(x); 
 }
+
+// Get the location via the endpoint.  This is only called if the endpoint already
+// matches the factory.
+EndPoint* XferFactory::getEndPoint( std::string& end_point, bool local )
+{ 
+  OCPI::Util::SelfAutoMutex guard (this); 
+  for (EndPoints::iterator i = m_locations.begin(); i != m_locations.end(); i++)
+    if (*i && end_point == (*i)->end_point)
+      return *i;
+  EndPoint *loc = createEndPoint(end_point, local);
+  m_locations.resize(loc->mailbox + 1, NULL);
+  m_locations[loc->mailbox] = loc;
+  return loc;
+}
+
+EndPoint* XferFactory::newCompatibleEndPoint(const char *remote_endpoint)
+{ 
+  OCPI::Util::SelfAutoMutex guard (this); 
+  char *cs = strdup(remote_endpoint);
+  uint32_t mailBox, maxMb, size;
+  EndPoint::getResourceValuesFromString(remote_endpoint, cs, &mailBox, &maxMb, &size);
+  unsigned n;
+  for (n = 1; n < MAX_SYSTEM_SMBS; n++)
+    if (n != mailBox && (n >= m_locations.size() || !m_locations[n]))
+      break;
+  if (n == MAX_SYSTEM_SMBS)
+    throw OCPI::Util::Error("Mailboxes for endpoints for protocol %s are exhausted (all %d are used)",
+			    getProtocol(), MAX_SYSTEM_SMBS);
+  std::string sep = allocateEndpoint(NULL, n, maxMb);
+  EndPoint *loc = createEndPoint(sep, true);
+  m_locations.resize(loc->mailbox + 1, NULL);
+  m_locations[loc->mailbox] = loc;
+  return loc;
+}
+
+// static
+
+bool XferFactoryManager::
+canSupport(EndPoint &local_ep, const char *remote_endpoint) {
+  char *protocol = strdup(remote_endpoint);
+  char *cs = strdup(remote_endpoint);
+  uint32_t mailBox, maxMb, size;
+  EndPoint::getProtocolFromString(remote_endpoint, protocol);
+  EndPoint::getResourceValuesFromString(remote_endpoint, cs, &mailBox, &maxMb, &size);
+  bool ret = 
+    local_ep.protocol == protocol &&
+    maxMb == local_ep.maxCount && mailBox != local_ep.mailbox;
+  free(protocol);
+  free(cs);
+  return ret;
+}
+
+
+
+
+
 
 /******
  *  TEMPLATE MANAGEMENT
@@ -540,20 +601,20 @@ createSMBResources(
 
   sr->sMemResourceMgr = CreateResourceServices();
   sr->sMemResourceMgr->createLocal( loc->size );
-  OS::uint64_t offset;
-  if ( sr->sMemResourceMgr->alloc( sizeof(ContainerComms),
-                                   0, &offset) != 0 ) {
+  uint64_t offset;
+  uint32_t size = sizeof(ContainerComms); // variable some day?
+  if ( sr->sMemResourceMgr->alloc( size, 0, &offset) != 0 ) {
     throw OU::EmbeddedException(  NO_MORE_SMB, loc->end_point.c_str() );
   }
 
   sr->m_comms = static_cast<DataTransfer::ContainerComms*>
-    (sr->sMemServices->map(offset,sizeof(ContainerComms)));
+    (sr->sMemServices->map(offset,size));
 
   if ( ! sr->m_comms ) {
     throw OU::EmbeddedException(  SMB_MAP_ERROR, loc->end_point.c_str());
   }
 
-  memset( sr->m_comms, 0, sizeof(ContainerComms) );
+  memset( sr->m_comms, 0, size);
   sr->m_comms->upAndRunning = UpAndRunningMarker;
   m_resources.insert(sr);
   return sr;
@@ -696,7 +757,7 @@ allocateEndpoint(std::string& protocol, const OCPI::Util::PValue * props )
   if ( ! factory ) {
     return NULL;
   }
-  return factory->allocateEndpoint( props );
+  return factory->allocateEndpoint( props, factory-> getNextMailBox(), factory->getMaxMailBox());
 }
 
 XferServices* XferFactoryManager::getService(

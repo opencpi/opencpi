@@ -39,18 +39,27 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/time.h>
 #include <time.h>
 #include <cstring>
 #include <cstdlib>
 
+namespace OCPI {
+  namespace OS {
+
+inline Time Time::now() {
+  Time t;
 #ifdef __APPLE__
-#include <sys/time.h>
-inline static void now(struct timespec *t) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  TIMEVAL_TO_TIMESPEC(&tv, t);
-}
+  t.set(tv.tv_sec, tv.tv_usec * 1000);
+#else
+  struct timespec ts;
+  ocpiCheck(clock_gettime (CLOCK_MONOTONIC, &ts) == 0);
+  t.set(ts.tv_sec, ts.tv_nsec);
 #endif
+  return t;
+}
 /*
  * ----------------------------------------------------------------------
  * Frequency of the high-resolution timestamp counter, in Hz.
@@ -81,11 +90,11 @@ namespace {
   public:
     CounterFreq ();
     bool useHighResTimer () const;
-    operator unsigned long long () const;
+    operator uint64_t () const;
 
   private:
     bool m_useHighResTimer;
-    unsigned long long m_counterFreq;
+    uint64_t m_counterFreq;
   };
 
   static CounterFreq g_counterFreq;
@@ -257,7 +266,7 @@ CounterFreq::useHighResTimer () const
 }
 
 inline
-CounterFreq::operator unsigned long long () const
+CounterFreq::operator uint64_t () const
 {
   return m_counterFreq;
 }
@@ -303,14 +312,14 @@ asm void tm_move_from_tbr_lower ( unsigned int time_val )
 
 /*
  * ----------------------------------------------------------------------
- * OCPI::OS::Timer implementation.
+ * Timer implementation.
  * ----------------------------------------------------------------------
  */
 
 namespace {
   struct TimerClockInfo {
-    struct timespec startTime;
-    OCPI::OS::Timer::ElapsedTime accumulatedTime;
+    Time startTime;
+    ElapsedTime accumulatedTime;
   };
 
   struct TimerTickInfo {
@@ -321,35 +330,42 @@ namespace {
   struct TimerData {
     bool running;
 
-    union {
-      TimerClockInfo tci;
-      TimerTickInfo tti;
-    } t;
+    TimerClockInfo tci;
+    TimerTickInfo tti;
   };
 }
 
+#if 0
 inline
 TimerData &
-o2td (OCPI::OS::uint64_t * ptr)
+o2td (uint64_t * ptr)
   throw ()
 {
   return *reinterpret_cast<TimerData *> (ptr);
 }
+#endif
 
-OCPI::OS::Timer::
+Timer::
 Timer (bool start)
   throw ()
 {
-  ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (TimerData)> ()));
-  ocpiAssert (sizeof (m_osOpaque) >= sizeof (TimerData));
-
-  TimerData & td = o2td (m_osOpaque);
-
-  if (useHighResTimer()) {
-    TimerTickInfo & tti = td.t.tti;
-    tti.accumulatedCounter = 0;
-
-    if ((td.running = start)) {
+  init(start);
+}
+Timer::
+Timer(uint32_t seconds, uint32_t nanoseconds)  throw() 
+  : expiration(seconds, nanoseconds){
+  init(true);
+}
+Timer::
+Timer(Time time)  throw() 
+  : expiration(time) {
+  init(time != 0);
+}
+void Timer::init(bool start) {
+  tti.accumulatedCounter = 0;
+  tci.accumulatedTime.set(0);
+  if ((running = start)) {
+    if (useHighResTimer()) {
       register unsigned int tb_lower, tb_upper, tb_upper_tmp;
 
       do {
@@ -358,45 +374,30 @@ Timer (bool start)
         TBU( tb_upper_tmp );
       }
       while ( tb_upper != tb_upper_tmp );
-
+      
       tti.lower = tb_lower;
       tti.upper = tb_upper;
     }
-  }
-  else {
-    TimerClockInfo & tci = td.t.tci;
-    tci.accumulatedTime.seconds = 0;
-    tci.accumulatedTime.nanoseconds = 0;
-
-    if ((td.running = start)) {
-#ifdef __APPLE__
-      now(&tci.startTime);
-#else
-      if (clock_gettime (CLOCK_MONOTONIC, &tci.startTime) != 0) {
-        ocpiAssert (0);
-      }
-#endif
-    }
+    else
+      tci.startTime = Time::now();
   }
 }
 
-OCPI::OS::Timer::
+Timer::
 ~Timer ()
   throw ()
 {
 }
 
 void
-OCPI::OS::Timer::
+Timer::
 start ()
   throw ()
 {
-  TimerData & td = o2td (m_osOpaque);
-  ocpiAssert (!td.running);
-  td.running = true;
+  ocpiAssert (!running);
+  running = true;
 
   if (useHighResTimer()) {
-    TimerTickInfo & tti = td.t.tti;
     register unsigned int tb_lower, tb_upper, tb_upper_tmp;
 
     do {
@@ -409,150 +410,118 @@ start ()
     tti.lower = tb_lower;
     tti.upper = tb_upper;
   }
-  else {
-    TimerClockInfo & tci = td.t.tci;
-#ifdef __APPLE__
-      now(&tci.startTime);
-#else
-    if (clock_gettime (CLOCK_MONOTONIC, &tci.startTime) != 0) {
-      ocpiAssert (0);
-    }
-#endif
-  }
+  else
+    tci.startTime = Time::now();
 }
 
-void
-OCPI::OS::Timer::
+ElapsedTime
+Timer::
 stop ()
   throw ()
 {
-  if (useHighResTimer()) {
-    register unsigned int tb_lower, tb_upper, tb_upper_tmp;
-    TimerData & td = o2td (m_osOpaque);
-    TimerTickInfo & tti = td.t.tti;
-
-    do {
-      TBU( tb_upper );
-      TBL( tb_lower );
-      TBU( tb_upper_tmp );
-    }
-    while ( tb_upper != tb_upper_tmp );
-
-    ocpiAssert (td.running);
-
-    unsigned long long t2 = (((unsigned long long) tb_upper)  << 32) | tb_lower;
-    unsigned long long t1 = (((unsigned long long) tti.upper) << 32) | tti.lower;
-    ocpiAssert (t2 > t1);
-
-    td.running = false;
-    tti.accumulatedCounter += t2 - t1;
-  }
-  else {
-    struct timespec stopTime;
-
-#ifdef __APPLE__
-    now(&stopTime);
-#else
-    if (clock_gettime (CLOCK_MONOTONIC, &stopTime) != 0) {
-      ocpiAssert (0);
-    }
-#endif
-
-    TimerData & td = o2td (m_osOpaque);
-    TimerClockInfo & tci = td.t.tci;
-    ocpiAssert (td.running);
-
-    ocpiAssert ((stopTime.tv_sec > tci.startTime.tv_sec) ||
-               (stopTime.tv_sec == tci.startTime.tv_sec &&
-                stopTime.tv_nsec >= tci.startTime.tv_nsec));
-
-    td.running = false;
-    tci.accumulatedTime.seconds += stopTime.tv_sec - tci.startTime.tv_sec;
-
-    if (tci.startTime.tv_nsec > stopTime.tv_nsec) {
-      tci.accumulatedTime.seconds--;
-      tci.accumulatedTime.nanoseconds += 1000000000 + stopTime.tv_nsec - tci.startTime.tv_nsec;
-    }
-    else {
-      tci.accumulatedTime.nanoseconds += stopTime.tv_nsec - tci.startTime.tv_nsec;
-    }
-
-    if (tci.accumulatedTime.nanoseconds >= 1000000000) {
-      tci.accumulatedTime.seconds++;
-      tci.accumulatedTime.nanoseconds -= 1000000000;
-    }
-  }
+  ElapsedTime et = getElapsed();
+  running = false;
+  return et;
 }
 
 void
-OCPI::OS::Timer::
+Timer::
 reset ()
   throw ()
 {
-  TimerData & td = o2td (m_osOpaque);
+  running = false;
 
-  td.running = false;
-
-  if (useHighResTimer()) {
-    TimerTickInfo & tti = td.t.tti;
+  if (useHighResTimer())
     tti.accumulatedCounter = 0;
+  else
+    tci.accumulatedTime.set(0);
+}
+
+bool
+Timer::expired() {
+  if (expiration != 0 && getElapsed() > expiration) {
+    running = false;
+    return true;
   }
-  else {
-    TimerClockInfo & tci = td.t.tci;
-    tci.accumulatedTime.seconds = 0;
-    tci.accumulatedTime.nanoseconds = 0;
+  return false;
+}
+ElapsedTime
+Timer::
+getElapsed () 
+  throw ()
+{
+  if (running) {
+    if (useHighResTimer()) {
+      register unsigned int tb_lower, tb_upper, tb_upper_tmp;
+      
+      do {
+	TBU( tb_upper );
+	TBL( tb_lower );
+	TBU( tb_upper_tmp );
+      }
+      while ( tb_upper != tb_upper_tmp );
+
+      unsigned long long t2 = (((unsigned long long) tb_upper)  << 32) | tb_lower;
+      unsigned long long t1 = (((unsigned long long) tti.upper) << 32) | tti.lower;
+      ocpiAssert (t2 > t1);
+
+      tti.accumulatedCounter += t2 - t1;
+      tti.lower = tb_lower;
+      tti.upper = tb_upper;
+      ocpiAssert (g_counterFreq != 0);
+      // FIXME: perhaps better accuracy deling with ocpi ticks directly
+      tci.accumulatedTime.set(tti.accumulatedCounter / g_counterFreq,
+			      ((tti.accumulatedCounter % g_counterFreq) * 1000000000ull) / g_counterFreq);
+      
+    }
+    else {
+      Time stopTime = Time::now();
+
+      ocpiAssert (stopTime >= tci.startTime);
+
+      tci.accumulatedTime += stopTime - tci.startTime;
+      tci.startTime = stopTime;
+    }
   }
+  return tci.accumulatedTime;
 }
 
 void
-OCPI::OS::Timer::
+Timer::
 getValue (ElapsedTime & timer)
   throw ()
 {
-  TimerData & td = o2td (m_osOpaque);
-  ocpiAssert (!td.running);
+  ocpiAssert(!running);
 
   if (useHighResTimer()) {
-    TimerTickInfo & tti = td.t.tti;
     ocpiAssert (g_counterFreq != 0);
-    timer.seconds = static_cast<unsigned int> (tti.accumulatedCounter / g_counterFreq);
-    timer.nanoseconds = static_cast<unsigned int> (((tti.accumulatedCounter % g_counterFreq) * 1000000000ull) / g_counterFreq);
-  }
-  else {
-    TimerClockInfo & tci = td.t.tci;
+    // FIXME: perhaps better accuracy deling with ocpi ticks directly
+    timer.set(tti.accumulatedCounter / g_counterFreq,
+	      ((tti.accumulatedCounter % g_counterFreq) * 1000000000ull) / g_counterFreq);
+  } else
     timer = tci.accumulatedTime;
-  }
 }
 
 void
-OCPI::OS::Timer::
+Timer::
 getPrecision (ElapsedTime & prec)
   throw ()
 {
   if (useHighResTimer()) {
     ocpiAssert (g_counterFreq != 0);
 
-    prec.seconds = 0;
-    prec.nanoseconds = static_cast<unsigned int> (1000000000ull / g_counterFreq);
-
-    if (!prec.nanoseconds) {
-      // round up better-than-nanosecond resolution to 1.
-      prec.nanoseconds = 1;
-    }
-  }
-  else {
-    struct timespec res;
-
+    
+    Time::TimeVal r = (Time::ticksPerSecond + g_counterFreq/2)/g_counterFreq;
+    prec.set(r ? r : 1);
+  } else {
 #ifdef __APPLE__
-    res.tv_sec = 0;
-    res.tv_nsec = 10000000; // 10 ms
+    prec.set(0, 10000000); // 10ms - hah!
 #else
-    if (clock_getres (CLOCK_MONOTONIC, &res) != 0) {
-      ocpiAssert (0);
-    }
+    struct timespec res;
+    ocpiCheck(clock_getres (CLOCK_MONOTONIC, &res) == 0);
+    prec.set(res.tv_sec, res.tv_nsec);
 #endif
-
-    prec.seconds = res.tv_sec;
-    prec.nanoseconds = res.tv_nsec;
+  }
+}
   }
 }

@@ -49,7 +49,6 @@
 #define DataTransfer_SocketsTransfer_H_
 
 #include <OcpiOsDataTypes.h>
-#include <OcpiOsMutex.h>
 #include <DtDriver.h>
 #include <DtTransferInterface.h>
 #include <DtSharedMemoryInterface.h>
@@ -73,7 +72,7 @@ namespace DataTransfer {
   {
   public:
 
-      virtual ~SocketEndPoint();
+    virtual ~SocketEndPoint();
     SocketEndPoint( std::string& ep, bool local, OCPI::OS::uint32_t size=0)
       : EndPoint(ep, size, local) { parse(ep);}
 
@@ -132,33 +131,36 @@ namespace DataTransfer {
     /***************************************
      *  Get the location via the endpoint
      ***************************************/
-    EndPoint* getEndPoint( std::string& end_point, bool );
-    void releaseEndPoint( EndPoint* loc );
+    //    EndPoint* getEndPoint( std::string& end_point, bool );
+    //void releaseEndPoint( EndPoint* loc );
 
 
     /***************************************
      *  Set (unparse, snprintf) the endpoint string
      ***************************************/
     static void setEndpointString(std::string &str, const char *ipAddr, unsigned port,
-				  unsigned size, unsigned mbox);
+				  unsigned size, unsigned mbox, unsigned maxCount);
     /***************************************
      *  This method is used to dynamically allocate
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(const OCPI::Util::PValue*);
+    std::string allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes);
 
+  protected:
+    EndPoint* createEndPoint(std::string& endpoint, bool local = false);
+    
     /***************************************
      *  This method is used to flush any cached items in the factoy
      ***************************************/
-    void clearCache();
+    //    void clearCache();
 
-  protected:
+    //  protected:
 
-    OCPI::OS::Mutex m_mutex;
-    OCPI::Util::VList g_locations;
+    //    OCPI::OS::Mutex m_mutex;
+    //    OCPI::Util::VList g_locations;
 
-  private:
+    //  private:
 
   };
 

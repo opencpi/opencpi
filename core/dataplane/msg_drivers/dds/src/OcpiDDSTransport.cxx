@@ -720,6 +720,8 @@ namespace OCPI {
 
 #ifndef NDEBUG
 	  cout << endl << "**** In Begin Sequence !! " << m.m_name << " *** " << m_seq.size() << endl;
+#else
+	  (void)m;
 #endif
 	  align( 8,m_source.top());
 	  long size;
@@ -875,7 +877,10 @@ namespace OCPI {
 	  align(m.m_align,m_target);
 #ifndef NDEBUG
 	  printf("Array member offset = %d, items = %d, align = %d\n", m.m_offset, nItems, m.m_align );
+#else
+	  (void)nItems;
 #endif
+
 	}
 
 	void endArray(OU::Member & ) {
@@ -904,6 +909,7 @@ namespace OCPI {
 
 
 	void writeString(OU::Member &, OU::WriteDataPtr p, uint32_t strLen , bool /* start */) {
+	  (void)strLen;
 	  c_char * msg = (c_char*)(p.data);
 	  if ( m_inSequence ) {
 	    m_seqStrings.push_back( std::string( msg ) );
@@ -1040,7 +1046,7 @@ namespace OCPI {
 	  fflush(stdout);
 #endif
 	  Reader r(m_data,(uint8_t*)from);
-	  unsigned rlen = m_data.m_proto->read( r, (uint8_t*)to, m_data.maxMsgSize(), 0);
+	  m_data.m_proto->read( r, (uint8_t*)to, m_data.maxMsgSize(), 0);
 	  return;
 	}
 

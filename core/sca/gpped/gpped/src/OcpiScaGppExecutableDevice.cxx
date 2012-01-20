@@ -107,7 +107,7 @@ GppExecutableDevice (CORBA::ORB_ptr orb,
     m_ocpiDeviceId (ocpiDeviceId),
     m_osName (osName),
     m_processorName (processorName),
-    m_fileFs (tempFileLocation)
+    m_fileFs (tempFileLocation.c_str())
 {
   OCPI::Logger::DebugLogger debug (m_out);
   debug << m_logProducerName

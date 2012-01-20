@@ -120,8 +120,7 @@ void TransportGlobal::parseArgs( int argc, char **argv )
 
 
 TransportGlobal::TransportGlobal( int argcp, char **argvp )
-    : m_Circuitinit(false)
-
+  : m_useEvents(false),m_Circuitinit(false), m_event_manager(NULL)
 {
   ( void ) argcp;
   ( void ) argvp;
@@ -131,7 +130,7 @@ TransportGlobal::TransportGlobal( int argcp, char **argvp )
 
 
 TransportGlobal::TransportGlobal( int event_ordinal, bool asyc )
-  : m_useEvents(asyc),m_Circuitinit(false)
+  : m_useEvents(asyc),m_Circuitinit(false), m_event_manager(NULL)
 {
   int low = EVENT_START + event_ordinal*EVENT_RANGE;
   int high = low+EVENT_RANGE-1;

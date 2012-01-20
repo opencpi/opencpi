@@ -220,7 +220,7 @@ $(PACKAGES):
 		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
 	fi
 
-clean distclean: cleancomponents
+clean distclean: cleancomponents cleanexamples
 	$(AT)$(foreach p,$(ALLPACKAGES),\
 		if test -f $p/Makefile.ocpi ; then \
 			$(MAKE) $(call DescendMake,$p) -f Makefile.ocpi $@ ; \

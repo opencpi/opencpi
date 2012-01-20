@@ -9,7 +9,7 @@ $(info Setting OCPI_CDK_DIR to $(OCPI_CDK_DIR))
 endif
 all:applications
 
-applications: platforms components
+applications: components platforms
 	$(AT)$(call MyMake,applications) Platforms=$(Platforms)
 
 components: primitives

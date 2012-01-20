@@ -237,7 +237,7 @@ static bool run_lb_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers )
   UTGConsumerWorkerProperties cprops;
   UTGProducerWorkerProperties pprops;
 
-  int count = 6;
+  int count = 10;
   while ( count > 0 ) {
 
     // Read the consumer properties to monitor progress
@@ -703,7 +703,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s:  %s\n",  test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -726,7 +726,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -748,7 +748,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -770,7 +770,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -792,7 +792,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -814,7 +814,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s: %s\n",  test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -836,7 +836,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -858,7 +858,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s: %s\n",  test_name,  test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 

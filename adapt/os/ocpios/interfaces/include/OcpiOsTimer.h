@@ -73,6 +73,44 @@ namespace OCPI {
      * and nanoseconds.
      */
 
+    class Time {
+    public:
+      typedef uint64_t TimeVal; // our base type for time where 1 == 1/2^32 of a second
+    protected:
+      TimeVal m_time;
+    public:
+      static const uint32_t nsPerSecond = 1000000000;
+      static const uint64_t ticksPerSecond = 1ull << 32;
+      inline uint32_t seconds() const { return m_time >> 32; }
+      // This is rounded to the nearest nanosecond
+      inline uint32_t nanoseconds() const {
+	return ((m_time & 0xffffffffll) * nsPerSecond + ticksPerSecond/2) / ticksPerSecond;
+      }
+      inline Time(uint32_t seconds, uint32_t nanoseconds) {
+	m_time = (((uint64_t)nanoseconds << 32) + nsPerSecond / 2) / nsPerSecond +
+	  ((uint64_t)seconds << 32);
+      }
+      inline Time() {}
+      inline Time(TimeVal t) { m_time = t;}
+      inline void set(uint32_t seconds, uint32_t nanoseconds) {
+	m_time = (((uint64_t)nanoseconds << 32) + nsPerSecond / 2) / nsPerSecond +
+	  ((uint64_t)seconds << 32);
+      }
+      inline void set(TimeVal t) { m_time = t;}
+      inline bool operator> (const Time &r) const { return m_time > r.m_time; }
+      inline bool operator< (const Time &r) const { return m_time < r.m_time; }
+      inline bool operator>= (const Time &r) const { return m_time >= r.m_time; }
+      inline bool operator<= (const Time &r) const { return m_time <= r.m_time; }
+      inline bool operator== (const Time &r) const { return m_time == r.m_time; }
+      inline bool operator!= (const Time &r) const { return m_time != r.m_time; }
+      inline Time operator+ (const Time &r) const { return Time(m_time + r.m_time); }
+      inline Time operator- (const Time &r) const { return Time(m_time - r.m_time); }
+      inline Time operator+= (const Time &r) { return Time(m_time += r.m_time); }
+      inline uint64_t bits() const { return m_time; }
+      static Time now();
+    };
+    typedef Time ElapsedTime;
+
     class Timer {
     public:
       /**
@@ -82,12 +120,19 @@ namespace OCPI {
        *
        */
 
-      struct ElapsedTime
-      {
-        unsigned int seconds;
-        unsigned int nanoseconds;
-      };
-
+    private:
+      struct TimerClockInfo {
+	Time startTime;
+	ElapsedTime accumulatedTime;
+      } tci;
+      struct TimerTickInfo {
+	uint32_t lower, upper;
+	uint64_t accumulatedCounter;
+      } tti;
+      Time expiration;
+	
+      bool running;
+      void init(bool start);
     public:
       /**
        * Constructor.
@@ -100,6 +145,11 @@ namespace OCPI {
 
       Timer (bool start = false)
         throw ();
+      Timer (uint32_t seconds, uint32_t nanoseconds)
+	throw ();
+      Timer (Time)
+	throw ();
+      bool expired();
 
       /**
        * Destructor.
@@ -123,9 +173,10 @@ namespace OCPI {
        *
        * \pre The timer shall be running.
        * \post The timer is stopped.
+       * Returns elapsed time since start
        */
 
-      void stop ()
+      ElapsedTime stop ()
         throw ();
 
       /**
@@ -149,6 +200,10 @@ namespace OCPI {
 
       void getValue (ElapsedTime & timer)
         throw ();
+      // Does not stop the timer, allowing it to be sampled
+      ElapsedTime getElapsed() throw();
+      inline Time getStart() const throw() { return tci.startTime;}
+
 
       /**
        * Query the operating system/hardware granularity for measuring time.
@@ -159,11 +214,9 @@ namespace OCPI {
 
       static void getPrecision (ElapsedTime & prec)
         throw ();
-
-    private:
-      uint64_t m_osOpaque[4];
     };
 
+#if 0
     namespace
     {
       const static unsigned int nanoseconds_per_second = 1000000000;
@@ -196,7 +249,6 @@ namespace OCPI {
 
       return false;
     }
-
     /**
      * @brief
      *   Less than comparison of two ElapsedTime instances.
@@ -315,7 +367,7 @@ namespace OCPI {
 
       return result;
     }
-
+#endif
   } // End: namespace OS
 
 } // End: namespace OCPI

@@ -35,19 +35,19 @@
 ########################################################################### #
 
 
-# Build from 32-bit x86 Linux for Linux
+# Build from 64-bit x86 Linux for Linux
 
 # #### Absolute path to the base directory of the OpenCPI installation #### #
 
-#if [ -z "$OCPI_BASE_DIR" ]
-#then
+if [ -z "$OCPI_BASE_DIR" ]
+then
   export OCPI_BASE_DIR=`pwd`
-#fi
+fi
 
-#if [ -z "$OCPI_CDK_DIR" ]
-#then
+if [ -z "$OCPI_CDK_DIR" ]
+then
   export OCPI_CDK_DIR=$OCPI_BASE_DIR/ocpi
-#fi
+fi
 
 # #### Build target architecture and OS ################################### #
 
@@ -58,28 +58,21 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 # #### Location of the Xilinx tools ####################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.3/ISE_DS
+export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/13.2/ISE_DS
 
-# #### Location of the Altera tools ####################################### #
+# #### Location of Icarus Verilog ######################################### #
 
-export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/11.0
+export OCPI_ICARUS_DIR=/opt/opencpi/linux-x86_64/prerequisites/icarus/
 
 # #### Location of Google Test (gtest) #################################### #
 
 export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
 
-# #### Location of Verilator #################################### #
-
-export OCPI_VERILATOR_DIR=/opt/opencpi/prerequisites/verilator/$OCPI_BUILD_HOST
-
-# #### Location of Icarus #################################### #
-
-export OCPI_ICARUS_DIR=/opt/opencpi/prerequisites/icarus/linux-x86_64
 # #### Build output location ############################################## #
 
 export OCPI_OUT_DIR=$OCPI_OS-$OCPI_ARCH-bin
 
-#export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_GTEST_DIR/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_GTEST_DIR/lib:$LD_LIBRARY_PATH
 
 # #### Compiler linker flags ############################################## #
 
@@ -103,14 +96,14 @@ export OCPI_BUILD_SHARED_LIBRARIES=1
 
 # #### CORBA OCPI_CORBA_ORB/IDL tools ################################################ #
 
-export HAVE_CORBA=1
+export OCPI_HAVE_CORBA=1
 
 # OpenCPI uses OmniORB exclusivly
 export OCPI_CORBA_ORB=OMNI
-export OCPI_OMNI_DIR=/opt/opencpi/prerequisites/omniorb
-export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/bin
+export OCPI_OMNI_DIR=/usr/local
+export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/bin
 export OCPI_OMNI_IDL_DIR=$OCPI_OMNI_DIR/share/idl/omniORB
-export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/lib
+export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/lib
 export OCPI_OMNI_INCLUDE_DIR=$OCPI_OMNI_DIR/include
 
 # #### Path to Mercury tools and libraries ################################ #
@@ -125,17 +118,18 @@ export OCPI_HAVE_IBVERBS=0
 
 # #### OpenCL exports ##################################################### #
 
-
 #export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
 export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl_container/impl/include
 export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 
 # ######################################################################### #
 
-export OCPI_HAVE_OPENCV=1
-export OCPI_OPENCV_HOME=/usr/local
-export OCPI_HAVE_OPENSPLICE=1
-export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
+export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/lib/rcc
+export OCPI_SMB_SIZE=100000000
+
+# #########  OpenCV 
+#export OCPI_HAVE_OPENCV=0
+#export OCPI_OPENCV_HOME=/usr/local
 
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

@@ -511,7 +511,7 @@ static inline Emit::EventQEntry* getNextEntry( Emit::EventQEntry * ce, Emit::Eve
 
   // Deal with wrap for the variable length payload
   uint8_t * end = (uint8_t*)q->end;
-  if ( ((uint8_t*)ne>=end+sizeof(Emit::EventQEntry)) || ((uint8_t*)ne+ne->size)>=end) {
+  if ( ((uint8_t*)ne>=end-sizeof(Emit::EventQEntry)) || ((uint8_t*)ne+ne->size)>=end) {
     ne = q->start;
   }
   return ne;

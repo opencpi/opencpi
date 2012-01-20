@@ -115,7 +115,7 @@ namespace OCPI {
       /**********************************
        *  Constructors
        **********************************/
-      Server( std::string& end_point,     // In - endpoint
+      Server( const char *end_point,     // In - endpoint
               ServerEventHandler* cb     // In - Server event handler
               );
 

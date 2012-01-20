@@ -344,7 +344,7 @@ namespace
 
     unsigned int ec2 = static_cast<unsigned int>( pm2.getExitCode ( ) );
     unsigned int ec3 = static_cast<unsigned int>( pm3.getExitCode ( ) );
-    EXPECT_LT( ( ( ec3 - ec2 ) % 128 ), 2 );
+    EXPECT_LT( ( ( ec3 - ec2 ) % 128 ), 2u );
   }
 
 

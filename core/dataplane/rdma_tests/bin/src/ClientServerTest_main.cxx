@@ -38,32 +38,31 @@
 #include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
 #include <OcpiTransportServer.h>
-#include <OcpiTransportClient.h>
+#include <OcpiMessageEndpoint.h>
 #include <OcpiRDTInterface.h>
 #include <OcpiThread.h>
 #include <OcpiBuffer.h>
 
 
-#define CATCH_ALL_RETHROW( msg )                                        \
-  catch ( int& ii ) {                                                        \
-    printf("gpp: Caught an int exception while %s = %d\n", msg,ii );        \
-    throw;                                                                \
-  }                                                                        \
-  catch( std::string& stri ) {                                                \
-    printf("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
-    throw;                                                                \
-  }                                                                        \
-  catch ( OCPI::Util::EmbeddedException& eex ) {                                \
-    printf(" gpp: Caught an embedded exception while %s:\n", msg);                \
-    printf( " error number = %d", eex.m_errorCode );                        \
+#define CATCH_ALL_RETURN1( msg )						\
+  catch ( int& ii ) {							\
+    printf("gpp: Caught an int exception while %s = %d\n", msg,ii );	\
+    return 1;								\
+  }									\
+  catch ( OCPI::Util::EmbeddedException& eex ) {			\
+    printf(" gpp: Caught an embedded exception while %s:\n", msg);	\
+    printf( " error number = %d", eex.m_errorCode );			\
     printf( " aux info = %s\n", eex.m_auxInfo.c_str() );                \
-    throw;                                                                \
-  }                                                                        \
+    return 1;								\
+  }									\
+  catch( std::string& stri ) {						\
+    printf("gpp: Caught a string exception while %s = %s\n", msg, stri.c_str() ); \
+    return 1;								\
+  }									\
   catch( ... ) {                                                        \
-    printf("gpp: Caught an unknown exception while %s\n",msg );                \
-    throw;                                                                \
+    printf("gpp: Caught an unknown exception while %s\n",msg );		\
+    return 1;								\
   }
-
 
 using namespace OCPI::DataTransport;
 using namespace DataTransport::Interface;
@@ -83,13 +82,11 @@ int  OCPI_RCC_CONT_NBUFFERS      = 1;
 
 
 // Program globals
-static std::string server_end_point = "ocpi-socket-rdma://localhost;40006:600000.2.8";
-static std::string loopback_end_point = "ocpi-socket-rdma://localhost;0:600000.3.8";
+static const char *server_end_point = "ocpi-socket-rdma://localhost;40006:600000.2.8";
+static const char *loopback_end_point = "ocpi-socket-rdma://localhost;0:600000.3.8";
 static volatile int circuit_count=0;
 static MessageCircuit     *gpp_circuits[10];
-static MessageCircuit     *loopback_circuit;
-static Server *server=NULL;
-static Client *client=NULL;
+//static Server *server=NULL;
 
 
 #define CS_DISPATCH if (server)server->dispatch();if(client)client->dispatch();
@@ -119,6 +116,7 @@ public:
 };
 
 
+#if 0
 class TransportCEventHandler : public ClientEventHandler
 {
 public:
@@ -140,6 +138,7 @@ public:
   }
 
 };
+#endif
 
 bool parseArgs( int argc, char** argv)
 {
@@ -168,15 +167,15 @@ int gpp_cont(int argc, char** argv)
 
   try {
     loopback = parseArgs(argc,argv);
-    TransportCEventHandler* eh=NULL;
-    TransportSEventHandler *tcb=NULL;
     if ( !loopback ) {
-      printf("Setting up for server mode using %s\n", server_end_point.c_str());
+      printf("Setting up for server mode using %s\n", server_end_point);
+      MessageCircuit *mc;
 
+#if 0
       // Create the server endpoint and its processing thread
-      tcb = new TransportSEventHandler();
+      TransportSEventHandler *tcb = new TransportSEventHandler();
       server = new Server( server_end_point, tcb );
-      printf("setServerURL \"%s\"\n", server_end_point.c_str() );
+      printf("setServerURL \"%s\"\n", server_end_point );
 
       // We need a client to continue
       while ( circuit_count == 0 ) {
@@ -184,49 +183,73 @@ int gpp_cont(int argc, char** argv)
         OCPI::OS::sleep( 500 );
         printf("Waiting for a client to connect\n");
       }
-
-      int msg_count = 0;
-      //      while( msg_count < 100 ) {
-      while (1) {
-        OCPI::DataTransport::Buffer* buffer;        
-        buffer = gpp_circuits[0]->getSendMessageBuffer();
-        if ( buffer ) {
-          sprintf((char*)buffer->getBuffer(),"message %d\n", msg_count++ );
-          gpp_circuits[0]->sendMessage( buffer, strlen((char*)buffer->getBuffer()) + 1 );
-        }
-        server->dispatch();
+      MessageCircuit *mc = gpp_circuits[0];
+#else
+      MessageEndpoint &mep = MessageEndpoint::getMessageEndpoint(server_end_point);
+      printf("Local server endpoint is: %s\n", mep.endpoint());
+      do {
+	OS::Timer timer(2, 0);
+        printf("Waiting for a client to connect...\n");
+	mc = mep.accept(&timer);
+      } while (!mc);
+#endif
+      printf("Server side:\n  local:  %s\n  remote: %s\n ",
+	     mc->localEndpoint(), mc->remoteEndpoint());
+      for (unsigned msg_count = 0; msg_count <= 101; msg_count++) {
+        OCPI::DataTransport::BufferUserFacet* buffer;        
+	void *data;
+	uint32_t bufferLength;
+	while (!(buffer = mc->getNextOutputBuffer(data, bufferLength)))
+	  mc->dispatch();
+	unsigned length = 0;
+	if (msg_count != 100) {
+	  sprintf((char*)data, "message %d\n", msg_count);
+	  length = strlen((char*)data) + 1 ;
+	}
+	printf("Sending buffer: %s, length %u\n", data, length);
+	mc->sendBuffer( buffer, length);
       }
-
+      printf("Server done, waiting 5 seconds\n");
+      OCPI::OS::sleep(5000);
     }
     else {
-      printf("Setting up for loopback mode using %s\n", loopback_end_point.c_str());
-      eh = new TransportCEventHandler();
-      client = new Client( loopback_end_point, 1024, eh );
-      loopback_circuit = client->createCircuit( server_end_point );   
-      printf("***** Established a new connection  !! \n");
+      printf("Setting up for loopback mode using %s\n", loopback_end_point);
+      OS::Timer timer(5, 0);
+      std::auto_ptr<MessageCircuit> c(&MessageEndpoint::connect(server_end_point, 4096, &timer));
+      //      MessageCircuit c(loopback_end_point, 1024);
+      //      printf("***** Client connecting to: %s\n", server_end_point);
+      //      c.connect( server_end_point );   
+      printf("Client side:\n  local:  %s\n  remote: %s\n ",
+	     c->localEndpoint(), c->remoteEndpoint());
 
-      while( 1) {
-        client->dispatch();
-        OCPI::DataTransport::Buffer* buffer;        
-        if ( loopback_circuit->messageAvailable() ) {
-          buffer = loopback_circuit->getNextMessage();
-          if ( buffer ) {
-            printf("Message from server = %s\n", (char*)buffer->getBuffer() );
-            loopback_circuit->freeMessage( buffer );
-          }
-        }      
+      for (unsigned n = 0; n < 1000; n++) {
+        OCPI::DataTransport::BufferUserFacet* buffer;        
+	void *data = 0;// for debug
+	uint32_t length;
+	while (!(buffer = c->getNextInputBuffer(data, length)))
+	  OCPI::OS::sleep(1);
+	if (length != 0) {
+	  ocpiAssert(length == strlen((char *)data) + 1);
+	  printf("Message %d from server = %s\n", n, (char*)data);
+	}
+	c->freeBuffer( buffer );
+	if (length == 0) {
+	  printf("Message %d empty\n", n);
+	  break;
+	}
+	OCPI::OS::sleep(1);
       }
+      printf("****Client done\n");
     }
   }
-  catch ( ... ) {
-    printf("Failed with exception\n");
-  }
+  CATCH_ALL_RETURN1("running client/server test")
 
   return 0;
 }
 
 int main( int argc, char** argv)
 {
+  setlinebuf(stdout);
   // Start the container in a thead
   return gpp_cont(argc,argv);
 }

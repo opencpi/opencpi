@@ -179,42 +179,34 @@ FileFsIterator::lastModified ()
 
 namespace OS = OCPI::OS;
 namespace OCPI { namespace Util { 
-FileFs::FileFs (const std::string & root)
+FileFs::FileFs (const char *root)
   throw (std::string)
-  : m_root(OS::FileSystem::absoluteName(root)),
+  : m_root(root ? OS::FileSystem::absoluteName(std::string(root)) :
+	   OS::FileSystem::cwd()),
     m_cwd ("/")
 {
-  /*
-   * Our "root" must be an absolute directory name.
-   */
-  for (unsigned n = m_root.length(); n > 1 && m_root[n-1] == '/'; )
-    m_root.resize(--n);
+  if (root) {
+    /*
+     * Our "root" must be an absolute directory name.
+     */
+    for (unsigned n = m_root.length(); n > 1 && m_root[n-1] == '/'; )
+      m_root.resize(--n);
   
-  testFilenameForValidity (m_root);
+    testFilenameForValidity (m_root);
 
-  if (!m_root.length() || m_root[0] != '/') {
-    throw std::string ("root must be absolute");
+    if (!m_root.length() || m_root[0] != '/')
+      throw std::string ("root must be absolute");
+
+    /*
+     * Make sure that our root exists, and is a directory.
+     */
+    bool isDir;
+
+    if (!OS::FileSystem::exists (m_root, &isDir))
+      throw std::string ("root directory does not exist");
+    else if (!isDir)
+      throw std::string ("root is not a directory");
   }
-
-  /*
-   * Make sure that our root exists, and is a directory.
-   */
-
-  bool isDir;
-
-  if (!OS::FileSystem::exists (m_root, &isDir)) {
-    throw std::string ("root directory does not exist");
-  }
-  else if (!isDir) {
-    throw std::string ("root is not a directory");
-  }
-  setURI();
-}
-FileFs::FileFs ()
-  throw ()
-  : m_root(OS::FileSystem::cwd()),
-    m_cwd ("/")
-{
   setURI();
 }
 FileFs::~FileFs ()

@@ -64,6 +64,7 @@ using namespace DataTransfer;
 using namespace DtI;
 using namespace DtOsDataTypes;
 using namespace OCPI::OS;
+namespace OU = OCPI::Util;
 
 // Buffer allignment
 #define BUF_ALIGNMENT 7
@@ -1584,6 +1585,9 @@ void
 Port::
 sendOutputBuffer( BufferUserFacet* buf, unsigned int length, unsigned int opcode )
 {
+  if (length > getBufferLength())
+    throw OU::Error("Buffer being sent with data length (%u) exceeding buffer length (%u)",
+		    length, getBufferLength());
   Buffer *b = static_cast<Buffer *>(buf);
   // Put the actual opcode and data length in the meta-data
   b->getMetaData()->ocpiMetaDataWord.opCode = opcode;

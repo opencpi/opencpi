@@ -140,8 +140,8 @@ Worker( Application & app, Artifact *art, const char *name,
   initializeContext();
   // If we have an event handler, we need to inform it about the timeout
   if (  m_dispatch->runCondition && m_dispatch->runCondition->timeout ) {
-    runTimeout.seconds = m_dispatch->runCondition->usecs / 1000000;
-    runTimeout.nanoseconds = (m_dispatch->runCondition->usecs%1000000) * 1000;
+    runTimeout.set(m_dispatch->runCondition->usecs / 1000000,
+		   (m_dispatch->runCondition->usecs % 1000000) * 1000);
     if ( m_transport.m_transportGlobal->getEventManager() ) {
 
 #ifdef EM_PORT_COMPLETE
@@ -583,14 +583,14 @@ void Worker::run(bool &anyone_run) {
     }
     // Check if this worker has a timer for a run condition
     if (m_dispatch->runCondition && m_dispatch->runCondition->timeout ) {
-      OS::Timer::ElapsedTime et;
+      OS::ElapsedTime et;
       runTimer.stop();
       runTimer.getValue( et );
       runTimer.start();
       if ( et > runTimeout ) {          
 #ifndef NDEBUG
 	printf("WORKER TIMED OUT, timer time = %d,%d -- run timer = %d,%d\n", 
-	       et.seconds, et.nanoseconds, runTimeout.seconds, runTimeout.nanoseconds );
+	       et.seconds(), et.nanoseconds(), runTimeout.seconds(), runTimeout.nanoseconds() );
 #endif
 	run_condition_met = true;
 	timeout = true;

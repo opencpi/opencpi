@@ -41,9 +41,9 @@
 
 #include <iostream>
 
-std::ostream& operator<< ( std::ostream& s, OCPI::OS::Timer::ElapsedTime e )
+std::ostream& operator<< ( std::ostream& s, OCPI::OS::ElapsedTime e )
 {
-  s << e.seconds << " seconds " << e.nanoseconds << " nanoseconds " << '\n';
+  s << e.seconds() << " seconds " << e.nanoseconds() << " nanoseconds " << '\n';
 
   return s;
 }
@@ -60,10 +60,9 @@ namespace
   TEST( TestOcpiOsTimer, test_1 )
   {
     OCPI::OS::Timer t;
-    OCPI::OS::Timer::ElapsedTime e;
     t.start ( );
     t.stop( );
-    t.getValue ( e );
+    OCPI::OS::ElapsedTime e = t.getElapsed();
     EXPECT_EQ ( true, true );
   }
 
@@ -71,22 +70,20 @@ namespace
   // Test 2: Sleep for a while and see that the timer isn't too far off.
   TEST( TestOcpiOsTimer, test_2 )
   {
-    OCPI::OS::Timer::ElapsedTime e;
     OCPI::OS::Timer t ( true );
     OCPI::OS::sleep ( 3000 );
     t.stop ( );
-    t.getValue ( e );
-    unsigned int msecs = e.seconds * 1000 + e.nanoseconds / 1000000;
+    OCPI::OS::ElapsedTime e = t.getElapsed();
+    unsigned int msecs = e.seconds() * 1000 + e.nanoseconds() / 1000000;
     // Allow for a 15% skew
-    EXPECT_GE( msecs, 2550 );
-    EXPECT_LE( msecs, 3450 );
+    EXPECT_GE( msecs, 2550u );
+    EXPECT_LE( msecs, 3450u );
   }
 
 
   // Test 3: Test that the timer can be re-started.
   TEST( TestOcpiOsTimer, test_3 )
   {
-    OCPI::OS::Timer::ElapsedTime e;
     OCPI::OS::Timer t;
 
     for ( unsigned int i = 0; i < 10; i++ )
@@ -97,18 +94,17 @@ namespace
       OCPI::OS::sleep ( 300 );
     }
 
-    t.getValue ( e );
-    unsigned int msecs = e.seconds * 1000 + e.nanoseconds / 1000000;
+    OCPI::OS::ElapsedTime e = t.getElapsed();
+    unsigned int msecs = e.seconds() * 1000 + e.nanoseconds() / 1000000;
     // Allow for a 1% skew
-    EXPECT_GE( msecs, 2970 );
-    EXPECT_LE( msecs, 3030 );
+    EXPECT_GE( msecs, 2970u );
+    EXPECT_LE( msecs, 3030u );
   }
 
 
   // Test 4: Timer reset
   TEST( TestOcpiOsTimer, test_4 )
   {
-    OCPI::OS::Timer::ElapsedTime e;
     OCPI::OS::Timer t;
 
     for ( unsigned int i = 0; i < 10; i++ )
@@ -127,55 +123,55 @@ namespace
       t.stop ( );
     }
 
-    t.getValue ( e );
-    unsigned int msecs = e.seconds * 1000 + e.nanoseconds / 1000000;
+    OCPI::OS::ElapsedTime e = t.getElapsed();
+    unsigned int msecs = e.seconds() * 1000 + e.nanoseconds() / 1000000;
     // Allow for a 1% skew
-    EXPECT_GE( msecs, 2970 );
-    EXPECT_LE( msecs, 3030 );
+    EXPECT_GE( msecs, 2970u );
+    EXPECT_LE( msecs, 3030u );
   }
 
 
   // Test 5: Timer precision: Expect better than 100ms
   TEST( TestOcpiOsTimer, test_5 )
   {
-    OCPI::OS::Timer::ElapsedTime e;
+    OCPI::OS::ElapsedTime e;
     OCPI::OS::Timer::getPrecision ( e );
-    EXPECT_EQ( e.seconds, 0 );
-    EXPECT_NE( e.nanoseconds, 0 );
-    EXPECT_LE( e.nanoseconds, 100000000 );
+    EXPECT_EQ( e.seconds(), 0u );
+    EXPECT_NE( e.nanoseconds(), 0u );
+    EXPECT_LE( e.nanoseconds(), 100000000u );
   }
 
 
   //  Test 6: Elapsed time comparators
   TEST( TestOcpiOsTimer, test_6 )
   {
-    OCPI::OS::Timer::ElapsedTime e1, e2;
+    OCPI::OS::ElapsedTime e1, e2;
 
-    e1.seconds = 100; e1.nanoseconds = 100;
-    e2.seconds = 100; e2.nanoseconds = 100;
+    e1.set( 100, 100);
+    e2.set( 100, 100);
 
     EXPECT_EQ( e1, e2 );
 
-    e1.seconds = 101; e1.nanoseconds = 100;
-    e2.seconds = 100; e2.nanoseconds = 100;
+    e1.set( 101, 100);
+    e2.set( 100, 100);
 
     EXPECT_NE( e1, e2 );
     EXPECT_GT( e1, e2 );
 
-    e1.seconds = 100; e1.nanoseconds = 101;
-    e2.seconds = 100; e2.nanoseconds = 100;
+    e1.set( 100, 101);
+    e2.set( 100, 100);
 
     EXPECT_NE( e1, e2 );
     EXPECT_GT( e1, e2 );
 
-    e1.seconds = 100; e1.nanoseconds = 99;
-    e2.seconds = 100; e2.nanoseconds = 100;
+    e1.set( 100, 99);
+    e2.set( 100, 100);
 
     EXPECT_NE( e1, e2 );
     EXPECT_LT( e1, e2 );
 
-    e1.seconds = 99;  e1.nanoseconds = 100;
-    e2.seconds = 100; e2.nanoseconds = 100;
+    e1.set( 99, 100);
+    e2.set( 100, 100);
 
     EXPECT_NE( e1, e2 );
     EXPECT_LT( e1, e2 );
@@ -185,35 +181,35 @@ namespace
   // Test 7: Elapsed time arithmetic
   TEST( TestOcpiOsTimer, test_7 )
   {
-    OCPI::OS::Timer::ElapsedTime e1, e2, e3;
+    OCPI::OS::ElapsedTime e1, e2, e3;
 
-    e1.seconds = 100; e1.nanoseconds = 300;
-    e2.seconds = 200; e2.nanoseconds = 400;
+    e1.set( 100, 300);
+    e2.set( 200, 400);
     e3 = e1 + e2;
 
-    EXPECT_EQ( e3.seconds, 300 );
-    EXPECT_EQ( e3.nanoseconds, 700 );
+    EXPECT_EQ( e3.seconds(), 300u );
+    EXPECT_EQ( e3.nanoseconds(), 700u );
 
-    e1.seconds = 100; e1.nanoseconds = 600000000;
-    e2.seconds = 100; e2.nanoseconds = 600000000;
+    e1.set( 100, 600000000);
+    e2.set( 100, 600000000);
     e3 = e1 + e2;
 
-    EXPECT_EQ( e3.seconds, 201 );
-    EXPECT_EQ( e3.nanoseconds, 200000000 );
+    EXPECT_EQ( e3.seconds(), 201u );
+    EXPECT_EQ( e3.nanoseconds(), 200000000u );
 
-    e1.seconds = 300; e1.nanoseconds = 400;
-    e2.seconds = 100; e2.nanoseconds = 100;
+    e1.set( 300, 400);
+    e2.set( 100, 100);
     e3 = e1 - e2;
 
-    EXPECT_EQ( e3.seconds, 200 );
-    EXPECT_EQ( e3.nanoseconds, 300 );
+    EXPECT_EQ( e3.seconds(), 200u );
+    EXPECT_EQ( e3.nanoseconds(), 300u );
 
-    e1.seconds = 300; e1.nanoseconds = 400;
-    e2.seconds = 100; e2.nanoseconds = 500;
+    e1.set( 300, 400);
+    e2.set( 100, 500);
     e3 = e1 - e2;
 
-    EXPECT_EQ( e3.seconds, 199 );
-    EXPECT_EQ( e3.nanoseconds, 999999900 );
+    EXPECT_EQ( e3.seconds(), 199u );
+    EXPECT_EQ( e3.nanoseconds(), 999999900u );
   }
 
 } // End: namespace<unnamed>

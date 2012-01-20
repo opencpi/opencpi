@@ -215,8 +215,9 @@ namespace DataTransfer {
     /***************************************
      *  Get the location via the endpoint
      ***************************************/
-    EndPoint* getEndPoint( std::string& end_point, bool local  );
-    void releaseEndPoint( EndPoint* loc );
+    // EndPoint* getEndPoint( std::string& end_point, bool local  );
+    EndPoint* createEndPoint(std::string& endpoint, bool local = false);
+    // void releaseEndPoint( EndPoint* loc );
 
 
     /***************************************
@@ -224,16 +225,16 @@ namespace DataTransfer {
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint( const OCPI::Util::PValue *props=NULL);
+    std::string allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes);
 
     /***************************************
      *  This method is used to flush any cached items in the factoy
      ***************************************/
-    void clearCache();
+    //    void clearCache();
 
-  protected:
+    //  protected:
 
-    OCPI::OS::Mutex  m_mutex;
+    // OCPI::OS::Mutex  m_mutex;
 
 
   };

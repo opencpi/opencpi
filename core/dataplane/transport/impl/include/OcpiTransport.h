@@ -49,6 +49,7 @@
 #define OCPI_DataTransport_Transport_H_
 
 #include <vector>
+#include <OcpiOsTimer.h>
 #include <OcpiConnectionMetaData.h>
 #include <OcpiCircuit.h>
 #include <OcpiTransportConstants.h>
@@ -92,7 +93,7 @@ namespace OCPI {
       /**********************************
        * This method gets called when an error gets generated
        *********************************/
-      virtual void error( OCPI::Util::EmbeddedException& ex ) = 0;
+      //      virtual void error( OCPI::Util::EmbeddedException& ex ) = 0;
 
       virtual ~NewCircuitRequestListener(){}
 
@@ -128,12 +129,13 @@ namespace OCPI {
        * Is an endpoint local
        *********************************/
       DataTransfer::SMBResources* addLocalEndpointFromProtocol( const char* protocol );      
-      DataTransfer::SMBResources* addLocalEndpoint( const char* ep );
-      DataTransfer::SMBResources* addLocalCompatibleEndpoint( const char* ep );
+      DataTransfer::SMBResources* addLocalEndpoint( const char* ep, bool compatibleWith = false );
+      DataTransfer::SMBResources* findLocalCompatibleEndpoint( const char* ep );
       DataTransfer::SMBResources* addRemoteEndpoint( const char* ep );
       bool                        isLocalEndpoint( const char* ep );
       DataTransfer::SMBResources* getEndpointResources(const char* ep);
       void                        removeLocalEndpoint(  const char* ep );
+      DataTransfer::EndPoint &getLocalCompatibleEndpoint(const char *ep);
 
 
       /**********************************
@@ -145,7 +147,8 @@ namespace OCPI {
                               ConnectionMetaData* connection,                
                               PortOrdinal src_ports[]=NULL,        
                               PortOrdinal dest_ports[]=NULL,   
-                              OCPI::OS::uint32_t flags=0
+                              uint32_t flags = 0,
+			      OCPI::OS::Timer *timer = 0
                               );                                        
 
       // ports in the connection are used.
@@ -154,7 +157,8 @@ namespace OCPI {
                               ConnectionMetaData* connection,                
                               PortOrdinal src_ports[]=NULL,        
                               PortOrdinal dest_ports[]=NULL,        
-                              OCPI::OS::uint32_t flags=0 ); 
+                              uint32_t flags = 0,
+			      OCPI::OS::Timer *timer = 0); 
 
       // ports in the connection are used.
       Circuit * createCircuit( OCPI::RDT::Descriptors& sPort );
@@ -177,6 +181,7 @@ namespace OCPI {
        * Deletes a circuit
        *********************************/
       void deleteCircuit( CircuitId circuit );        
+      void deleteCircuit( Circuit* circuit );        
 
       /**********************************
        * Retrieves the requested circuit
@@ -188,7 +193,7 @@ namespace OCPI {
        * General house keeping 
        *********************************/
       void dispatch(DataTransfer::EventManager* event_manager=NULL);
-      std::vector<std::string> getListOfSupportedEndpoints();
+      //      std::vector<std::string> getListOfSupportedEndpoints();
 
       /**********************************
        * Set the callback listener for new circuit requests on this transport
@@ -200,7 +205,12 @@ namespace OCPI {
        * Does this transport support mailboxes?
        *********************************/
       inline bool supportsMailboxes(){return m_uses_mailboxes;}
-      void setListeningEndpoint( DataTransfer::EndPoint* ep){m_CSendpoint=ep;}
+      void setListeningEndpoint( DataTransfer::EndPoint* ep) throw() {m_CSendpoint=ep;}
+
+      /**********************************
+       * Does this (local, finalized) endpoint support talking to this other endpoint?
+       *********************************/
+      static bool canSupport(DataTransfer::EndPoint &ep, const char *endpoint);
 
     protected:
 
@@ -223,7 +233,7 @@ namespace OCPI {
       /**********************************
        * Request a new connection
        *********************************/
-      void requestNewConnection( Circuit* circuit, bool send);
+      void requestNewConnection( Circuit* circuit, bool send, OCPI::OS::Timer *timer);
 
       DataTransfer::SMBResources* getEndpointResourcesFromMailbox(OCPI::OS::uint32_t idx);
 
@@ -233,7 +243,7 @@ namespace OCPI {
 
       DataTransfer::SMBResources *         m_defEndpoint; // FIXME: check lifecycle
       std::vector<std::string>             m_endpoints;
-      std::vector<DataTransfer::EndPoint*> m_finalized_endpoints;
+      //      std::vector<DataTransfer::EndPoint*> m_finalized_endpoints;
       
 
       /**********************************

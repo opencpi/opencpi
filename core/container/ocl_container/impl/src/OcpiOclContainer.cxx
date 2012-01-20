@@ -711,11 +711,11 @@ namespace OCPI
           timedOut = false;
           if ( myRunCondition->timeout )
           {
-            OS::Timer::ElapsedTime et;
+            OS::ElapsedTime et;
             runTimer.stop();
             runTimer.getValue( et );
-            unsigned int elapsed_usecs = ( et.seconds * 1000000 ) +
-                                         ( et.nanoseconds / 1000 );
+            unsigned int elapsed_usecs =
+	      et.seconds() * 1000000 + et.nanoseconds() / 1000 ;
             runTimer.start();
             if ( elapsed_usecs > myRunCondition->usecs )
             {

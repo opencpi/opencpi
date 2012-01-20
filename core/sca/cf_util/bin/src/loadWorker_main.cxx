@@ -218,7 +218,7 @@ loadWorkerInt (CORBA::ORB_ptr orb,
     workerFileNameInFileFs += workerRelName;
 
     OCPI::Util::FileFs::FileFs * fileFs =
-      new OCPI::Util::FileFs::FileFs (workerDirName);
+      new OCPI::Util::FileFs::FileFs (workerDirName.c_str());
 
     if (!fileFs->exists (workerFileNameInFileFs)) {
       delete fileFs;

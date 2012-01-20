@@ -57,8 +57,8 @@ namespace OCPI {
     {
     public:
 
-      NewCircuitListener( Server* server, ServerEventHandler* cb, Transport* transport )
-        :m_server(server),m_cb(cb),m_transport(transport),m_halfMCircuit(0){}
+      NewCircuitListener( Server* server, ServerEventHandler* cb, Transport* transport, OCPI::OS::Mutex *mtx )
+        :m_server(server),m_cb(cb),m_transport(transport),m_halfMCircuit(0), m_mutex(mtx){}
 
 
       void newCircuitAvailable( Circuit* circuit )
@@ -104,7 +104,7 @@ namespace OCPI {
               m_halfMCircuit.remove( c1 );
 
               // Tell the application 
-              MessageCircuit* mc = new MessageCircuit( m_transport, c1, circuit);
+              MessageCircuit* mc = new MessageCircuit( m_transport, c1, circuit, m_mutex);
               m_server->m_circuits.push_back( mc );
               m_cb->newMessageCircuitAvailable( mc );
               break;
@@ -114,7 +114,7 @@ namespace OCPI {
         }
       }
 
-
+#if 0
       /**********************************
        * This method gets called when an error gets generated
        *********************************/
@@ -125,12 +125,13 @@ namespace OCPI {
 #endif
         m_cb->error( ex );
       }
-
+#endif
     private:
       Server*                  m_server;
       ServerEventHandler* m_cb;
       Transport*          m_transport;
-      VList                  m_halfMCircuit;  
+      VList               m_halfMCircuit;  
+      OCPI::OS::Mutex *   m_mutex;
 
     };
 
@@ -148,7 +149,7 @@ namespace OCPI {
                         OCPI::DataTransport::Transport* transport, Mutex* sem)
         : m_server(server),m_cb(cb),m_transport(transport),m_mutex(sem)
       {
-        m_listener = new NewCircuitListener(server, m_cb, m_transport);
+        m_listener = new NewCircuitListener(server, m_cb, m_transport,sem);
         transport->setNewCircuitRequestListener( m_listener );
       }
 
@@ -226,7 +227,7 @@ void Server::remove( MessageCircuit* circuit )
  *  Constructors
  **********************************/
 Server::Server( 
-                std::string& end_point,     // In - endpoint
+                const char *end_point,     // In - endpoint
                 ServerEventHandler* cb     // In - Server event handler
                 )
   :m_circuits(0),m_event_handler(cb),runThreadFlag(true)
@@ -237,11 +238,18 @@ Server::Server(
   // Add this endpoint to our known endpoints
   SMBResources* res;
   try {
-    res = m_transport->addLocalEndpoint( end_point.c_str() );
+    std::string s(end_point ? end_point : "");
+    res = s.find(':') == std::string::npos ?
+      m_transport->addLocalEndpointFromProtocol(end_point) :
+      m_transport->addLocalEndpoint( end_point);
+      
   }
   catch( OCPI::Util::ExceptionMonitor& ) {
     throw;
   }
+  if (!res)
+    throw OCPI::Util::Error("Endpoint not supported: \"%s\"",
+			    end_point);
         
 #ifdef CONTAINER_MULTI_THREADED
   m_mutex = new Mutex(true);

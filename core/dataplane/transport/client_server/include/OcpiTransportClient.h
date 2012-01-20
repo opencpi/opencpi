@@ -46,32 +46,16 @@
 #ifndef OCPI_Transport_Client_H_
 #define OCPI_Transport_Client_H_
 
+#include <OcpiOsTimer.h>
 #include <OcpiMessageCircuit.h>
 #include <OcpiThreadHook.h>
 #include <OcpiList.h>
 #include <string>
 #include <DtIntEventHandler.h>
+#include <OcpiTransport.h>
 
 
 namespace OCPI {
-  namespace DataTransport {
-    class Transport;
-  }
-}
-
-namespace DataTransfer {
-  struct EndPoint;
-}
-
-namespace OCPI {
-  namespace OS {
-    class Mutex;
-  }
-}
-class CTransportControl;
-
-namespace OCPI {
-
   namespace DataTransport {
   
     /**********************************
@@ -99,6 +83,7 @@ namespace OCPI {
     /**********************************
      * This class is used in conjuction with the OCPI transport to create a client circuit
      **********************************/
+    class CTransportControl;
     class Client : public ThreadHook
     {
 
@@ -112,21 +97,25 @@ namespace OCPI {
        **********************************/
       Client( std::string&     our_end_point, // In - endpoint
               int             buffer_size,       // In - Buffer size in bytes
-              ClientEventHandler* cb     // In - Client event handler
+              ClientEventHandler* cb = NULL     // In - Client event handler
               );
 
       /**********************************
-       *  Create a new circuit
+       *  Create/connect (via a new circuit): return true if timedout
        **********************************/
-      MessageCircuit* createCircuit( std::string& server_end_point );
-
-
+      bool connect( std::string& server_end_point, OCPI::OS::ElapsedTime delay = 0);
+      inline OCPI::DataTransport::BufferUserFacet *getNextInputBuffer(void *&data, uint32_t &length) {
+	return m_circuit ? m_circuit->getNextInputBuffer(data, length) : NULL;
+      }
+      inline void freeBuffer(OCPI::DataTransport::BufferUserFacet *buffer) {
+	if (m_circuit)
+	  m_circuit->freeBuffer(buffer);
+      }
       /**********************************
        *  Dispatch control, this method needs to be called periodically to provide 
        * the client class with houskeeping time.
        **********************************/
-      void dispatch(DataTransfer::EventManager* eh=NULL);
-
+      inline void dispatch(DataTransfer::EventManager* eh=NULL);
 
       /**********************************
        *  Remove a message circuit
@@ -141,7 +130,7 @@ namespace OCPI {
 
 
       // Our exception monitor class
-      OCPI::Util::ExceptionMonitor m_exceptionMonitor;
+      //      OCPI::Util::ExceptionMonitor m_exceptionMonitor;
 
       // Message circuits
       OCPI::Util::VList m_circuits;
@@ -155,10 +144,10 @@ namespace OCPI {
       /**********************************
        *  local init
        **********************************/
-      void init();
+      void init(DataTransfer::SMBResources* res);
 
       // our event handler
-      ClientEventHandler* m_event_handler;
+      //      ClientEventHandler* m_event_handler;
 
       // buffer count
       int m_buffer_size;
@@ -180,8 +169,8 @@ namespace OCPI {
       OCPI::OS::Mutex* m_mutex;
 
       // Transport controller
-      CTransportControl* m_transport_controller;
-
+      // CTransportControl* m_transport_controller;
+      MessageCircuit *m_circuit;
     };
 
     /**********************************

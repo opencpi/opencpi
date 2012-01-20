@@ -91,10 +91,11 @@ PCIPIOXferFactory::PCIPIOXferFactory()
 PCIPIOXferFactory::~PCIPIOXferFactory()
   throw ()
 {
-  clearCache();
+  //  clearCache();
 }
 
 
+#if 0
 /***************************************
  *  This method is used to flush any cached items in the factoy
  ***************************************/
@@ -102,7 +103,6 @@ void PCIPIOXferFactory::clearCache()
 {
   g_locations.destroyList();
 }
-
 
 // Get the location via the endpoint
 EndPoint* PCIPIOXferFactory::getEndPoint( std::string& end_point, bool /* local */  )
@@ -133,6 +133,12 @@ void PCIPIOXferFactory::releaseEndPoint( EndPoint* loc )
 #endif
 
 }
+#endif
+
+  EndPoint* PCIPIOXferFactory::
+  createEndPoint(std::string& endpoint, bool local) {
+    return new PCIEndPoint(endpoint, local);
+  }
 
 
 // This method is used to allocate a transfer compatible SMB
@@ -163,12 +169,12 @@ XferServices* PCIPIOXferFactory::getXferServices(SmemServices* source, SmemServi
  *  node.
  ***************************************/
 static OCPI::OS::int32_t pid;
-std::string PCIPIOXferFactory::allocateEndpoint( const OCPI::Util::PValue * /* props */)
+std::string PCIPIOXferFactory::
+allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
 {
   std::string ep;
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::SelfAutoMutex guard (this); 
 
-  int mailbox = getNextMailBox();
   pid++;
 
   unsigned int size = m_SMBSize;
@@ -176,11 +182,8 @@ std::string PCIPIOXferFactory::allocateEndpoint( const OCPI::Util::PValue * /* p
   char tep[128];
   pid = getpid();
   int bus_id = 0;
-  snprintf(tep,128,"ocpi-pci-pio://%d.0:%d.%d.%d",bus_id, size, mailbox,getMaxMailBox());
+  snprintf(tep,128,"ocpi-pci-pio://%d.0:%d.%d.%d",bus_id, size, mailBox, maxMailBoxes);
   ep = tep;
-
-  mailbox++;
-
   return ep;
 }
 

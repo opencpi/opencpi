@@ -23,7 +23,11 @@ dds_ports: dds_ports.cxx
 	g++ -g -o $@ -I$(OCPI_INC_DIR) $(OPENSPLICE_LD_FLAGS) $(OCPI_LD_FLAGS) $^ $(OPENSPLICE_LIBS:%=-l%)
 
 run: dds_ports workers
-	. $(OCPI_OPENSPLICE_HOME)/release.com; ospl start; OCPI_LIBRARY_PATH=lib/rcc ./dds_ports	
+	@if test "$(OCPI_HAVE_OPENSPLICE)" == ""; then \
+	  echo "*******Cannot execute OpenSplice on this machine for dds testing. Skipping execution." ; \
+	else \
+	. $(OCPI_OPENSPLICE_HOME)/release.com; ospl start; OCPI_LIBRARY_PATH=lib/rcc ./dds_ports; \
+	fi
 
 clean::
 	rm -r -f dds_ports *.dSYM *.o

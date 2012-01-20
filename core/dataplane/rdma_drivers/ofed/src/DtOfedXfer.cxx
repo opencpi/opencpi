@@ -51,7 +51,6 @@
 #include <ezxml.h>
 
 #include <OcpiOsDataTypes.h>
-#include <OcpiOsMutex.h>
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
 #include <OcpiUtilAutoMutex.h>
@@ -339,15 +338,16 @@ namespace DataTransfer {
       /***************************************
        *  Get the location via the endpoint
        ***************************************/
-      DataTransfer::EndPoint* getEndPoint( std::string& end_point, bool local );
-      void releaseEndPoint( DataTransfer::EndPoint* loc );
+      //DataTransfer::EndPoint* getEndPoint( std::string& end_point, bool local );
+      //void releaseEndPoint( DataTransfer::EndPoint* loc );
+      DataTransfer::EndPoint* createEndPoint(std::string& endpoint, bool local = false);
 
       /***************************************
        *  This method is used to dynamically allocate
        *  an endpoint for an application running on "this"
        *  node.
        ***************************************/
-      std::string allocateEndpoint(const OCPI::Util::PValue * props );
+      std::string allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes);
       void allocateEndpoints(std::vector<std::string> &l);
 
       // From driver base class
@@ -355,8 +355,8 @@ namespace DataTransfer {
 	throw (OCPI::Util::EmbeddedException);
 
     protected:
-      OCPI::OS::Mutex                  m_mutex;
-      std::map<std::string, EndPoint * > m_map;
+      //OCPI::OS::Mutex                  m_mutex;
+      //std::map<std::string, EndPoint * > m_map;
     };
     // Note that there is no base class for DT devices
     class Device
@@ -538,6 +538,7 @@ namespace DataTransfer {
     }
 
 
+#if 0
     // Get the location via the endpoint
     DataTransfer::EndPoint* 
     XferFactory::
@@ -573,6 +574,7 @@ namespace DataTransfer {
       }
       return (*it).second;
     }
+#endif
 
 
     // This method is used to allocate a transfer compatible SMB
@@ -580,7 +582,11 @@ namespace DataTransfer {
     XferFactory::
     getSmemServices( DataTransfer::EndPoint* loc )
     {
-      OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+      OCPI::Util::SelfAutoMutex guard (this);
+#if 1
+      if (!loc->smem)
+	loc->smem = new SmemServices(this, loc);
+#else
       if ( loc->smem ) {
 	return loc->smem;
       }
@@ -589,6 +595,7 @@ namespace DataTransfer {
 	loc->smem = new SmemServices( this, loc );
       }
       m_map[ loc->end_point ] = static_cast<EndPoint*>(loc);
+#endif
       return loc->smem;
     }
 
@@ -601,16 +608,16 @@ namespace DataTransfer {
     getXferServices( DataTransfer::SmemServices * s, 
 		     DataTransfer::SmemServices * t )
     {
-      OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+      OCPI::Util::SelfAutoMutex guard (this); 
       return new XferServices( s, t );
     }
 
 
     std::string 
     XferFactory::
-    allocateEndpoint( const OCPI::Util::PValue *props )
+    allocateEndpoint(const OCPI::Util::PValue*props, unsigned mailBox, unsigned maxMailBoxes)
     {
-      OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+      OCPI::Util::SelfAutoMutex guard (this); 
       Device *d;
       const char *deviceName = 0;
       if (OCPI::Util::findString(props, "Device", deviceName))
@@ -625,10 +632,9 @@ namespace DataTransfer {
 
       // This will be the non-finalized version of the ep
       char buf[512];
-      int mailbox = getNextMailBox();
       snprintf( buf, 512, "ocpi-ofed-rdma://%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d",
 		d->name().c_str(), port, (long long)0, (long long)0, 0, 0, 0,
-		(unsigned long long)0, size, mailbox, getMaxMailBox());
+		(unsigned long long)0, size, mailBox, maxMailBoxes);
       std::string ep = buf;
       return ep;
     }
@@ -639,8 +645,19 @@ namespace DataTransfer {
     allocateEndpoints(std::vector<std::string> &l) {
       for (Device *d = firstDevice(); d; d = d->nextDevice()) {
 	PValue props[] = {PVString("device", d->name().c_str()), PVEnd };
-	l.push_back(allocateEndpoint(props));
+	l.push_back(allocateEndpoint(props, getNextMailBox(), getMaxMailBox()));
       }
+    }
+
+    DataTransfer::EndPoint* XferFactory::
+    createEndPoint(std::string& endpoint, bool local) {
+      EndPoint *ep = new EndPoint(endpoint, local);
+      for (Device *d = firstDevice(); d; d = d->nextDevice())
+	if ( d->name() == ep->m_dev ) {
+	  ep->m_device = d;
+	  break;
+	}
+      return ep;
     }
 
     void

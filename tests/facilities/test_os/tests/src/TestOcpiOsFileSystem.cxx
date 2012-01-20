@@ -255,7 +255,7 @@ namespace
     EXPECT_EQ( OCPI::OS::FileSystem::exists ( absFileName, &isDir ), true );
     EXPECT_EQ( isDir, false );
     unsigned long long fileSize = OCPI::OS::FileSystem::size ( fileName );
-    EXPECT_EQ( fileSize, 13 );
+    EXPECT_EQ( fileSize, 13ull );
     std::time_t now = time ( 0 );
     std::time_t fileTime = OCPI::OS::FileSystem::lastModified ( fileName );
     EXPECT_LT( ( now - fileTime ), 3 );

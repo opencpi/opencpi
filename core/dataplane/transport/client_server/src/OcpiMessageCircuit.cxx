@@ -33,48 +33,68 @@
  */
 
 
+#include <OcpiOsMisc.h>
+#include <DtTransferInternal.h>
 #include <OcpiMessageCircuit.h>
 #include <OcpiBuffer.h>
 #include <OcpiOsAssert.h>
 #include <OcpiPort.h>
 
-using namespace OCPI::DataTransport;
-using namespace DataTransport::Interface;
-
-
+namespace OS = OCPI::OS;
+namespace OCPI {
+  namespace DataTransport {
 /**********************************
  * Constructor
  **********************************/
 MessageCircuit::MessageCircuit(
-                               OCPI::DataTransport::Transport* transport,
-                               OCPI::DataTransport::Circuit* send,                // In - send circuit
-                               OCPI::DataTransport::Circuit* rcv                // In - recieve circuit
+                               Transport* transport,
+                               Circuit* send,                // In - send circuit
+                               Circuit* rcv,                // In - recieve circuit
+			       OS::Mutex *mutex
                                )
-  :m_transport(transport),m_send(send),m_rcv(rcv),m_full_buffer(NULL)
+  : m_standalone(false), m_transport(transport),
+    m_full_buffer(NULL), m_mutex(mutex)
 {
   m_rcv_port = rcv->getInputPortSet(0)->getPort(0);
   m_send_port = send->getOutputPortSet()->getPort(0);
-  if ( m_send_port->isShadow() ) {
-#ifndef NDEBUG
-    printf("*** &&& Rcv port backwards !!!!\n");
-#endif
-    m_send = rcv;
-    m_rcv = send;
-    m_rcv_port = m_rcv->getInputPortSet(0)->getPort(0);
-    m_send_port = m_send->getOutputPortSet()->getPort(0);
-  }
+  ocpiAssert(!m_send_port->isShadow());
+  m_localEndpoint = m_rcv_port->getMetaData()->real_location_string;
+  m_remoteEndpoint =rcv->getOutputPortSet()->getPort(0)->getMetaData()->real_location_string;
 }
 
 
 MessageCircuit::~MessageCircuit()
 {
-  m_transport->deleteCircuit(m_rcv->getCircuitId());
-  m_transport->deleteCircuit(m_send->getCircuitId());
+  m_transport->deleteCircuit(m_rcv_port->getCircuit());
+  m_transport->deleteCircuit(m_send_port->getCircuit());
+  if (m_standalone) {
+    // delete m_transport; FIXME: this causes a problem with a mailbox lock not being locked on destruction...
+    delete m_mutex;
+  }
 }
 
-OCPI::DataTransport::Buffer* MessageCircuit::getSendMessageBuffer()
+const char *MessageCircuit::localEndpoint() const {
+  return m_rcv_port->getMetaData()-> real_location_string.c_str();
+}
+const char *MessageCircuit::remoteEndpoint() const {
+  return m_rcv_port->getCircuit()->getOutputPortSet()->getPort(0)->
+    getMetaData()->real_location_string.c_str();
+}
+BufferUserFacet* MessageCircuit::getNextOutputBuffer(void *&data, uint32_t &length,
+						     OS::Timer *timer)
 {
-  return m_send_port->getNextEmptyOutputBuffer();
+  m_transport->dispatch();
+  if (timer) {
+    BufferUserFacet* b;
+    while (!(b = m_send_port->getNextEmptyOutputBuffer(data, length))) {
+      if (timer->expired())
+	return 0;
+      m_transport->dispatch();
+      OS::sleep(0);
+    }
+    return b;
+  } else
+    return m_send_port->getNextEmptyOutputBuffer(data, length);
 }
 
 
@@ -83,20 +103,10 @@ OCPI::DataTransport::Buffer* MessageCircuit::getSendMessageBuffer()
 /**********************************
  *  Send a message
  **********************************/
-void MessageCircuit::sendMessage( OCPI::DataTransport::Buffer* buffer, unsigned int length )
+void MessageCircuit::sendBuffer( BufferUserFacet* buffer, unsigned int length )
 {
-  buffer->setNumberOfBytes2Transfer( length );
-
-  // Make sure we get thread time
-  m_send->checkQueuedTransfers();
-  if ( m_send->canTransferBuffer( buffer, false ) ) {
-    m_send->startBufferTransfer( buffer );
-  }
-  else {
-    m_send->queTransfer( buffer );
-  }
+  return m_send_port->sendOutputBuffer(buffer, length, 0);
 }
-
 
 /**********************************
  *  Determines if a message is available 
@@ -113,35 +123,148 @@ bool MessageCircuit::messageAvailable()
   return m_full_buffer ? true : false;
 }
 
-
 /**********************************
  *  Get a message
  **********************************/
-OCPI::DataTransport::Buffer* MessageCircuit::getNextMessage()
+BufferUserFacet* MessageCircuit::getNextInputBuffer(void *&data, uint32_t &length,
+						    OS::Timer *timer)
 {
-  OCPI::DataTransport::Buffer *r_buf=NULL;
+  BufferUserFacet *r_buf=NULL;
 
   if ( m_full_buffer ) {
     r_buf = m_full_buffer;
     m_full_buffer = NULL;
+    data = (void*)r_buf->getBuffer();
+    length = r_buf->getDataLength();
+    return r_buf;
   }
-  else {
-    r_buf = m_rcv_port->getNextFullInputBuffer();
-  }
+  uint32_t opcode;
+  if (timer) {
+    while (!(r_buf = m_rcv_port->getNextFullInputBuffer(data, length, opcode))) {
+      if (timer->expired())
+	return 0;
+      m_transport->dispatch();
+      OS::sleep(0);
+    }
+  } else
+    r_buf = m_rcv_port->getNextFullInputBuffer(data, length, opcode);
 
   static bool one_time_warning = 0;
-  if ( m_rcv->getStatus() == Circuit::Disconnecting ) {
+  if ( m_rcv_port->getCircuit()->getStatus() == Circuit::Disconnecting ) {
     if ( ! one_time_warning ) {
       printf("WARNING: Circuit is disconnecting\n");
       one_time_warning = 1;
     }
-
   }
-
-  return r_buf;
+  return m_full_buffer = r_buf;
 }
 
-void MessageCircuit::freeMessage( OCPI::DataTransport::Buffer* msg )
+void MessageCircuit::freeBuffer( BufferUserFacet* msg )
 {
-  m_rcv_port->inputAvailable( msg );
+  ocpiAssert(msg == m_full_buffer);
+  m_full_buffer = NULL;
+  m_rcv_port->inputAvailable( static_cast<Buffer*>(msg) );
+}
+
+void MessageCircuit::dispatch(DataTransfer::EventManager* eh)
+{
+#ifdef CONTAINER_MULTI_THREADED
+  m_mutex->lock();
+  m_transport->dispatch();
+  m_mutex->unlock();
+#else
+  m_transport->dispatch( eh );
+#endif
+}
+
+// Alternative constructor that directly connects as "client".
+// Since the "connect" method below has a timeout, it can't be part of the
+// constructor
+MessageCircuit::MessageCircuit(const char *local_ep_or_protocol, uint32_t bufferSize)
+  :m_standalone(true),
+   m_transport(new Transport(new TransportGlobal(0, (char**)0), true)),
+   m_rcv_port(NULL), m_send_port(NULL), m_full_buffer(NULL), m_mutex(new OS::Mutex),
+   m_bufferSize(bufferSize), m_localEndpoint(local_ep_or_protocol ? local_ep_or_protocol : "")
+{
+  
+}
+
+// Complete one of the two circuits
+Circuit &
+MessageCircuit::makeCircuit(const std::string &from, const std::string &to, bool send) {
+  Circuit &c =
+    *m_transport->createCircuit( "", new ConnectionMetaData(from.c_str(), to.c_str(), 1, m_bufferSize),
+				 NULL, NULL,
+				 NewConnectionFlag | (send ? SendCircuitFlag : RcvCircuitFlag),
+				 m_timer);
+  while (!c.ready()) {
+    c.updateConnection( NULL, 0 );
+    m_transport->dispatch();
+    OS::sleep(1);
+    if (m_timer && m_timer->expired()) {
+      delete &c;
+      throw OCPI::Util::Error("Timeout (> %us %uns) on %s side of connection '%s'->'%s'",
+			      m_timer->getElapsed().seconds(), m_timer->getElapsed().nanoseconds(),
+			      send ? "send" : "receive", from.c_str(), to.c_str());
+    }
+  }
+  c.initializeDataTransfers();
+#ifndef NDEBUG
+  printf("Client side %s circuit is ready\n", send ? "send" : "receive");
+#endif
+  return c;
+}
+
+bool MessageCircuit::
+connect(const char *server_end_point, OS::Timer *timer) {
+  m_timer = timer;
+  DataTransfer::EndPoint *ep;
+  if (m_localEndpoint.empty()) {
+    // This will always reuse the local endpoint that is compatible with the other side,
+    // and never add one.  For each supported protocol a default one is always create, although
+    // not finalized (resources allocated).  This will finalize it
+    ep = &m_transport->getLocalCompatibleEndpoint(server_end_point);
+    m_localEndpoint = ep->end_point;
+  } else
+    ep = m_transport->addLocalEndpoint(m_localEndpoint.c_str())->sMemServices->endpoint();
+  //  m_end_point = res->sMemServices->endpoint();
+  m_transport->setListeningEndpoint(ep);
+  m_remoteEndpoint = server_end_point;
+
+  Circuit &send = makeCircuit(m_localEndpoint, m_remoteEndpoint, true);
+  try {
+    Circuit &rcv = makeCircuit(m_remoteEndpoint, m_localEndpoint, false);
+    m_rcv_port = rcv.getInputPortSet(0)->getPort(0);
+    m_send_port = send.getOutputPortSet()->getPort(0);
+  } catch (...) {
+    m_transport->deleteCircuit(&send);
+    return true;
+  }
+  return false;
+}
+
+MessageCircuit::MessageCircuit(Transport &transport,
+			       OS::Mutex &mutex,
+			       const char *localEndpoint,
+			       const char *remoteEndpoint,
+			       uint32_t bufferSize,
+			       OS::Timer *timer)
+  : m_standalone(false), m_transport(&transport),
+    m_rcv_port(NULL), m_send_port(NULL),
+    m_full_buffer(NULL), m_mutex(&mutex), m_bufferSize(bufferSize),
+    m_localEndpoint(localEndpoint), m_remoteEndpoint(remoteEndpoint)
+{
+  m_timer = timer;
+  Circuit &send = makeCircuit(m_localEndpoint, m_remoteEndpoint, true);
+  try {
+      Circuit &rcv = makeCircuit(m_remoteEndpoint, m_localEndpoint, false);
+      m_rcv_port = rcv.getInputPortSet(0)->getPort(0);
+      m_send_port = send.getOutputPortSet()->getPort(0);
+  } catch(...) {
+    m_transport->deleteCircuit(&send);
+    throw;
+  }
+}
+
+  }
 }

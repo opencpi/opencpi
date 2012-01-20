@@ -60,7 +60,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <OcpiOsAssert.h>
-#include <OcpiUtilAutoMutex.h>
 #include <DtExceptions.h>
 #include <OcpiThread.h>
 
@@ -165,19 +164,28 @@ public:
 
 
   void run() {
-    while ( m_run ) {
-      m_bidx=0;
-      long long n = m_socket.recv( m_buf, TCP_BUFSIZE_READ);
-      if ( n <= 0 ) {
-	printf("Got a socket error, terminating connection\n");
-	m_socket.close();
-	throw EmbeddedException("Got a socket communication error\n");
-      }
+    try {
+      while ( m_run ) {
+	m_bidx=0;
+	long long n = m_socket.recv( m_buf, TCP_BUFSIZE_READ);
+	if ( n < 0 ) {
+	  printf("Got a socket error, terminating connection\n");
+	  m_socket.close();
+	  throw EmbeddedException("Got a socket communication error\n");
+	}
 #ifndef NDEBUG
-      printf("Got %lld bytes data on server socket !!\n", n);
+	printf("Got %lld bytes data on server socket !!\n", n);
 #endif
-      processBuffer( n );
+	processBuffer( n );
+	if (n == 0)
+	  m_run = false;
+      }
+    } catch (std::string &s) {
+      printf("Exception in socket background thread: %s\n", s.c_str());
+    } catch (...) {
+      printf("Unknown exception in socket background thread\n");
     }
+    // FIXME:  make this background exception catching generic in the utility thread class
   }
 
 
@@ -256,14 +264,15 @@ public:
       // We now know the real port, so we need to change the endpoint string.
       sep->portNum = m_server.getPortNo();
       SocketXferFactory::setEndpointString(sep->end_point, sep->ipAddress.c_str(),
-					   sep->portNum, sep->size, sep->mailbox);
+					   sep->portNum, sep->size, sep->mailbox,
+					   sep->maxCount);
     }
     m_started = true;
     while ( ! m_stop )
       // block for a while, and if we time out, check m_stop again
       if (m_server.wait(500)) {
 	OCPI::OS::Socket s = m_server.accept();
-	s.linger(false);
+	s.linger(true); // we want to give some time for data to the client FIXME timeout param?
 	ServerSocketHandler * ssh = new ServerSocketHandler(s,m_startupParms);
 	m_sockets.push_back( ssh );
 	ssh->start();
@@ -297,10 +306,11 @@ SocketXferFactory::SocketXferFactory()
 SocketXferFactory::~SocketXferFactory()
   throw ()
 {
-  clearCache();
+  //  clearCache();
 }
 
 
+#if 0
 /***************************************
  *  This method is used to flush any cached items in the factoy
  ***************************************/
@@ -313,7 +323,6 @@ void SocketXferFactory::clearCache()
   }
   g_locations.destroyList();
 }
-
 
 // Get the location via the endpoint
 EndPoint* SocketXferFactory::getEndPoint( std::string& end_point, bool local )
@@ -330,10 +339,12 @@ EndPoint* SocketXferFactory::getEndPoint( std::string& end_point, bool local )
   g_locations.insert( loc );
   return loc;
 }
+#endif
 
+#if 0
 void SocketXferFactory::releaseEndPoint( EndPoint* )
 {}
-
+#endif
 
 // This method is used to allocate a transfer compatible SMB
 SmemServices* SocketXferFactory::getSmemServices(EndPoint* loc )
@@ -387,17 +398,20 @@ static OCPI::OS::int32_t getNextPortNum()
 
 static std::string sep;
 
+// This is static
 void SocketXferFactory::
 setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
-		   unsigned size, unsigned mbox)
+		  unsigned size, unsigned mbox, unsigned maxCount)
 {
   char tep[128];
-  snprintf(tep, 128, "ocpi-socket-rdma://%s;%u:%u.%u.20", ipAddr, port, size, mbox);
+  snprintf(tep, 128, "ocpi-socket-rdma://%s;%u:%u.%u.%u", ipAddr, port, size, mbox,
+	   maxCount);
   ep = tep;
 }
-std::string SocketXferFactory::allocateEndpoint( const OCPI::Util::PValue*)
+std::string SocketXferFactory::
+allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::SelfAutoMutex guard (this);
   std::string ep;
   char ip_addr[128];
 
@@ -430,7 +444,7 @@ std::string SocketXferFactory::allocateEndpoint( const OCPI::Util::PValue*)
     }
     port = m_port++;
   }
-  setEndpointString(ep, ip_addr, port, parent().getSMBSize(), getNextMailBox());
+  setEndpointString(ep, ip_addr, port, parent().getSMBSize(), mailBox, maxMailBoxes);
 #if 0
   char tep[128];
   unsigned int size = parent().getSMBSize();
@@ -442,7 +456,10 @@ std::string SocketXferFactory::allocateEndpoint( const OCPI::Util::PValue*)
   return ep;
 }
 
-
+  EndPoint* SocketXferFactory::
+  createEndPoint(std::string& endpoint, bool local) {
+    return new SocketEndPoint(endpoint, local);
+  }
 
 
 // Sets smem location data based upon the specified endpoint
@@ -650,7 +667,7 @@ action_socket_transfer(PIO_transfer transfer)
   unsigned  trys = 10;
   unsigned long idx=0;
   char* chdr = (char*)&hdr;
-  while ( ((nb=parent().m_clientSocketT->socket().send((const char*)&chdr[idx],(size_t)btt) ) != 0) && trys-- ) {
+  while (btt && ((nb=parent().m_clientSocketT->socket().send((const char*)&chdr[idx],(size_t)btt) ) != 0) && trys-- ) {
     btt -= nb;
     idx += nb;
   }
@@ -669,7 +686,7 @@ action_socket_transfer(PIO_transfer transfer)
   btt = transfer->nbytes;
   trys = 10;
   idx=0;
-  while ( ((nb=parent().m_clientSocketT->socket().send((const char*)&src1[idx],(size_t)btt) ) != 0) && trys-- ) {
+  while (btt && ((nb=parent().m_clientSocketT->socket().send((const char*)&src1[idx],(size_t)btt) ) != 0) && trys-- ) {
     btt -= nb;
     idx += nb;
   }

@@ -122,15 +122,15 @@ namespace OCPI {
     const char *Implementation::getValue(const std::string &sym, ExprValue &val) {
       // Our builtin symbols take precendence, but can be overridden with $
       if (sym == "model") {
-	val.number = false;
+	val.isNumber = false;
 	val.string = m_model;
 	return NULL;
       } else if (sym == "platform") {
-	val.number = false;
+	val.isNumber = false;
 	val.string = m_attributes->m_platform;
 	return NULL;
       } else if (sym == "os") {
-	val.number = false;
+	val.isNumber = false;
 	val.string = m_attributes->m_os;
 	return NULL;
       }

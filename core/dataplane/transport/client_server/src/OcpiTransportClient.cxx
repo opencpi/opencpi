@@ -32,7 +32,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <OcpiTransportClient.h>
 #include <OcpiTransport.h>
 #include <OcpiMessageCircuit.h>
@@ -43,7 +42,7 @@
 #include <OcpiCircuit.h>
 
 using namespace OCPI::DataTransport;
-using namespace OCPI::OS;
+namespace OS = OCPI::OS;
 using namespace DataTransfer;
 using namespace DataTransport::Interface;
 
@@ -52,33 +51,22 @@ int Client::m_count=0;
 /**********************************
  *  Local init
  **********************************/
-void Client::init()
+void Client::init(SMBResources* res)
 {
-  if ( !m_init && (m_endpoint_string.length() != 0)  ) {
-
-    SMBResources* res;
-    try {
-      res = m_transport->addLocalEndpoint( m_endpoint_string.c_str() );
-    }
-    catch( ... ) {
-      throw;
-    }
-                
     // Get our endpoint
     m_end_point = res->sMemServices->endpoint();
     m_transport->setListeningEndpoint( m_end_point );
-                
-    m_init=true;
-  }
-
 }
+
+#if 0
 
 class CTransportControl : public OCPI::Util::Thread
 {
 public:
   friend class Client;
 
-  CTransportControl( Client* client, ClientEventHandler* cb,  OCPI::DataTransport::Transport* transport, Mutex* mut)
+  CTransportControl( Client* client, ClientEventHandler* cb,
+		     OCPI::DataTransport::Transport* transport, OS::Mutex* mut)
     : m_client(client),m_cb(cb),m_transport(transport),m_mutex(mut)
   {
   }
@@ -92,12 +80,13 @@ public:
 
       m_transport->dispatch();
 
-      for ( OCPI::OS::uint32_t n=0; n<m_client->m_circuits.getElementCount(); n++ ) {
-        if ( static_cast<MessageCircuit*>(m_client->m_circuits[n])->messageAvailable() ) {
-          someCircuitHadData = true;
-          m_cb->dataAvailable( static_cast<MessageCircuit*>(m_client->m_circuits[n]) );
-        }
-      }
+      if (m_cb)
+	for ( uint32_t n=0; n<m_client->m_circuits.getElementCount(); n++ ) {
+	  if ( static_cast<MessageCircuit*>(m_client->m_circuits[n])->messageAvailable() ) {
+	    someCircuitHadData = true;
+	    m_cb->dataAvailable( static_cast<MessageCircuit*>(m_client->m_circuits[n]) );
+	  }
+	}
 
       m_mutex->unlock();
 
@@ -107,7 +96,7 @@ public:
        */
 
       if (!someCircuitHadData) {
-        OCPI::OS::sleep(100);
+        OS::sleep(100);
       }
 
       m_mutex->lock();
@@ -118,12 +107,12 @@ public:
 
 private:
   Client*                            m_client;
-  ClientEventHandler*               m_cb;
+  ClientEventHandler*                m_cb;
   OCPI::DataTransport::Transport*    m_transport;
-  Mutex*                            m_mutex;
+  OS::Mutex*                         m_mutex;
 
 };
-
+#endif
         
 /**********************************
  *  Constructors
@@ -134,54 +123,54 @@ Client::Client(
                 ClientEventHandler*            cb     
 
                 )
-  : m_circuits(0),runThreadFlag(true),m_event_handler(cb),m_buffer_size(buffer_size),
-    m_init(false)
+  : m_circuits(0),runThreadFlag(true),
+    //    m_event_handler(cb),
+    m_buffer_size(buffer_size),
+    m_init(false), m_circuit(NULL)
 {
+    (void)cb;
 
   OCPI::DataTransport::TransportGlobal *tpg = new OCPI::DataTransport::TransportGlobal(0,(char**)0);
   m_transport = new OCPI::DataTransport::Transport(tpg,true);
 
   // If we dont have an endpoint, we need to get one
-  if ( end_point.length() ) {
+  if ( end_point.length()) {
     m_endpoint_string = end_point;
+    init(m_transport->addLocalEndpoint( m_endpoint_string.c_str()));
   }
-  init();
 
   // Create our controller
 #ifdef CONTAINER_MULTI_THREADED
-  m_mutex = new Mutex(true);
-#endif
+  m_mutex = new OCPI::OS::Mutex(true);
 
-#ifdef CONTAINER_MULTI_THREADED
   m_transport_controller = new CTransportControl(this, cb, m_transport, m_mutex );
-#endif
 
-#ifdef CONTAINER_MULTI_THREADED
   m_transport_controller->start();
-#endif
-        
+#endif        
 }
 
 
 /**********************************
- *  Create a new circuit
+ *  Create a new circuit: return whether we timed out
  **********************************/
 #define CLIENT_DEFAULT_BUFFER_SIZE 1024*10
-MessageCircuit* Client::createCircuit( std::string& server_end_point )
+bool Client::connect( std::string& server_end_point, OS::ElapsedTime delay)
 {
+#if 0
   OCPI::Util::PValue props[] = {OCPI::Util::PVULong("SMBSize",CLIENT_DEFAULT_BUFFER_SIZE),
 				OCPI::Util::PVEnd };
-
+#endif
 #ifdef CONTAINER_MULTI_THREADED
   m_mutex->lock();
 #endif
 
+  OS::Timer timer(delay != 0);
+  OS::ElapsedTime et;
   //Make sure we have an endpoint to work with
   if ( m_endpoint_string.length() == 0 ) {
-    // Ask the transfer factory to give me an endpoint that we can support
-    std::string nuls;
-    m_endpoint_string = XferFactoryManager::getFactoryManager().allocateEndpoint(nuls, props);
-    init();
+    SMBResources* res = m_transport->findLocalCompatibleEndpoint(server_end_point.c_str());
+    m_endpoint_string = res->sMemServices->endpoint()->end_point; 
+    init(res);
   }
 
   MessageCircuit* mc=NULL;
@@ -221,8 +210,16 @@ MessageCircuit* Client::createCircuit( std::string& server_end_point )
     // any houskeeping that it needs to do.
     m_transport->dispatch();
 
-    OCPI::OS::sleep(0);
+    OS::sleep(0);
+    if (delay != 0) {
+      timer.getValue(et);
+      if (et > delay)
+	return true;
+    }
   }
+#ifndef NDEBUG
+  printf("Client side send circuit is ready\n");
+#endif
 
   try {
     sprintf( cid, "%s-%d\n", m_end_point->end_point.c_str(), m_count++);
@@ -248,16 +245,25 @@ MessageCircuit* Client::createCircuit( std::string& server_end_point )
     // any houskeeping that it needs to do.
     m_transport->dispatch();
 
-    OCPI::OS::sleep(0);
+    OS::sleep(0);
+    if (delay != 0) {
+      timer.getValue(et);
+      if (et > delay)
+	return true;
+    }
   }
+#ifndef NDEBUG
+  printf("Client side recv circuit is ready\n");
+#endif
 
-  mc = new MessageCircuit( m_transport, send_circuit, rcv_circuit);
+  mc = new MessageCircuit( m_transport, send_circuit, rcv_circuit, m_mutex);
   m_circuits.push_back( mc );
 
 #ifdef CONTAINER_MULTI_THREADED
   m_mutex->unlock();
 #endif
-  return mc;
+  m_circuit = mc;
+  return false;
 }
 
 
@@ -335,7 +341,7 @@ Client::~Client()
 
   try {
     // Delete all of the circuits
-    for ( OCPI::OS::uint32_t n=0; n<m_circuits.getElementCount(); n++ ) {
+    for (uint32_t n=0; n<m_circuits.getElementCount(); n++ ) {
       MessageCircuit* c = static_cast<MessageCircuit*>(m_circuits[n]);
       delete c;
     }

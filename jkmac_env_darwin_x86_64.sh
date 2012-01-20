@@ -54,6 +54,7 @@ fi
 export OCPI_OS=darwin
 export OCPI_ARCH=x86_64
 export OCPI_BUILD_HOST=darwin-x86_64
+export OCPI_TARGET_HOST=$OCPI_BUILD_HOST
 export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 export OCPI_EXCLUDE_TARGETS=xilinx
 
@@ -67,11 +68,11 @@ export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
 
 # #### Location of Verilator #################################### #
 
-export OCPI_VERILATOR_DIR=/opt/opencpi/prerequisites/verilator/darwin-x86_64
+export OCPI_VERILATOR_DIR=/opt/opencpi/prerequisites/verilator/$OCPI_BUILD_HOST
 
 # #### Location of Icarus #################################### #
 
-export OCPI_ICARUS_DIR=/opt/opencpi/prerequisites/icarus/darwin-x86_64
+export OCPI_ICARUS_DIR=/opt/opencpi/prerequisites/icarus/$OCPI_BUILD_HOST
 
 # #### Build output location ############################################## #
 
@@ -106,10 +107,10 @@ export HAVE_CORBA=1
 
 # OpenCPI uses OmniORB exclusivly
 export OCPI_CORBA_ORB=OMNI
-export OCPI_OMNI_DIR=/usr/local
-export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/bin
+export OCPI_OMNI_DIR=/opt/opencpi/prerequisites/omniorb
+export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/bin
 export OCPI_OMNI_IDL_DIR=$OCPI_OMNI_DIR/share/idl/omniORB
-export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/lib
+export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/lib
 export OCPI_OMNI_INCLUDE_DIR=$OCPI_OMNI_DIR/include/omniORB4
 
 # #### Path to Mercury tools and libraries ################################ #
@@ -136,6 +137,8 @@ export OCPI_SMB_SIZE=100000000
 # #########  OpenCV 
 export OCPI_HAVE_OPENCV=1
 export OCPI_OPENCV_HOME=/usr/local
+#export OCPI_HAVE_OPENSPLICE=1
+export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
 
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

@@ -78,10 +78,10 @@ PIOXferFactory::PIOXferFactory()
 PIOXferFactory::~PIOXferFactory()
   throw ()
 {
-  clearCache();
+  //  clearCache();
 }
 
-
+#if 0
 /***************************************
  *  This method is used to flush any cached items in the factoy
  ***************************************/
@@ -99,7 +99,7 @@ void PIOXferFactory::clearCache()
 // Get the location via the endpoint
 EndPoint* PIOXferFactory::getEndPoint( std::string& end_point, bool /* local */ )
 { 
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::SelfAutoMutex guard (this); 
 
   GppEndPoint *loc;
   for ( OCPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
@@ -117,10 +117,17 @@ EndPoint* PIOXferFactory::getEndPoint( std::string& end_point, bool /* local */ 
   g_locations.insert( loc );
   return loc;
 }
+#endif
 
+  EndPoint* PIOXferFactory::
+  createEndPoint(std::string& endpoint, bool local) {
+    return new GppEndPoint(endpoint, 0, local);
+  }
+
+#if 0
 void PIOXferFactory::releaseEndPoint( EndPoint* )
 {}
-
+#endif
 
 // This method is used to allocate a transfer compatible SMB
 SmemServices* PIOXferFactory::getSmemServices(EndPoint* loc )
@@ -148,23 +155,20 @@ XferServices* PIOXferFactory::getXferServices(SmemServices* source, SmemServices
  ***************************************/
 static OCPI::OS::int32_t pid;
 static OCPI::OS::int32_t smb_count=0;
-std::string 
-PIOXferFactory::
-allocateEndpoint( const PValue * /* props */ )
+std::string PIOXferFactory::
+allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
 {
-  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  OCPI::Util::SelfAutoMutex guard (this); 
   std::string ep;
 
-  int mailbox = getNextMailBox();
   pid++;
 
   unsigned int size = m_SMBSize;
 
   pid = getpid();
   char tep[128];
-  snprintf(tep,128,"ocpi-smb-pio://pioXfer%d%d:%d.%d.%d",pid,smb_count++,size, mailbox,getMaxMailBox());
+  snprintf(tep,128,"ocpi-smb-pio://pioXfer%d%d:%d.%d.%d",pid,smb_count++,size, mailBox, maxMailBoxes);
   ep = tep;
-  mailbox++;
 
   return ep;
 }
@@ -237,7 +241,7 @@ void PIOXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 
 XferRequest* PIOXferServices::createXferRequest()
 {
-  OCPI::Util::AutoMutex guard ( parent().m_mutex, true ); 
+  OCPI::Util::SelfAutoMutex guard (&parent()); 
   return new PIOXferRequest ( *this );
 }
 

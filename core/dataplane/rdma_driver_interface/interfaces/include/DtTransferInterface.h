@@ -53,9 +53,10 @@
 #define DataTransfer_TransferInterface_H_
 
 #include <vector>
+#include <list>
 #include <string.h>
 #include "ezxml.h"
-#include <OcpiOsDataTypes.h>
+#include <OcpiUtilSelfMutex.h>
 #include <OcpiList.h>
 #include <OcpiDriverManager.h>
 
@@ -239,7 +240,8 @@ namespace DataTransfer {
   class XferFactory
     : public OCPI::Driver::DriverType<XferFactoryManager, XferFactory>,
       public OCPI::Util::Parent<SmemServices>,
-      public FactoryConfig
+      public FactoryConfig,
+      virtual protected OCPI::Util::SelfMutex
   {
   public:
 
@@ -267,8 +269,10 @@ namespace DataTransfer {
      * This method creates a specialized SmeLocation object.  This call should
      * cache locations and return the same location object for identical strings.
      ***************************************/
-    virtual EndPoint* getEndPoint( std::string& endpoint, bool local=false )=0;
-
+    virtual EndPoint* getEndPoint( std::string& endpoint, bool local=false );
+    virtual EndPoint* newCompatibleEndPoint( const char*endpoint);
+    // Avoid the mailbox, and match the mailbox count, if not -1
+    virtual EndPoint* createEndPoint(std::string& endpoint, bool local=false) = 0;
 
     /***************************************
      *  This method is used to dynamically allocate
@@ -276,7 +280,8 @@ namespace DataTransfer {
      *  node.  This endpoint does not need to be finalized until
      * it has been passed to finalizeEndpoint().
      ***************************************/
-    virtual std::string allocateEndpoint(const OCPI::Util::PValue *props=NULL) = 0;
+    virtual std::string allocateEndpoint(const OCPI::Util::PValue*,
+					 unsigned mailBox, unsigned maxMailBoxes) = 0;
 
     /***************************************
      *  This method is used to dynamically allocate
@@ -303,12 +308,13 @@ namespace DataTransfer {
      *  Gets the first node specified by name, otherwise null
      ***************************************/    
     static ezxml_t getNode( ezxml_t tn, const char* name );
-
-
-    protected:
-    int getNextMailBox();
-    int getMaxMailBox();
-
+    // The range of mailboxes is common across all transports.
+    // This will allow us to share memory between protocol someday.
+    uint32_t getMaxMailBox(), getNextMailBox();
+  private:
+    // This vector is indexed by the mailbox number of the endpoint
+    typedef std::vector<EndPoint *> EndPoints;
+    EndPoints m_locations;
   };
   // OCPI::Driver::Device is virtually inherited to give access
   // to the class that is not normally inherited here.

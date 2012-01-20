@@ -90,9 +90,7 @@ namespace OCPI {
          *             \a root and its subdirectories will be accessible.
 	 *             The default constructor uses the cwd.
          */
-        FileFs ()
-          throw ();
-        FileFs (const std::string &root)
+        FileFs (const char *root = NULL)
           throw (std::string);
 
         /**

@@ -95,7 +95,7 @@ namespace DataTransfer {
     // Compute virtual address to return to caller for a Map call.
     void* computeMappedVA ()
     {
-      HostSmem* pSmem = (HostSmem*)m_pSmem;
+      HostSmem* pSmem = static_cast<HostSmem*>(m_pSmem);
 
       // If we mapped at 0, then this code is identical. If we mapped at non-zero
       // (caller specified non-zero offset/size), this accounts for it.
@@ -155,7 +155,8 @@ namespace DataTransfer {
       catch( ... ) 
         {
           delete pMapper;
-          delete (m_pSmem);
+          delete m_pSmem;
+	  m_pSmem = 0;
           throw;
         }
     }
@@ -166,7 +167,7 @@ namespace DataTransfer {
     void close ()
     {
       // Verify state
-      HostSmem* pSmem = (HostSmem*)m_pSmem;
+      HostSmem* pSmem = static_cast<HostSmem*>(m_pSmem);
       if (pSmem == 0)
         {
           throw DataTransferEx (RESOURCE_EXCEPTION, "HostSmemServices::Close: No active instance");
@@ -186,7 +187,7 @@ namespace DataTransfer {
     }
 
     // Attach to an existing shared memory object by name.
-    OCPI::OS::int32_t attach (EndPoint* loc)
+    OCPI::OS::int32_t attach(EndPoint* loc)
     {
       // Begin exception handler
       OCPI::OS::int32_t rc = 0;
@@ -204,7 +205,7 @@ namespace DataTransfer {
             }
 
           // Lookup existing named shared memory object.
-          if ((pSmem = (HostSmem *)this->BaseSmemServices::lookup (loc->getAddress())) == 0)
+          if ((pSmem = static_cast<HostSmem *>(this->BaseSmemServices::lookup (loc->getAddress()))) == 0)
             {
               // Attempt to attach to host OS shared memory.
               //                EndPoint loc = OcpiSmemServices::HostOnly;
@@ -236,7 +237,8 @@ namespace DataTransfer {
       catch( ... ) 
         {
           delete pMapper;
-          delete (m_pSmem);
+          delete m_pSmem;
+          m_pSmem = 0;
           throw;
         }
       if (rc == 0)
@@ -250,7 +252,7 @@ namespace DataTransfer {
     OCPI::OS::int32_t detach ()
     {
       // Verify state
-      HostSmem* pSmem = (HostSmem*)m_pSmem;
+      HostSmem* pSmem = static_cast<HostSmem*>(m_pSmem);
       if (pSmem == 0)
         {
           throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Detach: No active instance");
@@ -277,7 +279,7 @@ namespace DataTransfer {
       void* pva=NULL;
 
       // Verify state
-      HostSmem* pSmem = (HostSmem*)m_pSmem;
+      HostSmem* pSmem = static_cast<HostSmem*>(m_pSmem);
       if (pSmem == 0)
         {
           throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Map: No active instance");
@@ -329,7 +331,7 @@ namespace DataTransfer {
     OCPI::OS::int32_t unMap ()
     {
       // Verify state
-      HostSmem* pSmem = (HostSmem*)m_pSmem;
+      HostSmem* pSmem = static_cast<HostSmem*>(m_pSmem);
       if (pSmem == 0)
         {
           throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::UnMap: No active instance");
@@ -356,7 +358,7 @@ namespace DataTransfer {
       void* pva=NULL;
 
       // Verify state
-      HostSmem* pSmem = (HostSmem*)m_pSmem;
+      HostSmem* pSmem = static_cast<HostSmem*>(m_pSmem);
       if (pSmem == 0)
         {
           throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Enable: No active instance");
@@ -383,7 +385,7 @@ namespace DataTransfer {
     OCPI::OS::int32_t disable ()
     {
       // Verify state
-      HostSmem* pSmem = (HostSmem*)m_pSmem;
+      HostSmem* pSmem = static_cast<HostSmem*>(m_pSmem);
       if (pSmem == 0)
         {
           throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::Disable: No active instance");
@@ -398,7 +400,7 @@ namespace DataTransfer {
     //        GetHandle - platform dependent opaque handle for Smem instance.
     void* getHandle ()
     {
-      HostSmem* pSmem = (HostSmem*)m_pSmem;
+      HostSmem* pSmem = static_cast<HostSmem*>(m_pSmem);
       if (pSmem == 0)
         {
           throw DataTransferEx (RESOURCE_EXCEPTION,"HostSmemServices::GetHandle: No active instance");
@@ -412,12 +414,17 @@ namespace DataTransfer {
       :BaseSmemServices(p, cloc)
     {
       EndPoint* loc = (EndPoint*)cloc;
-      create(loc);
+      if (cloc->local)
+	create(loc);
+      else
+	attach(loc);
     }
 
     virtual ~HostSmemServices ()
     {
-      delete m_pSmem;
+      ocpiAssert(m_pSmem->m_refcnt > 0);
+      if (--m_pSmem->m_refcnt == 0)
+	delete m_pSmem;
     }
   private:
   };

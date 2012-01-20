@@ -99,7 +99,7 @@ Circuit(
         PortOrdinal dest_pss[] )
   :  CU::Child<OCPI::DataTransport::Transport,Circuit>(*t),
      OCPI::Time::Emit(t, "Circuit"),
-     m_transport(t),
+     m_transport(t), m_status(Unknown),
      m_ready(false),m_updated(false),
      m_outputPs(0), m_inputPs(0),  m_metaData(connection) ,m_portsets_init(0)
 {
@@ -112,7 +112,7 @@ Circuit(
   m_fromQ = false;
 
 #ifndef NDEBUG
-  printf(" In Circuit::Circuit() \n");
+  printf(" In Circuit::Circuit() id is 0x%x\n", id);
 #endif
 
   // static init stuff goes here

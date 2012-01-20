@@ -48,6 +48,7 @@
 #ifndef OCPI_Transport_Message_Circuit_H_
 #define OCPI_Transport_Message_Circuit_H_
 
+#include <OcpiOsTimer.h>
 #include <OcpiTransport.h>
 #include <OcpiCircuit.h>
 #include <OcpiUtilException.h>
@@ -72,8 +73,16 @@ namespace OCPI {
       MessageCircuit(
                      OCPI::DataTransport::Transport* transport,
                      OCPI::DataTransport::Circuit* send,        // In - send circuit
-                     OCPI::DataTransport::Circuit* rcv        // In - recieve circuit
+                     OCPI::DataTransport::Circuit* rcv,        // In - recieve circuit
+		     OCPI::OS::Mutex *mutex
                      );
+      MessageCircuit(const char *local_ep_or_protocol = NULL, uint32_t bufferSize = 4096);
+      MessageCircuit(OCPI::DataTransport::Transport &transport,
+		     OCPI::OS::Mutex &mutex,
+		     const char *localEndpoint,
+		     const char *remoteEndpoint,
+		     uint32_t bufferSize,
+		     OS::Timer *timer = NULL);
 
 
       /**********************************
@@ -82,10 +91,17 @@ namespace OCPI {
       ~MessageCircuit();
         
       /**********************************
+       *  connect as client
+       **********************************/
+      bool connect(const char *server_end_point, OCPI::OS::Timer *timer = NULL);
+      //      bool connect(OCPI::OS::Timer *timer);
+
+      /**********************************
        *  Send a message
        **********************************/
-      OCPI::DataTransport::Buffer* getSendMessageBuffer();
-      void sendMessage( OCPI::DataTransport::Buffer* msg, unsigned int length );
+      OCPI::DataTransport::BufferUserFacet*
+	getNextOutputBuffer(void *&data, uint32_t &length, OCPI::OS::Timer *timer = NULL);
+      void sendBuffer( OCPI::DataTransport::BufferUserFacet* msg, unsigned int length );
 
 
       /**********************************
@@ -93,32 +109,47 @@ namespace OCPI {
        *
        *  returns the number of messages.
        **********************************/
-      bool messageAvailable();
+      //      bool messageAvailable();
 
         
       /**********************************
        *  Get a message
        **********************************/
-      OCPI::DataTransport::Buffer* getNextMessage();
-      void freeMessage( OCPI::DataTransport::Buffer* msg );
+      bool messageAvailable(); // optional
+      OCPI::DataTransport::BufferUserFacet*
+	getNextInputBuffer(void *&data, uint32_t &length, OCPI::OS::Timer *timer = NULL);
+      void freeBuffer( OCPI::DataTransport::BufferUserFacet* msg );
+      void dispatch(DataTransfer::EventManager* eh = NULL);
 
 
       /**********************************
        *  Get the individual circuits
        **********************************/
-      OCPI::DataTransport::Circuit* getSendCircuit();
-      OCPI::DataTransport::Circuit* getRcvCircuit();
-      OCPI::DataTransport::Transport* m_transport;
+      // OCPI::DataTransport::Circuit* getSendCircuit();
+      // OCPI::DataTransport::Circuit* getRcvCircuit();
 
+      const char *localEndpoint() const;
+      const char *remoteEndpoint() const;
     protected:
+      Circuit & makeCircuit(const std::string &from, const std::string &to, bool send);
+      // Does this circuit have an owner with transport and mutex or no
+      bool m_standalone;
 
+      OCPI::DataTransport::Transport* m_transport;
+      
       // our circuits
-      OCPI::DataTransport::Circuit* m_send;
-      OCPI::DataTransport::Circuit* m_rcv;
+      //OCPI::DataTransport::Circuit* m_send;
+      //OCPI::DataTransport::Circuit* m_rcv;
       OCPI::DataTransport::Port* m_rcv_port;
       OCPI::DataTransport::Port* m_send_port;
-      OCPI::DataTransport::Buffer* m_full_buffer;
-                  
+      OCPI::DataTransport::BufferUserFacet* m_full_buffer;
+
+      // Thread safe control
+      OCPI::OS::Mutex* m_mutex;
+
+      uint32_t m_bufferSize;
+      std::string m_localEndpoint, m_remoteEndpoint;
+      OCPI::OS::Timer *m_timer;
                   
     };
           
@@ -133,8 +164,8 @@ namespace OCPI {
     /**********************************
      *  Get the individual circuits
      **********************************/
-    inline OCPI::DataTransport::Circuit* MessageCircuit::getSendCircuit(){return m_send;}
-    inline OCPI::DataTransport::Circuit* MessageCircuit::getRcvCircuit(){return m_rcv;}
+    // inline OCPI::DataTransport::Circuit* MessageCircuit::getSendCircuit(){return m_send;}
+    // inline OCPI::DataTransport::Circuit* MessageCircuit::getRcvCircuit(){return m_rcv;}
  
           
   }

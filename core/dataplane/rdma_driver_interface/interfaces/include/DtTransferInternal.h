@@ -80,7 +80,7 @@ namespace DataTransfer {
     ~SMBResources()
     {
       delete sMemResourceMgr;
-      delete sMemServices;
+      //      delete sMemServices; these are children of xfer factories
     }
   };
 
@@ -156,13 +156,15 @@ namespace DataTransfer {
     SMBResources* getSMBResources( EndPoint* ep );
 
     // Retrieves the factory based upon the transfer type
-    XferFactory* find( std::string& end_point1,std::string& end_point2 );
-    XferFactory* find( const char* end_point1,const char* end_point2 );
+    static std::string null;
+    XferFactory* find( std::string& end_point1,std::string& end_point2 = null );
+    XferFactory* find( const char* end_point1,const char* end_point2 = NULL);
 
     // Creates a transfer service template
     XferServices* getService(std::string& s_endpoint,  std::string& t_endpoint);        
     XferServices* getService(EndPoint *s_endpoint, EndPoint *t_endpoint);        
 
+    static bool canSupport(EndPoint &local_ep, const char *remote_endpoint);
     // Constructors/Destructors
     XferFactoryManager();
     ~XferFactoryManager();
