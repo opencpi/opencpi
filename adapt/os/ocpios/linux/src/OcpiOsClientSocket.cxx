@@ -110,8 +110,8 @@ OCPI::OS::ClientSocket::connect (const std::string & remoteHost,
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
 #ifndef NDEBUG
-    printf("Connect succeeded to \"%s\" (%s) port %u\n",
-	   remoteHost.c_str(), inet_ntoa(sin.sin_addr), remotePort);
+  //    printf("Connect succeeded to \"%s\" (%s) port %u\n",
+  //	   remoteHost.c_str(), inet_ntoa(sin.sin_addr), remotePort);
 #endif
 
   OCPI::OS::uint64_t * fd2o = reinterpret_cast<OCPI::OS::uint64_t *> (&fileno);

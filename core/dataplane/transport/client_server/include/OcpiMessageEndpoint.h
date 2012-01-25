@@ -71,6 +71,7 @@ namespace OCPI {
       // Connect this endpoint to a remote one, creating a message circuit
       static MessageCircuit &connect(const char *server_endpoint, 
 				     unsigned bufferSize = 4096,
+				     const char *protocol = NULL,
 				     OCPI::OS::Timer *timer = NULL);
       
       inline const char *endpoint() const { return m_endpoint->end_point.c_str(); }
@@ -78,7 +79,7 @@ namespace OCPI {
       MessageCircuit *accept(OCPI::OS::Timer *timer);
       // FIXME: resolve the static method vs this one better.
       MessageCircuit &connectTo(const char *server_endpoint, unsigned bufferSize = 4096,
-				OCPI::OS::Timer *timer = NULL);
+				const char *protocol = NULL, OCPI::OS::Timer *timer = NULL);
     private:
       bool canSupport(const char *endpoint) const;
       inline void dispatch(DataTransfer::EventManager* eh = NULL) {

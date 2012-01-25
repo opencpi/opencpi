@@ -75,6 +75,10 @@ namespace OCPI {
       // unions and enums
       ValueType(OCPI::API::BaseType bt = OCPI::API::OCPI_none);
       ~ValueType();
+      bool isSequence() const { return m_isSequence; }
+      // Return whether this value is fixed in size
+      // If top == true, its ok for it to be a sequence
+      bool isFixed(bool top = true) const;
     };
     const unsigned testMaxStringLength = 10;
     const unsigned maxDataTypeAlignment = 16;
@@ -157,7 +161,7 @@ namespace OCPI {
       void printAttrs(FILE *f, const char *tag, unsigned indent = 0);
       void printChildren(FILE *f, const char *tag, unsigned indent = 0);
       void printXML(FILE *f, const char *tag, unsigned indent);
-      void write(Writer &writer, const uint8_t *&data, uint32_t &length);
+      void write(Writer &writer, const uint8_t *&data, uint32_t &length, bool topSeq = false);
       void read(Reader &reader, uint8_t *&data, uint32_t &length);
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       const char *

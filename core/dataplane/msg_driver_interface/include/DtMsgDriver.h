@@ -102,7 +102,7 @@ namespace DataTransfer {
 	 * of this method should cache the service object if possible so that they
 	 * can be re-used.
 	 ***************************************/
-	virtual XferServices* getXferServices( OCPI::Util::Protocol * protocol,
+	virtual XferServices* getXferServices( const OCPI::Util::Protocol &protocol,
 					       const char* other_url,
 					       const OCPI::Util::PValue *our_props=0,
 					       const OCPI::Util::PValue *other_props=0 )=0;
@@ -179,38 +179,25 @@ namespace DataTransfer {
       /*
        * Queue Msg Transfer Request
        */
-      virtual void post (OCPI::DataTransport::BufferUserFacet* buffer, uint32_t msg_size ) = 0;
+      virtual void sendOutputBuffer(OCPI::DataTransport::BufferUserFacet* buffer,
+				    uint32_t msg_size, uint8_t opcode = 0 ) = 0;
 
       /*
        * Release a buffer previously leased by nextMsg
        */
-      virtual void release( OCPI::DataTransport::BufferUserFacet*  buffer) = 0;    
-
-
-
-      /*
-       * Is there an output buffer available ?
-       */
-      virtual bool hasFreeBuffer() = 0;    
+      virtual void releaseInputBuffer( OCPI::DataTransport::BufferUserFacet*  buffer) = 0;    
 
       /*
        * Get a free output buffer if one is available
        */
-      virtual  OCPI::DataTransport::BufferUserFacet*  getFreeBuffer() = 0;    
-
-
-      /*
-       *  Is there data ready on the channel ?
-       */
-      virtual bool msgReady() =0;
+      virtual  OCPI::DataTransport::BufferUserFacet*
+	getNextEmptyOutputBuffer(void *&data, uint32_t &length) = 0;    
 
       /*
        *  Get data on the channel, If no data is available this may block
        */
-      virtual OCPI::DataTransport::BufferUserFacet* getNextMsg( uint32_t & length ) = 0;
-      
-
-
+      virtual OCPI::DataTransport::BufferUserFacet*
+	getNextFullInputBuffer(void *&data, uint32_t & length, uint8_t &opcode ) = 0;
 
       // Destructor - Note that invoking OcpiXferServices::Release is the preferred method.
       virtual ~MsgChannel () {};
@@ -237,7 +224,7 @@ namespace DataTransfer {
        *        Errors:
        *                DataTransferEx for all exception conditions
        */
-      XferServices (  OCPI::Util::Protocol * p, 
+      XferServices (  const OCPI::Util::Protocol & p, 
 		      const char  *url,
 		      const OCPI::Util::PValue *our_props=0,
 		      const OCPI::Util::PValue *other_props=0 )
@@ -268,14 +255,15 @@ namespace DataTransfer {
        * Member access
        */
       inline std::string & url(){return m_url;}
-      inline OCPI::Util::Protocol * protocol(){return m_protocol;}
+      inline OCPI::Util::Protocol & protocol(){return m_protocol;}
 
                  
       virtual ~XferServices () {};
 
     private:
       int m_use_count;
-      OCPI::Util::Protocol * m_protocol;
+      // FIXME:  check whether this can be a reference, not a copy
+      OCPI::Util::Protocol  m_protocol;
       std::string m_url;
 
 
@@ -317,7 +305,7 @@ namespace DataTransfer {
       public XferServices
       {
       protected:
-	ConnectionBase<ConcDri, ConcConn, ConcXfer>(OCPI::Util::Protocol * protocol,
+	ConnectionBase<ConcDri, ConcConn, ConcXfer>(const OCPI::Util::Protocol &protocol,
 						    const char* other_url,
 				  const OCPI::Util::PValue *our_props=0,
 				  const OCPI::Util::PValue *other_props=0 )						    

@@ -330,7 +330,7 @@ Mutex* OCPI::DataTransport::Transport::getMailBoxLock( const char* mbid )
 
 void 
 OCPI::DataTransport::Transport::
-requestNewConnection( Circuit* circuit, bool send, OS::Timer *timer)
+requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Timer *timer)
 {
   std::string& input_loc = circuit->getInputPortSet(0)->getPortFromIndex(0)->getMetaData()->real_location_string;
   std::string& output_loc = circuit->getOutputPortSet()->getPortFromIndex(0)->getMetaData()->real_location_string;
@@ -387,6 +387,23 @@ requestNewConnection( Circuit* circuit, bool send, OS::Timer *timer)
   mb->request.reqNewConnection.buffer_size = circuit->getOutputPortSet()->getBufferLength();
   mb->request.reqNewConnection.send = send ? 1 : 0;
   strcpy(mb->request.reqNewConnection.output_end_point, m_CSendpoint->end_point.c_str() );
+  if (protocol) {
+    // If we have protocol info, we will asking the server for a place to put it.
+    // We first must allocate space on our side of the transfer, and copy the protocol data
+    // into our local smb buffer.  Then later we can transfer it to the server side when we
+    // find out where the server's protocol buffer is.  We will do that when the server asks us
+    // for our output flow control offsets.
+    uint64_t protocolOffset;
+    uint32_t protocolSize = strlen(protocol) + 1;
+    mb->request.reqNewConnection.protocol_size = protocolSize;
+    if (s_res->sMemResourceMgr->alloc(protocolSize, 0, &protocolOffset))
+      throw OCPI::Util::EmbeddedException(NO_MORE_BUFFER_AVAILABLE, "for protocol info exchange");
+    void *myProtocolBuffer = s_res->sMemServices->map(protocolOffset, protocolSize);
+    memcpy(myProtocolBuffer, protocol, protocolSize);
+    s_res->sMemServices->unMap();    
+    circuit->setProtocolInfo(protocolSize, protocolOffset);
+  } else
+    mb->request.reqNewConnection.protocol_size = 0;
    
   // For now, this request does not require a return
   mb->return_offset = -1;
@@ -427,6 +444,7 @@ createCircuit(
               PortOrdinal src_ports[],
               PortOrdinal dest_ports[],
               OCPI::OS::uint32_t flags,
+	      const char *protocol,
 	      OS::Timer *timer
               )                        
 {
@@ -449,11 +467,7 @@ createCircuit(
   // We may need to make a new connection request
   if ( flags & NewConnectionFlag ) {
     try {
-      bool send = false;
-      if ( flags & SendCircuitFlag ) {
-        send = true;
-      }
-      requestNewConnection( circuit, send, timer );
+      requestNewConnection( circuit, (flags & SendCircuitFlag) != 0, protocol, timer );
     }
     catch( ... ) {
       deleteCircuit( circuit->getCircuitId() );
@@ -472,14 +486,15 @@ createCircuit(
               ConnectionMetaData* connection,        
               PortOrdinal src_ports[],        
               PortOrdinal dest_ports[],
-              OCPI::OS::uint32_t flags,
+              uint32_t flags,
+	      const char *protocol,
 	      OS::Timer *timer
               )
 {
   ( void ) id;
   CircuitId cid;
   cid = this->m_nextCircuitId++;
-  return createCircuit( cid, connection, src_ports, dest_ports, flags, timer);
+  return createCircuit( cid, connection, src_ports, dest_ports, flags, protocol, timer);
 }
 
 
@@ -694,7 +709,7 @@ void OCPI::DataTransport::Transport::dispatch(DataTransfer::EventManager*)
   for ( cit=m_circuits.begin(); cit!=m_circuits.end(); cit++) {
     if ( (*cit) == NULL ) continue;
     if ( (*cit)->ready() ) {
-      (*cit)->initializeDataTransfers();
+      // (*cit)->initializeDataTransfers();
       (*cit)->checkQueuedTransfers();
     }
   }
@@ -770,12 +785,11 @@ void OCPI::DataTransport::Transport::clearRemoteMailbox( OCPI::OS::uint32_t offs
   }
 }
 
-
-void OCPI::DataTransport::Transport::sendOffsets( OCPI::Util::VList& offsets, std::string& remote_ep )
+void OCPI::DataTransport::Transport::
+sendOffsets( OCPI::Util::VList& offsets, std::string& remote_ep, 
+	     uint32_t extraSize, uint64_t extraFrom, uint64_t extraTo)
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
-
-  // Check active transfers to make sure they are complete
 
  FORSTART:
 
@@ -788,11 +802,6 @@ void OCPI::DataTransport::Transport::sendOffsets( OCPI::Util::VList& offsets, st
       goto FORSTART;
     }
   }
-
-#ifdef DEBUG_L2
-  printf("In OCPI::DataTransport::Transport::sendOffsets, sending %d OCPI::OS::int32_ts\n", offsets.size() );
-#endif
-
   /* Attempt to get or make a transfer template */
   XferServices* ptemplate = 
     XferFactoryManager::getFactoryManager().getService( m_CSendpoint->end_point, 
@@ -801,11 +810,18 @@ void OCPI::DataTransport::Transport::sendOffsets( OCPI::Util::VList& offsets, st
     ocpiAssert(0);
   }
 
-  // Create the copy in the template
-  XferRequest* ptransfer = ptemplate->createXferRequest();
-  int count=0;
+#ifdef DEBUG_L2
+  printf("In OCPI::DataTransport::Transport::sendOffsets, sending %d OCPI::OS::int32_ts\n", offsets.size() );
+#endif
 
-  for ( OCPI::OS::uint32_t y=0; y<offsets.getElementCount(); y++, count++ ) {
+  XferRequest* ptransfer = ptemplate->createXferRequest();
+
+  // We do the extra transfer first so that the other side will have the protocol when it
+  // sees that the output offsets have been copied.
+  if (extraSize)
+    ptransfer->copy (extraFrom, extraTo, extraSize, XferRequest::None);
+
+  for ( OCPI::OS::uint32_t y=0; y<offsets.getElementCount(); y++) {
 
     OCPI::DataTransport::Port::ToFrom* tf = 
       static_cast<OCPI::DataTransport::Port::ToFrom*>(offsets[y]);
@@ -916,8 +932,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
             ConnectionMetaData* md=NULL;
             Circuit* c=NULL;
-            addRemoteEndpoint( 
-                              comms->mailBox[n].request.reqNewConnection.output_end_point        );
+            addRemoteEndpoint(comms->mailBox[n].request.reqNewConnection.output_end_point);
             try {
 
               // send flag indicates that the client is requesting a circuit to send data to me
@@ -932,12 +947,24 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
                                                                         
                 std::string s(comms->mailBox[n].request.reqNewConnection.output_end_point);
                 md = new ConnectionMetaData( m_CSendpoint->end_point.c_str(),
-                                                s.c_str(),  1, 
-                                                comms->mailBox[n].request.reqNewConnection.buffer_size );
+					     s.c_str(),  1, 
+					     comms->mailBox[n].request.reqNewConnection.buffer_size );
               }
 
-              // Create the new circuit
-              c = createCircuit( circuit_id, md, NULL,NULL,0);
+              // Create the new circuit on request from the other side (client)
+	      // If the client has protocol info for us, allocate local smb space for it, so it can
+	      // copy it to me when I tell it where to put it in the request for output control offsets;
+	      uint64_t protocolOffset = 0;
+	      uint32_t protocolSize = comms->mailBox[n].request.reqNewConnection.protocol_size;
+	      if (protocolSize) {
+		// Allocate local space
+		if (m_CSendpoint->resources->sMemResourceMgr->alloc(protocolSize, 0,  &protocolOffset))
+		  throw OCPI::Util::EmbeddedException(NO_MORE_BUFFER_AVAILABLE, "for protocol info exchange");
+		// map in local space
+		
+	      }
+              c = createCircuit(circuit_id, md);
+	      c->setProtocolInfo(protocolSize, protocolOffset);
             }
             catch ( ... ) {
 
@@ -1014,11 +1041,25 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
             ocpiAssert(0);
           }
 
+	  uint32_t protocolSize = 0;
+	  uint64_t protocolOffset;
+	  if (comms->mailBox[n].request.reqOutputContOffset.protocol_offset) {
+	    // The server side is telling us where to put the protcol info, based on our telling
+	    // it, in the reqnewconnection, how big it is.
+	    c->getProtocolInfo(protocolSize, protocolOffset);
+	    ocpiAssert(protocolSize != 0);
+	  }
+
           OCPI::Util::VList offsetv;
 
           port->getOffsets( comms->mailBox[n].return_offset, offsetv);
-          sendOffsets( offsetv, res->sMemServices->endpoint()->end_point);
+	  
+	  sendOffsets( offsetv, res->sMemServices->endpoint()->end_point,
+		       protocolSize, protocolOffset,
+		       comms->mailBox[n].request.reqOutputContOffset.protocol_offset);
           port->releaseOffsets( offsetv );
+	  if (protocolSize)
+	    m_CSendpoint->resources->sMemResourceMgr->free(protocolOffset, protocolSize);
 
           // Clear our mailbox
           comms->mailBox[n].error_code = 0;
@@ -1247,7 +1288,7 @@ addLocalEndpoint(const char *nfep, bool compatibleWith)
     delete gep;
     throw OCPI::Util::EmbeddedException( MAX_ENDPOINT_COUNT_EXCEEDED, loc.c_str() );
   }
-  gep->loc->local = true;
+  ocpiAssert(gep->loc->local == true);
   try {
     gep->res = XferFactoryManager::getFactoryManager().createSMBResources(gep->loc);
   }
@@ -1271,9 +1312,11 @@ addLocalEndpoint(const char *nfep, bool compatibleWith)
 bool Transport::isLocalEndpoint( const char* loc )
 {
   for ( OCPI::OS::uint32_t n=0; n<m_localEndpoints.getElementCount(); n++ ) {
+#if 0
 #ifndef NDEBUG
     printf("isLocalEndpoint:: Comparing (%s) with (%s) \n", loc, 
            ((GEndPoint*)m_localEndpoints.getEntry(n))->ep.c_str()  );
+#endif
 #endif
     if ( strcmp( loc, ((GEndPoint*)m_localEndpoints.getEntry(n))->ep.c_str() ) == 0 ) {
 #ifndef NDEBUG

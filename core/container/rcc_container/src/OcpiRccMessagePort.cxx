@@ -93,7 +93,7 @@ namespace OCPI {
 	err += url;
 	throw err;
       }
-      DTM::XferServices * msgService  = factory->getXferServices( (OCPI::Util::Protocol*)&m_metaPort, url, myProps, otherProps );
+      DTM::XferServices * msgService  = factory->getXferServices(m_metaPort, url, myProps, otherProps );
       ocpiAssert ( msgService );
       m_msgChannel = msgService->getMsgChannel(url,myProps,otherProps);
       parent().portIsConnected(portOrdinal());
@@ -101,9 +101,9 @@ namespace OCPI {
 
     void 
     MessagePort::
-    sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t len, RCCOrdinal /*opcode*/)
+    sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t len, uint8_t opcode)
     {
-      m_msgChannel->post( buffer, len );
+      m_msgChannel->sendOutputBuffer( buffer, len, opcode);
     }
 
     void 
@@ -111,45 +111,28 @@ namespace OCPI {
     releaseInputBuffer( OCPI::DataTransport::BufferUserFacet* buffer)
     {
       ocpiAssert(m_metaPort.provider);
-      m_msgChannel->release( buffer );
+      m_msgChannel->releaseInputBuffer(buffer);
     }
     
     OCPI::DataTransport::BufferUserFacet*
     MessagePort::
     getNextEmptyOutputBuffer(void *&data, uint32_t &length)
     {
-      if (m_msgChannel->hasFreeBuffer()) {
-	OCPI::DataTransport::BufferUserFacet *b = m_msgChannel->getFreeBuffer();
-	if (b) {
-	  data = (void*)b->getBuffer(); // cast off volatile
-	  length = b->getDataLength();
-	  return b;
-	}
-      } 
-      return NULL;
+      return m_msgChannel->getNextEmptyOutputBuffer(data, length);
     }
     
     void 
     MessagePort::
-    sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet*, unsigned int, RCCOrdinal /*op*/  )
+    sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet*, unsigned int, uint8_t /*op*/  )
     {
       ocpiAssert(!"sendZcopyInputBuffer not supported with message ports !!\n");
     }
     
     OCPI::DataTransport::BufferUserFacet*
     MessagePort::
-    getNextFullInputBuffer(void *&data, uint32_t &length, RCCOrdinal &opcode)
+    getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode)
     {
-      
-      if (m_msgChannel->msgReady()) {
-	OCPI::DataTransport::BufferUserFacet *b = m_msgChannel->getNextMsg( length );
-	if (b) {
-	  opcode = 0;
-	  data = (void*)b->getBuffer(); // cast off volatile
-	  return b;
-	}
-      }
-      return NULL;
+      return m_msgChannel->getNextFullInputBuffer(data, length, opcode);
     }
 
     void 

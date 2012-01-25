@@ -1,6 +1,4 @@
 #!/bin/sh
----- use LD_RUN_PATH and --with-omniNames-logdir
-
 set -e
 OCPI_OMNIORB_VERSION=4.1.5
 . setup_install.sh

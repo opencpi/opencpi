@@ -148,6 +148,7 @@ namespace OCPI {
                               PortOrdinal src_ports[]=NULL,        
                               PortOrdinal dest_ports[]=NULL,   
                               uint32_t flags = 0,
+			      const char *protocol = NULL,
 			      OCPI::OS::Timer *timer = 0
                               );                                        
 
@@ -158,6 +159,7 @@ namespace OCPI {
                               PortOrdinal src_ports[]=NULL,        
                               PortOrdinal dest_ports[]=NULL,        
                               uint32_t flags = 0,
+			      const char *protocol = NULL,
 			      OCPI::OS::Timer *timer = 0); 
 
       // ports in the connection are used.
@@ -228,12 +230,13 @@ namespace OCPI {
       /**********************************
        * Send remote port our offset information
        *********************************/
-      void sendOffsets( OCPI::Util::VList& offsets, std::string& t_ep );
+      void sendOffsets( OCPI::Util::VList& offsets, std::string& t_ep,
+			uint32_t extraSize = 0, uint64_t extraFrom = 0, uint64_t extraTo = 0);
 
       /**********************************
        * Request a new connection
        *********************************/
-      void requestNewConnection( Circuit* circuit, bool send, OCPI::OS::Timer *timer);
+      void requestNewConnection( Circuit* circuit, bool send, const char *protocol, OCPI::OS::Timer *timer);
 
       DataTransfer::SMBResources* getEndpointResourcesFromMailbox(OCPI::OS::uint32_t idx);
 

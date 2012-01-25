@@ -33,7 +33,7 @@
  */
 
 #define __STDC_LIMIT_MACROS // wierd standards goof up
-#include <assert.h>
+#include <OcpiOsAssert.h>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilException.h"
 #include "OcpiUtilDataTypes.h"
@@ -63,6 +63,22 @@ namespace OCPI {
 	  delete [] m_enums[n];
 	delete [] m_enums;
       }
+    }
+    bool ValueType::isFixed(bool top) const {
+      if (m_isSequence && !top)
+	return false;
+      switch (m_baseType) {
+      case OA::OCPI_String:
+      case OA::OCPI_Type:
+	return false;
+      case OA::OCPI_Struct:
+	for (unsigned n = 0; n < m_nMembers; n++)
+	  if (!m_members[n].isFixed(false))
+	    return false;
+      default:
+	;
+      }
+      return true;
     }
 
     Reader::Reader(){}
@@ -305,11 +321,17 @@ namespace OCPI {
       align(*(const uint8_t **)&p, n, length);
     }
     // Push the data in the linear buffer into a writer object
-    void Member::write(Writer &writer, const uint8_t *&data, uint32_t &length) {
+    void Member::write(Writer &writer, const uint8_t *&data, uint32_t &length, bool topSeq) {
       unsigned nElements = 1;
       if (m_isSequence) {
-	align(data, m_align, length);
-	nElements = *(uint32_t *)data;
+	if (topSeq) {
+	  ocpiAssert(((intptr_t)data & ~(m_align - 1)) == 0);
+	  ocpiAssert(length % m_nBytes == 0);
+	  nElements = length / m_nBytes;
+	} else {
+	  align(data, m_align, length);
+	  nElements = *(uint32_t *)data;
+	}
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
 	  throw Error("Sequence in buffer exceeds max length (%u)", m_sequenceLength);
 	writer.beginSequence(*this, nElements);
@@ -359,7 +381,7 @@ namespace OCPI {
 	}
       case OA::OCPI_none:
       case OA::OCPI_scalar_type_limit:
-	assert(0);
+	ocpiAssert(0);
       }
       if (m_isSequence) {
 	writer.endSequence(*this);
@@ -426,7 +448,7 @@ namespace OCPI {
 	}
       case OA::OCPI_none:
       case OA::OCPI_scalar_type_limit:
-	assert(0);
+	ocpiAssert(0);
       }
       if (m_isSequence) {
 	reader.endSequence(*this);

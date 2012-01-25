@@ -52,23 +52,25 @@ namespace OCPI  {
       unsigned m_nExceptions;
       Operation *m_exceptions;  // if twoway
       unsigned m_myOffset;      // for determining message sizes
+      bool m_topFixedSequence;  // is this operation a single top level sequence of fixed size elements?
       const char *parse(ezxml_t op, Protocol &);
       Operation();
       Operation(const Operation & p );
       ~Operation();
       Operation & operator=(const Operation * p );
       Operation & operator=(const Operation & p );
-      inline bool isTwoWay() { return m_isTwoWay; }
-      inline Member *args() { return m_args; }
-      inline unsigned nArgs() { return m_nArgs; }
-      inline const std::string name() { return m_name; }
-      void printXML(FILE *f, unsigned indent = 0);
+      inline bool isTwoWay() const { return m_isTwoWay; }
+      inline Member *args() const { return m_args; }
+      inline unsigned nArgs() const { return m_nArgs; }
+      inline const std::string &name() const { return m_name; }
+      inline bool isTopFixedSequence() const { return m_topFixedSequence; }
+      void printXML(FILE *f, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, uint32_t length);
       uint32_t read(Reader &reader, uint8_t *&data, uint32_t maxLength);
       // for testing
       void generate(const char *name, Protocol &p);
       void generateArgs(Value **&);
-      void print(FILE *, Value **v);
+      void print(FILE *, Value **v) const;
       void testPrintParse(FILE *f, Value **v);
     };
     class Protocol {
@@ -108,15 +110,17 @@ namespace OCPI  {
       inline unsigned &nOperations() { return m_nOperations; }
       inline Operation *operations() { return m_operations; }
       const char *parse(ezxml_t x);
+      // Note this is NOT const char array and must be modifiable in place
+      const char *parse(char *proto);
       const char *parseSummary(ezxml_t x);
       const char *finishParse();
-      void printXML(FILE *f, unsigned indent = 0);
+      void printXML(FILE *f, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode);
       uint32_t read(Reader &reader, uint8_t *data, uint32_t maxLength, uint8_t opcode);
       void generate(const char *name);
       void generateOperation(uint8_t &opcode, Value **&v);
       void freeOperation(uint8_t operation, Value **v);
-      void printOperation(FILE *, uint8_t opcode, Value **v);
+      void printOperation(FILE *, uint8_t opcode, Value **v) const;
       void testOperation(FILE *, uint8_t opcode, Value **v);
     };
   }

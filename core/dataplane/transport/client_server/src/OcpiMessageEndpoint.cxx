@@ -10,7 +10,7 @@
 #include "DtTransferInternal.h"
 
 namespace OS = OCPI::OS;
-
+namespace OD = DataTransfer;
 namespace OCPI {
   namespace DataTransport {
 
@@ -20,10 +20,10 @@ namespace OCPI {
     // Getting our endpoint might end up creating a new one, and if so we want to nuke it
     MessageEndpoint::
     MessageEndpoint(const char *endpoint)
-      : m_transportGlobal(*new OCPI::DataTransport::TransportGlobal(0, (char**)0)),
+      : m_transportGlobal(*new TransportGlobal(0, (char**)0)),
 	m_transport(NULL), m_endpoint(NULL) {
       try {
-	m_transport = new OCPI::DataTransport::Transport(&m_transportGlobal, true);
+	m_transport = new Transport(&m_transportGlobal, true);
 	m_transport->setNewCircuitRequestListener(this);
 	m_endpoint = &m_transport->getLocalCompatibleEndpoint(endpoint);
       } catch (...) {
@@ -77,8 +77,8 @@ namespace OCPI {
     // static
     
     MessageCircuit & MessageEndpoint::
-    connect(const char *server_endpoint, unsigned bufferSize, OS::Timer *timer) {
-      return getMessageEndpoint(server_endpoint).connectTo(server_endpoint, bufferSize, timer);
+    connect(const char *server_endpoint, unsigned bufferSize, const char *protocol, OS::Timer *timer) {
+      return getMessageEndpoint(server_endpoint).connectTo(server_endpoint, bufferSize, protocol, timer);
     }
     
     // static 
@@ -93,7 +93,7 @@ namespace OCPI {
 	  getMessageEndpoint(protocols[n].c_str());
       }
       // loop for anyone
-      OCPI::OS::Timer timer(delay != 0);
+      OS::Timer timer(delay != 0);
       // OCPI::OS::Time start = timer.getStart();
       do {
 	for (MessageEndpoints::iterator i = s_messageEndpoints.begin(); i != s_messageEndpoints.end(); i++) {
@@ -120,9 +120,9 @@ namespace OCPI {
 
     // the internal, non-static method, with same args as the static one, hence "To".
     MessageCircuit &MessageEndpoint::
-    connectTo(const char *server_endpoint, unsigned bufferSize, OCPI::OS::Timer *timer) {
+    connectTo(const char *server_endpoint, unsigned bufferSize, const char *protocol, OCPI::OS::Timer *timer) {
       return *new MessageCircuit(*m_transport, *this, m_endpoint->end_point.c_str(),
-				 server_endpoint, bufferSize, timer);
+				 server_endpoint, bufferSize, protocol, timer);
     }
 
     // Callback from the transport when a new circuit is started.
@@ -132,17 +132,6 @@ namespace OCPI {
 #ifndef NDEBUG
       printf("In MessageEndpoint::newCircuitAvailable, got a new circuit \n");
 #endif
-
-      // Wait for the circuit to become "ready"
-      while (!circuit->ready()) {
-	circuit->updateConnection( NULL, 0 );
-	// this is recursive.  FIXME: update circuits in checkmailboxes and
-	// callback when ready
-	m_transport->dispatch();
-	OCPI::OS::sleep(1);
-      }
-      circuit->initializeDataTransfers();
-      
       m_halfCircuits.push_back(circuit);
     }
     
@@ -152,18 +141,30 @@ namespace OCPI {
 	dispatch();
       // Search oldest first, and look forward
 	for (HalfCircuits::iterator i = m_halfCircuits.begin(); i != m_halfCircuits.end(); i++) {
-	  std::string &first =
-	    (*i)->getInputPortSet(0)->getPortFromIndex(0)->getMetaData()->real_location_string;
-	  for (HalfCircuits::iterator j = i; j != m_halfCircuits.end(); j++)
-	    if ((*j)->getOutputPortSet()->getPortFromIndex(0)->getMetaData()->real_location_string ==
-		first) {
-	      MessageCircuit *mc = new MessageCircuit(m_transport, *i, *j, this);
-	      m_halfCircuits.erase(i);
-	      m_halfCircuits.erase(j);
-	      return mc;
-	    }	    
+	  if (!(*i)->ready())
+	    continue;
+	  //	  (*i)->initializeDataTransfers();
+	  // We need to match two circuits that have the same other side
+	  Port *iInput = (*i)->getInputPortSet(0)->getPortFromIndex(0);
+	  if (!iInput->isShadow()) {
+	    OD::EndPoint *remote = iInput->getMetaData()->m_shadow_location;
+	    for (HalfCircuits::iterator j = m_halfCircuits.begin(); j != m_halfCircuits.end(); j++) {
+	      if (i == j || !(*j)->ready())
+		continue;
+	      // (*i)->initializeDataTransfers();
+	      Port *jOutput = (*j)->getOutputPortSet()->getPortFromIndex(0);
+	      if (!jOutput->isShadow() && jOutput->getMetaData()->m_shadow_location == remote) {
+		MessageCircuit *mc = new MessageCircuit(*m_transport, *this, **j, **i);
+		m_halfCircuits.erase(i);
+		m_halfCircuits.erase(j);
+		return mc;
+	      }	    
+	    }
+	  }
 	}
 	OCPI::OS::sleep(1);
+	//	OS::ElapsedTime t = timer->getElapsed();
+	//	printf("Time is %lus %luns\n", t.seconds(), t.nanoseconds()); 
       } while (!timer || !timer->expired());
       return NULL;
     }

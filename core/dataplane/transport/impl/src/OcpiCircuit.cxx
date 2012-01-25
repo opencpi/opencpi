@@ -96,12 +96,13 @@ Circuit(
         CircuitId& id,
         ConnectionMetaData* connection, 
         PortOrdinal src_ps[],
-        PortOrdinal dest_pss[] )
+        PortOrdinal dest_pss[])
   :  CU::Child<OCPI::DataTransport::Transport,Circuit>(*t),
      OCPI::Time::Emit(t, "Circuit"),
      m_transport(t), m_status(Unknown),
      m_ready(false),m_updated(false),
-     m_outputPs(0), m_inputPs(0),  m_metaData(connection) ,m_portsets_init(0)
+     m_outputPs(0), m_inputPs(0),  m_metaData(connection) ,m_portsets_init(0),
+     m_protocol(NULL)
 {
   ( void ) src_ps;
   ( void ) dest_pss;
@@ -330,6 +331,8 @@ OCPI::DataTransport::Circuit::
 
   delete m_metaData;
 
+  if (m_protocol)
+    delete m_protocol;
   //  ocpiAssert( m_ref_count == 0 );
 }
 
@@ -972,10 +975,12 @@ ready()
       }
     }
   }
-
-  return m_ready = true;
+  m_ready = true;
+  initializeDataTransfers();
+  return true;
 }
 
+#if 0
 /**********************************
  * Updates an existing connection with a new port
  *********************************/
@@ -985,7 +990,7 @@ updateConnection(OCPI::DataTransport::Port*,OCPI::OS::uint32_t)
 {
   return ready();
 }
-
+#endif
 /**********************************
  * Initialize transfers
  *********************************/

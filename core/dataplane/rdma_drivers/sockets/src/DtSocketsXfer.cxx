@@ -155,7 +155,8 @@ class ServerSocketHandler : public Thread
 {
 public:
   ServerSocketHandler( OCPI::OS::Socket & socket, SocketStartupParams & sp  )
-    :m_run(true), m_startupParms(sp),m_socket(socket),m_bytes_left(0){}
+    : m_run(true), m_startupParms(sp), m_socket(socket) {}
+
   virtual ~ServerSocketHandler()
   {
     m_socket.close();
@@ -164,62 +165,55 @@ public:
 
 
   void run() {
+    char * current_ptr;
+    unsigned int    bytes_left = 0;
+    SocketDataHeader header;
+    bool in_header = true;;
     try {
       while ( m_run ) {
-	m_bidx=0;
-	long long n = m_socket.recv( m_buf, TCP_BUFSIZE_READ);
-	if ( n < 0 ) {
-	  printf("Got a socket error, terminating connection\n");
-	  m_socket.close();
-	  throw EmbeddedException("Got a socket communication error\n");
+	char   buf[TCP_BUFSIZE_READ];
+	unsigned long long n = m_socket.recv( buf, TCP_BUFSIZE_READ);
+	if ( n == 0 ) {
+	  printf("Got a socket EOF, terminating connection\n");
+	  break;
 	}
 #ifndef NDEBUG
-	printf("Got %lld bytes data on server socket !!\n", n);
+	printf("Got %lld bytes data on server socket !! %d %d %lld %d\n", n, bytes_left, in_header,
+	       header.offset, header.length);
 #endif
-	processBuffer( n );
-	if (n == 0)
-	  m_run = false;
+	unsigned copy_len;
+	for (char *bp = buf; n; n -= copy_len, bp += copy_len) {
+	  // We are either filling a header or filling a request based on a header.
+	  if (bytes_left == 0) {
+	    if (in_header) {
+	      current_ptr = (char *)&header;
+	      bytes_left = sizeof(header);
+	    } else {
+	      current_ptr =(char*)m_startupParms.lsmem->map(header.offset, header.length);
+	      bytes_left = header.length;
+	    }
+	  }
+	  copy_len = (n <= bytes_left) ? n : bytes_left;
+#ifndef NDEBUG
+	  printf("Copying socket data to %p, size = %u, in header %d, left %d, first %lx\n",
+		 current_ptr, copy_len, in_header, bytes_left, *(unsigned long*)bp);
+#endif
+	  memcpy(current_ptr, bp, copy_len );
+	  current_ptr += copy_len;
+	  if (!(bytes_left -= copy_len))
+	    in_header = !in_header;
+#ifndef NDEBUG
+	  printf("After copying socket data to %p, size = %u, in header %d, left %d %lld %d\n",
+		 current_ptr, copy_len, in_header, bytes_left, header.offset, header.length);
+#endif
+	}
       }
     } catch (std::string &s) {
       printf("Exception in socket background thread: %s\n", s.c_str());
     } catch (...) {
       printf("Unknown exception in socket background thread\n");
     }
-    // FIXME:  make this background exception catching generic in the utility thread class
-  }
-
-
-  void processBuffer( unsigned int len )
-  {
-    // Its a header
-    if ( m_bytes_left == 0 ) {
-      if ( len >= sizeof(SocketDataHeader) ) {
-        SocketDataHeader* hdr = reinterpret_cast<SocketDataHeader*>(&m_buf[m_bidx]);
-        m_current_ptr = (char*)m_startupParms.lsmem->map(hdr->offset,hdr->length);
-        m_bytes_left = hdr->length;
-        m_bidx += sizeof(SocketDataHeader);
-        len -= sizeof(SocketDataHeader);
-	if (len == 0)
-	  return;
-      } else {
-	printf("Got a socket error (header fragment), terminating connection\n");
-	m_socket.close();
-	throw EmbeddedException("Got a socket communication error: header fragment\n");
-      }
-    }
-
-    unsigned int copy_len = (len <= m_bytes_left) ? len : m_bytes_left;
-#ifndef NDEBUG
-    printf("Copying socket data to %lld, size = %u\n", (long long)m_current_ptr, copy_len );
-#endif
-    memcpy( m_current_ptr, &m_buf[m_bidx], copy_len );
-    m_current_ptr += copy_len;
-    m_bytes_left -= copy_len;
-    len -= copy_len;
-    m_bidx += copy_len;
-    if ( len ) {
-      processBuffer( len );
-    }
+    m_socket.close();
   }
 
   void stop(){m_run=false;}
@@ -227,12 +221,7 @@ public:
 private:
   bool   m_run;
   SocketStartupParams   m_startupParms;
-  char * m_current_ptr;
-  char   m_buf[TCP_BUFSIZE_READ];
-  int    m_bidx;
   OCPI::OS::Socket & m_socket;
-  unsigned int    m_bytes_left;
-
 };
 
 
@@ -657,9 +646,9 @@ action_socket_transfer(PIO_transfer transfer)
 
 
 #ifndef NDEBUG
-  printf("Sending IP header %lu %x\n",
+  printf("Sending IP header %lu %lu %llx\n",
 	 (unsigned long)sizeof(SocketDataHeader),
-	 *(uint32_t*)&hdr);
+	 (unsigned long)hdr.length, hdr.offset);
   OCPI::OS::sleep( 100 );
 #endif
   long long nb=0;  

@@ -398,6 +398,7 @@ EndPoint* XferFactory::newCompatibleEndPoint(const char *remote_endpoint)
   char *cs = strdup(remote_endpoint);
   uint32_t mailBox, maxMb, size;
   EndPoint::getResourceValuesFromString(remote_endpoint, cs, &mailBox, &maxMb, &size);
+  free(cs);
   unsigned n;
   for (n = 1; n < MAX_SYSTEM_SMBS; n++)
     if (n != mailBox && (n >= m_locations.size() || !m_locations[n]))
@@ -594,7 +595,7 @@ createSMBResources(
     throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
 
-  sr->sMemServices = factory->getSmemServices( loc );
+  sr->sMemServices = loc->smem ? loc->smem : factory->getSmemServices( loc );
   if ( !sr->sMemServices ) {
     throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
@@ -617,6 +618,7 @@ createSMBResources(
   memset( sr->m_comms, 0, size);
   sr->m_comms->upAndRunning = UpAndRunningMarker;
   m_resources.insert(sr);
+  loc->resources = sr;
   return sr;
 }
 
@@ -672,6 +674,7 @@ getSMBResources(
   sr->sMemServices = factory->getSmemServices(loc);
   sr->sMemResourceMgr = NULL;
   sr->sMemServices->attach( loc );
+  loc->resources = sr;
   m_resources.insert(sr);
   return sr;
 }
@@ -788,6 +791,7 @@ XferServices* XferFactoryManager::getService(
 
     /* We couldn't find a template, create one */
     /* create the transfer template, source->target */
+    printf("new template from %s to %s\n", s_endpoint->end_point.c_str(), t_endpoint->end_point.c_str());
     pxfer = factory->getXferServices(source_info->sMemServices, target_info->sMemServices);
 
     /* Insert the template into the template list */
@@ -823,6 +827,7 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
 
     /* We couldn't find a template, create one */
     /* create the transfer template, source->target */
+    printf("new template from %s to %s\n", source_sname.c_str(), target_sname.c_str());
     pxfer = factory->getXferServices(source_info->sMemServices, target_info->sMemServices);
 
     /* Insert the template into the template list */

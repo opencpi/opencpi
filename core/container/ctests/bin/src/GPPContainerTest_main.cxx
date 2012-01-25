@@ -59,8 +59,6 @@
 #include <LoopbackWorker.h>
 #include <test_utilities.h>
 
-#include <OcpiTransportServer.h>
-#include <OcpiTransportClient.h>
 #include <OcpiBuffer.h>
 
 #include <sstream>
@@ -114,6 +112,7 @@ Port *pc_inputPort, *pc_outputPort, *lb_inputPort, *lb_outputPort;
 // Program globals
 static std::string server_end_point;
 static std::string loopback_end_point;
+#if 0
 static volatile int circuit_count=0;
 static OCPI::DataTransport::MessageCircuit  *gpp_circuits[10];
 static OCPI::DataTransport::MessageCircuit  *circuit;
@@ -167,7 +166,7 @@ public:
   }
 
 };
-
+#endif
 
 const char* fpath = "./tmp/";
 const int MAX_DESC_LEN = 1024;
@@ -546,6 +545,7 @@ int gpp_cont(int argc, char** argv)
 
 
 #ifndef USE_FS
+      This stuff needs to be updated to use OcpiMessageEndpoint etc.
       server_end_point = OCPI_RCC_CONT_COMMS_EP;
       TransportCEventHandler* eh=NULL;
       TransportSEventHandler *tcb=NULL;

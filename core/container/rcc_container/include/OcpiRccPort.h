@@ -106,18 +106,18 @@ namespace OCPI {
       inline OCPI::Metadata::PortOrdinal           portOrdinal(){return m_portOrdinal;}
       inline bool isOutput() {return !m_metaPort.provider;}
 
-      // Port control methods
+      // Port control methods // FIXME: make these pure virtual, but that requires other changes...
       virtual void releaseInputBuffer( OCPI::DataTransport::BufferUserFacet *)
+      { ocpiAssert(0); }
+      virtual void sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* , uint32_t, uint8_t )
       {ocpiAssert(0);}
-      virtual void sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* , uint32_t, RCCOrdinal )
-      {(void)ocpiAssert(0);}
       virtual OCPI::DataTransport::BufferUserFacet* getNextEmptyOutputBuffer(void *&, uint32_t &)
-	{(void)ocpiAssert(0); return NULL;}
-
-      virtual OCPI::DataTransport::BufferUserFacet* getNextFullInputBuffer(void *&, uint32_t &, RCCOrdinal &)
-	{(void)ocpiAssert(0);return NULL;}
+      {ocpiAssert(0); return NULL;}	
+      virtual OCPI::DataTransport::BufferUserFacet* getNextFullInputBuffer(void *&, uint32_t &, uint8_t &)
+      {ocpiAssert(0); return NULL;}	
       virtual void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* ,
-					 unsigned int , RCCOrdinal ) {ocpiAssert(0);}
+					 unsigned int , uint8_t)
+      {ocpiAssert(0);}
       virtual uint32_t getBufferCount()=0;
       virtual OCPI::DataTransport::BufferUserFacet* getBuffer( uint32_t tid )=0;
     protected:
@@ -266,7 +266,7 @@ namespace OCPI {
       bool advance();
 
       void send( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t length,
-		 RCCOrdinal opcode = 0 );
+		 uint8_t opcode = 0 );
       inline RDMAPort &getRDMAPort();
     protected:
 
@@ -298,18 +298,18 @@ namespace OCPI {
     public:
       MessagePort( Worker &w, Port& p, const OCPI::Util::PValue *params);
       
-      void connectURL( const char* url, const OCPI::Util::PValue *myProps,
-		       const OCPI::Util::PValue *otherProps);
+      void connectURL( const char* url, const OCPI::Util::PValue *myParams,
+		       const OCPI::Util::PValue *otherParams);
       inline void disconnect()
         throw ( OCPI::Util::EmbeddedException );
       OCPI::Container::ExternalPort& connectExternal(const char*, const OCPI::Util::PValue*,
 						     const OCPI::Util::PValue*);
       void releaseInputBuffer(OCPI::DataTransport::BufferUserFacet * buffer);
-      void sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t length, RCCOrdinal opcode );
+      void sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t length, uint8_t opcode );
       OCPI::DataTransport::BufferUserFacet*  getNextEmptyOutputBuffer(void *&data, uint32_t &length);
       OCPI::DataTransport::BufferUserFacet*  getNextFullInputBuffer(void *&data,
-								    uint32_t &length, RCCOrdinal &opcode);
-      void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len, RCCOrdinal op );
+								    uint32_t &length, uint8_t &opcode);
+      void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len, uint8_t op );
       OCPI::DataTransport::BufferUserFacet* getBuffer( uint32_t index );
       //      uint32_t getBufferLength();
       uint32_t getBufferCount();
@@ -354,11 +354,11 @@ namespace OCPI {
       
       // Port Control methods      
       void releaseInputBuffer(OCPI::DataTransport::BufferUserFacet * buffer);
-      void sendOutputBuffer(OCPI::DataTransport::BufferUserFacet * buffer, uint32_t length, RCCOrdinal opcode );
+      void sendOutputBuffer(OCPI::DataTransport::BufferUserFacet * buffer, uint32_t length, uint8_t opcode );
       OCPI::DataTransport::BufferUserFacet* getNextEmptyOutputBuffer(void *&data, uint32_t &length);
       OCPI::DataTransport::BufferUserFacet* getNextFullInputBuffer(void *&data, uint32_t &length,
-									   RCCOrdinal &opcode);
-      void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len, RCCOrdinal op );
+									   uint8_t &opcode);
+      void sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* src_buf, unsigned int len, uint8_t op );
       OCPI::DataTransport::BufferUserFacet* getBuffer( uint32_t index );
       //      uint32_t getBufferLength();
       uint32_t getBufferCount();

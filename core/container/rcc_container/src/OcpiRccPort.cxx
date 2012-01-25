@@ -375,19 +375,16 @@ namespace OCPI {
 
     void
     RDMAPort::
-    sendOutputBuffer(OCPI::DataTransport::BufferUserFacet* b, uint32_t length, RCCOrdinal opCode )
+    sendOutputBuffer(OCPI::DataTransport::BufferUserFacet* b, uint32_t length, uint8_t opCode )
     {
-      m_dtPort->sendOutputBuffer(b, length, (uint32_t)opCode);
+      m_dtPort->sendOutputBuffer(b, length, opCode);
     }
 
     OCPI::DataTransport::BufferUserFacet    *
     RDMAPort::
-    getNextFullInputBuffer(void *&data, uint32_t &length, RCCOrdinal &rccOpcode )
+    getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode )
     {
-      uint32_t opcode;
-      OCPI::DataTransport::BufferUserFacet *b = m_dtPort->getNextFullInputBuffer(data, length, opcode);
-      rccOpcode = opcode;
-      return b;
+      return m_dtPort->getNextFullInputBuffer(data, length, opcode);
     }
     // We are being told by our local peer that they are being disconnected.
     void 
@@ -431,7 +428,7 @@ namespace OCPI {
 
     void 
     RDMAPort::
-    sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* buf, unsigned int len, RCCOrdinal op )
+    sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* buf, unsigned int len, uint8_t op )
     {
       m_dtPort->sendZcopyInputBuffer( static_cast<OCPI::DataTransport::Buffer*>(buf), len, op);
     }
@@ -582,9 +579,13 @@ namespace OCPI {
 	m_buffer = m_delegateTo->getNextEmptyOutputBuffer(m_rccPort->current.data,
 							  m_rccPort->current.maxLength);
 	m_rccPort->output.length = m_rccPort->current.maxLength;
-      } else
-	m_buffer = m_delegateTo->getNextFullInputBuffer(m_rccPort->current.data, m_rccPort->input.length,
-							m_rccPort->input.u.operation);
+      } else {
+	uint8_t opcode;
+	if ((m_buffer = m_delegateTo->getNextFullInputBuffer(m_rccPort->current.data,
+							     m_rccPort->input.length,
+							     opcode)))
+	  m_rccPort->input.u.operation = opcode;
+      }
       if (m_buffer) {
 	m_rccPort->current.containerBuffer = m_buffer;
 	m_buffer->m_ud = this;
@@ -595,7 +596,7 @@ namespace OCPI {
     }
 
     void Port::
-    send(OCPI::DataTransport::BufferUserFacet* buffer, uint32_t length, RCCOrdinal opcode)
+    send(OCPI::DataTransport::BufferUserFacet* buffer, uint32_t length, uint8_t opcode)
     {
       Port *bufferPort = static_cast<Port*>(buffer->m_ud);
       ocpiAssert (m_delegateTo);

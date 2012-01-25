@@ -30,3 +30,4 @@ a.out*
 \.\#*
 \#*\#
 .DS_Store
+timeData.raw

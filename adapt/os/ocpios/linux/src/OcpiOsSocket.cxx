@@ -114,6 +114,7 @@ OCPI::OS::Socket::recv (char * buffer, unsigned long long amount)
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
 
+  //  printf("recv %p %p %d\n", this, buffer, o2fd(m_osOpaque));
   return static_cast<unsigned long long> (ret);
 }
 

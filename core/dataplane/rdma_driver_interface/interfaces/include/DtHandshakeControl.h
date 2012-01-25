@@ -56,11 +56,11 @@ namespace DataTransfer {
 
   // This is the const value that is used to determine if a SMB transport
   // is up and running
-  const OCPI::OS::uint64_t UpAndRunningMarker = 0x51abac;
+  const uint64_t UpAndRunningMarker = 0x51abac;
 
   // Token definition
-  typedef OCPI::OS::int32_t ControlToken;
-  typedef OCPI::OS::int32_t BooleanToken;
+  typedef int32_t ControlToken;
+  typedef int32_t BooleanToken;
 
 
   /**********************************
@@ -86,58 +86,60 @@ namespace DataTransfer {
     };
 
     struct BasicReq {
-      ReqTypeIds         type;
-      OCPI::OS::uint32_t  pad;
+      ReqTypeIds type;
+      uint32_t   pad;
     };
 
     struct RequestUpdateCircuit {
-      ReqTypeIds         type;
-      OCPI::OS::uint32_t  pad;
-      OCPI::OS::uint32_t       senderCircuitId;              // Id of circuit of interest
-      OCPI::OS::uint32_t       receiverCircuitId;      // Id of circuit of interest
-      OCPI::OS::uint64_t  receiverPortId;            // Our new input port id
-      OCPI::OS::uint32_t         tPortCount;                    // Number of input ports
-      OCPI::OS::uint64_t         senderPortId;             // Sender port ordinal
-      OCPI::OS::uint64_t  senderOutputPortId;       // Our output port ordinal
-      OCPI::OS::uint32_t         senderOutputControlOffset; // Control offset to output
-      OCPI::OS::uint32_t  pad1;
-      char               output_end_point[128];   // Output endpoint
+      ReqTypeIds type;
+      uint32_t   pad;
+      uint32_t   senderCircuitId;              // Id of circuit of interest
+      uint32_t   receiverCircuitId;      // Id of circuit of interest
+      uint64_t   receiverPortId;            // Our new input port id
+      uint32_t   tPortCount;                    // Number of input ports
+      uint64_t   senderPortId;             // Sender port ordinal
+      uint64_t   senderOutputPortId;       // Our output port ordinal
+      uint32_t   senderOutputControlOffset; // Control offset to output
+      uint32_t   pad1;
+      char       output_end_point[128];   // Output endpoint
     };
 
     struct RequestShadowRstateOffset {
-      ReqTypeIds         type;
-      OCPI::OS::uint32_t  pad;
-      OCPI::OS::uint32_t  circuitId;
-      OCPI::OS::uint32_t  portId;
-      OCPI::OS::uint32_t  pad1;
-      char               url[128];
+      ReqTypeIds type;
+      uint32_t   pad;
+      uint32_t   circuitId;
+      uint32_t   portId;
+      uint32_t   pad1;
+      char       url[128];
     };
 
     struct RequestInputOffsets {
-      ReqTypeIds         type;
-      OCPI::OS::uint32_t  pad;
-      OCPI::OS::uint32_t  circuitId;
-      OCPI::OS::uint32_t  portId;
-      OCPI::OS::uint32_t       pad1;
-      char               url[128];
+      ReqTypeIds type;
+      uint32_t   pad;
+      uint32_t   circuitId;
+      uint32_t   portId;
+      uint32_t   pad1;
+      char       url[128];
     };
 
     struct RequestOutputControlOffset {
-      ReqTypeIds                type;
-      OCPI::OS::uint32_t         pad;
-      OCPI::OS::uint32_t  circuitId;
-      OCPI::OS::uint32_t  portId;
-      char                      shadow_end_point[128];       // Output endpoint
+      ReqTypeIds type;
+      uint32_t   pad;
+      uint32_t   circuitId;
+      uint32_t   portId;
+      uint64_t   protocol_offset;             // server side is also telling us where to put the protocol info
+      char       shadow_end_point[128];       // Output endpoint
     };
 
     struct RequestNewConnection {
-      ReqTypeIds                type;
-      OCPI::OS::uint32_t         pad;
-      OCPI::OS::uint32_t         circuitId;
-      OCPI::OS::uint32_t         buffer_size;
-      OCPI::OS::uint32_t                  send;                                // Send or recieve buffer
-      OCPI::OS::uint32_t         pad1;
-      char                      output_end_point[128];
+      ReqTypeIds type;
+      uint32_t   pad;
+      uint32_t   circuitId;
+      uint32_t   buffer_size;
+      uint32_t   send;                   // Send or recieve buffer boolean
+      uint32_t   protocol_size;          // the size of the client's protocol info
+      uint32_t   pad1;
+      char       output_end_point[128];
     };
 
     union RequestTypes {
@@ -151,10 +153,10 @@ namespace DataTransfer {
 
     struct MailBox {
       RequestTypes            request;
-      OCPI::OS::int32_t              error_code;
-      OCPI::OS::uint32_t              returnMailboxId;
+      int32_t              error_code;
+      uint32_t              returnMailboxId;
       OCPI::OS::int64_t              return_offset;
-      OCPI::OS::uint32_t              return_size;
+      uint32_t              return_size;
     };
 
     OCPI::OS::int64_t               upAndRunning;
@@ -174,47 +176,47 @@ namespace DataTransfer {
     BooleanToken   endOfWhole;           // end of whole data distribution
     BooleanToken   endOfStream;          // end of data stream
 
-    OCPI::OS::uint32_t           numberOfBuffers;
+    uint32_t           numberOfBuffers;
   };
 
 
   struct BufferState {
     // buffer full token
-    OCPI::OS::int32_t   bufferFull;
+    int32_t   bufferFull;
   };
 
 
   struct BufferShape
   {
     /* Return error value */
-    OCPI::OS::uint32_t error;
+    uint32_t error;
 
     /* Buffer handle */
-    OCPI::OS::uint32_t buffer;
+    uint32_t buffer;
 
     /* Number of dimensions */
-    OCPI::OS::uint32_t ndims;
+    uint32_t ndims;
 
     /* Data shape size */
-    OCPI::OS::uint32_t dataShape[3];
+    uint32_t dataShape[3];
 
     /* Whole shape size */
-    OCPI::OS::uint32_t wholeShape[3];
+    uint32_t wholeShape[3];
 
     /* Left overlap sizes */
-    OCPI::OS::uint32_t left[3];
+    uint32_t left[3];
 
     /* Right overlap sizes */
-    OCPI::OS::uint32_t right[3];
+    uint32_t right[3];
 
     /* Position of data in whole */
-    OCPI::OS::uint32_t wholePosition[3];
+    uint32_t wholePosition[3];
 
     /* Strides of data in buffer */
-    OCPI::OS::uint32_t dataInBuffer[3];
+    uint32_t dataInBuffer[3];
 
     /* Offset from start of buffer to start of data */
-    OCPI::OS::uint32_t dataBufferOffset;
+    uint32_t dataBufferOffset;
   };
 
 
@@ -236,22 +238,22 @@ namespace DataTransfer {
   struct BufferMetaData {
     RplMetaData              ocpiMetaDataWord;      // OCPI compatible metadata word
 
-    OCPI::OS::uint32_t           sequence;                            // Transfer sequence
-    OCPI::OS::int32_t           userTag;                            // User defined buffer tag
-    OCPI::OS::int32_t           endOfCircuit;                    // Circuit is being deleted
-    OCPI::OS::int32_t           broadCast;                        // This buffer was broadcast to all inputs
-    OCPI::OS::int32_t       metaDataOnlyTransfer; // Only meta data transfered
-    OCPI::OS::uint32_t      srcRank;              // rank of the output buffer
-    OCPI::OS::int32_t       srcTemporalId;        // temporal buffer id
+    uint32_t           sequence;                            // Transfer sequence
+    int32_t           userTag;                            // User defined buffer tag
+    int32_t           endOfCircuit;                    // Circuit is being deleted
+    int32_t           broadCast;                        // This buffer was broadcast to all inputs
+    int32_t       metaDataOnlyTransfer; // Only meta data transfered
+    uint32_t      srcRank;              // rank of the output buffer
+    int32_t       srcTemporalId;        // temporal buffer id
     BooleanToken           endOfWhole;           // end of whole data distribution
-    OCPI::OS::uint32_t           nPartsPerWhole;                // Number of parts to make up the whole data set
-    OCPI::OS::uint32_t           partsSequence;            // This buffers sequence in the whole
+    uint32_t           nPartsPerWhole;                // Number of parts to make up the whole data set
+    uint32_t           partsSequence;            // This buffers sequence in the whole
     BooleanToken           endOfStream;          // end of data stream
-    OCPI::OS::int32_t           timeStamp;                        // Buffer time stamp
+    int32_t           timeStamp;                        // Buffer time stamp
     DtOsDataTypes::Offset  localStateOffset;     // offset back to local state
-    OCPI::OS::int32_t       outputSmbId;          // Output smb id
+    int32_t       outputSmbId;          // Output smb id
     BufferShape                   shape;                                // buffer shape
-    OCPI::OS::uint32_t             zcopy;
+    uint32_t             zcopy;
 
 
   };

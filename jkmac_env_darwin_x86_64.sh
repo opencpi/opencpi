@@ -111,7 +111,7 @@ export OCPI_OMNI_DIR=/opt/opencpi/prerequisites/omniorb
 export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/bin
 export OCPI_OMNI_IDL_DIR=$OCPI_OMNI_DIR/share/idl/omniORB
 export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/lib
-export OCPI_OMNI_INCLUDE_DIR=$OCPI_OMNI_DIR/include/omniORB4
+export OCPI_OMNI_INCLUDE_DIR=$OCPI_OMNI_DIR/include
 
 # #### Path to Mercury tools and libraries ################################ #
 

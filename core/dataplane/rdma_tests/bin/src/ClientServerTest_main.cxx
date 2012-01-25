@@ -193,29 +193,33 @@ int gpp_cont(int argc, char** argv)
 	mc = mep.accept(&timer);
       } while (!mc);
 #endif
-      printf("Server side:\n  local:  %s\n  remote: %s\n ",
-	     mc->localEndpoint(), mc->remoteEndpoint());
+      char *protocol = mc->getProtocol();
+      printf("Server side:\n  local:  %s\n  remote: %s, protocol: %s\n ",
+	     mc->localEndpoint(), mc->remoteEndpoint(), protocol);
+      delete [] protocol;
       for (unsigned msg_count = 0; msg_count <= 101; msg_count++) {
         OCPI::DataTransport::BufferUserFacet* buffer;        
 	void *data;
 	uint32_t bufferLength;
-	while (!(buffer = mc->getNextOutputBuffer(data, bufferLength)))
+	while (!(buffer = mc->getNextEmptyOutputBuffer(data, bufferLength)))
 	  mc->dispatch();
 	unsigned length = 0;
 	if (msg_count != 100) {
 	  sprintf((char*)data, "message %d\n", msg_count);
 	  length = strlen((char*)data) + 1 ;
 	}
-	printf("Sending buffer: %s, length %u\n", data, length);
-	mc->sendBuffer( buffer, length);
+	printf("Sending buffer: %s, length %u\n", (char*)data, length);
+	mc->sendOutputBuffer( buffer, length, 0xe7);
       }
       printf("Server done, waiting 5 seconds\n");
       OCPI::OS::sleep(5000);
+      delete mc;
     }
     else {
       printf("Setting up for loopback mode using %s\n", loopback_end_point);
-      OS::Timer timer(5, 0);
-      std::auto_ptr<MessageCircuit> c(&MessageEndpoint::connect(server_end_point, 4096, &timer));
+      OS::Timer timer(10, 0);
+      std::auto_ptr<MessageCircuit> c(&MessageEndpoint::connect(server_end_point, 4096,
+								"Hello, World", &timer));
       //      MessageCircuit c(loopback_end_point, 1024);
       //      printf("***** Client connecting to: %s\n", server_end_point);
       //      c.connect( server_end_point );   
@@ -226,13 +230,14 @@ int gpp_cont(int argc, char** argv)
         OCPI::DataTransport::BufferUserFacet* buffer;        
 	void *data = 0;// for debug
 	uint32_t length;
-	while (!(buffer = c->getNextInputBuffer(data, length)))
+	uint8_t opcode;
+	while (!(buffer = c->getNextFullInputBuffer(data, length, opcode)))
 	  OCPI::OS::sleep(1);
 	if (length != 0) {
 	  ocpiAssert(length == strlen((char *)data) + 1);
-	  printf("Message %d from server = %s\n", n, (char*)data);
+	  printf("Message %d from server = %s, op %xx\n", n, (char*)data, opcode);
 	}
-	c->freeBuffer( buffer );
+	c->releaseInputBuffer( buffer );
 	if (length == 0) {
 	  printf("Message %d empty\n", n);
 	  break;
@@ -243,7 +248,7 @@ int gpp_cont(int argc, char** argv)
     }
   }
   CATCH_ALL_RETURN1("running client/server test")
-
+    OCPI::DataTransport::MessageEndpoint::destroyMessageEndpoints();
   return 0;
 }
 

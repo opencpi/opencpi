@@ -903,12 +903,27 @@ bool OCPI::DataTransport::Port::ready()
 
     } 
     else {  // Shadow output port
-
-      if ( ! m_portDependencyData.offsets[0].outputOffsets.portSetControlOffset ) {
-
-
         SMBResources* s_res = 
           XferFactoryManager::getFactoryManager().getSMBResources( getShadowEndpoint() );
+
+      if ( m_portDependencyData.offsets[0].outputOffsets.portSetControlOffset ) {
+	// We have received the output offsets.  Perform any required protocol info
+	// processing if there is any.  This means stashing the received protocol info
+	// into the circuit object.
+	uint32_t protocolSize;
+	uint64_t protocolOffset;
+	getCircuit()->getProtocolInfo(protocolSize, protocolOffset);
+	if (protocolSize) {
+	  // protocolSize from the circuit is set by the incoming request from the client,
+	  // and cleared when the information is stashed into the circuit.
+	  void *myProtocolBuffer = s_res->sMemServices->map(protocolOffset, protocolSize);
+	  // This string constructor essentially copies the info into the string
+	  char *copy = new char[protocolSize];
+	  memcpy(copy, myProtocolBuffer, protocolSize);
+	  getCircuit()->setProtocol(copy);
+	  s_res->sMemServices->unMap();	  
+	}
+      } else {
         SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
         XferMailBox xmb( getMailbox() );
         if ( ! xmb.mailBoxAvailable(s_res) ) {
@@ -936,6 +951,9 @@ bool OCPI::DataTransport::Port::ready()
         strcpy(mb->request.reqOutputContOffset.shadow_end_point,
                m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
 
+	uint32_t protocolSize;
+	getCircuit()->getProtocolInfo(protocolSize, mb->request.reqOutputContOffset.protocol_offset);
+
 #ifndef NDEBUG
         printf("Making return address to %s\n", 
                m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
@@ -946,7 +964,6 @@ bool OCPI::DataTransport::Port::ready()
         mb->return_size = sizeof( PortMetaData::BufferOffsets );
         mb->returnMailboxId = getMailbox();
         xmb.makeRequest( s_res, t_res);
-
         return false;
       }
     }
@@ -1421,7 +1438,7 @@ hasEmptyOutputBuffer()
 
 OCPI::DataTransport::BufferUserFacet* 
 OCPI::DataTransport::Port::
-getNextFullInputBuffer(void *&data, uint32_t &length, uint32_t &opcode)
+getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode)
 {
   OCPI::DataTransport::Buffer* buf = getNextFullInputBuffer();
   if (buf) {
@@ -1551,28 +1568,12 @@ getNextEmptyOutputBuffer()
 
 void 
 Port::
-sendZcopyInputBuffer( Buffer* src_buf, unsigned int len, unsigned op)
+sendZcopyInputBuffer( Buffer* src_buf, unsigned int len, uint8_t op)
 {
   src_buf->getMetaData()->ocpiMetaDataWord.length = len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
   getCircuit()->sendZcopyInputBuffer( this, src_buf, len );
 }
-
-
-#if 0
-void 
-Port::
-advance( Buffer* buffer, unsigned int len )
-{
-  buffer->getMetaData()->ocpiMetaDataWord.length = len;
-  if ( isOutput() ) {
-    sendOutputBuffer( buffer, len, opcode );
-  }
-  else {
-    inputAvailable( buffer);
-  }
-}
-#endif
 
 OCPI::OS::uint32_t 
 Port::
@@ -1583,7 +1584,7 @@ getBufferLength()
 
 void 
 Port::
-sendOutputBuffer( BufferUserFacet* buf, unsigned int length, unsigned int opcode )
+sendOutputBuffer( BufferUserFacet* buf, unsigned int length, uint8_t opcode )
 {
   if (length > getBufferLength())
     throw OU::Error("Buffer being sent with data length (%u) exceeding buffer length (%u)",

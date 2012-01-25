@@ -129,7 +129,7 @@ namespace OCPI {
       /**********************************
        * Reteives the next available input buffer.
        *********************************/
-      BufferUserFacet* getNextFullInputBuffer(void *&data, uint32_t &length, uint32_t &opcode);
+      BufferUserFacet* getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode);
       Buffer* getNextFullInputBuffer();
 
       /**********************************
@@ -199,7 +199,7 @@ namespace OCPI {
        * This method is used to send an input buffer thru an output port with Zero copy, 
        * if possible.
        *********************************/
-      void sendZcopyInputBuffer( Buffer* src_buf, unsigned int len, unsigned op );
+      void sendZcopyInputBuffer( Buffer* src_buf, unsigned int len, uint8_t op );
 
       /**********************************
        * This method causes the specified input buffer to be marked
@@ -211,7 +211,7 @@ namespace OCPI {
       /**********************************
        * Send an output buffer
        *********************************/
-      void sendOutputBuffer( BufferUserFacet* b, unsigned int length, unsigned int opcode );
+      void sendOutputBuffer( BufferUserFacet* b, unsigned int length, uint8_t opcode );
 
 
       // Advanced buffer management

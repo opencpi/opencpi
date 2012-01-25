@@ -1392,9 +1392,9 @@ namespace OCPI {
 	  */
 	}
 	  
-	void post (OCPI::DataTransport::BufferUserFacet* b, uint32_t msg_size )
+	void sendOutputBuffer (OCPI::DataTransport::BufferUserFacet* b, uint32_t /* msg_size */,
+			       uint8_t /* opcode */)
 	{
-	  (void)msg_size;
 	  Buffer * buffer = static_cast<Buffer*>(b);
 	  m_writer->write( buffer->m_buf, NULL);
 	  m_freeTxBuffers.push_back( buffer );
@@ -1405,8 +1405,11 @@ namespace OCPI {
 	  return true;
 	}
 
-	OCPI::DataTransport::BufferUserFacet*  getFreeBuffer()
+	OCPI::DataTransport::BufferUserFacet*
+	getNextEmptyOutputBuffer(void *&data, uint32_t &length)
 	{
+	  if (!hasFreeBuffer())
+	    return NULL;
 	  Buffer * buf;
 	  if ( ! m_freeTxBuffers.empty() ) {
 	    buf = m_freeTxBuffers.front();
@@ -1414,6 +1417,10 @@ namespace OCPI {
 	  }
 	  else {
 	    buf = new Buffer(new char[m_topic->data().maxMsgSize()], m_topic->data().maxMsgSize(), m_bufCount++);
+	  }
+	  if (buf) {
+	    data = (void*)buf->getBuffer(); // cast off volatile
+	    length = buf->getDataLength();
 	  }
 	  return buf;
 	}
@@ -1456,7 +1463,7 @@ namespace OCPI {
 	  return false;
 	}
 
-	void release( OCPI::DataTransport::BufferUserFacet*  buffer)
+	void releaseInputBuffer( OCPI::DataTransport::BufferUserFacet*  buffer)
 	{
 	  ::DDS::ReturnCode_t status;
 	  Buffer * buf = static_cast<Buffer*>(buffer);
@@ -1465,15 +1472,17 @@ namespace OCPI {
 	  m_freeRcvBuffers.push_back( buf  );
 	}
 	  
-	OCPI::DataTransport::BufferUserFacet* getNextMsg( uint32_t & length )
+	OCPI::DataTransport::BufferUserFacet*  getNextFullInputBuffer(void *&data, uint32_t &length,
+								      uint8_t &opcode)
 	{
-	  if ( ! msgReady() ) {
+	  if (!msgReady())
 	    return NULL;
-	  }
 	  Buffer * buf = m_fullRcvBuffers.front();
 	  ocpiAssert( buf );
 	  m_fullRcvBuffers.pop_front();	  
 	  length = buf->m_dLen;
+	  opcode = 0;
+	  data = (void*)buf->getBuffer(); // cast off volatile
 	  return buf;
 	}      
 
@@ -1483,7 +1492,7 @@ namespace OCPI {
       class XferServices : public DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>
       {
       public:
-	XferServices ( OCPI::Util::Protocol * protocol , const char  * other_url, 
+	XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url, 
 		       const OCPI::Util::PValue *our_props=0,
 		       const OCPI::Util::PValue *other_props=0 );
 
@@ -1583,40 +1592,40 @@ namespace OCPI {
 	}
 
 
-	virtual XferServices* getXferServices( OCPI::Util::Protocol * protocol,
+	virtual XferServices* getXferServices( const OCPI::Util::Protocol & protocol,
 					       const char* url,
 					       const OCPI::Util::PValue *our_props=0,
 					       const OCPI::Util::PValue *other_props=0 )
 	{
 
 #ifndef NDEBUG
-	  if ( protocol->m_name.length() )
-	    cout << "Protocol name = " << protocol->m_name << endl;
-	  cout << "  Operation count = " << protocol->nOperations() << endl;
+	  if ( protocol.m_name.length() )
+	    cout << "Protocol name = " << protocol.m_name << endl;
+	  cout << "  Operation count = " << protocol.nOperations() << endl;
 	  cout << "  Op 1 info " << endl;
-	  cout << "    name = " << protocol->operations()[0].name() << endl;
-	  cout << "    num args = " <<  protocol->operations()[0].nArgs() << endl;
-	  for ( unsigned n=0; n<protocol->operations()[0].nArgs(); n++ ) {
+	  cout << "    name = " << protocol.operations()[0].name() << endl;
+	  cout << "    num args = " <<  protocol.operations()[0].nArgs() << endl;
+	  for ( unsigned n=0; n<protocol.operations()[0].nArgs(); n++ ) {
 
-	    if ( protocol->operations()[0].args()[n].m_name.length() )
-	      cout << n << " Name = " << protocol->operations()[0].args()[n].m_name << endl;
-	    cout << "      offset =  " << protocol->operations()[0].args()[n].m_offset << endl;
-	    cout << "      bits =  " << protocol->operations()[0].args()[n].m_nBits << endl;
-	    cout << "      align =  " << protocol->operations()[0].args()[n].m_align << endl;
-	    cout << "      nBytes =  " << protocol->operations()[0].args()[n].m_nBytes << endl;
+	    if ( protocol.operations()[0].args()[n].m_name.length() )
+	      cout << n << " Name = " << protocol.operations()[0].args()[n].m_name << endl;
+	    cout << "      offset =  " << protocol.operations()[0].args()[n].m_offset << endl;
+	    cout << "      bits =  " << protocol.operations()[0].args()[n].m_nBits << endl;
+	    cout << "      align =  " << protocol.operations()[0].args()[n].m_align << endl;
+	    cout << "      nBytes =  " << protocol.operations()[0].args()[n].m_nBytes << endl;
 
-	    cout << "      type =  " << protocol->operations()[0].args()[n].m_baseType << endl;	      
-	    cout << "       seq =  " << protocol->operations()[0].args()[n].m_isSequence << endl;	      
-	    cout << "       ary =  " << protocol->operations()[0].args()[n].m_arrayRank << endl;
-	    cout << "       strlen =  " << protocol->operations()[0].args()[n].m_stringLength << endl;	      
-	    cout << "       sequence length =  " << protocol->operations()[0].args()[n].m_sequenceLength << endl;	      
+	    cout << "      type =  " << protocol.operations()[0].args()[n].m_baseType << endl;	      
+	    cout << "       seq =  " << protocol.operations()[0].args()[n].m_isSequence << endl;	      
+	    cout << "       ary =  " << protocol.operations()[0].args()[n].m_arrayRank << endl;
+	    cout << "       strlen =  " << protocol.operations()[0].args()[n].m_stringLength << endl;	      
+	    cout << "       sequence length =  " << protocol.operations()[0].args()[n].m_sequenceLength << endl;	      
 	  }
 #endif
 
 	  // We can share XferServices among threads in the same process
 	  std::list<XferServices*>::iterator it;
 	  for ( it=m_services.begin(); it!=m_services.end(); it++) {
-	    if ( ((*it)->url() == url ) && ((*it)->protocol()->m_name == protocol->m_name  ) ) {
+	    if ( ((*it)->url() == url ) && ((*it)->protocol().m_name == protocol.m_name  ) ) {
 	      return (*it);
 
 	    }
@@ -1633,12 +1642,12 @@ namespace OCPI {
 
 	
       XferServices::
-      XferServices ( OCPI::Util::Protocol * protocol , const char  * other_url,
+      XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url,
 		     const OCPI::Util::PValue *our_props,
 		     const OCPI::Util::PValue *other_props)
 	: DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>(protocol,other_url,our_props,other_props)
       {
-	m_td = protocol;
+	m_td = &protocol;
       }
 
       XferFactory::

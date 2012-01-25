@@ -44,7 +44,7 @@ namespace OCPI {
 
     Operation::Operation()
       : m_isTwoWay(false), m_nArgs(0), m_args(NULL), m_nExceptions(0), m_exceptions(NULL),
-	m_myOffset(0) {
+	m_myOffset(0), m_topFixedSequence(false) {
     }
     Operation::~Operation() {
       if (m_args)
@@ -97,10 +97,12 @@ namespace OCPI {
 	err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
 				   p.m_dataValueWidth, p.m_diverseDataSizes,
 				   sub32dummy, p.m_isUnbounded);
+      if (!err && m_nArgs == 1 && m_args[0].isSequence() && m_args[0].isFixed())
+	m_topFixedSequence = true;
       return err;
     }
 
-    void Operation::printXML(FILE *f, unsigned indent) {
+    void Operation::printXML(FILE *f, unsigned indent) const {
       fprintf(f, "%*s<operation", indent * 2, "");
       if (!m_name.empty())
 	fprintf(f, " name=\"%s\"", m_name.c_str());
@@ -117,7 +119,7 @@ namespace OCPI {
     }
     void Operation::write(Writer &writer, const uint8_t *data, uint32_t length) {
       for (unsigned n = 0; n < m_nArgs; n++)
-	m_args[n].write(writer, data, length);
+	m_args[n].write(writer, data, length, isTopFixedSequence());
     }
 
     uint32_t Operation::read(Reader &reader, uint8_t *&data, uint32_t maxLength) {
@@ -153,7 +155,7 @@ namespace OCPI {
 	v[n]->generate();
       }
     }
-    void Operation::print(FILE *f, Value **v) {
+    void Operation::print(FILE *f, Value **v) const {
       fprintf(f, "%s\n", m_name.c_str());
       for (unsigned n = 0; n < m_nArgs; n++) {
 	std::string s;
@@ -326,7 +328,7 @@ namespace OCPI {
       m_operations[opcode].generateArgs(v);
     }
 
-    void Protocol::printOperation(FILE *f, uint8_t opcode, Value **v) {
+    void Protocol::printOperation(FILE *f, uint8_t opcode, Value **v) const {
       fprintf(f, "%u:", opcode);
       m_operations[opcode].print(f, v);
       fflush(f);
@@ -335,6 +337,15 @@ namespace OCPI {
       fprintf(f, "testing %u:", opcode);
       m_operations[opcode].testPrintParse(f, v);
     }
+    const char *Protocol::parse(char *proto) {
+      ezxml_t x = ezxml_parse_str(proto, strlen(proto));
+      if (!x)
+	return "Error parsing xml protocol description";
+      const char *err = parse(x);
+      ezxml_free(x);
+      return err;
+    }
+
     const char *Protocol::parse(ezxml_t prot) {
       const char *err;
       const char *name = ezxml_cattr(prot, "name");
@@ -369,7 +380,7 @@ namespace OCPI {
 	return err;
       return finishParse();
     }
-    void Protocol::printXML(FILE *f, unsigned indent) {
+    void Protocol::printXML(FILE *f, unsigned indent) const {
       fprintf(f, "%*s<protocol", indent * 2, "");
       if (!m_name.empty())
 	fprintf(f, " name=\"%s\"", m_name.c_str());

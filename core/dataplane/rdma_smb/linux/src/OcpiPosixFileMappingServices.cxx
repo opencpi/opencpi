@@ -84,9 +84,17 @@ namespace DataTransfer {
 	  m_errno = errno;
 	  if (rc != 0)
 	    {
-	      printf("OcpiPosixFileMappingServices::CreateMapping: ftruncate failed with errno %d\n", m_errno);
+#ifndef NDEBUG
+	      printf("OcpiPosixFileMappingServices::CreateMapping: ftruncate failed with errno %d\n",
+		     m_errno);
+#endif
 	      TerminateMapping ();
 	    }
+#ifndef NDEBUG
+	  printf("shm fd %d truncate was %u now %u\n",
+		 m_fd, statbuf.st_size, iMaxSize);
+#endif
+
 	}
       return rc;
     }
@@ -188,11 +196,16 @@ namespace DataTransfer {
       m_length = 0;
       if (m_fd == -1) {
 	  m_errno = errno;
+#ifndef NDEBUG
 	  printf ("OcpiPosixFileMapping::InitMapping: shm_open of %s failed with errno %d\n",
 		  m_name.c_str (), m_errno);
+#endif
 	  return m_errno;
 	}
       m_created = iFlags == O_CREAT;
+#ifndef NDEBUG
+      printf("shm open %s fd %d created %d\n", m_name.c_str(), m_fd, m_created);
+#endif
       return 0;
     }
 
@@ -200,6 +213,9 @@ namespace DataTransfer {
     int TerminateMapping ()
     {
       if ( m_fd != -1 ) {
+#ifndef NDEBUG
+      printf("shm closing %s fd %d created %d\n", m_name.c_str(), m_fd, m_created);
+#endif
 	if (m_created)
 	  shm_unlink(m_name.c_str());
 	close (m_fd);

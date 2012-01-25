@@ -47,8 +47,6 @@
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
-#include <OcpiTransportServer.h>
-#include <OcpiTransportClient.h>
 #include <OcpiRDTInterface.h>
 #include <test_utilities.h>
 #include <OcpiUtilCommandLineConfiguration.h>
@@ -56,8 +54,6 @@
 #include "UtGenericLoopbackWorkers.h"
 
 #include <OcpiThread.h>
-using namespace OCPI::DataTransport;
-using namespace DataTransport::Interface;
 using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;

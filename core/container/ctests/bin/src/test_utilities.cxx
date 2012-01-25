@@ -54,8 +54,8 @@
 #include <OcpiContainerPort.h>
 #include <test_utilities.h>
 
-using namespace OCPI::DataTransport;
-using namespace DataTransport::Interface;
+//using namespace OCPI::DataTransport;
+//using namespace DataTransport::Interface;
 using namespace OCPI::Container;
 using namespace OCPI;
 

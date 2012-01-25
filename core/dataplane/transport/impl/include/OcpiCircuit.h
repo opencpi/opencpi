@@ -87,7 +87,7 @@ namespace OCPI {
       Circuit( Transport* tpg,
                CircuitId&  iid, ConnectionMetaData* connection, 
                PortOrdinal sps[], 
-               PortOrdinal dpss[] );
+               PortOrdinal dpss[]);
 
 
       /**********************************
@@ -291,6 +291,33 @@ namespace OCPI {
       ConnectionMetaData * getConnectionMetaData();
 
 
+      /**********************************
+       * store and retrieve protocol info during connection setup
+       *********************************/
+      void getProtocolInfo(uint32_t &size, uint64_t &offset) {
+	// ocpiAssert(m_protocol != 0 && m_protocol->length() != 0 && m_protocolOffset != 0);
+	size = m_protocolSize;
+	offset = m_protocolOffset;
+      }
+
+      // Estalish where in the local SMB the protocol does or will exist.
+      inline void setProtocolInfo(uint32_t size, uint64_t offset) {
+	m_protocolSize = size;
+	m_protocolOffset = offset;
+	//	if (m_protocol) {
+	//        delete m_protocol;
+	//	  m_protocol = 0;
+	//	}
+      }
+      inline void setProtocol(char *protocol) {
+	ocpiAssert(m_protocol == 0 && m_protocolSize != 0);
+	m_protocolSize = 0;
+	m_protocol = protocol;
+      }
+      // Retrieve the protocol string and pass ownership to caller as a char ARRAY
+      inline char *getProtocol() {
+	char *s = m_protocol; m_protocol = NULL; return s;
+      }
     protected:
 
       /***************************************************
@@ -396,6 +423,31 @@ namespace OCPI {
       // Reference count
       int m_ref_count;
 
+      // Protocol info goes through a different lifecycle on server and client.
+
+      // On client, it is passed into the DataTransport::createCircuit, which passes it into
+      // the circuit constructor, which takes ownership of it.
+      // Then transport->createCircuit ALSO, after construction, does requestNewConnection and passes the protocol
+      // info into the mailbox exchanges: it allocates local smb space, maps and copies the protocol
+      // info into the smb in order to transfer it to the server's smb.  At this time the client
+      // circuit is told where in the local smb the info exists, and thus it can delete the original string
+      // information passed into the constructor. (in setProtocolInfo).  After copying it into the SMB,
+      // the connection request to the server contains the size of this information, so that the server can 
+      // allocate space for it in its SMB.
+
+      // On the server side, the receipt of the connection request carries the size of the protocol info.
+      // Upon receipt, the server allocates SMB space to receive the protocol info into, and sends this offset
+      // back to the client in the request for output flow control offsets.  When the client receives this
+      // request, it copies the protocol info from client smb to server smb, and deallocates the smb space
+      // holding the protocol info on the client side.  When the server sees that its request for output flow
+      // control offsets has been satisfied (and thus the protocol info has also arrived), it creates a protocol
+      // string in the circuit, copies the info out of the SMB and deallocates the smb space.
+      // Then when the user of the circuit processes the protocol info it deletes it.
+      char *m_protocol; // a char array we own
+      // Offset in our local endpoint smb where we have put the protoco info for sending to the
+      // server side.
+      uint32_t m_protocolSize;
+      uint64_t m_protocolOffset;
     };
 
 
