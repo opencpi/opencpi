@@ -69,7 +69,7 @@ namespace DataTransfer {
     //	eAccess		- The type of access desired.
     //	iMaxSize	- Maximum size of mapping object.
     // Returns 0 for success or a platform specific error number.
-    int CreateMapping (const char*  strFilePath, const char* strMapName, AccessType eAccess, OCPI::OS::int64_t iMaxSize)
+    int CreateMapping (const char*  strFilePath, const char* strMapName, AccessType eAccess, uint64_t iMaxSize)
     {
       // Common call to do shm_open
       int rc = InitMapping (strFilePath, strMapName, eAccess, O_CREAT);
@@ -79,7 +79,7 @@ namespace DataTransfer {
 	  // Note Darwin/MacOS doesn't allow truncating it more than once, so it can't expand either
 	  struct stat statbuf;
 	  rc = fstat (m_fd, &statbuf);
-	  if (rc == 0 && statbuf.st_size < iMaxSize)
+	  if (rc == 0 && (uint64_t)statbuf.st_size < iMaxSize)
 	    rc = ftruncate (m_fd, iMaxSize);
 	  m_errno = errno;
 	  if (rc != 0)
@@ -91,8 +91,8 @@ namespace DataTransfer {
 	      TerminateMapping ();
 	    }
 #ifndef NDEBUG
-	  printf("shm fd %d truncate was %u now %u\n",
-		 m_fd, statbuf.st_size, iMaxSize);
+	  printf("shm fd %d truncate was %llu now %llu\n",
+		 m_fd, (unsigned long long)statbuf.st_size, (unsigned long long)iMaxSize);
 #endif
 
 	}

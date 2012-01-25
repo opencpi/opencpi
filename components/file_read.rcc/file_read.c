@@ -5,6 +5,7 @@
  *
  * This file contains the RCC implementation skeleton for worker: file_read
  */
+#define _GNU_SOURCE // for asprintf
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>

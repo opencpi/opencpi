@@ -27,7 +27,7 @@ canny: canny.cxx
 	g++ -g -Wall -o $@ $(INCS) $^ $(LDFLAGS)
 
 run: canny
-	export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components; \
+	export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc; \
 	export OCPI_SMB_SIZE=120000000; \
 	./canny boston_small.jpg > /dev/null	
 

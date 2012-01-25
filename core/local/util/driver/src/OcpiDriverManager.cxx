@@ -102,11 +102,13 @@ namespace OCPI {
 	}
 	// Now perform the configuration process, where managers and their children can do
 	// things they would not do earlier, at static construction time.
-	for (Manager *m = firstChild(); m; m = m->nextChild()) {
-	  ezxml_t c = x ? ezxml_cchild(x, m->name().c_str()) : NULL;
-	  m->configure(c);
+	for (Manager *m = firstChild(); m; m = m->nextChild())
+	  m->configure(x ? ezxml_cchild(x, m->name().c_str()) : NULL);
+	// The discovery happens in a second pass to make sure everything is configured before
+	// anything is discovered so that one driver's discovery can depend on another type of
+	// driver's configuration.
+	for (Manager *m = firstChild(); m; m = m->nextChild())
 	  m->discover();
-	}
       }
     }
     // Cleanup all managers

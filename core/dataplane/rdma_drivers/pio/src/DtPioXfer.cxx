@@ -135,7 +135,7 @@ SmemServices* PIOXferFactory::getSmemServices(EndPoint* loc )
   if ( loc->smem ) {
     return loc->smem;
   }
-  return CreateSmemServices( this, loc);
+  return loc->smem = CreateSmemServices( this, loc);
 }
 
 

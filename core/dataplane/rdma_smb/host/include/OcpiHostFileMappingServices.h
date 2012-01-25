@@ -66,7 +66,7 @@ namespace DataTransfer {
     //                0 for success; platform dependent error code otherwise.
     //        Throws:
     //                DataTransferEx for all other exception conditions
-    virtual int CreateMapping (const char*  strFilePath, const char* strMapName, AccessType eAccess, OCPI::OS::int64_t iMaxSize) = 0;
+    virtual int CreateMapping (const char*  strFilePath, const char* strMapName, AccessType eAccess, uint64_t iMaxSize) = 0;
 
     // Open an existing mapping to a named file.
     //        Arguments:
