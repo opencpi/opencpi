@@ -129,21 +129,22 @@ getListOfSupportedEndpoints()
 {
   parent().configure();
   std::vector<std::string> l;
+
   // Loop over transfer drivers
-  for (XferFactory *factory = firstDriver(); factory;
-       factory = factory->nextDriver()) {
-    try {
-      factory->allocateEndpoints(l);
+    for (XferFactory *factory = firstDriver(); factory;
+	 factory = factory->nextDriver()) {
+      try {
+	factory->allocateEndpoints(l);
+      }
+      catch( OU::EmbeddedException & ex ) {
+	fprintf(stderr, "Could not allocate endpoint for %s, error = %s\n",
+		factory->getProtocol(), ex.getAuxInfo() );
+      }
+      catch( ... ) {
+	fprintf(stderr, "Caught an unknown exception while allocating an endpoint from %s\n",
+		factory->getProtocol() );
+      }
     }
-    catch( OU::EmbeddedException & ex ) {
-      fprintf(stderr, "Could not allocate endpoint for %s, error = %s\n",
-	      factory->getProtocol(), ex.getAuxInfo() );
-    }
-    catch( ... ) {
-      fprintf(stderr, "Caught an unknown exception while allocating an endpoint from %s\n",
-	      factory->getProtocol() );
-    }
-  }
   return l;
 }
 

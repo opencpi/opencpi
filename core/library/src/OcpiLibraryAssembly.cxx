@@ -36,16 +36,35 @@ namespace OCPI {
   namespace Library {
     namespace OU = OCPI::Util;
     Assembly::Assembly(const char *file)
-      : OU::Assembly(file) {
+      : OU::Assembly(file), m_refCount(1) {
       findImplementations();
     }
     Assembly::Assembly(const std::string &string)
-      : OU::Assembly(string) {
+      : OU::Assembly(string), m_refCount(1) {
       findImplementations();
     }
     Assembly::~Assembly() {
       delete [] m_candidates;
     }
+
+    void
+    Assembly::
+    operator ++( int )
+    {
+      m_refCount++;
+    }
+
+    void
+    Assembly::
+    operator --( int )
+    {
+      if ( --m_refCount == 0 ) {
+	delete this;
+      }
+    }
+
+
+
     //The callback for the findImplementations() method below.
     bool Assembly::foundImplementation(const Implementation &i, unsigned score) {
       m_tempCandidates->push_back(Candidate(i, score));

@@ -717,7 +717,8 @@ void OCPI::DataTransport::Transport::dispatch(DataTransfer::EventManager*)
   // handle mailbox requests
   if ( m_uses_mailboxes )
     checkMailBoxs();
-  OCPI::OS::sleep(1);
+
+  //  OCPI::OS::sleep(0);
 
 }
 

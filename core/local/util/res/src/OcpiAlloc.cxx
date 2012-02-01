@@ -1,4 +1,4 @@
-
+//#define  DEBUG_LISTS 1
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -33,6 +33,7 @@
  */
 
 #include <OcpiOsDataTypes.h>
+#include <OcpiOsAssert.h>
 #include <OcpiRes.h>
 #include <list>
 #include <cstdio>
@@ -137,6 +138,19 @@ void OCPI::Util::ResPool::defrag()
 int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
   throw( std::bad_alloc ) 
 {
+
+#ifndef NDEBUG
+  if ( nbytes > 2000000 ) {
+    printf("Allocating large mem\n");
+  }
+#ifdef DEBUG_LISTS
+  printf("Alloc list\n");
+  dumpList(m_pool->alloc_list);
+  printf("Free list\n");
+  dumpList(m_pool->free_list);
+#endif
+#endif
+
   
   m_pool->free_list.sort();
   std::list<Block>::iterator it;
@@ -189,16 +203,33 @@ int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int align
 int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
   throw( std::bad_alloc ) 
 {
+
   std::list<Block>::iterator it;
   for ( it=m_pool->alloc_list.begin(); it !=m_pool->alloc_list.end(); it++ ) {
     if ( (*it).aligned_addr == addr )  {
+
+#ifndef NDEBUG
+      if ( (*it).size > 2000000 ) {
+	printf("Freeing large mem\n");
+      }
+#ifdef DEBUG_LISTS
+      printf("Alloc list\n");
+      dumpList(m_pool->alloc_list);
+      printf("Free list\n");
+      dumpList(m_pool->free_list);
+#endif
+#endif
+
+
       m_pool->free_list.push_back( Block( m_pool, (*it).size, addr, addr ) );
       m_pool->alloc_list.erase( it );
       m_pool->defrag();  
       return 0;
     }
   }
-  return -1;
+
+  ocpiAssert(0);
+return -1;
 }
 
 OCPI::Util::MemBlockMgr::MemBlockMgr(OCPI::Util::ResAddrType start, OCPI::OS::uint64_t size )

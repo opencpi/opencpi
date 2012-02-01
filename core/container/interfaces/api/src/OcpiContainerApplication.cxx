@@ -46,6 +46,7 @@ namespace OCPI {
     Application::Application(const OA::PValue *) {
     }
     Application::~Application() {
+      printf("In  Application::~Application()\n");
     }
 
     OA::Worker &Application::
@@ -96,10 +97,10 @@ namespace OCPI {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	w->stop();
     }
-    void Application::
-    wait() {
+    bool Application::
+    wait( uint32_t timeout_us ) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
-	w->wait();
+	w->wait( timeout_us );
     }
   }
   namespace API {

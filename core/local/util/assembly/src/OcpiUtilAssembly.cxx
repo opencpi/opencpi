@@ -68,8 +68,19 @@ namespace OCPI {
 
     const char *Assembly::parse(ezxml_t ax) {
       const char *err;
-      if ((err = OE::checkElements(ax, "instance", "connection", NULL)))
+      if ((err = OE::checkElements(ax, "instance", "connection", "policy", NULL)))
 	return err;
+      
+      ezxml_t  p = ezxml_cchild(ax, "policy");
+      if ( p ) {
+	const char * tmp = ezxml_attr(p, "mapping" );
+	if ( tmp ) policy.name = tmp;
+	tmp  = ezxml_attr(p, "processors");	
+	if ( tmp ) {
+	  policy.nprocs = atoi(tmp);
+	}
+      }
+	
       OE::getNameWithDefault(ax, m_name, "unnamed%u", s_count);
       m_instances.resize(OE::countChildren(ax, "Instance"));
       Instance *i = &m_instances[0];

@@ -50,19 +50,24 @@ namespace OCPI {
       ApplicationI &m_application;
     public:
       // The constructor does the planning, deciding what impl will run where
-      explicit Application(const char *file);
-      explicit Application(const std::string &string);
+      explicit Application(const char *file,  const OCPI::API::PValue * policy=NULL);
+      explicit Application(const std::string &string,  const OCPI::API::PValue * policy=NULL);
+      
+      // Creates a new Application instance from the app template
+      explicit Application( Application & app,  const OCPI::API::PValue * policy=NULL);     
+
       virtual ~Application();
       // This does the setup - creating/instantiating workers, 
       // setting initial properties, and making connections
       void initialize();
       // This makes the application operational, and resumes after "stop"
       void start();
-      void wait();
+      void wait( unsigned timeout_us );
       // Suspension, that can be resumed with "start".
       void stop();
       ExternalPort &getPort(const char *);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value);
+      bool getProperty(const char* worker_name, const char* prop_name, std::string &value);
     };
   }
 }

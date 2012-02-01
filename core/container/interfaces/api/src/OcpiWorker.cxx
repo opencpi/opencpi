@@ -242,10 +242,28 @@ namespace OCPI {
     bool Worker::beforeStart() {
       return getControlState() == INITIALIZED;
     }
-    void Worker::wait() {
+    bool Worker::wait( uint32_t timeout_us ) {
+      uint32_t time_left = timeout_us;
       while (getControlState() != UNUSABLE &&
-	     getControlState() != FINISHED)
-	usleep(10000);
+	     getControlState() != FINISHED) {
+	if ( timeout_us == 0 ) {
+	  usleep(10000);
+	}
+	else {
+	  if ( time_left == 0 ) {
+	    return true;
+	  }
+	  else if ( time_left > 10000 ) {
+	    time_left -= 10000;
+	    usleep(10000);	    
+	  }
+	  else {
+	    time_left = 0;
+	    usleep( time_left );
+	  }
+	}
+      }
+      return false;
     }
 
     //      application().container().start(); 

@@ -55,8 +55,7 @@ namespace OCPI {
 
     class ApplicationI : public OCPI::Container::Callback {
       typedef OCPI::Container::Container::CMap CMap;
-      const OCPI::Library::Assembly &m_assembly;
-      bool m_ownAssembly;
+      OCPI::Library::Assembly &m_assembly;
 
       struct Instance {
 	const OCPI::Library::Implementation *m_impl; // The chosen, best implementation
@@ -99,19 +98,32 @@ namespace OCPI {
       OCPI::Container::Worker **m_workers;
       OCPI::Container::ExternalPort **m_externalPorts;
       const char **m_externalNames;
-      void init();
+      void init(const OCPI::API::PValue * policy);
+
+      enum CMapPolicy {
+	RoundRobin,
+	MinProcessors,
+	MaxProcessors
+      };
+      CMapPolicy m_cMapPolicy;
+      unsigned   m_processors;
+      unsigned m_currConn;
+      void policyMap( Instance * i, CMap & bestMap, CMap & allMap );
+      void setPolicy( const OCPI::API::PValue * policy );
     public:
-      explicit ApplicationI(const char *file);
-      explicit ApplicationI(const std::string &string);
-      explicit ApplicationI(const OCPI::Library::Assembly &);
+      explicit ApplicationI(const char *file, const OCPI::API::PValue * policy=NULL);
+      explicit ApplicationI(const std::string &string, const OCPI::API::PValue * policy=NULL);
+      explicit ApplicationI( OCPI::Library::Assembly &, const OCPI::API::PValue * policy=NULL);
       ~ApplicationI();
+      OCPI::Library::Assembly & assembly(){return m_assembly;}
       bool foundContainer(OCPI::Container::Container &i);
       void initialize();
       void start();
       void stop();
-      void wait();
+      void wait( uint32_t timeout_us=0 );
       ExternalPort &getPort(const char *);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value);
+      bool getProperty(const char * wname, const char * pname, std::string &value);
       // This will be used for the port connection protocol
       OCPI::Container::Port &getRemote(const char *);
     };

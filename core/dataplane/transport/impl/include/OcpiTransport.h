@@ -246,7 +246,6 @@ namespace OCPI {
 
       DataTransfer::SMBResources *         m_defEndpoint; // FIXME: check lifecycle
       std::vector<std::string>             m_endpoints;
-      //      std::vector<DataTransfer::EndPoint*> m_finalized_endpoints;
       
 
       /**********************************

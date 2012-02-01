@@ -63,10 +63,15 @@ namespace OCPI {
       Candidates *m_candidates;                  // array of sets indexed by implementation ordinal
       explicit Assembly(const char *file);
       explicit Assembly(const std::string &string);
+
+      // Reference counting
+      void operator ++( int );
+      void operator --( int );
       ~Assembly();
     private:
       void findImplementations();
       bool foundImplementation(const Implementation &i, unsigned score);
+      int m_refCount;
     };
   }
 }

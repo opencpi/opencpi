@@ -8,7 +8,7 @@
     <Property Name="images" readable="true"/>
   </Properties>
   <DataInterfaceSpec Name="in">
-    <xi:include href="image32f_lines.xml"/>
+    <xi:include href="feature32f.xml"/>
   </DataInterfaceSpec>
   <DataInterfaceSpec Name="out" Producer="true">
     <xi:include href="feature32f.xml"/>

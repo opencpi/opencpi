@@ -34,6 +34,7 @@ static const double pi = 3.14159265358979323846;
 int main ( int argc, char* argv [ ] )
 {
   std::string of_app_xml("<application>"
+			 " <policy mapping='MaxProcessors' processors='0'/>"
 			 "  <instance worker='min_eigen_val' name='min_worker' selection='model==\"rcc\"'>"
 			 "    <property name='height' value='360'/> "
 			 "    <property name='width' value='480'/> "
@@ -170,8 +171,6 @@ int main ( int argc, char* argv [ ] )
 			 "    <port instance='sobel_bdy_worker' name='out_32f'/>"
 			 "  </connection>"
 
-
-
 			 "  <connection>"
 			 "    <port instance='sobel_ad2x_worker' name='in'/>"
 			 "    <port instance='sobel_adx_worker' name='out'/>"
@@ -184,8 +183,6 @@ int main ( int argc, char* argv [ ] )
 			 "    <port instance='sobel_adxdy_y_worker' name='in'/>"
 			 "    <port instance='sobel_adxdy_x_worker' name='out'/>"
 			 "  </connection>"
-
-
 
 			 "  <connection>"
 			 "    <external name='myOutA'/>"
@@ -207,9 +204,6 @@ int main ( int argc, char* argv [ ] )
 			 "    <external name='myInErr'/>"
 			 "    <port instance='optical_flow_worker' name='out_err'/>"
 			 "  </connection>"
-
-
-
 
 			 "  <connection>"
 			 "    <external name='myOutAdx'/>"
@@ -296,8 +290,8 @@ int main ( int argc, char* argv [ ] )
 	(void)OA::ContainerManager::find("rcc",buf);
       }
 
-      int done = 1;
-      while ( done > 0 ) {
+      int policy = 1;
+      while ( policy < 4 ) {
 
 	// load images
 	IplImage* imgA_color = cvLoadImage( argv[1] );
@@ -329,13 +323,17 @@ int main ( int argc, char* argv [ ] )
       
 	if ( app != NULL ) {
 	  OA::Application * tapp = app;
-	  if ( done == 1 ) {
+	  if ( policy == 1 ) {
 	    app = new OA::Application(*tapp, maxp_policy);	
-	    done++;
+	    policy++;
 	  }
-	  else {
+	  else if ( policy == 2 ) {
 	    app = new OA::Application(*tapp, minp_policy);	
-	    done++;
+	    policy++;
+	  }
+	  else if ( policy == 3 ) {
+	    app = new OA::Application(*tapp, fixedp_policy);	
+	    policy++;
 	  }
 	  try {
 	    delete tapp;
@@ -345,7 +343,7 @@ int main ( int argc, char* argv [ ] )
 	  }
 	}
 	else {
-	  app = new OA::Application(of_app_xml, fixedp_policy);
+	  app = new OA::Application( of_app_xml );
 	}
 
 	fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
@@ -389,49 +387,52 @@ int main ( int argc, char* argv [ ] )
 
 
 	app->start();
-	app->wait( 1 );
-	std::string value;
-	if ( ! app->getProperty( "min_workerA", "height", value ) ) {
-	  printf("Error: could not get worker property\n");
-	  exit ( -1 );
+
+	if ( policy == 3 ) {
+	  app->wait( 1 );
+	  std::string value;
+	  if ( ! app->getProperty( "min_workerA", "height", value ) ) {
+	    printf("Error: could not get worker property\n");
+	    exit ( -1 );
+	  }
+	  printf("worker property = %s\n", value.c_str() );
 	}
-	printf("worker property = %s\n", value.c_str() );
 
 	while (!(myOutput = myOutFeature.getBuffer(odata, olength))) sleep(0);
 	memcpy(odata, imgA->imageData, imgA->height * imgA->width);
-	myOutput->put(0, imgA->height * imgA->width, false);
+	myOutput->put(imgA->height * imgA->width, 0, false);
 
 	while (!(myOutput = myOutFeatureA.getBuffer(odata, olength)))sleep(0);
 	memcpy(odata, imgA->imageData, imgA->height * imgA->width);
-	myOutput->put(0, imgA->height * imgA->width, false);
+	myOutput->put(imgA->height * imgA->width, 0, false);
 
 	while (!(myOutput = myOutA.getBuffer(odata, olength))) sleep(0);
 	memcpy(odata, imgA->imageData, imgA->height * imgA->width);
-	myOutput->put(0, imgA->height * imgA->width, false);
+	myOutput->put(imgA->height * imgA->width, 0, false);
 
 	while (!(myOutput = myOutAdx.getBuffer(odata, olength))) sleep(0);
 	memcpy(odata, imgA->imageData, imgA->height * imgA->width);
-	myOutput->put(0, imgA->height * imgA->width, false);
+	myOutput->put(imgA->height * imgA->width, 0, false);
 
 	while (!(myOutput = myOutAdy.getBuffer(odata, olength))) sleep(0);
 	memcpy(odata, imgA->imageData, imgA->height * imgA->width);
-	myOutput->put(0, imgA->height * imgA->width, false);
+	myOutput->put(imgA->height * imgA->width, 0, false);
 
 	while (!(myOutput = myOutAdxdy.getBuffer(odata, olength))) sleep(0);
 	memcpy(odata, imgA->imageData, imgA->height * imgA->width);
-	myOutput->put(0, imgA->height * imgA->width, false);
+	myOutput->put(imgA->height * imgA->width, 0, false);
 
 	while (!(myOutput = myOutB.getBuffer(odata, olength))) sleep(0);
 	memcpy(odata, imgB->imageData, imgB->height * imgB->width);
-	myOutput->put(0, imgB->height * imgB->width, false);
+	myOutput->put(imgB->height * imgB->width, 0, false);
 
 	while (!(myOutput = myOutBdx.getBuffer(odata, olength))) sleep(0);
 	memcpy(odata, imgB->imageData, imgB->height * imgB->width);
-	myOutput->put(0, imgB->height * imgB->width, false);
+	myOutput->put( imgB->height * imgB->width, 0, false);
 
 	while (!(myOutput = myOutBdy.getBuffer(odata, olength))) sleep(0);
 	memcpy(odata, imgB->imageData, imgB->height * imgB->width);
-	myOutput->put(0, imgB->height * imgB->width, false);
+	myOutput->put(imgB->height * imgB->width, 0, false);
 
 	std::cout << "My output buffer is size " << olength << std::endl;
 
@@ -472,10 +473,8 @@ int main ( int argc, char* argv [ ] )
 	// Draw flow
 	for( size_t i = 0; i < ncorners; i++ ) {
 
-	  /*
-	    if( status[i] == 0 || err[i] > 500 )
+	  if( status[i] == 0 || err[i] > 500 )
 	    continue;
-	  */
 
 	  double x0 = cornersA[2*i];
 	  double y0 = cornersA[2*i+1];

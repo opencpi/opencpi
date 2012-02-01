@@ -2,6 +2,6 @@
 <!-- The first opcode sets the  8 bit image protocol. -->
 <Protocol>
   <Operation Name="Line">
-    <Argument Name="Pixels" Type="uchar" SequenceLength="4M"/>
+    <Argument Name="Pixels" Type="uchar" SequenceLength="1M"/>
   </Operation>
 </Protocol>

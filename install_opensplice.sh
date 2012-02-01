@@ -121,9 +121,17 @@ static int clock_gettime(int id, struct timespec *tp) {
 #endif
 EOF
 fi
-sed 's/-D_XOPEN_SOURCE=500//;s/-lrt//;s/-static-libgcc//' < setup/x86_64.linux2.6-default.mak > temp.mak
+if test `uname` == Darwin; then
+  sed 's/-D_XOPEN_SOURCE=500//;s/-lrt//;s/-static-libgcc//' < setup/x86_64.linux2.6-default.mak > temp.mak
+else
+  sed 's/-D_XOPEN_SOURCE=500//;s/-static-libgcc//' < setup/x86_64.linux2.6-default.mak > temp.mak
+fi
 mv temp.mak setup/x86_64.linux2.6-default.mak
-sed s=endian.h=machine/endian.h= < src/abstraction/os/linux2.6/include/os_abstract.h > temp.h
+if test `uname` == Darwin; then
+  sed s=endian.h=machine/endian.h= < src/abstraction/os/linux2.6/include/os_abstract.h > temp.h
+else
+  sed s=endian.h=endian.h= < src/abstraction/os/linux2.6/include/os_abstract.h > temp.h
+endif
 mv temp.h src/abstraction/os/linux2.6/include/os_abstract.h
 sed s=OS_MAP_ON_SEG=OS_MAP_ON_FILE= < src/abstraction/os/linux2.6/code/os_sharedmem.c > temp.c
 mv temp.c src/abstraction/os/linux2.6/code/os_sharedmem.c

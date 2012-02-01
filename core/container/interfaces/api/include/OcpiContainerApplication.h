@@ -59,8 +59,7 @@ namespace OCPI {
     class Artifact;
     class Application :
       public OCPI::API::ContainerApplication
-    {
-      friend class Container;
+    {      friend class Container;
       friend class Artifact;
     protected:
       Application(const OCPI::Util::PValue *props = 0);
@@ -95,7 +94,7 @@ namespace OCPI {
       void start();
       void stop();
       // This method should block until all the workers in the application are "done".
-      virtual void wait();
+      virtual bool wait( uint32_t timeout_us );
     };
   } // Container
 } // OCPI

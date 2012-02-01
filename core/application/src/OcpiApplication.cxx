@@ -40,21 +40,21 @@ namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
 namespace OCPI {
   namespace API {
-    ApplicationI::ApplicationI(const char *file)
-      : m_assembly(*new OL::Assembly(file)), m_ownAssembly(true) {
-      init();
+    ApplicationI::ApplicationI(const char *file, const PValue * policy)
+      : m_assembly(*new OL::Assembly(file))  {
+      init(policy);
     }
-    ApplicationI::ApplicationI(const std::string &string)
-      : m_assembly(*new OL::Assembly(string)), m_ownAssembly(true) {
-      init();
+    ApplicationI::ApplicationI(const std::string &string, const PValue * policy)
+      : m_assembly(*new OL::Assembly(string))  {
+      init(policy);
     }
-    ApplicationI::ApplicationI(const OL::Assembly &assy)
-      : m_assembly(assy), m_ownAssembly(false) {
-      init();
+    ApplicationI::ApplicationI(OL::Assembly &assy, const PValue * policy)
+      : m_assembly(assy) {
+      m_assembly++;
+      init(policy);
     }
     ApplicationI::~ApplicationI() {
-      if (m_ownAssembly)
-	delete &m_assembly;
+      m_assembly--;
       if (m_containerApps) {
 	for (unsigned n = 0; n < m_nContainers; n++)
 	  delete m_containerApps[n];
@@ -66,7 +66,145 @@ namespace OCPI {
       delete [] m_containers;
       delete [] m_properties;
     }
-    void ApplicationI::init() {
+
+    void 
+    ApplicationI::
+    policyMap( Instance * i, CMap & bestMap, CMap & /* alliMap */)
+    {
+
+      // bestMap is a bitmap of the best availabe containers that the implementation can be mapped to
+      // alliMap is the bitmap of all suitable containers for the implementation
+      switch ( m_cMapPolicy ) {
+
+      case MaxProcessors:
+	{  // If we are here the policy is a "limited to" m_procesors policy
+
+	  // First figure out if we have already hit our limit
+	  if (  m_nContainers >= m_processors ) {
+	    for ( unsigned n=0; n<m_nContainers; n++ ) {
+	      if ( m_currConn >= m_nContainers ) m_currConn=0;
+	      CMap map = 1<<m_usedContainers[m_currConn++];
+	      if ( map & bestMap ) {
+		i->m_container = m_currConn-1;
+		return;
+	      }
+	    }
+	  }
+	}
+	// Not at our limit, let RR find the next available
+	
+      case RoundRobin:
+	{
+
+	  // Now we must select the container for the best candidate.
+	  // As a default, we will rotate through the possible containers to spread them out
+	  // So, find the next (rotating) container for the best candidate
+	  CMap map;
+	  for (map= 1<<m_currConn++; !(map & bestMap); map = 1 << ++m_currConn) {
+	    if (m_currConn >= OC::Container::maxContainer)
+	      m_currConn = 1;
+	  }
+	  if (m_currConn >= OC::Container::maxContainer)
+	    m_currConn = 1;
+	  std::cout << map << " " << bestMap << " " << m_currConn << std::endl;	
+	  if (!(m_allMap & map)) {
+	    // A container we have not used yet.
+	    m_allMap |= map;
+	    i->m_container = m_nContainers;
+	    // Note we save the container ordinal, not the container pointer,
+	    // simply to allow the container to go away after this API (construction)
+	    // and before the next (initialize).  At least we can check for errors.
+	    m_usedContainers[m_nContainers++] = m_currConn;
+
+	  } 
+	  else {
+	    for (unsigned c = 0; c < m_nContainers; c++) {
+	      if (m_usedContainers[c] == m_currConn) {
+		i->m_container = c;
+		break;
+	      }
+	    }
+	  }
+
+	}
+	break;
+
+      case MinProcessors:
+	{
+	  if ( m_processors == 0 ) {  // Special case, we use the minimum possible
+	    CMap map=1;
+	    for ( unsigned n=0; n<OC::Container::maxContainer; n++, map=1<<n ) {
+	      if ( map & bestMap ) {
+		m_currConn = n+1;
+		break;
+	      }
+	    }
+	    if ( ! (map&bestMap) ) {
+	      throw std::string("No Suitable container found for worker");
+	    }
+	    std::cout << map << " " << bestMap << " " << m_currConn << std::endl;	
+	    if (!(m_allMap & map)) {
+	      m_allMap |= map;
+	      i->m_container = m_nContainers;
+	      m_usedContainers[m_nContainers++] = m_currConn;
+	    }
+	    else {
+	      for (unsigned c = 0; c < m_nContainers; c++) {
+		if (m_usedContainers[c] == m_currConn) {
+		  i->m_container = c;
+		  break;
+		}
+	      }
+	    }
+	  }
+	}
+	break;
+      }
+    }
+
+    void 
+    ApplicationI::
+    setPolicy( const PValue * policy ) {
+      std::string pname;
+      int pcount;
+      if ( ! policy ) {
+	if (  m_assembly.policy.name.length() ) {
+	  pname = m_assembly.policy.name;
+	  pcount = m_assembly.policy.nprocs;
+	}
+	else {
+	  return;
+	}
+      }
+      else {
+	pname = policy->name;
+	pcount = policy->vLong;
+      }
+      if ( pname =="MaxProcessors" ) {
+	if ( pcount > 0 ) {
+	  m_cMapPolicy = MaxProcessors;
+	  m_processors = pcount;
+	}
+	else {  // Really just a RR policy
+	  m_cMapPolicy = RoundRobin;
+	  m_processors = 0;	    
+	}
+      }
+      else if (  pname == "MinProcessors" ) {
+	m_cMapPolicy = MinProcessors;
+	m_processors = pcount;
+      }
+      else if ( pname == "RoundRobin" ) {
+	m_cMapPolicy = RoundRobin;
+	m_processors = 0;
+      }
+    }
+  
+
+    void 
+    ApplicationI::
+    init( const PValue * policy ) {
+
       m_allMap = m_curMap = 0;   // accumulate all containers actually used
       m_nContainers = 0;
       m_containers = NULL;
@@ -76,9 +214,14 @@ namespace OCPI {
       m_externalNames = NULL;
       m_properties = NULL;
       m_nProperties = 0;
+      m_currConn=0;
+      m_cMapPolicy=RoundRobin;
+
+      // Set the instance map policy
+      setPolicy( policy );
+
       unsigned
-	nInstances = m_assembly.m_instances.size(),
-	currConn = 0; // for rotating placement
+	nInstances = m_assembly.m_instances.size();
       m_usedContainers = new unsigned[nInstances]; // over allocated - could use less
       Instance *i = m_instances = new Instance[nInstances];
       // For all instances in the assembly
@@ -137,28 +280,13 @@ namespace OCPI {
 	  }
 	}
 
-	// Now we must select the container for the best candidate.
-	// As a default, we will rotate through the possible containers to spread them out
-	// So, find the next (rotating) container for the best candidate
-	CMap map;
-	for (map = 1 << currConn; !(map & bestMap); map = 1 << currConn)
-	  if (++currConn >= OC::Container::maxContainer)
-	    currConn = 0;
-	if (!(m_allMap & map)) {
-	  // A container we have not used yet.
-	  m_allMap |= map;
-	  i->m_container = m_nContainers;
-	  // Note we save the container ordinal, not the container pointer,
-	  // simply to allow the container to go away after this API (construction)
-	  // and before the next (initialize).  At least we can check for errors.
-	  m_usedContainers[m_nContainers++] = currConn;
-	} else
-	  for (unsigned c = 0; c < m_nContainers; c++)
-	    if (m_usedContainers[c] == currConn) {
-	      i->m_container = c;
-	      break;
-	    }
+
+	// Now call invoke the policy method to map the instances to a container
+	policyMap(i, bestMap, sum);
+
       }
+
+      
       // Now that we have specific implementations we can do property-aggregation work,
       // since instances can have implementation-specific properties.
       // First, we build the property map that exposes all instance properties as app properties.
@@ -197,12 +325,18 @@ namespace OCPI {
     }
 
     void ApplicationI::initialize() {
+
+
       unsigned nInstances = m_assembly.m_instances.size();
+#ifndef NDEBUG
+      printf("Mapped %d instances to %d containers\n", nInstances, m_nContainers);
+#endif
+
       m_containers = new OC::Container *[m_nContainers];
       m_containerApps = new OC::Application *[m_nContainers];
       m_workers = new OC::Worker *[nInstances];
       for (unsigned n = 0; n < m_nContainers; n++) {
-	OC::Container &c = OC::Container::nthContainer(m_usedContainers[n]);
+	OC::Container &c = OC::Container::nthContainer(m_usedContainers[n]-1);
 	m_containers[n] = &c;
 	// FIXME: get rid of this cast...
 	m_containerApps[n] = static_cast<OC::Application*>(c.createApplication());
@@ -258,6 +392,11 @@ namespace OCPI {
       }
     }
     void ApplicationI::start() {
+
+#ifndef NDEBUG
+      printf("Using %d containers to support the application\n", m_nContainers );
+#endif
+
       for (unsigned n = 0; n < m_nContainers; n++)
 	m_containerApps[n]->start();
     };
@@ -265,9 +404,9 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nContainers; n++)
 	m_containerApps[n]->stop();
     }
-    void ApplicationI::wait() {
+    void ApplicationI::wait( uint32_t timeout_us ) {
       for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->wait();
+	m_containerApps[n]->wait( timeout_us );
     }
 
     ExternalPort &ApplicationI::getPort(const char *name) {
@@ -279,6 +418,7 @@ namespace OCPI {
 	ext.m_external = &ext.m_port.connectExternal(name, ext.m_params);
       return *ext.m_external;
     }
+
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value) {
       if (ordinal >= m_nProperties)
 	return false;
@@ -287,6 +427,21 @@ namespace OCPI {
       std::string dummy;
       return m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);
     }
+
+    bool ApplicationI::getProperty(const char * worker_inst_name, const char * prop_name, std::string &value) {
+      std::string nm(worker_inst_name);
+      nm += std::string(":") + prop_name;
+      for ( unsigned n=0; n<m_nProperties; n++ ) {
+	Property &p = m_properties[n];
+	if ( nm == p.m_name ) {
+	  std::string dummy;
+	  return m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);	 
+	}
+      }
+      return false;
+    }
+
+
 
     ApplicationI::Instance::Instance() :
       m_impl(NULL), m_propValues(NULL), m_propOrdinals(NULL) {
@@ -299,20 +454,26 @@ namespace OCPI {
   }
   namespace API {
 
-    Application::Application(const char *file)
-      : m_application(*new ApplicationI(file)) {
+    Application::Application(const char *file, const PValue * policy)
+      : m_application(*new ApplicationI(file,policy)) {
     }
-    Application::Application(const std::string &string)
-      : m_application(*new ApplicationI(string)) {
+    Application::Application(const std::string &string, const PValue * policy)
+      : m_application(*new ApplicationI(string,policy)) {
+    }
+    Application::Application( Application::Application & app,  const PValue * policy)
+      : m_application(*new ApplicationI(app.m_application.assembly(),policy)) {
     }
     Application::~Application() { delete &m_application; }
     void Application::initialize() { m_application.initialize(); }
     void Application::start() { m_application.start(); }
     void Application::stop() { m_application.start(); }
-    void Application::wait() { m_application.wait(); }
+    void Application::wait( unsigned timeout_us ) { m_application.wait(timeout_us); }
     ExternalPort &Application::getPort(const char *name) { return m_application.getPort(name); }
     bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value) {
       return m_application.getProperty(ordinal, name, value);
+    }
+    bool Application::getProperty(const char* w, const char* p, std::string &value) {
+      return m_application.getProperty(w,p,value);
     }
 
   }

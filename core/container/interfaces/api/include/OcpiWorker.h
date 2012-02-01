@@ -156,7 +156,7 @@ namespace OCPI {
     OCPI_CONTROL_OPS
 #undef CONTROL_OP
       virtual void controlOperation(OCPI::Metadata::Worker::ControlOperation) = 0;
-      virtual void wait();
+      virtual bool wait( uint32_t timeout_us );
     };
   }
 }

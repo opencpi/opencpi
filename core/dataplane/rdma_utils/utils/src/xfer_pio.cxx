@@ -303,7 +303,7 @@ xfer_pio_copy(PIO_template pio_template, OCPI::OS::uint32_t src_os, OCPI::OS::ui
     pio_transfer->dst_off = dst_os;
     pio_transfer->src_stride = 1;
         
-#define MULTI_MAP
+    //#define MULTI_MAP
 #ifdef MULTI_MAP
     if ( dst_os >= OF_WINDOW ) {
                 

@@ -99,11 +99,16 @@ namespace OCPI {
 	PValueList m_parameters;
 	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
       };
+      struct Policy {
+	std::string name;
+	int         nprocs;
+      };
     private:
       ezxml_t m_xml;
       char *m_copy;
     public:
       static unsigned s_count;
+      Policy policy;
       std::string m_name;
       std::vector<Instance> m_instances;
       std::vector<Connection> m_connections;

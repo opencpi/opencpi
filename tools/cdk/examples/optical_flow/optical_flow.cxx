@@ -340,7 +340,7 @@ int main ( int argc, char* argv [ ] )
       memcpy(odata, imgA->imageData, imgA->height * imgA->width);
       myOutput->put(0, imgA->height * imgA->width, false);
 
-      while (!(myOutput = myOutAdxdy.getBuffer(odata, olength)))
+      while (!(myOutput = myOutAdxdy.getBuffer(odata, olength)));
       memcpy(odata, imgA->imageData, imgA->height * imgA->width);
       myOutput->put(0, imgA->height * imgA->width, false);
 

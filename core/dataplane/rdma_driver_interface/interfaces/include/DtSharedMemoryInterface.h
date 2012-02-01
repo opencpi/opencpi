@@ -61,7 +61,7 @@ namespace DataTransfer {
 
   // Maximum number of SMB's and mailboxes allowed in the system unless overriden by env
   // FIXME:  make this part of config
-  const OCPI::OS::uint32_t MAX_SYSTEM_SMBS = 10;
+  const OCPI::OS::uint32_t MAX_SYSTEM_SMBS = 20;
 
   // Protocol specific location class
   struct SMBResources;
