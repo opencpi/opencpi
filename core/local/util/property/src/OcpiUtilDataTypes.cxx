@@ -367,7 +367,7 @@ namespace OCPI {
 	  WriteDataPtr p = {data};
 	  unsigned nBytes = strlen((const char *)data) + 1;
 	  advance(data, nBytes, length);
-	  writer.writeString(*this, p, nBytes - 1, n == 0);
+	  writer.writeString(*this, p, nBytes - 1, n == 0, topSeq);
 	}
 	break;
       default:

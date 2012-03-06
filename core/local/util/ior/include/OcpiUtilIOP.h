@@ -115,6 +115,32 @@ namespace OCPI {
       //@}
 
       /**
+       * Tagged Component tag value as specified in CORBA section 13.6.2,
+       * <em>Interoperable Object References: IORs</em>.
+       */
+
+      typedef OCPI::OS::uint32_t ComponentId;
+
+      /**
+       * \brief CORBA IOR Tagged Component
+       *
+       * Tagged Component as specified in CORBA section 13.6.2,
+       * <em>Interoperable Object References: IORs</em>.
+       */
+
+      struct TaggedComponent {
+        ComponentId tag;
+        std::string component_data;
+      };
+
+      /**
+       * Sequence of tagged components as specified in CORBA section 13.6.2,
+       * <em>Interoperable Object References: IORs</em>.
+       */
+
+      typedef std::vector<TaggedComponent> TaggedComponentSeq;
+
+      /**
        * \brief Interoperable Object Reference.
        *
        * IOR as specified in CORBA section 13.6.2,
@@ -144,6 +170,17 @@ namespace OCPI {
          */
 
         explicit IOR (const std::string & data)
+          throw (std::string);
+
+        /**
+         * Constructor from stringified IOR
+         *
+         * \param[in] data A stringified IOR.
+         *
+         * \throw std::string If the IOR can not be unmarshalled from
+         * \a data.
+         */
+        explicit IOR (const char *data)
           throw (std::string);
 
         /**
@@ -324,9 +361,17 @@ namespace OCPI {
 
         //@}
 
+        const std::string & corbaloc()
+          throw (std::string);
       protected:
         std::string m_type_id;
+	std::string m_corbaloc;
         TaggedProfileSeq m_profiles;
+      private:
+	void doKey(const std::string &key) throw();
+	void doAddress(const std::string &addr) throw ();
+	void doIPAddress(unsigned major, unsigned minor, const std::string &host, uint16_t port) throw ();
+	void doComponent(TaggedComponent &tc) throw (std::string);
       };
 
       /**
@@ -366,31 +411,6 @@ namespace OCPI {
 
       //@{
 
-      /**
-       * Tagged Component tag value as specified in CORBA section 13.6.2,
-       * <em>Interoperable Object References: IORs</em>.
-       */
-
-      typedef OCPI::OS::uint32_t ComponentId;
-
-      /**
-       * \brief CORBA IOR Tagged Component
-       *
-       * Tagged Component as specified in CORBA section 13.6.2,
-       * <em>Interoperable Object References: IORs</em>.
-       */
-
-      struct TaggedComponent {
-        ComponentId tag;
-        std::string component_data;
-      };
-
-      /**
-       * Sequence of tagged components as specified in CORBA section 13.6.2,
-       * <em>Interoperable Object References: IORs</em>.
-       */
-
-      typedef std::vector<TaggedComponent> TaggedComponentSeq;
 
       /**
        * Identifies a tagged component as a <em>TAG_ORB_TYPE</em>
@@ -419,7 +439,12 @@ namespace OCPI {
        * component.  Use OCPI::Util::IOP::AlternateIIOPAddressComponent.
        */
 
-      extern const ComponentId TAG_ALTERNATE_IIOP_ADDRESS;
+      extern const ComponentId 
+	TAG_ALTERNATE_IIOP_ADDRESS,
+	TAG_OMNIORB_UNIX_TRANS,
+	TAG_OMNIORB_PERSISTENT_ID,
+	TAG_OMNIORB_RESTRICTED_CONNECTION,
+	TAG_OMNIORB_OCPI_TRANS;
 
       /**
        * \brief A list of protocol components for an IOR.

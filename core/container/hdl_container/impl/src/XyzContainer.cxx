@@ -510,7 +510,7 @@ namespace OCPI {
         myDesc.emptyFlagValue = 1;
         myDesc.fullFlagValue = 1;
         snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "ocpi-pci-pio://%s.%lld:%lld.3.10", "0", (unsigned long long)0,
+                 "ocpi-pci-pio:%s.%lld:%lld.3.10", "0", (unsigned long long)0,
                  (unsigned long long)0);
 
 #ifdef NEEDED

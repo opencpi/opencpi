@@ -80,10 +80,10 @@ static void dumpList( std::list<OCPI::Util::Block>& list )
 #ifdef DEBUG_LISTS
   std::list<OCPI::Util::Block>::iterator it;
   for ( it=list.begin(); it !=list.end(); it++ ) {
-    printf("addr = %" PRIx64 ", aligned_addr = %" PRIx64 ", size = %" PRIu64 "\n", 
-            (*it).addr, 
-            (*it).aligned_addr, 
-            (*it).size );
+    ocpiDebug("addr = %" PRIx64 ", aligned_addr = %" PRIx64 ", size = %" PRIu64 "", 
+	      (*it).addr, 
+	      (*it).aligned_addr, 
+	      (*it).size );
   }
 #else
   (void)list;
@@ -126,9 +126,9 @@ void OCPI::Util::ResPool::defrag()
   sort_by_size = true;  
 
 #ifdef DEBUG_LISTS
-  printf("Alloc list\n");
+  ocpiDebug("Alloc list");
   dumpList(alloc_list);
-  printf("Free list\n");
+  ocpiDebug("Free list");
   dumpList(free_list);
 #endif
 
@@ -139,16 +139,14 @@ int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int align
   throw( std::bad_alloc ) 
 {
 
-#ifndef NDEBUG
   if ( nbytes > 2000000 ) {
-    printf("Allocating large mem\n");
+    ocpiInfo("Allocating large mem\n");
   }
 #ifdef DEBUG_LISTS
-  printf("Alloc list\n");
+  ocpiDebug("Alloc list");
   dumpList(m_pool->alloc_list);
-  printf("Free list\n");
+  ocpiDebug("Free list");
   dumpList(m_pool->free_list);
-#endif
 #endif
 
   
@@ -165,10 +163,8 @@ int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int align
         (*it).addr += nbytes;
         (*it).size -= nbytes;      
         m_pool->alloc_list.push_back( Block(m_pool, nbytes, taddr, ALIGN(req_addr, alignment)) );
-#ifndef NDEBUG
-        printf("**** Alloc Returning address = %" PRIx64 ", %" PRIx64 "\n", 
+        ocpiDebug("**** Alloc Returning address = %" PRIx64 ", %" PRIx64 "", 
                taddr, req_addr );
-#endif
         return 0;
       }
       else if (  ((*it).size == nbytes) ) {
@@ -176,10 +172,8 @@ int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int align
         (*it).aligned_addr = req_addr;
         m_pool->alloc_list.push_back( *it );
         m_pool->free_list.erase( it );      
-#ifndef NDEBUG
-        printf("**** Alloc Returning address = %" PRIx64 ", %" PRIx64 "\n", 
+        ocpiDebug("**** Alloc Returning address = %" PRIx64 ", %" PRIx64 "", 
                (*it).addr, req_addr );
-#endif
         return 0;
       }
     }

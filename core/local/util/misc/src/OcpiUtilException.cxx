@@ -32,6 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdarg.h>
+#include "OcpiOsAssert.h"
 #include "OcpiUtilException.h"
 
 namespace OCPI {
@@ -48,6 +49,7 @@ namespace OCPI {
       va_start(ap, err);
       setConcatenateV(err, ap);
       m_auxInfo = *this; // backward compatibility...
+      ocpiBad(this->c_str());
     }
     ApiError::~ApiError(){}
     Error::Error(){}
@@ -56,6 +58,7 @@ namespace OCPI {
       va_start(ap, err);
       setFormatV(err, ap);
       va_end(ap);
+      ocpiBad(this->c_str());
     }      
     void Error::setConcatenateV(const char *err, va_list ap) {
       append(err);

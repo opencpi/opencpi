@@ -104,10 +104,8 @@ namespace OCPI {
 				  send ? "send" : "receive", from.c_str(), to.c_str());
 	}
       }
-      c.initializeDataTransfers();
-#ifndef NDEBUG
-      printf("Client side %s circuit is ready\n", send ? "send" : "receive");
-#endif
+      // c.initializeDataTransfers();
+      ocpiDebug("Client side %s circuit is ready", send ? "send" : "receive");
       return c;
     }
 
@@ -182,7 +180,7 @@ namespace OCPI {
     void MessageCircuit::
     releaseInputBuffer( BufferUserFacet* msg )
     {
-      m_rcv_port->inputAvailable( static_cast<Buffer*>(msg) );
+      m_rcv_port->releaseInputBuffer(msg);
     }
 
     void MessageCircuit::

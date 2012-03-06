@@ -59,9 +59,9 @@ using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
 
 static const char* g_ep[]    =  {
-  "ocpi-smb-pio://test1:900000.1.20",
-  "ocpi-smb-pio://test2:900000.2.20",
-  "ocpi-smb-pio://test3:900000.3.20"
+  "ocpi-smb-pio:test1:900000.1.20",
+  "ocpi-smb-pio:test2:900000.2.20",
+  "ocpi-smb-pio:test3:900000.3.20"
 };
 static int   OCPI_USE_POLLING            = 1;
 

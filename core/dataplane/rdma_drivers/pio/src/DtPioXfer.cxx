@@ -69,7 +69,7 @@ const char *pio = "pio"; // name passed to inherited template class
 PIOXferFactory::PIOXferFactory()
   throw ()
  {
-  printf("In PIOXferFactory::PIOXferFactory()\n");
+  ocpiDebug("In PIOXferFactory::PIOXferFactory()");
 
   // Empty
 }
@@ -167,7 +167,7 @@ allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBo
 
   pid = getpid();
   char tep[128];
-  snprintf(tep,128,"ocpi-smb-pio://pioXfer%d%d:%d.%d.%d",pid,smb_count++,size, mailBox, maxMailBoxes);
+  snprintf(tep,128,"ocpi-smb-pio:pioXfer%d%d:%d.%d.%d",pid,smb_count++,size, mailBox, maxMailBoxes);
   ep = tep;
 
   return ep;
@@ -180,24 +180,12 @@ allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBo
 OCPI::OS::int32_t GppEndPoint::parse( std::string& ep )
 {
 
-  OCPI::OS::uint32_t n,i=0;
-  OCPI::OS::int32_t start=0;
   char sname[80];
-  for ( n=0; n<ep.length(); n++ ) {
-    if ( (start<2) && (ep[n] == '/') ) {
-      start++;
-    }
-    else if ( (start == 2) && (ep[n] == ':') ) {
-      break;
-    }
-    else if ( start == 2 ) {
-      sname[i++] = ep[n];
-    }
+  if (sscanf(ep.c_str(), "ocpi-smb-pio:%[^:]:", sname) != 1) {
+    fprintf( stderr, "SMB PIO:  ERROR: Bad SMB PIO endpoint format (%s)\n", ep.c_str() );
+    throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );	  
   }
-
-  sname[i] = 0;
   m_smb_name = sname;
-
   return 0;
 }
 

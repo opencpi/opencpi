@@ -135,16 +135,12 @@ TransportGlobal::TransportGlobal( int event_ordinal, bool asyc )
   int low = EVENT_START + event_ordinal*EVENT_RANGE;
   int high = low+EVENT_RANGE-1;
   if ( asyc ) {
-#ifndef NDEBUG
-    printf("GPP: Using events\n");        
-#endif
+    ocpiDebug("GPP: Using events");        
     //        Create a asyc event handler object
     m_event_manager = new DataTransfer::EventManager(low,high);
   }
   else {
-#ifndef NDEBUG
-    printf("GPP: Not Using events\n");                
-#endif
+    ocpiDebug("GPP: Not Using events");
     m_event_manager = NULL;
   }
         

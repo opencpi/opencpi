@@ -48,6 +48,7 @@
 #include <DtPioXfer.h>
 //#include <OcpiPCISMemServices.h>
 #include <xfer_if.h>
+#include "OcpiOsAssert.h"
 #include <OcpiList.h>
 #include <OcpiUtilHash.h>
 #include <OcpiOsMutex.h>
@@ -84,7 +85,7 @@ const char *pci = "pci"; // name passed to inherited template class
 PCIPIOXferFactory::PCIPIOXferFactory()
   throw ()
 {
-  printf("In PCIPIOXferFactory::PCIPIOXferFactory()\n");
+  ocpiDebug("In PCIPIOXferFactory::PCIPIOXferFactory()");
 }
 
 // Destructor
@@ -182,7 +183,7 @@ allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBo
   char tep[128];
   pid = getpid();
   int bus_id = 0;
-  snprintf(tep,128,"ocpi-pci-pio://%d.0:%d.%d.%d",bus_id, size, mailBox, maxMailBoxes);
+  snprintf(tep,128,"ocpi-pci-pio:%d.0:%d.%d.%d",bus_id, size, mailBox, maxMailBoxes);
   ep = tep;
   return ep;
 }
@@ -240,7 +241,7 @@ void PCISmemServices::create (EndPoint* loc, OCPI::OS::uint32_t size)
     base_adr+=offset;
     char buf[128];
     snprintf(buf, 128,
-             "ocpi-pci-pio://%s.%lld:%lld.2.10", "0", (unsigned long long)base_adr,
+             "ocpi-pci-pio:%s.%lld:%lld.2.10", "0", (unsigned long long)base_adr,
              (unsigned long long)size);
     loc->end_point = buf;
 
@@ -383,7 +384,7 @@ OCPI::OS::int32_t PCIEndPoint::parse( std::string& ep )
 {
 
   printf("Scaning %s\n", ep.c_str() );
-  if (sscanf(ep.c_str(), "ocpi-pci-pio://%x.%" SCNu64 ":%" SCNu64 ".3.10", 
+  if (sscanf(ep.c_str(), "ocpi-pci-pio:%x.%" SCNu64 ":%" SCNu64 ".3.10", 
                    &bus_id,
                    &bus_offset,
                    &map_size) != 3)

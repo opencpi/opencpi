@@ -38,8 +38,9 @@
  */
 
 #include <list>
+#include "OcpiUtilIOP.h"
 #include "OcpiMessageEndpoint.h"
-#include <DtMsgDriver.h>
+#include "DtMsgDriver.h"
 
 
 //namespace OX = OCPI::Util::EzXml;
@@ -83,27 +84,30 @@ namespace OCPI {
 	    m_url(url), m_circuit(0)
 	{
 	  (void)ourParams, (void)otherParams;
-	  ocpiAssert(!strncmp(url, "corbaloc:", sizeof("corbaloc:") - 1));
+	  std::string corbalocURL;
+	  if (!strncasecmp(url, "ior:", sizeof("ior:") - 1)) {
+	    // Convert IOR to corbaloc
+	    OU::IOP::IOR ior(url);
+	    corbalocURL = ior.corbaloc();
+	  } else
+	    corbalocURL = url;
+
+	  ocpiAssert(!strncasecmp(url, "corbaloc:", sizeof("corbaloc:") - 1));
 	  url += sizeof("corbaloc:") - 1;
-	  do {
-	    const char *p;
+	  for (const char *p; *url && url[-1] != '/'; url = p + 1) {
 	    for (p = url; *p && *p != ',' && *p != '/'; p++)
 	      // Skip over slashes after colon
 	      if (*p == ':' && p[1] == '/' && p[2] == '/')
 		p += 2;
+	    if (!*p)
+	      throw OU::Error("No key found (after slash) in url: %s", m_url.c_str());
 	    if (!strncmp(url, "omniocpi:", sizeof("omniocpi:") - 1))
 	      url += sizeof("omniocpi:") - 1;
 	    if (!strncmp(url, "ocpi-", 5))
 	      m_rdmaEndpoints.push_back(std::string(url, p - url));
-	    // ignore addresses that we can't use.
-	    url = p;
-	  } while (*url == ',');
+	  }
 	  if (m_rdmaEndpoints.empty())
 	    throw OU::Error("No usable opencpi endpoints in url: %s", m_url.c_str());
-	  if (*url++ != '/')
-	    throw OU::Error("Missing object key after slash at the end of url: %s", 
-			    m_url.c_str());
-
 	  // The key is encoded according to RFC 2396, but we will leave it that way
 	  m_key = url;
 
@@ -211,7 +215,7 @@ namespace OCPI {
       {
 
       public:
-	inline const char* getProtocol(){return "corbaloc";};
+	inline const char* getProtocol() {return "corbaloc";};
 	XferFactory()throw ();
 	virtual ~XferFactory()throw ();
  
@@ -224,7 +228,8 @@ namespace OCPI {
 			 const OCPI::Util::PValue * /* ourParams */,
 			 const OCPI::Util::PValue * /*otherParams */ )
 	{
-	  return !strncmp(getProtocol(), url, strlen(getProtocol()));
+	  return !strncasecmp(url, "corbaloc:", sizeof("corbaloc:") - 1) ||
+	    !strncasecmp(url, "ior:", sizeof("ior:") - 1);
 	}
 
 	virtual XferServices* getXferServices( const OCPI::Util::Protocol & protocol,

@@ -62,7 +62,7 @@ namespace OCPI {
       void initialize();
       // This makes the application operational, and resumes after "stop"
       void start();
-      void wait( unsigned timeout_us );
+      void wait( unsigned timeout_us = 0);
       // Suspension, that can be resumed with "start".
       void stop();
       ExternalPort &getPort(const char *);

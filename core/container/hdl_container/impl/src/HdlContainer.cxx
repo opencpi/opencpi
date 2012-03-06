@@ -866,7 +866,7 @@ namespace OCPI {
 #endif
 
         snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "ocpi-pci-pio://%s.%lld:%lld.3.10", busId,
+                 "ocpi-pci-pio:%s.%lld:%lld.3.10", busId,
                  (long long unsigned)w.m_container.basePaddr,
                  (long long unsigned)w.m_container.endPointSize);
         if ( isProvider()) {
@@ -932,7 +932,7 @@ namespace OCPI {
         // FIXME - can't we avoid string processing here?
         unsigned busId;
         uint64_t busAddress, busSize;
-        if (sscanf(other.desc.oob.oep, "ocpi-pci-pio://%x.%lld:%lld.3.10", &busId,
+        if (sscanf(other.desc.oob.oep, "ocpi-pci-pio:%x.%lld:%lld.3.10", &busId,
                    (long long unsigned *)&busAddress,
                    (long long unsigned *)&busSize) != 3)
           throw OC::ApiError("other port's endpoint description wrong: \"",
@@ -1183,6 +1183,7 @@ namespace OCPI {
         static const char *dma = getenv("OCPI_DMA_MEMORY");
         static bool done = false;  // FIXME not thread safe, and generates incorrect compiler error
         static uint64_t base;
+	static uint64_t pagesize = getpagesize();
         if (!done) {
           if (dma) {
             unsigned sizeM;
@@ -1191,11 +1192,19 @@ namespace OCPI {
             //size = (unsigned long long)sizeM * 1024 * 1024;
             fprintf(stderr, "DMA Memory:  %uM at 0x%llx\n", sizeM,
                     (unsigned long long)base);
+	    uint64_t top = base + sizeM * 1024llu * 1024llu;
+	    if (base & (pagesize-1)) {
+	      base += pagesize - 1;
+	      base &= ~(pagesize - 1);
+	      top &= ~(pagesize - 1);
+	      fprintf(stderr, "DMA Memory is NOT page aligned.  Now %llu at 0x%llx\n",
+		      top - base, base);
+	    }
           }
           done = true;
         }
         snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "ocpi-pci-pio://%s.%lld:%lld.3.10", "0", (unsigned long long)base,
+                 "ocpi-pci-pio:%s.%lld:%lld.3.10", "0", (unsigned long long)base,
                  (unsigned long long)nAlloc);
         // If we are ActiveOnly we need no DMAable memory at all, so get it from the heap.
         if (getData().data.role == OCPI::RDT::ActiveOnly)
@@ -1207,8 +1216,8 @@ namespace OCPI {
                                       Driver::pciMemFd, base);
           ocpiAssert(allocation != (uint8_t*)-1);
           base += nAlloc;
-          base += getpagesize();
-          base &= ~(getpagesize() - 1);
+          base += pagesize - 1;
+          base &= ~(pagesize - 1);
           // Get the local endpoint corresponding to the known remote endpoint
 #if 0
           myEndpoint = OCPI::RDT::GetEndpoint("ocpi-pci//bus-id");

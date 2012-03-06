@@ -97,7 +97,9 @@ namespace OCPI {
 	err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
 				   p.m_dataValueWidth, p.m_diverseDataSizes,
 				   sub32dummy, p.m_isUnbounded);
-      if (!err && m_nArgs == 1 && m_args[0].isSequence() && m_args[0].isFixed())
+      if (!err && m_nArgs == 1 &&
+	  (m_args[0].isSequence() && m_args[0].isFixed() ||
+	   !m_args[0].isSequence() && m_args[0].m_baseType == OA::OCPI_String))
 	m_topFixedSequence = true;
       return err;
     }

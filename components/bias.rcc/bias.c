@@ -23,10 +23,10 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  RCCPort
    *in = &self->ports[BIAS_IN],
    *out = &self->ports[BIAS_OUT];
+ BiasProperties *props = self->properties;
  uint32_t
    *inData = in->current.data,
-   *outData = out->current.data,
-   bias = ((BiasProperties*)self->properties)->biasValue;
+   *outData = out->current.data;
 
  if (in->input.length > out->current.maxLength) {
    self->errorString = "output buffer too small";
@@ -38,7 +38,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  }
  unsigned n;
  for (n = in->input.length / sizeof(uint32_t); n; n--)
-   *outData++ = *inData++ + bias;
+   *outData++ = *inData++ + props->biasValue;
  out->output.length = in->input.length;
  out->output.u.operation = in->input.u.operation;
  return in->input.length ? RCC_ADVANCE : RCC_ADVANCE_DONE;

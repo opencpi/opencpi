@@ -98,6 +98,7 @@ namespace OCPI {
     void debugBreak ()
       throw ();
 
+    void logPrint(unsigned n, const char *fmt, ...) throw();
   }
 }
 

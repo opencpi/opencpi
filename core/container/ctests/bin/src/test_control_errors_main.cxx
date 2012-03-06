@@ -62,9 +62,9 @@ namespace OM = OCPI::Metadata;
 namespace OU = OCPI::Util;
 
 static const char* g_ep[]    =  {
-  "ocpi-smb-pio://test1:9000000.1.20",
-  "ocpi-smb-pio://test2:9000000.2.20",
-  "ocpi-smb-pio://test3:9000000.3.20"
+  "ocpi-smb-pio:test1:9000000.1.20",
+  "ocpi-smb-pio:test2:9000000.2.20",
+  "ocpi-smb-pio:test3:9000000.3.20"
 };
 static int   OCPI_USE_POLLING            = 1;
 static CWorker PRODUCER(0,3), LOOPBACK(2,3), CONSUMER(4,0);

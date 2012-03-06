@@ -49,7 +49,7 @@ namespace OCPI {
       friend class SelfAutoMutex;
     protected:
       SelfMutex() : OCPI::OS::Mutex(true) {}
-      ~SelfMutex() { unlock(); }
+      ~SelfMutex() { unlock(true); }
     };
     // The class used with automatic storage.
     class SelfAutoMutex {

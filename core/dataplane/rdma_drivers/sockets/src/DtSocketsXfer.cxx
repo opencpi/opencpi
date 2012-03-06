@@ -1,7 +1,4 @@
 
-#ifndef NDEBUG
-#define NDEBUG 1
-#endif
 
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -49,6 +46,9 @@
  *
  */
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #include <DtSharedMemoryInternal.h>
 #include <DtSocketsXfer.h>
 #include <xfer_if.h>
@@ -56,9 +56,6 @@
 #include <OcpiList.h>
 #include <OcpiUtilHash.h>
 #include <OcpiOsMisc.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include <OcpiOsAssert.h>
 #include <DtExceptions.h>
 #include <OcpiThread.h>
@@ -81,6 +78,7 @@ using namespace OCPI::OS;
 struct SocketDataHeader {
   uint64_t   offset;
   uint32_t   length;
+  uint32_t   count;
 };
 
 
@@ -140,7 +138,7 @@ public:
   }
   ~ClientSocketT( )
   {
-    printf("In ~ClientSocketT()\n");
+    ocpiDebug("In ~ClientSocketT()");
     m_socket.close();
   }
   OCPI::OS::Socket& socket(){return m_socket;}
@@ -160,7 +158,7 @@ public:
   virtual ~ServerSocketHandler()
   {
     m_socket.close();
-    printf("In ~ServerSocketHandler()\n");
+    ocpiDebug("In ~ServerSocketHandler()");
   }
 
 
@@ -174,13 +172,11 @@ public:
 	char   buf[TCP_BUFSIZE_READ];
 	unsigned long long n = m_socket.recv( buf, TCP_BUFSIZE_READ);
 	if ( n == 0 ) {
-	  printf("Got a socket EOF, terminating connection\n");
+	  ocpiInfo("Got a socket EOF, terminating connection");
 	  break;
 	}
-#ifndef NDEBUG
-	printf("Got %lld bytes data on server socket !! %d %d %lld %d\n", n, bytes_left, in_header,
-	       header.offset, header.length);
-#endif
+	//	ocpiDebug("Got %lld bytes data on server socket !! %d %d %lld %d", n, bytes_left, in_header,
+	//		  header.offset, header.length);
 	unsigned copy_len;
 	for (char *bp = buf; n; n -= copy_len, bp += copy_len) {
 	  // We are either filling a header or filling a request based on a header.
@@ -189,29 +185,27 @@ public:
 	      current_ptr = (char *)&header;
 	      bytes_left = sizeof(header);
 	    } else {
+	      ocpiDebug("Received Header: %8x: %lx %llx",
+			header.count, header.length, header.offset);
 	      current_ptr =(char*)m_startupParms.lsmem->map(header.offset, header.length);
 	      bytes_left = header.length;
 	    }
 	  }
 	  copy_len = (n <= bytes_left) ? n : bytes_left;
-#ifndef NDEBUG
-	  printf("Copying socket data to %p, size = %u, in header %d, left %d, first %lx\n",
-		 current_ptr, copy_len, in_header, bytes_left, *(unsigned long*)bp);
-#endif
+	  ocpiDebug("Copying socket data to %p, size = %u, in header %d, left %d, first %lx",
+		    current_ptr, copy_len, in_header, bytes_left, *(unsigned long*)bp);
 	  memcpy(current_ptr, bp, copy_len );
 	  current_ptr += copy_len;
 	  if (!(bytes_left -= copy_len))
 	    in_header = !in_header;
-#ifndef NDEBUG
-	  printf("After copying socket data to %p, size = %u, in header %d, left %d %lld %d\n",
-		 current_ptr, copy_len, in_header, bytes_left, header.offset, header.length);
-#endif
+	  //ocpiDebug("After copying socket data to %p, size = %u, in header %d, left %d %lld %d",
+	  //current_ptr, copy_len, in_header, bytes_left, header.offset, header.length);
 	}
       }
     } catch (std::string &s) {
-      printf("Exception in socket background thread: %s\n", s.c_str());
+      ocpiBad("Exception in socket background thread: %s", s.c_str());
     } catch (...) {
-      printf("Unknown exception in socket background thread\n");
+      ocpiBad("Unknown exception in socket background thread");
     }
     m_socket.close();
   }
@@ -240,7 +234,7 @@ public:
     }
     catch( std::string & err ) {
       m_error=true;
-      printf("Socket bind error. %s\n", err.c_str() );
+      ocpiBad("Socket bind error. %s", err.c_str() );
       ocpiAssert(!"Unable to bind to socket");
       return;
     }
@@ -393,7 +387,7 @@ setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
 		  unsigned size, unsigned mbox, unsigned maxCount)
 {
   char tep[128];
-  snprintf(tep, 128, "ocpi-socket-rdma://%s;%u:%u.%u.%u", ipAddr, port, size, mbox,
+  snprintf(tep, 128, "ocpi-socket-rdma:%s;%u:%u.%u.%u", ipAddr, port, size, mbox,
 	   maxCount);
   ep = tep;
 }
@@ -412,7 +406,7 @@ allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBo
 
   const char* env = getenv("OCPI_TRANSFER_IP_ADDR");
   if( !env || (env[0] == 0)) {
-    printf("Set ""OCPI_TRANSFER_IP_ADDR"" environment varible to set socket IP address\n");
+    ocpiDebug("Set ""OCPI_TRANSFER_IP_ADDR"" environment variable to set socket IP address");
     gethostname(ip_addr,128);
   }
   else {
@@ -423,7 +417,7 @@ allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBo
   int port;
   const char* penv = getenv("OCPI_TRANSFER_PORT");
   if( !penv || (penv[0] == 0)) {
-    printf("Set ""OCPI_TRANSFER_PORT"" environment varible to set socket IP address\n");
+    ocpiDebug("Set ""OCPI_TRANSFER_PORT"" environment variable to set socket IP address");
     port = 0;//getNextPortNum();
   }
   else {
@@ -437,7 +431,7 @@ allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBo
 #if 0
   char tep[128];
   unsigned int size = parent().getSMBSize();
-  snprintf(tep, 128, "ocpi-socket-rdma://%s;%d:%d.%d.20", ip_addr, port,
+  snprintf(tep, 128, "ocpi-socket-rdma:%s;%d:%d.%d.20", ip_addr, port,
 	   size, getNextMailBox());
   sep = ep = tep;  
 #endif
@@ -456,36 +450,13 @@ OCPI::OS::int32_t
 SocketEndPoint::
 parse( std::string& ep )
 {
-
-  OCPI::OS::uint32_t n,i=0;
-  OCPI::OS::int32_t start=0;
   char ipaddr[80];
-  char sportNum[80];
-  bool port=false;
-  for ( n=0; n<ep.length(); n++ ) {
-    if ( (start<2) && (ep[n] == '/') ) {
-      start++;
-    }
-    else if ( (start == 2) && (ep[n] == ':') ) {
-      break;
-    }
-    else if ( start == 2 ) {
-      if ( ep[n] == ';' ) {
-        port = true;
-        ipaddr[i] = 0;
-        i = 0;
-      }
-      if ( ! port ) {
-        ipaddr[i++] = ep[n];
-      }
-      else {
-        sportNum[i++] = ep[n];
-      }
-    }
+  int rv = sscanf(ep.c_str(), "ocpi-socket-rdma:%[^;];%u:", ipaddr, &portNum);
+  if (rv != 2) {
+    fprintf( stderr, "SocketEndPoint  ERROR: Bad socket endpoint format (%s)\n", ep.c_str() );
+    throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );	  
   }
-  sportNum[i] = 0;
   ipAddress = ipaddr;  
-  portNum = atoi(&sportNum[1]);
   return 0;
 }
 
@@ -636,21 +607,21 @@ action_socket_transfer(PIO_transfer transfer)
 
   //#define TRACE_PIO_XFERS  
 #ifdef TRACE_PIO_XFERS
-  printf("Socket: copying %d bytes from 0x%llx to 0x%llx\n", transfer->nbytes,transfer->src_off,transfer->dst_off);
-  printf("source wrd 1 = %d\n", src1[0] );
+  ocpiDebug("Socket: copying %d bytes from 0x%llx to 0x%llx", transfer->nbytes,transfer->src_off,transfer->dst_off);
+  ocpiDebug("source wrd 1 = %d", src1[0] );
 #endif
   
   SocketDataHeader hdr;
+  static uint32_t count = 0xabc00000;
   hdr.length = transfer->nbytes;
   hdr.offset = transfer->dst_off;
+  hdr.count = count++;
 
-
-#ifndef NDEBUG
-  printf("Sending IP header %lu %lu %llx\n",
-	 (unsigned long)sizeof(SocketDataHeader),
-	 (unsigned long)hdr.length, hdr.offset);
+  ocpiDebug("Sending IP header %lu %lu %llx %lx",
+	    (unsigned long)sizeof(SocketDataHeader),
+	    (unsigned long)hdr.length, hdr.offset,
+	    (unsigned long)hdr.count);
   OCPI::OS::sleep( 100 );
-#endif
   long long nb=0;  
   unsigned long btt = sizeof(SocketDataHeader);
   unsigned  trys = 10;
@@ -664,12 +635,11 @@ action_socket_transfer(PIO_transfer transfer)
     throw EmbeddedException("Socket write error during data transfer operation\n");
   }
 
+  ocpiDebug("Sending IP data %u %x", transfer->nbytes,
+	    *(uint32_t*)src1);
 #ifndef NDEBUG
-  printf("Sending IP data %u %x\n", transfer->nbytes,
-	 *(uint32_t*)src1);
   OCPI::OS::sleep( 100 );
 #endif
-
 
   nb=0;  
   btt = transfer->nbytes;

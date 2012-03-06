@@ -39,6 +39,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <execinfo.h>
+#include <stdarg.h>
 
 void
 OCPI::OS::dumpStack (std::ostream & out)
@@ -61,4 +62,16 @@ OCPI::OS::debugBreak ()
   throw ()
 {
   kill (getpid(), SIGINT);
+}
+
+void
+OCPI::OS::logPrint(unsigned n, const char *fmt, ...) throw() {
+  va_list ap;
+  va_start(ap, fmt);
+  fprintf(stderr, "OCPI(%2d): ", n);
+  vfprintf(stderr, fmt, ap);
+  va_end(ap);
+  if (fmt[strlen(fmt)-1] != '\n')
+    fprintf(stderr, "\n");
+  fflush(stderr);
 }

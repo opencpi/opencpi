@@ -206,7 +206,7 @@ namespace OCPI {
        * as available.
        *********************************/
       OCPI::OS::int32_t inputAvailable( Buffer* input_buf );
-
+      inline void releaseInputBuffer(BufferUserFacet *ib) { (void)inputAvailable(static_cast<Buffer*>(ib)); }
 
       /**********************************
        * Send an output buffer

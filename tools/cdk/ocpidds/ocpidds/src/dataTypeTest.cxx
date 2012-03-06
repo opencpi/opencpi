@@ -185,7 +185,7 @@ public:
   void endType(OU::Member &) {
     m_parent = m_parent->m_parent;
   }
-  void writeString(OU::Member &m, OU::WriteDataPtr p, uint32_t strLen, bool start) {
+  void writeString(OU::Member &m, OU::WriteDataPtr p, uint32_t strLen, bool start, bool top) {
     if (start)
       newItem(m);
     assert(m_v->m_stringNext + strLen + 1 <= m_v->m_stringSpace + m_v->m_stringSpaceLength);

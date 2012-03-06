@@ -117,7 +117,7 @@ namespace OCPI {
 	endStruct(Member &m),
 	beginType(Member &m),
 	endType(Member &m),
-	writeString(Member &m, WriteDataPtr p, uint32_t strLen, bool start) = 0,
+	writeString(Member &m, WriteDataPtr p, uint32_t strLen, bool start, bool top) = 0,
 	writeData(Member &m, WriteDataPtr p, uint32_t nBytes, uint32_t nElements) = 0,
 	end();
     };

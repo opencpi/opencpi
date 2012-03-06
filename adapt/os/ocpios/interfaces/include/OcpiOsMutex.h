@@ -146,10 +146,11 @@ namespace OCPI {
        * \throw std::string Operating system error.
        */
 
-      void unlock ()
+      void unlock (bool okIfUnlocked = false)
         throw (std::string);
 
     private:
+      unsigned m_locked;
       OCPI::OS::uint64_t m_osOpaque[8];
 
     private:

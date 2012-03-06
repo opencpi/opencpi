@@ -51,6 +51,7 @@ o2pm (OCPI::OS::uint64_t * ptr)
 
 OCPI::OS::Mutex::Mutex (bool recursive)
   throw (std::string)
+  : m_locked(0)
 {
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (pthread_mutex_t)> ()));
   ocpiAssert (sizeof (m_osOpaque) >= sizeof (pthread_mutex_t));
@@ -92,9 +93,9 @@ OCPI::OS::Mutex::lock ()
   throw (std::string)
 {
   int res;
-  if ((res = pthread_mutex_lock (o2pm (m_osOpaque)))) {
+  if ((res = pthread_mutex_lock (o2pm (m_osOpaque))))
     throw OCPI::OS::Posix::getErrorMessage (res);
-  }
+  m_locked++;
 }
 
 bool
@@ -102,18 +103,21 @@ OCPI::OS::Mutex::trylock ()
   throw (std::string)
 {
   int res = pthread_mutex_trylock (o2pm (m_osOpaque));
-  if (res != 0 && res != EBUSY) {
+  if (!res)
+    m_locked++;
+  else if (res != 0 && res != EBUSY)
     throw OCPI::OS::Posix::getErrorMessage (res);
-  }
-  return ((res == 0) ? true : false);
+  return (!res ? true : false);
 }
 
 void
-OCPI::OS::Mutex::unlock ()
+OCPI::OS::Mutex::unlock (bool okIfUnlocked)
   throw (std::string)
 {
   int res;
-  if ((res = pthread_mutex_unlock (o2pm (m_osOpaque)))) {
+  if (okIfUnlocked && !m_locked)
+    return;
+  if ((res = pthread_mutex_unlock (o2pm (m_osOpaque))))
     throw OCPI::OS::Posix::getErrorMessage (res);
-  }
+  m_locked--;
 }

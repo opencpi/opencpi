@@ -303,6 +303,7 @@ namespace OCPI {
        */
 
       void formatString(std::string &out, const char *fmt, ...);
+      void formatStringAdd(std::string &out, const char *fmt, ...);
     }
   }
 }

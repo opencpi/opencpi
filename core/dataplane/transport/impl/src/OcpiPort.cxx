@@ -45,6 +45,7 @@
  *
  */
 
+#include <ctype.h>
 #include <DtTransferInternal.h>
 #include <DtHandshakeControl.h>
 #include <OcpiPort.h>
@@ -127,7 +128,7 @@ void OCPI::DataTransport::Port::initialize()
   if ( !t->isLocalEndpoint( m_data->m_real_location->end_point.c_str()) ) {
 
 #ifdef DEBUG_L2
-    printf( "We are a shadow port\n" );
+    ocpiDebug( "We are a shadow port" );
 #endif
     m_shadow = true;
     m_localSMemResources = m_shadowSMemResources;
@@ -135,7 +136,7 @@ void OCPI::DataTransport::Port::initialize()
   else {
 
 #ifdef DEBUG_L2
-    printf("We are a real port\n" );
+    ocpiDebug("We are a real port" );
 #endif
     m_shadow = false;
     m_localSMemResources = m_realSMemResources;
@@ -195,9 +196,7 @@ OCPI::DataTransport::Port::Port( PortMetaData* data, PortSet* ps )
   m_buffers[0]=0;
   m_zCopyBufferQ = 0;
 
-#ifndef NDEBUG
-  printf("In OCPI::DataTransport::Port::Port()\n");
-#endif
+  ocpiDebug("In OCPI::DataTransport::Port::Port()");
 
 
   // Init member data
@@ -244,7 +243,7 @@ finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCP
       ocpiAssert(flow->type == OCPI::RDT::ProducerDescT);
       break;
     case OCPI::RDT::ActiveOnly:
-      printf("Found a Passive Consumer Port !!\n");
+      ocpiDebug("Found a Passive Consumer Port !!");
       attachPullDriver(c.createPullDriver( other ));
       break;
     case OCPI::RDT::ActiveMessage:
@@ -372,8 +371,8 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
         desc.desc.metaDataBaseAddr = m_data->m_bufferData[0].outputOffsets.metaDataOffset;
         desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
         if (desc.desc.nBuffers != getPortSet()->getBufferCount())
-	  printf("Buffer count mismatch.  Should be %u but will be forced to %u\n",
-		 desc.desc.nBuffers, getPortSet()->getBufferCount());
+	  ocpiDebug("Buffer count mismatch.  Should be %u but will be forced to %u",
+		    desc.desc.nBuffers, getPortSet()->getBufferCount());
         desc.desc.nBuffers = getPortSet()->getBufferCount();
 	desc.desc.fullFlagBaseAddr = m_data->m_bufferData[0].outputOffsets.localStateOffset;
         desc.desc.fullFlagSize = sizeof(BufferState);
@@ -386,30 +385,23 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
 
       if ( getCircuit()->m_transport->m_transportGlobal->useEvents() ) {
 
-#ifndef NDEBUG
-      printf("We are using EVENTS\n");
-#endif
+      ocpiDebug("We are using EVENTS\n");
                 
       int lr,hr;
       getCircuit()->m_transport->m_transportGlobal->getEventManager()->getEventRange(lr,hr);
       desc.desc.fullFlagValue = 1 | 
         ((OCPI::OS::uint64_t)(lr+1)<<32) | (OCPI::OS::uint64_t)1<<63;
-#ifndef NDEBUG
-      printf("OcpiPort: low range = %d, high range = %d, flag = 0x%llx\n", lr, hr, (long long)desc.desc.fullFlagValue);
-#endif
+      ocpiDebug("OcpiPort: low range = %d, high range = %d, flag = 0x%llx\n", lr, hr, (long long)desc.desc.fullFlagValue);
 
     }
     else {
-#ifndef NDEBUG
-      printf("We are NOT using events \n");
-#endif
+      ocpiDebug("We are NOT using events");
+
       desc.desc.fullFlagValue = 1 | 
         ((OCPI::OS::uint64_t)(0xfff)<<32) | (OCPI::OS::uint64_t)1<<63;
     }
 
-#ifndef NDEBUG
-    printf("Full flag value = 0x%llx\n", (long long)desc.desc.fullFlagValue );
-#endif
+    ocpiDebug("Full flag value = 0x%llx\n", (long long)desc.desc.fullFlagValue );
 
     desc.desc.oob.port_id = reinterpret_cast<uint64_t>(this);
     strcpy(desc.desc.oob.oep, m_realSMemResources->sMemServices->endpoint()->end_point.c_str());
@@ -463,13 +455,11 @@ void OCPI::DataTransport::Port::advance( OCPI::OS::uint64_t value )
   ( void ) value;
   if ( isOutput() ) {
 
-#ifndef NDEBUG                
-    printf("ERROR: Attemping to advance a source buffer \n");
-#endif
+    ocpiDebug("ERROR: Attemping to advance a source buffer \n");
                 
     if ( isShadow() ) {
       // Nothing to do
-      printf("Programming ERROR!! advancing a output shadow buffer\n");
+      ocpiBad("Programming ERROR!! advancing a output shadow buffer");
     }
     else {
       // All output transfer objects are required to include a done flag,
@@ -481,9 +471,7 @@ void OCPI::DataTransport::Port::advance( OCPI::OS::uint64_t value )
   else {
     if ( isShadow() ) {
         
-#ifndef NDEBUG                                
-      printf("Advancing the shadow buffer\n");
-#endif
+      ocpiDebug("Advancing the shadow buffer");
                         
       // If we are a input shadow buffer, it means that a remote input buffer
       // became empty.
@@ -491,9 +479,7 @@ void OCPI::DataTransport::Port::advance( OCPI::OS::uint64_t value )
     }
     else {
 
-#ifndef NDEBUG
-      printf("Advancing the REAL buffer\n");
-#endif
+      ocpiDebug("Advancing the REAL buffer");
                                                 
       // One of our inputs just got filled
       getPortSet()->getTxController()->bufferFull(this);
@@ -513,9 +499,8 @@ bool OCPI::DataTransport::Port::supportsZeroCopy( OCPI::DataTransport::Port* por
   if ( getCircuit()->m_transport->isLocalEndpoint( port->m_data->m_real_location->end_point.c_str() ) &&
        getCircuit()->m_transport->isLocalEndpoint( m_data->m_real_location->end_point.c_str() )
        ) {
-#ifndef NDEBUG
-    printf(" NOTE: %s and %s are both local\n", m_data->m_real_location->end_point.c_str(), port->m_data->m_real_location->end_point.c_str() );
-#endif
+    ocpiDebug(" NOTE: %s and %s are both local", m_data->m_real_location->end_point.c_str(),
+	      port->m_data->m_real_location->end_point.c_str() );
     return true;
   }
 
@@ -539,9 +524,7 @@ OCPI::DataTransport::Port::
 createBuffers()
 {
         
-#ifndef NDEBUG
-  printf("Number of buffers = %d\n", this->getBufferCount() );
-#endif
+  ocpiDebug("Number of buffers = %d", this->getBufferCount() );
 
   m_bufferCount = this->getBufferCount();
 
@@ -734,9 +717,8 @@ bool OCPI::DataTransport::Port::ready()
           if ( ! xmb.mailBoxAvailable(s_res) ) {
             return false;
           }
-#ifndef NDEBUG
-          printf("Real Input buffer is making a request to get shadow offsets !!\n");
-#endif
+          ocpiDebug("Real Input buffer is making a request to get shadow offsets. cid %x",
+		    getCircuit()->getCircuitId());
                                         
           DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
           mb->request.reqShadowOffsets.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
@@ -751,10 +733,8 @@ bool OCPI::DataTransport::Port::ready()
             mb->request.reqShadowOffsets.portId    = getPortId();
           }
 
-#ifndef NDEBUG
-          printf("Making return address to %s\n", 
+          ocpiDebug("Making return address to %s", 
                  m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
-#endif
 
           strncpy( mb->request.reqShadowOffsets.url, 
                    m_localSMemResources->sMemServices->endpoint()->end_point.c_str(), 128 );
@@ -806,10 +786,8 @@ bool OCPI::DataTransport::Port::ready()
           return false;
         }
                                 
-#ifndef NDEBUG
-        printf("Input Shadow buffer is making a request to get buffer offsets, my offset = 0x%llx!!\n",
-               (long long unsigned)m_offsetsOffset);
-#endif
+        ocpiDebug("Input Shadow buffer is making a request to get buffer offsets, my offset = 0x%llx id %x",
+		  (long long unsigned)m_offsetsOffset, getCircuit()->getCircuitId());
 
         DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
         mb->request.reqInputOffsets.type = DataTransfer::ContainerComms::ReqInputOffsets;
@@ -823,11 +801,8 @@ bool OCPI::DataTransport::Port::ready()
           mb->request.reqInputOffsets.portId    = getPortId();
         }
 
-
-#ifndef NDEBUG
-        printf("Making return address to %s\n", 
-               m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
-#endif
+        ocpiDebug("Making return address to %s", 
+		  m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
 
         strncpy( mb->request.reqInputOffsets.url, 
                    m_localSMemResources->sMemServices->endpoint()->end_point.c_str(), 128 );
@@ -864,9 +839,8 @@ bool OCPI::DataTransport::Port::ready()
             return false;
           }
 
-#ifndef NDEBUG
-          printf("Shadow Input buffer is making a request to get other shadow offsets !!\n");
-#endif
+          ocpiDebug("Shadow Input buffer is making a request to get other shadow offsets. id %x",
+		    getCircuit()->getCircuitId());
 
           DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
           mb->request.reqShadowOffsets.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
@@ -881,10 +855,8 @@ bool OCPI::DataTransport::Port::ready()
             mb->request.reqShadowOffsets.portId    = getPortId();
           }
 
-#ifndef NDEBUG
-          printf("Making return address to %s\n", 
-                 m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
-#endif
+          ocpiDebug("Making return address to %s", 
+		    m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
 
           strncpy( mb->request.reqShadowOffsets.url, 
                    m_localSMemResources->sMemServices->endpoint()->end_point.c_str(), 128 );
@@ -914,12 +886,15 @@ bool OCPI::DataTransport::Port::ready()
 	uint64_t protocolOffset;
 	getCircuit()->getProtocolInfo(protocolSize, protocolOffset);
 	if (protocolSize) {
+	  ocpiDebug("Receiving protocol info offset 0x%llx size %lu",
+		    (unsigned long long)protocolOffset, (unsigned long)protocolSize);
 	  // protocolSize from the circuit is set by the incoming request from the client,
 	  // and cleared when the information is stashed into the circuit.
 	  void *myProtocolBuffer = s_res->sMemServices->map(protocolOffset, protocolSize);
 	  // This string constructor essentially copies the info into the string
 	  char *copy = new char[protocolSize];
 	  memcpy(copy, myProtocolBuffer, protocolSize);
+	  ocpiDebug("Received protocol info: \"%s\"", isprint(*copy) ? copy : "unprintable");
 	  getCircuit()->setProtocol(copy);
 	  s_res->sMemServices->unMap();	  
 	}
@@ -930,9 +905,8 @@ bool OCPI::DataTransport::Port::ready()
           return false;
         }
 
-#ifndef NDEBUG
-        printf("Output shadow port is making a request to get port control offsets !!\n");
-#endif
+        ocpiDebug("Output shadow port is making a request to get port control offsets. id %x",
+		  getCircuit()->getCircuitId());
 
         DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
         mb->request.reqOutputContOffset.type = DataTransfer::ContainerComms::ReqOutputControlOffset;
@@ -954,11 +928,9 @@ bool OCPI::DataTransport::Port::ready()
 	uint32_t protocolSize;
 	getCircuit()->getProtocolInfo(protocolSize, mb->request.reqOutputContOffset.protocol_offset);
 
-#ifndef NDEBUG
-        printf("Making return address to %s\n", 
+        ocpiDebug("Making return address to %s", 
                m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
-        printf("Setting port id = %lld\n", (long long)mb->request.reqShadowOffsets.portId );
-#endif
+        ocpiDebug("Setting port id = %lld", (long long)mb->request.reqShadowOffsets.portId );
 
         mb->return_offset = m_offsetsOffset;
         mb->return_size = sizeof( PortMetaData::BufferOffsets );
@@ -993,19 +965,14 @@ void OCPI::DataTransport::Port::writeOffsets( PortMetaData::BufferOffsets* offse
         offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx ] =
           m_data->m_bufferData[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
                                 
-#ifndef NDEBUG                
-        printf("Wrote shadow offset %lld to address %p\n", 
+        ocpiDebug("Wrote shadow offset %lld to address %p", 
                (long long)m_data->m_bufferData[n].inputOffsets.myShadowsRemoteStateOffsets[idx],
                &offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx] );
-#endif
-                                
                                 
       }
       else {
 
-#ifndef NDEBUG
-        printf("Wrote real input offsets\n");
-#endif
+        ocpiDebug("Wrote real input offsets");
                                 
         // Our buffer space
         offset[n].inputOffsets.bufferOffset = m_data->m_bufferData[n].inputOffsets.bufferOffset;
@@ -1033,12 +1000,9 @@ void OCPI::DataTransport::Port::writeOffsets( PortMetaData::BufferOffsets* offse
 
     }
 
-#ifndef NDEBUG
-    printf("Wrote output control offset 0x%llx to address %p\n", 
+    ocpiDebug("Wrote output control offset 0x%llx to address %p\n", 
            (long long)m_data->m_bufferData[0].outputOffsets.portSetControlOffset,
            &offset[0].outputOffsets.portSetControlOffset );
-#endif
-                                
                                 
   }
 
@@ -1075,17 +1039,13 @@ void OCPI::DataTransport::Port::getOffsets( OCPI::OS::uint64_t to_base_offset, O
         tf->to_offset = (OCPI::OS::uint64_t)&to_offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
         offsets.push_back( tf );
 
-#ifndef NDEBUG
-        printf("Wrote shadow offset 0x%llx to address 0x%llx\n", 
+        ocpiDebug("Wrote shadow offset 0x%llx to address 0x%llx\n", 
                (long long)tf->from_offset, (long long)tf->to_offset );
-#endif
                                 
       }
       else {
 
-#ifndef NDEBUG
-        printf("Wrote real input offsets\n");
-#endif
+        ocpiDebug("Wrote real input offsets\n");
 
         ToFrom* tf = new ToFrom;
         tf->from_offset = (OCPI::OS::uint64_t)&from_offset[n].inputOffsets.bufferOffset;
@@ -1123,9 +1083,7 @@ void OCPI::DataTransport::Port::getOffsets( OCPI::OS::uint64_t to_base_offset, O
       offsets.push_back( tf );
     }
 
-#ifndef NDEBUG
-    printf("Wrote output control offsets\n");
-#endif
+    ocpiDebug("Wrote output control offsets\n");
                                 
   }
 }
@@ -1302,9 +1260,7 @@ createInputOffsets()
         m_data->m_bufferData[index].inputOffsets.bufferSize = m_data->m_portSetMd->bufferLength;
       }
                 
-#ifndef NDEBUG
-      printf("\n\nInput buffer offset = 0x%" PRIx64 "\n", boffset );
-#endif
+      ocpiDebug("\n\nInput buffer offset = 0x%" PRIx64 "", boffset );
                 
       // Allocate the meta-data structure
       rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount, 

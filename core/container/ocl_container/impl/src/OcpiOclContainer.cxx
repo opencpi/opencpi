@@ -1120,7 +1120,7 @@ namespace OCPI
 
           snprintf ( myDesc.oob.oep,
                      sizeof ( myDesc.oob.oep ),
-                     "ocpi-smb-pio://pioXfer%d:%d.%d.%d",
+                     "ocpi-smb-pio:pioXfer%d:%d.%d.%d",
                      pid,
                      nAlloc,
                      mailbox,
@@ -1176,7 +1176,7 @@ namespace OCPI
           int max_mailbox;
 
           if ( sscanf ( other.desc.oob.oep,
-                        "ocpi-smb-pio://pioXfer%d:%d.%d.%d",
+                        "ocpi-smb-pio:pioXfer%d:%d.%d.%d",
                         &pid,
                         &nAlloc,
                         &mailbox,
@@ -1588,7 +1588,7 @@ namespace OCPI
           myDesc.oob.port_id = port.metaPort().ordinal;
           snprintf ( myDesc.oob.oep,
                      sizeof ( myDesc.oob.oep ),
-                     "ocpi-smb-pio://pioXfer%d:%u.%d.%d",
+                     "ocpi-smb-pio:pioXfer%d:%u.%d.%d",
                      pid,
                      nAlloc,
                      mailbox,

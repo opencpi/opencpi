@@ -82,7 +82,7 @@ getNextMailBox()
   if ( ! mb_once ) {
     const char* env = getenv("OCPI_TRANSFER_MAILBOX");
     if( !env || (env[0] == 0)) {
-      printf("Set ""OCPI_TRANSFER_MAILBOX"" environment varible to control mailbox\n");
+      ocpiInfo("Set ""OCPI_TRANSFER_MAILBOX"" environment varible to control mailbox");
     }
     else {
       mailbox = atoi(env);
@@ -103,7 +103,7 @@ getMaxMailBox()
   if ( ! mmb_once ) {
     const char* env = getenv("OCPI_MAX_MAILBOX");
     if( !env || (env[0] == 0)) {
-      printf("Set ""OCPI_MAX_MAILBOX"" environment varible to control max mailbox\n");
+      ocpiInfo("Set ""OCPI_MAX_MAILBOX"" environment varible to control max mailbox");
     }
     else {
       max_mb = atoi(env);
@@ -242,10 +242,8 @@ supportsEndPoints(
 		  std::string& end_point2 )
 {
 
-#ifndef NDEBUG
-  printf("In  XferFactory::supportsEndPoints, (%s) (%s)\n",
+  ocpiDebug("In  XferFactory::supportsEndPoints, (%s) (%s)",
          end_point1.c_str(), end_point2.c_str() );
-#endif
 
   unsigned int len = strlen( getProtocol() );
   if ( end_point1.length() && end_point2.length() ) {
@@ -335,9 +333,7 @@ startup()
 {
   OU::AutoMutex guard ( m_mutex, true );
 
-#ifndef NDEBUG
-  printf("++++++++ In void XferFactoryManager::startup(), ref count = %d\n", m_refCount );
-#endif
+  ocpiDebug("++++++++ In void XferFactoryManager::startup(), ref count = %d", m_refCount);
 
   m_refCount++;
 }
@@ -685,11 +681,10 @@ getSMBResources(
 bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 {
 
-#ifndef NDEBUG
-  printf("In makerequest from %s to %s\n",
-         source->sMemServices->endpoint()->end_point.c_str(),
-         target->sMemServices->endpoint()->end_point.c_str() );
-#endif
+  ocpiDebug("In makerequest from %s to %s\n",
+	    source->sMemServices->endpoint()->end_point.c_str(),
+	    target->sMemServices->endpoint()->end_point.c_str() );
+
 
 #ifdef MULTI_THREADED
   // Lock the mailbox
@@ -709,9 +704,7 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 
   OS::uint32_t offset = sizeof(ContainerComms::MailBox) * m_slot + sizeof(OS::uint32_t);
 
-#ifndef NDEBUG
-  printf("In make request with offset = %d\n", offset );
-#endif
+  ocpiDebug("In make request with offset = %d\n", offset );
 
   XferRequest * ptransfer = ptemplate->createXferRequest();
 

@@ -118,9 +118,9 @@ Transport( TransportGlobal* tpg, bool uses_mailboxes )
   m_endpoints = 
     XferFactoryManager::getFactoryManager().getListOfSupportedEndpoints();  
 
-  std::vector<std::string>::iterator it;
+  std::vector<std::string>::const_iterator it;
   for ( it=m_endpoints.begin(); it!=m_endpoints.end(); it++ ) {
-    printf("initial supported ep = %s\n", (*it).c_str() );
+    ocpiDebug("initial supported ep = %s", (*it).c_str() );
   }
 
 }
@@ -201,16 +201,11 @@ SMBResources*
 OCPI::DataTransport::Transport::
 findLocalCompatibleEndpoint( const char* ep )
 {
-
-#ifndef NDEBUG
-  printf("Finding compatible endpoint for %s\n", ep );
-#endif
+  ocpiDebug("Finding compatible endpoint for %s", ep );
 
   std::vector<std::string>::iterator it;
   for ( it=m_endpoints.begin(); it!=m_endpoints.end(); it++ ) {
-#ifndef NDEBUG
-    printf("ep = %s\n", (*it).c_str() );
-#endif
+    ocpiDebug("ep = %s", (*it).c_str() );
     int m=0;
     while ( (*it).c_str()[m] || ep[m] ) {
 
@@ -225,9 +220,7 @@ findLocalCompatibleEndpoint( const char* ep )
 	SMBResources *res = addLocalEndpoint( (*it).c_str() );
 	
         (*it) = res->sMemServices->endpoint()->end_point; 
-#ifndef NDEBUG
-        printf("Found %s for %s\n", (*it).c_str(), ep );
-#endif
+        ocpiDebug("Found %s for %s", (*it).c_str(), ep );
         return res;
       }
       m++;
@@ -352,6 +345,7 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
     addRemoteEndpoint( server_loc->c_str() );
   }
 
+  ocpiDebug("requestNewConnection: c: %s s: %s", client_loc->c_str(), server_loc->c_str());
   XferFactory* tfactory = 
     XferFactoryManager::getFactoryManager().find( *client_loc, nuls );
   if ( ! tfactory ) {
@@ -368,6 +362,8 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
     XferFactoryManager::getFactoryManager().getSMBResources( *server_loc );
 
   XferMailBox xmb(client_location->mailbox );
+  bool openCircuit = circuit->m_openCircuit;
+  circuit->m_openCircuit = true;
   while ( ! xmb.mailBoxAvailable(s_res) ) {
     dispatch();
     OCPI::OS::sleep(0);
@@ -376,10 +372,9 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
       throw OCPI::Util::EmbeddedException("Server Not Responding");
     }
   }
+  circuit->m_openCircuit = openCircuit;
 
-#ifdef DEBUG_L2
-  printf("Client is making a request to server to establish new connection!!\n");
-#endif
+  ocpiDebug("Client is making a request to server to establish new connection.");
    
   DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
   mb->request.reqNewConnection.type = DataTransfer::ContainerComms::ReqNewConnection;
@@ -410,10 +405,8 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
   mb->return_size = 0;
   mb->returnMailboxId = client_location->mailbox;
 
-#ifndef NDEBUG
-  printf("reqNewConnection: mb %p 0x%x\n", mb, circuit->getCircuitId());
-  printf("reqNewConnection: type %d\n", mb->request.reqNewConnection.type);
-#endif
+  ocpiDebug("reqNewConnection: mb %p 0x%x type %d", mb, circuit->getCircuitId(),
+	    mb->request.reqNewConnection.type);
  
   xmb.makeRequest( s_res, t_res );
 
@@ -463,6 +456,7 @@ createCircuit(
   }
 
   m_circuits.push_back( circuit );
+  ocpiDebug("New circuit created and registered: id %x flags %x", circuit->getCircuitId(), flags);
 
   // We may need to make a new connection request
   if ( flags & NewConnectionFlag ) {
@@ -546,7 +540,7 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
   // With an inside connection, the endpoints are the same
   strcpy(outputDesc.desc.oob.oep, inputPort.getEndpoint()->end_point.c_str());
   if (outputDesc.desc.dataBufferSize > inputPort.getMetaData()->m_descriptor.desc.dataBufferSize) {
-    printf("Forcing output buffer size to %u from input size %u on local connection\n",
+    ocpiDebug("Forcing output buffer size to %u from input size %u on local connection",
 	   inputPort.getMetaData()->m_descriptor.desc.dataBufferSize,
 	   outputDesc.desc.dataBufferSize);	   
     outputDesc.desc.dataBufferSize = inputPort.getMetaData()->m_descriptor.desc.dataBufferSize;
@@ -571,7 +565,7 @@ createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc, const OU::PV
       (found = OU::findString(params, "transport", protocol)) ||
       (protocol = getenv("OCPI_DEFAULT_PROTOCOL"))) {
     if (!found)
-      printf("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment\n", protocol);
+      ocpiDebug("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment", protocol);
     res = addLocalEndpointFromProtocol(protocol);
   } else {
     // It is up to the caller to specify the endpoint which implicitly defines
@@ -717,8 +711,7 @@ void OCPI::DataTransport::Transport::dispatch(DataTransfer::EventManager*)
   // handle mailbox requests
   if ( m_uses_mailboxes )
     checkMailBoxs();
-
-  //  OCPI::OS::sleep(0);
+  //  OCPI::OS::sleep(1);
 
 }
 
@@ -729,7 +722,7 @@ void OCPI::DataTransport::Transport::clearRemoteMailbox( OCPI::OS::uint32_t offs
   TransferDesc* td=NULL;
 
 #ifdef DEBUG_L2
-  printf("Clearing remote mailbox address = %s, offset = 0x%x\n", loc->end_point, offset );
+  ocpiDebug("Clearing remote mailbox address = %s, offset = 0x%x", loc->end_point, offset );
 #endif
 
   for ( OCPI::OS::uint32_t m=0; m<m_cached_transfers.getElementCount(); m++ ) {
@@ -738,7 +731,7 @@ void OCPI::DataTransport::Transport::clearRemoteMailbox( OCPI::OS::uint32_t offs
       td = tmp_td;
       while ( td->xfer->getStatus() ) {
 #ifdef DEBUG_L2
-        printf("Request to clear the remote mailbox has not yet completed\n");
+        ocpiDebug("Request to clear the remote mailbox has not yet completed");
 #endif
       }
     }
@@ -812,7 +805,7 @@ sendOffsets( OCPI::Util::VList& offsets, std::string& remote_ep,
   }
 
 #ifdef DEBUG_L2
-  printf("In OCPI::DataTransport::Transport::sendOffsets, sending %d OCPI::OS::int32_ts\n", offsets.size() );
+  ocpiDebug("In OCPI::DataTransport::Transport::sendOffsets, sending %d OCPI::OS::int32_ts", offsets.size() );
 #endif
 
   XferRequest* ptransfer = ptemplate->createXferRequest();
@@ -828,7 +821,7 @@ sendOffsets( OCPI::Util::VList& offsets, std::string& remote_ep,
       static_cast<OCPI::DataTransport::Port::ToFrom*>(offsets[y]);
 
 #ifdef DEBUG_L3
-    printf("Adding copy to transfer list, 0x%x to 0x%x\n", tf->from_offset,tf->to_offset );
+    ocpiDebug("Adding copy to transfer list, 0x%x to 0x%x", tf->from_offset,tf->to_offset );
 #endif
     ptransfer->copy (
 		     tf->from_offset,
@@ -878,10 +871,8 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
     if ( (n != m_CSendpoint->mailbox ) && (comms->mailBox[n].request.reqBasic.type != 0) ) {
 
-#ifndef NDEBUG
-      printf("***&&& Got a mailbox request from %d, req = %d\n", n, 
+      ocpiDebug("Got a mailbox request from %d, req = %d", n, 
              comms->mailBox[n].request.reqBasic.type);
-#endif
 
       switch ( comms->mailBox[n].request.reqBasic.type ) {
 
@@ -890,9 +881,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
 
           CircuitId circuit_id = comms->mailBox[n].request.reqUpdateCircuit.receiverCircuitId;
-#ifndef NDEBUG
-          printf("Handling case DataTransfer::ContainerComms::ReqUpdateCircuit: 0x%x\n", circuit_id);
-#endif
+          ocpiDebug("Handling case DataTransfer::ContainerComms::ReqUpdateCircuit: 0x%x\n", circuit_id);
           OCPI::DataTransport::Circuit* c = 
             static_cast<OCPI::DataTransport::Circuit*>(getCircuit(circuit_id ));
 
@@ -920,9 +909,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
       case DataTransfer::ContainerComms::ReqNewConnection:
         {
 	  CircuitId circuit_id = comms->mailBox[n].request.reqNewConnection.circuitId;
-#ifndef NDEBUG
-          printf("Handling case DataTransfer::ContainerComms::ReqNewConnection: 0x%x\n", circuit_id);
-#endif
+          ocpiDebug("Handling case DataTransfer::ContainerComms::ReqNewConnection: 0x%x", circuit_id);
           try {
 
             // If we dont have a new circuit listener installed, ignore the request
@@ -1018,9 +1005,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
       case DataTransfer::ContainerComms::ReqOutputControlOffset:
         {
           CircuitId circuit_id = comms->mailBox[n].request.reqOutputContOffset.circuitId;
-#ifndef NDEBUG
-          printf("Handling case DataTransfer::ContainerComms::ReqOutputControlOffset: 0x%x\n", circuit_id);
-#endif
+          ocpiDebug("Handling case DataTransfer::ContainerComms::ReqOutputControlOffset: 0x%x", circuit_id);
 
           int port_id = comms->mailBox[n].request.reqOutputContOffset.portId;
 
@@ -1028,7 +1013,10 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
           // Get the circuit 
           Circuit* c = getCircuit( circuit_id );
-
+	  if (!c) {
+	    ocpiBad("Unknown circuit %x", circuit_id);
+	    ocpiAssert(0);
+	  }
           OCPI::DataTransport::Port* port = 
             static_cast<OCPI::DataTransport::Port*>(c->getOutputPortSet()->getPortFromOrdinal( port_id ));
           ocpiAssert(port);
@@ -1036,16 +1024,14 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
           // We will lookup the return addres based upon the mailbox
           SMBResources* res = getEndpointResources(comms->mailBox[n].request.reqOutputContOffset.shadow_end_point) ;
           if ( ! res ) {
-#ifndef NDEBUG
-            printf("**** INTERNAL programming error !! output shadow port asked for control offset and we dont know its end point !!\n");
-#endif
+            ocpiBad("**** INTERNAL programming error !! output shadow port asked for control offset and we dont know its end point !!\n");
             ocpiAssert(0);
           }
 
 	  uint32_t protocolSize = 0;
 	  uint64_t protocolOffset;
 	  if (comms->mailBox[n].request.reqOutputContOffset.protocol_offset) {
-	    // The server side is telling us where to put the protcol info, based on our telling
+	    // The server side is telling us where to put the protocol info, based on our telling
 	    // it, in the reqnewconnection, how big it is.
 	    c->getProtocolInfo(protocolSize, protocolOffset);
 	    ocpiAssert(protocolSize != 0);
@@ -1080,9 +1066,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
           CircuitId circuit_id = comms->mailBox[n].request.reqShadowOffsets.circuitId;
 
-#ifndef NDEBUG
-          printf("Handling case DataTransfer::ContainerComms::ReqShadowRstateOffset: 0x%x\n", circuit_id);
-#endif
+          ocpiDebug("Handling case DataTransfer::ContainerComms::ReqShadowRstateOffset: 0x%x", circuit_id);
           int port_id = comms->mailBox[n].request.reqShadowOffsets.portId;
 
           SMBResources* res=    
@@ -1091,7 +1075,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
           // Get the circuit 
           Circuit* c = getCircuit( circuit_id );
 
-          printf("Return address = %s\n", comms->mailBox[n].request.reqShadowOffsets.url );
+          ocpiDebug("Return address = %s", comms->mailBox[n].request.reqShadowOffsets.url );
 
           OCPI::DataTransport::Port* port=NULL;
           for ( OCPI::OS::uint32_t y=0; y<c->getInputPortSetCount(); y++ ) {
@@ -1125,9 +1109,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
         {
 
           CircuitId circuit_id = comms->mailBox[n].request.reqInputOffsets.circuitId;
-#ifndef NDEBUG
-          printf("Handling case DataTransfer::ContainerComms::ReqInputOffsets: 0x%x\n", circuit_id);
-#endif
+          ocpiDebug("Handling case DataTransfer::ContainerComms::ReqInputOffsets: 0x%x", circuit_id);
           int port_id = comms->mailBox[n].request.reqInputOffsets.portId;
 
           SMBResources* res=    
@@ -1167,9 +1149,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
       case DataTransfer::ContainerComms::NoRequest:
       default:
-#ifndef NDEBUG
-        printf("Handling case DataTransfer::ContainerComms::Default:\n");
-#endif
+        ocpiDebug("Handling case DataTransfer::ContainerComms::Default:");
         //                                ocpiAssert(0);
 
         break;
@@ -1197,9 +1177,7 @@ void  Transport::removeLocalEndpoint(  const char* loc )
 SMBResources* Transport::addRemoteEndpoint( const char* loc )
 {
   std::string sloc(loc);
-#ifndef NDEBUG
-  printf("In TransportGlobal::addRemoteEndpoint, loc = %s\n", loc );
-#endif
+  ocpiDebug("In Transport::addRemoteEndpoint, loc = %s", loc );
   
   SMBResources* res = getEndpointResources(loc);
   if ( res ) {
@@ -1278,9 +1256,7 @@ addLocalEndpoint(const char *nfep, bool compatibleWith)
     return res;
   }
 
-#ifndef NDEBUG
-  printf("******** REQ EP = %s as local\n", ep );
-#endif
+  ocpiDebug("******** REQ EP = %s as local", ep );
 
   GEndPoint* gep = new GEndPoint;
   gep->ep = ep;
@@ -1300,9 +1276,7 @@ addLocalEndpoint(const char *nfep, bool compatibleWith)
   loc = gep->ep = gep->loc->end_point;
   gep->loc->setEndpoint( loc );
 
-#ifndef NDEBUG
-  printf("******** ADDING EP = %s as local\n", loc.c_str() );
-#endif
+  ocpiDebug("******** ADDING EP = %s as local", loc.c_str() );
 
   m_localEndpoints.insert( gep );
   return gep->res;
@@ -1320,9 +1294,7 @@ bool Transport::isLocalEndpoint( const char* loc )
 #endif
 #endif
     if ( strcmp( loc, ((GEndPoint*)m_localEndpoints.getEntry(n))->ep.c_str() ) == 0 ) {
-#ifndef NDEBUG
-      printf("isLocalEndpoint:: is local\n"  );
-#endif
+      ocpiDebug("isLocalEndpoint:: is local"  );
 
       return true;
     }

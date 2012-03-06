@@ -183,18 +183,22 @@ namespace OCPI {
           Cp289ProviderPort::Octets os(shadow.length(), shadow.length(), (CORBA::Octet*)shadow.data());
           connectInitial(os);
         } else {
-          // So we are a provider with no existing connections
+          // So we are a user port with no existing connections
           // Several cases here:
-          // 1. Connection protocol provided by CORBA is deemed sufficient.
-          //    This implies, for a Cp289 component, that we need to do CORBA adaptation
-          //    here in the proxy.  LIMITATION: we don't support this yet: it would require
-          //    the proxy to establish a local GIOP bridge and a data connection to the proxy
-          // 2. The connection protocol does not require us to exchange information
-          //    Meaning that the IOR profile in the provider IOR is given to us, the user
-          //    side, and that is sufficient to establish the connection.  THis means we
-          //    do not need to use the "private IDL" for exchanging info between proxies.
-          // 3. The connection protocol DOES require extra exchanges of information, and we 
-          //    do it via private IDL
+	  // 1. The provider is a normal SCA component and does not support our CORBA transport, we have some choices:
+	  //    1a. We can provide a bridge between the local worker and the remote IIOP
+	  //        endpoint/socket, synthesizing GIOP: inserting GIOP headers and possibly
+	  //        transcoding messages when necessary.
+	  //    1b. We can use the local ORB with a code-generated loadable proxy bridge.
+	  //    1c. A DII-based generic proxy port bridge
+	  //    LIMITATION:  We don't support this case yet.
+          //
+          // 2. The provider is a normal SCA component and DOES support our CORBA transport with in-band connection
+          //    Meaning that the IOR profile in the provider IOR has info for our transport, and we can make a
+	  //    direct connection whereby our (remote) transport plugin synthesizes GIOP, using connectURL.
+	  //
+          // 3. The provider is "one of ours" and we can negotiate a direct connection using our transport.
+	  //
           std::string ipi;
           getProfile(connection, OCPI_PORT_INFO_TAG, ipi);
 

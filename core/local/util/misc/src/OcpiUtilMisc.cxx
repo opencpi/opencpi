@@ -493,14 +493,25 @@ OCPI::Util::Misc::isXMLDocument (std::istream * istr)
   return result;
 }
 
+static void formatAdd(std::string &out, const char *fmt, va_list ap) {
+  char *cp;
+  vasprintf(&cp, fmt, ap);
+  assert(cp); // or better generic memory exception
+  out += cp;
+  free(cp);
+}
 void OCPI::Util::Misc::
 formatString(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  char *cp;
-  vasprintf(&cp, fmt, ap);
+  out.clear();
+  formatAdd(out, fmt, ap);
   va_end(ap);
-  assert(cp); // or better generic memory exception
-  out = cp;
-  free(cp);
+}
+void OCPI::Util::Misc::
+formatStringAdd(std::string &out, const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  formatAdd(out, fmt, ap);
+  va_end(ap);
 }

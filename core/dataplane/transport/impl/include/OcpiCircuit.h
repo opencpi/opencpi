@@ -313,9 +313,12 @@ namespace OCPI {
 	ocpiAssert(m_protocol == 0 && m_protocolSize != 0);
 	m_protocolSize = 0;
 	m_protocol = protocol;
+	ocpiDebug("Setting protocol string (id %x p %p): \"%s\"",
+		  getCircuitId(), protocol, isprint(*protocol) ? protocol : "unprintable");
       }
       // Retrieve the protocol string and pass ownership to caller as a char ARRAY
       inline char *getProtocol() {
+	ocpiDebug("Getprotocol id %x protocol %p", getCircuitId(), m_protocol);
 	char *s = m_protocol; m_protocol = NULL; return s;
       }
     protected:
@@ -399,9 +402,10 @@ namespace OCPI {
       // Updated flag
       bool m_updated;
 
+    public: // temporary
       // Circuit is open
       bool m_openCircuit;
-
+    protected:
       // Relative load factor
       OCPI::OS::uint32_t m_loadFactor;
 

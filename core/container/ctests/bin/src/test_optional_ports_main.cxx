@@ -60,9 +60,9 @@ using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
 namespace OU = OCPI::Util;
 
-static const char* g_ep1    = "ocpi-smb-pio://test1:900000.1.20";
-static const char* g_ep2    = "ocpi-smb-pio://test2:900000.2.20";
-static const char* g_ep3    = "ocpi-smb-pio://test3:900000.3.20";
+static const char* g_ep1    = "ocpi-smb-pio:test1:900000.1.20";
+static const char* g_ep2    = "ocpi-smb-pio:test2:900000.2.20";
+static const char* g_ep3    = "ocpi-smb-pio:test3:900000.3.20";
 static int   OCPI_USE_POLLING            = 1;
 
 static CWorker PRODUCER(0,3), LOOPBACK(2,3), CONSUMER(4,0);

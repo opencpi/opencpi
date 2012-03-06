@@ -73,8 +73,8 @@ using namespace OCPI;
  *  These are the global parameters that are configured in the vxWorks startup script
  */
 /*
-char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-smb-pio://s:300000.1.20";
-char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-smb-pio://lb:300000.3.20";
+char* OCPI_RCC_CONT_COMMS_EP    = "ocpi-smb-pio:s:300000.1.20";
+char* OCPI_RCC_LBCONT_COMMS_EP  = "ocpi-smb-pio:lb:300000.3.20";
 */
 
 int  OCPI_RCC_DATA_BUFFER_SIZE   = 1024;
@@ -82,8 +82,8 @@ int  OCPI_RCC_CONT_NBUFFERS      = 1;
 
 
 // Program globals
-static const char *server_end_point = "ocpi-socket-rdma://localhost;40006:600000.2.8";
-static const char *loopback_end_point = "ocpi-socket-rdma://localhost;0:600000.3.8";
+static const char *server_end_point = "ocpi-socket-rdma:localhost;40006:600000.2.8";
+static const char *loopback_end_point = "ocpi-socket-rdma:localhost;0:600000.3.8";
 static volatile int circuit_count=0;
 static MessageCircuit     *gpp_circuits[10];
 //static Server *server=NULL;

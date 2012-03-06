@@ -16,7 +16,7 @@ namespace OCPI {
     Driver::
     Driver() throw() 
       : m_tpg_events(NULL), m_tpg_no_events(NULL), m_count(0) {
-      printf("Registering the RCC Container driver\n");
+      ocpiDebug("Registering the RCC Container driver");
     }
     // Look for a container that doesn't exist yet.
     OC::Container *Driver::

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include "OcpiOsAssert.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilException.h"
@@ -101,11 +102,11 @@ namespace OCPI {
 	// Recursive.
 	void doDir(const std::string &dirName) {
 	  bool isDir;
-	  if (!OS::FileSystem::exists(dirName, &isDir) ||
-	      !isDir)
-	    throw OU::Error("Directory name in OCPI_LIBRARY_PATH, \"%s\", "
-			    "is nonexistent or not a directory", dirName.c_str());
-
+	  if (!OS::FileSystem::exists(dirName, &isDir) || !isDir) {
+	    ocpiBad("Directory name in OCPI_LIBRARY_PATH, \"%s\", "
+		    "is nonexistent or not a directory.  It will be ignored", dirName.c_str());
+	    return;
+	  }
 	  static const std::string pattern("*");
 	  OS::FileIterator dir(dirName, "*");
 	  for (; !dir.end(); dir.next()) {

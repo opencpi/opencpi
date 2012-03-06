@@ -102,7 +102,7 @@ Circuit(
      m_transport(t), m_status(Unknown),
      m_ready(false),m_updated(false),
      m_outputPs(0), m_inputPs(0),  m_metaData(connection) ,m_portsets_init(0),
-     m_protocol(NULL)
+     m_protocol(NULL), m_protocolSize(0), m_protocolOffset(0)
 {
   ( void ) src_ps;
   ( void ) dest_pss;
@@ -112,9 +112,7 @@ Circuit(
   m_templatesGenerated = false;
   m_fromQ = false;
 
-#ifndef NDEBUG
-  printf(" In Circuit::Circuit() id is 0x%x\n", id);
-#endif
+  ocpiDebug(" In Circuit::Circuit() this %p id is 0x%x\n", this, id);
 
   // static init stuff goes here
   if ( t->m_transportGlobal->m_Circuitinit == false ) {
@@ -262,14 +260,13 @@ Circuit(
     m_maxPortOrd+= static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[psc])->m_portMd.size();
   }
 
-#ifndef NDEBUG
-  printf("Circuit::Circuit: po = %d\n", m_maxPortOrd );
-#endif
+  ocpiDebug("Circuit::Circuit: po = %d", m_maxPortOrd );
 
   if ( m_maxPortOrd > 1 ) {
     Port* port = this->getOutputPortSet()->getPortFromIndex(0);
 
-    if ( port->m_data->real_location_string.length() ) {
+    if (port->m_data->real_location_string.length() ) {
+      ocpiDebug("Circuit is closed 1: id %x", getCircuitId());
       m_openCircuit = false;
     }
   }
@@ -332,7 +329,7 @@ OCPI::DataTransport::Circuit::
   delete m_metaData;
 
   if (m_protocol)
-    delete m_protocol;
+    delete [] m_protocol;
   //  ocpiAssert( m_ref_count == 0 );
 }
 
@@ -400,6 +397,7 @@ updateInputs( void* data )
 
   // make sure we have a closed circuit
   if ( sports>0 && tports>0 ) {
+    ocpiDebug("Circuit is closed 2: id %x", getCircuitId());
     m_openCircuit = false;
   }
                   
@@ -438,9 +436,7 @@ updateInputs()
       // Ignore local ports
       if ( m_transport->isLocalEndpoint( port->getRealShemServices()->endpoint()->end_point.c_str() ) ) {
         if ( port->getCircuit()->getOutputPortSet()->getPortFromIndex(0) != output_port ) {
-#ifndef NDEBUG
-          printf("**** ERROR We have a local connection to a different circuit !!\n");
-#endif
+          ocpiBad("**** ERROR We have a local connection to a different circuit !!");
           throw OCPI::Util::EmbeddedException (
                                               INTERNAL_PROGRAMMING_ERROR1, 
                                               "We have a local connection to a different circuit" );
@@ -451,9 +447,7 @@ updateInputs()
       // Wait for our mailbox to become free
       while( ! xmb.mailBoxAvailable(s_res) ) {
         OCPI::OS::sleep(0);
-#ifndef NDEBUG
-        printf("Waiting for our mailbox to be cleared !!\n");
-#endif
+        ocpiDebug("Waiting for our mailbox to be cleared !!");
       }
 
       SMBResources* t_res = 
@@ -472,6 +466,7 @@ updateInputs()
       mb->return_offset = -1;
       mb->return_size = 0;
       mb->returnMailboxId = output_port->getMailbox();
+      ocpiDebug("ReqUpdateCircuit for %x", getCircuitId());
       xmb.makeRequest( s_res, t_res );
     }
   }
@@ -482,6 +477,7 @@ updateInputs()
   }
 
   if ( m_maxPortOrd > 1 ) {
+    ocpiDebug("Circuit is closed 3: id %x", getCircuitId());
     m_openCircuit = false;
   }
   return true;
@@ -790,6 +786,7 @@ updatePort( OCPI::DataTransport::Port* p )
 
   p->update();
   if ( m_maxPortOrd > 1 ) {
+    ocpiDebug("Circuit is closed 4: id %x", getCircuitId());
     m_openCircuit = false;
   }
 
@@ -830,6 +827,7 @@ addPort( PortMetaData* pmd )
   Port* port = new Port( spmd, sps );
   sps->add( port );
   m_maxPortOrd++;
+  ocpiDebug("Circuit is closed 5: id %x", getCircuitId());
   m_openCircuit = false;
 
   return port;
@@ -925,6 +923,7 @@ addInputPort( const OCPI::RDT::Descriptors& pdesc, const char* our_ep)
   }
   else {
     getUserPortFlowControlDescriptor(fb,0);
+    ocpiDebug("Circuit is closed 6: id %x", getCircuitId());
     m_openCircuit = false;
   }
 
@@ -976,6 +975,7 @@ ready()
     }
   }
   m_ready = true;
+  ocpiDebug("Circuit %x is READY", getCircuitId());
   initializeDataTransfers();
   return true;
 }

@@ -61,9 +61,9 @@ using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
 
-static const char* g_ep1    = "ocpi-smb-pio://test1:9000000.1.20";
-static const char* g_ep2    = "ocpi-smb-pio://test2:9000000.2.20";
-static const char* g_ep3    = "ocpi-smb-pio://test3:9000000.3.20";
+static const char* g_ep1    = "ocpi-smb-pio:test1:9000000.1.20";
+static const char* g_ep2    = "ocpi-smb-pio:test2:9000000.2.20";
+static const char* g_ep3    = "ocpi-smb-pio:test3:9000000.3.20";
 static int   OCPI_RCC_DATA_BUFFER_SIZE   = 512;
 static int   OCPI_USE_POLLING            = 1;
 

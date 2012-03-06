@@ -34,7 +34,8 @@ OCPI_OCL_LIBS=-locl_container -lOpenCL
 endif
 export OCPI_SET_LIB_PATH=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 #$(info export OCPI_SET_LIB_PATH=$(OCPI_SET_LIB_PATH))
-export OCPI_API_LIBS=application interfaces rcc_container rdma_drivers util # ocpios
+export OCPI_API_LIBS=application interfaces rcc_container rdma_drivers util  msg_driver_interface  msg_drivers # ocpios
+export OCPI_TRANSPORT_LIBS=rdma_drivers util  msg_driver_interface  msg_drivers
 #$(info export OCPI_API_LIBS=$(OCPI_API_LIBS))
 
 # These linker flags tell the linker:

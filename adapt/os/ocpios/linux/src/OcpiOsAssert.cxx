@@ -33,13 +33,10 @@
  */
 
 
-#include <OcpiOsAssert.h>
 #include <iostream>
 #include <cstdlib>
-
-#if !defined (NDEBUG)
-#include <OcpiOsDebug.h>
-#endif
+#include "OcpiOsAssert.h"
+#include "OcpiOsDebug.h"
 
 namespace {
 

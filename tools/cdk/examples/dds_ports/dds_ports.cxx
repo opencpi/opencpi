@@ -36,8 +36,8 @@ int main ( int argc, char* argv [ ] )
     OA::Port & out = producer.getPort("out");
     OA::Port & in = consumer.getPort("in");
 
-    in.connectURL( "ocpi-dds-msg://JTest_Msg1;JTest::Msg1;u1");
-    out.connectURL( "ocpi-dds-msg://JTest_Msg1");
+    in.connectURL( "ocpi-dds-msg:JTest_Msg1;JTest::Msg1;u1");
+    out.connectURL( "ocpi-dds-msg:JTest_Msg1");
 
     // Number of message the producer should publish
     producer.setProperty( "msgs_to_produce", "30" );

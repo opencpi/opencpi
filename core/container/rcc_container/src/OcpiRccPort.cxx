@@ -370,7 +370,7 @@ namespace OCPI {
       ocpiAssert(b);
       ocpiAssert(isProvider()); // we don't support releasing (and not sending) output buffers
       ocpiAssert(m_dtPort);
-      m_dtPort->inputAvailable(static_cast<OCPI::DataTransport::Buffer*>(b));
+      m_dtPort->releaseInputBuffer(b);
     }
 
     void

@@ -88,9 +88,9 @@ namespace OCPI {
 	  char k[128];
 	  char t[128];
 
-	  /* ocpi-dds-msg://topic-name:key */
-	  //	  int c = sscanf(ep,"ocpi-dds-msg://%[^;];%[^;];%[^;];%s", t, m,s, k );
-	  int c = sscanf(ep,"ocpi-dds-msg://%[^;];%[^;];%s", t, ms, k );
+	  /* ocpi-dds-msg:topic-name:key */
+	  //	  int c = sscanf(ep,"ocpi-dds-msg:%[^;];%[^;];%[^;];%s", t, m,s, k );
+	  int c = sscanf(ep,"ocpi-dds-msg:%[^;];%[^;];%s", t, ms, k );
 	  if ( c == 1 ) {
 	    topic = t;	      
 	  }
@@ -908,7 +908,7 @@ namespace OCPI {
 	}
 
 
-	void writeString(OU::Member &, OU::WriteDataPtr p, uint32_t strLen , bool /* start */) {
+	void writeString(OU::Member &, OU::WriteDataPtr p, uint32_t strLen , bool /* start */, bool /* top */) {
 	  (void)strLen;
 	  c_char * msg = (c_char*)(p.data);
 	  if ( m_inSequence ) {

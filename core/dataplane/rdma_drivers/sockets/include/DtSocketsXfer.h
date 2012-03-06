@@ -83,7 +83,7 @@ namespace DataTransfer {
         virtual const char* getAddress(){return ipAddress.c_str();}
 
         std::string ipAddress;
-        int         portNum;
+        unsigned  portNum;
   };
 
 

@@ -54,3 +54,7 @@ ALLINC +=$(OCPI_OPENSPLICE_HOME)/include/sys
 ALLINC +=$(OCPI_OPENSPLICE_HOME)/include/sys
 endif
 SHARED=$(SHARED_ALLOW_UNDEFINED)
+ifeq ($(OCPI_OS),darwin)
+EXCLUDE_OBJECTS=OpenSpliceBindings.obj OcpiDDSTransport.obj
+endif
+

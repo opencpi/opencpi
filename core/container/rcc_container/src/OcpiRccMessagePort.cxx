@@ -89,7 +89,7 @@ namespace OCPI {
       DTM::XferFactory * factory = 
 	DataTransfer::Msg::XferFactoryManager::getFactoryManager().findFactory( url, myProps, otherProps );
       if ( ! factory) {
-	std::string err( "Message URL not supported");
+	std::string err( "Message URL not supported: ");
 	err += url;
 	throw err;
       }

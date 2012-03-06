@@ -632,7 +632,7 @@ namespace DataTransfer {
 
       // This will be the non-finalized version of the ep
       char buf[512];
-      snprintf( buf, 512, "ocpi-ofed-rdma://%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d",
+      snprintf( buf, 512, "ocpi-ofed-rdma:%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d",
 		d->name().c_str(), port, (long long)0, (long long)0, 0, 0, 0,
 		(unsigned long long)0, size, mailBox, maxMailBoxes);
       std::string ep = buf;
@@ -667,7 +667,7 @@ namespace DataTransfer {
       // This will be the non-finalized version of the ep
       char buf[512];
       snprintf( buf, 512,
-		"ocpi-ofed-rdma://%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d",
+		"ocpi-ofed-rdma:%s:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d",
 		m_device->name().c_str(),
 		m_port, (long long)m_gid.global.subnet_prefix,
 		(long long)m_gid.global.interface_id, m_lid,
@@ -680,10 +680,10 @@ namespace DataTransfer {
     EndPoint::
     parse( std::string& ep )
     {
-      /* ocpi-ofed-rdma://<device id>:<port id>:<gidm.gidl>:<lid>:<psn>:<rkey>:<vaddr>:<smb size>.<mb id> */
+      /* ocpi-ofed-rdma:<device id>:<port id>:<gidm.gidl>:<lid>:<psn>:<rkey>:<vaddr>:<smb size>.<mb id> */
       char buf[128];
       int tport;
-      int c = sscanf(ep.c_str(),"ocpi-ofed-rdma://%[^:]:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d", buf, &tport, 
+      int c = sscanf(ep.c_str(),"ocpi-ofed-rdma:%[^:]:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d", buf, &tport, 
 		     (unsigned long long*)&m_gid.global.subnet_prefix, 
 		     (unsigned long long*)&m_gid.global.interface_id, 
 		     &m_lid, &m_psn, 

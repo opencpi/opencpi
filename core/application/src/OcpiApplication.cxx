@@ -106,7 +106,7 @@ namespace OCPI {
 	  }
 	  if (m_currConn >= OC::Container::maxContainer)
 	    m_currConn = 1;
-	  std::cout << map << " " << bestMap << " " << m_currConn << std::endl;	
+	  ocpiDebug("map %d best %d curr %d", map, bestMap, m_currConn);
 	  if (!(m_allMap & map)) {
 	    // A container we have not used yet.
 	    m_allMap |= map;
@@ -393,9 +393,7 @@ namespace OCPI {
     }
     void ApplicationI::start() {
 
-#ifndef NDEBUG
-      printf("Using %d containers to support the application\n", m_nContainers );
-#endif
+      ocpiDebug("Using %d containers to support the application", m_nContainers );
 
       for (unsigned n = 0; n < m_nContainers; n++)
 	m_containerApps[n]->start();

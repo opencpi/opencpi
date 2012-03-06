@@ -71,7 +71,7 @@ namespace DataTransfer {
   /**********************************
    * This is our PCI shared memory location implementation.  The format of the 
    * address is as follows:
-   *     "ocpi-pci-pio://bid.base.size:300000.1.2"
+   *     "ocpi-pci-pio:bid.base.size:300000.1.2"
    *  Where:
    *      bid:  is the PCI bus id
    *      name: is the name of the endpoint
