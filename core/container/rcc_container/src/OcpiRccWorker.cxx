@@ -292,9 +292,7 @@ initializeContext()
   // Create our memory spaces
   int idx=0;
   while( wd->memSizes && wd->memSizes[idx] ) {
-#ifndef NDEBUG
-    printf("Allocating %d bytes of data for worker memory\n", wd->memSizes[idx] );
-#endif
+    ocpiDebug("Allocating %d bytes of data for worker memory\n", wd->memSizes[idx] );
     idx++;
   }
   int mcount = idx;

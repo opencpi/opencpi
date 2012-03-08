@@ -1260,7 +1260,7 @@ createInputOffsets()
         m_data->m_bufferData[index].inputOffsets.bufferSize = m_data->m_portSetMd->bufferLength;
       }
                 
-      ocpiDebug("\n\nInput buffer offset = 0x%" PRIx64 "", boffset );
+      ocpiDebug("***Input buffer offset = 0x%" PRIx64 "", boffset );
                 
       // Allocate the meta-data structure
       rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount, 

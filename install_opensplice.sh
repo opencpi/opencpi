@@ -131,7 +131,7 @@ if test `uname` == Darwin; then
   sed s=endian.h=machine/endian.h= < src/abstraction/os/linux2.6/include/os_abstract.h > temp.h
 else
   sed s=endian.h=endian.h= < src/abstraction/os/linux2.6/include/os_abstract.h > temp.h
-endif
+fi
 mv temp.h src/abstraction/os/linux2.6/include/os_abstract.h
 sed s=OS_MAP_ON_SEG=OS_MAP_ON_FILE= < src/abstraction/os/linux2.6/code/os_sharedmem.c > temp.c
 mv temp.c src/abstraction/os/linux2.6/code/os_sharedmem.c

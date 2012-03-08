@@ -52,7 +52,7 @@ if $#argv == 1 then
 else
 foreach i ( `ls -d test* | grep -v '_main' | grep -v '\.'`)
   echo Running $i...
-  ./$i | grep Test:
+  sh -c "./$i 2> /dev/null | grep Test:"
 end
 endif
 

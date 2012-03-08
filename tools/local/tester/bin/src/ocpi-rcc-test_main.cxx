@@ -487,7 +487,7 @@ runTest ()
     endpoint = m_config.endpoint.c_str ();
   }
   else {
-    endpoint  = "ocpi-smb-pio://ocpi-rcc-test:";
+    endpoint  = "ocpi-smb-pio:ocpi-rcc-test:";
     endpoint += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (m_config.endpointSize));
     endpoint += ".1.1";
   }

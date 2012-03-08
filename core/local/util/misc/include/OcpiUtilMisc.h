@@ -52,6 +52,7 @@
 #include <istream>
 #include <functional>
 
+#include "OcpiOsAssert.h"
 
 #ifndef NDEBUG
   class Trace {
@@ -60,12 +61,12 @@
     Trace(const char* e) 
       : ts(e)
     {
-      printf("Entering (%s)\n", ts.c_str() );
+      ocpiDebug("Entering (%s)\n", ts.c_str() );
     }
 
     ~Trace()
     {
-      printf("Leaving (%s)\n", ts.c_str() );    
+      ocpiDebug("Leaving (%s)\n", ts.c_str() );    
     }
   };
 #define TRACE(s) Trace t(s)

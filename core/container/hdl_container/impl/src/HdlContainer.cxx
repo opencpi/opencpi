@@ -1198,7 +1198,7 @@ namespace OCPI {
 	      base &= ~(pagesize - 1);
 	      top &= ~(pagesize - 1);
 	      fprintf(stderr, "DMA Memory is NOT page aligned.  Now %llu at 0x%llx\n",
-		      top - base, base);
+		      (unsigned long long)(top - base), (unsigned long long)base);
 	    }
           }
           done = true;

@@ -84,7 +84,7 @@ HdlSimPost=\
     if ! test -d $(LibName); then \
       mkdir $(LibName); \
     else \
-      rm $(LibName)/*; \
+      rm -f $(LibName)/*; \
     fi;\
     for s in $(HdlToolLinkFiles); do \
       if [[ $$s == /* ]]; then \

@@ -52,7 +52,7 @@ $(call OcpiDbgVar,$(OCPI_VERILATOR_DIR))
 # built when the library is built.
 # In verilator the result is a library directory full of links
 # So there not a specific file name we can look for
-HdlToolLibraryFile=links
+HdlToolLibraryFile=$(LibName)
 ################################################################################
 # Function required by toolset: given a list of targets for this tool set
 # Reduce it to the set of library targets.
@@ -60,7 +60,7 @@ HdlToolLibraryTargets=verilator
 ################################################################################
 # Variable required by toolset: what is the name of the file or directory that
 # is the thing created when a library is created. The thing that will be installed
-HdlToolLibraryResult=links
+HdlToolLibraryResult=$(LibName)
 ################################################################################
 # Variable required by toolset: HdlToolCoreLibName
 # What library name should we give to the library when a core is built from
@@ -110,5 +110,7 @@ MyIncs=$(foreach d,$(VerilogIncludeDirs),-I$(call FindRelative,$(TargetDir),$(d)
 HdlToolCompile=\
  $(Verilator) -cc --top-module $(MyTop) -Mdir . $(VWarnings) $(MyLibs) $(MyIncs) \
     $(HdlToolFiles)
-HdlToolPost=$(HdlSimPost)
+
+$(eval $(call HdlSimNoLibraries))
+
 

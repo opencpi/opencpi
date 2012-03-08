@@ -214,6 +214,7 @@ namespace OCPI {
     // on their stack so that access to members (in inline methods) has no indirection.
     class Property {
       Worker &m_worker;               // which worker do I belong to
+      bool m_readSync, m_writeSync;
     public:
       void checkTypeAlways(BaseType ctype, unsigned n, bool write) const;
       inline void checkType(BaseType ctype, unsigned n, bool write) const {
@@ -221,6 +222,8 @@ namespace OCPI {
         checkTypeAlways(ctype, n, write);
 #endif
       }
+      inline bool readSync() const { return m_readSync; }
+      inline bool writeSync() const { return m_writeSync; }
       volatile void *m_writeVaddr;
       const volatile void *m_readVaddr;
       PropertyInfo &m_info;           // details about property, not defined in the API

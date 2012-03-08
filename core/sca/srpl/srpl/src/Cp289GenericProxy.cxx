@@ -300,7 +300,7 @@ namespace OCPI {
       // There is a slight amount of caching optimization possible
       // if we had a (redundant) name mapping to pre-established CC:Property objects.
       OA::Property p(m_worker, name);
-      needSync = p.m_info.m_writeSync;
+      needSync = p.writeSync();
       const char *oops = 0;
       switch (p.m_info.m_baseType) {
         OCPI_PROPERTY_DATA_TYPES
@@ -352,7 +352,7 @@ namespace OCPI {
     {
       OA::Property p(m_worker, name);
       if (!haveSync &&
-          ((haveSync = p.m_info.m_readSync)))
+          ((haveSync = p.readSync())))
         m_worker.beforeQuery();
       const char * oops;
       switch (p.m_info.m_baseType) {

@@ -77,9 +77,9 @@ PACKAGES += \
 	 core/dataplane/rdma_utils \
 	 core/dataplane/rdma_smb \
 	 core/dataplane/rdma_drivers \
+	 core/dataplane/transport \
 	 core/dataplane/msg_driver_interface \
 	 core/dataplane/msg_drivers \
-	 core/dataplane/transport \
 	 core/library \
 	 core/container/interfaces \
 	 core/container/hdl_container \
@@ -125,9 +125,9 @@ ALLPACKAGES = \
 	core/dataplane/rdma_utils \
 	core/dataplane/rdma_smb \
 	core/dataplane/rdma_drivers \
+	core/dataplane/transport \
 	core/dataplane/msg_driver_interface \
 	core/dataplane/msg_drivers \
-	core/dataplane/transport \
 	core/library \
 	core/container/interfaces \
 	core/container/hdl_container \

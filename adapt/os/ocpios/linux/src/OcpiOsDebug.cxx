@@ -33,45 +33,53 @@
  */
 
 
-#include <OcpiOsDebug.h>
 #include <iostream>
 #include <signal.h>
 #include <cstdlib>
 #include <unistd.h>
 #include <execinfo.h>
 #include <stdarg.h>
+#include <OcpiOsDebug.h>
+#include <OcpiOsMutex.h>
 
-void
-OCPI::OS::dumpStack (std::ostream & out)
-  throw ()
-{
-  void * bt[40];
+namespace OCPI {
+  namespace OS {
+    void
+    dumpStack (std::ostream & out)
+      throw ()
+    {
+      void * bt[40];
 
-  int bts = backtrace (bt, 40);
-  char ** btsyms = backtrace_symbols (bt, bts);
+      int bts = backtrace (bt, 40);
+      char ** btsyms = backtrace_symbols (bt, bts);
 
-  for (int i=0; i<bts; i++) {
-    out << btsyms[i] << std::endl;
+      for (int i=0; i<bts; i++) {
+	out << btsyms[i] << std::endl;
+      }
+
+      free (btsyms);
+    }
+
+    void
+    debugBreak ()
+      throw ()
+    {
+      kill (getpid(), SIGINT);
+    }
+
+    static Mutex mine;
+    void
+    logPrint(unsigned n, const char *fmt, ...) throw() {
+      va_list ap;
+      va_start(ap, fmt);
+      mine.lock();
+      fprintf(stderr, "OCPI(%2d): ", n);
+      vfprintf(stderr, fmt, ap);
+      va_end(ap);
+      if (fmt[strlen(fmt)-1] != '\n')
+	fprintf(stderr, "\n");
+      fflush(stderr);
+      mine.unlock();
+    }
   }
-
-  free (btsyms);
-}
-
-void
-OCPI::OS::debugBreak ()
-  throw ()
-{
-  kill (getpid(), SIGINT);
-}
-
-void
-OCPI::OS::logPrint(unsigned n, const char *fmt, ...) throw() {
-  va_list ap;
-  va_start(ap, fmt);
-  fprintf(stderr, "OCPI(%2d): ", n);
-  vfprintf(stderr, fmt, ap);
-  va_end(ap);
-  if (fmt[strlen(fmt)-1] != '\n')
-    fprintf(stderr, "\n");
-  fflush(stderr);
 }

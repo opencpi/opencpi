@@ -255,15 +255,15 @@ namespace DataTransfer {
        * Member access
        */
       inline std::string & url(){return m_url;}
-      inline OCPI::Util::Protocol & protocol(){return m_protocol;}
+      inline const OCPI::Util::Protocol & protocol(){return m_protocol;}
 
                  
       virtual ~XferServices () {};
 
     private:
       int m_use_count;
-      // FIXME:  check whether this can be a reference, not a copy
-      OCPI::Util::Protocol  m_protocol;
+      // FIXME:  make sure the life cycle is ok for this to be a reference
+      const OCPI::Util::Protocol  &m_protocol;
       std::string m_url;
 
 

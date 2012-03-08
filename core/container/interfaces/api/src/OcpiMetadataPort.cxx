@@ -87,7 +87,7 @@ namespace OCPI {
       if (!name)
 	return true;
       ordinal = aOrdinal;
-      printf("Port %s has ordinal = %d\n", name, ordinal );
+      ocpiDebug("Port %s has ordinal = %d\n", name, ordinal );
 
       // Initialize everything from the protocol, then other attributes can override the protocol
       ezxml_t protocol = ezxml_cchild(x, "protocol");

@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
 	fprintf(stderr, "%s", (char *)data);
 	return 0;
       }
+      usleep(1);
     }
     fprintf(stderr,"Worker never sent anything!\n");
   } catch (std::string &e) {
