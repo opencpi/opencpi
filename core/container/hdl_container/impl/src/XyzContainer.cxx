@@ -74,7 +74,10 @@ namespace OCPI {
       Container(const char *name, unsigned example_specific_param)
 	: OC::ContainerBase<Driver,Container,Application,Artifact>(name),
 	  m_example(example_specific_param)
-      {}
+      {
+	m_model = "xyz";
+	m_os = "";
+      }
     public:
       ~Container() {
 	this->lock();

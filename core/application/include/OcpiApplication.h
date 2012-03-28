@@ -96,6 +96,7 @@ namespace OCPI {
       typedef std::pair<const char*, External> ExternalPair;
       Externals m_externals;
       OCPI::Container::Worker **m_workers;
+      OCPI::Container::Worker *m_doneWorker;
       OCPI::Container::ExternalPort **m_externalPorts;
       const char **m_externalNames;
       void init(const OCPI::API::PValue * policy);
@@ -110,6 +111,7 @@ namespace OCPI {
       unsigned m_currConn;
       void policyMap( Instance * i, CMap & bestMap, CMap & allMap );
       void setPolicy( const OCPI::API::PValue * policy );
+      Property &findProperty(const char * worker_inst_name, const char * prop_name);
     public:
       explicit ApplicationI(const char *file, const OCPI::API::PValue * policy=NULL);
       explicit ApplicationI(const std::string &string, const OCPI::API::PValue * policy=NULL);
@@ -120,10 +122,11 @@ namespace OCPI {
       void initialize();
       void start();
       void stop();
-      void wait( uint32_t timeout_us=0 );
+      bool wait(OCPI::OS::Timer *);
       ExternalPort &getPort(const char *);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value);
-      bool getProperty(const char * wname, const char * pname, std::string &value);
+      void getProperty(const char * wname, const char * pname, std::string &value);
+      void setProperty(const char* worker_name, const char* prop_name, const char *value);
       // This will be used for the port connection protocol
       OCPI::Container::Port &getRemote(const char *);
     };

@@ -126,11 +126,20 @@ void OutputBuffer::update(bool critical)
 
     m_bsVaddr = getPort()->getLocalShemServices()->map
       (output_offsets->localStateOffset, 
-       sizeof(BufferState)*MAX_PCONTRIBS);
+       sizeof(BufferState)*MAX_PCONTRIBS*2);
 
     m_state = static_cast<volatile BufferState (*)[MAX_PCONTRIBS]>(m_bsVaddr);
+    // These EMPTY are the non-shadow local flags indicating emptiness/availability
+    // Written by remote side when evacuated by remote side by pull
+    // or set by us when a transfer is done
     for ( unsigned int y=0; y<MAX_PCONTRIBS; y++ ) {
-      m_state[0][y].bufferFull = 1;
+      m_state[0][y].bufferIsEmpty = EF_EMPTY_VALUE;
+    }
+    // These FULL flags will be set by the output side to FULL and sent to the input side
+    // This separates the flag that we get from the input side (pull) and the flag that we send to
+    // the other side.  This is constant staging.
+    for ( unsigned int y=MAX_PCONTRIBS; y<MAX_PCONTRIBS*2; y++ ) {
+      m_state[0][y].bufferIsFull = FF_FULL_VALUE;
     }
   }
  
@@ -179,24 +188,33 @@ void OutputBuffer::update(bool critical)
  **********************************/              
 volatile BufferState* OutputBuffer::getState()
 {
+  //  ocpiDebug("ob %p shadow %d m_pid %u",
+  //	    this, this->m_port->isShadow(), m_pid);
   if ( m_dependentZeroCopyCount ) {
+    //    ocpiDebug("ob %p zc %u dep ports %u",
+    //	      this, m_dependentZeroCopyCount,
+    //	      m_dependentZeroCopyPorts.size());
     OCPI::OS::uint32_t c=0;
     for ( OCPI::OS::uint32_t n=0;
           c<m_dependentZeroCopyCount && n<m_dependentZeroCopyPorts.size(); n++) {
       if ( m_dependentZeroCopyPorts[n] ) {
-                       
-        if (m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()].bufferFull != 0 ) {
-	    return &m_state[0][static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId()];
+	unsigned i = static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId();
+	// If any of our dependent zc inputs are still full,
+	// then we must be treated as still full (still not evacuated).
+	ocpiAssert(m_state[0][i].bufferIsEmpty == EF_EMPTY_VALUE ||
+		   m_state[0][i].bufferIsEmpty == EF_FULL_VALUE);
+        if (m_state[0][i].bufferIsEmpty == EF_FULL_VALUE ) {
+	    return &m_state[0][i];
         }
         c++;
       }
     }
   }
 
-#ifndef NDEBUG
-  //  printf("Output buffer state = 0x%llx\n", (long long)m_state[0][m_pid].bufferFull );
-#endif
-
+  //  ocpiDebug("Output buffer %p m_pid %u empty state = 0x%llx\n",
+  //	    this, m_pid, (long long)m_state[0][m_pid].bufferIsEmpty );
+  ocpiAssert(m_state[0][m_pid].bufferIsEmpty == EF_EMPTY_VALUE ||
+	     m_state[0][m_pid].bufferIsEmpty == EF_FULL_VALUE);
   return &m_state[0][m_pid];
 }
 
@@ -208,6 +226,7 @@ volatile BufferState* OutputBuffer::getState()
  *********************************/
 bool OutputBuffer::isEmpty()
 {
+  ocpiAssert(!getPort()->isShadow());
   if ( Buffer::isEmpty() == false ) {
     return false;
   }
@@ -245,19 +264,23 @@ bool OutputBuffer::isEmpty()
 #endif
 
     if ( n_pending == 0 ) {
-      m_state[0][m_pid].bufferFull = 1;
+      ocpiAssert(m_state[0][m_pid].bufferIsEmpty == EF_EMPTY_VALUE ||
+		 m_state[0][m_pid].bufferIsEmpty == EF_FULL_VALUE);
+      m_state[0][m_pid].bufferIsEmpty = EF_EMPTY_VALUE;
     }
   }
 
+#if 0
   if ( getPort()->isShadow() ) {
     return true;
   }
-
+#endif
   volatile BufferState* state = this->getState();
 
-  //  printf("Buffer state = %d\n", state->bufferFull );
-
-  return (state->bufferFull != 0) ? true:false;
+  //  ocpiDebug("isEmpty: Output empty buffer %p state = %d\n", this, state->bufferIsEmpty );
+  ocpiAssert(state->bufferIsEmpty == EF_EMPTY_VALUE ||
+	     state->bufferIsEmpty == EF_FULL_VALUE);
+  return state->bufferIsEmpty == EF_EMPTY_VALUE;
 }
 
 /**********************************

@@ -131,6 +131,8 @@ namespace OCPI {
 
       virtual void finishConnection(OCPI::RDT::Descriptors &other) = 0;
 
+      // Return true and fill in the string if you want a protocol
+      virtual bool getPreferredProtocol(const char *&) { return false; }
     public:
       void determineRoles(OCPI::RDT::Descriptors &other);
 

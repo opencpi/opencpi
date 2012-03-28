@@ -12,11 +12,11 @@ test.input:
 	./a.out > test.input
 
 biasFile: biasFile.cxx
-	g++ -Wall -g -o $@ -I$(OCPI_INC_DIR) $(OCPI_LD_FLAGS) $^
+	g++ -Wall -g -o $@ -I$(OCPI_INC_DIR) $^ $(OCPI_LD_FLAGS)
 
 
 run: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc ./biasFile > /dev/null	
+	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc ./biasFile '$(ARGS)' > /dev/null	
 	od -X test.output
 
 clean::

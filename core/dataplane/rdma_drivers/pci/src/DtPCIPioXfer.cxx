@@ -106,7 +106,7 @@ void PCIPIOXferFactory::clearCache()
 }
 
 // Get the location via the endpoint
-EndPoint* PCIPIOXferFactory::getEndPoint( std::string& end_point, bool /* local */  )
+EndPoint* PCIPIOXferFactory::getEndPoint( std::string& end_point, bool local)
 { 
   PCIEndPoint *loc;
   for ( OCPI::OS::uint32_t n=0; n<g_locations.getElementCount(); n++ ) {
@@ -116,7 +116,7 @@ EndPoint* PCIPIOXferFactory::getEndPoint( std::string& end_point, bool /* local 
     }
   }
 
-  loc = new PCIEndPoint(end_point);
+  loc = new PCIEndPoint(end_point, local);
         
   // This is a test case to make sure that a factory can modify the endpoint
   // string and system can handle it !!

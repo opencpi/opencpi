@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <assert.h>
@@ -36,6 +38,7 @@ typedef struct {
   volatile OcdpMetadata *metadata;
   volatile uint32_t *flags;
   volatile uint32_t *doorbell;
+  volatile uint64_t *startTime, *doneTime;
   // Then the dynamic state of the stream
   unsigned bufIdx, opCode;
   char *buf; // local buffer
@@ -52,8 +55,60 @@ static void
 	      unsigned nCpuBufs, unsigned nFpgaBufs, unsigned bufSize,
 	      uint8_t *cpuBase, unsigned long long dmaBase, uint32_t *offset, unsigned ramp);
 
-static unsigned checkStream(Stream *s);
-bool noData = 0, noCheck = 0, verbose = 0, single = 0;
+typedef unsigned long long ull; 
+static inline ull ticks2ns(uint64_t ticks) {
+  return (ticks * 1000000000ull + (1ull << 31))/ (1ull << 32);
+}
+static inline ull ns2ticks(uint32_t sec, uint32_t nsec) {
+  return ((uint64_t)sec << 32ull) + (nsec + 500000000ull) * (1ull<<32) /1000000000;
+}
+
+static inline uint64_t now() {
+#ifdef __APPLE__
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return ns2ticks(tv.tv_sec, tv.tv_usec * 1000);
+#else
+  struct timespec ts;
+  clock_gettime (CLOCK_REALTIME, &ts);
+  return ns2ticks(ts.tv_sec, ts.tv_nsec);
+#endif
+}
+
+
+static inline uint64_t swap32(uint64_t x) {return (x <<32) | (x >> 32); }
+
+static int compu32(const void *a, const void *b) { return *(int32_t*)a - *(int32_t*)b; }
+void init_fpga_time(volatile OccpSpace *occp) {
+  unsigned n;
+  uint32_t delta[100];
+  uint32_t sum = 0;
+  
+  for (n = 0; n < 100; n++) {
+    occp->admin.timeDelta = occp->admin.time;
+    delta[n] = occp->admin.timeDelta >> 32;
+  }
+  qsort(delta, 100, sizeof(uint32_t), compu32);
+  
+  for (n = 0; n < 90; n++)
+    sum += delta[n];
+  sum = ((sum + 45) / 90) / 2;
+  // we have average delay
+  fprintf(stderr, "delta ticks min %llu max %llu avg %llu\n",
+	  ticks2ns(delta[0]), ticks2ns(delta[99]), ticks2ns(sum));
+  occp->admin.time = swap32(now() + sum);
+  occp->admin.timeDelta = swap32(now());
+  fprintf(stderr, "now delta is: %lluns\n", ticks2ns(occp->admin.timeDelta >> 32));
+  #ifndef __APPLE__
+  {
+    struct timespec ts;
+    clock_getres(CLOCK_REALTIME, &ts);
+    fprintf(stderr, "res: %ld\n", ts.tv_nsec);
+  }
+  #endif
+}
+static unsigned checkStream(Stream *s, uint64_t *tp, Stream *other);
+bool noData = 0, noCheck = 0, verbose = 0, single = 0, measure = 0;
 unsigned maxFrames = 0, bufSize = 4096;
 uint64_t bytes;
  int
@@ -62,7 +117,7 @@ main(int argc, char *argv[])
   unsigned dmaMeg;
   unsigned long long dmaBase;
   int fd;
-  OccpSpace *occp;
+  volatile OccpSpace *occp;
   uint8_t *bar1, *cpuBase;
   const char *dmaEnv;
   volatile OcdpProperties *dp0Props, *dp1Props;
@@ -96,6 +151,7 @@ main(int argc, char *argv[])
 	    "  -v        verbose\n"
 	    "  -s        single thread\n"
 	    "  -r<size>  ramp the data.  <size> is size of ramp value (1/2/4/8).\n"
+	    "  -t        when single, perform time measurements for each round trip.\n"
 	    , name, name, nCpuBufs, nFpgaBufs);
     return 1;
   }
@@ -126,6 +182,9 @@ main(int argc, char *argv[])
       break;
     case 's':
       single = true;
+      break;
+    case 't':
+      measure = true;
       break;
     case 'r':
       ramp = atoi(&argv[1][2]);
@@ -165,6 +224,7 @@ main(int argc, char *argv[])
   assert((cpuBase = (uint8_t*)mmap(NULL, (unsigned long long)dmaMeg * 1024 * 1024,
 				   PROT_READ|PROT_WRITE, MAP_SHARED, fd, dmaBase)) !=
 	 MAP_FAILED);
+  init_fpga_time(occp);
   // Global setup is done, mappings established.  Now do individual pointers.
   // Pointers to the WCI property spaces for each worker
   dp0Props = (OcdpProperties*)occp->config[WORKER_DP0];
@@ -208,15 +268,50 @@ main(int argc, char *argv[])
 
   if (single) {
     unsigned nTo = 1;
-    fprintf(stderr, "Single\n");
+    fprintf(stderr, "Running single threaded\n");
     gettimeofday(&tv0, 0);
     gettimeofday(&tv1, 0);
-    do {
-      if (fromCpu.flags[fromCpu.bufIdx])
-	checkStream(&fromCpu);
-      if (toCpu.flags[toCpu.bufIdx])
-	nTo = checkStream(&toCpu);
-    } while (nTo != 0 && (maxFrames == 0 || toCpu.opCode < maxFrames));
+    if (measure) {
+      fprintf(stderr, "Nanoseconds:   Size        Pull       Push      Total    Processing\n");
+      do {
+	uint32_t tcons, n, tprod;
+	uint64_t t[4];
+	
+	for (n = 1000000000; n && !(tcons = fromCpu.flags[fromCpu.bufIdx]); n--) {
+	}
+	if (!n) {
+	  fprintf(stderr, "Timed out waiting for buffer from cpu to fpga\n");
+	  return 1;
+	}
+	checkStream(&fromCpu, NULL, NULL);
+	for (n = 1000000000; n && !(tprod = toCpu.flags[toCpu.bufIdx]); n--) {
+	}
+	if (!n) {
+	  fprintf(stderr, "Timed out waiting for buffer from fpga to cpu\n");
+	  return 1;
+	}
+	nTo = checkStream(&toCpu, t, &fromCpu);
+#if 0
+ 	t[0] = ((t[0] & 0xffffffff) << 32) | (t[0] >> 32);
+	t[1] = ((t[1] & 0xffffffff) << 32) | (t[1] >> 32);
+	t[2] = ((t[2] & 0xffffffff) << 32) | (t[2] >> 32);
+	t[3] = ((t[3] & 0xffffffff) << 32) | (t[3] >> 32);
+	fprintf(stderr, "Times: cons reg %llx prod reg %llx cons db %llx prod db %llx\n",
+		(ull)t[0], (ull)t[1], (ull)t[2], (ull)t[3]);
+#endif
+	fprintf(stderr,
+		"Measure: %10u  %10llu %10llu %10llu %10llu\n",
+		bufSize,
+		ticks2ns(t[2] - t[0]), ticks2ns(t[3] - t[1]), ticks2ns(t[3] - t[0]),
+		ticks2ns(t[1] - t[2]));
+      } while (nTo != 0 && (maxFrames == 0 || toCpu.opCode < maxFrames));
+    } else
+      do {
+	if (fromCpu.flags[fromCpu.bufIdx])
+	  checkStream(&fromCpu, NULL, NULL);
+	if (toCpu.flags[toCpu.bufIdx])
+	  nTo = checkStream(&toCpu, NULL, NULL);
+      } while (nTo != 0 && (maxFrames == 0 || toCpu.opCode < maxFrames));
   } else {
     // Now everything is running, and waiting to be fed some data
     // First we'll start a thread that reads data from FPGA and writes to stdout
@@ -277,12 +372,19 @@ start(volatile OccpWorkerRegisters *w) {
 }
 
 static unsigned
-checkStream(Stream *s) {
+checkStream(Stream *s, uint64_t *tp, Stream *other) {
   unsigned n;
   // mark the buffer not ready for CPU.  FPGA will set it to 1 when it is ready
   s->flags[s->bufIdx] = 0;
   // Wait for buffer to be read, so we can fill/empty it.
   if (s->isToCpu) {
+    // We have received a buffer from the FPGA
+    if (tp) {
+      tp[0] = *other->startTime; // capture consumer's "issue pull of metadata" time
+      tp[1] = *s->startTime; // capture producers "issue doorbell" time.
+      tp[2] = *other->doneTime;
+      tp[3] = *s->doneTime;
+    }
     if (noData)
       n = s->bufSize;
     else {
@@ -312,7 +414,7 @@ checkStream(Stream *s) {
       bytes += s->bufSize;
     } else
       bytes += s->metadata[s->bufIdx].length;
-  } else {
+  } else { // from cpu
     if (noData) {
       n = s->bufSize;
       s->metadata[s->bufIdx].length = n;
@@ -365,7 +467,7 @@ doStream(void *args) {
       fprintf(stderr, "%s cpu %d\n", s->isToCpu ? "to" : "from", s->opCode);
     while (s->flags[s->bufIdx] == 0)
       sched_yield();
-    n = checkStream(s);
+    n = checkStream(s, NULL, NULL);
   } while (n != 0 && (maxFrames == 0 || s->opCode < maxFrames));// On a big end);
   return 0;
 }
@@ -390,6 +492,8 @@ setupStream(Stream *s, volatile OcdpProperties *p, bool isToCpu,
   s->metadata = (OcdpMetadata *)(s->buffers + nCpuBufs * bufSize);
   s->flags = (uint32_t *)(s->metadata + nCpuBufs);
   s->doorbell = &p->nRemoteDone;
+  s->startTime = &p->startTime;
+  s->doneTime = &p->doneTime;
   *offset += (uint8_t *)(s->flags + nCpuBufs) - s->buffers;
   memset((void *)s->flags, isToCpu ? 0 : 1, nCpuBufs * sizeof(uint32_t));
   p->nLocalBuffers = nFpgaBufs;

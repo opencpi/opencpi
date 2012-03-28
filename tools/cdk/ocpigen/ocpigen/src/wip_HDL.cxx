@@ -311,6 +311,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
     case WSIPort:
     case WMIPort:
       // Do common WDI attributes first
+      fprintf(f, "  //   Protocol: \"%s\"\n", p->protocol->name().c_str());
       fprintf(f, "  //   DataValueWidth: %u\n", p->protocol->m_dataValueWidth);
       fprintf(f, "  //   DataValueGranularity: %u\n", p->protocol->m_dataValueGranularity);
       fprintf(f, "  //   DiverseDataSizes: %s\n", BOOL(p->protocol->m_diverseDataSizes));
@@ -517,6 +518,19 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
   fclose(f);
   return 0;
 }
+ static void
+emitOpcodes(Port *p, FILE *f, const char *pName, const char *comment) {
+   Protocol *prot = p->protocol;
+   if (prot && prot->nOperations()) {
+     OU::Operation *op = prot->operations();
+     fprintf(f,
+	     "  %s Opcode/operation value declarations for protocol \"%s\" on interface \"%s\"\n",
+	     comment, prot->m_name.c_str(), p->name);
+     for (unsigned n = 0; n < prot->nOperations(); n++, op++)
+       fprintf(f, "  localparam [%sOpCodeWidth - 1 : 0] %s%s_Op = %u;\n", pName, pName, op->name().c_str(), n);
+   }
+}
+
 // Generate the readonly implementation file.
 // What implementations must explicitly (verilog) or implicitly (VHDL) include.
  const char *
@@ -707,6 +721,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		    // p->ocp.MReqInfo.width - 1, pout, p->clock->signal, pout, pout);
 		    "  %s [%d:0] %sOpcode; assign %sMReqInfo = %sOpcode;\n",
 		    p->u.wsi.regRequest ? "reg" : "wire", p->ocp.MReqInfo.width - 1, pout, pout, pout);
+	  emitOpcodes(p, f, mIn ? pin : pout, comment);
 	}
 	if (p->ocp.MFlag.width) {
 	  if (w->language == VHDL)
@@ -762,7 +777,11 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	      fprintf(f,
 		      "  wire [7:0] %sOpcode = %s%cFlag[7:0];\n",
 		      pin, pin, p->master ? 'S' : 'M');
+	    fprintf(f,
+		    "  localparam %sOpCodeWidth = 7;\n",
+		    mIn ? pin : pout);
 	  }
+	  emitOpcodes(p, f, mIn ? pin : pout, comment);
 	}
 	if (p->protocol->m_variableMessageLength) {
 	  if (w->language == VHDL) {
@@ -800,11 +819,9 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
       }
     }
   }
-  // Emit properties
   if (w->language == VHDL)
     fprintf(f,
 	    "end entity %s;\n",	w->implName);
-  // no close for verilog since its included
   fclose(f);
   return 0;
 }
@@ -1623,7 +1640,9 @@ emitWorker(FILE *f, Worker *w)
 emitInstance(Instance *i, FILE *f)
 {
   fprintf(f, "<%s name=\"%s\" worker=\"%s\" occpIndex=\"%u\"",
-	  i->isInterconnect ? "interconnect" : "instance",
+	  i->iType == Instance::Application ? "instance" :
+	  i->iType == Instance::Interconnect ? "interconnect" :
+	  i->iType == Instance::IO ? "io" : "adapter",
 	  i->name, i->worker->implName, i->index);
 #if 0
   bool any = false;
@@ -1647,8 +1666,10 @@ emitInstance(Instance *i, FILE *f)
 #endif
   if (i->attach)
     fprintf(f, " attachment=\"%s\"", i->attach);
-  if (i->isInterconnect) // FIXME!!!! when shep puts regions in the bitstream
+  if (i->iType == Instance::Interconnect) // FIXME!!!! when shep puts regions in the bitstream
     fprintf(f, " ocdpOffset=\"%d\"", !strcmp(i->name, "dp0") ? 0 : 32*1024);
+  if (i->hasConfig)
+    fprintf(f, " configure=\"%#lx\"", (unsigned long)i->config);
   fprintf(f, "/>\n");
 }
 
@@ -1705,7 +1726,7 @@ emitArtHDL(Worker *aw, const char *outDir) {
   fprintf(f, "  -->\n");
   ezxml_t dep;
   Worker *dw = new Worker;
-  if ((err = parseFile(container, 0, "HdlContainer", &dep, 0)) ||
+  if ((err = parseFile(container, 0, "HdlContainer", &dep, &dw->file)) ||
       (err = parseHdlAssy(dep, dw)))
     return err;
   uuid_string_t uuid_string;
@@ -1740,8 +1761,11 @@ emitArtHDL(Worker *aw, const char *outDir) {
     if (di->worker)
       emitInstance(di, f);
   // Emit the connections between the container and the application
+  // and within the container (adapters).
   Connection *cc, *ac;
-  for (cc = dw->assembly.connections, n = 0; n < dw->assembly.nConnections; n++, cc++)
+  for (cc = dw->assembly.connections, n = 0; n < dw->assembly.nConnections; n++, cc++) {
+    // Application connections are those that match by connection name, which means
+    // that the name is meaningful/relative to the application (e.g. "in" is input to the app).
     for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
       if (!strcmp(ac->name, cc->name)) {
 	if (ac->external->port->u.wdi.isProducer) {
@@ -1753,24 +1777,38 @@ emitArtHDL(Worker *aw, const char *outDir) {
 		   !cc->external->port->u.wdi.isBidirectional)
 	    return esprintf("container connection \"%s\" has same direction (is consumer) as application connection",
 			    cc->name);
-	InstancePort *aip, *cip;
-	for (aip = ac->ports; aip; aip = aip->nextConn)
-	  if (aip != ac->external)
-	    break;
-	for (cip = cc->ports; cip; cip = cip->nextConn)
-	  if (cip != cc->external)
-	    break;
-	if (ac->external->port->u.wdi.isProducer)
-	  // Application is producing to an external consumer
-	  fprintf(f, "<connection from=\"%s\" out=\"%s\" to=\"%s\" in=\"%s\"/>\n",
-		  aip->instance->name, aip->port->name,
-		  cip->instance->name, cip->port->name);
-	else
-	  // Application is consuming from an external producer
-	  fprintf(f, "<connection from=\"%s\" out=\"%s\" to=\"%s\" in=\"%s\"/>\n",
-		  cip->instance->name, cip->port->name,
-		  aip->instance->name, aip->port->name);
+	break;
       }
+    if (nn >= aw->assembly.nConnections)
+      ac = NULL; // indicate no application connection
+    InstancePort *otherp = NULL, *cip = NULL;
+    for (cip = cc->ports; cip; cip = cip->nextConn)
+      if (cip != cc->external)
+	break;
+    if (!cip)
+      return esprintf("container connecction \"%s\" connects to no ports in the container", cc->name);
+    if (ac) {
+      for (otherp = ac->ports; otherp; otherp = otherp->nextConn)
+	if (otherp != ac->external)
+	  break;
+    } else {
+      // Internal connection
+      for (otherp = cc->ports; otherp; otherp = otherp->nextConn)
+	if (otherp != cip)
+	  break;
+    }
+    assert(otherp != NULL);
+    if (otherp->port->u.wdi.isProducer)
+      // Application is producing to an external consumer
+      fprintf(f, "<connection from=\"%s\" out=\"%s\" to=\"%s\" in=\"%s\"/>\n",
+	      otherp->instance->name, otherp->port->name,
+	      cip->instance->name, cip->port->name);
+    else
+      // Application is consuming from an external producer
+      fprintf(f, "<connection from=\"%s\" out=\"%s\" to=\"%s\" in=\"%s\"/>\n",
+	      cip->instance->name, cip->port->name,
+	      otherp->instance->name, otherp->port->name);
+  }
   // Emit the connections inside the application
   for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
     if (!ac->external) {

@@ -31,7 +31,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define USE_FS
+#define USE_FS // FIXME: message circuits have evolved so turning this off doesn't work now
 
 
 /*
@@ -307,12 +307,14 @@ std::string readDesc( const char* file_name )
   while ( buffer == NULL ) {
 
     printf("Checking for Buffer\n");
+    void *data;
+    uint32_t length;
+    uint8_t opcode;
 
-    if ( circuit->messageAvailable() ) {
+    if ( (buffer = circuit->getNextFullInputBuffer(data, length, opcode))) {
 
       printf("GOT A BUFFER !!\n");
 
-      buffer = circuit->getNextMessage();
       printf("Message from server = %s\n", (char*)buffer->getBuffer() );
       std::string tbuf;
       tbuf.assign( (const char*)buffer->getBuffer(), buffer->getLength() );    

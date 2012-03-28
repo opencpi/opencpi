@@ -20,7 +20,7 @@ OCPI_API_LIBS+= msg_driver_interface msg_drivers
 all: dds_ports
 
 dds_ports: dds_ports.cxx
-	g++ -g -o $@ -I$(OCPI_INC_DIR) $(OPENSPLICE_LD_FLAGS) $(OCPI_LD_FLAGS) $^ $(OPENSPLICE_LIBS:%=-l%)
+	g++ -g -o $@ -I$(OCPI_INC_DIR) $^ $(OPENSPLICE_LD_FLAGS) $(OCPI_LD_FLAGS) $(OPENSPLICE_LIBS:%=-l%)
 
 run: dds_ports workers
 	@if test "$(OCPI_HAVE_OPENSPLICE)" == ""; then \

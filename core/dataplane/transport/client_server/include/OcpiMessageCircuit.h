@@ -100,7 +100,7 @@ namespace OCPI {
 
       // Indicates whether data is available for input - a "peek"
       
-      bool messageAvailable();
+      //bool messageAvailable();
 
         
       /**********************************

@@ -31,6 +31,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "OcpiOsMisc.h"
 #include "OcpiUtilValue.h"
 #include "OcpiApplication.h"
 
@@ -95,17 +96,15 @@ namespace OCPI {
 	
       case RoundRobin:
 	{
-
 	  // Now we must select the container for the best candidate.
 	  // As a default, we will rotate through the possible containers to spread them out
 	  // So, find the next (rotating) container for the best candidate
 	  CMap map;
-	  for (map= 1<<m_currConn++; !(map & bestMap); map = 1 << ++m_currConn) {
-	    if (m_currConn >= OC::Container::maxContainer)
-	      m_currConn = 1;
-	  }
-	  if (m_currConn >= OC::Container::maxContainer)
-	    m_currConn = 1;
+	  do {
+	    if (++m_currConn >= OC::Container::maxContainer)
+	      m_currConn = 0;
+	    map = 1 << m_currConn;
+	  } while (!(map & bestMap));
 	  ocpiDebug("map %d best %d curr %d", map, bestMap, m_currConn);
 	  if (!(m_allMap & map)) {
 	    // A container we have not used yet.
@@ -135,7 +134,7 @@ namespace OCPI {
 	    CMap map=1;
 	    for ( unsigned n=0; n<OC::Container::maxContainer; n++, map=1<<n ) {
 	      if ( map & bestMap ) {
-		m_currConn = n+1;
+		m_currConn = n;
 		break;
 	      }
 	    }
@@ -214,9 +213,9 @@ namespace OCPI {
       m_externalNames = NULL;
       m_properties = NULL;
       m_nProperties = 0;
-      m_currConn=0;
+      m_currConn = OC::Container::maxContainer - 1;
       m_cMapPolicy=RoundRobin;
-
+      m_doneWorker = NULL;
       // Set the instance map policy
       setPolicy( policy );
 
@@ -231,7 +230,7 @@ namespace OCPI {
 	  sum = 0,     // accumulate possible containers over candidates
 	  bestMap = 0; // save map of best candidate.  initialized to kill warning
 	unsigned bestScore = 0;
-	// For all candidate implementations knwon to be suitable for this instance
+	// For all candidate implementations known to be suitable for this instance
 	for (unsigned m = 0; m < cs.size(); m++) {
 	  OL::Candidate &c = cs[m];
 	  m_curMap = 0; // to accumulate containers suitable for this candidate
@@ -306,6 +305,9 @@ namespace OCPI {
 	  p->m_name = m_assembly.m_instances[n].m_name + ":" + mp->m_name;
 	  p->m_instance = n;
 	  p->m_property = nn;
+	  ocpiDebug("Instance %s (%u) property %s (%u) named %s", 
+		    m_assembly.m_instances[n].m_name.c_str(), n,
+		    mp->m_name.c_str(), nn, p->m_name.c_str());		    
 	}
       }
       // To prepare for remote containers, we need to organize the containers we are
@@ -336,7 +338,8 @@ namespace OCPI {
       m_containerApps = new OC::Application *[m_nContainers];
       m_workers = new OC::Worker *[nInstances];
       for (unsigned n = 0; n < m_nContainers; n++) {
-	OC::Container &c = OC::Container::nthContainer(m_usedContainers[n]-1);
+	OC::Container &c = OC::Container::nthContainer(m_usedContainers[n]);
+	ocpiDebug("Container %u is %s", n, c.name().c_str());
 	m_containers[n] = &c;
 	// FIXME: get rid of this cast...
 	m_containerApps[n] = static_cast<OC::Application*>(c.createApplication());
@@ -371,6 +374,8 @@ namespace OCPI {
 	      w.setProperty(prop->m_ordinal, *prop->m_defaultValue);
 	  }
       }
+      if (m_assembly.m_doneInstance != -1)
+	m_doneWorker = m_workers[m_assembly.m_doneInstance];
       unsigned nConns = m_assembly.m_connections.size();
       for (unsigned n = 0; n < nConns; n++) {
 	const OU::Assembly::Connection &c = m_assembly.m_connections[n];
@@ -402,9 +407,19 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nContainers; n++)
 	m_containerApps[n]->stop();
     }
-    void ApplicationI::wait( uint32_t timeout_us ) {
-      for (unsigned n = 0; n < m_nContainers; n++)
-	m_containerApps[n]->wait( timeout_us );
+    bool ApplicationI::wait(OS::Timer *timer) {
+      if (m_doneWorker)
+	return m_doneWorker->wait(timer);
+      do {
+	bool done = true;
+	for (unsigned n = 0; n < m_nContainers; n++)
+	  if (!m_containerApps[n]->isDone())
+	    done = false;
+	if (done)
+	  return false;
+	OS::sleep(10);
+      } while (!timer || !timer->expired());
+      return true;
     }
 
     ExternalPort &ApplicationI::getPort(const char *name) {
@@ -426,20 +441,30 @@ namespace OCPI {
       return m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);
     }
 
-    bool ApplicationI::getProperty(const char * worker_inst_name, const char * prop_name, std::string &value) {
+    ApplicationI::Property &ApplicationI::
+    findProperty(const char * worker_inst_name, const char * prop_name) {
       std::string nm(worker_inst_name);
-      nm += std::string(":") + prop_name;
-      for ( unsigned n=0; n<m_nProperties; n++ ) {
-	Property &p = m_properties[n];
-	if ( nm == p.m_name ) {
-	  std::string dummy;
-	  return m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);	 
-	}
-      }
-      return false;
+      nm += ":";
+      nm += prop_name;
+      Property *p = m_properties;
+      for (unsigned n = 0; n < m_nProperties; n++, p++)
+	if (!strcasecmp(nm.c_str(), p->m_name.c_str()))
+	  return *p;
+      throw OU::Error("Unknown application property: %s", nm.c_str());
     }
 
+    void ApplicationI::
+    getProperty(const char * worker_inst_name, const char * prop_name, std::string &value) {
+      Property &p = findProperty(worker_inst_name, prop_name);
+      std::string dummy;
+      m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);	 
+    }
 
+    void ApplicationI::
+    setProperty(const char * worker_inst_name, const char * prop_name, const char *value) {
+      Property &p = findProperty(worker_inst_name, prop_name);
+      m_workers[p.m_instance]->setProperty(prop_name, value);
+    }
 
     ApplicationI::Instance::Instance() :
       m_impl(NULL), m_propValues(NULL), m_propOrdinals(NULL) {
@@ -465,13 +490,21 @@ namespace OCPI {
     void Application::initialize() { m_application.initialize(); }
     void Application::start() { m_application.start(); }
     void Application::stop() { m_application.start(); }
-    void Application::wait( unsigned timeout_us ) { m_application.wait(timeout_us); }
+    bool Application::wait( unsigned timeout_us ) {
+      OS::Timer *timer = NULL;
+      if (timeout_us) 
+	timer = new OS::Timer(timeout_us/1000000ul, (timeout_us%1000000) * 1000ull);
+      return m_application.wait(timer);
+    }
     ExternalPort &Application::getPort(const char *name) { return m_application.getPort(name); }
     bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value) {
       return m_application.getProperty(ordinal, name, value);
     }
-    bool Application::getProperty(const char* w, const char* p, std::string &value) {
-      return m_application.getProperty(w,p,value);
+    void Application::getProperty(const char* w, const char* p, std::string &value) {
+      m_application.getProperty(w, p, value);
+    }
+    void Application::setProperty(const char* w, const char* p, const char *value) {
+      m_application.setProperty(w, p, value);
     }
 
   }

@@ -1231,6 +1231,8 @@ addLocalEndpoint(const char *nfep, bool compatibleWith)
       try {
 	m_defEndpoint = addLocalEndpointFromProtocol("ocpi-smb-pio");
       } catch (...) {
+	if (m_endpoints.empty())
+	  throw;
 	m_defEndpoint = addLocalEndpoint(m_endpoints[0].c_str());
       }
     return m_defEndpoint;

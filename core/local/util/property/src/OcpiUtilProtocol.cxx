@@ -364,22 +364,35 @@ namespace OCPI {
 	m_qualifiedName = name;
       // If we are actually parsing the protocol, there is no default value width.
       if (ezxml_cchild(prot, "operation")) {
-	if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize", (void*)0))) 
+	if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize", "datavaluewidth",
+				  (void*)0))) 
 	  return err;
 	m_dataValueWidth = 0;
 	// First time we call this it will just be for counting.
-	if (!(err = OE::ezxml_children(prot, doOperation, this))) {
-	  m_operations = m_op = new Operation[m_nOperations];
-	  // Now we call a second time t make them.
-	  if ((err = OE::ezxml_children(prot, doOperation, this)))
-	    return err;
-	  if (m_dataValueWidth) {
-	    // Convert max size from bytes back to values
-	    unsigned bytes = (m_dataValueWidth + CHAR_BIT - 1) / CHAR_BIT;
-	    m_maxMessageValues += bytes - 1;
-	    m_maxMessageValues /= bytes;
-	    m_dataValueGranularity = 1;  // FIXME - compute this for real
-	  }
+	if ((err = OE::ezxml_children(prot, doOperation, this)))
+	  return err;
+	m_operations = m_op = new Operation[m_nOperations];
+	// Now we call a second time t make them.
+	if ((err = OE::ezxml_children(prot, doOperation, this)))
+	  return err;
+	// Allow dvw to be overridden to provide for future finer granularity (e.g. 8 when proto says 16)
+	unsigned dvwattr;
+	bool hasDvw;
+	if ((err = OE::getNumber(prot, "datavaluewidth", &dvwattr, &hasDvw, m_dataValueWidth)))
+	  return err;
+	if (hasDvw) {
+	  if (dvwattr > m_dataValueWidth)
+	    return "can't force DataValueWidth to be greater than protocol implies";
+	  else if (m_dataValueWidth % dvwattr)
+	    return "DataValueWidth attribute must divide into implied datavaluewidth";
+	  m_dataValueWidth = dvwattr;
+	}
+	if (m_dataValueWidth) {
+	  // Convert max size from bytes back to values
+	  unsigned bytes = (m_dataValueWidth + CHAR_BIT - 1) / CHAR_BIT;
+	  m_maxMessageValues += bytes - 1;
+	  m_maxMessageValues /= bytes;
+	  m_dataValueGranularity = 1;  // FIXME - compute this for real
 	}
       } else if ((err = parseSummary(prot)))
 	return err;

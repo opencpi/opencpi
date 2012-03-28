@@ -39,6 +39,7 @@ namespace OCPI {
 	  if (!xname || strcmp("artifact", xname))
 	    throw ApiError("invalid metadata in binary/artifact file \"", name,
 			   "\": no <artifact/>", NULL);
+	  ocpiDebug("Artifact file %s has artifact metadata", name);
 	}
       public:
 	~Artifact() {
@@ -107,6 +108,7 @@ namespace OCPI {
 		    "is nonexistent or not a directory.  It will be ignored", dirName.c_str());
 	    return;
 	  }
+	  ocpiDebug("Processing library directory: %s", dirName.c_str());
 	  static const std::string pattern("*");
 	  OS::FileIterator dir(dirName, "*");
 	  for (; !dir.end(); dir.next()) {
@@ -119,9 +121,13 @@ namespace OCPI {
 	      const char *absName = absolute.c_str();
 	      unsigned len = strlen(absName), xlen = strlen(".xml");
 	      
-	      if (len < xlen || strcasecmp(absName + len - xlen, ".xml"))
+	      if (len < xlen || strcasecmp(absName + len - xlen, ".xml")) {
 		// FIXME: supply library level xml for the artifact
-		(new Artifact(*this, absName, NULL))->configure();
+		// The log will show which files are not any good.
+		try {
+		  (new Artifact(*this, absName, NULL))->configure();
+		} catch (...) {}
+	      }
 	    }
 	  }
 	}
@@ -151,6 +157,7 @@ namespace OCPI {
 	  // FIXME: canonicalize the names before dup matching? (i.e. realpath)??
 	  const char *path = getenv("OCPI_LIBRARY_PATH");
 	  if (path) {
+	    ocpiDebug("OCPI_LIBRARY_PATH is %s", path);
 	    char *cp = strdup(path), *last;
 	    try {
 	      for (char *lp = strtok_r(cp, ":", &last); lp;

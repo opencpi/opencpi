@@ -80,7 +80,7 @@ namespace OCPI {
 	  throw OU::Error(i->m_selection.empty() ?
 			  "No implementations found in any libraries for \"%s\"" :
 			  "No acceptable implementations found in any libraries "
-			  "for \"%s\" (for selection: \"%s\")",
+			  "for \"%s\" (for selection: '%s')",
 			  i->m_specName.c_str(), i->m_selection.c_str());
 
       // Check for interface compatibility.

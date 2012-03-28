@@ -678,7 +678,7 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
 
           // Create the transfer that copys the output state to the remote input state
           ptransfer->copy (
-			   output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   output_offsets->localStateOffset + sizeof(BufferState) * MAX_PCONTRIBS + s_port->getPortId() * sizeof(BufferState),
 			   input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
 			   sizeof(BufferState),
 			   XferRequest::LastTransfer );
@@ -739,6 +739,7 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
                           TransferController* cont )
 {
 
+  ocpiAssert(!"pattern1AFC output");
   // Since this is a whole output distribution, only port 0 of the output
   // set gets to do anything.
   if ( s_port->getPortSet()->getDataDistribution()->getMetaData()->distType == DataDistributionMetaData::parallel &&
@@ -937,6 +938,7 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
 void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_port, PortSet* input,
                                                               TransferController* cont )
 {
+  ocpiAssert(!"pattern1AFCshadow output");
 
   // Since this is a whole output distribution, only port 0 of the output
   // set gets to do anything.
@@ -1110,6 +1112,7 @@ createOutputTransfers(Port* s_port,
                       TransferController* cont  )
 {
 
+  ocpiAssert(!"pattern2 output");
   /*
    *        For a WP / SW transfer, we need to be capable of transfering from any
    *  output buffer to any one input buffer.
@@ -1418,6 +1421,7 @@ createOutputTransfers(Port* s_port,
                       TransferController* cont  )
 {
 
+  ocpiAssert(!"pattern4 output");
   /*
    *        For a WP / P(Parts) transfer, we need to be capable of transfering from any
    *  output buffer to all input port buffers.

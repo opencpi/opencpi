@@ -215,6 +215,10 @@ namespace OCPI {
     }
 
     bool Container::supportsImplementation(OU::Implementation &i) {
+      ocpiDebug("supports: %s/%s %s/%s %s/%s",
+		m_model.c_str(), i.model().c_str(),
+		m_os.c_str(), i.attributes().m_os.c_str(),
+		m_platform.c_str(), i.attributes().m_platform.c_str());
       return
 	m_model == i.model() &&
 	m_os == i.attributes().m_os &&

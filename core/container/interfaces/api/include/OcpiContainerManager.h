@@ -149,6 +149,10 @@ namespace OCPI {
 	return Parent<App>::firstChild();
       }
       Container *nextContainer() { return OCPI::Driver::DeviceBase<Dri,Con>::nextDevice(); }
+    public:
+      const std::string &name() const {
+	return OCPI::Driver::DeviceBase<Dri,Con>::name();
+      }
     };
     extern const char *application;
     template<class Con, class App, class Wrk>

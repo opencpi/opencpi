@@ -180,9 +180,9 @@ namespace DataTransfer {
   };
 
 
-  struct BufferState {
+  union BufferState {
     // buffer full token
-    int32_t   bufferFull;
+    int32_t   bufferIsFull, bufferIsEmpty ;
   };
 
 

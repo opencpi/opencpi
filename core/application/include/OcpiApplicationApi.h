@@ -62,12 +62,15 @@ namespace OCPI {
       void initialize();
       // This makes the application operational, and resumes after "stop"
       void start();
-      void wait( unsigned timeout_us = 0);
+      // return true if timed out
+      bool wait( unsigned timeout_us = 0);
       // Suspension, that can be resumed with "start".
       void stop();
       ExternalPort &getPort(const char *);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value);
-      bool getProperty(const char* worker_name, const char* prop_name, std::string &value);
+      void getProperty(const char* worker_name, const char* prop_name, std::string &value);
+      void setProperty(const char* worker_name, const char* prop_name, const char *value);
+      // FIXME: add cached/efficient property methods like workers have
     };
   }
 }

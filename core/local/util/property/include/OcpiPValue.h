@@ -80,6 +80,7 @@ namespace OCPI {
       PValue *m_list;
       const char *vParse(const PValue *p, ezxml_t x, va_list ap);
     public:
+      PValueList(PValue *);
       PValueList();
       ~PValueList();
       inline operator const PValue*() const { return m_list; }

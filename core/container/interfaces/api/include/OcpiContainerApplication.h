@@ -93,8 +93,9 @@ namespace OCPI {
       virtual Worker *firstWorker() const = 0;
       void start();
       void stop();
+      bool isDone();
       // This method should block until all the workers in the application are "done".
-      virtual bool wait( uint32_t timeout_us );
+      virtual bool wait(OCPI::OS::Timer *timer = NULL);
     };
   } // Container
 } // OCPI

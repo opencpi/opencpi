@@ -207,7 +207,6 @@ static const char omniidl_be[] = {
 "                f.write('\\n')\n"
 "            f.write('\\n')\n"
 "    f.write('\\n')\n"
-"    # f.write('    </Protocol>\\n')\n"
 "\n"
 "def doStruct(s, f):\n"
 "    f.write('{0}\\n{1} {2} {3}\\n'.format(s.repoId(), s.identifier(), s.line(), s.file()))\n"
@@ -637,7 +636,7 @@ doInterface(OU::Protocol &p, const char *&cp) {
     unsigned line, len;
     int n = sscanf(cp, "%u %n", &line, &len);
     assert(n == 1);
-    cp+= len;
+    cp += len;
     std::string tmp;
     getString(tmp, cp, "\n"); // skip redundant filename
     // Loop over parameters

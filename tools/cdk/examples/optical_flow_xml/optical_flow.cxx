@@ -391,10 +391,7 @@ int main ( int argc, char* argv [ ] )
 	if ( policy == 3 ) {
 	  app->wait( 1 );
 	  std::string value;
-	  if ( ! app->getProperty( "min_workerA", "height", value ) ) {
-	    printf("Error: could not get worker property\n");
-	    exit ( -1 );
-	  }
+	  app->getProperty( "min_workerA", "height", value);
 	  printf("worker property = %s\n", value.c_str() );
 	}
 

@@ -147,10 +147,10 @@ namespace OCPI {
      *
      *  returns the number of messages.
      **********************************/
-    bool MessageCircuit::messageAvailable()
-    {
-      return m_rcv_port->hasFullInputBuffer();
-    }
+    //    bool MessageCircuit::messageAvailable()
+    //    {
+    //      return m_rcv_port->hasFullInputBuffer();
+    //    }
 
     BufferUserFacet* MessageCircuit::
     getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode, OS::Timer *timer)

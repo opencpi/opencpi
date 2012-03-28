@@ -452,7 +452,9 @@ Protocol::parse(const char *file, ezxml_t prot)
   if (file) {
     // If we are being parsed from a protocol file, default the name.
     const char *start = strrchr(file, '/');
-    if (!start)
+    if (start)
+      start++;
+    else
       start = file;
     const char *last = strrchr(file, '.');
     if (!last)
@@ -1241,10 +1243,10 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   a->isContainer = !strcasecmp(xml->name, "HdlContainer");
   static const char
     *topAttrs[] = {"Name", "Pattern", "Language", 0},
-    *instAttrs[] = {"Worker", "Name", "Inputs", "Outputs", 0},
-    *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", "Inputs", "Outputs", 0};
+    *instAttrs[] = {"Worker", "Name", 0},
+    *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", "Adapter", "Configure", 0};
   // Do the generic assembly parsing, then to more specific to HDL
-  if ((err = parseAssy(xml, NULL, aw, topAttrs,
+  if ((err = parseAssy(xml, aw->file, aw, topAttrs,
                        a->isContainer ? contInstAttrs : instAttrs, true)))
       return err;
   // Do the OCP derivation for all workers
@@ -1253,31 +1255,42 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
       return err;
   ezxml_t x = ezxml_cchild(xml, "Instance");
   Instance *i;
+  // FIXME: ensure that container and application instance names don't collide
   for (i = a->instances; x; i++, x = ezxml_next(x)) {
     if (a->isContainer) {
       bool idxFound;
+      // FIXME: perhaps an instance with no control?
       if ((err = OE::getNumber(x, "Index", &i->index, &idxFound, 0)))
         return err;
       if (!idxFound)
         return "Missing o\"Index\" attribute in instance in container assembly";
       const char
         *ic = ezxml_cattr(x, "Interconnect"),
+	*ad = ezxml_cattr(x, "Adapter"),
         *io = ezxml_cattr(x, "IO");
       if (!i->wName) {
         // No worker means application instance in container
         if (!i->name)
           return "Missing \"Name\" attribute for application instance in container";
-        if (io || ic)
-          return "Application workers in container can't be interconnects or io";
+        if (io || ic || ad)
+          return "Application workers in container can't be interconnects or io or adapter";
+	i->iType = Instance::Application;
         continue; // for app instances we just capture index.
       } else {
+	if ((err = OE::getNumber(x, "configure", &i->config, &i->hasConfig, 0)))
+	  return esprintf("Invalid configuration value for adapter: %s", err);
         if (ic) {
           if (io)
             return "Container workers cannot be both IO and Interconnect";
           i->attach = ic;
-          i->isInterconnect = true;
-        } else if (io)
+          i->iType = Instance::Interconnect;
+        } else if (io) {
           i->attach = io;
+	  i->iType = Instance::IO;
+	} else if (ad) {
+	  i->iType = Instance::Adapter;
+	  i->attach = ad; // an adapter is for an interconnect or I/O
+	}
         // we do allow for containers to have workers that are not io or interconnect
       }
     } // end of container processing

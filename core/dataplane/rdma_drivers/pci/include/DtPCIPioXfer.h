@@ -81,8 +81,8 @@ namespace DataTransfer {
   public:
 
       virtual ~PCIEndPoint();
-      PCIEndPoint( std::string& ep, OCPI::OS::uint32_t size=0)
-        :EndPoint(ep,size){parse(ep);};
+      PCIEndPoint( std::string& ep, bool local)
+        :EndPoint(ep, 0, local){parse(ep);};
 
         // Sets smem location data based upon the specified endpoint
         OCPI::OS::int32_t parse( std::string& ep );
@@ -216,7 +216,7 @@ namespace DataTransfer {
      *  Get the location via the endpoint
      ***************************************/
     // EndPoint* getEndPoint( std::string& end_point, bool local  );
-    EndPoint* createEndPoint(std::string& endpoint, bool local = false);
+    EndPoint* createEndPoint(std::string& endpoint, bool local);
     // void releaseEndPoint( EndPoint* loc );
 
 

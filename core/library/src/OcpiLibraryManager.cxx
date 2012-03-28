@@ -188,7 +188,7 @@ namespace OCPI {
     }
 
     // The artifact base class
-    Artifact::Artifact() : m_xml(NULL), m_nImplementations(0) {}
+    Artifact::Artifact() : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL) {}
     Artifact::~Artifact() {
       for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++) {
 	WorkerMapPair wmp = *wi;

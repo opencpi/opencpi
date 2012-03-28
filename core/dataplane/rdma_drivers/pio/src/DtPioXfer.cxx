@@ -97,7 +97,7 @@ void PIOXferFactory::clearCache()
 
 
 // Get the location via the endpoint
-EndPoint* PIOXferFactory::getEndPoint( std::string& end_point, bool /* local */ )
+EndPoint* PIOXferFactory::getEndPoint( std::string& end_point, bool local )
 { 
   OCPI::Util::SelfAutoMutex guard (this); 
 
@@ -109,7 +109,7 @@ EndPoint* PIOXferFactory::getEndPoint( std::string& end_point, bool /* local */ 
     }
   }
 
-  loc = new GppEndPoint(end_point);
+  loc = new GppEndPoint(end_point, local);
         
   // This is a test case to make sure that a factory can modify the endpoint
   // string and system can handle it !!
@@ -121,7 +121,7 @@ EndPoint* PIOXferFactory::getEndPoint( std::string& end_point, bool /* local */ 
 
   EndPoint* PIOXferFactory::
   createEndPoint(std::string& endpoint, bool local) {
-    return new GppEndPoint(endpoint, 0, local);
+    return new GppEndPoint(endpoint, local);
   }
 
 #if 0

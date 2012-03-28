@@ -39,6 +39,7 @@
 #include "ezxml.h"
 #include "OcpiParentChild.h"
 #include "OcpiOsMutex.h"
+#include "OcpiOsTimer.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiContainerDataTypes.h"
 #include "OcpiMetadataWorker.h"
@@ -69,12 +70,17 @@ namespace OCPI {
       inline void setControlState(ControlState state) {
 	m_state = state;
       }	
+      // Default is that no polling is done
+      virtual void checkControlState() {}
+
       inline ControlState getControlState() {
+	checkControlState(); // 
 	return m_state;
       }	
     protected:
       Controllable();
       void setControlOperations(const char *controlOperations);
+      virtual ~Controllable(){}
     private:
       ControlState m_state;
       uint32_t m_controlMask;
@@ -156,7 +162,8 @@ namespace OCPI {
     OCPI_CONTROL_OPS
 #undef CONTROL_OP
       virtual void controlOperation(OCPI::Metadata::Worker::ControlOperation) = 0;
-      virtual bool wait( uint32_t timeout_us );
+      virtual bool wait(OCPI::OS::Timer *t = NULL);
+      bool isDone();
     };
   }
 }

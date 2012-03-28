@@ -344,10 +344,14 @@ struct Instance {
   Clock **clocks;      // mapping of instance's clocks to assembly clocks
   InstancePort *ports;
   uint32_t index;      // index within container
-  bool isInterconnect; // instance is acting in the container to attach to an interconnect
+  enum {
+    Application, Interconnect, IO, Adapter
+  } iType;
   const char *attach;  // external node port this worker is attached to for io or interconnect
   unsigned nValues;    // number of property values
   InstanceProperty *properties;
+  bool hasConfig;      // hack for adapter configuration FIXME make normal properties
+  uint32_t config;
 };
 struct OcpAdapt {
   const char *expr;

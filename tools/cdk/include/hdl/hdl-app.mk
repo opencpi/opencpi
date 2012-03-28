@@ -239,7 +239,7 @@ $(call NgdName,$1): $(call AppNgcName,$1) $(HdlPlatformsDir)/$1/$1.ucf $(call To
 # Map to physical elements
 $(call MapName,$1): $(call NgdName,$1)
 	$(AT)echo -n For $(Worker) on $1: creating mapped NCD '(Native Circuit Description)' file using '"map"'.
-	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$1) -w -logic_opt on -xe c -mt on -t 1 -register_duplication on \
+	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$1) -w -logic_opt on -xe c -mt on -t $(or $(OCPI_PAR_SEED),1) -register_duplication on \
 	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(call MapName,$1)) \
 	                         $(notdir $(call NgdName,$1)) $(notdir $(call PcfName,$1)))
 

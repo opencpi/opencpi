@@ -56,6 +56,26 @@
 #include <OcpiOsMutex.h>
 
 
+
+#ifdef WANT
+#define EF_EMPTY_VALUE 1
+#define EF_FULL_VALUE  0
+#define FF_EMPTY_VALUE 0
+#define FF_FULL_VALUE  1
+#else
+#if 1
+#define EF_EMPTY_VALUE 1
+#define EF_FULL_VALUE  0
+#define FF_EMPTY_VALUE 0
+#define FF_FULL_VALUE  1
+#else
+#define EF_EMPTY_VALUE 1
+#define EF_FULL_VALUE  2
+#define FF_EMPTY_VALUE 1
+#define FF_FULL_VALUE  2
+#endif
+#endif
+
 namespace OCPI {
 
   namespace DataTransport {

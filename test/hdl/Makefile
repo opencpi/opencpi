@@ -48,7 +48,7 @@ ifeq ($(PROC),i386)
 PROC:=x86_64
 endif
 else
-BASICLIBS=-luuid # ocfrp_check needs this, only on linux
+BASICLIBS=-luuid -lrt # ocfrp_check needs this, only on linux
 endif
 OCPI_OUT_DIR = $(OCPI_OS)-$(PROC)-bin
 ALL=$(basename $(notdir $(wildcard src/*.c)))

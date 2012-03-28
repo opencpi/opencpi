@@ -32,6 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "OcpiOsMisc.h"
 #include "OcpiUtilAutoMutex.h"
 #include "OcpiContainerApplication.h"
 #include "OcpiContainerErrorCodes.h"
@@ -242,26 +243,15 @@ namespace OCPI {
     bool Worker::beforeStart() {
       return getControlState() == INITIALIZED;
     }
-    bool Worker::wait( uint32_t timeout_us ) {
-      uint32_t time_left = timeout_us;
-      while (getControlState() != UNUSABLE &&
-	     getControlState() != FINISHED) {
-	if ( timeout_us == 0 ) {
-	  usleep(10000);
-	}
-	else {
-	  if ( time_left == 0 ) {
-	    return true;
-	  }
-	  else if ( time_left > 10000 ) {
-	    time_left -= 10000;
-	    usleep(10000);	    
-	  }
-	  else {
-	    time_left = 0;
-	    usleep( time_left );
-	  }
-	}
+    bool Worker::isDone() {
+      ControlState cs = getControlState();
+      return cs == UNUSABLE || cs == FINISHED;
+    }
+    bool Worker::wait(OCPI::OS::Timer *timer) {
+      while (!isDone()) {
+	OS::sleep(1);
+	if (timer && timer->expired())
+	  return true;
       }
       return false;
     }

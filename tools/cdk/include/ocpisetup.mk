@@ -30,11 +30,24 @@ Ocpilibrarypathenv=DYLD_LIBRARY_PATH
 OCPI_OCL_LIBS=-locl_container -framework OpenCL
 else
 OcpiLibraryPathEnv=LD_LIBRARY_PATH
-OCPI_OCL_LIBS=-locl_container -lOpenCL
+OCPI_OCL_LIBS=  -Xlinker --undefined=_ZN4OCPI3OCL6driverE -locl_container -lOpenCL
+OCPI_EXTRA_LIBS=rt dl uuid
+# for static builds
+ifneq ($(wildcard $(OCPI_LIB_DIR)/*.a),)
+OCPI_DRIVER_OBJS=\
+  -Xlinker --undefined=_ZN4OCPI3RCC6driverE\
+  -Xlinker --undefined=_ZN4OCPI7Library7CompLib6driverE\
+  -Xlinker --undefined=_ZN12DataTransfer9pioDriverE\
+  -Xlinker --undefined=_ZN4OCPI3HDL6driverE\
+  -Xlinker --undefined=_ZN12DataTransfer9pciDriverE\
+
+endif
+
 endif
 export OCPI_SET_LIB_PATH=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 #$(info export OCPI_SET_LIB_PATH=$(OCPI_SET_LIB_PATH))
-export OCPI_API_LIBS=application interfaces rcc_container rdma_drivers util  msg_driver_interface  msg_drivers # ocpios
+# Note most of these are just required for static linking
+export OCPI_API_LIBS=application rcc_container hdl_container interfaces library transport rdma_driver_interface rdma_drivers rdma_utils rdma_smb util  msg_driver_interface ocpios $(OCPI_EXTRA_LIBS)
 export OCPI_TRANSPORT_LIBS=rdma_drivers util  msg_driver_interface  msg_drivers
 #$(info export OCPI_API_LIBS=$(OCPI_API_LIBS))
 
@@ -42,7 +55,7 @@ export OCPI_TRANSPORT_LIBS=rdma_drivers util  msg_driver_interface  msg_drivers
 # 1. When executed at runtime, look in OCPI_LIB_DIR to resolve shared libraries
 # 2. At link time, look in OCPI_LIB_DIR to find explicitly mentioned libraries
 # 3. At link time, look in OCPI_API_LIBS for functions called from the program
-export OCPI_LD_FLAGS= -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-l%)
+export OCPI_LD_FLAGS= $(OCPI_DRIVER_OBJS) -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-l%)
 OCPI_HAVE_OPENCL:=$(shell $(OCPI_BIN_DIR)/ocpiocl test; if test $$? == 0; then echo 1; fi)
 #$(info OCL=$(OCPI_HAVE_OPENCL)=)
 

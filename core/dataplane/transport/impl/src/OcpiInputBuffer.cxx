@@ -57,8 +57,6 @@ using namespace OCPI::DataTransport;
 using namespace DataTransfer;
 using namespace OCPI::OS;
 
-#define EFLAG_VALUE 5
-
 /**********************************
  * Constructors
  *********************************/
@@ -132,23 +130,23 @@ void InputBuffer::update(bool critical)
   // map our states
   if ( !this->m_port->isShadow() && !m_bsVaddr && input_offsets->localStateOffset ) {
 
-#ifndef NDEBUG
-    printf("InputBuffer:update: mapping states\n");
-#endif
+    ocpiDebug("InputBuffer %p:update: mapping states", this);
 
     m_bsVaddr = getPort()->getLocalShemServices()->map
       (input_offsets->localStateOffset, 
        sizeof(BufferState)*MAX_PCONTRIBS*2);
 
     m_state = static_cast<volatile BufferState (*)[MAX_PCONTRIBS]>(m_bsVaddr);
+    // These FULL flags will be set by the output side to FULL
     for ( unsigned int y=0; y<MAX_PCONTRIBS; y++ ) {
-      m_state[0][y].bufferFull = EFLAG_VALUE;
+      m_state[0][y].bufferIsFull = FF_EMPTY_VALUE;
     }
 
+    // These EMPTY flags will be set by the input side to EMPTY and sent to the shadows
     // This separates the flag that we get from the output and the flag that we send to
     // our shadow buffer. 
     for ( unsigned int y=MAX_PCONTRIBS; y<MAX_PCONTRIBS*2; y++ ) {
-      m_state[0][y].bufferFull = EFLAG_VALUE;
+      m_state[0][y].bufferIsEmpty = EF_EMPTY_VALUE;
     }
 
 
@@ -207,7 +205,7 @@ void InputBuffer::update(bool critical)
       // Our flag is 4 bytes
       this->m_feedbackDesc.desc.emptyFlagPitch = sizeof(BufferState);
       this->m_feedbackDesc.desc.emptyFlagSize = sizeof(BufferState);
-      this->m_feedbackDesc.desc.emptyFlagValue = 0x1000; 
+      this->m_feedbackDesc.desc.emptyFlagValue = EF_EMPTY_VALUE; // 0x1000; 
         
 #ifndef NDEBUG                
       printf("Requested Emptyflag port value = 0x%llx\n", 
@@ -220,11 +218,13 @@ void InputBuffer::update(bool critical)
 #endif
 
 
+      ocpiAssert(getPort()->isShadow());
       m_myShadowsRemoteStates[idx] = 
         static_cast<volatile BufferState*>(m_rssVaddr[idx]);
 
 
-      m_myShadowsRemoteStates[idx]->bufferFull = EFLAG_VALUE;
+      // Initially empty
+      m_myShadowsRemoteStates[idx]->bufferIsEmpty = EF_EMPTY_VALUE;
 
 #ifdef DEBUG_L2
       printf("Mapped shadow buffer for idx %d = 0x%x\n", idx, m_myShadowsRemoteStates[idx] );
@@ -244,7 +244,7 @@ void InputBuffer::update(bool critical)
 void InputBuffer::useTidForFlowControl( bool )
 {
   for ( unsigned int y=MAX_PCONTRIBS; y<MAX_PCONTRIBS*2; y++ ) {
-    m_state[0][y].bufferFull = EFLAG_VALUE;
+    m_state[0][y].bufferIsEmpty = EF_EMPTY_VALUE;
   }
 }
 
@@ -289,7 +289,7 @@ volatile BufferState* InputBuffer::getState()
 #ifdef DEBUG_L2
     printf("Getting load factor of %d\n", m_state[0]->pad );
 #endif
-    m_tState.bufferFull = m_state[0][m_pid].bufferFull;
+    m_tState.bufferIsFull = m_state[0][m_pid].bufferIsFull;
 
 #ifdef LEAST_BUSY
     m_tState.pad = m_state[0][m_pid].pad;
@@ -305,9 +305,15 @@ volatile BufferState* InputBuffer::getState()
     // If we are a shadow port (a local state of a real remote port), then we only
     // use m_state[0] to determine if the remote buffer is free.  Otherwise, we need
     // to look at all of the other states to determine if all outputs have written to us.
+    // NOT A SHADOW HERE
     for ( OCPI::OS::uint32_t n=0; n<MAX_PCONTRIBS; n++ ) {
-      if ( m_state[0][n].bufferFull != EFLAG_VALUE ) {
-        m_tState.bufferFull = m_state[0][n].bufferFull;
+      //      ocpiDebug("input %p getstate m_pid: %u s: %u n %u  m_state[0][n].bufferFull %u",
+      //		this, m_pid, m_tState.bufferIsFull, n, m_state[0][n].bufferIsFull);
+      fflush(stderr); fflush(stdout);
+      ocpiAssert(m_state[0][n].bufferIsFull == FF_EMPTY_VALUE ||
+		 m_state[0][n].bufferIsFull == FF_FULL_VALUE);
+      if ( m_state[0][n].bufferIsFull != FF_EMPTY_VALUE) {
+        m_tState.bufferIsFull = m_state[0][n].bufferIsFull;
 	break;
       }
     }
@@ -319,7 +325,9 @@ volatile BufferState* InputBuffer::getState()
 
     int mb = getPort()->getMailbox();
 
-    m_tState.bufferFull = m_myShadowsRemoteStates[mb]->bufferFull;
+    m_tState.bufferIsFull = m_myShadowsRemoteStates[mb]->bufferIsEmpty;
+    ocpiAssert(m_tState.bufferIsEmpty == EF_EMPTY_VALUE ||
+	       m_tState.bufferIsEmpty == EF_FULL_VALUE);
 
 #ifdef LEAST_BUSY
     m_tState.pad = m_myShadowsRemoteStates[mb]->pad;
@@ -343,10 +351,17 @@ void InputBuffer::markBufferFull()
   m_produced = true;
 
   if ( ! this->getPort()->isShadow() ) {
-    m_state[0][0].bufferFull = 1;
+    // This can happen when in the same container
+    ocpiAssert(m_state[0][0].bufferIsFull == FF_EMPTY_VALUE ||
+	       m_state[0][0].bufferIsFull == FF_FULL_VALUE);
+    m_state[0][0].bufferIsFull = FF_FULL_VALUE;
   }
   else {
-    m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferFull = 1;
+    // This flag is being set locally with the expectation that the other side will write back to it
+    // to tell us it has become empty
+    ocpiAssert(m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty == EF_EMPTY_VALUE ||
+	       m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty == EF_FULL_VALUE);
+    m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty = EF_FULL_VALUE;
   }
 
 }
@@ -359,13 +374,16 @@ void InputBuffer::markBufferEmpty()
 {
   if ( ! this->getPort()->isShadow() ) {
     for ( unsigned int n=0; n<MAX_PCONTRIBS; n++ ) {
-      m_state[0][n].bufferFull =  EFLAG_VALUE;
+      ocpiAssert(m_state[0][n].bufferIsFull == FF_EMPTY_VALUE ||
+		 m_state[0][n].bufferIsFull == FF_FULL_VALUE);
+      m_state[0][n].bufferIsFull =  FF_EMPTY_VALUE;
     }
   }
   else {
-    m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferFull = EFLAG_VALUE;
+    ocpiAssert(!"marking shadow input empty?");
+    m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsFull = EF_EMPTY_VALUE;
     volatile BufferState* state = this->getState();
-    state->bufferFull = EFLAG_VALUE;
+    state->bufferIsFull = EF_EMPTY_VALUE;
   }        
 }
 
@@ -418,8 +436,10 @@ bool InputBuffer::isEmpty()
        return false;
      }
      else {  // We are a real input
+      ocpiAssert(state->bufferIsFull == FF_EMPTY_VALUE ||
+		 state->bufferIsFull == FF_FULL_VALUE);
        bool empty = 
-         (state->bufferFull == EFLAG_VALUE) ? true : false;       
+         (state->bufferIsFull == FF_EMPTY_VALUE) ? true : false;       
        if ( empty ) {
 
          OCPI::OS::uint64_t mdata;
@@ -436,7 +456,7 @@ bool InputBuffer::isEmpty()
    }
 
 #ifdef DEBUG_L2
-  printf("Input buffer state = %d\n", m_state[0]->bufferFull);
+  printf("Input buffer state = %d\n", m_state[0]->bufferIsFull);
 #endif
 
 #ifdef LEAST_BUSY
@@ -447,11 +467,18 @@ bool InputBuffer::isEmpty()
 #endif
 
 #ifdef DEBUG_L2
-  printf("Shadow(%d), Buffer state = %x\n", (isShadow() == true) ? 1:0, state->bufferFull );
+  printf("Shadow(%d), Buffer state = %x\n", (isShadow() == true) ? 1:0, state->bufferIsFull );
 #endif
 
+  if (isShadow()) {
+      ocpiAssert(state->bufferIsEmpty == EF_EMPTY_VALUE ||
+		 state->bufferIsEmpty == EF_FULL_VALUE);
+  } else {
+      ocpiAssert(state->bufferIsFull == FF_EMPTY_VALUE ||
+		 state->bufferIsFull == FF_FULL_VALUE);
+  }
   bool empty;
-  empty = (state->bufferFull == EFLAG_VALUE) ? true : false;
+  empty = (state->bufferIsFull == (isShadow() ? EF_EMPTY_VALUE : FF_EMPTY_VALUE)) ? true : false;
 
 
 #ifdef DEBUG_L2
@@ -475,9 +502,12 @@ volatile BufferMetaData* InputBuffer::getMetaData()
 
   // This returns the first MD that has been written
   PortSet* s_port = static_cast<OCPI::DataTransport::PortSet*>(getPort()->getCircuit()->getOutputPortSet());
+  ocpiAssert(!isShadow());
   for ( OCPI::OS::uint32_t n=0; n<m_outputPortCount; n++ ) {
     int id = s_port->getPortFromIndex(n)->getPortId();
-    if ( m_state[0][id].bufferFull  != EFLAG_VALUE ) {
+    ocpiAssert(m_state[0][id].bufferIsFull == FF_EMPTY_VALUE ||
+	       m_state[0][id].bufferIsFull == FF_FULL_VALUE);
+    if ( m_state[0][id].bufferIsFull != FF_EMPTY_VALUE ) {
       return &m_sbMd[0][id];
     }
   }
@@ -493,10 +523,12 @@ OCPI::OS::uint32_t InputBuffer::getNumOutputsThatHaveProduced()
 {
   int count=0;
   PortSet* s_port = static_cast<OCPI::DataTransport::PortSet*>(getPort()->getCircuit()->getOutputPortSet());
+  ocpiAssert(!isShadow());
   for ( OCPI::OS::uint32_t n=0; n<m_outputPortCount; n++ ) {
     int id = s_port->getPortFromIndex(n)->getPortId();
-    if ( m_state[0][id].bufferFull
- != EFLAG_VALUE  ) {
+    ocpiAssert(m_state[0][id].bufferIsFull == FF_EMPTY_VALUE ||
+	       m_state[0][id].bufferIsFull == FF_FULL_VALUE);
+    if ( m_state[0][id].bufferIsFull != FF_EMPTY_VALUE  ) {
       count++;
     }
   }

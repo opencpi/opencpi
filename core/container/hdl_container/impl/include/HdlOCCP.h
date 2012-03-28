@@ -68,11 +68,11 @@ namespace OCPI {
       uint32_t
         timeControl;
       uint64_t
-        time,
-        timeDelta;
+        time,             //38
+        timeDelta;        //40
       const uint32_t
-        timeClksPerPps,
-	pad[1];
+        timeClksPerPps,   //48
+	pad[1];           //4c
       const uint64_t dna; // 5054
       const uint32_t
         pad1[9],     // 585c6064686c707478

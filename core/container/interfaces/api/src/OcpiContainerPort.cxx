@@ -157,7 +157,29 @@ namespace OCPI {
 	  // We're in different containers managed locally.  Perform the connection protocol
           // FIXME:  a more "binary" way to do this locally?
 	  std::string pInfo, uInfo;
+	  
+	  // if output has a single protocol, tell the input about it.
+	  const char *dummy;
+	  OU::PValue *others = NULL;
+	  if (!OU::findString(otherParams, "protocol", dummy) &&
+	      !OU::findString(otherParams, "transport", dummy) &&
+	      !OU::findString(otherParams, "endpoint", dummy) &&
+	      getPreferredProtocol(dummy)) {
+	    // FIXME: make a convenience method for PVList etc.
+	    others = new OU::PValue[otherParams->length() + 2];
+	    unsigned n = 0;
+	    const OU::PValue *p;
+	    for (p = otherParams; p && p->name; p++, n++)
+	      others[n] = *p;
+	    others[n].name = "protocol";
+	    others[n].vString = dummy;
+	    others[n].type = OA::OCPI_String;
+	    others[++n].name = NULL;
+	    otherParams = others;
+	  }
 	  other.getInitialProviderInfo(otherParams, pInfo);
+	  if (others)
+	    delete [] others;
 	  setInitialProviderInfo(myParams, pInfo, uInfo);
           if (!uInfo.empty()) {
             other.setInitialUserInfo(uInfo, pInfo);
@@ -187,7 +209,7 @@ namespace OCPI {
     void Port::getInitialProviderInfo(const OCPI::Util::PValue *params, std::string &out) {
       ocpiAssert(isProvider());
       if (!m_canBeExternal)
-	throw ApiError("Port \", name, \" cannot be connected external to container", NULL);
+	throw OU::Error("Port ", m_metaPort.name, " cannot be connected external to container");
       applyConnectParams(params);
       m_container.packPortDesc(this->getData(), out);
     }

@@ -8,16 +8,27 @@
    Foreach external connection:  define IO or Interconnect worker (and props)
    Foreach worker (including io and interconnect) define index.
   -->
-<HdlContainer Name="xxx">
-  <Instance Worker="dp.xml" Index="13" Interconnect="pcie"/>
-  <Instance Worker="dp.xml" Index="14" Interconnect="pcie"/>
-  <Instance Name="sma0" Index="2"/>
+<HdlContainer>
+  <Instance Worker="dp" Index="13" Interconnect="pcie"/>
+  <Instance Worker="dp" Index="14" Interconnect="pcie"/>
+  <Instance Worker="sma" Index="2" Adapter="dp0" configure="1"/>
   <Instance Name="bias" Index="3"/>
-  <Instance Name="sma1" Index="4"/>
-  <Connection Name="FC" External="producer">
+  <Instance Worker="sma" Index="4" Adapter="dp1" configure="2"/>
+  <!-- Container's internal connections -->
+  <Connection>
+    <Attach Instance="sma0" Interface="message"/>
     <Attach Instance="dp0" Interface="wmi"/>
   </Connection>
-  <Connection Name="FP" External="consumer">
+  <Connection>
+    <Attach Instance="sma1" Interface="message"/>
     <Attach Instance="dp1" Interface="wmi"/>
+  </Connection>
+  <!-- Connect the container's output to the application's input -->
+  <Connection Name="in" External="producer">
+    <Attach Instance="sma0" Interface="out"/>
+  </Connection>
+  <!-- Connect the container's input to the application's output -->
+  <Connection Name="out" External="consumer">
+    <Attach Instance="sma1" Interface="in"/>
   </Connection>
 </HdlContainer>

@@ -70,8 +70,8 @@ namespace DataTransfer {
   public:
 
       virtual ~GppEndPoint();
-  GppEndPoint( std::string& ep, OCPI::OS::uint32_t size=0, bool local = false)
-    :EndPoint(ep,size, local){parse(ep);};
+  GppEndPoint( std::string& ep, bool local = false)
+    :EndPoint(ep, 0, local){parse(ep);};
 
         // Sets smem location data based upon the specified endpoint
         OCPI::OS::int32_t parse( std::string& ep );
@@ -128,7 +128,7 @@ namespace DataTransfer {
      *  Get the location via the endpoint
      ***************************************/
     //    EndPoint* getEndPoint( std::string& end_point, bool local );
-    DataTransfer::EndPoint* createEndPoint(std::string& endpoint, bool local = false);
+    DataTransfer::EndPoint* createEndPoint(std::string& endpoint, bool local);
     //    void releaseEndPoint( EndPoint* loc );
 
 

@@ -281,7 +281,7 @@ namespace OCPI {
       inline Dev *nextDevice() { return *Child<Dri,Dev,device>::nextChildP(); }
       inline Device *nextDeviceBase() { return nextDevice(); }
       inline Dri &driver() { return Child<Dri,Dev,device>::parent(); }
-      inline const std::string &name() const {
+      const std::string &name() const {
 	return Child<Dri,Dev,device>::name();
       }
     protected:

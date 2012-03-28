@@ -83,7 +83,7 @@ namespace OCPI {
     unsigned Worker::whichProperty(const char *id) {
       Property *p = myProps;
       for (unsigned n=0; n < nProps; n++, p++)
-        if (!strcmp(p->m_name.c_str(), id))
+        if (!strcasecmp(p->m_name.c_str(), id))
           return n;
       throw OU::ApiError("Unknown property: \"", id, "\"", 0);
     }

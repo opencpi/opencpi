@@ -584,7 +584,7 @@ OCPI::DataTransport::Port::
       ocpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.localStateOffset,
-                          sizeof(BufferState)*MAX_PCONTRIBS);
+                          sizeof(BufferState)*MAX_PCONTRIBS); // FIXME shouldn't this be *2?
       ocpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.metaDataOffset,
@@ -617,7 +617,7 @@ OCPI::DataTransport::Port::
       ocpiAssert( rc == 0 );
 
       rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.localStateOffset,
-                          sizeof(BufferState)*MAX_PCONTRIBS);
+                          sizeof(BufferState)*MAX_PCONTRIBS); // FIXME shouldn't this be *2?
       ocpiAssert( rc == 0 );
 
     }
@@ -1172,7 +1172,7 @@ createOutputOffsets()
     }
                 
     // Allocate the local state
-    rc = res_mgr->alloc( sizeof(BufferState) * MAX_PCONTRIBS * bCount, 
+    rc = res_mgr->alloc( sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2, 
                          BUF_ALIGNMENT, &soffset);
     if ( rc != 0 ) {
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
@@ -1181,7 +1181,7 @@ createOutputOffsets()
     }
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.localStateOffset = 
-        soffset + index * MAX_PCONTRIBS * sizeof(BufferState);
+        soffset + index * MAX_PCONTRIBS * sizeof(BufferState) * 2;
     }
                 
     // Allocate the meta-data structure

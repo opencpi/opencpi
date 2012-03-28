@@ -45,7 +45,7 @@ namespace OCPI {
       : m_xml(ezxml_parse_file(file)), m_copy(NULL) {
       if (!m_xml)
 	throw Error("Can't open or xml-parse assembly xml file: \"%s\"", file);
-      const char *err = parse(m_xml);
+      const char *err = parse();
       if (err)
 	throw Error("Error parsing assembly xml file (\"%s\") due to: %s", file, err);
     }
@@ -54,7 +54,7 @@ namespace OCPI {
       strcpy(m_copy, string.c_str());
       if (!(m_xml = ezxml_parse_str(m_copy, string.size())))
 	throw Error("Can't xml-parse assembly xml string");
-      const char *err = parse(m_xml);
+      const char *err = parse();
       if (err)
 	throw Error("Error parsing assembly xml string due to: %s", err);
     }
@@ -66,7 +66,10 @@ namespace OCPI {
 
     unsigned Assembly::s_count = 0;
 
-    const char *Assembly::parse(ezxml_t ax) {
+    const char *Assembly::parse() {
+      // This is were common initialization is done except m_xml and m_copy
+      m_doneInstance = -1;
+      ezxml_t ax = m_xml;
       const char *err;
       if ((err = OE::checkElements(ax, "instance", "connection", "policy", NULL)))
 	return err;
@@ -87,6 +90,13 @@ namespace OCPI {
       for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix), i++)
 	if ((err = i->parse(ix, ax)))
 	  return err;
+      const char *done = ezxml_cattr(ax, "done");
+      if (done) {
+	unsigned n;
+	if ((err = getInstance(done, n)))
+	  return err;
+	m_doneInstance = (int)n;
+      }
       m_connections.resize(OE::countChildren(ax, "Connection"));
       Connection *c = &m_connections[0];
       unsigned n = 0;

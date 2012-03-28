@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -67,7 +66,8 @@
 typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
 #include "ezxml.h"
-#include <OcpiOsMisc.h>
+#include "OcpiOsMisc.h"
+#include "OcpiOsAssert.h"
 #include "PciScanner.h"
 #include "OcpiContainerManager.h"
 #include "OcpiWorker.h"
@@ -166,16 +166,24 @@ namespace OCPI {
         }
         bar1Offset = bar1Paddr - basePaddr;
 	m_model = "hdl";
+	m_os = "";
 	// Capture the UUID info that tells us about the platform
 	HdlUUID myUUID;
-	for (unsigned n = 0; n < sizeof(HdlUUID); n++)
+	unsigned n;
+	for (n = 0; n < sizeof(HdlUUID); n++)
 	  ((uint8_t*)&myUUID)[n] = ((volatile uint8_t *)&occp->admin.uuid)[(n & ~3) + (3 - (n&3))];
-	if (myUUID.platform[0] && myUUID.platform[1])
-	  m_platform.assign(myUUID.platform, sizeof(myUUID.platform));
-	if (myUUID.device[0] && myUUID.device[1])
-	  m_device.assign(myUUID.device, sizeof(myUUID.device));
-	if (myUUID.load[0])
-	  m_loadParams.assign(myUUID.load, sizeof(myUUID.load));
+	for (n = 0; myUUID.platform[n] && n < sizeof(myUUID.platform); n++)
+	  ;
+	if (n > 2)
+	  m_platform.assign(myUUID.platform, n);
+	for (n = 0; myUUID.device[n] && n < sizeof(myUUID.device); n++)
+	  ;
+	if (n > 2)
+	  m_device.assign(myUUID.device, n);
+	for (n = 0; myUUID.load[n] && n < sizeof(myUUID.load); n++)
+	  ;
+	if (n > 1)
+	  m_loadParams.assign(myUUID.load, n);
 	memcpy(m_loadedUUID, myUUID.uuid, sizeof(m_loadedUUID));
 	
 	if (config) {
@@ -245,7 +253,7 @@ namespace OCPI {
 	const char *err = PCI::search(exclude, OCFRP0_VENDOR, OCFRP0_DEVICE,
 				      OCFRP0_CLASS, OCFRP0_SUBCLASS, *this, n);
 	if (err)
-	  fprintf(stderr, "PCI Scanner Error: %s\n", err);
+	  ocpiBad("In HDL Container driver, got PCI Scanner Error: %s", err);
 	return n;
       }
     }
@@ -386,6 +394,7 @@ namespace OCPI {
     }
     // The class that knows about WCI interfaces and the OCCP.
     class WciControl : virtual public OC::Controllable {
+      friend class Port;
       const char *implName, *instName;
     protected:
       Container &myWciContainer;
@@ -530,6 +539,9 @@ namespace OCPI {
 	WciControl::controlOperation(op);
       }
 
+      void checkControlState() {
+	// Override, and eventually poll/check for FINISHED etc.
+      }
       // FIXME: These (and sequence/string stuff above) need to be sensitive to
       // addresing windows in OCCP.
       void read(uint32_t, uint32_t, void*) {
@@ -730,20 +742,28 @@ namespace OCPI {
     // Also ports are either user or provider.
     // So this class takes care of all 4 cases, since the differences are so
     // minor as to not be worth (re)factoring (currently).
+    // The inheritance of WciControl is for the external case
     class Port : public OC::PortBase<Worker,Port,ExternalPort>, WciControl {
       friend class Worker;
       friend class ExternalPort;
       ezxml_t m_connection;
       // These are for external ports
       // Which would be in a different class if we separate them
-      unsigned myOcdpSize;
-      volatile OcdpProperties *myOcdpRegisters;
+      volatile OcdpProperties *m_ocdpRegisters;
+      unsigned m_ocdpSize;
       // For direct user access to ports
       uint8_t *userDataBaseAddr;
       volatile OcdpMetadata *userMetadataBaseAddr;
-      bool userConnected;
+      bool m_userConnected;
+      WciControl *m_adapter; // if there is an adapter
+      bool m_hasAdapterConfig;
+      uint32_t m_adapterConfig;
       static int dumpFd;
 
+      bool getPreferredProtocol(const char *&s) {
+	s = "ocpi-pci-pio";
+	return true;
+      }
       void setMode( ConnectionMode ){};
       void disconnect()
         throw ( OCPI::Util::EmbeddedException )
@@ -761,12 +781,12 @@ namespace OCPI {
         if (!m_canBeExternal)
           return;
         if (myDesc.nBuffers *
-            (OC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN) + OCDP_METADATA_SIZE) > myOcdpSize)
+            (OC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN) + OCDP_METADATA_SIZE) > m_ocdpSize)
           throw OC::ApiError("Requested buffer count and size won't fit in the OCDP's memory", 0);
         myDesc.dataBufferPitch = OC::roundup(myDesc.dataBufferSize, OCDP_LOCAL_BUFFER_ALIGN);
         myDesc.metaDataBaseAddr =
           myDesc.dataBufferBaseAddr +
-          myOcdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
+          m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
         userMetadataBaseAddr = (OcdpMetadata *)(userDataBaseAddr +
                                                 (myDesc.metaDataBaseAddr -
                                                  myDesc.dataBufferBaseAddr));
@@ -785,25 +805,25 @@ namespace OCPI {
         uPort.applyConnectParams(uProps);
         // We must initialize the emulated register file for use by other software
         Port &other = *static_cast<Port *>(&uPort);
-        myOcdpRegisters->nRemoteDone = 0;
-        myOcdpRegisters->nReady = myDesc.nBuffers;
-        other.myOcdpRegisters->nRemoteDone = 0;
-        other.myOcdpRegisters->nReady = 0;
+        m_ocdpRegisters->nRemoteDone = 0;
+        m_ocdpRegisters->nReady = myDesc.nBuffers;
+        other.m_ocdpRegisters->nRemoteDone = 0;
+        other.m_ocdpRegisters->nReady = 0;
         unsigned doneCount = 0, copyCount = 0, myUserNext = 0, otherUserNext = 0;
         for (;;) {
-          if (myOcdpRegisters->nRemoteDone != 0) {
+          if (m_ocdpRegisters->nRemoteDone != 0) {
             doneCount++;
-            ocpiAssert(myOcdpRegisters->nReady != 0);
-            myOcdpRegisters->nReady--;
-            myOcdpRegisters->nRemoteDone = 0;
+            ocpiAssert(m_ocdpRegisters->nReady != 0);
+            m_ocdpRegisters->nReady--;
+            m_ocdpRegisters->nRemoteDone = 0;
             copyCount++;
           }
-          if (other.myOcdpRegisters->nRemoteDone != 0) {
-            ocpiAssert(other.myOcdpRegisters->nReady != 0);
-            other.myOcdpRegisters->nReady--;
-            other.myOcdpRegisters->nRemoteDone = 0;
+          if (other.m_ocdpRegisters->nRemoteDone != 0) {
+            ocpiAssert(other.m_ocdpRegisters->nReady != 0);
+            other.m_ocdpRegisters->nReady--;
+            other.m_ocdpRegisters->nRemoteDone = 0;
           }
-          while (copyCount && other.myOcdpRegisters->nReady != other.myDesc.nBuffers) {
+          while (copyCount && other.m_ocdpRegisters->nReady != other.myDesc.nBuffers) {
             uint8_t *remoteData = userDataBaseAddr + myUserNext * myDesc.dataBufferSize;
             volatile OcdpMetadata *remoteMetadata = userMetadataBaseAddr + myUserNext;
             if (++myUserNext >= myDesc.nBuffers)
@@ -812,8 +832,8 @@ namespace OCPI {
             volatile OcdpMetadata *otherMetadata = other.userMetadataBaseAddr + otherUserNext;
             memcpy((void *)otherMetadata, (void *)remoteMetadata, sizeof(OcdpMetadata));
             memcpy(otherData, remoteData, remoteMetadata->length);
-            myOcdpRegisters->nReady++;
-            other.myOcdpRegisters->nReady++;
+            m_ocdpRegisters->nReady++;
+            other.m_ocdpRegisters->nReady++;
             if (++otherUserNext >= other.myDesc.nBuffers)
               otherUserNext = 0;
             copyCount--;
@@ -825,27 +845,34 @@ namespace OCPI {
            const OM::Port &mPort, // the parsed port metadata
            ezxml_t connXml, // the xml connection for this port
            ezxml_t icwXml,  // the xml interconnect/infrastructure worker attached to this port if any
-           ezxml_t icXml, // the xml interconnect instance attached to this port if any
+           ezxml_t icXml,   // the xml interconnect instance attached to this port if any
+           ezxml_t adwXml,  // the xml adapter/infrastructure worker attached to this port if any
+           ezxml_t adXml,   // the xml adapter instance attached to this port if any
 	   bool argIsProvider) :
         OC::PortBase<Worker,Port,ExternalPort>(w, mPort, argIsProvider,
 					       (1 << OCPI::RDT::Passive) |
 					       (1 << OCPI::RDT::ActiveFlowControl) |
 					       (1 << OCPI::RDT::ActiveMessage), params),
         WciControl(w.m_container, icwXml, icXml),
-        m_connection(connXml),
-        myOcdpRegisters((volatile OcdpProperties *)myProperties),
-        userConnected(false)
+        m_connection(connXml), 
+        m_ocdpRegisters((volatile OcdpProperties *)myProperties),
+	m_ocdpSize(m_ocdpRegisters ? m_ocdpRegisters->memoryBytes : 0),
+        m_userConnected(false),
+	m_adapter(adwXml ? new WciControl(w.m_container, adwXml, adXml) : 0),
+	m_hasAdapterConfig(false),
+	m_adapterConfig(0)
       {
-	//	getData().port = (OC::PortDesc)this; // make this our derived class
-
-        if (!icXml) {
+	const char *err;
+	if (m_adapter && adXml &&
+	    (err = OU::EzXml::getNumber(adXml, "configure", &m_adapterConfig, &m_hasAdapterConfig, 0)))
+	  throw OU::Error("Invalid configuration value for adapter: %s", err);
+        if (!m_ocdpRegisters) {
           m_canBeExternal = false;
           return;
         }
         m_canBeExternal = true;
         // This will eventually be in the IP:  FIXME
         uint32_t myOcdpOffset = OC::getAttrNum(icXml, "ocdpOffset");
-        myOcdpSize = myOcdpRegisters->memoryBytes;
         const char *busId = "0";
         // These will be determined at connection time
         myDesc.dataBufferPitch   = 0;
@@ -881,13 +908,13 @@ namespace OCPI {
           //  (thus it is a "remote buffer is full")
           // This register is for WRITING.
           myDesc.fullFlagBaseAddr =
-            (uint8_t*)&myOcdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr;
+            (uint8_t*)&m_ocdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr;
           // The nReady register is the empty flag, which tells the producer how many
           // empty buffers there are to fill when consumer is in PASSIVE MODE
           // Other modes it is not used.
           // This register is for READING (in passive mode)
           myDesc.emptyFlagBaseAddr =
-            (uint8_t*)&myOcdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
+            (uint8_t*)&m_ocdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
         } else {
           // BasicPort does this: getData().data.type = OCPI::RDT::ProducerDescT;
           // The flag is in the OCDP's register space.
@@ -899,12 +926,12 @@ namespace OCPI {
           // (thus it is a "remote buffer is empty")
           // This register is for writing.
           myDesc.emptyFlagBaseAddr =
-            (uint8_t*)&myOcdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr;
+            (uint8_t*)&m_ocdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr;
           // The nReady register is the full flag, which tells the consumer how many
           // full buffers there are to read/take when producer is PASSIVE
           // This register is for READING (in passive mode)
           myDesc.fullFlagBaseAddr =
-            (uint8_t*)&myOcdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
+            (uint8_t*)&m_ocdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
         }
         userDataBaseAddr = myWciContainer.bar1Vaddr + myOcdpOffset;
         const char *df = getenv("OCPI_DUMP_PORTS");
@@ -915,18 +942,18 @@ namespace OCPI {
           ocpiCheck(::write(dumpFd, (void *)pd, sizeof(*pd)) == sizeof(*pd));
         }
         if (getenv("OCPI_OCFRP_DUMMY"))
-          *(uint32_t*)&myOcdpRegisters->foodFace = 0xf00dface;
+          *(uint32_t*)&m_ocdpRegisters->foodFace = 0xf00dface;
 	// Allow default connect params on port construction prior to connect
 	applyConnectParams(params);
       }
       // All the info is in.  Do final work to (locally) establish the connection
       void finishConnection(OCPI::RDT::Descriptors &other) {
         // Here is where we can setup the OCDP producer/user
-        ocpiAssert(myOcdpRegisters->foodFace == 0xf00dface);
-        myOcdpRegisters->nLocalBuffers = myDesc.nBuffers;
-        myOcdpRegisters->localBufferSize = myDesc.dataBufferPitch;
-        myOcdpRegisters->localBufferBase = 0;
-        myOcdpRegisters->localMetadataBase = myOcdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
+        ocpiAssert(m_ocdpRegisters->foodFace == 0xf00dface);
+        m_ocdpRegisters->nLocalBuffers = myDesc.nBuffers;
+        m_ocdpRegisters->localBufferSize = myDesc.dataBufferPitch;
+        m_ocdpRegisters->localBufferBase = 0;
+        m_ocdpRegisters->localMetadataBase = m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
         OcdpRole myOcdpRole;
         OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole)getData().data.role;
         // FIXME - can't we avoid string processing here?
@@ -954,37 +981,37 @@ namespace OCPI {
         case OCPI::RDT::ActiveFlowControl:
           myOcdpRole = OCDP_ACTIVE_FLOWCONTROL;
 	  addr = busAddress + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
-          myOcdpRegisters->remoteFlagBase = addr;
-          myOcdpRegisters->remoteFlagHi = addr > 32;
-          myOcdpRegisters->remoteFlagPitch =
+          m_ocdpRegisters->remoteFlagBase = addr;
+          m_ocdpRegisters->remoteFlagHi = addr > 32;
+          m_ocdpRegisters->remoteFlagPitch =
             (isProvider() ?
              other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
           break;
         case OCPI::RDT::ActiveMessage:
           myOcdpRole = OCDP_ACTIVE_MESSAGE;
 	  addr = busAddress + other.desc.dataBufferBaseAddr;
-          myOcdpRegisters->remoteBufferBase = addr;
-          myOcdpRegisters->remoteBufferHi = addr >> 32;
+          m_ocdpRegisters->remoteBufferBase = addr;
+          m_ocdpRegisters->remoteBufferHi = addr >> 32;
 	  addr = busAddress + other.desc.metaDataBaseAddr;
-          myOcdpRegisters->remoteMetadataBase = addr;
-          myOcdpRegisters->remoteMetadataHi = addr >> 32;
+          m_ocdpRegisters->remoteMetadataBase = addr;
+          m_ocdpRegisters->remoteMetadataHi = addr >> 32;
           if ( isProvider()) {
             if (other.desc.dataBufferSize > myDesc.dataBufferSize)
               throw OC::ApiError("At consumer, remote buffer size is larger than mine", NULL);
           } else if (other.desc.dataBufferSize < myDesc.dataBufferSize) {
             throw OC::ApiError("At producer, remote buffer size smaller than mine", NULL);
           }
-          myOcdpRegisters->nRemoteBuffers = other.desc.nBuffers;
-          myOcdpRegisters->remoteBufferSize = other.desc.dataBufferPitch;
+          m_ocdpRegisters->nRemoteBuffers = other.desc.nBuffers;
+          m_ocdpRegisters->remoteBufferSize = other.desc.dataBufferPitch;
 #ifdef WAS
-          myOcdpRegisters->remoteMetadataSize = OCDP_METADATA_SIZE;
+          m_ocdpRegisters->remoteMetadataSize = OCDP_METADATA_SIZE;
 #else
-          myOcdpRegisters->remoteMetadataSize = other.desc.metaDataPitch;
+          m_ocdpRegisters->remoteMetadataSize = other.desc.metaDataPitch;
 #endif
           addr = busAddress + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
-          myOcdpRegisters->remoteFlagBase = addr;
-          myOcdpRegisters->remoteFlagHi = addr >> 32;
-          myOcdpRegisters->remoteFlagPitch =
+          m_ocdpRegisters->remoteFlagBase = addr;
+          m_ocdpRegisters->remoteFlagHi = addr >> 32;
+          m_ocdpRegisters->remoteFlagPitch =
             ( isProvider() ?
              other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
           break;
@@ -995,11 +1022,17 @@ namespace OCPI {
           myOcdpRole = OCDP_PASSIVE; // quiet compiler warning
           ocpiAssert(0);
         }
-        myOcdpRegisters->control =
+        m_ocdpRegisters->control =
           OCDP_CONTROL(isProvider() ? OCDP_CONTROL_CONSUMER : OCDP_CONTROL_PRODUCER,
                        myOcdpRole);
 	// We aren't a worker so someone needs to start us.
 	controlOperation(OM::Worker::OpInitialize);
+	if (m_adapter) {
+	  m_adapter->controlOperation(OM::Worker::OpInitialize);
+	  if (m_hasAdapterConfig)
+	    *(volatile uint32_t *)(m_adapter->myProperties) = m_adapterConfig;
+	  m_adapter->controlOperation(OM::Worker::OpStart);
+	}
 	controlOperation(OM::Worker::OpStart);
       }
       // Connection between two ports inside this container
@@ -1047,7 +1080,7 @@ namespace OCPI {
       }
 #endif
       // Find connections attached to this port
-      ezxml_t conn, ic = 0, icw = 0;
+      ezxml_t conn, ic = 0, icw = 0, ad = 0, adw = 0;
       for (conn = ezxml_child(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
         const char
           *from = ezxml_attr(conn,"from"), // instance with user port
@@ -1062,34 +1095,61 @@ namespace OCPI {
 	    iAmTo = false;
 	  else
 	    continue;
+          // We have a connection.  See if it is to a container adapter, which in turn would be
+	  // connected to an interconnect.  No other adapters are expected yet.
+          for (ad = ezxml_child(myXml()->parent, "adapter"); ad; ad = ezxml_next(ad)) {
+            const char *adName = ezxml_attr(ad, "name");
+            if (adName &&
+                (iAmTo && !strcmp(adName, from) ||
+                 !iAmTo && !strcmp(adName, to))) {
+              // We have a connection on this port to an adapter instance.  Find the worker
+	      const char *adwName = ezxml_attr(ad, "worker");
+	      if (adwName)
+		for (adw = ezxml_child(myXml()->parent, "worker"); adw; adw = ezxml_next(adw)) {
+		  const char *nameAttr = ezxml_attr(adw, "name");
+		  if (nameAttr && !strcmp(nameAttr, adwName))
+		    break;
+		}
+	      if (!adw)
+		throw OU::Error("For port \"%s\": adapter worker missing for connection", myName);
+	      // Find the attached interconnect instance
+	      const char *attach = ezxml_attr(ad, "attachment");
+	      for (ic = ezxml_child(myXml()->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
+		const char *icName = ezxml_attr(ic, "name");
+		if (icName && !strcmp(icName, attach))
+		  break; // We have the IC connected through an adapter.
+	      }
+	      if (!ic)
+		throw OU::Error("For port \"%s\": adapter instance has no interconnect \"%s\"",
+				myName, attach);
+	      break; // with ad set to indicate we have an adapter, and ic set for its interconnect
+	    }
+	  }
           // We have a connection.  See if it is to an external interconnect.  FIXME i/o later
-          for (ic = ezxml_child(myXml()->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
-            const char *icName = ezxml_attr(ic, "name");
-            if (icName &&
-                (iAmTo && !strcmp(icName, from) ||
-                 !iAmTo && !strcmp(icName, to))) {
-              // We have a connection on this port to an interconnect worker!
-              // Find its details
-              const char *icwName = ezxml_attr(ic, "worker");
-              if (icwName)
-                for (icw = ezxml_child(myXml()->parent, "worker"); icw; icw = ezxml_next(icw)) {
-                  const char *nameAttr = ezxml_attr(icw, "name");
-                  if (nameAttr && !strcmp(nameAttr, icwName))
-                    break;
-                }
-              if (!icw)
-                throw OC::ApiError("For port \"", myName,
-                                   "\": interconnect worker missing for connection", NULL);
-	      // If we are bidirectional, this external connection sets our direction
-	      if (metaPort.bidirectional)
-		isProvider = iAmTo;
-              break; // we found an external connection
-            }
-          } // loop over interconnects
+	  if (!ic)
+	    for (ic = ezxml_child(myXml()->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
+	      const char *icName = ezxml_attr(ic, "name");
+	      if (icName &&
+		  (iAmTo && !strcmp(icName, from) ||
+		   !iAmTo && !strcmp(icName, to)))
+		break;
+	    }
+	  if (ic) {
+	    const char *icwName = ezxml_attr(ic, "worker");
+	    if (icwName)
+	      for (icw = ezxml_child(myXml()->parent, "worker"); icw; icw = ezxml_next(icw)) {
+		const char *nameAttr = ezxml_attr(icw, "name");
+		if (nameAttr && !strcmp(nameAttr, icwName))
+		  break;
+	      }
+	    if (!icw)
+	      throw OU::Error("For port \"%s\": interconnect worker missing for connection", myName);
+	    break; // we found an external connection
+	  }
 	  break; // we found a connection
 	}
       } // loop over all connections
-      return *new Port(*this, props, metaPort, conn, icw, ic, isProvider);
+      return *new Port(*this, props, metaPort, conn, icw, ic, adw, ad, isProvider);
     }
     // Here because these depend on Port
     OC::Port &Worker::
@@ -1278,7 +1338,7 @@ namespace OCPI {
           lb->busy = false;
           lb->readyForLocal = localFlags + i;
           *lb->readyForLocal = parent().isProvider();
-          lb->readyForRemote = remoteFlags + i; //&parent().myOcdpRegisters->nRemoteDone;
+          lb->readyForRemote = remoteFlags + i; //&parent().m_ocdpRegisters->nRemoteDone;
           *lb->readyForRemote = !parent().isProvider();
         }
         (lb-1)->last = true;
@@ -1334,9 +1394,9 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
         // FIXME:  memory barrier to be sure?
         // Tell the far side that a its buffer has been used (filled or emptied)
         //wmb();
-        if (parent().myOcdpRegisters->foodFace != 0xf00dface)
+        if (parent().m_ocdpRegisters->foodFace != 0xf00dface)
           abort();
-        parent().myOcdpRegisters->nRemoteDone = 1;
+        parent().m_ocdpRegisters->nRemoteDone = 1;
         // Advance our far side status
         if (nextFar->last)
           nextFar = farBuffers;
@@ -1359,7 +1419,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
           // Use far side "ready" register to determine whether far buffers are ready
           // Thus we need to do a remote PCIe read to know far size status
           if (*nextRemote->readyForRemote) { // avoid remote read if local is not ready
-            for (uint32_t nReady = parent().myOcdpRegisters->nReady;
+            for (uint32_t nReady = parent().m_ocdpRegisters->nReady;
                  nReady && *nextRemote->readyForRemote; nReady--)
 	      moveData();
           }
@@ -1443,10 +1503,10 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       }
       void advanceLocal() {
         if (getData().data.role == OCPI::RDT::ActiveFlowControl) {
-          //          if (parent().myOcdpRegisters->foodFace != 0xf00dface)
+          //          if (parent().m_ocdpRegisters->foodFace != 0xf00dface)
           //            abort();
           //          wmb();
-          parent().myOcdpRegisters->nRemoteDone = 1;
+          parent().m_ocdpRegisters->nRemoteDone = 1;
           //usleep(0);
         }
         if (nextLocal->last)

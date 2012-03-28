@@ -106,10 +106,12 @@ namespace OCPI {
     private:
       ezxml_t m_xml;
       char *m_copy;
+      const char *parse();
     public:
       static unsigned s_count;
       Policy policy;
       std::string m_name;
+      int m_doneInstance; // -1 for none
       std::vector<Instance> m_instances;
       std::vector<Connection> m_connections;
       // Provide a file name.
@@ -117,7 +119,6 @@ namespace OCPI {
       // Provide a string containing the xml
       explicit Assembly(const std::string &string);
       ~Assembly();
-      const char *parse(ezxml_t a);
       const char *getInstance(const char *name, unsigned &);
     };
   }

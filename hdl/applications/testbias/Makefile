@@ -42,5 +42,6 @@ ComponentLibraries=../../../components
 AssemblyWorkers=sma:sma0 sma:sma1 bias:bias
 # For which containers should the runtime xml be generated?
 # These (for now) just xml files containing HdlContainer elements.
+Container=mkOCApp-2sma.v
 Containers=testbiasCont
 include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk

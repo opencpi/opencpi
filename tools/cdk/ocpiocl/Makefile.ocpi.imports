@@ -42,12 +42,16 @@ ALLINC += \
 
 
 ALLLIBS += \
+	$(OCL_CONTAINER_LIBS) \
 	$(UTIL_LIBS) \
 	$(LOGGER_LIBS) \
 	$(OCPIOS_LIBS)
 
-ALLLIBS += $(OCL_CONTAINER_LIBS) 
 EXTRA_LDFLAGS=$(LD_ALLOW_UNDEFINED)
 #$(info DDD $(LD_ALLOW_UNDEFINED) EEE $(EXTRA_LDFLAGS))
 #ifeq ($(OCPI_HAVE_OPENCL),1)
 #endif
+ifeq ($(OCPI_OS),linux)
+# Why do I need this here but not elsewhere, like in sred??
+BASICLIBS += -lOpenCL
+endif

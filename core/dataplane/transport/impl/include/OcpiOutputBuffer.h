@@ -52,6 +52,7 @@
 #include <OcpiBuffer.h>
 #include <OcpiOsMutex.h>
 #include <OcpiOsAssert.h>
+#include <OcpiPort.h>
 
 namespace OCPI {
 
@@ -154,7 +155,9 @@ namespace OCPI {
      *********************************/
     inline void OutputBuffer::markBufferFull()
       {
-        m_state[0][m_pid].bufferFull = 0;
+	ocpiAssert(!getPort()->isShadow());
+	// This is a local operation
+        m_state[0][m_pid].bufferIsEmpty = EF_FULL_VALUE;
         setInUse(false);
       }
 
@@ -163,7 +166,8 @@ namespace OCPI {
      *********************************/
     inline void OutputBuffer::markBufferEmpty()
       {
-        m_state[0][m_pid].bufferFull = 1;
+	// this really only happens in cleanup or shadow-pull
+        m_state[0][m_pid].bufferIsEmpty = EF_EMPTY_VALUE;
       }
 
 

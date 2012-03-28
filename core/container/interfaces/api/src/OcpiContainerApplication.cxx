@@ -98,12 +98,18 @@ namespace OCPI {
 	w->stop();
     }
     bool Application::
-    wait( uint32_t timeout_us ) {
-      bool timeout = false;
+    isDone() {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
-	if (w->wait( timeout_us ))
-	  timeout = true;
-      return timeout;
+	if (!w->isDone())
+	  return false;
+      return true;
+    }
+    bool Application::
+    wait(OS::Timer *timer) {
+      for (Worker *w = firstWorker(); w; w = w->nextWorker())
+	if (w->wait(timer))
+	  return true;
+      return false;
     }
   }
   namespace API {

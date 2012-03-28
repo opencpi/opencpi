@@ -62,6 +62,9 @@ typedef struct {
     remoteBufferHi,     // 0x94
     remoteMetadataHi,   // 0x98
     remoteFlagHi;       // 0x9c
+  uint64_t
+    startTime,          // 0xa0
+    doneTime;           // 0xa8
 } OcdpProperties;
 #define OCDP_CONTROL_DISABLED 0
 #define OCDP_CONTROL_PRODUCER 1
