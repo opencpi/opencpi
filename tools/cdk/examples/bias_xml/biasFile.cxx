@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
     "    <port instance='file_write' name='in'/>"
     "  </connection>"
     "</application>";
-  std::cerr<<hello;
   try {
     OA::Application app(hello);
     fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");

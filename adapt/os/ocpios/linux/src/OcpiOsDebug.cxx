@@ -68,17 +68,26 @@ namespace OCPI {
     }
 
     static Mutex mine;
+    static unsigned logLevel = UINT_MAX;
     void
     logPrint(unsigned n, const char *fmt, ...) throw() {
-      va_list ap;
-      va_start(ap, fmt);
+      if (logLevel != UINT_MAX && n > logLevel)
+	return;
       mine.lock();
-      fprintf(stderr, "OCPI(%2d): ", n);
-      vfprintf(stderr, fmt, ap);
-      va_end(ap);
-      if (fmt[strlen(fmt)-1] != '\n')
-	fprintf(stderr, "\n");
-      fflush(stderr);
+      if (logLevel == UINT_MAX) {
+	const char *e = getenv("OCPI_LOG_LEVEL");
+	logLevel = e ? atoi(e) : 9;
+      }
+      if (n <= (unsigned)logLevel)  {
+	va_list ap;
+	va_start(ap, fmt);
+	fprintf(stderr, "OCPI(%2d): ", n);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	if (fmt[strlen(fmt)-1] != '\n')
+	  fprintf(stderr, "\n");
+	fflush(stderr);
+      }
       mine.unlock();
     }
   }
