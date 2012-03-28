@@ -53,5 +53,7 @@ EXTRA_LDFLAGS=$(LD_ALLOW_UNDEFINED)
 #endif
 ifeq ($(OCPI_OS),linux)
 # Why do I need this here but not elsewhere, like in sred??
+ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),0)
 BASICLIBS += -lOpenCL
+endif
 endif
