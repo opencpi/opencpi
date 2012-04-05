@@ -330,9 +330,7 @@ namespace OCPI {
 
 
       unsigned nInstances = m_assembly.m_instances.size();
-#ifndef NDEBUG
-      printf("Mapped %d instances to %d containers\n", nInstances, m_nContainers);
-#endif
+      ocpiDebug("Mapped %d instances to %d containers", nInstances, m_nContainers);
 
       m_containers = new OC::Container *[m_nContainers];
       m_containerApps = new OC::Application *[m_nContainers];

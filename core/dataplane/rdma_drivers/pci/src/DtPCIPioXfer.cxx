@@ -129,9 +129,7 @@ void PCIPIOXferFactory::releaseEndPoint( EndPoint* loc )
 {
    ( void ) loc;
 
-#ifndef NDEBUG
-  printf("void PCIPIOXferFactory::releaseLocation( EndPoint* loc ), NOT YET IMPLEMENTED !!\n");
-#endif
+  ocpiDebug("void PCIPIOXferFactory::releaseLocation( EndPoint* loc ), NOT YET IMPLEMENTED !!");
 
 }
 #endif
@@ -218,9 +216,7 @@ void PCISmemServices::create (EndPoint* loc, OCPI::OS::uint32_t size)
 
   if ( loc->local ) {
 
-#ifndef NDEBUG
-    printf("************************ SMEM is local !!, vaddr = %p\n", m_vaddr);
-#endif
+    ocpiDebug("PCISmemServices: SMEM is local !!, vaddr = %p", m_vaddr);
 
     static const char *dma = getenv("OCPI_DMA_MEMORY");
     OCPI::OS::uint64_t base_adr;
@@ -229,8 +225,7 @@ void PCISmemServices::create (EndPoint* loc, OCPI::OS::uint32_t size)
       ocpiCheck(sscanf(dma, "%uM$0x%llx", &sizeM,
 		       (unsigned long long *) &base_adr) == 2);
       size = (unsigned long long)sizeM * 1024 * 1024;
-      fprintf(stderr, "DMA Memory:  %uM at 0x%llx\n", sizeM,
-	      (unsigned long long)base_adr);
+      ocpiDebug("DMA Memory:  %uM at 0x%llx\n", sizeM, (unsigned long long)base_adr);
     }
     else {
       ocpiCheck(!"OCPI_DMA_MEMORY not found in the environment\n");
@@ -251,7 +246,7 @@ void PCISmemServices::create (EndPoint* loc, OCPI::OS::uint32_t size)
       }
     }
 
-    printf("mmap mapping base = %" PRIu64 "with size = %d\n", base_adr, size );
+    ocpiDebug("mmap mapping base = %" PRIu64 "with size = %d\n", base_adr, size );
 
     m_vaddr =  (uint8_t*)mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED,
                               m_fd, base_adr);
@@ -266,9 +261,7 @@ void PCISmemServices::create (EndPoint* loc, OCPI::OS::uint32_t size)
 
     m_vaddr = NULL;
 
-#ifndef NDEBUG
-    printf("About to open shm\n");
-#endif
+    ocpiDebug("About to open shm\n");
 
     if ( m_fd == -1 ) {
       if ( (m_fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0) {
@@ -276,9 +269,7 @@ void PCISmemServices::create (EndPoint* loc, OCPI::OS::uint32_t size)
       }
     }
 
-#ifndef NDEBUG
-    printf("*******************  fd = %d *************************\n", m_fd);
-#endif
+    ocpiDebug("*******************  fd = %d *************************\n", m_fd);
 
   }
 }
@@ -292,9 +283,7 @@ void* PCISmemServices::getHandle ()
 // Close shared memory object.
 void PCISmemServices::close ()
 {
-#ifndef NDEBUG
-  printf("In PCISmemServices::close ()\n");
-#endif
+  ocpiDebug("In PCISmemServices::close ()\n");
 
 }
 
@@ -324,28 +313,28 @@ void* PCISmemServices::map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size )
   }
         
   if ( m_location->local ) {        
-#ifndef NDEBUG
-    printf("**************** Returning local vaddr = %p\n", (uint8_t*)m_vaddr + offset);
-#endif
+    ocpiDebug("PCISmemServices::map returning local vaddr = %p base %p offset 0x%"
+	      PRIx64 " size %d",
+	      (uint8_t*)m_vaddr + offset, m_vaddr, offset, size);
     return (char*)m_vaddr + offset;
   }
 
 
   // We will create a map per offset until we change the OCPI endpoint to handle segments
   // We just need to make sure we dont run out of maps.
-  printf("shm size = %" PRIu64 ", bus_offset = %" PRIu64 ", offset = %" PRIu64 ", fd = %d\n", 
-         m_location->map_size, 
-         m_location->bus_offset,
-         offset, 
-          m_fd );
+  ocpiDebug("shm size = %" PRIu64 ", bus_offset = %" PRIu64 ", offset = %" PRIu64 ", fd = %d", 
+	    m_location->map_size, 
+	    m_location->bus_offset,
+	    offset, 
+	    m_fd );
   if (m_vaddr == NULL ) {
     m_vaddr = mmap(NULL, m_location->map_size, PROT_READ|PROT_WRITE, MAP_SHARED,
                     m_fd,  m_location->bus_offset );
-    printf("vaddr = %p\n", m_vaddr );
+    ocpiDebug("vaddr = %p", m_vaddr );
   }
 
   if ( (m_vaddr == NULL) || (m_vaddr == (void*)-1 )) {
-    printf("mmap failed to map to offset %llu\n", (long long)offset );
+    ocpiDebug("mmap failed to map to offset %llu", (long long)offset );
     throw OCPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant map offset"  );
   }
   return (OCPI::OS::uint8_t*)m_vaddr+offset;
@@ -371,11 +360,7 @@ OCPI::OS::int32_t PCISmemServices::disable ()
 
 PCISmemServices::~PCISmemServices ()
 {
-
-#ifndef NDEBUG
-  printf("IN PCISmemServices::~PCISmemServices ()\n");
-#endif
-
+  ocpiDebug("IN PCISmemServices::~PCISmemServices ()");
 }
 
 
@@ -383,17 +368,15 @@ PCISmemServices::~PCISmemServices ()
 OCPI::OS::int32_t PCIEndPoint::parse( std::string& ep )
 {
 
-  printf("Scaning %s\n", ep.c_str() );
+  ocpiDebug("Scanning %s", ep.c_str() );
   if (sscanf(ep.c_str(), "ocpi-pci-pio:%x.%" SCNu64 ":%" SCNu64 ".3.10", 
                    &bus_id,
                    &bus_offset,
                    &map_size) != 3)
     throw OCPI::Util::EmbeddedException("Remote endpoint description wrong: ");
   
-#ifndef NDEBUG
-  printf("bus_id = %d, offset = 0x%" PRIx64 ", size = 0x%" PRIx64 "\n", 
+  ocpiDebug("bus_id = %d, offset = 0x%" PRIx64 ", size = 0x%" PRIx64, 
           bus_id, bus_offset, map_size );
-#endif
    
   return 0;
 }

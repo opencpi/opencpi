@@ -43,6 +43,8 @@
  *    Revision Detail: Created
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <DtHandshakeControl.h>
 #include <OcpiOutputBuffer.h>
 #include <OcpiInputBuffer.h>
@@ -100,9 +102,8 @@ void OutputBuffer::update(bool critical)
   // First we will map our buffer
   if ( !m_bVaddr && output_offsets->bufferOffset ) {
 
-#ifndef NDEBUG
-    printf("OutputBuffer:update: mapping buffer\n");
-#endif
+    ocpiDebug("OutputBuffer:update: mapping buffer %p tid %d offset 0x%" PRIx64,
+	      this, tid, output_offsets->bufferOffset);
 
     m_bVaddr = getPort()->getLocalShemServices()->map
       (output_offsets->bufferOffset, 
