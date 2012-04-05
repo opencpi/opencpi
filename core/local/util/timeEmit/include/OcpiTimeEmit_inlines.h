@@ -73,11 +73,18 @@ namespace OCPI {
     };
 
     struct Emit::EventQEntry {
-      Time     time;
+      Time     time_ticks;
       EventId  eid;
       OwnerId  owner;
       uint32_t   size;   // In bytes
       // payload goes here
+    };
+
+    struct GTime {
+      Emit::Time startTime;
+      Emit::Time startTicks;
+      Emit::Time stopTime;
+      Emit::Time stopTicks;
     };
 
     struct Emit::EventQ {
@@ -89,13 +96,24 @@ namespace OCPI {
       bool         full;
       bool         done;
       EventTriggerRole    role;
-    EventQ():start(NULL),base(NULL),end(NULL),current(NULL),full(false),done(false),role(NoTrigger){}
+      Emit::TimeSource    *ts;
+      GTime               gTime;
+      inline Time calcGTime( Time ticks ) {
+	return gTime.startTime + ((((ticks-gTime.startTicks )*gTime.stopTime) - 
+				   ((ticks - gTime.startTicks )*gTime.startTime)) / 
+				  (gTime.stopTicks-gTime.startTicks));
+
+      }
+ 
+      EventQ():start(NULL),base(NULL),end(NULL),current(NULL),full(false),done(false),role(NoTrigger){}
       void allocate()
       {
         base = new uint8_t[config.size];
         start = (EventQEntry*) base;
         end   = base + config.size;
-        memset(base,0,config.size);
+        memset(base,0,config.size);	
+	gTime.startTime = ts->getTime();
+	gTime.startTicks = ts->getTicks();
       };
       ~EventQ() 
       {
@@ -128,7 +146,6 @@ namespace OCPI {
       OCPI::OS::Mutex *                    g_mutex;
       bool                                 init;
       EventId                              nextEventId;
-      Time                                 startTime;
       std::vector<HeaderEntry>             classDefs;
       std::vector<EventQ*>                 eventQ;
       std::vector<EventMap>                eventMap;
@@ -138,7 +155,7 @@ namespace OCPI {
       EmitFormatter::DumpFormat            dumpFormat;
       std::string                          dumpFileName;
       std::fstream                         dumpFileStream;
-      Emit::TimeSource                     *ts;
+      Emit::TimeSource                     *ts;  // Default time source
       Header():init(false),nextEventId(0),shuttingDown(false),dumpOnExit(false)
       {
 	g_mutex = new OCPI::OS::Mutex(true);
@@ -154,7 +171,7 @@ namespace OCPI {
 	}
 	else {
 	  ts = new Emit::SimpleSystemTime();
-	}
+	}	  
       };
       ~Header() {
 	for ( unsigned int n=0; n<eventQ.size(); n++ ) {
@@ -171,7 +188,12 @@ namespace OCPI {
 
 inline OCPI::Time::Emit::Time OCPI::Time::Emit::getTime()
 {
-  return m_ts->getTime(m_init_tv);
+  return m_ts->getTime();
+};
+
+inline OCPI::Time::Emit::Time OCPI::Time::Emit::getTicks()
+{
+  return m_ts->getTicks();
 };
 
 
@@ -235,7 +257,7 @@ inline void OCPI::Time::Emit::processTrigger( EventTriggerRole role ) {
   } \
   ADJUST_CURRENT( m_q, s ); \
   m_q->current->size = s; \
-  m_q->current->time  = t;	\
+  m_q->current->time_ticks  = t;	\
   m_q->current->eid   = id;     \
   m_q->current->owner = m_myId;
 
@@ -259,12 +281,12 @@ inline void OCPI::Time::Emit::emit( OCPI::Time::Emit::EventId id,
 				    uint64_t v,
 				    EventTriggerRole role)
 {        
-  emitT(id,v,getTime(),role);
+  emitT(id,v,getTicks(),role);
 }
 
 inline void OCPI::Time::Emit::emitT( OCPI::Time::Emit::EventId id, 
 				    uint64_t v,
-				    Time ptime,
+				     Time pticks,
 				    EventTriggerRole role)
 {        
 
@@ -287,7 +309,7 @@ inline void OCPI::Time::Emit::emitT( OCPI::Time::Emit::EventId id,
   }
 
   m_q->current->size = size; 
-  m_q->current->time  = ptime;
+  m_q->current->time_ticks = pticks;
   m_q->current->eid   = id;                
   m_q->current->owner = m_myId;
 
@@ -308,7 +330,7 @@ inline void OCPI::Time::Emit::emitT( OCPI::Time::Emit::EventId id,
 
 inline void OCPI::Time::Emit::emit( EventId id, OCPI::API::PValue& p, EventTriggerRole role )
 {
-  emitT(id,p,getTime(),role);
+  emitT(id,p,getTicks(),role);
 }
 
 inline void OCPI::Time::Emit::emitT( EventId id, OCPI::API::PValue& p, Time t, EventTriggerRole role )
@@ -372,7 +394,7 @@ inline void OCPI::Time::Emit::emitT( EventId id, OCPI::API::PValue& p, Time t, E
 inline void OCPI::Time::Emit::emit( OCPI::Time::Emit::EventId id,
                                            EventTriggerRole role )
 {
-  emitT(id,getTime(),role);
+  emitT(id,getTicks(),role);
 }
 
 inline void OCPI::Time::Emit::emitT( OCPI::Time::Emit::EventId id,

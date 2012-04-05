@@ -54,6 +54,7 @@
 #include <OcpiPort.h>
 #include <OcpiPortSetMetaData.h>
 #include <OcpiParentChild.h>
+#include <OcpiTimeEmit.h>
 
 namespace  OCPI {
   namespace DataTransport {
@@ -70,7 +71,8 @@ namespace OCPI {
     class Port;
     class Buffer;
 
-    class PortSet : public OCPI::Util::Child<Circuit,PortSet>, public OCPI::Util::Parent<Port>
+    class PortSet : public OCPI::Util::Child<Circuit,PortSet>, public OCPI::Util::Parent<Port>,
+      public OCPI::Time::Emit
     {
 
     public:

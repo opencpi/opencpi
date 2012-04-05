@@ -63,6 +63,7 @@ using namespace OCPI::OS;
 PortSet::
 PortSet( PortSetMetaData* psmd, Circuit* circuit )
   :CU::Child<Circuit,PortSet>( *circuit ),
+   OCPI::Time::Emit( circuit, "PortSet" ),
    m_transferController(NULL),
    m_circuit(circuit)
  {

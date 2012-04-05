@@ -151,6 +151,13 @@ do { \
   this->emit(re);           \
  } while(0)
 
+#define OCPI_EMIT__( name, c )			\
+do { \
+  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Transient); \
+  c->emit(re);								\
+ } while(0)
+
+
 #define OCPI_EMIT_STATE( name, state )                        \
 do { \
   OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Value); \
@@ -341,16 +348,22 @@ namespace OCPI {
 
       // This is the base class for the time source that gets used by the emit class for time stamping events.
       class TimeSource {
+      protected:
+	struct timespec m_init_tv;
+	bool m_init;
       public:
-        TimeSource();
-        virtual Time getTime(  struct timespec & init_tv, bool init=false  )=0;
+        TimeSource():m_init(false){}
+        virtual Time getTime()=0;
+        virtual Time getTicks()=0;
         virtual ~TimeSource(){}
       };
 
       // This class uses "gettimeofday" to get the time tag
       class SimpleSystemTime : public TimeSource {
       public:
-        Time getTime( struct timespec & init_tv, bool init );
+	SimpleSystemTime();
+        Time getTime();
+        virtual Time getTicks();
         virtual ~SimpleSystemTime(){};
       };
 
@@ -359,7 +372,8 @@ namespace OCPI {
       class FastSystemTime : public TimeSource {
       public:
         FastSystemTime();
-        Time getTime(  struct timespec & init_tv, bool init );
+        Time getTime();
+        virtual Time getTicks();
       private:
           int m_method;
           virtual ~FastSystemTime(){};
@@ -408,14 +422,26 @@ namespace OCPI {
 
       // Stop collecting events now
       void stop( bool globally = true );
+      static void endQue();
 
       // Member access
       inline OCPI::OS::uint32_t getLevel(){return m_level;};
       inline std::string& getClassName(){return m_className; }
+      void setInstanceName( const char* name );
       inline Emit* getParent(){return m_parent;}
+
+      // Determines if a category and sub-category qualitfy for an emit
+      inline static bool qualifyCategory( uint32_t category, uint32_t sub_cat )
+	{
+	  if ( (m_categories & category) && ( m_sub_categories & sub_cat) ) 
+	    return true;
+	  else 
+	    return false;	      
+	}
 
       // Get Headers
       static Header& getHeader();
+
       // This mutex is used to protect the static header data
       static OCPI::OS::Mutex& getGMutex();
 
@@ -435,6 +461,7 @@ namespace OCPI {
 
       // static class methods
       Time getTime();
+      Time getTicks();
 
       // Get the header information
       void getHeaderInfo( Emit* t, int& instance  );
@@ -454,7 +481,8 @@ namespace OCPI {
       int            m_parentIndex;
       OCPI::OS::Mutex m_mutex;
       TimeSource*    m_ts;
-      static struct timespec m_init_tv;
+      static uint32_t m_categories;
+      static uint32_t m_sub_categories;
     };
 
 

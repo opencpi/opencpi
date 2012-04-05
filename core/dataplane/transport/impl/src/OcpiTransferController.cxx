@@ -57,6 +57,7 @@
 #include <OcpiIntDataDistribution.h>
 #include <OcpiList.h>
 #include <OcpiOsAssert.h>
+#include <OcpiTimeEmitCategories.h>
 
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;
@@ -424,6 +425,7 @@ void TransferController::broadCastOutput( Buffer* b )
 #endif
 
   // Start producing, this may be asynchronous
+  OCPI_EMIT_CAT__("Start Data Transfer",OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buffer );
   m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid][1][OUTPUT]->produce();
         
   // Add the template to our list
@@ -661,6 +663,7 @@ int TransferController1::produce( Buffer* b, bool bcast )
   // Start producing, this may be asynchronous
   OcpiTransferTemplate *temp = 
     m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid][bcast_idx][OUTPUT];
+  OCPI_EMIT_CAT__("Start Data Transfer",OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buffer );
   temp->produce();
 
   // Add the template to our list
@@ -923,6 +926,7 @@ int TransferController2::produce( Buffer* b, bool bcast )
 #endif
 
   // Start producing, this may be asynchronous
+  OCPI_EMIT_CAT__("Start Data Transfer",OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buffer );
   m_templates [buffer->getPort()->getPortId()][buffer->getTid()][m_inputPort->getPortId()][m_nextTid][bcast_idx][OUTPUT]->produce();
 
   // Add the template to our list

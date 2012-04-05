@@ -59,6 +59,7 @@
 #include <OcpiParentChild.h>
 #include <DtSharedMemoryInternal.h>
 #include "OcpiBuffer.h"
+#include <OcpiTimeEmit.h>
 
 
 namespace DataTransfer {
@@ -79,7 +80,8 @@ namespace OCPI {
     class Circuit;
 
     // This is the OCPI specialized port class definition
-    class Port :  public OCPI::Util::Child<PortSet,Port>
+    class Port :  public OCPI::Util::Child<PortSet,Port>, 	
+      public OCPI::Time::Emit
     {
 
     public:
@@ -148,7 +150,7 @@ namespace OCPI {
        * Finalize the port
        *********************************/
       virtual void finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine,
-			     OCPI::RDT::Descriptors *flow = NULL);
+			     OCPI::RDT::Descriptors *flow = NULL );
       bool isFinalized(); 
 
       /**************************************

@@ -54,6 +54,8 @@
 #include <OcpiPort.h>
 #include <OcpiOsAssert.h>
 #include <OcpiCircuit.h>
+#include <OcpiTimeEmitCategories.h>
+
 
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;
@@ -63,10 +65,11 @@ using namespace DataTransfer;
  * Constructors
  *********************************/
 Buffer::Buffer( OCPI::DataTransport::Port* port, OCPI::OS::uint32_t tid )
-    : m_zeroCopyFromBuffer(NULL),m_port(port),
-      m_zCopyPort(0),m_attachedZBuffer(0),m_tid(tid),m_buffer(0),
-      m_dependentZeroCopyPorts(1),  m_dependentZeroCopyCount(0), 
-      m_InUse(false),m_remoteZCopy(false), m_threadSafeMutex(true)
+  : OCPI::Time::Emit( port, "Buffer", ""),
+  m_zeroCopyFromBuffer(NULL),m_port(port),
+  m_zCopyPort(0),m_attachedZBuffer(0),m_tid(tid),m_buffer(0),
+  m_dependentZeroCopyPorts(1),  m_dependentZeroCopyCount(0), 
+  m_InUse(false),m_remoteZCopy(false), m_threadSafeMutex(true)
 {
   m_pullTransferInProgress = NULL;
   m_pid=m_port->getPortId();
@@ -195,8 +198,8 @@ bool Buffer::isEmpty()
  **********************************/
 void Buffer::attachZeroCopy( Buffer* from_buffer )
 {
-  OCPI::Util::AutoMutex guard ( m_threadSafeMutex,
-                               true ); 
+  OCPI::Util::AutoMutex guard ( m_threadSafeMutex, true ); 
+  OCPI_EMIT_CAT_("Attaching ZCopy buffer",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_DP);
 
   ocpiAssert( ! m_zeroCopyFromBuffer );
 
@@ -225,8 +228,7 @@ void Buffer::attachZeroCopy( Buffer* from_buffer )
  **********************************/
 Buffer* Buffer::detachZeroCopy()
 {
-  OCPI::Util::AutoMutex guard ( m_threadSafeMutex,
-                               true ); 
+  OCPI::Util::AutoMutex guard ( m_threadSafeMutex, true ); 
 
   Buffer* rb=m_zeroCopyFromBuffer;
 
@@ -250,6 +252,9 @@ Buffer* Buffer::detachZeroCopy()
   // We need to inform all links that this buffer is no longer a dependency
   m_zeroCopyFromBuffer->unMarkZeroCopyDependent( this );
   m_zeroCopyFromBuffer = NULL;
+
+  OCPI_EMIT_CAT_("Detaching ZCopy buffer",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_DP);
+
   return rb;
 
 }
@@ -286,9 +291,11 @@ send()
 {
   if ( m_noTransfer ) return;
   if ( m_port->getCircuit()->canTransferBuffer( this ) ) {
+    OCPI_EMIT_CAT_("Posting Buffer Transfer",OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW);
     m_port->getCircuit()->startBufferTransfer( this );
   }
   else {
+    OCPI_EMIT_CAT_("Queing Buffer Transfer",OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW);
     m_port->getCircuit()->queTransfer( this );
   }
 }

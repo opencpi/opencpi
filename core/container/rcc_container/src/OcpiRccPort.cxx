@@ -75,7 +75,11 @@ namespace OCPI {
     initInputPort(const OU::PValue *params)
     {
       ocpiAssert(!m_dtPort);
-      m_dtPort = parent().getTransport().createInputPort(getData().data, params);
+      m_dtPort = parent().getTransport().createInputPort(getData().data, params );
+      std::string n = parent().implTag() + "_";
+      n += parent().instTag() + "_";
+      n +=  m_metaPort.name;
+      m_dtPort->setInstanceName( n.c_str() );
       parent().portIsConnected(portOrdinal());
     }
 
@@ -106,13 +110,19 @@ namespace OCPI {
       inputPort.initInputPort(otherParams);
       ocpiAssert(!m_dtPort);
       // Setup the output port, providing input port info, but NOT finalizing
-      m_dtPort = parent().getTransport().createOutputPort(getData().data, *inputPort.dtPort());
+      m_dtPort = parent().getTransport().createOutputPort(getData().data, *inputPort.dtPort() );
+
+      std::string n = parent().implTag() + "_";
+      n += parent().instTag() + "_";
+      n +=  m_metaPort.name;
+      m_dtPort->setInstanceName( n.c_str() );
+
       // Perform the final negotiation between the input side with all its
       determineRoles(inputPort.getData().data);
       // Tell the input port to finalize
-      inputPort.dtPort()->finalize(getData().data, inputPort.getData().data);
+      inputPort.dtPort()->finalize(getData().data, inputPort.getData().data );
       // Tell the output port to finalize
-      m_dtPort->finalize(inputPort.getData().data, getData().data);
+      m_dtPort->finalize(inputPort.getData().data, getData().data );
       m_localOther = &inputPort;
       inputPort.m_localOther = this;
       parent().portIsConnected(portOrdinal());
@@ -144,10 +154,16 @@ namespace OCPI {
       OC::Container::unpackPortDesc(inputInfo, inputPortData);
       OC::PortConnectionDesc localShadowPort;
       ocpiAssert(!m_dtPort);
-      m_dtPort = parent().getTransport().createOutputPort(getData().data, inputPortData.data);
+      m_dtPort = parent().getTransport().createOutputPort(getData().data, inputPortData.data );
+
+      std::string n = parent().implTag() + "_";
+      n += parent().instTag() + "_";
+      n +=  m_metaPort.name;
+      m_dtPort->setInstanceName( n.c_str() );
+
       determineRoles(inputPortData.data);
       finishConnection(inputPortData.data);
-      m_dtPort->finalize(inputPortData.data, getData().data, &localShadowPort.data);
+      m_dtPort->finalize(inputPortData.data, getData().data, &localShadowPort.data );
       parent().portIsConnected(portOrdinal());
       // Fill in our container-port reference and our container reference
       OC::Container::packPortDesc(getData().data.role == OCPI::RDT::ActiveMessage ?
@@ -165,7 +181,7 @@ namespace OCPI {
       OC::Container::unpackPortDesc(input_port, tpdata);
 
       ocpiAssert(m_dtPort);
-      m_dtPort->finalize(tpdata.data, getData().data);
+      m_dtPort->finalize(tpdata.data, getData().data );
       OC::Container::packPortDesc(getData(), out);
     }
 

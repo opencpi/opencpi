@@ -181,7 +181,7 @@ void OCPI::DataTransport::Port::initialize()
  * Constructors
  *********************************/
 OCPI::DataTransport::Port::Port( PortMetaData* data, PortSet* ps )
-  : CU::Child<PortSet,Port>(*ps),
+  : CU::Child<PortSet,Port>(*ps), OCPI::Time::Emit( ps, "Port", "",NULL ), 
     m_initialized(false), 
     m_data( data ),
     m_realSMemResources(NULL),
@@ -226,7 +226,7 @@ SmemServices* OCPI::DataTransport::Port::getRealShemServices()
  *********************************/
 void 
 Port::
-finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCPI::RDT::Descriptors *flow)
+finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCPI::RDT::Descriptors *flow )
 {
   Circuit &c = *getCircuit();
   Port *otherPort;
@@ -1398,6 +1398,7 @@ getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode)
 {
   OCPI::DataTransport::Buffer* buf = getNextFullInputBuffer();
   if (buf) {
+    OCPI_EMIT_CAT__("Data Buffer Recieved",OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
     data = (void*)buf->getBuffer(); // cast off the volatile
     opcode = buf->getMetaData()->ocpiMetaDataWord.opCode;
     length = buf->getDataLength();

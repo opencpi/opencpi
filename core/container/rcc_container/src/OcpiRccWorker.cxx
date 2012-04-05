@@ -65,6 +65,7 @@
 #include <OcpiUtilMisc.h>
 #include <OcpiParentChild.h>
 #include <OcpiMetadataWorker.h>
+#include <OcpiTimeEmitCategories.h>
 
 namespace OM = OCPI::Metadata;
 namespace OC = OCPI::Container;
@@ -126,6 +127,7 @@ Worker::
 Worker( Application & app, Artifact *art, const char *name,
 	ezxml_t impl, ezxml_t inst, const OU::PValue *wParams)
   : OC::WorkerBase<Application,Worker,Port>(app, art, name, impl, inst, wParams),
+    OCPI::Time::Emit( "Worker", name ),
     // Note the "hack" to use "name" as dispatch when artifact is not present
     m_context(0), m_mutex(app.container()), enabled(false),sourcePortCount(0),targetPortCount(0),
     m_nPorts(0),//sourcePorts(1), targetPorts(1),
@@ -572,6 +574,8 @@ void Worker::run(bool &anyone_run) {
   RCCBoolean timeout = false;
   RCCPortMask readyMask = 0;
 
+  OCPI_EMIT_CAT_("Start Worker Evaluation",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_WC);
+
   // Break from this "do" when we know whether we are running or not
   do {
     // No run condition at all means run
@@ -646,10 +650,14 @@ void Worker::run(bool &anyone_run) {
     assert(enabled);
     if (m_dispatch->run && execute_run ) {
       anyone_run = true;
-      OCPI_EMIT_("End Worker Evaluation");
+      OCPI_EMIT_CAT_("End Worker Evaluation",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_WC);
       RCCBoolean newRunCondition = false;
+
       // FIXME: implement new runcondition!!!
-      switch (m_dispatch->run(m_context, timeout, &newRunCondition)) {
+      OCPI_EMIT_CAT_("Start Worker Run", OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_NO_SUBCAT);
+      RCCResult rc = m_dispatch->run(m_context, timeout, &newRunCondition);
+      OCPI_EMIT_CAT_("End Worker Run", OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_NO_SUBCAT);
+      switch ( rc ) {
       case RCC_ADVANCE:
 	advanceAll();
 	break;
@@ -678,12 +686,12 @@ void Worker::run(bool &anyone_run) {
 }
      void Worker::checkDeadLock() {}
      void Worker::advanceAll() {
-       OCPI_EMIT_( "Start Advance All" );
+       OCPI_EMIT_CAT_("Start Advance All",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_WC);
        RCCPort *rccPort = m_context->ports;
        for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
 	 if (rccPort->current.data)
 	   rccPort->containerPort->advance();
-       OCPI_EMIT_( "End Advance All" );
+       OCPI_EMIT_CAT_("End Advance All",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_WC);
      }
 
 // Note we are already under a mutex here

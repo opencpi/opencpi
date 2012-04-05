@@ -51,6 +51,7 @@
 #include <OcpiCircuit.h>
 #include <OcpiOsAssert.h>
 #include <OcpiUtilAutoMutex.h>
+#include <OcpiTimeEmitCategories.h>
 
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;

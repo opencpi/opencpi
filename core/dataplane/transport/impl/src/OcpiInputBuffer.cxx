@@ -52,6 +52,7 @@
 #include <OcpiUtilAutoMutex.h>
 #include <OcpiTransferController.h>
 #include <OcpiPullDataDriver.h>
+#include <OcpiTimeEmitCategories.h>
 
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;
@@ -349,6 +350,7 @@ volatile BufferState* InputBuffer::getState()
 void InputBuffer::markBufferFull()
 {
   m_produced = true;
+  OCPI_EMIT_CAT_("Mark Buffer Full",OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW);
 
   if ( ! this->getPort()->isShadow() ) {
     // This can happen when in the same container
@@ -372,6 +374,7 @@ void InputBuffer::markBufferFull()
  *********************************/
 void InputBuffer::markBufferEmpty()
 {
+  OCPI_EMIT_CAT_("Mark Buffer Empty",OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW);
   if ( ! this->getPort()->isShadow() ) {
     for ( unsigned int n=0; n<MAX_PCONTRIBS; n++ ) {
       ocpiAssert(m_state[0][n].bufferIsFull == FF_EMPTY_VALUE ||

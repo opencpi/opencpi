@@ -117,37 +117,6 @@ static inline void get_tick_count(tick_t *t)
 
   t->l.high = tb_upper;
   t->l.low  = tb_lower;
-
-
-#ifdef NEW_WAS
-  __asm volatile ( "1:\n"
-                   "  mftbu %0;\n"      /* Load from TBU to orig */
-                   "  mftb  %1;\n"      /* Load from TBL */
-                   "  mftbu %2;\n"      /* Load from TBU to temp */
-                   "  cmpw %2, %0;\n"   /* Compare TBU orig to TBU temp */
-                   "bne 1b;\n"
-                   :
-                   "=r" ( tb_upper ),
-                   "=r" ( tb_lower ),
-                   "=r" ( tb_upper_tmp )
-                 : );
-
-#ifdef WAS
-    __asm__ __volatile__ ( 
-    "1:\n\t" 
-        "mftbu %0\n\t" 
-        "mftb %1\n\t" 
-        "mftbu r6\n\t" 
-        "cmpw r6,%0\n\t" 
-        "bne 1b" 
-        : 
-         "=r" (t->l.high), 
-         "=r" (t->l.low) 
-        : 
-        : "r6");
-#endif
-#endif
-
 }
 #endif /* _CPU_POWERPC */
 
