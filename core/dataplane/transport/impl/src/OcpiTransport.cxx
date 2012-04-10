@@ -100,13 +100,31 @@ getListOfSupportedEndpoints()
 // FIXME have recursive mutex with default constructor
 // Constructors
 OCPI::DataTransport::Transport::
+Transport( TransportGlobal* tpg, bool uses_mailboxes, OCPI::Time::Emit * parent  )
+  : OCPI::Time::Emit(parent, "Transport"), m_defEndpoint(NULL),
+    m_uses_mailboxes(uses_mailboxes), m_mutex(*new OCPI::OS::Mutex(true)),
+    m_nextCircuitId(0), m_CSendpoint(NULL), m_transportGlobal(tpg)
+{
+  OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  init();
+}
+
+
+OCPI::DataTransport::Transport::
 Transport( TransportGlobal* tpg, bool uses_mailboxes )
   : OCPI::Time::Emit("Transport"), m_defEndpoint(NULL),
     m_uses_mailboxes(uses_mailboxes), m_mutex(*new OCPI::OS::Mutex(true)),
     m_nextCircuitId(0), m_CSendpoint(NULL), m_transportGlobal(tpg)
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
+  init();
+}
 
+
+
+void 
+OCPI::DataTransport::Transport::
+init() {
   if ( g_nextCircuitId == 0 ) {
     srand( time(NULL) );
     g_nextCircuitId = getpid() + rand();
@@ -122,26 +140,8 @@ Transport( TransportGlobal* tpg, bool uses_mailboxes )
   for ( it=m_endpoints.begin(); it!=m_endpoints.end(); it++ ) {
     ocpiDebug("initial supported ep = %s", (*it).c_str() );
   }
-
 }
 
-
-#if 0
-// FIXME: This is only used in addLocalEndpoint and should be collapsed into it.
-std::string& 
-OCPI::DataTransport::Transport::
-getDefaultEndPoint()
-{
-  if ( m_defEndpoint == "" ) {
-    m_defEndpoint = getEndpointFromProtocol("ocpi-smb-pio");
-    if ( m_defEndpoint == "" ) {
-      m_defEndpoint =  m_endpoints[0] = 
-	addLocalEndpoint( m_endpoints[0].c_str() )->sMemServices->endpoint()->end_point; 
-    }
-  }
-  return m_defEndpoint;
-}
-#endif
 
 // Find an endpoint that we can use to communicate with the given endpoint (string).
 // It might just be a protocol string
@@ -511,7 +511,7 @@ createCircuit( OCPI::RDT::Descriptors& sPortDesc )
 OCPI::DataTransport::Port * 
 OCPI::DataTransport::Transport::
 createOutputPort(OCPI::RDT::Descriptors& outputDesc,
-		 const OCPI::RDT::Descriptors& inputDesc)
+		 const OCPI::RDT::Descriptors& inputDesc )
 {
   // Before creating the output port, we need to 
   // create a local endpoint that is compatible with the remote.
@@ -525,7 +525,6 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
 
   Circuit *c = createCircuit(outputDesc);
   c->addInputPort(inputDesc, outputDesc.desc.oob.oep);
-  // flowDesc.desc.oob.cookie = outputDesc.desc.oob.cookie;
 
   Port *p = c->getOutputPort();
   p->getPortDescriptor(outputDesc, &inputDesc);
@@ -535,7 +534,7 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
 OCPI::DataTransport::Port * 
 OCPI::DataTransport::Transport::
 createOutputPort(OCPI::RDT::Descriptors& outputDesc,
-		 OCPI::DataTransport::Port &inputPort)
+		 OCPI::DataTransport::Port &inputPort )
 {
   // With an inside connection, the endpoints are the same
   strcpy(outputDesc.desc.oob.oep, inputPort.getEndpoint()->end_point.c_str());
@@ -631,7 +630,7 @@ OCPI::DataTransport::Transport::
 createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
 {
   Circuit *circuit = 0;
-  Port *port = createInputPort(circuit, desc, params);
+  Port *port = createInputPort(circuit, desc, params );
   circuit->attach(); // FIXME: why wouldn't port creation do the attach?
   // Merge port descriptor info between what was passed in and what is determined here.
   port->getPortDescriptor(desc, NULL);

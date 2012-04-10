@@ -49,6 +49,7 @@
 
 #include <OcpiTimeEmit.h>
 #include <iostream>
+#include <stdio.h>
 
 namespace OCPI {
 
@@ -79,7 +80,7 @@ namespace OCPI {
 		Event e;
 		char buf[256];
 		int id,owner,type;
-		sscanf( b, "%d,%d,%d,%llu,%s", &id, &owner,&type, (unsigned long long*) &e.hdr.time, buf);
+		sscanf( b, "%d,%d,%d,%llu,%s", &id, &owner,&type, (unsigned long long*) &e.hdr.time_ticks, buf);
 		e.hdr.eid = (uint16_t)id;
 		e.hdr.owner = (uint16_t)owner;
 		e.svalue = buf;
@@ -244,7 +245,7 @@ namespace OCPI {
 	}  
 	static bool SortPredicate( const Event& e1, const Event& e2 )
 	  {
-	    return e1.hdr.time < e2.hdr.time;
+	    return e1.hdr.time_ticks < e2.hdr.time_ticks;
 	  }
 	std::vector<Event> m_events;
 	void  parseEvents() {
@@ -256,7 +257,7 @@ namespace OCPI {
 		      << ezxml_cattr(x,"value") << " " << std::endl;
 #endif
 
-	    sscanf( ezxml_cattr(x,"time"), "%llu", (unsigned long long*) &e.hdr.time);
+	    sscanf( ezxml_cattr(x,"time"), "%llu", (unsigned long long*) &e.hdr.time_ticks);
 	    e.hdr.eid = atoi( ezxml_cattr(x,"id") );
 	    e.hdr.owner = atoi( ezxml_cattr(x,"owner") );
 	    e.svalue = ezxml_cattr(x,"value");
@@ -297,7 +298,7 @@ namespace OCPI {
 	  {
 	    std::vector<XMLReader::Event>::iterator it;
 	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++ ) {
-	      out << (*it).hdr.eid << "," << (*it).hdr.time << "," << m_xml_reader.getDescription((*it).hdr.eid).width << "," <<
+	      out << (*it).hdr.eid << "," << (*it).hdr.time_ticks << "," << m_xml_reader.getDescription((*it).hdr.eid).width << "," <<
 		(*it).svalue << "," <<	m_xml_reader.ownerString( (*it).hdr.owner ) << "," << 
 		"\"" << m_xml_reader.descString( (*it).hdr.eid ) << "\"" << std::endl;
 	    }
@@ -337,38 +338,49 @@ namespace OCPI {
 #define SYMSTART 33
 #define SYMEND   126
 #define SYMLEN (SYMEND-SYMSTART)
+	
+	std::string itos(int n, char * digits ) {
+	  char s[16];
+	  std::size_t base = SYMLEN;
+	  int i=0;
+	  do {      
+	    s[i++] = digits[n % base]; 
+	  } while ((n /= base) > 0);   
+	  s[i] = '\0';
+	  return std::string( s );
+	}
+
+
 	  void getVCDVarSyms( std::map<int,std::string,ecmp> & varsyms )
 	  {
-	    unsigned int n;
-	    char syms[SYMLEN];
-	    for( n=0; n<SYMLEN; n++)syms[n]=static_cast<char>(n+SYMSTART);
+	    unsigned int n;	    
+	    char digits[SYMLEN];
+	    for( int u=0; u<SYMLEN; u++)digits[u]=static_cast<char>(u+SYMSTART);
+	    n = SYMLEN+1;
 	    std::vector<XMLReader::Description>::iterator it;
-	    int scount=0;
-	    int * sindex = new int[m_xml_reader.getDescriptions().size()/SYMLEN+1];
-	    std::auto_ptr<int> del(sindex);
-	    for ( n=0;n<m_xml_reader.getDescriptions().size()/SYMLEN+1;n++)sindex[n]=0;
 	    for ( it=m_xml_reader.getDescriptions().begin(); it!=m_xml_reader.getDescriptions().end(); it++ ) {
-	      unsigned int ccount = scount/SYMLEN;
-	      std::string sym;
-	      for ( n=0; n<=ccount; n++ ) {
-		sym += syms[sindex[n]%SYMLEN];
-		sindex[n]++;
-		scount++;
-	      }
-	      varsyms[(*it).id] = sym;
+	      varsyms[(*it).id] = itos( n++, digits );
+#ifndef NDEBUG
+	      std::cerr << "id = " << (*it).id << " sym = " << varsyms[(*it).id] << std::endl;
+#endif
 	    }
 	  }
 
-
+      
 	  void dumpVCDScope( std::ostream& out, XMLReader::Owner & owner,
 			     std::map< int, std::string, ecmp > & varsyms,
 			     std::vector<EventInstance> & allEis )
 	  {
-
 	    std::string pname( owner.name );
 	    std::replace(pname.begin(),pname.end(),' ','_');
 	    out << "$scope module " << pname.c_str() << " $end" << std::endl; 
-	    for( int n=0; n<=owner.id/SYMLEN; n++) owner.postfix=static_cast<char>((SYMSTART+owner.id)%SYMLEN);
+
+#ifdef EMIT_POSTFIX_REQUIRED
+	    for( int n=0; n<=owner.id/SYMLEN; n++) {
+	      owner.postfix = static_cast<char>((SYMSTART+owner.id)%SYMLEN);
+	      std::cerr << "Postfix = " << owner.postfix;
+	    }
+#endif
 
 	    // Dump the variables for this object
 	    std::vector<XMLReader::Description>::iterator it;
@@ -379,16 +391,20 @@ namespace OCPI {
 		std::replace(tn.begin(),tn.end(),' ','_');
 		std::string type;
 		type = ((*it).width > 1) ? "integer" : "reg";
+
 		out << "$var " << type << " " << (*it).width << " " << varsyms[(*it).id] << owner.postfix<<
 		  " " <<  tn << " $end" << std::endl;
 		std::string sym = varsyms[(*it).id] + owner.postfix;
+
 		allEis.push_back( EventInstance(owner.id,(*it).id,sym) );
 	      }
 	    }
     
 	    // Now dump our children
 	    unsigned int id;
+	    int mod=0;
 	    for ( id=0; id<m_xml_reader.getOwners().size(); id++ ) {
+	      if ( (mod++%10000) == 0 ) std::cerr << "." << std::flush;
 	      if ( m_xml_reader.getOwner(id).parentIndex == owner.id ) {
 		dumpVCDScope( out, m_xml_reader.getOwner(id), varsyms, allEis );
 	      }
@@ -418,6 +434,9 @@ namespace OCPI {
 	    std::map< int, std::string, ecmp > varsyms;
 	    std::vector<EventInstance> allEis;
 	    OCPI::Time::Emit::OwnerId owner;
+	    int mod=0;
+
+	    std::cerr << "This can take several minutes depending on the event count" << std::endl;
 
 	    // Date
 	    char date[80];
@@ -447,13 +466,18 @@ namespace OCPI {
 	    // For each top level object generate its $var defs and then dump its children
 	    getVCDVarSyms( varsyms );
 
+	    std::cerr << "." << std::flush;
+
 	    // Here we output each scoped owner class and then define which event each class will emit
 	    for ( owner=0, hit=m_xml_reader.getOwners().begin();
 		  hit!=m_xml_reader.getOwners().end(); hit++,owner++ ) {
 	      if ( (*hit).parentIndex == -1 ) {
 		dumpVCDScope( out, m_xml_reader.getOwner(owner), varsyms, allEis );
 	      }
+	      if ( (mod++%1000) == 0 ) std::cerr << "." << std::flush;
 	    }
+
+	    std::cerr << "." << std::flush;
 
 	    out << "$upscope $end" << std::endl;
 	    out << "$enddefinitions $end" << std::endl;
@@ -470,6 +494,7 @@ namespace OCPI {
 	      }
 	    }
 	    out << "$end" << std::endl;  
+	    std::cerr << "." << std::flush;
 
 
 	    // Now emit the events
@@ -479,16 +504,20 @@ namespace OCPI {
 	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++) {
 	      XMLReader::Owner& owner = m_xml_reader.getOwner((*it).hdr.owner);
 	      if ( start_time == 0 ) {
-		start_time = (*it).hdr.time;
+		start_time = (*it).hdr.time_ticks;
 	      }
 	      TimeLineData tld;
 
+	      if ( (mod++%10000) == 0 ) std::cerr << "." << std::flush;
+
 	      // event time
 	      char tbuf[256];
+
+#define EMIT_RELATIVE_TIME
 #ifdef EMIT_RELATIVE_TIME
-	      OCPI::Time::Emit::Time ctime = (*it).hdr.time-start_time;
+	      OCPI::Time::Emit::Time ctime = (*it).hdr.time_ticks-start_time;
 #else
-	      OCPI::Time::Emit::Time ctime = (*it).hdr.time;
+	      OCPI::Time::Emit::Time ctime = (*it).hdr.time_ticks;
 #endif
 	      snprintf(tbuf,256,"\n#%lld\n",(long long)ctime);
 	      tld.t = ctime;
@@ -549,7 +578,7 @@ namespace OCPI {
 	    unsigned int n;
 	    if ( tldv.size() ) {
 	      for(n=0; n<tldv.size()-1; n++) {  
-		if ( tldv[n].time == tldv[n+1].time ) {
+		if ( tldv[n].time_ticks == tldv[n+1].time_ticks ) {
 		  tldv[n].values += "\n";
 		  tldv[n].values += tldv[n+1].values;
 		  tldv.erase(tldv.begin()+n+1);

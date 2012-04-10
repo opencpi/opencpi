@@ -58,6 +58,7 @@
 #include <OcpiTransportGlobal.h>
 #include <DtIntEventHandler.h>
 #include <OcpiParentChild.h>
+#include <OcpiTimeEmit.h>
 
 
 // Forward references
@@ -117,6 +118,8 @@ namespace OCPI {
        * Constructors
        *********************************/
       Transport(OCPI::DataTransport::TransportGlobal* tpg,
+                bool uses_mailboxes, OCPI::Time::Emit * parent );
+      Transport(OCPI::DataTransport::TransportGlobal* tpg,
                 bool uses_mailboxes );
 
       /**********************************
@@ -172,11 +175,11 @@ namespace OCPI {
       // Use this one when you know there is only one output port
       // And the input port is remote
       Port * createOutputPort(OCPI::RDT::Descriptors& outputDesc,
-			      const OCPI::RDT::Descriptors& inputDesc);
+			      const OCPI::RDT::Descriptors& inputDesc );
       // Use this when you are connecting the new outport to 
       // a local input port.
       Port * createOutputPort(OCPI::RDT::Descriptors& outputDesc,
-			      Port& inputPort);
+			      Port& inputPort );
 
 
       /**********************************
@@ -246,6 +249,8 @@ namespace OCPI {
 
       DataTransfer::SMBResources *         m_defEndpoint; // FIXME: check lifecycle
       std::vector<std::string>             m_endpoints;
+
+      void init();
       
 
       /**********************************

@@ -57,7 +57,8 @@
 #include <RCC_Worker.h>
 #include <OcpiTransport.h>
 #include <OcpiRccDriver.h>
-#include "OcpiRccApplication.h"
+#include <OcpiRccApplication.h>
+#include <OcpiTimeEmit.h>
 
 namespace OCPI {
 
@@ -83,7 +84,8 @@ namespace OCPI {
     const OCPI::OS::uint32_t CP289_CSINTERNAL_ERROR          = (CP289_EX_SOURCE_ID << 16) + 6;
 
     class Container
-      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>
+      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>,
+      public OCPI::Time::Emit
     {
 
       public:

@@ -91,7 +91,8 @@ Container(const char *name,
 	  OCPI::DataTransport::TransportGlobal *tpg, 
 	  const OA::PValue* props )
   throw ( OU::EmbeddedException )
-  : OC::ContainerBase<Driver,Container,Application,Artifact>(name)
+  : OC::ContainerBase<Driver,Container,Application,Artifact>(name),
+    OCPI::Time::Emit( "Container", name )
 {
   m_model = "rcc";
   //temp  m_ourUID = g_unique_id;
@@ -100,7 +101,7 @@ Container(const char *name,
   // that their is at least 1 available or we will complain.
   // Initialize the underlying transport system
   try {
-    m_transport = new OCPI::DataTransport::Transport( tpg, false );
+    m_transport = new OCPI::DataTransport::Transport( tpg, false, this );
   }
   catch( std::bad_alloc ) {
     throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);

@@ -76,6 +76,7 @@
 #include <OcpiPullDataDriver.h>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <OcpiTimeEmitCategories.h>
 
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;
@@ -1559,7 +1560,7 @@ canTransferBuffer( Buffer* src_buf, bool queued_transfer )
     }
   }
 
-  OCPI_EMIT_( "Input Buffer Ready" );
+  OCPI_EMIT_CAT_("Input Buffer Ready",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_DP);
 
   return true;
 }

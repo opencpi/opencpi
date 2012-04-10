@@ -192,7 +192,10 @@ createWorker(OC::Artifact *art, const char *appInstName,
 	     const OCPI::Util::PValue *wParams)
 {
   OU::SelfAutoMutex guard (&container());
-  return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL, appInstName, impl, inst, wParams);
+  if ( appInstName ) 
+    return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL, appInstName, impl, inst, wParams);
+  else 
+    return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL, "unnamed-worker", impl, inst, wParams);
 }
 
 void Application::

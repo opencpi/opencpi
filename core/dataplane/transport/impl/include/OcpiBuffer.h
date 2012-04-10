@@ -54,7 +54,7 @@
 #include <OcpiPortMetaData.h>
 #include <DtHandshakeControl.h>
 #include <OcpiOsMutex.h>
-
+#include <OcpiTimeEmit.h>
 
 
 #ifdef WANT
@@ -81,8 +81,6 @@ namespace OCPI {
   namespace DataTransport {
 
     class  Port;
-
-
     
     class BufferUserFacet {
     public:
@@ -102,7 +100,8 @@ namespace OCPI {
 
 
 
-    class Buffer : public BufferUserFacet
+    class Buffer : public BufferUserFacet,
+       public OCPI::Time::Emit
     {
 
     public:
@@ -306,7 +305,6 @@ namespace OCPI {
 
       // Do not actually transfer the data
       bool m_noTransfer;
-
 
     };
 
