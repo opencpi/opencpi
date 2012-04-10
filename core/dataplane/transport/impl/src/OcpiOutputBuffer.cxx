@@ -101,7 +101,8 @@ void OutputBuffer::update(bool critical)
   // First we will map our buffer
   if ( !m_bVaddr && output_offsets->bufferOffset ) {
 
-    ocpiDebug("OutputBuffer:update: mapping buffer %p tid %d offset 0x%" PRIx64,
+    ocpiDebug("OutputBuffer:update: port %p bmd %p mapping buffer %p tid %d offset 0x%" PRIx64,
+	      getPort(), getPort()->getMetaData()->m_bufferData,
 	      this, tid, output_offsets->bufferOffset);
 
     m_bVaddr = getPort()->getLocalShemServices()->map

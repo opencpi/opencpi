@@ -1170,7 +1170,8 @@ createOutputOffsets()
       m_data->m_bufferData[index].outputOffsets.bufferOffset = boffset+(index*m_data->m_portSetMd->bufferLength);
       m_data->m_bufferData[index].outputOffsets.bufferSize =  m_data->m_portSetMd->bufferLength;
     }
-                
+    ocpiDebug("Port %p bmd %p count %d boffset %" PRIx64, this, m_data->m_bufferData,
+	      bCount, boffset);
     // Allocate the local state
     rc = res_mgr->alloc( sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2, 
                          BUF_ALIGNMENT, &soffset);
