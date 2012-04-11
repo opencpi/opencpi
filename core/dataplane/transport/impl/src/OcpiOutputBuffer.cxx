@@ -71,6 +71,9 @@ OutputBuffer::OutputBuffer( OCPI::DataTransport::Port* port, OCPI::OS::uint32_t 
   m_bcsVaddr = 0;
 
   // update
+  ocpiDebug("OutputBuffer: port %p bmd %p offset 0x%" PRIx64,
+	    port, port->getMetaData()->m_bufferData,
+	    port->getMetaData()->m_bufferData[0].outputOffsets.bufferOffset);
   update(0);
 }
 
@@ -102,9 +105,9 @@ void OutputBuffer::update(bool critical)
   // First we will map our buffer
   if ( !m_bVaddr && output_offsets->bufferOffset ) {
 
-    ocpiDebug("OutputBuffer:update: port %p bmd %p mapping buffer %p tid %d offset 0x%" PRIx64,
+    ocpiDebug("OutputBuffer:update: port %p bmd %p mapping buffer %p tid %d offset 0x%" PRIx64 " at %p",
 	      getPort(), getPort()->getMetaData()->m_bufferData,
-	      this, tid, output_offsets->bufferOffset);
+	      this, tid, output_offsets->bufferOffset, output_offsets);
 
     m_bVaddr = getPort()->getLocalShemServices()->map
       (output_offsets->bufferOffset, 

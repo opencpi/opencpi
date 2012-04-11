@@ -528,8 +528,14 @@ createBuffers()
 
   m_bufferCount = this->getBufferCount();
 
+  ocpiDebug("Port::CreateBuffers1: port %p bmd %p offset 0x%" PRIx64,
+	    this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
+
   // Do the resource allocation first to make sure we can habdle the request.
   allocateBufferResources();
+
+  ocpiDebug("Port::CreateBuffers2: port %p bmd %p offset 0x%" PRIx64,
+	    this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
 
   // Here we will create our buffers
   for ( OCPI::OS::uint32_t tid=0; tid<this->getBufferCount(); tid++ ) {
