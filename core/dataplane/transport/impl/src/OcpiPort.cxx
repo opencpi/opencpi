@@ -1172,12 +1172,16 @@ createOutputOffsets()
                                          NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
     }
 
+    ocpiDebug("Port::createOutputOffsets1: port %p bmd %p offset 0x%" PRIx64,
+	      this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.bufferOffset = boffset+(index*m_data->m_portSetMd->bufferLength);
       m_data->m_bufferData[index].outputOffsets.bufferSize =  m_data->m_portSetMd->bufferLength;
     }
     ocpiDebug("Port %p bmd %p count %d boffset %" PRIx64, this, m_data->m_bufferData,
 	      bCount, boffset);
+    ocpiDebug("Port::createOutputOffsets2: port %p bmd %p offset 0x%" PRIx64,
+	      this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
     // Allocate the local state
     rc = res_mgr->alloc( sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2, 
                          BUF_ALIGNMENT, &soffset);
@@ -1195,7 +1199,7 @@ createOutputOffsets()
     rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount, 
                          BUF_ALIGNMENT, &moffset);
     if ( rc != 0 ) {
-      res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount );
+      res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2 );
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
       throw OCPI::Util::EmbeddedException( 
                                          NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
@@ -1212,7 +1216,7 @@ createOutputOffsets()
                            BUF_ALIGNMENT, &coffset);
       if ( rc != 0 ) {
         res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
-        res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount );
+        res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2);
         res_mgr->free( moffset,   sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount );
         throw OCPI::Util::EmbeddedException( 
                                            NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
