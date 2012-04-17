@@ -113,6 +113,9 @@
 #define OCPI_EMIT_REGISTER_FULL(  name, dtype, width, etype )        \
   static OCPI::Time::Emit::RegisterEvent re(name,width,etype,dtype)
 
+#define OCPI_EMIT_REGISTER_FULL_VAR(  name, dtype, width, etype, var )	\
+  static OCPI::Time::Emit::RegisterEvent var(name,width,etype,dtype)
+
 #define OCPI_EMIT_REGISTER_P( p )        \
   static OCPI::Time::Emit::RegisterEvent re(p)
 
@@ -167,6 +170,24 @@ do { \
 do { \
   OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Value); \
   this->emit(re,static_cast<OCPI::OS::uint64_t>(state)); \
+ } while(0)
+#define OCPI_EMIT_STATE__( name, state, c )	\
+do { \
+  OCPI_EMIT_REGISTER_FULL( name, OCPI::Time::Emit::u, 1, OCPI::Time::Emit::Value); \
+  c->emit(re,static_cast<OCPI::OS::uint64_t>(state));		\
+ } while(0)
+
+#define OCPI_EMIT_STATE_NR( re, state )                        \
+do { \
+  OCPI::Time::Emit::getSEmit().emit(re,static_cast<OCPI::OS::uint64_t>(state)); \
+} while(0)
+#define OCPI_EMIT_STATE_NR_( re, state )                \
+do { \
+  this->emit(re,static_cast<OCPI::OS::uint64_t>(state)); \
+ } while(0)
+#define OCPI_EMIT_STATE_NR__( re, state, c )	\
+do { \
+  c->emit(re,static_cast<OCPI::OS::uint64_t>(state));		\
  } while(0)
 
 #define OCPI_EMIT_PVALUE_( p ) \
@@ -405,6 +426,9 @@ namespace OCPI {
 
       // Header utility methods
       OwnerId addHeader( Emit* t );
+
+      // Gets the default time source
+      static TimeSource * getDefaultTS();
 
       // Trace method
       void emit( EventId id, OCPI::OS::uint64_t v, EventTriggerRole role=NoTrigger );

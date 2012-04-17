@@ -447,6 +447,18 @@ void QStopTest1()
 static OCPI::Time::Emit::RegisterEvent ev0( "my event" );
 static OCPI::Time::Emit::RegisterEvent ev1( "uint event", 8 );
 
+
+static int ticks=0;
+class MyTS : public OCPI::Time::Emit::TimeSource {
+public:
+  MyTS(){};
+  OCPI::Time::Emit::Time getTime(){
+    return OCPI::Time::Emit::getDefaultTS()->getTime();
+  }
+  OCPI::Time::Emit::Time getTicks(){return ticks++;}
+};
+
+
 int main( int argc, char** argv )
 {
 
@@ -466,7 +478,24 @@ int main( int argc, char** argv )
   OCPI::Time::Emit::RegisterEvent ev2( plonglong );
   OCPI::Time::Emit::getSEmit().emit(ev0);
   OCPI::Time::Emit::getSEmit().emit(ev1,89);
-  OCPI_TIME_EMIT_C("C event");
+  OCPI_TIME_EMIT_C("C event");  
+  OCPI::Time::Emit::getSEmit().emit(ev1,89);
+
+
+
+
+
+  // Provide events with own time source
+  MyTS ts;
+  static OCPI::Time::Emit::RegisterEvent hw_evt("My Hardware defined event");
+  OCPI::Time::Emit E( ts );
+  E.emitT( hw_evt, ts.getTicks() );
+  E.emitT( hw_evt, ts.getTicks() );
+  E.emitT( hw_evt, ts.getTicks() );
+  
+
+
+
 
 
   /*

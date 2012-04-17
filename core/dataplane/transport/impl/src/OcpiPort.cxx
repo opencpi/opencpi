@@ -1405,10 +1405,15 @@ getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode)
 {
   OCPI::DataTransport::Buffer* buf = getNextFullInputBuffer();
   if (buf) {
-    OCPI_EMIT_CAT__("Data Buffer Recieved",OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
+
     data = (void*)buf->getBuffer(); // cast off the volatile
     opcode = buf->getMetaData()->ocpiMetaDataWord.opCode;
     length = buf->getDataLength();
+    OCPI_EMIT_CAT__("Data Buffer Received" , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
+
+    OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::u, 64, OCPI::Time::Emit::Value, dbre ); 
+    OCPI_EMIT_VALUE_CAT_NR__(dbre, (uint64_t)(opcode | (uint64_t)length<<16) , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_VALUES, buf);
+
   }
   return buf;
 }
@@ -1557,6 +1562,8 @@ sendOutputBuffer( BufferUserFacet* buf, unsigned int length, uint8_t opcode )
   // Put the actual opcode and data length in the meta-data
   b->getMetaData()->ocpiMetaDataWord.opCode = opcode;
   b->getMetaData()->ocpiMetaDataWord.length = length;
+
+  
 
   // If there were no available output buffers when the worker was last run on this port, then the
   // buffer can be NULL.  The user should not be advancing all in this case, but we need to protect against it.

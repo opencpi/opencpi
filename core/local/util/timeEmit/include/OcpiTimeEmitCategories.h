@@ -71,7 +71,9 @@
 #define OCPI_EMIT_CAT_WORKER_DEV  4   // Worker Developer timing events
 
 // Worker developer sub-cats
-#define OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW 4
+#define OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW   0x4
+#define OCPI_EMIT_CAT_WORKER_DEV_BUFFER_VALUES 0x10
+#define OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME      0x8
 
 #define OCPI_EMIT_NO_SUBCAT       ~0
 
@@ -89,6 +91,37 @@
 #define OCPI_EMIT_CAT( name, category, subcat ) \
   do { \
     if ( OCPI::Time::Emit::qualifyCategory( category, subcat ) ) OCPI_EMIT( name ); \
+  } while ( 0 );
+
+#define OCPI_EMIT_STATE_CAT_NR_( re, state, category, subcat )	\
+  do { \
+    if ( OCPI::Time::Emit::qualifyCategory( category, subcat ) ) OCPI_EMIT_STATE_NR_( re, state ); \
+  } while ( 0 );
+
+#define OCPI_EMIT_STATE_CAT_NR__( re, state, category, subcat, c )	\
+  do { \
+    if ( OCPI::Time::Emit::qualifyCategory( category, subcat ) ) OCPI_EMIT_STATE_NR__( re, state, c ); \
+  } while ( 0 );
+
+#define OCPI_EMIT_STATE_CAT_NR( re, state, category, subcat )	\
+  do { \
+    if ( OCPI::Time::Emit::qualifyCategory( category, subcat ) ) OCPI_EMIT_STATE_NR( re, state ); \
+  } while ( 0 );
+
+
+#define OCPI_EMIT_VALUE_CAT_NR_( re, state, category, subcat )	\
+  do { \
+    if ( OCPI::Time::Emit::qualifyCategory( category, subcat ) ) OCPI_EMIT_STATE_NR_( re, state ); \
+  } while ( 0 );
+
+#define OCPI_EMIT_VALUE_CAT_NR__( re, state, category, subcat, c )	\
+  do { \
+    if ( OCPI::Time::Emit::qualifyCategory( category, subcat ) ) OCPI_EMIT_STATE_NR__( re, state, c ); \
+  } while ( 0 );
+
+#define OCPI_EMIT_VALUE_CAT_NR( re, state, category, subcat )	\
+  do { \
+    if ( OCPI::Time::Emit::qualifyCategory( category, subcat ) ) OCPI_EMIT_STATE_NR( re, state ); \
   } while ( 0 );
 
 

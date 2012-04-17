@@ -127,7 +127,7 @@ Worker::
 Worker( Application & app, Artifact *art, const char *name,
 	ezxml_t impl, ezxml_t inst, const OU::PValue *wParams)
   : OC::WorkerBase<Application,Worker,Port>(app, art, name, impl, inst, wParams),
-    OCPI::Time::Emit( "Worker", name ),
+    OCPI::Time::Emit( &parent().parent(), "Worker", name ), 
     // Note the "hack" to use "name" as dispatch when artifact is not present
     m_context(0), m_mutex(app.container()), enabled(false),sourcePortCount(0),targetPortCount(0),
     m_nPorts(0),//sourcePorts(1), targetPorts(1),
@@ -574,7 +574,8 @@ void Worker::run(bool &anyone_run) {
   RCCBoolean timeout = false;
   RCCPortMask readyMask = 0;
 
-  OCPI_EMIT_CAT_("Start Worker Evaluation",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_WC);
+  OCPI_EMIT_REGISTER_FULL_VAR( "Worker Evaluation", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, were ); 
+  OCPI_EMIT_STATE_CAT_NR_(were, 1, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
 
   // Break from this "do" when we know whether we are running or not
   do {
@@ -650,13 +651,14 @@ void Worker::run(bool &anyone_run) {
     assert(enabled);
     if (m_dispatch->run && execute_run ) {
       anyone_run = true;
-      OCPI_EMIT_CAT_("End Worker Evaluation",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_WC);
+      OCPI_EMIT_STATE_CAT_NR_(were, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
       RCCBoolean newRunCondition = false;
 
       // FIXME: implement new runcondition!!!
-      OCPI_EMIT_CAT_("Start Worker Run", OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_NO_SUBCAT);
+      OCPI_EMIT_REGISTER_FULL_VAR( "Worker Run", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, wre ); \
+      OCPI_EMIT_STATE_CAT_NR_(wre, 1, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
       RCCResult rc = m_dispatch->run(m_context, timeout, &newRunCondition);
-      OCPI_EMIT_CAT_("End Worker Run", OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_NO_SUBCAT);
+      OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
       switch ( rc ) {
       case RCC_ADVANCE:
 	advanceAll();
@@ -686,12 +688,14 @@ void Worker::run(bool &anyone_run) {
 }
      void Worker::checkDeadLock() {}
      void Worker::advanceAll() {
-       OCPI_EMIT_CAT_("Start Advance All",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_WC);
+
+      OCPI_EMIT_REGISTER_FULL_VAR( "Advance All", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, aare ); 
+      OCPI_EMIT_STATE_CAT_NR_(aare, 1, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
        RCCPort *rccPort = m_context->ports;
        for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
 	 if (rccPort->current.data)
 	   rccPort->containerPort->advance();
-       OCPI_EMIT_CAT_("End Advance All",OCPI_EMIT_CAT_TUNING,OCPI_EMIT_CAT_TUNING_WC);
+       OCPI_EMIT_STATE_CAT_NR_(aare, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
      }
 
 // Note we are already under a mutex here

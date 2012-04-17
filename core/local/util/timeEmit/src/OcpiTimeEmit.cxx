@@ -53,8 +53,8 @@ namespace OU = OCPI::Util;
 namespace OCPI {
   namespace Time {
 
-    uint32_t Emit::m_categories = ~0;
-    uint32_t Emit::m_sub_categories = ~0;
+    uint32_t Emit::m_categories = 0;
+    uint32_t Emit::m_sub_categories = 0;
 
     extern "C" {
       int OcpiTimeARegister( char* signal_name )
@@ -66,12 +66,6 @@ namespace OCPI {
 	Emit::getSEmit().emit(sig);
       }
     }
-
-
-
-
-
-
 
 
     static 
@@ -193,11 +187,12 @@ namespace OCPI {
       return *getHeader().g_mutex;
     }
 
-    static Emit::TimeSource * getDefaultTS()
+    Emit::TimeSource * 
+    Emit::
+    getDefaultTS()
     {
       return Emit::getHeader().ts;
     }
-
 
     Emit::
     Emit( TimeSource& ts, const char* class_name, 

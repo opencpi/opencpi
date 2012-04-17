@@ -59,7 +59,7 @@ namespace OCPI {
 
       class XMLReader {
 
-      private:
+     private:
 	ezxml_t m_xml;  // root
 	ezxml_t m_desc_xml;
 	ezxml_t m_owner_xml;
@@ -347,6 +347,9 @@ namespace OCPI {
 	    s[i++] = digits[n % base]; 
 	  } while ((n /= base) > 0);   
 	  s[i] = '\0';
+
+	  std::cerr << "ITOS returning " << s << std::endl;
+
 	  return std::string( s );
 	}
 
@@ -375,6 +378,7 @@ namespace OCPI {
 	    std::replace(pname.begin(),pname.end(),' ','_');
 	    out << "$scope module " << pname.c_str() << " $end" << std::endl; 
 
+#define EMIT_POSTFIX_REQUIRED
 #ifdef EMIT_POSTFIX_REQUIRED
 	    for( int n=0; n<=owner.id/SYMLEN; n++) {
 	      owner.postfix = static_cast<char>((SYMSTART+owner.id)%SYMLEN);
@@ -535,7 +539,7 @@ namespace OCPI {
 		break;
 	      case OCPI::Time::Emit::State:
 		{
-		  snprintf(tbuf,256,"%d ",((*it).v.uvalue == 0) ? 0 : 1);
+		  snprintf(tbuf,256,"%d",((*it).v.uvalue == 0) ? 0 : 1);
 		  tld.values += tbuf;
 		    tld.values += varsyms[(*it).hdr.eid] + owner.postfix.c_str() + "\n";
 		}
