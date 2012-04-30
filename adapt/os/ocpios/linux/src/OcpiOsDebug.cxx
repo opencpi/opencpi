@@ -33,12 +33,15 @@
  */
 
 
-#include <iostream>
 #include <signal.h>
-#include <cstdlib>
 #include <unistd.h>
 #include <execinfo.h>
 #include <stdarg.h>
+#include <cstdlib>
+#include <iostream>
+#include <cstdio>
+#include <climits>
+#include <cstring>
 #include <OcpiOsDebug.h>
 #include <OcpiOsMutex.h>
 

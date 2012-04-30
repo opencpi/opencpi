@@ -33,6 +33,7 @@
  */
 #include <assert.h>
 #include <sys/time.h>
+#include <climits>
 #include "OcpiUtilException.h"
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilValue.h"

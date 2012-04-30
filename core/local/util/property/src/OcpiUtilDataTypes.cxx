@@ -33,11 +33,14 @@
  */
 
 #define __STDC_LIMIT_MACROS // wierd standards goof up
-#include <OcpiOsAssert.h>
+
+#include <climits>
+#include <string>
+
+#include "OcpiOsAssert.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilException.h"
 #include "OcpiUtilDataTypes.h"
-#include <string>
 #include "OcpiUtilValue.h"
 
 namespace OCPI {

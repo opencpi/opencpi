@@ -47,6 +47,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
+#include <cstdio>
 #include "OcpiOsPosixError.h"
 #include "OcpiOsPosixSocket.h"
 

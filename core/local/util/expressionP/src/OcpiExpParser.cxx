@@ -45,11 +45,13 @@
 
 #include <iostream>
 #include <stack>
-#include "OcpiExpParser.h"
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
-#include <OcpiOsAssert.h>
+
+#include "OcpiOsDataTypes.h"
+#include "OcpiOsAssert.h"
+#include "OcpiExpParser.h"
 
 using namespace std;
 

@@ -49,7 +49,7 @@ main (int argc, char *argv[])
     return 1;
   }
 
-  OCPI::Util::FileFs::FileFs localFs;
+  OCPI::Util::FileFs localFs;
   OCPI::Util::Http::HttpFs<OCPI::Util::Tcp::Connector> remoteFs;
   OCPI::Util::Vfs::UriFs ufs;
 

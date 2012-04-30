@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include <climits>
 #include "OcpiOsAssert.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"

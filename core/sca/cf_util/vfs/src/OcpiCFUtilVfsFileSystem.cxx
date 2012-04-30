@@ -32,6 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <memory>
 #include <ctime>
 #include <string>
 #include <cstring>

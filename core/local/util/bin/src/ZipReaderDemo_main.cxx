@@ -49,7 +49,7 @@ main (int argc, char *argv[])
     return 1;
   }
 
-  OCPI::Util::FileFs::FileFs localFs ("/");
+  OCPI::Util::FileFs localFs ("/");
   std::string zipName = OCPI::OS::FileSystem::fromNativeName (argv[1]);
   std::string absZipName = OCPI::OS::FileSystem::absoluteName (zipName);
   OCPI::Util::ZipFs::ZipFs zipFs;

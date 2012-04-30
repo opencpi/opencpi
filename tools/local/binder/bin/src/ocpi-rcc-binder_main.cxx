@@ -1036,7 +1036,7 @@ ocpiRccBinderInt (int argc, char * argv[])
    * Construct a FileFs for file access.
    */
 
-  OCPI::Util::FileFs::FileFs fileFs ("/");
+  OCPI::Util::FileFs fileFs ("/");
 
   /*
    * Collect executable information.

@@ -40,12 +40,13 @@
 
 ************************************************************************** */
 
-#include "OcpiOclPlatformManager.h"
-#include "OcpiDriverManager.h"
-#include "OcpiUtilException.h"
+#include <errno.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
-#include <opencl.h>
-
+#include <cstdlib>
+#include <climits>
 #include <map>
 #include <vector>
 #include <cstring>
@@ -53,10 +54,14 @@
 #include <fstream>
 #include <iostream>
 
-#include <errno.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
+#include <opencl.h>
+
+#include "OcpiOclPlatformManager.h"
+#include "OcpiDriverManager.h"
+#include "OcpiUtilException.h"
+
+
+
 
 namespace
 {

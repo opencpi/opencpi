@@ -32,9 +32,11 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <OcpiOsAssert.h>
 #include <string>
+#include <cstring>
 #include <vector>
+
+#include "OcpiOsAssert.h"
 #include "OcpiUtilCDR.h"
 #include "OcpiUtilIOP.h"
 #include "OcpiUtilIIOP.h"

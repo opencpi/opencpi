@@ -40,22 +40,25 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <vector>
-#include <OcpiOsAssert.h>
-#include <OcpiOsMisc.h>
-#include <DtTransferInternal.h>
-#include <OcpiUtilCommandLineConfiguration.h>
-
 #include <unistd.h>
-#include <arpa/inet.h>
+#include <math.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <math.h>
+#include <arpa/inet.h>
+
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <vector>
+#include <cstddef>
+
+#include "OcpiOsAssert.h"
+#include "OcpiOsMisc.h"
+#include "DtTransferInternal.h"
+#include "OcpiUtilCommandLineConfiguration.h"
+
 
 static int socket_fd;
 /****************************************************************************** 

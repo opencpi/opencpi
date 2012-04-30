@@ -577,7 +577,7 @@ namespace OCPI {
     Application::Application(const std::string &string, const PValue * policy)
       : m_application(*new ApplicationI(string,policy)) {
     }
-    Application::Application( Application::Application & app,  const PValue * policy)
+    Application::Application(Application & app,  const PValue * policy)
       : m_application(*new ApplicationI(app.m_application.assembly(),policy)) {
     }
     Application::~Application() { delete &m_application; }

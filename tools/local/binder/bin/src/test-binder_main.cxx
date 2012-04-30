@@ -153,20 +153,20 @@ public:
   };
 
 public:
-  TempFileHolder (OCPI::Util::FileFs::FileFs & fs,
+  TempFileHolder (OCPI::Util::FileFs & fs,
                   const std::string & wd);
   ~TempFileHolder ();
 
   Info & add (const std::string & name);
 
 private:
-  OCPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs & m_fs;
   const std::string m_wd;
   std::vector<Info *> m_infos;
 };
 
 TempFileHolder::
-TempFileHolder (OCPI::Util::FileFs::FileFs & fs,
+TempFileHolder (OCPI::Util::FileFs & fs,
                 const std::string & wd)
   : m_fs (fs),
     m_wd (wd)
@@ -277,19 +277,19 @@ simpleSCDData = "\
 
 class ZipFileTest : public OCPI::Util::Test::Test {
 public:
-  ZipFileTest (OCPI::Util::FileFs::FileFs & fs,
+  ZipFileTest (OCPI::Util::FileFs & fs,
                const std::string & workingDirectory,
                const std::string & rccBinderExecutable);
   void run ();
 
 private:
-  OCPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs & m_fs;
   std::string m_wd;
   std::string m_rccBinderExecutable;
 };
 
 ZipFileTest::
-ZipFileTest (OCPI::Util::FileFs::FileFs & fs,
+ZipFileTest (OCPI::Util::FileFs & fs,
              const std::string & workingDirectory,
              const std::string & rccBinderExecutable)
   : OCPI::Util::Test::Test ("Zip File Test"),
@@ -357,19 +357,19 @@ ZipFileTest::run ()
 
 class CreateSPDTest : public OCPI::Util::Test::Test {
 public:
-  CreateSPDTest (OCPI::Util::FileFs::FileFs & fs,
+  CreateSPDTest (OCPI::Util::FileFs & fs,
                  const std::string & workingDirectory,
                  const std::string & rccBinderExecutable);
   void run ();
 
 private:
-  OCPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs & m_fs;
   std::string m_wd;
   std::string m_rccBinderExecutable;
 };
 
 CreateSPDTest::
-CreateSPDTest (OCPI::Util::FileFs::FileFs & fs,
+CreateSPDTest (OCPI::Util::FileFs & fs,
                const std::string & workingDirectory,
                const std::string & rccBinderExecutable)
   : OCPI::Util::Test::Test ("Create SPD Test"),
@@ -432,13 +432,13 @@ CreateSPDTest::run ()
 
 class UpdateSPDNoImplementationTest : public OCPI::Util::Test::Test {
 public:
-  UpdateSPDNoImplementationTest (OCPI::Util::FileFs::FileFs & fs,
+  UpdateSPDNoImplementationTest (OCPI::Util::FileFs & fs,
                                  const std::string & workingDirectory,
                                  const std::string & rccBinderExecutable);
   void run ();
 
 private:
-  OCPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs & m_fs;
   std::string m_wd;
   std::string m_rccBinderExecutable;
   static const char * s_spdData;
@@ -468,7 +468,7 @@ s_spdData = "\
 ";
 
 UpdateSPDNoImplementationTest::
-UpdateSPDNoImplementationTest (OCPI::Util::FileFs::FileFs & fs,
+UpdateSPDNoImplementationTest (OCPI::Util::FileFs & fs,
                                const std::string & workingDirectory,
                                const std::string & rccBinderExecutable)
   : OCPI::Util::Test::Test ("Update SPD No Implementation"),
@@ -577,7 +577,7 @@ UpdateSPDNoImplementationTest::run ()
 
 class UpdateSPDExistingImplementationTest : public OCPI::Util::Test::Test {
 public:
-  UpdateSPDExistingImplementationTest (OCPI::Util::FileFs::FileFs & fs,
+  UpdateSPDExistingImplementationTest (OCPI::Util::FileFs & fs,
                                        const std::string & workingDirectory,
                                        const std::string & rccBinderExecutable);
   void run ();
@@ -588,7 +588,7 @@ protected:
   void testUpdateByInfo ();
 
 private:
-  OCPI::Util::FileFs::FileFs & m_fs;
+  OCPI::Util::FileFs & m_fs;
   std::string m_wd;
   std::string m_rccBinderExecutable;
   static const char * s_spdData;
@@ -636,7 +636,7 @@ UpdateSPDExistingImplementationTest::
 s_implUUID = "DCE:70b385a5-d3e5-4146-8f26-4ce4e0c8dd7e";
 
 UpdateSPDExistingImplementationTest::
-UpdateSPDExistingImplementationTest (OCPI::Util::FileFs::FileFs & fs,
+UpdateSPDExistingImplementationTest (OCPI::Util::FileFs & fs,
                                      const std::string & workingDirectory,
                                      const std::string & rccBinderExecutable)
   : OCPI::Util::Test::Test ("Update SPD Existing Implementation"),
@@ -890,7 +890,7 @@ testRccBinderInt (int argc, char * argv[])
 
   try {
     OCPI::Util::Test::Suite tests ("OCPI RCC Binder Tests");
-    OCPI::Util::FileFs::FileFs fs ("/");
+    OCPI::Util::FileFs fs ("/");
     std::string cwd = OCPI::OS::FileSystem::cwd ();
 
     tests.add_test (new ZipFileTest (fs, cwd, config.rccBinderExecutable));

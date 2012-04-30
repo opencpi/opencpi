@@ -34,6 +34,7 @@
 
 #include <stdio.h>
 #include <sstream>
+#include <memory>
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>

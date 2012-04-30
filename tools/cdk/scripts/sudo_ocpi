@@ -1,0 +1,5 @@
+#!/bin/bash
+# "sudo -E" does not preserve $PATH (on Ubuntu at least).
+# So use this script instead to start commands in cdk scripts or bin dirs as root
+exec sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PATH=$PATH $*
+

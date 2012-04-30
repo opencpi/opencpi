@@ -199,7 +199,7 @@ namespace OCPI {
       LoadedFileInfos m_loadedFiles;
       LoadedDllInfos m_loadedDlls;
       ProcessInfos m_processInfos;
-      OCPI::Util::FileFs::FileFs m_fileFs;
+      OCPI::Util::FileFs m_fileFs;
       static const unsigned int s_shutdownGracePeriod;
     };
 

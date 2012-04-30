@@ -47,9 +47,12 @@
 #ifndef __OCPI_TIME_EMIT_OUPUTFORMATTER_H__
 #define __OCPI_TIME_EMIT_OUPUTFORMATTER_H__
 
-#include <OcpiTimeEmit.h>
-#include <iostream>
 #include <stdio.h>
+#include <iostream>
+#include <algorithm>
+#include <memory>
+#include "OcpiTimeEmit.h"
+
 
 namespace OCPI {
 

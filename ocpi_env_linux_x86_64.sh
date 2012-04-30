@@ -78,7 +78,10 @@ export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_GTEST_DIR/l
 
 export OCPI_CFLAGS=-m64
 export OCPI_CXXFLAGS=-m64
-export OCPI_LDFLAGS=-m64
+# the no-as-needed forces the loading of libraries that are mentioned even if they are
+# not referenced.  This allows our drivers to be loaded by simply mentioning the libraries.
+# FIXME:  we should do the opposite, and use something like -u flags or config files for loading drivers.
+export OCPI_LDFLAGS="-m64 -Xlinker --no-as-needed"
 
 # #### Debug and assert settings ########################################## #
 
@@ -89,7 +92,7 @@ export OCPI_ASSERT=1
 
 # #### Shared library build settings ###################################### #
 
-export OCPI_SHARED_LIBRARIES_FLAGS="-m64 -m elf_x86_64"
+export OCPI_SHARED_LIBRARIES_FLAGS="-m64 -melf_x86_64"
 
 # Set to 0 to build static libraries
 export OCPI_BUILD_SHARED_LIBRARIES=1

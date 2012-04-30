@@ -525,7 +525,7 @@ runTest ()
     std::cout << "Opening Worker ... " << std::flush;
   }
 
-  OCPI::Util::FileFs::FileFs fileFs ("/");
+  OCPI::Util::FileFs fileFs ("/");
   std::string workerFile = fileFs.fromNativeName (m_config.workerFile);
   OCPI::Util::ZipFs::ZipFs zfs (&fileFs, workerFile, std::ios_base::in,
                                false, true);
@@ -1644,7 +1644,7 @@ loadDll (OCPI::Util::Vfs::Vfs & fs,
     return;
   }
 
-  OCPI::Util::FileFs::FileFs * ffs = dynamic_cast<OCPI::Util::FileFs::FileFs *> (&fs);
+  OCPI::Util::FileFs * ffs = dynamic_cast<OCPI::Util::FileFs *> (&fs);
 
   if (m_verbose) {
     std::cout << "Loading DLL \"" << normalName << "\" ... " << std::flush;

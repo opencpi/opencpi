@@ -137,7 +137,7 @@ propertyEncoderInt (int argc, char * argv[])
    * Construct a FileFs to read the XML files from.
    */
 
-  OCPI::Util::FileFs::FileFs fileFs ("/");
+  OCPI::Util::FileFs fileFs ("/");
 
   /*
    * Figure out the name of our SCD file.

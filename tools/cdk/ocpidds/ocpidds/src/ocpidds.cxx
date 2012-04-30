@@ -234,13 +234,17 @@ static const char omniidl_be[] = {
 };
 
 // This is from the gnu library and BSD, and is in darwin
-#if defined(OCPI_OS_linux) || defined(OCPI_OS_win32)
-static int mkstemps(char *temp, int suffixlen) {
+//#if defined(OCPI_OS_linux) || defined(OCPI_OS_win32)
+//#if defined(OCPI_OS_win32)
+// Its too much trouble to keep track of when we need this and when we don't
+// so its just redundantly present...
+// Its in darwin and ubuntu, but not RHEL5 or linux
+static int OURmkstemps(char *temp, int suffixlen) {
   char *cp = temp + strlen(temp) - suffixlen;
   char save = *cp;
   *cp = 0;
   int fd;
-#ifdef SPA_WINDOWS
+#if defined(OCPI_OS_win32)
   if (!mktemp(temp))
     return -1;
   *cp = save;
@@ -258,7 +262,7 @@ static int mkstemps(char *temp, int suffixlen) {
 #endif
   return fd;
 }
-#endif
+//#endif
 
 // Like strcat but surrounding with double-quotes, and escaping them too.
 static void appendQuoteEscape(char *base, const char *append) {
@@ -295,7 +299,7 @@ mymkstemp(char **result, char **dir, const char *prefix, const char *suffix) {
     *cp = '\0';
   asprintf(&cp, "%s%c%sXXXXXX%s%s", tmp, OS::FileSystem::slashes[0], prefix,
 	   suffix ? "." : "", suffix ? suffix : "");
-  fd = mkstemps(cp, suffix ? strlen(suffix)+1 : 0);
+  fd = OURmkstemps(cp, suffix ? strlen(suffix)+1 : 0);
   if (fd >= 0) {
     if (dir)
       *dir = tmp;
@@ -306,7 +310,7 @@ mymkstemp(char **result, char **dir, const char *prefix, const char *suffix) {
     free(tmp);
     free(cp);
   }
-  return fd;
+  return fd; 
 }
 
 // Run the command returning the stderr output as a string or

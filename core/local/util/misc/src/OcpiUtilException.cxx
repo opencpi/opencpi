@@ -32,6 +32,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdarg.h>
+#include <cstdio>
+
 #include "OcpiOsAssert.h"
 #include "OcpiUtilException.h"
 

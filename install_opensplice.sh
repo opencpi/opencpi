@@ -1,4 +1,5 @@
-#!/bin/sh -e
+#!/bin/bash -e
+# FIXME: why do we need bash?
 OCPI_PREREQUISITES_BUILD_DIR=/opt/opencpi/prerequisites
 OCPI_PREREQUISITES_INSTALL_DIR=/opt/opencpi/prerequisites
 OCPI_HOST_SYSTEM=linux-x86_64

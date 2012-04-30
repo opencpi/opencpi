@@ -53,9 +53,9 @@ getPciValue(const char *dev, char *value, char *buf, unsigned len)
   fd = open(buf, O_RDONLY);
   if (fd < 0)
     return "can't open descriptor file for PCI device";
-  n = read(fd, buf, len);
+  n = read(fd, buf, len-1);
   close(fd);
-  if (n <= 0 && (unsigned)n >= len)
+  if (n <= 0 && (unsigned)n >= len-1)
     return "can't read descriptor file for PCI device";
   buf[n] = 0;
   return 0;
@@ -79,7 +79,7 @@ const char *
 getPci(const char *name, unsigned theVendor, unsigned theDevice, unsigned theClass,
        unsigned theSubClass, bool verbose, Bar *bars, unsigned *nbars) {
   const char *err = 0;
-  char buf[512], rbuf[512];
+  char buf[1024], rbuf[1024];
   unsigned long long domain, bus, deviceN, function, vendor, device, classword;
   unsigned pciClass, pciSubClass;
   char *r = rbuf;
@@ -95,10 +95,12 @@ getPci(const char *name, unsigned theVendor, unsigned theDevice, unsigned theCla
     return "PCI device attributes not accessible";
   pciClass = classword >> 16;
   pciSubClass = (classword >> 8) & 0xff;
-  if (verbose)
+  if (verbose) {
     printf("dom %lld bus %lld devN %lld func %lld vendor 0x%llx "
 	   "device 0x%llx class 0x%x subclass 0x%x\n",
 	   domain, bus, deviceN, function, vendor, device, pciClass, pciSubClass);
+    printf("resource = '%s'\n", rbuf);
+  }
   if (vendor != theVendor || device != theDevice ||
       pciClass != theClass || pciSubClass != theSubClass)
     return NULL;

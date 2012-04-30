@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+# FIXME: why bash?
 # bitgen option.userid...biggen_bin.ut "userid on line 21 - feed5200".
 if [[ $# == 0 ]]; then
   echo Usage is: `basename $0` '[all|auto]'

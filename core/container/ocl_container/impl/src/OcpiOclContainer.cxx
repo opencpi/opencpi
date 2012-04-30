@@ -39,6 +39,7 @@
 
 ************************************************************************** */
 
+#include <climits>
 #include "OCL_Worker.h"
 #include "OcpiWorker.h"
 #include "OcpiOsTimer.h"

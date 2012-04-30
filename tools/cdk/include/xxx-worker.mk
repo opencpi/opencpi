@@ -170,7 +170,7 @@ $(foreach s,$(AuthoredSourceFiles) $(GeneratedSourceFiles),\
 
 $(call WkrBinary,$(1)): $$(ObjectFiles_$(1)) $(ArtifactXmlFile) \
 			| $(call WkrTargetDir,$(1))
-	$(LinkBinary) $$(ObjectFiles_$(1))
+	$(LinkBinary) $$(ObjectFiles_$(1)) $(OtherLibraries)
 	$(AT)if test -f "$(ArtifactXmlFile)"; then \
 		(cat $(ArtifactXmlFile); \
                  sh -c 'echo X$$$$4' `ls -l $(ArtifactXmlFile)`) >> $$@; \

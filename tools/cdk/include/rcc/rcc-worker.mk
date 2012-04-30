@@ -74,7 +74,7 @@ GCCLINK=gcc
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)
 LinkBinary=$(GCCLINK) $(SharedLibLinkOptions) -o $$@ \
-$(OtherLibraries) $(AEPLibraries) \
+$(AEPLibraries) \
 $(foreach ol,$(Libraries),$(or $(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g

@@ -59,7 +59,7 @@ main (int argc, char *argv[])
 
   try {
     OCPI::Logger::OStreamOutput logger (std::cout);
-    OCPI::Util::FileFs::FileFs localFs;
+    OCPI::Util::FileFs localFs;
     OCPI::Util::Http::Server server (&localFs, &logger);
     OCPI::Util::Tcp::Server serverPort (portNo, true);
 

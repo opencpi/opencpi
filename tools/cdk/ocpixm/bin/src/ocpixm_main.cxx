@@ -551,7 +551,7 @@ namespace
   ezxml_t get_xml_file_root ( const char* filename,
                               OCPI::Util::EzXml::Doc& doc )
   {
-    OCPI::Util::FileFs::FileFs file_fs ( "/" );
+    OCPI::Util::FileFs file_fs ( "/" );
 
     const std::string fs_filename ( file_fs.fromNativeName ( filename ) );
 
@@ -1801,7 +1801,7 @@ namespace
   void create_output_stream ( const char* filename,
                               std::ofstream& out )
   {
-    OCPI::Util::FileFs::FileFs file_fs ( "/" );
+    OCPI::Util::FileFs file_fs ( "/" );
 
     const std::string fs_filename ( file_fs.fromNativeName ( filename ) );
 

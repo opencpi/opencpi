@@ -59,6 +59,7 @@
 #include <sys/stat.h>
 #include <vector>
 #include <string>
+#include <cstddef>
 #include <uuid/uuid.h>
 // FIXME: integrate this into our UUID utility properly
 #ifndef _UUID_STRING_T

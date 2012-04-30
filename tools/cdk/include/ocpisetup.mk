@@ -28,6 +28,7 @@ export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
 ifneq ($(findstring darwin,$(OCPI_RUNTIME_SYSTEM)),)
 Ocpilibrarypathenv=DYLD_LIBRARY_PATH
 OCPI_OCL_LIBS=-locl_container -framework OpenCL
+OcpiAsNeeded=
 else
 OcpiLibraryPathEnv=LD_LIBRARY_PATH
 OCPI_OCL_LIBS=  -Xlinker --undefined=_ZN4OCPI3OCL6driverE -locl_container -lOpenCL
@@ -42,7 +43,7 @@ OCPI_DRIVER_OBJS=\
   -Xlinker --undefined=_ZN12DataTransfer9pciDriverE\
 
 endif
-
+OcpiAsNeeded=-Xlinker --no-as-needed
 endif
 export OCPI_SET_LIB_PATH=$(OcpiLibraryPathEnv)=$$$(OcpiLibraryPathEnv):$(OCPI_LIB_DIR)
 #$(info export OCPI_SET_LIB_PATH=$(OCPI_SET_LIB_PATH))
@@ -55,7 +56,7 @@ export OCPI_TRANSPORT_LIBS=rdma_drivers util  msg_driver_interface  msg_drivers
 # 1. When executed at runtime, look in OCPI_LIB_DIR to resolve shared libraries
 # 2. At link time, look in OCPI_LIB_DIR to find explicitly mentioned libraries
 # 3. At link time, look in OCPI_API_LIBS for functions called from the program
-export OCPI_LD_FLAGS= $(OCPI_DRIVER_OBJS) -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-l%)
-OCPI_HAVE_OPENCL:=$(shell $(OCPI_BIN_DIR)/ocpiocl test; if test $$? == 0; then echo 1; fi)
+export OCPI_LD_FLAGS= $(OCPI_DRIVER_OBJS) $(OcpiAsNeeded) -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-l%)
+OCPI_HAVE_OPENCL:=$(shell $(OCPI_BIN_DIR)/ocpiocl test; if [ $$? = 0 ]; then echo 1; fi)
 #$(info OCL=$(OCPI_HAVE_OPENCL)=)
 

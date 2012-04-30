@@ -49,6 +49,8 @@
 
 #include <string>
 
+#include "OcpiOsDataTypes.h"
+
 namespace OCPI {
   namespace Util {
 
