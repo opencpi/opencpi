@@ -269,7 +269,7 @@ doTopProp(ezxml_t prop, void *arg) {
   if (!(err = OE::checkAttrs(prop, OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest",
 			    "Default", NULL)))
     err = addProperty(w, prop, false);
-  return 0;
+  return err;
 }
 
 
