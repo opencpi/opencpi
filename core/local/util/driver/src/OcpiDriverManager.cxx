@@ -82,7 +82,7 @@ namespace OCPI {
 	if (!file)
 	  file = getenv("OCPI_SYSTEM_CONFIG");
 	if (!file) {
-	  file = "/opt/opencpi/platform.xml";
+	  file = "/opt/opencpi/system.xml";
 	  optional = true;
 	}
 	ezxml_t x = ezxml_parse_file(file);
@@ -146,9 +146,11 @@ namespace OCPI {
       }
     }
     ezxml_t Driver::getDeviceConfig(const char *name) {
-      for (ezxml_t dx = ezxml_cchild(m_config, "device"); dx; dx = ezxml_next(dx))
-	if (!strcmp(name, dx->name))
+      for (ezxml_t dx = ezxml_cchild(m_config, "device"); dx; dx = ezxml_next(dx)) {
+	const char *devName = ezxml_cattr(dx, "name");
+	if (devName && !strcmp(name, devName))
 	  return dx;
+      }
       return NULL;
     }
     Driver::~Driver(){}

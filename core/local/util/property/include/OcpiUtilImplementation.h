@@ -125,6 +125,7 @@ namespace OCPI {
       ~Implementation();
       inline const std::string &model() const { return m_model; }
       inline const std::string &specName() const { return m_specName; }
+      inline const std::string &name() const { return m_name; }
       inline const Attributes &attributes() const { return *m_attributes; }
       const char *parse(ezxml_t xml, Attributes &attr);
       Property &findProperty(const char *id) const;
@@ -139,7 +140,8 @@ namespace OCPI {
         ocpiAssert(which < m_nProperties);
         return m_properties[which];
       }
-      Port *findPort(const std::string &id) const;
+      inline Port *findPort(const std::string &id) const { return findPort(id.c_str()); }
+      Port *findPort(const char *) const;
       inline Port &port(unsigned long which) const
       {
         ocpiAssert(which < m_nPorts);

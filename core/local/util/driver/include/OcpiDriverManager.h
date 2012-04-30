@@ -138,7 +138,7 @@ namespace OCPI {
     public:
       virtual const std::string &name() const = 0;
       virtual Driver *nextDriverBase() = 0;
-      virtual void configure(ezxml_t) = 0;
+      virtual void configure(ezxml_t);
       virtual Device *firstDeviceBase() = 0;
     };
     // The template class inherited by concrete managers, with the template
@@ -197,7 +197,7 @@ namespace OCPI {
       {}
     public:
       // Configure from system configuration XML
-      virtual void configure(ezxml_t ){}
+      //      virtual void configure(ezxml_t );//{}
       // Per driver discovery routine to create devices that are found,
       // excluding the ones named in the "exclude" list.
       virtual unsigned search(const PValue* props = NULL, const char **exclude = NULL) {

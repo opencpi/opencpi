@@ -39,21 +39,29 @@ namespace OCPI {
       std::string m_runtimeVersion;
     };
 
-    // This object represents a potentially usable implementation in an artifact.
-    // And in any artifact, there may be multiple pre-build instances of the implementation,
-    // that may have fixed connectivity with other implementations.
+    class Implementation;
+    struct Connection {
+      Implementation *impl;
+      OCPI::Util::Port *port;
+    };
     class Artifact;
+    // This object represents a potentially usable implementation in an artifact.
+    // And in any artifact, there may be multiple static instances of the implementation,
+    // that may have fixed connectivity with other implementations.
     class Implementation {
     public:
-      Artifact &m_artifact;                  
-      ezxml_t m_instance;                   // prebuilt instances of this implementation
-      // This is the metadata description of the implementation.
+      Artifact &m_artifact;                 // FIXME this can be parent/child
+      // This is the metadata description of the implementation, whether static instance or not
       OCPI::Util::Implementation &m_metadataImpl;
-      inline Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance = NULL)
-	: m_artifact(art), m_instance(instance), m_metadataImpl(i) {}
+      ezxml_t m_instance;                   // static instances of this implementation
+      OCPI::Util::Port::Mask m_externals, m_internals;
+      Connection *m_connections;
+      Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance = NULL);
       // Does this implementation satify the selection criteria?  and if so, what is the score?
       bool satisfiesSelection(const char *selection, unsigned &score);
       bool getValue(const std::string &symbol, OCPI::Util::ExprValue &val);
+      void setConnection(OCPI::Util::Port &myPort, Implementation *otherImpl = NULL,
+			 OCPI::Util::Port *otherPort = NULL);
     };
     struct Comp {
       inline bool operator() (const char *lhs, const char *rhs) const {
@@ -69,12 +77,15 @@ namespace OCPI {
     class Artifact : public OCPI::Util::Attributes {
     protected:
       ezxml_t m_xml;
-      // Map from spec name to implementations
+      // A count and array of implementations found in the artifact, *not* static instances.
       unsigned m_nImplementations;
-      OCPI::Util::Implementation *m_metaImplementations;
-      WorkerMap m_workers;
+      OCPI::Util::Implementation *m_metaImplementations; // this array 
+      // A map for implementations (*including* static instances) in this artifact
+      // Used for artifact-by-artifact searches (FIXME: obsolete?)
+      WorkerMap m_workers;      // Map from spec name to implementations
       Artifact();
       virtual ~Artifact();
+      Implementation *addImplementation(OCPI::Util::Implementation &metaImpl, ezxml_t staticInstance);
     public:
       void configure(ezxml_t x = NULL);
       bool evaluateWorkerSuitability( const OCPI::API::PValue *p, unsigned & score );

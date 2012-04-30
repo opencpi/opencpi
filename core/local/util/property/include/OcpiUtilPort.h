@@ -44,8 +44,11 @@ namespace OCPI {
   namespace Util {
     typedef uint32_t PortOrdinal;
     // FIXME:  use a pointer to a protocol, and share protocols in the artifact xml
+    class Implementation;
     class Port : public Protocol {
     public:
+      typedef uint32_t Mask;
+      static const Mask c_maxPorts = sizeof(Mask)*8;
       std::string m_name;
       PortOrdinal m_ordinal;
       bool        m_provider;
@@ -54,6 +57,8 @@ namespace OCPI {
       uint32_t    m_minBufferCount;  // implementation-defined value
       uint32_t    m_bufferSize;      // metadata protocol override, if non-zero
       ezxml_t     m_xml;
+      //      Port       *m_connected;       // static connection of this port.
+      Implementation *m_implementation;
       Port(bool provider = true);
       const char *parse(ezxml_t x, PortOrdinal ord);
     };

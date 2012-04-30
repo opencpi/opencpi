@@ -56,6 +56,7 @@
 #define OCPI_UTIL_ASSEMBLY_H
 #include <string>
 #include <vector>
+#include <list>
 #include "ezxml.h"
 #include "OcpiPValue.h"
 
@@ -69,15 +70,18 @@ namespace OCPI {
 	const char *parse(ezxml_t x);
       };
       typedef std::vector<Property> Properties;
+      struct Port;
       struct Instance {
 	std::string
-	  m_name,      // name of the instance within the assembly
-	  m_specName,  // name of component being instantiated
-	  m_selection; // the selection expression
+	  m_name,                  // name of the instance within the assembly
+	  m_specName,              // name of component being instantiated
+	  m_selection;             // the selection expression
 	Properties m_properties;
 	PValueList m_parameters;
+	std::list<Port*> m_ports; // attachments to connections
 	const char *parse(ezxml_t ix, ezxml_t ax);
       };
+      // The attachment of a connection to external or port
       struct External {
 	std::string m_name; // the name
 	std::string m_url;  // the URL that this external attachment has
@@ -85,11 +89,12 @@ namespace OCPI {
 	PValueList m_parameters;
 	const char *parse(ezxml_t, unsigned&, const PValue *pvl);
       };
-      // The attachment of a connection to external
+      struct Connection;
       struct Port {
 	std::string m_name;
 	unsigned m_instance;
 	PValueList m_parameters;
+	Port *m_connectedPort;
 	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl);
       };
       struct Connection {

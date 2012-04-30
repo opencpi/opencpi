@@ -23,14 +23,16 @@ function good {
 }
 function bad {
   rm -f $tmp
-  echo Look at $tlog for details.
+  echo Look at $tlog.\* for details.
   exit 1
 }
 #part=${1:-xc5vlx50t}
 #pos=${2:-1}
 #echo part "$part" pos "$pos" port "$port"
+imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
 if [[ $port == all ]]; then
-  ports="usb21 usb22 usb23 usb24 usb25 usb26 usb27 usb28 usb29"
+  ports=`echo listusbcables | $imp 2> $tlog | grep '^port=' | sed 's/port=\(.*\), *esn=\(.*\)/\1/'`
+  # ports="usb21 usb22 usb23 usb24 usb25 usb26 usb27 usb28 usb29"
 else
   ports=$port
 fi
@@ -41,12 +43,11 @@ if [[ $p == auto ]]; then
 else
   echo -n Trying port $p...
 fi
-imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
-echo setMode -bs/setCable -p $p | tr / \\n | $imp  2> $tlog 1>&2
+echo setMode -bs/setCable -p $p | tr / \\n | $imp  2> $tlog.$p 1>&2
 if test $? == 0; then
-  #cat $tlog
-   if grep -q '^Cable connection established.' $tlog; then
-      ed $tlog <<EOF > /dev/null 2>&1
+  #cat $tlog.$p
+   if grep -q '^Cable connection established.' $tlog.$p; then
+      ed $tlog.$p <<EOF > /dev/null 2>&1
       /Usb Port -/
       .=
       s/^.*Usb Port - \(USB[^)]*\).*\$/\1/
@@ -57,8 +58,17 @@ if test $? == 0; then
 EOF
       myport=`cat $tmp`
       myportlc=`echo $myport | tr A-Z a-z`
+      ed $tlog.$p <<EOF  > /dev/null 2>&1
+      /ESN.*option:/
+      .=
+      s/^.*ESN.*option: *\(.*\).\$/\1/
+      1,-d
+      2,\$d
+      w $tmp
+EOF
+      myesn=`cat $tmp`
       if [[ $myport == USB* ]]; then
-         echo USB Cable Connection verified on port $myportlc.
+         echo USB Cable Connection verified on port $myportlc, ESN is $myesn
 	 anyport=yes
       else
 	 echo USB Cable Connection on port $p verified, but actual port not discovered \(port = $myport\?\)
@@ -75,11 +85,11 @@ fi
 any=
 for pos in 1 2 3 4 5 6 7 8 9; do
 #  echo Trying position $pos
-  echo setMode -bs/setCable -p $p/identify/readidcode -p $pos | tr / \\n | $imp  2> $tlog 1>&2
+  echo setMode -bs/setCable -p $p/identify/readidcode -p $pos | tr / \\n | $imp  2> $tlog.$p.$pos.id 1>&2
   last=$?
-  #echo status:$? $tlog 
+  #echo status:$? $tlog.$p.$pos.id 
   if test $last == 0; then
-    ed $tlog <<EOF > /dev/null 2>&1
+    ed $tlog.$p.$pos.id <<EOF > /dev/null 2>&1
       $
       ?IDCODE?+
       s/^.*Xilinx \([^,]*\),.*\$/\1/p
@@ -88,11 +98,13 @@ for pos in 1 2 3 4 5 6 7 8 9; do
       w $tmp
 EOF
     mypart=`cat $tmp`
-    echo -n Part at position $pos on $myportlc: Part $mypart
-    echo setMode -bs/setCable -p $p/identify/readidcode -p $pos/readusercode -p $pos | tr / \\n | $imp  2> $tlog 1>&2
+    echo Part at position $pos on $myportlc is $mypart
+    any=yes
+    continue
+    echo setMode -bs/setCable -p $p/identify/readidcode -p $pos/readusercode -p $pos | tr / \\n | $imp  2> $tlog.$p.$pos.user 1>&2
     last=$?
     if test $last == 0; then
-      ed $tlog <<EOF > /dev/null 2>&1
+      ed $tlog.$p.$pos.user <<EOF > /dev/null 2>&1
         $
         ?: Usercode is ?
         s/^.*Usercode is '\([^']*\)'.*\$/\1/p
@@ -108,11 +120,11 @@ EOF
     else
       echo -n ', no UserID'
     fi
-    echo setMode -bs/setCable -p $p/identify/readdna -p $pos | tr / \\n | $imp  2> $tlog.$p.$pos 1>&2
+    echo setMode -bs/setCable -p $p/identify/readdna -p $pos | tr / \\n | $imp  2> $tlog.$p.$pos.dna 1>&2
     last=$?
     if test $last == 0; then
       #cat $tlog
-      ed $tlog.$p.$pos <<EOF > /dev/null 2>&1
+      ed $tlog.$p.$pos.dna <<EOF > /dev/null 2>&1
         $
         ?DNA *= *'?
         s/^.*DNA *= *'\([^']*\)'.*\$/\1/p
@@ -131,6 +143,8 @@ EOF
   else
     if [[ $any == "" ]]; then
       echo No part with user id at position $pos
+    else
+      break
     fi
   fi
 done

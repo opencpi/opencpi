@@ -52,22 +52,31 @@ namespace OCPI {
     // This class represents a candidate implementation for an instance.
     struct Candidate {
       // The impl is not a reference since std::vector must copy it :-(
-      const Implementation *impl; unsigned score;
+      const Implementation *impl;
+      unsigned score;
       inline Candidate(const Implementation &impl, unsigned score) : impl(&impl), score(score) {}
     };
     typedef std::vector<Candidate> Candidates;   // a set of candidates for an instance
 
+    // A library::assembly adds value to the underlying/inherited util::assembly
+    // By finding candidate implementations in the available artifact libraries.
     class Assembly : public OCPI::Util::Assembly,  public ImplementationCallback {
-      Candidates *m_tempCandidates;              // set currently being processed (for one instance)
+      unsigned m_instance;			  // ordinal of current instance being processed
+      unsigned m_nPorts;                          // nPorts of impls of instance being processed
+      Candidates *m_tempCandidates;               // candidates currently being processed (for one instance)
+      OCPI::Util::Assembly::Port ***m_assyPorts; // a map by spec port ordinal to util::assembly ports
     public:
-      Candidates *m_candidates;                  // array of sets indexed by implementation ordinal
+      Candidates *m_candidates;                  // array of candidate sets, indexed by instance ordinal
       explicit Assembly(const char *file);
       explicit Assembly(const std::string &string);
-
+      ~Assembly();
+      bool checkConnection(const Implementation &impl, const Implementation &otherImpl,
+			   const OCPI::Util::Assembly::Port &ap, unsigned port);
+      inline Port *assyPort(unsigned inst, unsigned port) { return m_assyPorts[inst][port];}
       // Reference counting
       void operator ++( int );
       void operator --( int );
-      ~Assembly();
+      
     private:
       void findImplementations();
       bool foundImplementation(const Implementation &i, unsigned score);

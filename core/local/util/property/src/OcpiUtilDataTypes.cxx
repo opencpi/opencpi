@@ -537,7 +537,7 @@ namespace OCPI {
     }
     const char *Member::
     offset(unsigned &maxAlign, uint32_t &argOffset,
-	   unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded) {
+	   unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop) {
       const char *err;
       uint64_t nBytes;
       m_offset = 0;
@@ -592,6 +592,7 @@ namespace OCPI {
       }
       m_dataAlign = m_align; // capture this before adjusting it in the sequence case.
       if (m_isSequence) {
+	// Pad the size to be what is required for an array of same.
 	nBytes = roundup(nBytes, m_align);
 	if (m_sequenceLength != 0)
 	  nBytes *= m_sequenceLength;
@@ -599,7 +600,10 @@ namespace OCPI {
 	  unBounded = true;
 	if (m_align < 4)
 	  m_align = 4;
-	nBytes += m_align > 4 ? m_align : 4;
+	// Add the bytes for the 32 bit sequence count, and if the alignment be larger
+	// than 32 bits, add padding for that.  But not for a top level singular sequence
+	if (!isTop || argOffset)
+	  nBytes += m_align > 4 ? m_align : 4;
 	if (nBytes > UINT32_MAX)
 	  return "Total sequence size in bytes is too large (> 4G)";
       }
@@ -616,10 +620,11 @@ namespace OCPI {
     const char *
     Member::alignMembers(Member *m, unsigned nMembers, 
 			 unsigned &maxAlign, uint32_t &myOffset,
-			 unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded) {
+			 unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded,
+			 bool isTop) {
       const char *err;
       for (unsigned n = 0; n < nMembers; n++, m++)
-	if ((err = m->offset(maxAlign, myOffset, minSizeBits, diverseSizes, sub32, unBounded)))
+	if ((err = m->offset(maxAlign, myOffset, minSizeBits, diverseSizes, sub32, unBounded, isTop)))
 	  return err;
       return 0;
     }

@@ -63,12 +63,12 @@ namespace OCPI {
     Property &Implementation::findProperty(const char *id) const {
       return *(m_properties + whichProperty(id));
     }
-    Port *Implementation::findPort(const std::string &id) const {
+    Port *Implementation::findPort(const char *id) const {
       Port *p = m_ports;
       for (unsigned int n = m_nPorts; n; n--, p++)
-        if (p->m_name == id)
+        if (!strcasecmp(p->m_name.c_str(), id))
           return p;
-      return 0;
+      return NULL;
     }
     Test &Implementation::findTest(unsigned int testId) const {
        (void)testId;

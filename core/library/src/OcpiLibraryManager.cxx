@@ -133,7 +133,13 @@ namespace OCPI {
       }
     }
 #endif
-    bool Implementation::satisfiesSelection(const char *selection, unsigned &score) {
+    Implementation::
+    Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance)
+	: m_artifact(art), m_metadataImpl(i), m_instance(instance),
+	  m_externals(0), m_internals(0), m_connections(NULL)
+    {}
+    bool Implementation::
+    satisfiesSelection(const char *selection, unsigned &score) {
       OU::ExprValue val;
       const char *err = OU::evalExpression(selection, val, &m_metadataImpl);
       if (err)
@@ -144,6 +150,19 @@ namespace OCPI {
       return val.number > 0;
     }
 
+    void Implementation::
+    setConnection(OCPI::Util::Port &myPort, Implementation *otherImpl,
+		  OCPI::Util::Port *otherPort) {
+      if (otherImpl) {
+	m_internals |= 1 << myPort.m_ordinal;
+	if (!m_connections)
+	  m_connections = new Connection[m_metadataImpl.nPorts()];
+	m_connections[myPort.m_ordinal].impl = otherImpl;
+	m_connections[myPort.m_ordinal].port = otherPort;
+      } else {
+	m_externals |= 1 << myPort.m_ordinal;
+      }
+    }
     Driver::
     Driver(const char *name)
       : OD::DriverType<Manager,Driver>(name) {
@@ -409,6 +428,14 @@ namespace OCPI {
       }
       return false;
     }
+    Implementation *Artifact::addImplementation(OU::Implementation &metaImpl, ezxml_t staticInstance) {
+      Implementation *impl = new Implementation(*this, metaImpl, staticInstance);
+      // Record in the artifact's mapping
+      m_workers.insert(WorkerMapPair(metaImpl.specName().c_str(), impl));
+      // Record in the globalmapping
+      Manager::getSingleton().addImplementation(*impl);
+      return impl;
+    }
     // Note this XML argument is from the system config file, not the
     // XML attached to this artifact file.
     // But in any case we process the attached metadata here, and not
@@ -418,30 +445,52 @@ namespace OCPI {
     void Artifact::configure(ezxml_t /* x */) {
       // Retrieve attributes from artifact xml
       Attributes::parse(m_xml);
-      // First implementations.
-      Manager &mgr = Manager::getSingleton();
+      // Loop over all the implementations
       m_nImplementations = OE::countChildren(m_xml, "worker");
       OU::Implementation *metaImpl = m_metaImplementations = new OU::Implementation[m_nImplementations];
+      typedef std::map<const char*, Implementation *, Comp> InstanceMap;
+      typedef InstanceMap::iterator InstanceIter;
+      InstanceMap instances; // record static instances for connection tracking
       for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_next(w), metaImpl++) {
 	const char *err = metaImpl->parse(w, *this);
 	if (err)
 	  throw OU::Error("Error processing implementation metadata for %s: %s",
 			  name().c_str(), err);
-	bool instances = false;
-	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_next(i)) {
+	bool haveInstances = false;
+	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_next(i))
 	  if (!strcasecmp(metaImpl->specName().c_str(), ezxml_cattr(i, "worker"))) {
-	    instances = true;
-	    Implementation *impl = new Implementation(*this, *metaImpl, i);
-	    
-	    m_workers.insert(WorkerMapPair(metaImpl->specName().c_str(), impl));
-	    mgr.addImplementation(*impl);
+	    haveInstances = true;
+	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
 	  }
-	}
-	if (!instances) {
-	  Implementation *impl = new Implementation(*this, *metaImpl);
-	  m_workers.insert(WorkerMapPair(metaImpl->specName().c_str(), impl));
-	  mgr.addImplementation(*impl);
-	}
+	if (!haveInstances)
+	  (void)addImplementation(*metaImpl, NULL);
+      }
+      // Record connectivity in the artifact: what is external, and what is
+      // internal, and if internal, who is connected to whom
+      for (ezxml_t conn = ezxml_child(m_xml, "connection"); conn; conn = ezxml_next(conn)) {
+        const char
+          *fromX = ezxml_attr(conn,"from"), // instance with user port
+          *toX = ezxml_attr(conn,"to"),     // instance with provider port
+          *out = ezxml_attr(conn, "out"),  // user port name
+          *in = ezxml_attr(conn, "in");    // provider port name
+        if (!fromX || !toX || !out || !in)
+	  throw OU::Error("Invalid artifact XML: connection has bad attributes");
+	OU::Port *fromP, *toP;
+	InstanceIter
+	  fromI = instances.find(fromX),
+	  toI = instances.find(toX);
+	Implementation
+	  *fromImpl = fromI == instances.end() ? NULL : fromI->second,
+	  *toImpl = toI == instances.end() ? NULL : toI->second;
+	if (fromImpl && !(fromP = fromImpl->m_metadataImpl.findPort(out)) ||
+	    toImpl && !(toP = toImpl->m_metadataImpl.findPort(in)))
+	  throw OU::Error("Invalid artifact XML: \"to\" or \"from\" port not found for connection");
+	if (fromImpl) {
+	  fromImpl->setConnection(*fromP, toImpl, toP);
+	  if (toImpl)
+	    toImpl->setConnection(*toP, fromImpl, fromP);
+	} else if (toImpl)
+	  toImpl->setConnection(*toP);
       }
     }
   }

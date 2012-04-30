@@ -14,7 +14,7 @@ fi
 rm -f gtkwave-$GTKWAVE_VERSION.tar
 tar xzf $TARFILE
 cd gtkwave-$GTKWAVE_VERSION
-mkdir $OCPI_HOST_SYSTEM
+mkdir -p $OCPI_HOST_SYSTEM
 ./configure --disable-tcl --disable-xz --prefix=`pwd`/$OCPI_HOST_SYSTEM
 make; make install
 

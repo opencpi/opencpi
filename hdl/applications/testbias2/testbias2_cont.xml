@@ -1,0 +1,25 @@
+<HdlContainer Name="testbias2Cont">
+  <Instance Worker="dp" Index="13" Interconnect="pcie"/>
+  <Instance Worker="dp" Index="14" Interconnect="pcie"/>
+  <Instance Worker="sma" Index="2" Adapter="dp0" configure="1"/>
+  <Instance Worker="sma" Index="4" Adapter="dp1" configure="2"/>
+  <Instance Name="bias0" Index="3"/>
+  <Instance Name="bias1" Index="5"/>
+  <!-- Container's internal connections -->
+  <Connection>
+    <Attach Instance="sma0" Interface="message"/>
+    <Attach Instance="dp0" Interface="wmi"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="sma1" Interface="message"/>
+    <Attach Instance="dp1" Interface="wmi"/>
+  </Connection>
+  <!-- Connect the container's output to the application's input -->
+  <Connection Name="in" External="producer">
+    <Attach Instance="sma0" Interface="out"/>
+  </Connection>
+  <!-- Connect the container's input to the application's output -->
+  <Connection Name="out" External="consumer">
+    <Attach Instance="sma1" Interface="in"/>
+  </Connection>
+</HdlContainer>

@@ -34,60 +34,14 @@
 #
 ########################################################################### #
 
-ifndef OCPI_CDK_DIR
-OCPI_CDK_DIR=../ocpi
-endif
-
-Implementations = \
-	adc_unpack.rcc \
-	bias.hdl \
-	bias_ver.hdl \
-	blur.rcc \
-	canny.rcc \
-	canny_partial.rcc \
-	convert_s16_f32.rcc \
-	corner_eigen_vals_vecs.rcc\
-	copy.rcc \
-	delay.hdl \
-	delay.rcc \
-	dilate.rcc \
-	erode.rcc \
-	framegate.hdl \
-	framegate.rcc \
-	gaussian_blur.rcc \
-	good_features_to_track.rcc \
-	min_eigen_val.rcc \
-	morph_mean.rcc \
-	optical_flow_pyr_lk.rcc \
-	scharr.rcc \
-	sma.hdl \
-	sobel.rcc \
-	sobel_32f.rcc \
-	split1x2.rcc \
-	splitter2x2.hdl \
-	splitter2x2.rcc \
-	testmulti.rcc \
-	testzc.rcc \
-	psd.hdl \
-	ddc.hdl \
-	fft1d.ocl \
-	mmul.ocl \
-	vadd.ocl \
-	vsadd.ocl \
-	power_spectrum_1d.ocl \
-	testmulti.ocl \
-        file_read.rcc \
-        file_write.rcc \
-	bias.rcc \
-
-#	wbr.hdl 
-
-#HdlTargets=all
-
-ifndef OCPI_RUNTIME_HOST
-RccTargets=$(HostTarget)
-else
-RccTargets=$(OCPI_RUNTIME_HOST)
-endif
-
-include $(OCPI_CDK_DIR)/include/lib.mk
+# Which component libraries should be referenced to build this app?
+Libraries=bsv util
+ComponentLibraries=../../../components
+# this line will be eliminated with a little more toolsmithing
+# at the moment there is no way for altera to search for cores.
+AssemblyWorkers=sma:sma0 sma:sma1 bias:bias
+# For which containers should the runtime xml be generated?
+# These (for now) just xml files containing HdlContainer elements.
+Container=mkOCApp-2sma-2w.v
+Containers=testbiasCont2
+include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk

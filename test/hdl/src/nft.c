@@ -371,12 +371,12 @@ start(volatile OccpWorkerRegisters *w) {
   check(w->start);
 }
 
+// Called when the ready flag for the next buffer to process has become non-zero.
 static unsigned
 checkStream(Stream *s, uint64_t *tp, Stream *other) {
   unsigned n;
-  // mark the buffer not ready for CPU.  FPGA will set it to 1 when it is ready
+  // mark the buffer not ready for CPU.  FPGA will set it to !=0 when it is ready
   s->flags[s->bufIdx] = 0;
-  // Wait for buffer to be read, so we can fill/empty it.
   if (s->isToCpu) {
     // We have received a buffer from the FPGA
     if (tp) {

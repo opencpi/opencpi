@@ -209,7 +209,8 @@ namespace OCPI {
     void Port::getInitialProviderInfo(const OCPI::Util::PValue *params, std::string &out) {
       ocpiAssert(isProvider());
       if (!m_canBeExternal)
-	throw OU::Error("Port ", m_metaPort.name, " cannot be connected external to container");
+	throw OU::Error("Port \"%s\" cannot be connected external to container",
+			m_metaPort.name);
       applyConnectParams(params);
       m_container.packPortDesc(this->getData(), out);
     }
@@ -220,7 +221,8 @@ namespace OCPI {
       // User side, producer side.
       ocpiAssert(!isProvider());
       if (!m_canBeExternal)
-	throw ApiError("Port \", name, \" cannot be connected external to container", NULL);
+	throw OU::Error("Port \"%s\" cannot be connected external to container",
+			m_metaPort.name);
       PortConnectionDesc otherPortData;
       m_container.unpackPortDesc(ipi, otherPortData);
       // Adjust any parameters from connection metadata

@@ -45,7 +45,7 @@ namespace OCPI {
       // Find elements that match the container types.
       for (ezxml_t dx = x->child; dx; dx = dx->sibling) {
 	for (DriverBase *d = firstChild(); d; d = d->nextChild())
-	  if (!strcmp(d->name(), dx->name))
+	  if (!strcasecmp(d->name(), dx->name))
 	    break;
 	if (d)
 	  d->configure(dx);

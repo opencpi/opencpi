@@ -214,7 +214,7 @@ namespace OCPI {
       m_properties = NULL;
       m_nProperties = 0;
       m_currConn = OC::Container::maxContainer - 1;
-      m_cMapPolicy=RoundRobin;
+      m_cMapPolicy = RoundRobin;
       m_doneWorker = NULL;
       // Set the instance map policy
       setPolicy( policy );
@@ -222,35 +222,119 @@ namespace OCPI {
       unsigned
 	nInstances = m_assembly.m_instances.size();
       m_usedContainers = new unsigned[nInstances]; // over allocated - could use less
+      // Application's instances
       Instance *i = m_instances = new Instance[nInstances];
-      // For all instances in the assembly
+      for (unsigned n = 0; n < nInstances; n++, i++)
+	i->m_nCandidates = m_assembly.m_candidates[n].size();
+      i = m_instances;
+      // For all instances in the assembly (this loop is "backed up" sometimes)
       for (unsigned n = 0; n < nInstances; n++, i++) {
 	OL::Candidates &cs = m_assembly.m_candidates[n];
 	CMap
 	  sum = 0,     // accumulate possible containers over candidates
 	  bestMap = 0; // save map of best candidate.  initialized to kill warning
 	unsigned bestScore = 0;
-	// For all candidate implementations known to be suitable for this instance
+	bool nonReusable = false;     // remember if we ran out of containers
+	unsigned backup = nInstances; // where to backup to if we run into a dead end
+	// For all candidate implementations known to be suitable for this instance,
+	// find the "best" one, filtering out those that are infeasible due to
+	// constraints between implementations and containers etc. that could not
+	// be ruled out earlier
 	for (unsigned m = 0; m < cs.size(); m++) {
+	  if (i->m_rejectedCandidates & (1 << m))
+	    continue;
 	  OL::Candidate &c = cs[m];
-	  m_curMap = 0; // to accumulate containers suitable for this candidate
+	  m_curMap = 0;        // to accumulate containers suitable for this candidate
+	  m_curContainers = 0; // to count suitable containers for this candidate
 	  (void)OC::Manager::findContainers(*this, cs[m].impl->m_metadataImpl);
-	  // If the candidate has feasible containers, evaluate based on score.
+	  if (!m_curMap)
+	    continue; // if there are no containers that can run it, skip it
+	  if (c.impl->m_instance) {
+	    // Avoid implementations that are non-reusable if we don't have enough
+	    // containers to use them all
+	    unsigned nn, nContainers = 0; // How many containers are we already using
+	    unsigned first = nInstances;  // Remember first potential con
+	    for (nn = 0; nn < n; nn++)
+	      if (c.impl == m_instances[nn].m_impl) {
+		if (m_instances[nn].m_nCandidates > 1)
+		  first = nn;
+		if (++nContainers >= m_curContainers)
+		  break;
+	      }
+	    if (nn < n) {
+	      nonReusable = true;
+	      if (first < backup)
+		backup = first;
+	      ocpiDebug("Skipping candidate due to container overflow");
+	      continue;
+	    }
+	  }
+	  // Check to see if this implementation is incompatible with previous choices.
+	  // If it has any ports that are preconnected to instances that have already chosen
+	  // incompatible implementations, skip it.
+	  unsigned nPorts = c.impl->m_metadataImpl.nPorts();
+	  bool skip = false;
+	  // For all ports on this instance, check for incompatibility
+	  for (unsigned nn = 0; nn < nPorts; nn++) {
+	    OU::Assembly::Port *ap = m_assembly.assyPort(n, nn);
+	    ocpiDebug("ap %p %p inst %u n %u nn %u", ap, ap->m_connectedPort,
+		      ap->m_connectedPort ? ap->m_connectedPort->m_instance : 0, n, nn);
+	    if(ap && ap->m_connectedPort && ap->m_connectedPort->m_instance < n &&
+	       m_assembly.checkConnection(*c.impl, *m_instances[ap->m_connectedPort->m_instance].m_impl,
+					  *ap, nn)) {
+	      // Remember the earliest instance we might back up to if we have no solution
+	      if (ap->m_connectedPort->m_instance < backup &&
+		  m_instances[ap->m_connectedPort->m_instance].m_nCandidates > 1) {
+		backup = ap->m_connectedPort->m_instance;
+	      }
+	      
+	      skip = true;
+	      break;
+	    }
+	  }
+	  if (skip) {
+	    ocpiDebug("For instance \"%s\" for spec \"%s\" rejecting implementation \"%s%s%s\" with score %u "
+		      "from artifact \"%s\" due to connectivity conflict",
+		      m_assembly.m_instances[n].m_name.c_str(),
+		      m_assembly.m_instances[n].m_specName.c_str(),
+		      c.impl->m_metadataImpl.name().c_str(),
+		      c.impl->m_instance ? "/" : "",
+		      c.impl->m_instance ? ezxml_cattr(c.impl->m_instance, "name") : "",
+		      c.score, c.impl->m_artifact.name().c_str());
+	    continue;
+	  }
+	  // If the candidate has feasible containers, evaluate based on score,
 	  if (m_curMap && c.score > bestScore) {
 	    bestScore = c.score;
 	    i->m_impl = c.impl;
+	    i->m_chosenCandidate = m;
 	    bestMap = m_curMap;
 	  }
 	  sum |= m_curMap;
 	}
 	if (!sum)
-	  throw OU::Error(cs.size() > 1 ?
-			  "There are no containers for any of the %d suitable implementations "
-			  "for instance %s of component (spec) %s" :
-			  "There are no containers for the %d suitable implementation "
-			  "for instance %s of component (spec) %s",
-			  cs.size(), m_assembly.m_instances[n].m_name.c_str(),
-			  m_assembly.m_instances[n].m_specName.c_str());
+	  if (backup < nInstances) {
+	    ocpiDebug("Backing up from instance %u to instance %u", n, backup);
+	    i = &m_instances[backup];
+	    i->m_rejectedCandidates |= 1 << i->m_chosenCandidate;
+	    i->m_impl = NULL;
+	    i->m_nCandidates--;
+	    i--;
+	    n = backup - 1;
+	    continue;
+	  } else {
+	    std::string err;
+	    if (nonReusable)
+	      err = "There are not enough containers to run the %d non-reusable implementation";
+	    else if (cs.size() > 1)
+	      err = "There are no containers for any of the %d suitable implementations";
+	    else
+	      err = "There are no containers for the %d suitable implementation";
+	    err += " for instance %s of component (spec) %s";
+	    throw OU::Error(err.c_str(), 
+			    cs.size(), m_assembly.m_instances[n].m_name.c_str(),
+			    m_assembly.m_instances[n].m_specName.c_str());
+	  }
 	// The chosen, best, feasible implementation for the instance
 	const OL::Implementation &impl = *i->m_impl;
 
@@ -282,6 +366,16 @@ namespace OCPI {
 
 	// Now call invoke the policy method to map the instances to a container
 	policyMap(i, bestMap, sum);
+	ocpiInfo("Instance \"%s\" for spec \"%s\" uses implementation \"%s%s%s\" with score %u "
+		  "from artifact \"%s\" on container \"%s\"",
+		 m_assembly.m_instances[n].m_name.c_str(),
+		 m_assembly.m_instances[n].m_specName.c_str(),
+		 i->m_impl->m_metadataImpl.name().c_str(),
+		 i->m_impl->m_instance ? "/" : "",
+		 i->m_impl->m_instance ? ezxml_cattr(i->m_impl->m_instance, "name") : "",
+		 bestScore, i->m_impl->m_artifact.name().c_str(),
+		 OC::Container::nthContainer(m_usedContainers[i->m_container]).name().c_str());
+		  
 
       }
 
@@ -323,6 +417,7 @@ namespace OCPI {
     }
     bool ApplicationI::foundContainer(OCPI::Container::Container &c) {
       m_curMap |= 1 << c.ordinal();
+      m_curContainers++;
       return false;
     }
 
@@ -465,7 +560,8 @@ namespace OCPI {
     }
 
     ApplicationI::Instance::Instance() :
-      m_impl(NULL), m_propValues(NULL), m_propOrdinals(NULL) {
+      m_impl(NULL), m_propValues(NULL), m_propOrdinals(NULL), m_rejectedCandidates(0),
+      m_nCandidates(0), m_chosenCandidate(0) {
     }
     ApplicationI::Instance::~Instance() {
       delete [] m_propValues;

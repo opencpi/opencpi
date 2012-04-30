@@ -62,6 +62,9 @@ namespace OCPI {
 	unsigned m_container;                        // LOCAL ordinal - among those we are using
 	OCPI::Util::Value *m_propValues;             // the parsed property values to set
 	unsigned *m_propOrdinals;
+	CMap m_rejectedCandidates;                   // which ones have been rejected
+	unsigned m_nCandidates;                      // how many are left
+	unsigned m_chosenCandidate;                  // which one was it? (for m_impl)
 	Instance();
 	~Instance();
       } *m_instances;
@@ -77,8 +80,9 @@ namespace OCPI {
       } *m_properties;
       unsigned m_nProperties;
       // The bits in the cmap show which containers are possible for that candidate implementation
-      CMap m_curMap;   // A temporary that accumulates containers for a candidate
-      CMap m_allMap;   // A map of all containers chosen/used
+      CMap m_curMap;            // A temporary that accumulates containers for a candidate
+      unsigned m_curContainers; // A temporary that counts containers for a candidate
+      CMap m_allMap;            // A map of all containers chosen/used
       unsigned m_nContainers;                         // how many containers have been used
       unsigned *m_usedContainers;                     // per used container, its container ordinal (global)
       // Now the runtime state.

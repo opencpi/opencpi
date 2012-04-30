@@ -65,7 +65,7 @@
 #define _UUID_STRING_T
 typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
-#include "ezxml.h"
+#include "OcpiUtilEzxml.h"
 #include "OcpiOsMisc.h"
 #include "OcpiOsAssert.h"
 #include "PciScanner.h"
@@ -87,6 +87,7 @@ namespace OCPI {
     namespace OS = OCPI::OS;
     namespace OM = OCPI::Metadata;
     namespace OU = OCPI::Util;
+    namespace OE = OCPI::Util::EzXml;
 
     static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
     // This is the alignment constraint of DMA buffers in the processor's memory.
@@ -120,7 +121,6 @@ namespace OCPI {
       // "found" method.
       unsigned search(const OA::PValue*, const char **exclude);
       OC::Container *probeContainer(const char *which, const OA::PValue *props);
-
     };
     OC::RegisterContainerDriver<Driver> driver;
 
@@ -141,7 +141,7 @@ namespace OCPI {
       uint64_t basePaddr, bar1Offset;
       uint8_t *baseVaddr;     // base virtual address of whole region containing both BARs
       uint64_t endPointSize; // size in bytes of whole region containing both BARs.
-      std::string m_device, m_loadParams;
+      std::string m_device, m_esn, m_position, m_loadParams;
       uuid_t m_loadedUUID;
       friend class WciControl;
       friend class Driver;
@@ -150,8 +150,8 @@ namespace OCPI {
     protected:
       Container(const char *name, uint64_t bar0Paddr,
                 volatile OccpSpace *aOccp, uint64_t bar1Paddr,
-		uint8_t *aBar1Vaddr, uint32_t bar1Size, const ezxml_t config = NULL,
-		const OU::PValue *props = NULL) 
+		uint8_t *aBar1Vaddr, uint32_t bar1Size,
+		ezxml_t config = NULL, const OU::PValue *props = NULL) 
         : OC::ContainerBase<Driver,Container,Application,Artifact>(name, config, props),
 	  occp(aOccp), bar1Vaddr(aBar1Vaddr)
       {
@@ -191,12 +191,17 @@ namespace OCPI {
 	  // usb port for jtag loading
 	  // part type to look for artifacts
 	  // esn for checking/asserting that
-	  const char *cp = ezxml_cattr(config, "platform");
-	  if (cp)
-	    m_platform = cp;
-	  cp = ezxml_cattr(config, "loadParams");
-	  if (cp)
-	    m_loadParams = cp;
+	  OE::getOptionalString(config, m_esn, "esn");
+	  std::string platform, device;
+	  OE::getOptionalString(config, platform, "platform");
+	  OE::getOptionalString(config, platform, "device");
+	  if (!platform.empty() && platform != m_platform)
+	    throw OU::Error("Discovered platform (%s) doesn't match configured platform (%s)",
+			    m_platform.c_str(), platform.c_str());
+	  if (!device.empty() && device != m_device)
+	    throw OU::Error("Discovered device (%s) doesn't match configured device (%s)",
+			    m_device.c_str(), device.c_str());
+	  OE::getOptionalString(config, m_position, "position");
 	}
       }
       bool isLoadedUUID(const std::string &uuid) {
@@ -356,8 +361,9 @@ namespace OCPI {
 	  char *command, *base = getenv("OCPI_CDK_DIR");
 	  if (!base)
 	    throw "OCPI_CDK_DIR environment variable not set";
-	  asprintf(&command, "%s/scripts/loadBitStreamOnPlatform \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-		   base, name().c_str(), c.name().c_str(), c.m_platform.c_str(), c.m_device.c_str(), c.m_loadParams.c_str());
+	  asprintf(&command, "%s/scripts/loadBitStreamOnPlatform \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+		   base, name().c_str(), c.name().c_str(), c.m_platform.c_str(), c.m_device.c_str(),
+		   c.m_esn.c_str(), c.m_position.c_str());
 	  printf("Executing command to load bit stream for container %s: \"%s\"\n",
 		 c.name().c_str(), command);
 	  int rc = system(command);
@@ -404,7 +410,9 @@ namespace OCPI {
       unsigned myOccpIndex;
       volatile uint8_t *myProperties;
       WciControl(Container &container, ezxml_t implXml, ezxml_t instXml)
-        : implName(0), instName(0), myWciContainer(container), myRegisters(0) {
+        : implName(0), instName(0), myWciContainer(container), myRegisters(NULL),
+	  myProperties(NULL)
+      {
 	setControlOperations(ezxml_cattr(implXml, "controlOperations"));
         if (!implXml)
           return;
@@ -419,7 +427,7 @@ namespace OCPI {
         for (uint32_t u = 1 << logTimeout; !(u & timeout);
              u >>= 1, logTimeout--)
           ;
-        printf("Timeout for $%s is %d\n", implName, logTimeout);
+        ocpiDebug("Timeout for $%s is %d\n", implName, logTimeout);
         myWciContainer.getWorkerAccess(myOccpIndex, myRegisters, myProperties);
         // Assert Reset
         myRegisters->control =  logTimeout;

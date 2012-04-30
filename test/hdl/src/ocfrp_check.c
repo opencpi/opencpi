@@ -177,25 +177,67 @@ main(int argc, char **argv)
     argv++;
   }
   const char *err;
+  int rv = 0;
   if (argv[1]) {
     if ((err = doDevice(argv[1], OCFRP0_VENDOR, OCFRP0_DEVICE, OCFRP0_CLASS, OCFRP0_SUBCLASS,
 			verbose))) {
-      fprintf(stderr, "Couldn't find \"%s\": %s\n", argv[1], err);
-      return 1;
+      fprintf(stderr, "Error: Couldn't find \"%s\": %s\n", argv[1], err);
+      rv = 1;
     } else if (!nFound) {
-      fprintf(stderr, "Device specified is not recognized as an OpenCPI FPGA platform\n");
-      return 1;
+      fprintf(stderr, "Error: Device specified is not recognized as an OpenCPI FPGA platform\n");
+      rv = 1;
     }
   } else {
     if ((err = search(0, OCFRP0_VENDOR, OCFRP0_DEVICE, OCFRP0_CLASS, OCFRP0_SUBCLASS,
 		      verbose))) {
-      fprintf(stderr, "PCI Scanner Error: %s\n", err);
-      return 1;
+      fprintf(stderr, "Error: PCI Scanner Error: %s\n", err);
+      rv = 1;
     } else if (!nFound) {
       fprintf(stderr, "Did not find any OpenOCPI FPGA platforms.\n");
-      return 1;
+      rv = 1;
     }
   }
-  return 0;
+  {
+    const char *dmaEnv;
+    unsigned dmaMeg;
+    unsigned long long dmaBase;
+    int fd;
+    volatile uint8_t *cpuBase;
+
+    if (!(dmaEnv = getenv("OCPI_DMA_MEMORY"))) {
+      fprintf(stderr,
+	      "Warning: You must set the OCPI_DMA_MEMORY environment variable before using any OpenCPI FPGA platform\n"
+	      "         Use \"sudo -E\" to allow this program to have access to environmant variables\n");
+    } else if (sscanf(dmaEnv, "%uM$0x%llx", &dmaMeg, (unsigned long long *) &dmaBase) != 2) {
+      fprintf(stderr, "Error: The OCPI_DMA_MEMORY environment variable is not formatted correctly\n");
+      rv = 1;
+    } else if ((fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0 ||
+	       (cpuBase = (uint8_t*)mmap(NULL, (unsigned long long)dmaMeg * 1024 * 1024,
+					 PROT_READ|PROT_WRITE, MAP_SHARED, fd, dmaBase)) ==
+	       MAP_FAILED) {
+      fprintf(stderr, "Error: Can't map to local DMA memory defined in OCPI_DMA_MEMORY using /dev/mem (%s/%d)\n",
+	      strerror(errno), errno);
+      rv = 1;
+    } else {
+      uint8_t save = *cpuBase;
+
+      if ((*cpuBase = 1, *cpuBase != 1) || (*cpuBase = 2, *cpuBase != 2)) {
+	*cpuBase = save; // do this before any sys calls etc.
+	fprintf(stderr, "Error: Can't write to start of local DMA memory defined in OCPI_DMA_MEMORY using /dev/mem\n");
+	rv = 1;
+      } else {
+	*cpuBase = save; // on the wild chance that we shouldn't actually be touching this?
+	cpuBase += (unsigned long long)dmaMeg * 1024ull * 1024ull - 1ull;
+	save = *cpuBase;
+	if ((*cpuBase = 1, *cpuBase != 1) || (*cpuBase = 2, *cpuBase != 2)) {
+	  *cpuBase = save; // do this before any sys calls etc.
+	  fprintf(stderr, "Error: Can't write to end of local DMA memory defined in OCPI_DMA_MEMORY using /dev/mem\n");
+	  rv = 1;
+	} else
+	  *cpuBase = save; // on the wild chance that we shouldn't actually be touching this?
+      }
+    }
+  }
+  return rv;
 }
 

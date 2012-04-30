@@ -1626,7 +1626,7 @@ emitWorker(FILE *f, Worker *w)
 	fprintf(f, " bufferSize=\"%u\"", p->u.wdi.bufferSize);
       fprintf(f, ">\n");
       p->protocol->printXML(f, 2);
-      fprintf(f, "</port>\n");
+      fprintf(f, "  </port>\n");
     }
   }
   for (nn = 0; nn < w->localMemories.size(); nn++) {
@@ -1767,7 +1767,7 @@ emitArtHDL(Worker *aw, const char *outDir) {
     // Application connections are those that match by connection name, which means
     // that the name is meaningful/relative to the application (e.g. "in" is input to the app).
     for (ac = aw->assembly.connections, nn = 0; nn < aw->assembly.nConnections; nn++, ac++)
-      if (!strcmp(ac->name, cc->name)) {
+      if (ac->external && cc->external && !strcmp(ac->name, cc->name)) {
 	if (ac->external->port->u.wdi.isProducer) {
 	  if (cc->external->port->u.wdi.isProducer)
 	    return esprintf("container connection \"%s\" has same direction (is producer) as application connection",

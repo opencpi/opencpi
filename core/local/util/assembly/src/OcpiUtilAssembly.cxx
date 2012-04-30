@@ -67,7 +67,7 @@ namespace OCPI {
     unsigned Assembly::s_count = 0;
 
     const char *Assembly::parse() {
-      // This is were common initialization is done except m_xml and m_copy
+      // This is where common initialization is done except m_xml and m_copy
       m_doneInstance = -1;
       ezxml_t ax = m_xml;
       const char *err;
@@ -131,9 +131,9 @@ namespace OCPI {
 	unsigned me = 0, n = 0;
 	for (ezxml_t x = ezxml_cchild(ax, "instance"); x; x = ezxml_next(x))
 	  if (m_specName == ezxml_attr(x, "worker")) {
-	    n++;
 	    if (x == ix)
 	      me = n;
+	    n++;
 	  }
 	if (n > 1)
 	  Misc::formatString(m_name, "%s%u", m_specName.c_str(), me);
@@ -168,21 +168,33 @@ namespace OCPI {
       m_ports.resize(OE::countChildren(cx, "port"));
       if (m_ports.size() < 1)
 	return "no ports found under connection";
-      Port *p = &m_ports[0];
-      for (ezxml_t x = ezxml_cchild(cx, "port"); x; x = ezxml_next(x), p++)
+      Port
+	*other = NULL,
+	*p = &m_ports[0];
+      for (ezxml_t x = ezxml_cchild(cx, "port"); x; x = ezxml_next(x), p++) {
 	if ((err = p->parse(x, a, m_parameters)))
 	  return err;
+	if (other) {
+	  ocpiAssert(!p->m_connectedPort && !other->m_connectedPort);
+	  p->m_connectedPort = other;
+	  other->m_connectedPort = p;
+	  
+	} else
+	  other = p;
+      }
       return NULL;
     }
     const char *Assembly::Port::parse(ezxml_t x, Assembly &a, const PValue *pvl) {
       const char *err;
       std::string iName;
+      m_connectedPort = NULL;
       if ((err = OE::checkElements(x, NULL)) ||
 	  (err = OE::getRequiredString(x, m_name, "name", "port")) ||
 	  (err = OE::getRequiredString(x, iName, "instance", "port")) ||
 	  (err = a.getInstance(iName.c_str(), m_instance)))
 	return err;
       // Parse all attributes except the explicit ones here.
+      a.m_instances[m_instance].m_ports.push_back(this);
       return m_parameters.parse(pvl, x, "name", "instance", NULL);
     }
     const char *Assembly::External::parse(ezxml_t x, unsigned &n, const PValue *pvl) {

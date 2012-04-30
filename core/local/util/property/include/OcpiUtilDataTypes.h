@@ -168,14 +168,14 @@ namespace OCPI {
 	parse(ezxml_t xp, bool isFixed, bool hasName, const char *hasDefault, unsigned ordinal);
       const char *
       offset(unsigned &maxAlign, uint32_t &argOffset,
-	     unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded);
+	     unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop = false);
       static const char *
       parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
 		   bool isFixed, const char *tag, const char *vtag);
       static const char *
       alignMembers(Member *m, unsigned nMembers,
 		   unsigned &maxAlign, uint32_t &myOffset,
-		   unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded);
+		   unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop = false);
     };
     // These two are indexed by the BaseType
     extern const char *baseTypeNames[];

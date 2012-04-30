@@ -97,14 +97,15 @@ namespace OCPI {
 	return err;
       if (m_isTwoWay)
 	p.m_isTwoWay = true;
-      if (!(err = Member::parseMembers(op, m_nArgs, m_args, false, "argument", NULL)))
+      if (!(err = Member::parseMembers(op, m_nArgs, m_args, false, "argument", NULL))) {
+	if (m_nArgs == 1 &&
+	    (m_args[0].isSequence() && m_args[0].isFixed() ||
+	     !m_args[0].isSequence() && m_args[0].m_baseType == OA::OCPI_String))
+	  m_topFixedSequence = true;
 	err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
 				   p.m_dataValueWidth, p.m_diverseDataSizes,
-				   sub32dummy, p.m_isUnbounded);
-      if (!err && m_nArgs == 1 &&
-	  (m_args[0].isSequence() && m_args[0].isFixed() ||
-	   !m_args[0].isSequence() && m_args[0].m_baseType == OA::OCPI_String))
-	m_topFixedSequence = true;
+				   sub32dummy, p.m_isUnbounded, m_topFixedSequence);
+      }
       return err;
     }
 
@@ -150,7 +151,7 @@ namespace OCPI {
       unsigned maxAlignDummy = 1;
       if ((err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
 				      p.m_dataValueWidth, p.m_diverseDataSizes,
-				      sub32dummy, p.m_isUnbounded)))
+				      sub32dummy, p.m_isUnbounded, m_topFixedSequence)))
 	throw std::string(err);
 
     }
