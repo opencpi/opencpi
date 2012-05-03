@@ -19,7 +19,7 @@ OPENCV_LIB_DIR=$(OCPI_OPENCV_HOME)/lib
 LDFLAGS=$(OCPI_LD_FLAGS) \
         -Xlinker -rpath -Xlinker $(OPENCV_LIB_DIR) -L$(OPENCV_LIB_DIR) $(OPENCV_LIBS:%=-l%)
 
-INCS += -I$(OCPI_INC_DIR) -I$(OCPI_OPENCV_HOME)/include/opencv
+INCS += -I$(OCPI_INC_DIR) -I$(OCPI_OPENCV_HOME)/include -I$(OCPI_OPENCV_HOME)/include/opencv
 
 all: image_filtering
 

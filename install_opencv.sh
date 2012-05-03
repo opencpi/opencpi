@@ -1,57 +1,60 @@
-#!/bin/sh
-OCPI_HOST_SYSTEM=linux-x86_64
-set -e
+#!/bin/bash --noprofile
 . setup_install.sh
+CMAKE=$OCPI_PREREQUISITES_INSTALL_DIR/cmake/$OCPI_BUILD_HOST/bin/cmake
+if test ! -x $CMAKE ; then
+  echo No cmake found at: $CMAKE
+  echo Installing opencv requires cmake, and it is not installed as an opencpi prerequisite.
+  echo Either use the install_cmake.mk script to do that, of modify this script to
+  echo point to an existing cmake.  We don\'t use a system-installed cmake unless you ask for it.
+  exit 1
+fi
 if test ! -d opencv ; then
-mkdir opencv
+  mkdir -p opencv
 fi
 cd opencv
-if test ! -d CMake ; then
-mkdir -p CMake
-cd CMake
-curl -O http://www.cmake.org/files/v2.8/cmake-2.8.7-Linux-i386.tar.gz
-gunzip cmake-2.8.7-Linux-i386.tar.gz
-tar xf cmake-2.8.7-Linux-i386.tar
-rm cmake-2.8.7-Linux-i386.tar
-cd ..
-fi
-OCPI_OPEN_VERSION=2.3.1a
-TarFile=OpenCV-$OCPI_OPEN_VERSION.tar
+OPENCV_MAJOR=2.3.1
+OPENCV_MINOR=a
+OPENCV_VERSION=$OPENCV_MAJOR$OPENCV_MINOR
+TarFile=OpenCV-$OPENCV_VERSION.tar
 BZFile=$TarFile.bz2
 if test ! -f $BZFile ; then
-  if test ! -f $TarFile ; then
-    echo You must download the source tar file: $BZFile from:
-    echo     http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.3.1/
-    echo It has no download URL, so you must do it yourself and put it in: `pwd`
-    echo Then you can run this $0 script again.
-    exit 1
-  fi
+  curl -O http://softlayer.dl.sourceforge.net/project/opencvlibrary/opencv-unix/$OPENCV_MAJOR/$BZFile
+#  if test ! -f $TarFile ; then
+#    echo You must download the source tar file: $BZFile from:
+#    echo     http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.3.1/
+#    echo It has no download URL, so you must do it yourself and put it in: `pwd`
+#    echo Then you can run this $0 script again.
+#    exit 1
+#  fi
 fi
-if test ! -f $TarFile ; then
-bzip2 -d $BZFile
+rm -f $TarFile
+OPENCV_DIR=OpenCV-$OPENCV_MAJOR
+OPENCV_INSTALL_DIR=$OCPI_PREREQUISITES_INSTALL_DIR/opencv/$OCPI_BUILD_TARGET
+rm -f -r $OPENCV_DIR
+rm -f -r $OPENCV_INSTALL_DIR
+bunzip2 -d $BZFile
+tar xf $TarFile
+cd OpenCV-$OPENCV_MAJOR
+mkdir build-$OCPI_BUILD_TARGET
+if test `uname` == Darwin; then
+  # Force the rpath in the various targets to be @rpath
+  for sd in modules/{gpu,haartraining,highgui,stitching,traincascade}/CMakeLists.txt OpenCVModule.cmake; do
+    echo editing $sd to force @rpath as install_name
+    ed $sd <<EOF    
+g/INSTALL_NAME_DIR/s/lib/@rpath/p
+w
+EOF
+  done
 fi
-tar xf OpenCV-$OCPI_OPEN_VERSION.tar
-cd OpenCV-2.3.1
-CMAKE=/opt/opencpi/prerequisites/opencv/CMake/cmake-2.8.7-Linux-i386/bin/cmake 
-if test ! -d release ; then
-mkdir release
-fi
-cd release
-if test ! -d  $OCPI_HOST_SYSTEM ; then
-mkdir $OCPI_HOST_SYSTEM
-fi
-cd $OCPI_HOST_SYSTEM
-$CMAKE -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=release/ -D BUILD_PYTHON_SUPPORT=ON ../..
+cd build-$OCPI_BUILD_TARGET
+#if test ! -d release ; then
+#mkdir release
+#fi
+#cd release
+PKG_CONFIG_PATH=/usr/local/lib/pkgconfig \
+  $CMAKE \
+  -D CMAKE_BUILD_TYPE=RELEASE \
+  -D CMAKE_INSTALL_PREFIX=$OPENCV_INSTALL_DIR \
+  ..
 make
 make install
-
-
-
-
-
-
-
-
-
-
-

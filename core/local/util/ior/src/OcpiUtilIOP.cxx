@@ -33,6 +33,7 @@
  */
 
 #include <string>
+#include <cstring>
 #include <vector>
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"

@@ -107,11 +107,13 @@ export HAVE_CORBA=1
 
 # OpenCPI uses OmniORB exclusivly
 export OCPI_CORBA_ORB=OMNI
-export OCPI_OMNI_DIR=/opt/opencpi/prerequisites/omniorb
-export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/bin
+export OCPI_OMNI_DIR=/Users/jek/sw/omniORB-4.1.5-ocpi/OCPI_INSTALL
+export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/bin
 export OCPI_OMNI_IDL_DIR=$OCPI_OMNI_DIR/share/idl/omniORB
-export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/lib
+export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/lib
 export OCPI_OMNI_INCLUDE_DIR=$OCPI_OMNI_DIR/include
+export OCPI_CORBA_INCLUDE_DIRS="$OCPI_OMNI_INCLUDE_DIR $OCPI_OMNI_INCLUDE_DIR/omniORB4"
+
 
 # #### Path to Mercury tools and libraries ################################ #
 
@@ -135,8 +137,8 @@ export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/lib/rcc
 export OCPI_SMB_SIZE=100000000
 
 # #########  OpenCV 
-export OCPI_HAVE_OPENCV=1
-export OCPI_OPENCV_HOME=/usr/local
+export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/darwin-x86_64
+# suppress execution while allowing building
 #export OCPI_HAVE_OPENSPLICE=1
 export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
 

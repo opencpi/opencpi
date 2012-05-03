@@ -132,8 +132,7 @@ export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 
 # ######################################################################### #
 
-export OCPI_HAVE_OPENCV=1
-export OCPI_OPENCV_HOME=/usr/local
+export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-x86_64
 export OCPI_HAVE_OPENSPLICE=1
 export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
 

@@ -47,7 +47,7 @@ PassOutDir=OutDir=$(call AdjustRelative,$(OutDir:%/=%))/$@
 endif
 endif
 
-Applications=testbias testpsd testddc 
+Applications=testbias testpsd testddc testbias2
 # These require adc/dac: demoappC demoappE
 # testwbr
 
