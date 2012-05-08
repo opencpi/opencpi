@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     "    <port instance='file_write' name='in'/>"
     "  </connection>"
     "</application>";
-  printf("xml:\n%s\n", hello.c_str());
+
   try {
     OA::Application app(hello);
     fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
