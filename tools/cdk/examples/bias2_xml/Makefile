@@ -40,11 +40,11 @@ run: all test.input
 	od -X test.output
 
 runhdl1: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/components/hdl sudo -E ./biasFile '$(ARGS)'
+	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/components/hdl sudo -E ./biasFile $(ARGS)
 	od -X test.output
 
 runhdl2: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/hdl:$(OCPI_CDK_DIR)/lib/components/rcc sudo -E ./biasFile '$(ARGS)'
+	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/hdl:$(OCPI_CDK_DIR)/lib/components/rcc sudo -E ./biasFile $(ARGS)
 	od -X test.output
 
 clean::
