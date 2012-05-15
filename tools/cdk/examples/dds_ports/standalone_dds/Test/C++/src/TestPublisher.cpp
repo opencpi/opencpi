@@ -177,10 +177,13 @@ int main(int argc, char *argv[])
     msgInstance.sseq2[n] = CORBA::string_dup(buf);
   }
 
+  
+  for ( int y=0; y<30; y++ ) {
+    ReturnCode_t status = HelloWorldWriter->write(msgInstance, NULL);
+    checkStatus(status, "MsgDataWriter::write");
+    os_nanoSleep(delay_2ms);
+  }
 
-  ReturnCode_t status = HelloWorldWriter->write(msgInstance, NULL);
-  checkStatus(status, "MsgDataWriter::write");
-  os_nanoSleep(delay_2ms);
 
   /* Remove the DataWriters */
   mgr->deleteWriter();

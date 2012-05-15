@@ -45,8 +45,8 @@ int main ( int argc, char* argv [ ] )
     producer.start();
     consumer.start();
 
-    printf("\n\nWaiting for 10 seconds for standalone DDS messages\n");
-    int count = 10;
+    printf("\n\nWaiting for standalone DDS messages\n");
+    int count = 5;
     while( count > 0 ) 
       { 
 	sleep(1); 
@@ -56,15 +56,16 @@ int main ( int argc, char* argv [ ] )
     producer.stop();
     consumer.stop();
 
+    int expMsgCount = 30;
     printf("\n\n\n");
     std::string n[2], v[2];    
     consumer.getProperty( 0, n[0], v[0] );    consumer.getProperty( 1, n[1], v[1] );
     printf("Got %s OCPI message, %s were good\n", v[0].c_str(),v[1].c_str());
-    if (v[0] != v[1] ) passed = false;
+    if (v[0] != v[1] || atoi(v[0].c_str()) != expMsgCount ) passed = false;
     consumer.getProperty( 2, n[0], v[0] );    consumer.getProperty( 3, n[1], v[1] );
     printf("Got %s DDS message, %s were good\n", v[0].c_str(),v[1].c_str());
-    if ( v[0] != v[1] ) passed = false;
-    printf("******  The test has %s   *******\n", passed ? "Passed" : "Failed" );
+    if ( v[0] != v[1] || atoi(v[0].c_str()) != expMsgCount ) passed = false;
+    printf("******  Test  %s   *******\n", passed ? "Passed" : "Failed" );
 
   }
   catch ( const std::string& s )
