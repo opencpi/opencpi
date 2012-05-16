@@ -68,7 +68,7 @@ DispatchSourceFile = $(GeneratedDir)/$(word 1,$(Workers))_dispatch.c
 GeneratedSourceFiles += $(DispatchSourceFile)
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
-ArtifactXmlFile = $(TargetDir)/$(word 1,$(Workers))_art.xml
+ArtifactXmlFile = $(TargetDir)/$(word 1,$(Workers))_assy_art.xml
 GCC=gcc
 GCCLINK=gcc
 ToolSeparateObjects:=yes
@@ -93,7 +93,7 @@ include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 
 RccAssemblyFile=$(GeneratedDir)/$(word 1,$(Workers))_assy.xml
 $(RccAssemblyFile): | $(GeneratedDir)
-	$(AT)(echo "<RccAssembly Name=\""$(word 1,$(Workers))"\">"; \
+	$(AT)(echo "<RccAssembly>"; \
 	  for w in $(Workers); do echo "<Worker File=\"$$w.xml\"/>"; done; \
 	  echo "</RccAssembly>") > $@
 

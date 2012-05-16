@@ -29,7 +29,7 @@ if ( ! ( -f $bitfile && -r $bitfile ) ) then
   echo Bitstream file \"$bitfile\" does not exist or is inaccessible.
   exit 1
 endif
-findJtagPart $usbport $part > $tmp
+`dirname $0`/findJtagPart $usbport $part > $tmp
 if ($status != 0) then
   echo Error: Could not find jtag position for part $part on USB port $usbport.
   exit 1
