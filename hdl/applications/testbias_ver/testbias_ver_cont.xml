@@ -1,0 +1,34 @@
+<!--
+   The concrete deployment of an application assembly on an FPGA.
+   Ultimately information to generate FTOP
+   Each external connection must attach to a worker with an ID and some properties.
+   (Forget properties now).
+   This should be derivable from a global deployment.
+   The information we are adding is:
+   Foreach external connection:  define IO or Interconnect worker (and props)
+   Foreach worker (including io and interconnect) define index.
+  -->
+<HdlContainer>
+  <Instance Worker="dp" Index="13" Interconnect="pcie"/>
+  <Instance Worker="dp" Index="14" Interconnect="pcie"/>
+  <Instance Worker="sma" Index="2" Adapter="dp0" configure="1"/>
+  <Instance Name="bias" Index="3"/>
+  <Instance Worker="sma" Index="4" Adapter="dp1" configure="2"/>
+  <!-- Container's internal connections -->
+  <Connection>
+    <Attach Instance="sma0" Interface="message"/>
+    <Attach Instance="dp0" Interface="wmi"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="sma1" Interface="message"/>
+    <Attach Instance="dp1" Interface="wmi"/>
+  </Connection>
+  <!-- Connect the container's output to the application's input -->
+  <Connection Name="in" External="producer">
+    <Attach Instance="sma0" Interface="out"/>
+  </Connection>
+  <!-- Connect the container's input to the application's output -->
+  <Connection Name="out" External="consumer">
+    <Attach Instance="sma1" Interface="in"/>
+  </Connection>
+</HdlContainer>
