@@ -1,0 +1,40 @@
+<!-- Direct Digital Synthisizer Component specification 
+
+This component synthesizes a complex waveform.  The initial phase and increment are specified by properties.
+The required intput port into this component is a control stream.  The timestamp is ignored and is not required
+to be passed to the output stream.  When this component recieves a Sync message it must reset its phase to the
+intial phase, fluh any buffers that it can and send a "Sync" message prior to generating new data. 
+
+ -->
+
+<ComponentSpec name="dds_complex" >
+  <Properties>
+
+<!-- DDS advance rate in (radians per sample)/2Pi  Format: Qs0.31 
+     This value is normalized to the unit circle.
+-->
+    <Property Name="phaseIncrement" type="Long" Readable="true" Writable="true"/>
+
+<!-- Initial phase of the DDS in radians/2Pi. Also used as the start phase after Sync  Format:Qs0.31 
+     This value is normalized to the unit circle.
+-->
+    <Property Name="syncPhase" type="Long" Readable="true" Writable="true"/>
+
+  </Properties>
+
+  <!-- input sync stream -->
+  <DataInterfaceSpec Name="in" Producer="false">
+    <Protocol>
+      <xi:include href="cstream_sync_protocol.xml"/>
+    </Protocol>
+  </DataInterfaceSpec>
+
+  <!-- output stream that contains both data and sync -->
+  <DataInterfaceSpec Name="out" Producer="true">
+    <Protocol>
+      <xi:include href="cstream_data_protocol.xml"/>
+      <xi:include href="cstream_sync_protocol.xml"/>
+    </Protocol>
+  </DataInterfaceSpec>
+
+</ComponentSpec>

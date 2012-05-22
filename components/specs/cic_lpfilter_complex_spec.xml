@@ -4,31 +4,22 @@ When this component receives a "Sync" message it is responsible for performing w
 required to handle a discontinuity in the input data stream.  All of the control protocol
 being handled at the input must be passed to the output.
 
-This is a simple CIC half band filter.
-
-Questions:
-Should we provided decimation capabilities here?
-Possible properties:
-     Number of stages
-     Decimation factor
-     Number of samples per stage 
-
- 
+This is a simple CIC half band lowpass filter.
 
 -->
 
-<ComponentSpec Name="CICLowpassFilter">
+<ComponentSpec name="cic_lpfilter_complex" >
 
-  <!-- Input data and control stream --->
+  <!-- Input data and control stream -->
   <DataInterfaceSpec Name="in" Producer="false">
     <xi:include href="cstream_data_protocol.xml"/>
-    <xi:include href="cstream_control_protocol.xml"/>
+    <xi:include href="cstream_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
-  <!-- Output data and control stream --->
+  <!-- Output data and control stream -->
   <DataInterfaceSpec Name="out" Producer="true">
     <xi:include href="cstream_data_protocol.xml"/>
-    <xi:include href="cstream_control_protocol.xml"/>
+    <xi:include href="cstream_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
 </ComponentSpec>

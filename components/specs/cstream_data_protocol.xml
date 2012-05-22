@@ -1,17 +1,13 @@
 <!-- A general complex data protocol   -->
-<Protocol>
+<Protocol name="cstream_data" >
 
   <Operation Name="data" >
-    <!-- Variable size frames with packed 32 bit I/Q data values (16x16). Max size = 15k (To fit in Jumbo packet) Format:Qs0.15 -->
-      <type type="IQ" >
+    <!-- Variable size frames with packed 32 bit I/Q data values (16Q,16I).  Format:Qs0.15 -->
+      <Argument name="IQ" type="Struct" SequenceLength="2048" >
         <member name="I" type="Short"/>
         <member name="Q" type="Short"/>
-      </type>
-    <Argument Name="samples" Type="IQ" SequenceLength="15k"/>
+      </Argument>
   </Operation>
-
-  <!-- Used to indicate a discontinuity in the stream -zero length --->
-  <Operation Name="EOS">     
 
 </Protocol>
 
