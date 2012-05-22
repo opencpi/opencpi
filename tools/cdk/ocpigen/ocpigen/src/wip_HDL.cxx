@@ -829,7 +829,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 const char *
 openSkelHDL(Worker *w, const char *outDir, const char *suff, FILE *&f) {
   const char *err;
-  if ((err = openOutput(w->implName, outDir, "", suff, w->language == VHDL ? VHD : VER, NULL, f)))
+  if ((err = openOutput(w->fileName, outDir, "", suff, w->language == VHDL ? VHD : VER, NULL, f)))
     return err;
   const char *comment = w->language == VHDL ? "--" : "//";
   printgen(f, comment, w->file, true);

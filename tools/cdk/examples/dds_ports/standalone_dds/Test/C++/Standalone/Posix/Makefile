@@ -15,12 +15,12 @@ CXXFLAGS=-g -c -m64 -fPIC
 CPPFLAGS=$(INCLUDES)
 
 # Linker settings.
-LD_SO=source $(OSPL_HOME)/release.com; $(CXX)
+LD_SO=. $(OSPL_HOME)/release.com; $(CXX)
 LD_FLAGS=-fPIC
 LD_LIBS=-lstdc++
 
 #OpenSplice idl preprocessor
-OSPLICE_COMP= source $(OSPL_HOME)/release.com;  $(OSPL_HOME)/bin/idlpp -S -l cpp -d bld
+OSPLICE_COMP= . $(OSPL_HOME)/release.com;  $(OSPL_HOME)/bin/idlpp -S -l cpp -d bld
 
 OSPLICE_LIBS=-lddsdatabase -ldcpsgapi -ldcpssacpp -lddsos
 

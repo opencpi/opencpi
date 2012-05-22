@@ -458,7 +458,7 @@ namespace OCPI {
 			  name().c_str(), err);
 	bool haveInstances = false;
 	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_next(i))
-	  if (!strcasecmp(metaImpl->specName().c_str(), ezxml_cattr(i, "worker"))) {
+	  if (!strcasecmp(metaImpl->name().c_str(), ezxml_cattr(i, "worker"))) {
 	    haveInstances = true;
 	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
 	  }

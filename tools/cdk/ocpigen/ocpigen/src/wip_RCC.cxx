@@ -455,7 +455,7 @@ const char *
 emitArtRCC(Worker *aw, const char *outDir) {
   const char *err;
   FILE *f;
-  if ((err = openOutput(aw->implName, outDir, "", "_art", ".xml", NULL, f)))
+  if ((err = openOutput(aw->fileName, outDir, "", "_art", ".xml", NULL, f)))
     return err;
   fprintf(f, "<!--\n");
   printgen(f, "", aw->file);

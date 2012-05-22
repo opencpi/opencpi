@@ -930,9 +930,11 @@ parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
   aw->isAssembly = true;
   if ((err = OE::checkAttrs(xml, "Name", (void*)0)))
     return err;
+#if 0
   aw->implName = ezxml_cattr(xml, "Name");
   if (!aw->implName)
     aw->implName = "RccAssembly";
+#endif
   for (ezxml_t x = ezxml_cchild(xml, "Worker"); x; x = ezxml_next(x)) {
     const char *wXmlName = ezxml_cattr(x, "File");
     if (!wXmlName)
@@ -955,9 +957,11 @@ parseOclAssy(ezxml_t xml, const char *file, Worker *aw) {
   aw->isAssembly = true;
   if ((err = OE::checkAttrs(xml, "Name", (void*)0)))
     return err;
+#if 0
   aw->implName = ezxml_cattr(xml, "Name");
   if (!aw->implName)
     aw->implName = "OclAssembly";
+#endif
   for (ezxml_t x = ezxml_cchild(xml, "Worker"); x; x = ezxml_next(x)) {
     const char *wXmlName = ezxml_cattr(x, "File");
     if (!wXmlName)
@@ -994,19 +998,21 @@ doOutputs(const char *tok, void *arg) {
 
 // The generic assembly parser
  static const char *
-parseAssy(ezxml_t xml, const char *defName, Worker *aw,
+parseAssy(ezxml_t xml, Worker *aw,
           const char **topAttrs, const char **instAttrs, bool noWorkerOk) {
   const char *err;
   Assembly *a = &aw->assembly;
   aw->isAssembly = true;
   if ((err = OE::checkAttrsV(xml, topAttrs)))
     return err;
+#if 0
   aw->implName = ezxml_cattr(xml, "Name");
   if (!aw->implName)
     if (defName)
       aw->implName = defName;
     else
       return esprintf("Missing \"Name\" attribute for \"%s\"", xml->name);
+#endif
   // Count instances and workers
   for (ezxml_t x = ezxml_cchild(xml, "Instance"); x; x = ezxml_next(x))
     a->nInstances++;
@@ -1246,7 +1252,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
     *instAttrs[] = {"Worker", "Name", 0},
     *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", "Adapter", "Configure", 0};
   // Do the generic assembly parsing, then to more specific to HDL
-  if ((err = parseAssy(xml, aw->file, aw, topAttrs,
+  if ((err = parseAssy(xml, aw, topAttrs,
                        a->isContainer ? contInstAttrs : instAttrs, true)))
       return err;
   // Do the OCP derivation for all workers
@@ -1440,7 +1446,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   // Now all clocks are done.  We process the non-data external ports.
   // Now all data ports that are connected have mapped clocks and
   // all ports with WCI clocks are connected.  All that's left is
-  // non-WCI: WTI, WMemI
+  // WCI: WTI, WMemI
   unsigned nWti = 0, nWmemi = 0;
   for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
     if (i->worker) {
@@ -1458,7 +1464,11 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
             aw->ctl.writableConfigProperties = true;
           if (iw->ctl.readableConfigProperties)
             aw->ctl.readableConfigProperties = true;
+#if 0
+	  // Until we have container automation, we force the assembly level
+	  // WCIs to have byte enables.  FIXME
           if (iw->ctl.sub32BitConfigProperties)
+#endif
             aw->ctl.sub32BitConfigProperties = true;
           aw->ctl.controlOps |= iw->ctl.controlOps; // needed?  useful?
           // Reset while suspended: This is really only interesting if all
@@ -1524,6 +1534,9 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
 const char *
 parseHdl(ezxml_t xml, const char *file, Worker *w) {
    const char *err;
+  if (strcmp(w->implName, w->fileName))
+    return esprintf("File name (%s) and implementation name in XML (%s) don't match",
+		    w->fileName, w->implName);
   if ((err = OE::checkAttrs(xml, "Name", "Pattern", "Language", (void*)0)))
     return err;
   const char *lang = ezxml_cattr(xml, "Language");
