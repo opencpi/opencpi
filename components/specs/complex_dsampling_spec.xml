@@ -1,0 +1,29 @@
+
+<!-- Complex down sampling component spec
+
+     This component down samples the data from a complex data stream.  It can down sample by a factor from
+     1 to 256.
+
+     Control events must be passed on to the output.
+-->
+
+<ComponentSpec Name="ComplexDownSampling">
+
+  <Properties>
+    <!-- Down sample factor  Format: unsigned integer (1-256) -->
+    <Property Name="dFactor" type="UShort" Readable="true" Writable="true"/>
+  </Properties>
+
+  <!-- input stream that contains both data and control --->
+  <DataInterfaceSpec Name="in" Producer="false">
+    <xi:include href="cstream_data_protocol.xml"/>
+    <xi:include href="cstream_control_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <!-- Down sample output stream that contains both data and control --->
+  <DataInterfaceSpec Name="out" Producer="true">
+    <xi:include href="cstream_data_protocol.xml"/>
+    <xi:include href="cstream_contol_protocol.xml"/>
+  </DataInterfaceSpec>
+
+</ComponentSpec>
