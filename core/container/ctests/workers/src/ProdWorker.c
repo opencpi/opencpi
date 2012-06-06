@@ -137,6 +137,7 @@ void PrintProdStatus()
   printf("Produced buffer count = %d\n", g_prod_p_count );
 }
 
+static int count=0;
 static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
   ( void ) timedout;
@@ -147,6 +148,12 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
   ProducerWorkerStaticMemory *mem = this_->memories[0];
  // ProducerWorkerProperties *props = this_->properties;
+
+
+  //  printf("\n\n\n\n\ IN ProducerWorker_run\n\n\n\n");
+
+  //  if ( count++ > 0 )return RCC_OK;
+
   
   /* Generate a simple pattern and send it */
   char* out_buffer = (char*)this_->ports[ProducerWorker_Data_Out_Port].current.data;

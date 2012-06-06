@@ -97,6 +97,8 @@ getListOfSupportedEndpoints()
 }
 #endif
 
+
+
 // FIXME have recursive mutex with default constructor
 // Constructors
 OCPI::DataTransport::Transport::
@@ -142,14 +144,22 @@ init() {
   }
 }
 
+static std::string
+getDefaultEp()
+{
+  const char *endpoint = getenv("OCPI_DEFAULT_ENDPOINT");
+  if ( ! endpoint ) endpoint = "ocpi-smb-pio";
+  return std::string(endpoint);
+}
 
 // Find an endpoint that we can use to communicate with the given endpoint (string).
 // It might just be a protocol string
 // Create one if there isn't one.
 DataTransfer::EndPoint &Transport::
 getLocalCompatibleEndpoint(const char *endpoint) {
-  if (!endpoint || !endpoint[0])
-    endpoint = "ocpi-smb-pio";  // FIXME: some global constant
+  if (!endpoint || !endpoint[0]) {
+    endpoint = getDefaultEp().c_str();
+  }
   // This entry point is for mailbox users, so there cannot be any finalized endpoints yet
   for (unsigned n=0; n<m_localEndpoints.getElementCount(); n++ ) {
     GEndPoint *gep = static_cast<GEndPoint*>(m_localEndpoints[n]);
@@ -177,7 +187,7 @@ getLocalCompatibleEndpoint(const char *endpoint) {
       if (!strcmp(protocol, protocol1) &&
 	  maxMb == maxMb1 &&
 	  mailBox != mailBox1) {
-	res = addLocalEndpoint((*i).c_str());
+	res = addLocalEndpoint((*i).c_str(), true);
       }
       free(protocol1);
       free(cs1);
@@ -188,7 +198,7 @@ getLocalCompatibleEndpoint(const char *endpoint) {
     free(protocol);
     free(cs);
     if (!res)
-      res = addLocalEndpoint(endpoint, true);
+      res = addLocalEndpoint(endpoint, true );
   } else
     // Just a protocol
     res = findLocalCompatibleEndpoint(endpoint);
@@ -217,7 +227,7 @@ findLocalCompatibleEndpoint( const char* ep )
       if ( ( (*it).c_str()[m] == ':') || ep[m] == ':' ) {
 
         // Make sure that the endpoint is finalized
-	SMBResources *res = addLocalEndpoint( (*it).c_str() );
+	SMBResources *res = addLocalEndpoint( (*it).c_str(), true );
 	
         (*it) = res->sMemServices->endpoint()->end_point; 
         ocpiDebug("Found %s for %s", (*it).c_str(), ep );
@@ -571,7 +581,7 @@ createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc, const OU::PV
     // the QOS.  If the caller does not provide the endpoint, we will pick one
     // by default.
     OU::findString(params, "endpoint", endpoint);
-    res = addLocalEndpoint(endpoint);
+    res = addLocalEndpoint(endpoint, true);
   }
   if ( ! res ) {
     throw OCPI::Util::Error("Endpoint not supported: protocol \"%s\" endpoint \"%s\"",
@@ -754,13 +764,13 @@ void OCPI::DataTransport::Transport::clearRemoteMailbox( OCPI::OS::uint32_t offs
 		     offset + sizeof(ContainerComms::BasicReq),
 		     offset + sizeof(ContainerComms::BasicReq),
 		     sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
-		     XferRequest::FirstTransfer );
+		     XferRequest::DataTransfer );
                 
     ptransfer->copy (
 		     offset,
 		     offset,
 		     sizeof(ContainerComms::BasicReq),
-		     XferRequest::LastTransfer );
+		     XferRequest::FlagTransfer );
 
     ptransfer->post();
 
@@ -1220,6 +1230,8 @@ bogus here - dont necessarily add a new one.
 #endif
 }
 
+
+
 SMBResources* 
 Transport::
 addLocalEndpoint(const char *nfep, bool compatibleWith)
@@ -1228,11 +1240,11 @@ addLocalEndpoint(const char *nfep, bool compatibleWith)
   if (!nfep) {
     if (!m_defEndpoint)
       try {
-	m_defEndpoint = addLocalEndpointFromProtocol("ocpi-smb-pio");
+	m_defEndpoint = addLocalEndpointFromProtocol(getDefaultEp().c_str());
       } catch (...) {
 	if (m_endpoints.empty())
 	  throw;
-	m_defEndpoint = addLocalEndpoint(m_endpoints[0].c_str());
+	m_defEndpoint = addLocalEndpoint(m_endpoints[0].c_str() );
       }
     return m_defEndpoint;
   }

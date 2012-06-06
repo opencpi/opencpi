@@ -149,6 +149,9 @@ namespace OCPI {
 
       unsigned long long recv (char * buffer, unsigned long long amount)
         throw (std::string);
+      unsigned long long recvfrom(char  *buf, unsigned long long amount, int flags,
+				  char *  src_addr, unsigned long *addrlen)
+      throw (std::string);
 
       /**
        * Sends data to the peer.
@@ -169,6 +172,11 @@ namespace OCPI {
 
       unsigned long long send (const char * data, unsigned long long amount)
         throw (std::string);
+      unsigned long long sendmsg (const void * iovect, unsigned int flags )
+        throw (std::string);
+      unsigned long long sendto (const char * data, unsigned long long amount,
+				 int flags,  char * src_addr, unsigned long addrlen)			  
+	throw (std::string);
 
       /**
        * Returns the socket's local port number.

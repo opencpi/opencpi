@@ -373,9 +373,6 @@ bool TransferController::canBroadcast(
     // All inputs have a free buffer
     if ( produce ) {
       m_nextTid = p;
-#ifndef NDEBUG
-      printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
       break;
     }
   }
@@ -405,9 +402,7 @@ void TransferController::broadCastOutput( Buffer* b )
   buffer->markBufferFull();
         
   for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
-#ifndef NDEBUG
-    printf("TransferController:: 1 m_nextTid = %d\n", m_nextTid );
-#endif
+
     Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid));
     tbuf->markBufferFull();
 
@@ -466,10 +461,6 @@ TransferController1::
 canProduce( Buffer* buffer )
 {
 
-#ifndef NDEBUG
-  //  printf(" In TransferController1::canProduce \n");
-#endif
-
   // When s DD = whole only port 0 of the output port set can produce
   if (  m_wholeOutputSet && buffer->getPort()->getRank() != 0 ) {
     return true;
@@ -505,10 +496,6 @@ canProduce( Buffer* buffer )
     // All inputs have a free buffer
     if ( produce ) {
       m_nextTid = p;
-
-#ifndef NDEBUG
-      printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
       break;
     }
   }
@@ -616,10 +603,6 @@ int TransferController1::produce( Buffer* b, bool bcast )
     if ( m_nextTid < 0 ) {
       m_nextTid = 0;
     }
-#ifndef NDEBUG
-    printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
-
 
     //#define DELAY_FOR_TEST
 #ifdef DELAY_FOR_TEST
@@ -639,13 +622,8 @@ int TransferController1::produce( Buffer* b, bool bcast )
   buffer->markBufferFull();
 
   for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
-
-#ifndef NDEBUG
-    printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
     Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid) );
     tbuf->markBufferFull();
-
   }
 
   /*
@@ -829,18 +807,11 @@ bool TransferController2::canProduce(
         if ( m_inputPort ) {
           if ( port->getBusyFactor() < m_inputPort->getBusyFactor() ) {
             m_nextTid = p;
-
-#ifndef NDEBUG
-            printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
             m_inputPort = port;
           }
         }
         else {
           m_nextTid = p;
-#ifndef NDEBUG
-          printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
           m_inputPort = port;
         }
         break;
@@ -901,11 +872,6 @@ int TransferController2::produce( Buffer* b, bool bcast )
   buffer->markBufferFull();
 
   // Here we will mark the lstate of the input port as full
-
-#ifndef NDEBUG
-  printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
-
   Buffer* tbuf = static_cast<Buffer*>(m_inputPort->getBuffer(m_nextTid));
   tbuf->markBufferFull();
 

@@ -64,7 +64,7 @@ static Worker * WORKER_LOOPBACK_ID;
 static bool loopback;
 
 int  OCPI_RCC_DATA_BUFFER_SIZE   = 10*1024;
-int  OCPI_RCC_CONT_NBUFFERS      = 3;
+int  OCPI_RCC_CONT_NBUFFERS      = 1;
 
 volatile int OCPI_RUN_TEST = 1;
 volatile int OCPI_YIELD = 1;
@@ -274,7 +274,8 @@ void swrite( std::string & s )
 {
   uint32_t  l = s.size();
   write( socket_fd, &l, 4 );  
-  write( socket_fd, s.c_str(), l );  
+  if ( l != 0 ) 
+    write( socket_fd, s.c_str(), l );  
 }
 
 static 
@@ -285,7 +286,7 @@ sread( std::string & s  )
   uint32_t size;
   char buf[2048];
   l = read( socket_fd, &size, 4 );
-  ocpiAssert( l > 0 );  
+  if ( l == 0 ) return 0;
   l = read( socket_fd, buf, size); 
   ocpiAssert( l == size);  
   s.assign(buf,l);
@@ -325,16 +326,24 @@ void setupForPCMode(const OCPI::API::PValue *props)
     swrite( desc );
     sread( desc );
 
-    pc_inputPort->setInitialUserInfo( desc, fb );
+    if ( desc.size() ) 
+      pc_inputPort->setInitialUserInfo( desc, fb );
+    else 
+      fb.clear();
+
     swrite( fb );
     sread( desc );
-    pc_inputPort->setFinalUserInfo( desc );
+
+    if ( desc.size() )     
+      pc_inputPort->setFinalUserInfo( desc );
 
     sread( desc );
     pc_outputPort->setInitialProviderInfo( NULL, desc, fb );
     swrite( fb );
+
     sread( desc );
-    pc_outputPort->setFinalProviderInfo( desc, fb);
+    if ( desc.size() )     
+      pc_outputPort->setFinalProviderInfo( desc, fb);
     swrite( fb );
     printf("Done setting fc\n");
 
@@ -379,15 +388,23 @@ void setupForLoopbackMode(const OCPI::API::PValue *props)
     lb_outputPort->setInitialProviderInfo( NULL, desc, fb );
     swrite( fb );
     sread( desc );
-    lb_outputPort->setFinalProviderInfo( desc, fb);
+    if ( desc.size() ) 
+      lb_outputPort->setFinalProviderInfo( desc, fb);
+    else 
+      fb.clear();
+
     swrite( fb );
     lb_inputPort->getInitialProviderInfo(NULL,desc);
     swrite( desc );
     sread( desc );
-    lb_inputPort->setInitialUserInfo( desc, fb );
+
+    if ( desc.size() ) 
+      lb_inputPort->setInitialUserInfo( desc, fb );
     swrite( fb );
     sread( desc );
-    lb_inputPort->setFinalUserInfo( desc );
+
+    if ( desc.size() ) 
+      lb_inputPort->setFinalUserInfo( desc );
   }
   CATCH_ALL_RETHROW( "connecting ports");
 
@@ -443,10 +460,10 @@ int gpp_cont(int /* argc */, char** /* argv */, const char *protocol)
       
       // We can either take on the role of the producer/consumer or the loopback
       OCPI::Container::Worker *worker;
-      //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
+      static OCPI::Util::PValue port_props[] = {OCPI::Util::PVString("transport","ocpi-socket-rdma"),
       // static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
       // static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
-      const OCPI::API::PValue port_props[] = {OCPI::Util::PVString("protocol", protocol),
+      //      const OCPI::API::PValue port_props[] = {OCPI::Util::PVString("protocol", protocol),
 					       OCPI::Util::PVEnd };
       if ( loopback ) {
         setupForLoopbackMode(port_props);
@@ -588,15 +605,16 @@ int main( int argc, char** argv)
   }
 
   if ( config.host.empty() ) {  
-    socket_fd = server_connect(18077);
+    socket_fd = server_connect(17077);
     loopback = false;
   }
   else {
-    socket_fd = client_connect(config.host.c_str() ,18077);
+    socket_fd = client_connect(config.host.c_str() ,17077);
     loopback = true;
   }
 
   // Start the container in a thead
+  printf("**** Protocol = %s\n",  config.protocol.c_str());
   gpp_cont(argc,argv, config.protocol.c_str());
 
 }

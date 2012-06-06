@@ -53,7 +53,9 @@
 
 OCPI::OS::Socket
 OCPI::OS::ClientSocket::connect (const std::string & remoteHost,
-                                unsigned int remotePort)
+				 unsigned int remotePort,
+				 bool udp
+				 )
   throw (std::string)
 {
   struct sockaddr_in sin;
@@ -97,7 +99,13 @@ OCPI::OS::ClientSocket::connect (const std::string & remoteHost,
     OCPI::OS::Posix::netDbUnlock ();
   }
 
-  int fileno = ::socket (PF_INET, SOCK_STREAM, 0);
+  int fileno;
+  if ( ! udp ) {
+    fileno = ::socket (PF_INET, SOCK_STREAM, 0);
+  }
+  else {
+    fileno = ::socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  }
 
   if (fileno < 0) {
     throw OCPI::OS::Posix::getErrorMessage (errno);

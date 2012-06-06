@@ -713,13 +713,13 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 		   offset + sizeof(ContainerComms::BasicReq),
 		   offset + sizeof(ContainerComms::BasicReq),
 		   sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
-		   XferRequest::FirstTransfer );
+		   XferRequest::DataTransfer );
 
   ptransfer->copy (
 		   offset,
 		   offset,
 		   sizeof(ContainerComms::BasicReq),
-		   XferRequest::LastTransfer );
+		   XferRequest::FlagTransfer );
 
   // Start the transfer
   ptransfer->post();

@@ -43,83 +43,83 @@
 #include "LoopbackWorker.h"
 
 enum PortIds {
-        LoopbackWorker_Data_Out_Port=0,
-    LoopbackWorker_Data_In_Port=1,
-        LastPort
+  LoopbackWorker_Data_Out_Port=0,
+  LoopbackWorker_Data_In_Port=1,
+  LastPort
 };
 
 
 static RCCResult initialize(RCCWorker *this_)
 {
-        LoopbackWorkerStaticMemory *mem = (LoopbackWorkerStaticMemory*)this_->memories[0];
-        LoopbackWorkerProperties *props = this_->properties;
+  LoopbackWorkerStaticMemory *mem = (LoopbackWorkerStaticMemory*)this_->memories[0];
+  LoopbackWorkerProperties *props = this_->properties;
 
-        mem->state = LB_New_Input;
-        mem->startIndex = 0;
-        mem->overlapSize = 0;
+  mem->state = LB_New_Input;
+  mem->startIndex = 0;
+  mem->overlapSize = 0;
 
-        props->startIndex = mem->startIndex;
-        props->longProperty = 0;
+  props->startIndex = mem->startIndex;
+  props->longProperty = 0;
 
-        return RCC_OK;
+  return RCC_OK;
 }
 
 
 static RCCResult start(RCCWorker *this_)
 {
-        ( void ) this_;
-        return RCC_OK;
+  ( void ) this_;
+  return RCC_OK;
 }
 
 
 static RCCResult stop(RCCWorker *this_)
 {
-        ( void ) this_;
-        return RCC_OK;
+  ( void ) this_;
+  return RCC_OK;
 }
 
 static RCCResult release(RCCWorker *this_)
 {
-        ( void ) this_;
-        return RCC_OK;
+  ( void ) this_;
+  return RCC_OK;
 }
 
 static RCCResult test(RCCWorker *this_)
 {
-        ( void ) this_;
-        return RCC_OK;
+  ( void ) this_;
+  return RCC_OK;
 }
 
 
 static RCCResult afterConfigure(RCCWorker *this_)
 {
   /* This only works for simple memory configurations */
-    LoopbackWorkerStaticMemory *static_mem = this_->memories[0];
-    LoopbackWorkerProperties *props = this_->properties;
+  LoopbackWorkerStaticMemory *static_mem = this_->memories[0];
+  LoopbackWorkerProperties *props = this_->properties;
 
-    static_mem->longProperty = props->longProperty;
-        return RCC_OK;
+  static_mem->longProperty = props->longProperty;
+  return RCC_OK;
 }
 
 
 static RCCResult beforeQuery(RCCWorker *this_)
 {
   /* This only works for simple memory configurations */
-    LoopbackWorkerStaticMemory *static_mem = this_->memories[0];
-    LoopbackWorkerProperties *props = this_->properties;
+  LoopbackWorkerStaticMemory *static_mem = this_->memories[0];
+  LoopbackWorkerProperties *props = this_->properties;
 
-    props->startIndex = static_mem->startIndex;
+  props->startIndex = static_mem->startIndex;
 
-    return RCC_OK;
+  return RCC_OK;
 }
 
 static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
-    ( void ) timedout;
-    ( void ) newRunCondition;
-    uint32_t len;
+  ( void ) timedout;
+  ( void ) newRunCondition;
+  uint32_t len;
 
-//  LoopbackWorkerStaticMemory *mem = this_->memories[0];
+  //  LoopbackWorkerStaticMemory *mem = this_->memories[0];
   LoopbackWorkerProperties *props = this_->properties;
 
   char* in_buffer = (char*)this_->ports[LoopbackWorker_Data_In_Port].current.data;
@@ -130,9 +130,6 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   len = this_->ports[LoopbackWorker_Data_In_Port].input.length;
   this_->ports[LoopbackWorker_Data_Out_Port].output.length = len;
 
-  /*  printf("LB len = %d\n", len ); */
-
-
 #define CHECK_DATA
 #ifdef CHECK_DATA
   { int *b = (int*)(in_buffer);
@@ -141,47 +138,34 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #define RESYNC
 #ifdef RESYNC
 
-  /*
-  if ( *b != (int)mem->b_count ) {
-    printf("MAYBE!! Dropped a buffer, got buffer %d, expected %d\n", 
-           *b, mem->b_count );    
-    sleep(2);
-  }
-  */
+    //    sleep(2);
 
-
-  if ( *b != *mem ) {
-    printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
-           *b, *mem );
-    //dropped_b++;
-    /* resync */
-    *mem = *b;
-  }
+    if ( *b != *mem ) {
+      printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
+	     *b, *mem );
+      *mem = *b;
+    }
 #endif
 
-  ncount = 0;
-  for (n=4; n<len; n++) {
-    if ( (in_buffer[n] != (char)(n+*mem)%23) && (ncount++ < 100000) ) {
-      printf("Consumer(%u, %u, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
-             props->startIndex, len, *mem, n, (char)(n+*mem)%23, in_buffer[n]);
-      passed = 0;
+    ncount = 0;
+    for (n=4; n<len; n++) {
+      if ( (in_buffer[n] != (char)(n+*mem)%23) && (ncount++ < 100000) ) {
+	printf("Consumer(%u, %u, b-> %d): Data integrity error(%d) !!, expected %d, got %d\n", 
+	       props->startIndex, len, *mem, n, (char)(n+*mem)%23, in_buffer[n]);
+	passed = 0;
+      }
     }
-  }
-  if ( passed ) {
-    if ( (*mem%500) == 0 ) 
-      printf("Loopback: Buffer %d data integrity test passed\n", *mem);
-  }
+    if ( passed ) {
+      if ( (*mem%500) == 0 ) 
+	printf("Loopback: Buffer %d data integrity test passed\n", *mem);
+    }
     (*mem)++;
   }
 #endif
-#ifdef DATA_CHECK
-  for (n=0; n<len; n++) {
-          if ( in_buffer[n] != (char)n%256 ) {
-                  printf("LB: Data integrity error !!, expected %d, got %d\n", (char)n%256, in_buffer[n]);
-          }
-  }
-  printf("Data integrity passes in the LB:\n");
-#endif
+
+
+  //  printf("\n\n\n\ In LBW, got a good buffer of data !!\n\n\n");
+
 
 #define LOOPBACK_DATA
 #ifdef LOOPBACK_DATA
@@ -193,16 +177,19 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #define NZCOPYIO
 
   /*
-#ifdef NZCOPYIO
-  this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
-                        &this_->ports[LoopbackWorker_Data_Out_Port].current, 0x54, len );
-  this_->container.advance( &this_->ports[LoopbackWorker_Data_In_Port], 0 );
-#else
-  this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
-                        &this_->ports[LoopbackWorker_Data_In_Port].current, 0x54, len );
-#endif
+    #ifdef NZCOPYIO
+    this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
+    &this_->ports[LoopbackWorker_Data_Out_Port].current, 0x54, len );
+    this_->container.advance( &this_->ports[LoopbackWorker_Data_In_Port], 0 );
+    #else
+    this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
+    &this_->ports[LoopbackWorker_Data_In_Port].current, 0x54, len );
+    #endif
   */
 
+  this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
+			 &this_->ports[LoopbackWorker_Data_Out_Port].current, 0x54, len );
+  this_->container.advance( &this_->ports[LoopbackWorker_Data_In_Port], 0 );
 
   props->startIndex++;
   // Since we have used "send" in to out, or memcpy, send, and advance, we just return OK here.
@@ -220,12 +207,12 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #define NUM_OUTPUT_PORTS   1
 #define PROPERTY_SIZE      sizeof( LoopbackWorkerProperties )
 static uint32_t memSizes[] = {sizeof(LoopbackWorkerStaticMemory), 1024*10, 0 };
-//static int32_t portRunConditions[] = { (1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port) , 0 };
 
 #ifdef NZCOPYIO
 static uint32_t portRunConditions[] = { ((1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port)), 0 };
 #else
-static uint32_t portRunConditions[] = { (1<<LoopbackWorker_Data_In_Port), 0, 0 };
+// static uint32_t portRunConditions[] = { (1<<LoopbackWorker_Data_In_Port), 0, 0 };
+static uint32_t portRunConditions[] = { ((1<<LoopbackWorker_Data_In_Port) | (1<<LoopbackWorker_Data_Out_Port)), 0 };
 #endif
 static RCCRunCondition workerRunConditions[] = { { portRunConditions,0,0 }, {0,0,0} , { 0,0,0 } };
 // static RCCPortInfo portInfo = { 0, 1024*12, 1 };
