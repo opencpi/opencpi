@@ -193,7 +193,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
   props->startIndex++;
   // Since we have used "send" in to out, or memcpy, send, and advance, we just return OK here.
-  return RCC_OK;
+  return RCC_ADVANCE;
 
 }
 

@@ -272,27 +272,52 @@ int server_connect(int port)
 static 
 void swrite( std::string & s )
 {
+  ocpiDebug("Entering write %d", s.size());
   uint32_t  l = s.size();
-  write( socket_fd, &l, 4 );  
-  if ( l != 0 ) 
-    write( socket_fd, s.c_str(), l );  
+  if (l)
+    ocpiCheck(write( socket_fd, s.c_str(), l ) == l);  
 }
 
 static 
 int
 sread( std::string & s  )
 {
-  uint32_t l;
+  ocpiDebug("Entering read");
   uint32_t size;
   char buf[2048];
-  l = read( socket_fd, &size, 4 );
-  if ( l == 0 ) return 0;
-  l = read( socket_fd, buf, size); 
-  ocpiAssert( l == size);  
-  s.assign(buf,l);
+  ocpiCheck(read( socket_fd, &size, 4 ) == 4);
+  if (size) {
+    ocpiCheck(read( socket_fd, buf, size) == size);
+    s.assign(buf, size);
+  } else
+    s.clear();
+  ocpiDebug("Leaving sread %d", size);
   return size;
 }
 
+static void
+setupInputPort(Port *ip) {
+  std::string desc, fb;
+  ip->getInitialProviderInfo(NULL, desc);
+  ocpiAssert(desc.size());
+  swrite( desc );
+  ocpiCheck(sread( desc ));
+  ip->setInitialUserInfo( desc, fb );
+  swrite( fb );
+  if (fb.size() && sread( desc ))
+    ip->setFinalUserInfo( desc );
+}
+static void
+setupOutputPort(Port *op) {
+  std::string desc, fb;
+  ocpiCheck(sread( desc ));
+  op->setInitialProviderInfo( NULL, desc, fb );
+  swrite( fb );
+  if (fb.size() && sread( desc )) {
+    op->setFinalProviderInfo( desc, fb);
+    swrite( fb );
+  }
+}
 static 
 void setupForPCMode(const OCPI::API::PValue *props)
 {
@@ -321,32 +346,9 @@ void setupForPCMode(const OCPI::API::PValue *props)
   // Now we need to make the connections.  We are connecting our producer to the loopback consumer
   // and the loopback consumer to our producer.
   try {
-    std::string desc, fb;
-    pc_inputPort->getInitialProviderInfo(NULL, desc);
-    swrite( desc );
-    sread( desc );
-
-    if ( desc.size() ) 
-      pc_inputPort->setInitialUserInfo( desc, fb );
-    else 
-      fb.clear();
-
-    swrite( fb );
-    sread( desc );
-
-    if ( desc.size() )     
-      pc_inputPort->setFinalUserInfo( desc );
-
-    sread( desc );
-    pc_outputPort->setInitialProviderInfo( NULL, desc, fb );
-    swrite( fb );
-
-    sread( desc );
-    if ( desc.size() )     
-      pc_outputPort->setFinalProviderInfo( desc, fb);
-    swrite( fb );
-    printf("Done setting fc\n");
-
+    setupInputPort(pc_inputPort);
+    setupOutputPort(pc_outputPort);
+    printf("Done setting pc\n");
   }
   catch( ... ) {                
     printf("gpp: Caught an unknown exception while connecting external ports\n" );
@@ -382,29 +384,8 @@ void setupForLoopbackMode(const OCPI::API::PValue *props)
   CATCH_ALL_RETHROW( "creating ports");
 
   try {
-    std::string desc, fb;
-    
-    sread( desc );
-    lb_outputPort->setInitialProviderInfo( NULL, desc, fb );
-    swrite( fb );
-    sread( desc );
-    if ( desc.size() ) 
-      lb_outputPort->setFinalProviderInfo( desc, fb);
-    else 
-      fb.clear();
-
-    swrite( fb );
-    lb_inputPort->getInitialProviderInfo(NULL,desc);
-    swrite( desc );
-    sread( desc );
-
-    if ( desc.size() ) 
-      lb_inputPort->setInitialUserInfo( desc, fb );
-    swrite( fb );
-    sread( desc );
-
-    if ( desc.size() ) 
-      lb_inputPort->setFinalUserInfo( desc );
+    setupOutputPort(lb_outputPort);
+    setupInputPort(lb_inputPort);
   }
   CATCH_ALL_RETHROW( "connecting ports");
 
