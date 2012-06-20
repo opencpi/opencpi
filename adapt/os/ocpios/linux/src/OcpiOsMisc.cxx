@@ -41,15 +41,16 @@
  *                  that is the signal that kill(1) sends by default.
  */
 
-#include <OcpiOsMisc.h>
 #include <string>
-#include <sys/types.h>
-#include <sys/time.h>
+#include <stdarg.h>
 #include <signal.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <sched.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include "OcpiOsMisc.h"
 #include "OcpiOsPosixSocket.h"
 #include "OcpiOsPosixError.h"
 
@@ -152,5 +153,16 @@ OCPI::OS::setCtrlCHandler (void (*handler) (void))
   else {
     g_userHandler = handler;
   }
+}
+void OCPI::OS::setError(std::string &error, const char *fmt, ...)
+  throw() {
+  char *err0, *err1;
+  va_list ap;
+  va_start(ap, fmt);
+  vasprintf(&err0, fmt, ap);
+  asprintf(&err1, "%s (%s [%d])", err0, strerror(errno), errno);
+  free(err0);
+  error = err1;
+  free(err1);
 }
 

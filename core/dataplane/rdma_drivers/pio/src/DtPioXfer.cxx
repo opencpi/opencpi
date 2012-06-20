@@ -193,6 +193,7 @@ GppEndPoint::~GppEndPoint()
 {
 }
 
+#if 0
 void PIOXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )
 {
   int n=0;
@@ -201,15 +202,17 @@ void PIOXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_
     n++;
   }
 }
-
+#endif
 
 // PIOXferRequest destructor implementation
 PIOXferRequest::~PIOXferRequest ()
 {
+#if 0
   if (m_thandle)
     {
       (void)xfer_release (m_thandle, 0);
     }
+#endif
 }
 
 
@@ -230,10 +233,11 @@ void PIOXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 XferRequest* PIOXferServices::createXferRequest()
 {
   OCPI::Util::SelfAutoMutex guard (&parent()); 
-  return new PIOXferRequest ( *this );
+  return new PIOXferRequest ( *this, m_xftemplate );
 }
 
 
+#if 0
 // Create a transfer request
 XferRequest* PIOXferRequest::copy (OCPI::OS::uint32_t srcoffs, 
                                     OCPI::OS::uint32_t dstoffs, 
@@ -281,14 +285,14 @@ XferRequest & PIOXferRequest::group (XferRequest* lhs )
   xfer_group ( handles, 0, &getHandle());
   return *this;
 }
-
+#endif
 
 
 
 // Destructor
 PIOXferServices::~PIOXferServices ()
 {
-  // Invoke destroy without flags.
+ // Invoke destroy without flags.
   xfer_destroy (m_xftemplate, 0);
 }
 

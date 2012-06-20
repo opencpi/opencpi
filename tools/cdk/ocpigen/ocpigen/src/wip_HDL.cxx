@@ -1695,7 +1695,7 @@ emitUuidHDL(const Worker *aw, const char *outDir, const uuid_t &uuid) {
     fprintf(f, "%02x", ((char*)&uuidRegs)[n]&0xff);
   fprintf(f, ";\nendmodule // mkUUID\n");
   if (fclose(f))
-    return "Could close output file. No space?";
+    return "Could not close output file. No space?";
   return NULL;
 }
 

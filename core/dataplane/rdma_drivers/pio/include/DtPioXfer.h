@@ -163,10 +163,12 @@ namespace DataTransfer {
   public:
 
     // Constructor
-    PIOXferRequest( PIOXferServices & parent )
-      : TransferBase<PIOXferServices,PIOXferRequest>(parent),
-      m_thandle(NULL){}
+  PIOXferRequest( PIOXferServices & parent, XF_template temp)
+    : TransferBase<PIOXferServices,PIOXferRequest>(parent, temp)
+      //      ,m_thandle(NULL)
+{}
 
+#if 0
     XferRequest & group( XferRequest* lhs );
 
     XferRequest* copy (OCPI::OS::uint32_t srcoff, 
@@ -174,24 +176,24 @@ namespace DataTransfer {
 		       OCPI::OS::uint32_t nbytes, 
 		       XferRequest::Flags flags
 		       );
-
+#endif
     // Queue data transfer request
-    void post();
+    //    void post();
 
     // Get Information about a Data Transfer Request
-    DataTransfer::XferRequest::CompletionStatus getStatus();
+    //DataTransfer::XferRequest::CompletionStatus getStatus();
 
     // Destructor - implementation at end of file
     virtual ~PIOXferRequest ();
 
-    void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] );
+    //    void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] );
 
     // Data members accessible from this/derived class
-  protected:
+    //  protected:
 
     // Get the transfer handle
-    XF_transfer & getHandle();
-    XF_transfer               m_thandle;                // Transfer handle returned by xfer_xxx etal
+    //    XF_transfer & getHandle();
+    //    XF_transfer               m_thandle;                // Transfer handle returned by xfer_xxx etal
 
   };
 
@@ -252,15 +254,6 @@ namespace DataTransfer {
 
   // inline methods for PIOXferFactory
   inline const char* PIOXferFactory::getProtocol(){return "ocpi-smb-pio";}
- 
-  // inline methods for PIOXferRequest
-  inline XF_transfer& PIOXferRequest::getHandle(){return m_thandle;}
-  inline void PIOXferRequest::post(){xfer_start (m_thandle, 0);}
-  inline DataTransfer::XferRequest::CompletionStatus PIOXferRequest::getStatus()
-    {
-      return xfer_get_status (m_thandle) == 0 ? DataTransfer::XferRequest::CompleteSuccess : DataTransfer::XferRequest::Pending;
-    }
-
 }
 
 

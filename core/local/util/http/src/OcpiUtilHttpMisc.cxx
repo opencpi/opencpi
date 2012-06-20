@@ -298,11 +298,11 @@ OCPI::Util::Http::makeHttpDate (std::time_t curTime)
     res += "0";
   }
 
-  res += OCPI::Util::Misc::integerToString (tmStr->tm_mday);
+  res += OCPI::Util::integerToString (tmStr->tm_mday);
   res += " ";
   res += shortMonthNames[tmStr->tm_mon];
   res += " ";
-  res += OCPI::Util::Misc::integerToString (tmStr->tm_year + 1900);
+  res += OCPI::Util::integerToString (tmStr->tm_year + 1900);
 
   /*
    * Time
@@ -312,17 +312,17 @@ OCPI::Util::Http::makeHttpDate (std::time_t curTime)
   if (tmStr->tm_hour < 10) {
     res += "0";
   }
-  res += OCPI::Util::Misc::integerToString (tmStr->tm_hour);
+  res += OCPI::Util::integerToString (tmStr->tm_hour);
   res += ":";
   if (tmStr->tm_min < 10) {
     res += "0";
   }
-  res += OCPI::Util::Misc::integerToString (tmStr->tm_min);
+  res += OCPI::Util::integerToString (tmStr->tm_min);
   res += ":";
   if (tmStr->tm_sec < 10) {
     res += "0";
   }
-  res += OCPI::Util::Misc::integerToString (tmStr->tm_sec);
+  res += OCPI::Util::integerToString (tmStr->tm_sec);
   res += " GMT";
 
   return res;

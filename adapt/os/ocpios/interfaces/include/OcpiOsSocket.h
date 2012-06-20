@@ -147,7 +147,7 @@ namespace OCPI {
        * \pre The socket shall be connected.
        */
 
-      unsigned long long recv (char * buffer, unsigned long long amount)
+      unsigned long long recv (char * buffer, unsigned long long amount, unsigned timeoutms = 0)
         throw (std::string);
 
       /**
@@ -287,6 +287,9 @@ namespace OCPI {
 
     protected:
       OCPI::OS::uint64_t m_osOpaque[1];
+    private:
+      bool m_temporary; // kludge to make up for broken interface
+      unsigned m_timeoutms;
     };
 
   }

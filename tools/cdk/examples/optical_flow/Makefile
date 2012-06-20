@@ -29,7 +29,7 @@ optical_flow: optical_flow.cxx
 run: optical_flow
 	export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components; \
 	export OCPI_SMB_SIZE=600000000; \
-	./optical_flow uavA.jpg uavB.jpg  > /dev/null	
+	$(VG) ./optical_flow uavA.jpg uavB.jpg  > /dev/null	
 
 clean::
 	rm -f -r *.dSYM optical_flow *.*~ *~ output_image.jpg *.o *.d

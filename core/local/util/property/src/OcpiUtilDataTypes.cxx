@@ -348,7 +348,6 @@ namespace OCPI {
 	writer.beginArray(*this, m_nItems);			  
       }
 
-
       align(data, m_dataAlign, length);
       switch (m_baseType) {
       case OA::OCPI_Struct:

@@ -47,8 +47,8 @@ using namespace DataTransfer;
 
 #define USE_BYTE_TRANSFERS
 #ifdef USE_BYTE_TRANSFERS
-static void
-action_pio_transfer(PIO_transfer transfer)
+void
+xfer_pio_action_transfer(PIO_transfer transfer)
 {
 
   /* Get the alignments */
@@ -168,8 +168,8 @@ action_pio_transfer(PIO_transfer transfer)
 }
 #else
 
-static void
-action_pio_transfer(PIO_transfer transfer)
+void
+xfer_pio_action_transfer(PIO_transfer transfer)
 {
   OCPI::OS::int32_t nwords = ((transfer->nbytes + 5) / 8) ;
 
@@ -402,6 +402,7 @@ xfer_pio_group(PIO_transfer *members, OCPI::OS::int32_t, PIO_transfer *pio_trans
   return 0;
 }
 
+#if 0
 OCPI::OS::int32_t
 xfer_pio_start(PIO_transfer pio_transfer, OCPI::OS::int32_t)
 {
@@ -415,7 +416,7 @@ xfer_pio_start(PIO_transfer pio_transfer, OCPI::OS::int32_t)
 
   return 0;
 }
-
+#endif
 OCPI::OS::int32_t
 xfer_pio_release(PIO_transfer pio_transfer)
 {

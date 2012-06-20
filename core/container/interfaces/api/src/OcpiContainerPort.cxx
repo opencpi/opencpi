@@ -197,7 +197,7 @@ namespace OCPI {
     // The general case of connecting ports that are in the same process.
     void Port::connectURL(const char*, const OCPI::Util::PValue *,
 			  const OCPI::Util::PValue *) {
-      printf("connectURL not allowed on this container !!\n");
+      ocpiDebug("connectURL not allowed on this container !!");
       ocpiAssert( 0 );
     }
 
@@ -263,16 +263,16 @@ namespace OCPI {
       OCPI::RDT::Descriptors
         &pDesc = isProvider() ? getData().data : other,
         &uDesc = isProvider() ? other : getData().data;
-      printf("Port %s, a %s, has options 0x%x, initial role %s, buffers %u\n"
-             "  other has options 0x%x, initial role %s, buffers %u\n",
-             m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
-             getData().data.options, roleName[getData().data.role], getData().data.desc.nBuffers,
-             other.options, roleName[other.role], other.desc.nBuffers);
+      ocpiDebug("Port %s, a %s, has options 0x%x, initial role %s, buffers %u",
+		m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
+		getData().data.options, roleName[getData().data.role], getData().data.desc.nBuffers);
+      ocpiDebug("  other has options 0x%x, initial role %s, buffers %u",
+		other.options, roleName[other.role], other.desc.nBuffers);
       chooseRoles(uDesc.role, uDesc.options, pDesc.role, pDesc.options);
-      printf("  after negotiation, port %s, a %s, has role %s\n"
-             "  other has role %s\n",
-             m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
-             roleName[getData().data.role], roleName[other.role]);
+      ocpiDebug("  after negotiation, port %s, a %s, has role %s,"
+		"  other has role %s",
+		m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
+		roleName[getData().data.role], roleName[other.role]);
       // We must make sure other side doesn't mess with roles anymore.
       uDesc.options |= 1 << OCPI::RDT::MandatedRole;
       pDesc.options |= 1 << OCPI::RDT::MandatedRole;

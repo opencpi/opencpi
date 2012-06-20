@@ -588,7 +588,9 @@ namespace OCPI {
       OS::Timer *timer = NULL;
       if (timeout_us) 
 	timer = new OS::Timer(timeout_us/1000000ul, (timeout_us%1000000) * 1000ull);
-      return m_application.wait(timer);
+      bool r = m_application.wait(timer);
+      delete timer;
+      return r;
     }
     ExternalPort &Application::getPort(const char *name) { return m_application.getPort(name); }
     bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value) {

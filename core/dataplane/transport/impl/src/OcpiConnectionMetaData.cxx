@@ -61,10 +61,9 @@ using namespace OCPI::OS;
 
 
 // This constructor is used to create a simple point to point Whole/Par ->Par/Whole circuit
-ConnectionMetaData::ConnectionMetaData( const char* source_ep, const char* target_ep, 
-                                              int  buf_count,
-                                              int  buf_len
-                                              )
+ConnectionMetaData::ConnectionMetaData( EndPoint *source_ep, EndPoint* target_ep, 
+					int  buf_count,
+					int  buf_len)
   : m_portSetMd(0) 
 {
 
@@ -72,10 +71,12 @@ ConnectionMetaData::ConnectionMetaData( const char* source_ep, const char* targe
   PortSetMetaData* psmd = new PortSetMetaData( true,0,new ParallelDataDistribution(), 
                                                buf_count, buf_len, 
                                                this);
-  PortMetaData* pmd;
   m_portSetMd.push_back( psmd );
-  pmd = new PortMetaData(0,true,source_ep,target_ep,psmd);
+  PortMetaData* pmd = new PortMetaData(0, true, source_ep, target_ep, psmd);
   psmd->addPort(pmd);
+
+  // Our connection distribution
+  dataDistribution = new OCPI::DataTransport::ParallelDataDistribution();
 
   // Create the destination port
   psmd = new PortSetMetaData(   false,1,new ParallelDataDistribution(), 
@@ -86,23 +87,21 @@ ConnectionMetaData::ConnectionMetaData( const char* source_ep, const char* targe
   pmd = new PortMetaData( 1,false,target_ep,source_ep,psmd);
   psmd->addPort(pmd);
 
-  // Our connection distribution
-  dataDistribution = new OCPI::DataTransport::ParallelDataDistribution();
 
 }
 
 
-
-ConnectionMetaData::ConnectionMetaData( OCPI::RDT::Descriptors& sPort )
+// Output-only
+ConnectionMetaData::ConnectionMetaData( DataTransfer::EndPoint &outputEp,
+					OCPI::RDT::Descriptors& outputDesc)
   : m_portSetMd(0) 
 {
 
-  // Create the source port 
+  // Create the output port 
   PortSetMetaData* psmd = new PortSetMetaData(true,0,new ParallelDataDistribution(), 
-                                                    sPort.desc.nBuffers, sPort.desc.dataBufferSize, this);
+					      outputDesc.desc.nBuffers, outputDesc.desc.dataBufferSize, this);
   m_portSetMd.push_back( psmd );
-  PortMetaData* pmd = new PortMetaData(0,true,sPort,NULL,psmd);
-
+  PortMetaData* pmd = new PortMetaData(0,true, &outputEp, outputDesc, psmd);
   psmd->addPort(pmd);
 
   // Our connection distribution

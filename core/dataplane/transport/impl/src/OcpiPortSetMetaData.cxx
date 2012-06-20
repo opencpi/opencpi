@@ -45,6 +45,7 @@
  */
 
 #include <OcpiOsAssert.h>
+#include "DtSharedMemoryInterface.h"
 #include <OcpiPortSetMetaData.h>
 #include <OcpiPortMetaData.h>
 #include <OcpiIntDataDistribution.h>
@@ -71,12 +72,13 @@ PortSetMetaData( bool src,
                  OCPI::OS::uint32_t ps_id, 
                  DataDistribution* dd, 
                  ConnectionMetaData* c,
-                 const OCPI::RDT::Descriptors* port_dep, 
-                 OCPI::OS::uint32_t cid, 
+                 DataTransfer::EndPoint &inputEp,
+                 const OCPI::RDT::Descriptors* inputDesc, 
+		 //                 OCPI::OS::uint32_t cid, 
                  int port_count, 
                  int buffer_count,
                  int buffer_size,
-                 const char* our_ep  )
+                 DataTransfer::EndPoint &outputEp  )
   :CU::Child<ConnectionMetaData,PortSetMetaData>( *c ),
    m_connection(c)
 {
@@ -93,7 +95,7 @@ PortSetMetaData( bool src,
 
   // First we will create the generic ones
   for ( n=0; n<port_count; n++ ) {
-    PortMetaData* pmd =  new PortMetaData( n+1, false, our_ep ,NULL, port_dep[n], cid, this );
+    PortMetaData* pmd =  new PortMetaData( n+1, outputEp, inputEp, inputDesc[n], /*cid,*/ this );
     addPort( pmd );
 
   }

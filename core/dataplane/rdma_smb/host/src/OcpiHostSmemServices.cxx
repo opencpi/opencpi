@@ -134,9 +134,7 @@ namespace DataTransfer {
                                     "HostSmemServices::Create: CreateFileMappingServices returned NULL reference");
             }
                 
-#ifndef NDEBUG
-          printf("Creating mapping of size %lu\n", size );
-#endif
+          ocpiDebug("Creating mapping of size %lu", size );
 
           rc = pMapper->CreateMapping ("", loc->getAddress(), OcpiFileMappingServices::ReadWriteAccess, (OCPI::OS::int64_t)size);
 

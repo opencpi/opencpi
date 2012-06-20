@@ -488,7 +488,7 @@ runTest ()
   }
   else {
     endpoint  = "ocpi-smb-pio:ocpi-rcc-test:";
-    endpoint += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (m_config.endpointSize));
+    endpoint += OCPI::Util::unsignedToString (static_cast<unsigned int> (m_config.endpointSize));
     endpoint += ".1.1";
   }
 
@@ -507,7 +507,7 @@ runTest ()
   catch (const OCPI::Util::EmbeddedException & oops) {
     const char * auxInfo = oops.getAuxInfo ();
     std::string msg = "Error creating RCC container: error code ";
-    msg += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+    msg += OCPI::Util::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
 
     if (auxInfo && *auxInfo) {
       msg += ": ";
@@ -702,7 +702,7 @@ runTest ()
   catch (const OCPI::Util::EmbeddedException & oops) {
     const char * auxInfo = oops.getAuxInfo ();
     std::string msg = "Error loading worker into container: error code ";
-    msg += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+    msg += OCPI::Util::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
 
     if (auxInfo && *auxInfo) {
       msg += ": ";
@@ -1025,7 +1025,7 @@ createAllPorts ()
       msg += " port \"";
       msg += portInfo->name;
       msg += "\": ";
-      msg += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+      msg += OCPI::Util::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
 
       if (auxInfo) {
         msg += " (";
@@ -1056,7 +1056,7 @@ connectInputPorts ()
       uint32_t packetSize = static_cast<uint32_t> (m_config.defaultPacketSize);
 
       if (colonPos != std::string::npos) {
-        packetSize = OCPI::Util::Misc::stringToUnsigned (fileName.substr (colonPos+1));
+        packetSize = OCPI::Util::stringToUnsigned (fileName.substr (colonPos+1));
         fileName = fileName.substr (0, colonPos);
       }
 
@@ -1135,7 +1135,7 @@ connectInputPorts ()
   catch (const OCPI::Util::EmbeddedException & oops) {
     const char * auxInfo = oops.getAuxInfo ();
     std::string msg = "Error connectint input ports: error code ";
-    msg += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+    msg += OCPI::Util::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
 
     if (auxInfo && *auxInfo) {
       msg += ": ";
@@ -1231,7 +1231,7 @@ connectOutputPorts ()
   catch (const OCPI::Util::EmbeddedException & oops) {
     const char * auxInfo = oops.getAuxInfo ();
     std::string msg = "Error connectint input ports: error code ";
-    msg += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+    msg += OCPI::Util::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
 
     if (auxInfo && *auxInfo) {
       msg += ": ";
@@ -1303,7 +1303,7 @@ configureWorker ()
 
       case OCPI::SCA::SCA_short:
         {
-          int idata = OCPI::Util::Misc::stringToInteger (value);
+          int idata = OCPI::Util::stringToInteger (value);
           int16_t data = static_cast<int16_t> (idata);
 
           m_containerWorkerId->write ( p.offset,
@@ -1313,7 +1313,7 @@ configureWorker ()
 
       case OCPI::SCA::SCA_long:
         {
-          int idata = OCPI::Util::Misc::stringToInteger (value);
+          int idata = OCPI::Util::stringToInteger (value);
           int32_t data = static_cast<int32_t> (idata);
 
           m_containerWorkerId->write (  p.offset,
@@ -1323,7 +1323,7 @@ configureWorker ()
 
       case OCPI::SCA::SCA_ulong:
         {
-          unsigned int idata = OCPI::Util::Misc::stringToUnsigned (value);
+          unsigned int idata = OCPI::Util::stringToUnsigned (value);
           uint32_t data = static_cast<uint32_t> (idata);
 
           m_containerWorkerId->write (  p.offset,
@@ -1333,7 +1333,7 @@ configureWorker ()
 
       case OCPI::SCA::SCA_ushort:
         {
-          unsigned int idata = OCPI::Util::Misc::stringToUnsigned (value);
+          unsigned int idata = OCPI::Util::stringToUnsigned (value);
           uint16_t data = static_cast<uint16_t> (idata);
 
           m_containerWorkerId->write ( p.offset,
@@ -2055,7 +2055,7 @@ main (int argc, char * argv[])
     iPidFile >> strPid;
 
     try {
-      pid = OCPI::Util::Misc::stringToUnsigned (strPid);
+      pid = OCPI::Util::stringToUnsigned (strPid);
     }
     catch (...) {
       pid = 0;

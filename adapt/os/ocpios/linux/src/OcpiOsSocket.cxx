@@ -69,6 +69,7 @@ o2fd (const OCPI::OS::uint64_t * ptr)
 OCPI::OS::Socket::Socket ()
   throw ()
 {
+  m_timeoutms = 0;
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (int)> ()));
   ocpiAssert (sizeof (m_osOpaque) >= sizeof (int));
   o2fd (m_osOpaque) = -1;
@@ -77,6 +78,8 @@ OCPI::OS::Socket::Socket ()
 OCPI::OS::Socket::Socket (const OCPI::OS::uint64_t * opaque)
   throw (std::string)
 {
+  m_temporary = true;
+  m_timeoutms = 0;
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (int)> ()));
   ocpiAssert (sizeof (m_osOpaque) >= sizeof (int));
   o2fd (m_osOpaque) = o2fd (opaque);
@@ -85,6 +88,8 @@ OCPI::OS::Socket::Socket (const OCPI::OS::uint64_t * opaque)
 OCPI::OS::Socket::Socket (const Socket & other)
   throw ()
 {
+  m_timeoutms = 0;
+  m_temporary = false;
   o2fd (m_osOpaque) = o2fd (other.m_osOpaque);
 }
 
@@ -92,6 +97,8 @@ OCPI::OS::Socket &
 OCPI::OS::Socket::operator= (const Socket & other)
   throw ()
 {
+  m_timeoutms = 0;
+  m_temporary = false;
   o2fd (m_osOpaque) = o2fd (other.m_osOpaque);
   return *this;
 }
@@ -99,18 +106,31 @@ OCPI::OS::Socket::operator= (const Socket & other)
 OCPI::OS::Socket::~Socket ()
   throw ()
 {
+  if (!m_temporary && o2fd (m_osOpaque) != -1)
+    close();
 }
 
 unsigned long long
-OCPI::OS::Socket::recv (char * buffer, unsigned long long amount)
+OCPI::OS::Socket::recv (char * buffer, unsigned long long amount, unsigned timeoutms)
   throw (std::string)
 {
+  if (timeoutms != m_timeoutms) {
+    struct timeval tv;
+    tv.tv_sec = timeoutms/1000;
+    tv.tv_usec = (timeoutms % 1000) * 1000;
+    ocpiDebug("Setting socket timeout to %u ms", timeoutms);
+    if (setsockopt(o2fd (m_osOpaque), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0)
+      throw OCPI::OS::Posix::getErrorMessage (errno);
+    m_timeoutms = timeoutms;
+  }
   unsigned long count = static_cast<unsigned long> (amount);
   ocpiAssert (static_cast<unsigned long long> (count) == amount);
 
   size_t ret = ::recv (o2fd (m_osOpaque), buffer, count, 0);
 
   if (ret == static_cast<size_t> (-1)) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK)
+      return ULLONG_MAX;
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
 
@@ -125,7 +145,13 @@ OCPI::OS::Socket::send (const char * data, unsigned long long amount)
   unsigned long count = static_cast<unsigned long> (amount);
   ocpiAssert (static_cast<unsigned long long> (count) == amount);
 
-  size_t ret = ::send (o2fd (m_osOpaque), data, count, 0);
+  size_t ret = ::send (o2fd (m_osOpaque), data, count, 
+#ifdef OCPI_OS_darwin
+		       0 // darwin uses setsockopt for this
+#else
+		       MSG_NOSIGNAL
+#endif		       
+		       );
 
   if (ret == static_cast<size_t> (-1)) {
     throw OCPI::OS::Posix::getErrorMessage (errno);
@@ -193,6 +219,13 @@ OCPI::OS::Socket::linger (bool opt)
                     (char *) &lopt, sizeof (struct linger)) != 0) {
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }   
+#ifdef OCPI_OS_darwin
+  int x = 1;
+  if (::setsockopt (o2fd (m_osOpaque), SOL_SOCKET, SO_NOSIGPIPE,
+                    (void *) &x, sizeof (x)) != 0) {
+    throw OCPI::OS::Posix::getErrorMessage (errno);
+  }   
+#endif
 }
 
 void
@@ -211,6 +244,7 @@ OCPI::OS::Socket::close ()
   if (::close (o2fd (m_osOpaque))) {
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
+  o2fd (m_osOpaque) = -1;
 }
 
 OCPI::OS::Socket

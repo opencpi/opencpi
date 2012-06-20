@@ -210,9 +210,7 @@ Buffer* TransferController::getNextFullInputBuffer(
 
   int &seq = input_port->getLastBufferTidProcessed();
 
-#ifndef NDEBUG
-  printf("getNextFullInputBuffer, last seq processed = %d\n", seq );
-#endif
+  ocpiDebug("getNextFullInputBuffer, last seq processed = %d", seq );
 
   InputBuffer *low_seq = NULL;
   int full_count=0;
@@ -260,10 +258,8 @@ Buffer* TransferController::getNextFullInputBuffer(
 
   // Check for programming error
   if ( (full_count == input_port->getBufferCount()) && ! boi ) {
-#ifndef NDEBUG
-    printf("*** INTERNAL ERROR ***, got a full set of input buffers, but cant find expected sequence\n");
+    ocpiDebug("*** INTERNAL ERROR ***, got a full set of input buffers, but cant find expected sequence");
     ocpiAssert(0)
-#endif
       }
 
   return boi;
@@ -312,11 +308,8 @@ Buffer* TransferController::getNextFullInputBuffer(
     low_seq->setInUse( true );
   }
 
-#ifndef NDEBUG
-  if ( ! low_seq ) {
-    printf("No Input buffers avail\n");
-  }
-#endif
+  if ( ! low_seq )
+    ocpiDebug("No Input buffers avail");
         
   return low_seq;
 #endif
@@ -373,9 +366,7 @@ bool TransferController::canBroadcast(
     // All inputs have a free buffer
     if ( produce ) {
       m_nextTid = p;
-#ifndef NDEBUG
-      printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
+      ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
       break;
     }
   }
@@ -392,9 +383,7 @@ void TransferController::broadCastOutput( Buffer* b )
 {
   OutputBuffer* buffer = static_cast<OutputBuffer*>(b);
 
-#ifndef NDEBUG
-  printf("TransferController::broadCastOutput( Buffer* b ), setting EOS !!\n");
-#endif
+  ocpiDebug("TransferController::broadCastOutput( Buffer* b ), setting EOS !!");
 
   // In the case of a braodcast, we will copy some of the buffers meta-data
   // attributes to the output control structure
@@ -405,9 +394,7 @@ void TransferController::broadCastOutput( Buffer* b )
   buffer->markBufferFull();
         
   for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
-#ifndef NDEBUG
-    printf("TransferController:: 1 m_nextTid = %d\n", m_nextTid );
-#endif
+    ocpiDebug("TransferController:: 1 m_nextTid = %d", m_nextTid );
     Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid));
     tbuf->markBufferFull();
 
@@ -418,11 +405,9 @@ void TransferController::broadCastOutput( Buffer* b )
    *  up the template that we need to produce.  So, since the output tid is a given,
    *  the only calculation is the input tid that we are going to produce to.
    */
-#ifndef NDEBUG
-  printf("output port id = %d, buffer id = %d, input id = %d\n", 
+  ocpiDebug("output port id = %d, buffer id = %d, input id = %d", 
          buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
-  printf("Template address = %p\n", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid][1][OUTPUT]);
-#endif
+  ocpiDebug("Template address = %p", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid][1][OUTPUT]);
 
   // Start producing, this may be asynchronous
   OCPI_EMIT_CAT__("Start Data Transfer",OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buffer );
@@ -466,9 +451,7 @@ TransferController1::
 canProduce( Buffer* buffer )
 {
 
-#ifndef NDEBUG
-  //  printf(" In TransferController1::canProduce \n");
-#endif
+  //  ocpiDebug(" In TransferController1::canProduce");
 
   // When s DD = whole only port 0 of the output port set can produce
   if (  m_wholeOutputSet && buffer->getPort()->getRank() != 0 ) {
@@ -506,9 +489,7 @@ canProduce( Buffer* buffer )
     if ( produce ) {
       m_nextTid = p;
 
-#ifndef NDEBUG
-      printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
+      ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
       break;
     }
   }
@@ -590,13 +571,11 @@ int TransferController1::produce( Buffer* b, bool bcast )
 
   if ( bcast_idx == 1 ) {
 #ifdef DEBUG_L2
-    printf("*** producing via broadcast, rank == %d !!\n", b->getPort()->getRank());
+    ocpiDebug("*** producing via broadcast, rank == %d !!", b->getPort()->getRank());
 #endif
 
     if ( ! buffer->getMetaData()->endOfStream ) {
-#ifndef NDEBUG
-      printf("*** ERROR *** EOS not set via broadcast !!\n");
-#endif
+      ocpiDebug("*** ERROR *** EOS not set via broadcast !!");
     }
   }
 
@@ -604,7 +583,7 @@ int TransferController1::produce( Buffer* b, bool bcast )
   if ( m_wholeOutputSet && b->getPort()->getRank() != 0 ) {
 
 #ifdef DEBUG_L2
-    printf("My rank != 0 so i am not producing !!! \n");
+    ocpiDebug("My rank != 0 so i am not producing !!!");
 #endif
 
     // We need to mark the local buffer as free
@@ -616,9 +595,7 @@ int TransferController1::produce( Buffer* b, bool bcast )
     if ( m_nextTid < 0 ) {
       m_nextTid = 0;
     }
-#ifndef NDEBUG
-    printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
+    ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
 
 
     //#define DELAY_FOR_TEST
@@ -640,9 +617,7 @@ int TransferController1::produce( Buffer* b, bool bcast )
 
   for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
 
-#ifndef NDEBUG
-    printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
+    ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
     Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid) );
     tbuf->markBufferFull();
 
@@ -655,9 +630,9 @@ int TransferController1::produce( Buffer* b, bool bcast )
    */
 
 #ifdef DEBUG_L2
-  printf("output port id = %d, buffer id = %d, input id = %d\n", 
+  ocpiDebug("output port id = %d, buffer id = %d, input id = %d", 
          buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
-  printf("Template address = 0x%x\n", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid]);
+  ocpiDebug("Template address = 0x%x", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid]);
 #endif
 
   // Start producing, this may be asynchronous
@@ -676,8 +651,8 @@ int TransferController1::produce( Buffer* b, bool bcast )
   }
 
 #ifdef DEBUG_L2
-  printf("next tid = %d, num buf = %d\n", m_nextTid, m_input->getBufferCount());
-  printf("Returning max gated sequence = %d\n", temp->getMaxGatedSequence());
+  ocpiDebug("next tid = %d, num buf = %d", m_nextTid, m_input->getBufferCount());
+  ocpiDebug("Returning max gated sequence = %d", temp->getMaxGatedSequence());
 #endif
 
   return temp->getMaxGatedSequence();
@@ -720,8 +695,8 @@ Buffer* TransferController1::consume( Buffer* input )
 
 
 #ifdef DEBUG_L2
-  printf("Set load factor to %d\n", buffer->getState()->pad);
-  printf("Consuming using tpid = %d, ttid = %d, template = 0x%x\n",input->getPort()->getPortId(),
+  ocpiDebug("Set load factor to %d", buffer->getState()->pad);
+  ocpiDebug("Consuming using tpid = %d, ttid = %d, template = 0x%x",input->getPort()->getPortId(),
          input->getTid(), m_templates [0][0][input->getPort()->getPortId()][input->getTid()][0][INPUT] );
 #endif
 
@@ -798,7 +773,7 @@ bool TransferController2::canProduce(
   // Broadcast is a special case
   if ( buffer->getMetaData()->endOfStream ) {
 #ifdef DEBUG_L2
-    printf("*** Testing canproduce via broacast !!\n");
+    ocpiDebug("*** Testing canproduce via broacast !!");
 #endif
     return canBroadcast( b );
   }
@@ -823,24 +798,20 @@ bool TransferController2::canProduce(
     for ( OCPI::OS::uint32_t p=0; p<m_input->getBufferCount(); p++ ) {
 
 #ifdef DEBUG_L2
-      printf("canProduce:: busy factor for port %d = %d\n", n, port->getBusyFactor() ) ;
+      ocpiDebug("canProduce:: busy factor for port %d = %d", n, port->getBusyFactor() ) ;
 #endif
       if ( port->getBuffer(p)->isEmpty() ) {
         if ( m_inputPort ) {
           if ( port->getBusyFactor() < m_inputPort->getBusyFactor() ) {
             m_nextTid = p;
 
-#ifndef NDEBUG
-            printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
+            ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
             m_inputPort = port;
           }
         }
         else {
           m_nextTid = p;
-#ifndef NDEBUG
-          printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
+          ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
           m_inputPort = port;
         }
         break;
@@ -850,7 +821,7 @@ bool TransferController2::canProduce(
 
 #ifdef DEBUG_L2
   if ( m_inputPort ) 
-    printf("Selected Port %d with BF = %d\n", m_inputPort->getPortId(), m_inputPort->getBusyFactor() );
+    ocpiDebug("Selected Port %d with BF = %d", m_inputPort->getPortId(), m_inputPort->getBusyFactor() );
 #endif
 
   return m_inputPort?true:false;
@@ -869,12 +840,10 @@ int TransferController2::produce( Buffer* b, bool bcast )
   if ( bcast_idx == 1 ) {
 
 #ifdef DEBUG_L2
-    printf("*** producing via broadcast, rank == %d !!\n", b->getPort()->getRank());
+    ocpiDebug("*** producing via broadcast, rank == %d !!", b->getPort()->getRank());
 #endif
     if ( ! buffer->getMetaData()->endOfStream ) {
-#ifndef NDEBUG
-      printf("*** ERROR *** EOS not set via broadcast !!\n");
-#endif                
+      ocpiDebug("*** ERROR *** EOS not set via broadcast !!");
     }
   }
 
@@ -882,7 +851,7 @@ int TransferController2::produce( Buffer* b, bool bcast )
   if ( m_wholeOutputSet && b->getPort()->getRank() != 0 ) {
 
 #ifdef DEBUG_L2
-    printf("My rank != 0 so i am not producing !!! \n");
+    ocpiDebug("My rank != 0 so i am not producing !!!");
 #endif
     // We need to mark the local buffer as free
     buffer->markBufferEmpty();
@@ -902,9 +871,7 @@ int TransferController2::produce( Buffer* b, bool bcast )
 
   // Here we will mark the lstate of the input port as full
 
-#ifndef NDEBUG
-  printf("TransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
+  ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
 
   Buffer* tbuf = static_cast<Buffer*>(m_inputPort->getBuffer(m_nextTid));
   tbuf->markBufferFull();
@@ -920,9 +887,9 @@ int TransferController2::produce( Buffer* b, bool bcast )
    *  the only calculation is the input tid that we are going to produce to.
    */
 #ifdef DEBUG_L2
-  printf("output port id = %d, buffer id = %d, input id = %d\n", 
+  ocpiDebug("output port id = %d, buffer id = %d, input id = %d", 
          buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
-  printf("Template address = 0x%x\n", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][m_inputPort->getPortId()][m_nextTid][bcast_idx][OUTPUT]);
+  ocpiDebug("Template address = 0x%x", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][m_inputPort->getPortId()][m_nextTid][bcast_idx][OUTPUT]);
 #endif
 
   // Start producing, this may be asynchronous
@@ -953,8 +920,8 @@ Buffer* TransferController2::consume( Buffer* input )
 
 
 #ifdef DEBUG_L2
-  printf("Set load factor to %d\n", buffer->getState()->pad);
-  printf("Consuming [0][0][%d][%d][0][1]\n",input->getPort()->getPortId(),input->getTid());
+  ocpiDebug("Set load factor to %d", buffer->getState()->pad);
+  ocpiDebug("Consuming [0][0][%d][%d][0][1]",input->getPort()->getPortId(),input->getTid());
 #endif
 
   // Tell everyone that we are empty
@@ -994,7 +961,7 @@ Buffer* TransferController2::getNextFullInputBuffer(
 
 #ifdef DEBUG_L2
   if ( ! low_seq ) {
-    printf("No Input buffers avail\n");
+    ocpiDebug("No Input buffers avail");
   }
 #endif
 
@@ -1019,14 +986,14 @@ bool TransferController3::haveOutputBarrierToken( OutputBuffer* src_buf )
     tok = true;
                 
 #ifdef DEBUG_L2
-    printf("Checking barrier token for port %d, token = %d, returning %d\n", our_port_id ,
+    ocpiDebug("Checking barrier token for port %d, token = %d, returning %d", our_port_id ,
            src_buf->getControlBlock()->sequentialControlToken, tok);
 #endif
                 
   }
 
 #ifdef DEBUG_L2
-  printf("Checking barrier token for port %d, token = %d, returning %d\n", our_port_id ,
+  ocpiDebug("Checking barrier token for port %d, token = %d, returning %d", our_port_id ,
          src_buf->getControlBlock()->sequentialControlToken, tok);
 #endif
 
@@ -1091,7 +1058,7 @@ int TransferController4::produce( Buffer* b, bool bcast )
   List& l_pending = buffer->getPendingTxList();
 
 #ifdef DEBUG_L2
-  printf("pending transfers on buffer = %d\n", n_pending );
+  ocpiDebug("pending transfers on buffer = %d", n_pending );
 #endif
 
   int total=0;
@@ -1116,7 +1083,7 @@ int TransferController4::produce( Buffer* b, bool bcast )
   }
 
 #ifdef DEBUG_L2
-  printf("TransferController4::produce returning %d\n", total );
+  ocpiDebug("TransferController4::produce returning %d", total );
 #endif
 
   return total;
@@ -1133,7 +1100,7 @@ Buffer* TransferController4::getNextFullInputBuffer(
 {
 
 #ifdef DEBUG_L2
-  printf("In TransferController4::getNextFullInputBuffer\n");
+  ocpiDebug("In TransferController4::getNextFullInputBuffer");
 #endif
 
   // With this pattern, the data buffers are not deterministic, so we will always hand back 
@@ -1164,7 +1131,7 @@ Buffer* TransferController4::getNextFullInputBuffer(
 
 #ifdef DEBUG_L2
   if ( ! low_seq ) {
-    printf("No Input buffers avail\n");
+    ocpiDebug("No Input buffers avail");
   }
 #endif
         

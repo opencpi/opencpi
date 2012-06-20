@@ -48,10 +48,10 @@
  *
  */
 
-#include <OcpiUtilMisc.h>
 #include <string>
 #include <map>
 #include <ctime>
+#include "OcpiUtilMisc.h"
 
 namespace OCPI {
   namespace Util {
@@ -70,7 +70,7 @@ namespace OCPI {
        */
 
       typedef std::map<std::string, std::string,
-        OCPI::Util::Misc::CaseInsensitiveStringLess> Headers;
+        OCPI::Util::CaseInsensitiveStringLess> Headers;
 
       /**
        * Check whether a string is a valid HTTP token.

@@ -55,7 +55,7 @@ namespace {
 }
 
 std::string
-OCPI::Util::Misc::integerToString (int value)
+OCPI::Util::integerToString (int value)
 {
   bool positive = (value >= 0);
   int count=1, tmp;
@@ -88,7 +88,7 @@ OCPI::Util::Misc::integerToString (int value)
 }
 
 std::string
-OCPI::Util::Misc::unsignedToString (unsigned int value,
+OCPI::Util::unsignedToString (unsigned int value,
                                    unsigned int base,
                                    unsigned int mindigits,
                                    char pad)
@@ -140,7 +140,7 @@ OCPI::Util::Misc::unsignedToString (unsigned int value,
 }
 
 std::string
-OCPI::Util::Misc::unsignedToString (unsigned long long value,
+OCPI::Util::unsignedToString (unsigned long long value,
                                    unsigned int base,
                                    unsigned int mindigits,
                                    char pad)
@@ -192,7 +192,7 @@ OCPI::Util::Misc::unsignedToString (unsigned long long value,
 }
 
 std::string
-OCPI::Util::Misc::doubleToString (double value)
+OCPI::Util::doubleToString (double value)
 {
   char tmp[32]; // C Programmer's Disease
   sprintf (tmp, "%g", value);
@@ -206,7 +206,7 @@ OCPI::Util::Misc::doubleToString (double value)
  */
 
 int
-OCPI::Util::Misc::stringToInteger (const std::string & str)
+OCPI::Util::stringToInteger (const std::string & str)
 {
   const char * txtPtr = str.c_str ();
   long int value;
@@ -229,7 +229,7 @@ OCPI::Util::Misc::stringToInteger (const std::string & str)
 }
 
 unsigned int
-OCPI::Util::Misc::stringToUnsigned (const std::string & str,
+OCPI::Util::stringToUnsigned (const std::string & str,
                                    unsigned int base)
 {
   const char * txtPtr = str.c_str ();
@@ -253,7 +253,7 @@ OCPI::Util::Misc::stringToUnsigned (const std::string & str,
 }
 
 unsigned long long
-OCPI::Util::Misc::stringToULongLong (const std::string & str,
+OCPI::Util::stringToULongLong (const std::string & str,
                                     unsigned int base)
 {
   const char * txtPtr = str.c_str ();
@@ -285,7 +285,7 @@ OCPI::Util::Misc::stringToULongLong (const std::string & str,
  */
 
 std::streamsize
-OCPI::Util::Misc::unsignedToStreamsize (unsigned long long value, bool minusone)
+OCPI::Util::unsignedToStreamsize (unsigned long long value, bool minusone)
 {
   /*
    * Microsoft C++ generates a "W1" warning, even when static_cast<> is
@@ -321,7 +321,7 @@ OCPI::Util::Misc::unsignedToStreamsize (unsigned long long value, bool minusone)
  */
 
 std::string
-OCPI::Util::Misc::readline (std::istream * conn, unsigned int maxSize)
+OCPI::Util::readline (std::istream * conn, unsigned int maxSize)
 {
   std::string res;
   char c;
@@ -362,7 +362,7 @@ OCPI::Util::Misc::readline (std::istream * conn, unsigned int maxSize)
  */
 
 int
-OCPI::Util::Misc::
+OCPI::Util::
 caseInsensitiveStringCompare (const std::string & s1,
                               const std::string & s2)
 {
@@ -394,7 +394,7 @@ caseInsensitiveStringCompare (const std::string & s1,
 }
 
 bool
-OCPI::Util::Misc::CaseInsensitiveStringLess::
+OCPI::Util::CaseInsensitiveStringLess::
 operator() (const std::string & s1,
             const std::string & s2) const
 {
@@ -408,7 +408,7 @@ operator() (const std::string & s1,
  */
 
 bool
-OCPI::Util::Misc::glob (const std::string & str,
+OCPI::Util::glob (const std::string & str,
                        const std::string & pat)
 {
   int strIdx = 0, strLen = str.length ();
@@ -463,7 +463,7 @@ OCPI::Util::Misc::glob (const std::string & str,
  */
 
 bool
-OCPI::Util::Misc::isXMLDocument (std::istream * istr)
+OCPI::Util::isXMLDocument (std::istream * istr)
 {
   /*
    * We read the first four bytes of the file, which must be "<?xm"
@@ -493,25 +493,26 @@ OCPI::Util::Misc::isXMLDocument (std::istream * istr)
   return result;
 }
 
-static void formatAdd(std::string &out, const char *fmt, va_list ap) {
+void OCPI::Util::
+formatStringAddV(std::string &out, const char *fmt, va_list ap) {
   char *cp;
   vasprintf(&cp, fmt, ap);
   assert(cp); // or better generic memory exception
   out += cp;
   free(cp);
 }
-void OCPI::Util::Misc::
+void OCPI::Util::
 formatString(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   out.clear();
-  formatAdd(out, fmt, ap);
+  formatStringAddV(out, fmt, ap);
   va_end(ap);
 }
-void OCPI::Util::Misc::
+void OCPI::Util::
 formatStringAdd(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  formatAdd(out, fmt, ap);
+  formatStringAddV(out, fmt, ap);
   va_end(ap);
 }

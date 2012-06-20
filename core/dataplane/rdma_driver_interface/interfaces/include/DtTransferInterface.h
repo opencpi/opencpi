@@ -52,13 +52,18 @@
 #ifndef DataTransfer_TransferInterface_H_
 #define DataTransfer_TransferInterface_H_
 
+#include <set> 
 #include <vector>
-#include <list>
 #include <string.h>
 #include "ezxml.h"
 #include <OcpiUtilSelfMutex.h>
 #include <OcpiList.h>
 #include <OcpiDriverManager.h>
+
+// Forward declarations to avoid circular dependencies.
+typedef struct XFTransfer* XF_transfer;
+typedef struct XFTemplate* XF_template;
+typedef struct pio_transfer_ * PIO_transfer;
 
 namespace DataTransfer {
 
@@ -67,6 +72,10 @@ namespace DataTransfer {
   class XferServices;
   class XferFactory;
   struct EndPoint;
+  typedef std::set<EndPoint *> EndPoints;
+  typedef EndPoints::iterator EndPointsIter;
+
+
 
   // A single request to perform a data transfer, this is effectively a transfer 
   // template that is used aOCPI::OS::int32_t with a transfer service object to 
@@ -76,7 +85,7 @@ namespace DataTransfer {
   public:
    
     // Constructor
-    XferRequest(){};
+    XferRequest(XF_template temp = NULL);
 
     // Flags used when created
     typedef enum { 
@@ -103,7 +112,7 @@ namespace DataTransfer {
      *        Throws:
      *                DataTransferEx for all exception conditions
      */
-    virtual void post () = 0;
+    virtual void post ();
 
     /*
      * Get Information about a Data Transfer Request
@@ -114,7 +123,7 @@ namespace DataTransfer {
      *        Throws:
      *                DataTransferEx for all exception conditions
      */
-    virtual CompletionStatus  getStatus () = 0;
+    virtual CompletionStatus  getStatus ();
 
 
     /*
@@ -131,7 +140,7 @@ namespace DataTransfer {
      *                DataTransferEx for all exception conditions
      */
     virtual void modify( OCPI::OS::uint32_t new_offsets[],
-			 OCPI::OS::uint32_t old_offsets[] )=0;
+			 OCPI::OS::uint32_t old_offsets[] );
 
 
     /*
@@ -151,7 +160,7 @@ namespace DataTransfer {
                                OCPI::OS::uint32_t dstoff, 
                                OCPI::OS::uint32_t nbytes, 
                                XferRequest::Flags flags
-                               ) = 0;
+                               );
 
     /*
      * Group data transfer requests.
@@ -163,12 +172,16 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    virtual XferRequest & group( XferRequest* lhs ) = 0;
-                 
+    virtual XferRequest & group( XferRequest* lhs );
 
+    // Perform a PIO transfer.  Default null implementation when no using default "post" method
+    virtual void action_transfer(PIO_transfer);
+    virtual void start_pio(PIO_transfer);
     // Destructor - Note that invoking OcpiXferServices::Release is the preferred method.
-    virtual ~XferRequest () {};
-
+    virtual ~XferRequest ();
+  private:
+    XF_transfer m_thandle;                // Transfer handle returned by xfer_xx
+    XF_template m_xftemplate;             // parent's template
   };
 
          
@@ -269,8 +282,12 @@ namespace DataTransfer {
      * This method creates a specialized SmeLocation object.  This call should
      * cache locations and return the same location object for identical strings.
      ***************************************/
-    virtual EndPoint* getEndPoint( std::string& endpoint, bool local=false );
-    virtual EndPoint* newCompatibleEndPoint( const char*endpoint);
+    virtual EndPoint* getEndPoint(const char *endpoint, bool local=false, bool cantExist = false );
+    inline EndPoint* getEndPoint(const std::string &s, bool local=false) {
+      return getEndPoint(s.c_str(), local);
+    }
+    virtual EndPoint* addCompatibleEndPoint( uint32_t mbox, uint32_t maxMb);
+    virtual EndPoint* addEndPoint(const char *endpoint, bool local);
     // Avoid the mailbox, and match the mailbox count, if not -1
     virtual EndPoint* createEndPoint(std::string& endpoint, bool local=false) = 0;
 
@@ -283,6 +300,8 @@ namespace DataTransfer {
     virtual std::string allocateEndpoint(const OCPI::Util::PValue*,
 					 unsigned mailBox, unsigned maxMailBoxes) = 0;
 
+    // The endpoint is telling its factory that it is being deleted.
+    void removeEndPoint(EndPoint &ep);
     /***************************************
      *  This method is used to dynamically allocate
      *  source endpoints for all this driver's devices, for an application running on "this"
@@ -313,8 +332,10 @@ namespace DataTransfer {
     uint32_t getMaxMailBox(), getNextMailBox();
   private:
     // This vector is indexed by the mailbox number of the endpoint
-    typedef std::vector<EndPoint *> EndPoints;
-    EndPoints m_locations;
+    // and only contains local endpoints
+    std::vector<EndPoint *> m_locations;
+    // This is just a set of all endpoints
+    EndPoints m_endPoints;
   };
   // OCPI::Driver::Device is virtually inherited to give access
   // to the class that is not normally inherited here.

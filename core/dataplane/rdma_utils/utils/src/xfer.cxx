@@ -37,7 +37,6 @@
 /* Facility Interface Includes */
 #include <stdio.h>
 #include <stdlib.h>
-#include <xfer_if.h>
 #include <xfer_internal.h>
 #include <OcpiOsAssert.h>
 
@@ -321,7 +320,7 @@ xfer_group(XF_transfer *xf_members,
   return 0;
 }
 
-
+#if 0
 
 long
 xfer_start(XF_transfer xf_handle, OCPI::OS::int32_t flags)
@@ -353,6 +352,7 @@ xfer_start(XF_transfer xf_handle, OCPI::OS::int32_t flags)
   return pio_rc;
 }
 
+#endif
 long 
 xfer_modify( XF_transfer xf_handle, OCPI::OS::uint32_t* noff, OCPI::OS::uint32_t* ooff )
 {

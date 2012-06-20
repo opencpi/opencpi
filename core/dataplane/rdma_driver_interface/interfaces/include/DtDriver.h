@@ -55,8 +55,8 @@ namespace DataTransfer {
     public OCPI::Util::Child<ConcConn, ConcXfer>
   {
   protected:
-    TransferBase<ConcConn, ConcXfer>(ConcConn &conn)
-    : OCPI::Util::Child<ConcConn,ConcXfer>(conn) {}
+    TransferBase<ConcConn, ConcXfer>(ConcConn &conn, XF_template temp = NULL)
+      : XferRequest(temp), OCPI::Util::Child<ConcConn,ConcXfer>(conn) {}
   };
   template <class Dri>
   class RegisterTransferDriver

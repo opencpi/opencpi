@@ -97,6 +97,11 @@ namespace OCPI {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	w->stop();
     }
+    void Application::
+    release() {
+      for (Worker *w = firstWorker(); w; w = w->nextWorker())
+	w->release();
+    }
     bool Application::
     isDone() {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())

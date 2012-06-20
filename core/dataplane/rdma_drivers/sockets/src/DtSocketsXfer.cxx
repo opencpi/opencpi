@@ -1,5 +1,3 @@
-
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -49,6 +47,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <deque>
 #include <DtSharedMemoryInternal.h>
 #include <DtSocketsXfer.h>
 #include <xfer_if.h>
@@ -152,12 +151,16 @@ private:
 class ServerSocketHandler : public Thread
 {
 public:
-  ServerSocketHandler( OCPI::OS::Socket & socket, SocketStartupParams & sp  )
-    : m_run(true), m_startupParms(sp), m_socket(socket) {}
+  ServerSocketHandler( OCPI::OS::ServerSocket & server, SocketStartupParams & sp  )
+    : m_run(true), m_startupParms(sp), m_socket(server.accept()) {
+    m_socket.linger(true); // we want to give some time for data to the client FIXME timeout param?
+    start();
+  }
 
   virtual ~ServerSocketHandler()
   {
-    m_socket.close();
+    stop();
+    join();
     ocpiDebug("In ~ServerSocketHandler()");
   }
 
@@ -170,11 +173,13 @@ public:
     try {
       while ( m_run ) {
 	char   buf[TCP_BUFSIZE_READ];
-	unsigned long long n = m_socket.recv( buf, TCP_BUFSIZE_READ);
+	// FIXME: verify that a timeout is set on this socket.
+	unsigned long long n = m_socket.recv( buf, TCP_BUFSIZE_READ, 500);
 	if ( n == 0 ) {
 	  ocpiInfo("Got a socket EOF, terminating connection");
 	  break;
-	}
+	} else if (n == ULLONG_MAX)
+	  continue; // allow shutdown to happen
 	//	ocpiDebug("Got %lld bytes data on server socket !! %d %d %lld %d", n, bytes_left, in_header,
 	//		  header.offset, header.length);
 	unsigned copy_len;
@@ -215,7 +220,7 @@ public:
 private:
   bool   m_run;
   SocketStartupParams   m_startupParms;
-  OCPI::OS::Socket & m_socket;
+  OCPI::OS::Socket m_socket;
 };
 
 
@@ -224,7 +229,13 @@ class SocketServerT : public OCPI::Util::Thread
 public:  
   SocketServerT( SocketStartupParams& sp )
     :m_startupParms(sp),m_stop(false),m_started(false),m_error(false){}
-  ~SocketServerT(){}
+  ~SocketServerT(){
+    while (!m_sockets.empty()) {
+      ServerSocketHandler* ssh = m_sockets.front();
+      m_sockets.pop_front();
+      delete ssh;
+    }
+  }
 
   void run() {
     SocketEndPoint *sep = static_cast<SocketEndPoint*>(m_startupParms.lsmem->endpoint());
@@ -252,14 +263,8 @@ public:
     }
     m_started = true;
     while ( ! m_stop )
-      // block for a while, and if we time out, check m_stop again
-      if (m_server.wait(500)) {
-	OCPI::OS::Socket s = m_server.accept();
-	s.linger(true); // we want to give some time for data to the client FIXME timeout param?
-	ServerSocketHandler * ssh = new ServerSocketHandler(s,m_startupParms);
-	m_sockets.push_back( ssh );
-	ssh->start();
-      }
+      if (m_server.wait(500)) // give a chance to stop every 1/2 second
+	m_sockets.push_back(new ServerSocketHandler(m_server, m_startupParms));
     m_server.close();
   }
   void stop(){m_stop=true;}
@@ -269,7 +274,7 @@ public:
 
 private:
   OCPI::OS::ServerSocket         m_server;
-  std::vector<ServerSocketHandler*>  m_sockets;
+  std::deque<ServerSocketHandler*>  m_sockets;
   SocketStartupParams   m_startupParms;
   bool                  m_stop;
   bool                  m_started;
@@ -361,7 +366,7 @@ XferServices* SocketXferFactory::getXferServices(SmemServices* source, SmemServi
 
 XferRequest* SocketXferServices::createXferRequest()
 {
-  return new SocketXferRequest( *this );
+  return new SocketXferRequest( *this, m_xftemplate );
 }
 
 
@@ -468,6 +473,7 @@ SocketEndPoint::
 
 
 
+#if 0
 void SocketXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )
 {
   int n=0;
@@ -476,14 +482,16 @@ void SocketXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint
     n++;
   }
 }
-
+#endif
 
 // SocketXferRequest destructor implementation
 SocketXferRequest::~SocketXferRequest ()
 {
+#if 0
   if (m_thandle) {
     (void)xfer_release (m_thandle, 0);
   }
+#endif
 }
 
 
@@ -505,6 +513,7 @@ void SocketXferServices::createTemplate (SmemServices* p1, SmemServices* p2)
 
 }
 
+#if 0
 // Create a transfer request
 XferRequest* SocketXferRequest::copy (OCPI::OS::uint32_t srcoffs, 
                                     OCPI::OS::uint32_t dstoffs, 
@@ -536,6 +545,8 @@ XferRequest* SocketXferRequest::copy (OCPI::OS::uint32_t srcoffs,
     if (retVal) {
       return NULL;
     }
+    xfer_release(handles[0], 0);
+    xfer_release(handles[1], 0);
   }
   return this;
 }
@@ -551,7 +562,7 @@ XferRequest & SocketXferRequest::group (XferRequest* lhs )
   xfer_group ( handles, 0, &getHandle());
   return *this;
 }
-
+#endif
 
 // Destructor
 SocketXferServices::
@@ -570,17 +581,17 @@ SocketXferServices::
 SocketSmemServices::
 ~SocketSmemServices ()
 {
-  delete [] m_mem;
   if ( m_socketServerT ) {
     m_socketServerT->stop();
     m_socketServerT->join();
     delete m_socketServerT;
   }
+  delete [] m_mem;
 }
 
 
-OCPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t, SocketXferRequest* req);
-
+  //OCPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t, SocketXferRequest* req);
+#if 0
 void 
 SocketXferRequest::
 post()
@@ -597,9 +608,10 @@ post()
     xfer_socket_starti(xf_transfer->last_pio_transfer, 0);
   }
 }
+#endif
 
 void SocketXferRequest::
-action_socket_transfer(PIO_transfer transfer)
+action_transfer(PIO_transfer transfer)
 {
   // OCPI::OS::int32_t nwords = ((transfer->nbytes + 5) / 8) ;
   OCPI::OS::int32_t *src1 = (OCPI::OS::int32_t *)transfer->src_va;
@@ -664,6 +676,7 @@ action_socket_transfer(PIO_transfer transfer)
 
 }
 
+#if 0
 
 OCPI::OS::int32_t SocketXferRequest::
 xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t)
@@ -674,7 +687,7 @@ xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t)
   } while ((transfer = transfer->next));
   return 0;
 }
-
+#endif
 #define SOCKET_RDMA_SUPPORT
 #ifdef SOCKET_RDMA_SUPPORT
 // Used to register with the data transfer system;

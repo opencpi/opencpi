@@ -61,7 +61,7 @@ isXMLDocument (Vfs * fs, const std::string & fileName)
     std::istream * istr = fs->openReadonly (fileName);
 
     try {
-      result = OCPI::Util::Misc::isXMLDocument (istr);
+      result = OCPI::Util::isXMLDocument (istr);
     }
     catch (...) {
       try {

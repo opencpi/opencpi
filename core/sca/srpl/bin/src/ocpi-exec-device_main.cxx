@@ -256,7 +256,7 @@ namespace {
         }
         if (exists && isdir) {
           std::string relName = "cp289ExecutableDevice-";
-          relName += OCPI::Util::Misc::unsignedToString (ocpiDeviceId);
+          relName += OCPI::Util::unsignedToString (ocpiDeviceId);
           std::string tempFileLocation = OCPI::OS::FileSystem::joinNames (ntd, relName);
           try {
             exists = OCPI::OS::FileSystem::exists (tempFileLocation, &isdir);
@@ -682,11 +682,11 @@ main (int argc, char * argv[])
     for (int cdi=1; cdi<argc; cdi++) {
       if (std::strcmp (argv[cdi], "ocpiDeviceId") == 0 ||
           std::strcmp (argv[cdi], "--ocpiDeviceId") == 0) {
-        ocpiDeviceId = OCPI::Util::Misc::stringToUnsigned (argv[cdi+1]);
+        ocpiDeviceId = OCPI::Util::stringToUnsigned (argv[cdi+1]);
         break;
       }
       else if (std::strncmp (argv[cdi], "--ocpiDeviceId=", 14) == 0) {
-        ocpiDeviceId = OCPI::Util::Misc::stringToUnsigned (argv[cdi]+14);
+        ocpiDeviceId = OCPI::Util::stringToUnsigned (argv[cdi]+14);
         break;
       } else if (std::strncmp (argv[cdi], "--tempDir=", 10) == 0)
         tempDir = argv[cdi] + 10;
@@ -742,7 +742,7 @@ main (int argc, char * argv[])
     iPidFile >> strPid;
 
     try {
-      pid = OCPI::Util::Misc::stringToUnsigned (strPid);
+      pid = OCPI::Util::stringToUnsigned (strPid);
     }
     catch (...) {
       pid = 0;

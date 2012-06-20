@@ -53,9 +53,9 @@
 #ifndef OCPI_DataTransfer_SharedMemoryInterface_H_
 #define OCPI_DataTransfer_SharedMemoryInterface_H_
 
+#include <string>
 #include <OcpiParentChild.h>
 #include <OcpiOsDataTypes.h>
-#include <string>
 
 namespace DataTransfer {
 
@@ -66,23 +66,31 @@ namespace DataTransfer {
   // Protocol specific location class
   struct SMBResources;
   class SmemServices;
+  class XferFactory;
   struct EndPoint
   {
 
-    std::string          end_point;                // deep copy of the endpoint string
-    SmemServices         * smem;         // Shared memory 
-    std::string          protocol;                // protocol string
-    OCPI::OS::uint32_t   mailbox;        // endpoint mailbox
-    OCPI::OS::uint32_t   maxCount;        // Number of mailboxes in communication domain
-    OCPI::OS::uint32_t   size;                // Size of endpoint area in bytes
+    std::string          end_point;    // deep copy of the endpoint string
+    SmemServices         * smem;       // Shared memory 
+    std::string          protocol;     // protocol string
+    OCPI::OS::uint32_t   mailbox;      // endpoint mailbox
+    OCPI::OS::uint32_t   maxCount;     // Number of mailboxes in communication domain
+    OCPI::OS::uint32_t   size;         // Size of endpoint area in bytes
     OCPI::OS::uint32_t   event_id;     
     bool                 local;        // local endpoint
-    SMBResources*        resources;        // SMB resources associated with this endpoint
-
+    SMBResources*        resources;    // SMB resources associated with this endpoint
+    XferFactory*         factory;
+    unsigned             refCount;
     EndPoint( std::string& ep, OCPI::OS::uint32_t size=0, bool local=false);
     EndPoint& operator=(EndPoint&);
     EndPoint& operator=(EndPoint*);
-    virtual ~EndPoint(){};
+    void    release();
+    virtual ~EndPoint();
+
+    // Commit resources
+    void finalize();
+    // Check compatibility
+    bool canSupport(const char *remote_endpoint);
 
     // Sets smem location data based upon the specified endpoint
     OCPI::OS::int32_t setEndpoint( std::string& ep );
@@ -91,7 +99,7 @@ namespace DataTransfer {
     virtual const char* getAddress()=0;
 
     // Parse the endpoint string
-    static const char* getProtocolFromString( const char* ep, char* );
+    static void getProtocolFromString( const char* ep, std::string & );
 
     static void getResourceValuesFromString( 
                             const char*  ep,                // Endpoint value
@@ -103,9 +111,7 @@ namespace DataTransfer {
 
   };
 
-
   // Shared memory services.  
-  class XferFactory;
   class SmemServices : public OCPI::Util::Child<XferFactory,SmemServices>
   {
   private:

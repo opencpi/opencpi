@@ -56,12 +56,12 @@
 
 #include <opencl.h>
 
+#include "OcpiUtilMisc.h"
 #include "OcpiOclPlatformManager.h"
 #include "OcpiDriverManager.h"
 #include "OcpiUtilException.h"
 
-
-
+namespace OU = OCPI::Util;
 
 namespace
 {
@@ -197,11 +197,24 @@ namespace
         return "CL_INVALID_MIP_LEVEL";
       case CL_INVALID_GLOBAL_WORK_SIZE:
         return "CL_INVALID_GLOBAL_WORK_SIZE";
+#ifdef CL_VERSION_1_1
+    case  CL_PLATFORM_NOT_FOUND_KHR:
+      return "CL_PLATFORM_NOT_FOUND_KHR";
+#endif
       default:
           return "Unknown error";
     }
 
     return "Unknown error";
+  }
+  void throwOclError(cl_int errnum, const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    std::string s;
+    OU::formatStringAddV(s, fmt, ap);
+    va_end(ap);
+    OU::formatStringAdd(s, ": OpenCL error: %s [%d]", ocl_strerror(errnum), errnum);
+    throw OU::Error(s.c_str());
   }
 
   const char* device_type_str ( cl_device_type type )
@@ -323,12 +336,12 @@ namespace OCPI
 
         if ( stat ( path.c_str ( ), &fs ) )
         {
-          throw OCPI::Util::Error ( "stat(%s) failed : %s", path.c_str ( ), strerror ( errno ) );
+          throw OU::Error ( "stat(%s) failed : %s", path.c_str ( ), strerror ( errno ) );
         }
 
         if ( fs.st_size == 0 || !S_ISREG ( fs.st_mode ) )
         {
-          throw OCPI::Util::Error ( "Invalid files size or permission" );
+          throw OU::Error ( "Invalid files size or permission" );
         }
 
         n_bytes = fs.st_size;
@@ -337,7 +350,7 @@ namespace OCPI
 
         if ( fd == -1 )
         {
-          throw OCPI::Util::Error ( "open() failed : %s", strerror ( errno ) );
+          throw OU::Error ( "open() failed : %s", strerror ( errno ) );
         }
 
         // Must skip metadata
@@ -349,7 +362,7 @@ namespace OCPI
 
         if ( !ptr )
         {
-          throw OCPI::Util::Error ( "mmap() failed : %s", strerror ( errno ) );
+          throw OU::Error ( "mmap() failed : %s", strerror ( errno ) );
         }
       }
 
@@ -404,7 +417,7 @@ namespace OCPI
         int fd = open ( path_to_source, O_RDONLY);
         if ( fd < 0 )
         {
-          throw OCPI::Util::Error ( "open() failed : %s", strerror ( errno ) );
+          throw OU::Error ( "open() failed : %s", strerror ( errno ) );
         }
 
         char buf [64 / 3+4 ]; // octal + \r + \n + null
@@ -502,12 +515,12 @@ namespace OCPI
                                                        &rc );
       if ( rc )
       {
-        throw OCPI::Util::Error ( "clCreateProgramWithBinary() failed rc: %s", ocl_strerror ( rc ) );
+        throwOclError(rc, "clCreateProgramWithBinary() failed rc");
       }
 
       if ( binary_status )
       {
-        throw OCPI::Util::Error ( "clCreateProgramWithBinary() failed status: %s", ocl_strerror ( binary_status ) );
+        throwOclError(binary_status, "clCreateProgramWithBinary() failed status");
       }
 
       cl_int build_rc = clBuildProgram ( program,
@@ -527,7 +540,7 @@ namespace OCPI
                                      &build_log_n_bytes );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetProgramBuildInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetProgramBuildInfo() failed ");
         }
 
         std::vector<char> build_log;
@@ -542,7 +555,7 @@ namespace OCPI
                                      0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetProgramBuildInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetProgramBuildInfo() failed ");
         }
 
         build_log.push_back ( '\0' );
@@ -556,7 +569,7 @@ namespace OCPI
 
       if ( build_rc )
       {
-        throw OCPI::Util::Error ( "clBuildProgram() failed : %s", ocl_strerror ( build_rc ) );
+        throwOclError(build_rc, "clBuildProgram() failed ");
       }
 
       cl_uint n_kernels;
@@ -565,7 +578,7 @@ namespace OCPI
 
       if ( rc )
       {
-        throw OCPI::Util::Error ( "clCreateKernelsInProgram() failed : %s", ocl_strerror ( rc ) );
+        throwOclError(rc, "clCreateKernelsInProgram() failed ");
       }
 
       std::vector<cl_kernel> kernels ( n_kernels );
@@ -576,7 +589,7 @@ namespace OCPI
 
       if ( rc )
       {
-        throw OCPI::Util::Error ( "clCreateKernelsInProgram() failed : %s", ocl_strerror ( rc ) );
+        throwOclError(rc, "clCreateKernelsInProgram() failed ");
       }
 
       Binary binary;
@@ -596,7 +609,7 @@ namespace OCPI
                                0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetKernelInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetKernelInfo() failed ");
         }
 
         std::cout << "OCL discovered kernel " << kernel_name << std::endl;
@@ -610,7 +623,7 @@ namespace OCPI
                                0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetKernelInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetKernelInfo() failed ");
         }
 
         rc = clGetKernelInfo ( kernels [ n ],
@@ -620,7 +633,7 @@ namespace OCPI
                                0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetKernelInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetKernelInfo() failed ");
         }
 
         rc = clGetKernelWorkGroupInfo ( kernels [ n ],
@@ -631,7 +644,7 @@ namespace OCPI
                                         0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetKernelWorkGroupInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetKernelWorkGroupInfo() failed ");
         }
 
         printf ( "\n\nREMOVE work_group_size %zu %zu %zu\n",
@@ -679,7 +692,7 @@ namespace OCPI
                                                        &rc );
       if ( rc )
       {
-        throw OCPI::Util::Error ( "clCreateProgramWithSource() failed : %s", ocl_strerror ( rc ) );
+        throwOclError(rc, "clCreateProgramWithSource() failed ");
       }
 
       std::string compiler_options ( options );
@@ -705,7 +718,7 @@ namespace OCPI
                                      &build_log_n_bytes );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetProgramBuildInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetProgramBuildInfo() failed ");
         }
 
         std::vector<char> build_log;
@@ -720,7 +733,7 @@ namespace OCPI
                                      0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetProgramBuildInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetProgramBuildInfo() failed ");
         }
 
         build_log.push_back ( '\0' );
@@ -731,7 +744,7 @@ namespace OCPI
 
         if ( build_rc )
         {
-          std::cout << "clBuildProgram() failed : " << ocl_strerror ( build_rc ) << std::endl;
+          std::cout << "clBuildProgram() failed : " <<  ( build_rc ) << std::endl;
           return false;
         }
 
@@ -744,7 +757,7 @@ namespace OCPI
                                 0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetProgramInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetProgramInfo() failed ");
         }
 
         std::vector<unsigned char> binary_data;
@@ -760,14 +773,14 @@ namespace OCPI
                                 0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetProgramInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetProgramInfo() failed ");
         }
 
         std::ofstream out ( output_file.c_str ( ) );
 
         if ( !out.is_open ( ) )
         {
-          throw OCPI::Util::Error ( "Unable to open output file %s", output_file.c_str ( ) );
+          throw OU::Error ( "Unable to open output file %s", output_file.c_str ( ) );
         }
 
         out.write ( (const char*) &binary_data [ 0 ], binary_data.size ( ) );
@@ -794,7 +807,7 @@ namespace OCPI
 
         ~PlatformManager ( );
 
-        Device& getDevice ( const OCPI::Util::PValue* props );
+        Device& getDevice ( const OU::PValue* props );
 
         const std::string to_str ( ) const;
 
@@ -827,12 +840,12 @@ namespace OCPI
 
       if ( rc )
       {
-        throw OCPI::Util::Error ( "clGetPlatformIDs() failed : %s", ocl_strerror ( rc ) );
+        throwOclError(rc, "clGetPlatformIDs() failed ");
       }
 
       if ( n_platforms == 0 )
       {
-        throw OCPI::Util::Error ( "No OpenCL platforms found" );
+        throw OU::Error ( "No OpenCL platforms found" );
       }
 
       std::vector<cl_platform_id> platform_ids;
@@ -843,7 +856,7 @@ namespace OCPI
 
       if ( rc )
       {
-        throw OCPI::Util::Error ( "clGetPlatformIDs() failed : %s", ocl_strerror ( rc ) );
+        throwOclError(rc, "clGetPlatformIDs() failed ");
       }
 
       for ( size_t n = 0; n < platform_ids.size ( ); n++ )
@@ -861,7 +874,7 @@ namespace OCPI
                                  0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetPlatformInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetPlatformInfo() failed ");
         }
         platform.profile = platform_info;
 
@@ -873,7 +886,7 @@ namespace OCPI
 
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetPlatformInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetPlatformInfo() failed ");
        }
         platform.version = platform_info;
 
@@ -884,7 +897,7 @@ namespace OCPI
                                  0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetPlatformInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetPlatformInfo() failed ");
         }
         platform.name = platform_info;
 
@@ -896,7 +909,7 @@ namespace OCPI
 
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetPlatformInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetPlatformInfo() failed ");
         }
         platform.vendor = platform_info;
 
@@ -908,7 +921,7 @@ namespace OCPI
 
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetPlatformInfo() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetPlatformInfo() failed ");
         }
         platform.extensions = platform_info;
 
@@ -945,7 +958,7 @@ namespace OCPI
                                      &n_devices );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetDeviceIDs() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetDeviceIDs() failed ");
         }
 
         std::vector<cl_device_id> device_ids;
@@ -959,7 +972,7 @@ namespace OCPI
                               0 );
         if ( rc )
         {
-          throw OCPI::Util::Error ( "clGetDeviceIDs() failed : %s", ocl_strerror ( rc ) );
+          throwOclError(rc, "clGetDeviceIDs() failed ");
         }
 
         cl_context_properties ctx_props [ 3 ];
@@ -982,7 +995,7 @@ namespace OCPI
                                              &rc );
           if ( ( rc ) || ( !device.context ) )
           {
-            throw OCPI::Util::Error ( "clCreateContext() failed : %s", ocl_strerror ( rc ) );
+            throwOclError(rc, "clCreateContext() failed ");
           }
 
           device.cmdq = clCreateCommandQueue ( device.context,
@@ -991,7 +1004,7 @@ namespace OCPI
                                                &rc );
           if ( rc )
           {
-            throw OCPI::Util::Error ( "clCreateCommandQueue() failed : %s", ocl_strerror ( rc ) );
+            throwOclError(rc, "clCreateCommandQueue() failed ");
           }
 
 #define DEV_INFO(param_name, member) DEV_INFO_SIZE(param_name, sizeof(device.member), &device.member)
@@ -1002,7 +1015,7 @@ namespace OCPI
           } while (0)
 #define DEV_INFO_SIZE(param_name, size, out) do {			\
 	    if ((rc = clGetDeviceInfo(device_ids[d], CL_DEVICE_##param_name, size, out, 0))) \
-              throw OCPI::Util::Error( "clGetDeviceInfo() failed for CL_DEVICE_" #param_name ": %s", ocl_strerror ( rc ) ); \
+              throwOclError(rc, "clGetDeviceInfo() failed for CL_DEVICE_" #param_name); \
           } while (0)  
 	  DEV_INFO(TYPE, type);
 	  DEV_INFO(VENDOR_ID, vendorId);
@@ -1072,7 +1085,7 @@ namespace OCPI
       return os << p.to_str();
     }
 
-    Device& PlatformManager::getDevice ( const OCPI::Util::PValue* props )
+    Device& PlatformManager::getDevice ( const OU::PValue* props )
     {
       std::cout << *this << std::endl;
       // FIXME - implement a device lookup back on properties or something.
@@ -1251,7 +1264,7 @@ bool OCPI::OCL::DeviceContext::Impl::compile ( const std::string& options,
 
 /* ---- DeviceContext wrapper class -------------------------------------- */
 
-OCPI::OCL::DeviceContext::DeviceContext ( const OCPI::Util::PValue* props )
+OCPI::OCL::DeviceContext::DeviceContext ( const OU::PValue* props )
   : d_impl ( new Impl ( getPlatform().getDevice ( props ) ) )
 {
   // Empty
@@ -1336,19 +1349,19 @@ void OCPI::OCL::DeviceWorker::Impl::run ( const OCPI::OCL::Grid& grid )
                                        &event );
   if ( rc )
   {
-    throw OCPI::Util::Error ( "clEnqueueNDRangeKernel() failed : %s", ocl_strerror ( rc ) );
+    throwOclError(rc, "clEnqueueNDRangeKernel() failed ");
   }
 
   rc = clWaitForEvents( 1, &event );
   if ( rc )
   {
-    throw OCPI::Util::Error ( "clWaitForEvents() failed : %s", ocl_strerror ( rc ) );
+    throwOclError(rc, "clWaitForEvents() failed ");
   }
 
   rc = clReleaseEvent ( event );
   if ( rc )
   {
-    throw OCPI::Util::Error ( "clReleaseEvent() failed : %s", ocl_strerror ( rc ) );
+    throwOclError(rc, "clReleaseEvent() failed ");
   }
 }
 
@@ -1359,7 +1372,7 @@ void OCPI::OCL::DeviceWorker::Impl::setKernelArg ( size_t arg_idx,
 
   if ( it == d_buffers.end ( ) )
   {
-    throw OCPI::Util::Error ( "Unregistered host pointer" );
+    throw OU::Error ( "Unregistered host pointer" );
   }
 
   cl_int rc = clSetKernelArg ( d_kernel,
@@ -1368,7 +1381,7 @@ void OCPI::OCL::DeviceWorker::Impl::setKernelArg ( size_t arg_idx,
                                (void*) &it->second.mem );
   if ( rc )
   {
-    throw OCPI::Util::Error ( "clSetKernelArg() failed : %s", ocl_strerror ( rc ) );
+    throwOclError(rc, "clSetKernelArg() failed ");
   }
 }
 
@@ -1382,7 +1395,7 @@ void OCPI::OCL::DeviceWorker::Impl::setKernelArg ( size_t arg_idx,
                                arg );
   if ( rc )
   {
-    throw OCPI::Util::Error ( "clSetKernelArg() failed : %s", ocl_strerror ( rc ) );
+    throwOclError(rc, "clSetKernelArg() failed ");
   }
 }
 
@@ -1394,7 +1407,7 @@ void OCPI::OCL::DeviceWorker::Impl::registerPtr ( void* ptr,
 
   if ( it != d_buffers.end ( ) )
   {
-    throw OCPI::Util::Error ( "Pointer %p already registered", ptr );
+    throw OU::Error ( "Pointer %p already registered", ptr );
   }
 
   if ( it == d_buffers.end ( ) )
@@ -1413,7 +1426,7 @@ void OCPI::OCL::DeviceWorker::Impl::registerPtr ( void* ptr,
                                   &rc );
     if ( rc )
     {
-      throw OCPI::Util::Error ( "clCreateBuffer() failed : %s", ocl_strerror ( rc ) );
+      throwOclError(rc, "clCreateBuffer() failed ");
     }
     d_buffers [ ( uintptr_t ) ptr ] = buffer;
   }
@@ -1425,14 +1438,14 @@ void OCPI::OCL::DeviceWorker::Impl::unregisterPtr ( void* ptr )
 
   if ( it == d_buffers.end ( ) )
   {
-    throw OCPI::Util::Error ( "Unknown pointer %p in unregisterPtr()", ptr );
+    throw OU::Error ( "Unknown pointer %p in unregisterPtr()", ptr );
   }
 
   cl_int rc = clReleaseMemObject ( it->second.mem );
 
   if ( rc )
   {
-    throw OCPI::Util::Error ( "clReleaseMemObject() failed : %s", ocl_strerror ( rc ) );
+    throwOclError(rc, "clReleaseMemObject() failed ");
   }
 
   d_buffers.erase ( it );
@@ -1446,7 +1459,7 @@ void* OCPI::OCL::DeviceWorker::Impl::mapPtr ( void* ptr,
 
   if ( it == d_buffers.end ( ) )
   {
-    throw OCPI::Util::Error ( "Unknown pointer %p in mapPtr()", ptr );
+    throw OU::Error ( "Unknown pointer %p in mapPtr()", ptr );
   }
 
   cl_int rc;
@@ -1464,7 +1477,7 @@ void* OCPI::OCL::DeviceWorker::Impl::mapPtr ( void* ptr,
                                           &rc );
   if ( rc )
   {
-    throw OCPI::Util::Error ( "clEnqueueMapBuffer() failed : %s", ocl_strerror ( rc ) );
+    throwOclError(rc, "clEnqueueMapBuffer() failed ");
   }
 
   return mapped_ptr;
@@ -1476,7 +1489,7 @@ void OCPI::OCL::DeviceWorker::Impl::unmapPtr ( void* ptr )
 
   if ( it == d_buffers.end ( ) )
   {
-    throw OCPI::Util::Error ( "Unknown pointer %p in unmapPtr()", ptr );
+    throw OU::Error ( "Unknown pointer %p in unmapPtr()", ptr );
   }
 
   cl_int rc = clEnqueueUnmapMemObject ( d_cmdq,
@@ -1487,7 +1500,7 @@ void OCPI::OCL::DeviceWorker::Impl::unmapPtr ( void* ptr )
                                         0 );
   if ( rc )
   {
-    throw OCPI::Util::Error ( "clEnqueueUnmapMemObject() failed : %s", ocl_strerror ( rc ) );
+    throwOclError(rc, "clEnqueueUnmapMemObject() failed ");
   }
 }
 
@@ -1498,7 +1511,7 @@ void OCPI::OCL::DeviceWorker::Impl::syncPtr ( void* ptr,
 
   if ( it == d_buffers.end ( ) )
   {
-    throw OCPI::Util::Error ( "Unknown pointer %p in syncPtr()", ptr );
+    throw OU::Error ( "Unknown pointer %p in syncPtr()", ptr );
   }
 
   if ( flag == OCPI::OCL::DeviceWorker::HOST_TO_DEVICE )
@@ -1514,7 +1527,7 @@ void OCPI::OCL::DeviceWorker::Impl::syncPtr ( void* ptr,
                                        0 );
     if ( rc )
     {
-      throw OCPI::Util::Error ( "clEnqueueWriteBuffer() failed : %s", ocl_strerror ( rc ) );
+      throwOclError(rc, "clEnqueueWriteBuffer() failed ");
     }
   }
   else /* Device to host */
@@ -1530,7 +1543,7 @@ void OCPI::OCL::DeviceWorker::Impl::syncPtr ( void* ptr,
                                       0 );
     if ( rc )
     {
-      throw OCPI::Util::Error ( "clEnqueueReadBuffer() failed : %s", ocl_strerror ( rc ) );
+      throwOclError(rc, "clEnqueueReadBuffer() failed ");
     }
   }
 }

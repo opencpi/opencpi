@@ -36,8 +36,7 @@
 #ifndef XFER_INTERNAL_H_
 #define XFER_INTERNAL_H_
 
-#include <xfer_if.h>
-#include <DtTransferInterface.h>
+#include "xfer_if.h"
 
 #define PIO       1
 
@@ -50,8 +49,6 @@ struct pio_template_ : public XFTemplate
   pio_template_():rdst(0){};
 };
 
-typedef struct pio_template_ * PIO_template;
-
 struct pio_transfer_ : public XFTransfer
 {
   struct pio_transfer_ *next;  /* pointer to next transfer */
@@ -63,8 +60,6 @@ struct pio_transfer_ : public XFTransfer
   OCPI::OS::uint32_t     dst_stride;            /* number of bytes between each element */
   OCPI::OS::int32_t      nbytes;                 /* size of transfer */
 };
-
-typedef struct pio_transfer_ * PIO_transfer;
 
 struct xf_template_ : public XFTemplate
 {
@@ -90,6 +85,5 @@ extern OCPI::OS::int32_t xfer_pio_group(PIO_transfer *, OCPI::OS::int32_t, PIO_t
 extern OCPI::OS::int32_t xfer_pio_release(PIO_transfer);
 extern OCPI::OS::int32_t xfer_pio_destroy(PIO_template);
 extern void xfer_pio_modify( PIO_transfer, int,  OCPI::OS::uint32_t*,  OCPI::OS::uint32_t* );
-
 
 #endif /* !defined XFER_INTERNAL_H */

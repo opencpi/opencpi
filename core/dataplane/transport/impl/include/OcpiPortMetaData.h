@@ -185,29 +185,29 @@ namespace OCPI {
       // Standard constructors
       PortMetaData( PortOrdinal pid, 
                     bool s, 
+		    DataTransfer::EndPoint *ep,
                     const OCPI::RDT::Descriptors& sPort,
-                    const char * shadow_ep,
                     PortSetMetaData* psmd );
 
       PortMetaData( PortOrdinal pid, 
                     bool output,
-                    const char* ep, 
-                    const char * shadow_ep,
+                    DataTransfer::EndPoint *ep, 
+                    DataTransfer::EndPoint *shadow_ep,
                     PortSetMetaData* psmd );
 
 
 
       PortMetaData( PortOrdinal pid, 
+                    DataTransfer::EndPoint &ep, 
                     const OCPI::RDT::Descriptors& portDesc,
                     PortSetMetaData* psmd );
 
       // Dependency constructor
       PortMetaData( PortOrdinal pid, 
-                    bool s, 
-                    const char* ep, 
-                    const char* shadow_ep,
+                    DataTransfer::EndPoint &ep, 
+                    DataTransfer::EndPoint &shadow_ep, 
                     const OCPI::RDT::Descriptors& pd, 
-                    OCPI::OS::uint32_t circuitId,
+		    //                    OCPI::OS::uint32_t circuitId,
                     PortSetMetaData* psmd );
 
       virtual ~PortMetaData();

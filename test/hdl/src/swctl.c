@@ -219,8 +219,8 @@ admin(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatil
   time_t epochtime, nowtime;
   struct tm *etime, *ntime;
   static union {
-    uint32_t uint;
-    char c[sizeof(uint32_t) + 1];
+    uint64_t uint;
+    char c[sizeof(uint64_t) + 1];
   } u;
   //  uint64_t x, y, *z = (uint64_t*)p;
   //  x = z[0];
@@ -230,10 +230,8 @@ admin(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatil
   etime = gmtime(&epochtime); 
   //printf("%lld%lld\n", (long long)x, (long long)y);
   printf("OCCP Admin Space\n");
-  u.uint = p->admin.magic1;
-  printf(" Open:         0x%08x \"%s\"\n", u.uint, u.c);
-  u.uint = p->admin.magic2;
-  printf(" CPI:          0x%08x \"%s\"\n", u.uint, u.c);
+  u.uint = p->admin.magic;
+  printf(" OpenCpi:      0x%016x \"%s\"\n", u.uint, u.c);
   printf(" revision:     0x%08x\n", p->admin.revision);
   printf(" birthday:     0x%08x %s", p->admin.birthday, asctime(etime));
   printf(" workerMask:   0x%08x workers", (j = p->admin.config));

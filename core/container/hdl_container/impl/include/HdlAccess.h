@@ -1,0 +1,128 @@
+// This file defines the control plane access classes, which is the basis for different
+// implementations of the cHDL control plane.
+
+#ifndef HDL_ACCESS_H
+#define HDL_ACCESS_H
+#include <cstdlib>
+#include <stdint.h>
+namespace OCPI {
+  namespace HDL {
+    // FIXME:  when do we check for unexpected errors when the worker said they don't produce errors?
+    // FIXME:  perhaps after setup is done?  Should a control op notice the error?
+    // FIXME:  after a bunch of register settings?  afterconfig?
+    typedef uint32_t RegisterOffset;
+    class Accessor {
+    public:
+      virtual ~Accessor() {}
+      // When the status pointer is zero, throw the exception if it is non-zero
+      virtual uint64_t get64(RegisterOffset, uint32_t *status = NULL) = 0;
+      virtual uint32_t get32(RegisterOffset, uint32_t *status = NULL) = 0;
+      virtual uint16_t get16(RegisterOffset, uint32_t *status = NULL) = 0;
+      virtual uint8_t  get8(RegisterOffset,  uint32_t *status = NULL) = 0;
+      // the rest return status
+      virtual void getBytes(RegisterOffset, uint8_t *, unsigned, uint32_t *status = NULL) = 0;
+      virtual void set64(RegisterOffset, uint64_t, uint32_t *status = NULL) = 0;
+      virtual void set32(RegisterOffset, uint32_t, uint32_t *status = NULL) = 0;
+      virtual void set16(RegisterOffset, uint16_t, uint32_t *status = NULL) = 0;
+      virtual void set8(RegisterOffset, uint8_t, uint32_t *status = NULL) = 0;
+      virtual void setBytes(RegisterOffset, const uint8_t *, unsigned, uint32_t *status = NULL) = 0;
+    };
+    class Access {
+      friend class Worker;
+      volatile uint8_t *m_registers; // the memory mapped virtual address of the registers
+      uint64_t m_base;               // the base of the "registers" in their physical address space
+      Accessor *m_accessor;          // when no virtual pointer access, the object that does the access
+      volatile uint8_t *m_buffers;   // sort of a hack for the data plane until en dp is available
+
+    public:
+      Access(Access &other);
+      Access(volatile uint8_t *registers = NULL,  Accessor *accessor = NULL,
+	     RegisterOffset base = 0, volatile uint8_t *buffers = NULL);
+      ~Access();
+      inline volatile uint8_t *registers() const { return m_registers; }
+      inline bool usable() const { return m_registers || m_accessor; }
+      void
+      setAccess(volatile uint8_t *registers,  Accessor *accessor = NULL,
+		RegisterOffset base = 0, volatile uint8_t *buffers = NULL);
+      void
+      closeAccess();
+
+      // Given that I have registers already set up,
+      // set up the (other, subsidiary) offsettee to have registers at an offset in my space
+      void offsetRegisters(Access &offsettee, unsigned offset);
+
+      // Return the offset in the endpoint physical window of this vaddr in bar0
+      inline uint64_t physOffset(unsigned offset) {
+	return m_base + offset;
+      }
+      // The optimization here is to reduce the number of memory references, hence no unrolling
+      void getBytes(RegisterOffset offset, uint8_t *to8, unsigned bytes) const;
+
+      void setBytes(RegisterOffset offset, const uint8_t *from8, unsigned bytes) const;
+      inline uint8_t get8RegisterOffset(unsigned offset) const {
+	return m_registers ? *(uint8_t *)(m_registers + offset) :
+	  m_accessor->get8(m_base + offset);
+      }
+      inline uint16_t get16RegisterOffset(unsigned offset) const {
+	return m_registers ? *(uint16_t *)(m_registers + offset) :
+	  m_accessor->get16(m_base + offset);
+      }
+      inline uint32_t get32RegisterOffset(unsigned offset) const {
+	return m_registers ? *(uint32_t *)(m_registers + offset) :
+	  m_accessor->get32(m_base + offset);
+      }
+      inline uint64_t get64RegisterOffset(unsigned offset) const {
+	return m_registers ? *(uint64_t *)(m_registers + offset) :
+	  m_accessor->get64(m_base + offset);
+      }
+      inline void set8RegisterOffset(unsigned offset, uint8_t val) const {
+	if (m_registers)
+	  *(uint8_t *)(m_registers + offset) = val;
+	else
+	  m_accessor->set8(m_base + offset, val);
+      }
+      inline void set16RegisterOffset(unsigned offset, uint16_t val) const {
+	if (m_registers)
+	  *(uint16_t *)(m_registers + offset) = val;
+	else
+	  m_accessor->set16(m_base + offset, val);
+      }
+      inline void set32RegisterOffset(unsigned offset, uint32_t val) const {
+	if (m_registers)
+	  *(uint32_t *)(m_registers + offset) = val;
+	else
+	  m_accessor->set32(m_base + offset, val);
+      }
+      inline void set64RegisterOffset(unsigned offset, uint64_t val) const{
+	if (m_registers)
+	  *(uint64_t *)(m_registers + offset) = val;
+	else
+	  m_accessor->set64(m_base + offset, val);
+      }
+      inline void getBytesRegisterOffset(unsigned offset, uint8_t *bytes,  unsigned size) const {
+	if (m_registers)
+	  getBytes(offset, bytes, size);
+	else
+	  m_accessor->getBytes(offset, bytes, size);
+      }
+      inline void setBytesRegisterOffset(unsigned offset, const uint8_t *bytes, unsigned size) const {
+	if (m_registers)
+	  setBytes(offset, bytes, size);
+	else
+	  m_accessor->setBytes(offset, bytes, size);
+      }
+#define get32Register(m, type) get32RegisterOffset(offsetof(type, m))
+#define get64Register(m, type) get64RegisterOffset(offsetof(type, m))
+#define set32Register(m, type, val) set32RegisterOffset(offsetof(type, m), (val))
+#define set64Register(m, type, val) set64RegisterOffset(offsetof(type, m), (val))
+#define getRegisterBytes(m, buf, type) \
+      getBytesRegisterOffset(offsetof(type, m), (uint8_t*)(buf), sizeof(((type*)0)->m))
+#define setRegisterBytes(m, buf, type) \
+      setBytesRegisterOffset(offsetof(type, m), (const uint8_t*)(buf), sizeof(((type*)0)->m))
+#define offsetRegister(m, type) physOffset(offsetof(type, m))
+
+    };
+    
+  }
+}
+#endif

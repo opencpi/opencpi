@@ -75,7 +75,7 @@ static RCCResult release(RCCWorker *self)
 inline static void
 doLineX(Pixel *l0, Pixel *l1, Pixel *l2, Pixel *out, unsigned width) {
   unsigned i; // don't depend on c99 yet
-  for (i = 1; i < width - 1; i++) {
+  for (i = 1; i < width - 2; i++) {
     PixelTemp t =
       -1 * l0[i-1] + 1 * l0[i+1] +
       -2 * l1[i-1] + 2 * l1[i+1] +
@@ -103,7 +103,7 @@ inline static void
 doLineY(Pixel *l0, Pixel *l1, Pixel *l2, Pixel *out, unsigned width) {
   ( void )l1;
   unsigned i; // don't depend on c99 yet
-  for (i = 1; i < width - 1; i++) {
+  for (i = 1; i < width - 2; i++) {
     PixelTemp t = 
       -1 * l0[i-1] + 1 * l2[i-1] +
       -2 * l0[i]   + 2 * l2[i]   +
@@ -141,18 +141,14 @@ update(SState *myState,
   }
 
   unsigned produced = 0;
-  for( i = 0; i < lines; i++ ) {
+  for ( i = 0; i < lines; i++ ) {
     int at = myState->lineAt + i;
     // at = 0 begin (zero lines)
-    if( at == 1 ) {
-      // first line
+    if (at == 0 || at == H - 1) {
+      // first or last line
       memset(dst, 0, sizeof(Pixel) * W);
       memset(dst_32f, 0, sizeof(float) * W);
-      dst += W;
-      dst_32f += W;
-      produced++;
-    }
-    else if( at > 1 ) {
+    } else {
       Pixel *img_cur = myState->img + at * W;
       if( xderiv ) {
         doLineX( img_cur - W, img_cur, img_cur + W, dst, W );
@@ -162,19 +158,10 @@ update(SState *myState,
         doLineY( img_cur - W, img_cur, img_cur + W, dst, W );
         doLineY_32f( img_cur - W, img_cur, img_cur + W, dst_32f, W );
       }
-      dst += W;
-      dst_32f += W;
-      produced++;
     }
-
-    if( at == H - 1 ) {
-      // end (two lines)
-      memset(dst, 0, sizeof(Pixel) * W);
-      memset(dst_32f, 0, sizeof(float) * W);
-      dst += W;
-      dst_32f += W;
-      produced++;
-    }
+    dst += W;
+    dst_32f += W;
+    produced++;
   }
   return produced;
 }

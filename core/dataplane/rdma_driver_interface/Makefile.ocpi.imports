@@ -38,7 +38,8 @@
 
 
 ALLINC += $(OCPIOS_EXPORTS) \
- $(UTIL_EXPORTS) 
+$(DATA_TRANSFER_EXPORTS) $(UTIL_EXPORTS) 
 
 ALLLIBS += $(OCPIOS_LIBS) \
+ $(OCPI_BASE_DIR)/core/dataplane/rdma_utils/rdma_utils \
  $(UTIL_LIBS)

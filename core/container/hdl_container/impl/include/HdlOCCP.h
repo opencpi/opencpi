@@ -40,6 +40,8 @@
 namespace OCPI {
   namespace HDL {
 #endif
+#define OCCP_MAX_WORKERS 15
+#define OCCP_MAX_REGIONS 16
     typedef struct {
       uint32_t birthday; // The time the final build was started
       uint8_t uuid[16];  // The official UUID of the bitstream
@@ -49,36 +51,35 @@ namespace OCPI {
       char dna[8];       // The serial number of this particular device
     } HdlUUID;
     typedef struct {
+      const uint64_t magic; // 00
       const uint32_t
-        magic1,
-        magic2,
-        revision,
-        birthday,
-        config,
-        pciDevice,
-        attention,
-        status;
+        revision,           // 08
+        birthday,           // 0c
+        config,             // 10 - bit mask of existing workers
+        pciDevice,          // 14
+        attention,          // 18
+        status;             // 1c
       uint32_t
-        scratch20,
-        scratch24,
-        control;
+        scratch20,          // 20
+        scratch24,          // 24
+        control,            // 28
+        reset;              // 2c
       const uint32_t
-        mbz0,
-	timeStatus;
+	timeStatus;         // 30
       uint32_t
-        timeControl;
+        timeControl;        // 34
       uint64_t
-        time,             //38
-        timeDelta;        //40
+        time,               // 383c
+        timeDelta;          // 4044
       const uint32_t
-        timeClksPerPps,   //48
-	pad[1];           //4c
-      const uint64_t dna; // 5054
+        timeClksPerPps,     // 48
+	readCounter;        // 4c
+      const uint64_t dna;   // 5054
       const uint32_t
-        pad1[9],     // 585c6064686c707478
-        numRegions,  // 7c
-        regions[16]; // 8084888c9094989ca0a4a8acb0b4b8bc
-      HdlUUID uuid;
+        pad1[9],            // 585c6064686c707478
+        numRegions,         // 7c
+        regions[OCCP_MAX_REGIONS];// 8084888c9094989ca0a4a8acb0b4b8bc
+      HdlUUID uuid;         // 9094989ca0a4a8acb0b4b8bcc0c4c8cc
     } OccpAdminRegisters;
     typedef struct {
       const uint32_t
@@ -100,26 +101,56 @@ namespace OCPI {
 	window,
         reserved[3];
     } OccpWorkerRegisters;
-#define OCCP_CONTROL_ENABLE 0x80000000
+#define OCCP_WORKER_CONTROL_ENABLE 0x80000000
 #define OCCP_WORKER_CONTROL_SIZE 0x10000
 #define OCCP_ADMIN_SIZE OCCP_WORKER_CONTROL_SIZE
+#define OCCP_ADMIN_CONFIG_OFFSET 4096
+#define OCCP_ADMIN_CONFIG_SIZE 4096
 #define OCCP_WORKER_CONFIG_SIZE 0x100000
 #define OCCP_WORKER_CONTROL_BASE(i) ((i) * OCCP_BYTES_PER_WORKER)
 #define OCCP_WORKER_PROPERTY_BASE(i) ((i) * OCCP_BYTES_PER_WORKER)
-#define OCCP_MAX_WORKERS 15
-#define OCFRP0_VENDOR 0x10ee
-#define OCFRP0_DEVICE 0x4243
-#define OCFRP0_CLASS 0x05
-#define OCFRP0_SUBCLASS 0x00
 // Magic values from config space: these values are 32 bit values with chars big endian
 #define OCCP_MAGIC1 (('O'<<24)|('p'<<16)|('e'<<8)|'n')
 #define OCCP_MAGIC2 (('C'<<24)|('P'<<16)|('I'<<8))
+#define OCCP_MAGIC ((uint64_t)OCCP_MAGIC2 << 32ull | OCCP_MAGIC1)
 // Read return values from workers
 #define OCCP_ERROR_RESULT   0xc0de4202
 #define OCCP_TIMEOUT_RESULT 0xc0de4203
 #define OCCP_RESET_RESULT   0xc0de4204
 #define OCCP_SUCCESS_RESULT 0xc0de4201
 #define OCCP_FATAL_RESULT   0xc0de4205
+#define OCCP_STATUS_CONFIG_WRITE (1 << 27)
+#define OCCP_STATUS_CONFIG_OP (0x7 << 24)
+#define OCCP_STATUS_CONFIG_BE (0xf << 20)
+
+#define OCCP_STATUS_CONFIG_ADDR_VALID (1 << 16)
+#define OCCP_STATUS_CONFIG_BE_VALID (1 << 17)
+#define OCCP_STATUS_CONFIG_OP_VALID (1 << 18)
+#define OCCP_STATUS_CONFIG_WRITE_VALID (1 << 19)
+#define OCCP_STATUS_CONFIG_ADDR_VALID (1 << 16)
+#define OCCP_STATUS_ACCESS_ERROR    (1 << 10) // this is simulated on the CPU, not in OCCP
+#define OCCP_STATUS_SFLAG           (1 << 9)
+#define OCCP_STATUS_WRITE_TIMEOUT   (1 << 8)
+#define OCCP_STATUS_READ_TIMEOUT    (1 << 7)
+#define OCCP_STATUS_CONTROL_TIMEOUT (1 << 6)
+#define OCCP_STATUS_WRITE_FAIL      (1 << 5)
+#define OCCP_STATUS_READ_FAIL       (1 << 4)
+#define OCCP_STATUS_CONTROL_FAIL    (1 << 3)
+#define OCCP_STATUS_WRITE_ERROR     (1 << 2)
+#define OCCP_STATUS_READ_ERROR      (1 << 1)
+#define OCCP_STATUS_CONTROL_ERROR   (1 << 0)
+#define OCCP_STATUS_WRITE_ERRORS	 \
+    (OCCP_STATUS_WRITE_TIMEOUT |	 \
+     OCCP_STATUS_WRITE_FAIL |		 \
+     OCCP_STATUS_WRITE_ERROR)
+#define OCCP_STATUS_READ_ERRORS		 \
+    (OCCP_STATUS_READ_TIMEOUT |		 \
+     OCCP_STATUS_READ_FAIL |		 \
+     OCCP_STATUS_READ_ERROR)
+#define OCCP_STATUS_CONTROL_ERRORS	 \
+    (OCCP_STATUS_CONTROL_TIMEOUT |	 \
+     OCCP_STATUS_CONTROL_FAIL |		 \
+     OCCP_STATUS_CONTROL_ERROR)
 #define OCCP_STATUS_ALL_ERRORS 0x1ff
     typedef uint8_t *OccpConfigArea;
     typedef struct {
@@ -129,7 +160,9 @@ namespace OCPI {
 
     typedef struct {
       OccpAdminRegisters admin;
-      uint8_t pad[OCCP_ADMIN_SIZE - sizeof(OccpAdminRegisters)];
+      uint8_t pad[OCCP_ADMIN_CONFIG_OFFSET - sizeof(OccpAdminRegisters)];
+      uint8_t configRam[OCCP_ADMIN_CONFIG_SIZE];
+      uint8_t pad1[OCCP_ADMIN_SIZE - (OCCP_ADMIN_CONFIG_OFFSET + OCCP_ADMIN_CONFIG_SIZE)];
       OccpWorker worker[OCCP_MAX_WORKERS];
       uint8_t config[OCCP_MAX_WORKERS][OCCP_WORKER_CONFIG_SIZE];
     } OccpSpace;

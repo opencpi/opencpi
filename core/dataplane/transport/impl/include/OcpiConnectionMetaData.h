@@ -74,8 +74,9 @@ namespace OCPI {
       /**********************************
        * Constructors
        *********************************/
-      ConnectionMetaData( const char* output_ep, const char* input_ep, int buf_count, int buf_size );
-      ConnectionMetaData( OCPI::RDT::Descriptors& sPort );
+      ConnectionMetaData(DataTransfer::EndPoint *output_ep, DataTransfer::EndPoint *input_ep,
+			 int buf_count, int buf_size );
+      ConnectionMetaData(DataTransfer::EndPoint &ep, OCPI::RDT::Descriptors& sPort);
       ConnectionMetaData();
 
 

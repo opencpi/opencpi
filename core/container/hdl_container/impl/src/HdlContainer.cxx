@@ -60,6 +60,7 @@
 #include <vector>
 #include <string>
 #include <cstddef>
+#include <arpa/inet.h> // FIXME: get this out of here for htons
 #include <uuid/uuid.h>
 // FIXME: integrate this into our UUID utility properly
 #ifndef _UUID_STRING_T
@@ -69,13 +70,18 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #include "OcpiUtilEzxml.h"
 #include "OcpiOsMisc.h"
 #include "OcpiOsAssert.h"
+#include "OcpiOsEther.h"
 #include "PciScanner.h"
+#include "EtherDriver.h"
 #include "OcpiContainerManager.h"
 #include "OcpiWorker.h"
 #include "OcpiPValue.h"
 #include "OcpiContainerMisc.h"
+#include "OcpiUtilMisc.h"
 #include "HdlOCCP.h"
 #include "HdlOCDP.h"
+#include "HdlDriver.h"
+#include "HdlContainer.h"
 
 #define wmb()        asm volatile("sfence" ::: "memory"); usleep(0)
 #define clflush(p) asm volatile("clflush %0" : "+m" (*(char *)(p))) //(*(volatile char __force *)p))
@@ -97,255 +103,107 @@ namespace OCPI {
     static const unsigned LOCAL_BUFFER_ALIGN = 32;
     // This is the constraint based both on the local issues and the OCDP's DMA engine.
     static const unsigned LOCAL_DMA_ALIGN = max(LOCAL_BUFFER_ALIGN, OCDP_FAR_BUFFER_ALIGN);
-    class ExternalPort;
-    class Container;
-    const char *hdl = "hdl";
-    class Driver : public OC::DriverBase<Driver, Container, hdl>, OCPI::PCI::Driver {
-
-      friend class ExternalPort; // for pcimemfd
-      // The fd for mapped memory, until we have a driver to restrict it.
-      static int pciMemFd;
-
-      // Create a container
-      Container *create(const char *name, PCI::Bar *bars, unsigned nbars,
-			const char *&err, const OU::PValue *props = NULL);
-
-      // Create a dummy container using shm_open for the device
-      Container *createDummy(const char *name, const char *df, const OA::PValue *);
-
-      // Callback function for PciScanner::search which creates a container
-      bool found(const char *name, PCI::Bar *bars, unsigned nbars);
-    public:
-      // This driver method is called when container-discovery happens, to see if there
-      // are any container devices supported by this driver
-      // It uses a generic PCI scanner to find candidates, and when found, calls the
-      // "found" method.
-      unsigned search(const OA::PValue*, const char **exclude);
-      OC::Container *probeContainer(const char *which, const OA::PValue *props);
-    };
-    OC::RegisterContainerDriver<Driver> driver;
-
-    bool Driver::found(const char *name, PCI::Bar *bars, unsigned nbars) {
-      const char *err = 0;
-      if (create(name, bars, nbars, err))
-        return true;
-      fprintf(stderr, "Error during probe for OCFRP: %s\n", err);
-      return false;
-    }
-    class Artifact;
-    class Port;
-    class Application;
-    class Container : public OC::ContainerBase<Driver, Container, Application, Artifact> {
-      volatile OccpAdminRegisters *adminRegisters;
-      volatile OccpSpace* occp;
-      uint8_t *bar1Vaddr;
-      uint64_t basePaddr, bar1Offset;
-      uint8_t *baseVaddr;     // base virtual address of whole region containing both BARs
-      uint64_t endPointSize; // size in bytes of whole region containing both BARs.
-      std::string m_device, m_esn, m_position, m_loadParams;
-      uuid_t m_loadedUUID;
-      friend class WciControl;
-      friend class Driver;
-      friend class Port;
-      friend class Artifact;
-    protected:
-      Container(const char *name, uint64_t bar0Paddr,
-                volatile OccpSpace *aOccp, uint64_t bar1Paddr,
-		uint8_t *aBar1Vaddr, uint32_t bar1Size,
-		ezxml_t config = NULL, const OU::PValue *props = NULL) 
-        : OC::ContainerBase<Driver,Container,Application,Artifact>(name, config, props),
-	  occp(aOccp), bar1Vaddr(aBar1Vaddr)
-      {
-        if (bar0Paddr < bar1Paddr) {
-          basePaddr = bar0Paddr;
-          endPointSize = bar1Paddr + bar1Size - basePaddr;
-          baseVaddr = (uint8_t *)occp;
-        } else {
-          basePaddr = bar1Paddr;
-          endPointSize = bar0Paddr + sizeof(OccpSpace) - basePaddr;
-          baseVaddr = bar1Vaddr;
-        }
-        bar1Offset = bar1Paddr - basePaddr;
-	m_model = "hdl";
-	m_os = "";
-	// Capture the UUID info that tells us about the platform
-	HdlUUID myUUID;
-	unsigned n;
-	for (n = 0; n < sizeof(HdlUUID); n++)
-	  ((uint8_t*)&myUUID)[n] = ((volatile uint8_t *)&occp->admin.uuid)[(n & ~3) + (3 - (n&3))];
-	for (n = 0; myUUID.platform[n] && n < sizeof(myUUID.platform); n++)
-	  ;
-	if (n > 2)
-	  m_platform.assign(myUUID.platform, n);
-	for (n = 0; myUUID.device[n] && n < sizeof(myUUID.device); n++)
-	  ;
-	if (n > 2)
-	  m_device.assign(myUUID.device, n);
-	for (n = 0; myUUID.load[n] && n < sizeof(myUUID.load); n++)
-	  ;
-	if (n > 1)
-	  m_loadParams.assign(myUUID.load, n);
-	memcpy(m_loadedUUID, myUUID.uuid, sizeof(m_loadedUUID));
-	
-	if (config) {
-	  // what do I not know about this?
-	  // usb port for jtag loading
-	  // part type to look for artifacts
-	  // esn for checking/asserting that
-	  OE::getOptionalString(config, m_esn, "esn");
-	  std::string platform, device;
-	  OE::getOptionalString(config, platform, "platform");
-	  OE::getOptionalString(config, platform, "device");
-	  if (!platform.empty() && platform != m_platform)
-	    throw OU::Error("Discovered platform (%s) doesn't match configured platform (%s)",
-			    m_platform.c_str(), platform.c_str());
-	  if (!device.empty() && device != m_device)
-	    throw OU::Error("Discovered device (%s) doesn't match configured device (%s)",
-			    m_device.c_str(), device.c_str());
-	  OE::getOptionalString(config, m_position, "position");
-	}
-      }
-      bool isLoadedUUID(const std::string &uuid) {
-	uuid_string_t parsed;
-	uuid_unparse(m_loadedUUID, parsed);
-	return uuid == parsed;
-      }
-    public:
-      ~Container() {
-	this->lock();
-        // FIXME: ref count driver static resources, like closing pciMemFd
-      }
-      void start() {}
-      void stop() {}
-      bool dispatch() { return false; }
-      // friends
-      void getWorkerAccess(unsigned index, volatile OccpWorkerRegisters *&r,
-                           volatile uint8_t *&c)
-      {
-        if (index >= OCCP_MAX_WORKERS)
-          throw OC::ApiError("Invalid occpIndex property", 0);
-        // check this against something in the admin registers
-        c = occp->config[index];
-        r = &occp->worker[index].control;
-      }
-      void releaseWorkerAccess(unsigned index)
-      {
-	(void)index;
-        // potential unmapping/ref counting
-      }
-#if 0
-      // support worker ids for those who want it
-      OC::Worker &findWorker(OC::WorkerId)
-      {
-        static OC::Worker *w; return *w;
-      }
-#endif
-      OC::Artifact &
-      createArtifact(OCPI::Library::Artifact &lart, const OA::PValue *artifactParams);
-      OA::ContainerApplication *
-      createApplication(const char *name, const OCPI::Util::PValue *props)
-	throw ( OCPI::Util::EmbeddedException );
-      bool needThread() { return false; }
-    };
     
-    unsigned Driver::search(const OA::PValue*, const char **exclude)
+    Container::
+    Container(const char *name,
+	      Access &controlAccess, // control plane accessor for the container, copied in
+	      Access &dataAccess, // control plane accessor for the container, copied in
+	      std::string &endpoint,
+	      ezxml_t config, const OU::PValue *params) 
+        : OC::ContainerBase<Driver,Container,Application,Artifact>(name, config, params),
+	  Access(controlAccess), m_bufferSpace(dataAccess),
+	  m_endpoint(endpoint)
     {
-      const char *df = getenv("OCPI_OCFRP_DUMMY");
-      if (df) {
-	createDummy("0000:99:00.0", df, 0);
-	return 1;
-      } else {
-	unsigned n = 0;
-	const char *err = PCI::search(exclude, OCFRP0_VENDOR, OCFRP0_DEVICE,
-				      OCFRP0_CLASS, OCFRP0_SUBCLASS, *this, n);
-	if (err)
-	  ocpiBad("In HDL Container driver, got PCI Scanner Error: %s", err);
-	return n;
+      time_t bd = get32Register(admin.birthday, OccpSpace);
+      char tbuf[30];
+      ocpiInfo("OCFRP: %s, with bitstream birthday: %s", name, ctime_r(&bd, tbuf));
+      m_model = "hdl";
+      m_os = "";
+      // Capture the UUID info that tells us about the platform
+      HdlUUID myUUIDtmp, myUUID;
+      unsigned n;
+      getRegisterBytes(admin.uuid, &myUUIDtmp, OccpSpace);
+      // Fix the endianness
+      for (n = 0; n < sizeof(HdlUUID); n++)
+	((uint8_t*)&myUUID)[n] = ((uint8_t *)&myUUIDtmp)[(n & ~3) + (3 - (n&3))];
+      for (n = 0; myUUID.platform[n] && n < sizeof(myUUID.platform); n++)
+	;
+      if (n > 2)
+	m_platform.assign(myUUID.platform, n);
+      for (n = 0; myUUID.device[n] && n < sizeof(myUUID.device); n++)
+	;
+      if (n > 2)
+	m_device.assign(myUUID.device, n);
+      for (n = 0; myUUID.load[n] && n < sizeof(myUUID.load); n++)
+	;
+      if (n > 1)
+	m_loadParams.assign(myUUID.load, n);
+      memcpy(m_loadedUUID, myUUID.uuid, sizeof(m_loadedUUID));
+	
+      if (config) {
+	// what do I not know about this?
+	// usb port for jtag loading
+	// part type to look for artifacts
+	// esn for checking/asserting that
+	OE::getOptionalString(config, m_esn, "esn");
+	std::string platform, device;
+	OE::getOptionalString(config, platform, "platform");
+	OE::getOptionalString(config, platform, "device");
+	if (!platform.empty() && platform != m_platform)
+	  throw OU::Error("Discovered platform (%s) doesn't match configured platform (%s)",
+			  m_platform.c_str(), platform.c_str());
+	if (!device.empty() && device != m_device)
+	  throw OU::Error("Discovered device (%s) doesn't match configured device (%s)",
+			  m_device.c_str(), device.c_str());
+	OE::getOptionalString(config, m_position, "position");
       }
     }
-    OC::Container *Driver::probeContainer(const char *which, const OA::PValue *props)
-    {
-      const char *df = getenv("OCPI_OCFRP_DUMMY");
-      if (df)
-	return createDummy(which, df, props);
-      // Real probe
-      PCI::Bar bars[2];
-      unsigned nbars = 2;
-      const char *err = 0;
-      if (!PCI::probe(which, OCFRP0_VENDOR, OCFRP0_DEVICE,
-		      OCFRP0_CLASS, OCFRP0_SUBCLASS, bars, nbars, err) || err)
-	OC::ApiError("Error probing \"", which, "\": ", err, NULL);
-      Container *c = create(which, bars, nbars, err, props);
-      if (!c)
-	OC::ApiError("Error creating \"", which, "\" (which probed ok): ", err, NULL);
-      return c;
+    bool Container::
+    isLoadedUUID(const std::string &uuid) {
+      uuid_string_t parsed;
+      uuid_unparse(m_loadedUUID, parsed);
+      return uuid == parsed;
     }
 
-    // Create a dummy device emulated by a shared memory buffer
-    Container *Driver::
-    createDummy(const char *name, const char *df, const OA::PValue *) {
-      int fd;
-      uint8_t *bar0, *bar1;
-      fprintf(stderr, "DF: %s, Page %d, Occp %" PRIsize_t ", SC pagesize %lu off_t %" PRIsize_t " bd %" PRIsize_t "\n",
-              df, getpagesize(), sizeof(OccpSpace), sysconf(_SC_PAGE_SIZE),
-              sizeof(off_t), sizeof(OC::PortData));
-      umask(0);
-      ocpiCheck((fd = shm_open(df, O_CREAT | O_RDWR, 0666)) >= 0);
-      ocpiCheck(ftruncate(fd, sizeof(OccpSpace) + 64*1024) >= 0);
-      ocpiCheck((bar0 = (uint8_t*)mmap(NULL, sizeof(OccpSpace) + 64*1024,
-                                       PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0))
-                != (uint8_t*)-1);
-      bar1 = bar0 + sizeof(OccpSpace);
-      return new Container(name, 0, (volatile OccpSpace*)bar0,
-                           sizeof(OccpSpace), bar1, 64*1024);
+    Container::
+    ~Container() {
+      this->lock();
+      // FIXME: ref count driver static resources, like closing pciMemFd
     }
+    void Container::
+    start() {}
+    void Container::
+    stop() {}
+    bool Container::
+    dispatch() { return false; }
+    // friends
+    void Container::
+    getWorkerAccess(unsigned index,
+		    Access &worker,
+		    Access &properties) {
+      if (index >= OCCP_MAX_WORKERS)
+	throw OU::Error("Invalid occpIndex property");
+      // FIXME:  check runtime for connected worker
+      // This is ugly because offsetof is stupid
+      offsetRegisters(worker, (intptr_t)(&((OccpSpace*)0)->worker[index]));
+      offsetRegisters(properties,(intptr_t)(&((OccpSpace*)0)->config[index]));
+    }
+    void Container::
+    releaseWorkerAccess(unsigned /* index */,
+			Access & /* worker */,
+			Access & /* properties */) {
+    }
+    bool Container::
+    needThread() { return false; }
 
-    // Internal driver method
-    // Return container pointer OR null, and if NULL, set "err" output arg.
-    Container *Driver::
-    create(const char *name, PCI::Bar *bars, unsigned nbars, const char *&err,
-	   const OU::PValue *props) {
-      if (nbars != 2 || bars[0].io || bars[0].prefetch || bars[1].io || bars[1].prefetch ||
-          bars[0].addressSize != 32 || bars[0].size != sizeof(OccpSpace))
-        err = "OCFRP found but bars are misconfigured\n";
-      else {
-        void *bar0 = 0, *bar1 = 0;
-        // PCI config info looks good.  Now check the OCCP signature.
-        if (pciMemFd < 0 && (pciMemFd = open("/dev/mem", O_RDWR|O_SYNC)) < 0)
-          err = "Can't open /dev/mem";
-        else if ((bar0 = mmap(NULL, sizeof(OccpSpace), PROT_READ|PROT_WRITE, MAP_SHARED,
-                              pciMemFd, bars[0].address)) == (void*)-1)
-          err = "can't mmap /dev/mem for bar0";
-        else if ((bar1 = mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE, MAP_SHARED,
-                              pciMemFd, bars[1].address)) == (void*)-1)
-          err = "can't mmap /dev/mem for bar1";
-        else {
-          volatile OccpSpace *occp = (OccpSpace *)bar0;
-	  //          static union { char string[5]; uint32_t value; }
-	  //          magic1 = {{'n', 'e', 'p', 'O'}}, magic2 = {{0, 'I', 'P', 'C'}};
-          //magic1 = {{'O', 'p', 'e', 'n'}}, magic2 = {{'C', 'P', 'I', '\0'}};
-          //          magic1 = {OCCP_MAGIC1}, magic2 = {OCCP_MAGIC2};
-          //if (occp->admin.magic1 != magic1.value || occp->admin.magic2 != magic2.value) {
-	  if (occp->admin.magic1 != OCCP_MAGIC1 || occp->admin.magic2 != OCCP_MAGIC2) {
-            err = "Magic numbers do not match in region/bar 0";
-	    fprintf(stderr, "PCI Device matches OCFRP vendor/device, but not OCCP signature: "
-		    "magic1: 0x%x (sb 0x%x), magic2: 0x%x (sb 0x%x)",
-		    occp->admin.magic1, OCCP_MAGIC1, occp->admin.magic2, OCCP_MAGIC2);
-          } else {
-            char tbuf[30];
-            time_t bd = occp->admin.birthday;
-            fprintf(stderr, "OCFRP: %s, with bitstream birthday: %s", name, ctime_r(&bd, tbuf));
-	    return new Container(name, bars[0].address, occp, bars[1].address,
-				 (uint8_t*)bar1, bars[1].size, getDeviceConfig(name),
-				 props);
-          }
-        }
-        if (bar0)
-          munmap(bar0, sizeof(OccpSpace));
-        if (bar1)
-          munmap(bar1, bars[1].size);
-      }
-      return 0;
+    // This simply insulates the driver code from needing the container class implementation decl.
+    OC::Container *Driver::
+    createContainer(const char *name,
+		    Access &controlAccess, // control plane accessor for the container, copied in
+		    Access &dataAccess, // control plane accessor for the container, copied in
+		    std::string &endpoint,
+		    ezxml_t config, const OU::PValue *params)  {
+      return new Container(name, controlAccess, dataAccess, endpoint, config, params);
     }
 
     class Artifact : public OC::ArtifactBase<Container,Artifact> {
@@ -400,19 +258,17 @@ namespace OCPI {
       return *new Artifact(*this, lart, artifactParams);
     }
     // The class that knows about WCI interfaces and the OCCP.
-    class WciControl : virtual public OC::Controllable {
+    class WciControl : public Access, virtual public OC::Controllable {
       friend class Port;
       const char *implName, *instName;
     protected:
-      Container &myWciContainer;
+      Access m_properties;
+      Container &m_wciContainer;
       // myRegisters is zero when this WCI does not really exist.
       // (since we inherit this in some cases were it is not needed).
-      volatile OccpWorkerRegisters *myRegisters;
       unsigned myOccpIndex;
-      volatile uint8_t *myProperties;
       WciControl(Container &container, ezxml_t implXml, ezxml_t instXml)
-        : implName(0), instName(0), myWciContainer(container), myRegisters(NULL),
-	  myProperties(NULL)
+        : implName(0), instName(0), m_wciContainer(container)
       {
 	setControlOperations(ezxml_cattr(implXml, "controlOperations"));
         if (!implXml)
@@ -429,9 +285,11 @@ namespace OCPI {
              u >>= 1, logTimeout--)
           ;
         ocpiDebug("Timeout for $%s is %d\n", implName, logTimeout);
-        myWciContainer.getWorkerAccess(myOccpIndex, myRegisters, myProperties);
+	// Get access to registers and properties
+        container.getWorkerAccess(myOccpIndex, *this, m_properties);
         // Assert Reset
-        myRegisters->control =  logTimeout;
+        // myRegisters->control =  logTimeout;
+        set32Register(control,  OccpWorkerRegisters, logTimeout);
 #ifndef SHEP_FIXME_THE_RESET
         struct timespec spec;
         spec.tv_sec = 0;
@@ -440,15 +298,17 @@ namespace OCPI {
         ocpiCheck(bad == 0);
 #endif
         // Take out of reset
-        myRegisters->control = OCCP_CONTROL_ENABLE | logTimeout ;
+        // myRegisters->control = OCCP_CONTROL_ENABLE | logTimeout ;
+        set32Register(control,  OccpWorkerRegisters, OCCP_WORKER_CONTROL_ENABLE | logTimeout);
+#if 0 // do this by changing the accessor
         if (getenv("OCPI_OCFRP_DUMMY")) {
           *(uint32_t *)&myRegisters->initialize = OCCP_SUCCESS_RESULT; //fakeout
           *(uint32_t *)&myRegisters->start = OCCP_SUCCESS_RESULT; //fakeout
         }
+#endif
       }
       virtual ~WciControl() {
-        if (myRegisters)
-          myWciContainer.releaseWorkerAccess(myOccpIndex);
+	m_wciContainer.releaseWorkerAccess(myOccpIndex, *this, m_properties);
       }
       // Add the hardware considerations to the property object that supports
       // fast memory-mapped property access directly to users
@@ -457,33 +317,27 @@ namespace OCPI {
 				   volatile void *&writeVaddr,
 				   const volatile void *&readVaddr) {
 	(void)readVaddr;
-        if (myRegisters)
+        if (m_properties.registers())
           if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence &&
 	      !md.m_baseType != OA::OCPI_String &&
               OU::baseTypeSizes[md.m_baseType] <= 32 &&
 	      md.m_offset < OCCP_WORKER_CONFIG_SIZE &&
               !md.m_writeError)
-            writeVaddr = myProperties + md.m_offset;
+            writeVaddr = m_properties.registers() + md.m_offset;
       }
       // Map the control op numbers to structure members
       static const unsigned controlOffsets[];
-#if 0
- = {
-#define CONTROL_OP(x, c, t, s1, s2, s3) \
-      offsetof(OccpWorkerRegisters,x) / sizeof (uint32_t),
-      OCPI_CONTROL_OPS
-#undef CONTROL_OP
-	0};
-#endif
     public:
       void controlOperation(OCPI::Metadata::Worker::ControlOperation op) {
 	if (getControlMask() & (1 << op)) {
-	  uint32_t result = *((volatile uint32_t *)myRegisters + controlOffsets[op]);
+	  uint32_t result =
+	    // *((volatile uint32_t *)myRegisters + controlOffsets[op]);
+	    get32RegisterOffset(controlOffsets[op]);
 	  if (result != OCCP_SUCCESS_RESULT) {
 	    const char *oops;
 	    switch (result) {
 	    case OCCP_TIMEOUT_RESULT:
-	      oops = "timed out performing control operation";
+	      oops = "timed out performing control operation (no OCP response on the WCI)";
 	      break;
 	    case OCCP_ERROR_RESULT:
 	      oops = "indicated an error from control operation";
@@ -497,16 +351,16 @@ namespace OCPI {
 	    default:
 	      oops = "returned unknown result value from control operation";
 	    }
-	    throw OC::ApiError("Worker \"", implName, ":", instName, "\" ", oops, 0);
+	    throw OU::Error("worker %s:%s %s", implName, instName, oops);
 	  }
 	}
       }
     };
-    // Idiotic c++ doesn't allow static initializations in class definitions.
+    // c++ doesn't allow static initializations in class definitions.
     const unsigned WciControl::controlOffsets[] = {
 #define CONTROL_OP(x, c, t, s1, s2, s3) \
-      offsetof(OccpWorkerRegisters,x) / sizeof (uint32_t),
-      OCPI_CONTROL_OPS
+	offsetof(OccpWorkerRegisters,x),
+	OCPI_CONTROL_OPS
 #undef CONTROL_OP
 	0};
 
@@ -579,167 +433,173 @@ namespace OCPI {
 
       // These property access methods are called when the fast path
       // is not enabled, either due to no MMIO or that the property can
-      // return errors.  OCCP has MMIO, so it must be the latter
+      // return errors.
+      static void throwPropertyReadError(uint32_t status) {
+	throw OU::Error("property reading error: %s",
+			status & OCCP_STATUS_READ_TIMEOUT ? "timeout" : "worker generated error response");
+      }
+      static void throwPropertyWriteError(uint32_t status) {
+	throw OU::Error("property writing error: %s",
+			status & OCCP_STATUS_WRITE_TIMEOUT ? "timeout" : "worker generated error response");
+      }
+      static void throwPropertySequenceError() {
+	throw OU::Error("property sequence length overflow on read/get");
+      }
+
+#define PUT_GET_PROPERTY(n)						\
+      inline void setProperty##n(const OA::Property &p, uint##n##_t val) const {  \
+	uint32_t status = 0;						          \
+	if (m_properties.m_registers) {					          \
+	  if (!p.m_info.m_writeError ||					          \
+	      !(status =						          \
+		get32Register(status, OccpWorkerRegisters) &                      \
+		OCCP_STATUS_WRITE_ERRORS))				          \
+	    m_properties.set##n##RegisterOffset(p.m_info.m_offset, val); \
+	  if (p.m_info.m_writeError && !status)				\
+	    status =							          \
+	      get32Register(status, OccpWorkerRegisters) &		          \
+	      OCCP_STATUS_WRITE_ERRORS;					          \
+	} else								          \
+	  m_properties.m_accessor->set##n(p.m_info.m_offset, val, &status);       \
+	if (status)							\
+	  throwPropertyWriteError(status);				\
+      }									\
+      inline uint##n##_t getProperty##n(const OA::Property &p) const {	\
+	uint32_t status = 0;						\
+	uint##n##_t val;						\
+	if (m_properties.m_registers) {					\
+	  if (!p.m_info.m_readError ||					\
+	      !(status =						\
+		get32Register(status, OccpWorkerRegisters) &		\
+		OCCP_STATUS_READ_ERRORS))				\
+	    val = m_properties.get##n##RegisterOffset(p.m_info.m_offset); \
+	  if (p.m_info.m_readError && !status)				\
+	    status =							\
+	      get32Register(status, OccpWorkerRegisters) &		\
+	      OCCP_STATUS_READ_ERRORS;					\
+	} else								\
+	  val = m_properties.m_accessor->get##n(p.m_info.m_offset, &status); \
+	if (status)							\
+	  throwPropertyReadError(status);				\
+	return val;							\
+      }
+      PUT_GET_PROPERTY(8)
+      PUT_GET_PROPERTY(16)
+      PUT_GET_PROPERTY(32)
+      PUT_GET_PROPERTY(64)
+
+      inline void setPropertySequence(const OA::Property &p,
+				      const uint8_t *val,
+				      uint32_t nItems, unsigned nBytes) const {
+	uint32_t status = 0;
+	if (m_properties.m_registers) {
+	  if (!p.m_info.m_writeError ||
+	      !(status =
+		get32Register(status, OccpWorkerRegisters) &
+		OCCP_STATUS_WRITE_ERRORS)) {
+	    m_properties.setBytesRegisterOffset(p.m_info.m_offset + p.m_info.m_align,
+						val, nBytes);
+	    m_properties.set32RegisterOffset(p.m_info.m_offset, nItems);
+	  }
+	  if (p.m_info.m_writeError && !status)
+	    status =
+	      get32Register(status, OccpWorkerRegisters) &
+	      OCCP_STATUS_WRITE_ERRORS;
+	} else {
+	  m_properties.m_accessor->setBytes(p.m_info.m_offset + p.m_info.m_align,
+					    val, nBytes, &status);
+	  if (!status)
+	    m_properties.m_accessor->set32(p.m_info.m_offset, nItems, &status);
+	}
+	if (status)
+	  throwPropertyWriteError(status);
+      }
+      inline unsigned
+      getPropertySequence(const OA::Property &p, uint8_t *buf, unsigned n) const {
+	uint32_t status = 0, nItems;
+
+	if (m_properties.m_registers) {
+	  if (!p.m_info.m_readError ||
+	      !(status =
+		get32Register(status, OccpWorkerRegisters) &
+		OCCP_STATUS_READ_ERRORS))
+	    nItems = m_properties.get32RegisterOffset(p.m_info.m_offset);
+	  if (!p.m_info.m_readError && 
+	      !(status =
+		get32Register(status, OccpWorkerRegisters) &
+		OCCP_STATUS_READ_ERRORS)) {
+	    if (nItems * (p.m_info.m_nBits/8) <= n)
+	      throwPropertySequenceError();
+	    m_properties.getBytesRegisterOffset(p.m_info.m_offset + p.m_info.m_align, 
+						buf, nItems * (p.m_info.m_nBits/8));
+	    if (p.m_info.m_readError && !status)
+	      status =
+		get32Register(status, OccpWorkerRegisters) &
+		OCCP_STATUS_READ_ERRORS;
+	  }
+	} else {
+	  nItems = m_properties.m_accessor->get32(p.m_info.m_offset, &status);
+	  if (!status) {
+	    if (nItems * (p.m_info.m_nBits/8) <= n)
+	      throwPropertySequenceError();
+	    m_properties.m_accessor->getBytes(p.m_info.m_offset + p.m_info.m_align, 
+					      buf, nItems * (p.m_info.m_nBits/8),
+					      &status);
+	  }
+	}
+	if (status)
+	  throwPropertyReadError(status);
+	return nItems;
+      }
+
+      
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                     \
-      void set##pretty##Property(const OA::Property &p, const run val) const {     \
-        if (p.m_info.m_writeError &&                                               \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
-          throw; /*"worker has errors before write */			           \
-        volatile store *pp = (volatile store *)(myProperties + p.m_info.m_offset); \
-        if (bits > 32) {                                                           \
-          assert(bits == 64);                                                      \
-          volatile uint32_t *p32 = (volatile uint32_t *)pp;                        \
-          p32[1] = ((const uint32_t *)&val)[1];                                    \
-          p32[0] = ((const uint32_t *)&val)[0];                                    \
-        } else                                                                     \
-          *pp = *(const store *)&val;                                              \
-        if (p.m_info.m_writeError && myRegisters->status & OCCP_STATUS_ALL_ERRORS) \
-          throw; /*"worker has errors after write */                               \
-      }                                                                            \
-      void set##pretty##SequenceProperty(const OA::Property &p,const run *vals,    \
-					 unsigned length) const {	           \
-        if (p.m_info.m_writeError &&                                               \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
-          throw; /*"worker has errors before write */                              \
-        memcpy((void *)(myProperties + p.m_info.m_offset + p.m_info.m_align), vals,\
-	       length * sizeof(run));					           \
-        *(volatile uint32_t *)(myProperties + p.m_info.m_offset) = length;         \
-        if (p.m_info.m_writeError &&                                               \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
-          throw; /*"worker has errors after write */                               \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+      void								\
+      set##pretty##Property(const OA::Property &p, const run val) const { \
+	setProperty##bits(p, *(uint##bits##_t *)&val);			\
+      }									\
+      void								\
+      set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
+				    unsigned length) const {		\
+	setPropertySequence(p, (const uint8_t *)vals,			\
+			    length, length * (bits/8));			\
+      }									\
+      run								\
+      get##pretty##Property(const OA::Property &p) const {		\
+	return (run)getProperty##bits(p);				\
+      }									\
+      unsigned								\
+      get##pretty##SequenceProperty(const OA::Property &p, run *vals,	\
+				    unsigned length) const {		\
+	return								\
+	  getPropertySequence(p, (uint8_t *)vals,length * (bits/8));	\
       }
-      // Set a string property value FIXME redundant length check??? 
-      // ASSUMPTION:  strings always occupy at least 4 bytes, and
-      // are aligned on 4 byte boundaries.  The offset calculations
-      // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                 \
-      virtual void set##pretty##Property(const OA::Property &p, const run val) const { \
-        unsigned ocpi_length;						         \
-        if (!val || (ocpi_length = strlen(val)) > p.m_info.m_stringLength)       \
-          throw; /*"string property too long"*/;                                 \
-        if (p.m_info.m_writeError &&                                             \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                        \
-          throw; /*"worker has errors before write */                            \
-        uint32_t *p32 = (uint32_t *)(myProperties + p.m_info.m_offset);          \
-        /* add 1 for null, if length to be written is more than 32 bits */       \
-        if (++ocpi_length > 32/CHAR_BIT)                                         \
-          memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT);         \
-        uint32_t i;                                                              \
-        memcpy(&i, val, 32/CHAR_BIT);                                            \
-        p32[0] = i;                                                              \
-        if (p.m_info.m_writeError &&                                             \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                        \
-          throw; /*"worker has errors after write */                             \
-      }                                                                          \
-      void set##pretty##SequenceProperty(const OA::Property &p,                    \
-					 const run *vals, unsigned length) const { \
-        if (length > p.m_info.m_sequenceLength)                                    \
-          throw;                                                                   \
-        if (p.m_info.m_writeError &&                                               \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
-          throw; /*"worker has errors before write */                              \
-        char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT);       \
-        for (unsigned i = 0; i < length; i++) {                                    \
-          unsigned len = strlen(vals[i]);                                          \
-          if (len > p.m_info.m_sequenceLength)   			           \
-            throw; /* "string in sequence too long" */                             \
-          memcpy(cp, vals[i], len+1);                                              \
-        }                                                                          \
-        *(uint32_t *)(myProperties + p.m_info.m_offset) = length;                  \
-        if (p.m_info.m_writeError &&                                               \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
-          throw; /*"worker has errors after write */                               \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
+OCPI_DATA_TYPES
+      void
+      setStringProperty(const OA::Property &p, const char* val) const {
+	uint32_t n = strlen(val) + 1;
+	setPropertySequence(p, (const uint8_t *)val, n, n);
       }
-      OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE_S
-#undef OCPI_DATA_TYPE
-      // Get Scalar Property
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                    \
-      virtual run get##pretty##Property(const OA::Property &p) const {            \
-        if (p.m_info.m_readError &&                                               \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                         \
-          throw; /*"worker has errors before read "*/                             \
-        uint32_t *pp = (uint32_t *)(myProperties + p.m_info.m_offset);            \
-        union {                                                                   \
-                run r;                                                            \
-                uint32_t u32[bits/32];                                            \
-        } u;                                                                      \
-        if (bits > 32)                                                            \
-          u.u32[1] = pp[1];                                                       \
-        u.u32[0] = pp[0];                                                         \
-        if (p.m_info.m_readError && myRegisters->status & OCCP_STATUS_ALL_ERRORS) \
-          throw; /*"worker has errors after read */                               \
-        return u.r;                                                               \
-      }                                                                           \
-      unsigned get##pretty##SequenceProperty(const OA::Property &p, run *vals,     \
-					     unsigned length) const {	           \
-        if (p.m_info.m_readError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
-          throw; /*"worker has errors before read "*/                              \
-        uint32_t n = *(uint32_t *)(myProperties + p.m_info.m_offset);              \
-        if (n > length)                                                            \
-          throw; /* sequence longer than provided buffer */                        \
-        memcpy(vals, (void*)(myProperties + p.m_info.m_offset + p.m_info.m_align), \
-               n * sizeof(run));                                                   \
-        if (p.m_info.m_readError &&                                                \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                          \
-          throw; /*"worker has errors after read */                                \
-        return n;                                                                  \
+      void
+      setStringSequenceProperty(const OA::Property &, const char * const *,
+				unsigned ) const {
+	throw OU::Error("No support for properties that are sequences of strings");
       }
-
-      // ASSUMPTION:  strings always occupy at least 4 bytes, and
-      // are aligned on 4 byte boundaries.  The offset calculations
-      // and structure padding are assumed to do this. FIXME redundant length check
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                \
-      virtual void get##pretty##Property(const OA::Property &p, char *cp, unsigned length) const { \
-        unsigned stringLength = p.m_info.m_stringLength;		     \
-        if (length < stringLength + 1)                                       \
-          throw; /*"string buffer smaller than property"*/;                  \
-        if (p.m_info.m_readError &&                                          \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                    \
-          throw; /*"worker has errors before write */                        \
-        uint32_t i32, *p32 = (uint32_t *)(myProperties + p.m_info.m_offset); \
-        memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT);   \
-        i32 = *p32;                                                          \
-        memcpy(cp, &i32, 32/CHAR_BIT);                                       \
-        if (p.m_info.m_readError &&                                          \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                    \
-          throw; /*"worker has errors after write */                         \
-      }                                                                      \
-      unsigned get##pretty##SequenceProperty                                 \
-      (const OA::Property &p, char **vals, unsigned length, char *buf,       \
-       unsigned space) const {						     \
-        if (p.m_info.m_readError &&                                          \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                    \
-          throw; /*"worker has errors before read */                         \
-        uint32_t                                                             \
-          n = *(uint32_t *)(myProperties + p.m_info.m_offset),               \
-          wlen = p.m_info.m_stringLength + 1;                                \
-        if (n > length)                                                      \
-          throw; /* sequence longer than provided buffer */                  \
-        char *cp = (char *)(myProperties + p.m_info.m_offset + 32/CHAR_BIT); \
-        for (unsigned i = 0; i < n; i++) {                                   \
-          if (space < wlen)                                                  \
-            throw;                                                           \
-          memcpy(buf, cp, wlen);                                             \
-          cp += wlen;                                                        \
-          vals[i] = buf;                                                     \
-          unsigned slen = strlen(buf) + 1;                                   \
-          buf += slen;                                                       \
-          space -= slen;                                                     \
-        }                                                                    \
-        if (p.m_info.m_readError &&					     \
-            myRegisters->status & OCCP_STATUS_ALL_ERRORS)                    \
-          throw; /*"worker has errors after read */                          \
-        return n;                                                            \
+      void
+      getStringProperty(const OA::Property &p, char *val, unsigned length) const {
+	// ignore return value
+	getPropertySequence(p, (uint8_t*)val, length);
       }
-      OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE_S
-#undef OCPI_DATA_TYPE
-#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+      unsigned
+      getStringSequenceProperty(const OA::Property &, char * *,
+				unsigned ,char*, unsigned) const {
+	throw OU::Error("No support for properties that are sequences of strings");
+	return 0;
+      }
     };
     OC::Worker & Application::createWorker(OC::Artifact *art, const char *appInstName,
 					   ezxml_t impl, ezxml_t inst,
@@ -752,16 +612,16 @@ namespace OCPI {
     // So this class takes care of all 4 cases, since the differences are so
     // minor as to not be worth (re)factoring (currently).
     // The inheritance of WciControl is for the external case
+    class ExternalPort;
     class Port : public OC::PortBase<Worker,Port,ExternalPort>, WciControl {
       friend class Worker;
       friend class ExternalPort;
       ezxml_t m_connection;
-      // These are for external ports
+      // These are for external-to-FPGA ports
       // Which would be in a different class if we separate them
-      volatile OcdpProperties *m_ocdpRegisters;
       unsigned m_ocdpSize;
       // For direct user access to ports
-      uint8_t *userDataBaseAddr;
+      volatile uint8_t *userDataBaseAddr;
       volatile OcdpMetadata *userMetadataBaseAddr;
       bool m_userConnected;
       WciControl *m_adapter; // if there is an adapter
@@ -800,6 +660,7 @@ namespace OCPI {
                                                 (myDesc.metaDataBaseAddr -
                                                  myDesc.dataBufferBaseAddr));
       }
+#if 0
       // I am an input port, the other guy is an output port.
       // My job is to emulate a bitstream that consumes from me, and produces at otherPort
       // This is for testing
@@ -849,6 +710,7 @@ namespace OCPI {
           }
         }
       }
+#endif
       Port(Worker &w,
 	   const OA::PValue *params,
            const OM::Port &mPort, // the parsed port metadata
@@ -862,10 +724,12 @@ namespace OCPI {
 					       (1 << OCPI::RDT::Passive) |
 					       (1 << OCPI::RDT::ActiveFlowControl) |
 					       (1 << OCPI::RDT::ActiveMessage), params),
+	// The WCI will control the interconnect worker.
         WciControl(w.m_container, icwXml, icXml),
         m_connection(connXml), 
-        m_ocdpRegisters((volatile OcdpProperties *)myProperties),
-	m_ocdpSize(m_ocdpRegisters ? m_ocdpRegisters->memoryBytes : 0),
+	m_ocdpSize(m_properties.usable() ?
+		   m_properties.get32RegisterOffset(offsetof(OcdpProperties, memoryBytes)) :
+		   0),
         m_userConnected(false),
 	m_adapter(adwXml ? new WciControl(w.m_container, adwXml, adXml) : 0),
 	m_hasAdapterConfig(false),
@@ -875,14 +739,12 @@ namespace OCPI {
 	if (m_adapter && adXml &&
 	    (err = OU::EzXml::getNumber(adXml, "configure", &m_adapterConfig, &m_hasAdapterConfig, 0)))
 	  throw OU::Error("Invalid configuration value for adapter: %s", err);
-        if (!m_ocdpRegisters) {
+        if (!usable()) {
           m_canBeExternal = false;
           return;
         }
         m_canBeExternal = true;
-        // This will eventually be in the IP:  FIXME
         uint32_t myOcdpOffset = OC::getAttrNum(icXml, "ocdpOffset");
-        const char *busId = "0";
         // These will be determined at connection time
         myDesc.dataBufferPitch   = 0;
         myDesc.metaDataBaseAddr  = 0;
@@ -894,18 +756,17 @@ namespace OCPI {
         myDesc.emptyFlagPitch    = 0;
         myDesc.emptyFlagValue    = 1; // Will be a count of buffers made empty
         myDesc.metaDataPitch     = sizeof(OcdpMetadata);
-        myDesc.dataBufferBaseAddr = w.m_container.bar1Offset + myOcdpOffset;
+	// This is the offset within the overall endpoint of our data buffers
+        myDesc.dataBufferBaseAddr = w.m_container.m_bufferSpace.physOffset(myOcdpOffset);
 
 #ifdef PORT_COMPLETE
         myDesc.oob.pid = (uint64_t)(OC::Port *)this;
         myDesc.oob.cid = 0;
 #endif
 
-        snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "ocpi-pci-pio:%s.%lld:%lld.3.10", busId,
-                 (long long unsigned)w.m_container.basePaddr,
-                 (long long unsigned)w.m_container.endPointSize);
-        if ( isProvider()) {
+        strncpy(myDesc.oob.oep, w.m_container.m_endpoint.c_str(), sizeof(myDesc.oob.oep));
+
+        if (isProvider()) {
           // CONSUMER
           // BasicPort does this: getData().data.type = OCPI::RDT::ConsumerDescT;
           // The flag is in the OCDP's register space.
@@ -917,13 +778,13 @@ namespace OCPI {
           //  (thus it is a "remote buffer is full")
           // This register is for WRITING.
           myDesc.fullFlagBaseAddr =
-            (uint8_t*)&m_ocdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr;
+	    m_properties.physOffset(offsetof(OcdpProperties, nRemoteDone));
           // The nReady register is the empty flag, which tells the producer how many
           // empty buffers there are to fill when consumer is in PASSIVE MODE
           // Other modes it is not used.
           // This register is for READING (in passive mode)
           myDesc.emptyFlagBaseAddr =
-            (uint8_t*)&m_ocdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
+	    m_properties.physOffset(offsetof(OcdpProperties, nReady));
         } else {
           // BasicPort does this: getData().data.type = OCPI::RDT::ProducerDescT;
           // The flag is in the OCDP's register space.
@@ -934,15 +795,15 @@ namespace OCPI {
           // *ActiveMessage: consumer hits this after making a remote buffer empty
           // (thus it is a "remote buffer is empty")
           // This register is for writing.
-          myDesc.emptyFlagBaseAddr =
-            (uint8_t*)&m_ocdpRegisters->nRemoteDone - (uint8_t *)myWciContainer.baseVaddr;
+          myDesc.emptyFlagBaseAddr = 
+	    m_properties.physOffset(offsetof(OcdpProperties, nRemoteDone));
           // The nReady register is the full flag, which tells the consumer how many
           // full buffers there are to read/take when producer is PASSIVE
           // This register is for READING (in passive mode)
-          myDesc.fullFlagBaseAddr =
-            (uint8_t*)&m_ocdpRegisters->nReady - (uint8_t *)myWciContainer.baseVaddr;
+          myDesc.fullFlagBaseAddr = 
+	    m_properties.physOffset(offsetof(OcdpProperties, nReady));
         }
-        userDataBaseAddr = myWciContainer.bar1Vaddr + myOcdpOffset;
+        userDataBaseAddr = w.m_container.m_bufferSpace.registers() + myOcdpOffset;
         const char *df = getenv("OCPI_DUMP_PORTS");
         if (df) {
           if (dumpFd < 0)
@@ -950,19 +811,22 @@ namespace OCPI {
           OC::PortData *pd = this;
           ocpiCheck(::write(dumpFd, (void *)pd, sizeof(*pd)) == sizeof(*pd));
         }
+#if 0
         if (getenv("OCPI_OCFRP_DUMMY"))
           *(uint32_t*)&m_ocdpRegisters->foodFace = 0xf00dface;
+#endif
 	// Allow default connect params on port construction prior to connect
 	applyConnectParams(params);
       }
       // All the info is in.  Do final work to (locally) establish the connection
       void finishConnection(OCPI::RDT::Descriptors &other) {
         // Here is where we can setup the OCDP producer/user
-        ocpiAssert(m_ocdpRegisters->foodFace == 0xf00dface);
-        m_ocdpRegisters->nLocalBuffers = myDesc.nBuffers;
-        m_ocdpRegisters->localBufferSize = myDesc.dataBufferPitch;
-        m_ocdpRegisters->localBufferBase = 0;
-        m_ocdpRegisters->localMetadataBase = m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE;
+        ocpiAssert(m_properties.get32Register(foodFace, OcdpProperties) == 0xf00dface);
+	m_properties.set32Register(nLocalBuffers, OcdpProperties, myDesc.nBuffers);
+	m_properties.set32Register(localBufferSize, OcdpProperties, myDesc.dataBufferPitch);
+	m_properties.set32Register(localBufferBase, OcdpProperties, 0);
+	m_properties.set32Register(localMetadataBase, OcdpProperties,
+				    m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE);
         OcdpRole myOcdpRole;
         OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole)getData().data.role;
         // FIXME - can't we avoid string processing here?
@@ -990,39 +854,39 @@ namespace OCPI {
         case OCPI::RDT::ActiveFlowControl:
           myOcdpRole = OCDP_ACTIVE_FLOWCONTROL;
 	  addr = busAddress + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
-          m_ocdpRegisters->remoteFlagBase = addr;
-          m_ocdpRegisters->remoteFlagHi = addr > 32;
-          m_ocdpRegisters->remoteFlagPitch =
-            (isProvider() ?
-             other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
+          m_properties.set32Register(remoteFlagBase, OcdpProperties, addr);
+	  m_properties.set32Register(remoteFlagHi, OcdpProperties, addr > 32);
+          m_properties.set32Register(remoteFlagPitch, OcdpProperties,
+				      (isProvider() ?
+				       other.desc.emptyFlagPitch : other.desc.fullFlagPitch));
           break;
         case OCPI::RDT::ActiveMessage:
           myOcdpRole = OCDP_ACTIVE_MESSAGE;
 	  addr = busAddress + other.desc.dataBufferBaseAddr;
-          m_ocdpRegisters->remoteBufferBase = addr;
-          m_ocdpRegisters->remoteBufferHi = addr >> 32;
+          m_properties.set32Register(remoteBufferBase, OcdpProperties, addr);
+	  m_properties.set32Register(remoteBufferHi, OcdpProperties, addr >> 32);
 	  addr = busAddress + other.desc.metaDataBaseAddr;
-          m_ocdpRegisters->remoteMetadataBase = addr;
-          m_ocdpRegisters->remoteMetadataHi = addr >> 32;
+	  m_properties.set32Register(remoteMetadataBase, OcdpProperties, addr);
+	  m_properties.set32Register(remoteMetadataHi, OcdpProperties, addr >> 32);
           if ( isProvider()) {
             if (other.desc.dataBufferSize > myDesc.dataBufferSize)
               throw OC::ApiError("At consumer, remote buffer size is larger than mine", NULL);
           } else if (other.desc.dataBufferSize < myDesc.dataBufferSize) {
             throw OC::ApiError("At producer, remote buffer size smaller than mine", NULL);
           }
-          m_ocdpRegisters->nRemoteBuffers = other.desc.nBuffers;
-          m_ocdpRegisters->remoteBufferSize = other.desc.dataBufferPitch;
+          m_properties.set32Register(nRemoteBuffers, OcdpProperties, other.desc.nBuffers);
+	  m_properties.set32Register(remoteBufferSize, OcdpProperties, other.desc.dataBufferPitch);
 #ifdef WAS
-          m_ocdpRegisters->remoteMetadataSize = OCDP_METADATA_SIZE;
+          m_properties.set32Register(remoteMetadataSize, OcdpProperties, OCDP_METADATA_SIZE);
 #else
-          m_ocdpRegisters->remoteMetadataSize = other.desc.metaDataPitch;
+          m_properties.set32Register(remoteMetadataSize, OcdpProperties, other.desc.metaDataPitch);
 #endif
           addr = busAddress + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
-          m_ocdpRegisters->remoteFlagBase = addr;
-          m_ocdpRegisters->remoteFlagHi = addr >> 32;
-          m_ocdpRegisters->remoteFlagPitch =
-            ( isProvider() ?
-             other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
+          m_properties.set32Register(remoteFlagBase, OcdpProperties, addr);
+          m_properties.set32Register(remoteFlagHi, OcdpProperties, addr >> 32);
+          m_properties.set32Register(remoteFlagPitch, OcdpProperties, 
+				      isProvider() ?
+				      other.desc.emptyFlagPitch : other.desc.fullFlagPitch);
           break;
         case OCPI::RDT::Passive:
           myOcdpRole = OCDP_PASSIVE;
@@ -1031,15 +895,15 @@ namespace OCPI {
           myOcdpRole = OCDP_PASSIVE; // quiet compiler warning
           ocpiAssert(0);
         }
-        m_ocdpRegisters->control =
-          OCDP_CONTROL(isProvider() ? OCDP_CONTROL_CONSUMER : OCDP_CONTROL_PRODUCER,
-                       myOcdpRole);
+	m_properties.set32Register(control, OcdpProperties,
+				    OCDP_CONTROL(isProvider() ? OCDP_CONTROL_CONSUMER :
+						 OCDP_CONTROL_PRODUCER, myOcdpRole));
 	// We aren't a worker so someone needs to start us.
 	controlOperation(OM::Worker::OpInitialize);
 	if (m_adapter) {
 	  m_adapter->controlOperation(OM::Worker::OpInitialize);
 	  if (m_hasAdapterConfig)
-	    *(volatile uint32_t *)(m_adapter->myProperties) = m_adapterConfig;
+	    m_adapter->m_properties.set32RegisterOffset(0, m_adapterConfig);
 	  m_adapter->controlOperation(OM::Worker::OpStart);
 	}
 	controlOperation(OM::Worker::OpStart);
@@ -1282,7 +1146,7 @@ namespace OCPI {
           if (!dma)
             throw OC::ApiError("Asking for DMA without OCPI_DMA_MEMORY environment var", NULL);
           allocation = (uint8_t*)mmap(NULL, nAlloc, PROT_READ|PROT_WRITE, MAP_SHARED,
-                                      Driver::pciMemFd, base);
+                                      PCI::Driver::s_pciMemFd, base);
           ocpiAssert(allocation != (uint8_t*)-1);
           base += nAlloc;
           base += pagesize - 1;
@@ -1403,9 +1267,9 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
         // FIXME:  memory barrier to be sure?
         // Tell the far side that a its buffer has been used (filled or emptied)
         //wmb();
-        if (parent().m_ocdpRegisters->foodFace != 0xf00dface)
+        if (parent().m_properties.get32Register(foodFace, OcdpProperties) != 0xf00dface)
           abort();
-        parent().m_ocdpRegisters->nRemoteDone = 1;
+        parent().m_properties.set32Register(nRemoteDone, OcdpProperties, 1);
         // Advance our far side status
         if (nextFar->last)
           nextFar = farBuffers;
@@ -1428,7 +1292,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
           // Use far side "ready" register to determine whether far buffers are ready
           // Thus we need to do a remote PCIe read to know far size status
           if (*nextRemote->readyForRemote) { // avoid remote read if local is not ready
-            for (uint32_t nReady = parent().m_ocdpRegisters->nReady;
+            for (uint32_t nReady = parent().m_properties.get32RegisterOffset(offsetof(OcdpProperties, nReady));
                  nReady && *nextRemote->readyForRemote; nReady--)
 	      moveData();
           }
@@ -1515,7 +1379,7 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
           //          if (parent().m_ocdpRegisters->foodFace != 0xf00dface)
           //            abort();
           //          wmb();
-          parent().m_ocdpRegisters->nRemoteDone = 1;
+          parent().m_properties.set32Register(nRemoteDone, OcdpProperties, 1);
           //usleep(0);
         }
         if (nextLocal->last)
@@ -1555,7 +1419,6 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       finishConnection(myExternalPort->getData().data);
       return *myExternalPort;
     }
-    int Driver::pciMemFd = -1;
   }
 }
 

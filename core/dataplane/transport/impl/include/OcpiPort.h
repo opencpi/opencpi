@@ -302,12 +302,14 @@ namespace OCPI {
       // Our pull driver
       PullDataDriver* m_pdDriver;
 
-      // Buffers
-      int m_localBufferCount;
-      Buffer* m_buffers[MAX_BUFFERS];
-
       // Associated Port set
       PortSet* m_portSet;
+
+      // Buffers
+      //      int m_localBufferCount;
+      uint32_t m_bufferCount;
+      Buffer** m_buffers; // [MAX_BUFFERS];
+
 
 
       /**********************************
@@ -434,12 +436,6 @@ namespace OCPI {
 
       inline PortSet* getPortSet(){return m_portSet;}
       void addBuffer( Buffer* buf );
-
-
-    private:
-
-      int m_bufferCount;
-
     };
 
 

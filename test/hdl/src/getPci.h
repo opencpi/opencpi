@@ -144,6 +144,6 @@ getPci(const char *name, unsigned theVendor, unsigned theDevice, unsigned theCla
 
 const char *
 getOpenCPI(char *pci, Bar *bars, unsigned *nbars, bool verbose) {
-  return getPci(pci, OCFRP0_VENDOR, OCFRP0_DEVICE, OCFRP0_CLASS, OCFRP0_SUBCLASS,
+  return getPci(pci, OCFRP0_PCI_VENDOR, OCFRP0_PCI_DEVICE, OCFRP0_PCI_CLASS, OCFRP0_PCI_SUBCLASS,
 		verbose, bars, nbars);
 }

@@ -32,38 +32,42 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PCISCANNER_H
-#define PCISCANNER_H
+#ifndef PCIDRIVER_H
+#define PCIDRIVER_H
 #include <stdint.h>
+#include <string>
+#include "OcpiPValue.h"
+#include "HdlAccess.h"
+
 namespace OCPI {
-  namespace PCI {
-    struct Bar {
-      uint64_t address;
-      uint64_t size;
-      bool io, prefetch;
-      unsigned addressSize;
-    };
-    class Driver {
-    protected:
-      virtual ~Driver();
-    public:
-      virtual bool found(const char *name, Bar *bars, unsigned nBars) = 0;
-    };
-    // See if the device with the given name is a good one.
-    // nbars on input is size of Bars array.
-    // nbars on output is number of good bars found
-    // Return an error string or null on success
-    bool
-      probe(const char *name, unsigned theVendor, unsigned theDevice, unsigned theClass,
-            unsigned theSubClass, Bar *bars, unsigned &nbars, const char *&err);
-    // Search for devices of this vendor/device/class/subclass
-    // call the "found" function for each such device,
-    // set the output arg "count" to the number of devices found,
-    // return an error string if something went wrong.
-    const char *
-      search(const char **exclude,
-             unsigned vendor, unsigned device, unsigned pciClass, unsigned subClass,
-                       Driver &driver, unsigned &count);
+  namespace HDL {
+    namespace PCI {
+#define OCFRP0_PCI_VENDOR 0x10ee
+#define OCFRP0_PCI_DEVICE 0x4243
+#define OCFRP0_PCI_CLASS 0x05
+#define OCFRP0_PCI_SUBCLASS 0x00
+      struct Bar {
+	uint64_t address;
+	uint64_t size;
+	bool io, prefetch;
+	unsigned addressSize;
+      };
+      class Driver {
+      protected:
+	virtual ~Driver();
+	virtual bool
+	found(const char *name, Access &cAccess, Access &dAccess,
+	      std::string &endpoint, std::string &error) = 0;
+      public:
+	static int s_pciMemFd;
+	unsigned
+	search(const OCPI::Util::PValue *props, const char **exclude, std::string &error);
+	bool
+	open(const char *pciName, std::string &name, HDL::Access &cAccess, HDL::Access &dAccess,
+	     std::string &endpoint, std::string &err);
+	     
+      };
+    }
   }
 }
 #endif

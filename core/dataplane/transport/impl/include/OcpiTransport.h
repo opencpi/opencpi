@@ -50,15 +50,18 @@
 
 #include <vector>
 #include <OcpiOsTimer.h>
+#include <OcpiOsMutex.h>
+#include <OcpiParentChild.h>
+#include <OcpiTimeEmit.h>
+#include <DtExceptions.h>
+#include <DtIntEventHandler.h>
+#include <DtTransferInterface.h>
+
 #include <OcpiConnectionMetaData.h>
 #include <OcpiCircuit.h>
 #include <OcpiTransportConstants.h>
-#include <OcpiOsMutex.h>
-#include <DtExceptions.h>
 #include <OcpiTransportGlobal.h>
-#include <DtIntEventHandler.h>
-#include <OcpiParentChild.h>
-#include <OcpiTimeEmit.h>
+
 
 
 // Forward references
@@ -131,14 +134,18 @@ namespace OCPI {
       /**********************************
        * Is an endpoint local
        *********************************/
+#if 0
       DataTransfer::SMBResources* addLocalEndpointFromProtocol( const char* protocol );      
       DataTransfer::SMBResources* addLocalEndpoint( const char* ep, bool compatibleWith = false );
       DataTransfer::SMBResources* findLocalCompatibleEndpoint( const char* ep );
-      DataTransfer::SMBResources* addRemoteEndpoint( const char* ep );
+#endif
+      DataTransfer::EndPoint &addRemoteEndPoint( const char* ep );
       bool                        isLocalEndpoint( const char* ep );
-      DataTransfer::SMBResources* getEndpointResources(const char* ep);
-      void                        removeLocalEndpoint(  const char* ep );
-      DataTransfer::EndPoint &getLocalCompatibleEndpoint(const char *ep);
+      DataTransfer::EndPoint* getEndpoint(const char* ep);
+      // void                        removeLocalEndpoint(  const char* ep );
+      DataTransfer::EndPoint &getLocalCompatibleEndpoint(const char *ep, bool exclusive = false);
+      DataTransfer::EndPoint &getLocalEndpointFromProtocol(const char *ep);
+      DataTransfer::EndPoint &getLocalEndpoint(const char *ep);
 
 
       /**********************************
@@ -166,7 +173,7 @@ namespace OCPI {
 			      OCPI::OS::Timer *timer = 0); 
 
       // ports in the connection are used.
-      Circuit * createCircuit( OCPI::RDT::Descriptors& sPort );
+      //Circuit * createCircuit( DataTransfer::EndPoint *ep );
 
 
       Port * createInputPort( Circuit * &c,  OCPI::RDT::Descriptors& desc, const OCPI::Util::PValue *);
@@ -212,11 +219,6 @@ namespace OCPI {
       inline bool supportsMailboxes(){return m_uses_mailboxes;}
       void setListeningEndpoint( DataTransfer::EndPoint* ep) throw() {m_CSendpoint=ep;}
 
-      /**********************************
-       * Does this (local, finalized) endpoint support talking to this other endpoint?
-       *********************************/
-      static bool canSupport(DataTransfer::EndPoint &ep, const char *endpoint);
-
     protected:
 
       /**********************************
@@ -233,7 +235,7 @@ namespace OCPI {
       /**********************************
        * Send remote port our offset information
        *********************************/
-      void sendOffsets( OCPI::Util::VList& offsets, std::string& t_ep,
+      void sendOffsets( OCPI::Util::VList& offsets, DataTransfer::EndPoint *ep,
 			uint32_t extraSize = 0, uint64_t extraFrom = 0, uint64_t extraTo = 0);
 
       /**********************************
@@ -241,14 +243,13 @@ namespace OCPI {
        *********************************/
       void requestNewConnection( Circuit* circuit, bool send, const char *protocol, OCPI::OS::Timer *timer);
 
-      DataTransfer::SMBResources* getEndpointResourcesFromMailbox(OCPI::OS::uint32_t idx);
+      // DataTransfer::SMBResources* getEndpointResourcesFromMailbox(OCPI::OS::uint32_t idx);
 
       
 
     private:
 
       DataTransfer::SMBResources *         m_defEndpoint; // FIXME: check lifecycle
-      std::vector<std::string>             m_endpoints;
 
       void init();
       
@@ -264,8 +265,9 @@ namespace OCPI {
       // mailbox support
       bool                               m_uses_mailboxes;
 
-      OCPI::Util::VList   m_localEndpoints;
-      OCPI::Util::VList   m_remoteEndpoints;
+      // These are the endpoints we own. the local list is initialized with 
+      // an allocated endpoint for each driver
+      DataTransfer::EndPoints m_localEndpoints, m_remoteEndpoints;
 
       // List of circuits
       std::vector<OCPI::DataTransport::Circuit*> m_circuits;

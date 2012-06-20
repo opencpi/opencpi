@@ -48,14 +48,15 @@
 #ifndef OCPI_POSIX_FILEMAPPING_SERVICES_H_
 #define OCPI_POSIX_FILEMAPPING_SERVICES_H_
 
-#include "OcpiHostFileMappingServices.h"
 #include <string>
 #include <cstdio>
+#include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <errno.h>
-#include <unistd.h>
+#include "OcpiOsAssert.h"
+#include "OcpiHostFileMappingServices.h"
 
 namespace DataTransfer {
 
@@ -84,16 +85,12 @@ namespace DataTransfer {
 	  m_errno = errno;
 	  if (rc != 0)
 	    {
-#ifndef NDEBUG
-	      printf("OcpiPosixFileMappingServices::CreateMapping: ftruncate failed with errno %d\n",
+	      ocpiDebug("OcpiPosixFileMappingServices::CreateMapping: ftruncate failed with errno %d",
 		     m_errno);
-#endif
 	      TerminateMapping ();
 	    }
-#ifndef NDEBUG
-	  printf("shm fd %d truncate was %llu now %llu\n",
-		 m_fd, (unsigned long long)statbuf.st_size, (unsigned long long)iMaxSize);
-#endif
+	  ocpiDebug("shm fd %d truncate was %llu now %llu",
+		    m_fd, (unsigned long long)statbuf.st_size, (unsigned long long)iMaxSize);
 
 	}
       return rc;
@@ -196,16 +193,12 @@ namespace DataTransfer {
       m_length = 0;
       if (m_fd == -1) {
 	  m_errno = errno;
-#ifndef NDEBUG
-	  printf ("OcpiPosixFileMapping::InitMapping: shm_open of %s failed with errno %d\n",
+	  ocpiDebug("OcpiPosixFileMapping::InitMapping: shm_open of %s failed with errno %d\n",
 		  m_name.c_str (), m_errno);
-#endif
 	  return m_errno;
 	}
       m_created = iFlags == O_CREAT;
-#ifndef NDEBUG
-      printf("shm open %s fd %d created %d\n", m_name.c_str(), m_fd, m_created);
-#endif
+      ocpiDebug("shm open %s fd %d created %d\n", m_name.c_str(), m_fd, m_created);
       return 0;
     }
 
@@ -213,9 +206,7 @@ namespace DataTransfer {
     int TerminateMapping ()
     {
       if ( m_fd != -1 ) {
-#ifndef NDEBUG
-      printf("shm closing %s fd %d created %d\n", m_name.c_str(), m_fd, m_created);
-#endif
+      ocpiDebug("shm closing %s fd %d created %d", m_name.c_str(), m_fd, m_created);
 	if (m_created)
 	  shm_unlink(m_name.c_str());
 	close (m_fd);

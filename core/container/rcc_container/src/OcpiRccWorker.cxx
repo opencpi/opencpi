@@ -184,7 +184,7 @@ write(uint32_t offset,
 Worker::
 ~Worker()
 {
-  // FIXME - this sort of thing should be generic
+  // FIXME - this sort of thing should be generic and be reused in portError
   if (enabled) {
     enabled = false;
     controlOperation(OM::Worker::OpStop);
@@ -211,6 +211,11 @@ Worker::
   delete m_context->runCondition;
   delete[] (char*)m_context->properties;
   delete[] m_context;
+  while (!m_testPmds.empty()) {
+    OM::Port *pmd = m_testPmds.front();
+    m_testPmds.pop_front();
+    delete pmd;
+  }
 }
 
 static void
@@ -472,6 +477,7 @@ createTestPort( Worker *w, OM::PortOrdinal portId,
                 OS::uint32_t bufferSize, 
 		bool isProvider,
 		const OU::PValue* props) {
+#if 0
   // Add runtime properties if buffer count and size are being adjusted
   unsigned n = props->length();
   OA::PVarray * p = new OA::PVarray(n + 3);
@@ -484,14 +490,15 @@ createTestPort( Worker *w, OM::PortOrdinal portId,
   if (bufferSize)
     myProps[i++] = OA::PVULong("bufferSize", bufferSize);
   myProps[i] = OA::PVEnd;
-
+#endif
   OM::Port *pmd = new OM::Port;;
   pmd->name = isProvider ? "unnamed input" : "unnamed output";
   pmd->ordinal = portId;
   pmd->provider = isProvider;
   pmd->bufferSize = bufferSize;
- // FIXME: stash the params and the metadata for destruction to avoid a leak.
-  return w->createPort(*pmd, myProps);
+  pmd->minBufferCount = bufferCount;
+  w->m_testPmds.push_back(pmd);
+  return w->createPort(*pmd, props);
 }
  OC::Port &
 Worker::
@@ -534,6 +541,16 @@ portIsConnected( unsigned ordinal )
   m_context->connectedPorts |= (1<<ordinal);
 }
 
+void
+Worker::
+portError(std::string &error) {
+  enabled = false;
+  controlOperation(OM::Worker::OpStop);
+  controlOperation(OM::Worker::OpRelease);
+  setControlState(OC::UNUSABLE);
+  ocpiBad("Worker %s received port error: %s", name().c_str(), error.c_str());
+}
+
 void 
 Worker::
 prepareProperty(OM::Property& md , 
@@ -544,7 +561,7 @@ prepareProperty(OM::Property& md ,
   if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence && md.m_baseType != OA::OCPI_String &&
       OU::baseTypeSizes[md.m_baseType] <= 32 &&
       !md.m_writeError) {
-    if ( (md.m_offset+sizeof(md.m_baseType)) > m_dispatch->propertySize ) {
+    if ( (md.m_offset+OU::baseTypeSizes[md.m_baseType]/8) > m_dispatch->propertySize ) {
       throw OU::EmbeddedException( OU::PROPERTY_SET_EXCEPTION, NULL, OU::ApplicationRecoverable);
     }
     writeVaddr = (uint8_t*)m_context->properties + md.m_offset;
@@ -659,6 +676,8 @@ void Worker::run(bool &anyone_run) {
       OCPI_EMIT_STATE_CAT_NR_(wre, 1, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
       RCCResult rc = m_dispatch->run(m_context, timeout, &newRunCondition);
       OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
+      // The state might have changed behind our back: e.g. in port exceptions
+      if (getState() != OC::UNUSABLE)
       switch ( rc ) {
       case RCC_ADVANCE:
 	advanceAll();
@@ -671,7 +690,6 @@ void Worker::run(bool &anyone_run) {
 	setControlState(OC::FINISHED);
 	break;
       case RCC_OK:
-	assert(enabled);
 	runTimer.stop();
 	runTimer.reset();
 	runTimer.start();
@@ -737,6 +755,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
     }
     if (m_dispatch->stop)
       rc = m_dispatch->stop(m_context);
+    setControlState(OC::SUSPENDED);
     break;
     // like stop, except don't call stop
   case OM::Worker::OpRelease:
@@ -747,6 +766,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
     }
     if (m_dispatch->release)
       rc = m_dispatch->release(m_context);
+    setControlState(OC::UNUSABLE);
     break;
   case OM::Worker::OpTest:
     if (m_dispatch->test)

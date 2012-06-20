@@ -127,7 +127,7 @@ namespace OcpiUtilStreamFsWriter {
       return -1;
     }
 
-    return OCPI::Util::Misc::unsignedToStreamsize (m_payload);
+    return OCPI::Util::unsignedToStreamsize (m_payload);
   }
 
   std::streambuf::int_type
@@ -349,11 +349,11 @@ dumpTOC ()
 
   for (TOC::iterator it=m_toc.begin(); it!=m_toc.end() && m_stream->good(); it++) {
     std::string pos =
-      OCPI::Util::Misc::unsignedToString ((*it).second.pos);
+      OCPI::Util::unsignedToString ((*it).second.pos);
     std::string size =
-      OCPI::Util::Misc::unsignedToString ((*it).second.size);
+      OCPI::Util::unsignedToString ((*it).second.size);
     std::string lm =
-      OCPI::Util::Misc::unsignedToString (static_cast<unsigned long long> ((*it).second.lastModified));
+      OCPI::Util::unsignedToString (static_cast<unsigned long long> ((*it).second.lastModified));
 
     m_stream->put ('\n');
     m_stream->write ((*it).first.data(), (*it).first.length());
@@ -366,7 +366,7 @@ dumpTOC ()
   }
 
   std::string tp =
-    OCPI::Util::Misc::unsignedToString (m_pos, 10, 16, ' ');
+    OCPI::Util::unsignedToString (m_pos, 10, 16, ' ');
 
   m_stream->write ("\n<End Of TOC>\n", 14);
   m_stream->write (tp.data(), tp.length());

@@ -28,9 +28,9 @@ bestfit: bestfit.cxx
 
 run: bestfit all
 	export OCPI_LIBRARY_PATH=lib; \
-	(./bestfit 9999 .001 10; \
-	./bestfit 24000 .002 1000; \
-	./bestfit 40000 .001 100 )  > /dev/null
+	($(VG) ./bestfit 9999 .001 10; \
+	$(VG) ./bestfit 24000 .002 1000; \
+	$(VG) ./bestfit 40000 .001 100 )  > /dev/null
 
 clean::
 	rm -f -r lib bestfit *.dSYM *.*~ *~ output_image.jpg *.o *.d
