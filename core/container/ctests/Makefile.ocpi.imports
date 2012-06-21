@@ -49,9 +49,11 @@ ALLINC += $(OCPIOS_EXPORTS) \
 DYNOBJS += \
 	../../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
 	../../../../../core/container/rcc_container/$(OCPI_OUT_DIR)/OcpiRccDriver.obj \
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtUDPSocketXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj 
+
 
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)

@@ -127,7 +127,9 @@ init() {
 DataTransfer::EndPoint &OCPI::DataTransport::Transport::
 getLocalCompatibleEndpoint(const char *remote, bool exclusive) {
   if (!remote || !remote[0])
-    remote = "ocpi-smb-pio";  // FIXME: some global constant
+    remote = getenv("OCPI_DEFAULT_TRANSPORT");
+  if (!remote)
+    remote = "ocpi-smb-pio";
   std::string protocol;
   EndPoint::getProtocolFromString(remote, protocol);
   XferFactory* tfactory = XferFactoryManager::getFactoryManager().find(protocol);
@@ -711,13 +713,13 @@ void OCPI::DataTransport::Transport::clearRemoteMailbox( OCPI::OS::uint32_t offs
 		     offset + sizeof(ContainerComms::BasicReq),
 		     offset + sizeof(ContainerComms::BasicReq),
 		     sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
-		     XferRequest::FirstTransfer );
+		     XferRequest::DataTransfer );
                 
     ptransfer->copy (
 		     offset,
 		     offset,
 		     sizeof(ContainerComms::BasicReq),
-		     XferRequest::LastTransfer );
+		     XferRequest::FlagTransfer );
 
     ptransfer->post();
 

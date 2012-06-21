@@ -31,6 +31,8 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -231,7 +233,7 @@ admin(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatil
   //printf("%lld%lld\n", (long long)x, (long long)y);
   printf("OCCP Admin Space\n");
   u.uint = p->admin.magic;
-  printf(" OpenCpi:      0x%016x \"%s\"\n", u.uint, u.c);
+  printf(" OpenCpi:      0x%016" PRIx64 " \"%s\"\n", u.uint, u.c);
   printf(" revision:     0x%08x\n", p->admin.revision);
   printf(" birthday:     0x%08x %s", p->admin.birthday, asctime(etime));
   printf(" workerMask:   0x%08x workers", (j = p->admin.config));

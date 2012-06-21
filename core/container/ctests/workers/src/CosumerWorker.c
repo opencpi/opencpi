@@ -115,6 +115,8 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   ConsumerWorkerProperties *props = this_->properties;
   unsigned passed = 1;
 
+  //  printf("\n\n\n\n\ IN ConsumerWorker_run\n\n\n\n");
+
 #ifdef TIME_TP
   double          usecs;
   Timespec        cTime;
@@ -157,14 +159,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #define RESYNC
 #ifdef RESYNC
 
-  /*
-  if ( *b != (int)mem->b_count ) {
-    printf("MAYBE!! Dropped a buffer, got buffer %d, expected %d\n", 
-           *b, mem->b_count );    
-    sleep(2);
-  }
-  */
-
+  //  sleep( 2 );
 
   if ( *b != mem->b_count ) {
     printf("ERROR!! Dropped a buffer, got buffer %d, expected %d\n", 
@@ -185,7 +180,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   }
   props->startIndex++;
   if ( passed ) {
-    if ( (mem->b_count%500) == 0 ) 
+    if ( (mem->b_count%5000) == 0 ) 
       printf("Buffer %d data integrity test passed\n", mem->b_count);
   }
 #endif
@@ -207,10 +202,11 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   }
 #endif
 
-  OCPI_TIME_EMIT_C("Consumer Start Advance");
-  this_->container.advance( &this_->ports[ConsumerWorker_Data_In_Port], 0 ); 
-  OCPI_TIME_EMIT_C("Consumer End Advance");
-  return RCC_OK;
+
+  OCPI_TIME_EMIT_C("Consumer Start Release");
+  //  this_->container.release( &this_->ports[ConsumerWorker_Data_In_Port].current ); 
+  OCPI_TIME_EMIT_C("Consumer End Release");
+  return RCC_ADVANCE;
 }
 
 /*

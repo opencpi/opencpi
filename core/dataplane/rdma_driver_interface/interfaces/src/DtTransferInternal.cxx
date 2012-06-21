@@ -733,13 +733,13 @@ bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )
 		   offset + sizeof(ContainerComms::BasicReq),
 		   offset + sizeof(ContainerComms::BasicReq),
 		   sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::BasicReq),
-		   XferRequest::FirstTransfer );
+		   XferRequest::DataTransfer );
 
   ptransfer->copy (
 		   offset,
 		   offset,
 		   sizeof(ContainerComms::BasicReq),
-		   XferRequest::LastTransfer );
+		   XferRequest::FlagTransfer );
 
   // Start the transfer
   ptransfer->post();
@@ -868,8 +868,8 @@ XferRequest* XferRequest::copy (OCPI::OS::uint32_t srcoffs,
 {
   OCPI::OS::int32_t retVal = 0;
   OCPI::OS::int32_t newflags = 0;
-  if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
-  if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
+  if (flags & XferRequest::DataTransfer) newflags |= XFER_FIRST;
+  if (flags & XferRequest::FlagTransfer) newflags |= XFER_LAST;
   if ( m_thandle == NULL ) {
     retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &m_thandle);
     if (retVal){

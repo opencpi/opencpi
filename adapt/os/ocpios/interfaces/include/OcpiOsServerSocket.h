@@ -128,7 +128,8 @@ namespace OCPI {
        * an active process.
        */
 
-      void bind (unsigned int portNo = 0, bool reuse = false)
+      OCPI::OS::Socket 
+      bind (unsigned int portNo = 0, bool reuse = false, bool udp = false)
         throw (std::string);
 
       /**

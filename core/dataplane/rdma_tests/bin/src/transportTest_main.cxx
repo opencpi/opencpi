@@ -352,8 +352,8 @@ public:
 	int t_data_off = offsetof( struct MemLayout, buffers[0].data ) + sizeof( TestMemLayout ) * y;
 	int t_nbytes_off = offsetof( struct MemLayout, buffers[0].nbytes ) + sizeof( TestMemLayout ) * y;
 	DataTransfer::XferRequest * req = m_xferServices->createXferRequest();
-	req->copy( s_data_off, t_data_off, BUFFER_SIZE, DataTransfer::XferRequest::FirstTransfer );    
-	req->copy( s_ff_off, t_ff_off, sizeof(uint32_t) , DataTransfer::XferRequest::LastTransfer );	
+	req->copy( s_data_off, t_data_off, BUFFER_SIZE, DataTransfer::XferRequest::DataTransfer );    
+	req->copy( s_ff_off, t_ff_off, sizeof(uint32_t) , DataTransfer::XferRequest::FlagTransfer );	
 	req->copy( s_nbytes_off, t_nbytes_off, sizeof(uint32_t), DataTransfer::XferRequest::None );    
 	m_reqs[ n ][ y ] = req;
       }
@@ -506,8 +506,8 @@ public:
 
     // Now create the request to send the server our url so it can talk back to us
     DataTransfer::XferRequest * server_init_req = m_xferServices->createXferRequest();
-    server_init_req->copy( s_start_off + url_off, url_off, 256, DataTransfer::XferRequest::FirstTransfer );
-    server_init_req->copy( s_start_off + con_off, con_off, 4, DataTransfer::XferRequest::LastTransfer );    
+    server_init_req->copy( s_start_off + url_off, url_off, 256, DataTransfer::XferRequest::DataTransfer );
+    server_init_req->copy( s_start_off + con_off, con_off, 4, DataTransfer::XferRequest::FlagTransfer );    
 
     // Now init the data in our local SMB
     MemLayout *scratch = (MemLayout*) m_smem->map( s_start_off, sizeof(MemLayout) );

@@ -350,7 +350,7 @@ reset(volatile OccpWorkerRegisters *w, unsigned timeout) {
    // Assert Reset
    w->control =  logTimeout;
    // Take out of reset
-   w->control = OCCP_CONTROL_ENABLE | logTimeout ;
+   w->control = OCCP_WORKER_CONTROL_ENABLE | logTimeout ;
 }
 
 // check a control operation return code

@@ -90,11 +90,10 @@ namespace DataTransfer {
     // Flags used when created
     typedef enum { 
       None = 0, 
-      FlagTransfer       = 0x01, 
-      FirstTransfer      = 0x02, // First transfer in list
-      LastTransfer       = 0x04, // Last transfer in list
+      DataTransfer       = 0x01, 
+      MetaDataTransfer      = 0x02, // First transfer in list
+      FlagTransfer       = 0x04, // Last transfer in list
       SizeModifiable     = 0x06, // Size of this transfer is modifiable on start
-      DataOffset         = 0x08, // Source offset
       WakeupNotification = 0x10  // Notification transfer
     }  Flags;
 

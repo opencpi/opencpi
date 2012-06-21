@@ -139,6 +139,51 @@ OCPI::OS::Socket::recv (char * buffer, unsigned long long amount, unsigned timeo
   return static_cast<unsigned long long> (ret);
 }
 
+
+unsigned long long 
+OCPI::OS::Socket::
+recvfrom(char  *buf, unsigned long long amount, int flags,
+	 char * src_addr, unsigned long * addrlen)
+  throw (std::string)
+{
+  struct sockaddr * si_other = reinterpret_cast< struct sockaddr *>(src_addr);
+  unsigned long count = static_cast<unsigned long> (amount);
+  ocpiAssert (static_cast<unsigned long long> (count) == amount);
+
+  size_t ret = ::recvfrom (o2fd (m_osOpaque), buf, count, flags, si_other, (socklen_t*)addrlen );
+
+  
+
+  if (ret == static_cast<size_t> (-1)) {
+    throw OCPI::OS::Posix::getErrorMessage (errno);
+  }
+
+  //  printf("recv %p %p %d\n", this, buffer, o2fd(m_osOpaque));
+  return static_cast<unsigned long long> (ret);
+
+
+}
+
+
+unsigned long long
+OCPI::OS::Socket::sendto (const char * data, unsigned long long amount,
+			  int flags,  char * src_addr, unsigned long addrlen)			  
+  throw (std::string)
+{
+  struct sockaddr * si_other = reinterpret_cast< struct sockaddr *>(src_addr);
+  unsigned long count = static_cast<unsigned long> (amount);
+  ocpiAssert (static_cast<unsigned long long> (count) == amount);
+
+  size_t ret = ::sendto (o2fd (m_osOpaque), data, count, flags, si_other, (socklen_t)addrlen );
+
+  if (ret == static_cast<size_t> (-1)) {
+    throw OCPI::OS::Posix::getErrorMessage (errno);
+  }
+
+  return static_cast<unsigned long long> (ret);
+}
+
+
 unsigned long long
 OCPI::OS::Socket::send (const char * data, unsigned long long amount)
   throw (std::string)
@@ -160,6 +205,24 @@ OCPI::OS::Socket::send (const char * data, unsigned long long amount)
 
   return static_cast<unsigned long long> (ret);
 }
+
+unsigned long long
+OCPI::OS::Socket::sendmsg (const void * iovect, unsigned int flags  )
+  throw (std::string)
+{
+  const struct msghdr * iov = static_cast<const struct msghdr *>(iovect);
+
+  size_t ret = ::sendmsg (o2fd (m_osOpaque), iov, flags);
+
+  if (ret == static_cast<size_t> (-1)) {
+    throw OCPI::OS::Posix::getErrorMessage (errno);
+  }
+
+  return static_cast<unsigned long long> (ret);
+}
+
+
+
 
 unsigned int
 OCPI::OS::Socket::getPortNo ()

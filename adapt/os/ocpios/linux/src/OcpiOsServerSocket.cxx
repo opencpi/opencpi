@@ -73,7 +73,7 @@ OCPI::OS::ServerSocket::ServerSocket ()
   o2fd (m_osOpaque) = -1;
 }
 
-OCPI::OS::ServerSocket::ServerSocket (unsigned int portNo, bool reuse)
+OCPI::OS::ServerSocket::ServerSocket (unsigned int portNo, bool reuse )
   throw (std::string)
 {
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_osOpaque), sizeof (int)> ()));
@@ -88,8 +88,8 @@ OCPI::OS::ServerSocket::~ServerSocket ()
   ocpiAssert (o2fd (m_osOpaque) == -1);
 }
 
-void
-OCPI::OS::ServerSocket::bind (unsigned int portNo, bool reuse)
+OCPI::OS::Socket
+OCPI::OS::ServerSocket::bind (unsigned int portNo, bool reuse, bool udp )
   throw (std::string)
 {
   ocpiAssert (o2fd (m_osOpaque) == -1);
@@ -104,7 +104,13 @@ OCPI::OS::ServerSocket::bind (unsigned int portNo, bool reuse)
   sin.sin_port = htons (portNo);
   sin.sin_addr.s_addr = INADDR_ANY;
 
-  int fileno = ::socket (PF_INET, SOCK_STREAM, 0);
+  int fileno;
+  if ( ! udp ) {
+    fileno = ::socket (PF_INET, SOCK_STREAM, 0);
+  }
+  else {
+    fileno = ::socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  }
   
   if (fileno < 0) {
     throw OCPI::OS::Posix::getErrorMessage (errno);
@@ -125,13 +131,18 @@ OCPI::OS::ServerSocket::bind (unsigned int portNo, bool reuse)
     throw OCPI::OS::Posix::getErrorMessage (err);
   }
 
-  if (::listen (fileno, DEFAULT_LISTEN_BACKLOG) != 0) {
-    int err = errno;
-    ::close (fileno);
-    throw OCPI::OS::Posix::getErrorMessage (err);
+  if ( ! udp ) {
+    if (::listen (fileno, DEFAULT_LISTEN_BACKLOG) != 0) {
+      int err = errno;
+      ::close (fileno);
+      throw OCPI::OS::Posix::getErrorMessage (err);
+    }
   }
 
   o2fd (m_osOpaque) = fileno;
+
+  OCPI::OS::uint64_t * fd2o = reinterpret_cast<OCPI::OS::uint64_t *> (&fileno);
+  return OCPI::OS::Socket( fd2o );
 }
 
 unsigned int
@@ -158,12 +169,11 @@ OCPI::OS::ServerSocket::accept ()
 {
   ocpiAssert (o2fd (m_osOpaque) != -1);
 
+  
   int newfd = ::accept (o2fd (m_osOpaque), 0, 0);
-
   if (newfd == -1) {
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
-
   OCPI::OS::uint64_t * fd2o = reinterpret_cast<OCPI::OS::uint64_t *> (&newfd);
   return OCPI::OS::Socket (fd2o);
 }

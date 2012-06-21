@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -64,7 +65,7 @@ static Worker * WORKER_LOOPBACK_ID;
 static bool loopback;
 
 int  OCPI_RCC_DATA_BUFFER_SIZE   = 10*1024;
-int  OCPI_RCC_CONT_NBUFFERS      = 3;
+int  OCPI_RCC_CONT_NBUFFERS      = 1;
 
 volatile int OCPI_RUN_TEST = 1;
 volatile int OCPI_YIELD = 1;
@@ -292,7 +293,11 @@ sread( std::string & s  )
   ocpiDebug("Entering read");
   uint32_t size;
   char buf[2048];
-  ocpiCheck(read( socket_fd, &size, 4 ) == 4);
+  ssize_t r = read(socket_fd, &size, 4);
+  if (r == 0)
+    return 0;
+  if (r != 4)
+    throw OCPI::Util::Error("Descriptor socket read error %d %d", r, errno);
   if (size) {
     ocpiCheck(read( socket_fd, buf, size) == size);
     s.assign(buf, size);

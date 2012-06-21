@@ -248,8 +248,8 @@ XferRequest* PIOXferRequest::copy (OCPI::OS::uint32_t srcoffs,
 
   OCPI::OS::int32_t retVal = 0;
   OCPI::OS::int32_t newflags = 0;
-  if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
-  if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
+  if (flags & XferRequest::DataTransfer) newflags |= XFER_FIRST;
+  if (flags & XferRequest::FlagTransfer) newflags |= XFER_LAST;
   if ( getHandle() == NULL ) {
     retVal = xfer_copy ( parent().m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &getHandle());
     if (retVal){

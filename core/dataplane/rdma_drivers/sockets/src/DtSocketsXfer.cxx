@@ -404,7 +404,7 @@ allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBo
   char ip_addr[128];
 
 
-  //#define USE_LOOPBACK
+//#define USE_LOOPBACK
 #ifdef USE_LOOPBACK
   strcpy( ip_addr, "127.0.0.1");
 #else
@@ -433,13 +433,6 @@ allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBo
     port = m_port++;
   }
   setEndpointString(ep, ip_addr, port, parent().getSMBSize(), mailBox, maxMailBoxes);
-#if 0
-  char tep[128];
-  unsigned int size = parent().getSMBSize();
-  snprintf(tep, 128, "ocpi-socket-rdma:%s;%d:%d.%d.20", ip_addr, port,
-	   size, getNextMailBox());
-  sep = ep = tep;  
-#endif
   sep = ep;
   return ep;
 }
@@ -523,8 +516,8 @@ XferRequest* SocketXferRequest::copy (OCPI::OS::uint32_t srcoffs,
 {
   OCPI::OS::int32_t retVal = 0;
   OCPI::OS::int32_t newflags = 0;
-  if (flags & XferRequest::FirstTransfer) newflags |= XFER_FIRST;
-  if (flags & XferRequest::LastTransfer) newflags |= XFER_LAST;
+  if (flags & XferRequest::DataTransfer) newflags |= XFER_FIRST;
+  if (flags & XferRequest::FlagTransfer) newflags |= XFER_LAST;
   if ( getHandle() == NULL ) {
     retVal = xfer_copy ( parent().m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &getHandle());
     if (retVal){
@@ -633,7 +626,9 @@ action_transfer(PIO_transfer transfer)
 	    (unsigned long)sizeof(SocketDataHeader),
 	    (unsigned long)hdr.length, hdr.offset,
 	    (unsigned long)hdr.count);
-  OCPI::OS::sleep( 100 );
+
+  //  OCPI::OS::sleep( 100 );
+
   long long nb=0;  
   unsigned long btt = sizeof(SocketDataHeader);
   unsigned  trys = 10;

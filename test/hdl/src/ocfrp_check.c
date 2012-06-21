@@ -32,7 +32,10 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #define _POSIX_SOURCE // to force ctime_r to be defined on linux FIXME
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,7 +117,7 @@ found(const char *name, Bar *bars, unsigned nbars, bool verbose) {
     if (occp->admin.magic != OCCP_MAGIC) {
       if (verbose)
 	printf("PCI Device matches OCFRP vendor/device, but not OCCP signature: "
-	       "magic: 0x%llx (sb 0x%llx)",
+	       "magic: 0x%" PRIx64 " (sb 0x%" PRIx64 ")\n",
 	       occp->admin.magic, OCCP_MAGIC);
       err = "Magic numbers do not match in region/bar 0";
       break;

@@ -950,11 +950,11 @@ namespace DataTransfer {
       wr->wr.rdma.rkey = static_cast<EndPoint*>(xferServices.m_targetSmb->endpoint())->m_rkey;
       wr->send_flags = IBV_SEND_SIGNALED;
 
-      if (  (flags & DataTransfer::XferRequest::LastTransfer) == DataTransfer::XferRequest::LastTransfer ) {
+      if (  (flags & DataTransfer::XferRequest::FlagTransfer) == DataTransfer::XferRequest::FlagTransfer ) {
 	wr->send_flags |= IBV_SEND_FENCE;
 	m_lastWr = wr;
       }
-      else if (  (flags & DataTransfer::XferRequest::LastTransfer) == DataTransfer::XferRequest::FirstTransfer ) {
+      else if (  (flags & DataTransfer::XferRequest::DataTransfer) == DataTransfer::XferRequest::DataTransfer ) {
 	m_firstWr = wr;
       }
       else {
