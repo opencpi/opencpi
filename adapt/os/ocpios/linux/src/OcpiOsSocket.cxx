@@ -126,10 +126,11 @@ OCPI::OS::Socket::recv (char * buffer, unsigned long long amount, unsigned timeo
   unsigned long count = static_cast<unsigned long> (amount);
   ocpiAssert (static_cast<unsigned long long> (count) == amount);
 
-  size_t ret = ::recv (o2fd (m_osOpaque), buffer, count, 0);
-
-  if (ret == static_cast<size_t> (-1)) {
-    if (errno == EAGAIN || errno == EWOULDBLOCK)
+  ssize_t ret;
+  while ((ret = ::recv (o2fd (m_osOpaque), buffer, count, 0)) == -1 && errno == EINTR)
+    ;
+  if (ret == -1) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK) // timeout errors
       return ULLONG_MAX;
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }

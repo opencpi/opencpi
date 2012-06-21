@@ -231,11 +231,11 @@ namespace OCPI {
 	      }
 	      const char *busId = "0";
 	      OU::formatString(endpoint,
-			       "ocpi-pci-pio:%s.%lld:%lld.3.10", busId,
+			       "ocpi-pci-pio:%s.0x%llx:%lld.3.20", busId,
 			       (long long unsigned)endpointPaddr,
 			       (long long unsigned)endpointSize);
-	      cAccess.setAccess((uint8_t*)bar0, NULL, bars[0].address);
-	      dAccess.setAccess((uint8_t*)bar1, NULL, bars[1].address);
+	      cAccess.setAccess((uint8_t*)bar0, NULL, controlOffset);
+	      dAccess.setAccess((uint8_t*)bar1, NULL, bufferOffset);
 	      return true;
 	    }
 	  }

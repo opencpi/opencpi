@@ -395,7 +395,8 @@ addEndPoint(const char *end_point, bool local) {
   ocpiAssert(m_endPoints.find(loc) == m_endPoints.end());
   m_endPoints.insert(loc);
   if (local) {
-    m_locations.resize(loc->mailbox + 1, NULL);
+    if (m_locations.size() <= loc->mailbox)
+      m_locations.resize(loc->mailbox + 1, NULL);
     m_locations[loc->mailbox] = loc;
   }
   ocpiInfo("Creating ep %p %s", loc, loc->end_point.c_str());
@@ -434,14 +435,18 @@ addCompatibleEndPoint(uint32_t mailBox, uint32_t maxMb)
 { 
   OCPI::Util::SelfAutoMutex guard (this); 
   // Find an unused slot that is different from the remote one
+  // mailbox might be zero so this will find the first free slot in any case
+  unsigned myMax = getMaxMailBox();
+  if (maxMb && maxMb != myMax)
+    throw OU::Error("Remote end point has different number of mailbox slots (%u vs. our %u)",  maxMb, myMax);
   unsigned n;
   for (n = 1; n < MAX_SYSTEM_SMBS; n++)
     if (n != mailBox && (n >= m_locations.size() || !m_locations[n]))
       break;
-  if (n == MAX_SYSTEM_SMBS)
-    throw OCPI::Util::Error("Mailboxes for endpoints for protocol %s are exhausted (all %d are used)",
-			    getProtocol(), MAX_SYSTEM_SMBS);
-  return addEndPoint(allocateEndpoint(NULL, n, maxMb).c_str(), true);
+  if (n == MAX_SYSTEM_SMBS || n > myMax)
+    throw OCPI::Util::Error("Mailboxes for endpoints for protocol %s are exhausted (all %u are used)",
+			    getProtocol(), myMax);
+  return addEndPoint(allocateEndpoint(NULL, n, myMax).c_str(), true);
 }
 
 /******

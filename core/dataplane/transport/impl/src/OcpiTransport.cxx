@@ -115,7 +115,7 @@ init() {
 
   // ask the xfer factory manager to allocate a set of endpoints for us, 
   // for all possible protocols
-  XferFactoryManager::getFactoryManager().allocateSupportedEndpoints(m_localEndpoints);
+  //  XferFactoryManager::getFactoryManager().allocateSupportedEndpoints(m_localEndpoints);
 #ifndef NDEBUG
     for (EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
       ocpiInfo("Transport %p initially got endpoint %s", this, (*i)->end_point.c_str());
@@ -126,6 +126,8 @@ init() {
 // to talk to it.
 DataTransfer::EndPoint &OCPI::DataTransport::Transport::
 getLocalCompatibleEndpoint(const char *remote, bool exclusive) {
+  if (!remote || !remote[0])
+    remote = "ocpi-smb-pio";  // FIXME: some global constant
   std::string protocol;
   EndPoint::getProtocolFromString(remote, protocol);
   XferFactory* tfactory = XferFactoryManager::getFactoryManager().find(protocol);
@@ -151,12 +153,17 @@ getLocalCompatibleEndpoint(const char *remote, bool exclusive) {
     for (EndPointsIter i = m_localEndpoints.begin(); lep == NULL && i != m_localEndpoints.end(); i++)
       if ((*i)->protocol == protocol)
 	lep = *i;
-    ocpiAssert(lep); // if we found a factory, it is supported.
+    if (!lep) {
+      // We have no local endpoint for this protocol yet.
+      lep = tfactory->addCompatibleEndPoint(0, 0);
+      m_localEndpoints.insert(lep);
+    }
   }
   lep->finalize();
   return *lep;
 }
 
+#if 0
 // This is called when we need a local endpoint for a protocol.
 DataTransfer::EndPoint &OCPI::DataTransport::Transport::
 getLocalEndpointFromProtocol(const char *protocol) {
@@ -169,6 +176,7 @@ getLocalEndpointFromProtocol(const char *protocol) {
     }
   throw UnsupportedEndpointEx(protocol);
 }
+#endif
 // This is called when we have an explicit local endpoint that specifies something
 // not available in the default allocated one for the protocol.
 
@@ -526,7 +534,7 @@ createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc, const OU::PV
 	!OU::findString(params, "transport", protocol) &&
 	(protocol = getenv("OCPI_DEFAULT_PROTOCOL")))
       ocpiDebug("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment", protocol);
-    ep = &getLocalEndpointFromProtocol(protocol);
+    ep = &getLocalCompatibleEndpoint(protocol);
   }
   strcpy(desc.desc.oob.oep, ep->end_point.c_str());
   
@@ -950,7 +958,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
           ocpiAssert(port);
 
           // We will lookup the return addres based upon the mailbox
-          EndPoint* ep = getEndpoint(comms->mailBox[n].request.reqOutputContOffset.shadow_end_point) ;
+          EndPoint* ep = getEndpoint(comms->mailBox[n].request.reqOutputContOffset.shadow_end_point, true) ;
           if ( !ep ) {
             ocpiBad("**** INTERNAL programming error !! output shadow port asked for control offset and we dont know its end point !!\n");
             ocpiAssert(0);
@@ -997,7 +1005,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
           ocpiDebug("Handling case DataTransfer::ContainerComms::ReqShadowRstateOffset: 0x%x", circuit_id);
           int port_id = comms->mailBox[n].request.reqShadowOffsets.portId;
 
-          EndPoint *ep = getEndpoint( comms->mailBox[n].request.reqShadowOffsets.url );
+          EndPoint *ep = getEndpoint( comms->mailBox[n].request.reqShadowOffsets.url, true );
 
           // Get the circuit 
           Circuit* c = getCircuit( circuit_id );
@@ -1039,7 +1047,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
           ocpiDebug("Handling case DataTransfer::ContainerComms::ReqInputOffsets: 0x%x", circuit_id);
           int port_id = comms->mailBox[n].request.reqInputOffsets.portId;
 
-          EndPoint* ep = getEndpoint( comms->mailBox[n].request.reqInputOffsets.url );
+          EndPoint* ep = getEndpoint( comms->mailBox[n].request.reqInputOffsets.url, true );
 
           // Get the circuit 
           Circuit* c = getCircuit( circuit_id );
@@ -1093,7 +1101,7 @@ addRemoteEndPoint( const char* loc )
   std::string sloc(loc);
   ocpiDebug("In Transport::addRemoteEndPoint, loc = %s", loc );
   
-  EndPoint *ep = getEndpoint(loc);
+  EndPoint *ep = getEndpoint(loc, false);
   if (ep)
     return *ep;
   XferFactory* tfactory = 
@@ -1120,13 +1128,16 @@ bool Transport::isLocalEndpoint( const char* loc )
 
 
 EndPoint * Transport::
-getEndpoint(const char* ep)
+getEndpoint(const char* ep, bool local)
 {
-  for (EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
-    if ((*i)->end_point == ep)
-      return *i;
-  for (EndPointsIter i = m_remoteEndpoints.begin(); i != m_remoteEndpoints.end(); i++)
-    if ((*i)->end_point == ep)
-      return *i;
+  if (local) {
+    for (EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
+      if ((*i)->end_point == ep)
+	return *i;
+  } else {
+    for (EndPointsIter i = m_remoteEndpoints.begin(); i != m_remoteEndpoints.end(); i++)
+      if ((*i)->end_point == ep)
+	return *i;
+  }
   return NULL;
 }

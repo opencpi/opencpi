@@ -104,7 +104,7 @@ namespace DataTransfer {
   public:
 
     // Create the service
-    void create (EndPoint* loc, OCPI::OS::uint32_t size);
+    void create (PCIEndPoint* loc);
 
     // Close shared memory object.
     void close ();
@@ -141,7 +141,7 @@ namespace DataTransfer {
       : DataTransfer::SmemServices( p, loc ), m_init(false),m_fd(-1)
       {
         m_location = dynamic_cast<PCIEndPoint*>(loc);
-        create( loc, loc->size);
+        create(m_location);
 
       }
       PCISmemServices ();

@@ -71,7 +71,7 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #include "OcpiOsMisc.h"
 #include "OcpiOsAssert.h"
 #include "OcpiOsEther.h"
-#include "PciScanner.h"
+#include "PciDriver.h"
 #include "EtherDriver.h"
 #include "OcpiContainerManager.h"
 #include "OcpiWorker.h"
@@ -211,19 +211,22 @@ namespace OCPI {
       Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) :
         OC::ArtifactBase<Container,Artifact>(c, lart, artifactParams) {
 	if (!lart.uuid().empty() && c.isLoadedUUID(lart.uuid()))
-	  printf("For HDL container %s, when loading bitstream %s, uuid matches what is already loaded\n",
+	  ocpiInfo("For HDL container %s, when loading bitstream %s, uuid matches what is already loaded\n",
 		 c.name().c_str(), name().c_str());
 	else {
-	  printf("Loading bitstream %s on HDL container %s\n",
+	  ocpiInfo("Loading bitstream %s on HDL container %s\n",
 		 name().c_str(), c.name().c_str());
 	  // FIXME: there should be a utility to run a script in this way
 	  char *command, *base = getenv("OCPI_CDK_DIR");
+	  const char *device = c.name().c_str();
+	  if (!strncmp("PCI:", device, 4))
+	    device += 4;
 	  if (!base)
 	    throw "OCPI_CDK_DIR environment variable not set";
 	  asprintf(&command, "%s/scripts/loadBitStreamOnPlatform \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-		   base, name().c_str(), c.name().c_str(), c.m_platform.c_str(), c.m_device.c_str(),
+		   base, name().c_str(), device, c.m_platform.c_str(), c.m_device.c_str(),
 		   c.m_esn.c_str(), c.m_position.c_str());
-	  printf("Executing command to load bit stream for container %s: \"%s\"\n",
+	  ocpiInfo("Executing command to load bit stream for container %s: \"%s\"\n",
 		 c.name().c_str(), command);
 	  int rc = system(command);
 	  const char *err = 0;
@@ -236,7 +239,7 @@ namespace OCPI {
 			   errno);
 	    break;
 	  case 0:
-	    printf("Successfully loaded bitstream file: \"%s\" on HDL container \"%s\"\n",
+	    ocpiInfo("Successfully loaded bitstream file: \"%s\" on HDL container \"%s\"\n",
 		   lart.name().c_str(), c.name().c_str());
 	    break;
 	  default:
@@ -832,23 +835,16 @@ OCPI_DATA_TYPES
         // FIXME - can't we avoid string processing here?
         unsigned busId;
         uint64_t busAddress, busSize;
-        if (sscanf(other.desc.oob.oep, "ocpi-pci-pio:%x.%lld:%lld.3.10", &busId,
+        if (sscanf(other.desc.oob.oep, "ocpi-pci-pio:%x.0x%llx:%lld.3.20", &busId,
                    (long long unsigned *)&busAddress,
                    (long long unsigned *)&busSize) != 3)
           throw OC::ApiError("other port's endpoint description wrong: \"",
                              other.desc.oob.oep, "\"", NULL);
-
-
-
-        printf("\n\n\n base = %lld, offset = %lld, RFB = %lld  \n\n\n",  (long long)busAddress,
-	       (long long)(isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr ),
-          (long long)(busAddress +
-                     (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr )) );
-
-               printf("Other ep = %s\n", other.desc.oob.oep );
-
-
-
+        ocpiDebug("finishConnection: base = %lld, offset = %lld, RFB = %lld",  (long long)busAddress,
+		  (long long)(isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr ),
+		  (long long)(busAddress +
+			      (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr )) );
+	ocpiDebug("Other ep = %s\n", other.desc.oob.oep );
         switch (myRole) {
 	  uint64_t addr;
         case OCPI::RDT::ActiveFlowControl:

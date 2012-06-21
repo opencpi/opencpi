@@ -624,7 +624,7 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
       }
     }
 
-    tres = m_transport->getEndpoint( pdesc.desc.oob.oep )->resources;
+    tres = m_transport->getEndpoint( pdesc.desc.oob.oep, false )->resources;
     PullDataInfo* pull_data_info = new PullDataInfo;
     // Get the local and remote vaddrs
     pull_data_info->src_buffer = (volatile OCPI::OS::uint8_t*)

@@ -12,6 +12,10 @@ if [[ $# < 4 ]]; then
     echo '  'For now, you must select the correct USB port and part for the device.
     exit 1
 fi
+if [[ $5 == "" ]]; then
+    echo "No ESN found/specified in config file.  Can't load bitstream automatically." 1>&2
+    exit 1
+fi
 tmp=/tmp/ocpibitstream$$
 port=`echo listusbcables | $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch 2> $tmp | grep '^port=' | sed 's/port=\(.*\), *esn=\(.*\)/\1 \2/' | grep $5 | sed 's/^\([^ ]*\).*$/\1/'`
 `dirname $0`/loadBitStream $1 $2 $port $4

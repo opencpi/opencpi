@@ -35,17 +35,21 @@
 #ifndef PCIDRIVER_H
 #define PCIDRIVER_H
 #include <stdint.h>
+#ifdef __cplusplus
 #include <string>
 #include "OcpiPValue.h"
 #include "HdlAccess.h"
 
+
 namespace OCPI {
   namespace HDL {
     namespace PCI {
+#endif
 #define OCFRP0_PCI_VENDOR 0x10ee
 #define OCFRP0_PCI_DEVICE 0x4243
 #define OCFRP0_PCI_CLASS 0x05
 #define OCFRP0_PCI_SUBCLASS 0x00
+#ifdef __cplusplus
       struct Bar {
 	uint64_t address;
 	uint64_t size;
@@ -70,4 +74,5 @@ namespace OCPI {
     }
   }
 }
+#endif
 #endif

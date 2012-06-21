@@ -75,7 +75,7 @@ namespace DataTransfer {
   public:
 
     // THIS IS THE NEW CREATE !!
-    virtual void create (EndPoint* loc) = 0;
+    //    virtual void create (EndPoint* loc) = 0;
 
     // Close shared memory object.
     virtual void close () = 0;

@@ -141,10 +141,10 @@ namespace OCPI {
 #endif
       DataTransfer::EndPoint &addRemoteEndPoint( const char* ep );
       bool                        isLocalEndpoint( const char* ep );
-      DataTransfer::EndPoint* getEndpoint(const char* ep);
+      DataTransfer::EndPoint* getEndpoint(const char* ep, bool local);
       // void                        removeLocalEndpoint(  const char* ep );
       DataTransfer::EndPoint &getLocalCompatibleEndpoint(const char *ep, bool exclusive = false);
-      DataTransfer::EndPoint &getLocalEndpointFromProtocol(const char *ep);
+      //      DataTransfer::EndPoint &getLocalEndpointFromProtocol(const char *ep);
       DataTransfer::EndPoint &getLocalEndpoint(const char *ep);
 
 

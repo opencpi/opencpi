@@ -331,7 +331,10 @@ o	  else if ((bar1 = mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE, MAP_SHARED,
 	print(which, cAccess);
 	return true;
       }
-      return createContainer(which, cAccess, dAccess, endpoint, getDeviceConfig(which), m_params) != NULL;
+      ezxml_t config = getDeviceConfig(which);
+      if (!config && !strncmp("PCI:", which, 4)) // compatibility
+	config = getDeviceConfig(which+4);
+      return createContainer(which, cAccess, dAccess, endpoint, config, m_params) != NULL;
     } 
 
     unsigned Driver::
@@ -352,8 +355,14 @@ o	  else if ((bar1 = mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE, MAP_SHARED,
     probeContainer(const char *which, const OA::PValue *params) {
       std::string name, error, endpoint;
       Access dAccess;
-      if (open(which, name, *this, dAccess, endpoint, error))
+      if (open(which, name, *this, dAccess, endpoint, error)) {
+	ezxml_t config = getDeviceConfig(which);
+	if (!config)
+	  config = getDeviceConfig(name.c_str());
+	if (!config && !strncmp("PCI:", which, 4))
+	  config = getDeviceConfig(which + 4);
 	return createContainer(which, *this, dAccess, endpoint, getDeviceConfig(which), params);
+      }
       throw OU::Error("While probing %s: %s", which, error.c_str());
     }      
     /*
