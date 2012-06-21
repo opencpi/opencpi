@@ -197,7 +197,7 @@ namespace DataTransfer {
 
 
       // This causes a packet drop for testing
-	      //#define DROP_PACKET
+#define DROP_PACKET
 #ifdef DROP_PACKET
       const char* env = getenv("OCPI_UDP_DROP_PKTS");
       if ( env != NULL ) {
@@ -704,7 +704,7 @@ namespace DataTransfer {
   void
   UDPSocketXferRequest::checkDrops()
   { 
-    static const int start_to_worry = 250;
+    static const int start_to_worry = 25;
 
     // We only need to check the completion status of the flag transfer since it is gated on the 
     // completion status of the data and meta-data transfers

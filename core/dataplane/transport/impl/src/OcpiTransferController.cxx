@@ -366,7 +366,6 @@ bool TransferController::canBroadcast(
     // All inputs have a free buffer
     if ( produce ) {
       m_nextTid = p;
-      ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
       break;
     }
   }
@@ -394,7 +393,6 @@ void TransferController::broadCastOutput( Buffer* b )
   buffer->markBufferFull();
         
   for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
-    ocpiDebug("TransferController:: 1 m_nextTid = %d", m_nextTid );
     Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid));
     tbuf->markBufferFull();
 
@@ -451,8 +449,6 @@ TransferController1::
 canProduce( Buffer* buffer )
 {
 
-  //  ocpiDebug(" In TransferController1::canProduce");
-
   // When s DD = whole only port 0 of the output port set can produce
   if (  m_wholeOutputSet && buffer->getPort()->getRank() != 0 ) {
     return true;
@@ -488,8 +484,6 @@ canProduce( Buffer* buffer )
     // All inputs have a free buffer
     if ( produce ) {
       m_nextTid = p;
-
-      ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
       break;
     }
   }
@@ -595,8 +589,6 @@ int TransferController1::produce( Buffer* b, bool bcast )
     if ( m_nextTid < 0 ) {
       m_nextTid = 0;
     }
-    ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
-
 
     //#define DELAY_FOR_TEST
 #ifdef DELAY_FOR_TEST
@@ -616,11 +608,8 @@ int TransferController1::produce( Buffer* b, bool bcast )
   buffer->markBufferFull();
 
   for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
-
-    ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
     Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid) );
     tbuf->markBufferFull();
-
   }
 
   /*
@@ -804,14 +793,11 @@ bool TransferController2::canProduce(
         if ( m_inputPort ) {
           if ( port->getBusyFactor() < m_inputPort->getBusyFactor() ) {
             m_nextTid = p;
-
-            ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
             m_inputPort = port;
           }
         }
         else {
           m_nextTid = p;
-          ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
           m_inputPort = port;
         }
         break;
@@ -870,9 +856,6 @@ int TransferController2::produce( Buffer* b, bool bcast )
   buffer->markBufferFull();
 
   // Here we will mark the lstate of the input port as full
-
-  ocpiDebug("TransferController:: m_nextTid = %d", m_nextTid );
-
   Buffer* tbuf = static_cast<Buffer*>(m_inputPort->getBuffer(m_nextTid));
   tbuf->markBufferFull();
 

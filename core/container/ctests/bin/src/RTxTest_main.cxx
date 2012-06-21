@@ -279,7 +279,6 @@ static
 void swrite( std::string & s )
 {
   ocpiDebug("Entering write %d", s.size());
-  // This is to quite valgrind...
   uint32_t  l = s.size();
   ocpiCheck(write( socket_fd, &l, 4 ) == 4);
   if (l)
@@ -452,7 +451,7 @@ int gpp_cont()
       
       // We can either take on the role of the producer/consumer or the loopback
       OCPI::Container::Worker *worker;
-      //    static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-socket-rdma"),
+      // static OCPI::Util::PValue port_props[] = {OCPI::Util::PVString("transport","ocpi-socket-rdma"),
       // static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
       // static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
       const OCPI::API::PValue port_props[] = {OCPI::Util::PVString("transport", config.transport.c_str()),

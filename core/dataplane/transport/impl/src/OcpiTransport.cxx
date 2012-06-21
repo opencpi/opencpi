@@ -165,20 +165,6 @@ getLocalCompatibleEndpoint(const char *remote, bool exclusive) {
   return *lep;
 }
 
-#if 0
-// This is called when we need a local endpoint for a protocol.
-DataTransfer::EndPoint &OCPI::DataTransport::Transport::
-getLocalEndpointFromProtocol(const char *protocol) {
-  if (!protocol || !protocol[0])
-    protocol = "ocpi-smb-pio";  // FIXME: some global constant
-  for (EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
-    if ((*i)->protocol == protocol) {
-      (*i)->finalize();
-      return **i;
-    }
-  throw UnsupportedEndpointEx(protocol);
-}
-#endif
 // This is called when we have an explicit local endpoint that specifies something
 // not available in the default allocated one for the protocol.
 
