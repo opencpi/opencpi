@@ -83,7 +83,7 @@ static Function
   search, emulate, ethers, probe, testdma, admin, bram, unbram, uuid, reset, 
   radmin, wadmin, settime, deltatime, wdump, wreset, wunreset, wop, wwctl, wclear, wwpage,
   wread, wwrite;
-static bool verbose = false;
+static bool verbose = false, parseable = false;
 static int log = -1;
 static const char *interface = NULL, *device = NULL, *part = NULL, *platform = NULL;
 static std::string name, error, endpoint;
@@ -249,6 +249,9 @@ main(int argc, const char **argv)
     case 'v':
       verbose = true;
       break;
+    case 'P':
+      parseable = true;
+      break;
     default:
       bad("unknown flag: %s", *ap);
     }
@@ -274,7 +277,7 @@ main(int argc, const char **argv)
       do {
 	worker = strtoul(cp, &ep, 10);
 	if (worker < 1 || worker > OCCP_MAX_WORKERS)
-	  bad("Worker number `%s' invalid\n", cp);
+	  bad("Worker number `%s' invalid", cp);
 	if (*ep)
 	  ep++;
 	cAccess.offsetRegisters(wAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[worker]));
@@ -499,7 +502,7 @@ testdma(const char **) {
   save = *cpuBase;
   if ((*cpuBase = 1, *cpuBase != 1) || (*cpuBase = 2, *cpuBase != 2)) {
     *cpuBase = save; // do this before any sys calls etc.
-    bad("Can't write to end of local DMA memory defined in OCPI_DMA_MEMORY using /dev/mem\n");
+    bad("Can't write to end of local DMA memory defined in OCPI_DMA_MEMORY using /dev/mem");
   }
   *cpuBase = save; // on the wild chance that we shouldn't actually be touching this?
   printf("Successfully wrote and read back start and end of DMA memory\n");
@@ -684,20 +687,26 @@ unbram(const char **ap) {
 
 static void
 uuid(const char **ap) {
-  if (!platform || !device)
-    bad("both platform and device must be specified for the uuid command");
+  OCPI::HDL::HdlUUID uuidRegs;
+  if (!platform || !part)
+    bad("both platform and part/chip must be specified for the uuid command");
   if (!*ap)
     bad("No output uuid verilog specified for uuid command");
   FILE *ofp = fopen(ap[0], "wb");
   if (!ofp)
     bad("Cannot open output file: \"%s\"", ap[1]);
+  if (strlen(platform) > sizeof(uuidRegs.platform) - 1)
+    bad("Platform: '%s' is too long.  Must be < %u long",
+	platform, sizeof(uuidRegs.platform) - 1);
+  if (strlen(part) > sizeof(uuidRegs.device) - 1)
+    bad("Part/chip: '%s' is too long.  Must be < %u long",
+	part, sizeof(uuidRegs.device) - 1);
   uuid_t uuid;
   uuid_generate(uuid);
-  OCPI::HDL::HdlUUID uuidRegs;
   memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
   uuidRegs.birthday = time(0);
   strncpy(uuidRegs.platform, platform, sizeof(uuidRegs.platform));
-  strncpy(uuidRegs.device, device, sizeof(uuidRegs.device));
+  strncpy(uuidRegs.device, part, sizeof(uuidRegs.device));
   strncpy(uuidRegs.load, "", sizeof(uuidRegs.load));
   assert(sizeof(uuidRegs) * 8 == 512);
   uuid_string_t textUUID;
@@ -706,7 +715,7 @@ uuid(const char **ap) {
 	  "// UUID generated for platform '%s', device '%s', uuid '%s'\n"
 	  "module mkUUID(uuid);\n"
 	  "output [511 : 0] uuid;\nwire [511 : 0] uuid = 512'h",
-	  platform, device, textUUID);
+	  platform, part, textUUID);
   for (unsigned n = 0; n < sizeof(uuidRegs); n++)
     fprintf(ofp, "%02x", ((char*)&uuidRegs)[n]&0xff);
   fprintf(ofp, ";\nendmodule // mkUUID\n");
@@ -751,8 +760,11 @@ static void
 radmin(const char **ap) {
   unsigned off = (unsigned)atoi_any(*ap, 0);
   uint32_t x = cAccess.get32RegisterOffset(off);
-  printf("Admin for hdl-device '%s' at offset 0x%x is 0x%x (%u)\n",
-	 device, off, x, x);
+  if (parseable)
+    printf("0x%" PRIx32 "\n", x);
+  else
+    printf("Admin for hdl-device '%s' at offset 0x%x is 0x%x (%u)\n",
+	   device, off, x, x);
 }
 static void
 wadmin(const char **ap) {
@@ -877,13 +889,16 @@ wop(const char **ap) {
     if (!strcasecmp(ops[i], *ap)) {
       uint32_t r = wAccess.get32RegisterOffset(offsetof(OH::OccpWorkerRegisters, initialize) +
 					       i * sizeof(uint32_t));
-      printf("Worker %u on device %s: the '%s' control operation was performed with result '%s' (0x%x)\n",
-	     worker, device, *ap,
-	     r == OCCP_ERROR_RESULT ? "error" :
-	     r == OCCP_TIMEOUT_RESULT ? "timeout" :
-	     r == OCCP_RESET_RESULT ? "reset" :
-	     r == OCCP_SUCCESS_RESULT ? "success" : 
-	     r == OCCP_FATAL_RESULT  ? "fatal" : "unknown",
+      if (parseable)
+	printf("0x%" PRIx32 "\n", r);
+      else
+	printf("Worker %u on device %s: the '%s' control operation was performed with result '%s' (0x%x)\n",
+	       worker, device, *ap,
+	       r == OCCP_ERROR_RESULT ? "error" :
+	       r == OCCP_TIMEOUT_RESULT ? "timeout" :
+	       r == OCCP_RESET_RESULT ? "reset" :
+	       r == OCCP_SUCCESS_RESULT ? "success" : 
+	       r == OCCP_FATAL_RESULT  ? "fatal" : "unknown",
 	     r);
       return;
     }
@@ -916,8 +931,9 @@ wread(const char **ap) {
   unsigned size;
   unsigned off = (unsigned)atoi_any(*ap++, &size);
   unsigned n = *ap ? (unsigned)atoi_any(*ap, 0) : 1;
-  printf("Worker %u on device %s: read config offset 0x%x size %u count %u\n",
-	 worker, device, off, size, n);
+  if (!parseable)
+    printf("Worker %u on device %s: read config offset 0x%x size %u count %u\n",
+	   worker, device, off, size, n);
 
   for (unsigned n = *ap ? (unsigned)atoi_any(*ap, 0) : 1; n--; off += size) {
     uint64_t i;
@@ -931,8 +947,11 @@ wread(const char **ap) {
     case 8:
       i = confAccess.get64RegisterOffset(off); break;
     }
-    printf("  offset 0x%08x (%8u), value 0x%08" PRIx64 " (%10" PRIu64 ")\n",
-	   off, off, i, i);
+    if (parseable)
+      printf("0x%08" PRIx64"\n", i);
+    else
+      printf("  offset 0x%08x (%8u), value 0x%08" PRIx64 " (%10" PRIu64 ")\n",
+	     off, off, i, i);
   }
 }
 static void

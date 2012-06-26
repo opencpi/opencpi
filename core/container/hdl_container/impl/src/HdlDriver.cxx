@@ -325,7 +325,8 @@ o	  else if ((bar1 = mmap(NULL, bars[1].size, PROT_READ|PROT_WRITE, MAP_SHARED,
     }
 */
     bool Driver::
-    found(const char *which, Access &cAccess, Access &dAccess, std::string &endpoint, std::string &error) {
+    found(const char *which, Access &cAccess, Access &dAccess, std::string &endpoint,
+	  std::string &/*error*/) {
       bool printOnly;
       if (OU::findBool(m_params, "printOnly", printOnly) && printOnly) {
 	print(which, cAccess);

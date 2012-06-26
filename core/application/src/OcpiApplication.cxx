@@ -525,6 +525,31 @@ namespace OCPI {
       return *ext.m_external;
     }
 
+    Worker &ApplicationI::getPropertyWorker(const char *name) {
+      Property *p = m_properties;
+      for (unsigned n = 0; n < m_nProperties; n++, p++)
+	if (!strcasecmp(name, p->m_name.c_str())) {
+	  char *cp = strchr(name, ':');
+	  return *m_workers[p->m_instance];
+	}
+      throw OU::Error("Unknown application property: %s", name);
+    }
+
+    static inline const char *maybeColon(const char *name) {
+      const char *cp = strchr(name, ':');
+      return cp ? cp + 1 : name;
+    }
+    // FIXME:  consolidate the constructors (others are in OcpiProperty.cxx) (have in internal class for init)
+    // FIXME:  avoid the double lookup since the first one gets us the ordinal
+    Property::Property(Application &app, const char *aname)
+      : m_worker(app.getPropertyWorker(aname)),
+	m_readSync(false), m_writeSync(false), m_writeVaddr(0), m_readVaddr(0),
+	m_info(m_worker.setupProperty(maybeColon(aname), m_writeVaddr, m_readVaddr))
+    {
+      m_readSync = m_info.m_readSync;
+      m_writeSync = m_info.m_writeSync;
+    }
+
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value) {
       if (ordinal >= m_nProperties)
 	return false;
@@ -602,6 +627,7 @@ namespace OCPI {
     void Application::setProperty(const char* w, const char* p, const char *value) {
       m_application.setProperty(w, p, value);
     }
+    Worker &Application::getPropertyWorker(const char *name) { return m_application.getPropertyWorker(name); }
 
   }
 }

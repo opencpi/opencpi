@@ -15,7 +15,7 @@ namespace OCPI {
 
     Access::
     ~Access() {
-      delete m_accessor;
+      //      delete m_accessor;
     }
 
     void Access::
@@ -30,7 +30,7 @@ namespace OCPI {
 
     void Access::
     closeAccess() {
-      delete m_accessor;
+      //      delete m_accessor;
       m_accessor = NULL;
     }
 
