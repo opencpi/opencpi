@@ -250,7 +250,7 @@ processSAD (OCPI::Util::Vfs::Vfs & fs,
       catch (const std::string & oops) {
         std::string msg = oops;
         msg += " while parsing hostcollocation[";
-        msg + OCPI::Util::Misc::unsignedToString (hcIdx);
+        msg + OCPI::Util::unsignedToString (hcIdx);
         msg += "]";
         throw msg;
       }
@@ -329,7 +329,7 @@ processSAD (OCPI::Util::Vfs::Vfs & fs,
       }
       catch (const std::string & oops) {
         std::string msg = "While parsing connection[";
-        msg += OCPI::Util::Misc::unsignedToString (ciIdx);
+        msg += OCPI::Util::unsignedToString (ciIdx);
         msg += "]";
         throw msg;
       }
@@ -375,7 +375,7 @@ processSAD (OCPI::Util::Vfs::Vfs & fs,
       }
       catch (const std::string & oops) {
         std::string msg = "While parsing port[";
-        msg += OCPI::Util::Misc::unsignedToString (epIdx);
+        msg += OCPI::Util::unsignedToString (epIdx);
         msg += "]";
         throw msg;
       }
@@ -442,7 +442,7 @@ parseHostCollocation (ezxml_t hcNode, unsigned int hcIdx)
     catch (const std::string & oops) {
       std::string msg = oops;
       msg += " while parsing componentplacement[";
-      msg += OCPI::Util::Misc::unsignedToString (cpIdx);
+      msg += OCPI::Util::unsignedToString (cpIdx);
       msg += "]";
       throw msg;
     }

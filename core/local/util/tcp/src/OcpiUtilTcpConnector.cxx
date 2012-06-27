@@ -90,7 +90,7 @@ OCPI::Util::Tcp::Connector::connect (const std::string & authority)
     std::string reason = "cannot connect to ";
     reason += host;
     reason += ":";
-    reason += OCPI::Util::Misc::integerToString (portno);
+    reason += OCPI::Util::integerToString (portno);
     reason += ": ";
     reason += connReason;
     throw reason;

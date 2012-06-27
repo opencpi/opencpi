@@ -235,7 +235,7 @@ namespace OCPI {
       } catch (const OCPI::Util::EmbeddedException & oops) {
         const char * auxInfo = oops.getAuxInfo ();
         std::string msg = "Error creating RPL container: error code ";
-        msg += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+        msg += OCPI::Util::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
         
         if (auxInfo && *auxInfo) {
           msg += ": ";
@@ -411,11 +411,11 @@ namespace OCPI {
         CF::DataType & property = props[pi];
         const char * propertyId = property.id.in ();
 
-        if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2") == 0)
+        if (OCPI::Util::caseInsensitiveStringCompare (propertyId, "DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2") == 0)
           property.value <<= static_cast<CORBA::ULong> (m_ocpiDeviceId);
-        else if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:c788404e-b9f5-4532-8c7d-3588d328fff0") == 0)
+        else if (OCPI::Util::caseInsensitiveStringCompare (propertyId, "DCE:c788404e-b9f5-4532-8c7d-3588d328fff0") == 0)
           property.value <<= m_ocpiDeviceType.c_str ();
-        else if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43") == 0)
+        else if (OCPI::Util::caseInsensitiveStringCompare (propertyId, "DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43") == 0)
           property.value <<= "RPL";
         else if (std::strcmp (propertyId, "PRODUCER_LOG_LEVEL") == 0)
           queryProducerLogLevel (property);
@@ -826,7 +826,7 @@ namespace OCPI {
         msg += "\", function name \"";
         msg += functionName;
         msg += "\" ";
-        msg += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
+        msg += OCPI::Util::unsignedToString (static_cast<unsigned int> (oops.getErrorCode()));
 
         if (auxInfo && *auxInfo) {
           msg += ": ";
@@ -914,7 +914,7 @@ namespace OCPI {
       PidMap::iterator it = m_pidMap.find(pid);
       if (it == m_pidMap.end()) {
         std::string msg = "Invalid pid ";
-        msg += OCPI::Util::Misc::integerToString (pid);
+        msg += OCPI::Util::integerToString (pid);
         m_out << OCPI::Logger::Level::EXCEPTION_ERROR
               << m_logProducerName
               << msg

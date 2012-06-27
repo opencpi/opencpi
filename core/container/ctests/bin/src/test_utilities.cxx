@@ -294,7 +294,7 @@ std::vector<CApp> OCPI::CONTAINER_TEST::createContainers( std::vector<const char
   try { 
     for ( int n=0; n<ccount;n++) { 
       std::string name;
-      OCPI::Util::Misc::formatString(name, "rcc%u", n);
+      OCPI::Util::formatString(name, "rcc%u", n);
       OCPI::API::Container *c = OCPI::API::ContainerManager::find("rcc", name.c_str(), cprops);
       if ( ! c )
 	throw OCPI::Util::EmbeddedException("No Containers found\n");

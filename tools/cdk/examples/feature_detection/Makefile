@@ -29,7 +29,7 @@ feature_detection: feature_detection.cxx
 run: feature_detection
 	export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components; \
 	export OCPI_SMB_SIZE=100000000; \
-	./feature_detection  boston_small.jpg  > /dev/null	
+	$(VG) ./feature_detection  boston_small.jpg  > /dev/null	
 
 clean::
 	rm -f -r feature_detection *.dSYM *.*~ *~ output_image.jpg *.o *.d

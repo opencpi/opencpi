@@ -386,21 +386,35 @@ namespace OCPI {
       ocpiAssert(b);
       ocpiAssert(isProvider()); // we don't support releasing (and not sending) output buffers
       ocpiAssert(m_dtPort);
-      m_dtPort->releaseInputBuffer(b);
+      try {
+	m_dtPort->releaseInputBuffer(b);
+      } catch (std::string &e) {
+	parent().portError(e);
+      }
     }
-
+    
     void
     RDMAPort::
     sendOutputBuffer(OCPI::DataTransport::BufferUserFacet* b, uint32_t length, uint8_t opCode )
     {
-      m_dtPort->sendOutputBuffer(b, length, opCode);
+      try {
+	m_dtPort->sendOutputBuffer(b, length, opCode);
+      } catch (std::string &e) {
+	parent().portError(e);
+      }
     }
 
     OCPI::DataTransport::BufferUserFacet    *
     RDMAPort::
     getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode )
     {
-      return m_dtPort->getNextFullInputBuffer(data, length, opcode);
+      OCPI::DataTransport::BufferUserFacet *b = NULL;
+      try {
+	b = m_dtPort->getNextFullInputBuffer(data, length, opcode);
+      } catch (std::string &e) {
+	parent().portError(e);
+      }
+      return b;
     }
     // We are being told by our local peer that they are being disconnected.
     void 
@@ -446,14 +460,24 @@ namespace OCPI {
     RDMAPort::
     sendZcopyInputBuffer( OCPI::DataTransport::BufferUserFacet* buf, unsigned int len, uint8_t op )
     {
-      m_dtPort->sendZcopyInputBuffer( static_cast<OCPI::DataTransport::Buffer*>(buf), len, op);
+      try {
+	m_dtPort->sendZcopyInputBuffer( static_cast<OCPI::DataTransport::Buffer*>(buf), len, op);
+      } catch (std::string &e) {
+	parent().portError(e);
+      }
     }
 
     OCPI::DataTransport::BufferUserFacet*
     RDMAPort::
     getNextEmptyOutputBuffer(void *&data, uint32_t &length)
     {
-      return m_dtPort->getNextEmptyOutputBuffer(data, length);
+      OCPI::DataTransport::BufferUserFacet *b = NULL;
+      try {
+	b = m_dtPort->getNextEmptyOutputBuffer(data, length);
+      } catch (std::string &e) {
+	parent().portError(e);
+      }
+      return b;
     }
 
     bool 

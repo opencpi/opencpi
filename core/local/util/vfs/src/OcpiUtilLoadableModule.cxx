@@ -176,9 +176,9 @@ open (OCPI::Util::Vfs::Vfs * vfs,
 
   if (g_loadableModulePrefix.length()) {
     relFileName = g_loadableModulePrefix;
-    relFileName += OCPI::Util::Misc::unsignedToString (g_loadableModuleNumber++);
+    relFileName += OCPI::Util::unsignedToString (g_loadableModuleNumber++);
     relFileName += "_";
-    relFileName += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (OCPI::OS::getProcessId()));
+    relFileName += OCPI::Util::unsignedToString (static_cast<unsigned int> (OCPI::OS::getProcessId()));
     relFileName += "_";
     relFileName += OCPI::Util::Vfs::relativeName (fileName);
   }
@@ -217,7 +217,7 @@ open (OCPI::Util::Vfs::Vfs * vfs,
       std::string oops = "Failed to open \"";
       oops += m_fileName;
       oops += "\" for writing: ";
-      oops += OCPI::Util::Misc::integerToString (errno);
+      oops += OCPI::Util::integerToString (errno);
       throw oops;
     }
 

@@ -80,9 +80,6 @@ namespace OCPI {
     /**
      * \brief Miscellaneous utilities.
      */
-
-    namespace Misc {
-
       /**
        * \brief Convert an integer to a string.
        *
@@ -303,9 +300,10 @@ namespace OCPI {
        *
        */
 
-      void formatString(std::string &out, const char *fmt, ...);
-      void formatStringAdd(std::string &out, const char *fmt, ...);
-    }
+      void
+	formatString(std::string &out, const char *fmt, ...),
+	formatStringAdd(std::string &out, const char *fmt, ...),
+	formatStringAddV(std::string &out, const char *fmt, va_list ap);
   }
 }
 

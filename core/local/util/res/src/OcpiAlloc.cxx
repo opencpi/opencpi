@@ -140,7 +140,8 @@ int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int align
 {
 
   if ( nbytes > 2000000 ) {
-    ocpiInfo("Allocating large mem\n");
+    ocpiInfo("Allocating large mem %ullK", nbytes/1024);
+    //    OCPI::OS::dumpStack (std::cerr);
   }
 #ifdef DEBUG_LISTS
   ocpiDebug("Alloc list");
@@ -171,9 +172,9 @@ int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int align
         req_addr = ALIGN((*it).addr, alignment);
         (*it).aligned_addr = req_addr;
         m_pool->alloc_list.push_back( *it );
-        m_pool->free_list.erase( it );      
         ocpiDebug("**** Alloc Returning address = %" PRIx64 ", %" PRIx64 "", 
                (*it).addr, req_addr );
+        m_pool->free_list.erase( it );      
         return 0;
       }
     }
@@ -204,7 +205,7 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
 
 #ifndef NDEBUG
       if ( (*it).size > 2000000 ) {
-	printf("Freeing large mem\n");
+	ocpiInfo("Freeing large mem %lluK", (*it).size/1024);
       }
 #ifdef DEBUG_LISTS
       printf("Alloc list\n");

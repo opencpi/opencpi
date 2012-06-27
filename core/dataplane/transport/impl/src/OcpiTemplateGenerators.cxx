@@ -100,12 +100,10 @@ create( Transport* transport, PortSet* output, PortSet* input, TransferControlle
       continue;
     }
 
-#ifndef NDEBUG
-    printf("s port endpoints = %s, %s, %s\n", 
+    ocpiDebug("s port endpoints = %s, %s, %s", 
            s_port->getRealShemServices()->endpoint()->end_point.c_str(),
            s_port->getShadowShemServices()->endpoint()->end_point.c_str(),           
            s_port->getLocalShemServices()->endpoint()->end_point.c_str() );
-#endif
 
 
       // Create a DD specific transfer template
@@ -122,12 +120,10 @@ create( Transport* transport, PortSet* output, PortSet* input, TransferControlle
 
     Port* t_port = input->getPort(t_n);
 
-#ifndef NDEBUG
-    printf("t port endpoints = %s, %s, %s\n", 
-           t_port->getRealShemServices()->endpoint()->end_point.c_str(),
-           t_port->getShadowShemServices()->endpoint()->end_point.c_str(),           
-           t_port->getLocalShemServices()->endpoint()->end_point.c_str() );
-#endif
+    ocpiDebug("t port endpoints = %s, %s, %s", 
+	      t_port->getRealShemServices()->endpoint()->end_point.c_str(),
+	      t_port->getShadowShemServices()->endpoint()->end_point.c_str(),           
+	      t_port->getLocalShemServices()->endpoint()->end_point.c_str() );
 
 
     // If the output port is not local, but the transfer role requires us to move data, we need to create transfers
@@ -195,10 +191,8 @@ void TransferTemplateGenerator::createInputBroadcastTemplates(PortSet* output,
 
 
     //Add the template to the controller
-#ifndef NDEBUG
-    printf("*&*&* Adding template for tpid = %d, ttid = %u, template = %p\n", 
+    ocpiDebug("*&*&* Adding template for tpid = %d, ttid = %u, template = %p", 
            input->getPortId(), t_tid, temp);
-#endif
 
     cont->addTemplate( temp, 0, 0, input->getPortId(), t_tid, true, TransferController::INPUT );
 
@@ -232,13 +226,11 @@ void TransferTemplateGenerator::createInputBroadcastTemplates(PortSet* output,
         FORMAT_TRANSFER_EC_RETHROW( input, s_port );
       }
 
-#ifndef NDEBUG
-      printf("CreateInputBroadcastTransfers: localStateOffset 0x%llx\n", 
+      ocpiDebug("CreateInputBroadcastTransfers: localStateOffset 0x%llx", 
              (long long)input_offsets->localStateOffset);
-      printf("CreateInputBroadcastTransfers: RemoteStateOffsets %p\n",
+      ocpiDebug("CreateInputBroadcastTransfers: RemoteStateOffsets %p",
              input_offsets->myShadowsRemoteStateOffsets);
-      printf("CreateInputBroadcastTransfers: s_pid %d\n", s_pid);
-#endif
+      ocpiDebug("CreateInputBroadcastTransfers: s_pid %d", s_pid);
 
       // Create the copy in the template
       XferRequest* ptransfer = ptemplate->createXferRequest();
@@ -298,11 +290,9 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
       // Add the template to the controller, for this pattern the output port
       // and the input ports remains constant
 
-#ifndef NDEBUG
-      printf("output port id = %d, buffer id = %d, input id = %d\n", 
+      ocpiDebug("output port id = %d, buffer id = %d, input id = %d", 
              s_port->getPortId(), s_tid, t_tid );
-      printf("Template address = %p\n", temp);
-#endif
+      ocpiDebug("Template address = %p", temp);
 
       cont->addTemplate( temp, s_port->getPortId(),
                          s_tid, 0 ,t_tid, true, TransferController::OUTPUT );
@@ -315,9 +305,7 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
         &s_port->getMetaData()->m_bufferData[s_tid].outputOffsets;
 
       // We need to setup a transfer for each input port. 
-#ifndef NDEBUG
-      printf("Number of input ports = %d\n", n_t_ports);
-#endif
+      ocpiDebug("Number of input ports = %d", n_t_ports);
       for ( n=0; n<n_t_ports; n++ ) {
 
         // Get the input port
@@ -331,9 +319,8 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
         // we dont need to create a transfer template
         if ( m_zcopyEnabled && s_port->supportsZeroCopy( t_port ) ) {
 
-#ifndef NDEBUG
-          printf("** ZERO COPY TransferTemplateGenerator::createOutputBroadcastTemplates from %p, to %p\n", s_buf, t_buf);
-#endif
+          ocpiDebug("** ZERO COPY TransferTemplateGenerator::createOutputBroadcastTemplates from %p, to %p",
+		    s_buf, t_buf);
           temp->addZeroCopyTransfer( s_buf, t_buf );
           continue;
         }
@@ -462,10 +449,8 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
     // Create a template
     OcpiTransferTemplate* temp = new OcpiTransferTemplate(0);
 
-#ifndef NDEBUG
-    printf("*&*&* Adding template for tpid = %d, ttid = %d, template = %p\n", 
+    ocpiDebug("*&*&* Adding template for tpid = %d, ttid = %d, template = %p", 
            input->getPortId(), t_tid, temp);
-#endif
 
     //Add the template to the controller
     cont->addTemplate( temp, 0, 0, input->getPortId(), t_tid, false, TransferController::INPUT );
@@ -500,9 +485,7 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
 
       // Attach zero-copy for co-location
       if ( m_zcopyEnabled && s_port->supportsZeroCopy( input ) ) {
-#ifndef NDEBUG
-        printf("Adding Zery copy for input response\n");
-#endif
+        ocpiDebug("Adding Zery copy for input response");
         temp->addZeroCopyTransfer( NULL, t_buf );
 
 	//h
@@ -609,11 +592,9 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
 
       // Add the template to the controller, for this pattern the output port
       // and the input ports remains constant
-#ifndef NDEBUG
-      printf("output port id = %d, buffer id = %d, input id = %d\n", 
+      ocpiDebug("output port id = %d, buffer id = %d, input id = %d\n", 
              s_port->getPortId(), s_tid, t_tid);
-      printf("Template address = %p\n", temp);
-#endif
+      ocpiDebug("Template address = %p\n", temp);
 
       cont->addTemplate( temp, s_port->getPortId(),
                          s_tid, 0 ,t_tid, false, TransferController::OUTPUT );
@@ -623,9 +604,7 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
        */
 
       // We need to setup a transfer for each input port. 
-#ifndef NDEBUG
-      printf("Number of input ports = %d\n", n_t_ports);
-#endif
+      ocpiDebug("Number of input ports = %d\n", n_t_ports);
 
       for ( n=0; n<n_t_ports; n++ ) {
 
@@ -643,9 +622,8 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
         // we dont need to create a transfer template
         if ( m_zcopyEnabled && s_port->supportsZeroCopy( t_port ) ) {
 
-#ifndef NDEBUG
-          printf("** ZERO COPY TransferTemplateGeneratorPattern1::createOutputTransfers from %p, to %p\n", s_buf, t_buf);
-#endif
+          ocpiDebug("** ZERO COPY TransferTemplateGeneratorPattern1::createOutputTransfers from %p, to %p",
+		    s_buf, t_buf);
           temp->addZeroCopyTransfer( s_buf, t_buf );
           continue;
         }
@@ -719,7 +697,7 @@ public:
   virtual ~OcpiTransferTemplateAFC(){}
   virtual bool isSlave()
   {
-    printf("\n\n\n\n I Am A slave port \n\n\n\n\n");
+    ocpiDebug("*******I Am A slave port");
     return true;
   }
 };
@@ -778,19 +756,15 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
 
       // Add the template to the controller, for this pattern the output port
       // and the input ports remains constant
-#ifndef NDEBUG
-      printf("output port id = %d, buffer id = %d, input id = %d\n", 
+      ocpiDebug("output port id = %d, buffer id = %d, input id = %d", 
              s_port->getPortId(), s_tid, t_tid);
-      printf("Template address = %p\n", temp);
-#endif
+      ocpiDebug("Template address = %p", temp);
 
       cont->addTemplate( temp, s_port->getPortId(),
                          s_tid, 0 ,t_tid, false, TransferController::OUTPUT );
 
       // We need to setup a transfer for each input port. 
-#ifndef NDEBUG
-      printf("Number of input ports = %d\n", n_t_ports);
-#endif
+      ocpiDebug("Number of input ports = %d", n_t_ports);
 
       for ( n=0; n<n_t_ports; n++ ) {
 
@@ -808,9 +782,8 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
         // we dont need to create a transfer template
         if ( m_zcopyEnabled && s_port->supportsZeroCopy( t_port ) ) {
 
-#ifndef NDEBUG
-          printf("** ZERO COPY TransferTemplateGeneratorPattern1AFC::createOutputTransfers from %p, to %p\n", s_buf, t_buf);
-#endif
+          ocpiDebug("** ZERO COPY TransferTemplateGeneratorPattern1AFC::createOutputTransfers from %p, to %p",
+		    s_buf, t_buf);
           temp->addZeroCopyTransfer( s_buf, t_buf );
           continue;
         }
@@ -881,10 +854,8 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
     // Create a template
     OcpiTransferTemplate* temp = new OcpiTransferTemplateAFC(0);
 
-#ifndef NDEBUG
-    printf("*&*&* Adding template for tpid = %d, ttid = %d, template = %p\n", 
+    ocpiDebug("*&*&* Adding template for tpid = %d, ttid = %d, template = %p", 
            input->getPortId(), t_tid, temp);
-#endif
 
     //Add the template to the controller
     cont->addTemplate( temp, 0, 0, input->getPortId(), t_tid, false, TransferController::INPUT );
@@ -916,9 +887,7 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
 
       // Attach zero-copy for co-location
       if ( m_zcopyEnabled && s_port->supportsZeroCopy( input ) ) {
-#ifndef NDEBUG
-        printf("Adding Zery copy for input response\n");
-#endif
+        ocpiDebug("Adding Zery copy for input response");
         temp->addZeroCopyTransfer( NULL, t_buf );
       }
 
@@ -977,11 +946,9 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
 
       // Add the template to the controller, for this pattern the output port
       // and the input ports remains constant
-#ifndef NDEBUG
-      printf("output port id = %d, buffer id = %d, input id = %d\n", 
+      ocpiDebug("output port id = %d, buffer id = %d, input id = %d", 
              s_port->getPortId(), s_tid, t_tid);
-      printf("Template address = %p\n", temp);
-#endif
+      ocpiDebug("Template address = %p", temp);
 
       cont->addTemplate( temp, s_port->getPortId(),
                          s_tid, 0 ,t_tid, false, TransferController::OUTPUT );
@@ -991,9 +958,7 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
        */
 
       // We need to setup a transfer for each input port. 
-#ifndef NDEBUG
-      printf("Number of input ports = %d\n", n_t_ports);
-#endif
+      ocpiDebug("Number of input ports = %d", n_t_ports);
 
       for ( n=0; n<n_t_ports; n++ ) {
 
@@ -1011,9 +976,8 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
         // we dont need to create a transfer template
         if ( m_zcopyEnabled && s_port->supportsZeroCopy( t_port ) ) {
 
-#ifndef NDEBUG
-          printf("** ZERO COPY TransferTemplateGeneratorPattern1::createOutputTransfers from %p, to %p\n", s_buf, t_buf);
-#endif
+          ocpiDebug("** ZERO COPY TransferTemplateGeneratorPattern1::createOutputTransfers from %p, to %p",
+		    s_buf, t_buf);
           temp->addZeroCopyTransfer( s_buf, t_buf );
           continue;
         }
@@ -1118,9 +1082,7 @@ createOutputTransfers(Port* s_port,
    *  output buffer to any one input buffer.
    */
 
-#ifndef NDEBUG
-  printf("In createOutputTransfers, parrtern #2   \n");
-#endif
+  ocpiDebug("In createOutputTransfers, pattern #2");
 
   // Since this is a whole output distribution, only port 0 of the output
   // set gets to do anything.
@@ -1164,11 +1126,9 @@ createOutputTransfers(Port* s_port,
         // Add the template to the controller, for this pattern the output port
         // and the input ports remains constant
 
-#ifndef NDEBUG
-        printf("output port id = %d, buffer id = %d, input id = %d\n", 
+        ocpiDebug("output port id = %d, buffer id = %d, input id = %d", 
                s_port->getPortId(), s_tid, t_tid);
-        printf("Template address = %p\n", temp);
-#endif
+        ocpiDebug("Template address = %p", temp);
         cont->addTemplate( temp, s_port->getPortId(),
                            s_tid, t_port->getPortId() ,t_tid, false, TransferController::OUTPUT );
 
@@ -1185,9 +1145,8 @@ createOutputTransfers(Port* s_port,
         bool standard_transfer = true;
         if ( m_zcopyEnabled && s_port->supportsZeroCopy( t_port ) ) {
 
-#ifndef NDEBUG
-          printf("** ZERO COPY TransferTemplateGeneratorPattern2::createOutputTransfers from %p, to %p\n", s_buf, t_buf);
-#endif
+          ocpiDebug("** ZERO COPY TransferTemplateGeneratorPattern2::createOutputTransfers from %p, to %p",
+		    s_buf, t_buf);
           temp->addZeroCopyTransfer( s_buf, t_buf );
           standard_transfer = false;
         }
@@ -1290,9 +1249,7 @@ createOutputTransfers(Port* s_port,
 bool TransferTemplateGeneratorPattern3::addTransferPreState( XferRequest* pt, TDataInterface& tdi)
 {
 
-#ifndef NDEBUG
-  printf("*** In TransferTemplateGeneratorPattern3::addTransferPreState() \n");
-#endif
+  ocpiDebug("*** In TransferTemplateGeneratorPattern3::addTransferPreState()");
 
   // We need to update all of the shadow buffers for all "real" output ports
   // to let them know that the input buffer for this input port has been allocated
@@ -1316,10 +1273,8 @@ bool TransferTemplateGeneratorPattern3::addTransferPreState( XferRequest* pt, TD
     // A shadow for a output may not exist if they are co-located
     if ( input_offsets->myShadowsRemoteStateOffsets[idx] != 0 ) {
 
-#ifndef NDEBUG
-      printf("TransferTemplateGeneratorPattern3::addTransferPreState mapping shadow offset to 0x%llx\n", 
+      ocpiDebug("TransferTemplateGeneratorPattern3::addTransferPreState mapping shadow offset to 0x%llx", 
              (long long)input_offsets->myShadowsRemoteStateOffsets[idx]);
-#endif
 
       /* Attempt to get or make a transfer template */
       XferServices* ptemplate = XferFactoryManager::getFactoryManager().getService( 
@@ -1427,9 +1382,7 @@ createOutputTransfers(Port* s_port,
    *  output buffer to all input port buffers.
    */
 
-#ifndef NDEBUG
-  printf("In TransferTemplateGeneratorPattern4::createOutputTransfers  \n");
-#endif
+  ocpiDebug("In TransferTemplateGeneratorPattern4::createOutputTransfers");
 
   // Since this is a whole output distribution, only port 0 of the output
   // set gets to do anything.
@@ -1462,10 +1415,8 @@ createOutputTransfers(Port* s_port,
   // Get the total number of parts that make up the whole
   int parts_per_whole = dpart->getPartsCount(output, input);
 
-#ifndef NDEBUG
-  printf("** There are %d transfers to complete this set\n", n_transfers_per_output_buffer);
-  printf("There are %d parts per whole\n", parts_per_whole );
-#endif
+  ocpiDebug("** There are %d transfers to complete this set", n_transfers_per_output_buffer);
+  ocpiDebug("There are %d parts per whole", parts_per_whole );
 
   // We need a transfer template to allow a transfer from each output buffer to every
   // input buffer for this pattern.

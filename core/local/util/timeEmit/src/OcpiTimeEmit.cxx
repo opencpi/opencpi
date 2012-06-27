@@ -398,6 +398,7 @@ namespace OCPI {
       catch ( ... ) {
 	// Ignore
       }
+      g_header = NULL;
     }
 
 
@@ -652,10 +653,11 @@ namespace OCPI {
     Emit::SimpleSystemTime::
     SimpleSystemTime()
     {
-      if ( m_init ) {
+      if ( !m_init ) {
 	m_init_tv.tv_sec =0;
 	m_init_tv.tv_nsec =0;
 	clock_gettime(CLOCK_REALTIME, &m_init_tv );
+	m_init = true;
       }
     }
 
@@ -761,6 +763,7 @@ namespace OCPI {
 	m_init_tv.tv_sec =0;
 	m_init_tv.tv_nsec =0;
 	fasttime_gettime(&m_init_tv);
+	m_init = true;
       }
 
     }

@@ -128,7 +128,7 @@ namespace OCPI {
 	return m_rcv_port->getCircuit()->getProtocol();
       }
     private:
-      Circuit & makeCircuit(const std::string &from, const std::string &to, bool send,
+      Circuit & makeCircuit(DataTransfer::EndPoint &from, DataTransfer::EndPoint &to, bool send,
 			    const char *protocol, OCPI::OS::Timer *timer);
 
       // Member data at initialization

@@ -148,7 +148,7 @@ void OCPI::DataTransport::Port::initialize()
   // dependencies to fill in the missing data.
         
   if ( m_localSMemResources->sMemResourceMgr->alloc( 
-                                    sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS, 0, &m_offsetsOffset ) ) {
+                                    sizeof(PortMetaData::BufferOffsets)*m_bufferCount, 0, &m_offsetsOffset ) ) {
     throw OCPI::Util::EmbeddedException ( 
                                       NO_MORE_SMB, 
                                       m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
@@ -161,10 +161,10 @@ void OCPI::DataTransport::Port::initialize()
   m_portDependencyData.offsets = static_cast<PortMetaData::BufferOffsets*>
     (m_localSMemResources->sMemServices->map 
      (m_offsetsOffset, 
-      sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS ));
+      sizeof(PortMetaData::BufferOffsets)*m_bufferCount ));
 
   memcpy(m_portDependencyData.offsets,m_data->m_bufferData,
-         sizeof(PortMetaData::BufferOffsets[MAX_BUFFERS]));
+         sizeof(PortMetaData::BufferOffsets[m_bufferCount]));
 
   delete [] m_data->m_bufferData;
   m_data->m_bufferData = m_portDependencyData.offsets;
@@ -190,10 +190,11 @@ OCPI::DataTransport::Port::Port( PortMetaData* data, PortSet* ps )
     m_hsPortControl(NULL),
     m_externalState(NotExternal),
     m_pdDriver(NULL),
-    m_portSet(ps)
+    m_portSet(ps),
+    m_bufferCount(ps->getBufferCount()),
+    m_buffers(new Buffer*[m_bufferCount])
 {
-  m_bufferCount=0;
-  m_buffers[0]=0;
+  memset(m_buffers, 0, sizeof(Buffer*) * m_bufferCount);
   m_zCopyBufferQ = 0;
 
   ocpiDebug("In OCPI::DataTransport::Port::Port()");
@@ -259,12 +260,12 @@ finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCP
     otherPort = c.getInputPortSet(0)->getPort(0);
   } else {
     // We are input, other is output.
+    EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other.desc.oob.oep);
     c.setFlowControlDescriptor(this, other);
     ocpiAssert(getRealShemServices());
 
-    std::string s2(other.desc.oob.oep);
     XferServices * xfers =   
-      XferFactoryManager::getFactoryManager().getService( getEndpoint()->end_point, s2 );
+      XferFactoryManager::getFactoryManager().getService( getEndpoint(), &otherEp);
     xfers->finalize( other.desc.oob.cookie );
     otherPort = c.getOutputPortSet()->getPort(0);
   }
@@ -337,10 +338,9 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
 
     if ( other ) {
       // Get the connection cookie
-      std::string mep(desc.desc.oob.oep);
-      std::string tep(other->desc.oob.oep);
+      EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other->desc.oob.oep);
       XferServices * xfers = 
-      XferFactoryManager::getFactoryManager().getService( mep, tep);
+	XferFactoryManager::getFactoryManager().getService( getEndpoint(), &otherEp);
       ocpiAssert( xfers );
       desc.desc.oob.cookie = 
 	xfers->getConnectionCookie();
@@ -526,7 +526,7 @@ createBuffers()
         
   ocpiDebug("Number of buffers = %d", this->getBufferCount() );
 
-  m_bufferCount = this->getBufferCount();
+  ocpiAssert(m_bufferCount == this->getBufferCount());
 
   ocpiDebug("Port::CreateBuffers1: port %p bmd %p offset 0x%" PRIx64,
 	    this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
@@ -572,90 +572,80 @@ OCPI::DataTransport::Port::
   int index=0;
   ResourceServices* res_mgr;
 
+  if ( m_initialized ) {
 
-  if ( ! m_initialized ) {
-    return;
-  }
+    if ( isOutput() ) {
 
-  if ( isOutput() ) {
+      if ( ! m_data->m_shadow  ) {
 
-    if ( ! m_data->m_shadow  ) {
+	res_mgr = 
+	  XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+	ocpiAssert( res_mgr );
 
-      res_mgr = 
-        XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
-      ocpiAssert( res_mgr );
+	rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.bufferOffset,
+			    m_data->m_bufferData[index].outputOffsets.bufferSize);
+	ocpiAssert( rc == 0 );
 
-      rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.bufferOffset,
-                          m_data->m_bufferData[index].outputOffsets.bufferSize);
-      ocpiAssert( rc == 0 );
+	rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.localStateOffset,
+			    sizeof(BufferState)*MAX_PCONTRIBS); // FIXME shouldn't this be *2?
+	ocpiAssert( rc == 0 );
 
-      rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.localStateOffset,
-                          sizeof(BufferState)*MAX_PCONTRIBS); // FIXME shouldn't this be *2?
-      ocpiAssert( rc == 0 );
+	rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.metaDataOffset,
+			    sizeof(BufferMetaData)*MAX_PCONTRIBS);
+	ocpiAssert( rc == 0 );
 
-      rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.metaDataOffset,
-                          sizeof(BufferMetaData)*MAX_PCONTRIBS);
-      ocpiAssert( rc == 0 );
+	if ( m_data->m_localPortSetControl != 0  ) {
 
-      if ( m_data->m_localPortSetControl != 0  ) {
-
-        rc = res_mgr->free( m_data->m_localPortSetControl,
-                            sizeof(OutputPortSetControl));
-        ocpiAssert( rc == 0 );
-        m_data->m_localPortSetControl = 0;
+	  rc = res_mgr->free( m_data->m_localPortSetControl,
+			      sizeof(OutputPortSetControl));
+	  ocpiAssert( rc == 0 );
+	  m_data->m_localPortSetControl = 0;
+	}
       }
     }
-  }
-  else {
+    else {
 
-    if ( ! m_shadow ) {
+      if ( ! m_shadow ) {
 
-      res_mgr = 
-        XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
-      ocpiAssert( res_mgr );
+	res_mgr = 
+	  XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+	ocpiAssert( res_mgr );
 
-      rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.bufferOffset,
-                          m_data->m_bufferData[index].inputOffsets.bufferSize);
-      ocpiAssert( rc == 0 );
+	rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.bufferOffset,
+			    m_data->m_bufferData[index].inputOffsets.bufferSize);
+	ocpiAssert( rc == 0 );
 
-      rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.metaDataOffset,
-                          sizeof(BufferMetaData)*MAX_PCONTRIBS);
-      ocpiAssert( rc == 0 );
+	rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.metaDataOffset,
+			    sizeof(BufferMetaData)*MAX_PCONTRIBS);
+	ocpiAssert( rc == 0 );
 
-      rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.localStateOffset,
-                          sizeof(BufferState)*MAX_PCONTRIBS); // FIXME shouldn't this be *2?
-      ocpiAssert( rc == 0 );
+	rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.localStateOffset,
+			    sizeof(BufferState)*MAX_PCONTRIBS); // FIXME shouldn't this be *2?
+	ocpiAssert( rc == 0 );
 
-    }
-    else {  // We are a shadow port
-
-      res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_shadow_location )->sMemResourceMgr;
-      ocpiAssert( res_mgr );
-
-      rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox],
-                          sizeof(BufferState));
-      ocpiAssert( rc == 0 );
-    }
-
-  }
-
-
-  if ( m_localSMemResources ) {
-    m_localSMemResources->sMemResourceMgr->free( m_offsetsOffset,
-                                                 sizeof(PortMetaData::BufferOffsets)*MAX_BUFFERS);
-  }
- 
-  OCPI::OS::int32_t i;
-  if ( m_buffers[0] ) {
-    for (i=0; i<m_bufferCount; i++ ) {
-      if ( this->isOutput() ) {
-        delete static_cast<OutputBuffer*>(m_buffers[i]);
       }
-      else {
-        delete static_cast<InputBuffer*>(m_buffers[i]);        
+      else {  // We are a shadow port
+
+	res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_shadow_location )->sMemResourceMgr;
+	ocpiAssert( res_mgr );
+
+	rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox],
+			    sizeof(BufferState));
+	ocpiAssert( rc == 0 );
       }
+
+    }
+
+
+    if ( m_localSMemResources ) {
+      m_localSMemResources->sMemResourceMgr->free( m_offsetsOffset,
+						   sizeof(PortMetaData::BufferOffsets)*m_bufferCount);
     }
   }
+  if (m_buffers)
+    for (unsigned i=0; i<m_bufferCount; i++ )
+      delete m_buffers[i];
+  delete [] m_buffers;
 }
 
 /**********************************

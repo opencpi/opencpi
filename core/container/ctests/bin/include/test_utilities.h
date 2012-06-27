@@ -85,7 +85,7 @@ class SignalHandler {
       printf("Got a signal, number = %d\n", signum );
       if ( m_cb ) {
         once = true;
-        OCPI::Time::Emit::shutdown();
+        // OCPI::Time::Emit::shutdown(); our shutdown code does this anyway, in a better place
         m_cb(signum);
       }
     }

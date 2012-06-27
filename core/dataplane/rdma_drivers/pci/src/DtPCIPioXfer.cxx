@@ -59,7 +59,7 @@
 #include <stdio.h>
 #include <OcpiOsAssert.h>
 #include <OcpiPValue.h>
-
+#include <OcpiUtilMisc.h>
 
 #include <limits.h>
 #include <errno.h>
@@ -143,10 +143,9 @@ void PCIPIOXferFactory::releaseEndPoint( EndPoint* loc )
 // This method is used to allocate a transfer compatible SMB
 SmemServices* PCIPIOXferFactory::getSmemServices( EndPoint* loc )
 {
-  if ( loc->smem ) {
-    return loc->smem;
-  }
-  return new PCISmemServices( this, loc);
+  if (!loc->smem )
+    loc->smem = new PCISmemServices( this, loc);
+  return loc->smem;
 }
 
 
@@ -167,30 +166,15 @@ XferServices* PCIPIOXferFactory::getXferServices(SmemServices* source, SmemServi
  *  an endpoint for an application running on "this"
  *  node.
  ***************************************/
-static OCPI::OS::int32_t pid;
 std::string PCIPIOXferFactory::
 allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
 {
   std::string ep;
-  OCPI::Util::SelfAutoMutex guard (this); 
+  OCPI::Util::SelfAutoMutex guard (this);  // FIXME what are we guarding?
 
-  pid++;
-
-  unsigned int size = m_SMBSize;
-
-  char tep[128];
-  pid = getpid();
-  int bus_id = 0;
-  snprintf(tep,128,"ocpi-pci-pio:%d.0:%d.%d.%d",bus_id, size, mailBox, maxMailBoxes);
-  ep = tep;
+  OCPI::Util::formatString(ep, "ocpi-pci-pio:0.0:%u.%u.%u", m_SMBSize, mailBox, maxMailBoxes);
   return ep;
 }
-
-
-
-
-
-
 
 void PCIInit()
 {
@@ -198,7 +182,7 @@ void PCIInit()
 }
 
 // Create the service
-void PCISmemServices::create (EndPoint* loc, OCPI::OS::uint32_t size)
+void PCISmemServices::create (PCIEndPoint* loc)
 {
   OCPI::Util::AutoMutex guard ( m_threadSafeMutex,
                                true ); 
@@ -207,48 +191,41 @@ void PCISmemServices::create (EndPoint* loc, OCPI::OS::uint32_t size)
     return;
   }
   m_init = true;
-  m_location = dynamic_cast<PCIEndPoint*>(loc);
   m_last_offset = 0;
-  if ( size == 0 ) {
-    size = m_location->map_size;
-  }
-  m_size = size;
+  m_size = loc->size;
 
   if ( loc->local ) {
 
     ocpiDebug("PCISmemServices: SMEM is local !!, vaddr = %p", m_vaddr);
 
     static const char *dma = getenv("OCPI_DMA_MEMORY");
+    if (!dma)
+      throw OCPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "OCPI_DMA_MEMORY not set"  );
     OCPI::OS::uint64_t base_adr;
-    if (dma) {
-      unsigned sizeM;
-      ocpiCheck(sscanf(dma, "%uM$0x%llx", &sizeM,
-		       (unsigned long long *) &base_adr) == 2);
-      size = (unsigned long long)sizeM * 1024 * 1024;
-      ocpiDebug("DMA Memory:  %uM at 0x%llx\n", sizeM, (unsigned long long)base_adr);
-    }
-    else {
-      ocpiCheck(!"OCPI_DMA_MEMORY not found in the environment\n");
-    }
+    unsigned sizeM;
+    ocpiCheck(sscanf(dma, "%uM$0x%llx", &sizeM,
+		     (unsigned long long *) &base_adr) == 2);
+    uint64_t dmaSize = (unsigned long long)sizeM * 1024 * 1024;
+    ocpiDebug("DMA Memory:  %uM at 0x%llx\n", sizeM, (unsigned long long)base_adr);
+    // chop it up into equal parts assuming everyone has the same maxCount
+    // We assume the external ports of Hdl containers use slot zero.
+    dmaSize /= loc->maxCount;
+    dmaSize &= ~(getpagesize() - 1);
+    if (loc->size > dmaSize)
+      throw OCPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "not enough memory to accomodate all mailboxes");
+    base_adr += dmaSize * loc->mailbox;
+    OCPI::Util::formatString(loc->end_point,
+		     "ocpi-pci-pio:0.0x%llx:%lld.%u.%u",
+		     (unsigned long long)base_adr,
+		     (unsigned long long)loc->size, loc->mailbox, loc->maxCount);
 
-    uint32_t offset = 1024*1024*128;
-    size -= offset;
-    base_adr+=offset;
-    char buf[128];
-    snprintf(buf, 128,
-             "ocpi-pci-pio:%s.%lld:%lld.2.10", "0", (unsigned long long)base_adr,
-             (unsigned long long)size);
-    loc->end_point = buf;
+    if (m_fd == -1 &&
+	( m_fd = open("/dev/mem", O_RDWR|O_SYNC )) < 0 )
+      throw OCPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
 
-    if ( m_fd == -1 ) {
-      if ( ( m_fd = open("/dev/mem", O_RDWR|O_SYNC )) < 0 ) {
-        throw OCPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
-      }
-    }
+    ocpiDebug("mmap mapping base = %" PRIx64 " with size = %d\n", base_adr, loc->size);
 
-    ocpiDebug("mmap mapping base = %" PRIu64 "with size = %d\n", base_adr, size );
-
-    m_vaddr =  (uint8_t*)mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED,
+    m_vaddr =  (uint8_t*)mmap(NULL, loc->size, PROT_READ|PROT_WRITE, MAP_SHARED,
                               m_fd, base_adr);
 
     if ( m_vaddr == MAP_FAILED )
@@ -309,13 +286,13 @@ void* PCISmemServices::map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size )
                                true ); 
 
   if ( ! m_init  ) {
-    create(m_location, m_location->size);
+    create(m_location);
   }
         
   if ( m_location->local ) {        
     ocpiDebug("PCISmemServices::map returning local vaddr = %p base %p offset 0x%"
-	      PRIx64 " size %d",
-	      (uint8_t*)m_vaddr + offset, m_vaddr, offset, size);
+	      PRIx64 " size %u, end 0x%p",
+	      (uint8_t*)m_vaddr + offset, m_vaddr, offset, size, (uint8_t *)m_vaddr + size);
     return (char*)m_vaddr + offset;
   }
 
@@ -369,7 +346,7 @@ OCPI::OS::int32_t PCIEndPoint::parse( std::string& ep )
 {
 
   ocpiDebug("Scanning %s", ep.c_str() );
-  if (sscanf(ep.c_str(), "ocpi-pci-pio:%x.%" SCNu64 ":%" SCNu64 ".3.10", 
+  if (sscanf(ep.c_str(), "ocpi-pci-pio:%x.%" SCNi64 ":%" SCNu64 ".", 
                    &bus_id,
                    &bus_offset,
                    &map_size) != 3)

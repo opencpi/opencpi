@@ -174,22 +174,24 @@ namespace DataTransfer {
 
     // Public methods available to clients
   public:
-    SocketXferRequest( SocketXferServices & parent )
-      : TransferBase<SocketXferServices,SocketXferRequest>(parent),
-	m_thandle(0) {}
+  SocketXferRequest( SocketXferServices & parent, XF_template temp )
+    : TransferBase<SocketXferServices,SocketXferRequest>(parent, temp)
+      //,m_thandle(0)
+      {}
 
     // Queue data transfer request
-    void post();
+    //    void post();
 
     // Get Information about a Data Transfer Request
     DataTransfer::XferRequest::CompletionStatus getStatus();
 
     // Get the transfer handle
-    XF_transfer& getHandle();
+    //    XF_transfer& getHandle();
 
     // Destructor - implementation at end of file
     virtual ~SocketXferRequest ();
 
+#if 0
 
     void modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] );
 
@@ -201,11 +203,11 @@ namespace DataTransfer {
 		       OCPI::OS::uint32_t nbytes, 
 		       XferRequest::Flags flags
 		       );
-
+#endif
     // Data members accessible from this/derived class
   private:
-    OCPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t);
-    void action_socket_transfer(PIO_transfer transfer);
+    //    OCPI::OS::int32_t xfer_socket_starti(PIO_transfer pio_transfer, OCPI::OS::int32_t);
+    void action_transfer(PIO_transfer transfer);
   protected:
     Flags                                     m_flags;                // Flags used during creation
     OCPI::OS::uint32_t                        m_srcoffset;        // The source memory offset
@@ -282,7 +284,7 @@ namespace DataTransfer {
   inline const char* SocketXferFactory::getProtocol(){return "ocpi-socket-rdma";}
 
   // inline methods for SocketXferRequest
-  inline XF_transfer& SocketXferRequest::getHandle(){return m_thandle;}
+  //  inline XF_transfer& SocketXferRequest::getHandle(){return m_thandle;}
 
   inline DataTransfer::XferRequest::CompletionStatus SocketXferRequest::getStatus()
     { return xfer_get_status (m_thandle) == 0 ? DataTransfer::XferRequest::CompleteSuccess : DataTransfer::XferRequest::Pending;}

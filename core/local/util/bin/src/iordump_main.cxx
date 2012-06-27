@@ -105,7 +105,7 @@ dumpTaggedComponent (std::ostream & out, const OCPI::Util::IOP::TaggedComponent 
       OCPI::Util::IOP::ORBTypeComponent otc (tc.component_data);
       out << "OCPI_CORBA_ORB Type." << std::endl;
       out << "     OCPI_CORBA_ORB Type: 0x"
-          << OCPI::Util::Misc::unsignedToString ((unsigned int) otc.orb_type, 16, 8);
+          << OCPI::Util::unsignedToString ((unsigned int) otc.orb_type, 16, 8);
 
       if ((otc.orb_type >= 0x58505300 && otc.orb_type <= 0x5850530f) ||
           (otc.orb_type >= 0x50544300 && otc.orb_type <= 0x5054430f)) {
@@ -128,14 +128,14 @@ dumpTaggedComponent (std::ostream & out, const OCPI::Util::IOP::TaggedComponent 
     }
     else {
       out << "Unknown Component: Tag 0x"
-          << OCPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
+          << OCPI::Util::unsignedToString ((unsigned int) tc.tag, 16, 8)
           << "." << std::endl;
       dumpOctetSeq (out, tc.component_data, "         Data: ");
     }
   }
   catch (const std::string & oops) {
     out << "Undecodeable Component: Tag 0x"
-        << OCPI::Util::Misc::unsignedToString ((unsigned int) tc.tag, 16, 8)
+        << OCPI::Util::unsignedToString ((unsigned int) tc.tag, 16, 8)
         << ": " << oops
         << "." << std::endl;
     dumpOctetSeq (out, tc.component_data, "         Data: ");
@@ -148,8 +148,8 @@ dumpIIOPProfile (std::ostream & out, const OCPI::Util::IIOP::ProfileBody & pb)
   unsigned long numComponents = pb.numComponents ();
   out << "IIOP Profile." << std::endl
       << "      Version: "
-      << OCPI::Util::Misc::integerToString ((int) pb.iiop_version.major) << "."
-      << OCPI::Util::Misc::integerToString ((int) pb.iiop_version.minor) << std::endl
+      << OCPI::Util::integerToString ((int) pb.iiop_version.major) << "."
+      << OCPI::Util::integerToString ((int) pb.iiop_version.minor) << std::endl
       << "         Host: " << pb.host << std::endl
       << "         Port: " << pb.port << std::endl;
   dumpOctetSeq (out, pb.object_key, "   Object Key: ");
@@ -188,14 +188,14 @@ dumpProfile (std::ostream & out, const OCPI::Util::IOP::TaggedProfile & tp)
     }
     else {
       out << "Unknown Profile: Tag 0x"
-          << OCPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
+          << OCPI::Util::unsignedToString ((unsigned int) tp.tag, 16, 8)
           << "." << std::endl;
       dumpOctetSeq (out, tp.profile_data, "         Data: ");
     }
   }
   catch (const std::string & oops) {
     out << "Undecodeable Profile: Tag 0x"
-        << OCPI::Util::Misc::unsignedToString ((unsigned int) tp.tag, 16, 8)
+        << OCPI::Util::unsignedToString ((unsigned int) tp.tag, 16, 8)
         << ": " << oops
         << "." << std::endl;
     dumpOctetSeq (out, tp.profile_data, "         Data: ");

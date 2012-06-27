@@ -25,7 +25,7 @@ namespace OCPI {
       try {
 	m_transport = new Transport(&m_transportGlobal, true);
 	m_transport->setNewCircuitRequestListener(this);
-	m_endpoint = &m_transport->getLocalCompatibleEndpoint(endpoint);
+	m_endpoint = &m_transport->getLocalCompatibleEndpoint(endpoint, true);
       } catch (...) {
 	if (m_transport)
 	  delete m_transport;
@@ -115,7 +115,7 @@ namespace OCPI {
     s_messageEndpoints;
   
     bool MessageEndpoint::canSupport(const char *endpoint) const {
-      return m_transport->canSupport(*m_endpoint, endpoint);
+      return m_endpoint->canSupport(endpoint);
     }
 
     // the internal, non-static method, with same args as the static one, hence "To".

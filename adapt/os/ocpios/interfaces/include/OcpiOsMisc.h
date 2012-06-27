@@ -161,6 +161,8 @@ namespace OCPI {
     void setCtrlCHandler (void (*handler) (void))
       throw ();
 
+    void setError(std::string &error, const char *fmt, ...)
+      throw();
   }
 }
 

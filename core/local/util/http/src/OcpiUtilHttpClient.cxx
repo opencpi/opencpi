@@ -286,7 +286,7 @@ OCPI::Util::Http::ClientStream::ClientBuf::
 receiveStatus ()
   throw (std::string)
 {
-  m_status = OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+  m_status = OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
 
   if (!m_inConn->good()) {
     throw std::string ("could not read status");
@@ -343,13 +343,13 @@ receiveHeaders ()
 {
   std::string::size_type colonPos;
   std::string headerLine =
-    OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+    OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
   int count=0;
 
   while (m_inConn->good() && headerLine.length()) {
     if (++count > MAX_NUM_OF_HEADER_LINES) {
       std::string reason = "implementation limit reached: more than ";
-      reason += OCPI::Util::Misc::integerToString (MAX_NUM_OF_HEADER_LINES);
+      reason += OCPI::Util::integerToString (MAX_NUM_OF_HEADER_LINES);
       reason += " header lines";
       throw reason;
     }
@@ -403,7 +403,7 @@ receiveHeaders ()
     }
 
     headerLine =
-      OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+      OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
   }
 
   if (!m_inConn->good ()) {
@@ -730,7 +730,7 @@ underflow_common (bool bump)
   if (m_chunked && m_chunkRemaining == 0) {
     if (!m_firstChunk) {
       std::string trailingCRLF =
-        OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+        OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
       
       if (!m_inConn->good() || trailingCRLF.length()) {
         // "protocol error, chunk did not end in CRLF";
@@ -747,7 +747,7 @@ underflow_common (bool bump)
      */
 
     std::string chunkSizeLine =
-      OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+      OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
     char * csep;
 
     m_chunkRemaining = std::strtoul (chunkSizeLine.c_str(), &csep, 16);
@@ -929,12 +929,12 @@ xsgetn (char * s, std::streamsize n)
 
     if (m_chunked) {
       std::streamsize inChunk =
-        OCPI::Util::Misc::unsignedToStreamsize (m_chunkRemaining, true);
+        OCPI::Util::unsignedToStreamsize (m_chunkRemaining, true);
       toRead = (remaining < inChunk) ? remaining : inChunk;
     }
     else if (m_contentLength != static_cast<unsigned long long> (-1)) {
       std::streamsize inContent =
-        OCPI::Util::Misc::unsignedToStreamsize (m_contentRemaining, true);
+        OCPI::Util::unsignedToStreamsize (m_contentRemaining, true);
       toRead = (remaining < inContent) ? remaining : inContent;
     }
     else {
@@ -1316,7 +1316,7 @@ putOrPost (int requestType,
 
   if (contentLength != static_cast<unsigned long long> (-1)) {
     headers["Content-Length"] =
-      OCPI::Util::Misc::unsignedToString (contentLength);
+      OCPI::Util::unsignedToString (contentLength);
   }
 
   connect (uri);

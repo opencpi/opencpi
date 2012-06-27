@@ -48,7 +48,6 @@
  */
 
 namespace OU = OCPI::Util;
-namespace OM = OCPI::Util::Misc;
 namespace OCPI {
   namespace Util {
     namespace IOP {
@@ -430,7 +429,7 @@ doIPAddress(unsigned major, unsigned minor, const std::string &host, uint16_t po
   throw()
 {
   std::string addr;
-  OM::formatString(addr, "iiop:%u.%u@%s:%u", major, minor, host.c_str(), port);
+  OU::formatString(addr, "iiop:%u.%u@%s:%u", major, minor, host.c_str(), port);
   doAddress(addr);
 }
 

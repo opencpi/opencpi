@@ -80,7 +80,6 @@ namespace DataTransfer {
     ~SMBResources()
     {
       delete sMemResourceMgr;
-      //      delete sMemServices; these are children of xfer factories
     }
   };
 
@@ -132,6 +131,7 @@ namespace DataTransfer {
 
     // This method is used to retreive all of the available endpoints that have been
     // registered in the system.  Note: some of the endpoints may not be finalized. 
+    void allocateSupportedEndpoints(EndPoints &endpoints);
     std::vector<std::string> getListOfSupportedEndpoints();  
     std::vector<std::string> getListOfSupportedProtocols();  
 
@@ -161,7 +161,7 @@ namespace DataTransfer {
     XferFactory* find( const char* end_point1,const char* end_point2 = NULL);
 
     // Creates a transfer service template
-    XferServices* getService(std::string& s_endpoint,  std::string& t_endpoint);        
+    //    XferServices* getService(std::string& s_endpoint,  std::string& t_endpoint);        
     XferServices* getService(EndPoint *s_endpoint, EndPoint *t_endpoint);        
 
     static bool canSupport(EndPoint &local_ep, const char *remote_endpoint);
@@ -180,8 +180,8 @@ namespace DataTransfer {
     // Shuts down the transer sub-system
     void shutdown();
 
-    int get_template(const char *src, const char *dst, XferServices* &xfer_template);
-    int add_template(std::string& src, std::string& dst, XferServices* xf_template);
+    int get_template(EndPoint *src, EndPoint *dst, XferServices* &xfer_template);
+    int add_template(EndPoint *src, EndPoint *dst, XferServices* xf_template);
     SMBResources* findResource(const char* );
     
     // Reference counter

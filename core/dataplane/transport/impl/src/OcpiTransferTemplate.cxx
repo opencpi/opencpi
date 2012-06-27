@@ -124,7 +124,7 @@ addZeroCopyTransfer(
                     InputBuffer* input )
 {
 
-  ocpiDebug("addZeroCopyTransfer, adding Zero copy transfer, output = %p, input = %p\n", output, input);
+  ocpiDebug("addZeroCopyTransfer, adding Zero copy transfer, output = %p, input = %p", output, input);
 
   if ( isDuplicate( output, input) ) {
     return;
@@ -163,7 +163,7 @@ isComplete()
   // now make sure all of the gated transfers are complete
   OCPI::OS::int32_t n_pending = get_nentries(&m_gatedTransfersPending);
 
-  ocpiDebug("There are %d gated transfers\n", n_pending );
+  ocpiDebug("There are %d gated transfers", n_pending );
 
   for (OCPI::OS::int32_t i=0; i < n_pending; i++) {
     OcpiTransferTemplate* temp = static_cast<OcpiTransferTemplate*>(get_entry(&m_gatedTransfersPending, i));
@@ -186,7 +186,7 @@ produceGated( OCPI::OS::uint32_t port_id, OCPI::OS::uint32_t tid  )
 {
 
   // See if we have any other transfers of this type left
-  ocpiDebug("m_sequence = %d\n", m_sequence );
+  ocpiDebug("m_sequence = %d", m_sequence );
 
   OcpiTransferTemplate* temp = getNextGatedTransfer(port_id,tid);
 
@@ -195,7 +195,7 @@ produceGated( OCPI::OS::uint32_t port_id, OCPI::OS::uint32_t tid  )
   }
   else {
 
-    ocpiDebug("ERROR !!! OcpiTransferTemplate::produceGated got a NULL template, p = %d, t = %d\n",
+    ocpiDebug("ERROR !!! OcpiTransferTemplate::produceGated got a NULL template, p = %d, t = %d",
            port_id, tid);
 
     ocpiAssert(0);
@@ -271,7 +271,7 @@ OcpiTransferTemplate::
 produce()
 {
   // start the transfers now
-  ocpiDebug("Producing %d transfers\n", n_transfers);
+  ocpiDebug("Producing %d transfers", n_transfers);
 
   // At this point we need to pre-set the meta-data if needed
   presetMetaData();
@@ -281,7 +281,7 @@ produce()
   if ( m_zCopy ) {
     ZCopy* z = m_zCopy;
     while( z ) {
-      ocpiDebug("Attaching %p to %p\n", z->output, z->input);
+      ocpiDebug("Attaching %p to %p", z->output, z->input);
       z->input->attachZeroCopy( z->output );
       z = z->next;
     }
@@ -308,7 +308,7 @@ consume()
 {
   Buffer* rb=NULL;
 
-  ocpiDebug("Consuming %d transfers\n", n_transfers);
+  ocpiDebug("Consuming %d transfers", n_transfers);
 
   // If we have a list of attached buffers, it means that we are now
   // done with the local zero copy buffers and need to mark them 
@@ -316,7 +316,7 @@ consume()
   if ( m_zCopy ) {
     ZCopy* z = m_zCopy;
     while( z ) {
-      ocpiDebug("Detaching %p to %p\n", z->output, z->input);
+      ocpiDebug("Detaching %p to %p", z->output, z->input);
       rb = z->input->detachZeroCopy();
       z = z->next;
     }

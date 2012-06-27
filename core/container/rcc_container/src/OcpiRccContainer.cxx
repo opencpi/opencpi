@@ -162,9 +162,16 @@ dispatch(DataTransfer::EventManager* event_manager)
     printf("WORKER RUN: Entry\n");
   }
 #endif
-  // Give our transport some time
-  m_transport->dispatch( event_manager );
-
+  try {
+    // Give our transport some time
+    m_transport->dispatch( event_manager );
+  } catch(...) {
+    ocpiBad("RCC Container dispatch thread encountered transport exception.  Shutting down.");
+    // Release all the current workers if there is a transport failure.
+    for (Application *a = OU::Parent<Application>::firstChild(); a; a = a->nextChild())
+      a->release();
+    return DispatchNoMore;
+  }
   //#define VECTOR_BUFFERS_FROM_EVENTS
 #ifdef VECTOR_BUFFERS_FROM_EVENTS
   if ( event_manager ) {

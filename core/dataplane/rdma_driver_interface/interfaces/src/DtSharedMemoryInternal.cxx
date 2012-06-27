@@ -77,7 +77,7 @@ SmemServices::
 }
 
 EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
-  :smem(0),mailbox(0),maxCount(0),size(psize),local(l),resources(0)
+  :smem(0),mailbox(0),maxCount(0),size(psize),local(l),resources(0),factory(NULL),refCount(0)
 {
   if ( ! size ) {
     size = XferFactoryManager::getFactoryManager().getSMBSize();
@@ -85,30 +85,33 @@ EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
   setEndpoint( end_point);
 }
 
+EndPoint::~EndPoint() {
+  factory->removeEndPoint(*this);
+}
+
+void EndPoint::release() {
+  ocpiAssert(refCount);
+  ocpiInfo("Releasing ep %p refCount %u", this, refCount);
+  if (--refCount == 0)
+    delete this;
+}
+
 // Sets smem location data based upon the specified endpoint
 OCPI::OS::int32_t EndPoint::setEndpoint( std::string& ep )
 {
   char buf[OCPI::RDT::MAX_PROTOS_SIZE];
   end_point = ep;
-  char* proto = (char*)getProtocolFromString(ep.c_str(),buf);
-  protocol = proto;
+  getProtocolFromString(ep.c_str(), protocol);
   getResourceValuesFromString(ep.c_str() ,buf,&mailbox,&maxCount,&size);
   return 0;
 }
 
 
 // Endpoint parsing
-const char* EndPoint::getProtocolFromString( const char* ep, char *proto )
+void EndPoint::getProtocolFromString( const char* ep, std::string &proto )
 {
-  int i=0;
-  for ( unsigned int n=0; n<strlen(ep); n++ ) {
-    if ( ep[n] == ':' ) {
-      break;
-    }
-    proto[i++] = ep[n];
-  }
-  proto[i] = 0;
-  return proto;
+  const char *colon = strchr(ep, ':');
+  proto.assign(ep, colon ? colon - ep : strlen(ep));
 }
 
 void EndPoint::getResourceValuesFromString( const char* ep, 
@@ -169,6 +172,30 @@ void EndPoint::getResourceValuesFromString( const char* ep,
       cs[cs_index++] = ep[n];
     }
   }
+}
+
+void EndPoint::
+finalize() {
+  if (!smem || !resources)
+    ocpiInfo("Finalizing endpoint %p %s %p %p", this, end_point.c_str(), smem, resources);
+  if (!smem)
+    factory->getSmemServices(this);
+  if (!resources)
+    XferFactoryManager::getFactoryManager().createSMBResources(this);
+}
+
+bool DataTransfer::EndPoint::
+canSupport(const char *remoteEndpoint) {
+  std::string remoteProtocol;
+  DataTransfer::EndPoint::getProtocolFromString(remoteEndpoint, remoteProtocol);
+  char *cs = strdup(remoteEndpoint);
+  uint32_t mailBox, maxMb, size;
+  getResourceValuesFromString(remoteEndpoint, cs, &mailBox, &maxMb, &size);
+  bool ret = 
+    protocol == remoteProtocol &&
+    maxMb == maxCount && mailBox != mailbox;
+  free(cs);
+  return ret;
 }
 
 class ResourceServicesImpl : public DataTransfer::ResourceServices

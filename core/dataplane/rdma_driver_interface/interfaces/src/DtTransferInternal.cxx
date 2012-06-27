@@ -65,6 +65,7 @@
 #include <OcpiUtilAutoMutex.h>
 #include <OcpiUtilEzxml.h>
 #include <OcpiPValue.h>
+#include <xfer_internal.h>
 #include <DtTransferInternal.h>
 
 namespace OX = OCPI::Util::EzXml;
@@ -73,6 +74,7 @@ namespace OS = OCPI::OS;
 namespace OD = OCPI::Driver;
 
 namespace DataTransfer {
+
 uint32_t 
 XferFactory::
 getNextMailBox()
@@ -120,6 +122,16 @@ allocateEndpoints(std::vector<std::string> &l) {
   l.push_back(allocateEndpoint(NULL, getNextMailBox(), getMaxMailBox()));
 }
 
+// Allocate a set of endpoints, one per driver, for the caller
+void XferFactoryManager::
+allocateSupportedEndpoints(EndPoints &endpoints) {
+  parent().configure();
+  for (XferFactory *f = firstDriver(); f; f = f->nextDriver()) {
+    std::string eps = f->allocateEndpoint(NULL, f->getNextMailBox(), f->getMaxMailBox());
+    ocpiDebug("Allocating supported local endpoint: %s", eps.c_str());
+    endpoints.insert(f->addEndPoint(eps.c_str(), true));
+  }
+}
 
 // This method is used to retreive all of the available endpoints that have been registered
 // in the system.  Note that some of the endpoints may not be finalized.
@@ -137,11 +149,11 @@ getListOfSupportedEndpoints()
 	factory->allocateEndpoints(l);
       }
       catch( OU::EmbeddedException & ex ) {
-	fprintf(stderr, "Could not allocate endpoint for %s, error = %s\n",
+	ocpiBad("Could not allocate endpoint for %s, error = %s",
 		factory->getProtocol(), ex.getAuxInfo() );
       }
       catch( ... ) {
-	fprintf(stderr, "Caught an unknown exception while allocating an endpoint from %s\n",
+	ocpiBad("Caught an unknown exception while allocating an endpoint from %s",
 		factory->getProtocol() );
       }
     }
@@ -156,7 +168,7 @@ getNode( ezxml_t tn, const char* name )
 {
   ezxml_t node = tn;
   while ( node ) {
-    if ( node->name ) printf("node %s\n", node->name );
+    if ( node->name ) ocpiDebug("node %s", node->name );
     if ( node->name && (strcmp( node->name, name) == 0 ) ) {
       return node;
     }
@@ -360,9 +372,9 @@ XferFactory(const char *name)
 XferFactory::~XferFactory()
 {
   this->lock();
-  for (unsigned n = 0; n < m_locations.size(); n++)
-    if (m_locations[n])
-      delete m_locations[n];
+  
+  while (!m_endPoints.empty())
+    delete *m_endPoints.begin(); // this will call back and remove even though we don't need it.
 }
 
 // This default implementation is just to parse generic properties,
@@ -375,62 +387,67 @@ configure(ezxml_t x) {
   OD::Driver::configure(x); 
 }
 
-// Get the location via the endpoint.  This is only called if the endpoint already
-// matches the factory.
-EndPoint* XferFactory::getEndPoint( std::string& end_point, bool local )
-{ 
-  OCPI::Util::SelfAutoMutex guard (this); 
-  for (EndPoints::iterator i = m_locations.begin(); i != m_locations.end(); i++)
-    if (*i && end_point == (*i)->end_point)
-      return *i;
-  EndPoint *loc = createEndPoint(end_point, local);
-  m_locations.resize(loc->mailbox + 1, NULL);
-  m_locations[loc->mailbox] = loc;
+EndPoint* XferFactory::
+addEndPoint(const char *end_point, bool local) {
+  std::string eps(end_point);
+  EndPoint *loc = createEndPoint(eps, local);
+  loc->factory = this;
+  ocpiAssert(m_endPoints.find(loc) == m_endPoints.end());
+  m_endPoints.insert(loc);
+  if (local) {
+    if (m_locations.size() <= loc->mailbox)
+      m_locations.resize(loc->mailbox + 1, NULL);
+    m_locations[loc->mailbox] = loc;
+  }
+  ocpiInfo("Creating ep %p %s", loc, loc->end_point.c_str());
+  loc->refCount = 1;
   return loc;
 }
+void XferFactory::
+removeEndPoint(EndPoint &ep) {
+  if (ep.local) {
+    m_locations[ep.mailbox] = NULL; // note this might already be done.
+  }
+  m_endPoints.erase(&ep);
+}
 
-EndPoint* XferFactory::newCompatibleEndPoint(const char *remote_endpoint)
+// Get the location via the endpoint.  This is only called if the endpoint already
+// matches the factory.
+EndPoint* XferFactory::
+getEndPoint(const char *end_point, bool local, bool cantExist)
 { 
   OCPI::Util::SelfAutoMutex guard (this); 
-  char *cs = strdup(remote_endpoint);
-  uint32_t mailBox, maxMb, size;
-  EndPoint::getResourceValuesFromString(remote_endpoint, cs, &mailBox, &maxMb, &size);
-  free(cs);
+  for (EndPoints::iterator i = m_endPoints.begin(); i != m_endPoints.end(); i++)
+    if (*i && (*i)->end_point == end_point)
+      if (cantExist)
+	throw OU::Error("Local explicit endpoint already exists: '%s'", end_point);
+      else {
+	(*i)->refCount++; // FIXME:: this likely happens too often and thus will leak.
+	ocpiInfo("Incrementing refcount on ep %p to %u", *i, (*i)->refCount);
+	OCPI::OS::dumpStack(std::cerr);
+	return *i;
+      }
+  return addEndPoint(end_point, local);
+}
+
+EndPoint* XferFactory::
+addCompatibleEndPoint(uint32_t mailBox, uint32_t maxMb)
+{ 
+  OCPI::Util::SelfAutoMutex guard (this); 
+  // Find an unused slot that is different from the remote one
+  // mailbox might be zero so this will find the first free slot in any case
+  unsigned myMax = getMaxMailBox();
+  if (maxMb && maxMb != myMax)
+    throw OU::Error("Remote end point has different number of mailbox slots (%u vs. our %u)",  maxMb, myMax);
   unsigned n;
   for (n = 1; n < MAX_SYSTEM_SMBS; n++)
     if (n != mailBox && (n >= m_locations.size() || !m_locations[n]))
       break;
-  if (n == MAX_SYSTEM_SMBS)
-    throw OCPI::Util::Error("Mailboxes for endpoints for protocol %s are exhausted (all %d are used)",
-			    getProtocol(), MAX_SYSTEM_SMBS);
-  std::string sep = allocateEndpoint(NULL, n, maxMb);
-  EndPoint *loc = createEndPoint(sep, true);
-  m_locations.resize(loc->mailbox + 1, NULL);
-  m_locations[loc->mailbox] = loc;
-  return loc;
+  if (n == MAX_SYSTEM_SMBS || n > myMax)
+    throw OCPI::Util::Error("Mailboxes for endpoints for protocol %s are exhausted (all %u are used)",
+			    getProtocol(), myMax);
+  return addEndPoint(allocateEndpoint(NULL, n, myMax).c_str(), true);
 }
-
-// static
-
-bool XferFactoryManager::
-canSupport(EndPoint &local_ep, const char *remote_endpoint) {
-  char *protocol = strdup(remote_endpoint);
-  char *cs = strdup(remote_endpoint);
-  uint32_t mailBox, maxMb, size;
-  EndPoint::getProtocolFromString(remote_endpoint, protocol);
-  EndPoint::getResourceValuesFromString(remote_endpoint, cs, &mailBox, &maxMb, &size);
-  bool ret = 
-    local_ep.protocol == protocol &&
-    maxMb == local_ep.maxCount && mailBox != local_ep.mailbox;
-  free(protocol);
-  free(cs);
-  return ret;
-}
-
-
-
-
-
 
 /******
  *  TEMPLATE MANAGEMENT
@@ -444,13 +461,15 @@ canSupport(EndPoint &local_ep, const char *remote_endpoint) {
 struct template_list_item_
 {
   XferServices* xf_template;
-  char* src;
-  char* dst;
+  EndPoint *src;
+  EndPoint *dst;
+  //  char* src;
+  // char* dst;
   int rcount;
   ~template_list_item_()
   {
-    delete []src;
-    delete []dst;
+    //delete []src;
+    //delete []dst;
     delete xf_template;
   }
 };
@@ -474,7 +493,7 @@ void XferFactoryManager::clearCache()
 }
 
 int
-XferFactoryManager::get_template(const char *src, const char *dst, XferServices* &xfer_template)
+XferFactoryManager::get_template(EndPoint *src, EndPoint *dst, XferServices* &xfer_template)
 {
   /* Check to see if the list has any items */
   if (get_nentries(&m_templatelist) == 0) {
@@ -486,8 +505,7 @@ XferFactoryManager::get_template(const char *src, const char *dst, XferServices*
   for (int i=0; i < get_nentries(&m_templatelist); i++) {
     TList_Item *item = (TList_Item *)get_entry(&m_templatelist, i);
     /* Check for a complete match */
-    if ((!(strcmp((const char *)item->src, src))) &&
-        (!(strcmp((const char *)item->dst, dst)))) {
+    if (item->src == src && item->dst == dst) {
       /* We have a match, return the template */
       xfer_template = item->xf_template;
       /* Increment the ref count */
@@ -501,7 +519,7 @@ XferFactoryManager::get_template(const char *src, const char *dst, XferServices*
 }
 
 int
-XferFactoryManager::add_template(std::string& src, std::string& dst, XferServices* xf_template)
+XferFactoryManager::add_template(EndPoint *src, EndPoint *dst, XferServices* xf_template)
 {
 
   /* Local Variables */
@@ -513,6 +531,7 @@ XferFactoryManager::add_template(std::string& src, std::string& dst, XferService
   /* Set the reference count */
   item->rcount = 1;
 
+#if 0
   /* Initialize the TList_Item */
   if ( src.length() ) {
     item->src = new char[src.length()+1];
@@ -522,7 +541,10 @@ XferFactoryManager::add_template(std::string& src, std::string& dst, XferService
     item->dst = new char[dst.length()+1];
     strcpy(item->dst, dst.c_str() );
   }
-
+#else
+  item->src = src;
+  item->dst = dst;
+#endif
   item->xf_template = xf_template;
 
   /* Add the template to the list */
@@ -638,8 +660,6 @@ getSMBResources(
   }
 }
 
-
-
 // create a transfer compatible SMB
 SMBResources* 
 XferFactoryManager::
@@ -667,7 +687,7 @@ getSMBResources(
   if ( ! factory ) {
     throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, ep.c_str());
   }
-  EndPoint* loc = factory->getEndPoint( ep );
+  EndPoint* loc = factory->getEndPoint( ep.c_str());
   sr->sMemServices = factory->getSmemServices(loc);
   sr->sMemResourceMgr = NULL;
   sr->sMemServices->attach( loc );
@@ -769,13 +789,13 @@ XferServices* XferFactoryManager::getService(
   OU::AutoMutex guard ( m_mutex, true );
 
   /* Check to see if we already have a transfer template */
-  if (get_template(s_endpoint->end_point.c_str(), t_endpoint->end_point.c_str(), pxfer)) {
+  if (get_template(s_endpoint, t_endpoint, pxfer)) {
 
     // Find the factory that supports the endpoints
     XferFactory* factory = find( s_endpoint->end_point,
                                                      t_endpoint->end_point);
     if ( factory == NULL ) {
-      printf("Enpoint connection, %s to %s not supported\n", s_endpoint->end_point.c_str(),
+      ocpiBad("Enpoint connection, %s to %s not supported", s_endpoint->end_point.c_str(),
              t_endpoint->end_point.c_str() );
       throw -1;
     }
@@ -785,11 +805,11 @@ XferServices* XferFactoryManager::getService(
 
     /* We couldn't find a template, create one */
     /* create the transfer template, source->target */
-    printf("new template from %s to %s\n", s_endpoint->end_point.c_str(), t_endpoint->end_point.c_str());
+    ocpiDebug("new template from %s to %s", s_endpoint->end_point.c_str(), t_endpoint->end_point.c_str());
     pxfer = factory->getXferServices(source_info->sMemServices, target_info->sMemServices);
 
     /* Insert the template into the template list */
-    if (add_template(s_endpoint->end_point, t_endpoint->end_point, pxfer)) {
+    if (add_template(s_endpoint, t_endpoint, pxfer)) {
       return NULL;
     }
   }
@@ -798,6 +818,7 @@ XferServices* XferFactoryManager::getService(
 
 }
 
+#if 0
 XferServices* XferFactoryManager::getService( std::string& source_sname, std::string& target_sname)
 {
   SMBResources* source_info;
@@ -808,10 +829,7 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
 
   /* Check to see if we already have a transfer template */
   if (get_template(source_sname.c_str(), target_sname.c_str(), pxfer)) {
-
-#ifndef NDEBUG
-    printf("Getting new service !!\n");
-#endif
+    ocpiDebug("Getting new service !!");
 
     // Find the factory that supports the endpoints
     XferFactory* factory = find( source_sname, target_sname);
@@ -821,7 +839,7 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
 
     /* We couldn't find a template, create one */
     /* create the transfer template, source->target */
-    printf("new template from %s to %s\n", source_sname.c_str(), target_sname.c_str());
+    ocpiDebug("new template from %s to %s", source_sname.c_str(), target_sname.c_str());
     pxfer = factory->getXferServices(source_info->sMemServices, target_info->sMemServices);
 
     /* Insert the template into the template list */
@@ -832,6 +850,7 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
 
   return pxfer;
 }
+#endif
 
   void Device::
   configure(ezxml_t x)
@@ -839,4 +858,106 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
     OD::Device::configure(x); // give the base class a chance to do generic configuration
     parse(&driverBase(), x);
   }
+
+// Create a transfer request
+XferRequest* XferRequest::copy (OCPI::OS::uint32_t srcoffs, 
+				OCPI::OS::uint32_t dstoffs, 
+				OCPI::OS::uint32_t nbytes, 
+				XferRequest::Flags flags
+				)
+{
+  OCPI::OS::int32_t retVal = 0;
+  OCPI::OS::int32_t newflags = 0;
+  if (flags & XferRequest::DataTransfer) newflags |= XFER_FIRST;
+  if (flags & XferRequest::FlagTransfer) newflags |= XFER_LAST;
+  if ( m_thandle == NULL ) {
+    retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &m_thandle);
+    if (retVal){
+      return NULL;
+    }
+  }
+  else {
+    XF_transfer handle;
+    retVal = xfer_copy (m_xftemplate, srcoffs, dstoffs, nbytes, newflags, &handle);
+    if (retVal){
+      return NULL;
+    }
+    XF_transfer handles[3];
+    handles[0] = handle;
+    handles[1] = m_thandle;
+    handles[2] = 0;
+    retVal = xfer_group ( handles, 0, &m_thandle);
+    if (retVal) {
+      return NULL;
+    }
+    xfer_release(handles[0], 0);
+    xfer_release(handles[1], 0);
+  }
+  return this;
+}
+
+
+// Group data transfer requests
+XferRequest & XferRequest::group (XferRequest* lhs )
+{
+  XF_transfer handles[3];
+  handles[0] = lhs->m_thandle;
+  handles[1] = m_thandle;
+  handles[2] = 0;
+  xfer_group ( handles, 0, &m_thandle);
+  return *this;
+}
+
+void XferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )
+{
+  int n=0;
+  while ( new_offsets[n] ) {
+    xfer_modify( m_thandle, &new_offsets[n], &old_offsets[n] );
+    n++;
+  }
+}
+void XferRequest::action_transfer(PIO_transfer pio_transfer) {
+  xfer_pio_action_transfer(pio_transfer);
+}
+void XferRequest::start_pio(PIO_transfer pio_transfer) {
+  for (PIO_transfer transfer = pio_transfer; transfer; transfer = transfer->next)
+    action_transfer(transfer);
+}
+void XferRequest::post() {
+  
+  struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)m_thandle;
+  
+  /* Process the first transfers */
+
+  if (xf_transfer->first_pio_transfer) {
+    start_pio(xf_transfer->first_pio_transfer);
+  }
+
+  /* Get the type of transfer */
+  if (xf_transfer->pio_transfer) {
+    /* Start the pio transfer */
+    start_pio(xf_transfer->pio_transfer);
+  }
+
+  /* Process the last transfers */
+  if (xf_transfer->last_pio_transfer) {
+
+    /* Start the last pio transfer */
+    start_pio(xf_transfer->last_pio_transfer);
+  }
+}
+
+XferRequest::CompletionStatus XferRequest::
+getStatus() {
+  return xfer_get_status (m_thandle) == 0 ? CompleteSuccess : Pending;
+}
+
+XferRequest::XferRequest(XF_template temp) : m_thandle(NULL), m_xftemplate(temp) {
+}
+XferRequest::~XferRequest() {
+  if (m_thandle)
+    {
+      (void)xfer_release (m_thandle, 0);
+    }
+}
 }

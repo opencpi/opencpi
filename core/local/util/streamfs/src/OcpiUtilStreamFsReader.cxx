@@ -171,7 +171,7 @@ namespace OcpiUtilStreamFsReader {
     }
 
     unsigned long long newpos = origin + off;
-    pos_type ptpos = OCPI::Util::Misc::unsignedToStreamsize (newpos);
+    pos_type ptpos = OCPI::Util::unsignedToStreamsize (newpos);
 
     if (ptpos == static_cast<pos_type> (-1)) {
       return static_cast<pos_type> (-1);
@@ -189,11 +189,11 @@ namespace OcpiUtilStreamFsReader {
     }
 
     if (static_cast<unsigned long long> (pos) == m_pos) {
-      return OCPI::Util::Misc::unsignedToStreamsize (pos);
+      return OCPI::Util::unsignedToStreamsize (pos);
     }
 
     unsigned long long spos = m_beg + pos;
-    pos_type ptspos = OCPI::Util::Misc::unsignedToStreamsize (spos);
+    pos_type ptspos = OCPI::Util::unsignedToStreamsize (spos);
 
     if (ptspos == static_cast<pos_type> (-1)) {
       return static_cast<pos_type> (-1);
@@ -204,7 +204,7 @@ namespace OcpiUtilStreamFsReader {
     }
 
     m_pos = pos;
-    return OCPI::Util::Misc::unsignedToStreamsize (pos);
+    return OCPI::Util::unsignedToStreamsize (pos);
   }
 
   std::streamsize
@@ -220,7 +220,7 @@ namespace OcpiUtilStreamFsReader {
     }
 
     unsigned long long remaining = m_size - m_pos;
-    std::streamsize strem = OCPI::Util::Misc::unsignedToStreamsize (remaining);
+    std::streamsize strem = OCPI::Util::unsignedToStreamsize (remaining);
     std::streamsize amount = (count < strem) ? count : strem;
 
     m_stream->read (buffer, amount);
@@ -496,7 +496,7 @@ namespace {
           isDirectory = true;
         }
 
-        if (OCPI::Util::Misc::glob (nextPathComponent, m_relPat)) {
+        if (OCPI::Util::glob (nextPathComponent, m_relPat)) {
           if (isDirectory) {
             if (m_seenDirectories.find (nextPathComponent) == m_seenDirectories.end()) {
               m_seenDirectories.insert (nextPathComponent);
@@ -697,7 +697,7 @@ readTOC ()
 
   char * endPtr;
   unsigned long long tocPos = std::strtoul (sTocPos.c_str(), &endPtr, 10);
-  std::streamsize ptTocPos = OCPI::Util::Misc::unsignedToStreamsize (tocPos);
+  std::streamsize ptTocPos = OCPI::Util::unsignedToStreamsize (tocPos);
 
   if (!endPtr || *endPtr || ptTocPos < 0) {
     throw std::string ("invalid TOC position");
@@ -1006,7 +1006,7 @@ openReadonly (const std::string & fileName,
   }
 
   if ((*it).second.pos != m_pos) {
-    std::streamsize newpos = OCPI::Util::Misc::unsignedToStreamsize ((*it).second.pos);
+    std::streamsize newpos = OCPI::Util::unsignedToStreamsize ((*it).second.pos);
 
     if (newpos < 0) {
       throw std::string ("invalid position");

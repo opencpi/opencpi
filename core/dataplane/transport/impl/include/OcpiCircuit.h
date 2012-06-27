@@ -133,9 +133,9 @@ namespace OCPI {
       /**********************************
        * Adds a port to the circuit
        *********************************/
-      void addInputPort(
-                                              const OCPI::RDT::Descriptors&      portDep,
-                                              const char*                 our_ep);
+      void addInputPort(DataTransfer::EndPoint &iep,
+			const OCPI::RDT::Descriptors& inputDesc,
+			DataTransfer::EndPoint &oep);
 
       /**********************************
        * Adds a port to the circuit

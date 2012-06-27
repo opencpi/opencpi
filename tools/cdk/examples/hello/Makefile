@@ -12,7 +12,7 @@ hello: hello.cxx
 
 # OCPI_LIBRARY_PATH is like LD_LIBRARY_PATH, but for OpenCPI components.
 run: all
-	OCPI_LIBRARY_PATH=lib ./hello > /dev/null	
+	OCPI_LIBRARY_PATH=lib $(VG) ./hello > /dev/null	
 
 clean::
 	rm -f -r hello hello.dSYM lib

@@ -37,7 +37,7 @@
 #define XFER_IF_H
 
 
-#include <DtTransferInterface.h>
+#include "DtTransferInterface.h"
 
 /* Constants */
 #define XFER_FLAG  1
@@ -54,7 +54,6 @@ struct  XFTemplate {
   int                         s_off;
   int                         t_off;
 };
-
 class Mapit {
  public:
   virtual void map( unsigned int, unsigned int){};
@@ -70,6 +69,8 @@ XFTransfer():m(NULL){};
 typedef XFTemplate* XF_template;
 typedef XFTransfer* XF_transfer;
 
+typedef struct pio_template_ * PIO_template;
+
 /* External functions */
 extern long xfer_create(DataTransfer::SmemServices*, DataTransfer::SmemServices*, OCPI::OS::int32_t , XF_template *);
 extern long xfer_copy(XF_template, OCPI::OS::uint32_t, OCPI::OS::uint32_t, OCPI::OS::uint32_t, OCPI::OS::int32_t, XF_transfer *);
@@ -79,5 +80,6 @@ extern long xfer_destroy(XF_template, OCPI::OS::int32_t);
 extern long xfer_start(XF_transfer, OCPI::OS::int32_t);
 extern long xfer_get_status(XF_transfer);
 extern long xfer_modify( XF_transfer, OCPI::OS::uint32_t* noff, OCPI::OS::uint32_t* ooff );
+extern void xfer_pio_action_transfer(PIO_transfer);
 
 #endif /* !defined XFER_IF_H */

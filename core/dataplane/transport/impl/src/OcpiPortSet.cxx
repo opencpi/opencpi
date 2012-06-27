@@ -72,9 +72,7 @@ PortSet( PortSetMetaData* psmd, Circuit* circuit )
    m_data.portCount = 0;
    m_data.outputPortRank = 0;
 
- #ifndef NDEBUG
-   printf("In PortSet::PortSet()\n");
- #endif
+   ocpiDebug("In PortSet::PortSet()");
 
    // cache our meta data
    m_output = m_data.psMetaData->output;
@@ -98,9 +96,7 @@ update( PortSetMetaData* psmd )
 {
   // Here we will create our ports
 
-#ifndef NDEBUG
-  printf("PortSet::update: size = %d\n", psmd->m_portMd.size() );
-#endif
+  ocpiDebug("PortSet::update: size = %d", psmd->m_portMd.size() );
 
   for ( unsigned int n=0; n<psmd->m_portMd.size(); n++ ) {
 

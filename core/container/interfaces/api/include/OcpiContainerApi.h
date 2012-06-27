@@ -44,8 +44,6 @@
 #include "OcpiLibraryApi.h"
 namespace OCPI {
   namespace API {
-    // The abstract class for exposed API functionality for containers
-    //    class Application;
     class ExternalBuffer {
     protected:
       virtual ~ExternalBuffer();
@@ -208,6 +206,7 @@ namespace OCPI {
 	*find(const PValue *list);
       static void shutdown();
     };
+    class Application; // forward reference for applications that span containers.
     // User interface for runtime property support for a worker.
     // Optimized for low-latency scalar and/or memory mapped access.
     // Not virtual.
@@ -215,7 +214,7 @@ namespace OCPI {
     // on their stack so that access to members (in inline methods) has no indirection.
     class Property {
       Worker &m_worker;               // which worker do I belong to
-      bool m_readSync, m_writeSync;
+      bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
     public:
       void checkTypeAlways(BaseType ctype, unsigned n, bool write) const;
       inline void checkType(BaseType ctype, unsigned n, bool write) const {
@@ -228,6 +227,7 @@ namespace OCPI {
       volatile void *m_writeVaddr;
       const volatile void *m_readVaddr;
       PropertyInfo &m_info;           // details about property, not defined in the API
+      Property(Application &, const char *);
       Property(Worker &, const char *);
       Property(Worker &, unsigned);
       // We don't use scalar-type-based templates (sigh) so we can control which

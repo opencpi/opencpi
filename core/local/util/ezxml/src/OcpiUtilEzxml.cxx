@@ -531,7 +531,7 @@ namespace OCPI {
 	if (name)
 	  s = name;
 	else
-	  Misc::formatString(s, fmt, ord++);
+	  formatString(s, fmt, ord++);
       }
       const char *getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *element) {
 	const char *cp = ezxml_cattr(x, attr);

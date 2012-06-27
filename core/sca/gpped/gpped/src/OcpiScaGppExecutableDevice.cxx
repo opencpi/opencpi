@@ -422,16 +422,16 @@ query (CF::Properties & props)
     CF::DataType & property = props[pi];
     const char * propertyId = property.id.in ();
 
-    if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2") == 0) {
+    if (OCPI::Util::caseInsensitiveStringCompare (propertyId, "DCE:b59fa5e6-5eb4-44f6-90f6-0548508f2ba2") == 0) {
       property.value <<= static_cast<CORBA::ULong> (m_ocpiDeviceId);
     }
-    else if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43") == 0) {
+    else if (OCPI::Util::caseInsensitiveStringCompare (propertyId, "DCE:c4b738d8-fbe6-4893-81cd-1bb7a77bfb43") == 0) {
       property.value <<= "GPP";
     }
-    else if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:80bf17f0-6c7f-11d4-a226-0050da314cd6") == 0) {
+    else if (OCPI::Util::caseInsensitiveStringCompare (propertyId, "DCE:80bf17f0-6c7f-11d4-a226-0050da314cd6") == 0) {
       property.value <<= m_osName.c_str ();
     }
-    else if (OCPI::Util::Misc::caseInsensitiveStringCompare (propertyId, "DCE:9b445600-6c7f-11d4-a226-0050da314cd6") == 0) {
+    else if (OCPI::Util::caseInsensitiveStringCompare (propertyId, "DCE:9b445600-6c7f-11d4-a226-0050da314cd6") == 0) {
       property.value <<= m_processorName.c_str ();
     }
     else if (std::strcmp (propertyId, "PRODUCER_LOG_LEVEL") == 0) {
@@ -1054,7 +1054,7 @@ terminate (CF::ExecutableDevice::ProcessID_Type processId)
 
   if (pit == m_processInfos.end()) {
     std::string msg = "Process id \"";
-    msg += OCPI::Util::Misc::unsignedToString (pid);
+    msg += OCPI::Util::unsignedToString (pid);
     msg += "\" not found";
 
     m_out << OCPI::Logger::Level::EXCEPTION_ERROR

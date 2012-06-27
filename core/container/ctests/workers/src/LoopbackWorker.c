@@ -187,9 +187,11 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     #endif
   */
 
+#if 0
   this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
 			 &this_->ports[LoopbackWorker_Data_Out_Port].current, 0x54, len );
   this_->container.advance( &this_->ports[LoopbackWorker_Data_In_Port], 0 );
+#endif
 
   props->startIndex++;
   // Since we have used "send" in to out, or memcpy, send, and advance, we just return OK here.

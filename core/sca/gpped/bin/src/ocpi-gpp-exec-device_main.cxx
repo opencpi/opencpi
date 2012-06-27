@@ -233,7 +233,7 @@ namespace {
     }
 
     std::string relName = "gppExecutableDevice-";
-    relName += OCPI::Util::Misc::unsignedToString (ocpiDeviceId);
+    relName += OCPI::Util::unsignedToString (ocpiDeviceId);
 
     std::string tempFileLocation = OCPI::OS::FileSystem::joinNames (ntd, relName);
 
@@ -507,7 +507,7 @@ startGppExecutableDeviceScaInt (CORBA::ORB_ptr orb,
         deviceLabel = argv[++ai];
       }
       else if (std::strcmp (argv[ai], "ocpiDeviceId") == 0) {
-        ocpiDeviceId = OCPI::Util::Misc::stringToUnsigned (argv[++ai]);
+        ocpiDeviceId = OCPI::Util::stringToUnsigned (argv[++ai]);
       }
       else if (std::strcmp (argv[ai], "osName") == 0) {
         osName = argv[++ai];
@@ -736,11 +736,11 @@ main (int argc, char * argv[])
     for (int cdi=1; cdi<argc; cdi++) {
       if (std::strcmp (argv[cdi], "ocpiDeviceId") == 0 ||
           std::strcmp (argv[cdi], "--ocpiDeviceId") == 0) {
-        ocpiDeviceId = OCPI::Util::Misc::stringToUnsigned (argv[cdi+1]);
+        ocpiDeviceId = OCPI::Util::stringToUnsigned (argv[cdi+1]);
         break;
       }
       else if (std::strncmp (argv[cdi], "--ocpiDeviceId=", 14) == 0) {
-        ocpiDeviceId = OCPI::Util::Misc::stringToUnsigned (argv[cdi]+14);
+        ocpiDeviceId = OCPI::Util::stringToUnsigned (argv[cdi]+14);
         break;
       }
     }
@@ -795,7 +795,7 @@ main (int argc, char * argv[])
     iPidFile >> strPid;
 
     try {
-      pid = OCPI::Util::Misc::stringToUnsigned (strPid);
+      pid = OCPI::Util::stringToUnsigned (strPid);
     }
     catch (...) {
       pid = 0;

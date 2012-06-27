@@ -153,7 +153,7 @@ stringifyCFException (const CORBA::Exception & cex)
 
     if (ex) {
       reason  = "Invalid port: ";
-      reason += OCPI::Util::Misc::unsignedToString (static_cast<unsigned int> (ex->errorCode));
+      reason += OCPI::Util::unsignedToString (static_cast<unsigned int> (ex->errorCode));
       reason += ": ";
       reason += ex->msg.in ();
       return reason;

@@ -329,7 +329,7 @@ MemIStream::MemIStreamBuf::seekoff (off_type off, std::ios_base::seekdir way,
   }
 
   unsigned long long newpos = origin + off;
-  pos_type ptpos = OCPI::Util::Misc::unsignedToStreamsize (newpos);
+  pos_type ptpos = OCPI::Util::unsignedToStreamsize (newpos);
 
   if (ptpos == static_cast<pos_type> (-1)) {
     return ptpos;

@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -88,6 +89,7 @@ public:
   bool verbose;
   std::string host;
   std::string protocol;
+  std::string transport;
   int  protocol_index;
   std::string endpoint;
   int  endpoint_index;
@@ -107,7 +109,7 @@ OcpiRccBinderConfigurator ()
     verbose (false),
     protocol_index(-1),
     endpoint_index(0),
-    iters(2000000),
+    iters(2000),
     show_drivers(false),
     xml_config("../dconf.xml")
   
@@ -131,6 +133,9 @@ OcpiRccBinderConfigurator::g_options[] = {
   { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "protocol", "Use this protocol for testing",
     OCPI_CLC_OPT(&OcpiRccBinderConfigurator::protocol), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
+    "transport", "Use this transport for testing",
+    OCPI_CLC_OPT(&OcpiRccBinderConfigurator::transport), 0 },
   { OCPI::Util::CommandLineConfiguration::OptionType::LONG,
     "pi", "Protocol Index, Can be used in place of the string",
     OCPI_CLC_OPT(&OcpiRccBinderConfigurator::protocol_index), 0 },
@@ -182,6 +187,7 @@ int client_connect(const char *servername,int port) {
     return -1;
 
   n = getaddrinfo(servername, service, &hints, &res);
+  free(service);
 
   if (n < 0) {
     fprintf(stderr, "%s for %s:%d\n", gai_strerror(n), servername, port);
@@ -229,7 +235,7 @@ int server_connect(int port)
     return -1;
 
   n = getaddrinfo(NULL, service, &hints, &res);
-
+  free(service);
   if (n < 0) {
     fprintf(stderr, "%s for port %d\n", gai_strerror(n), port);
     return n;
@@ -274,7 +280,6 @@ void swrite( std::string & s )
 {
   ocpiDebug("Entering write %d", s.size());
   uint32_t  l = s.size();
-  
   if (l) {
     ocpiCheck(write( socket_fd, &l, 4 ) == 4);  
     ocpiCheck(write( socket_fd, s.c_str(), l ) == l);  
@@ -300,9 +305,9 @@ sread( std::string & s  )
 }
 
 static void
-setupInputPort(Port *ip) {
+setupInputPort(Port *ip, const OCPI::API::PValue *props) {
   std::string desc, fb;
-  ip->getInitialProviderInfo(NULL, desc);
+  ip->getInitialProviderInfo(props, desc);
   ocpiAssert(desc.size());
   swrite( desc );
   ocpiCheck(sread( desc ));
@@ -314,7 +319,7 @@ setupInputPort(Port *ip) {
   */
 }
 static void
-setupOutputPort(Port *op) {
+setupOutputPort(Port *op, const OCPI::API::PValue */*props */) {
   std::string desc, fb;
   ocpiCheck(sread( desc ));
   op->setInitialProviderInfo( NULL, desc, fb );
@@ -355,27 +360,26 @@ void setupForPCMode(const OCPI::API::PValue *props)
   // Now we need to make the connections.  We are connecting our producer to the loopback consumer
   // and the loopback consumer to our producer.
   try {
-    setupInputPort(pc_inputPort);
-    setupOutputPort(pc_outputPort);
-    printf("Done setting pc\n");
+    setupInputPort(pc_inputPort, props);
+    setupOutputPort(pc_outputPort, props);
+    ocpiDebug("Done setting pc");
   }
   catch( ... ) {                
-    printf("gpp: Caught an unknown exception while connecting external ports\n" );
-    throw;
+    throw OCPI::Util::Error("gpp: Caught an unknown exception while connecting external ports");
   }
-  printf("Setup is complete\n");
+  ocpiDebug("Setup is complete");
 }
 
 static 
 void setupForLoopbackMode(const OCPI::API::PValue *props)
 {
-  printf("*** Create worker\n");
+  ocpiDebug("*** Create worker");
   try {
     WORKER_LOOPBACK_ID = OCPI::CONTAINER_TEST::createWorker(loopback_app, &LoopbackWorkerDispatchTable);
   }
   CATCH_ALL_RETHROW( "creating workers");
 
-  printf("*** Create ports\n");
+  ocpiDebug("*** Create ports");
   try {
     lb_outputPort = &WORKER_LOOPBACK_ID->createOutputPort( 0,
                                                           OCPI_RCC_CONT_NBUFFERS,
@@ -393,8 +397,8 @@ void setupForLoopbackMode(const OCPI::API::PValue *props)
   CATCH_ALL_RETHROW( "creating ports");
 
   try {
-    setupOutputPort(lb_outputPort);
-    setupInputPort(lb_inputPort);
+    setupOutputPort(lb_outputPort, props);
+    setupInputPort(lb_inputPort, props);
   }
   CATCH_ALL_RETHROW( "connecting ports");
 
@@ -406,7 +410,7 @@ bool parseArgs( int argc, char** argv)
   bool ret =false;
   for ( int n=0; n<argc; n++ ) {
     if (strcmp(argv[n],"-loopback") == 0 ) {
-      printf("Setting up for loopback mode\n");
+      ocpiDebug("Setting up for loopback mode");
       ret = true;
     }
   }
@@ -414,7 +418,7 @@ bool parseArgs( int argc, char** argv)
 }
 #endif
 static 
-int gpp_cont(int /* argc */, char** /* argv */, const char *protocol)
+int gpp_cont()
 {
 
   DataTransfer::EventManager* event_manager = NULL;
@@ -431,7 +435,7 @@ int gpp_cont(int /* argc */, char** /* argv */, const char *protocol)
       try { 
 	c =  OCPI::API::ContainerManager::find("rcc", NULL, cprops);
 	if ( ! c )
-	  throw OCPI::Util::EmbeddedException("No Containers found\n");
+	  throw OCPI::Util::EmbeddedException("No Containers found");
 	a = c->createApplication();
       }
       CATCH_ALL_RETHROW( "creating container");
@@ -450,10 +454,10 @@ int gpp_cont(int /* argc */, char** /* argv */, const char *protocol)
       
       // We can either take on the role of the producer/consumer or the loopback
       OCPI::Container::Worker *worker;
-      static OCPI::Util::PValue port_props[] = {OCPI::Util::PVString("transport","ocpi-socket-rdma"),
+      // static OCPI::Util::PValue port_props[] = {OCPI::Util::PVString("transport","ocpi-socket-rdma"),
       // static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-ofed-rdma"),
       // static OCPI::Util::PValue c_port_props[] = {OCPI::Util::PVString("protocol","ocpi-smb-pio"),
-      //      const OCPI::API::PValue port_props[] = {OCPI::Util::PVString("protocol", protocol),
+      const OCPI::API::PValue port_props[] = {OCPI::Util::PVString("transport", config.transport.c_str()),
 					       OCPI::Util::PVEnd };
       if ( loopback ) {
         setupForLoopbackMode(port_props);
@@ -478,18 +482,21 @@ int gpp_cont(int /* argc */, char** /* argv */, const char *protocol)
       OCPI_RUN_TEST = 1;
 
       if ( event_manager ) {
-        printf("Running with an event manager\n");
+        ocpiDebug("Running with an event manager");
       }
       else {
-        printf("Running without a event manager\n");
+        ocpiDebug("Running without a event manager");
       }      
       
-      unsigned count = 0;
-      while( OCPI_RUN_TEST ) {
-	uint32_t sofar;
+      unsigned sofar = 0;
+      while( OCPI_RUN_TEST && sofar < (unsigned)config.iters) {
+	OS::Timer timer(2,0);
+	if (!worker->wait(&timer)) {
+	  ocpiInfo(" worker terminated");
+	  break;
+	}
 	worker->read(0, sizeof(uint32_t), &sofar);
-	fprintf(stderr, " %u%s", sofar, ++count%10 ? "" : "\n");
-	sleep(2);
+	ocpiInfo(" received %u", sofar);
       }	
 
       // Cleanup
@@ -506,21 +513,21 @@ int gpp_cont(int /* argc */, char** /* argv */, const char *protocol)
       }
     }
     catch ( int& ii ) {
-      printf("gpp: Caught an int exception = %d\n", ii );
+      ocpiBad("gpp: Caught an int exception = %d", ii );
     }
     catch ( OCPI::Util::EmbeddedException& eex ) {                        
-      printf(" \n gpp main: Caught an embedded exception");  
-      printf( " error number = %d", eex.m_errorCode );                        
-      printf(" Error = %s\n", eex.getAuxInfo() );
+      ocpiBad("gpp main: Caught an embedded exception");  
+      ocpiBad("error number = %d", eex.m_errorCode );                        
+      ocpiBad("Error = %s", eex.getAuxInfo() );
     }                                                               
     catch( std::string& stri ) {
-      printf("gpp: Caught a string exception = %s\n", stri.c_str() );
+      ocpiBad("gpp: Caught a string exception = %s", stri.c_str() );
     }
     catch( ... ) {
-      printf("gpp: Caught an unknown exception\n" );
+      ocpiBad("gpp: Caught an unknown exception" );
     }
 
-    printf("gpp_container: Good Bye\n");
+    ocpiDebug("gpp_container: Good Bye");
 
     return 0;
 }
@@ -545,6 +552,8 @@ int main( int argc, char** argv)
     std::cerr << "Error: " << oops << std::endl;
     return false;
   }
+  if (config.transport.empty())
+    config.transport = config.protocol;
   if (config.help) {
     printUsage (config, argv[0]);
     return false;
@@ -553,27 +562,27 @@ int main( int argc, char** argv)
   // Print out the available protocols
   std::vector<std::string> protolist  = fm.getListOfSupportedProtocols();  
   if ( protolist.size() == 0 ) {
-    printf("There are no resistered transfer drivers linked into this test, exiting\n");
+    ocpiBad("There are no resistered transfer drivers linked into this test, exiting");
     exit(-1);
   }
   std::vector<std::string>::iterator epit;
-  printf("\n\n List of supported transfer driver id's:\n");
+  ocpiDebug("List of supported transfer driver id's:");
   for ( epit=protolist.begin(); epit!=protolist.end(); epit++ ){
-    printf("  %s\n", (*epit).c_str() );
+    ocpiDebug("  %s", (*epit).c_str() );
   }
 
   // Print out the available endpoints
   std::vector<std::string>  eplist  = fm.getListOfSupportedEndpoints();
-  printf("\n\n List of supported endpoints:\n");
+  ocpiDebug("List of supported endpoints:");
   for ( epit=eplist.begin(); epit!=eplist.end(); epit++ ){
-    printf("  %s\n", (*epit).c_str() );
+    ocpiDebug("  %s", (*epit).c_str() );
   }
   if ( config.show_drivers ) {
     exit(1);
   }
   if ( config.protocol_index >= 0 ) {
     if ( config.protocol_index >= (int)protolist.size() ) {
-      printf("Invalid --pe argument, maximum value is %d\n", (int)protolist.size() );
+      ocpiBad("Invalid --pe argument, maximum value is %d", (int)protolist.size() );
       exit(-1);
     }
     std::string p = protolist[config.protocol_index];
@@ -595,17 +604,16 @@ int main( int argc, char** argv)
   }
 
   if ( config.host.empty() ) {  
-    socket_fd = server_connect(17077);
+    ocpiCheck((socket_fd = server_connect(18077)) >= 0);
     loopback = false;
   }
   else {
-    socket_fd = client_connect(config.host.c_str() ,17077);
+    ocpiCheck((socket_fd = client_connect(config.host.c_str() ,18077)) >= 0);
     loopback = true;
   }
 
   // Start the container in a thead
-  printf("**** Protocol = %s\n",  config.protocol.c_str());
-  gpp_cont(argc,argv, config.protocol.c_str());
+  gpp_cont();
 
 }
 

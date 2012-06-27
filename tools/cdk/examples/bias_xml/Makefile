@@ -36,7 +36,7 @@ biasFile: biasFile.cxx
 
 
 run: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc ./biasFile $(ARGS) > /dev/null	
+	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc $(VG) ./biasFile $(ARGS) > /dev/null	
 	od -X test.output
 
 runhdl1: all test.input

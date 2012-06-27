@@ -45,6 +45,10 @@ namespace OCPI {
     }
     Assembly::~Assembly() {
       delete [] m_candidates;
+      if (m_assyPorts)
+	for (unsigned n = 0; n < m_instances.size(); n++)
+	  delete [] m_assyPorts[n];
+      delete [] m_assyPorts;
     }
 
     void

@@ -104,11 +104,11 @@ stringifyCorbaException (const CORBA::Exception & ex)
       }
 
       res += " VMCID 0x";
-      res += OCPI::Util::Misc::unsignedToString ((unsigned)vmcid, 16);
+      res += OCPI::Util::unsignedToString ((unsigned)vmcid, 16);
     }
 
     res += ", minor code ";
-    res += OCPI::Util::Misc::unsignedToString ((unsigned)minorCode);
+    res += OCPI::Util::unsignedToString ((unsigned)minorCode);
     res += ")";
 
     return res;

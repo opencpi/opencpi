@@ -113,12 +113,13 @@ namespace OCPI {
                        OCPI::OS::uint32_t ps_id, 
                        DataDistribution* dd, 
                        ConnectionMetaData* c,
-                       const OCPI::RDT::Descriptors* port_dep, 
-                       OCPI::OS::uint32_t cid,
+		       DataTransfer::EndPoint &inputEp,
+                       const OCPI::RDT::Descriptors* inputDesc, 
+		       //                       OCPI::OS::uint32_t cid,
                        int port_count,
                        int buffer_count,
                        int buffer_size,
-                       const char* our_ep);
+                       DataTransfer::EndPoint &outputEp);
 
       virtual ~PortSetMetaData();
 

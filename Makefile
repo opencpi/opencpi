@@ -72,8 +72,8 @@ PACKAGES += adapt/os/ocpios core/local/logger core/local/util
 #PACKAGES += core/control/wci_api
 
 PACKAGES += \
-	 core/dataplane/rdma_driver_interface \
 	 core/dataplane/rdma_utils \
+	 core/dataplane/rdma_driver_interface \
 	 core/dataplane/rdma_smb \
 	 core/dataplane/rdma_drivers \
 	 core/dataplane/transport \
@@ -120,8 +120,8 @@ ALLPACKAGES = \
 	core/local/util \
 	core/corba/corba_util \
 	core/corba/orb_services \
-	core/dataplane/rdma_driver_interface \
 	core/dataplane/rdma_utils \
+	core/dataplane/rdma_driver_interface \
 	core/dataplane/rdma_smb \
 	core/dataplane/rdma_drivers \
 	core/dataplane/transport \

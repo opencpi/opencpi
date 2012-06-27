@@ -798,7 +798,7 @@ findRccImplementation (ezxml_t root)
         }
         else if (std::strcmp (refid, s_ocpiDeviceIdPropertyId) == 0) {
           try {
-            implDeviceId = OCPI::Util::Misc::stringToUnsigned (value);
+            implDeviceId = OCPI::Util::stringToUnsigned (value);
           }
           catch (...) {
           }
@@ -969,7 +969,7 @@ createOCPIDeviceIdDependencyElement (unsigned int deviceId)
   ezxml_t didPrefNode = ezxml_add_child (didNode, "propertyref", 13);
   ezxml_set_attr (didPrefNode, "refid", s_ocpiDeviceIdPropertyId);
 
-  std::string tmp = OCPI::Util::Misc::unsignedToString (deviceId);
+  std::string tmp = OCPI::Util::unsignedToString (deviceId);
   ezxml_set_attr_d (didPrefNode, "value", tmp.c_str());
 
   return didNode;

@@ -145,10 +145,11 @@ namespace OCPI {
 	      d->configure(dx);
       }
     }
-    ezxml_t Driver::getDeviceConfig(const char *name) {
+    ezxml_t Driver::getDeviceConfig(const char *argName) {
+      ocpiDebug("getDeviceConfig driver '%s' for device '%s' m_config %p", name().c_str(), argName, m_config);
       for (ezxml_t dx = ezxml_cchild(m_config, "device"); dx; dx = ezxml_next(dx)) {
 	const char *devName = ezxml_cattr(dx, "name");
-	if (devName && !strcmp(name, devName))
+	if (devName && !strcmp(argName, devName))
 	  return dx;
       }
       return NULL;

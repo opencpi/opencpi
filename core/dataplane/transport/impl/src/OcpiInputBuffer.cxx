@@ -94,9 +94,7 @@ void InputBuffer::update(bool critical)
   ( void ) critical;
   OCPI::OS::uint32_t n, tid;
 
-#ifndef NDEBUG
-  printf("InputBuffer:update:start\n");
-#endif
+  ocpiDebug("InputBuffer:update:start");
 
   tid = getTid();
 
@@ -109,9 +107,7 @@ void InputBuffer::update(bool critical)
   // First we will map our buffer
   if ( !this->m_port->isShadow() && !m_bVaddr && input_offsets->bufferOffset ) {
 
-#ifndef NDEBUG
-    printf("InputBuffer:update:mapping buffer offset\n");
-#endif
+    ocpiDebug("InputBuffer:update:mapping buffer offset");
 
     m_bVaddr = getPort()->getLocalShemServices()->map
       (input_offsets->bufferOffset, 
@@ -123,7 +119,7 @@ void InputBuffer::update(bool critical)
     m_buffer = m_baseAddress = m_bVaddr;
 
 #ifdef DEBUG_L2
-    printf("Input buffer addr = 0x%x, size = %d\n", m_buffer, input_offsets->bufferSize );
+    ocpiDebug("Input buffer addr = 0x%x, size = %d", m_buffer, input_offsets->bufferSize );
 #endif
 
   }
@@ -156,9 +152,7 @@ void InputBuffer::update(bool critical)
   // Now map the meta-data
   if ( !this->m_port->isShadow() && !m_bmdVaddr && input_offsets->metaDataOffset ) {
 
-#ifndef NDEBUG
-    printf("InputBuffer:update: mapping meta data\n");
-#endif
+    ocpiDebug("InputBuffer:update: mapping meta data");
 
     m_bmdVaddr = getPort()->getLocalShemServices()->map
       (input_offsets->metaDataOffset, 
@@ -186,13 +180,11 @@ void InputBuffer::update(bool critical)
     if ( !m_rssVaddr[idx] && input_offsets->myShadowsRemoteStateOffsets[idx] ) {
 
 #ifdef DEBUG_L2
-      printf("&&&& mapping shadow offset to 0x%x\n", 
+      ocpiDebug("&&&& mapping shadow offset to 0x%x", 
              input_offsets->myShadowsRemoteStateOffsets[idx]);
 #endif
 
-#ifndef NDEBUG
-      printf("InputBuffer:update: mapping shadows\n");
-#endif
+      ocpiDebug("InputBuffer:update: mapping shadows");
 
       m_rssVaddr[idx] = shadow_port->getRealShemServices()->map
         (input_offsets->myShadowsRemoteStateOffsets[idx], 
@@ -208,15 +200,9 @@ void InputBuffer::update(bool critical)
       this->m_feedbackDesc.desc.emptyFlagSize = sizeof(BufferState);
       this->m_feedbackDesc.desc.emptyFlagValue = EF_EMPTY_VALUE; // 0x1000; 
         
-#ifndef NDEBUG                
-      printf("Requested Emptyflag port value = 0x%llx\n", 
+      ocpiDebug("Requested Emptyflag port value = 0x%llx", 
              (long long)this->m_feedbackDesc.desc.emptyFlagValue);
-#endif
-                
-
-#ifndef NDEBUG
-      printf("InputBuffer:update: map returned %p\n", m_rssVaddr[idx]);
-#endif
+      ocpiDebug("InputBuffer:update: map returned %p", m_rssVaddr[idx]);
 
 
       ocpiAssert(getPort()->isShadow());
@@ -228,17 +214,13 @@ void InputBuffer::update(bool critical)
       m_myShadowsRemoteStates[idx]->bufferIsEmpty = EF_EMPTY_VALUE;
 
 #ifdef DEBUG_L2
-      printf("Mapped shadow buffer for idx %d = 0x%x\n", idx, m_myShadowsRemoteStates[idx] );
+      ocpiDebug("Mapped shadow buffer for idx %d = 0x%x", idx, m_myShadowsRemoteStates[idx] );
 #endif
 
     }
 
   }
-
-#ifndef NDEBUG
-  printf("InputBuffer:update:finish\n");
-#endif
-
+  ocpiDebug("InputBuffer:update:finish");
 }
 
 
@@ -281,14 +263,14 @@ volatile BufferState* InputBuffer::getState()
   }
 
 #ifdef DEBUG_L2
-  printf("In input get state, state = 0x%x\n", m_state[0]);
+  ocpiDebug("In input get state, state = 0x%x", m_state[0]);
 #endif
 
 
   if ( ! this->getPort()->isShadow() ) {
 
 #ifdef DEBUG_L2
-    printf("Getting load factor of %d\n", m_state[0]->pad );
+    ocpiDebug("Getting load factor of %d", m_state[0]->pad );
 #endif
     m_tState.bufferIsFull = m_state[0][m_pid].bufferIsFull;
 
@@ -310,7 +292,7 @@ volatile BufferState* InputBuffer::getState()
     for ( OCPI::OS::uint32_t n=0; n<MAX_PCONTRIBS; n++ ) {
       //      ocpiDebug("input %p getstate m_pid: %u s: %u n %u  m_state[0][n].bufferFull %u",
       //		this, m_pid, m_tState.bufferIsFull, n, m_state[0][n].bufferIsFull);
-      fflush(stderr); fflush(stdout);
+      //fflush(stderr); fflush(stdout);
       ocpiAssert(m_state[0][n].bufferIsFull == FF_EMPTY_VALUE ||
 		 m_state[0][n].bufferIsFull == FF_FULL_VALUE);
       if ( m_state[0][n].bufferIsFull != FF_EMPTY_VALUE) {
@@ -335,7 +317,7 @@ volatile BufferState* InputBuffer::getState()
 #endif
 
 #ifdef DEBUG_L2
-    printf("Load factor in shadow pad = %d\n",  m_tState.pad );
+    ocpiDebug("Load factor in shadow pad = %d",  m_tState.pad );
 #endif
 
   }
@@ -459,7 +441,7 @@ bool InputBuffer::isEmpty()
    }
 
 #ifdef DEBUG_L2
-  printf("Input buffer state = %d\n", m_state[0]->bufferIsFull);
+  ocpiDebug("Input buffer state = %d", m_state[0]->bufferIsFull);
 #endif
 
 #ifdef LEAST_BUSY
@@ -470,7 +452,7 @@ bool InputBuffer::isEmpty()
 #endif
 
 #ifdef DEBUG_L2
-  printf("Shadow(%d), Buffer state = %x\n", (isShadow() == true) ? 1:0, state->bufferIsFull );
+  ocpiDebug("Shadow(%d), Buffer state = %x", (isShadow() == true) ? 1:0, state->bufferIsFull );
 #endif
 
   if (isShadow()) {
@@ -485,7 +467,7 @@ bool InputBuffer::isEmpty()
 
 
 #ifdef DEBUG_L2
-  printf("TB(%p) port = %p empty = %d\n", this, getPort(), empty );
+  ocpiDebug("TB(%p) port = %p empty = %d", this, getPort(), empty );
 #endif
 
   return empty;

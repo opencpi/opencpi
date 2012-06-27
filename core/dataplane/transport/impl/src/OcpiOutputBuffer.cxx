@@ -118,7 +118,7 @@ void OutputBuffer::update(bool critical)
     m_buffer = m_baseAddress = m_bVaddr;
 
 #ifdef DEBUG_L2
-    printf("*** Output buffer addr = 0x%x, size = %d\n", m_buffer, output_offsets->bufferSize );
+    ocpiDebug("*** Output buffer addr = 0x%x, size = %d", m_buffer, output_offsets->bufferSize );
 #endif
 
   }
@@ -126,9 +126,7 @@ void OutputBuffer::update(bool critical)
   // map our states
   if ( !m_bsVaddr && output_offsets->localStateOffset ) {
 
-#ifndef NDEBUG
-    printf("OutputBuffer:update: mapping states\n");
-#endif
+    ocpiDebug("OutputBuffer:update: mapping states");
 
     m_bsVaddr = getPort()->getLocalShemServices()->map
       (output_offsets->localStateOffset, 
@@ -152,9 +150,7 @@ void OutputBuffer::update(bool critical)
   // map our meta-data
   if ( !m_bmdVaddr && output_offsets->metaDataOffset ) {
 
-#ifndef NDEBUG
-    printf("OutputBuffer:update: mapping metadata\n");
-#endif
+    ocpiDebug("OutputBuffer:update: mapping metadata");
 
     m_bmdVaddr = getPort()->getLocalShemServices()->map
       (output_offsets->metaDataOffset, 
@@ -168,18 +164,14 @@ void OutputBuffer::update(bool critical)
   // map our output control structure
   if ( !m_bcsVaddr && output_offsets->portSetControlOffset ) {
 
-#ifndef NDEBUG
-    printf("OutputBuffer: mapping control structure\n");
-#endif
+    ocpiDebug("OutputBuffer: mapping control structure");
 
     m_bcsVaddr = getPort()->getLocalShemServices()->map
       (output_offsets->portSetControlOffset, 
        sizeof(OutputPortSetControl));
 
-#ifndef NDEBUG
-    printf("m_bcsVaddr %p, portSetControlOffset %lld\n",
+    ocpiDebug("m_bcsVaddr %p, portSetControlOffset %lld",
            m_bcsVaddr, (long long)output_offsets->portSetControlOffset);
-#endif
 
                  
     memset(m_bcsVaddr, 0, sizeof(OutputPortSetControl));
@@ -217,7 +209,7 @@ volatile BufferState* OutputBuffer::getState()
     }
   }
 
-  //  ocpiDebug("Output buffer %p m_pid %u empty state = 0x%llx\n",
+  //  ocpiDebug("Output buffer %p m_pid %u empty state = 0x%llx",
   //	    this, m_pid, (long long)m_state[0][m_pid].bufferIsEmpty );
   ocpiAssert(m_state[0][m_pid].bufferIsEmpty == EF_EMPTY_VALUE ||
 	     m_state[0][m_pid].bufferIsEmpty == EF_FULL_VALUE);
@@ -240,7 +232,8 @@ bool OutputBuffer::isEmpty()
                                true ); 
 
 #ifdef DEBUG_L2
-  printf("Checking output isEmpty, m_dependentZeroCopyCount = %d, NOT CHECKING THEM !!\n", m_dependentZeroCopyCount);
+  ocpiDebug("Checking output isEmpty, m_dependentZeroCopyCount = %d, NOT CHECKING THEM !!",
+	    m_dependentZeroCopyCount);
 #endif
 
   // If we have any pending transfers, we will check them here to determine if
@@ -248,7 +241,7 @@ bool OutputBuffer::isEmpty()
   OCPI::OS::int32_t n_pending = get_nentries(&m_pendingTransfers);
 
 #ifdef DEBUG_L2
-  printf("** there are %d pending output transfers\n", n_pending );
+  ocpiDebug("** there are %d pending output transfers", n_pending );
 #endif
 
   for (OCPI::OS::int32_t i=0; i < n_pending; i++) {
@@ -265,9 +258,7 @@ bool OutputBuffer::isEmpty()
 
   if ( ! m_slave ) {
 
-#ifndef NDEBUG
-    //    printf("Not Slave port, manually setting DMA complete flag\n");
-#endif
+    //    ocpiDebug("Not Slave port, manually setting DMA complete flag");
 
     if ( n_pending == 0 ) {
       ocpiAssert(m_state[0][m_pid].bufferIsEmpty == EF_EMPTY_VALUE ||
@@ -283,7 +274,7 @@ bool OutputBuffer::isEmpty()
 #endif
   volatile BufferState* state = this->getState();
 
-  //  ocpiDebug("isEmpty: Output empty buffer %p state = %d\n", this, state->bufferIsEmpty );
+  //  ocpiDebug("isEmpty: Output empty buffer %p state = %d", this, state->bufferIsEmpty );
   ocpiAssert(state->bufferIsEmpty == EF_EMPTY_VALUE ||
 	     state->bufferIsEmpty == EF_FULL_VALUE);
   return state->bufferIsEmpty == EF_EMPTY_VALUE;

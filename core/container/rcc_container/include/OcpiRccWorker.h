@@ -82,6 +82,7 @@ namespace OCPI {
       void run(bool &anyRun);
       void checkDeadLock();
       void advanceAll();
+      void portError(std::string&error);
     public:
 
       Worker( Application & app, Artifact *art, const char *name,
@@ -163,6 +164,7 @@ namespace OCPI {
       virtual ~Worker();
 
 
+      std::list<OCPI::Metadata::Port*> m_testPmds;
     private:
       void initializeContext();
 
@@ -177,7 +179,6 @@ namespace OCPI {
       // Our context
       RCCWorker* m_context;
       OCPI::OS::Mutex &m_mutex;
-
     protected:
       inline uint8_t * getPropertyVaddr() const { return  (uint8_t*)m_context->properties; }
 

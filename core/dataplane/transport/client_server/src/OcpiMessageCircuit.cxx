@@ -67,9 +67,13 @@ namespace OCPI {
       : m_transport(transport),	m_bufferSize(bufferSize ? bufferSize : defaultBufferSize), m_mutex(mutex), 
 	m_rcv_port(NULL), m_send_port(NULL)
     {
-      Circuit &send = makeCircuit(localEndpoint, remoteEndpoint, true, protocol, timer);
+      DataTransfer::EndPoint
+	&local = transport.getLocalEndpoint(localEndpoint),
+	&remote = transport.addRemoteEndPoint(remoteEndpoint);
+
+      Circuit &send = makeCircuit(local, remote, true, protocol, timer);
       try {
-	Circuit &rcv = makeCircuit(remoteEndpoint, localEndpoint, false, NULL, timer);
+	Circuit &rcv = makeCircuit(remote, local, false, NULL, timer);
 	m_rcv_port = rcv.getInputPortSet(0)->getPort(0);
 	m_send_port = send.getOutputPortSet()->getPort(0);
       } catch(...) {
@@ -87,10 +91,10 @@ namespace OCPI {
 
     // Complete one of the two circuits
     Circuit & MessageCircuit::
-    makeCircuit(const std::string &from, const std::string &to, bool send,
+    makeCircuit(DataTransfer::EndPoint &from, DataTransfer::EndPoint &to, bool send,
 		const char *protocol, OS::Timer *timer) {
       Circuit &c =
-	*m_transport.createCircuit( "", new ConnectionMetaData(from.c_str(), to.c_str(), 1, m_bufferSize),
+	*m_transport.createCircuit( "", new ConnectionMetaData(&from, &to, 1, m_bufferSize),
 				    NULL, NULL,
 				    NewConnectionFlag | (send ? SendCircuitFlag : RcvCircuitFlag),
 				    protocol, timer);
@@ -101,7 +105,8 @@ namespace OCPI {
 	  delete &c;
 	  throw OCPI::Util::Error("Timeout (> %us %uns) on %s side of connection '%s'->'%s'",
 				  timer->getElapsed().seconds(), timer->getElapsed().nanoseconds(),
-				  send ? "send" : "receive", from.c_str(), to.c_str());
+				  send ? "send" : "receive", from.end_point.c_str(),
+				  to.end_point.c_str());
 	}
       }
       // c.initializeDataTransfers();

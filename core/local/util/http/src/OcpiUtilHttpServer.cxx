@@ -121,7 +121,7 @@ receiveRequestLine ()
   OCPI::Logger::DebugLogger debugLogger (*m_logger);
 
   m_requestLine =
-    OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+    OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
 
   /*
    * HTTP says we should ignore empty lines
@@ -129,7 +129,7 @@ receiveRequestLine ()
 
   while (m_requestLine.length() == 0 && m_inConn->good()) {
     m_requestLine =
-      OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+      OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
   }
 
   if (m_inConn->eof()) {
@@ -301,7 +301,7 @@ receiveRequestHeaders ()
   OCPI::Logger::DebugLogger debugLogger (*m_logger);
 
   std::string::size_type colonPos;
-  std::string headerLine = OCPI::Util::Misc::readline (m_inConn);
+  std::string headerLine = OCPI::Util::readline (m_inConn);
   int count=0;
 
   while (m_inConn->good() && headerLine.length()) {
@@ -380,7 +380,7 @@ receiveRequestHeaders ()
                 << "\""
                 << std::flush;
 
-    headerLine = OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+    headerLine = OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
   }
 
   if (!m_inConn->good ()) {
@@ -794,7 +794,7 @@ processPutRequest ()
 
   while (m_inConn->good() && fileStream->good()) {
     if (chunked) {
-      strChunkSize = OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+      strChunkSize = OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
 
       if (strChunkSize.length() == 0 || strChunkSize.length() == MAX_LENGTH_OF_HEADER_LINE) {
         debugLogger << g_myProducerName
@@ -829,12 +829,12 @@ processPutRequest ()
            m_inConn->good() && fileStream->good()) {
       if (chunked) {
         std::streamsize inChunk =
-          OCPI::Util::Misc::unsignedToStreamsize (chunkSize, true);
+          OCPI::Util::unsignedToStreamsize (chunkSize, true);
         amountToRead = (inChunk < DATA_BUFFER_SIZE) ? inChunk : DATA_BUFFER_SIZE;
       }
       else if (!haveContentLength) {
         std::streamsize inContent =
-          OCPI::Util::Misc::unsignedToStreamsize (contentLength, true);
+          OCPI::Util::unsignedToStreamsize (contentLength, true);
         amountToRead = (inContent < DATA_BUFFER_SIZE) ? inContent : DATA_BUFFER_SIZE;
       }
       else {
@@ -857,7 +857,7 @@ processPutRequest ()
     }
 
     if (chunked && chunkSize == 0) {
-      strChunkSize = OCPI::Util::Misc::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
+      strChunkSize = OCPI::Util::readline (m_inConn, MAX_LENGTH_OF_HEADER_LINE);
 
       if (strChunkSize.length() != 0) {
         debugLogger << g_myProducerName

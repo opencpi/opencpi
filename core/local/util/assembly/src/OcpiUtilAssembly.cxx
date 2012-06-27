@@ -136,7 +136,7 @@ namespace OCPI {
 	    n++;
 	  }
 	if (n > 1)
-	  Misc::formatString(m_name, "%s%u", m_specName.c_str(), me);
+	  formatString(m_name, "%s%u", m_specName.c_str(), me);
 	else
 	  m_name = m_specName;
       }

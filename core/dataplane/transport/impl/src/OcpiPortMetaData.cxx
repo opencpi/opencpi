@@ -63,7 +63,7 @@ init()
   // A circuit is created in parts, so we may not know the real location of this
   // port just yet
   std::string nuls;
-  if ( real_location_string.length()  ) {
+  if ( !m_real_location && real_location_string.length()  ) {
     m_real_tfactory = 
       XferFactoryManager::getFactoryManager().find( real_location_string, nuls );
     if ( ! m_real_tfactory ) {
@@ -74,7 +74,7 @@ init()
     m_real_location = m_real_tfactory->getEndPoint(real_location_string );
   }
 
-  if ( shadow_location_string.length() ) {
+  if ( !m_shadow_location && shadow_location_string.length() ) {
     m_shadow_tfactory = 
       XferFactoryManager::getFactoryManager().find( nuls, shadow_location_string );
     if ( ! m_shadow_tfactory ) {
@@ -89,8 +89,8 @@ init()
     m_shadow_tfactory = NULL;
   }
 
-  m_bufferData = new BufferOffsets[MAX_BUFFERS];
-  memset( m_bufferData, 0, sizeof(BufferOffsets[MAX_BUFFERS]));
+  m_bufferData = new BufferOffsets[m_portSetMd->bufferCount];
+  memset( m_bufferData, 0, sizeof(BufferOffsets[m_portSetMd->bufferCount]));
   m_localPortSetControl = 0;
 
 }
@@ -99,24 +99,24 @@ init()
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
               bool s, 
-              const OCPI::RDT::Descriptors& port,
-              const char* shadow_ep,
+	      DataTransfer::EndPoint *ep,
+              const OCPI::RDT::Descriptors& desc,
               PortSetMetaData* psmd )
-  : CU::Child<PortSetMetaData,PortMetaData>(*psmd), remoteCircuitId(-1),
-    remotePortId(-1),id(-1),rank(0),output(s),user_data(NULL),
-    m_init(false),m_real_location(NULL),m_shadow_location(NULL)
+  : CU::Child<PortSetMetaData,PortMetaData>(*psmd), m_shadow(true), remoteCircuitId(-1),
+    remotePortId(-1),id(pid),rank(0),output(s),user_data(NULL),
+    m_portSetMd(psmd),m_init(false),m_real_location(ep),m_shadow_location(NULL),
+    m_bufferData(NULL)
 {
-  m_bufferData = NULL;
-  m_shadow = true;
-  m_descriptor = port;
-  if ( port.desc.oob.oep ) {
-    real_location_string = port.desc.oob.oep;
-  }
+  m_descriptor = desc;
+  if (ep)
+    real_location_string = ep->end_point;
+  else
+    real_location_string = desc.desc.oob.oep;
+#if 0
   if ( shadow_ep ){
     shadow_location_string = shadow_ep;
   }
-  id = pid;
-  m_portSetMd = psmd;
+#endif
   init( );
 }
 
@@ -124,21 +124,17 @@ PortMetaData( PortOrdinal pid,
 
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
+	      DataTransfer::EndPoint &ep, 
               const OCPI::RDT::Descriptors& portDesc,
               PortSetMetaData* psmd )
-  : CU::Child<PortSetMetaData,PortMetaData>(*psmd), remoteCircuitId(-1),
-    remotePortId(-1),id(-1),rank(0),user_data(NULL),
-    m_init(false),m_real_location(NULL),m_shadow_location(NULL)
+  : CU::Child<PortSetMetaData,PortMetaData>(*psmd),m_shadow(true),remoteCircuitId(-1),
+    remotePortId(-1),id(pid),rank(0),user_data(NULL),
+    m_portSetMd(psmd),m_init(false),m_real_location(&ep),m_shadow_location(NULL),
+    m_bufferData(NULL)
 {
   m_descriptor = portDesc;
   output =  (m_descriptor.type == OCPI::RDT::ProducerDescT) ? true : false;
-  m_bufferData = NULL;
-  m_shadow = true;
-  if ( portDesc.desc.oob.oep[0] ) {
-    real_location_string = portDesc.desc.oob.oep;
-  }
-  id = pid;
-  m_portSetMd = psmd;
+  real_location_string = ep.end_point;
   init( );
 }
 
@@ -147,25 +143,22 @@ PortMetaData( PortOrdinal pid,
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
               bool s, 
-              const char* ep,
-              const char* shadow_ep,
+              EndPoint *ep,
+              EndPoint* shadow_ep,
               PortSetMetaData* psmd )
-  : CU::Child<PortSetMetaData,PortMetaData>(*psmd),remoteCircuitId(-1),
-    remotePortId(-1),id(-1),rank(0),output(s),user_data(NULL),
-    m_init(false),m_real_location(NULL),m_shadow_location(NULL)
+  : CU::Child<PortSetMetaData,PortMetaData>(*psmd),m_shadow(true),remoteCircuitId(-1),
+    remotePortId(-1),id(pid),rank(0),output(s),user_data(NULL),
+    m_portSetMd(psmd),m_init(false),m_real_location(ep),m_shadow_location(shadow_ep),
+    m_bufferData(NULL)
 {
   m_descriptor.type = s ? OCPI::RDT::ProducerDescT : OCPI::RDT::ConsumerDescT;
   m_descriptor.role = s ? OCPI::RDT::ActiveMessage : OCPI::RDT::ActiveFlowControl;
-  m_bufferData = NULL;
-  m_shadow = true;
   if ( ep ) {
-    real_location_string = ep;
+    real_location_string = ep->end_point;
   }
   if ( shadow_ep ){
-    shadow_location_string = shadow_ep;
+    shadow_location_string = shadow_ep->end_point;
   }
-  id = pid;
-  m_portSetMd = psmd;
   init( );
 }
 
@@ -173,43 +166,42 @@ PortMetaData( PortOrdinal pid,
 // Dependency constructor
 PortMetaData::
 PortMetaData( PortOrdinal pid, 
-              bool s, 
-              const char* ep, 
-              const char* shadow_ep,
-              const OCPI::RDT::Descriptors&  pdd , 
-              OCPI::OS::uint32_t circuitId,
+              DataTransfer::EndPoint &ep, 
+              DataTransfer::EndPoint &shadow_ep, 
+              const OCPI::RDT::Descriptors &pdd, 
+	      //              OCPI::OS::uint32_t circuitId,
               PortSetMetaData* psmd )
-  : CU::Child<PortSetMetaData,PortMetaData>(*psmd),
-    remotePortId(-1),id(-1),rank(0),output(s),user_data(NULL),
-    m_portSetMd(psmd), m_init(false)
+  : CU::Child<PortSetMetaData,PortMetaData>(*psmd),m_shadow(true),
+    real_location_string(shadow_ep.end_point),
+    shadow_location_string(ep.end_point),
+    remotePortId(pdd.desc.oob.port_id),
+    id(pid),rank(0),output(false),user_data(NULL),
+    m_portSetMd(psmd), m_init(false),
+    m_real_location(&shadow_ep),  m_real_tfactory(shadow_ep.factory),
+    m_shadow_location(&ep),  m_shadow_tfactory(ep.factory),
+    m_bufferData(NULL)
 {
-  ( void ) circuitId;
-  m_bufferData = NULL;
-  m_shadow = true;
-  if ( ep ) {
-    real_location_string = ep;
-  }
-  if ( shadow_ep ){
-    shadow_location_string = shadow_ep;
-  }
-  id = pid;
+  
+  //  ( void ) circuitId;
+  // real_location_string = ep.end_point;
+  //  if ( shadow_ep ){
+  //    shadow_location_string = shadow_ep;
+  //  }
 
   memcpy(&m_externPortDependencyData,&pdd.desc,sizeof(OCPI::RDT::Descriptors) );
   psmd->bufferCount  = pdd.desc.nBuffers;
   psmd->bufferLength = pdd.desc.dataBufferSize;
 
-#ifndef NDEBUG
-  printf("External port buffer ep = %s\n", pdd.desc.oob.oep );
-#endif
+  ocpiDebug("External port buffer ep = %s", pdd.desc.oob.oep );
 
   // In this case the "real" location of the port is its actual physical location,
   // the shadow port in here with its endpoint equal to the endpoint of the output
   // port
-  real_location_string = pdd.desc.oob.oep;
-  shadow_location_string = ep;
-  remotePortId = pdd.desc.oob.port_id;
-
-  std::string nuls;
+  //real_location_string = pdd.desc.oob.oep;
+  // shadow_location_string = ep.end_point;
+  //remotePortId = pdd.desc.oob.port_id;
+  //  std::string nuls;
+#if 0
   m_real_tfactory = 
     XferFactoryManager::getFactoryManager().find( real_location_string, nuls );
   if ( ! m_real_tfactory ) {
@@ -229,13 +221,15 @@ PortMetaData( PortOrdinal pid,
     }
     m_shadow_location = m_shadow_tfactory->getEndPoint( shadow_location_string );
   }
-  else {
+  else
+ {
     m_shadow_location = NULL;
     m_shadow_tfactory = NULL;
   }
+#endif
 
-  m_bufferData = new BufferOffsets[MAX_BUFFERS];
-  memset( m_bufferData, 0, sizeof(BufferOffsets[MAX_BUFFERS]));
+  m_bufferData = new BufferOffsets[m_portSetMd->bufferCount];
+  memset( m_bufferData, 0, sizeof(BufferOffsets[m_portSetMd->bufferCount]));
   m_localPortSetControl = 0;
         
   for ( unsigned int n=0; n<pdd.desc.nBuffers; n++ ) {
