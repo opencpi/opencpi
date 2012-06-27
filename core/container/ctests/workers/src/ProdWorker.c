@@ -54,6 +54,7 @@ enum PortIds {
 };
 
 void sleep( int n);
+void usleep( int n);
 static ProducerWorkerProperties old_props;
 static RCCResult initialize(RCCWorker *this_)
 {
@@ -146,6 +147,8 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   uint32_t len;
   int      *b;
 
+  //  sleep( 1 );
+
   ProducerWorkerStaticMemory *mem = this_->memories[0];
  // ProducerWorkerProperties *props = this_->properties;
 
@@ -164,9 +167,10 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 
   OCPI_TIME_EMIT_C( "Producer Start" );
 
-#define LIMIT_PRODUCTION__
+  //#define LIMIT_PRODUCTION
 #ifdef LIMIT_PRODUCTION
-#define PP_LIMIT 2
+#define PP_LIMIT 1
+  static int r_count=0;
   if ( ++r_count > PP_LIMIT ) {
     if ( r_count == (PP_LIMIT+1)) {
       printf("**** NOT PRODUCING ANY MORE DATA ****\n"); 
@@ -197,6 +201,8 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   /*  printf("Producer is producing with a length = %d\n", len);  */
 
 
+  this_->ports[ProducerWorker_Data_Out_Port].output.length = len;
+  this_->ports[ProducerWorker_Data_Out_Port].output.u.operation = 0;
   this_->container.send( &this_->ports[ProducerWorker_Data_Out_Port], 
                           &this_->ports[ProducerWorker_Data_Out_Port].current, 0x54, len );
 
@@ -207,8 +213,6 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     printf("Done sleeping ... \n");
 #endif
 
-  this_->ports[ProducerWorker_Data_Out_Port].output.length = len;
-  this_->ports[ProducerWorker_Data_Out_Port].output.u.operation = 0;
 
   OCPI_TIME_EMIT_C( "Producer End Send" );
         

@@ -61,12 +61,8 @@
 #include <DtSharedMemoryInterface.h>
 #include <OcpiOsSocket.h>
 #include <OcpiOsServerSocket.h>
-//#include <OcpiOsClientSocket.h>
 #include <xfer_internal.h>
 
-
-//#include <sys/types.h>
-//#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>

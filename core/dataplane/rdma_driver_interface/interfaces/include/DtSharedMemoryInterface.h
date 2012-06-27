@@ -89,6 +89,7 @@ namespace DataTransfer {
 
     // Get the address from the endpoint
     virtual const char* getAddress()=0;
+    virtual unsigned & getId(){static unsigned n=0; return n;};
 
     // Parse the endpoint string
     static const char* getProtocolFromString( const char* ep, char* );

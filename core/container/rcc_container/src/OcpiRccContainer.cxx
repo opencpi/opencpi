@@ -166,7 +166,7 @@ dispatch(DataTransfer::EventManager* event_manager)
   m_transport->dispatch( event_manager );
 
   //#define VECTOR_BUFFERS_FROM_EVENTS
-#ifndef VECTOR_BUFFERS_FROM_EVENTS
+#ifdef VECTOR_BUFFERS_FROM_EVENTS
   if ( event_manager ) {
     event_manager->consumeEvents();
   }

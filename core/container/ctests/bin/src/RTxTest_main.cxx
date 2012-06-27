@@ -63,7 +63,7 @@ static Worker * WORKER_CONSUMER_ID;
 static Worker * WORKER_LOOPBACK_ID;
 static bool loopback;
 
-int  OCPI_RCC_DATA_BUFFER_SIZE   = 10*1024;
+int  OCPI_RCC_DATA_BUFFER_SIZE   = 256;
 int  OCPI_RCC_CONT_NBUFFERS      = 1;
 
 volatile int OCPI_RUN_TEST = 1;
@@ -274,8 +274,11 @@ void swrite( std::string & s )
 {
   ocpiDebug("Entering write %d", s.size());
   uint32_t  l = s.size();
-  if (l)
+  
+  if (l) {
+    ocpiCheck(write( socket_fd, &l, 4 ) == 4);  
     ocpiCheck(write( socket_fd, s.c_str(), l ) == l);  
+  }
 }
 
 static 
@@ -285,7 +288,8 @@ sread( std::string & s  )
   ocpiDebug("Entering read");
   uint32_t size;
   char buf[2048];
-  ocpiCheck(read( socket_fd, &size, 4 ) == 4);
+  unsigned int l = read( socket_fd, &size, 4 );
+  if ( l == 0 ) return 0;
   if (size) {
     ocpiCheck(read( socket_fd, buf, size) == size);
     s.assign(buf, size);
@@ -303,9 +307,11 @@ setupInputPort(Port *ip) {
   swrite( desc );
   ocpiCheck(sread( desc ));
   ip->setInitialUserInfo( desc, fb );
+  /*
   swrite( fb );
   if (fb.size() && sread( desc ))
     ip->setFinalUserInfo( desc );
+  */
 }
 static void
 setupOutputPort(Port *op) {
@@ -313,10 +319,13 @@ setupOutputPort(Port *op) {
   ocpiCheck(sread( desc ));
   op->setInitialProviderInfo( NULL, desc, fb );
   swrite( fb );
+  /*
   if (fb.size() && sread( desc )) {
     op->setFinalProviderInfo( desc, fb);
     swrite( fb );
   }
+  */
+
 }
 static 
 void setupForPCMode(const OCPI::API::PValue *props)
@@ -456,9 +465,9 @@ int gpp_cont(int /* argc */, char** /* argv */, const char *protocol)
           setupForPCMode(port_props);
         }
         CATCH_ALL_RETHROW("setting mode");
-
 	worker = WORKER_CONSUMER_ID;
         try {
+	  OCPI::OS::sleep( 2000 );
           WORKER_PRODUCER_ID->start();
           WORKER_CONSUMER_ID->start();
         }
