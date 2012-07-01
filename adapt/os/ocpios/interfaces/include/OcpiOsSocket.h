@@ -150,7 +150,7 @@ namespace OCPI {
       unsigned long long recv (char * buffer, unsigned long long amount, unsigned timeoutms = 0)
         throw (std::string);
       unsigned long long recvfrom(char  *buf, unsigned long long amount, int flags,
-				  char *  src_addr, unsigned long *addrlen)
+				  char *  src_addr, unsigned long *addrlen, unsigned timeoutms = 0)
       throw (std::string);
 
       /**

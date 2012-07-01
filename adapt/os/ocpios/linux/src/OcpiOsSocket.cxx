@@ -143,24 +143,33 @@ OCPI::OS::Socket::recv (char * buffer, unsigned long long amount, unsigned timeo
 unsigned long long 
 OCPI::OS::Socket::
 recvfrom(char  *buf, unsigned long long amount, int flags,
-	 char * src_addr, unsigned long * addrlen)
+	 char * src_addr, unsigned long * addrlen, unsigned timeoutms)
   throw (std::string)
 {
+
+  if (timeoutms != m_timeoutms) {
+    struct timeval tv;
+    tv.tv_sec = timeoutms/1000;
+    tv.tv_usec = (timeoutms % 1000) * 1000;
+    ocpiDebug("Setting socket timeout to %u ms", timeoutms);
+    if (setsockopt(o2fd (m_osOpaque), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0)
+      throw OCPI::OS::Posix::getErrorMessage (errno);
+    m_timeoutms = timeoutms;
+  }
+
+
   struct sockaddr * si_other = reinterpret_cast< struct sockaddr *>(src_addr);
   unsigned long count = static_cast<unsigned long> (amount);
   ocpiAssert (static_cast<unsigned long long> (count) == amount);
 
-  size_t ret = ::recvfrom (o2fd (m_osOpaque), buf, count, flags, si_other, (socklen_t*)addrlen );
-
-  
-
-  if (ret == static_cast<size_t> (-1)) {
-    throw OCPI::OS::Posix::getErrorMessage (errno);
+  size_t ret;
+  ret= ::recvfrom (o2fd (m_osOpaque), buf, count, flags, si_other, (socklen_t*)addrlen);
+  if (ret == -1) {
+    return 0;
   }
 
   //  printf("recv %p %p %d\n", this, buffer, o2fd(m_osOpaque));
   return static_cast<unsigned long long> (ret);
-
 
 }
 

@@ -85,6 +85,7 @@ namespace DataTransfer {
     throw ()
   {
 
+    delete m_txDriver;
   }
 
   // This method is used to allocate a transfer compatible SMB
@@ -201,6 +202,7 @@ namespace DataTransfer {
   DatagramXferServices::
   ~DatagramXferServices ()
   {
+    lock();
 
   }
 
@@ -251,7 +253,6 @@ namespace DataTransfer {
   void 
   DatagramXferServices::
   ack(  unsigned count, unsigned start ) {
-    OCPI::Util::SelfAutoMutex guard ( this );
     for ( unsigned n=start; n<(start+count); n++ ) {
       //      printf("ACKING frame id = %d\n", n);
       releaseFrame ( n );
@@ -295,9 +296,6 @@ namespace DataTransfer {
   DatagramXferServices::
   sendAcks( uint64_t time_now, uint64_t timeout )
   {
-    OCPI::Util::SelfAutoMutex guard ( this );
-    return;
-
     if ( ( time_now - m_last_ack_send ) > timeout ) {
       int bytes_left;
       Frame & frame = getFrame( bytes_left );
@@ -312,7 +310,6 @@ namespace DataTransfer {
   getFrame(  int & bytes_left  )
   {
     OCPI::Util::SelfAutoMutex guard ( this );
-
     Frame & frame = *nextFreeFrame(); 
 
     bytes_left = (int) parent().txDriver().maxPayloadSize();
@@ -340,11 +337,10 @@ namespace DataTransfer {
       }
     }
 
+    frame.frameHdr.flags = 0;
     // Here we have to keep track of the number of bytes that we are injecting into the payload
     frame.sock_adr.sin_family = 2;	
-    //    frame.sock_adr.sin_port = htons( ( (DatagramSmemServices*)t.m_txTemplate->dsmem)->getEndPoint()->getId()  );
     frame.sock_adr.sin_port = htons( m_targetSmb->endpoint()->getId() );
-    //    inet_aton( ((DatagramSmemServices*)t.m_txTemplate->dsmem)->getEndPoint()->getAddress() , &frame.sock_adr.sin_addr);	
     inet_aton( m_targetSmb->endpoint()->getAddress() , &frame.sock_adr.sin_addr);	
     frame.msg.msg_name = &frame.sock_adr;	
     frame.msg.msg_namelen = sizeof( frame.sock_adr );
@@ -382,7 +378,6 @@ namespace DataTransfer {
       }
 
       Frame & frame = myParent().getFrame( bytes_left );
-      frame.frameHdr.flags = 0;
       frame.transaction = &t;
       frame.msg_count =0;
       frame.msg_start = msg;	  
@@ -487,10 +482,7 @@ namespace DataTransfer {
     m_messages[m_nMessagesTx].src_adr = src;
     m_messages[m_nMessagesTx].hdr.transactionId = m_tid; 
     m_nMessagesTx++;
-
-
   }
-
 
   
   DataTransfer::XferRequest::CompletionStatus 
@@ -516,12 +508,16 @@ namespace DataTransfer {
   DatagramSmemServices::
   ~DatagramSmemServices ()
   {
-    delete [] m_mem;
-    if ( m_socket ) {
-      delete m_socket;
+    lock();
+    try {
+      stop();
+      delete [] m_mem;
+      // Thread already joined join();
     }
-    stop();
-    join();
+    catch( ... ) {
+
+    }
+    unlock();
   }
 
 
@@ -534,6 +530,7 @@ namespace DataTransfer {
       while ( m_loop ) {
 	
 	// If we have not received an ACK after (timeout) send the frame again.
+	lock();
 	std::vector< DatagramXferServices * > & xfer_services =  m_lsmem->getAllXferServices();
 	for ( unsigned n=0; n<xfer_services.size(); n++ ) {
 	  if ( xfer_services[n] != NULL ) {
@@ -545,7 +542,7 @@ namespace DataTransfer {
 	    OCPI::OS::sleep(2);
 	  }
 	}
-	
+	unlock();
 	OCPI::OS::sleep(2);
       }
 
@@ -565,8 +562,10 @@ namespace DataTransfer {
 	  // We are multi-threaded and this can happen if a post occurs after this
 	  // method id called
 	  if ( time > m_freeFrames[n].send_time ) {
-	    
-	    m_freeFrames[n].resends++;
+
+	    m_freeFrames[n].resends++;	    
+
+#ifdef LIMIT_RETRIES
 	    if ( m_freeFrames[n].resends < 4 ) {
 	      printf("***** &&&&& Found a dropped frame, re-posting \n");
 	      post( m_freeFrames[n] );
@@ -574,6 +573,10 @@ namespace DataTransfer {
 	    else {
 	      ocpiAssert(!"Exceeded resend limit !!\n");
 	    }
+#else
+	    post( m_freeFrames[n] );
+
+#endif
 	  }
 	}
       }
@@ -614,6 +617,7 @@ namespace DataTransfer {
 
     // This frame contains ACK responses	       
     if ( header->ACKCount ) {
+      //      printf("Acking from %d, count = %d\n", header->ACKStart, header->ACKCount );
       ack(  header->ACKCount, header->ACKStart );
     }
     if ( header->flags ) return;

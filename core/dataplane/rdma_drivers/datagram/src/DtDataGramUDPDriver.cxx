@@ -111,8 +111,14 @@ namespace DataTransfer {
 
       virtual ~ServerDatagramSocketHandler()
       {
-	m_socket.close();
-	ocpiDebug("In ~ServerDatagramSocketHandler()");
+	try {
+	  stop();
+	  m_socket.close();
+	  join();
+	}
+	catch( ... ) {
+
+	}
       }
 
 #define RX_BUFFER_SIZE (1024*10)
@@ -134,6 +140,7 @@ namespace DataTransfer {
 
     private:
       OCPI::OS::Socket * m_socket;
+      std::vector<DatagramSmemServices*> m_smems;
 
     public:
       DatagramDriver()
@@ -143,7 +150,12 @@ namespace DataTransfer {
 
       virtual ~DatagramDriver()
       {
-
+	std::vector<DatagramSmemServices*>::iterator it;
+	for ( it=m_smems.begin(); it!=m_smems.end(); it++ ) {
+	  (*it)->stop();
+	  (*it)->join();
+	}
+	m_smems.clear();
       }
 
 
@@ -156,6 +168,7 @@ namespace DataTransfer {
       {
 	ep->smem = new DatagramSmemServices(f, ep);
 	DatagramSmemServices * smem = static_cast<DatagramSmemServices*>(ep->smem);
+	m_smems.push_back( smem );
 	if ( ep->local ) {
 	  // Create our listener socket thread so that we can respond to incoming
 	  // requests  
@@ -246,10 +259,10 @@ namespace DataTransfer {
 	  uint8_t   buf[RX_BUFFER_SIZE];
 	  struct sockaddr sad;
 	  unsigned long size = sizeof( struct sockaddr);
-	  unsigned long long n = m_socket.recvfrom( (char*)buf,RX_BUFFER_SIZE, 0, (char*)&sad, &size);
+	  unsigned long long n = m_socket.recvfrom( (char*)buf,RX_BUFFER_SIZE, 0, (char*)&sad, &size, 200);
 	  if ( n == 0 ) {
-	    ocpiInfo("Got a socket EOF, terminating connection");
-	    break;
+	    // timeout
+	    continue;
 	  }
 
 #ifdef DEBUG_TxRx_Datagram
@@ -261,7 +274,7 @@ namespace DataTransfer {
 #endif
 
 	  // This causes a frame drop for testing
-#define DROP_FRAME
+	  //#define DROP_FRAME
 #ifdef DROP_FRAME
 	  const char* env = getenv("OCPI_Datagram_DROP_FRAMES");
 	  if ( env != NULL ) 
@@ -295,7 +308,7 @@ namespace DataTransfer {
       } catch (...) {
 	ocpiBad("Unknown exception in socket background thread");
       }
-      m_socket.close();
+
     }
 
       void 
@@ -331,8 +344,6 @@ namespace DataTransfer {
 
     DatagramSocket::
     ~DatagramSocket() {
-      m_socketHandler->stop();
-      m_socketHandler->join();
       delete m_socketHandler;	
     }
 

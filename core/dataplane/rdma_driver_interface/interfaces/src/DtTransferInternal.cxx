@@ -457,6 +457,7 @@ addCompatibleEndPoint(uint32_t mailBox, uint32_t maxMb)
 #define TLIST_INITIAL_SIZE  64
 #define TLIST_INCREMENT     8
 
+
 // Transfer Template List data entity
 struct template_list_item_
 {
@@ -478,17 +479,22 @@ typedef struct template_list_item_ TList_Item;
 
 void XferFactoryManager::clearCache()
 {
+
+
+    // These are children of the factory and the factory will delete them !!
+#if 0
   for (OS::int32_t i=0; i<get_nentries(&m_templatelist); i++) {
     TList_Item *item = static_cast<TList_Item*>(get_entry(&m_templatelist, i));
     delete item;
   }
   destroy_list(&m_templatelist);
-
   for ( OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
     SMBResources* res = static_cast<SMBResources*>(m_resources.getEntry(n));
     delete res;
   }
   m_resources.destroyList();
+#endif
+
 
 }
 
