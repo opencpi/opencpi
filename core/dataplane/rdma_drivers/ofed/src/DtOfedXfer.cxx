@@ -38,6 +38,8 @@
  *
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -347,7 +349,7 @@ namespace DataTransfer {
        *  an endpoint for an application running on "this"
        *  node.
        ***************************************/
-      std::string allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes);
+      std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes);
       void allocateEndpoints(std::vector<std::string> &l);
 
       // From driver base class
@@ -615,7 +617,7 @@ namespace DataTransfer {
 
     std::string 
     XferFactory::
-    allocateEndpoint(const OCPI::Util::PValue*props, unsigned mailBox, unsigned maxMailBoxes)
+    allocateEndpoint(const OCPI::Util::PValue*props, uint16_t mailBox, uint16_t maxMailBoxes)
     {
       OCPI::Util::SelfAutoMutex guard (this); 
       Device *d;
@@ -683,13 +685,15 @@ namespace DataTransfer {
       /* ocpi-ofed-rdma:<device id>:<port id>:<gidm.gidl>:<lid>:<psn>:<rkey>:<vaddr>:<smb size>.<mb id> */
       char buf[128];
       int tport;
-      int c = sscanf(ep.c_str(),"ocpi-ofed-rdma:%[^:]:%d:%lld.%lld:%d:%d:%d:%llu:%d.%d.%d", buf, &tport, 
-		     (unsigned long long*)&m_gid.global.subnet_prefix, 
-		     (unsigned long long*)&m_gid.global.interface_id, 
+      int c = sscanf(ep.c_str(),"ocpi-ofed-rdma:%[^:]:%d:%" SCNu64 " .%" SCNu64
+		     ":%d:%d:%d:%" SCNu64 ":%d.%" SCNu16 ".%" SCNu16,
+		     buf, &tport, 
+		     &m_gid.global.subnet_prefix, 
+		     &m_gid.global.interface_id, 
 		     &m_lid, &m_psn, 
-		     &m_rkey, (unsigned long long*)&m_vaddr, &size, &mailbox, &maxCount );
+		     &m_rkey, &m_vaddr, &size, &mailbox, &maxCount );
       if ( c != 11 ) {
-	fprintf( stderr, "OFED::EndPoint  ERROR: Bad OFED endpoint format (%s)\n", ep.c_str() );
+	ocpiBad("OFED::EndPoint  ERROR: Bad OFED endpoint format (%s)\n", ep.c_str() );
 	throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );	  
       }
       m_dev = buf;

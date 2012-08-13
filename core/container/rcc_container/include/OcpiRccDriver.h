@@ -6,7 +6,7 @@ namespace OCPI {
     extern const char *rcc;
     class Container;
     class Driver : public OCPI::Container::DriverBase<Driver, Container, rcc> {
-      OCPI::DataTransport::TransportGlobal *m_tpg_events, *m_tpg_no_events;
+      //      OCPI::DataTransport::TransportGlobal *m_tpg_events, *m_tpg_no_events;
       unsigned m_count;
     public:
       Driver() throw();

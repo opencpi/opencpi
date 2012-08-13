@@ -42,6 +42,8 @@
  *
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <DtSharedMemoryInternal.h>
 #include <xfer_if.h>
 #include <xfer_internal.h>
@@ -180,8 +182,8 @@ namespace DataTransfer {
 
 
 	  // MORE DEBUG
-	  ocpiDebug("Got %lld bytes data on server socket !! %d %d %lld %d", n, bytes_left, in_header,
-		    header->offset, header->length);
+	  ocpiDebug("Got %llu bytes data on server socket !! %u %d %" PRIu64 " %" PRIu32,
+		    n, bytes_left, in_header, header->offset, header->length);
 
 	  switch ( header->type ) {
 
@@ -385,16 +387,16 @@ namespace DataTransfer {
   // This is static
   void UDPSocketXferFactory::
   setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
-		    unsigned size, unsigned mbox, unsigned maxCount)
+		    unsigned size, uint16_t mbox, uint16_t maxCount)
   {
     char tep[128];
 
-    snprintf(tep, 128, "ocpi-udp-rdma:%s;%u:%u.%u.%u", ipAddr, port, size, mbox,
-	     maxCount);
+    snprintf(tep, 128, "ocpi-udp-rdma:%s;%u:%u.%" PRIu16 ".%" PRIu16,
+	     ipAddr, port, size, mbox, maxCount);
     ep = tep;
   }
   std::string UDPSocketXferFactory::
-  allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
+  allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
   {
     OCPI::Util::SelfAutoMutex guard (this);
 
@@ -460,7 +462,8 @@ namespace DataTransfer {
     // Empty
   }
 
-  void UDPSocketXferRequest::modify( OCPI::OS::uint32_t new_offsets[], OCPI::OS::uint32_t old_offsets[] )
+  void UDPSocketXferRequest::modify( OCPI::OS::uint32_t */*new_offsets[]*/,
+				     OCPI::OS::uint32_t */*old_offsets[]*/ )
   {
     ocpiAssert(!"modify not inplemented");
   }
@@ -562,7 +565,7 @@ namespace DataTransfer {
   ackReceived( UDPSocketDataHeader * header )
   {
     uint32_t idx= header->transaction_sequence >> 16;
-    int id =  header->transaction_sequence & 0xffff;
+    unsigned int id =  header->transaction_sequence & 0xffff;
     ocpiAssert( idx < 3 );
 
 
@@ -635,7 +638,7 @@ namespace DataTransfer {
 
   void 
   UDPSocketXferRequest::TxPacket::
-  init( uint32_t nPackets, TxTemplate * temp  ) {
+  init( uint32_t /*nPackets*/, TxTemplate * temp  ) {
     m_nAcksTx = 0;
     m_acks.reserve( 20 + 1 );
     m_socket = &temp->ssmem->m_socketServerT->socket();

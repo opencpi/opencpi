@@ -202,7 +202,7 @@ int client_connect(const char *servername,int port) {
       char x[100];
       const char *host = inet_ntop(AF_INET, &((struct sockaddr_in *)t->ai_addr)->sin_addr, x, 100);
       ocpiBad("Client connect to %s (%s) port %d failed %s %d\n",
-	      servername, x, port, strerror(errno), errno, host ? host : "no-address");
+	      servername, host ? host : "no-address", port, strerror(errno), errno);
       close(sockfd);
       sockfd = -1;
     }
@@ -274,7 +274,7 @@ int server_connect(int port)
   if (sockfd >= 0 &&
       (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &n, sizeof n) ||
        bind(sockfd, (const struct sockaddr *)&sa, sizeof(sa)))) {
-    ocpiBad("Socket bind error %d (%s)", strerror(errno), errno);
+    ocpiBad("Socket bind error %s (%d)", strerror(errno), errno);
     close(sockfd);
     sockfd = -1;
   }
@@ -300,7 +300,7 @@ int server_connect(int port)
 static 
 void swrite( std::string & s )
 {
-  ocpiDebug("Entering write %d", s.size());
+  ocpiDebug("Entering write %zd", s.size());
   uint32_t  l = s.size();
   if (l) {
     ocpiCheck(write( socket_fd, &l, 4 ) == 4);  

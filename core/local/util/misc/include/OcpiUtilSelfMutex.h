@@ -44,22 +44,37 @@
 
 namespace OCPI {
   namespace Util {
-    // The class to inherit
-    class SelfMutex : protected OCPI::OS::Mutex {
+    // The class to inherit that has a mutex
+    class SelfMutex : public OCPI::OS::Mutex {
       friend class SelfAutoMutex;
     protected:
       SelfMutex() : OCPI::OS::Mutex(true) {}
       ~SelfMutex() { unlock(true); }
+    public:
+      operator OCPI::OS::Mutex &() const { return *this; }
+    };
+    // The class to inherit, that references a mutex provided upon construction
+    class SelfRefMutex {
+      friend class SelfAutoMutex;
+      OCPI::OS::Mutex &m_mutex;
+    protected:
+      SelfRefMutex(OCPI::OS::Mutex &m) : m_mutex(m) {}
+      operator OCPI::OS::Mutex &() { return m_mutex; }
     };
     // The class used with automatic storage.
     class SelfAutoMutex {
-      SelfMutex *m_mutex;
+      // this is a pointer and not a reference just to simplify usage
+      // I.e. you construct with "this" rather than "*this".
+      OCPI::OS::Mutex &m_mutex;
     public:
       // The argument is expected to be "this"
-      SelfAutoMutex(SelfMutex *m) : m_mutex(m) {
-	m->lock();
+      SelfAutoMutex(SelfRefMutex *srm) : m_mutex(*srm) {
+	m_mutex.lock();
       }
-      ~SelfAutoMutex() { m_mutex->unlock(); }
+      SelfAutoMutex(SelfMutex *m) : m_mutex(*m) {
+	m_mutex.lock();
+      }
+      ~SelfAutoMutex() { m_mutex.unlock(); }
     };
   }
 }

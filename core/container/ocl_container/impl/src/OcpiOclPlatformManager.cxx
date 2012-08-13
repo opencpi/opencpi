@@ -214,7 +214,7 @@ namespace
     OU::formatStringAddV(s, fmt, ap);
     va_end(ap);
     OU::formatStringAdd(s, ": OpenCL error: %s [%d]", ocl_strerror(errnum), errnum);
-    throw OU::Error(s.c_str());
+    throw OU::Error("Ocl Error: %s", s.c_str());
   }
 
   const char* device_type_str ( cl_device_type type )

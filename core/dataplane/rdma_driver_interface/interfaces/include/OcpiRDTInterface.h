@@ -107,12 +107,15 @@ namespace OCPI {
       Desc_t desc;
       Descriptors() : role(NoRole){}
     };
-
+    typedef Descriptors Descriptor;
     // Debug utils
     void printDesc( Desc_t& desc );
 
   }
-
+  // FIXME:  merge these at some point
+  namespace DataTransport {
+    using namespace RDT;
+  }
 }
 
 #endif

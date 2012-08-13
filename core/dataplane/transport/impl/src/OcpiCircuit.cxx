@@ -267,7 +267,7 @@ Circuit(
     Port* port = this->getOutputPortSet()->getPortFromIndex(0);
 
     if (port->m_data->real_location_string.length() ) {
-      ocpiDebug("Circuit is closed 1: id %x", getCircuitId());
+      ocpiInfo("Circuit %p is closed 1: id %x", this, getCircuitId());
       m_openCircuit = false;
     }
   }
@@ -398,7 +398,7 @@ updateInputs( void* data )
 
   // make sure we have a closed circuit
   if ( sports>0 && tports>0 ) {
-    ocpiDebug("Circuit is closed 2: id %x", getCircuitId());
+    ocpiInfo("Circuit %p is closed 2: id %x", this, getCircuitId());
     m_openCircuit = false;
   }
                   
@@ -478,7 +478,7 @@ updateInputs()
   }
 
   if ( m_maxPortOrd > 1 ) {
-    ocpiDebug("Circuit is closed 3: id %x", getCircuitId());
+    ocpiInfo("Circuit %p is closed 3: id %x", this, getCircuitId());
     m_openCircuit = false;
   }
   return true;
@@ -776,7 +776,7 @@ updatePort( OCPI::DataTransport::Port* p )
 
   p->update();
   if ( m_maxPortOrd > 1 ) {
-    ocpiDebug("Circuit is closed 4: id %x", getCircuitId());
+    ocpiInfo("Circuit %p is closed 4: id %x", this, getCircuitId());
     m_openCircuit = false;
   }
 
@@ -817,13 +817,14 @@ addPort( PortMetaData* pmd )
   Port* port = new Port( spmd, sps );
   sps->add( port );
   m_maxPortOrd++;
-  ocpiDebug("Circuit is closed 5: id %x", getCircuitId());
+  ocpiInfo("Circuit %p is closed 5: id %x", this, getCircuitId());
   m_openCircuit = false;
 
   return port;
 }
 
 
+#if 0
 void
 OCPI::DataTransport::Circuit::
 getUserPortFlowControlDescriptor( OCPI::RDT::Descriptors * fb, unsigned int idx )
@@ -855,7 +856,7 @@ getUserPortFlowControlDescriptor( OCPI::RDT::Descriptors * fb, unsigned int idx 
   strncpy(fb->desc.oob.oep,ep,127 );
   fb->desc.oob.oep[127] = 0;
 }
-
+#endif
 
 
 /**********************************
@@ -915,7 +916,7 @@ addInputPort(DataTransfer::EndPoint &iep, const OCPI::RDT::Descriptors& inputDes
   }
   else {
     getUserPortFlowControlDescriptor(fb,0);
-    ocpiDebug("Circuit is closed 6: id %x", getCircuitId());
+    ocpiInfo("Circuit %p is closed 6: id %x", this, getCircuitId());
     m_openCircuit = false;
   }
 

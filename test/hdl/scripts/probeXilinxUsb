@@ -34,9 +34,9 @@ imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
 if [[ $port == all ]]; then
   echo listusbcables | $imp 2> $tlog > $tmp
   ports=`grep '^port=' $tmp | sed 's/port=\(.*\), .*$/\1/'`
-  echo ports list is: $ports
+  echo Discovered ports are: $ports
   # ports="usb21 usb22 usb23 usb24 usb25 usb26 usb27 usb28 usb29"
-  exit 1
+  # exit 1
 else
   ports=$port
 fi

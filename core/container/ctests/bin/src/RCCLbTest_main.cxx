@@ -322,8 +322,8 @@ void setupForPCMode()
 
   if ( config.standalone ) {
     std::string spd, cpd;
-    OCPI::Container::Container::packPortDesc( outputPort->getData(), spd );
-    OCPI::Container::Container::packPortDesc( inputPort->getData(), cpd );
+    OCPI::Container::Port::packPortDesc( outputPort->getData().data, spd );
+    OCPI::Container::Port::packPortDesc( inputPort->getData().data, cpd );
     writePortDecsFile( spd , cpd );
   }
 
@@ -367,7 +367,7 @@ void setupForPCMode()
   // Here we eat the shadow port info since the rpl is currently passive
   if ( config.standalone ) {
     std::string scp;
-    OCPI::Container::Container::packPortDesc(inputPort->getData(), scp);
+    OCPI::Container::Port::packPortDesc(inputPort->getData().data, scp);
     writePortDecsFile( localShadowPort, scp );
     readPortDecsFile( remoteSourcePort, remoteTargetPort );
   }

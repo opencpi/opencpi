@@ -224,18 +224,22 @@ namespace OCPI {
       OU::AutoMutex guard (m_workerMutex, true);
       ControlState cs = getControlState();
       ControlTransition ct = controlTransitions[op];
-      if (cs == ct.valid[0] ||
-	  (ct.valid[1] != NONE && cs == ct.valid[1]) ||
-	  (ct.valid[2] != NONE && cs == ct.valid[2])) {
-        controlOperation(op);
-	if (ct.next != NONE)
-	  setControlState(ct.next);
-      } else
-	throw OU::EmbeddedException(cs == UNUSABLE ?
-				    OU::WORKER_UNUSABLE :
-				    OU::INVALID_CONTROL_SEQUENCE,
-				    "Illegal control state for operation",
-				    OU::ApplicationRecoverable);
+      // If we are already in the desired state, just ignore it so that
+      // Neither workers not containers need to deal with this
+      if (ct.next == NONE || cs != ct.next) {
+	if (cs == ct.valid[0] ||
+	    (ct.valid[1] != NONE && cs == ct.valid[1]) ||
+	    (ct.valid[2] != NONE && cs == ct.valid[2])) {
+	  controlOperation(op);
+	  if (ct.next != NONE)
+	    setControlState(ct.next);
+	} else
+	  throw OU::EmbeddedException(cs == UNUSABLE ?
+				      OU::WORKER_UNUSABLE :
+				      OU::INVALID_CONTROL_SEQUENCE,
+				      "Illegal control state for operation",
+				      OU::ApplicationRecoverable);
+      }
       Application &a = application();
       Container &c = a.container();
       c.start();

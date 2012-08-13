@@ -86,7 +86,7 @@ namespace OCPI {
 
 
     // The class used by both ExternalPorts (not associated with a worker) and Ports (owned by worker)
-    class BasicPort : public PortData {
+    class BasicPort : public PortData, protected OCPI::Util::SelfRefMutex {
     public:
       inline const OCPI::Metadata::Port &metaPort() const { return m_metaPort; }
     protected:
@@ -95,21 +95,22 @@ namespace OCPI {
       const OCPI::Metadata::Port &m_metaPort;
 
       BasicPort(const OCPI::Metadata::Port &mPort, bool isProvider, unsigned xferOptions,
-		const OCPI::Util::PValue *params, PortConnectionDesc *desc = NULL);
+		OCPI::OS::Mutex &mutex,	const OCPI::Util::PValue *params, PortConnectionDesc *desc = NULL);
       virtual ~BasicPort();
       // called after connection parameters have changed.
-      virtual void checkConnectParams() = 0;
-      void setConnectParams(const OCPI::Util::PValue *props);
+      virtual void startConnect(const OCPI::RDT::Descriptors *other, const OCPI::Util::PValue *params);
+      void setConnectParams(const OCPI::Util::PValue *params);
       static void chooseRoles(int32_t &uRole, uint32_t uOptions,
                               int32_t &pRole, uint32_t pOptions);
     public:
-      void applyConnectParams(const OCPI::Util::PValue *props);
+      void applyConnectParams(const OCPI::RDT::Descriptors *other, const OCPI::Util::PValue *props);
     };
 
 
 
     class Port : public BasicPort, public OCPI::API::Port {
 
+      friend class ExternalPort;
       static const std::string s_empty;
     protected:
       Container &m_container;
@@ -119,21 +120,76 @@ namespace OCPI {
       Port(Container &container, const OCPI::Metadata::Port &mport, bool isProvider,
 	   unsigned options, const OCPI::Util::PValue *params = NULL, PortConnectionDesc *desc = NULL);
       virtual ~Port(){}
+      // Convenience navigation
       Container &container() const;
-
+      virtual const std::string &name() const = 0;
+      virtual Worker &worker() const = 0;
+      // The implementation tells us whether the port is in the process and uses dt ports
+      virtual bool isLocal() const  = 0;//{ return false; }
       // connect inside the container (colocated ports)
-      virtual void connectInside(Port &other, const OCPI::Util::PValue *myProps=NULL,
-				 const OCPI::Util::PValue *otherProps=NULL) = 0;
+      virtual void connectInside(Port &other, const OCPI::Util::PValue *myProps=NULL) = 0;
 
       // other port is the same container type.  Return true if you do it.
       virtual bool connectLike(Port &other, const OCPI::Util::PValue *myProps=NULL,
 			       const OCPI::Util::PValue *otherProps=NULL);
 
-      virtual void finishConnection(OCPI::RDT::Descriptors &other) = 0;
-
+      // Finish this side of the connection, and return the right descriptor to return.
+      virtual const OCPI::RDT::Descriptors *finishConnect(const OCPI::RDT::Descriptors &other,
+							     OCPI::RDT::Descriptors &feedback) = 0;
       // Return true and fill in the string if you want a protocol
       virtual bool getPreferredProtocol(const char *&) { return false; }
+
+      // Create a container-specific external port
+      virtual ExternalPort &createExternal(const char *extName, bool isProvider,
+					   const OCPI::Util::PValue *extParams,
+					   const OCPI::Util::PValue *connParams) = 0;
     public:
+      // If isLocal(), then this method can be used. FIXME make protected after delagation fix
+      virtual void localConnect(OCPI::DataTransport::Port &/*input*/) {}
+      // If islocal(), then this can be used. FIXME make protected after delagation fix
+      virtual OCPI::DataTransport::Port &dtPort() {
+	ocpiAssert(!"unexpected dtPort reference");
+	return *(OCPI::DataTransport::Port*)0;
+      }
+      
+      /**
+         @brief
+         packPortDesc
+
+         This method is used to "pack" a port descriptor into a string that
+         can be sent over a wire.        
+
+         @param [ in ] port
+         Port to be packed.
+
+         @retval std::string packed port descriptor
+
+         ****************************************************************** */
+      static void packPortDesc(const OCPI::RDT::Descriptors&  port, std::string &out )
+        throw ();
+
+
+      /**
+         @brief
+         unpackPortDesc
+
+         This method is used to "unpack" a port descriptor into a Port.
+
+
+         @param [ in ] desc
+         String descriptor previously created with "packPort *".
+
+         @param [ in ] pd
+         Unpacked port descriptor.
+
+         @retval bool true if method successful.
+
+         ****************************************************************** */
+      static bool unpackPortDesc( const std::string& desc, OCPI::RDT::Descriptors &desc_storage )
+        throw ();
+      OCPI::API::ExternalPort &connectExternal(const char *extName = NULL, const OCPI::Util::PValue *extParams = NULL,
+					       const OCPI::Util::PValue *connectParams = NULL);
+
       void determineRoles(OCPI::RDT::Descriptors &other);
 
       void loopback(OCPI::API::Port &);
@@ -216,16 +272,30 @@ namespace OCPI {
       virtual void setFinalUserInfo(const std::string &);
     };
 
-    typedef OCPI::API::ExternalBuffer ExternalBuffer;
+    //    typedef OCPI::API::ExternalBuffer ExternalBuffer;
 
+    class ExternalBuffer : API::ExternalBuffer {
+      friend class ExternalPort;
+      OCPI::DataTransport::BufferUserFacet *m_dtBuffer;
+      OCPI::DataTransport::Port *m_dtPort;
+      ExternalBuffer();
+      void release();
+      void put( uint32_t length, uint8_t opCode, bool /*endOfData*/);
+    };
     // The direct interface for non-components to talk directly to the port,
-    // in a non-blocking fashion.
+    // in a non-blocking fashion.  This class is the base for all implementations
     class ExternalPort : public BasicPort, public OCPI::API::ExternalPort {
+      OCPI::DataTransport::Port *m_dtPort;
+      ExternalBuffer m_lastBuffer;
     protected:
-      ExternalPort(const OCPI::Metadata::Port & metaPort, bool isProvider,
-		   const OCPI::Util::PValue *props);
-      virtual ~ExternalPort(){};
-      void checkConnectParams();
+      ExternalPort(Port &port, bool isProvider, const OCPI::Util::PValue *extParams,
+		   const OCPI::Util::PValue *connParams);
+      virtual ~ExternalPort();
+      OCPI::API::ExternalBuffer
+        *getBuffer(uint8_t *&data, uint32_t &length, uint8_t &opCode, bool &end),
+	*getBuffer(uint8_t *&data, uint32_t &length);
+      void endOfData();
+      bool tryFlush();
     };
   }
 }

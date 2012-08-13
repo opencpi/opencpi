@@ -33,3 +33,52 @@ producer WRITES remoteDone as (local buffer is now) full flag
 	    full = ready;
 	    empty = done;
 	  }
+
+Finally software-only protocols:
+
+How to deal with external ports?
+Need the right interface into Transport...
+
+dtport = createiInputPort
+dtport->setInstanceName???
+dtport->finalize
+dtport->getNextFullInputBuffer
+dtport->releaseInputBuffer
+dport->reset
+
+dtport = createOutputPort
+dtport->setInstanceName
+dtport->finalize
+dtport->getNextEmptyOutputBuffer
+dtport->sendutputBuffer
+dtport->sendZcopyInputBuffer
+dport->reset
+
+dtport->isFinalized?
+dtport->getBuffer(index)? (for external port)
+
+create the transport-port, and then connect it too.
+basically bypassing the generic container-port logic..
+
+createInputPort(out desc, in params)
+can define protocol, or provide compatible remote endpoint?
+we HAVE the remote endpoint already in our hot little hand...
+we also have the descriptor too.
+
+ExternalPortIsInput case:
+
+p = createInputPort()
+p->finalize(parentport)
+
+ExternPortIsOutput case:
+
+p = createOutputPort(input-info)
+p->finalize()
+
+Then define the eport methods.
+This code then is portable to other containers!!!!
+
+
+
+
+

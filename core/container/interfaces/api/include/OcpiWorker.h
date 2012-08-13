@@ -97,6 +97,7 @@ namespace OCPI {
 	public OCPI::Metadata::Worker,  virtual public Controllable {
 
       friend class OCPI::API::Property;
+      friend class Port;
       friend class Artifact;
       friend class Application;
       Artifact *m_artifact;
@@ -111,6 +112,7 @@ namespace OCPI {
       virtual Port *findPort(const char *name) = 0;
       inline const std::string &instTag() const { return m_instTag; }
       inline const std::string &implTag() const { return m_implTag; }
+      virtual const std::string &name() const = 0;
       inline ezxml_t myXml() const { return m_xml; }
       inline ezxml_t myInstXml() const { return m_instXml; }
       Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *props);

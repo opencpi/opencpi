@@ -480,7 +480,7 @@ void IOR::
 doKey(const std::string &key) throw() {
   m_corbaloc += "/";
   const char *cp = key.data();
-  ocpiDebug("key length is %u", key.length());
+  ocpiDebug("key length is %zu", key.length());
   for (unsigned len = key.length(); len; len--, cp++)
     if (isalnum(*cp))
       m_corbaloc += *cp;

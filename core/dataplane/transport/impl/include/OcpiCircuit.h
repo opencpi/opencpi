@@ -351,8 +351,8 @@ namespace OCPI {
       /**********************************
        * This method is used to get the user port flow control descriptor.
        *********************************/
-      void
-        getUserPortFlowControlDescriptor( OCPI::RDT::Descriptors* fb, unsigned int idx );
+      //      void
+      //        getUserPortFlowControlDescriptor( OCPI::RDT::Descriptors* fb, unsigned int idx );
 
 
       /**********************************

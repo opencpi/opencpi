@@ -252,7 +252,7 @@ namespace OCPI {
 	      setError(error, "receiving packet bytes failed");
 	    return false;
 	  } else
-	    ocpiDebug("Received packet length %d address: sizeof %u alen %u family %u", 
+	    ocpiDebug("Received packet length %zu address: sizeof %zu alen %u family %u", 
 		      rlen, sizeof(sa), alen,
 		      ((struct sockaddr *)&sa)->sa_family);
 	  if (alen > before) {
@@ -269,7 +269,7 @@ namespace OCPI {
 	    payLoadLength = rlen;
 	    source = sa.ocpi.ocpi_remote;
 	  } else
-	    ocpiDebug("fam %u prot %u index %d hatype %u ptype %u len %u off %u",
+	    ocpiDebug("fam %u prot %u index %d hatype %u ptype %u len %u off %zu",
 		      sa.ll.sll_family, sa.ll.sll_protocol, sa.ll.sll_ifindex, sa.ll.sll_hatype,
 		      sa.ll.sll_pkttype, sa.ll.sll_halen, offsetof(struct sockaddr_ll, sll_addr[0]));
 #endif
@@ -375,7 +375,7 @@ namespace OCPI {
 	msg.msg_flags = 0; // checkfor MSG_TRUNC
 	
 	ssize_t rlen = sendmsg(m_fd, &msg, 0);
-	ocpiDebug("Send ether length %d, to %s, returned %d", len,
+	ocpiDebug("Send ether length %zd, to %s, returned %zd", len,
 		  addr.pretty(), rlen);
 	if (rlen != (ssize_t)len) {
 	  setError(error, "sendto of %u bytes failed, returning %d", len, rlen);

@@ -285,7 +285,7 @@ namespace DataTransfer {
     inline EndPoint* getEndPoint(const std::string &s, bool local=false) {
       return getEndPoint(s.c_str(), local);
     }
-    virtual EndPoint* addCompatibleEndPoint( uint32_t mbox, uint32_t maxMb);
+    virtual EndPoint* addCompatibleEndPoint( uint16_t mbox, uint16_t maxMb);
     virtual EndPoint* addEndPoint(const char *endpoint, bool local);
     // Avoid the mailbox, and match the mailbox count, if not -1
     virtual EndPoint* createEndPoint(std::string& endpoint, bool local=false) = 0;
@@ -297,7 +297,7 @@ namespace DataTransfer {
      * it has been passed to finalizeEndpoint().
      ***************************************/
     virtual std::string allocateEndpoint(const OCPI::Util::PValue*,
-					 unsigned mailBox, unsigned maxMailBoxes) = 0;
+					 uint16_t mailBox, uint16_t maxMailBoxes) = 0;
 
     // The endpoint is telling its factory that it is being deleted.
     void removeEndPoint(EndPoint &ep);
@@ -328,7 +328,7 @@ namespace DataTransfer {
     static ezxml_t getNode( ezxml_t tn, const char* name );
     // The range of mailboxes is common across all transports.
     // This will allow us to share memory between protocol someday.
-    uint32_t getMaxMailBox(), getNextMailBox();
+    uint16_t getMaxMailBox(), getNextMailBox();
   private:
     // This vector is indexed by the mailbox number of the endpoint
     // and only contains local endpoints

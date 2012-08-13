@@ -170,7 +170,7 @@ namespace DataTransfer {
     virtual ~DatagramXferFactory();//      throw ();
     //    virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
     virtual EndPoint*  createEndPoint(std::string& endpoint, bool local) =0;
-    virtual  std::string allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)=0;
+    virtual  std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)=0;
     virtual const char* getProtocol()=0;
     virtual DatagramXferServices *createXferServices(DatagramSmemServices*source,
 						     DatagramSmemServices*target) = 0;
@@ -341,7 +341,7 @@ namespace DataTransfer {
       void addFrameAck( DatagramFrameHeader * hdr );
       void ack( unsigned count, unsigned start );
       Frame *  nextFreeFrame();
-      Frame &  getFrame(  int & bytes_left  );
+      Frame &  getFrame(  unsigned & bytes_left  );
       void  releaseFrame ( unsigned seq );
       void post( Frame & t );
 

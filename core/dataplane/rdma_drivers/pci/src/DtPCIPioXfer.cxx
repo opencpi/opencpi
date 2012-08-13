@@ -43,10 +43,11 @@
  *
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <DtSharedMemoryInternal.h>
 #include <DtPCIPioXfer.h>
 #include <DtPioXfer.h>
-//#include <OcpiPCISMemServices.h>
 #include <xfer_if.h>
 #include "OcpiOsAssert.h"
 #include <OcpiList.h>
@@ -68,9 +69,6 @@
 #include <dirent.h>
 #include <sys/mman.h>
 #include <time.h>
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
 
 namespace DataTransfer {
 using namespace OCPI::Util;
@@ -167,12 +165,13 @@ XferServices* PCIPIOXferFactory::getXferServices(SmemServices* source, SmemServi
  *  node.
  ***************************************/
 std::string PCIPIOXferFactory::
-allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
+allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
 {
   std::string ep;
   OCPI::Util::SelfAutoMutex guard (this);  // FIXME what are we guarding?
 
-  OCPI::Util::formatString(ep, "ocpi-pci-pio:0.0:%u.%u.%u", m_SMBSize, mailBox, maxMailBoxes);
+  OCPI::Util::formatString(ep, "ocpi-pci-pio:0.0:%u.%" PRIu16 ".%" PRIu16,
+			   m_SMBSize, mailBox, maxMailBoxes);
   return ep;
 }
 
@@ -215,9 +214,9 @@ void PCISmemServices::create (PCIEndPoint* loc)
       throw OCPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "not enough memory to accomodate all mailboxes");
     base_adr += dmaSize * loc->mailbox;
     OCPI::Util::formatString(loc->end_point,
-		     "ocpi-pci-pio:0.0x%llx:%lld.%u.%u",
+		     "ocpi-pci-pio:0.0x%llx:%" PRIu32 ".%" PRIu16 ".%" PRIu16,
 		     (unsigned long long)base_adr,
-		     (unsigned long long)loc->size, loc->mailbox, loc->maxCount);
+		     loc->size, loc->mailbox, loc->maxCount);
 
     if (m_fd == -1 &&
 	( m_fd = open("/dev/mem", O_RDWR|O_SYNC )) < 0 )

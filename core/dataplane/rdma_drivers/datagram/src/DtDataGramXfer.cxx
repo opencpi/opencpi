@@ -106,7 +106,7 @@ namespace DataTransfer {
     return dgs;
   }
 
-  void DatagramXferRequest::modify( uint32_t  new_offsets[] , uint32_t  old_offsets[]  )
+  void DatagramXferRequest::modify( uint32_t  */*new_offsets[]*/ , uint32_t  */*old_offsets[]*/  )
   {
     ocpiAssert(!"modify not inplemented");
   }
@@ -276,7 +276,7 @@ namespace DataTransfer {
   sendAcks( uint64_t time_now, uint64_t timeout )
   {
     if (m_acks.size() && ( time_now - m_last_ack_send ) > timeout ) {
-      int bytes_left;
+      unsigned bytes_left;
       Frame & frame = getFrame( bytes_left );
       frame.frameHdr.flags = 1;
       post( frame );
@@ -286,7 +286,7 @@ namespace DataTransfer {
 
   Frame & 
   DatagramXferServices::
-  getFrame(  int & bytes_left  )
+  getFrame(unsigned & bytes_left  )
   {
     OCPI::Util::SelfAutoMutex guard ( this );
     Frame & frame = *nextFreeFrame(); 
@@ -339,7 +339,7 @@ namespace DataTransfer {
   DatagramXferRequest::
   post( DatagramTransaction & t )
   {
-    int bytes_left;
+    unsigned bytes_left;
     unsigned msg = 0;
 
     while ( msg < t.msgCount() ) {
@@ -355,9 +355,10 @@ namespace DataTransfer {
       frame.msg_start = msg;	  
 
       // Stuff as many messages into the frame as we can
-      while ( (bytes_left > 0) && (msg<t.msgCount()) ) {
-
-	if ( bytes_left < (int)( sizeof(DatagramMsgHeader) + t.hdrPtr(msg)->dataLen + 7 ) ) {
+      while (bytes_left > 0 && msg < t.msgCount()) {
+	unsigned need = sizeof(DatagramMsgHeader) + ((t.hdrPtr(msg)->dataLen + 7) & ~7);
+	if ( bytes_left < need) {
+	  ocpiAssert(msg > 0);
 	  // Need a new frame
 	  t.hdrPtr(msg-1)->nextMsg = false;
 	  break;
@@ -613,7 +614,7 @@ namespace DataTransfer {
     // Dont process dups. 
     if (  m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].id == header->frameSeq ) {
       
-      printf("max history = %d, SID = %d, fqr size = %zd mask=%d, seq = %d this = %p \n", 
+      ocpiDebug("max history = %d, SID = %d, fqr size = %zd mask=%d, seq = %d this = %p", 
 	     MAX_FRAME_HISTORY, header->srcId,  m_frameSeqRecord.size(), 
 	     header->frameSeq&MAX_FRAME_HISTORY, header->frameSeq, this
 	     );
@@ -622,7 +623,7 @@ namespace DataTransfer {
 	ocpiAssert( !"programming error, cant have dup without ACK ");
       }	    
 
-      printf("********  Found a duplicate frame, Ignoring it !! \n");
+      ocpiDebug("********  Found a duplicate frame, Ignoring it !!");
       // Need to ACK the dup anyway
       m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].acked = true;
       addFrameAck( header );

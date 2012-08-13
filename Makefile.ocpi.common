@@ -385,6 +385,7 @@ $(OBJDIR)/%.obj : %.cpp
 		$(addprefix -I,$(ALLINC)) \
 		"$<"
 
+ifneq (,)
 %.d : %.c
 	$(CC) -E $(CFLAGS) \
 		$(patsubst %,-D%=1,$(ALLDEFS)) \
@@ -420,6 +421,7 @@ $(OBJDIR)/%.obj : %.cpp
 		--target "$@" \
 		$(MKDEPENDFLAGS) \
 		-o "$@"
+endif
 #$(info WE ARE HERE: $(OBJDIR) $(LDFLAGS))
 $(OBJDIR)/%.exe : $(OBJDIR)/%.obj $(DYNOBJS)
 	$(LD) $(MAIN_LDFLAGS) -o "$@" \

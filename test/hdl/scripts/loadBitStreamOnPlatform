@@ -26,5 +26,6 @@ port=\
  grep $5 | \
  sed 's/^\([^ ]*\).*$/\1/'\
 `
-echo `dirname $0`/loadBitStream $1 $2 $port $4
+device=`echo $2 | sed 's/^PCI://'`
+echo `dirname $0`/loadBitStream $1 $device $port $4
 exit 0

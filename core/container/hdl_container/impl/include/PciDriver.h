@@ -73,6 +73,7 @@ namespace OCPI {
 	search(const OCPI::Util::PValue *props, const char **exclude, std::string &error);
 	OCPI::HDL::Device *
 	open(const char *pciName, std::string &err);
+	// Callback when found
 	virtual bool found(OCPI::HDL::Device &dev, std::string &error) = 0;
       };
     }

@@ -52,7 +52,7 @@ namespace OCPI {
       // set up the (other, subsidiary) offsettee to have registers at an offset in my space
       void offsetRegisters(Access &offsettee, unsigned offset);
 
-      // Return the offset in the endpoint physical window of this vaddr in bar0
+      // Return the offset in the endpoint physical window of this offset in the accessor
       inline uint64_t physOffset(unsigned offset) {
 	return m_base + offset;
       }
@@ -128,17 +128,20 @@ namespace OCPI {
     // It is specialized by the access paths and driver issues (for pci, ethernet etc.)
     class Device {
       std::string m_name;
-      std::string m_endpoint;
+      // This is the protocol-specific part of the endpoint.
+    protected:
+      std::string m_endpointSpecific;
       Access m_cAccess;
       Access m_dAccess;
-    protected:
+      uint64_t m_endpointSize;
       Device(std::string &name);
     public:
       virtual ~Device();
       inline const std::string &name() const { return m_name; }
       inline Access &cAccess() { return m_cAccess; };
       inline Access &dAccess() { return m_dAccess; };
-      inline std::string &endpoint() { return m_endpoint; }
+      inline std::string &endpoint() { return m_endpointSpecific; }
+      inline uint64_t endpointSize() { return m_endpointSize; }
     };
     
   }

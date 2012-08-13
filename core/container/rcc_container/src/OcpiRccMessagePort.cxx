@@ -143,6 +143,15 @@ namespace OCPI {
       // Empty
     }
 
+#if 1
+    OCPI::Container::ExternalPort &MessagePort::
+    createExternal(const char * /*extName*/, bool /*provider*/,
+		   const OCPI::Util::PValue */*params*/,
+		   const OCPI::Util::PValue */*params*/) {
+      ocpiAssert( 0 );
+      return *(OCPI::Container::ExternalPort *)0;
+    }
+#else
     OCPI::Container::ExternalPort& 
     MessagePort::
     connectExternal(const char*, const OCPI::Util::PValue*,
@@ -151,7 +160,7 @@ namespace OCPI {
       ocpiAssert( 0 );
       return *(OCPI::Container::ExternalPort *)0;
     }
-
+#endif
 
     OCPI::DataTransport::BufferUserFacet* 
     MessagePort::

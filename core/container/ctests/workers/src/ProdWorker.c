@@ -138,7 +138,7 @@ void PrintProdStatus()
   printf("Produced buffer count = %d\n", g_prod_p_count );
 }
 
-static int count=0;
+//static int count=0;
 static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBoolean *newRunCondition)
 {
   ( void ) timedout;

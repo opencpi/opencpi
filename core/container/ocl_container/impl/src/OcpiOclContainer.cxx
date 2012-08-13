@@ -1059,7 +1059,8 @@ namespace OCPI
           throw OC::ApiError( "OCL disconnect not yet implemented." );
         }
 
-        void checkConnectParams ( )
+      bool isLocal() const { return false; }
+        void startConnect (const OCPI::RDT::Descriptors */*other*/, const OCPI::Util::PValue */*params*/ )
         {
           if ( !m_canBeExternal )
           {
@@ -1162,12 +1163,12 @@ namespace OCPI
           myDesc.fullFlagBaseAddr = reinterpret_cast<uint64_t>( local );
 
           // Allow default connect params on port construction prior to connect
-          applyConnectParams ( params );
+          applyConnectParams(NULL, params);
         }
 
         // All the info is in.  Do final work to (locally) establish the connection
-        void finishConnection ( OCPI::RDT::Descriptors& other )
-        {
+        const OCPI::RDT::Descriptors *finishConnect(const OCPI::RDT::Descriptors &other,
+						    OCPI::RDT::Descriptors &/*feedback*/) {
           OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole) getData().data.role;
 
           // FIXME - can't we avoid string processing here?
@@ -1250,13 +1251,12 @@ namespace OCPI
             metadata [ n ].length = myDesc.dataBufferSize;
           }
           parent().myPorts [ parent().nConnectedPorts++ ].attr->connected = true;
+	  return NULL;
         }
-
         // Connection between two ports inside this container
         // We know they must be in the same artifact, and have a metadata-defined connection
         void connectInside ( OC::Port& provider,
-                             const OA::PValue* myProps,
-                             const OA::PValue* otherProps )
+                             const OA::PValue* /*myProps*/)
         {
           // We're both in the same runtime artifact object, so we know the port class
           Port& pport = static_cast<Port&>(provider);
@@ -1265,10 +1265,13 @@ namespace OCPI
           {
             throw OC::ApiError ( "Ports are both local in artifact, but are not connected", 0 );
           }
-          pport.applyConnectParams ( otherProps );
-          applyConnectParams ( myProps );
+#if 0
+	  pport.applyConnectParams(&getData().data, otherProps);
+	  applyConnectParams(&provider.getData().data, myProps);
+#endif
         }
 
+#if 0
         // Connect to a port in a like container (same driver)
         bool connectLike ( const OA::PValue* uProps,
                            OC::Port& provider,
@@ -1281,11 +1284,11 @@ namespace OCPI
           pport.applyConnectParams ( pProps );
           applyConnectParams ( uProps );
           determineRoles ( provider.getData().data );
-          finishConnection ( provider.getData().data );
-          pport.finishConnection ( getData().data );
+          finishConnect ( provider.getData().data );
+          pport.finishConnect ( getData().data );
           return true;
         }
-
+#endif
         bool isLocalBufferReady ( )
         {
           if ( *nextLocal->local == *nextLocal->shadow )
@@ -1353,6 +1356,9 @@ namespace OCPI
         OC::ExternalPort& connectExternal ( const char* name,
                                             const OA::PValue* userProps,
                                             const OA::PValue* props );
+        OC::ExternalPort &createExternal(const char *extName, bool provider, 
+					 const OU::PValue *extParams,
+					 const OU::PValue *connParams);
       public:
         OCPI::Metadata::PortOrdinal portOrdinal ( )
         {
@@ -1487,7 +1493,7 @@ namespace OCPI
     }
 
     // Buffers directly used by the "user" (non-container/component) API
-    class ExternalBuffer : OC::ExternalBuffer
+    class ExternalBuffer : OA::ExternalBuffer
     {
       friend class Port;
       friend class ExternalPort;
@@ -1534,17 +1540,18 @@ namespace OCPI
         uint32_t* remote;
         uint32_t* shadow;
 
-        ExternalPort ( Port& port,
-                       const char* name,
-                       bool isProvider,
-                       const OA::PValue* props )
-          : OC::ExternalPortBase<Port,ExternalPort> ( port, name, props, port.metaPort(), isProvider )
+        ExternalPort( Port& port,
+		      const char* name,
+		      bool isProvider,
+		      const OA::PValue* extParams,
+		      const OA::PValue* connParams )
+    : OC::ExternalPortBase<Port,ExternalPort> ( port, name, extParams, connParams, isProvider )
         {
           getData().data.options = ( 1 << OCPI::RDT::ActiveFlowControl ) |
                                         ( 1 << OCPI::RDT::ActiveMessage ) |
                                         ( 1 << OCPI::RDT::ActiveOnly );
 
-          applyConnectParams ( props );
+          applyConnectParams (NULL, extParams);
 
           port.determineRoles ( getData().data );
 
@@ -1687,10 +1694,10 @@ namespace OCPI
           opcode = nextLocal->metadata->opcode;
           end = false;
 
-          return static_cast<OC::ExternalBuffer *>( nextLocal );
+          return static_cast<OA::ExternalBuffer *>( nextLocal );
         }
 
-        OC::ExternalBuffer* getBuffer ( uint8_t*& bdata,
+        OA::ExternalBuffer* getBuffer ( uint8_t*& bdata,
                                         uint32_t& length )
         {
           ocpiAssert(parent().isProvider());
@@ -1704,7 +1711,7 @@ namespace OCPI
 
           length = nextLocal->length;
 
-          return static_cast<OC::ExternalBuffer *>( nextLocal );
+          return static_cast<OA::ExternalBuffer *>( nextLocal );
         }
 
         void advanceLocal ()
@@ -1739,6 +1746,12 @@ namespace OCPI
       myExternalPort->advanceLocal();
     }
 
+#if 1
+    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
+					   const OU::PValue *extParams, const OU::PValue *connParams) {
+      return *new ExternalPort(*this, extName, !isProvider, extParams, connParams);
+    }
+#else
     OC::ExternalPort& Port::connectExternal ( const char* extName,
                                               const OA::PValue* userProps,
                                               const OA::PValue* props )
@@ -1758,10 +1771,10 @@ namespace OCPI
                                            extName,
                                            !isProvider(),
                                            userProps );
-      finishConnection ( myExternalPort->getData().data );
+      finishConnect(myExternalPort->getData().data);
       return *myExternalPort;
     }
-
+#endif
     void Port::advanceLocal ()
     {
       (*nextLocal->remote)++;

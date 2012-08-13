@@ -55,7 +55,9 @@
 
 
 
+#define __STDC_FORMAT_MACROS
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
 #include <ezxml.h>
@@ -64,6 +66,7 @@
 #include <OcpiUtilHash.h>
 #include <OcpiUtilAutoMutex.h>
 #include <OcpiUtilEzxml.h>
+#include <OcpiUtilMisc.h>
 #include <OcpiPValue.h>
 #include <xfer_internal.h>
 #include <DtTransferInternal.h>
@@ -75,11 +78,11 @@ namespace OD = OCPI::Driver;
 
 namespace DataTransfer {
 
-uint32_t 
+uint16_t 
 XferFactory::
 getNextMailBox()
 {
-  static OS::int32_t mailbox=1;
+  static uint16_t mailbox=1;
   static bool mb_once=false;
   if ( ! mb_once ) {
     const char* env = getenv("OCPI_TRANSFER_MAILBOX");
@@ -96,12 +99,12 @@ getNextMailBox()
 
 
 
-uint32_t 
+uint16_t 
 XferFactory::
 getMaxMailBox()
 {
   static bool mmb_once=false;
-  static int max_mb=MAX_SYSTEM_SMBS;
+  static uint16_t max_mb=MAX_SYSTEM_SMBS;
   if ( ! mmb_once ) {
     const char* env = getenv("OCPI_MAX_MAILBOX");
     if( !env || (env[0] == 0)) {
@@ -362,6 +365,19 @@ void XferFactoryManager::shutdown()
   }
 }
 
+// We need to create an endpoint for some other (hardware) container.
+// The string should not include the last two fields.
+  EndPoint& XferFactoryManager::
+  allocateProxyEndPoint(const char *loc, uint64_t size) {
+    XferFactory* tfactory = find(loc);
+    if (!tfactory)
+      throw OU::Error("No driver/factory for endpoint string: '%s'", loc);
+    std::string complete;
+    OU::formatString(complete, "%s;%" PRIx64 ".%u.%u",
+		     loc, size, tfactory->getNextMailBox(), tfactory->getMaxMailBox());
+    return *tfactory->getEndPoint(complete.c_str(), false, true);
+  }
+
 XferFactory::
 XferFactory(const char *name)
   : OD::DriverType<XferFactoryManager,XferFactory>(name)
@@ -424,14 +440,16 @@ getEndPoint(const char *end_point, bool local, bool cantExist)
       else {
 	(*i)->refCount++; // FIXME:: this likely happens too often and thus will leak.
 	ocpiInfo("Incrementing refcount on ep %p to %u", *i, (*i)->refCount);
+#if 0
 	OCPI::OS::dumpStack(std::cerr);
+#endif
 	return *i;
       }
   return addEndPoint(end_point, local);
 }
 
 EndPoint* XferFactory::
-addCompatibleEndPoint(uint32_t mailBox, uint32_t maxMb)
+addCompatibleEndPoint(uint16_t mailBox, uint16_t maxMb)
 { 
   OCPI::Util::SelfAutoMutex guard (this); 
   // Find an unused slot that is different from the remote one

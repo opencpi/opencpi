@@ -55,7 +55,7 @@
 #include <OcpiOsTimer.h>
 #include <OcpiContainerManager.h>
 #include <RCC_Worker.h>
-#include <OcpiTransport.h>
+//#include <OcpiTransport.h>
 #include <OcpiRccDriver.h>
 #include <OcpiRccApplication.h>
 #include <OcpiTimeEmit.h>
@@ -84,8 +84,7 @@ namespace OCPI {
     const OCPI::OS::uint32_t CP289_CSINTERNAL_ERROR          = (CP289_EX_SOURCE_ID << 16) + 6;
 
     class Container
-      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>,
-      public OCPI::Time::Emit
+      : public OCPI::Container::ContainerBase<Driver,Container,Application,Artifact>
     {
 
       public:
@@ -99,7 +98,7 @@ namespace OCPI {
          * Constructors
          *********************************/
         Container(const char *name,
-		  OCPI::DataTransport::TransportGlobal* tpg, 
+		  //		  OCPI::DataTransport::TransportGlobal* tpg, 
 		  const OCPI::API::PValue* props )
           throw ( OCPI::Util::EmbeddedException );
 
@@ -124,13 +123,13 @@ namespace OCPI {
         //! get the event manager for this container
         DataTransfer::EventManager*  getEventManager();
 
-	inline OCPI::DataTransport::Transport& getTransport() { return *m_transport; }
+	//	inline OCPI::DataTransport::Transport& getTransport() { return *m_transport; }
 
 	bool needThread() { return true; }
-      protected:
+	//      protected:
 
         // Ocpi transport 
-        OCPI::DataTransport::Transport *m_transport;
+	//        OCPI::DataTransport::Transport *m_transport;
 
 
       };

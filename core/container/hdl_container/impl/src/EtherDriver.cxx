@@ -73,7 +73,10 @@ namespace OCPI {
 	    return;
 	  EtherControlPacket *ecp =  (EtherControlPacket *)(m_request.payload);
 	  ecp->header.tag = 0;
-	  cAccess().setAccess(NULL, this);
+	  OU::formatString(m_endpointSpecific, "ocpi-ether-rdma:%s", name.c_str());
+	  m_endpointSize = ((uint64_t)1) << 32;
+	  cAccess().setAccess(NULL, this, m_endpointSize - sizeof(OccpSpace));
+	  dAccess().setAccess(NULL, this, 0);
 	}
       public:
 	~Device() {

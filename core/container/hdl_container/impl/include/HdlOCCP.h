@@ -114,7 +114,7 @@ namespace OCPI {
 // Magic values from config space: these values are 32 bit values with chars big endian
 #define OCCP_MAGIC1 (('O'<<24)|('p'<<16)|('e'<<8)|'n')
 #define OCCP_MAGIC2 (('C'<<24)|('P'<<16)|('I'<<8))
-#define OCCP_MAGIC (((uint64_t)OCCP_MAGIC2 << 32ull) | OCCP_MAGIC1)
+#define OCCP_MAGIC ((((uint64_t)OCCP_MAGIC2) << 32) | OCCP_MAGIC1)
 // Read return values from workers
 #define OCCP_ERROR_RESULT   0xc0de4202
 #define OCCP_TIMEOUT_RESULT 0xc0de4203

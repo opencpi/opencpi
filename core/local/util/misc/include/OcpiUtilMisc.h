@@ -301,8 +301,8 @@ namespace OCPI {
        */
 
       void
-	formatString(std::string &out, const char *fmt, ...),
-	formatStringAdd(std::string &out, const char *fmt, ...),
+	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
+	formatStringAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatStringAddV(std::string &out, const char *fmt, va_list ap);
   }
 }

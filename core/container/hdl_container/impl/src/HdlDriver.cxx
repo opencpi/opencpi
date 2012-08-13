@@ -2,6 +2,8 @@
  * This file contains driver-level code that does not know about the guts of the 
  * container class.
  */
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <sys/mman.h>
 #include <uuid/uuid.h>
 // FIXME: integrate this into our UUID utility properly
@@ -31,7 +33,7 @@ namespace OCPI {
       if (magic == OCCP_MAGIC)
 	return true;
       ocpiBad("HDL Device '%s' responds, but the OCCP signature: "
-	      "magic: 0x%llx (sb 0x%llx)", name.c_str(), magic, OCCP_MAGIC);
+	      "magic: 0x%" PRIx64 " (sb 0x%" PRIx64 ")", name.c_str(), magic, OCCP_MAGIC);
       error = "Magic numbers in admin space do not match";
       return false;
     }

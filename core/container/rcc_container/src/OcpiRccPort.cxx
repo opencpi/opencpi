@@ -70,6 +70,7 @@ namespace OM = OCPI::Metadata;
 namespace OCPI {
   namespace RCC {
 
+#if 0
     void 
     RDMAPort::
     initInputPort(const OU::PValue *params)
@@ -82,7 +83,7 @@ namespace OCPI {
       m_dtPort->setInstanceName( n.c_str() );
       parent().portIsConnected(portOrdinal());
     }
-
+#endif
     RDMAPort::
     RDMAPort(Worker &w, Port& p,  const OU::PValue *params)
       :  PortDelegator(w, p.metaPort(),
@@ -98,48 +99,79 @@ namespace OCPI {
       disconnect();
     }
 
-    void 
-    RDMAPort::
-    connectInside(OC::Port & other, const OU::PValue */*myParams*/,  const OU::PValue *otherParams)
-    {
-      OU::AutoMutex guard ( m_mutex,  true ); 
-      RDMAPort &inputPort = static_cast<OCPI::RCC::Port *>(&other)->getRDMAPort();
 
-      // Setup the input port, given connect-time parameters for the transport subsystem
-      // and enhancing (but NOT finalizing) the descriptor based on transport/protocol issues.
-      inputPort.initInputPort(otherParams);
+    // For an output port, other == NULL signifies the collocated special case
+    void RDMAPort::
+    startConnect(const OCPI::RDT::Descriptors *other, const OCPI::Util::PValue *params) {
       ocpiAssert(!m_dtPort);
-      // Setup the output port, providing input port info, but NOT finalizing
-      m_dtPort = parent().getTransport().createOutputPort(getData().data, *inputPort.dtPort() );
+      if (isProvider())
+	m_dtPort = parent().getTransport().createInputPort(getData().data, params );
+      else if (other)
+	m_dtPort = parent().getTransport().createOutputPort(getData().data, *other);
+      if (m_dtPort) {
+	std::string n = parent().implTag() + "_";
+	n += parent().instTag() + "_";
+	n +=  m_metaPort.name;
+	m_dtPort->setInstanceName( n.c_str() ); // FIXME: put this in the dt port constructor
+	parent().portIsConnected(portOrdinal());
+      }
+    }
 
+    // This happens AFTER startConnect 
+    void RDMAPort::
+    localConnect(OCPI::DataTransport::Port &input) {
+      m_dtPort = parent().getTransport().createOutputPort(getData().data, input);
       std::string n = parent().implTag() + "_";
       n += parent().instTag() + "_";
       n +=  m_metaPort.name;
-      m_dtPort->setInstanceName( n.c_str() );
-
-      // Perform the final negotiation between the input side with all its
-      determineRoles(inputPort.getData().data);
-      // Tell the input port to finalize
-      inputPort.dtPort()->finalize(getData().data, inputPort.getData().data );
-      // Tell the output port to finalize
-      m_dtPort->finalize(inputPort.getData().data, getData().data );
-      m_localOther = &inputPort;
-      inputPort.m_localOther = this;
+      m_dtPort->setInstanceName( n.c_str() ); // FIXME: put this in the dt port constructor
       parent().portIsConnected(portOrdinal());
     }
 
+    const OCPI::RDT::Descriptors *RDMAPort::
+    finishConnect(const OCPI::RDT::Descriptors &other,
+		     OCPI::RDT::Descriptors &feedback) {
+      const OCPI::RDT::Descriptors *d = NULL;
+      if (isProvider())
+	m_dtPort->finalize(other, getData().data);
+      else
+	d = m_dtPort->finalize(other, getData().data, &feedback);
+      parent().portIsConnected(portOrdinal());
+      return d;
+    }
 
+    // The input/other is already started via startConnect
+    void 
+    RDMAPort::
+    connectInside(OC::Port & input, const OU::PValue *params)
+    {
+      OU::AutoMutex guard ( m_mutex,  true ); 
+      RDMAPort &inputPort = static_cast<OCPI::RCC::Port *>(&input)->getRDMAPort();
+      ocpiAssert(!m_dtPort);
+      // start up the output side with no input information - just for params
+      applyConnectParams(NULL, params);
+      // Perform the final negotiation between the input side with all its
+      determineRoles(inputPort.getData().data);
+      // Setup the output port, providing the collocated input port info, but NOT finalizing
+      localConnect(inputPort.dtPort());
+      OCPI::RDT::Descriptors feedback;
+      const OCPI::RDT::Descriptors *outDesc;
+      if ((outDesc = finishConnect(inputPort.getData().data, feedback)))
+	inputPort.finishConnect(*outDesc, feedback);
+      m_localOther = &inputPort;
+      inputPort.m_localOther = this;
+    }
+
+#if 0
     void
     RDMAPort::
     getInitialProviderInfo(const OU::PValue* params, std::string &out)
     {
-      OU::AutoMutex guard ( m_mutex,  true ); 
+      OU::SelfAutoMutex guard (this);
       ocpiAssert( isProvider() );
       applyConnectParams(params);
-      initInputPort(params);
       OC::Container::packPortDesc(getData(), out);
     }
-
     // An output port is being told of an input port's initial (perhaps sufficient) info
     // FIXME: share more code with the generic implementation
     void
@@ -162,7 +194,7 @@ namespace OCPI {
       m_dtPort->setInstanceName( n.c_str() );
 
       determineRoles(inputPortData.data);
-      finishConnection(inputPortData.data);
+      finishConnect(inputPortData.data);
       m_dtPort->finalize(inputPortData.data, getData().data, &localShadowPort.data );
       parent().portIsConnected(portOrdinal());
       // Fill in our container-port reference and our container reference
@@ -214,7 +246,9 @@ namespace OCPI {
 	throw OU::EmbeddedException("Input Port descriptor is invalid");
       }
     }
+#endif
 
+#if 0
     class ExternalBuffer : public OC::ExternalBuffer {
     public:
       // For consumer buffers
@@ -343,7 +377,6 @@ namespace OCPI {
       return false; // there are no more buffers to send on this external port that I can send...
     }
 
-
     /*
      * The following code is generated by the tool
      */
@@ -377,7 +410,7 @@ namespace OCPI {
       ocpiAssert(!"unexpected");
       return *(OC::ExternalPort *)0;
     }
-
+#endif
     // Discard the buffer (input only for now)
     void
     RDMAPort::
@@ -524,6 +557,21 @@ namespace OCPI {
       ocpiAssert( 0 );
     }
 
+    class ExternalPort : public OC::ExternalPortBase<RDMAPort,ExternalPort> {
+      friend class RDMAPort;
+    protected:
+      ExternalPort(RDMAPort &port, const char *name, bool isProvider, 
+		   const OU::PValue *extParams, const OU::PValue *connParams) :
+        OC::ExternalPortBase<RDMAPort,ExternalPort>(port, name, extParams, connParams, isProvider) {
+      }
+    public:
+      virtual ~ExternalPort() {}
+    };
+    OC::ExternalPort &RDMAPort::createExternal(const char *extName, bool isProvider,
+					       const OU::PValue *extParams, const OU::PValue *portParams) {
+      return *new ExternalPort(*this, extName, isProvider, extParams, portParams);
+    }
+
     Port::
     Port( Worker& w, const OCPI::Metadata::Port & pmd, const OCPI::Util::PValue *params, RCCPort *rp)
       : PortDelegator( w, pmd, 0, NULL, params), m_params(params), m_delegateTo(NULL),
@@ -558,6 +606,17 @@ namespace OCPI {
       m_delegateTo->connect(other,myParams,otherParams);
     }
 
+#if 1
+    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
+					   const OU::PValue *extParams, const OU::PValue *connParams) {
+      OU::AutoMutex guard ( m_mutex,  true ); 
+      // only supported in RDMA mode
+      if ( ! m_delegateTo ) {
+	setMode( OCPI::Container::Port::CON_TYPE_RDMA );
+      }
+      return ((RDMAPort *)m_delegateTo)->createExternal(extName, isProvider, extParams, connParams);
+    }
+#else
     // NOTE: this cannot be delegated because it passes "this" to connect, and that must be
     // a top level port.
     OCPI::API::ExternalPort&
@@ -592,7 +651,7 @@ namespace OCPI {
       }
       return *new ExternalPort(*p, name, NULL, metaPort(), m_mutex);
     }
-
+#endif
     void Port::
     release( OCPI::DataTransport::BufferUserFacet* buffer)
     {

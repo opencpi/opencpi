@@ -45,6 +45,8 @@
  *
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -156,7 +158,7 @@ XferServices* PIOXferFactory::getXferServices(SmemServices* source, SmemServices
 static OCPI::OS::int32_t pid;
 static OCPI::OS::int32_t smb_count=0;
 std::string PIOXferFactory::
-allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
+allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
 {
   OCPI::Util::SelfAutoMutex guard (this); 
   std::string ep;
@@ -167,7 +169,8 @@ allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBo
 
   pid = getpid();
   char tep[128];
-  snprintf(tep,128,"ocpi-smb-pio:pioXfer%d%d:%d.%d.%d",pid,smb_count++,size, mailBox, maxMailBoxes);
+  snprintf(tep,128,"ocpi-smb-pio:pioXfer%d%d:%d.%" PRIu16 ".%" PRIu16,
+	   pid,smb_count++,size, mailBox, maxMailBoxes);
   ep = tep;
 
   return ep;

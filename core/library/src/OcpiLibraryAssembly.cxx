@@ -85,7 +85,7 @@ namespace OCPI {
 	// We have processed an implementation before, just check for consistency
 	if (i.m_metadataImpl.nPorts() != m_nPorts) {
 	  ocpiInfo("Port number mismatch (%u vs %u) between implementations of worker %s.",
-		   i.m_metadataImpl.specName().c_str());
+		   i.m_metadataImpl.nPorts(), m_nPorts, i.m_metadataImpl.specName().c_str());
 	  return false;
 	}
       } else {
@@ -197,7 +197,8 @@ namespace OCPI {
 	  if (p0.m_name.size()  && p1.m_name.size() && p0.m_name != p1.m_name)
 	    throw OU::Error("Protocols (ports \"%s\" protocol \%s\" vs. port \"%s\" protocol \"%s\") "
 			    "in connection are incompatible",
-			    p0.m_name.c_str(), p1.m_name.c_str());
+			    ap0->m_name.c_str(), p0.m_name.c_str(),
+			    ap1->m_name.c_str(), p1.m_name.c_str());
 	  
 	  // FIXME:  more robust naming, namespacing, UUIDs, hash etc.
 	    

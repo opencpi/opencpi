@@ -43,6 +43,8 @@
  *
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <OcpiOsEther.h>
 #include <DtDataGramXfer.h>
 #include <OcpiUtilException.h>
@@ -173,7 +175,7 @@ namespace DataTransfer {
       const char* getProtocol() { return OCPI_ETHER_RDMA; }
 
       std::string 
-      allocateEndpoint( const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
+      allocateEndpoint( const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
       {
 	std::string ep;
 	const char* env = getenv("OCPI_ETHER_INTERFACE");
@@ -186,7 +188,7 @@ namespace DataTransfer {
 	OE::Interface ifc(env, error);
 	if (error.size())
 	  throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
-	OCPI::Util::formatString(ep, OCPI_ETHER_RDMA ":%s/%s;%u.%u.%u",
+	OCPI::Util::formatString(ep, OCPI_ETHER_RDMA ":%s/%s;%u.%" PRIu16".%" PRIu16,
 				 ifc.name.c_str(), ifc.addr.pretty(), parent().getSMBSize(),
 				 mailBox, maxMailBoxes);
 	return ep;

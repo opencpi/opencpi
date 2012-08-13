@@ -96,10 +96,12 @@ namespace OCPI {
       virtual inline OCPI::Container::PortConnectionDesc &  getData() {
 	return m_delegator ? m_delegator->getData() : OCPI::Container::PortData::getData();
       }
-      virtual void checkConnectParams(){}
+      virtual void startConnect(const OCPI::RDT::Descriptors *, const OCPI::Util::PValue *) {};
       virtual void setMode( ConnectionMode ){}
-      virtual void connectInside( OCPI::Container::Port &, const OCPI::Util::PValue *, const OCPI::Util::PValue *){}
-      virtual void finishConnection(OCPI::RDT::Descriptors &){}
+      virtual void connectInside( OCPI::Container::Port &, const OCPI::Util::PValue *){}
+      const OCPI::RDT::Descriptors *
+      finishConnect(const OCPI::RDT::Descriptors &/*other*/,
+		    OCPI::RDT::Descriptors &/*feedback*/) { return NULL;}
       virtual bool definitionComplete(){return true;}
 
       virtual inline OCPI::OS::Mutex               &mutex() { return m_mutex;}
@@ -152,6 +154,7 @@ namespace OCPI {
 	return m_delegateTo ? m_delegateTo->getData() : PortData::getData();
       }
 #endif
+      bool isLocal() const { return true; }
       void setMode( ConnectionMode mode );
       virtual void connect( OCPI::Container::Port &other, const OCPI::API::PValue *myProps=NULL,
 			    const OCPI::API::PValue *otherProps=NULL);
@@ -172,8 +175,14 @@ namespace OCPI {
 	}
       }
 
+#if 1
+      OCPI::Container::ExternalPort &createExternal(const char *extName, bool provider,
+						    const OCPI::Util::PValue *extParams,
+						    const OCPI::Util::PValue *connParams);
+#else
       virtual OCPI::API::ExternalPort& connectExternal(const char* n, const OCPI::Util::PValue* p,
 						       const OCPI::Util::PValue* po);
+#endif
 
       virtual inline bool definitionComplete() {
 	if (m_delegateTo) {
@@ -181,24 +190,39 @@ namespace OCPI {
 	}
 	return false;
       }
-      virtual inline void checkConnectParams()
+      void localConnect(OCPI::DataTransport::Port &input)
       {
+      if ( ! m_delegateTo ) setMode( CON_TYPE_RDMA );
 	if (m_delegateTo) {
-	  m_delegateTo->checkConnectParams();
+	  m_delegateTo->localConnect(input);
 	}
       }
-      virtual inline void connectInside(OCPI::Container::Port & other, const OCPI::Util::PValue * my_props,
-					const OCPI::Util::PValue * other_props)
-      {
-	ocpiAssert ( m_delegateTo);
-	m_delegateTo->connectInside(other,my_props,other_props);
+      OCPI::DataTransport::Port &dtPort() { 
+      if ( ! m_delegateTo ) setMode( CON_TYPE_RDMA );
+      ocpiAssert(m_delegateTo);
+      return m_delegateTo->dtPort();
       }
-      virtual inline void finishConnection(OCPI::RDT::Descriptors& d)
+      virtual inline void startConnect(const OCPI::RDT::Descriptors *other, const OCPI::Util::PValue* params)
+      {
+      if ( ! m_delegateTo ) setMode( CON_TYPE_RDMA );
+	if (m_delegateTo) {
+	  m_delegateTo->startConnect(other, params);
+	}
+      }
+      virtual inline void connectInside(OCPI::Container::Port & other, const OCPI::Util::PValue * my_props)
       {
 	ocpiAssert ( m_delegateTo);
-	m_delegateTo->finishConnection(d);
+	m_delegateTo->connectInside(other,my_props);
+      }
+      const OCPI::RDT::Descriptors *
+      finishConnect(const OCPI::RDT::Descriptors &other,
+		    OCPI::RDT::Descriptors &feedback)
+      {
+	ocpiAssert ( m_delegateTo);
+	return m_delegateTo->finishConnect(other, feedback);
       }
 
+#if 0
       // Connection routines
       virtual inline void getInitialProviderInfo(const OCPI::API::PValue*p, std::string &out)
       {
@@ -228,7 +252,7 @@ namespace OCPI {
 	ocpiAssert ( m_delegateTo);
 	m_delegateTo->setFinalUserInfo(s);
       }
-
+#endif
       // Port control methods
       virtual inline OCPI::DataTransport::BufferUserFacet* getBuffer( uint32_t tid )
       {
@@ -302,8 +326,15 @@ namespace OCPI {
 		       const OCPI::Util::PValue *otherParams);
       inline void disconnect()
         throw ( OCPI::Util::EmbeddedException );
+      bool isLocal() const { return false; }
+#if 1
+      OCPI::Container::ExternalPort &createExternal(const char *extName, bool provider,
+						    const OCPI::Util::PValue *extParams,
+						    const OCPI::Util::PValue *connParams);
+#else
       OCPI::Container::ExternalPort& connectExternal(const char*, const OCPI::Util::PValue*,
 						     const OCPI::Util::PValue*);
+#endif
       void releaseInputBuffer(OCPI::DataTransport::BufferUserFacet * buffer);
       void sendOutputBuffer( OCPI::DataTransport::BufferUserFacet* buffer, uint32_t length, uint8_t opcode );
       OCPI::DataTransport::BufferUserFacet*  getNextEmptyOutputBuffer(void *&data, uint32_t &length);
@@ -320,8 +351,6 @@ namespace OCPI {
     };
 
 
-
-    class RDMAPort;
     class RDMAPort : public PortDelegator  {
     public:
 
@@ -334,18 +363,29 @@ namespace OCPI {
         throw ( OCPI::Util::EmbeddedException );
 
       // Connection routines
+#if 0
       void
 	getInitialProviderInfo(const OCPI::API::PValue*, std::string &out),
 	setInitialProviderInfo(const OCPI::API::PValue*, const std::string&, std::string &out),
 	setInitialUserInfo(const std::string&, std::string &out),
 	setFinalProviderInfo(const std::string&, std::string &out),
 	setFinalUserInfo(const std::string&);
-      void checkConnectParams(){}
-      void connectInside(OCPI::Container::Port & other, const OCPI::Util::PValue * my_props,
-			 const OCPI::Util::PValue * other_props);
-      void finishConnection(OCPI::RDT::Descriptors&){}
+#endif
+      bool isLocal() const { return true; }
+      void localConnect(OCPI::DataTransport::Port &input);
+      OCPI::DataTransport::Port &dtPort(){ ocpiAssert(m_dtPort); return *m_dtPort;}
+      void startConnect(const OCPI::RDT::Descriptors *, const OCPI::Util::PValue * my_props);
+      void connectInside(OCPI::Container::Port & other, const OCPI::Util::PValue * my_props);
+      const OCPI::RDT::Descriptors *
+      finishConnect(const OCPI::RDT::Descriptors &/*other*/,
+		    OCPI::RDT::Descriptors &/*feedback*/);
+      OCPI::Container::ExternalPort &createExternal(const char *extName, bool provider,
+						    const OCPI::Util::PValue *extParams,
+						    const OCPI::Util::PValue *connParams);
+#if 0
       OCPI::Container::ExternalPort& connectExternal(const char*, const OCPI::Util::PValue*,
       						     const OCPI::Util::PValue*);
+#endif
       virtual void connect( OCPI::Container::Port &other, const OCPI::API::PValue *myProps=NULL,
 			    const OCPI::API::PValue *otherProps=NULL);        
       virtual void connectURL( const char* url, const OCPI::Util::PValue *myProps,
@@ -365,9 +405,7 @@ namespace OCPI {
       
     private:
 
-      inline OCPI::DataTransport::Port * dtPort(){return m_dtPort;}
-
-      void initInputPort(const OCPI::Util::PValue *);
+      //      void initInputPort(const OCPI::Util::PValue *);
       void processPortProperties( const OCPI::Util::PValue* props );
       void disconnectInternal();
 
@@ -383,6 +421,4 @@ namespace OCPI {
   }
 
 }
-
 #endif
-

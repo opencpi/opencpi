@@ -90,7 +90,6 @@ Transport( TransportGlobal* tpg, bool uses_mailboxes, OCPI::Time::Emit * parent 
   init();
 }
 
-
 OCPI::DataTransport::Transport::
 Transport( TransportGlobal* tpg, bool uses_mailboxes )
   : OCPI::Time::Emit("Transport"), m_defEndpoint(NULL),
@@ -100,8 +99,6 @@ Transport( TransportGlobal* tpg, bool uses_mailboxes )
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
   init();
 }
-
-
 
 void 
 OCPI::DataTransport::Transport::
@@ -138,7 +135,8 @@ getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
   DataTransfer::EndPoint *lep = NULL;
   if (strchr(remote, ':')) {
     char *cs = strdup(remote);
-    uint32_t mailBox, maxMb, size;
+    uint16_t mailBox, maxMb;
+    uint32_t size;
     EndPoint::getResourceValuesFromString(remote, cs, &mailBox, &maxMb, &size);
     free(cs);
     for (EndPointsIter i = m_localEndpoints.begin();
@@ -588,7 +586,7 @@ OCPI::DataTransport::Circuit*
 OCPI::DataTransport::Transport::
 getCircuit(  CircuitId& circuit_id )
 {
-  std::vector<OCPI::DataTransport::Circuit*>::iterator cit;
+  CircuitsIter cit;
   for ( cit=m_circuits.begin(); cit!=m_circuits.end(); cit++) {
     if ( (*cit)->getCircuitId() == circuit_id ) {
       return (*cit);
@@ -621,7 +619,7 @@ deleteCircuit(Circuit *circuit)
 {
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
-  std::vector<OCPI::DataTransport::Circuit*>::iterator it = std::find(m_circuits.begin(), m_circuits.end(), circuit);
+  CircuitsIter it = std::find(m_circuits.begin(), m_circuits.end(), circuit);
   m_circuits.erase(it);
   delete circuit;
   if ( m_circuits.size() == 0 ) {
@@ -643,7 +641,7 @@ void OCPI::DataTransport::Transport::dispatch(DataTransfer::EventManager*)
   OCPI::Util::AutoMutex guard ( m_mutex, true ); 
 
   // move data from queue if possible
-  std::vector<OCPI::DataTransport::Circuit*>::iterator cit;
+  CircuitsIter cit;
   for ( cit=m_circuits.begin(); cit!=m_circuits.end(); cit++) {
     if ( (*cit) == NULL ) continue;
     if ( (*cit)->ready() ) {
@@ -791,7 +789,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 
   // See if we have any comms requests
   unsigned nMailBoxes = m_CSendpoint->maxCount;
-  for ( OCPI::OS::uint32_t n=0; n<nMailBoxes; n++ ) {
+  for ( uint16_t n=0; n<nMailBoxes; n++ ) {
 
     if ( (n != m_CSendpoint->mailbox ) && (comms->mailBox[n].request.reqBasic.type != 0) ) {
 

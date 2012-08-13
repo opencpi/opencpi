@@ -31,6 +31,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,23 +65,23 @@ namespace OCPI {
 	Device(std::string &name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1)
 	  : OCPI::HDL::Device(name), m_bar0(bar0), m_bar1(bar1),
 	    m_bar0size(pci.size0), m_bar1size(pci.size1), m_fd(fd) {
-	  uint64_t endpointPaddr, endpointSize, controlOffset, bufferOffset;
+	  uint64_t endpointPaddr, controlOffset, bufferOffset;
 	  if (pci.bar0 < pci.bar1) {
 	    endpointPaddr = pci.bar0;
-	    endpointSize = pci.bar1 + pci.size1 - endpointPaddr;
+	    m_endpointSize = pci.bar1 + pci.size1 - endpointPaddr;
 	    controlOffset = 0;
 	    bufferOffset = pci.bar1 - pci.bar0;
 	  } else {
 	    endpointPaddr = pci.bar1;
-	    endpointSize = pci.bar0 + pci.size0 - endpointPaddr;
+	    m_endpointSize = pci.bar0 + pci.size0 - endpointPaddr;
 	    controlOffset = pci.bar0 - pci.bar1;
 	    bufferOffset = 0;
 	  }
-	  const char *busId = "0";
-	  OU::formatString(endpoint(),
-			   "ocpi-pci-pio:%s.0x%llx:%lld.3.20", busId,
-			   (long long unsigned)endpointPaddr,
-			   (long long unsigned)endpointSize);
+	  const char *cp = name.c_str();
+	  if (!strncasecmp("PCI:", cp, 4))
+	    cp += 4;
+	  unsigned bus = atoi(cp); // does anyone use non-zero PCI domains?
+	  OU::formatString(m_endpointSpecific, "ocpi-pci-pio:%u.%" PRIx64, bus, endpointPaddr);
 	  cAccess().setAccess((uint8_t*)bar0, NULL, controlOffset);
 	  dAccess().setAccess((uint8_t*)bar1, NULL, bufferOffset);
 	}

@@ -15,19 +15,22 @@ namespace OCPI {
     const char *rcc = "rcc";
     Driver::
     Driver() throw() 
-      : m_tpg_events(NULL), m_tpg_no_events(NULL), m_count(0) {
+      :
+      //      m_tpg_events(NULL), m_tpg_no_events(NULL), 
+      m_count(0) {
       ocpiDebug("Registering the RCC Container driver");
     }
     // Look for a container that doesn't exist yet.
     OC::Container *Driver::
-    probeContainer(const char *which, const OA::PValue *props)
+    probeContainer(const char *which, const OA::PValue *params)
 	throw ( OU::EmbeddedException )
     {
+#if 0
+      // THis is in the container base class now
       static unsigned event_range_start = 0;
       bool polled = true;
       OU::findBool(props, "polled", polled);
       OCPI::DataTransport::TransportGlobal **tpg(polled ? &m_tpg_no_events : &m_tpg_events);
-	  
       OCPI::RCC::Container *rcc;	  
       try {
 	if (!*tpg)
@@ -36,7 +39,9 @@ namespace OCPI {
       } catch( std::bad_alloc ) {
 	throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
       }
-      return rcc;
+#else	  
+      return new Container(which, params); // parent().getTransportGlobal(params), params);
+#endif
     }
     // Per driver discovery routine to create devices
     unsigned Driver::
@@ -52,8 +57,8 @@ namespace OCPI {
     {
       // Force containers to shutdown before we remove transport globals.
       OU::Parent<Container>::deleteChildren();
-      if ( m_tpg_no_events ) delete m_tpg_no_events;
-      if ( m_tpg_events ) delete m_tpg_events;
+      //      if ( m_tpg_no_events ) delete m_tpg_no_events;
+      //      if ( m_tpg_events ) delete m_tpg_events;
     }
     // Register this driver
     OC::RegisterContainerDriver<Driver> driver;

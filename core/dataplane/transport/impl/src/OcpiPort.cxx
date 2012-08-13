@@ -224,11 +224,13 @@ SmemServices* OCPI::DataTransport::Port::getRealShemServices()
 
 /**********************************
  * Finalize the port - called when the roles are finally established and won't change any more
+ * The return value is the resulting descriptor which is either "mine" or "flow"
  *********************************/
-void 
+const OCPI::RDT::Descriptors *
 Port::
 finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCPI::RDT::Descriptors *flow )
 {
+  const OCPI::RDT::Descriptors *result = &mine;
   Circuit &c = *getCircuit();
   Port *otherPort;
   if (m_data->output) {
@@ -249,9 +251,12 @@ finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCP
       break;
     case OCPI::RDT::ActiveMessage:
       if (flow) {
-	*flow = c.getInputPortSet(0)->getPort(0)->getMetaData()->m_shadowPortDescriptor;
-	flow->type = OCPI::RDT::ConsumerFlowControlDescT;
-	flow->desc.oob.cookie = mine.desc.oob.cookie;
+	PortMetaData *inputMeta = c.getInputPortSet(0)->getPort(0)->getMetaData();
+	if (inputMeta->m_shadow) {
+	  *flow = c.getInputPortSet(0)->getPort(0)->getMetaData()->m_shadowPortDescriptor;
+	  flow->type = OCPI::RDT::ConsumerFlowControlDescT;
+	  result = flow;
+	}
       }
       break;
     }
@@ -274,6 +279,8 @@ finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCP
   otherPort->m_data->m_descriptor = other;
   ocpiAssert(otherPort->m_data->m_descriptor.role != 5);
   c.m_openCircuit = false;
+  c.ready();
+  return result;
 }
 bool Port::
 isFinalized() {

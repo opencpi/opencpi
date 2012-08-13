@@ -101,6 +101,7 @@ PACKAGES += tools/cdk/ocpigen
 PACKAGES += tools/cdk/ocpidds
 # if we don't have opencl and we are building statically, don't bother with this
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
+PACKAGES += tools/cdk/ocpiocl
 else
 ifeq ($(OCPI_HAVE_OPENCL),1)
 PACKAGES += tools/cdk/ocpiocl

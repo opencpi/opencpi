@@ -270,7 +270,8 @@ namespace OCPI {
       DataTransfer::EndPoints m_localEndpoints, m_remoteEndpoints;
 
       // List of circuits
-      std::vector<OCPI::DataTransport::Circuit*> m_circuits;
+      std::list<OCPI::DataTransport::Circuit*> m_circuits;
+      typedef std::list<OCPI::DataTransport::Circuit*>::iterator CircuitsIter;
 
       // New circuit listener
       NewCircuitRequestListener* m_newCircuitListener;
@@ -289,8 +290,6 @@ namespace OCPI {
     public:
       // Our transport global class
       OCPI::DataTransport::TransportGlobal*            m_transportGlobal;
-
-
     };
 
   }

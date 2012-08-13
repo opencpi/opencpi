@@ -43,6 +43,8 @@
  *
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -60,9 +62,10 @@ namespace DataTransfer {
 
     static void 
     setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
-		      unsigned size, unsigned mbox, unsigned maxCount)
+		      unsigned size, uint16_t mbox, uint16_t maxCount)
     {
-      OCPI::Util::formatString(ep, "ocpi-udp-rdma:%s;%u:%u.%u.%u", ipAddr, port, size, mbox, maxCount);
+      OCPI::Util::formatString(ep, "ocpi-udp-rdma:%s;%u:%u.%" PRIu16 ".%" PRIu16,
+			       ipAddr, port, size, mbox, maxCount);
     }
 
     class DatagramSocket;
@@ -190,7 +193,7 @@ namespace DataTransfer {
       const char* getProtocol(){return "ocpi-udp-rdma";}
 
       std::string 
-      allocateEndpoint( const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
+      allocateEndpoint( const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
       {
 	std::string ep;
 	char ip_addr[128];
