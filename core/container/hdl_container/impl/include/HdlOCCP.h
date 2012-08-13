@@ -34,7 +34,9 @@
 
 #ifndef OCCP_H
 #define OCCP_H
+#ifndef __KERNEL__ // for linux driver
 #include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 namespace OCPI {

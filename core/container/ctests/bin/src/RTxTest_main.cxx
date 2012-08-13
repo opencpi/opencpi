@@ -199,6 +199,10 @@ int client_connect(const char *servername,int port) {
     if (sockfd >= 0) {
       if (!connect(sockfd, t->ai_addr, t->ai_addrlen))
 	break;
+      char x[100];
+      const char *host = inet_ntop(AF_INET, &((struct sockaddr_in *)t->ai_addr)->sin_addr, x, 100);
+      ocpiBad("Client connect to %s (%s) port %d failed %s %d\n",
+	      servername, x, port, strerror(errno), errno, host ? host : "no-address");
       close(sockfd);
       sockfd = -1;
     }
@@ -220,15 +224,16 @@ int client_connect(const char *servername,int port) {
 static 
 int server_connect(int port)
 {
+#if 0
   struct addrinfo *res, *t;
   struct addrinfo hints;
   memset( &hints, 0, sizeof(hints));
   hints.ai_flags    = AI_PASSIVE;
-  hints.ai_family   = AF_UNSPEC;
+  hints.ai_family   = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
 
   char *service;
-  int sockfd = -1, connfd;
+  int sockfd = -1;
   int n;
 
   if (asprintf(&service, "%d", port) < 0)
@@ -254,16 +259,33 @@ int server_connect(int port)
       sockfd = -1;
     }
   }
-
+  ocpiInfo("Server port for endpoint exchange is %d", ((struct sockaddr_in *)t->ai_addr)->sin_port);
   freeaddrinfo(res);
-
+#else
+  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  struct sockaddr_in sa;
+#ifdef OCPI_OS_darwin
+  sa.sin_len = sizeof(sa);
+#endif
+  sa.sin_family = AF_INET;
+  sa.sin_port = htons(port);
+  sa.sin_addr.s_addr = INADDR_ANY;
+  int n = 1;
+  if (sockfd >= 0 &&
+      (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &n, sizeof n) ||
+       bind(sockfd, (const struct sockaddr *)&sa, sizeof(sa)))) {
+    ocpiBad("Socket bind error %d (%s)", strerror(errno), errno);
+    close(sockfd);
+    sockfd = -1;
+  }
+#endif
   if (sockfd < 0) {
     fprintf(stderr, "Couldn't listen to port %d\n", port);
     return sockfd;
   }
 
   listen(sockfd, 1);
-  connfd = accept(sockfd, NULL, 0);
+  int connfd = accept(sockfd, NULL, 0);
   if (connfd < 0) {
     perror("server accept");
     fprintf(stderr, "accept() failed\n");
@@ -295,11 +317,13 @@ sread( std::string & s  )
   char buf[2048];
   unsigned int l = read( socket_fd, &size, 4 );
   if ( l == 0 ) return 0;
-  if (size) {
-    ocpiCheck(read( socket_fd, buf, size) == size);
-    s.assign(buf, size);
-  } else
-    s.clear();
+  ssize_t nread;
+  unsigned done = 0;
+  for (unsigned todo = size; todo; done += nread, todo -= nread) {
+    nread = read( socket_fd, buf + done, todo);
+    ocpiCheck(nread >= 0);
+  }
+  s.assign(buf, size);
   ocpiDebug("Leaving sread %d", size);
   return size;
 }
@@ -462,6 +486,13 @@ int gpp_cont()
       if ( loopback ) {
         setupForLoopbackMode(port_props);
 	worker = WORKER_LOOPBACK_ID;
+#if 1
+	printf("before sleep\n");
+	fflush(stdout);
+	OCPI::OS::sleep( 2000 );
+	printf("after sleep\n");
+	fflush(stdout);
+#endif
         WORKER_LOOPBACK_ID->start();
       }
       else {

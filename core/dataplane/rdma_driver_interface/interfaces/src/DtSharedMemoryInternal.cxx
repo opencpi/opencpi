@@ -153,7 +153,7 @@ void EndPoint::getResourceValuesFromString( const char* ep,
         item_count++;
       }
     }
-    else if ( ep[n] == ':' ) { 
+    else if ( ep[n] == ':'  || ep[n] == ';') { 
       if ( cs_index > 0  ) {  // buffer size
         if ( cs_index > 1 ) {
           char tmp = cs[0];

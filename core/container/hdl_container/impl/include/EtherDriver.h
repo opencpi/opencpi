@@ -46,104 +46,39 @@
 #include "OcpiOsEther.h"
 #include "OcpiPValue.h"
 #include "HdlAccess.h"
+#include "EtherDefs.h"
 namespace OCPI {
   namespace HDL {
     namespace Ether {
-#define OCCP_ETHER_MTYPE 0xf040
-#define OCCP_ETHER_STYPE 0xf040
-      typedef struct {
-	uint16_t etherTypeOverlay;  // this is to align the protocol in ethernet frames.
-	uint16_t length; // big endian
-	uint16_t pad;
-	uint8_t  typeEtc;
-	uint8_t  tag;
-      } EtherControlHeader;
-      typedef struct {
-	EtherControlHeader header;
-	uint8_t mbx80;
-	uint8_t mbz0;
-	uint8_t mbz1;
-	uint8_t maxCoalesced;
-      } EtherControlNop;
-      typedef struct {
-	EtherControlHeader header;
-	uint32_t address, data;
-      } EtherControlWrite;
-      typedef struct {
-	EtherControlHeader header;
-	uint32_t address;
-      } EtherControlRead;
-      typedef struct {
-	EtherControlHeader header;
-	uint8_t mbx40;
-	uint8_t mbz0;
-	uint8_t mbz1;
-	uint8_t maxCoalesced;
-      } EtherControlNopResponse;
-      typedef struct {
-	EtherControlHeader header;
-	uint32_t data; // read and nop
-      } EtherControlReadResponse;
-      typedef struct {
-	EtherControlHeader header;
-      } EtherControlWriteResponse;
-      typedef union {
-	EtherControlHeader header;
-	EtherControlNop nop;
-	EtherControlWrite write;
-	EtherControlRead read;
-	EtherControlNopResponse nopResponse;
-	EtherControlWriteResponse writeResponse;
-	EtherControlReadResponse readResponse;
-      } EtherControlPacket;
-      typedef enum {
-	NOP,
-	WRITE,
-	READ,
-	RESPONSE,
-	TYPE_LIMIT
-      } EtherControlMessageType;
-      typedef enum {
-	OK,
-	WORKER_TIMEOUT,
-	ERROR,
-	ETHER_TIMEOUT,
-	RESPONSE_LIMIT
-      } EtherControlResponse;
-#define OCCP_ETHER_MESSAGE_TYPE(t_and_be) ((OCPI::HDL::Ether::EtherControlMessageType)((t_and_be) >> 4))
-#define OCCP_ETHER_BYTE_ENABLES(t_and_be) ((t_and_be) & 0xf)
-#define OCCP_ETHER_RESPONSE(t_and_be) ((OCPI::HDL::Ether::EtherControlResponse)((t_and_be) & 0xf))
-#define OCCP_ETHER_TYPE_ETC(type, be) (((type) << 4) | ((be) & 0xf))
       const unsigned RETRIES = 10;
       const unsigned DELAYMS = 100;
       const unsigned MAX_INTERFACES = 10;
 
+      class Device;
       class Driver {
-	OCPI::OS::Ether::Socket *m_socket; // a pointer since we only open it on demand
-	const char **m_exclude; // during discovery
+	friend class Device;
+	OCPI::OS::Ether::Socket *m_socket; // discovery socket. pointer since we only open it on demand
+	const char **m_exclude;            // during discovery
+	// A mapping from interface name to sockets per interface, during discovery
 	typedef std::map<const std::string, OCPI::OS::Ether::Socket *> Sockets;
 	typedef Sockets::const_iterator SocketsIter;
 	typedef std::pair<const std::string, OCPI::OS::Ether::Socket*> SocketPair;
 	Sockets m_sockets;
+	// Find the discovery socket for this interface
 	OCPI::OS::Ether::Socket *
 	findSocket(OCPI::OS::Ether::Interface &ifc, std::string &error);
+	// Try to find one or more devices on this interface
 	unsigned 
-	tryIface(OCPI::OS::Ether::Interface &ifc, OCPI::OS::Ether::Address &mac, const char **exclude,
-		 std::string &name, Access &cAccess, Access &dAccess, std::string &endpoint,
-		 std::string &error);
-	virtual bool
-	found(const char *name, Access &cAccess, Access &dAccess,
-	      std::string &endpoint, std::string &error) = 0;
+	tryIface(OCPI::OS::Ether::Interface &ifc, OCPI::OS::Ether::Address *mac, const char **exclude,
+		 Device **dev, std::string &error);
       protected:
 	virtual ~Driver();
       public:
 	unsigned
 	search(const OCPI::Util::PValue *props, const char **exclude, std::string &error);
-	bool
-	probe(const char *which, std::string &error);
-	bool
-	open(const char *etherName, std::string &name, HDL::Access &cAccess, HDL::Access &dAccess,
-	     std::string &endpoint, std::string &err);
+	OCPI::HDL::Device *
+	open(const char *etherName, std::string &err);
+	virtual bool found(OCPI::HDL::Device &dev, std::string &error) = 0;
       };
 
     }

@@ -43,167 +43,161 @@
  *
  */
 
-#include <DtSharedMemoryInternal.h>
-#include <OcpiOsMisc.h>
-#include <OcpiOsAssert.h>
-#include <DtExceptions.h>
-#include <OcpiThread.h>
-#include <DtDataGramXfer.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <fasttime.h>
-#include <OcpiUtilAutoMutex.h>
-#include <deque>
+#include <OcpiOsSocket.h>
+#include <OcpiOsServerSocket.h>
+#include <OcpiOsAssert.h>
+#include <OcpiUtilMisc.h>
+#include <DtDataGramXfer.h>
+
+#define DATAGRAM_PAYLOAD_SIZE 512
 
 namespace DataTransfer {
 
   namespace UDP {
 
-    class ServerDatagramSocketHandler;
-
-    class DatagramSocket : public DataTransfer::DatagramSocket {
-
-    public :
-      DatagramSocket( DatagramSmemServices*  lsmem, DatagramTransmisionLayerDriver * driver )
-	: DataTransfer::DatagramSocket(lsmem,driver){}
-      virtual ~DatagramSocket();
-      void start();
-
-    private:
-      ServerDatagramSocketHandler*   m_socketHandler;
-    };
-
-
-
-    class  DatagramEndPoint : public EndPoint 
+    static void 
+    setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
+		      unsigned size, unsigned mbox, unsigned maxCount)
     {
-    public:
-      virtual ~DatagramEndPoint(){};
+      OCPI::Util::formatString(ep, "ocpi-udp-rdma:%s;%u:%u.%u.%u", ipAddr, port, size, mbox, maxCount);
+    }
+
+    class DatagramSocket;
+    class DatagramEndPoint : public EndPoint 
+    {
+      friend class DatagramSocket;
+      friend class DatagramXferFactory;
+    protected:
       DatagramEndPoint( std::string& ep, bool local, uint32_t size=0)
-	: EndPoint(ep, size, local) { parse(ep);}
-      virtual const char* getAddress(){return ipAddress.c_str();}
-      int32_t parse( std::string& ep )
-      {
+	: EndPoint(ep, size, local) { 
 	char ipaddr[80];
-	int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%u:", ipaddr, &portNum);
+	int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%u:", ipaddr, &m_portNum);
 	if (rv != 2) {
 	  fprintf( stderr, "DatagramEndPoint  ERROR: Bad socket endpoint format (%s)\n", ep.c_str() );
 	  throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );	  
 	}
-	ipAddress = ipaddr;  
-	return 0;
+	m_ipAddress = ipaddr;  
+	memset(&m_sockaddr, 0, sizeof(m_sockaddr));
+	m_sockaddr.sin_family = AF_INET;
+	m_sockaddr.sin_port = htons(m_portNum);
+	inet_aton(m_ipAddress.c_str(), &m_sockaddr.sin_addr);
       }
-      unsigned & getId(){return portNum;}
-      std::string ipAddress;
-      unsigned  portNum;
+      inline struct sockaddr_in &sockaddr() { return m_sockaddr; }
+      void updatePortNum(unsigned short portNum) {
+	if (portNum != m_portNum) {
+	  m_portNum = portNum;
+	  m_sockaddr.sin_port = htons(m_portNum);
+	  setEndpointString(end_point, m_ipAddress.c_str(), m_portNum, size, mailbox, maxCount);
+	}
+      }
+    public:
+      virtual const char* getAddress(){return m_ipAddress.c_str();}
+      unsigned & getId() { return m_portNum;}
+    private:
+      std::string m_ipAddress;
+      unsigned  m_portNum;
+      struct sockaddr_in m_sockaddr;
     };
 
-
-
-    class DatagramDriver;
-    class ServerDatagramSocketHandler : public OCPI::Util::Thread
-    {
+    class DatagramSocket : public DataTransfer::DatagramSocket {
+      friend class DatagramXferFactory;
+    protected:
+      DatagramSocket( DatagramSmemServices*  lsmem) //, DatagramTransmissionLayerDriver * driver )
+	: DataTransfer::DatagramSocket(lsmem) {//,driver) {
+	m_msghdr.msg_namelen = sizeof(struct sockaddr_in);
+	m_msghdr.msg_iov = 0;
+	m_msghdr.msg_iovlen = 0;
+	m_msghdr.msg_control = 0;
+	m_msghdr.msg_controllen = 0;
+	m_msghdr.msg_flags = 0;    
+      }
+      uint16_t maxPayloadSize() { return DATAGRAM_PAYLOAD_SIZE; }
     public:
-      ServerDatagramSocketHandler( OCPI::OS::Socket & socket, DatagramSmemServices*  lsmem,  DatagramDriver * driver )
-	: m_run(true), m_lsmem(lsmem), m_socket(socket),m_driver(driver) {}
-
-      virtual ~ServerDatagramSocketHandler()
-      {
+      void start() {
+	DatagramEndPoint *sep = (DatagramEndPoint*)m_lsmem->endpoint();
 	try {
-	  stop();
-	  m_socket.close();
-	  join();
+	  m_socket = m_server.bind(sep->getId(),false,true);
+	}
+	catch( std::string & err ) {
+	  m_error=true;
+	  ocpiBad("DatagramSocket bind error. %s", err.c_str() );
+	  ocpiAssert(!"Unable to bind to socket");
+	  return;
 	}
 	catch( ... ) {
-
+	  m_error=true;
+	  ocpiAssert(!"Unable to bind to socket");
+	  return;
 	}
+	sep->updatePortNum(m_server.getPortNo());
+	m_socket.linger(false); // we want to give some time for data to the client FIXME timeout param?
+	OCPI::Util::Thread::start();
       }
 
-#define RX_BUFFER_SIZE (1024*10)
-
-
-      void stop(){m_run=false;}
-      void run();
-
+      void send(Frame &frame) {
+	// FIXME: multithreaded..
+	DatagramEndPoint *dep = static_cast<DatagramEndPoint *>(frame.endpoint);
+	m_msghdr.msg_name = &dep->sockaddr();
+	// We are depending on structure compatibility
+	m_msghdr.msg_iov = (struct iovec *)frame.iov;
+	m_msghdr.msg_iovlen = frame.iovlen;
+	m_socket.sendmsg(&m_msghdr, 0);
+      }
+      unsigned
+      receive(uint8_t *buffer, unsigned &offset) {
+	struct sockaddr sad;
+	unsigned long size = sizeof(struct sockaddr);
+	unsigned n = (unsigned)m_socket.recvfrom((char*)buffer, DATAGRAM_PAYLOAD_SIZE, 0, (char*)&sad, &size, 200);
+	offset = 0;
+#ifdef DEBUG_TxRx_Datagram
+	// All DEBUG
+	if (n != 0) {
+	  int port = ntohs ( ((struct sockaddr_in *)&sad)->sin_port );
+	  char * a  = inet_ntoa ( ((struct sockaddr_in *)&sad)->sin_addr );
+	  ocpiDebug(" Recved %lld bytes of data on port %lld from addr %s port %d\n",
+		    (long long)n , (long long)m_socket.getPortNo(), a, port);
+	}
+#endif
+	return n;
+      }
     private:
-      bool   m_run;
-      DatagramSmemServices*  m_lsmem;
-      OCPI::OS::Socket & m_socket;
-      DatagramDriver *               m_driver;
+      struct msghdr                 m_msghdr;
+      OCPI::OS::Socket              m_socket;
+      OCPI::OS::ServerSocket        m_server;
     };
 
-
-    class DatagramDriver : public DatagramTransmisionLayerDriver  {
-      friend class FrameMonitor;
-
-    private:
-      OCPI::OS::Socket * m_socket;
-      std::vector<DatagramSmemServices*> m_smems;
+    class DatagramDevice;
+    class DatagramXferServices;
+    const char *datagram_udp = "datagram_udp";
+    class DatagramXferFactory
+      : public DriverBase<DatagramXferFactory, DatagramDevice, DatagramXferServices, datagram_udp,
+			  DataTransfer::DatagramXferFactory>
+    {
+    protected:
+      ~DatagramXferFactory() throw () {}
 
     public:
-      DatagramDriver()
-      {
-
-      }
-
-      virtual ~DatagramDriver()
-      {
-	std::vector<DatagramSmemServices*>::iterator it;
-	for ( it=m_smems.begin(); it!=m_smems.end(); it++ ) {
-	  (*it)->stop();
-	  (*it)->join();
-	}
-	m_smems.clear();
-      }
-
-
-      uint16_t maxPayloadSize()
-      {
-	return DATAGRAM_PAYLOAD_SIZE;
-      }
-
-      SmemServices * getSmemServices( XferFactory *f, EndPoint * ep )
-      {
-	ep->smem = new DatagramSmemServices(f, ep);
-	DatagramSmemServices * smem = static_cast<DatagramSmemServices*>(ep->smem);
-	m_smems.push_back( smem );
-	if ( ep->local ) {
-	  // Create our listener socket thread so that we can respond to incoming
-	  // requests  
-	  smem->socketServer() = new DatagramSocket( smem, this );
-	  smem->socketServer()->start();
-	  m_socket = & ((DatagramSmemServices*)ep->smem)->socketServer()->socket();
-	}
-	smem->start();
-	return ep->smem;
-      }
-      EndPoint * getEndPoint(){return NULL;}
-      EndPoint* createEndPoint(std::string& endpoint, bool local) {
-	return new DatagramEndPoint(endpoint, local);
-      }
-      static void 
-      setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
-			unsigned size, unsigned mbox, unsigned maxCount)
-      {
-	char tep[128];
-	snprintf(tep, 128, "ocpi-udp-rdma:%s;%u:%u.%u.%u", ipAddr, port, size, mbox,
-		 maxCount);
-	ep = tep;
-      }
+      DataTransfer::DatagramSmemServices *createSmemServices(EndPoint *ep);
+      DataTransfer::DatagramXferServices *createXferServices(DatagramSmemServices*source,
+							     DatagramSmemServices*target);
+      DatagramSocket *createSocket(DatagramSmemServices *smem);
+      EndPoint* createEndPoint(std::string& endpoint, bool local);
+      // End boilerplate methods
 
       const char* getProtocol(){return "ocpi-udp-rdma";}
 
       std::string 
-      allocateEndpoint( const OCPI::Util::PValue*, unsigned SMBsize, unsigned mailBox, unsigned maxMailBoxes)
+      allocateEndpoint( const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
       {
 	std::string ep;
 	char ip_addr[128];
 	const char* env = getenv("OCPI_UDP_TRANSFER_IP_ADDR");
 	if( !env || (env[0] == 0)) {
 	  ocpiDebug("Set ""OCPI_TRANSFER_IP_ADDR"" environment variable to set socket IP address");
-	  gethostname(ip_addr,128);
+	  gethostname(ip_addr,128); // FIXME: get a numeric address to avoid DNS problems
 	}
 	else {
 	  strcpy(ip_addr,env);
@@ -225,138 +219,18 @@ namespace DataTransfer {
 	if ( mb ) {
 	  mailBox = atoi(mb);
 	}
-	setEndpointString(ep, ip_addr, port, SMBsize, mailBox, maxMailBoxes);
+	setEndpointString(ep, ip_addr, port, parent().getSMBSize(), mailBox, maxMailBoxes);
 	return ep;
       }
       
     };
 
-
-    class DatagramXferFactory : public DataTransfer::DatagramXferFactory {
-    public:
-      DatagramXferFactory(){
-	printf(" ***** In UDP::DatagramXferFactory\n");
-	setDriver(new DatagramDriver());
-      }
-      virtual ~DatagramXferFactory()
-	throw () {};
-    };
-
-
-
-
-    // This handler services 
-    void
-    ServerDatagramSocketHandler::
-    run() {
-
-      uint64_t frames_processed = 0;
-      DatagramFrameHeader * header;
-
-	
-      try {
-	while ( m_run ) {
-	  uint8_t   buf[RX_BUFFER_SIZE];
-	  struct sockaddr sad;
-	  unsigned long size = sizeof( struct sockaddr);
-	  unsigned long long n = m_socket.recvfrom( (char*)buf,RX_BUFFER_SIZE, 0, (char*)&sad, &size, 200);
-	  if ( n == 0 ) {
-	    // timeout
-	    continue;
-	  }
-
-#ifdef DEBUG_TxRx_Datagram
-	  // All DEBUG
-	  int port = ntohs ( ((struct sockaddr_in *)&sad)->sin_port );
-	  char * a  = inet_ntoa ( ((struct sockaddr_in *)&sad)->sin_addr );
-	  printf(" Recved %lld bytes of data on port %lld from addr %s port %d\n", (long long)n , (long long)m_socket.getPortNo(), 
-		 a, port );
-#endif
-
-	  // This causes a frame drop for testing
-	  //#define DROP_FRAME
-#ifdef DROP_FRAME
-	  const char* env = getenv("OCPI_Datagram_DROP_FRAMES");
-	  if ( env != NULL ) 
-	  {
-	    static int dropit=1;
-	    static int dt = 300;
-	    static int m = 678900;
-	    if ( dt && (((++dropit)%m)==0) ) {
-	      printf("\n\n\n DROP A PACKET FOR TESTING \n\n\n");
-	      dt--;
-	      m = 500000 + rand()%10000;
-	      continue;
-	    }
-	  }
-#endif
-
-
-	  header = reinterpret_cast<DatagramFrameHeader*>(&buf[2]);
-
-	  // Get the xfer service that handles this conversation
-	  DatagramXferServices * xferS = 
-	    m_lsmem->xferServices(header->srcId);
-	  xferS->processFrame( header );
-
-	  frames_processed++;
-
-	}
-      }
-      catch (std::string &s) {
-	ocpiBad("Exception in socket background thread: %s", s.c_str());
-      } catch (...) {
-	ocpiBad("Unknown exception in socket background thread");
-      }
-
-    }
-
-      void 
-      DatagramSocket::
-      start() {
-	DatagramEndPoint *sep = (DatagramEndPoint*)m_lsmem->endpoint();
-	try {
-	  m_socket = m_server.bind(sep->getId(),false,true);
-	}
-	catch( std::string & err ) {
-	  m_error=true;
-	  ocpiBad("DatagramSocket bind error. %s", err.c_str() );
-	  ocpiAssert(!"Unable to bind to socket");
-	  return;
-	}
-	catch( ... ) {
-	  m_error=true;
-	  ocpiAssert(!"Unable to bind to socket");
-	  return;
-	}
-	if (sep->getId() == 0) {
-	  // We now know the real port, so we need to change the endpoint string.
-	  sep->getId() = m_server.getPortNo();
-	  DatagramDriver::setEndpointString(sep->end_point, sep->ipAddress.c_str(),
-				      sep->portNum, sep->size, sep->mailbox,
-				      sep->maxCount);
-	}
-	m_socket.linger(false); // we want to give some time for data to the client FIXME timeout param?
-	m_socketHandler  = new ServerDatagramSocketHandler(m_socket ,m_lsmem,
-							   static_cast<DatagramDriver*>(m_driver));
-	m_socketHandler->start();
-      }
-
-    DatagramSocket::
-    ~DatagramSocket() {
-      delete m_socketHandler;	
-    }
-
-  }
-
-  DatagramTransmisionLayerDriver * getUDPDriver(){return new UDP::DatagramDriver();}
-
+#include "DtDataGramBoilerplate.h"
 #define Datagram_UDP_RDMA_SUPPORT
 #ifdef  Datagram_UDP_RDMA_SUPPORT
-  // Used to register with the data transfer system;
-  RegisterTransferDriver<DatagramXferFactory> UDPDatagramDriver;
+    // Used to register with the data transfer system;
+    RegisterTransferDriver<DatagramXferFactory> UDPDatagramDriver;
 #endif
-
-
+  }
 }
 

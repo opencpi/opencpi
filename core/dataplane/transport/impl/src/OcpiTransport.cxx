@@ -125,7 +125,7 @@ init() {
 // This is called when we get a remote endpoint string and need a local endpoint
 // to talk to it.
 DataTransfer::EndPoint &OCPI::DataTransport::Transport::
-getLocalCompatibleEndpoint(const char *remote, bool exclusive) {
+getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
   if (!remote || !remote[0])
     remote = getenv("OCPI_DEFAULT_TRANSPORT");
   if (!remote)

@@ -1,0 +1,120 @@
+This is the OpenCPI Linux Driver.
+
+Requirements:
+
+* GNU GCC toolset
+* Source for your Linux Kernel
+* sudo
+
+To build the driver:
+
+$ make
+
+$ make load
+
+If you want to use more then 128KB of RAM, then you will need to reserve a 
+block of memory during the Linux kernel boot, using the memmap parameter.  The
+memmap parameter takes a number of formats, but the one that is most useful to 
+us is the following:
+
+	memmap=SIZE$START
+
+Where SIZE is the number of bytes to reserve in either hex or decimal, and
+START is the physical address in hexidecimal bytes.  You *must* use even
+page boundaries (0x1000 or 4096 bytes) for all addresses and sizes.  
+  
+Start by running:
+
+$ dmesg | grep BIOS
+BIOS-provided physical RAM map:
+ BIOS-e820: 0000000000000000 - 000000000009f800 (usable)
+ BIOS-e820: 000000000009f800 - 00000000000a0000 (reserved)
+ BIOS-e820: 00000000000ca000 - 00000000000cc000 (reserved)
+ BIOS-e820: 00000000000dc000 - 00000000000e4000 (reserved)
+ BIOS-e820: 00000000000e8000 - 0000000000100000 (reserved)
+ BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)
+ BIOS-e820: 000000005fef0000 - 000000005feff000 (ACPI data)
+ BIOS-e820: 000000005feff000 - 000000005ff00000 (ACPI NVS)
+ BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)
+ BIOS-e820: 00000000e0000000 - 00000000f0000000 (reserved)
+ BIOS-e820: 00000000fec00000 - 00000000fec10000 (reserved)
+ BIOS-e820: 00000000fee00000 - 00000000fee01000 (reserved)
+ BIOS-e820: 00000000fffe0000 - 0000000100000000 (reserved)
+
+ You want to select a (usable) section of memory and reserve a section of that
+ memory.  Once the memory is reserved, the Linux kernel will ignore it.  In
+ this example, there are 3 useable sections:
+ 
+ BIOS-e820: 0000000000000000 - 000000000009f800 (usable)
+ BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)
+ BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)
+
+The best choice is the second section (pages 0x100-0x5fef0).  If you wanted to 
+reserve 128MB, that would be 0x8000 pages.  Pick the end of the block 
+(page 0x5fef0) and subtract the number of pages, leaving 0x57ef0.  This would
+result in the following memmap parameter:
+
+	memmap=128M$0x57EF0000
+
+Once you've calculated your memmap parameter, you will need to add it to the
+kernel command line in your boot loader.  If you're using GRUB, you will need
+to edit the GRUB configuration file (on RHEL /boot/grub/grub.conf).  A sample
+boot configuration would look like this:
+
+title Red Hat Enterprise Linux Server (2.6.18-128.el5)
+        root (hd0,0)crashkernel=128M@16M
+        kernel /vmlinuz-2.6.18-128.el5 ro root=/dev/VolGroup00/LogVol00 rhgb quiet
+        initrd /initrd-2.6.18-128.el5.img
+
+You’ll need to edit the ‘kernel’ line to add the memmap parameter; make a copy 
+first, and then change the title line to distinguish it.  It should look like
+this:
+
+title Red Hat Enterprise Linux Server (2.6.18-128.el5) Memmap Example
+        root (hd0,0)
+        kernel /vmlinuz-2.6.18-128.el5 ro root=/dev/VolGroup00/LogVol00 rhgb quiet memmap=128M$0x57EF0000
+        initrd /initrd-2.6.18-128.el5.img
+
+Save the file, and then reboot the system, making certain to boot from your new
+configuration.  Once that's done, if you run 'dmesg' you should see something
+like this:
+
+$dmesg | more
+Linux version 2.6.18-128.el5 (mockbuild@hs20-bc1-7.build.redhat.com) (gcc version 4.1.2 20080704 (Red Hat 4.1.2-44)) #1 SMP Wed Dec 17 11:41:38 EST 2008
+Command line: ro root=/dev/VolGroup00/LogVol00 rhgb quiet memmap=128M$0x57EF0000
+BIOS-provided physical RAM map:
+ BIOS-e820: 0000000000000000 - 000000000009f800 (usable)
+ BIOS-e820: 000000000009f800 - 00000000000a0000 (reserved)
+ BIOS-e820: 00000000000ca000 - 00000000000cc000 (reserved)
+ BIOS-e820: 00000000000dc000 - 00000000000e4000 (reserved)
+ BIOS-e820: 00000000000e8000 - 0000000000100000 (reserved)
+ BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)
+ BIOS-e820: 000000005fef0000 - 000000005feff000 (ACPI data)
+ BIOS-e820: 000000005feff000 - 000000005ff00000 (ACPI NVS)
+ BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)
+ BIOS-e820: 00000000e0000000 - 00000000f0000000 (reserved)
+ BIOS-e820: 00000000fec00000 - 00000000fec10000 (reserved)
+ BIOS-e820: 00000000fee00000 - 00000000fee01000 (reserved)
+ BIOS-e820: 00000000fffe0000 - 0000000100000000 (reserved)
+user-defined physical RAM map:
+ user: 0000000000000000 - 000000000009f800 (usable)
+ user: 000000000009f800 - 00000000000a0000 (reserved)
+ user: 00000000000ca000 - 00000000000cc000 (reserved)
+ user: 00000000000dc000 - 00000000000e4000 (reserved)
+ user: 00000000000e8000 - 0000000000100000 (reserved)
+ user: 0000000000100000 - 0000000057ef0000 (usable)
+ user: 0000000057ef0000 - 000000005fef0000 (reserved)
+ user: 000000005fef0000 - 000000005feff000 (ACPI data)
+ user: 000000005feff000 - 000000005ff00000 (ACPI NVS)
+ user: 000000005ff00000 - 0000000060000000 (usable)
+ user: 00000000e0000000 - 00000000f0000000 (reserved)
+ user: 00000000fec00000 - 00000000fec10000 (reserved)
+ user: 00000000fee00000 - 00000000fee01000 (reserved)
+ user: 00000000fffe0000 - 0000000100000000 (reserved)
+DMI present.
+
+You will see a new (reserved) area between the second (useable) section and the
+(ACPI data) section.
+
+Now, when you run the 'make load' script, it will detect the new reserved
+area, and pass that data to the opencpi kernel module.

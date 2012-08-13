@@ -43,14 +43,18 @@
 #include <stdio.h>
 #include <string>
 
+#include "OcpiOsIOvec.h"
+#include "KernelDriver.h"
 // Ethernet support
 
 namespace OCPI {
   namespace OS {
     namespace Ether {
       typedef uint16_t Type;
-      const unsigned MaxRawPacket = 1518;
+      // Note this value includes the ethertype bytes
+      const unsigned MaxPacketSize = (1518 - 4 - 12);
       // This is worth inlining since addresses are processed at runtime.
+      extern bool haveDriver();
       class Address {
       public:
 	static const unsigned s_size = 6;
@@ -99,8 +103,9 @@ namespace OCPI {
 	Type type;
       };
       struct Packet {
-	Header header;
-	uint8_t payload[MaxRawPacket - sizeof(Header)];
+	uint8_t destination[Address::s_size];
+	uint8_t source[Address::s_size];
+	uint8_t payload[MaxPacketSize];
       };
       // A socket that sends and receives L2 layer poackets.
       // Note that receives are done into internal buffers and it is assumed that
@@ -112,21 +117,27 @@ namespace OCPI {
       class Socket {
 	unsigned m_ifIndex;
 	Address m_ifAddr;
-	Type m_sType, m_rType;
+	Type m_type;
 	//	Address m_addr; // not a reference
 	int m_fd;
 	unsigned m_timeout;
+	ocpi_role_t m_role;
+	uint16_t m_endpoint;
       public:
-	Socket(Interface &, std::string &error, Type sType, Type rType = 0);
+	Socket(Interface &, ocpi_role_t role, Address *remote, uint16_t endpoint, std::string &error);
 	~Socket();
+	inline Address &ifAddr() { return m_ifAddr; }
 	// These return false if error or timeout
-	// Receive directly into packet buffer.  Source address can be extracted
-	bool receive(Packet &, unsigned &payLoadLength, unsigned timeoutms, std::string &error);
+	// Receive directly into packet buffer.
+	bool receive(Packet &, unsigned &payLoadLength, unsigned timeoutms,
+		     Address &addr, std::string &error);
+	bool receive(uint8_t *buf, unsigned &offset, unsigned &length, unsigned timeoutms,
+		     Address &addr, std::string &error);
 	// Send, and fill out the addressing first (hence packet not const).
 	// If no "addr", then use address in socket.
-	// Return false if error of timeout
+	// Return false if error or timeout
 	bool send(Packet &, unsigned payloadLength, Address &addr, unsigned timeoutms, std::string &error);
-	//	void setAddr(Address &addr);
+	bool send(IOVec *, unsigned vecLen, Address &addr, unsigned timeoutms, std::string &error);
       };
       // The interface object has no dependencies on the scanner.
       struct Interface {

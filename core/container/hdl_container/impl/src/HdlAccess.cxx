@@ -90,5 +90,11 @@ namespace OCPI {
       while (bytes)
 	*to8++ = *from8++, bytes--;
     }
+    Device::
+    Device(std::string &name)
+      : m_name(name) {
+    }
+    Device::
+    ~Device() {}
   }
 }

@@ -34,7 +34,9 @@
 
 #ifndef PCIDRIVER_H
 #define PCIDRIVER_H
+#ifndef __KERNEL__
 #include <stdint.h>
+#endif
 #ifdef __cplusplus
 #include <string>
 #include "OcpiPValue.h"
@@ -45,10 +47,11 @@ namespace OCPI {
   namespace HDL {
     namespace PCI {
 #endif
-#define OCFRP0_PCI_VENDOR 0x10ee
-#define OCFRP0_PCI_DEVICE 0x4243
-#define OCFRP0_PCI_CLASS 0x05
-#define OCFRP0_PCI_SUBCLASS 0x00
+#define OCPI_HDL_PCI_DIR "/dev/ocpi/pci"
+#define OCPI_HDL_PCI_VENDOR_ID 0x10ee
+#define OCPI_HDL_PCI_DEVICE_ID 0x4243
+#define OCPI_HDL_PCI_CLASS 0x05    // PCI_BASE_CLASS_MEMORY on linux
+#define OCPI_HDL_PCI_SUBCLASS 0x00 // PCI_CLASS_MEMOR_RAM & 0xff on linux
 #ifdef __cplusplus
       struct Bar {
 	uint64_t address;
@@ -57,19 +60,20 @@ namespace OCPI {
 	unsigned addressSize;
       };
       class Driver {
+	int m_pciMemFd;
+	bool m_useDriver;
       protected:
+	Driver();
 	virtual ~Driver();
-	virtual bool
-	found(const char *name, Access &cAccess, Access &dAccess,
-	      std::string &endpoint, std::string &error) = 0;
       public:
-	static int s_pciMemFd;
+	// Grab some DMA memory, return a virtual mapping to it, and set base to the physical place
+	void *
+	map(uint32_t size, uint64_t &base, std::string &error);
 	unsigned
 	search(const OCPI::Util::PValue *props, const char **exclude, std::string &error);
-	bool
-	open(const char *pciName, std::string &name, HDL::Access &cAccess, HDL::Access &dAccess,
-	     std::string &endpoint, std::string &err);
-	     
+	OCPI::HDL::Device *
+	open(const char *pciName, std::string &err);
+	virtual bool found(OCPI::HDL::Device &dev, std::string &error) = 0;
       };
     }
   }

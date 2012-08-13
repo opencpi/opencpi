@@ -528,10 +528,8 @@ namespace OCPI {
     Worker &ApplicationI::getPropertyWorker(const char *name) {
       Property *p = m_properties;
       for (unsigned n = 0; n < m_nProperties; n++, p++)
-	if (!strcasecmp(name, p->m_name.c_str())) {
-	  char *cp = strchr(name, ':');
+	if (!strcasecmp(name, p->m_name.c_str()))
 	  return *m_workers[p->m_instance];
-	}
       throw OU::Error("Unknown application property: %s", name);
     }
 
