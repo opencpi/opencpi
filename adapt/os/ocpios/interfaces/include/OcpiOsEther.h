@@ -43,7 +43,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "OcpiOsIOvec.h"
+#include "OcpiOsIovec.h"
 #include "KernelDriver.h"
 // Ethernet support
 
