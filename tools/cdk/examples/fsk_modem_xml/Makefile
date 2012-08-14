@@ -12,7 +12,7 @@ fsk_modem: fsk_modem.cxx
 
 # OCPI_LIBRARY_PATH is like LD_LIBRARY_PATH, but for OpenCPI components.
 run: all
-	OCPI_LIBRARY_PATH=lib/rcc ./appHello > /dev/null	
+	OCPI_LIBRARY_PATH=$(OCPI_BASE_DIR)/components/lib/rcc ./fsk_modem > /dev/null	
 
 clean::
 	rm -f -r fsk_modem fsk_modem.dSYM
