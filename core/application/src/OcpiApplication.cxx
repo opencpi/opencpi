@@ -277,7 +277,7 @@ namespace OCPI {
 	  // For all ports on this instance, check for incompatibility
 	  for (unsigned nn = 0; nn < nPorts; nn++) {
 	    OU::Assembly::Port *ap = m_assembly.assyPort(n, nn);
-	    ocpiDebug("ap %p %p inst %u n %u nn %u", ap, ap->m_connectedPort,
+	    if ( ap) ocpiDebug("ap %p %p inst %u n %u nn %u", ap, ap->m_connectedPort,
 		      ap->m_connectedPort ? ap->m_connectedPort->m_instance : 0, n, nn);
 	    if(ap && ap->m_connectedPort && ap->m_connectedPort->m_instance < n &&
 	       m_assembly.checkConnection(*c.impl, *m_instances[ap->m_connectedPort->m_instance].m_impl,

@@ -289,3 +289,8 @@ export_cdk:
 	tar -z -h -f $$file -c -X $$file.exclude -C tools/cdk/export .
 
 
+etags: 
+    ETAGS=etags ; \
+    rm TAGS \
+    find . -name '*.cpp' -o -name '*.h' -o -name '*.c' -print0 \
+    | xargs $(ETAGS) --extra=+q --fields=+fksaiS --c++-kinds=+px --append

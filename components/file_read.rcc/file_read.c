@@ -66,6 +66,12 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    asprintf(&self->errorString, "error reading file: %s", strerror(errno));
    return RCC_ERROR;
  }
+ 
+ if ( n == 0 ) {
+   return RCC_DONE;
+ }
+ printf("In file_read.c got data = %s\n", port->current.data);
+
  if (props->granularity)
    n -= n % props->granularity;
  port->output.length = n;

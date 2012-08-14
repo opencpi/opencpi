@@ -1,3 +1,4 @@
+
 /*
  * THIS FILE WAS ORIGINALLY GENERATED ON Wed Dec 21 15:54:06 2011 EST
  * BASED ON THE FILE: file_read.xml
@@ -11,7 +12,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include "file_write_Worker.h"
+#include "file_write_real_Worker.h"
 
 typedef struct {
   int fd;
@@ -19,10 +20,10 @@ typedef struct {
 } MyState;
 static uint32_t mysizes[] = {sizeof(MyState), 0};
 
-FILE_WRITE_METHOD_DECLARATIONS;
-RCCDispatch file_write = {
+FILE_WRITE_REAL_METHOD_DECLARATIONS;
+RCCDispatch file_write_real = {
  /* insert any custom initializations here */
- FILE_WRITE_DISPATCH
+ FILE_WRITE_REAL_DISPATCH
  .memSizes = mysizes
 };
 
@@ -33,10 +34,10 @@ RCCDispatch file_write = {
 static RCCResult
 start(RCCWorker *self) {
   MyState *s = self->memories[0];
-  File_writeProperties *p = self->properties;
+  File_write_realProperties *p = self->properties;
 
   if (s->started) {
-    self->errorString = "file_read cannot be restarted";
+    self->errorString = "file_write cannot be restarted";
     return RCC_ERROR;
   }
   s->started = 1;
@@ -49,11 +50,11 @@ start(RCCWorker *self) {
 
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
- RCCPort *port = &self->ports[FILE_WRITE_IN];
- File_writeProperties *props = self->properties;
+ RCCPort *port = &self->ports[FILE_WRITE_REAL_IN];
+ File_write_realProperties *props = self->properties;
  MyState *s = self->memories[0];
 
-  printf("In file_write.c got data = %s\n", port->current.data);
+ printf("In file_write.c got %d bytes of data\n", port->input.length);
 
  (void)timedOut;(void)newRunCondition;
  if (port->input.length) {

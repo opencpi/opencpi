@@ -1,0 +1,5 @@
+<RccImplementation>
+  <xi:include href="sym_fir_complex_spec.xml"/>
+</RccImplementation>
+
+

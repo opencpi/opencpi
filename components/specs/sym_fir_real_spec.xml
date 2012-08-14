@@ -1,36 +1,39 @@
-<!-- Component spec for Complex CIC lowpass filter  
+<!-- Component spec for a Symmetric Real FIR bandpass multitap filter  
     
 When this component receives a "Sync" message it is responsible for performing whatever is 
 required to handle a discontinuity in the input data stream.  All of the control protocol
 being handled at the input must be passed to the output.
 
-This is a simple CIC half band lowpass filter.
-
 -->
 
-<ComponentSpec name="cic_lpfilter_complex" >
+<ComponentSpec name="sym_fir_real" >
 
   <Properties>
-    <!-- M - integer decimation factor   Format: bool   -->
-    <Property Name="m" type="Short" Readable="true" Writable="true"/>
     <!-- Bypass filter - if true, no transform  Format: bool -->
     <Property Name="bypass" type="bool" Readable="true" Writable="true"/>
     <!-- Gain factor   Format: double -->
     <Property Name="gain" type="Double" Readable="true" Writable="true"/>
     <!-- Reset filter to Tzero   Format: bool  -->
     <Property Name="Reset" type="bool" Readable="false" Writable="true"/>
+    <!-- Number of Taps   Format: int   -->
+    <Property Name="nTaps" type="Short" Readable="true" Writable="true"/>
     <!-- pd ???   Format: bool   -->
     <Property Name="pd" type="bool" Readable="true" Writable="true"/>
   </Properties>
 
   <!-- Input data and control stream -->
   <DataInterfaceSpec Name="in" Producer="false">
-      <xi:include href="iqstream_with_sync_protocol.xml"/>
+      <xi:include href="rstream_with_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
   <!-- Output data and control stream -->
   <DataInterfaceSpec Name="out" Producer="true">
-      <xi:include href="iqstream_with_sync_protocol.xml"/>
+      <xi:include href="rstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <!-- Output data and control stream (DEBUG)-->
+  <DataInterfaceSpec Name="outDebug" Producer="true" Optional="true">
+      <xi:include href="rstream_with_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
 </ComponentSpec>

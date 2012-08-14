@@ -19,6 +19,25 @@ RCCDispatch dds_complex = {
 
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
- (void)self;(void)timedOut;(void)newRunCondition;
+  (void)timedOut;(void)newRunCondition;
+
+
+ RCCPort
+   *in = &self->ports[DDS_COMPLEX_IN],
+   *out = &self->ports[DDS_COMPLEX_OUT];
+
+ uint16_t
+   *inData = in->current.data,
+   *outData = out->current.data;
+
+ printf("In dds_complex.c got data = %s\n", inData);
+
+ if (in->input.length > out->current.maxLength) {
+   self->errorString = "output buffer too small";
+   return RCC_ERROR;
+ }
+
+
+
  return RCC_ADVANCE;
 }

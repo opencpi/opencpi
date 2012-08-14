@@ -22,19 +22,23 @@ intial phase, fluh any buffers that it can and send a "Sync" message prior to ge
 
   </Properties>
 
-  <!-- input sync stream -->
-  <DataInterfaceSpec Name="in" Producer="false">
-    <Protocol>
-      <xi:include href="cstream_sync_protocol.xml"/>
-    </Protocol>
-  </DataInterfaceSpec>
+
 
   <!-- output stream that contains both data and sync -->
   <DataInterfaceSpec Name="out" Producer="true">
-    <Protocol>
       <xi:include href="cstream_data_protocol.xml"/>
-      <xi:include href="cstream_sync_protocol.xml"/>
-    </Protocol>
+      <xi:include href="signal_sync_protocol.xml"/>
   </DataInterfaceSpec>
+
+  <!-- input sync stream -->
+  <DataInterfaceSpec Name="in" Producer="false">
+      <xi:include href="signal_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+
+  </DataInterfaceSpec>
+
+
+
 
 </ComponentSpec>

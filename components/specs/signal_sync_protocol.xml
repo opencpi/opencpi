@@ -1,7 +1,5 @@
 <!-- A general I/O sync protocol for a signal processing stream  -->
 
-<Protocol>
-
   <!-- zero size frames  indicating a phase discontinuity - i.e. samples not continuous-->
   <Operation Name="Sync"/>
 
@@ -9,8 +7,5 @@
   <Operation Name="Time">
     <Argument Name="time" Type="ULongLong"/>
   </Operation>
-
-</Protocol>
-
 
 

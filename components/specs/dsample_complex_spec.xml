@@ -18,13 +18,13 @@ Control events must be passed on to the output.
   <!-- input stream that contains both data and sync -->
   <DataInterfaceSpec Name="in" Producer="false">
     <xi:include href="cstream_data_protocol.xml"/>
-    <xi:include href="cstream_sync_protocol.xml"/>
+    <xi:include href="signal_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
   <!-- Down sample output stream that contains both data and sync -->
   <DataInterfaceSpec Name="out" Producer="true">
     <xi:include href="cstream_data_protocol.xml"/>
-    <xi:include href="cstream_sync_protocol.xml"/>
+    <xi:include href="signal_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
 </ComponentSpec>

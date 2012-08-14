@@ -195,8 +195,7 @@ namespace OCPI {
 	  // Protocol on both sides of the connection
 	  OU::Protocol &p0 = *ap0, &p1 = *ap1;
 	  if (p0.m_name.size()  && p1.m_name.size() && p0.m_name != p1.m_name)
-	    throw OU::Error("Protocols (ports \"%s\" protocol \%s\" vs. port \"%s\" protocol \"%s\") "
-			    "in connection are incompatible",
+	    throw OU::Error("Protocols (ports \"%s\" protocol vs. port \"%s\" protocol in connection are incompatible",
 			    p0.m_name.c_str(), p1.m_name.c_str());
 	  
 	  // FIXME:  more robust naming, namespacing, UUIDs, hash etc.

@@ -1,17 +1,17 @@
-<!-- Component spec for Complex CIC lowpass filter  
+<!-- Component spec for Complex CIC highpass filter  
     
 When this component receives a "Sync" message it is responsible for performing whatever is 
 required to handle a discontinuity in the input data stream.  All of the control protocol
 being handled at the input must be passed to the output.
 
-This is a simple CIC half band lowpass filter.
+This is a simple CIC half band highpass filter.
 
 -->
 
-<ComponentSpec name="cic_lpfilter_complex" >
+<ComponentSpec name="cic_hpfilter_complex" >
 
   <Properties>
-    <!-- M - integer decimation factor   Format: bool   -->
+    <!-- M - integer interpolation factor   Format: bool   -->
     <Property Name="m" type="Short" Readable="true" Writable="true"/>
     <!-- Bypass filter - if true, no transform  Format: bool -->
     <Property Name="bypass" type="bool" Readable="true" Writable="true"/>

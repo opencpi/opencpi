@@ -7,18 +7,24 @@ Properties:
  granularity: incidates that the last message will be truncated to be a multiple of this.
 -->
 <RccImplementation controloperations="start">
-  <ComponentSpec name='file_read'>
+  <ComponentSpec name='file_read_real'>
 
     <DataInterfaceSpec Name="out" Producer="true">
       <xi:include href="rstream_with_sync_protocol.xml"/>
     </DataInterfaceSpec>
 
-    <property name='messagesInFile' type='bool' readable='true'/>
-    <property name='opcode' type='uchar' readable='true'/>
+    <property name='fileName' type='string' stringLength='1024'/>
+    <property name='genTestFile' type='bool' readable='true'/>
+    <property name='stepThruMsg' type='bool' readable='true' writable='true'/>
+    <property name='stepNow' type='bool' readable='true' writable='true'/>
     <property name='messageSize' type='ulong' readable='true'/>
-    <property name='granularity' type='ulong' readable='true'/>
     <property name='bytesRead' type='uLongLong' readable='true'/>
     <property name='messagesWritten' type='uLongLong' readable='true'/>
-    <property name='fileName' type='string' stringLength='1024'/>
+
+    <property name='messagesInFile' type='bool' readable='true'/>
+    <property name='opcode' type='uchar' readable='true'/>
+    <property name='granularity' type='ulong' readable='true'/>
+
+
   </ComponentSpec>
 </RccImplementation>
