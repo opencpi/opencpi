@@ -34,6 +34,10 @@
 
 #ifndef OCDP_H
 #define OCDP_H
+#ifdef __cplusplus
+namespace OCPI {
+  namespace HDL {
+#endif
 typedef struct {
   uint32_t
     nLocalBuffers,      // 0x00
@@ -43,7 +47,7 @@ typedef struct {
     localBufferSize,    // 0x10
     localMetadataSize,  // 0x14
     nRemoteDone,        // 0x18 written indicating remote action on local buffers
-    rsvd,               // 0x1c
+    rsvdregion,         // 0x1c
     nReady;             // 0x20 read by remote to know local buffers for remote action
   const uint32_t
     foodFace,           // 0x24 constant 0xf00dface: debug
@@ -87,4 +91,8 @@ enum OcdpRole {
   OCDP_ACTIVE_FLOWCONTROL = 2
 };
 
+#ifdef __cplusplus
+  }
+}
+#endif
 #endif

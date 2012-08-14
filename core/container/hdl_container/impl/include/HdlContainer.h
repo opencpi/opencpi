@@ -10,23 +10,20 @@ namespace OCPI {
     class Port;
     class Application;
     class Accessor;
+    // We inherit Access to simply ensure that control accesses are as fast as possible.
     class Container
       : public OCPI::Container::ContainerBase<Driver, Container, Application, Artifact>,
 	private Access {
-      Access m_bufferSpace;
-      std::string m_endpoint;
-      std::string m_device, m_esn, m_position, m_loadParams;
+      HDL::Device &m_device;        // the underlying device that we own
+      DataTransfer::EndPoint &m_endpoint; // the data plane endpoint of the device
+      std::string m_part, m_esn, m_position, m_loadParams;
       uuid_t m_loadedUUID;
       friend class WciControl;
       friend class Driver;
       friend class Port;
       friend class Artifact;
     protected:
-      Container(const char *name,
-		Access &controlAccessor,
-		Access &dataAccessor,
-		std::string &endpoint,
-		ezxml_t config = NULL, const OCPI::API::PValue *params = NULL);
+      Container(OCPI::HDL::Device &device, ezxml_t config = NULL, const OCPI::API::PValue *params = NULL);
     public:
       virtual ~Container();
     protected:
@@ -37,6 +34,7 @@ namespace OCPI {
       void releaseWorkerAccess(unsigned index,
 			       Access & worker,
 			       Access & properties);
+      inline HDL::Device &hdlDevice() { return m_device; }
     public:
       void start();
       void stop();

@@ -263,7 +263,7 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
 }
 
 
-static  ExternalBuffer * in_buffer = NULL;
+static  OCPI::API::ExternalBuffer * in_buffer = NULL;
 static  uint8_t  in_opCode;
 static  uint8_t* in_data;
 static  uint32_t in_length;
@@ -317,7 +317,7 @@ static bool run_ap_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers, i
     if ( in_buffer ) {
       uint8_t* data;
       uint32_t length;
-      ExternalBuffer* eb =
+      OCPI::API::ExternalBuffer* eb =
         external_output_port->getBuffer( data, length );
       if ( eb ) {
         ocpiAssert( length >= in_length );

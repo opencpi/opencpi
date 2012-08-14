@@ -44,6 +44,8 @@
  *
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -190,7 +192,7 @@ public:
 	      current_ptr = (char *)&header;
 	      bytes_left = sizeof(header);
 	    } else {
-	      ocpiDebug("Received Header: %8x: %lx %llx",
+	      ocpiDebug("Received Header: %8x: %" PRIx32 " %" PRIx64,
 			header.count, header.length, header.offset);
 	      current_ptr =(char*)m_startupParms.lsmem->map(header.offset, header.length);
 	      bytes_left = header.length;
@@ -389,15 +391,15 @@ static std::string sep;
 // This is static
 void SocketXferFactory::
 setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
-		  unsigned size, unsigned mbox, unsigned maxCount)
+		  unsigned size, uint16_t mbox, uint16_t maxCount)
 {
   char tep[128];
-  snprintf(tep, 128, "ocpi-socket-rdma:%s;%u:%u.%u.%u", ipAddr, port, size, mbox,
-	   maxCount);
+  snprintf(tep, 128, "ocpi-socket-rdma:%s;%u:%u.%" PRIu16 ".%" PRIu16,
+	   ipAddr, port, size, mbox, maxCount);
   ep = tep;
 }
 std::string SocketXferFactory::
-allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes)
+allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
 {
   OCPI::Util::SelfAutoMutex guard (this);
   std::string ep;
@@ -622,10 +624,10 @@ action_transfer(PIO_transfer transfer)
   hdr.offset = transfer->dst_off;
   hdr.count = count++;
 
-  ocpiDebug("Sending IP header %lu %lu %llx %lx",
-	    (unsigned long)sizeof(SocketDataHeader),
-	    (unsigned long)hdr.length, hdr.offset,
-	    (unsigned long)hdr.count);
+  ocpiDebug("Sending IP header %zu %" PRIu32 " %" PRIx64" %" PRIx32,
+	    sizeof(SocketDataHeader),
+	    hdr.length, hdr.offset,
+	    hdr.count);
 
   //  OCPI::OS::sleep( 100 );
 

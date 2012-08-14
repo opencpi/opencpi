@@ -361,13 +361,14 @@ namespace OCPI {
         throw OCPI::Util::EmbeddedException("disconnect not yet implemented !!");
       }
 
+      bool isLocal() const { return false; }
       // Called after connection PValues have been set, which is after our constructor
       // userDataBaseAddr, dataBufferBaseAddr are assumed set
       // Also error-check for bad combinations or values of parameters
       // FIXME:  we are relying on dataBufferBaseAddr being set before we know
       // buffer sizes etc.  If we are sharing a memory pool, this will not be the case,
       // and we would probably allocate the whole thing here.
-      void checkConnectParams() {
+      void startConnect(const OCPI::RDT::Descriptors */*other*/, const OCPI::Util::PValue */*params*/) {
         if (m_canBeExternal) {} // if the port is connectable externally...
       }
       // I am an input port, the other guy is an output port.
@@ -389,21 +390,24 @@ namespace OCPI {
 	if (isProvider()) {} // is this an input?
       }
       // All the info is in.  Do final work to (locally) establish the connection
-      void finishConnection(OCPI::RDT::Descriptors &other) {
-	(void)other;
+      const OCPI::RDT::Descriptors *finishConnect(const OCPI::RDT::Descriptors &/*other*/,
+						  OCPI::RDT::Descriptors &/*feedback*/) {
+	return NULL;
       }
       // Connection between two ports inside this container
       // We know they must be in the same artifact, and have a metadata-defined connection
-      void connectInside(OC::Port &provider, const OA::PValue *myProps,
-			 const OA::PValue *otherProps) {
+      void connectInside(OC::Port &provider, const OA::PValue */*myProps*/) {
         // We're both in the same runtime artifact object, so we know the port class
         Port &pport = static_cast<Port&>(provider);
         if (m_connection != pport.m_connection)
           throw "Ports are both local in bitstream/artifact, but are not connected";
-        pport.applyConnectParams(otherProps);
-        applyConnectParams(myProps);
+#if 0
+        pport.applyConnectParams(&getData().data, otherProps);
+        applyConnectParams(&provider.getData().data, myProps);
+#endif
         // For now we assume there is nothing to actually adjust in the bitstream.
       }
+#if 0
       // Connect to a port in a like container (same driver)
       bool connectLike(const OA::PValue *uProps, OC::Port &provider, const OA::PValue *pProps) {
         // We're both in the same runtime artifact object, so we know the port class
@@ -412,14 +416,17 @@ namespace OCPI {
         pport.applyConnectParams(pProps);
         applyConnectParams(uProps);
         determineRoles(provider.getData().data);
-        finishConnection(provider.getData().data);
-        pport.finishConnection(getData().data);
+        finishConnect(provider.getData().data);
+        pport.finishConnect(getData().data);
         return true;
       }
+#endif
       // Directly connect to this port
       // which creates a dummy user port
-      OC::ExternalPort &connectExternal(const char *name, const OA::PValue *userProps,
-					const OA::PValue *props);
+      //      OC::ExternalPort &connectExternal(const char *name, const OA::PValue *userProps,
+      //					const OA::PValue *props);
+    OC::ExternalPort &createExternal(const char *extName, bool isProvider,
+					   const OU::PValue *extParams, const OU::PValue *connParams);
     };
     // OCPI API
     OC::Port &Worker::
@@ -463,6 +470,23 @@ namespace OCPI {
       return *new Port(*this, props, metaPort, metaPort.provider, conn);
     }
 
+#if 1 // shared
+    class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
+      friend class Port;
+    protected:
+      ExternalPort(Port &port, const char *name, bool isProvider,
+		   const OA::PValue *extParams, const OA::PValue *connParams) :
+        OC::ExternalPortBase<Port,ExternalPort>(port, name, extParams, connParams, isProvider) {
+      }
+    public:
+      virtual ~ExternalPort() {}
+    };
+    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
+					   const OU::PValue *extParams,
+					   const OU::PValue *connParams) {
+      return *new ExternalPort(*this, extName, isProvider, extParams, connParams);
+    }
+#else
     // Buffers directly used by the "user" (non-container/component) API
     class ExternalBuffer : OC::ExternalBuffer {
       friend class ExternalPort;
@@ -571,9 +595,10 @@ namespace OCPI {
       applyConnectParams(props);
       // UserPort constructor must know the roles.
       ExternalPort *myExternalPort = new ExternalPort(*this, name, userProps);
-      finishConnection(myExternalPort->getData().data);
+      finishConnect(myExternalPort->getData().data);
       return *myExternalPort;
     }
+#endif
   }
 }
 

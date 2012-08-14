@@ -234,7 +234,7 @@ void writeDesc( std::string& desc, const char* file_name )
 void writeDesc( Port * desc, const char* file_name )
 {
   std::string sdesc;
-  OCPI::Container::Container::packPortDesc(desc->getData(), sdesc);
+  OCPI::Container::Port::packPortDesc(desc->getData().data, sdesc);
   writeDesc( sdesc, file_name );
 }
 

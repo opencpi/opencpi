@@ -203,7 +203,7 @@ namespace OCPI {
       }
     public:
       virtual const std::string &name() const { return m_childName; }
-      inline TParent &parent() { return m_parent; }
+      inline TParent &parent() const { return m_parent; }
     };
       
     // This is the child where the derived TChild is inherited from here

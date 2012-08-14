@@ -53,7 +53,8 @@ DYNOBJS += \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj 
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtSocketsXfer.obj \
+	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj \
 
 
 

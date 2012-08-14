@@ -275,7 +275,7 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
   int testPassed = 1;
   uint32_t err_code = OU::NO_ERROR_;
   std::string err_str;
-  int tmpi = 0;
+  //  int tmpi = 0;
 
   try {
     createWorkers( ca );
@@ -325,6 +325,8 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
   }
 
 
+#if 0
+  // This test is not valid since changing this number on the fly is never allowed.
   tmpi = UTGProducerWorkerDispatchTable.numInputs;
   UTGProducerWorkerDispatchTable.numInputs = 10;
   TRY_AND_SET(err_code, err_str, "", PRODUCER.worker->start());
@@ -337,7 +339,9 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
 
  done:
   UTGProducerWorkerDispatchTable.numInputs  = tmpi;
-
+#else
+ done:
+#endif
   try {
     disableWorkers(ca,workers);
   }
@@ -626,7 +630,7 @@ static int config_and_run_test_method(const char *test_name, std::vector<CApp>& 
 
 /*
  *  Call the worker "state" method and make sure that it returns success. Then call the "state" method again
- *  and make sure we get an invalid sequence error back.
+ *  and make sure we get no error back
  */
 static int config_and_run_state_error_test1(const char *test_name, std::vector<CApp>& ca,
                                             std::vector<CWorker*>& workers, OM::Worker::ControlOperation state
@@ -719,7 +723,7 @@ static int config_and_run_state_error_test1(const char *test_name, std::vector<C
 	      case OM::Worker::OpStop:   CONSUMER.worker->stop(); break;
 	      default:;
 	      });
-  if ( err_code != OU::INVALID_CONTROL_SEQUENCE ) {  // Test failed, there should have been an error reported
+  if ( err_code != OU::NO_ERROR_ ) {  // Test failed, there should have been no error reported
     TUPRINTF("Wrong return code\n");
     testPassed = false;
     goto done;
@@ -742,7 +746,7 @@ static int config_and_run_state_error_test1(const char *test_name, std::vector<C
 
 /*
  *  Force the worker to create an error on "state" and make sure we get back the error string and
- *  status correctly.  Then call "state" again and make sure we get a worker unusable error back.
+ *  status correctly.  Then call "state" again and make sure we get no error back.
  */
 static int config_and_run_state_error_test2(const char *test_name, std::vector<CApp>& ca,
                                             std::vector<CWorker*>& workers, OM::Worker::ControlOperation state
@@ -824,13 +828,13 @@ static int config_and_run_state_error_test2(const char *test_name, std::vector<C
 	      default:;
 	      });
   if ( err_code == OU::NO_ERROR_ ) {
-    TUPRINTF("Expected worker to return FATAL falure\n");
+    TUPRINTF("Expected worker to return no error\n");
     testPassed = false;
-  }
+  } 
   if ( err_str != ERROR_TEST_STRING ) {
     testPassed = false;
   }
-
+#if 0
   TRY_AND_SET(err_code, err_str, "",
 	      switch (state) {
 	      case OM::Worker::OpStart:   CONSUMER.worker->start(); break;
@@ -844,7 +848,7 @@ static int config_and_run_state_error_test2(const char *test_name, std::vector<C
   if ( err_code != OU::WORKER_UNUSABLE) {
     testPassed = false;
   }
-
+#endif
   try {
     disableWorkers( ca, workers );
     disconnectPorts( ca, workers );
@@ -971,7 +975,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -994,7 +998,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -1016,7 +1020,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -1041,7 +1045,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
   test_name = "init() Control Error Test 2";
@@ -1062,7 +1066,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 #endif
 
@@ -1084,7 +1088,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -1108,7 +1112,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -1132,7 +1136,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
   test_name = "test() Method Test";
@@ -1153,7 +1157,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -1175,7 +1179,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test:  %s: %s\n",   test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 

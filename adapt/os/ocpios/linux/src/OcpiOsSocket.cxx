@@ -162,9 +162,11 @@ recvfrom(char  *buf, unsigned long long amount, int flags,
   unsigned long count = static_cast<unsigned long> (amount);
   ocpiAssert (static_cast<unsigned long long> (count) == amount);
 
-  size_t ret;
+  ssize_t ret;
   ret= ::recvfrom (o2fd (m_osOpaque), buf, count, flags, si_other, (socklen_t*)addrlen);
   if (ret == -1) {
+    if (errno != EAGAIN && errno != EINTR)
+      throw OCPI::OS::Posix::getErrorMessage(errno);
     return 0;
   }
 

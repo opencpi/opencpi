@@ -149,8 +149,8 @@ namespace OCPI {
       /**********************************
        * Finalize the port
        *********************************/
-      virtual void finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine,
-			     OCPI::RDT::Descriptors *flow = NULL );
+      virtual const OCPI::RDT::Descriptors *finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine,
+						      OCPI::RDT::Descriptors *flow = NULL );
       bool isFinalized(); 
 
       /**************************************

@@ -13,6 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "file_write_real_Worker.h"
+#include <stream_data_file_format.h>
 
 typedef struct {
   int fd;
@@ -50,15 +51,25 @@ start(RCCWorker *self) {
 
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
+ (void)timedOut;(void)newRunCondition;
  RCCPort *port = &self->ports[FILE_WRITE_REAL_IN];
  File_write_realProperties *props = self->properties;
  MyState *s = self->memories[0];
+ ssize_t n;
 
  printf("In file_write.c got %d bytes of data\n", port->input.length);
 
- (void)timedOut;(void)newRunCondition;
+ FileHeader h;
+ h.endian = 1;
+ h.opcode = port->input.u.operation;
+ h.length = port->input.length;
+ if ((n = write(s->fd, port->current.data, sizeof(FileHeader) )) < 0)  {
+   asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+   return RCC_ERROR;
+ }
+ props->bytesWritten += n;
+
  if (port->input.length) {
-   ssize_t n;
    if ((n = write(s->fd, port->current.data, port->input.length)) < 0) {
      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
      return RCC_ERROR;

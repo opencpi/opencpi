@@ -116,8 +116,8 @@ void EndPoint::getProtocolFromString( const char* ep, std::string &proto )
 
 void EndPoint::getResourceValuesFromString( const char* ep, 
                                             char* cs, 
-                                            OCPI::OS::uint32_t* mailBox, 
-                                            OCPI::OS::uint32_t* maxMb, 
+                                            uint16_t* mailBox, 
+                                            uint16_t* maxMb, 
                                             OCPI::OS::uint32_t* size
                                             )
 {
@@ -153,7 +153,7 @@ void EndPoint::getResourceValuesFromString( const char* ep,
         item_count++;
       }
     }
-    else if ( ep[n] == ':' ) { 
+    else if ( ep[n] == ':'  || ep[n] == ';') { 
       if ( cs_index > 0  ) {  // buffer size
         if ( cs_index > 1 ) {
           char tmp = cs[0];
@@ -189,7 +189,8 @@ canSupport(const char *remoteEndpoint) {
   std::string remoteProtocol;
   DataTransfer::EndPoint::getProtocolFromString(remoteEndpoint, remoteProtocol);
   char *cs = strdup(remoteEndpoint);
-  uint32_t mailBox, maxMb, size;
+  uint16_t mailBox, maxMb;
+  uint32_t size;
   getResourceValuesFromString(remoteEndpoint, cs, &mailBox, &maxMb, &size);
   bool ret = 
     protocol == remoteProtocol &&

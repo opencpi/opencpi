@@ -1,15 +1,15 @@
 #!/bin/sh --noprofile
 if [[ $# < 4 ]]; then
-    echo Usage is: "$0:t" bit_file PCI_device part-name $#
-    echo '  'An example is '(for an ML555)' is:
-    echo '    'loadBitStreamOnPlatform testbias-ml555.bit.gz 0000:02:00.0 xc5vlx50t
-    echo '  To find the PCI devices (available containers),' use the '"sudo -E ocfrp_check"' command.
-    echo '    'With ocfrp_check, OpenCPI boards with valid bitstreams look like:
-    echo '    'Found an OpenOCPI FPGA at PCI 0000:04:00.0 ...'
-    echo '  'Use "probeXilinxUsb all" to find out usb port names, JTAG Cable ESNs, parts and jtag positions.
-    echo '  'This loading script relies on a database to correlate JTAG Cable ESNs and PCI devices'
-    echo '  'If it doesn\'t find the part, it will say so and fail.
-    echo '  'For now, you must select the correct USB port and part for the device.
+    echo Usage is: `basename $0` bit_file PCI_device platform part-name esn position
+    echo '  An example is (for an ML555) is:'
+    echo '    loadBitStreamOnPlatform testbias-ml555.bit.gz 0000:02:00.0 ml555 xc5vlx50t 0123456789abcd 2'
+    echo '  To find the HDL devices (available containers), use the "sudo -E ocpihdl search" command.'
+    echo '     With ocpihdl, OpenCPI boards with valid bitstreams look like:'
+    echo '     Found an OpenOCPI FPGA at PCI 0000:04:00.0 ...'
+    echo '  Use "probeXilinxUsb all" to find out usb port names, JTAG Cable ESNs, parts and jtag positions.'
+    echo '  This loading script relies on a database to correlate JTAG Cable ESNs and HDL devices'
+    echo '  If it does not find the part, it will say so and fail.'
+    echo '  The ESN determines which (dynamically and unpredictably) assigned usb port to use.'
     exit 1
 fi
 if [[ $5 == "" ]]; then
@@ -17,6 +17,15 @@ if [[ $5 == "" ]]; then
     exit 1
 fi
 tmp=/tmp/ocpibitstream$$
-port=`echo listusbcables | $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch 2> $tmp | grep '^port=' | sed 's/port=\(.*\), *esn=\(.*\)/\1 \2/' | grep $5 | sed 's/^\([^ ]*\).*$/\1/'`
-`dirname $0`/loadBitStream $1 $2 $port $4
+port=\
+`echo listusbcables | \
+ $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch 2> $tmp | \
+ grep '^port=' | \
+ sed 's/port=\(.*\), *\(.*\)/\1 \2/' | \
+ sed 's/Legacy Cable.*/esn=0123456789ABCD/' | \
+ grep $5 | \
+ sed 's/^\([^ ]*\).*$/\1/'\
+`
+device=`echo $2 | sed 's/^PCI://'`
+echo `dirname $0`/loadBitStream $1 $device $port $4
 exit 0

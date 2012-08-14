@@ -67,17 +67,20 @@
 #define _UUID_STRING_T
 typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
-#include "OcpiUtilEzxml.h"
 #include "OcpiOsMisc.h"
 #include "OcpiOsAssert.h"
 #include "OcpiOsEther.h"
-#include "PciDriver.h"
-#include "EtherDriver.h"
+#include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
+#include "OcpiPValue.h"
+#include "DtTransferInternal.h"
+#include "OcpiPort.h"
+#include "OcpiTransport.h"
 #include "OcpiContainerManager.h"
 #include "OcpiWorker.h"
-#include "OcpiPValue.h"
 #include "OcpiContainerMisc.h"
-#include "OcpiUtilMisc.h"
+#include "PciDriver.h"
+#include "EtherDriver.h"
 #include "HdlOCCP.h"
 #include "HdlOCDP.h"
 #include "HdlDriver.h"
@@ -95,6 +98,7 @@ namespace OCPI {
     namespace OM = OCPI::Metadata;
     namespace OU = OCPI::Util;
     namespace OE = OCPI::Util::EzXml;
+    namespace OD = OCPI::DataTransport;
 
     static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
     // This is the alignment constraint of DMA buffers in the processor's memory.
@@ -102,21 +106,18 @@ namespace OCPI {
     // It should come from somewhere else.  FIXME
     static const unsigned LOCAL_BUFFER_ALIGN = 32;
     // This is the constraint based both on the local issues and the OCDP's DMA engine.
-    static const unsigned LOCAL_DMA_ALIGN = max(LOCAL_BUFFER_ALIGN, OCDP_FAR_BUFFER_ALIGN);
+    // static const unsigned LOCAL_DMA_ALIGN = max(LOCAL_BUFFER_ALIGN, OCDP_FAR_BUFFER_ALIGN);
     
     Container::
-    Container(const char *name,
-	      Access &controlAccess, // control plane accessor for the container, copied in
-	      Access &dataAccess, // control plane accessor for the container, copied in
-	      std::string &endpoint,
-	      ezxml_t config, const OU::PValue *params) 
-        : OC::ContainerBase<Driver,Container,Application,Artifact>(name, config, params),
-	  Access(controlAccess), m_bufferSpace(dataAccess),
-	  m_endpoint(endpoint)
-    {
+    Container(OCPI::HDL::Device &device, ezxml_t config, const OU::PValue *params) 
+      : OC::ContainerBase<Driver,Container,Application,Artifact>(device.name().c_str(), config, params),
+	Access(device.cAccess()), m_device(device),
+	m_endpoint(DataTransfer::getManager().allocateProxyEndPoint(device.endpoint().c_str(),
+								    device.endpointSize())) {
+
       time_t bd = get32Register(admin.birthday, OccpSpace);
       char tbuf[30];
-      ocpiInfo("OCFRP: %s, with bitstream birthday: %s", name, ctime_r(&bd, tbuf));
+      ocpiInfo("OCFRP: %s, with bitstream birthday: %s", name().c_str(), ctime_r(&bd, tbuf));
       m_model = "hdl";
       m_os = "";
       // Capture the UUID info that tells us about the platform
@@ -133,7 +134,7 @@ namespace OCPI {
       for (n = 0; myUUID.device[n] && n < sizeof(myUUID.device); n++)
 	;
       if (n > 2)
-	m_device.assign(myUUID.device, n);
+	m_part.assign(myUUID.device, n);
       for (n = 0; myUUID.load[n] && n < sizeof(myUUID.load); n++)
 	;
       if (n > 1)
@@ -152,23 +153,23 @@ namespace OCPI {
 	if (!platform.empty() && platform != m_platform)
 	  throw OU::Error("Discovered platform (%s) doesn't match configured platform (%s)",
 			  m_platform.c_str(), platform.c_str());
-	if (!device.empty() && device != m_device)
+	if (!device.empty() && device != m_part)
 	  throw OU::Error("Discovered device (%s) doesn't match configured device (%s)",
-			  m_device.c_str(), device.c_str());
+			  m_part.c_str(), device.c_str());
 	OE::getOptionalString(config, m_position, "position");
       }
+    }
+    Container::
+    ~Container() {
+      this->lock();
+      m_endpoint.release();
+      delete &m_device;
     }
     bool Container::
     isLoadedUUID(const std::string &uuid) {
       uuid_string_t parsed;
       uuid_unparse(m_loadedUUID, parsed);
       return uuid == parsed;
-    }
-
-    Container::
-    ~Container() {
-      this->lock();
-      // FIXME: ref count driver static resources, like closing pciMemFd
     }
     void Container::
     start() {}
@@ -198,12 +199,8 @@ namespace OCPI {
 
     // This simply insulates the driver code from needing the container class implementation decl.
     OC::Container *Driver::
-    createContainer(const char *name,
-		    Access &controlAccess, // control plane accessor for the container, copied in
-		    Access &dataAccess, // control plane accessor for the container, copied in
-		    std::string &endpoint,
-		    ezxml_t config, const OU::PValue *params)  {
-      return new Container(name, controlAccess, dataAccess, endpoint, config, params);
+    createContainer(OCPI::HDL::Device &dev, ezxml_t config, const OU::PValue *params)  {
+      return new Container(dev, config, params);
     }
 
     class Artifact : public OC::ArtifactBase<Container,Artifact> {
@@ -219,12 +216,10 @@ namespace OCPI {
 	  // FIXME: there should be a utility to run a script in this way
 	  char *command, *base = getenv("OCPI_CDK_DIR");
 	  const char *device = c.name().c_str();
-	  if (!strncmp("PCI:", device, 4))
-	    device += 4;
 	  if (!base)
 	    throw "OCPI_CDK_DIR environment variable not set";
 	  asprintf(&command, "%s/scripts/loadBitStreamOnPlatform \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-		   base, name().c_str(), device, c.m_platform.c_str(), c.m_device.c_str(),
+		   base, name().c_str(), device, c.m_platform.c_str(), c.m_part.c_str(),
 		   c.m_esn.c_str(), c.m_position.c_str());
 	  ocpiInfo("Executing command to load bit stream for container %s: \"%s\"\n",
 		 c.name().c_str(), command);
@@ -320,13 +315,13 @@ namespace OCPI {
 				   volatile void *&writeVaddr,
 				   const volatile void *&readVaddr) {
 	(void)readVaddr;
-        if (m_properties.registers())
-          if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence &&
-	      !md.m_baseType != OA::OCPI_String &&
-              OU::baseTypeSizes[md.m_baseType] <= 32 &&
-	      md.m_offset < OCCP_WORKER_CONFIG_SIZE &&
-              !md.m_writeError)
-            writeVaddr = m_properties.registers() + md.m_offset;
+        if (m_properties.registers() &&
+	    md.m_baseType != OA::OCPI_Struct && !md.m_isSequence &&
+	    !md.m_baseType != OA::OCPI_String &&
+	    OU::baseTypeSizes[md.m_baseType] <= 32 &&
+	    md.m_offset < OCCP_WORKER_CONFIG_SIZE &&
+	    !md.m_writeError)
+	  writeVaddr = m_properties.registers() + md.m_offset;
       }
       // Map the control op numbers to structure members
       static const unsigned controlOffsets[];
@@ -388,6 +383,7 @@ namespace OCPI {
     class Worker : public OC::WorkerBase<Application, Worker, Port>,  public WciControl {
       friend class Application;
       friend class Port;
+      friend class ExternalPort;
       Container &m_container;
       Worker(Application &app, OC::Artifact *art, const char *name,
              ezxml_t implXml, ezxml_t instXml, const OA::PValue* execProps) :
@@ -633,7 +629,7 @@ OCPI_DATA_TYPES
       static int dumpFd;
 
       bool getPreferredProtocol(const char *&s) {
-	s = "ocpi-pci-pio";
+	s = parent().m_container.m_endpoint.protocol.c_str();
 	return true;
       }
       void setMode( ConnectionMode ){};
@@ -643,13 +639,15 @@ OCPI_DATA_TYPES
         throw OCPI::Util::EmbeddedException("disconnect not yet implemented !!");
       }
 
+      bool isLocal() const { return false; }
+
       // Called after connection PValues have been set, which is after our constructor
       // userDataBaseAddr, dataBufferBaseAddr are assumed set
       // Also error-check for bad combinations or values of parameters
       // FIXME:  we are relying on dataBufferBaseAddr being set before we know
       // buffer sizes etc.  If we are sharing a memory pool, this will not be the case,
       // and we would probably allocate the whole thing here.
-      void checkConnectParams() {
+      void startConnect(const OCPI::RDT::Descriptors */*other*/, const OCPI::Util::PValue */*params*/) {
         if (!m_canBeExternal)
           return;
         if (myDesc.nBuffers *
@@ -730,6 +728,7 @@ OCPI_DATA_TYPES
 	// The WCI will control the interconnect worker.
         WciControl(w.m_container, icwXml, icXml),
         m_connection(connXml), 
+	// Note this can be from the region descriptors
 	m_ocdpSize(m_properties.usable() ?
 		   m_properties.get32RegisterOffset(offsetof(OcdpProperties, memoryBytes)) :
 		   0),
@@ -747,11 +746,13 @@ OCPI_DATA_TYPES
           return;
         }
         m_canBeExternal = true;
-        uint32_t myOcdpOffset = OC::getAttrNum(icXml, "ocdpOffset");
+	// This should be the region address from admin, using the 0x1c region register
+	// The region addresses are offsets in BAR1 at this point
+        uint32_t myOcdpOffset = OC::getAttrNum(icXml, "ocdpOffset"); // FIXME
         // These will be determined at connection time
         myDesc.dataBufferPitch   = 0;
         myDesc.metaDataBaseAddr  = 0;
-        // Fixed values not set later in checkConnectParams
+        // Fixed values not set later in startConnect
         myDesc.fullFlagSize      = 4;
         myDesc.fullFlagPitch     = 0;
         myDesc.fullFlagValue     = 1; // will be a count of buffers made full someday?
@@ -760,14 +761,16 @@ OCPI_DATA_TYPES
         myDesc.emptyFlagValue    = 1; // Will be a count of buffers made empty
         myDesc.metaDataPitch     = sizeof(OcdpMetadata);
 	// This is the offset within the overall endpoint of our data buffers
-        myDesc.dataBufferBaseAddr = w.m_container.m_bufferSpace.physOffset(myOcdpOffset);
+        myDesc.dataBufferBaseAddr = w.m_container.hdlDevice().dAccess().physOffset(myOcdpOffset);
 
 #ifdef PORT_COMPLETE
         myDesc.oob.pid = (uint64_t)(OC::Port *)this;
         myDesc.oob.cid = 0;
 #endif
 
-        strncpy(myDesc.oob.oep, w.m_container.m_endpoint.c_str(), sizeof(myDesc.oob.oep));
+	// FIXME: note that the last three fields in every endpoint are generic and should be
+	// put into the descriptor...
+        strncpy(myDesc.oob.oep, w.m_container.m_endpoint.end_point.c_str(), sizeof(myDesc.oob.oep));
 
         if (isProvider()) {
           // CONSUMER
@@ -806,7 +809,7 @@ OCPI_DATA_TYPES
           myDesc.fullFlagBaseAddr = 
 	    m_properties.physOffset(offsetof(OcdpProperties, nReady));
         }
-        userDataBaseAddr = w.m_container.m_bufferSpace.registers() + myOcdpOffset;
+        userDataBaseAddr = w.m_container.hdlDevice().dAccess().registers() + myOcdpOffset;
         const char *df = getenv("OCPI_DUMP_PORTS");
         if (df) {
           if (dumpFd < 0)
@@ -819,10 +822,12 @@ OCPI_DATA_TYPES
           *(uint32_t*)&m_ocdpRegisters->foodFace = 0xf00dface;
 #endif
 	// Allow default connect params on port construction prior to connect
-	applyConnectParams(params);
+	applyConnectParams(NULL, params);
       }
       // All the info is in.  Do final work to (locally) establish the connection
-      void finishConnection(OCPI::RDT::Descriptors &other) {
+      const OCPI::RDT::Descriptors *
+      finishConnect(const OCPI::RDT::Descriptors &other,
+		    OCPI::RDT::Descriptors &/*feedback*/) {
         // Here is where we can setup the OCDP producer/user
         ocpiAssert(m_properties.get32Register(foodFace, OcdpProperties) == 0xf00dface);
 	m_properties.set32Register(nLocalBuffers, OcdpProperties, myDesc.nBuffers);
@@ -903,18 +908,17 @@ OCPI_DATA_TYPES
 	  m_adapter->controlOperation(OM::Worker::OpStart);
 	}
 	controlOperation(OM::Worker::OpStart);
+	return NULL;
       }
       // Connection between two ports inside this container
       // We know they must be in the same artifact, and have a metadata-defined connection
-      void connectInside(OC::Port &provider, const OA::PValue *myProps, const OA::PValue *otherProps) {
+      void connectInside(OC::Port &provider, const OA::PValue *) {
         // We're both in the same runtime artifact object, so we know the port class
         Port &pport = static_cast<Port&>(provider);
         if (m_connection != pport.m_connection)
           throw OC::ApiError("Ports are both local in bitstream/artifact, but are not connected", 0);
-        pport.applyConnectParams(otherProps);
-        applyConnectParams(myProps);
-        // For now we assume there is nothing to actually adjust in the bitstream.
       }
+#if 0
       // Connect to a port in a like container (same driver)
       bool connectLike(const OA::PValue *uProps, OC::Port &provider, const OA::PValue *pProps) {
         // We're both in the same runtime artifact object, so we know the port class
@@ -923,14 +927,19 @@ OCPI_DATA_TYPES
         pport.applyConnectParams(pProps);
         applyConnectParams(uProps);
         determineRoles(provider.getData().data);
-        finishConnection(provider.getData().data);
+        finishConnect(provider.getData().data);
         pport.finishConnection(getData().data);
         return true;
       }
+#endif
+      OC::ExternalPort &createExternal(const char *extName, bool isProvider,
+				       const OU::PValue *extParams, const OU::PValue *connParams);
+#if 0
       // Directly connect to this port
       // which creates a dummy user port
       OC::ExternalPort &connectExternal(const char *name, const OA::PValue *userProps,
 					const OA::PValue *props);
+#endif
     };
     int Port::dumpFd = -1;
 
@@ -1038,6 +1047,89 @@ OCPI_DATA_TYPES
       return *(Port *)0;//      return *new Port(*this);
     }
 
+#if 1 // SHARED_EXTERNAL
+    class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
+      friend class Port;
+    protected:
+      ExternalPort(Port &port, const char *name, bool isProvider,
+		   const OA::PValue *extParams, const OA::PValue *connParams) :
+        OC::ExternalPortBase<Port,ExternalPort>(port, name, extParams, connParams, isProvider) {
+      }
+    public:
+      virtual ~ExternalPort() {}
+    };
+#endif
+#ifdef GENERIC_EXTERNAL
+    class ExternalBuffer : OC::ExternalBuffer {
+      friend class ExternalPort;
+      OD::BufferUserFacet *m_dtBuffer;
+      OD::Port *m_dtPort;
+      ExternalBuffer() :
+	m_dtBuffer(NULL), m_dtPort(NULL)
+      {}
+      void release() {
+	if (m_dtBuffer) {
+	  m_dtPort->releaseInputBuffer(m_dtBuffer);
+	  m_dtBuffer = NULL;
+	}
+      }
+      void put( uint32_t length, uint8_t opCode, bool /*endOfData*/) {
+	m_dtPort->sendOutputBuffer(m_dtBuffer, length, opCode);
+      }
+    };
+    // Producer or consumer
+    class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
+      OD::Port *m_dtPort;
+      ExternalBuffer m_lastBuffer;
+    public:
+      ExternalPort(Port &port, const char *name, bool isProvider, const OA::PValue *params) :
+        OC::ExternalPortBase<Port,ExternalPort>(port, name, params, port.metaPort(), isProvider),
+	m_dtPort(NULL)
+      {
+	if (isProvider) {
+	  m_dtPort = port.parent().m_container.getTransport().createInputPort(getData().data, params);
+	  // Since our worker port is finalized at this point...
+	  m_dtPort->finalize(parent().getData().data, getData().data);
+	  m_lastBuffer.m_dtPort = m_dtPort;
+	} else {
+	  m_dtPort = port.parent().m_container.getTransport().
+	    createOutputPort(getData().data, port.getData().data);
+	  m_dtPort->finalize(port.getData().data, getData().data);
+	}
+      }
+      ~ExternalPort() {
+	delete m_dtPort;
+      }
+      OA::ExternalBuffer *
+      getBuffer(uint8_t *&data, uint32_t &length, uint8_t &opCode, bool &end) {
+	end = false;
+	ocpiAssert(m_lastBuffer.m_dtBuffer == NULL);
+	void *vdata;
+	if ((m_lastBuffer.m_dtBuffer = m_dtPort->getNextFullInputBuffer(vdata, length, opCode))) {
+	  data = (uint8_t*)vdata; // fix all the buffer data types to match the API: uint8_t*
+	  return &m_lastBuffer;
+	}
+	return NULL;
+      }
+      OC::ExternalBuffer *
+      getBuffer(uint8_t *&data, uint32_t &length) {
+	ocpiAssert(m_lastBuffer.m_dtBuffer == NULL);
+	void *vdata;
+	if ((m_lastBuffer.m_dtBuffer = m_dtPort->getNextEmptyOutputBuffer(vdata, length))) {
+	  data = (uint8_t*)vdata; // fix all the buffer data types to match the API: uint8_t*
+	  return &m_lastBuffer;
+	}
+	return NULL;
+      }
+      void endOfData() {
+	ocpiAssert(!"No EndOfData support for external ports");
+      }
+      bool tryFlush() {
+	return false;
+      }
+    };    
+#endif
+#if OLD_EXTERNAL
     // Buffers directly used by the "user" (non-container/component) API
     class ExternalBuffer : OC::ExternalBuffer {
       friend class ExternalPort;
@@ -1108,60 +1200,28 @@ OCPI_DATA_TYPES
           // These might not be needed if we are ActiveFlowControl
           OC::roundup(sizeof(uint32_t) * nFar, LOCAL_DMA_ALIGN);
         // Now we allocate all the (local) endpoint memory
-        uint8_t *allocation = 0;
-        static const char *dma = getenv("OCPI_DMA_MEMORY");
-        static bool done = false;  // FIXME not thread safe, and generates incorrect compiler error
-        static uint64_t base;
-	static uint64_t pagesize = getpagesize();
-        if (!done) {
-          if (dma) {
-            unsigned sizeM;
-            ocpiCheck(sscanf(dma, "%uM$0x%llx", &sizeM,
-                             (unsigned long long *) &base) == 2);
-            //size = (unsigned long long)sizeM * 1024 * 1024;
-            fprintf(stderr, "DMA Memory:  %uM at 0x%llx\n", sizeM,
-                    (unsigned long long)base);
-	    uint64_t top = base + sizeM * 1024llu * 1024llu;
-	    if (base & (pagesize-1)) {
-	      base += pagesize - 1;
-	      base &= ~(pagesize - 1);
-	      top &= ~(pagesize - 1);
-	      fprintf(stderr, "DMA Memory is NOT page aligned.  Now %llu at 0x%llx\n",
-		      (unsigned long long)(top - base), (unsigned long long)base);
-	    }
-          }
-          done = true;
-        }
-        snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
-                 "ocpi-pci-pio:%s.%lld:%lld.3.10", "0", (unsigned long long)base,
-                 (unsigned long long)nAlloc);
+        uint64_t phys;
         // If we are ActiveOnly we need no DMAable memory at all, so get it from the heap.
-        if (getData().data.role == OCPI::RDT::ActiveOnly)
-          allocation = new uint8_t[nAlloc];
-        else {
-          if (!dma)
-            throw OC::ApiError("Asking for DMA without OCPI_DMA_MEMORY environment var", NULL);
-          allocation = (uint8_t*)mmap(NULL, nAlloc, PROT_READ|PROT_WRITE, MAP_SHARED,
-                                      PCI::Driver::s_pciMemFd, base);
-          ocpiAssert(allocation != (uint8_t*)-1);
-          base += nAlloc;
-          base += pagesize - 1;
-          base &= ~(pagesize - 1);
-          // Get the local endpoint corresponding to the known remote endpoint
+        if (getData().data.role == OCPI::RDT::ActiveOnly) {
+          localData = new uint8_t[nAlloc];
+	  phys = 0;
+	} else {
+	  std::string error;
+	  if (!(localData = (uint8_t *)Driver::getSingleton().map(nAlloc, phys, error)))
+	    throw error;
+	}
+        snprintf(myDesc.oob.oep, sizeof(myDesc.oob.oep),
+                 "ocpi-pci-pio:%s.%lld:%lld.3.10", "0", (unsigned long long)phys,
+                 (unsigned long long)nAlloc);
 #if 0
-          myEndpoint = OCPI::RDT::GetEndpoint("ocpi-pci//bus-id");
-          if (!myEndpoint)
-            OC::ApiError("No local (CPU) endpoint support for pci bus %s", NULL);
-          allocation = myEndpoint->alloc(nAlloc);
+	myEndpoint = OCPI::RDT::GetEndpoint("ocpi-pci//bus-id");
+	if (!myEndpoint)
+	  OC::ApiError("No local (CPU) endpoint support for pci bus %s", NULL);
+	localData = myEndpoint->alloc(nAlloc);
 #endif
-        }
-
-#ifdef NEEDED
-        memset((void *)allocation, 0, nAlloc);
-#endif
-
-        localData = allocation;
+        memset((void *)localData, 0, nAlloc);
         myDesc.dataBufferBaseAddr  = 0;
+	uint8_t *allocation = localData;
         allocation += OC::roundup(myDesc.dataBufferPitch * nLocal, LOCAL_BUFFER_ALIGN);
         metadata = (OcdpMetadata *)allocation;
         myDesc.metaDataBaseAddr = allocation - localData;
@@ -1401,6 +1461,8 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       // Tell the other side that the buffer has become available
       myExternalPort->advanceLocal();
     }
+#endif
+#if 0
     OC::ExternalPort &Port::connectExternal(const char *extName, const OA::PValue *userProps,
 					    const OA::PValue *props) {
       if (!m_canBeExternal)
@@ -1412,9 +1474,15 @@ void memcpy64(uint64_t *to, uint64_t *from, unsigned nbytes)
       applyConnectParams(props);
       // UserPort constructor must know the roles.
       ExternalPort *myExternalPort = new ExternalPort(*this, extName, !isProvider(), userProps);
-      finishConnection(myExternalPort->getData().data);
+      finishConnect(myExternalPort->getData().data);
       return *myExternalPort;
     }
+#else
+    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
+					       const OU::PValue *extParams, const OU::PValue *connParams) {
+      return *new ExternalPort(*this, extName, isProvider, extParams, connParams);
+    }
+#endif
   }
 }
 

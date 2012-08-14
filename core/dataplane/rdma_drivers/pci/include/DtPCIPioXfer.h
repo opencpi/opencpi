@@ -225,7 +225,7 @@ namespace DataTransfer {
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes);
+    std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes);
 
     /***************************************
      *  This method is used to flush any cached items in the factoy

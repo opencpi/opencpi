@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -49,28 +48,15 @@
 #define DataTransfer_DATAGRAMTransfer_H_
 
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <OcpiOsDataTypes.h>
+#include <deque>
+#include <OcpiOsIovec.h>
+#include <OcpiThread.h>
+#include <OcpiUtilAutoMutex.h>
 #include <DtDriver.h>
 #include <DtTransferInterface.h>
 #include <DtSharedMemoryInterface.h>
-#include <OcpiOsSocket.h>
-#include <OcpiOsServerSocket.h>
-#include <OcpiUtilAutoMutex.h>
-#include <deque>
-
-// After socket abstraction, remove me
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-
 
 #define FRAME_SEQ_MASK 0xff
-#define DATAGRAM_PAYLOAD_SIZE 512
 
 
 namespace DataTransfer {
@@ -97,17 +83,7 @@ namespace DataTransfer {
   // Abstract base class that needs to be inherited by a transmission layer driver.
   class TxTemplate;
 
-  // Virtual class for a transaction object
-  class Transaction {
-  public:
-    virtual unsigned msgCount() = 0;
-    virtual void * srcPtr( unsigned  part )=0;
-    virtual DatagramMsgHeader * hdrPtr( unsigned part )=0;
-    virtual void ACK(int part )=0;            
-    TxTemplate   * m_txTemplate;
-    virtual ~Transaction(){};
-  };
-
+  struct DatagramTransaction;
   struct DatagramFrameHeader {
     uint16_t destId;
     uint16_t srcId;
@@ -124,18 +100,13 @@ namespace DataTransfer {
     bool                 is_free;
     int                  resends;
     DatagramFrameHeader  frameHdr;
-    sockaddr_in          sock_adr;
-    msghdr               msg;
-    struct iovec         iov[MAX_MSGS+1];
-    Transaction *        transaction;
-    void release() {	  
-      // We have to release the individual messages for the transaction here.
-      for (unsigned int n=msg_start; n<(msg_count+msg_start); n++ ) {
-	ocpiAssert( transaction );
-	transaction->ACK( n );
-      }
-      transaction = 0;
-    }
+    unsigned             iovlen;
+    // This is defined in POSIX 1003..1g for those datagram systems that can
+    // take advantage of that.
+    struct OCPI::OS::IOVec iov[MAX_MSGS+1];
+    DatagramTransaction *transaction;
+    EndPoint *           endpoint; // where is this frame going to
+    void release();
     Frame():is_free(true),resends(0),transaction(0){}
   };
 
@@ -156,19 +127,70 @@ namespace DataTransfer {
       DatagramSmemServices*  m_lsmem;
     };
 
-
-
   class DatagramXferServices;
-  class DatagramSocket;
+  class DatagramSocket : public OCPI::Util::Thread
+  {
+  public:  
+  DatagramSocket( DatagramSmemServices*  lsmem)
+    :m_lsmem(lsmem),m_error(false),m_run(true),m_joined(false) {}
+
+      bool error(){return m_error;}
+      virtual ~DatagramSocket();
+      virtual void send(Frame &frame) = 0;
+      // return bytes read and offset in buffer to use.  Returning zero is timeout
+      virtual unsigned receive(uint8_t *buf, unsigned &offset) = 0;
+      virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
+      virtual void start() = 0;
+      inline void stop() { m_run = false; }
+      // Since we are stopped+joined when our smem is stopped, as well as destruction
+      inline void join() {
+	if (!m_joined) {
+	  OCPI::Util::Thread::join();
+	  m_joined = true;
+	}
+      }
+      void run();
+  protected:
+      DatagramSmemServices* m_lsmem;
+      bool                  m_error;
+      bool                  m_run;
+      bool                  m_joined;
+  };
+
+
+  class DatagramXferFactory : public DataTransfer::XferFactory {
+    friend class DatagramSmemServices;
+  private:
+    std::vector<DatagramSmemServices*> m_smems;
+    //    DatagramTransmissionLayerDriver * m_txDriver;
+
+  public:
+    DatagramXferFactory(const char *name)
+      throw ();
+    virtual ~DatagramXferFactory();//      throw ();
+    //    virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
+    virtual EndPoint*  createEndPoint(std::string& endpoint, bool local) =0;
+    virtual  std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)=0;
+    virtual const char* getProtocol()=0;
+    virtual DatagramXferServices *createXferServices(DatagramSmemServices*source,
+						     DatagramSmemServices*target) = 0;
+    virtual DatagramSmemServices *createSmemServices(EndPoint *ep) = 0;
+    virtual DatagramSocket *createSocket(DatagramSmemServices *) = 0;
+    SmemServices *getSmemServices(EndPoint* ep);
+    XferServices* getXferServices(SmemServices* source, SmemServices* target);
+  };
+
   class DatagramSmemServices : public SmemServices, public FrameMonitor
     {
     public:
-      DatagramSmemServices (XferFactory * p, EndPoint* ep)
-	:SmemServices(p, ep),FrameMonitor(this),m_socket(NULL),m_xferServices(32)
+      DatagramSmemServices (DatagramXferFactory * p, EndPoint* ep)
+	: SmemServices(p, ep),FrameMonitor(this),m_socket(NULL),m_xferServices(32)
       {
 	m_ep = ep;
 	m_mem = new char[ep->size];
 	memset( m_mem, 0, ep->size );
+	if (ep->local)
+	  m_socket = p->createSocket(this);
       };
       OCPI::OS::int32_t attach (EndPoint* loc){ ( void ) loc; return 0;};
       OCPI::OS::int32_t detach (){return 0;}
@@ -187,7 +209,19 @@ namespace DataTransfer {
 	return m_xferServices[destId];
       }
       std::vector< DatagramXferServices * > & getAllXferServices(){return  m_xferServices;}
-      DatagramSocket & socket() {return *m_socket;}
+      inline void send(Frame &frame) { m_socket->send(frame); }
+      void start() {
+	FrameMonitor::start();
+	if (m_socket)
+	  m_socket->start();
+      }
+      void stop() {
+	FrameMonitor::stop();
+	if (m_socket) {
+	  m_socket->stop();
+	  m_socket->join();
+	}
+      }
     private:
       DatagramSocket * m_socket;
       FrameMonitor   * m_frameMonitor;
@@ -195,90 +229,6 @@ namespace DataTransfer {
       char* m_mem;
       std::vector< DatagramXferServices * > m_xferServices;
     };
-  
-
-
-
-  /*
-  struct DatagramSocketStartupParams {
-    DatagramSocketStartupParams ( )
-      : lsmem ( 0 )
-    { }
-    DatagramSmemServices*  lsmem;
-  };
-  */
-
-  class DatagramTransmisionLayerDriver;
-
-  class DatagramSocket 
-  {
-  public:  
-    DatagramSocket( DatagramSmemServices*  lsmem, DatagramTransmisionLayerDriver * driver )
-      :m_lsmem(lsmem),m_error(false),m_driver(driver){}
-
-
-      OCPI::OS::Socket & socket() {return  m_socket;}    
-      virtual void start()=0;
-      bool error(){return m_error;}
-      virtual ~DatagramSocket();
-  protected:
-      OCPI::OS::Socket m_socket;
-      OCPI::OS::ServerSocket          m_server;
-      DatagramSmemServices*          m_lsmem;
-      bool                           m_error;
-      DatagramTransmisionLayerDriver *               m_driver;
-  };
-
-
-  class DatagramTransmisionLayerDriver {
-  public:
-
-    virtual ~DatagramTransmisionLayerDriver(){};
-    virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
-
-    virtual SmemServices * getSmemServices(XferFactory *f, EndPoint* loc )=0;
-    virtual EndPoint * getEndPoint()=0;
-    virtual EndPoint*  createEndPoint(std::string& endpoint, bool local) =0;
-    virtual  std::string allocateEndpoint(const OCPI::Util::PValue*, unsigned smbsize, unsigned mailBox, unsigned maxMailBoxes)=0;
-    
-
-    virtual const char* getProtocol()=0;
-  };
-
-
-  class DatagramXferFactory;
-  class DatagramDevice : public OCPI::Driver::DeviceBase<DatagramXferFactory,DatagramDevice> {
-  };
-  class DatagramXferServices;
-  extern const char *datagramsocket;
-
-  class DatagramXferFactory : 
-  public DriverBase<DatagramXferFactory, DatagramDevice,DatagramXferServices,datagramsocket> {
-
-  private:
-    DatagramTransmisionLayerDriver * m_txDriver;
-
-  public:
-    DatagramXferFactory()
-      throw ();
-    virtual ~DatagramXferFactory()
-      throw ();
-    void setDriver( DatagramTransmisionLayerDriver* d)
-    {
-      m_txDriver=d;
-      printf("Set driver to %p\n", d);
-    }
-    inline const char* getProtocol(){return m_txDriver->getProtocol();}
-    SmemServices* getSmemServices(EndPoint* ep );
-    XferServices* getXferServices(SmemServices* source, SmemServices* target);
-    std::string allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes);
-    unsigned maxPayloadSize(){return m_txDriver->maxPayloadSize();}
-    DatagramTransmisionLayerDriver & txDriver(){return *m_txDriver;}
-
-  protected:
-    EndPoint* createEndPoint(std::string& endpoint, bool local = false);
-    
-  };
 
   struct TxTemplate {
     TxTemplate(){}
@@ -289,20 +239,65 @@ namespace DataTransfer {
   };
 
 
+  class DatagramXferRequest;
+  // Although the XferRequest represents a single contiguous RDMA request, it may be split up into
+  // many datagram messages.
+  struct DatagramTransaction { // : public Transaction  {
+
+    TxTemplate   * m_txTemplate;
+    struct Message {
+      DatagramMsgHeader   hdr;
+      void *              src_adr;
+      bool                ack;
+    Message():ack(false){}
+    };
+    bool                m_init;
+    uint32_t            m_nMessagesTx;
+    uint32_t            m_nMessagesRx;
+    uint32_t            m_tid;
+    std::vector<Message>   m_messages;
+    inline bool init() {return m_init;}
+    unsigned msgCount(){return m_nMessagesTx;}
+  DatagramTransaction() 
+  : m_init(false), m_nMessagesTx(0), m_nMessagesRx(0) {}
+    ~DatagramTransaction(){
+      ///FIXME: *********** free up the frames involved with this transaction      
+    }
+    void init( uint32_t nMessages, TxTemplate * temp  );
+    void add( DatagramXferRequest* rqst, uint8_t * src, uint64_t dst_offset, uint32_t length, uint32_t tx_total );
+    void fini( uint32_t src, uint32_t dst, TxTemplate * temp  );
+
+    inline bool complete() 
+    {
+      return (m_nMessagesRx == m_nMessagesTx);
+    };
+
+    inline void * srcPtr( unsigned  msg )
+    {
+      ocpiAssert( msg < m_messages.size() );
+      return m_messages[msg].src_adr;
+    }
+    inline DatagramMsgHeader * hdrPtr( unsigned msg ) {
+      ocpiAssert( msg < m_messages.size() );
+      return &m_messages[msg].hdr;
+    }
+    inline void ACK(int message ) {
+      m_messages[message].ack = true;
+      m_nMessagesRx++;
+    }    
+  };
   /**********************************
    * This is the Programmed I/O transfer request class
    *********************************/
-  class DatagramXferServices;
-  class DatagramXferRequest : public TransferBase<DatagramXferServices,DatagramXferRequest>
+  class DatagramXferRequest : public XferRequest
     {
     public:
-
-      DatagramXferRequest( DatagramXferServices & parent )
-	: TransferBase<DatagramXferServices,DatagramXferRequest>(parent), m_tested4Complete(0)
+      virtual DatagramXferServices &parent() = 0;
+    DatagramXferRequest(XF_template temp)
+      : XferRequest(temp), m_tested4Complete(0)
 	{
 	
 	}
-
 	void post();
 	DataTransfer::XferRequest::CompletionStatus getStatus();
 	virtual ~DatagramXferRequest ();
@@ -316,57 +311,12 @@ namespace DataTransfer {
 
     private:
 	uint32_t     m_txTotal;   // Total number of datagrams that make up this transaction - flag transfer
-
-	// Although the XferRequest represents a single contiguous RDMA request, it may be split up into
-	// many datagram messages.
-	struct DatagramTransaction : public Transaction  {
-
-	  struct Message {
-	    DatagramMsgHeader   hdr;
-	    void *              src_adr;
-	    bool                ack;
-	    Message():ack(false){}
-	  };
-	  bool                m_init;
-	  uint32_t            m_nMessagesTx;
-	  uint32_t            m_nMessagesRx;
-	  uint32_t            m_tid;
-	  std::vector<Message>   m_messages;
-	  inline bool init() {return m_init;}
-	  unsigned msgCount(){return m_nMessagesTx;}
-	  DatagramTransaction() 
-	    : m_init(false), m_nMessagesTx(0), m_nMessagesRx(0) {}
-	  ~DatagramTransaction(){}
-	  void init( uint32_t nMessages, TxTemplate * temp  );
-	  void add( DatagramXferRequest* rqst, uint8_t * src, uint64_t dst_offset, uint32_t length, uint32_t tx_total );
-	  void fini( uint32_t src, uint32_t dst, TxTemplate * temp  );
-
-	  inline bool complete() 
-	  {
-	    return (m_nMessagesRx == m_nMessagesTx);
-	  };
-
-	  inline void * srcPtr( unsigned  msg )
-	  {
-	    ocpiAssert( msg < m_messages.size() );
-	    return m_messages[msg].src_adr;
-	  }
-	  inline DatagramMsgHeader * hdrPtr( unsigned msg ) {
-	    ocpiAssert( msg < m_messages.size() );
-	    return &m_messages[msg].hdr;
-	  }
-	  inline void ACK(int message ) {
-	    m_messages[message].ack = true;
-	    m_nMessagesRx++;
-	  }    
-	};
-
 	void post( DatagramTransaction & t );
 	void queFrame( Frame & frame );
-	DatagramXferServices & myParent(){return static_cast<DatagramXferServices&>(parent());}
-
+	//	DatagramXferServices & parent() {return m_parent; }
 
     protected:
+	//	DatagramXferServices                     &m_parent;
 	OCPI::OS::uint32_t                        m_srcoffset;        // The source memory offset
 	OCPI::OS::uint32_t                        m_dstoffset;        // The destination memory offset
 	OCPI::OS::uint32_t                        m_length;                // The length of the request in bytes
@@ -376,8 +326,7 @@ namespace DataTransfer {
 
 
   class DropPktMonitor;
-  class DatagramXferServices : public ConnectionBase<DatagramXferFactory,DatagramXferServices,DatagramXferRequest>,
-     public OCPI::Util::SelfMutex
+  class DatagramXferServices : public XferServices, public OCPI::Util::SelfMutex
     {
 
       // So the destructor can invoke "remove"
@@ -385,14 +334,14 @@ namespace DataTransfer {
 
     public:
       DatagramXferServices(SmemServices* source, SmemServices* target);
-      XferRequest* createXferRequest();
+      //      XferRequest* createXferRequest();
       virtual ~DatagramXferServices ();
-
+      virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
 
       void addFrameAck( DatagramFrameHeader * hdr );
       void ack( unsigned count, unsigned start );
       Frame *  nextFreeFrame();
-      Frame &  getFrame(  int & bytes_left  );
+      Frame &  getFrame(  unsigned & bytes_left  );
       void  releaseFrame ( unsigned seq );
       void post( Frame & t );
 
@@ -401,15 +350,14 @@ namespace DataTransfer {
       void sendAcks( uint64_t time_now, uint64_t timeout );
 
       // Source SMB services pointer
-      SmemServices* m_sourceSmb;
+      DatagramSmemServices* m_sourceSmb;
 
       // Target SMB services pointer
-      SmemServices* m_targetSmb;
-
-      // Create tranfer services template
-      void createTemplate (SmemServices* p1, SmemServices* p2);
+      DatagramSmemServices* m_targetSmb;
 
     private:
+      // Create tranfer services template
+      void createTemplate (DatagramSmemServices* p1, DatagramSmemServices* p2);
       struct FrameRecord {
 	bool     acked;
 	uint32_t id;
@@ -427,14 +375,10 @@ namespace DataTransfer {
       TxTemplate               m_txTemplate;
       std::vector<Frame>       m_freeFrames;
       std::deque<unsigned>     m_acks;
-      uint32_t                  m_frameSeq;
+      uint32_t                 m_frameSeq;
       std::vector<FrameRecord> m_frameSeqRecord;
       std::vector<MsgTransactionRecord> m_msgTransactionRecord;
       uint64_t m_last_ack_send;
-
     };
-
-
-
 }
 #endif

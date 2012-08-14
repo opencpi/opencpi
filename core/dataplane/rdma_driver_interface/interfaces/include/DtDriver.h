@@ -12,11 +12,11 @@ namespace DataTransfer {
   // using a static const char* variable.
   // We inherit XferFactory class here among other things.
   template <class ConcreteDriver, class ConcreteDevice, class ConcreteSvcs,
-	    const char *&name>
+	    const char *&name, class Base = DataTransfer::XferFactory>
   class DriverBase :
-    public OCPI::Driver::DriverBase<XferFactoryManager, DataTransfer::XferFactory,
-				    ConcreteDriver, ConcreteDevice, name>,
-    public OCPI::Util::Parent<ConcreteSvcs>
+    public OCPI::Util::Parent<ConcreteSvcs>, // destroy these last
+    public OCPI::Driver::DriverBase<XferFactoryManager, Base,
+				    ConcreteDriver, ConcreteDevice, name>
   {
   };
   template <class Dri, class Dev>
@@ -35,28 +35,31 @@ namespace DataTransfer {
 
   // The template class  directory inherited by concrete connecion classes 
   // (a.k.a. XferServices)
-  template <class ConcDri, class ConcConn, class ConcXfer>
+  template <class ConcDri, class ConcConn, class ConcXfer, class Base = XferServices>
   class ConnectionBase :
     public OCPI::Util::Child<ConcDri,ConcConn>,
     public OCPI::Util::Parent<ConcXfer>,
-    public XferServices
+      public Base
   {
   protected:
-    ConnectionBase<ConcDri, ConcConn, ConcXfer>(SmemServices* source,
-						SmemServices* target)
+    ConnectionBase<ConcDri, ConcConn, ConcXfer, Base>(SmemServices* source,
+						      SmemServices* target)
     : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Driver::Singleton<ConcDri>::
 					   getSingleton()),
-      XferServices(source, target)
+      Base(source, target)
     {}
   };
-  template <class ConcConn, class ConcXfer>
+    template <class ConcConn, class ConcXfer, class Base = XferRequest>
   class TransferBase :
-    public XferRequest,
+    public Base,
     public OCPI::Util::Child<ConcConn, ConcXfer>
   {
   protected:
-    TransferBase<ConcConn, ConcXfer>(ConcConn &conn, XF_template temp = NULL)
-      : XferRequest(temp), OCPI::Util::Child<ConcConn,ConcXfer>(conn) {}
+  TransferBase<ConcConn, ConcXfer, Base>(ConcConn &conn, XF_template temp = NULL)
+      : Base(temp), OCPI::Util::Child<ConcConn,ConcXfer>(conn) {}
+    // Allow the base class to get at the derived parent
+    // To do that it needs to declare a pure virtual method
+    ConcConn &parent() { return OCPI::Util::Child<ConcConn,ConcXfer>::parent(); }
   };
   template <class Dri>
   class RegisterTransferDriver

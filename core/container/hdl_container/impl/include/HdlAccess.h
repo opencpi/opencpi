@@ -5,6 +5,7 @@
 #define HDL_ACCESS_H
 #include <cstdlib>
 #include <stdint.h>
+#include <string>
 namespace OCPI {
   namespace HDL {
     // FIXME:  when do we check for unexpected errors when the worker said they don't produce errors?
@@ -32,7 +33,7 @@ namespace OCPI {
       volatile uint8_t *m_registers; // the memory mapped virtual address of the registers
       uint64_t m_base;               // the base of the "registers" in their physical address space
       Accessor *m_accessor;          // when no virtual pointer access, the object that does the access
-      volatile uint8_t *m_buffers;   // sort of a hack for the data plane until en dp is available
+      volatile uint8_t *m_buffers;   // sort of a hack for the data plane until enet dp is available
 
     public:
       Access(Access &other);
@@ -51,7 +52,7 @@ namespace OCPI {
       // set up the (other, subsidiary) offsettee to have registers at an offset in my space
       void offsetRegisters(Access &offsettee, unsigned offset);
 
-      // Return the offset in the endpoint physical window of this vaddr in bar0
+      // Return the offset in the endpoint physical window of this offset in the accessor
       inline uint64_t physOffset(unsigned offset) {
 	return m_base + offset;
       }
@@ -121,6 +122,26 @@ namespace OCPI {
       setBytesRegisterOffset(offsetof(type, m), (const uint8_t*)(buf), sizeof(((type*)0)->m))
 #define offsetRegister(m, type) physOffset(offsetof(type, m))
 
+    };
+    // This class represents a raw HDL device before it is a container, or when there is no
+    // need to create a container (utilities, discovery etc.).
+    // It is specialized by the access paths and driver issues (for pci, ethernet etc.)
+    class Device {
+      std::string m_name;
+      // This is the protocol-specific part of the endpoint.
+    protected:
+      std::string m_endpointSpecific;
+      Access m_cAccess;
+      Access m_dAccess;
+      uint64_t m_endpointSize;
+      Device(std::string &name);
+    public:
+      virtual ~Device();
+      inline const std::string &name() const { return m_name; }
+      inline Access &cAccess() { return m_cAccess; };
+      inline Access &dAccess() { return m_dAccess; };
+      inline std::string &endpoint() { return m_endpointSpecific; }
+      inline uint64_t endpointSize() { return m_endpointSize; }
     };
     
   }

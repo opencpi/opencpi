@@ -181,7 +181,7 @@ main(int argc, char **argv)
   const char *err;
   int rv = 0;
   if (argv[1]) {
-    if ((err = doDevice(argv[1], OCFRP0_PCI_VENDOR, OCFRP0_PCI_DEVICE, OCFRP0_PCI_CLASS, OCFRP0_PCI_SUBCLASS,
+    if ((err = doDevice(argv[1], OCPI_HDL_PCI_VENDOR_ID, OCPI_HDL_PCI_DEVICE_ID, OCPI_HDL_PCI_CLASS, OCPI_HDL_PCI_SUBCLASS,
 			verbose))) {
       fprintf(stderr, "Error: Couldn't find \"%s\": %s\n", argv[1], err);
       rv = 1;
@@ -190,7 +190,7 @@ main(int argc, char **argv)
       rv = 1;
     }
   } else {
-    if ((err = search(0, OCFRP0_PCI_VENDOR, OCFRP0_PCI_DEVICE, OCFRP0_PCI_CLASS, OCFRP0_PCI_SUBCLASS,
+    if ((err = search(0, OCPI_HDL_PCI_VENDOR_ID, OCPI_HDL_PCI_DEVICE_ID, OCPI_HDL_PCI_CLASS, OCPI_HDL_PCI_SUBCLASS,
 		      verbose))) {
       fprintf(stderr, "Error: PCI Scanner Error: %s\n", err);
       rv = 1;

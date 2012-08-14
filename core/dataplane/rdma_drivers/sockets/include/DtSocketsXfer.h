@@ -139,13 +139,13 @@ namespace DataTransfer {
      *  Set (unparse, snprintf) the endpoint string
      ***************************************/
     static void setEndpointString(std::string &str, const char *ipAddr, unsigned port,
-				  unsigned size, unsigned mbox, unsigned maxCount);
+				  unsigned size, uint16_t mbox, uint16_t maxCount);
     /***************************************
      *  This method is used to dynamically allocate
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(const OCPI::Util::PValue*, unsigned mailBox, unsigned maxMailBoxes);
+    std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes);
 
   protected:
     EndPoint* createEndPoint(std::string& endpoint, bool local = false);

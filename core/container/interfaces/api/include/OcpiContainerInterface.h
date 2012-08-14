@@ -58,6 +58,7 @@
 #include <OcpiParentChild.h>
 #include <OcpiOsThreadManager.h>
 #include "OcpiUtilSelfMutex.h"
+#include "OcpiTransport.h"
 #include <DtIntEventHandler.h>
 #include <OcpiContainerDataTypes.h>
 #include <OcpiContainerApi.h>
@@ -85,7 +86,10 @@ namespace OCPI {
        ********************************************************************** */
     class Artifact; // the class representing a loaded artifact on the container
     class Container
-      : public OCPI::API::Container, public OCPI::Library::Capabilities, virtual protected OCPI::Util::SelfMutex
+      : public OCPI::API::Container,
+	public OCPI::Library::Capabilities,
+	public OCPI::Time::Emit,
+	virtual public OCPI::Util::SelfMutex
     {
 
       bool runInternal(uint32_t usecs = 0, bool verbose = false);
@@ -110,7 +114,7 @@ namespace OCPI {
          @throw  OCPI::Util::EmbeddedException  If an error is detected during construction
 
          ****************************************************************** */
-      Container(const ezxml_t config = NULL, const OCPI::Util::PValue* props = NULL)
+      Container(const char *name, const ezxml_t config = NULL, const OCPI::Util::PValue* props = NULL)
         throw ( OCPI::Util::EmbeddedException );
 
       ~Container();
@@ -164,43 +168,6 @@ namespace OCPI {
       virtual Artifact *findLoadedArtifact(const OCPI::Library::Artifact &a) = 0;
       virtual Artifact &createArtifact(OCPI::Library::Artifact &,
 				       const OCPI::API::PValue *props = NULL) = 0;
-
-      
-      /**
-         @brief
-         packPortDesc
-
-         This method is used to "pack" a port descriptor into a string that
-         can be sent over a wire.        
-
-         @param [ in ] port
-         Port to be packed.
-
-         @retval std::string packed port descriptor
-
-         ****************************************************************** */
-      static void packPortDesc(PortConnectionDesc&  port, std::string &out )
-        throw ();
-
-
-      /**
-         @brief
-         unpackPortDesc
-
-         This method is used to "unpack" a port descriptor into a Port.
-
-
-         @param [ in ] desc
-         String descriptor previously created with "packPort *".
-
-         @param [ in ] pd
-         Unpacked port descriptor.
-
-         @retval bool true if method successful.
-
-         ****************************************************************** */
-      static bool unpackPortDesc( const std::string& desc, PortConnectionDesc &desc_storage )
-        throw ();
      
       //!< Start/Stop the container
       virtual void start(DataTransfer::EventManager* event_manager)
@@ -225,7 +192,7 @@ namespace OCPI {
       class Server;
       Server *m_server;
       inline Server *server() const { return m_server; }
-      
+      inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
     protected:
       void shutdown();
       //      const std::string m_name;
@@ -238,6 +205,8 @@ namespace OCPI {
       bool m_enabled;
       bool m_ownThread;
       OCPI::OS::ThreadManager *m_thread;
+      // This is not an embedded member to potentially control lifecycle better...
+      OCPI::DataTransport::Transport &m_transport;
     private:
       static Container **s_containers;
       static unsigned s_maxContainer;

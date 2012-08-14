@@ -202,7 +202,7 @@ void Application::
 run(DataTransfer::EventManager* event_manager, bool &more_to_do) {
   for (Worker *w = firstChild(); w; w = w->nextChild()) {
     // Give our transport some time
-    parent().m_transport->dispatch( event_manager );
+    parent().getTransport().dispatch( event_manager );
     w->run(more_to_do);
   }
 }

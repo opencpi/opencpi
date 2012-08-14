@@ -305,22 +305,31 @@ initializeContext()
   int mcount = idx;
 
   // check masks for bad bits
-  m_nPorts = getNumPorts();
+  OM::Port *ports = getPorts(m_nPorts);
   if (m_nPorts) {
     if (m_nPorts != wd->numInputs + wd->numOutputs)
       throw OU::Error("metadata port count (%u) and dispatch port count (in: %u + out: %u) differ",
 		      m_nPorts, wd->numInputs, wd->numOutputs);
   } else if (wd->numInputs || wd->numOutputs)
     m_nPorts = wd->numInputs + wd->numOutputs;
-  int32_t mask = -1 << m_nPorts;
-  if (mask & wd->optionallyConnectedPorts)
+  RCCPortMask ourMask = ~(-1 << m_nPorts);
+  if ((~ourMask) & wd->optionallyConnectedPorts)
     throw OU::EmbeddedException( OU::PORT_COUNT_MISMATCH,
 				 "optional port mask is invalid",
 				 OU::ApplicationRecoverable);
+  if (ports) {
+    RCCPortMask optional = 0;
+    for (unsigned n = 0; n < m_nPorts; n++)
+      if (ports[n].optional)
+	optional |= 1 << n;
+    if (wd->optionallyConnectedPorts != optional)
+      throw OU::Error("metadata optional ports (%x) and dispatch optional ports (%x) differ",
+		      optional, wd->optionallyConnectedPorts);
+  }
   unsigned rc_count = 0;
   if ( wd->runCondition && wd->runCondition->portMasks )
     while (wd->runCondition->portMasks[rc_count] ) {
-      if (mask & wd->runCondition->portMasks[rc_count])
+      if ((~ourMask) & wd->runCondition->portMasks[rc_count])
 	throw OU::EmbeddedException( OU::PORT_COUNT_MISMATCH,
 				     "run condition mask is invalid",
 				     OU::ApplicationRecoverable);
@@ -726,10 +735,16 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
       rc = m_dispatch->initialize(m_context);
     break;
   case OM::Worker::OpStart:
-    // FIXME: ports that are not connected are not "created".
-    // If a worker gets started before all of its ports are created: error
-    if ( (int)(targetPortCount + sourcePortCount) != 
-	 (int)(m_dispatch->numInputs + m_dispatch->numOutputs ) )
+    {
+    // If a worker gets started before all of its required ports are created: error
+      RCCPortMask mandatory = ~(-1 << m_nPorts) & ~m_dispatch->optionallyConnectedPorts;
+      if ((mandatory & m_context->connectedPorts) != mandatory)
+	throw OU::EmbeddedException( OU::PORT_NOT_CONNECTED, NULL, OU::ApplicationRecoverable);	
+    }
+#if 0
+    // If some how
+    if ( (int)(targetPortCount + sourcePortCount) > 
+	 (int)(m_dispatch->numInputs + m_dispatch->numOutputs - m_optionalPorts) )
       throw OU::EmbeddedException( OU::PORT_COUNT_MISMATCH,
 				   "Port count different than metadata",
 				   OU::ApplicationRecoverable);
@@ -741,6 +756,7 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 	  throw OU::EmbeddedException( OU::PORT_NOT_CONNECTED, NULL, OU::ApplicationRecoverable);	
 
       }
+#endif
     if (!m_dispatch->start ||
 	(rc = m_dispatch->start(m_context)) == RCC_OK) {
       enabled = true;
@@ -748,13 +764,15 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
     }
     break;
   case OM::Worker::OpStop:
+    // If the worker says that stop failed, we're not stopped.
+    if (m_dispatch->stop &&
+	(rc = m_dispatch->stop(m_context)) != RCC_OK)
+      break;
     if (enabled) {
       enabled = false;
       runTimer.stop();
       runTimer.reset();
     }
-    if (m_dispatch->stop)
-      rc = m_dispatch->stop(m_context);
     setControlState(OC::SUSPENDED);
     break;
     // like stop, except don't call stop

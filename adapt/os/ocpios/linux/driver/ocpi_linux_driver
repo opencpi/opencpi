@@ -1,0 +1,99 @@
+#!/bin/sh
+
+# This script loads and unloads the linix driver
+# it is intended to be called from other script that checks args etc.
+
+# Retrieve the reserved DMA memory value from the kernel command line
+# Note there might be multiple reservations, and we currently only support one (the first).
+
+if [ $# == 2 ] ; then # this is for the makefile
+  DIR=.
+else
+  DIR=$OCPI_CDK_DIR/lib/linux-x86_64
+fi
+
+MODNAME=opencpi
+MODFILE=$MODNAME.ko
+RULESFILE=99-$MODNAME.rules
+MODPATH=$DIR/$MODFILE
+RULESPATH=$DIR/$RULESFILE
+
+function rudev () {
+  sudo rm -f /etc/udev/rules.d/$RULESFILE
+  sudo /sbin/udevcontrol reload_rules
+}
+
+function rmd () {
+  sudo /sbin/rmmod $MODNAME
+  if [ $? == 1 ] ; then
+    echo Unexpected error unloading driver module.
+    exit 1
+  fi
+  # check /dev?
+  sleep 1 # in case udev's processing of the unload takes some time?
+  rudev
+}
+
+
+if [ -d /sys/module/opencpi ] ; then
+   case $1 in
+     (reload) 
+       echo The driver module is already loaded.  It will be unloaded.
+       rmd
+       ;;
+     (load)
+       echo The driver module is already loaded.  No action was taken.
+       exit 0
+       ;;
+     (unload)
+       rmd
+       echo The driver module was successfully unloaded.
+       exit 0
+       ;;
+     (status)
+       echo The driver module is currently loaded.
+       exit 0
+       ;;
+  esac
+elif [ $1 == unload ] ; then
+    echo The driver module is not loaded.  No action was taken.
+    exit 0
+fi
+MEMMAP=`tr ' ' '\n' < /proc/cmdline | grep -m 1 '^memmap='`
+if [ "$MEMMAP" == "" ] ; then
+  echo No reserved DMA memory found on the linux boot command line.
+else
+  echo Found reserved DMA memory on the linux boot command line: =$MEMMAP=.
+fi
+if [ ! -r $MODPATH ] ; then
+  echo The driver file: \"$MODPATH\" is missing or was never built.
+  if [ $1 != status ] ; then
+     exit 1
+  fi
+elif [ $1 == status ] ; then
+  date=(`ls -lL $MODPATH`)
+  unset date[0]
+  unset date[1]
+  unset date[2]
+  unset date[3]
+  unset date[4]
+  echo The driver file is dated: ${date[*]}
+fi
+if [ $1 == status ] ; then
+  echo The driver module is not currently loaded.
+  exit 0
+fi
+sudo cp $RULESPATH /etc/udev/rules.d
+sudo /sbin/udevcontrol reload_rules
+sudo /sbin/insmod $MODPATH $MEMMAP
+if [ $? == 0 ] ; then
+  # check /dev?
+  echo Driver loaded successfully.
+else
+  rudev
+  echo Driver loading failed.
+fi
+  
+
+
+

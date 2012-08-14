@@ -40,10 +40,9 @@
 #include <OcpiOsAssert.h>
 #include <OcpiOsMisc.h>
 #include "OcpiUtilCppMacros.h"
-#include <OcpiUtilCDR.h>
-#include <OcpiRDTInterface.h>
 #include <OcpiPortMetaData.h>
 #include <OcpiLibraryManager.h>
+#include <OcpiContainerManager.h>
 #include <OcpiContainerInterface.h>
 #include <OcpiContainerPort.h>
 #include <OcpiContainerApplication.h>
@@ -57,121 +56,10 @@ namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
 namespace OL = OCPI::Library;
 
-using namespace OCPI::RDT;
 
 
 namespace OCPI {
   namespace Container {
-
-    void
-    packDescriptor (OCPI::Util::CDR::Encoder& packer, const Descriptors & desc)
-      throw ()
-    {
-      const OutOfBandData * oob=NULL;
-      packer.putULong (desc.type);
-      packer.putULong (desc.role);
-      packer.putULong (desc.options);
-
-      switch (desc.type) {
-      case ConsumerDescT:
-      case ConsumerFlowControlDescT:
-      case ProducerDescT:
-      default:
-        {
-          const Desc_t & d = desc.desc;
-          oob = &d.oob;
-          packer.putULong     (d.nBuffers);
-          packer.putULongLong (d.dataBufferBaseAddr);
-          packer.putULong     (d.dataBufferPitch);
-          packer.putULong     (d.dataBufferSize);
-          packer.putULongLong (d.metaDataBaseAddr);
-          packer.putULong     (d.metaDataPitch);
-          packer.putULongLong (d.fullFlagBaseAddr);
-          packer.putULong     (d.fullFlagSize);
-          packer.putULong     (d.fullFlagPitch);
-          packer.putULongLong (d.fullFlagValue);
-          packer.putULongLong (d.emptyFlagBaseAddr);
-          packer.putULong     (d.emptyFlagSize);
-          packer.putULong     (d.emptyFlagPitch);
-          packer.putULongLong (d.emptyFlagValue);
-        }
-        break;
-      }
-
-      /*
-       * OutOfBandData is the same for consumer and producer.
-       */
-      if ( oob ) { 
-        packer.putULongLong (oob->port_id);
-        packer.putString (oob->oep);
-        packer.putULongLong (oob->cookie);
-      }
-    }
-
-    bool
-    unpackDescriptor ( OCPI::Util::CDR::Decoder& unpacker,
-                       Descriptors & desc)
-      throw ()
-    {
-      OutOfBandData * oob=NULL;
-
-      try {
-        unpacker.getULong (desc.type);
-        unpacker.getLong (desc.role);
-        unpacker.getULong (desc.options);
-
-        switch (desc.type) {
-        case ConsumerDescT:
-        case ConsumerFlowControlDescT:
-        case ProducerDescT:
-        default:
-          {
-            Desc_t & d = desc.desc;
-            oob = &d.oob;
-            unpacker.getULong     (d.nBuffers);
-            unpacker.getULongLong (d.dataBufferBaseAddr);
-            unpacker.getULong     (d.dataBufferPitch);
-            unpacker.getULong     (d.dataBufferSize);
-            unpacker.getULongLong (d.metaDataBaseAddr);
-            unpacker.getULong     (d.metaDataPitch);
-            unpacker.getULongLong (d.fullFlagBaseAddr);
-            unpacker.getULong     (d.fullFlagSize);
-            unpacker.getULong     (d.fullFlagPitch);
-            unpacker.getULongLong (d.fullFlagValue);
-            unpacker.getULongLong (d.emptyFlagBaseAddr);
-            unpacker.getULong     (d.emptyFlagSize);
-            unpacker.getULong     (d.emptyFlagPitch);
-            unpacker.getULongLong (d.emptyFlagValue);
-          }
-          break;
-        }
-
-        /*
-         * OutOfBandData is the same for consumer and producer.
-         */
-
-        std::string oep;
-        if ( oob ) {
-          unpacker.getULongLong (oob->port_id);
-          unpacker.getString (oep);
-          unpacker.getULongLong (oob->cookie);
-        }
-        else {
-          return false;
-        }
-
-        if (oep.length()+1 > 128) {
-          return false;
-        }
-
-        std::strncpy (oob->oep, oep.c_str(), 128);
-      }
-      catch (const OCPI::Util::CDR::Decoder::InvalidData &) {
-        return false;
-      }
-
-      return true;
-    }
 
 #if 0
     static uint32_t mkUID() {
@@ -180,10 +68,12 @@ namespace OCPI {
     }
 #endif
 
-    Container::Container(const ezxml_t config, const OCPI::Util::PValue *props)
+    Container::Container(const char *name, const ezxml_t config, const OCPI::Util::PValue *params)
       throw ( OU::EmbeddedException )
       : //m_ourUID(mkUID()),
-      m_enabled(false), m_ownThread(true), m_thread(NULL)
+      OCPI::Time::Emit("Container", name ),
+      m_enabled(false), m_ownThread(true), m_thread(NULL),
+      m_transport(*new OCPI::DataTransport::Transport(&Manager::getTransportGlobal(params), false, this))
     {
       OU::SelfAutoMutex guard (this);
       static unsigned ordinal;
@@ -202,7 +92,7 @@ namespace OCPI {
       // FIXME:  this should really be in a baseclass inherited by software containers
       // It works because stuff can be overriden and no threads are created until
       // "start", which is 
-      OU::findBool(props, "ownthread", m_ownThread);
+      OU::findBool(params, "ownthread", m_ownThread);
       if (getenv("OCPI_NO_THREADS"))
 	m_ownThread = false;
       m_os = OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI");
@@ -270,101 +160,10 @@ namespace OCPI {
       if (m_thread)
 	delete m_thread;
       s_containers[m_ordinal] = 0;
+      delete &m_transport;
     }
 
     bool m_start;
-
-
-
-    /*
-     * ----------------------------------------------------------------------
-     * A simple test.
-     * ----------------------------------------------------------------------
-     */
-    /*
-      static int
-      pack_unpack_test (int argc, char *argv[])
-      {
-      OCPI::RDT::Descriptors d;
-      std::string data;
-      bool good;
-
-      std::memset (&d, 0, sizeof (OCPI::RDT::Descriptors));
-      d.mode = OCPI::RDT::ConsumerDescType;
-      d.desc.c.fullFlagValue = 42;
-      std::strcpy (d.desc.c.oob.oep, "Hello World");
-      data = packDescriptor (d);
-      std::memset (&d, 0, sizeof (OCPI::RDT::Descriptors));
-      good = unpackDescriptor (data, d);
-      ocpiAssert (good);
-      ocpiAssert (d.mode == OCPI::RDT::ConsumerDescType);
-      ocpiAssert (d.desc.c.fullFlagValue == 42);
-      ocpiAssert (std::strcmp (d.desc.c.oob.oep, "Hello World") == 0);
-
-      std::memset (&d, 0, sizeof (OCPI::RDT::Descriptors));
-      d.mode = OCPI::RDT::ProducerDescType;
-      d.desc.p.emptyFlagValue = 42;
-      std::strcpy (d.desc.p.oob.oep, "Hello World");
-      data = packDescriptor (d);
-      std::memset (&d, 0, sizeof (OCPI::RDT::Descriptors));
-      good = unpackDescriptor (data, d);
-      ocpiAssert (good);
-      ocpiAssert (d.mode == OCPI::RDT::ProducerDescType);
-      ocpiAssert (d.desc.p.emptyFlagValue == 42);
-      ocpiAssert (std::strcmp (d.desc.p.oob.oep, "Hello World") == 0);
-
-      data[0] = ((data[0] == '\0') ? '\1' : '\0'); // Hack: flip byteorder
-      good = unpackDescriptor (data, d);
-      ocpiAssert (!good);
-
-      return 0;
-      }
-    */
-
-
-    void Container::packPortDesc(  PortConnectionDesc & port, std::string &out  )
-      throw()
-    {
-
-      std::string s;
-      OCPI::Util::CDR::Encoder packer;
-      packer.putBoolean (OCPI::Util::CDR::nativeByteorder());
-      //      packer.putULong (port.container_id);
-      //      packer.putULongLong( port.port );
-  
-      packDescriptor( packer, port.data );
-      out = packer.data();
-    }
-
-
-    //    int Container::portDescSize(){return sizeof(PortData);}
-
-    bool Container::unpackPortDesc( const std::string& data, PortConnectionDesc &port)
-      throw ()
-    {
-      OCPI::Util::CDR::Decoder unpacker (data);
-      Descriptors *desc = &port.data;
-      bool bo;
-
-      try { 
-	unpacker.getBoolean (bo);
-	unpacker.byteorder (bo);
-	//      unpacker.getULong (port.container_id);
-	//	unpacker.getULongLong ((uint64_t&)port.port);
-	bool good = unpackDescriptor ( unpacker, *desc);
-	if ( ! good ) {
-	  return false;
-	}
-
-      }
-      catch (const OCPI::Util::CDR::Decoder::InvalidData &) {
-	return false;
-      }
-
-      return true;
-    }
-
-
 
     void Container::start(DataTransfer::EventManager* event_manager)
       throw()

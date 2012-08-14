@@ -86,7 +86,7 @@ clean: cleanup
 	rm -f $(IDLOBJECTS)
 distclean: distcleanup
 	rm -f $(IDLOBJECTS)
-	rm -f $(IDLCSOURCES) $(IDLSSOURCES) $(IDLCHEADERS) $(IDLSHEADERS) *S_T.h *S_T.cpp *.inl
+	rm -f $(IDLCSOURCES) $(IDLSSOURCES) $(IDLCHEADERS) $(IDLSHEADERS) *S_T.h *S_T.cpp *.inl *.d
 
 #
 # Make the objects depend on all IDL-generated files.  The explicit

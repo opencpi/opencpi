@@ -34,6 +34,7 @@
 // Ethernet support implementation for unix
 
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
@@ -49,6 +50,7 @@
 #include <net/ndrv.h>
 #endif
 #ifdef OCPI_OS_linux
+#include <dirent.h>
 #include <arpa/inet.h>
 #include <linux/if_arp.h>
 #endif
@@ -97,22 +99,37 @@ namespace OCPI {
       Address Address::
       s_broadcast("ff:ff:ff:ff:ff:ff");
 
-      Socket::
-      Socket(Interface &i, std::string &error, Type sType, Type rType)
-	: m_ifIndex(i.index), m_ifAddr(i.addr), m_sType(sType), m_rType(rType ? rType : sType),
-#ifdef OCPI_OS_darwin
-	  m_fd(socket(PF_NDRV, SOCK_RAW, 0)), 
+      bool haveDriver() {
+#ifdef OCPI_OS_linux
+	// FIXME: mutex
+	static bool init = false, haveit;
+	if (!init) {
+	  int dfd = open(OCPI_DRIVER_MEM, O_RDONLY);
+	  if (dfd >= 0) {
+	    haveit = true;
+	    close(dfd);
+	  } else
+	    haveit = false;
+	  init = true;
+	}	  
+	return haveit;
 #else
-	  m_fd(socket(PF_PACKET, SOCK_RAW, htons(m_rType))), // is this type needed here or just in bind?
+	return false;
 #endif
-	  m_timeout(0)
+      }
+      Socket::
+      Socket(Interface &i, ocpi_role_t role, Address *remote, uint16_t endpoint, std::string &error)
+	: m_ifIndex(i.index), m_ifAddr(i.addr),
+	  m_type(role == ocpi_data ? OCDP_ETHER_TYPE : OCCP_ETHER_MTYPE),
+	  m_fd(-1), m_timeout(0), m_role(role), m_endpoint(endpoint)
       {
-	if (m_fd < 0) {
+	ocpiDebug("setting ethertype socket option on type 0x%x", m_type);
+#ifdef OCPI_OS_darwin
+	(void)remote;
+	if ((m_fd = socket(PF_NDRV, SOCK_RAW, 0)) < 0) {
 	  OS::setError(error, "opening raw socket");
 	  return;
 	}
-	ocpiDebug("setting ethertype socket option on type 0x%x", m_rType);
-#ifdef OCPI_OS_darwin
 	struct sockaddr_ndrv sa;
 	sa.snd_len = sizeof(sa);
 	sa.snd_family = PF_NDRV;
@@ -125,36 +142,61 @@ namespace OCPI {
 	struct ndrv_demux_desc ndd;
 	ndd.type = NDRV_DEMUXTYPE_ETHERTYPE;
 	ndd.length = sizeof(ndd.data.ether_type);
-	ndd.data.ether_type = htons(m_rType);
+	ndd.data.ether_type = htons(m_type);
 
 	struct ndrv_protocol_desc npd;
 	npd.version = NDRV_PROTOCOL_DESC_VERS;
-	npd.protocol_family = m_rType; // some random number???
+	npd.protocol_family = m_type; // some random number???
 	npd.demux_count = 1;
 	npd.demux_list = &ndd;
 
 	if (setsockopt(m_fd, SOL_NDRVPROTO, NDRV_SETDMXSPEC, (caddr_t)&npd, sizeof(npd)) != 0) {
-	  OS::setError(error, "setting ethertype socket option on type 0x%x", m_rType);
+	  OS::setError(error, "setting ethertype socket option on type 0x%x", m_type);
 	  return;
 	}
 #else
-	struct sockaddr_ll sa;
-	sa.sll_family = PF_PACKET;      // supposedly not used for bind
-	sa.sll_protocol = htons(m_rType);
-	sa.sll_ifindex = i.index;
-	sa.sll_hatype = ARPHRD_ETHER;   // supposedly not used for bind
-	sa.sll_pkttype = PACKET_HOST;   // supposedly not used for bind
-	sa.sll_halen = sizeof(Address); // supposedly not used for bind
-	memcpy(sa.sll_addr,             // supposedly not used for bind
-	       i.addr.addr(),
-	       sizeof(sa.sll_addr));
-	if (bind(m_fd, (const struct sockaddr *)&sa, sizeof(sa))) {
-	  OS::setError(error, "binding ethertype socket");
-	  return;
+	if (haveDriver()) {
+	  if ((m_fd = socket(PF_OPENCPI, SOCK_DGRAM, 0)) < 0) {
+	    OS::setError(error, "opening raw socket");
+	    return;
+	  }
+	  struct sockaddr_ocpi sa;
+	  memset(&sa, 0, sizeof(sa));
+	  sa.ocpi_family = PF_OPENCPI;      // supposedly not used for bind
+	  sa.ocpi_role = role;
+	  sa.ocpi_ifindex = i.index;
+	  if (remote)
+	    memcpy(sa.ocpi_remote, remote, sizeof(sa.ocpi_remote));
+	  if (role == ocpi_data)
+	    sa.ocpi_endpoint = endpoint;
+	  if (bind(m_fd, (const struct sockaddr *)&sa, sizeof(sa))) {
+	    OS::setError(error, "binding ethertype socket");
+	    return;
+	  }
+	} else {
+	  // is this type needed here or just in bind?
+	  if ((m_fd = socket(PF_PACKET, SOCK_RAW, htons(m_type))) < 0) {
+	    OS::setError(error, "opening raw socket");
+	    return;
+	  }
+	  struct sockaddr_ll sa;
+	  sa.sll_family = PF_PACKET;      // supposedly not used for bind
+	  sa.sll_protocol = htons(m_type);
+	  sa.sll_ifindex = i.index;
+	  sa.sll_hatype = ARPHRD_ETHER;   // supposedly not used for bind
+	  sa.sll_pkttype = PACKET_HOST;   // supposedly not used for bind
+	  sa.sll_halen = sizeof(Address); // supposedly not used for bind
+	  memcpy(sa.sll_addr,             // supposedly not used for bind
+		 i.addr.addr(),
+		 sizeof(sa.sll_addr));
+	  if (bind(m_fd, (const struct sockaddr *)&sa, sizeof(sa))) {
+	    OS::setError(error, "binding ethertype socket");
+	    return;
+	  }
 	}
 #endif
-	ocpiDebug("Successfully opened raw socket on '%s' for ethertype 0x%x/0x%x bound to %s",
-		  i.name.c_str(), m_rType, m_sType, i.addr.pretty());
+	ocpiDebug("Successfully opened raw socket on '%s' for ethertype 0x%x bound to %s",
+		  i.name.c_str(), m_type, i.addr.pretty());
       }
       Socket::
       ~Socket() {
@@ -162,7 +204,15 @@ namespace OCPI {
 	  close(m_fd);
       }
 
-      bool Socket::receive(Packet &packet, unsigned &payLoadLength, unsigned timeoutms, std::string &error) {
+      bool Socket::receive(Packet &packet, unsigned &payLoadLength, unsigned timeoutms, Address &addr,
+			   std::string &error) {
+	unsigned offset;
+	bool b = receive((uint8_t *)&packet, offset, payLoadLength, timeoutms, addr, error);
+	ocpiAssert(offset == offsetof(Packet, payload));
+	return b;
+      }
+      bool Socket::receive(uint8_t *buffer, unsigned &offset, unsigned &payLoadLength, unsigned timeoutms,
+			   Address &addr, std::string &error) {
 	if (timeoutms != m_timeout) {
 	  struct timeval tv;
 	  tv.tv_sec = timeoutms/1000;
@@ -174,61 +224,93 @@ namespace OCPI {
 	  }
 	  m_timeout = timeoutms;
 	}
+	socklen_t alen;
+	offset = offsetof(Packet, payload);
+	Packet &packet(*(Packet *)buffer);
+	void *payload = (void *)buffer;
 #ifdef OCPI_OS_darwin
 	struct sockaddr_dl sa;
 	const int flags = 0;
+	alen = sizeof(sa);
 #else
-	struct sockaddr_ll sa;
+	union {
+	  struct sockaddr_ll ll;
+	  struct sockaddr_ocpi ocpi;
+	} sa;
 	const int flags = MSG_TRUNC;
-#endif
-	socklen_t alen = sizeof(sa);
-	ssize_t rlen = recvfrom(m_fd, &packet, sizeof(Packet), flags,
-				(struct sockaddr*)&sa, &alen);
-	if (rlen < 0) {
-	  if (errno != EAGAIN)
-	    setError(error, "receiving packet bytes failed");
-	  return false;
+	if (haveDriver()) {
+	  payload = packet.payload;
+	  alen = sizeof(sa.ocpi);
 	} else
-	  ocpiDebug("Received packet length %d address: sizeof %u alen %u family %u", 
-		    rlen, sizeof(sa), alen,
-		    ((struct sockaddr *)&sa)->sa_family);
-	if (alen > sizeof(sa)) {
-	  ocpiDebug("received sockaddr len is %d, should be %u", alen, sizeof(sa));
+	  alen = sizeof(sa.ll);
+#endif
+	do { // loop to filter our junk packets
+	  socklen_t before = alen;
+	  ssize_t rlen = recvfrom(m_fd, payload, sizeof(Packet), flags, (struct sockaddr*)&sa, &alen);
+	  if (rlen < 0) {
+	    if (errno != EAGAIN && errno != EINTR)
+	      setError(error, "receiving packet bytes failed");
+	    return false;
+	  } else
+	    ocpiDebug("Received packet length %zu address: sizeof %zu alen %u family %u", 
+		      rlen, sizeof(sa), alen,
+		      ((struct sockaddr *)&sa)->sa_family);
+	  if (alen > before) {
+	    ocpiDebug("received sockaddr len is %d, should be %u", alen, before);
+	    setError(error, "received sockaddr len is %d, should be %u", alen, sizeof(sa));
+	    return false;
+	  }
+	  payLoadLength = rlen - (sizeof(Header) - sizeof(uint16_t));
+	  uint8_t *source = packet.source;
 #ifdef OCPI_OS_linux
-	  ocpiDebug("fam %u prot %u index %d hatype %u ptype %u len %u off %u",
-		    sa.sll_family, sa.sll_protocol, sa.sll_ifindex, sa.sll_hatype,
-		    sa.sll_pkttype, sa.sll_halen, offsetof(struct sockaddr_ll, sll_addr[0]));		    
+	  if (haveDriver()) {
+	    ocpiDebug("fam %u role %u index %d",
+		      sa.ocpi.ocpi_family, sa.ocpi.ocpi_role, sa.ocpi.ocpi_ifindex);
+	    payLoadLength = rlen;
+	    source = sa.ocpi.ocpi_remote;
+	  } else
+	    ocpiDebug("fam %u prot %u index %d hatype %u ptype %u len %u off %zu",
+		      sa.ll.sll_family, sa.ll.sll_protocol, sa.ll.sll_ifindex, sa.ll.sll_hatype,
+		      sa.ll.sll_pkttype, sa.ll.sll_halen, offsetof(struct sockaddr_ll, sll_addr[0]));
 #endif
-	  setError(error, "received sockaddr len is %d, should be %u", alen, sizeof(sa));
-	  return false;
-	}
-	if (m_rType != ntohs(packet.header.type)) {
-	  setError(error, "Ethertype mismatch: ours is 0x%x, packet's is0x%x",
-		   m_rType, ntohs(packet.header.type));
-	  return false;
-	}
-	payLoadLength = rlen - sizeof(Header);
+	  if (!memcmp(source, m_ifAddr.addr(), Address::s_size)) {
+	    ocpiDebug("Received packet from myself\n");
+	    continue;
+	  }
+	  Type type = ((Header *)&packet)->type;
+	  if (m_type != ntohs(type)) {
+	    setError(error, "Ethertype mismatch: ours is 0x%x, packet's is0x%x",
+		     m_type, ntohs(type));
+	    return false;
+	  }
 #ifdef OCPI_DEBUG
-	Address from(packet.header.source);
-	Address to(packet.header.destination);
+	  Address from(source);
+	  Address to(packet.destination);
+	  ocpiDebug("Received ether packet from: %s to %s type 0x%x payload len %d",
+		    from.pretty(), to.pretty(), ntohs(type), payLoadLength);
 #endif
-	ocpiDebug("Received ether packet from: %s to %s type 0x%x payload len %d",
-		  from.pretty(), to.pretty(), ntohs(packet.header.type), payLoadLength);
-	return true;
+	  addr.set(source);
+	  return true;
+	} while (1);
       }
 
       bool Socket::
-      send(Packet &packet, unsigned payLoadLength, Address &addr, unsigned /*timeoutms*/,
+      send(Packet &packet, unsigned payLoadLength, Address &addr, unsigned timeoutms,
 	   std::string &error) {
-	if (payLoadLength > sizeof(Packet) - sizeof(Header)) {
-	  error = "sending packet that is too long";
+	if (payLoadLength > sizeof(Packet) - (sizeof(Header) - sizeof(uint16_t))) {
+	  setError(error, "sending packet that is too long: %u, p %u h %u",
+		   payLoadLength, sizeof(Packet), sizeof(Header));
 	  return false;
 	}
-	packet.header.type = htons(m_sType);
-	memcpy(packet.header.source, m_ifAddr.addr(), sizeof(packet.header.source));
-	memcpy(packet.header.destination, addr.addr(),
-	       sizeof(packet.header.destination));
-
+	OS::IOVec iov[2];
+	iov[0].iov_base = packet.payload;
+	iov[0].iov_len = payLoadLength;
+	return send(iov, 1, addr, timeoutms, error);
+      }
+      bool Socket::
+      send(IOVec *iov, unsigned iovlen, Address &addr, unsigned /*timeoutms*/, std::string &error) {
+	IOVec myiov[10];
+	bool prepend = true;
 	// FIXME: see if we really need this in raw sockets at all, since it is redundant 
 #ifdef OCPI_OS_darwin
 	struct sockaddr_dl sa;
@@ -239,20 +321,61 @@ namespace OCPI {
 	sa.sdl_nlen = 0;
 	sa.sdl_alen = 6;
 	sa.sdl_slen = 0;
-	memcpy(sa.sdl_data, packet.header.destination, Address::s_size);
+	memcpy(sa.sdl_data, addr.addr(), Address::s_size);
+	ocpiAssert(iovlen < 10);
 #else
-	struct sockaddr_ll sa;
-	memset(&sa, 0, sizeof(sa)); // man page says initialize to zero except:
-	sa.sll_family = PF_PACKET;
-	memcpy(sa.sll_addr, packet.header.destination, Address::s_size);
-	sa.sll_halen = Address::s_size;
-	sa.sll_ifindex = m_ifIndex;
+	union {
+	  struct sockaddr_ll ll;
+	  struct sockaddr_ocpi ocpi;
+	} sa;
+	memset(&sa, 0, sizeof(sa));
+	if (haveDriver()) {
+	  sa.ocpi.ocpi_family = PF_PACKET;
+	  sa.ocpi.ocpi_role = m_role;
+	  sa.ocpi.ocpi_ifindex = m_ifIndex;
+	  memcpy(sa.ocpi.ocpi_remote, addr.addr(), Address::s_size);
+	  prepend = false;
+	} else {
+	  ocpiAssert(iovlen < 10);
+	  sa.ll.sll_family = PF_PACKET;
+	  memcpy(sa.ll.sll_addr, addr.addr(), Address::s_size);
+	  sa.ll.sll_halen = Address::s_size;
+	  sa.ll.sll_ifindex = m_ifIndex;
+	}
 #endif
-	size_t len = sizeof(Header) + payLoadLength;
-	if (len < 60)
-	  len = 60;
-	ssize_t rlen = sendto(m_fd, &packet, len, 0, (struct sockaddr*)&sa, sizeof(sa));
-	ocpiDebug("Send ether length %d, to %s, returned %d", len,
+	Header header;
+	if (prepend) {
+	  myiov[0].iov_base = &header;
+	  myiov[0].iov_len = sizeof(header);
+	  if (iov[0].iov_len > 2) {
+	    memcpy(&myiov[1], iov, iovlen * sizeof(*iov));
+	    myiov[1].iov_base = (uint8_t *)myiov[1].iov_base + 2;
+	    myiov[1].iov_len -= 2;
+	  } else {
+	    iov++;
+	    iovlen--;
+	    memcpy(&myiov[1], iov, iovlen * sizeof(*iov));
+	  }
+	  iov = myiov;
+	  iovlen++;
+	  memcpy(header.source, m_ifAddr.addr(), sizeof(header.source));
+	  memcpy(header.destination, addr.addr(), sizeof(header.destination));
+	  header.type = htons(m_type);
+	}
+	size_t len = 0;
+	for (IOVec *i = iov; i < &iov[iovlen]; i++)
+	  len += i->iov_len;
+	struct msghdr msg;
+        msg.msg_name = (void*)&sa;
+	msg.msg_namelen = sizeof(sa);
+        msg.msg_iov = (iovec*)iov;
+	msg.msg_iovlen = iovlen;
+	msg.msg_control = 0;
+	msg.msg_controllen = 0;
+	msg.msg_flags = 0; // checkfor MSG_TRUNC
+	
+	ssize_t rlen = sendmsg(m_fd, &msg, 0);
+	ocpiDebug("Send ether length %zd, to %s, returned %zd", len,
 		  addr.pretty(), rlen);
 	if (rlen != (ssize_t)len) {
 	  setError(error, "sendto of %u bytes failed, returning %d", len, rlen);
@@ -265,7 +388,9 @@ namespace OCPI {
 	char *buffer, *end;
 	struct if_msghdr *ifm;
 #else
-	int sfd;
+#define NETIFDIR "/sys/class/net"
+	DIR *dfd;
+	long start;
 #endif
 	int index;
       };
@@ -307,8 +432,13 @@ namespace OCPI {
 	  } else
 	    err = "sysctl failed after 10 retries";
 #else
-	if ((o->sfd = socket(PF_PACKET, SOCK_RAW, 0)) < 0)
-	  setError(err, "failed opening interface scanning socket");
+	if ((o->dfd = opendir(NETIFDIR)) == NULL)
+	  setError(err, "failed opening interface scanning socket (via %s", NETIFDIR);
+	if ((o->start = telldir(o->dfd)) < 0) {
+	  closedir(o->dfd);
+	  o->dfd = NULL;
+	  setError(err, "telldir failure on %s directory");
+	}
 	o->index = 0;
 #endif
       }
@@ -318,10 +448,39 @@ namespace OCPI {
 #ifdef OCPI_OS_darwin
 	delete o->buffer;
 #else
-	if (o->sfd >= 0)
-	  close(o->sfd);
+	if (o->dfd >= 0)
+	  closedir(o->dfd);
 #endif
       }
+#ifdef OCPI_OS_linux
+      // Return true if we got a valu
+      static bool
+      getValue(std::string &file, const char *name, long *nresult, std::string *sresult = NULL) {
+	size_t s = file.size();
+	file += '/';
+	file += name;
+	int fd = open(file.c_str(), O_RDONLY);
+	file.resize(s);
+	if (fd < 0)
+	  return false;
+	char buf[100];
+	ssize_t n = read(fd, buf, sizeof(buf));
+	close(fd);
+	if (n <= 0 || n >= (ssize_t)sizeof(buf))
+	  return false;
+	while (n > 0 && buf[n-1] == '\n')
+	  n--;
+	buf[n] = 0;
+	if (nresult) {
+	  char *end;
+	  *nresult = strtol(buf, &end, 0);
+	  return *end == 0 || *end == '\n';
+	}
+	*sresult = buf;
+	return true;
+      }
+#endif
+
       bool IfScanner::
       getNext(Interface &i, std::string &err, const char *only) {
 	err.clear();
@@ -380,7 +539,38 @@ namespace OCPI {
 	  err = "the requested interface was not found";
 	return found;
 #else
-	struct ifreq ifr;
+	// Somewhat ugly and unscalable.  We can use the driver if needed.
+	while (++o->index < 10) {
+	  seekdir(o->dfd, o->start);
+	  struct dirent ent, *entp;
+	  while (readdir_r(o->dfd, &ent, &entp) == 0 && entp)
+	    if (entp->d_name[0] != '.' && (!only || !strcmp(only, entp->d_name))) {
+	      std::string s(NETIFDIR), addr;
+	      s += '/';
+	      s += entp->d_name;
+	      long nval, carrier, index;
+
+	      if (getValue(s, "type", &nval) && nval == ARPHRD_ETHER &&
+		  getValue(s, "address", NULL, &addr) &&
+		  getValue(s, "ifindex", &index) && (only || index == o->index) &&
+		  getValue(s, "carrier", &carrier) &&
+		  getValue(s, "flags", &nval)) {
+		i.addr.setString(addr.c_str());
+		if (!i.addr.error()) {
+		  i.index = index;
+		  i.name = entp->d_name;
+		  i.up = (nval & IFF_UP) != 0;
+		  i.connected = carrier != 0;
+		  ocpiDebug("found ether interface '%s' which is %s, %s, at address %s",
+			    entp->d_name, i.up ? "up" : "down",
+			    i.connected ? "connected" : "disconnected", i.addr.pretty());
+		  return true;
+		}
+	      }
+	    }
+	}
+	return false;
+#if 0 // old sudo-required way
 	do {
 	  i.index = ifr.ifr_ifindex = ++o->index;
 	  if (ioctl(o->sfd, SIOCGIFNAME, &ifr) < 0) {
@@ -411,12 +601,13 @@ namespace OCPI {
 	} while(i.index < 10);
 	return false;
 #endif
+#endif
       }
       Interface::Interface(){}
       Interface::Interface(const char *name, std::string &error) {
 	IfScanner ifs(error);
 	while (error.empty() && ifs.getNext(*this, error, name))
-	  if (up || connected)
+	  if (up && connected)
 	    return;
 	error = "No interfaces found that are up and connected";
       }

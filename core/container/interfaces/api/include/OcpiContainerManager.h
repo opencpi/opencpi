@@ -54,6 +54,7 @@
 #define OCPI_CONTAINER_MANAGER_H
 #include "OcpiParentChild.h"
 #include "OcpiDriverManager.h"
+#include "OcpiTransportGlobal.h"
 #include "OcpiContainerApi.h"
 #include "OcpiContainerInterface.h"
 #include "OcpiContainerApplication.h"
@@ -80,7 +81,10 @@ namespace OCPI {
     class Manager : public OCPI::API::ContainerManager,
 		    public OCPI::Driver::ManagerBase<Manager, Driver, container> {
       unsigned cleanupPosition();
+      OCPI::DataTransport::TransportGlobal &getTransportGlobalInternal(const OCPI::Util::PValue *params);
     public:
+      Manager();
+      ~Manager();
       OCPI::API::Container *find(const char *model, const char *which,
 				 const OCPI::API::PValue *props);
       bool findContainersX(Callback &cb, OCPI::Util::Implementation &i); 
@@ -88,6 +92,14 @@ namespace OCPI {
 	return getSingleton().findContainersX(cb, i);
       }
       void shutdown();
+      // convenience
+      static inline OCPI::DataTransport::TransportGlobal &
+      getTransportGlobal(const OCPI::Util::PValue *params = NULL) {
+	return getSingleton().getTransportGlobalInternal(params);
+      }
+    private:
+      // Globals dependant on polling
+      OCPI::DataTransport::TransportGlobal *m_tpg_events, *m_tpg_no_events;
     };
 
     // A base class inherited by all container drivers for common behavior
@@ -137,7 +149,7 @@ namespace OCPI {
       ContainerBase<Dri, Con, App, Art>(const char *name,
 					const ezxml_t config = NULL,
 					const OCPI::Util::PValue *props = NULL)
-	: OCPI::Driver::DeviceBase<Dri,Con>(name), Container(config, props) {}
+	: OCPI::Driver::DeviceBase<Dri,Con>(name), Container(name, config, props) {}
       inline Driver &driver() { return OCPI::Driver::DeviceBase<Dri,Con>::parent(); }
       Artifact *findLoadedArtifact(const char *name) {
 	return Parent<Art>::findChildByName(name);
@@ -199,6 +211,7 @@ namespace OCPI {
       Application &application() { return Child<App,Wrk,worker>::parent(); }
       Port *findPort(const char *name) { return Parent<Prt>::findChildByName(name); }
       Worker *nextWorker() { return Child<App,Wrk,worker>::nextChild(); }
+      const std::string &name() const { return Child<App,Wrk,worker>::name(); }
     };
     extern const char *port;
     template<class Wrk, class Prt, class Ext>
@@ -212,6 +225,9 @@ namespace OCPI {
 			    PortConnectionDesc *desc = NULL)
       : Child<Wrk,Prt,port>(worker, mport.name), Port(worker.parent().parent(), mport,
 						      isProvider, xferOptions, params, desc) {}
+      inline Worker &worker() const { return Child<Wrk,Prt,port>::parent(); }
+    public:
+      const std::string &name() const { return Child<Wrk,Prt,port>::name(); }
     };
     extern const char *externalPort;
     template<class Prt, class Ext>
@@ -220,11 +236,11 @@ namespace OCPI {
         public ExternalPort {
     protected:
       ExternalPortBase<Prt,Ext>(Prt &port, const char *name,
-				const OCPI::Util::PValue *props,
-				const OCPI::Metadata::Port &metaPort,
+				const OCPI::Util::PValue *extParams,
+				const OCPI::Util::PValue *connParams,
 				bool isProvider)
       : Child<Prt,Ext,externalPort>(port, name),
-	ExternalPort(metaPort, isProvider, props) {}
+	ExternalPort(port, isProvider, extParams, connParams) {}
     };
   }
 }

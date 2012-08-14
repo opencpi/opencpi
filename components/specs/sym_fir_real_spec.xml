@@ -31,9 +31,4 @@ being handled at the input must be passed to the output.
       <xi:include href="rstream_with_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
-  <!-- Output data and control stream (DEBUG)-->
-  <DataInterfaceSpec Name="outDebug" Producer="true" Optional="true">
-      <xi:include href="rstream_with_sync_protocol.xml"/>
-  </DataInterfaceSpec>
-
 </ComponentSpec>

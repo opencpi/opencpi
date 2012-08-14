@@ -90,11 +90,11 @@ namespace DataTransfer {
   public:
 
     // Constructor 
-    XferMailBox( OCPI::OS::uint32_t slot )
+    XferMailBox(uint16_t slot )
       :m_slot(slot){};
 
       // This method sets the communications slot for this template
-      void setMailBox( OCPI::OS::uint32_t slot ){m_slot=slot;};
+      void setMailBox(uint16_t slot ){m_slot=slot;};
 
       // Determine if the mail box is avialable
       inline bool mailBoxAvailable( SMBResources* res ){ 
@@ -111,7 +111,7 @@ namespace DataTransfer {
   protected:
 
       // Our mail slot index
-      OCPI::OS::uint32_t m_slot;
+      uint16_t m_slot;
 
   };
 
@@ -164,6 +164,9 @@ namespace DataTransfer {
     //    XferServices* getService(std::string& s_endpoint,  std::string& t_endpoint);        
     XferServices* getService(EndPoint *s_endpoint, EndPoint *t_endpoint);        
 
+    // Create an endpoint for remote hardware
+    EndPoint& allocateProxyEndPoint(const char *epString, uint64_t size);
+
     static bool canSupport(EndPoint &local_ep, const char *remote_endpoint);
     // Constructors/Destructors
     XferFactoryManager();
@@ -195,6 +198,9 @@ namespace DataTransfer {
     bool            m_configured;
 
   };
+
+    // Convenience
+    inline XferFactoryManager &getManager() { return XferFactoryManager::getSingleton(); }
 
 
 }

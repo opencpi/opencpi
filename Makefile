@@ -99,7 +99,14 @@ PACKAGES += tools/local/binder tools/local/tester
 PACKAGES += tools/cdk/cdkutils
 PACKAGES += tools/cdk/ocpigen
 PACKAGES += tools/cdk/ocpidds
+# if we don't have opencl and we are building statically, don't bother with this
+ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 PACKAGES += tools/cdk/ocpiocl
+else
+ifeq ($(OCPI_HAVE_OPENCL),1)
+PACKAGES += tools/cdk/ocpiocl
+endif
+endif
 PACKAGES += tools/cdk/ocpixm
 PACKAGES += test
 
@@ -205,6 +212,13 @@ cleancomponents:
 .PHONY: prims
 hdlprims:
 	$(MAKE) -C hdl primitives
+
+driver:
+	$(MAKE) -C adapt/os/ocpios/$(OCPI_OS)/driver
+
+cleandriver:
+	$(MAKE) -C adapt/os/ocpios/$(OCPI_OS)/driver topclean
+
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 

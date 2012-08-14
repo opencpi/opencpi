@@ -54,7 +54,7 @@
 
 #define WORKER_INTERNAL
 #include <OcpiOsMisc.h>
-#include <OcpiTransport.h>
+//#include <OcpiTransport.h>
 #include <OcpiOsAssert.h>
 #include <OcpiUtilCDR.h>
 #include <OcpiRDTInterface.h>
@@ -82,21 +82,21 @@ DataTransfer::EventManager*
 Container::
 getEventManager()
 {
-  return m_transport->m_transportGlobal->getEventManager();
+  return getTransport().m_transportGlobal->getEventManager();
 }
 
 class Driver;
 Container::
 Container(const char *name,
-	  OCPI::DataTransport::TransportGlobal *tpg, 
+	  //	  OCPI::DataTransport::TransportGlobal *tpg, 
 	  const OA::PValue* props )
   throw ( OU::EmbeddedException )
-  : OC::ContainerBase<Driver,Container,Application,Artifact>(name),
-    OCPI::Time::Emit( "Container", name )
+  : OC::ContainerBase<Driver,Container,Application,Artifact>(name)
 {
   m_model = "rcc";
   //temp  m_ourUID = g_unique_id;
 
+#if 0
   // The underlying tranport system has some number of endpoints registered.  Lets make sure
   // that their is at least 1 available or we will complain.
   // Initialize the underlying transport system
@@ -106,7 +106,7 @@ Container(const char *name,
   catch( std::bad_alloc ) {
     throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
   }
-
+#endif
   const char* monitorIPAddress = NULL;
   OU::findString(props, "monitorIPAddress", monitorIPAddress);
   //  start(NULL);
@@ -134,12 +134,14 @@ Container::
   // We need to shut down the apps and workers since they
   // depend on artifacts and transport.
   OU::Parent<Application>::deleteChildren();
+#if 0
   try {
     delete m_transport;
   }
   catch( ... ) {
     printf("ERROR: Got an exception in OCPI::RCC::Container::~Container)\n");
   }
+#endif
 }
 
 volatile int ocpi_dbg_run=0;
@@ -164,7 +166,7 @@ dispatch(DataTransfer::EventManager* event_manager)
 #endif
   try {
     // Give our transport some time
-    m_transport->dispatch( event_manager );
+    getTransport().dispatch( event_manager );
   } catch(...) {
     ocpiBad("RCC Container dispatch thread encountered transport exception.  Shutting down.");
     // Release all the current workers if there is a transport failure.
@@ -218,7 +220,7 @@ start(DataTransfer::EventManager* event_manager)
 
 #ifdef EM_PORT_COMPLETE
     if ( event_manager ) {
-      DataTransfer::EndPoint* ep = m_transport->getEndpoint();
+      DataTransfer::EndPoint* ep = getTransport().getEndpoint();
       event_manager->spin(ep, false);
     }
 #endif
@@ -240,7 +242,7 @@ stop(DataTransfer::EventManager* event_manager)
     m_enabled = false;
 #ifdef EM_PORT_COMPLETE
     if ( event_manager ) {
-      DataTransfer::EndPoint* ep = m_transport->getEndpoint();
+      DataTransfer::EndPoint* ep = getTransport().getEndpoint();
       event_manager->spin(ep, true);  
     }
 #endif

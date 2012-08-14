@@ -235,8 +235,7 @@ namespace OCPI {
     class DriverBase
       : public Parent<Dev>,
         public Singleton<ConcDri>,
-        public DriBase
-    {
+	public DriBase { // destroy this class BEFORE children 
     public:
       // to access a specific driver
       inline static ConcDri &getDriver() {

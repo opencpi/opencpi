@@ -73,10 +73,10 @@ namespace DataTransfer {
     std::string          end_point;    // deep copy of the endpoint string
     SmemServices         * smem;       // Shared memory 
     std::string          protocol;     // protocol string
-    OCPI::OS::uint32_t   mailbox;      // endpoint mailbox
-    OCPI::OS::uint32_t   maxCount;     // Number of mailboxes in communication domain
-    OCPI::OS::uint32_t   size;         // Size of endpoint area in bytes
-    OCPI::OS::uint32_t   event_id;     
+    uint16_t             mailbox;      // endpoint mailbox
+    uint16_t             maxCount;     // Number of mailboxes in communication domain
+    uint32_t             size;         // Size of endpoint area in bytes
+    uint32_t             event_id;     
     bool                 local;        // local endpoint
     SMBResources*        resources;    // SMB resources associated with this endpoint
     XferFactory*         factory;
@@ -105,9 +105,9 @@ namespace DataTransfer {
     static void getResourceValuesFromString( 
                             const char*  ep,                // Endpoint value
                             char*  cs,                        // User provided buffer (at least sizeof ep )
-                            OCPI::OS::uint32_t* mailBox,        // Mailbox value returned
-                            OCPI::OS::uint32_t* maxMb,        // Maximum mailbox value in circuit returned
-                            OCPI::OS::uint32_t* bufsize        // Buffer size returned
+                            uint16_t* mailBox,        // Mailbox value returned
+                            uint16_t* maxMb,        // Maximum mailbox value in circuit returned
+                            uint32_t* bufsize        // Buffer size returned
                             );
 
   };

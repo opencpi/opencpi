@@ -32,13 +32,13 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+#include <list>
+#include <cstdio>
 #include <OcpiOsDataTypes.h>
 #include <OcpiOsAssert.h>
 #include <OcpiRes.h>
-#include <list>
-#include <cstdio>
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
 
 namespace OCPI {
   namespace Util {
@@ -140,7 +140,7 @@ int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int align
 {
 
   if ( nbytes > 2000000 ) {
-    ocpiInfo("Allocating large mem %ullK", nbytes/1024);
+    ocpiInfo("Allocating large mem %" PRIu64 "K", nbytes/1024);
     //    OCPI::OS::dumpStack (std::cerr);
   }
 #ifdef DEBUG_LISTS
@@ -205,7 +205,7 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
 
 #ifndef NDEBUG
       if ( (*it).size > 2000000 ) {
-	ocpiInfo("Freeing large mem %lluK", (*it).size/1024);
+	ocpiInfo("Freeing large mem %" PRIu64 "K", (*it).size/1024);
       }
 #ifdef DEBUG_LISTS
       printf("Alloc list\n");

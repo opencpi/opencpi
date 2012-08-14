@@ -32,8 +32,11 @@ function bad {
 #echo part "$part" pos "$pos" port "$port"
 imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
 if [[ $port == all ]]; then
-  ports=`echo listusbcables | $imp 2> $tlog | grep '^port=' | sed 's/port=\(.*\), *esn=\(.*\)/\1/'`
+  echo listusbcables | $imp 2> $tlog > $tmp
+  ports=`grep '^port=' $tmp | sed 's/port=\(.*\), .*$/\1/'`
+  echo Discovered ports are: $ports
   # ports="usb21 usb22 usb23 usb24 usb25 usb26 usb27 usb28 usb29"
+  # exit 1
 else
   ports=$port
 fi
@@ -59,6 +62,10 @@ if test $? == 0; then
 EOF
       myport=`cat $tmp`
       myportlc=`echo $myport | tr A-Z a-z`
+      if grep -q 'ESN device is not available' $tlog.$p ; then
+	  myesn=0123456789ABCD
+	  echo USB Pod have no ESN, so we\'ll use $myesn. You can only have one of these.
+      else
       ed $tlog.$p <<EOF  > /dev/null 2>&1
       /ESN.*option:/
       .=
@@ -68,6 +75,7 @@ EOF
       w $tmp
 EOF
       myesn=`cat $tmp`
+      fi
       if [[ $myport == USB* ]]; then
          echo USB Cable Connection verified on port $myportlc, ESN is $myesn
 	 anyport=yes

@@ -60,11 +60,12 @@ namespace OCPI {
       // This is the implementation class of the API error class
       class Error : public OCPI::API::Error, public std::string {
       public:
-	Error(const char *err, ...); // sprintf if there is an unescaped %%, concatenation otherw        virtual ~Error();
+	Error(const char *err, ...) __attribute__((format(printf, 2, 3)));
+	virtual ~Error();
       protected:
 	Error();
 	void setFormatV(const char *fmt, va_list ap);
-	void setFormat(const char *fmt, ...);
+	void setFormat(const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 	void setConcatenateV(const char *fmt, va_list ap);
 	inline const std::string &error() const { return *this; }
       };
@@ -284,7 +285,7 @@ namespace OCPI {
       class ApiError : public Error {
       public:
 	std::string m_auxInfo; // legacy compatibility FIXME
-	ApiError(const char *err, ...);
+	ApiError(const char *err, ...); // FIXME: remote this entirely to get better error checking
 	virtual ~ApiError();
       };
   }

@@ -154,8 +154,8 @@ namespace DataTransfer {
     struct MailBox {
       RequestTypes            request;
       int32_t              error_code;
-      uint32_t              returnMailboxId;
-      OCPI::OS::int64_t              return_offset;
+      uint32_t              returnMailboxId; // FIXME: make this the right type
+      int64_t              return_offset;
       uint32_t              return_size;
     };
 

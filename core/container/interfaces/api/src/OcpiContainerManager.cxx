@@ -37,7 +37,32 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace OD = OCPI::Driver;
     namespace OU = OCPI::Util;
+    namespace OT = OCPI::DataTransport;
     const char *container = "container";
+
+    Manager::Manager() : m_tpg_events(NULL), m_tpg_no_events(NULL) {
+    }
+
+    Manager::~Manager() {
+      // Delete my children before the transportGlobals they depend on.
+      deleteChildren();
+      if ( m_tpg_no_events ) delete m_tpg_no_events;
+      if ( m_tpg_events ) delete m_tpg_events;
+    }
+
+    // Note this is not dependent on configuration.
+    // It is currently used in lieu of a generic data transport shutdowm.
+    OCPI::DataTransport::TransportGlobal &Manager::
+    getTransportGlobalInternal(const OU::PValue *params) {
+      static unsigned event_range_start = 0;
+      bool polled = true;
+      OU::findBool(params, "polled", polled);
+      OT::TransportGlobal **tpg = polled ? &m_tpg_no_events : &m_tpg_events;
+      if (!*tpg)
+	*tpg = new OT::TransportGlobal( event_range_start++, !polled );
+      return **tpg;
+    }
+
 #if 0
     // The manager of all container drivers gets the "containers" element
     void Manager::configure(ezxml_t x, bool debug) {
