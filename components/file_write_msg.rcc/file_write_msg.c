@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include "file_write_real_Worker.h"
+#include "file_write_msg_Worker.h"
 #include <stream_data_file_format.h>
 
 typedef struct {
@@ -21,10 +21,10 @@ typedef struct {
 } MyState;
 static uint32_t mysizes[] = {sizeof(MyState), 0};
 
-FILE_WRITE_REAL_METHOD_DECLARATIONS;
-RCCDispatch file_write_real = {
+FILE_WRITE_MSG_METHOD_DECLARATIONS;
+RCCDispatch file_write_msg = {
  /* insert any custom initializations here */
- FILE_WRITE_REAL_DISPATCH
+ FILE_WRITE_MSG_DISPATCH
  .memSizes = mysizes
 };
 
@@ -35,7 +35,7 @@ RCCDispatch file_write_real = {
 static RCCResult
 start(RCCWorker *self) {
   MyState *s = self->memories[0];
-  File_write_realProperties *p = self->properties;
+  File_write_msgProperties *p = self->properties;
 
   if (s->started) {
     self->errorString = "file_write cannot be restarted";
@@ -52,8 +52,8 @@ start(RCCWorker *self) {
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  (void)timedOut;(void)newRunCondition;
- RCCPort *port = &self->ports[FILE_WRITE_REAL_IN];
- File_write_realProperties *props = self->properties;
+ RCCPort *port = &self->ports[FILE_WRITE_MSG_IN];
+ File_write_msgProperties *props = self->properties;
  MyState *s = self->memories[0];
  ssize_t n;
 

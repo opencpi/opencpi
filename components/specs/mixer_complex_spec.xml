@@ -17,7 +17,7 @@ receives a "Sync" message it must perform the following steps.
 
   <!-- input stream that contains both data and sync  -->
   <DataInterfaceSpec Name="in_dds" Producer="false">
-      <xi:include href="rstream_with_sync_protocol.xml"/>
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
   <!-- output stream that contains both data and sync -->
@@ -27,7 +27,7 @@ receives a "Sync" message it must perform the following steps.
 
   <!-- Optional control only stream.  This port is used to tell the DDS to re-sync -->
   <DataInterfaceSpec Name="out_sync_only" Producer="true" optional="true">
-      <xi:include href="iqstream_with_sync_protocol.xml"/>
+      <xi:include href="signal_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
 </ComponentSpec>

@@ -8,11 +8,6 @@ being handled at the input must be passed to the output.
 
 <ComponentSpec name="fsk_mod_complex" >
 
-  <Properties>
-    <!-- Reset   Format: boolean  -->
-    <Property Name="Reset" type="bool" Readable="false" Writable="true"/>
-  </Properties>
-
   <!-- Input data and control stream -->
   <DataInterfaceSpec Name="in" Producer="false">
       <xi:include href="rstream_with_sync_protocol.xml"/>

@@ -4,7 +4,7 @@ Properties:
  messagesInFile: indicates that messages, including length and opcode, should be written in the file
 -->
 <RccImplementation controloperations="start">
-  <ComponentSpec name='file_write_real'>
+  <ComponentSpec name='file_write_msg'>
     <DataInterfaceSpec Name="in"/>
     <property name='messagesInFile' type='bool' readable='true'/>
     <property name='bytesWritten' type='uLongLong' readable='true'/>

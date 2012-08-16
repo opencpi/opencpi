@@ -13,76 +13,72 @@ int main ( int argc, char* argv [ ] )
   std::string app_xml("<application>"
 		      " <policy mapping='MaxProcessors' processors='0'/>"
 
-		      "  <instance worker='file_read_real' name='file_reader' selection='model==\"rcc\"'>"
+		      "  <instance worker='file_read_msg' >"
 		      "    <property name='fileName' value='dataIn.dat'/> "		      
 		      "    <property name='genTestFile' value='true'/> "		      
 		      "    <property name='stepThruMsg' value='true'/> "
 		      "    <property name='stepNow' value='true'/> "
 		      "  </instance> "
 
-		      "  <instance worker='sym_fir_real' name='tx_fir_r' selection='model==\"rcc\"'>"
+		      "  <instance worker='sym_fir_real' name='tx_fir_r' >"
 		      "    <property name='bypass' value='false'/> "
 		      "    <property name='gain' value='1'/> "
-		      "    <property name='nTaps' value='256'/> "
 		      "  </instance> "
 
-		      "  <instance worker='fsk_mod_complex' name='fsk_mod' selection='model==\"rcc\"'>"
+		      "  <instance worker='fsk_mod_complex' name='fsk_mod' >"
 		      "  </instance> "
 
-		      "  <instance worker='sym_fir_complex' name='tx_fir_c' selection='model==\"rcc\"'>"
+		      "  <instance worker='sym_fir_complex' name='tx_fir_c'>"
 		      "    <property name='bypass' value='false'/> "
 		      "    <property name='gain' value='1'/> "
-		      "    <property name='nTaps' value='256'/> "
 		      "  </instance> "
 
-		      "  <instance worker='cic_hpfilter_complex' name='tx_cic' selection='model==\"rcc\"'>"
+		      "  <instance worker='cic_hpfilter_complex' name='tx_cic' >"
 		      "    <property name='M' value='2'/> "
 		      "  </instance> "
 			 
-
-		      "  <instance worker='loopback_complex' name='loopback' selection='model==\"rcc\"'>"
+		      "  <instance worker='loopback' >"
 		      "  </instance> "
 
+		      "  <instance worker='noise_gen_complex' >"
+		      "    <property name='mask' value='0'/> "		      
+		      "  </instance> "
 
-		      "  <instance worker='dds_complex' name='ddc_dds' selection='model==\"rcc\"'>"
+		      "  <instance worker='dds_complex' name='ddc_dds' >"
 		      "    <property name='phaseIncrement' value='12345678'/> "
 		      "    <property name='syncPhase' value='0'/> "
 		      "  </instance> "
 
-		      "  <instance worker='mixer_complex' name='ddc_mixer' selection='model==\"rcc\"'>"
+		      "  <instance worker='mixer_complex' name='ddc_mixer' >"
 		      "  </instance> "
 
 
-		      "  <instance worker='cic_lpfilter_complex' name='rx_cic' selection='model==\"rcc\"'>"
+		      "  <instance worker='cic_lpfilter_complex' name='rx_cic' >"
 		      "    <property name='M' value='2'/> "
 		      "  </instance> "
 
-		      "  <instance worker='sym_fir_complex' name='rx_fir_c' selection='model==\"rcc\"'>"
+		      "  <instance worker='sym_fir_complex' name='rx_fir_c' >"
 		      "    <property name='bypass' value='false'/> "
 		      "    <property name='gain' value='1'/> "
-		      "    <property name='nTaps' value='256'/> "
 		      "  </instance> "
 
-		      "  <instance worker='fm_demod_complex' name='fm_demod' selection='model==\"rcc\"'>"
+		      "  <instance worker='fm_demod_complex' name='fm_demod' >"
 		      "  </instance> "
 
 
-		      "  <instance worker='sym_fir_real' name='rx_fir_r' selection='model==\"rcc\"'>"
+		      "  <instance worker='sym_fir_real' name='rx_fir_r' >"
 		      "    <property name='bypass' value='false'/> "
 		      "    <property name='gain' value='1'/> "
-		      "    <property name='nTaps' value='256'/> "
 		      "  </instance> "
 "<!--"
 "-->"
 
-		      "  <instance worker='file_write' name='file_writer' selection='model==\"rcc\"'>"
+		      "  <instance worker='file_write_msg' >"
 		      "    <property name='fileName' value='dataOut.dat'/> "		      
 		      "  </instance> "
 
-
-
 		      "  <connection>"
-		      "    <port instance='file_reader' name='out'/>"
+		      "    <port instance='file_read_msg' name='out'/>"
 		      "    <port instance='tx_fir_r' name='in'/>"
 		      "  </connection>"
 
@@ -101,9 +97,15 @@ int main ( int argc, char* argv [ ] )
 		      "    <port instance='tx_cic' name='in'/>"
 		      "  </connection>"
 
+
 		      "  <connection>"
-		      "    <port instance='loopback' name='in'/>"
+		      "    <port instance='noise_gen_complex' name='in'/>"
 		      "    <port instance='tx_cic' name='out'/>"
+		      "  </connection>"
+
+		      "  <connection>"
+		      "    <port instance='noise_gen_complex' name='out'/>"
+		      "    <port instance='loopback' name='in'/>"
 		      "  </connection>"
 			 
 
@@ -131,8 +133,6 @@ int main ( int argc, char* argv [ ] )
 		      "    <port instance='ddc_dds' name='out'/>"
 		      "  </connection>"
 
-
-
 		      "  <connection>"
 		      "    <port instance='rx_cic' name='out'/>"
 		      "    <port instance='rx_fir_c' name='in'/>"
@@ -150,7 +150,7 @@ int main ( int argc, char* argv [ ] )
 
 		      "  <connection>"
 		      "    <port instance='rx_fir_r' name='out'/>"
-		      "    <port instance='file_writer' name='in'/>"
+		      "    <port instance='file_write_msg' name='in'/>"
 		      "  </connection>"			 
 
 		      "</application>");
@@ -181,15 +181,15 @@ int main ( int argc, char* argv [ ] )
 
       while ( 1 ) {
 	std::string value;
-	app->getProperty( "file_reader", "stepThruMsg", value);
+	app->getProperty( "file_read_msg", "stepThruMsg", value);
         if ( value == "true" ) {
-	  app->getProperty( "file_reader", "stepNow", value);
+	  app->getProperty( "file_read_msg", "stepNow", value);
 	  if ( value == "false" ) {
 	    // wait for user
 	    char c;
 	    std::cout << "Hit any key to continue" << std::endl;
 	    std::cin >> c;
-	    app->setProperty("file_reader","stepNow","true");
+	    app->setProperty("file_read_msg","stepNow","true");
 	  }
 	}
 

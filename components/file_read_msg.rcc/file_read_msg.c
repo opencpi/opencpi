@@ -12,7 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
-#include "file_read_real_Worker.h"
+#include "file_read_msg_Worker.h"
 #include <stream_data_file_format.h>
 
 typedef struct {
@@ -23,10 +23,10 @@ typedef struct {
 } MyState;
 static uint32_t mysizes[] = {sizeof(MyState), 0};
 
-FILE_READ_REAL_METHOD_DECLARATIONS;
-RCCDispatch file_read_real = {
+FILE_READ_MSG_METHOD_DECLARATIONS;
+RCCDispatch file_read_msg = {
  /* insert any custom initializations here */
- FILE_READ_REAL_DISPATCH
+ FILE_READ_MSG_DISPATCH
  .memSizes = mysizes
 };
 
@@ -40,7 +40,7 @@ RCCDispatch file_read_real = {
 #define S_SIZE (DATA_SIZE/40)
 RCCResult genTestFile( RCCWorker * self )
 {
-  File_read_realProperties *p = self->properties;
+  File_read_msgProperties *p = self->properties;
   unsigned int n;
   double interval = 2.0*PI/S_SIZE;
   FileHeader h;
@@ -55,7 +55,7 @@ RCCResult genTestFile( RCCWorker * self )
   // Generate a text message
   {
     h.endian = 1;
-    h.opcode = FILE_READ_REAL_OUT_MESSAGE;
+    h.opcode = 3;
     char * cbuffer = "This is a test message for the real data stream";
     h.length = strlen( cbuffer ) + 1;
 
@@ -74,7 +74,7 @@ RCCResult genTestFile( RCCWorker * self )
 
   // Generate a "real" sinwave
   h.endian = 1;
-  h.opcode = FILE_READ_REAL_OUT_DATA;
+  h.opcode = 0;
   h.length = DATA_SIZE * sizeof(uint16_t);
   bc+=sizeof(FileHeader);
   if (write(fd, &h, sizeof(FileHeader)) < 0) {
@@ -94,7 +94,7 @@ RCCResult genTestFile( RCCWorker * self )
   // Generate a text message
   {
     h.endian = 1;
-    h.opcode = FILE_READ_REAL_OUT_MESSAGE;
+    h.opcode = 3;
     char * cbuffer = "This is another test message for the real data stream";
     h.length = strlen( cbuffer ) + 1;
     bc+= sizeof(FileHeader);
@@ -117,7 +117,7 @@ RCCResult genTestFile( RCCWorker * self )
 static RCCResult
 start(RCCWorker *self) {
   MyState *s = self->memories[0];
-  File_read_realProperties *p = self->properties;
+  File_read_msgProperties *p = self->properties;
   if (s->started) {
     self->errorString = "file_read cannot be restarted";
     return RCC_ERROR;
@@ -141,8 +141,8 @@ start(RCCWorker *self) {
 
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
- RCCPort *port = &self->ports[FILE_READ_REAL_OUT];
- File_read_realProperties *props = self->properties;
+ RCCPort *port = &self->ports[FILE_READ_MSG_OUT];
+ File_read_msgProperties *props = self->properties;
  MyState *s = self->memories[0];
  size_t n2read =  props->messageSize ? props->messageSize : port->current.maxLength;
  ssize_t n, readl;
@@ -168,13 +168,13 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
      return RCC_ERROR;
    } 
-   printf("file_reader_real: Data length = %d\n", s->header.length );
+   printf("file_reader_msg: Data length = %d\n", s->header.length );
    s->blcm = s->header.length;
  }
  if ( n == 0 ) {
    return RCC_DONE;
  }
- self->ports[FILE_READ_REAL_OUT].output.u.operation = s->header.opcode;
+ self->ports[FILE_READ_MSG_OUT].output.u.operation = s->header.opcode;
  
  readl = (port->current.maxLength > s->header.length) ?  s->header.length : port->current.maxLength;
  if ((n = read(s->fd, port->current.data, readl )) < 0) {
@@ -184,7 +184,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  if ( n == 0 ) {
    return RCC_DONE;
  }
- // printf("In file_read_real.c got data = %s\n", port->current.data);
+ // printf("In file_read_msg.c got data = %s\n", port->current.data);
 
  port->output.length = n;
  props->bytesRead += n;

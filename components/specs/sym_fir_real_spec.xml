@@ -11,14 +11,12 @@ being handled at the input must be passed to the output.
   <Properties>
     <!-- Bypass filter - if true, no transform  Format: bool -->
     <Property Name="bypass" type="bool" Readable="true" Writable="true"/>
-    <!-- Gain factor   Format: double -->
-    <Property Name="gain" type="Double" Readable="true" Writable="true"/>
-    <!-- Reset filter to Tzero   Format: bool  -->
-    <Property Name="Reset" type="bool" Readable="false" Writable="true"/>
-    <!-- Number of Taps   Format: int   -->
-    <Property Name="nTaps" type="Short" Readable="true" Writable="true"/>
-    <!-- pd ???   Format: bool   -->
-    <Property Name="pd" type="bool" Readable="true" Writable="true"/>
+    <!-- Gain factor   Format: Qs15.16 -->
+    <Property Name="gain" type="Long" Readable="true" Writable="true"/>
+    <!-- tap values  Format: short[128]   -->
+    <Property Name="taps" type="Short" ArrayLength="128" Readable="true" Writable="true"/>
+    <!-- peakDetect  Format: IQ (16Q,16I) Qs0.15 -->
+    <Property Name="peakDetect" type="bool" Readable="true" Writable="false"/>
   </Properties>
 
   <!-- Input data and control stream -->

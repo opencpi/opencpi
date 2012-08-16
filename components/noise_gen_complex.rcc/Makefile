@@ -1,3 +1,4 @@
+
 # #####
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
@@ -33,74 +34,4 @@
 #
 ########################################################################### #
 
-ifndef OCPI_CDK_DIR
-OCPI_CDK_DIR=../ocpi
-endif
-
-Implementations = \
-	adc_unpack.rcc \
-	bias.hdl \
-	bias_ver.hdl \
-	blur.rcc \
-	canny.rcc \
-	canny_partial.rcc \
-	cic_lpfilter_complex.rcc \
-	cic_hpfilter_complex.rcc \
-	convert_s16_f32.rcc \
-	corner_eigen_vals_vecs.rcc\
-	copy.rcc \
-	dds_complex.rcc \
-	delay.hdl \
-	delay.rcc \
-	dilate.rcc \
-	dsample_complex.rcc \
-	erode.rcc \
-	fm_demod_complex.rcc \
-	framegate.hdl \
-	framegate.rcc \
-	fsk_mod_complex.rcc \
-	gaussian_blur.rcc \
-	good_features_to_track.rcc \
-	loopback.rcc \
-	min_eigen_val.rcc \
-	mixer_complex.rcc \
-	morph_mean.rcc \
-	noise_gen_complex.rcc \
-	optical_flow_pyr_lk.rcc \
-	scharr.rcc \
-	sma.hdl \
-	sobel.rcc \
-	sobel_32f.rcc \
-	split1x2.rcc \
-	splitter2x2.hdl \
-	splitter2x2.rcc \
-	sym_fir_complex.rcc \
-	sym_fir_real.rcc \
-	testmulti.rcc \
-	testzc.rcc \
-	psd.hdl \
-	ddc.hdl \
-	fft1d.ocl \
-	mmul.ocl \
-	vadd.ocl \
-	vsadd.ocl \
-	power_spectrum_1d.ocl \
-	testmulti.ocl \
-        file_read.rcc \
-        file_read_msg.rcc \
-        file_write.rcc \
-        file_write_msg.rcc \
-	bias.rcc 
-
-
-#	wbr.hdl 
-
-#HdlTargets=all
-
-ifndef OCPI_RUNTIME_HOST
-RccTargets=$(HostTarget)
-else
-RccTargets=$(OCPI_RUNTIME_HOST)
-endif
-
-include $(OCPI_CDK_DIR)/include/lib.mk
+include $(OCPI_CDK_DIR)/include/worker.mk

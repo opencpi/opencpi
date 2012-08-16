@@ -317,6 +317,8 @@ initializeContext()
     throw OU::EmbeddedException( OU::PORT_COUNT_MISMATCH,
 				 "optional port mask is invalid",
 				 OU::ApplicationRecoverable);
+
+
   if (ports) {
     RCCPortMask optional = 0;
     for (unsigned n = 0; n < m_nPorts; n++)
@@ -326,6 +328,9 @@ initializeContext()
       throw OU::Error("metadata optional ports (%x) and dispatch optional ports (%x) differ",
 		      optional, wd->optionallyConnectedPorts);
   }
+
+
+
   unsigned rc_count = 0;
   if ( wd->runCondition && wd->runCondition->portMasks )
     while (wd->runCondition->portMasks[rc_count] ) {

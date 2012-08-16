@@ -1,11 +1,14 @@
-<ComponentSpec Name="loopprod">
+<ComponentSpec Name="loopback">
+
   <Properties>
-    <Property Name="run2BufferCount" Readable="true" Writable="true"/>
-    <Property Name="buffersProcessed" Readable="true" Writable="true"/>
-    <Property Name="bytesProcessed" Readable="true" Writable="true"/>
-    <Property Name="testControlErrors" Readable="true" Writable="true"/>
-    <Property Name="testConfigErrors" eadable="true" Writable="true"/>
-    <Property Name="lastProp" eadable="true" Writable="true"/>
+    <Property Name="msgsProcessed" Readable="true" Writable="false"/>
+    <Property Name="bytesProcessed" Readable="true" Writable="false"/>
   </Properties>
-  <DataInterfaceSpec Name="Data_In_Port"/>
+
+  <!-- Input data and control stream -->
+  <DataInterfaceSpec Name="in" Producer="false"/>
+
+  <!-- Output data and control stream -->
+  <DataInterfaceSpec Name="out" Producer="true"/>
+
 </ComponentSpec>

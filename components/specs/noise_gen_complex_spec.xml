@@ -1,4 +1,4 @@
-<!-- Component spec for a FM demodulator
+<!-- Component spec for Complex noise generator
     
 When this component receives a "Sync" message it is responsible for performing whatever is 
 required to handle a discontinuity in the input data stream.  All of the control protocol
@@ -6,11 +6,11 @@ being handled at the input must be passed to the output.
 
 -->
 
-<ComponentSpec name="fm_demod_complex" >
+<ComponentSpec name="noise_gen_complex" >
 
   <Properties>
-    <!-- emitAngle : When true the output is the angle between this sample and the previous   Format: boolean  -->
-    <Property Name="emitAngle" type="bool" Readable="true" Writable="true"/>
+    <!-- mask - noise mask value Format: unsigned long   -->
+    <Property Name="mask" type="ULong" Readable="true" Writable="true"/>
   </Properties>
 
   <!-- Input data and control stream -->
@@ -20,7 +20,7 @@ being handled at the input must be passed to the output.
 
   <!-- Output data and control stream -->
   <DataInterfaceSpec Name="out" Producer="true">
-      <xi:include href="rstream_with_sync_protocol.xml"/>
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
 </ComponentSpec>

@@ -1624,6 +1624,8 @@ emitWorker(FILE *f, Worker *w)
 	fprintf(f, " minBufferCount=\"%u\"", p->u.wdi.minBufferCount);
       if (p->u.wdi.bufferSize)
 	fprintf(f, " bufferSize=\"%u\"", p->u.wdi.bufferSize);
+      if (p->u.wdi.isOptional)
+	fprintf(f, " optional=\"%u\"", p->u.wdi.isOptional);
       fprintf(f, ">\n");
       p->protocol->printXML(f, 2);
       fprintf(f, "  </port>\n");
