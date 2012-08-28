@@ -42,13 +42,16 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifdef HdlSkip
 $(call OcpiDbg, Skipping)
 else
-HdlSkelSuffix=_skel.v
-HdlDefsSuffix=_defs.vh
-HdlImplSuffix=_impl.vh
+HdlVerilogSuffix:=.v
+HdlVerilogIncSuffix:=.vh
+HdlVHDLSuffix:=.vhd
+HdlVHDLIncSuffix:=.vhd
+HdlSkelSuffix=_skel$(HdlSourceSuffix)
+HdlDefsSuffix=_defs$(HdlIncSuffix)
+HdlImplSuffix=_impl$(HdlIncSuffix)
 ifneq ($(word 2,$(Workers)),)
 $(error Only one HDL worker can be built.  Workers is: $(Workers))
 endif
-
 ifndef Core
 Core=$(Worker)
 endif
@@ -60,21 +63,39 @@ BF:=$(HdlBin)
 OBJ:=$(HdlBin)
 # We don't build independent standalone worker binaries (no artifact file here)
 ArtifactFile=
+############
+# We need to figure out the language and the file suffixes before calling www-worker
+# 
+HdlXmlFile=$(Worker).xml
+ifeq ($(realpath $(HdlXmlFile)),)
+  $(error Missing XML implementation file: $(HdlXmlFile))
+endif
+# Ugly grab of the language attribute from the XML file
+HdlLanguage=$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z)
+$(info HdlLanguage is $(HdlLanguage))
+ifeq ($(HdlLanguage),)
+HdlLanguage=verilog
+endif
+ifeq ($(HdlLanguage),verilog)
+HdlSourceSuffix:=$(HdlVerilogSuffix)
+HdlIncSuffix:=$(HdlVerilogIncSuffix)
+else
+HdlSourceSuffix:=$(HdlVHDLSuffix)
+HdlIncSuffix:=$(HdlVHDLIncSuffix)
+endif
+
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 $(call OcpiDbgVar,Worker)
-
 ################################################################################
 # Generated files: impl depends on defs, worker depends on impl
 # map the generic "IncludeDirs" into the verilog
 override VerilogIncludeDirs += $(IncludeDirs)
-ImplXmlFile=$(firstword $(ImplXmlFiles))
 DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
 $(DefsFile): $(Worker).xml | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
 	$(AT)$(OcpiGen) -d $<
 
 $(ImplHeaderFiles): $(DefsFile)
-
 
 ################################################################################
 # Include this to build the core or the library

@@ -178,10 +178,11 @@ namespace OCPI {
 	v[n]->unparse(s);
 	Value tv(m_args[n]);
 	const char *err;
-	if ((err = tv.parse(s.c_str(), NULL)))
+	if ((err = tv.parse(s.c_str(), NULL))) {
 	  fprintf(f, "error: %s (%s)\n", err, s.c_str());
-	else {
-	  fprintf(f, "ok");
+	  exit(1);
+	} else {
+	  fprintf(f, "ok\n");
 	  std::string s1;
 	  tv.unparse(s1);
 	  if (s != s1)

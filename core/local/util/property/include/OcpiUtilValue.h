@@ -102,6 +102,7 @@ namespace OCPI {
       const char *parse(const char *unparsed, const char *stop = NULL);
       const char *allocate();
       bool needsComma() const;
+      bool needsCommaDimension() const;
       bool needsCommaElement() const;
       void
 	generate(),
@@ -117,7 +118,7 @@ namespace OCPI {
         OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
       void
-	unparse(std::string &s) const,
+	unparse(std::string &s, bool append = false) const,
 	unparseElement(std::string &s, unsigned nSeq) const,
 	unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset,
 			 unsigned nItems) const,

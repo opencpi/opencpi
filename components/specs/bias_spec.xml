@@ -1,9 +1,9 @@
 <ComponentSpec Name="bias">
   <Property Name="biasValue" Readable="true" Writable="true"/>
   <DataInterfaceSpec Name="in">
-    <xi:include href="stream_protocol.xml"/>
+    <xi:include href="stream32_protocol.xml"/>
   </DataInterfaceSpec>
   <DataInterfaceSpec Name="out" Producer="true">
-    <xi:include href="stream_protocol.xml"/>
+    <xi:include href="stream32_protocol.xml"/>
   </DataInterfaceSpec>
 </ComponentSpec>

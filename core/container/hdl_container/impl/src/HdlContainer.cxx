@@ -36,13 +36,10 @@
 
 /**
   @brief
-  This file contains the implementation for the RPL container for the OC FPGA
-  Reference Platformm
-  FIXME: we need to abstract the RPL aspects from the OCRP FPGA aspects.
-  It implements the OCPI::RPL::Container class, which implements the
+  This file contains the implementation for the HDL container for FPGA
+  Platformms
+  It implements the OCPI::HDL::Container class, which implements the
   OCPI::Container::Interface class.
-  There is no separate header file for this class since its only purpose
-  is to implement the OCPI::Container::Interface and no one else will use it.
 
   Revision History:
 
@@ -50,37 +47,39 @@
     Initial version.
 
 ************************************************************************** */
-#include <climits>
-#include <unistd.h>
-#include <fcntl.h>
-#include <cassert>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+//#include <climits>
+//#include <unistd.h>
+//#include <fcntl.h>
+//#include <cassert>
 #include <errno.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <vector>
-#include <string>
-#include <cstddef>
-#include <arpa/inet.h> // FIXME: get this out of here for htons
+//#include <sys/mman.h>
+//#include <sys/stat.h>
+//#include <vector>
+//#include <string>
+//#include <cstddef>
+//#include <arpa/inet.h> // FIXME: get this out of here for htons
 #include <uuid/uuid.h>
 // FIXME: integrate this into our UUID utility properly
 #ifndef _UUID_STRING_T
 #define _UUID_STRING_T
 typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
-#include "OcpiOsMisc.h"
+//#include "OcpiOsMisc.h"
 #include "OcpiOsAssert.h"
-#include "OcpiOsEther.h"
+//#include "OcpiOsEther.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiPValue.h"
 #include "DtTransferInternal.h"
-#include "OcpiPort.h"
-#include "OcpiTransport.h"
-#include "OcpiContainerManager.h"
+//#include "OcpiPort.h"
+//#include "OcpiTransport.h"
+//#include "OcpiContainerManager.h"
 #include "OcpiWorker.h"
 #include "OcpiContainerMisc.h"
-#include "PciDriver.h"
-#include "EtherDriver.h"
+//#include "PciDriver.h"
+//#include "EtherDriver.h"
 #include "HdlOCCP.h"
 #include "HdlOCDP.h"
 #include "HdlDriver.h"
@@ -111,10 +110,8 @@ namespace OCPI {
     Container::
     Container(OCPI::HDL::Device &device, ezxml_t config, const OU::PValue *params) 
       : OC::ContainerBase<Driver,Container,Application,Artifact>(device.name().c_str(), config, params),
-	Access(device.cAccess()), m_device(device),
-	m_endpoint(DataTransfer::getManager().allocateProxyEndPoint(device.endpoint().c_str(),
-								    device.endpointSize())) {
-
+	Access(device.cAccess()), m_device(device)
+    {
       time_t bd = get32Register(admin.birthday, OccpSpace);
       char tbuf[30];
       ocpiInfo("OCFRP: %s, with bitstream birthday: %s", name().c_str(), ctime_r(&bd, tbuf));
@@ -162,7 +159,6 @@ namespace OCPI {
     Container::
     ~Container() {
       this->lock();
-      m_endpoint.release();
       delete &m_device;
     }
     bool Container::
@@ -627,10 +623,131 @@ OCPI_DATA_TYPES
       bool m_hasAdapterConfig;
       uint32_t m_adapterConfig;
       static int dumpFd;
+      DataTransfer::EndPoint *m_endPoint; // the data plane endpoint if externally connected
 
-      bool getPreferredProtocol(const char *&s) {
-	s = parent().m_container.m_endpoint.protocol.c_str();
-	return true;
+      Port(Worker &w,
+	   const OA::PValue *params,
+           const OM::Port &mPort, // the parsed port metadata
+           ezxml_t connXml, // the xml connection for this port
+           ezxml_t icwXml,  // the xml interconnect/infrastructure worker attached to this port if any
+           ezxml_t icXml,   // the xml interconnect instance attached to this port if any
+           ezxml_t adwXml,  // the xml adapter/infrastructure worker attached to this port if any
+           ezxml_t adXml,   // the xml adapter instance attached to this port if any
+	   bool argIsProvider) :
+        OC::PortBase<Worker,Port,ExternalPort>(w, mPort, argIsProvider,
+					       (1 << OCPI::RDT::Passive) |
+					       (1 << OCPI::RDT::ActiveFlowControl) |
+					       (1 << OCPI::RDT::ActiveMessage), params),
+	// The WCI will control the interconnect worker.
+	// If there is no such worker, usable will fail.
+        WciControl(w.m_container, icwXml, icXml),
+        m_connection(connXml), 
+	// Note this can be from the region descriptors
+	m_ocdpSize(m_properties.usable() ?
+		   m_properties.get32RegisterOffset(offsetof(OcdpProperties, memoryBytes)) :
+		   0),
+        m_userConnected(false),
+	m_adapter(adwXml ? new WciControl(w.m_container, adwXml, adXml) : 0),
+	m_hasAdapterConfig(false),
+	m_adapterConfig(0),
+	m_endPoint(NULL)
+      {
+	const char *err;
+	if (m_adapter && adXml &&
+	    (err = OU::EzXml::getNumber(adXml, "configure", &m_adapterConfig, &m_hasAdapterConfig, 0)))
+	  throw OU::Error("Invalid configuration value for adapter: %s", err);
+        if (!icwXml || !usable()) {
+          m_canBeExternal = false;
+          return;
+        }
+        m_canBeExternal = true;
+	Device &device = w.parent().parent().hdlDevice();
+	// Create an endpoint for the external port.
+	// We have an endpoint-per-external-port to allow the FPGA implementation of each port
+	// to share no state with other ports.  Someday this might not be the right choice,
+	// especially when different DPs share an external memory port.
+	// But it is possible to have both PCI and Ether ports and this requires it.
+	m_endPoint =
+	  &DataTransfer::getManager().allocateProxyEndPoint(device.endpointSpecific().c_str(),
+							    device.endpointSize());
+	OD::Transport::fillDescriptorFromEndPoint(*m_endPoint, getData().data);
+	// This should be the region address from admin, using the 0x1c region register
+	// The region addresses are offsets in BAR1 at this point
+        uint32_t myOcdpOffset = OC::getAttrNum(icXml, "ocdpOffset"); // FIXME
+        // These will be determined at connection time
+        myDesc.dataBufferPitch   = 0;
+        myDesc.metaDataBaseAddr  = 0;
+        // Fixed values not set later in startConnect
+        myDesc.fullFlagSize      = 4;
+        myDesc.fullFlagPitch     = 0;
+        myDesc.fullFlagValue     = 1; // will be a count of buffers made full someday?
+        myDesc.emptyFlagSize     = 4;
+        myDesc.emptyFlagPitch    = 0;
+        myDesc.emptyFlagValue    = 1; // Will be a count of buffers made empty
+        myDesc.metaDataPitch     = sizeof(OcdpMetadata);
+	// This is the offset within the overall endpoint of our data buffers
+        myDesc.dataBufferBaseAddr = device.dAccess().physOffset(myOcdpOffset);
+
+        if (isProvider()) {
+          // CONSUMER
+          // BasicPort does this: getData().data.type = OCPI::RDT::ConsumerDescT;
+          // The flag is in the OCDP's register space.
+          // "full" is the flag telling me (the consumer) a buffer has become full
+          // Mode dependent usage:
+          // *Passive/ActiveFlowCtl: producer hits this after writing/filling local buffer
+          //  (thus it is a "local buffer is full")
+          // *Active Message: producer hits this when remote buffer is ready to pull
+          //  (thus it is a "remote buffer is full")
+          // This register is for WRITING.
+          myDesc.fullFlagBaseAddr =
+	    m_properties.physOffset(offsetof(OcdpProperties, nRemoteDone));
+          // The nReady register is the empty flag, which tells the producer how many
+          // empty buffers there are to fill when consumer is in PASSIVE MODE
+          // Other modes it is not used.
+          // This register is for READING (in passive mode)
+          myDesc.emptyFlagBaseAddr =
+	    m_properties.physOffset(offsetof(OcdpProperties, nReady));
+        } else {
+          // BasicPort does this: getData().data.type = OCPI::RDT::ProducerDescT;
+          // The flag is in the OCDP's register space.
+          // "empty" is the flag telling me (the producer) a buffer has become empty
+          // Mode dependent usage:
+          // *Passive/ActiveFlowCtl: consumer hits this after making a local buffer empty
+          //  (thus it is a "local buffer is empty")
+          // *ActiveMessage: consumer hits this after making a remote buffer empty
+          // (thus it is a "remote buffer is empty")
+          // This register is for writing.
+          myDesc.emptyFlagBaseAddr = 
+	    m_properties.physOffset(offsetof(OcdpProperties, nRemoteDone));
+          // The nReady register is the full flag, which tells the consumer how many
+          // full buffers there are to read/take when producer is PASSIVE
+          // This register is for READING (in passive mode)
+          myDesc.fullFlagBaseAddr = 
+	    m_properties.physOffset(offsetof(OcdpProperties, nReady));
+        }
+        userDataBaseAddr = device.dAccess().registers() + myOcdpOffset;
+        const char *df = getenv("OCPI_DUMP_PORTS");
+        if (df) {
+          if (dumpFd < 0)
+            ocpiCheck((dumpFd = creat(df, 0666)) >= 0);
+          OC::PortData *pd = this;
+          ocpiCheck(::write(dumpFd, (void *)pd, sizeof(*pd)) == sizeof(*pd));
+        }
+#if 0
+        if (getenv("OCPI_OCFRP_DUMMY"))
+          *(uint32_t*)&m_ocdpRegisters->foodFace = 0xf00dface;
+#endif
+	// Allow default connect params on port construction prior to connect
+	applyConnectParams(NULL, params);
+      }
+    public: // for parent/child...
+      ~Port() {
+	if (m_endPoint)
+	  m_endPoint->release();
+      }
+    private:
+      const char *getPreferredProtocol() {
+	return parent().m_container.hdlDevice().protocol();
       }
       void setMode( ConnectionMode ){};
       void disconnect()
@@ -712,118 +829,7 @@ OCPI_DATA_TYPES
         }
       }
 #endif
-      Port(Worker &w,
-	   const OA::PValue *params,
-           const OM::Port &mPort, // the parsed port metadata
-           ezxml_t connXml, // the xml connection for this port
-           ezxml_t icwXml,  // the xml interconnect/infrastructure worker attached to this port if any
-           ezxml_t icXml,   // the xml interconnect instance attached to this port if any
-           ezxml_t adwXml,  // the xml adapter/infrastructure worker attached to this port if any
-           ezxml_t adXml,   // the xml adapter instance attached to this port if any
-	   bool argIsProvider) :
-        OC::PortBase<Worker,Port,ExternalPort>(w, mPort, argIsProvider,
-					       (1 << OCPI::RDT::Passive) |
-					       (1 << OCPI::RDT::ActiveFlowControl) |
-					       (1 << OCPI::RDT::ActiveMessage), params),
-	// The WCI will control the interconnect worker.
-        WciControl(w.m_container, icwXml, icXml),
-        m_connection(connXml), 
-	// Note this can be from the region descriptors
-	m_ocdpSize(m_properties.usable() ?
-		   m_properties.get32RegisterOffset(offsetof(OcdpProperties, memoryBytes)) :
-		   0),
-        m_userConnected(false),
-	m_adapter(adwXml ? new WciControl(w.m_container, adwXml, adXml) : 0),
-	m_hasAdapterConfig(false),
-	m_adapterConfig(0)
-      {
-	const char *err;
-	if (m_adapter && adXml &&
-	    (err = OU::EzXml::getNumber(adXml, "configure", &m_adapterConfig, &m_hasAdapterConfig, 0)))
-	  throw OU::Error("Invalid configuration value for adapter: %s", err);
-        if (!usable()) {
-          m_canBeExternal = false;
-          return;
-        }
-        m_canBeExternal = true;
-	// This should be the region address from admin, using the 0x1c region register
-	// The region addresses are offsets in BAR1 at this point
-        uint32_t myOcdpOffset = OC::getAttrNum(icXml, "ocdpOffset"); // FIXME
-        // These will be determined at connection time
-        myDesc.dataBufferPitch   = 0;
-        myDesc.metaDataBaseAddr  = 0;
-        // Fixed values not set later in startConnect
-        myDesc.fullFlagSize      = 4;
-        myDesc.fullFlagPitch     = 0;
-        myDesc.fullFlagValue     = 1; // will be a count of buffers made full someday?
-        myDesc.emptyFlagSize     = 4;
-        myDesc.emptyFlagPitch    = 0;
-        myDesc.emptyFlagValue    = 1; // Will be a count of buffers made empty
-        myDesc.metaDataPitch     = sizeof(OcdpMetadata);
-	// This is the offset within the overall endpoint of our data buffers
-        myDesc.dataBufferBaseAddr = w.m_container.hdlDevice().dAccess().physOffset(myOcdpOffset);
 
-#ifdef PORT_COMPLETE
-        myDesc.oob.pid = (uint64_t)(OC::Port *)this;
-        myDesc.oob.cid = 0;
-#endif
-
-	// FIXME: note that the last three fields in every endpoint are generic and should be
-	// put into the descriptor...
-        strncpy(myDesc.oob.oep, w.m_container.m_endpoint.end_point.c_str(), sizeof(myDesc.oob.oep));
-
-        if (isProvider()) {
-          // CONSUMER
-          // BasicPort does this: getData().data.type = OCPI::RDT::ConsumerDescT;
-          // The flag is in the OCDP's register space.
-          // "full" is the flag telling me (the consumer) a buffer has become full
-          // Mode dependent usage:
-          // *Passive/ActiveFlowCtl: producer hits this after writing/filling local buffer
-          //  (thus it is a "local buffer is full")
-          // *Active Message: producer hits this when remote buffer is ready to pull
-          //  (thus it is a "remote buffer is full")
-          // This register is for WRITING.
-          myDesc.fullFlagBaseAddr =
-	    m_properties.physOffset(offsetof(OcdpProperties, nRemoteDone));
-          // The nReady register is the empty flag, which tells the producer how many
-          // empty buffers there are to fill when consumer is in PASSIVE MODE
-          // Other modes it is not used.
-          // This register is for READING (in passive mode)
-          myDesc.emptyFlagBaseAddr =
-	    m_properties.physOffset(offsetof(OcdpProperties, nReady));
-        } else {
-          // BasicPort does this: getData().data.type = OCPI::RDT::ProducerDescT;
-          // The flag is in the OCDP's register space.
-          // "empty" is the flag telling me (the producer) a buffer has become empty
-          // Mode dependent usage:
-          // *Passive/ActiveFlowCtl: consumer hits this after making a local buffer empty
-          //  (thus it is a "local buffer is empty")
-          // *ActiveMessage: consumer hits this after making a remote buffer empty
-          // (thus it is a "remote buffer is empty")
-          // This register is for writing.
-          myDesc.emptyFlagBaseAddr = 
-	    m_properties.physOffset(offsetof(OcdpProperties, nRemoteDone));
-          // The nReady register is the full flag, which tells the consumer how many
-          // full buffers there are to read/take when producer is PASSIVE
-          // This register is for READING (in passive mode)
-          myDesc.fullFlagBaseAddr = 
-	    m_properties.physOffset(offsetof(OcdpProperties, nReady));
-        }
-        userDataBaseAddr = w.m_container.hdlDevice().dAccess().registers() + myOcdpOffset;
-        const char *df = getenv("OCPI_DUMP_PORTS");
-        if (df) {
-          if (dumpFd < 0)
-            ocpiCheck((dumpFd = creat(df, 0666)) >= 0);
-          OC::PortData *pd = this;
-          ocpiCheck(::write(dumpFd, (void *)pd, sizeof(*pd)) == sizeof(*pd));
-        }
-#if 0
-        if (getenv("OCPI_OCFRP_DUMMY"))
-          *(uint32_t*)&m_ocdpRegisters->foodFace = 0xf00dface;
-#endif
-	// Allow default connect params on port construction prior to connect
-	applyConnectParams(NULL, params);
-      }
       // All the info is in.  Do final work to (locally) establish the connection
       const OCPI::RDT::Descriptors *
       finishConnect(const OCPI::RDT::Descriptors &other,
@@ -837,6 +843,8 @@ OCPI_DATA_TYPES
 				    m_ocdpSize - myDesc.nBuffers * OCDP_METADATA_SIZE);
         OcdpRole myOcdpRole;
         OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole)getData().data.role;
+	
+#if 0
         // FIXME - can't we avoid string processing here?
         unsigned busId;
         uint64_t busAddress, busSize;
@@ -845,16 +853,18 @@ OCPI_DATA_TYPES
                    (long long unsigned *)&busSize) != 3)
           throw OC::ApiError("other port's endpoint description wrong: \"",
                              other.desc.oob.oep, "\"", NULL);
-        ocpiDebug("finishConnection: base = %lld, offset = %lld, RFB = %lld",  (long long)busAddress,
-		  (long long)(isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr ),
-		  (long long)(busAddress +
-			      (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr )) );
+#endif
+        ocpiDebug("finishConnection: base = %" PRIu64 ", offset = %" PRIu64 ", RFB = %" PRIu64 "",
+		  other.desc.oob.address,
+		  isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr,
+		  other.desc.oob.address +
+		  (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr));
 	ocpiDebug("Other ep = %s\n", other.desc.oob.oep );
         switch (myRole) {
 	  uint64_t addr;
         case OCPI::RDT::ActiveFlowControl:
           myOcdpRole = OCDP_ACTIVE_FLOWCONTROL;
-	  addr = busAddress + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+	  addr = other.desc.oob.address + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
           m_properties.set32Register(remoteFlagBase, OcdpProperties, addr);
 	  m_properties.set32Register(remoteFlagHi, OcdpProperties, addr > 32);
           m_properties.set32Register(remoteFlagPitch, OcdpProperties,
@@ -863,10 +873,10 @@ OCPI_DATA_TYPES
           break;
         case OCPI::RDT::ActiveMessage:
           myOcdpRole = OCDP_ACTIVE_MESSAGE;
-	  addr = busAddress + other.desc.dataBufferBaseAddr;
+	  addr = other.desc.oob.address + other.desc.dataBufferBaseAddr;
           m_properties.set32Register(remoteBufferBase, OcdpProperties, addr);
 	  m_properties.set32Register(remoteBufferHi, OcdpProperties, addr >> 32);
-	  addr = busAddress + other.desc.metaDataBaseAddr;
+	  addr = other.desc.oob.address + other.desc.metaDataBaseAddr;
 	  m_properties.set32Register(remoteMetadataBase, OcdpProperties, addr);
 	  m_properties.set32Register(remoteMetadataHi, OcdpProperties, addr >> 32);
           if ( isProvider()) {
@@ -882,7 +892,7 @@ OCPI_DATA_TYPES
 #else
           m_properties.set32Register(remoteMetadataSize, OcdpProperties, other.desc.metaDataPitch);
 #endif
-          addr = busAddress + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+          addr = other.desc.oob.address + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
           m_properties.set32Register(remoteFlagBase, OcdpProperties, addr);
           m_properties.set32Register(remoteFlagHi, OcdpProperties, addr >> 32);
           m_properties.set32Register(remoteFlagPitch, OcdpProperties, 

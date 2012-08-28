@@ -226,8 +226,7 @@ SmemServices* OCPI::DataTransport::Port::getRealShemServices()
  * Finalize the port - called when the roles are finally established and won't change any more
  * The return value is the resulting descriptor which is either "mine" or "flow"
  *********************************/
-const OCPI::RDT::Descriptors *
-Port::
+const OCPI::RDT::Descriptors * Port::
 finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCPI::RDT::Descriptors *flow )
 {
   const OCPI::RDT::Descriptors *result = &mine;
@@ -1137,10 +1136,10 @@ void
 Port::
 createOutputOffsets()
 {
-  OCPI::OS::uint64_t boffset, moffset, soffset, coffset;
-  OCPI::OS::uint32_t rc;
+  uint32_t boffset, moffset, soffset, coffset;
+  int rc;
   bool local=false;
-  OCPI::OS::uint32_t index;
+  uint32_t index;
   unsigned int bCount = m_data->m_portSetMd->bufferCount;
 
   // The allocation of buffer may be delayed if the circuit definition is not complete
@@ -1175,7 +1174,7 @@ createOutputOffsets()
       m_data->m_bufferData[index].outputOffsets.bufferOffset = boffset+(index*m_data->m_portSetMd->bufferLength);
       m_data->m_bufferData[index].outputOffsets.bufferSize =  m_data->m_portSetMd->bufferLength;
     }
-    ocpiDebug("Port %p bmd %p count %d boffset %" PRIx64, this, m_data->m_bufferData,
+    ocpiDebug("Port %p bmd %p count %d boffset %" PRIx32, this, m_data->m_bufferData,
 	      bCount, boffset);
     ocpiDebug("Port::createOutputOffsets2: port %p bmd %p offset 0x%" PRIx64,
 	      this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
@@ -1233,7 +1232,7 @@ void
 Port::
 createInputOffsets() 
 {
-    OCPI::OS::uint64_t boffset, moffset, soffset;
+    uint32_t boffset, moffset, soffset;
     int rc;
     bool local=false;
     ResourceServices* res_mgr;
@@ -1268,7 +1267,7 @@ createInputOffsets()
         m_data->m_bufferData[index].inputOffsets.bufferSize = m_data->m_portSetMd->bufferLength;
       }
                 
-      ocpiDebug("***Input buffer offset = 0x%" PRIx64 "", boffset );
+      ocpiDebug("***Input buffer offset = 0x%" PRIx32 "", boffset );
                 
       // Allocate the meta-data structure
       rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount, 

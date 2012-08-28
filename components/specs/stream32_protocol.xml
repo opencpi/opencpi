@@ -1,0 +1,9 @@
+<!-- The protocol that comes from an ADC -->
+<Protocol>
+  <Operation Name="data">
+    <Argument Name="data" Type="ULong" SequenceLength="0"/>
+  </Operation>
+</Protocol>
+
+<!-- <ProtocolSummary DataValueWidth="8" MaxMessageValues="16380" NumberOfOpcodes="256" -->
+<!-- 		 VariableMessageLength="true" ZeroLengthMessages="true"/> -->

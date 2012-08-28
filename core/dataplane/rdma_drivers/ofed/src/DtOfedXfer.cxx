@@ -228,7 +228,7 @@ namespace DataTransfer {
 
       OCPI::OS::int32_t attach ( DataTransfer::EndPoint* ){return 0;};
       OCPI::OS::int32_t detach (){return 0;}
-      void* map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t/* size */)
+      void* map (uint32_t offset, uint32_t/* size */)
       {
 	// Local memory, just pass back the pointer
 	return &m_mem[offset];

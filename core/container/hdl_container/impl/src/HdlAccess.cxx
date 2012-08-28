@@ -91,8 +91,8 @@ namespace OCPI {
 	*to8++ = *from8++, bytes--;
     }
     Device::
-    Device(std::string &name)
-      : m_name(name) {
+    Device(std::string &name, const char *protocol)
+      : m_name(name), m_protocol(protocol) {
     }
     Device::
     ~Device() {}

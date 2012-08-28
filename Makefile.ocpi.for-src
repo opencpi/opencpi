@@ -82,6 +82,11 @@ CDEPENDS = $(patsubst %.c,%.d,$(CSOURCES))
 CXXDEPENDS = $(patsubst %.cxx,%.d,$(CXXSOURCES))
 CPPDEPENDS = $(patsubst %.cpp,%.d,$(CPPSOURCES))
 
+# For mains in normal (non-bin) src dir
+ifneq ($(wildcard *_main.c*),)
+include $(OCPI_BASE_DIR)/Makefile.ocpi.sub-bin
+endif
+
 #
 # Rules
 #
@@ -94,9 +99,9 @@ objdir:
 depends: $(CDEPENDS) $(CXXDEPENDS) $(CPPDEPENDS)
 #generated: depends
 objects: generated objdir $(OBJECTS)
-clean: cleanup
+clean:: cleanup
 	-rm -f $(OBJECTS)
-distclean: distcleanup
+distclean:: distcleanup
 	-rm -f $(OBJECTS)
 
 #

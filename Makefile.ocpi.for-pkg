@@ -152,7 +152,7 @@ lib: objects
 		$(MAKE) -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-pkg $(SYSTEMOPTION) $(PACKAGELIB) ; \
 	fi
 
-FILTEROBJS=$(foreach o,$1,$(if $(foreach x,$(foreach f,$2,$(findstring $f,$(notdir $o))),$x),,$o))
+FILTEROBJS=$(foreach o,$(filter-out %_main.obj,$1),$(if $(foreach x,$(foreach f,$2,$(findstring $f,$(notdir $o))),$x),,$o))
 ifneq ($(filter linux darwin,$(OCPI_OS)),)
 $(UNIXLIB): $(OBJECTS)
 	-rm -f $@
@@ -240,7 +240,7 @@ objects: generated
 	      OBJDIR=../$(OCPI_OUT_DIR) $(SYSTEMOPTION) $@ ; \
 	  else \
 	    $(MAKE) $(call DescendMake1,src) -f $(DescendFile1)/Makefile.ocpi.for-src \
-	      OBJDIR=../$(OCPI_OUT_DIR) $(SYSTEMOPTION) $@ ; \
+	      OBJDIR=../$(OCPI_OUT_DIR) $(SYSTEMOPTION) all ; \
 	  fi; \
 	else \
 	  for facility in $(FACILITIES) ; do \
@@ -248,14 +248,14 @@ objects: generated
 	      if test -f $$facility/idl/Makefile.ocpi ; then \
 		$(MAKE) $(call DescendMake2,$$facility/idl) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 	      else \
-		$(MAKE) $(call DescendMake2,$$facility/idl) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+		$(MAKE) $(call DescendMake2,$$facility/idl) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) all ; \
 	      fi ; \
 	    fi; \
 	    if test -d $$facility/src ; then \
 	      if test -f $$facility/src/Makefile.ocpi ; then \
 		$(MAKE) $(call DescendMake2,$$facility/src) -f Makefile.ocpi $(SYSTEMOPTION) $@ ; \
 	      else \
-		$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) $@ ; \
+		$(MAKE) $(call DescendMake2,$$facility/src) -f $(DescendFile2)/Makefile.ocpi.for-src $(SYSTEMOPTION) all ; \
 	      fi ; \
 	    fi; \
 	   done; \

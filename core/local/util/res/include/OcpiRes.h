@@ -32,22 +32,24 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef OCPI_RES_H
+#define OCPI_RES_H
 #include <OcpiOsDataTypes.h>
 #include <cstdlib>
 #include <memory>
 
 namespace OCPI {
   namespace Util {
-    typedef OCPI::OS::uint64_t ResAddrType;
+    typedef uint32_t ResAddrType;
     struct ResPool;
     class MemBlockMgr
     {
     public:
-      MemBlockMgr(ResAddrType start, OCPI::OS::uint64_t size)
+      MemBlockMgr(ResAddrType start, OCPI::OS::uint32_t size)
         throw( std::bad_alloc );
       ~MemBlockMgr()
         throw();
-      int alloc( OCPI::OS::uint64_t nbytes, unsigned int alignment, ResAddrType& req_addr)
+      int alloc(uint32_t nbytes, unsigned int alignment, ResAddrType& req_addr)
         throw( std::bad_alloc );
       int free(ResAddrType  addr )
         throw( std::bad_alloc );
@@ -59,10 +61,4 @@ namespace OCPI {
     };
   }
 }
-
-
-
-
-
-
-
+#endif

@@ -195,10 +195,11 @@ namespace OCPI {
 	  // Protocol on both sides of the connection
 	  OU::Protocol &p0 = *ap0, &p1 = *ap1;
 	  if (p0.m_name.size()  && p1.m_name.size() && p0.m_name != p1.m_name)
-	    throw OU::Error("Protocols (ports \"%s\" protocol \%s\" vs. port \"%s\" protocol \"%s\") "
-			    "in connection are incompatible",
-			    ap0->m_name.c_str(), p0.m_name.c_str(),
-			    ap1->m_name.c_str(), p1.m_name.c_str());
+	    throw OU::Error("Protocols in connection are incompatible: "
+			    "port \"%s\" of instance \"%s\" has protocol \%s\" vs. "
+			    "port \"%s\" of instance \"%s\" has protocol \"%s\"",
+			    ap0->m_name.c_str(), m_instances[c.m_ports[0].m_instance].m_name.c_str(), p0.m_name.c_str(),
+			    ap1->m_name.c_str(), m_instances[c.m_ports[1].m_instance].m_name.c_str(), p1.m_name.c_str());
 	  
 	  // FIXME:  more robust naming, namespacing, UUIDs, hash etc.
 	    

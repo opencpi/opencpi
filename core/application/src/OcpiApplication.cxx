@@ -33,6 +33,7 @@
  */
 #include "OcpiOsMisc.h"
 #include "OcpiUtilValue.h"
+#include "OcpiPValue.h"
 #include "OcpiApplication.h"
 
 namespace OC = OCPI::Container;
@@ -161,39 +162,18 @@ namespace OCPI {
       }
     }
 
-    void 
-    ApplicationI::
-    setPolicy( const PValue * policy ) {
-      std::string pname;
-      int pcount;
-      if ( ! policy ) {
-	if (  m_assembly.policy.name.length() ) {
-	  pname = m_assembly.policy.name;
-	  pcount = m_assembly.policy.nprocs;
-	}
-	else {
-	  return;
-	}
-      }
-      else {
-	pname = policy->name;
-	pcount = policy->vLong;
-      }
-      if ( pname =="MaxProcessors" ) {
-	if ( pcount > 0 ) {
-	  m_cMapPolicy = MaxProcessors;
-	  m_processors = pcount;
-	}
-	else {  // Really just a RR policy
-	  m_cMapPolicy = RoundRobin;
-	  m_processors = 0;	    
-	}
-      }
-      else if (  pname == "MinProcessors" ) {
+    // Possible override the original policy in the xml
+    void ApplicationI::
+    setPolicy(const PValue *params) {
+      uint32_t pcount;
+      bool rr;
+      if (OU::findULong(params, "MaxProcessors", pcount)) {
+	m_cMapPolicy = MaxProcessors;
+	m_processors = pcount;
+      } else if (OU::findULong(params, "MinProcessors", pcount)) {
 	m_cMapPolicy = MinProcessors;
 	m_processors = pcount;
-      }
-      else if ( pname == "RoundRobin" ) {
+      } else if (OU::findBool(params, "RoundRobin", rr) && rr) {
 	m_cMapPolicy = RoundRobin;
 	m_processors = 0;
       }

@@ -103,7 +103,8 @@ static const unsigned
   WORKER = 1,
   DEVICE = 2,
   INTERFACE = 4,
-  SUDO = 8;
+  SUDO = 8,
+  DISCOVERY = 16;
 struct Command {
   const char *name;
   Function *func;
@@ -113,16 +114,16 @@ struct Command {
   { "bram", bram, 0 },
   { "deltatime", deltatime, DEVICE},
   { "dump", 0, 0 },
-  { "emulate", emulate, SUDO|INTERFACE },
+  { "emulate", emulate, SUDO | INTERFACE },
   { "ethers", ethers, INTERFACE},
-  { "probe", probe, DEVICE },
+  { "probe", probe, SUDO | DEVICE | DISCOVERY},
   { "radmin", radmin, DEVICE },
   { "receiveData", receiveData, INTERFACE},
-  { "receiveRDMA", receiveRDMA, DEVICE},
+  { "receiveRDMA", receiveRDMA, 0}, // might want device depending on args
   { "reset", reset, DEVICE },
-  { "search", search, SUDO|INTERFACE},
+  { "search", search, SUDO | INTERFACE | DISCOVERY},
   { "sendData", sendData, INTERFACE},
-  { "sendRDMA", sendRDMA, DEVICE},
+  { "sendRDMA", sendRDMA, 0},  // might want device depending on args
   { "settime", settime, DEVICE},
   { "testdma", testdma, 0},
   { "unbram", unbram, 0},
@@ -208,9 +209,24 @@ bad(const char *fmt, ...) {
   exit(1);
 }
 
+static void setupDevice(bool discovery) {
+  if (!device)
+    bad("a device option is required with this command");
+  
+  driver = &OCPI::HDL::Driver::getSingleton();
+  std::string error;
+  if (!(dev = driver->open(device, discovery, error)))
+    bad("error opening device %s", device);
+  cAccess = &dev->cAccess();
+  dAccess = &dev->dAccess();
+  name = dev->name();
+  endpoint = dev->endpointSpecific();
+}
+
 int
 main(int argc, const char **argv)
 {
+  OC::Manager::getSingleton().suppressDiscovery();
   const char *argv0 = strrchr(argv[0], '/');
   if (argv0)
     argv0++;
@@ -252,8 +268,8 @@ main(int argc, const char **argv)
       interface = ap[0][2] ? &ap[0][2] : *++ap;
       break;
     case 'd':
-      if (!(exact->options & DEVICE))
-	bad("An interface cannot be specified with this command");
+      //      if (!(exact->options & DEVICE))
+      //	bad("An interface cannot be specified with this command");
       device = ap[0][2] ? &ap[0][2] : *++ap;
       break;
     case 'p':
@@ -280,17 +296,7 @@ main(int argc, const char **argv)
     if (exact->options & DEVICE) {
       if (!device)
 	device = *ap++;
-      if (!device)
-	bad("a device option is required with this command");
-
-      driver = &OCPI::HDL::Driver::getSingleton();
-      std::string error;
-      if (!(dev = driver->open(device, error)))
-	bad("error opening device %s", device);
-      cAccess = &dev->cAccess();
-      dAccess = &dev->dAccess();
-      name = dev->name();
-      endpoint = dev->endpoint();
+      setupDevice((exact->options & DISCOVERY) != 0);
     }
     if (exact->options & WORKER) {
       if (!*ap)
@@ -339,6 +345,9 @@ static void probe(const char **) {
   driver->print(name.c_str(), *cAccess);
 }
 
+static const char *ops[] =
+  { "initialize", "start", "stop", "release", "test", "before", "after", "reserved7", 0};
+
 static void emulate(const char **) {
   OE::IfScanner ifs(error);
   if (error.size())
@@ -351,7 +360,7 @@ static void emulate(const char **) {
       if (error.size())
 	bad("Failed to open slave socket");
       OE::Packet rFrame, sFrame;
-      char cadmin[sizeof(OH::OccpAdminRegisters)];
+      static char cadmin[sizeof(OH::OccpSpace)];
       memset(cadmin, 0, sizeof(cadmin));
       OH::OccpAdminRegisters &admin = *(OH::OccpAdminRegisters *)cadmin;
 #define unconst32(a) (*(uint32_t *)&(a))
@@ -403,19 +412,20 @@ static void emulate(const char **) {
 	  bool sent;
 	  HE::EtherControlHeader &ech_in =  *(HE::EtherControlHeader *)(rFrame.payload);
 	  HE::EtherControlMessageType type = OCCP_ETHER_MESSAGE_TYPE(ech_in.typeEtc);
-	  printf("Received ether control packet type %u, length 0x%x ntohs 0x%x tag %d from %s\n",
-		 type, ech_in.length, ntohs(ech_in.length), ech_in.tag, from.pretty());
 	  unsigned uncache = OCCP_ETHER_UNCACHED(ech_in.typeEtc) ? 1 : 0;
 	  OE::Packet &out = uncache ? rFrame : sFrame;
 	  HE::EtherControlHeader *echp = (HE::EtherControlHeader *)out.payload;
+	  HE::EtherControlRead &ecr =  *(HE::EtherControlRead *)(rFrame.payload);
+	  uint32_t offset = ntohl(ecr.address); // for read or write
+	  HE::EtherControlWrite &ecw =  *(HE::EtherControlWrite *)(rFrame.payload);
+	  printf("Received type %u, length 0x%x ntohs 0x%x tag %3d from %s, offset 0x%8" PRIx32
+		 ", data 0x%8" PRIx32 "\n",
+		 type, ech_in.length, ntohs(ech_in.length), ech_in.tag, from.pretty(), offset,
+		 ntohl(ecw.data));
 	  switch (type) {
 	  case HE::OCCP_READ:
 	  case HE::OCCP_WRITE:
 	    if (uncache || !haveTag || ech_in.tag != ech_out.tag || from != to) {
-	      HE::EtherControlRead &ecr =  *(HE::EtherControlRead *)(rFrame.payload);
-	      uint32_t offset = ntohl(ecr.address); // for read or write
-	      if (offset >= sizeof(admin))
-		bad("Received offset out of range: %u (0x%x)", offset, offset);
 	      if (!uncache) {
 		to = from;
 		haveTag = true;
@@ -425,11 +435,62 @@ static void emulate(const char **) {
 		ocpiAssert(ntohs(ech_in.length) == sizeof(ecr)-2);
 		HE::EtherControlReadResponse &ecrr =  *(HE::EtherControlReadResponse *)(echp);
 		ecrr.data = htonl(*(uint32_t *)&cadmin[offset]);
+		if (offset > sizeof(cadmin)) {
+		  ocpiDebug("Read offset out of range: 0x%" PRIx32 ", returning 0\n", offset);
+		  ecrr.data = 0;
+		} else if (offset >= offsetof(OH::OccpSpace, config)) {
+		  unsigned
+		    worker = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
+		    woffset = (offset - offsetof(OH::OccpSpace, config)) % OCCP_WORKER_CONFIG_SIZE;
+		  printf("Worker %2d config read 0x%x\n", worker, woffset);
+		  if (worker == 13 && woffset == 0x4c)
+		    ecrr.data = htonl(0x8000);
+		} else if (offset >= offsetof(OH::OccpSpace, worker)) {
+		  unsigned
+		    worker = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
+		    woffset = (offset - offsetof(OH::OccpSpace, worker)) % sizeof(OH::OccpWorker);
+		  if (woffset < offsetof(OH::OccpWorkerRegisters, control)) {
+		    printf("Worker %2d control operation read: %s\n", worker, ops[woffset/sizeof(uint32_t)]);
+		    ecrr.data = htonl(OCCP_SUCCESS_RESULT);
+		  } else
+		    printf("Worker %2d register read: %s\n", worker, 
+			   woffset == offsetof(OH::OccpWorkerRegisters, control) ? "control" :
+			   woffset == offsetof(OH::OccpWorkerRegisters, window) ? "window" :
+			   woffset == offsetof(OH::OccpWorkerRegisters, clearError) ? "clearError" :
+			   woffset == offsetof(OH::OccpWorkerRegisters, lastConfig) ? "lastConfig" :
+			   "unknown");
+		}
 		echp->length = htons(sizeof(ecrr)-2);
 	      } else {
 		HE::EtherControlWrite &ecw =  *(HE::EtherControlWrite *)(rFrame.payload);
 		ocpiAssert(ntohs(ech_in.length) == sizeof(ecw)-2);
-		*(uint32_t *)&cadmin[offset] = ntohl(ecw.data);
+		uint32_t data = ntohl(ecw.data);
+		if (offset > sizeof(cadmin)) {
+		  ocpiDebug("Write offset out of range: 0x%" PRIx32 "\n", offset);
+		} else if (offset > offsetof(OH::OccpSpace, config)) {
+		  unsigned
+		    worker = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
+		    woffset = (offset - offsetof(OH::OccpSpace, config)) % OCCP_WORKER_CONFIG_SIZE;
+		  printf("Worker %2d config write 0x%x: 0x%" PRIx32 "\n", worker, woffset, data);
+		  *(uint32_t *)&cadmin[offset] = data;
+		} else if (offset > offsetof(OH::OccpSpace, worker)) {
+		  unsigned
+		    worker = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
+		    woffset = (offset - offsetof(OH::OccpSpace, worker)) % sizeof(OH::OccpWorker);
+		  if (woffset < offsetof(OH::OccpWorkerRegisters, control)) {
+		    printf("Worker %2d control operation write???: %s\n",
+			   worker, ops[woffset/sizeof(uint32_t)]);
+		  } else {
+		    printf("Worker %2d register write of 0x%" PRIx32 " to %s\n", worker, data,
+			   woffset == offsetof(OH::OccpWorkerRegisters, control) ? "control" :
+			   woffset == offsetof(OH::OccpWorkerRegisters, window) ? "window" :
+			   woffset == offsetof(OH::OccpWorkerRegisters, clearError) ? "clearError" :
+			   woffset == offsetof(OH::OccpWorkerRegisters, lastConfig) ? "lastConfig" :
+			   "unknown");
+		    *(uint32_t *)&cadmin[offset] = data;
+		  }
+		} else
+		  *(uint32_t *)&cadmin[offset] = data;
 		HE::EtherControlWriteResponse &ecwr =  *(HE::EtherControlWriteResponse *)(echp);
 		echp->length = htons(sizeof(ecwr)-2);
 	      }
@@ -864,9 +925,6 @@ deltatime(const char **) {
 #endif
 							      ));
 }
-static const char *ops[] =
-  { "initialize", "start", "stop", "release", "test", "before", "after", "reserved7", 0};
-
 static void
 wdump(const char **) {
   printf("Worker %u on device %s\n", worker, device);
@@ -911,10 +969,15 @@ wreset(const char **) {
   printf("Worker %u on device %s: reset asserted, was %s\n", 
 	 worker, device, (i & OCCP_WORKER_CONTROL_ENABLE) ? "deasserted" : "already asserted");
 }
+static int
+wwunreset(OH::Access &w) {
+  uint32_t i = w.get32Register(control, OH::OccpWorkerRegisters);
+  w.set32Register(control, OH::OccpWorkerRegisters, i  | OCCP_WORKER_CONTROL_ENABLE);
+  return i;
+}
 static void
 wunreset(const char **) {
-  uint32_t i = wAccess.get32Register(control, OH::OccpWorkerRegisters);
-  wAccess.set32Register(control, OH::OccpWorkerRegisters, i | OCCP_WORKER_CONTROL_ENABLE);
+  uint32_t i = wwunreset(wAccess);
   printf("Worker %u on device %s: reset deasserted, was %s\n", 
 	 worker, device, (i & OCCP_WORKER_CONTROL_ENABLE) ? "already deasserted" : "asserted");
 }
@@ -924,7 +987,9 @@ static uint32_t
 wwop(OH::Access &w, const char *op) {
   for (unsigned i = 0; ops[i]; i++) 
     if (!strcasecmp(ops[i], op)) {
-      return w.get32RegisterOffset(offsetof(OH::OccpWorkerRegisters, initialize) +
+      ocpiDebug("Worker control op: %s, %d offset %lx", op, i,
+		offsetof(OH::OccpWorkerRegisters, initialize) + i * sizeof(uint32_t));
+     return w.get32RegisterOffset(offsetof(OH::OccpWorkerRegisters, initialize) +
 				   i * sizeof(uint32_t));
     }
   bad("Unknown control operation: `%s'", op);
@@ -1067,6 +1132,8 @@ receiveData(const char **/*ap*/) {
 #define GEN_WORKER 5
 static void
 receiveRDMA(const char **ap) {
+  if (!*ap)
+    setupDevice(false);
   std::string file;
   OD::TransportGlobal &global(OC::Manager::getTransportGlobal());
   OD::Transport transport(&global, false);
@@ -1103,7 +1170,6 @@ receiveRDMA(const char **ap) {
   OH::Access
     edpAccess, edpConfAccess, smaAccess, smaConfAccess, gbeAccess, gbeConfAccess,
     genAccess, genConfAccess;
-  uint16_t outputMailBox;
   if (*ap) {
     // If we are exchanging descriptors, write it out to the given file with ".in" suffix
     // Pause (getchar), and then read in the output descriptor from the other side.
@@ -1137,6 +1203,18 @@ receiveRDMA(const char **ap) {
     cAccess->offsetRegisters(gbeConfAccess, (intptr_t)(&((OH::OccpSpace*)0)->config[GBE_WORKER]));
     cAccess->offsetRegisters(genAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[GEN_WORKER]));
     cAccess->offsetRegisters(genConfAccess, (intptr_t)(&((OH::OccpSpace*)0)->config[GEN_WORKER]));
+    wwreset(edpAccess);
+    wwreset(smaAccess);
+    wwreset(gbeAccess);
+    wwreset(genAccess);
+    wwunreset(edpAccess);
+    wwunreset(smaAccess);
+    wwunreset(gbeAccess);
+    wwunreset(genAccess);
+    ocpiCheck(wwop(edpAccess, "initialize") == OCCP_SUCCESS_RESULT);
+    ocpiCheck(wwop(smaAccess, "initialize") == OCCP_SUCCESS_RESULT);
+    ocpiCheck(wwop(gbeAccess, "initialize") == OCCP_SUCCESS_RESULT);
+    ocpiCheck(wwop(genAccess, "initialize") == OCCP_SUCCESS_RESULT);
     // 2. Synthesize the output descriptor
     theOutputDesc.type = OD::ProducerDescT;
     theOutputDesc.role = OD::ActiveMessage;
@@ -1163,8 +1241,7 @@ receiveRDMA(const char **ap) {
     uint32_t outputEndPointSize = edpConfAccess.get32Register(memoryBytes, OH::OcdpProperties);
     OX::EndPoint &outputEndPoint =
       OX::getManager().allocateProxyEndPoint(outputString.c_str(), outputEndPointSize);
-    memcpy(theOutputDesc.desc.oob.oep, outputEndPoint.end_point.c_str(), sizeof(theOutputDesc.desc.oob.oep));
-    outputMailBox = outputEndPoint.mailbox;
+    OD::Transport::fillDescriptorFromEndPoint(outputEndPoint, theOutputDesc);
   }
   // Finalizing the input port takes: role, type flow, emptyflagbase, size, pitch, value
   // This makes the input port ready to data from the output port
@@ -1174,22 +1251,20 @@ receiveRDMA(const char **ap) {
     // If it is hardware we setup and start the workers now
     // We aren't passing descriptors, but programming the hardware and
     // synthesizing the output descriptor
-    wwreset(edpAccess);
-    wwreset(smaAccess);
-    wwreset(gbeAccess);
-    wwreset(genAccess);
-    ocpiCheck(wwop(edpAccess, "initialize") == OCCP_SUCCESS_RESULT);
-    ocpiCheck(wwop(smaAccess, "initialize") == OCCP_SUCCESS_RESULT);
-    ocpiCheck(wwop(gbeAccess, "initialize") == OCCP_SUCCESS_RESULT);
-    ocpiCheck(wwop(genAccess, "initialize") == OCCP_SUCCESS_RESULT);
 
     // Configure the 4 workers, upstream to downstream:
     // 1. The message generator set up to send 10 messages of 16 bytes each.
     struct Generator {
-      uint32_t enable, wrapCount, messagesSent, dataSent, messagesToSend, status;
+      uint32_t
+        enable,         // 0x00
+	wrapCount,      // 0x04
+	messagesSent,   // 0x08
+	dataSent,       // 0x0c
+	messagesToSend, // 0x10
+	status;         // 0x14
     };
     genAccess.set32Register(window, OH::OccpWorkerRegisters, 0);     // for normal config
-    genConfAccess.set32Register(enable, Generator, 1);
+    //    genConfAccess.set32Register(enable, Generator, 1);
     genConfAccess.set32Register(wrapCount, Generator, 1);
     genConfAccess.set32Register(messagesToSend, Generator, 10);
     genAccess.set32Register(window, OH::OccpWorkerRegisters, 0x400); // setup for metadata
@@ -1200,17 +1275,13 @@ receiveRDMA(const char **ap) {
     genConfAccess.set32RegisterOffset(4, 2);
     genConfAccess.set32RegisterOffset(8, 3);
     genConfAccess.set32RegisterOffset(0xc, 4);
+    genAccess.set32Register(window, OH::OccpWorkerRegisters, 0);     // for normal config
     // 2. The SMA adapter converting from WSI to WMI
     smaConfAccess.set32RegisterOffset(0, 2); // WSI to WMI
     // 3. The EDP, set up to perform datagram RDMA
-    // Retrieve the mailbox id from the local input endpoint since it isn't in the descriptor
-    // and we need it to program the EDP
-    char dummy[sizeof(myInputDesc.desc.oob.oep)];
-    uint16_t inputMailBox, maxBox;
-    uint32_t inputEndPointSize;
-    OX::EndPoint::getResourceValuesFromString(myInputDesc.desc.oob.oep,
-					      dummy, &inputMailBox, &maxBox, &inputEndPointSize);
     // Tell the output side about the input side, as determined by createInputPort
+    edpConfAccess.set32Register(control, OH::OcdpProperties,
+				OCDP_CONTROL(OCDP_CONTROL_PRODUCER, OH::OCDP_ACTIVE_MESSAGE));
     edpConfAccess.set32Register(nRemoteBuffers, OH::OcdpProperties, myInputDesc.desc.nBuffers);
     edpConfAccess.set32Register(remoteBufferBase, OH::OcdpProperties, myInputDesc.desc.dataBufferBaseAddr);
     edpConfAccess.set32Register(remoteMetadataBase, OH::OcdpProperties, myInputDesc.desc.metaDataBaseAddr);
@@ -1220,7 +1291,7 @@ receiveRDMA(const char **ap) {
     edpConfAccess.set32Register(remoteFlagPitch, OH::OcdpProperties, myInputDesc.desc.fullFlagPitch);
     // Program the source/destination ids for remote DMA
     edpConfAccess.set32Register(remoteBufferHi, OH::OcdpProperties,
-				inputMailBox | (outputMailBox << 16));
+				myInputDesc.desc.oob.mailBox | (theOutputDesc.desc.oob.mailBox << 16));
     // Program the local part of the output side - how data is placed in local buffers
     edpConfAccess.set32Register(nLocalBuffers, OH::OcdpProperties, theOutputDesc.desc.nBuffers);
     edpConfAccess.set32Register(localBufferSize, OH::OcdpProperties, theOutputDesc.desc.dataBufferPitch);
@@ -1244,6 +1315,7 @@ receiveRDMA(const char **ap) {
     ocpiCheck(wwop(edpAccess, "start") == OCCP_SUCCESS_RESULT);
     ocpiCheck(wwop(smaAccess, "start") == OCCP_SUCCESS_RESULT);
     ocpiCheck(wwop(genAccess, "start") == OCCP_SUCCESS_RESULT);
+    genConfAccess.set32Register(enable, Generator, 1);
   }
   for (unsigned n = 0; n < 10; n++) {
     uint8_t opCode;
@@ -1269,6 +1341,8 @@ receiveRDMA(const char **ap) {
 // Receive an RDMA stream using a datagram transport
 static void
 sendRDMA(const char **ap) {
+  if (!*ap)
+    setupDevice(false);
   std::string file;
   OD::TransportGlobal &global(OC::Manager::getTransportGlobal());
   OD::Transport transport(&global, false);

@@ -240,7 +240,7 @@ namespace OCPI {
 	if (defValue) {
 	  m_defaultValue = new Value(*this);
 	  if ((err = m_defaultValue->parse(defValue)))
-	    return esprintf("for member %s:", m_name.c_str());
+	    return esprintf("for member %s: %s", m_name.c_str(), err);
 	}
       }
       return 0;
@@ -264,12 +264,6 @@ namespace OCPI {
 	for (unsigned n = 0; n < m_arrayRank; n++)
 	  fprintf(f, "%s%u", n ? "," : "", m_arrayDimensions[n]);
 	fprintf(f, "\"");
-      }
-      if (m_defaultValue) {
-
-	std::string val;
-	m_defaultValue->unparse(val);
-	fprintf(f, " default=\"%s\"", val.c_str());
       }
       if (m_nEnums) {
 	fprintf(f, " enums=\"");

@@ -61,7 +61,13 @@ public:
   // This makes it obvious when we are recursing.
   unsigned beginSequence(OU::Member &m) {
     nextItem(m, true);
-    return m_v ? m_v->m_nElements : 0;
+#if 0
+    if (m_v) {
+      return m_v->m_nElements;
+    } else
+      return 0;
+#endif
+        return m_v ? m_v->m_nElements : 0;
   }
   void beginStruct(OU::Member &m) {
     nextItem(m, false);
@@ -204,13 +210,37 @@ public:
 	   p.data, nBytes);
   }
 };
-void dataTypeTest(unsigned count) {
+void dataTypeTest(const char *arg) {
+  unsigned count;
+  OU::Protocol pp, *ppp;
+  if (isdigit(*arg)) {
+    count = atoi(arg);
+    ppp = NULL;
+  } else {
+    char buf[10000];
+    int fd = open(arg, O_RDONLY);
+    if (fd < 0) {
+      fprintf(stderr, "Can't open %s\n", arg);
+      return;
+    }
+    ssize_t nread = read(fd, buf, sizeof(buf));
+    if (nread <= 0 || nread >= (ssize_t)sizeof(buf)) {
+      fprintf(stderr, "Can't read file: %s\n", arg);
+      return;
+    }
+    buf[nread] = 0;
+    pp.parse(buf);
+    ppp = &pp;
+    count = 1;
+  }
   for (unsigned n = 0; n < count; n++) {
-    OU::Protocol p;
-    p.generate("test");
+    OU::Protocol genp;
+    OU::Protocol &p = ppp ? *ppp : genp;
+    if (!ppp)
+      p.generate("test");
     p.printXML(stdout);
     OU::Value **v;
-    uint8_t opcode;
+    uint8_t opcode = 0;
     p.generateOperation(opcode, v);
     p.printOperation(stdout, opcode, v);
     p.testOperation(stdout, opcode, v);

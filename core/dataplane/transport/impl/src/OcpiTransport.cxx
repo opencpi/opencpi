@@ -346,7 +346,7 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
     // into our local smb buffer.  Then later we can transfer it to the server side when we
     // find out where the server's protocol buffer is.  We will do that when the server asks us
     // for our output flow control offsets.
-    uint64_t protocolOffset;
+    uint32_t protocolOffset;
     uint32_t protocolSize = strlen(protocol) + 1;
     mb->request.reqNewConnection.protocol_size = protocolSize;
     if (s_res->sMemResourceMgr->alloc(protocolSize, 0, &protocolOffset))
@@ -460,6 +460,18 @@ createCircuit( DataTransfer::EndPoint *ep, OCPI::RDT::Descriptors& desc )
   return createCircuit(NULL, new ConnectionMetaData( ep, desc ));
 }
 #endif
+// There could be a shared sub-structure here...
+void
+OCPI::DataTransport::Transport::
+fillDescriptorFromEndPoint(EndPoint &ep, OCPI::RDT::Descriptors &desc) {
+  strcpy(desc.desc.oob.oep, ep.end_point.c_str());
+  desc.desc.oob.address = ep.address;
+  desc.desc.oob.size = ep.size;
+  desc.desc.oob.mailBox = ep.mailbox;
+  desc.desc.oob.maxCount = ep.maxCount;
+}
+
+
 // Create an output given a descriptor from a remote input port
 // Also returning a flowcontrol descriptor to give to that remote port
 OCPI::DataTransport::Port * 
@@ -471,7 +483,7 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
   // create a local endpoint that is compatible with the remote.
   // It will throw an exception if it isn't workable
   EndPoint &oep = getLocalCompatibleEndpoint(inputDesc.desc.oob.oep);
-  strcpy(outputDesc.desc.oob.oep, oep.end_point.c_str());
+  fillDescriptorFromEndPoint(oep, outputDesc);
   // Ensure that the input port endpoint is registered
   EndPoint &iep = addRemoteEndPoint(inputDesc.desc.oob.oep);
   if (outputDesc.desc.dataBufferSize > inputDesc.desc.dataBufferSize)
@@ -491,7 +503,8 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
 		 OCPI::DataTransport::Port &inputPort )
 {
   // With an inside connection, the endpoints are the same
-  strcpy(outputDesc.desc.oob.oep, inputPort.getEndpoint()->end_point.c_str());
+  EndPoint &iep = *inputPort.getEndpoint();
+  fillDescriptorFromEndPoint(iep, outputDesc);
   if (outputDesc.desc.dataBufferSize > inputPort.getMetaData()->m_descriptor.desc.dataBufferSize) {
     ocpiDebug("Forcing output buffer size to %u from input size %u on local connection",
 	   inputPort.getMetaData()->m_descriptor.desc.dataBufferSize,
@@ -508,8 +521,9 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
 
 OCPI::DataTransport::Port * 
 OCPI::DataTransport::Transport::
-createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc, const OU::PValue *params )
+createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
 {
+  Circuit *circuit = 0;
   // First, process params to establish the right endpoint
   DataTransfer::EndPoint *ep;
   const char *endpoint = NULL, *protocol = NULL;
@@ -525,8 +539,9 @@ createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc, const OU::PV
   strcpy(desc.desc.oob.oep, ep->end_point.c_str());
   
   int ord=-1;
-  OCPI::DataTransport::Port * dtPort=NULL;  
+  OCPI::DataTransport::Port * port=NULL;  
   
+#if 0
   // For sake of efficiency we make sure to re-use the circuits that relate 
   // to the same connecton
   if ( circuit  ) {
@@ -548,10 +563,12 @@ createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc, const OU::PV
     else {
       psmd = circuit->getInputPortSet(0)->getPsMetaData();
     }
-    dtPort = circuit->addPort( new OCPI::DataTransport::PortMetaData( ord, *ep, desc, psmd) );
-    circuit->updatePort( dtPort );
+    port = circuit->addPort( new OCPI::DataTransport::PortMetaData( ord, *ep, desc, psmd) );
+    circuit->updatePort( port );
   }
-  else {
+  else
+#endif
+ {
 
     // Create the port meta-data
     ConnectionMetaData* cmd = new ConnectionMetaData(NULL,
@@ -562,12 +579,18 @@ createInputPort( Circuit * &circuit,  OCPI::RDT::Descriptors& desc, const OU::PV
     circuit = createCircuit(NULL ,cmd);
 
     OCPI::DataTransport::PortSet* ps = circuit->getInputPortSet(0);
-    dtPort = ps->getPortFromOrdinal(ord);    
+    port = ps->getPortFromOrdinal(ord);    
   }
 
-  return dtPort;
+  circuit->attach(); // FIXME: why wouldn't port creation do the attach?
+  // Merge port descriptor info between what was passed in and what is determined here.
+  port->getPortDescriptor(desc, NULL);
+ // Make sure the port's descriptor is consistent
+  //port->getMetaData()->m_descriptor = desc;
+  return port;
 }
 
+#if 0
 OCPI::DataTransport::Port * 
 OCPI::DataTransport::Transport::
 createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
@@ -581,6 +604,7 @@ createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
   //port->getMetaData()->m_descriptor = desc;
   return port;
 }
+#endif
 
 OCPI::DataTransport::Circuit* 
 OCPI::DataTransport::Transport::
@@ -864,7 +888,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
               // Create the new circuit on request from the other side (client)
 	      // If the client has protocol info for us, allocate local smb space for it, so it can
 	      // copy it to me when I tell it where to put it in the request for output control offsets;
-	      uint64_t protocolOffset = 0;
+	      uint32_t protocolOffset = 0;
 	      uint32_t protocolSize = comms->mailBox[n].request.reqNewConnection.protocol_size;
 	      if (protocolSize) {
 		// Allocate local space

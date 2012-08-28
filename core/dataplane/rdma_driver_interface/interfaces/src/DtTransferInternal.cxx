@@ -94,6 +94,7 @@ getNextMailBox()
     }
     mb_once = true;
   }
+  ocpiDebug("Transfer factory %p returning mailbox %u", this, mailbox);
   return mailbox++;
 }
 
@@ -368,12 +369,12 @@ void XferFactoryManager::shutdown()
 // We need to create an endpoint for some other (hardware) container.
 // The string should not include the last two fields.
   EndPoint& XferFactoryManager::
-  allocateProxyEndPoint(const char *loc, uint64_t size) {
+  allocateProxyEndPoint(const char *loc, uint32_t size) {
     XferFactory* tfactory = find(loc);
     if (!tfactory)
       throw OU::Error("No driver/factory for endpoint string: '%s'", loc);
     std::string complete;
-    OU::formatString(complete, "%s;%" PRIx64 ".%u.%u",
+    OU::formatString(complete, "%s;%" PRIu32 ".%u.%u",
 		     loc, size, tfactory->getNextMailBox(), tfactory->getMaxMailBox());
     return *tfactory->getEndPoint(complete.c_str(), false, true);
   }
@@ -645,7 +646,7 @@ createSMBResources(
 
   sr->sMemResourceMgr = CreateResourceServices();
   sr->sMemResourceMgr->createLocal( loc->size );
-  uint64_t offset;
+  uint32_t offset;
   uint32_t size = sizeof(ContainerComms); // variable some day?
   if ( sr->sMemResourceMgr->alloc( size, 0, &offset) != 0 ) {
     throw OU::EmbeddedException(  NO_MORE_SMB, loc->end_point.c_str() );

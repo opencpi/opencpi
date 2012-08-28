@@ -130,17 +130,19 @@ namespace OCPI {
       std::string m_name;
       // This is the protocol-specific part of the endpoint.
     protected:
+      std::string m_protocol;
       std::string m_endpointSpecific;
       Access m_cAccess;
       Access m_dAccess;
       uint64_t m_endpointSize;
-      Device(std::string &name);
+      Device(std::string &name, const char *protocol);
     public:
       virtual ~Device();
+      inline const char *protocol() const { return m_protocol.c_str(); }
       inline const std::string &name() const { return m_name; }
       inline Access &cAccess() { return m_cAccess; };
       inline Access &dAccess() { return m_dAccess; };
-      inline std::string &endpoint() { return m_endpointSpecific; }
+      inline std::string &endpointSpecific() { return m_endpointSpecific; }
       inline uint64_t endpointSize() { return m_endpointSize; }
     };
     

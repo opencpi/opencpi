@@ -76,14 +76,15 @@ namespace DataTransfer {
     uint16_t             mailbox;      // endpoint mailbox
     uint16_t             maxCount;     // Number of mailboxes in communication domain
     uint32_t             size;         // Size of endpoint area in bytes
+    uint64_t             address;      // Address of endpoint in its address space (usually 0)
     uint32_t             event_id;     
     bool                 local;        // local endpoint
     SMBResources*        resources;    // SMB resources associated with this endpoint
     XferFactory*         factory;
     unsigned             refCount;
     EndPoint( std::string& ep, OCPI::OS::uint32_t size=0, bool local=false);
-    EndPoint& operator=(EndPoint&);
-    EndPoint& operator=(EndPoint*);
+    //    EndPoint& operator=(EndPoint&);
+    //    EndPoint& operator=(EndPoint*);
     void    release();
     virtual ~EndPoint();
 
@@ -150,7 +151,7 @@ namespace DataTransfer {
      *                Returns address if success, NULL on error and sets platform dependent exception
      *
      */
-    virtual void* map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size ) = 0;
+    virtual void* map (uint32_t offset, uint32_t size ) = 0;
 
     /*
      * Unmap the current mapped view.
@@ -159,7 +160,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual OCPI::OS::int32_t unMap () = 0;
+    virtual int32_t unMap () = 0;
 
     /*
      *        GetEndPoint - Returns the endpoint of the shared memory area

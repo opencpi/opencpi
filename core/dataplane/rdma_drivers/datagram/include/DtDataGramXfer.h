@@ -194,7 +194,7 @@ namespace DataTransfer {
       };
       OCPI::OS::int32_t attach (EndPoint* loc){ ( void ) loc; return 0;};
       OCPI::OS::int32_t detach (){return 0;}
-      void* map (uint64_t offset, uint32_t/* size */)
+      void* map (uint32_t offset, uint32_t/* size */)
       {
 	return &m_mem[offset];
       }
@@ -379,6 +379,7 @@ namespace DataTransfer {
       std::vector<FrameRecord> m_frameSeqRecord;
       std::vector<MsgTransactionRecord> m_msgTransactionRecord;
       uint64_t m_last_ack_send;
+      unsigned m_frames_in_play;
     };
 }
 #endif

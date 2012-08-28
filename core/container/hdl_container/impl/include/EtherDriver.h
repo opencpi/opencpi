@@ -66,18 +66,20 @@ namespace OCPI {
 	Sockets m_sockets;
 	// Find the discovery socket for this interface
 	OCPI::OS::Ether::Socket *
-	findSocket(OCPI::OS::Ether::Interface &ifc, std::string &error);
+	findSocket(OCPI::OS::Ether::Interface &ifc, bool discovery, std::string &error);
 	// Try to find one or more devices on this interface
+	// mac is NULL for broadcast
+	// discovery is false only if mac is true
 	unsigned 
 	tryIface(OCPI::OS::Ether::Interface &ifc, OCPI::OS::Ether::Address *mac, const char **exclude,
-		 Device **dev, std::string &error);
+		 Device **dev, bool discovery, std::string &error);
       protected:
 	virtual ~Driver();
       public:
 	unsigned
 	search(const OCPI::Util::PValue *props, const char **exclude, std::string &error);
 	OCPI::HDL::Device *
-	open(const char *etherName, std::string &err);
+	open(const char *etherName, bool discovery, std::string &err);
 	// callback when found
 	virtual bool found(OCPI::HDL::Device &dev, std::string &error) = 0;
       };

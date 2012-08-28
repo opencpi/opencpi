@@ -56,7 +56,7 @@ namespace OCPI {
       }
     }
     unsigned Manager::cleanupPosition() { return 1; }
-   // Get the singleton ManagerManager, possibly constructing it.
+    // Get the singleton ManagerManager, possibly constructing it.
     ManagerManager *ManagerManager::getManagerManager() {
       return &Singleton<ManagerManager>::getSingleton();
     }
@@ -102,13 +102,19 @@ namespace OCPI {
 	}
 	// Now perform the configuration process, where managers and their children can do
 	// things they would not do earlier, at static construction time.
-	for (Manager *m = firstChild(); m; m = m->nextChild())
+	ocpiDebug("Configuring the driver managers");
+	for (Manager *m = firstChild(); m; m = m->nextChild()) {
+	  ocpiDebug("Configuring the %s manager", m->name().c_str());
 	  m->configure(x ? ezxml_cchild(x, m->name().c_str()) : NULL);
+	}
 	// The discovery happens in a second pass to make sure everything is configured before
 	// anything is discovered so that one driver's discovery can depend on another type of
 	// driver's configuration.
 	for (Manager *m = firstChild(); m; m = m->nextChild())
-	  m->discover();
+	  if (m->shouldDiscover()) {
+	    ocpiDebug("Performing discovery for the %s manager", m->name().c_str());
+	    m->discover();
+	  }
       }
     }
     // Cleanup all managers

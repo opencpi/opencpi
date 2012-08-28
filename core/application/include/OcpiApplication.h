@@ -103,7 +103,7 @@ namespace OCPI {
       OCPI::Container::Worker *m_doneWorker;
       OCPI::Container::ExternalPort **m_externalPorts;
       const char **m_externalNames;
-      void init(const OCPI::API::PValue * policy);
+      void init(const OCPI::API::PValue *params);
 
       enum CMapPolicy {
 	RoundRobin,
@@ -114,7 +114,7 @@ namespace OCPI {
       unsigned   m_processors;
       unsigned m_currConn;
       void policyMap( Instance * i, CMap & bestMap, CMap & allMap );
-      void setPolicy( const OCPI::API::PValue * policy );
+      void setPolicy(const OCPI::API::PValue *params);
       Property &findProperty(const char * worker_inst_name, const char * prop_name);
     public:
       explicit ApplicationI(const char *file, const OCPI::API::PValue * policy=NULL);

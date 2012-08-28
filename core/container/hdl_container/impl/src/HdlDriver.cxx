@@ -69,9 +69,8 @@ namespace OCPI {
 	     name, tbuf, tbuf1, platform, device, textUUID);
     }
 
-    // return true on ok.  caller must close to release resources.
     OCPI::HDL::Device *Driver::
-    open(const char *which, std::string &err) {
+    open(const char *which, bool discovery, std::string &err) {
       lock();
       bool pci = false;
       if (!strncasecmp("PCI:", which, 4)) {
@@ -80,14 +79,14 @@ namespace OCPI {
       } else if (!strncasecmp("Ether:", which, 6)) {
 	which += 6;
       } else {
-	unsigned n;
+	unsigned n = 0;
 	for (const char *cp = strchr(which, ':'); cp; n++, cp = strchr(cp+1, ':'))
 	  ;
 	if (n != 5)
 	  pci = true;
       }
-      Device *dev = pci ? PCI::Driver::open(which, err) : Ether::Driver::open(which, err);
-      if (checkAdmin(dev->name(), dev->cAccess(), err))
+      Device *dev = pci ? PCI::Driver::open(which, err) : Ether::Driver::open(which, discovery, err);
+      if (dev && checkAdmin(dev->name(), dev->cAccess(), err))
 	return dev;
       delete dev;
       return NULL;
@@ -135,7 +134,7 @@ namespace OCPI {
     probeContainer(const char *which, const OA::PValue *params) {
       std::string error;
       Device *dev;
-      if ((dev = open(which, error))) {
+      if ((dev = open(which, false, error))) {
 	const char *name = dev->name().c_str();
 	ezxml_t config = getDeviceConfig(name);
 	if (!config)

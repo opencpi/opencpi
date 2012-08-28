@@ -92,9 +92,6 @@ namespace DataTransfer {
         char*              p_virt_addr;
 
         int bus_id;
-        OCPI::OS::uint64_t bus_offset;
-        OCPI::OS::uint64_t map_size;
-
   };
 
 
@@ -116,7 +113,7 @@ namespace DataTransfer {
     OCPI::OS::int32_t detach ();
 
     // Map a view of the shared memory area at some offset/size and return the virtual address.
-    void* map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size );
+    void* map (uint32_t offset, uint32_t size );
 
     // Unmap the current mapped view.
     OCPI::OS::int32_t unMap ();

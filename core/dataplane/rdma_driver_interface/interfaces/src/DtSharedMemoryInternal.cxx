@@ -77,7 +77,7 @@ SmemServices::
 }
 
 EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
-  :smem(0),mailbox(0),maxCount(0),size(psize),local(l),resources(0),factory(NULL),refCount(0)
+  :smem(0),mailbox(0),maxCount(0),size(psize),address(0),local(l),resources(0),factory(NULL),refCount(0)
 {
   if ( ! size ) {
     size = XferFactoryManager::getFactoryManager().getSMBSize();
@@ -86,7 +86,8 @@ EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
 }
 
 EndPoint::~EndPoint() {
-  factory->removeEndPoint(*this);
+  if (factory)
+    factory->removeEndPoint(*this);
 }
 
 void EndPoint::release() {
@@ -203,7 +204,7 @@ class ResourceServicesImpl : public DataTransfer::ResourceServices
 {
 public:
   // Create a local resource pool
-  OCPI::OS::int32_t createLocal (OCPI::OS::uint32_t size)
+  int createLocal (uint32_t size)
   {
     (void)terminate ();
     try {
@@ -216,22 +217,20 @@ public:
   }
 
   // Allocate from pool
-  OCPI::OS::int32_t alloc (OCPI::OS::uint32_t nbytes, OCPI::OS::uint32_t alignment, OCPI::OS::uint64_t* addr_p)
+  int alloc (uint32_t nbytes, unsigned alignment, OCPI::Util::ResAddrType* addr_p)
   {
-    int  retval;
-    retval = m_pool->alloc ( nbytes, alignment, *addr_p );
-    return retval;
+    return m_pool->alloc ( nbytes, alignment, *addr_p );
   }
 
   // Free back to pool
-  OCPI::OS::int32_t free (OCPI::OS::uint32_t addr, OCPI::OS::uint32_t nbytes)
+  int free (uint32_t addr, uint32_t nbytes)
   {
     ( void ) nbytes;
     return m_pool->free ( addr );
   }
 
   // Destroy resource pool
-  OCPI::OS::int32_t destroy ()
+  int destroy ()
   {
     terminate ();
     return 0;

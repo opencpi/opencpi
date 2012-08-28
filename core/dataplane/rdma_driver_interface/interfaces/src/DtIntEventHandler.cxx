@@ -144,7 +144,7 @@ void DataTransfer::EventManager::consumeEvents()
 }
 
 // Get the next available event
-bool DataTransfer::EventManager::getNextEvent( int& id, OCPI::OS::uint64_t &value )
+bool DataTransfer::EventManager::getNextEvent( int& id, uint64_t &value )
 {
   ocpiAssert( m_eventHandler );
   if ( m_eventHandler->getPendingEvent(id,value) == DataTransfer::EventSuccess ) {
@@ -171,13 +171,13 @@ DataTransfer::ReturnStatus
 DataTransfer::EventManager::waitForEvent( int timeout_us )
 {
   int id;
-  OCPI::OS::uint64_t value;
+  uint64_t value;
   return waitForEvent( timeout_us, id, value );
 }
 
 
 DataTransfer::ReturnStatus 
-DataTransfer::EventManager::waitForEvent( int timeout_us, int& id, OCPI::OS::uint64_t &value )
+DataTransfer::EventManager::waitForEvent( int timeout_us, int& id, uint64_t &value )
 {
   ocpiAssert( m_eventHandler );  
 

@@ -63,7 +63,7 @@ namespace OCPI {
 	int m_fd;
 	friend class Driver;
 	Device(std::string &name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1)
-	  : OCPI::HDL::Device(name), m_bar0(bar0), m_bar1(bar1),
+	  : OCPI::HDL::Device(name, "ocpi-pci-pio"), m_bar0(bar0), m_bar1(bar1),
 	    m_bar0size(pci.size0), m_bar1size(pci.size1), m_fd(fd) {
 	  uint64_t endpointPaddr, controlOffset, bufferOffset;
 	  if (pci.bar0 < pci.bar1) {

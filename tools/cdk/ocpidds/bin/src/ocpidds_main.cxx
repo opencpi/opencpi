@@ -43,7 +43,7 @@
 int
 main(int argc, char **argv) {
   const char *outDir = 0, *structName = 0;
-  unsigned doTest = 0;
+  const char *doTest = NULL;
   bool
     doProto = false, doIDL = false;
   if (argc <= 1) {
@@ -77,7 +77,7 @@ main(int argc, char **argv) {
 	structName = *++ap;
 	break;
       case 't':
-	doTest = atoi(*++ap);
+	doTest = *++ap;
 	break;
       case 'M':
 	depFile = *++ap;

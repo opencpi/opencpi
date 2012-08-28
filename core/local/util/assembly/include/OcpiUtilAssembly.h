@@ -104,9 +104,12 @@ namespace OCPI {
 	PValueList m_parameters;
 	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
       };
-      struct Policy {
-	std::string name;
-	int         nprocs;
+      // Potentially specified in the assembly, what policy should be used
+      // to spread workers to containers?
+      enum CMapPolicy {
+	RoundRobin,
+	MinProcessors,
+	MaxProcessors
       };
     private:
       ezxml_t m_xml;
@@ -114,11 +117,12 @@ namespace OCPI {
       const char *parse();
     public:
       static unsigned s_count;
-      Policy policy;
       std::string m_name;
       int m_doneInstance; // -1 for none
       std::vector<Instance> m_instances;
       std::vector<Connection> m_connections;
+      CMapPolicy m_cMapPolicy;
+      uint32_t   m_processors;
       // Provide a file name.
       explicit Assembly(const char *file);
       // Provide a string containing the xml

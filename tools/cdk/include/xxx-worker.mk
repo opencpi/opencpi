@@ -78,18 +78,25 @@ $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : %.xml | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@
 	$(AT)$(OcpiGen) -i  $<
 
-skeleton: $(SkelFiles)
+skeleton:  $(ImplHeaderFiles) $(SkelFiles)
 
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : %.xml | $(GeneratedDir)
 	$(AT)echo Generating the implementation skeleton file: $@
 	$(AT)$(OcpiGen) -s $<
 endif
 IncludeDirs:=$(OCPI_CDK_DIR)/include/$(Model) $(GeneratedDir) $(IncludeDirs)
+ifeq ($(origin XmlIncludeDirsInternal),undefined)
+ifeq ($(origin XmlIncludeDirs),undefined)
+ifneq ($(wildcard ../specs),)
+XmlIncludeDirsInternal=../specs
+endif
+endif
+endif
 override XmlIncludeDirs+=. $(XmlIncludeDirsInternal)
 -include $(GeneratedDir)/*.deps
 -include $(TargetDir)/*.deps
 
-clean::
+clean:: cleanfirst
 	$(AT)rm -r -f $(GeneratedDir) $(TargetDir)
 
 ################################################################################
@@ -224,7 +231,7 @@ endif # LibDir to export into
 ################################################################################
 # Cleanup.  Tricky/careful removal of skeletons that were copied up into the 
 #           directory.
-clean::
+cleanfirst::
 	$(AT)for s in $(AuthoredSourceFiles); do \
 	   sk=$(GeneratedDir)/`echo $$s | sed s~$(SourceSuffix)$$~$(SkelSuffix)~`; \
 	   if test -e $$s -a -e $$sk; then \
@@ -236,3 +243,4 @@ clean::
 	      fi; \
 	    fi; \
 	done
+

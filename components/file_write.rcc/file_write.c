@@ -53,7 +53,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  File_writeProperties *props = self->properties;
  MyState *s = self->memories[0];
 
-  printf("In file_write.c got data = %s\n", port->current.data);
+ // printf("In file_write.c got %u data = %x\n", port->input.length, *(uint32_t *)port->current.data);
 
  (void)timedOut;(void)newRunCondition;
  if (port->input.length) {

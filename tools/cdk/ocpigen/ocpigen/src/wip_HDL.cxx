@@ -32,6 +32,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -156,6 +158,243 @@ const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master
 }
 
 
+void
+emitPortDescription(Port *p, Worker *w, FILE *f) {
+  bool mIn = p->masterIn();
+  char *nbuf;
+  asprintf(&nbuf, " %d", p->count);
+  const char *comment = w->language == VHDL ? "  --" : "//";
+  fprintf(f,
+	  "\n  %s The%s %s %sinterface%s named \"%s\", with \"%s\" acting as OCP %s:\n",
+	  comment, p->count > 1 ? nbuf : "", wipNames[p->type],
+	  p->type == WMIPort || p->type == WSIPort ?
+	  (p->u.wdi.isProducer ? "producer " : "consumer ") : "",
+	  p->count > 1 ? "s" : "", p->name, w->implName, mIn ? "slave" : "master");
+  fprintf(f, "  %s WIP attributes for this %s interface are:\n", comment, wipNames[p->type]);
+  if (p->clockPort)
+    fprintf(f, "  %s   Clock: uses the clock from interface named \"%s\"\n", comment,
+	    p->clockPort->name);
+  else if (p->myClock)
+    fprintf(f, "  %s   Clock: this interface has its own clock, named \"%s\"\n", comment,
+	    p->clock->signal);
+  else
+    fprintf(f, "  %s   Clock: this interface uses the worker's clock named \"%s\"\n", comment,
+	    p->clock->signal);
+  switch (p->type) {
+  case WCIPort:
+    fprintf(f, "  %s   SizeOfConfigSpace: %llu (0x%llx)\n", comment,
+	    (unsigned long long)w->ctl.sizeOfConfigSpace,
+	    (unsigned long long)w->ctl.sizeOfConfigSpace);
+    fprintf(f, "  %s   WritableConfigProperties: %s\n",
+	    comment, BOOL(w->ctl.writableConfigProperties));
+    fprintf(f, "  %s   ReadableConfigProperties: %s\n",
+	    comment, BOOL(w->ctl.readableConfigProperties));
+    fprintf(f, "  %s   Sub32BitConfigProperties: %s\n",
+	    comment, BOOL(w->ctl.sub32BitConfigProperties));
+    fprintf(f, "  %s   ControlOperations (in addition to the required \"start\"): ",
+	    comment);
+    {
+      bool first = true;
+      for (unsigned op = 0; op < NoOp; op++, first = false)
+	if (op != ControlOpStart &&
+	    w->ctl.controlOps & (1 << op))
+	  fprintf(f, "%s%s", first ? "" : ",", controlOperations[op]);
+    }
+    fprintf(f, "\n");
+    fprintf(f, "  %s   ResetWhileSuspended: %s\n",
+	    comment, BOOL(p->u.wci.resetWhileSuspended));
+    break;
+  case WSIPort:
+  case WMIPort:
+    // Do common WDI attributes first
+    fprintf(f, "  %s   Protocol: \"%s\"\n", comment, p->protocol->name().c_str());
+    fprintf(f, "  %s   DataValueWidth: %u\n", comment, p->protocol->m_dataValueWidth);
+    fprintf(f, "  %s   DataValueGranularity: %u\n", comment, p->protocol->m_dataValueGranularity);
+    fprintf(f, "  %s   DiverseDataSizes: %s\n", comment, BOOL(p->protocol->m_diverseDataSizes));
+    fprintf(f, "  %s   MaxMessageValues: %u\n", comment, p->protocol->m_maxMessageValues);
+    fprintf(f, "  %s   NumberOfOpcodes: %u\n", comment, p->u.wdi.nOpcodes);
+    fprintf(f, "  %s   Producer: %s\n", comment, BOOL(p->u.wdi.isProducer));
+    fprintf(f, "  %s   VariableMessageLength: %s\n", comment, BOOL(p->protocol->m_variableMessageLength));
+    fprintf(f, "  %s   ZeroLengthMessages: %s\n", comment, BOOL(p->protocol->m_zeroLengthMessages));
+    fprintf(f, "  %s   Continuous: %s\n", comment, BOOL(p->u.wdi.continuous));
+    fprintf(f, "  %s   DataWidth: %u\n", comment, p->dataWidth);
+    fprintf(f, "  %s   ByteWidth: %u\n", comment, p->byteWidth);
+    fprintf(f, "  %s   ImpreciseBurst: %s\n", comment, BOOL(p->impreciseBurst));
+    fprintf(f, "  %s   Preciseburst: %s\n", comment, BOOL(p->preciseBurst));
+    if (p->type == WSIPort) {
+      fprintf(f, "  %s   Abortable: %s\n", comment, BOOL(p->u.wsi.abortable));
+      fprintf(f, "  %s   EarlyRequest: %s\n", comment, BOOL(p->u.wsi.earlyRequest));
+    } else if (p->type == WMIPort)
+      fprintf(f, "  %s   TalkBack: %s\n", comment, BOOL(p->u.wmi.talkBack));
+    break;
+  case WTIPort:
+    break;
+  case WMemIPort:
+    fprintf(f, "  %s   DataWidth: %u\n", comment, p->dataWidth);
+    fprintf(f, "  %s   ByteWidth: %u\n", comment, p->byteWidth);
+    fprintf(f, "  %s   ImpreciseBurst: %s\n", comment, BOOL(p->impreciseBurst));
+    fprintf(f, "  %s   Preciseburst: %s\n", comment, BOOL(p->preciseBurst));
+    fprintf(f, "  %s   MemoryWords: %llu\n", comment, (unsigned long long )p->u.wmemi.memoryWords);
+    fprintf(f, "  %s   MaxBurstLength: %u\n", comment, p->u.wmemi.maxBurstLength);
+    fprintf(f, "  %s   WriteDataFlowControl: %s\n", comment, BOOL(p->u.wmemi.writeDataFlowControl));
+    fprintf(f, "  %s   ReadDataFlowControl: %s\n", comment, BOOL(p->u.wmemi.readDataFlowControl));
+  default:
+    ;
+  }
+}
+void
+emitSignal(const char *signal, FILE *f, const char *comment, Language lang, bool in,
+	   char *&last, int width, const char *pref = "",
+	   const char *type = "std_logic", const char *value = NULL) {
+  int pad = 22 - strlen(signal);
+  if (lang == VHDL) {
+    if (last)
+      fprintf(f, last, ';');
+    if (width < 0) {
+      asprintf(&last, "  %s  %s%*s: %s %s%%c%s%s\n",
+	       pref, signal, pad, "", in ? "in " : "out", type,
+	       value ? " := " : "", value ? value : "");
+    } else
+      asprintf(&last, "  %s  %s%*s: %s std_logic_vector(%u downto 0)%%c\n",
+	       pref, signal, pad, "", in ? "in " : "out", width - 1);
+  } else {
+    if (last)
+      fprintf(f, last, ',');
+    free(last);
+    if (width < 0)
+      asprintf(&last, "  %s%%c %*s%s %s\n",
+	       signal, pad, "", comment, in ? "input" : "output");
+    else
+      asprintf(&last, "  %s%%c %*s%s %s [%3u:0]\n",
+	       signal, pad, "", comment, in ? "input " : "output",
+	       width - 1);
+  }
+}
+void
+emitLastSignal(FILE *f, char *&last, Language lang, bool end) {
+  if (last) {
+    fprintf(f, last, end ? ' ' : (lang == VHDL ? ';' : ','));
+    free(last);
+    last = 0;
+  }
+}
+void
+emitParameters(FILE *f, Worker *w, const char *comment) {
+  bool first = true;
+  char *last = NULL;
+  for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+    if ((*pi)->m_isParameter) {
+      if (first) {
+	if (w->language == VHDL)
+	  fprintf(f, "  generic (\n");
+	first = false;
+      }
+      OU::Property *pr = *pi;
+      if (w->language == VHDL) {
+	if (first)
+	  printf("  generic (\n");
+	first = false;
+	// Note we could be very obsessive with types becase VHDL can be,
+	// but not now...
+	// FIXME: define actual ocpi types corresponding to our IDL-inspired types
+	const char *type;
+	switch (pr->m_baseType) {
+	case OA::OCPI_Bool: type = "boolean"; break;
+	case OA::OCPI_Char: type = "character"; break;
+	case OA::OCPI_Double: type = "real"; break;
+	case OA::OCPI_Float: type = "real"; break;
+	case OA::OCPI_Short: type = "integer"; break;
+	case OA::OCPI_Long: type = "integer"; break;
+	case OA::OCPI_UChar: type = "natural"; break;
+	case OA::OCPI_ULong: type = "natural"; break;
+	case OA::OCPI_UShort: type = "natural"; break;
+	case OA::OCPI_LongLong: type = "integer"; break;
+	case OA::OCPI_ULongLong: type = "natural"; break;
+	case OA::OCPI_String: type = "string"; break;
+	default:;
+	}
+	std::string value;
+	if (pr->m_defaultValue)
+	  pr->m_defaultValue->unparse(value);
+	emitSignal(pr->m_name.c_str(), f, comment, w->language, true, last, -1, "  ",
+		   type, value.size() ? value.c_str() : NULL);
+      } else {
+	int64_t i64 = 0;
+	if (pr->m_defaultValue)
+	  switch (pr->m_baseType) {
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			\
+	    case OA::OCPI_##pretty:					\
+	      i64 = (int64_t)pr->m_defaultValue->m_##pretty; break;
+	    OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+	  default:;
+	  }
+	unsigned bits =
+	  pr->m_baseType == OA::OCPI_Bool ?
+	  1 : pr->m_nBits;
+	fprintf(f, "  parameter [%u:0] %s = %u'h%llx;\n",
+		bits - 1, pr->m_name.c_str(), bits, (long long)i64);
+      }
+    }
+  if (!first && w->language == Verilog) {
+    emitLastSignal(f, last, w->language, true);
+    fprintf(f, "  );\n");
+  }
+}
+
+static void
+emitSignals(FILE *f, Worker *w) {
+  const char *comment = w->language == VHDL ? "  --" : "//";
+  if (w->language == VHDL)
+    fprintf(f, "  port (\n");
+  OcpSignalDesc *osd;
+  Clock *c = w->clocks;
+  char *last = NULL;
+  for (unsigned i = 0; i < w->nClocks; i++, c++) {
+    if (!c->port) {
+      if (last == NULL)
+	fprintf(f,
+		"  %s Clocks not associated with one specific interface:\n", comment);
+      emitSignal(c->signal, f, comment, w->language, true, last, -1);
+    }
+  }
+  for (unsigned i = 0; i < w->ports.size(); i++) {
+    Port *p = w->ports[i];
+    bool mIn = p->masterIn();
+    emitLastSignal(f, last, w->language, false);
+    //    if (lang == Verilog)
+    emitPortDescription(p, w, f);
+    // Some ports are basically an array of interfaces.
+    for (unsigned n = 0; n < p->count; n++) {
+      if (p->clock->port == p && n == 0) {
+	emitSignal(p->clock->signal, f, comment, w->language, true, last, -1);
+	p->ocp.Clk.signal = p->clock->signal;
+      } else if (n == 0)
+	fprintf(f,
+		"  %s No Clk signal here. The \"%s\" interface uses \"%s\" as clock\n",
+		comment, p->name, p->clock->signal);
+      osd = ocpSignals;
+      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
+	  emitSignal(os->signal, f, comment, w->language, true, last, osd->vector ? os->width : -1);
+	}
+      osd = ocpSignals;
+      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
+	  emitSignal(os->signal, f, comment, w->language, false, last, osd->vector ? os->width : -1);
+	}
+    }
+  }
+  if (w->nSignals) {
+    fprintf(f, "  %s Extra signals not part of any WIP interface:\n", comment);
+    Signal *s = w->signals;
+    for (unsigned n = 0; n < w->nSignals; n++, s++)
+      emitSignal(s->name, f, comment, w->language, s->direction == Signal::IN, last, s->width);
+  }
+  emitLastSignal(f, last, w->language, true);
+  if (w->language == VHDL)
+    fprintf(f, "  );\n");
+}
 
 // Emit the file that can be used to instantiate the worker
  const char *
@@ -178,30 +417,30 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
     fprintf(f,
 	    "Library IEEE;\n"
 	    "  use IEEE.std_logic_1164.all;\n"
-	    "Library work;\n"
-	    "  use work.wip_defs.all;\n"
+	    "Library ocpi;\n"
+	    //	    "  use ocpi.wip_defs.all;\n"
 	    "\n"
 	    "package %s_defs is\n",
 	    w->implName);
+#if 0 // no record types for now since its controversial and a pain for mixed languages
   // Generate record types for interfaces
-  OcpSignalDesc *osd;
-  if (lang == VHDL)
+  if (lang == VHDL) {
     for (unsigned i = 0; i < w->ports.size(); i++) {
       Port *p = w->ports[i];
       bool mIn = p->masterIn();
+      emitPortDescription(p, w, f);
       fprintf(f,
-	      "\n"
-	      "-- These 2 records correspond to the input and output sides of the OCP bundle\n"
-	      "-- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
+	      "  -- These 2 records correspond to the input and output sides of the OCP bundle\n"
+	      "  -- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
 	      w->implName, wipNames[p->type], p->name);
       fprintf(f,
-	      "\n-- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
+	      "\n  -- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
 	      wipNames[p->type], mIn ? "master" : "slave", p->name, w->implName);
       char *pin, *pout;
       if ((err = pattern(w, p, 0, 0, true, !mIn, &pin)) ||
 	  (err = pattern(w, p, 0, 0, false, !mIn, &pout)))
 	return err;
-      fprintf(f, "type %s_t is record\n", pin);
+      fprintf(f, "  type %sin_t is record\n", pin);
       osd = ocpSignals;
       for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
@@ -214,12 +453,12 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    fprintf(f, "std_logic");
 	  fprintf(f, ";\n");
 	}
-      fprintf(f, "end record %s_t;\n", pin);
+      fprintf(f, "  end record %sin_t;\n", pin);
       fprintf(f,
-	      "\n-- Record for the %s output (OCP %s) signals for port \"%s\" of worker \"%s\"\n"
-	      "type %s%s_t is record\n",
+	      "\n  -- Record for the %s output (OCP %s) signals for port \"%s\" of worker \"%s\"\n"
+	      "  type %sout_t is record\n",
 	      wipNames[p->type], mIn ? "slave" : "master",
-	      p->name, w->implName, p->name, pout);
+	      p->name, w->implName, pout);
       osd = ocpSignals;
       for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
@@ -232,13 +471,15 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    fprintf(f, "std_logic");
 	  fprintf(f, ";\n");
 	}
-      fprintf(f, "end record %s_t;\n", pout);
+      fprintf(f, "  end record %sout_t;\n", pout);
     }
-  if (lang == VHDL)
+  }
+#endif
+  if (lang == VHDL) {
     fprintf(f,
-	    "\n\ncomponent %s is\n"
-	    "  port (\n", w->implName);
-  else
+	    "\ncomponent %s is\n", w->implName);
+    emitParameters(f, w, comment);
+  } else
     fprintf(f,
 	    "\n"
 	    "`default_nettype none\n"
@@ -246,214 +487,17 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    "(* box_type=\"user_black_box\" *)\n"
 	    "`endif\n"
 	    "module %s (\n", w->implName, w->implName);
-  // port name is scoped by entity, just has to avoid record name
-  // _in or _out
-  // type conventions _t or _Typ or T or..
-  // port signal (wsi consumer port foo):
-  //  foo_s_out: out spec_impl.foo_s_t;
-  Clock *c = w->clocks;
-  bool first = true;
-  for (unsigned i = 0; i < w->nClocks; i++, c++) {
-    if (!c->port) {
-      if (first)
-	fprintf(f,
-		"  // Clocks not associated with one specific interface:\n");
-      first = false;
-      fprintf(f, "  %s, %*s// input\n",
-	      c->signal, (int)(22 - strlen(c->signal)), "");
-    }
-  }
-  char *last = 0;
-  for (unsigned i = 0; i < w->ports.size(); i++) {
-    Port *p = w->ports[i];
-    if (last) {
-      fprintf(f, last, ',');
-      last = 0;
-    }
-    bool mIn = p->masterIn();
-    char *nbuf;
-    asprintf(&nbuf, " %d", p->count);
+  emitSignals(f, w);
+  if (lang == VHDL)
     fprintf(f,
-	    "\n  %s%s The%s %s %sinterface%s named \"%s\", with \"%s\" acting as OCP %s:\n",
-	    lang == VHDL ? "  " : "", comment, p->count > 1 ? nbuf : "", wipNames[p->type],
-	    p->type == WMIPort || p->type == WSIPort ?
-	    (p->u.wdi.isProducer ? "producer " : "consumer ") : "",
-	    p->count > 1 ? "s" : "", p->name, w->implName, mIn ? "slave" : "master");
-    fprintf(f, "  // WIP attributes for this %s interface are:\n", wipNames[p->type]);
-    if (p->clockPort)
-      fprintf(f, "  //   Clock: uses the clock from interface named \"%s\"\n",
-	      p->clockPort->name);
-    else if (p->myClock)
-      fprintf(f, "  //   Clock: this interface has its own clock, named \"%s\"\n",
-	      p->clock->signal);
-    else
-      fprintf(f, "  //   Clock: this interface uses the worker's clock named \"%s\"\n",
-	      p->clock->signal);
-    switch (p->type) {
-      case WCIPort:
-	fprintf(f, "  //   SizeOfConfigSpace: %llu (0x%llx)\n",
-		(unsigned long long)w->ctl.sizeOfConfigSpace,
-		(unsigned long long)w->ctl.sizeOfConfigSpace);
-	fprintf(f, "  //   WritableConfigProperties: %s\n", BOOL(w->ctl.writableConfigProperties));
-	fprintf(f, "  //   ReadableConfigProperties: %s\n", BOOL(w->ctl.readableConfigProperties));
-	fprintf(f, "  //   Sub32BitConfigProperties: %s\n", BOOL(w->ctl.sub32BitConfigProperties));
-	fprintf(f, "  //   ControlOperations (in addition to the required \"start\"): ");
-	{
-	  bool first = true;
-	  for (unsigned op = 0; op < NoOp; op++, first = false)
-	    if (op != ControlOpStart &&
-		w->ctl.controlOps & (1 << op))
-	      fprintf(f, "%s%s", first ? "" : ",", controlOperations[op]);
-	}
-	fprintf(f, "\n");
-	fprintf(f, "  //   ResetWhileSuspended: %s\n", BOOL(p->u.wci.resetWhileSuspended));
-	break;
-    case WSIPort:
-    case WMIPort:
-      // Do common WDI attributes first
-      fprintf(f, "  //   Protocol: \"%s\"\n", p->protocol->name().c_str());
-      fprintf(f, "  //   DataValueWidth: %u\n", p->protocol->m_dataValueWidth);
-      fprintf(f, "  //   DataValueGranularity: %u\n", p->protocol->m_dataValueGranularity);
-      fprintf(f, "  //   DiverseDataSizes: %s\n", BOOL(p->protocol->m_diverseDataSizes));
-      fprintf(f, "  //   MaxMessageValues: %u\n", p->protocol->m_maxMessageValues);
-      fprintf(f, "  //   NumberOfOpcodes: %u\n", p->u.wdi.nOpcodes);
-      fprintf(f, "  //   Producer: %s\n", BOOL(p->u.wdi.isProducer));
-      fprintf(f, "  //   VariableMessageLength: %s\n", BOOL(p->protocol->m_variableMessageLength));
-      fprintf(f, "  //   ZeroLengthMessages: %s\n", BOOL(p->protocol->m_zeroLengthMessages));
-      fprintf(f, "  //   Continuous: %s\n", BOOL(p->u.wdi.continuous));
-      fprintf(f, "  //   DataWidth: %u\n", p->dataWidth);
-      fprintf(f, "  //   ByteWidth: %u\n", p->byteWidth);
-      fprintf(f, "  //   ImpreciseBurst: %s\n", BOOL(p->impreciseBurst));
-      fprintf(f, "  //   Preciseburst: %s\n", BOOL(p->preciseBurst));
-      if (p->type == WSIPort) {
-	fprintf(f, "  //   Abortable: %s\n", BOOL(p->u.wsi.abortable));
-	fprintf(f, "  //   EarlyRequest: %s\n", BOOL(p->u.wsi.earlyRequest));
-      } else if (p->type == WMIPort)
-	fprintf(f, "  //   TalkBack: %s\n", BOOL(p->u.wmi.talkBack));
-      break;
-    case WTIPort:
-      break;
-    case WMemIPort:
-      fprintf(f, "  //   DataWidth: %u\n", p->dataWidth);
-      fprintf(f, "  //   ByteWidth: %u\n", p->byteWidth);
-      fprintf(f, "  //   ImpreciseBurst: %s\n", BOOL(p->impreciseBurst));
-      fprintf(f, "  //   Preciseburst: %s\n", BOOL(p->preciseBurst));
-      fprintf(f, "  //   MemoryWords: %llu\n", (unsigned long long )p->u.wmemi.memoryWords);
-      fprintf(f, "  //   MaxBurstLength: %u\n", p->u.wmemi.maxBurstLength);
-      fprintf(f, "  //   WriteDataFlowControl: %s\n", BOOL(p->u.wmemi.writeDataFlowControl));
-      fprintf(f, "  //   ReadDataFlowControl: %s\n", BOOL(p->u.wmemi.readDataFlowControl));
-    default:
-      ;
-    }
-    for (unsigned n = 0; n < p->count; n++) {
-      if (last) {
-	fprintf(f, last, ',');
-	last = 0;
-      }
-      if (p->clock->port == p && n == 0) {
-	if (lang == VHDL)
-	  fprintf(f, "    %-20s: in  std_logic;\n", p->clock->signal);
-	else
-	  fprintf(f, "  %s, %*s// input\n",
-		  p->clock->signal, (int)(22 - strlen(p->clock->signal)), "");
-	p->ocp.Clk.signal = p->clock->signal;
-      } else if (n == 0)
-	fprintf(f,
-		"  %s%s No Clk signal here. The \"%s\" interface uses \"%s\" as clock,\n",
-		lang == VHDL ? "  " : "", comment, p->name, p->clock->signal);
-      if (lang == VHDL)
-	fprintf(f, "    %-20s: in  %s_t;\n",
-		p->fullNameIn, p->fullNameIn);
-      else {
-	osd = ocpSignals;
-	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-	  if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
-	    char *name;
-	    asprintf(&name, os->signal, n);
-	    fprintf(f, "  %s, %*s// input  ", name, (int)(22 - strlen(name)), "");
-	    //if (osd->type)
-	    //fprintf(f, "%s_t", osd->name);
-	    //else
-	    if (osd->vector)
-	      fprintf(f, "[%3u:0]\n", os->width - 1);
-	    else
-	      fprintf(f, "\n");
-	  }
-      }
-      if (lang == VHDL)
-	fprintf(f, "    %-20s: out %s_t%s\n", p->fullNameOut, p->fullNameOut,
-		i < w->ports.size() - 1 || p->count > n+1 ? ";" : "");
-      else {
-	osd = ocpSignals;
-	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-	  if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
-	    if (last)
-	      fprintf(f, last, ',');
-	    char *name;
-	    asprintf(&name, os->signal, n);
-	    asprintf(&last, "  %s%%c %*s// output ", name,
-		     (int)(22 - strlen(name)), "");
-	    if (osd->vector)
-	      asprintf(&last, "%s[%3u:0]\n", last, os->width - 1);
-	    else
-	      asprintf(&last, "%s\n", last);
-	  }
-      }
-    }
-  }
-  if (w->nSignals) {
-    if (last)
-      fprintf(f, last, ',');
-    last = 0;
-    fprintf(f, "  // Extra signals not part of any WIP interface:\n");
-    Signal *s = w->signals;
-    for (unsigned n = 0; n < w->nSignals; n++, s++) {
-      if (last)
-	fprintf(f, last, ',');
-      asprintf(&last, "  %s%%c %*s// %s ", s->name,
-	       (int)(22 - strlen(s->name)), " ",
-	       s->direction == Signal::IN ? "input " :
-	       (s->direction == Signal::OUT ? "output" : "inout "));
-      if (s->width)
-	asprintf(&last, "%s[%3u:0]\n", last, s->width - 1);
-      else
-	asprintf(&last, "%s\n", last);
-    }
-  }
-  if (lang == VHDL) {
-    fprintf(f, "  );\n"
-	    "end component %s;\n"
+	    "end component %s;\n\n"
 	    "end package %s_defs;\n", w->implName, w->implName);
-  } else {
-    if (last)
-	fprintf(f, last, ' ');
+  else {
     fprintf(f, ");\n");
-    // Now we emit parameters.
-    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
-      if ((*pi)->m_isParameter) {
-	OU::Property *pr = *pi;
-	if (w->language == VHDL) {
-	  fprintf(f, "VHDL PARAMETERS HERE\n");
-	} else {
-	  int64_t i64 = 0;
-	  if (pr->m_defaultValue)
-	    switch (pr->m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
-	      case OA::OCPI_##pretty:	   \
-		i64 = (int64_t)pr->m_defaultValue->m_##pretty; break;
-	      OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-	  default:;
-	  }
-	  unsigned bits =
-	    pr->m_baseType == OA::OCPI_Bool ?
-	    1 : pr->m_nBits;
-	  fprintf(f, "  parameter [%u:0] %s = %u'h%llx;\n",
-		  bits - 1, pr->m_name.c_str(), bits, (long long)i64);
-	}
-      }
+    // Now we emit parameters in the body.
+    emitParameters(f, w, comment);
     // Now we emit the declarations (input, output, width) for each module port
-    c = w->clocks;
+    Clock *c = w->clocks;
     for (unsigned i = 0; i < w->nClocks; i++, c++)
       if (!c->port)
 	fprintf(f, "  input          %s;\n", c->signal);
@@ -469,7 +513,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    (err = pattern(w, p, n, 0, false, !mIn, &pout)))
 	  return err;
 #endif
-	osd = ocpSignals;
+	OcpSignalDesc *osd = ocpSignals;
 	for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	  if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
 	    char *name;
@@ -518,23 +562,42 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
   fclose(f);
   return 0;
 }
- static void
-emitOpcodes(Port *p, FILE *f, const char *pName, const char *comment) {
-   Protocol *prot = p->protocol;
-   if (prot && prot->nOperations()) {
-     OU::Operation *op = prot->operations();
-     fprintf(f,
-	     "  %s Opcode/operation value declarations for protocol \"%s\" on interface \"%s\"\n",
-	     comment, prot->m_name.c_str(), p->name);
-     for (unsigned n = 0; n < prot->nOperations(); n++, op++)
-       fprintf(f, "  localparam [%sOpCodeWidth - 1 : 0] %s%s_Op = %u;\n", pName, pName, op->name().c_str(), n);
-   }
+
+static void
+emitVhdlValue(FILE *f, unsigned width, uint64_t value) {
+  fprintf(f, "b\"");
+  for (int b = width-1; b >= 0; b--)
+    fprintf(f, "%c", value & (1 << b) ? '1' : '0');
+  fprintf(f, "\"; -- 0x%0*" PRIx64 "\n", (int)roundup(width, 4)/4, value);
+}
+
+static void
+emitOpcodes(Port *p, FILE *f, const char *pName, Language lang, const char *comment) {
+  Protocol *prot = p->protocol;
+  if (prot && prot->nOperations()) {
+    OU::Operation *op = prot->operations();
+    fprintf(f,
+	    "  %s Opcode/operation value declarations for protocol \"%s\" on interface \"%s\"\n",
+	    comment, prot->m_name.c_str(), p->name);
+    for (unsigned n = 0; n < prot->nOperations(); n++, op++)
+      if (lang == VHDL) {
+	fprintf(f, "  constant %s%s_Op%*s : %sOpcode_t := ",
+		pName, op->name().c_str(),
+		(int)(22 - (strlen(pName) + strlen(op->name().c_str()))), "",
+		pName);
+	emitVhdlValue(f, p->ocp.MReqInfo.width, n);
+      } else
+	fprintf(f, "  localparam [%sOpCodeWidth - 1 : 0] %s%s_Op = %u;\n",
+		pName, pName, op->name().c_str(), n);
+  }
 }
 
 // Generate the readonly implementation file.
 // What implementations must explicitly (verilog) or implicitly (VHDL) include.
+// The idea is to minimize code in the actual worker implementation (nee skeleton) file,
+// without constructing significant "state" or "newly defined internal interfaces".
  const char *
-emitImplHDL(Worker *w, const char *outDir, const char *library) {
+ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
   const char *err;
   FILE *f;
   if ((err = openOutput(w->implName, outDir, "", IMPL, w->language == VHDL ? VHD : ".vh", NULL, f)))
@@ -545,16 +608,16 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	  "%s This file contains the implementation declarations for worker %s\n"
 	  "%s Interface definition signal names defined with pattern rule: \"%s\"\n\n",
 	  comment, w->implName, comment, w->pattern);
-  if (w->language == VHDL)
+  if (w->language == VHDL) {
+    // FIXME: how to add library refs for shared sub-worker stuff..
     fprintf(f,
 	    "library IEEE;\n"
 	    "  use IEEE.std_logic_1164.all;\n"
-	    "library %s;\n"
-	    "  use %s.%s%s.all;\n\n"
-	    "entity %s is\n"
-	    "  port (\n",
-	    library, library, w->implName, DEFS, w->implName);
-  else
+	    "library ocpi;\n"
+	    "entity %s is\n", w->implName);
+    emitParameters(f, w, comment);
+    emitSignals(f, w);
+  } else
     // Verilog just needs the module declaration and any other associate declarations
     // required for the module declaration.
     fprintf(f,
@@ -563,6 +626,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	    "`include \"ocpi_wip_defs%s\"\n",
 	    w->implName, w->implName, DEFS, VERH, w->implName, DEFS, VERH, VERH);
 
+#if 0 // record types any more fornow
   // For VHDL we need to basically replicate the port declarations that are part of the
   // component: there is no way to just use what the component decl says.
   // For Verilog we just include the module declaration so don't need anything here.
@@ -603,7 +667,8 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
     }
     fprintf(f, "  );\n");
   }
-  // Aliases for OCP signals
+#endif
+  // Aliases for OCP signals, or simple combinatorial "macros".
   for (unsigned i = 0; i < w->ports.size(); i++) {
     Port *p = w->ports[i];
     bool mIn = p->masterIn();
@@ -619,10 +684,10 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		comment, wipNames[p->type], p->name);
 	if (w->language == VHDL)
 	  fprintf(f,
-		  "  alias %s_Terminate : std_logic is %s.MFlag(0);\n"
-		  "  alias %s_Endian   : std_logic is %s.MFlag(1);\n"
-		  "  alias %s_Config    : std_logic is %s.MAddrSpace(0);\n"
-		  "  alias %s_Attention : std_logic is %s.SFlag(0);\n",
+		  "  alias %sTerminate : std_logic is %sMFlag(0);\n"
+		  "  alias %sEndian    : std_logic is %sMFlag(1);\n"
+		  "  alias %sConfig    : std_logic is %sMAddrSpace(0);\n"
+		  "  alias %sAttention : std_logic is %sSFlag(0);\n",
 		  pin, pin, pin, pin, pin, pin, pout, pout);
 	else {
 	  fprintf(f,
@@ -665,12 +730,8 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	    if (!(*pi)->m_isParameter) {
 	      OU::Property *pr = *pi;
 	      if (w->language == VHDL) {
-		fprintf(f,
-			"  constant %-20s : Property_t := b\"", pr->m_name.c_str());
-		for (int b = p->ocp.MAddr.width-1; b >= 0; b--)
-		  fprintf(f, "%c", pr->m_offset & (1 << b) ? '1' : '0');
-		fprintf(f, "\"; -- 0x%0*x\n",
-			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->m_offset);
+		fprintf(f, "  constant %-22s : Property_t := ", pr->m_name.c_str());
+		emitVhdlValue(f, p->ocp.MAddr.width, pr->m_offset);
 	      } else
 		fprintf(f, "  localparam [%d:0] %sAddr = %d'h%0*x;\n",
 			p->ocp.MAddr.width - 1, pr->m_name.c_str(), p->ocp.MAddr.width,
@@ -699,8 +760,8 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 	  if (n == 0) {
 	    if (w->language == VHDL)
 	      fprintf(f,
-		      "  subtype %s%s_OpCode_t is std_logic_vector(%d downto 0);\n",
-		      p->name, mIn ? pin : pout, p->ocp.MReqInfo.width - 1);
+		      "  subtype %sOpCode_t is std_logic_vector(%d downto 0);\n",
+		      mIn ? pin : pout, p->ocp.MReqInfo.width - 1);
 	    else
 	      fprintf(f,
 		      "  localparam %sOpCodeWidth = %d;\n",
@@ -708,7 +769,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
           }
 	  if (w->language == VHDL)
 	    fprintf(f,
-		    "  alias %s_Opcode: %sOpCode_t is %s.MReqInfo(%d downto 0);\n",
+		    "  alias %sOpcode: %sOpCode_t is %sMReqInfo(%d downto 0);\n",
 		    mIn ? pin : pout, mIn ? pin : pout,
 		    mIn ? pin : pout, p->ocp.MReqInfo.width - 1);
 	  else if (mIn)
@@ -721,7 +782,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		    // p->ocp.MReqInfo.width - 1, pout, p->clock->signal, pout, pout);
 		    "  %s [%d:0] %sOpcode; assign %sMReqInfo = %sOpcode;\n",
 		    p->u.wsi.regRequest ? "reg" : "wire", p->ocp.MReqInfo.width - 1, pout, pout, pout);
-	  emitOpcodes(p, f, mIn ? pin : pout, comment);
+	  emitOpcodes(p, f, mIn ? pin : pout, w->language, comment);
 	}
 	if (p->ocp.MFlag.width) {
 	  if (w->language == VHDL)
@@ -781,7 +842,7 @@ emitImplHDL(Worker *w, const char *outDir, const char *library) {
 		    "  localparam %sOpCodeWidth = 7;\n",
 		    mIn ? pin : pout);
 	  }
-	  emitOpcodes(p, f, mIn ? pin : pout, comment);
+	  emitOpcodes(p, f, mIn ? pin : pout, w->language, comment);
 	}
 	if (p->protocol->m_variableMessageLength) {
 	  if (w->language == VHDL) {

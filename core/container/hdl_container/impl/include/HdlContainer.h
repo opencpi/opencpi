@@ -15,7 +15,7 @@ namespace OCPI {
       : public OCPI::Container::ContainerBase<Driver, Container, Application, Artifact>,
 	private Access {
       HDL::Device &m_device;        // the underlying device that we own
-      DataTransfer::EndPoint &m_endpoint; // the data plane endpoint of the device
+      //      DataTransfer::EndPoint &m_endpoint; // the data plane endpoint of the device
       std::string m_part, m_esn, m_position, m_loadParams;
       uuid_t m_loadedUUID;
       friend class WciControl;

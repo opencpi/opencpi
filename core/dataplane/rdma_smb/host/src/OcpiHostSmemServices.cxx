@@ -116,7 +116,6 @@ namespace DataTransfer {
       HostSmem* pSmem = 0;
       OcpiFileMappingServices* pMapper = 0;
       m_location = loc;
-      unsigned long size = loc->size;
 
       try
         {
@@ -134,9 +133,9 @@ namespace DataTransfer {
                                     "HostSmemServices::Create: CreateFileMappingServices returned NULL reference");
             }
                 
-          ocpiDebug("Creating mapping of size %lu", size );
+          ocpiDebug("Creating mapping of size %u", loc->size );
 
-          rc = pMapper->CreateMapping ("", loc->getAddress(), OcpiFileMappingServices::ReadWriteAccess, (OCPI::OS::int64_t)size);
+          rc = pMapper->CreateMapping ("", loc->getAddress(), OcpiFileMappingServices::ReadWriteAccess, loc->size);
 
           if (rc == 0)
             {
@@ -271,7 +270,7 @@ namespace DataTransfer {
     }
 
     // Map a view of the shared memory area at some offset/size and return the virtual address.
-    void* map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size )
+    void* map (uint32_t offset, uint32_t size )
     {
       ( void ) size;
       void* pva=NULL;

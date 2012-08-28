@@ -67,13 +67,10 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ERROR;
  }
  
- if ( n == 0 ) {
-   return RCC_DONE;
- }
- printf("In file_read.c got data = %s\n", port->current.data);
 
- if (props->granularity)
+ if (props->granularity && n)
    n -= n % props->granularity;
+ // printf("In file_read.c got %zu data = %x\n", n, *(uint32_t *)port->current.data);
  port->output.length = n;
  props->bytesRead += n;
  if (n) {

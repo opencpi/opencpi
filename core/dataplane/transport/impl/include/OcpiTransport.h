@@ -175,8 +175,9 @@ namespace OCPI {
       // ports in the connection are used.
       //Circuit * createCircuit( DataTransfer::EndPoint *ep );
 
-
-      Port * createInputPort( Circuit * &c,  OCPI::RDT::Descriptors& desc, const OCPI::Util::PValue *);
+      // Initialize descriptor from endpoint info
+      static void fillDescriptorFromEndPoint(DataTransfer::EndPoint &ep, OCPI::RDT::Descriptors &desc);
+      //      Port * createInputPort( Circuit * &c,  OCPI::RDT::Descriptors& desc, const OCPI::Util::PValue *);
       // Use this one when you know there is only one input port
       Port * createInputPort(OCPI::RDT::Descriptors& desc, const OCPI::Util::PValue *);
       // Use this one when you know there is only one output port

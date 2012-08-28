@@ -10,7 +10,7 @@ Properties:
   <ComponentSpec name='file_read'>
 
     <DataInterfaceSpec Name="out" Producer="true">
-      <xi:include href="rstream_with_sync_protocol.xml"/>
+      <!-- <xi:include href="rstream_with_sync_protocol.xml"/> -->
     </DataInterfaceSpec>
 
     <property name='messagesInFile' type='bool' readable='true'/>
@@ -20,5 +20,6 @@ Properties:
     <property name='bytesRead' type='uLongLong' readable='true'/>
     <property name='messagesWritten' type='uLongLong' readable='true'/>
     <property name='fileName' type='string' stringLength='1024'/>
+    <Property Name="test" type="Short" ArrayLength="4" Readable="true" Writable="true" default="1,2,3,4"/>
   </ComponentSpec>
 </RccImplementation>

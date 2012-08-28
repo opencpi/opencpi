@@ -111,7 +111,7 @@ MyLibs=\
 #MyTop=$(if $(findstring core,$(HdlMode)),-top $(Top))
 #MyTop=-s glbl
 MyOut=$(LibName).vvp
-#Warnings=-Wall -debug -debugi 10
+Warnings=-Wall 
 MyIncs=\
  $(foreach d,$(VerilogIncludeDirs),-I$(call FindRelative,$(TargetDir),$(d))) \
  $(foreach l,$(ComponentLibraries),\

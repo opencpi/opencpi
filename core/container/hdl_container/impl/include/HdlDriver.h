@@ -48,7 +48,7 @@ The issue is that the ether scanner has an open socket for discovery,
       // Probe a specific container
       OCPI::Container::Container *probeContainer(const char *which, const OCPI::API::PValue *props);
       OCPI::HDL::Device *
-      open(const char *which, std::string &err);
+	open(const char *which, bool discovery, std::string &err);
       void close();
 
       // Create an actual container.

@@ -201,11 +201,10 @@ namespace OCPI {
 	  //		   connectLike( other, myParams, otherParams))
 	  //	  return;
       } else {
-	  const char *preferred = 0;
+	  const char *preferred = getPreferredProtocol();
 	  // Check if the output side has a preferred protocol, and if so, set it
-	  getPreferredProtocol(preferred);
 	  if (!preferred)
-	    other.getPreferredProtocol(preferred);
+	    preferred = other.getPreferredProtocol();
 	  // Ensure that any connect parameters are on both ports' lists
 	  OU::PValue *newMyParams, *newOtherParams;
 	  mergeConnectParams(otherParams, preferred, myParams, newMyParams);
@@ -644,8 +643,7 @@ namespace OCPI {
       : BasicPort(port.metaPort(), isProvider, 0, port, extParams),
 	m_dtPort(NULL)
     {
-      const char *preferred = 0;
-      port.getPreferredProtocol(preferred);
+      const char *preferred = port.getPreferredProtocol();
       OU::PValue *newExtParams, *newPortParams;
       // Grab any connect parameters onto our params
       mergeConnectParams(portParams, preferred, extParams, newExtParams);

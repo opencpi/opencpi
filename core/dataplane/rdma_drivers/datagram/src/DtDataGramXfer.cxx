@@ -655,8 +655,8 @@ namespace DataTransfer {
       if ( ! fr.in_use ) {
 	fr.in_use = true;
 	fr.msgsProcessed = 0;
-	//	frames_in_play++;
-	//	ocpiAssert( frames_in_play < MAX_TRANSACTION_HISTORY );
+	m_frames_in_play++;
+	ocpiAssert( m_frames_in_play < MAX_TRANSACTION_HISTORY );
       }
       fr.transactionId = msg->transactionId;
       fr.numMsgsInTransaction = msg->numMsgsInTransaction;	      
@@ -710,7 +710,7 @@ namespace DataTransfer {
 
 	memcpy(dptr, &msg->flagValue, 4);
 	fr.in_use = false;
-	//	frames_in_play--;
+	m_frames_in_play--;
       }
 
       if  ( msg->nextMsg ) {

@@ -76,34 +76,39 @@ namespace OCPI {
     const uint32_t MAX_EPS_SIZE=256;
     const uint32_t MAX_PROTOS_SIZE=64;
     struct OutOfBandData {
-      OCPI::OS::uint64_t  port_id;     // Port Id
+      uint64_t            port_id;     // Port Id
       char                oep[MAX_EPS_SIZE];    // Originators endpoint
-      OCPI::OS::uint64_t  cookie;      // Optional opaque connection cookie
+      uint64_t            cookie;      // Optional opaque value for endpoint connection cookie
+      // These values are information common to all endpoints
+      uint64_t            address;     // Address of endpoint in its address space (usually 0)
+      uint32_t            size;        // EndpointSize
+      uint16_t            mailBox;     // endpoint mailbox
+      uint16_t            maxCount;    // Number of mailboxes in communication domain
     };
 
     struct Desc_t {
-      OCPI::OS::uint32_t  nBuffers;
-      OCPI::OS::uint64_t  dataBufferBaseAddr;
-      OCPI::OS::uint32_t  dataBufferPitch;
-      OCPI::OS::uint32_t  dataBufferSize;
-      OCPI::OS::uint64_t  metaDataBaseAddr;
-      OCPI::OS::uint32_t  metaDataPitch;
-      OCPI::OS::uint64_t  fullFlagBaseAddr; 
-      OCPI::OS::uint32_t  fullFlagSize;
-      OCPI::OS::uint32_t  fullFlagPitch;
-      OCPI::OS::uint64_t  fullFlagValue;
-      OCPI::OS::uint64_t  emptyFlagBaseAddr; // when consumer is passive
-      OCPI::OS::uint32_t  emptyFlagSize;
-      OCPI::OS::uint32_t  emptyFlagPitch;
-      OCPI::OS::uint64_t  emptyFlagValue;
+      uint32_t  nBuffers;
+      uint64_t  dataBufferBaseAddr;
+      uint32_t  dataBufferPitch;
+      uint32_t  dataBufferSize;
+      uint64_t  metaDataBaseAddr;
+      uint32_t  metaDataPitch;
+      uint64_t  fullFlagBaseAddr; 
+      uint32_t  fullFlagSize;
+      uint32_t  fullFlagPitch;
+      uint64_t  fullFlagValue;
+      uint64_t  emptyFlagBaseAddr; // when consumer is passive
+      uint32_t  emptyFlagSize;
+      uint32_t  emptyFlagPitch;
+      uint64_t  emptyFlagValue;
 
       OutOfBandData       oob;
     };
 
     struct Descriptors {
-      OCPI::OS::uint32_t  type;
-      OCPI::OS::int32_t   role;     // signed to suppress compiler warnings vs. enums
-      OCPI::OS::uint32_t  options; // bit fields based on role.
+      uint32_t  type;
+      int32_t   role;     // signed to suppress compiler warnings vs. enums
+      uint32_t  options; // bit fields based on role.
       Desc_t desc;
       Descriptors() : role(NoRole){}
     };

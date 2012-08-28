@@ -72,8 +72,8 @@ namespace DataTransfer {
   class EventHandler
   {
   public:
-    virtual ReturnStatus waitForEvent( int timeout_us, int &id, OCPI::OS::uint64_t &value )=0;
-    virtual ReturnStatus getPendingEvent(int &id, OCPI::OS::uint64_t &value )=0;
+    virtual ReturnStatus waitForEvent( int timeout_us, int &id, uint64_t &value )=0;
+    virtual ReturnStatus getPendingEvent(int &id, uint64_t &value )=0;
 
     // The follwing methods are used by the container infrastructure to set a timeout value
     // for the event manager to block.  These values are used to allow workers that use
@@ -118,7 +118,7 @@ namespace DataTransfer {
     // Allow an application to wait for an event.  Calling this method does remove the
     // returned event from the Q.
     ReturnStatus waitForEvent( int timeout_us );
-    ReturnStatus waitForEvent( int timeout_us, int& id, OCPI::OS::uint64_t &value );
+    ReturnStatus waitForEvent( int timeout_us, int& id, uint64_t &value );
 
     // The follwing methods are used by the container infrastructure to set a timeout value
     // for the event manager to block.  These values are used to allow workers that use
@@ -128,7 +128,7 @@ namespace DataTransfer {
     void removeMinTimeout(  OCPI::OS::uint32_t id );
 
     // Get the next available event
-    bool getNextEvent( int& id, OCPI::OS::uint64_t &value );
+    bool getNextEvent( int& id, uint64_t &value );
 
     // Consume all existing events
     void consumeEvents();
@@ -153,8 +153,8 @@ namespace DataTransfer {
     OCPI::OS::Mutex m_mutex;
     struct Events {
       int id;
-      OCPI::OS::uint64_t value;
-      Events(int& pid, OCPI::OS::uint64_t &pv)
+      uint64_t value;
+      Events(int& pid, uint64_t &pv)
         :id(pid),value(pv){};
     };
     std::list<Events> m_events;

@@ -292,11 +292,12 @@ endif # for multiple tool sets.
 
 ################################################################################
 # These are rules for both recursive and non-recursive cases.
-clean::
+clean:: cleanfirst
 	$(AT)$(if $(findstring $(HdlMode),worker),,\
 		echo Cleaning HDL $(HdlMode) `pwd` for all targets.;)\
 	rm -r -f $(OutDir)target-* $(OutDir)gen
 
+cleanfirst::
 cleanimports::
 	rm -r -f imports
 

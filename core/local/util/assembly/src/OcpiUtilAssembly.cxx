@@ -69,18 +69,41 @@ namespace OCPI {
     const char *Assembly::parse() {
       // This is where common initialization is done except m_xml and m_copy
       m_doneInstance = -1;
+      m_cMapPolicy = RoundRobin;
+      m_processors = 0;
       ezxml_t ax = m_xml;
       const char *err;
-      if ((err = OE::checkElements(ax, "instance", "connection", "policy", NULL)))
+      bool maxProcs = false, minProcs = false, roundRobin = false;
+      if ((err = OE::checkAttrs(ax, "maxprocessors", "minprocessors", "roundrobin", NULL)) ||
+	  (err = OE::checkElements(ax, "instance", "connection", "policy", NULL)) ||
+	  (err = OE::getNumber(ax, "maxprocessors", &m_processors, &maxProcs)) ||
+	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &maxProcs)) ||
+	  (err = OE::getBoolean(ax, "roundrobin", &roundRobin)))
 	return err;
-      
+      if (maxProcs)
+	m_cMapPolicy = MaxProcessors;
+      else if (minProcs)
+	m_cMapPolicy = MinProcessors;
+      else if (roundRobin)
+	m_cMapPolicy = RoundRobin;
+      else
+	m_cMapPolicy = RoundRobin;
       ezxml_t  p = ezxml_cchild(ax, "policy");
       if ( p ) {
 	const char * tmp = ezxml_attr(p, "mapping" );
-	if ( tmp ) policy.name = tmp;
+	if ( tmp ) {
+	  if (!strcasecmp(tmp, "maxprocessors"))
+	    m_cMapPolicy = MaxProcessors;
+	  else if (!strcasecmp(tmp, "minprocessors"))
+	    m_cMapPolicy = MinProcessors;
+	  else if (!strcasecmp(tmp, "roundrobin"))
+	    m_cMapPolicy = RoundRobin;
+	  else
+	    return esprintf("Invalid policy mapping option: %s", tmp);
+	}
 	tmp  = ezxml_attr(p, "processors");	
 	if ( tmp ) {
-	  policy.nprocs = atoi(tmp);
+	  m_processors = atoi(tmp);
 	}
       }
 	

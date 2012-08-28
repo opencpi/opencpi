@@ -159,7 +159,7 @@ namespace DataTransfer {
       uint32_t              return_size;
     };
 
-    OCPI::OS::int64_t               upAndRunning;
+    uint64_t               upAndRunning;
     MailBox                       mailBox[MAX_SYSTEM_SMBS];
 
   };

@@ -137,7 +137,7 @@ namespace OCPI {
       virtual const OCPI::RDT::Descriptors *finishConnect(const OCPI::RDT::Descriptors &other,
 							     OCPI::RDT::Descriptors &feedback) = 0;
       // Return true and fill in the string if you want a protocol
-      virtual bool getPreferredProtocol(const char *&) { return false; }
+      virtual const char *getPreferredProtocol() { return NULL; }
 
       // Create a container-specific external port
       virtual ExternalPort &createExternal(const char *extName, bool isProvider,

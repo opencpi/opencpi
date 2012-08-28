@@ -1,0 +1,28 @@
+<application done='file_write'>
+  <instance worker='file_read'>
+    <property name='filename' value='test.input'/>
+    <property name='granularity' value='4'/>
+    <property name='messageSize' value='16'/>
+  </instance>
+  <instance worker='bias'>
+    <property name='biasValue' value='0x01020304'/>
+  </instance>
+  <instance worker='bias'>
+    <property name='biasValue' value='0x01010101'/>
+  </instance>
+  <instance worker='file_write'>
+    <property name='filename' value='test.outputwrong'/>
+  </instance>
+  <connection>
+    <port instance='file_read' name='out'/>
+    <port instance='bias0' name='in'/>
+  </connection>
+  <connection>
+    <port instance='bias0' name='out'/>
+    <port instance='bias1' name='in'/>
+  </connection>
+  <connection>
+    <port instance='bias1' name='out'/>
+    <port instance='file_write' name='in'/>
+  </connection>
+</application>

@@ -46,7 +46,8 @@
 #ifndef OCPI_DataTransfer_SharedMemoryInternal_H_
 #define OCPI_DataTransfer_SharedMemoryInternal_H_
 
-#include <DtSharedMemoryInterface.h>
+#include "OcpiRes.h"
+#include "DtSharedMemoryInterface.h"
 
 namespace DataTransfer {
 
@@ -63,7 +64,7 @@ namespace DataTransfer {
     //                Returns 0 if transfer has completed, non-zero otherwise
     //        Throws:
     //                DtException for all other exception conditions
-    virtual OCPI::OS::int32_t createLocal (OCPI::OS::uint32_t size) = 0;
+    virtual int createLocal (uint32_t size) = 0;
 
     // Allocate from pool
     //        Arguments:
@@ -74,10 +75,10 @@ namespace DataTransfer {
     //                Returns 0 if transfer has completed, non-zero otherwise
     //        Throws:
     //                DtException for all other exception conditions
-    virtual OCPI::OS::int32_t alloc (
-                                    OCPI::OS::uint32_t nbytes, 
-                                    OCPI::OS::uint32_t alignment, 
-                                    OCPI::OS::uint64_t* addr_p) = 0;
+    virtual int alloc (
+		       uint32_t nbytes, 
+		       unsigned alignment, 
+		       OCPI::Util::ResAddrType* addr_p) = 0;
 
     // Free back to pool
     //        Arguments:
@@ -87,9 +88,9 @@ namespace DataTransfer {
     //                Returns 0 if transfer has completed, non-zero otherwise
     //        Throws:
     //                DtException for all other exception conditions
-    virtual OCPI::OS::int32_t free (
-                                   OCPI::OS::uint32_t addr, 
-                                   OCPI::OS::uint32_t nbytes) = 0;
+    virtual int free (
+		      uint32_t addr, 
+		      uint32_t nbytes) = 0;
 
     // Destroy resource pool
     //        Arguments:
@@ -97,7 +98,7 @@ namespace DataTransfer {
     //                Returns 0 if transfer has completed, non-zero otherwise
     //        Throws:
     //                DtException for all other exception conditions
-    virtual OCPI::OS::int32_t destroy () = 0;
+    virtual int destroy () = 0;
 
     // Destructor
     virtual ~ResourceServices () {};

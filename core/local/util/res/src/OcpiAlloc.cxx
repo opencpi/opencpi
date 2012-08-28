@@ -135,12 +135,12 @@ void OCPI::Util::ResPool::defrag()
 }
 
 
-int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
+int OCPI::Util::MemBlockMgr::alloc(uint32_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
   throw( std::bad_alloc ) 
 {
 
   if ( nbytes > 2000000 ) {
-    ocpiInfo("Allocating large mem %" PRIu64 "K", nbytes/1024);
+    ocpiInfo("Allocating large mem %" PRIu32 "K", nbytes/1024);
     //    OCPI::OS::dumpStack (std::cerr);
   }
 #ifdef DEBUG_LISTS
@@ -164,7 +164,7 @@ int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int align
         (*it).addr += nbytes;
         (*it).size -= nbytes;      
         m_pool->alloc_list.push_back( Block(m_pool, nbytes, taddr, ALIGN(req_addr, alignment)) );
-        ocpiDebug("**** Alloc Returning address = %" PRIx64 ", %" PRIx64 "", 
+        ocpiDebug("**** Alloc Returning address = %" PRIx32 ", %" PRIx32 "", 
                taddr, req_addr );
         return 0;
       }
@@ -172,7 +172,7 @@ int OCPI::Util::MemBlockMgr::alloc(OCPI::OS::uint64_t nbytes, unsigned int align
         req_addr = ALIGN((*it).addr, alignment);
         (*it).aligned_addr = req_addr;
         m_pool->alloc_list.push_back( *it );
-        ocpiDebug("**** Alloc Returning address = %" PRIx64 ", %" PRIx64 "", 
+        ocpiDebug("**** Alloc Returning address = %" PRIx32 ", %" PRIx32 "", 
                (*it).addr, req_addr );
         m_pool->free_list.erase( it );      
         return 0;
@@ -227,7 +227,7 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
 return -1;
 }
 
-OCPI::Util::MemBlockMgr::MemBlockMgr(OCPI::Util::ResAddrType start, OCPI::OS::uint64_t size )
+OCPI::Util::MemBlockMgr::MemBlockMgr(OCPI::Util::ResAddrType start, OCPI::OS::uint32_t size )
   throw( std::bad_alloc ) 
 {
   

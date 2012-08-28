@@ -112,10 +112,12 @@ namespace OCPI {
     class Driver;
     class Manager : public Child<ManagerManager,Manager> {
       friend class ManagerManager;
+      bool m_doNotDiscover;
     protected:
       Manager(const char *mname)
 	: Child<ManagerManager,Manager>
-	  (Singleton<ManagerManager>::getSingleton(), mname)
+	  (Singleton<ManagerManager>::getSingleton(), mname),
+	  m_doNotDiscover(false)
       {}
       // Configure the manager. X is the node whose name is the name of the manager
       // The default implementation just configures any drivers
@@ -124,7 +126,9 @@ namespace OCPI {
       virtual unsigned discover() = 0;
       virtual Driver *firstDriverBase() = 0;
       virtual unsigned cleanupPosition();
+      bool shouldDiscover() const { return !m_doNotDiscover; }
     public:
+      inline void suppressDiscovery() { m_doNotDiscover = true; }
       virtual ~Manager();
     };
     class Device;

@@ -181,7 +181,7 @@ namespace OCPI {
       m_structNext = NULL;
       m_types = NULL;
       m_typeNext = NULL;
-      m_parent = NULL;
+      //      m_parent = NULL;
       m_next = 0;
       m_length = 0;
       m_ULongLong = 0;
@@ -609,9 +609,9 @@ namespace OCPI {
 	  offset += skip;
 	} else {
 	  // strip braces if they were added
-	  if (needsCommaElement()) {
+	  if (needsCommaDimension()) {
 	    if (start[0] != '{' || end[-1] != '}')
-	      return esprintf("struct as array element not enclosed in {} for (%*s) (%u)",
+	      return esprintf("struct or array element not enclosed in {} for (%*s) (%u)",
 			      end - start, start, end - start);
 	    start++;
 	    end--;
@@ -735,7 +735,7 @@ unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, u
     } else {
       if (n != 0)
 	s+= ',';
-      if (needsCommaElement()) {
+      if (needsCommaDimension()) {
 	s += '{';
 	unparseValue(s, nseq, offset++);
 	s += '}';
@@ -762,8 +762,9 @@ static void doFormat(std::string &s, const char *fmt, ...) {
   free(cp);
 }
 
-void Value::unparse(std::string &s) const {
-  s.clear();
+void Value::unparse(std::string &s, bool append) const {
+  if (!append)
+    s.clear();
   if (m_vt->m_isSequence) {
     // Now we have allocated the appropriate sequence array, so we can parse elements
     //    doFormat(s, "\\<%lu\\>", m_nElements);
@@ -846,7 +847,7 @@ unparseDouble(std::string &s, double val) const {
   for (char *p = cp; *p; p++)
     if (*p == 'e' || *p == 'E') {
       while (p > cp && p[-1] == '0') {
-	strcpy(p - 1, p);
+	strcpy(p - 1, p); // FIXME valgrind overlap
 	p--;
       }
       break;
@@ -899,6 +900,9 @@ unparseString(std::string &s, const char *val) const {
 bool Value::needsComma() const {
   return m_vt->m_isSequence || m_vt->m_arrayRank == 1 || m_vt->m_baseType == OA::OCPI_Struct;
 }
+bool Value::needsCommaDimension() const {
+  return /* m_vt->m_arrayRank == 1 || */ m_vt->m_baseType == OA::OCPI_Struct;
+}
 bool Value::needsCommaElement() const {
   return m_vt->m_arrayRank == 1 || m_vt->m_baseType == OA::OCPI_Struct;
 }
@@ -914,10 +918,10 @@ unparseStruct(std::string &s, StructValue val) const {
       s += ' ';
       if (v->needsComma()) {
 	s += '{';
-	v->unparse(s);
+	v->unparse(s, true);
 	s += '}';
       } else
-	v->unparse(s);
+	v->unparse(s, true);
       seenOne = true;
     }
   }
@@ -926,10 +930,10 @@ void Value::
 unparseType(std::string &s, TypeValue val) const {
   if (val->needsComma()) {
     s += '{';
-    val->unparse(s);
+    val->unparse(s, true);
     s += '}';
   } else
-    val->unparse(s);
+    val->unparse(s, true);
 }
 void Value::
 unparseEnum(std::string &s, EnumValue val) const {

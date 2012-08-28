@@ -39,7 +39,7 @@ extern const char
   *emitProtocol(const char *outDir, const char *file, const char *structName),
   *emitIDL(const char *outDir, const char *protoFile);
 extern void
-  dataTypeTest(unsigned count),
+  dataTypeTest(const char *arg),
   addInclude(const char *inc);
 #endif
 

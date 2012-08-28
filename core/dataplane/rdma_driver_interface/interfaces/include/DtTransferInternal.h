@@ -165,7 +165,7 @@ namespace DataTransfer {
     XferServices* getService(EndPoint *s_endpoint, EndPoint *t_endpoint);        
 
     // Create an endpoint for remote hardware
-    EndPoint& allocateProxyEndPoint(const char *epString, uint64_t size);
+    EndPoint& allocateProxyEndPoint(const char *epString, uint32_t size);
 
     static bool canSupport(EndPoint &local_ep, const char *remote_endpoint);
     // Constructors/Destructors

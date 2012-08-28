@@ -1165,7 +1165,10 @@ namespace OCPI
           // Allow default connect params on port construction prior to connect
           applyConnectParams(NULL, params);
         }
-
+    public:
+      ~Port() {
+      }
+    private:
         // All the info is in.  Do final work to (locally) establish the connection
         const OCPI::RDT::Descriptors *finishConnect(const OCPI::RDT::Descriptors &other,
 						    OCPI::RDT::Descriptors &/*feedback*/) {
@@ -1351,11 +1354,13 @@ namespace OCPI
 
         void advanceLocal ();
 
+#if 0
         // Directly connect to this port
         // which creates a dummy user port
-        OC::ExternalPort& connectExternal ( const char* name,
+        OA::ExternalPort& connectExternal ( const char* name,
                                             const OA::PValue* userProps,
                                             const OA::PValue* props );
+#endif
         OC::ExternalPort &createExternal(const char *extName, bool provider, 
 					 const OU::PValue *extParams,
 					 const OU::PValue *connParams);
@@ -1752,7 +1757,7 @@ namespace OCPI
       return *new ExternalPort(*this, extName, !isProvider, extParams, connParams);
     }
 #else
-    OC::ExternalPort& Port::connectExternal ( const char* extName,
+    OA::ExternalPort& Port::connectExternal ( const char* extName,
                                               const OA::PValue* userProps,
                                               const OA::PValue* props )
     {

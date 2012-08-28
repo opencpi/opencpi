@@ -39,6 +39,10 @@ run: all test.input
 	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc $(VG) ./biasFile $(ARGS) > /dev/null	
 	od -X test.output
 
+runxml: all test.input
+	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc $(VG) ocpirun -d -v $(ARGS) bias.xml > /dev/null
+	od -X test.output
+
 runhdl1: all test.input
 	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/components/hdl sudo -E ./biasFile $(ARGS)
 	od -X test.output

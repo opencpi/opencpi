@@ -170,7 +170,7 @@ allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBo
   std::string ep;
   OCPI::Util::SelfAutoMutex guard (this);  // FIXME what are we guarding?
 
-  OCPI::Util::formatString(ep, "ocpi-pci-pio:0.0:%u.%" PRIu16 ".%" PRIu16,
+  OCPI::Util::formatString(ep, "ocpi-pci-pio:0.0;%u.%" PRIu16 ".%" PRIu16,
 			   m_SMBSize, mailBox, maxMailBoxes);
   return ep;
 }
@@ -270,7 +270,7 @@ OCPI::OS::int32_t PCISmemServices::attach (EndPoint*)
 }
 
 // Detach from shared memory object
-OCPI::OS::int32_t PCISmemServices::detach ()
+int32_t PCISmemServices::detach ()
 {
   // NULL function
   return 0;
@@ -278,7 +278,7 @@ OCPI::OS::int32_t PCISmemServices::detach ()
 
 
 // Map a view of the shared memory area at some offset/size and return the virtual address.
-void* PCISmemServices::map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size )
+void* PCISmemServices::map (uint32_t offset, uint32_t size )
 {  
   ( void ) size;
   OCPI::Util::AutoMutex guard ( m_threadSafeMutex,
@@ -290,7 +290,7 @@ void* PCISmemServices::map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size )
         
   if ( m_location->local ) {        
     ocpiDebug("PCISmemServices::map returning local vaddr = %p base %p offset 0x%"
-	      PRIx64 " size %u, end 0x%p",
+	      PRIx32 " size %u, end 0x%p",
 	      (uint8_t*)m_vaddr + offset, m_vaddr, offset, size, (uint8_t *)m_vaddr + size);
     return (char*)m_vaddr + offset;
   }
@@ -298,14 +298,14 @@ void* PCISmemServices::map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size )
 
   // We will create a map per offset until we change the OCPI endpoint to handle segments
   // We just need to make sure we dont run out of maps.
-  ocpiDebug("shm size = %" PRIu64 ", bus_offset = %" PRIu64 ", offset = %" PRIu64 ", fd = %d", 
-	    m_location->map_size, 
-	    m_location->bus_offset,
+  ocpiDebug("shm size = %" PRIu32 ", address = %" PRIu64 ", offset = %" PRIu32 ", fd = %d", 
+	    m_location->size, 
+	    m_location->address,
 	    offset, 
 	    m_fd );
   if (m_vaddr == NULL ) {
-    m_vaddr = mmap(NULL, m_location->map_size, PROT_READ|PROT_WRITE, MAP_SHARED,
-                    m_fd,  m_location->bus_offset );
+    m_vaddr = mmap(NULL, m_location->size, PROT_READ|PROT_WRITE, MAP_SHARED,
+                    m_fd,  m_location->address);
     ocpiDebug("vaddr = %p", m_vaddr );
   }
 
@@ -317,7 +317,7 @@ void* PCISmemServices::map (OCPI::OS::uint64_t offset, OCPI::OS::uint32_t size )
 }
 
 // Unmap the current mapped view.
-OCPI::OS::int32_t PCISmemServices::unMap ()
+int32_t PCISmemServices::unMap ()
 {
   return 0;
 }
@@ -329,7 +329,7 @@ void* PCISmemServices::enable ()
 }
 
 // Disable mapping
-OCPI::OS::int32_t PCISmemServices::disable ()
+int32_t PCISmemServices::disable ()
 {
   return 0;
 }
@@ -341,18 +341,18 @@ PCISmemServices::~PCISmemServices ()
 
 
 // Sets smem location data based upon the specified endpoint
-OCPI::OS::int32_t PCIEndPoint::parse( std::string& ep )
+int32_t PCIEndPoint::parse( std::string& ep )
 {
 
   ocpiDebug("Scanning %s", ep.c_str() );
-  if (sscanf(ep.c_str(), "ocpi-pci-pio:%x.%" SCNi64 ":%" SCNu64 ".", 
+  if (sscanf(ep.c_str(), "ocpi-pci-pio:%x.%" SCNi64 ";%" SCNu32 ".", 
                    &bus_id,
-                   &bus_offset,
-                   &map_size) != 3)
+                   &address,
+                   &size) != 3)
     throw OCPI::Util::EmbeddedException("Remote endpoint description wrong: ");
   
-  ocpiDebug("bus_id = %d, offset = 0x%" PRIx64 ", size = 0x%" PRIx64, 
-          bus_id, bus_offset, map_size );
+  ocpiDebug("bus_id = %d, address = 0x%" PRIx64 ", size = 0x%" PRIx32, 
+          bus_id, address, size );
    
   return 0;
 }
