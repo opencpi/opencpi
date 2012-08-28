@@ -42,6 +42,7 @@ ALLINC += \
 
 
 ALLLIBS += \
+	$(OCL_CONTAINER_LIBS) \
 	$(UTIL_LIBS) \
 	$(LOGGER_LIBS) \
 	$(OCPIOS_LIBS)

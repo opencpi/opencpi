@@ -41,7 +41,7 @@ ALLINC += $(OCPIOS_EXPORTS) \
  $(UTIL_EXPORTS)  $(DATA_TRANSFER_EXPORTS)
 
 ALLLIBS += $(OCPIOS_LIBS) \
- $(UTIL_LIBS)  $(DATA_TRANSFER_LIBS)
+ $(UTIL_LIBS)  $(OCPI_BASE_DIR)/core/dataplane/rdma_driver_interface/rdma_driver_interface # $(DATA_TRANSFER_LIBS)
 
 ifeq ($(OCPI_HAVE_IBVERBS),1)
 CXXFLAGS+= -DOFED_RDMA_SUPPORT

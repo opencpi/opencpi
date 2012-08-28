@@ -49,6 +49,7 @@ ALLLIBS += \
   $(LIBRARY_LIBS) \
   $(DATA_TRANSPORT_LIBS) \
   $(MSG_TRANSPORT_LIBS) \
+  $(DATA_TRANSFER_DRIVER_LIBS) \
   $(DATA_TRANSFER_LIBS) \
   $(UTIL_LIBS) \
   $(OCPIOS_LIBS)
@@ -59,8 +60,6 @@ MAIN_DRIVERS+= \
   _ZN12DataTransfer3pioE\
   _ZN4OCPI3HDL3hdlE\
   _ZN12DataTransfer3pciE\
-
-
 
 
 
