@@ -90,7 +90,8 @@ Implementations = \
         file_read_msg.rcc \
         file_write.rcc \
         file_write_msg.rcc \
-	bias.rcc 
+	bias.rcc \
+	ptest.rcc
 
 
 #	wbr.hdl 

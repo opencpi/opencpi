@@ -37,10 +37,12 @@
 #include <stdio.h>
 #include "OcpiOsAssert.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
 #include "sca_props.h"
 #include "idl2ifr.h"
 
 namespace OCPI { namespace SCA {
+    namespace OU = OCPI::Util;
 
 // Return a single string, to be freed by caller, or NULL on error.
  char *
@@ -186,7 +188,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
   asprintf(&rid, "\n%s\n", p->repid);
   const char *cp = strcasestr(repo, rid);
   if (!cp)
-    return esprintf("Didn't find interface definition for REPID: %s in IDL files provided", p->repid);
+    return OU::esprintf("Didn't find interface definition for REPID: %s in IDL files provided", p->repid);
   cp += strlen(rid);
   cp = strchr(cp, '\n'); // skip interface name
   if (!cp)
@@ -303,7 +305,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
 	case CORBA::tk_home:
 	case CORBA::tk_event:
 	default:
-	  return esprintf("Argument data type unsupported for parameter \"%s\" of operation \"%s\" type %d",
+	  return OU::esprintf("Argument data type unsupported for parameter \"%s\" of operation \"%s\" type %d",
 			  (const char *)op->name(), (const char *)arg->name, kind);
 	}
 	fprintf(f, " Type=\"%s\"/>\n", ocpiType);	

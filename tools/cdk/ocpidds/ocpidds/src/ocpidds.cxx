@@ -57,6 +57,7 @@
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilDataTypes.h"
 #include "OcpiUtilProtocol.h"
+#include "OcpiUtilMisc.h"
 #include "ocpidds.h"
 
 namespace OS = OCPI::OS;
@@ -708,13 +709,13 @@ doStruct(OU::Protocol &p, const char *&cp) {
 	      break;
 	    }
 	  if (n >= op.m_nArgs)
-	    return esprintf("Pragma refers to non-existent field \"%s\" for data type \"%s\"",
+	    return OU::esprintf("Pragma refers to non-existent field \"%s\" for data type \"%s\"",
 			    tmp1.c_str(), op.m_name.c_str());
 	}
       } else
-	return esprintf("Invalid Pragma doesn't match struct name: %s", tmp.c_str());
+	return OU::esprintf("Invalid Pragma doesn't match struct name: %s", tmp.c_str());
     } else
-      return esprintf("Unknown Pragma: %s", tmp.c_str());
+      return OU::esprintf("Unknown Pragma: %s", tmp.c_str());
   }
   cp++;
   return NULL;
@@ -792,7 +793,7 @@ emitProtocol(const char *outDir, const char *file, const char *structName) {
     }
   }
   if (!found)
-    err = esprintf("Could not find struct named \"%s\" in IDL file \"%s\"",
+    err = OU::esprintf("Could not find struct named \"%s\" in IDL file \"%s\"",
 		   structName, file);
   free(repo);
   return err;

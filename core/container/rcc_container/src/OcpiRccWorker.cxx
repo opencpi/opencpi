@@ -362,6 +362,9 @@ initializeContext()
   
   m_context->connectedPorts = 0;
   m_context->runCondition = new RCCRunCondition;
+  m_context->runCondition->portMasks = 0;  
+  m_context->runCondition->timeout = false;
+  m_context->runCondition->usecs = 0;
  
   if ( wd->runCondition ) {
     if ( wd->runCondition->portMasks ) {
@@ -631,10 +634,12 @@ void Worker::run(bool &anyone_run) {
 	break;
       }
     }
-    // If no port masks, then we won't run
+    // If no port masks, then we  run
     if (!m_context->runCondition->portMasks ||
-	!m_context->runCondition->portMasks[0])
+	!m_context->runCondition->portMasks[0]) {
+      run_condition_met = true;
       break;
+    }
     // Ok, do the work to find out which ports are ready
     readyMask = getReadyPorts();
 #ifndef NDEBUG
@@ -979,6 +984,38 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+      void Worker::setPropertyBytes(const OCPI::API::PropertyInfo &/*info*/, uint32_t offset,
+			    const uint8_t *data, unsigned nBytes) const {
+        memcpy((void *)(getPropertyVaddr() + offset), data, nBytes);
+      }
+      void Worker::setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const {
+        *(uint8_t *)(getPropertyVaddr() + info.m_offset) = data;
+      }
+      void Worker::setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data) const {
+        *(uint16_t *)(getPropertyVaddr() + info.m_offset) = data;
+      }
+      void Worker::setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data) const {
+        *(uint32_t *)(getPropertyVaddr() + info.m_offset) = data;
+      };
+      void Worker::setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const {
+        *(uint64_t *)(getPropertyVaddr() + info.m_offset) = data;
+      }
+      void Worker::getPropertyBytes(const OCPI::API::PropertyInfo &/*info*/, uint32_t offset,
+			    uint8_t *data, unsigned nBytes) const {
+        memcpy(data, (void *)(getPropertyVaddr() + offset), nBytes);
+      }
+      uint8_t Worker::getProperty8(const OCPI::API::PropertyInfo &info) const {
+        return *(uint8_t *)(getPropertyVaddr() + info.m_offset);
+      }
+      uint16_t Worker::getProperty16(const OCPI::API::PropertyInfo &info) const {
+        return *(uint16_t *)(getPropertyVaddr() + info.m_offset);
+      }
+      uint32_t Worker::getProperty32(const OCPI::API::PropertyInfo &info) const {
+        return *(uint32_t *)(getPropertyVaddr() + info.m_offset);
+      };
+      uint64_t Worker::getProperty64(const OCPI::API::PropertyInfo &info) const {
+        return *(uint64_t *)(getPropertyVaddr() + info.m_offset);
+      }
 
 }
 }

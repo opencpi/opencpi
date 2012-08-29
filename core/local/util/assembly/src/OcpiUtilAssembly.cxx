@@ -74,7 +74,7 @@ namespace OCPI {
       ezxml_t ax = m_xml;
       const char *err;
       bool maxProcs = false, minProcs = false, roundRobin = false;
-      if ((err = OE::checkAttrs(ax, "maxprocessors", "minprocessors", "roundrobin", NULL)) ||
+      if ((err = OE::checkAttrs(ax, "maxprocessors", "minprocessors", "roundrobin", "done", "name", NULL)) ||
 	  (err = OE::checkElements(ax, "instance", "connection", "policy", NULL)) ||
 	  (err = OE::getNumber(ax, "maxprocessors", &m_processors, &maxProcs)) ||
 	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &maxProcs)) ||
@@ -138,8 +138,12 @@ namespace OCPI {
 
     const char *Assembly::Property::parse(ezxml_t x) {
       const char *err = OE::getRequiredString(x, m_name, "name", "property");
-      if (!err)
-	err = OE::getRequiredString(x, m_value, "value", "property");
+      if (!err &&
+	  (err = OE::getRequiredString(x, m_value, "value", "property"))) {
+	const char *file = ezxml_cattr(x, "valueFile");
+	if (file)
+	  err = fileString(m_value, file);
+      }
       return err;
     }
     const char *Assembly::Instance::parse(ezxml_t ix, ezxml_t ax) {

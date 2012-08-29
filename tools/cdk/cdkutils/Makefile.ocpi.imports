@@ -36,8 +36,10 @@
 
 ALLINC += \
 	$(UTIL_EXPORTS) \
+        $(OCPIOS_EXPORTS) \
 
 ALLLIBS += \
 	$(UTIL_LIBS) \
+        $(OCPIOS_LIBS) \
 
 

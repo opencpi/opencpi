@@ -40,7 +40,10 @@
 #include <ctype.h>
 #include <sys/time.h>
 #include "OcpiUtilCppMacros.h"
+#include "OcpiUtilMisc.h"
 #include "wip.h"
+
+namespace OU = OCPI::Util;
 // Generate the readonly implementation file.
 // What implementations must explicitly (verilog) or implicitly (VHDL) include.
 #define HEADER ".h"
@@ -130,7 +133,7 @@ methodName(Worker *w, const char *method, const char *&mName) {
 	  s++;
 	break;
       default:
-	return esprintf("Invalid pattern rule: %s", w->pattern);
+	return OU::esprintf("Invalid pattern rule: %s", w->pattern);
       }
   }
   *s++ = 0;

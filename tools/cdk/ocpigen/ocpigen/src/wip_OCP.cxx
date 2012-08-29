@@ -36,7 +36,10 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "OcpiUtilMisc.h"
 #include "wip.h"
+
+namespace OU = OCPI::Util;
 
 #undef OCP_SIGNAL_MT
 #define OCP_SIGNAL_MT(n, w) {#n, true, true, w, true, false},
@@ -265,7 +268,7 @@ deriveOCP(Worker *w) {
       ocp->SThreadBusy.value = s;
       break;
     default:
-      return esprintf("No WIP port type specified for interface \"%s\"", p->name);
+      return OU::esprintf("No WIP port type specified for interface \"%s\"", p->name);
     }
     fixOCP(p);
   }

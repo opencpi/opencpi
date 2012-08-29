@@ -40,7 +40,12 @@
 #include <ctype.h>
 #include <sys/time.h>
 #include "OcpiUtilCppMacros.h"
+#include "OcpiUtilMisc.h"
 #include "wip.h"
+
+namespace OU = OCPI::Util;
+
+
 // Generate the readonly implementation file.
 // What implementations must explicitly (verilog) or implicitly (VHDL) include.
 #define HEADER ".h"
@@ -201,7 +206,7 @@ methodName(Worker *w, const char *method, const char *&mName) {
 	s++;
       break;
     default:
-      return esprintf("Invalid pattern rule: %s", w->pattern);
+      return OU::esprintf("Invalid pattern rule: %s", w->pattern);
     }
   }
   *s++ = 0;
@@ -228,24 +233,24 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
   fprintf(f, " */\n");
   const char *upper = upperdup(w->implName);
   fprintf(f,
-"\n"
+	  "\n"
 	  "/* This file contains the implementation declarations for worker %s */\n\n"
-"#ifndef RCC_WORKER_%s_H__\n"
-"#define RCC_WORKER_%s_H__\n"
-"#include <RCC_Worker.h>\n"
-"#if defined (__cplusplus)\n"
-"extern \"C\" {\n"
+	  "#ifndef RCC_WORKER_%s_H__\n"
+	  "#define RCC_WORKER_%s_H__\n"
+	  "#include <RCC_Worker.h>\n"
+	  "#if defined (__cplusplus)\n"
+	  "extern \"C\" {\n"
 	  "#endif\n",
 	  w->implName, upper, upper);
   const char *last;
+  unsigned in = 0, out = 0;
   if (w->ports.size()) {
     fprintf(f,
-"/*\n"
-" * Enumeration of port ordinals for worker %s\n"
+	    "/*\n"
+	    " * Enumeration of port ordinals for worker %s\n"
 	    " */\n"
 	    "typedef enum {\n",
 	    w->implName);
-    unsigned in = 0, out = 0;
     last = "";
     for (unsigned n = 0; n < w->ports.size(); n++) {
       Port *port = w->ports[n];
@@ -258,11 +263,10 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	in++;
     }
     fprintf(f, "\n} %c%sPort;\n", toupper(w->implName[0]), w->implName+1);
-    fprintf(f,
-"#define %s_N_INPUT_PORTS %u\n"
-	    "#define %s_N_OUTPUT_PORTS %u\n",
-	    upper, in, upper, out);
   }
+  fprintf(f, "#define %s_N_INPUT_PORTS %u\n"
+	  "#define %s_N_OUTPUT_PORTS %u\n",
+	  upper, in, upper, out);
   if (w->ctl.properties.size()) {
     fprintf(f,
 "/*\n"

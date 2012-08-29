@@ -587,11 +587,3 @@ namespace OCPI {
     }
   }
 }
-const char *esprintf(const char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  char *buf;
-  vasprintf(&buf, fmt, ap);
-  va_end(ap);
-  return buf;
-}

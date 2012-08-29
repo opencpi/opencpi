@@ -39,6 +39,7 @@
 
 #include "OcpiOsAssert.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
 #include "OcpiUtilException.h"
 #include "OcpiUtilDataTypes.h"
 #include "OcpiUtilValue.h"

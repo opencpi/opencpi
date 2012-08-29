@@ -41,6 +41,7 @@
 #include <string.h>
 #include "OcpiOsAssert.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
 #include "OcpiUtilAutoMutex.h"
 #include "OcpiUtilValue.h"
 #include "OcpiUtilDataTypes.h"
@@ -142,8 +143,8 @@ namespace OCPI {
 	  nBraces++; break;
 	case '}':
 	  if (nBraces == 0)
-	    return esprintf("unbalanced braces - extra close brace for (%*s) (%u)",
-			    stop - tmp, tmp, stop - tmp);
+	    return esprintf("unbalanced braces - extra close brace for (%*s) (%zu)",
+			    (int)(stop - tmp), tmp, stop - tmp);
 	  if (--nBraces == 0 && !comma) {
 	    end = unparsed;
 	    goto break2;
@@ -407,8 +408,8 @@ namespace OCPI {
 	  start++;
 	if (v->needsComma()) {
 	  if (*start != '{' || end[-1] != '}')
-	    return esprintf("struct member value needs be enclosed in {} (%*s) (%u)",
-			    end - start, start, end - start);
+	    return esprintf("struct member value needs be enclosed in {} (%*s) (%zu)",
+			    (int)(end - start), start, end - start);
 	  start++;
 	  end--;
 	}
@@ -602,8 +603,8 @@ namespace OCPI {
 	last = start;
 	if (nextDim < m_vt->m_arrayRank) {
 	  if (start == end || start[0] != '{' || end[-1] != '}')
-	    return esprintf("array elements not enclosed in {} for (%*s) (%u)",
-			    end - start, start, end - start);
+	    return esprintf("array elements not enclosed in {} for (%*s) (%zu)",
+			    (int)(end - start), start, end - start);
 	  if ((err = parseDimension(start+1, end-1, nseq, nextDim, offset, skip)))
 	    return err;
 	  offset += skip;
@@ -611,8 +612,8 @@ namespace OCPI {
 	  // strip braces if they were added
 	  if (needsCommaDimension()) {
 	    if (start[0] != '{' || end[-1] != '}')
-	      return esprintf("struct or array element not enclosed in {} for (%*s) (%u)",
-			      end - start, start, end - start);
+	      return esprintf("struct or array element not enclosed in {} for (%*s) (%zu)",
+			      (int)(end - start), start, end - start);
 	    start++;
 	    end--;
 	  }
@@ -640,7 +641,7 @@ namespace OCPI {
 				   m_vt->m_isSequence || m_vt->m_arrayRank ?      \
 				   m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
 				   m_##pretty)))			        \
-	    return esprintf("%s for \"%*s\" (%u)", err, end-start, start, end-start);\
+	    return esprintf("%s for \"%*s\" (%zu)", err, (int)(end-start), start, end-start); \
 	  break;
 	OCPI_PROPERTY_DATA_TYPES
 	OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)

@@ -34,8 +34,9 @@
 
 #include <string.h>
 #include "OcpiOsAssert.h"
-#include "OcpiUtilImplementation.h"
+#include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilImplementation.h"
 
 namespace OCPI {
   namespace Util {

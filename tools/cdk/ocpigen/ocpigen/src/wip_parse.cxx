@@ -40,7 +40,10 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include "OcpiUtilMisc.h"
 #include "wip.h"
+
+namespace OU = OCPI::Util;
 
 /*
  * Todo:
@@ -94,7 +97,7 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
       if (p != op && !strcmp(clock, op->name)) {
         if (p->myClock)
           // Can't refer to another port and also own the clock
-          return esprintf("Clock for interface \"%s\" refers to interface \"%s\","
+          return OU::esprintf("Clock for interface \"%s\" refers to interface \"%s\","
                           " and also has MyClock=true?",
                           p->name, clock);
         p->clockPort = op;
@@ -108,13 +111,13 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
         p->clock = c;
         if (p->myClock)
           if (c->port)
-            return esprintf("Clock for interface \"%s\", \"%s\" is already owned by interface \"%s\"",
+            return OU::esprintf("Clock for interface \"%s\", \"%s\" is already owned by interface \"%s\"",
                             p->name, clock, c->port->name);
           else
             c->port = p;
         return 0;
       }
-    return esprintf("Clock attribute of \"%s\" matches no interface or clock", p->name);
+    return OU::esprintf("Clock attribute of \"%s\" matches no interface or clock", p->name);
   }
   return 0;
 }
@@ -126,7 +129,7 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
   const char *err;
   const char *name = ezxml_cattr(impl, "Name");
   if (!name)
-    return esprintf("Missing \"Name\" attribute of %s element", impl->name);
+    return OU::esprintf("Missing \"Name\" attribute of %s element", impl->name);
   unsigned i;
   Port *dp = 0;
   for (i = 0; i < w->ports.size(); i++) {
@@ -136,7 +139,7 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
   }
   if (i >= w->ports.size() || dp && !dp->isData)
     return
-      esprintf("Name attribute of Stream/MessageInterface \"%s\" "
+      OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
                "does not match a DataInterfaceSpec", name);
   if ((err = checkClock(w, impl, dp)) ||
       (err = OE::getNumber(impl, "DataWidth", &dp->dataWidth, 0, dp->protocol->m_dataValueWidth)) ||
@@ -172,7 +175,7 @@ tryInclude(ezxml_t top, const char *parent, const char *element, ezxml_t *parsed
       return err;
     const char *ifile = ezxml_cattr(x, "href");
     if (!ifile)
-      return esprintf("xi:include missing an href attribute in file \"%s\"", parent);
+      return OU::esprintf("xi:include missing an href attribute in file \"%s\"", parent);
     ezxml_t i = 0;
     if ((err = parseFile(ifile, parent, element, &i, &ifile, optional)))
       return err;
@@ -203,7 +206,7 @@ tryChildInclude(ezxml_t top, const char *parent, const char *element,
   }
   return
     optional ? 0 :
-    esprintf("Neither %s nor xi:include found under %s in file \"%s\"",
+    OU::esprintf("Neither %s nor xi:include found under %s in file \"%s\"",
              element, top->name, parent);
 }
 
@@ -241,16 +244,16 @@ doImplProp(ezxml_t prop, void *arg) {
     }
   if (p) {
     if (!isSpec)
-      return esprintf("Implementation property named \"%s\" conflict with spec property",
+      return OU::esprintf("Implementation property named \"%s\" conflict with spec property",
                       name);
     if (p->m_defaultValue && ezxml_cattr(prop, "Default"))
-      return esprintf("Implementation property named \"%s\" cannot override "
+      return OU::esprintf("Implementation property named \"%s\" cannot override "
 		      "previous default value", name);
     if ((err = p->parseImpl(prop)))
       return err;
   } else {
     if (isSpec)
-      return esprintf("Specification property named \"%s\" not found in spec", name);
+      return OU::esprintf("Specification property named \"%s\" not found in spec", name);
     // All the spec attributes plus the impl attributes
     if ((err = addProperty(w, prop, true)))
       return err;
@@ -753,11 +756,11 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   for (unsigned i = 0; i < w->nClocks; i++, c++)
     if (c->port) {
       if (c->signal)
-        return esprintf("Clock %s is owned by interface %s and has a signal name",
+        return OU::esprintf("Clock %s is owned by interface %s and has a signal name",
                         c->name, c->port->name);
       //asprintf((char **)&c->signal, "%s_Clk", c->port->fullNameIn);
     } else if (!c->signal)
-      return esprintf("Clock %s is owned by no port and has no signal name",
+      return OU::esprintf("Clock %s is owned by no port and has no signal name",
                       c->name);
   // now make sure clockPort references are sorted out
   for (unsigned i = 0; i < w->ports.size(); i++) {
@@ -796,13 +799,13 @@ const char *
 getWorker(Assembly *a, ezxml_t x, const char *aName, Worker **wp) {
   const char *wName = ezxml_cattr(x, aName);
   if (!wName)
-    return esprintf("Missing \"%s\" attribute on connection", aName);
+    return OU::esprintf("Missing \"%s\" attribute on connection", aName);
   for (WorkersIter wi = a->workers.begin(); wi != a->workers.end(); wi++)
     if (!strcmp(wName, (*wi)->implName)) {
       *wp = (*wi);
       return 0;
     }
-  return esprintf("Attribute \"%s\": Worker name \"%s\" not foundr",
+  return OU::esprintf("Attribute \"%s\": Worker name \"%s\" not foundr",
                   aName, wName);
 }
 
@@ -810,7 +813,7 @@ const char *
 getPort(Worker *w, ezxml_t x, const char *aName, Port **pp) {
   const char *pName = ezxml_cattr(x, aName);
   if (!pName)
-    return esprintf("Missing \"%s\" attribute for worker \"%s\"",
+    return OU::esprintf("Missing \"%s\" attribute for worker \"%s\"",
                     aName, w->implName);
   for (unsigned i = 0; i < w->ports.size(); i++) {
     Port *p = w->ports[i];
@@ -819,7 +822,7 @@ getPort(Worker *w, ezxml_t x, const char *aName, Port **pp) {
       return 0;
     }
   }
-  return esprintf("Port name \"%s\" matches no port on worker \"%s\"",
+  return OU::esprintf("Port name \"%s\" matches no port on worker \"%s\"",
                   pName, w->implName);
 }
 
@@ -983,8 +986,8 @@ doInOut(const char *tok, Instance *i, bool isProducer) {
       if (p->u.wdi.isBidirectional)
         i->ports[n].isProducer = isProducer;
       else
-        return esprintf("Port \"%s\" is neither WMI nor bidirectional", p->name);
-  return esprintf("Unknown port \"%s\" in \"inputs\" attribute of instance", tok);
+        return OU::esprintf("Port \"%s\" is neither WMI nor bidirectional", p->name);
+  return OU::esprintf("Unknown port \"%s\" in \"inputs\" attribute of instance", tok);
 }
 static const char *
 doInputs(const char *tok, void *arg) {
@@ -1011,7 +1014,7 @@ parseAssy(ezxml_t xml, Worker *aw,
     if (defName)
       aw->implName = defName;
     else
-      return esprintf("Missing \"Name\" attribute for \"%s\"", xml->name);
+      return OU::esprintf("Missing \"Name\" attribute for \"%s\"", xml->name);
 #endif
   // Count instances and workers
   for (ezxml_t x = ezxml_cchild(xml, "Instance"); x; x = ezxml_next(x))
@@ -1025,7 +1028,7 @@ parseAssy(ezxml_t xml, Worker *aw,
     if (!i->wName) {
       if (noWorkerOk) // caller's business to deal with this
         continue;
-      return esprintf("Missing \"Worker\" attribute for instance \"%s\"",
+      return OU::esprintf("Missing \"Worker\" attribute for instance \"%s\"",
                       i->name ? i->name : "<no Name>");
     }
     // So we have an instance with a real live worker
@@ -1036,7 +1039,7 @@ parseAssy(ezxml_t xml, Worker *aw,
       i->worker = new Worker;
       a->workers.push_back(i->worker);
       if ((err = parseWorker(i->wName, aw->file, i->worker)))
-        return esprintf("in file %s: %s", i->wName, err);
+        return OU::esprintf("in file %s: %s", i->wName, err);
     }
     i->ports = myCalloc(InstancePort, i->worker->ports.size());
     for (unsigned n = 0; n < i->worker->ports.size(); n++) {
@@ -1066,11 +1069,11 @@ parseAssy(ezxml_t xml, Worker *aw,
           break;
         }
       if (!ipv->property)
-        return esprintf("Unknown property \"%s\" for worker \"%s\"", name,
+        return OU::esprintf("Unknown property \"%s\" for worker \"%s\"", name,
                         i->worker->implName);
       const char *unparsed = ezxml_cattr(pv, "Value");
       if (!unparsed)
-	return esprintf("Missing \"value\" attribute for \"%s\" property value", name);
+	return OU::esprintf("Missing \"value\" attribute for \"%s\" property value", name);
 
       if ((err = ipv->property->parseValue(unparsed, ipv->value)))
         return err;
@@ -1101,7 +1104,7 @@ parseAssy(ezxml_t xml, Worker *aw,
     }
     for (Instance *ii = a->instances; ii < i; ii++)
       if (!strcmp(ii->name, i->name))
-        return esprintf("Duplicate instance named \"%s\" in assembly", i->name);
+        return OU::esprintf("Duplicate instance named \"%s\" in assembly", i->name);
   }
   for (ezxml_t x = ezxml_cchild(xml, "Connection"); x; x = ezxml_next(x)) {
     if ((err = OE::checkAttrs(x, "Name", "External", (void*)0)))
@@ -1115,7 +1118,7 @@ parseAssy(ezxml_t xml, Worker *aw,
       const char *instName = ezxml_cattr(at, "Instance");
       if (!instName)
         return
-          esprintf("Missing \"Instance\" attribute in Attach subelement of "
+          OU::esprintf("Missing \"Instance\" attribute in Attach subelement of "
                    "connection \"%s\"", c->name);
       n = 0;
       InstancePort *ip = 0; // kill warning
@@ -1125,10 +1128,10 @@ parseAssy(ezxml_t xml, Worker *aw,
           const char *iName = ezxml_cattr(at, "Interface");
           if (!iName)
             return
-              esprintf("Missing \"Interface\" attribute in \"attach\" subelement of"
+              OU::esprintf("Missing \"Interface\" attribute in \"attach\" subelement of"
                        "connection \"%s\"", c->name);
           if (!i->worker)
-            return esprintf("Instance \"%s\" of connection \"%s\" has no worker",
+            return OU::esprintf("Instance \"%s\" of connection \"%s\" has no worker",
                             i->name, c->name);
           unsigned nn = 0;
           for (nn = 0; nn < i->worker->ports.size(); nn++) {
@@ -1139,19 +1142,19 @@ parseAssy(ezxml_t xml, Worker *aw,
               ip = &i->ports[nn];
               if (ip->connection)
                 return
-                  esprintf("Interface \"%s\" of worker instance \"%s\" "
+                  OU::esprintf("Interface \"%s\" of worker instance \"%s\" "
                            "attached to both connections \"%s\" and \"%s\"",
                            iName, instName, ip->connection->name, c->name);
               break;
             }
           }
           if (nn >= i->worker->ports.size())
-            return esprintf("Interface \"%s\" not found on instance \"%s\" in "
+            return OU::esprintf("Interface \"%s\" not found on instance \"%s\" in "
                             "connection  \"%s\"", iName, instName, c->name);
           break;
         }
       if (n >= a->nInstances)
-        return esprintf("Instance \"%s\" not found for connection  \"%s\"",
+        return OU::esprintf("Instance \"%s\" not found for connection  \"%s\"",
                         instName, c->name);
       attachPort(c, ip, p->name, NULL);
     } // all (local) attachments to the connection
@@ -1159,14 +1162,14 @@ parseAssy(ezxml_t xml, Worker *aw,
       asprintf((char **)&c->name, "conn%d", (int)(c - a->connections));
     for (Connection *cc = a->connections; cc < c; cc++)
       if (!strcmp(cc->name, c->name))
-        return esprintf("Duplicate connection named \"%s\" in assembly",
+        return OU::esprintf("Duplicate connection named \"%s\" in assembly",
                         c->name);
     const char *ext = ezxml_cattr(x, "External");
     if (ext) {
       if (strcasecmp(ext, "producer") &&
           strcasecmp(ext, "consumer") &&
           strcasecmp(ext, "bidirectional"))
-        return esprintf("Value of \"External\" attribute of connection \"%s\" is not "
+        return OU::esprintf("Value of \"External\" attribute of connection \"%s\" is not "
                         "\"consumer\" or \"producer\"", c->name);
       InstancePort *ip = myCalloc(InstancePort, 1);
       attachPort(c, ip, c->name, ext);
@@ -1206,19 +1209,19 @@ parseAssy(ezxml_t xml, Worker *aw,
       // See how we expose this externally
       if (!strcasecmp(role, "producer")) {
         if (!intPort->u.wdi.isProducer && !intPort->u.wdi.isBidirectional)
-          return esprintf("Connection %s has external producer role incompatible "
+          return OU::esprintf("Connection %s has external producer role incompatible "
                           "with port %s of worker %s",
                           c->name, intPort->name, intPort->worker->implName);
         extPort->u.wdi.isProducer = true;
         extPort->u.wdi.isBidirectional = false;
       } else if (!strcasecmp(role, "bidirectional")) {
         if (!intPort->u.wdi.isBidirectional)
-          return esprintf("Connection %s has external bidirectional role incompatible "
+          return OU::esprintf("Connection %s has external bidirectional role incompatible "
                           "with port %s of worker %s",
                           c->name, intPort->name, intPort->worker->implName);
       } else if (!strcasecmp(role, "consumer")) {
         if (intPort->u.wdi.isProducer)
-          return esprintf("Connection %s has external consumer role incompatible "
+          return OU::esprintf("Connection %s has external consumer role incompatible "
                           "with port %s of worker %s",
                           c->name, intPort->name, intPort->worker->implName);
         extPort->u.wdi.isBidirectional = false;
@@ -1234,7 +1237,7 @@ parseAssy(ezxml_t xml, Worker *aw,
             !pp->u.wdi.isOptional &&
             !ip->connection)
           return
-            esprintf("Port %s of instance %s of worker %s"
+            OU::esprintf("Port %s of instance %s of worker %s"
                " is not connected and not optional",
                pp->name, i->name, i->worker->implName);
       }
@@ -1284,7 +1287,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
         continue; // for app instances we just capture index.
       } else {
 	if ((err = OE::getNumber(x, "configure", &i->config, &i->hasConfig, 0)))
-	  return esprintf("Invalid configuration value for adapter: %s", err);
+	  return OU::esprintf("Invalid configuration value for adapter: %s", err);
         if (ic) {
           if (io)
             return "Container workers cannot be both IO and Interconnect";
@@ -1414,7 +1417,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
         } else if (ip->instance->clocks[nc]) {
           // This port already has a mapped clock
           if (ip->instance->clocks[nc] != c->clock)
-            return esprintf("Connection %s at interface %s of instance %s has clock conflict",
+            return OU::esprintf("Connection %s at interface %s of instance %s has clock conflict",
                             c->name, ip->port->name, ip->instance->name);
         } else {
           // FIXME CHECK COMPATIBILITY OF c->clock with ip->port->clock
@@ -1429,7 +1432,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
         unsigned nc = ip->port->clock - ip->instance->worker->clocks;
         if (!i->clocks[nc]) {
           if (ip->port->type == WSIPort || ip->port->type == WMIPort)
-            return esprintf("Unconnected data interface %s of instance %s has its own clock",
+            return OU::esprintf("Unconnected data interface %s of instance %s has its own clock",
                             ip->port->name, i->name);
           i->clocks[nc] = clk;
           asprintf((char **)&clk->name, "%s_%s", i->name, ip->port->clock->name);
@@ -1535,7 +1538,7 @@ const char *
 parseHdl(ezxml_t xml, const char *file, Worker *w) {
    const char *err;
   if (strcmp(w->implName, w->fileName))
-    return esprintf("File name (%s) and implementation name in XML (%s) don't match",
+    return OU::esprintf("File name (%s) and implementation name in XML (%s) don't match",
 		    w->fileName, w->implName);
   if ((err = OE::checkAttrs(xml, "Name", "Pattern", "Language", (void*)0)))
     return err;
@@ -1554,15 +1557,15 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
   // Here is where there is a difference between a implementation and as assembly
   if (!strcasecmp(xml->name, "HdlImplementation")) {
     if ((err = parseHdlImpl(xml, file, w)))
-      return esprintf("in %s for %s: %s", xml->name, w->implName, err);
+      return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
   } else if (!strcasecmp(xml->name, "HdlAssembly")) {
     if ((err = parseHdlAssy(xml, w)))
-      return esprintf("in %s for %s: %s", xml->name, w->implName, err);
+      return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
   } else
     return "file contains neither an HdlImplementation nor an HdlAssembly";
   // Whether a worker or an assembly, we derive the external OCP signals, etc.
   if ((err = deriveOCP(w)))
-    return esprintf("in %s for %s: %s", xml->name, w->implName, err);
+    return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
   unsigned wipN[NWIPTypes][2] = {{0}};
   for (unsigned i = 0; i < w->ports.size(); i++) {
     Port *p = w->ports[i];
@@ -1636,7 +1639,7 @@ parseRcc(ezxml_t xml, const char *file, Worker *w) {
         break;
     }
     if (n >= w->ports.size())
-      return esprintf("No DataInterface named \"%s\" from Port element", name);
+      return OU::esprintf("No DataInterface named \"%s\" from Port element", name);
     if ((err = OE::getNumber(x, "MinBuffers", &p->u.wdi.minBufferCount, 0, 0)) || // backward compat
         (err = OE::getNumber(x, "MinBufferCount", &p->u.wdi.minBufferCount, 0, p->u.wdi.minBufferCount)) ||
         (err = OE::getNumber(x, "Buffersize", &p->u.wdi.bufferSize, 0,
@@ -1682,7 +1685,7 @@ parseOcl(ezxml_t xml, const char *file, Worker *w) {
         break;
     }
     if (n >= w->ports.size())
-      return esprintf("No DataInterface named \"%s\" from Port element", name);
+      return OU::esprintf("No DataInterface named \"%s\" from Port element", name);
     if ((err = OE::getNumber(x, "MinBuffers", &p->u.wdi.minBufferCount, 0, 0)) || // backward compat
         (err = OE::getNumber(x, "MinBufferCount", &p->u.wdi.minBufferCount, 0, p->u.wdi.minBufferCount)))
       return err;
@@ -1725,7 +1728,7 @@ parseWorker(const char *file, const char *parent, Worker *w) {
   if (name && !strcasecmp(xml->name, "ComponentAssembly"))
     return parseAssy(xml, w->file, w);
 #endif
-  return esprintf("\"%s\" is not a valid implemention type (RccImplementation, HdlImplementation, OclImplementation, HdlAssembly, OclAssembly, ComponentAssembly)", xml->name);
+  return OU::esprintf("\"%s\" is not a valid implemention type (RccImplementation, HdlImplementation, OclImplementation, HdlAssembly, OclAssembly, ComponentAssembly)", xml->name);
 }
 
 void cleanWIP(Worker *w){ (void)w;}

@@ -38,6 +38,7 @@
 #include <climits>
 #include "OcpiOsAssert.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilValue.h"
 #define PROPERTY_ATTRIBUTES OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest", "Default"

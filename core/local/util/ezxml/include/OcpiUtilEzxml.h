@@ -264,7 +264,5 @@ namespace OCPI {
 
   }
 }
-// Move this somewhere sensible and integrate with CC::ApiError etc. FIXME
-extern const char *esprintf(const char *fmt, ...);
 
 #endif

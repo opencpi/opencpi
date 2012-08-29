@@ -226,7 +226,7 @@ namespace OCPI {
 	    err = "Couldn't execute bitstream loading command.  Bad OCPI_CDK_DIR environment variable?";
 	    break;
 	  case -1:
-	    err = esprintf("Unknown system error (errno %d) while executing bitstream loading command",
+	    err = OU::esprintf("Unknown system error (errno %d) while executing bitstream loading command",
 			   errno);
 	    break;
 	  case 0:
@@ -234,7 +234,7 @@ namespace OCPI {
 		   lart.name().c_str(), c.name().c_str());
 	    break;
 	  default:
-	    err = esprintf("Bitstream loading error (%d) loading \"%s\" on HDL container \"%s\"",
+	    err = OU::esprintf("Bitstream loading error (%d) loading \"%s\" on HDL container \"%s\"",
 			   rc, lart.name().c_str(), c.name().c_str());
 	  }
 	  if (err)
@@ -442,38 +442,38 @@ namespace OCPI {
       }
 
 #define PUT_GET_PROPERTY(n)						\
-      inline void setProperty##n(const OA::Property &p, uint##n##_t val) const {  \
+      void setProperty##n(const OA::PropertyInfo &info, uint##n##_t val) const {  \
 	uint32_t status = 0;						          \
 	if (m_properties.m_registers) {					          \
-	  if (!p.m_info.m_writeError ||					          \
+	  if (!info.m_writeError ||					          \
 	      !(status =						          \
 		get32Register(status, OccpWorkerRegisters) &                      \
 		OCCP_STATUS_WRITE_ERRORS))				          \
-	    m_properties.set##n##RegisterOffset(p.m_info.m_offset, val); \
-	  if (p.m_info.m_writeError && !status)				\
+	    m_properties.set##n##RegisterOffset(info.m_offset, val); \
+	  if (info.m_writeError && !status)				\
 	    status =							          \
 	      get32Register(status, OccpWorkerRegisters) &		          \
 	      OCCP_STATUS_WRITE_ERRORS;					          \
 	} else								          \
-	  m_properties.m_accessor->set##n(p.m_info.m_offset, val, &status);       \
+	  m_properties.m_accessor->set##n(info.m_offset, val, &status);       \
 	if (status)							\
 	  throwPropertyWriteError(status);				\
       }									\
-      inline uint##n##_t getProperty##n(const OA::Property &p) const {	\
+      inline uint##n##_t getProperty##n(const OA::PropertyInfo &info) const {	\
 	uint32_t status = 0;						\
 	uint##n##_t val;						\
 	if (m_properties.m_registers) {					\
-	  if (!p.m_info.m_readError ||					\
+	  if (!info.m_readError ||					\
 	      !(status =						\
 		get32Register(status, OccpWorkerRegisters) &		\
 		OCCP_STATUS_READ_ERRORS))				\
-	    val = m_properties.get##n##RegisterOffset(p.m_info.m_offset); \
-	  if (p.m_info.m_readError && !status)				\
+	    val = m_properties.get##n##RegisterOffset(info.m_offset); \
+	  if (info.m_readError && !status)				\
 	    status =							\
 	      get32Register(status, OccpWorkerRegisters) &		\
 	      OCCP_STATUS_READ_ERRORS;					\
 	} else								\
-	  val = m_properties.m_accessor->get##n(p.m_info.m_offset, &status); \
+	  val = m_properties.m_accessor->get##n(info.m_offset, &status); \
 	if (status)							\
 	  throwPropertyReadError(status);				\
 	return val;							\
@@ -482,6 +482,41 @@ namespace OCPI {
       PUT_GET_PROPERTY(16)
       PUT_GET_PROPERTY(32)
       PUT_GET_PROPERTY(64)
+
+      void setPropertyBytes(const OA::PropertyInfo &info, uint32_t offset,
+			    const uint8_t *data, unsigned nBytes) const {
+	uint32_t status = 0;
+	if (m_properties.m_registers) {
+	  if (!info.m_writeError ||
+	      !(status = (get32Register(status, OccpWorkerRegisters) &
+			  OCCP_STATUS_WRITE_ERRORS)))
+	    m_properties.setBytesRegisterOffset(offset,	data, nBytes);
+	  if (info.m_writeError && !status)
+	    status = (get32Register(status, OccpWorkerRegisters) &
+		      OCCP_STATUS_WRITE_ERRORS);
+	} else
+	  m_properties.m_accessor->setBytes(offset, data, nBytes, &status);
+	if (status)
+	  throwPropertyWriteError(status);
+      }
+
+      inline void
+      getPropertyBytes(const OA::PropertyInfo &info, uint32_t offset, uint8_t *buf, unsigned nBytes) const {
+	uint32_t status = 0;
+
+	if (m_properties.m_registers) {
+	  if (!info.m_readError ||
+	      !(status = (get32Register(status, OccpWorkerRegisters) &
+			  OCCP_STATUS_READ_ERRORS))) {
+	    m_properties.getBytesRegisterOffset(offset, buf, nBytes);
+	    if (info.m_readError)
+	      status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_READ_ERRORS;
+	  }
+	} else
+	  m_properties.m_accessor->getBytes(offset, buf, nBytes, &status);
+	if (status)
+	  throwPropertyReadError(status);
+      }
 
       inline void setPropertySequence(const OA::Property &p,
 				      const uint8_t *val,
@@ -554,7 +589,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
       void								\
       set##pretty##Property(const OA::Property &p, const run val) const { \
-	setProperty##bits(p, *(uint##bits##_t *)&val);			\
+	setProperty##bits(p.m_info, *(uint##bits##_t *)&val);			\
       }									\
       void								\
       set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
@@ -564,7 +599,7 @@ namespace OCPI {
       }									\
       run								\
       get##pretty##Property(const OA::Property &p) const {		\
-	return (run)getProperty##bits(p);				\
+	return (run)getProperty##bits(p.m_info);				\
       }									\
       unsigned								\
       get##pretty##SequenceProperty(const OA::Property &p, run *vals,	\
