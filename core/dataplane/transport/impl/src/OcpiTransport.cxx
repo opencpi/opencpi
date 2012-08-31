@@ -119,37 +119,55 @@ init() {
 #endif
 }
 
-// This is called when we get a remote endpoint string and need a local endpoint
-// to talk to it.
+// This is called when we get a variably complete remote endpoint string
+// and need a local endpoint to talk to it.
 DataTransfer::EndPoint &OCPI::DataTransport::Transport::
 getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
   if (!remote || !remote[0])
     remote = getenv("OCPI_DEFAULT_TRANSPORT");
   if (!remote)
     remote = "ocpi-smb-pio";
-  std::string protocol;
-  EndPoint::getProtocolFromString(remote, protocol);
-  XferFactory* tfactory = XferFactoryManager::getFactoryManager().find(protocol);
+  XferFactory* tfactory = XferFactoryManager::getFactoryManager().find(remote);
   if (!tfactory)
     throw UnsupportedEndpointEx(remote);
+#if 1
+  uint16_t mailBox = 0, maxMb = 0;
+  const char *after = strchr(remote, ':');
+  if (after) {
+    after++; // for isCompatible below
+    char *cs = strdup(remote);
+    uint32_t size;
+    EndPoint::getResourceValuesFromString(remote, cs, &mailBox, &maxMb, &size);
+    free(cs);
+  }
+  DataTransfer::EndPoint *lep = NULL;
+  for (EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++) {
+    DataTransfer::EndPoint *ep = *i;
+    if (ep->factory == tfactory &&
+	(mailBox == 0 || (ep->maxCount == maxMb && ep->mailbox != mailBox)) &&
+	ep->isCompatibleLocal(after)) {
+      lep = ep;
+      break;
+    }
+  }
+  if (!lep) {
+    lep = tfactory->addCompatibleLocalEndPoint(after, mailBox, maxMb);
+    m_localEndpoints.insert(lep);
+  }
+#else
   DataTransfer::EndPoint *lep = NULL;
   if (strchr(remote, ':')) {
+    // remote has details (not just a protool) we need to match up in the details
+    // we first parse the generic back end (if there is one).
     char *cs = strdup(remote);
     uint16_t mailBox, maxMb;
     uint32_t size;
     EndPoint::getResourceValuesFromString(remote, cs, &mailBox, &maxMb, &size);
     free(cs);
-    for (EndPointsIter i = m_localEndpoints.begin();
-	 lep == NULL && i != m_localEndpoints.end(); i++) {
-      DataTransfer::EndPoint *ep = *i;
-      if (ep->protocol == protocol && ep->maxCount == maxMb && ep->mailbox != mailBox)
-	lep = ep;
-    }
-    if (!lep) {
-      lep = tfactory->addCompatibleEndPoint(mailBox, maxMb);
-      m_localEndpoints.insert(lep);
-    }
+    // Now we ask the driver to do the real work.
+    lep = tfactory->getCompatibleEndPoint(remote, m_localEndpoints, mailBox, maxMb);
   } else {
+    // Remote is just a protocol
     for (EndPointsIter i = m_localEndpoints.begin(); lep == NULL && i != m_localEndpoints.end(); i++)
       if ((*i)->protocol == protocol)
 	lep = *i;
@@ -159,6 +177,7 @@ getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
       m_localEndpoints.insert(lep);
     }
   }
+#endif
   lep->finalize();
   return *lep;
 }
@@ -532,6 +551,7 @@ createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
   else {
     if (!OU::findString(params, "protocol", protocol) &&
 	!OU::findString(params, "transport", protocol) &&
+	!OU::findString(params, "remote", protocol) &&
 	(protocol = getenv("OCPI_DEFAULT_PROTOCOL")))
       ocpiDebug("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment", protocol);
     ep = &getLocalCompatibleEndpoint(protocol);

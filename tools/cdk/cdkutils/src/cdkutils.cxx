@@ -37,8 +37,10 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include "OcpiUtilMisc.h"
 #include "cdkutils.h"
 
+namespace OU = OCPI::Util;
 const char **includes;
 static unsigned nIncludes;
 void
@@ -78,18 +80,18 @@ parseFile(const char *file, const char *parent, const char *element,
       }
     }
     if (fd < 0)
-      return esprintf("File \"%s\" could not be opened for reading/parsing", file);
+      return OU::esprintf("File \"%s\" could not be opened for reading/parsing", file);
   }
   if (xfile)
     *xfile = cp;
   ezxml_t x = ezxml_parse_fd(fd);
   if (!x || !x->name)
-    return esprintf("File \"%s\" (when looking for \"%s\") could not be parsed as XML (", cp, file);
+    return OU::esprintf("File \"%s\" (when looking for \"%s\") could not be parsed as XML (", cp, file);
   if (element && strcasecmp(x->name, element)) {
     if (optional)
       *xp = 0;
     else
-      return esprintf("File \"%s\" does not contain a %s element", cp, element);
+      return OU::esprintf("File \"%s\" does not contain a %s element", cp, element);
   } else
     *xp = x;
   addDep(cp, parent != 0);
@@ -123,7 +125,7 @@ dumpDeps(const char *top) {
     return 0;
   FILE *out = fopen(depFile, "w");
   if (out == NULL)
-    return esprintf("Cannot open dependency file \"%s\" for writing", top);
+    return OU::esprintf("Cannot open dependency file \"%s\" for writing", top);
   fprintf(out, "%s:", top);
   for (unsigned n = 0; n < nDeps; n++)
     fprintf(out, " %s", deps[n]);
@@ -143,7 +145,7 @@ openOutput(const char *name, const char *outDir, const char *prefix, const char 
   asprintf(&file, "%s%s%s%s%s%s", outDir ? outDir : "", outDir ? "/" : "",
 	  prefix, name, suffix, ext);
   if ((f = fopen(file, "w")) == NULL)
-    return esprintf("Can't not open file %s for writing (%s)\n",
+    return OU::esprintf("Can't not open file %s for writing (%s)\n",
 		    file, strerror(errno));
   dumpDeps(file);
   if (other && strcmp(other, name)) {

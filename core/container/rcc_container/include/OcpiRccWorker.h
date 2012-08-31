@@ -129,6 +129,19 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+      void setPropertyBytes(const OCPI::API::PropertyInfo &info, uint32_t offset,
+			    const uint8_t *data, unsigned nBytes) const;
+      void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data) const;
+      void setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data) const;
+      void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data) const;
+      void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data) const;
+      void getPropertyBytes(const OCPI::API::PropertyInfo &info, uint32_t offset,
+				    uint8_t *data, unsigned nBytes) const;
+      uint8_t getProperty8(const OCPI::API::PropertyInfo &info) const;
+      uint16_t getProperty16(const OCPI::API::PropertyInfo &info) const;
+      uint32_t getProperty32(const OCPI::API::PropertyInfo &info) const;
+      uint64_t getProperty64(const OCPI::API::PropertyInfo &info) const;
+
 
         virtual void prepareProperty(OCPI::Metadata::Property&,
 				     volatile void *&writeVaddr,

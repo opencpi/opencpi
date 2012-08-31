@@ -972,6 +972,17 @@ namespace OCPI
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+#define PUT_GET_PROPERTY(n)						\
+      void setProperty##n(const OA::PropertyInfo &, uint##n##_t) const {} \
+      uint##n##_t getProperty##n(const OA::PropertyInfo &) const { return 0; }
+      PUT_GET_PROPERTY(8)
+      PUT_GET_PROPERTY(16)
+      PUT_GET_PROPERTY(32)
+      PUT_GET_PROPERTY(64)
+      void setPropertyBytes(const OA::PropertyInfo &, uint32_t,
+			    const uint8_t *, unsigned ) const {}
+      void getPropertyBytes(const OA::PropertyInfo &, uint32_t,
+			    uint8_t *, unsigned ) const {}
 
     }; // End: class Worker
 

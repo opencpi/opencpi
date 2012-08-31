@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -304,6 +303,12 @@ namespace OCPI {
 	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatStringAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatStringAddV(std::string &out, const char *fmt, va_list ap);
+      // Return an error string (caller can throw if desired)
+      const char
+	*fileString(std::string &out, const char *file),
+	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+
+
   }
 }
 

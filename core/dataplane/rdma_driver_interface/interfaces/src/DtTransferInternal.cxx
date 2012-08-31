@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -126,6 +125,7 @@ allocateEndpoints(std::vector<std::string> &l) {
   l.push_back(allocateEndpoint(NULL, getNextMailBox(), getMaxMailBox()));
 }
 
+#if 0
 // Allocate a set of endpoints, one per driver, for the caller
 void XferFactoryManager::
 allocateSupportedEndpoints(EndPoints &endpoints) {
@@ -136,6 +136,7 @@ allocateSupportedEndpoints(EndPoints &endpoints) {
     endpoints.insert(f->addEndPoint(eps.c_str(), true));
   }
 }
+#endif
 
 // This method is used to retreive all of the available endpoints that have been registered
 // in the system.  Note that some of the endpoints may not be finalized.
@@ -416,7 +417,7 @@ addEndPoint(const char *end_point, bool local) {
       m_locations.resize(loc->mailbox + 1, NULL);
     m_locations[loc->mailbox] = loc;
   }
-  ocpiInfo("Creating ep %p %s", loc, loc->end_point.c_str());
+  ocpiInfo("Creating ep %p %s %u", loc, loc->end_point.c_str(), local);
   loc->refCount = 1;
   return loc;
 }
@@ -449,8 +450,16 @@ getEndPoint(const char *end_point, bool local, bool cantExist)
   return addEndPoint(end_point, local);
 }
 
+// The default is that the remote one doesn't matter to this allocation
+std::string XferFactory::
+allocateCompatibleEndpoint(const OCPI::Util::PValue*params,
+			   const char *,
+			   uint16_t mailBox, uint16_t maxMailBoxes) {
+  return allocateEndpoint(params, mailBox, maxMailBoxes);
+}
+
 EndPoint* XferFactory::
-addCompatibleEndPoint(uint16_t mailBox, uint16_t maxMb)
+addCompatibleLocalEndPoint(const char *remote, uint16_t mailBox, uint16_t maxMb)
 { 
   OCPI::Util::SelfAutoMutex guard (this); 
   // Find an unused slot that is different from the remote one
@@ -459,15 +468,23 @@ addCompatibleEndPoint(uint16_t mailBox, uint16_t maxMb)
   if (maxMb && maxMb != myMax)
     throw OU::Error("Remote end point has different number of mailbox slots (%u vs. our %u)",  maxMb, myMax);
   unsigned n;
-  for (n = 1; n < MAX_SYSTEM_SMBS; n++)
-    if (n != mailBox && (n >= m_locations.size() || !m_locations[n]))
-      break;
-  if (n == MAX_SYSTEM_SMBS || n > myMax)
-    throw OCPI::Util::Error("Mailboxes for endpoints for protocol %s are exhausted (all %u are used)",
-			    getProtocol(), myMax);
-  return addEndPoint(allocateEndpoint(NULL, n, myMax).c_str(), true);
+  if (!mailBox)
+    n = getNextMailBox();
+  else {
+    for (n = 1; n < m_locations.size(); n++)
+      if (n != mailBox && m_locations[n])
+	break;
+    if (n == MAX_SYSTEM_SMBS || n > myMax)
+      throw OCPI::Util::Error("Mailboxes for endpoints for protocol %s are exhausted (all %u are used)",
+			      getProtocol(), myMax);
+    if (n >= m_locations.size())
+      n = getNextMailBox();
+  }
+  std::string stringEndPoint = 
+    remote ? allocateCompatibleEndpoint(NULL, remote, n, myMax) :
+    allocateEndpoint(NULL, n, myMax);
+  return addEndPoint(stringEndPoint.c_str(), true);
 }
-
 /******
  *  TEMPLATE MANAGEMENT
  ******/

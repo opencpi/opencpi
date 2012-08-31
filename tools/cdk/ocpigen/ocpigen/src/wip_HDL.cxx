@@ -45,9 +45,11 @@
 #define _UUID_STRING_T
 typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
+#include "OcpiUtilMisc.h"
 #include "HdlOCCP.h"
 #include "wip.h"
 
+namespace OU = OCPI::Util;
 /*
  * todo
  * generate WIP attribute constants for use by code (widths, etc.)
@@ -149,7 +151,7 @@ const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master
 	}
 	break;
       default:
-	return esprintf("Invalid pattern rule: %s", w->pattern);
+	return OU::esprintf("Invalid pattern rule: %s", w->pattern);
       }
     }
   }
@@ -1105,7 +1107,7 @@ emitAssyHDL(Worker *w, const char *outDir)
 	       slave->instance->name, slave->port->name,
 	       master->instance->name, master->port->name);
       if ((err = adjustConnection(consumer, producer)))
-	return esprintf("for connection from %s/%s to %s/%s: %s",
+	return OU::esprintf("for connection from %s/%s to %s/%s: %s",
 			producer->instance->name, producer->port->name,
 			consumer->instance->name, consumer->port->name, err);
       // Generate signals when both sides has the signal configured.
@@ -1650,7 +1652,7 @@ emitWorker(FILE *f, Worker *w)
     if (!first)
       fprintf(f, "\"");
   }
-  if (w->ports[0]->type == WCIPort && w->ports[0]->u.wci.timeout)
+  if (w->ports.size() && w->ports[0]->type == WCIPort && w->ports[0]->u.wci.timeout)
     fprintf(f, " Timeout=\"%u\"", w->ports[0]->u.wci.timeout);
   fprintf(f, ">\n");
   unsigned nn;
@@ -1815,7 +1817,7 @@ emitArtHDL(Worker *aw, const char *outDir) {
       }
     }
     if (!nn >= dw->assembly.nInstances)
-      return esprintf("No instance in container assembly for assembly instance \"%s\"",
+      return OU::esprintf("No instance in container assembly for assembly instance \"%s\"",
 		      i->name);
     emitInstance(i, f);
   }
@@ -1833,12 +1835,12 @@ emitArtHDL(Worker *aw, const char *outDir) {
       if (ac->external && cc->external && !strcmp(ac->name, cc->name)) {
 	if (ac->external->port->u.wdi.isProducer) {
 	  if (cc->external->port->u.wdi.isProducer)
-	    return esprintf("container connection \"%s\" has same direction (is producer) as application connection",
+	    return OU::esprintf("container connection \"%s\" has same direction (is producer) as application connection",
 			    cc->name);
 	} else if (!ac->external->port->u.wdi.isBidirectional &&
 		   !cc->external->port->u.wdi.isProducer &&
 		   !cc->external->port->u.wdi.isBidirectional)
-	    return esprintf("container connection \"%s\" has same direction (is consumer) as application connection",
+	    return OU::esprintf("container connection \"%s\" has same direction (is consumer) as application connection",
 			    cc->name);
 	break;
       }
@@ -1849,7 +1851,7 @@ emitArtHDL(Worker *aw, const char *outDir) {
       if (cip != cc->external)
 	break;
     if (!cip)
-      return esprintf("container connecction \"%s\" connects to no ports in the container", cc->name);
+      return OU::esprintf("container connecction \"%s\" connects to no ports in the container", cc->name);
     if (ac) {
       for (otherp = ac->ports; otherp; otherp = otherp->nextConn)
 	if (otherp != ac->external)

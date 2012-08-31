@@ -51,7 +51,15 @@ int main(int argc, char **argv) {
     app.initialize();
     fprintf(stderr, "Application established: containers, workers, connections all created\n");
     fprintf(stderr, "Communication with the application established\n");
+#if 1
+    OA::Property p(app, "file_write:filename");
+    p.setStringValue("test.output");
+    OA::Property p1(app, "file_read:test");
+    short s[] = {-1,-2, 0, -32768, 32767};
+    p1.setShortSequenceValue(s, 4);
+#else
     app.setProperty("file_write", "filename", "test.output");
+#endif
     app.start();
     fprintf(stderr, "Application started/running\n");
     app.wait();

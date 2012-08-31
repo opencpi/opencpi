@@ -83,6 +83,7 @@ namespace DataTransfer {
     XferFactory*         factory;
     unsigned             refCount;
     EndPoint( std::string& ep, OCPI::OS::uint32_t size=0, bool local=false);
+    virtual bool isCompatibleLocal(const char *) const { return true; }
     //    EndPoint& operator=(EndPoint&);
     //    EndPoint& operator=(EndPoint*);
     void    release();

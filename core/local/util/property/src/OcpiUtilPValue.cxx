@@ -36,10 +36,11 @@
 #include <memory>
 #include <unistd.h>
 #include <stdarg.h>
-#include <OcpiUtilEzxml.h>
-#include <OcpiUtilDataTypes.h>
-#include <OcpiUtilValue.h>
-#include <OcpiPValue.h>
+#include "OcpiUtilEzxml.h"
+#include "OcpiUtilMisc.h"
+#include "OcpiUtilDataTypes.h"
+#include "OcpiUtilValue.h"
+#include "OcpiPValue.h"
 
 namespace OE = OCPI::Util::EzXml;
 namespace OCPI {

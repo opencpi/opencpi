@@ -39,6 +39,7 @@
 #include <cerrno>
 #include <cctype>
 #include <assert.h>
+#include <OcpiUtilException.h>
 #include <OcpiUtilMisc.h>
 
 /*
@@ -515,4 +516,40 @@ formatStringAdd(std::string &out, const char *fmt, ...) {
   va_start(ap, fmt);
   formatStringAddV(out, fmt, ap);
   va_end(ap);
+}
+
+// Use vanilla C file I/O
+const char *OCPI::Util::
+fileString(std::string &out, const char *file) {
+  FILE *f = fopen(file, "r");
+  long size;
+  const char *err = NULL;
+
+  if (f &&
+      fseek(f, 0, SEEK_END) == 0 &&
+      (size = ftell(f)) > 0 &&
+      fseek(f, 0, SEEK_SET) == 0) {
+    // To avoid requiring double storage, we chunk the input.
+    char buf[4*1024];
+    out.reserve(size);
+    size_t n;
+    for (; (n = fread(buf, 1, sizeof(buf), f)) && n <= (size_t)size; size -= n)
+      out.append(buf, n);
+    if (n)
+      err = "file longer than expected";
+  } else
+    err = "file could not be open for reading";
+  fclose(f);
+  if (err)
+    return esprintf("Can't process file \"%s\" for string: %s", file, err);
+  return NULL;
+}
+const char *OCPI::Util::
+esprintf(const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  char *buf;
+  vasprintf(&buf, fmt, ap);
+  va_end(ap);
+  return buf;
 }

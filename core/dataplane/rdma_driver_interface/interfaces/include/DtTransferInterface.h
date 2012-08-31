@@ -285,8 +285,8 @@ namespace DataTransfer {
     inline EndPoint* getEndPoint(const std::string &s, bool local=false) {
       return getEndPoint(s.c_str(), local);
     }
-    virtual EndPoint* addCompatibleEndPoint( uint16_t mbox, uint16_t maxMb);
-    virtual EndPoint* addEndPoint(const char *endpoint, bool local);
+    EndPoint* addCompatibleLocalEndPoint(const char *remote, uint16_t mailBox, uint16_t maxMb);
+    EndPoint* addEndPoint(const char *endpoint, bool local);
     // Avoid the mailbox, and match the mailbox count, if not -1
     virtual EndPoint* createEndPoint(std::string& endpoint, bool local=false) = 0;
 
@@ -298,6 +298,9 @@ namespace DataTransfer {
      ***************************************/
     virtual std::string allocateEndpoint(const OCPI::Util::PValue*,
 					 uint16_t mailBox, uint16_t maxMailBoxes) = 0;
+    virtual std::string allocateCompatibleEndpoint(const OCPI::Util::PValue*params,
+						   const char *remote,
+						   uint16_t mailBox, uint16_t maxMailBoxes);
 
     // The endpoint is telling its factory that it is being deleted.
     void removeEndPoint(EndPoint &ep);

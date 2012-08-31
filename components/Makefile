@@ -100,6 +100,7 @@ Implementations = \
         file_read_msg.rcc \
         file_write.rcc \
         file_write_msg.rcc \
+	ptest.rcc \
 	bias.rcc \
 	$(Tests)
 

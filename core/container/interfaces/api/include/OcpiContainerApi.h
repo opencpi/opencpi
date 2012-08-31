@@ -122,7 +122,7 @@ namespace OCPI {
       virtual void set##pretty##Property(const Property &,const run) const = 0; \
       virtual void set##pretty##SequenceProperty(const Property &,        \
 						 const run *,		  \
-						 unsigned length) const = 0;
+						 unsigned nElements) const = 0;
 
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
