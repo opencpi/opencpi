@@ -37,6 +37,14 @@ ifndef OCPI_CDK_DIR
 OCPI_CDK_DIR=../ocpi
 endif
 
+Tests = \
+	dds_complex.test \
+	fsk_mod_complex.test \
+	mixer_complex.test \
+	loopback.test \
+	sym_fir_real.test
+
+
 Implementations = \
 	adc_unpack.rcc \
 	bias.hdl \
@@ -46,6 +54,8 @@ Implementations = \
 	canny_partial.rcc \
 	cic_lpfilter_complex.rcc \
 	cic_hpfilter_complex.rcc \
+	comparator_complex.rcc \
+	comparator_real.rcc \
 	convert_s16_f32.rcc \
 	corner_eigen_vals_vecs.rcc\
 	copy.rcc \
@@ -90,12 +100,13 @@ Implementations = \
         file_read_msg.rcc \
         file_write.rcc \
         file_write_msg.rcc \
-	bias.rcc 
-
+	bias.rcc \
+	$(Tests)
 
 #	wbr.hdl 
 
 #HdlTargets=all
+
 
 ifndef OCPI_RUNTIME_HOST
 RccTargets=$(HostTarget)
@@ -104,3 +115,6 @@ RccTargets=$(OCPI_RUNTIME_HOST)
 endif
 
 include $(OCPI_CDK_DIR)/include/lib.mk
+
+
+
