@@ -457,7 +457,7 @@ int  main( int argc, char** argv)
   if ( (buffers < 4) || (buffers > 6) ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s %d: %s\n", test_name, buffers, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -490,7 +490,7 @@ int  main( int argc, char** argv)
   if ( (buffers < 4) || (buffers > 6) ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s: %s\n", test_name,  test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 
@@ -520,7 +520,7 @@ int  main( int argc, char** argv)
   catch ( ... ) {
     test_rc = 0;
   }
-  printf(" Test:  %s\n",   test_rc ? "PASSED" : "FAILED" );
+  printf(" Test: %s: %s\n", test_name, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
 
 

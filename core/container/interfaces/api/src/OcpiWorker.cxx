@@ -127,8 +127,8 @@ namespace OCPI {
 	if (info.m_isSequence)
 	  setProperty32(info, v.m_nElements);
       } else if (info.m_baseType == OA::OCPI_String) {
-	unsigned l = strlen(v.m_String);
-	if (l > 3)
+	unsigned l = strlen(v.m_String) + 1; // amount to actually copy
+	if (l > 4)
 	  setPropertyBytes(info, info.m_offset + 4,
 			   (uint8_t *)(v.m_String + 4), l - 4);
 	setProperty32(info, *(uint32_t *)v.m_String);
@@ -209,7 +209,7 @@ namespace OCPI {
 	  uint8_t *data = new uint8_t[nBytes];
 	  v.m_pUChar = data;
 	  if (nBytes)
-	    getPropertyBytes(info, info.m_offset + info.m_align, data, nBytes);
+	    getPropertyBytes(info, info.m_offset + (info.m_isSequence ? info.m_align : 0), data, nBytes);
 	}
       } else if (info.m_baseType == OA::OCPI_String) {
 	v.m_String = (const char *)new char[info.m_stringLength + 1];

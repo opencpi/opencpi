@@ -637,7 +637,6 @@ void Worker::run(bool &anyone_run) {
     // If no port masks, then we  run
     if (!m_context->runCondition->portMasks ||
 	!m_context->runCondition->portMasks[0]) {
-      run_condition_met = true;
       break;
     }
     // Ok, do the work to find out which ports are ready
@@ -859,9 +858,13 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 					 unsigned length) const {		\
         if (p.m_info.m_writeError)                                              \
           throw; /*"worker has errors before write */                           \
-        memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), vals, \
-	       length * sizeof(run));					        \
-        *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = length;         \
+	if (p.m_info.m_isSequence) {     					\
+	  memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), vals, \
+		 length * sizeof(run));					\
+	  *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = length/p.m_info.m_nItems; \
+	} else								\
+	  memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset), vals, \
+		 length * sizeof(run));					\
         if (p.m_info.m_writeError)                                              \
           throw; /*"worker has errors after write */                            \
       }
@@ -926,15 +929,22 @@ void Worker::controlOperation(OM::Worker::ControlOperation op) {
 					     unsigned length) const {	    \
         if (p.m_info.m_readError )					    \
           throw; /*"worker has errors before read "*/			    \
-        uint32_t n = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset); \
-        if (n > length)							    \
-          throw; /* sequence longer than provided buffer */		    \
-        memcpy(vals,							    \
-	       (void*)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), \
-               n * sizeof(run));                                            \
-        if (p.m_info.m_readError )					    \
-          throw; /*"worker has errors after read */			    \
-        return n;							    \
+	if (p.m_info.m_isSequence) {					\
+	  uint32_t nSeq = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset); \
+	  uint32_t n = nSeq * p.m_info.m_nItems;					\
+	  if (n > length)						\
+	    throw "sequence longer than provided buffer";		\
+	  memcpy(vals,							\
+		 (void*)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), \
+		 n * sizeof(run));					\
+	  length = n;							\
+	} else								\
+	  memcpy(vals,							\
+		 (void*)(getPropertyVaddr() + p.m_info.m_offset),	\
+		 length * sizeof(run));					\
+	if (p.m_info.m_readError )					\
+	  throw; /*"worker has errors after read */			\
+	return length;							\
       }
 
       // ASSUMPTION:  strings always occupy at least 4 bytes, and

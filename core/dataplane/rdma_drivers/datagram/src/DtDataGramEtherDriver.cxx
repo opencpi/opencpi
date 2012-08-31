@@ -96,15 +96,16 @@ namespace DataTransfer {
       const std::string &ifname() const { return m_ifname; }
       OE::Address &addr() { return m_addr; } // not const
       const char* getAddress() { return m_addr.pretty(); }
-#if 0
     public:
-      virtual const char* getAddress(){return m_ipAddress.c_str();}
-      unsigned & getId() { return m_portNum;}
-    private:
-      std::string m_ipAddress;
-      unsigned  m_portNum;
-      struct sockaddr_in m_sockaddr;
-#endif
+      bool isCompatibleLocal(const char *remote) {
+	std::string interface;
+	const char *sp = strchr(remote, '/');
+	if (!sp)
+	  return true;
+	//	  throw OU::Error("Badly formed ether-rdma endpoint: %s", remote);
+	interface.assign(remote, sp - remote);
+	return m_ifname == interface;
+      }
     };
 
     class DatagramSocket : public DataTransfer::DatagramSocket {
@@ -174,24 +175,41 @@ namespace DataTransfer {
 
       const char* getProtocol() { return OCPI_ETHER_RDMA; }
 
-      std::string 
-      allocateEndpoint( const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
-      {
-	std::string ep;
-	const char* env = getenv("OCPI_ETHER_INTERFACE");
 
-	if (!env || (env[0] == 0)) {
-	  ocpiDebug("Set ""OCPI_ETHER_INTERFACE"" environment variable to set socket Ethernet address");
-	  env = 0;
-	}
+      std::string 
+      allocateEndpoint(const OCPI::Util::PValue*params, uint16_t mailBox, uint16_t maxMailBoxes)
+      {
+	const char *ifname;
+	if (!OU::findString(params, "interface", ifname))
+	  ifname = getenv("OCPI_ETHER_INTERFACE");
 	std::string error;
-	OE::Interface ifc(env, error);
+	OE::Interface ifc(ifname, error);
 	if (error.size())
 	  throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
+	std::string ep;
 	OCPI::Util::formatString(ep, OCPI_ETHER_RDMA ":%s/%s;%u.%" PRIu16".%" PRIu16,
 				 ifc.name.c_str(), ifc.addr.pretty(), parent().getSMBSize(),
 				 mailBox, maxMailBoxes);
 	return ep;
+      }
+
+      std::string 
+      allocateCompatibleEndpoint(const OCPI::Util::PValue*, const char *remote,
+				 uint16_t mailBox, uint16_t maxMailBoxes) {
+	std::string interface;
+	const char *sp = strchr(remote, '/');
+	if (sp)
+	  interface.assign(remote, sp - remote);
+	else {
+	  std::string error;
+	  OE::Interface ifc(NULL, error);
+	  if (error.size())
+	    throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
+	  interface = ifc.name;
+	}
+	//throw OU::Error("Badly formed ether-rdma endpoint: %s", remote);
+	OU::PValue pvs[] = { OU::PVString("interface", interface.c_str()), OU::PVEnd };
+	return allocateEndpoint(pvs, mailBox, maxMailBoxes);
       }
     };
 

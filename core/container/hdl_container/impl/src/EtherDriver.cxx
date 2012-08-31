@@ -80,7 +80,7 @@ namespace OCPI {
 	  const char *cp = name.c_str();
 	  if (!strncasecmp("Ether:", cp, 6))
 	    cp += 6;
-	  OU::formatString(m_endpointSpecific, "ocpi-ether-rdma:%s", name.c_str());
+	  OU::formatString(m_endpointSpecific, "ocpi-ether-rdma:%s", cp);
 	  m_endpointSize = ((uint64_t)1) << 32;
 	  cAccess().setAccess(NULL, this, m_endpointSize - sizeof(OccpSpace));
 	  dAccess().setAccess(NULL, this, 0);

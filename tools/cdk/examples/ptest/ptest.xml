@@ -1,5 +1,6 @@
 <application>
   <instance worker='ptest'>
+    <property name='p1' value='\376'/>
     <property name='p3' value='123.456'/>
     <property name='p11' value='hello, world'/>
     <property name='sp0' value='true'/>

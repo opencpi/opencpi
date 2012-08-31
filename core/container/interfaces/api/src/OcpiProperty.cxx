@@ -52,12 +52,15 @@ namespace OCPI {
       if (ctype != m_info.m_baseType)
 	throw "incorrect type for this property";
       if (m_info.m_isSequence) {
+	if (n % m_info.m_nItems)
+	  throw "number of items not a multiple of array size";
+	n /= m_info.m_nItems;
 	if (write && n > m_info.m_sequenceLength)
 	  throw "sequence or array too long for this property";
 	if (!write && n < m_info.m_sequenceLength)
 	  throw "sequence or array not large enough for this property";
-      } else if (n > 1)
-	throw "more than one value being read or written from non-array non-sequence type";
+      } else if (n != m_info.m_nItems)
+	throw "wrong number of values for non-sequence type";
     }
     // This is user-visible, initialized from information in the metadata
     // It is intended to be constructed on the user's stack - a cache of

@@ -1137,8 +1137,10 @@ receiveRDMA(const char **ap) {
   std::string file;
   OD::TransportGlobal &global(OC::Manager::getTransportGlobal());
   OD::Transport transport(&global, false);
+  if (endpoint.empty())
+    endpoint = "ocpi-ether-rdma";
   OU::PValue params[2] = { 
-    OA::PVString("transport", "ocpi-ether-rdma"),
+    OA::PVString("remote", endpoint.c_str()),
     OA::PVEnd
   };
   OD::Descriptor myInputDesc;
@@ -1165,6 +1167,7 @@ receiveRDMA(const char **ap) {
   memset( myInputDesc.desc.oob.oep, 0, sizeof(myInputDesc.desc.oob.oep));
   myInputDesc.desc.oob.cookie = 0;
   OD::Port &port = *transport.createInputPort(myInputDesc, params);
+  ocpiDebug("Our input descriptor: %s", myInputDesc.desc.oob.oep);
   // Now the normal transport/transfer driver has initialized (not finalized) the input port.
   OD::Descriptor theOutputDesc;
   OH::Access
@@ -1175,9 +1178,15 @@ receiveRDMA(const char **ap) {
     // Pause (getchar), and then read in the output descriptor from the other side.
     file = *ap;
     file += ".in";
+    // Strip out our ether interface.
+    OD::Descriptor sendDesc = myInputDesc;
+    const char *sp = strchr(myInputDesc.desc.oob.oep,'/');
+    std::string clean("ocpi-ether-rdma:");
+    clean.append(sp+1);
+    strcpy(sendDesc.desc.oob.oep, clean.c_str());
     int fd = creat(file.c_str(), 0666);
     if (fd < 0 ||
-	write(fd, &myInputDesc, sizeof(myInputDesc)) != sizeof(myInputDesc) ||
+	write(fd, &sendDesc, sizeof(sendDesc)) != sizeof(sendDesc) ||
 	close(fd) < 0)
       bad("Creating temp file for RDMA descriptor");
     printf("Input Descriptor written to %s.\nWaiting for a keystroke...", file.c_str());
@@ -1236,11 +1245,9 @@ receiveRDMA(const char **ap) {
     theOutputDesc.desc.emptyFlagValue = 1;
     theOutputDesc.desc.oob.port_id = 0;
     theOutputDesc.desc.oob.cookie = 0;
-    std::string outputString;
-    OU::formatString(outputString, "ocpi-ether-rdma:%s", name.c_str());
     uint32_t outputEndPointSize = edpConfAccess.get32Register(memoryBytes, OH::OcdpProperties);
     OX::EndPoint &outputEndPoint =
-      OX::getManager().allocateProxyEndPoint(outputString.c_str(), outputEndPointSize);
+      OX::getManager().allocateProxyEndPoint(endpoint.c_str(), outputEndPointSize);
     OD::Transport::fillDescriptorFromEndPoint(outputEndPoint, theOutputDesc);
   }
   // Finalizing the input port takes: role, type flow, emptyflagbase, size, pitch, value
@@ -1299,7 +1306,7 @@ receiveRDMA(const char **ap) {
     edpConfAccess.set32Register(localMetadataBase, OH::OcdpProperties, theOutputDesc.desc.metaDataBaseAddr);
     edpConfAccess.set32Register(localMetadataSize, OH::OcdpProperties, theOutputDesc.desc.metaDataPitch);
     // 4. The GBE worker that inserts the MAC header fields.
-    OE::Address addr(strchr(dev->name().c_str(), '/') + 1);
+    OE::Address addr(strchr(myInputDesc.desc.oob.oep, '/') + 1);
     union {
       struct {
 	uint8_t addr[6];
@@ -1308,7 +1315,9 @@ receiveRDMA(const char **ap) {
       uint64_t value;
     } value;
     memcpy(value.addr, addr.addr(), addr.s_size);
-    value.ethertype = htons(OCDP_ETHER_TYPE);
+    value.ethertype = OCDP_ETHER_TYPE;
+    ocpiDebug("Telling device to send to %s with ethertype %x",
+	      addr.pretty(), OCDP_ETHER_TYPE);
     gbeConfAccess.set64RegisterOffset(0x10, value.value);
     // Now that they are all configured, start from downstream to upstream.
     ocpiCheck(wwop(gbeAccess, "start") == OCCP_SUCCESS_RESULT);
@@ -1377,6 +1386,7 @@ sendRDMA(const char **ap) {
 	read(fd, &theInputDesc, sizeof(theInputDesc)) != sizeof(theInputDesc) ||
 	close(fd) < 0)
       bad("Reading file for RDMA input descriptor");
+    ocpiDebug("Received descriptor for: %s", myOutputDesc.desc.oob.oep);
   } else {
     theInputDesc.type = OD::ProducerDescT;
     theInputDesc.role = OD::ActiveMessage;
@@ -1401,13 +1411,18 @@ sendRDMA(const char **ap) {
   }
   OD::Port &port = *transport.createOutputPort(myOutputDesc, theInputDesc);
   OD::Descriptor localShadowPort, feedback;
-  const OD::Descriptor *outDesc = port.finalize(theInputDesc, myOutputDesc, &localShadowPort);
+  const OD::Descriptor &outDesc = *port.finalize(theInputDesc, myOutputDesc, &localShadowPort);
   if (*ap) {
     file = *ap;
     file += ".out";
+    OD::Descriptor sendDesc = outDesc;
+    const char *sp = strchr(outDesc.desc.oob.oep, '/');
+    std::string clean("ocpi-ether-rdma:");
+    clean.append(sp+1);
+    strcpy(sendDesc.desc.oob.oep, clean.c_str());
     int fd = creat(file.c_str(), 0666);
     if (fd < 0 ||
-	write(fd, outDesc, sizeof(*outDesc)) != sizeof(*outDesc) ||
+	write(fd, &sendDesc, sizeof(sendDesc)) != sizeof(sendDesc) ||
 	close(fd) < 0)
       bad("Writing output RDMA descriptor");
     printf("Flow Control Descriptor in %s.\nWaiting for a keystroke...", file.c_str());

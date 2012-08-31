@@ -48,7 +48,7 @@ else
   setenv LD_LIBRARY_PATH ../../../../lib/$OCPI_RUNTIME_HOST-bin
 endif
 if $#argv == 1 then
-  ./$argv[1] | grep Test:
+  sh -c "./$argv[1] 2> /dev/null | grep Test:"
 else
 foreach i ( `ls -d test* | grep -v '_main' | grep -v '\.'`)
   echo Running $i...
