@@ -34,21 +34,12 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    *inData = in->current.data,
    *outData = out->current.data;
 
+ if (in->input.length > out->current.maxLength) {
+   self->errorString = "output buffer too small";
+   return RCC_ERROR;
+ }
+
  switch( in->input.u.operation ) {
-
- case FM_DEMOD_COMPLEX_IN_MESSAGE:
-
-   {
-     if (in->input.length > out->current.maxLength) {
-       self->errorString = "output buffer too small";
-       return RCC_ERROR;
-     }
-     printf("In fm_demod  got data = %s, len = %d\n", inData, in->input.length );
-     memcpy( outData, inData, in->input.length);
-     out->output.length = in->input.length;
-     out->output.u.operation = in->input.u.operation;
-   }
-   break;
 
  case FM_DEMOD_COMPLEX_IN_IQ:
    //   processSignalData( self  );

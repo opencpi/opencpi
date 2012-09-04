@@ -29,12 +29,12 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    *in = &self->ports[LOOPBACK_IN],
    *out = &self->ports[LOOPBACK_OUT];
    
-
  uint16_t
    *inData = in->current.data,
    *outData = out->current.data;
 
  if (in->input.length > out->current.maxLength) {
+   printf("loopback: ERROR: ouput buffer is too small\n");
    self->errorString = "output buffer too small";
    return RCC_ERROR;
  }
@@ -44,13 +44,11 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  case 3:
    printf("In loopback  got data = %s, len = %d\n", inData, in->input.length );
    
-
  default:
    memcpy( outData, inData, in->input.length);
    out->output.length = in->input.length;
    out->output.u.operation = in->input.u.operation;
    break;
-
 
  };
 

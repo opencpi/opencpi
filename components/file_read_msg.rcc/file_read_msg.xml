@@ -19,6 +19,9 @@ Properties:
     <property name='bytesRead' type='uLongLong' readable='true'/>
     <property name='messagesWritten' type='uLongLong' readable='true'/>
 
+    <property name='finished' type='bool' readable='true' writable='false'/>
+
+
     <property name='messagesInFile' type='bool' readable='true'/>
     <property name='opcode' type='uchar' readable='true'/>
     <property name='granularity' type='ulong' readable='true'/>

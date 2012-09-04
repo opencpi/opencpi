@@ -52,6 +52,7 @@ RCCResult genTestFile( RCCWorker * self )
     return RCC_ERROR;
   }
 
+#ifdef DEBUG_PASS_THRU
   // Generate a text message
   {
     h.endian = 1;
@@ -71,6 +72,8 @@ RCCResult genTestFile( RCCWorker * self )
       return RCC_ERROR;
     }
   }
+#endif
+
 
   // Generate a "real" sinwave
   h.endian = 1;
@@ -91,6 +94,8 @@ RCCResult genTestFile( RCCWorker * self )
     return RCC_ERROR;
   }
 
+
+#ifdef DEBUG_PASS_THRU
   // Generate a text message
   {
     h.endian = 1;
@@ -108,6 +113,8 @@ RCCResult genTestFile( RCCWorker * self )
       return RCC_ERROR;
     }
   }
+#endif
+
 
   close(fd);
   return RCC_OK;
@@ -134,7 +141,7 @@ start(RCCWorker *self) {
     asprintf(&self->errorString, "error opening file \"%s\": %s", p->fileName, strerror(errno));
     return RCC_ERROR;
   }
-
+  p->finished = 0;
   return RCC_OK;
 }
 
@@ -168,10 +175,12 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
      return RCC_ERROR;
    } 
-   printf("file_reader_msg: Data length = %d\n", s->header.length );
+   printf("file_reader_msg(%s): Data length = %d\n", props->fileName, s->header.length );
    s->blcm = s->header.length;
  }
  if ( n == 0 ) {
+   printf("file_reader_msg: Finished !!\n");
+   props->finished = 1;
    return RCC_DONE;
  }
  self->ports[FILE_READ_MSG_OUT].output.u.operation = s->header.opcode;

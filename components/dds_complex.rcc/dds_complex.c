@@ -7,37 +7,108 @@
  */
 #include "dds_complex_Worker.h"
 
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <assert.h>
+#include <signal_utils.h>
+
+// We will run when we get an input buffer, OR if we have an output buffer
+static uint32_t portRunConditionMasks[] = { 1<<DDS_COMPLEX_IN , 1<<DDS_COMPLEX_OUT, 0 };
+static RCCRunCondition workerRunCondition = { portRunConditionMasks, 0 , 0 };
+
+typedef struct {
+  double curAngle;
+} State;
+
+static uint32_t sizes[] = {sizeof(State), 0 };
+
 DDS_COMPLEX_METHOD_DECLARATIONS;
 RCCDispatch dds_complex = {
- /* insert any custom initializations here */
- DDS_COMPLEX_DISPATCH
+  /* insert any custom initializations here */
+  .runCondition = &workerRunCondition,
+  .memSizes = sizes,
+  DDS_COMPLEX_DISPATCH
 };
+
+static void 
+sync( RCCWorker *self )
+{
+  Dds_complexProperties *p = self->properties;
+  State *myState = self->memories[0];  
+  myState->curAngle = 0 + p->syncPhase;
+}
+
+static void
+processTimeSignal( RCCWorker *self ) 
+{
+  // Empty
+}
+
 
 /*
  * Methods to implement for worker dds_complex, based on metadata.
  */
+static RCCResult start(RCCWorker *self )
+{
+  sync( self );
+  return RCC_OK;
+}
+
 
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   (void)timedOut;(void)newRunCondition;
+  State *myState = self->memories[0];  
+  Dds_complexProperties *p = self->properties;
 
+  RCCPort
+    *in = &self->ports[DDS_COMPLEX_IN],
+    *out = &self->ports[DDS_COMPLEX_OUT];
 
- RCCPort
-   *in = &self->ports[DDS_COMPLEX_IN],
-   *out = &self->ports[DDS_COMPLEX_OUT];
+  Dds_complexOutIq 
+    *outData = (Dds_complexOutIq*)out->current.data;
 
- uint16_t
-   *inData = in->current.data,
-   *outData = out->current.data;
+  uint16_t *inData;
 
- printf("In dds_complex.c got data = %s\n", inData);
+  if ( in->current.data ) { 
+    inData = in->current.data;
 
- if (in->input.length > out->current.maxLength) {
-   self->errorString = "output buffer too small";
-   return RCC_ERROR;
- }
+    if (in->input.length > out->current.maxLength) {
+      self->errorString = "output buffer too small";
+      return RCC_ERROR;
+    }
 
+    switch( in->input.u.operation ) {
 
+    case DDS_COMPLEX_IN_SYNC:
+      sync( self  );
+      break;
 
- return RCC_ADVANCE;
+    case DDS_COMPLEX_IN_TIME:
+      processTimeSignal( self );
+      break;
+    };
+  }
+
+  
+  // Generate the next signal buffer
+  if ( outData ) {
+    unsigned int len = byteLen2Complex(out->current.maxLength);
+    unsigned int n;
+    for ( n=0; n<len; n++ ) {
+      outData->data.data[n].I = Scale( sin(myState->curAngle) );
+      outData->data.data[n].Q = Scale( cos(myState->curAngle) );    
+      myState->curAngle += p->phaseIncrement;
+      if( myState->curAngle > 2*PI ) {
+	myState->curAngle = 0;
+      }
+    }
+    out->output.length = out->current.maxLength;
+    out->output.u.operation = DDS_COMPLEX_OUT_IQ;
+  }
+
+  return RCC_ADVANCE;
 }

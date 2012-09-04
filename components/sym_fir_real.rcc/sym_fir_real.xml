@@ -1,4 +1,5 @@
 <RccImplementation>
+  <ControlInterface ControlOperations="start"/>
   <xi:include href="sym_fir_real_spec.xml"/>
 </RccImplementation>
 

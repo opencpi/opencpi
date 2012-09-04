@@ -1,0 +1,23 @@
+<ComponentSpec Name="comparator_real">
+
+  <Properties>
+    <Property Name="passed" type="bool" Readable="true" Writable="true" />
+    <Property Name="deviation" type="double" Readable="true" Writable="true" />
+    <Property Name="complex" type="bool" Readable="true" Writable="true" />
+    <property name='finished' type='bool' readable='true' writable='false'/>
+    <Property Name="msgsProcessed" Readable="true" Writable="false"/>
+    <Property Name="bytesProcessed" Readable="true" Writable="false"/>
+  </Properties>
+
+  <DataInterfaceSpec Name="in_unit_test" Producer="false">
+      <xi:include href="rstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="in_expected" Producer="false">
+      <xi:include href="rstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="out_delta" Producer="true"/>
+  <DataInterfaceSpec Name="out_actual" Producer="true"/>
+
+</ComponentSpec>

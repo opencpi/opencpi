@@ -34,23 +34,13 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  uint16_t
    *inData = in->current.data,
    *outData = out->current.data;
+ 
+ if (in->input.length > out->current.maxLength) {
+   self->errorString = "output buffer too small";
+   return RCC_ERROR;
+ }
 
  switch( in->input.u.operation ) {
-
- case CIC_HPFILTER_COMPLEX_IN_MESSAGE:
-
-   {
-     if (in->input.length > out->current.maxLength) {
-       self->errorString = "output buffer too small";
-       return RCC_ERROR;
-     }
-     printf("In cic_hpfilter_complex  got data = %s, len = %d\n", inData, in->input.length );
-     memcpy( outData, inData, in->input.length);
-     out->output.length = in->input.length;
-     out->output.u.operation = in->input.u.operation;
-   }
-   break;
-
 
  case CIC_HPFILTER_COMPLEX_IN_IQ:
    //   processSignalData( self  );

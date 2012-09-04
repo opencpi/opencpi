@@ -23,14 +23,13 @@ intial phase, fluh any buffers that it can and send a "Sync" message prior to ge
   </Properties>
 
 
-
   <!-- output stream that contains both data and sync -->
   <DataInterfaceSpec Name="out" Producer="true">
       <xi:include href="iqstream_with_sync_protocol.xml"/>
   </DataInterfaceSpec>
 
   <!-- input sync stream -->
-  <DataInterfaceSpec Name="in" Producer="false">
+  <DataInterfaceSpec Name="in" Producer="false" Optional="true">
       <xi:include href="signal_sync_protocol.xml"/>
   </DataInterfaceSpec>
 

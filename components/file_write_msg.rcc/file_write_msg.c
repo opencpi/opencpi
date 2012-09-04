@@ -57,14 +57,14 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  MyState *s = self->memories[0];
  ssize_t n;
 
- printf("In file_write.c got %d bytes of data\n", port->input.length);
+ printf("In file_write_msg got %d bytes of data\n", port->input.length);
 
  FileHeader h;
  h.endian = 1;
  h.opcode = port->input.u.operation;
  h.length = port->input.length;
- if ((n = write(s->fd, port->current.data, sizeof(FileHeader) )) < 0)  {
-   asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+ if ((n = write(s->fd, &h, sizeof(FileHeader) )) < 0)  {
+   asprintf(&self->errorString, "error writing to file: %s", strerror(errno));
    return RCC_ERROR;
  }
  props->bytesWritten += n;
@@ -78,6 +78,9 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    props->messagesRead++;
    return RCC_ADVANCE;
  }
+
+ printf("file_write_msg: Done\n");
+ flush(s->fd);
  close(s->fd);
  return RCC_DONE;
 }
