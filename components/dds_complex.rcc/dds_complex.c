@@ -44,6 +44,7 @@ sync( RCCWorker *self )
 static void
 processTimeSignal( RCCWorker *self ) 
 {
+  (void)self;
   // Empty
 }
 
@@ -99,8 +100,8 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     unsigned int len = byteLen2Complex(out->current.maxLength);
     unsigned int n;
     for ( n=0; n<len; n++ ) {
-      outData->data.data[n].I = Scale( sin(myState->curAngle) );
-      outData->data.data[n].Q = Scale( cos(myState->curAngle) );    
+      outData->data[n].I = Scale( sin(myState->curAngle) );
+      outData->data[n].Q = Scale( cos(myState->curAngle) );    
       myState->curAngle += p->phaseIncrement;
       if( myState->curAngle > 2*PI ) {
 	myState->curAngle = 0;

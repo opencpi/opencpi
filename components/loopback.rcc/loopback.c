@@ -42,7 +42,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  switch( in->input.u.operation ) {
 
  case 3:
-   printf("In loopback  got data = %s, len = %d\n", inData, in->input.length );
+   printf("In loopback  got data = %s, len = %d\n", (char*)inData, in->input.length );
    
  default:
    memcpy( outData, inData, in->input.length);

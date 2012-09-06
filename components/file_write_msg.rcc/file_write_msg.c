@@ -80,7 +80,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  }
 
  printf("file_write_msg: Done\n");
- flush(s->fd);
+ // flush(s->fd);
  close(s->fd);
  return RCC_DONE;
 }

@@ -64,13 +64,13 @@ apply_filter( State * myState,  Sym_fir_realInData * input )
     acum3 = 0;
   unsigned	n = (NTAPS / UnRoll) * UnRoll;
   for (i = 0; i < n; i += UnRoll){
-    acum0 += myState->taps[i + 0] * Uscale( input->real.data[i + 0] );
-    acum1 += myState->taps[i + 1] * Uscale( input->real.data[i + 1] );
-    acum2 += myState->taps[i + 2] * Uscale( input->real.data[i + 2] );
-    acum3 += myState->taps[i + 3] * Uscale( input->real.data[i + 3] );
+    acum0 += myState->taps[i + 0] * Uscale( input->real[i + 0] );
+    acum1 += myState->taps[i + 1] * Uscale( input->real[i + 1] );
+    acum2 += myState->taps[i + 2] * Uscale( input->real[i + 2] );
+    acum3 += myState->taps[i + 3] * Uscale( input->real[i + 3] );
   }
   for (; i < NTAPS; i++)
-    acum0 += myState->taps[i] * Uscale( input->real.data[i] );
+    acum0 += myState->taps[i] * Uscale( input->real[i] );
   return (acum0 + acum1 + acum2 + acum3);
 }
 
@@ -103,7 +103,7 @@ processSignalData( RCCWorker * self )
     if ( fabs(v) > p->peakDetect ) {
       p->peakDetect = Scale( fabs(v) );
     }
-    outData->real.data[i] =  Scale( gain * v );
+    outData->real[i] =  Scale( gain * v );
   }
  
 }

@@ -33,6 +33,4 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-IncludeDirs+=../shared
-
 include $(OCPI_CDK_DIR)/include/worker.mk

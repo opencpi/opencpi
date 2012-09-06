@@ -94,6 +94,7 @@ namespace OCPI {
 	void request(EtherControlMessageType type, RegisterOffset offset,
 		     unsigned bytes, OS::Ether::Packet &recvFrame, uint32_t *status) {
 	  EtherControlHeader &ech_out =  *(EtherControlHeader *)(m_request.payload);
+	  ech_out.pad = 0;
 	  ech_out.tag++;
 	  ech_out.typeEtc =
 	    OCCP_ETHER_TYPE_ETC(type,
@@ -245,6 +246,7 @@ namespace OCPI {
       static void
       initNop(EtherControlNop &nop) {
 	nop.header.length = htons(sizeof(nop)-2);
+	nop.header.pad = 0;
 	nop.header.typeEtc = OCCP_ETHER_TYPE_ETC(OCCP_NOP, 0xf, 1);
 	nop.mbx80 = 0x80;
 	nop.mbz0 = 0;

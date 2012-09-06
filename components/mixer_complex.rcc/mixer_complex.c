@@ -58,13 +58,13 @@ processSignalData( RCCWorker * self  )
   // DDS * IF = out  -> (a+bi)(c+di) = (ac - bd) + (bc + ad)i  : (if.I + if.Q)(dds.I + dds.Q)
   unsigned int n;
   for ( n=0; n<len; n++ ) {
-    double dtmp = ( Uscale(in_ifData->data.data[myState->curIfIndex].I) * Uscale(in_ddsData->data.data[myState->curDdsIndex].I) ) 
-      - ( Uscale(in_ifData->data.data[myState->curIfIndex].Q) * Uscale(in_ddsData->data.data[myState->curDdsIndex].Q) );
-    outData->data.data[n].I = Scale( dtmp );
+    double dtmp = ( Uscale(in_ifData->data[myState->curIfIndex].I) * Uscale(in_ddsData->data[myState->curDdsIndex].I) ) 
+      - ( Uscale(in_ifData->data[myState->curIfIndex].Q) * Uscale(in_ddsData->data[myState->curDdsIndex].Q) );
+    outData->data[n].I = Scale( dtmp );
 
-    dtmp = ( Uscale(in_ifData->data.data[myState->curIfIndex].Q) * Uscale(in_ddsData->data.data[myState->curDdsIndex].I) ) 
-      + ( Uscale(in_ifData->data.data[myState->curIfIndex].I) * Uscale(in_ddsData->data.data[myState->curDdsIndex].Q) );
-    outData->data.data[n].Q = Scale( dtmp );
+    dtmp = ( Uscale(in_ifData->data[myState->curIfIndex].Q) * Uscale(in_ddsData->data[myState->curDdsIndex].I) ) 
+      + ( Uscale(in_ifData->data[myState->curIfIndex].I) * Uscale(in_ddsData->data[myState->curDdsIndex].Q) );
+    outData->data[n].Q = Scale( dtmp );
 
     myState->curDdsIndex++;
     myState->curIfIndex++;
@@ -126,12 +126,14 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   (void)timedOut;(void)newRunCondition;
 
  RCCPort
-   *in = &self->ports[MIXER_COMPLEX_IN_IF],
+   *in = &self->ports[MIXER_COMPLEX_IN_IF];
+#if 0
    *out = &self->ports[MIXER_COMPLEX_OUT];   
 
  uint16_t
    *inData = in->current.data,
    *outData = out->current.data;
+#endif
 
  switch( in->input.u.operation ) {
 

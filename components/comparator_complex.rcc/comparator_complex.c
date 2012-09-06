@@ -66,8 +66,8 @@ runComplexTest( RCCWorker * self )
  int len = byteLen2Complex( in_unit_test->input.length );
  int i;
  for ( i=0; i<len; i++ ) {
-   double delta = fabs( scabs(inUTData->data.data[i].I, inUTData->data.data[i].Q) - 
-			scabs(inEXData->data.data[i].I, inEXData->data.data[i].Q) );
+   double delta = fabs( scabs(inUTData->data[i].I, inUTData->data[i].Q) - 
+			scabs(inEXData->data[i].I, inEXData->data[i].Q) );
 
    //   printf("Calculated delta = %f \n", delta );
    if ( delta > p->deviation ) {
