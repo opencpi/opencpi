@@ -44,7 +44,7 @@ doFsk( RCCWorker * self )
   unsigned int i;
   unsigned rval, ival;
   for ( i=0; i<len; i++ ) {
-    myState->accum += Uscale( inData->real.data[i] );
+    myState->accum += Uscale( inData->real[i] );
     {
       const double
 	pi_2 = 0x3fff,
@@ -83,11 +83,11 @@ doFsk( RCCWorker * self )
 	}
       }
       if (myState->accum) {
-	outData->data.data[i].I = Scale( one );
-	outData->data.data[i].Q = 0;
+	outData->data[i].I = Scale( one );
+	outData->data[i].Q = 0;
       } else {
-	outData->data.data[i].I = Scale( rval );
-	outData->data.data[i].Q = Scale( ival );
+	outData->data[i].I = Scale( rval );
+	outData->data[i].Q = Scale( ival );
       }
     }
   }
