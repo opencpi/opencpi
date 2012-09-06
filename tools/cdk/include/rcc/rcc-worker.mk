@@ -45,7 +45,7 @@ RccImplSuffix=_Worker.h
 RccSkelSuffix=_skel.c
 RccSourceSuffix=.c
 OBJ:=.o
-
+IncludeDirs+=../include
 ifneq ($(OCPI_DEBUG),0)
 SharedLibLinkOptions+=-g
 endif
