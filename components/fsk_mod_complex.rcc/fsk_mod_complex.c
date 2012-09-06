@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <signal_utils.h>
 
 /*
  * THIS FILE WAS ORIGINALLY GENERATED ON Mon Aug  6 05:50:19 2012 PDT
@@ -10,6 +6,10 @@
  *
  * This file contains the RCC implementation skeleton for worker: fsk_mod_complex
  */
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "signal_utils.h"
 #include "fsk_mod_complex_Worker.h"
 
 typedef struct {
@@ -29,18 +29,10 @@ RCCDispatch fsk_mod_complex = {
  */
 
 static void
-doFsk( RCCWorker * self )
+doFsk( State *myState,  Fsk_mod_complexInData *inData,  Fsk_mod_complexOutIq  *outData, unsigned dlen )
 {
-  State *myState = self->memories[0];  
 
-  RCCPort
-    *in = &self->ports[FSK_MOD_COMPLEX_IN],
-    *out = &self->ports[FSK_MOD_COMPLEX_OUT];
- 
-  Fsk_mod_complexInData *inData = in->current.data;
-  Fsk_mod_complexOutIq  *outData = out->current.data;
-
-  unsigned len = byteLen2Real(in->input.length);
+  unsigned len = byteLen2Real(dlen);
   unsigned int i;
   unsigned rval, ival;
   for ( i=0; i<len; i++ ) {
@@ -99,18 +91,19 @@ static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   (void)timedOut;(void)newRunCondition;
 
+  State *myState = self->memories[0];  
+
   RCCPort
     *in = &self->ports[FSK_MOD_COMPLEX_IN],
     *out = &self->ports[FSK_MOD_COMPLEX_OUT];
-
-  uint16_t
-    *inData = in->current.data,
-    *outData = out->current.data;
+ 
+  Fsk_mod_complexInData *inData = in->current.data;
+  Fsk_mod_complexOutIq  *outData = out->current.data;
 
   switch( in->input.u.operation ) {
 
   case FSK_MOD_COMPLEX_IN_DATA:
-    doFsk( self  );
+    doFsk( myState, inData, outData, in->input.length );
     break;
 
   case FSK_MOD_COMPLEX_IN_SYNC:

@@ -38,6 +38,7 @@ OCPI_CDK_DIR=../ocpi
 endif
 
 Tests = \
+	unit.test \
 	dds_complex.test \
 	fsk_mod_complex.test \
 	mixer_complex.test \

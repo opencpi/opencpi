@@ -12,7 +12,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <signal_utils.h>
+#include "signal_utils.h"
+
 
 
 static uint32_t runConditionMasks[] = { (1<<MIXER_COMPLEX_IN_DDS) | (1<<MIXER_COMPLEX_IN_IF) | (1<<MIXER_COMPLEX_OUT), 0 };

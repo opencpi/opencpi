@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
-#include <signal_utils.h>
+#include "signal_utils.h"
 
 // We will run when we get an input buffer, OR if we have an output buffer
 static uint32_t portRunConditionMasks[] = { 1<<DDS_COMPLEX_IN , 1<<DDS_COMPLEX_OUT, 0 };
@@ -39,12 +39,6 @@ sync( RCCWorker *self )
   Dds_complexProperties *p = self->properties;
   State *myState = self->memories[0];  
   myState->curAngle = 0 + p->syncPhase;
-}
-
-static void
-processTimeSignal( RCCWorker *self ) 
-{
-  // Empty
 }
 
 
@@ -76,11 +70,6 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   if ( in->current.data ) { 
     inData = in->current.data;
 
-    if (in->input.length > out->current.maxLength) {
-      self->errorString = "output buffer too small";
-      return RCC_ERROR;
-    }
-
     switch( in->input.u.operation ) {
 
     case DDS_COMPLEX_IN_SYNC:
@@ -88,11 +77,10 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
       break;
 
     case DDS_COMPLEX_IN_TIME:
-      processTimeSignal( self );
+      // Empty
       break;
     };
   }
-
   
   // Generate the next signal buffer
   if ( outData ) {
@@ -106,7 +94,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 	myState->curAngle = 0;
       }
     }
-    out->output.length = out->current.maxLength;
+    out->output.length = len * 4;
     out->output.u.operation = DDS_COMPLEX_OUT_IQ;
   }
 

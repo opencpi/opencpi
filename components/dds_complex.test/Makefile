@@ -18,7 +18,7 @@ run: ddsTest
 
 
 clean::
-	rm -f -r ddsTest ddsTest.dSYM *.*~
+	rm -f -r ddsTest ddsTest.dSYM *.*~ deltaDataOut.dat testDataOut.dat
 
 # These make the worker library for this application
 Implementations =
