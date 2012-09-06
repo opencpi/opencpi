@@ -6,6 +6,7 @@
 #define byteLen2Real(x) ((x/2)-4)
 
 #define min(x,y) ((x<y)?x:y)
+#define mems(t,m) sizeof(((t*)0)->m)
 
 #define QMASK 0xefff
 #define Uscale(x)  (double)((double)x / pow(2,15))

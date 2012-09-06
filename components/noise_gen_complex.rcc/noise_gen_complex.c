@@ -21,6 +21,26 @@ RCCDispatch noise_gen_complex = {
  * Methods to implement for worker noise_gen_complex, based on metadata.
  */
 
+
+static void
+processSignalData( RCCWorker * self )
+{
+  Noise_gen_complexProperties *p = self->properties;
+
+  RCCPort
+    *in = &self->ports[NOISE_GEN_COMPLEX_IN],
+    *out = &self->ports[NOISE_GEN_COMPLEX_OUT];
+ 
+  Noise_gen_complexInIq    *inData = in->current.data;
+  Noise_gen_complexOutIq    *outData = out->current.data;
+  out->output.length = in->input.length;
+  out->output.u.operation = in->input.u.operation;
+  
+
+}
+
+
+
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   (void)timedOut;(void)newRunCondition;
@@ -28,7 +48,6 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  RCCPort
    *in = &self->ports[NOISE_GEN_COMPLEX_IN],
    *out = &self->ports[NOISE_GEN_COMPLEX_OUT];
-
 
  uint16_t
    *inData = in->current.data,
@@ -42,17 +61,14 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  switch( in->input.u.operation ) {
 
  case NOISE_GEN_COMPLEX_IN_IQ:
-   //   processSignalData( self  );
+   processSignalData( self  );
 
  case NOISE_GEN_COMPLEX_IN_SYNC:
-   //   processSyncSignal( self  );
-
  case NOISE_GEN_COMPLEX_IN_TIME:
-   //   processTimeSignal( self );
-   memcpy( outData, inData, in->input.length);
-   out->output.length = in->input.length;
-   out->output.u.operation = in->input.u.operation;
-   break;
+   self->container.send( &self->ports[NOISE_GEN_COMPLEX_OUT], 
+			 &self->ports[NOISE_GEN_COMPLEX_IN].current, in->input.u.operation, 
+			 in->input.length );
+   return RCC_OK;
 
  };
 

@@ -17,7 +17,7 @@ run: mixerTest
 	./mixerTest
 
 clean::
-	rm -f -r mixerTest mixerTest.dSYM *.*~
+	rm -f -r mixerTest mixerTest.dSYM *.*~ deltaDataOut.dat testDataOut.dat 
 
 # These make the worker library for this application
 Implementations =

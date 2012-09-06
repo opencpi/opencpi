@@ -13,7 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "file_write_msg_Worker.h"
-#include <stream_data_file_format.h>
+#include "stream_data_file_format.h"
 
 typedef struct {
   int fd;
@@ -80,7 +80,6 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  }
 
  printf("file_write_msg: Done\n");
- // flush(s->fd);
  close(s->fd);
  return RCC_DONE;
 }

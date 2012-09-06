@@ -10,9 +10,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include "sym_fir_real_Worker.h"
-#include <signal_utils.h>
+#include "signal_utils.h"
 
-#define NTAPS 256
+#define mems(t,m) sizeof(((t*)0)->m)
+#define NTAPS (sizeof(mems(Sym_fir_realProperties,taps))/sizeof(int16_t))
 #define UnRoll 4
 
 typedef struct {
@@ -32,7 +33,6 @@ RCCDispatch sym_fir_real = {
  * Methods to implement for worker sym_fir_real, based on metadata.
  */
 
-
 /*
  * Methods to implement for worker dds_complex, based on metadata.
  */
@@ -41,7 +41,7 @@ static RCCResult start(RCCWorker *self )
   int i,j;
   Sym_fir_realProperties *p = self->properties;
   State *myState = self->memories[0];  
-  for ( i=0; i<NTAPS/2; i++ ) {
+  for ( i=0; i<(int)NTAPS/2; i++ ) {
     myState->taps[i] = (double)p->taps[i];
   }
   for ( j=i; i>=0; j++,i-- ) {
@@ -49,9 +49,6 @@ static RCCResult start(RCCWorker *self )
   }  
   return RCC_OK;
 }
-
-
-
 
 static double
 apply_filter( State * myState,  Sym_fir_realInData * input )
@@ -74,50 +71,18 @@ apply_filter( State * myState,  Sym_fir_realInData * input )
   return (acum0 + acum1 + acum2 + acum3);
 }
 
-
-static void
-processSignalData( RCCWorker * self )
-{
-  State *myState = self->memories[0];  
-  Sym_fir_realProperties *p = self->properties;
-
-  RCCPort
-    *in = &self->ports[SYM_FIR_REAL_IN],
-    *out = &self->ports[SYM_FIR_REAL_OUT];
- 
-  Sym_fir_realInData    *inData = in->current.data;
-  Sym_fir_realOutData   *outData = out->current.data;
-  out->output.length = in->input.length;
-  out->output.u.operation = SYM_FIR_REAL_OUT_DATA;
-  
-  if ( p->bypass ) {
-    memcpy(inData,outData,in->input.length);
-    return;
-  }
-
-  unsigned i;
-  double gain = Gain( p->gain);
-  unsigned len = byteLen2Real(in->input.length) - UnRoll;
-  for ( i=0; i<len; i++ ) {
-    double v = apply_filter( myState, inData );
-    if ( fabs(v) > p->peakDetect ) {
-      p->peakDetect = Scale( fabs(v) );
-    }
-    outData->real[i] =  Scale( gain * v );
-  }
- 
-}
-
-
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   (void)timedOut;(void)newRunCondition;  
 
+  Sym_fir_realProperties *p = self->properties;
+  State *myState = self->memories[0];  
+
   RCCPort
     *in = &self->ports[SYM_FIR_REAL_IN],
     *out = &self->ports[SYM_FIR_REAL_OUT];
 
-  uint16_t
+  Sym_fir_realInData
     *inData = in->current.data,
     *outData = out->current.data;
 
@@ -129,7 +94,25 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   switch( in->input.u.operation ) {
 
   case SYM_FIR_REAL_IN_DATA:
-    processSignalData( self  );
+    {
+      out->output.length = in->input.length;
+      out->output.u.operation = SYM_FIR_REAL_OUT_DATA;
+      if ( p->bypass ) {
+	memcpy(inData,outData,in->input.length);
+      }
+      else {
+	unsigned i;
+	double gain = Gain( p->gain);
+	unsigned len = byteLen2Real(in->input.length) - UnRoll;
+	for ( i=0; i<len; i++ ) {
+	  double v = apply_filter( myState, inData );
+	  if ( fabs(v) > p->peakDetect ) {
+	    p->peakDetect = Scale( fabs(v) );
+	  }
+	  outData->real[i] =  Scale( gain * v );
+	}
+      }
+    }
     break;
 
   case SYM_FIR_REAL_IN_SYNC:
