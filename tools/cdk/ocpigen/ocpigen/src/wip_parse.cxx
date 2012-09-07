@@ -672,8 +672,15 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
         (err = OE::getBoolean(s, "EarlyRequest", &dp->u.wsi.earlyRequest)))
       return err;
     dp->type = WSIPort;
+    unsigned granuleWidth = dp->protocol->m_dataValueWidth * dp->protocol->m_dataValueGranularity;
+    // If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
+#if 1
+    if (granuleWidth >= dp->dataWidth && (granuleWidth % dp->dataWidth) == 0 && 
+        !dp->protocol->m_zeroLengthMessages)
+#else    
     if ((dp->protocol->m_dataValueWidth * dp->protocol->m_dataValueGranularity) % dp->dataWidth &&
         !dp->protocol->m_zeroLengthMessages)
+#endif
       dp->byteWidth = dp->dataWidth;
     else
       dp->byteWidth = dp->protocol->m_dataValueWidth;
