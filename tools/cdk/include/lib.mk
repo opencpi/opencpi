@@ -53,6 +53,7 @@ XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))
 HdlImplementations=$(filter %.hdl,$(Implementations))
 OclImplementations=$(filter %.ocl,$(Implementations))
+TestImplementations=$(filter %.test,$(Implementations))
 LibDir=$(OutDir)lib
 GenDir=$(OutDir)gen
 #LibDirs=$(foreach m,$(CapModels),$(foreach ht,$($(m)Targets),$(LibDir)/$(call UnCapitalize,$(m))/$(ht)))
@@ -67,6 +68,10 @@ endif
 
 ifneq ($(RccImplementations),)
 build_targets += rcc
+endif
+
+ifneq ($(TestImplementations),)
+build_targets += test
 endif
 
 ifneq ($(OclImplementations),)
@@ -143,6 +148,8 @@ xm: speclinks $(XmImplementations)
 
 rcc: speclinks $(RccImplementations)
 
+test: speclinks $(TestImplementations)
+
 checkocl:
 	$(AT)if ! $(OCPI_CDK_DIR)/bin/$(HostTarget)/ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
 
@@ -171,13 +178,16 @@ cleanxm:
 cleanrcc:
 	$(call CleanModel,rcc)
 
+cleantest:
+	$(call CleanModel,test)
+
 cleanocl:
 	$(call CleanModel,ocl)
 
 cleanhdl:
 	$(call CleanModel,hdl)
 
-clean:: cleanxm cleanrcc cleanocl cleanhdl
+clean:: cleanxm cleanrcc cleanocl cleanhdl cleantest
 	$(AT)echo Cleaning library directory for all targets.
 	$(AT)rm -fr $(OutDir)lib $(OutDir)gen $(OutDir)
 
@@ -187,13 +197,16 @@ $(HdlImplementations): | $(OutDir)lib/hdl $(OutDir)gen/hdl
 $(RccImplementations): | $(OutDir)lib/rcc
 	$(AT)$(call BuildImplementation,rcc,$@)
 
+$(TestImplementations): | $(OutDir)/$@
+	$(AT)$(call BuildImplementation,test,$@)
+
 $(OclImplementations): | $(OutDir)lib/ocl
 	$(AT)$(call BuildImplementation,ocl,$@)
 
 $(XmImplementations): | $(OutDir)lib/xm
 	$(AT)$(call BuildImplementation,xm,$@)
 
-.PHONY: $(XmImplementations) $(RccImplementations) $(OclImplementations) $(HdlImplementations) speclinks
+.PHONY: $(XmImplementations) $(RccImplementations) $(TestImplementations) $(OclImplementations) $(HdlImplementations) speclinks
 
 # Worker should only be specified when the target is "new".
 ifeq ($(origin Worker),command line)

@@ -11,15 +11,16 @@
 #include <stdlib.h>
 #include "sym_fir_real_Worker.h"
 #include "signal_utils.h"
+#include "sym_fir.h"
 
-#define mems(t,m) sizeof(((t*)0)->m)
+
 #define NTAPS (sizeof(mems(Sym_fir_realProperties,taps))/sizeof(int16_t))
-#define UnRoll 4
 
 typedef struct {
   double   taps[NTAPS];
 } State;
 static uint32_t sizes[] = {sizeof(State), 0 };
+
 
 
 SYM_FIR_REAL_METHOD_DECLARATIONS;
@@ -50,6 +51,8 @@ static RCCResult start(RCCWorker *self )
   return RCC_OK;
 }
 
+
+
 static double
 apply_filter( State * myState,  Sym_fir_realInData * input )
 {
@@ -71,6 +74,7 @@ apply_filter( State * myState,  Sym_fir_realInData * input )
   return (acum0 + acum1 + acum2 + acum3);
 }
 
+
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   (void)timedOut;(void)newRunCondition;  
@@ -91,12 +95,12 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     return RCC_ERROR;
   }
 
+  out->output.length = in->input.length;
+  out->output.u.operation = in->input.u.operation;
   switch( in->input.u.operation ) {
 
   case SYM_FIR_REAL_IN_DATA:
     {
-      out->output.length = in->input.length;
-      out->output.u.operation = SYM_FIR_REAL_OUT_DATA;
       if ( p->bypass ) {
 	memcpy(inData,outData,in->input.length);
       }
@@ -117,8 +121,6 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
   case SYM_FIR_REAL_IN_SYNC:
   case SYM_FIR_REAL_IN_TIME:
-    out->output.length = in->input.length;
-    out->output.u.operation = in->input.u.operation;
     memcpy( outData, inData, in->input.length);
     break;
 

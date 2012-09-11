@@ -20,8 +20,6 @@ int main ( int argc, char* argv [ ] )
 		      "    <property name='stepNow' value='true'/> "
 		      "  </instance> "
 
-
-
 		      "  <instance worker='sym_fir_real' name='tx_fir_r' >"
 		      "    <property name='bypass' value='false'/> "
 		      "    <property name='gain' value='1'/> "
@@ -46,6 +44,7 @@ int main ( int argc, char* argv [ ] )
 		      "    <property name='mask' value='0'/> "		      
 		      "  </instance> "
 
+#ifdef NEED_MIXER
 		      "  <instance worker='dds_complex' name='ddc_dds' >"
 		      "    <property name='phaseIncrement' value='12345678'/> "
 		      "    <property name='syncPhase' value='0'/> "
@@ -53,6 +52,7 @@ int main ( int argc, char* argv [ ] )
 
 		      "  <instance worker='mixer_complex' name='ddc_mixer' >"
 		      "  </instance> "
+#endif
 
 
 		      "  <instance worker='cic_lpfilter_complex' name='rx_cic' >"
@@ -111,18 +111,28 @@ int main ( int argc, char* argv [ ] )
 		      "  </connection>"
 			 
 
+#ifdef NEED_MIXER
 		      "  <connection>"
 		      "    <port instance='loopback' name='out'/>"
 		      "    <port instance='ddc_mixer' name='in_if'/>"
 		      "  </connection>"
 
-
 		      "  <connection>"
 		      "    <port instance='rx_cic' name='in'/>"
 		      "    <port instance='ddc_mixer' name='out'/>"
 		      "  </connection>"
+#else
+		      "  <connection>"
+		      "    <port instance='loopback' name='out'/>"
+		      "    <port instance='rx_cic' name='in'/>"
+		      "  </connection>"
+
+#endif
 
 
+
+
+#ifdef NEED_MIXER
 		      "<!--   Connections internal to the DDC -->"
 		      "  <connection>"
 		      "    <port instance='ddc_mixer' name='out_sync_only'/>"
@@ -134,6 +144,7 @@ int main ( int argc, char* argv [ ] )
 		      "    <port instance='ddc_mixer' name='in_dds'/>"
 		      "    <port instance='ddc_dds' name='out'/>"
 		      "  </connection>"
+#endif
 
 		      "  <connection>"
 		      "    <port instance='rx_cic' name='out'/>"
@@ -185,20 +196,12 @@ int main ( int argc, char* argv [ ] )
       printf(">>> DONE Initializing!\n");
 
 
-      /*
-      std::string taps ("{-2,11,22,27,25,15,0,-14,-25,-29,-25,-13,2,19,31,35,29,15,-3,-22,-35,"
-		      "-40,-34,-18,2,22,37,41,34,16,-6,-28,-43,-46,-35,-14,12,38,54,57,43,17,-14,-44,-63,-66,-51,-22,13,46,"
-			"66,68,50,16,-23,-60,-80,-78,-53,-9,40,84,109,105,73,19,-43,-98,-130,-127,-91,-28,44,106,139,132,84,5,"
-		      "-82,-154,-186,-166,-92,20,144,245,292,267,168,14,-157,-301,-377,-357,-239,-47,168,346,426,370,174,-123,"
-			"-447,-699,-781,-623,-206,417,1128,1752,2094,1983,1317,106,-1510,-3263,-4777,-5633,-5435,-3884,-851,3582,"
-			"9113,15238,21318,26666,30645,32767}");
-      app->setProperty( "tx_fir_r", "taps" , taps.c_str() );
-      */
-
       app->start();
 
       while ( 1 ) {
 	std::string value;
+
+#ifdef STEP_THRU_DATA
 	app->getProperty( "file_read_msg", "stepThruMsg", value);
         if ( value == "true" ) {
 	  app->getProperty( "file_read_msg", "stepNow", value);
@@ -210,6 +213,9 @@ int main ( int argc, char* argv [ ] )
 	    app->setProperty("file_read_msg","stepNow","true");
 	  }
 	}
+#endif
+
+	
 
 	sleep( 1 );
       }

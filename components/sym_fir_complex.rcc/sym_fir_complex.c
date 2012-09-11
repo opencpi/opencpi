@@ -10,10 +10,21 @@
  * This file contains the RCC implementation skeleton for worker: sym_fir_complex
  */
 #include "sym_fir_complex_Worker.h"
+#include "sym_fir.h"
+#include "signal_utils.h"
+
+#define NTAPS (sizeof(mems(Sym_fir_complexProperties,taps))/sizeof(int16_t))
+
+typedef struct {
+  double   taps[NTAPS];
+} State;
+static uint32_t sizes[] = {sizeof(State), 0 };
+
 
 SYM_FIR_COMPLEX_METHOD_DECLARATIONS;
 RCCDispatch sym_fir_complex = {
  /* insert any custom initializations here */
+  .memSizes = sizes,
  SYM_FIR_COMPLEX_DISPATCH
 };
 
@@ -21,16 +32,69 @@ RCCDispatch sym_fir_complex = {
  * Methods to implement for worker sym_fir_complex, based on metadata.
  */
 
+/*
+ * Methods to implement for worker dds_complex, based on metadata.
+ */
+static RCCResult start(RCCWorker *self )
+{
+  int i,j;
+  Sym_fir_complexProperties *p = self->properties;
+  State *myState = self->memories[0];  
+  for ( i=0; i<(int)NTAPS/2; i++ ) {
+    myState->taps[i] = (double)p->taps[i];
+  }
+  for ( j=i; i>=0; j++,i-- ) {
+    myState->taps[j] = (double)p->taps[i];
+  }  
+  return RCC_OK;
+}
+
+
+
+static void
+apply_filter( State * myState,  Sym_fir_complexInIq * input, double * i, double * q )
+{
+  unsigned	n;
+  double	
+    acum0 = 0,
+    acum1 = 0,
+    acum2 = 0,
+    acum3 = 0;
+  unsigned	len = (NTAPS / UnRoll) * UnRoll;
+  for (n = 0; n < len; n += UnRoll){
+    acum0 += myState->taps[n + 0] * Uscale( input->data[n + 0].I );
+    acum1 += myState->taps[n + 1] * Uscale( input->data[n + 1].I );
+    acum2 += myState->taps[n + 2] * Uscale( input->data[n + 2].I );
+    acum3 += myState->taps[n + 3] * Uscale( input->data[n + 3].I );
+  }
+  for (; n < NTAPS; n++)
+    acum0 += myState->taps[n] * Uscale( input->data[n].I );
+  *i = acum0 + acum1 + acum2 + acum3;
+
+  acum0 = acum1 = acum2 = acum3 = 0;
+  for (n = 0; n < n; n += UnRoll){
+    acum0 += myState->taps[n + 0] * Uscale( input->data[n + 0].Q );
+    acum1 += myState->taps[n + 1] * Uscale( input->data[n + 1].Q );
+    acum2 += myState->taps[n + 2] * Uscale( input->data[n + 2].Q );
+    acum3 += myState->taps[n + 3] * Uscale( input->data[n + 3].Q );
+  }
+  for (; n < NTAPS; n++)
+    acum0 += myState->taps[n] * Uscale( input->data[n].Q );
+  *q = acum0 + acum1 + acum2 + acum3;
+}
+
+
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   (void)timedOut;(void)newRunCondition;
+  Sym_fir_complexProperties *p = self->properties;
+  State *myState = self->memories[0];  
 
  RCCPort
    *in = &self->ports[SYM_FIR_COMPLEX_IN],
    *out = &self->ports[SYM_FIR_COMPLEX_OUT];
 
-
- uint16_t
+ Sym_fir_complexInIq
    *inData = in->current.data,
    *outData = out->current.data;
 
@@ -39,20 +103,37 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ERROR;
  }
 
+ out->output.length = in->input.length;
+ out->output.u.operation = in->input.u.operation;
  switch( in->input.u.operation ) {
 
  case SYM_FIR_COMPLEX_IN_IQ:
-   //   processSignalData( self  );
+    {
+      if ( p->bypass ) {
+	memcpy(inData,outData,in->input.length);
+      }
+      else {
+	unsigned n;
+	unsigned len = byteLen2Complex(in->input.length) - UnRoll;
+	double gain = Gain( p->gain);
+	for ( n=0; n<len; n++ ) {
+	  double i,q;
+	  apply_filter( myState, &inData[n], &i, &q );
+	  double v = scabs(i,q);
+	  if ( v > Uscale( p->peakDetect ) ) {
+	    p->peakDetect = Scale( v );
+	  }
+
+	  // Not sure if this is correct
+	  outData->data[n].I = Scale( i * gain);
+	  outData->data[n].Q = Scale( q * gain);	 
+	}
+      }
+    }
 
  case SYM_FIR_COMPLEX_IN_SYNC:
-   //   processSyncSignal( self  );
-
  case SYM_FIR_COMPLEX_IN_TIME:
-   //   processTimeSignal( self );
-
    memcpy( outData, inData, in->input.length);
-   out->output.length = in->input.length;
-   out->output.u.operation = in->input.u.operation;
    break;
 
  };

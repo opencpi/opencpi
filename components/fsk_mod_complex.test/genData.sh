@@ -1,4 +1,5 @@
 rm -f expectedDataIn.dat
-./genExpected --utname=sym_fir_real 
+./genExpected --utname=fsk_mod_complex --genRSin=true
+
 
 

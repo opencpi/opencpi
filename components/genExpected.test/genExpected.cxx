@@ -18,7 +18,7 @@ public:
   bool genRSin;
   bool verbose;
   std::string unit_test_name;
-  MultiNameValue unit_test_props;
+  std::string unit_test_props;
 private:
   static CommandLineConfiguration::Option g_options[];
 };
@@ -38,7 +38,7 @@ UnitTestConfigurator::g_options[] = {
   { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "utname", "unit test component name",
     OCPI_CLC_OPT(&UnitTestConfigurator::unit_test_name), 0 },
-  { OCPI::Util::CommandLineConfiguration::OptionType::MULTINAMEVALUE,
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "utp", "Unit test component properties",
     OCPI_CLC_OPT(&UnitTestConfigurator::unit_test_props), 0 },
   { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
@@ -72,9 +72,10 @@ int main ( int argc, char* argv [ ] )
 
 		   "  <instance worker='file_read_msg' >"
 		   "    <property name='fileName' value='testDataIn.dat'/> "		      
-		   "    <property name='genTestFile' value='%s'/> "		      
+		   "    <property name='genTestFile' value='true'/> "		      
 		   "    <property name='stepThruMsg' value='false'/> "
 		   "    <property name='stepNow' value='true'/> "
+		   "    <property name='genReal' value='%s'/> "
 		   "  </instance> "
 
 		   "  <instance worker='%s' name='unit_test' >"
@@ -114,20 +115,7 @@ int main ( int argc, char* argv [ ] )
     return 0;
   }
 
-  std::string utp;
   std::string compp;
-
-  for (OCPI::Util::CommandLineConfiguration::MultiNameValue::const_iterator ipit = config.unit_test_props.begin();
-       ipit != config.unit_test_props.end(); ipit++) {
-    const std::string & pname = (*ipit).first;
-    const std::string & pval = (*ipit).second;
-    printf("utp(%s) = %s\n", pname.c_str(), pval.c_str() );
-    char buf[1024];
-    snprintf("<property name='%s' value='%s'/> ", 1023, pname.c_str(), pval.c_str() );
-    utp += buf;    
-  }
-  if ( ! utp.empty() )
-    printf("Utp props = %s\n", utp.c_str() );
 
   OA::Application * app = NULL;
   try
@@ -148,7 +136,7 @@ int main ( int argc, char* argv [ ] )
       char app_xml[4096];
       snprintf( app_xml, 4095, xml, config.genRSin ? "true" : "false",
 		config.unit_test_name.c_str(), 
-		utp.c_str() );
+		config.unit_test_props.c_str() );
 
       printf("%s\n", app_xml );
       

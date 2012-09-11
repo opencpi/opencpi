@@ -25,9 +25,9 @@ static uint32_t mysizes[] = {sizeof(MyState), 0};
 
 FILE_READ_MSG_METHOD_DECLARATIONS;
 RCCDispatch file_read_msg = {
- /* insert any custom initializations here */
- FILE_READ_MSG_DISPATCH
- .memSizes = mysizes
+  /* insert any custom initializations here */
+  FILE_READ_MSG_DISPATCH
+  .memSizes = mysizes
 };
 
 /*
@@ -74,26 +74,50 @@ RCCResult genTestFile( RCCWorker * self )
   }
 #endif
 
+  if ( p->genReal ) {
+    // Generate a "real" sinwave
+    h.endian = 1;
+    h.opcode = 0;
+    h.length = DATA_SIZE * sizeof(uint16_t);
+    bc+=sizeof(FileHeader);
+    if (write(fd, &h, sizeof(FileHeader)) < 0) {
+      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      return RCC_ERROR;
+    }
+    uint16_t buffer[DATA_SIZE];
+    for ( n=0; n<h.length / sizeof(uint16_t); n++ ) {
+      buffer[n] = (uint16_t) ( SCALE_F * sin( interval * n ));
+    }
+    bc+= h.length;
+    if (write(fd, buffer, h.length) < 0) {
+      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      return RCC_ERROR;
+    }
+  }
+  else {
 
-  // Generate a "real" sinwave
-  h.endian = 1;
-  h.opcode = 0;
-  h.length = DATA_SIZE * sizeof(uint16_t);
-  bc+=sizeof(FileHeader);
-  if (write(fd, &h, sizeof(FileHeader)) < 0) {
-    asprintf(&self->errorString, "error reading file: %s", strerror(errno));
-    return RCC_ERROR;
-  }
-  uint16_t buffer[DATA_SIZE];
-  for ( n=0; n<h.length / sizeof(uint16_t); n++ ) {
-    buffer[n] = (uint16_t) ( SCALE_F * sin( interval * n ));
-  }
-  bc+= h.length;
-  if (write(fd, buffer, h.length) < 0) {
-    asprintf(&self->errorString, "error reading file: %s", strerror(errno));
-    return RCC_ERROR;
-  }
+    // Generate a "complex" sinwave
+    h.endian = 1;
+    h.opcode = 0;
+    h.length = DATA_SIZE * sizeof(uint16_t) * 2;
+    bc+=sizeof(FileHeader);
+    if (write(fd, &h, sizeof(FileHeader)) < 0) {
+      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      return RCC_ERROR;
+    }
+    uint16_t buffer[DATA_SIZE*2];
+    for ( n=0; n<h.length / (sizeof(uint16_t)*2); n+=2 ) {
+      buffer[n] = (uint16_t) ( SCALE_F * sin( interval * n ));
+      buffer[n+1] = (uint16_t) ( SCALE_F * cos( interval * n ));
+    }
+    bc+= h.length;
+    if (write(fd, buffer, h.length) < 0) {
+      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      return RCC_ERROR;
+    }
 
+
+  }
 
 #ifdef DEBUG_PASS_THRU
   // Generate a text message

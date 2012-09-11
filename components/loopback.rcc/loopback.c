@@ -39,18 +39,9 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ERROR;
  }
 
- switch( in->input.u.operation ) {
-
- case 3:
-   printf("In loopback  got data = %s, len = %d\n", (char*)inData, in->input.length );
-   
- default:
-   memcpy( outData, inData, in->input.length);
-   out->output.length = in->input.length;
-   out->output.u.operation = in->input.u.operation;
-   break;
-
- };
-
- return RCC_ADVANCE;
+ // Zero copy transfer
+ self->container.send( &self->ports[LOOPBACK_OUT], 
+		       &self->ports[LOOPBACK_IN].current, in->input.u.operation, 
+		       in->input.length);
+ return RCC_OK;
 }

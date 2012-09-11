@@ -41,9 +41,15 @@ Tests = \
 	unit.test \
 	dds_complex.test \
 	fsk_mod_complex.test \
+	fm_demod_complex.test \
 	mixer_complex.test \
 	loopback.test \
-	sym_fir_real.test
+	sym_fir_real.test \
+	sym_fir_complex.test \
+	noise_gen_complex.test \
+	cic_lpfilter_complex.test \
+	cic_hpfilter_complex.test \
+	genExpected.test 
 
 
 Implementations = \
