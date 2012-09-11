@@ -55,7 +55,10 @@ MyDir:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 MyIncs= \
          -I$(realpath $(MyDir)/../../../../../core/container/hdl_container/impl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
-MyLib=$(realpath      $(MyDir)/../../../../../lib/linux-x86_64-bin)
+MyLib:=$(realpath $(MyDir)/../../../../../lib/linux-x86_64-bin)
+ifeq ($(strip $(MyLib)),)
+$(error OpenCpi libraries must be built before the driver is built)
+endif
 export EXTRA_CFLAGS:= $(MyIncs) -Wformat=2
 MODFILE=$(MODNAME).ko
 RULESFILE=99-$(MODNAME).rules

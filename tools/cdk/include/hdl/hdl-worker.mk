@@ -42,6 +42,14 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifdef HdlSkip
 $(call OcpiDbg, Skipping)
 else
+Compile=$(HdlCompile)
+$(call OcpiDbgVar,HdlBin)
+BF:=$(HdlBin)
+# This could change someday if any hdl tools have separate object files.
+OBJ:=$(HdlBin)
+# We don't build independent standalone worker binaries (no artifact file here)
+ArtifactFile=
+
 HdlVerilogSuffix:=.v
 HdlVerilogIncSuffix:=.vh
 HdlVHDLSuffix:=.vhd
@@ -52,19 +60,13 @@ HdlImplSuffix=_impl$(HdlIncSuffix)
 ifneq ($(word 2,$(Workers)),)
 $(error Only one HDL worker can be built.  Workers is: $(Workers))
 endif
-ifndef Core
-Core=$(Worker)
+# THis is REDUNDANT with what is in xxx-worker.mk, but we need it to figure out the language below.
+ifndef Worker
+Worker=$(CwdName)
 endif
 
-Compile=$(HdlCompile)
-$(call OcpiDbgVar,HdlBin)
-BF:=$(HdlBin)
-# This could change someday if any hdl tools have separate object files.
-OBJ:=$(HdlBin)
-# We don't build independent standalone worker binaries (no artifact file here)
-ArtifactFile=
 ############
-# We need to figure out the language and the file suffixes before calling www-worker
+# We need to figure out the language and the file suffixes before calling xxx-worker
 # 
 HdlXmlFile=$(Worker).xml
 ifeq ($(realpath $(HdlXmlFile)),)
@@ -86,10 +88,14 @@ endif
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 $(call OcpiDbgVar,Worker)
+ifndef Core
+Core=$(Worker)
+endif
 ################################################################################
 # Generated files: impl depends on defs, worker depends on impl
 # map the generic "IncludeDirs" into the verilog
 override VerilogIncludeDirs += $(IncludeDirs)
+ImplXmlFile=$(firstword $(ImplXmlFiles))
 DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
 $(DefsFile): $(Worker).xml | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@

@@ -1,5 +1,5 @@
-<!-- The protocol that comes from an ADC -->
-<Protocol>
+<!-- 32 bit values, with byte enables forced -->
+<Protocol datavaluewidth="8">
   <Operation Name="data">
     <Argument Name="data" Type="ULong" SequenceLength="0"/>
   </Operation>

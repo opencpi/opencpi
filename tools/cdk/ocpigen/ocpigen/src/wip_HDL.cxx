@@ -246,31 +246,34 @@ emitPortDescription(Port *p, Worker *w, FILE *f) {
 }
 void
 emitSignal(const char *signal, FILE *f, const char *comment, Language lang, bool in,
-	   char *&last, int width, const char *pref = "",
+	   char *&last, int width, unsigned n, const char *pref = "",
 	   const char *type = "std_logic", const char *value = NULL) {
   int pad = 22 - strlen(signal);
+  char *name;
+  asprintf(&name, signal, n);
   if (lang == VHDL) {
     if (last)
       fprintf(f, last, ';');
     if (width < 0) {
       asprintf(&last, "  %s  %s%*s: %s %s%%c%s%s\n",
-	       pref, signal, pad, "", in ? "in " : "out", type,
+	       pref, name, pad, "", in ? "in " : "out", type,
 	       value ? " := " : "", value ? value : "");
     } else
       asprintf(&last, "  %s  %s%*s: %s std_logic_vector(%u downto 0)%%c\n",
-	       pref, signal, pad, "", in ? "in " : "out", width - 1);
+	       pref, name, pad, "", in ? "in " : "out", width - 1);
   } else {
     if (last)
       fprintf(f, last, ',');
     free(last);
     if (width < 0)
       asprintf(&last, "  %s%%c %*s%s %s\n",
-	       signal, pad, "", comment, in ? "input" : "output");
+	       name, pad, "", comment, in ? "input" : "output");
     else
       asprintf(&last, "  %s%%c %*s%s %s [%3u:0]\n",
-	       signal, pad, "", comment, in ? "input " : "output",
+	       name, pad, "", comment, in ? "input " : "output",
 	       width - 1);
   }
+  free(name);
 }
 void
 emitLastSignal(FILE *f, char *&last, Language lang, bool end) {
@@ -318,7 +321,7 @@ emitParameters(FILE *f, Worker *w, const char *comment) {
 	std::string value;
 	if (pr->m_defaultValue)
 	  pr->m_defaultValue->unparse(value);
-	emitSignal(pr->m_name.c_str(), f, comment, w->language, true, last, -1, "  ",
+	emitSignal(pr->m_name.c_str(), f, comment, w->language, true, last, -1, 0, "  ",
 		   type, value.size() ? value.c_str() : NULL);
       } else {
 	int64_t i64 = 0;
@@ -338,7 +341,7 @@ emitParameters(FILE *f, Worker *w, const char *comment) {
 		bits - 1, pr->m_name.c_str(), bits, (long long)i64);
       }
     }
-  if (!first && w->language == Verilog) {
+  if (!first && w->language == VHDL) {
     emitLastSignal(f, last, w->language, true);
     fprintf(f, "  );\n");
   }
@@ -357,7 +360,7 @@ emitSignals(FILE *f, Worker *w) {
       if (last == NULL)
 	fprintf(f,
 		"  %s Clocks not associated with one specific interface:\n", comment);
-      emitSignal(c->signal, f, comment, w->language, true, last, -1);
+      emitSignal(c->signal, f, comment, w->language, true, last, -1, 0);
     }
   }
   for (unsigned i = 0; i < w->ports.size(); i++) {
@@ -369,7 +372,7 @@ emitSignals(FILE *f, Worker *w) {
     // Some ports are basically an array of interfaces.
     for (unsigned n = 0; n < p->count; n++) {
       if (p->clock->port == p && n == 0) {
-	emitSignal(p->clock->signal, f, comment, w->language, true, last, -1);
+	emitSignal(p->clock->signal, f, comment, w->language, true, last, -1, n);
 	p->ocp.Clk.signal = p->clock->signal;
       } else if (n == 0)
 	fprintf(f,
@@ -378,12 +381,12 @@ emitSignals(FILE *f, Worker *w) {
       osd = ocpSignals;
       for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  emitSignal(os->signal, f, comment, w->language, true, last, osd->vector ? os->width : -1);
+	  emitSignal(os->signal, f, comment, w->language, true, last, osd->vector ? os->width : -1, n);
 	}
       osd = ocpSignals;
       for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  emitSignal(os->signal, f, comment, w->language, false, last, osd->vector ? os->width : -1);
+	  emitSignal(os->signal, f, comment, w->language, false, last, osd->vector ? os->width : -1, n);
 	}
     }
   }
@@ -391,7 +394,7 @@ emitSignals(FILE *f, Worker *w) {
     fprintf(f, "  %s Extra signals not part of any WIP interface:\n", comment);
     Signal *s = w->signals;
     for (unsigned n = 0; n < w->nSignals; n++, s++)
-      emitSignal(s->name, f, comment, w->language, s->direction == Signal::IN, last, s->width);
+      emitSignal(s->name, f, comment, w->language, s->direction == Signal::IN, last, s->width, 0);
   }
   emitLastSignal(f, last, w->language, true);
   if (w->language == VHDL)
@@ -424,59 +427,6 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    "\n"
 	    "package %s_defs is\n",
 	    w->implName);
-#if 0 // no record types for now since its controversial and a pain for mixed languages
-  // Generate record types for interfaces
-  if (lang == VHDL) {
-    for (unsigned i = 0; i < w->ports.size(); i++) {
-      Port *p = w->ports[i];
-      bool mIn = p->masterIn();
-      emitPortDescription(p, w, f);
-      fprintf(f,
-	      "  -- These 2 records correspond to the input and output sides of the OCP bundle\n"
-	      "  -- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
-	      w->implName, wipNames[p->type], p->name);
-      fprintf(f,
-	      "\n  -- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
-	      wipNames[p->type], mIn ? "master" : "slave", p->name, w->implName);
-      char *pin, *pout;
-      if ((err = pattern(w, p, 0, 0, true, !mIn, &pin)) ||
-	  (err = pattern(w, p, 0, 0, false, !mIn, &pout)))
-	return err;
-      fprintf(f, "  type %sin_t is record\n", pin);
-      osd = ocpSignals;
-      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  fprintf(f, "    %-20s: ", osd->name);
-	  if (osd->type)
-	    fprintf(f, "%s_t", osd->name);
-	  else if (osd->vector)
-	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
-	  else
-	    fprintf(f, "std_logic");
-	  fprintf(f, ";\n");
-	}
-      fprintf(f, "  end record %sin_t;\n", pin);
-      fprintf(f,
-	      "\n  -- Record for the %s output (OCP %s) signals for port \"%s\" of worker \"%s\"\n"
-	      "  type %sout_t is record\n",
-	      wipNames[p->type], mIn ? "slave" : "master",
-	      p->name, w->implName, pout);
-      osd = ocpSignals;
-      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  fprintf(f, "    %-20s: ", osd->name);
-	  if (osd->type)
-	    fprintf(f, "%s_t", osd->name);
-	  else if (osd->vector)
-	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
-	  else
-	    fprintf(f, "std_logic");
-	  fprintf(f, ";\n");
-	}
-      fprintf(f, "  end record %sout_t;\n", pout);
-    }
-  }
-#endif
   if (lang == VHDL) {
     fprintf(f,
 	    "\ncomponent %s is\n", w->implName);
@@ -619,6 +569,55 @@ emitOpcodes(Port *p, FILE *f, const char *pName, Language lang, const char *comm
 	    "entity %s is\n", w->implName);
     emitParameters(f, w, comment);
     emitSignals(f, w);
+    // Generate record types to easily and compactly plumb interface signals internally
+    for (unsigned i = 0; i < w->ports.size(); i++) {
+      Port *p = w->ports[i];
+      bool mIn = p->masterIn();
+      //      emitPortDescription(p, w, f);
+      fprintf(f, "\n"
+	      "  -- These 2 records correspond to the input and output sides of the OCP bundle\n"
+	      "  -- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
+	      w->implName, wipNames[p->type], p->name);
+      fprintf(f,
+	      "\n  -- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
+	      wipNames[p->type], mIn ? "master" : "slave", p->name, w->implName);
+      char *pin, *pout;
+      if ((err = pattern(w, p, 0, 0, true, !mIn, &pin)) ||
+	  (err = pattern(w, p, 0, 0, false, !mIn, &pout)))
+	return err;
+      fprintf(f, "  type %sin_t is record\n", pin);
+      OcpSignalDesc *osd = ocpSignals;
+      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
+	  fprintf(f, "    %-20s: ", osd->name);
+	  if (osd->type)
+	    fprintf(f, "ocpi.ocp.%s_t", osd->name);
+	  else if (osd->vector)
+	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
+	  else
+	    fprintf(f, "std_logic");
+	  fprintf(f, ";\n");
+	}
+      fprintf(f, "  end record %sin_t;\n", pin);
+      fprintf(f,
+	      "\n  -- Record for the %s output (OCP %s) signals for port \"%s\" of worker \"%s\"\n"
+	      "  type %sout_t is record\n",
+	      wipNames[p->type], mIn ? "slave" : "master",
+	      p->name, w->implName, pout);
+      osd = ocpSignals;
+      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
+	  fprintf(f, "    %-20s: ", osd->name);
+	  if (osd->type)
+	    fprintf(f, "ocpi.ocp.%s_t", osd->name);
+	  else if (osd->vector)
+	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
+	  else
+	    fprintf(f, "std_logic");
+	  fprintf(f, ";\n");
+	}
+      fprintf(f, "  end record %sout_t;\n", pout);
+    }
   } else
     // Verilog just needs the module declaration and any other associate declarations
     // required for the module declaration.
@@ -882,9 +881,12 @@ emitOpcodes(Port *p, FILE *f, const char *pName, Language lang, const char *comm
       }
     }
   }
-  if (w->language == VHDL)
+  if (w->language == VHDL) {
     fprintf(f,
 	    "end entity %s;\n",	w->implName);
+    // Generate all the properties
+
+  }
   fclose(f);
   return 0;
 }
