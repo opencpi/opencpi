@@ -100,20 +100,28 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   Fsk_mod_complexInData *inData = in->current.data;
   Fsk_mod_complexOutIq  *outData = out->current.data;
 
+  if (in->input.length > out->current.maxLength*2 ) {
+    self->errorString = "output buffer too small";
+    return RCC_ERROR;
+  }
+
   switch( in->input.u.operation ) {
 
   case FSK_MOD_COMPLEX_IN_DATA:
     doFsk( myState, inData, outData, in->input.length );
+    // output is complex, input is real
+    out->output.length = in->input.length*2;
     break;
 
   case FSK_MOD_COMPLEX_IN_SYNC:
   case FSK_MOD_COMPLEX_IN_TIME:
-    memcpy( outData, inData, in->input.length);
-    out->output.length = in->input.length;
-    out->output.u.operation = in->input.u.operation;
+    self->container.send( out, &in->current, in->input.u.operation, in->input.length);
+    return RCC_OK;
     break;
 
   };
 
-  return RCC_ADVANCE;
+
+ out->output.u.operation = in->input.u.operation;
+ return RCC_ADVANCE;
 }

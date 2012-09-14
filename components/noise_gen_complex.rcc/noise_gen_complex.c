@@ -110,18 +110,13 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ERROR;
  }
 
- out->output.u.operation = in->input.u.operation;
- out->output.length = in->input.length;
-
  switch( in->input.u.operation ) {
 
  case NOISE_GEN_COMPLEX_IN_IQ:
    {
      random_noise( s );
      if ( ! p->mask ) {
-       self->container.send( &self->ports[NOISE_GEN_COMPLEX_OUT], 
-                          &self->ports[NOISE_GEN_COMPLEX_IN].current, in->input.u.operation, 
-			     in->input.length );
+       self->container.send( out, &in->current,in->input.u.operation, in->input.length );
        return RCC_OK;
      }
      unsigned i;
@@ -135,12 +130,13 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
  case NOISE_GEN_COMPLEX_IN_SYNC:
  case NOISE_GEN_COMPLEX_IN_TIME:
-   self->container.send( &self->ports[NOISE_GEN_COMPLEX_OUT], 
-			 &self->ports[NOISE_GEN_COMPLEX_IN].current, in->input.u.operation, 
-			 in->input.length );
+   self->container.send( out, &in->current, in->input.u.operation, in->input.length );
    return RCC_OK;
 
  };
 
+ out->output.u.operation = in->input.u.operation;
+ out->output.length = in->input.length;
  return RCC_ADVANCE;
+
 }

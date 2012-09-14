@@ -29,10 +29,6 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    *in = &self->ports[LOOPBACK_IN],
    *out = &self->ports[LOOPBACK_OUT];
    
- uint16_t
-   *inData = in->current.data,
-   *outData = out->current.data;
-
  if (in->input.length > out->current.maxLength) {
    printf("loopback: ERROR: ouput buffer is too small\n");
    self->errorString = "output buffer too small";
@@ -40,8 +36,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  }
 
  // Zero copy transfer
- self->container.send( &self->ports[LOOPBACK_OUT], 
-		       &self->ports[LOOPBACK_IN].current, in->input.u.operation, 
-		       in->input.length);
+ self->container.send( out, &in->current, in->input.u.operation, in->input.length);
+
  return RCC_OK;
 }

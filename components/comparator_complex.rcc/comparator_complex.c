@@ -30,7 +30,6 @@ static RCCResult
 start(RCCWorker *self) {
   Comparator_complexProperties *p = self->properties;
   MyState *s = self->memories[0];
-  p->finished = 0;
   s->deviation = Uscale( p->deviation );
   return RCC_OK;
 }

@@ -15,7 +15,7 @@ run: all
 	OCPI_LIBRARY_PATH=$(OCPI_BASE_DIR)/components/lib/rcc ./fsk_modem > /dev/null	
 
 clean::
-	rm -f -r fsk_modem fsk_modem.dSYM
+	rm -f -r fsk_modem fsk_modem.dSYM timeData.* *.~
 
 # These make the worker library for this application
 Implementations =

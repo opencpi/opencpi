@@ -14,7 +14,7 @@
 #include "sym_fir.h"
 
 
-#define NTAPS (sizeof(mems(Sym_fir_realProperties,taps))/sizeof(int16_t))
+#define NTAPS (mems(Sym_fir_realProperties,taps)/sizeof(int16_t))
 
 typedef struct {
   double   taps[NTAPS];
@@ -54,7 +54,7 @@ static RCCResult start(RCCWorker *self )
 
 
 static double
-apply_filter( State * myState,  Sym_fir_realInData * input )
+apply_filter( double taps[],  Sym_fir_realInData * input )
 {
   unsigned	i = 0;
   double	
@@ -64,13 +64,13 @@ apply_filter( State * myState,  Sym_fir_realInData * input )
     acum3 = 0;
   unsigned	n = (NTAPS / UnRoll) * UnRoll;
   for (i = 0; i < n; i += UnRoll){
-    acum0 += myState->taps[i + 0] * Uscale( input->real[i + 0] );
-    acum1 += myState->taps[i + 1] * Uscale( input->real[i + 1] );
-    acum2 += myState->taps[i + 2] * Uscale( input->real[i + 2] );
-    acum3 += myState->taps[i + 3] * Uscale( input->real[i + 3] );
+    acum0 += taps[i + 0] * Uscale( input->real[i + 0] );
+    acum1 += taps[i + 1] * Uscale( input->real[i + 1] );
+    acum2 += taps[i + 2] * Uscale( input->real[i + 2] );
+    acum3 += taps[i + 3] * Uscale( input->real[i + 3] );
   }
   for (; i < NTAPS; i++)
-    acum0 += myState->taps[i] * Uscale( input->real[i] );
+    acum0 += taps[i] * Uscale( input->real[i] );
   return (acum0 + acum1 + acum2 + acum3);
 }
 
@@ -95,21 +95,20 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     return RCC_ERROR;
   }
 
-  out->output.length = in->input.length;
-  out->output.u.operation = in->input.u.operation;
   switch( in->input.u.operation ) {
 
   case SYM_FIR_REAL_IN_DATA:
     {
       if ( p->bypass ) {
-	memcpy(inData,outData,in->input.length);
+	self->container.send( out, &in->current, in->input.u.operation, in->input.length);
+	return RCC_OK;
       }
       else {
 	unsigned i;
 	double gain = Gain( p->gain);
 	unsigned len = byteLen2Real(in->input.length) - UnRoll;
 	for ( i=0; i<len; i++ ) {
-	  double v = apply_filter( myState, inData );
+	  double v = apply_filter( myState->taps, inData );
 	  if ( fabs(v) > p->peakDetect ) {
 	    p->peakDetect = Scale( fabs(v) );
 	  }
@@ -121,10 +120,13 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
   case SYM_FIR_REAL_IN_SYNC:
   case SYM_FIR_REAL_IN_TIME:
-    memcpy( outData, inData, in->input.length);
+    self->container.send( out, &in->current, in->input.u.operation, in->input.length);
+    return RCC_OK;
     break;
 
   };
 
+  out->output.length = in->input.length;
+  out->output.u.operation = in->input.u.operation;
   return RCC_ADVANCE;
 }

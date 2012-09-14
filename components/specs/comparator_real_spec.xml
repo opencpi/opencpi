@@ -3,7 +3,6 @@
   <Properties>
     <Property Name="passed" type="bool" Readable="true" Writable="true" />
     <Property Name="deviation" type="double" Readable="true" Writable="true" />
-    <property name='finished' type='bool' readable='true' writable='false'/>
     <Property Name="msgsProcessed" Readable="true" Writable="false"/>
     <Property Name="bytesProcessed" Readable="true" Writable="false"/>
   </Properties>

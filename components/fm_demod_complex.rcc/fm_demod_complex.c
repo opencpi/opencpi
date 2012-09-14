@@ -79,7 +79,6 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ERROR;
  }
 
- out->output.u.operation = in->input.u.operation;
  switch( in->input.u.operation ) {
 
  case FM_DEMOD_COMPLEX_IN_IQ:
@@ -89,25 +88,28 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      for ( samp=0; samp<len; samp++ ) {
        double angle = myATan2(Uscale(inData->data[0].I),Uscale(inData->data[0].Q));
        if ( p->emitAngle ) {
-	 outData->real[0] = angle;	 
+	 outData->real[samp] = Scale( angle );
        }
        else {
-	 outData->real[0] =  angle - s->lastAngle;
+	 outData->real[samp] =  Scale( angle - s->lastAngle );
        }
        s->lastAngle = angle;
      }
-     out->output.length = in->input.length/2;
+
+     // Convertion from complex bytes to real
+     out->output.length = ComplexLen2Real(in->input.length);
    }
    break;
 
  case FM_DEMOD_COMPLEX_IN_SYNC:
    sync( self );
  case FM_DEMOD_COMPLEX_IN_TIME:
-   memcpy( outData, inData, in->input.length);
-   out->output.length = in->input.length;
+   self->container.send( out, &in->current, in->input.u.operation, in->input.length );
+   return RCC_OK;
    break;
    
  };
 
+ out->output.u.operation = in->input.u.operation;
  return RCC_ADVANCE;
 }

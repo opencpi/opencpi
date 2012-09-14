@@ -38,8 +38,6 @@ RCCDispatch cic_hpfilter_complex = {
  * Methods to implement for worker cic_hpfilter_complex, based on metadata.
  */
 
-
-
 static void
 sync( RCCWorker * self )
 {
@@ -52,6 +50,19 @@ static RCCResult
 start(RCCWorker *self) {
   sync( self );
   return RCC_OK;
+}
+
+RCCResult sendOutput( RCCWorker * self, MyState * s, RCCPort * out, unsigned samp, unsigned len ) 
+{
+  if ( samp >= len ) {
+    s->input_idx = 0;
+    return RCC_ADVANCE;
+  }
+  else {
+    self->container.advance(out,0);
+    s->input_idx = samp;
+    return RCC_OK;
+  }
 }
 
 
@@ -70,6 +81,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    *outData = out->current.data;
  
  out->output.u.operation = in->input.u.operation;
+ out->output.length = in->input.length;
  switch( in->input.u.operation ) {
 
  case CIC_HPFILTER_COMPLEX_IN_IQ:
@@ -77,38 +89,22 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      unsigned out_idx = 0;
      unsigned len = byteLen2Complex(in->input.length);
      unsigned i, samp;
+
+     // We may need to generate more output data from the last input
+     unsigned max_out = byteLen2Complex(out->current.maxLength);
+     if ( s->remainder ) {
+       for ( i=0; (i<s->remainder) && (out_idx<max_out); i++, out_idx++ ) {
+	 outData->data[out_idx].I = s->fast_acc[II][STAGES];
+	 outData->data[out_idx].Q = s->fast_acc[QQ][STAGES];
+       }
+       s->remainder -= i;
+       if ( out_idx >= max_out ) {
+	 return sendOutput( self, s, out, s->input_idx, in->input.length);
+       }
+     }
+
+     len = min(len,max_out);
      for ( samp=s->input_idx; samp<len; samp++ ) {
-       if ( ((out_idx+1)*4) >= out->current.maxLength ) {  // We ran out of output buffer
-	 s->input_idx = samp;
-	 self->container.send( &self->ports[CIC_HPFILTER_COMPLEX_OUT], 
-			       &self->ports[CIC_HPFILTER_COMPLEX_OUT].current, in->input.u.operation, 
-			       out_idx*4 );
-	 if ( samp < len ) {
-	   return RCC_OK;
-	 }
-	 else {
-	   return RCC_ADVANCE;
-	 }
-       }
-       // We may need to generate more output data from the last input
-       if ( s->remainder ) {
-	 for ( i=0; (i<s->remainder) && ((out_idx*4) <= out->current.maxLength); i++, out_idx++ ) {
-	   outData->data[out_idx].I = s->fast_acc[II][STAGES];
-	   outData->data[out_idx].Q = s->fast_acc[QQ][STAGES];
-	 }
-	 s->remainder -= i;
-	 if ( ((out_idx+1)*4) >= out->current.maxLength ) {
-	   self->container.send( &self->ports[CIC_HPFILTER_COMPLEX_OUT], 
-				 &self->ports[CIC_HPFILTER_COMPLEX_OUT].current, in->input.u.operation, 
-				 out_idx*4 );
-	   if ( samp < len ) {
-	     return RCC_OK;
-	   }
-	   else {
-	     return RCC_ADVANCE;
-	   }
-	 }
-       }
 
        // I
        s->slow_acc[II][0] = inData->data[samp].I;
@@ -135,18 +131,9 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
        // Generate the interpolated output 
        // We are not really interpolating here, just copying the last calculated value
        for ( i=0; i<p->M; i++, out_idx++ ) {
-	 if ( ((out_idx+1)*4) >= out->current.maxLength ) {
+	 if ( out_idx  >= max_out ) {
 	   s->remainder = p->M-i;
-	   s->input_idx = samp;
-	   self->container.send( &self->ports[CIC_HPFILTER_COMPLEX_OUT], 
-				 &self->ports[CIC_HPFILTER_COMPLEX_OUT].current, in->input.u.operation, 
-				 out_idx*4 );
-	   if ( samp < len ) {
-	     return RCC_OK;
-	   }
-	   else {
-	     return RCC_ADVANCE;
-	   }
+	   return sendOutput( self, s, out, samp,  in->input.length);
 	 }
 	 double gain = Gain( p->gain);
 	 outData->data[out_idx].I = Scale( Uscale(s->fast_acc[II][STAGES]) * gain);
@@ -158,19 +145,17 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 	 out_idx++;
        }
      }
+     return sendOutput( self, s, out, samp, in->input.length);
    }
-   s->input_idx=0;
    break;  
 
  case CIC_HPFILTER_COMPLEX_IN_SYNC:
    sync( self  );
  case CIC_HPFILTER_COMPLEX_IN_TIME:
-   memcpy( outData, inData, in->input.length);
-   out->output.length = in->input.length;
+   self->container.send( out, &in->current, in->input.u.operation, in->input.length);
    break;
 
- };
+ }
 
-
- return RCC_ADVANCE;
+ return RCC_OK;
 }

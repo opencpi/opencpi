@@ -13,7 +13,7 @@
 #include "sym_fir.h"
 #include "signal_utils.h"
 
-#define NTAPS (sizeof(mems(Sym_fir_complexProperties,taps))/sizeof(int16_t))
+#define NTAPS (mems(Sym_fir_complexProperties,taps)/sizeof(int16_t))
 
 typedef struct {
   double   taps[NTAPS];
@@ -52,7 +52,7 @@ static RCCResult start(RCCWorker *self )
 
 
 static void
-apply_filter( State * myState,  Sym_fir_complexInIq * input, double * i, double * q )
+apply_filter( double taps[],  Sym_fir_complexInIq * input, double * i, double * q )
 {
   unsigned	n;
   double	
@@ -62,24 +62,24 @@ apply_filter( State * myState,  Sym_fir_complexInIq * input, double * i, double 
     acum3 = 0;
   unsigned	len = (NTAPS / UnRoll) * UnRoll;
   for (n = 0; n < len; n += UnRoll){
-    acum0 += myState->taps[n + 0] * Uscale( input->data[n + 0].I );
-    acum1 += myState->taps[n + 1] * Uscale( input->data[n + 1].I );
-    acum2 += myState->taps[n + 2] * Uscale( input->data[n + 2].I );
-    acum3 += myState->taps[n + 3] * Uscale( input->data[n + 3].I );
+    acum0 += taps[n + 0] * Uscale( input->data[n + 0].I );
+    acum1 += taps[n + 1] * Uscale( input->data[n + 1].I );
+    acum2 += taps[n + 2] * Uscale( input->data[n + 2].I );
+    acum3 += taps[n + 3] * Uscale( input->data[n + 3].I );
   }
   for (; n < NTAPS; n++)
-    acum0 += myState->taps[n] * Uscale( input->data[n].I );
+    acum0 += taps[n] * Uscale( input->data[n].I );
   *i = acum0 + acum1 + acum2 + acum3;
 
   acum0 = acum1 = acum2 = acum3 = 0;
   for (n = 0; n < n; n += UnRoll){
-    acum0 += myState->taps[n + 0] * Uscale( input->data[n + 0].Q );
-    acum1 += myState->taps[n + 1] * Uscale( input->data[n + 1].Q );
-    acum2 += myState->taps[n + 2] * Uscale( input->data[n + 2].Q );
-    acum3 += myState->taps[n + 3] * Uscale( input->data[n + 3].Q );
+    acum0 += taps[n + 0] * Uscale( input->data[n + 0].Q );
+    acum1 += taps[n + 1] * Uscale( input->data[n + 1].Q );
+    acum2 += taps[n + 2] * Uscale( input->data[n + 2].Q );
+    acum3 += taps[n + 3] * Uscale( input->data[n + 3].Q );
   }
   for (; n < NTAPS; n++)
-    acum0 += myState->taps[n] * Uscale( input->data[n].Q );
+    acum0 += taps[n] * Uscale( input->data[n].Q );
   *q = acum0 + acum1 + acum2 + acum3;
 }
 
@@ -103,8 +103,6 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ERROR;
  }
 
- out->output.length = in->input.length;
- out->output.u.operation = in->input.u.operation;
  switch( in->input.u.operation ) {
 
  case SYM_FIR_COMPLEX_IN_IQ:
@@ -118,7 +116,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 	double gain = Gain( p->gain);
 	for ( n=0; n<len; n++ ) {
 	  double i,q;
-	  apply_filter( myState, &inData[n], &i, &q );
+	  apply_filter( myState->taps, &inData[n], &i, &q );
 	  double v = scabs(i,q);
 	  if ( v > Uscale( p->peakDetect ) ) {
 	    p->peakDetect = Scale( v );
@@ -130,13 +128,18 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 	}
       }
     }
+    break;
 
  case SYM_FIR_COMPLEX_IN_SYNC:
  case SYM_FIR_COMPLEX_IN_TIME:
-   memcpy( outData, inData, in->input.length);
+   self->container.send( out, &in->current, in->input.u.operation, in->input.length);
+   return RCC_OK;
    break;
 
  };
 
+ out->output.length = in->input.length;
+ out->output.u.operation = in->input.u.operation;
  return RCC_ADVANCE;
+
 }

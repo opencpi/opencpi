@@ -2,8 +2,11 @@
 #include <math.h>
 
 
-#define byteLen2Complex(x) ((x/4)-4)
-#define byteLen2Real(x) ((x/2)-4)
+#define byteLen2Complex(x) (x/4)
+#define byteLen2Real(x) (x/2)
+#define Complex2bytes(x) (x*4)
+#define real2bytes(x) (x*2)
+#define ComplexLen2Real(x) (x/2)
 
 #define min(x,y) ((x<y)?x:y)
 #define mems(t,m) sizeof(((t*)0)->m)

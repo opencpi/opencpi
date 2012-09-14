@@ -30,7 +30,6 @@ start(RCCWorker *self) {
   Comparator_realProperties *p = self->properties;
   MyState *s = self->memories[0];
   s->deviation = Uscale( p->deviation );
-  p->finished = 0;
   return RCC_OK;
 }
 

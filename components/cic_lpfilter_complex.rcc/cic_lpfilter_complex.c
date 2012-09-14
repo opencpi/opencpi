@@ -22,6 +22,8 @@ typedef struct {
   int32_t slow_del[2][STAGES+1];
   int32_t fast_acc[2][STAGES+1];
   int32_t dfactor;
+  unsigned sample;
+  unsigned out_idx;
 } MyState;
 static uint32_t mysizes[] = {sizeof(MyState), 0};
 
@@ -36,9 +38,6 @@ RCCDispatch cic_lpfilter_complex = {
 /*
  * Methods to implement for worker cic_hpfilter_complex, based on metadata.
  */
-
-
-
 static void
 sync( RCCWorker * self )
 {
@@ -50,13 +49,11 @@ sync( RCCWorker * self )
   }
 }
 
-
 static RCCResult
 start(RCCWorker *self) {
   sync( self );
   return RCC_OK;
 }
-
 
 static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
@@ -71,19 +68,24 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  Cic_lpfilter_complexInIq
    *inData = in->current.data,
    *outData = out->current.data;
+
+ if (in->input.length > out->current.maxLength) {
+   self->errorString = "output buffer too small";
+   return RCC_ERROR;
+ }
  
- out->output.u.operation = in->input.u.operation;
  switch( in->input.u.operation ) {
 
  case CIC_LPFILTER_COMPLEX_IN_IQ:
    {
-     unsigned out_idx = 0;
+     unsigned out_idx = s->out_idx;
      unsigned len = byteLen2Complex(in->input.length);
-     unsigned i, samp;
-     for ( samp=0; samp<len; samp++ ) {
+     unsigned i;
+     len = min(out->current.maxLength-out_idx, len);
+     for ( s->sample=0; s->sample<len; s->sample++ ) {
 
        // I
-       s->fast_acc[II][0] = inData->data[samp].I;
+       s->fast_acc[II][0] = inData->data[s->sample].I;
        for ( i=1; i<=STAGES; i++ ) {
 	 s->fast_acc[II][i] = s->fast_acc[II][i] - s->fast_acc[II][i-1];
        }
@@ -94,7 +96,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
        }
 
        // Q
-       s->fast_acc[QQ][0] = inData->data[samp].Q;
+       s->fast_acc[QQ][0] = inData->data[s->sample].Q;
        for ( i=1; i<=STAGES; i++ ) {
 	 s->fast_acc[QQ][i] = s->fast_acc[QQ][i] - s->fast_acc[QQ][i-1];
        }
@@ -116,19 +118,34 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 	 out_idx++;
        }
      }
-     out->output.length = out_idx;
+
+     // To optimize throughput we will pack output buffers
+     unsigned outb = Complex2bytes(out_idx);
+     if ( outb < out->current.maxLength-Complex2bytes(1) ) {
+       s->out_idx = out_idx;
+     }
+     else {
+       out->output.length = outb;
+       s->out_idx = 0;
+       self->container.advance( out, 0 );
+     }
+     if ( s->sample >= byteLen2Complex(in->input.length) ) {
+       s->sample=0;
+       self->container.advance( in, 0 );
+     }
+     
    }
    break;  
 
  case CIC_LPFILTER_COMPLEX_IN_SYNC:
    sync( self  );
  case CIC_LPFILTER_COMPLEX_IN_TIME:
-   out->output.length = in->input.length;
-   memcpy( outData, inData, in->input.length);
+   self->container.send( out, &in->current, in->input.u.operation, in->input.length );
+   return RCC_OK;
    break;
 
  };
 
+ return RCC_OK;
 
- return RCC_ADVANCE;
 }
