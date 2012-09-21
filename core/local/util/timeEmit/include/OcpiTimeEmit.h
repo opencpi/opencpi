@@ -367,25 +367,28 @@ namespace OCPI {
 
       };
 
+      class TimeSource;
+      typedef  Time (*TickFunc)(TimeSource*);
+
       // This is the base class for the time source that gets used by the emit class for time stamping events.
       class TimeSource {
-      protected:
-	struct timespec m_init_tv;
-	bool m_init;
       public:
-        TimeSource():m_init(false){}
-        virtual Time getTime()=0;
-        virtual Time getTicks()=0;
-        virtual ~TimeSource(){}
+        TimeSource(){};
+	virtual Time getTime();
+	TickFunc ticks;
+	virtual ~TimeSource(){}
       };
 
       // This class uses "gettimeofday" to get the time tag
       class SimpleSystemTime : public TimeSource {
       public:
 	SimpleSystemTime();
-        Time getTime();
-        virtual Time getTicks();
+        static Time getTimeOfDay();
         virtual ~SimpleSystemTime(){};
+      private:
+	static struct timespec m_init_tv;
+	static bool m_init;
+	static uint64_t myTicks( TimeSource *);
       };
 
       // This class uses both "gettimeofday" and the CPU free runnging clock to minimize the 
@@ -393,11 +396,14 @@ namespace OCPI {
       class FastSystemTime : public TimeSource {
       public:
         FastSystemTime();
-        Time getTime();
-        virtual Time getTicks();
+        Time getTimeOfDay();
+	static Time getTimeS();
       private:
-          int m_method;
-          virtual ~FastSystemTime(){};
+	int m_method;
+	static struct timespec m_init_tv;
+	static bool m_init;
+	virtual ~FastSystemTime(){};
+	static uint64_t myTicks( TimeSource * );
       };
       
 
@@ -420,6 +426,10 @@ namespace OCPI {
        */
       Emit( Emit* parent, const char* class_name=NULL, 
                  const char* instance_name=NULL, QConfig* config=NULL )
+        throw ( OCPI::Util::EmbeddedException ) ;
+
+      Emit( Emit* parent, TimeSource& ts, const char* class_name, 
+	    const char* instance_name, QConfig* config )
         throw ( OCPI::Util::EmbeddedException ) ;
       ~Emit()
         throw ( );
@@ -474,6 +484,12 @@ namespace OCPI {
         throw ( );
 
     private:
+
+      void 
+	parent_init( Emit* parent, 
+		     const char* class_name, 
+		     const char* instance_name, 
+		     QConfig* config );
 
       void pre_init( const char* class_name, 
                 const char* instance_name, 

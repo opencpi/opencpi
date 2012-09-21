@@ -448,14 +448,14 @@ static OCPI::Time::Emit::RegisterEvent ev0( "my event" );
 static OCPI::Time::Emit::RegisterEvent ev1( "uint event", 8 );
 
 
-static int ticks=0;
+static int mticks=0;
 class MyTS : public OCPI::Time::Emit::TimeSource {
 public:
   MyTS(){};
   OCPI::Time::Emit::Time getTime(){
     return OCPI::Time::Emit::getDefaultTS()->getTime();
   }
-  OCPI::Time::Emit::Time getTicks(){return ticks++;}
+  OCPI::Time::Emit::Time getTicks(){return mticks++;}
 };
 
 

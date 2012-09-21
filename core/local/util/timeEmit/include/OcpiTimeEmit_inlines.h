@@ -99,9 +99,16 @@ namespace OCPI {
       Emit::TimeSource    *ts;
       GTime               gTime;
       inline Time calcGTime( Time ticks ) {
-	return gTime.startTime + ((((ticks-gTime.startTicks )*gTime.stopTime) - 
-				   ((ticks - gTime.startTicks )*gTime.startTime)) / 
-				  (gTime.stopTicks-gTime.startTicks));
+
+	Time t;
+
+	t = gTime.startTime + ((((ticks-gTime.startTicks )*gTime.stopTime) - 
+				((ticks - gTime.startTicks )*gTime.startTime)) / 
+			       (gTime.stopTicks-gTime.startTicks));
+
+	//	printf("In calcGTime: ticks = %lld, time = %lld \n", ticks, t );
+
+	return t;
 
       }
  
@@ -113,7 +120,7 @@ namespace OCPI {
         end   = base + config.size;
         memset(base,0,config.size);	
 	gTime.startTime = ts->getTime();
-	gTime.startTicks = ts->getTicks();
+	gTime.startTicks = ts->ticks(ts);
       };
       ~EventQ() 
       {
@@ -193,7 +200,7 @@ inline OCPI::Time::Emit::Time OCPI::Time::Emit::getTime()
 
 inline OCPI::Time::Emit::Time OCPI::Time::Emit::getTicks()
 {
-  return m_ts->getTicks();
+  return m_ts->ticks(m_ts);
 };
 
 

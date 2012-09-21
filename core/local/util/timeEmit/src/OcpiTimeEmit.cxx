@@ -226,16 +226,13 @@ namespace OCPI {
     }
 
 
+    void 
     Emit::
-    Emit( Emit* parent, 
-	  const char* class_name, 
-	  const char* instance_name, 
-	  QConfig* config )
-      throw ( OU::EmbeddedException )
-      :m_parent(parent), m_q(NULL), m_ts(NULL)
+    parent_init( Emit* parent, 
+		 const char* class_name, 
+		 const char* instance_name, 
+		 QConfig* config )
     {
-      AUTO_MUTEX(Emit::getGMutex());
-      m_ts = getDefaultTS();
       if ( class_name ) {
 	m_className = class_name;
       }
@@ -261,6 +258,38 @@ namespace OCPI {
       if (   getHeader().traceCD ) {
 	OCPI_EMIT_("Object Exists");
       }
+    }
+
+
+    Emit::
+    Emit( Emit* parent, 
+	  const char* class_name, 
+	  const char* instance_name, 
+	  QConfig* config )
+      throw ( OU::EmbeddedException )
+      :m_parent(parent), m_q(NULL), m_ts(NULL)
+    {
+      AUTO_MUTEX(Emit::getGMutex());
+      m_ts = getDefaultTS();
+      parent_init(parent,class_name,instance_name,config);
+    }
+
+
+    Emit::
+    Emit( Emit* parent, 
+	  TimeSource &ts,
+	  const char* class_name, 
+	  const char* instance_name, 
+	  QConfig* config )
+      throw ( OU::EmbeddedException )
+      :m_parent(parent), m_q(NULL), m_ts(NULL)
+    {
+      AUTO_MUTEX(Emit::getGMutex());
+      if ( ! config ) {
+	throw OCPI::Util::EmbeddedException("Cant have new time source without new Q");
+      }
+      m_ts = &ts;
+      parent_init(parent,class_name,instance_name,config);
     }
 
 
@@ -294,7 +323,7 @@ namespace OCPI {
 	   it!=Emit::getHeader().eventQ.end(); it++ ) {
 	(*it)->done = true;
 	(*it)->gTime.stopTime  = (*it)->ts->getTime();
-	(*it)->gTime.stopTicks = (*it)->ts->getTicks();
+	(*it)->gTime.stopTicks = (*it)->ts->ticks( (*it)->ts );
       }
 
     }
@@ -650,10 +679,13 @@ namespace OCPI {
 
     }
 
+    struct timespec Emit::SimpleSystemTime::m_init_tv;
+    bool  Emit::SimpleSystemTime::m_init=false;
     Emit::SimpleSystemTime::
     SimpleSystemTime()
     {
       if ( !m_init ) {
+	ticks = myTicks;
 	m_init_tv.tv_sec =0;
 	m_init_tv.tv_nsec =0;
 	clock_gettime(CLOCK_REALTIME, &m_init_tv );
@@ -663,7 +695,7 @@ namespace OCPI {
 
     Emit::Time 
     Emit::SimpleSystemTime::
-    getTime( )
+    getTimeOfDay( )
     {
       struct timespec tv;
       Time t;
@@ -691,7 +723,7 @@ namespace OCPI {
 
     Emit::Time 
     Emit::SimpleSystemTime::
-    getTicks()
+    myTicks( TimeSource * )
     {
       return fasttime_getticks();
     }
@@ -705,6 +737,7 @@ namespace OCPI {
       int result;
       fasttime_statistics_t stats;
       struct timespec tp_fast, tp_actual;
+      ticks = myTicks;
 
       m_method = fasttime_init_context(NULL, 
 				       FASTTIME_METHOD_CLIENT | FASTTIME_METHOD_DAEMON);
@@ -771,7 +804,7 @@ namespace OCPI {
 
     Emit::Time 
     Emit::FastSystemTime::
-    getTicks()
+    myTicks( TimeSource *)
     {
       return fasttime_getticks();
     }
@@ -779,7 +812,17 @@ namespace OCPI {
 
     Emit::Time 
     Emit::FastSystemTime::
-    getTime()
+    getTimeOfDay()
+    {
+      return getTimeS();
+    }
+
+
+    struct timespec Emit::FastSystemTime::m_init_tv;
+    bool  Emit::FastSystemTime::m_init=false;
+    Emit::Time 
+    Emit::FastSystemTime::
+    getTimeS()
     {
       struct timespec tv;
       Time t;
@@ -804,5 +847,16 @@ namespace OCPI {
       return t;  
     }
 
+
+    Emit::Time 
+    Emit::TimeSource::
+    getTime()
+    {
+      return Emit::SimpleSystemTime::getTimeOfDay();
+    }
+
+
+
   }
+
 }
