@@ -717,7 +717,7 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
                           TransferController* cont )
 {
 
-  ocpiAssert(!"pattern1AFC output");
+  //  ocpiAssert(!"pattern1AFC output");
   // Since this is a whole output distribution, only port 0 of the output
   // set gets to do anything.
   if ( s_port->getPortSet()->getDataDistribution()->getMetaData()->distType == DataDistributionMetaData::parallel &&

@@ -107,30 +107,22 @@ int
 TransferController1AFCShadow::
 produce( Buffer* b, bool bcast )
 {
-#ifndef NDEBUG
-  printf("In TransferController1AFCShadow::produce \n");
-#endif
+  ocpiDebug("In TransferController1AFCShadow::produce");
 
 
   Buffer* buffer = static_cast<Buffer*>(b);
   int bcast_idx = bcast ? 1 : 0;
   if ( bcast_idx == 1 ) {
-#ifndef NDEBUG
-    printf("*** producing via broadcast, rank == %d !!\n", b->getPort()->getRank());
-#endif
+    ocpiDebug("*** producing via broadcast, rank == %d !!", b->getPort()->getRank());
 
     if ( ! buffer->getMetaData()->endOfStream ) {
-#ifndef NDEBUG
-      printf("*** ERROR *** EOS not set via broadcast !!\n");
-#endif
+      ocpiDebug("*** ERROR *** EOS not set via broadcast !!");
     }
   }
 
   // With this pattern, only port 0 of the output port set can produce
   if ( m_wholeOutputSet && b->getPort()->getRank() != 0 ) {
-#ifndef DEBUG
-    printf("My rank != 0 so i am not producing !!! \n");
-#endif
+    ocpiDebug("My rank != 0 so i am not producing !!!");
 
     // Next input buffer 
     int tmp = ((m_nextTid++)%m_input->getBufferCount()) - 1;
@@ -138,9 +130,7 @@ produce( Buffer* b, bool bcast )
     if ( m_nextTid < 0 ) {
       m_nextTid = 0;
     }
-#ifndef NDEBUG
-    printf("AFCTransferController:: m_nextTid = %d\n", m_nextTid );
-#endif
+    ocpiDebug("AFCTransferController:: m_nextTid = %d", m_nextTid );
 
     //#define DELAY_FOR_TEST
 #ifdef DELAY_FOR_TEST
@@ -163,9 +153,9 @@ produce( Buffer* b, bool bcast )
    */
 
 #ifdef DEBUG_L2
-  printf("output port id = %d, buffer id = %d, input id = %d\n", 
+  ocpiDebug("output port id = %d, buffer id = %d, input id = %d", 
          buffer->getPort()->getPortId(), buffer->getTid(), m_nextTid);
-  printf("Template address = 0x%x\n", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid]);
+  ocpiDebug("Template address = 0x%x", m_templates [buffer->getPort()->getPortId()][buffer->getTid()][0][m_nextTid]);
 #endif
 
   // We need to mark the local buffer as free
@@ -186,8 +176,8 @@ produce( Buffer* b, bool bcast )
   }
 
 #ifdef DEBUG_L2
-  printf("next tid = %d, num buf = %d\n", m_nextTid, m_input->getBufferCount());
-  printf("Returning max gated sequence = %d\n", temp->getMaxGatedSequence());
+  ocpiDebug("next tid = %d, num buf = %d", m_nextTid, m_input->getBufferCount());
+  ocpiDebug("Returning max gated sequence = %d", temp->getMaxGatedSequence());
 #endif
 
   return temp->getMaxGatedSequence();
@@ -215,8 +205,8 @@ consume( Buffer* input )
 
 
 #ifdef DEBUG_L2
-  printf("Set load factor to %d\n", buffer->getState()->pad);
-  printf("Consuming using tpid = %d, ttid = %d, template = 0x%x\n",input->getPort()->getPortId(),
+  ocpiDebug("Set load factor to %d", buffer->getState()->pad);
+  ocpiDebug("Consuming using tpid = %d, ttid = %d, template = 0x%x",input->getPort()->getPortId(),
          input->getTid(), m_templates [0][0][input->getPort()->getPortId()][input->getTid()][0][INPUT] );
 #endif
 

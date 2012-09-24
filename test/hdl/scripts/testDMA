@@ -3,8 +3,8 @@
 set log=testDMA$$.log
 echo Start with $argv >& $log
 echo Log is: `pwd`/$log
-set cmd="sudo -E "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" testRpl"
-#set cmd="sudo -E testRpl"
+#set cmd="sudo -E "LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}" testRpl"
+set cmd="sudo -E testRpl"
 
 if ($#argv == 0) then
    echo Usage is: testDMA "<DP-roles> <nbufs> <message-sizes> <message-counts> [bd1] [bd2]"
