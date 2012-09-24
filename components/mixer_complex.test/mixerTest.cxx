@@ -17,6 +17,7 @@ public:
   bool help;
   bool verbose;
   bool real;
+  std::string model;
 private:
   static CommandLineConfiguration::Option g_options[];
 };
@@ -26,7 +27,8 @@ UnitTestConfigurator::
 UnitTestConfigurator ()
   : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
-    verbose (false)
+    verbose (false),
+    model("rcc")
 {
 }
 
@@ -38,6 +40,9 @@ UnitTestConfigurator::g_options[] = {
   { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
     "help", "This message",
     OCPI_CLC_OPT(&UnitTestConfigurator::help), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
+    "model", "Component Selection model",
+    OCPI_CLC_OPT(&UnitTestConfigurator::model), 0 },
   { OCPI::Util::CommandLineConfiguration::OptionType::END, 0, 0, 0, 0 }
 };
 
@@ -65,7 +70,7 @@ int main ( int argc, char* argv [ ] )
 		   "    <property name='stepNow' value='true'/> "
 		   "  </instance> "
 
-		   "  <instance worker='mixer_complex' name='unit_test' >"
+		   "  <instance worker='mixer_complex' name='unit_test' selection='model==\"%s\"'>"
 		   "  </instance> "
 
 		   "  <instance worker='file_write_msg' name='fw_test_gen_data' >"
@@ -162,7 +167,7 @@ int main ( int argc, char* argv [ ] )
       };
 
       char app_xml[4096];
-      snprintf( app_xml, 4095, xml );
+      snprintf( app_xml, 4095, xml, config.model.c_str()  );
 
       printf("%s\n", app_xml );
       

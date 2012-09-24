@@ -20,6 +20,7 @@ public:
   std::string unit_test_name;
   std::string unit_test_props;
   std::string comparator_props;
+  std::string model;  
 private:
   static CommandLineConfiguration::Option g_options[];
 };
@@ -29,7 +30,8 @@ UnitTestConfigurator::
 UnitTestConfigurator ()
   : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
-    verbose (false)
+    verbose (false),
+    model("rcc")
 {
 }
 
@@ -50,6 +52,9 @@ UnitTestConfigurator::g_options[] = {
   { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "real", "Real data connection or complex",
     OCPI_CLC_OPT(&UnitTestConfigurator::real), 0 },
+  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
+    "model", "The model for the UUT, {rcc,hdl}",
+    OCPI_CLC_OPT(&UnitTestConfigurator::model), 0 },
   { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
     "help", "This message",
     OCPI_CLC_OPT(&UnitTestConfigurator::help), 0 },
@@ -80,7 +85,7 @@ int main ( int argc, char* argv [ ] )
 		   "    <property name='stepNow' value='true'/> "
 		   "  </instance> "
 
-		   "  <instance worker='%s' name='unit_test' >"
+		   "  <instance worker='%s' name='unit_test'  selection='model==\"%s\"'>"
 		   "  %s "
 		   "  </instance> "
 
@@ -165,7 +170,7 @@ int main ( int argc, char* argv [ ] )
       };
 
       char app_xml[4096];
-      snprintf( app_xml, 4095, xml, config.unit_test_name.c_str(), 
+      snprintf( app_xml, 4095, xml, config.unit_test_name.c_str(), config.model.c_str(), 
 		config.unit_test_props.c_str(),  config.real ? "real" : "complex", config.comparator_props.c_str() );
 
       printf("%s\n", app_xml );
