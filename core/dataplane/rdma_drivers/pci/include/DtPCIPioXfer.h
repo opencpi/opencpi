@@ -88,6 +88,7 @@ namespace DataTransfer {
         OCPI::OS::int32_t parse( std::string& ep );
 
         // Get the address from the endpoint
+	// FIXME: make this get address thing NOT generic...
         virtual const char* getAddress(){return p_virt_addr;}
         char*              p_virt_addr;
 

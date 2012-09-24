@@ -367,8 +367,9 @@ namespace OCPI {
 	m_qualifiedName = name;
       // If we are actually parsing the protocol, there is no default value width.
       if (ezxml_cchild(prot, "operation")) {
-	if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize", "datavaluewidth",
-				  (void*)0))) 
+	if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize",
+				  "datavaluewidth", "maxmessagevalues",
+				  "zerolengthmessages", (void*)0)))
 	  return err;
 	m_dataValueWidth = 0;
 	// First time we call this it will just be for counting.
@@ -376,9 +377,11 @@ namespace OCPI {
 	  return err;
 	m_operations = m_op = new Operation[m_nOperations];
 	// Now we call a second time t make them.
-	if ((err = OE::ezxml_children(prot, doOperation, this)))
+	if ((err = OE::ezxml_children(prot, doOperation, this)) ||
+	    (err = OE::getBoolean(prot, "ZeroLengthMessages", &m_zeroLengthMessages)))
 	  return err;
-	// Allow dvw to be overridden to provide for future finer granularity (e.g. 8 when proto says 16)
+	// Allow dvw to be overridden to provide for future finer granularity 
+	// (e.g. force 8 when proto says 16)
 	unsigned dvwattr;
 	bool hasDvw;
 	if ((err = OE::getNumber(prot, "datavaluewidth", &dvwattr, &hasDvw, m_dataValueWidth)))
@@ -397,6 +400,9 @@ namespace OCPI {
 	  m_maxMessageValues /= bytes;
 	  m_dataValueGranularity = 1;  // FIXME - compute this for real
 	}
+	// Now we still overriding the real max message values
+	if ((err = OE::getNumber(prot, "maxmessagevalues", &m_maxMessageValues, 0, false)))
+	  return err;
       } else if ((err = parseSummary(prot)))
 	return err;
       if ((err = OE::getNumber(prot, "defaultbuffersize", &m_defaultBufferSize, 0,

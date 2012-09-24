@@ -1,0 +1,539 @@
+
+#define ENTITY_HEADER(pretty) \
+$library ieee; \
+$  use IEEE.std_logic_1164.all; \
+$  use IEEE.numeric_std.all; \
+$library ocpi;\
+$use ocpi.wci.all;\
+$use ocpi.types.all;\
+$use ocpi.ocp.all;\
+$entity pretty##_property is\
+
+#define ENTITY(pretty,which,def,rng) \
+$--\
+$-- implementation of registered pretty property value, with write pulse \
+$--\
+ENTITY_HEADER(pretty)\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
+$@@port (clk          : in std_logic; \
+$@@@@@@@@reset        : in boolean; \
+$@@@@@@@@write_enable : in boolean; \
+$@@@@@@@@data         : in std_logic_vector(rng); \
+$@@@@@@@@value        : out pretty##_t; \
+$@@@@@@@@written      : out boolean \
+$@@@@@@@);\
+$end entity;
+
+// Write-only implementation
+#define WPROP(pretty,which,def,rng,lhs,rhs) \
+ENTITY(pretty,which,def,rng) \
+$architecture rtl of pretty##_property is begin\
+$@@reg: process(Clk) is\
+$@@begin \
+$@@@@if rising_edge(clk) then\
+$@@@@@@if reset then\
+$@@@@@@@ value <= default;\
+$@@@@@@@ written <= false;\
+$@@@@@@elsif write_enable then\
+$@@@@@@@@value <= rhs(data);\
+$@@@@@@@@written <= true;\
+$@@@@@@else\
+$@@@@@@@@written <= false;\
+$@@@@@@end if;\
+$@@@@end if; \
+$@@end process; \
+$end rtl;
+
+#define RPROP(pretty,which,def,rng,lhs,rhs)\
+$--\
+$-- readback scalar <=32 property\
+$--\
+ENTITY_HEADER(read_##pretty)\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port (value       : in pretty##_t;\
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0));\
+$end entity; \
+$architecture rtl of read_##pretty##_property is begin\
+$@@data_out <= std_logic_vector(resize(shift_left(unsigned(lhs(value)),\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(property.offset rem 4)*8),\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@32));\
+$end rtl;
+
+#define ENTITY_64(pretty,which,def,rng) \
+$--\
+$-- implementation of registered pretty property value, with write pulse \
+$--\
+ENTITY_HEADER(pretty)\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
+$@@port (clk          : in std_logic; \
+$@@@@@@@@reset        : in boolean; \
+$@@@@@@@@write_enable : in boolean; \
+$@@@@@@@@data         : in std_logic_vector(31 downto 0); \
+$@@@@@@@@value        : out pretty##_t; \
+$@@@@@@@@written      : out boolean; \
+$@@@@@@@@hi32         : in boolean); \
+$end entity;
+
+// Write-only implementation
+#define WPROP_64(pretty,which,def,rng,lhs,rhs) \
+ENTITY_64(pretty,which,def,rng) \
+$architecture rtl of pretty##_property is begin\
+$@@reg: process(Clk) is\
+$@@begin \
+$@@@@if rising_edge(clk) then\
+$@@@@@@if reset then\
+$@@@@@@@ value <= default;\
+$@@@@@@@ written <= false;\
+$@@@@@@elsif write_enable then\
+$@@@@@@@@if hi32 then\
+$@@@@@@@@@@value(63 downto 32) <= rhs(data);\
+$@@@@@@@@@@written <= true;\
+$@@@@@@@@else\
+$@@@@@@@@@@value(31 downto 0) <= rhs(data);\
+$@@@@@@@@end if; \
+$@@@@@@else\
+$@@@@@@@@written <= false;\
+$@@@@@@end if;\
+$@@@@end if; \
+$@@end process; \
+end rtl;
+
+#define RPROP_64(pretty,which,def,rng,lhs,rhs)\
+$--\
+$-- readback scalar  >32 property\
+$--\
+ENTITY_HEADER(read_##pretty)\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port (value       : in pretty##_t;\
+$@@@@@@@@hi32        : boolean;\
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0)\
+$@@@@@@@);\
+$end entity;\
+$architecture rtl of read_##pretty##_property is begin\
+$@@data_out <= std_logic_vector(value(63 downto 32)) when hi32\
+$@@@@@@@@@@@@@ else std_logic_vector(value(31 downto 0));\
+$end rtl;
+
+#define ENTITY_STRING(pretty,which,def,rng) \
+$--\
+$-- implementation of registered pretty property value, with write pulse \
+$--\
+ENTITY_HEADER(pretty)\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in boolean;\
+$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@data         : in std_logic_vector(rng);\
+$@@@@@@@@value        : out pretty##_t(0 to property.string_length);\
+$@@@@@@@@written      : out boolean;\
+$@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
+$end entity;
+
+#define WPROP_STRING(pretty,which,def,rng,lhs,rhs) \
+ENTITY_STRING(pretty,which,def,rng) \
+$architecture rtl of pretty##_property is \
+$@@signal base : natural;\
+begin\
+$@@base <= to_integer(offset);\
+$@@reg: process(Clk) is\
+$@@begin\
+$@@@@if rising_edge(clk) then\
+$@@@@@@if reset then\
+$@@@@@@@ value <= (others => to_signed(0,char_t~length));\
+$@@@@@@@ written <= false;\
+$@@@@@@elsif write_enable then\
+$@@@@@@@@value (base to base + 3) <= to_string(data);\
+$@@@@@@@@written <= true;\
+$@@@@@@else\
+$@@@@@@@@written <= false;\
+$@@@@@@end if;\
+$@@@@end if; \
+$@@end process; \
+$end rtl;
+
+#define RPROP_STRING(pretty,which,def,rng,lhs,rhs)\
+$--\
+$-- readback string property\
+$--\
+ENTITY_HEADER(read_##pretty)\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port (value       : in pretty##_t;\
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
+$@@@@@@@@offset      : unsigned(worker.decode_width-1 downto 0));\
+$end entity;\
+$architecture rtl of read_##pretty##_property is begin\
+$@@data_out <= from_string(value, offset);\
+$end rtl;
+
+#define ENTITY_ARRAY(pretty,which,def,rng) \
+$--\
+$-- implementation of registered pretty property value, with write pulse \
+$--\
+ENTITY_HEADER(pretty##_array)\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in boolean;\
+$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@data         : in std_logic_vector(31 downto 0);\
+$@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
+$@@@@@@@@written      : out boolean;\
+$@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@any_written  : out boolean;\
+$@@@@@@@@nbytes_1     : in byte_offset_t);\
+$end entity;
+
+#define ENTITY_ARRAY_64(pretty,which,def,rng) \
+$--\
+$-- implementation of registered pretty property value, with write pulse \
+$--\
+ENTITY_HEADER(pretty##_array)\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in boolean;\
+$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@data         : in std_logic_vector(31 downto 0);\
+$@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
+$@@@@@@@@written      : out boolean;\
+$@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@any_written  : out boolean;\
+$@@@@@@@@hi32         : in boolean);\
+$end entity;
+
+// boolean version with one bit per byte
+#define WPROP_ARRAY_1(pretty,which,def,rng,lhs,rhs) \
+ENTITY_ARRAY(pretty,which,def,rng) \
+$architecture rtl of pretty##_array_property is \
+$@@signal base : natural;\
+begin\
+$@@base <= to_integer(index);\
+$@@reg: process(Clk) is\
+$@@begin\
+$@@@@if rising_edge(clk) then\
+$@@@@@@if reset then\
+$@@@@@@@@value <= (others => default);\
+$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= false;\
+$@@@@@@elsif write_enable then\
+$@@@@@@@@value(base) <= rhs(data(0));\
+$@@@@@@@@if nbytes_1 > 0 and property.nitems > 1 then\
+$@@@@@@@@@@value(base+1) <= rhs(data(8));\
+$@@@@@@@@@@if nbytes_1 > 1 and property.nitems > 2 then\
+$@@@@@@@@@@@@value(base+2) <= rhs(data(16));\
+$@@@@@@@@@@@@if nbytes_1 > 2 and property.nitems > 3 then\
+$@@@@@@@@@@@@@@value(base+3) <= rhs(data(24));\
+$@@@@@@@@@@@@end if;\
+$@@@@@@@@@@end if;\
+$@@@@@@@@end if;\
+$@@@@@@@@any_written <= true;\
+$@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@else\
+$@@@@@@@@any_written <= false;\
+$@@@@@@@@written <= false;\
+$@@@@@@end if;\
+$@@@@end if; \
+$@@end process; \
+$end rtl;
+
+#define ENTITY_RPROP_ARRAY(pretty) \
+ENTITY_HEADER(read_##pretty##_array)\
+$@@generic (worker : worker_t; property : property_t); \
+$@@port (value       : in pretty##_array_t(0 to property.nitems-1); \
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
+$@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@nbytes_1    : in ocpi.wci.byte_offset_t);\
+$end entity;
+
+#define RPROP_ARRAY_1(pretty,which,def,rng,lhs,rhs) \
+$--\
+v$-- readback 1 bit property array\
+$--\
+ENTITY_RPROP_ARRAY(pretty)\
+$architecture rtl of read_##pretty##_array_property is \
+$@@signal byte_offset : byte_offset_t; \
+$begin\
+$@@byte_offset <= resize(property.offset + index, byte_offset_t'length);\
+$@@data_out <= from_bool_array(value,index,nbytes_1,byte_offset);\
+$end rtl;
+
+#define RPROP_ARRAY_8(pretty,which,def,rng,lhs,rhs) \
+$--\
+$-- readback scalar 8 bit property\
+$--\
+ENTITY_RPROP_ARRAY(pretty)\
+$architecture rtl of read_##pretty##_array_property is\
+$@@signal i : natural;\
+$@@signal word : word_t;\
+$begin\
+$@@i <= to_integer(index);\
+$@@word <=\
+$@@@@x"000000" & std_logic_vector(value(i)) when nbytes_1 = 0 else\
+$@@@@x"0000" & std_logic_vector(value(i+1)) & std_logic_vector(value(i)) when nbytes_1 = 1 else\
+$@@@@x"00" & std_logic_vector(value(i+2)) &\
+$@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i)) when nbytes_1 = 2 else\
+$@@@@std_logic_vector(value(i+3)) & std_logic_vector(value(i+2)) &\
+$@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i));\
+$@@data_out <= word_t(shift_left(unsigned(word),\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@((property.offset+to_integer(index)) rem 4) *8));\
+$end rtl;
+
+#define RPROP_ARRAY_16(pretty,which,def,rng,lhs,rhs) \
+$--\
+$-- readback scalar 16 bit property\
+$--\
+ENTITY_RPROP_ARRAY(pretty)\
+$architecture rtl of read_##pretty##_array_property is\
+$@@signal i : natural;\
+$begin\
+$@@i <= to_integer(index);\
+$@@data_out <=\
+$@@@@std_logic_vector(value(i)) & x"0000" when (to_integer(index) + property.offset/2) rem 2 = 1 else\
+$@@@@x"0000" & std_logic_vector(value(i)) when nbytes_1 = 1 else\
+$@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i));\
+$end rtl;
+
+#define RPROP_ARRAY_32(pretty,which,def,rng,lhs,rhs) \
+$--\
+$-- readback scalar 16 bit property\
+$--\
+ENTITY_RPROP_ARRAY(pretty)\
+$architecture rtl of read_##pretty##_array_property is\
+$begin\
+$@@data_out <= std_logic_vector(value(to_integer(index)));\
+$end rtl;
+
+#define RPROP_ARRAY_64(pretty,which,def,rng,lhs,rhs) \
+$--\
+$-- readback scalar 64 bit property\
+$--\
+ENTITY_HEADER(read_##pretty##_array)\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port (value       : in pretty##_array_t(0 to property.nitems-1);\
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
+$@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@hi32        : in boolean);\
+$end entity;\
+$architecture rtl of read_##pretty##_array_property is\
+$@@signal i : natural;\
+$begin\
+$@@i <= to_integer(index);\
+$@@data_out <= std_logic_vector(value(i)(63 downto 32)) when hi32 else\
+$@@@@@@@@@@@@@@std_logic_vector(value(i)(31 downto 0));\
+$end rtl;
+
+#define RPROP_ARRAY_STRING(pretty,which,def,rng,lhs,rhs) \
+$--\
+$-- readback scalar string property\
+$--\
+ENTITY_HEADER(read_##pretty##_array)\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port@@@ (value@@@ : in@ pretty##_array_t(0 to property.nitems-1,\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@0 to (property.string_length+4)/4*4-1);\
+$@@@@@@@@@@@data_out : out std_logic_vector(31 downto 0);\
+$@@@@@@@@@@@offset@@ : in@ unsigned(worker.decode_width-1 downto 0));\
+$end entity;
+
+
+#define WPROP_ARRAY_8(pretty,which,def,rng,lhs,rhs) \
+ENTITY_ARRAY(pretty,which,def,rng) \
+$architecture rtl of pretty##_array_property is begin\
+$@@reg: process(Clk) is\
+$@@@@variable base : natural;\
+$@@begin\
+$@@@@base := to_integer(index);\
+$@@@@if rising_edge(clk) then\
+$@@@@@@if reset then\
+$@@@@@@@@value <= (others => default);\
+$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= false;\
+$@@@@@@elsif write_enable then\
+$@@@@@@@@value(base) <= rhs(data(7 downto 0));\
+$@@@@@@@@if nbytes_1 > 0 and property.nitems > 1 then\
+$@@@@@@@@@@value(base+1) <= rhs(data(15 downto 8));\
+$@@@@@@@@@@if nbytes_1 > 1 and property.nitems > 2 then\
+$@@@@@@@@@@@@value(base+2) <= rhs(data(23 downto 16));\
+$@@@@@@@@@@@@if nbytes_1 > 2 and property.nitems > 3 then\
+$@@@@@@@@@@@@@@value(base+3) <= rhs(data(31 downto 24));\
+$@@@@@@@@@@@@end if;\
+$@@@@@@@@@@end if;\
+$@@@@@@@@end if;\
+$@@@@@@@@any_written <= true;\
+$@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@else\
+$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= false;\
+$@@@@@@end if;\
+$@@@@end if; \
+$@@end process; \
+$end rtl;
+
+#define WPROP_ARRAY_16(pretty,which,def,rng,lhs,rhs) \
+ENTITY_ARRAY(pretty,which,def,rng) \
+$architecture rtl of pretty##_array_property is begin\
+$@@reg: process(Clk) is\
+$@@@@variable base : natural;\
+$@@begin\
+$@@@@base := to_integer(index);\
+$@@@@if rising_edge(clk) then\
+$@@@@@@if reset then\
+$@@@@@@@@value <= (others => default);\
+$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= false;\
+$@@@@@@elsif write_enable then\
+$@@@@@@@@value(base) <= rhs(data(15 downto 0));\
+$@@@@@@@@if nbytes_1 > 1 and property.nitems > 1 then\
+$@@@@@@@@@@value(base+1) <= rhs(data(31 downto 16));\
+$@@@@@@@@end if;\
+$@@@@@@@@any_written <= true;\
+$@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@else\
+$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= false;\
+$@@@@@@end if;\
+$@@@@end if; \
+$@@end process; \
+$end rtl;
+
+#define WPROP_ARRAY_32(pretty,which,def,rng,lhs,rhs) \
+ENTITY_ARRAY(pretty,which,def,rng) \
+$architecture rtl of pretty##_array_property is begin\
+$@@reg: process(Clk) is\
+$@@@@variable base : natural;\
+$@@begin\
+$@@@@base := to_integer(index);\
+$@@@@if rising_edge(clk) then\
+$@@@@@@if reset then\
+$@@@@@@@@value <= (others => default);\
+$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= false;\
+$@@@@@@elsif write_enable then\
+$@@@@@@@@value(base) <= rhs(data);\
+$@@@@@@@@any_written <= true;\
+$@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@else\
+$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= false;\
+$@@@@@@end if;\
+$@@@@end if; \
+$@@end process; \
+$end rtl;
+
+#define WPROP_ARRAY_64(pretty,which,def,rng,lhs,rhs) \
+ENTITY_ARRAY_64(pretty,which,def,rng) \
+$architecture rtl of pretty##_array_property is\
+$@@signal base : natural;\
+begin\
+$@@base <= to_integer(index);\
+$@@reg: process(Clk) is\
+$@@begin\
+$@@@@if rising_edge(clk) then\
+$@@@@@@if reset then\
+$@@@@@@@@value <= (others => default);\
+$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= false;\
+$@@@@@@elsif write_enable then\
+$@@@@@@@@if hi32 then\
+$@@@@@@@@@@value(base)(63 downto 32) <= rhs(data);\
+$@@@@@@@@@@-- for little endian machines that do a store64\
+$@@@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@@@else\
+$@@@@@@@@@@value(base)(31 downto 0) <= rhs(data);\
+$@@@@@@@@end if;\
+$@@@@@@@@any_written <= true;\
+$@@@@@@else\
+$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= false;\
+$@@@@@@end if;\
+$@@@@end if; \
+$@@end process; \
+$end rtl;
+
+#define ENTITY_ARRAY_STRING(pretty,which,def,rng) \
+$--\
+$-- implementation of registered pretty property value, with write pulse \
+$--\
+ENTITY_HEADER(pretty##_array)\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t := (def,def)); \
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in boolean;\
+$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@data         : in std_logic_vector(31 downto 0);\
+$@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1,\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0 to (property.string_length+4)/4*4-1);\
+$@@@@@@@@written      : out boolean;\
+$@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@any_written  : out boolean;\
+$@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
+$end entity;
+
+#define WPROP_ARRAY_STRING(pretty,which,def,rng,lhs,rhs) \
+ENTITY_ARRAY_STRING(pretty,which,def,rng)
+
+#define TYPE(type,def,rng,suff,asuff,lhs,rhs,an) \
+  WPROP##suff(type,X,def,rng,lhs,rhs) \
+  WPROP##_ARRAY_##an(type,X,def,rng,lhs,rhs)\
+  RPROP##suff(type,X,def,rng,lhs,rhs) \
+  RPROP##_ARRAY_##an(type,X,def,rng,lhs,rhs)\
+
+#define TYPEV(type,an) TYPE(type,(others => '0'),type##_t~range,,,,type##_t,an)
+#define TYPEV64(type,s) TYPE(type,(others => '0'),type##_t~range,_64,,(31 downto 0),s,64)
+
+TYPE(bool,false,0 downto 0,,,from_bool,to_bool,1)
+TYPEV(char,8)
+TYPEV64(double,)
+TYPEV(float,32)
+TYPEV(short,16)
+TYPEV(long,32)
+TYPEV(uchar,8)
+TYPEV(ulong,32)
+TYPEV(ushort,16)
+TYPEV64(longlong,signed)
+TYPEV64(ulonglong,unsigned)
+TYPE(string,("00000000","00000000"),31 downto 0,_STRING,_STRING,,,STRING)
+
+architecture rtl of string_array_property is
+  constant nwords : natural := (property.string_length+4)/4;
+  subtype string_words_t is ocpi.wci.data_a_t(0 to nwords * property.nitems-1);
+  signal string_words : string_words_t;
+begin
+  gen: for i in 0 to property.nitems-1 generate -- properties~left to 0 generate
+    gen1:  for j in 0 to nwords-1 generate
+      gen2:  for k in 0 to 3 generate
+       value(i,j*4+k) <= signed(string_words(i*nwords + j)(k*8+7 downto k*8));
+      end generate gen2;
+    end generate gen1;
+ end generate gen;
+  reg: process(Clk) is
+  begin
+    if rising_edge(clk) then
+      if reset then
+        string_words(0) <= (others => '0');
+        written <= false;
+        any_written <= false;
+      elsif write_enable then
+        string_words(to_integer(offset) / 4) <= data;
+        written <= true;
+	if to_integer(offset) = 0 then
+	  any_written <= true;
+	end if;
+      else
+        written <= false;
+        any_written <= false;
+      end if;
+    end if; 
+  end process; 
+end rtl;
+
+architecture rtl of read_string_array_property is
+  constant nwords : natural := (property.string_length+4)/4;
+  subtype string_words_t is ocpi.wci.data_a_t(0 to nwords * property.nitems-1);
+  signal string_words : string_words_t;
+begin
+  gen: for i in 0 to property.nitems-1 generate -- properties~left to 0 generate
+    gen1:  for j in 0 to nwords-1 generate
+      gen2:  for k in 0 to 3 generate
+       string_words(i*nwords + j)(k*8+7 downto k*8) <= std_logic_vector(value(i,j*4+k));
+      end generate gen2;
+    end generate gen1;
+ end generate gen;
+ data_out <= string_words(to_integer(offset)/4);
+end rtl;

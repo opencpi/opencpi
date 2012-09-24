@@ -68,7 +68,9 @@ namespace OCPI {
     }
 
     // The callback for the findImplementations() method below.
-    bool Assembly::foundImplementation(const Implementation &i, unsigned score) {
+    // Return true if we found THE ONE.
+    // Set accepted = true, if we actually accepted one
+    bool Assembly::foundImplementation(const Implementation &i, unsigned score, bool &accepted) {
       ocpiDebug("Considering implementation for instance \"%s\" spec \"%s\" named \"%s%s%s\" "
 		"from artifact \"%s\"",
 		m_instances[m_instance].m_name.c_str(),
@@ -81,7 +83,8 @@ namespace OCPI {
       // (because it has not been correlated with any implementations).
       // Here is where we process the matchup between the port names in the util::assembly
       // and the port names in implementations in the libraries
-      if (m_nPorts) {
+      // This test works even when there are no ports
+      if (m_assyPorts[m_instance]) {
 	// We have processed an implementation before, just check for consistency
 	if (i.m_metadataImpl.nPorts() != m_nPorts) {
 	  ocpiInfo("Port number mismatch (%u vs %u) between implementations of worker %s.",
@@ -154,6 +157,7 @@ namespace OCPI {
       // FIXME:  Check consistency between implementations here...
       m_tempCandidates->push_back(Candidate(i, score));
       ocpiDebug("Accepted implementation with score %u", score);
+      accepted = true;
       return false;
     }
     // A common method used by constructors

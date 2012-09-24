@@ -79,7 +79,7 @@ namespace OCPI {
       
     private:
       void findImplementations();
-      bool foundImplementation(const Implementation &i, unsigned score);
+      bool foundImplementation(const Implementation &i, unsigned score, bool &accepted);
       int m_refCount;
     };
   }

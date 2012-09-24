@@ -69,10 +69,11 @@ static unsigned myfls(uint64_t n) {
   return 0;
 }
 // Derive the OCP signal configuration based on the WIP profile
-static int64_t ceilLog2(uint64_t n) {
+uint64_t ceilLog2(uint64_t n) {
   return n ? myfls(n - 1) : 0;
 }
 static unsigned floorLog2(uint64_t n) {
+  //  ocpiInfo("Floor log2 of %u is %u", n, myfls(n)-1);
   return myfls(n) - 1;
 }
 #define max(a,b) ((a) > (b) ? (a) : (b))
@@ -139,6 +140,9 @@ deriveOCP(Worker *w) {
 	ocp->MBurstLength.width =
 	  floorLog2((p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth  + p->dataWidth - 1)/
 		    p->dataWidth) + 1;
+	//	ocpiInfo("Burst %u from mmv %u dvw %u dw %u",
+	//		  ocp->MBurstLength.width, p->protocol->m_maxMessageValues,
+	//		  p->protocol->m_dataValueWidth, p->dataWidth);
 	if (ocp->MBurstLength.width < 2)
 	  ocp->MBurstLength.width = 2;
 	if (p->impreciseBurst)

@@ -277,6 +277,7 @@ finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCP
   ocpiAssert(m_data->m_descriptor.role != 5);
   otherPort->m_data->m_descriptor = other;
   ocpiAssert(otherPort->m_data->m_descriptor.role != 5);
+  ocpiDebug("Circuit %s %p is closed", m_data->output ? "output" : "in", &c);
   c.m_openCircuit = false;
   c.ready();
   return result;
@@ -355,7 +356,8 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
     if ( ! isOutput() ) { 
 
       ocpiAssert(desc.type == OCPI::RDT::ConsumerDescT);
-      desc.role = OCPI::RDT::ActiveFlowControl;
+      if (desc.role == OCPI::RDT::NoRole)
+	desc.role = OCPI::RDT::ActiveFlowControl;
       // desc.options |= 1 << OCPI::RDT::MandatedRole;
       desc.desc.dataBufferBaseAddr = m_portDependencyData.offsets[0].inputOffsets.bufferOffset;
       desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
@@ -370,7 +372,8 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
     else {  // We are an output port
 
         ocpiAssert(desc.type == OCPI::RDT::ProducerDescT);
-        desc.role = OCPI::RDT::ActiveMessage;
+	if (desc.role == OCPI::RDT::NoRole)
+	  desc.role = OCPI::RDT::ActiveMessage;
 	//desc.options |= 1 << OCPI::RDT::MandatedRole;
         desc.desc.dataBufferBaseAddr = 	m_data->m_bufferData[0].outputOffsets.bufferOffset;
         desc.desc.dataBufferPitch = desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
@@ -1326,7 +1329,12 @@ createInputOffsets()
                 
       //    printf("EmptyFlag value = 0x%llx\n", m_shadowPortDescriptor.desc.emptyFlagValue);
                 
+#if 0
       strcpy( m_data->m_shadowPortDescriptor.desc.oob.oep,m_data->m_shadow_location->end_point.c_str());
+#else
+      Transport::fillDescriptorFromEndPoint(*m_data->m_shadow_location, 
+				 m_data->m_shadowPortDescriptor);
+#endif
       m_data->m_shadowPortDescriptor.desc.oob.port_id = m_data->m_externPortDependencyData.desc.oob.port_id;
       for ( index=0; index<bCount; index++ ) {
         m_data->m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox] = 

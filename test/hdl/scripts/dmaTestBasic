@@ -4,8 +4,8 @@
 echo "admin probe: "
 XX=($*)
 LAST=${XX[$#-1]}
-sudo swctl $LAST settime
-sudo swctl $LAST admin
+sudo ocpihdl settime -d $LAST
+sudo ocpihdl admin -d $LAST 
 
 #./testDMA "p f m" "3" "0 4112 8176" "100" $*
 #./testDMA "p f m" "3" "0 4096 8192" "100" $*
@@ -13,7 +13,7 @@ sudo swctl $LAST admin
 #./testDMA "p m" "3" "0 16 1024 4096 8192" "100" $*
 #./testDMA "p m f" "3" "0 16 1024 2048" "200" $*
 #./testDMA "p m f" "3" "0 4096 8176" "1000" $*
-testDMA "p m f" "3" "0 4096 8192" "500" $*
+testDMA "m f" "3" "0 4096 8192" "500" $*
 
 # TODO: Understand system "hiccup" or full stall with 4096 or 8192 and 100+ iterations
 # observed only with m+m

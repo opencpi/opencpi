@@ -41,9 +41,25 @@ include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
 # built when the library is built.
+
+# When XST compiles VHDL files it creates <lib>.vdbl, <lib>.vdbx
+# When XST compiles Verilog files it creates <lib>.sdbl, <lib>.sdbx
+# Core platform and application modes only use Verilog
+# Libraries and workers may also have VHDL
+ifneq ($(findstring $(HdlMode),core platform application),)
+  HdlLibSuffix=sdbl
+else
+   ifneq ($(strip $(filter %.vhd,$(CompiledSourceFiles))),)
+      HdlLibSuffix=vdbl
+   else
+      HdlLibSuffix=sdbl
+   endif
+endif
+
 HdlToolLibraryFile=$(strip \
   $(2)/$(strip \
-    $(if $(filter virtex5,$(call HdlGetFamily,$(1))),hdllib.ref,$(2).sdbl)))
+    $(if $(filter virtex5,$(call HdlGetFamily,$(1))),hdllib.ref,$(2).$(HdlLibSuffix))))
+
 ################################################################################
 # Function required by toolset: given a list of targets for this tool set
 # Reduce it to the set of library targets.
@@ -127,9 +143,53 @@ $(call OcpiDbgVar,HdlMode)
 OBJ:=.xxx
 # Options that the user should not specify
 XstBadOptions=\
-    -ifn -ofn -top -xsthdpini -p -ifmt -sd -vlgincdir -vlgpath -lso
+    -ifn -ofn -top -xsthdpini -ifmt -sd -vlgincdir -vlgpath -lso
 # Options that the user may specify/override
-XstGoodOptions=-bufg -opt_mode -opt_level -read_cores -iobuf
+XstGoodOptions=-bufg -opt_mode -opt_level -read_cores -iobuf \
+-p \
+-power \
+-iuc \
+-opt_mode Speed \
+-opt_level \
+-keep_hierarchy \
+-netlist_hierarchy \
+-rtlview \
+-glob_opt \
+-write_timing_constraints \
+-cross_clock_analysis \
+-hierarchy_separator \
+-bus_delimiter \
+-case \
+-slice_utilization_ratio \
+-bram_utilization_ratio \
+-dsp_utilization_ratio \
+-lc \
+-reduce_control_sets \
+-fsm_extract \
+-fsm_encoding \
+-safe_implementation \
+-fsm_style \
+-ram_extract \
+-ram_style \
+-rom_extract \
+-shreg_extract \
+-rom_style  \
+-auto_bram_packing \
+-resource_sharing \
+-async_to_sync \
+-shreg_min_size \
+-use_dsp48 \
+-max_fanout \
+-register_duplication \
+-register_balancing \
+-optimize_primitives \
+-use_clock_enable \
+-use_sync_set \
+-use_sync_reset \
+-iob \
+-equivalent_register_removal \
+-slice_utilization_ratio_maxmargin
+
 # Our default options, some of which may be overridden
 # This is the set for building cores, not chips.
 XstDefaultOptions=\
@@ -169,11 +229,12 @@ $(call XstPruneOption,$(XstDefaultOptions)) $(XstExtraOptions) $(XstInternalOpti
 
 # Options and temp files if we have any libraries
 # Note that "Libraries" is for precompiled libraries, whereas "OcpiLibraries" are for cores (in the -sd path),
-# BUT! the empty module declarations must be in the lso list so to get cores we need the bb in a library too.
-ifneq ($(Libraries)$(ComponentLibraries)$(Cores),)
+# BUT! the empty module declarations must be in the lso list to get cores we need the bb in a library too.
+
 
 XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
+
 XstMakeIni=\
   ($(foreach l,$(Libraries),\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
@@ -183,31 +244,53 @@ XstMakeIni=\
       echo $(lastword $(subst -, ,$(notdir $(l))))_bb=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l)_bb,$(HdlTarget)))));) \
+   $(foreach l,$(CDKComponentLibraries),echo $(notdir $(l))=$(strip \
+     $(call FindRelative,$(TargetDir),$(l)/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));) \
+   $(foreach l,$(CDKDeviceLibraries),echo $(notdir $(l))=$(strip \
+     $(call FindRelative,$(TargetDir),$(l)/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));) \
+   $(foreach l,$(DeviceLibraries),echo $(notdir $(l))=$(strip \
+     $(call FindRelative,$(TargetDir),$(l)/lib/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));) \
    $(foreach l,$(ComponentLibraries),echo $(notdir $(l))=$(strip \
      $(call FindRelative,$(TargetDir),$(l)/lib/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));))\
    > $(XstIniFile);
+
 XstMakeLso=\
-  (echo $(LibName);$(foreach l,$(Libraries) $(ComponentLibraries),\
+  (echo $(LibName);$(foreach l,$(Libraries) $(CDKComponentLibraries) $(CDKDeviceLibraries) $(ComponentLibraries) $(DeviceLibraries),\
                       echo $(lastword $(subst -, ,$(notdir $(l))));)\
   $(foreach l,$(Cores),\
             echo $(lastword $(subst -, ,$(notdir $(l))_bb));)) > $(XstLsoFile);
 XstOptions += -lso $(XstLsoFile) 
-endif
+#endif
 XstPrjFile=$(Core).prj
-XstMakePrj=($(foreach f,$(HdlSources),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) > $(XstPrjFile);
+# old XstMakePrj=($(foreach f,$(HdlSources),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) > $(XstPrjFile);
+
+VhdlSources    = ${strip ${filter %vhd, $(HdlSources)}}
+VerilogSources = ${strip ${filter-out %vhd, $(HdlSources)}}
+XstMakePrj=rm -f $(XstPrjFile); \
+           $(if $(VerilogSources), ($(foreach f,$(VerilogSources), echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >  $(XstPrjFile);, ) \
+           $(if $(VhdlSources),    ($(foreach f,$(VhdlSources),    echo vhdl    $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >> $(XstPrjFile);, )
 XstScrFile=$(Core).scr
 
 XstMakeScr=(echo set -xsthdpdir . -xsthdpini $(XstIniFile);echo run $(strip $(XstOptions))) > $(XstScrFile);
 # The options we directly specify
 #$(info TARGETDIR: $(TargetDir))
 XstOptions +=\
--ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) -p $(or $(HdlExactPart),$(HdlTarget)) \
+ -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) -p $(or $(HdlExactPart),$(HdlTarget)) \
  $(and $(VerilogIncludeDirs),$(strip\
    -vlgincdir { \
      $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
     })) \
-  $(and $(ComponentLibraries)$(Cores),-sd { \
+  $(and $(CDKComponentLibraries)$(CDKDeviceLibraries)$(ComponentLibraries)$(DeviceLibraries)$(Cores),-sd { \
+     $(foreach l,$(CDKComponentLibraries),$(strip \
+       $(call FindRelative,$(TargetDir),\
+         $(l)/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
+     $(foreach l,$(CDKDeviceLibraries),$(strip \
+       $(call FindRelative,$(TargetDir),\
+         $(l)/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
      $(foreach l,$(ComponentLibraries),$(strip \
+       $(call FindRelative,$(TargetDir),\
+         $(l)/lib/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
+     $(foreach l,$(DeviceLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/lib/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
      $(foreach c,$(Cores),$(sort \
@@ -219,7 +302,13 @@ XstOptions +=\
       })
 
 XstNgcOptions=\
+  $(foreach l,$(CDKComponentLibraries), -sd \
+    $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart) $(HdlTarget))))\
+  $(foreach l,$(CDKDeviceLibraries), -sd \
+    $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart) $(HdlTarget))))\
   $(foreach l,$(ComponentLibraries), -sd \
+    $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(HdlPart) $(HdlTarget))))\
+  $(foreach l,$(DeviceLibraries), -sd \
     $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(HdlPart) $(HdlTarget))))\
   $(foreach c,$(Cores), -sd \
     $(call FindRelative,$(TargetDir),$(call CoreRefDir,$(c),$(or $(HdlPart),$(HdlTarget))))) 
@@ -238,9 +327,13 @@ HdlToolCompile=\
   rm -f $(notdir $@);\
   $(XstMakePrj)\
   $(XstMakeLso)\
-  $(XstMakeIni)\
+  $(if $(Libraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores),\
+     $(XstMakeIni))\
   $(XstMakeScr)\
   $(Xilinx) xst -ifn $(XstScrFile)
+
+# optional creation of these doesn't work...
+#    $(XstMakeLso) $(XstMakeIni))\
 
 # We can't trust xst's exit code so we conservatively check for zero errors
 # Plus we create the edif all the time...

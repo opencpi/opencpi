@@ -420,12 +420,8 @@ int main(int argc, char *argv[])
   
   if (rplContainer && (!two || rplContainer2)) {
     try {
-      DThread * rcc_dThread=0;
-      if (rccFile) {
+      if (rccFile)
 	rccContainer = OA::ContainerManager::find("rcc");
-	rcc_dThread = new DThread( *rccContainer );
-	rcc_dThread->start();
-      }
 
       // Create an application on this container, no parameters at this time
       std::auto_ptr<OA::ContainerApplication>
@@ -441,12 +437,20 @@ int main(int argc, char *argv[])
 
       OA::Worker *w[14] = {
 	((OA::Worker *)0),
+#ifdef SMA
 	// SMA0 in first FPGA
 	&a.createWorker(xfile, 0, "w2c1", "sma", "sma0"),                                 // w2# 1
+#else
+	0,
+#endif
 	// MIddle worker in first FPGA
 	&a.createWorker(xfile, 0, "w3c1", "bias", "bias"),                             // w3# 2
+#ifdef SMA
 	// SMA1 in first FPGA
-	&a.createWorker(xfile, 0, "w4c1", "sma", "sma1"),                                 // w4# 3
+	//&a.createWorker(xfile, 0, "w4c1", "sma", "sma1"),                                 // w4# 3
+#else
+	0,
+#endif
 	// ADC in first FPGA
 	acquire ? &a.createWorker(xfile, 0, "w10c1", "ADC", "ADCi") : 0,                 //w10# 4
 	// DAC in first FPGA
@@ -473,38 +477,43 @@ int main(int argc, char *argv[])
 	rccFile ? &rcca.createWorker(rccFile, 0, "wNcRcc", rccName, 0) : 0                //   #13
       };
 
+#ifdef SMA
       OA::Port &w1in = w[1]->getPort("message");
 
       OA::Port &w1out = w[1]->getPort("out");
 
       OA::Port &w1sin = w[1]->getPort("in");
-
+#endif
       OA::Port &w2in = w[2]->getPort("in");
 
       OA::Port &w2out = w[2]->getPort("out");
-
+#ifdef SMA
       OA::Port &w3in = w[3]->getPort("in");
 
       OA::Port &w3out = w[3]->getPort("message");
       OA::Port &w3sout = w[3]->getPort("out");
-
       OA::Port &w4out = acquire ? w[4]->getPort("ADCout") : *(OA::Port *)0;
 
       OA::Port &w5in = emit ? w[5]->getPort("DACin") : *(OA::Port *)0;
 
       OA::Port &w6in = two ? w[6]->getPort("message") : *(OA::Port *)0;
       OA::Port &w6out = two ? w[6]->getPort("out") : *(OA::Port *)0;
+#endif
       OA::Port &w7in = two ? w[7]->getPort("in") : *(OA::Port *)0;
       OA::Port &w7out = two ? w[7]->getPort("out") : *(OA::Port *)0;
+#ifdef SMA
       OA::Port &w8in = two ? w[8]->getPort("in") : *(OA::Port *)0;
       OA::Port &w8out = two ? w[8]->getPort("message") : *(OA::Port *)0;
       OA::Port &w9in0 = psd ? w[9]->getPort("WSIinB") : *(OA::Port *)0;
       OA::Port &w9in1 = psd ? w[9]->getPort("WSIinA") : *(OA::Port *)0;
+#endif
       OA::Port &w9out0 = psd ? w[9]->getPort("WSIoutC") : *(OA::Port *)0;
+#if 0 // obsolete
       // The issue here is that input ports get their protocol bound at
       // construction time rather than connection time.
       if (rccFile)
 	putenv((char *)"OCPI_DEFAULT_PROTOCOL=ocpi-pci-pio");
+#endif
       OA::Port &w13in = rccFile ? w[13]->getPort("in") : *(OA::Port*)0;
       OA::Port &w13out = rccFile ? w[13]->getPort("out") : *(OA::Port*)0;
 
@@ -519,52 +528,72 @@ int main(int argc, char *argv[])
         *p91 = mkParams(bufferCount[9][1], bufferSize, active[9][1]);
 
 
+#ifdef SMA
       OA::Property pfc(*w[1], "smaCtrl");
       OA::Property pfp(*w[3], "smaCtrl");
+#endif
       if (psd) {
 	OA::Property splitCtrl(*w[9], "splitCtrl");
 	const unsigned IN_FROM_ADC = 0x1, IN_FROM_SMA0 = 0x100;
 	splitCtrl.setULongValue(acquire ? IN_FROM_ADC : IN_FROM_SMA0);
       }
 
+#ifdef SMA
       // Caller knows data type, we can add a debug-mode runtime check
       pfc.setULongValue(acquire ? 0 : 1);
 
       pfp.setULongValue(emit ? 0 : 2);
       
-
       if (loop)
         w1in.loopback(w3out);
-
       if (acquire)
         w4out.connect(psd ? w9in1 : w1sin);
 
-      // connect sma0 either directory to bias/delay, or if psd, to the second input of the splitter
+      // connect sma0 either directly to bias/delay, or if psd, to the second input of the splitter
       w1out.connect(psd ? w9in0 : w2in);
+#endif
       if (psd)
 	w9out0.connect(w2in);
 
-      w2out.connect(w3in);
+#ifdef SMA
+      w2out.connect(w3in); // bias to sma1
 
-      if (emit) {
-	w3sout.connect(w5in);
-      }
-     OA::ExternalPort *myOut =
-        acquire ? 0 : &w1in.connectExternal("w0out", p01, p10);
+      if (emit)
+	w3sout.connect(w5in); // sma1 to dac
+      OA::ExternalPort *myOut =
+        acquire ? 0 : &w1in.connectExternal("w0out", p10, p01); // sw output to sma0
 
       if (two) {
-        w3out.connect(w6in,p31,p60);
-        w6out.connect(w7in);
-        w7out.connect(w8in);
+        w3out.connect(w6in,p31,p60); // from sma1 first to sma0 second
+        w6out.connect(w7in); // from sma0 second to bias second
+        w7out.connect(w8in); // from base second to sma1 second
       }
 
-      if (rccFile) {
-	w3out.connect(w13in,p31,p90);
-      }
+      if (rccFile)
+	w3out.connect(w13in,p31,p90); // from sma1 to rcc worker
+
       OA::ExternalPort &myIn =
-	two ? w8out.connectExternal ( "w0in", p00, p81 ) :
-	rccFile ? w13out.connectExternal ( "w13out", p00, p91) :
-	w3out.connectExternal ( "w0in", p00, p31 );
+	two ? w8out.connectExternal ( "w0in", p81, p00 ) : // from second sma1 to SW ext input
+	rccFile ? w13out.connectExternal ( "w13out", p91, p00) : // from rcc out to sw input
+	w3out.connectExternal ( "w0in", p31, p00 ); // from sma1 to sm input
+#else
+      // We don't have SMA anymore - it is an invisible part of infrastructure
+      // except that we can't use it as a switch anymore...
+
+      OA::ExternalPort *myOut =
+        acquire ? 0 : &w2in.connectExternal("w0out", p10, p01); // sw output to sma0
+
+      if (two)
+        w2out.connect(w7in,p31,p60); // from sma1 first to sma0 second
+
+      if (rccFile)
+	w2out.connect(w13in,p31,p90); // from sma1 to rcc worker
+
+      OA::ExternalPort &myIn =
+	two ? w7out.connectExternal ( "w0in", p81, p00 ) : // from second sma1 to SW ext input
+	rccFile ? w13out.connectExternal ( "w13out", p91, p00) : // from rcc out to sw input
+	w2out.connectExternal ( "w0in", p31, p00 ); // from sma1 to sm input
+#endif
 
       if (setProp) {
 	OA::Property p(*w[2], setProp);
@@ -579,13 +608,21 @@ int main(int argc, char *argv[])
 	w[12]->start();
       }
 
+#ifdef SMA
       w[1]->start();
+#endif
       w[2]->start();
+#ifdef SMA
       w[3]->start();
+#endif
       if (two) {
+#ifdef SMA
         w[6]->start();
+#endif
         w[7]->start();
+#ifdef SMA
         w[8]->start();
+#endif
       }
       if (psd)
 	w[9]->start();
@@ -777,10 +814,8 @@ int main(int argc, char *argv[])
         printf("File \"%s\" successfully written\n", ofile);
         close(ofd);
       }
-      if (rccFile ) {
-	rcc_dThread->stop();
-	rcc_dThread->join();
-      }
+      if (rccContainer )
+	rccContainer->stop();
       if (doTicks) {
 	tick_t *tp = ticks + 1;
 	for (unsigned n = 0; tp->ll && n <= NTICKS; n++, tp++) {

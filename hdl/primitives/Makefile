@@ -53,7 +53,7 @@ ImportCoreDirs=\
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
 
-Libs=bsv util util_virtex6 util_virtex5 util_stratix4 vendor_altera
+Libs=ocpi bsv util util_virtex6 util_virtex5 util_stratix4 vendor_altera
 
 #LocalCores=xfft_v7_1 \
  temac_v6 \

@@ -556,7 +556,8 @@ createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
       ocpiDebug("Forcing protocol = %s because OCPI_DEFAULT_PROTOCOL set in environment", protocol);
     ep = &getLocalCompatibleEndpoint(protocol);
   }
-  strcpy(desc.desc.oob.oep, ep->end_point.c_str());
+  fillDescriptorFromEndPoint(*ep, desc);
+  //  strcpy(desc.desc.oob.oep, ep->end_point.c_str());
   
   int ord=-1;
   OCPI::DataTransport::Port * port=NULL;  

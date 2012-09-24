@@ -3,12 +3,12 @@
       <Property Name="smaCtrl" Readable="true" Writable="true"/>
     </Properties>
     <DataInterfaceSpec Name="in" Optional="true">
-      <xi:include href="stream_protocol.xml"/>
+      <xi:include href="stream32_protocol.xml"/>
     </DataInterfaceSpec>
     <DataInterfaceSpec Name="out" Producer="true" Optional="true">
-      <xi:include href="stream_protocol.xml"/>
+      <xi:include href="stream32_protocol.xml"/>
     </DataInterfaceSpec>
     <DataInterfaceSpec Name="message">
-      <xi:include href="stream_protocol.xml"/>
+      <xi:include href="stream32_protocol.xml"/>
     </DataInterfaceSpec>
   </ComponentSpec>

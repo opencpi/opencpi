@@ -866,6 +866,7 @@ OCPI_DATA_TYPES
 #endif
 
       // All the info is in.  Do final work to (locally) establish the connection
+      // If we're output, we must return the flow control descriptor
       const OCPI::RDT::Descriptors *
       finishConnect(const OCPI::RDT::Descriptors &other,
 		    OCPI::RDT::Descriptors &/*feedback*/) {
@@ -879,17 +880,7 @@ OCPI_DATA_TYPES
         OcdpRole myOcdpRole;
         OCPI::RDT::PortRole myRole = (OCPI::RDT::PortRole)getData().data.role;
 	
-#if 0
-        // FIXME - can't we avoid string processing here?
-        unsigned busId;
-        uint64_t busAddress, busSize;
-        if (sscanf(other.desc.oob.oep, "ocpi-pci-pio:%x.0x%llx:%lld.3.20", &busId,
-                   (long long unsigned *)&busAddress,
-                   (long long unsigned *)&busSize) != 3)
-          throw OC::ApiError("other port's endpoint description wrong: \"",
-                             other.desc.oob.oep, "\"", NULL);
-#endif
-        ocpiDebug("finishConnection: base = %" PRIu64 ", offset = %" PRIu64 ", RFB = %" PRIu64 "",
+        ocpiDebug("finishConnection: other = %" PRIx64 ", offset = %" PRIx64 ", RFB = %" PRIx64 "",
 		  other.desc.oob.address,
 		  isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr,
 		  other.desc.oob.address +
@@ -941,6 +932,12 @@ OCPI_DATA_TYPES
           myOcdpRole = OCDP_PASSIVE; // quiet compiler warning
           ocpiAssert(0);
         }
+        ocpiDebug("finishConnection: me = %" PRIx64 ", offset = %" PRIx64 ", RFB = %" PRIx64 "",
+		  myDesc.oob.address,
+		  isProvider() ? myDesc.fullFlagBaseAddr : myDesc.emptyFlagBaseAddr,
+		  myDesc.oob.address +
+		  (isProvider() ? myDesc.fullFlagBaseAddr : myDesc.emptyFlagBaseAddr));
+	ocpiDebug("My ep = %s\n", myDesc.oob.oep );
 	m_properties.set32Register(control, OcdpProperties,
 				    OCDP_CONTROL(isProvider() ? OCDP_CONTROL_CONSUMER :
 						 OCDP_CONTROL_PRODUCER, myOcdpRole));
@@ -953,7 +950,7 @@ OCPI_DATA_TYPES
 	  m_adapter->controlOperation(OM::Worker::OpStart);
 	}
 	controlOperation(OM::Worker::OpStart);
-	return NULL;
+	return isProvider() ? NULL : &getData().data;
       }
       // Connection between two ports inside this container
       // We know they must be in the same artifact, and have a metadata-defined connection

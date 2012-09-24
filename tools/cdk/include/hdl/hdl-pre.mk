@@ -220,11 +220,13 @@ $(call OcpiDbgVar,HdlToolSets)
 
 # In all cases if SourceFiles is not specified in the Makefile,
 # we look for any relevant
+$(call OcpiDbgVar,SourceFiles,Before searching: )
 ifndef SourceFiles
 CompiledSourceFiles:= $(wildcard *.[vV]) $(wildcard *.vhd) $(wildcard *.vhdl)
 else
 CompiledSourceFiles:= $(SourceFiles)
 endif
+$(call OcpiDbgVar,CompiledSourceFiles,After searching: )
 
 ifndef HdlInstallDir
 HdlInstallDir=$(OCPI_CDK_DIR)/lib/hdl

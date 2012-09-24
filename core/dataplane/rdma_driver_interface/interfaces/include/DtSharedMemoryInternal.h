@@ -52,7 +52,7 @@
 namespace DataTransfer {
 
   // Platform dependent global that creates an instance
-  SmemServices* CreateSmemServices ( XferFactory * p, EndPoint* loc );
+  SmemServices* createSmemServices ( XferFactory * p, EndPoint* loc );
 
   class ResourceServices
   {

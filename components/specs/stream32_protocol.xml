@@ -1,5 +1,7 @@
 <!-- 32 bit values, with byte enables forced -->
-<Protocol datavaluewidth="8">
+<!-- We force the protocol to match up with the BSV for now: byte enables and 
+     burst length in 32 bit words using 12 bits, which is up to 4K-1 or 16k-4 bytes -->
+<Protocol datavaluewidth="8" maxmessagevalues="16380" zerolengthmessages="true">
   <Operation Name="data">
     <Argument Name="data" Type="ULong" SequenceLength="0"/>
   </Operation>

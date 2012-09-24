@@ -212,18 +212,16 @@ void PCISmemServices::create (PCIEndPoint* loc)
     dmaSize &= ~(getpagesize() - 1);
     if (loc->size > dmaSize)
       throw OCPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "not enough memory to accomodate all mailboxes");
-    base_adr += dmaSize * loc->mailbox;
-    OCPI::Util::formatString(loc->end_point,
-		     "ocpi-pci-pio:0.0x%llx:%" PRIu32 ".%" PRIu16 ".%" PRIu16,
-		     (unsigned long long)base_adr,
-		     loc->size, loc->mailbox, loc->maxCount);
-
     if (m_fd == -1 &&
 	( m_fd = open("/dev/mem", O_RDWR|O_SYNC )) < 0 )
       throw OCPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "cant open /dev/mem"  );
 
+    base_adr += dmaSize * loc->mailbox;
+
     ocpiDebug("mmap mapping base = %" PRIx64 " with size = %d\n", base_adr, loc->size);
 
+    // FIXME posix os abstraction, along with other posix maping stuff...
+    // FIXME use driver if available
     m_vaddr =  (uint8_t*)mmap(NULL, loc->size, PROT_READ|PROT_WRITE, MAP_SHARED,
                               m_fd, base_adr);
 
@@ -231,7 +229,11 @@ void PCISmemServices::create (PCIEndPoint* loc)
     {
       throw OCPI::Util::EmbeddedException (  RESOURCE_EXCEPTION, "mmap() of DMA memory failed."  );
     } 
-
+    OCPI::Util::formatString(loc->end_point,
+		     "ocpi-pci-pio:0.0x%llx;%" PRIu32 ".%" PRIu16 ".%" PRIu16,
+		     (unsigned long long)base_adr,
+		     loc->size, loc->mailbox, loc->maxCount);
+    loc->address = base_adr;
   }
   else {
 
@@ -345,7 +347,7 @@ int32_t PCIEndPoint::parse( std::string& ep )
 {
 
   ocpiDebug("Scanning %s", ep.c_str() );
-  if (sscanf(ep.c_str(), "ocpi-pci-pio:%x.%" SCNi64 ";%" SCNu32 ".", 
+  if (sscanf(ep.c_str(), "ocpi-pci-pio:%x.%" SCNx64 ";%" SCNu32 ".", 
                    &bus_id,
                    &address,
                    &size) != 3)

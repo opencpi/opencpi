@@ -101,10 +101,10 @@ static void printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast, bool 
       isLast = true;
   }
   // End of declarator. If we're a sequence we close off the struct.
+  fprintf(f, "; /* %8xx", m->m_offset); 
   if (topSeq)
-    fprintf(f, "; /* this is a top level sequence of fixed size elements */ \n");
-  else
-    fprintf(f, ";\n");
+    fprintf(f, "this is a top level sequence of fixed size elements");
+  fprintf(f, " */\n");
 }
 
 // Print type, including sequence type etc.
@@ -133,13 +133,13 @@ printType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &p
   if (m->m_isSequence && !topSeq) {
     fprintf(f,
 	    "%*sstruct {\n"
-	    "%*s uint32_t length; /* offset %4u, 0x%x */\n",
-	    indent, "", indent, "", offset, offset);
-    offset += 4;
+	    "%*s  uint32_t length;\n",
+	    indent, "", indent, "");
+    //    offset += 4;
     if (m->m_dataAlign > sizeof(uint32_t)) {
       unsigned align = m->m_dataAlign - (unsigned)sizeof(uint32_t);
-      fprintf(f, "%*s char pad%u_[%u];\n", indent, "", pad++, align);
-      offset += align;
+      fprintf(f, "%*s  char pad%u_[%u];\n", indent, "", pad++, align);
+      //      offset += align;
     }
     printBaseType(f, m, indent + 2, offset, pad, parent, isFixed, isLast);
     fprintf(f, " data");
@@ -161,15 +161,21 @@ static void
 printMember(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &pad,
 	    const char *parent, bool isFixed, bool &isLast, bool topSeq)
 {
+  //  printf("name %s offset %u m->m_offset %u bytes %u\n",
+  //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
   if (offset < m->m_offset) {
     fprintf(f, "%*schar pad%u_[%u];\n",
 	    indent, "", pad++, m->m_offset - offset);
     offset = m->m_offset;
   }
   printType(f, m, indent, offset, pad, parent, isFixed, isLast, topSeq);
+  //  printf("1name %s offset %u m->m_offset %u bytes %u\n",
+  //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
   fprintf(f, " %s", m->m_name.c_str());
   printArray(f, m, isFixed, isLast, topSeq);
   offset += m->m_nBytes;
+  //  printf("2name %s offset %u m->m_offset %u bytes %u\n",
+  //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
 }
 
 static const char *

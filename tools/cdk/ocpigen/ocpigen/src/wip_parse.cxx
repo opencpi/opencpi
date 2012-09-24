@@ -151,8 +151,13 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
       (err = OE::getBoolean(impl, "ImpreciseBurst", &dp->impreciseBurst)) ||
       (err = OE::getBoolean(impl, "PreciseBurst", &dp->preciseBurst)))
     return err;
-  if (dp->dataWidth % dp->protocol->m_dataValueWidth)
-    return "DataWidth not a multiple of DataValueWidth";
+  if (dp->dataWidth >= dp->protocol->m_dataValueWidth) {
+    if (dp->dataWidth % dp->protocol->m_dataValueWidth)
+      return OU::esprintf("DataWidth (%u) on port '%s' not a multiple of DataValueWidth (%u)",
+			  dp->dataWidth, dp->name, dp->protocol->m_dataValueWidth);
+  } else if (dp->protocol->m_dataValueWidth % dp->dataWidth)
+      return OU::esprintf("DataValueWidth (%u) on port '%s' not a multiple of DataWidth (%u)",
+			  dp->protocol->m_dataValueWidth, dp->name, dp->dataWidth);
 #if 0
   if (dp->impreciseBurst && dp->preciseBurst)
     return "Both ImpreciseBurst and PreciseBurst cannot be specified for WSI or WMI";
@@ -659,8 +664,8 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
 
   // Prepare to process data plane port implementation info
   // Now lets look at the implementation-specific data interface info
+  Port *dp;
   for (ezxml_t s = ezxml_cchild(xml, "StreamInterface"); s; s = ezxml_next(s)) {
-    Port *dp;
     if ((err = OE::checkAttrs(s, "Name", "Clock", "DataWidth", "PreciseBurst",
                               "ImpreciseBurst", "Continuous", "Abortable",
                               "EarlyRequest", "MyClock", "RegRequest", "Pattern",
@@ -672,21 +677,8 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
         (err = OE::getBoolean(s, "EarlyRequest", &dp->u.wsi.earlyRequest)))
       return err;
     dp->type = WSIPort;
-    unsigned granuleWidth = dp->protocol->m_dataValueWidth * dp->protocol->m_dataValueGranularity;
-    // If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
-#if 1
-    if (granuleWidth >= dp->dataWidth && (granuleWidth % dp->dataWidth) == 0 && 
-        !dp->protocol->m_zeroLengthMessages)
-#else    
-    if ((dp->protocol->m_dataValueWidth * dp->protocol->m_dataValueGranularity) % dp->dataWidth &&
-        !dp->protocol->m_zeroLengthMessages)
-#endif
-      dp->byteWidth = dp->dataWidth;
-    else
-      dp->byteWidth = dp->protocol->m_dataValueWidth;
   }
   for (ezxml_t m = ezxml_cchild(xml, "MessageInterface"); m; m = ezxml_next(m)) {
-    Port *dp;
     if ((err = OE::checkAttrs(m, "Name", "Clock", "MyClock", "DataWidth",
                               "PreciseBurst", "MFlagWidth", "ImpreciseBurst",
                               "Continuous", "ByteWidth", "TalkBack",
@@ -700,8 +692,40 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
         (err = OE::getNumber(m, "MFlagWidth", &dp->u.wmi.mflagWidth, 0, 0)))
       return err;
     dp->type = WMIPort;
-    if (dp->dataWidth % dp->byteWidth)
-      return "Specified ByteWidth does not divide evenly into specified DataWidth";
+  }
+  // Final pass over all data ports for defaulting and checking
+  for (unsigned i = 0; i < w->ports.size(); i++) {
+    dp = w->ports[i];
+    switch (dp->type) {
+    case WDIPort:
+      // For data ports that have not been specified as stream or message,
+      // default to imprecise stream clocked by the WSI, with data width implied from protocol.
+      dp->type = WSIPort;
+      dp->dataWidth = dp->protocol->m_dataValueWidth;
+      dp->impreciseBurst = true;
+      if (w->ports[0]->type == WCIPort)
+	dp->clockPort = w->ports[0];
+      else
+	return "A data port that defaults to WSI must be in a worker with a WCI";
+      // fall into
+    case WSIPort:
+    case WMIPort:
+      {
+	// If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
+	unsigned granuleWidth =
+	  dp->protocol->m_dataValueWidth * dp->protocol->m_dataValueGranularity;
+	// If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
+	if (granuleWidth >= dp->dataWidth && (granuleWidth % dp->dataWidth) == 0 && 
+	    !dp->protocol->m_zeroLengthMessages)
+	  dp->byteWidth = dp->dataWidth;
+	else
+	  dp->byteWidth = dp->protocol->m_dataValueWidth;
+      }
+      if (dp->dataWidth % dp->byteWidth)
+	return "Specified ByteWidth does not divide evenly into specified DataWidth";
+      break;
+    default:;
+    }
   }
   unsigned nextPort = oldSize;
   for (ezxml_t m = ezxml_cchild(xml, "MemoryInterface"); m; m = ezxml_next(m), nextPort++) {

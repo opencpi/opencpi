@@ -7,16 +7,27 @@
 namespace OA = OCPI::API;
 
 int main(int argc, char **argv) {
+  char *size = "100", *selection = "", *nbuffers="2";
+  if (argv[1]) {
+    selection = argv[1];
+    if (argv[2]) {
+      size = argv[2];
+      if (argv[3])
+      nbuffers = argv[3];
+    }
+  }
   std::string hello =
     "<application done='file_write'>"
     "  <instance worker='file_read'>"
     "    <property name='filename' value='test.input'/>"
     "    <property name='granularity' value='4'/>"
-    "    <property name='messageSize' value='16'/>"
+    "    <property name='messageSize' value='";
+  hello += size;
+  hello +=
+    "'/>"
     "  </instance>"
     "  <instance worker='bias' selection='";
-  if (argv[1])
-    hello += argv[1];
+  hello += selection;
   hello +=
     "'>"
     "    <property name='biasValue' value='0x01020304'/>"
@@ -25,12 +36,18 @@ int main(int argc, char **argv) {
     "    <property name='filename' value='test.outputwrong'/>"
     "  </instance>"
     "  <connection>"
-    "    <port instance='file_read' name='out'/>"
-    "    <port instance='bias' name='in'/>"
+    "    <port instance='file_read' name='out' bufferCount='1'/>"
+    "    <port instance='bias' name='in' bufferCount='";
+  hello += nbuffers;
+  hello +=
+    "'/>"
     "  </connection>"
     "  <connection>"
-    "    <port instance='bias' name='out'/>"
-    "    <port instance='file_write' name='in'/>"
+    "    <port instance='bias' name='out' bufferCount='";
+  hello += nbuffers;
+  hello +=
+    "'/>"
+    "    <port instance='file_write' name='in' bufferCount='1'/>"
     "  </connection>"
     "</application>";
   try {

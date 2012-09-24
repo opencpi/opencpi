@@ -26,6 +26,7 @@ port=\
  grep $5 | \
  sed 's/^\([^ ]*\).*$/\1/'\
 `
+echo "USB port is '$port' for loading bitstream" >> $tmp
 device=`echo $2 | sed 's/^PCI://'`
-echo `dirname $0`/loadBitStream $1 $device $port $4
+`dirname $0`/loadBitStream $1 $device $port $4
 exit 0

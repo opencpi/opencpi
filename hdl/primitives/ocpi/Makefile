@@ -34,6 +34,21 @@
 #
 ########################################################################### #
 
+# This primitive library contains VHDL primitive modules that are used
+# by all workers
+# These need to be in order if tools aren't very smart
+LibName=ocpi
+SourceFiles=ocpi.vhd ocpi_impl.vhd gen/ocpi_types.vhd ocpi_types_body.vhd gen/ocpi_types_impl.vhd
+include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library
 
+CPPFiles=$(wildcard *.cpp_vhd)
+GenFiles=$(CPPFiles:%.cpp_vhd=gen/%.vhd)
+$(GenFiles): gen/%.vhd : %.cpp_vhd | gen
+	$(AT)echo Preprocessing $< into $@:
+	$(AT)gcc -E -P -std=c99 -xc \
+        -imacros $$OCPI_BASE_DIR/core/local/util/property/include/OcpiUtilDataTypesApi.h \
+	-o foo $< ;  tr '$$' '\n' < foo | tr '@' ' ' | tr '~' "'" | sed '/^ *$$/d' > $@
 
-include ../../../Makefile.ocpi.for-pkg
+#gen:
+#	@mkdir -p gen
+

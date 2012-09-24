@@ -145,7 +145,7 @@ struct OcpSignalDesc {
 // A bit redundant from the above, but for adhoc signals
 struct Signal {
   const char *name;
-  enum { IN, OUT, INOUT } direction;
+  enum Direction { IN, OUT, INOUT } direction;
   unsigned width;
 };
 #define OCP_SIGNAL_MT(n,w) OCP_SIGNAL_MV(n,w)
@@ -472,5 +472,6 @@ extern void
   emitWorker(FILE *f, Worker *w),
   cleanWIP(Worker *w);
 
+extern uint64_t ceilLog2(uint64_t n);
 
 #endif

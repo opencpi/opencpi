@@ -64,13 +64,14 @@ namespace OCPI {
     class PropertyInfo : public OCPI::Util::Member {
     public:
       PropertyInfo();
-      bool m_readSync, m_writeSync, m_isWritable, m_isReadable, m_readError, m_writeError;
+      bool m_readSync, m_writeSync, m_isWritable, m_isReadable, m_readError, m_writeError,
+	m_isVolatile, m_isInitial;
     };
   }
 
   namespace Util {
     class Property : public OCPI::API::PropertyInfo {
-      const char *parseImplAlso(ezxml_t x);
+      const char *parseImplAlso(ezxml_t x, bool &readableConfigs, bool &writableConfigs);
     public:
       Property();
       ~Property();

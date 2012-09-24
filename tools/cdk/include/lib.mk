@@ -210,30 +210,38 @@ $(XmImplementations): | $(OutDir)lib/xm
 
 # Worker should only be specified when the target is "new".
 ifeq ($(origin Worker),command line)
-ifneq ($(MAKECMDGOALS),new)
-$(error You can't set the "Worker" variable unless the make goal is "new")
-endif
-Words:=$(subst ., ,$(Worker))
-$(if $(or $(word 3,$(Words)),$(strip \
-          $(if $(word 2,$(Words)),,ok))), \
+  ifneq ($(MAKECMDGOALS),new)
+    $(error You can't set the "Worker" variable unless the make goal is "new")
+  endif
+  Words:=$(subst ., ,$(Worker))
+  $(if $(or $(word 3,$(Words)),$(strip \
+            $(if $(word 2,$(Words)),,ok))), \
      $(error The Worker must be of the form "Worker=name.model"))
-Model:=$(word 2,$(Words))
-ifeq ($(findstring $(Model),$(Models)),)
-$(error The suffix of "$(Worker)", which is "$(Model)" doesn't match any known model.)
-endif
-ifneq ($(wildcard $(Worker)),)
-$(error The worker "$(Worker)" already exists)
-endif
-Name:=$(word 1,$(Words))
-UCModel=$(call ToUpper,$(Model))
-ifndef SpecFile
-SpecFile:=specs/$(Name)_spec.xml
-endif
-ifeq ($(wildcard $(SpecFile)),)
-$(error Can't create worker $(Worker) when spec file: $(SpecFile) doesn't exist)
-endif
+  Model:=$(word 2,$(Words))
+  ifeq ($(findstring $(Model),$(Models)),)
+    $(error The suffix of "$(Worker)", which is "$(Model)" doesn't match any known model.)
+  endif
+  ifneq ($(wildcard $(Worker)),)
+    $(error The worker "$(Worker)" already exists)
+  endif
+  Name:=$(word 1,$(Words))
+  UCModel=$(call ToUpper,$(Model))
+  ifndef SpecFile
+    SpecFile:=specs/$(Name)_spec.xml
+  endif
+  ifeq ($(wildcard $(SpecFile))$(wildcard specs/$(SpecFile)),)
+    $(error Can't create worker $(Worker) when spec file: $(SpecFile) doesn't exist. Use SpecFile= ?)
+  endif
+  ifeq ($(Model),hdl)
+    ifndef Language
+      Language=verilog
+    endif
+  endif
+  ifdef Language
+    LangAttr:=language="$(Language)"
+  endif
 else ifdef Worker
-$(error Worker definition invalid)
+  $(error Worker definition invalid)
 endif
 new:
 	$(AT)$(if $(Worker),,\
@@ -242,13 +250,11 @@ new:
 	$(AT)mkdir $(Worker)
 	$(AT)echo include $$\(OCPI_CDK_DIR\)/include/worker.mk > $(Worker)/Makefile
 	$(AT)(\
-	  echo '<$(UCModel)Implementation>';\
+	  echo '<$(UCModel)Implementation $(LangAttr)>';\
 	  echo '  <xi:include href="$(notdir $(SpecFile))"/>';\
 	  echo '</$(UCModel)Implementation>') > $(Worker)/$(Name).xml
 	$(AT)echo Building worker to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model))
 	$(AT)$(MAKE) -C $(Worker) \
 		OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 		XmlIncludeDirs=../specs \
-		Worker=$(Name)
-
-#		skeleton
+		Worker=$(Name) skeleton

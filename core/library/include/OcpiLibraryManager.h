@@ -110,8 +110,9 @@ namespace OCPI {
     protected:
       virtual ~ImplementationCallback(){};
     public:
-      // if true is returned, stop looking further.
-      virtual bool foundImplementation(const Implementation &i, unsigned score) = 0;
+      // Return true if we found THE ONE.
+      // Set accepted = true, if we actually accepted one
+      virtual bool foundImplementation(const Implementation &i, unsigned score, bool &accepted) = 0;
     };
 
     // The manager/owner of all library drivers

@@ -96,11 +96,9 @@ namespace OCPI {
       for (WorkerIter wi = range.first; wi != range.second; wi++) {
 	unsigned score = 1; // default when no selection criteria
 	Implementation &impl = *wi->second;
-	if (!selectCriteria || impl.satisfiesSelection(selectCriteria, score)) {
-	  found = true;
-	  if (icb.foundImplementation(impl, score))
-	    return true;
-	}
+	if ((!selectCriteria || impl.satisfiesSelection(selectCriteria, score)) &&
+	    icb.foundImplementation(impl, score, found))
+	  return true;
       }
       return found;
     }
@@ -110,8 +108,9 @@ namespace OCPI {
       struct mine : public ImplementationCallback {
 	const Implementation *&m_impl;
 	mine(const Implementation *&impl) : m_impl(impl) {}
-	bool foundImplementation(const Implementation &i, unsigned) {
+	bool foundImplementation(const Implementation &i, unsigned, bool &accepted) {
 	  m_impl = &i;
+	  accepted = true;
 	  return true;
 	}
       } cb(impl);

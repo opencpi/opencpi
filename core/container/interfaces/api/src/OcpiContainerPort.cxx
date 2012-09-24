@@ -90,10 +90,11 @@ namespace OCPI {
 	else if (!strcasecmp(s, "activeonly"))
 	  role = ActiveOnly;
 	else
-	  throw ApiError("xferRole property must be passive|active|flowcontrol|activeonly", NULL);
+	  throw OU::Error("xferRole property must be passive|active|flowcontrol|activeonly");
 	if (!(getData().data.options & (1 << role)))
-	  throw ApiError("xferRole of \"%s\" not supported by port \"%s\"", s, mPort.name);
+	  throw OU::Error("xferRole of \"%s\" not supported by port \"%s\"", s, mPort.name);
 	getData().data.role = role;
+	getData().data.options |= (1 << OCPI::RDT::MandatedRole);
       }
     }
 
@@ -200,7 +201,7 @@ namespace OCPI {
 	  //        } else if (&container().driver() == &otherContainer.driver() &&
 	  //		   connectLike( other, myParams, otherParams))
 	  //	  return;
-      } else {
+	} else {
 	  const char *preferred = getPreferredProtocol();
 	  // Check if the output side has a preferred protocol, and if so, set it
 	  if (!preferred)
@@ -640,7 +641,10 @@ namespace OCPI {
     ExternalPort::
     ExternalPort(Port &port, bool isProvider, const OCPI::Util::PValue *extParams, 
 		 const OCPI::Util::PValue *portParams)
-      : BasicPort(port.metaPort(), isProvider, 0, port, extParams),
+      // FIXME: push the xfer options down to the lower layers
+      : BasicPort(port.metaPort(), isProvider,
+		  (1 << OCPI::RDT::ActiveFlowControl) |
+		  (1 << OCPI::RDT::ActiveMessage), port, extParams),
 	m_dtPort(NULL)
     {
       const char *preferred = port.getPreferredProtocol();
@@ -679,7 +683,7 @@ namespace OCPI {
 	port.determineRoles(getData().data);
 	Descriptors localShadowPort, feedback;
 	const Descriptors *outDesc = m_dtPort->finalize(port.getData().data, getData().data, &localShadowPort);
-	ocpiAssert(!port.finishConnect(*outDesc, feedback));
+	ocpiCheck(!port.finishConnect(*outDesc, feedback));
       }
       m_lastBuffer.m_dtPort = m_dtPort;
       delete [] newExtParams;

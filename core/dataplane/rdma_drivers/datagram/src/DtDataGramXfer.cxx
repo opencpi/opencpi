@@ -77,6 +77,7 @@ namespace DataTransfer {
   // Destructor
   DatagramXferFactory::~DatagramXferFactory()
   {
+    ocpiDebug("DatagramXferFactory::~DatagramXferFactory entered");
     std::vector<DatagramSmemServices*>::iterator it;
     for ( it=m_smems.begin(); it!=m_smems.end(); it++ ) {
       (*it)->stop();
@@ -138,40 +139,30 @@ namespace DataTransfer {
 #endif
 
     if (flags & XferRequest::FlagTransfer) {
-      if ( m_transaction.m_messages.size() == 0 ) {
-	m_transaction.init( 1, &parent().m_txTemplate );
-	uint8_t *  cur_src = static_cast<uint8_t *>( parent().m_txTemplate.ssmem->map(srcoffs,0) );
-	m_transaction.add( this, cur_src, dstoffs, 4, 1 );
+      if (!init()) {
+	init(0);
+	add(NULL, 0, 0);
       }
-      m_transaction.fini( srcoffs, dstoffs,  &parent().m_txTemplate );
+      fini(*(uint32_t*)parent().m_txTemplate.ssmem->map(srcoffs,0), dstoffs);
       return this;
     }
     
-    // For each tranfer at this level we have a header and payload.  We may need to break it up into
-    // multiple messages.  Each message gets it own header so each one is self contained and can be
+    // For each transfer at this level we have a header and payload.  We may need to break it up into
+    // multiple "messages".  Each message gets it own header so each one is self contained and can be
     // acted upon by the receiver without being dependent on previous messages (which could get lost).
-    // We ask the underlying transmission layer for the max msg size.
-#define MAX_Datagram_DATA_SIZE(x) (x - (sizeof(DatagramMsgHeader) + sizeof(DatagramFrameHeader) + 8))
-
-    unsigned maxpl = parent().maxPayloadSize();
-    int nPackets = (nbytes / MAX_Datagram_DATA_SIZE(maxpl) );
-    nPackets +=  (nbytes % MAX_Datagram_DATA_SIZE(maxpl)) ? 1 : 0;
-    if (flags & XferRequest::DataTransfer) {
-      m_transaction.init( nPackets, &parent().m_txTemplate );
-      m_txTotal = nPackets + 1;
-    }
-    int32_t  bytes_left = nbytes;
-    uint64_t  cur_dst_off = dstoffs;
-    uint8_t *  cur_src = static_cast<uint8_t *>( parent().m_txTemplate.ssmem->map(srcoffs,0) );
-    for ( int m=0; m<nPackets; m++ ) {
-      ocpiAssert(bytes_left >= 0 );
-      uint32_t length = bytes_left < (int32_t)MAX_Datagram_DATA_SIZE(maxpl) ? bytes_left : MAX_Datagram_DATA_SIZE(maxpl);	
-      m_transaction.add( this, cur_src, cur_dst_off, length, m_txTotal );
-      cur_dst_off += length;
-      cur_src += length;
-      bytes_left -= length;
-    }
-
+    // We ask the underlying transmission layer for the max frame payload size.
+    unsigned maxpl =
+      parent().maxPayloadSize() - (sizeof(DatagramMsgHeader) + sizeof(DatagramFrameHeader) + 8);
+    if (!init())
+      // conservative estimate, but it still might be exceeded
+      init((nbytes + maxpl - 1)/maxpl + 1);
+    unsigned length;
+    for (uint8_t *src = (uint8_t*)parent().m_txTemplate.ssmem->map(srcoffs,0);
+	 nbytes > 0;
+	 nbytes -= length, src += length, dstoffs += length) {
+      length = nbytes > maxpl ? maxpl : nbytes;
+      add(src, dstoffs, length);
+    }						
     return this;
   }
 
@@ -185,6 +176,10 @@ namespace DataTransfer {
   DatagramXferServices::
   ~DatagramXferServices ()
   {
+    ocpiDebug("DatagramXferServices::~DatagramXferServices entered");
+    // Note that members are destroyed before base classes,
+    // so our frames are destroyed, and then our children (xferrequests and transactions)
+    // which makes sense because frames refer to transactions
     lock();
 
   }
@@ -193,29 +188,14 @@ namespace DataTransfer {
   DatagramXferServices::
   post ( Frame & frame ) {
     frame.send_time = fasttime_getticks();
+    if (frame.msg_count)
+      frame.frameHdr.flags |= FRAME_FLAG_HAS_MESSAGES;
     m_sourceSmb->send(frame);
     // If there is nothing to ack (no messages) in this frame, free it as soon as it is sent.
     // The "send" is required to take it and not queue it (or at least copy it).
-    if (frame.frameHdr.flags == 1)
+    if (!frame.msg_count)
       frame.release();
   }
-
-  void
-  DatagramXferRequest::
-  queFrame( Frame & frame ) {
-
-      
-#ifdef DEBUG_TxRx_Datagram
-    if ( frame.frameHdr.ACKCount ) {
-      printf("Responding to frames, count = %d, start = %d\n", frame.frameHdr.ACKCount,
-	     frame.frameHdr.ACKStart );
-    }
-#endif
-
-    parent().post( frame );
-
-  }
-
 
   Frame * 
   DatagramXferServices::  
@@ -258,7 +238,7 @@ namespace DataTransfer {
     int bytes_left;
     Frame & frame = getFrame( bytes_left );
     frame.frameHdr.ackOnly = 1;
-    post( frame );
+ss    post( frame );
 #endif
 
   }
@@ -267,8 +247,12 @@ namespace DataTransfer {
   DatagramXferServices::
   releaseFrame ( unsigned seq ) {	
     unsigned mseq = seq & FRAME_SEQ_MASK;
-
-    m_freeFrames[mseq].release();
+    Frame &f = m_freeFrames[mseq];
+    if (!f.is_free && f.frameHdr.frameSeq == seq)
+      m_freeFrames[mseq].release();
+    else
+      ocpiDebug("Received ack 0x%x when frame is %s with num 0x%x",
+		seq, f.is_free ? "free" : "busy", f.frameHdr.frameSeq);
   }
 
   void 
@@ -278,7 +262,6 @@ namespace DataTransfer {
     if (m_acks.size() && ( time_now - m_last_ack_send ) > timeout ) {
       unsigned bytes_left;
       Frame & frame = getFrame( bytes_left );
-      frame.frameHdr.flags = 1;
       post( frame );
     }
   }
@@ -295,11 +278,15 @@ namespace DataTransfer {
 
     frame.frameHdr.destId = m_targetSmb->endpoint()->mailbox;
     frame.frameHdr.srcId =  m_sourceSmb->endpoint()->mailbox;
+    frame.frameHdr.flags = 0;
+    frame.frameHdr.ACKCount = 0;
     frame.transaction = 0;
     frame.msg_count = 0;
+    frame.msg_start = 0;
+    frame.endpoint = m_targetSmb->endpoint();
+    frame.iovlen = 0;
 
     // We will piggyback any pending acks here
-    frame.frameHdr.ACKCount = 0;
     if ( m_acks.size() ) {
       m_last_ack_send = fasttime_getticks();
       frame.frameHdr.ACKStart = m_acks[0];
@@ -318,10 +305,8 @@ namespace DataTransfer {
       }
     }
 
-    frame.frameHdr.flags = 0;
-    frame.endpoint = m_targetSmb->endpoint();
+
     // This is a two byte pad for compatibility with the 14 byte ethernet header.
-    frame.iovlen = 0;
     frame.iov[frame.iovlen].iov_base = (void*) &frame.frameHdr;
     frame.iov[frame.iovlen].iov_len = 2;
     frame.iovlen++;
@@ -330,18 +315,18 @@ namespace DataTransfer {
     bytes_left -= ((int)frame.iov[1].iov_len + 2);
     frame.iovlen++;
 		
-    frame.msg_count = frame.msg_start = 0;
     return frame;
   }
 
 
   void 
   DatagramXferRequest::
-  post( DatagramTransaction & t )
+  post()
   {
     unsigned bytes_left;
     unsigned msg = 0;
-
+    DatagramTransaction & t = *this;
+    t.m_nMessagesRx = 0;
     while ( msg < t.msgCount() ) {
 
       // calculate the next message size
@@ -351,7 +336,6 @@ namespace DataTransfer {
 
       Frame & frame = parent().getFrame( bytes_left );
       frame.transaction = &t;
-      frame.msg_count =0;
       frame.msg_start = msg;	  
 
       // Stuff as many messages into the frame as we can
@@ -379,24 +363,9 @@ namespace DataTransfer {
 	frame.msg_count++;
       }
       t.hdrPtr(msg-1)->nextMsg = false;
-      queFrame( frame );	  
+      parent().post( frame );
+      //      queFrame( frame );	  
     }	
-  }
-
-
-  void 
-  DatagramXferRequest::
-  post()
-  {
-    m_transaction.m_nMessagesRx = 0;
-
-    // #define TRACE_Datagram_XFERS  
-#ifdef TRACE_Datagram_XFERS
-    ocpiDebug("Datagram: copying %d bytes from 0x%llx to 0x%llx", transfer->nbytes,transfer->src_off,transfer->dst_off);
-    ocpiDebug("source wrd 1 = %d", src1[0] );
-#endif
-    post( m_transaction );
-
   }
 
   volatile static uint32_t g_txId;
@@ -407,39 +376,50 @@ namespace DataTransfer {
   }
 
   void 
-  //DatagramXferRequest::
   DatagramTransaction::
-  init( uint32_t nMsgs, TxTemplate * temp  ) {
+  init( uint32_t nMsgs) {
     ocpiAssert( ! m_init );
     m_nMessagesTx = 0;
-    m_messages.reserve( nMsgs + 1 );
-    m_txTemplate = temp;
-    m_init = true;
+    m_messages.reserve(nMsgs ? nMsgs : 1);
     m_tid = getNextId();
+    m_init = true;
   }
 
+  // Finalize the transaction since we now have the flag transfer information
+  // and we know how many messages were actually sent for the transaction,
+  // essentially filling in the constant fields
   void 
-  //DatagramXferRequest::
   DatagramTransaction::
-  fini( uint32_t src, uint32_t dst, TxTemplate * temp ) {
-    std::vector<Message>::iterator it;
-    m_txTemplate=temp;
-    uint32_t* sptr =(uint32_t*)m_txTemplate->ssmem->map(src, 4);	  
-    for ( it=m_messages.begin(); it!=m_messages.end(); it++ ) {
-      (*it).hdr.flagAddr = dst;
-      (*it).hdr.flagValue = *sptr;
+  fini( uint32_t flag, uint32_t dst) {
+    Message *m = &m_messages[0];
+    for (unsigned n = 0; n < m_nMessagesTx; n++, m++) {
+      m->hdr.transactionId = m_tid; 
+      m->hdr.numMsgsInTransaction = m_nMessagesTx == 1 ? 0 : m_nMessagesTx;
+      m->hdr.flagAddr = dst;
+      m->hdr.flagValue = flag;
     }
   }
 
   
+  // src == NULL means the message only carries the flag and the transaction has no other messages
   void 
-  //DatagramXferRequest::
   DatagramTransaction::
-  add(DatagramXferRequest* ,  uint8_t * src, uint64_t dst_offset, uint32_t length, uint32_t tx_total )
+  add(uint8_t * src, uint64_t dst_offset, uint32_t length)
   {
-    if ( m_nMessagesTx>= m_messages.size() ) {
-      m_messages.reserve( m_messages.size() + 10 );
-    }
+    if ( m_nMessagesTx >= m_messages.size() )
+      m_messages.reserve( m_nMessagesTx + 10 );
+    m_messages.resize(++m_nMessagesTx);
+    Message &m = m_messages.back();
+
+    m.hdr.dataAddr = dst_offset;
+    m.hdr.dataLen = length;
+    m.src_adr = src;
+
+    // This might disappear since we could put disconnect in a frame flag
+    m.hdr.type = DataTransfer::DatagramMsgHeader::DATA;
+    // This might disappear unless there is a use-case for its heuristic value
+    m.hdr.msgSequence = m_nMessagesTx;
+  }
 
 #ifdef PKT_DEBUG
     struct sockaddr_in * in = (struct sockaddr_in *)&sad;
@@ -449,24 +429,13 @@ namespace DataTransfer {
     struct in_addr  adrr  =  ((struct sockaddr_in *)&sad)->sin_addr;
 #endif
 
-    m_messages.push_back( m_messages[m_nMessagesTx] );
-    m_messages[m_nMessagesTx].hdr.type = DataTransfer::DatagramMsgHeader::DATA;
-    m_messages[m_nMessagesTx].hdr.numMsgsInTransaction = tx_total;
-    m_messages[m_nMessagesTx].hdr.msgSequence = m_nMessagesTx;
-    m_messages[m_nMessagesTx].hdr.dataAddr = (uint32_t)dst_offset;
-    m_messages[m_nMessagesTx].hdr.dataLen = length;
-    m_messages[m_nMessagesTx].src_adr = src;
-    m_messages[m_nMessagesTx].hdr.transactionId = m_tid; 
-    m_nMessagesTx++;
-  }
-
   
   DataTransfer::XferRequest::CompletionStatus 
   DatagramXferRequest::getStatus()
   { 
     // We only need to check the completion status of the flag transfer since it is gated on the 
     // completion status of the data and meta-data transfers
-    if ( ! m_transaction.complete() ) {
+    if ( ! complete() ) {
       return DataTransfer::XferRequest::Pending;
     }
     else {
@@ -528,6 +497,7 @@ namespace DataTransfer {
   DatagramSmemServices::
   ~DatagramSmemServices ()
   {
+    ocpiDebug("DatagramSmemServices::~DatagramSmemServices entered");
     lock();
     try {
       stop();
@@ -590,7 +560,7 @@ namespace DataTransfer {
 	      printf("***** &&&&& Found a dropped frame, re-posting \n");
 	      post( m_freeFrames[n] );
 	    }
-	    else {
+	ss    else {
 	      ocpiAssert(!"Exceeded resend limit !!\n");
 	    }
 #else
@@ -639,7 +609,7 @@ namespace DataTransfer {
       //      printf("Acking from %d, count = %d\n", header->ACKStart, header->ACKCount );
       ack(  header->ACKCount, header->ACKStart );
     }
-    if ( header->flags ) return;
+    if (!(header->flags & FRAME_FLAG_HAS_MESSAGES)) return;
 
 
     // For our response

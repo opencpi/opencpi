@@ -825,16 +825,15 @@ atoi_any(const char *arg, unsigned *sizep)
 {
   uint64_t value ;
 
-  if(strncmp(arg,"0x",2) != 0)
-    sscanf(arg,"%" SCNu64, &value) ;
-  else
-    sscanf(arg,"0x%" SCNx64, &value) ;
+  int n = sscanf(arg, strncmp(arg,"0x",2) != 0 ? "%" SCNu64 : "0x%" SCNx64, &value);
+  if (n != 1)
+    bad("Bad numeric value: '%s'", arg);
   if (sizep) {
     char *sp;
     if ((sp = strchr(arg, '/')))
       switch(*++sp) {
       default:
-	fprintf(stderr, "Bad size specifier: must be 1, 2, or 4");
+	bad("Bad size specifier in %s: must be 1, 2, or 4", arg);
 	abort();
       case '1':
       case '2':
@@ -1253,6 +1252,7 @@ receiveRDMA(const char **ap) {
   // Finalizing the input port takes: role, type flow, emptyflagbase, size, pitch, value
   // This makes the input port ready to data from the output port
   port.finalize(theOutputDesc, myInputDesc);
+  ocpiDebug("Our output descriptor is: %s", theOutputDesc.desc.oob.oep);
   if (!*ap) {
     // If the other side is software (sendRDMA below), it will start when told.
     // If it is hardware we setup and start the workers now
@@ -1297,8 +1297,10 @@ receiveRDMA(const char **ap) {
     edpConfAccess.set32Register(remoteFlagBase, OH::OcdpProperties, myInputDesc.desc.fullFlagBaseAddr);
     edpConfAccess.set32Register(remoteFlagPitch, OH::OcdpProperties, myInputDesc.desc.fullFlagPitch);
     // Program the source/destination ids for remote DMA
-    edpConfAccess.set32Register(remoteBufferHi, OH::OcdpProperties,
-				myInputDesc.desc.oob.mailBox | (theOutputDesc.desc.oob.mailBox << 16));
+    uint32_t val = myInputDesc.desc.oob.mailBox | (theOutputDesc.desc.oob.mailBox << 16);
+    ocpiDebug("DW with DestId in LSB and SourceID in MSB is 0x%x", val);
+    edpConfAccess.set32Register(remoteBufferHi, OH::OcdpProperties, val);
+
     // Program the local part of the output side - how data is placed in local buffers
     edpConfAccess.set32Register(nLocalBuffers, OH::OcdpProperties, theOutputDesc.desc.nBuffers);
     edpConfAccess.set32Register(localBufferSize, OH::OcdpProperties, theOutputDesc.desc.dataBufferPitch);

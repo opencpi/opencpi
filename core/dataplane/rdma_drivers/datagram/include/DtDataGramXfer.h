@@ -92,6 +92,7 @@ namespace DataTransfer {
     uint8_t  ACKCount;
     uint8_t  flags;
   };    
+  #define FRAME_FLAG_HAS_MESSAGES 1
 
   static const int MAX_MSGS = 10;  // FIXME can be calulated
   struct Frame {
@@ -162,13 +163,11 @@ namespace DataTransfer {
     friend class DatagramSmemServices;
   private:
     std::vector<DatagramSmemServices*> m_smems;
-    //    DatagramTransmissionLayerDriver * m_txDriver;
 
   public:
     DatagramXferFactory(const char *name)
       throw ();
     virtual ~DatagramXferFactory();//      throw ();
-    //    virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
     virtual EndPoint*  createEndPoint(std::string& endpoint, bool local) =0;
     virtual  std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)=0;
     virtual const char* getProtocol()=0;
@@ -242,9 +241,7 @@ namespace DataTransfer {
   class DatagramXferRequest;
   // Although the XferRequest represents a single contiguous RDMA request, it may be split up into
   // many datagram messages.
-  struct DatagramTransaction { // : public Transaction  {
-
-    TxTemplate   * m_txTemplate;
+  struct DatagramTransaction { 
     struct Message {
       DatagramMsgHeader   hdr;
       void *              src_adr;
@@ -263,9 +260,10 @@ namespace DataTransfer {
     ~DatagramTransaction(){
       ///FIXME: *********** free up the frames involved with this transaction      
     }
-    void init( uint32_t nMessages, TxTemplate * temp  );
-    void add( DatagramXferRequest* rqst, uint8_t * src, uint64_t dst_offset, uint32_t length, uint32_t tx_total );
-    void fini( uint32_t src, uint32_t dst, TxTemplate * temp  );
+    // nMessages is the estimated number of messages EXCLUSIVE of the flag transfer
+    void init( uint32_t nMessages);
+    void add(uint8_t * src, uint64_t dst_offset, uint32_t length);
+    void fini(uint32_t flag, uint32_t dst);
 
     inline bool complete() 
     {
@@ -289,7 +287,7 @@ namespace DataTransfer {
   /**********************************
    * This is the Programmed I/O transfer request class
    *********************************/
-  class DatagramXferRequest : public XferRequest
+  class DatagramXferRequest : public XferRequest, private DatagramTransaction
     {
     public:
       virtual DatagramXferServices &parent() = 0;
@@ -311,17 +309,11 @@ namespace DataTransfer {
 
     private:
 	uint32_t     m_txTotal;   // Total number of datagrams that make up this transaction - flag transfer
-	void post( DatagramTransaction & t );
-	void queFrame( Frame & frame );
-	//	DatagramXferServices & parent() {return m_parent; }
-
     protected:
-	//	DatagramXferServices                     &m_parent;
 	OCPI::OS::uint32_t                        m_srcoffset;        // The source memory offset
 	OCPI::OS::uint32_t                        m_dstoffset;        // The destination memory offset
 	OCPI::OS::uint32_t                        m_length;                // The length of the request in bytes
 	int                                       m_tested4Complete;
-	DatagramTransaction                       m_transaction;
     };
 
 
@@ -334,7 +326,6 @@ namespace DataTransfer {
 
     public:
       DatagramXferServices(SmemServices* source, SmemServices* target);
-      //      XferRequest* createXferRequest();
       virtual ~DatagramXferServices ();
       virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
 

@@ -58,7 +58,7 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 # #### Location of the Xilinx tools ####################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/14.1/ISE_DS
+export OCPI_XILINX_TOOLS_DIR=/home/jek1/mac/Xilinx/14.2/ISE_DS
 
 # #### Location of the Altera tools ####################################### #
 

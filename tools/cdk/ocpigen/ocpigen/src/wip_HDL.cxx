@@ -245,32 +245,34 @@ emitPortDescription(Port *p, Worker *w, FILE *f) {
   }
 }
 void
-emitSignal(const char *signal, FILE *f, const char *comment, Language lang, bool in,
+emitSignal(const char *signal, FILE *f, const char *comment, Language lang, Signal::Direction dir,
 	   char *&last, int width, unsigned n, const char *pref = "",
 	   const char *type = "std_logic", const char *value = NULL) {
   int pad = 22 - strlen(signal);
   char *name;
   asprintf(&name, signal, n);
   if (lang == VHDL) {
+    const char *io = dir == Signal::IN ? "in" : (dir == Signal::OUT ? "out" : "inout");
     if (last)
       fprintf(f, last, ';');
     if (width < 0) {
       asprintf(&last, "  %s  %s%*s: %s %s%%c%s%s\n",
-	       pref, name, pad, "", in ? "in " : "out", type,
+	       pref, name, pad, "", io, type,
 	       value ? " := " : "", value ? value : "");
     } else
       asprintf(&last, "  %s  %s%*s: %s std_logic_vector(%u downto 0)%%c\n",
-	       pref, name, pad, "", in ? "in " : "out", width - 1);
+	       pref, name, pad, "", io, width - 1);
   } else {
+    const char *io = dir == Signal::IN ? "input" : (dir == Signal::OUT ? "output" : "inout");
     if (last)
       fprintf(f, last, ',');
     free(last);
     if (width < 0)
       asprintf(&last, "  %s%%c %*s%s %s\n",
-	       name, pad, "", comment, in ? "input" : "output");
+	       name, pad, "", comment, io);
     else
       asprintf(&last, "  %s%%c %*s%s %s [%3u:0]\n",
-	       name, pad, "", comment, in ? "input " : "output",
+	       name, pad, "", comment, io,
 	       width - 1);
   }
   free(name);
@@ -321,7 +323,7 @@ emitParameters(FILE *f, Worker *w, const char *comment) {
 	std::string value;
 	if (pr->m_defaultValue)
 	  pr->m_defaultValue->unparse(value);
-	emitSignal(pr->m_name.c_str(), f, comment, w->language, true, last, -1, 0, "  ",
+	emitSignal(pr->m_name.c_str(), f, comment, w->language, Signal::IN, last, -1, 0, "  ",
 		   type, value.size() ? value.c_str() : NULL);
       } else {
 	int64_t i64 = 0;
@@ -360,7 +362,7 @@ emitSignals(FILE *f, Worker *w) {
       if (last == NULL)
 	fprintf(f,
 		"  %s Clocks not associated with one specific interface:\n", comment);
-      emitSignal(c->signal, f, comment, w->language, true, last, -1, 0);
+      emitSignal(c->signal, f, comment, w->language, Signal::IN, last, -1, 0);
     }
   }
   for (unsigned i = 0; i < w->ports.size(); i++) {
@@ -372,7 +374,7 @@ emitSignals(FILE *f, Worker *w) {
     // Some ports are basically an array of interfaces.
     for (unsigned n = 0; n < p->count; n++) {
       if (p->clock->port == p && n == 0) {
-	emitSignal(p->clock->signal, f, comment, w->language, true, last, -1, n);
+	emitSignal(p->clock->signal, f, comment, w->language, Signal::IN, last, -1, n);
 	p->ocp.Clk.signal = p->clock->signal;
       } else if (n == 0)
 	fprintf(f,
@@ -381,20 +383,24 @@ emitSignals(FILE *f, Worker *w) {
       osd = ocpSignals;
       for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  emitSignal(os->signal, f, comment, w->language, true, last, osd->vector ? os->width : -1, n);
+	  emitSignal(os->signal, f, comment, w->language, Signal::IN,
+		     last, osd->vector ? os->width : -1, n);
 	}
       osd = ocpSignals;
       for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  emitSignal(os->signal, f, comment, w->language, false, last, osd->vector ? os->width : -1, n);
+	  emitSignal(os->signal, f, comment, w->language, Signal::OUT,
+		     last, osd->vector ? os->width : -1, n);
 	}
     }
   }
   if (w->nSignals) {
+    emitLastSignal(f, last, w->language, false);
     fprintf(f, "  %s Extra signals not part of any WIP interface:\n", comment);
     Signal *s = w->signals;
     for (unsigned n = 0; n < w->nSignals; n++, s++)
-      emitSignal(s->name, f, comment, w->language, s->direction == Signal::IN, last, s->width, 0);
+      emitSignal(s->name, f, comment, w->language, s->direction, last,
+		 s->width ? s->width : -1, 0);
   }
   emitLastSignal(f, last, w->language, true);
   if (w->language == VHDL)
@@ -443,6 +449,8 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
   if (lang == VHDL)
     fprintf(f,
 	    "end component %s;\n\n"
+	    "constant properties : ocpi.wci.properties_t;\n"
+	    "constant worker : ocpi.wci.worker_t;\n"
 	    "end package %s_defs;\n", w->implName, w->implName);
   else {
     fprintf(f, ");\n");
@@ -516,11 +524,13 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 }
 
 static void
-emitVhdlValue(FILE *f, unsigned width, uint64_t value) {
+emitVhdlValue(FILE *f, unsigned width, uint64_t value, bool singleLine = true) {
   fprintf(f, "b\"");
   for (int b = width-1; b >= 0; b--)
     fprintf(f, "%c", value & (1 << b) ? '1' : '0');
-  fprintf(f, "\"; -- 0x%0*" PRIx64 "\n", (int)roundup(width, 4)/4, value);
+  fprintf(f, "\"");
+  if (singleLine)
+    fprintf(f, "; -- 0x%0*" PRIx64 "\n", (int)roundup(width, 4)/4, value);
 }
 
 static void
@@ -544,6 +554,107 @@ emitOpcodes(Port *p, FILE *f, const char *pName, Language lang, const char *comm
   }
 }
 
+static char *
+tempName(char *&temp, unsigned len, const char *fmt, ...) {
+  va_list ap;
+  if (temp)
+    free(temp);
+  char *mytemp;
+  va_start(ap, fmt);
+  vasprintf(&mytemp, fmt, ap);
+  va_end(ap);
+  asprintf(&temp, "%-*s", len, mytemp);
+  free(mytemp);
+  return temp;
+}
+static char *prType(OU::Property &pr) {
+  char *type;
+  
+  if (pr.m_baseType == OA::OCPI_String)
+    if (pr.m_arrayRank)
+      asprintf(&type,
+	       "types.String_array_t(0 to %u, 0 to %u)",
+	       pr.m_nItems-1, (pr.m_stringLength+4)/4*4-1);
+    else
+      asprintf(&type, "types.String_t(0 to %u)", pr.m_stringLength);
+  else if (pr.m_arrayRank)
+    asprintf(&type, "types.%s_array_t(0 to %u)",
+	     OU::baseTypeNames[pr.m_baseType], pr.m_nItems - 1);
+  else
+    asprintf(&type, "types.%s_t", OU::baseTypeNames[pr.m_baseType]);
+  return type;
+}
+
+static void
+emitVhdlScalar(FILE *f, OU::Property &pr) {
+  if (pr.m_baseType == OA::OCPI_Bool)
+    fprintf(f, "false");
+  else if (pr.m_baseType == OA::OCPI_String) {
+    unsigned len = pr.m_arrayRank ? (pr.m_stringLength+4)/4*4-1 : pr.m_stringLength+1;
+    fprintf(f, "(");
+    for (unsigned n = 0; n < len; n++) {
+      if (n)
+	fprintf(f, ", ");
+      emitVhdlValue(f, 8, 0, false);
+    }
+    fprintf(f, ")");
+  } else
+    emitVhdlValue(f, pr.m_nBits, 0, false);
+}
+
+static void
+emitVhdlDefault(FILE *f, OU::Property &pr, const char *eq)
+{
+  fprintf(f, " %s ", eq);
+  if (pr.m_arrayRank) {
+    fprintf(f, "(");
+    for (unsigned n = 0; n < pr.m_nItems; n++) {
+      if (n != 0)
+	fprintf(f, ", ");
+      emitVhdlScalar(f, pr);
+    }
+    fprintf(f, ")");
+  } else
+    emitVhdlScalar(f, pr);
+}
+static void
+emitVhdlProp(FILE *f, OU::Property &pr, const char *&last, bool out,
+	     unsigned maxPropName, bool &first)
+{
+  const char *name = pr.m_name.c_str();
+
+  if (last)
+    fprintf(f, "%s", last);
+  last = ";\n";
+  if (first)
+    fprintf(f,
+	    "    --\n"
+	    "    -- %s for this worker's %s properties\n"
+	    "    --\n", out ? "outputs" : "inputs", out ? "writable" : "volatile");
+  first = false;
+  char *type = prType(pr), *temp = NULL;
+  fprintf(f,
+	  "    %s : %s %s",
+	  tempName(temp, maxPropName, "%s_%s", name, out ? "value" : "read"),
+	  out ? "out" : "in ", type);
+  if (!out)
+    emitVhdlDefault(f, pr, ":=");
+  free(type);
+  if (out && pr.m_isWritable) {
+    fprintf(f,
+	    ";\n    %s : out boolean",
+	    tempName(temp, maxPropName, "%s_written", name));
+    if (pr.m_arrayRank || pr.m_stringLength > 3)
+      fprintf(f,
+	      ";\n    %s : out boolean", 
+	      tempName(temp, maxPropName, "%s_any_written", name));
+  }
+  free(temp); // FIXME: make proper string versions of this junk
+}
+static void
+printVhdlValue(FILE *f, OU::Value &v) {
+}
+
 // Generate the readonly implementation file.
 // What implementations must explicitly (verilog) or implicitly (VHDL) include.
 // The idea is to minimize code in the actual worker implementation (nee skeleton) file,
@@ -560,13 +671,45 @@ emitOpcodes(Port *p, FILE *f, const char *pName, Language lang, const char *comm
 	  "%s This file contains the implementation declarations for worker %s\n"
 	  "%s Interface definition signal names defined with pattern rule: \"%s\"\n\n",
 	  comment, w->implName, comment, w->pattern);
+  unsigned decodeWidth = ceilLog2(w->ctl.sizeOfConfigSpace);
+  if (decodeWidth < 5)
+    decodeWidth = 5;
   if (w->language == VHDL) {
-    // FIXME: how to add library refs for shared sub-worker stuff..
     fprintf(f,
+	    "-- Worker-specific definitions that are needed outside entities below\n"
+	    "package body %s_defs is\n"
+	    "  constant worker : ocpi.wci.worker_t := (%u, \"00000100\");\n"
+	    "  constant properties : ocpi.wci.properties_t := (\n",
+	    w->implName, decodeWidth);
+    bool first = true;
+    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
+      OU::Property *pr = *pi;
+      fprintf(f, "%s    (%2u, %6u, %6u, %6u, %6u, %s %s %s %s)",
+	      first ? "" : ",\n",
+	      pr->m_nBits,
+	      pr->m_offset,
+	      pr->m_nBytes - 1,
+	      pr->m_stringLength,
+	      pr->m_nItems,
+	      pr->m_isWritable ? "true, " : "false,",
+	      pr->m_isReadable ? "true, " : "false,",
+	      pr->m_isVolatile ? "true, " : "false,",
+	      pr->m_isParameter  ? "true" : "false");
+      first = false;
+    }    
+    fprintf(f,
+	    "\n  );\n"
+	    "end %s_defs;\n"
+	    "-- This is the entity declaration that the worker developer will implement\n"
+	    "-- The achitecture for this entity will be in the implementation file\n"
 	    "library IEEE;\n"
 	    "  use IEEE.std_logic_1164.all;\n"
+	    "  use IEEE.numeric_std.all;\n"
 	    "library ocpi;\n"
-	    "entity %s is\n", w->implName);
+	    " use ocpi.all;\n"
+	    "library work;\n"
+	    " use work.all;\n"
+	    "entity %s is\n", w->implName, w->implName);
     emitParameters(f, w, comment);
     emitSignals(f, w);
     // Generate record types to easily and compactly plumb interface signals internally
@@ -627,7 +770,7 @@ emitOpcodes(Port *p, FILE *f, const char *pName, Language lang, const char *comm
 	    "`include \"ocpi_wip_defs%s\"\n",
 	    w->implName, w->implName, DEFS, VERH, w->implName, DEFS, VERH, VERH);
 
-#if 0 // record types any more fornow
+#if 0 // no record types here any more for now
   // For VHDL we need to basically replicate the port declarations that are part of the
   // component: there is no way to just use what the component decl says.
   // For Verilog we just include the module declaration so don't need anything here.
@@ -882,10 +1025,283 @@ emitOpcodes(Port *p, FILE *f, const char *pName, Language lang, const char *comm
     }
   }
   if (w->language == VHDL) {
+    unsigned maxPropName = 0;
+    bool writables = false, readables = false, volatiles = false, readback = false;
+    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
+      OU::Property &pr = **pi;
+      unsigned len = pr.m_name.length();
+      if (pr.m_isWritable) {
+	if (pr.m_isReadable)
+	  readback = true;
+	writables = true;
+	if (pr.m_isInitial)
+	  len += strlen("_value");
+	else if (pr.m_arrayRank || pr.m_stringLength > 3)
+	  len += strlen("_any_written");
+	else
+	  len += strlen("_written");
+      } else if (pr.m_isVolatile) {
+	len += strlen("_read");
+	readables = true;
+	volatiles = true;
+      } else if (pr.m_isReadable)
+	readables = true; // this implies a constant, unchangeable value
+      if (len > maxPropName)
+	maxPropName = len;
+    }
     fprintf(f,
-	    "end entity %s;\n",	w->implName);
-    // Generate all the properties
-
+	    "  -- convenient bundling function\n"
+	    "  impure function wci_inputs return wci.in_t is begin\n"
+            "    return wci.in_t'(ctl_Clk,\n"
+	    "                     std_logic_vector(resize(unsigned(ctl_MAddr),32)),\n"
+	    "                     ctl_MAddrSpace, ctl_MByteEn,\n"
+	    "                     ctl_MCmd, ctl_MData, ctl_MFlag, ctl_MReset_n);\n"
+	    "  end wci_inputs;\n"
+            "  -- convenience signals decoupled from OCP;\n"
+            "  signal wci_clk   : std_logic;\n"
+            "  signal wci_reset : boolean;\n");
+    if (volatiles) {
+      fprintf(f, "  -- signals the worker assigns volatile values to\n");
+      for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+	if ((*pi)->m_isVolatile) {
+	  OU::Property &pr = **pi;
+	  char *type = prType(pr);
+	  fprintf(f, "  signal %s_read_value : %s;\n", pr.m_name.c_str(), type);
+	  free(type);
+	}      
+    }
+    fprintf(f,
+	    "end entity %s;\n"
+	    "\n"
+	    "-- Here we define and implement the WCI interface module for this worker,\n"
+	    "-- which can be used by the worker implementer to avoid all the OCP/WCI issues\n"
+	    "library IEEE;\n"
+	    "  use IEEE.std_logic_1164.all;\n"
+	    "  use IEEE.numeric_std.all;\n"
+	    "library ocpi;\n"
+	    "  use ocpi.all;\n"
+	    "library work;\n"
+	    " use work.all;\n"
+	    "entity %s_wci is\n"
+	    "  port(\n"
+	    "    %-*s : in  wci.in_t;         -- signal bundle from wci interface\n"
+	    "    %-*s : in  boolean := true;  -- worker uses this to delay completion\n"
+	    "    %-*s : in  boolean := false; -- worker indicates an attention condition\n"
+	    "    %-*s : out wci.out_t;        -- signal bundle to wci interface\n"
+	    "    %-*s : out std_logic;        -- wci clk for worker\n"
+	    "    %-*s : out boolean;          -- wci reset for worker\n"
+	    "    %-*s : out wci.control_op_t; -- control op in progress, or no_op_e\n"
+	    "    %-*s : out wci.state_t;      -- wci state: see state_t\n"
+	    "    %-*s : out boolean;          -- shorthand for state==operating_e\n"
+	    "    %-*s : out boolean;          -- for endian-switchable workers\n"
+	    "    %-*s : out boolean%s          -- forcible abort a control-op when\n"
+	    "                                              -- worker uses 'ready' to delay it\n",
+	    w->implName, w->implName,
+	    maxPropName, "inputs",
+	    maxPropName, "ready",
+	    maxPropName, "attention",
+	    maxPropName, "outputs",
+	    maxPropName, "clk",
+	    maxPropName, "reset",
+	    maxPropName, "control_op",
+	    maxPropName, "state",
+	    maxPropName, "is_operating",
+	    maxPropName, "is_big_endian",
+	    maxPropName, "abort_control_op",
+	    w->ctl.properties.size() == 0 ? "" : ";");
+    bool first = true;
+    const char *last = NULL;
+    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+      if ((*pi)->m_isVolatile)
+	emitVhdlProp(f, **pi, last, false, maxPropName, first);
+    first = true;
+    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+      if ((*pi)->m_isWritable)
+	emitVhdlProp(f, **pi, last, true, maxPropName, first);
+    fprintf(f,
+	    "\n"
+	    "  );\n"
+	    "end entity;\n");
+    fprintf(f,
+	    "architecture rtl of %s_wci is\n"
+	    "  signal my_clk   : std_logic; -- internal usage of output\n"
+	    "  signal my_reset : boolean; -- internal usage of output\n",
+	    w->implName);
+    if (w->ctl.properties.size()) {
+      unsigned nProps_1 = w->ctl.properties.size() - 1;
+      fprintf(f,
+	      "  -- signals for property reads and writes\n"
+	      "  signal offsets       : "
+	      "wci.offset_a_t(0 to %u);  -- offsets within each property\n"
+	      "  signal indices       : "
+	      "wci.offset_a_t(0 to %u);  -- array index for array properties\n"
+	      "  signal hi32          : "
+	      "boolean;                 -- high word of 64 bit value\n"
+	      "  signal nbytes_1      : "
+	      "wci.byte_offset_t;       -- # bytes minus one being read/written\n",
+	      nProps_1, nProps_1);
+      if (writables)
+	fprintf(f,
+		"  -- signals between the decoder and the writable property registers\n"
+		"  signal write_enables : "
+		"wci.boolean_array_t(0 to %u);\n"
+		"  signal data          : "
+		"wci.data_a_t (0 to %u);   -- data being written, right justified\n",
+	      nProps_1, nProps_1);
+      if (readables)
+	fprintf(f,
+		"  -- signals between the decoder and the readback mux\n"
+		"  signal read_enables  : wci.boolean_array_t(0 to %u);\n"
+		"  signal readback_data : wci.data_a_t(%s_defs.properties'range);\n",
+		nProps_1, w->implName);
+      if (readback) {
+	fprintf(f,
+		"  -- internal signals between property registers and the readback mux\n"
+                "  -- for those that are writable, readable, and not volatile\n");
+	for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
+	  OU::Property &pr = **pi;
+	  if (pr.m_isWritable && pr.m_isReadable && !pr.m_isVolatile) {
+	    char *type = prType(pr), *temp = NULL;
+	    fprintf(f,
+		    "  signal my_%s : %s;\n",
+		    tempName(temp, maxPropName, "%s_value", pr.m_name.c_str()),
+		    type);
+	    free(type);
+	    free(temp);
+	  }
+	}
+      }
+    }
+    fprintf(f,
+	    "begin\n"
+	    "  outputs.SFlag(0) <= '1' when attention else '0';\n"
+	    "  outputs.SFlag(1) <= '1'; -- worker is present\n"
+	    "  outputs.SThreadBusy(0) <= '0' when ready else '1';\n"
+	    "  my_clk <= inputs.Clk;\n"
+	    "  my_reset <= inputs.MReset_n = '0';\n"
+	    "  clk <= my_clk;\n"
+	    "  reset <= my_reset;\n"
+	    "  x : component wci.decoder\n"
+	    "      generic map(worker                 => %s_defs.worker,\n"
+	    "                  properties             => %s_defs.properties)\n"
+	    "      port map(   ocp_in                 => inputs,\n"
+	    "                  ready                  => ready,\n"
+	    "                  resp                   => outputs.SResp,\n"
+	    "                  write_enables          => write_enables,\n"
+	    "                  read_enables           => read_enables,\n"
+	    "                  offsets                => offsets,\n"
+	    "                  indices                => indices,\n"
+	    "                  hi32                   => hi32,\n"
+	    "                  nbytes_1               => nbytes_1,\n"
+            "                  data_outputs           => data,\n"
+	    "                  control_op             => control_op,\n"
+	    "                  state                  => state,\n"
+	    "                  is_operating           => is_operating,\n"
+	    "                  abort_control_op       => abort_control_op,\n"
+	    "                  is_big_endian          => is_big_endian);\n",
+	    w->implName, w->implName);
+    if (readables)
+      fprintf(f,
+	      "readback : component wci.readback\n"
+	      "  generic map(%s_defs.properties)\n"
+	      "  port map(   read_enables => read_enables,\n"
+	      "              data_inputs  => readback_data,\n"
+	      "              data_output  => outputs.SData);\n",
+	      w->implName);
+    unsigned n = 0;
+    for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++, n++) {
+      OU::Property &pr = **pi;
+      const char *name = pr.m_name.c_str();
+      if (pr.m_isWritable) {
+	fprintf(f, 
+		"  %s : component ocpi.types.%s%s_property\n"
+		"    generic map(worker       => %s_defs.worker,\n"
+		"                property     => %s_defs.properties(%u)",
+		name, OU::baseTypeNames[pr.m_baseType],
+		pr.m_arrayRank ? "_array" : "",
+		w->implName, w->implName, n);
+	if (pr.m_defaultValue) {
+	  fprintf(f,
+		  ",\n"
+		  "                default     => ");
+	  printVhdlValue(f, *pr.m_defaultValue);
+	}
+		
+	fprintf(f,
+		")\n"
+		"    port map(   clk          => my_clk,\n"
+		"                reset        => my_reset,\n"
+		"                write_enable => write_enables(%u),\n"
+		"                data         => data(%u)(%u downto 0),\n"
+		"                value        => %s%s_value,\n",
+		n, n, pr.m_nBits >= 32 || pr.m_arrayRank ? 31 : pr.m_nBits-1,
+		pr.m_isReadable && !pr.m_isVolatile ? "my_" : "", name);
+	if (pr.m_isInitial)
+	  fprintf(f, "                written      => open");
+	else
+	  fprintf(f, "                written      => %s_written", name);
+	if (pr.m_arrayRank) {
+	  fprintf(f, ",\n"
+		  "                index        => indices(%u)(%u downto 0),\n",
+		  n, decodeWidth-1);
+	  if (pr.m_isInitial)
+	    fprintf(f,
+		    "                any_written  => open");
+	  else
+	    fprintf(f,
+		    "                any_written  => %s_any_written", name);
+	  if (pr.m_baseType != OA::OCPI_String &&
+	      pr.m_nBits != 64)
+	    fprintf(f, ",\n"
+		    "                nbytes_1     => nbytes_1");
+	}
+	if (pr.m_nBits == 64)
+	  fprintf(f, ",\n"
+		  "                hi32         => hi32");
+	if (pr.m_baseType == OA::OCPI_String)
+	  fprintf(f, ",\n"
+		  "                offset        => offsets(%u)(%u downto 0)",
+		  n, decodeWidth-1);
+	fprintf(f, ");\n");
+	if (pr.m_isReadable && !pr.m_isVolatile)
+	  fprintf(f, "  %s_value <= my_%s_value;\n", name, name);
+      }
+      if (pr.m_isReadable) {
+	fprintf(f, 
+		"  %s_readback : component ocpi.types.read_%s%s_property\n"
+		"    generic map(worker       => %s_defs.worker,\n"
+		"                property     => %s_defs.properties(%u))\n"
+		"    port map(",
+		pr.m_name.c_str(), OU::baseTypeNames[pr.m_baseType],
+		pr.m_arrayRank ? "_array" : "",
+		w->implName, w->implName, n);
+	if (pr.m_isVolatile)
+	  fprintf(f, "   value        => %s_read,\n", name);
+	else
+	  fprintf(f, "   value        => my_%s_value,\n", name);
+	fprintf(f,   "                data_out     => readback_data(%u)", n);
+	if (pr.m_baseType == OA::OCPI_String)
+	  fprintf(f, ",\n"
+		  "                offset       => offsets(%u)(%u downto 0)",
+		  n, decodeWidth-1);
+	else {
+	  if (pr.m_arrayRank) {
+	    fprintf(f, ",\n"
+		    "                index        => indices(%u)(%u downto 0)",
+		    n, decodeWidth-1);
+	    if (pr.m_nBits != 64)
+	      fprintf(f, ",\n"
+		      "                nbytes_1     => nbytes_1");
+	  }
+	  if (pr.m_nBits == 64)
+	    fprintf(f, ",\n"
+		    "           hi32       => hi32");
+	}
+	fprintf(f, ");\n");
+      }
+    }
+    fprintf(f,
+	    "end architecture rtl;\n");
   }
   fclose(f);
   return 0;
@@ -906,16 +1322,62 @@ emitSkelHDL(Worker *w, const char *outDir) {
   const char *err = openSkelHDL(w, outDir, SKEL, f);
   if (err)
     return err;
-  if (w->language == VHDL)
+  bool volatiles = false;
+  for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+    if ((*pi)->m_isVolatile)
+      volatiles = true;
+  if (w->language == VHDL) {
     fprintf(f,
 	    "-- This file contains the architecture skeleton for worker: %s\n\n"
-	    "library IEEE;\n"
-	    "  use IEEE.std_logic_1164.all;\n\n"
+	    "library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;\n"
+	    "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n"
 	    "architecture rtl of %s is\n"
-	    "begin -- rtl\n\n\n\n"
-	    "end rtl;\n",
-	    w->implName, w->implName);
-  else {
+	    "begin\n"
+	    "  -- This instantiates the WCI/Control module/entity generated in the *_impl.vhd file\n"
+	    "  -- With no user logic at all, this simply implements writable properties.\n"
+	    "  wci : entity %s_wci\n"
+	    "    port map(-- These first signals are just for use by the wci module, not the worker\n"
+	    "             inputs        => wci_inputs, -- wci_inputs is a bundling function\n"
+	    "             outputs.SData => ctl_SData, outputs.SResp => ctl_SResp,\n"
+	    "             outputs.SFlag => ctl_SFlag, outputs.SThreadBusy => ctl_SThreadBusy,\n"
+	    "             -- These are outputs used by the worker logic\n"
+	    "             clk           => wci_clk,   -- output to user logic\n"
+	    "             reset         => wci_reset, -- OCP guarantees 16 clocks of reset\n"
+	    "             is_operating  => open%s     -- use this to know when we are running\n",
+	    w->implName, w->implName, w->implName, volatiles ? "," : "");
+    if (volatiles) {
+      fprintf(f,
+	      "            -- These are inputs from the worker for volatile property values.\n");
+      bool first = true;
+      for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
+	OU::Property &pr = **pi;
+	const char *name = pr.m_name.c_str();
+	if (pr.m_isVolatile) {
+	  fprintf(f, "%s            %s_read     => %s_read_value",
+		  first ? "" : ",\n", name, name);
+	first = false;
+	}
+      }
+      fprintf(f, "\n");
+    }
+    fprintf(f,
+	    "           );\n");
+    if (volatiles) {
+      fprintf(f,
+	      "  -- These are default value assignments for volatile properties\n"
+	      "  -- Workers should assign values to the <name>_read_value signals.\n");
+      for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
+	OU::Property &pr = **pi;
+	const char *name = pr.m_name.c_str();
+	if (pr.m_isVolatile) {
+	  fprintf(f, "  %s_read_value", name);
+	  emitVhdlDefault(f, pr, "<=");
+	  fprintf(f, ";\n");
+	}
+      }
+    }
+    fprintf(f, "end rtl;\n");
+  } else {
     fprintf(f,
 	    "// This file contains the implementation skeleton for worker: %s\n\n"
 	    "`include \"%s_impl%s\"\n\n",

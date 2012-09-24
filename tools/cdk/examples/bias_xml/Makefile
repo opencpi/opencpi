@@ -27,29 +27,29 @@ include $(OCPI_CDK_DIR)/ocpisetup.mk
 
 all: biasFile
 
-test.input:
+good.output test.input: mkTestFile.cxx
 	g++ -Wall mkTestFile.cxx
-	./a.out > test.input
+	./a.out $(FILE_SIZE) > test.input 2> good.output
 
 biasFile: biasFile.cxx
 	g++ -Wall -g -o $@ -I$(OCPI_INC_DIR) $^ $(OCPI_LD_FLAGS)
 
 
-run: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc $(VG) ./biasFile $(ARGS) > /dev/null	
-	od -X test.output
+run: all test.input 
+	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc $(VG) ./biasFile $(ARGS) > /dev/null
+	cmp test.output good.output
 
 runxml: all test.input
 	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc $(VG) ocpirun -d -v $(ARGS) bias.xml > /dev/null
-	od -X test.output
+	cmp test.output good.output
 
 runhdl1: all test.input
 	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/components/hdl sudo -E ./biasFile $(ARGS)
-	od -X test.output
+	cmp test.output good.output
 
 runhdl2: all test.input
 	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/hdl:$(OCPI_CDK_DIR)/lib/components/rcc sudo -E ./biasFile $(ARGS)
-	od -X test.output
+	cmp test.output good.output
 
 clean::
 	rm -f -r biasFile biasFile.dSYM test.output test.input a.out

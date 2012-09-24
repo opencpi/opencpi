@@ -41,7 +41,8 @@
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilValue.h"
-#define PROPERTY_ATTRIBUTES OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest", "Default"
+#define PROPERTY_ATTRIBUTES \
+  OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest", "Default", "Volatile", "Initial"
 
 namespace OCPI {
   namespace API {
@@ -71,8 +72,13 @@ namespace OCPI {
       bool readableConfigs = false, writableConfigs = false, sub32Configs = false;
       return parse(prop, argOffset, readableConfigs, writableConfigs, sub32Configs, true, ordinal);
     }
+
+    // Note that readable and writable are here to allow the implementation to
+    // have more access than the spec.  I.e. the spec might not specify readable,
+    // but for debugging the implementation might want it.  Similarly, the spec
+    // might say "initial", but the implementation wants dynamic writability
 #define IMPL_ATTRIBUTES \
-  "ReadSync", "WriteSync", "ReadError", "WriteError", "Parameter"
+    "ReadSync", "WriteSync", "ReadError", "WriteError", "Parameter", "Readable", "Writable"
       
 
     const char *
@@ -95,7 +101,7 @@ namespace OCPI {
 				unBoundedDummy)))
 	return err;
       if (includeImpl &&
-	  (err = parseImplAlso(prop)))
+	  (err = parseImplAlso(prop, readableConfigs, writableConfigs)))
 	return err;
       if (!m_isParameter) {
 	// Member::parse would have done this for us, but it doesn't know about parameters.
@@ -104,8 +110,14 @@ namespace OCPI {
 	offset += m_nBytes;
 	//printf("%s at %x(word) %x(byte)\n", p->name, p->offset/4, p->offset);
 	if ((err = OE::getBoolean(prop, "Readable", &m_isReadable)) ||
-	    (err = OE::getBoolean(prop, "Writable", &m_isWritable)))
+	    (err = OE::getBoolean(prop, "Writable", &m_isWritable)) ||
+	    (err = OE::getBoolean(prop, "Initial", &m_isInitial)) ||
+	    (err = OE::getBoolean(prop, "Volatile", &m_isVolatile)))
 	  return err;
+	if (m_isInitial)
+	  m_isWritable = true;
+	if (m_isVolatile)
+	  m_isReadable = true;
 	if (m_isReadable)
 	  readableConfigs = true;
 	if (m_isWritable)
@@ -136,17 +148,21 @@ namespace OCPI {
 #endif
 
     const char *Property::
-    parseImplAlso(ezxml_t prop) {
+    parseImplAlso(ezxml_t prop, bool &readableConfigs, bool &writableConfigs) {
       const char *err;
       if ((err = OE::getBoolean(prop, "ReadSync", &m_readSync)) ||
 	  (err = OE::getBoolean(prop, "WriteSync", &m_writeSync)) ||
 	  (err = OE::getBoolean(prop, "ReadError", &m_readError)) ||
 	  (err = OE::getBoolean(prop, "WriteError", &m_writeError)) ||
 	  (err = OE::getBoolean(prop, "IsTest", &m_isTest)) ||
+	  (err = OE::getBoolean(prop, "Readable", &m_isReadable)) ||
 	  (err = OE::getBoolean(prop, "Parameter", &m_isParameter)))
 	return err;
       if (m_isParameter && m_isWritable)
 	return esprintf("Property \"%s\" is a parameter and can't be writable", m_name.c_str());
+      if (m_isReadable)
+	readableConfigs = true;
+      // FIXME: add overrides: writable clears initial
       return 0;
     }
     const char *Property::
@@ -154,7 +170,9 @@ namespace OCPI {
       const char *err;
       if ((err = OE::checkAttrs(x, "Name", IMPL_ATTRIBUTES, NULL)))
 	return err;
-      return parseImplAlso(x);
+      // FIXME: why does this use case ignore readable/writable?
+      bool readableDummy = false, writableDummy = false;
+      return parseImplAlso(x, readableDummy, writableDummy);
     }
     const char *Property::getValue(ExprValue &val) {
       if (!m_defaultValue)

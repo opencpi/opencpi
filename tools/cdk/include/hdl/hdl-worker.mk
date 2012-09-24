@@ -38,7 +38,11 @@
 ifndef HdlMode
 HdlMode:=worker
 endif
+$(call OcpiDbg,Entering hdl-worker.mk)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+ifeq ($(MAKECMDGOALS),skeleton)
+  HdlSkip:=
+endif
 ifdef HdlSkip
 $(call OcpiDbg, Skipping)
 else
@@ -85,6 +89,11 @@ else
 HdlSourceSuffix:=$(HdlVHDLSuffix)
 HdlIncSuffix:=$(HdlVHDLIncSuffix)
 endif
+$(call OcpiDbgVar,Libraries,Add ocpi library perhaps)
+ifeq ($(filter ocpi,$(Libraries)),)
+  Libraries:=ocpi $(Libraries)
+endif
+$(call OcpiDbgVar,Libraries,After adding ocpi if not there )
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 $(call OcpiDbgVar,Worker)
@@ -102,6 +111,11 @@ $(DefsFile): $(Worker).xml | $(GeneratedDir)
 	$(AT)$(OcpiGen) -d $<
 
 $(ImplHeaderFiles): $(DefsFile)
+
+ifeq ($(HdlLanguage),vhdl)
+  CompiledSourceFiles:=$(DefsFile) $(ImplHeaderFiles) $(CompiledSourceFiles)
+  LibName=$(Worker)
+endif
 
 ################################################################################
 # Include this to build the core or the library
