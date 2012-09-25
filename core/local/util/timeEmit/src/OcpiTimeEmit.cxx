@@ -236,7 +236,8 @@ namespace OCPI {
     parent_init( Emit* parent, 
 		 const char* class_name, 
 		 const char* instance_name, 
-		 QConfig* config )
+		 QConfig* config,
+		 bool parent_q )
     {
       if ( class_name ) {
 	m_className = class_name;
@@ -247,7 +248,7 @@ namespace OCPI {
       m_level = m_parent->m_level + 1;
       m_parentIndex = parent->m_myId;
       m_myId = addHeader( this );
-      if ( config ) {
+      if ( !parent_q ) {
 	init_q( config, m_ts );
       }
       else {
@@ -272,7 +273,7 @@ namespace OCPI {
     {
       AUTO_MUTEX(Emit::getGMutex());
       m_ts = getDefaultTS();
-      parent_init(parent,class_name,instance_name,config);
+      parent_init(parent,class_name,instance_name,config,config?true:false);
     }
 
 
@@ -287,7 +288,7 @@ namespace OCPI {
     {
       AUTO_MUTEX(Emit::getGMutex());
       init_q( config, &ts );
-      parent_init(parent,class_name,instance_name,NULL);
+      parent_init(parent,class_name,instance_name,NULL,false);
     }
 
 

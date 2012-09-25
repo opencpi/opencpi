@@ -106,7 +106,8 @@ namespace OCPI {
 				((ticks - gTime.startTicks )*gTime.startTime)) / 
 			       (gTime.stopTicks-gTime.startTicks));
 
-	//	printf("In calcGTime: ticks = %lld, time = %lld \n", ticks, t );
+	//	printf("In calcGTime: ticks = %lld, stt = %lld, stpt = %lld, time = %lld \n", ticks, gTime.startTime, gTime.stopTime, t );
+	//	printf("tst = %lld, tstpt = %lld\n", gTime.startTicks, gTime.stopTicks);
 
 	return t;
 

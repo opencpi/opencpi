@@ -491,7 +491,8 @@ namespace OCPI {
 	parent_init( Emit* parent, 
 		     const char* class_name, 
 		     const char* instance_name, 
-		     QConfig* config );
+		     QConfig* config,
+		     bool parent_q=false);
 
       void pre_init( const char* class_name, 
                 const char* instance_name, 
