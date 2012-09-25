@@ -401,7 +401,7 @@ namespace OCPI {
 	  m_dataValueGranularity = 1;  // FIXME - compute this for real
 	}
 	// Now we still overriding the real max message values
-	if ((err = OE::getNumber(prot, "maxmessagevalues", &m_maxMessageValues, 0, false)))
+	if ((err = OE::getNumber(prot, "maxmessagevalues", &m_maxMessageValues, 0, 0, false)))
 	  return err;
       } else if ((err = parseSummary(prot)))
 	return err;
