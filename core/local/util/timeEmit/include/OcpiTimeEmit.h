@@ -428,8 +428,8 @@ namespace OCPI {
                  const char* instance_name=NULL, QConfig* config=NULL )
         throw ( OCPI::Util::EmbeddedException ) ;
 
-      Emit( Emit* parent, TimeSource& ts, const char* class_name, 
-	    const char* instance_name, QConfig* config )
+      Emit( Emit* parent, TimeSource& ts, const char* class_name=NULL, 
+	    const char* instance_name=NULL, QConfig* config=NULL )
         throw ( OCPI::Util::EmbeddedException ) ;
       ~Emit()
         throw ( );
@@ -484,6 +484,8 @@ namespace OCPI {
         throw ( );
 
     private:
+      void 
+	init_q ( QConfig* config, TimeSource * ts );
 
       void 
 	parent_init( Emit* parent, 

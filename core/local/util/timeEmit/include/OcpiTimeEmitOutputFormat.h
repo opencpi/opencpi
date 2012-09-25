@@ -339,7 +339,7 @@ namespace OCPI {
 	};
 
 #define SYMSTART 33
-#define SYMEND   126
+#define SYMEND   90
 #define SYMLEN (SYMEND-SYMSTART)
 	
 	std::string itos(int n, char * digits ) {
@@ -383,10 +383,20 @@ namespace OCPI {
 
 #define EMIT_POSTFIX_REQUIRED
 #ifdef EMIT_POSTFIX_REQUIRED
+
+#ifdef WAS
 	    for( int n=0; n<=owner.id/SYMLEN; n++) {
 	      owner.postfix = static_cast<char>((SYMSTART+owner.id)%SYMLEN);
+	      // std::cerr << "Postfix = " << owner.postfix;
+	    }
+#endif
+	    char digits[SYMLEN];
+	    for( int u=0; u<SYMLEN; u++)digits[u]=static_cast<char>(u+SYMSTART);
+	    for( int n=0; n<=owner.id/SYMLEN; n++) {
+	      owner.postfix = itos( owner.id, digits );
 	      std::cerr << "Postfix = " << owner.postfix;
 	    }
+
 #endif
 
 	    // Dump the variables for this object

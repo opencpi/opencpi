@@ -138,6 +138,35 @@ namespace OCPI {
 
       getHeader().init = true;
     }
+    
+    void 
+    Emit::
+    init_q( QConfig * config,  TimeSource * t )
+    {
+      m_q = new EventQ;      
+      m_ts = m_q->ts = t;
+      if ( config ) {
+	m_q->config = *config;
+      }
+      else {
+	char* qsize;
+	if ( (qsize = getenv("OCPI_TIME_EMIT_Q_SIZE") ) != NULL ) {
+	  m_q->config.size = atoi(qsize);
+	}
+	else {
+	  m_q->config.size  = 25 * 1024 * 1024;
+	}
+	char* swf;
+	if ( (swf = getenv("OCPI_TIME_EMIT_Q_SWF") ) != NULL ) {
+	  m_q->config.stopWhenFull = atoi(swf);
+	}
+	else {
+	  m_q->config.stopWhenFull = false;
+	}
+      }
+      m_q->allocate();
+      getHeader().eventQ.push_back( m_q );
+    }
 
     void 
     Emit::
@@ -154,31 +183,7 @@ namespace OCPI {
       }
       m_parentIndex = -1;
       m_myId = addHeader( this );
-
-      m_q = new EventQ;
-      m_q->ts = m_ts;
-      getHeader().eventQ.push_back( m_q );
-      if ( config ) {
-	m_q->config = *config;
-      }
-      else {
-	char* qsize;
-	if ( (qsize = getenv("OCPI_TIME_EMIT_Q_SIZE") ) != NULL ) {
-	  m_q->config.size = atoi(qsize);
-	}
-	else {
-	  m_q->config.size  = 256 * 1024;
-	}
-	char* swf;
-	if ( (swf = getenv("OCPI_TIME_EMIT_Q_SWF") ) != NULL ) {
-	  m_q->config.stopWhenFull = atoi(swf);
-	}
-	else {
-	  m_q->config.stopWhenFull = false;
-	}
-      }
-      m_q->allocate();
-
+      init_q( config, m_ts );
     }
 
     OCPI::OS::Mutex& 
@@ -243,11 +248,7 @@ namespace OCPI {
       m_parentIndex = parent->m_myId;
       m_myId = addHeader( this );
       if ( config ) {
-	m_q = new EventQ;
-	m_q->ts = m_ts;
-	getHeader().eventQ.push_back( m_q );
-	m_q->config = *config;
-	m_q->allocate();
+	init_q( config, m_ts );
       }
       else {
 	m_q = m_parent->m_q;
@@ -285,11 +286,8 @@ namespace OCPI {
       :m_parent(parent), m_q(NULL), m_ts(NULL)
     {
       AUTO_MUTEX(Emit::getGMutex());
-      if ( ! config ) {
-	throw OCPI::Util::EmbeddedException("Cant have new time source without new Q");
-      }
-      m_ts = &ts;
-      parent_init(parent,class_name,instance_name,config);
+      init_q( config, &ts );
+      parent_init(parent,class_name,instance_name,NULL);
     }
 
 
