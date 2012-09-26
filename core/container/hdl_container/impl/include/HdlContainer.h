@@ -1,7 +1,7 @@
 #ifndef HdlContainer_H
 #define HdlContainer_H
 #include <uuid/uuid.h>
-#include "HdlOccp.h"
+#include "HdlOCCP.h"
 #include "HdlAccess.h"
 #include "OcpiContainerManager.h"
 
