@@ -390,6 +390,7 @@ namespace OCPI {
 	      owner.postfix = itos( owner.id, digits );
 	      //	      std::cerr << "Postfix = " << owner.postfix;
 	    }
+#endif
 
 	    // Dump the variables for this object
 	    std::vector<XMLReader::Description>::iterator it;
