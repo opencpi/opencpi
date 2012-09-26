@@ -849,19 +849,36 @@ atoi_any(const char *arg, unsigned *sizep)
 
 static void
 radmin(const char **ap) {
-  unsigned off = (unsigned)atoi_any(*ap, 0);
-  uint32_t x = cAccess->get32RegisterOffset(off);
-  if (parseable)
-    printf("0x%" PRIx32 "\n", x);
-  else
-    printf("Admin for hdl-device '%s' at offset 0x%x is 0x%x (%u)\n",
-	   device, off, x, x);
+  unsigned size;
+  unsigned off = (unsigned)atoi_any(*ap, &size);
+  if (size == 4) {
+    uint32_t x = cAccess->get32RegisterOffset(off);
+    if (parseable)
+      printf("0x%" PRIx32 "\n", x);
+    else
+      printf("Admin for hdl-device '%s' at offset 0x%x is 0x%x (%u)\n",
+	     device, off, x, x);
+  } else if (size == 8) {
+    uint64_t x = cAccess->get64RegisterOffset(off);
+    if (parseable)
+      printf("0x%" PRIx64 "\n", x);
+    else
+      printf("Admin for hdl-device '%s' at offset 0x%x is 0x%"PRIx64" (%"PRIi64")\n",
+	     device, off, x, x);
+  } else
+    bad("bad size for radmin");
 }
 static void
 wadmin(const char **ap) {
-  unsigned off = (unsigned)atoi_any(*ap++, 0);
-  unsigned val = (unsigned)atoi_any(*ap, 0);
-  cAccess->set32RegisterOffset(off, val);
+  unsigned size;
+  unsigned off = (unsigned)atoi_any(*ap++, &size);
+  uint64_t val = atoi_any(*ap, 0);
+  if (size == 4)
+    cAccess->set32RegisterOffset(off, (uint32_t)val);
+  else if (size == 8)
+    cAccess->set64RegisterOffset(off, val);
+  else
+    bad("bad size for wadmin");
 }
 static void
 settime(const char **) {
@@ -873,10 +890,10 @@ settime(const char **) {
   // When it goes on the PCIe wire, it will be "endianized".
   // On intel, first DW will be LSB.  On PPC, first DW will be MSB.
   
-#define FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU 1
+#define FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU() 1
 
   cAccess->set64Register(time, OH::OccpAdminRegisters, 
-#if FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU
+#if FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU()
 			((uint64_t)fraction << 32) | tv.tv_sec
 #else
 			((uint64_t)tv.tv_sec << 32) | fraction
@@ -884,45 +901,41 @@ settime(const char **) {
 			);
 }
 typedef unsigned long long ull; 
-static inline ull ticks2ns(uint64_t ticks) {
-  return (ticks * 1000000000ull + (1ull << 31))/ (1ull << 32);
+static inline int64_t ticks2ns(uint64_t ticks) {
+  return ((ticks) * 1000000000ull + (1ull << 31))/ (1ull << 32);
+}
+static inline int64_t dticks2ns(int64_t ticks) {
+  return ((ticks) * 1000000000ll + (1ll << 31))/ (1ll << 32);
 }
 static inline ull ns2ticks(uint32_t sec, uint32_t nsec) {
-  return ((uint64_t)sec << 32ull) + (nsec + 500000000ull) * (1ull<<32) /1000000000;
+  return (((uint64_t)(sec)) << 32ull) + ((nsec) + 500000000ull) * (1ull<<32) /1000000000;
 }
 
 static int compu32(const void *a, const void *b) { return *(int32_t*)a - *(int32_t*)b; }
+static inline uint64_t swap32(uint64_t x) {return (x <<32) | (x >> 32); }
 static void
 deltatime(const char **) {
   unsigned n;
-  uint32_t delta[100];
-  uint64_t sum = 0;
+  int32_t delta[100];
+  int64_t sum = 0;
   
   for (n = 0; n < 100; n++) {
     uint64_t time = cAccess->get64Register(time, OH::OccpAdminRegisters);
     cAccess->set64Register(timeDelta, OH::OccpAdminRegisters, time);
-    delta[n] = (uint32_t)(cAccess->get64Register(timeDelta, OH::OccpAdminRegisters)
-#if FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU
-			  >> 32
-#endif
-			  );
+    delta[n] = (int32_t)swap32(cAccess->get64Register(timeDelta, OH::OccpAdminRegisters));
   }
-  qsort(delta, 100, sizeof(uint32_t), compu32);
+  qsort(delta, 100, sizeof(int32_t), compu32);
   
   for (n = 0; n < 90; n++)
     sum += delta[n];
-  sum = ((sum + 45) / 90) / 2;
+  sum = (sum + 45) / 90;
   // we have average delay
-  printf("Delta ns min %llu max %llu average (of best 90 out of 100) %llu\n",
-	  ticks2ns(delta[0]/2), ticks2ns(delta[99]/2), ticks2ns(sum));
-  uint64_t time = cAccess->get64Register(time, OH::OccpAdminRegisters);
-  cAccess->set64Register(timeDelta, OH::OccpAdminRegisters, time + (sum << 33));
-  uint64_t deltatime = cAccess->get64Register(timeDelta, OH::OccpAdminRegisters);
-  printf("Now after correction, delta is: %lluns\n", ticks2ns(deltatime
-#if FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU
-							      >> 32
-#endif
-							      ));
+  printf("Delta ns min %"PRIi64" max %"PRIi64". average: (of best 90 out of 100) %"PRIi64"\n",
+	 ticks2ns(delta[0]), ticks2ns(delta[99]), ticks2ns(sum));
+  uint64_t time = swap32(cAccess->get64Register(time, OH::OccpAdminRegisters));
+  cAccess->set64Register(timeDelta, OH::OccpAdminRegisters, swap32(time + sum));
+  int32_t deltatime = swap32(cAccess->get64Register(timeDelta, OH::OccpAdminRegisters));
+  printf("Now after correction, delta is: %"PRIi64"ns\n", dticks2ns(deltatime));
 }
 static void
 wdump(const char **) {
@@ -1349,7 +1362,7 @@ receiveRDMA(const char **ap) {
   printf("Received 10 RDMA buffers\n");
   port.reset();
 }
-// Receive an RDMA stream using a datagram transport
+// Send an RDMA stream using a datagram transport
 static void
 sendRDMA(const char **ap) {
   if (!*ap)

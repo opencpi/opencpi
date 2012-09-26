@@ -229,9 +229,8 @@ namespace DataTransfer {
   struct RplMetaData {
     uint32_t
     length,
-      opCode,
-      tag,
-      interval;
+      opCode;
+    uint64_t timestamp;
   };
 
 

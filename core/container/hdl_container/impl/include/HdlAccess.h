@@ -61,42 +61,42 @@ namespace OCPI {
 
       void setBytes(RegisterOffset offset, const uint8_t *from8, unsigned bytes) const;
       inline uint8_t get8RegisterOffset(unsigned offset) const {
-	return m_registers ? *(uint8_t *)(m_registers + offset) :
+	return m_registers ? *(volatile uint8_t *)(m_registers + offset) :
 	  m_accessor->get8(m_base + offset);
       }
       inline uint16_t get16RegisterOffset(unsigned offset) const {
-	return m_registers ? *(uint16_t *)(m_registers + offset) :
+	return m_registers ? *(volatile uint16_t *)(m_registers + offset) :
 	  m_accessor->get16(m_base + offset);
       }
       inline uint32_t get32RegisterOffset(unsigned offset) const {
-	return m_registers ? *(uint32_t *)(m_registers + offset) :
+	return m_registers ? *(volatile uint32_t *)(m_registers + offset) :
 	  m_accessor->get32(m_base + offset);
       }
       inline uint64_t get64RegisterOffset(unsigned offset) const {
-	return m_registers ? *(uint64_t *)(m_registers + offset) :
+	return m_registers ? *(volatile uint64_t *)(m_registers + offset) :
 	  m_accessor->get64(m_base + offset);
       }
       inline void set8RegisterOffset(unsigned offset, uint8_t val) const {
 	if (m_registers)
-	  *(uint8_t *)(m_registers + offset) = val;
+	  *(volatile uint8_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set8(m_base + offset, val);
       }
       inline void set16RegisterOffset(unsigned offset, uint16_t val) const {
 	if (m_registers)
-	  *(uint16_t *)(m_registers + offset) = val;
+	  *(volatile uint16_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set16(m_base + offset, val);
       }
       inline void set32RegisterOffset(unsigned offset, uint32_t val) const {
 	if (m_registers)
-	  *(uint32_t *)(m_registers + offset) = val;
+	  *(volatile uint32_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set32(m_base + offset, val);
       }
       inline void set64RegisterOffset(unsigned offset, uint64_t val) const{
 	if (m_registers)
-	  *(uint64_t *)(m_registers + offset) = val;
+	  *(volatile uint64_t *)(m_registers + offset) = val;
 	else
 	  m_accessor->set64(m_base + offset, val);
       }

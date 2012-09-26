@@ -407,6 +407,62 @@ emitSignals(FILE *f, Worker *w) {
     fprintf(f, "  );\n");
 }
 
+const char *
+emitVhdlPortRecords(FILE *f, Worker *w) {
+  const char *err = NULL;
+  // Generate record types to easily and compactly plumb interface signals internally
+  for (unsigned i = 0; i < w->ports.size(); i++) {
+    Port *p = w->ports[i];
+    bool mIn = p->masterIn();
+    //      emitPortDescription(p, w, f);
+    fprintf(f, "\n"
+	    "  -- These 2 records correspond to the input and output sides of the OCP bundle\n"
+	    "  -- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
+	    w->implName, wipNames[p->type], p->name);
+    fprintf(f,
+	    "\n  -- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
+	    wipNames[p->type], mIn ? "master" : "slave", p->name, w->implName);
+    char *pin, *pout;
+    if ((err = pattern(w, p, 0, 0, true, !mIn, &pin)) ||
+	(err = pattern(w, p, 0, 0, false, !mIn, &pout)))
+      return err;
+    fprintf(f, "  type %sin_t is record\n", pin);
+    OcpSignalDesc *osd = ocpSignals;
+    for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+      //      if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
+      if (osd->master == mIn && os->value) {
+	fprintf(f, "    %-20s: ", osd->name);
+	if (osd->type)
+	  fprintf(f, "ocpi.ocp.%s_t", osd->name);
+	else if (osd->vector)
+	  fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
+	else
+	  fprintf(f, "std_logic");
+	fprintf(f, ";\n");
+      }
+    fprintf(f, "  end record %sin_t;\n", pin);
+    fprintf(f,
+	    "\n  -- Record for the %s output (OCP %s) signals for port \"%s\" of worker \"%s\"\n"
+	    "  type %sout_t is record\n",
+	    wipNames[p->type], mIn ? "slave" : "master",
+	    p->name, w->implName, pout);
+    osd = ocpSignals;
+    for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
+      if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
+	fprintf(f, "    %-20s: ", osd->name);
+	if (osd->type)
+	  fprintf(f, "ocpi.ocp.%s_t", osd->name);
+	else if (osd->vector)
+	  fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
+	else
+	  fprintf(f, "std_logic");
+	fprintf(f, ";\n");
+      }
+    fprintf(f, "  end record %sout_t;\n", pout);
+  }
+  return err;
+}
+
 // Emit the file that can be used to instantiate the worker
  const char *
 emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
@@ -446,13 +502,16 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    "`endif\n"
 	    "module %s (\n", w->implName, w->implName);
   emitSignals(f, w);
-  if (lang == VHDL)
+  if (lang == VHDL) {
     fprintf(f,
 	    "end component %s;\n\n"
 	    "constant properties : ocpi.wci.properties_t;\n"
-	    "constant worker : ocpi.wci.worker_t;\n"
-	    "end package %s_defs;\n", w->implName, w->implName);
-  else {
+	    "constant worker : ocpi.wci.worker_t;\n",
+	    w->implName);
+    if ((err = emitVhdlPortRecords(f, w)))
+      return err;
+    fprintf(f, "end package %s_defs;\n", w->implName);
+  } else {
     fprintf(f, ");\n");
     // Now we emit parameters in the body.
     emitParameters(f, w, comment);
@@ -655,12 +714,123 @@ static void
 printVhdlValue(FILE *f, OU::Value &v) {
 }
 
+static void
+emitVhdlWSI(FILE *f, Worker *w, Port *p) {
+  // emit the custom wsi interface
+  fprintf(f, 
+	  "library IEEE; use IEEE.std_logic_1164.ALL; use IEEE.numeric_std.ALL;\n"
+	  "library ocpi; use ocpi.types.all;\n"
+	  "library work; use work.bias_vhdl1_defs.all;\n"
+	  "entity %s_%s_wsi is\n"
+	  "  port (-- Exterior OCP signals\n"
+	  "        ocp_in         : in  %s_in_t;\n"
+	  "        ocp_out        : out %s_out_t;\n"
+	  "        -- Signals connected from the worker's WCI to this interface;\n",
+	  w->implName, p->name, p->name, p->name);
+  if (p->clock == w->ports[0]->clock)
+    fprintf(f,
+	    "        wci_clk        : in  std_logic;\n");
+  fprintf(f, 
+	  "        wci_reset      : in  bool_t;\n"
+	  "        -- Interior signals used by worker logic\n");
+  if (p->clock != w->ports[0]->clock)
+    fprintf(f, "        clk            : out std_logic; -- NOT the same as WCI clock\n");
+  fprintf(f,
+	  "        reset          : out bool_t; -- this port is being reset from outside\n");
+  if (p->masterIn())
+    fprintf(f,
+	    "        ready          : out bool_t; -- data can be taken\n"
+	    "        take           : in bool_t;\n");
+  else
+    fprintf(f, 
+	    "        ready          : out bool_t; -- data can be given\n"
+	    "        give           : in  bool_t;\n");
+  const char *dataDir = p->masterIn() ? "out" : "in ";
+  if (p->dataWidth)
+    fprintf(f, "        data_%s       : %s std_logic_vector(%u downto 0);\n",
+	    dataDir, dataDir, p->dataWidth-1);
+  if (p->ocp.MByteEn.width)
+    fprintf(f, "        byte_enable    : %s std_logic_vector(%u downto 0);\n",
+	    dataDir, p->ocp.MByteEn.width-1);
+  fprintf(f, "        som, eom, valid : %s bool_t", dataDir);
+  if (p->u.wsi.abortable)
+    fprintf(f, ";\n        abort           : %s bool_t", dataDir);
+  fprintf(f,
+	  ");\n"
+	  "end entity;\n"
+	  "library util;\n"
+	  "architecture rtl of %s_%s_wsi is\n",
+	  w->implName, p->name);
+  if (p->masterIn()) {
+    fprintf(f, 
+	    "  signal fifo_full_n, fifo_empty_n : std_logic;\n"
+	    "  signal my_take, my_reset_n, my_enq : std_logic;\n"
+	    "component FIFO2\n"
+	    "  generic (width   : natural := 1; \\guarded\\ : natural := 1);\n"
+	    "  port(    CLK     : in  std_logic;\n"
+	    "           RST_N   : in  std_logic;\n"
+	    "           D_IN    : in  std_logic_vector(width - 1 downto 0);\n"
+	    "           ENQ     : in  std_logic;\n"
+	    "           DEQ     : in  std_logic;\n"
+	    "           CLR     : in  std_logic;\n"
+	    "           FULL_N  : out std_logic;\n"
+	    "           EMPTY_N : out std_logic;\n"
+	    "           D_OUT   : out std_logic_vector(width - 1 downto 0));\n"
+	    "end component FIFO2;\n"
+	    "begin\n"
+	    "  my_take <= '1' when take else '0';\n"
+	    "  my_enq <= '1' when ocp_in.MCmd = ocpi.ocp.MCmd_WRITE else '0';\n"
+	    "  my_reset_n <= '0' when wci_reset or (ocp_in.MReset_n = '0') else '1';\n"
+	    "  ready <= true when fifo_empty_n = '1' else false;\n"
+	    "  fifo : FIFO2\n"
+	    "    generic map(width => %u)\n"
+	    "    port map(   clk     => %s\n"
+	    "                rst_n   => my_reset_n,\n"
+	    "                d_in    => ocp_in.MData,\n"
+	    "                enq     => my_enq,\n"
+	    "                full_n  => fifo_full_n,\n"
+	    "                d_out   => data_out,\n"
+	    "                deq     => my_take,\n"
+	    "                empty_n => fifo_empty_n,\n"
+	    "                clr     => '0');\n",
+	    p->dataWidth,
+	    p->clock != w->ports[0]->clock ? 
+	    "ocp_in.clk, -- output from the port's own clock" :
+	    "wci_clk,");
+  } else {
+    const char *clk = p->clock != w->ports[0]->clock ? 
+      "ocp_in.clk" : "wci_clk";
+    fprintf(f,
+	    "  signal my_reset : bool_t;\n"
+	    "begin\n"
+	    "  my_reset <= wci_reset or (ocp_in.SReset_n = '0');\n"
+	    "  reset <= my_reset;\n"
+	    "  reg: process(%s) is begin\n"
+	    "    if rising_edge(%s) then\n"
+	    "      if my_reset then\n"
+	    "        ready <= false;\n"
+	    "      else\n"
+	    "        ready <= ocp_in.SThreadBusy(0) = '0';\n"
+	    "      end if;\n"
+	    "    end if;\n"
+	    "  end process;\n"
+	    "  ocp_out.MCmd <= ocpi.ocp.MCmd_WRITE when give else ocpi.ocp.MCmd_IDLE;\n"
+	    "  ocp_out.MData <= data_in;\n"
+	    "  ocp_out.MBurstLength <= b\"01\" when eom else b\"10\";\n"
+	    "  ocp_out.MByteEn <= byte_enable;\n"
+	    "  ocp_out.MReqLast <= '1' when eom else '0';\n",
+	    clk, clk);
+  }
+
+  fprintf(f, "end architecture rtl;\n");
+}
+
 // Generate the readonly implementation file.
 // What implementations must explicitly (verilog) or implicitly (VHDL) include.
 // The idea is to minimize code in the actual worker implementation (nee skeleton) file,
 // without constructing significant "state" or "newly defined internal interfaces".
- const char *
- emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
+const char *
+emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
   const char *err;
   FILE *f;
   if ((err = openOutput(w->implName, outDir, "", IMPL, w->language == VHDL ? VHD : ".vh", NULL, f)))
@@ -698,7 +868,8 @@ printVhdlValue(FILE *f, OU::Value &v) {
       first = false;
     }    
     fprintf(f,
-	    "\n  );\n"
+	    "\n  );\n");
+    fprintf(f, 
 	    "end %s_defs;\n"
 	    "-- This is the entity declaration that the worker developer will implement\n"
 	    "-- The achitecture for this entity will be in the implementation file\n"
@@ -706,61 +877,13 @@ printVhdlValue(FILE *f, OU::Value &v) {
 	    "  use IEEE.std_logic_1164.all;\n"
 	    "  use IEEE.numeric_std.all;\n"
 	    "library ocpi;\n"
-	    " use ocpi.all;\n"
+	    " use ocpi.all; use ocpi.types.all;\n"
 	    "library work;\n"
 	    " use work.all;\n"
-	    "entity %s is\n", w->implName, w->implName);
+	    " use work.%s_defs.all;\n"
+	    "entity %s is\n", w->implName, w->implName, w->implName);
     emitParameters(f, w, comment);
     emitSignals(f, w);
-    // Generate record types to easily and compactly plumb interface signals internally
-    for (unsigned i = 0; i < w->ports.size(); i++) {
-      Port *p = w->ports[i];
-      bool mIn = p->masterIn();
-      //      emitPortDescription(p, w, f);
-      fprintf(f, "\n"
-	      "  -- These 2 records correspond to the input and output sides of the OCP bundle\n"
-	      "  -- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
-	      w->implName, wipNames[p->type], p->name);
-      fprintf(f,
-	      "\n  -- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
-	      wipNames[p->type], mIn ? "master" : "slave", p->name, w->implName);
-      char *pin, *pout;
-      if ((err = pattern(w, p, 0, 0, true, !mIn, &pin)) ||
-	  (err = pattern(w, p, 0, 0, false, !mIn, &pout)))
-	return err;
-      fprintf(f, "  type %sin_t is record\n", pin);
-      OcpSignalDesc *osd = ocpSignals;
-      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  fprintf(f, "    %-20s: ", osd->name);
-	  if (osd->type)
-	    fprintf(f, "ocpi.ocp.%s_t", osd->name);
-	  else if (osd->vector)
-	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
-	  else
-	    fprintf(f, "std_logic");
-	  fprintf(f, ";\n");
-	}
-      fprintf(f, "  end record %sin_t;\n", pin);
-      fprintf(f,
-	      "\n  -- Record for the %s output (OCP %s) signals for port \"%s\" of worker \"%s\"\n"
-	      "  type %sout_t is record\n",
-	      wipNames[p->type], mIn ? "slave" : "master",
-	      p->name, w->implName, pout);
-      osd = ocpSignals;
-      for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
-	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  fprintf(f, "    %-20s: ", osd->name);
-	  if (osd->type)
-	    fprintf(f, "ocpi.ocp.%s_t", osd->name);
-	  else if (osd->vector)
-	    fprintf(f, "std_logic_vector(%u downto 0)", os->width - 1);
-	  else
-	    fprintf(f, "std_logic");
-	  fprintf(f, ";\n");
-	}
-      fprintf(f, "  end record %sout_t;\n", pout);
-    }
   } else
     // Verilog just needs the module declaration and any other associate declarations
     // required for the module declaration.
@@ -1061,7 +1184,7 @@ printVhdlValue(FILE *f, OU::Value &v) {
             "  signal wci_clk   : std_logic;\n"
             "  signal wci_reset : boolean;\n");
     if (volatiles) {
-      fprintf(f, "  -- signals the worker assigns volatile values to\n");
+      fprintf(f, "  -- the worker assigns volatile property values to these signals\n");
       for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
 	if ((*pi)->m_isVolatile) {
 	  OU::Property &pr = **pi;
@@ -1070,6 +1193,53 @@ printVhdlValue(FILE *f, OU::Value &v) {
 	  free(type);
 	}      
     }
+    if (writables) {
+      fprintf(f, "  -- these signals provide the values of writable properties\n");
+      for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+	if ((*pi)->m_isWritable) {
+	  OU::Property &pr = **pi;
+	  char *type = prType(pr);
+	  fprintf(f, "  signal %s_value : %s;\n", pr.m_name.c_str(), type);
+	  free(type);
+	}      
+    }
+    unsigned n = 0;
+    for (unsigned i = 0; i < w->ports.size(); i++)
+      if (w->ports[i]->type == WSIPort) {
+	Port *p = w->ports[i];
+	if (n++ == 0)
+	  fprintf(f, "  -- signal bundling functions for WSI ports\n");
+	fprintf(f,
+		"  impure function wsi_%s_inputs return %s_in_t is begin\n"
+		"    return %s_in_t'(",
+		p->name, p->name, p->name);
+	if (p->masterIn())
+	  fprintf(f, 
+		  "%s_MBurstLength,%s_MByteEn, %s_MCmd, %s_MData,\n"
+		  "                    %s_MReqLast, %s_MReset_n",
+		  p->name, p->name, p->name, p->name, p->name, p->name);
+	else
+	  fprintf(f, 
+		  "%s_SReset_n, %s_SThreadBusy",
+		  p->name, p->name);
+	fprintf(f, 
+		");\n"
+		"  end wsi_%s_inputs;\n",
+		p->name);
+	const char *tofrom = p->masterIn() ? "from" : "to";
+	fprintf(f,
+		"  signal %s_%s_%s : bool_t;\n"
+		"  signal ext_reset_at_%s : bool_t; -- this port is being reset from the outside\n"
+		"  signal data_%s_%s : std_logic_vector(%u downto 0);\n"
+		"  signal byte_enable_%s_%s: std_logic_vector(%u downto 0);\n"
+		"  signal som_%s_%s : bool_t;    -- valid eom\n"
+		"  signal eom_%s_%s : bool_t;    -- valid som\n"
+		"  signal valid_%s_%s : bool_t;   -- valid data\n",
+		p->masterIn() ? "take" : "give", tofrom, p->name, p->name,
+		tofrom, p->name, p->dataWidth-1, 
+		tofrom, p->name, p->dataWidth / p->byteWidth - 1, tofrom, p->name, tofrom, p->name,
+		tofrom, p->name);
+      }
     fprintf(f,
 	    "end entity %s;\n"
 	    "\n"
@@ -1208,7 +1378,7 @@ printVhdlValue(FILE *f, OU::Value &v) {
 	      "              data_inputs  => readback_data,\n"
 	      "              data_output  => outputs.SData);\n",
 	      w->implName);
-    unsigned n = 0;
+    n = 0;
     for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++, n++) {
       OU::Property &pr = **pi;
       const char *name = pr.m_name.c_str();
@@ -1302,6 +1472,9 @@ printVhdlValue(FILE *f, OU::Value &v) {
     }
     fprintf(f,
 	    "end architecture rtl;\n");
+    for (unsigned i = 0; i < w->ports.size(); i++)
+      if (w->ports[i]->type == WSIPort)
+	emitVhdlWSI(f, w, w->ports[i]);
   }
   fclose(f);
   return 0;
@@ -1322,10 +1495,14 @@ emitSkelHDL(Worker *w, const char *outDir) {
   const char *err = openSkelHDL(w, outDir, SKEL, f);
   if (err)
     return err;
-  bool volatiles = false;
-  for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+  bool volatiles = false, writables = false;
+  for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
     if ((*pi)->m_isVolatile)
       volatiles = true;
+    if ((*pi)->m_isWritable)
+      writables = true;
+  }
+  
   if (w->language == VHDL) {
     fprintf(f,
 	    "-- This file contains the architecture skeleton for worker: %s\n\n"
@@ -1334,7 +1511,7 @@ emitSkelHDL(Worker *w, const char *outDir) {
 	    "architecture rtl of %s is\n"
 	    "begin\n"
 	    "  -- This instantiates the WCI/Control module/entity generated in the *_impl.vhd file\n"
-	    "  -- With no user logic at all, this simply implements writable properties.\n"
+	    "  -- With no user logic at all, this implements writable properties.\n"
 	    "  wci : entity %s_wci\n"
 	    "    port map(-- These first signals are just for use by the wci module, not the worker\n"
 	    "             inputs        => wci_inputs, -- wci_inputs is a bundling function\n"
@@ -1344,7 +1521,7 @@ emitSkelHDL(Worker *w, const char *outDir) {
 	    "             clk           => wci_clk,   -- output to user logic\n"
 	    "             reset         => wci_reset, -- OCP guarantees 16 clocks of reset\n"
 	    "             is_operating  => open%s     -- use this to know when we are running\n",
-	    w->implName, w->implName, w->implName, volatiles ? "," : "");
+	    w->implName, w->implName, w->implName, volatiles || writables ? "," : "");
     if (volatiles) {
       fprintf(f,
 	      "            -- These are inputs from the worker for volatile property values.\n");
@@ -1358,10 +1535,76 @@ emitSkelHDL(Worker *w, const char *outDir) {
 	first = false;
 	}
       }
+      fprintf(f, "%s\n", writables ? "," : "");
+    }
+    if (writables) {
+      fprintf(f,
+	      "            -- These are outputs to the worker for writable property values.\n");
+      bool first = true;
+      for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
+	OU::Property &pr = **pi;
+	const char *name = pr.m_name.c_str();
+	if (pr.m_isWritable) {
+	  fprintf(f, "%s            %s_value     => %s_value",
+		  first ? "" : ",\n", name, name);
+	first = false;
+	}
+      }
       fprintf(f, "\n");
     }
     fprintf(f,
 	    "           );\n");
+    if (w->ports.size()) {
+      for (unsigned i = 0; i < w->ports.size(); i++)
+	if (w->ports[i]->type == WSIPort) {
+	  Port *p = w->ports[i];
+	  fprintf(f,
+		  "  --\n"
+		  "  -- The WSI interface helper component instance for port \"%s\"\n"
+		  "  %s_port : entity %s_%s_wsi\n"
+		  "    port map(-- These signals connect this component to the external OCP interface\n"
+		  "             ocp_in => wsi_%s_inputs, -- function that bundles signals\n",
+		  p->name, p->name, w->implName, p->name, p->name);
+	  if (p->masterIn())
+	    fprintf(f,
+		    "             ocp_out.SReset_n    => %s_SReset_n,\n"
+		    "             ocp_out.SThreadBusy => %s_SThreadBusy,\n",
+		    p->name, p->name);
+	  else
+	    fprintf(f,
+		    "             ocp_out.MBurstLength => %s_MBurstLength,\n" 
+		    "             ocp_out.MByteEn      => %s_MByteEn,\n" 
+		    "             ocp_out.MCmd         => %s_MCmd,\n" 
+		    "             ocp_out.MData        => %s_MData,\n" 
+		    "             ocp_out.MReqLast     => %s_MReqLast,\n" 
+		    "             ocp_out.MReset_n     => %s_MReset_n,\n",
+		    p->name, p->name, p->name, p->name, p->name, p->name);
+	  fprintf(f,
+		  "             -- These signals are just connected to the WCI\n"
+		  "             wci_clk     => ctl_Clk,\n"
+		  "             wci_reset   => ctl_MReset_n = '0',\n");
+	  if (p->masterIn())
+	    fprintf(f,
+		    "             -- This signal is the only input from worker code\n"
+		    "             take => take_from_%s,\n", p->name);
+	  else
+	    fprintf(f,
+		    "             -- This signal is the control input from worker code\n"
+		    "             give => give_to_%s,\n", p->name);
+	  const char *tofrom = p->masterIn() ? "from" : "to";
+	  fprintf(f,
+		  "             -- Output signals from this component into the worker\n"
+		  "             reset       => ext_reset_at_%s, -- this port is being reset from the outside\n"
+		  "             data_%s    => data_%s_%s,\n"
+		  "             byte_enable => byte_enable_%s_%s,\n"
+		  "             som         => som_%s_%s,    -- valid eom\n"
+		  "             eom         => eom_%s_%s,    -- valid som\n"
+		  "             valid        => valid_%s_%s); -- valid data\n",
+		  p->name, p->masterIn() ? "out" : "in", tofrom, p->name,
+		  tofrom, p->name, tofrom, p->name, tofrom, p->name, tofrom, p->name);
+	}
+
+    }
     if (volatiles) {
       fprintf(f,
 	      "  -- These are default value assignments for volatile properties\n"

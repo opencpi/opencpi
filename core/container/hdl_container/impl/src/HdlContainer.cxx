@@ -49,37 +49,23 @@
 ************************************************************************** */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-//#include <climits>
-//#include <unistd.h>
-//#include <fcntl.h>
-//#include <cassert>
 #include <errno.h>
-//#include <sys/mman.h>
-//#include <sys/stat.h>
-//#include <vector>
-//#include <string>
-//#include <cstddef>
-//#include <arpa/inet.h> // FIXME: get this out of here for htons
 #include <uuid/uuid.h>
 // FIXME: integrate this into our UUID utility properly
 #ifndef _UUID_STRING_T
 #define _UUID_STRING_T
 typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
-//#include "OcpiOsMisc.h"
+#include "fasttime.h"
 #include "OcpiOsAssert.h"
-//#include "OcpiOsEther.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiPValue.h"
 #include "DtTransferInternal.h"
-//#include "OcpiPort.h"
-//#include "OcpiTransport.h"
-//#include "OcpiContainerManager.h"
+
 #include "OcpiWorker.h"
 #include "OcpiContainerMisc.h"
-//#include "PciDriver.h"
-//#include "EtherDriver.h"
+
 #include "HdlOCCP.h"
 #include "HdlOCDP.h"
 #include "HdlDriver.h"
@@ -98,20 +84,67 @@ namespace OCPI {
     namespace OU = OCPI::Util;
     namespace OE = OCPI::Util::EzXml;
     namespace OD = OCPI::DataTransport;
+    namespace OT = OCPI::Time;
 
     static inline unsigned max(unsigned a,unsigned b) { return a > b ? a : b;}
     // This is the alignment constraint of DMA buffers in the processor's memory.
     // It could be a cache line or a malloc granule...
     // It should come from somewhere else.  FIXME
     static const unsigned LOCAL_BUFFER_ALIGN = 32;
-    // This is the constraint based both on the local issues and the OCDP's DMA engine.
-    // static const unsigned LOCAL_DMA_ALIGN = max(LOCAL_BUFFER_ALIGN, OCDP_FAR_BUFFER_ALIGN);
     
+    // Set up the FPGAs clock, assuming it has no GPS.
+    // This does two things:
+    // 1. calculate the delay when the CPU reads the 64 bit time register.
+    //   Ie. the time interval between the actual sampling of the 64 bit clock ON the FPGA and when
+    //   the "load" instruction actually returns that value.
+    // 2. set the FPGA time value to something close to our system time.
+    static inline uint64_t ticks2ns(uint64_t ticks) {
+      return (ticks * 1000000000ull + (1ull << 31)) / (1ull << 32);
+    }
+    static inline int64_t dticks2ns(int64_t ticks) {
+      return (ticks * 1000000000ll + (1ll << 31))/ (1ll << 32);
+    }
+    static inline uint64_t ns2ticks(uint32_t sec, uint32_t nsec) {
+      return ((uint64_t)sec << 32ull) + ((nsec + 500000000ull) * (1ull<<32)) /1000000000ull;
+    }
+    static inline uint64_t now() {
+#if 1
+      static int x;
+      if (!x) {
+	fasttime_init();
+	x = 1;
+      }
+      struct timespec tv;
+      fasttime_gettime(&tv);
+      return ns2ticks(tv.tv_sec, tv.tv_nsec);
+#else
+#ifdef __APPLE__
+      struct timeval tv;
+      gettimeofday(&tv, NULL);
+      return ns2ticks(tv.tv_sec, tv.tv_usec * 1000);
+#else
+      struct timespec ts;
+      clock_gettime (CLOCK_REALTIME, &ts);
+      return ns2ticks(ts.tv_sec, ts.tv_nsec);
+#endif
+#endif
+    }
+
+    static int compu32(const void *a, const void *b) { return *(int32_t*)a - *(int32_t*)b; }
+
+    static OT::Emit::Time getTicksFunc(OT::Emit::TimeSource *ts) {
+      return static_cast<Container *>(ts)->getMyTicks();
+    }
     Container::
     Container(OCPI::HDL::Device &device, ezxml_t config, const OU::PValue *params) 
       : OC::ContainerBase<Driver,Container,Application,Artifact>(device.name().c_str(), config, params),
-	Access(device.cAccess()), m_device(device)
+	Access(device.cAccess()), OT::Emit::TimeSource(getTicksFunc),
+	m_device(device), m_hwEvents(this, *this, "FPGA Events")
     {
+      initTime();
+      static OT::Emit::RegisterEvent te("testevent");
+      m_hwEvents.emit(te);
+      m_hwEvents.emitT(te, getMyTicks());
       time_t bd = get32Register(admin.birthday, OccpSpace);
       char tbuf[30];
       ocpiInfo("OCFRP: %s, with bitstream birthday: %s", name().c_str(), ctime_r(&bd, tbuf));
@@ -158,8 +191,62 @@ namespace OCPI {
     }
     Container::
     ~Container() {
+      OT::Emit::shutdown();
       this->lock();
       delete &m_device;
+    }
+    void Container::
+    initTime() {
+      unsigned n;
+      uint32_t delta[100];
+      uint32_t sum = 0;
+  
+      // Take a hundred samples of round trip time, and sort
+      for (n = 0; n < 100; n++) {
+	// Read the FPGA's time, and set its delta register
+	set64Register(admin.timeDelta, OccpSpace, get64Register(admin.time, OccpSpace));
+	// occp->admin.timeDelta = occp->admin.time;
+	// Read the (incorrect endian) delta register
+	delta[n] = (int32_t)swap32(get64Register(admin.timeDelta, OccpSpace));
+      }
+      qsort(delta, 100, sizeof(uint32_t), compu32);
+  
+      // Ignore the slowest 10%
+      for (n = 0; n < 90; n++)
+	sum += delta[n];
+      sum = (sum + 45) / 90;
+      m_timeCorrection = sum;
+      // we have average delay
+      ocpiInfo("For %s: round trip times (ns) deltas: min %"
+	       PRIu64 " max %" PRIu64 " avg of best 90: %" PRIu64 "\n",
+	       name().c_str(), ticks2ns(delta[0]), ticks2ns(delta[99]), ticks2ns(sum));
+      sum /= 2; // assume half a round trip for writes
+      uint64_t nw1 = now();
+      uint64_t nw1a = nw1 + sum;
+      uint64_t nw1as = swap32(nw1a);
+      set64Register(admin.time, OccpSpace, nw1as);
+      // set32Register(admin.scratch20, OccpSpace, nw1as>>32);
+      // set32Register(admin.scratch24, OccpSpace, (nw1as&0xffffffff));
+      //uint64_t nw1b = 0; // get64Register(admin.time, OccpSpace);
+      //      uint64_t nw1bs = swap32(nw1b);
+      uint64_t nw2 = 0; // now();
+      uint64_t nw2s = swap32(nw2);
+      set64Register(admin.timeDelta, OccpSpace, nw1as);
+      uint64_t nw1b = get64Register(admin.time, OccpSpace);
+      uint64_t nw1bs = swap32(nw1b);
+      int64_t dt = get64Register(admin.timeDelta, OccpSpace);
+      fprintf(stderr,"Now delta is: %" PRIi64 "ns "
+	       "(dt 0x%"PRIx64" dtsw 0x%"PRIx64" nw1 0x%"PRIx64" nw1a 0x%"PRIx64 " nw1as 0x%"PRIx64
+	      " nw1b 0x%"PRIx64" nw1bs 0x%"PRIx64" nw2 0x%"PRIx64" nw2s 0x%"PRIx64" t 0x%lx)\n",
+	      dticks2ns(swap32(dt)), dt, swap32(dt), nw1, nw1a, nw1as, 
+	      nw1b, nw1bs, nw2, nw2s, time(0));
+#ifndef __APPLE__
+      {
+	struct timespec ts;
+	clock_getres(CLOCK_REALTIME, &ts);
+	ocpiInfo("res: %ld", ts.tv_nsec);
+      }
+#endif
     }
     bool Container::
     isLoadedUUID(const std::string &uuid) {

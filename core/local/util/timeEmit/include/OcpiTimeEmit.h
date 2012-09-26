@@ -373,7 +373,7 @@ namespace OCPI {
       // This is the base class for the time source that gets used by the emit class for time stamping events.
       class TimeSource {
       public:
-        TimeSource(){};
+        TimeSource(TickFunc tf = NULL) : ticks(tf) {};
 	virtual Time getTime();
 	TickFunc ticks;
 	virtual ~TimeSource(){}
