@@ -81,6 +81,11 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      unsigned out_idx = s->out_idx;
      unsigned len = byteLen2Complex(in->input.length);
      unsigned i;
+
+#ifndef NDEBUG
+     printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+#endif
+
      len = min(out->current.maxLength-out_idx, len);
      for ( s->sample=0; s->sample<len; s->sample++ ) {
 

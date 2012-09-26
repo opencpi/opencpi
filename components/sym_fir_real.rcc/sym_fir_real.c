@@ -99,6 +99,10 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
   case SYM_FIR_REAL_IN_DATA:
     {
+#ifndef NDEBUG
+      printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+#endif
+
       if ( p->bypass ) {
 	self->container.send( out, &in->current, in->input.u.operation, in->input.length);
 	return RCC_OK;

@@ -90,6 +90,10 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      unsigned len = byteLen2Complex(in->input.length);
      unsigned i, samp;
 
+#ifndef NDEBUG
+      printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+#endif
+
      // We may need to generate more output data from the last input
      unsigned max_out = byteLen2Complex(out->current.maxLength);
      if ( s->remainder ) {
@@ -99,7 +103,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
        }
        s->remainder -= i;
        if ( out_idx >= max_out ) {
-	 return sendOutput( self, s, out, s->input_idx, in->input.length);
+	 return sendOutput( self, s, out, s->input_idx, byteLen2Complex(in->input.length));
        }
      }
 
@@ -133,7 +137,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
        for ( i=0; i<p->M; i++, out_idx++ ) {
 	 if ( out_idx  >= max_out ) {
 	   s->remainder = p->M-i;
-	   return sendOutput( self, s, out, samp,  in->input.length);
+	   return sendOutput( self, s, out, samp,  byteLen2Complex(in->input.length));
 	 }
 	 double gain = Gain( p->gain);
 	 outData->data[out_idx].I = Scale( Uscale(s->fast_acc[II][STAGES]) * gain);
@@ -142,10 +146,9 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 	 if ( v > Uscale( p->peakDetect ) ) {
 	    p->peakDetect = Scale( v );
 	 }
-	 out_idx++;
        }
      }
-     return sendOutput( self, s, out, samp, in->input.length);
+     return sendOutput( self, s, out, samp, byteLen2Complex(in->input.length));
    }
    break;  
 

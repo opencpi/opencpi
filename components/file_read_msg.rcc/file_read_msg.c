@@ -171,12 +171,25 @@ start(RCCWorker *self) {
 
 
 static RCCResult
+retDone( RCCBoolean cont ) 
+{
+  if ( ! cont ) {
+    return RCC_DONE;
+  }
+  else {
+    return RCC_ADVANCE;
+  }
+}
+
+
+static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  RCCPort *port = &self->ports[FILE_READ_MSG_OUT];
  File_read_msgProperties *props = self->properties;
  MyState *s = self->memories[0];
  size_t n2read =  props->messageSize ? props->messageSize : port->current.maxLength;
  ssize_t n, readl;
+
 
  if ( props->stepThruMsg ) {
    if ( ! props->stepNow ) {
@@ -205,9 +218,11 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  if ( n == 0 ) {
    printf("file_reader_msg: Finished !!\n");
    props->finished = 1;
-   return RCC_DONE;
+   return retDone( props->continuous );
  }
  self->ports[FILE_READ_MSG_OUT].output.u.operation = s->header.opcode;
+
+ // printf("port max len = %d\n", port->current.maxLength);
  
  readl = (port->current.maxLength > s->header.length) ?  s->header.length : port->current.maxLength;
  if ((n = read(s->fd, port->current.data, readl )) < 0) {
@@ -215,9 +230,12 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ERROR;
  } 
  if ( n == 0 ) {
-   return RCC_DONE;
+   return retDone( props->continuous );
  }
- // printf("In file_read_msg.c got data = %s\n", port->current.data);
+ //printf("In file_read_msg.c got data = %s\n", port->current.data);
+
+
+ // printf("sending %d bytes on file read\n", n);
 
  port->output.length = n;
  props->bytesRead += n;
@@ -227,6 +245,11 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ADVANCE;
  }
  close(s->fd);
+
+ // If the continuous flag is set, send the last buffer of data forever
+ if ( props->continuous ) {
+   return RCC_ADVANCE;
+ }
  return RCC_ADVANCE_DONE;
 }
 
