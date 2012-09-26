@@ -1,9 +1,5 @@
-library IEEE;
-  use IEEE.std_logic_1164.all;
-  use IEEE.numeric_std.all;
-
-library ocpi;
-use ocpi.all;
+library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
+library ocpi; use ocpi.all; use ocpi.types.all;
 package body wci is
 
 -- convert byte enables to byte offsets
@@ -11,7 +7,7 @@ package body wci is
 function decode_access(input : in_t) return access_t is begin
   case input.MCmd is
     when ocp.MCmd_WRITE => if input.MAddrSpace(0) = '1' then return write_e; else return Error_e; end if;
-    when ocp.MCmd_READ => if input.MAddrSpace(0) = '1' then return Read_e; else return Control_e; end if;
+    when ocp.MCmd_READ  => if input.MAddrSpace(0) = '1' then return Read_e; else return Control_e; end if;
     when others => return None_e;
   end case;
 end decode_access;
@@ -32,9 +28,10 @@ end decode_access;
 --  end if;
 --  return property_access_t'(None_e, property_offset_t'(others => '0'));
 --end decode_property;
+
 function get_value(input : in_t; boffset : unsigned; width : natural) return std_logic_vector is
   variable bitoffset : natural := to_integer(boffset & "000");
-  variable bitwidth : natural := width;
+  variable bitwidth  : natural := width;
 begin
   if bitwidth > 32 then bitwidth := 32; end if;
   return input.MData(bitoffset + bitwidth - 1 downto bitoffset);
@@ -45,16 +42,17 @@ begin
 --this fine in VHDL, but not in XST
 --return control_op_t'val(to_integer(unsigned(bits)));
   case to_integer(unsigned(bits)) is
-    when control_op_t'pos(initialize_e) => return initialize_e;
-    when control_op_t'pos(start_e) => return start_e;
-    when control_op_t'pos(stop_e) => return stop_e;
-    when control_op_t'pos(release_e) => return release_e;
+    when control_op_t'pos(initialize_e)   => return initialize_e;
+    when control_op_t'pos(start_e)        => return start_e;
+    when control_op_t'pos(stop_e)         => return stop_e;
+    when control_op_t'pos(release_e)      => return release_e;
     when control_op_t'pos(before_query_e) => return before_query_e;
     when control_op_t'pos(after_config_e) => return after_config_e;
-    when control_op_t'pos(test_e) => return test_e;
-    when others => return no_op_e;
+    when control_op_t'pos(test_e)         => return test_e;
+    when others                           => return no_op_e;
   end case;
 end to_control_op;
+
 -- How wide should the data path be from the decoder to the property
 function data_out_top (property : property_t) return natural is
 begin
@@ -70,30 +68,30 @@ function resize(bits : std_logic_vector; n : natural) return std_logic_vector is
 end resize;
 
 
-
 end wci;
 
 -- per-property decoder - purely combinatorial
--- result is write_enable, offset-in-array, and aligne data output
-library ieee; 
- use IEEE.std_logic_1164.all; 
- use IEEE.numeric_std.all; 
-library ocpi;
-use ocpi.ocp.all;
-use ocpi.wci.all;
+-- result is write_enable, offset-in-array, and aligned data output
+library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
+library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all;
+
 entity property_decoder is
-  generic (property : property_t; decode_width : natural);
-  port (reset_n      : in std_logic;
-        offset_in    : in unsigned(decode_width-1 downto 0);
-        top          : in natural;
-        access_in    : in access_t;
-        data_in      : in std_logic_vector(31 downto 0);
-        write_enable : out boolean;
-        read_enable  : out boolean;
-        offset_out   : out unsigned(decode_width-1 downto 0);
-        index_out    : out unsigned(decode_width-1 downto 0);
-        data_out     : out std_logic_vector(data_out_top(property) downto 0));
+  generic (
+        property     : property_t;   -- property type
+        decode_width : natural);     -- decoder width in bits
+  port (
+        reset_n      : in std_logic;                           -- active-low WCI worker reset
+        offset_in    : in unsigned(decode_width-1 downto 0);   -- offset in Bytes
+        top          : in natural;                             -- High order bit position of datatype
+        access_in    : in access_t;                            -- Enumerated WCI access type
+        data_in      : in std_logic_vector(31 downto 0);       -- WCI slave data
+        write_enable : out boolean;                            -- active-high write pulse
+        read_enable  : out boolean;                            -- active-high read pulse
+        offset_out   : out unsigned(decode_width-1 downto 0);  -- 
+        index_out    : out unsigned(decode_width-1 downto 0);  --
+        data_out     : out std_logic_vector(data_out_top(property) downto 0)); --
 end entity property_decoder;
+
 architecture rtl of property_decoder is
   subtype decode_t is unsigned (decode_width-1 downto 0);
   signal my_offset : decode_t;
@@ -117,32 +115,31 @@ architecture rtl of property_decoder is
              (property.nitems > 1 and my_offset > 0 and my_offset <= property.bytes_1)));
   end my_decode;
 begin
-  byte_offset <= offset_in(1 downto 0);
-  my_offset <= offset_in - property.offset;
+  byte_offset  <= offset_in(1 downto 0);
+  my_offset    <= offset_in - property.offset;
   write_enable <= access_in = write_e and property.writable and my_decode(property);
-  read_enable <= access_in = read_e and property.readable and my_decode(property);
-  offset_out <= (others => '0') when property.nitems <= 1 else my_offset;
+  read_enable  <= access_in = read_e and property.readable and my_decode(property);
+  offset_out   <= (others => '0') when property.nitems <= 1 else my_offset;
   data_out <=
-    data_in(data_out_top(property) downto 0)        when property.nitems <= 1 else
+    data_in(data_out_top(property) downto 0)        when property.nitems     <= 1  else
     data_in(31 downto 0)                            when property.data_width >= 32 else
-    resize(data_in(top downto 0),data_out'length)   when byte_offset = 0 else
-    resize(data_in(15 downto 8),data_out'length)    when byte_offset = 1 else
-    resize(data_in(top downto 16), data_out'length) when byte_offset = 2 else
-    resize(data_in(31 downto 24), data_out'length);
+    resize(data_in(top downto 0),  data_out'length) when byte_offset = 0           else
+    resize(data_in(15 downto 8),   data_out'length) when byte_offset = 1           else
+    resize(data_in(top downto 16), data_out'length) when byte_offset = 2           else
+    resize(data_in(31 downto 24),  data_out'length);
   index_out <=
     to_unsigned(0,index_out'length) when property.nitems <= 1 else
     my_offset/element_bytes(property);  -- this won't be used for strings so no
                                         -- non-power of 2 math needed.
 end rtl;
 
-library ieee; 
-use IEEE.std_logic_1164.all; 
- use IEEE.numeric_std.all; 
-library ocpi;
-use ocpi.ocp;
-use ocpi.wci.all;
+library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
+library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all;
+
 entity decoder is
-  generic (worker : worker_t; properties : properties_t);
+  generic (
+      worker                 : worker_t;
+      properties             : properties_t);
   port (
       ocp_in                 : in in_t;       
       ready                  : in boolean := true;
@@ -161,9 +158,10 @@ entity decoder is
       is_big_endian          : out boolean   -- for runtime dynamic endian
       );
 end entity;
+
 architecture rtl of decoder is
-  signal beoffset : unsigned(1 downto 0);
-  signal offset : unsigned(worker.decode_width-1 downto 0);
+  signal beoffset  : unsigned(1 downto 0);
+  signal offset    : unsigned(worker.decode_width-1 downto 0);
   signal my_access : access_t;
   signal control_op_in : control_op_t;
   signal my_write_enables, my_read_enables : boolean_array_t(properties'range);
@@ -305,12 +303,8 @@ end rtl;
 --
 -- The readback multiplexer for those properties that have readback
 --
-library ieee; 
-use IEEE.std_logic_1164.all; 
- use IEEE.numeric_std.all; 
-library ocpi;
-use ocpi.ocp;
-use ocpi.wci.all;
+library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
+library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all;
 entity readback is
   generic (properties : properties_t);
   port (

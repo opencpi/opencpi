@@ -38,7 +38,7 @@
 # by all workers
 # These need to be in order if tools aren't very smart
 LibName=ocpi
-SourceFiles=ocpi.vhd ocpi_impl.vhd gen/ocpi_types.vhd ocpi_types_body.vhd gen/ocpi_types_impl.vhd
+SourceFiles=gen/ocpi_types.vhd ocpi.vhd ocpi_impl.vhd ocpi_types_body.vhd gen/ocpi_types_impl.vhd
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library
 
 CPPFiles=$(wildcard *.cpp_vhd)

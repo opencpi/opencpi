@@ -1,12 +1,7 @@
 
 #define ENTITY_HEADER(pretty) \
-$library ieee; \
-$  use IEEE.std_logic_1164.all; \
-$  use IEEE.numeric_std.all; \
-$library ocpi;\
-$use ocpi.wci.all;\
-$use ocpi.types.all;\
-$use ocpi.ocp.all;\
+$library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;\
+$library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all; use ocpi.ocp.all;\
 $entity pretty##_property is\
 
 #define ENTITY(pretty,which,def,rng) \
@@ -240,7 +235,7 @@ $@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_array_t(0 to property.nitems-1); \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
 $@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0);\
-$@@@@@@@@nbytes_1    : in ocpi.wci.byte_offset_t);\
+$@@@@@@@@nbytes_1    : in byte_offset_t);\
 $end entity;
 
 #define RPROP_ARRAY_1(pretty,which,def,rng,lhs,rhs) \
@@ -492,7 +487,7 @@ TYPE(string,("00000000","00000000"),31 downto 0,_STRING,_STRING,,,STRING)
 
 architecture rtl of string_array_property is
   constant nwords : natural := (property.string_length+4)/4;
-  subtype string_words_t is ocpi.wci.data_a_t(0 to nwords * property.nitems-1);
+  subtype string_words_t is data_a_t(0 to nwords * property.nitems-1);
   signal string_words : string_words_t;
 begin
   gen: for i in 0 to property.nitems-1 generate -- properties~left to 0 generate
@@ -525,7 +520,7 @@ end rtl;
 
 architecture rtl of read_string_array_property is
   constant nwords : natural := (property.string_length+4)/4;
-  subtype string_words_t is ocpi.wci.data_a_t(0 to nwords * property.nitems-1);
+  subtype string_words_t is data_a_t(0 to nwords * property.nitems-1);
   signal string_words : string_words_t;
 begin
   gen: for i in 0 to property.nitems-1 generate -- properties~left to 0 generate

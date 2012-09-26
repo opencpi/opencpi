@@ -2,14 +2,41 @@
 // The types are based on the ieee.std_logic and ieee.numeric_std packages.
 // It should be processed into the ocpi library and accessed via ocpi.type.xxx.
 
-library ocpi;
-use ocpi.wci.all;
 library ieee;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 library std;
 use std.all;
 package types is
+--
+-- Miscellaneous type declarations not related to OpenCPI types
+--
+subtype byte_offset_t is unsigned(1 downto 0);
+TYPE control_op_t IS (INITIALIZE_e,
+                      START_e,     
+                      STOP_e,
+                      RELEASE_e,
+                      BEFORE_QUERY_e,
+                      AFTER_CONFIG_e,
+                      TEST_e,
+                      NO_OP_e);
+
+subtype control_op_mask_t is std_logic_vector(control_op_t'pos(no_op_e) downto 0);
+type worker_t is record
+  decode_width : natural;
+  allowed_ops : control_op_mask_t;
+end record worker_t;
+type property_t is record
+  data_width,                         -- data width of datum in bits, but 32 for strings
+  offset,                             -- offset in property space in bytes
+  bytes_1,                            -- total bytes in this property minus 1
+  string_length,                      -- bytes (excluding null) for string values
+  nitems                              -- nitems array
+    : natural;                -- with of a single item
+  writable, readable, volatile, parameter : boolean;
+end record property_t;
+subtype word_t is std_logic_vector(31 downto 0);
+
 -- These types are the mapping of the OpenCPI scalar types to VHDL.
 -- We use std_logic vector types and avoid native types.
 -- These ranges match the IDL specification
@@ -93,7 +120,8 @@ type string_t is array (natural range <>) of char_t;
 subtype wordstring_t is string_t(0 to 3);
 function to_string(inword : word_t) return wordstring_t;
 function from_string(s : string_t; offset : unsigned) return word_t; --std_logic_vector;
---
+
+
 --
 -- Property storage entities to attach to a wci.decoder
 --
@@ -143,7 +171,7 @@ $--\
 $-- readback scalar <=32 property \
 $--\
 $component read_##pretty##_property \
-$@@generic (worker : worker_t; property : ocpi.wci.property_t); \
+$@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_t; \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0); \
 $@@@@@@@@offset      : unsigned(worker.decode_width-1 downto 0)); \
@@ -190,7 +218,7 @@ $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1); \
 $@@@@@@@@written      : out boolean; \
 $@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0); \
 $@@@@@@@@any_written  : out boolean; \
-$@@@@@@@@nbytes_1     : in ocpi.wci.byte_offset_t);\
+$@@@@@@@@nbytes_1     : in byte_offset_t);\
 $end component;
 
 #define RPROP_ARRAY(pretty,which,def,io) \
@@ -202,7 +230,7 @@ $@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_array_t(0 to property.nitems-1); \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0); \
 $@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0); \
-$@@@@@@@@nbytes_1    : in ocpi.wci.byte_offset_t);\
+$@@@@@@@@nbytes_1    : in byte_offset_t);\
 $end component;
 
 #define WPROP_64_ARRAY(pretty,which,def,io) \

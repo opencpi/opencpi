@@ -20,6 +20,13 @@ function from_bool(b : bool_t) return std_logic_vector is begin
     return std_logic_vector'(b"0");
   end if;
 end from_bool;                                                            
+--function from_bool(b : bool_t) return std_logic is begin
+--  if b then
+--    return '1';
+--  else
+--    return '0';
+--  end if;
+--end from_bool;                                                            
 function from_bool_array(ba : bool_array_t; index, nbytes_1, byte_offset : unsigned) return word_t is
   variable result: word_t := (others => '0');
   variable i : natural := to_integer(index);

@@ -22,9 +22,8 @@
 --  It must be kept in sync with the Verilog (and any other) one
 --
 
-LIBRARY IEEE;
-USE IEEE.std_logic_1164.ALL;
-USE IEEE.numeric_std.ALL;
+library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
+library ocpi; use ocpi.types.all;
 
 -- Since packages are not hierarchical we prefix ours with ocpi_
 
@@ -49,12 +48,9 @@ package ocp is
 
 end package ocp;
 
-library IEEE;
-use IEEE.std_logic_1164.ALL;
-use IEEE.numeric_std.ALL;
-library ocpi;
-use ocpi.ocp;
--- This mackage defines constants relating to the WCI interface
+-- This package defines constants relating to the WCI interface
+library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
+library ocpi; use ocpi.types.all; use ocpi.ocp;
 package wci is
 
   -- Address Space Selection
@@ -71,16 +67,6 @@ package wci is
                    SUSPENDED_e,         -- 3
                    UNUSABLE_e);         -- 4
 
-  TYPE control_op_t IS (INITIALIZE_e,
-                        START_e,     
-                        STOP_e,
-                        RELEASE_e,
-                        BEFORE_QUERY_e,
-                        AFTER_CONFIG_e,
-                        TEST_e,
-                        NO_OP_e);
-
-  subtype control_op_mask_t is std_logic_vector(control_op_t'pos(no_op_e) downto 0);
 
   type control_op_masks_t is array (natural range <>) of control_op_mask_t;
 
@@ -146,29 +132,13 @@ package wci is
 
   function resize(bits : std_logic_vector; n : natural) return std_logic_vector;
 
-  type property_t is record
-    data_width,                         -- data width of datum in bits, but 32 for strings
-    offset,                             -- offset in property space in bytes
-    bytes_1,                            -- total bytes in this property minus 1
-    string_length,                      -- bytes (excluding null) for string values
-    nitems                              -- nitems array
-      : natural;                -- with of a single item
-    writable, readable, volatile, parameter : boolean;
-  end record property_t;
 
-  type worker_t is record
-    decode_width : natural;
-    allowed_ops : control_op_mask_t;
-  end record worker_t;
-
-  subtype word_t is std_logic_vector(31 downto 0);
   subtype hword_t is std_logic_vector(15 downto 0);
   subtype byte_t is std_logic_vector(7 downto 0);
   type properties_t is array (natural range <>) of property_t;
   type data_a_t is array (natural range <>) of word_t;
   type offset_a_t is array (natural range <>) of unsigned(31 downto 0);
   type boolean_array_t is array (natural range <>) of boolean;
-  subtype byte_offset_t is unsigned(1 downto 0);
   function data_out_top (property : property_t) return natural;
 
   -- the wci convenience IP that makes it simple to implement a WCI interface
@@ -203,3 +173,20 @@ package wci is
   end component readback;
 end package wci;
 
+library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
+library ocpi; use ocpi.all; use ocpi.types.all;
+package worker is
+  type control_in_t is record
+    clk                  : std_logic;
+    reset                : bool_t;
+    control_op           : control_op_t; -- what control op is in progress?
+    state                : wci.state_t; -- the current control state
+    is_operating         : bool_t; -- convenience signal for "in operating state in"
+    is_big_endian        : bool_t;
+  end record control_in_t;
+  type control_out_t is record
+    ready            : bool_t; -- worker indicates completion of control/config
+    attention        : bool_t; -- worker indicates it needs attention
+    abort_control_op : bool_t;
+  end record control_out_t;
+end package worker;
