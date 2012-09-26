@@ -100,7 +100,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   Fsk_mod_complexInData *inData = in->current.data;
   Fsk_mod_complexOutIq  *outData = out->current.data;
 
-  if (in->input.length > out->current.maxLength*2 ) {
+  if ((in->input.length*2) > out->current.maxLength ) {
     self->errorString = "output buffer too small";
     return RCC_ERROR;
   }
@@ -108,9 +108,14 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   switch( in->input.u.operation ) {
 
   case FSK_MOD_COMPLEX_IN_DATA:
-    doFsk( myState, inData, outData, in->input.length );
-    // output is complex, input is real
-    out->output.length = in->input.length*2;
+    {
+#ifndef NDEBUG
+      printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+#endif
+      doFsk( myState, inData, outData, in->input.length );
+      // output is complex, input is real
+      out->output.length = in->input.length*2;
+    }
     break;
 
   case FSK_MOD_COMPLEX_IN_SYNC:

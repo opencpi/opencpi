@@ -608,8 +608,8 @@ void Worker::run(bool &anyone_run) {
   RCCBoolean timeout = false;
   RCCPortMask readyMask = 0;
 
-  OCPI_EMIT_REGISTER_FULL_VAR( "Worker Evaluation", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, were ); 
-  OCPI_EMIT_STATE_CAT_NR_(were, 1, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
+  //  OCPI_EMIT_REGISTER_FULL_VAR( "Worker Evaluation", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, were ); 
+  // OCPI_EMIT_STATE_CAT_NR_(were, 1, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
 
   // Break from this "do" when we know whether we are running or not
   do {
@@ -686,7 +686,7 @@ void Worker::run(bool &anyone_run) {
     assert(enabled);
     if (m_dispatch->run && execute_run ) {
       anyone_run = true;
-      OCPI_EMIT_STATE_CAT_NR_(were, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
+      //      OCPI_EMIT_STATE_CAT_NR_(were, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
       RCCBoolean newRunCondition = false;
 
       // FIXME: implement new runcondition!!!

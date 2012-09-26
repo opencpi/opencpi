@@ -114,10 +114,22 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
  case NOISE_GEN_COMPLEX_IN_IQ:
    {
+#ifndef NDEBUG
+     printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+#endif
      random_noise( s );
      if ( ! p->mask ) {
-       self->container.send( out, &in->current,in->input.u.operation, in->input.length );
+#ifdef ZCOPY__
+       // Zero copy transfer
+       self->container.send( out, &in->current, in->input.u.operation, in->input.length);
        return RCC_OK;
+#else
+       out->output.u.operation = in->input.u.operation;
+       out->output.length = in->input.length;
+       memcpy( out->current.data, in->current.data,  in->input.length);
+       return RCC_ADVANCE; 
+#endif
+
      }
      unsigned i;
      unsigned len = byteLen2Complex(in->input.length);

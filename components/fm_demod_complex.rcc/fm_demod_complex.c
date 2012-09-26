@@ -83,6 +83,9 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
  case FM_DEMOD_COMPLEX_IN_IQ:
    {
+#ifndef NDEBUG
+      printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+#endif
      unsigned len = byteLen2Complex(in->input.length);
      unsigned samp;
      for ( samp=0; samp<len; samp++ ) {

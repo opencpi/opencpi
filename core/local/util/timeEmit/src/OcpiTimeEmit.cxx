@@ -154,7 +154,7 @@ namespace OCPI {
 	  m_q->config.size = atoi(qsize);
 	}
 	else {
-	  m_q->config.size  = 25 * 1024 * 1024;
+	  m_q->config.size  = 50 * 1024;
 	}
 	char* swf;
 	if ( (swf = getenv("OCPI_TIME_EMIT_Q_SWF") ) != NULL ) {

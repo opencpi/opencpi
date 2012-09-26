@@ -35,8 +35,22 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ERROR;
  }
 
+#ifndef NDEBUG
+ printf("%s got %d bytes of data\n", __FILE__,  in->input.length);
+#endif
+
+ //#define ZCOPY__
+#ifdef ZCOPY__
  // Zero copy transfer
  self->container.send( out, &in->current, in->input.u.operation, in->input.length);
-
  return RCC_OK;
+#else
+ out->output.u.operation = in->input.u.operation;
+ out->output.length = in->input.length;
+ memcpy( out->current.data, in->current.data,  in->input.length);
+ return RCC_ADVANCE; 
+#endif
+
+
+
 }
