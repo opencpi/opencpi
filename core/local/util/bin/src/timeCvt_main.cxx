@@ -65,6 +65,7 @@ public:
   std::string format;
   std::string infilename;
   std::string outfilename;
+  bool        smart;
 
 private:
   static CommandLineConfiguration::Option g_options[];
@@ -77,7 +78,8 @@ OcpiTimeCvtConfigurator::
 OcpiTimeCvtConfigurator()
   : OCPI::Util::CommandLineConfiguration (g_options),
     help (false),
-    verbose (false)
+    verbose (false),
+    smart(true)
 {
 }
 
@@ -95,6 +97,10 @@ OcpiTimeCvtConfigurator::g_options[] = {
   { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
     "out", "Output filename",
     OCPI_CLC_OPT(&OcpiTimeCvtConfigurator::outfilename), 0 },
+
+  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
+    "smart", "Smart format formatting for CSV files only",
+    OCPI_CLC_OPT(&OcpiTimeCvtConfigurator::smart), 0 },
 
   { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
     "verbose", "Be verbose",
@@ -167,7 +173,7 @@ int main( int argc, char** argv )
   }
   else {
     format = EmitFormatter::CSVFormat;
-    OCPI::TimeEmit::Formatter::CSVWriter csv_formatter( xml_data );  
+    OCPI::TimeEmit::Formatter::CSVWriter csv_formatter( xml_data, config.smart );  
     *out << csv_formatter;    
   }
 

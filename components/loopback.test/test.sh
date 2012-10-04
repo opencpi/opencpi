@@ -7,4 +7,7 @@ if [[ $rc != 0 ]]; then
     exit $rc;
 fi
 ./unitTest --utname=loopback --compp="<property name='deviation' value='100'/>" --real=false --model=$1
+rc=$?
+exit $rc;
+
 

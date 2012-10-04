@@ -35,6 +35,7 @@
 #include "OcpiUtilValue.h"
 #include "OcpiPValue.h"
 #include "OcpiApplication.h"
+#include "OcpiTimeEmit.h"
 
 namespace OC = OCPI::Container;
 namespace OU = OCPI::Util;
@@ -573,6 +574,8 @@ namespace OCPI {
 
   }
   namespace API {
+    OCPI_EMIT_REGISTER_FULL_VAR( "Get Property", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, pegp ); 
+    OCPI_EMIT_REGISTER_FULL_VAR( "Set Property", OCPI::Time::Emit::u, 1, OCPI::Time::Emit::State, pesp ); 
 
     Application::Application(const char *file, const PValue * policy)
       : m_application(*new ApplicationI(file,policy)) {
@@ -600,10 +603,16 @@ namespace OCPI {
       return m_application.getProperty(ordinal, name, value);
     }
     void Application::getProperty(const char* w, const char* p, std::string &value) {
+      OCPI_EMIT_STATE_NR( pegp, 1 );
       m_application.getProperty(w, p, value);
+      OCPI_EMIT_STATE_NR( pegp, 0 );
+
     }
     void Application::setProperty(const char* w, const char* p, const char *value) {
+      OCPI_EMIT_STATE_NR( pesp, 1 );
       m_application.setProperty(w, p, value);
+      OCPI_EMIT_STATE_NR( pesp, 0 );
+
     }
     Worker &Application::getPropertyWorker(const char *name) { return m_application.getPropertyWorker(name); }
 

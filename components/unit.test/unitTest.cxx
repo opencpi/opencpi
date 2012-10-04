@@ -79,7 +79,7 @@ printUsage (UnitTestConfigurator & config,
 
 int main ( int argc, char* argv [ ] )
 {
-  int passed = 1;
+  int passed = -1;
   const char * xml("<application>"
 		   " <policy mapping='MaxProcessors' processors='0'/>"
 
@@ -225,10 +225,12 @@ int main ( int argc, char* argv [ ] )
     }
   catch ( const std::string& s )
     {
+      passed = -2;
       std::cerr << "\n\nException(s): " << s << "\n" << std::endl;
     }
   catch ( std::exception& g )
     {
+      passed = -2;
       std::cerr << "\nException(g): "
 		<< typeid( g ).name( )
 		<< " : "
@@ -238,6 +240,7 @@ int main ( int argc, char* argv [ ] )
     }
   catch ( ... )
     {
+      passed = -2;
       std::cerr << "\n\nException(u): unknown\n" << std::endl;
     }
   fflush( stdout );

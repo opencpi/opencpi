@@ -60,6 +60,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  printf("In file_write_msg got %d bytes of data\n", port->input.length);
 
  FileHeader h;
+ h.pad = 0;
  h.endian = 1;
  h.opcode = port->input.u.operation;
  h.length = port->input.length;

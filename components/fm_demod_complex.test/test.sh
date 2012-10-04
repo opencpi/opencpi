@@ -7,5 +7,7 @@ if [[ $rc != 0 ]]; then
     exit $rc;
 fi
 ./unitTest --utname=fm_demod_complex --compp="<property name='deviation' value='100'/>" --real=true --model=$1
+rc=$?
+exit $rc;
 
 

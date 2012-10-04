@@ -53,6 +53,8 @@
 #include <memory>
 #include "OcpiTimeEmit.h"
 
+#define min(a,b) a<b?a:b
+#define max(a,b) a>b?a:b
 
 namespace OCPI {
 
@@ -173,6 +175,18 @@ namespace OCPI {
 	  ocpiAssert((unsigned)id < m_owners.size() );
 	  return m_owners[id].name;
 	}
+	std::string  ownersString( int id ) {
+	  ocpiAssert((unsigned)id < m_owners.size() );
+	  std::string s;
+	  int pi= m_owners[id].parentIndex;
+	  while ( pi > 0 ) {
+	    s += ownerString(pi);
+	    s += ":";	    
+	    pi = m_owners[pi].parentIndex;
+	  }	  
+	  s+= m_owners[id].name;
+	  return s;
+	}
 	std::string & descString( int id ) {
 	  ocpiAssert((unsigned)id < m_desc.size() );
 	  return m_desc[id].desc;
@@ -291,26 +305,189 @@ namespace OCPI {
       class CSVWriter {
       private:
 	XMLReader & m_xml_reader;
+	int  m_line;
+	bool m_smart;
+	
       public:
-	CSVWriter( XMLReader & xml_data )  
-	  :m_xml_reader(xml_data) 
+	CSVWriter( XMLReader & xml_data, bool smart)  
+	  :m_xml_reader(xml_data),m_smart(smart),m_line(1)
 	  {       
 	    // Empty
 	  }  
-	  void formatDumpToStream( std::ostream& out )
+	  void formatDumpToStreamRaw( std::ostream& out )
 	  {
 	    std::vector<XMLReader::Event>::iterator it;
 	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++ ) {
 	      out << (*it).hdr.eid << "," << (*it).hdr.time_ticks << "," << m_xml_reader.getDescription((*it).hdr.eid).width << "," <<
-		(*it).svalue << "," <<	m_xml_reader.ownerString( (*it).hdr.owner ) << "," << 
+		(*it).svalue << "," <<	m_xml_reader.ownersString( (*it).hdr.owner ) << "," << 
 		"\"" << m_xml_reader.descString( (*it).hdr.eid ) << "\"" << std::endl;
+	    }
+	  }
+
+	  void formatStateEvent(  std::ostream& out, std::string & eventStr, std::string & owner ) {
+	    std::vector<XMLReader::Event>::iterator it;
+	    XMLReader::Event * e=NULL;
+	    int count=0;
+	    uint64_t t,
+	      maxt=0,
+	      mint;
+
+	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++ ) {
+	      // If only a selected id has been chosen
+	      if ( m_xml_reader.descString( (*it).hdr.eid ) != eventStr ) {
+		continue;
+	      }
+	      if (  m_xml_reader.ownersString( (*it).hdr.owner ).find( owner ) == std::string::npos ) {
+		continue;
+	      }
+	      count++;
+	      if (  m_xml_reader.getDescription((*it).hdr.eid).etype  == OCPI::Time::Emit::State ) {
+		if ( e && ( (*it).svalue == "0" ) ) {
+		  t = (*it).hdr.time_ticks - e->hdr.time_ticks ; 
+		  mint=min(t,mint);
+		  maxt=max(t,maxt);
+		}
+		else {
+		  t = 0;
+		}
+		char ts[128];
+		if ( t ) 
+		  snprintf(ts,128,"%lld",(long long)t);
+		else
+		  snprintf(ts,128,"%s","");		  
+		    
+		out << (*it).hdr.eid << "," << (*it).hdr.time_ticks << "," << m_xml_reader.getDescription((*it).hdr.eid).width << "," <<
+		  (*it).svalue << "," <<	m_xml_reader.ownersString( (*it).hdr.owner ) << "," << 
+		  "\"" << m_xml_reader.descString( (*it).hdr.eid ) << "\"" << 
+		  "," << ts <<
+		  std::endl;
+	      }
+	      e = &(*it);
+	    }
+	    if ( count ) {
+	      out << "," << "," << "," << "," << "," << "," << std::endl;
+	      out << "," << "," << "," << "," << "," << "," << std::endl;
+	      out << ",,,,,,," << "\"Average\"," << "=SUM(G" << m_line <<
+		"..G" << m_line+count-1 << ")/" << count/2 << std::endl;
+	      out << ",,,,,,," << "\"Max\",," << maxt << std::endl;
+	      out << ",,,,,,," << "\"Min\",,," << mint << std::endl;
+	      out << std::endl << std::endl << std::endl;
+	      m_line += count + 8;
+	    }
+	  }
+
+	  void formatTransientEvent(  std::ostream& out, std::string & eventStr, std::string & owner ) {
+	    std::vector<XMLReader::Event>::iterator it;
+	    XMLReader::Event * e=NULL;
+	    int count=0;
+	    uint64_t t,
+	      maxt=0,
+	      mint;
+
+	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++ ) {
+	      // If only a selected id has been chosen
+	      if ( m_xml_reader.descString( (*it).hdr.eid ) != eventStr ) {
+		continue;
+	      }
+	      if (  m_xml_reader.ownersString( (*it).hdr.owner ).find( owner ) == std::string::npos ) {
+		continue;
+	      }
+	      count++;
+	      if (  m_xml_reader.getDescription((*it).hdr.eid).etype  == OCPI::Time::Emit::Transient ) {
+
+		if ( e && ( (count%2)==0 ) ) {
+		  t = (*it).hdr.time_ticks - e->hdr.time_ticks ; 
+		  mint=min(t,mint);
+		  maxt=max(t,maxt);
+		}
+		else {
+		  t = 0;
+		}
+		char ts[128];
+		if ( t ) 
+		  snprintf(ts,128,"%lld",(long long)t);
+		else
+		  snprintf(ts,128,"%s","");		  
+		out << (*it).hdr.eid << "," << (*it).hdr.time_ticks << "," << m_xml_reader.getDescription((*it).hdr.eid).width << "," <<
+		  (*it).svalue << "," <<	m_xml_reader.ownersString( (*it).hdr.owner ) << "," << 
+		  "\"" << m_xml_reader.descString( (*it).hdr.eid ) << "\"" << 
+		  "," << ts  <<
+		  std::endl;
+	      }
+	      e = &(*it);
+	    }
+	    if ( count ) {
+	      out << "," << "," << "," << "," << "," << "," << std::endl;
+	      out << "," << "," << "," << "," << "," << "," << std::endl;
+	      out << ",,,,,,," << "\"Average\"," << "=SUM(G" << m_line <<
+		"..G" << m_line+count-1 << ")/" << count/2 << std::endl;
+	      out << ",,,,,,," << "\"Max\",," << maxt << std::endl;
+	      out << ",,,,,,," << "\"Min\",,," << mint << std::endl;
+	      out << std::endl << std::endl << std::endl;
+	      m_line += count + 8;
+	    }
+	  }
+
+	  void smartFormatEvents(  std::ostream& out )
+	  {
+	    std::vector<XMLReader::Description>::iterator it;
+
+	    // Add Header
+	    out << "Event ID, Time nS, Width, Value, Owner, Desc, DetaT,,AverageT, MaxT, MinT" << std::endl; m_line++;
+	    out << std::endl; m_line++;
+
+	    //  output all of the state events
+	    for ( it=m_xml_reader.getDescriptions().begin(); it!=m_xml_reader.getDescriptions().end(); it++ ) {	    
+	      if ( (*it).etype == OCPI::Time::Emit::State ) {
+		
+		// Organize the state data by owner
+		for ( unsigned id=0; id<m_xml_reader.getOwners().size(); id++ ) { 
+		  std::string owner = m_xml_reader.ownersString( id );
+		  formatStateEvent( out, (*it).desc, owner );
+		}
+	      }
+	    }
+
+
+	    //  output all of the transient events
+	    for ( it=m_xml_reader.getDescriptions().begin(); it!=m_xml_reader.getDescriptions().end(); it++ ) {	    
+	      if ( (*it).etype == OCPI::Time::Emit::Transient ) {
+		
+		// Organize the state data by owner
+		for ( unsigned id=0; id<m_xml_reader.getOwners().size(); id++ ) { 
+		  std::string owner = m_xml_reader.ownersString( id );
+		  formatTransientEvent( out, (*it).desc, owner );
+		}
+	      }
+	    }
+
+	    	       
+	       
+
+
+	    
+	    
+
+
+	  }
+
+
+	  void formatDumpToStreamFormatted( std::ostream& out )
+	  {
+	    std::string tstr = "Worker Run";
+	    std::string owner = "tx_fir_r";
+	    if ( m_smart ) {
+	      smartFormatEvents(out);
+	    }
+	    else {
+	      formatDumpToStreamRaw(out);
 	    }
 	  }
       };
 
       inline std::ostream &
 	operator<< (std::ostream& out, CSVWriter& t ) {
-	t.formatDumpToStream(out);
+	t.formatDumpToStreamFormatted(out);
 	return out;
       }
 

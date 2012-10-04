@@ -12,7 +12,7 @@ being handled at the input must be passed to the output.
     <!-- Bypass filter - if true, no transform  Format: bool -->
     <Property Name="bypass" type="bool" Readable="true" Writable="true"/>
     <!-- Gain factor   Format: Qs0.15 -->
-    <Property Name="gain" type="Long" Readable="true" Writable="true"/>
+    <Property Name="gain" type="Short" Readable="true" Writable="true"/>
     <!-- tap values  Format: short[128]   -->
     <Property Name="taps" type="Short" ArrayLength="128" Readable="true" Writable="true"/>
     <!-- peakDetect  Format: Real Qs0.15 -->
