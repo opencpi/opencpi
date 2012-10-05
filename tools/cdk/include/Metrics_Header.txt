@@ -1,0 +1,9 @@
+This file contains software metrics for all of the software components defined in $(OCPI_BASE_DIR)/components
+The metrics include the following:
+
+    Lines of code (LOC) - Total number of lines of code 
+    Lines of code that do not have Comments (NLOC)
+    Total Token Count - Halstead Token Count Metric (ttoken)
+    Cyclomatic complexity number (CCN) - Thomas J. McCabe, SR. software complexity metric
+    Function Count (function_count) - number of functions in the file
+
