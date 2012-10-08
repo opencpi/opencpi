@@ -16,7 +16,7 @@ This is a simple CIC half band highpass filter.
     <!-- Bypass filter - if true, no transform  Format: bool -->
     <Property Name="bypass" type="bool" Readable="true" Writable="true"/>
     <!-- Gain factor   Format: Qs0.15 -->
-    <Property Name="gain" type="Long" Readable="true" Writable="true"/>
+    <Property Name="gain" type="Short" Readable="true" Writable="true"/>
     <!-- peakDetect  Format: IQ (16Q,16I) Qs0.15 -->
     <Property Name="peakDetect" type="Short" Readable="true" Writable="true" />
   </Properties>

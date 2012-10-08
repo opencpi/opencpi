@@ -255,7 +255,7 @@ int main ( int argc, char* argv [ ] )
     return 0;
   }
     
-
+  std::string value;
   OA::Application * app = NULL;
   try
     {      
@@ -285,6 +285,21 @@ int main ( int argc, char* argv [ ] )
       app = new OA::Application( app_xml, policy);	
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
       app->initialize();
+
+
+#ifdef TIME_PROPERTY_FUNTIONS
+      // This here to simulate the AGC
+      app->getProperty( "tx_fir_r", "gain", value);
+      app->setProperty("tx_fir_r","gain","1");
+      app->getProperty( "rx_fir_r", "gain", value);
+      app->setProperty("rx_fir_r","gain","1");
+      app->getProperty( "tx_fir_r", "gain", value);
+      app->setProperty("tx_fir_r","gain","1");
+      app->getProperty( "rx_fir_r", "gain", value);
+      app->setProperty("rx_fir_r","gain","1");
+#endif
+
+
       fprintf(stderr, "Application established: containers, workers, connections all created\n");
       printf(">>> DONE Initializing!\n");
       app->start();
@@ -293,11 +308,11 @@ int main ( int argc, char* argv [ ] )
 	mcount = 4;
       while ( (count++ < mcount) | config.cont ) {
 
+
 	/****
 	 *  DEBUG, step thru data
 	 ****/
 	if ( config.step ) {
-	  std::string value;
 	  app->getProperty( "file_read_msg", "stepNow", value);
 	  if ( value == "false" ) {
 	    // wait for user

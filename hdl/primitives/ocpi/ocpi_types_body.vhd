@@ -86,21 +86,25 @@ end to_ulong;
 --begin
 --return char_t(c(7 downto 0));
 --end to_char;
+
 function to_string(inword : word_t) return wordstring_t is
 begin
-  return (signed(inword(7 downto 0)),
-  	  signed(inword(15 downto 8)),
+  return
+   (signed(inword( 7 downto  0)),
+    signed(inword(15 downto  8)),
 	  signed(inword(23 downto 16)),
 	  signed(inword(31 downto 24)));
 end to_string;
+
 function from_string(s : string_t; offset : unsigned) return word_t is
   variable off : natural;
 begin 
   off := to_integer(offset);
   return
-    std_logic_vector(s(off)) &
+    std_logic_vector(s(off))   &
     std_logic_vector(s(off+1)) &
     std_logic_vector(s(off+2)) &
     std_logic_vector(s(off+3));
 end from_string;
+
 end types;

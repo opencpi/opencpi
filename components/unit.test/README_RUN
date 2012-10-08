@@ -1,0 +1,14 @@
+
+Directions to run any unit test that is based on unitTest.test.
+
+Directions to run any of the tests in the components directory that utilize the untiTest.test application.
+
+cd to $(OCPI_BADE_DIR)/%COMPONENT_NAME%.test
+type "./test model"
+	Where model is one of the following {rcc,hdl,ocl}
+The test will execute and 1 of three things will happen.
+
+1) The test will run successfully and will print out "TEST passed".  When this occurs the test.sh script will also exit with the return code from unitTest which is 0 on success
+2) The test will run without success and will print out "TEST failed".  When this occurs the test.sh script will also exit with the return code from unitTest which is -1 on failure
+3) An error will be displayed indicating that the component for the selected model was not found.  When this occurs the test.sh script will also exit with the return code from unitTest which is -2 on failure
+

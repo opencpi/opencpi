@@ -301,8 +301,8 @@ begin
 end rtl;
 
 --
--- The readback multiplexer for those properties that have readback
---
+-- A combinatorial readback multiplexer for those properties that have readback
+-- 
 library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all;
 entity readback is
@@ -314,6 +314,9 @@ entity readback is
       );
 end entity readback;
 
+-- This implementation will behave and synthesize correctly; but due to 
+-- its clock-less, combinatorial structure, may fail to close timing for
+-- higher clock frequencies and/or a large number of properties...
 architecture rtl of readback is
   subtype index_t is natural range properties'range;
   function first_true(bools : boolean_array_t(properties'range)) return index_t is

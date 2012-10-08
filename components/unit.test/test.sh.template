@@ -1,0 +1,10 @@
+#!/bin/bash 
+rt=$( ../include/uut.sh $1 );
+rc=$?
+
+if [[ $rc != 0 ]]; then
+    echo $rt;
+    exit $rc;
+fi 
+./unitTest --utname=%UUT_NAME% --compp="<property name='deviation' value='100'/>" --utp=%UUT_PROPERTIES% --real=true --model=$1 
+
