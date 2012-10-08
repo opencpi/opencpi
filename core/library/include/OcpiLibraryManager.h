@@ -133,8 +133,8 @@ namespace OCPI {
 			      const char *&inst);
       void setPath(const char *);
       // return true if present
-      bool getPlatform(const char *name, unsigned &platform);
-      unsigned addPlatform(const char *name);
+      //      bool getPlatform(const char *name, unsigned &platform);
+      //      unsigned addPlatform(const char *name);
     protected:
     public:
       Manager();

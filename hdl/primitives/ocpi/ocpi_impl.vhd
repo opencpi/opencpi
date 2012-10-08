@@ -142,7 +142,7 @@ entity decoder is
       properties             : properties_t);
   port (
       ocp_in                 : in in_t;       
-      ready                  : in boolean := true;
+      done                   : in boolean := true;
       resp                   : out ocp.SResp_t;
       write_enables          : out boolean_array_t(properties'range);
       read_enables           : out boolean_array_t(properties'range);
@@ -251,7 +251,7 @@ begin
         end if;
         allowed_ops := next_ops(state_t'pos(my_state));
       elsif my_control_op /= NO_OP_e then
-        if ready then                   -- FIXME ready should also control config i/o
+        if done then                   -- FIXME done should also control config i/o
           -- finish the control by setting the state
           is_operating <= false;
           case my_control_op is

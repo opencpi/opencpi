@@ -135,7 +135,7 @@ namespace OCPI {
       Access m_cAccess;
       Access m_dAccess;
       uint64_t m_endpointSize;
-      Device(std::string &name, const char *protocol);
+      Device(std::string &name, const char *protocol = "");
     public:
       virtual ~Device();
       inline const char *protocol() const { return m_protocol.c_str(); }
