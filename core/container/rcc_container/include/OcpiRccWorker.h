@@ -51,6 +51,7 @@
 #ifndef OCPI_RCC_WORKER_H_
 #define OCPI_RCC_WORKER_H_
 
+#include <stdarg.h>
 #include <climits>
 #include <OcpiOsTimer.h>
 #include <OcpiTimeEmit.h>
@@ -72,8 +73,6 @@ namespace OCPI {
       : public OCPI::Container::WorkerBase<Application,Worker,Port>,
 	public OCPI::Time::Emit
     {
-
-    protected:
       friend class Application;
       friend class Controller;
       friend class RDMAPort;
@@ -84,6 +83,7 @@ namespace OCPI {
       void advanceAll();
       void portError(std::string&error);
     public:
+      void setError(const char *fmt, va_list ap);
 
       Worker( Application & app, Artifact *art, const char *name,
 	      ezxml_t impl, ezxml_t inst, const OCPI::Util::PValue *wParams);
@@ -181,17 +181,15 @@ namespace OCPI {
     private:
       void initializeContext();
 
-      // Last error description
-      //std::string m_lastError;
-      
-      // Last WCI operation status
-      //WCI_status    m_wciStatus;
-
       // Our dispatch table
       RCCDispatch* m_dispatch;
       // Our context
       RCCWorker* m_context;
       OCPI::OS::Mutex &m_mutex;
+      RCCRunCondition m_defaultRunCondition; // run condition we create
+      RCCPortMask m_defaultMasks[2];         // masks for our default run condition
+      RCCRunCondition *m_runCondition;       // current active run condition we use is dispatching
+      char *m_errorString;                   // error string set via "setError"
     protected:
       inline uint8_t * getPropertyVaddr() const { return  (uint8_t*)m_context->properties; }
 
@@ -212,9 +210,6 @@ namespace OCPI {
       OCPI::OS::Timer        runTimer;
       OCPI::OS::ElapsedTime  runTimeout;
                         
-      // runtime control
-      //      bool run_condition_met;
-
       // Debug/stats
       OCPI::OS::uint32_t worker_run_count;
 

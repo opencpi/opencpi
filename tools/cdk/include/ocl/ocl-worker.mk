@@ -56,9 +56,9 @@ AREXT=.a
 endif
 endif
 
-EntryPointSourceFile += $(foreach w,$(Workers),$(GeneratedDir)/$(word 1,$(w))_entry_point$(OclSourceSuffix))
+EntryPointSourceFiles += $(foreach w,$(Workers),$(GeneratedDir)/$(word 1,$(w))_entry_point$(OclSourceSuffix))
 
-GeneratedSourceFiles += $(EntryPointSourceFile)
+GeneratedSourceFiles += $(EntryPointSourceFiles)
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
 ArtifactXmlFile = $(TargetDir)/$(word 1,$(Workers))_art.xml

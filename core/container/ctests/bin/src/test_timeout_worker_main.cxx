@@ -428,8 +428,9 @@ int  main( int argc, char** argv)
 
 
 
-  // Patch the producers run condition so that it only has a 1 second timout
   RCCRunCondition rc;
+#if 0 // this oesn't work because a null pointer means run all the time
+  // Patch the producers run condition so that it only has a 1 second timout
   rc.portMasks = NULL;
   rc.usecs = 1000 * 1000 * 1;
   rc.timeout    = 1;
@@ -459,7 +460,7 @@ int  main( int argc, char** argv)
   }
   printf(" Test: %s %d: %s\n", test_name, buffers, test_rc ? "PASSED" : "FAILED" );
   oa_test_rc &= test_rc; test_rc=1;
-
+#endif
 
   // Patch the producers run condition so that it only has a 1 second timout
   RCCPortMask nilPortMask = 0;

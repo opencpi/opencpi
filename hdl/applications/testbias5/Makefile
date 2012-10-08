@@ -34,23 +34,14 @@
 #
 ########################################################################### #
 
-# This primitive library contains VHDL primitive modules that are used
-# by all workers
-# These need to be in order if tools aren't very smart
-LibName=ocpi
-SourceFiles=ocpi_ocp.vhd ocpi_types.vhd ocpi_wci.vhd ocpi_worker.vhd \
-            ocpi_types_body.vhd ocpi_wci_body.vhd \
-            ocpi_wci_impl.vhd gen/ocpi_props.vhd gen/ocpi_props_impl.vhd
-include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library
-
-CPPFiles=$(wildcard *.cpp_vhd)
-GenFiles=$(CPPFiles:%.cpp_vhd=gen/%.vhd)
-$(GenFiles): gen/%.vhd : %.cpp_vhd | gen
-	$(AT)echo Preprocessing $< into $@:
-	$(AT)gcc -E -P -std=c99 -xc \
-        -imacros $$OCPI_BASE_DIR/core/local/util/property/include/OcpiUtilDataTypesApi.h \
-	-o foo $< ;  tr '$$' '\n' < foo | tr '@' ' ' | tr '~' "'" | sed '/^ *$$/d' > $@; rm foo
-
-#gen:
-#	@mkdir -p gen
-
+# Which component libraries should be referenced to build this app?
+Libraries=bsv util
+ComponentLibraries=../../../components
+# this line will be eliminated with a little more toolsmithing
+# at the moment there is no way for altera to search for cores.
+AssemblyWorkers=sma:sma0 sma:sma1 bias:bias
+# For which containers should the runtime xml be generated?
+# These (for now) just xml files containing HdlContainer elements.
+Container=mkOCApp-2sma-5w.v
+Containers=testbiasCont5
+include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk

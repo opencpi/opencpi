@@ -146,7 +146,7 @@ package wci is
     generic(worker : worker_t; properties : properties_t);
     port(
       ocp_in                 : in in_t;       
-      ready                  : in boolean := true;
+      done                   : in boolean := true;
       resp                   : out ocp.SResp_t;
       write_enables          : out boolean_array_t(properties'range);
       read_enables           : out boolean_array_t(properties'range);
@@ -185,7 +185,7 @@ package worker is
     is_big_endian        : bool_t;
   end record control_in_t;
   type control_out_t is record
-    ready            : bool_t; -- worker indicates completion of control/config
+    done             : bool_t; -- worker indicates completion of control/config
     attention        : bool_t; -- worker indicates it needs attention
     abort_control_op : bool_t;
   end record control_out_t;

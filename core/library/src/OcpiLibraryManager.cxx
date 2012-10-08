@@ -133,9 +133,9 @@ namespace OCPI {
     }
 #endif
     Implementation::
-    Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance)
-	: m_artifact(art), m_metadataImpl(i), m_instance(instance),
-	  m_externals(0), m_internals(0), m_connections(NULL)
+    Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance, unsigned ordinal)
+	: m_artifact(art), m_metadataImpl(i), m_staticInstance(instance),
+	  m_externals(0), m_internals(0), m_connections(NULL), m_ordinal(ordinal)
     {}
     bool Implementation::
     satisfiesSelection(const char *selection, unsigned &score) {
@@ -206,7 +206,7 @@ namespace OCPI {
     }
 
     // The artifact base class
-    Artifact::Artifact() : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL) {}
+    Artifact::Artifact() : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL), m_nWorkers(0) {}
     Artifact::~Artifact() {
       for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++) {
 	WorkerMapPair wmp = *wi;
@@ -428,7 +428,7 @@ namespace OCPI {
       return false;
     }
     Implementation *Artifact::addImplementation(OU::Implementation &metaImpl, ezxml_t staticInstance) {
-      Implementation *impl = new Implementation(*this, metaImpl, staticInstance);
+      Implementation *impl = new Implementation(*this, metaImpl, staticInstance, m_nWorkers++);
       // Record in the artifact's mapping
       m_workers.insert(WorkerMapPair(metaImpl.specName().c_str(), impl));
       // Record in the globalmapping
@@ -450,7 +450,9 @@ namespace OCPI {
       typedef std::map<const char*, Implementation *, Comp> InstanceMap;
       typedef InstanceMap::iterator InstanceIter;
       InstanceMap instances; // record static instances for connection tracking
-      for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_next(w), metaImpl++) {
+      unsigned n = 0;
+      for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_next(w), metaImpl++, n++) {
+	metaImpl->m_ordinal = n;
 	const char *err = metaImpl->parse(w, *this);
 	if (err)
 	  throw OU::Error("Error processing implementation metadata for %s: %s",

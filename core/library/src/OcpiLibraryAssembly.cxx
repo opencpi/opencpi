@@ -70,14 +70,15 @@ namespace OCPI {
     // The callback for the findImplementations() method below.
     // Return true if we found THE ONE.
     // Set accepted = true, if we actually accepted one
-    bool Assembly::foundImplementation(const Implementation &i, unsigned score, bool &accepted) {
-      ocpiDebug("Considering implementation for instance \"%s\" spec \"%s\" named \"%s%s%s\" "
+    bool Assembly::
+    foundImplementation(const Implementation &i, unsigned score, bool &accepted) {
+      ocpiDebug("Considering implementation for instance \"%s\" with spec \"%s\": \"%s%s%s\" "
 		"from artifact \"%s\"",
 		m_instances[m_instance].m_name.c_str(),
 		i.m_metadataImpl.specName().c_str(),
 		i.m_metadataImpl.name().c_str(),
-		i.m_instance ? "/" : "",
-		i.m_instance ? ezxml_cattr(i.m_instance, "name") : "",
+		i.m_staticInstance ? "/" : "",
+		i.m_staticInstance ? ezxml_cattr(i.m_staticInstance, "name") : "",
 		i.m_artifact.name().c_str());
       // The util::assembly only knows port names, not worker port ordinals
       // (because it has not been correlated with any implementations).
@@ -143,14 +144,30 @@ namespace OCPI {
 	      // We found the assembly connection port
 	      // Now check that the port connected in the assembly has the same
 	      // name as the port connected in the artifact
-	      if (!ap->m_connectedPort ||
-		  ap->m_connectedPort->m_name != c->port->m_name ||
-		  m_instances[ap->m_connectedPort->m_instance].m_specName != i.m_metadataImpl.specName())
-		return false; // avoid this implementation due to an incompatible static connection
+	      if (!ap->m_connectedPort) {
+		ocpiDebug("Rejected implementation because artifact has port %s connected while "
+			  "application doesn't.", p->m_name.c_str());
+		return false;
+	      }
+	      if (ap->m_connectedPort->m_name != c->port->m_name || // port name different
+		  m_instances[ap->m_connectedPort->m_instance].m_specName !=
+		  c->impl->m_metadataImpl.specName()) {             // or spec name different
+		ocpiDebug("Rejected implementation due to incompatible connection on port \"%s\"",
+			  p->m_name.c_str());
+		ocpiDebug("Artifact connects it to port %s of spec %s, "
+			  "but application wants port %s of spec %s",
+			  c->port->m_name.c_str(), c->impl->m_metadataImpl.specName().c_str(),
+			  ap->m_connectedPort->m_name.c_str(),
+			  m_instances[ap->m_connectedPort->m_instance].m_specName.c_str());
+		return false;
+	      }
 	      bump = 1;; // An implementation with hardwired connections gets a score bump
-	    } else
+	    } else {
 	      // There is no connection in the assembly for a statically connected impl port
+	      ocpiDebug("Rejected implementation because artifact has port %s connected while "
+			"application mention it.", p->m_name.c_str());
 	      return false;
+	    }
 	  }
 	score += bump;
       }
@@ -162,8 +179,9 @@ namespace OCPI {
     }
     // A common method used by constructors
     void Assembly::findImplementations() {
-      m_tempCandidates = m_candidates = new Candidates[m_instances.size()];
       m_instance = 0;
+      m_maxCandidates = 0;
+      m_tempCandidates = m_candidates = new Candidates[m_instances.size()];
       m_assyPorts = new OU::Assembly::Port **[m_instances.size()];
       for (unsigned n = 0; n < m_instances.size(); n++, m_tempCandidates++, m_instance++) {
 	OU::Assembly::Instance &inst = m_instances[m_instance];
@@ -177,6 +195,8 @@ namespace OCPI {
 			  "No acceptable implementations found in any libraries "
 			  "for \"%s\" (for selection: '%s')",
 			  inst.m_specName.c_str(), inst.m_selection.c_str());
+	if (m_tempCandidates->size() > m_maxCandidates)
+	  m_maxCandidates = m_tempCandidates->size();
       }
       // Check for interface compatibility.
       // We assume all implementations have the same protocol metadata
@@ -214,7 +234,7 @@ namespace OCPI {
     // A port is connected in the assembly, and the port it is connected to is on an instance with
     // an already chosen implementation. Now we can check whether this impl conflicts with that one
     // or not
-    bool Assembly::checkConnection(const Implementation &impl, const Implementation &otherImpl,
+    bool Assembly::badConnection(const Implementation &impl, const Implementation &otherImpl,
 				    const OU::Assembly::Port &ap, unsigned port) {
       const OU::Port
 	&p = impl.m_metadataImpl.port(port),
@@ -222,6 +242,7 @@ namespace OCPI {
       if (impl.m_internals & (1 << port)) {
 	// This port is preconnected and the other port is not preconnected to us: we're incompatible
 	if (!(otherImpl.m_internals & (1 << other.m_ordinal)) ||
+	    otherImpl.m_connections[other.m_ordinal].impl != &impl ||
 	    otherImpl.m_connections[other.m_ordinal].port != &p) {
 	ocpiDebug("other %p %u %s  m_internals %x, other internals %x", &other, other.m_ordinal, other.m_name.c_str(),
 		  impl.m_internals, otherImpl.m_internals);

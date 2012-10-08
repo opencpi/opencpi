@@ -286,7 +286,7 @@ int main ( int argc, char* argv [ ] )
       // Create several containers to distribute the workers on
       for ( int n=0; n<nContainers; n++ ) {
 	char buf[1024];
-	sprintf(buf, "Rcc Container %d\n", n );
+	sprintf(buf, "Rcc Container %d", n );
 	(void)OA::ContainerManager::find("rcc",buf);
       }
 

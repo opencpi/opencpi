@@ -121,6 +121,7 @@ namespace OCPI {
       unsigned m_nProperties;
       Property *m_properties;
       ezxml_t m_xml;
+      unsigned m_ordinal; // ordinal within artifact
       Implementation();
       ~Implementation();
       inline const std::string &model() const { return m_model; }
@@ -180,6 +181,7 @@ namespace OCPI {
       OpsLimit
       };
     };
+    extern const char *controlOpNames[Implementation::OpsLimit];
   }
 }
 #endif

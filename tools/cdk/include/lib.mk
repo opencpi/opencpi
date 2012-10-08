@@ -211,7 +211,7 @@ $(XmImplementations): | $(OutDir)lib/xm
 # Worker should only be specified when the target is "new".
 ifeq ($(origin Worker),command line)
   ifneq ($(MAKECMDGOALS),new)
-    $(error You can't set the "Worker" variable unless the make goal is "new")
+    $(error You can't set the "Worker" variable unless the make goal/target is "new")
   endif
   Words:=$(subst ., ,$(Worker))
   $(if $(or $(word 3,$(Words)),$(strip \
@@ -226,35 +226,38 @@ ifeq ($(origin Worker),command line)
   endif
   Name:=$(word 1,$(Words))
   UCModel=$(call ToUpper,$(Model))
-  ifndef SpecFile
-    SpecFile:=specs/$(Name)_spec.xml
+  ifdef SpecFile
+    OcpiSpecFile:=$(SpecFile)
+  else
+    OcpiSpecFile:=specs/$(Name)_spec.xml
   endif
   ifeq ($(wildcard $(SpecFile))$(wildcard specs/$(SpecFile)),)
     $(error Can't create worker $(Worker) when spec file: $(SpecFile) doesn't exist. Use SpecFile= ?)
   endif
   ifeq ($(Model),hdl)
     ifndef Language
-      Language=verilog
+      Language=vhdl
     endif
   endif
   ifdef Language
     LangAttr:=language="$(Language)"
   endif
 else ifdef Worker
-  $(error Worker definition invalid)
+  $(error Worker definition is invalid.  It can onlybe specified on the command line with "new")
 endif
 new:
 	$(AT)$(if $(Worker),,\
 	   $(error The "Worker=" variable must be specified when "new" is specified))\
-	  echo Creating worker named $(Worker).
+	  echo Creating worker subdirectory named $(Worker).
 	$(AT)mkdir $(Worker)
-	$(AT)echo include $$\(OCPI_CDK_DIR\)/include/worker.mk > $(Worker)/Makefile
-	$(AT)(\
+	$(AT)($(if $(Language),echo Language:=$(Language);)echo include $$\(OCPI_CDK_DIR\)/include/worker.mk) > $(Worker)/Makefile
+	$(AT)$(if $(SpecFile),$(AT)(\
 	  echo '<$(UCModel)Implementation $(LangAttr)>';\
 	  echo '  <xi:include href="$(notdir $(SpecFile))"/>';\
-	  echo '</$(UCModel)Implementation>') > $(Worker)/$(Name).xml
-	$(AT)echo Building worker to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model))
+	  echo '</$(UCModel)Implementation>') > $(Worker)/$(Name).xml,\
+          echo "No OWD implementation xml file created.  Using defaults.")
+	$(AT)echo Running \"make skeleton\" to make initial skeleton in $(Worker)/$(Name).$(Suffix_$(Model))
 	$(AT)$(MAKE) -C $(Worker) \
 		OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 		XmlIncludeDirs=../specs \
-		Worker=$(Name) skeleton
+		Worker=$(Name) skeleton Language=$(Language)

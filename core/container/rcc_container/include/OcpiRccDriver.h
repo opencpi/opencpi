@@ -1,5 +1,6 @@
 #ifndef OCPI_RCC_DRIVER_H
 #define OCPI_RCC_DRIVER_H
+#include <pthread.h>
 #include <OcpiContainerManager.h>
 namespace OCPI {
   namespace RCC {
@@ -9,6 +10,7 @@ namespace OCPI {
       //      OCPI::DataTransport::TransportGlobal *m_tpg_events, *m_tpg_no_events;
       unsigned m_count;
     public:
+      static pthread_key_t s_threadKey;
       Driver() throw();
       OCPI::Container::Container *
 	probeContainer(const char *which, const OCPI::API::PValue *props)

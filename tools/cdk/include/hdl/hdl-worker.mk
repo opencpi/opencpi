@@ -67,20 +67,36 @@ endif
 # THis is REDUNDANT with what is in xxx-worker.mk, but we need it to figure out the language below.
 ifndef Worker
 Worker=$(CwdName)
+Workers=$(Worker)
 endif
 
 ############
 # We need to figure out the language and the file suffixes before calling xxx-worker
 # 
+ifeq ($(Worker_$(Worker)_xml),)
+Worker_$(Worker)_xml=$(Worker).xml
 HdlXmlFile=$(Worker).xml
-ifeq ($(realpath $(HdlXmlFile)),)
-  $(error Missing XML implementation file: $(HdlXmlFile))
 endif
+HdlXmlFile=$(Worker_$(Worker)_xml)
+$(call OcpiDbgVar,HdlXmlFile)
+$(call OcpiDbgVar,Worker)
+$(call OcpiDbgVar,Worker_$(Worker)_xml)
+
+#ifeq ($(realpath $(HdlXmlFile)),)
+#  $(error Missing XML implementation file: $(HdlXmlFile))
+#endif
+ifdef Language
+HdlLanguage:=$(call ToLower,$(Language))
+endif
+ifndef HdlLanguage
 # Ugly grab of the language attribute from the XML file
-HdlLanguage=$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z)
+HdlLanguage:=$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z)
+endif
 $(info HdlLanguage is $(HdlLanguage))
 ifeq ($(HdlLanguage),)
-HdlLanguage=verilog
+HdlLanguage:=vhdl
+else
+HdlLanguage:=$(call ToLower,$(HdlLanguage))
 endif
 ifeq ($(HdlLanguage),verilog)
 HdlSourceSuffix:=$(HdlVerilogSuffix)
@@ -106,7 +122,7 @@ endif
 override VerilogIncludeDirs += $(IncludeDirs)
 ImplXmlFile=$(firstword $(ImplXmlFiles))
 DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
-$(DefsFile): $(Worker).xml | $(GeneratedDir)
+$(DefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
 	$(AT)$(OcpiGen) -d $<
 

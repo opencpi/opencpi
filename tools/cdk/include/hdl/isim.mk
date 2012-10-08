@@ -104,9 +104,9 @@ MyIncs=\
         -i $(call FindRelative,$(TargetDir),$(l)/lib/hdl/isim/$(notdir $(w)))))
 
 HdlToolCompile=\
-  $(Xilinx) vlogcomp -v 1 -work $(LibName)=$(LibName) $(MyIncs) $(IsimLibs) \
+  $(Xilinx) $(if $(filter .v,$(suffix $(firstword $(IsimFiles)))),vlogcomp $(MyIncs),vhpcomp) -v 1 -work $(LibName)=$(LibName) $(IsimLibs) \
      $(IsimFiles) \
-  $(if $(findstring $(HdlMode),worker), && \
+  $(if $(findstring $(HdlMode),worker assembly), && \
     echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
 	> $(Worker).prj && \
     fuse $(Worker).$(Worker) work.glbl -prj $(Worker).prj -L unisims_ver \

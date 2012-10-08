@@ -86,7 +86,7 @@ parseFile(const char *file, const char *parent, const char *element,
     *xfile = cp;
   ezxml_t x = ezxml_parse_fd(fd);
   if (!x || !x->name)
-    return OU::esprintf("File \"%s\" (when looking for \"%s\") could not be parsed as XML (", cp, file);
+    return OU::esprintf("File \"%s\" (when looking for \"%s\") could not be parsed as XML", cp, file);
   if (element && strcasecmp(x->name, element)) {
     if (optional)
       *xp = 0;
@@ -186,6 +186,6 @@ printgen(FILE *f, const char *comment, const char *file, bool orig, const char *
 	  "%s YOU %s EDIT IT%s\n",
 	  comment, orig ? "ORIGINALLY " : "", ct, local->tm_zone, endComment,
 	  comment, file, endComment,
-	  comment, orig ? "ARE EXPECTED TO" : "PROBABLY SHOULD NOT", endComment);
+	  comment, orig ? "*ARE* EXPECTED TO" : "PROBABLY SHOULD NOT", endComment);
 }
 

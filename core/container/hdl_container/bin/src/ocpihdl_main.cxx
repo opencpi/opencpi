@@ -35,8 +35,12 @@
 #include <errno.h>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <arpa/inet.h>
 #include <uuid/uuid.h>
 #include <dirent.h>
@@ -52,6 +56,7 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #include "DtSharedMemoryInterface.h"
 #include "DtTransferInternal.h"
 #include "EtherDriver.h"
+#include "SimDriver.h"
 #include "HdlDriver.h"
 #include "HdlContainer.h"
 #include "HdlOCCP.h"
@@ -90,10 +95,11 @@ typedef void Function(const char **ap);
 static Function
   search, emulate, ethers, probe, testdma, admin, bram, unbram, uuid, reset, 
   radmin, wadmin, settime, deltatime, wdump, wreset, wunreset, wop, wwctl, wclear, wwpage,
-  wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA;
-static bool verbose = false, parseable = false;
+  wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate;
+static bool verbose = false, parseable = false, simDump = true;
 static int log = -1;
-static const char *interface = NULL, *device = NULL, *part = NULL, *platform = NULL;
+static const char *interface = NULL, *device = NULL, *part = NULL, *platform = NULL, *simexec = "./runsim";
+static unsigned sleepUsecs = 1000000, spinCount = 255, simTicks = 100000;
 static std::string name, error, endpoint;
 static OH::Driver *driver;
 static OH::Device *dev;
@@ -125,6 +131,7 @@ struct Command {
   { "sendData", sendData, INTERFACE},
   { "sendRDMA", sendRDMA, 0},  // might want device depending on args
   { "settime", settime, DEVICE},
+  { "simulate", simulate, 0},
   { "testdma", testdma, 0},
   { "unbram", unbram, 0},
   { "uuid", uuid, 0},
@@ -180,12 +187,18 @@ usage(const char *name) {
 	  "    wwrite <hdl-dev> <worker> <offset>[/size] <value>"
 	  "                                 # perform config space write of size bytes (default 4) at offset\n"
 	  "                                 # generate UUID verilog file\n"
+          "    simulate                     # run simulator inside created sim: device\n"
           "  Options: (values are either directly after the letter or in the next argument)\n"
 	  "    -l <level>                   # set log levels\n"
 	  "    -i <interface>               # set ethernet interface to use\n"
 	  "    -d <hdl-device>              # identify a specific hdl device to use\n"
 	  "    -p <hdl-platform>            # specify a particular hdl platform (e.g. ml605)\n"
           "    -c <hdl-part>                # specify a particular part/chip (e.g. xc6vlx240t\n"
+	  "    -s <spin-clocks>             # clocks to credit/run the sim between control messages\n"
+	  "    -t <sleep-usecs>             # delay time letting sim run between credits\n"
+	  "    -T <sim-time>                # total simulation time before terminating\n"
+	  "    -D                           # turn off simulation dumping\n"
+	  "    -e <sim-executable>          # simulator executable - default is \"./runsim\"\n"
 	  "    -v                           # be verbose\n"
 	  "  <worker> can be multiple workers such as 1,2,3,4,5.  No ranges.\n"
 	  "  <hdl-dev> examples: 3                            # PCI device 3 (i.e. 0000:03:00.0)\n"
@@ -252,6 +265,7 @@ main(int argc, const char **argv)
       bad("ambiguous command: %s", argv[1]);
     else
       exact = found;
+#if 0
   if ((exact->options & SUDO) && geteuid()) {
     int dfd = ::open(OCPI_DRIVER_MEM, O_RDONLY);
     if (dfd >= 0)
@@ -259,6 +273,7 @@ main(int argc, const char **argv)
     else
       bad("This command requires running with \"sudo -E ./%s ...\"", argv0);
   }
+#endif
   const char **ap;
   for (ap = &argv[2]; *ap && ap[0][0] == '-'; ap++)
     switch (ap[0][1]) {
@@ -272,6 +287,9 @@ main(int argc, const char **argv)
       //	bad("An interface cannot be specified with this command");
       device = ap[0][2] ? &ap[0][2] : *++ap;
       break;
+    case 'e':
+      simexec = ap[0][2] ? &ap[0][2] : *++ap;
+      break;
     case 'p':
       platform = ap[0][2] ? &ap[0][2] : *++ap;
       break;
@@ -280,6 +298,18 @@ main(int argc, const char **argv)
       break;
     case 'l':
       log = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+      break;
+    case 's':
+      spinCount = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+      break;
+    case 't':
+      sleepUsecs = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+      break;
+    case 'T':
+      simTicks = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+      break;
+    case 'D':
+      simDump = false;
       break;
     case 'v':
       verbose = true;
@@ -541,6 +571,7 @@ static void emulate(const char **) {
   if (error.size())
     bad("Error getting interface %s", interface ? interface : "that is up and connected");
 }
+
 static void
 ethers(const char **) {
   OE::IfScanner ifs(error);
@@ -1466,4 +1497,257 @@ sendRDMA(const char **ap) {
   OS::sleep(10000);
   printf("Exiting\n");
   port.reset();
+}
+
+struct Fifo {
+  std::string m_name;
+  int m_rfd, m_wfd;
+  bool m_read;
+  Fifo(std::string strName, bool iRead, const char *old, std::string &error)
+    : m_name(strName), m_rfd(-1), m_wfd(-1), m_read(iRead) {
+    const char *name = m_name.c_str();
+    if (mkfifo(name, 0666))
+      OU::formatString(error, "can't create fifo: %s (%s %d)",
+		       name, strerror(errno), errno);
+    else if ((m_rfd = open(name, O_RDONLY | O_NONBLOCK)) < 0)
+      OU::formatString(error, "can't open fifo %s for reading (%s %d)",
+		       name, strerror(errno), errno);
+    else if (fcntl(m_rfd, F_SETFL, 0) != 0)
+      OU::formatString(error, "can't set blocking flags on reading fifo %s (%s %d)", name,
+		       strerror(errno), errno);
+    else if ((m_wfd = open(name, O_WRONLY | O_NONBLOCK)) < 0)
+      OU::formatString(error, "can't open fifo %s for writing (%s %d)",
+		       name, strerror(errno), errno);
+    else if (fcntl(m_wfd, F_SETFL, 0) != 0)
+      OU::formatString(error, "can't set blocking flags on writing fifo %s (%s %d)", name,
+		       strerror(errno), errno);
+    if (old) {
+      unlink(old);
+      if (symlink(name, old) != 0)
+	OU::formatString(error, "can't symlink from %s to %s (%s %d)", old, name,
+		       strerror(errno), errno);
+    }
+    ocpiDebug("Fifo %s created and opened for %s", name, iRead ? "reading" : "writing");
+  }    
+  ~Fifo() {
+    ocpiDebug("Destroying fifo %s", m_name.c_str());
+    if (m_rfd >= 0) close(m_rfd);
+    if (m_wfd >= 0) close(m_wfd);
+    unlink(m_name.c_str());
+  }
+};
+
+enum Action {
+  SPIN_CREDIT = 0,
+  DCP_CREDIT = 1,
+  DUMP_OFF = 253,
+  DUMP_ON = 254,
+  TERMINATE = 255
+};
+
+
+static bool stopped = false;
+static void sigint(int /* signal */) {
+  stopped = true;
+}
+
+static bool
+mywait(pid_t pid, bool hang, std::string &error) {
+  int status;
+  pid_t wpid;
+  do
+    wpid = waitpid(pid, &status, (hang ? 0 : WNOHANG) | WUNTRACED);
+  while (wpid == -1 && errno == EINTR);
+  if (wpid == 0)
+    ocpiDebug("Wait returned 0 - subprocess running");
+  else if ((int)wpid == -1) {
+    error = "waitpid error";
+    return true;
+  } else if (WIFEXITED(status)) {
+    int exitStatus = WEXITSTATUS(status);
+    if (exitStatus > 10)
+      OU::formatString(error, "Simulation subprocess couldn't execute simulator \"%s\" (got %s - %d)",
+		       simexec, strerror(exitStatus - 10), exitStatus - 10);
+    else
+      OU::formatString(error, "Simulation subprocess terminated with exit status %d", exitStatus);
+    if (hang) {
+      ocpiInfo("%s", error.c_str());
+      error.clear();
+    } else
+      return true;
+  } else if (WIFSIGNALED(status)) {
+    int termSig = WTERMSIG(status);
+    OU::formatString(error, "Simulation subprocess terminated with signal %s (%d)",
+		     strsignal(termSig), termSig);
+    if (hang) {
+      ocpiInfo("%s", error.c_str());
+      error.clear();
+    } else
+      return true;
+  } else if (WIFSTOPPED(status)) {
+    int stopSig = WSTOPSIG(status);
+    ocpiInfo("Simulator subprocess stopped with signal %s (%d)",
+	     strsignal(stopSig), stopSig);
+  }
+  return false;
+}
+static void
+simulate(const char **ap) {
+  pid_t pid = getpid();
+  std::string simDir;
+  OU::formatString(simDir, "%s/%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR);
+  if (mkdir(simDir.c_str(), 0777) != 0 && errno != EEXIST)
+    bad("Can't create directory for all OpenCPI simulator containers: %s", simDir.c_str());
+  if (*ap)
+    OU::formatString(simDir, "%s/%s/%s.%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR, OH::Sim::SIMPREF, *ap);
+  else
+    OU::formatString(simDir, "%s/%s/%s.%u", OH::Sim::TMPDIR, OH::Sim::SIMDIR, OH::Sim::SIMPREF, pid);
+  if (mkdir(simDir.c_str(), 0777) != 0)
+    if (errno == EEXIST)
+      bad("Diretory for this simulator, \"%s\", already exists (/tmp not cleared?)", simDir.c_str());
+    else
+      bad("Can't create the new diretory for this simulator: %s", simDir.c_str());
+  simDir += "/";
+  do {
+    // This fifo is read by the sim and we write it.
+    Fifo reqFifo(simDir + "request", false, "/tmp/OpenCPI0_Req", error);
+    if (error.size())
+      break;
+    // This fifo is created and we open it for reading, but never read it.
+    Fifo respFifo(simDir + "response", true, "/tmp/OpenCPI0_Resp", error);
+    if (error.size())
+      break;
+    // This fifo is read by the sim and we write it.
+    Fifo ctlFifo(simDir + "control", false, "/tmp/OpenCPI0_IOCtl", error);
+    if (error.size())
+      break;
+    // This fifo is read by us and written by the client
+    Fifo extFifo(simDir + "external", true, "/tmp/OpenCPI0_Ext", error);
+    if (error.size())
+      break;
+    ocpiInfo("Simulator named \"sim:%s\" created in %s. All fifos are open.",
+	     strrchr(simDir.c_str(), '.') + 1, simDir.c_str());
+    fd_set fds[1];
+    struct timeval timeout[1];
+    uint64_t cum = 0, last = 0, dcp = 0;
+    char msg[2];
+    assert(signal(SIGINT, sigint) != SIG_ERR);
+    pid_t simPid;
+    switch ((simPid = fork())) {
+    case 0:
+      if (execl(simexec, simexec, NULL))
+	exit(10 + errno);
+      break; // not used.
+    case -1:
+      OU::formatString(error, "Could not create simulator sub-process for: %s", simexec);
+      goto out;
+    default:
+      ocpiInfo("Simluator subprocess has pid: %u.", simPid);
+    }
+    // just improve the odds of an immediate error giving a good error message
+    msg[0] = SPIN_CREDIT;
+    msg[1] = spinCount;
+    assert(write(ctlFifo.m_wfd, msg, 2) == 2);
+    ocpiInfo("Waiting 5 seconds for simlator to start before issueing any more credits.");
+    sleep(5);
+    if (mywait(simPid, false, error))
+      goto out;
+    error.clear();
+    // From here on, we have a subprocess.
+    if (simDump == false) {
+      msg[0] = DUMP_OFF;
+      msg[1] = 0;
+      assert(write(ctlFifo.m_wfd, msg, 2) == 2);
+    } 
+    
+    for (cum = 0; !stopped && error.empty() && cum < simTicks;) {
+      if (dcp) {
+	msg[0] = SPIN_CREDIT;
+	msg[1] = spinCount;
+	assert(write(ctlFifo.m_wfd, msg, 2) == 2);
+	if (cum - last > 1000) {
+	  ocpiInfo("Spin credit at: %20" PRIu64, cum);
+	  last = cum;
+	}
+	cum += spinCount;
+      }
+      FD_ZERO(fds);
+      FD_SET(extFifo.m_rfd, fds);
+      timeout[0].tv_sec = sleepUsecs/1000000;
+      timeout[0].tv_usec = sleepUsecs%1000000;
+      switch (select(extFifo.m_rfd+1, fds, NULL, NULL, timeout)) {
+      case 0: // timeout
+	ocpiDebug("Select timeout. cum: %" PRIu64, cum);
+	break;
+      case 1:
+	{
+	  unsigned n = 0;
+	  if (ioctl(extFifo.m_rfd, FIONREAD, &n) == -1) {
+	    error = "fionread syscall";
+	    goto out;
+	  }
+	  if (n == 0) {
+	    ocpiInfo("Return from select with 0 bytes");
+	    break;
+	  }
+	  while (n) {
+	    char buf[250], *bp = buf;
+	    ssize_t nactual = read(extFifo.m_rfd, buf, n > sizeof(buf) ? sizeof(buf) : n);
+	    if (nactual < 0)
+	      if (errno == EINTR)
+		continue;
+	      else {
+		error = "read error from external fifo";
+		goto out;
+	      }
+	    ssize_t nn;
+	    for (unsigned nw = 0; nw < nactual; nw += nn, bp += nn) {
+	      if ((nn = write(reqFifo.m_wfd, bp, nactual - nw)) < 0) {
+		if (errno != EINTR) {
+		  error = "write error to request fifo";
+		  goto out;
+		}
+	      } else if (nn == 0) {
+		error = "write zero bytes to request fifo";
+		goto out;
+	      } else {
+		msg[0] = DCP_CREDIT;
+		msg[1] = nn;
+		if (write(ctlFifo.m_wfd, msg, 2) != 2) {
+		  error = "write error to control fifo";
+		  goto out;
+		}
+		dcp += nn;
+	      }
+	    }
+	    //	  printf("have written %zu to cp\n", nr);
+	    ocpiInfo("have written to ioctl crediting %zu bytes", nactual);
+	    n -= nactual;
+	  }
+	}
+	break;
+      default:
+	if (errno != EINTR) {
+	  OU::formatString(error, "Select failed: %s %u", strerror(errno), errno);
+	  goto out;
+	}
+      }
+    } // end of loop accumulating credits
+    if (stopped)
+      ocpiInfo("Stopping simulator due to signal");
+    else if (cum >= simTicks)
+      ocpiInfo("Simulator credits at %" PRIu64 " exceeded %u, stopping simulation",
+	       cum, simTicks);
+  out:
+    msg[0] = TERMINATE;
+    msg[1] = 0;
+    assert(write(ctlFifo.m_wfd, msg, 2) == 2);
+    ocpiInfo("Waiting for simulator process to exit");
+    mywait(simPid, true, error);
+    // destroy all automatic objects
+  } while (0);
+  ocpiDebug("Removing sim directory: %s", simDir.c_str());
+  assert(rmdir(simDir.c_str()) == 0);
+  if (error.length())
+    bad("sim");
 }

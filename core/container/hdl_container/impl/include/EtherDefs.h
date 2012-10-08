@@ -48,6 +48,7 @@
 namespace OCPI {
   namespace HDL {
     namespace Ether {
+      extern unsigned typeLength[];
 #define OCPI_HDL_ETHER OCPI::HDL::Ether::
 #else
 #define OCPI_HDL_ETHER

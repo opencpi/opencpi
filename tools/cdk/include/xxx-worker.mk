@@ -34,22 +34,6 @@
 #
 ########################################################################### #
 
-# Makefile fragment for all workers
-
-ifneq ($(Worker),)
-ifneq ($(Workers),)
-$(error Cannot set both Worker and Workers variables in Makefile)
-else
-Workers=$(Worker)
-endif
-else
-ifeq ($(Workers),)
-Worker=$(CwdName)
-Workers=$(Worker)
-endif
-endif
-$(call OcpiDbgVar,Workers)
-$(call OcpiDbgVar,Worker)
 
 ################################################################################
 # Tools for metadata and generated files
@@ -67,20 +51,20 @@ OcpiGen=\
 
 ################################################################################
 # metadata and generated files that are target-independent
-ImplXmlFiles=$(Workers:%=%.xml)
 ImplSuffix=$($(CapModel)ImplSuffix)
 SkelSuffix=$($(CapModel)SkelSuffix)
 SourceSuffix=$($(CapModel)SourceSuffix)
+ImplXmlFiles=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 ifndef Application
 ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
 SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
-$(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : %.xml | $(GeneratedDir)
-	$(AT)echo Generating the implementation header file: $@
+$(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
+	$(AT)echo Generating the implementation header file: $@ from $< 
 	$(AT)$(OcpiGen) -i  $<
 
 skeleton:  $(ImplHeaderFiles) $(SkelFiles)
 
-$(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : %.xml | $(GeneratedDir)
+$(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation skeleton file: $@
 	$(AT)$(OcpiGen) -s $<
 endif
@@ -131,6 +115,8 @@ else
 WkrBinaryName=$(word 1,$(Workers))
 endif
 endif
+$(call OcpiDbgVar,WkrBinaryName)
+$(call OcpiDbgVar,Workers)
 $(call OcpiDbgVar,ModelSpecificBuildHook,Before all: )
 all: $(ModelSpecificBuildHook) 
 

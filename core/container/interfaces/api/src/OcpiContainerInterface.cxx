@@ -68,6 +68,7 @@ namespace OCPI {
     }
 #endif
 
+    unsigned Container::s_nContainers = 0;
     Container::Container(const char *name, const ezxml_t config, const OCPI::Util::PValue *params)
       throw ( OU::EmbeddedException )
       : //m_ourUID(mkUID()),
@@ -76,8 +77,7 @@ namespace OCPI {
       m_transport(*new OCPI::DataTransport::Transport(&Manager::getTransportGlobal(params), false, this))
     {
       OU::SelfAutoMutex guard (this);
-      static unsigned ordinal;
-      m_ordinal = ordinal++;
+      m_ordinal = s_nContainers++;
       if (m_ordinal >= s_maxContainer) {
 	Container **old = s_containers;
 	s_containers = new Container *[s_maxContainer + 10];

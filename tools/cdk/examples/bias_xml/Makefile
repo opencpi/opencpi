@@ -52,4 +52,4 @@ runhdl2: all test.input
 	cmp test.output good.output
 
 clean::
-	rm -f -r biasFile biasFile.dSYM test.output test.input a.out
+	rm -f -r biasFile biasFile.dSYM test.output test.input a.out good.output

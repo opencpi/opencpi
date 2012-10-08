@@ -72,11 +72,16 @@ namespace OCPI {
     OCPI::HDL::Device *Driver::
     open(const char *which, bool discovery, std::string &err) {
       lock();
-      bool pci = false;
+      // FIXME: obviously this should be registered and dispatched nicely..
+      bool pci = false, ether = false, sim = false;
       if (!strncasecmp("PCI:", which, 4)) {
 	pci = true;
 	which += 4;
+      } else if (!strncasecmp("sim:", which, 4)) {
+	sim = true;
+	which += 4;
       } else if (!strncasecmp("Ether:", which, 6)) {
+	ether = true;
 	which += 6;
       } else {
 	unsigned n = 0;
@@ -85,7 +90,10 @@ namespace OCPI {
 	if (n != 5)
 	  pci = true;
       }
-      Device *dev = pci ? PCI::Driver::open(which, err) : Ether::Driver::open(which, discovery, err);
+      Device *dev =
+	pci ? PCI::Driver::open(which, err) : 
+	ether ? Ether::Driver::open(which, discovery, err) :
+	sim ? Sim::Driver::open(which, discovery, err) : NULL;
       if (dev && checkAdmin(dev->name(), dev->cAccess(), err))
 	return dev;
       delete dev;
@@ -125,8 +133,11 @@ namespace OCPI {
 	error.clear();
       }
       count += PCI::Driver::search(params, exclude, error);
-      if (error.size())
+      if (error.size()) {
 	ocpiBad("In HDL Container driver, got pci search error: %s", error.c_str());
+	error.clear();
+      }
+      count += Sim::Driver::search(params, exclude, error);
       return count;
     }
     

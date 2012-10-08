@@ -34,10 +34,42 @@
 #
 ########################################################################### #
 
-# Generic worker makefile
+# Generic top level worker makefile
 include $(OCPI_CDK_DIR)/include/util.mk
 ifeq ($(Model),)
 $(error This directory named $(CwdName) does not end in any of: $(Models))
 endif
+ifneq ($(Worker),)
+  ifneq ($(Workers),)
+    $(error Cannot set both Worker and Workers variables in Makefile)
+  else
+    Workers=$(Worker)
+  endif
+else
+  ifeq ($(Workers),)
+    Worker=$(CwdName)
+    Workers=$(Worker)
+  endif
+endif
+#ImplXmlFiles=$(Workers:%=%.xml)
+define OcpiGeneratedWorkerXml
+$(Worker_$1_xml): | gen
+	$(AT)echo Generating default OWD xml file for $(Model) worker. ; \
+	(echo '<$(CapModel)Implementation $(if $(Language),Language="$(Language)",)>' ; \
+	echo '  <xi:include href="$1_spec.xml"/>' ; \
+	echo '</$(CapModel)Implementation>' ) > $$@
+
+endef
+$(foreach w,$(Workers),\
+   $(if $(wildcard $w.xml),\
+      $(eval Worker_$w_xml:=$w.xml),\
+      $(if $(wildcard *.xml),\
+         $(error Worker description file "$w.xml" appears to be missing.),\
+         $(eval Worker_$w_xml:=gen/$w.xml)\
+         $(eval $(call OcpiGeneratedWorkerXml,$w)))))
+
+#$(foreach w,$(Workers),$(info OWD file for worker $w is $(Worker_$w_xml)))
+$(call OcpiDbgVar,Workers)
+$(call OcpiDbgVar,Worker)
 #$(info Model is $(Model))
 include $(OCPI_CDK_DIR)/include/$(Model)/$(Model)-worker.mk

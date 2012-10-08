@@ -53,10 +53,11 @@ namespace OCPI {
       Artifact &m_artifact;                 // FIXME this can be parent/child
       // This is the metadata description of the implementation, whether static instance or not
       OCPI::Util::Implementation &m_metadataImpl;
-      ezxml_t m_instance;                   // static instances of this implementation
+      ezxml_t m_staticInstance;             // static instances of this implementation
       OCPI::Util::Port::Mask m_externals, m_internals;
       Connection *m_connections;
-      Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance = NULL);
+      unsigned m_ordinal;                   // ordinal of worker within artifact
+      Implementation(Artifact &art, OCPI::Util::Implementation &i, ezxml_t instance, unsigned ordinal);
       // Does this implementation satify the selection criteria?  and if so, what is the score?
       bool satisfiesSelection(const char *selection, unsigned &score);
       bool getValue(const std::string &symbol, OCPI::Util::ExprValue &val);
@@ -83,6 +84,8 @@ namespace OCPI {
       // A map for implementations (*including* static instances) in this artifact
       // Used for artifact-by-artifact searches (FIXME: obsolete?)
       WorkerMap m_workers;      // Map from spec name to implementations
+      // A count of static instances added to the worker map (m_workers)
+      unsigned m_nWorkers;
       Artifact();
       virtual ~Artifact();
       Implementation *addImplementation(OCPI::Util::Implementation &metaImpl, ezxml_t staticInstance);
@@ -129,6 +132,9 @@ namespace OCPI {
 			      const OCPI::API::Connection *conns,
 			      const char *&inst);
       void setPath(const char *);
+      // return true if present
+      bool getPlatform(const char *name, unsigned &platform);
+      unsigned addPlatform(const char *name);
     protected:
     public:
       Manager();

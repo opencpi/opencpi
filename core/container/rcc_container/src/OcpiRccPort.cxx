@@ -478,14 +478,15 @@ namespace OCPI {
 	  m_dtPort->reset();
 	if (m_localOther)
 	  m_localOther->disconnectInternal();
-      } else if (m_localOther)
+      } else {
+	if (m_localOther)
 	// Input with a peer - they go first
-	m_localOther->disconnectInternal();
-      else if (m_dtPort)
-	// Input without a pear
-	m_dtPort->reset();
+	  m_localOther->disconnectInternal();
+	if (m_dtPort)
+	  m_dtPort->reset();
+      }
       m_localOther = NULL;
-      m_dtPort = 0;
+      m_dtPort = NULL;
       parent().m_context->connectedPorts &= ~(1<<m_portOrdinal);
     }
 

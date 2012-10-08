@@ -28,5 +28,4 @@ port=\
 `
 echo "USB port is '$port' for loading bitstream" >> $tmp
 device=`echo $2 | sed 's/^PCI://'`
-`dirname $0`/loadBitStream $1 $device $port $4
-exit 0
+exec `dirname $0`/loadBitStream $1 $device $port $4

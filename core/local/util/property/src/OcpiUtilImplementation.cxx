@@ -191,6 +191,11 @@ namespace OCPI {
       validate();
     }
     void Attributes::validate() { }
+    const char *controlOpNames[Implementation::OpsLimit] = {
+#define CONTROL_OP(x, c, t, s1, s2, s3)  #c,
+      OCPI_CONTROL_OPS
+#undef CONTROL_OP
+    };
   }
 }
 

@@ -63,15 +63,16 @@ namespace OCPI {
     class Assembly : public OCPI::Util::Assembly,  public ImplementationCallback {
       unsigned m_instance;			  // ordinal of current instance being processed
       unsigned m_nPorts;                          // nPorts of impls of instance being processed
+      unsigned m_maxCandidates;                   // maximum number of candidates for any instance
       Candidates *m_tempCandidates;               // candidates currently being processed (for one instance)
-      OCPI::Util::Assembly::Port ***m_assyPorts; // a map by spec port ordinal to util::assembly ports
+      OCPI::Util::Assembly::Port ***m_assyPorts;  // a map by spec port ordinal to util::assembly ports
     public:
-      Candidates *m_candidates;                  // array of candidate sets, indexed by instance ordinal
+      Candidates *m_candidates;                   // array of candidate sets, indexed by instance ordinal
       explicit Assembly(const char *file);
       explicit Assembly(const std::string &string);
       ~Assembly();
-      bool checkConnection(const Implementation &impl, const Implementation &otherImpl,
-			   const OCPI::Util::Assembly::Port &ap, unsigned port);
+      bool badConnection(const Implementation &impl, const Implementation &otherImpl,
+			 const OCPI::Util::Assembly::Port &ap, unsigned port);
       inline Port *assyPort(unsigned inst, unsigned port) { return m_assyPorts[inst][port];}
       // Reference counting
       void operator ++( int );

@@ -7,7 +7,7 @@
 namespace OA = OCPI::API;
 
 int main(int argc, char **argv) {
-  char *size = "100", *selection = "", *nbuffers="2";
+  const char *size = "100", *selection = "", *nbuffers="2";
   if (argv[1]) {
     selection = argv[1];
     if (argv[2]) {

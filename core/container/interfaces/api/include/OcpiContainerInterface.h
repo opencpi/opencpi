@@ -188,6 +188,7 @@ namespace OCPI {
       static Container &nthContainer(unsigned n);
       typedef uint32_t CMap;
       static const unsigned maxContainer = sizeof(CMap) * 8;
+      static unsigned s_nContainers;
       // Server - if a container is remote, it has a server.
       class Server;
       Server *m_server;

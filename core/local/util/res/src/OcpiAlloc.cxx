@@ -53,7 +53,7 @@ namespace OCPI {
     };
     struct ResPool {
       OCPI::Util::ResAddrType  start_off;
-      OCPI::OS::uint64_t  total_size;
+      OCPI::OS::uint64_t  total_size, used;
       std::list<Block> free_list;
       std::list<Block> alloc_list;
       bool             sort_by_size;
@@ -140,8 +140,9 @@ int OCPI::Util::MemBlockMgr::alloc(uint32_t nbytes, unsigned int alignment, OCPI
 {
 
   if ( nbytes > 2000000 ) {
-    ocpiInfo("Allocating large mem %" PRIu32 "K", nbytes/1024);
-    //    OCPI::OS::dumpStack (std::cerr);
+    ocpiInfo("Allocating large mem %" PRIu32 "K in %p %" PRIu64 " of %" PRIu64 " used",
+	     nbytes/1024, this, m_pool->used, m_pool->total_size);
+    // OCPI::OS::dumpStack (std::cerr);
   }
 #ifdef DEBUG_LISTS
   ocpiDebug("Alloc list");
@@ -166,6 +167,7 @@ int OCPI::Util::MemBlockMgr::alloc(uint32_t nbytes, unsigned int alignment, OCPI
         m_pool->alloc_list.push_back( Block(m_pool, nbytes, taddr, ALIGN(req_addr, alignment)) );
         ocpiDebug("**** Alloc Returning address = %" PRIx32 ", %" PRIx32 "", 
                taddr, req_addr );
+	m_pool->used += nbytes;
         return 0;
       }
       else if (  ((*it).size == nbytes) ) {
@@ -175,6 +177,7 @@ int OCPI::Util::MemBlockMgr::alloc(uint32_t nbytes, unsigned int alignment, OCPI
         ocpiDebug("**** Alloc Returning address = %" PRIx32 ", %" PRIx32 "", 
                (*it).addr, req_addr );
         m_pool->free_list.erase( it );      
+	m_pool->used += nbytes;
         return 0;
       }
     }
@@ -205,7 +208,9 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
 
 #ifndef NDEBUG
       if ( (*it).size > 2000000 ) {
-	ocpiInfo("Freeing large mem %" PRIu64 "K", (*it).size/1024);
+	ocpiInfo("Freeing large mem %" PRIu64 "K in %p %" PRIu64 " of %" PRIu64 " used",
+		 (*it).size/1024, this, m_pool->used, m_pool->total_size);
+	//        OCPI::OS::dumpStack (std::cerr);
       }
 #ifdef DEBUG_LISTS
       printf("Alloc list\n");
@@ -216,6 +221,7 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
 #endif
 
 
+      m_pool->used -= (*it).size;
       m_pool->free_list.push_back( Block( m_pool, (*it).size, addr, addr ) );
       m_pool->alloc_list.erase( it );
       m_pool->defrag();  
@@ -232,6 +238,8 @@ OCPI::Util::MemBlockMgr::MemBlockMgr(OCPI::Util::ResAddrType start, OCPI::OS::ui
 {
   
   m_pool = new OCPI::Util::ResPool;
+  m_pool->total_size = size;
+  m_pool->used = 0;
   m_pool->free_list.push_back( Block( m_pool, size, start, start ) );
 }
 

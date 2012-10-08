@@ -18,8 +18,10 @@ namespace OCPI {
       :
       //      m_tpg_events(NULL), m_tpg_no_events(NULL), 
       m_count(0) {
+      ocpiCheck(pthread_key_create(&s_threadKey, NULL) == 0);
       ocpiDebug("Registering the RCC Container driver");
     }
+    pthread_key_t Driver::s_threadKey;
     // Look for a container that doesn't exist yet.
     OC::Container *Driver::
     probeContainer(const char *which, const OA::PValue *params)
@@ -59,6 +61,7 @@ namespace OCPI {
       OU::Parent<Container>::deleteChildren();
       //      if ( m_tpg_no_events ) delete m_tpg_no_events;
       //      if ( m_tpg_events ) delete m_tpg_events;
+      ocpiCheck(pthread_key_delete(s_threadKey) == 0);
     }
     // Register this driver
     OC::RegisterContainerDriver<Driver> driver;

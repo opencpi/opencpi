@@ -48,7 +48,7 @@ namespace OCPI {
       namespace OE = OCPI::OS::Ether;
 
 
-      static unsigned typeLength[] = {
+      unsigned typeLength[] = {
 	sizeof(EtherControlNop), sizeof(EtherControlWrite),
 	sizeof(EtherControlRead), sizeof(EtherControlResponse)
       };

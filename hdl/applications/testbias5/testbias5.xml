@@ -1,0 +1,30 @@
+<HdlAssembly Language="Verilog">
+  <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
+  <Instance Worker="bias" Name="bias0"/>
+  <Instance Worker="bias" Name="bias1"/>
+  <Instance Worker="bias" Name="bias2"/>
+  <Instance Worker="bias" Name="bias3"/>
+  <Instance Worker="bias" Name="bias4"/>
+  <Connection Name="in" External="consumer">
+    <Attach Instance="bias0" Interface="in"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="bias0" Interface="out"/>
+    <Attach Instance="bias1" Interface="in"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="bias1" Interface="out"/>
+    <Attach Instance="bias2" Interface="in"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="bias2" Interface="out"/>
+    <Attach Instance="bias3" Interface="in"/>
+  </Connection>
+  <Connection>
+    <Attach Instance="bias3" Interface="out"/>
+    <Attach Instance="bias4" Interface="in"/>
+  </Connection>
+  <Connection Name="out" External="producer">
+    <Attach Instance="bias4" Interface="out"/>
+  </Connection>
+</HdlAssembly>

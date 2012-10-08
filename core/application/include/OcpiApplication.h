@@ -57,18 +57,30 @@ namespace OCPI {
       typedef OCPI::Container::Container::CMap CMap;
       OCPI::Library::Assembly &m_assembly;
 
+      unsigned m_nInstances;
       struct Instance {
 	const OCPI::Library::Implementation *m_impl; // The chosen, best implementation
 	unsigned m_container;                        // LOCAL ordinal - among those we are using
 	OCPI::Util::Value *m_propValues;             // the parsed property values to set
 	unsigned *m_propOrdinals;
-	CMap m_rejectedCandidates;                   // which ones have been rejected
-	unsigned m_nCandidates;                      // how many are left
-	unsigned m_chosenCandidate;                  // which one was it? (for m_impl)
+	CMap *m_feasibleContainers;                  // map per candidate, from findContainers
+	unsigned m_nCandidates;                      // convenience
+	//	unsigned m_candidate;                        // temp during algorithm
+	//	unsigned *m_containers;                      // counters of where we are in containers for candidate
 	Instance();
 	~Instance();
       } *m_instances;
 
+      struct Booking {
+	OCPI::Library::Artifact *m_artifact;
+	CMap m_usedImpls;         // which fixed implementations in the artifact are in use
+	Booking() : m_artifact(NULL), m_usedImpls(0) {}
+      } *m_bookings;
+
+      struct Deployment {
+	unsigned candidate;            // running counter of where we are in candidates list
+	unsigned container;            // running counters of where we are in containers for candidate
+      } *m_deployments, *m_bestDeployments;
       // This class represents a mapping from an externally visible property of the assembly
       // to an individual property of an instance. It must be at this layer
       // (not util::assembly or library::assembly) because it potentially depends on the 
@@ -79,12 +91,13 @@ namespace OCPI {
 	unsigned m_property; // ordinal of property in implememtation of instance
       } *m_properties;
       unsigned m_nProperties;
-      // The bits in the cmap show which containers are possible for that candidate implementation
-      CMap m_curMap;            // A temporary that accumulates containers for a candidate
-      unsigned m_curContainers; // A temporary that counts containers for a candidate
-      CMap m_allMap;            // A map of all containers chosen/used
-      unsigned m_nContainers;                         // how many containers have been used
-      unsigned *m_usedContainers;                     // per used container, its container ordinal (global)
+      CMap m_curMap;              // A temporary that indicates possible containers for a candidate
+      unsigned m_curContainers;   // A temporary that counts containers for a candidate
+      CMap m_allMap;              // A map of all containers chosen/used
+      unsigned *m_global2used;         // A map from global ordinals to our "used" orinals
+      unsigned m_nContainers;     // how many containers have been used
+      unsigned *m_usedContainers; // A map from used container to global container
+
       // Now the runtime state.
       OCPI::Container::Container **m_containers;      // the actual containers we are using
       OCPI::Container::Application **m_containerApps; // per used container, the container app
@@ -101,9 +114,8 @@ namespace OCPI {
       Externals m_externals;
       OCPI::Container::Worker **m_workers;
       OCPI::Container::Worker *m_doneWorker;
-      OCPI::Container::ExternalPort **m_externalPorts;
-      const char **m_externalNames;
-      void init(const OCPI::API::PValue *params);
+      // OCPI::Container::ExternalPort **m_externalPorts;
+      // const char **m_externalNames;
 
       enum CMapPolicy {
 	RoundRobin,
@@ -113,9 +125,20 @@ namespace OCPI {
       CMapPolicy m_cMapPolicy;
       unsigned   m_processors;
       unsigned m_currConn;
-      void policyMap( Instance * i, CMap & bestMap, CMap & allMap );
+      unsigned m_bestScore;
+
+      void init(const OCPI::API::PValue *params);
+      // return our used-container ordinal
+      unsigned addContainer(unsigned container);
+      bool connectionsOk(OCPI::Library::Candidate &c, unsigned instNum);
+      void finalizeProperties();
+      bool bookingOk(Booking &b, OCPI::Library::Candidate &c, unsigned n);
+      //      CMap assessCandidate(Instance &i, OCPI::Library::Candidate &c, unsigned &backUp);
+      void policyMap( Instance * i, CMap & bestMap);
       void setPolicy(const OCPI::API::PValue *params);
       Property &findProperty(const char * worker_inst_name, const char * prop_name);
+      void dumpDeployment(unsigned score, Deployment *dep);
+      void doInstance(unsigned instNum, unsigned score);
     public:
       explicit ApplicationI(const char *file, const OCPI::API::PValue * policy=NULL);
       explicit ApplicationI(const std::string &string, const OCPI::API::PValue * policy=NULL);

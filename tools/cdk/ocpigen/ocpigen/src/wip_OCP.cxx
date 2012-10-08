@@ -177,8 +177,12 @@ deriveOCP(Worker *w) {
       {
 	unsigned n = (p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth +
 		      p->dataWidth - 1) / p->dataWidth;
-	if (n > 1)
-	  ocp->MAddr.width = ceilLog2(n) + max(0, ceilLog2(p->dataWidth) - 3);
+	if (n > 1) {
+	  ocp->MAddr.width = ceilLog2(n);
+	  unsigned nn = ceilLog2(p->dataWidth);
+	  if (nn > 3)
+	    ocp->MAddr.width += ceilLog2(p->dataWidth) - 3;
+	}
 	ocp->MAddrSpace.value = s;
 	if (p->preciseBurst) {
 	  ocp->MBurstLength.width = n < 4 ? 2 : floorLog2(n-1) + 1;

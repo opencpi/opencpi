@@ -196,6 +196,7 @@ typedef struct {
   RCCBoolean (*advance)(RCCPort *port, uint32_t maxlength);
   RCCBoolean (*wait)(RCCPort *, uint32_t max, uint32_t usecs);
   void (*take)(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
+  void (*setError)(const char *, ...);
 } RCCContainer;
 
 struct RCCWorker {

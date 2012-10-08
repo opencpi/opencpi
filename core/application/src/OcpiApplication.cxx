@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -57,108 +56,98 @@ namespace OCPI {
     }
     ApplicationI::~ApplicationI() {
       m_assembly--;
+      delete [] m_instances;
+      delete [] m_bookings;
+      delete [] m_deployments;
+      delete [] m_bestDeployments;
+      delete [] m_properties;
+      delete [] m_global2used;
+      delete [] m_usedContainers;
+      delete [] m_containers;
       if (m_containerApps) {
 	for (unsigned n = 0; n < m_nContainers; n++)
 	  delete m_containerApps[n];
 	delete [] m_containerApps;
       }
       delete [] m_workers;
-      delete [] m_usedContainers;
-      delete [] m_instances;
-      delete [] m_containers;
-      delete [] m_properties;
+    }
+    unsigned ApplicationI::
+    addContainer(unsigned container) {
+      ocpiAssert(!(m_allMap & (1 << container)));
+      m_usedContainers[m_nContainers] = container;
+      m_allMap |= 1 << container;
+      m_global2used[container] = m_nContainers;
+      return m_nContainers++;
     }
 
-    void 
-    ApplicationI::
-    policyMap( Instance * i, CMap & bestMap, CMap & /* alliMap */)
+    /*
+    so we made choices during the feasibility analysis, but here we want to add some policy.
+    the default allocation will bias toward collocation, so this is basically to 
+    spread things out.
+    Since exclusive/bitstream allocations are not really adjustable, we just deal with the others.
+    we haven't remembered ALL deployments, just the "best".
+    we have preferred internally connected impls by scoring them up, which has inherently consolidated then.
+    (preferred collocation)
+    so somehow we need to keep the policy while keeping the fixed allocation...
+    perhaps we need to record some sort of exclusivity and collocation constraints
+    the def
+    */
+    // For dynamic instances only, distribute them according to policy
+    void ApplicationI::
+    policyMap( Instance * i, CMap & bestMap)
     {
-
       // bestMap is a bitmap of the best availabe containers that the implementation can be mapped to
       // alliMap is the bitmap of all suitable containers for the implementation
       switch ( m_cMapPolicy ) {
 
       case MaxProcessors:
-	{  // If we are here the policy is a "limited to" m_procesors policy
-
-	  // First figure out if we have already hit our limit
-	  if (  m_nContainers >= m_processors ) {
-	    for ( unsigned n=0; n<m_nContainers; n++ ) {
-	      if ( m_currConn >= m_nContainers ) m_currConn=0;
-	      CMap map = 1<<m_usedContainers[m_currConn++];
-	      if ( map & bestMap ) {
-		i->m_container = m_currConn-1;
-		return;
-	      }
+	// Limit use of processors to m_processors
+	// If We have hit the limit, try to re-use.  If we can't, fall through to round robin
+	if (m_nContainers >= m_processors)
+	  for (unsigned n = 0; n < m_nContainers; n++) {
+	    if ( m_currConn >= m_nContainers ) 
+	      m_currConn = 0;
+	    if (bestMap & (1 << m_usedContainers[m_currConn++])) {
+	      i->m_container = m_currConn - 1;
+	      return;
 	    }
 	  }
-	}
 	// Not at our limit, let RR find the next available
 	
       case RoundRobin:
-	{
-	  // Now we must select the container for the best candidate.
-	  // As a default, we will rotate through the possible containers to spread them out
-	  // So, find the next (rotating) container for the best candidate
-	  CMap map;
-	  do {
-	    if (++m_currConn >= OC::Container::maxContainer)
-	      m_currConn = 0;
-	    map = 1 << m_currConn;
-	  } while (!(map & bestMap));
-	  ocpiDebug("map %d best %d curr %d", map, bestMap, m_currConn);
-	  if (!(m_allMap & map)) {
-	    // A container we have not used yet.
-	    m_allMap |= map;
-	    i->m_container = m_nContainers;
-	    // Note we save the container ordinal, not the container pointer,
-	    // simply to allow the container to go away after this API (construction)
-	    // and before the next (initialize).  At least we can check for errors.
-	    m_usedContainers[m_nContainers++] = m_currConn;
-
-	  } 
-	  else {
-	    for (unsigned c = 0; c < m_nContainers; c++) {
-	      if (m_usedContainers[c] == m_currConn) {
-		i->m_container = c;
-		break;
-	      }
-	    }
+	// Prefer adding a new container to an existing one, but if we can't
+	// use a new one, rotate around the existing ones.
+	for (unsigned n = 0; n < OC::Container::s_nContainers; n++)
+	  if ((bestMap & (1 << n)) && !(m_allMap & (1 << n))) {
+	    m_currConn = m_nContainers;
+	    i->m_container = addContainer(n);
+	    return; // We added a new one - and used it
 	  }
-
-	}
+	// We have to use one we have since only those are feasible
+	do {
+	  if (++m_currConn >= OC::Container::s_nContainers)
+	    m_currConn = 0;
+	} while (!(bestMap & (1 << m_usedContainers[m_currConn])));
+	i->m_container = m_currConn;
+	ocpiDebug("best 0x%x curr %u cont %u", bestMap, m_currConn, m_usedContainers[m_currConn]);
 	break;
 
       case MinProcessors:
-	{
-	  if ( m_processors == 0 ) {  // Special case, we use the minimum possible
-	    CMap map=1;
-	    for ( unsigned n=0; n<OC::Container::maxContainer; n++, map=1<<n ) {
-	      if ( map & bestMap ) {
-		m_currConn = n;
-		break;
-	      }
-	    }
-	    if ( ! (map&bestMap) ) {
-	      throw std::string("No Suitable container found for worker");
-	    }
-	    std::cout << map << " " << bestMap << " " << m_currConn << std::endl;	
-	    if (!(m_allMap & map)) {
-	      m_allMap |= map;
-	      i->m_container = m_nContainers;
-	      m_usedContainers[m_nContainers++] = m_currConn;
-	    }
-	    else {
-	      for (unsigned c = 0; c < m_nContainers; c++) {
-		if (m_usedContainers[c] == m_currConn) {
-		  i->m_container = c;
-		  break;
-		}
-	      }
-	    }
+	// Minimize processor - reuse when possible
+	// use a new one, rotate around the existing ones.
+	ocpiAssert(m_processors == 0);
+	// Try to use first one already used that suits us
+	for (unsigned n = 0; n < m_nContainers; n++)
+	  if (bestMap & (1 << m_usedContainers[n])) {
+	    i->m_container = n;
+	    return;
 	  }
-	}
-	break;
+	// Add one
+	unsigned n;
+	for (n = 0; n < OC::Container::s_nContainers; n++)
+	  if (bestMap & (1 << n))
+	    break;
+	i->m_container = addContainer(n);
       }
     }
 
@@ -179,142 +168,66 @@ namespace OCPI {
       }
     }
   
-
-    void 
-    ApplicationI::
-    init( const PValue * policy ) {
-
-      m_allMap = m_curMap = 0;   // accumulate all containers actually used
-      m_nContainers = 0;
-      m_containers = NULL;
-      m_containerApps = NULL;
-      m_workers = NULL;
-      m_externalPorts = NULL;
-      m_externalNames = NULL;
-      m_properties = NULL;
-      m_nProperties = 0;
-      m_currConn = OC::Container::maxContainer - 1;
-      m_cMapPolicy = RoundRobin;
-      m_doneWorker = NULL;
-      // Set the instance map policy
-      setPolicy( policy );
-
-      unsigned
-	nInstances = m_assembly.m_instances.size();
-      m_usedContainers = new unsigned[nInstances]; // over allocated - could use less
-      // Application's instances
-      Instance *i = m_instances = new Instance[nInstances];
-      for (unsigned n = 0; n < nInstances; n++, i++)
-	i->m_nCandidates = m_assembly.m_candidates[n].size();
-      i = m_instances;
-      // For all instances in the assembly (this loop is "backed up" sometimes)
-      for (unsigned n = 0; n < nInstances; n++, i++) {
-	OL::Candidates &cs = m_assembly.m_candidates[n];
-	CMap
-	  sum = 0,     // accumulate possible containers over candidates
-	  bestMap = 0; // save map of best candidate.  initialized to kill warning
-	unsigned bestScore = 0;
-	bool nonReusable = false;     // remember if we ran out of containers
-	unsigned backup = nInstances; // where to backup to if we run into a dead end
-	// For all candidate implementations known to be suitable for this instance,
-	// find the "best" one, filtering out those that are infeasible due to
-	// constraints between implementations and containers etc. that could not
-	// be ruled out earlier
-	for (unsigned m = 0; m < cs.size(); m++) {
-	  if (i->m_rejectedCandidates & (1 << m))
-	    continue;
-	  OL::Candidate &c = cs[m];
-	  m_curMap = 0;        // to accumulate containers suitable for this candidate
-	  m_curContainers = 0; // to count suitable containers for this candidate
-	  (void)OC::Manager::findContainers(*this, cs[m].impl->m_metadataImpl);
-	  if (!m_curMap)
-	    continue; // if there are no containers that can run it, skip it
-	  if (c.impl->m_instance) {
-	    // Avoid implementations that are non-reusable if we don't have enough
-	    // containers to use them all
-	    unsigned nn, nContainers = 0; // How many containers are we already using
-	    unsigned first = nInstances;  // Remember first potential con
-	    for (nn = 0; nn < n; nn++)
-	      if (c.impl == m_instances[nn].m_impl) {
-		if (m_instances[nn].m_nCandidates > 1)
-		  first = nn;
-		if (++nContainers >= m_curContainers)
-		  break;
-	      }
-	    if (nn < n) {
-	      nonReusable = true;
-	      if (first < backup)
-		backup = first;
-	      ocpiDebug("Skipping candidate due to container overflow");
-	      continue;
-	    }
-	  }
-	  // Check to see if this implementation is incompatible with previous choices.
-	  // If it has any ports that are preconnected to instances that have already chosen
-	  // incompatible implementations, skip it.
-	  unsigned nPorts = c.impl->m_metadataImpl.nPorts();
-	  bool skip = false;
-	  // For all ports on this instance, check for incompatibility
-	  for (unsigned nn = 0; nn < nPorts; nn++) {
-	    OU::Assembly::Port *ap = m_assembly.assyPort(n, nn);
-	    if ( ap) ocpiDebug("ap %p %p inst %u n %u nn %u", ap, ap->m_connectedPort,
-		      ap->m_connectedPort ? ap->m_connectedPort->m_instance : 0, n, nn);
-	    if(ap && ap->m_connectedPort && ap->m_connectedPort->m_instance < n &&
-	       m_assembly.checkConnection(*c.impl, *m_instances[ap->m_connectedPort->m_instance].m_impl,
-					  *ap, nn)) {
-	      // Remember the earliest instance we might back up to if we have no solution
-	      if (ap->m_connectedPort->m_instance < backup &&
-		  m_instances[ap->m_connectedPort->m_instance].m_nCandidates > 1) {
-		backup = ap->m_connectedPort->m_instance;
-	      }
-	      
-	      skip = true;
-	      break;
-	    }
-	  }
-	  if (skip) {
-	    ocpiDebug("For instance \"%s\" for spec \"%s\" rejecting implementation \"%s%s%s\" with score %u "
-		      "from artifact \"%s\" due to connectivity conflict",
-		      m_assembly.m_instances[n].m_name.c_str(),
-		      m_assembly.m_instances[n].m_specName.c_str(),
-		      c.impl->m_metadataImpl.name().c_str(),
-		      c.impl->m_instance ? "/" : "",
-		      c.impl->m_instance ? ezxml_cattr(c.impl->m_instance, "name") : "",
-		      c.score, c.impl->m_artifact.name().c_str());
-	    continue;
-	  }
-	  // If the candidate has feasible containers, evaluate based on score,
-	  if (m_curMap && c.score > bestScore) {
-	    bestScore = c.score;
-	    i->m_impl = c.impl;
-	    i->m_chosenCandidate = m;
-	    bestMap = m_curMap;
-	  }
-	  sum |= m_curMap;
+    // Check whether this candidate can be used relative to previous
+    // choices for instances it is connected to
+    bool ApplicationI::
+    connectionsOk(OL::Candidate &c, unsigned instNum) {
+      unsigned nPorts = c.impl->m_metadataImpl.nPorts();
+      for (unsigned nn = 0; nn < nPorts; nn++) {
+	OU::Assembly::Port
+	  *ap = m_assembly.assyPort(instNum, nn),
+	  *other = ap ? ap->m_connectedPort : NULL;
+	if (ap &&                          // if the port is even mentioned in the assembly?
+	    other &&                       // if the port is connected in the assembly
+	    other->m_instance < instNum &&  // if the other instance has been processed
+	    m_assembly.                    // then check for prewired compatibility
+	    badConnection(*c.impl, *m_instances[other->m_instance].m_impl, *ap, nn)) {
+	  ocpiDebug("For instance \"%s\" for spec \"%s\" rejecting implementation \"%s%s%s\" with score %u "
+		    "from artifact \"%s\" due to connectivity conflict",
+		    m_assembly.m_instances[instNum].m_name.c_str(),
+		    m_assembly.m_instances[instNum].m_specName.c_str(),
+		    c.impl->m_metadataImpl.name().c_str(),
+		    c.impl->m_staticInstance ? "/" : "",
+		    c.impl->m_staticInstance ? ezxml_cattr(c.impl->m_staticInstance, "name") : "",
+		    c.score, c.impl->m_artifact.name().c_str());
+	  ocpiDebug("Other is instance \"%s\" for spec \"%s\" implementation \"%s%s%s\" "
+		    "from artifact \"%s\".",
+		    m_assembly.m_instances[other->m_instance].m_name.c_str(),
+		    m_assembly.m_instances[other->m_instance].m_specName.c_str(),
+		    m_instances[other->m_instance].m_impl->m_metadataImpl.name().c_str(),
+		    m_instances[other->m_instance].m_impl->m_staticInstance ? "/" : "",
+		    m_instances[other->m_instance].m_impl->m_staticInstance ?
+		    ezxml_cattr(m_instances[other->m_instance].m_impl->m_staticInstance, "name") : "",
+		    m_instances[other->m_instance].m_impl->m_artifact.name().c_str());
+	  return false;
 	}
-	if (!sum)
-	  if (backup < nInstances) {
-	    ocpiDebug("Backing up from instance %u to instance %u", n, backup);
-	    i = &m_instances[backup];
-	    i->m_rejectedCandidates |= 1 << i->m_chosenCandidate;
-	    i->m_impl = NULL;
-	    i->m_nCandidates--;
-	    i--;
-	    n = backup - 1;
-	    continue;
-	  } else {
-	    std::string err;
-	    if (nonReusable)
-	      err = "There are not enough containers to run the %d non-reusable implementation";
-	    else if (cs.size() > 1)
-	      err = "There are no containers for any of the %d suitable implementations";
-	    else
-	      err = "There are no containers for the %d suitable implementation";
-	    err += " for instance %s of component (spec) %s";
-	    throw OU::Error(err.c_str(), 
-			    cs.size(), m_assembly.m_instances[n].m_name.c_str(),
-			    m_assembly.m_instances[n].m_specName.c_str());
-	  }
+      }
+      return true;
+    }
+
+    // FIXME: we assume that if the implementation is not a static instance then it can't conflict
+    bool ApplicationI::
+    bookingOk(Booking &b, OL::Candidate &c, unsigned n) {
+      if (c.impl->m_staticInstance && b.m_artifact &&
+	  (b.m_artifact != &c.impl->m_artifact ||
+	   b.m_usedImpls & (1 << c.impl->m_ordinal))) {
+	ocpiDebug("For instance \"%s\" for spec \"%s\" rejecting implementation \"%s%s%s\" with score %u "
+		  "from artifact \"%s\" due to insufficient available containers",
+		  m_assembly.m_instances[n].m_name.c_str(),
+		  m_assembly.m_instances[n].m_specName.c_str(),
+		  c.impl->m_metadataImpl.name().c_str(),
+		  c.impl->m_staticInstance ? "/" : "",
+		  c.impl->m_staticInstance ? ezxml_cattr(c.impl->m_staticInstance, "name") : "",
+		  c.score, c.impl->m_artifact.name().c_str());
+	return false;
+      }
+      return true;
+    }
+    
+    void ApplicationI::
+    finalizeProperties() {
+      Instance *i = m_instances;
+      for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	// The chosen, best, feasible implementation for the instance
 	const OL::Implementation &impl = *i->m_impl;
 
@@ -342,37 +255,17 @@ namespace OCPI {
 			      impl.m_metadataImpl.specName().c_str());
 	  }
 	}
-
-
-	// Now call invoke the policy method to map the instances to a container
-	policyMap(i, bestMap, sum);
-	ocpiInfo("Instance \"%s\" for spec \"%s\" uses implementation \"%s%s%s\" with score %u "
-		  "from artifact \"%s\" on container \"%s\"",
-		 m_assembly.m_instances[n].m_name.c_str(),
-		 m_assembly.m_instances[n].m_specName.c_str(),
-		 i->m_impl->m_metadataImpl.name().c_str(),
-		 i->m_impl->m_instance ? "/" : "",
-		 i->m_impl->m_instance ? ezxml_cattr(i->m_impl->m_instance, "name") : "",
-		 bestScore, i->m_impl->m_artifact.name().c_str(),
-		 OC::Container::nthContainer(m_usedContainers[i->m_container]).name().c_str());
-		  
-
       }
-
-      
-      // Now that we have specific implementations we can do property-aggregation work,
-      // since instances can have implementation-specific properties.
-      // First, we build the property map that exposes all instance properties as app properties.
+      // For all instances in the assembly
       // FIXME: allow XML expression of specific renamed mappings:
       //       <property name="foo" instance="bar" [property="baz"]/>
-      i = m_instances;
-      // For all instances in the assembly
       m_nProperties = 0;
-      for (unsigned n = 0; n < nInstances; n++, i++)
+      i = m_instances;
+      for (unsigned n = 0; n < m_nInstances; n++, i++)
 	m_nProperties += i->m_impl->m_metadataImpl.m_nProperties;
       Property *p = m_properties = new Property[m_nProperties];
       i = m_instances;
-      for (unsigned n = 0; n < nInstances; n++, i++) {
+      for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	unsigned nProps;
 	OU::Property *mp = i->m_impl->m_metadataImpl.properties(nProps);
 	for (unsigned nn = 0; nn < nProps; nn++, mp++, p++) {
@@ -384,6 +277,203 @@ namespace OCPI {
 		    mp->m_name.c_str(), nn, p->m_name.c_str());		    
 	}
       }
+    }
+    void ApplicationI::
+    dumpDeployment(unsigned score, Deployment *deployments) {
+
+      ocpiDebug("Deployment with score %u is:", score);
+      Instance *i = m_instances;
+      Deployment *d = deployments;
+      for (unsigned n = 0; n < m_nInstances; n++, d++, i++)
+	ocpiDebug(" Instance %2u: Candidate: %u, Container: %u Instance %s%s%s in %s", 
+		  n, d->candidate, d->container,
+		  i->m_impl->m_metadataImpl.name().c_str(),
+		  i->m_impl->m_staticInstance ? "/" : "",
+		  i->m_impl->m_staticInstance ? ezxml_cattr(i->m_impl->m_staticInstance, "name") : "",
+		  i->m_impl->m_artifact.name().c_str());
+    }
+
+    void ApplicationI::
+    doInstance(unsigned instNum, unsigned score) {
+      Deployment *d = m_deployments + instNum;
+      Instance *i = m_instances + instNum;
+      for (unsigned m = 0; m < i->m_nCandidates; m++) {
+	OL::Candidate &c = m_assembly.m_candidates[instNum][m];	  
+	i->m_impl = c.impl; // temporary, but needed by (at least) connectionsOk
+	if (connectionsOk(c, instNum))
+	  for (unsigned cont = 0; cont < OC::Container::s_nContainers; cont++) {
+	    Booking &b = m_bookings[cont];
+	    if (i->m_feasibleContainers[m] & (1 << cont) && bookingOk(b, c, instNum)) {
+	      d->container = cont;
+	      d->candidate = m;
+	      unsigned myScore = score + c.score;
+	      if (instNum < m_nInstances-1) {
+		Booking save = b;
+		if (c.impl->m_staticInstance) {
+		  b.m_artifact = &c.impl->m_artifact;
+		  b.m_usedImpls |= 1 << c.impl->m_ordinal;
+		}
+		doInstance(instNum + 1, myScore);
+		b = save;
+	      } else {
+		dumpDeployment(myScore, m_deployments);
+		if (myScore > m_bestScore) {
+		  memcpy(m_bestDeployments, m_deployments, sizeof(Deployment)*m_nInstances);
+		  m_bestScore = myScore;
+		  ocpiDebug("Setting BEST");
+		}
+	      }
+	      if (!c.impl->m_staticInstance)
+		break;
+	    }
+	  }
+      }
+    }
+
+    void ApplicationI::
+    init( const PValue * policy ) {
+
+      // In order from class definition
+      m_nInstances = m_assembly.m_instances.size();
+      m_instances = new Instance[m_nInstances];
+      m_bookings = new Booking[OC::Container::s_nContainers];
+      m_deployments = new Deployment[m_nInstances];
+      m_bestDeployments = new Deployment[m_nInstances];
+      m_properties = NULL;
+      m_nProperties = 0;
+      m_curMap = 0;
+      m_curContainers = 0;
+      m_allMap = 0;
+      m_global2used = new unsigned[OC::Container::s_nContainers];
+      m_nContainers = 0;
+      m_usedContainers = new unsigned[OC::Container::s_nContainers];
+      m_containers = NULL;    // allocated when we know how many we are using
+      m_containerApps = NULL; // ditto
+      m_workers = NULL;
+      m_doneWorker = NULL;
+      //      m_externalPorts = NULL;
+      //      m_externalNames = NULL;
+      m_cMapPolicy = RoundRobin;
+      m_processors = 0;
+      m_currConn = OC::Container::s_nContainers - 1;
+      // Set the instance map policy
+      setPolicy( policy );
+
+
+      // First pass - make sure there are some containers to support some candidate
+      // and remember which containers can support which candidates
+      Instance *i = m_instances;
+      for (unsigned n = 0; n < m_nInstances; n++, i++) {
+	OL::Candidates &cs = m_assembly.m_candidates[n];
+	i->m_nCandidates = cs.size();
+	i->m_feasibleContainers = new CMap[cs.size()];
+	//	i->m_containers = new unsigned[i->m_nCandidates];
+	//	memset(i->m_containers, 0, sizeof(unsigned) * i->m_nCandidates);
+	CMap sum = 0;
+	for (unsigned m = 0; m < i->m_nCandidates; m++) {
+	  m_curMap = 0;        // to accumulate containers suitable for this candidate
+	  m_curContainers = 0; // to count suitable containers for this candidate
+	  (void)OC::Manager::findContainers(*this, cs[m].impl->m_metadataImpl);
+	  i->m_feasibleContainers[m] = m_curMap;
+	  sum |= m_curMap;
+	}
+	if (!sum)
+	  throw OU::Error("For instance \"%s\" for spec \"%s\": "
+			  "no feasible containers found for any implementation",
+			  m_assembly.m_instances[n].m_name.c_str(),
+			  m_assembly.m_instances[n].m_specName.c_str());
+      }
+      // Second pass - search for best feasible choice
+      // FIXME: we are assuming broadly that dynamic instances have universal connectivity
+      // FIXME: we are assuming that an artifact is exclusive it is has static instances.
+      // FIXME: we are assuming that if an artifact has a static instance, all of its instances are
+
+      m_bestScore = 0;
+      doInstance(0, 0);
+
+#if 0
+      // The per-container structure that records container commitments as we go
+      Booking bookings[OC::Container::s_nContainers];
+      // The per-instance structure to record decisions and algorithm state
+      Deployment
+        deployments[m_nInstances],     // current deployment
+	bestDeployments[m_nInstances]; // best deployment
+
+       *d; 
+      memset(deployments, 0, sizeof(deployments));
+      // Breadth first search for best combinations of candidate/container per instance
+      bool foundAny;
+      do { // look for overall solutions, and keey trying while we find new ones
+	foundAny = false;
+	unsigned cumScore = 0;
+	i = m_instances;
+	d = deployments;
+	memset(bookings, 0, sizeof(Booking) * OC::Container::s_nContainers);
+	for (unsigned n = 0; n < m_nInstances; n++, i++, d++) {
+	  for (unsigned m = 0; m < i->m_nCandidates; m++) {
+	    OL::Candidate &c = m_assembly.m_candidates[n][m];	  
+	    i->m_impl = c.impl; // temporary, but needed by (at least) connectionsOk
+	    if (connectionsOk(c, n))
+	      for (unsigned cont = 0; cont < OC::Container::s_nContainers; cont++) {
+		Booking &b = bookings[cont];
+		if (i->m_feasibleContainers[m] & (1 << cont) && bookingOk(b, c, n)) {
+		  // We have a feasible choice here.  Record booking.
+		  d->container = cont;
+		  d->candidate = m;
+		  b.m_artifact = &c.impl->m_artifact;
+		  b.m_usedImpls |= 1 << c.impl->m_ordinal;
+		  cumScore += c.score;
+		  if (n >= m_nInstances-1) {
+		    dumpDeployment(cumScore, deployments);
+		    if (cumScore > bestScore) {
+		      memcpy(bestDeployments, deployments, sizeof(Deployment)*m_nInstances);
+		      bestScore = cumScore;
+		    }
+		  }
+		}
+	      }
+	  }
+	}
+      } while (foundAny);
+#endif
+      // Record the implementation from the best deployment
+      i = m_instances;
+      Deployment *d = m_bestDeployments;
+      for (unsigned n = 0; n < m_nInstances; n++, i++, d++)
+	i->m_impl = m_assembly.m_candidates[n][d->candidate].impl;
+      // All the implementation selection is done, so now do the final check of properties
+      // since properties can be implementation specific
+      finalizeProperties();
+
+      // Up to now we have just been "planning" and not doing things.
+      // Now invoke the policy method to map the dynamic instances to containers
+      // First we do a pass that will only map the dynamic implementations
+      i = m_instances;
+      d = m_bestDeployments;
+      for (unsigned n = 0; n < m_nInstances; n++, i++, d++) {
+	if (!i->m_impl->m_staticInstance)
+	  policyMap(i, i->m_feasibleContainers[d->candidate]);
+      }
+      // Now add the containers for the static instances
+      i = m_instances;
+      d = m_bestDeployments;
+      ocpiInfo("Final deployment after processor policy applied is:");
+      for (unsigned n = 0; n < m_nInstances; n++, i++, d++) {
+	const OL::Implementation &impl = *i->m_impl;
+	if (impl.m_staticInstance) {
+	  unsigned cNum = d->container;
+	  i->m_container = m_allMap & (1 << cNum) ? m_global2used[cNum] : addContainer(cNum);
+	}
+	OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
+	ocpiInfo(" Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s", 
+		 n, m_assembly.m_instances[n].m_name.c_str(),
+		 m_assembly.m_instances[n].m_specName.c_str(),
+		 c.m_model.c_str(), c.name().c_str(),
+		 impl.m_metadataImpl.name().c_str(),
+		 impl.m_staticInstance ? "/" : "",
+		 impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
+		 impl.m_artifact.name().c_str());
+      }
       // To prepare for remote containers, we need to organize the containers we are
       // using by their server.  Then we essentially synthesize an "app" for each server.
       // so the interface to the server is a subset of the info here.
@@ -392,40 +482,35 @@ namespace OCPI {
       // The top side is decomposing and merging etc.
       // Assuming that we send the server an XML assembly, it means we need to express remote
       // connections in that xml.
-
-
     }
-    bool ApplicationI::foundContainer(OCPI::Container::Container &c) {
+    bool
+    ApplicationI::foundContainer(OCPI::Container::Container &c) {
       m_curMap |= 1 << c.ordinal();
       m_curContainers++;
       return false;
     }
 
     void ApplicationI::initialize() {
-
-
-      unsigned nInstances = m_assembly.m_instances.size();
-      ocpiDebug("Mapped %d instances to %d containers", nInstances, m_nContainers);
+      m_nInstances = m_assembly.m_instances.size();
+      ocpiDebug("Mapped %d instances to %d containers", m_nInstances, m_nContainers);
 
       m_containers = new OC::Container *[m_nContainers];
       m_containerApps = new OC::Application *[m_nContainers];
-      m_workers = new OC::Worker *[nInstances];
+      m_workers = new OC::Worker *[m_nInstances];
       for (unsigned n = 0; n < m_nContainers; n++) {
-	OC::Container &c = OC::Container::nthContainer(m_usedContainers[n]);
-	ocpiDebug("Container %u is %s", n, c.name().c_str());
-	m_containers[n] = &c;
 	// FIXME: get rid of this cast...
-	m_containerApps[n] = static_cast<OC::Application*>(c.createApplication());
+	m_containers[n] = &OC::Container::nthContainer(m_usedContainers[n]);
+	m_containerApps[n] = static_cast<OC::Application*>(m_containers[n]->createApplication());
       }
       Instance *i = m_instances;
-      for (unsigned n = 0; n < nInstances; n++, i++) {
+      for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	const OL::Implementation &impl = *i->m_impl;
 	OC::Worker &w =
 	  m_containerApps[i->m_container]->
 	  createWorker(impl.m_artifact,                          // The artifact of the library impl
 		       m_assembly.m_instances[n].m_name.c_str(), // The instance name in the assembly
 		       impl.m_metadataImpl.m_xml,                // the xml of the impl (from artifact)
-		       impl.m_instance,                          // the xml of the fixed instance (from artifact)
+		       impl.m_staticInstance,                    // the xml of the fixed instance (from artifact)
 		       NULL);                                    // wparams
 	m_workers[n] = &w;
 	// Now we need to set the initial properties - either from assembly or from defaults
@@ -563,12 +648,13 @@ namespace OCPI {
     }
 
     ApplicationI::Instance::Instance() :
-      m_impl(NULL), m_propValues(NULL), m_propOrdinals(NULL), m_rejectedCandidates(0),
-      m_nCandidates(0), m_chosenCandidate(0) {
+      m_impl(NULL), m_propValues(NULL), m_propOrdinals(NULL) { //, m_candidate(0) {
     }
     ApplicationI::Instance::~Instance() {
       delete [] m_propValues;
       delete [] m_propOrdinals;
+      //      delete [] m_containers;
+      delete [] m_feasibleContainers;
     }
 
   }

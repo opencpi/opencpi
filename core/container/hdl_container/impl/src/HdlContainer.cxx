@@ -432,7 +432,7 @@ namespace OCPI {
 	    default:
 	      oops = "returned unknown result value from control operation";
 	    }
-	    throw OU::Error("worker %s:%s %s", implName, instName, oops);
+	    throw OU::Error("worker %s:%s %s (%0x" PRIx32 ")", implName, instName, oops, result);
 	  }
 	}
       }

@@ -7,6 +7,7 @@
 #include "OcpiContainerManager.h"
 #include "EtherDriver.h"
 #include "PciDriver.h"
+#include "SimDriver.h"
 
 namespace OCPI {
   namespace HDL {
@@ -33,6 +34,7 @@ The issue is that the ether scanner has an open socket for discovery,
       : public OCPI::Container::DriverBase<Driver, Container, hdl>,
 	public OCPI::HDL::PCI::Driver,
 	OCPI::HDL::Ether::Driver,
+	OCPI::HDL::Sim::Driver,
 	Access, // for temporary probing
 	virtual protected OCPI::Util::SelfMutex
     {

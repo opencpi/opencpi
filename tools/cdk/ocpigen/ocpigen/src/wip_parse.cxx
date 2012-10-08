@@ -1581,7 +1581,8 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
   else if (!strcasecmp(lang, "VHDL"))
     w->language = VHDL;
   else
-    return "Language attribute not \"Verilog\" or \"VHDL\" in ComponentImplementation";
+    return OU::esprintf("Language attribute \"%s\" is not \"Verilog\" or \"VHDL\" in ComponentImplementation",
+			lang);
   w->pattern = ezxml_cattr(xml, "Pattern");
   if (!w->pattern)
     w->pattern = "%s_";
@@ -1641,7 +1642,7 @@ const char *
 parseRcc(ezxml_t xml, const char *file, Worker *w) {
   const char *err;
   if ((err = OE::checkAttrs(xml, "Name", "ExternMethods", "StaticMethods", "Threaded",
-			    "ControlOperations", (void*)0)))
+			    "ControlOperations", "Language", (void*)0)))
     return err;
   // We use the pattern value as the method naming for RCC
   // and its presence indicates "extern" methods.

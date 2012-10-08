@@ -1,6 +1,6 @@
 -- Various re-usable functions relating to property data type support.
-library ocpi;
-use ocpi.wci.all;
+--library ocpi;
+--use ocpi.wci.all;
 library ieee;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
