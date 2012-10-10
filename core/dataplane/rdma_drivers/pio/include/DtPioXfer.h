@@ -78,7 +78,8 @@ namespace DataTransfer {
 
         // Get the address from the endpoint
         virtual const char* getAddress(){return m_smb_name.c_str();}
-
+  protected:
+	SmemServices &createSmemServices();
   private:
         std::string m_smb_name;
 

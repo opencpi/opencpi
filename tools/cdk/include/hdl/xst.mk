@@ -235,8 +235,10 @@ $(call XstPruneOption,$(XstDefaultOptions)) $(XstExtraOptions) $(XstInternalOpti
 XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
 
+XstNeedIni= $(strip $(Libraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
 XstMakeIni=\
-  ($(foreach l,$(Libraries),\
+  (\
+   $(foreach l,$(Libraries),\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
@@ -255,7 +257,8 @@ XstMakeIni=\
    > $(XstIniFile);
 
 XstMakeLso=\
-  (echo $(LibName);$(foreach l,$(Libraries) $(CDKComponentLibraries) $(CDKDeviceLibraries) $(ComponentLibraries) $(DeviceLibraries),\
+  ($(if $(or $(findstring work,$(LibName)),$(filter core application,$(HdlMode))),,echo work;)\
+   echo $(LibName);$(foreach l,$(Libraries) $(CDKComponentLibraries) $(CDKDeviceLibraries) $(ComponentLibraries) $(DeviceLibraries),\
                       echo $(lastword $(subst -, ,$(notdir $(l))));)\
   $(foreach l,$(Cores),\
             echo $(lastword $(subst -, ,$(notdir $(l))_bb));)) > $(XstLsoFile);
@@ -271,7 +274,7 @@ XstMakePrj=rm -f $(XstPrjFile); \
            $(if $(VhdlSources),    ($(foreach f,$(VhdlSources),    echo vhdl    $(if $(filter $(WorkLibrarySources),$(f)),work,$(LibName)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) >> $(XstPrjFile);, )
 XstScrFile=$(Core).scr
 
-XstMakeScr=(echo set -xsthdpdir . -xsthdpini $(XstIniFile);echo run $(strip $(XstOptions))) > $(XstScrFile);
+XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));echo run $(strip $(XstOptions))) > $(XstScrFile);
 # The options we directly specify
 #$(info TARGETDIR: $(TargetDir))
 XstOptions +=\
@@ -327,8 +330,7 @@ HdlToolCompile=\
   rm -f $(notdir $@);\
   $(XstMakePrj)\
   $(XstMakeLso)\
-  $(if $(Libraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores),\
-     $(XstMakeIni))\
+  $(and $(XstNeedIni),$(XstMakeIni)) \
   $(XstMakeScr)\
   $(Xilinx) xst -ifn $(XstScrFile)
 

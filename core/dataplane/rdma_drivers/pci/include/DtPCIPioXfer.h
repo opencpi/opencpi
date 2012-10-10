@@ -87,6 +87,7 @@ namespace DataTransfer {
         // Sets smem location data based upon the specified endpoint
         OCPI::OS::int32_t parse( std::string& ep );
 
+	DataTransfer::SmemServices &createSmemServices();
         // Get the address from the endpoint
 	// FIXME: make this get address thing NOT generic...
         virtual const char* getAddress(){return p_virt_addr;}
@@ -135,10 +136,10 @@ namespace DataTransfer {
     void* getHandle ();
 
     // Ctor/dtor
-    PCISmemServices ( XferFactory * p, EndPoint* loc ) 
-      : DataTransfer::SmemServices( p, loc ), m_init(false),m_fd(-1)
+    PCISmemServices (EndPoint& loc ) 
+      : DataTransfer::SmemServices(loc ), m_init(false), m_fd(-1)
       {
-        m_location = dynamic_cast<PCIEndPoint*>(loc);
+        m_location = static_cast<PCIEndPoint*>(&loc);
         create(m_location);
 
       }
@@ -196,13 +197,6 @@ namespace DataTransfer {
 
     // Get our protocol string
     const char* getProtocol();
-
-
-    /***************************************
-     * This method is used to allocate a transfer compatible SMB
-     ***************************************/
-    SmemServices* getSmemServices( EndPoint* ep );
-
 
     /***************************************
      *  This method is used to create a transfer service object

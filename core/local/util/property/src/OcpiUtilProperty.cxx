@@ -148,7 +148,7 @@ namespace OCPI {
 #endif
 
     const char *Property::
-    parseImplAlso(ezxml_t prop, bool &readableConfigs, bool &writableConfigs) {
+    parseImplAlso(ezxml_t prop, bool &readableConfigs, bool &/*writableConfigs*/) {
       const char *err;
       if ((err = OE::getBoolean(prop, "ReadSync", &m_readSync)) ||
 	  (err = OE::getBoolean(prop, "WriteSync", &m_writeSync)) ||

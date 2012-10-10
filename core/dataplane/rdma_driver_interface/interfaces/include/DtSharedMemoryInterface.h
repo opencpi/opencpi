@@ -63,15 +63,28 @@ namespace DataTransfer {
   // FIXME:  make this part of config
   const OCPI::OS::uint32_t MAX_SYSTEM_SMBS = 20;
 
-  // Protocol specific location class
-  struct SMBResources;
+  /*
+   * This structure is used to manage the shared memory blocks.  It contains the 
+   * shared memory service class, the resource manager for the SMB and a mapped
+   * pointer to the local mailbox structure within the SMB.
+   */
+  class ResourceServices;
+  struct ContainerComms;
+  class SmemServices;
+  struct SMBResources {
+    SmemServices       *sMemServices;
+    ResourceServices   *sMemResourceMgr;
+    ContainerComms     *m_comms;
+    SMBResources();
+    ~SMBResources();
+  };
   class SmemServices;
   class XferFactory;
+  // Protocol specific location class
   struct EndPoint
   {
 
     std::string          end_point;    // deep copy of the endpoint string
-    SmemServices         * smem;       // Shared memory 
     std::string          protocol;     // protocol string
     uint16_t             mailbox;      // endpoint mailbox
     uint16_t             maxCount;     // Number of mailboxes in communication domain
@@ -79,7 +92,7 @@ namespace DataTransfer {
     uint64_t             address;      // Address of endpoint in its address space (usually 0)
     uint32_t             event_id;     
     bool                 local;        // local endpoint
-    SMBResources*        resources;    // SMB resources associated with this endpoint
+    SMBResources         resources;    // SMB resources associated with this endpoint
     XferFactory*         factory;
     unsigned             refCount;
     EndPoint( std::string& ep, OCPI::OS::uint32_t size=0, bool local=false);
@@ -91,6 +104,8 @@ namespace DataTransfer {
 
     // Commit resources
     void finalize();
+    // Get resources, and finalize if needed
+    SMBResources &getSMBResources() { finalize(); return resources; };
     // Check compatibility
     bool canSupport(const char *remote_endpoint);
 
@@ -112,16 +127,18 @@ namespace DataTransfer {
                             uint32_t* bufsize        // Buffer size returned
                             );
 
+    virtual SmemServices &createSmemServices() = 0;
+    SmemServices *getSmemServices(); // ptr for legacy
   };
 
   // Shared memory services.  
-  class SmemServices : public OCPI::Util::Child<XferFactory,SmemServices>
+  class SmemServices // : public OCPI::Util::Child<XferFactory,SmemServices>
   {
-  private:
-    EndPoint * m_endpoint;
+ protected:
+    EndPoint &m_endpoint;
 
   public:
-    SmemServices (XferFactory * parent, EndPoint* ep);
+    SmemServices (/*XferFactory * parent,*/ EndPoint &ep);
 
     /*
      * Attach to an existing shared memory object by name.
@@ -166,7 +183,7 @@ namespace DataTransfer {
     /*
      *        GetEndPoint - Returns the endpoint of the shared memory area
      */
-    EndPoint * endpoint(){return m_endpoint;}
+    EndPoint * endpoint(){return &m_endpoint;}
 
 
 

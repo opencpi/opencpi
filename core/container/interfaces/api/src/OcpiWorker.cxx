@@ -212,7 +212,9 @@ namespace OCPI {
 	    getPropertyBytes(info, info.m_offset + (info.m_isSequence ? info.m_align : 0), data, nBytes);
 	}
       } else if (info.m_baseType == OA::OCPI_String) {
-	v.m_String = (const char *)new char[info.m_stringLength + 1];
+	// FIXME: a gross modularity violation
+	v.m_stringSpace = new char[info.m_stringLength + 1];
+	v.m_String = v.m_stringSpace;
 	getPropertyBytes(info, info.m_offset, (uint8_t*)v.m_pString, info.m_stringLength + 1);
       } else switch (info.m_nBits) {
 	case 8:
@@ -226,37 +228,6 @@ namespace OCPI {
 	default:;
 	}
       
-#if 0
-      switch (p.m_baseType) {
-#undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                         \
-      case OA::OCPI_##pretty:		                                               \
-	if (p.m_isSequence) {						\
-	  v.m_p##pretty = new run[p.m_sequenceLength]; \
-	  v.m_nElements = get##pretty##SequenceProperty(a, v.m_p##pretty, p.m_sequenceLength); \
-      } else								\
-	  v.m_##pretty = get##pretty##Property(a);                                     \
-	break;
-      OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
-#undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
-      case OA::OCPI_String:
-	if (p.m_isSequence) {
-	  unsigned space = p.m_sequenceLength * (p.m_stringLength + 1);
-	  v.m_stringSpace = new char[space];
-	  v.m_nElements = getStringSequenceProperty(a, (char **)v.m_pString, p.m_sequenceLength,
-						    v.m_stringSpace, space);
-	} else {
-	  v.m_String = v.m_stringSpace = new char[p.m_stringLength + 1];
-	  getStringProperty(a, (char *)v.m_String, p.m_stringLength + 1);
-	}
-	break;
-      case OA::OCPI_none: case OA::OCPI_Struct: case OA::OCPI_Type: case OA::OCPI_Enum:
-      case OA::OCPI_scalar_type_limit:;
-      }
-#endif
       v.unparse(value);
       name = p.m_name;
       return true;

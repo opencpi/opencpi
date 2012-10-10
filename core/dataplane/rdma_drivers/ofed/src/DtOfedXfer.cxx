@@ -181,7 +181,6 @@ namespace DataTransfer {
     };
 
 
-    class SmemServices;
     class  Device;
     struct  EndPoint : public DataTransfer::EndPoint 
     {
@@ -205,6 +204,8 @@ namespace DataTransfer {
       // Finalize this endpoint
       void finalize();
 
+      DataTransfer::SmemServices &createSmemServices();
+
       Device *     m_device;
       std::string  m_addr;
       std::string  m_dev;
@@ -224,7 +225,7 @@ namespace DataTransfer {
     class SmemServices : public DataTransfer::SmemServices
     {
     public:
-      SmemServices ( DataTransfer::XferFactory * parent, DataTransfer::EndPoint* ep);
+      SmemServices (/* DataTransfer::XferFactory * parent, */EndPoint& ep);
 
       OCPI::OS::int32_t attach ( DataTransfer::EndPoint* ){return 0;};
       OCPI::OS::int32_t detach (){return 0;}
@@ -250,6 +251,10 @@ namespace DataTransfer {
       char     * m_mem;
     };
 
+    DataTransfer::SmemServices & EndPoint::
+    createSmemServices() {
+      return *new SmemServices(*this);
+    }
 
 #define OFED_DEVICE_ATTRS \
     "port", "hop_limit", "ibv_qp_timeout", "ibv_qp_retry_cnt", \
@@ -326,10 +331,8 @@ namespace DataTransfer {
       // Get our protocol string
       inline const char* getProtocol(){return "ocpi-ofed-rdma";};
 
-      /***************************************
-       * This method is used to allocate a transfer compatible SMB
-       ***************************************/
-      DataTransfer::SmemServices * getSmemServices( DataTransfer::EndPoint * ep );
+      // Factory for derived class
+      //      DataTransfer::SmemServices *createSmemServices(EndPoint &ep);
 
       /***************************************
        *  This method is used to create a transfer service object
@@ -579,15 +582,17 @@ namespace DataTransfer {
 #endif
 
 
+#if 0
     // This method is used to allocate a transfer compatible SMB
     DataTransfer::SmemServices* 
     XferFactory::
-    getSmemServices( DataTransfer::EndPoint* loc )
+    createSmemServices( DataTransfer::EndPoint& loc )
     {
       OCPI::Util::SelfAutoMutex guard (this);
 #if 1
-      if (!loc->smem)
-	loc->smem = new SmemServices(this, loc);
+      return new SmemServices(loc);
+      //      if (!loc->smem)
+      //	loc->smem = new SmemServices(this, loc);
 #else
       if ( loc->smem ) {
 	return loc->smem;
@@ -600,6 +605,7 @@ namespace DataTransfer {
 #endif
       return loc->smem;
     }
+#endif
 
 
     /***************************************
@@ -1117,26 +1123,26 @@ namespace DataTransfer {
     }
 
     SmemServices::
-    SmemServices (DataTransfer::XferFactory *f, DataTransfer::EndPoint* ep)
-      :DataTransfer::SmemServices(f, ep),m_ofed_ep(static_cast<EndPoint*>(ep))
+    SmemServices (EndPoint& ep)
+      :DataTransfer::SmemServices(ep), m_ofed_ep(&ep)
     {
 
-      if ( m_ofed_ep->local ) {
-	if (posix_memalign((void**)&m_mem, sysconf(_SC_PAGESIZE), m_ofed_ep->size)) {
-	  fprintf(stderr, "OFED::SmemServices Error: Couldn't allocate SMB.\n");
+      if ( ep.local ) {
+	if (posix_memalign((void**)&m_mem, sysconf(_SC_PAGESIZE), ep.size)) {
+	  ocpiDebug("OFED::SmemServices Error: Couldn't allocate SMB.\n");
 	  throw DataTransfer::DataTransferEx( NO_MORE_SMB, "memalign failed" );
 	}
-	memset(m_mem, 0, m_ofed_ep->size );
+	memset(m_mem, 0, ep.size );
 	m_ofed_ep->m_device->createMemContext( this );
 
 	// Now that the memory has been registered, we can finalize our endpoint.
-	EndPoint * ep = static_cast<EndPoint*>(endpoint());
-	ep->m_vaddr = (uint64_t)m_mem;
-	MASK_ADDR( ep->m_vaddr );
-	ep->finalize();
+	//	EndPoint * ep = static_cast<EndPoint*>(endpoint());
+	m_ofed_ep->m_vaddr = (uint64_t)m_mem;
+	MASK_ADDR( m_ofed_ep->m_vaddr );
+	ep.finalize();
       }
       else {
-	m_mem = (char*)static_cast<EndPoint*>(ep)->m_vaddr;
+	m_mem = (char*)m_ofed_ep->m_vaddr;
       }
     };
 

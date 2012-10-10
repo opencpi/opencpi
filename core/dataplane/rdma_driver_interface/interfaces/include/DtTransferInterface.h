@@ -251,7 +251,7 @@ namespace DataTransfer {
   class XferFactoryManager;
   class XferFactory
     : public OCPI::Driver::DriverType<XferFactoryManager, XferFactory>,
-      public OCPI::Util::Parent<SmemServices>,
+    //      public OCPI::Util::Parent<SmemServices>,
       public FactoryConfig,
       virtual protected OCPI::Util::SelfMutex
   {
@@ -312,10 +312,12 @@ namespace DataTransfer {
      ***************************************/
     virtual void allocateEndpoints(std::vector<std::string> &l);
 
+#if 0 // moved to be an endpoint method
     /***************************************
      *  This method is used to allocate a transfer compatible SMB
      ***************************************/
     virtual SmemServices* getSmemServices( EndPoint* ep )=0;
+#endif
 
     /***************************************
      *  This method is used to get a transfer service object. The implementation

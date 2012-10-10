@@ -88,6 +88,14 @@ namespace DataTransfer {
 	m_sockaddr.sin_port = htons(m_portNum);
 	inet_aton(m_ipAddress.c_str(), &m_sockaddr.sin_addr);
       }
+      ~DatagramEndPoint() {
+	// FIXME:  this is generic behavior and belongs in a datagram endpoint base class
+	if (resources.sMemServices) {
+	  DatagramSmemServices &sm = *static_cast<DatagramSmemServices *>(resources.sMemServices);
+	  sm.stop();
+	  sm.join();
+	}
+      }
       inline struct sockaddr_in &sockaddr() { return m_sockaddr; }
       void updatePortNum(unsigned short portNum) {
 	if (portNum != m_portNum) {
@@ -95,6 +103,12 @@ namespace DataTransfer {
 	  m_sockaddr.sin_port = htons(m_portNum);
 	  setEndpointString(end_point, m_ipAddress.c_str(), m_portNum, size, mailbox, maxCount);
 	}
+      }
+      DataTransfer::SmemServices &createSmemServices() {
+	DataTransfer::DatagramSmemServices *ss = new DatagramSmemServices(*this);
+	// FIXME: this "start" is generic behavior and could be in a base class?
+	ss->start();
+	return *ss;
       }
     public:
       virtual const char* getAddress(){return m_ipAddress.c_str();}
@@ -183,7 +197,6 @@ namespace DataTransfer {
       ~DatagramXferFactory() throw () {}
 
     public:
-      DataTransfer::DatagramSmemServices *createSmemServices(EndPoint *ep);
       DataTransfer::DatagramXferServices *createXferServices(DatagramSmemServices*source,
 							     DatagramSmemServices*target);
       DatagramSocket *createSocket(DatagramSmemServices *smem);

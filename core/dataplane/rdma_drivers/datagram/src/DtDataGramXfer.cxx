@@ -78,14 +78,17 @@ namespace DataTransfer {
   DatagramXferFactory::~DatagramXferFactory()
   {
     ocpiDebug("DatagramXferFactory::~DatagramXferFactory entered");
+#if 0
     std::vector<DatagramSmemServices*>::iterator it;
     for ( it=m_smems.begin(); it!=m_smems.end(); it++ ) {
       (*it)->stop();
       (*it)->join();
     }
     m_smems.clear();
+#endif
   }
 
+#if 0
   SmemServices *DatagramXferFactory::
   getSmemServices(EndPoint* ep ) {
     if (ep->smem)
@@ -96,6 +99,7 @@ namespace DataTransfer {
     smem->start();
     return smem;
   }
+#endif
 
   XferServices* DatagramXferFactory::
   getXferServices(SmemServices* source, SmemServices* target) {

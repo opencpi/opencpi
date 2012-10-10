@@ -132,12 +132,9 @@ void PIOXferFactory::releaseEndPoint( EndPoint* )
 #endif
 
 // This method is used to allocate a transfer compatible SMB
-SmemServices* PIOXferFactory::getSmemServices(EndPoint* loc )
+SmemServices& GppEndPoint::createSmemServices()
 {
-  if ( loc->smem ) {
-    return loc->smem;
-  }
-  return loc->smem = createSmemServices( this, loc);
+  return createHostSmemServices(*this);
 }
 
 

@@ -34,7 +34,7 @@
 ########################################################################### #
 
 # This file should be include in makefiles for hdl primitive libraries,
-# compiled from sources.  The idea is to as much precompilation as possible.
+# compiled from sources.  The idea is to do as much precompilation as possible.
 # Some tools do more than others, but this is a LIBRARY, which means we are not
 # combining things together such that they can't be used separately.
 

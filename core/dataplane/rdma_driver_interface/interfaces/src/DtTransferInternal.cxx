@@ -332,7 +332,7 @@ const char *transfer = "transfer";
 XferFactoryManager::
 XferFactoryManager()
   : m_refCount(0),m_init(false),m_mutex(true),
-    m_resources(0),m_configured(false)
+    m_configured(false)
 {
 
 }
@@ -362,7 +362,7 @@ void XferFactoryManager::shutdown()
   m_refCount--;
   if ( m_refCount == 0 ) {
     clearCache();
-    m_resources.destroyList();
+    //    m_resources.destroyList();
     m_init = false;
   }
 }
@@ -515,15 +515,13 @@ typedef struct template_list_item_ TList_Item;
 
 void XferFactoryManager::clearCache()
 {
-
-
     // These are children of the factory and the factory will delete them !!
-#if 0
   for (OS::int32_t i=0; i<get_nentries(&m_templatelist); i++) {
     TList_Item *item = static_cast<TList_Item*>(get_entry(&m_templatelist, i));
     delete item;
   }
   destroy_list(&m_templatelist);
+#if 0
   for ( OS::uint32_t n=0; n<m_resources.getElementCount(); n++ ) {
     SMBResources* res = static_cast<SMBResources*>(m_resources.getEntry(n));
     delete res;
@@ -601,6 +599,7 @@ XferFactoryManager::add_template(EndPoint *src, EndPoint *dst, XferServices* xf_
   return 0;
 }
 
+#if 0
 SMBResources* 
 XferFactoryManager::
 findResource(const char* ep)
@@ -616,19 +615,17 @@ findResource(const char* ep)
   return NULL;
 }
 
-
 void 
 XferFactoryManager::
 deleteSMBResources( EndPoint* loc)
 {
   OU::AutoMutex guard ( m_mutex, true );
   SMBResources* sr;
-  sr = findResource( loc->end_point.c_str() );
+xxx  sr = findResource( loc->end_point.c_str() );
   ocpiAssert( sr );
   m_resources.remove(sr);
   delete sr;
 }
-
 
 // create a transfer compatible SMB
 SMBResources* 
@@ -638,8 +635,12 @@ createSMBResources(
 
 {
   parent().configure();
+  ocpiAssert(loc->factory);
   OU::AutoMutex guard ( m_mutex, true );
 
+  if (loc->resources)
+    return loc->resources;
+#if 0
   SMBResources* sr;
   sr = findResource( loc->end_point.c_str() );
   if ( sr ) {
@@ -656,10 +657,14 @@ createSMBResources(
     throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
 
-  sr->sMemServices = loc->smem ? loc->smem : factory->getSmemServices( loc );
+  sr->sMemServices = loc->getSmemServices();
   if ( !sr->sMemServices ) {
     throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, loc->end_point.c_str());
   }
+#else
+  SMBResources* sr = new SMBResources;
+  sr->sMemServices = loc->getSmemServices();
+#endif
 
   sr->sMemResourceMgr = CreateResourceServices();
   sr->sMemResourceMgr->createLocal( loc->size );
@@ -682,8 +687,7 @@ createSMBResources(
   loc->resources = sr;
   return sr;
 }
-
-
+#endif
 
 // create a transfer compatible SMB
 SMBResources* 
@@ -691,16 +695,23 @@ XferFactoryManager::
 getSMBResources(
 		EndPoint* ep )
 {
-  ocpiAssert( ep );
-  if ( ep->resources ) {
-    return ep->resources;
-  }
-  else {
-    SMBResources* res = getSMBResources( ep->end_point );
-    ep->resources = res;
-    return res;
-  }
+  OU::AutoMutex guard ( m_mutex, true );
+  return &ep->getSMBResources();
 }
+#if 0
+  ocpiAssert( ep );
+  ep->finalize();
+  return &ep->resources;
+  if (!ep->resources) {
+    SMBResources* sr = new SMBResources;
+    sr->sMemServices = ep->getSmemServices();
+    sr->sMemResourceMgr = NULL;
+    sr->sMemServices->attach( loc );
+    ep->resources = sr;
+    m_resources.insert(sr);
+  }
+  return ep->resources;
+#endif
 
 // create a transfer compatible SMB
 SMBResources* 
@@ -709,19 +720,6 @@ getSMBResources(
 		std::string& ep)
 {
   parent().configure();
-  OU::AutoMutex guard ( m_mutex, true );
-
-  if ( ep.length() == 0 ) {
-    throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, "Null Endpoint");
-  }
-  SMBResources* sr = findResource( ep.c_str() );
-  if ( sr ) {
-    return sr;
-  }
-  else {
-    sr = new SMBResources;
-  }
-
   // Find the factory that knows how to create the shared memory block for
   // this address
   std::string nuls;
@@ -730,14 +728,8 @@ getSMBResources(
     throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, ep.c_str());
   }
   EndPoint* loc = factory->getEndPoint( ep.c_str());
-  sr->sMemServices = factory->getSmemServices(loc);
-  sr->sMemResourceMgr = NULL;
-  sr->sMemServices->attach( loc );
-  loc->resources = sr;
-  m_resources.insert(sr);
-  return sr;
+  return getSMBResources(loc);
 }
-
 
 // This method makes a request to the
 bool XferMailBox::makeRequest( SMBResources* source, SMBResources* target )

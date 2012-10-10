@@ -314,7 +314,7 @@ public:
   {
     // Get the resources that we will need for the test
     m_endpoint = factory->getEndPoint( ep, true );
-    m_smem     = factory->getSmemServices( m_endpoint );
+    m_smem     = m_endpoint->getSmemServices();
     m_tmem     = (MemLayout*)m_smem->map(0, m_endpoint->size );
   }
 
@@ -328,7 +328,7 @@ public:
   void createXferServices( std::string & other_ep ) {
     m_other_endpoint_url = other_ep;
     m_other_endpoint = m_factory->getEndPoint( other_ep, false );
-    m_other_smem = m_factory->getSmemServices( m_other_endpoint );
+    m_other_smem = m_other_endpoint->getSmemServices();
     m_xferServices = m_factory->getXferServices( m_smem, m_other_smem );
   }
   

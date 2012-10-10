@@ -93,6 +93,21 @@ namespace DataTransfer {
 	if (error)
 	  throw DataTransfer::DataTransferEx(UNSUPPORTED_ENDPOINT, error);
       }
+      ~DatagramEndPoint() {
+	// FIXME:  this is generic behavior and belongs in a datagram endpoint base class
+	if (resources.sMemServices) {
+	  DatagramSmemServices &sm = *static_cast<DatagramSmemServices *>(resources.sMemServices);
+	  sm.stop();
+	  sm.join();
+	}
+      }
+      DatagramSmemServices &
+      createSmemServices() {
+	DataTransfer::DatagramSmemServices *ss = new DatagramSmemServices(*this);
+	// FIXME: this "start" is generic behavior and could be in a base class?
+	ss->start();
+	return *ss;
+      }
       const std::string &ifname() const { return m_ifname; }
       OE::Address &addr() { return m_addr; } // not const
       const char* getAddress() { return m_addr.pretty(); }

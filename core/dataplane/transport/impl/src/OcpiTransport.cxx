@@ -830,7 +830,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
   nc++;
 
   // Ignore our request slot
-  DataTransfer::ContainerComms* comms =   m_CSendpoint->resources->m_comms;
+  DataTransfer::ContainerComms* comms =   m_CSendpoint->resources.m_comms;
 
   // See if we have any comms requests
   unsigned nMailBoxes = m_CSendpoint->maxCount;
@@ -913,7 +913,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 	      uint32_t protocolSize = comms->mailBox[n].request.reqNewConnection.protocol_size;
 	      if (protocolSize) {
 		// Allocate local space
-		if (m_CSendpoint->resources->sMemResourceMgr->alloc(protocolSize, 0,  &protocolOffset))
+		if (m_CSendpoint->resources.sMemResourceMgr->alloc(protocolSize, 0,  &protocolOffset))
 		  throw OCPI::Util::EmbeddedException(NO_MORE_BUFFER_AVAILABLE, "for protocol info exchange");
 		// map in local space
 		
@@ -1013,7 +1013,7 @@ void OCPI::DataTransport::Transport::checkMailBoxs()
 		       comms->mailBox[n].request.reqOutputContOffset.protocol_offset);
           port->releaseOffsets( offsetv );
 	  if (protocolSize)
-	    m_CSendpoint->resources->sMemResourceMgr->free(protocolOffset, protocolSize);
+	    m_CSendpoint->resources.sMemResourceMgr->free(protocolOffset, protocolSize);
 
           // Clear our mailbox
           comms->mailBox[n].error_code = 0;
@@ -1140,8 +1140,7 @@ addRemoteEndPoint( const char* loc )
   if (!tfactory)
     throw UnsupportedEndpointEx(loc);
   ep = tfactory->getEndPoint(loc, false);
-  if (!ep->resources)
-    XferFactoryManager::getFactoryManager().createSMBResources(ep);
+  ep->finalize();
   m_remoteEndpoints.insert(ep);
   return *ep;
 }

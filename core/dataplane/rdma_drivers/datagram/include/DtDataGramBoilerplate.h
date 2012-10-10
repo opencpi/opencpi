@@ -37,10 +37,6 @@
     createXferRequest() {
       return new DatagramXferRequest(*this);
     }
-    DataTransfer::DatagramSmemServices *DatagramXferFactory::
-    createSmemServices(EndPoint *ep) {
-      return new DatagramSmemServices(this, ep);
-    }
    DataTransfer::DatagramXferServices *DatagramXferFactory::
    createXferServices(DatagramSmemServices *source, DatagramSmemServices*target) {
      return new DatagramXferServices(source, target);

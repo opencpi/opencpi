@@ -778,6 +778,7 @@ emitVhdlProp(FILE *f, OU::Property &pr, const char *&last, bool writable,
 }
 static void
 printVhdlValue(FILE *f, OU::Value &v) {
+  (void)f;(void)v;
 }
 
 static void

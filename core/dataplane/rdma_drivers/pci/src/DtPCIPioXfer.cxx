@@ -139,11 +139,9 @@ void PCIPIOXferFactory::releaseEndPoint( EndPoint* loc )
 
 
 // This method is used to allocate a transfer compatible SMB
-SmemServices* PCIPIOXferFactory::getSmemServices( EndPoint* loc )
+SmemServices & PCIEndPoint::createSmemServices()
 {
-  if (!loc->smem )
-    loc->smem = new PCISmemServices( this, loc);
-  return loc->smem;
+  return *new PCISmemServices(*this);
 }
 
 

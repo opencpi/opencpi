@@ -93,7 +93,8 @@ namespace DataTransfer {
 
         // Get the address from the endpoint
         virtual const char* getAddress(){return ipAddress.c_str();}
-
+	
+	SmemServices &createSmemServices();
         std::string ipAddress;
         unsigned  portNum;
   };
@@ -126,12 +127,6 @@ namespace DataTransfer {
 
     // Get our protocol string
     const char* getProtocol();
-
-
-    /***************************************
-     * This method is used to allocate a transfer compatible SMB
-     ***************************************/
-    SmemServices* getSmemServices(EndPoint* ep );
 
 
     /***************************************

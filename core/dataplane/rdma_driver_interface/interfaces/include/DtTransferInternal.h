@@ -68,22 +68,6 @@ namespace DataTransfer {
   // Forward references
   class SmemServices;
 
-  /*
-   * This structure is used to manage the shared memory blocks.  It contains the 
-   * shared memory service class, the resource manager for the SMB and a mapped
-   * pointer to the local mailbox structure within the SMB.
-   */
-  struct SMBResources {
-    SmemServices       *sMemServices;
-    ResourceServices   *sMemResourceMgr;
-    ContainerComms     *m_comms;
-    ~SMBResources()
-    {
-      delete sMemResourceMgr;
-    }
-  };
-
-
   // This class is used to manage the endpoints mailbox
   class XferMailBox {
 
@@ -147,12 +131,14 @@ namespace DataTransfer {
     SMBResources* createSMBResources(EndPoint* loc);
 
     // Delete a SMB resource
-    void deleteSMBResources(EndPoint* loc);
+    //    void deleteSMBResources(EndPoint* loc);
 
     // get the transfer compatible SMB resources
+#if 1
     SMBResources* getSMBResources( std::string& endpoint ); 
     inline SMBResources* getSMBResources( const char* ep )
       {std::string t(ep); return getSMBResources(t);}
+#endif
     SMBResources* getSMBResources( EndPoint* ep );
 
     // Retrieves the factory based upon the transfer type
@@ -185,13 +171,13 @@ namespace DataTransfer {
 
     int get_template(EndPoint *src, EndPoint *dst, XferServices* &xfer_template);
     int add_template(EndPoint *src, EndPoint *dst, XferServices* xf_template);
-    SMBResources* findResource(const char* );
+    //    SMBResources* findResource(const char* );
     
     // Reference counter
     OCPI::OS::uint32_t m_refCount;
     bool               m_init;
     OCPI::OS::Mutex    m_mutex;
-    OCPI::Util::VList  m_resources;
+    //    OCPI::Util::VList  m_resources;
     List               m_templatelist;
     FactoryConfig      m_config;
 

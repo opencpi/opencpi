@@ -68,12 +68,12 @@ namespace DataTransfer {
   class UDPSmemServices : public SmemServices
   {
   public:
-    UDPSmemServices (XferFactory * p, EndPoint* ep)
-      :SmemServices(p, ep),m_socketServerT(NULL)
+    UDPSmemServices (EndPoint& ep)
+      :SmemServices(ep),m_socketServerT(NULL)
     {
-      m_ep = static_cast<UDPEndPoint*>(ep);
-      m_mem = new char[ep->size];
-      memset( m_mem, 0, ep->size );
+      //      m_ep = static_cast<UDPEndPoint*>(ep);
+      m_mem = new char[ep.size];
+      memset( m_mem, 0, ep.size );
     };
     OCPI::OS::int32_t attach (EndPoint* loc){ ( void ) loc; return 0;};
     OCPI::OS::int32_t detach (){return 0;}
@@ -82,14 +82,14 @@ namespace DataTransfer {
       return &m_mem[offset];
     }
     OCPI::OS::int32_t unMap (){return 0;}
-    UDPEndPoint* getEndPoint (){return m_ep;}
+    UDPEndPoint* getEndPoint (){return static_cast<UDPEndPoint*>(&m_endpoint);}
     virtual ~UDPSmemServices ();
 
   public: 
     UDPSocketServerT * m_socketServerT;
 
   private:
-    UDPEndPoint* m_ep;
+    //    UDPEndPoint* m_ep;
     char* m_mem;
   };
 
@@ -340,25 +340,20 @@ namespace DataTransfer {
 
 
   // This method is used to allocate a transfer compatible SMB
-  SmemServices* UDPSocketXferFactory::getSmemServices(EndPoint* loc )
+  SmemServices& UDPEndPoint::createSmemServices()
   {
-    UDPSocketStartupParams sp;
-    if ( loc->smem ) {
-      return loc->smem;
-    }
+    UDPSmemServices * smem = new UDPSmemServices(*this);
 
-    loc->smem = sp.lsmem = new UDPSmemServices(this, loc);
-    UDPSmemServices * smem = static_cast<UDPSmemServices*>(sp.lsmem);
-
-
-    if ( loc->local ) {
+    if (local ) {
       // Create our listener socket thread so that we can respond to incoming
       // requests  
+      UDPSocketStartupParams sp;
+      sp.lsmem = smem;
       smem->m_socketServerT = new UDPSocketServerT( sp );
       smem->m_socketServerT->start();
       smem->m_socketServerT->btr();  
     }
-    return sp.lsmem;
+    return *smem;
   }
 
 

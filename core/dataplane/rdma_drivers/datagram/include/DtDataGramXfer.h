@@ -161,8 +161,8 @@ namespace DataTransfer {
 
   class DatagramXferFactory : public DataTransfer::XferFactory {
     friend class DatagramSmemServices;
-  private:
-    std::vector<DatagramSmemServices*> m_smems;
+    //  private:
+    //    std::vector<DatagramSmemServices*> m_smems;
 
   public:
     DatagramXferFactory(const char *name)
@@ -173,23 +173,21 @@ namespace DataTransfer {
     virtual const char* getProtocol()=0;
     virtual DatagramXferServices *createXferServices(DatagramSmemServices*source,
 						     DatagramSmemServices*target) = 0;
-    virtual DatagramSmemServices *createSmemServices(EndPoint *ep) = 0;
     virtual DatagramSocket *createSocket(DatagramSmemServices *) = 0;
-    SmemServices *getSmemServices(EndPoint* ep);
     XferServices* getXferServices(SmemServices* source, SmemServices* target);
   };
 
   class DatagramSmemServices : public SmemServices, public FrameMonitor
     {
     public:
-      DatagramSmemServices (DatagramXferFactory * p, EndPoint* ep)
-	: SmemServices(p, ep),FrameMonitor(this),m_socket(NULL),m_xferServices(32)
+      DatagramSmemServices (EndPoint& ep)
+	: SmemServices(ep),FrameMonitor(this),m_socket(NULL),m_xferServices(32)
       {
-	m_ep = ep;
-	m_mem = new char[ep->size];
-	memset( m_mem, 0, ep->size );
-	if (ep->local)
-	  m_socket = p->createSocket(this);
+	//	m_ep = ep;
+	m_mem = new char[ep.size];
+	memset( m_mem, 0, ep.size );
+	if (ep.local)
+	  m_socket = static_cast<DatagramXferFactory *>(ep.factory)->createSocket(this);
       };
       OCPI::OS::int32_t attach (EndPoint* loc){ ( void ) loc; return 0;};
       OCPI::OS::int32_t detach (){return 0;}
@@ -198,7 +196,7 @@ namespace DataTransfer {
 	return &m_mem[offset];
       }
       OCPI::OS::int32_t unMap (){return 0;}
-      EndPoint* getEndPoint (){return m_ep;}
+      //      EndPoint* getEndPoint (){return m_ep;}
       virtual ~DatagramSmemServices ();
       DatagramSocket *& socketServer(){return m_socket;}
       void addXfer( DatagramXferServices * s );
@@ -224,7 +222,7 @@ namespace DataTransfer {
     private:
       DatagramSocket * m_socket;
       FrameMonitor   * m_frameMonitor;
-      EndPoint* m_ep;
+      //      EndPoint* m_ep;
       char* m_mem;
       std::vector< DatagramXferServices * > m_xferServices;
     };

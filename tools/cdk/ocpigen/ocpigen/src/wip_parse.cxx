@@ -275,7 +275,7 @@ doTopProp(ezxml_t prop, void *arg) {
   Worker *w = (Worker *)arg;
   const char *err;
   if (!(err = OE::checkAttrs(prop, OCPI_UTIL_MEMBER_ATTRS, "Readable", "Writable", "IsTest",
-			    "Default", NULL)))
+			     "Initial", "Volatile", "Default", NULL)))
     err = addProperty(w, prop, false);
   return err;
 }

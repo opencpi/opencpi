@@ -88,11 +88,11 @@ class SocketServerT;
 class SocketSmemServices : public SmemServices
   {
   public:
-    SocketSmemServices (XferFactory * p, EndPoint* ep)
-      :SmemServices(p, ep),m_socketServerT(NULL),m_ep(ep)
+    SocketSmemServices (EndPoint& ep)
+      :SmemServices(ep),m_socketServerT(NULL)//,m_ep(ep)
     {
-      m_mem = new char[ep->size];
-      memset( m_mem, 0, ep->size );
+      m_mem = new char[ep.size];
+      memset( m_mem, 0, ep.size );
     };
     OCPI::OS::int32_t attach (EndPoint* loc){ ( void ) loc; return 0;};
     OCPI::OS::int32_t detach (){return 0;}
@@ -101,7 +101,7 @@ class SocketSmemServices : public SmemServices
       return &m_mem[offset];
     }
     OCPI::OS::int32_t unMap (){return 0;}
-    EndPoint* getEndPoint (){return m_ep;}
+    //    EndPoint* getEndPoint (){return m_ep;}
     virtual ~SocketSmemServices ();
 
   public: 
@@ -110,7 +110,7 @@ class SocketSmemServices : public SmemServices
 
 
   private:
-    EndPoint* m_ep;
+    //    EndPoint* m_ep;
     char* m_mem;
   };
 
@@ -337,24 +337,21 @@ void SocketXferFactory::releaseEndPoint( EndPoint* )
 #endif
 
 // This method is used to allocate a transfer compatible SMB
-SmemServices* SocketXferFactory::getSmemServices(EndPoint* loc )
+SmemServices& SocketEndPoint::createSmemServices()
 {
-  SocketStartupParams sp;
-  if ( loc->smem ) {
-    return loc->smem;
-  }
 
-  loc->smem = sp.lsmem = new SocketSmemServices(this, loc);
-  SocketSmemServices * smem = static_cast<SocketSmemServices*>(sp.lsmem);
+  SocketSmemServices * smem = new SocketSmemServices(*this);
 
-  if ( loc->local ) {
+  if (local) {
     // Create our listener socket thread so that we can respond to incoming
     // requests  
+    SocketStartupParams sp;
+    sp.lsmem = smem;
     smem->m_socketServerT = new SocketServerT( sp );
     smem->m_socketServerT->start();
     smem->m_socketServerT->btr();  
   }
-  return sp.lsmem;
+  return *smem;
 }
 
 

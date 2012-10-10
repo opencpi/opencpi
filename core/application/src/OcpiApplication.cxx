@@ -122,15 +122,18 @@ namespace OCPI {
 	  if ((bestMap & (1 << n)) && !(m_allMap & (1 << n))) {
 	    m_currConn = m_nContainers;
 	    i->m_container = addContainer(n);
+	    ocpiDebug("instance %p used new container. best 0x%x curr %u cont %u",
+		      i, bestMap, m_currConn, n);
 	    return; // We added a new one - and used it
 	  }
 	// We have to use one we have since only those are feasible
 	do {
-	  if (++m_currConn >= OC::Container::s_nContainers)
+	  if (++m_currConn >= m_nContainers)
 	    m_currConn = 0;
 	} while (!(bestMap & (1 << m_usedContainers[m_currConn])));
 	i->m_container = m_currConn;
-	ocpiDebug("best 0x%x curr %u cont %u", bestMap, m_currConn, m_usedContainers[m_currConn]);
+	ocpiDebug("instance %p reuses container. best 0x%x curr %u cont %u",
+		  i, bestMap, m_currConn, m_usedContainers[m_currConn]);
 	break;
 
       case MinProcessors:
@@ -392,51 +395,6 @@ namespace OCPI {
       m_bestScore = 0;
       doInstance(0, 0);
 
-#if 0
-      // The per-container structure that records container commitments as we go
-      Booking bookings[OC::Container::s_nContainers];
-      // The per-instance structure to record decisions and algorithm state
-      Deployment
-        deployments[m_nInstances],     // current deployment
-	bestDeployments[m_nInstances]; // best deployment
-
-       *d; 
-      memset(deployments, 0, sizeof(deployments));
-      // Breadth first search for best combinations of candidate/container per instance
-      bool foundAny;
-      do { // look for overall solutions, and keey trying while we find new ones
-	foundAny = false;
-	unsigned cumScore = 0;
-	i = m_instances;
-	d = deployments;
-	memset(bookings, 0, sizeof(Booking) * OC::Container::s_nContainers);
-	for (unsigned n = 0; n < m_nInstances; n++, i++, d++) {
-	  for (unsigned m = 0; m < i->m_nCandidates; m++) {
-	    OL::Candidate &c = m_assembly.m_candidates[n][m];	  
-	    i->m_impl = c.impl; // temporary, but needed by (at least) connectionsOk
-	    if (connectionsOk(c, n))
-	      for (unsigned cont = 0; cont < OC::Container::s_nContainers; cont++) {
-		Booking &b = bookings[cont];
-		if (i->m_feasibleContainers[m] & (1 << cont) && bookingOk(b, c, n)) {
-		  // We have a feasible choice here.  Record booking.
-		  d->container = cont;
-		  d->candidate = m;
-		  b.m_artifact = &c.impl->m_artifact;
-		  b.m_usedImpls |= 1 << c.impl->m_ordinal;
-		  cumScore += c.score;
-		  if (n >= m_nInstances-1) {
-		    dumpDeployment(cumScore, deployments);
-		    if (cumScore > bestScore) {
-		      memcpy(bestDeployments, deployments, sizeof(Deployment)*m_nInstances);
-		      bestScore = cumScore;
-		    }
-		  }
-		}
-	      }
-	  }
-	}
-      } while (foundAny);
-#endif
       // Record the implementation from the best deployment
       i = m_instances;
       Deployment *d = m_bestDeployments;

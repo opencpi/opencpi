@@ -63,8 +63,8 @@
 using namespace DataTransfer;
 
 SmemServices::
-SmemServices (XferFactory * parent, EndPoint* ep)
-  : OCPI::Util::Child<XferFactory,SmemServices>(*parent), m_endpoint(ep)
+SmemServices (/*XferFactory * parent, */EndPoint& ep)
+  : /* OCPI::Util::Child<XferFactory,SmemServices>(*parent), */ m_endpoint(ep)
 {
 
 }
@@ -77,7 +77,7 @@ SmemServices::
 }
 
 EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
-  :smem(0),mailbox(0),maxCount(0),size(psize),address(0),local(l),resources(0),factory(NULL),refCount(0)
+  :mailbox(0),maxCount(0),size(psize),address(0),local(l),factory(NULL),refCount(0)
 {
   if ( ! size ) {
     size = XferFactoryManager::getFactoryManager().getSMBSize();
@@ -88,6 +88,7 @@ EndPoint::EndPoint( std::string& end_point, OCPI::OS::uint32_t psize, bool l )
 EndPoint::~EndPoint() {
   if (factory)
     factory->removeEndPoint(*this);
+  delete resources.sMemServices;
 }
 
 void EndPoint::release() {
@@ -177,12 +178,18 @@ void EndPoint::getResourceValuesFromString( const char* ep,
 
 void EndPoint::
 finalize() {
-  if (!smem || !resources)
-    ocpiInfo("Finalizing endpoint %p %s %p %p", this, end_point.c_str(), smem, resources);
-  if (!smem)
-    factory->getSmemServices(this);
-  if (!resources)
-    XferFactoryManager::getFactoryManager().createSMBResources(this);
+  getSmemServices();
+  if (!resources.sMemResourceMgr) {
+    ocpiInfo("Finalizing endpoint %p %s %p %p %p", this, end_point.c_str(),
+	     resources.sMemServices, resources.sMemResourceMgr, resources.m_comms);
+    resources.sMemResourceMgr = CreateResourceServices();
+    resources.sMemResourceMgr->createLocal(size);
+    uint32_t offset;
+    if (resources.sMemResourceMgr->alloc( sizeof(ContainerComms), 0, &offset) != 0)
+      throw OCPI::Util::EmbeddedException(  NO_MORE_SMB, end_point.c_str() );
+    resources.m_comms = static_cast<DataTransfer::ContainerComms*>
+      (resources.sMemServices->map(offset, sizeof(ContainerComms)));
+  }
 }
 
 bool DataTransfer::EndPoint::
@@ -198,6 +205,12 @@ canSupport(const char *remoteEndpoint) {
     maxMb == maxCount && mailBox != mailbox;
   free(cs);
   return ret;
+}
+
+SmemServices *DataTransfer::EndPoint::
+getSmemServices() {
+  return resources.sMemServices ?
+    resources.sMemServices : (resources.sMemServices = &createSmemServices());
 }
 
 class ResourceServicesImpl : public DataTransfer::ResourceServices
@@ -265,3 +278,9 @@ DataTransfer::ResourceServices* DataTransfer::CreateResourceServices ()
 }
 
 
+DataTransfer::SMBResources::SMBResources()
+ : sMemServices(0), sMemResourceMgr(0), m_comms(0) {
+}
+DataTransfer::SMBResources::~SMBResources() {
+  delete sMemResourceMgr;
+}
