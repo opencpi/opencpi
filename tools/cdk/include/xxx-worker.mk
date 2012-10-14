@@ -55,6 +55,7 @@ ImplSuffix=$($(CapModel)ImplSuffix)
 SkelSuffix=$($(CapModel)SkelSuffix)
 SourceSuffix=$($(CapModel)SourceSuffix)
 ImplXmlFiles=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
+$(call OcpiDbgVar,ImplXmlFiles)
 ifndef Application
 ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
 SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))

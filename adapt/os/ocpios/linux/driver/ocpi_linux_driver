@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# This script loads and unloads the linix driver
-# it is intended to be called from other script that checks args etc.
+# This script loads and unloads the linux driver
+# it is intended to be called from another script that checks args etc.
 
 # Retrieve the reserved DMA memory value from the kernel command line
 # Note there might be multiple reservations, and we currently only support one (the first).
@@ -85,7 +85,8 @@ if [ $1 == status ] ; then
 fi
 sudo cp $RULESPATH /etc/udev/rules.d
 sudo /sbin/udevcontrol reload_rules
-sudo /sbin/insmod $MODPATH $MEMMAP
+sudo /sbin/insmod $MODPATH opencpi_$MEMMAP
+#sudo /sbin/modprobe -v 
 if [ $? == 0 ] ; then
   # check /dev?
   echo Driver loaded successfully.

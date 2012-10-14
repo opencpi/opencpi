@@ -562,6 +562,14 @@ namespace OCPI {
 	}
         return false;
       }
+      ezxml_t
+      ezxml_firstChild(ezxml_t xml) {
+	return xml ? xml->child : 0;
+      }
+      ezxml_t
+      ezxml_nextChild(ezxml_t xml) {
+	return xml->ordered;
+      }
       const char *
       ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg) {
 	const char *err;

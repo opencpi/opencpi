@@ -52,7 +52,7 @@ namespace OU = OCPI::Util;
 #define RCCIMPL "_Worker"
 #define RCCMAP "_map"
 
-static const char *
+static char *
 upperdup(const char *s) {
   char *upper = (char *)malloc(strlen(s) + 1);
   for (char *u = upper; (*u++ = toupper(*s)); s++)
@@ -246,7 +246,7 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
   fprintf(f, "/*\n");
   printgen(f, " *", w->file);
   fprintf(f, " */\n");
-  const char *upper = upperdup(w->implName);
+  char *upper = upperdup(w->implName);
   fprintf(f,
 	  "\n"
 	  "/* This file contains the implementation declarations for worker %s */\n\n"
@@ -284,8 +284,8 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  upper, in, upper, out);
   if (w->ctl.properties.size()) {
     fprintf(f,
-"/*\n"
-" * Property structure for worker %s\n"
+	    "/*\n"
+	    " * Property structure for worker %s\n"
 	    " */\n"
 	    "typedef struct {\n",
 	    w->implName);
@@ -299,11 +299,11 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
   if ((err = methodName(w, "run", mName)))
     return err;
   fprintf(f,
-"/*\n"
-" * Use this macro, followed by a semicolon, to declare methods before\n"
-" * implementing them, and before defining the RCCDispatch for the worker\n"
-" * e.g.:\n"
-" * %s_METHOD_DECLARATIONS;\n"
+	  "/*\n"
+	  " * Use this macro, followed by a semicolon, to declare methods before\n"
+	  " * implementing them, and before defining the RCCDispatch for the worker\n"
+	  " * e.g.:\n"
+	  " * %s_METHOD_DECLARATIONS;\n"
 	  " */\n"
 	  "#define %s_METHOD_DECLARATIONS \\\n",
 	  upper, upper);
@@ -328,22 +328,22 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	  w->pattern ? "extern" : "static", mName);
   fprintf(f, "/**/\n");
   fprintf(f,
-"/*\n"
-" * This macro defines the initialization of the RCCDispatch structure\n"
-" * for the %s worker. Insert it AFTER any customized initializations\n"
-" * of members: memSizes, runCondition.\n"
-" * E.g.: \n"
-" * static RCCRunCondition myRunCondition { ... };\n"
-" * %s_METHOD_DECLARATIONS;\n"
-" * RCCDispatch xyz_dispatch = {\n"
-" * .runCondition = &myRunCondition,\n"
-" * %s_DISPATCH\n"
-" * };\n"
+	  "/*\n"
+	  " * This macro defines the initialization of the RCCDispatch structure\n"
+	  " * for the %s worker. Insert it AFTER any customized initializations\n"
+	  " * of members: memSizes, runCondition.\n"
+	  " * E.g.: \n"
+	  " * static RCCRunCondition myRunCondition { ... };\n"
+	  " * %s_METHOD_DECLARATIONS;\n"
+	  " * RCCDispatch xyz_dispatch = {\n"
+	  " * .runCondition = &myRunCondition,\n"
+	  " * %s_DISPATCH\n"
+	  " * };\n"
 	  " */\n"
-"#define %s_DISPATCH \\\n"
-" .version = RCC_VERSION,\\\n"
-" .numInputs = %s_N_INPUT_PORTS,\\\n"
-" .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
+	  "#define %s_DISPATCH \\\n"
+	  " .version = RCC_VERSION,\\\n"
+	  " .numInputs = %s_N_INPUT_PORTS,\\\n"
+	  " .numOutputs = %s_N_OUTPUT_PORTS,\\\n"
 	  " .threadProfile = %u,\\\n",
 	  w->implName, upper, upper, upper, upper, upper, w->isThreaded ? 1 : 0);
   if (w->ctl.properties.size())
@@ -368,19 +368,56 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
     fprintf(f, " .optionallyConnectedPorts = 0x%x,\\\n", optionals);
   fprintf(f, "/**/\n");
   if (w->ports.size()) {
+    // First generate the protocol enumerations
+    for (unsigned n = 0; n < w->ports.size(); n++) {
+      Port *port = w->ports[n];
+      if (port->protocol->operations()) {
+	unsigned nn;
+	for (nn = 0; nn < n; nn++) {
+	  Port *pp = w->ports[nn];
+	  if (pp->protocol->operations() &&
+	      !strcasecmp(pp->protocol->m_name.c_str(),
+			  port->protocol->m_name.c_str()))
+	    break;
+	}
+	if (nn >= n) {
+	  OU::Protocol *prot = port->protocol;
+	  fprintf(f,
+		  "/*\n"
+		  " * Enumeration of operations for protocol %s (%s)\n"
+		  " */\n"
+		  "typedef enum {\n",
+		  prot->m_name.c_str(), prot->m_qualifiedName.c_str());
+	  OU::Operation *o = prot->operations();
+	  char *puName = upperdup(prot->m_name.c_str());
+	  for (unsigned no = 0; no < prot->nOperations(); no++, o++) {
+	    char *ouName = upperdup(o->name().c_str());
+	    fprintf(f, " %s_%s,\n", puName, ouName);
+	    free((void*)ouName);
+	  }
+	  free(puName);
+	  fprintf(f, "} %c%sOperation;\n",
+		  toupper(*prot->m_name.c_str()),
+		  prot->m_name.c_str() + 1);
+	}
+      }
+    }
     for (unsigned n = 0; n < w->ports.size(); n++) {
       Port *port = w->ports[n];
       if (port->protocol->operations()) {
 	fprintf(f,
-"/*\n"
-" * Enumeration of operations on port %s of worker %s\n"
+		"/*\n"
+		" * Enumeration of operations on port %s of worker %s\n"
 		" */\n"
 		"typedef enum {\n",
 		port->name, w->implName);
 	OU::Operation *o = port->protocol->operations();
-	const char *puName = upperdup(port->name);
-	for (unsigned nn = 0; nn < port->protocol->nOperations(); nn++, o++)
-	  fprintf(f, " %s_%s_%s,\n", upper, puName, upperdup(o->name().c_str()));
+	char *puName = upperdup(port->name);
+	for (unsigned nn = 0; nn < port->protocol->nOperations(); nn++, o++) {
+	  char *ouName = upperdup(o->name().c_str());
+	  fprintf(f, " %s_%s_%s,\n", upper, puName, ouName);
+	  free(ouName);
+	}
 	fprintf(f, "} %c%s%c%sOperation;\n",
 		toupper(w->implName[0]), w->implName+1,
 		toupper(port->name[0]), port->name+1);
@@ -389,10 +426,10 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	for (unsigned nn = 0; nn < port->protocol->nOperations(); nn++, o++)
 	  if (o->nArgs()) {
 	    fprintf(f,
-"/*\n"
-" * Structure for the %s operation on port %s\n"
+		    "/*\n"
+		    " * Structure for the %s operation on port %s\n"
 		    " */\n"
-		    "typedef struct {\n",
+		    "typedef struct __attribute__ ((__packed__)) {\n",
 		    o->name().c_str(), port->name);
 	    std::string s;
 	    camel(s, w->implName, port->name, o->name().c_str());

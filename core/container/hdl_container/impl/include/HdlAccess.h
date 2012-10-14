@@ -29,22 +29,22 @@ namespace OCPI {
       virtual void setBytes(RegisterOffset, const uint8_t *, unsigned, uint32_t *status = NULL) = 0;
     };
     class Access {
-      friend class Worker;
+      friend class WciControl;
       volatile uint8_t *m_registers; // the memory mapped virtual address of the registers
       uint64_t m_base;               // the base of the "registers" in their physical address space
       Accessor *m_accessor;          // when no virtual pointer access, the object that does the access
-      volatile uint8_t *m_buffers;   // sort of a hack for the data plane until enet dp is available
+      //      volatile uint8_t *m_buffers;   // sort of a hack for the data plane until enet dp is available
 
     public:
       Access(Access &other);
       Access(volatile uint8_t *registers = NULL,  Accessor *accessor = NULL,
-	     RegisterOffset base = 0, volatile uint8_t *buffers = NULL);
+	     RegisterOffset base = 0); //, volatile uint8_t *buffers = NULL);
       ~Access();
       inline volatile uint8_t *registers() const { return m_registers; }
       inline bool usable() const { return m_registers || m_accessor; }
       void
       setAccess(volatile uint8_t *registers,  Accessor *accessor = NULL,
-		RegisterOffset base = 0, volatile uint8_t *buffers = NULL);
+		RegisterOffset base = 0); //, volatile uint8_t *buffers = NULL);
       void
       closeAccess();
 

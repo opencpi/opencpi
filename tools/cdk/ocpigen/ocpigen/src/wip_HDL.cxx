@@ -777,8 +777,17 @@ emitVhdlProp(FILE *f, OU::Property &pr, const char *&last, bool writable,
   free(temp); // FIXME: make proper string versions of this junk
 }
 static void
+printVhdlScalarValue(FILE *f, OU::Value &v) {
+  (void)f;(void)v;
+}
+
+static void
 printVhdlValue(FILE *f, OU::Value &v) {
   (void)f;(void)v;
+  const OU::ValueType &vt = *v.m_vt;
+  std::string value;
+  v.unparse(value);
+  fprintf(f, "to_%s(%s)", OU::baseTypeNames[vt.m_baseType], value.c_str());
 }
 
 static void
@@ -825,7 +834,6 @@ emitVhdlWSI(FILE *f, Worker *w, Port *p) {
   fprintf(f,
 	  ");\n"
 	  "end entity;\n"
-	  "library util;\n"
 	  "architecture rtl of %s_%s_wsi is\n",
 	  w->implName, p->name);
   if (p->masterIn()) {
@@ -1352,11 +1360,13 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	      OU::Property *pr = *pi;
 	      if (w->language == VHDL) {
 		fprintf(f, "  constant %-22s : Property_t := ", pr->m_name.c_str());
-		emitVhdlValue(f, p->ocp.MAddr.width, pr->m_offset);
+		emitVhdlValue(f, p->ocp.MAddr.width,
+			      pr->m_isIndirect ? pr->m_indirectAddr : pr->m_offset);
 	      } else
 		fprintf(f, "  localparam [%d:0] %sAddr = %d'h%0*x;\n",
 			p->ocp.MAddr.width - 1, pr->m_name.c_str(), p->ocp.MAddr.width,
-			(int)roundup(p->ocp.MAddr.width, 4)/4, pr->m_offset);
+			(int)roundup(p->ocp.MAddr.width, 4)/4,
+			pr->m_isIndirect ? pr->m_indirectAddr : pr->m_offset);
 	    }
 	}
 	break;
@@ -2671,13 +2681,17 @@ emitWorker(FILE *f, Worker *w)
   unsigned nn;
   for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
     OU::Property *prop = *pi;
-    if (prop->m_isParameter)
+    if (prop->m_isParameter) // FIXME: readable parameters...
       continue;
     prop->printAttrs(f, "property", 1);
     if (prop->m_isReadable)
       fprintf(f, " readable=\"true\"");
+    if (prop->m_isVolatile)
+      fprintf(f, " volatile=\"true\"");
     if (prop->m_isWritable)
       fprintf(f, " writable=\"true\"");
+    if (prop->m_isInitial)
+      fprintf(f, " initial=\"true\"");
     if (prop->m_readSync)
       fprintf(f, " readSync=\"true\"");
     if (prop->m_writeSync)
@@ -2686,6 +2700,8 @@ emitWorker(FILE *f, Worker *w)
       fprintf(f, " readError=\"true\"");
     if (prop->m_writeError)
       fprintf(f, " writeError=\"true\"");
+    if (prop->m_isIndirect)
+      fprintf(f, " indirect=\"%"PRIu32"u\"", prop->m_indirectAddr);
     prop->printChildren(f, "property");
   }
   for (nn = 0; nn < w->ports.size(); nn++) {

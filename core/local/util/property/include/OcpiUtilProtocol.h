@@ -110,7 +110,7 @@ namespace OCPI  {
       inline unsigned &nOperations() { return m_nOperations; }
       inline Operation *operations() { return m_operations; }
       inline const std::string &name() const { return m_name; }
-      const char *parse(ezxml_t x);
+      const char *parse(ezxml_t x, bool top = true);
       // Note this is NOT const char array and must be modifiable in place
       const char *parse(char *proto);
       const char *parseSummary(ezxml_t x);

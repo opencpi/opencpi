@@ -357,7 +357,9 @@ namespace OCPI {
       return err;
     }
 
-    const char *Protocol::parse(ezxml_t prot) {
+    const char *Protocol::parse(ezxml_t prot, bool top) {
+      if (!top)
+	return OE::ezxml_children(prot, doOperation, this);
       const char *err;
       const char *name = ezxml_cattr(prot, "name");
       if (name)
@@ -365,15 +367,15 @@ namespace OCPI {
       name = ezxml_cattr(prot, "qualifiedname");
       if (name)
 	m_qualifiedName = name;
-      // If we are actually parsing the protocol, there is no default value width.
-      if (ezxml_cchild(prot, "operation")) {
+      m_dataValueWidth = 0;
+      // First time we call this it will just be for counting.
+      if ((err = OE::ezxml_children(prot, doOperation, this)))
+	return err;
+      if (m_nOperations) {
+	// If we are actually parsing the protocol, there is no default value width.
 	if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize",
 				  "datavaluewidth", "maxmessagevalues",
 				  "zerolengthmessages", (void*)0)))
-	  return err;
-	m_dataValueWidth = 0;
-	// First time we call this it will just be for counting.
-	if ((err = OE::ezxml_children(prot, doOperation, this)))
 	  return err;
 	m_operations = m_op = new Operation[m_nOperations];
 	// Now we call a second time t make them.

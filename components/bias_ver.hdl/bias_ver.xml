@@ -2,6 +2,6 @@
   <xi:include href="bias_spec.xml"/>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" RegRequest="true" NumberOfOpcodes="256"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" RegRequest="true" NumberOfOpcodes="256"/>
-</ComponentImplementation>
+</HdlImplementation>
 
 

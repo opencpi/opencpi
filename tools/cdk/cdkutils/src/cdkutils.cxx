@@ -85,6 +85,9 @@ parseFile(const char *file, const char *parent, const char *element,
   if (xfile)
     *xfile = cp;
   ezxml_t x = ezxml_parse_fd(fd);
+  const char *err;
+  if (x && (err = ezxml_error(x)) && err[0])
+    return OU::esprintf("XML Parsing error: %s", err);
   if (!x || !x->name)
     return OU::esprintf("File \"%s\" (when looking for \"%s\") could not be parsed as XML", cp, file);
   if (element && strcasecmp(x->name, element)) {

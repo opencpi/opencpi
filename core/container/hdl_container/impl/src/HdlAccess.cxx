@@ -3,14 +3,15 @@
 namespace OCPI {
   namespace HDL {
     Access::
-    Access(volatile uint8_t *registers,  Accessor *accessor, RegisterOffset base,
-	   volatile uint8_t *buffers) : m_accessor(NULL) {
-      setAccess(registers, accessor, base, buffers);
+    Access(volatile uint8_t *registers,  Accessor *accessor, RegisterOffset base)
+    //,  volatile uint8_t *buffers)
+      : m_accessor(NULL) {
+      setAccess(registers, accessor, base); //, buffers);
     }
     // Take the content and ownership away from the other access structure
     Access::
     Access(Access &other) : m_accessor(NULL) {
-      setAccess(other.m_registers, other.m_accessor, other.m_base);
+      setAccess(other.m_registers, other.m_accessor); //, other.m_base);
     }
 
     Access::
@@ -20,12 +21,12 @@ namespace OCPI {
 
     void Access::
     setAccess(volatile uint8_t *registers,  Accessor *accessor,
-	      RegisterOffset base, volatile uint8_t *buffers) {
+	      RegisterOffset base) { //, volatile uint8_t *buffers) {
       delete m_accessor;
       m_registers = registers;
       m_accessor = accessor;
       m_base = base;
-      m_buffers = buffers;
+      //      m_buffers = buffers;
     }
 
     void Access::

@@ -41,9 +41,11 @@
 #include <assert.h>
 #include <ctype.h>
 #include "OcpiUtilMisc.h"
+#include "OcpiUtilEzxml.h"
 #include "wip.h"
 
 namespace OU = OCPI::Util;
+namespace OE = OCPI::Util::EzXml;
 
 /*
  * Todo:
@@ -167,52 +169,106 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
   return 0;
 }
 
+#if 0
+// Is this an include? If so give me the underlying XML
+static const char *
+tryThisInclude(ezxml_t x, const char *parent, ezxml_t *parsed, const char **child) {
+  const char *eName = ezxml_name(x);
+  if (!eName || strcasecmp(eName, "xi:include"))
+    return 0;
+  const char *err;
+  if ((err = OE::checkAttrs(x, "href", (void*)0)))
+    return err;
+  const char *ifile = ezxml_cattr(x, "href");
+  if (!ifile)
+    return OU::esprintf("xi:include missing an href attribute in file \"%s\"", parent);
+  ezxml_t i = 0;
+  if ((err = parseFile(ifile, parent, element, &i, &ifile, optional)))
+    return err;
+  *parsed = i;
+  *child = ifile;
+}
+#endif
 // If the given element is xi:include, then parse it and return the parsed element.
 // If not, *parsed is set to zero.
+// If not optional then it MUST be the indicated element
 // Also return the file name of the included file.
 static const char *
-tryInclude(ezxml_t top, const char *parent, const char *element, ezxml_t *parsed,
-           const char **child, bool optional = false) {
+tryInclude(ezxml_t x, const char *parent, const char *element, ezxml_t *parsed,
+           const char **child, bool optional) {
+  *parsed = 0;
+  const char *eName = ezxml_name(x);
+  if (!eName || strcasecmp(eName, "xi:include"))
+    return 0;
   const char *err;
-  ezxml_t x = ezxml_child(top, "xi:include");
-  if (x) {
-    if ((err = OE::checkAttrs(x, "href", (void*)0)))
-      return err;
-    const char *ifile = ezxml_cattr(x, "href");
-    if (!ifile)
-      return OU::esprintf("xi:include missing an href attribute in file \"%s\"", parent);
-    ezxml_t i = 0;
-    if ((err = parseFile(ifile, parent, element, &i, &ifile, optional)))
-      return err;
-    *parsed = i;
-    *child = ifile;
-  } else {
-    if (child)
-      *child = 0;
-    *parsed = 0;
-  }
+  if ((err = OE::checkAttrs(x, "href", (void*)0)))
+    return err;
+  const char *ifile = ezxml_cattr(x, "href");
+  if (!ifile)
+    return OU::esprintf("xi:include missing an href attribute in file \"%s\"", parent);
+  *child = ifile;
+  if ((err = parseFile(ifile, parent, element, parsed, &ifile, optional)))
+    return OU::esprintf("Error in %s: %s", ifile, err);
+  return NULL;
+}
+
+// If this element is either the given element or an include of the given element...
+// optional means the included file can be something else.
+// If success, set *parsed, and maybe *childFile.
+static const char *
+tryChildInclude(ezxml_t x, const char *parent, const char *element,
+                ezxml_t *parsed, const char **childFile, bool optional = false) {
+  *childFile = 0;
+  const char *err = tryInclude(x, parent, element, parsed, childFile, optional);
+  if (err || *parsed)
+    return err;
+  const char *eName = ezxml_name(x);
+  if (!eName || strcasecmp(eName, element))
+    return 0;
+  *parsed = x;
   return 0;
 }
 
-// The top element should have either a child "element" or
-// an xi:include of such an element.
-// If success, set *parsed, and maybe *childFile.
+// Find the single instance of a child, which might be xi:included
 static const char *
-tryChildInclude(ezxml_t top, const char *parent, const char *element,
-                ezxml_t *parsed, const char **childFile, bool optional = false) {
-  const char *err = tryInclude(top, parent, element, parsed, childFile, optional);
-  if (err || *parsed)
-    return err;
-  // No xi:include, of the right type, try to find it directly
-  if ((*parsed = ezxml_cchild(top, element))) {
-    if (childFile)
-      *childFile = parent;
-    return 0;
+tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
+		   ezxml_t *parsed, const char **childFile, bool optional) {
+  *parsed = 0;
+  const char *err = 0;
+  for (ezxml_t x = OE::ezxml_firstChild(top); x; x = OE::ezxml_nextChild(x)) {
+    const char *eName = ezxml_name(x);
+    if (eName)
+      if (!strcasecmp(eName, element))
+	if (*parsed)
+	  return OU::esprintf("found duplicate %s element where only one was expected",
+			      element);
+	else {
+	  if (childFile)
+	    *childFile = parent;
+	  *parsed = x;
+	}
+      else {
+	const char *file;
+	ezxml_t found;
+	if ((err = tryInclude(x, parent, element, &found, &file, optional)))
+	  return err;
+	else if (found) {
+	  if (*parsed)
+	    return OU::esprintf("found duplicate %s element in file %s, "
+				"included from file %s, where only one was expected",
+				element, parent, file);
+	  else {
+	    *parsed = found;
+	    if (childFile)
+	      *childFile = file;
+	  }
+	}
+      }
   }
-  return
-    optional ? 0 :
-    OU::esprintf("Neither %s nor xi:include found under %s in file \"%s\"",
-             element, top->name, parent);
+  if (!*parsed && !optional)
+    return OU::esprintf("no %s element found under %s, whether included via xi:include or not",
+			element, ezxml_name(top));
+  return err;
 }
 
 
@@ -221,12 +277,102 @@ addProperty(Worker *w, ezxml_t prop, bool includeImpl)
 {
   w->ctl.properties.push_back(new OU::Property);
   return w->ctl.properties.back()->
-    parse(prop, w->ctl.offset, w->ctl.readableConfigProperties,
+    parse(prop, w->ctl.readableConfigProperties,
 	  w->ctl.writableConfigProperties, w->ctl.sub32BitConfigProperties,
 	  includeImpl, w->ctl.ordinal++);
-  
 }
 
+struct PropInfo {
+  Worker *worker;
+  bool isImpl; // Are we in an implementation context?
+  bool anyIsBad;
+  bool top;    // Are we in a top layer mixed with other elements?
+  const char *parent;
+  PropInfo(Worker *worker, bool isImpl, bool anyIsBad, const char *parent)
+    : worker(worker), isImpl(isImpl), anyIsBad(anyIsBad), top(true), parent(parent) {}
+};
+
+// process something that might be a property, either at spec time or at impl time
+// This tries to keep properties in order no matter where they occur
+static const char *
+doMaybeProp(ezxml_t maybe, void *vpinfo) {
+  PropInfo &pinfo = *(PropInfo*)vpinfo;
+  Worker *w = pinfo.worker;
+  ezxml_t props = 0;
+  const char *childFile;
+  const char *err;
+  if (pinfo.top) {
+    if ((err = tryChildInclude(maybe, pinfo.parent, "ControlInterface", &props, &childFile, true)))
+      return err;
+    if (props) {
+      const char *parent = pinfo.parent;
+      pinfo.parent = childFile;
+      err = OE::ezxml_children(props, doMaybeProp, &pinfo);
+      pinfo.parent = parent;
+      return err;
+    }
+  }
+  if (!props &&
+      (err = tryChildInclude(maybe, pinfo.parent, "Properties", &props, &childFile, pinfo.top)))
+    return err;
+  if (props) {
+    if (pinfo.anyIsBad)
+      return "A Properties element is invalid in this context";
+    bool save = pinfo.top;
+    pinfo.top = false;
+    const char *parent = pinfo.parent;
+    pinfo.parent = childFile;
+    err = OE::ezxml_children(props, doMaybeProp, &pinfo);
+    pinfo.parent = parent;
+    pinfo.top = save;
+    return err;
+  }
+  const char *eName = ezxml_name(maybe);
+  if (!eName)
+    return 0;
+  bool isSpec = !strcasecmp(eName, "SpecProperty");
+  if (isSpec && !pinfo.isImpl)
+    return "SpecProperty elements not allowed in component specification";
+  if (!isSpec && strcasecmp(eName, "Property"))
+    if (pinfo.top)
+      return 0;
+    else
+      return OU::esprintf("Invalid child element '%s' of a 'Properties' element", eName);
+  if (pinfo.anyIsBad)
+    return "A Property or SpecProperty element are invalid in this context";
+  const char *name = ezxml_cattr(maybe, "Name");
+  if (!name)
+    return "Property or SpecProperty has no \"Name\" attribute";
+  OU::Property *p = NULL;
+  for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+    if ((*pi)->m_name == name) {
+      p = *pi;
+      break;
+    }
+  if (isSpec) {
+    // FIXME mark a property as "impled" so we reject doing it more than once
+    if (!p)
+      return OU::esprintf("Existing property named \"%s\" not found", name);
+    if (p->m_defaultValue && ezxml_cattr(maybe, "Default"))
+      return OU::esprintf("Implementation property named \"%s\" cannot override "
+			  "previous default value", name);
+    // So simply add impl to the existing propert
+    return p->parseImpl(maybe, w->ctl.readableConfigProperties,
+			w->ctl.writableConfigProperties);
+  } else if (p)
+      return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
+			  name);
+  // All the spec attributes plus the impl attributes
+  return addProperty(w, maybe, pinfo.isImpl);
+}
+
+static const char *
+doProperties(ezxml_t top, Worker *w, const char *parent, bool impl, bool anyIsBad) {
+  PropInfo pi(w, impl, anyIsBad, parent);
+  return OE::ezxml_children(top, doMaybeProp, &pi);
+}
+
+#if 0
 // Generic implementation properties
 // Called both for counting and for filling out
 static const char *
@@ -302,7 +448,7 @@ doSpecProp(ezxml_t prop, void *arg) {
     return "Element under Properties is neither Property or xi:include";
   return doTopProp(prop, (void*)w);
 }
-
+#endif
 // parse an attribute value as a list separated by comma, space or tab
 // and call a function with the given arg for each token found
 static const char *parseList(const char *list,
@@ -339,7 +485,7 @@ static const char *parseControlOp(const char *op, void *arg) {
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
-const char *
+static const char *
 parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t &xctl) {
   // Now we do the rest of the control interface
   xctl = ezxml_cchild(impl, "ControlInterface");
@@ -374,22 +520,13 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t &xctl) {
       }
     }
 #endif
-    ezxml_t props;
-    if ((err = tryChildInclude(xctl, file, "Properties", &props, NULL, true)))
-      return err;
-    // Properties might be in a "properties" element, maybe via xi:include
-    if (props) {
-      if ((err = OE::ezxml_children(props, doImplProp, w)))
-        return err;
-    } else
-      // Properties might also be directly under ControlInterface for simplicity
-      if ((err = OE::ezxml_children(xctl, doImplProp, w)))
-        return err;
   }
-  // parseing the impl control interface means we have visited all the properties,
-  // both spec and impl, so now we know the whole config space.
-  if (w->ctl.offset > w->ctl.sizeOfConfigSpace)
-    w->ctl.sizeOfConfigSpace = w->ctl.offset;
+  if ((err = doProperties(impl, w, file, true, false)))
+    return err;
+  // Now that we have all information about properties and we can actually
+  // do the offset calculations
+  for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
+    (*pi)->offset(w->ctl.offset, w->ctl.sizeOfConfigSpace);
   // Allow overriding sizeof config space
   if (xctl) {
     uint64_t sizeOfConfigSpace;
@@ -398,7 +535,7 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t &xctl) {
       return err;
     if (haveSize) {
       if (sizeOfConfigSpace < w->ctl.sizeOfConfigSpace)
-        return "SizeOfConfigSpace attribute of ControlInterface smaller than properties";
+        return "SizeOfConfigSpace attribute of ControlInterface smaller than properties indicate";
       w->ctl.sizeOfConfigSpace = sizeOfConfigSpace;
     }
   }
@@ -424,23 +561,17 @@ parseImplLocalMemory(ezxml_t impl, Worker *w) {
 }
 
 // Parse the control information about the component spec
-const char *
-parseSpecControl(Worker *w, ezxml_t ps, ezxml_t props, ezxml_t spec) {
+static const char *
+parseSpecControl(Worker *w, ezxml_t ps) {
   const char *err;
-  if (ps) {
-    if ((err = OE::checkAttrs(ps, "SizeOfConfigSpace", "WritableConfigProperties",
-                          "ReadableConfigProperties", "Sub32BitConfigProperties",
-                          "Count", (void*)0)) ||
-        (err = OE::getNumber64(ps, "SizeOfConfigSpace", &w->ctl.sizeOfConfigSpace, 0, 0)) ||
-        (err = OE::getBoolean(ps, "WritableConfigProperties", &w->ctl.writableConfigProperties)) ||
-        (err = OE::getBoolean(ps, "ReadableConfigProperties", &w->ctl.readableConfigProperties)) ||
-        (err = OE::getBoolean(ps, "Sub32BitConfigProperties", &w->ctl.sub32BitConfigProperties)))
-      return err;
-  } else if (props) {
-    // No property summary, must have something else.
-    if ((err = OE::ezxml_children(props, doSpecProp, w)))
-      return err;
-  } else if ((err = OE::ezxml_children(spec, doTopProp, w)))
+  if (ps &&
+      ((err = OE::checkAttrs(ps, "SizeOfConfigSpace", "WritableConfigProperties",
+			     "ReadableConfigProperties", "Sub32BitConfigProperties",
+			     "Count", (void*)0)) ||
+       (err = OE::getNumber64(ps, "SizeOfConfigSpace", &w->ctl.sizeOfConfigSpace, 0, 0)) ||
+       (err = OE::getBoolean(ps, "WritableConfigProperties", &w->ctl.writableConfigProperties)) ||
+       (err = OE::getBoolean(ps, "ReadableConfigProperties", &w->ctl.readableConfigProperties)) ||
+       (err = OE::getBoolean(ps, "Sub32BitConfigProperties", &w->ctl.sub32BitConfigProperties))))
     return err;
   return 0;
 }
@@ -470,6 +601,11 @@ Protocol::parse(const char *file, ezxml_t prot)
     last = checkSuffix(start, "_protocol", last);
     last = checkSuffix(start, "_prot", last);
     m_name.assign(start, last - start);
+    const char *ofile = m_port.worker->file;
+    m_port.worker->file = file;
+    const char *err = OU::Protocol::parse(prot);
+    m_port.worker->file = ofile;
+    return err;
   }
   return prot ? OU::Protocol::parse(prot) : NULL;
 }
@@ -477,25 +613,25 @@ Protocol::parse(const char *file, ezxml_t prot)
 const char *Protocol::parseOperation(ezxml_t op) {
   const char *err, *ifile;
   ezxml_t iprot = 0;
-  if ((err = tryInclude(op, m_port.worker->file, "Protocol", &iprot, &ifile)))
+  if ((err = tryInclude(op, m_port.worker->file, "Protocol", &iprot, &ifile, false)))
     return err;
   // If it is an "include", basically recurse
   if (iprot) {
     const char *ofile = m_port.worker->file;
     m_port.worker->file = ifile;
-    err = OU::Protocol::parse(iprot);
+    err = OU::Protocol::parse(iprot, false);
     m_port.worker->file = ofile;
     return err;
   }
   return OU::Protocol::parseOperation(op);
 }
 
-const char *
+static const char *
 parseSpec(ezxml_t xml, const char *file, Worker *w) {
   const char *err;
   // xi:includes at this level are component specs, nothing else can be included
   ezxml_t spec;
-  if ((err = tryChildInclude(xml, w->file, "ComponentSpec", &spec, &w->specFile)))
+  if ((err = tryOneChildInclude(xml, w->file, "ComponentSpec", &spec, &w->specFile, false)))
     return err;
   w->specName = ezxml_cattr(spec, "Name");
   if (!w->specName)
@@ -504,19 +640,17 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
       (err = OE::getBoolean(spec, "NoControl", &w->noControl)))
     return err;
   // Parse control port info
-  ezxml_t ps, props;
-  if ((err = tryChildInclude(spec, file, "PropertySummary", &ps, NULL, true)))
+  ezxml_t ps;
+  if ((err = tryOneChildInclude(spec, file, "PropertySummary", &ps, NULL, true)))
     return err;
-  if (ps) {
-    if (ezxml_cchild(spec, "Properties") || ezxml_cchild(spec, "Property"))
-      return "cannot have both PropertySummary and Properties";
-    props = 0;
-  } else if ((err = tryChildInclude(spec, file, "Properties", &props, NULL, true)))
+  if ((err = doProperties(spec, w, file, false, ps != NULL)))
     return err;
   if (w->noControl) {
-    if (ps || props || OE::countChildren(spec, "property"))
-      return "NoControl specified, PropertySummary, Properties, Property cannot be specified";
-  } else if ((err = parseSpecControl(w, ps, props, spec)))
+    if (ps)
+      return "NoControl specified, PropertySummary cannot be specified";
+    if ((err = doProperties(spec, w, file, false, true)))
+      return err;
+  } else if ((err = parseSpecControl(w, ps)))
     return err;
   // Now parse the data aspects, allocating (data) ports.
   for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x)) {
@@ -538,7 +672,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
     }
     ezxml_t pSum;
     const char *protFile = 0;
-    if ((err = tryChildInclude(x, file, "ProtocolSummary", &pSum, &protFile, true)))
+    if ((err = tryOneChildInclude(x, file, "ProtocolSummary", &pSum, &protFile, true)))
       return err;
     Protocol *prot = p->protocol = new Protocol(*p);
     if (pSum) {
@@ -554,7 +688,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
     } else {
       ezxml_t protx = NULL;
       // FIXME: default protocol name from file name
-      if ((err = tryChildInclude(x, file, "Protocol", &protx, &protFile, true)))
+      if ((err = tryOneChildInclude(x, file, "Protocol", &protx, &protFile, true)))
         return err;
       if (protx) {
         if ((err = prot->parse(protFile, protx)))
@@ -574,7 +708,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
   return 0;
 }
 
-const char *
+static const char *
 parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   const char *err;
   ezxml_t xctl;
@@ -825,8 +959,8 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   return 0;
 }
 
-
-const char *
+#if 0
+static const char *
 getWorker(Assembly *a, ezxml_t x, const char *aName, Worker **wp) {
   const char *wName = ezxml_cattr(x, aName);
   if (!wName)
@@ -840,7 +974,7 @@ getWorker(Assembly *a, ezxml_t x, const char *aName, Worker **wp) {
                   aName, wName);
 }
 
-const char *
+static const char *
 getPort(Worker *w, ezxml_t x, const char *aName, Port **pp) {
   const char *pName = ezxml_cattr(x, aName);
   if (!pName)
@@ -857,7 +991,7 @@ getPort(Worker *w, ezxml_t x, const char *aName, Port **pp) {
                   pName, w->implName);
 }
 
-const char *
+static const char *
 getConnPort(ezxml_t x, Assembly *a, const char *wAttr, const char *pAttr,
             Port **pp) {
   const char *err;
@@ -866,6 +1000,7 @@ getConnPort(ezxml_t x, Assembly *a, const char *wAttr, const char *pAttr,
     return err;
   return getPort(w, x, pAttr, pp);
 }
+#endif
 
 // Attach an instance port to a connection
 static void
@@ -1210,7 +1345,7 @@ parseAssy(ezxml_t xml, Worker *aw,
   // Now we fill in the top-level worker stuff.
   aw->specName = aw->implName;
   // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
-  if ((err = OE::ezxml_children(xml, doImplProp, aw)))
+  if ((err = doProperties(xml, aw, aw->file, true, false)))
     return err;
   // Create the external data ports on the assembly worker
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)

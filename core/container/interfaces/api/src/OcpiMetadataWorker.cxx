@@ -60,9 +60,11 @@
  *                  Initial version.
  */
 
+#define __STDC_LIMIT_MACROS
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdint.h>
 #include "OcpiOsAssert.h"
 #include "OcpiMetadataWorker.h"
 #include "OcpiContainerMisc.h"
@@ -126,15 +128,19 @@ namespace OCPI {
       const char *err;
       // Second pass - decode all information
       Property *prop = myProps;
-      unsigned offset = 0;
-      bool readableConfigs, writableConfigs, sub32Configs; // all unused
+      bool readableConfigs = false, writableConfigs = false, sub32Configs = false; // all unused
       for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x), prop++)
       {
-        if ((err = prop->parse(x, offset, readableConfigs, writableConfigs,
+        if ((err = prop->parse(x, readableConfigs, writableConfigs,
 			       sub32Configs, true, prop - myProps)))
           throw OU::ApiError("Invalid xml property description:", err, NULL);
-        totalPropertySize += prop->m_nBytes;
       }
+      prop = myProps;
+      unsigned offset = 0;
+      uint64_t totalSize = 0;
+      for (unsigned n = 0; n < nProps; n++, prop++)
+	prop->offset(offset, totalSize);
+      ocpiAssert(totalSize < UINT32_MAX);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
       unsigned n = 0;
       Port *p = myPorts;

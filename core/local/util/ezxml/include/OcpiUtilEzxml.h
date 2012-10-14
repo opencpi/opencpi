@@ -226,6 +226,8 @@ namespace OCPI {
       };
 
       extern ezxml_t
+	ezxml_firstChild(ezxml_t xml),
+	ezxml_nextChild(ezxml_t xml),
 	findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
 			  const char *value);
       extern const char

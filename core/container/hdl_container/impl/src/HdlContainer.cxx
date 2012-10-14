@@ -342,6 +342,7 @@ namespace OCPI {
     class WciControl : public Access, virtual public OC::Controllable {
       friend class Port;
       const char *implName, *instName;
+      mutable uint32_t m_window; // perfect use-case for mutable..
     protected:
       Access m_properties;
       Container &m_wciContainer;
@@ -349,7 +350,7 @@ namespace OCPI {
       // (since we inherit this in some cases were it is not needed).
       unsigned myOccpIndex;
       WciControl(Container &container, ezxml_t implXml, ezxml_t instXml)
-        : implName(0), instName(0), m_wciContainer(container)
+        : implName(0), instName(0), m_window(0), m_wciContainer(container)
       {
 	setControlOperations(ezxml_cattr(implXml, "controlOperations"));
         if (!implXml)
@@ -381,6 +382,7 @@ namespace OCPI {
         // Take out of reset
         // myRegisters->control = OCCP_CONTROL_ENABLE | logTimeout ;
         set32Register(control,  OccpWorkerRegisters, OCCP_WORKER_CONTROL_ENABLE | logTimeout);
+	m_window = 0;
 #if 0 // do this by changing the accessor
         if (getenv("OCPI_OCFRP_DUMMY")) {
           *(uint32_t *)&myRegisters->initialize = OCCP_SUCCESS_RESULT; //fakeout
@@ -400,15 +402,16 @@ namespace OCPI {
 	(void)readVaddr;
         if (m_properties.registers() &&
 	    md.m_baseType != OA::OCPI_Struct && !md.m_isSequence &&
-	    !md.m_baseType != OA::OCPI_String &&
+	    md.m_baseType != OA::OCPI_String &&
 	    OU::baseTypeSizes[md.m_baseType] <= 32 &&
 	    md.m_offset < OCCP_WORKER_CONFIG_SIZE &&
-	    !md.m_writeError)
+	    !md.m_writeError &&
+	    !md.m_isIndirect)
 	  writeVaddr = m_properties.registers() + md.m_offset;
       }
       // Map the control op numbers to structure members
       static const unsigned controlOffsets[];
-    public:
+    protected:
       void controlOperation(OCPI::Metadata::Worker::ControlOperation op) {
 	if (getControlMask() & (1 << op)) {
 	  uint32_t result =
@@ -435,6 +438,225 @@ namespace OCPI {
 	    throw OU::Error("worker %s:%s %s (%0x" PRIx32 ")", implName, instName, oops, result);
 	  }
 	}
+      }
+#define CHECK_WINDOW(_offset_, _nb_) 					        \
+      do {								        \
+	unsigned window = (_offset_) & ~(OCCP_WORKER_CONFIG_SIZE-1);            \
+        ocpiAssert(window == ((_offset_)+(_nb_))&~(OCCP_WORKER_CONFIG_SIZE-1)); \
+	if (window != m_window) {                                               \
+	  set32Register(window, OccpWorkerRegisters,			        \
+			window >> OCCP_WORKER_CONFIG_WINDOW_BITS);              \
+	  m_window = window;					                \
+	}								        \
+      } while (0)
+#define PUT_GET_PROPERTY(n)						          \
+      void setProperty##n(const OA::PropertyInfo &info, uint##n##_t val) const {  \
+        CHECK_WINDOW(info.m_offset, n/8);					  \
+	uint32_t status = 0;						          \
+	if (m_properties.m_registers) {					          \
+	  if (!info.m_writeError ||					          \
+	      !(status =						          \
+		get32Register(status, OccpWorkerRegisters) &                      \
+		OCCP_STATUS_WRITE_ERRORS))                			  \
+	    m_properties.set##n##RegisterOffset(info.m_offset, val);              \
+	  if (info.m_writeError && !status)				          \
+	    status =							          \
+	      get32Register(status, OccpWorkerRegisters) &		          \
+	      OCCP_STATUS_WRITE_ERRORS;					          \
+	} else								          \
+	  m_properties.m_accessor->set##n(info.m_offset, val, &status);           \
+	if (status)							          \
+	  throwPropertyWriteError(status);				          \
+      }									          \
+      inline uint##n##_t getProperty##n(const OA::PropertyInfo &info) const {     \
+        CHECK_WINDOW(info.m_offset, n/8);					  \
+	uint32_t status = 0;						          \
+	uint##n##_t val;						          \
+	if (m_properties.m_registers) {					          \
+	  if (!info.m_readError ||					          \
+	      !(status =						          \
+		get32Register(status, OccpWorkerRegisters) &		          \
+		OCCP_STATUS_READ_ERRORS))				          \
+	    val = m_properties.get##n##RegisterOffset(info.m_offset);             \
+	  if (info.m_readError && !status)				          \
+	    status =							          \
+	      get32Register(status, OccpWorkerRegisters) &		          \
+	      OCCP_STATUS_READ_ERRORS;					          \
+	} else								          \
+	  val = m_properties.m_accessor->get##n(info.m_offset, &status);          \
+	if (status)							          \
+	  throwPropertyReadError(status);				          \
+	return val;							          \
+      }
+      PUT_GET_PROPERTY(8)
+      PUT_GET_PROPERTY(16)
+      PUT_GET_PROPERTY(32)
+      PUT_GET_PROPERTY(64)
+#undef PUT_GET_PROPERTY
+      void setPropertyBytes(const OA::PropertyInfo &info, uint32_t offset,
+			    const uint8_t *data, unsigned nBytes) const {
+	CHECK_WINDOW(offset, nBytes);
+	uint32_t status = 0;
+	if (m_properties.m_registers) {
+	  if (!info.m_writeError ||
+	      !(status = (get32Register(status, OccpWorkerRegisters) &
+			  OCCP_STATUS_WRITE_ERRORS)))
+	    m_properties.setBytesRegisterOffset(offset,	data, nBytes);
+	  if (info.m_writeError && !status)
+	    status = (get32Register(status, OccpWorkerRegisters) &
+		      OCCP_STATUS_WRITE_ERRORS);
+	} else
+	  m_properties.m_accessor->setBytes(offset, data, nBytes, &status);
+	if (status)
+	  throwPropertyWriteError(status);
+      }
+
+      inline void
+      getPropertyBytes(const OA::PropertyInfo &info, uint32_t offset, uint8_t *buf, unsigned nBytes) const {
+	CHECK_WINDOW(offset, nBytes);
+	uint32_t status = 0;
+
+	if (m_properties.m_registers) {
+	  if (!info.m_readError ||
+	      !(status = (get32Register(status, OccpWorkerRegisters) &
+			  OCCP_STATUS_READ_ERRORS))) {
+	    m_properties.getBytesRegisterOffset(offset, buf, nBytes);
+	    if (info.m_readError)
+	      status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_READ_ERRORS;
+	  }
+	} else
+	  m_properties.m_accessor->getBytes(offset, buf, nBytes, &status);
+	if (status)
+	  throwPropertyReadError(status);
+      }
+      inline void setPropertySequence(const OA::Property &p,
+				      const uint8_t *val,
+				      uint32_t nItems, unsigned nBytes) const {
+	CHECK_WINDOW(p.m_info.m_offset, nBytes);
+	uint32_t status = 0;
+	if (m_properties.m_registers) {
+	  if (!p.m_info.m_writeError ||
+	      !(status =
+		get32Register(status, OccpWorkerRegisters) &
+		OCCP_STATUS_WRITE_ERRORS)) {
+	    m_properties.setBytesRegisterOffset(p.m_info.m_offset + p.m_info.m_align,
+						val, nBytes);
+	    m_properties.set32RegisterOffset(p.m_info.m_offset, nItems);
+	  }
+	  if (p.m_info.m_writeError && !status)
+	    status =
+	      get32Register(status, OccpWorkerRegisters) &
+	      OCCP_STATUS_WRITE_ERRORS;
+	} else {
+	  m_properties.m_accessor->setBytes(p.m_info.m_offset + p.m_info.m_align,
+					    val, nBytes, &status);
+	  if (!status)
+	    m_properties.m_accessor->set32(p.m_info.m_offset, nItems, &status);
+	}
+	if (status)
+	  throwPropertyWriteError(status);
+      }
+      inline unsigned
+      getPropertySequence(const OA::Property &p, uint8_t *buf, unsigned n) const {
+	CHECK_WINDOW(p.m_info.m_offset, n);
+	uint32_t status = 0, nItems;
+
+	if (m_properties.m_registers) {
+	  if (!p.m_info.m_readError ||
+	      !(status =
+		get32Register(status, OccpWorkerRegisters) &
+		OCCP_STATUS_READ_ERRORS))
+	    nItems = m_properties.get32RegisterOffset(p.m_info.m_offset);
+	  if (!p.m_info.m_readError && 
+	      !(status =
+		get32Register(status, OccpWorkerRegisters) &
+		OCCP_STATUS_READ_ERRORS)) {
+	    if (nItems * (p.m_info.m_nBits/8) <= n)
+	      throwPropertySequenceError();
+	    m_properties.getBytesRegisterOffset(p.m_info.m_offset + p.m_info.m_align, 
+						buf, nItems * (p.m_info.m_nBits/8));
+	    if (p.m_info.m_readError && !status)
+	      status =
+		get32Register(status, OccpWorkerRegisters) &
+		OCCP_STATUS_READ_ERRORS;
+	  }
+	} else {
+	  nItems = m_properties.m_accessor->get32(p.m_info.m_offset, &status);
+	  if (!status) {
+	    if (nItems * (p.m_info.m_nBits/8) <= n)
+	      throwPropertySequenceError();
+	    m_properties.m_accessor->getBytes(p.m_info.m_offset + p.m_info.m_align, 
+					      buf, nItems * (p.m_info.m_nBits/8),
+					      &status);
+	  }
+	}
+	if (status)
+	  throwPropertyReadError(status);
+	return nItems;
+      }
+
+      
+#undef OCPI_DATA_TYPE_S
+      // Set a scalar property value
+
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)     	    \
+      void								    \
+      set##pretty##Property(const OA::Property &p, const run val) const {   \
+	setProperty##bits(p.m_info, *(uint##bits##_t *)&val);		    \
+      }									    \
+      void								    \
+      set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
+				    unsigned length) const {		\
+	setPropertySequence(p, (const uint8_t *)vals,			\
+			    length, length * (bits/8));			\
+      }									\
+      run								\
+      get##pretty##Property(const OA::Property &p) const {		\
+	return (run)getProperty##bits(p.m_info);			\
+      }									\
+      unsigned								\
+      get##pretty##SequenceProperty(const OA::Property &p, run *vals,	\
+				    unsigned length) const {		\
+	return								\
+	  getPropertySequence(p, (uint8_t *)vals, length * (bits/8));	\
+      }
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
+OCPI_DATA_TYPES
+#undef OCPI_DATA_TYPE
+      void
+      setStringProperty(const OA::Property &p, const char* val) const {
+	uint32_t n = strlen(val) + 1;
+	setPropertySequence(p, (const uint8_t *)val, n, n);
+      }
+      void
+      setStringSequenceProperty(const OA::Property &, const char * const *,
+				unsigned ) const {
+	throw OU::Error("No support for properties that are sequences of strings");
+      }
+      void
+      getStringProperty(const OA::Property &p, char *val, unsigned length) const {
+	// ignore return value
+	getPropertySequence(p, (uint8_t*)val, length);
+      }
+      unsigned
+      getStringSequenceProperty(const OA::Property &, char * *,
+				unsigned ,char*, unsigned) const {
+	throw OU::Error("No support for properties that are sequences of strings");
+	return 0;
+      }
+      // These property access methods are called when the fast path
+      // is not enabled, either due to no MMIO or that the property can
+      // return errors.
+      static void throwPropertyReadError(uint32_t status) {
+	throw OU::Error("property reading error: %s",
+			status & OCCP_STATUS_READ_TIMEOUT ? "timeout" : "worker generated error response");
+      }
+      static void throwPropertyWriteError(uint32_t status) {
+	throw OU::Error("property writing error: %s",
+			status & OCCP_STATUS_WRITE_TIMEOUT ? "timeout" : "worker generated error response");
+      }
+      static void throwPropertySequenceError() {
+	throw OU::Error("property sequence length overflow on read/get");
       }
     };
     // c++ doesn't allow static initializations in class definitions.
@@ -463,7 +685,7 @@ namespace OCPI {
       throw ( OCPI::Util::EmbeddedException ) {
       return new Application(*this, name, props);
     };
-    class Worker : public OC::WorkerBase<Application, Worker, Port>,  public WciControl {
+    class Worker : public OC::WorkerBase<Application, Worker, Port>, public WciControl {
       friend class Application;
       friend class Port;
       friend class ExternalPort;
@@ -513,209 +735,69 @@ namespace OCPI {
                       OS::uint32_t bufferSize,
                       const OA::PValue* props) throw();
 
-      // These property access methods are called when the fast path
-      // is not enabled, either due to no MMIO or that the property can
-      // return errors.
-      static void throwPropertyReadError(uint32_t status) {
-	throw OU::Error("property reading error: %s",
-			status & OCCP_STATUS_READ_TIMEOUT ? "timeout" : "worker generated error response");
-      }
-      static void throwPropertyWriteError(uint32_t status) {
-	throw OU::Error("property writing error: %s",
-			status & OCCP_STATUS_WRITE_TIMEOUT ? "timeout" : "worker generated error response");
-      }
-      static void throwPropertySequenceError() {
-	throw OU::Error("property sequence length overflow on read/get");
-      }
 
-#define PUT_GET_PROPERTY(n)						\
-      void setProperty##n(const OA::PropertyInfo &info, uint##n##_t val) const {  \
-	uint32_t status = 0;						          \
-	if (m_properties.m_registers) {					          \
-	  if (!info.m_writeError ||					          \
-	      !(status =						          \
-		get32Register(status, OccpWorkerRegisters) &                      \
-		OCCP_STATUS_WRITE_ERRORS))				          \
-	    m_properties.set##n##RegisterOffset(info.m_offset, val); \
-	  if (info.m_writeError && !status)				\
-	    status =							          \
-	      get32Register(status, OccpWorkerRegisters) &		          \
-	      OCCP_STATUS_WRITE_ERRORS;					          \
-	} else								          \
-	  m_properties.m_accessor->set##n(info.m_offset, val, &status);       \
-	if (status)							\
-	  throwPropertyWriteError(status);				\
-      }									\
-      inline uint##n##_t getProperty##n(const OA::PropertyInfo &info) const {	\
-	uint32_t status = 0;						\
-	uint##n##_t val;						\
-	if (m_properties.m_registers) {					\
-	  if (!info.m_readError ||					\
-	      !(status =						\
-		get32Register(status, OccpWorkerRegisters) &		\
-		OCCP_STATUS_READ_ERRORS))				\
-	    val = m_properties.get##n##RegisterOffset(info.m_offset); \
-	  if (info.m_readError && !status)				\
-	    status =							\
-	      get32Register(status, OccpWorkerRegisters) &		\
-	      OCCP_STATUS_READ_ERRORS;					\
-	} else								\
-	  val = m_properties.m_accessor->get##n(info.m_offset, &status); \
-	if (status)							\
-	  throwPropertyReadError(status);				\
-	return val;							\
-      }
-      PUT_GET_PROPERTY(8)
-      PUT_GET_PROPERTY(16)
-      PUT_GET_PROPERTY(32)
-      PUT_GET_PROPERTY(64)
-
-      void setPropertyBytes(const OA::PropertyInfo &info, uint32_t offset,
-			    const uint8_t *data, unsigned nBytes) const {
-	uint32_t status = 0;
-	if (m_properties.m_registers) {
-	  if (!info.m_writeError ||
-	      !(status = (get32Register(status, OccpWorkerRegisters) &
-			  OCCP_STATUS_WRITE_ERRORS)))
-	    m_properties.setBytesRegisterOffset(offset,	data, nBytes);
-	  if (info.m_writeError && !status)
-	    status = (get32Register(status, OccpWorkerRegisters) &
-		      OCCP_STATUS_WRITE_ERRORS);
-	} else
-	  m_properties.m_accessor->setBytes(offset, data, nBytes, &status);
-	if (status)
-	  throwPropertyWriteError(status);
-      }
-
-      inline void
-      getPropertyBytes(const OA::PropertyInfo &info, uint32_t offset, uint8_t *buf, unsigned nBytes) const {
-	uint32_t status = 0;
-
-	if (m_properties.m_registers) {
-	  if (!info.m_readError ||
-	      !(status = (get32Register(status, OccpWorkerRegisters) &
-			  OCCP_STATUS_READ_ERRORS))) {
-	    m_properties.getBytesRegisterOffset(offset, buf, nBytes);
-	    if (info.m_readError)
-	      status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_READ_ERRORS;
-	  }
-	} else
-	  m_properties.m_accessor->getBytes(offset, buf, nBytes, &status);
-	if (status)
-	  throwPropertyReadError(status);
-      }
-
-      inline void setPropertySequence(const OA::Property &p,
-				      const uint8_t *val,
-				      uint32_t nItems, unsigned nBytes) const {
-	uint32_t status = 0;
-	if (m_properties.m_registers) {
-	  if (!p.m_info.m_writeError ||
-	      !(status =
-		get32Register(status, OccpWorkerRegisters) &
-		OCCP_STATUS_WRITE_ERRORS)) {
-	    m_properties.setBytesRegisterOffset(p.m_info.m_offset + p.m_info.m_align,
-						val, nBytes);
-	    m_properties.set32RegisterOffset(p.m_info.m_offset, nItems);
-	  }
-	  if (p.m_info.m_writeError && !status)
-	    status =
-	      get32Register(status, OccpWorkerRegisters) &
-	      OCCP_STATUS_WRITE_ERRORS;
-	} else {
-	  m_properties.m_accessor->setBytes(p.m_info.m_offset + p.m_info.m_align,
-					    val, nBytes, &status);
-	  if (!status)
-	    m_properties.m_accessor->set32(p.m_info.m_offset, nItems, &status);
-	}
-	if (status)
-	  throwPropertyWriteError(status);
-      }
-      inline unsigned
-      getPropertySequence(const OA::Property &p, uint8_t *buf, unsigned n) const {
-	uint32_t status = 0, nItems;
-
-	if (m_properties.m_registers) {
-	  if (!p.m_info.m_readError ||
-	      !(status =
-		get32Register(status, OccpWorkerRegisters) &
-		OCCP_STATUS_READ_ERRORS))
-	    nItems = m_properties.get32RegisterOffset(p.m_info.m_offset);
-	  if (!p.m_info.m_readError && 
-	      !(status =
-		get32Register(status, OccpWorkerRegisters) &
-		OCCP_STATUS_READ_ERRORS)) {
-	    if (nItems * (p.m_info.m_nBits/8) <= n)
-	      throwPropertySequenceError();
-	    m_properties.getBytesRegisterOffset(p.m_info.m_offset + p.m_info.m_align, 
-						buf, nItems * (p.m_info.m_nBits/8));
-	    if (p.m_info.m_readError && !status)
-	      status =
-		get32Register(status, OccpWorkerRegisters) &
-		OCCP_STATUS_READ_ERRORS;
-	  }
-	} else {
-	  nItems = m_properties.m_accessor->get32(p.m_info.m_offset, &status);
-	  if (!status) {
-	    if (nItems * (p.m_info.m_nBits/8) <= n)
-	      throwPropertySequenceError();
-	    m_properties.m_accessor->getBytes(p.m_info.m_offset + p.m_info.m_align, 
-					      buf, nItems * (p.m_info.m_nBits/8),
-					      &status);
-	  }
-	}
-	if (status)
-	  throwPropertyReadError(status);
-	return nItems;
-      }
-
-      
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-      void								\
-      set##pretty##Property(const OA::Property &p, const run val) const { \
-	setProperty##bits(p.m_info, *(uint##bits##_t *)&val);			\
-      }									\
-      void								\
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)     	    \
+      void								    \
+      set##pretty##Property(const OA::Property &p, const run val) const {   \
+        WciControl::set##pretty##Property(p, val);			    \
+      }									    \
+      void								    \
       set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
-				    unsigned length) const {		\
-	setPropertySequence(p, (const uint8_t *)vals,			\
-			    length, length * (bits/8));			\
-      }									\
-      run								\
-      get##pretty##Property(const OA::Property &p) const {		\
-	return (run)getProperty##bits(p.m_info);				\
-      }									\
-      unsigned								\
-      get##pretty##SequenceProperty(const OA::Property &p, run *vals,	\
-				    unsigned length) const {		\
-	return								\
-	  getPropertySequence(p, (uint8_t *)vals,length * (bits/8));	\
+				    unsigned length) const {		    \
+	WciControl::set##pretty##SequenceProperty(p, vals, length);	    \
+      }									    \
+      run								    \
+      get##pretty##Property(const OA::Property &p) const {		    \
+	return WciControl::get##pretty##Property(p);			    \
+      }									    \
+      unsigned								    \
+      get##pretty##SequenceProperty(const OA::Property &p, run *vals,	    \
+				    unsigned length) const {		    \
+	return								    \
+      get##pretty##SequenceProperty(p, vals, length);		            \
       }
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 OCPI_DATA_TYPES
       void
       setStringProperty(const OA::Property &p, const char* val) const {
-	uint32_t n = strlen(val) + 1;
-	setPropertySequence(p, (const uint8_t *)val, n, n);
+        WciControl::setStringProperty(p, val);
       }
       void
-      setStringSequenceProperty(const OA::Property &, const char * const *,
-				unsigned ) const {
-	throw OU::Error("No support for properties that are sequences of strings");
+      setStringSequenceProperty(const OA::Property &p, const char * const *val,
+				unsigned n) const {
+	WciControl::setStringSequenceProperty(p, val, n);
       }
       void
       getStringProperty(const OA::Property &p, char *val, unsigned length) const {
-	// ignore return value
-	getPropertySequence(p, (uint8_t*)val, length);
+	WciControl::getStringProperty(p, val, length);
       }
       unsigned
-      getStringSequenceProperty(const OA::Property &, char * *,
-				unsigned ,char*, unsigned) const {
-	throw OU::Error("No support for properties that are sequences of strings");
-	return 0;
+      getStringSequenceProperty(const OA::Property &p, char * *cp,
+				unsigned n ,char*pp, unsigned nn) const {
+	return WciControl::getStringSequenceProperty(p, cp, n, pp, nn);
+      }
+#define PUT_GET_PROPERTY(n)						         \
+      void setProperty##n(const OA::PropertyInfo &info, uint##n##_t val) const { \
+        WciControl::setProperty##n(info, val);				         \
+      }									         \
+      inline uint##n##_t getProperty##n(const OA::PropertyInfo &info) const {    \
+	return WciControl::getProperty##n(info);			         \
+      }									         
+      PUT_GET_PROPERTY(8)
+      PUT_GET_PROPERTY(16)
+      PUT_GET_PROPERTY(32)
+      PUT_GET_PROPERTY(64)
+      void setPropertyBytes(const OA::PropertyInfo &info, uint32_t offset,
+			    const uint8_t *data, unsigned nBytes) const {
+	WciControl::setPropertyBytes(info, offset, data, nBytes);
+      }
+      inline void
+      getPropertyBytes(const OA::PropertyInfo &info, uint32_t offset, uint8_t *buf,
+		       unsigned nBytes) const {
+	WciControl::getPropertyBytes(info, offset, buf, nBytes);
       }
     };
     OC::Worker & Application::createWorker(OC::Artifact *art, const char *appInstName,
