@@ -442,7 +442,7 @@ namespace OCPI {
 #define CHECK_WINDOW(_offset_, _nb_) 					        \
       do {								        \
 	unsigned window = (_offset_) & ~(OCCP_WORKER_CONFIG_SIZE-1);            \
-        ocpiAssert(window == ((_offset_)+(_nb_))&~(OCCP_WORKER_CONFIG_SIZE-1)); \
+        ocpiAssert(window == (((_offset_)+(_nb_))&~(OCCP_WORKER_CONFIG_SIZE-1))); \
 	if (window != m_window) {                                               \
 	  set32Register(window, OccpWorkerRegisters,			        \
 			window >> OCCP_WORKER_CONFIG_WINDOW_BITS);              \
