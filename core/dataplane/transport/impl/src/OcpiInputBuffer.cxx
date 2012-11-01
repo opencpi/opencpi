@@ -297,6 +297,12 @@ volatile BufferState* InputBuffer::getState()
 		 m_state[0][n].bufferIsFull == FF_FULL_VALUE);
       if ( m_state[0][n].bufferIsFull != FF_EMPTY_VALUE) {
         m_tState.bufferIsFull = m_state[0][n].bufferIsFull;
+
+
+	printf("&&&&&&&&   found state value at %d\n", n );
+
+
+
 	break;
       }
     }

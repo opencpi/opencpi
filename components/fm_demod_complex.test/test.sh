@@ -8,6 +8,12 @@ if [[ $rc != 0 ]]; then
 fi
 ./unitTest --utname=fm_demod_complex --compp="<property name='deviation' value='100'/>" --real=true --model=$1
 rc=$?
-exit $rc;
+if [[ $rc != 0 ]]; then
+    exit $rc;
+fi
+./utTime.sh 10
+rc=$?
+exit $rc
+
 
 

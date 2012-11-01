@@ -8,6 +8,12 @@ if [[ $rc != 0 ]]; then
 fi
 ./unitTest --utname=loopback --compp="<property name='deviation' value='100'/>" --real=false --model=$1
 rc=$?
-exit $rc;
+if [[ $rc != 0 ]]; then
+    exit $rc;
+fi
+./utTime.sh 20
+rc=$?
+exit $rc
+
 
 

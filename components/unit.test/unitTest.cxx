@@ -81,7 +81,7 @@ int main ( int argc, char* argv [ ] )
 {
   int passed = -1;
   const char * xml("<application>"
-		   " <policy mapping='MaxProcessors' processors='0'/>"
+		   " <policy mapping='MaxProcessors' processors='1'/>"
 
 		   "  <instance worker='file_read_msg' name='fr_test_data' >"
 		   "    <property name='fileName' value='testDataIn.dat'/> "		      

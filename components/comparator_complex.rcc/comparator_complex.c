@@ -31,6 +31,12 @@ start(RCCWorker *self) {
   Comparator_complexProperties *p = self->properties;
   MyState *s = self->memories[0];
   s->deviation = Uscale( p->deviation );
+
+  // We do this since a single failure will turn this to a false but we still
+  // want to run the entire test to generate the output files for debug and 
+  // analysis
+  p->passed = 1;
+
   return RCC_OK;
 }
 
@@ -91,12 +97,6 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
   // MyState *s = self->memories[0];
   Comparator_complexProperties *p = self->properties;
-
-  // We do this since a single failure will turn this to a false but we still
-  // want to run the entire test to generate the output files for debug and 
-  // analysis
-  p->passed = 1;
-
 
   // We run when we have all buffers avail, no need to check
   runComplexTest( self );
