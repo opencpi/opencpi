@@ -7,6 +7,7 @@ include $(OCPI_CDK_DIR)/ocpisetup.mk
 
 all: 
 	rm -f unitTest; ln -s ../unit.test/unitTest .
+	rm -f utTime.sh; ln -s ../unit.test/utTime.sh .
 	rm -f genExpected; ln -s ../genExpected.test/genExpected .
 	
 
@@ -17,7 +18,7 @@ run: all
 	OCPI_LIBRARY_PATH=$(OCPI_BASE_DIR)/components/lib/rcc ./test.sh 
 
 clean::
-	rm -f -r *.*~ *~ *.raw deltaDataOut.dat testDataOut.dat genExpected unitTest
+	rm -f -r *.*~ *~ *.raw deltaDataOut.dat testDataOut.dat genExpected unitTest utTime.sh *.csv
 
 # These make the worker library for this application
 Implementations =

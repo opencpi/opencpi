@@ -6,6 +6,7 @@ endif
 include $(OCPI_CDK_DIR)/ocpisetup.mk
 
 all: ddsTest
+	rm -f utTime.sh; ln -s ../unit.test/utTime.sh .
 
 ddsTest: ddsTest.cxx
 	g++ -Wall -g -o $@ -I$(OCPI_INC_DIR) -I$(OCPI_BASE_DIR)/core/local/util/misc/include $^ $(OCPI_LD_FLAGS) 
@@ -18,7 +19,7 @@ run: ddsTest
 
 
 clean::
-	rm -f -r ddsTest ddsTest.dSYM *.*~ deltaDataOut.dat testDataOut.dat
+	rm -f -r ddsTest ddsTest.dSYM *.*~ deltaDataOut.dat testDataOut.dat *.csv utTime.sh
 
 # These make the worker library for this application
 Implementations =

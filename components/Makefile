@@ -123,12 +123,9 @@ RccTargets=$(OCPI_RUNTIME_HOST)
 endif
 
 
-loc:
-	$(OCPI_CDK_DIR)/include/static_analyzer.sh ./components_sw_metrics.txt
-
-
-
 include $(OCPI_CDK_DIR)/include/lib.mk
 
-
+loc:
+	$(OCPI_CDK_DIR)/include/static_analyzer.sh ./components_sw_metrics.txt
+	
 
