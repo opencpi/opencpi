@@ -291,15 +291,16 @@ volatile BufferState* InputBuffer::getState()
     // NOT A SHADOW HERE
     for ( OCPI::OS::uint32_t n=0; n<MAX_PCONTRIBS; n++ ) {
       //      ocpiDebug("input %p getstate m_pid: %u s: %u n %u  m_state[0][n].bufferFull %u",
-      //		this, m_pid, m_tState.bufferIsFull, n, m_state[0][n].bufferIsFull);
+      //      		this, m_pid, m_tState.bufferIsFull, n, m_state[0][n].bufferIsFull);
       //fflush(stderr); fflush(stdout);
-      ocpiAssert(m_state[0][n].bufferIsFull == FF_EMPTY_VALUE ||
-		 m_state[0][n].bufferIsFull == FF_FULL_VALUE);
-      if ( m_state[0][n].bufferIsFull != FF_EMPTY_VALUE) {
-        m_tState.bufferIsFull = m_state[0][n].bufferIsFull;
+      uint32_t full = m_state[0][n].bufferIsFull & FF_MASK;
+      ocpiAssert(full == FF_EMPTY_VALUE ||
+		 full == FF_FULL_VALUE);
+      if (full != FF_EMPTY_VALUE) {
+        m_tState.bufferIsFull = FF_FULL_VALUE; // m_state[0][n].bufferIsFull;
 
 
-	printf("&&&&&&&&   found state value at %d\n", n );
+	ocpiDebug("&&&&&&&&   found state value at %d", n );
 
 
 
@@ -342,8 +343,8 @@ void InputBuffer::markBufferFull()
 
   if ( ! this->getPort()->isShadow() ) {
     // This can happen when in the same container
-    ocpiAssert(m_state[0][0].bufferIsFull == FF_EMPTY_VALUE ||
-	       m_state[0][0].bufferIsFull == FF_FULL_VALUE);
+    uint32_t full = m_state[0][0].bufferIsFull & FF_MASK;
+    ocpiAssert(full == FF_EMPTY_VALUE || full == FF_FULL_VALUE);
     m_state[0][0].bufferIsFull = FF_FULL_VALUE;
   }
   else {
@@ -365,8 +366,8 @@ void InputBuffer::markBufferEmpty()
   OCPI_EMIT_CAT_("Mark Buffer Empty",OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW);
   if ( ! this->getPort()->isShadow() ) {
     for ( unsigned int n=0; n<MAX_PCONTRIBS; n++ ) {
-      ocpiAssert(m_state[0][n].bufferIsFull == FF_EMPTY_VALUE ||
-		 m_state[0][n].bufferIsFull == FF_FULL_VALUE);
+      uint32_t full = m_state[0][n].bufferIsFull & FF_MASK;
+      ocpiAssert(full == FF_EMPTY_VALUE || full == FF_FULL_VALUE);
       m_state[0][n].bufferIsFull =  FF_EMPTY_VALUE;
     }
   }
@@ -469,7 +470,8 @@ bool InputBuffer::isEmpty()
 		 state->bufferIsFull == FF_FULL_VALUE);
   }
   bool empty;
-  empty = (state->bufferIsFull == (isShadow() ? EF_EMPTY_VALUE : FF_EMPTY_VALUE)) ? true : false;
+  uint32_t flag = state->bufferIsFull & FF_MASK;
+  empty = (flag == (isShadow() ? EF_EMPTY_VALUE : FF_EMPTY_VALUE)) ? true : false;
 
 
 #ifdef DEBUG_L2
@@ -496,9 +498,9 @@ volatile BufferMetaData* InputBuffer::getMetaData()
   ocpiAssert(!isShadow());
   for ( OCPI::OS::uint32_t n=0; n<m_outputPortCount; n++ ) {
     int id = s_port->getPortFromIndex(n)->getPortId();
-    ocpiAssert(m_state[0][id].bufferIsFull == FF_EMPTY_VALUE ||
-	       m_state[0][id].bufferIsFull == FF_FULL_VALUE);
-    if ( m_state[0][id].bufferIsFull != FF_EMPTY_VALUE ) {
+    uint32_t full = m_state[0][id].bufferIsFull & FF_MASK;
+    ocpiAssert(full == FF_EMPTY_VALUE || full == FF_FULL_VALUE);
+    if (full != FF_EMPTY_VALUE) {
       return &m_sbMd[0][id];
     }
   }

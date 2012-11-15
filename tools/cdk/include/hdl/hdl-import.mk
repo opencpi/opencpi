@@ -1,10 +1,14 @@
 # This file is bypassed if imports are already present.
 # Thus imports only happen after: make cleanimports
+ifeq ($(MAKECMDGOALS),clean)
+  override Imports=
+endif
+
 ifdef Imports
 ImportsDir:=$(OutDir)imports
 #$(info WILD=$(wildcard $(ImportsDir)/*)=)
 
-ifneq ($(if $(wildcard $(ImportsDir)/*),$(DIFF_IMPORTS),),)
+ifneq ($(if $(wildcard $(ImportsDir)/*),$(DIFF_IMPORTS),x),)
 
 ifndef OCPI_HDL_IMPORTS_DIR
 $(error This primitive requires OCPI_HDL_IMPORTS_DIR to have a value, and it doesn't)
@@ -35,16 +39,21 @@ $(foreach n,$(NetNames),$(if $(word 2,$(filter $(n),$(NetNames))),$(error Import
 #$(info wi $(WImports))
 #$(info nn $(NetNames))
 #$(info ni $(NetImports))
-ifdef DIFF_IMPORTS #1
+ifdef DIFF_IMPORTS
 diff:
 	$(AT) echo ========Comparing imports for the $(LibName) $(CwdName) primitive library.
 	$(AT) for i in $(NetImports); do $(ECHO) Comparing $$i...; diff $$i $(OutDir)imports; done
 else
-out:=$(strip $(shell echo hihi; if test -d $(ImportsDir); then \
-		echo Making imports subdirectory to receive imported files for the $(LibName) primitive library. ; \
-	        mkdir $(ImportsDir); \
-		for i in $(NetImports); do cp $$i $(OutDir)imports; done; \
-	     fi))
+out:=$(strip \
+       $(shell \
+         if ! test -d $(ImportsDir); then \
+	   echo Making subdirectory to receive imported files for the $(LibName) primitive library. ; \
+           mkdir $(ImportsDir); \
+	   echo Copying files to the imports subdirectory for the $(LibName) primitive library.; \
+	   for i in $(NetImports); do \
+             cp $$i $(OutDir)imports; \
+           done; \
+	 fi))
 $(if $(out),$(info $(out)))
 endif
 #$(info xxx $(shell echo $(ImportsDir)/*.[vV]))

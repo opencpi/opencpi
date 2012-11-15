@@ -51,6 +51,17 @@ begin
     when control_op_t'pos(test_e)         => return test_e;
     when others                           => return no_op_e;
   end case;
+--return start_e; --to_unsigned(2,3); --unsigned(bits);
+--  case unsigned(bits) is
+--    when initialize_e   => return initialize_e;
+--    when start_e        => return start_e;
+--    when stop_e         => return stop_e;
+--    when release_e      => return release_e;
+--    when before_query_e => return before_query_e;
+--    when after_config_e => return after_config_e;
+--    when test_e         => return test_e;
+--    when others         => return no_op_e;
+--  end case;
 end to_control_op;
 
 -- How wide should the data path be from the decoder to the property

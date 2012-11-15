@@ -182,7 +182,7 @@ namespace DataTransfer {
 
   union BufferState {
     // buffer full token
-    int32_t   bufferIsFull, bufferIsEmpty ;
+    uint32_t   bufferIsFull, bufferIsEmpty ;
   };
 
 

@@ -64,7 +64,7 @@ namespace DataTransfer {
     setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
 		      unsigned size, uint16_t mbox, uint16_t maxCount)
     {
-      OCPI::Util::formatString(ep, "ocpi-udp-rdma:%s;%u:%u.%" PRIu16 ".%" PRIu16,
+      OCPI::Util::formatString(ep, "ocpi-udp-rdma:%s;%u;%u.%" PRIu16 ".%" PRIu16,
 			       ipAddr, port, size, mbox, maxCount);
     }
 
@@ -77,7 +77,7 @@ namespace DataTransfer {
       DatagramEndPoint( std::string& ep, bool local, uint32_t size=0)
 	: EndPoint(ep, size, local) { 
 	char ipaddr[80];
-	int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%u:", ipaddr, &m_portNum);
+	int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%u;", ipaddr, &m_portNum);
 	if (rv != 2) {
 	  fprintf( stderr, "DatagramEndPoint  ERROR: Bad socket endpoint format (%s)\n", ep.c_str() );
 	  throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );	  

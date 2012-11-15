@@ -8,15 +8,15 @@ entity property_decoder is
         property     : property_t;   -- property type
         decode_width : natural);     -- decoder width in bits
   port (
-        reset_n      : in std_logic;                           -- active-low WCI worker reset
-        offset_in    : in unsigned(decode_width-1 downto 0);   -- offset in Bytes
-        top          : in natural;                             -- High order bit position of datatype
-        access_in    : in access_t;                            -- Enumerated WCI access type
-        data_in      : in std_logic_vector(31 downto 0);       -- WCI slave data
-        write_enable : out boolean;                            -- active-high write pulse
-        read_enable  : out boolean;                            -- active-high read pulse
-        offset_out   : out unsigned(decode_width-1 downto 0);  -- 
-        index_out    : out unsigned(decode_width-1 downto 0);  --
+        reset        : in  bool_t;                            -- active-low WCI worker reset
+        offset_in    : in  unsigned(decode_width-1 downto 0); -- offset in Bytes
+        top          : in  natural;                           -- High order bit position of datatype
+        access_in    : in  access_t;                          -- Enumerated WCI access type
+        data_in      : in  std_logic_vector(31 downto 0);     -- WCI slave data
+        write_enable : out bool_t;                            -- active-high write pulse
+        read_enable  : out bool_t;                            -- active-high read pulse
+        offset_out   : out unsigned(decode_width-1 downto 0); -- 
+        index_out    : out unsigned(decode_width-1 downto 0); --
         data_out     : out std_logic_vector(data_out_top(property) downto 0)); --
 end entity property_decoder;
 
@@ -34,19 +34,20 @@ architecture rtl of property_decoder is
     end if;
     return to_unsigned(bytes, decode_t'length);
   end element_bytes;
-  impure function my_decode (property : property_t) return boolean is
+  -- I tried to use offset_in directly, not an argument, and isim generated a wierd warning...
+  impure function my_decode (input: unsigned) return boolean is
   begin
-    return (Reset_n = '1' and 
-            offset_in >= property.offset and
-            (my_offset = 0 or
-             (property.data_width > 32 and my_offset = 4) or
-             (property.nitems > 1 and my_offset > 0 and my_offset <= property.bytes_1)));
+    return not reset and 
+      input >= property.offset and
+      (my_offset = 0 or
+       (property.data_width > 32 and my_offset = 4) or
+       (property.nitems > 1 and my_offset > 0 and my_offset <= property.bytes_1));
   end my_decode;
 begin
   byte_offset  <= offset_in(1 downto 0);
   my_offset    <= offset_in - property.offset;
-  write_enable <= access_in = write_e and property.writable and my_decode(property);
-  read_enable  <= access_in = read_e and property.readable and my_decode(property);
+  write_enable <= to_bool(access_in = write_e and property.writable and my_decode(offset_in));
+  read_enable  <= to_bool(access_in = read_e and property.readable and my_decode(offset_in));
   offset_out   <= (others => '0') when property.nitems <= 1 else my_offset;
   data_out <=
     data_in(data_out_top(property) downto 0)        when property.nitems     <= 1  else
@@ -70,20 +71,20 @@ entity decoder is
       properties             : properties_t);
   port (
       ocp_in                 : in in_t;       
-      done                   : in boolean := true;
+      done                   : in bool_t := btrue;
       resp                   : out ocp.SResp_t;
-      write_enables          : out boolean_array_t(properties'range);
-      read_enables           : out boolean_array_t(properties'range);
+      write_enables          : out bool_array_t(properties'range);
+      read_enables           : out bool_array_t(properties'range);
       offsets                : out offset_a_t(properties'range);
       indices                : out offset_a_t(properties'range);
-      hi32                   : out boolean;
+      hi32                   : out bool_t;
       nbytes_1               : out byte_offset_t;
       data_outputs           : out data_a_t(properties'range);
       control_op             : out control_op_t;
       state                  : out state_t;
-      is_operating           : out boolean;  -- just a convenience for state = operating_e
-      abort_control_op       : out boolean;
-      is_big_endian          : out boolean   -- for runtime dynamic endian
+      is_operating           : out bool_t;  -- just a convenience for state = operating_e
+      abort_control_op       : out bool_t;
+      is_big_endian          : out bool_t   -- for runtime dynamic endian
       );
 end entity;
 
@@ -92,7 +93,7 @@ architecture rtl of decoder is
   signal offset    : unsigned(worker.decode_width-1 downto 0);
   signal my_access : access_t;
   signal control_op_in : control_op_t;
-  signal my_write_enables, my_read_enables : boolean_array_t(properties'range);
+  signal my_write_enables, my_read_enables : bool_array_t(properties'range);
   signal my_control_op : control_op_t;
   type my_offset_a_t is array(properties'range) of unsigned (worker.decode_width -1 downto 0);
   signal my_offsets : my_offset_a_t;
@@ -127,22 +128,28 @@ begin
   -- combinatorial signals used in various places
   state <= my_state;
   nbytes_1 <= num_bytes_1(ocp_in);
-  is_big_endian <= ocp_in.MFlag(1) = '1';
-  abort_control_op <= ocp_in.MFlag(0) = '1';
+  is_big_endian <= to_bool(ocp_in.MFlag(1) = '1');
+  abort_control_op <= to_bool(ocp_in.MFlag(0) = '1');
   beoffset <= be2offset(ocp_in);
   offset <= unsigned(ocp_in.MAddr(worker.decode_width-1 downto 2)) & beoffset;
   my_access <= decode_access(ocp_in);
   control_op_in <= ocpi.wci.to_control_op(ocp_in.MAddr(4 downto 2));
-  hi32 <= ocp_in.MAddr(2) = '1';
+  hi32 <= to_bool(ocp_in.MAddr(2) = '1');
   -- generate property instances for each property
   -- they are all combinatorial by design
-  gen: for i in 0 to properties'length-1 generate -- properties'left to 0 generate
+  gen: for i in 0 to properties'right generate -- properties'left to 0 generate
     prop: entity ocpi.property_decoder
       generic map (properties(i), worker.decode_width)
-      port map(ocp_in.MReset_n, offset, top_bit(ocp_in), my_access, ocp_in.MData,
-               my_write_enables(i), my_read_enables(i), my_offsets(i),
-               indices(i)(worker.decode_width-1 downto 0),
-               data_outputs(i)(data_out_top(properties(i)) downto 0));
+      port map(reset        => to_bool(ocp_in.MReset_n),
+               offset_in    => offset,
+               top          => top_bit(ocp_in),
+               access_in    => my_access,
+               data_in      => ocp_in.MData,
+               write_enable => my_write_enables(i),
+               read_enable  => my_read_enables(i),
+               offset_out   => my_offsets(i),
+               index_out    => indices(i)(worker.decode_width-1 downto 0),
+               data_out     => data_outputs(i)(data_out_top(properties(i)) downto 0));
     offsets(i) <= resize(my_offsets(i),offsets(i)'length); -- resize to 32 bits for VHDL language reasons
   end generate gen;
   
@@ -157,11 +164,11 @@ begin
     variable allowed_ops : control_op_mask_t;
     variable next_op : control_op_t;
     -- FIXME check that this synthesizes properly - may have to revert to logic...
-    function any_true(bools : boolean_array_t) return boolean is
+    function any_true(bools : bool_array_t) return boolean is
        variable result: boolean := false;
     begin
       for i in bools'range loop
-        if bools(i) then result := true; end if;
+        if its(bools(i)) then result := true; end if;
       end loop;
       return result;
     end any_true;
@@ -170,7 +177,7 @@ begin
       -- default value of the SResp output, which is a register
       resp <= ocp.SResp_NULL;
       if ocp_in.MReset_n = '0' then
-        is_operating <= false;
+        is_operating <= bfalse;
         my_control_op <= NO_OP_e;
         if worker.allowed_ops(control_op_t'pos(initialize_e)) = '1' then
           my_state <= exists_e;
@@ -179,18 +186,18 @@ begin
         end if;
         allowed_ops := next_ops(state_t'pos(my_state));
       elsif my_control_op /= NO_OP_e then
-        if done then                   -- FIXME done should also control config i/o
+        if its(done) then                   -- FIXME done should also control config i/o
           -- finish the control by setting the state
-          is_operating <= false;
+          is_operating <= bfalse;
           case my_control_op is
             when INITIALIZE_e =>
               my_state <= initialized_e;
-            when START_e => null;
+            when START_e =>
               my_state <= operating_e;
-              is_operating <= true;
-            when STOP_e => null;
+              is_operating <= btrue;
+            when STOP_e =>
               my_state <= suspended_e;
-            when RELEASE_e => null;
+            when RELEASE_e =>
               my_state <= unusable_e;
             when others => null;                            
           end case;
@@ -236,7 +243,7 @@ library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all;
 entity readback is
   generic (properties : properties_t);
   port (
-      read_enables : in boolean_array_t(properties'range);
+      read_enables : in bool_array_t(properties'range);
       data_inputs  : in data_a_t(properties'range);
       data_output  : out std_logic_vector(31 downto 0)
       );
@@ -244,10 +251,10 @@ end entity readback;
 
 architecture rtl of readback is
   subtype index_t is natural range properties'range;
-  function first_true(bools : boolean_array_t(properties'range)) return index_t is
+  function first_true(bools : bool_array_t(properties'range)) return index_t is
   begin
-    for i in 0 to properties'length-1 loop
-      if bools(i) then return i; end if;
+    for i in 0 to properties'right loop
+      if its(bools(i)) then return i; end if;
     end loop;
     return 0;
   end first_true;

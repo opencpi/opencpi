@@ -122,7 +122,9 @@ namespace OCPI {
 	  uint8_t *data = v.m_pUChar;
 	  unsigned nBytes = v.m_nTotal * (info.m_nBits/8);
 	  if (nBytes)
-	    setPropertyBytes(info, info.m_offset + info.m_align, data, nBytes);
+	    setPropertyBytes(info,
+			     info.m_offset + (info.m_isSequence ? info.m_align : 0),
+			     data, nBytes);
 	}
 	if (info.m_isSequence)
 	  setProperty32(info, v.m_nElements);

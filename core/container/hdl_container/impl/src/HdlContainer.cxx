@@ -235,9 +235,9 @@ namespace OCPI {
       uint64_t nw1b = get64Register(admin.time, OccpSpace);
       uint64_t nw1bs = swap32(nw1b);
       int64_t dt = get64Register(admin.timeDelta, OccpSpace);
-      fprintf(stderr,"Now delta is: %" PRIi64 "ns "
+      ocpiDebug("Now delta is: %" PRIi64 "ns "
 	       "(dt 0x%"PRIx64" dtsw 0x%"PRIx64" nw1 0x%"PRIx64" nw1a 0x%"PRIx64 " nw1as 0x%"PRIx64
-	      " nw1b 0x%"PRIx64" nw1bs 0x%"PRIx64" nw2 0x%"PRIx64" nw2s 0x%"PRIx64" t 0x%lx)\n",
+	      " nw1b 0x%"PRIx64" nw1bs 0x%"PRIx64" nw2 0x%"PRIx64" nw2s 0x%"PRIx64" t 0x%lx)",
 	      dticks2ns(swap32(dt)), dt, swap32(dt), nw1, nw1a, nw1as, 
 	      nw1b, nw1bs, nw2, nw2s, time(0));
 #ifndef __APPLE__
@@ -840,7 +840,7 @@ OCPI_DATA_TYPES
 	   bool argIsProvider) :
         OC::PortBase<Worker,Port,ExternalPort>(w, mPort, argIsProvider,
 					       (1 << OCPI::RDT::Passive) |
-					       (1 << OCPI::RDT::ActiveFlowControl) |
+					       //  (1 << OCPI::RDT::ActiveFlowControl) |
 					       (1 << OCPI::RDT::ActiveMessage), params),
 	// The WCI will control the interconnect worker.
 	// If there is no such worker, usable will fail.

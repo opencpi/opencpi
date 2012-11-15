@@ -66,22 +66,29 @@ namespace OCPI {
 	  : OCPI::HDL::Device(name, "ocpi-pci-pio"), m_bar0(bar0), m_bar1(bar1),
 	    m_bar0size(pci.size0), m_bar1size(pci.size1), m_fd(fd) {
 	  uint64_t endpointPaddr, controlOffset, bufferOffset;
+	  uint32_t holeOffset, holeEnd;
 	  if (pci.bar0 < pci.bar1) {
 	    endpointPaddr = pci.bar0;
 	    m_endpointSize = pci.bar1 + pci.size1 - endpointPaddr;
 	    controlOffset = 0;
 	    bufferOffset = pci.bar1 - pci.bar0;
+	    holeOffset = pci.size0;
+	    holeEnd = pci.bar1 - pci.bar0;
 	  } else {
 	    endpointPaddr = pci.bar1;
 	    m_endpointSize = pci.bar0 + pci.size0 - endpointPaddr;
 	    controlOffset = pci.bar0 - pci.bar1;
 	    bufferOffset = 0;
+	    holeOffset = pci.size1;
+	    holeEnd = pci.bar0 - pci.bar1;
 	  }
 	  const char *cp = name.c_str();
 	  if (!strncasecmp("PCI:", cp, 4))
 	    cp += 4;
 	  unsigned bus = atoi(cp); // does anyone use non-zero PCI domains?
-	  OU::formatString(m_endpointSpecific, "ocpi-pci-pio:%u.%" PRIx64, bus, endpointPaddr);
+	  OU::formatString(m_endpointSpecific,
+			   "ocpi-pci-pio:%u.0x%" PRIx64 ".0x%" PRIx32 ".0x%" PRIx32,
+			   bus, endpointPaddr, holeOffset, holeEnd);
 	  cAccess().setAccess((uint8_t*)bar0, NULL, controlOffset);
 	  dAccess().setAccess((uint8_t*)bar1, NULL, bufferOffset);
 	}

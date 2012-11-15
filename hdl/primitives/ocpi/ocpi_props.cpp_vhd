@@ -19,11 +19,11 @@ $--\
 $component pretty##_property \
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
 $@@port (clk          : in std_logic; \
-$@@@@@@@@reset        : in boolean; \
-$@@@@@@@@write_enable : in boolean; \
+$@@@@@@@@reset        : in bool_t; \
+$@@@@@@@@write_enable : in bool_t; \
 $@@@@@@@@data         : in std_logic_vector(rng); \
 $@@@@@@@@value        : out pretty##_t; \
-$@@@@@@@@written      : out boolean); \
+$@@@@@@@@written      : out bool_t); \
 $end component;
 
 #define RPROP(pretty,which,def,rng,io) \
@@ -43,11 +43,11 @@ $--\
 $component pretty##_property \
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def);\
 $@@port (clk          : in std_logic;\
-$@@@@@@@@reset        : in boolean;\
-$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(rng);\
 $@@@@@@@@value        : out pretty##_t(0 to property.string_length);\
-$@@@@@@@@written      : out boolean;\
+$@@@@@@@@written      : out bool_t;\
 $@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
 $end component;
 
@@ -69,12 +69,12 @@ $--\
 $component pretty##_property \
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
 $@@port (clk          : in std_logic; \
-$@@@@@@@@reset        : in boolean; \
-$@@@@@@@@write_enable : in boolean; \
+$@@@@@@@@reset        : in bool_t; \
+$@@@@@@@@write_enable : in bool_t; \
 $@@@@@@@@data         : in std_logic_vector(31 downto 0); \
 $@@@@@@@@value        : out pretty##_t; \
-$@@@@@@@@written      : out boolean; \
-$@@@@@@@@hi32         : in boolean); \
+$@@@@@@@@written      : out bool_t; \
+$@@@@@@@@hi32         : in bool_t); \
 $end component;
 
 #define RPROP_64(pretty,which,def,rng,io) \
@@ -85,7 +85,7 @@ $component read_##pretty##_property \
 $@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_t; \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0); \
-$@@@@@@@@hi32        : in boolean);\
+$@@@@@@@@hi32        : in bool_t);\
 $end component;
 
 #define WPROP_ARRAY(pretty,which,def,io) \
@@ -95,13 +95,13 @@ $--\
 $component pretty##_array_property \
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
 $@@port (clk          : in std_logic; \
-$@@@@@@@@reset        : in boolean; \
-$@@@@@@@@write_enable : in boolean; \
+$@@@@@@@@reset        : in bool_t; \
+$@@@@@@@@write_enable : in bool_t; \
 $@@@@@@@@data         : in std_logic_vector(31 downto 0); \
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1); \
-$@@@@@@@@written      : out boolean; \
+$@@@@@@@@written      : out bool_t; \
 $@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0); \
-$@@@@@@@@any_written  : out boolean; \
+$@@@@@@@@any_written  : out bool_t; \
 $@@@@@@@@nbytes_1     : in byte_offset_t);\
 $end component;
 
@@ -124,14 +124,14 @@ $--\
 $component pretty##_array_property \
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def);\
 $@@port (clk          : in std_logic;\
-$@@@@@@@@reset        : in boolean;\
-$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
-$@@@@@@@@written      : out boolean;\
+$@@@@@@@@written      : out bool_t;\
 $@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
-$@@@@@@@@any_written  : out boolean;\
-$@@@@@@@@hi32         : in boolean);\
+$@@@@@@@@any_written  : out bool_t;\
+$@@@@@@@@hi32         : in bool_t);\
 $end component;
 
 #define RPROP_64_ARRAY(pretty,which,def,io) \
@@ -143,7 +143,7 @@ $@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_array_t(0 to property.nitems-1); \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0); \
 $@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0); \
-$@@@@@@@@hi32        : in boolean);\
+$@@@@@@@@hi32        : in bool_t);\
 $end component;
 
 #define WPROP_STRING_ARRAY(pretty,which,def,io) \
@@ -153,14 +153,14 @@ $--\
 $component pretty##_array_property \
 $@@generic(worker : worker_t; property : property_t; default : pretty##_array_t := (def,def)); \
 $@@port (clk          : in std_logic; \
-$@@@@@@@@reset        : in boolean; \
-$@@@@@@@@write_enable : in boolean; \
+$@@@@@@@@reset        : in bool_t; \
+$@@@@@@@@write_enable : in bool_t; \
 $@@@@@@@@data         : in std_logic_vector(31 downto 0); \
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1,\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0 to (property.string_length+4)/4*4-1);\
-$@@@@@@@@written      : out boolean;\
+$@@@@@@@@written      : out bool_t;\
 $@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
-$@@@@@@@@any_written  : out boolean; \
+$@@@@@@@@any_written  : out bool_t; \
 $@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
 $end component;
 
@@ -185,7 +185,7 @@ $end component;
 #define TYPEV(type) TYPE(type,(others => '0'),type##_t~range,,)
 #define TYPEV64(type) TYPE(type,(others => '0'),type##_t~range,_64,_64)
 
-TYPE(bool,false,0 downto 0,,)
+TYPE(bool,bfalse,0 downto 0,,)
 TYPEV(char)
 TYPEV64(double)
 TYPEV(float)
@@ -197,7 +197,5 @@ TYPEV(ushort)
 TYPEV64(longlong)
 TYPEV64(ulonglong)
 TYPE(string,("00000000","00000000"),31 downto 0,_STRING,_STRING)
-
-function from_bool_array(ba : bool_array_t; index, nbytes_1, byte_offset : unsigned) return word_t;
 
 end package props;

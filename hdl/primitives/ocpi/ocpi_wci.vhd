@@ -11,8 +11,18 @@ TYPE control_op_t IS (INITIALIZE_e,
                       AFTER_CONFIG_e,
                       TEST_e,
                       NO_OP_e);
-
 subtype control_op_mask_t is std_logic_vector(control_op_t'pos(no_op_e) downto 0);
+--subtype control_op_t is unsigned(2 downto 0); -- natural range 0 to 7;
+--constant  INITIALIZE_e   : control_op_t := to_unsigned(0,3);
+--constant  START_e        : control_op_t := to_unsigned(1,3);
+--constant  STOP_e         : control_op_t := to_unsigned(2,3);
+--constant  RELEASE_e      : control_op_t := to_unsigned(3,3);
+--constant  BEFORE_QUERY_e : control_op_t := to_unsigned(4,3);
+--constant  AFTER_CONFIG_e : control_op_t := to_unsigned(5,3);
+--constant  TEST_e         : control_op_t := to_unsigned(6,3);
+--constant  NO_OP_e        : control_op_t := to_unsigned(7,3);
+--subtype control_op_mask_t is std_logic_vector(to_integer(NO_OP_e) downto 0);
+
 type worker_t is record
   decode_width : natural;
   allowed_ops : control_op_mask_t;
@@ -35,11 +45,17 @@ end record property_t;
   -- These are not normative to the WCI interface, but are useful for bookkeepping
   -- Note we track the state where we have accepted a control operation but
   -- have not yet responded to it.
-  TYPE State_t IS (EXISTS_e,            -- 0
-                   INITIALIZED_e,       -- 1
-                   OPERATING_e,         -- 2
-                   SUSPENDED_e,         -- 3
-                   UNUSABLE_e);         -- 4
+  --TYPE State_t IS (EXISTS_e,            -- 0
+  --                 INITIALIZED_e,       -- 1
+  --                 OPERATING_e,         -- 2
+  --                 SUSPENDED_e,         -- 3
+  --                 UNUSABLE_e);         -- 4
+subtype State_t is natural range 0 to 4;
+constant  EXISTS_e      : State_t := 0;
+constant  INITIALIZED_e : State_t := 1;
+constant  OPERATING_e   : State_t := 2;
+constant  SUSPENDED_e   : State_t := 3;
+constant  UNUSABLE_e    : State_t := 4;
 
 
   type control_op_masks_t is array (natural range <>) of control_op_mask_t;
@@ -119,28 +135,28 @@ end record property_t;
   component decoder
     generic(worker : worker_t; properties : properties_t);
     port(
-      ocp_in                 : in in_t;       
-      done                   : in boolean := true;
+      ocp_in                 : in  in_t;       
+      done                   : in  bool_t := btrue;
       resp                   : out ocp.SResp_t;
-      write_enables          : out boolean_array_t(properties'range);
-      read_enables           : out boolean_array_t(properties'range);
+      write_enables          : out bool_array_t(properties'range);
+      read_enables           : out bool_array_t(properties'range);
       offsets                : out offset_a_t(properties'range);
       indices                : out offset_a_t(properties'range);
-      hi32                   : out boolean;
+      hi32                   : out bool_t;
       nbytes_1               : out byte_offset_t;
       data_outputs           : out data_a_t(properties'range);
       control_op             : out control_op_t;
       state                  : out state_t;
-      is_operating           : out boolean;  -- just a convenience for state = operating_e
-      abort_control_op       : out boolean;
-      is_big_endian          : out boolean   -- for runtime dynamic endian
+      is_operating           : out bool_t;  -- just a convenience for state = operating_e
+      abort_control_op       : out bool_t;
+      is_big_endian          : out bool_t   -- for runtime dynamic endian
     );
   end Component;
          
   component readback
     generic(properties : properties_t);
     port(
-      read_enables : in boolean_array_t(properties'range);
+      read_enables : in bool_array_t(properties'range);
       data_inputs  : in data_a_t(properties'range);
       data_output  : out std_logic_vector(31 downto 0)
       );

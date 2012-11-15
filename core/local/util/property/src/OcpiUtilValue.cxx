@@ -504,11 +504,14 @@ namespace OCPI {
 			  m_nElements, m_vt->m_sequenceLength);
       }
       switch (m_vt->m_baseType) {
-#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage) \
-      case OA::OCPI_##pretty:			   \
-	if (m_vt->m_isSequence || m_vt->m_arrayRank) \
-	  m_p##pretty = new run[m_nTotal];	   \
-	m_length = m_nTotal * sizeof(run);	   \
+#define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)     \
+      case OA::OCPI_##pretty:			       \
+	m_length = m_nTotal * sizeof(run);	       \
+	if (m_vt->m_isSequence || m_vt->m_arrayRank) { \
+	  m_p##pretty = new run[m_nTotal];	       \
+          /* FIXME: type-specific default value */     \
+          memset(m_p##pretty, 0, m_length);            \
+        }                                              \
 	break;
 	OCPI_PROPERTY_DATA_TYPES
 	OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
@@ -546,8 +549,6 @@ namespace OCPI {
 	m_stringNext = m_stringSpace = new char[m_stringSpaceLength];
       }
       const char *start, *end, *tmp = unparsed;
-      if (!stop)
-	stop = unparsed + strlen(unparsed);
       m_nTotal = m_vt->m_nItems;
       if (m_vt->m_isSequence) {
 	// Figure out how many elements in the sequence
@@ -597,9 +598,10 @@ namespace OCPI {
       const char *last = 0;
       for (unsigned n = 0; n < m_vt->m_arrayDimensions[dim]; n++) {
 	const char *start, *end;
-	doElement(unparsed, stop, start, end, nextDim == m_vt->m_arrayRank);
-	if (n && start == last)
-	  return "insufficient array elements";
+	if ((err = doElement(unparsed, stop, start, end, nextDim == m_vt->m_arrayRank)))
+	  return err;
+	if (n && start == end)
+	  break; // return "insufficient array elements";
 	last = start;
 	if (nextDim < m_vt->m_arrayRank) {
 	  if (start == end || start[0] != '{' || end[-1] != '}')

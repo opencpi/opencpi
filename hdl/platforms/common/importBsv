@@ -10,7 +10,8 @@ mkOCCP.v \
 mkWciMonitor.v \
 mkOCDP4B.v \
 mkOCInf4B.v \
-mkCTop4B.v\
+mkCTop4B.v \
+mkTimeClient.v \
 )
 cp $OCPI_HDL_IMPORTS_DIR/rtl/$i .
 end

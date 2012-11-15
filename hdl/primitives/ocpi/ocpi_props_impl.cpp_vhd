@@ -11,11 +11,11 @@ $--\
 ENTITY_HEADER(pretty)\
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
 $@@port (clk          : in std_logic; \
-$@@@@@@@@reset        : in boolean; \
-$@@@@@@@@write_enable : in boolean; \
+$@@@@@@@@reset        : in bool_t; \
+$@@@@@@@@write_enable : in bool_t; \
 $@@@@@@@@data         : in std_logic_vector(rng); \
 $@@@@@@@@value        : out pretty##_t; \
-$@@@@@@@@written      : out boolean \
+$@@@@@@@@written      : out bool_t \
 $@@@@@@@);\
 $end entity;
 
@@ -26,14 +26,14 @@ $architecture rtl of pretty##_property is begin\
 $@@reg: process(Clk) is\
 $@@begin \
 $@@@@if rising_edge(clk) then\
-$@@@@@@if reset then\
+$@@@@@@if its(reset) then\
 $@@@@@@@ value <= default;\
-$@@@@@@@ written <= false;\
-$@@@@@@elsif write_enable then\
+$@@@@@@@ written <= bfalse;\
+$@@@@@@elsif its(write_enable) then\
 $@@@@@@@@value <= rhs(data);\
-$@@@@@@@@written <= true;\
+$@@@@@@@@written <= btrue;\
 $@@@@@@else\
-$@@@@@@@@written <= false;\
+$@@@@@@@@written <= bfalse;\
 $@@@@@@end if;\
 $@@@@end if; \
 $@@end process; \
@@ -61,12 +61,12 @@ $--\
 ENTITY_HEADER(pretty)\
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
 $@@port (clk          : in std_logic; \
-$@@@@@@@@reset        : in boolean; \
-$@@@@@@@@write_enable : in boolean; \
+$@@@@@@@@reset        : in bool_t; \
+$@@@@@@@@write_enable : in bool_t; \
 $@@@@@@@@data         : in std_logic_vector(31 downto 0); \
 $@@@@@@@@value        : out pretty##_t; \
-$@@@@@@@@written      : out boolean; \
-$@@@@@@@@hi32         : in boolean); \
+$@@@@@@@@written      : out bool_t; \
+$@@@@@@@@hi32         : in bool_t); \
 $end entity;
 
 // Write-only implementation
@@ -76,18 +76,18 @@ $architecture rtl of pretty##_property is begin\
 $@@reg: process(Clk) is\
 $@@begin \
 $@@@@if rising_edge(clk) then\
-$@@@@@@if reset then\
+$@@@@@@if its(reset) then\
 $@@@@@@@ value <= default;\
-$@@@@@@@ written <= false;\
-$@@@@@@elsif write_enable then\
-$@@@@@@@@if hi32 then\
+$@@@@@@@ written <= bfalse;\
+$@@@@@@elsif its(write_enable) then\
+$@@@@@@@@if its(hi32) then\
 $@@@@@@@@@@value(63 downto 32) <= rhs(data);\
-$@@@@@@@@@@written <= true;\
+$@@@@@@@@@@written <= btrue;\
 $@@@@@@@@else\
 $@@@@@@@@@@value(31 downto 0) <= rhs(data);\
 $@@@@@@@@end if; \
 $@@@@@@else\
-$@@@@@@@@written <= false;\
+$@@@@@@@@written <= bfalse;\
 $@@@@@@end if;\
 $@@@@end if; \
 $@@end process; \
@@ -100,12 +100,12 @@ $--\
 ENTITY_HEADER(read_##pretty)\
 $@@generic (worker : worker_t; property : property_t);\
 $@@port (value       : in pretty##_t;\
-$@@@@@@@@hi32        : in boolean;\
+$@@@@@@@@hi32        : in bool_t;\
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0)\
 $@@@@@@@);\
 $end entity;\
 $architecture rtl of read_##pretty##_property is begin\
-$@@data_out <= std_logic_vector(value(63 downto 32)) when hi32\
+$@@data_out <= std_logic_vector(value(63 downto 32)) when its(hi32)\
 $@@@@@@@@@@@@@ else std_logic_vector(value(31 downto 0));\
 $end rtl;
 
@@ -116,11 +116,11 @@ $--\
 ENTITY_HEADER(pretty)\
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
 $@@port (clk          : in std_logic;\
-$@@@@@@@@reset        : in boolean;\
-$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(rng);\
 $@@@@@@@@value        : out pretty##_t(0 to property.string_length);\
-$@@@@@@@@written      : out boolean;\
+$@@@@@@@@written      : out bool_t;\
 $@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
 $end entity;
 
@@ -133,14 +133,14 @@ $@@base <= to_integer(offset);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
-$@@@@@@if reset then\
+$@@@@@@if its(reset) then\
 $@@@@@@@ value <= (others => to_signed(0,char_t~length));\
-$@@@@@@@ written <= false;\
-$@@@@@@elsif write_enable then\
+$@@@@@@@ written <= bfalse;\
+$@@@@@@elsif its(write_enable) then\
 $@@@@@@@@value (base to base + 3) <= to_string(data);\
-$@@@@@@@@written <= true;\
+$@@@@@@@@written <= btrue;\
 $@@@@@@else\
-$@@@@@@@@written <= false;\
+$@@@@@@@@written <= bfalse;\
 $@@@@@@end if;\
 $@@@@end if; \
 $@@end process; \
@@ -167,13 +167,13 @@ $--\
 ENTITY_HEADER(pretty##_array)\
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
 $@@port (clk          : in std_logic;\
-$@@@@@@@@reset        : in boolean;\
-$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
-$@@@@@@@@written      : out boolean;\
+$@@@@@@@@written      : out bool_t;\
 $@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
-$@@@@@@@@any_written  : out boolean;\
+$@@@@@@@@any_written  : out bool_t;\
 $@@@@@@@@nbytes_1     : in byte_offset_t);\
 $end entity;
 
@@ -184,14 +184,14 @@ $--\
 ENTITY_HEADER(pretty##_array)\
 $@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
 $@@port (clk          : in std_logic;\
-$@@@@@@@@reset        : in boolean;\
-$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
-$@@@@@@@@written      : out boolean;\
+$@@@@@@@@written      : out bool_t;\
 $@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
-$@@@@@@@@any_written  : out boolean;\
-$@@@@@@@@hi32         : in boolean);\
+$@@@@@@@@any_written  : out bool_t;\
+$@@@@@@@@hi32         : in bool_t);\
 $end entity;
 
 // boolean version with one bit per byte
@@ -204,11 +204,11 @@ $@@base <= to_integer(index);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
-$@@@@@@if reset then\
+$@@@@@@if its(reset) then\
 $@@@@@@@@value <= (others => default);\
-$@@@@@@@@written <= false;\
-$@@@@@@@@any_written <= false;\
-$@@@@@@elsif write_enable then\
+$@@@@@@@@written <= bfalse;\
+$@@@@@@@@any_written <= bfalse;\
+$@@@@@@elsif its(write_enable) then\
 $@@@@@@@@value(base) <= rhs(data(0));\
 $@@@@@@@@if nbytes_1 > 0 and property.nitems > 1 then\
 $@@@@@@@@@@value(base+1) <= rhs(data(8));\
@@ -219,11 +219,11 @@ $@@@@@@@@@@@@@@value(base+3) <= rhs(data(24));\
 $@@@@@@@@@@@@end if;\
 $@@@@@@@@@@end if;\
 $@@@@@@@@end if;\
-$@@@@@@@@any_written <= true;\
-$@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@@@any_written <= btrue;\
+$@@@@@@@@if base = 0 then written <= btrue; end if;\
 $@@@@@@else\
-$@@@@@@@@any_written <= false;\
-$@@@@@@@@written <= false;\
+$@@@@@@@@any_written <= bfalse;\
+$@@@@@@@@written <= bfalse;\
 $@@@@@@end if;\
 $@@@@end if; \
 $@@end process; \
@@ -305,13 +305,13 @@ $@@generic (worker : worker_t; property : property_t);\
 $@@port (value       : in pretty##_array_t(0 to property.nitems-1);\
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
 $@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0);\
-$@@@@@@@@hi32        : in boolean);\
+$@@@@@@@@hi32        : in bool_t);\
 $end entity;\
 $architecture rtl of read_##pretty##_array_property is\
 $@@signal i : natural;\
 $begin\
 $@@i <= to_integer(index);\
-$@@data_out <= std_logic_vector(value(i)(63 downto 32)) when hi32 else\
+$@@data_out <= std_logic_vector(value(i)(63 downto 32)) when its(hi32) else\
 $@@@@@@@@@@@@@@std_logic_vector(value(i)(31 downto 0));\
 $end rtl;
 
@@ -337,11 +337,11 @@ $@@base <= to_integer(index);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
-$@@@@@@if reset then\
+$@@@@@@if its(reset) then\
 $@@@@@@@@value <= (others => default);\
-$@@@@@@@@written <= false;\
-$@@@@@@@@any_written <= false;\
-$@@@@@@elsif write_enable then\
+$@@@@@@@@written <= bfalse;\
+$@@@@@@@@any_written <= bfalse;\
+$@@@@@@elsif its(write_enable) then\
 $@@@@@@@@value(base) <= rhs(data(7 downto 0));\
 $@@@@@@@@if nbytes_1 > 0 and property.nitems > 1 then\
 $@@@@@@@@@@value(base+1) <= rhs(data(15 downto 8));\
@@ -352,11 +352,11 @@ $@@@@@@@@@@@@@@value(base+3) <= rhs(data(31 downto 24));\
 $@@@@@@@@@@@@end if;\
 $@@@@@@@@@@end if;\
 $@@@@@@@@end if;\
-$@@@@@@@@any_written <= true;\
-$@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@@@any_written <= btrue;\
+$@@@@@@@@if base = 0 then written <= btrue; end if;\
 $@@@@@@else\
-$@@@@@@@@written <= false;\
-$@@@@@@@@any_written <= false;\
+$@@@@@@@@written <= bfalse;\
+$@@@@@@@@any_written <= bfalse;\
 $@@@@@@end if;\
 $@@@@end if; \
 $@@end process; \
@@ -371,20 +371,20 @@ $@@base <= to_integer(index);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
-$@@@@@@if reset then\
+$@@@@@@if its(reset) then\
 $@@@@@@@@value <= (others => default);\
-$@@@@@@@@written <= false;\
-$@@@@@@@@any_written <= false;\
-$@@@@@@elsif write_enable then\
+$@@@@@@@@written <= bfalse;\
+$@@@@@@@@any_written <= bfalse;\
+$@@@@@@elsif its(write_enable) then\
 $@@@@@@@@value(base) <= rhs(data(15 downto 0));\
 $@@@@@@@@if nbytes_1 > 1 and property.nitems > 1 then\
 $@@@@@@@@@@value(base+1) <= rhs(data(31 downto 16));\
 $@@@@@@@@end if;\
-$@@@@@@@@any_written <= true;\
-$@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@@@any_written <= btrue;\
+$@@@@@@@@if base = 0 then written <= btrue; end if;\
 $@@@@@@else\
-$@@@@@@@@written <= false;\
-$@@@@@@@@any_written <= false;\
+$@@@@@@@@written <= bfalse;\
+$@@@@@@@@any_written <= bfalse;\
 $@@@@@@end if;\
 $@@@@end if; \
 $@@end process; \
@@ -399,17 +399,17 @@ $@@base <= to_integer(index);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
-$@@@@@@if reset then\
+$@@@@@@if its(reset) then\
 $@@@@@@@@value <= (others => default);\
-$@@@@@@@@written <= false;\
-$@@@@@@@@any_written <= false;\
-$@@@@@@elsif write_enable then\
+$@@@@@@@@written <= bfalse;\
+$@@@@@@@@any_written <= bfalse;\
+$@@@@@@elsif its(write_enable) then\
 $@@@@@@@@value(base) <= rhs(data);\
-$@@@@@@@@any_written <= true;\
-$@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@@@any_written <= btrue;\
+$@@@@@@@@if base = 0 then written <= btrue; end if;\
 $@@@@@@else\
-$@@@@@@@@written <= false;\
-$@@@@@@@@any_written <= false;\
+$@@@@@@@@written <= bfalse;\
+$@@@@@@@@any_written <= bfalse;\
 $@@@@@@end if;\
 $@@@@end if; \
 $@@end process; \
@@ -424,22 +424,22 @@ $@@base <= to_integer(index);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
-$@@@@@@if reset then\
+$@@@@@@if its(reset) then\
 $@@@@@@@@value <= (others => default);\
-$@@@@@@@@written <= false;\
-$@@@@@@@@any_written <= false;\
-$@@@@@@elsif write_enable then\
-$@@@@@@@@if hi32 then\
+$@@@@@@@@written <= bfalse;\
+$@@@@@@@@any_written <= bfalse;\
+$@@@@@@elsif its(write_enable) then\
+$@@@@@@@@if its(hi32) then\
 $@@@@@@@@@@value(base)(63 downto 32) <= rhs(data);\
 $@@@@@@@@@@-- for little endian machines that do a store64\
-$@@@@@@@@@@if base = 0 then written <= true; end if;\
+$@@@@@@@@@@if base = 0 then written <= btrue; end if;\
 $@@@@@@@@else\
 $@@@@@@@@@@value(base)(31 downto 0) <= rhs(data);\
 $@@@@@@@@end if;\
-$@@@@@@@@any_written <= true;\
+$@@@@@@@@any_written <= btrue;\
 $@@@@@@else\
-$@@@@@@@@written <= false;\
-$@@@@@@@@any_written <= false;\
+$@@@@@@@@written <= bfalse;\
+$@@@@@@@@any_written <= bfalse;\
 $@@@@@@end if;\
 $@@@@end if; \
 $@@end process; \
@@ -452,14 +452,14 @@ $--\
 ENTITY_HEADER(pretty##_array)\
 $@@generic(worker : worker_t; property : property_t; default : pretty##_array_t := (def,def)); \
 $@@port (clk          : in std_logic;\
-$@@@@@@@@reset        : in boolean;\
-$@@@@@@@@write_enable : in boolean;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1,\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0 to (property.string_length+4)/4*4-1);\
-$@@@@@@@@written      : out boolean;\
+$@@@@@@@@written      : out bool_t;\
 $@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
-$@@@@@@@@any_written  : out boolean;\
+$@@@@@@@@any_written  : out bool_t;\
 $@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
 $end entity;
 
@@ -475,7 +475,7 @@ ENTITY_ARRAY_STRING(pretty,which,def,rng)
 #define TYPEV(type,an) TYPE(type,(others => '0'),type##_t~range,,,,type##_t,an)
 #define TYPEV64(type,s) TYPE(type,(others => '0'),type##_t~range,_64,,(31 downto 0),s,64)
 
-TYPE(bool,false,0 downto 0,,,from_bool,to_bool,1)
+TYPE(bool,bfalse,0 downto 0,,,from_bool,to_bool,1)
 TYPEV(char,8)
 TYPEV64(double,)
 TYPEV(float,32)
@@ -503,19 +503,19 @@ begin
   reg: process(Clk) is
   begin
     if rising_edge(clk) then
-      if reset then
+      if its(reset) then
         string_words(0) <= (others => '0');
-        written <= false;
-        any_written <= false;
-      elsif write_enable then
+        written <= bfalse;
+        any_written <= bfalse;
+      elsif its(write_enable) then
         string_words(to_integer(offset) / 4) <= data;
-        written <= true;
+        written <= btrue;
 	if to_integer(offset) = 0 then
-	  any_written <= true;
+	  any_written <= btrue;
 	end if;
       else
-        written <= false;
-        any_written <= false;
+        written <= bfalse;
+        any_written <= bfalse;
       end if;
     end if; 
   end process; 

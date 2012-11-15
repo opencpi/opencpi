@@ -9,4 +9,5 @@ $ib framegate mkFrameGate4B
 $ib psd mkPSD
 $ib sma mkSMAdapter4B
 $ib splitter2x2 mkWsiSplitter2x24B
+$ib pattern mkWSIPatternWorker4B
 

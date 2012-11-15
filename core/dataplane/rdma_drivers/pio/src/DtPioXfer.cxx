@@ -59,6 +59,7 @@
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
 #include <OcpiUtilAutoMutex.h>
+#include <OcpiUtilMisc.h>
 #include <DtExceptions.h>
 #include <OcpiPValue.h>
 
@@ -152,7 +153,7 @@ XferServices* PIOXferFactory::getXferServices(SmemServices* source, SmemServices
  *  an endpoint for an application running on "this"
  *  node.
  ***************************************/
-static OCPI::OS::int32_t pid;
+//static OCPI::OS::int32_t pid;
 static OCPI::OS::int32_t smb_count=0;
 std::string PIOXferFactory::
 allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
@@ -160,16 +161,8 @@ allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBo
   OCPI::Util::SelfAutoMutex guard (this); 
   std::string ep;
 
-  pid++;
-
-  unsigned int size = m_SMBSize;
-
-  pid = getpid();
-  char tep[128];
-  snprintf(tep,128,"ocpi-smb-pio:pioXfer%d%d:%d.%" PRIu16 ".%" PRIu16,
-	   pid,smb_count++,size, mailBox, maxMailBoxes);
-  ep = tep;
-
+  OCPI::Util::formatString(ep, "ocpi-smb-pio:pioXfer%d%d;%" PRIu32 ".%" PRIu16 ".%" PRIu16,
+		   getpid(), smb_count++, m_SMBSize, mailBox, maxMailBoxes);
   return ep;
 }
 

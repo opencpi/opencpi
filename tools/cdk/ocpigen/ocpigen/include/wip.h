@@ -241,7 +241,8 @@ union Profiles {
 class Port {
 public:
   const char *name;
-  const char *fullNameIn, *fullNameOut; // used during HDL generation
+  std::string fullNameIn, fullNameOut; // used during HDL generation
+  std::string typeNameIn, typeNameOut; // used during HDL generation
   Worker *worker;
   unsigned count;
   bool isExternal;          // external port of an assembly (not part of worker)
@@ -410,7 +411,9 @@ class  Worker {
   unsigned nClocks;
   Clock *clocks;
   Endian endian;
-  const char *pattern;
+  const char 
+    *pattern,                     // pattern for signal names within ports
+    *portPattern;                 // pattern for port names
   const char *staticPattern;      // pattern for rcc static methods
   bool isAssembly;
   unsigned nInstances;
@@ -450,7 +453,8 @@ extern const char
   *parseOclAssy(ezxml_t xml, const char *file, Worker *aw),
   *parseFile(const char *file, const char *parent, const char *element,
 	     ezxml_t *xp, const char **xfile, bool optional = false),
-  *pattern(Worker *w, Port *p, int n0, unsigned n1, bool in, bool master, char **suff),
+  *pattern(Worker *w, Port *p, int n0, unsigned n1, bool in, bool master,
+	   std::string &, bool port = false),
   *parseWorker(const char *file, const char *parent, Worker *),
   *deriveOCP(Worker *w),
   *emitDefsHDL(Worker*, const char *, bool wrap = false),

@@ -50,6 +50,8 @@
 ************************************************************************** */
 
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +62,7 @@
 #include <OcpiOsAssert.h>
 #include <OcpiRDTInterface.h>
 
+namespace OU = OCPI::Util;
 using namespace DataTransfer;
 
 SmemServices::
@@ -117,12 +120,19 @@ void EndPoint::getProtocolFromString( const char* ep, std::string &proto )
 }
 
 void EndPoint::getResourceValuesFromString( const char* ep, 
-                                            char* cs, 
+                                            char*, 
                                             uint16_t* mailBox, 
                                             uint16_t* maxMb, 
                                             OCPI::OS::uint32_t* size
                                             )
 {
+  const char *semi = strrchr(ep, ';');
+  if (!semi ||
+      sscanf(semi+1, "%" SCNu32 ".%" SCNu16 ".%" SCNu16,
+	     size, mailBox, maxMb) != 3)
+    throw OU::Error("Invalid endpoint: %s", ep);
+#if 0
+	     
   *size = 0;
   int item_count = 0;
   int cs_index = 0;
@@ -174,6 +184,7 @@ void EndPoint::getResourceValuesFromString( const char* ep,
       cs[cs_index++] = ep[n];
     }
   }
+#endif
 }
 
 void EndPoint::

@@ -40,7 +40,7 @@ OCPI_DRIVER_OBJS=\
   -Xlinker --undefined=_ZN4OCPI7Library7CompLib6driverE\
   -Xlinker --undefined=_ZN12DataTransfer9pioDriverE\
   -Xlinker --undefined=_ZN4OCPI3HDL6driverE\
-  -Xlinker --undefined=_ZN12DataTransfer9pciDriverE\
+  -Xlinker --undefined=_ZN12DataTransfer3PCI6driverE\
 
 endif
 OcpiAsNeeded=-Xlinker --no-as-needed

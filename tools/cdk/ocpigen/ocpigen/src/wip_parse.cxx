@@ -1411,15 +1411,16 @@ parseAssy(ezxml_t xml, Worker *aw,
   return 0;
 }
 
+#define TOP_ATTRS "Name", "Pattern", "Language", "PortPattern",
 const char *
 parseHdlAssy(ezxml_t xml, Worker *aw) {
   const char *err;
   Assembly *a = &aw->assembly;
   a->isContainer = !strcasecmp(xml->name, "HdlContainer");
   static const char
-    *topAttrs[] = {"Name", "Pattern", "Language", 0},
-    *instAttrs[] = {"Worker", "Name", 0},
-    *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", "Adapter", "Configure", 0};
+    *topAttrs[] = {TOP_ATTRS NULL},
+    *instAttrs[] = {"Worker", "Name", NULL},
+    *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", "Adapter", "Configure", NULL};
   // Do the generic assembly parsing, then to more specific to HDL
   if ((err = parseAssy(xml, aw, topAttrs,
                        a->isContainer ? contInstAttrs : instAttrs, true)))
@@ -1706,7 +1707,7 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
   if (strcmp(w->implName, w->fileName))
     return OU::esprintf("File name (%s) and implementation name in XML (%s) don't match",
 		    w->fileName, w->implName);
-  if ((err = OE::checkAttrs(xml, "Name", "Pattern", "Language", (void*)0)))
+  if ((err = OE::checkAttrs(xml, TOP_ATTRS (void*)0)))
     return err;
   const char *lang = ezxml_cattr(xml, "Language");
   if (!lang)
@@ -1719,8 +1720,11 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
     return OU::esprintf("Language attribute \"%s\" is not \"Verilog\" or \"VHDL\" in ComponentImplementation",
 			lang);
   w->pattern = ezxml_cattr(xml, "Pattern");
+  w->portPattern = ezxml_cattr(xml, "PortPattern");
   if (!w->pattern)
     w->pattern = "%s_";
+  if (!w->portPattern)
+    w->portPattern = "%s_%n";
   // Here is where there is a difference between a implementation and as assembly
   if (!strcasecmp(xml->name, "HdlImplementation")) {
     if ((err = parseHdlImpl(xml, file, w)))
@@ -1739,25 +1743,29 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
     // Derive full names
     bool mIn = masterIn(p);
     // ordinal == -1 means insert "%d" into the name for using latter
-    if ((err = pattern(w, p, -1, wipN[p->type][mIn], true, !mIn, (char **)&p->fullNameIn)) ||
-        (err = pattern(w, p, -1, wipN[p->type][mIn], false, !mIn, (char **)&p->fullNameOut)))
+    if ((err = pattern(w, p, -1, wipN[p->type][mIn], true, !mIn, p->fullNameIn)) ||
+        (err = pattern(w, p, -1, wipN[p->type][mIn], false, !mIn, p->fullNameOut)) ||
+        (err = pattern(w, p, -1, wipN[p->type][mIn], true, !mIn, p->typeNameIn, true)) ||
+        (err = pattern(w, p, -1, wipN[p->type][mIn], false, !mIn, p->typeNameOut, true)))
       return err;
+    //    const char *pat = p->pattern ? p->pattern : w->pattern;
+    
     if (p->clock->port == p) {
-      char *sin;
+      std::string sin;
       // ordinal == -2 means suppress ordinal
-      if ((err = pattern(w, p, -2, wipN[p->type][mIn], true, !mIn, &sin)))
+      if ((err = pattern(w, p, -2, wipN[p->type][mIn], true, !mIn, sin)))
         return err;
-      asprintf((char **)&p->ocp.Clk.signal, "%s%s", sin, "Clk");
+      asprintf((char **)&p->ocp.Clk.signal, "%s%s", sin.c_str(), "Clk");
       p->clock->signal = p->ocp.Clk.signal;
     }
     OcpSignalDesc *osd = ocpSignals;
     for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
       if (osd->master == mIn && strcasecmp(osd->name, "Clk") && os->value)
-        asprintf((char **)&os->signal, "%s%s", p->fullNameIn, osd->name);
+        asprintf((char **)&os->signal, "%s%s", p->fullNameIn.c_str(), osd->name);
     osd = ocpSignals;
     for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
       if (osd->master != mIn && strcasecmp(osd->name, "Clk") && os->value)
-        asprintf((char **)&os->signal, "%s%s", p->fullNameOut, osd->name);
+        asprintf((char **)&os->signal, "%s%s", p->fullNameOut.c_str(), osd->name);
     wipN[p->type][mIn]++;
   }
   if (w->ports.size() > 32)
@@ -1919,7 +1927,7 @@ Worker::Worker()
 }
 
 Port::Port()
-  : name(0), fullNameIn(0), fullNameOut(0), worker(0), count(0),
+  : name(0), worker(0), count(0),
     isExternal(false), isData(false), pattern(0), type(NoPort),
     dataWidth(0), byteWidth(0), impreciseBurst(false), preciseBurst(false),
     clock(0), clockPort(0), myClock(false),values(0), master(false), protocol(0)

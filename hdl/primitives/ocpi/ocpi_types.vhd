@@ -15,12 +15,49 @@ subtype byte_offset_t is unsigned(1 downto 0);
 --
 -- boolean type, convertible to/from vhdl native boolean
 --
-subtype Bool_t is boolean; --std_logic;
+
+-- THESE ARE DEFINITIONS WHEN Bool_t is BOOLEAN
+--subtype Bool_t is boolean;
+
+-- THESE ARE DEFINITIONS WHEN Bool_t is std_logic
+subtype Bool_t is std_logic;
+function "and"  ( l : bool_t; r : bool_t ) return boolean;
+function "nand" ( l : bool_t; r : bool_t ) return boolean;
+function "or"   ( l : bool_t; r : bool_t ) return boolean;
+function "nor"  ( l : bool_t; r : bool_t ) return boolean;
+function "xor"  ( l : bool_t; r : bool_t ) return boolean;
+function "xnor" ( l : bool_t; r : bool_t ) return boolean;
+
+----function "and"  ( l : bool_t; r : boolean ) return boolean;
+function "nand" ( l : bool_t; r : boolean ) return boolean;
+function "or"   ( l : bool_t; r : boolean ) return boolean;
+function "nor"  ( l : bool_t; r : boolean ) return boolean;
+function "xor"  ( l : bool_t; r : boolean ) return boolean;
+function "xnor" ( l : bool_t; r : boolean ) return boolean;
+
+function "and"  ( l : boolean; r : bool_t ) return boolean;
+function "nand" ( l : boolean; r : bool_t ) return boolean;
+function "or"   ( l : boolean; r : bool_t ) return boolean;
+function "nor"  ( l : boolean; r : bool_t ) return boolean;
+function "xor"  ( l : boolean; r : bool_t ) return boolean;
+function "xnor" ( l : boolean; r : bool_t ) return boolean;
+
+function "or"   ( l : bool_t; r : boolean ) return bool_t;
+
+
+function "not"  ( l : bool_t             ) return boolean;
+
+-- THESE ARE Bool_t related definitions independent of whether bool_t is boolean or std_logic
 type bool_array_t is array (natural range <>) of bool_t;
---function To_boolean (b : Bool_t) return boolean;
+function To_boolean (b : Bool_t) return boolean;
 function To_bool(b : std_logic) return Bool_t;
 function To_bool(b : std_logic_vector) return Bool_t;
+function To_bool(b : boolean) return Bool_t;
 function from_bool(b : bool_t) return std_logic_vector;
+function btrue return bool_t;
+function bfalse return bool_t;
+function its(b : bool_t) return boolean;
+
 --
 -- char type, convertible to/from vhdl native character, and integer (due to numeric_std)
 --
