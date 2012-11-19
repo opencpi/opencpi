@@ -295,7 +295,7 @@ static void
 release_block(ocpi_block_t *block)
 {
   bool do_merge = false;
-  log_debug_block(block, "unmap_block");
+  log_debug_block(block, "release_block");
   spin_lock(&block_lock);
   do_merge = release_block_locked(block);
   spin_unlock(&block_lock);
@@ -331,7 +331,8 @@ get_status(ocpi_status_t *status) {
 
 // Try to get/allocate a memory block.  Return it on success, or NULL on failure
 // - sparep points to a spare block to use for splitting
-// - *sparep should be set to zero if the spare it used
+// - *sparep should be set to zero if the spare is used
+// if "file" is NULL it is an initial driver request, NOT a process request
 static long
 get_memory(ocpi_request_t *request, struct file *file, ocpi_block_t **sparep) {
   long err = -ENOMEM;
@@ -348,10 +349,11 @@ get_memory(ocpi_request_t *request, struct file *file, ocpi_block_t **sparep) {
 	split->size -= request->actual;
 	list_add(&split->list, &block->list);
       }
+      atomic_set(&block->refcnt, 1);
       block->file = file;
       block->cached = request->cached;
-      block->size = request->actual;
-      block->available = false;
+      if (file)
+	block->available = false;
       err = 0;
       break;
     }
@@ -359,13 +361,15 @@ get_memory(ocpi_request_t *request, struct file *file, ocpi_block_t **sparep) {
   return err;
 }
 
+// If file == NULL, this is a request for the initial driver memory, not a minor 0 ioctl request
 static long
 request_memory(struct file *file, ocpi_request_t *request) {
   ocpi_block_t *spare;
   long err = -ENOMEM;
 
   request->actual = PAGE_ALIGN(request->needed);
-  log_debug("memory request %lx -> %lx\n", (unsigned long)request->needed, (unsigned long)request->actual);
+  log_debug("memory request file %p %lx -> %lx\n",
+	    file, (unsigned long)request->needed, (unsigned long)request->actual);
   // This is most likely to be used, but possibly will be given back
   // We allocate it outside the spin lock
   spare = kzalloc(sizeof(ocpi_block_t), GFP_KERNEL);
@@ -425,8 +429,8 @@ opencpi_vma_open(struct vm_area_struct *vma) {
   log_debug("vma_open: vma %p size %lu @ offset %016llx\n", vma,
 	    (unsigned long)(vma->vm_end - vma->vm_start),
 	    (ocpi_address_t)vma->vm_pgoff << PAGE_SHIFT);
-  log_debug_block(block, "vma_open:");
   atomic_inc(&block->refcnt);
+  log_debug_block(block, "vma_open:");
 }
 
 // close: a process mapping is going away.
@@ -562,6 +566,7 @@ opencpi_io_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsig
       if (copy_to_user((void __user *)arg, &request, sizeof(request))) {
 	log_err("unable to return memory request - we will leak until exit\n");
 	err = -EFAULT;
+	// FIXME: release the memory here
       }
       return err;
     }

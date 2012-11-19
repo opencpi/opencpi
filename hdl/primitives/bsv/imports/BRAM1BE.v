@@ -1,4 +1,4 @@
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2011 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,8 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 24080 $
-// $Date: 2011-05-18 19:32:52 +0000 (Wed, 18 May 2011) $
+// $Revision: 28325 $
+// $Date: 2012-04-25 18:22:57 +0000 (Wed, 25 Apr 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
@@ -50,8 +50,8 @@ module BRAM1BE(CLK,
    output [DATA_WIDTH-1:0]        DO;
 
    reg [DATA_WIDTH-1:0]           RAM[0:MEMSIZE-1];
-   reg [ADDR_WIDTH-1:0]           ADDR_R;
    reg [DATA_WIDTH-1:0]           DO_R;
+   reg [DATA_WIDTH-1:0]           DO_R2;
 
    reg [DATA_WIDTH-1:0]           DATA;
    wire [DATA_WIDTH-1:0]          DATAwr;
@@ -67,8 +67,8 @@ module BRAM1BE(CLK,
       for (i = 0; i < MEMSIZE; i = i + 1) begin
          RAM[i] = { ((DATA_WIDTH+1)/2) { 2'b10 } };
       end
-      ADDR_R = { ((ADDR_WIDTH+1)/2) { 2'b10 } };
-      DO_R = { ((DATA_WIDTH+1)/2) { 2'b10 } };
+      DO_R  = { ((DATA_WIDTH+1)/2) { 2'b10 } };
+      DO_R2 = { ((DATA_WIDTH+1)/2) { 2'b10 } };
    end
    // synopsys translate_on
 `endif // !`ifdef BSV_NO_INITIAL_BLOCKS
@@ -104,13 +104,18 @@ module BRAM1BE(CLK,
 
    always @(posedge CLK) begin
       if (EN) begin
-         if (|WE)
-           RAM[ADDR] <= `BSV_ASSIGNMENT_DELAY DATA;
-         ADDR_R    <= `BSV_ASSIGNMENT_DELAY ADDR;
+         if (|WE) begin
+            RAM[ADDR] <= `BSV_ASSIGNMENT_DELAY DATA;
+            DO_R <= `BSV_ASSIGNMENT_DELAY DATA;
+         end
+         else begin
+            DO_R <= `BSV_ASSIGNMENT_DELAY RAM[ADDR];
+         end
       end
-      DO_R      <= `BSV_ASSIGNMENT_DELAY RAM[ADDR_R];
+      DO_R2 <= `BSV_ASSIGNMENT_DELAY DO_R;
    end
 
-   assign DO = (PIPELINED) ? DO_R : RAM[ADDR_R];
+   // Output driver
+   assign DO = (PIPELINED) ? DO_R2 : DO_R;
 
 endmodule // BRAM1BE

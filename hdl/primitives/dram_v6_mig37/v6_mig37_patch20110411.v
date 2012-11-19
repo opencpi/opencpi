@@ -389,7 +389,7 @@ module v6_mig37 #
    .DQ_WIDTH        (DQ_WIDTH),
    .DQS_WIDTH       (DQS_WIDTH),
    .DQS_CNT_WIDTH   (DQS_CNT_WIDTH),
-//   .OCB_MONITOR     (OCB_MONITOR), // JEK: 13.3 didn't like that this was not found
+//   .OCB_MONITOR     (OCB_MONITOR),
    .ORDERING        (ORDERING),
    .OUTPUT_DRV      (OUTPUT_DRV),
    .PHASE_DETECT    (PHASE_DETECT),
@@ -399,8 +399,8 @@ module v6_mig37 #
    .ROW_WIDTH       (ROW_WIDTH),
    .RTT_NOM         (RTT_NOM),
    .RTT_WR          (RTT_WR),
-//   .SIM_CAL_OPTION  (SIM_CAL_OPTION), // JEK: 13.3 didn't like that this was not found
-//   .SIM_INIT_OPTION (SIM_INIT_OPTION), // JEK: 13.3 didn't like that this was not found
+//   .SIM_CAL_OPTION  (SIM_CAL_OPTION),
+//   .SIM_INIT_OPTION (SIM_INIT_OPTION),
    .WRLVL           (WRLVL),
    .nDQS_COL0       (nDQS_COL0),
    .nDQS_COL1       (nDQS_COL1),

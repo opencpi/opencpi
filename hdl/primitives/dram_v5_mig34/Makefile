@@ -1,7 +1,7 @@
 Core=dram_v5_mig34
 Top=v5_mig34
 ExcludeTargets=
-OnlyTargets=virtex5 isim
+OnlyTargets=virtex5
 SourceFiles=\
  ddr2_ctrl.v\
  ddr2_mem_if_top.v\

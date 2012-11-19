@@ -8,11 +8,11 @@ namespace OA = OCPI::API;
 int main(int argc, char **argv) {
   std::string hello("<application>"
 		    // instance name defaults to file_read since there is only one
-		    "  <instance worker='file_read'>"
+		    "  <instance component='file_read'>"
 		    "    <property name='filename' value='hello.file'/>"
 		    "    <property name='messageSize' value='4'/>"
 		    "  </instance>"
-		    "  <instance worker='file_write'>"
+		    "  <instance component='file_write'>"
 		    "    <property name='filename' value='out.file'/>"
 		    "  </instance>"
 		    "  <connection ");

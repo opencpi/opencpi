@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2012 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,26 +19,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 24080 $
-// $Date: 2011-05-18 19:32:52 +0000 (Wed, 18 May 2011) $
+// $Revision: 29441 $
+// $Date: 2012-08-27 21:58:03 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
-`define BSV_ASSIGNMENT_DELAY
+  `define BSV_ASSIGNMENT_DELAY
+`endif
+
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
 `endif
 
 
+
 // Sized fifo.  Model has output register which improves timing
-module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
+module SizedFIFO(CLK, RST, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
    parameter               p1width = 1; // data width
    parameter               p2depth = 3;
    parameter               p3cntr_width = 1; // log(p2depth-1)
    // The -1 is allowed since this model has a fast output register
    parameter               guarded = 1;
-   localparam              p2depth2 = p2depth -2 ;
+   localparam              p2depth2 = (p2depth >= 2) ? (p2depth -2) : 0 ;
 
    input                   CLK;
-   input                   RST_N;
+   input                   RST;
    input                   CLR;
    input [p1width - 1 : 0] D_IN;
    input                   ENQ;
@@ -59,7 +68,7 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
 
    // if the depth is too small, don't create an ill-sized array;
    // instead, make a 1-sized array and let the initial block report an error
-   reg [p1width - 1 : 0]     arr[0: ((p2depth >= 2) ? (p2depth2) : 0)];
+   reg [p1width - 1 : 0]     arr[0: p2depth2];
 
    reg [p1width - 1 : 0]     D_OUT;
    reg                       hasodata;
@@ -92,7 +101,7 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
         head          = {p3cntr_width {1'b0}} ;
         tail          = {p3cntr_width {1'b0}} ;
 
-        for (i = 0; i <= p2depth2 && p2depth > 2; i = i + 1)
+        for (i = 0; i <= p2depth2; i = i + 1)
           begin
              arr[i]   = D_OUT ;
           end
@@ -100,9 +109,9 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
    // synopsys translate_on
 `endif // BSV_NO_INITIAL_BLOCKS
 
-   always @(posedge CLK /* or negedge RST_N */ )
+   always @(posedge CLK /* or `BSV_RESET_EDGE RST */ )
      begin
-        if (!RST_N)
+        if (RST == `BSV_RESET_VALUE)
           begin
              head <= `BSV_ASSIGNMENT_DELAY {p3cntr_width {1'b0}} ;
              tail <= `BSV_ASSIGNMENT_DELAY {p3cntr_width {1'b0}} ;
@@ -120,7 +129,7 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
                    arr[i]  <= `BSV_ASSIGNMENT_DELAY {p1width {1'b0}} ;
                end
               */
-          end // if (RST_N == 0)
+          end // if (RST == `BSV_RESET_VALUE)
         else
          begin
 
@@ -190,8 +199,7 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
                       not_ring_full <= `BSV_ASSIGNMENT_DELAY ! (next_tail == head) ;
                    end
               end // if (ENQ)
-         end // else: !if(RST_N == 0)
-
+         end // else: !if(RST == `BSV_RESET_VALUE)
      end // always @ (posedge CLK)
 
    // synopsys translate_off
@@ -201,7 +209,7 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
 
         deqerror =  0;
         enqerror = 0;
-        if ( RST_N )
+        if (RST == ! `BSV_RESET_VALUE)
            begin
               if ( ! EMPTY_N && DEQ )
                 begin
@@ -224,16 +232,16 @@ module SizedFIFO(CLK, RST_N, D_IN, ENQ, FULL_N, D_OUT, DEQ, EMPTY_N, CLR);
         integer ok ;
         ok = 1 ;
 
-        if ( p2depth <= 2 )
+        if ( p2depth <= 1)
           begin
              ok = 0;
-             $display ( "ERROR SizedFIFO.v: depth parameter must be greater than 2" ) ;
+             $display ( "Warning SizedFIFO: %m -- depth parameter increased from %0d to 2", p2depth);
           end
 
         if ( p3cntr_width <= 0 )
           begin
              ok = 0;
-             $display ( "ERROR SizedFIFO.v: width parameter must be greater than 0" ) ;
+             $display ( "ERROR SizedFIFO: %m -- width parameter must be greater than 0" ) ;
           end
 
         if ( ok == 0 ) $finish ;

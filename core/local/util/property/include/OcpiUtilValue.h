@@ -119,12 +119,14 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
       void
 	unparse(std::string &s, bool append = false) const,
-	unparseElement(std::string &s, unsigned nSeq) const,
+	unparseElement(std::string &s, unsigned nSeq) const;
+      bool
 	unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset,
-			 unsigned nItems) const,
-	unparseValue(std::string &s, unsigned nSeq, unsigned nArray) const;
+			 unsigned nItems) const;
+      // return TRUE if value is an empty value
+      bool unparseValue(std::string &s, unsigned nSeq, unsigned nArray) const;
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-      void unparse##pretty(std::string &s, run ) const;
+      bool unparse##pretty(std::string &s, run ) const;
 	OCPI_PROPERTY_DATA_TYPES
         OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
         OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)

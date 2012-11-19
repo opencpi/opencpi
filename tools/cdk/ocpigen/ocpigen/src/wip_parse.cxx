@@ -1741,7 +1741,7 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
   for (unsigned i = 0; i < w->ports.size(); i++) {
     Port *p = w->ports[i];
     // Derive full names
-    bool mIn = masterIn(p);
+    bool mIn = p->masterIn();
     // ordinal == -1 means insert "%d" into the name for using latter
     if ((err = pattern(w, p, -1, wipN[p->type][mIn], true, !mIn, p->fullNameIn)) ||
         (err = pattern(w, p, -1, wipN[p->type][mIn], false, !mIn, p->fullNameOut)) ||

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2012 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,23 +19,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 17872 $
-// $Date: 2009-09-18 14:32:56 +0000 (Fri, 18 Sep 2009) $
+// $Revision: 29441 $
+// $Date: 2012-08-27 21:58:03 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
-`define BSV_ASSIGNMENT_DELAY
+  `define BSV_ASSIGNMENT_DELAY
+`endif
+
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
 `endif
 
 
+
 module SyncReset0 (
-		   IN_RST_N,
-		   OUT_RST_N
+		   IN_RST,
+		   OUT_RST
 		   );
 
-   input   IN_RST_N ;
-   output  OUT_RST_N ;
+   input   IN_RST ;
+   output  OUT_RST ;
 
-   assign  OUT_RST_N = IN_RST_N ;
+   assign  OUT_RST = IN_RST ;
 
 endmodule

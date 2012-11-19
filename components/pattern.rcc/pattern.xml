@@ -1,0 +1,5 @@
+<RccImplementation >
+  <xi:include href="pattern_spec.xml"/>
+  <property name="nextMeta" volatile='true'/>
+  <property name="nextData" volatile='true'/>
+</RccImplementation>

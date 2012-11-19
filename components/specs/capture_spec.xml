@@ -1,0 +1,46 @@
+<!-- 
+The message capture takes data from the "in" port.
+Properties:
+ messagesInFile: indicates that messages, including length and opcode, will be in the file
+ opcode: indicates a fixed opcode to use, defaults to zero
+ messageSize: indicates the size of messages
+ granularity: incidates that the last message will be truncated to be a multiple of this.
+-->
+<ComponentSpec name='capture'>
+
+  <DataInterfaceSpec Name="in" Producer="false">
+      <xi:include href="stream32_protocol.xml"/>
+  </DataInterfaceSpec>
+  <!-- The control register: initialized to zero
+       bit 0 is to enable receiving of messages - always set to 1 before start.
+       bit 1 is to indicate that capture should stop when memories are full (no wrap).
+       Future: bit 0 will be nuked soon
+  -->
+  <property name='control'           readable='true' writable='true' default='3'/> 
+
+  <!-- The register that indicates how many metadata records were written.
+       Initialized to 0.
+       i.e. each message captures uses the next metadata record, and wraps
+  -->
+  <property name='metadataCount'     volatile='true' writable='true'/>
+
+  <!-- Simple running counter of "words" captured. Initialized to 0. -->
+  <property name='dataCount'         volatile='true' writable='true'/>
+
+  <!-- Status and configurationbits.
+       [31:28]  4’hA (the hex nibble 0xA)
+       27       0
+       26       0
+       25       MetaFull 
+       24       DataFull
+      [23:20]   Log2 number of Bytes per Data Word
+      [19:16]   Log2 number of Bytes per Metadata Word
+      [15:8]    Log2 number of Data Words
+       [7:0]    Log2 number of Metadata Words
+  -->
+  <property name='status'            volatile='true'/>
+  <!-- Memory for metadata records. -->
+  <property name='metadata' arraydimensions='1024,4'/>
+  <!-- Memory for data words. -->
+  <property name='data' arraylength='1024'/>
+</ComponentSpec>

@@ -1,17 +1,17 @@
 <application done='file_write'>
-  <instance worker='file_read'>
+  <instance component='file_read'>
     <property name='filename' value='test.input'/>
     <property name='granularity' value='4'/>
     <property name='messageSize' value='16'/>
   </instance>
-  <instance worker='bias'>
+  <instance component='bias'>
     <property name='biasValue' value='0x01020304'/>
   </instance>
-  <instance worker='file_write'>
+  <instance component='file_write'>
     <property name='filename' value='test.outputwrong'/>
   </instance>
   <connection>
-    <port instance='file_read' name='out'/>
+    <port instance='file_read' name='out' xferrole='flowcontrol'/>
     <port instance='bias' name='in'/>
   </connection>
   <connection>

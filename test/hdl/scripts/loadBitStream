@@ -10,6 +10,7 @@ if ($#argv != 4) then
     echo '  'This loading script will automatically find the jtag position of the specified part.
     echo '  'If it doesn\'t find the part, it will say so and fail.
     echo '  'For now, you must select the correct USB port and part for the device.
+    echo '  'The arguments were: $argv
     exit 1
 endif
 #set bin = ./linux-x86_64-bin

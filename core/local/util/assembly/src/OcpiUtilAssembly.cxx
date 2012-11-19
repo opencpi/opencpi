@@ -77,7 +77,7 @@ namespace OCPI {
       if ((err = OE::checkAttrs(ax, "maxprocessors", "minprocessors", "roundrobin", "done", "name", NULL)) ||
 	  (err = OE::checkElements(ax, "instance", "connection", "policy", NULL)) ||
 	  (err = OE::getNumber(ax, "maxprocessors", &m_processors, &maxProcs)) ||
-	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &maxProcs)) ||
+	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &minProcs)) ||
 	  (err = OE::getBoolean(ax, "roundrobin", &roundRobin)))
 	return err;
       if (maxProcs)
@@ -147,17 +147,17 @@ namespace OCPI {
       return err;
     }
     const char *Assembly::Instance::parse(ezxml_t ix, ezxml_t ax) {
-      const char *err = OE::getRequiredString(ix, m_specName, "worker", "instance");
+      const char *err = OE::getRequiredString(ix, m_specName, "component", "instance");
       if (err ||
 	  (err = OE::checkElements(ix, "property", NULL)))
 	return err;
       OE::getOptionalString(ix, m_name, "name");
       OE::getOptionalString(ix, m_selection, "selection");
-      // default is worker%d unless there is only one, in which case it is "worker".
+      // default is component%d unless there is only one, in which case it is "component".
       if (m_name.empty()) {
 	unsigned me = 0, n = 0;
 	for (ezxml_t x = ezxml_cchild(ax, "instance"); x; x = ezxml_next(x))
-	  if (m_specName == ezxml_attr(x, "worker")) {
+	  if (m_specName == ezxml_attr(x, "component")) {
 	    if (x == ix)
 	      me = n;
 	    n++;
@@ -172,7 +172,7 @@ namespace OCPI {
       for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px), p++)
 	if ((err = p->parse(px)))
 	  return err;
-      return m_parameters.parse(ix, "name", "worker", "selection", NULL);
+      return m_parameters.parse(ix, "name", "component", "selection", NULL);
     }
 
     const char *Assembly::Connection::parse(ezxml_t cx, Assembly &a, unsigned &n) {

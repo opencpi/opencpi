@@ -19,16 +19,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 17872 $
-// $Date: 2009-09-18 14:32:56 +0000 (Fri, 18 Sep 2009) $
+// $Revision: 29442 $
+// $Date: 2012-08-27 21:58:10 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
 `define BSV_ASSIGNMENT_DELAY
 `endif
 
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
+`endif
+
+
+
 // A separate module which instantiates a simple reset combining primitive.
-// The primitive is simply an AND gate.
+// The primitive is simply an AND gate for negative resets,  an OR gate for positive resets.
 module ResetEither(A_RST,
                    B_RST,
                    RST_OUT
@@ -39,6 +49,6 @@ module ResetEither(A_RST,
 
    output           RST_OUT;
 
-   assign RST_OUT = A_RST & B_RST ;
+   assign RST_OUT = ((A_RST == `BSV_RESET_VALUE) || (B_RST == `BSV_RESET_VALUE)) ? `BSV_RESET_VALUE : ~ `BSV_RESET_VALUE;
 
-endmodule                
+endmodule

@@ -273,6 +273,7 @@ public:
   inline bool masterIn() {
   return
     type == WCIPort ? 1 :
+    type == WTIPort ? 1 :
     type == WMemIPort ? (u.wmemi.isSlave ? 1 : 0) :
     type == WMIPort ? 0 :
     type == WSIPort ? (u.wdi.isProducer ? 0 : 1) :
@@ -423,16 +424,18 @@ class  Worker {
   Signal *signals;
 };
 
-
+#if 0
 // Are master signals inputs at this port?
 static inline bool masterIn(Port *p) {
   return
     p->type == WCIPort ? 1 :
+    p->type == WTIPort ? 1 :
     p->type == WMemIPort ? (p->u.wmemi.isSlave ? 1 : 0) :
     p->type == WMIPort ? 0 :
     p->type == WSIPort ? (p->u.wdi.isProducer ? 0 : 1) :
     false;
 }
+#endif
 
 #define SKEL "_skel"
 #define IMPL "_impl"

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2012 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,20 +19,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 24080 $
-// $Date: 2011-05-18 19:32:52 +0000 (Wed, 18 May 2011) $
+// $Revision: 29442 $
+// $Date: 2012-08-27 21:58:10 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
 `define BSV_ASSIGNMENT_DELAY
 `endif
 
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
+`endif
+
 
 module ResetToBool( RST, VAL);
-   
+
    input  RST;
    output VAL;
-   
-   assign VAL = (RST == 1'b0);
-   
+
+   assign VAL = (RST == `BSV_RESET_VALUE);
+
 endmodule

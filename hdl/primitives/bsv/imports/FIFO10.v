@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2012 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 24080 $
-// $Date: 2011-05-18 19:32:52 +0000 (Wed, 18 May 2011) $
+// $Revision: 29441 $
+// $Date: 2012-08-27 21:58:03 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
-`define BSV_ASSIGNMENT_DELAY
+  `define BSV_ASSIGNMENT_DELAY
+`endif
+
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
 `endif
 
 
+
 // Depth 1 FIFO data size 0!
-module FIFO10(CLK, 
-              RST_N, 
-              ENQ, 
-              FULL_N, 
-              DEQ, 
-              EMPTY_N, 
+module FIFO10(CLK,
+              RST,
+              ENQ,
+              FULL_N,
+              DEQ,
+              EMPTY_N,
               CLR
               );
 
    parameter guarded = 1;
 
    input                  CLK;
-   input                  RST_N;
+   input                  RST;
    input                  ENQ;
    input                  DEQ;
    input                  CLR ;
@@ -52,26 +61,26 @@ module FIFO10(CLK,
    reg                    empty_reg ;
 
    assign                 EMPTY_N = empty_reg ;
-   
+
 `ifdef BSV_NO_INITIAL_BLOCKS
 `else // not BSV_NO_INITIAL_BLOCKS
    // synopsys translate_off
-   initial 
+   initial
      begin
         empty_reg = 1'b0;
      end // initial begin
    // synopsys translate_on
 `endif // BSV_NO_INITIAL_BLOCKS
 
-   
+
    assign FULL_N = !empty_reg;
 
-   always@(posedge CLK /* or negedge RST_N */)
+   always@(posedge CLK /* or `BSV_RESET_EDGE RST */)
      begin
-        if (!RST_N)
+        if (RST == `BSV_RESET_VALUE)
           begin
              empty_reg <= `BSV_ASSIGNMENT_DELAY 1'b0;
-          end // if (RST_N == 0)        
+          end // if (RST == `BSV_RESET_VALUE)
         else
            begin
               if (CLR)
@@ -86,29 +95,29 @@ module FIFO10(CLK,
                 begin
                    empty_reg <= `BSV_ASSIGNMENT_DELAY 1'b0;
                 end // if (DEQ)
-           end // else: !if(RST_N == 0)
-     end // always@ (posedge CLK or negedge RST_N)
-   
+           end // else: !if(RST == `BSV_RESET_VALUE)
+     end // always@ (posedge CLK or `BSV_RESET_EDGE RST)
+
    // synopsys translate_off
    always@(posedge CLK)
      begin: error_checks
         reg deqerror, enqerror ;
-        
+
         deqerror =  0;
         enqerror = 0;
-        if ( RST_N )
+        if (RST == ! `BSV_RESET_VALUE)
            begin
               if ( ! empty_reg && DEQ )
                 begin
-                   deqerror = 1 ;             
+                   deqerror = 1 ;
                    $display( "Warning: FIFO10: %m -- Dequeuing from empty fifo" ) ;
                 end
               if ( ! FULL_N && ENQ && (!DEQ || guarded) )
                 begin
-                   enqerror =  1 ;             
+                   enqerror =  1 ;
                    $display( "Warning: FIFO10: %m -- Enqueuing to a full fifo" ) ;
                 end
-           end // if ( RST_N )
+           end // if (RST == ! `BSV_RESET_VALUE)
      end
    // synopsys translate_on
 

@@ -62,8 +62,10 @@ fi
 MEMMAP=`tr ' ' '\n' < /proc/cmdline | grep -m 1 '^memmap='`
 if [ "$MEMMAP" == "" ] ; then
   echo No reserved DMA memory found on the linux boot command line.
+  INSARG=
 else
   echo Found reserved DMA memory on the linux boot command line: =$MEMMAP=.
+  INSARG=opencpi_$MEMMAP
 fi
 if [ ! -r $MODPATH ] ; then
   echo The driver file: \"$MODPATH\" is missing or was never built.
@@ -85,7 +87,7 @@ if [ $1 == status ] ; then
 fi
 sudo cp $RULESPATH /etc/udev/rules.d
 sudo /sbin/udevcontrol reload_rules
-sudo /sbin/insmod $MODPATH opencpi_$MEMMAP
+sudo /sbin/insmod $MODPATH $INSARG
 #sudo /sbin/modprobe -v 
 if [ $? == 0 ] ; then
   # check /dev?

@@ -297,7 +297,7 @@ volatile BufferState* InputBuffer::getState()
       ocpiAssert(full == FF_EMPTY_VALUE ||
 		 full == FF_FULL_VALUE);
       if (full != FF_EMPTY_VALUE) {
-        m_tState.bufferIsFull = FF_FULL_VALUE; // m_state[0][n].bufferIsFull;
+        m_tState.bufferIsFull = m_state[0][n].bufferIsFull;
 
 
 	ocpiDebug("&&&&&&&&   found state value at %d", n );
@@ -316,8 +316,9 @@ volatile BufferState* InputBuffer::getState()
     int mb = getPort()->getMailbox();
 
     m_tState.bufferIsFull = m_myShadowsRemoteStates[mb]->bufferIsEmpty;
-    ocpiAssert(m_tState.bufferIsEmpty == EF_EMPTY_VALUE ||
-	       m_tState.bufferIsEmpty == EF_FULL_VALUE);
+    uint32_t full = m_tState.bufferIsFull & FF_MASK;
+    ocpiAssert(full == EF_EMPTY_VALUE ||
+	       full == EF_FULL_VALUE);
 
 #ifdef LEAST_BUSY
     m_tState.pad = m_myShadowsRemoteStates[mb]->pad;
@@ -428,10 +429,9 @@ bool InputBuffer::isEmpty()
        return false;
      }
      else {  // We are a real input
-      ocpiAssert(state->bufferIsFull == FF_EMPTY_VALUE ||
-		 state->bufferIsFull == FF_FULL_VALUE);
-       bool empty = 
-         (state->bufferIsFull == FF_EMPTY_VALUE) ? true : false;       
+       uint32_t full = state->bufferIsFull & FF_MASK;
+      ocpiAssert(full == FF_EMPTY_VALUE || full == FF_FULL_VALUE);
+      bool empty = full == FF_EMPTY_VALUE;
        if ( empty ) {
 
          OCPI::OS::uint64_t mdata;
@@ -462,15 +462,15 @@ bool InputBuffer::isEmpty()
   ocpiDebug("Shadow(%d), Buffer state = %x", (isShadow() == true) ? 1:0, state->bufferIsFull );
 #endif
 
+  uint32_t flag = state->bufferIsFull & FF_MASK;
   if (isShadow()) {
-      ocpiAssert(state->bufferIsEmpty == EF_EMPTY_VALUE ||
-		 state->bufferIsEmpty == EF_FULL_VALUE);
+      ocpiAssert(flag == EF_EMPTY_VALUE ||
+		 flag == EF_FULL_VALUE);
   } else {
-      ocpiAssert(state->bufferIsFull == FF_EMPTY_VALUE ||
-		 state->bufferIsFull == FF_FULL_VALUE);
+      ocpiAssert(flag == FF_EMPTY_VALUE ||
+		 flag == FF_FULL_VALUE);
   }
   bool empty;
-  uint32_t flag = state->bufferIsFull & FF_MASK;
   empty = (flag == (isShadow() ? EF_EMPTY_VALUE : FF_EMPTY_VALUE)) ? true : false;
 
 

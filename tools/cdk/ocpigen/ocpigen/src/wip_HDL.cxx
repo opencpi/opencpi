@@ -54,7 +54,7 @@ namespace OU = OCPI::Util;
  * generate WIP attribute constants for use by code (widths, etc.)
  * sthreadbusyu alias?
  */
-static const char *wipNames[] = {"Unknown", "WCI", "WSI", "WMI", "WDI", "WMemI", 0};
+static const char *wipNames[] = {"Unknown", "WCI", "WSI", "WMI", "WDI", "WMemI", "WTI", 0};
 
 const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master, std::string &suff,
 		    bool port) {
@@ -234,6 +234,10 @@ emitPortDescription(Port *p, Worker *w, FILE *f) {
       fprintf(f, "  %s   TalkBack: %s\n", comment, BOOL(p->u.wmi.talkBack));
     break;
   case WTIPort:
+    fprintf(f, "  %s   SecondsWidth: %u\n", comment, p->u.wti.secondsWidth);
+    fprintf(f, "  %s   FractionWidth: %u\n", comment, p->u.wti.fractionWidth);
+    fprintf(f, "  %s   AllowUnavailable: %s\n", comment, BOOL(p->u.wti.allowUnavailable));
+    fprintf(f, "  %s   DataWidth: %u\n", comment, p->dataWidth);
     break;
   case WMemIPort:
     fprintf(f, "  %s   DataWidth: %u\n", comment, p->dataWidth);
@@ -765,7 +769,7 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	fprintf(f, "  input          %s;\n", c->signal);
     for (unsigned i = 0; i < w->ports.size(); i++) {
       Port *p = w->ports[i];
-      bool mIn = masterIn(p);
+      bool mIn = p->masterIn();
       for (unsigned n = 0; n < p->count; n++) {
 	if (p->clock->port == p && n == 0)
 	  fprintf(f, "  input          %s;\n", p->clock->signal);

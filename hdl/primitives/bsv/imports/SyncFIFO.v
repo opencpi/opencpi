@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2010 Bluespec, Inc.
+// Copyright (c) 2000-2012 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,13 +19,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 24080 $
-// $Date: 2011-05-18 19:32:52 +0000 (Wed, 18 May 2011) $
+// $Revision: 29441 $
+// $Date: 2012-08-27 21:58:03 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
-`define BSV_ASSIGNMENT_DELAY
+  `define BSV_ASSIGNMENT_DELAY
 `endif
+
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
+`endif
+
 
 // A clock synchronization FIFO where the enqueue and dequeue sides are in
 // different clock domains.
@@ -37,7 +46,7 @@
 // is delayed due to synchronization latency.
 module SyncFIFO(
                 sCLK,
-                sRST_N,
+                sRST,
                 dCLK,
                 sENQ,
                 sD_IN,
@@ -54,7 +63,7 @@ module SyncFIFO(
 
    // input clock domain ports
    input                     sCLK ;
-   input                     sRST_N ;
+   input                     sRST ;
    input                     sENQ ;
    input [dataWidth -1 : 0]  sD_IN ;
    output                    sFULL_N ;
@@ -85,7 +94,7 @@ module SyncFIFO(
    wire                      dNextNotEmpty;
 
    // Reset generation
-   wire                      dRST_N ;
+   wire                      dRST ;
 
    // flops to sychronize enqueue and dequeue point across domains
    reg [indxWidth : 0]       dSyncReg1, dEnqPtr ;
@@ -94,7 +103,7 @@ module SyncFIFO(
    wire [indxWidth - 1 :0]   sEnqPtrIndx, dDeqPtrIndx ;
 
    // Resets
-   assign                    dRST_N = sRST_N ;
+   assign                    dRST = sRST ;
 
    // Outputs
    assign                    dD_OUT   = dDoutReg     ;
@@ -117,14 +126,14 @@ module SyncFIFO(
    assign sNextNotFull   = (sGEnqPtr [indxWidth+1:1] ^ msb12set) != sDeqPtr ;
    assign sFutureNotFull = (sGEnqPtr1[indxWidth+1:1] ^ msb12set) != sDeqPtr ;
 
-   always @(posedge sCLK or negedge sRST_N)
+   always @(posedge sCLK or `BSV_RESET_EDGE sRST)
      begin
-        if (sRST_N == 0)
+        if (sRST == `BSV_RESET_VALUE)
           begin
              sGEnqPtr    <= `BSV_ASSIGNMENT_DELAY {(indxWidth +2 ) {1'b0}} ;
              sGEnqPtr1   <= `BSV_ASSIGNMENT_DELAY { {indxWidth {1'b0}}, 2'b11} ;
              sNotFullReg <= `BSV_ASSIGNMENT_DELAY 1'b0 ; // Mark as full during reset to avoid spurious loads
-          end // if (sRST_N == 0)
+          end // if (sRST == `BSV_RESET_VALUE)
         else
            begin
               if ( sENQ )
@@ -137,24 +146,24 @@ module SyncFIFO(
                 begin
                    sNotFullReg <= `BSV_ASSIGNMENT_DELAY  sNextNotFull ;
                 end // else: !if( sENQ )
-           end // else: !if(sRST_N == 0)
-     end // always @ (posedge sCLK or negedge sRST_N)
+           end // else: !if(sRST == `BSV_RESET_VALUE)
+     end // always @ (posedge sCLK or `BSV_RESET_EDGE sRST)
 
 
    // Enqueue pointer synchronizer to dCLK
-   always @(posedge dCLK  or negedge dRST_N)
+   always @(posedge dCLK  or `BSV_RESET_EDGE dRST)
      begin
-        if (dRST_N == 0)
+        if (dRST == `BSV_RESET_VALUE)
           begin
              dSyncReg1 <= `BSV_ASSIGNMENT_DELAY {(indxWidth + 1) {1'b0}} ;
              dEnqPtr   <= `BSV_ASSIGNMENT_DELAY {(indxWidth + 1) {1'b0}} ;
-          end // if (dRST_N == 0)
+          end // if (dRST == `BSV_RESET_VALUE)
         else
           begin
              dSyncReg1 <= `BSV_ASSIGNMENT_DELAY sGEnqPtr[indxWidth+1:1] ; // Clock domain crossing
              dEnqPtr   <= `BSV_ASSIGNMENT_DELAY dSyncReg1 ;
-          end // else: !if(dRST_N == 0)
-     end // always @ (posedge dCLK  or negedge dRST_N)
+          end // else: !if(dRST == `BSV_RESET_VALUE)
+     end // always @ (posedge dCLK  or `BSV_RESET_EDGE dRST)
    ////////////////////////////////////////////////////////////////////////
 
 
@@ -162,14 +171,14 @@ module SyncFIFO(
    // Enqueue Pointer and increment logic
    assign dNextNotEmpty   = dGDeqPtr[indxWidth+1:1]  != dEnqPtr ;
 
-   always @(posedge dCLK or negedge dRST_N)
+   always @(posedge dCLK or `BSV_RESET_EDGE dRST)
      begin
-        if (dRST_N == 0)
+        if (dRST == `BSV_RESET_VALUE)
           begin
              dGDeqPtr     <= `BSV_ASSIGNMENT_DELAY {(indxWidth + 2) {1'b0}} ;
              dGDeqPtr1    <= `BSV_ASSIGNMENT_DELAY {{indxWidth {1'b0}}, 2'b11 } ;
              dNotEmptyReg <= `BSV_ASSIGNMENT_DELAY 1'b0 ;
-          end // if (dRST_N == 0)
+          end // if (dRST == `BSV_RESET_VALUE)
         else
            begin
               if ((!dNotEmptyReg || dDEQ) && dNextNotEmpty) begin
@@ -181,23 +190,23 @@ module SyncFIFO(
               else if (dDEQ && !dNextNotEmpty) begin
                  dNotEmptyReg <= `BSV_ASSIGNMENT_DELAY 1'b0;
               end
-           end // else: !if(dRST_N == 0)
-     end // always @ (posedge dCLK or negedge dRST_N)
+           end // else: !if(dRST == `BSV_RESET_VALUE)
+     end // always @ (posedge dCLK or `BSV_RESET_EDGE dRST)
 
     // Dequeue pointer synchronized to sCLK
-    always @(posedge sCLK  or negedge sRST_N)
+    always @(posedge sCLK  or `BSV_RESET_EDGE sRST)
       begin
-         if (sRST_N == 0)
+         if (sRST == `BSV_RESET_VALUE)
            begin
               sSyncReg1 <= `BSV_ASSIGNMENT_DELAY {(indxWidth + 1) {1'b0}} ;
               sDeqPtr   <= `BSV_ASSIGNMENT_DELAY {(indxWidth + 1) {1'b0}} ; // When reset mark as not empty
-           end // if (sRST_N == 0)
+           end // if (sRST == `BSV_RESET_VALUE)
          else
            begin
               sSyncReg1 <= `BSV_ASSIGNMENT_DELAY dGDeqPtr[indxWidth+1:1] ; // clock domain crossing
               sDeqPtr   <= `BSV_ASSIGNMENT_DELAY sSyncReg1 ;
-           end // else: !if(sRST_N == 0)
-      end // always @ (posedge sCLK  or negedge sRST_N)
+           end // else: !if(sRST == `BSV_RESET_VALUE)
+      end // always @ (posedge sCLK  or `BSV_RESET_EDGE sRST)
    ////////////////////////////////////////////////////////////////////////
 
 `ifdef BSV_NO_INITIAL_BLOCKS
@@ -308,13 +317,13 @@ module testSyncFIFO() ;
    parameter fifodepth = 32;
    parameter fifoidx = 5;
 
-   wire      sCLK,  dCLK, dRST_N ;
+   wire      sCLK,  dCLK, dRST ;
    wire      sENQ, dDEQ;
    wire      sFULL_N, dEMPTY_N ;
    wire [dsize -1:0] sDIN, dDOUT ;
 
    reg [dsize -1:0]  sCNT, dCNT ;
-   reg sRST_N, sCLR ;
+   reg sRST, sCLR ;
 
    ClockGen#(15,14,10)  sc( sCLK );
    ClockGen#(11,12,2600)  dc( dCLK );
@@ -325,14 +334,14 @@ module testSyncFIFO() ;
         dCNT = 0;
         sCLR = 1'b0 ;
 
-        sRST_N = 0 ;
+        sRST = `BSV_RESET_VALUE ;
         $display( "running test" ) ;
 
         $dumpfile("SyncFIFO.vcd");
         $dumpvars(5,testSyncFIFO) ;
         $dumpon ;
         #200 ;
-        sRST_N = 1 ;
+        sRST = !`BSV_RESET_VALUE ;
 
 
         #100000 $finish ;
@@ -348,7 +357,7 @@ module testSyncFIFO() ;
       end
 
    SyncFIFO #(dsize,fifodepth,fifoidx)
-     dut( sCLK, sRST_N, dCLK, sENQ, sDIN,
+     dut( sCLK, sRST, dCLK, sENQ, sDIN,
           sFULL_N, // sCLR,
           dDEQ, dDOUT, dEMPTY_N );
 

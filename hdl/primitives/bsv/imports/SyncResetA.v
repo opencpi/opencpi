@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2012 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,45 +19,55 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 20862 $
-// $Date: 2010-06-07 18:20:35 +0000 (Mon, 07 Jun 2010) $
+// $Revision: 29452 $
+// $Date: 2012-08-27 22:01:48 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
-`define BSV_ASSIGNMENT_DELAY
+  `define BSV_ASSIGNMENT_DELAY
 `endif
+
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
+`endif
+
 
 
 // A synchronization module for resets.   Output resets are held for
 // RSTDELAY+1 cycles, RSTDELAY >= 0.  Reset assertion is asynchronous,
 // while deassertion is synchronized to the clock.
 module SyncResetA (
-                   IN_RST_N,
+                   IN_RST,
                    CLK,
-                   OUT_RST_N
+                   OUT_RST
                    );
 
    parameter          RSTDELAY = 1  ; // Width of reset shift reg
 
    input              CLK ;
-   input              IN_RST_N ;
-   output             OUT_RST_N ;
+   input              IN_RST ;
+   output             OUT_RST ;
 
    reg [RSTDELAY:0]   reset_hold ;
+   wire [RSTDELAY+1:0] next_reset = {reset_hold, ~ `BSV_RESET_VALUE} ;
 
-   assign  OUT_RST_N = reset_hold[RSTDELAY] ;
+   assign  OUT_RST = reset_hold[RSTDELAY] ;
 
-   always @( posedge CLK or negedge IN_RST_N )
+   always @( posedge CLK or `BSV_RESET_EDGE IN_RST )
      begin
-        if (!IN_RST_N)
+        if (IN_RST == `BSV_RESET_VALUE)
            begin
-              reset_hold <= `BSV_ASSIGNMENT_DELAY 'b0 ;
+              reset_hold <= `BSV_ASSIGNMENT_DELAY {RSTDELAY+1 {`BSV_RESET_VALUE}} ;
            end
         else
           begin
-             reset_hold <= `BSV_ASSIGNMENT_DELAY ( reset_hold << 1'b1 ) | 'b1 ;
+             reset_hold <= `BSV_ASSIGNMENT_DELAY next_reset[RSTDELAY:0];
           end
-     end // always @ ( posedge CLK or negedge IN_RST_N )
+     end // always @ ( posedge CLK or  `BSV_RESET_EDGE IN_RST )
 
 `ifdef BSV_NO_INITIAL_BLOCKS
 `else // not BSV_NO_INITIAL_BLOCKS
@@ -66,7 +76,7 @@ module SyncResetA (
      begin
         #0 ;
         // initialize out of reset forcing the designer to do one
-        reset_hold = {(RSTDELAY + 1) {1'b1}} ;
+        reset_hold = {(RSTDELAY + 1) {~ `BSV_RESET_VALUE}} ;
      end
    // synopsys translate_on
 `endif // BSV_NO_INITIAL_BLOCKS

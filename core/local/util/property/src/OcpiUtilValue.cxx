@@ -723,28 +723,41 @@ namespace OCPI {
       return err;
 #endif
 
-void Value::
+bool Value::
 unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, unsigned nItems) const {
   unsigned
     nextDim = dim + 1,
     dimension = m_vt->m_arrayDimensions[dim],
     skip = nItems/dimension;
-  for (unsigned n = 0; n < m_vt->m_arrayDimensions[dim]; n++)
+  bool prevNull = false, allNull = true;
+  unsigned length = 0;
+  std::string v;
+  for (unsigned n = 0; n < m_vt->m_arrayDimensions[dim]; n++) {
+    bool thisNull;
     if (nextDim < m_vt->m_arrayRank) {
-      s += '{';
-      unparseDimension(s, nseq, nextDim, offset, skip);
-      s += '}';
+      v += '{';
+      thisNull = unparseDimension(v, nseq, nextDim, offset, skip);
+      v += '}';
       offset += skip;
     } else {
       if (n != 0)
-	s+= ',';
+	v += ',';
       if (needsCommaDimension()) {
-	s += '{';
-	unparseValue(s, nseq, offset++);
-	s += '}';
+	v += '{';
+	thisNull = unparseValue(v, nseq, offset++);
+	v += '}';
       } else
-	unparseValue(s, nseq, offset++);
+	thisNull = unparseValue(v, nseq, offset++);
     }
+    if (thisNull) {
+      if (!prevNull)
+	length = v.length();
+      prevNull = true;
+    } else
+      allNull = prevNull = false;
+  }
+  s.append(v.c_str(), length ? length : v.length());
+  return allNull;
 }
 
 void Value::
@@ -785,15 +798,15 @@ void Value::unparse(std::string &s, bool append) const {
     unparseElement(s, 0);
 }
 
-void Value::
+bool Value::
 unparseValue(std::string &s, unsigned nSeq, unsigned nArray) const {
   switch (m_vt->m_baseType) {
-#define OCPI_DATA_TYPE(sca,c,u,b,run,pretty,storage)		 \
-  case OA::OCPI_##pretty:					 \
-    unparse##pretty(s,						 \
-		    m_vt->m_isSequence || m_vt->m_arrayRank ?	 \
-		    m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
-		    m_##pretty);				 \
+#define OCPI_DATA_TYPE(sca,c,u,b,run,pretty,storage)     		 \
+  case OA::OCPI_##pretty:		        			 \
+    return unparse##pretty(s,						 \
+		           m_vt->m_isSequence || m_vt->m_arrayRank ?	 \
+		           m_p##pretty[nSeq * m_vt->m_nItems + nArray] : \
+		           m_##pretty); 				 \
       break;
     OCPI_PROPERTY_DATA_TYPES
     OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
@@ -802,12 +815,14 @@ unparseValue(std::string &s, unsigned nSeq, unsigned nArray) const {
 #undef OCPI_DATA_TYPE
   case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
   }
+  return false;
 }
-void Value::
+bool Value::
 unparseBool(std::string &s, bool val) const {
   s += val ? "true" : "false";
+  return !val;
 }
-void Value::
+bool Value::
 unparseChar(std::string &s, char argVal) const {
   uint8_t val = argVal & 0xff;
   if (isprint(val)) {
@@ -842,8 +857,9 @@ unparseChar(std::string &s, char argVal) const {
     }
     s += c;
   }
+  return argVal == 0;
 }
-void Value::
+bool Value::
 unparseDouble(std::string &s, double val) const {
   char *cp;
   asprintf(&cp, "%g", val);
@@ -858,47 +874,57 @@ unparseDouble(std::string &s, double val) const {
   s += cp;
   free(cp);
   //  doFormat(s, "%g", val);
+  return *(uint64_t *)&val == 0;
 }
-void Value::
+bool Value::
 unparseFloat(std::string &s, float val) const {
   unparseDouble(s, (double)val);
+  return *(uint32_t*)&val == 0;
   //  doFormat(s, "%g", (double)val);
 }
-void Value::
+bool Value::
 unparseShort(std::string &s, int16_t val) const {
   doFormat(s, "%ld", (long)val);
+  return val == 0;
 }
-void Value::
+bool Value::
 unparseLong(std::string &s, int32_t val) const {
   doFormat(s, "%ld", (long)val);
+  return val == 0;
 }
-void Value::
+bool Value::
 unparseUChar(std::string &s, uint8_t val) const {
   doFormat(s, "0x%0x", val);
+  return val == 0;
 }
-void Value::
+bool Value::
 unparseULong(std::string &s, uint32_t val) const {
   doFormat(s, "%lu", (unsigned long)val);
+  return val == 0;
 }
-void Value::
+bool Value::
 unparseUShort(std::string &s, uint16_t val) const {
   doFormat(s, "%lu", (unsigned long)val);
+  return val == 0;
 }
-void Value::
+bool Value::
 unparseLongLong(std::string &s, int64_t val) const {
   doFormat(s, "%lld", (long long)val);
+  return val == 0;
 }
-void Value::
+bool Value::
 unparseULongLong(std::string &s, uint64_t val) const {
   doFormat(s, "%llu", (unsigned long long)val);
+  return val == 0;
 }
-void Value::
+bool Value::
 unparseString(std::string &s, const char *val) const {
   if (!*val)
     s += "\"\"";
   else
     while (*val)
       unparseChar(s, *val++);
+  return *val == 0;
 }
 bool Value::needsComma() const {
   return m_vt->m_isSequence || m_vt->m_arrayRank == 1 || m_vt->m_baseType == OA::OCPI_Struct;
@@ -909,9 +935,10 @@ bool Value::needsCommaDimension() const {
 bool Value::needsCommaElement() const {
   return m_vt->m_arrayRank == 1 || m_vt->m_baseType == OA::OCPI_Struct;
 }
-void Value::
+bool Value::
 unparseStruct(std::string &s, StructValue val) const {
   bool seenOne = false;
+  
   for (unsigned n = 0; n < m_vt->m_nMembers; n++) {
     Value *v = *val++;
     if (v) {
@@ -928,8 +955,9 @@ unparseStruct(std::string &s, StructValue val) const {
       seenOne = true;
     }
   }
+  return !seenOne;
 }
-void Value::
+bool Value::
 unparseType(std::string &s, TypeValue val) const {
   if (val->needsComma()) {
     s += '{';
@@ -937,10 +965,12 @@ unparseType(std::string &s, TypeValue val) const {
     s += '}';
   } else
     val->unparse(s, true);
+  return false;
 }
-void Value::
+bool Value::
 unparseEnum(std::string &s, EnumValue val) const {
   s += m_vt->m_enums[val];
+  return val == 0;
 }
 #if 0
 

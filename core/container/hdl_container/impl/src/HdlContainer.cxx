@@ -161,10 +161,14 @@ namespace OCPI {
 	;
       if (n > 2)
 	m_platform.assign(myUUID.platform, n);
+      else if (myUUID.platform[0] == '\240' && myUUID.platform[1] == 0)
+	m_platform = "ml605";
       for (n = 0; myUUID.device[n] && n < sizeof(myUUID.device); n++)
 	;
       if (n > 2)
 	m_part.assign(myUUID.device, n);
+      else if (myUUID.device[0] == '`' && myUUID.device[1] == 0)
+	m_part = "xc6vlx240t";
       for (n = 0; myUUID.load[n] && n < sizeof(myUUID.load); n++)
 	;
       if (n > 1)
@@ -839,8 +843,8 @@ OCPI_DATA_TYPES
            ezxml_t adXml,   // the xml adapter instance attached to this port if any
 	   bool argIsProvider) :
         OC::PortBase<Worker,Port,ExternalPort>(w, mPort, argIsProvider,
-					       (1 << OCPI::RDT::Passive) |
-					       //  (1 << OCPI::RDT::ActiveFlowControl) |
+					       // (1 << OCPI::RDT::Passive) |
+					       // (1 << OCPI::RDT::ActiveFlowControl) |
 					       (1 << OCPI::RDT::ActiveMessage), params),
 	// The WCI will control the interconnect worker.
 	// If there is no such worker, usable will fail.
@@ -982,57 +986,6 @@ OCPI_DATA_TYPES
                                                 (myDesc.metaDataBaseAddr -
                                                  myDesc.dataBufferBaseAddr));
       }
-#if 0
-      // I am an input port, the other guy is an output port.
-      // My job is to emulate a bitstream that consumes from me, and produces at otherPort
-      // This is for testing
-      void loopback(const OA::PValue *pProps, OA::Port &apiUserPort, const OA::PValue *uProps) {
-	OC::Port &uPort = *static_cast<OC::Port*>(&apiUserPort);
-        ocpiAssert(isProvider());
-        ocpiAssert(! uPort.isProvider());
-        // default to something useful
-        getData().data.role = OCPI::RDT::Passive;
-        uPort.getData().data.role = OCPI::RDT::Passive;
-        applyConnectParams(pProps);
-        uPort.applyConnectParams(uProps);
-        // We must initialize the emulated register file for use by other software
-        Port &other = *static_cast<Port *>(&uPort);
-        m_ocdpRegisters->nRemoteDone = 0;
-        m_ocdpRegisters->nReady = myDesc.nBuffers;
-        other.m_ocdpRegisters->nRemoteDone = 0;
-        other.m_ocdpRegisters->nReady = 0;
-        unsigned doneCount = 0, copyCount = 0, myUserNext = 0, otherUserNext = 0;
-        for (;;) {
-          if (m_ocdpRegisters->nRemoteDone != 0) {
-            doneCount++;
-            ocpiAssert(m_ocdpRegisters->nReady != 0);
-            m_ocdpRegisters->nReady--;
-            m_ocdpRegisters->nRemoteDone = 0;
-            copyCount++;
-          }
-          if (other.m_ocdpRegisters->nRemoteDone != 0) {
-            ocpiAssert(other.m_ocdpRegisters->nReady != 0);
-            other.m_ocdpRegisters->nReady--;
-            other.m_ocdpRegisters->nRemoteDone = 0;
-          }
-          while (copyCount && other.m_ocdpRegisters->nReady != other.myDesc.nBuffers) {
-            uint8_t *remoteData = userDataBaseAddr + myUserNext * myDesc.dataBufferSize;
-            volatile OcdpMetadata *remoteMetadata = userMetadataBaseAddr + myUserNext;
-            if (++myUserNext >= myDesc.nBuffers)
-              myUserNext = 0;
-            uint8_t *otherData = other.userDataBaseAddr + otherUserNext * other.myDesc.dataBufferSize;
-            volatile OcdpMetadata *otherMetadata = other.userMetadataBaseAddr + otherUserNext;
-            memcpy((void *)otherMetadata, (void *)remoteMetadata, sizeof(OcdpMetadata));
-            memcpy(otherData, remoteData, remoteMetadata->length);
-            m_ocdpRegisters->nReady++;
-            other.m_ocdpRegisters->nReady++;
-            if (++otherUserNext >= other.myDesc.nBuffers)
-              otherUserNext = 0;
-            copyCount--;
-          }
-        }
-      }
-#endif
 
       // All the info is in.  Do final work to (locally) establish the connection
       // If we're output, we must return the flow control descriptor
@@ -1057,14 +1010,17 @@ OCPI_DATA_TYPES
 	ocpiDebug("Other ep = %s\n", other.desc.oob.oep );
         switch (myRole) {
 	  uint64_t addr;
+	  uint32_t pitch;
         case OCPI::RDT::ActiveFlowControl:
           myOcdpRole = OCDP_ACTIVE_FLOWCONTROL;
-	  addr = other.desc.oob.address + (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+	  addr = other.desc.oob.address +
+	    (isProvider() ? other.desc.emptyFlagBaseAddr : other.desc.fullFlagBaseAddr);
+	  pitch = isProvider() ? other.desc.emptyFlagPitch : other.desc.fullFlagPitch;
           m_properties.set32Register(remoteFlagBase, OcdpProperties, addr);
 	  m_properties.set32Register(remoteFlagHi, OcdpProperties, addr > 32);
-          m_properties.set32Register(remoteFlagPitch, OcdpProperties,
-				      (isProvider() ?
-				       other.desc.emptyFlagPitch : other.desc.fullFlagPitch));
+          m_properties.set32Register(remoteFlagPitch, OcdpProperties, pitch);
+	  ocpiDebug("HDL Port is %s, AFC, flag is 0x%" PRIx64 "pitch %u", 
+		    isProvider() ? "consumer" : "producer", addr, pitch);
           break;
         case OCPI::RDT::ActiveMessage:
           myOcdpRole = OCDP_ACTIVE_MESSAGE;

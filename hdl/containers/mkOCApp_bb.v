@@ -90,6 +90,18 @@ module mkOCApp4B(RST_N_rst_0,
 		 wci_s_7_SThreadBusy,
 		 wci_s_7_SFlag,
 		 wci_s_7_MFlag,
+		 wti_s_0_MCmd,
+		 wti_s_0_MData,
+		 wti_s_0_SThreadBusy,
+		 wti_s_0_SReset_n,
+		 wti_s_1_MCmd,
+		 wti_s_1_MData,
+		 wti_s_1_SThreadBusy,
+		 wti_s_1_SReset_n,
+		 wti_s_2_MCmd,
+		 wti_s_2_MData,
+		 wti_s_2_SThreadBusy,
+		 wti_s_2_SReset_n,
 		 wmiM0_MCmd,
 		 wmiM0_MReqLast,
 		 wmiM0_MReqInfo,
@@ -412,6 +424,42 @@ module mkOCApp4B(RST_N_rst_0,
 
   // action method wci_s_7_mFlag
   input  [1 : 0] wci_s_7_MFlag;
+
+  // action method wti_s_0_mCmd
+  input  [2 : 0] wti_s_0_MCmd;
+
+  // action method wti_s_0_mData
+  input  [63 : 0] wti_s_0_MData;
+
+  // value method wti_s_0_sThreadBusy
+  output wti_s_0_SThreadBusy;
+
+  // value method wti_s_0_sReset_n
+  output wti_s_0_SReset_n;
+
+  // action method wti_s_1_mCmd
+  input  [2 : 0] wti_s_1_MCmd;
+
+  // action method wti_s_1_mData
+  input  [63 : 0] wti_s_1_MData;
+
+  // value method wti_s_1_sThreadBusy
+  output wti_s_1_SThreadBusy;
+
+  // value method wti_s_1_sReset_n
+  output wti_s_1_SReset_n;
+
+  // action method wti_s_2_mCmd
+  input  [2 : 0] wti_s_2_MCmd;
+
+  // action method wti_s_2_mData
+  input  [63 : 0] wti_s_2_MData;
+
+  // value method wti_s_2_sThreadBusy
+  output wti_s_2_SThreadBusy;
+
+  // value method wti_s_2_sReset_n
+  output wti_s_2_SReset_n;
 
   // value method wmiM0_mCmd
   output [2 : 0] wmiM0_MCmd;

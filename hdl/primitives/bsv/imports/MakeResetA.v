@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2012 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,63 +19,72 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 20862 $
-// $Date: 2010-06-07 18:20:35 +0000 (Mon, 07 Jun 2010) $
+// $Revision: 29452 $
+// $Date: 2012-08-27 22:01:48 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
-`define BSV_ASSIGNMENT_DELAY
+  `define BSV_ASSIGNMENT_DELAY
 `endif
+
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
+`endif
+
 
 
 module MakeResetA (
 		  CLK,
-		  RST_N,
+		  RST,
                   ASSERT_IN,
 		  ASSERT_OUT,
 
                   DST_CLK,
-                  OUT_RST_N
+                  OUT_RST
                   );
 
    parameter          RSTDELAY = 2  ; // Width of reset shift reg
    parameter          init = 1 ;
 
    input              CLK ;
-   input              RST_N ;
+   input              RST ;
    input              ASSERT_IN ;
    output             ASSERT_OUT ;
 
    input              DST_CLK ;
-   output             OUT_RST_N ;
+   output             OUT_RST ;
 
    reg                rst ;
-   wire               OUT_RST_N ;
+   wire               OUT_RST ;
 
-   assign ASSERT_OUT = !rst ;
+   assign ASSERT_OUT =  rst == `BSV_RESET_VALUE ;
 
    SyncResetA #(RSTDELAY) rstSync (.CLK(DST_CLK),
-				   .IN_RST_N(rst),
-				   .OUT_RST_N(OUT_RST_N));
+				   .IN_RST(rst),
+				   .OUT_RST(OUT_RST));
 
-   always@(posedge CLK or negedge RST_N) begin
-      if (RST_N == 0)
-        rst <= `BSV_ASSIGNMENT_DELAY init;
+   always@(posedge CLK or `BSV_RESET_EDGE RST) begin
+      if (RST == `BSV_RESET_VALUE)
+        rst <= `BSV_ASSIGNMENT_DELAY init ? ~ `BSV_RESET_VALUE : `BSV_RESET_VALUE ;
       else
         begin
            if (ASSERT_IN)
-             rst <= `BSV_ASSIGNMENT_DELAY 1'b0;
+             rst <= `BSV_ASSIGNMENT_DELAY `BSV_RESET_VALUE;
            else // if (rst == 1'b0)
-             rst <= `BSV_ASSIGNMENT_DELAY 1'b1;
-        end // else: !if(RST_N == 0)
-   end // always@ (posedge CLK or negedge RST_N)
+             rst <= `BSV_ASSIGNMENT_DELAY ~ `BSV_RESET_VALUE;
+        end // else: !if(RST == `BSV_RESET_VALUE)
+   end // always@ (posedge CLK or `BSV_RESET_EDGE RST)
 
 `ifdef BSV_NO_INITIAL_BLOCKS
 `else // not BSV_NO_INITIAL_BLOCKS
    // synopsys translate_off
    initial begin
       #0 ;
-      rst = 1'b1 ;
+      rst = ~ `BSV_RESET_VALUE ;
    end
    // synopsys translate_on
 `endif // BSV_NO_INITIAL_BLOCKS

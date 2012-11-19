@@ -199,9 +199,9 @@ volatile BufferState* OutputBuffer::getState()
 	unsigned i = static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId();
 	// If any of our dependent zc inputs are still full,
 	// then we must be treated as still full (still not evacuated).
-	ocpiAssert(m_state[0][i].bufferIsEmpty == EF_EMPTY_VALUE ||
-		   m_state[0][i].bufferIsEmpty == EF_FULL_VALUE);
-        if (m_state[0][i].bufferIsEmpty == EF_FULL_VALUE ) {
+	uint32_t state = m_state[0][i].bufferIsEmpty & EF_MASK;
+	ocpiAssert(state == EF_EMPTY_VALUE ||state == EF_FULL_VALUE);
+        if (state == EF_FULL_VALUE ) {
 	    return &m_state[0][i];
         }
         c++;
@@ -211,8 +211,8 @@ volatile BufferState* OutputBuffer::getState()
 
   //  ocpiDebug("Output buffer %p m_pid %u empty state = 0x%llx",
   //	    this, m_pid, (long long)m_state[0][m_pid].bufferIsEmpty );
-  ocpiAssert(m_state[0][m_pid].bufferIsEmpty == EF_EMPTY_VALUE ||
-	     m_state[0][m_pid].bufferIsEmpty == EF_FULL_VALUE);
+  uint32_t state = m_state[0][m_pid].bufferIsEmpty & EF_MASK;
+  ocpiAssert(state == EF_EMPTY_VALUE ||state == EF_FULL_VALUE);
   return &m_state[0][m_pid];
 }
 
@@ -275,9 +275,9 @@ bool OutputBuffer::isEmpty()
   volatile BufferState* state = this->getState();
 
   //  ocpiDebug("isEmpty: Output empty buffer %p state = %d", this, state->bufferIsEmpty );
-  ocpiAssert(state->bufferIsEmpty == EF_EMPTY_VALUE ||
-	     state->bufferIsEmpty == EF_FULL_VALUE);
-  return state->bufferIsEmpty == EF_EMPTY_VALUE;
+  uint32_t empty = state->bufferIsEmpty & EF_MASK;
+  ocpiAssert(empty == EF_EMPTY_VALUE || empty == EF_FULL_VALUE);
+  return empty == EF_EMPTY_VALUE;
 }
 
 /**********************************

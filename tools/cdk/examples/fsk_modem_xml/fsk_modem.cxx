@@ -91,7 +91,7 @@ int main ( int argc, char* argv [ ] )
 {
   const char * axml("<application>"
 
-		      "  <instance worker='file_read_msg' >"
+		      "  <instance component='file_read_msg' >"
 		      "    <property name='fileName' value='dataIn.dat'/> "		      
 		      "    <property name='genTestFile' value='true'/> "		      
 		      "    <property name='stepThruMsg' value='%s'/> "
@@ -99,61 +99,61 @@ int main ( int argc, char* argv [ ] )
 		      "    <property name='continuous' value='%s'/> "
 		      "  </instance> "
 
-		      "  <instance worker='sym_fir_real' name='tx_fir_r' >"
+		      "  <instance component='sym_fir_real' name='tx_fir_r' >"
 		      "    <property name='bypass' value='false'/> "
 		      "    <property name='gain' value='1'/> "
 		      "    <property name='taps' valuefile='fir_real_coefs.xml'/> "
 		      "  </instance> "
 
-		      "  <instance worker='fsk_mod_complex' name='fsk_mod' >"
+		      "  <instance component='fsk_mod_complex' name='fsk_mod' >"
 		      "  </instance> "
 
-		      "  <instance worker='sym_fir_complex' name='tx_fir_c'>"
+		      "  <instance component='sym_fir_complex' name='tx_fir_c'>"
 		      "    <property name='bypass' value='false'/> "
 		      "    <property name='gain' value='1'/> "
 		      "    <property name='taps' valuefile='fir_complex_coefs.xml'/> "
 		      "  </instance> "
 
-		      "  <instance worker='cic_hpfilter_complex' name='tx_cic' >"
+		      "  <instance component='cic_hpfilter_complex' name='tx_cic' >"
 		      "    <property name='M' value='%d'/> "
 		      "  </instance> "
 			 
-		      "  <instance worker='loopback' >"
+		      "  <instance component='loopback' >"
 		      "  </instance> "
 
-		      "  <instance worker='noise_gen_complex' >"
+		      "  <instance component='noise_gen_complex' >"
 		      "    <property name='mask' value='0'/> "		      
 		      "  </instance> "
 
 #ifdef NEED_MIXER
-		      "  <instance worker='dds_complex' name='ddc_dds' >"
+		      "  <instance component='dds_complex' name='ddc_dds' >"
 		      "    <property name='phaseIncrement' value='12345678'/> "
 		      "    <property name='syncPhase' value='0'/> "
 		      "  </instance> "
 
-		      "  <instance worker='mixer_complex' name='ddc_mixer' >"
+		      "  <instance component='mixer_complex' name='ddc_mixer' >"
 		      "  </instance> "
 #endif
-		      "  <instance worker='cic_lpfilter_complex' name='rx_cic' >"
+		      "  <instance component='cic_lpfilter_complex' name='rx_cic' >"
 		      "    <property name='M' value='%d'/> "
 		      "  </instance> "
 
-		      "  <instance worker='sym_fir_complex' name='rx_fir_c' >"
+		      "  <instance component='sym_fir_complex' name='rx_fir_c' >"
 		      "    <property name='bypass' value='false'/> "
 		      "    <property name='gain' value='1'/> "
 		      "    <property name='taps' valuefile='fir_complex_coefs.xml'/> "
 		      "  </instance> "
 
-		      "  <instance worker='fm_demod_complex' name='fm_demod' >"
+		      "  <instance component='fm_demod_complex' name='fm_demod' >"
 		      "  </instance> "
 
-		      "  <instance worker='sym_fir_real' name='rx_fir_r' >"
+		      "  <instance component='sym_fir_real' name='rx_fir_r' >"
 		      "    <property name='bypass' value='false'/> "
 		      "    <property name='gain' value='1'/> "
 		      "    <property name='taps' valuefile='fir_real_coefs.xml'/> "
 		      "  </instance> "
 
-		      "  <instance worker='file_write_msg' >"
+		      "  <instance component='file_write_msg' >"
 		      "    <property name='fileName' value='dataOut.dat'/> "		      
 		      "  </instance> "
 

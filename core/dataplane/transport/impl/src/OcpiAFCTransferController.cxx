@@ -217,6 +217,7 @@ consume( Buffer* input )
 
 
 
+#if 0
 /**********************************
  * This method gets the next available buffer from the specified output port
  *********************************/
@@ -232,7 +233,7 @@ getNextEmptyOutputBuffer(
   n = (n+1) % src_port->getBufferCount();
   return boi;
 }
-
+#endif
 
 
 Buffer* 
@@ -277,8 +278,8 @@ hasFullInputBuffer(
   int tlo = ((lo+1)%input_port->getBufferCount());
   *retb = buffer = static_cast<InputBuffer*>(input_port->getBuffer(tlo));
   volatile BufferState* state = buffer->getState();
-  ocpiAssert(!"AFC buffer check");
-  if ( (state->bufferIsFull == 0 ) ||
+  //  ocpiAssert(!"AFC buffer check");
+  if ((state->bufferIsFull & FF_MASK) == FF_EMPTY_VALUE ||
        buffer->inUse() ) {
     return false;
   }

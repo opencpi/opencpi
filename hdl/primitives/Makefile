@@ -39,9 +39,12 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 # Process the imported cores, which will end up in the
 # list $(ImportCores).
+
+# has problems, probably don't need anymore
+#  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34
+
 ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/temac_v6 \
-  $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig34 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v6_mig37 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/dram_v5_mig34 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/fft_v5_4k_strm_nat \
@@ -80,10 +83,11 @@ cleanimports:
 	$(AT)$(foreach l,$(Libs) $(LocalCores),\
 		$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) cleanimports;)
 
-diff: diff_cores
+diff: diff_cores diff_libs
+
+diff_libs:
 	$(AT)$(foreach l,$(Libs),\
 		$(MyMake) -C $(l) DIFF_IMPORTS=sdf OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) diff;)
-
 
 install:
 	$(AT)set -e;$(foreach l,$(Libs) $(Cores),$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install;)

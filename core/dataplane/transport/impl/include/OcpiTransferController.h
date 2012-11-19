@@ -362,11 +362,12 @@ namespace OCPI {
                                                    OCPI::DataTransport::PortSet* input,
                                                    bool whole_output_set);
 
+#if 0
       /**********************************
        * This method gets the next available buffer from the specified output port
        *********************************/
       virtual Buffer* getNextEmptyOutputBuffer( OCPI::DataTransport::Port* src_port );
-
+#endif
 
       /**********************************
        * This method gets the next available buffer from the specified input port

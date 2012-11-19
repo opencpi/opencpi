@@ -1,0 +1,15 @@
+<HdlImplementation Language="verilog"  Pattern="%w%M%0_">
+  <xi:include href="capture_spec.xml"/>
+  <ControlInterface Sub32BitConfigProperties="true" ControlOperations="initialize"/>
+  <!-- additional implementation-specific properties -->
+  <property name='wsiMstatus'        volatile='true'/>
+  <property name='wsiMpMesgCount'    volatile='true'/>
+  <property name='wsiMiMesgCount'    volatile='true'/>
+  <property name='wsiMtbusyCount'    volatile='true'/>
+  <!-- Force these spec properties to a specific indirect non-contiguous address -->
+  <specProperty name='metadata' indirect='0x40000000'/>
+  <specProperty name='data' indirect='0x80000000'/>
+  <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
+  <StreamInterface Name="in"  ImpreciseBurst="True" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
+  <TimeInterface/>
+</HdlImplementation>

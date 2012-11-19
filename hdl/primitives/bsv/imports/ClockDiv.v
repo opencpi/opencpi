@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2012 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,20 +19,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 17872 $
-// $Date: 2009-09-18 14:32:56 +0000 (Fri, 18 Sep 2009) $
+// $Revision: 29441 $
+// $Date: 2012-08-27 21:58:03 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
-`define BSV_ASSIGNMENT_DELAY
+  `define BSV_ASSIGNMENT_DELAY
 `endif
+
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
+`endif
+
 
 // A clock divider circuit.
 // Division is based on the parameters, where
 // Division is upper - lower + 1
-// Duty cycle is : 
+// Duty cycle is :
 //       let half = 1 << (width-1)
-//       (upper - half) / upper - lower + 1 
+//       (upper - half) / upper - lower + 1
 // E.g., (2,1,3) is a divide by 3  duty cycle  2/3
 //       (2,0,3) is a divide by 4  duty cycle  2/4
 //       (1,0,1) is a divide by 2, duty cycle  1/2
@@ -41,17 +50,17 @@
 // The offset allow edges for seperate modules to be determined
 // relative to each other. a clock divider with offset 1 occurs one
 // (fast) clock later than a clock with offset 0.
-module ClockDiv(CLK_IN, RST_N, PREEDGE,  CLK_OUT);
+module ClockDiv(CLK_IN, RST, PREEDGE,  CLK_OUT);
 
    parameter width = 2 ;        // must be sufficient to hold upper
-   parameter lower = 1 ;        // 
+   parameter lower = 1 ;        //
    parameter upper = 3 ;
    parameter offset = 0;        // offset for relative edges.
                                 // (0 <= offset <= (upper - lower)
 
    input     CLK_IN;            // input clock
-   input     RST_N;
-   
+   input     RST;
+
    output    PREEDGE;           // output signal announcing an upcoming edge
    output    CLK_OUT;           // output clock
 
@@ -61,16 +70,16 @@ module ClockDiv(CLK_IN, RST_N, PREEDGE,  CLK_OUT);
    // Wire constants for the parameters
    wire [width-1:0]     upper_w ;
    wire [width-1:0]     lower_w ;
-   
+
    assign               CLK_OUT = cntr[width-1] ;
    assign               upper_w = upper ;
    assign               lower_w = lower ;
-   
+
    // The clock is about to tick when counter is about to set its msb
    //  Note some simulators do not allow 0 width expressions
    wire [width-1:0]     nexttick = ~ ( 'b01 << (width-1) )  ;
 
-   // Combinational block to generate next edge signal 
+   // Combinational block to generate next edge signal
    always@( cntr or nexttick )
      begin
         #0
@@ -78,8 +87,8 @@ module ClockDiv(CLK_IN, RST_N, PREEDGE,  CLK_OUT);
         // Since this read by other always blocks trigger by the output CLK of this module
         PREEDGE <= `BSV_ASSIGNMENT_DELAY  (cntr == nexttick) ;
      end
-   
-   always@( posedge CLK_IN or negedge RST_N )
+
+   always@( posedge CLK_IN or `BSV_RESET_EDGE RST )
      begin
         // The use of blocking assignment within this block insures
         // that the clock generated from cntr[MSB] occurs before any
@@ -89,16 +98,16 @@ module ClockDiv(CLK_IN, RST_N, PREEDGE,  CLK_OUT);
         // updates occur. see
         // http://www.sunburst-design.com/papers/CummingsSNUG2002Boston_NBAwithDelays.pdf
 
-        if ( RST_N == 0 )
-          cntr = upper - offset ;        
+        if ( RST == `BSV_RESET_VALUE )
+          cntr = upper - offset ;
         else
           begin
              if ( cntr < upper_w )
                cntr = cntr + 1 ;
              else
                cntr = lower_w ;
-          end // else: !if( RST_N == 0 )
-     end // always@ ( posedge CLK_IN or negedge RST_N )
+          end // else: !if( RST == `BSV_RESET_VALUE )
+     end // always@ ( posedge CLK_IN or `BSV_RESET_EDGE RST )
 
 `ifdef BSV_NO_INITIAL_BLOCKS
 `else // not BSV_NO_INITIAL_BLOCKS
@@ -107,8 +116,8 @@ module ClockDiv(CLK_IN, RST_N, PREEDGE,  CLK_OUT);
     begin
        #0 ;
        cntr = (upper - offset)  ;
-       PREEDGE = 0 ;       
-    end // initial begin   
+       PREEDGE = 0 ;
+    end // initial begin
   // synopsys translate_on
 `endif // BSV_NO_INITIAL_BLOCKS
 

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2012 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,18 +19,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 24080 $
-// $Date: 2011-05-18 19:32:52 +0000 (Wed, 18 May 2011) $
+// $Revision: 29441 $
+// $Date: 2012-08-27 21:58:03 +0000 (Mon, 27 Aug 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
-`define BSV_ASSIGNMENT_DELAY
+  `define BSV_ASSIGNMENT_DELAY
 `endif
+
+`ifdef BSV_POSITIVE_RESET
+  `define BSV_RESET_VALUE 1'b1
+  `define BSV_RESET_EDGE posedge
+`else
+  `define BSV_RESET_VALUE 1'b0
+  `define BSV_RESET_EDGE negedge
+`endif
+
 
 
 // Depth 2 FIFO
 module FIFO2(CLK,
-             RST_N,
+             RST,
              D_IN,
              ENQ,
              FULL_N,
@@ -43,7 +52,7 @@ module FIFO2(CLK,
    parameter guarded = 1;
 
    input     CLK ;
-   input     RST_N ;
+   input     RST ;
    input [width - 1 : 0] D_IN;
    input                 ENQ;
    input                 DEQ;
@@ -82,13 +91,13 @@ module FIFO2(CLK,
    // synopsys translate_on
 `endif // BSV_NO_INITIAL_BLOCKS
 
-   always@(posedge CLK /* or negedge RST_N */)
+   always@(posedge CLK /* or `BSV_RESET_EDGE RST */)
      begin
-        if (!RST_N)
+        if (RST == `BSV_RESET_VALUE)
           begin
              empty_reg <= `BSV_ASSIGNMENT_DELAY 1'b0;
              full_reg  <= `BSV_ASSIGNMENT_DELAY 1'b1;
-          end // if (RST_N == 0)
+          end // if (RST == `BSV_RESET_VALUE)
         else
           begin
              if (CLR)
@@ -106,18 +115,18 @@ module FIFO2(CLK,
                   full_reg  <= `BSV_ASSIGNMENT_DELAY 1'b1;
                   empty_reg <= `BSV_ASSIGNMENT_DELAY ! full_reg;
                end // if ( DEQ && ! ENQ )
-          end // else: !if(RST_N == 0)
+          end // else: !if(RST == `BSV_RESET_VALUE)
 
-     end // always@ (posedge CLK or negedge RST_N)
+     end // always@ (posedge CLK or `BSV_RESET_EDGE RST)
 
 
-   always@(posedge CLK /* or negedge RST_N */ )
+   always@(posedge CLK /* or `BSV_RESET_EDGE RST */ )
      begin
         // Following section initializes the data registers which
         // may be desired only in some situations.
         // Uncomment to initialize array
         /*
-        if (!RST_N)
+        if (RST == `BSV_RESET_VALUE)
           begin
              data0_reg <= `BSV_ASSIGNMENT_DELAY {width {1'b0}} ;
              data1_reg <= `BSV_ASSIGNMENT_DELAY {width {1'b0}} ;
@@ -129,8 +138,8 @@ module FIFO2(CLK,
                            {width{d0di}} & D_IN | {width{d0d1}} & data1_reg | {width{d0h}} & data0_reg ;
              data1_reg <= `BSV_ASSIGNMENT_DELAY
                           d1di ? D_IN : data1_reg ;
-          end // else: !if(RST_N == 0)
-     end // always@ (posedge CLK or negedge RST_N)
+          end // else: !if(RST == `BSV_RESET_VALUE)
+     end // always@ (posedge CLK or `BSV_RESET_EDGE RST)
 
 
 
@@ -141,7 +150,7 @@ module FIFO2(CLK,
 
         deqerror =  0;
         enqerror = 0;
-        if ( RST_N )
+        if (RST == ! `BSV_RESET_VALUE)
           begin
              if ( ! empty_reg && DEQ )
                begin

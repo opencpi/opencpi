@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   unsigned long bufferCount[10][2] =
     {{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2},{2,2}};
   const char *active[10][2] = {{0}};
-  unsigned long bufferSize = 9000, ioCount = 1, ioSize = 16, delay = 0; // memorySize = 0
+  unsigned long bufferSize = 2048, ioCount = 1, ioSize = 16, delay = 0; // memorySize = 0
 #define NTICKS 100
   //  uint64_t memoryBase = 0;
   bool loop = false, doread = true, two = false, //same = true, probe = false,
@@ -757,7 +757,7 @@ int main(int argc, char *argv[])
 	  struct {
 	    uint32_t length, opcode, pad[2];
 	  } head;
-	  head.length = length;
+	  head.length = nIO;
 	  head.opcode = opCode;
 	  struct iovec io[2] = {
 	    {&head, sizeof(head)},
@@ -783,7 +783,7 @@ int main(int argc, char *argv[])
 	  for (unsigned i = 0; i < nIO/sizeof(uint32_t); i++)
 	    if (d32[i] != inN * nIO/sizeof(uint32_t) + i) {
 	      fprintf(stderr, "Bad data 0x%x, len %d w %d inN %d should be 0x%lx\n",
-		      d32[i], length, i, inN, inN * nIO/sizeof(uint32_t) + i);
+		      d32[i], nIO, i, inN, inN * nIO/sizeof(uint32_t) + i);
 	      oops = "Data mismatch on input";
 	    }
 	cBuffer->release();

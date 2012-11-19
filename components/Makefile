@@ -109,6 +109,8 @@ Implementations = \
         file_write_msg.rcc \
 	ptest.rcc \
 	bias.rcc \
+	pattern.hdl pattern.rcc \
+	capture.hdl capture.rcc \
 	$(Tests)
 
 #	wbr.hdl 
@@ -127,5 +129,5 @@ include $(OCPI_CDK_DIR)/include/lib.mk
 
 loc:
 	$(OCPI_CDK_DIR)/include/static_analyzer.sh ./components_sw_metrics.txt
-	
+
 

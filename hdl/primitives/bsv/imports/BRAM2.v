@@ -1,5 +1,4 @@
-
-// Copyright (c) 2000-2009 Bluespec, Inc.
+// Copyright (c) 2000-2011 Bluespec, Inc.
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,15 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// $Revision: 24080 $
-// $Date: 2011-05-18 19:32:52 +0000 (Wed, 18 May 2011) $
+// $Revision: 28325 $
+// $Date: 2012-04-25 18:22:57 +0000 (Wed, 25 Apr 2012) $
 
 `ifdef BSV_ASSIGNMENT_DELAY
 `else
  `define BSV_ASSIGNMENT_DELAY
 `endif
 
-// Dual-Ported BRAM (READ FIRST)
+// Dual-Ported BRAM (WRITE FIRST)
 module BRAM2(CLKA,
              ENA,
              WEA,
@@ -64,8 +63,8 @@ module BRAM2(CLKA,
    reg [DATA_WIDTH-1:0]           RAM[0:MEMSIZE-1] /* synthesis syn_ramstyle="no_rw_check" */ ;
    reg [DATA_WIDTH-1:0]           DOA_R;
    reg [DATA_WIDTH-1:0]           DOB_R;
-   reg [DATA_WIDTH-1:0]           DOA_D1_R;
-   reg [DATA_WIDTH-1:0]           DOB_D1_R;
+   reg [DATA_WIDTH-1:0]           DOA_R2;
+   reg [DATA_WIDTH-1:0]           DOB_R2;
 
 `ifdef BSV_NO_INITIAL_BLOCKS
 `else
@@ -78,39 +77,40 @@ module BRAM2(CLKA,
       end
       DOA_R = { ((DATA_WIDTH+1)/2) { 2'b10 } };
       DOB_R = { ((DATA_WIDTH+1)/2) { 2'b10 } };
-      DOA_D1_R = { ((DATA_WIDTH+1)/2) { 2'b10 } };
-      DOB_D1_R = { ((DATA_WIDTH+1)/2) { 2'b10 } };
+      DOA_R2 = { ((DATA_WIDTH+1)/2) { 2'b10 } };
+      DOB_R2 = { ((DATA_WIDTH+1)/2) { 2'b10 } };
    end
    // synopsys translate_on
 `endif // !`ifdef BSV_NO_INITIAL_BLOCKS
 
    always @(posedge CLKA) begin
-      DOA_R <= `BSV_ASSIGNMENT_DELAY RAM[ADDRA];
       if (ENA) begin
          if (WEA) begin
-           RAM[ADDRA] <= `BSV_ASSIGNMENT_DELAY DIA;
-	 end
+            RAM[ADDRA] <= `BSV_ASSIGNMENT_DELAY DIA;
+            DOA_R <= `BSV_ASSIGNMENT_DELAY DIA;
+         end
+         else begin
+            DOA_R <= `BSV_ASSIGNMENT_DELAY RAM[ADDRA];
+         end
       end
+      DOA_R2 <= `BSV_ASSIGNMENT_DELAY DOA_R;
    end
 
    always @(posedge CLKB) begin
-      DOB_R <= `BSV_ASSIGNMENT_DELAY RAM[ADDRB];
       if (ENB) begin
          if (WEB) begin
-           RAM[ADDRB] <= `BSV_ASSIGNMENT_DELAY DIB;
-	 end
+            RAM[ADDRB] <= `BSV_ASSIGNMENT_DELAY DIB;
+            DOB_R <= `BSV_ASSIGNMENT_DELAY DIB;
+         end
+         else begin
+            DOB_R <= `BSV_ASSIGNMENT_DELAY RAM[ADDRB];
+         end
       end
+      DOB_R2 <= `BSV_ASSIGNMENT_DELAY DOB_R;
    end
 
-   // Pipeline
-   always @(posedge CLKA)
-      DOA_D1_R <= DOA_R;
-
-   always @(posedge CLKB)
-      DOB_D1_R <= DOB_R;
-
    // Output drivers
-   assign DOA = (PIPELINED) ? DOA_D1_R : DOA_R;
-   assign DOB = (PIPELINED) ? DOB_D1_R : DOB_R;
+   assign DOA = (PIPELINED) ? DOA_R2 : DOA_R;
+   assign DOB = (PIPELINED) ? DOB_R2 : DOB_R;
 
 endmodule // BRAM2

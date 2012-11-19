@@ -9,26 +9,26 @@ namespace OA = OCPI::API;
 int main(int argc, char **argv) {
   std::string hello =
     "<application done='file_write'>"
-    "  <instance worker='file_read'>"
+    "  <instance component='file_read'>"
     "    <property name='filename' value='test.input'/>"
     "    <property name='granularity' value='4'/>"
     "    <property name='messageSize' value='16'/>"
     "  </instance>"
-    "  <instance worker='bias' selection='";
+    "  <instance component='bias' selection='";
   if (argv[1])
     hello += argv[1];
   hello +=
     "'>"
     "    <property name='biasValue' value='0x01020304'/>"
     "  </instance>"
-    "  <instance worker='bias' selection='";
+    "  <instance component='bias' selection='";
   if (argv[1] && argv[2])
     hello += argv[2];
   hello +=
     "'>"
     "    <property name='biasValue' value='0x01010101'/>"
     "  </instance>"
-    "  <instance worker='file_write'>"
+    "  <instance component='file_write'>"
     "    <property name='filename' value='test.outputwrong'/>"
     "  </instance>"
     "  <connection>"
