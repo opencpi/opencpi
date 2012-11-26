@@ -91,7 +91,7 @@ Container(const char *name,
 	  //	  OCPI::DataTransport::TransportGlobal *tpg, 
 	  const OA::PValue* props )
   throw ( OU::EmbeddedException )
-  : OC::ContainerBase<Driver,Container,Application,Artifact>(name)
+  : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name)
 {
   m_model = "rcc";
   //temp  m_ourUID = g_unique_id;

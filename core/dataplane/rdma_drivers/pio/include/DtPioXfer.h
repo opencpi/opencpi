@@ -165,7 +165,7 @@ namespace DataTransfer {
 
     // Constructor
   PIOXferRequest( PIOXferServices & parent, XF_template temp)
-    : TransferBase<PIOXferServices,PIOXferRequest>(parent, temp)
+    : TransferBase<PIOXferServices,PIOXferRequest>(parent, *this, temp)
       //      ,m_thandle(NULL)
 {}
 
@@ -210,7 +210,7 @@ namespace DataTransfer {
   public:
 
     PIOXferServices(SmemServices* source, SmemServices* target)
-      : ConnectionBase<PIOXferFactory,PIOXferServices,PIOXferRequest>(source,target)
+      : ConnectionBase<PIOXferFactory,PIOXferServices,PIOXferRequest>(*this, source,target)
       {
 	createTemplate( source, target);
       }

@@ -46,6 +46,7 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

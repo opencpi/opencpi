@@ -191,7 +191,7 @@ namespace DataTransfer {
     };
 
     UDPSocketXferRequest( UDPSocketXferServices & parent )
-      : TransferBase<UDPSocketXferServices,UDPSocketXferRequest>(parent), m_tested4Complete(0)
+      : TransferBase<UDPSocketXferServices,UDPSocketXferRequest>(parent, *this), m_tested4Complete(0)
       //      m_thandle(0) 
 	{
 	  m_TxPkt[0].m_id = 0;

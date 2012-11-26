@@ -80,7 +80,7 @@ namespace OCPI {
 		   const char  * url,
 		   const OCPI::Util::PValue *ourParams,
 		   const OCPI::Util::PValue *otherParams)
-	  : DataTransfer::Msg::TransferBase<XferServices,MsgChannel>(xf),
+	  : DataTransfer::Msg::TransferBase<XferServices,MsgChannel>(xf, *this),
 	    m_url(url), m_circuit(0)
 	{
 	  (void)ourParams, (void)otherParams;
@@ -201,7 +201,7 @@ namespace OCPI {
       {
       public:
 	Device(const char* name)
-	  : DataTransfer::Msg::DeviceBase<XferFactory,Device>(name)
+	  : DataTransfer::Msg::DeviceBase<XferFactory,Device>(name, *this)
 	{
 
 	}
@@ -253,7 +253,7 @@ namespace OCPI {
 		     const OCPI::Util::PValue *ourParams,
 		     const OCPI::Util::PValue *otherParams)
 	: DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>
-	  (protocol, other_url, ourParams, otherParams),
+	  (*this, protocol, other_url, ourParams, otherParams),
 	  m_protocol(protocol)
       {
       }

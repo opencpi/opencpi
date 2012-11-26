@@ -7,7 +7,6 @@
     // +++ Begin boilerplate
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    class DatagramXferFactory;
     class DatagramDevice : public OCPI::Driver::DeviceBase<DatagramXferFactory,DatagramDevice> {
     };
     class DatagramXferRequest;
@@ -20,7 +19,7 @@
     protected:
       DatagramXferServices(DatagramSmemServices* source, DatagramSmemServices* target)
 	: ConnectionBase<DatagramXferFactory,DatagramXferServices,DatagramXferRequest,
-			 DataTransfer::DatagramXferServices>(source,target){}
+			 DataTransfer::DatagramXferServices>(*this, source, target){}
       // Here because the driver template classes can't inherit nicely
       XferRequest* createXferRequest();
       uint16_t maxPayloadSize() { return DATAGRAM_PAYLOAD_SIZE; }
@@ -31,7 +30,7 @@
       friend class DatagramXferServices;
     protected:
       DatagramXferRequest(DatagramXferServices &parent)
-	: TransferBase<DatagramXferServices,DatagramXferRequest,DataTransfer::DatagramXferRequest>(parent) {}
+	: TransferBase<DatagramXferServices,DatagramXferRequest,DataTransfer::DatagramXferRequest>(parent, *this) {}
     };
     XferRequest* DatagramXferServices::
     createXferRequest() {

@@ -72,87 +72,76 @@ namespace OCPI {
     // prefix is the string prefix to use when no name is provided
     template <class TChild> class Sibling {
       friend class Parent<TChild>;
-      TChild *m_next;
+      Sibling<TChild> *m_next;
+      TChild *m_derived;
     protected:
       Sibling<TChild>() : m_next(NULL) {}
       virtual ~Sibling<TChild>(){};
     public:
-      // virtual TChild *child() = 0;
-      inline TChild *nextChild() { return *nextChildP(); }
-      inline TChild **nextChildP() { return &m_next; }
+      TChild *child() const { return m_derived; }
+      //      virtual Sibling<TChild> *sibling() = 0;
+      inline TChild *nextChild() { return m_next ? m_next->m_derived : NULL; }
+      //  inline Sibling<TChild> **nextChildP() { return &m_next; }
       virtual const std::string &name() const = 0;
     };
     template <class TParent, class TChild, const char *&prefix> class ChildOnly;
     // This is the class inherited by the parent, given the child's type
     template <class TChild>  class Parent {
-      TChild * m_children;
+      Sibling<TChild> * m_children;
       bool m_done;
     public:
       Parent<TChild>()
       : m_children(NULL), m_done(false) {}
       // FIXME: add in order with "last" ptr etc.
-      void addChild(TChild *child) {
+      void addChild(TChild &dchild, Sibling<TChild> *sibling) {
+	//	Sibling<TChild> *sibling = dchild.sibling();
 #ifndef NDEBUG
-	for (TChild *cp = m_children; cp; cp = cp->nextChild())
-	  if (cp == child)
+	for (Sibling<TChild> *cp = m_children; cp; cp = cp->m_next)
+	  if (cp == sibling)
 	    assert(!"duplicate child in parent");
 #endif
-	child->m_next = m_children;
-	m_children = child;
+	
+	sibling->m_next = m_children;
+	m_children = sibling;
+	sibling->m_derived = &dchild;
       }
       // called by child destructor
-      void releaseChild(TChild *child) {
+      void releaseChild(Sibling<TChild> *child) {
 	if (!m_done) {
-	  for (TChild **c = &m_children; *c; c = (*c)->nextChildP())
+	  for (Sibling<TChild> **c = &m_children; *c; c = &(*c)->m_next)
 	    if (*c == child) {
-	      *c = *child->nextChildP();
+	      *c = child->m_next;
 	      return;
 	    }
           assert(!"child missing from parent");
 	}
       }
-#if 0
-      // call a function on all children, stopping if it returns true
-      // it should not add or remove anything.
-      TChild * doChildren(bool (*func)(TChild &)) {
-	for (TChild *cp = m_children; cp; cp = *cp->nextChildP())
-	  if ((*func)(*cp))
-	    return cp;
-	return NULL;
-      }
-#endif
+
       TChild *firstChild() const {
-	return static_cast<TChild *>(m_children);
+	return m_children ? m_children->m_derived : NULL;
       }
 
       // call a function on all children, stopping if it returns true
       // it should not add or remove anything.
       TChild *findChild(bool (TChild::*doChild)(const void*), const void* arg) {
-	for (TChild *cp = m_children; cp; cp = *cp->nextChildP())
-	  if ((cp->*doChild)(arg))
-            return cp;
+	for (Sibling<TChild> *cp = m_children; cp; cp = cp->m_next)
+	  if ((cp->m_derived->*doChild)(arg))
+            return cp->m_derived;
 	return 0;
       }
+
       TChild *findChildByName(const char *argName) {
-	for (TChild *cp = m_children; cp; cp = *cp->nextChildP())
+	for (Sibling<TChild> *cp = m_children; cp; cp = cp->m_next)
 	  if (!strcmp(cp->name().c_str(), argName))
-	    return cp;
+	    return cp->m_derived;
 	return 0;
       }
-#if 0
-      inline TChild *findChildByName(const std::string &name) {
-	return findChildByName(name.c_str());
-	for (TChild *cp = m_children; cp; cp = *cp->nextChildP())
-	  if (cp->m_childName == name)
-	    return cp;
-	return 0;
-      }
-#endif
+
       void deleteChildren() {
 	if (!m_done) {
 	  m_done = true; // suppress release
-	  for (TChild *child = m_children; child; child = m_children) {
-	    m_children = *child->nextChildP();
+	  for (Sibling<TChild> *child = m_children; child; child = m_children) {
+	    m_children = child->m_next;
 	    delete child; // this should call most derived class
 	  }
 	}
@@ -185,10 +174,9 @@ namespace OCPI {
       bool m_released; // testing this 
       friend class Parent<TChild>;
     protected:
-      ChildOnly<TParent,TChild, prefix>(TParent &p, const char *myName)
+      ChildOnly<TParent,TChild, prefix>(TParent &p, // TChild &c,
+					const char *myName)
       : m_parent(p), m_childName(childName(myName, prefix)), m_released(false) {
-	m_parent.
-	  Parent<TChild>::addChild(static_cast<TChild*>(this));
       }
       void releaseFromParent() {
 	if (!m_released) {
@@ -206,8 +194,12 @@ namespace OCPI {
       inline TParent &parent() const { return m_parent; }
     };
       
-    // This is the child where the derived TChild is inherited from here
     extern const char *child;
+#if 0
+    // This is the child template where the derived TChild is inherited from here
+    // i.e. where the parent/child relationship is with a specialized base class
+    // rather than the mode derived class.  I.e. the parent has children not
+    // specific to the parent class.
     template <class TParent,class TChild,const char *&prefix = child>
     class ChildWithBase : public ChildOnly<TParent,TChild,prefix>, public TChild {
       friend class Parent<TChild>;
@@ -225,6 +217,7 @@ namespace OCPI {
       }
     };
 
+#endif
     // This is the child where the TChild inherits from this template
     // Note Sibling is inherited before ChildOnly so it is initialized first.
     // which it must be (m_next must be NULL before child it added to parent)
@@ -234,12 +227,15 @@ namespace OCPI {
     public:
       // These are public because you can't use "friend class TChild"
       // Let's not put in a null string name so that any usage is more obvious
-      Child<TParent,TChild,prefix> (TParent & p, const char *name = "unknown")
+      Child<TParent,TChild,prefix> (TParent & p, TChild &c, const char *name = "unknown")
       : ChildOnly<TParent, TChild,prefix>(p, name)
-      {}
+      {
+	p.Parent<TChild>::addChild(c, &c);
+      }
       virtual const std::string &name() const {
 	return ChildOnly<TParent,TChild,prefix>::name();
       }
+      //      virtual Sibling<TChild> *sibling() { return this; }
     };
 
   }

@@ -28,7 +28,7 @@ namespace OCPI {
 	friend class Library;
 	char *m_metadata;
 	Artifact(Library &lib, const char *name, const OA::PValue *)
-	  : ArtifactBase<Library,Artifact>(lib, name),
+	  : ArtifactBase<Library,Artifact>(lib, *this, name),
 	    m_metadata(0)
 	{	
 	  // The returned value must be deleted with delete[];
@@ -100,7 +100,7 @@ namespace OCPI {
       class Library : public OL::LibraryBase<Driver, Library, Artifact> {
 	friend class Driver;
 	Library(const char *name)
-	  : OL::LibraryBase<Driver,Library,Artifact>(name) {}
+	  : OL::LibraryBase<Driver,Library,Artifact>(*this, name) {}
 	// Recursive.
 	void doDir(const std::string &dirName) {
 	  bool isDir;

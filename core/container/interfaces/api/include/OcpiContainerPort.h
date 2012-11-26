@@ -37,26 +37,27 @@
 #define OCPI_CONTAINER_PORT_H
 
 #include "OcpiParentChild.h"
+#include "OcpiUtilSelfMutex.h"
+#include "OcpiPValue.h"
+#include "OcpiRDTInterface.h"
+#include "OcpiMetadataPort.h"
 #include "OcpiContainerApi.h"
-#include "OcpiContainerInterface.h"
-#include "OcpiMetadataWorker.h"
-
 
 namespace OCPI {
+  namespace DataTransport {
+    class Port;
+    class BufferUserFacet;
+  }
   namespace Container {
 
     class Worker;
     class ExternalPort;
+    class Container;
 
     // Port connection dependency data: what is communicated between containers
     struct PortConnectionDesc
     {
       OCPI::RDT::Descriptors        data;        // Connection data
-
-      // JEK: I removed these to find out if they mattered to anyone.  Doesn't seem to.
-      //      PortDesc                  port;   
-      // Container id that owns this port
-      // OCPI::OS::uint32_t         container_id;
     };
 
 
@@ -67,6 +68,7 @@ namespace OCPI {
     const unsigned DEFAULT_BUFFER_SIZE = 2*1024;
     class PortData
     {
+      OCPI::Metadata::PortOrdinal m_ordinal;
       bool m_isProvider; // perhaps overriding bidirectional
       PortConnectionDesc *m_connectionData;
       PortConnectionDesc  connectionData;      // Port Connection Dependency data
@@ -76,6 +78,9 @@ namespace OCPI {
     public:
       virtual ~PortData(){};
       inline bool isProvider() { return m_isProvider; }
+      inline bool isOutput() {return !isProvider(); }
+      inline bool isInput() {return isProvider(); }
+      inline OCPI::Metadata::PortOrdinal ordinal() { return m_ordinal; }
       virtual inline PortConnectionDesc &  getData() {
 	return m_connectionData ? *m_connectionData : connectionData;
       }
@@ -117,7 +122,7 @@ namespace OCPI {
       std::string m_initialPortInfo;
       bool m_canBeExternal;
       // This is here so we own this storage while we pass back references.
-      Port(Container &container, const OCPI::Metadata::Port &mport, bool isProvider,
+      Port(Worker &worker, const OCPI::Metadata::Port &mport, bool isProvider,
 	   unsigned options, const OCPI::Util::PValue *params = NULL, PortConnectionDesc *desc = NULL);
       virtual ~Port(){}
       // Convenience navigation
@@ -144,13 +149,10 @@ namespace OCPI {
 					   const OCPI::Util::PValue *extParams,
 					   const OCPI::Util::PValue *connParams) = 0;
     public:
-      // If isLocal(), then this method can be used. FIXME make protected after delagation fix
+      // If isLocal(), then this method can be used.
       virtual void localConnect(OCPI::DataTransport::Port &/*input*/) {}
-      // If islocal(), then this can be used. FIXME make protected after delagation fix
-      virtual OCPI::DataTransport::Port &dtPort() {
-	ocpiAssert(!"unexpected dtPort reference");
-	return *(OCPI::DataTransport::Port*)0;
-      }
+      // If islocal(), then this can be used.
+      virtual OCPI::DataTransport::Port &dtPort() { return *(OCPI::DataTransport::Port *)0;}
       
       /**
          @brief
@@ -190,23 +192,21 @@ namespace OCPI {
       OCPI::API::ExternalPort &connectExternal(const char *extName = NULL, const OCPI::Util::PValue *extParams = NULL,
 					       const OCPI::Util::PValue *connectParams = NULL);
 
+    protected:
       void determineRoles(OCPI::RDT::Descriptors &other);
 
       void loopback(OCPI::API::Port &);
 
       bool hasName(const char *name);
 
-      //      inline bool isTwoWay() { return m_metaPort.twoway; }
-
-
       // This is a hook for implementations to specialize the port
       enum ConnectionMode {CON_TYPE_NONE, CON_TYPE_RDMA, CON_TYPE_MESSAGE};
       virtual void setMode( ConnectionMode mode ) = 0;
 
-      //      inline ezxml_t getXml() { return myXml; }
+    public:
       // Local (possibly among different containers) connection: 1 step operation on the user port
-      void connect( OCPI::API::Port &other, const OCPI::Util::PValue *myProps,
-		    const OCPI::Util::PValue *otherProps);
+      virtual void connect( OCPI::API::Port &other, const OCPI::API::PValue *myProps,
+			    const OCPI::API::PValue *otherProps);
 
 
       // Connect to a URL based port.  This is currently used for DDS but may also be used for CORBA etc.
@@ -272,7 +272,22 @@ namespace OCPI {
       virtual void setFinalUserInfo(const std::string &);
     };
 
-    //    typedef OCPI::API::ExternalBuffer ExternalBuffer;
+    extern const char *port;
+    template<class Wrk, class Prt, class Ext>
+    class PortBase
+      : public OCPI::Util::Child<Wrk, Prt, port>,
+      public OCPI::Util::Parent<Ext>,
+        public Port {
+    protected:
+      PortBase<Wrk,Prt,Ext>(Wrk &worker, Prt &prt, const OCPI::Metadata::Port &mport, bool isProvider,
+			    unsigned xferOptions, const OCPI::Util::PValue *params,
+			    PortConnectionDesc *desc = NULL)
+      : OCPI::Util::Child<Wrk,Prt,port>(worker, prt, mport.name), Port(worker, mport,
+						      isProvider, xferOptions, params, desc) {}
+      inline Worker &worker() const { return OCPI::Util::Child<Wrk,Prt,port>::parent(); }
+    public:
+      const std::string &name() const { return OCPI::Util::Child<Wrk,Prt,port>::name(); }
+    };
 
     class ExternalBuffer : API::ExternalBuffer {
       friend class ExternalPort;
@@ -282,6 +297,7 @@ namespace OCPI {
       void release();
       void put( uint32_t length, uint8_t opCode, bool /*endOfData*/);
     };
+
     // The direct interface for non-components to talk directly to the port,
     // in a non-blocking fashion.  This class is the base for all implementations
     class ExternalPort : public BasicPort, public OCPI::API::ExternalPort {
@@ -296,6 +312,20 @@ namespace OCPI {
 	*getBuffer(uint8_t *&data, uint32_t &length);
       void endOfData();
       bool tryFlush();
+    };
+
+    extern const char *externalPort;
+    template<class Prt, class Ext>
+    class ExternalPortBase
+      : public OCPI::Util::Child<Prt,Ext,externalPort>,
+        public ExternalPort {
+    protected:
+      ExternalPortBase<Prt,Ext>(Prt &port, Ext &ext, const char *name,
+				const OCPI::Util::PValue *extParams,
+				const OCPI::Util::PValue *connParams,
+				bool isProvider)
+      : OCPI::Util::Child<Prt,Ext,externalPort>(port, ext, name),
+	ExternalPort(port, isProvider, extParams, connParams) {}
     };
   }
 }

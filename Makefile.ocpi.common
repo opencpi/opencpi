@@ -300,7 +300,7 @@ SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOW_UNDEFINED) -install_name @rpath/$(
 SHARED=-dynamiclib -install_name @rpath/$(notdir $@)
 UNDEFINED_FLAG=-Xlinker -u -Xlinker _$1
 BASICLIBS=
-CXXFLAGS += -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare
+CXXFLAGS += -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare -Wno-dangling-else -Wno-logical-op-parentheses
 # -Wuninitialized only usable with -O
 # not available on -Wunused-but-set-variable -Wignored-qualifiers -Wconversion-null -Wint-to-pointer-cast
 #CXXFLAGS += -Wall

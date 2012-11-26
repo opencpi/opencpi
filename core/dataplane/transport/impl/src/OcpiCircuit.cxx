@@ -98,7 +98,7 @@ Circuit(
         ConnectionMetaData* connection, 
         PortOrdinal src_ps[],
         PortOrdinal dest_pss[])
-  :  CU::Child<OCPI::DataTransport::Transport,Circuit>(*t),
+  :  CU::Child<OCPI::DataTransport::Transport,Circuit>(*t, *this),
      OCPI::Time::Emit(t, "Circuit"),
      m_transport(t), m_status(Unknown),
      m_ready(false),m_updated(false),

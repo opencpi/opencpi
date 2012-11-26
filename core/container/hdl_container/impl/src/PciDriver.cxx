@@ -307,7 +307,7 @@ namespace OCPI {
 		error = "can't mmap /dev/mem for bar1";
 	    }
 	  else
-	    return false; // not really an error
+	    return NULL; // not really an error
 	}
 	if (error.empty())
 	  return new Device(name, fd, pci, bar0, bar1);

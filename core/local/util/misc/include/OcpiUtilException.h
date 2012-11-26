@@ -157,7 +157,7 @@ namespace OCPI {
      */
     class ExceptionMonitor : public EmbeddedException {
     public:
-      bool error();
+      //      bool error();
       void setError( EmbeddedException* ex );
       void setError( const EmbeddedException& ex );
       void setError( OCPI::OS::uint32_t ec, const char* aux_info );
@@ -186,7 +186,7 @@ namespace OCPI {
       }
 #endif
 
-    inline bool ExceptionMonitor::error(){return m_ex;}
+    //    inline bool ExceptionMonitor::error(){return m_ex;}
     inline void ExceptionMonitor::setError( EmbeddedException* ex )
       {
         m_errorCode = ex->m_errorCode;

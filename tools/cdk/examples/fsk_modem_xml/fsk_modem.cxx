@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <typeinfo>
 #include "OcpiApi.h"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"

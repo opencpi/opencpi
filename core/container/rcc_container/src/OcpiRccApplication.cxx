@@ -60,7 +60,7 @@ namespace OCPI {
 
 Artifact::
 Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *props)
-  : OC::ArtifactBase<Container,Artifact>(c, lart, props),
+  : OC::ArtifactBase<Container,Artifact>(c, *this, lart, props),
     m_entryTable(NULL), m_open(false), m_workerCount(0)
 {
   const char *url = lart.name().c_str();
@@ -159,7 +159,7 @@ hasUrl(const char *url)
  *********************************/  
 Application::
 Application(Container &c, const char *name, const OU::PValue *props)
-  : OC::ApplicationBase<Container,Application,Worker>(c, name, props)
+  : OC::ApplicationBase<Container,Application,Worker>(c, *this, name, props)
 {
   // Empty
 }

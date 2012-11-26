@@ -25,8 +25,8 @@ namespace DataTransfer {
     public Device
   {
   protected:
-    DeviceBase<Dri, Dev>(const char *childName)
-    : OCPI::Driver::DeviceBase<Dri, Dev>(childName)
+    DeviceBase<Dri, Dev>(const char *childName, Dev &dev)
+    : OCPI::Driver::DeviceBase<Dri, Dev>(childName, dev)
     {}
     inline XferFactory &driverBase() {
       return OCPI::Driver::DeviceBase<Dri,Dev>::parent();
@@ -42,10 +42,10 @@ namespace DataTransfer {
       public Base
   {
   protected:
-    ConnectionBase<ConcDri, ConcConn, ConcXfer, Base>(SmemServices* source,
+    ConnectionBase<ConcDri, ConcConn, ConcXfer, Base>(ConcConn &cc, SmemServices* source,
 						      SmemServices* target)
     : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Driver::Singleton<ConcDri>::
-					   getSingleton()),
+					   getSingleton(), cc),
       Base(source, target)
     {}
   };
@@ -55,8 +55,8 @@ namespace DataTransfer {
     public OCPI::Util::Child<ConcConn, ConcXfer>
   {
   protected:
-  TransferBase<ConcConn, ConcXfer, Base>(ConcConn &conn, XF_template temp = NULL)
-      : Base(temp), OCPI::Util::Child<ConcConn,ConcXfer>(conn) {}
+    TransferBase<ConcConn, ConcXfer, Base>(ConcConn &conn, ConcXfer &xfer, XF_template temp = NULL)
+    : Base(temp), OCPI::Util::Child<ConcConn,ConcXfer>(conn, xfer) {}
     // Allow the base class to get at the derived parent
     // To do that it needs to declare a pure virtual method
     ConcConn &parent() { return OCPI::Util::Child<ConcConn,ConcXfer>::parent(); }

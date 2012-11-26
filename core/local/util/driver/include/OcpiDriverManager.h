@@ -61,7 +61,7 @@
 namespace OCPI {
   namespace Driver {
     using OCPI::Util::Child;
-    using OCPI::Util::ChildWithBase;
+    //    using OCPI::Util::ChildWithBase;
     using OCPI::Util::Sibling;
     using OCPI::Util::Parent;
     using OCPI::Util::PValue;
@@ -116,7 +116,7 @@ namespace OCPI {
     protected:
       Manager(const char *mname)
 	: Child<ManagerManager,Manager>
-	  (Singleton<ManagerManager>::getSingleton(), mname),
+	  (Singleton<ManagerManager>::getSingleton(), *this, mname),
 	  m_doNotDiscover(false)
       {}
       // Configure the manager. X is the node whose name is the name of the manager
@@ -196,8 +196,8 @@ namespace OCPI {
     template <class DriMgr, class DriBase>
     class DriverType : public Child<DriMgr,DriBase>, public Driver {
     protected:
-      DriverType(const char *name)
-	: Child<DriMgr,DriBase>(DriMgr::getSingleton(), name)
+      DriverType(const char *name, DriBase &d)
+	: Child<DriMgr,DriBase>(DriMgr::getSingleton(), d, name)
       {}
     public:
       // Configure from system configuration XML
@@ -218,7 +218,7 @@ namespace OCPI {
 	(void)which; (void)processor; (void)mach;
 	return NULL;
       };
-      DriBase *nextDriver() { return *Sibling<DriBase>::nextChildP(); }
+      DriBase *nextDriver() { return Sibling<DriBase>::nextChild(); }
       inline Driver *nextDriverBase() { return nextDriver(); }
       inline const std::string &name() const {
 	return Child<DriMgr,DriBase>::name();
@@ -281,15 +281,15 @@ namespace OCPI {
     template <class Dri, class Dev>
     class DeviceBase: public Child<Dri,Dev,device>, virtual public Device {
     public:
-      inline Dev *nextDevice() { return *Child<Dri,Dev,device>::nextChildP(); }
+      inline Dev *nextDevice() { return Child<Dri,Dev,device>::nextChild(); }
       inline Device *nextDeviceBase() { return nextDevice(); }
       inline Dri &driver() { return Child<Dri,Dev,device>::parent(); }
       const std::string &name() const {
 	return Child<Dri,Dev,device>::name();
       }
     protected:
-      DeviceBase<Dri, Dev>(const char *childName)
-      : Child<Dri, Dev, device>(Singleton<Dri>::getSingleton(), childName)
+      DeviceBase<Dri, Dev>(const char *childName, Dev &dev)
+      : Child<Dri, Dev, device>(Singleton<Dri>::getSingleton(), dev, childName)
       {}
     };
   }

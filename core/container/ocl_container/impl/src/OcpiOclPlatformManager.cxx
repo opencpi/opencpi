@@ -197,7 +197,7 @@ namespace
         return "CL_INVALID_MIP_LEVEL";
       case CL_INVALID_GLOBAL_WORK_SIZE:
         return "CL_INVALID_GLOBAL_WORK_SIZE";
-#ifdef CL_VERSION_1_1
+#ifdef CL_PLATFORM_NOT_FOUND_KHR
     case  CL_PLATFORM_NOT_FOUND_KHR:
       return "CL_PLATFORM_NOT_FOUND_KHR";
 #endif

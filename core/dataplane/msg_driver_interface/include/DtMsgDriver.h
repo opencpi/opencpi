@@ -288,8 +288,8 @@ namespace DataTransfer {
       public Device
       {
       protected:
-	DeviceBase<Dri, Dev>(const char *childName)
-	  : OCPI::Driver::DeviceBase<Dri, Dev>(childName)
+	DeviceBase<Dri, Dev>(const char *childName, Dev &dev)
+	  : OCPI::Driver::DeviceBase<Dri, Dev>(childName, dev)
 	  {}
 	  inline XferFactory &driverBase() {
 	    return OCPI::Driver::DeviceBase<Dri,Dev>::parent();
@@ -305,12 +305,13 @@ namespace DataTransfer {
       public XferServices
       {
       protected:
-	ConnectionBase<ConcDri, ConcConn, ConcXfer>(const OCPI::Util::Protocol &protocol,
+	ConnectionBase<ConcDri, ConcConn, ConcXfer>(ConcConn &conn,
+						    const OCPI::Util::Protocol &protocol,
 						    const char* other_url,
-				  const OCPI::Util::PValue *our_props=0,
-				  const OCPI::Util::PValue *other_props=0 )						    
+						    const OCPI::Util::PValue *our_props=0,
+						    const OCPI::Util::PValue *other_props=0 )
 	  : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Driver::Singleton<ConcDri>::
-						 getSingleton()),
+						 getSingleton(), conn),
 	  XferServices(protocol,other_url,our_props,other_props)
 	    {}
       };
@@ -320,8 +321,8 @@ namespace DataTransfer {
       public OCPI::Util::Child<ConcConn, ConcXfer>
       {
       protected:
-	TransferBase<ConcConn, ConcXfer>(ConcConn &conn)
-	  : OCPI::Util::Child<ConcConn,ConcXfer>(conn) {}
+	TransferBase<ConcConn, ConcXfer>(ConcConn &conn, ConcXfer &xfer)
+	  : OCPI::Util::Child<ConcConn,ConcXfer>(conn, xfer) {}
       };
     template <class Dri>
       class RegisterTransferDriver

@@ -219,6 +219,7 @@ namespace OCPI {
         void rmdir (const std::string &)
           throw (std::string);
 
+#if 0
         /*
          * Directory Listing
          */
@@ -229,7 +230,7 @@ namespace OCPI {
 
         void closeIterator (OCPI::Util::Vfs::Iterator *)
           throw (std::string);
-
+#endif
         /*
          * File Information
          */

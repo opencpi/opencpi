@@ -106,7 +106,7 @@ namespace OCPI {
     }
 
     Driver::Driver(const char *name) 
-      : OD::DriverType<Manager,Driver>(name) {
+      : OD::DriverType<Manager,Driver>(name, *this) {
     }
     const char
       *application = "application",

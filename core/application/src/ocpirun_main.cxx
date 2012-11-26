@@ -1,3 +1,11 @@
+/* TODO:
+ * container creation - possibly with maxprocessors
+ * sync options with doc
+ * perhaps add file I/O pre-existing ports?
+ * API for log level
+ */
+#include <stdlib.h>
+#include <string.h>
 #include <iostream>
 #include <cstdio>
 #include <cassert>

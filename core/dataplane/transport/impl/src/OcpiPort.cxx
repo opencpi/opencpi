@@ -181,7 +181,7 @@ void OCPI::DataTransport::Port::initialize()
  * Constructors
  *********************************/
 OCPI::DataTransport::Port::Port( PortMetaData* data, PortSet* ps )
-  : CU::Child<PortSet,Port>(*ps), OCPI::Time::Emit( ps, "Port", "",NULL ), 
+  : CU::Child<PortSet,Port>(*ps, *this), OCPI::Time::Emit( ps, "Port", "",NULL ), 
     m_initialized(false), 
     m_data( data ),
     m_realSMemResources(NULL),
@@ -1494,7 +1494,7 @@ getNextEmptyOutputBuffer()
     return NULL;
   }
   if ( !getPortSet() || !getPortSet()->getTxController() ) {
-    return false;
+    return NULL;
   }
   OutputBuffer* buffer = static_cast<OutputBuffer*>
     (getPortSet()->getTxController()->getNextEmptyOutputBuffer(this));

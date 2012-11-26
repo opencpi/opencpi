@@ -79,7 +79,7 @@ PortSetMetaData( bool src,
                  int buffer_count,
                  int buffer_size,
                  DataTransfer::EndPoint &outputEp  )
-  :CU::Child<ConnectionMetaData,PortSetMetaData>( *c ),
+  :CU::Child<ConnectionMetaData,PortSetMetaData>( *c, *this ),
    m_connection(c)
 {
   OCPI::OS::int32_t n;
@@ -108,7 +108,7 @@ PortSetMetaData(    bool src,
                     int buffer_count,
                     int buffer_size,
                     ConnectionMetaData* c )
-  :CU::Child<ConnectionMetaData,PortSetMetaData>( *c ),
+  :CU::Child<ConnectionMetaData,PortSetMetaData>( *c, *this ),
    m_connection(c)
 {
 

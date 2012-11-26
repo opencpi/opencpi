@@ -79,10 +79,6 @@ namespace DataTransfer {
     uint8_t    nextMsg;      
   };
 
-
-  // Abstract base class that needs to be inherited by a transmission layer driver.
-  class TxTemplate;
-
   struct DatagramTransaction;
   struct DatagramFrameHeader {
     uint16_t destId;

@@ -229,6 +229,7 @@ namespace OCPI {
          * Directory Listing
          */
         
+#if 0
         /**
          * Not supported by this file system.
          */
@@ -243,7 +244,7 @@ namespace OCPI {
 
         void closeIterator (OCPI::Util::Vfs::Iterator *)
           throw (std::string);
-
+#endif
         /*
          * File Information
          */

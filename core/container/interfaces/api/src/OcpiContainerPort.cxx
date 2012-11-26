@@ -34,11 +34,10 @@
 
 #include "OcpiUtilCDR.h"
 #include "OcpiPValue.h"
-#include "OcpiPort.h"
-#include "OcpiContainerPort.h"
 #include "OcpiWorker.h"
 #include "OcpiContainerApplication.h"
-#include "OcpiContainerMisc.h"
+#include "OcpiUtilException.h"
+#include "OcpiContainerPort.h"
 
 namespace OCPI {
   namespace Container {
@@ -50,7 +49,7 @@ namespace OCPI {
 
     PortData::PortData(const OM::Port &mPort, bool isProvider, unsigned xferOptions,
 		       const OU::PValue *params, PortConnectionDesc *desc)
-      : m_isProvider(isProvider), m_connectionData(desc)
+      : m_ordinal(mPort.ordinal), m_isProvider(isProvider), m_connectionData(desc)
     {
       Descriptors &d = getData().data;
       d.type = isProvider ? ConsumerDescT : ProducerDescT;
@@ -68,12 +67,12 @@ namespace OCPI {
 
       if (OU::findULong(params, "bufferCount", ul))
 	if (ul < mPort.minBufferCount)
-	  throw ApiError("bufferCount is below worker's minimum", NULL);
+	  throw OU::Error("bufferCount is below worker's minimum");
         else
 	  getData().data.desc.nBuffers = ul;
       if (OU::findULong(params, "bufferSize", ul))
 	if (ul < mPort.m_minBufferSize)
-	  throw ApiError("bufferSize is below worker's minimum", NULL);
+	  throw OU::Error("bufferSize is below worker's minimum");
         else
 	  getData().data.desc.dataBufferSize = ul;
       const char *s;
@@ -126,10 +125,10 @@ namespace OCPI {
 
     // This base class constructor for generic initialization
     // FIXME: parse buffer count here at least? (check that others don't do it).
-    Port::Port(Container &container, const OCPI::Metadata::Port &mPort, bool isProvider,
+    Port::Port(Worker &worker, const OCPI::Metadata::Port &mPort, bool isProvider,
 	       unsigned xferOptions, const OCPI::Util::PValue *params, PortConnectionDesc *desc) :
-      BasicPort( mPort, isProvider, xferOptions, container, params, desc),
-      m_container(container), m_canBeExternal(true)
+      BasicPort( mPort, isProvider, xferOptions, worker.application().container(), params, desc),
+      m_container(worker.application().container()), m_canBeExternal(true)
     {
     }
 
@@ -181,15 +180,15 @@ namespace OCPI {
 		       const OCPI::Util::PValue *otherParams) {
       OU::SelfAutoMutex guard (this);
       Port &other = *static_cast<Port*>(&apiOther);
-      setMode( CON_TYPE_RDMA );
-      other.setMode( CON_TYPE_RDMA );
+      //      setMode( CON_TYPE_RDMA );
+      //      other.setMode( CON_TYPE_RDMA );
       if (isProvider())
         if (other.isProvider())
-          throw ApiError("Cannot connect two provider ports", NULL);
+          throw OU::Error("Cannot connect two provider ports");
         else
           other.connect( *this, otherParams, myParams);
       else if (!other.isProvider())
-        throw ApiError("Cannot connect to user ports", NULL);
+        throw OU::Error("Cannot connect to user ports");
       else {
         Container &otherContainer = other.container();
 	// FIXME: Take any connection-related parameters and make sure both parameter lists have them.
@@ -258,14 +257,11 @@ namespace OCPI {
       }
     }
 
-
-    // The general case of connecting ports that are in the same process.
     void Port::connectURL(const char*, const OCPI::Util::PValue *,
 			  const OCPI::Util::PValue *) {
       ocpiDebug("connectURL not allowed on this container !!");
       ocpiAssert( 0 );
     }
-
 
     // Start the remote/intercontainer connection process
     void Port::getInitialProviderInfo(const OCPI::Util::PValue *params, std::string &out) {
@@ -513,12 +509,12 @@ namespace OCPI {
         if (uRole == pOther)
           return;
         if (uOptions & (1 << MandatedRole))
-          throw ApiError("Incompatible mandated transfer roles", NULL);
+          throw OU::Error("Incompatible mandated transfer roles");
         if (uOptions & (1 << pOther)) {
           uRole = pOther;
           return;
         }
-        throw ApiError("No compatible role available against mandated role", NULL);
+        throw OU::Error("No compatible role available against mandated role");
       } else if (pRole != NoRole) {
         // provider has a preference
         if (uOptions & (1 << MandatedRole)) {
@@ -530,7 +526,7 @@ namespace OCPI {
             pRole = uOther;
             return;
           }
-          throw ApiError("No compatible role available against mandated role", NULL);
+          throw OU::Error("No compatible role available against mandated role");
         } else if (uRole != NoRole) {
           // We have preferences on both sides, but no mandate
           // If preferences match, all is well
@@ -594,7 +590,7 @@ namespace OCPI {
           pRole = uOther;
           return;
         }
-        throw ApiError("No compatible role available against mandated role", NULL);
+        throw OU::Error("No compatible role available against mandated role");
       } else if (uRole != NoRole) {
         // Provider has no mandate or preference, but user has a preference
         if (pOptions & (1 << uOther)) {
@@ -612,15 +608,9 @@ namespace OCPI {
           pRole = otherRoles[i];
           return;
         }
-      throw ApiError("No compatible combination of roles exist", NULL);
+      throw OU::Error("No compatible combination of roles exist");
     }            
-#if 0
-    ExternalPort::ExternalPort(const OCPI::Metadata::Port & metaPort,
-			       bool isProvider, const OCPI::Util::PValue *params)
-      : BasicPort(metaPort, isProvider, 0, params) {
-    }
-    void ExternalPort::startConnect() {}
-#endif
+
     ExternalBuffer::
     ExternalBuffer() :
       m_dtBuffer(NULL), m_dtPort(NULL)

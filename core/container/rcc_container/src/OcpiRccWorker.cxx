@@ -99,7 +99,7 @@ namespace OCPI {
 Worker::
 Worker( Application & app, Artifact *art, const char *name,
 	ezxml_t impl, ezxml_t inst, const OU::PValue *wParams)
-  : OC::WorkerBase<Application,Worker,Port>(app, art, name, impl, inst, wParams),
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, name, impl, inst, wParams),
     OCPI::Time::Emit( &parent().parent(), "Worker", name ), 
     // Note the "hack" to use "name" as dispatch when artifact is not present
     m_dispatch(art ? art->getDispatch(ezxml_cattr(impl, "name")) : (RCCDispatch *)name),
@@ -429,7 +429,7 @@ createPort(const OCPI::Metadata::Port& mp, const OCPI::Util::PValue *params)
 				"Source Port count exceeds configuration", OU::ApplicationFatal);
   Port *port;
   try {
-    port = new Port(*this, mp, params, &m_context->ports[mp.ordinal]);
+    port = new Port(*this, mp, params, m_context->ports[mp.ordinal]);
   }
   catch(std::bad_alloc) {
     throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);

@@ -1132,7 +1132,7 @@ namespace OCPI {
 
 	inline std::string & module_name(){return m_data.module_name;}
 	inline std::string & struct_name(){return m_data.struct_name;}
-	inline std::string & name(){return m_data.name;}	    
+	// child class does this:	inline std::string & name(){return m_data.name;}	    
 
       };
 
@@ -1259,7 +1259,7 @@ namespace OCPI {
 
 
       Topic::Topic( TopicManager & tm, TopicData & data ) 
-	: OCPI::Util::Child<TopicManager,Topic>(tm),m_data(data)
+	: OCPI::Util::Child<TopicManager,Topic>(tm, *this, data.name.c_str()),m_data(data)
       {	
 	m_cbFuncs = FuncPoolManager::registerCB( this );
 
@@ -1328,7 +1328,8 @@ namespace OCPI {
 	MsgChannel(XferServices & xf, const char  * url, TopicData & td,
 		   const OCPI::Util::PValue *our_props=0,
 		   const OCPI::Util::PValue *other_props=0 )
-	  : DataTransfer::Msg::TransferBase<XferServices,MsgChannel>( xf ),m_ep(url),m_td(td),m_bufCount(0)
+	  : DataTransfer::Msg::TransferBase<XferServices,MsgChannel>( xf, *this),
+	    m_ep(url),m_td(td),m_bufCount(0)
 	{
 	  (void)our_props;
 	  (void)other_props;
@@ -1556,7 +1557,7 @@ namespace OCPI {
       {
       public:
 	Device(const char* name)
-	  : DataTransfer::Msg::DeviceBase<XferFactory,Device>(name)
+	  : DataTransfer::Msg::DeviceBase<XferFactory,Device>(name, *this)
 	{
 
 	}
@@ -1645,7 +1646,8 @@ namespace OCPI {
       XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url,
 		     const OCPI::Util::PValue *our_props,
 		     const OCPI::Util::PValue *other_props)
-	: DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>(protocol,other_url,our_props,other_props)
+	: DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>
+	  (*this, protocol,other_url,our_props,other_props)
       {
 	m_td = &protocol;
       }
@@ -1669,7 +1671,7 @@ namespace OCPI {
       Device::
       configure(ezxml_t x) {
 	DataTransfer::Msg::Device::configure(x);
-	FactoryConfig::parse(&parent(), x);
+	DDS::FactoryConfig::parse(&parent(), x);
       }
 
       DataTransfer::Msg::RegisterTransferDriver<XferFactory> driver;

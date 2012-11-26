@@ -446,7 +446,8 @@ OCPI::Util::MemFs::StaticMemFs::rmdir (const std::string &)
 
 OCPI::Util::Vfs::Iterator *
 OCPI::Util::MemFs::StaticMemFs::list (const std::string & dir,
-                                     const std::string & pattern)
+				      const std::string & pattern, 
+				      bool /* recursive */)
   throw (std::string)
 {
   m_lock.rdLock ();

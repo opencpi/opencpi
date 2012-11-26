@@ -78,7 +78,7 @@ namespace OCPI {
 	  set(addr.addr());
 	}
 	inline const uint8_t *addr() const { return m_addr; }
-	inline const uint64_t addr64() const { return m_addr64; }
+	inline uint64_t addr64() const { return m_addr64; }
 	const char *pretty();
 	inline bool error() const { return m_error; }
 	inline bool broadcast() const { return m_broadcast; }

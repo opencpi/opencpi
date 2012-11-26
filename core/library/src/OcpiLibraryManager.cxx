@@ -164,7 +164,7 @@ namespace OCPI {
     }
     Driver::
     Driver(const char *name)
-      : OD::DriverType<Manager,Driver>(name) {
+      : OD::DriverType<Manager,Driver>(name, *this) {
     }
     Artifact *Driver::
     findArtifact(const Capabilities &caps,
@@ -208,10 +208,8 @@ namespace OCPI {
     // The artifact base class
     Artifact::Artifact() : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL), m_nWorkers(0) {}
     Artifact::~Artifact() {
-      for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++) {
-	WorkerMapPair wmp = *wi;
+      for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	delete (*wi).second;
-      }
       delete [] m_metaImplementations;
     }
 

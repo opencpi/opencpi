@@ -50,8 +50,8 @@ namespace OCPI {
     protected:
       SelfMutex() : OCPI::OS::Mutex(true) {}
       ~SelfMutex() { unlock(true); }
-    public:
-      operator OCPI::OS::Mutex &() const { return *this; }
+      //    public:
+      //      operator OCPI::OS::Mutex &() { return *this; }
     };
     // The class to inherit, that references a mutex provided upon construction
     class SelfRefMutex {

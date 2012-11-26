@@ -9,8 +9,8 @@
  * or a client process not relying on the daemon.
  */
 
-#include "rcs.h"
-RCS_ID("@(#) $Id: calibration.c,v 1.12 2005/08/27 08:24:45 alexholkner Exp $")
+//#include "rcs.h"
+//RCS_ID("@(#) $Id: calibration.c,v 1.12 2005/08/27 08:24:45 alexholkner Exp $")
 
 #include <stdint.h>
 #include <stdlib.h>

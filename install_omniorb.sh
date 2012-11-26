@@ -1,11 +1,12 @@
 #!/bin/sh
 set -e
 OCPI_OMNIORB_VERSION=4.1.5
-. setup_install.sh
+. ./setup_install.sh
 mkdir -p omniorb
 cd omniorb
 sudo rm -r -f omniorb* $OCPI_BUILD_TARGET omniORB* include lib share etc
 curl -O http://iweb.dl.sourceforge.net/project/omniorb/omniORB/omniORB-$OCPI_OMNIORB_VERSION/omniORB-$OCPI_OMNIORB_VERSION.tar.bz2
+#cp ../omniORB-$OCPI_OMNIORB_VERSION.tar.bz2 .
 tar xf omniORB-$OCPI_OMNIORB_VERSION.tar.bz2
 cd omniORB-$OCPI_OMNIORB_VERSION
 # From here on is per target

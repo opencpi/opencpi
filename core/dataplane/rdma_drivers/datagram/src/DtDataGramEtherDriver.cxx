@@ -61,6 +61,7 @@ namespace DataTransfer {
 #define DATAGRAM_PAYLOAD_SIZE OE::MaxPacketSize;
 
     class DatagramSocket;
+    class DatagramXferFactory;
     class DatagramEndPoint : public EndPoint 
     {
       OE::Address m_addr;
@@ -112,7 +113,7 @@ namespace DataTransfer {
       OE::Address &addr() { return m_addr; } // not const
       const char* getAddress() { return m_addr.pretty(); }
     public:
-      bool isCompatibleLocal(const char *remote) {
+      bool isCompatibleLocal(const char *remote) const {
 	std::string interface;
 	const char *sp = strchr(remote, '/');
 	if (!sp)
@@ -126,7 +127,7 @@ namespace DataTransfer {
     class DatagramSocket : public DataTransfer::DatagramSocket {
       friend class DatagramXferFactory;
       OE::Socket *m_socket;
-    protected:
+    public:
       DatagramSocket( DatagramSmemServices*  lsmem)
 	: DataTransfer::DatagramSocket(lsmem), m_socket(NULL) {
       }

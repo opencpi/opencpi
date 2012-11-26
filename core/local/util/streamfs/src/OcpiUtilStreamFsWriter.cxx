@@ -471,6 +471,7 @@ rmdir (const std::string &)
   throw std::string ("not supported on this file system");
 }
 
+#if 0
 /*
  * ----------------------------------------------------------------------
  * Directory Listing
@@ -492,7 +493,7 @@ closeIterator (OCPI::Util::Vfs::Iterator *)
 {
   ocpiAssert (0);
 }
-
+#endif
 /*
  * ----------------------------------------------------------------------
  * File information

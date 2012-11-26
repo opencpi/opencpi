@@ -308,7 +308,7 @@ namespace OCPI {
 	m_variableMessageLength = true;
 	m_isUnbounded = true;
       }
-      return false;
+      return NULL;
     }
 
     const char *Protocol::finishParse() {

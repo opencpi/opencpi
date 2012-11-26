@@ -8,8 +8,8 @@
 /* Library API for fasttime
  *
  */
-#include "rcs.h"
-RCS_ID("@(#) $Id: fasttime.c,v 1.11 2005/08/27 08:24:45 alexholkner Exp $")
+//#include "rcs.h"
+//RCS_ID("@(#) $Id: fasttime.c,v 1.11 2005/08/27 08:24:45 alexholkner Exp $")
 
 #define _XPG4_2
 #define __EXTENSIONS__

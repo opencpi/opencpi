@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 OCPI_GTEST_VERSION=1.6.0
-. setup_install.sh
+. ./setup_install.sh
 mkdir -p gtest
 cd gtest
 rm -r -f gtest*

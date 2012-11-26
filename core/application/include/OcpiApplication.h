@@ -151,7 +151,7 @@ namespace OCPI {
       void stop();
       bool wait(OCPI::OS::Timer *);
       ExternalPort &getPort(const char *);
-      friend class Property;
+      friend struct Property;
       Worker &getPropertyWorker(const char *name);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value);
       void getProperty(const char * wname, const char * pname, std::string &value);

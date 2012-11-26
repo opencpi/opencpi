@@ -16,7 +16,7 @@ TarFile=OpenSpliceDDSV$OCPI_OPENSPLICE_VERSION-src.tar
 pwd
 if test ! -f $TarFile ; then
   echo You must download the source tar file: $TarFile from:
-  echo     http://www.prismtech.com/download-documents
+  echo     http://www.prismtech.com/opensplice/opensplice-dds-community/software-downloads
   echo It has no download URL, so you must do it yourself and put it in: `pwd`
   echo Then you can run this $0 script again.
   exit 1

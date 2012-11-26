@@ -376,7 +376,7 @@ namespace DataTransfer {
       ibv_device_attr    m_device_attribute;
       
       Device(const char* name)
-	: DataTransfer::DeviceBase<XferFactory,Device>(name)
+	: DataTransfer::DeviceBase<XferFactory,Device>(name, *this)
       {
 	m_dev = find( name );
 	if ( ! m_dev ) {
@@ -398,7 +398,7 @@ namespace DataTransfer {
       void configure(ezxml_t x) {
 	DataTransfer::Device::configure(x);
 	// Parse for ofed properties
-	FactoryConfig::parse(&parent(), x);
+	OFED::FactoryConfig::parse(&parent(), x);
       }
 
       virtual ~Device()
@@ -515,7 +515,7 @@ namespace DataTransfer {
       // First parse generic properties and default from parent's
       DataTransfer::FactoryConfig::parse(&parent(), x);
       // Next parse our own driver-specific configuration
-      FactoryConfig::parse(NULL, x);
+      OFED::FactoryConfig::parse(NULL, x);
     }
 
     unsigned 
@@ -1081,15 +1081,15 @@ namespace DataTransfer {
 
     XferRequest::
     XferRequest(XferServices &s)
-      : DataTransfer::TransferBase<XferServices,XferRequest>(s),
+      : DataTransfer::TransferBase<XferServices,XferRequest>(s, *this),
 	m_wr(NULL),m_nextWr(NULL),m_firstWr(NULL),m_lastWr(NULL), m_PCount(0), m_PComplete(0)
     {
 
     }
 
     XferServices::
-    XferServices( DataTransfer::SmemServices* source, DataTransfer::SmemServices* target)
-      : DataTransfer::ConnectionBase<XferFactory,XferServices,XferRequest>(source,target),
+    XferServices(DataTransfer::SmemServices* source, DataTransfer::SmemServices* target)
+      : DataTransfer::ConnectionBase<XferFactory,XferServices,XferRequest>(*this, source,target),
 	m_finalized(false), m_post_count(0),m_cq_count(0)
     {
       createTemplate( source, target);

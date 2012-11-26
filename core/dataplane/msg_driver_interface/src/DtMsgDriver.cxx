@@ -153,7 +153,7 @@ DTM::XferFactoryManager::
 
 DTM::XferFactory::
 XferFactory( const char* name)
-  : OCPI::Driver::DriverType<DTM::XferFactoryManager, DTM::XferFactory>(name)
+  : OCPI::Driver::DriverType<DTM::XferFactoryManager, DTM::XferFactory>(name, *this)
 {
 
 }

@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     app.start();
     fprintf(stderr, "Application started/running\n");
     OA::ExternalBuffer *b;
-    for (unsigned i = 0; i < 100; i++) {
+    for (unsigned i = 0; i < 10; i++) {
       uint8_t *data;
       uint32_t length;
       uint8_t opcode;
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 	fprintf(stderr, "%s", (char *)data);
 	return 0;
       }
-      usleep(1);
+      sleep(1);
     }
     fprintf(stderr,"Worker never sent anything!\n");
   } catch (std::string &e) {

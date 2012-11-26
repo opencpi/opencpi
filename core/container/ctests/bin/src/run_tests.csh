@@ -42,7 +42,7 @@ setenv OCPI_SMB_SIZE 3000000
 setenv OCPI_LIBRARY_PATH ../../../../components/lib/rcc
 if $OCPI_RUNTIME_HOST == darwin-x86_64 then
   setenv OCPI_RCC_SUFFIX dylib
-  setenv DYLD_LIBRARY_PATH ../../../../lib/$OCPI_RUNTIME_HOST-bin
+#  setenv DYLD_LIBRARY_PATH ../../../../lib/$OCPI_RUNTIME_HOST-bin
 else
   setenv OCPI_RCC_SUFFIX so
   setenv LD_LIBRARY_PATH ../../../../lib/$OCPI_RUNTIME_HOST-bin

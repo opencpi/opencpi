@@ -137,7 +137,8 @@ namespace OCPI {
     }
     Container::
     Container(OCPI::HDL::Device &device, ezxml_t config, const OU::PValue *params) 
-      : OC::ContainerBase<Driver,Container,Application,Artifact>(device.name().c_str(), config, params),
+      : OC::ContainerBase<Driver,Container,Application,Artifact>
+	(*this, device.name().c_str(), config, params),
 	Access(device.cAccess()), OT::Emit::TimeSource(getTicksFunc),
 	m_device(device), m_hwEvents(this, *this, "FPGA Events")
     {
@@ -262,8 +263,6 @@ namespace OCPI {
     start() {}
     void Container::
     stop() {}
-    bool Container::
-    dispatch() { return false; }
     // friends
     void Container::
     getWorkerAccess(unsigned index,
@@ -289,17 +288,18 @@ namespace OCPI {
     createContainer(OCPI::HDL::Device &dev, ezxml_t config, const OU::PValue *params)  {
       return new Container(dev, config, params);
     }
-
+    class Worker;
     class Artifact : public OC::ArtifactBase<Container,Artifact> {
       friend class Container;
+
       Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) :
-        OC::ArtifactBase<Container,Artifact>(c, lart, artifactParams) {
+	OC::ArtifactBase<Container,Artifact>(c, *this, lart, artifactParams) {
 	if (!lart.uuid().empty() && c.isLoadedUUID(lart.uuid()))
 	  ocpiInfo("For HDL container %s, when loading bitstream %s, uuid matches what is already loaded\n",
-		 c.name().c_str(), name().c_str());
+		   c.name().c_str(), name().c_str());
 	else {
 	  ocpiInfo("Loading bitstream %s on HDL container %s\n",
-		 name().c_str(), c.name().c_str());
+		   name().c_str(), c.name().c_str());
 	  // FIXME: there should be a utility to run a script in this way
 	  char *command, *base = getenv("OCPI_CDK_DIR");
 	  const char *device = c.name().c_str();
@@ -309,7 +309,7 @@ namespace OCPI {
 		   base, name().c_str(), device, c.m_platform.c_str(), c.m_part.c_str(),
 		   c.m_esn.c_str(), c.m_position.c_str());
 	  ocpiInfo("Executing command to load bit stream for container %s: \"%s\"\n",
-		 c.name().c_str(), command);
+		   c.name().c_str(), command);
 	  int rc = system(command);
 	  const char *err = 0;
 	  switch (rc) {
@@ -318,24 +318,22 @@ namespace OCPI {
 	    break;
 	  case -1:
 	    err = OU::esprintf("Unknown system error (errno %d) while executing bitstream loading command",
-			   errno);
+			       errno);
 	    break;
 	  case 0:
 	    ocpiInfo("Successfully loaded bitstream file: \"%s\" on HDL container \"%s\"\n",
-		   lart.name().c_str(), c.name().c_str());
+		     lart.name().c_str(), c.name().c_str());
 	    break;
 	  default:
 	    err = OU::esprintf("Bitstream loading error (%d) loading \"%s\" on HDL container \"%s\"",
-			   rc, lart.name().c_str(), c.name().c_str());
+			       rc, lart.name().c_str(), c.name().c_str());
 	  }
 	  if (err)
 	    throw OC::ApiError(err, NULL);
 	}
       }
-    public:
       ~Artifact() {}
     };
-
     // We know we have not already loaded it, but it still might be loaded on the device.
     OC::Artifact & Container::
     createArtifact(OCPI::Library::Artifact &lart, const OA::PValue *artifactParams)
@@ -671,24 +669,23 @@ OCPI_DATA_TYPES
 #undef CONTROL_OP
 	0};
 
-    class Worker;
     class Application : public OC::ApplicationBase<Container, Application, Worker> {
       friend class Container;
       Application(Container &con, const char *name, const OA::PValue *props) 
-	: OC::ApplicationBase<Container, Application, Worker>(con, name, props)
+	: OC::ApplicationBase<Container, Application, Worker>(con, *this, name, props)
       {}
-      // Note that this cannot be a "default" implementation in the OC::Application
-      // base class since we must pass the correct/derived type of application
-      // to the artifact (to at least avoid casting...)
-      OC::Worker & createWorker(OC::Artifact *art, const char *appInstName,
+      OC::Worker & createWorker(OC::Artifact *art,
+				const char *appInstName,
 				ezxml_t impl, ezxml_t inst,
-				const OCPI::Util::PValue *wParams);
+				const OU::PValue *wParams);
     };
+
     OA::ContainerApplication *Container::
     createApplication(const char *name, const OCPI::Util::PValue *props)
       throw ( OCPI::Util::EmbeddedException ) {
       return new Application(*this, name, props);
     };
+    class Port;
     class Worker : public OC::WorkerBase<Application, Worker, Port>, public WciControl {
       friend class Application;
       friend class Port;
@@ -696,7 +693,8 @@ OCPI_DATA_TYPES
       Container &m_container;
       Worker(Application &app, OC::Artifact *art, const char *name,
              ezxml_t implXml, ezxml_t instXml, const OA::PValue* execProps) :
-        OC::WorkerBase<Application, Worker, Port>(app, art, name, implXml, instXml, execProps),
+        OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml,
+						  instXml, execProps),
         WciControl(app.parent(), implXml, instXml),
         m_container(app.parent())
       {
@@ -842,7 +840,7 @@ OCPI_DATA_TYPES
            ezxml_t adwXml,  // the xml adapter/infrastructure worker attached to this port if any
            ezxml_t adXml,   // the xml adapter instance attached to this port if any
 	   bool argIsProvider) :
-        OC::PortBase<Worker,Port,ExternalPort>(w, mPort, argIsProvider,
+        OC::PortBase<Worker,Port,ExternalPort>(w, *this, mPort, argIsProvider,
 					       // (1 << OCPI::RDT::Passive) |
 					       // (1 << OCPI::RDT::ActiveFlowControl) |
 					       (1 << OCPI::RDT::ActiveMessage), params),
@@ -1220,7 +1218,7 @@ OCPI_DATA_TYPES
     protected:
       ExternalPort(Port &port, const char *name, bool isProvider,
 		   const OA::PValue *extParams, const OA::PValue *connParams) :
-        OC::ExternalPortBase<Port,ExternalPort>(port, name, extParams, connParams, isProvider) {
+        OC::ExternalPortBase<Port,ExternalPort>(port, *this, name, extParams, connParams, isProvider) {
       }
     public:
       virtual ~ExternalPort() {}

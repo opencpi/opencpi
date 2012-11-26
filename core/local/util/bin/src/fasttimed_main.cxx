@@ -24,8 +24,8 @@
  * or by having it specified through some environment variable.
  */
 
-#include "rcs.h"
-RCS_ID("@(#) $Id: fasttimed.c,v 1.15 2005/08/27 08:24:45 alexholkner Exp $")
+//#include "rcs.h"
+//RCS_ID("@(#) $Id: fasttimed.c,v 1.15 2005/08/27 08:24:45 alexholkner Exp $")
 
 #define _XPG4_2
 #define __EXTENSIONS__

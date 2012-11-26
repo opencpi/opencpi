@@ -82,7 +82,7 @@ namespace OCPI {
     }
 
     /*
-    so we made choices during the feasibility analysis, but here we want to add some policy.
+    we made choices during the feasibility analysis, but here we want to add some policy.
     the default allocation will bias toward collocation, so this is basically to 
     spread things out.
     Since exclusive/bitstream allocations are not really adjustable, we just deal with the others.
@@ -304,13 +304,17 @@ namespace OCPI {
       for (unsigned m = 0; m < i->m_nCandidates; m++) {
 	OL::Candidate &c = m_assembly.m_candidates[instNum][m];	  
 	i->m_impl = c.impl; // temporary, but needed by (at least) connectionsOk
+	//ocpiDebug("doInstance %u %u %u", instNum, score, m);
 	if (connectionsOk(c, instNum))
+	  //ocpiDebug("doInstance connections ok");
 	  for (unsigned cont = 0; cont < OC::Container::s_nContainers; cont++) {
 	    Booking &b = m_bookings[cont];
+	    //ocpiDebug("doInstance container: cont %u feasible 0x%x", cont, i->m_feasibleContainers[m]);
 	    if (i->m_feasibleContainers[m] & (1 << cont) && bookingOk(b, c, instNum)) {
 	      d->container = cont;
 	      d->candidate = m;
 	      unsigned myScore = score + c.score;
+	      //ocpiDebug("doInstance ok");
 	      if (instNum < m_nInstances-1) {
 		Booking save = b;
 		if (c.impl->m_staticInstance) {

@@ -170,7 +170,7 @@ int OCPI::Util::MemBlockMgr::alloc(uint32_t nbytes, unsigned int alignment, OCPI
 	m_pool->used += nbytes;
         return 0;
       }
-      else if (  ((*it).size == nbytes) ) {
+      else if ((*it).size == nbytes) {
         req_addr = ALIGN((*it).addr, alignment);
         (*it).aligned_addr = req_addr;
         m_pool->alloc_list.push_back( *it );

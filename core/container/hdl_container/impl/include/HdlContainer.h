@@ -2,15 +2,12 @@
 #define HdlContainer_H
 #include <uuid/uuid.h>
 #include "HdlOCCP.h"
-#include "HdlAccess.h"
-#include "OcpiContainerManager.h"
+#include "OcpiContainerInterface.h"
 
 namespace OCPI {
   namespace HDL {
-    class Artifact;
-    class Port;
     class Application;
-    class Accessor;
+    class Artifact;
     // We inherit Access to simply ensure that control accesses are as fast as possible.
     class Container
       : public OCPI::Container::ContainerBase<Driver, Container, Application, Artifact>,
@@ -47,7 +44,6 @@ namespace OCPI {
     public:
       void start();
       void stop();
-      bool dispatch();
       OCPI::Container::Artifact &
 	createArtifact(OCPI::Library::Artifact &lart, const OCPI::API::PValue *artifactParams);
       OCPI::API::ContainerApplication *

@@ -154,7 +154,7 @@ endif
 # The link that makes the app core be in the right place
 # namely: target-<family>/<family>/<foo>.ngc
 # so we make a simple link for the family name
-$(OutDir)target-$3/$3: $(OutDir)target-$3/$(Core)$(HdlBin)
+$(OutDir)target-$3/$3: | $(OutDir)target-$3/$(Core)$(HdlBin)
 	$(AT)pwd;ln -s . $(OutDir)target-$3/$3
 
 $(OutDir)target-$1/$(Worker):

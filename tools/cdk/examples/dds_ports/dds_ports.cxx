@@ -1,7 +1,9 @@
 
+#include <stdio.h>
 #include <unistd.h>
 #include <iostream>
 #include <cstdlib>
+#include <typeinfo>
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
 

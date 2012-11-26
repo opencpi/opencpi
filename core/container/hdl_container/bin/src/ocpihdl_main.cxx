@@ -860,7 +860,7 @@ atoi_any(const char *arg, unsigned *sizep)
   if (n != 1)
     bad("Bad numeric value: '%s'", arg);
   if (sizep) {
-    char *sp;
+    const char *sp;
     if ((sp = strchr(arg, '/')))
       switch(*++sp) {
       default:

@@ -198,10 +198,11 @@ namespace OCPI {
          * Directory Listing
          */
 
+#if 0 
         OCPI::Util::Vfs::Iterator * list (const std::string & dir,
                                          const std::string & pattern = "*")
           throw (std::string);
-
+#endif
         void closeIterator (OCPI::Util::Vfs::Iterator *)
           throw (std::string);
 

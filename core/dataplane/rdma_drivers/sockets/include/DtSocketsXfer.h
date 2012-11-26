@@ -169,7 +169,7 @@ namespace DataTransfer {
     // Public methods available to clients
   public:
   SocketXferRequest( SocketXferServices & parent, XF_template temp )
-    : TransferBase<SocketXferServices,SocketXferRequest>(parent, temp)
+    : TransferBase<SocketXferServices,SocketXferRequest>(parent, *this, temp)
       //,m_thandle(0)
       {}
 
@@ -226,7 +226,7 @@ namespace DataTransfer {
   public:
 
     SocketXferServices(SmemServices* source, SmemServices* target)
-      : ConnectionBase<SocketXferFactory,SocketXferServices,SocketXferRequest>(source,target)
+      : ConnectionBase<SocketXferFactory,SocketXferServices,SocketXferRequest>(*this, source,target)
     {
       createTemplate( source, target);
     }

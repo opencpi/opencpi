@@ -70,6 +70,7 @@ namespace OCPI
 
     namespace
     {
+#if 0
       void printDesc ( const OCPI::RDT::Desc_t& desc,
                        const char* msg )
       {
@@ -110,6 +111,7 @@ namespace OCPI
                  (long long)desc.oob.port_id,
                  desc.oob.oep );
       }
+#endif
 
       typedef enum
       {
@@ -189,7 +191,7 @@ namespace OCPI
                     DeviceContext* device,
                     const ezxml_t config = NULL,
                     const OU::PValue* props = NULL )
-          : OC::ContainerBase<Driver,Container,Application,Artifact>(name, config, props),
+          : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name, config, props),
             d_device ( device )
         {
 	  m_model = "ocl";
@@ -267,7 +269,7 @@ namespace OCPI
         Artifact ( Container& c,
                    OCPI::Library::Artifact& lart,
                    const OA::PValue* artifactParams )
-          : OC::ArtifactBase<Container,Artifact> ( c, lart, artifactParams )
+          : OC::ArtifactBase<Container,Artifact> ( c, *this, lart, artifactParams )
         {
           printf ( "OCL loading OpenCL artifact %s into OCL container %s\n",
                    name().c_str(),
@@ -298,7 +300,7 @@ namespace OCPI
         Application ( Container& con,
                       const char* name,
                       const OA::PValue* props )
-          : OC::ApplicationBase<Container, Application, Worker> ( con, name, props )
+          : OC::ApplicationBase<Container, Application, Worker> ( con, *this, name, props )
         {
           // Empty
         }
@@ -414,7 +416,7 @@ namespace OCPI
                  ezxml_t implXml,
                  ezxml_t instXml,
                  const OA::PValue* execParams )
-        : OC::WorkerBase<Application, Worker, Port> ( app, art, name, implXml, instXml, execParams ),
+	  : OC::WorkerBase<Application, Worker, Port> ( app, *this, art, name, implXml, instXml, execParams ),
           isEnabled ( false ),
           myContainer ( app.parent() ),
           implName ( ezxml_attr ( implXml, "name" ) ),
@@ -1083,7 +1085,7 @@ namespace OCPI
                const OA::PValue* params,
                const OM::Port& mPort, // the parsed port metadata
                bool argIsProvider )
-          : OC::PortBase<Worker,Port,ExternalPort> ( w, mPort, argIsProvider,
+          : OC::PortBase<Worker,Port,ExternalPort> ( w, *this, mPort, argIsProvider,
 						     ( 1 << OCPI::RDT::ActiveFlowControl ) |
 						     ( 1 << OCPI::RDT::ActiveMessage ),
 						     params ),
@@ -1561,7 +1563,7 @@ namespace OCPI
 		      bool isProvider,
 		      const OA::PValue* extParams,
 		      const OA::PValue* connParams )
-    : OC::ExternalPortBase<Port,ExternalPort> ( port, name, extParams, connParams, isProvider )
+	  : OC::ExternalPortBase<Port,ExternalPort> ( port, *this, name, extParams, connParams, isProvider )
         {
           getData().data.options = ( 1 << OCPI::RDT::ActiveFlowControl ) |
                                         ( 1 << OCPI::RDT::ActiveMessage ) |

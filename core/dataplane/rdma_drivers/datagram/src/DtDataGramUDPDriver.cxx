@@ -73,7 +73,7 @@ namespace DataTransfer {
     {
       friend class DatagramSocket;
       friend class DatagramXferFactory;
-    protected:
+    public:
       DatagramEndPoint( std::string& ep, bool local, uint32_t size=0)
 	: EndPoint(ep, size, local) { 
 	char ipaddr[80];
@@ -88,6 +88,7 @@ namespace DataTransfer {
 	m_sockaddr.sin_port = htons(m_portNum);
 	inet_aton(m_ipAddress.c_str(), &m_sockaddr.sin_addr);
       }
+    protected:
       ~DatagramEndPoint() {
 	// FIXME:  this is generic behavior and belongs in a datagram endpoint base class
 	if (resources.sMemServices) {
@@ -121,7 +122,7 @@ namespace DataTransfer {
 
     class DatagramSocket : public DataTransfer::DatagramSocket {
       friend class DatagramXferFactory;
-    protected:
+    public:
       DatagramSocket( DatagramSmemServices*  lsmem) //, DatagramTransmissionLayerDriver * driver )
 	: DataTransfer::DatagramSocket(lsmem) {//,driver) {
 	m_msghdr.msg_namelen = sizeof(struct sockaddr_in);

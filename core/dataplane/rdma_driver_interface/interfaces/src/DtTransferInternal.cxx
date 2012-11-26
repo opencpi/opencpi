@@ -382,7 +382,7 @@ void XferFactoryManager::shutdown()
 
 XferFactory::
 XferFactory(const char *name)
-  : OD::DriverType<XferFactoryManager,XferFactory>(name)
+  : OD::DriverType<XferFactoryManager,XferFactory>(name, *this)
 {
 }
 

@@ -246,8 +246,8 @@ namespace OCPI {
 	return Parent<Art>::findChildByName(url);
       }
     protected:
-      LibraryBase<Dri, Lib, Art>(const char *childName)
-      : OCPI::Driver::DeviceBase<Dri, Lib>(childName) {}
+      LibraryBase<Dri, Lib, Art>(Lib &lib, const char *childName)
+	: OCPI::Driver::DeviceBase<Dri, Lib>(childName, lib) {}
     };
 
     // This is the template inherited by concrete artifacts
@@ -257,8 +257,8 @@ namespace OCPI {
       public Artifact
     {
     protected:
-      ArtifactBase<Lib, Art>(Lib &lib, const char *name)
-      : OCPI::Util::Child<Lib,Art>(lib, name) {}
+      ArtifactBase<Lib, Art>(Lib &lib, Art &art, const char *name)
+	: OCPI::Util::Child<Lib,Art>(lib, art, name) {}
     public:
       inline Artifact *nextArtifact() {
 	return OCPI::Util::Child<Lib,Art>::nextChild();

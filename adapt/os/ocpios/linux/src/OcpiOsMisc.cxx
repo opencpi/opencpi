@@ -41,6 +41,7 @@
  *                  that is the signal that kill(1) sends by default.
  */
 
+#include <stdio.h>
 #include <string>
 #include <stdarg.h>
 #include <signal.h>

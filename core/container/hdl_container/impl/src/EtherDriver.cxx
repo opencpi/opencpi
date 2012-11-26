@@ -389,7 +389,7 @@ namespace OCPI {
 	      OU::formatString(error, "HDL ether platform %s not found", name);
 	  }
 	}
-	return false;
+	return NULL;
       }
 
       unsigned Driver::

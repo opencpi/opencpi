@@ -56,7 +56,7 @@ namespace CU = ::OCPI::Util;
 namespace OCPI {
 
   namespace RDT {
-    class Descriptors;
+    struct Descriptors;
   }
 
   namespace DataTransport {

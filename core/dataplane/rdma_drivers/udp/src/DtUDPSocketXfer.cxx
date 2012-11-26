@@ -112,7 +112,7 @@ namespace DataTransfer {
 	UDPSocketXferRequest * req = m_xfs->firstChild();
 	while ( req ) {
 	  req->checkDrops();
-	  req = *req->nextChildP();
+	  req = req->nextChild();
 	};
 	OCPI::OS::sleep(10);
       }
@@ -127,7 +127,7 @@ namespace DataTransfer {
 
   UDPSocketXferServices::
   UDPSocketXferServices(SmemServices* source, SmemServices* target)
-    : ConnectionBase<UDPSocketXferFactory,UDPSocketXferServices,UDPSocketXferRequest>(source,target)
+    : ConnectionBase<UDPSocketXferFactory,UDPSocketXferServices,UDPSocketXferRequest>(*this, source,target)
   {
     m_dpMonitor = new DropPktMonitor(this);
     m_dpMonitor->start();
