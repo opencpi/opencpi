@@ -35,5 +35,4 @@
 ########################################################################### #
 
 Libraries=bsv util
-OnlyTargets=xc6vlx240t
 include $(OCPI_CDK_DIR)/include/worker.mk

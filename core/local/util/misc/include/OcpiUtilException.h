@@ -61,6 +61,7 @@ namespace OCPI {
       class Error : public OCPI::API::Error, public std::string {
       public:
 	Error(const char *err, ...) __attribute__((format(printf, 2, 3)));
+	Error(unsigned level, const char *err, ...) __attribute__((format(printf, 3, 4)));
 	virtual ~Error();
       protected:
 	Error();

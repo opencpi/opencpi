@@ -68,8 +68,8 @@ namespace OCPI {
       OCPI::Util::Assembly::Port ***m_assyPorts;  // a map by spec port ordinal to util::assembly ports
     public:
       Candidates *m_candidates;                   // array of candidate sets, indexed by instance ordinal
-      explicit Assembly(const char *file);
-      explicit Assembly(const std::string &string);
+      explicit Assembly(const char *file, const OCPI::Util::PValue *params);
+      explicit Assembly(const std::string &string, const OCPI::Util::PValue *params);
       ~Assembly();
       bool badConnection(const Implementation &impl, const Implementation &otherImpl,
 			 const OCPI::Util::Assembly::Port &ap, unsigned port);
@@ -79,7 +79,8 @@ namespace OCPI {
       void operator --( int );
       
     private:
-      void findImplementations();
+      void finalizeConnections();
+      void findImplementations(const OCPI::Util::PValue *params);
       bool foundImplementation(const Implementation &i, unsigned score, bool &accepted);
       int m_refCount;
     };

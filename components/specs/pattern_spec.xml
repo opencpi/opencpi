@@ -46,7 +46,7 @@ Properties:
   -->
   <property name='status'            volatile='true'/>
   <!-- Memory for metadata records. -->
-  <property name='metadata' arraydimensions='1024,4'/>
+  <property name='metadata' arraydimensions='1024,4' initial='true'/>
   <!-- Memory for data words. -->
-  <property name='data' arraylength='1024'/>
+  <property name='data' arraylength='1024' initial='true'/>
 </ComponentSpec>

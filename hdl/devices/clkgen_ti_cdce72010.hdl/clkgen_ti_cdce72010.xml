@@ -1,0 +1,54 @@
+<!--
+
+This is the HDL implememtation XML for the device worker for a TI
+CDCE72010 clock generator/synchronizer/distributor chip.
+
+Note that the default values from the data sheet are not specified
+here as default values from the property sheet, since they are in
+EEPROM, and we don't want to automatically program them to those
+values and override values written in EEPROM.
+
+-->
+<HdlImplementation Language="Verilog" Pattern="%w%M%0_">
+  <xi:include href="clock_gen_spec"/>
+  <controlinterface>
+  <!-- These properties are specific to this clock generator mchip/implementation 
+       The output control registers each control a specific output in bits 27:21.
+       Except for output 0 and 9, phase adjust and output divider are in bits 20:6.
+       Output 0 has the same phase adjust and divider as output 1.
+       Output 9 has the same phase adjust and divider as output 8.
+       Except for above, each register has its own unique/different control bits.
+       (Since they are really somewhat different, this is not an array).
+       These are initialized from EEPROM on power up.
+    -->
+    <Property Name="OutputControl0" Readable="true" Writable="true"/>
+    <Property Name="OutputControl1" Readable="true" Writable="true"/>
+    <Property Name="OutputControl2" Readable="true" Writable="true"/>
+    <Property Name="OutputControl3" Readable="true" Writable="true"/>
+    <Property Name="OutputControl4" Readable="true" Writable="true"/>
+    <Property Name="OutputControl5" Readable="true" Writable="true"/>
+    <Property Name="OutputControl6" Readable="true" Writable="true"/>
+    <Property Name="OutputControl7" Readable="true" Writable="true"/>
+    <Property Name="OutputControl8" Readable="true" Writable="true"/>
+    <Property Name="OutputControl9" Readable="true" Writable="true"/>
+    <!-- reg 10: 
+	 reference (PRI/SEC) divider bits 13:0 and VXXO/AUX/SEC divider bits 27:14 are here
+	 initialized from EEPROM on power up -->
+    <Property Name="Dividers" Readable="true" Writable="true"/>
+    <!-- reg 11:
+	 feedback and clock tree configuration
+	 initialized from EEPROM on power up -->
+    <Property Name="Feedback" Readable="true" Writable="true"/>
+    <!-- reg 12:
+	 test/diagnostic control and other status
+	 partially initialized to specific values on power no (NOT EEPROM).
+	 partially read-only -->
+    <Property Name="TestStatus" Readable="true" Writable="true"/>
+  </controlinterface>
+  <!-- From here on are the actual signal names of this worker -->
+  <Signal input="spi_miso"/>
+  <Signal output="spi_le"/>
+  <Signal output="spi_clk"/>
+  <Signal output="spi_mosi"/>
+</HdlImplementation>
+

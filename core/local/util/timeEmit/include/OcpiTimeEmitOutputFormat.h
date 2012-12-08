@@ -305,8 +305,8 @@ namespace OCPI {
       class CSVWriter {
       private:
 	XMLReader & m_xml_reader;
-	int  m_line;
 	bool m_smart;
+	int  m_line;
 	
       public:
 	CSVWriter( XMLReader & xml_data, bool smart)  

@@ -34,26 +34,12 @@
 #
 ########################################################################### #
 
-# This Makefile is to prebuild platform cores, which will have an unresolved
-# reference to mkOCApp.  We build with combinations of devices (which are the
-# optional elements of the platform).
-
-HdlMode:=platform
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-override HdlPlatform:=$(CwdName)
-Worker:=$(CwdName)
-HdlExactPart:=$(HdlPart_$(CwdName))
-HdlPart:=$(call HdlGetPart,$(CwdName))
-$(call OcpiDbgVar,HdlPart)
-override HdlTargets:=$(HdlPart)
-$(call OcpiDbgVar,HdlTargets,After HdlGetPart )
-include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
-LibName=$(CwdName)
-Core=$(CwdName)
-HdlPlatform:=$(CwdName)
-HdlTarget:=$(HdlActualTarget)
-Top=fpgaTop
-CompiledSourceFiles+=../../containers/mkOCApp_bb.v
-CompiledSourceFiles+=$(wildcard ../common/*.v)
-ComponentLibraries=../../devices
-include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
+SimLibraries=\
+ $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
+SimFiles=\
+ $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
+# Libraries=bsv util util_virtex5
+# include for protocols etc.
+OnlyTargets=verilator
+XmlIncludeDirs+=../../../components/specs
+include $(OCPI_CDK_DIR)/include/worker.mk

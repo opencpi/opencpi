@@ -56,14 +56,15 @@ SkelSuffix=$($(CapModel)SkelSuffix)
 SourceSuffix=$($(CapModel)SourceSuffix)
 ImplXmlFiles=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 $(call OcpiDbgVar,ImplXmlFiles)
-ifndef Application
 ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
-SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
 	$(AT)$(OcpiGen) -i  $<
+ifndef Application
+SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
 
 skeleton:  $(ImplHeaderFiles) $(SkelFiles)
+all: skeleton
 
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation skeleton file: $@
@@ -89,6 +90,7 @@ clean:: cleanfirst
 ifndef Application
 ifeq ($(origin WorkerSourceFiles),undefined)
 WorkerSourceFiles=$(foreach w,$(Workers),$(w)$(SourceSuffix))
+CompiledSourceFiles:= $(sort $(CompiledSourceFiles) $(WorkerSourceFiles))
 ifeq ($(origin ModelSpecificBuildHook),undefined)
 $(call OcpiDbgVar,SourceSuffix)
 $(call OcpiDbgVar,WorkerSourceFiles)
@@ -171,9 +173,9 @@ $(call WkrBinary,$(1)): $$(ObjectFiles_$(1)) $(ArtifactXmlFile) \
 	fi
 endif
 # If not an application, make the worker object files depend on the impl headers
-ifndef Application
+#ifndef Application
 $(foreach w,$(Workers),$(call WkrWorkerDep,$(w),$(1)))
-endif
+#endif
 # Make sure we actuall make the final binary for this target
 $(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$(1))")
 all: $(call WkrBinary,$(1))

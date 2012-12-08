@@ -10,7 +10,7 @@ cd $OCPI_PREREQUISITES_BUILD_DIR
 if test ! -d opensplice ; then
   mkdir opensplice
 fi
-OCPI_OPENSPLICE_VERSION=5.4.1
+OCPI_OPENSPLICE_VERSION=5.5.1
 cd opensplice
 TarFile=OpenSpliceDDSV$OCPI_OPENSPLICE_VERSION-src.tar
 pwd

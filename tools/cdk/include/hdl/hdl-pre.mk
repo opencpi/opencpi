@@ -132,7 +132,7 @@ HdlGetToolSet=$(strip \
 
 ################################################################################
 # $(call HdlGetTargetsForToolSet,toolset,targets)
-# Return all the targets that work with this too
+# Return all the targets that work with this tool
 HdlGetTargetsForToolSet=$(sort \
     $(foreach t,$(2),\
        $(and $(findstring $(1),$(call HdlGetToolSet,$(t))),$(t))))
@@ -223,6 +223,7 @@ $(call OcpiDbgVar,HdlToolSets)
 $(call OcpiDbgVar,SourceFiles,Before searching: )
 ifndef SourceFiles
 CompiledSourceFiles:= $(wildcard *.[vV]) $(wildcard *.vhd) $(wildcard *.vhdl)
+$(call OcpiDbgVar,CompiledSourceFiles)
 else
 CompiledSourceFiles:= $(SourceFiles)
 endif
@@ -247,7 +248,8 @@ install: $(HdlToolSets:%=install_%)
 stublibrary: $(HdlToolSets:%=stublibrary_%)
 define HdlDoToolSet
 $(1):
-	$(AT)$(MAKE) --no-print-directory HdlPlatforms="$(HdlPlatforms)" HdlTarget= \
+	$(AT)$(MAKE) --no-print-directory \
+	   HdlPlatforms="$(call HdlGetTargetsForToolSet,$(1),$(HdlPlatforms))" HdlTarget= \
            HdlTargets="$(call HdlGetTargetsForToolSet,$(1),$(HdlActualTargets))"
 
 stublibrary_$(1):

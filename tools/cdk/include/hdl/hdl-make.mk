@@ -12,7 +12,11 @@ HdlError:=error
 HdlSourceSuffix=.v
 
 
-HdlAllParts:=$(sort $(foreach t,$(HdlTopTargets),$(if $(findstring $(f),$(HdlSimTools)),,$(foreach f,$(HdlTargets_$(t)),$(HdlTargets_$(f))))))
+#HdlAllParts:=$(sort $(foreach t,$(HdlTopTargets),$(if $(findstring $(f),$(HdlSimTools)),,$(foreach f,$(HdlTargets_$(t)),$(HdlTargets_$(f))))))
+$(call OcpiDbgVar,HdlTopTargets)
+HdlAllParts:=$(sort $(foreach t,$(HdlTopTargets),\
+	              $(or $(foreach f,$(HdlTargets_$t),\
+                             $(or $(HdlTargets_$f),$f)),$t)))
 $(call OcpiDbgVar,HdlAllParts)
 
 HdlAllPlatformParts:=$(sort $(foreach pl,$(HdlAllPlatforms),$(firstword $(subst -, ,$(HdlPart_$(pl))))))
@@ -21,6 +25,12 @@ $(call OcpiDbgVar,HdlAllPlatformParts)
 # Families are either top level targets with nothing underneath or one level down
 HdlAllFamilies:=$(sort $(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
 $(call OcpiDbgVar,HdlAllFamilies)
+
+
+################################################################################
+# $(call HdlGetTargetFromPart,hdl-part)
+# Return the target name from a hyphenated partname
+HdlGetTargetFromPart=$(firstword $(subst -, ,$1))
 
 ################################################################################
 # $(call HdlGetFamily,hdl-target,[multi-ok?])
@@ -43,9 +53,11 @@ HdlGetFamily=$(call OcpiDbg,Entering HdlGetFamily($1,$2))$(strip \
 	             HdlFamily is ambigous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
 	           $(or $(HdlTargets_$(1)),$(1)))))),$(strip \
 	  $(foreach f,$(HdlAllFamilies),\
-	     $(and $(findstring $1,$(HdlTargets_$f)),$f))),$(strip \
+	     $(and $(findstring $(call HdlGetTargetFromPart,$1),$(HdlTargets_$f)),$f))),$(strip \
+	  $(and $(findstring $1,$(HdlAllPlatforms)), \
+	        $(call HdlGetFamily,$(call HdlGetTargetFromPart,$(HdlPart_$1))))),\
 	  $(call $(HdlError),$(strip \
-	     The build target '$(1)' is not a family or a part in any family)))),\
+	     The build target '$(1)' is not a family or a part in any family))),\
      $(call OcpiDbg,HdlGetFamily($1,$2)->$(gf))$(gf)))
 
 
@@ -73,7 +85,11 @@ ifeq ($(origin HdlPlatforms),undefined)
 HdlPlatforms:=ml605
 endif
 ifeq ($(origin HdlTargets),undefined)
+ifdef HdlPlatforms
+HdlTargets:=$(foreach p,$(HdlPlatforms),$(call HdlGetFamily,$(HdlPart_$p)))
+else
 HdlTargets:=virtex6
+endif
 endif
 ifeq ($(HdlTargets),all)
 override HdlTargets:=$(HdlAllFamilies)

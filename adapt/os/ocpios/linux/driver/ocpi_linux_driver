@@ -6,6 +6,15 @@
 # Retrieve the reserved DMA memory value from the kernel command line
 # Note there might be multiple reservations, and we currently only support one (the first).
 
+if [ -x /sbin/udevcontrol ] ; then
+RELOAD="/sbin/udevcontrol reload_rules"
+elif [ -x /sbin/udevadm ] ; then
+RELOAD="/sbin/udevadm control --reload-rules"
+else
+ echo Error: Neither /sbin/udevcontrol nor /sbin/udevadm were found and executable.
+ exit 1
+fi
+
 if [ $# == 2 ] ; then # this is for the makefile
   DIR=.
 else
@@ -20,7 +29,7 @@ RULESPATH=$DIR/$RULESFILE
 
 function rudev () {
   sudo rm -f /etc/udev/rules.d/$RULESFILE
-  sudo /sbin/udevcontrol reload_rules
+  sudo $RELOAD
 }
 
 function rmd () {
@@ -85,8 +94,8 @@ if [ $1 == status ] ; then
   echo The driver module is not currently loaded.
   exit 0
 fi
-sudo cp $RULESPATH /etc/udev/rules.d
-sudo /sbin/udevcontrol reload_rules
+sudo cp $RULESPATH /etc/udev/rules.d &&
+sudo $RELOAD &&
 sudo /sbin/insmod $MODPATH $INSARG
 #sudo /sbin/modprobe -v 
 if [ $? == 0 ] ; then

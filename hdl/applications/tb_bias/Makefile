@@ -34,26 +34,14 @@
 #
 ########################################################################### #
 
-# This Makefile is to prebuild platform cores, which will have an unresolved
-# reference to mkOCApp.  We build with combinations of devices (which are the
-# optional elements of the platform).
-
-HdlMode:=platform
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-override HdlPlatform:=$(CwdName)
-Worker:=$(CwdName)
-HdlExactPart:=$(HdlPart_$(CwdName))
-HdlPart:=$(call HdlGetPart,$(CwdName))
-$(call OcpiDbgVar,HdlPart)
-override HdlTargets:=$(HdlPart)
-$(call OcpiDbgVar,HdlTargets,After HdlGetPart )
-include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
-LibName=$(CwdName)
-Core=$(CwdName)
-HdlPlatform:=$(CwdName)
-HdlTarget:=$(HdlActualTarget)
-Top=fpgaTop
-CompiledSourceFiles+=../../containers/mkOCApp_bb.v
-CompiledSourceFiles+=$(wildcard ../common/*.v)
-ComponentLibraries=../../devices
-include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
+# Which component libraries should be referenced to build this app?
+Libraries=bsv util
+ComponentLibraries=../../../components
+# this line will be eliminated with a little more toolsmithing
+# at the moment there is no way for altera to search for cores.
+AssemblyWorkers=sma:sma0 sma:sma1 bias:bias
+# For which containers should the runtime xml be generated?
+# These (for now) just xml files containing HdlContainer elements.
+Container=mkOCApp-3w.v
+Containers=testtbCont
+include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk

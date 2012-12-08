@@ -355,3 +355,76 @@ HdlToolPost=\
 #    echo ngcbuild $(XstNgcOptions) temp.ngc $(Core).ngc; \
 #    echo ngcbuild -verbose $(XstNgcOptions) temp.ngc $(Core).ngc; \
 #
+################################################################################
+# Generate the per-platform files into platform-specific target dirs
+InitXilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh > /dev/null
+XilinxAfter=grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
+	     if grep -q $2 $1.out; then \
+	       echo Time: `cat $1.time`; \
+	       exit 0; \
+	     else \
+	       exit 1; \
+	     fi
+# Use default pattern to find error string in tool output
+DoXilinx=$(call DoXilinxPat,$1,$2,$3,'Number of error.*s: *0')
+DoXilinxPat=\
+	echo " "Details in $1.out; cd $(call PlatformDir,$2); $(InitXilinx); \
+	echo Command: $1 $3 > $1.out; \
+	/usr/bin/time -f %E -o $1.time sh -c "$1 $3; echo $$? > $1.status" >> $1.out 2>&1;\
+	(echo -n Time:; cat $1.time) >> $1.out; \
+	$(call XilinxAfter,$1,$4)
+#AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)
+PromName=$(call PlatformDir,$1)/$(call AppName,$1).mcs
+BitName=$(call PlatformDir,$1)/$(call AppName,$1).bit
+# FIXME: allow for multiple container mappings, possible platform-specific, possibly not
+NgdName=$(call PlatformDir,$1)/$(call AppName,$1).ngd
+NgcName=$(call PlatformDir,$1)/$(call AppName,$1).ngc
+AppNgcName=$(call PlatformDir,$1)/$(ContainerModule).ngc
+MapName=$(call PlatformDir,$1)/$(call AppName,$1)_map.ncd
+ParName=$(call PlatformDir,$1)/$(call AppName,$1)_par.ncd
+ChipScopeName=$(call PlatformDir,$1)/$(call AppName,$1)_csi.ngc
+PcfName=$(call PlatformDir,$1)/$(call AppName,$1).pcf
+TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
+
+define HdlToolDoPlatform
+
+$(call NgdName,$1): $(call AppNgcName,$1) $(HdlPlatformsDir)/$1/$1.ucf $(call TopNgcName,$1) | $(call PlatformDir,$1)
+	$(AT)echo -n For $(Worker) on $1: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
+	$(AT)$(call DoXilinx,ngdbuild,$1,\
+	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
+	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgdName,$1)))
+	$(AT)$(call DoXilinx,ngcbuild,$1,\
+	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
+	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgcName,$1)))
+# Map to physical elements
+$(call MapName,$1): $(call NgdName,$1)
+	$(AT)echo -n For $(Worker) on $1: creating mapped NCD '(Native Circuit Description)' file using '"map"'.
+	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$1) -w -logic_opt on -xe c -mt on -t $(or $(OCPI_PAR_SEED),1) -register_duplication on \
+	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(call MapName,$1)) \
+	                         $(notdir $(call NgdName,$1)) $(notdir $(call PcfName,$1)))
+
+# Place-and-route, and generate timing report
+$(call ParName,$1): $(call MapName,$1) $(call PcfName,$1)
+	$(AT)echo -n For $(Worker) on $1: creating PAR\'d NCD file using '"par"'.
+	$(AT)$(call DoXilinx,par,$1,-w -xe c $(notdir $(call MapName,$1)) \
+		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
+	$(AT)echo -n Generating timing report '(TWR)' for $1 platform design.
+	$(AT)-$(call DoXilinx,trce,$1,-v 20 -fastpaths -xml fpgaTop.twx \
+		-o fpgaTop.twr \
+		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
+
+# Generate bitstream
+$(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
+	$(AT)echo -n For $(Worker) on $1: Generating bitstream file $$@.
+	$(AT)$(call DoXilinxPat,bitgen,$1,-f $(HdlPlatformsDir)/common/bitgen_bit.ut \
+                $(notdir $(call ParName,$1)) $(notdir $(call BitName,$1)) \
+		$(notdir $(call PcfName,$1)), 'DRC detected 0 errors')
+
+ifdef HdlPromArgs_$1
+$(call PromName,$1): $(call BitName,$1)
+	$(AT)echo -n For $(Worker) on $1: Generating PROM file $$@.
+	$(AT)$(call DoXilinxPat,promgen,$1, -w -p mcs -c FF $$(HdlPromArgs_$1) $(notdir $(call BitName,$1)),'.*')
+#$$(info have prom for $1=$$(HdlPromArgs_$1)=)
+all: $(call PromName,$1)
+endif
+endef

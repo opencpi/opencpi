@@ -73,6 +73,10 @@ namespace OCPI {
     static Mutex mine;
     static unsigned logLevel = UINT_MAX;
     void
+    logSetLevel(unsigned level) {
+      logLevel = level;
+    }
+    void
     logPrint(unsigned n, const char *fmt, ...) throw() {
       if (logLevel != UINT_MAX && n > logLevel)
 	return;

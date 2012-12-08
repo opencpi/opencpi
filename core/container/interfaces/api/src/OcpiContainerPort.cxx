@@ -348,11 +348,12 @@ namespace OCPI {
       Descriptors
         &pDesc = isProvider() ? getData().data : other,
         &uDesc = isProvider() ? other : getData().data;
-      ocpiDebug("Port %s, a %s, has options 0x%x, initial role %s, buffers %u",
+      ocpiDebug("Port %s, a %s, has options 0x%x, initial role %s, buffers %u size %u",
 		m_metaPort.name, isProvider() ? "provider/consumer" : "user/producer",
-		getData().data.options, roleName[getData().data.role], getData().data.desc.nBuffers);
-      ocpiDebug("  other has options 0x%x, initial role %s, buffers %u",
-		other.options, roleName[other.role], other.desc.nBuffers);
+		getData().data.options, roleName[getData().data.role],
+		getData().data.desc.nBuffers, getData().data.desc.dataBufferSize);
+      ocpiDebug("  other has options 0x%x, initial role %s, buffers %u size %u",
+		other.options, roleName[other.role], other.desc.nBuffers, other.desc.dataBufferSize);
       chooseRoles(uDesc.role, uDesc.options, pDesc.role, pDesc.options);
       ocpiDebug("  after negotiation, port %s, a %s, has role %s,"
 		"  other has role %s",

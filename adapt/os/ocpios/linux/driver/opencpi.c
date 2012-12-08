@@ -51,6 +51,7 @@
 #include <linux/sysfs.h>
 #include <linux/pid.h>
 #include <linux/cdev.h>			// Character devices (load this last due to bugs)
+#include <linux/version.h>
 
 
 #include "HdlOCCP.h"
@@ -447,6 +448,13 @@ opencpi_vma_close(struct vm_area_struct *vma) {
 }
 
 // Map an individual page - in our case only for kernel allocation (not mmio, not reserved)
+#if RHEL_MAJOR==6
+#define OCPI_RH6
+#else
+#define OCPI_RH5
+#endif
+
+#ifdef OCPI_RH5
 static struct page *
 opencpi_vma_nopage(struct vm_area_struct *vma, unsigned long virt_addr, int *type) {
   ocpi_block_t *block = vma->vm_private_data;
@@ -472,6 +480,32 @@ static struct vm_operations_struct opencpi_vm_ops = {
   .close = opencpi_vma_close,
   .nopage = opencpi_vma_nopage,
 };
+#else
+static int
+opencpi_vma_fault(struct vm_area_struct *vma, struct vm_fault *vmf) {
+  ocpi_block_t *block = vma->vm_private_data;
+
+  if (block && block->type == ocpi_kernel) {
+    unsigned long offset = vmf->pgoff << PAGE_SHIFT;
+    struct page *pageptr = virt_to_page(offset);
+
+    log_debug("vma_fault vma %p addr %p pfn %lx\n", vma, vmf->virtual_address, vmf->pgoff);
+    log_debug_block(block, "vma_fault:");
+
+    get_page(pageptr);
+    vmf->page = pageptr;
+    return 0;
+  }
+  return VM_FAULT_SIGBUS; /* send a SIGBUS */
+}
+
+// vma operations on our mappings
+static struct vm_operations_struct opencpi_vm_ops = {
+  .open = opencpi_vma_open,
+  .close = opencpi_vma_close,
+  .fault = opencpi_vma_fault,
+};
+#endif
 
 // -----------------------------------------------------------------------------------------------
 // Character device functions: only "release", "ioctl" and "mmap" for us
@@ -876,13 +910,24 @@ probe_pci(struct pci_dev *pcidev, const struct pci_device_id *id) {
     // We assume no real side effects on this initialization (nothing to undo)
     if ((err = add_cdev(mydev)))
       break;
+#ifdef OCPI_RH6
+    log_debug("pci device name set to: %s\n",
+	      mydev->pcidev->dev.init_name ? mydev->pcidev->dev.init_name : "nothing");
+#else
     log_debug("pci device name set to: %s\n",
 	      mydev->pcidev->dev.bus_id[0] ? mydev->pcidev->dev.bus_id : "nothing");
+#endif
     {
       struct device *fsdev =
-	device_create(opencpi_class, NULL, mydev->cdev.dev,
+#ifdef OCPI_RH6
+	device_create(opencpi_class, NULL, mydev->cdev.dev, NULL,
 		      "%s=p=%04x:%02x:%02x.%d", DRIVER_ABBREV, pci_domain_nr(pcidev->bus),
 		      pcidev->bus->number, PCI_SLOT(pcidev->devfn), PCI_FUNC(pcidev->devfn));
+#else
+        device_create(opencpi_class, NULL, mydev->cdev.dev,
+		      "%s=p=%04x:%02x:%02x.%d", DRIVER_ABBREV, pci_domain_nr(pcidev->bus),
+		      pcidev->bus->number, PCI_SLOT(pcidev->devfn), PCI_FUNC(pcidev->devfn));
+#endif
       if (fsdev == NULL || IS_ERR(fsdev)) {
 	log_pci_err(pcidev, PTR_ERR(fsdev), "device_create failed");
 	break;
@@ -977,11 +1022,19 @@ static DEFINE_MUTEX(net_mutex);
 
 // A user level socket is being created - do our part
 static int
+#ifdef OCPI_RH6
+net_create(struct net *net, struct socket *sock, int protocol, int kern) {
+#else
 net_create(struct socket *sock, int protocol) {
+#endif
   struct sock *sk;
   if (sock->type != SOCK_DGRAM)
     return -ESOCKTNOSUPPORT;
+#ifdef OCPI_RH6
+  if ((sk = sk_alloc(net, PF_OPENCPI, GFP_KERNEL, &opencpi_proto)) == NULL)
+#else
   if ((sk = sk_alloc(PF_OPENCPI, GFP_KERNEL, &opencpi_proto, 1)) == NULL)
+#endif
     return -ENOBUFS;
   sock->state = SS_UNCONNECTED;
   sock->ops = &opencpi_socket;
@@ -1010,7 +1063,11 @@ net_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len) {
   if (s->ocpi_ifindex == 0) {
     int n;
     for (n = 1; n < 20; n++) {
+#ifdef OCPI_RH6
+      struct net_device *d = dev_get_by_index(&init_net, n);
+#else
       struct net_device *d = dev_get_by_index(n);
+#endif
       if (d != NULL && d->type == ARPHRD_ETHER &&
 	  (dev_get_flags(d) & (IFF_UP|IFF_LOWER_UP)) == (IFF_UP|IFF_LOWER_UP))
 	break;
@@ -1022,7 +1079,11 @@ net_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len) {
   if (addr_len < sizeof(ocpi_sockaddr_t) ||
       s->ocpi_family != PF_OPENCPI ||
       s->ocpi_role == ocpi_none || s->ocpi_role >= ocpi_role_limit ||
+#ifdef OCPI_RH6
+      (d = dev_get_by_index(&init_net, s->ocpi_ifindex)) == NULL ||
+#else
       (d = dev_get_by_index(s->ocpi_ifindex)) == NULL ||
+#endif
       (s->ocpi_role == ocpi_master &&
        (is_zero_ether_addr(s->ocpi_remote) ||
 	is_broadcast_ether_addr(s->ocpi_remote))))
@@ -1210,7 +1271,11 @@ net_sendmsg(struct kiocb *iocb, struct socket *sock, struct msghdr *msg, size_t 
       kfree_skb(skb);
     else {
       error = total_len;
+#ifdef OCPI_RH6
+      dev_hard_header(skb, dev, etype,
+#else
       dev->hard_header(skb, dev, etype,
+#endif
 		       mysa->ocpi_role == ocpi_master ? 
 		       mysa->ocpi_remote : ((ocpi_sockaddr_t *)msg->msg_name)->ocpi_remote,
 		       NULL, actual_len);

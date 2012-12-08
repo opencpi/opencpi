@@ -98,6 +98,7 @@ namespace OCPI {
     void debugBreak ()
       throw ();
 
+    void logSetLevel(unsigned n);
     void logPrint(unsigned n, const char *fmt, ...) throw() __attribute__((format(printf, 2, 3)));
   }
 }

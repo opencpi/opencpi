@@ -38,6 +38,9 @@
 
 HdlMode:=application
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+# This is only checked with ifdef, and otherwise not used.
+# It is needed in generic code where hdlmode is not known
+Application:=$(CwdName)
 
 ################################################################################
 # Deal with platform issues if there are specified platforms
@@ -123,7 +126,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
 # (i.e. have run "make" per tool, with all the targets for a tool built in one "make").
 # Now we build the container core on top of the app core, only for synthesis.
 ifndef HdlSkip
-ifdef HdlSimTool
+ifdef HdlSimToolXXX
 $(info No container core built for simulation tool $(HdlToolSet))
 else
 ifndef Container
@@ -150,12 +153,15 @@ ifdef HdlToolNeedBB
 # namely under the family
 $(OutDir)target-$3/$(Worker)_bb/$3:
 	$(AT)ln -s . $(OutDir)target-$3/$(Worker)_bb/$3
+else
+$(OutDir)target-$3/$(Worker)/$3:
+	$(AT)ln -s . $(OutDir)target-$3/$(Worker)/$3
 endif
 # The link that makes the app core be in the right place
 # namely: target-<family>/<family>/<foo>.ngc
 # so we make a simple link for the family name
 $(OutDir)target-$3/$3: | $(OutDir)target-$3/$(Core)$(HdlBin)
-	$(AT)pwd;ln -s . $(OutDir)target-$3/$3
+	$(AT)ln -s . $(OutDir)target-$3/$3
 
 $(OutDir)target-$1/$(Worker):
 	$(AT)mkdir $$@
@@ -174,11 +180,16 @@ $(OutDir)target-$1/$(ContainerModule)$(HdlBin): HdlSources=$(OutDir)target-$1/$(
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/$(ContainerModule).v
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/$(Worker)_UUID.v
 # Need the link to the bb lib
+ifdef HdlToolNeedBB
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $(OutDir)target-$3/$(Worker)_bb/$3
+else
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $(OutDir)target-$3/$(Worker)/$3
+endif
 # Need the link to the core
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $(OutDir)target-$3/$3
 	$(AT)echo Building container core \"$(ContainerModule)\" for target \"$$(HdlTarget)\"
 	$(AT)$$(HdlCompile)
+
 endef
 
 #$(info HAT=$(HdlActualTargets)=)
@@ -190,75 +201,15 @@ $(Containers): $(ContainerRtl) Makefile
 all: $(ContainerCores)
 
 ################################################################################
-# Generate the per-platform files into platform-specific target dirs
-InitXilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh > /dev/null
-XilinxAfter=grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
-	     if grep -q $2 $1.out; then \
-	       echo Time: `cat $1.time`; \
-	       exit 0; \
-	     else \
-	       exit 1; \
-	     fi
-# Use default pattern to find error string in tool output
-DoXilinx=$(call DoXilinxPat,$1,$2,$3,'Number of error.*s: *0')
-DoXilinxPat=\
-	echo " "Details in $1.out; cd $(call PlatformDir,$2); $(InitXilinx); \
-	echo Command: $1 $3 > $1.out; \
-	/usr/bin/time -f %E -o $1.time sh -c "$1 $3; echo $$? > $1.status" >> $1.out 2>&1;\
-	(echo -n Time:; cat $1.time) >> $1.out; \
-	$(call XilinxAfter,$1,$4)
+# Now we build for the platform.  These three names are platform-independent
 PlatformDir=$(OutDir)target-$1
 AppName=$(Worker)-$1
-#AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)
-PromName=$(call PlatformDir,$1)/$(call AppName,$1).mcs
-BitName=$(call PlatformDir,$1)/$(call AppName,$1).bit
-ContainerXmlFile=$(Worker)_cont.xml
-# FIXME: allow for multiple container mappings, possible platform-specific, possibly not
+BitZName=$(call PlatformDir,$1)/$(call AppName,$1).bit.gz
 ArtifactXmlName=$(call PlatformDir,$1)/$(Worker)_cont_art.xml
 ArtifactXmlDirs=$(XmlIncludeDirs) ../../devices/specs ../../devices/lib/hdl
-BitZName=$(call PlatformDir,$1)/$(call AppName,$1).bit.gz
-NgdName=$(call PlatformDir,$1)/$(call AppName,$1).ngd
-NgcName=$(call PlatformDir,$1)/$(call AppName,$1).ngc
-AppNgcName=$(call PlatformDir,$1)/$(ContainerModule).ngc
-MapName=$(call PlatformDir,$1)/$(call AppName,$1)_map.ncd
-ParName=$(call PlatformDir,$1)/$(call AppName,$1)_par.ncd
-ChipScopeName=$(call PlatformDir,$1)/$(call AppName,$1)_csi.ngc
-PcfName=$(call PlatformDir,$1)/$(call AppName,$1).pcf
-TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
+ContainerXmlFile=$(Worker)_cont.xml
 
-define DoPlatform
-
-$(call NgdName,$1): $(call AppNgcName,$1) $(HdlPlatformsDir)/$1/$1.ucf $(call TopNgcName,$1) | $(call PlatformDir,$1)
-	$(AT)echo -n For $(Worker) on $1: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
-	$(AT)$(call DoXilinx,ngdbuild,$1,\
-	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
-	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgdName,$1)))
-	$(AT)$(call DoXilinx,ngcbuild,$1,\
-	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
-	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgcName,$1)))
-# Map to physical elements
-$(call MapName,$1): $(call NgdName,$1)
-	$(AT)echo -n For $(Worker) on $1: creating mapped NCD '(Native Circuit Description)' file using '"map"'.
-	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$1) -w -logic_opt on -xe c -mt on -t $(or $(OCPI_PAR_SEED),1) -register_duplication on \
-	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(call MapName,$1)) \
-	                         $(notdir $(call NgdName,$1)) $(notdir $(call PcfName,$1)))
-
-# Place-and-route, and generate timing report
-$(call ParName,$1): $(call MapName,$1) $(call PcfName,$1)
-	$(AT)echo -n For $(Worker) on $1: creating PAR\'d NCD file using '"par"'.
-	$(AT)$(call DoXilinx,par,$1,-w -xe c $(notdir $(call MapName,$1)) \
-		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
-	$(AT)echo -n Generating timing report '(TWR)' for $1 platform design.
-	$(AT)-$(call DoXilinx,trce,$1,-v 20 -fastpaths -xml fpgaTop.twx \
-		-o fpgaTop.twr \
-		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
-
-# Generate bitstream
-$(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
-	$(AT)echo -n For $(Worker) on $1: Generating bitstream file $$@.
-	$(AT)$(call DoXilinxPat,bitgen,$1,-f $(HdlPlatformsDir)/common/bitgen_bit.ut \
-                $(notdir $(call ParName,$1)) $(notdir $(call BitName,$1)) \
-		$(notdir $(call PcfName,$1)), 'DRC detected 0 errors')
+define doPlatform
 
 # Different since it is in the targetdir
 $(call ArtifactXmlName,$1) $(call PlatformDir,$1)/$(Worker)_UUID.v: $(ContainerXmlFile) $(ImplXmlFile)
@@ -267,27 +218,22 @@ $(call ArtifactXmlName,$1) $(call PlatformDir,$1)/$(Worker)_UUID.v: $(ContainerX
 	  -D $(call PlatformDir,$1) $(ArtifactXmlDirs:%=-I%) -A \
           -c $(ContainerXmlFile) -P $1 -e $(call HdlGetPart,$1) $(ImplXmlFile)
 
-
-$(call BitZName,$1): $(call BitName,$1) $(call ArtifactXmlName,$1)
-	$(AT)echo Making compressed bit file: $$@
-	$(AT)gzip -c $(call BitName,$1) > $$@
-	$(AT)$(ToolsDir)/../../scripts/addmeta $(call ArtifactXmlName,$1) $$@
-
-
--include $(HdlPlatformsDir)/$1/$1.mk
-ifdef HdlPromArgs_$1
-$(call PromName,$1): $(call BitName,$1)
-	$(AT)echo -n For $(Worker) on $1: Generating PROM file $$@.
-	$(AT)$(call DoXilinxPat,promgen,$1, -w -p mcs -c FF $$(HdlPromArgs_$1) $(notdir $(call BitName,$1)),'.*')
-#$$(info have prom for $1=$$(HdlPromArgs_$1)=)
-all: $(call PromName,$1)
-endif
+$(call BitZName,$1): $$(call BitName,$1) $$(call ArtifactXmlName,$1)
+	$(AT)echo Making compressed bit file: $$@ from $$<
+	$(AT)gzip -c $$(call BitName,$1) > $$@
+	$(AT)$(ToolsDir)/../../scripts/addmeta $$(call ArtifactXmlName,$1) $$@
 
 all: $(call BitZName,$1)
-
 endef
 
-$(foreach p,$(HdlPlatforms),$(eval $(call DoPlatform,$(p))))
+$(foreach p,$(HdlPlatforms),$(eval $(call doPlatform,$p)))
+
+# Maybe the platform and not the tool defines how things build...
+-include $(HdlPlatformsDir)/$1/$1.mk
+
+# At this point we expect HdlToolDoPlatform to be defined.
+
+$(foreach p,$(HdlPlatforms),$(eval $(call HdlToolDoPlatform,$p)))
 
 endif # of else of ifdef HdlSimTool
 

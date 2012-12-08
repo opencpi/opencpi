@@ -64,10 +64,21 @@ namespace OCPI {
   namespace Util {
     class Assembly {
     public:
+      // This class is overloaded both for property values for individual instances
+      // as well as top level properties that are mapped to workers.
+      struct Instance;
+      struct MappedProperty {
+	std::string m_name;
+	std::string m_instPropName; // non-empty for top level
+	unsigned m_instance;        // if m_instPropName is nonempty this is valid
+	const char *parse(ezxml_t x, Assembly &a);
+      };
+      typedef std::vector<MappedProperty> MappedProperties;
       struct Property {
 	std::string m_name;
 	std::string m_value;
 	const char *parse(ezxml_t x);
+	const char *setValue(ezxml_t px);
       };
       typedef std::vector<Property> Properties;
       struct Port;
@@ -76,10 +87,13 @@ namespace OCPI {
 	  m_name,                  // name of the instance within the assembly
 	  m_specName,              // name of component being instantiated
 	  m_selection;             // the selection expression
+	unsigned m_ordinal;
 	Properties m_properties;
 	PValueList m_parameters;
 	std::list<Port*> m_ports; // attachments to connections
-	const char *parse(ezxml_t ix, ezxml_t ax);
+	const char *parse(ezxml_t ix, ezxml_t ax, unsigned ordinal);
+	const char *addProperty(const char *name, ezxml_t px);
+	const char *parseConnection(ezxml_t ix, Assembly &a);
       };
       // The attachment of a connection to external or port
       struct External {
@@ -91,11 +105,16 @@ namespace OCPI {
       };
       struct Connection;
       struct Port {
-	std::string m_name;
+	// This mutable is because this name might be resolved when an application
+	// uses this assembly (and has access to impl metadata).
+	// Then this assembly is reused, this resolution will still be valid.
+	mutable std::string m_name;
 	unsigned m_instance;
 	PValueList m_parameters;
+	bool m_input; // if no name
 	Port *m_connectedPort;
 	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl);
+	void init(const char *name, unsigned instance, bool isInput);
       };
       struct Connection {
 	std::string m_name;
@@ -103,6 +122,8 @@ namespace OCPI {
 	std::vector<Port> m_ports;
 	PValueList m_parameters;
 	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
+	Port &addPort(unsigned instance, const char *port, bool isInput);
+	void addExternal(const char *name);
       };
       // Potentially specified in the assembly, what policy should be used
       // to spread workers to containers?
@@ -123,12 +144,18 @@ namespace OCPI {
       std::vector<Connection> m_connections;
       CMapPolicy m_cMapPolicy;
       uint32_t   m_processors;
+      MappedProperties m_mappedProperties; // top level mapped to instance properties.
       // Provide a file name.
       explicit Assembly(const char *file);
       // Provide a string containing the xml
       explicit Assembly(const std::string &string);
       ~Assembly();
-      const char *getInstance(const char *name, unsigned &);
+      const char
+        *getInstance(const char *name, unsigned &),
+	*addConnection(const char *name, Connection *&c),
+        *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort),
+        *addExternalConnection(unsigned instance, const char *port);
+
     };
   }
 }

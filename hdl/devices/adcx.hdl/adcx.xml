@@ -9,6 +9,7 @@
     </DataInterfaceSpec>
   </ComponentSpec>
   <StreamInterface Name="out" ImpreciseBurst="True" PreciseBurst="True" DataWidth="32"/>
+  <TimeInterface/>
   <Signal Input="CLK_sys0_clk"/>
   <Signal Input="RST_N_sys0_rst"/>
   <Signal Input="CLK_adc_clk"/>
@@ -24,7 +25,6 @@
   <Signal Input="adc1_ddp_arg" Width="7"/>
   <Signal Input="adc1_ddn_arg" Width="7"/>
   <Signal Input="adc1_sdout_arg"/>
-  <Signal Output="wtiS0_SThreadBusy"/>
   <Signal Output="adx_csb"/>
   <Signal Output="adx_sdo"/>
   <Signal Output="adx_funct"/>

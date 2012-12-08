@@ -196,6 +196,10 @@ namespace OCPI {
       ocpiAssert(!m_dtPort);
       // start up the output side with no input information - just for params
       applyConnectParams(NULL, params);
+      // We forcibly ignore mandatory transfer roles here:
+      input.getData().data.options &= ~OCPI::RDT::MandatedRole;
+      getData().data.options |= OCPI::RDT::MandatedRole;
+      getData().data.role = OCPI::RDT::ActiveMessage;
       // Perform the final negotiation between the input side with all its
       determineRoles(input.getData().data);
       // Setup the output port, providing the collocated input port info, but NOT finalizing

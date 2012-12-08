@@ -36,6 +36,7 @@
 #include <memory>
 #include <unistd.h>
 #include <stdarg.h>
+#include <strings.h>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilDataTypes.h"
@@ -82,10 +83,10 @@ namespace OCPI {
       return NULL;
     }
  
-#undef OCPI_DATA_TYPE_S
+    //#undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)	\
     bool 							        \
-    find##pretty(const PValue* p, const char* name, run &value) {	\
+    find##pretty(const PValue* p, const char* name, run &value) { \
       const PValue *fp = find(p, name);					\
       if (fp)								\
         if (fp->type == OCPI::API::OCPI_##pretty) {	                \
@@ -95,6 +96,7 @@ namespace OCPI {
 	  throw ApiError("Property \"", name, "\" is not a ", #pretty, NULL); \
       return false;							\
     }
+#if 0
 #define OCPI_DATA_TYPE_S(sca, corba, letter, bits, run, pretty, store)	\
     bool 							        \
     find##pretty(const PValue* p, const char* name, run &value) {	\
@@ -104,13 +106,55 @@ namespace OCPI {
           value = fp->v##pretty;					\
           return true;							\
 	} else								\
-	  throw ApiError("Property \"", name, "\" is not a ", #pretty, NULL); \
+	  throw ApiError("Parameter \"", name, "\" is not a ", #pretty, NULL); \
       return false;							\
     }
+#endif
+
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-#undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+    //#undef OCPI_DATA_TYPE_S
+    //#define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+
+    bool 
+    findAssign(const PValue *p, const char *name, const char *var, const char *&val) {
+      if (p)
+	for (; p->name; p++)
+	  if (!strcasecmp(p->name, name))
+	    if (p->type == OCPI::API::OCPI_String) {
+	      unsigned len = strlen(var);
+	      if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+		val = p->vString + len + 1;
+		return true;
+	      }
+	    } else
+	      throw ApiError("Parameter \"", name, "\" is not a string", NULL);
+      return false;
+    }
+
+    bool 
+    findAssignNext(const PValue *p, const char *name, const char *var,
+		   const char *&val, unsigned &next) {
+      if (p)
+	for (unsigned n = 0; p->name; p++, n++)
+	  if (n >= next && !strcasecmp(p->name, name))
+	    if (p->type == OCPI::API::OCPI_String) {
+	      if (!var) {
+		val = p->vString;
+		next = n + 1;
+		return true;
+	      } else {
+		unsigned len = strlen(var);
+		if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+		  val = p->vString + len + 1;
+		  next = n + 1;
+		  return true;
+		}
+	      }
+	    } else
+	      throw ApiError("Parameter \"", name, "\" is not a string", NULL);
+      return false;
+    }
 
     PValueList::PValueList() : m_list(NULL) {}
     PValueList::~PValueList() { delete [] m_list; }
