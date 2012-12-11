@@ -128,8 +128,19 @@ getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
   if (!remote)
     remote = "ocpi-smb-pio";
   XferFactory* tfactory = XferFactoryManager::getFactoryManager().find(remote);
-  if (!tfactory)
-    throw UnsupportedEndpointEx(remote);
+  if (!tfactory) {
+    std::string rem("ocpi-");
+    if (!strcasecmp(remote, "pio"))
+      rem += "smb-pio";
+    else if (!strcasecmp(remote, "pci"))
+      rem += "pci-pio";
+    else {
+      rem += remote;
+      rem += "-rdma";
+    }
+    if (!(tfactory = XferFactoryManager::getFactoryManager().find(rem)))
+      throw UnsupportedEndpointEx(remote);
+  }
 #if 1
   uint16_t mailBox = 0, maxMb = 0;
   const char *after = strchr(remote, ':');
