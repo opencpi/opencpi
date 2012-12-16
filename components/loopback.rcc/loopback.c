@@ -30,8 +30,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    *out = &self->ports[LOOPBACK_OUT];
    
  if (in->input.length > out->current.maxLength) {
-   printf("loopback: ERROR: ouput buffer is too small\n");
-   self->errorString = "output buffer too small";
+   self->container.setError( "output buffer too small" );
    return RCC_ERROR;
  }
 

@@ -5,7 +5,6 @@
  *
  * This file contains the RCC implementation skeleton for worker: file_read
  */
-#define _GNU_SOURCE // for asprintf
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
@@ -48,7 +47,7 @@ RCCResult genTestFile( RCCWorker * self )
   unsigned bc=0;
   printf("Generating simple data file\n");
   if ((fd = creat(p->fileName, 0666)) < 0) {
-    asprintf(&self->errorString, "error opening file \"%s\": %s", p->fileName, strerror(errno));
+    self->container.setError( "error opening file \"%s\": %s", p->fileName, strerror(errno));
     return RCC_ERROR;
   }
 
@@ -62,13 +61,13 @@ RCCResult genTestFile( RCCWorker * self )
 
     bc+=sizeof(FileHeader);
     if (write(fd, &h, sizeof(FileHeader)) < 0) {
-      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      self->container.setError( "error reading file: %s", strerror(errno));
       return RCC_ERROR;
     }
 
     bc+= h.length;
     if (write(fd, cbuffer, h.length) < 0) {
-      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      self->container.setError( "error reading file: %s", strerror(errno));
       return RCC_ERROR;
     }
   }
@@ -81,7 +80,7 @@ RCCResult genTestFile( RCCWorker * self )
     h.length = DATA_SIZE * sizeof(uint16_t);
     bc+=sizeof(FileHeader);
     if (write(fd, &h, sizeof(FileHeader)) < 0) {
-      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      self->container.setError( "error reading file: %s", strerror(errno));
       return RCC_ERROR;
     }
     uint16_t buffer[DATA_SIZE];
@@ -90,7 +89,7 @@ RCCResult genTestFile( RCCWorker * self )
     }
     bc+= h.length;
     if (write(fd, buffer, h.length) < 0) {
-      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      self->container.setError( "error reading file: %s", strerror(errno));
       return RCC_ERROR;
     }
   }
@@ -102,7 +101,7 @@ RCCResult genTestFile( RCCWorker * self )
     h.length = DATA_SIZE * sizeof(uint16_t) * 2;
     bc+=sizeof(FileHeader);
     if (write(fd, &h, sizeof(FileHeader)) < 0) {
-      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      self->container.setError( "error reading file: %s", strerror(errno));
       return RCC_ERROR;
     }
     uint16_t buffer[DATA_SIZE*2];
@@ -112,7 +111,7 @@ RCCResult genTestFile( RCCWorker * self )
     }
     bc+= h.length;
     if (write(fd, buffer, h.length) < 0) {
-      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      self->container.setError( "error reading file: %s", strerror(errno));
       return RCC_ERROR;
     }
 
@@ -128,12 +127,12 @@ RCCResult genTestFile( RCCWorker * self )
     h.length = strlen( cbuffer ) + 1;
     bc+= sizeof(FileHeader);
     if (write(fd, &h, sizeof(FileHeader)) < 0) {
-      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      self->container.setError("error reading file: %s", strerror(errno));
       return RCC_ERROR;
     }
     bc+= h.length;
     if (write(fd, cbuffer, h.length) < 0) {
-      asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+      self->container.setError( "error reading file: %s", strerror(errno));
       return RCC_ERROR;
     }
   }
@@ -150,7 +149,7 @@ start(RCCWorker *self) {
   MyState *s = self->memories[0];
   File_read_msgProperties *p = self->properties;
   if (s->started) {
-    self->errorString = "file_read cannot be restarted";
+    self->container.setError("file_read cannot be restarted");
     return RCC_ERROR;
   }
 
@@ -162,7 +161,7 @@ start(RCCWorker *self) {
 
   s->started = 1;
   if ((s->fd = open(p->fileName, O_RDONLY)) < 0) {
-    asprintf(&self->errorString, "error opening file \"%s\": %s", p->fileName, strerror(errno));
+    self->container.setError( "error opening file \"%s\": %s", p->fileName, strerror(errno));
     return RCC_ERROR;
   }
   p->finished = 0;
@@ -200,7 +199,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
  (void)timedOut;(void)newRunCondition;
  if (props->messageSize > port->current.maxLength) {
-   self->errorString = "message size property too large for buffers";
+   self->container.setError( "message size property too large for buffers" );
    return RCC_ERROR;
  }
  if (props->granularity) {
@@ -209,7 +208,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
  if ( s->blcm == 0 ) {
    if ((n = read(s->fd, &s->header, sizeof(FileHeader))) < 0) {
-     asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+     self->container.setError( "error reading file: %s", strerror(errno));
      return RCC_ERROR;
    } 
    printf("file_reader_msg(%s): Data length = %d\n", props->fileName, s->header.length );
@@ -226,7 +225,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  
  readl = (port->current.maxLength > s->header.length) ?  s->header.length : port->current.maxLength;
  if ((n = read(s->fd, port->current.data, readl )) < 0) {
-   asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+   self->container.setError( "error reading file: %s", strerror(errno));
    return RCC_ERROR;
  } 
  if ( n == 0 ) {
