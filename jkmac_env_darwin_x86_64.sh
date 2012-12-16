@@ -78,12 +78,12 @@ export OCPI_ICARUS_DIR=/opt/opencpi/prerequisites/icarus/$OCPI_BUILD_HOST
 
 export OCPI_OUT_DIR=$OCPI_OS-$OCPI_ARCH-bin
 
-export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_GTEST_DIR/lib:$LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_GTEST_DIR/lib:$LD_LIBRARY_PATH
 
 # #### Compiler linker flags ############################################## #
 
 #export OCPI_CFLAGS=-m64
-#export OCPI_CXXFLAGS=-m64
+export OCPI_CXXFLAGS=-Wno-dangling-else
 #export OCPI_LDFLAGS=-m64
 
 # #### Debug and assert settings ########################################## #
@@ -130,7 +130,7 @@ export OCPI_HAVE_IBVERBS=0
 #export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
 export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl_container/impl/include
 export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
-export OCPI_OCL_OBJS=/Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/OpenCL.framework/Versions/Current/OpenCL
+export OCPI_OCL_OBJS=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
 # ######################################################################### #
 
 export OCPI_LIBRARY_PATH=$OCPI_BASE_DIR/components/lib/rcc

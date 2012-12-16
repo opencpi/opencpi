@@ -66,7 +66,8 @@ namespace OCPI {
 
     unsigned Assembly::s_count = 0;
 
-    const char *Assembly::parse() {
+    const char *Assembly::
+    parse() {
       // This is where common initialization is done except m_xml and m_copy
       m_doneInstance = -1;
       m_cMapPolicy = RoundRobin;
@@ -75,7 +76,7 @@ namespace OCPI {
       const char *err;
       bool maxProcs = false, minProcs = false, roundRobin = false;
       if ((err = OE::checkAttrs(ax, "maxprocessors", "minprocessors", "roundrobin", "done", "name", NULL)) ||
-	  (err = OE::checkElements(ax, "instance", "connection", "policy", NULL)) ||
+	  (err = OE::checkElements(ax, "instance", "connection", "policy", "property", NULL)) ||
 	  (err = OE::getNumber(ax, "maxprocessors", &m_processors, &maxProcs)) ||
 	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &minProcs)) ||
 	  (err = OE::getBoolean(ax, "roundrobin", &roundRobin)))
@@ -88,9 +89,9 @@ namespace OCPI {
 	m_cMapPolicy = RoundRobin;
       else
 	m_cMapPolicy = RoundRobin;
-      ezxml_t  p = ezxml_cchild(ax, "policy");
-      if ( p ) {
-	const char * tmp = ezxml_attr(p, "mapping" );
+      ezxml_t px = ezxml_cchild(ax, "policy");
+      if (px) {
+	const char * tmp = ezxml_attr(px, "mapping" );
 	if ( tmp ) {
 	  if (!strcasecmp(tmp, "maxprocessors"))
 	    m_cMapPolicy = MaxProcessors;
@@ -101,8 +102,8 @@ namespace OCPI {
 	  else
 	    return esprintf("Invalid policy mapping option: %s", tmp);
 	}
-	tmp  = ezxml_attr(p, "processors");	
-	if ( tmp ) {
+	tmp  = ezxml_attr(px, "processors");	
+	if (tmp) {
 	  m_processors = atoi(tmp);
 	}
       }
@@ -110,43 +111,157 @@ namespace OCPI {
       OE::getNameWithDefault(ax, m_name, "unnamed%u", s_count);
       m_instances.resize(OE::countChildren(ax, "Instance"));
       Instance *i = &m_instances[0];
-      for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix), i++)
-	if ((err = i->parse(ix, ax)))
+      unsigned n = 0;
+      for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix), i++, n++)
+	if ((err = i->parse(ix, ax, n)))
 	  return err;
       const char *done = ezxml_cattr(ax, "done");
       if (done) {
-	unsigned n;
 	if ((err = getInstance(done, n)))
 	  return err;
 	m_doneInstance = (int)n;
       }
+      m_mappedProperties.resize(OE::countChildren(ax, "property"));
+      MappedProperty *p = &m_mappedProperties[0];
+      for (ezxml_t px = ezxml_cchild(ax, "property"); px; px = ezxml_next(px), p++)
+	if ((err = p->parse(px, *this)))
+	  return err;
       m_connections.resize(OE::countChildren(ax, "Connection"));
       Connection *c = &m_connections[0];
-      unsigned n = 0;
-      for (ezxml_t  cx = ezxml_cchild(ax, "Connection"); cx; cx = ezxml_next(cx), c++, n++)
+      n = 0;
+      for (ezxml_t cx = ezxml_cchild(ax, "Connection"); cx; cx = ezxml_next(cx), c++, n++)
 	if ((err = c->parse(cx, *this, n)))
+	  return err;
+      i = &m_instances[0];
+      for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix), i++)
+	if ((err = i->parseConnection(ix, *this)))
 	  return err;
       return NULL;
     }
 
-    const char * Assembly::getInstance(const char *name, unsigned &n) {
+    const char * Assembly::
+    getInstance(const char *name, unsigned &n) {
       for (n = 0; n < m_instances.size(); n++)
 	if (m_instances[n].m_name == name)
 	  return NULL;
       return esprintf("No instance named \"%s\" found", name);
     }
 
-    const char *Assembly::Property::parse(ezxml_t x) {
-      const char *err = OE::getRequiredString(x, m_name, "name", "property");
-      if (!err &&
-	  (err = OE::getRequiredString(x, m_value, "value", "property"))) {
-	const char *file = ezxml_cattr(x, "valueFile");
-	if (file)
-	  err = fileString(m_value, file);
+    const char *Assembly::
+    addConnection(const char *name, Connection *&c) {
+      c = &m_connections[0];
+      for (unsigned n = m_connections.size(); n; n--, c++)
+	if (!strcasecmp(c->m_name.c_str(), name))
+	  return esprintf("Duplicate connection named '%s' in assembly", name);
+      unsigned size = m_connections.size();
+      m_connections.resize(size + 1);
+      c = &m_connections.back();
+      c->m_name = name;
+      return NULL;
+    }
+    const char *Assembly::
+    addPortConnection(unsigned from, const char *fromPort, unsigned to, const char *toPort) {
+      std::string name = m_instances[from].m_name + "." + (fromPort ? fromPort : "output");
+      Connection *c;
+      const char *err = addConnection(name.c_str(), c);
+      if (!err) {
+	Port &toP = c->addPort(to, toPort, true);
+	Port &fromP = c->addPort(from, fromPort, false);
+	toP.m_connectedPort = &fromP;
+	fromP.m_connectedPort = &toP;
       }
       return err;
     }
-    const char *Assembly::Instance::parse(ezxml_t ix, ezxml_t ax) {
+    const char *Assembly::
+    addExternalConnection(unsigned instance, const char *port) {
+      Connection *c;
+      const char *err = addConnection(port, c);
+      if (!err) {
+	c->addPort(instance, port, false);
+	c->addExternal(port);
+      }
+      return err;
+    }
+    const char *Assembly::Property::
+    setValue(ezxml_t px) {
+      const char *cp, *err = NULL;
+      if ((cp = ezxml_cattr(px, "value")))
+	m_value = cp;
+      else if ((cp = ezxml_cattr(px, "valueFile")))
+	err = fileString(m_value, cp);
+      else
+	err = "Missing value or valuefile attribute for instance property value";
+      return err;
+    }
+
+    const char *Assembly::MappedProperty::
+    parse(ezxml_t px, Assembly &a) {
+      const char *err;
+      std::string instance;
+
+      if ((err = OE::checkAttrs(px, "name", "value", "valuefile", "instance", "property", NULL)) ||
+	  (err = OE::getRequiredString(px, m_name, "name", "property")) ||
+	  (err = OE::getRequiredString(px, instance, "instance", "property")) ||
+	  (err = a.getInstance(instance.c_str(), m_instance)))
+	return err;
+      MappedProperty *p = &a.m_mappedProperties[0];
+      for (unsigned n = a.m_mappedProperties.size(); n && p < this; n--, p++)
+	if (p->m_name == m_name)
+	  return esprintf("Duplicate mapped property: %s", m_name.c_str());
+      const char *cp = ezxml_cattr(px, "property");
+      m_instPropName = cp ? cp : m_name.c_str();
+      if (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile"))
+	a.m_instances[m_instance].addProperty(m_instPropName.c_str(), px);
+      return NULL;
+    }
+
+    const char *Assembly::Property::
+    parse(ezxml_t px) {
+      const char *err;
+
+      if ((err = OE::checkAttrs(px, "name", "value", "valuefile", NULL)) ||
+	  (err = OE::getRequiredString(px, m_name, "name", "property")))
+	return err;
+      return setValue(px);
+    }
+
+    // connect, then optionally, which local port (from) and which dest port (to).
+    // external=port, connect=instance, then to or from?
+    const char *Assembly::Instance::
+    parseConnection(ezxml_t ix, Assembly &a) {
+      const char
+	*err = NULL,
+	*c = ezxml_cattr(ix, "connect"),
+	*e = ezxml_cattr(ix, "external");
+      if (c) {
+	unsigned n;
+	if ((err = a.getInstance(c, n)))
+	  return err;
+	err = a.addPortConnection(m_ordinal, ezxml_cattr(ix, "from"), n, ezxml_cattr(ix, "to"));
+      }
+      if (e)
+	err = a.addExternalConnection(m_ordinal, e);
+      return err;
+    }
+
+    const char *Assembly::Instance::
+    addProperty(const char *name, ezxml_t px) {
+      Property *p = &m_properties[0];
+      unsigned n;
+      for (n = m_properties.size(); n ; n--, p++)
+	if (p->m_name == name)
+	  break;
+      if (!n) {
+	m_properties.resize(m_properties.size() + 1);
+	p = &m_properties.back();
+      }
+      p->setValue(px);
+      return NULL;
+    }
+
+    const char *Assembly::Instance::
+    parse(ezxml_t ix, ezxml_t ax, unsigned ordinal) {
+      m_ordinal = ordinal;
       const char *err = OE::getRequiredString(ix, m_specName, "component", "instance");
       if (err ||
 	  (err = OE::checkElements(ix, "property", NULL)))
@@ -172,10 +287,12 @@ namespace OCPI {
       for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px), p++)
 	if ((err = p->parse(px)))
 	  return err;
-      return m_parameters.parse(ix, "name", "component", "selection", NULL);
+      return m_parameters.parse(ix, "name", "component", "selection", "connect",
+				"external", "from", "to", NULL);
     }
 
-    const char *Assembly::Connection::parse(ezxml_t cx, Assembly &a, unsigned &n) {
+    const char *Assembly::Connection::
+    parse(ezxml_t cx, Assembly &a, unsigned &n) {
       const char *err;
       if ((err = OE::checkElements(cx, "port", "external", NULL)) ||
 	  (err = OE::checkAttrs(cx, "name", "transport", NULL)))
@@ -211,20 +328,48 @@ namespace OCPI {
       }
       return NULL;
     }
-    const char *Assembly::Port::parse(ezxml_t x, Assembly &a, const PValue *pvl) {
-      const char *err;
-      std::string iName;
+
+    Assembly::Port & Assembly::Connection::
+    addPort(unsigned instance, const char *port, bool isInput) {
+      m_ports.resize(m_ports.size() + 1);
+      m_ports.back().init(port, instance, isInput);
+      return m_ports.back();
+    }
+
+    void Assembly::Port::
+    init(const char *name, unsigned instance, bool isInput) {
+      if (name)
+	m_name = name;
+      m_instance = instance;
+      m_input = isInput;
       m_connectedPort = NULL;
+    }
+
+    void Assembly::Connection::
+    addExternal(const char *port) {
+      m_externals.resize(m_externals.size() + 1);
+      External &e = m_externals.back();
+      e.m_name = port;
+      e.m_provider = false; // provisional
+    }
+    const char *Assembly::Port::
+    parse(ezxml_t x, Assembly &a, const PValue *pvl) {
+      const char *err;
+      std::string iName, name;
+      unsigned instance;
       if ((err = OE::checkElements(x, NULL)) ||
-	  (err = OE::getRequiredString(x, m_name, "name", "port")) ||
+	  (err = OE::getRequiredString(x, name, "name", "port")) ||
 	  (err = OE::getRequiredString(x, iName, "instance", "port")) ||
-	  (err = a.getInstance(iName.c_str(), m_instance)))
+	  (err = a.getInstance(iName.c_str(), instance)))
 	return err;
+      init(name.c_str(), instance, false);
       // Parse all attributes except the explicit ones here.
       a.m_instances[m_instance].m_ports.push_back(this);
       return m_parameters.parse(pvl, x, "name", "instance", NULL);
     }
-    const char *Assembly::External::parse(ezxml_t x, unsigned &n, const PValue *pvl) {
+
+    const char *Assembly::External::
+    parse(ezxml_t x, unsigned &n, const PValue *pvl) {
       OE::getNameWithDefault(x, m_name, "ext%u", n);
       OE::getOptionalString(x, m_url, "url");
       const char *err;

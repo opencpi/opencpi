@@ -86,7 +86,7 @@ namespace OCPI {
       // (not util::assembly or library::assembly) because it potentially depends on the 
       // implementation specific properties of the implementations selected.
       struct Property {
-	std::string m_name;  // qualified name:   instance.property
+	std::string m_name;  // qualified name (instance[.:=]property) or mapped name
 	unsigned m_instance; // ordinal of instance in assembly
 	unsigned m_property; // ordinal of property in implememtation of instance
       } *m_properties;
@@ -131,7 +131,7 @@ namespace OCPI {
       // return our used-container ordinal
       unsigned addContainer(unsigned container);
       bool connectionsOk(OCPI::Library::Candidate &c, unsigned instNum);
-      void finalizeProperties();
+      void finalizeProperties(const OCPI::Util::PValue *params);
       bool bookingOk(Booking &b, OCPI::Library::Candidate &c, unsigned n);
       //      CMap assessCandidate(Instance &i, OCPI::Library::Candidate &c, unsigned &backUp);
       void policyMap( Instance * i, CMap & bestMap);
@@ -139,6 +139,11 @@ namespace OCPI {
       Property &findProperty(const char * worker_inst_name, const char * prop_name);
       void dumpDeployment(unsigned score, Deployment *dep);
       void doInstance(unsigned instNum, unsigned score);
+      void checkInstanceParams(const char *pName, const OCPI::Util::PValue *params,
+			       bool checkMapped = false);
+      void prepareInstanceProperties(unsigned nInstance, const OCPI::Library::Implementation &impl,
+				     unsigned *&pn, OCPI::Util::Value *&pv,
+				     const PValue *params);
     public:
       explicit ApplicationI(const char *file, const OCPI::API::PValue * policy=NULL);
       explicit ApplicationI(const std::string &string, const OCPI::API::PValue * policy=NULL);

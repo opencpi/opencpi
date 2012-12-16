@@ -259,7 +259,13 @@ void InputBuffer::setBusyFactor( OCPI::OS::uint32_t bf )
 volatile BufferState* InputBuffer::getState()
 {
   if ( !this->getPort()->isShadow() && m_zeroCopyFromBuffer ) {
-    return m_zeroCopyFromBuffer->getState();
+    ocpiAssert(m_zeroCopyFromBuffer->getPort()->isOutput());
+    // Output buffer's state is an empty flag
+    uint32_t state = m_zeroCopyFromBuffer->getState()->bufferIsEmpty & EF_MASK;
+    // Invert the sense in our state
+    m_tState.bufferIsFull = state == EF_FULL_VALUE ? FF_FULL_VALUE : FF_EMPTY_VALUE;
+    return &m_tState;
+    // old/wrong? return m_zeroCopyFromBuffer->getState();
   }
 
 #ifdef DEBUG_L2

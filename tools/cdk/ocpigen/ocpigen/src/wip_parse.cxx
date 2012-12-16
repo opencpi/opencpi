@@ -1166,6 +1166,7 @@ doOutputs(const char *tok, void *arg) {
 #endif
 
 // The generic assembly parser
+// FIXME: share code with the util::Assembly parser
  static const char *
 parseAssy(ezxml_t xml, Worker *aw,
           const char **topAttrs, const char **instAttrs, bool noWorkerOk) {
@@ -1419,7 +1420,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   a->isContainer = !strcasecmp(xml->name, "HdlContainer");
   static const char
     *topAttrs[] = {TOP_ATTRS NULL},
-    *instAttrs[] = {"Worker", "Name", NULL},
+    *instAttrs[] = {"Worker", "Name", "connect", "to", "port", "external", NULL},
     *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", "Adapter", "Configure", NULL};
   // Do the generic assembly parsing, then to more specific to HDL
   if ((err = parseAssy(xml, aw, topAttrs,

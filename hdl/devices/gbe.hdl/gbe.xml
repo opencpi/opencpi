@@ -1,4 +1,4 @@
-<HdlImplementation Name="gbe" Language="Verilog" >
+<HdlImplementation Name="gbe" Language="Verilog" Pattern="%w%M%0_" >
   <ComponentSpec Name="gbe">
     <Properties>
       <property name="dramStatus" readable="true"/>
@@ -36,27 +36,43 @@
       <property name="reserved3" readable="true" ArrayLength="131040"/>
       <property name="data" readable="true" ArrayLength="131072"/>
     </Properties>
-    <DataInterface Name="wsiM0"/>
+    <DataInterfaceSpec Name="wsiS0" />
+    <DataInterfaceSpec Name="wsiM0" producer="true"/>
   </ComponentSpec>
-  <StreamInterface Name="wsiM0" DataWidth="32"/>
-  <ControlInterface Name="wci_s" ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>
+  <property name="hasDebugLogic" parameter="true"/>
+  <StreamInterface Name="wsiM0" NumberOfOpcodes="256" preciseBurst="true" impreciseburst="true"/>
+  <StreamInterface Name="wsiS0" NumberOfOpcodes="256" preciseBurst="true" impreciseburst="true"/>
+  <ControlInterface Name="wciS0" ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>
   <!--  Non-OCP Signals -->
   <Signal Input="CLK_gmii_rx_clk"/>
   <Signal Input="CLK_sys1_clk"/>
   <Signal Input="RST_N_sys1_rst"/>
-  <SIgnal Input="wtiS0_req" Width="67"/>
-  <Signal Input="gmii_rxd_i" Width="8"/>
-  <Signal Input="gmii_rx_dv_i"/>
-  <Signal Input="gmii_rx_er_i"/>
+  <Signal Input="wtiS0_req" Width="67"/>
+  <Signal Input="gmii_rx_rxd_i" Width="8"/>
+  <Signal Input="gmii_rx_rx_dv_i"/>
+  <Signal Input="gmii_rx_rx_er_i"/>
+  <Signal Input="EN_cpClient_request_get"/>
+  <Signal Input="cpClient_response_put" width="40"/>
+  <Signal Input="EN_cpClient_response_put"/>
+  <Signal Input="gmii_col_i"/>
+  <Signal Input="gmii_crs_i"/>
+  <Signal Input="gmii_intr_i"/>
+  <Signal Inout="mdio_mdd"/>
+  <Signal Inout="mdio_mdc"/>
+  <Signal Output="cpClient_request_get" width="59"/>
+  <Signal Output="RDY_cpClient_request_get"/>
+  <Signal Output="RDY_cpClient_response_put"/>
   <Signal Output="wtiS0_SThreadBusy"/>
-  <Signal Output="gmii_txd" Width="8"/>
-  <Signal Output="gmii_tx_en"/>
-  <Signal Output="gmii_tx_er"/>
-  <Signal Output="CLK_gmii_tx_clk"/>
-  <Signal Output="CLK_GATE_gmii_tx_clk"/>
-  <Signal Output="CLK_rxclk"/>
-  <Signal Output="CLK_GATE_rxclk"/>
-  <Signal Output="RST_N_mrst_n"/>
+  <Signal Output="wtiS0_SReset_n"/>
+  <Signal Output="gmii_tx_txd" Width="8"/>
+  <Signal Output="gmii_tx_tx_en"/>
+  <Signal Output="gmii_tx_tx_er"/>
+  <Signal Output="CLK_gmii_tx_tx_clk"/>
+  <Signal Output="CLK_GATE_gmii_tx_tx_clk"/>
+  <Signal Output="CLK_rxclkBnd"/>
+  <Signal Output="CLK_GATE_rxclkBnd"/>
+  <Signal Output="RST_N_gmii_rstn"/>
+  <Signal Output="gmii_led"/>
 </HdlImplementation>
 
 

@@ -40,16 +40,8 @@
 
 HdlMode:=platform
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-# extra level of pre-filtering targets - we are only doing the ONE
-ifeq ($(origin HdlPlatforms),undefined)
-HdlPlatforms:=all
-endif
-ifneq ($(findstring all,$(HdlPlatforms)),)
-override HdlPlatforms:=$(CwdName)
-endif
-ifeq ($(findstring $(CwdName),$(HdlPlatforms)),)
- $(info Platform $(CwdName) skipped.)
-else
+override HdlPlatform:=$(CwdName)
+Worker:=$(CwdName)
 HdlExactPart:=$(HdlPart_$(CwdName))
 HdlPart:=$(call HdlGetPart,$(CwdName))
 $(call OcpiDbgVar,HdlPart)
@@ -65,4 +57,3 @@ CompiledSourceFiles+=../../containers/mkOCApp_bb.v
 CompiledSourceFiles+=$(wildcard ../common/*.v)
 ComponentLibraries=../../devices
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
-endif

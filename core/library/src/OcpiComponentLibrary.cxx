@@ -33,13 +33,11 @@ namespace OCPI {
 	{	
 	  // The returned value must be deleted with delete[];
 	  if (!(m_metadata = getMetadata()))
-	    throw ApiError("Cannot open or retrieve metadata from file \"",
-			   name, "\"", NULL);
+	    throw OU::Error(OCPI_LOG_INFO, "Cannot open or retrieve metadata from file \"%s\"", name);
 	  m_xml = OX::Doc::parse(m_metadata);
 	  char *xname = ezxml_name(m_xml);
 	  if (!xname || strcmp("artifact", xname))
-	    throw ApiError("invalid metadata in binary/artifact file \"", name,
-			   "\": no <artifact/>", NULL);
+	    throw OU::Error("invalid metadata in binary/artifact file \"%s\": no <artifact/>", name);
 	  ocpiDebug("Artifact file %s has artifact metadata", name);
 	}
       public:
@@ -58,7 +56,7 @@ namespace OCPI {
 	  char *data = 0;
 	  int fd = open(name().c_str(), O_RDONLY);
 	  if (fd < 0)
-	    throw ApiError("Cannot open file: \"", name().c_str(), "\"", NULL);
+	    throw OU::Error("Cannot open file: \"%s\"", name().c_str());
 	  char buf[64/3+4]; // octal + \r + \n + null
 	  off_t fileLength, second, third;
 	  if (fd >= 0 &&

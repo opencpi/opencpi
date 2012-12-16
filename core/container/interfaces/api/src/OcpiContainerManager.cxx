@@ -96,11 +96,11 @@ namespace OCPI {
     void Manager::shutdown() {
       deleteChildren();
     }
-    bool Manager::findContainersX(Callback &cb, OU::Implementation &i) {
+    bool Manager::findContainersX(Callback &cb, OU::Implementation &i, const char *name) {
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild())
 	for (Container *c = d->firstContainer(); c; c = c->nextContainer())
-	  if (c->supportsImplementation(i))
+	  if ((name == NULL || name == c->name()) && c->supportsImplementation(i))
 	    cb.foundContainer(*c);
       return false;
     }
@@ -122,6 +122,13 @@ namespace OCPI {
     }
     void ContainerManager::shutdown() {
       OCPI::Container::Manager::getSingleton().shutdown();
+    }
+    Container *ContainerManager::
+    get(unsigned n) {
+      OCPI::Container::Manager::getSingleton().parent().configureOnce();
+      return
+	n >= OCPI::Container::Container::s_nContainers ? NULL : 
+	&OCPI::Container::Container::nthContainer(n);
     }
   }
 }

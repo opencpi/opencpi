@@ -59,4 +59,7 @@ export OCPI_TRANSPORT_LIBS=rdma_drivers util  msg_driver_interface  msg_drivers
 export OCPI_LD_FLAGS= $(OCPI_DRIVER_OBJS) $(OcpiAsNeeded) -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-l%)
 OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test; if [ $$? = 0 ]; then echo 1; fi),)
 #$(info OCL=$(OCPI_HAVE_OPENCL)=)
+ifeq ($(origin OCPI_SUDO),undefined)
+OCPI_SUDO=sudo -E
+endif
 

@@ -166,6 +166,7 @@ hdlstubs: $(HdlImplementations)
 	  $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk > \
 	  $(GenDir)/hdl/Makefile
 	$(AT)$(MyHdlMake) -C $(GenDir)/hdl -L LibName=$(LibName) \
+		Libraries=ocpi \
 		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) \
 		HdlInstallLibDir=$(call AdjustRelative2,$(LibDir)/hdl/stubs) \
 		stublibrary

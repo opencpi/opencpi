@@ -52,7 +52,9 @@ Implementations = \
 	dram_v6.hdl \
 	icap.hdl \
 	flash.hdl \
+        clkgen_ti_cdce72010.hdl \
+	gbe.hdl \
 
-#	gbe \ - we need to clean up wti, and deal with multiple control ifcs.
+
 
 include $(OCPI_CDK_DIR)/include/lib.mk

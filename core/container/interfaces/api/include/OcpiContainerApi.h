@@ -203,8 +203,9 @@ namespace OCPI {
     class ContainerManager {
     public:
       static Container 
-      *find(const char *model, const char *which = NULL, const PValue *props = NULL),
-	*find(const PValue *list);
+        *find(const char *model, const char *which = NULL, const PValue *props = NULL),
+	*find(const PValue *list),
+	*get(unsigned n);
       static void shutdown();
     };
     class Application; // forward reference for applications that span containers.

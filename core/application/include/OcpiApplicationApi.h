@@ -68,8 +68,12 @@ namespace OCPI {
       void stop();
       ExternalPort &getPort(const char *);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value);
-      void getProperty(const char* worker_name, const char* prop_name, std::string &value);
-      void setProperty(const char* worker_name, const char* prop_name, const char *value);
+      // Use top level names or instance:property
+      void getProperty(const char* prop_name, std::string &value);
+      void setProperty(const char* prop_name, const char *value);
+      // Access properties by instance name and property name
+      void getProperty(const char* instance_name, const char* prop_name, std::string &value);
+      void setProperty(const char* instance_name, const char* prop_name, const char *value);
     private:
       friend class Property;
       Worker &getPropertyWorker(const char *name);

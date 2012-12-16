@@ -35,13 +35,13 @@
 namespace OCPI {
   namespace Library {
     namespace OU = OCPI::Util;
-    Assembly::Assembly(const char *file)
+    Assembly::Assembly(const char *file, const OCPI::Util::PValue *params)
       : OU::Assembly(file), m_refCount(1) {
-      findImplementations();
+      findImplementations(params);
     }
-    Assembly::Assembly(const std::string &string)
+    Assembly::Assembly(const std::string &string, const OCPI::Util::PValue *params)
       : OU::Assembly(string), m_refCount(1) {
-      findImplementations();
+      findImplementations(params);
     }
     Assembly::~Assembly() {
       delete [] m_candidates;
@@ -177,8 +177,40 @@ namespace OCPI {
       accepted = true;
       return false;
     }
+    // Resolve port issues that depend on spec metadata that was not available
+    // when the assembly was parsed.
+    void Assembly::finalizeConnections() {
+      unsigned nConns = m_connections.size();
+      for (unsigned n = 0; n < nConns; n++) {
+	const OU::Assembly::Connection &c = m_connections[n];
+	const OU::Assembly::Port *ap = &c.m_ports[0];
+	for (unsigned np = c.m_ports.size(); np; np--, ap++)
+	  if (ap->m_name.empty()) {
+	    // A port of a connection that has no name means it implies the only
+	    // port with that direction.
+	    unsigned nPorts;
+	    OU::Port
+	      *p = m_candidates[ap->m_instance][0].impl->m_metadataImpl.ports(nPorts),
+	      *thePort = NULL;
+	    for (; nPorts; nPorts--, p++)
+	      if (ap->m_input && p->m_provider || !ap->m_input && !p->m_provider) {
+		if (thePort)
+		  throw OU::Error("The %s connection at instance %s is ambiguous: "
+				  " Port name must be specified.",
+				  ap->m_input ? "input" : "output",
+				  m_instances[ap->m_instance].m_name.c_str());
+		thePort = p;
+	      }
+	    if (!thePort)
+	      throw OU::Error("There is no %s port for connection at instance %s.",
+			      ap->m_input ? "input" : "output",
+			      m_instances[ap->m_instance].m_name.c_str());
+	    ap->m_name = thePort->m_name;
+	  }
+      }
+    }
     // A common method used by constructors
-    void Assembly::findImplementations() {
+    void Assembly::findImplementations(const OU::PValue *params) {
       m_instance = 0;
       m_maxCandidates = 0;
       m_tempCandidates = m_candidates = new Candidates[m_instances.size()];
@@ -187,17 +219,21 @@ namespace OCPI {
 	OU::Assembly::Instance &inst = m_instances[m_instance];
 	m_assyPorts[n] = NULL;
 	m_nPorts = 0;
-	if (!Manager::findImplementations(*this, inst.m_specName.c_str(),
-					  inst.m_selection.empty() ?
-					  NULL : inst.m_selection.c_str()))
-	  throw OU::Error(inst.m_selection.empty() ?
+	const char *selection = NULL;
+	if (!OU::findAssign(params, "selection", inst.m_name.c_str(), selection))
+	  selection = inst.m_selection.empty() ? NULL : inst.m_selection.c_str();
+
+	if (!Manager::findImplementations(*this, inst.m_specName.c_str(), selection))
+	  throw OU::Error(!selection ?
 			  "No implementations found in any libraries for \"%s\"" :
 			  "No acceptable implementations found in any libraries "
 			  "for \"%s\" (for selection: '%s')",
-			  inst.m_specName.c_str(), inst.m_selection.c_str());
+			  inst.m_specName.c_str(), selection);
 	if (m_tempCandidates->size() > m_maxCandidates)
 	  m_maxCandidates = m_tempCandidates->size();
       }
+      // Resolve any ambiguous connections now that we have some implementation metadata
+      finalizeConnections();
       // Check for interface compatibility.
       // We assume all implementations have the same protocol metadata
       unsigned nConns = m_connections.size();

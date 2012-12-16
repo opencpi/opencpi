@@ -37,6 +37,7 @@
       <property name="data" readable="true" ArrayLength="131072"/>
     </Properties>
   </ComponentSpec>
+  <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
   <ControlInterface ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>
   <MemoryInterface DataWidth="128" ByteWidth="8" MemoryWords="4g" 
                    MaxBurstLength="4k-1" PreciseBurst="true" WriteDataFlowControl="true"

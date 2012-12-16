@@ -12,8 +12,8 @@
 #define mems(t,m) sizeof(((t*)0)->m)
 
 #define QMASK 0xefff
-#define Uscale(x)  (double)((double)x / pow(2,15))
-#define Scale(x)   (int16_t)((double)x * pow(2,15))
+#define Uscale(x)  (double)((double)(x) / pow(2,15))
+#define Scale(x)   (int16_t)((double)(x) * pow(2,15))
 #define Gain(x) (double)((double)x * pow(2,15))
 
 // Qs15 complex absolute value returned as a double

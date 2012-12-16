@@ -44,11 +44,11 @@ runxml: all test.input
 	cmp test.output good.output
 
 runhdl1: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/components/hdl sudo -E ./biasFile $(ARGS)
+	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/components/hdl $(OCPI_SUDO) ./biasFile $(ARGS)
 	cmp test.output good.output
 
 runhdl2: all test.input
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/hdl:$(OCPI_CDK_DIR)/lib/components/rcc sudo -E ./biasFile $(ARGS)
+	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/hdl:$(OCPI_CDK_DIR)/lib/components/rcc $(OCPI_SUDO) ./biasFile $(ARGS)
 	cmp test.output good.output
 
 clean::

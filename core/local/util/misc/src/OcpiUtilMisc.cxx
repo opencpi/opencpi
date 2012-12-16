@@ -533,8 +533,13 @@ fileString(std::string &out, const char *file) {
     char buf[4*1024];
     out.reserve(size);
     size_t n;
-    for (; (n = fread(buf, 1, sizeof(buf), f)) && n <= (size_t)size; size -= n)
+    for (; (n = fread(buf, 1, sizeof(buf), f)) && n <= (size_t)size; size -= n) {
+      unsigned nn = n;
+      for (char *cp = buf; nn; nn--, cp++)
+	if (*cp == '\n')
+	  *cp = ',';
       out.append(buf, n);
+    }
     if (n)
       err = "file longer than expected";
   } else

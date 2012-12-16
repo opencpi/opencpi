@@ -322,18 +322,18 @@ emitParameters(FILE *f, Worker *w, const char *comment) {
 	// FIXME: define actual ocpi types corresponding to our IDL-inspired types
 	const char *type;
 	switch (pr->m_baseType) {
-	case OA::OCPI_Bool: type = "boolean"; break;
-	case OA::OCPI_Char: type = "character"; break;
-	case OA::OCPI_Double: type = "real"; break;
-	case OA::OCPI_Float: type = "real"; break;
-	case OA::OCPI_Short: type = "integer"; break;
-	case OA::OCPI_Long: type = "integer"; break;
-	case OA::OCPI_UChar: type = "natural"; break;
-	case OA::OCPI_ULong: type = "natural"; break;
-	case OA::OCPI_UShort: type = "natural"; break;
-	case OA::OCPI_LongLong: type = "integer"; break;
-	case OA::OCPI_ULongLong: type = "natural"; break;
-	case OA::OCPI_String: type = "string"; break;
+	case OA::OCPI_Bool: type = "bool_t"; break;
+	case OA::OCPI_Char: type = "char_t"; break;
+	case OA::OCPI_Double: type = "double_t"; break;
+	case OA::OCPI_Float: type = "real_t"; break;
+	case OA::OCPI_Short: type = "short_t"; break;
+	case OA::OCPI_Long: type = "long_t"; break;
+	case OA::OCPI_UChar: type = "uchar_t"; break;
+	case OA::OCPI_ULong: type = "ulong_t"; break;
+	case OA::OCPI_UShort: type = "ushort_t"; break;
+	case OA::OCPI_LongLong: type = "longlong_t"; break;
+	case OA::OCPI_ULongLong: type = "ulonglong_t"; break;
+	case OA::OCPI_String: type = "string_t"; break;
 	default:;
 	}
 	std::string value;
@@ -1001,9 +1001,9 @@ emitShellVHDL(FILE *f, Worker *w) {
 	  "  -- With no user logic at all, this implements writable properties.\n"
 	  "  wci : entity %s_wci\n"
 	  "    port map(-- These first signals are just for use by the wci module, not the worker\n"
-	  "             inputs.Clk        => ctl_Clk,\n"
-	  "             inputs.MAddr => ctl_MAddr,\n",
-	  w->implName);
+	  "             inputs.Clk        => %s,\n"
+	  "             inputs.MAddr      => %s,\n",
+	  w->implName, wci->ocp.Clk.signal, wci->ocp.MAddr.signal);
   //, w->ports[0]->ocp.MAddr.width-1);
   //  if (wci->ocp.MAddr.width != 32)
   //    fprintf(f,
@@ -1011,21 +1011,21 @@ emitShellVHDL(FILE *f, Worker *w) {
 	     //	    wci->ocp.MAddr.width);
 	    
   fprintf(f,
-	  "             inputs.MAddrSpace => ctl_MAddrSpace,\n");
+	  "             inputs.MAddrSpace => %s,\n", wci->ocp.MAddrSpace.signal);
   if (wci->ocp.MByteEn.value)
     fprintf(f,
-	    "             inputs.MByteEn    => ctl_MByteEn,\n");
+	    "             inputs.MByteEn    => %s,\n", wci->ocp.MByteEn.signal);
   //  else
   //    fprintf(f,
   //	    "             inputs.MByteEn    => unused,\n");
 
   fprintf(f,
-	  "             inputs.MCmd       => ctl_MCmd,\n"
-	  "             inputs.MData      => ctl_MData,\n"
-	  "             inputs.MFlag      => ctl_MFlag,\n"
-	  "             inputs.MReset_n   => ctl_MReset_n,\n"
-	  "             outputs.SData => ctl_SData, outputs.SResp => ctl_SResp,\n"
-	  "             outputs.SFlag => ctl_SFlag, outputs.SThreadBusy => ctl_SThreadBusy,\n"
+	  "             inputs.MCmd       => %s,\n"
+	  "             inputs.MData      => %s,\n"
+	  "             inputs.MFlag      => %s,\n"
+	  "             inputs.MReset_n   => %s,\n"
+	  "             outputs.SData => %s, outputs.SResp => %s,\n"
+	  "             outputs.SFlag => %s, outputs.SThreadBusy => %s,\n"
 	  "             -- These are outputs used by the worker logic\n"
 	  //	    "             clk           => %s_Clk,   -- output to user logic\n"
 	  "             reset         => wci_reset, -- OCP guarantees 16 clocks of reset\n"
@@ -1035,7 +1035,9 @@ emitShellVHDL(FILE *f, Worker *w) {
 	  "             is_big_endian => wci_is_big_endian,\n"
 	  "             done          => wci_done,\n"
 	  "             attention     => wci_attention,\n"
-	  "             abort_control_op => wci_abort_control_op%s     -- use this to know when we are running\n",
+	  "             abort_control_op => wci_abort_control_op%s  -- use this to know when we are running\n",
+	  wci->ocp.MCmd.signal, wci->ocp.MData.signal, wci->ocp.MFlag.signal, wci->ocp.MReset_n.signal,
+	  wci->ocp.SData.signal, wci->ocp.SResp.signal, wci->ocp.SFlag.signal, wci->ocp.SThreadBusy.signal,
 	  volatiles || writables ? "," : "");
   if (volatiles) {
     fprintf(f,
@@ -1089,59 +1091,59 @@ emitShellVHDL(FILE *f, Worker *w) {
 		p->name, p->name, w->implName, p->name);
 	if (p->masterIn()) {
 	  fprintf(f,
-		  "             ocp_in.MBurstLength => %s_MBurstLength,\n", p->name);
+		  "             ocp_in.MBurstLength => %s,\n", p->ocp.MBurstLength.signal);
 	  if (p->ocp.MBurstPrecise.value)
 	    fprintf(f,
-		    "             ocp_in.MBurstPrecise => %s_MBurstPrecise,\n", p->name);
+		    "             ocp_in.MBurstPrecise => %s,\n", p->ocp.MBurstPrecise.signal);
 	  if (p->ocp.MByteEn.value)
 	    fprintf(f,
-		    "             ocp_in.MByteEn      => %s_MByteEn,\n", p->name);
+		    "             ocp_in.MByteEn      => %s,\n", p->ocp.MByteEn.signal);
 	  fprintf(f,
-		  "             ocp_in.MCmd         => %s_MCmd,\n"
-		  "             ocp_in.MData        => %s_MData,\n",
-		  p->name, p->name);		  
+		  "             ocp_in.MCmd         => %s,\n"
+		  "             ocp_in.MData        => %s,\n",
+		  p->ocp.MCmd.signal, p->ocp.MData.signal);
 	  if (p->ocp.MReqInfo.value)
 	    fprintf(f,
-		  "             ocp_in.MReqInfo     => %s_MReqInfo,\n",
-		  p->name);
+		  "             ocp_in.MReqInfo     => %s,\n",
+		  p->ocp.MReqInfo.signal);
 	  fprintf(f,
-		  "             ocp_in.MReqLast     => %s_MReqLast,\n"
-		  "             ocp_in.MReset_n     => %s_MReset_n,\n",
-		  p->name, p->name);
+		  "             ocp_in.MReqLast     => %s,\n"
+		  "             ocp_in.MReset_n     => %s,\n",
+		  p->ocp.MReqLast.signal, p->ocp.MReset_n.signal);
 	} else
 	  fprintf(f,
-		  "             ocp_in.SReset_n    => %s_SReset_n,\n"
-		  "             ocp_in.SThreadBusy => %s_SThreadBusy,\n",
-		  p->name, p->name);
+		  "             ocp_in.SReset_n    => %s,\n"
+		  "             ocp_in.SThreadBusy => %s,\n",
+		  p->ocp.SReset_n.signal, p->ocp.SThreadBusy.signal);
 	if (p->masterIn())
 	  fprintf(f,
-		  "             ocp_out.SReset_n    => %s_SReset_n,\n"
-		  "             ocp_out.SThreadBusy => %s_SThreadBusy,\n",
-		  p->name, p->name);
+		  "             ocp_out.SReset_n    => %s,\n"
+		  "             ocp_out.SThreadBusy => %s,\n",
+		  p->ocp.SReset_n.signal, p->ocp.SThreadBusy.signal);
 	else {
 	  fprintf(f,
-		  "             ocp_out.MBurstLength => %s_MBurstLength,\n", p->name);
+		  "             ocp_out.MBurstLength => %s,\n", p->ocp.MBurstLength.signal);
 	  if (p->ocp.MBurstPrecise.value)
 	    fprintf(f,
-		    "             ocp_out.MBurstPrecise => %s_MBurstPrecise,\n", p->name);
+		    "             ocp_out.MBurstPrecise => %s,\n", p->ocp.MBurstPrecise.signal);
 	  if (p->ocp.MByteEn.value)
-	    fprintf(f, "             ocp_out.MByteEn      => %s_MByteEn,\n", p->name);
+	    fprintf(f, "             ocp_out.MByteEn      => %s,\n", p->ocp.MByteEn.signal);
 	  fprintf(f,
-		  "             ocp_out.MCmd         => %s_MCmd,\n" 
-		  "             ocp_out.MData        => %s_MData,\n",
-		  p->name, p->name);
+		  "             ocp_out.MCmd         => %s,\n" 
+		  "             ocp_out.MData        => %s,\n",
+		  p->ocp.MCmd.signal, p->ocp.MData.signal);
 	  if (p->ocp.MReqInfo.value)
 	    fprintf(f,
-		    "             ocp_out.MReqInfo     => %s_MReqInfo,\n", p->name);
+		    "             ocp_out.MReqInfo     => %s,\n", p->ocp.MReqInfo.signal);
 	  fprintf(f,
-		  "             ocp_out.MReqLast     => %s_MReqLast,\n" 
-		  "             ocp_out.MReset_n     => %s_MReset_n,\n",
-		  p->name, p->name);
+		  "             ocp_out.MReqLast     => %s,\n" 
+		  "             ocp_out.MReset_n     => %s,\n",
+		  p->ocp.MReqLast.signal, p->ocp.MReset_n.signal);
 	}
 	fprintf(f,
 		"             -- These signals are just connected to the WCI\n"
-		"             wci_clk     => ctl_Clk,\n"
-		"             wci_reset   => wci_reset,\n");
+		"             wci_clk     => %s,\n"
+		"             wci_reset   => wci_reset,\n", wci->ocp.Clk.signal);
 	if (p->masterIn())
 	  fprintf(f,
 		  "             -- This signal is the only input from worker code\n"
@@ -1189,14 +1191,14 @@ emitShellVHDL(FILE *f, Worker *w) {
     switch (p->type) {
     case WCIPort:
       fprintf(f,
-	      "%s    %s_in.clk => %s_Clk, %s_in.reset => wci_reset,\n"
+	      "%s    %s_in.clk => %s, %s_in.reset => wci_reset,\n"
 	      "    %s_in.control_op => wci_control_op,\n"
 	      "    %s_in.state => wci_state,\n"
 	      "    %s_in.is_operating => wci_is_operating,\n"
 	      "    %s_in.abort_control_op => wci_abort_control_op,\n"
 	      "    %s_in.is_big_endian => wci_is_big_endian,\n"
 	      "    %s_out.done => wci_done, %s_out.attention => wci_attention",
-	      i == 0 ? "" : ",\n", p->name, p->name, p->name, p->name,
+	      i == 0 ? "" : ",\n", p->name, p->ocp.Clk.signal, p->name, p->name,
 	      p->name, p->name, p->name, p->name, p->name, p->name);
       break;
     case WSIPort:

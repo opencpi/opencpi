@@ -441,37 +441,39 @@ namespace OCPI {
 	  }
 	}
       }
-#define CHECK_WINDOW(_offset_, _nb_) 					        \
-      do {								        \
-	unsigned window = (_offset_) & ~(OCCP_WORKER_CONFIG_SIZE-1);            \
-        ocpiAssert(window == (((_offset_)+(_nb_))&~(OCCP_WORKER_CONFIG_SIZE-1))); \
-	if (window != m_window) {                                               \
-	  set32Register(window, OccpWorkerRegisters,			        \
-			window >> OCCP_WORKER_CONFIG_WINDOW_BITS);              \
-	  m_window = window;					                \
-	}								        \
-      } while (0)
+      inline uint32_t
+      checkWindow(uint32_t offset, unsigned nBytes) const {
+	unsigned window = offset & ~(OCCP_WORKER_CONFIG_SIZE-1);
+        ocpiAssert(window == ((offset+nBytes)&~(OCCP_WORKER_CONFIG_SIZE-1)));
+	if (window != m_window) {
+	  set32Register(window, OccpWorkerRegisters,
+			window >> OCCP_WORKER_CONFIG_WINDOW_BITS);
+	  m_window = window;
+	}
+	return offset & (OCCP_WORKER_CONFIG_SIZE - 1);
+      }
+
 #define PUT_GET_PROPERTY(n)						          \
       void setProperty##n(const OA::PropertyInfo &info, uint##n##_t val) const {  \
-        CHECK_WINDOW(info.m_offset, n/8);					  \
+        uint32_t offset = checkWindow(info.m_offset, n/8);			  \
 	uint32_t status = 0;						          \
 	if (m_properties.m_registers) {					          \
 	  if (!info.m_writeError ||					          \
 	      !(status =						          \
 		get32Register(status, OccpWorkerRegisters) &                      \
 		OCCP_STATUS_WRITE_ERRORS))                			  \
-	    m_properties.set##n##RegisterOffset(info.m_offset, val);              \
+	    m_properties.set##n##RegisterOffset(offset, val);                     \
 	  if (info.m_writeError && !status)				          \
 	    status =							          \
 	      get32Register(status, OccpWorkerRegisters) &		          \
 	      OCCP_STATUS_WRITE_ERRORS;					          \
 	} else								          \
-	  m_properties.m_accessor->set##n(info.m_offset, val, &status);           \
+	  m_properties.m_accessor->set##n(offset, val, &status);                  \
 	if (status)							          \
 	  throwPropertyWriteError(status);				          \
       }									          \
       inline uint##n##_t getProperty##n(const OA::PropertyInfo &info) const {     \
-        CHECK_WINDOW(info.m_offset, n/8);					  \
+        uint32_t offset = checkWindow(info.m_offset, n/8);			  \
 	uint32_t status = 0;						          \
 	uint##n##_t val;						          \
 	if (m_properties.m_registers) {					          \
@@ -479,13 +481,13 @@ namespace OCPI {
 	      !(status =						          \
 		get32Register(status, OccpWorkerRegisters) &		          \
 		OCCP_STATUS_READ_ERRORS))				          \
-	    val = m_properties.get##n##RegisterOffset(info.m_offset);             \
+	    val = m_properties.get##n##RegisterOffset(offset);                    \
 	  if (info.m_readError && !status)				          \
 	    status =							          \
 	      get32Register(status, OccpWorkerRegisters) &		          \
 	      OCCP_STATUS_READ_ERRORS;					          \
 	} else								          \
-	  val = m_properties.m_accessor->get##n(info.m_offset, &status);          \
+	  val = m_properties.m_accessor->get##n(offset, &status);                 \
 	if (status)							          \
 	  throwPropertyReadError(status);				          \
 	return val;							          \
@@ -497,7 +499,7 @@ namespace OCPI {
 #undef PUT_GET_PROPERTY
       void setPropertyBytes(const OA::PropertyInfo &info, uint32_t offset,
 			    const uint8_t *data, unsigned nBytes) const {
-	CHECK_WINDOW(offset, nBytes);
+        offset = checkWindow(offset, nBytes);
 	uint32_t status = 0;
 	if (m_properties.m_registers) {
 	  if (!info.m_writeError ||
@@ -515,7 +517,7 @@ namespace OCPI {
 
       inline void
       getPropertyBytes(const OA::PropertyInfo &info, uint32_t offset, uint8_t *buf, unsigned nBytes) const {
-	CHECK_WINDOW(offset, nBytes);
+        offset = checkWindow(offset, nBytes);
 	uint32_t status = 0;
 
 	if (m_properties.m_registers) {
@@ -534,33 +536,33 @@ namespace OCPI {
       inline void setPropertySequence(const OA::Property &p,
 				      const uint8_t *val,
 				      uint32_t nItems, unsigned nBytes) const {
-	CHECK_WINDOW(p.m_info.m_offset, nBytes);
+	uint32_t offset = checkWindow(p.m_info.m_offset, nBytes);
 	uint32_t status = 0;
 	if (m_properties.m_registers) {
 	  if (!p.m_info.m_writeError ||
 	      !(status =
 		get32Register(status, OccpWorkerRegisters) &
 		OCCP_STATUS_WRITE_ERRORS)) {
-	    m_properties.setBytesRegisterOffset(p.m_info.m_offset + p.m_info.m_align,
+	    m_properties.setBytesRegisterOffset(offset + p.m_info.m_align,
 						val, nBytes);
-	    m_properties.set32RegisterOffset(p.m_info.m_offset, nItems);
+	    m_properties.set32RegisterOffset(offset, nItems);
 	  }
 	  if (p.m_info.m_writeError && !status)
 	    status =
 	      get32Register(status, OccpWorkerRegisters) &
 	      OCCP_STATUS_WRITE_ERRORS;
 	} else {
-	  m_properties.m_accessor->setBytes(p.m_info.m_offset + p.m_info.m_align,
+	  m_properties.m_accessor->setBytes(offset + p.m_info.m_align,
 					    val, nBytes, &status);
 	  if (!status)
-	    m_properties.m_accessor->set32(p.m_info.m_offset, nItems, &status);
+	    m_properties.m_accessor->set32(offset, nItems, &status);
 	}
 	if (status)
 	  throwPropertyWriteError(status);
       }
       inline unsigned
       getPropertySequence(const OA::Property &p, uint8_t *buf, unsigned n) const {
-	CHECK_WINDOW(p.m_info.m_offset, n);
+	uint32_t offset = checkWindow(p.m_info.m_offset, n);
 	uint32_t status = 0, nItems;
 
 	if (m_properties.m_registers) {
@@ -568,14 +570,14 @@ namespace OCPI {
 	      !(status =
 		get32Register(status, OccpWorkerRegisters) &
 		OCCP_STATUS_READ_ERRORS))
-	    nItems = m_properties.get32RegisterOffset(p.m_info.m_offset);
+	    nItems = m_properties.get32RegisterOffset(offset);
 	  if (!p.m_info.m_readError && 
 	      !(status =
 		get32Register(status, OccpWorkerRegisters) &
 		OCCP_STATUS_READ_ERRORS)) {
 	    if (nItems * (p.m_info.m_nBits/8) <= n)
 	      throwPropertySequenceError();
-	    m_properties.getBytesRegisterOffset(p.m_info.m_offset + p.m_info.m_align, 
+	    m_properties.getBytesRegisterOffset(offset + p.m_info.m_align, 
 						buf, nItems * (p.m_info.m_nBits/8));
 	    if (p.m_info.m_readError && !status)
 	      status =
@@ -583,11 +585,11 @@ namespace OCPI {
 		OCCP_STATUS_READ_ERRORS;
 	  }
 	} else {
-	  nItems = m_properties.m_accessor->get32(p.m_info.m_offset, &status);
+	  nItems = m_properties.m_accessor->get32(offset, &status);
 	  if (!status) {
 	    if (nItems * (p.m_info.m_nBits/8) <= n)
 	      throwPropertySequenceError();
-	    m_properties.m_accessor->getBytes(p.m_info.m_offset + p.m_info.m_align, 
+	    m_properties.m_accessor->getBytes(offset + p.m_info.m_align, 
 					      buf, nItems * (p.m_info.m_nBits/8),
 					      &status);
 	  }

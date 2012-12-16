@@ -61,14 +61,19 @@ namespace OCPI {
     typedef OCPI::API::PValue PValue;
     extern PValue allPVParams[];
 #define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)	\
-      bool find##pretty(const PValue* p, const char* name, run &value);
+    bool find##pretty(const PValue* p, const char* name, run &value);
+#if 0
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S(sca, corba, letter, bits, run, pretty, store)	\
       bool find##pretty(const PValue* p, const char* name, run &value);
-      OCPI_PROPERTY_DATA_TYPES
-#undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+#endif
+      OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
+    bool findAssign(const PValue *p, const char *name, const char *var, const char *&value);
+    bool findAssignNext(const PValue *p, const char *name, const char *var,
+			const char *&val, unsigned &next);
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
     typedef OCPI::API::PV##pretty PV##pretty;
   OCPI_PROPERTY_DATA_TYPES
