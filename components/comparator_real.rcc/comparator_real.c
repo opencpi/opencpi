@@ -99,7 +99,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   (void)timedOut;(void)newRunCondition;
 
   // MyState *s = self->memories[0];
-  Comparator_realProperties *p = self->properties;
+  // Comparator_realProperties *p = self->properties;
 
   // We run when we have all buffers avail, no need to check
   runRealTest( self );
