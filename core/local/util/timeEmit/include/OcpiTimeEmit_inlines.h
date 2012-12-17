@@ -100,11 +100,11 @@ namespace OCPI {
       GTime               gTime;
       inline Time calcGTime( Time ticks ) {
 
-	Time t;
-
-	t = gTime.startTime + ((((ticks-gTime.startTicks )*gTime.stopTime) - 
-				((ticks - gTime.startTicks )*gTime.startTime)) / 
-			       (gTime.stopTicks-gTime.startTicks));
+	Time t =
+	  gTime.stopTicks == gTime.startTicks ? gTime.startTime : 
+	  gTime.startTime + ((((ticks-gTime.startTicks )*gTime.stopTime) - 
+			      ((ticks - gTime.startTicks )*gTime.startTime)) / 
+			     (gTime.stopTicks-gTime.startTicks));
 
 	//	printf("In calcGTime: ticks = %lld, stt = %lld, stpt = %lld, time = %lld \n", ticks, gTime.startTime, gTime.stopTime, t );
 	//	printf("tst = %lld, tstpt = %lld\n", gTime.startTicks, gTime.stopTicks);

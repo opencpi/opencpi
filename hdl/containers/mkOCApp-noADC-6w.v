@@ -314,7 +314,10 @@ module mkOCApp4B(RST_N_rst_0,
 	       wsi_m_dac_MReset_n,
 
 	       wsi_m_dac_SReset_n,
-               uuid);
+	       uuid,
+	       rom_en,
+	       rom_addr,
+	       rom_data);
   parameter [0 : 0] hasDebugLogic = 1'b0;
   input  RST_N_rst_0;
   input  RST_N_rst_1;
@@ -791,6 +794,11 @@ module mkOCApp4B(RST_N_rst_0,
   // action method wsi_m_dac_sReset_n
   input  wsi_m_dac_SReset_n;
   output [511 : 0] uuid;
+
+  input 	   rom_en;
+  input  [9:0] 	   rom_addr;
+  output [31:0]    rom_data;
+
   wire [511 : 0]   myUUID;
   wire [511 : 0]   uuid = myUUID;
 
@@ -1016,6 +1024,18 @@ module mkOCApp4B(RST_N_rst_0,
 //				      .dac_MByteEn(wsi_m_dac_MByteEn),
 //				      .dac_MReqInfo(wsi_m_dac_MReqInfo),
 //				      .dac_MReset_n(wsi_m_dac_MReset_n));
+
+  BRAM1Load #(.FILENAME("metadatarom.data"),
+	      .PIPELINED(1'd0),
+	      .ADDR_WIDTH(32'd10),
+	      .DATA_WIDTH(32'd32),
+	      .MEMSIZE(11'd1024),
+	      .BINARY(1'd0)) rom_memory(.CLK(CLK),
+					.ADDR(rom_addr),
+					.DI(32'd0),
+					.WE(1'd0),
+					.EN(rom_en),
+					.DO(rom_data));
 
 // Tieoffs for unused WCI signals
 assign wci_s_0_SResp = 2'b0;

@@ -24,34 +24,18 @@ namespace OCPI {
     pthread_key_t Driver::s_threadKey;
     // Look for a container that doesn't exist yet.
     OC::Container *Driver::
-    probeContainer(const char *which, const OA::PValue *params)
+    probeContainer(const char *which, std::string &error, const OA::PValue *params)
 	throw ( OU::EmbeddedException )
     {
-#if 0
-      // THis is in the container base class now
-      static unsigned event_range_start = 0;
-      bool polled = true;
-      OU::findBool(props, "polled", polled);
-      OCPI::DataTransport::TransportGlobal **tpg(polled ? &m_tpg_no_events : &m_tpg_events);
-      OCPI::RCC::Container *rcc;	  
-      try {
-	if (!*tpg)
-	  *tpg = new OCPI::DataTransport::TransportGlobal( event_range_start++, !polled );
-	rcc = new Container(which, *tpg, props);
-      } catch( std::bad_alloc ) {
-	throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);
-      }
-#else	  
-      return new Container(which, params); // parent().getTransportGlobal(params), params);
-#endif
+      return new Container(which, params);
     }
     // Per driver discovery routine to create devices
     unsigned Driver::
     search(const OA::PValue* props, const char **exclude)
       throw ( OU::EmbeddedException ) {
       (void) props; (void)exclude;
-      probeContainer("rcc0", NULL);
-      return 1;
+      std::string error;
+      return probeContainer("rcc0", error, NULL) ? 1 : 0;
     }
     Driver::
     ~Driver()

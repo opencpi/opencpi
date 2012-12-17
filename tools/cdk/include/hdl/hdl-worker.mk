@@ -116,6 +116,14 @@ $(call OcpiDbgVar,Worker)
 ifndef Core
 Core=$(Worker)
 endif
+
+# This is the utility program for hdl
+ifeq ($(shell if test -x $(ToolsDir)/ocpihdl; then echo xx; fi),)
+$(error Missing ocpihdl utility program)
+endif
+OcpiHdl=\
+  $(DYN_PREFIX) $(ToolsDir)/ocpihdl 
+
 ################################################################################
 # Generated files: impl depends on defs, worker depends on impl
 # map the generic "IncludeDirs" into the verilog

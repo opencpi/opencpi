@@ -1,6 +1,5 @@
 #ifndef HdlContainer_H
 #define HdlContainer_H
-#include <uuid/uuid.h>
 #include "HdlOCCP.h"
 #include "OcpiContainerInterface.h"
 
@@ -15,9 +14,8 @@ namespace OCPI {
       HDL::Device &m_device;        // the underlying device that we own
       //      DataTransfer::EndPoint &m_endpoint; // the data plane endpoint of the device
       std::string m_part, m_esn, m_position, m_loadParams;
-      uuid_t m_loadedUUID;
-      uint32_t m_timeCorrection;
       OCPI::Time::Emit m_hwEvents;
+      uint64_t m_lastTick;
       friend class WciControl;
       friend class Driver;
       friend class Port;
@@ -27,13 +25,12 @@ namespace OCPI {
     public:
       virtual ~Container();
       inline uint64_t getMyTicks() {
-	return swap32(get64Register(admin.time, OccpSpace)) + m_timeCorrection;
+	return
+	  m_device.isAlive() ? 
+	  m_lastTick = swap32(get64Register(admin.time, OccpSpace)) + hdlDevice().m_timeCorrection :
+	  m_lastTick;
       }
-    private:
-      static inline uint64_t swap32(uint64_t x) {return (x <<32) | (x >> 32); }
-      void initTime();
     protected:
-      bool isLoadedUUID(const std::string &uuid);
       void getWorkerAccess(unsigned index,
 			   Access &worker,
 			   Access &properties);

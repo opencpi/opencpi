@@ -234,7 +234,9 @@ namespace OCPI {
 	*getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *element),
 	*ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg),
 	*ezxml_attrs(ezxml_t xml, const char* (*func)(const char *name, const char *value, void *arg), void *arg),
-        *getBoolean(ezxml_t x, const char *name, bool *b),
+	// true only means its an error to do anything but true, for cases
+	// when you are only allowed to "add truth", not set false
+        *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly = false),
         *checkAttrs(ezxml_t x, ...),
         *checkElements(ezxml_t x, ...),
 	*checkAttrsV(ezxml_t x, const char **attrs),

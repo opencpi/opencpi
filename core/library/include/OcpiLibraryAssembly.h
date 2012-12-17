@@ -79,7 +79,7 @@ namespace OCPI {
       void operator --( int );
       
     private:
-      void finalizeConnections();
+      void resolvePorts(const Implementation &i);
       void findImplementations(const OCPI::Util::PValue *params);
       bool foundImplementation(const Implementation &i, unsigned score, bool &accepted);
       int m_refCount;

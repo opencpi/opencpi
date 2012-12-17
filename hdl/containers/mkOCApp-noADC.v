@@ -1001,6 +1001,18 @@ module mkOCApp(RST_N_rst_0,
 `endif
 );
 
+  BRAM1Load #(.FILENAME("metadatarom.data"),
+	      .PIPELINED(1'd0),
+	      .ADDR_WIDTH(32'd10),
+	      .DATA_WIDTH(32'd32),
+	      .MEMSIZE(11'd1024),
+	      .BINARY(1'd0)) rom_memory(.CLK(CLK),
+					.ADDR(rom_addr),
+					.DI(32'd0),
+					.WE(1'd0),
+					.EN(rom_en),
+					.DO(rom_data));
+
 //				      .adc_SThreadBusy(wsi_s_adc_SThreadBusy),
 //				      .adc_SReset_n(wsi_s_adc_SReset_n),
 //				      .dac_MCmd(wsi_m_dac_MCmd),

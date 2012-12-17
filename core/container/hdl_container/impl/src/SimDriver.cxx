@@ -52,19 +52,6 @@ namespace OCPI {
       namespace OU = OCPI::Util;
       using namespace OCPI::HDL::Ether;
       
-      static ssize_t myread(int fd, void *argBuf, size_t n) {
-	uint8_t *buf = (uint8_t*)argBuf;
-	ssize_t soFar = 0;
-	do {
-	  ssize_t r = read(fd, buf, n);
-	  if (r <= 0)
-	    return r;
-	  soFar += r;
-	  buf += r;
-	  n -= r;
-	} while (n);
-	return soFar;
-      }
       class Device
 	: public OCPI::HDL::Device,
 	  public OCPI::HDL::Accessor {
@@ -72,7 +59,7 @@ namespace OCPI {
 	bool m_discovery;
 	std::string m_directory;
 	EtherControlPacket m_request;
-	int m_toSim, m_fromSim;
+	int m_toSim, m_fromSim, m_toServer, m_fromServer;
       protected:
 	Device(std::string &name, std::string &dir, bool discovery, std::string &error)
 	  : OCPI::HDL::Device(name),
@@ -82,6 +69,8 @@ namespace OCPI {
 	  if (!strncasecmp("Sim:", cp, 4))
 	    cp += 4;
 	  std::string
+	    toServer(m_directory + "/server"),
+	    fromServer(m_directory + "/client"),
 	    toSim(m_directory + "/external"),
 	    fromSim(m_directory + "/response");
 	  if ((m_toSim = open(toSim.c_str(), O_WRONLY | O_NONBLOCK)) < 0 ||
@@ -94,7 +83,22 @@ namespace OCPI {
 	    OU::formatString(error, "Can't open or set up named pipe from simulator: %s", fromSim.c_str());
 	    return;
 	  }
+	  if ((m_toServer = open(toServer.c_str(), O_WRONLY | O_NONBLOCK)) < 0 ||
+	      fcntl(m_toServer, F_SETFL, 0) != 0) {
+	    OU::formatString(error, "Can't open or set up named pipe to sim server: %s", toServer.c_str());
+	    return;
+	  }
+	  if ((m_fromServer = open(fromServer.c_str(), O_RDONLY | O_NONBLOCK)) < 0 ||
+	      fcntl(m_fromServer, F_SETFL, 0) != 0) {
+	    OU::formatString(error, "Can't open or set up named pipe from sim server: %s", toServer.c_str());
+	    return;
+	  }
 	  ocpiDebug("Sim container %s opened both named pipes", name.c_str());
+	  uint16_t c[2] = {0, 1};
+	  if (mywrite(m_toServer, (const void *)c, sizeof(c)))
+	    throw OU::Error("Can't write flush message to sim server");
+	  if (myread(m_fromServer, (char *)c, sizeof(c)) != sizeof(c))
+	    throw OU::Error("Can't read flush response from sim server");
 	  //OU::formatString(m_endpointSpecific, "ocpi-ether-rdma:%s", cp);
 	  m_endpointSize = sizeof(OccpSpace);
 	  cAccess().setAccess(NULL, this, m_endpointSize - sizeof(OccpSpace));
@@ -102,6 +106,71 @@ namespace OCPI {
 	}
       public:
 	~Device() {
+	}
+      private:
+	ssize_t 
+	myread(int fd, void *argBuf, size_t n) {
+	  ocpiDebug("myread of %zu", n);
+	  uint8_t *buf = (uint8_t*)argBuf;
+	  ssize_t soFar = 0;
+	  do {
+	    ssize_t r = read(fd, buf, n);
+	    switch(r) {
+	    case -1:
+	      if (errno == EINTR)
+		continue;
+	      // fall into
+	    case 0:
+	      m_isAlive = false;
+	      return r;
+	    default:
+	      soFar += r;
+	      buf += r;
+	      n -= r;
+	    }
+	  } while (n);
+	  return soFar;
+	}
+	bool
+	mywrite(int fd, const void *buf, unsigned n) {
+	  ssize_t nr = write(fd, buf, n);
+	  if (nr == n)
+	    return false;
+	  if (nr == 0 || errno == EPIPE)
+	    m_isAlive = false;
+	  return true;
+	}
+      public:
+	// Load a bitstream via jtag
+	void load(const char *name) {
+	  uint16_t c[2];
+	  unsigned
+	    hlen = sizeof(c),
+	    namelen = strlen(name),
+	    msglen = hlen + namelen + 1;
+	  c[0] = namelen + 1;
+	  c[1] = 0;
+	  std::string msg(msglen, 0);
+	  msg.replace(0, hlen, (const char *)c);
+	  msg.replace(hlen, namelen, name);
+	  ocpiDebug("Request to sim server to load %s (len %u)", name, msglen); 
+	  if (mywrite(m_toServer, msg.c_str(), msglen))
+	    throw OU::Error("Can't write load request message to sim server");
+	  if (myread(m_fromServer, (char *)c, sizeof(c)) != sizeof(c))
+	    throw OU::Error("Can't read header from sim server");
+	  if (c[0] != 0) {
+	    char *err = new char[c[0]];
+	    if (myread(m_fromServer, err, c[0]) != c[0]) {
+	      delete err;
+	      throw OU::Error("Can't read header from sim server");
+	    }
+	    std::string error(err);
+	    delete err;
+	    throw OU::Error("Loading new executable %s failed: %s", name, error.c_str());
+	  }
+	  if (c[1] != 0)
+	    throw OU::Error("Bad command returned from server: %u", c[1]);
+	  ocpiInfo("Successfully loaded new sim executable: %s", name);
 	}
 	void request(EtherControlMessageType type, RegisterOffset offset,
 		     unsigned bytes, EtherControlPacket &responsePacket, uint32_t *status) {
@@ -114,16 +183,19 @@ namespace OCPI {
 	  EtherControlResponse response = OK;
 	  if (status)
 	    *status = 0;
-	  if (write(m_toSim, (void*)&m_request.header.length, typeLength[type]-2) != typeLength[type]-2)
-	    throw OU::Error("Can't write %u bytes of control request to named pipe", typeLength[type]-2);
-	  ocpiDebug("Request sent type %u tag %u offset %u",
+	  ocpiDebug("Sim request sent type %u tag %u offset %u",
 		    OCCP_ETHER_MESSAGE_TYPE(m_request.header.typeEtc), m_request.header.tag,
 		    ntohl(((EtherControlRead *)&m_request)->address));
+	  if (mywrite(m_toSim, (const void*)&m_request.header.length, typeLength[type]-2))
+	    throw OU::Error("Can't write %u bytes of control request to sim server", typeLength[type]-2);
 	  ssize_t r = myread(m_fromSim, (uint8_t*)&responsePacket.header+2,
 			     sizeof(responsePacket.header)-2);
-	  if (r != sizeof(responsePacket.header)-2)
-	    throw OU::Error("Can't read header of control request to named pipe: %zd %d",
+	  if (r != sizeof(responsePacket.header)-2) {
+	    m_isAlive = false;
+	    throw OU::Error(r ? "Can't read header of control request to named pipe: %zd %d" :
+			    "Simulation server has shut down",
 			    r, errno);
+	  }
 	  ocpiDebug("response received from sim %x %x %x",
 		    responsePacket.header.length, responsePacket.header.typeEtc,
 		    responsePacket.header.tag);
@@ -296,7 +368,7 @@ namespace OCPI {
 		  for (const char **ap = exclude; *ap; ap++)
 		    if (!strcmp(*ap, dev->name().c_str()))
 		      goto skipit; // continue(2);
-		if (found(*dev, error)) {
+		if (!found(*dev, error)) {
 		  count++;
 		  continue;
 		}
@@ -306,6 +378,7 @@ namespace OCPI {
 		ocpiInfo("Error opening sim device: %s", error.c_str());
 	      if (dev)
 		delete dev;
+	      error.clear();
 	    }
 	  closedir(d); // FIXME: try/catch?
 	}

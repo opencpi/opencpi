@@ -1,0 +1,11 @@
+<application >
+  <instance component="pattern" connect="bias">
+    <property name="messagesToSend" value='1'/>
+    <property name="metadata" value='{12,3}'/>
+    <property name="data" value='9,8,7,6'/>
+  </instance>
+  <instance component='bias' connect="capture">
+    <property name='biasValue' value='0x01020304'/>
+  </instance>
+  <instance component="capture"/>
+</application>

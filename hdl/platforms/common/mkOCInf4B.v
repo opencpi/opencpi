@@ -603,6 +603,9 @@ module mkOCInf4B(pciDevice,
 		 uuid_arg,
 		 EN_uuid,
 		 RDY_uuid,
+		 rom_en,
+		 rom_addr,
+		 rom_data,
 
 		 RST_N_wci_m_0,
 		 RST_N_wci_m_1,
@@ -1171,6 +1174,10 @@ module mkOCInf4B(pciDevice,
   input  [511 : 0] uuid_arg;
   input  EN_uuid;
   output RDY_uuid;
+  output       rom_en;
+  output [9:0] rom_addr;
+  input [31:0] rom_data;
+  
 
   // output resets
   output RST_N_wci_m_0;
@@ -2162,6 +2169,9 @@ module mkOCInf4B(pciDevice,
 	    .server_request_put(cp$server_request_put),
 	    .switch_x(cp$switch_x),
 	    .uuid_arg(cp$uuid_arg),
+	    .rom_en(rom_en),
+	    .rom_addr(rom_addr),
+	    .rom_data(rom_data),
 	    .wci_Vm_0_SData(cp$wci_Vm_0_SData),
 	    .wci_Vm_0_SFlag(cp$wci_Vm_0_SFlag),
 	    .wci_Vm_0_SResp(cp$wci_Vm_0_SResp),

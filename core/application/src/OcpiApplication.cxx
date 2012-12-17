@@ -267,7 +267,7 @@ namespace OCPI {
 	      assign = NULL;
 	}
 	if (assign)
-	  throw OU::Error("No instance for property assignment '%s'", assign);
+	  throw OU::Error("No instance for %s assignment '%s'", pName, assign);
       }
     }
     
@@ -610,16 +610,16 @@ namespace OCPI {
       }
       if (m_assembly.m_doneInstance != -1)
 	m_doneWorker = m_workers[m_assembly.m_doneInstance];
-      unsigned nConns = m_assembly.m_connections.size();
-      for (unsigned n = 0; n < nConns; n++) {
-	const OU::Assembly::Connection &c = m_assembly.m_connections[n];
-	OA::Port &apiPort = m_workers[c.m_ports[0].m_instance]->getPort(c.m_ports[0].m_name.c_str());
-	const OU::Assembly::Port &assPort = c.m_ports[0];
+      for (OU::Assembly::ConnectionIter ci = m_assembly.m_connections.begin();
+	   ci != m_assembly.m_connections.end(); ci++) {
+	const OU::Assembly::Connection &c = *ci;
+	OA::Port &apiPort = m_workers[c.m_ports.front().m_instance]->getPort(c.m_ports.front().m_name.c_str());
+	const OU::Assembly::Port &assPort = c.m_ports.front();
 	if (c.m_externals.size() == 0)
-	  apiPort.connect(m_workers[c.m_ports[1].m_instance]->getPort(c.m_ports[1].m_name.c_str()),
-			  assPort.m_parameters, c.m_ports[1].m_parameters);
+	  apiPort.connect(m_workers[c.m_ports.back().m_instance]->getPort(c.m_ports.back().m_name.c_str()),
+			  assPort.m_parameters, c.m_ports.back().m_parameters);
 	else {
-	  const OU::Assembly::External &e = c.m_externals[0];
+	  const OU::Assembly::External &e = c.m_externals.front();
 	  if (e.m_url.size())
 	    apiPort.connectURL(e.m_url.c_str(), assPort.m_parameters, e.m_parameters);
 	  else {

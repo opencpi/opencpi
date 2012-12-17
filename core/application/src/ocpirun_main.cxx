@@ -11,6 +11,7 @@
 #include <cassert>
 #include <string>
 #include <vector>
+#include <signal.h>
 #include "OcpiOsDebug.h"
 #include "OcpiContainerApi.h"
 #include "OcpiApplicationApi.h"
@@ -64,6 +65,7 @@ main(int /*argc*/, const char **argv) {
   if (!argv[1])
     usage(argv0);
   const char **ap;
+  signal(SIGPIPE, SIG_IGN);
   try {
     for (ap = &argv[1]; *ap && ap[0][0] == '-'; ap++)
       switch (ap[0][1]) {

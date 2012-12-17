@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <string>
 #include "OcpiPValue.h"
+#include "OcpiUtilEzxml.h"
 #include "OcpiContainerManager.h"
 #include "EtherDriver.h"
 #include "PciDriver.h"
@@ -39,6 +40,7 @@ The issue is that the ether scanner has an open socket for discovery,
 	virtual protected OCPI::Util::SelfMutex
     {
       const OCPI::Util::PValue *m_params; // a temporary during discovery
+      bool setup(Device &dev, ezxml_t &config, std::string &err);
     public:
       void print(const char *name, Access &access);
       // This driver method is called when container-discovery happens, to see if there
@@ -48,7 +50,8 @@ The issue is that the ether scanner has an open socket for discovery,
       unsigned search(const OCPI::API::PValue*, const char **exclude);
       bool found(Device &dev, std::string &error);
       // Probe a specific container
-      OCPI::Container::Container *probeContainer(const char *which, const OCPI::API::PValue *props);
+      OCPI::Container::Container *probeContainer(const char *which, std::string &error,
+						 const OCPI::API::PValue *props);
       OCPI::HDL::Device *
 	open(const char *which, bool discovery, std::string &err);
       void close();

@@ -533,7 +533,10 @@ module mkOCCP(pciDevice,
 	      switch_x,
 
 	      uuid_arg,
-
+	      rom_en,
+	      rom_addr,
+	      rom_data,
+	      
 	      RST_N_wci_Vm_0,
 	      RST_N_wci_Vm_1,
 	      RST_N_wci_Vm_2,
@@ -1033,6 +1036,12 @@ module mkOCCP(pciDevice,
 
   // action method uuid
   input  [511 : 0] uuid_arg;
+
+  // Manually added metadata bram signals
+  output       rom_en;
+  output [9:0] rom_addr;
+  input [31:0] rom_data;
+  
 
   // output resets
   output RST_N_wci_Vm_0;
@@ -5181,19 +5190,6 @@ module mkOCCP(pciDevice,
 		   .READ(dna_dna$READ),
 		   .SHIFT(dna_dna$SHIFT),
 		   .DOUT(dna_dna$DOUT));
-
-  // submodule rom_memory
-  BRAM1Load #(.FILENAME("ramprom.data"),
-	      .PIPELINED(1'd0),
-	      .ADDR_WIDTH(32'd10),
-	      .DATA_WIDTH(32'd32),
-	      .MEMSIZE(11'd1024),
-	      .BINARY(1'd0)) rom_memory(.CLK(CLK),
-					.ADDR(rom_memory$ADDR),
-					.DI(rom_memory$DI),
-					.WE(rom_memory$WE),
-					.EN(rom_memory$EN),
-					.DO(rom_memory$DO));
 
   // submodule rom_serverAdapter_outDataCore
   SizedFIFO #(.p1width(32'd32),
@@ -10678,6 +10674,9 @@ module mkOCCP(pciDevice,
   assign dna_shftReg_1$whas = dna_cnt >= 7'd3 && dna_cnt <= 7'd116 ;
   assign uuidV$wget = uuid_arg ;
   assign uuidV$whas = 1'd1 ;
+  assign rom_memory$DO = rom_data;
+  assign rom_addr = rom_memory$ADDR;
+  assign rom_en = rom_memory$EN;
   assign wci_reqF_x_wire$wget = MUX_wci_reqF_q_0$write_1__VAL_2 ;
   assign wci_reqF_x_wire$whas =
 	     WILL_FIRE_RL_cpDispatch_F_F_T_T_T_T ||

@@ -13,7 +13,7 @@ namespace OCPI {
       static pthread_key_t s_threadKey;
       Driver() throw();
       OCPI::Container::Container *
-	probeContainer(const char *which, const OCPI::API::PValue *props)
+	probeContainer(const char *which, std::string &error, const OCPI::API::PValue *props)
 	throw ( OCPI::Util::EmbeddedException );
       // Per driver discovery routine to create devices
       unsigned

@@ -126,12 +126,13 @@ namespace OCPI {
       for (ezxml_t px = ezxml_cchild(ax, "property"); px; px = ezxml_next(px), p++)
 	if ((err = p->parse(px, *this)))
 	  return err;
-      m_connections.resize(OE::countChildren(ax, "Connection"));
-      Connection *c = &m_connections[0];
       n = 0;
-      for (ezxml_t cx = ezxml_cchild(ax, "Connection"); cx; cx = ezxml_next(cx), c++, n++)
-	if ((err = c->parse(cx, *this, n)))
+      for (ezxml_t cx = ezxml_cchild(ax, "Connection"); cx; cx = ezxml_next(cx), n++) {
+	Connection tmp;
+	m_connections.push_back(tmp);
+	if ((err = m_connections.back().parse(cx, *this, n)))
 	  return err;
+      }
       i = &m_instances[0];
       for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix), i++)
 	if ((err = i->parseConnection(ix, *this)))
@@ -149,12 +150,11 @@ namespace OCPI {
 
     const char *Assembly::
     addConnection(const char *name, Connection *&c) {
-      c = &m_connections[0];
-      for (unsigned n = m_connections.size(); n; n--, c++)
-	if (!strcasecmp(c->m_name.c_str(), name))
+      for (ConnectionIter ci = m_connections.begin(); ci != m_connections.end(); ci++)
+	if (!strcasecmp((*ci).m_name.c_str(), name))
 	  return esprintf("Duplicate connection named '%s' in assembly", name);
-      unsigned size = m_connections.size();
-      m_connections.resize(size + 1);
+      Connection tmp;
+      m_connections.push_back(tmp);
       c = &m_connections.back();
       c->m_name = name;
       return NULL;
@@ -165,8 +165,8 @@ namespace OCPI {
       Connection *c;
       const char *err = addConnection(name.c_str(), c);
       if (!err) {
-	Port &toP = c->addPort(to, toPort, true);
-	Port &fromP = c->addPort(from, fromPort, false);
+	Port &toP = c->addPort(*this, to, toPort, true);
+	Port &fromP = c->addPort(*this, from, fromPort, false);
 	toP.m_connectedPort = &fromP;
 	fromP.m_connectedPort = &toP;
       }
@@ -177,7 +177,7 @@ namespace OCPI {
       Connection *c;
       const char *err = addConnection(port, c);
       if (!err) {
-	c->addPort(instance, port, false);
+	c->addPort(*this, instance, port, false);
 	c->addExternal(port);
       }
       return err;
@@ -302,47 +302,50 @@ namespace OCPI {
       if ((err = m_parameters.parse(cx, "name", NULL)))
 	return err;
 
-      m_externals.resize(OE::countChildren(cx, "external"));
-      External *e = &m_externals[0];
       unsigned nExt = 0;
-      for (ezxml_t x = ezxml_cchild(cx, "external"); x; x = ezxml_next(x), e++, nExt++)
-	if ((err = e->parse(x, nExt, m_parameters)))
+      for (ezxml_t x = ezxml_cchild(cx, "external"); x; x = ezxml_next(x), nExt++) {
+	External tmp;
+	m_externals.push_back(tmp);
+	if ((err = m_externals.back().parse(x, nExt, m_parameters)))
 	  return err;
+      }
 
-      m_ports.resize(OE::countChildren(cx, "port"));
-      if (m_ports.size() < 1)
+      if (OE::countChildren(cx, "port") < 1)
 	return "no ports found under connection";
-      Port
-	*other = NULL,
-	*p = &m_ports[0];
-      for (ezxml_t x = ezxml_cchild(cx, "port"); x; x = ezxml_next(x), p++) {
-	if ((err = p->parse(x, a, m_parameters)))
+      Port *other = NULL;
+      for (ezxml_t x = ezxml_cchild(cx, "port"); x; x = ezxml_next(x)) {
+	Port tmp;
+	m_ports.push_back(tmp);
+	Port &p = m_ports.back();
+	if ((err = p.parse(x, a, m_parameters)))
 	  return err;
 	if (other) {
-	  ocpiAssert(!p->m_connectedPort && !other->m_connectedPort);
-	  p->m_connectedPort = other;
-	  other->m_connectedPort = p;
-	  
+	  ocpiAssert(!p.m_connectedPort && !other->m_connectedPort);
+	  p.m_connectedPort = other;
+	  other->m_connectedPort = &p;
 	} else
-	  other = p;
+	  other = &p;
       }
       return NULL;
     }
 
     Assembly::Port & Assembly::Connection::
-    addPort(unsigned instance, const char *port, bool isInput) {
-      m_ports.resize(m_ports.size() + 1);
-      m_ports.back().init(port, instance, isInput);
-      return m_ports.back();
+    addPort(Assembly &a, unsigned instance, const char *port, bool isInput) {
+      Port tmp;
+      m_ports.push_back(tmp);
+      Port &p = m_ports.back();
+      p.init(a, port, instance, isInput);
+      return p;
     }
 
     void Assembly::Port::
-    init(const char *name, unsigned instance, bool isInput) {
+    init(Assembly &a, const char *name, unsigned instance, bool isInput) {
       if (name)
 	m_name = name;
       m_instance = instance;
       m_input = isInput;
       m_connectedPort = NULL;
+      a.m_instances[instance].m_ports.push_back(this);
     }
 
     void Assembly::Connection::
@@ -362,9 +365,7 @@ namespace OCPI {
 	  (err = OE::getRequiredString(x, iName, "instance", "port")) ||
 	  (err = a.getInstance(iName.c_str(), instance)))
 	return err;
-      init(name.c_str(), instance, false);
-      // Parse all attributes except the explicit ones here.
-      a.m_instances[m_instance].m_ports.push_back(this);
+      init(a, name.c_str(), instance, false);
       return m_parameters.parse(pvl, x, "name", "instance", NULL);
     }
 

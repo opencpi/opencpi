@@ -139,10 +139,6 @@ OCPI::OS::testAssertion (bool cond)
 #undef ocpiAssert
 #endif
 
-#define OCPI_LOG_DEBUG_MIN 10
-#define OCPI_LOG_WIERD 6
-#define OCPI_LOG_INFO 8
-#define OCPI_LOG_BAD 2
 #define ocpiWierd(...) ocpiLog(OCPI_LOG_WIERD, __VA_ARGS__)
 #define ocpiInfo(...) ocpiLog(OCPI_LOG_INFO, __VA_ARGS__)
 #define ocpiBad(...) ocpiLog(OCPI_LOG_BAD, __VA_ARGS__)

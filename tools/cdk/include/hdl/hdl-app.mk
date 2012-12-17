@@ -136,10 +136,12 @@ ContainerRtl=$(HdlPlatformsDir)/../containers/$(Container)
 # Too bad we can't reuse what is in hdl-core2.mk a second time here
 ContainerModule:=mkOCApp4B
 
-
-# Test: is this needed?
-#$(OutDir)target-$1/$(Worker)_bb/$(call HdlToolLibRef,$(Worker)_bb,$1):
-#	$(AT)ln -s . $(OutDir)target-$1/$(Worker)_bb/$1
+PlatformDir=$(OutDir)target-$1
+AppName=$(Worker)-$1
+BitZName=$(call PlatformDir,$1)/$(call AppName,$1).bit.gz
+ArtifactXmlName=$(call PlatformDir,$1)/$(Worker)_cont_art.xml
+ArtifactXmlDirs=$(XmlIncludeDirs) ../../devices/specs ../../devices/lib/hdl
+ContainerXmlFile=$(Worker)_cont.xml
 
 # The container (core) is built in the platform directory
 # First arg is platform
@@ -179,17 +181,21 @@ $(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $$$$(TargetDir)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): HdlSources=$(OutDir)target-$1/$(ContainerModule).v $(OutDir)target-$1/$(Worker)_UUID.v
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/$(ContainerModule).v
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/$(Worker)_UUID.v
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/metadatarom.data
 # Need the link to the bb lib
 ifdef HdlToolNeedBB
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $(OutDir)target-$3/$(Worker)_bb/$3
 else
-$(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $(OutDir)target-$3/$(Worker)/$3
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin):  $(OutDir)target-$3/$(Worker)/$3
 endif
 # Need the link to the core
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $(OutDir)target-$3/$3
 	$(AT)echo Building container core \"$(ContainerModule)\" for target \"$$(HdlTarget)\"
 	$(AT)$$(HdlCompile)
 
+$(OutDir)target-$1/metadatarom.data: $(call ArtifactXmlName,$1)
+	$(AT)echo Generating configuration ROM data for $1.
+	$(AT)$(OcpiHdl) bram $$< $$@
 endef
 
 #$(info HAT=$(HdlActualTargets)=)
@@ -198,16 +204,12 @@ $(foreach t,$(HdlPlatforms),$(eval $(call DoContainer,$t,$(call HdlGetPart,$t),$
 # the app module name from "ocpi_app" to the specific one.
 $(Containers): $(ContainerRtl) Makefile
 	$(AT)sed s/ocpi_app/$(Worker)/ $(ContainerRtl) > $@
+
+
 all: $(ContainerCores)
 
 ################################################################################
 # Now we build for the platform.  These three names are platform-independent
-PlatformDir=$(OutDir)target-$1
-AppName=$(Worker)-$1
-BitZName=$(call PlatformDir,$1)/$(call AppName,$1).bit.gz
-ArtifactXmlName=$(call PlatformDir,$1)/$(Worker)_cont_art.xml
-ArtifactXmlDirs=$(XmlIncludeDirs) ../../devices/specs ../../devices/lib/hdl
-ContainerXmlFile=$(Worker)_cont.xml
 
 define doPlatform
 
@@ -221,6 +223,7 @@ $(call ArtifactXmlName,$1) $(call PlatformDir,$1)/$(Worker)_UUID.v: $(ContainerX
 $(call BitZName,$1): $$(call BitName,$1) $$(call ArtifactXmlName,$1)
 	$(AT)echo Making compressed bit file: $$@ from $$<
 	$(AT)gzip -c $$(call BitName,$1) > $$@
+	$(AT)ls -ld $$@
 	$(AT)$(ToolsDir)/../../scripts/addmeta $$(call ArtifactXmlName,$1) $$@
 
 all: $(call BitZName,$1)

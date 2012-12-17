@@ -82,13 +82,15 @@ namespace OCPI {
 #endif
     // Make sure we cleanup first since we are "on top"
     unsigned Manager::cleanupPosition() { return 0; }
+    // FIXME: allow the caller to get errors. Perhaps another overloaded version
     OCPI::API::Container *Manager::find(const char *model, const char *which,
 					const OA::PValue *props) {
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild()) {
 	if (!strcmp(model, d->name().c_str())) {
 	  OA::Container *c = d->findContainer(which);
-	  return c ? c : d->probeContainer(which, props);
+	  std::string error;
+	  return c ? c : d->probeContainer(which, error, props);
 	}
       }
       return NULL;

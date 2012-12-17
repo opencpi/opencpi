@@ -6,6 +6,9 @@
 #include <cstdlib>
 #include <stdint.h>
 #include <string>
+#include <uuid/uuid.h>
+#include "OcpiUtilEzxml.h"
+#include "HdlOCCP.h"
 namespace OCPI {
   namespace HDL {
     // FIXME:  when do we check for unexpected errors when the worker said they don't produce errors?
@@ -127,23 +130,42 @@ namespace OCPI {
     // need to create a container (utilities, discovery etc.).
     // It is specialized by the access paths and driver issues (for pci, ethernet etc.)
     class Device {
-      std::string m_name;
-      // This is the protocol-specific part of the endpoint.
+      HdlUUID m_UUID;
+      uuid_t m_loadedUUID;
     protected:
-      std::string m_protocol;
+      std::string m_name, m_platform, m_part, m_esn, m_position, m_loadParams, m_protocol;
+      // This is the protocol-specific part of the endpoint.
       std::string m_endpointSpecific;
       Access m_cAccess;
       Access m_dAccess;
       uint64_t m_endpointSize;
+      bool m_isAlive;
       Device(std::string &name, const char *protocol = "");
     public:
+      uint32_t m_timeCorrection;
       virtual ~Device();
       inline const char *protocol() const { return m_protocol.c_str(); }
       inline const std::string &name() const { return m_name; }
+      inline const std::string &platform() const { return m_platform; }
+      inline const std::string &esn() const { return m_esn; }
+      inline const std::string &part() const { return m_part; }
       inline Access &cAccess() { return m_cAccess; };
       inline Access &dAccess() { return m_dAccess; };
       inline std::string &endpointSpecific() { return m_endpointSpecific; }
       inline uint64_t endpointSize() { return m_endpointSize; }
+      inline bool isAlive() { return m_isAlive; }
+      bool isLoadedUUID(const std::string &uuid);
+      void getUUID();
+      virtual void load(const char *name) = 0;
+      // This methd has a required base class implementation.
+      // If it is overridden, the base class method must be called from there.
+      // (probably early, as it retrieves a variety of generic information from either the
+      //  device itself or the config info)
+      // It is called shortly after construction returns and allows the device
+      // to do any finalization
+      // Return true on error
+      virtual bool configure(ezxml_t config, std::string &err);
+      void print();
     };
     
   }

@@ -763,6 +763,10 @@ module mkCTop4B(pciDevice,
   wire wtiM_sThreadBusy_d_2$D_IN, wtiM_sThreadBusy_d_2$EN;
 
   // ports of submodule app
+  wire        rom_en;
+  wire [9:0]  rom_addr;
+  wire [31:0] rom_data;
+  
   wire [511 : 0] app$uuid;
   wire [127 : 0] app$wmemiM0_MData, app$wmemiM0_SData;
   wire [63 : 0] app$wti_s_0_MData, app$wti_s_1_MData, app$wti_s_2_MData;
@@ -1470,7 +1474,11 @@ module mkCTop4B(pciDevice,
 					.wsi_m_dac_MByteEn(),
 					.wsi_m_dac_MReqInfo(),
 					.wsi_m_dac_MReset_n(),
-					.uuid(app$uuid));
+					.uuid(app$uuid),
+					.rom_en(rom_en),
+					.rom_addr(rom_addr),
+					.rom_data(rom_data)
+);
 
   // submodule ctNow
   SyncRegister #(.width(32'd64), .init(64'd0)) ctNow(.sCLK(CLK_sys0_clk),
@@ -1492,6 +1500,9 @@ module mkCTop4B(pciDevice,
 		.server_request_put(inf$server_request_put),
 		.switch_x(inf$switch_x),
 		.uuid_arg(inf$uuid_arg),
+		.rom_en(rom_en),
+		.rom_addr(rom_addr),
+		.rom_data(rom_data),
 		.wci_m_0_SData(inf$wci_m_0_SData),
 		.wci_m_0_SFlag(inf$wci_m_0_SFlag),
 		.wci_m_0_SResp(inf$wci_m_0_SResp),

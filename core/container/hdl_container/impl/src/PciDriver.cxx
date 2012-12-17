@@ -43,6 +43,7 @@
 #include <dirent.h>
 #include <sys/mman.h>
 #include <string>
+#include "fasttime.h"
 #include "OcpiUtilMisc.h"
 #include "KernelDriver.h"
 #include "HdlOCCP.h"
@@ -99,6 +100,130 @@ namespace OCPI {
 	    munmap(m_bar1, m_bar1size);
 	  if (m_fd >= 0)
 	    ::close(m_fd);
+	}
+	static int compu32(const void *a, const void *b) { return *(int32_t*)a - *(int32_t*)b; }
+    // Set up the FPGAs clock, assuming it has no GPS.
+    // This does two things:
+    // 1. calculate the delay when the CPU reads the 64 bit time register.
+    //   Ie. the time interval between the actual sampling of the 64 bit clock ON the FPGA and when
+    //   the "load" instruction actually returns that value.
+    // 2. set the FPGA time value to something close to our system time.
+    static inline uint64_t ticks2ns(uint64_t ticks) {
+      return (ticks * 1000000000ull + (1ull << 31)) / (1ull << 32);
+    }
+    static inline int64_t dticks2ns(int64_t ticks) {
+      return (ticks * 1000000000ll + (1ll << 31))/ (1ll << 32);
+    }
+    static inline uint64_t ns2ticks(uint32_t sec, uint32_t nsec) {
+      return ((uint64_t)sec << 32ull) + ((nsec + 500000000ull) * (1ull<<32)) /1000000000ull;
+    }
+    static inline uint64_t now() {
+#if 1
+      static int x;
+      if (!x) {
+	fasttime_init();
+	x = 1;
+      }
+      struct timespec tv;
+      fasttime_gettime(&tv);
+      return ns2ticks(tv.tv_sec, tv.tv_nsec);
+#else
+#ifdef __APPLE__
+      struct timeval tv;
+      gettimeofday(&tv, NULL);
+      return ns2ticks(tv.tv_sec, tv.tv_usec * 1000);
+#else
+      struct timespec ts;
+      clock_gettime (CLOCK_REALTIME, &ts);
+      return ns2ticks(ts.tv_sec, ts.tv_nsec);
+#endif
+#endif
+    }
+	void initTime() {
+	  unsigned n;
+	  uint32_t delta[100];
+	  uint32_t sum = 0;
+  
+	  // Take a hundred samples of round trip time, and sort
+	  for (n = 0; n < 100; n++) {
+	    // Read the FPGA's time, and set its delta register
+	    m_cAccess.set64Register(admin.timeDelta, OccpSpace,
+				    m_cAccess.get64Register(admin.time, OccpSpace));
+	    // occp->admin.timeDelta = occp->admin.time;
+	    // Read the (incorrect endian) delta register
+	    delta[n] = (int32_t)swap32(m_cAccess.get64Register(admin.timeDelta, OccpSpace));
+	  }
+	  qsort(delta, 100, sizeof(uint32_t), compu32);
+  
+	  // Ignore the slowest 10%
+	  for (n = 0; n < 90; n++)
+	    sum += delta[n];
+	  sum = (sum + 45) / 90;
+	  m_timeCorrection = sum;
+	  // we have average delay
+	  ocpiInfo("For %s: round trip times (ns) deltas: min %"
+		   PRIu64 " max %" PRIu64 " avg of best 90: %" PRIu64 "\n",
+		   name().c_str(), ticks2ns(delta[0]), ticks2ns(delta[99]), ticks2ns(sum));
+	  sum /= 2; // assume half a round trip for writes
+	  uint64_t nw1 = now();
+	  uint64_t nw1a = nw1 + sum;
+	  uint64_t nw1as = swap32(nw1a);
+	  m_cAccess.set64Register(admin.time, OccpSpace, nw1as);
+	  // set32Register(admin.scratch20, OccpSpace, nw1as>>32);
+	  // set32Register(admin.scratch24, OccpSpace, (nw1as&0xffffffff));
+	  //uint64_t nw1b = 0; // get64Register(admin.time, OccpSpace);
+	  //      uint64_t nw1bs = swap32(nw1b);
+	  uint64_t nw2 = 0; // now();
+	  uint64_t nw2s = swap32(nw2);
+	  m_cAccess.set64Register(admin.timeDelta, OccpSpace, nw1as);
+	  uint64_t nw1b = m_cAccess.get64Register(admin.time, OccpSpace);
+	  uint64_t nw1bs = swap32(nw1b);
+	  int64_t dt = m_cAccess.get64Register(admin.timeDelta, OccpSpace);
+	  ocpiDebug("Now delta is: %" PRIi64 "ns "
+		    "(dt 0x%"PRIx64" dtsw 0x%"PRIx64" nw1 0x%"PRIx64" nw1a 0x%"PRIx64 " nw1as 0x%"PRIx64
+		    " nw1b 0x%"PRIx64" nw1bs 0x%"PRIx64" nw2 0x%"PRIx64" nw2s 0x%"PRIx64" t 0x%lx)",
+		    dticks2ns(swap32(dt)), dt, swap32(dt), nw1, nw1a, nw1as, 
+		    nw1b, nw1bs, nw2, nw2s, time(0));
+#ifndef __APPLE__
+	  {
+	    struct timespec ts;
+	    clock_getres(CLOCK_REALTIME, &ts);
+	    ocpiInfo("res: %ld", ts.tv_nsec);
+	  }
+#endif
+	}
+	// Load a bitstream via jtag
+	void load(const char *fileName) {
+	  // FIXME: there should be a utility to run a script in this way
+	  char *command, *base = getenv("OCPI_CDK_DIR");
+	  if (!base)
+	    throw "OCPI_CDK_DIR environment variable not set";
+	  asprintf(&command,
+		   "%s/scripts/loadBitStreamOnPlatform \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+		   base, fileName, name().c_str(), m_platform.c_str(), m_part.c_str(),
+		   m_esn.c_str(), m_position.c_str());
+	  ocpiInfo("Executing command to load bit stream for device %s: \"%s\"\n",
+		   fileName, command);
+	  int rc = system(command);
+	  const char *err = 0;
+	  switch (rc) {
+	  case 127:
+	    err = "Couldn't execute bitstream loading command.  Bad OCPI_CDK_DIR environment variable?";
+	    break;
+	  case -1:
+	    err = OU::esprintf("Unknown system error (errno %d) while executing bitstream loading command",
+			       errno);
+	    break;
+	  case 0:
+	    ocpiInfo("Successfully loaded bitstream file: \"%s\" on HDL device \"%s\"\n",
+		     fileName, name().c_str());
+	    break;
+	  default:
+	    err = OU::esprintf("Bitstream loading error (%d) loading \"%s\" on HDL device \"%s\"",
+			       rc, fileName, name().c_str());
+	  }
+	  if (err)
+	    throw OU::Error(err);
 	}
       };
 
@@ -243,7 +368,7 @@ namespace OCPI {
 		  for (const char **ap = exclude; *ap; ap++)
 		    if (!strcmp(*ap, dev->name().c_str()))
 		      goto skipit; // continue(2);
-		if (found(*dev, error))
+		if (!found(*dev, error))
 		  count++;
 	      }
 	    skipit:

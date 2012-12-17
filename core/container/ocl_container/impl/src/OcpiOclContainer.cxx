@@ -168,6 +168,7 @@ namespace OCPI
                           const char** exclude );
 
         OC::Container* probeContainer ( const char* which,
+					std::string &error,
                                         const OA::PValue* props );
     }; // End: class Driver
 
@@ -246,19 +247,12 @@ namespace OCPI
       return 1;
     }
 
-    OC::Container* Driver::probeContainer ( const char* which,
+    // FIXME: leak of DeviceContext on constructor error
+    // FIXME: return errors, don't throw.
+    OC::Container* Driver::probeContainer ( const char* which, std::string &/*error*/,
                                             const OA::PValue* props )
     {
-      OCPI::OCL::Container* ocl ( 0 );
-      try
-      {
-        ocl = new Container ( which, new DeviceContext ( props ), 0, props );
-      }
-      catch ( std::bad_alloc )
-      {
-        throw OC::ApiError( "Failed to allocate OCL container." );
-      }
-      return ocl;
+      return new Container ( which, new DeviceContext ( props ), 0, props );
     }
 
     class Artifact : public OC::ArtifactBase<Container,Artifact>

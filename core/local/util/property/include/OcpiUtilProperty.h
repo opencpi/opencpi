@@ -74,7 +74,7 @@ namespace OCPI {
     class Property : public OCPI::API::PropertyInfo {
       const char
 	*parseImplAlso(ezxml_t x),
-	*parseAccess(ezxml_t prop, bool &readableConfigs, bool &writableConfigs);
+	*parseAccess(ezxml_t prop, bool &readableConfigs, bool &writableConfigs, bool addAccess);
     public:
       Property();
       ~Property();

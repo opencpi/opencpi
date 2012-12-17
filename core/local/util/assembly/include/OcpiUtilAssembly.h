@@ -62,6 +62,12 @@
 
 namespace OCPI {
   namespace Util {
+    // This class is the bottom of a three-level stack of assembly handling.
+    // It is parsed and maintained in a "vacuum": i.e. it knows nothing about
+    // implementations (metadata), nothing about librarys (available implementations),
+    // and nothing about containers (available places to run).  It simply represents
+    // the parsed entity.  See the "library" facility for the next level up,
+    // which is where implementation awareness (from artifacts in libraries) is handled.
     class Assembly {
     public:
       // This class is overloaded both for property values for individual instances
@@ -114,15 +120,17 @@ namespace OCPI {
 	bool m_input; // if no name
 	Port *m_connectedPort;
 	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl);
-	void init(const char *name, unsigned instance, bool isInput);
+	void init(Assembly &a, const char *name, unsigned instance, bool isInput);
       };
       struct Connection {
 	std::string m_name;
-	std::vector<External> m_externals;
-	std::vector<Port> m_ports;
+	std::list<External> m_externals;
+	typedef std::list<External>::iterator ExternalIter;
+	std::list<Port> m_ports;
+	typedef std::list<Port>::iterator PortIter;
 	PValueList m_parameters;
 	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
-	Port &addPort(unsigned instance, const char *port, bool isInput);
+	Port &addPort(Assembly &a, unsigned instance, const char *port, bool isInput);
 	void addExternal(const char *name);
       };
       // Potentially specified in the assembly, what policy should be used
@@ -141,7 +149,8 @@ namespace OCPI {
       std::string m_name;
       int m_doneInstance; // -1 for none
       std::vector<Instance> m_instances;
-      std::vector<Connection> m_connections;
+      std::list<Connection> m_connections;
+      typedef std::list<Connection>::iterator ConnectionIter;
       CMapPolicy m_cMapPolicy;
       uint32_t   m_processors;
       MappedProperties m_mappedProperties; // top level mapped to instance properties.

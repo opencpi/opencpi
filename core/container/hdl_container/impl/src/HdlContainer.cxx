@@ -56,9 +56,7 @@
 #define _UUID_STRING_T
 typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
-#include "fasttime.h"
 #include "OcpiOsAssert.h"
-#include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiPValue.h"
 #include "DtTransferInternal.h"
@@ -92,45 +90,6 @@ namespace OCPI {
     // It should come from somewhere else.  FIXME
     static const unsigned LOCAL_BUFFER_ALIGN = 32;
     
-    // Set up the FPGAs clock, assuming it has no GPS.
-    // This does two things:
-    // 1. calculate the delay when the CPU reads the 64 bit time register.
-    //   Ie. the time interval between the actual sampling of the 64 bit clock ON the FPGA and when
-    //   the "load" instruction actually returns that value.
-    // 2. set the FPGA time value to something close to our system time.
-    static inline uint64_t ticks2ns(uint64_t ticks) {
-      return (ticks * 1000000000ull + (1ull << 31)) / (1ull << 32);
-    }
-    static inline int64_t dticks2ns(int64_t ticks) {
-      return (ticks * 1000000000ll + (1ll << 31))/ (1ll << 32);
-    }
-    static inline uint64_t ns2ticks(uint32_t sec, uint32_t nsec) {
-      return ((uint64_t)sec << 32ull) + ((nsec + 500000000ull) * (1ull<<32)) /1000000000ull;
-    }
-    static inline uint64_t now() {
-#if 1
-      static int x;
-      if (!x) {
-	fasttime_init();
-	x = 1;
-      }
-      struct timespec tv;
-      fasttime_gettime(&tv);
-      return ns2ticks(tv.tv_sec, tv.tv_nsec);
-#else
-#ifdef __APPLE__
-      struct timeval tv;
-      gettimeofday(&tv, NULL);
-      return ns2ticks(tv.tv_sec, tv.tv_usec * 1000);
-#else
-      struct timespec ts;
-      clock_gettime (CLOCK_REALTIME, &ts);
-      return ns2ticks(ts.tv_sec, ts.tv_nsec);
-#endif
-#endif
-    }
-
-    static int compu32(const void *a, const void *b) { return *(int32_t*)a - *(int32_t*)b; }
 
     static OT::Emit::Time getTicksFunc(OT::Emit::TimeSource *ts) {
       return static_cast<Container *>(ts)->getMyTicks();
@@ -142,122 +101,24 @@ namespace OCPI {
 	Access(device.cAccess()), OT::Emit::TimeSource(getTicksFunc),
 	m_device(device), m_hwEvents(this, *this, "FPGA Events")
     {
-      initTime();
+      // Note that the device has retrieved all the info from the admin space already
       static OT::Emit::RegisterEvent te("testevent");
       m_hwEvents.emit(te);
       m_hwEvents.emitT(te, getMyTicks());
-      time_t bd = get32Register(admin.birthday, OccpSpace);
-      char tbuf[30];
-      ocpiInfo("OCFRP: %s, with bitstream birthday: %s", name().c_str(), ctime_r(&bd, tbuf));
       m_model = "hdl";
       m_os = "";
-      // Capture the UUID info that tells us about the platform
-      HdlUUID myUUIDtmp, myUUID;
-      unsigned n;
-      getRegisterBytes(admin.uuid, &myUUIDtmp, OccpSpace);
-      // Fix the endianness
-      for (n = 0; n < sizeof(HdlUUID); n++)
-	((uint8_t*)&myUUID)[n] = ((uint8_t *)&myUUIDtmp)[(n & ~3) + (3 - (n&3))];
-      for (n = 0; myUUID.platform[n] && n < sizeof(myUUID.platform); n++)
-	;
-      if (n > 2)
-	m_platform.assign(myUUID.platform, n);
-      else if (myUUID.platform[0] == '\240' && myUUID.platform[1] == 0)
-	m_platform = "ml605";
-      for (n = 0; myUUID.device[n] && n < sizeof(myUUID.device); n++)
-	;
-      if (n > 2)
-	m_part.assign(myUUID.device, n);
-      else if (myUUID.device[0] == '`' && myUUID.device[1] == 0)
-	m_part = "xc6vlx240t";
-      for (n = 0; myUUID.load[n] && n < sizeof(myUUID.load); n++)
-	;
-      if (n > 1)
-	m_loadParams.assign(myUUID.load, n);
-      memcpy(m_loadedUUID, myUUID.uuid, sizeof(m_loadedUUID));
-	
-      if (config) {
-	// what do I not know about this?
-	// usb port for jtag loading
-	// part type to look for artifacts
-	// esn for checking/asserting that
-	OE::getOptionalString(config, m_esn, "esn");
-	std::string platform, device;
-	OE::getOptionalString(config, platform, "platform");
-	OE::getOptionalString(config, platform, "device");
-	if (!platform.empty() && platform != m_platform)
-	  throw OU::Error("Discovered platform (%s) doesn't match configured platform (%s)",
-			  m_platform.c_str(), platform.c_str());
-	if (!device.empty() && device != m_part)
-	  throw OU::Error("Discovered device (%s) doesn't match configured device (%s)",
-			  m_part.c_str(), device.c_str());
-	OE::getOptionalString(config, m_position, "position");
-      }
+      m_platform = m_device.platform();
+      ocpiDebug("HDL Container for device %s constructed.  ESN: '%s' Platform/part is %s/%s.",
+		name().c_str(), m_device.esn().c_str(), m_device.platform().c_str(),
+		m_device.part().c_str());
     }
     Container::
     ~Container() {
+      ocpiDebug("Entering ~HDL::Container()");
       OT::Emit::shutdown();
       this->lock();
       delete &m_device;
-    }
-    void Container::
-    initTime() {
-      unsigned n;
-      uint32_t delta[100];
-      uint32_t sum = 0;
-  
-      // Take a hundred samples of round trip time, and sort
-      for (n = 0; n < 100; n++) {
-	// Read the FPGA's time, and set its delta register
-	set64Register(admin.timeDelta, OccpSpace, get64Register(admin.time, OccpSpace));
-	// occp->admin.timeDelta = occp->admin.time;
-	// Read the (incorrect endian) delta register
-	delta[n] = (int32_t)swap32(get64Register(admin.timeDelta, OccpSpace));
-      }
-      qsort(delta, 100, sizeof(uint32_t), compu32);
-  
-      // Ignore the slowest 10%
-      for (n = 0; n < 90; n++)
-	sum += delta[n];
-      sum = (sum + 45) / 90;
-      m_timeCorrection = sum;
-      // we have average delay
-      ocpiInfo("For %s: round trip times (ns) deltas: min %"
-	       PRIu64 " max %" PRIu64 " avg of best 90: %" PRIu64 "\n",
-	       name().c_str(), ticks2ns(delta[0]), ticks2ns(delta[99]), ticks2ns(sum));
-      sum /= 2; // assume half a round trip for writes
-      uint64_t nw1 = now();
-      uint64_t nw1a = nw1 + sum;
-      uint64_t nw1as = swap32(nw1a);
-      set64Register(admin.time, OccpSpace, nw1as);
-      // set32Register(admin.scratch20, OccpSpace, nw1as>>32);
-      // set32Register(admin.scratch24, OccpSpace, (nw1as&0xffffffff));
-      //uint64_t nw1b = 0; // get64Register(admin.time, OccpSpace);
-      //      uint64_t nw1bs = swap32(nw1b);
-      uint64_t nw2 = 0; // now();
-      uint64_t nw2s = swap32(nw2);
-      set64Register(admin.timeDelta, OccpSpace, nw1as);
-      uint64_t nw1b = get64Register(admin.time, OccpSpace);
-      uint64_t nw1bs = swap32(nw1b);
-      int64_t dt = get64Register(admin.timeDelta, OccpSpace);
-      ocpiDebug("Now delta is: %" PRIi64 "ns "
-	       "(dt 0x%"PRIx64" dtsw 0x%"PRIx64" nw1 0x%"PRIx64" nw1a 0x%"PRIx64 " nw1as 0x%"PRIx64
-	      " nw1b 0x%"PRIx64" nw1bs 0x%"PRIx64" nw2 0x%"PRIx64" nw2s 0x%"PRIx64" t 0x%lx)",
-	      dticks2ns(swap32(dt)), dt, swap32(dt), nw1, nw1a, nw1as, 
-	      nw1b, nw1bs, nw2, nw2s, time(0));
-#ifndef __APPLE__
-      {
-	struct timespec ts;
-	clock_getres(CLOCK_REALTIME, &ts);
-	ocpiInfo("res: %ld", ts.tv_nsec);
-      }
-#endif
-    }
-    bool Container::
-    isLoadedUUID(const std::string &uuid) {
-      uuid_string_t parsed;
-      uuid_unparse(m_loadedUUID, parsed);
-      return uuid == parsed;
+      ocpiDebug("Leaving ~HDL::Container()");
     }
     void Container::
     start() {}
@@ -294,42 +155,18 @@ namespace OCPI {
 
       Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) :
 	OC::ArtifactBase<Container,Artifact>(c, *this, lart, artifactParams) {
-	if (!lart.uuid().empty() && c.isLoadedUUID(lart.uuid()))
+	if (!lart.uuid().empty() && c.hdlDevice().isLoadedUUID(lart.uuid()))
 	  ocpiInfo("For HDL container %s, when loading bitstream %s, uuid matches what is already loaded\n",
 		   c.name().c_str(), name().c_str());
 	else {
 	  ocpiInfo("Loading bitstream %s on HDL container %s\n",
 		   name().c_str(), c.name().c_str());
-	  // FIXME: there should be a utility to run a script in this way
-	  char *command, *base = getenv("OCPI_CDK_DIR");
-	  const char *device = c.name().c_str();
-	  if (!base)
-	    throw "OCPI_CDK_DIR environment variable not set";
-	  asprintf(&command, "%s/scripts/loadBitStreamOnPlatform \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-		   base, name().c_str(), device, c.m_platform.c_str(), c.m_part.c_str(),
-		   c.m_esn.c_str(), c.m_position.c_str());
-	  ocpiInfo("Executing command to load bit stream for container %s: \"%s\"\n",
-		   c.name().c_str(), command);
-	  int rc = system(command);
-	  const char *err = 0;
-	  switch (rc) {
-	  case 127:
-	    err = "Couldn't execute bitstream loading command.  Bad OCPI_CDK_DIR environment variable?";
-	    break;
-	  case -1:
-	    err = OU::esprintf("Unknown system error (errno %d) while executing bitstream loading command",
-			       errno);
-	    break;
-	  case 0:
-	    ocpiInfo("Successfully loaded bitstream file: \"%s\" on HDL container \"%s\"\n",
-		     lart.name().c_str(), c.name().c_str());
-	    break;
-	  default:
-	    err = OU::esprintf("Bitstream loading error (%d) loading \"%s\" on HDL container \"%s\"",
-			       rc, lart.name().c_str(), c.name().c_str());
-	  }
-	  if (err)
-	    throw OC::ApiError(err, NULL);
+	  c.hdlDevice().load(name().c_str());
+	  c.hdlDevice().getUUID();
+	  if (!c.hdlDevice().isLoadedUUID(lart.uuid()))
+	    throw OU::Error("After loading %s on HDL device %s, uuid is wrong.  Wanted: %s",
+			    name().c_str(), c.name().c_str(),
+			    lart.uuid().c_str());
 	}
       }
       ~Artifact() {}
@@ -468,7 +305,8 @@ namespace OCPI {
 	      get32Register(status, OccpWorkerRegisters) &		          \
 	      OCCP_STATUS_WRITE_ERRORS;					          \
 	} else								          \
-	  m_properties.m_accessor->set##n(offset, val, &status);                  \
+	  m_properties.m_accessor->set##n(m_properties.m_base + offset, val,      \
+					  &status);			          \
 	if (status)							          \
 	  throwPropertyWriteError(status);				          \
       }									          \
@@ -487,7 +325,8 @@ namespace OCPI {
 	      get32Register(status, OccpWorkerRegisters) &		          \
 	      OCCP_STATUS_READ_ERRORS;					          \
 	} else								          \
-	  val = m_properties.m_accessor->get##n(offset, &status);                 \
+	  val = m_properties.m_accessor->get##n(m_properties.m_base + offset,     \
+						&status);                         \
 	if (status)							          \
 	  throwPropertyReadError(status);				          \
 	return val;							          \
@@ -510,7 +349,7 @@ namespace OCPI {
 	    status = (get32Register(status, OccpWorkerRegisters) &
 		      OCCP_STATUS_WRITE_ERRORS);
 	} else
-	  m_properties.m_accessor->setBytes(offset, data, nBytes, &status);
+	  m_properties.m_accessor->setBytes(m_properties.m_base + offset, data, nBytes, &status);
 	if (status)
 	  throwPropertyWriteError(status);
       }
@@ -529,7 +368,7 @@ namespace OCPI {
 	      status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_READ_ERRORS;
 	  }
 	} else
-	  m_properties.m_accessor->getBytes(offset, buf, nBytes, &status);
+	  m_properties.m_accessor->getBytes(m_properties.m_base + offset, buf, nBytes, &status);
 	if (status)
 	  throwPropertyReadError(status);
       }
@@ -552,10 +391,10 @@ namespace OCPI {
 	      get32Register(status, OccpWorkerRegisters) &
 	      OCCP_STATUS_WRITE_ERRORS;
 	} else {
-	  m_properties.m_accessor->setBytes(offset + p.m_info.m_align,
+	  m_properties.m_accessor->setBytes(m_properties.m_base + offset + p.m_info.m_align,
 					    val, nBytes, &status);
 	  if (!status)
-	    m_properties.m_accessor->set32(offset, nItems, &status);
+	    m_properties.m_accessor->set32(m_properties.m_base + offset, nItems, &status);
 	}
 	if (status)
 	  throwPropertyWriteError(status);
@@ -585,11 +424,11 @@ namespace OCPI {
 		OCCP_STATUS_READ_ERRORS;
 	  }
 	} else {
-	  nItems = m_properties.m_accessor->get32(offset, &status);
+	  nItems = m_properties.m_accessor->get32(m_properties.m_base + offset, &status);
 	  if (!status) {
 	    if (nItems * (p.m_info.m_nBits/8) <= n)
 	      throwPropertySequenceError();
-	    m_properties.m_accessor->getBytes(offset + p.m_info.m_align, 
+	    m_properties.m_accessor->getBytes(m_properties.m_base + offset + p.m_info.m_align, 
 					      buf, nItems * (p.m_info.m_nBits/8),
 					      &status);
 	  }

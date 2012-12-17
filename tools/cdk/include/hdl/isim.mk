@@ -109,13 +109,27 @@ IsimTop=$(Worker).$(Worker)
 endif
 
 HdlToolCompile=\
-  $(Xilinx) $(call OcpiDbgVar,IsimFiles,htc) $(call OcpiDbgVar,SourceFiles,htc) $(call OcpiDbgVar,CompiledSourceFiles,htc) $(call OcpiDbgVar,CoreBlackBoxFile,htc) $(if $(filter .v,$(suffix $(firstword $(IsimFiles)))),vlogcomp $(MyIncs),vhpcomp) -v 1 -work $(LibName)=$(LibName) $(IsimLibs) \
-     $(IsimFiles) \
-  $(if $(findstring $(HdlMode),worker platform), && \
+  $(Xilinx) $(call OcpiDbgVar,IsimFiles,htc) $(call OcpiDbgVar,SourceFiles,htc) $(call OcpiDbgVar,CompiledSourceFiles,htc) $(call OcpiDbgVar,CoreBlackBoxFile,htc) $(if $(filter .v,$(suffix $(firstword $(IsimFiles)))),vlogcomp $(MyIncs),vhpcomp) -v 2 -work $(LibName)=$(LibName) $(IsimLibs) \
+     $(IsimFiles) $(if $(findstring $(HdlMode),platform),\
+	 	       $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) \
+  $(if $(findstring $(HdlMode),worker), && \
     echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
 	> $(Worker).prj && \
-    fuse $(IsimTop) work.glbl -prj $(Worker).prj -L unisims_ver \
-	-o $(Worker).exe -lib $(Worker)=$(Worker) $(IsimLibs))
+    fuse $(IsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
+	-o $(Worker).exe -lib $(Worker)=$(Worker) $(IsimLibs)) \
+  $(if $(findstring $(HdlMode),platform), && \
+    echo verilog work ../../../containers/mkOCApp_bb.v > $(Worker).prj && \
+    fuse $(IsimTop) $(Worker).glbl -v 2 -prj $(Worker).prj -L unisims_ver \
+	-o $(Worker).exe -lib work=work -lib $(Worker)=$(Worker) $(IsimLibs))
+
+
+ifdef sdf
+    fuse $(IsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
+    echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
+	> $(Worker).prj && \
+
+endif
+
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
@@ -127,17 +141,20 @@ HdlToolPost=\
 
 IsimPlatform:=ocpiIsim
 IsimAppName=$(call AppName,$(IsimPlatform))
-BitFile=$(IsimAppName).exe
+ExeFile=$(IsimAppName).exe
+BitFile=$(IsimAppName).bit
 BitName=$(call PlatformDir,$(IsimPlatform))/$(BitFile)
 IsimPlatformDir=$(HdlPlatformsDir)/$(IsimPlatform)
 IsimTargetDir=$(call PlatformDir,$(IsimPlatform))
 IsimFuseCmd=\
-  $(Xilinx) fuse  ocpiIsim.main work.glbl \
+  $(Xilinx) fuse  ocpiIsim.main ocpiIsim.glbl -v 2 \
 		-lib ocpiIsim=$(IsimPlatformDir)/target-isim/ocpiIsim \
-		-lib work=$(IsimPlatformDir)/target-isim/isim/work \
-		-lib mkOCApp4B=$(IsimTargetDir)/mkOCApp4B \
-	$$(IsimLibs) -L unisims_ver -o $(BitFile)
+		-lib mkOCApp4B=mkOCApp4B \
+	        -lib $(Worker)=../target-isim/isim/$(Worker) \
+	$$(IsimLibs) -L unisims_ver -o $(ExeFile) && \
+	tar cf $(BitFile) $(ExeFile) metadatarom.data isim
 
+#		-lib work=$(IsimPlatformDir)/target-isim/isim/work \
 #" > $$(call AppName,$(IsimPlatform))-fuse.out 2>&1
 
 

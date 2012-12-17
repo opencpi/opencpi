@@ -10,9 +10,10 @@ _HDL_TARGETS_=here
 #Testing: HdlTopTargets=xilinx altera verilator test1
 HdlTopTargets:=xilinx altera icarus verilator isim  # icarus altera # verilator # altera
 
-HdlTargets_xilinx:=isim virtex5 virtex6
+HdlTargets_xilinx:=isim virtex5 virtex6 spartan3
 HdlTargets_virtex5:=xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t xc5vtx240t
 HdlTargets_virtex6:=xc6vlx240t xc6slx45t
+HdlTargets_spartan3:=xc3sd3400a
 
 HdlTargets_altera:=stratix4 stratix5 # altera-sim
 HdlTargets_stratix4:=ep4sgx230 ep4sgx360
@@ -23,6 +24,7 @@ HdlSimTools=isim icarus verilator ghdl
 # Tools are associated with the family or above
 HdlToolSet_ghdl:=ghdl
 HdlToolSet_isim:=isim
+HdlToolSet_spartan3:=xst
 HdlToolSet_virtex5:=xst
 HdlToolSet_virtex6:=xst
 HdlToolSet_verilator:=verilator
@@ -37,5 +39,6 @@ HdlPart_ml555:=xc5vlx50t-1-ff1136
 HdlPart_schist:=xc5vsx95t-2-ff1136
 HdlPart_ml605:=xc6vlx240t-1-ff1156
 HdlPart_alst4:=ep4sgx230-c2-kf40
+HdlPart_n210:=xc3sd3400a-5-fg676
 HdlPart_ocpiIsim:=isim
 endif

@@ -282,7 +282,7 @@ OCPI::OS::FileIterator::isDirectory ()
   FileIteratorData & data = o2fid (m_osOpaque);
   ocpiAssert (data.active && !data.atend);
 
-  if ((data.fileInfo.st_mode & S_IFDIR) == S_IFDIR) {
+  if ((data.fileInfo.st_mode & S_IFMT) == S_IFDIR) {
     return true;
   }
 
@@ -296,7 +296,7 @@ OCPI::OS::FileIterator::size ()
   FileIteratorData & data = o2fid (m_osOpaque);
   ocpiAssert (data.active && !data.atend);
 
-  if ((data.fileInfo.st_mode & S_IFREG) != S_IFREG) {
+  if ((data.fileInfo.st_mode & S_IFMT) != S_IFREG) {
     throw std::string ("not a regular file");
   }
 
@@ -332,10 +332,24 @@ OCPI::OS::FileIterator::next ()
     std::string absoluteFileName = FileSystem::joinNames (data.dir, data.dirInfo->d_name);
     std::string nativeName = FileSystem::toNativeName (absoluteFileName);
 
-    if (stat (nativeName.c_str(), &data.fileInfo)) {
+    if (lstat (nativeName.c_str(), &data.fileInfo)) {
       continue;
     }
-
+    if ((data.fileInfo.st_mode & S_IFMT) == S_IFLNK) {
+      char buf[10]; // just enough for "." and ".."
+      switch (readlink(nativeName.c_str(), buf, sizeof(buf))) {
+      case 2:
+	if (buf[1] != '.')
+	  break;
+      case 1:
+	if (buf[0] != '.')
+	  break;
+      case 0:
+      case -1:
+	ocpiDebug("Skipping symlink at '%s': that is . or .. or a problem", nativeName.c_str());
+	continue;
+      }
+    }
     /*
      * Good match
      */

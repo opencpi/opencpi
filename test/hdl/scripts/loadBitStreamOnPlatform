@@ -16,6 +16,10 @@ if [[ $5 == "" ]]; then
     echo "No ESN found/specified in config file.  Can't load bitstream automatically." 1>&2
     exit 1
 fi
+if test -x loadBitStream$3; then
+  exec sh loadBitStream$3
+fi
+
 tmp=/tmp/ocpibitstream$$
 port=\
 `echo listusbcables | \

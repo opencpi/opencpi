@@ -122,8 +122,9 @@ namespace OCPI {
 	for (; p->name; p++)
 	  if (!strcasecmp(p->name, name))
 	    if (p->type == OCPI::API::OCPI_String) {
-	      unsigned len = strlen(var);
-	      if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+	      unsigned len = p->vString[0] == '=' ? 0 : strlen(var);
+	      if (len == 0 ||
+		  !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
 		val = p->vString + len + 1;
 		return true;
 	      }
@@ -144,8 +145,9 @@ namespace OCPI {
 		next = n + 1;
 		return true;
 	      } else {
-		unsigned len = strlen(var);
-		if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+		unsigned len = p->vString[0] == '=' ? 0 : strlen(var);
+		if (len == 0 ||
+		    !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
 		  val = p->vString + len + 1;
 		  next = n + 1;
 		  return true;

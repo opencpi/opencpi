@@ -111,7 +111,7 @@ namespace OCPI {
     public:
       virtual Container *firstContainer() const = 0;
       virtual Container *findContainer(const char *which) = 0;
-      virtual Container *probeContainer(const char *which,
+      virtual Container *probeContainer(const char *which, std::string &error,
 					const OCPI::API::PValue *props = 0) = 0;
       // Any methods specific to container drivers (beyond what drivers do)
       // NONE at this time.

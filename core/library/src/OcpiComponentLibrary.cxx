@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
+//#include <dirent.h>
 #include <climits>
 #include "OcpiOsAssert.h"
 #include "OcpiOsFileIterator.h"
@@ -33,7 +33,7 @@ namespace OCPI {
 	{	
 	  // The returned value must be deleted with delete[];
 	  if (!(m_metadata = getMetadata()))
-	    throw OU::Error(OCPI_LOG_INFO, "Cannot open or retrieve metadata from file \"%s\"", name);
+	    throw OU::Error(OCPI_LOG_DEBUG, "Cannot open or retrieve metadata from file \"%s\"", name);
 	  m_xml = OX::Doc::parse(m_metadata);
 	  char *xname = ezxml_name(m_xml);
 	  if (!xname || strcmp("artifact", xname))

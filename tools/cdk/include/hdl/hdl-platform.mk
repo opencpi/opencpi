@@ -53,7 +53,10 @@ Core=$(CwdName)
 HdlPlatform:=$(CwdName)
 HdlTarget:=$(HdlActualTarget)
 Top=fpgaTop
+# black box doesn't work for some sim tools - at least isim for now
+ifndef HdlSimTool
 CompiledSourceFiles+=../../containers/mkOCApp_bb.v
+endif
 CompiledSourceFiles+=$(wildcard ../common/*.v)
 ComponentLibraries=../../devices
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk

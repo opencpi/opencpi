@@ -53,6 +53,12 @@
 
 #include <iostream>
 
+#define OCPI_LOG_DEBUG_MIN 10
+#define OCPI_LOG_DEBUG 10
+#define OCPI_LOG_WIERD 6
+#define OCPI_LOG_INFO 8
+#define OCPI_LOG_BAD 2
+
 namespace OCPI {
   namespace OS {
 

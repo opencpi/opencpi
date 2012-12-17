@@ -83,7 +83,7 @@ namespace OCPI {
       mine.lock();
       if (logLevel == UINT_MAX) {
 	const char *e = getenv("OCPI_LOG_LEVEL");
-	logLevel = e ? atoi(e) : 9;
+	logLevel = e ? atoi(e) : OCPI_LOG_WIERD;
       }
       if (n <= (unsigned)logLevel)  {
 	va_list ap;

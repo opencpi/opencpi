@@ -173,7 +173,10 @@ module mkOCApp4B(RST_N_rst_0,
 	       wsi_m_dac_SThreadBusy,
 	       wsi_m_dac_MReset_n,
 	       wsi_m_dac_SReset_n,
-	       uuid);
+	       uuid,
+	       rom_en,
+	       rom_addr,
+	       rom_data);
   parameter [0 : 0] hasDebugLogic = 1'b0;
   input  RST_N_rst_0;
   input  RST_N_rst_1;
@@ -687,6 +690,11 @@ module mkOCApp4B(RST_N_rst_0,
   input  wsi_m_dac_SReset_n;
 
   output [511 : 0] uuid;
+
+  input 	   rom_en;
+  input  [9:0] 	   rom_addr;
+  output [31:0]    rom_data;
+
   wire [511 : 0]   myUUID;
   wire [511 : 0]   uuid = myUUID;
   
@@ -819,6 +827,17 @@ wire [ 0: 0] sma1_in_2_app_out_SThreadBusy;
   .wci2_SThreadBusy(wci_s_4_SThreadBusy),
   .wci2_SFlag(wci_s_4_SFlag));
   
+  BRAM1Load #(.FILENAME("metadatarom.data"),
+	      .PIPELINED(1'd0),
+	      .ADDR_WIDTH(32'd10),
+	      .DATA_WIDTH(32'd32),
+	      .MEMSIZE(11'd1024),
+	      .BINARY(1'd0)) rom_memory(.CLK(CLK),
+					.ADDR(rom_addr),
+					.DI(32'd0),
+					.WE(1'd0),
+					.EN(rom_en),
+					.DO(rom_data));
 
 // Tieoffs for unused signals
 // First, the unused WSI slave signals

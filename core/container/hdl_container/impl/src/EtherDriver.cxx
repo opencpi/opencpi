@@ -90,6 +90,10 @@ namespace OCPI {
 	  if (OE::haveDriver())
 	    delete m_socket;
 	}
+	// Load a bitstream via jtag
+	void load(const char *) {
+	  throw "Can't load bitstreams for ethernet devices yet";
+	}
 	inline OS::Ether::Address &addr() { return m_addr; }
 	void request(EtherControlMessageType type, RegisterOffset offset,
 		     unsigned bytes, OS::Ether::Packet &recvFrame, uint32_t *status) {
@@ -346,7 +350,7 @@ namespace OCPI {
 	      if (mac) {
 		*dev = d;
 		return 1;
-	      } else if (found(*d, error))
+	      } else if (!found(*d, error))
 		count++;
 	    }
 	    if (!timer.expired())

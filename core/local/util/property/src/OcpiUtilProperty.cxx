@@ -92,12 +92,13 @@ namespace OCPI {
     }
 
     const char *
-    Property::parseAccess(ezxml_t prop, bool &readableConfigs, bool &writableConfigs) {
+    Property::parseAccess(ezxml_t prop, bool &readableConfigs, bool &writableConfigs,
+			  bool addAccess) {
       const char *err;
-      if ((err = OE::getBoolean(prop, "Readable", &m_isReadable)) ||
-	  (err = OE::getBoolean(prop, "Writable", &m_isWritable)) ||
-	  (err = OE::getBoolean(prop, "Initial", &m_isInitial)) ||
-	  (err = OE::getBoolean(prop, "Volatile", &m_isVolatile)))
+      if ((err = OE::getBoolean(prop, "Readable", &m_isReadable, addAccess)) ||
+	  (err = OE::getBoolean(prop, "Writable", &m_isWritable, addAccess)) ||
+	  (err = OE::getBoolean(prop, "Initial", &m_isInitial, addAccess)) ||
+	  (err = OE::getBoolean(prop, "Volatile", &m_isVolatile, addAccess)))
 	return err;
       if (m_isInitial)
 	m_isWritable = true;
@@ -119,7 +120,7 @@ namespace OCPI {
       if ((err = includeImpl ?
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, IMPL_ATTRIBUTES, NULL) :
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
-	  (err = parseAccess(prop, readableConfigs, writableConfigs)) ||
+	  (err = parseAccess(prop, readableConfigs, writableConfigs, false)) ||
 	  (err = Member::parse(prop, true, true, "default", ordinal)) ||
 	  includeImpl &&
 	  (err = parseImplAlso(prop)))
@@ -196,7 +197,7 @@ namespace OCPI {
     parseImpl(ezxml_t x, bool &readableConfigs, bool &writableConfigs) {
       const char *err;
       if ((err = OE::checkAttrs(x, "Name", IMPL_ATTRIBUTES, NULL)) ||
-	  (err = parseAccess(x, readableConfigs, writableConfigs)))
+	  (err = parseAccess(x, readableConfigs, writableConfigs, true)))
 	return err;
       return parseImplAlso(x);
     }

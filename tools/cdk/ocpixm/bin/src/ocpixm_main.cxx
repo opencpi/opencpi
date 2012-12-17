@@ -1958,6 +1958,7 @@ namespace
     out << std::endl;
   }
 
+#if 0
   const std::string get_xm_prop_type_prefix ( const XmComponentImpl* impl,
                                               const std::string& name )
   {
@@ -2009,6 +2010,7 @@ namespace
 
     return std::string ( "xxx_" );
   }
+#endif
 
   int space_to_underscore ( char c )
   {
@@ -2258,6 +2260,7 @@ namespace
     return std::string ( "Unknown" );
   }
 
+#if 0
   const std::string get_xm_prop_type_def ( const XmComponentImpl* impl,
                                            const std::string name )
   {
@@ -2303,7 +2306,7 @@ namespace
 
     return std::string ( "Unknown" );
   }
-
+#endif
   void generate_xm_proxy_source_propery_table ( const XmComponentImpl* impl,
                                                 std::ofstream& out )
   {

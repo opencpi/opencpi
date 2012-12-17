@@ -2863,14 +2863,14 @@ emitWorker(FILE *f, Worker *w)
     if (prop->m_isParameter) // FIXME: readable parameters...
       continue;
     prop->printAttrs(f, "property", 1);
-    if (prop->m_isReadable)
-      fprintf(f, " readable=\"true\"");
     if (prop->m_isVolatile)
       fprintf(f, " volatile=\"true\"");
-    if (prop->m_isWritable)
-      fprintf(f, " writable=\"true\"");
+    else if (prop->m_isReadable)
+      fprintf(f, " readable=\"true\"");
     if (prop->m_isInitial)
       fprintf(f, " initial=\"true\"");
+    else if (prop->m_isWritable)
+      fprintf(f, " writable=\"true\"");
     if (prop->m_readSync)
       fprintf(f, " readSync=\"true\"");
     if (prop->m_writeSync)

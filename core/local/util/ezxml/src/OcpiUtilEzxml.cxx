@@ -496,12 +496,16 @@ namespace OCPI {
       }
 
       const char *
-      getBoolean(ezxml_t x, const char *name, bool *b) {
+      getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
 	const char *a = ezxml_cattr(x, name);
 	if (a) {
-	  if (parseBool(a, NULL, b))
+	  bool val;
+	  if (parseBool(a, NULL, &val))
 	    return esprintf("parsing value \"%s\" as type Bool", a);
-	} else
+	  if (trueOnly && !val)
+	    return "can only set the value to true in this context";
+	  *b = val;
+	} else if (!trueOnly)
 	  *b = false;
 	return 0;
       }

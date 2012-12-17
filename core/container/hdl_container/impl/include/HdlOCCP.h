@@ -170,6 +170,7 @@ namespace OCPI {
       uint8_t config[OCCP_MAX_WORKERS][OCCP_WORKER_CONFIG_SIZE];
     } OccpSpace;
 #ifdef __cplusplus
+    inline uint64_t swap32(uint64_t x) {return (x <<32) | (x >> 32); }
   }
 }
 #endif
