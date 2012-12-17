@@ -119,7 +119,9 @@ endif
 
 # This is the utility program for hdl
 ifeq ($(shell if test -x $(ToolsDir)/ocpihdl; then echo xx; fi),)
+ifneq ($(MAKECMDGOALS),clean)
 $(error Missing ocpihdl utility program)
+endif
 endif
 OcpiHdl=\
   $(DYN_PREFIX) $(ToolsDir)/ocpihdl 
