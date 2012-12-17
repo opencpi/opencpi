@@ -6,7 +6,6 @@
  *
  * This file contains the RCC implementation skeleton for worker: file_read
  */
-#define _GNU_SOURCE // for asprintf
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
@@ -38,12 +37,12 @@ start(RCCWorker *self) {
   File_write_msgProperties *p = self->properties;
 
   if (s->started) {
-    self->errorString = "file_write cannot be restarted";
+    self->container.setError("file_write cannot be restarted");
     return RCC_ERROR;
   }
   s->started = 1;
   if ((s->fd = creat(p->fileName, 0666)) < 0) {
-    asprintf(&self->errorString, "error creating file \"%s\": %s", p->fileName, strerror(errno));
+    self->container.setError( "error creating file \"%s\": %s", p->fileName, strerror(errno));
     return RCC_ERROR;
   }
   return RCC_OK;
@@ -65,14 +64,14 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  h.opcode = port->input.u.operation;
  h.length = port->input.length;
  if ((n = write(s->fd, &h, sizeof(FileHeader) )) < 0)  {
-   asprintf(&self->errorString, "error writing to file: %s", strerror(errno));
+   self->container.setError( "error writing to file: %s", strerror(errno));
    return RCC_ERROR;
  }
  props->bytesWritten += n;
 
  if (port->input.length) {
    if ((n = write(s->fd, port->current.data, port->input.length)) < 0) {
-     asprintf(&self->errorString, "error reading file: %s", strerror(errno));
+     self->container.setError( "error reading file: %s", strerror(errno));
      return RCC_ERROR;
    }
    props->bytesWritten += n;
