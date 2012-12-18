@@ -38,7 +38,7 @@
     </Properties>
   </ComponentSpec>
   <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
-  <ControlInterface ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>
+  <ControlInterface SizeOfConfigSpace="4g" ControlOperations="initialize" Timeout="250000000" Sub32BitConfigProperties="true"/>
   <MemoryInterface DataWidth="128" ByteWidth="8" MemoryWords="4g" 
                    MaxBurstLength="4k-1" PreciseBurst="true" WriteDataFlowControl="true"
                    Slave="true"/>
@@ -49,7 +49,7 @@
   <Signal Inout="dram_io_dqs_p" Width="8"/>
   <Signal Inout="dram_io_dqs_n" Width="8"/>
   <Signal Output="dram_addr" Width="13"/>
-  <Signal Output="dram_ba" Width="2"/>
+  <Signal Output="dram_ba" Width="3"/>
   <Signal Output="dram_ras_n"/>
   <Signal Output="dram_cas_n"/>
   <Signal Output="dram_we_n"/>
