@@ -62,10 +62,10 @@ constant  UNUSABLE_e    : State_t := 4;
 
   -- constant masks for what control op is allowed in each state
   constant next_ops : control_op_masks_t :=
-    ("00000010",       -- EXISTS_e
-     "10010100",       -- INITIALIZED_e
-     "01111000",       -- OPERATING_e
-     "01110100",       -- SUSPENDED_e
+    ("00000001",       -- EXISTS_e
+     "01001010",       -- INITIALIZED_e
+     "00111100",       -- OPERATING_e
+     "00111010",       -- SUSPENDED_e
      "00000000"        -- UNUSABLE_e: nothing to do but reset
      );
   

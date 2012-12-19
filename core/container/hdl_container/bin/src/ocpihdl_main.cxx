@@ -1778,10 +1778,10 @@ struct Sim {
 	return true;
       }
       OU::formatString(cmd,
-		       "echo run 1s | "
+		       "(echo scope; echo show child -r ;  echo wave log -r / ; echo run 1 s) | "
 		       "(set -e ; cd %s; . $OCPI_XILINX_TOOLS_DIR/settings64.sh > sim.out 2>&1; "
-		       " exec ./%s-ocpiIsim.exe -testplusarg bscvcd >> sim.out 2>&1)",
-		       dir.c_str(), app.c_str());;
+		       " exec ./%s-ocpiIsim.exe %s >> sim.out 2>&1)",
+		       dir.c_str(), app.c_str(), simDump && !strcasecmp(simDump, "on") ? "-testplusarg bscvcd" : "");
     } else {
       OU::formatString(err, "Unsupported simulator platform %s for %s", platform.c_str(), file);
       return true;

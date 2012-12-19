@@ -34,7 +34,6 @@
 #
 ########################################################################### #
 
-# Which component libraries should be referenced to build this app?
 Libraries=bsv util
 ComponentLibraries=../../../components
 Container=mkOCApp-3w.v

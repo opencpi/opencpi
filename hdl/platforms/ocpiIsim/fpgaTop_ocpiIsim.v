@@ -159,6 +159,9 @@ module mkTB18(CLK,
        cp$wci_Vm_9_SThreadBusy;
 
   // ports of submodule app
+  wire        rom_en;
+  wire [9:0]  rom_addr;
+  wire [31:0] rom_data;
   wire [127 : 0] app$wmemiM0_MData, app$wmemiM0_SData;
   wire [63 : 0] app$wti_s_0_MData, app$wti_s_1_MData, app$wti_s_2_MData;
   wire [35 : 0] app$wmemiM0_MAddr;
@@ -260,6 +263,9 @@ module mkTB18(CLK,
 	    .server_request_put(cp$server_request_put),
 	    .switch_x(cp$switch_x),
 	    .uuid_arg(cp$uuid_arg),
+	    .rom_en(rom_en),
+	    .rom_addr(rom_addr),
+	    .rom_data(rom_data),
 	    .wci_Vm_0_SData(cp$wci_Vm_0_SData),
 	    .wci_Vm_0_SFlag(cp$wci_Vm_0_SFlag),
 	    .wci_Vm_0_SResp(cp$wci_Vm_0_SResp),
@@ -610,8 +616,10 @@ module mkTB18(CLK,
 					.wsi_m_dac_MByteEn(),
 					.wsi_m_dac_MReqInfo(),
 					.wsi_m_dac_MReset_n(),
-					.uuid(cp$uuid_arg));
-
+					.uuid(cp$uuid_arg),
+					.rom_en(rom_en),
+					.rom_addr(rom_addr),
+					.rom_data(rom_data));
 
   // submodule simDCP
   mkSimDCP simDCP(.CLK(CLK),

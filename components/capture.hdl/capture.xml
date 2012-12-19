@@ -11,5 +11,5 @@
   <specProperty name='data' indirect='0x80000000'/>
   <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
   <StreamInterface Name="in"  ImpreciseBurst="True" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
-  <TimeInterface/>
+  <TimeInterface fractionwidth="32"/>
 </HdlImplementation>

@@ -111,6 +111,7 @@ Implementations = \
 	bias.rcc \
 	pattern.hdl pattern.rcc \
 	capture.hdl capture.rcc \
+	bias_vhdl.hdl \
 	$(Tests)
 
 #	wbr.hdl 

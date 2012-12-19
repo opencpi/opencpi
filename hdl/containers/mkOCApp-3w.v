@@ -825,7 +825,12 @@ wire [ 0: 0] sma1_in_2_app_out_SThreadBusy;
   .wci2_SResp(wci_s_4_SResp),
   .wci2_SData(wci_s_4_SData),
   .wci2_SThreadBusy(wci_s_4_SThreadBusy),
-  .wci2_SFlag(wci_s_4_SFlag));
+  .wci2_SFlag(wci_s_4_SFlag),
+  .wti0_MCmd(wti_s_0_MCmd),
+  .wti0_MData(wti_s_0_MData),
+  .wti0_SReset_n(wti_s_0_SReset_n),
+  .wti0_SThreadBusy(wti_s_0_SThreadBusy));
+
   
   BRAM1Load #(.FILENAME("metadatarom.data"),
 	      .PIPELINED(1'd0),

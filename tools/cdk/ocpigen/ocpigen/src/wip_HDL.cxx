@@ -1277,9 +1277,10 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
   printgen(f, comment, w->file);
   fprintf(f,
 	  "%s This file contains the implementation declarations for worker %s\n"
-	  "%s Interface definition signal names defined with pattern rule: \"%s\"\n\n",
+	  "%s Interface definition signal names are defined with pattern rule: \"%s\"\n\n",
 	  comment, w->implName, comment, w->pattern);
   unsigned maxPropName = 0;
+  unsigned nRunProps = 0;
   bool writables = false, readables = false, volatiles = false, readback = false;
   for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
     OU::Property &pr = **pi;
@@ -1304,6 +1305,8 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
       readables = true; // this implies a constant, unchangeable value
     if (len > maxPropName)
       maxPropName = len;
+    if (!pr.m_isParameter || pr.m_isReadable)
+      nRunProps++;
   }
   bool first = true;
   const char *last = NULL;
@@ -1328,7 +1331,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	    "-- Data Input    |\\  | on definitions the in <worker>_worker_defs package,  |    |\\  Data Output\n"
 	    "-- Port based  ==| \\ | and the <worker>_worker entity, both in this file,   |   =| \\ Port based\n"
 	    "-- on the WSI  ==| / | both in the \"work\" library.                          |   =| / on the WSI\n"
-	    "-- OCP Profile   |/  | Package and entity declaration is this               |    |/  OCP Profile\n"
+	    "-- OCP Profile   |/  | Package and entity declarations are in this          |    |/  OCP Profile\n"
 	    "--               O   | <worker>_impl.vhd file. Architeture is in your       |    |\n"
 	    "--               O   |  <worker>.vhd file                                   |    O\n"
 	    "--               C   |                                                      |    C\n"
@@ -1425,28 +1428,34 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
     decodeWidth = 5;
 #endif
   if (w->language == VHDL) {
+    char ops[NoOp + 1 + 1];
+    for (unsigned op = 0; op <= NoOp; op++)
+      ops[NoOp - op] = op == ControlOpStart || w->ctl.controlOps & (1 << op) ? '1' : '0';
+    ops[NoOp+1] = 0;
     fprintf(f,
 	    "-- Worker-specific definitions that are needed outside entities below\n"
 	    "package body %s_defs is\n"
-	    "  constant worker : ocpi.wci.worker_t := (%u, \"00000100\");\n"
+	    "  constant worker : ocpi.wci.worker_t := (%u, \"%s\");\n"
 	    "  constant properties : ocpi.wci.properties_t := (\n",
-	    w->implName, decodeWidth);
+	    w->implName, decodeWidth, ops);
     bool first = true;
     unsigned n = 0;
     for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++, n++) {
       OU::Property *pr = *pi;
-      fprintf(f, "%s   %u => (%2u, %6u, %6u, %6u, %6u, %s %s %s %s)",
-	      first ? "" : ",\n", n,
-	      pr->m_nBits,
-	      pr->m_offset,
-	      pr->m_nBytes - 1,
-	      pr->m_stringLength,
-	      pr->m_nItems,
-	      pr->m_isWritable ? "true, " : "false,",
-	      pr->m_isReadable ? "true, " : "false,",
-	      pr->m_isVolatile ? "true, " : "false,",
-	      pr->m_isParameter  ? "true" : "false");
-      first = false;
+      if (!pr->m_isParameter || pr->m_isReadable) {
+	fprintf(f, "%s   %u => (%2u, %6u, %6u, %6u, %6u, %s %s %s %s)",
+		first ? "" : ",\n", n,
+		pr->m_nBits,
+		pr->m_offset,
+		pr->m_nBytes - 1,
+		pr->m_stringLength,
+		pr->m_nItems,
+		pr->m_isWritable ? "true, " : "false,",
+		pr->m_isReadable ? "true, " : "false,",
+		pr->m_isVolatile ? "true, " : "false,",
+		pr->m_isParameter  ? "true" : "false");
+	first = false;
+      }
     }    
     fprintf(f,
 	    "\n  );\n");
@@ -1878,7 +1887,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	    "  signal my_reset : bool_t; -- internal usage of output\n",
 	    w->implName);
     if (w->ctl.properties.size()) {
-      unsigned nProps_1 = w->ctl.properties.size() - 1;
+      unsigned nProps_1 = nRunProps - 1;
       fprintf(f,
 	      "  -- signals for property reads and writes\n"
 	      "  signal offsets       : "

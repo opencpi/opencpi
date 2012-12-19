@@ -88,10 +88,12 @@ IsimFiles=\
      $(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f)))
 $(call OcpiDbgVar,IsimFiles)
 
+#        -lib $(notdir $(l))_$(notdir $(w))=$(strip\
+
 IsimLibs=\
   $(foreach l,$(ComponentLibraries),\
      $(foreach w,$(wildcard $(l)/lib/hdl/isim/*),\
-        -lib $(notdir $(l))_$(notdir $(w))=$(strip\
+        -lib $(notdir $(w))=$(strip\
 	  $(call FindRelative,$(TargetDir),$(l)/lib/hdl/isim/$(notdir $(w))))))\
   $(foreach l,$(Libraries) $(Cores),\
      -lib $(notdir $(l))=$(strip \
@@ -104,7 +106,7 @@ MyIncs=\
      $(foreach w,$(wildcard $(l)/lib/hdl/isim/*),\
         -i $(call FindRelative,$(TargetDir),$(l)/lib/hdl/isim/$(notdir $(w)))))
 
-ifndef Worker
+ifndef IsimTop
 IsimTop=$(Worker).$(Worker)
 endif
 
@@ -114,9 +116,10 @@ HdlToolCompile=\
 	 	       $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) \
   $(if $(findstring $(HdlMode),worker), && \
     echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
-	> $(Worker).prj && \
-    fuse $(IsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
-	-o $(Worker).exe -lib $(Worker)=$(Worker) $(IsimLibs)) \
+	> $(Worker).prj \
+    $(if $(HdlSkipSimElaboration),,&& \
+      fuse $(IsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
+	-o $(Worker).exe -lib $(Worker)=$(Worker) $(IsimLibs))) \
   $(if $(findstring $(HdlMode),platform), && \
     echo verilog work ../../../containers/mkOCApp_bb.v > $(Worker).prj && \
     fuse $(IsimTop) $(Worker).glbl -v 2 -prj $(Worker).prj -L unisims_ver \

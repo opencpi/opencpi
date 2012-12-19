@@ -98,6 +98,7 @@ architecture rtl of decoder is
   type my_offset_a_t is array(properties'range) of unsigned (worker.decode_width -1 downto 0);
   signal my_offsets : my_offset_a_t;
   signal my_state : state_t;
+  signal my_reset : Bool_t;
   -- convert byte enables to low order address bytes
   function be2offset(input: in_t) return byte_offset_t is begin
     case input.MByteEn is
@@ -135,12 +136,13 @@ begin
   my_access <= decode_access(ocp_in);
   control_op_in <= ocpi.wci.to_control_op(ocp_in.MAddr(4 downto 2));
   hi32 <= to_bool(ocp_in.MAddr(2) = '1');
+  my_reset <= not ocp_in.MReset_n;
   -- generate property instances for each property
   -- they are all combinatorial by design
   gen: for i in 0 to properties'right generate -- properties'left to 0 generate
     prop: entity ocpi.property_decoder
       generic map (properties(i), worker.decode_width)
-      port map(reset        => to_bool(ocp_in.MReset_n),
+      port map(reset        => my_reset,
                offset_in    => offset,
                top          => top_bit(ocp_in),
                access_in    => my_access,
@@ -201,6 +203,8 @@ begin
               my_state <= unusable_e;
             when others => null;                            
           end case;
+          resp <= ocp.SResp_DVA;
+          my_control_op <= NO_OP_e;
         end if;
       else
         case my_access is
