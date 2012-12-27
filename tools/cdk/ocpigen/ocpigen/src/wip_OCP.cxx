@@ -145,6 +145,7 @@ deriveOCP(Worker *w) {
 	//		  p->protocol->m_dataValueWidth, p->dataWidth);
 	if (ocp->MBurstLength.width < 2)
 	  ocp->MBurstLength.width = 2;
+	// FIXME: this is not really supported, but was for compatibility
 	if (p->impreciseBurst)
 	  ocp->MBurstPrecise.value = s;
       } else

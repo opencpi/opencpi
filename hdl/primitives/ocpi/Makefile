@@ -38,9 +38,10 @@
 # by all workers
 # These need to be in order if tools aren't very smart
 LibName=ocpi
-SourceFiles=ocpi_ocp.vhd ocpi_types.vhd ocpi_wci.vhd ocpi_worker.vhd \
-            ocpi_types_body.vhd ocpi_wci_body.vhd \
-            ocpi_wci_impl.vhd gen/ocpi_props.vhd gen/ocpi_props_impl.vhd
+SourceFiles=ocpi_util.vhd ocpi_ocp.vhd ocpi_types.vhd ocpi_wci.vhd ocpi_wsi.vhd ocpi_worker.vhd \
+            ocpi_util_body.vhd ocpi_types_body.vhd ocpi_wci_body.vhd \
+            ocpi_wci_impl.vhd gen/ocpi_props.vhd gen/ocpi_props_impl.vhd \
+	    ocpi_wsi_impl.vhd
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library
 
 CPPFiles=$(wildcard *.cpp_vhd)

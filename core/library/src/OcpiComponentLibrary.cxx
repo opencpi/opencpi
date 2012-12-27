@@ -99,41 +99,34 @@ namespace OCPI {
 	friend class Driver;
 	Library(const char *name)
 	  : OL::LibraryBase<Driver,Library,Artifact>(*this, name) {}
-	// Recursive.
-	void doDir(const std::string &dirName) {
+
+	void doPath(const std::string &libName) {
+	  ocpiDebug("Processing library path: %s", libName.c_str());
 	  bool isDir;
-	  if (!OS::FileSystem::exists(dirName, &isDir) || !isDir) {
-	    ocpiBad("Directory name in OCPI_LIBRARY_PATH, \"%s\", "
-		    "is nonexistent or not a directory.  It will be ignored", dirName.c_str());
-	    return;
-	  }
-	  ocpiDebug("Processing library directory: %s", dirName.c_str());
-	  static const std::string pattern("*");
-	  OS::FileIterator dir(dirName, "*");
-	  for (; !dir.end(); dir.next()) {
-	    if (dir.isDirectory()) {
-	      std::string subDir =
-		OS::FileSystem::joinNames(dirName, dir.relativeName());
-	      doDir(subDir);
-	    } else {
-	      std::string absolute = dir.absoluteName();
-	      const char *absName = absolute.c_str();
-	      unsigned len = strlen(absName), xlen = strlen(".xml");
-	      
-	      if (len < xlen || strcasecmp(absName + len - xlen, ".xml")) {
-		// FIXME: supply library level xml for the artifact
-		// The log will show which files are not any good.
-		try {
-		  (new Artifact(*this, absName, NULL))->configure();
-		} catch (...) {}
-	      }
+	  if (!OS::FileSystem::exists(libName, &isDir))
+	    ocpiBad("Component library path name in OCPI_LIBRARY_PATH, \"%s\", "
+		    "is nonexistent.  It will be ignored", libName.c_str());
+	  else if (isDir) {
+	    OS::FileIterator dir(libName, "*");
+	    for (; !dir.end(); dir.next())
+	      doPath(OS::FileSystem::joinNames(libName, dir.relativeName()));
+	  } else {
+	    const char *name = libName.c_str();
+	    unsigned len = strlen(name), xlen = strlen(".xml");
+	  
+	    if (len < xlen || strcasecmp(name + len - xlen, ".xml")) {
+	    // FIXME: supply library level xml for the artifact
+	    // The log will show which files are not any good.
+	      try {
+		(new Artifact(*this, name, NULL))->configure();
+	      } catch (...) {}
 	    }
 	  }
 	}
       public:
 	// Do a recursive dirctory search for all files.
 	void configure(ezxml_t) {
-	  doDir(name());
+	  doPath(name());
 	}
 	OCPI::Library::Artifact *
 	addArtifact(const char *url, const OCPI::API::PValue *props) {

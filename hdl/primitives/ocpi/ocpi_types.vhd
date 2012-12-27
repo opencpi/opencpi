@@ -1,7 +1,4 @@
-
-library ieee; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
---library std;
---use std.all;
+library ieee; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;  use ieee.math_real;
 package types is
 --
 -- Miscellaneous type declarations not related to OpenCPI types
@@ -42,7 +39,7 @@ function "nor"  ( l : boolean; r : bool_t ) return boolean;
 function "xor"  ( l : boolean; r : bool_t ) return boolean;
 function "xnor" ( l : boolean; r : bool_t ) return boolean;
 
-function "or"   ( l : bool_t; r : boolean ) return bool_t;
+--function "or"   ( l : bool_t; r : boolean ) return bool_t;
 
 
 function "not"  ( l : bool_t             ) return boolean;

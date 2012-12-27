@@ -160,7 +160,7 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
   } else if (dp->protocol->m_dataValueWidth % dp->dataWidth)
       return OU::esprintf("DataValueWidth (%u) on port '%s' not a multiple of DataWidth (%u)",
 			  dp->protocol->m_dataValueWidth, dp->name, dp->dataWidth);
-#if 0
+#if 0 // FIXME
   if (dp->impreciseBurst && dp->preciseBurst)
     return "Both ImpreciseBurst and PreciseBurst cannot be specified for WSI or WMI";
 #endif

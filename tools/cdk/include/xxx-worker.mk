@@ -90,7 +90,8 @@ clean:: cleanfirst
 ifndef Application
 ifeq ($(origin WorkerSourceFiles),undefined)
 WorkerSourceFiles=$(foreach w,$(Workers),$(w)$(SourceSuffix))
-CompiledSourceFiles:= $(sort $(CompiledSourceFiles) $(WorkerSourceFiles))
+# We must preserve the order of CompiledSourceFiles
+CompiledSourceFiles:= $(CompiledSourceFiles) $(filterout $(CompiledSourceFiles) $(WorkerSourceFiles))
 ifeq ($(origin ModelSpecificBuildHook),undefined)
 $(call OcpiDbgVar,SourceSuffix)
 $(call OcpiDbgVar,WorkerSourceFiles)

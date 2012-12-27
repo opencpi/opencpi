@@ -417,7 +417,7 @@ addEndPoint(const char *end_point, bool local) {
       m_locations.resize(loc->mailbox + 1, NULL);
     m_locations[loc->mailbox] = loc;
   }
-  ocpiInfo("Creating ep %p %s %u", loc, loc->end_point.c_str(), local);
+  ocpiDebug("Creating ep %p %s %u", loc, loc->end_point.c_str(), local);
   loc->refCount = 1;
   return loc;
 }
@@ -441,7 +441,7 @@ getEndPoint(const char *end_point, bool local, bool cantExist)
 	throw OU::Error("Local explicit endpoint already exists: '%s'", end_point);
       else {
 	(*i)->refCount++; // FIXME:: this likely happens too often and thus will leak.
-	ocpiInfo("Incrementing refcount on ep %p to %u", *i, (*i)->refCount);
+	ocpiDebug("Incrementing refcount on ep %p to %u", *i, (*i)->refCount);
 #if 0
 	OCPI::OS::dumpStack(std::cerr);
 #endif

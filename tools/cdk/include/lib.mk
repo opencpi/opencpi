@@ -232,8 +232,8 @@ ifeq ($(origin Worker),command line)
   else
     OcpiSpecFile:=specs/$(Name)_spec.xml
   endif
-  ifeq ($(wildcard $(SpecFile))$(wildcard specs/$(SpecFile)),)
-    $(error Can't create worker $(Worker) when spec file: $(SpecFile) doesn't exist. Use SpecFile= ?)
+  ifeq ($(wildcard $(OcpiSpecFile)),)
+    $(error Can't create worker $(Worker) when spec file: "$(OcpiSpecFile)" doesn't exist. Use SpecFile= ?)
   endif
   ifeq ($(Model),hdl)
     ifndef Language

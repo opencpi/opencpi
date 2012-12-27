@@ -267,7 +267,7 @@ Circuit(
     Port* port = this->getOutputPortSet()->getPortFromIndex(0);
 
     if (port->m_data->real_location_string.length() ) {
-      ocpiInfo("Circuit %p is closed 1: id %x", this, getCircuitId());
+      ocpiDebug("Circuit %p is closed 1: id %x", this, getCircuitId());
       m_openCircuit = false;
     }
   }
@@ -398,7 +398,7 @@ updateInputs( void* data )
 
   // make sure we have a closed circuit
   if ( sports>0 && tports>0 ) {
-    ocpiInfo("Circuit %p is closed 2: id %x", this, getCircuitId());
+    ocpiDebug("Circuit %p is closed 2: id %x", this, getCircuitId());
     m_openCircuit = false;
   }
                   
@@ -478,7 +478,7 @@ updateInputs()
   }
 
   if ( m_maxPortOrd > 1 ) {
-    ocpiInfo("Circuit %p is closed 3: id %x", this, getCircuitId());
+    ocpiDebug("Circuit %p is closed 3: id %x", this, getCircuitId());
     m_openCircuit = false;
   }
   return true;
@@ -776,7 +776,7 @@ updatePort( OCPI::DataTransport::Port* p )
 
   p->update();
   if ( m_maxPortOrd > 1 ) {
-    ocpiInfo("Circuit %p is closed 4: id %x", this, getCircuitId());
+    ocpiDebug("Circuit %p is closed 4: id %x", this, getCircuitId());
     m_openCircuit = false;
   }
 
@@ -817,7 +817,7 @@ addPort( PortMetaData* pmd )
   Port* port = new Port( spmd, sps );
   sps->add( port );
   m_maxPortOrd++;
-  ocpiInfo("Circuit %p is closed 5: id %x", this, getCircuitId());
+  ocpiDebug("Circuit %p is closed 5: id %x", this, getCircuitId());
   m_openCircuit = false;
 
   return port;
@@ -916,7 +916,7 @@ addInputPort(DataTransfer::EndPoint &iep, const OCPI::RDT::Descriptors& inputDes
   }
   else {
     getUserPortFlowControlDescriptor(fb,0);
-    ocpiInfo("Circuit %p is closed 6: id %x", this, getCircuitId());
+    ocpiDebug("Circuit %p is closed 6: id %x", this, getCircuitId());
     m_openCircuit = false;
   }
 

@@ -864,6 +864,7 @@ printVhdlValue(FILE *f, OU::Value &v) {
   fprintf(f, "to_%s(%s)", OU::baseTypeNames[vt.m_baseType], value.c_str());
 }
 
+#if 0
 static void
 emitVhdlWSI(FILE *f, Worker *w, Port *p) {
   // emit the custom wsi interface
@@ -873,47 +874,59 @@ emitVhdlWSI(FILE *f, Worker *w, Port *p) {
 	  "library work; use work.%s_defs.all;\n"
 	  "entity %s_%s_wsi is\n"
 	  "  port (-- Exterior OCP signals\n"
-	  "        ocp_in         : in  %s_in_t;\n"
-	  "        ocp_out        : out %s_out_t;\n"
+	  "        ocp_in           : in  %s_in_t;\n"
+	  "        ocp_out          : out %s_out_t;\n"
 	  "        -- Signals connected from the worker's WCI to this interface;\n",
 	  w->implName, w->implName, p->name, p->name, p->name);
   if (p->clock == w->ports[0]->clock)
     fprintf(f,
-	    "        wci_clk        : in  std_logic;\n");
+	    "        wci_clk          : in  std_logic;\n");
   fprintf(f, 
-	  "        wci_reset      : in  Bool_t;\n"
+	  "        wci_reset        : in  Bool_t;\n"
+	  "        wci_is_operating : in  Bool_t;\n"
 	  "        -- Interior signals used by worker logic\n");
   if (p->clock != w->ports[0]->clock)
     fprintf(f, "        clk            : out std_logic; -- NOT the same as WCI clock\n");
   fprintf(f,
-	  "        reset          : out Bool_t; -- this port is being reset from outside/peer\n");
+	  "        reset            : out Bool_t; -- this port is being reset from outside/peer\n");
   if (p->masterIn())
     fprintf(f,
-	    "        ready          : out Bool_t; -- data can be taken\n"
-	    "        take           : in Bool_t;\n");
+	    "        ready            : out Bool_t; -- data can be taken\n"
+	    "        take             : in Bool_t;\n");
   else
     fprintf(f, 
-	    "        ready          : out Bool_t; -- data can be given\n"
-	    "        give           : in  Bool_t;\n");
+	    "        ready            : out Bool_t; -- data can be given\n"
+	    "        give             : in  Bool_t;\n");
   const char *dataDir = p->masterIn() ? "out" : "in ";
   if (p->dataWidth)
-    fprintf(f, "        data       : %s std_logic_vector(%u downto 0);\n",
+    fprintf(f, "        data             : %s std_logic_vector(%u downto 0);\n",
 	    dataDir, p->dataWidth-1);
   if (p->ocp.MByteEn.value)
-    fprintf(f, "        byte_enable    : %s std_logic_vector(%u downto 0);\n",
+    fprintf(f, "        byte_enable      : %s std_logic_vector(%u downto 0);\n",
 	    dataDir, p->ocp.MByteEn.width-1);
-  fprintf(f, "        som, eom, valid : %s Bool_t", dataDir);
+  fprintf(f, "        som, eom, valid  : %s Bool_t", dataDir);
   if (p->u.wsi.abortable)
     fprintf(f, ";\n        abort           : %s Bool_t", dataDir);
   fprintf(f,
 	  ");\n"
 	  "end entity;\n"
-	  "architecture rtl of %s_%s_wsi is\n",
-	  w->implName, p->name);
+	  "architecture rtl of %s_%s_wsi is\n"
+	  "  signal reset_i : Bool_t;\n"
+	  "  type data_t is record\n"
+	  "    data : std_logic_vector(%u downto 0);\n"
+	  "    valid, som, eom: std_logic;\n",
+	  w->implName, p->name, p->dataWidth - 1);
+  if (p->ocp.MByteEn.value)
+    fprintf(f, "    byte_enable: std_logic_vector(%u downto 0);\n",
+	    p->ocp.MByteEn.width - 1);
+  fprintf(f, "  end record data_t;\n");
+  const char *clk = p->clock != w->ports[0]->clock ? "ocp_in.clk" : "wci_clk";
   if (p->masterIn()) {
     fprintf(f, 
 	    "  signal fifo_full_n, fifo_empty_n : std_logic;\n"
-	    "  signal my_take, my_reset_n, my_enq : std_logic;\n"
+	    "  signal my_take, my_enq, som_in, eom_in, valid_in : std_logic;\n"
+	    "  signal data_in, data_out : data_t;\n"
+	    "  signal in_message : bool_t; -- State bit for in message or not\n"
 	    "component FIFO2\n"
 	    "  generic (width   : natural := 1; \\guarded\\ : natural := 1);\n"
 	    "  port(    CLK     : in  std_logic;\n"
@@ -927,33 +940,64 @@ emitVhdlWSI(FILE *f, Worker *w, Port *p) {
 	    "           D_OUT   : out std_logic_vector(width - 1 downto 0));\n"
 	    "end component FIFO2;\n"
 	    "begin\n"
+	    "  reset_i <= wci_reset or not wci_is_operating or not ocp_in.MReset_n;\n"
+	    "  reset <= reset_i; -- in wci clock domain for now\n"
+	    "  ocp_out.SReset_n <= not (wci_reset or not wci_is_operating);\n"
 	    "  my_take <= '1' when its(take) else '0';\n"
 	    "  my_enq <= '1' when ocp_in.MCmd = ocpi.ocp.MCmd_WRITE else '0';\n"
-	    "  my_reset_n <= '0' when wci_reset or (ocp_in.MReset_n = '0') else '1';\n"
 	    "  ready <= btrue when fifo_empty_n = '1' else bfalse;\n"
+	    "  ocp_out.SThreadBusy(0) <= not fifo_full_n;\n"
+	    "  -- combinatorial inputs into the FIFO\n"
+	    "  som_in <= not in_message and ocp_in.MCmd = ocpi.ocp.MCmd_WRITE;\n"
+	    "  eom_in <= data_last;\n"
+	    "  valid_in <= 0;\n"
+	    "  -- this is all combinatorial from the ocp inputs\n"
+	    "  data_in <=\n"
+	    "     (data  => ocp_in.MData,\n"
+	    "      som   => ocp_in.MCmd = ocpi.ocp.MCmd_WRITE and (not in_message or eom),\n"
+	    "      eom   => ocp_in.MDataLast,\n"
+	    "      valid => ocp_in.MCmd = ocpi.ocp.MCmd_WRITE and ocpi_in.MByteEn /= 0);\n"
+	    "  data <= data_out.data;\n"
+	    "  valid <= data_out.valid;\n"
+	    "  som <= data_out.som;\n"
+	    "  eom <= data_out.eom;\n"
+	    "%s"
 	    "  fifo : FIFO2\n"
-	    "    generic map(width => %u)\n"
+	    "    generic map(width   => data_t'width)\n"
 	    "    port map(   clk     => %s\n"
-	    "                rst     => my_reset_n,\n"
-	    "                d_in    => ocp_in.MData,\n"
+	    "                rst     => not my_reset,\n"
+	    "                d_in    => data_in,\n"
 	    "                enq     => my_enq,\n"
 	    "                full_n  => fifo_full_n,\n"
-	    "                d_out   => data,\n"
+	    "                d_out   => data_out,\n"
 	    "                deq     => my_take,\n"
 	    "                empty_n => fifo_empty_n,\n"
 	    "                clr     => '0');\n",
-	    p->dataWidth,
-	    p->clock != w->ports[0]->clock ? 
-	    "ocp_in.clk, -- output from the port's own clock" :
-	    "wci_clk,");
+	    "  reg: process(%s) is begin\n"
+	    "    -- in_message may be on on every cycle with back-to-back messages\n"
+	    "    if rising_edge(%s) then\n"
+            "      in_message <= bfalse;\n"
+	    "    elsif ocp_in.MCmd = ocpi.ocp.MCmd_WRITE;\n"
+	    "      in_message <= btrue;\n"
+	    "    elsif data_last then \n"
+	    "      in_message <= bfalse;\n"
+	    "    end if;\n"
+	    "  end process;\n",
+	    p->ocp.MByteEn.value ? "  , ocpi_in.MByteEn" : "",
+	    p->ocp.MByteEn.value ? "  byte_enable <= data_out.byte_enable;\n" : "",
+	    clk, clk);
   } else {
-    const char *clk = p->clock != w->ports[0]->clock ? 
-      "ocp_in.clk" : "wci_clk";
     fprintf(f,
-	    "  signal my_reset : Bool_t;\n"
 	    "begin\n"
-	    "  my_reset <= wci_reset or (ocp_in.SReset_n = '0');\n"
+	    "  my_reset <= wci_reset or not wci_is_operating or not ocp_in.SReset_n;\n"
 	    "  reset <= my_reset;\n"
+	    "  ocp_out.MReset_n <= not (wci_reset or not wci_is_operating);\n"
+	    "  ocp_out.MCmd <= ocpi.ocp.MCmd_WRITE when its(give) else ocpi.ocp.MCmd_IDLE;\n"
+	    "  ocp_out.MData <= data;\n"
+	    "  ocp_out.MReqLast <= '1' when its(eom) else '0';\n"
+	    "  ocp_out.MBurstLength <=\n"
+	    "    std_logic_vector(to_unsigned(1,ocp_out.MBurstLength'length)) when its(eom)\n"
+	    "    else std_logic_vector(to_unsigned(2, ocp_out.MBurstLength'length));\n"
 	    "  reg: process(%s) is begin\n"
 	    "    if rising_edge(%s) then\n"
 	    "      if its(my_reset) then\n"
@@ -962,13 +1006,7 @@ emitVhdlWSI(FILE *f, Worker *w, Port *p) {
 	    "        ready <= not to_bool(ocp_in.SThreadBusy(0));\n"
 	    "      end if;\n"
 	    "    end if;\n"
-	    "  end process;\n"
-	    "  ocp_out.MCmd <= ocpi.ocp.MCmd_WRITE when its(give) else ocpi.ocp.MCmd_IDLE;\n"
-	    "  ocp_out.MData <= data;\n"
-	    "  ocp_out.MReqLast <= '1' when its(eom) else '0';\n"
-	    "  ocp_out.MBurstLength <=\n"
-	    "    std_logic_vector(to_unsigned(1,ocp_out.MBurstLength'length)) when its(eom)\n"
-	    "    else std_logic_vector(to_unsigned(2, ocp_out.MBurstLength'length));\n",
+	    "  end process;\n",
 	    clk, clk);
     if (p->ocp.MByteEn.value)
       fprintf(f, "  ocp_out.MByteEn <= byte_enable;\n");
@@ -976,6 +1014,7 @@ emitVhdlWSI(FILE *f, Worker *w, Port *p) {
 
   fprintf(f, "end architecture rtl;\n");
 }
+#endif
 
 static void
 emitShellVHDL(FILE *f, Worker *w) {
@@ -1004,20 +1043,12 @@ emitShellVHDL(FILE *f, Worker *w) {
 	  "             inputs.Clk        => %s,\n"
 	  "             inputs.MAddr      => %s,\n",
 	  w->implName, wci->ocp.Clk.signal, wci->ocp.MAddr.signal);
-  //, w->ports[0]->ocp.MAddr.width-1);
-  //  if (wci->ocp.MAddr.width != 32)
-  //    fprintf(f,
-	     //	    "             inputs.MAddr(31 downto %u) => (others => '0'),\n",
-	     //	    wci->ocp.MAddr.width);
 	    
   fprintf(f,
 	  "             inputs.MAddrSpace => %s,\n", wci->ocp.MAddrSpace.signal);
   if (wci->ocp.MByteEn.value)
     fprintf(f,
 	    "             inputs.MByteEn    => %s,\n", wci->ocp.MByteEn.signal);
-  //  else
-  //    fprintf(f,
-  //	    "             inputs.MByteEn    => unused,\n");
 
   fprintf(f,
 	  "             inputs.MCmd       => %s,\n"
@@ -1027,7 +1058,6 @@ emitShellVHDL(FILE *f, Worker *w) {
 	  "             outputs.SData => %s, outputs.SResp => %s,\n"
 	  "             outputs.SFlag => %s, outputs.SThreadBusy => %s,\n"
 	  "             -- These are outputs used by the worker logic\n"
-	  //	    "             clk           => %s_Clk,   -- output to user logic\n"
 	  "             reset         => wci_reset, -- OCP guarantees 16 clocks of reset\n"
 	  "             control_op    => wci_control_op,\n"
 	  "             state         => wci_state,\n"
@@ -1083,91 +1113,88 @@ emitShellVHDL(FILE *f, Worker *w) {
     for (unsigned i = 0; i < w->ports.size(); i++)
       if (w->ports[i]->type == WSIPort) {
 	Port *p = w->ports[i];
+	bool slave = p->masterIn();
+	const char
+	  *mOption0 = slave ? "(others => '0')" : "open",
+	  *mOption1 = slave ? "(others => '1')" : "open";
+	  
 	fprintf(f,
 		"  --\n"
 		"  -- The WSI interface helper component instance for port \"%s\"\n"
-		"  %s_port : entity %s_%s_wsi\n"
-		"    port map(-- These signals connect this component to the external OCP interface\n",
-		p->name, p->name, w->implName, p->name);
-	if (p->masterIn()) {
-	  fprintf(f,
-		  "             ocp_in.MBurstLength => %s,\n", p->ocp.MBurstLength.signal);
-	  if (p->ocp.MBurstPrecise.value)
-	    fprintf(f,
-		    "             ocp_in.MBurstPrecise => %s,\n", p->ocp.MBurstPrecise.signal);
-	  if (p->ocp.MByteEn.value)
-	    fprintf(f,
-		    "             ocp_in.MByteEn      => %s,\n", p->ocp.MByteEn.signal);
-	  fprintf(f,
-		  "             ocp_in.MCmd         => %s,\n"
-		  "             ocp_in.MData        => %s,\n",
-		  p->ocp.MCmd.signal, p->ocp.MData.signal);
-	  if (p->ocp.MReqInfo.value)
-	    fprintf(f,
-		  "             ocp_in.MReqInfo     => %s,\n",
-		  p->ocp.MReqInfo.signal);
-	  fprintf(f,
-		  "             ocp_in.MReqLast     => %s,\n"
-		  "             ocp_in.MReset_n     => %s,\n",
-		  p->ocp.MReqLast.signal, p->ocp.MReset_n.signal);
-	} else
-	  fprintf(f,
-		  "             ocp_in.SReset_n    => %s,\n"
-		  "             ocp_in.SThreadBusy => %s,\n",
-		  p->ocp.SReset_n.signal, p->ocp.SThreadBusy.signal);
-	if (p->masterIn())
-	  fprintf(f,
-		  "             ocp_out.SReset_n    => %s,\n"
-		  "             ocp_out.SThreadBusy => %s,\n",
-		  p->ocp.SReset_n.signal, p->ocp.SThreadBusy.signal);
-	else {
-	  fprintf(f,
-		  "             ocp_out.MBurstLength => %s,\n", p->ocp.MBurstLength.signal);
-	  if (p->ocp.MBurstPrecise.value)
-	    fprintf(f,
-		    "             ocp_out.MBurstPrecise => %s,\n", p->ocp.MBurstPrecise.signal);
-	  if (p->ocp.MByteEn.value)
-	    fprintf(f, "             ocp_out.MByteEn      => %s,\n", p->ocp.MByteEn.signal);
-	  fprintf(f,
-		  "             ocp_out.MCmd         => %s,\n" 
-		  "             ocp_out.MData        => %s,\n",
-		  p->ocp.MCmd.signal, p->ocp.MData.signal);
-	  if (p->ocp.MReqInfo.value)
-	    fprintf(f,
-		    "             ocp_out.MReqInfo     => %s,\n", p->ocp.MReqInfo.signal);
-	  fprintf(f,
-		  "             ocp_out.MReqLast     => %s,\n" 
-		  "             ocp_out.MReset_n     => %s,\n",
-		  p->ocp.MReqLast.signal, p->ocp.MReset_n.signal);
-	}
-	fprintf(f,
-		"             -- These signals are just connected to the WCI\n"
-		"             wci_clk     => %s,\n"
-		"             wci_reset   => wci_reset,\n", wci->ocp.Clk.signal);
-	if (p->masterIn())
-	  fprintf(f,
-		  "             -- This signal is the only input from worker code\n"
-		  "             take => %s_take,\n", p->name);
+		"  %s_port : ocpi.wsi.%s\n"
+		"    generic map(precise         => %s,\n"
+		"                data_width      => %u,\n"
+		"                data_info_width => %u,\n"
+		"                burst_width     => %u,\n"
+		"                n_bytes         => %u,\n"
+		"                opcode_width    => %u,\n"
+                "                own_clock       => %s)\n",
+		p->name, p->name, slave ? "slave" : "master", BOOL(p->preciseBurst),
+		p->ocp.MData.value ? p->ocp.MData.width : 1,
+		p->ocp.MDataInfo.value ? p->ocp.MDataInfo.width : 1,
+		p->ocp.MBurstLength.width,
+		p->ocp.MByteEn.value ? p->ocp.MByteEn.width : 1,
+		p->ocp.MReqInfo.value ? p->ocp.MReqInfo.width : 1,
+		BOOL(p->myClock));
+	fprintf(f, "    port map   (Clk              => %s,\n", wci->ocp.Clk.signal);
+	fprintf(f, "                MBurstLength     => %s,\n", p->ocp.MBurstLength.signal);
+	fprintf(f, "                MByteEn          => %s,\n",
+		p->ocp.MByteEn.value ? p->ocp.MByteEn.signal : mOption1);
+	fprintf(f, "                MCmd             => %s,\n", p->ocp.MCmd.signal);
+	fprintf(f, "                MData            => %s,\n",
+		p->ocp.MData.value ? p->ocp.MData.signal : mOption0);
+	fprintf(f, "                MDataInfo        => %s,\n",
+		p->ocp.MDataInfo.value ? p->ocp.MDataInfo.signal : mOption0);
+	fprintf(f, "                MDataLast        => %s,\n",
+		p->ocp.MDataLast.value ? p->ocp.MDataLast.signal :
+		slave ? p->ocp.MReqLast.signal : "open");
+	if (p->ocp.MDataValid.value)
+	  fprintf(f, "                MDataValid       => %s,\n", p->ocp.MDataValid.signal);
+	else if (slave)
+	  fprintf(f, "                MDataValid       => to_bool(%s = ocp.MCmd_WRITE),\n",
+		  p->ocp.MCmd.signal);
 	else
-	  fprintf(f,
-		  "             -- This signal is the control input from worker code\n"
-		  "             give => %s_give,\n", p->name);
-	//	  const char *tofrom = p->masterIn() ? "from" : "to";
-	fprintf(f,
-		"             -- Output signals from this component into the worker\n"
-		"             reset       => %s_reset, -- this port is being reset from the outside\n"
-		"             ready       => %s_ready,\n"
-		"             data        => %s_data,\n",
-		p->name, p->name, p->name);
+	  fprintf(f, "                MDataValid       => open,\n");
+	fprintf(f, "                MReqInfo         => %s,\n",
+		p->ocp.MReqInfo.value ? p->ocp.MReqInfo.signal : mOption0);
+	if (!slave)
+	  fprintf(f, "                MReqLast         => %s,\n", p->ocp.MReqLast.signal);
+	fprintf(f, "                MReset_n         => %s,\n", p->ocp.MReset_n.signal);
+	fprintf(f, "                SReset_n         => %s,\n", p->ocp.SReset_n.signal);
+	fprintf(f, "                SThreadBusy      => %s,\n", p->ocp.SThreadBusy.signal);
+	fprintf(f, "                wci_clk          => %s,\n", wci->ocp.Clk.signal);
+	fprintf(f, "                wci_reset        => wci_reset,\n");
+	fprintf(f, "                wci_is_operating => wci_is_operating,\n");
+	fprintf(f, "                reset            => %s_reset,\n", p->name);
+	fprintf(f, "                ready            => %s_ready,\n", p->name);
+	fprintf(f, "                som              => %s_som,\n", p->name);
+	fprintf(f, "                eom              => %s_eom,\n", p->name);
+	fprintf(f, "                valid            => %s_valid,\n", p->name);
+	if (p->ocp.MData.value)
+	  fprintf(f, "                data             => %s_data,\n", p->name);
+	else
+	  fprintf(f, "                data             => open,\n");
+	if (p->u.wsi.abortable)
+	  fprintf(f, "                abort            => %s_abort,\n", p->name);
+	else
+	  fprintf(f, "                abort            => %s,\n", slave ? "open" : "'0'");
 	if (p->ocp.MByteEn.value)
-	  fprintf(f, "             byte_enable => %s_byte_enable,\n", p->name);
-	fprintf(f,
-		"             som         => %s_som,    -- valid eom\n"
-		"             eom         => %s_eom,    -- valid som\n"
-		"             valid        => %s_valid); -- valid data\n",
-		p->name, p->name, p->name);
+	  fprintf(f, "                byte_enable      => %s_byte_enable,\n", p->name);
+	else
+	  fprintf(f, "                byte_enable      => open,\n");
+	if (p->preciseBurst)
+	  fprintf(f, "                burst_length     => %s_burst_length,\n", p->name);
+	else
+	  fprintf(f, "                burst_length     => %s,\n", slave ? "open" : "(others => '0')");
+	if (p->ocp.MReqInfo.value)
+	  fprintf(f, "                opcode           => %s_opcode,\n", p->name);
+	else
+	  fprintf(f, "                opcode           => %s,\n", slave ? "open" : "(others => '0')");
+	if (slave)
+	  fprintf(f, "                take             => %s_take);\n", p->name);
+	else
+	  fprintf(f, "                give             => %s_give);\n", p->name);
       }
-
   }
   if (volatiles) {
     fprintf(f,
@@ -1371,7 +1398,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	    "  port(\n"
 	    "    -- Signals for control and configuration.  See record types above.\n"
 	    "    %-*s : in  worker_%s_t;\n"
-	    "    %-*s : out worker_%s_t",
+	    "    %-*s : out worker_%s_t := (btrue, bfalse)",
 	    w->implName, w->implName, maxPropName, p->typeNameIn.c_str(), p->typeNameIn.c_str(),
 	    maxPropName, p->typeNameOut.c_str(), p->typeNameOut.c_str());
     last = ";\n";
@@ -2090,9 +2117,12 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
     }
     fprintf(f,
 	    "end architecture rtl;\n");
+#if 0
+    // These are generic and parameterized now
     for (unsigned i = 0; i < w->ports.size(); i++)
       if (w->ports[i]->type == WSIPort)
 	emitVhdlWSI(f, w, w->ports[i]);
+#endif
     emitShellVHDL(f, w);
   }
   fclose(f);
@@ -2158,16 +2188,21 @@ adjustConnection(InstancePort *consumer, InstancePort *producer) {
     return "dataValueGranularity incompatibility for connection";
   if (prod->protocol->m_maxMessageValues > cons->protocol->m_maxMessageValues)
     return "maxMessageValues incompatibility for connection";
-  if (prod->u.wdi.nOpcodes > cons->u.wdi.nOpcodes)
+  if (prod->protocol->name().size() && cons->protocol->name().size() &&
+      prod->protocol->name() != cons->protocol->name())
+    return OU::esprintf("protocol incompatibility: producer: %s vs. consumer: %s",
+			prod->protocol->name().c_str(), cons->protocol->name().c_str());
+  if (prod->protocol->nOperations() && cons->protocol->nOperations() && 
+      prod->protocol->nOperations() != cons->protocol->nOperations())
     return "numberOfOpcodes incompatibility for connection";
+  //  if (prod->u.wdi.nOpcodes > cons->u.wdi.nOpcodes)
+  //    return "numberOfOpcodes incompatibility for connection";
   if (prod->protocol->m_variableMessageLength && !cons->protocol->m_variableMessageLength)
     return "variable length producer vs. fixed length consumer incompatibility";
   if (prod->protocol->m_zeroLengthMessages && !cons->protocol->m_zeroLengthMessages)
     return "zero length message incompatibility";
   if (prod->type != cons->type)
     return "profile incompatibility";
-  if (cons->u.wdi.continuous && !prod->u.wdi.continuous)
-    return "continuous incompatibility";
   if (prod->dataWidth != prod->dataWidth)
     return "dataWidth incompatibility";
   if (cons->u.wdi.continuous && !prod->u.wdi.continuous)
@@ -2185,7 +2220,7 @@ adjustConnection(InstancePort *consumer, InstancePort *producer) {
 	if (prod->preciseBurst) {
 	  // Convert any precise bursts to imprecise
 	  oa = &consumer->ocp[OCP_MBurstLength];
-	  oa->expr= "%s ? 1 : 2";
+	  oa->expr= "%s ? 2'b01 : 2'b10";
 	  oa->other = OCP_MReqLast;
 	  oa->comment = "Convert precise to imprecise";
 	  oa = &producer->ocp[OCP_MBurstLength];
@@ -2201,11 +2236,11 @@ adjustConnection(InstancePort *consumer, InstancePort *producer) {
 	// Consumer accept both, has MPreciseBurst Signal
 	oa = &consumer->ocp[OCP_MBurstPrecise];
 	if (!prod->impreciseBurst) {
-	  oa->expr = "1";
+	  oa->expr = "1'b1";
 	  oa->comment = "Tell consumer all bursts are precise";
 	} else if (!prod->preciseBurst) {
 	  oa = &consumer->ocp[OCP_MBurstPrecise];
-	  oa->expr = "0";
+	  oa->expr = "1'b0";
 	  oa->comment = "Tell consumer all bursts are imprecise";
 	  oa = &consumer->ocp[OCP_MBurstLength];
 	  oa->other = OCP_MBurstLength;
@@ -2226,7 +2261,7 @@ adjustConnection(InstancePort *consumer, InstancePort *producer) {
     if (cons->u.wsi.abortable) {
       if (!prod->u.wsi.abortable) {
 	oa = &consumer->ocp[OCP_MFlag];
-	oa->expr = "0";
+	oa->expr = "1'b0";
 	oa->comment = "Tell consumer no frames are ever aborted";
       }
     } else if (prod->u.wsi.abortable)
@@ -2240,11 +2275,34 @@ adjustConnection(InstancePort *consumer, InstancePort *producer) {
 	oa->comment = "Tell consumer last data is same as last request";
 	oa = &consumer->ocp[OCP_MDataValid];
 	oa->other = OCP_MCmd;
-	oa->expr = "%s == OCPI_OCP_MCMD_WRITE ? 1 : 0";
+	oa->expr = "%s == OCPI_OCP_MCMD_WRITE ? 1b'1 : 1b'0";
 	oa->comment = "Tell consumer data is valid when its(request) is MCMD_WRITE";
       }
     } else if (prod->u.wsi.earlyRequest)
       return "producer emits early requests, but consumer doesn't support them";
+    // Opcode compatibility
+    if (cons->u.wdi.nOpcodes != prod->u.wdi.nOpcodes)
+      if (cons->ocp.MReqInfo.value) {
+	if (prod->ocp.MReqInfo.value) {
+	  if (cons->ocp.MReqInfo.width > prod->ocp.MReqInfo.width) {
+	    oa = &consumer->ocp[OCP_MReqInfo];
+	    asprintf((char **)&oa->expr, "{%u'b0,%%s}",
+		     cons->ocp.MReqInfo.width - prod->ocp.MReqInfo.width);
+	    oa->other = OCP_MReqInfo;
+	  } else {
+	    // producer has more, we just connect the LSBs
+	  }
+	} else {
+	  // producer has none, consumer has some
+	  oa = &consumer->ocp[OCP_MReqInfo];
+	  asprintf((char **)&oa->expr, "%u'b0", cons->ocp.MReqInfo.width);
+	}
+      } else {
+	// consumer has none
+	oa = &producer->ocp[OCP_MReqInfo];
+	oa->expr = "";
+	oa->comment = "Consumer doesn't have opcodes (or has exactly one)";
+      }
     break;
   case WMIPort:
     break;
@@ -2435,14 +2493,17 @@ OCPI_PROPERTY_DATA_TYPES
 	    case WCIPort:
 	      switch (osd - ocpSignals) {
 	      case OCP_MAddr:
-		if (os->width < exf->width)
+		if (os->width < exf->width) {
 		  thisComment = "worker is narrower than external, which is OK";
-		//asprintf((char **)&signal, "%s[%u:0]", externalName, os->width - 1);
+		  asprintf((char **)&signal, "%s[%u:0]", externalName, os->width - 1);
+		  break;
+		}
 		break;
+	      default:
+		;
 	      }
-	      break;
-	    default:
-	      ;
+	      default:
+		;
 	    }
 	    if (!signal)
 	      signal = strdup(externalName);

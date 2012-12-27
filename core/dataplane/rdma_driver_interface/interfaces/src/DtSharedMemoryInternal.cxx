@@ -191,7 +191,7 @@ void EndPoint::
 finalize() {
   getSmemServices();
   if (!resources.sMemResourceMgr) {
-    ocpiInfo("Finalizing endpoint %p %s %p %p %p", this, end_point.c_str(),
+    ocpiDebug("Finalizing endpoint %p %s %p %p %p", this, end_point.c_str(),
 	     resources.sMemServices, resources.sMemResourceMgr, resources.m_comms);
     resources.sMemResourceMgr = CreateResourceServices();
     resources.sMemResourceMgr->createLocal(size);

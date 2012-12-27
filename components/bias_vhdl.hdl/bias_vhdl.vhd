@@ -7,6 +7,8 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 architecture rtl of bias_vhdl_worker is
 begin
+-- Pure combinatorial implementation
+
 -- WSI input interface outputs
   in_out.take <= in_in.ready and out_in.ready;
 -- WSI output interface outputs
@@ -15,4 +17,5 @@ begin
   out_out.som <= in_in.som;
   out_out.eom <= in_in.eom;
   out_out.valid <= in_in.valid;
+  out_out.byte_enable <= in_in.byte_enable; -- only necessary due to BSV protocol sharing
 end rtl;

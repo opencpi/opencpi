@@ -45,17 +45,17 @@ end record property_t;
   -- These are not normative to the WCI interface, but are useful for bookkeepping
   -- Note we track the state where we have accepted a control operation but
   -- have not yet responded to it.
-  --TYPE State_t IS (EXISTS_e,            -- 0
-  --                 INITIALIZED_e,       -- 1
-  --                 OPERATING_e,         -- 2
-  --                 SUSPENDED_e,         -- 3
-  --                 UNUSABLE_e);         -- 4
-subtype State_t is natural range 0 to 4;
-constant  EXISTS_e      : State_t := 0;
-constant  INITIALIZED_e : State_t := 1;
-constant  OPERATING_e   : State_t := 2;
-constant  SUSPENDED_e   : State_t := 3;
-constant  UNUSABLE_e    : State_t := 4;
+TYPE State_t IS (EXISTS_e,            -- 0
+                 INITIALIZED_e,       -- 1
+                 OPERATING_e,         -- 2
+                 SUSPENDED_e,         -- 3
+                 UNUSABLE_e);         -- 4
+--subtype State_t is natural range 0 to 4;
+--constant  EXISTS_e      : State_t := 0;
+--constant  INITIALIZED_e : State_t := 1;
+--constant  OPERATING_e   : State_t := 2;
+--constant  SUSPENDED_e   : State_t := 3;
+--constant  UNUSABLE_e    : State_t := 4;
 
 
   type control_op_masks_t is array (natural range <>) of control_op_mask_t;
