@@ -55,11 +55,15 @@ MyDir:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 MyIncs= \
          -I$(realpath $(MyDir)/../../../../../core/container/hdl_container/impl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
+#$(info MyIncs: $(MyIncs))
 MyLib:=$(realpath $(MyDir)/../../../../../lib/linux-x86_64-bin)
 ifeq ($(strip $(MyLib)),)
 $(error OpenCpi libraries must be built before the driver is built)
 endif
-export EXTRA_CFLAGS:= $(MyIncs) -Wformat=2
+# This is what works with RHEL5
+export EXTRA_CFLAGS := $(MyIncs) -Wformat=2
+# This is what works with Centos6
+export KCPPFLAGS := $(MyIncs) -Wformat=2
 MODFILE=$(MODNAME).ko
 RULESFILE=99-$(MODNAME).rules
 JUNK=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp*
