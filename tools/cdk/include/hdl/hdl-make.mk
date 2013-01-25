@@ -12,19 +12,64 @@ HdlError:=error
 HdlSourceSuffix=.v
 
 
-#HdlAllParts:=$(sort $(foreach t,$(HdlTopTargets),$(if $(findstring $(f),$(HdlSimTools)),,$(foreach f,$(HdlTargets_$(t)),$(HdlTargets_$(f))))))
+#HdlAllParts:=$(call Unique,$(foreach t,$(HdlTopTargets),$(if $(findstring $(f),$(HdlSimTools)),,$(foreach f,$(HdlTargets_$(t)),$(HdlTargets_$(f))))))
 $(call OcpiDbgVar,HdlTopTargets)
-HdlAllParts:=$(sort $(foreach t,$(HdlTopTargets),\
+HdlAllParts:=$(call Unique,$(foreach t,$(HdlTopTargets),\
 	              $(or $(foreach f,$(HdlTargets_$t),\
                              $(or $(HdlTargets_$f),$f)),$t)))
 $(call OcpiDbgVar,HdlAllParts)
 
-HdlAllPlatformParts:=$(sort $(foreach pl,$(HdlAllPlatforms),$(firstword $(subst -, ,$(HdlPart_$(pl))))))
+HdlAllPlatformParts:=$(call Unique,$(foreach pl,$(HdlAllPlatforms),$(firstword $(subst -, ,$(HdlPart_$(pl))))))
 $(call OcpiDbgVar,HdlAllPlatformParts)
 
 # Families are either top level targets with nothing underneath or one level down
-HdlAllFamilies:=$(sort $(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
+HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
 $(call OcpiDbgVar,HdlAllFamilies)
+
+
+################################################################################
+# $(call HdlComponentLibrary,lib,target)
+# Return the actual name (pointing to the target dir) and check for errors
+HdlComponentLibrary=$(strip \
+  $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
+   $(foreach f,$(call HdlGetFamily,$(notdir $2)),\
+     $(or $(wildcard $l/hdl/$f),$(wildcard $l/lib/hdl/$f),\
+      $(error Component library '$l' not found at either $l/hdl/$f or $l/lib/hdl/$f)))))
+
+HdlComponentCore=$(strip \
+  $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
+    $(foreach c,hdl/$3/$2$(HdlBin),\
+    $(or $(wildcard $l/$c),$(wildcard $l/lib/$c)))))
+
+#      $(error Component core '$l' not found at either $l/hdl/$2 or $l/lib/hdl/$2))))
+
+################################################################################
+# $(call HdlFindWorkerCoreFile,worker)
+# use ComponentLibraries
+# Return the actual file name of the found core or error 
+HdlFindWorkerCoreFile=$(strip \
+  $(firstword \
+    $(or $(foreach c,$(ComponentLibraries), \
+            $(foreach d,$(call HdlComponentCore,$c,$1,$(HdlTarget)),$d)),\
+         $(error Worker $1 not found in any component library.))))
+
+HdlXmlComponentLibraries=$(strip \
+  $(foreach c,$1,\
+    $(foreach l,$(if $(findstring /,$c),$c,$(OCPI_CDK_DIR)/lib/$c),\
+      $(foreach d,$(or $(wildcard $l/lib),$(wildcard $l),\
+	            $(error Component library '$c' not found at $l)),\
+	$d $d/hdl))))
+
+# Read the workers file
+define HdlSetWorkers
+  HdlInstances:=$$(strip $$(foreach i,$$(shell grep -v '\\\#' $$(ImplWorkersFile)),\
+	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i)))
+  HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
+#  $$(info Instances are: $$(HdlInstances))
+#  $$(info Workers are: $$(HdlWorkers))
+endef
+
+
 
 
 ################################################################################
@@ -65,7 +110,7 @@ HdlGetFamily=$(call OcpiDbg,Entering HdlGetFamily($1,$2))$(strip \
 # $(call HdlGetFamilies,hdl-target)
 # Return all the families for this target
 HdlGetFamilies=$(call OcpiDbg,Entering HdlGetFamilies($1))$(strip \
-  $(foreach fs,$(sort $(foreach t,$1,\
+  $(foreach fs,$(call Unique,$(foreach t,$1,\
                          $(if $(findstring $(t),all),\
                              $(HdlAllFamilies),\
                              $(call HdlGetFamily,$t,x)))),\
@@ -101,7 +146,7 @@ endif
 
 ifeq ($(HdlPlatforms),all)
 override HdlPlatforms:=$(HdlAllPlatforms)
-override HdlTargets:=$(sort $(HdlTargets) \
+override HdlTargets:=$(call Unique,$(HdlTargets) \
 	               $(call HdlGetFamilies,$(HdlAllPlatformParts)))
 endif
 

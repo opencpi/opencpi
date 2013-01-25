@@ -360,6 +360,10 @@ module mkGbeWorker(CLK_gmii_rx_clk,
   // output resets
   output RST_N_gmii_rstn;
 
+`else
+`define NOT_EMPTY_gbe
+`include "gbe_defs.vh"
+`endif
   // signals for module outputs
   wire [58 : 0] cpClient_request_get;
   wire [31 : 0] wciS0_SData, wsiM0_MData;
@@ -387,10 +391,6 @@ module mkGbeWorker(CLK_gmii_rx_clk,
        wtiS0_SReset_n,
        wtiS0_SThreadBusy;
 
-`else
-`define NOT_EMPTY_gbe
-`include "gbe_defs.vh"
-`endif
   // inlined wires
   wire [95 : 0] wsiM_extStatusW$wget, wsiS_extStatusW$wget;
   wire [71 : 0] wci_wslv_wciReq$wget;
@@ -3982,3 +3982,4 @@ module mkGbeWorker(CLK_gmii_rx_clk,
   // synopsys translate_on
 endmodule  // mkGbeWorker
 
+`default_nettype wire

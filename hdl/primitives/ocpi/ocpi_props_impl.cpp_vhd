@@ -246,7 +246,7 @@ ENTITY_RPROP_ARRAY(pretty)\
 $architecture rtl of read_##pretty##_array_property is \
 $@@signal byte_offset : byte_offset_t; \
 $begin\
-$@@byte_offset <= resize(property.offset + index, byte_offset_t'length);\
+$@@byte_offset <= resize(property.offset + index, byte_offset_t~length);\
 $@@data_out <= from_bool_array(value,index,nbytes_1,byte_offset);\
 $end rtl;
 

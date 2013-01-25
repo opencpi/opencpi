@@ -1,0 +1,21 @@
+<HdlAssembly Name="testddc" Language="Verilog">
+  <Instance Worker="sma.xml"/>
+  <Instance Worker="ddc.xml"/>
+  <Instance Worker="sma.xml"/>
+  <Connection Name="FC" External="consumer">
+    <port Instance="sma0" name="message"/>
+  </Connection>
+  <Connection>
+    <port Instance="sma0" name="out"/>
+    <port Instance="ddc" name="in"/>
+  </Connection>
+  <Connection>
+    <port Instance="ddc" name="out"/>
+    <port Instance="sma1" name="in"/>
+  </Connection>
+  <Connection Name="FP" External="producer">
+    <port Instance="sma1" name="message"/>
+  </Connection>
+</HdlAssembly>
+
+   

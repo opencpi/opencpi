@@ -163,7 +163,7 @@ namespace OCPI {
       delete &m_transport;
     }
 
-    bool m_start;
+    //    bool m_start;
 
     void Container::start(DataTransfer::EventManager* event_manager)
       throw()

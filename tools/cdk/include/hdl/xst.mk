@@ -38,15 +38,26 @@
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 
 ################################################################################
+# $(call HdlToolLibraryRefFile,libname,target)
+# Function required by toolset: return the file for dependencies on the library
+# This is attached to a directory, with a slash
+# Thus it is empty if the library is a diretory full of stuff that doesn't
+# have a file name we can predict.
+
+# XST: libraries are named differently depending on the source language
+# so we can't know them unfortunately (for referencing).
+HdlToolLibraryRefFile=
+
+################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
 # built when the library is built.
 
 # When XST compiles VHDL files it creates <lib>.vdbl, <lib>.vdbx
 # When XST compiles Verilog files it creates <lib>.sdbl, <lib>.sdbx
-# Core platform and application modes only use Verilog
+# Core platform and assembly modes only use Verilog
 # Libraries and workers may also have VHDL
-ifneq ($(findstring $(HdlMode),core platform application),)
+ifneq ($(findstring $(HdlMode),core platform assembly),)
   HdlLibSuffix=sdbl
 else
    ifneq ($(strip $(filter %.vhd,$(CompiledSourceFiles))),)
@@ -57,8 +68,7 @@ else
 endif
 
 HdlToolLibraryFile=$(strip \
-  $(2)/$(strip \
-    $(if $(filter virtex5,$(call HdlGetFamily,$(1))),hdllib.ref,$(2).$(HdlLibSuffix))))
+  $2/$(if $(filter virtex6,$(call HdlGetFamily,$1)),$2.$(HdlLibSuffix),hdllib.ref))
 
 ################################################################################
 # Function required by toolset: given a list of targets for this tool set
@@ -72,7 +82,8 @@ HdlToolLibraryResult=$(LibName)
 # Variable required by toolset: HdlToolCoreLibName
 # What library name should we give to the library when a core is built from
 # sources
-HdlToolCoreLibName=work
+# This is not "work" so that it doesn't get included when building the bb library
+HdlToolCoreLibName=$(Core)
 ################################################################################
 # Variable required by toolset: HdlBin
 # What suffix to give to the binary file result of building a core
@@ -98,7 +109,7 @@ HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
 ################################################################################
 # $(call XstLibraryFileTarget2(target,libname)
 # Return the actual file to depend on when it is built
-XstLibraryFileTarget=$(if $(filter virtex5,$(call HdlGetFamily,$(1))),hdllib.ref,$(2).sdbl)
+XstLibraryFileTarget=$(if $(filter virtex6,$(call HdlGetFamily,$(1))),$(2).sdbl,hdllib.ref)
 XstLibraryCleanTargets=$(strip \
   $(if $(filter virtex5,$(call HdlFamily,$(1))),hdllib.ref vlg??,*.sdb?))
 # When making a library, xst still wants a "top" since we can't precompile 
@@ -235,10 +246,17 @@ $(call XstPruneOption,$(XstDefaultOptions)) $(XstExtraOptions) $(XstInternalOpti
 XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
 
-XstNeedIni= $(strip $(Libraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
+XstLibraries=$(HdlLibraries) \
+             $(if $(findstring $(HdlMode),library),,\
+               $(foreach l,$(if $(findstring util_xilinx,$(LibName)),,util_xilinx) \
+                           util_$(call HdlGetFamily, $(HdlTarget)),\
+                 $(and $(wildcard $(call HdlLibraryRefDir,$l,$(HdlTarget))),$l)))
+
+XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
+#   $(and $(findstring worker,$(HdlMode)),echo $(call ToLower,$(Worker))=$(call ToLower,$(Worker));) 
 XstMakeIni=\
   (\
-   $(foreach l,$(Libraries),\
+   $(foreach l,$(XstLibraries),\
       echo $(lastword $(subst -, ,$(notdir $(l))))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$(l),$(HdlTarget)))));) \
@@ -253,12 +271,13 @@ XstMakeIni=\
    $(foreach l,$(DeviceLibraries),echo $(notdir $(l))=$(strip \
      $(call FindRelative,$(TargetDir),$(l)/lib/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));) \
    $(foreach l,$(ComponentLibraries),echo $(notdir $(l))=$(strip \
-     $(call FindRelative,$(TargetDir),$(l)/lib/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));))\
-   > $(XstIniFile);
+     $(call FindRelative,$(TargetDir),$(call HdlComponentLibrary,$l,stubs/$(HdlTarget))));) \
+  ) > $(XstIniFile);
 
 XstMakeLso=\
-  ($(if $(or $(findstring work,$(LibName)),$(filter core application,$(HdlMode))),,echo work;)\
-   echo $(LibName);$(foreach l,$(Libraries) $(CDKComponentLibraries) $(CDKDeviceLibraries) $(ComponentLibraries) $(DeviceLibraries),\
+  (\
+   $(if $(PreBuiltCore)$(findstring core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
+   $(foreach l,$(XstLibraries) $(CDKComponentLibraries) $(CDKDeviceLibraries) $(ComponentLibraries) $(DeviceLibraries),\
                       echo $(lastword $(subst -, ,$(notdir $(l))));)\
   $(foreach l,$(Cores),\
             echo $(lastword $(subst -, ,$(notdir $(l))_bb));)) > $(XstLsoFile);
@@ -277,6 +296,8 @@ XstScrFile=$(Core).scr
 XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));echo run $(strip $(XstOptions))) > $(XstScrFile);
 # The options we directly specify
 #$(info TARGETDIR: $(TargetDir))
+# $(and $(findstring worker,$(HdlMode)),-work_lib work) 
+# $(and $(findstring worker,$(HdlMode)),-work_lib $(call ToLower,$(Worker))) 
 XstOptions +=\
  -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) -p $(or $(HdlExactPart),$(HdlTarget)) \
  $(and $(VerilogIncludeDirs),$(strip\
@@ -291,8 +312,7 @@ XstOptions +=\
        $(call FindRelative,$(TargetDir),\
          $(l)/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
      $(foreach l,$(ComponentLibraries),$(strip \
-       $(call FindRelative,$(TargetDir),\
-         $(l)/lib/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
+       $(call FindRelative,$(TargetDir),$(call HdlComponentLibrary,$l,$(HdlTarget))))) \
      $(foreach l,$(DeviceLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/lib/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
@@ -310,18 +330,18 @@ XstNgcOptions=\
   $(foreach l,$(CDKDeviceLibraries), -sd \
     $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart) $(HdlTarget))))\
   $(foreach l,$(ComponentLibraries), -sd \
-    $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(HdlPart) $(HdlTarget))))\
+    $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart) $(HdlTarget))))\
   $(foreach l,$(DeviceLibraries), -sd \
     $(call FindRelative,$(TargetDir),$(l)/lib/hdl/$(or $(HdlPart) $(HdlTarget))))\
   $(foreach c,$(Cores), -sd \
-    $(call FindRelative,$(TargetDir),$(call CoreRefDir,$(c),$(or $(HdlPart),$(HdlTarget))))) 
+    $(call FindRelative,$(TargetDir),$(call HdlCoreRefDir,$(c),$(or $(HdlPart),$(HdlTarget))))) 
 
-#$(info lib=$(Libraries)= cores=$(Cores)= Comps=$(ComponentLibraries)= td=$(TargetDir)= @=$(@))
+#$(info lib=$(HdlLibraries)= cores=$(Cores)= Comps=$(ComponentLibraries)= td=$(TargetDir)= @=$(@))
 
 HdlToolCompile=\
-  $(foreach l,$(Libraries),\
+  $(foreach l,$(XstLibraries),\
      $(if $(wildcard $(call HdlLibraryRefDir,$(l),$(HdlTarget))),,\
-          $(error Error: Specified library: "$(l)", in the "Libraries" variable, was not found for $(HdlTarget).))) \
+          $(error Error: Specified library: "$(l)", in the "HdlLibraries" variable, was not found for $(HdlTarget).))) \
   $(foreach l,$(Cores),\
      $(if $(wildcard $(call HdlLibraryRefDir,$(l)_bb,$(or $(HdlTarget),$(info NONE2)))),,\
 	  $(info Error: Specified core library "$l", in the "Cores" variable, was not found.) \
@@ -332,7 +352,7 @@ HdlToolCompile=\
   $(XstMakeLso)\
   $(and $(XstNeedIni),$(XstMakeIni)) \
   $(XstMakeScr)\
-  $(Xilinx) xst -ifn $(XstScrFile)
+  $(Xilinx) xst -ifn $(XstScrFile) && touch $(LibName)
 
 # optional creation of these doesn't work...
 #    $(XstMakeLso) $(XstMakeIni))\

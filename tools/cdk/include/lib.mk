@@ -94,13 +94,14 @@ MyMake=$(MAKE) --no-print-directory
 BuildImplementation=\
     set -e; \
     tn="$(call Capitalize,$(1))Targets"; \
-    t="$($(call Capitalize,$(1))Targets)"; \
-    $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for targets $$t; \
+    t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
+    $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for targets: $$t; \
     $(MyMake) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
                $$tn="$$t" \
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
+	       HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative,$l),$l)) ocpi bsv"\
                VerilogIncludeDirs=$(call AdjustRelative,$(VerilogIncludeDirs)) \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
 
@@ -166,7 +167,7 @@ hdlstubs: $(HdlImplementations)
 	  $(call AdjustRelative2,$(OCPI_CDK_DIR))/include/hdl/hdl-lib.mk > \
 	  $(GenDir)/hdl/Makefile
 	$(AT)$(MyHdlMake) -C $(GenDir)/hdl -L LibName=$(LibName) \
-		Libraries=ocpi \
+		HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative2,$l),$l)) ocpi" \
 		OCPI_CDK_DIR=$(call AdjustRelative2,$(OCPI_CDK_DIR)) \
 		HdlInstallLibDir=$(call AdjustRelative2,$(LibDir)/hdl/stubs) \
 		stublibrary

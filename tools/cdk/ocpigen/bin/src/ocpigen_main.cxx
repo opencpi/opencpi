@@ -70,7 +70,7 @@ add to tree.
 
 int
 main(int argc, char **argv) {
-    const char *library = "work", *outDir = 0;
+  const char *library = "work", *outDir = 0, *wksFile = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
     doBsv = false, doArt = false;
@@ -84,6 +84,7 @@ main(int argc, char **argv) {
 	    " -a            Generate the assembly (composition) file: xyz.[v|vhd]\n"
 	    " -b            Generate the BSV interface file\n"
 	    " -A            Generate the artifact descriptor xml file\n"
+	    " -W <file>     Generate an assembly or container workers file: xyz.wks\n"
 	    " Options for artifact XML and UUID source generation (-A):\n"
 	    " -c <file>     The HDL container file to use for the artifact XML\n"
 	    " -P <platform> The platform for the artifact\n"
@@ -121,6 +122,9 @@ main(int argc, char **argv) {
 	break;
       case 'w':
 	doWrap = true;
+	break;
+      case 'W':
+	wksFile =*++ap;
 	break;
       case 'M':
 	depFile = *++ap;
@@ -181,6 +185,8 @@ main(int argc, char **argv) {
 	fprintf(stderr, "%s: Error generating wrapper file: %s\n", *ap, err);
       else if (doAssy && (err = emitAssyHDL(w, root)))
 	fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
+      else if (wksFile && !container && (err = emitWorkersHDL(w, root, wksFile)))
+	fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
       else if (doBsv && (err = emitBsvHDL(w, root)))
 	fprintf(stderr, "%s: Error generating BSV import file: %s\n", *ap, err);
       else if (doArt)
@@ -190,7 +196,7 @@ main(int argc, char **argv) {
 	    fprintf(stderr,
 		    "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
 	    return 1;
-	  } else if ((err = emitArtHDL(w, root)))
+	  } else if ((err = emitArtHDL(w, root, wksFile)))
 	    fprintf(stderr, "%s: Error generating bitstream artifact XML: %s\n",
 		    *ap, err);
 	  break;

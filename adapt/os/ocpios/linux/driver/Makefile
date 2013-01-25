@@ -70,7 +70,7 @@ JUNK=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp*
 INSTALLED=$(MyLib)/$(MODFILE) $(MyLib)/$(RULESFILE)
 all:	$(INSTALLED)
 
-$(MODFILE):
+$(MODFILE): opencpi.c
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 	@rm -rf	$(JUNK)
 

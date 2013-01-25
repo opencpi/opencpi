@@ -70,6 +70,11 @@ namespace OCPI {
       PVBool("polled"),
       PVULong("bufferCount"),
       PVULong("bufferSize"),
+      PVUChar("index"),
+      PVString("interconnect"),
+      PVString("adapter"),
+      PVString("configure"),
+      PVString("io"),
       PVEnd
     };
 

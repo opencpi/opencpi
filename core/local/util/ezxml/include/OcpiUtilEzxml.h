@@ -240,6 +240,7 @@ namespace OCPI {
         *checkAttrs(ezxml_t x, ...),
         *checkElements(ezxml_t x, ...),
 	*checkAttrsV(ezxml_t x, const char **attrs),
+	*checkAttrsVV(ezxml_t x, ...),
         *checkElements(ezxml_t x, ...),
         *getNumber(ezxml_t x, const char *attr, uint32_t *np,
 		   bool *found = NULL, uint32_t defaultValue = 0,

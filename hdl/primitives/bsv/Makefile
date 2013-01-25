@@ -38,5 +38,6 @@
 # and usable by BSV code, and supplied by BSV.
 # All targets should be happy
 Imports=$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/bsv/*.[vV]
-ExcludeImports=main.v
+# Exclude the BRAMs since they don't work on altera - they are in util_xilinx
+ExcludeImports=main.v BRAM1.v BRAM1BE.v BRAM2.v
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library

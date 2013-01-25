@@ -98,7 +98,7 @@ endif
 # Finally we create the black box/stub library for this core alone if needed
 # On two conditions: first that we actually need to do it (e.g. cores and apps),
 # second that the tools need it
-ifneq ($(filter application core,$(HdlMode)),)
+ifneq ($(filter assembly core,$(HdlMode)),)
 ifdef HdlToolNeedBB
 
 #ifeq ($(realpath $(CoreBlackBoxFile)),)

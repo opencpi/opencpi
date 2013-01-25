@@ -128,7 +128,7 @@ FindRelativeStep=\
 
 # helper function for FindRelative
 # arg1 is absolute-from arg2 is absolute-to arg3 is original from, arg4 is original to
-#$(info 1 $(1) 2 $(2) 3 $(3) 4 $(4)) 
+#$(info 1 $(1) 2 $(2) 3 $(3) 4 $(4))
 FindRelativeTop=\
         $(if $(realpath $(1)),\
             $(if $(realpath $(2)),\
@@ -260,5 +260,15 @@ ReplaceContentsIfDifferent=\
     cp -L -R -p $(1)/* $(2); \
     break;\
   done
+
+################################################################################
+# $(call Unique,words,already)
+# A utility function to remove duplicates without reordering
+# The second argument is just for recursion and should be blank on the call
+Unique=$(strip $(foreach x,$(call Unique2,$1,),$x))
+Unique2=$(if $1,$(call Unique2,$(wordlist 2,$(words $1),$1),$(strip\
+                               $(foreach w,$(firstword $1),$(if $(filter $w,$2),$2,$2 $w)))),$2)
+
+LibraryRefFile=$(call $(CapModel)LibraryRefFile,$1,$2)
 
 endif

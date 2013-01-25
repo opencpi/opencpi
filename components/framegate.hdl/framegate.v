@@ -49,6 +49,7 @@
 `endif
 
 `ifdef ORIGINAL
+`ifdef ORIGINAL
 module mkFrameGate4B(wciS0_Clk,
 		     wciS0_MReset_n,
 
@@ -210,6 +211,14 @@ module mkFrameGate4B(wciS0_Clk,
   // action method wsiM0_sReset_n
   input  wsiM0_SReset_n;
 
+`else
+`define NOT_EMPTY_framegate
+`include "framegate_defs.vh"
+`endif
+`else
+`define NOT_EMPTY_framegate
+`include "framegate_defs.vh"
+`endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData, wsiM0_MData;
   wire [11 : 0] wsiM0_MBurstLength;
@@ -217,17 +226,14 @@ module mkFrameGate4B(wciS0_Clk,
   wire [3 : 0] wsiM0_MByteEn;
   wire [2 : 0] wsiM0_MCmd;
   wire [1 : 0] wciS0_SFlag, wciS0_SResp;
-  wire wciS0_SThreadBusy,
+  wire [0:0]wciS0_SThreadBusy; wire 
        wsiM0_MBurstPrecise,
        wsiM0_MReqLast,
        wsiM0_MReset_n,
-       wsiS0_SReset_n,
-       wsiS0_SThreadBusy;
+       wsiS0_SReset_n;
+  
+  wire [0:0]     wsiS0_SThreadBusy;
 
-`else
-`define NOT_EMPTY_framegate
-`include "framegate_defs.vh"
-`endif
   // inlined wires
   wire [95 : 0] wsiM_extStatusW$wget, wsiS_extStatusW$wget;
   wire [71 : 0] wci_wciReq$wget;
@@ -587,14 +593,14 @@ module mkFrameGate4B(wciS0_Clk,
   assign wciS0_SData = wci_respF_q_0[31:0] ;
 
   // value method wciS0_sThreadBusy
-  assign wciS0_SThreadBusy =
+  assign wciS0_SThreadBusy[0] =
 	     wci_reqF_countReg > 2'd1 || wci_isReset_isInReset ;
 
   // value method wciS0_sFlag
   assign wciS0_SFlag = { 1'd1, wci_sFlagReg } ;
 
   // value method wsiS0_sThreadBusy
-  assign wsiS0_SThreadBusy =
+  assign wsiS0_SThreadBusy[0] =
 	     !wsiS_sThreadBusy_dw$whas || wsiS_sThreadBusy_dw$wget ;
 
   // value method wsiS0_sReset_n
@@ -913,7 +919,7 @@ module mkFrameGate4B(wciS0_Clk,
 	     (frameGateCtrl[3:0] == 4'h0 ||
 	      frameGateCtrl[3:0] == 4'h1 && !gated) ;
   assign wsiM_reqFifo_dequeueing$whas = WILL_FIRE_RL_wsiM_reqFifo_deq ;
-  assign wsiM_sThreadBusy_pw$whas = wsiM0_SThreadBusy ;
+  assign wsiM_sThreadBusy_pw$whas = wsiM0_SThreadBusy[0] ;
   assign wsi_Es_mReqLast_w$whas = wsiS0_MReqLast ;
   assign wsi_Es_mBurstPrecise_w$whas = wsiS0_MBurstPrecise ;
   assign wsi_Es_mDataInfo_w$whas = 1'd1 ;
@@ -1174,7 +1180,7 @@ module mkFrameGate4B(wciS0_Clk,
 	     WILL_FIRE_RL_wsiM_reqFifo_decCtr ;
 
   // register wsiM_sThreadBusy_d
-  assign wsiM_sThreadBusy_d$D_IN = wsiM0_SThreadBusy ;
+  assign wsiM_sThreadBusy_d$D_IN = wsiM0_SThreadBusy[0] ;
   assign wsiM_sThreadBusy_d$EN = 1'd1 ;
 
   // register wsiM_statusR

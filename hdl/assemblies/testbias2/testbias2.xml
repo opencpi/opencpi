@@ -1,0 +1,14 @@
+<HdlAssembly Name="testbias2" Language="Verilog">
+  <Instance Worker="bias" Name="bias0"/>
+  <Instance Worker="bias" Name="bias1"/>
+  <Connection Name="in" External="consumer">
+    <Port Instance="bias0" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="bias0" Name="out"/>
+    <Port Instance="bias1" Name="in"/>
+  </Connection>
+  <Connection Name="out" External="producer">
+    <Port Instance="bias1" Name="out"/>
+  </Connection>
+</HdlAssembly>

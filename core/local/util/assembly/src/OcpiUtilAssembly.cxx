@@ -41,25 +41,34 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace OE = OCPI::Util::EzXml;
 
-    Assembly::Assembly(const char *file)
-      : m_xml(ezxml_parse_file(file)), m_copy(NULL) {
+    Assembly::Assembly(const char *file, const char **extraTopAttrs, const char **extraInstAttrs)
+      : m_xml(ezxml_parse_file(file)), m_copy(NULL), m_xmlOnly(false), m_isImpl(false) {
       if (!m_xml)
 	throw Error("Can't open or xml-parse assembly xml file: \"%s\"", file);
-      const char *err = parse();
+      const char *err = parse(NULL, extraTopAttrs, extraInstAttrs);
       if (err)
 	throw Error("Error parsing assembly xml file (\"%s\") due to: %s", file, err);
     }
-    Assembly::Assembly(const std::string &string) {
+    Assembly::Assembly(const std::string &string, const char **extraTopAttrs, const char **extraInstAttrs)
+      : m_xmlOnly(false), m_isImpl(false) {
       m_copy = new char[string.size() + 1];
       strcpy(m_copy, string.c_str());
       if (!(m_xml = ezxml_parse_str(m_copy, string.size())))
 	throw Error("Can't xml-parse assembly xml string");
-      const char *err = parse();
+      const char *err = parse(NULL, extraTopAttrs, extraInstAttrs);
+      if (err)
+	throw Error("Error parsing assembly xml string due to: %s", err);
+    }
+    // FIXME:  we infer that this is an impl assy from this constructor.  Make it explicit?
+    Assembly::Assembly(const ezxml_t top, const char *defaultName,
+		       const char **extraTopAttrs, const char **extraInstAttrs)
+      : m_xml(top), m_copy(NULL), m_xmlOnly(true), m_isImpl(true) {
+      const char *err = parse(defaultName, extraTopAttrs, extraInstAttrs);
       if (err)
 	throw Error("Error parsing assembly xml string due to: %s", err);
     }
     Assembly::~Assembly() {
-      if (m_xml)
+      if (m_xml && !m_xmlOnly)
 	ezxml_free(m_xml);
       delete [] m_copy;
     }
@@ -67,15 +76,17 @@ namespace OCPI {
     unsigned Assembly::s_count = 0;
 
     const char *Assembly::
-    parse() {
+    parse(const char *defaultName, const char **extraTopAttrs, const char **extraInstAttrs) {
       // This is where common initialization is done except m_xml and m_copy
       m_doneInstance = -1;
       m_cMapPolicy = RoundRobin;
       m_processors = 0;
       ezxml_t ax = m_xml;
       const char *err;
+      static const char *baseAttrs[] = { "name", NULL};
       bool maxProcs = false, minProcs = false, roundRobin = false;
-      if ((err = OE::checkAttrs(ax, "maxprocessors", "minprocessors", "roundrobin", "done", "name", NULL)) ||
+      // FIXME: move app-specific parsing up into library assy
+      if ((err = OE::checkAttrsVV(ax, baseAttrs, extraTopAttrs, NULL)) ||
 	  (err = OE::checkElements(ax, "instance", "connection", "policy", "property", NULL)) ||
 	  (err = OE::getNumber(ax, "maxprocessors", &m_processors, &maxProcs)) ||
 	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &minProcs)) ||
@@ -108,12 +119,12 @@ namespace OCPI {
 	}
       }
 	
-      OE::getNameWithDefault(ax, m_name, "unnamed%u", s_count);
+      OE::getNameWithDefault(ax, m_name, defaultName ? defaultName : "unnamed%u", s_count);
       m_instances.resize(OE::countChildren(ax, "Instance"));
       Instance *i = &m_instances[0];
       unsigned n = 0;
       for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix), i++, n++)
-	if ((err = i->parse(ix, ax, n)))
+	if ((err = i->parse(ix, *this, n, extraInstAttrs)))
 	  return err;
       const char *done = ezxml_cattr(ax, "done");
       if (done) {
@@ -165,8 +176,8 @@ namespace OCPI {
       Connection *c;
       const char *err = addConnection(name.c_str(), c);
       if (!err) {
-	Port &toP = c->addPort(*this, to, toPort, true);
-	Port &fromP = c->addPort(*this, from, fromPort, false);
+	Port &toP = c->addPort(*this, to, toPort, true, false, true); // implicitly input
+	Port &fromP = c->addPort(*this, from, fromPort, false, false, true); // implicitly output
 	toP.m_connectedPort = &fromP;
 	fromP.m_connectedPort = &toP;
       }
@@ -177,7 +188,7 @@ namespace OCPI {
       Connection *c;
       const char *err = addConnection(port, c);
       if (!err) {
-	c->addPort(*this, instance, port, false);
+	c->addPort(*this, instance, port, false, false, false); // we don't know the direction
 	c->addExternal(port);
       }
       return err;
@@ -260,9 +271,22 @@ namespace OCPI {
     }
 
     const char *Assembly::Instance::
-    parse(ezxml_t ix, ezxml_t ax, unsigned ordinal) {
+    parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs) {
       m_ordinal = ordinal;
-      const char *err = OE::getRequiredString(ix, m_specName, "component", "instance");
+      const char *err;
+      static const char *instAttrs[] = { "component", "Worker", "Name", "connect", "to", "from",
+					"external", NULL};
+      if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)))
+	return err;
+      if (a.isImpl()) {
+	if (ezxml_cattr(ix, "component"))
+	  err = "'component' attributes invalid in this implementaiton assembly";
+	else
+	  OE::getOptionalString(ix, m_implName, "worker"); // FIXME: optional due to container xml...
+      } else {
+	OE::getOptionalString(ix, m_implName, "worker");
+	err = OE::getRequiredString(ix, m_specName, "component", "instance");
+      }
       if (err ||
 	  (err = OE::checkElements(ix, "property", NULL)))
 	return err;
@@ -271,23 +295,29 @@ namespace OCPI {
       // default is component%d unless there is only one, in which case it is "component".
       if (m_name.empty()) {
 	unsigned me = 0, n = 0;
-	for (ezxml_t x = ezxml_cchild(ax, "instance"); x; x = ezxml_next(x))
-	  if (m_specName == ezxml_attr(x, "component")) {
+	for (ezxml_t x = ezxml_cchild(a.xml(), "instance"); x; x = ezxml_next(x)) {
+	  const char
+	    *c = ezxml_cattr(x, "component"),
+	    *w = ezxml_cattr(x, "worker");
+	  if (m_specName.size() && c && m_specName == c ||
+	      m_implName.size() && w && m_implName == w) {
 	    if (x == ix)
 	      me = n;
 	    n++;
 	  }
+	}
+	const char *myBase = m_specName.size() ? m_specName.c_str() : m_implName.c_str();
 	if (n > 1)
-	  formatString(m_name, "%s%u", m_specName.c_str(), me);
+	  formatString(m_name, "%s%u", myBase, me);
 	else
-	  m_name = m_specName;
+	  m_name = myBase;
       }
       m_properties.resize(OE::countChildren(ix, "property"));
       Property *p = &m_properties[0];
       for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px), p++)
 	if ((err = p->parse(px)))
 	  return err;
-      return m_parameters.parse(ix, "name", "component", "selection", "connect",
+      return m_parameters.parse(ix, "name", "component", "worker", "selection", "connect",
 				"external", "from", "to", NULL);
     }
 
@@ -295,21 +325,28 @@ namespace OCPI {
     parse(ezxml_t cx, Assembly &a, unsigned &n) {
       const char *err;
       if ((err = OE::checkElements(cx, "port", "external", NULL)) ||
-	  (err = OE::checkAttrs(cx, "name", "transport", NULL)))
+	  (err = OE::checkAttrs(cx, "name", "transport", "external", NULL)))
 	return err;
       
       OE::getNameWithDefault(cx, m_name, "conn%u", n);
-      if ((err = m_parameters.parse(cx, "name", NULL)))
+      if ((err = m_parameters.parse(cx, "name", "external", NULL)))
 	return err;
 
-      unsigned nExt = 0;
+      const char *ext = ezxml_cattr(cx, "external");
+      if (ext) {
+	External tmp;
+	m_externals.push_back(tmp);
+	// default the external's name from the connection's name
+	if ((err = m_externals.back().init(m_name.c_str(), ext)))
+	  return err;
+      }
+      unsigned nExt = 0; // for name ordinals when unnamed
       for (ezxml_t x = ezxml_cchild(cx, "external"); x; x = ezxml_next(x), nExt++) {
 	External tmp;
 	m_externals.push_back(tmp);
 	if ((err = m_externals.back().parse(x, nExt, m_parameters)))
 	  return err;
       }
-
       if (OE::countChildren(cx, "port") < 1)
 	return "no ports found under connection";
       Port *other = NULL;
@@ -330,20 +367,23 @@ namespace OCPI {
     }
 
     Assembly::Port & Assembly::Connection::
-    addPort(Assembly &a, unsigned instance, const char *port, bool isInput) {
+    addPort(Assembly &a, unsigned instance, const char *port, bool isInput, bool bidi, bool known) {
       Port tmp;
       m_ports.push_back(tmp);
       Port &p = m_ports.back();
-      p.init(a, port, instance, isInput);
+      p.init(a, port, instance, isInput, bidi, known);
       return p;
     }
 
     void Assembly::Port::
-    init(Assembly &a, const char *name, unsigned instance, bool isInput) {
+    init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidir, bool isKnown) {
       if (name)
 	m_name = name;
+      m_provider = isInput;
+      m_bidirectional = bidir;
+      m_knownRole = isKnown;
       m_instance = instance;
-      m_input = isInput;
+      m_provider = isInput;
       m_connectedPort = NULL;
       a.m_instances[instance].m_ports.push_back(this);
     }
@@ -354,6 +394,8 @@ namespace OCPI {
       External &e = m_externals.back();
       e.m_name = port;
       e.m_provider = false; // provisional
+      e.m_bidirectional = false;
+      e.m_knownRole = false;
     }
     const char *Assembly::Port::
     parse(ezxml_t x, Assembly &a, const PValue *pvl) {
@@ -365,19 +407,42 @@ namespace OCPI {
 	  (err = OE::getRequiredString(x, iName, "instance", "port")) ||
 	  (err = a.getInstance(iName.c_str(), instance)))
 	return err;
-      init(a, name.c_str(), instance, false);
+      // We don't know the role at all at this point
+      init(a, name.c_str(), instance, false, false, false);
       return m_parameters.parse(pvl, x, "name", "instance", NULL);
     }
 
     const char *Assembly::External::
+    init(const char *name, const char *r) {
+      if (name)
+	m_name = name;
+      m_knownRole = false;
+      m_bidirectional = false;
+      m_provider = false;
+      if (r) {
+	if (!strcasecmp(r, "provider") || !strcasecmp(r, "input") || !strcasecmp(r, "consumer")) {
+	  m_provider = true;
+	  m_knownRole = true;
+	} else if (!strcasecmp(r, "user") || !strcasecmp(r, "output") || !strcasecmp(r, "producer")) {
+	  m_provider = false;
+	  m_knownRole = true;
+	} else if (!strcasecmp(r, "bidirectional")) {
+	  m_bidirectional = true;
+	  m_knownRole = true;
+	} else
+	  return esprintf("Invalid external role: %s", r);
+      }
+      return NULL;
+    }
+    const char *Assembly::External::
     parse(ezxml_t x, unsigned &n, const PValue *pvl) {
       OE::getNameWithDefault(x, m_name, "ext%u", n);
       OE::getOptionalString(x, m_url, "url");
-      const char *err;
-      if ((err = OE::getBoolean(x, "provider", &m_provider)))
-	return err;
+      std::string role;
+      OE::getOptionalString(x, role, "role");
       // Parse all attributes except the explicit ones here.
-      return m_parameters.parse(pvl, x, "name", "url", "provider", NULL);
+      const char *err = init(NULL, role.c_str());
+      return err ? err : m_parameters.parse(pvl, x, "name", "url", "provider", NULL);
     }
   }
 }

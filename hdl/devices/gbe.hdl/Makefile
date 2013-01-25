@@ -34,5 +34,6 @@
 #
 ########################################################################### #
 
-Libraries=bsv util
+OnlyTargets=xilinx
+override HdlLibraries=bsv util
 include $(OCPI_CDK_DIR)/include/worker.mk

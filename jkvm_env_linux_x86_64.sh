@@ -58,11 +58,17 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 # #### Location of the Xilinx tools ####################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/home/jek1/mac/Xilinx/14.3/ISE_DS
+export OCPI_XILINX_TOOLS_DIR=/home/jek1/mac/Xilinx/14.4/ISE_DS
+export OCPI_VIVADO_TOOLS_DIR=/home/jek1/mac/Xilinx/Vivado/2012.4
 
 # #### Location of the Altera tools ####################################### #
 
-export OCPI_ALTERA_TOOLS_DIR=/home/jim/altera/11.0
+export OCPI_ALTERA_TOOLS_DIR=/home/jek1/mac/altera/12.1
+export OCPI_ALTERA_LICENSE_FILE=/home/jek1/mac/altera/1-9095JT_License.dat
+
+# #### Location of the Modelsim tools ####################################### #
+
+export OCPI_MODELSIM_DIR=$OCPI_ALTERA_TOOLS_DIR/modelsim_ase
 
 # #### Location of Google Test (gtest) #################################### #
 

@@ -42,7 +42,7 @@
 #  workers
 #  device workers
 #  platforms
-#  applications
+#  assemblies
 
 ifndef __HDL_PRE_MK__
 __HDL_PRE_MK__=x
@@ -51,11 +51,12 @@ Model=hdl
 
 ################################################################################
 # The generic hdl compile that depends on HdlToolCompile
-HdlLog=$(or $(Core),$(LibName))-$(HdlToolSet).out
-HdlTime=$(or $(Core),$(LibName))-$(HdlToolSet).time
+HdlName=$(if $(findstring library,$(HdlMode)),$(LibName),$(Core))
+HdlLog=$(HdlName)-$(HdlToolSet).out
+HdlTime=$(HdlName)-$(HdlToolSet).time
 HdlCompile=\
   cd $(TargetDir); \
-  export HdlCommand="$(HdlToolCompile)"; \
+  export HdlCommand="set -e; $(HdlToolCompile)"; \
   $(TIME) sh -c \
    '(/bin/echo Command: "$$HdlCommand"; eval "$$HdlCommand") > $(HdlLog) 2>&1' \
     > $(HdlTime) 2>&1; \
@@ -63,20 +64,21 @@ HdlCompile=\
   cat $(HdlTime) >> $(HdlLog); \
   grep -i error $(HdlLog)| grep -v Command: |\
     grep -v '^WARNING:'|grep -v " 0 errors," | grep -i -v '[_a-z]error'; \
+  if grep -q '^ERROR:' $(HdlLog); then HdlExit=1; fi; \
   $(HdlToolPost) \
   if test "$$OCPI_HDL_VERBOSE_OUTPUT" != ''; then \
     cat $(HdlLog); \
   fi; \
   if test $$HdlExit != 0; then \
-    $(ECHO) Error: $(HdlToolSet) failed\($$HdlExit\). See $(TargetDir)/$(HdlLog); \
+    $(ECHO) -n Error: $(HdlToolSet) failed\($$HdlExit\). See $(TargetDir)/$(HdlLog).'  '; \
   else \
-    $(ECHO) -n ' '$(HdlToolSet) succeeded.'  '; \
-    cat $(HdlTime); \
+    $(ECHO) -n ' Tool "$(HdlToolSet)" for target "$(HdlTarget)" succeeded.  '; \
   fi; \
+  cat $(HdlTime); \
   rm -f $(HdlTime); \
   exit $$HdlExit
 ################################################################################
-# The post processing by simulators that do not produce any intermediate
+# The post processing by tools that do not produce any intermediate
 # build results
 HdlSimPost=\
   rm -r -f links; \
@@ -97,7 +99,7 @@ HdlSimPost=\
 
 define HdlSimNoLibraries
 HdlToolPost=$$(HdlSimPost)
-HdlToolLinkFiles=$$(sort\
+HdlToolLinkFiles=$$(call Unique,\
   $$(HdlToolFiles) \
   $$(foreach f,$$(DefsFile) $$(ImplHeaderFiles),\
      $$(call FindRelative,$$(TargetDir),$$(f))))
@@ -116,8 +118,18 @@ HdlLibraryRefDir=$(strip \
   $(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1)/$(strip \
     $(call HdlToolLibRef,$(notdir $1),$2,$3)))
 
-HdlCoreRefDir=$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1)/$2
+HdlCoreRefDir=$(foreach d,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1)/$2,$(strip \
+		$d))
 
+
+################################################################################
+# $(call HdlLibraryRefFile,location-dir,target)
+# This function takes a user-specified (friendly, target-independent) library
+# or core location and a target name.  They return the actual filename of that
+# library/core that the tool wants to see for that target, for depedencies.
+HdlLibraryRefFile=$(strip \
+  $(if $(findstring /,$1),$1/$2/,$(OCPI_CDK_DIR)/lib/hdl/$1/$2/)$(strip \
+    $(call HdlToolLibraryRefFile,$(notdir $1),$2)))
 
 ################################################################################
 # $(call HdlGetToolSet,hdl-target)
@@ -133,7 +145,7 @@ HdlGetToolSet=$(strip \
 ################################################################################
 # $(call HdlGetTargetsForToolSet,toolset,targets)
 # Return all the targets that work with this tool
-HdlGetTargetsForToolSet=$(sort \
+HdlGetTargetsForToolSet=$(call Unique,\
     $(foreach t,$(2),\
        $(and $(findstring $(1),$(call HdlGetToolSet,$(t))),$(t))))
 
@@ -155,14 +167,14 @@ $(call OcpiDbgVar,HdlTargets)
 $(call OcpiDbgVar,HdlTarget)
 $(call OcpiDbgVar,OnlyTargets)
 # Map "all" and top level targets down into "families"
-HdlActualTargets:=$(sort \
+HdlActualTargets:=$(call Unique,\
               $(foreach t,$(HdlTargets),\
                  $(if $(findstring $t,all)$(findstring $t,$(HdlTopTargets)),\
                     $(call HdlGetFamily,$t,x),\
                     $t)))
 $(call OcpiDbgVar,HdlActualTargets)
 # Map "only" targets down to families too
-HdlOnlyTargets:=$(sort \
+HdlOnlyTargets:=$(call Unique,\
               $(foreach t,\
                 $(or $(OnlyTargets),all),\
                   $(if $(findstring $(t),all)$(findstring $(t),$(HdlTopTargets)),\
@@ -179,7 +191,7 @@ $(call OcpiDbgVar,HdlOnlyTargets)
 #  -- replace with part
 HdlPreExcludeTargets:=$(HdlActualTargets)
 $(call OcpiDbgVar,HdlPreExcludeTargets,Before only: )
-HdlActualTargets:=$(sort \
+HdlActualTargets:=$(call Unique,\
               $(foreach t,$(HdlActualTargets),\
 		 $(or $(findstring $(t),$(HdlOnlyTargets)), \
                    $(and $(findstring $(t),$(HdlAllFamilies)), \
@@ -194,12 +206,12 @@ $(call OcpiDbgVar,HdlActualTargets,After only: )
 $(call OcpiDbgVar,ExcludeTargets,Makefile exclusions: )
 $(call OcpiDbgVar,OCPI_EXCLUDE_TARGETS,Environment exclusions: )
 ExcludeTargetsInternal:=\
-$(sort $(foreach t,$(ExcludeTargets) $(OCPI_EXCLUDE_TARGETS),\
+$(call Unique,$(foreach t,$(ExcludeTargets) $(OCPI_EXCLUDE_TARGETS),\
          $(if $(and $(findstring $t,$(HdlTopTargets)),$(HdlTargets_$t)),\
              $(HdlTargets_$t),$t)))
 
 $(call OcpiDbgVar,ExcludeTargetsInternal)
-HdlActualTargets:=$(sort \
+HdlActualTargets:=$(call Unique,\
  $(foreach t,$(HdlActualTargets),\
    $(if $(findstring $t,$(ExcludeTargetsInternal)),,\
       $(if $(findstring $t,$(HdlAllFamilies)),\
@@ -214,7 +226,7 @@ override HdlTargets:=$(HdlActualTargets)
 HdlFamilies=$(call HdlGetFamilies,$(HdlActualTargets))
 $(call OcpiDbgVar,HdlFamilies)
 
-HdlToolSets=$(sort $(foreach t,$(HdlFamilies),$(call HdlGetToolSet,$(t))))
+HdlToolSets=$(call Unique,$(foreach t,$(HdlFamilies),$(call HdlGetToolSet,$(t))))
 # We will already get an error if there are no toolsets.
 $(call OcpiDbgVar,HdlToolSets)
 
@@ -230,7 +242,7 @@ endif
 $(call OcpiDbgVar,CompiledSourceFiles,After searching: )
 
 ifndef HdlInstallDir
-HdlInstallDir=$(OCPI_CDK_DIR)/lib/hdl
+HdlInstallDir=lib
 $(HdlInstallDir):
 	$(AT)mkdir -p $@
 endif

@@ -38,8 +38,8 @@
 # This library is for opencpi code, not vendor code.
 OnlyTargets=stratix4
 Imports=\
- $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128/pcie_hip_s4gx_gen2_x4_128_wrapper.v
-
+ $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128/pcie_hip_s4gx_gen2_x4_128_wrapper.v \
+ $(foreach i,BRAM1 BRAM1BE BRAM2,$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/bsv/bram_patch/$i_alt.v)
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives
 

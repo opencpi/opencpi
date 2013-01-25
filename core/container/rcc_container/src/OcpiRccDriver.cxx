@@ -24,7 +24,7 @@ namespace OCPI {
     pthread_key_t Driver::s_threadKey;
     // Look for a container that doesn't exist yet.
     OC::Container *Driver::
-    probeContainer(const char *which, std::string &error, const OA::PValue *params)
+    probeContainer(const char *which, std::string &/*error*/, const OA::PValue *params)
 	throw ( OU::EmbeddedException )
     {
       return new Container(which, params);

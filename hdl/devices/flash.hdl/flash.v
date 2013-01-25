@@ -146,6 +146,10 @@ module mkFlashWorker(wciS0_Clk,
   // action method flash_fwait
   input  flash_fwait_i;
 
+`else
+`define NOT_EMPTY_flash
+`include "flash_defs.vh"
+`endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData;
   wire [23 : 0] flash_addr;
@@ -158,10 +162,6 @@ module mkFlashWorker(wciS0_Clk,
        flash_wp_n,
        wciS0_SThreadBusy;
 
-`else
-`define NOT_EMPTY_flash
-`include "flash_defs.vh"
-`endif
   // inlined wires
   wire [71 : 0] wci_wslv_wciReq$wget;
   wire [33 : 0] wci_wslv_respF_x_wire$wget;

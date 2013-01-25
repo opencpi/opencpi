@@ -42,6 +42,7 @@
 #include <ctype.h>
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilAssembly.h"
 #include "wip.h"
 
 namespace OU = OCPI::Util;
@@ -89,6 +90,19 @@ checkClock(Worker *w, ezxml_t impl, Port *p) {
     } else if (w->ports[0]->type == WCIPort) {
       // If no clock, and we have a WCI then assume the WCI's clock.
       p->clockPort = w->ports[0];
+    } else if (w->noControl) {
+      // If there is no control port, then we synthesize the clock as wci_clk
+      Clock *c = w->clocks;
+      for (unsigned i = 0; i < w->nClocks; i++, c++)
+	if (!strcasecmp("wci_Clk", c->name)) {
+	  p->clock = c;
+	  break;
+	}
+      if (!p->clock) {
+	p->clock = &w->clocks[w->nClocks++];
+	p->clock->name = strdup("wci_Clk");
+	p->clock->signal = strdup("wci_Clk");
+      }
     } else
       // If no clock, and no wci port, we're hosed.
       return "Interface has no clock declared, and there is no control interface";
@@ -143,16 +157,25 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
     return
       OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
                "does not match a DataInterfaceSpec", name);
+  bool dwFound;
   if ((err = checkClock(w, impl, dp)) ||
-      (err = OE::getNumber(impl, "DataWidth", &dp->dataWidth, 0, dp->protocol->m_dataValueWidth)) ||
-      (err = OE::getNumber(impl, "NumberOfOpcodes", &dp->u.wdi.nOpcodes,
-                           0, dp->u.wdi.nOpcodes)) ||
-      (err = OE::getNumber(impl, "MaxMessageValues", &dp->protocol->m_maxMessageValues,
-                           0, dp->protocol->m_maxMessageValues)) ||
+      (err = OE::getNumber(impl, "DataWidth", &dp->dataWidth, &dwFound)) ||
+      // Be careful not to clobber protocol-determined values (i.e. don't set default values)
+      (err = OE::getNumber(impl, "NumberOfOpcodes", &dp->u.wdi.nOpcodes, NULL, 0, false)) ||
+      (err = OE::getNumber(impl, "MaxMessageValues", &dp->protocol->m_maxMessageValues, NULL, 0, false)) ||
+      (err = OE::getNumber(impl, "DataValueWidth", &dp->protocol->m_dataValueWidth, NULL, 0, false)) ||
+      (err = OE::getBoolean(impl, "ZeroLengthMessages", &dp->protocol->m_zeroLengthMessages, true)) ||
       (err = OE::getBoolean(impl, "Continuous", &dp->u.wdi.continuous)) ||
       (err = OE::getBoolean(impl, "ImpreciseBurst", &dp->impreciseBurst)) ||
       (err = OE::getBoolean(impl, "PreciseBurst", &dp->preciseBurst)))
     return err;
+  if (!dwFound) {
+    if (w->defaultDataWidth >= 0)
+      dp->dataWidth = (unsigned)w->defaultDataWidth;
+    else
+      dp->dataWidth = dp->protocol->m_dataValueWidth;  // or granularity?
+  } else if (!dp->protocol->m_dataValueWidth && !dp->protocol->nOperations())
+    dp->protocol->m_dataValueWidth = dp->dataWidth;
   if (dp->dataWidth >= dp->protocol->m_dataValueWidth) {
     if (dp->dataWidth % dp->protocol->m_dataValueWidth)
       return OU::esprintf("DataWidth (%u) on port '%s' not a multiple of DataValueWidth (%u)",
@@ -160,6 +183,8 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
   } else if (dp->protocol->m_dataValueWidth % dp->dataWidth)
       return OU::esprintf("DataValueWidth (%u) on port '%s' not a multiple of DataWidth (%u)",
 			  dp->protocol->m_dataValueWidth, dp->name, dp->dataWidth);
+  if (!dp->impreciseBurst && !dp->preciseBurst)
+    dp->impreciseBurst = true;
 #if 0 // FIXME
   if (dp->impreciseBurst && dp->preciseBurst)
     return "Both ImpreciseBurst and PreciseBurst cannot be specified for WSI or WMI";
@@ -275,11 +300,19 @@ tryOneChildInclude(ezxml_t top, const char *parent, const char *element,
 static const char *
 addProperty(Worker *w, ezxml_t prop, bool includeImpl)
 {
-  w->ctl.properties.push_back(new OU::Property);
-  return w->ctl.properties.back()->
-    parse(prop, w->ctl.readableConfigProperties,
-	  w->ctl.writableConfigProperties, w->ctl.sub32BitConfigProperties,
-	  includeImpl, w->ctl.ordinal++);
+  OU::Property *p = new OU::Property;
+  w->ctl.properties.push_back(p);
+  
+  const char *err =
+    p->parse(prop, w->ctl.readables, w->ctl.writables, w->ctl.sub32Bits,
+	     includeImpl, w->ctl.ordinal++);
+  if (!err) {
+    if (p->m_isVolatile)
+      w->ctl.volatiles = true;
+    if (!p->m_isParameter || p->m_isReadable)
+      w->ctl.nRunProperties++;
+  }
+  return err;
 }
 
 struct PropInfo {
@@ -357,8 +390,7 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
       return OU::esprintf("Implementation property named \"%s\" cannot override "
 			  "previous default value", name);
     // So simply add impl to the existing propert
-    return p->parseImpl(maybe, w->ctl.readableConfigProperties,
-			w->ctl.writableConfigProperties);
+    return p->parseImpl(maybe, w->ctl.readables, w->ctl.writables);
   } else if (p)
       return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
 			  name);
@@ -498,7 +530,7 @@ parseImplControl(ezxml_t impl, const char *file, Worker *w, ezxml_t &xctl) {
     if ((err = OE::getBoolean(xctl, "Sub32BitConfigProperties", &sub32)))
       return err;
     if (sub32)
-      w->ctl.sub32BitConfigProperties = true;
+      w->ctl.sub32Bits = true;
 #if 1
     if ((err = parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, w)))
       return err;
@@ -569,9 +601,9 @@ parseSpecControl(Worker *w, ezxml_t ps) {
 			     "ReadableConfigProperties", "Sub32BitConfigProperties",
 			     "Count", (void*)0)) ||
        (err = OE::getNumber64(ps, "SizeOfConfigSpace", &w->ctl.sizeOfConfigSpace, 0, 0)) ||
-       (err = OE::getBoolean(ps, "WritableConfigProperties", &w->ctl.writableConfigProperties)) ||
-       (err = OE::getBoolean(ps, "ReadableConfigProperties", &w->ctl.readableConfigProperties)) ||
-       (err = OE::getBoolean(ps, "Sub32BitConfigProperties", &w->ctl.sub32BitConfigProperties))))
+       (err = OE::getBoolean(ps, "WritableConfigProperties", &w->ctl.writables)) ||
+       (err = OE::getBoolean(ps, "ReadableConfigProperties", &w->ctl.readables)) ||
+       (err = OE::getBoolean(ps, "Sub32BitConfigProperties", &w->ctl.sub32Bits))))
     return err;
   return 0;
 }
@@ -700,7 +732,7 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
 	prot->m_diverseDataSizes = true;
 	prot->m_variableMessageLength = true;
 	prot->m_maxMessageValues = 64*1024;
-	prot->m_zeroLengthMessages = true;
+	prot->m_zeroLengthMessages = false; // keep it simplest in this case
         p->u.wdi.nOpcodes = 1;
       }
     }
@@ -712,9 +744,14 @@ static const char *
 parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   const char *err;
   ezxml_t xctl;
+  uint32_t dw;
+  bool dwFound;
   if ((err = parseSpec(xml, file, w)) ||
-      (err = parseImplControl(xml, file, w, xctl)))
+      (err = parseImplControl(xml, file, w, xctl)) ||
+      (err = OE::getNumber(xml, "datawidth", &dw, &dwFound)))
     return err;
+  if (dwFound)
+    w->defaultDataWidth = (int)dw; // override the -1 default if set
   Port *wci;
   if (!w->noControl) {
     // Insert the control port at the beginning of the port list since we want
@@ -804,6 +841,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
                               "ImpreciseBurst", "Continuous", "Abortable",
                               "EarlyRequest", "MyClock", "RegRequest", "Pattern",
                               "NumberOfOpcodes", "MaxMessageValues",
+			      "datavaluewidth", "zerolengthmessages",
                               (void*)0)) ||
         (err = checkDataPort(w, s, &dp)) ||
         (err = OE::getBoolean(s, "Abortable", &dp->u.wsi.abortable)) ||
@@ -818,6 +856,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
                               "Continuous", "ByteWidth", "TalkBack",
                               "Bidirectional", "Pattern",
                               "NumberOfOpcodes", "MaxMessageValues",
+			      "datavaluewidth", "zerolengthmessages",
                               (void*)0)) ||
         (err = checkDataPort(w, m, &dp)) ||
         (err = OE::getNumber(m, "ByteWidth", &dp->byteWidth, 0, dp->dataWidth)) ||
@@ -835,7 +874,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
       // For data ports that have not been specified as stream or message,
       // default to imprecise stream clocked by the WSI, with data width implied from protocol.
       dp->type = WSIPort;
-      dp->dataWidth = dp->protocol->m_dataValueWidth;
+      dp->dataWidth = w->defaultDataWidth >= 0 ? w->defaultDataWidth : dp->protocol->m_dataValueWidth;
       dp->impreciseBurst = true;
       if (w->ports[0]->type == WCIPort)
 	dp->clockPort = w->ports[0];
@@ -1005,27 +1044,19 @@ getConnPort(ezxml_t x, Assembly *a, const char *wAttr, const char *pAttr,
 // Attach an instance port to a connection
 static void
 attachPort(Connection *c, InstancePort *ip, const char *name,
-           const char *externalRole) {
-  if (externalRole)
+	   OU::Assembly::External *external) {
+  if (external)
     c->nExternals++;
-#if 0
-  if (isProducer)
-    c->nProducers++;
-  else if (isBidirectional)
-    c->nBidirectionals++;
-  else
-    c->nConsumers++;
-#endif
   // Append to list for connection
   InstancePort **pp;
   for (pp = &c->ports; *pp; pp = &(*pp)->nextConn)
     ;
   *pp = ip;
   ip->connection = c;
-  ip->externalRole = externalRole;
+  ip->external = external;
   ip->name = name;
   c->nPorts++;
-  if (externalRole)
+  if (external)
     c->external = ip; // last one if there are more than one
 }
 
@@ -1165,254 +1196,184 @@ doOutputs(const char *tok, void *arg) {
 }
 #endif
 
-// The generic assembly parser
-// FIXME: share code with the util::Assembly parser
+// This parses the assembly using the generic assembly parser in OU::
+// It then does the binding to actual implementations.
  static const char *
 parseAssy(ezxml_t xml, Worker *aw,
           const char **topAttrs, const char **instAttrs, bool noWorkerOk) {
-  const char *err;
-  Assembly *a = &aw->assembly;
-  aw->isAssembly = true;
-  if ((err = OE::checkAttrsV(xml, topAttrs)))
-    return err;
-#if 0
-  aw->implName = ezxml_cattr(xml, "Name");
-  if (!aw->implName)
-    if (defName)
-      aw->implName = defName;
-    else
-      return OU::esprintf("Missing \"Name\" attribute for \"%s\"", xml->name);
-#endif
-  // Count instances and workers
-  for (ezxml_t x = ezxml_cchild(xml, "Instance"); x; x = ezxml_next(x))
-    a->nInstances++;
-  Instance *i = a->instances = myCalloc(Instance, a->nInstances);
-  for (ezxml_t x = ezxml_cchild(xml, "Instance"); x; x = ezxml_next(x), i++) {
-    if ((err = OE::checkAttrsV(x, instAttrs)))
-      return err;
-    i->name = ezxml_cattr(x, "Name");   // Name attribute is in fact optional
-    i->wName = ezxml_cattr(x, "Worker"); // Worker attribute is pathname
-    if (!i->wName) {
-      if (noWorkerOk) // caller's business to deal with this
-        continue;
-      return OU::esprintf("Missing \"Worker\" attribute for instance \"%s\"",
-                      i->name ? i->name : "<no Name>");
-    }
-    // So we have an instance with a real live worker
-    for (Instance *ii = a->instances; ii < i; ii++)
-      if (ii->wName && !strcmp(i->wName, ii->wName))
-        i->worker = ii->worker;
-    if (!i->worker) {
-      i->worker = new Worker;
-      a->workers.push_back(i->worker);
-      if ((err = parseWorker(i->wName, aw->file, i->worker)))
-        return OU::esprintf("in file %s: %s", i->wName, err);
-    }
-    i->ports = myCalloc(InstancePort, i->worker->ports.size());
-    for (unsigned n = 0; n < i->worker->ports.size(); n++) {
-      i->ports[n].port = i->worker->ports[n];
-      i->ports[n].instance = i;
-    }
-#if 0
-    // Override bidirectional ports in the instance
-    if ((err = parseList(ezxml_cattr(x, "inputs"), doInputs, i)) ||
-        (err = parseList(ezxml_cattr(x, "outputs"), doOutputs, i)))
-      return err;
-#endif
-    // Parse instance property values
-    for (ezxml_t pv = ezxml_cchild(x, "PropertyValue"); pv; pv = ezxml_next(pv))
-      i->nValues++;
-    InstanceProperty *ipv = i->properties =
-      myCalloc(InstanceProperty, i->nValues);
-    for (ezxml_t pv = ezxml_cchild(x, "PropertyValue"); pv;
-         pv = ezxml_next(pv), ipv++) {
-      const char *name = ezxml_cattr(pv, "Name");
-      if (!name)
-        return "PropertyValue has no \"Name\" attribute";
-      for (PropertiesIter pi = i->worker->ctl.properties.begin();
-	   pi != i->worker->ctl.properties.end(); pi++)
-        if ((*pi)->m_name == name) {
-          ipv->property = (*pi);
-          break;
-        }
-      if (!ipv->property)
-        return OU::esprintf("Unknown property \"%s\" for worker \"%s\"", name,
-                        i->worker->implName);
-      const char *unparsed = ezxml_cattr(pv, "Value");
-      if (!unparsed)
-	return OU::esprintf("Missing \"value\" attribute for \"%s\" property value", name);
+   (void)noWorkerOk; // FIXME: when containers are generated.
+   Assembly *a = &aw->assembly;
+   try {
+     a->assembly = new OU::Assembly(xml, aw->implName, topAttrs, instAttrs);
+   } catch (std::string &e) {
+     return OU::esprintf("%s", e.c_str());
+   }
+   a->nInstances = a->assembly->m_instances.size();
+   a->nConnections = a->assembly->m_connections.size();
+   const char *err;
+   aw->isAssembly = true;
+ 
+   Instance *i = a->instances = myCalloc(Instance, a->assembly->m_instances.size());
+   // Initialize our instances based on the generic assembly instances
+   OU::Assembly::Instance *ai = &a->assembly->m_instances[0];
+   for (unsigned n = 0; n < a->assembly->m_instances.size(); n++, i++, ai++) {
+     i->instance = ai;
+     i->name = i->instance->m_name.c_str();
+     i->wName = i->instance->m_implName.size() ? i->instance->m_implName.c_str() : 0;
+     // Find the real worker/impl for each instance, sharing the Worker amon instances
+     if (i->wName) {
+       for (Instance *ii = a->instances; ii < i; ii++)
+	 if (ii->wName && !strcmp(i->wName, ii->wName))
+	   i->worker = ii->worker;
+       if (!i->worker) {
+	 i->worker = new Worker;
+	 a->workers.push_back(i->worker);
+	 if ((err = parseWorker(i->wName, aw->file, i->worker)))
+	   return OU::esprintf("in file %s: %s", i->wName, err);
+       }
+       // Initialize the instance ports
+       i->ports = myCalloc(InstancePort, i->worker->ports.size());
+       for (unsigned n = 0; n < i->worker->ports.size(); n++) {
+	 i->ports[n].port = i->worker->ports[n];
+	 i->ports[n].instance = i;
+       }
+     }
+     // Parse property values now that we know the actual workers.
+     OU::Assembly::Property *ap = &ai->m_properties[0];
+     InstanceProperty *ipv = i->properties =	myCalloc(InstanceProperty, ai->m_properties.size());
+     for (unsigned n = ai->m_properties.size(); n; n--, ap++, ipv++)
+       if ((err = ipv->property->parseValue(ap->m_value.c_str(), ipv->value)))
+	 return err;
+   }
+   // Initialize our connections based on the generic assembly connections
+   Connection *c = a->connections = myCalloc(Connection, a->assembly->m_connections.size());
+   OU::Assembly::ConnectionIter ci = a->assembly->m_connections.begin();
+   for (unsigned n = a->assembly->m_connections.size(); n; n--, c++, ci++) {
+     c->connection = &(*ci);
+     c->name = c->connection->m_name.c_str();
+     unsigned nn = 0;
+     for (OU::Assembly::Connection::PortIter pi = c->connection->m_ports.begin();
+	  pi != c->connection->m_ports.end(); pi++, nn++) {
+       OU::Assembly::Port &ap = *pi;
+       // for each attached port in the generic assembly connection
+       // find the actual worker port it names, and do error checking
+       Instance &i = a->instances[ap.m_instance];
+       InstancePort *found = 0;
+       for (unsigned nn = 0; nn < i.worker->ports.size(); nn++) {
+	 Port *p = i.worker->ports[nn];
+	 if (p->isData)
+	   if (ap.m_name.empty()) {
+	     if (p->u.wdi.isProducer != ap.m_provider)
+	       if (found)
+		 return OU::esprintf("Ambiguous connection to unnamed %s port on %s:%s",
+				     ap.m_provider ? "input" : "output", i.wName, i.name);
+	       else
+		 found = &i.ports[nn];
+	   } else if (!strcasecmp(p->name, ap.m_name.c_str())) {
+	     found = &i.ports[nn];;
+	     break;
+	   }
+       }
+       if (found) {
+	 Port *p = found->port;
+	 // We have a match, do some checking
+	 if (!p->isData)
+	   return OU::esprintf("Connections for non-data ports not allowed for worker %s port %s",
+			       i.worker->implName, p->name);
+	 if (ap.m_knownRole &&
+	     !p->u.wdi.isBidirectional &&
+	     (ap.m_bidirectional || p->u.wdi.isProducer == ap.m_provider))
+	   return OU::esprintf("Role of port %s of worker %s in connection incompatible with port",
+			       p->name, i.worker->implName);
+	 attachPort(c, found, p->name, NULL);
+       }
+     } // for all instance ports on the connection
+     // Now handle the external aspect of the connection
+     switch (c->connection->m_externals.size()) {
+     default:
+       return "multiple external attachments on a connection unsupported";
+     case 1:
+       attachPort(c, myCalloc(InstancePort, 1), c->connection->m_externals.front().m_name.c_str(),
+		  &c->connection->m_externals.front());
+       break;
+     case 0:
+       ;
+     }
+   } // for all connections
+   // All parsing is done.
+   // Now we fill in the top-level worker stuff.
+   aw->specName = aw->implName;
+   // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
+   if ((err = doProperties(xml, aw, aw->file, true, false)))
+     return err;
+   // Create the external data ports on the assembly worker
+   unsigned n;
+   for (c = a->connections, n = 0; n < a->nConnections; n++, c++)
+     if (c->nExternals) {
+       Port *extPort = 0, *intPort = 0;
+       OU::Assembly::External *role = 0; // kill warning. if c->nExternals, it will be set
+       for (InstancePort *ip = c->ports; ip; ip = ip->nextConn)
+	 if (ip->external) {
+	   role = ip->external;
+	   assert(!extPort); // for now only one
+	   ip->port = new Port();
+	   aw->ports.push_back(ip->port);
+	   extPort = ip->port;
+	 } else {
+	   assert(!intPort); // for now only one
+	   intPort = ip->port;  // remember the last one
+	 }
+       // Start by copying everything.
+       *extPort = *intPort;
+       extPort->clock = 0;
+       extPort->clockPort = 0;
+       extPort->pattern = 0;
+       extPort->name = c->name;
+       extPort->isExternal = true;
+       extPort->count = 1;
+       extPort->worker = aw;
+       assert(role->m_knownRole);
+       // Resolve bidirectional role
+       // See how we expose this externally
+       if (!role->m_provider) {
+	 if (!intPort->u.wdi.isProducer && !intPort->u.wdi.isBidirectional)
+	   return OU::esprintf("Connection %s has external producer role incompatible "
+			       "with port %s of worker %s",
+			       c->name, intPort->name, intPort->worker->implName);
+	 extPort->u.wdi.isProducer = true;
+	 extPort->u.wdi.isBidirectional = false;
+       } else if (role->m_bidirectional) {
+	 if (!intPort->u.wdi.isBidirectional)
+	   return OU::esprintf("Connection %s has external bidirectional role incompatible "
+			       "with port %s of worker %s",
+			       c->name, intPort->name, intPort->worker->implName);
+       } else if (role->m_provider) {
+	 if (intPort->u.wdi.isProducer)
+	   return OU::esprintf("Connection %s has external consumer role incompatible "
+			       "with port %s of worker %s",
+			       c->name, intPort->name, intPort->worker->implName);
+	 extPort->u.wdi.isBidirectional = false;
+       }
+     }
+   // Check for unconnected non-optional data ports
+   for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
+     if (i->worker) {
+       InstancePort *ip = i->ports;
+       for (unsigned nn = 0; nn < i->worker->ports.size(); nn++, ip++) {
+	 Port *pp = ip->port;
+	 if (pp->isData &&
+	     !pp->u.wdi.isOptional &&
+	     !ip->connection)
+	   return
+	     OU::esprintf("Port %s of instance %s of worker %s"
+			  " is not connected and not optional",
+			  pp->name, i->name, i->worker->implName);
+       }
+     }
+   return 0;
+ }
 
-      if ((err = ipv->property->parseValue(unparsed, ipv->value)))
-        return err;
-    }
-  }
-  // Resolve instance names (i.e. generate those that are not specified)
-  unsigned n = 0;
-  for (i = a->instances; n < a->nInstances; n++, i++) {
-    if (!i->name) {
-      // compute ordinal in assembly for these instances
-      unsigned nSame = 0, total = 1, nn = 0;
-      for (Instance *ii = a->instances; nn < a->nInstances; ii++, nn++)
-        if (n != nn && i->worker == ii->worker) {
-          if (ii < i)
-            nSame++;
-          total++;
-        }
-#if 0
-      const char *wName = strrchr(i->wName, '/');
-      wName = wName ? wName+1 : i->wName;
-      char *dot = strchr(wName, '.');
-      *dot = 0;
-#endif
-      if (total == 1)
-        i->name = i->worker->implName;
-      else
-        asprintf((char **)&i->name, "%s%d", i->worker->implName, nSame);
-    }
-    for (Instance *ii = a->instances; ii < i; ii++)
-      if (!strcmp(ii->name, i->name))
-        return OU::esprintf("Duplicate instance named \"%s\" in assembly", i->name);
-  }
-  for (ezxml_t x = ezxml_cchild(xml, "Connection"); x; x = ezxml_next(x)) {
-    if ((err = OE::checkAttrs(x, "Name", "External", (void*)0)))
-      return err;
-    a->nConnections++;
-  }
-  Connection *c = a->connections = myCalloc(Connection, a->nConnections);
-  for (ezxml_t x = ezxml_cchild(xml, "Connection"); x; x = ezxml_next(x), c++) {
-    c->name = ezxml_cattr(x, "Name");
-    for (ezxml_t at = ezxml_cchild(x, "Attach"); at; at = ezxml_next(at)) {
-      const char *instName = ezxml_cattr(at, "Instance");
-      if (!instName)
-        return
-          OU::esprintf("Missing \"Instance\" attribute in Attach subelement of "
-                   "connection \"%s\"", c->name);
-      n = 0;
-      InstancePort *ip = 0; // kill warning
-      Port *p = 0; // kill warning
-      for (i = a->instances; n < a->nInstances; n++, i++)
-        if (!strcmp(i->name, instName)) {
-          const char *iName = ezxml_cattr(at, "Interface");
-          if (!iName)
-            return
-              OU::esprintf("Missing \"Interface\" attribute in \"attach\" subelement of"
-                       "connection \"%s\"", c->name);
-          if (!i->worker)
-            return OU::esprintf("Instance \"%s\" of connection \"%s\" has no worker",
-                            i->name, c->name);
-          unsigned nn = 0;
-          for (nn = 0; nn < i->worker->ports.size(); nn++) {
-            p = i->worker->ports[nn];
-            if (!strcmp(p->name, iName)) {
-              if (p->type != WSIPort && p->type != WMIPort)
-                return "Connections for non-data ports not allowed";
-              ip = &i->ports[nn];
-              if (ip->connection)
-                return
-                  OU::esprintf("Interface \"%s\" of worker instance \"%s\" "
-                           "attached to both connections \"%s\" and \"%s\"",
-                           iName, instName, ip->connection->name, c->name);
-              break;
-            }
-          }
-          if (nn >= i->worker->ports.size())
-            return OU::esprintf("Interface \"%s\" not found on instance \"%s\" in "
-                            "connection  \"%s\"", iName, instName, c->name);
-          break;
-        }
-      if (n >= a->nInstances)
-        return OU::esprintf("Instance \"%s\" not found for connection  \"%s\"",
-                        instName, c->name);
-      attachPort(c, ip, p->name, NULL);
-    } // all (local) attachments to the connection
-    if (!c->name)
-      asprintf((char **)&c->name, "conn%d", (int)(c - a->connections));
-    for (Connection *cc = a->connections; cc < c; cc++)
-      if (!strcmp(cc->name, c->name))
-        return OU::esprintf("Duplicate connection named \"%s\" in assembly",
-                        c->name);
-    const char *ext = ezxml_cattr(x, "External");
-    if (ext) {
-      if (strcasecmp(ext, "producer") &&
-          strcasecmp(ext, "consumer") &&
-          strcasecmp(ext, "bidirectional"))
-        return OU::esprintf("Value of \"External\" attribute of connection \"%s\" is not "
-                        "\"consumer\" or \"producer\"", c->name);
-      InstancePort *ip = myCalloc(InstancePort, 1);
-      attachPort(c, ip, c->name, ext);
-    }
-  } // all connections
-  // All parsing is done.
-  // Now we fill in the top-level worker stuff.
-  aw->specName = aw->implName;
-  // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
-  if ((err = doProperties(xml, aw, aw->file, true, false)))
-    return err;
-  // Create the external data ports on the assembly worker
-  for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
-    if (c->nExternals) {
-      Port *extPort = 0, *intPort = 0;
-      const char *role = 0; // kill warning. if c->nExternals, it will be set
-      for (InstancePort *ip = c->ports; ip; ip = ip->nextConn)
-        if (ip->externalRole) {
-          role = ip->externalRole;
-          assert(!extPort); // for now only one
-          ip->port = new Port();
-          aw->ports.push_back(ip->port);
-          extPort = ip->port;
-        } else {
-          assert(!intPort); // for now only one
-          intPort = ip->port;  // remember the last one
-        }
-      // Start by copying everything.
-      *extPort = *intPort;
-      extPort->clock = 0;
-      extPort->clockPort = 0;
-      extPort->pattern = 0;
-      extPort->name = c->name;
-      extPort->isExternal = true;
-      extPort->count = 1;
-      extPort->worker = aw;
-      // See how we expose this externally
-      if (!strcasecmp(role, "producer")) {
-        if (!intPort->u.wdi.isProducer && !intPort->u.wdi.isBidirectional)
-          return OU::esprintf("Connection %s has external producer role incompatible "
-                          "with port %s of worker %s",
-                          c->name, intPort->name, intPort->worker->implName);
-        extPort->u.wdi.isProducer = true;
-        extPort->u.wdi.isBidirectional = false;
-      } else if (!strcasecmp(role, "bidirectional")) {
-        if (!intPort->u.wdi.isBidirectional)
-          return OU::esprintf("Connection %s has external bidirectional role incompatible "
-                          "with port %s of worker %s",
-                          c->name, intPort->name, intPort->worker->implName);
-      } else if (!strcasecmp(role, "consumer")) {
-        if (intPort->u.wdi.isProducer)
-          return OU::esprintf("Connection %s has external consumer role incompatible "
-                          "with port %s of worker %s",
-                          c->name, intPort->name, intPort->worker->implName);
-        extPort->u.wdi.isBidirectional = false;
-      }
-    }
-  // Check for unconnected non-optional data ports
-  for (n = 0, i = a->instances; n < a->nInstances; n++, i++)
-    if (i->worker) {
-      InstancePort *ip = i->ports;
-      for (unsigned nn = 0; nn < i->worker->ports.size(); nn++, ip++) {
-        Port *pp = ip->port;
-        if (pp->isData &&
-            !pp->u.wdi.isOptional &&
-            !ip->connection)
-          return
-            OU::esprintf("Port %s of instance %s of worker %s"
-               " is not connected and not optional",
-               pp->name, i->name, i->worker->implName);
-      }
-    }
-  return 0;
-}
-
-#define TOP_ATTRS "Name", "Pattern", "Language", "PortPattern",
+#define TOP_ATTRS "Name", "Pattern", "Language", "PortPattern", "DataWidth",
 const char *
 parseHdlAssy(ezxml_t xml, Worker *aw) {
   const char *err;
@@ -1420,8 +1381,9 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   a->isContainer = !strcasecmp(xml->name, "HdlContainer");
   static const char
     *topAttrs[] = {TOP_ATTRS NULL},
-    *instAttrs[] = {"Worker", "Name", "connect", "to", "port", "external", NULL},
-    *contInstAttrs[] = {"Worker", "Name", "Index", "Interconnect", "IO", "Adapter", "Configure", NULL};
+    // FIXME: reduce to those that are hdl specific
+    *instAttrs[] =  { NULL },
+    *contInstAttrs[] = { "Index", "Interconnect", "IO", "Adapter", "Configure", NULL};
   // Do the generic assembly parsing, then to more specific to HDL
   if ((err = parseAssy(xml, aw, topAttrs,
                        a->isContainer ? contInstAttrs : instAttrs, true)))
@@ -1501,7 +1463,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   InstancePort *ip;
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     for (ip = c->ports; ip; ip = ip->nextConn)
-      if (ip->externalRole)
+      if (ip->external)
         ip->port = aw->ports + (ip->port - dataPorts + 1);
 #endif
   // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
@@ -1528,7 +1490,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   InstancePort *ip;
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++) {
     for (ip = c->ports; ip; ip = ip->nextConn)
-      if (!ip->externalRole &&
+      if (!ip->external &&
           // If the worker of this connected port has a WCI port
           ip->instance->worker->ports[0]->type == WCIPort &&
           // If this port on the worker uses the worker's wci clock
@@ -1543,7 +1505,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
       // And force the clock for each connected port to BE the wci clock
       // This will potentialy connect an independent clock to the wci clock
       for (ip = c->ports; ip; ip = ip->nextConn)
-        if (!ip->externalRole)
+        if (!ip->external)
           // FIXME: check for compatible clock constraints? insert synchronizer?
           ip->instance->clocks[ip->port->clock - ip->instance->worker->clocks] =
             wci->clock;
@@ -1552,7 +1514,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   // Deal with all the internal connection clocks that are not WCI clocks
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     for (ip = c->ports; ip; ip = ip->nextConn)
-      if (!ip->externalRole) {
+      if (!ip->external) {
         unsigned nc = ip->port->clock - ip->instance->worker->clocks;
         if (!c->clock) {
           // This connection doesn't have a clock yet,
@@ -1631,16 +1593,16 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
           // We make it easier for CTOP, hoping that wires dissolve appropriately
           if (iw->ctl.sizeOfConfigSpace > aw->ctl.sizeOfConfigSpace)
             aw->ctl.sizeOfConfigSpace = iw->ctl.sizeOfConfigSpace;
-          if (iw->ctl.writableConfigProperties)
-            aw->ctl.writableConfigProperties = true;
-          if (iw->ctl.readableConfigProperties)
-            aw->ctl.readableConfigProperties = true;
+          if (iw->ctl.writables)
+            aw->ctl.writables = true;
+          if (iw->ctl.readables)
+            aw->ctl.readables = true;
 #if 0
 	  // Until we have container automation, we force the assembly level
 	  // WCIs to have byte enables.  FIXME
-          if (iw->ctl.sub32BitConfigProperties)
+          if (iw->ctl.sub32Bits)
 #endif
-            aw->ctl.sub32BitConfigProperties = true;
+            aw->ctl.sub32Bits = true;
           aw->ctl.controlOps |= iw->ctl.controlOps; // needed?  useful?
           // Reset while suspended: This is really only interesting if all
           // external data ports are only connected to ports of workers were this
@@ -1690,7 +1652,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     if (c->nExternals)
       for (ip = c->ports; ip; ip = ip->nextConn)
-        if (ip->externalRole) {
+        if (ip->external) {
           Port *p = ip->port;
           p->clock = c->clock;
           if (p->clock->port && p->clock->port != p)
@@ -1900,10 +1862,6 @@ parseWorker(const char *file, const char *parent, Worker *w) {
     if (!strcasecmp("OclAssembly", name))
       return parseOclAssy(xml, file, w);
   }
-#if 0
-  if (name && !strcasecmp(xml->name, "ComponentAssembly"))
-    return parseAssy(xml, w->file, w);
-#endif
   return OU::esprintf("\"%s\" is not a valid implemention type (RccImplementation, HdlImplementation, OclImplementation, HdlAssembly, OclAssembly, ComponentAssembly)", xml->name);
 }
 
@@ -1911,19 +1869,19 @@ void cleanWIP(Worker *w){ (void)w;}
 
 Assembly::Assembly()
   : isContainer(false), outside(NULL), nInstances(0), instances(NULL), nConnections(0),
-    connections(NULL)
+    connections(NULL), assembly(NULL)
 {
 }
 Control::Control()
-  : sizeOfConfigSpace(0), writableConfigProperties(false), readableConfigProperties(false),
-    sub32BitConfigProperties(false), controlOps(0), offset(0), ordinal(0)
+  : sizeOfConfigSpace(0), writables(false), readables(false), sub32Bits(false), volatiles(false),
+    nRunProperties(0), controlOps(0), offset(0), ordinal(0)
 {
 }
 Worker::Worker()
   : model(NoModel), modelString(NULL), isDevice(false), noControl(false), file(0), specFile(0),
     implName(0), specName(0), fileName(0), isThreaded(false), nClocks(0),
     clocks(0), endian(NoEndian), pattern(0), staticPattern(0), isAssembly(false),
-    nInstances(0), language(NoLanguage), nSignals(0), signals(0)
+    defaultDataWidth(-1), nInstances(0), language(NoLanguage), nSignals(0), signals(0)
 {
 }
 

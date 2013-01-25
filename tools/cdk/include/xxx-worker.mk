@@ -47,7 +47,7 @@ endif
 #$(info OCDK $(OCPI_CDK_DIR))
 OcpiGen=\
   $(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(GeneratedDir)/$(@F).deps \
-    -D $(GeneratedDir) $(XmlIncludeDirs:%=-I%)
+    -D $(GeneratedDir) $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirs)))
 
 ################################################################################
 # metadata and generated files that are target-independent
@@ -60,7 +60,8 @@ ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
 	$(AT)$(OcpiGen) -i  $<
-ifndef Application
+# FIXME - should not be referencing HdlMode
+ifneq ($(HdlMode),assembly)
 SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
 
 skeleton:  $(ImplHeaderFiles) $(SkelFiles)
@@ -78,7 +79,7 @@ XmlIncludeDirsInternal=../specs
 endif
 endif
 endif
-override XmlIncludeDirs+=. $(XmlIncludeDirsInternal)
+override XmlIncludeDirs+=. $(XmlIncludeDirsInternal) $(OCPI_CDK_DIR)/lib/components
 -include $(GeneratedDir)/*.deps
 -include $(TargetDir)/*.deps
 
@@ -87,7 +88,8 @@ clean:: cleanfirst
 
 ################################################################################
 # source files that are target-independent
-ifndef Application
+# FIXME: this should not reference an Hdl variable
+ifneq ($(HdlMode),assembly)
 ifeq ($(origin WorkerSourceFiles),undefined)
 WorkerSourceFiles=$(foreach w,$(Workers),$(w)$(SourceSuffix))
 # We must preserve the order of CompiledSourceFiles
@@ -107,7 +109,7 @@ endif
 endif
 endif
 # The files we need to compile
-AuthoredSourceFiles=$(sort $(SourceFiles) $(WorkerSourceFiles))
+AuthoredSourceFiles=$(call Unique,$(SourceFiles) $(WorkerSourceFiles))
 
 ################################################################################
 # Compilation of source to binary into target directories
@@ -146,7 +148,10 @@ endef
 # $(call WkrWorkerDep,worker,target)
 define WkrWorkerDep
 
-$(call WkrObject,$(1),$(2)): $(GeneratedDir)/$(1)$(ImplSuffix)
+$(call WkrObject,$1,$2): TargetDir=$(OutDir)target-$2
+$(call WkrObject,$1,$2): \
+   $(GeneratedDir)/$1$(ImplSuffix) \
+   $(foreach l,$($(CapModel)Libraries),$$(call LibraryRefFile,$l,$2))
 
 endef
 
@@ -173,16 +178,17 @@ $(call WkrBinary,$(1)): $$(ObjectFiles_$(1)) $(ArtifactXmlFile) \
                  sh -c 'echo X$$$$4' `ls -l $(ArtifactXmlFile)`) >> $$@; \
 	fi
 endif
-# If not an application, make the worker object files depend on the impl headers
-#ifndef Application
-$(foreach w,$(Workers),$(call WkrWorkerDep,$(w),$(1)))
-#endif
 # Make sure we actuall make the final binary for this target
 $(call OcpiDbg,Before all: WkrBinary is "$(call WkrBinary,$(1))")
 all: $(call WkrBinary,$(1))
+
+# If not an application, make the worker object files depend on the impl headers
+$(foreach w,$(Workers),$(eval $(call WkrWorkerDep,$w,$1)))
+
 endef
+
 # Do all the targets
-$(foreach t,$($(CapModel)Targets),$(eval $(call WkrDoTarget,$(t))))
+$(foreach t,$($(CapModel)Targets),$(eval $(call WkrDoTarget,$t)))
 
 ################################################################################
 # Export support - what we put into the (export) library above us

@@ -985,6 +985,12 @@ assign wsi_m_dac_MData = 32'b0;
 assign wsi_m_dac_MByteEn = 4'b0;
 assign wsi_m_dac_MReqInfo = 8'b0;
 assign wsi_m_dac_MReset_n = 1'b0;
-
+// Unused wti slave signals
+assign wti_s_0_SThreadBusy = 1'b0;
+assign wti_s_0_SReset_n = 1'b1;
+assign wti_s_1_SThreadBusy = 1'b0;
+assign wti_s_1_SReset_n = 1'b1;
+assign wti_s_2_SThreadBusy = 1'b0;
+assign wti_s_2_SReset_n = 1'b1;
 endmodule  // mkOCApp
 

@@ -56,7 +56,7 @@ ImportCoreDirs=\
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
 
-Libs=ocpi bsv util util_virtex6 util_virtex5 util_stratix4 vendor_altera
+Libs=ocpi bsv util util_virtex6 util_virtex5 util_stratix4 util_xilinx vendor_altera
 
 #LocalCores=xfft_v7_1 \
  temac_v6 \
@@ -71,36 +71,38 @@ Libs=ocpi bsv util util_virtex6 util_virtex5 util_stratix4 vendor_altera
 
 Cores=$(LocalCores) $(ImportCores)
 
-MyMake=$(MAKE) HdlTargets="$(HdlTargets)" --no-print-directory
+HdlInstallDir:=lib
+MyMake=$(MAKE) HdlTargets="$(HdlTargets)" --no-print-directory -C $1 \
+  OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
+  HdlInstallDir=$(call AdjustRelative,$(HdlInstallDir)) \
+
 all: $(Libs) $(Cores)
 # enable cores to use libs
 $(LocalCores): $(Libs)
 
-clean:
-	$(AT)$(foreach l,$(Libs) $(Cores),\
-		$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) clean;)
+clean: uninstall
+	$(AT)$(foreach l,$(Libs) $(Cores), $(call MyMake,$l) clean;)
+
 cleanimports:
-	$(AT)$(foreach l,$(Libs) $(LocalCores),\
-		$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) cleanimports;)
+	$(AT)$(foreach l,$(Libs) $(LocalCores), $(call MyMake,$l) cleanimports;)
 
 diff: diff_cores diff_libs
 
 diff_libs:
-	$(AT)$(foreach l,$(Libs),\
-		$(MyMake) -C $(l) DIFF_IMPORTS=sdf OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) diff;)
+	$(AT)$(foreach l,$(Libs), $(call MyMake,$l) DIFF_IMPORTS=sdf diff;)
 
 install:
-	$(AT)set -e;$(foreach l,$(Libs) $(Cores),$(MyMake) -C $(l) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install;)
+	$(AT)set -e;$(foreach l,$(Libs) $(Cores),$(call MyMake,$l) install;)
 
 uninstall:
-	$(AT)echo Removing all installed HDL primitives and codes from $(OCPI_CDK_DIR)/lib
-	$(AT)rm -r -f $(OCPI_CDK_DIR)/lib/hdl
+	$(AT)echo Removing all installed HDL primitives and codes from: ./lib
+	$(AT)rm -r -f lib
 
 .PHONY: $(Libs) $(Cores)
 
 define MakeCoreOrLib
-	$(AT)$(MyMake) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR))
-	$(AT)$(MyMake) -C $@ OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) install
+	$(AT)$(call MyMake,$@)
+	$(AT)$(call MyMake,$@) install
 endef
 
 $(Libs):

@@ -33,9 +33,7 @@
 #
 ########################################################################### #
 
-ifndef OCPI_CDK_DIR
-OCPI_CDK_DIR=../ocpi
-endif
+$(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
 Tests = \
 	unit.test \
@@ -113,6 +111,8 @@ Implementations = \
 	capture.hdl capture.rcc \
 	bias_vhdl.hdl \
 	$(Tests)
+
+#	fir_prog.hdl \
 
 #	wbr.hdl 
 

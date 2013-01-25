@@ -38,6 +38,15 @@
 include $(OCPI_CDK_DIR)/include/hdl/altera.mk
 
 ################################################################################
+# $(call HdlToolLibraryRefFile,libname,target)
+# Function required by toolset: return the file for dependencies on the library
+# This is attached to a directory, with a slash
+# Thus it is empty if the library is a diretory full of stuff that doesn't
+# have a file name we can predict.
+
+HdlToolLibraryRefFile=
+
+################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
 # built when the library is built or touched when the library is changed or rebuilt.
@@ -82,66 +91,116 @@ HdlToolNeedBB=
 #
 HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
 
-# ?? What is the difference between SEARCH_PATH and USER_LIBRARIES???
+# This kludgery is because it seems that Quartus cannot support entities and architectures in 
+# separate files, so we have to combine them - UGH UGH UGH - I hope I'm wrong...
+QuartusVHDLWorker=$(and $(findstring worker,$(HdlMode)),$(findstring VHDL,$(HdlLanguage)))
+ifdef QuartusVHDLWorkerx
+QuartusCombine=$(OutDir)target-$(HdlTarget)/$(Worker)-combine.vhd
+QuartusSources=$(filter-out $(Worker).vhd $(ImplHeaderFiles),$(HdlSources)) $(QuartusCombine)
+$(QuartusCombine): $(ImplHeaderFiles) $(Worker).vhd
+	cat $(ImplHeaderFiles) $(Worker).vhd > $@
+else
+QuartusSources=$(HdlSources)
+endif
+# ?? What is the difference between SEARCH_PATH and USER_LIBRARIES???: answer is SEARCH_PATH is one at a time
 # Libraries can be built for specific targets, which just is for syntax checking
 # Note that a library can be designed for a specific target
 QuartusFamily_stratix4:=Stratix IV
 QuartusFamily_stratix5:=Stratix V
 QuartusMakePart1=$(firstword $1)$(word 3,$1)$(word 2,$1)
 QuartusMakePart=$(call QuartusMakePart1,$(subst -, ,$1))
+
+QuartusLibraries=$(strip \
+  $(HdlLibraries) \
+  $(if $(findstring $(HdlMode),library),,\
+     $(foreach l,util_$(call HdlGetFamily, $(HdlTarget)),\
+       $(and $(wildcard $(call HdlLibraryRefDir,$l,$(HdlTarget))),$l))))
+
+# Make the file that lists the files in order when we are building a library
+QuartusMakeExport= \
+ $(and $(findstring library,$(HdlMode)), \
+   (echo '\#' Source files in order for $(strip \
+     $(if $(findstring $(HdlMode),library),library: $(LibName),core: $(Core))); \
+    $(foreach s,$(QuartusSources),echo $(notdir $s);) \
+   ) > $(LibName)-sources.mk;)
+
+xxx=$(and $(ComponentLibraries),echo '\#' Search paths for component libraries;) \
+    $(foreach l,$(ComponentLibraries),\
+      echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
+      $(foreach found,\
+        $(foreach t,$(sort $(HdlTarget) $(call HdlGetFamily,$(HdlTarget))),\
+	  $(realpath $l/lib/hdl/$t)), \
+        $(if $(found),\
+          $(call FindRelative,$(TargetDir),$(found))'\"';,\
+	  $(error No component library at $(abspath $t)))))) \
+    $(eval HdlWorkers:=$$(strip $$(foreach i,$$(shell grep -v '\\\#' $$(ImplWorkersFile)),\
+                         $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
+# Make the settings file
+# Note that the local source files use notdir names and search paths while the
+# remote libraries use pathnames so that you can have files with the same names.
 QuartusMakeQsf=\
- if test -f $(Core).qsf; then cp $(Core).qsf $(Core).qsf.bak; fi; \
+ if test -f $(HdlName).qsf; then cp $(HdlName).qsf $(HdlName).qsf.bak; fi; \
+ $(and $(findstring $(HdlMode),library),\
+   echo 'module onewire(input  W_IN, output W_OUT); assign W_OUT = W_IN; endmodule' > onewire.v;) \
  (echo '\#' Common assignments whether a library or a core; \
   echo set_global_assignment -name FAMILY '\"'$(QuartusFamily_$(call HdlGetFamily,$(HdlTarget)))'\"'; \
-  echo set_global_assignment -name DEVICE $(if $(findstring $(HdlTarget),$(HdlAllFamilies)),AUTO,\
-                                            $(if $(HdlExactPart),\
-                                             $(call QuartusMakePart,$(HdlExactPart)),\
-                                             $(HdlTarget))); \
+  echo set_global_assignment -name DEVICE $(call ToUpper,$(if $(findstring $(HdlTarget),$(HdlAllFamilies)),AUTO,\
+                                            $(if $(findstring $(HdlMode),platform assembly), \
+                                             $(call QuartusMakePart,$(HdlPart_$(HdlPlatform))), \
+                                             $(HdlTarget)))); \
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
-  $(and $(VerilogIncludeDirs),echo '\#' Search paths for verilog includes;) \
-  $(foreach d,$(VerilogIncludeDirs),\
-    echo set_global_assignment -name SEARCH_PATH '\"'$(call FindRelative,$(TargetDir),$d)'\"';) \
-  $(and $(Libraries),echo '\#' Search paths for primitive libraries;) \
-  $(foreach l,$(Libraries),\
-    echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
+  \
+  $(and $(QuartusLibraries),echo '\#' Assignment for library source files since quartus cannot precompile;) \
+  $(foreach l,$(QuartusLibraries),\
     $(foreach hlr,$(call HdlLibraryRefDir,$l,$(HdlTarget)),\
       $(if $(realpath $(hlr)),,$(error No altera library at $(abspath $(hlr))))\
-        $(call FindRelative,$(TargetDir),$(hlr))))'\"';)\
-  $(and $(ComponentLibraries),echo '\#' Search paths for component libraries;) \
-  $(foreach l,$(ComponentLibraries),\
+      $(if $(realpath $(hlr)/$(notdir $l)-sources.mk),,\
+        $(error No source list file in altera library at $(abspath $(hlr)/$(notdir $l))))\
+      echo '\# Source files from the "$l" library'; \
+      $(foreach r,$(call FindRelative,$(TargetDir),$(hlr)),\
+	$(foreach f,$(shell grep -v '\\\#' $(hlr)/$(notdir $l)-sources.mk),\
+           echo set_global_assignment -name $(strip \
+	    $(if $(filter %.v,$f),VERILOG_FILE,VHDL_FILE -library $(notdir $l)) '\"'$r/$f'\"');)))) \
+  \
+  echo '\# Search path(s) for local files'; \
+  $(foreach d,$(call Unique,$(patsubst %/,%,$(dir $(QuartusSources)) $(VerilogIncludeDirs))), \
     echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
-    $(foreach found,\
-      $(foreach t,$(sort $(HdlTarget) $(call HdlGetFamily,$(HdlTarget))),\
-	$(realpath $l/lib/hdl/$t)), \
-      $(if $(found),\
-        $(call FindRelative,$(TargetDir),$(found))'\"';,\
-	$(error No component library at $(abspath $t))))))\
-  echo '\#' Assignments for source files; \
-  $(foreach s,$(CompiledSourceFiles),$(strip \
-     echo set_global_assignment -name VERILOG_FILE \
-       '\"'$(call FindRelative,$(TargetDir),$(dir $s))/$(notdir $s)'\"';)) \
-  $(if $(AssemblyWorkers), \
-     echo '\#' Import file names for assembly workers; \
-    $(foreach l,$(sort $(foreach w,$(AssemblyWorkers),$(firstword $(subst :, ,$w)))), \
-      echo set_global_assignment -name QXP_FILE \
-        '\"'$(call FindRelative,$(TargetDir),$(ComponentLibraries)/lib/hdl/$(HdlTarget)/$l$(HdlBin))'\"';)\
-    $(foreach l,$(AssemblyWorkers),\
-      echo set_global_assignment -name PARTITION_IMPORT_FILE \
-        '\"'$(call FindRelative,$(TargetDir),$(ComponentLibraries)/lib/hdl/$(HdlTarget)/$(firstword $(subst :, ,$l))$(HdlBin))'\"' \
-        -section_id '\"'$l'\"';\
-      echo set_global_assignment -name PARTITION_HIERARCHY db/$(subst :,_,$l) -to '\"'$l'\"' \
-      -section_id '\"'$l'\"';))\
-  $(and $(Cores),echo '\#' Import file names for cores;) \
+     $(call FindRelative,$(TargetDir),$d))'\"';) \
+  echo '\#' Assignment for local source files using search paths above; \
+  $(foreach s,$(QuartusSources), \
+    echo set_global_assignment -name $(if $(filter %.v,$s),VERILOG_FILE,VHDL_FILE -library $(LibName)) \
+       '\"'$(notdir $s)'\"';) \
+  \
+  $(and $(findstring assembly,$(HdlMode)), \
+    echo '\#' Import qxp files for each worker used in the assembly; \
+    $(eval $(HdlSetWorkers)) \
+    $(info WORKER=$(HdlWorkers) CL=$(ComponentLibraries) HT=$(HdlTarget)) \
+    $(foreach w,$(HdlWorkers),\
+      $(foreach f,$(call HdlFindWorkerCoreFile,$w),\
+       echo set_global_assignment -name QXP_FILE '\"'$(call FindRelative,$(TargetDir),$f)'\"';)) \
+    echo '\#' Define partitions for each worker instance in the assembly; \
+    $(foreach i,$(HdlInstances),\
+      $(foreach f,$(call HdlFindWorkerCoreFile,$(firstword $(subst :, ,$i))),\
+        echo set_global_assignment -name PARTITION_IMPORT_FILE \
+        '\"'$(call FindRelative,$(TargetDir),$f)'\"'\
+        -section_id '\"'$i'\"';\
+      echo set_global_assignment -name PARTITION_HIERARCHY db/$(subst :,_,$i) -to '\"$i\"' \
+      -section_id '\"'$i'\"';)))\
   $(foreach l,$(Cores),\
-    echo set_global_assignment -name QXP_FILE \
-    $(foreach found,$(firstword \
-                       $(foreach c,$(call HdlCoreRefDir,$l,$(HdlTarget)) \
-                                   $(call HdlCoreRefDir,$l,$(call HdlGetFamily,$(HdlTarget))),\
-                                 $(if $(realpath $c),$c))),\
-	$(if $(found),\
-           $(call FindRelative,$(TargetDir),$(found))/$l.qxp,\
-           $(error No altera core ($l.qxp) at $(abspath $(call HdlCoreRefDir,$l,$(call HdlGetFamily,$(HdlTarget)))))));)\
-  $(if $(findstring $(HdlMode),core worker platform application),\
+    echo set_global_assignment -name QXP_FILE '\"'$(strip \
+    $(or $(firstword \
+           $(foreach c,$(dir $l) $(call HdlCoreRefDir,$l,$(HdlTarget)) \
+                       $(call HdlCoreRefDir,$l,$(call HdlGetFamily,$(HdlTarget))),\
+	     $(foreach w,$c/$(notdir $l)$(HdlBin),\
+		$(if $(realpath $w),$(call FindRelative,$(TargetDir),$w))))), \
+        $(error No altera core ($l.qxp) at $(strip \
+           $(abspath $(call HdlCoreRefDir,$l,$(call HdlGetFamily,$(HdlTarget))))))))'\"';)\
+  $(if $(findstring $(HdlMode),platform),\
+    echo '\#' Make sure the app is defined as an empty partition. ;\
+    echo set_global_assignment -name PARTITION_HIERARCHY db/app -to '\"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app\"' \
+      -section_id '\"'app'\"'; \
+    echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'app'\"' EMPTY; ) \
+  $(if $(findstring $(HdlMode),core worker platform assembly),\
     echo '\#' Assignments for building cores; \
     echo set_global_assignment -name AUTO_EXPORT_INCREMENTAL_COMPILATION on; \
     echo set_global_assignment -name INCREMENTAL_COMPILATION_EXPORT_FILE $(Core)$(HdlBin); \
@@ -149,20 +208,29 @@ QuartusMakeQsf=\
   $(if $(findstring $(HdlMode),library),\
     echo '\#' Assignments for building libraries; \
     echo set_global_assignment -name SYNTHESIS_EFFORT fast;) \
- ) > $(Core).qsf;
-
+  $(if $(findstring $(HdlMode),platform),\
+    echo '\#' Include the platform-related assignments. ;\
+    echo source ../$(Worker).qsf;) \
+ ) > $(HdlName).qsf;
 # Be safe for now - remove all previous stuff
 HdlToolCompile=\
-  echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/quartus-$(Core).out.;\
+  echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/quartus-$(HdlName).out.;\
   rm -r -f db incremental_db *.qxp *.rpt *.summary *.qpf *.qdf $(notdir $@); \
-  $(QuartusMakeQsf) cat -n $(Core).qsf;\
+  $(QuartusMakeExport) $(QuartusMakeQsf) cat -n $(HdlName).qsf;\
   set -e; $(call OcpiDbgVar,HdlMode,xc) \
-  $(if $(findstring $(HdlMode),core worker platform application),\
-    $(call DoAltera,quartus_map --write_settings_files=off $(Core)); \
-    $(call DoAltera,quartus_cdb --merge --write_settings_files=off $(Core)); \
-    $(call DoAltera,quartus_cdb --incremental_compilation_export --write_settings_files=off $(Core))) \
+  $(if $(findstring $(HdlMode),core worker platform assembly),\
+    $(call DoAltera,quartus_map --write_settings_files=off $(HdlName)); \
+    $(call DoAltera,quartus_cdb --merge --write_settings_files=off $(HdlName)); \
+    $(call DoAltera,quartus_cdb --incremental_compilation_export --write_settings_files=off $(HdlName))) \
   $(if $(findstring $(HdlMode),library),\
-    $(call DoAltera,quartus_map --analysis_and_elaboration --write_settings_files=off $(Core))); \
+    $(call DoAltera,quartus_map --analysis_and_elaboration --write_settings_files=off $(HdlName))); \
+
+# We can't trust xst's exit code so we conservatively check for zero errors
+# Plus we create the edif all the time...
+HdlToolPost=\
+  if test $$HdlExit == 0; then \
+    touch $(LibName);\
+  fi;
 
 #    $(call DoAltera,quartus_map --analysis_and_elaboration --write_settings_files=off $(Core)); \
 #    $(call DoAltera,quartus_cdb --incremental_compilation_import=on --write_settings_files=off $(Core)); \
@@ -174,11 +242,56 @@ ifndef Core
 Core=onewire
 Top=onewire
 endif
-CompiledSourceFiles:= $(OCPI_CDK_DIR)/include/hdl/onewire.v $(CompiledSourceFiles)
 endif
 # We are a tool that really has no layered building at all for libraries
+#FIXME: rename the HdlSimNoLibraries since its not about "sim"
 $(eval $(call HdlSimNoLibraries))
 HdlToolFiles=\
+  $(LibName)-sources.mk \
   $(SimFiles) \
-  $(foreach f,$(HdlSources),\
+  $(foreach f,$(QuartusSources),\
      $(call FindRelative,$(TargetDir),$(dir $f))/$(notdir $f))
+
+################################################################################
+# Final bitstream building support, given that the "container" core is built
+# HdlToolDoPlatform takes platform as $1
+QuartusMakeTopQsf=\
+ if test -f $(Worker).qsf; then cp $(Worker).qsf $(Worker).qsf.bak; fi; \
+ (echo '\#' Common assignments whether a library or a core; \
+  echo set_global_assignment -name FAMILY '\"'$(QuartusFamily_$(call HdlGetFamily,$1))'\"'; \
+  echo set_global_assignment -name DEVICE $(call ToUpper,$(call QuartusMakePart,$(HdlPart_$1))); \
+  echo set_global_assignment -name TOP_LEVEL_ENTITY fpgaTop; \
+  echo set_global_assignment -name QXP_FILE '"'$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin)'"'; \
+  echo set_global_assignment -name QXP_FILE '"'$(ContainerModule)$(HdlBin)'"'; \
+  echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformsDir)/$1/$1.sdc'"'; \
+ ) > $(call AppName,$1).qsf
+
+# echo 'module onewire(input  W_IN, output W_OUT); assign W_OUT = W_IN; endmodule' > onewire.v; \
+#  echo set_global_assignment -name VERILOG_FILE onewire.v; \
+#  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(ContainerModule)$(HdlBin)'"' -section_id "app"; \
+  echo set_global_assignment -name PARTITION_HIERARCHY dp/app -to '"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app"' -section_id "app"; \
+  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin)'"' -section_id "plat"; \
+  echo set_global_assignment -name PARTITION_HIERARCHY db/plat -to '"fpgaTop"' -section_id "plat" ; \
+
+BitName=$(call PlatformDir,$1)/$(call AppName,$1).sof
+define HdlToolDoPlatform
+
+$(call BitName,$1): \
+		$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin) \
+		$(OutDir)target-$1/$(ContainerModule)$(HdlBin)
+	$(AT) set -e; \
+	cd $(call PlatformDir,$1) ; \
+	( set -e; \
+	rm -r -f db incremental_db ; \
+	$(call QuartusMakeTopQsf,$1) ; \
+	cp $(call AppName,$1).qsf $(call AppName,$1).qsf.pre-fit ; \
+	$(call DoAltera,quartus_map $(call AppName,$1)); \
+	$(call DoAltera,quartus_fit $(call AppName,$1)); \
+	QuartusStatus=$$$$? ; echo QuartusStatus after fit is $$$$QuartusStatus; \
+	cp $(call AppName,$1).qsf $(call AppName,$1).qsf.post-fit; \
+	$(call DoAltera,quartus_asm $(call AppName,$1)); \
+	QuartusStatus=$$$$? ; echo QuartusStatus after asm is $$$$QuartusStatus; \
+	) > $(call AppName,$1)-quartus.out
+
+endef
+

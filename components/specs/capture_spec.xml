@@ -9,7 +9,7 @@ Properties:
 <ComponentSpec name='capture'>
 
   <DataInterfaceSpec Name="in" Producer="false">
-      <xi:include href="stream32_protocol.xml"/>
+      <!-- <xi:include href="stream32_protocol.xml"/> -->
   </DataInterfaceSpec>
   <!-- The control register: initialized to zero
        bit 0 is to enable receiving of messages - always set to 1 before start.
@@ -40,7 +40,7 @@ Properties:
   -->
   <property name='status'            volatile='true'/>
   <!-- Memory for metadata records. -->
-  <property name='metadata' arraydimensions='1024,4'/>
+  <property name='metadata' arraydimensions='16,4'/>
   <!-- Memory for data words. -->
-  <property name='data' arraylength='1024'/>
+  <property name='data' arraylength='16'/>
 </ComponentSpec>

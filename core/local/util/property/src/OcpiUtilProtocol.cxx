@@ -375,6 +375,7 @@ namespace OCPI {
 	// If we are actually parsing the protocol, there is no default value width.
 	if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize",
 				  "datavaluewidth", "maxmessagevalues",
+				  "datavaluegranularity",
 				  "zerolengthmessages", (void*)0)))
 	  return err;
 	m_operations = m_op = new Operation[m_nOperations];
@@ -386,7 +387,9 @@ namespace OCPI {
 	// (e.g. force 8 when proto says 16)
 	unsigned dvwattr;
 	bool hasDvw;
-	if ((err = OE::getNumber(prot, "datavaluewidth", &dvwattr, &hasDvw, m_dataValueWidth)))
+	if ((err = OE::getNumber(prot, "datavaluewidth", &dvwattr, &hasDvw, m_dataValueWidth)) ||
+	    (err = OE::getNumber(prot, "datavaluegranularity", &m_dataValueGranularity, NULL,
+				 m_dataValueGranularity)))
 	  return err;
 	if (hasDvw) {
 	  if (dvwattr > m_dataValueWidth)
@@ -400,11 +403,12 @@ namespace OCPI {
 	  unsigned bytes = (m_dataValueWidth + CHAR_BIT - 1) / CHAR_BIT;
 	  m_maxMessageValues += bytes - 1;
 	  m_maxMessageValues /= bytes;
-	  m_dataValueGranularity = 1;  // FIXME - compute this for real
 	}
-	// Now we still overriding the real max message values
+	// Now we can still override the real max message values
 	if ((err = OE::getNumber(prot, "maxmessagevalues", &m_maxMessageValues, 0, 0, false)))
 	  return err;
+	// We can also override the granularity
+	
       } else if ((err = parseSummary(prot)))
 	return err;
       if ((err = OE::getNumber(prot, "defaultbuffersize", &m_defaultBufferSize, 0,

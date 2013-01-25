@@ -16,15 +16,28 @@ cp $src/$2.v $d/$1.v
 set x = $1:t
 set x = $x:r
 ed -s $d/$1.v<<EOF
+H
 /module /i
 \`ifdef ORIGINAL
 .
-/\/\/ inlined wires/i
+/\/\/ signals for module outputs/i
 \`else
 \`define NOT_EMPTY_$1
 \`include "$1_defs.vh"
 \`endif
 .
+.ka
+/assign/
+-kb
+.=
+'a=
+'b=
+'a,'bs/\\([a-zA-Z_0-9]*SThreadBusy\\),/[0:0]\\1; wire /g
+.=
++
+.=
+'b+1,\$s/\\([a-zA-Z_0-9]*SThreadBusy\\)\\([^a-zA-Z_0-9]\\)/\\1[0]\\2/g
+.=
 w
 EOF
 echo Imported $src/$2.v for $1

@@ -57,6 +57,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-lib2.mk
 # This can be overriden
 HdlInstallLibDir=$(HdlInstallDir)/$(LibName)
 $(HdlInstallLibDir):
+	$(AT)echo Creating directory $@ for library $(LibName)
 	$(AT)mkdir -p $@
 
 install: $(OutLibFiles) | $(HdlInstallLibDir)

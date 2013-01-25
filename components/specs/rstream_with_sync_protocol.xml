@@ -1,7 +1,7 @@
  <!-- A general real data protocol   -->
  <Protocol name="r16stream_data" >
 
-  <xi:include href='rstream_data_protocol.xml'/>
+  <xi:include href='rstream_protocol.xml'/>
   <!--  <\!-\- A general real data protocol   -\-> -->
   <!-- <Operation Name="data" > -->
   <!--   <\!-\- Variable size frames with 16 bit real data values.  Format:Qs0.15 -\-> -->

@@ -91,23 +91,27 @@ namespace OCPI {
       struct Instance {
 	std::string
 	  m_name,                  // name of the instance within the assembly
-	  m_specName,              // name of component being instantiated
+	  m_specName,              // name of component or worker being instantiated
+	  m_implName,              // name of implementation (if forced)
 	  m_selection;             // the selection expression
 	unsigned m_ordinal;
 	Properties m_properties;
 	PValueList m_parameters;
 	std::list<Port*> m_ports; // attachments to connections
-	const char *parse(ezxml_t ix, ezxml_t ax, unsigned ordinal);
+	const char *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs);
 	const char *addProperty(const char *name, ezxml_t px);
 	const char *parseConnection(ezxml_t ix, Assembly &a);
       };
       // The attachment of a connection to external or port
       struct External {
-	std::string m_name; // the name
-	std::string m_url;  // the URL that this external attachment has
-	bool m_provider;    // is this external attachment acting as a provider to the world?
+	std::string m_name;   // the name of the "external port" to the assembly
+	std::string m_url;    // the URL that this external attachment has
+	bool m_provider;      // is this external attachment acting as a provider to the world?
+	bool m_bidirectional; // possible when inherited from a port
+	bool m_knownRole;     // role is known
 	PValueList m_parameters;
 	const char *parse(ezxml_t, unsigned&, const PValue *pvl);
+	const char *init(const char *name, const char *role);
       };
       struct Connection;
       struct Port {
@@ -115,12 +119,14 @@ namespace OCPI {
 	// uses this assembly (and has access to impl metadata).
 	// Then this assembly is reused, this resolution will still be valid.
 	mutable std::string m_name;
+	bool m_provider;       // if no name
+	bool m_bidirectional;  // possible when inherited from a port
+	bool m_knownRole;      // we know the role for sure
 	unsigned m_instance;
 	PValueList m_parameters;
-	bool m_input; // if no name
-	Port *m_connectedPort;
+	Port *m_connectedPort; // the "other" port of the connection
 	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl);
-	void init(Assembly &a, const char *name, unsigned instance, bool isInput);
+	void init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidi, bool known);
       };
       struct Connection {
 	std::string m_name;
@@ -130,7 +136,7 @@ namespace OCPI {
 	typedef std::list<Port>::iterator PortIter;
 	PValueList m_parameters;
 	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
-	Port &addPort(Assembly &a, unsigned instance, const char *port, bool isInput);
+	Port &addPort(Assembly &a, unsigned instance, const char *port, bool isInput, bool bidi, bool known);
 	void addExternal(const char *name);
       };
       // Potentially specified in the assembly, what policy should be used
@@ -143,7 +149,10 @@ namespace OCPI {
     private:
       ezxml_t m_xml;
       char *m_copy;
-      const char *parse();
+      bool m_xmlOnly;
+      bool m_isImpl; // Is this assembly of worker (implementation) instances or component instances?
+      const char *parse(const char *defaultName = NULL, const char **extraTopAttrs = NULL,
+			const char **extraInstAttrs = NULL);
     public:
       static unsigned s_count;
       std::string m_name;
@@ -155,16 +164,22 @@ namespace OCPI {
       uint32_t   m_processors;
       MappedProperties m_mappedProperties; // top level mapped to instance properties.
       // Provide a file name.
-      explicit Assembly(const char *file);
+      explicit Assembly(const char *file, const char **extraTopAttrs = NULL,
+			const char **extraInstAttrs = NULL);
       // Provide a string containing the xml
-      explicit Assembly(const std::string &string);
+      explicit Assembly(const std::string &string, const char **extraTopAttrs = NULL,
+			const char **extraInstAttrs = NULL);
+      // Provide a string containing the xml
+      explicit Assembly(const ezxml_t top, const char *defaultName, const char **topAttrs = NULL,
+			const char **instAttrs = NULL);
       ~Assembly();
       const char
         *getInstance(const char *name, unsigned &),
 	*addConnection(const char *name, Connection *&c),
         *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort),
         *addExternalConnection(unsigned instance, const char *port);
-
+      inline ezxml_t xml() { return m_xml; }
+      inline bool isImpl() { return m_isImpl; }
     };
   }
 }

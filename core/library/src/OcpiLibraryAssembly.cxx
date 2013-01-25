@@ -35,12 +35,14 @@
 namespace OCPI {
   namespace Library {
     namespace OU = OCPI::Util;
+    // Attributes specific to an application assembly
+    static const char *assyAttrs[] = { "maxprocessors", "minprocessors", "roundrobin", "done", NULL};
     Assembly::Assembly(const char *file, const OCPI::Util::PValue *params)
-      : OU::Assembly(file), m_refCount(1) {
+      : OU::Assembly(file, assyAttrs), m_refCount(1) {
       findImplementations(params);
     }
     Assembly::Assembly(const std::string &string, const OCPI::Util::PValue *params)
-      : OU::Assembly(string), m_refCount(1) {
+      : OU::Assembly(string, assyAttrs), m_refCount(1) {
       findImplementations(params);
     }
     Assembly::~Assembly() {
@@ -83,11 +85,11 @@ namespace OCPI {
 	if ((*pi)->m_name.empty()) {
 	  // Resolve empty port names to be unambiguous if possible
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
-	    if ((*pi)->m_input && p->m_provider || !(*pi)->m_input && !p->m_provider) {
+	    if ((*pi)->m_provider && p->m_provider || !(*pi)->m_provider && !p->m_provider) {
 	      if (found)
 		  throw OU::Error("The '%s' connection at instance '%s' is ambiguous: "
 				  " Port name must be specified.",
-				  (*pi)->m_input ? "input" : "output",
+				  (*pi)->m_provider ? "input" : "output",
 				  m_instances[m_instance].m_name.c_str());
 	      // This is a mutable member of a const object.
 	      (*pi)->m_name = p->m_name;
@@ -96,7 +98,7 @@ namespace OCPI {
 	    }
 	  if (!found)
 	    throw OU::Error("There is no %s port for connection at instance '%s'.",
-			    (*pi)->m_input ? "input" : "output",
+			    (*pi)->m_provider ? "input" : "output",
 			    m_instances[m_instance].m_name.c_str());
 	} else {
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)

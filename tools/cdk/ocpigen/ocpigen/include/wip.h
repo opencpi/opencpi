@@ -43,6 +43,7 @@
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilValue.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilAssembly.h"
 #include "OcpiMetadataWorker.h"
 #include "ezxml.h"
 #include "cdkutils.h"
@@ -299,9 +300,11 @@ class Control {
  public:
   Control();
   uint64_t sizeOfConfigSpace;
-  bool writableConfigProperties;
-  bool readableConfigProperties;
-  bool sub32BitConfigProperties;
+  bool writables;
+  bool readables;
+  bool sub32Bits;
+  bool volatiles;
+  unsigned nRunProperties; // all but non-readable parameters.
   uint32_t controlOps; // bit mask
   Properties properties;
   unsigned offset;// temporary while properties are being parsed.
@@ -326,6 +329,7 @@ enum Language {
 
 struct InstancePort;
 struct Connection {
+  OCPI::Util::Assembly::Connection *connection; // connection in the underlying generic assembly
   const char *name;   // signal
   InstancePort *ports;
   //  unsigned nConsumers, nProducers, nBidirectionals,
@@ -340,6 +344,7 @@ struct InstanceProperty {
   OU::Value value;
 };
 struct Instance {
+  OCPI::Util::Assembly::Instance *instance; // instance in the underlying generic assembly
   const char *name;
   const char *wName;
   Worker *worker;
@@ -366,8 +371,7 @@ struct InstancePort {
   Connection *connection;
   InstancePort *nextConn;
   Port *port;  // The actual port of the instance's or assembly's worker
-  const char *externalRole; // external role
-  // bool isProducer, isBidirectional;
+  OU::Assembly::External *external;
   const char *name;
   unsigned ordinal; // ordinal for external array ports (e.g. WCI)
   Port *externalPort;
@@ -386,6 +390,7 @@ class Assembly {
   Instance *instances;
   unsigned nConnections;
   Connection *connections;
+  OU::Assembly *assembly;
 };
 
 enum Model {
@@ -394,7 +399,7 @@ enum Model {
   RccModel,
   OclModel
 };
-class  Worker {
+class Worker {
  public:
   Worker();
   Model model;
@@ -417,6 +422,7 @@ class  Worker {
     *portPattern;                 // pattern for port names
   const char *staticPattern;      // pattern for rcc static methods
   bool isAssembly;
+  int defaultDataWidth;           // initialized to -1 to allow zero
   unsigned nInstances;
   Language language;
   Assembly assembly;
@@ -468,9 +474,10 @@ extern const char
   *emitSkelRCC(Worker*, const char *),
   *emitSkelOCL(Worker*, const char *),
   *emitBsvHDL(Worker*, const char *),
-  *emitArtHDL(Worker *, const char *root),
+  *emitArtHDL(Worker *, const char *root, const char *wksFile),
   *emitArtRCC(Worker *, const char *root),
   *emitArtOCL(Worker *, const char *root),
+  *emitWorkersHDL(Worker*, const char *, const char *file),
   *emitAssyHDL(Worker*, const char *);
 
 extern void

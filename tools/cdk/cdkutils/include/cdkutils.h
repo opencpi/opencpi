@@ -47,7 +47,6 @@ extern const char
   **includes, *depFile,
   *parseFile(const char *file, const char *parent, const char *element,
 	     ezxml_t *xp, const char **xfile, bool optional),
-  *dumpDeps(const char *top),
   *openOutput(const char *name, const char *outDir, const char *prefix, const char *suffix,
 	      const char *ext, const char *other, FILE *&f);
 #endif

@@ -207,9 +207,10 @@ main(int argc, char **argv)
     volatile uint8_t *cpuBase;
 
     if (!(dmaEnv = getenv("OCPI_DMA_MEMORY"))) {
-      fprintf(stderr,
-	      "Warning: You must set the OCPI_DMA_MEMORY environment variable before using any OpenCPI FPGA platform\n"
-	      "         Use \"sudo -E\" to allow this program to have access to environmant variables\n");
+      if (verbose)
+	fprintf(stderr,
+		"Warning: You must set the OCPI_DMA_MEMORY environment variable or load the driver before using any OpenCPI FPGA platform\n"
+		"         Use \"sudo -E\" to allow this program to have access to environmant variables\n");
     } else if (sscanf(dmaEnv, "%uM$0x%llx", &dmaMeg, (unsigned long long *) &dmaBase) != 2) {
       fprintf(stderr, "Error: The OCPI_DMA_MEMORY environment variable is not formatted correctly\n");
       rv = 1;

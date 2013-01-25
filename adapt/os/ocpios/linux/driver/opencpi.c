@@ -1436,7 +1436,11 @@ opencpi_init(void) {
     // Create a kernel device object (and sysfs and /dev) for the base device: sets mydev->fsdev
     {
       struct device *fsdev =
+#ifdef OCPI_RH6
+	device_create(opencpi_class, NULL, opencpi_device_number, NULL, "%s=mem", DRIVER_ABBREV);
+#else
 	device_create(opencpi_class, NULL, opencpi_device_number, "%s=mem", DRIVER_ABBREV);
+#endif
       if (fsdev == NULL || IS_ERR(fsdev)) {
 	log_err_code(PTR_ERR(fsdev), "Error creating device");
 	break;

@@ -10,14 +10,14 @@ entity property_decoder is
   port (
         reset        : in  bool_t;                            -- active-low WCI worker reset
         offset_in    : in  unsigned(decode_width-1 downto 0); -- offset in Bytes
-        top          : in  natural;                           -- High order bit position of datatype
+--        top          : in  bit_offset_t;                      -- High order bit position of datatype
         access_in    : in  access_t;                          -- Enumerated WCI access type
         data_in      : in  std_logic_vector(31 downto 0);     -- WCI slave data
         write_enable : out bool_t;                            -- active-high write pulse
         read_enable  : out bool_t;                            -- active-high read pulse
         offset_out   : out unsigned(decode_width-1 downto 0); -- 
         index_out    : out unsigned(decode_width-1 downto 0); --
-        data_out     : out std_logic_vector(data_out_top(property) downto 0)); --
+        data_out     : out std_logic_vector(data_top(property,"00") downto 0)); --
 end entity property_decoder;
 
 architecture rtl of property_decoder is
@@ -37,7 +37,7 @@ architecture rtl of property_decoder is
   -- I tried to use offset_in directly, not an argument, and isim generated a wierd warning...
   impure function my_decode (input: unsigned) return boolean is
   begin
-    return not reset and 
+    return not its(reset) and 
       input >= property.offset and
       (my_offset = 0 or
        (property.data_width > 32 and my_offset = 4) or
@@ -49,13 +49,25 @@ begin
   write_enable <= to_bool(access_in = write_e and property.writable and my_decode(offset_in));
   read_enable  <= to_bool(access_in = read_e and property.readable and my_decode(offset_in));
   offset_out   <= (others => '0') when property.nitems <= 1 else my_offset;
-  data_out <=
-    data_in(data_out_top(property) downto 0)        when property.nitems     <= 1  else
-    data_in(31 downto 0)                            when property.data_width >= 32 else
-    resize(data_in(top downto 0),  data_out'length) when byte_offset = 0           else
-    resize(data_in(15 downto 8),   data_out'length) when byte_offset = 1           else
-    resize(data_in(top downto 16), data_out'length) when byte_offset = 2           else
-    resize(data_in(31 downto 24),  data_out'length);
+  l32: if property.data_width = 32 generate
+   data_out <= data_in;
+  end generate;
+  l16: if property.data_width = 16 generate
+   data_out <= data_in(15 downto 0) when byte_offset = 0 else data_in(31 downto 16);
+  end generate;
+  l8: if property.data_width = 8 generate
+   data_out <=
+     data_in(31 downto 24) when byte_offset = 3 else
+     data_in(23 downto 16) when byte_offset = 2 else
+     data_in(15 downto  8) when byte_offset = 1 else
+     data_in( 7 downto  0);
+  end generate;
+--  data_out     <= --data_in(data_top(property, byte_offset) downto to_integer(byte_offset*8));
+
+--    data_in(data_top(property, "00")    downto  0) when byte_offset = 0  else
+--    data_in(15                        downto  8) when byte_offset = 1  else
+--    data_in(data_top(property, "00")+16 downto 16) when byte_offset = 2  else
+--    data_in(31 downto 24);
   index_out <=
     to_unsigned(0,index_out'length) when property.nitems <= 1 else
     my_offset/element_bytes(property);  -- this won't be used for strings so no
@@ -100,25 +112,31 @@ architecture rtl of decoder is
   signal my_state : state_t;
   signal my_reset : Bool_t;
   -- convert byte enables to low order address bytes
-  function be2offset(input: in_t) return byte_offset_t is begin
-    case input.MByteEn is
+  function be2offset(input: in_t) return byte_offset_t is
+    variable byte_en : std_logic_vector(input.MByteEn'range) := input.MByteEn; -- avoid pedantic error
+  begin
+    case byte_en is
       when b"0010" =>           return b"01";
       when b"0100" | b"1100" => return b"10";
       when b"1000" =>           return b"11";
       when others =>            return b"00";
     end case;
   end be2offset;
-  function top_bit(input: in_t) return natural is begin
-    case input.MByteEn is
-      when b"0001" =>                     return 7;
-      when b"0010" | b"0011" =>           return 15;
-      when b"0100" =>                     return 23;
-      when b"1000" | b"1100" | b"1111" => return 31;
-      when others =>                      return 31;                                    
-    end case;
-  end top_bit;
-  function num_bytes_1(input : in_t) return byte_offset_t is begin
-    case input.MByteEn is
+  --function top_bit(input: in_t) return bit_offset_t is
+  --  variable byte_en : std_logic_vector(input.MByteEn'range) := input.MByteEn; -- avoid pedantic error
+  --begin
+  --  case byte_en is
+  --    when b"0001" =>                     return 7;
+  --    when b"0010" | b"0011" =>           return 15;
+  --    when b"0100" =>                     return 23;
+  --    when b"1000" | b"1100" | b"1111" => return 31;
+  --    when others =>                      return 31;                                    
+  --  end case;
+  --end top_bit;
+  function num_bytes_1(input : in_t) return byte_offset_t is
+    variable byte_en : std_logic_vector(input.MByteEn'range) := input.MByteEn; -- avoid pedantic error
+  begin
+    case byte_en is
       when b"0001" | b"0010" | b"0100" | b"1000" => return b"00";
       when b"1100" | b"0011" =>                     return b"01";
       when b"1111" =>                               return b"11";                               
@@ -144,14 +162,14 @@ begin
       generic map (properties(i), worker.decode_width)
       port map(reset        => my_reset,
                offset_in    => offset,
-               top          => top_bit(ocp_in),
+--               top          => top_bit(ocp_in),
                access_in    => my_access,
                data_in      => ocp_in.MData,
                write_enable => my_write_enables(i),
                read_enable  => my_read_enables(i),
                offset_out   => my_offsets(i),
                index_out    => indices(i)(worker.decode_width-1 downto 0),
-               data_out     => data_outputs(i)(data_out_top(properties(i)) downto 0));
+               data_out     => data_outputs(i)(data_top(properties(i),"00") downto 0));
     indices(i)(indices(i)'left downto worker.decode_width) <= (others => '0');
     offsets(i) <= resize(my_offsets(i),offsets(i)'length); -- resize to 32 bits for VHDL language reasons
   end generate gen;

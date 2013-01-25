@@ -1,0 +1,42 @@
+<HdlAssembly Name="testwbr" Language="Verilog">
+  <Property Name="hasDebugLogic" Parameter="true" Type="Bool" Default="true"/>
+  <Instance Worker="sma.xml"/>
+  <Instance Worker="bias.xml"/>
+  <Instance Worker="sma.xml"/>
+  <Instance Worker="splitter2x2.xml" Name="split0"/>
+  <Instance Worker="wbr.xml"/>
+  <Instance Worker="splitter2x2.xml" Name="split1"/>
+  <Connection Name="FC" External="consumer">
+    <port Instance="sma0" name="wmiM"/>
+  </Connection>
+  <Connection>
+    <port Instance="sma0" name="wsiM1"/>
+    <port Instance="split0" name="in0"/>
+  </Connection>
+  <Connection>
+    <port Instance="split0" name="out0"/>
+    <port Instance="bias" name="in"/>
+  </Connection>
+  <Connection>
+    <port Instance="bias" name="out"/>
+    <port Instance="split1" name="in0"/>
+  </Connection>
+  <Connection>
+    <port Instance="split1" name="out0"/>
+    <port Instance="sma1" name="wsiS1"/>
+  </Connection>
+  <Connection Name="FP" External="producer">
+    <port Instance="sma1" name="wmiM"/>
+  </Connection>
+  <!-- Now alternate path for wbr -->
+  <Connection>
+    <port Instance="split0" name="out1"/>
+    <port Instance="wbr" name="dif"/>
+  </Connection>
+  <Connection>
+    <port Instance="wbr" name="chan"/>
+    <port Instance="split1" name="in1"/>
+  </Connection>
+</HdlAssembly>
+
+   

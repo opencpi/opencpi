@@ -20,11 +20,12 @@ library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wsi.all; use ocpi.util.
 entity slave is
   generic (precise         : boolean; -- are we precise-only?
            data_width      : natural; -- width of data path
-           data_info_width : natural; -- width of data path
+           data_info_width : natural; -- width of data info path
            burst_width     : natural; -- burst width
            n_bytes         : natural; -- number of bytes
            opcode_width    : natural; -- bits in reqinfo
-           own_clock       : boolean  -- does the port have a clock different thanthe wci?
+           own_clock       : boolean; -- does the port have a clock different thanthe wci?
+           early_request   : boolean  -- are datavalid and datalast used? 
            );
   port (
     -- Exterior OCP input/master signals
@@ -38,11 +39,12 @@ entity slave is
     MData            : in  std_logic_vector(data_width-1 downto 0);
     --- only used for aborts or bytesize not 8 and less than datawidth
     MDataInfo        : in  std_logic_vector(data_info_width-1 downto 0);
+    --- only used if the "early_request" option is selected.
     MDataLast        : in  std_logic;
     MDataValid       : in  std_logic;
     --- only used if number of opcodes > 1
     MReqInfo         : in  std_logic_vector(opcode_width-1 downto 0);
---    MReqLast         : in  std_logic; unneeded
+    MReqLast         : in  std_logic;
     MReset_n         : in  std_logic;
     -- Exterior OCP output/slave signals
     SReset_n         : out std_logic;
@@ -72,67 +74,95 @@ library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wsi.all; use ocpi.util.all;
 architecture rtl of slave is
   signal reset_i : Bool_t; -- internal version of output to worker
+  signal reset_n   : Bool_t; -- internal assert-low reset (to avoid silly isim warning).
+
+  constant fifo_width : natural :=
+    data_width + 3 + data_info_width + n_bytes + burst_width + opcode_width;
 
   -- The bundle of signals that goes through the FIFO.  Packing and unpacking records isn't worth it.
-  constant fifo_width : natural :=
-    data_width + 4 + (data_info_width-1) + n_bytes + burst_width + opcode_width;
-  subtype data_bits is natural range fifo_width - 1 downto fifo_width - data_width;
-  constant valid_bit : natural := data_bits'right - 1;
-  constant som_bit   : natural := valid_bit - 1;
-  constant eom_bit   : natural := som_bit - 1;
-  subtype data_info_bits   is natural range
-    eom_bit - 1 downto eom_bit - data_info_width;
-  subtype byte_enable_bits is natural range
-    data_info_bits'right - 1 downto data_info_bits'right - n_bytes;
-  subtype burst_bits       is natural range
-    byte_enable_bits'right - 1 downto byte_enable_bits'right - burst_width;
-  subtype opcode_bits      is natural range
-    burst_bits'right - 1 downto 0;
+  constant data_bits   : natural := fifo_width - 1;
+  constant valid_bit   : natural := data_bits - data_width;
+  constant som_bit     : natural := valid_bit - 1;
+  constant eom_bit     : natural := som_bit - 1;
+  constant abort_bit   : natural := eom_bit - 1;
+  constant info_bits   : natural := eom_bit - 1;
+  constant enable_bits : natural := info_bits - data_info_width;
+  constant burst_bits  : natural := enable_bits - n_bytes;
+  constant opcode_bits : natural := burst_bits - burst_width;
+  function pack(data : std_logic_vector(data_width - 1 downto 0);
+                valid, som, eom : std_logic;
+                info : std_logic_vector(data_info_width - 1 downto 0);
+                enable : std_logic_vector(n_bytes - 1 downto 0);
+                burst : std_logic_vector(burst_width - 1 downto 0);
+                opcode : std_logic_vector(opcode_width - 1 downto 0))
+    return std_logic_vector is
+  begin
+    return data & valid & som & eom & info & enable & burst & opcode;
+  end pack;
 
   -- output signals from the fifo
   signal fifo_full_n : std_logic;
+  -- input signals to the fifo (packed via the "pack" function).
+  signal fifo_valid, fifo_som, fifo_eom : bool_t;
 
   -- actual state of the interface - 2 FFs
   signal in_message : bool_t; -- State bit for in message or not
   signal last_was_eom : bool_t;   -- state bit for previous data word
+  signal fifo_in, fifo_out : std_logic_vector(fifo_width - 1 downto 0);
+  signal fifo_enq : std_logic;
+  signal fifo_ready : bool_t;
 begin
   -- Combi resets:
   --   We get wci reset and wsi peer reset (from master)
   --   We produce wsi peer reset (from slave)
   -- Worker sees reset if wci is doing it or we're not started yet or peer is reset
   reset_i <= wci_reset or not MReset_n; -- FIXME WHEN own_clock
+  reset_n <= not reset_i;
   reset <= reset_i; -- in wci clock domain for now
   -- Pear sees reset if wci is doing it or we're not started
   SReset_n <= not wci_reset; -- FIXME WHEN OWN CLOCK
 
+  -- pack fifo input
+  fifo_in <= pack(MData,
+                  fifo_valid,
+                  fifo_som,
+                  fifo_eom,
+                  MDataInfo,
+                  MByteEn,
+                  MBurstLength,
+                  MReqInfo);
+
+  -- unpack fifo output
+  data         <= fifo_out(data_bits downto valid_bit+1);
+  valid        <= fifo_out(valid_bit) and fifo_ready;
+  som          <= fifo_out(som_bit) and fifo_ready;
+  eom          <= fifo_out(eom_bit) and fifo_ready;
+  abort        <= fifo_out(abort_bit) and fifo_ready;
+  byte_enable  <= fifo_out(enable_bits downto burst_bits+1);
+  burst_length <= fifo_out(burst_bits downto opcode_bits+1);
+  opcode       <= fifo_out(opcode_bits downto 0);
+  ready        <= fifo_ready;
+  -- fifo inputs
+  fifo_valid <= to_bool(((early_request and to_bool(MDataValid)) or
+                         ((not early_request and MCmd = ocpi.ocp.MCmd_WRITE))) and
+                        MByteEn /= (MByteEn'range => '0'));
+  fifo_som <= to_bool(MCmd = ocpi.ocp.MCmd_WRITE and
+                      (not its(in_message) or last_was_eom));
+  fifo_eom <= to_bool((early_request and to_bool(MDataLast)) or (not early_request and to_bool(MReqLast)));
+  fifo_enq <= fifo_valid or fifo_som or fifo_eom;
+
   -- Instantiate and connect the FIFO
   fifo : FIFO2
-    generic map(width                   => fifo_width)
-    port    map(clk                     => Clk,
-                rst                     => not reset_i,
-                d_in(data_bits)         => MData,
-                d_in(valid_bit)         => to_bool(MCmd = ocpi.ocp.MCmd_WRITE and
-                                                   MByteEn /= (MByteEn'range => '0')),
-                d_in(som_bit)           => to_bool(MCmd = ocpi.ocp.MCmd_WRITE and
-                                                   to_boolean(not in_message or last_was_eom)),     
-                d_in(eom_bit)           => MDataLast,
-                d_in(data_info_bits)    => MDataInfo,
-                d_in(byte_enable_bits)  => MByteEn,
-                d_in(burst_bits)        => MBurstLength,
-                d_in(opcode_bits)       => MReqInfo,
-                enq                     => MDataValid or to_bool(MCmd = ocpi.ocp.MCmd_WRITE),
-                full_n                  => fifo_full_n,
-                d_out(data_bits)        => data, -- unpack info bits if they are there...
-                d_out(valid_bit)        => valid,
-                d_out(som_bit)          => som,
-                d_out(eom_bit)          => eom,
-                d_out(data_info_bits'left) => abort,
-                d_out(byte_enable_bits) => byte_enable,
-                d_out(burst_bits)       => burst_length,
-                d_out(opcode_bits)      => opcode,
-                deq                     => take,
-                empty_n                 => ready,
-                clr                     => '0');
+    generic map(width                       => fifo_width)
+    port    map(clk                         => Clk,
+                rst                         => reset_n,
+                d_in                        => fifo_in,
+                enq                         => fifo_enq,
+                full_n                      => fifo_full_n,
+                d_out                       => fifo_out,
+                deq                         => take,
+                empty_n                     => fifo_ready,
+                clr                         => '0');
   -- FIXME WHEN OWN CLOCK
   SThreadBusy(0) <= reset_i or not fifo_full_n or not wci_is_operating;
 
@@ -146,12 +176,12 @@ begin
         in_message <= bfalse;
         last_was_eom <= bfalse;
       else
-        if MCmd = ocpi.ocp.MCmd_WRITE then
+        if MCmd = ocpi.ocp.MCmd_WRITE then -- FIXME: pipelined input
           in_message <= btrue;
         elsif its(last_was_eom) then
           in_message <= bfalse;
         end if;
-        last_was_eom <= MDataLast and MDataValid; -- perhaps MDataLast is enough.
+        last_was_eom <= fifo_eom; -- perhaps MDataLast is enough.
       end if;
     end if;
   end process;
@@ -168,7 +198,8 @@ entity master is
            burst_width     : natural; -- width of burst length
            n_bytes         : natural; -- number of bytes
            opcode_width    : natural; -- bits in reqinfo
-           own_clock       : boolean
+           own_clock       : boolean; -- does the port have a clock different thanthe wci?
+           early_request   : boolean  -- are datavalid and datalast used? 
            );
   port (
     -- Exterior OCP input/slave signals
@@ -215,7 +246,7 @@ begin
   reset <= reset_i;
   -- FIXME WHEN OWN CLOCK
   MReset_n <= not wci_reset;
-  MCmd <= ocpi.ocp.MCmd_WRITE when give and not early_som else ocpi.ocp.MCmd_IDLE;
+  MCmd <= ocpi.ocp.MCmd_WRITE when give and not its(early_som) else ocpi.ocp.MCmd_IDLE;
   MData <= data;
   MDataLast <= give and eom;
   MReqLast <= give and eom;
@@ -231,17 +262,18 @@ begin
         ready <= bfalse;
         last_eom <= bfalse;
         early_som <= bfalse;
+        opcode_i <= (others => '0'); -- perhaps unnecessary, but supresses a warning
       else
         ready <= wci_is_operating and not SThreadBusy(0);
       end if;
       if its(give) then
-        if (som or last_eom) then
+        if som or last_eom then
           if not its(valid) and not its(eom) then
             early_som <= btrue;
           else
             early_som <= bfalse; 
           end if;
-          opcode_i <=      opcode;
+          opcode_i <= opcode;
         end if;   
         last_eom <= eom;
       end if;

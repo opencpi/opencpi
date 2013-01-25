@@ -1,10 +1,11 @@
 library ieee; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;  use ieee.math_real;
 package types is
 --
--- Miscellaneous type declarations not related to OpenCPI types
+-- Miscellaneous type declarations not related to OpenCPI data types
 --
 subtype word_t is std_logic_vector(31 downto 0);
 subtype byte_offset_t is unsigned(1 downto 0);
+subtype bit_offset_t is natural range 0 to 31; -- bit within word
 
 -- These types are the mapping of the OpenCPI scalar types to VHDL.
 -- We use std_logic vector types and avoid native types.
@@ -25,7 +26,7 @@ function "nor"  ( l : bool_t; r : bool_t ) return boolean;
 function "xor"  ( l : bool_t; r : bool_t ) return boolean;
 function "xnor" ( l : bool_t; r : bool_t ) return boolean;
 
-----function "and"  ( l : bool_t; r : boolean ) return boolean;
+function "and"  ( l : bool_t; r : boolean ) return boolean;
 function "nand" ( l : bool_t; r : boolean ) return boolean;
 function "or"   ( l : bool_t; r : boolean ) return boolean;
 function "nor"  ( l : bool_t; r : boolean ) return boolean;

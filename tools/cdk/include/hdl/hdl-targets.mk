@@ -8,23 +8,25 @@ _HDL_TARGETS_=here
 # The levels are: top, family, part, speed
 
 #Testing: HdlTopTargets=xilinx altera verilator test1
-HdlTopTargets:=xilinx altera icarus verilator isim  # icarus altera # verilator # altera
+HdlTopTargets:=xilinx altera icarus verilator isim modelsim # icarus altera # verilator # altera
 
-HdlTargets_xilinx:=isim virtex5 virtex6 spartan3
+HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp xsim
 HdlTargets_virtex5:=xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t xc5vtx240t
 HdlTargets_virtex6:=xc6vlx240t xc6slx45t
 HdlTargets_spartan3:=xc3sd3400a
 
 HdlTargets_altera:=stratix4 stratix5 # altera-sim
-HdlTargets_stratix4:=ep4sgx230 ep4sgx360
+HdlTargets_stratix4:=ep4sgx230k ep4sgx360
 #Testing: HdlTargets_test1=test2
 
-HdlSimTools=isim icarus verilator ghdl
+HdlSimTools=isim icarus verilator ghdl xsim
 
 # Tools are associated with the family or above
 HdlToolSet_ghdl:=ghdl
 HdlToolSet_isim:=isim
-HdlToolSet_spartan3:=xst
+HdlToolSet_xsim:=xsim
+HdlToolSet_modelsim:=modelsim
+HdlToolSet_spartan3adsp:=xst
 HdlToolSet_virtex5:=xst
 HdlToolSet_virtex6:=xst
 HdlToolSet_verilator:=verilator
@@ -33,12 +35,14 @@ HdlToolSet_stratix4:=quartus
 HdlToolSet_stratix5:=quartus
 
 # Platforms
-HdlAllPlatforms:=ml555 schist ml605 ocpiIsim # alst4
+HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 isim_pf xsim_pf
 # Parts as chip-speed-package
 HdlPart_ml555:=xc5vlx50t-1-ff1136
 HdlPart_schist:=xc5vsx95t-2-ff1136
 HdlPart_ml605:=xc6vlx240t-1-ff1156
-HdlPart_alst4:=ep4sgx230-c2-kf40
+HdlPart_alst4:=ep4sgx230k-c2-f40
 HdlPart_n210:=xc3sd3400a-5-fg676
-HdlPart_ocpiIsim:=isim
+HdlPart_isim_pf:=isim
+HdlPart_xsim_pf:=xsim
+HdlPart_modelsim:=modelsim
 endif

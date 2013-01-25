@@ -510,7 +510,8 @@ namespace OCPI {
 
       m_bestScore = 0;
       doInstance(0, 0);
-
+      if (m_bestScore == 0)
+	throw OU::Error("There are no feasible deployments for the application given the constraints");
       // Record the implementation from the best deployment
       i = m_instances;
       Deployment *d = m_bestDeployments;

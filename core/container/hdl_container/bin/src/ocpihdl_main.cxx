@@ -52,6 +52,8 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
 #include "zlib.h"
 #include "OcpiOsMisc.h"
+#include "OcpiOsFileSystem.h"
+#include "OcpiOsFileIterator.h"
 #include "OcpiPValue.h"
 #include "OcpiUtilMisc.h"
 #include "DtSharedMemoryInterface.h"
@@ -99,8 +101,9 @@ static Function
   wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate;
 static bool verbose = false, parseable = false;
 static int log = -1;
+std::string platform, simexec;
 static const char
-*interface = NULL, *device = NULL, *part = NULL, *platform = NULL, *simexec = NULL, *simDump = NULL;
+*interface = NULL, *device = NULL, *part = NULL, *simDump = NULL;
 static unsigned
   sleepUsecs = 100000,  // how much time between quota injections
   spinCount = 255,      // how much quote per timeout AND per control message
@@ -204,7 +207,7 @@ usage(const char *name) {
 	  "    -t <sleep-usecs>             # delay time letting sim run between credits\n"
 	  "    -T <sim-time>                # total simulation time before terminating\n"
 	  "    -D                           # turn off simulation dumping\n"
-	  "    -e <sim-executable>          # simulator executable - default is \"./runsim\"\n"
+	  "    -e <sim-executable>          # simulator executable \"bitstream\" file\n"
 	  "    -v                           # be verbose\n"
 	  "  <worker> can be multiple workers such as 1,2,3,4,5.  No ranges.\n"
 	  "  <hdl-dev> examples: 3                            # PCI device 3 (i.e. 0000:03:00.0)\n"
@@ -242,6 +245,15 @@ static void setupDevice(bool discovery) {
   endpoint = dev->endpointSpecific();
 }
 
+static const char *
+next(const char **&ap) {
+  char letter = ap[0][1];
+  const char *next = ap[0][2] ? &ap[0][2] : *++ap;
+  if (!next || !next[0])
+    bad("Missing option value after -%c flag", letter);
+  return next;
+}
+
 static void
 doFlags(const char **&ap) {
   for (; *ap && ap[0][0] == '-'; ap++)
@@ -249,36 +261,36 @@ doFlags(const char **&ap) {
     case 'i':
       //      if (!(exact->options & INTERFACE))
       //	bad("An interface cannot be specified with this command");
-      interface = ap[0][2] ? &ap[0][2] : *++ap;
+      interface = next(ap);
       break;
     case 'd':
       //      if (!(exact->options & DEVICE))
       //	bad("An interface cannot be specified with this command");
-      device = ap[0][2] ? &ap[0][2] : *++ap;
+      device = next(ap);
       break;
     case 'e':
-      simexec = ap[0][2] ? &ap[0][2] : *++ap;
+      simexec = next(ap);
       break;
     case 'p':
-      platform = ap[0][2] ? &ap[0][2] : *++ap;
+      platform = next(ap);
       break;
     case 'c':
-      part = ap[0][2] ? &ap[0][2] : *++ap;
+      part = next(ap);
       break;
     case 'l':
-      log = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+      log = atoi(next(ap));
       break;
     case 's':
-      spinCount = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+      spinCount = atoi(next(ap));
       break;
     case 't':
-      sleepUsecs = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+      sleepUsecs = atoi(next(ap));
       break;
     case 'T':
-      simTicks = atoi(ap[0][2] ? &ap[0][2] : *++ap);
+      simTicks = atoi(next(ap));
       break;
     case 'D':
-      simDump = ap[0][2] ? &ap[0][2] : *++ap;
+      simDump = next(ap);
       break;
     case 'v':
       verbose = true;
@@ -828,16 +840,16 @@ unbram(const char **ap) {
 static void
 uuid(const char **ap) {
   OCPI::HDL::HdlUUID uuidRegs;
-  if (!platform || !part)
+  if (platform.empty() || !part)
     bad("both platform and part/chip must be specified for the uuid command");
   if (!*ap)
     bad("No output uuid verilog specified for uuid command");
   FILE *ofp = fopen(ap[0], "wb");
   if (!ofp)
     bad("Cannot open output file: \"%s\"", ap[1]);
-  if (strlen(platform) > sizeof(uuidRegs.platform) - 1)
+  if (platform.length() > sizeof(uuidRegs.platform) - 1)
     bad("Platform: '%s' is too long.  Must be < %u long",
-	platform, sizeof(uuidRegs.platform) - 1);
+	platform.c_str(), sizeof(uuidRegs.platform) - 1);
   if (strlen(part) > sizeof(uuidRegs.device) - 1)
     bad("Part/chip: '%s' is too long.  Must be < %u long",
 	part, sizeof(uuidRegs.device) - 1);
@@ -845,7 +857,7 @@ uuid(const char **ap) {
   uuid_generate(uuid);
   memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
   uuidRegs.birthday = time(0);
-  strncpy(uuidRegs.platform, platform, sizeof(uuidRegs.platform));
+  strncpy(uuidRegs.platform, platform.c_str(), sizeof(uuidRegs.platform));
   strncpy(uuidRegs.device, part, sizeof(uuidRegs.device));
   strncpy(uuidRegs.load, "", sizeof(uuidRegs.load));
   assert(sizeof(uuidRegs) * 8 == 512);
@@ -855,7 +867,7 @@ uuid(const char **ap) {
 	  "// UUID generated for platform '%s', device '%s', uuid '%s'\n"
 	  "module mkUUID(uuid);\n"
 	  "output [511 : 0] uuid;\nwire [511 : 0] uuid = 512'h",
-	  platform, part, textUUID);
+	  platform.c_str(), part, textUUID);
   for (unsigned n = 0; n < sizeof(uuidRegs); n++)
     fprintf(ofp, "%02x", ((char*)&uuidRegs)[n]&0xff);
   fprintf(ofp, ";\nendmodule // mkUUID\n");
@@ -1557,10 +1569,11 @@ mywait(pid_t pid, bool hang, std::string &error) {
   } else if (WIFEXITED(status)) {
     int exitStatus = WEXITSTATUS(status);
     if (exitStatus > 10)
-      OU::formatString(error, "Simulation subprocess couldn't execute simulator \"%s\" (got %s - %d)",
-		       simexec, strerror(exitStatus - 10), exitStatus - 10);
+      OU::formatString(error, "Simulation subprocess couldn't execute simulator executable \"%s\" (got %s - %d)",
+		       simexec.c_str(), strerror(exitStatus - 10), exitStatus - 10);
     else
-      OU::formatString(error, "Simulation subprocess terminated with exit status %d", exitStatus);
+      OU::formatString(error, "Simulation subprocess for executable \"%s\" terminated with exit status %d",
+		       simexec.c_str(), exitStatus);
     if (hang) {
       // If waiting for termination, its not our error
       ocpiInfo("%s", error.c_str());
@@ -1569,8 +1582,8 @@ mywait(pid_t pid, bool hang, std::string &error) {
       return true;
   } else if (WIFSIGNALED(status)) {
     int termSig = WTERMSIG(status);
-    OU::formatString(error, "Simulation subprocess terminated with signal %s (%d)",
-		     strsignal(termSig), termSig);
+    OU::formatString(error, "Simulation subprocess for executable \"%s\" terminated with signal %s (%d)",
+		     simexec.c_str(), strsignal(termSig), termSig);
     if (hang) {
       // If waiting for termination, its not our error
       ocpiInfo("%s", error.c_str());
@@ -1579,8 +1592,8 @@ mywait(pid_t pid, bool hang, std::string &error) {
       return true;
   } else if (WIFSTOPPED(status)) {
     int stopSig = WSTOPSIG(status);
-    ocpiInfo("Simulator subprocess stopped with signal %s (%d)",
-	     strsignal(stopSig), stopSig);
+    ocpiInfo("Simulator subprocess for executable \"%s\" stopped with signal %s (%d)",
+	     simexec.c_str(), strsignal(stopSig), stopSig);
     if (hang) {
       kill(pid, SIGTERM);
       sleep(1);
@@ -1702,7 +1715,9 @@ struct Sim {
       m_nfds((m_ext.m_rfd > m_server.m_rfd ? m_ext.m_rfd : m_server.m_rfd) + 1),
       m_buffer(NULL), m_bufferSize(0), m_dcp(0)
   {
-    initAdmin(*(OH::OccpAdminRegisters*)m_admin, "ocpiIsim");
+    std::string plat(platform);
+    plat += "_pf";
+    initAdmin(*(OH::OccpAdminRegisters*)m_admin, plat.c_str());
   }
   ~Sim() {
     delete [] m_buffer;
@@ -1710,10 +1725,12 @@ struct Sim {
   // Establish a new simulator from a new executable.
   // Return error in the string and return true
   bool
-  loadRun(const char *file, std::string &err) {
+  loadRun(const char *script, std::string &err) {
+    const char *file = simexec.c_str();
     if (verbose)
-      fprintf(stderr, "Initializing simulator from executable/bitstream: %s\n", file);
-    ocpiDebug("Starting the simulator load of bitstream: %s", file);
+      fprintf(stderr, "Initializing simulator from %s executable/bitstream: %s\n",
+	      platform.c_str(), file);
+    ocpiDebug("Starting the simulator load of %s bitstream: %s", platform.c_str(), file);
     // First establish a directory for the simulation based on the name of the file
     const char 
       *slash = strrchr(file, '/'),
@@ -1730,15 +1747,26 @@ struct Sim {
     slash = slash ? slash + 1 : file;
     std::string
       app(slash, suff - slash),
-      platform(suff + 1, (dot - suff) - 1),
+      plat(suff + 1, (dot - suff) - 1),
       dir(app);
     
+    if (!strcmp("_pf", plat.c_str() + plat.length() - 3))
+      plat.resize(plat.length() - 3);
+    if (plat != platform) {
+      OU::formatString(err, "simulator platform mismatch:  executable is %s for platform %s",
+		       file, platform.c_str());
+      return true;
+    }
+
     char date[100];
     time_t now = time(NULL);
     struct tm nowtm;
     localtime_r(&now, &nowtm);
-    strftime(date, sizeof(date), ":%Y:%m:%d:%T", &nowtm);
+    strftime(date, sizeof(date), ".%Y%m%d%H%M%S", &nowtm);
+    dir += ".";
+    dir += platform;
     dir += date;
+    ocpiDebug("Sim executable is %s, app is %s, platform is %s dir is %s", file, app.c_str(), plat.c_str(), dir.c_str());
     if (mkdir(dir.c_str(), 0777) != 0 && errno != EEXIST) {
       OU::formatString(err, "Can't create directory %s to run simulation", dir.c_str());
       return true;
@@ -1771,30 +1799,44 @@ struct Sim {
       break;
     }
     std::string cmd;
-    if (platform == "ocpiIsim") {
-      const char *xenv = getenv("OCPI_XILINX_TOOLS_DIR");
-      if (!xenv) {
-	err = "the OCPI_XILINX_TOOLS_DIR environment variable is not set";
-	return true;
-      }
-      OU::formatString(cmd,
-		       "(echo scope; echo show child -r ;  echo wave log -r / ; echo run 1 s) | "
-		       "(set -e ; cd %s; . $OCPI_XILINX_TOOLS_DIR/settings64.sh > sim.out 2>&1; "
-		       " exec ./%s-ocpiIsim.exe %s >> sim.out 2>&1)",
-		       dir.c_str(), app.c_str(), simDump && !strcasecmp(simDump, "on") ? "-testplusarg bscvcd" : "");
-    } else {
-      OU::formatString(err, "Unsupported simulator platform %s for %s", platform.c_str(), file);
+
+    const char *xenv = getenv("OCPI_CDK_DIR");
+    if (!xenv) {
+      err = " The OCPI_CDK_DIR environment variable is not set";
       return true;
     }
+    OU::formatString(cmd, "exec %s %s %s", script, app.c_str(),
+		     simDump && !strcasecmp(simDump, "on") ? "-testplusarg bscvcd" : "");
     if (verbose)
-      fprintf(stderr, "Starting execution of simulator for HDL assembly: %s.\n", app.c_str());
+      fprintf(stderr, "Starting execution of simulator for HDL assembly: %s (executable \"%s\".\n", app.c_str(), file);
     switch ((s_pid = fork())) {
     case 0:
-      if (execl("/bin/sh", "/bin/sh", "-c", cmd.c_str(), NULL))
-	exit(10 + errno);
+      if (chdir(dir.c_str()) != 0) {
+	std::string x("Cannot change to simulation subdirectory: ");
+	int e = errno;
+	x += dir;
+	x += "\n";
+	write(2, x.c_str(), x.length());
+	_exit(10 + e);
+      }
+      {
+	int fd = creat("sim.out", 0666);
+	if (fd < 0) {
+	  std::string x("Error: Cannot create sim.out file for simulation output.\n");
+	  int e = errno;
+	  write(2, x.c_str(), x.length());
+	  _exit(10 + e);
+	}
+	if (dup2(fd, 1) < 0 ||
+	    dup2(fd, 2) < 0)
+	  _exit(10 + errno);
+	assert(fd > 2);
+	if (execl("/bin/sh", "/bin/sh", "-c", cmd.c_str(), NULL))
+	  _exit(10 + errno);
+      }
       break; // not used.
     case -1:
-      OU::formatString(err, "Could not create simulator sub-process for: %s", simexec);
+      OU::formatString(err, "Could not create simulator sub-process for: %s", simexec.c_str());
       ocpiBad("%s", err.c_str());
       return true;
     default:
@@ -1848,7 +1890,7 @@ struct Sim {
     }
   }
   bool
-  doServer(std::string &error) {
+  doServer(const char *script, std::string &error) {
     uint16_t c[2];
     // This protocol has a count byte and a command byte.
     if (myread(m_server.m_rfd, (char *)c, sizeof(c), error)) {
@@ -1868,7 +1910,8 @@ struct Sim {
     switch (c[1]) {
     case 0:
       shutdown();
-      loadRun(m_buffer, error);
+      simexec = m_buffer;
+      loadRun(script, error);
       break;
     case 1:
       flush();
@@ -1982,7 +2025,7 @@ struct Sim {
   // set error on fatal problems
   // return any execution ticks provided.
   uint64_t
-  doit(uint64_t cum, std::string &error) {
+  doit(const char *script, uint64_t cum, std::string &error) {
     char msg[2];
     uint64_t ticks = 0;
     if (m_dcp) {
@@ -1990,6 +2033,14 @@ struct Sim {
       msg[1] = spinCount;
       assert(write(m_ctl.m_wfd, msg, 2) == 2);
       ticks = spinCount;
+    }
+    {
+      unsigned n = 0;
+      if (ioctl(m_req.m_rfd, FIONREAD, &n) == -1) {
+	error = "fionread syscall on req";
+	return ticks;
+      }
+      ocpiDebug("Request FIFO has %u", n);
     }
     fd_set fds[1];
     FD_ZERO(fds);
@@ -2011,7 +2062,7 @@ struct Sim {
       ;
     }
     if (FD_ISSET(m_server.m_rfd, fds))
-      return doServer(error);
+      return doServer(script, error);
     if (FD_ISSET(m_ext.m_rfd, fds)) {
       unsigned n = 0;
       if (ioctl(m_ext.m_rfd, FIONREAD, &n) == -1) {
@@ -2049,15 +2100,40 @@ static void sigint(int /* signal */) {
 
 static void
 simulate(const char **ap) {
+  // FIXME - determine this via argv0
+  const char *xenv = getenv("OCPI_CDK_DIR");
+  if (!xenv)
+    bad("The OCPI_CDK_DIR environment variable is not set");
+  std::string script(xenv);
+  script += "/scripts/";
+  if (platform.empty()) {
+    OS::FileIterator fi(script, "runSimExec.*");
+    if (fi.end())
+      bad("There is no supported simulation platform (no %s/runSimExec.*)", script.c_str());
+    std::string cmd = fi.relativeName();
+    const char *cp = strchr(cmd.c_str(), '.');
+    assert(cp);
+    platform = ++cp;
+    script += cmd;
+  } else {
+    if (!strcmp("_pf", platform.c_str() + platform.length() - 3))
+      platform.resize(platform.length() - 3);
+    script += "runSimExec.";
+    script += platform;
+    if (!OS::FileSystem::exists(script))
+      bad("\"%s\" is not a supported simulation platform (no %s)", platform.c_str(), script.c_str());
+  }      
   pid_t pid = getpid();
   std::string simDir;
   OU::formatString(simDir, "%s/%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR);
   if (mkdir(simDir.c_str(), 0777) != 0 && errno != EEXIST)
     bad("Can't create directory for all OpenCPI simulator containers: %s", simDir.c_str());
+  std::string simName;
   if (*ap)
-    OU::formatString(simDir, "%s/%s/%s.%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR, OH::Sim::SIMPREF, *ap);
+    simName = *ap;
   else
-    OU::formatString(simDir, "%s/%s/%s.%u", OH::Sim::TMPDIR, OH::Sim::SIMDIR, OH::Sim::SIMPREF, pid);
+    OU::formatString(simName, "%s.%u", platform.c_str(), pid);
+  OU::formatString(simDir, "%s/%s/%s.%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR, OH::Sim::SIMPREF, simName.c_str());
   if (mkdir(simDir.c_str(), 0777) != 0)
     if (errno == EEXIST)
       bad("Diretory for this simulator, \"%s\", already exists (/tmp not cleared?)", simDir.c_str());
@@ -2065,7 +2141,8 @@ simulate(const char **ap) {
       bad("Can't create the new diretory for this simulator: %s", simDir.c_str());
   do {
     if (verbose)
-      fprintf(stderr, "Registering simulation platform in directory: %s\n", simDir.c_str());
+      fprintf(stderr, "Registering HDL simulation device \"sim:%s\" in directory: %s for platform: %s\n",
+	      simName.c_str(), simDir.c_str(), platform.c_str());
     Sim sim(simDir, error);
     if (error.size())
       break;
@@ -2073,7 +2150,7 @@ simulate(const char **ap) {
 	     strrchr(simDir.c_str(), '.') + 1, simDir.c_str());
     assert(signal(SIGINT, sigint) != SIG_ERR);
     // If we were given an executable, start sim with it.
-    if (simexec && sim.loadRun(simexec, error))
+    if (simexec.length() && sim.loadRun(script.c_str(), error))
       bad("failed to start simulator");
     uint64_t cum, last, ticks;
     for (last = cum = 0; !stopped && error.empty() && cum < simTicks; cum += ticks) {
@@ -2081,7 +2158,7 @@ simulate(const char **ap) {
 	ocpiInfo("Spin credit at: %20" PRIu64, cum);
 	last = cum;
       }
-      ticks = sim.doit(cum, error);
+      ticks = sim.doit(script.c_str(), cum, error);
     }
     if (stopped) {
       if (verbose)

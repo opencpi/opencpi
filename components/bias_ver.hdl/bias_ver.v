@@ -48,8 +48,8 @@
   reg [1:0]  ctl_ctlSt;
 
   // When this worker is WCI reset, propagate reset out to WSI partners...
-  assign out_MReset_n = ctl_MReset_n;
-  assign in_SReset_n = ctl_MReset_n;
+  wire out_MReset_n = ctl_MReset_n;
+  wire in_SReset_n = ctl_MReset_n;
 
   //Pass the SThreadBusy upstream without pipelining...
   assign in_SThreadBusy = (out_SThreadBusy || (ctl_ctlSt!=2'h2));

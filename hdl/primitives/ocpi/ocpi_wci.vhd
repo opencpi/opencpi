@@ -129,7 +129,9 @@ TYPE State_t IS (EXISTS_e,            -- 0
   type data_a_t is array (natural range <>) of word_t;
   type offset_a_t is array (natural range <>) of unsigned(31 downto 0);
   type boolean_array_t is array (natural range <>) of boolean;
-  function data_out_top (property : property_t) return natural;
+  function data_top (property : property_t;
+                     byte_offset : byte_offset_t) -- xst v5 can't do this := to_unsigned(0,byte_offset_t'length))
+                     return bit_offset_t;
 
   -- the wci convenience IP that makes it simple to implement a WCI interface
   component decoder

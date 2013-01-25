@@ -13,12 +13,14 @@
 #include <vector>
 #include <signal.h>
 #include "OcpiOsDebug.h"
+#include "OcpiOsFileSystem.h"
 #include "OcpiContainerApi.h"
 #include "OcpiApplicationApi.h"
 #include "OcpiUtilMisc.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
+namespace OS = OCPI::OS;
 
 static std::string error;
 
@@ -101,6 +103,14 @@ main(int /*argc*/, const char **argv) {
       }
     if (!*ap)
       usage(argv0);
+    std::string file(*ap);
+    if (!OS::FileSystem::exists(file)) {
+      file += ".xml";
+      if (!OS::FileSystem::exists(file)) {
+	fprintf(stderr, "Error: file %s (or %s.xml) does not exist\n", *ap, *ap);
+	return 1;
+      }
+    }
     if (params.size())
       params.push_back(OA::PVEnd);
     OA::Container *c;
@@ -115,7 +125,7 @@ main(int /*argc*/, const char **argv) {
 	fprintf(stderr, "%s[%d]: %s", n ? ", " : "Available containers are: ", n, c->name().c_str());
       fprintf(stderr, "\n");
     }
-    OA::Application app(*ap, params.size() ? params.data() : NULL);
+    OA::Application app(file.c_str(), params.size() ? params.data() : NULL);
     if (verbose)
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
     app.initialize();

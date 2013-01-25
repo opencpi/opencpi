@@ -194,7 +194,7 @@ namespace OCPI {
       ctime_r(&bsbd, tbuf1);
       tbuf1[strlen(tbuf1)-1] = 0;
 
-      printf("OpenCPI HDL platform found: '%s': BSV date %s, bitstream date %s, "
+      printf("OpenCPI HDL device found: '%s': BSV date %s, bitstream date %s, "
 	     "platform \"%s\", part \"%s\", UUID %s\n",
 	     m_name.c_str(), tbuf, tbuf1, m_platform.c_str(), m_part.c_str(), textUUID);
     }

@@ -350,6 +350,26 @@ namespace OCPI {
       }
 
       const char *
+      checkAttrsVV(ezxml_t x, ...) {
+	if (!x->attr)
+	  return 0;
+	for (char **a = x->attr; *a; a += 2) {
+	  va_list ap;
+	  va_start(ap, x);
+	  for (const char **vap = va_arg(ap, const char **); vap; vap = va_arg(ap, const char **))
+	    while (*vap)
+	      if (!strcasecmp(*a, *vap++)) {
+		va_end(ap);
+		goto found;
+	      }
+	  va_end(ap);
+	  return esprintf("Invalid attribute name: \"%s\", in a %s element", *a, x->name);
+	found:;
+	}
+	return 0;
+      }
+
+      const char *
       checkAttrsV(ezxml_t x, const char **attrs) {
 	if (!x->attr)
 	  return 0;

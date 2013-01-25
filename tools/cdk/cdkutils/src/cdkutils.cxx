@@ -122,13 +122,16 @@ addDep(const char *dep, bool child) {
   deps[nDeps] = 0;
 }
 
-const char *
+static const char *
 dumpDeps(const char *top) {
   if (!depFile)
     return 0;
-  FILE *out = fopen(depFile, "w");
-  if (out == NULL)
-    return OU::esprintf("Cannot open dependency file \"%s\" for writing", top);
+  static FILE *out = NULL;
+  if (out == NULL) {
+    out = fopen(depFile, "w");
+    if (out == NULL)
+      return OU::esprintf("Cannot open dependency file \"%s\" for writing", top);
+  }
   fprintf(out, "%s:", top);
   for (unsigned n = 0; n < nDeps; n++)
     fprintf(out, " %s", deps[n]);
@@ -136,8 +139,9 @@ dumpDeps(const char *top) {
   for (unsigned n = 0; n < nDeps; n++)
     if (depChild[n])
       fprintf(out, "\n%s:\n", deps[n]);
-  fclose(out);
-  depFile = 0;
+  fflush(out);
+  //  fclose(out);
+  //  depFile = 0;
   return 0;
 }
 

@@ -20,7 +20,7 @@ function "nor"  ( l : bool_t; r : bool_t ) return boolean is begin return its(l)
 function "xor"  ( l : bool_t; r : bool_t ) return boolean is begin return its(l) xor its(r); end;
 function "xnor" ( l : bool_t; r : bool_t ) return boolean is begin return its(l) xnor its(r); end;
 
---function "and"  ( l : bool_t; r : boolean ) return boolean is begin return its(l) and r; end;
+function "and"  ( l : bool_t; r : boolean ) return boolean is begin return its(l) and r; end;
 function "nand" ( l : bool_t; r : boolean ) return boolean is begin return its(l) nand r; end;
 function "or"   ( l : bool_t; r : boolean ) return boolean is begin return its(l) or r; end;
 function "nor"  ( l : bool_t; r : boolean ) return boolean is begin return its(l) nor r; end;
@@ -34,7 +34,7 @@ function "nor"  ( l : boolean; r : bool_t ) return boolean is begin return l nor
 function "xor"  ( l : boolean; r : bool_t ) return boolean is begin return l xor its(r); end;
 function "xnor" ( l : boolean; r : bool_t ) return boolean is begin return l xnor its(r); end;
 
-function "or"   ( l : bool_t; r : boolean ) return bool_t is begin return to_bool(to_boolean(l) or r); end;
+--function "or"   ( l : bool_t; r : boolean ) return bool_t is begin return to_bool(to_boolean(l) or r); end;
 
 function "not"  ( l : bool_t             ) return boolean is begin return not its(l); end;
 
@@ -116,22 +116,22 @@ end to_ulong;
 
 function to_string(inword : word_t) return wordstring_t is
 begin
-  return
-   (signed(inword( 7 downto  0)),
-    signed(inword(15 downto  8)),
-	  signed(inword(23 downto 16)),
-	  signed(inword(31 downto 24)));
+  return (char_t(inword( 7 downto  0)),
+          char_t(inword(15 downto  8)),
+          char_t(inword(23 downto 16)),
+          char_t(inword(31 downto 24)));
 end to_string;
 
 function from_string(s : string_t; offset : unsigned) return word_t is
   variable off : natural;
+  variable w : word_t;
 begin 
   off := to_integer(offset);
-  return
-    std_logic_vector(s(off))   &
-    std_logic_vector(s(off+1)) &
-    std_logic_vector(s(off+2)) &
-    std_logic_vector(s(off+3));
+  w(31 downto 24) := std_logic_vector(s(off+3));
+  w(23 downto 16) := std_logic_vector(s(off+2));
+  w(15 downto  8) := std_logic_vector(s(off+1));
+  w( 7 downto  0) := std_logic_vector(s(off+0));
+  return w;
 end from_string;
 
 end types;
