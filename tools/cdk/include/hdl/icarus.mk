@@ -103,7 +103,7 @@ MyLibs=\
  $(foreach l,$(ComponentLibraries),\
    $(foreach w,$(wildcard $(l)/lib/hdl/icarus/*),\
      -y $(call FindRelative,$(TargetDir),$(l)/lib/hdl/icarus/$(notdir $(w))))) \
- $(foreach l,$(Libraries) $(Cores),\
+ $(foreach l,$(HdlLibraries) $(Cores),\
    $(foreach hlr,$(call HdlLibraryRefDir,$(l),icarus),\
      $(if $(realpath $(hlr)),,$(error No icarus library at $(abspath $(hlr))))\
      -y $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(l),icarus))))

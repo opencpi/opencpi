@@ -12,7 +12,8 @@ component slave
            burst_width     : natural; -- burst width
            n_bytes         : natural; -- number of bytes
            opcode_width    : natural; -- bits in reqinfo
-           own_clock       : boolean  -- does the port have a clock different thanthe wci?
+           own_clock       : boolean; -- does the port have a clock different thanthe wci?
+           early_request   : boolean  -- are datavalid and datalast used? 
            );
   port (
     -- Exterior OCP input/master signals
@@ -26,11 +27,11 @@ component slave
     MData            : in  std_logic_vector(data_width-1 downto 0);
     --- only used for aborts or bytesize not 8 and less than datawidth
     MDataInfo        : in  std_logic_vector(data_info_width-1 downto 0);
-    MDataLast        : in  std_logic;
-    MDataValid       : in  std_logic;
+    MDataLast        : in  std_logic := '0';
+    MDataValid       : in  std_logic := '0';
     --- only used if number of opcodes > 1
     MReqInfo         : in  std_logic_vector(opcode_width-1 downto 0);
---    MReqLast         : in  std_logic; unneeded since DataLast is here
+    MReqLast         : in  std_logic;
     MReset_n         : in  std_logic;
     -- Exterior OCP output/slave signals
     SReset_n         : out std_logic;
@@ -63,7 +64,8 @@ component master
            burst_width     : natural; -- width of burst width
            n_bytes         : natural; -- number of bytes
            opcode_width    : natural; -- bits in reqinfo
-           own_clock       : boolean
+           own_clock       : boolean; -- does the port have a clock different thanthe wci?
+           early_request   : boolean  -- are datavalid and datalast used? 
            );
   port (
     -- Exterior OCP input/slave signals

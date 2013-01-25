@@ -388,7 +388,7 @@ module mkSimIO(CLK,
     if (RST_N != `BSV_RESET_VALUE)
       if (!w_hdl[32])
 	begin
-	  TASK_fopen___d24 = $fopen("/tmp/OpenCPI0_Resp", "w");
+	  TASK_fopen___d24 = $fopen("/tmp/OpenCPI0_Resp", "wb");
 	  #0;
 	end
     if (RST_N != `BSV_RESET_VALUE)
@@ -402,7 +402,7 @@ module mkSimIO(CLK,
     if (RST_N != `BSV_RESET_VALUE)
       if (WILL_FIRE_RL_do_r_open)
 	begin
-	  TASK_fopen___d38 = $fopen("/tmp/OpenCPI0_Req", "r");
+	  TASK_fopen___d38 = $fopen("/tmp/OpenCPI0_Req", "rb");
 	  #0;
 	end
     if (RST_N != `BSV_RESET_VALUE)
@@ -528,7 +528,7 @@ module mkSimIO(CLK,
     if (RST_N != `BSV_RESET_VALUE)
       if (WILL_FIRE_RL_do_s_open)
 	begin
-	  TASK_fopen___d31 = $fopen("/tmp/OpenCPI0_IOCtl", "r");
+	  TASK_fopen___d31 = $fopen("/tmp/OpenCPI0_IOCtl", "rb");
 	  #0;
 	end
     if (RST_N != `BSV_RESET_VALUE)

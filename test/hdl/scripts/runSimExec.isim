@@ -1,0 +1,17 @@
+#!/bin/sh
+if [[ $OCPI_XILINX_TOOLS_DIR == "" ]]; then
+   echo "The OCPI_XILINX_TOOLS_DIR environment variable is not set, and is required for isim executables."
+   exit 1
+fi
+set -evx
+# Pass arguments to the settings script to override current args
+. $OCPI_XILINX_TOOLS_DIR/settings64.sh $OCPI_XILINX_TOOLS_DIR
+appname=$1
+shift
+exec ./$appname-isim_pf.exe $* <<EOF
+scope
+show child -r
+wave log -r /
+run 1 s
+EOF
+echo Hello 4

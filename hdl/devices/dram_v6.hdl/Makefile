@@ -34,7 +34,7 @@
 #
 ########################################################################### #
 
-Libraries=bsv util
+override HdlLibraries=bsv util
 Cores=dram_v6_mig37
 OnlyTargets=virtex6
 include $(OCPI_CDK_DIR)/include/worker.mk

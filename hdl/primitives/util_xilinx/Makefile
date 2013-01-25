@@ -1,15 +1,3 @@
-
-# #####
-#
-#  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
-#
-#    Mercury Federal Systems, Incorporated
-#    1901 South Bell Street
-#    Suite 402
-#    Arlington, Virginia 22202
-#    United States of America
-#    Telephone 703-413-0781
-#    FAX 703-413-0784
 #
 #  This file is part of OpenCPI (www.opencpi.org).
 #     ____                   __________   ____
@@ -34,7 +22,13 @@
 #
 ########################################################################### #
 
-# Which component libraries should be referenced to build this app?
-HdlLibraries=bsv util
-Container=mkOCApp-3w.v
-include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk
+# This library is for v6-specific primitives, that may shadow things in other libraries
+# Pick only what we need for now since the libsrc/hdl/ocpi is a kitchen sink
+SimLibraries=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
+SimFiles=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
+OnlyTargets=xilinx
+Imports=$(foreach i,BRAM1 BRAM1BE BRAM2,$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/bsv/$i.v)
+include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives
+
+
+

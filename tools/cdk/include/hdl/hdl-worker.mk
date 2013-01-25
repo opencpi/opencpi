@@ -64,7 +64,7 @@ HdlImplSuffix=_impl$(HdlIncSuffix)
 ifneq ($(word 2,$(Workers)),)
 $(error Only one HDL worker can be built.  Workers is: $(Workers))
 endif
-# THis is REDUNDANT with what is in xxx-worker.mk, but we need it to figure out the language below.
+# This is REDUNDANT with what is in xxx-worker.mk, but we need it to figure out the language below.
 ifndef Worker
 Worker=$(CwdName)
 Workers=$(Worker)
@@ -92,7 +92,7 @@ ifndef HdlLanguage
 # Ugly grab of the language attribute from the XML file
 HdlLanguage:=$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z)
 endif
-$(info HdlLanguage is $(HdlLanguage))
+#$(info HdlLanguage is $(HdlLanguage))
 ifeq ($(HdlLanguage),)
 HdlLanguage:=vhdl
 else
@@ -105,11 +105,12 @@ else
 HdlSourceSuffix:=$(HdlVHDLSuffix)
 HdlIncSuffix:=$(HdlVHDLIncSuffix)
 endif
-$(call OcpiDbgVar,Libraries,Add ocpi library perhaps)
-ifeq ($(filter ocpi,$(Libraries)),)
-  Libraries:=ocpi $(Libraries)
-endif
-$(call OcpiDbgVar,Libraries,After adding ocpi if not there )
+# The ocpi library is required for VHDL
+$(call OcpiDbgVar,HdlLibraries,Add ocpi library perhaps)
+$(if $(filter ocpi,$(HdlLibraries)),,\
+   $(if $(or $(findstring vhdl,$(HdlLanguage)),$(findstring assembly,$(HdlMode))),\
+     $(eval HdlLibraries:=ocpi $(HdlLibraries))))
+$(call OcpiDbgVar,HdlLibraries,After adding ocpi if not there )
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 $(call OcpiDbgVar,Worker)
@@ -149,9 +150,9 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
 
 
 ################################################################################
-# If not an application, we have to contribute to the exports for the library
+# If not an assembly, we have to contribute to the exports for the library
 # we are a part of.
-ifndef Application
+ifneq ($(HdlMode),assembly)
 # Expose the implementation xml file for apps that instantiate this worker core
 ifdef LibDir
 $(call OcpiDbg,Before all: "$(LibDir)/$(ImplXmlFile)")
@@ -175,6 +176,6 @@ $(GenDir)/$(Worker)$(HdlSourceSuffix): $(DefsFile) | $(GenDir)
 $(call OcpiDbg,Before all: "$(GenDir)/$(Worker)$(HdlSourceSuffix)")
 all: $(GenDir)/$(Worker)$(HdlSourceSuffix)
 endif
-endif # if not an application
+endif # if not an assembly
 
 endif # HdlSkip

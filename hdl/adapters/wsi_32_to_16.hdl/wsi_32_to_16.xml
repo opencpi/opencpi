@@ -1,0 +1,5 @@
+<HDLImplementation language="vhdl">
+  <xi:include href="in1_out1_spec.xml"/>
+  <streaminterface name='in' datawidth='32'/>
+  <streaminterface name='out' datawidth='16'/>
+</HDLImplementation>

@@ -28,8 +28,8 @@
 
 module mkTB18(CLK,
 	      RST_N);
-  input  CLK;
-  input  RST_N;
+  input  wire CLK;
+  input  wire RST_N;
 
   // register simCycle
   reg [15 : 0] simCycle;
@@ -750,3 +750,5 @@ module mkTB18(CLK,
   // synopsys translate_on
 endmodule  // mkTB18
 
+`default_nettype wire
+  

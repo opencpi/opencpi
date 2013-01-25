@@ -4,14 +4,15 @@ package body wci is
 
 -- convert byte enables to byte offsets
 
-function decode_access(input : in_t) return access_t is begin
-  case input.MCmd is
+function decode_access(input : in_t) return access_t is
+  variable cmd : ocp.MCmd_t := input.MCmd; -- avoid pedantic aggregate in case expression
+begin
+  case cmd is
     when ocp.MCmd_WRITE => if input.MAddrSpace(0) = '1' then return write_e; else return Error_e; end if;
     when ocp.MCmd_READ  => if input.MAddrSpace(0) = '1' then return Read_e; else return Control_e; end if;
     when others => return None_e;
   end case;
 end decode_access;
-
 
 --function "=" (l,r: Property_Io_t) return boolean is begin
 --  return Property_io_t'pos(l) = Property_io_t'pos(r);
@@ -65,14 +66,18 @@ begin
 end to_control_op;
 
 -- How wide should the data path be from the decoder to the property
-function data_out_top (property : property_t) return natural is
+function data_top (property : property_t;
+                   byte_offset : byte_offset_t)-- v5 xst can't do it := to_unsigned(0,byte_offset_t'length))
+  return bit_offset_t is
 begin
-  if property.data_width >= 32 or property.nitems > 1 then
+  if property.data_width >= 32 then
     return 31;
-  else
+  elsif property.nitems > 1 then
     return property.data_width - 1;
+  else
+    return (property.data_width - 1) + (to_integer(byte_offset) * 8);
   end if;
-end data_out_top;
+end data_top;
 
 function resize(bits : std_logic_vector; n : natural) return std_logic_vector is begin
   return std_logic_vector(resize(unsigned(bits),n));

@@ -1,4 +1,4 @@
-<HdlImplementation Name="gbe" Language="Verilog" Pattern="%w%M%0_" >
+<HdlImplementation Name="gbe" Language="Verilog" Pattern="%w%M%0_" datawidth='32'>
   <ComponentSpec Name="gbe">
     <Properties>
       <property name="dramStatus" readable="true"/>

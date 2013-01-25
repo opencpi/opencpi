@@ -1,0 +1,17 @@
+#!/bin/sh
+if [[ $OCPI_VIVADO_TOOLS_DIR == "" ]]; then
+   echo "The OCPI_VIVADO_TOOLS_DIR environment variable is not set, and is required for xnsim executables."
+   exit 1
+fi
+set -e
+# Pass arguments to the settings script to override current args
+. $OCPI_VIVADO_TOOLS_DIR/.settings64.sh $OCPI_VIVADO_TOOLS_DIR
+set -vx
+appname=$1
+shift
+exec xsim  -tl $* $appname-xsim_pf.exe <<EOF
+report_scopes
+report_objects
+log_wave -r /
+run 1 s
+EOF

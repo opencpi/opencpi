@@ -122,13 +122,13 @@ deriveOCP(Worker *w) {
 	ocp->MAddr.width = ceilLog2(w->ctl.sizeOfConfigSpace);
       if (w->ctl.sizeOfConfigSpace != 0)
 	ocp->MAddrSpace.value = s;
-      if (w->ctl.sub32BitConfigProperties)
+      if (w->ctl.sub32Bits)
 	ocp->MByteEn.width = 4;
-      if (w->ctl.writableConfigProperties)
+      if (w->ctl.writables)
 	ocp->MData.width = 32;
       ocp->MFlag.width = 2;
       ocp->MReset_n.value = s;
-      if (w->ctl.readableConfigProperties)
+      if (w->ctl.readables)
 	ocp->SData.width = 32;
       ocp->SFlag.width = 2;  //FIXME should be 1
       ocp->SResp.value = s;
