@@ -64,6 +64,8 @@ namespace OCPI {
       void start();
       // return true if timed out
       bool wait( unsigned timeout_us = 0);
+      // do functional (not cleanup) things at the end of execution
+      void finish();
       // Suspension, that can be resumed with "start".
       void stop();
       ExternalPort &getPort(const char *);

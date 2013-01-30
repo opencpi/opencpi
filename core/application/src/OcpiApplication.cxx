@@ -35,6 +35,7 @@
 #include "OcpiPValue.h"
 #include "OcpiApplication.h"
 #include "OcpiTimeEmit.h"
+#include "OcpiUtilMisc.h"
 
 namespace OC = OCPI::Container;
 namespace OU = OCPI::Util;
@@ -281,6 +282,15 @@ namespace OCPI {
       // Prepare all the property values in the assembly, avoiding those in parameters.
       for (unsigned p = 0; p < aProps.size(); p++) {
 	const char *pName = aProps[p].m_name.c_str();
+	if (aProps[p].m_dumpFile.size()) {
+	  // findProperty throws on error if bad name
+	  OU::Property &uProp = impl.m_metadataImpl.findProperty(pName);
+	  if (!uProp.m_isReadable)
+	    throw OU::Error("Cannot dump property '%s' for instance '%s'. It is not readable.",
+			    pName, name);
+	  if (!aProps[p].m_hasValue)
+	    continue;
+	}
 	unsigned pLength = strlen(pName);
 	// Check for override value - if we find one skip this xml prop value
 	for (unsigned n = 0; OU::findAssignNext(params, "property", name, propAssign, n); )
@@ -344,18 +354,20 @@ namespace OCPI {
 	      OU::findAssignNext(params, "property", mp->m_name.c_str(), sDummy, nDummy))
 	    nPropValues++;
 	if (nPropValues) {
+	  // This allocation will include dump-only properties, which won't be put into the
+	  // array by prepareInstanceProperties
 	  OU::Value *pv = i->m_propValues = new OU::Value[nPropValues];
 	  unsigned *pn = i->m_propOrdinals = new unsigned[nPropValues];
 	  prepareInstanceProperties(n, *i->m_impl, pn, pv, params);
+	  i->m_nPropValues = pn - i->m_propOrdinals;
 	}
       }
-      // For all instances in the assembly
-      // FIXME: allow XML expression of specific renamed mappings:
-      //       <property name="foo" instance="bar" [property="baz"]/>
+      // For all instances in the assembly, create the app-level property array
       m_nProperties = m_assembly.m_mappedProperties.size();
       i = m_instances;
       for (unsigned n = 0; n < m_nInstances; n++, i++)
 	m_nProperties += i->m_impl->m_metadataImpl.m_nProperties;
+      // Over allocate: mapped ones plus all the instances' ones
       Property *p = m_properties = new Property[m_nProperties];
       OU::Assembly::MappedProperty *mp = &m_assembly.m_mappedProperties[0];
       for (unsigned n = m_assembly.m_mappedProperties.size(); n; n--, mp++, p++) {
@@ -379,6 +391,16 @@ namespace OCPI {
 	  ocpiDebug("Instance %s (%u) property %s (%u) named %s", 
 		    m_assembly.m_instances[n].m_name.c_str(), n,
 		    meta->m_name.c_str(), nn, p->m_name.c_str());		    
+	  // Record dump file for this property if there is one.
+	  const OU::Assembly::Properties &aProps = m_assembly.m_instances[n].m_properties;
+	  p->m_dumpFile = NULL;
+	  for (unsigned nn = 0; nn < aProps.size(); nn++)
+	    if (aProps[nn].m_dumpFile.size() &&
+		!strcasecmp(aProps[nn].m_name.c_str(),
+			    meta->m_name.c_str())) {
+	      p->m_dumpFile = aProps[nn].m_dumpFile.c_str();
+	      break;
+	    }
 	}
       }
     }
@@ -586,21 +608,19 @@ namespace OCPI {
 	  m_containerApps[i->m_container]->
 	  createWorker(impl.m_artifact,                          // The artifact of the library impl
 		       m_assembly.m_instances[n].m_name.c_str(), // The instance name in the assembly
-		       impl.m_metadataImpl.m_xml,                // the xml of the impl (from artifact)
-		       impl.m_staticInstance,                    // the xml of the fixed instance (from artifact)
+		       impl.m_metadataImpl.m_xml,                // xml of impl (from artifact)
+		       impl.m_staticInstance,                    // xml of fixed instance (from artifact)
 		       NULL);                                    // wparams
 	m_workers[n] = &w;
 	// Now we need to set the initial properties - either from assembly or from defaults
-	const OU::Assembly::Properties &aProps = m_assembly.m_instances[n].m_properties;
-	unsigned nPropValues = aProps.size();
-	for (unsigned p = 0; p < nPropValues; p++)
+	for (unsigned p = 0; p < i->m_nPropValues; p++)
 	  w.setProperty(i->m_propOrdinals[p], i->m_propValues[p]);
 	unsigned nProps = impl.m_metadataImpl.m_nProperties;
 	OU::Property *prop = impl.m_metadataImpl.m_properties;
-	for (unsigned p = 0; p < nProps; p++, prop++)
+	for (unsigned n = 0; n < nProps; n++, prop++)
 	  if (prop->m_defaultValue) {
 	    bool found = false;
-	    for (unsigned m = 0; m < nPropValues; m++)
+	    for (unsigned m = 0; m < i->m_nPropValues; m++)
 	      if (i->m_propOrdinals[m] == prop->m_ordinal) {
 		found = true;
 		break;
@@ -614,7 +634,8 @@ namespace OCPI {
       for (OU::Assembly::ConnectionIter ci = m_assembly.m_connections.begin();
 	   ci != m_assembly.m_connections.end(); ci++) {
 	const OU::Assembly::Connection &c = *ci;
-	OA::Port &apiPort = m_workers[c.m_ports.front().m_instance]->getPort(c.m_ports.front().m_name.c_str());
+	OA::Port &apiPort =
+	  m_workers[c.m_ports.front().m_instance]->getPort(c.m_ports.front().m_name.c_str());
 	const OU::Assembly::Port &assPort = c.m_ports.front();
 	if (c.m_externals.size() == 0)
 	  apiPort.connect(m_workers[c.m_ports.back().m_instance]->getPort(c.m_ports.back().m_name.c_str()),
@@ -655,6 +676,19 @@ namespace OCPI {
 	OS::sleep(10);
       } while (!timer || !timer->expired());
       return true;
+    }
+
+    // Stuff to do after "done" (or perhaps timeout)
+    void ApplicationI::finish() {
+      Property *p = m_properties;
+      for (unsigned n = 0; n < m_nProperties; n++, p++)
+	if (p->m_dumpFile) {
+	  std::string name, value;
+	  m_workers[p->m_instance]->getProperty(p->m_property, name, value);
+	  const char *err = OU::string2File(value, p->m_dumpFile);
+	  if (err)
+	    throw OU::Error("Error writing '%s' property to file: %s", name.c_str(), err);
+	}
     }
 
     ExternalPort &ApplicationI::getPort(const char *name) {
@@ -767,6 +801,9 @@ namespace OCPI {
       bool r = m_application.wait(timer);
       delete timer;
       return r;
+    }
+    void Application::finish() {
+      m_application.finish();
     }
     ExternalPort &Application::getPort(const char *name) { return m_application.getPort(name); }
     bool Application::getProperty(unsigned ordinal, std::string &name, std::string &value) {

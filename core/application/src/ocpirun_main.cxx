@@ -154,6 +154,8 @@ main(int /*argc*/, const char **argv) {
       if (verbose)
 	fprintf(stderr, "Application finished\n");
     }
+    // In case the application specifically defines things to do that aren't in the destructor
+    app.finish();
     if (dump) {
       std::string name, value;
       if (verbose)

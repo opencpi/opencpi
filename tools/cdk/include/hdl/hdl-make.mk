@@ -32,14 +32,15 @@ $(call OcpiDbgVar,HdlAllFamilies)
 # Return the actual name (pointing to the target dir) and check for errors
 HdlComponentLibrary=$(strip \
   $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
-   $(foreach f,$(call HdlGetFamily,$(notdir $2)),\
+   $(foreach f,$(if $(filter ./,$(dir $2)),,$(dir $2))$(call HdlGetFamily,$(notdir $2)),\
      $(or $(wildcard $l/hdl/$f),$(wildcard $l/lib/hdl/$f),\
       $(error Component library '$l' not found at either $l/hdl/$f or $l/lib/hdl/$f)))))
 
 HdlComponentCore=$(strip \
   $(foreach l,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/$1),\
-    $(foreach c,hdl/$3/$2$(HdlBin),\
-    $(or $(wildcard $l/$c),$(wildcard $l/lib/$c)))))
+   $(foreach t,$(call Unique,$3 $(call HdlGetFamily,$3)),\
+    $(foreach c,hdl/$t/$2$(HdlBin),\
+    $(or $(wildcard $l/$c),$(wildcard $l/lib/$c))))))
 
 #      $(error Component core '$l' not found at either $l/hdl/$2 or $l/lib/hdl/$2))))
 
@@ -49,7 +50,7 @@ HdlComponentCore=$(strip \
 # Return the actual file name of the found core or error 
 HdlFindWorkerCoreFile=$(strip \
   $(firstword \
-    $(or $(foreach c,$(ComponentLibraries), \
+    $(or $(foreach c,$(ComponentLibraries),\
             $(foreach d,$(call HdlComponentCore,$c,$1,$(HdlTarget)),$d)),\
          $(error Worker $1 not found in any component library.))))
 
@@ -60,9 +61,9 @@ HdlXmlComponentLibraries=$(strip \
 	            $(error Component library '$c' not found at $l)),\
 	$d $d/hdl))))
 
-# Read the workers file
+# Read the workers file.  Arg1 is the file name(s) of the instance files
 define HdlSetWorkers
-  HdlInstances:=$$(strip $$(foreach i,$$(shell grep -v '\\\#' $$(ImplWorkersFile)),\
+  HdlInstances:=$$(strip $$(foreach i,$$(shell grep -h -v '\\\#' $(ImplWorkersFiles)),\
 	               $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i)))
   HdlWorkers:=$$(call Unique,$$(foreach i,$$(HdlInstances),$$(firstword $$(subst :, ,$$i))))
 #  $$(info Instances are: $$(HdlInstances))

@@ -1595,10 +1595,13 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
             aw->ctl.sizeOfConfigSpace = iw->ctl.sizeOfConfigSpace;
           if (iw->ctl.writables)
             aw->ctl.writables = true;
+#if 0
+	  // FIXME: until container automation we must force this
           if (iw->ctl.readables)
+#endif
             aw->ctl.readables = true;
 #if 0
-	  // Until we have container automation, we force the assembly level
+	  // FIXME: Until we have container automation, we force the assembly level
 	  // WCIs to have byte enables.  FIXME
           if (iw->ctl.sub32Bits)
 #endif

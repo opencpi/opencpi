@@ -101,8 +101,8 @@ BuildImplementation=\
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
-	       HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative,$l),$l)) ocpi bsv"\
-               VerilogIncludeDirs=$(call AdjustRelative,$(VerilogIncludeDirs)) \
+	       $(and $(filter hdl,$1),HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative,$l),$l)) util ocpi bsv"\
+               VerilogIncludeDirs=$(call AdjustRelative,$(VerilogIncludeDirs))) \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
 
 BuildModel=\
@@ -128,7 +128,8 @@ CleanModel=\
            OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) $$tn="$$t" clean; \
       fi;\
     done; \
-  fi
+  fi; \
+  rm -r -f lib/$1
 
 
 all: workers

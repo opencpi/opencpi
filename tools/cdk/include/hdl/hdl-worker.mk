@@ -107,6 +107,8 @@ HdlIncSuffix:=$(HdlVHDLIncSuffix)
 endif
 # The ocpi library is required for VHDL
 $(call OcpiDbgVar,HdlLibraries,Add ocpi library perhaps)
+# FIXME: why is this needed for assemblies since workers are cores?
+#------- perhaps for vhdl workers?
 $(if $(filter ocpi,$(HdlLibraries)),,\
    $(if $(or $(findstring vhdl,$(HdlLanguage)),$(findstring assembly,$(HdlMode))),\
      $(eval HdlLibraries:=ocpi $(HdlLibraries))))
@@ -132,9 +134,13 @@ OcpiHdl=\
 # map the generic "IncludeDirs" into the verilog
 override VerilogIncludeDirs += $(IncludeDirs)
 ImplXmlFile=$(firstword $(ImplXmlFiles))
+#$(HdlDefsSuffix))
+RefDefsFile=$(Workers:%=$(GeneratedDir)/%_defs.vh)
 DefsFile=$(Workers:%=$(GeneratedDir)/%$(HdlDefsSuffix))
-$(DefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
+
+$(sort $(RefDefsFile) $(DefsFile)): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
+	$(AT)$(OcpiGen) -w $<
 	$(AT)$(OcpiGen) -d $<
 
 $(ImplHeaderFiles): $(DefsFile)
@@ -150,8 +156,8 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
 
 
 ################################################################################
-# If not an assembly, we have to contribute to the exports for the library
-# we are a part of.
+# If not an assembly or container, we have to contribute to the exports for the
+# component library we are a part of.
 ifneq ($(HdlMode),assembly)
 # Expose the implementation xml file for apps that instantiate this worker core
 ifdef LibDir
@@ -168,13 +174,14 @@ ifdef GenDir
 $(GenDir):
 	mkdir $(GenDir)
 # Generate the stub files by providing a link from gen/worker.v to gen/worker_defs.v
+#$(HdlSourceSuffix))
 $(call OcpiDbgVar,DefsFiles)
-$(GenDir)/$(Worker)$(HdlSourceSuffix): $(DefsFile) | $(GenDir)
-	$(AT)echo Creating link from $(GenDir) to $(DefsFile) to expose the stub for worker "$(Worker)" "$@".
-	$(AT)$(call MakeSymLink2,$(DefsFile),$(GenDir),$(Worker)$(HdlSourceSuffix))
+$(GenDir)/$(Worker)$(HdlVerilogSuffix): $(RefDefsFile) | $(GenDir)
+	$(AT)echo Creating link from $(GenDir) to $(RefDefsFile) to expose the stub for worker "$(Worker)" .
+	$(AT)$(call MakeSymLink2,$(RefDefsFile),$(GenDir),$(Worker)$(HdlVerilogSuffix))
 
 $(call OcpiDbg,Before all: "$(GenDir)/$(Worker)$(HdlSourceSuffix)")
-all: $(GenDir)/$(Worker)$(HdlSourceSuffix)
+all: $(GenDir)/$(Worker)$(HdlVerilogSuffix)
 endif
 endif # if not an assembly
 

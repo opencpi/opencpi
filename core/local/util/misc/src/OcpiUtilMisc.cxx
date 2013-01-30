@@ -520,7 +520,7 @@ formatStringAdd(std::string &out, const char *fmt, ...) {
 
 // Use vanilla C file I/O
 const char *OCPI::Util::
-fileString(std::string &out, const char *file) {
+file2String(std::string &out, const char *file) {
   FILE *f = fopen(file, "r");
   long size;
   const char *err = NULL;
@@ -549,6 +549,16 @@ fileString(std::string &out, const char *file) {
     return esprintf("Can't process file \"%s\" for string: %s", file, err);
   return NULL;
 }
+const char *OCPI::Util::
+string2File(const std::string &in, const char *file) {
+  FILE *f = fopen(file, "w");
+  unsigned n = in.size();
+
+  if (f && fwrite(in.c_str(), 1, n, f) == n && fclose(f) == 0)
+    return NULL;
+  return esprintf("error writing string value to file '%s'", file);
+}
+
 const char *OCPI::Util::
 esprintf(const char *fmt, ...) {
   va_list ap;

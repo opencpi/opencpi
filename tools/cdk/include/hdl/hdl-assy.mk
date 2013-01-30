@@ -93,14 +93,16 @@ $(CoreBlackBoxFile): $$(DefsFile) | $(OutDir)gen
 
 # Generate the source code for this "assembly worker" implementation file.
 ImplFile:=$(GeneratedDir)/$(Worker)_assy$(HdlSourceSuffix)
-ImplWorkersFile:=$(GeneratedDir)/$(CwdName).wks
+AssyWorkersFile:=$(GeneratedDir)/$(CwdName).wks
+# This is overridden for the container and for the bitstream
+ImplWorkersFiles=$(AssyWorkersFile)
 
 $(ImplFile): $$(ImplXmlFile) | $$(GeneratedDir)
 	$(AT)echo Generating the assembly source file: $@ from $<
 	$(AT)$(OcpiGen) -W $(Worker) -a  $<
 
 # The workers file is actually created at the same time as the _assy.v file
-$(ImplWorkersFile): $(ImplFile)
+$(AssyWorkersFile): $(ImplFile)
 
 # The source code for this "worker" is the generated assembly file.
 SourceFiles:=$(ImplFile)
@@ -192,11 +194,12 @@ $(OutDir)target-$1/$(ContainerModule)$(HdlBin): Top=$(ContainerModule)
 # The extra slash below is to avoid the interpretation that the core is in the CDK dir
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override Cores=$(OutDir)target-$3/$(Worker)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override LibName=$(ContainerModule)
-$(OutDir)target-$1/$(ContainerModule)$(HdlBin): override ImplWorkersFile=$(call ContainerWorkersFile,$1)
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): override ImplWorkersFiles=$(call ContainerWorkersFile,$1)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override VerilogIncludeDirs=
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlTarget:=$2
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlFamily:=$3
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override TargetDir=$(OutDir)target-$1
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlMode:=container
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $$$$(TargetDir)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlSources=$(OutDir)target-$1/$(ContainerModule).v $(OutDir)target-$1/$(Worker)_UUID.v
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/$(ContainerModule).v
@@ -224,7 +227,7 @@ endef
 $(foreach t,$(HdlPlatforms),$(eval $(call DoContainer,$t,$(call HdlGetPart,$t),$(call HdlGetFamily,$(call HdlGetPart,$t)))))
 
 $(ContainerCores): 
-	$(AT)echo Building container core \"$(ContainerModule)\" for target \"$(HdlTarget)\"
+	$(AT)echo Building container core \"$@\" for target \"$(HdlTarget)\"
 	$(AT)$(HdlCompile)
 
 # Make copies of the container for each target dir changing
@@ -251,6 +254,7 @@ $(call ArtifactXmlName,$1) $(call PlatformDir,$1)/$(Worker)_UUID.v $(call Contai
 	  -D $(call PlatformDir,$1) $(ArtifactXmlDirs:%=-I%) -A \
           -c $(ContainerXmlFile) -W $(ContainerModule) -P $1 -e $(call HdlGetPart,$1) $(ImplXmlFile)
 
+$$(call BitName,$1): override ImplWorkersFiles=$(AssyWorkersFile) $(call ContainerWorkersFile,$1)
 $(call BitZName,$1): $$(call BitName,$1) $$(call ArtifactXmlName,$1)
 	$(AT)echo Making compressed bit file: $$@ from $$<
 	$(AT)gzip -c $$(call BitName,$1) > $$@

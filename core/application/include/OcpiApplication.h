@@ -61,6 +61,7 @@ namespace OCPI {
       struct Instance {
 	const OCPI::Library::Implementation *m_impl; // The chosen, best implementation
 	unsigned m_container;                        // LOCAL ordinal - among those we are using
+	unsigned m_nPropValues;                      // number of values to SET (not dump-only ones)
 	OCPI::Util::Value *m_propValues;             // the parsed property values to set
 	unsigned *m_propOrdinals;
 	CMap *m_feasibleContainers;                  // map per candidate, from findContainers
@@ -86,9 +87,10 @@ namespace OCPI {
       // (not util::assembly or library::assembly) because it potentially depends on the 
       // implementation specific properties of the implementations selected.
       struct Property {
-	std::string m_name;  // qualified name (instance[.:=]property) or mapped name
-	unsigned m_instance; // ordinal of instance in assembly
-	unsigned m_property; // ordinal of property in implememtation of instance
+	std::string m_name;     // qualified name (instance[.:=]property) or mapped name
+	unsigned m_instance;    // ordinal of instance in assembly
+	unsigned m_property;    // ordinal of property in implememtation of instance
+	const char *m_dumpFile; // pointer to dump file if one was specified
       } *m_properties;
       unsigned m_nProperties;
       CMap m_curMap;              // A temporary that indicates possible containers for a candidate
@@ -155,6 +157,7 @@ namespace OCPI {
       void start();
       void stop();
       bool wait(OCPI::OS::Timer *);
+      void finish();
       ExternalPort &getPort(const char *);
       friend struct Property;
       Worker &getPropertyWorker(const char *name);

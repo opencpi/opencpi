@@ -93,7 +93,7 @@ $(call OcpiDbgVar,XsimFiles)
 
 XsimLibraries=$(HdlLibraries) $(if $(findstring library,$(HdlMode)),,util_xilinx)
 XsimLibs=\
-  $(and $(filter assembly,$(HdlMode)),\
+  $(and $(filter assembly container,$(HdlMode)),\
   $(eval $(HdlSetWorkers)) \
   $(foreach w,$(HdlWorkers),\
     $(foreach f,$(firstword \
@@ -103,7 +103,8 @@ XsimLibs=\
                        $(error Worker $w not found in any component library.))),\
       -lib $w=$(call FindRelative,$(TargetDir),$f)))) \
   $(foreach l,\
-    $(HdlLibraries) $(Cores) $(and $(findstring $(HdlMode),worker device platform assembly),util_xilinx),\
+    $(HdlLibraries) $(Cores) $(and $(findstring $(HdlMode),worker device platform assembly container),\
+                                   util_xilinx),\
     -lib $(notdir $(l))=$(strip \
           $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,xsim))))
 

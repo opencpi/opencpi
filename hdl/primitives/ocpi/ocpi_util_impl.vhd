@@ -37,6 +37,7 @@ architecture rtl of message_bounds is
   signal fifo_ready  : bool_t;
   signal my_take     : bool_t;
   signal my_core_enable : bool_t;
+  signal my_reset_n     : bool_t;
 begin
   -- som is first data or when empty message
   som_out <= to_bool(out_count_r = 1 and (core_out or (fifo_eom and fifo_count = 0)));
@@ -56,11 +57,12 @@ begin
   -- decide when we can take from the input port
   my_take <= my_core_enable or (not valid_in and (som_in or (fifo_ready and eom_in)));
   take_in <= my_take;
+  my_reset_n <= not RST; -- for old vhdl
   
   myfifo : FIFO2
     generic map(width           => width)
-    port    map(clk             => Clk,
-                rst             => not RST,
+    port    map(clk             => clk,
+                rst             => my_reset_n,
                 d_in            => std_logic_vector(fifo_in),
                 enq             => fifo_enq,
                 full_n          => fifo_ready,

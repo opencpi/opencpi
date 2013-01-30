@@ -82,7 +82,9 @@ namespace OCPI {
       typedef std::vector<MappedProperty> MappedProperties;
       struct Property {
 	std::string m_name;
+	bool m_hasValue; // since value might legitimately be an empty string
 	std::string m_value;
+	std::string m_dumpFile;
 	const char *parse(ezxml_t x);
 	const char *setValue(ezxml_t px);
       };

@@ -118,8 +118,13 @@ HdlLibraryRefDir=$(strip \
   $(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1)/$(strip \
     $(call HdlToolLibRef,$(notdir $1),$2,$3)))
 
-HdlCoreRefDir=$(foreach d,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1)/$2,$(strip \
-		$d))
+HdlCoreRef=$(strip \
+  $(foreach d,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),\
+   $(foreach c,$(notdir $1)$(HdlBin),\
+     $(or $(wildcard $d$(HdlBin)),\
+	  $(wildcard $d/$2/$c),\
+          $(wildcard $d/$(call HdlGetFamily,$2)/$c),\
+	$(error No core file ($c) for target "$2" found for "$1".)))))
 
 
 ################################################################################

@@ -135,7 +135,9 @@ TYPE State_t IS (EXISTS_e,            -- 0
 
   -- the wci convenience IP that makes it simple to implement a WCI interface
   component decoder
-    generic(worker : worker_t; properties : properties_t);
+    generic(
+      worker                 : worker_t;
+      properties             : properties_t);
     port(
       ocp_in                 : in  in_t;       
       done                   : in  bool_t := btrue;
@@ -153,7 +155,22 @@ TYPE State_t IS (EXISTS_e,            -- 0
       abort_control_op       : out bool_t;
       is_big_endian          : out bool_t   -- for runtime dynamic endian
     );
-  end Component;
+  end component;
+
+  component control_decoder is
+    generic (
+      worker                 : worker_t);
+    port (
+      ocp_in                 : in in_t;       
+      done                   : in bool_t := btrue;
+      resp                   : out ocp.SResp_t;
+      control_op             : out control_op_t;
+      state                  : out state_t;
+      is_operating           : out bool_t;  -- just a convenience for state = operating_e
+      abort_control_op       : out bool_t;
+      is_big_endian          : out bool_t   -- for runtime dynamic endian
+      );
+  end component;
          
   component readback
     generic(properties : properties_t);

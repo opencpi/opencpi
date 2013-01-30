@@ -68,7 +68,7 @@ HdlToolLibraryResult=$(LibName)
 # Variable required by toolset: HdlToolCoreLibName
 # What library name should we give to the library when a core is built from
 # sources
-HdlToolCoreLibName=work
+HdlToolCoreLibName=$(Core)
 ################################################################################
 # Variable required by toolset: HdlBin
 # What suffix to give to the binary file result of building a core
@@ -145,8 +145,8 @@ QuartusMakeQsf=\
  (echo '\#' Common assignments whether a library or a core; \
   echo set_global_assignment -name FAMILY '\"'$(QuartusFamily_$(call HdlGetFamily,$(HdlTarget)))'\"'; \
   echo set_global_assignment -name DEVICE $(call ToUpper,$(if $(findstring $(HdlTarget),$(HdlAllFamilies)),AUTO,\
-                                            $(if $(findstring $(HdlMode),platform assembly), \
-                                             $(call QuartusMakePart,$(HdlPart_$(HdlPlatform))), \
+                                            $(if $(findstring $(HdlMode),platform assembly container),\
+                                             $(call QuartusMakePart,$(HdlPart_$(firstword $(HdlPlatforms)))),\
                                              $(HdlTarget)))); \
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   \
@@ -171,10 +171,9 @@ QuartusMakeQsf=\
     echo set_global_assignment -name $(if $(filter %.v,$s),VERILOG_FILE,VHDL_FILE -library $(LibName)) \
        '\"'$(notdir $s)'\"';) \
   \
-  $(and $(findstring assembly,$(HdlMode)), \
+  $(and $(filter assembly container,$(HdlMode)), \
     echo '\#' Import qxp files for each worker used in the assembly; \
     $(eval $(HdlSetWorkers)) \
-    $(info WORKER=$(HdlWorkers) CL=$(ComponentLibraries) HT=$(HdlTarget)) \
     $(foreach w,$(HdlWorkers),\
       $(foreach f,$(call HdlFindWorkerCoreFile,$w),\
        echo set_global_assignment -name QXP_FILE '\"'$(call FindRelative,$(TargetDir),$f)'\"';)) \
@@ -186,21 +185,16 @@ QuartusMakeQsf=\
         -section_id '\"'$i'\"';\
       echo set_global_assignment -name PARTITION_HIERARCHY db/$(subst :,_,$i) -to '\"$i\"' \
       -section_id '\"'$i'\"';)))\
+  $(and $(Cores),echo '\#' Import QXP file for each core;) \
   $(foreach l,$(Cores),\
-    echo set_global_assignment -name QXP_FILE '\"'$(strip \
-    $(or $(firstword \
-           $(foreach c,$(dir $l) $(call HdlCoreRefDir,$l,$(HdlTarget)) \
-                       $(call HdlCoreRefDir,$l,$(call HdlGetFamily,$(HdlTarget))),\
-	     $(foreach w,$c/$(notdir $l)$(HdlBin),\
-		$(if $(realpath $w),$(call FindRelative,$(TargetDir),$w))))), \
-        $(error No altera core ($l.qxp) at $(strip \
-           $(abspath $(call HdlCoreRefDir,$l,$(call HdlGetFamily,$(HdlTarget))))))))'\"';)\
+    echo set_global_assignment -name QXP_FILE \
+      '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRef,$l,$(HdlTarget)))'\"';)\
   $(if $(findstring $(HdlMode),platform),\
     echo '\#' Make sure the app is defined as an empty partition. ;\
     echo set_global_assignment -name PARTITION_HIERARCHY db/app -to '\"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app\"' \
       -section_id '\"'app'\"'; \
     echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'app'\"' EMPTY; ) \
-  $(if $(findstring $(HdlMode),core worker platform assembly),\
+  $(if $(findstring $(HdlMode),core worker platform assembly container),\
     echo '\#' Assignments for building cores; \
     echo set_global_assignment -name AUTO_EXPORT_INCREMENTAL_COMPILATION on; \
     echo set_global_assignment -name INCREMENTAL_COMPILATION_EXPORT_FILE $(Core)$(HdlBin); \
@@ -218,7 +212,7 @@ HdlToolCompile=\
   rm -r -f db incremental_db *.qxp *.rpt *.summary *.qpf *.qdf $(notdir $@); \
   $(QuartusMakeExport) $(QuartusMakeQsf) cat -n $(HdlName).qsf;\
   set -e; $(call OcpiDbgVar,HdlMode,xc) \
-  $(if $(findstring $(HdlMode),core worker platform assembly),\
+  $(if $(findstring $(HdlMode),core worker platform assembly container),\
     $(call DoAltera,quartus_map --write_settings_files=off $(HdlName)); \
     $(call DoAltera,quartus_cdb --merge --write_settings_files=off $(HdlName)); \
     $(call DoAltera,quartus_cdb --incremental_compilation_export --write_settings_files=off $(HdlName))) \

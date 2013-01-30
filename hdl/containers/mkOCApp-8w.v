@@ -868,7 +868,13 @@ module mkOCApp4B(RST_N_rst_0,
   .wci7_SResp(wci_s_7_SResp),
   .wci7_SData(wci_s_7_SData),
   .wci7_SThreadBusy(wci_s_7_SThreadBusy),
-  .wci7_SFlag(wci_s_7_SFlag));
+  .wci7_SFlag(wci_s_7_SFlag),
+
+  .wti0_MCmd(wti_s_0_MCmd),
+  .wti0_MData(wti_s_0_MData),
+  .wti0_SReset_n(wti_s_0_SReset_n),
+  .wti0_SThreadBusy(wti_s_0_SThreadBusy)
+);
   
 
 
@@ -923,6 +929,32 @@ assign wsi_m_dac_MData = 32'b0;
 assign wsi_m_dac_MByteEn = 4'b0;
 assign wsi_m_dac_MReqInfo = 8'b0;
 assign wsi_m_dac_MReset_n = 1'b0;
+
+assign wmiM0_MAddr = 14'b0;
+assign wmiM0_MAddrSpace = 1'b0;
+assign wmiM0_MBurstLength = 12'b0;
+assign wmiM0_MCmd = 3'b0;
+assign wmiM0_MData = 32'b0;
+assign wmiM0_MDataByteEn = 4'b0;
+assign wmiM0_MDataLast = 1'b0;
+assign wmiM0_MDataValid = 1'b0;
+assign wmiM0_MFlag = 32'b0;
+assign wmiM0_MReqInfo = 1'b0;
+assign wmiM0_MReqLast = 1'b0;
+assign wmiM0_MReset_n = 1'b0;
+
+assign wmiM1_MAddr = 14'b0;
+assign wmiM1_MAddrSpace = 1'b0;
+assign wmiM1_MBurstLength = 12'b0;
+assign wmiM1_MCmd = 3'b0;
+assign wmiM1_MData = 32'b0;
+assign wmiM1_MDataByteEn = 4'b0;
+assign wmiM1_MDataLast = 1'b0;
+assign wmiM1_MDataValid = 1'b0;
+assign wmiM1_MFlag = 32'b0;
+assign wmiM1_MReqInfo = 1'b0;
+assign wmiM1_MReqLast = 1'b0;
+assign wmiM1_MReset_n = 1'b0;
 
 endmodule  // mkOCApp
 

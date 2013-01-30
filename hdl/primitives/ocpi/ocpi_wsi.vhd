@@ -98,7 +98,7 @@ component master
     opcode           : in  std_logic_vector(opcode_width-1 downto 0);
     give             : in  Bool_t;
     data             : in  std_logic_vector(data_width-1 downto 0);
-    byte_enable      : in  std_logic_vector(n_bytes-1 downto 0) := (others => '1');
+    byte_enable      : in  std_logic_vector(n_bytes-1 downto 0) := (n_bytes-1 downto 0 => '1');
     som, eom, valid  : in  Bool_t);
 end component master;
 end package wsi;

@@ -165,11 +165,11 @@ const char *pattern(Worker *w, Port *p, int n, unsigned wn, bool in, bool master
 }
 
 void
-emitPortDescription(Port *p, Worker *w, FILE *f) {
+emitPortDescription(Port *p, Worker *w, FILE *f, Language lang) {
   bool mIn = p->masterIn();
   char *nbuf;
   asprintf(&nbuf, " %d", p->count);
-  const char *comment = w->language == VHDL ? "  --" : "//";
+  const char *comment = lang == VHDL ? "  --" : "//";
   fprintf(f,
 	  "\n  %s The%s %s %sinterface%s named \"%s\", with \"%s\" acting as OCP %s:\n",
 	  comment, p->count > 1 ? nbuf : "", wipNames[p->type],
@@ -362,9 +362,9 @@ emitParameters(FILE *f, Worker *w, const char *comment) {
 }
 
 static void
-emitSignals(FILE *f, Worker *w) {
-  const char *comment = w->language == VHDL ? "  --" : "//";
-  if (w->language == VHDL)
+emitSignals(FILE *f, Worker *w, Language lang) {
+  const char *comment = lang == VHDL ? "  --" : "//";
+  if (lang == VHDL)
     fprintf(f, "  port (\n");
   OcpSignalDesc *osd;
   Clock *c = w->clocks;
@@ -374,19 +374,19 @@ emitSignals(FILE *f, Worker *w) {
       if (last.empty())
 	fprintf(f,
 		"    %s Clock(s) not associated with one specific port:\n", comment);
-      emitSignal(c->signal, f, comment, w->language, Signal::IN, last, -1, 0);
+      emitSignal(c->signal, f, comment, lang, Signal::IN, last, -1, 0);
     }
   }
   for (unsigned i = 0; i < w->ports.size(); i++) {
     Port *p = w->ports[i];
     bool mIn = p->masterIn();
-    emitLastSignal(f, last, w->language, false);
+    emitLastSignal(f, last, lang, false);
     //    if (lang == Verilog)
-    emitPortDescription(p, w, f);
+    emitPortDescription(p, w, f, lang);
     // Some ports are basically an array of interfaces.
     for (unsigned n = 0; n < p->count; n++) {
       if (p->clock->port == p && n == 0) {
-	emitSignal(p->clock->signal, f, comment, w->language, Signal::IN, last, -1, n);
+	emitSignal(p->clock->signal, f, comment, lang, Signal::IN, last, -1, n);
 	p->ocp.Clk.signal = p->clock->signal;
       } else if (n == 0)
 	fprintf(f,
@@ -395,27 +395,27 @@ emitSignals(FILE *f, Worker *w) {
       osd = ocpSignals;
       for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  emitSignal(os->signal, f, comment, w->language, Signal::IN,
+	  emitSignal(os->signal, f, comment, lang, Signal::IN,
 		     last, osd->vector ? os->width : -1, n);
 	}
       osd = ocpSignals;
       for (OcpSignal *os = p->ocp.signals; osd->name; os++, osd++)
 	if ((osd->master != mIn && strcmp(osd->name, "Clk")) && os->value) {
-	  emitSignal(os->signal, f, comment, w->language, Signal::OUT,
+	  emitSignal(os->signal, f, comment, lang, Signal::OUT,
 		     last, osd->vector ? os->width : -1, n);
 	}
     }
   }
   if (w->nSignals) {
-    emitLastSignal(f, last, w->language, false);
+    emitLastSignal(f, last, lang, false);
     fprintf(f, "  %s Extra signals not part of any WIP interface:\n", comment);
     Signal *s = w->signals;
     for (unsigned n = 0; n < w->nSignals; n++, s++)
-      emitSignal(s->name, f, comment, w->language, s->direction, last,
+      emitSignal(s->name, f, comment, lang, s->direction, last,
 		 s->width ? s->width : -1, 0);
   }
-  emitLastSignal(f, last, w->language, true);
-  if (w->language == VHDL)
+  emitLastSignal(f, last, lang, true);
+  if (lang == VHDL)
     fprintf(f, "  );\n");
 }
 
@@ -745,13 +745,13 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    "(* box_type=\"user_black_box\" *)\n"
 	    "`endif\n"
 	    "module %s (\n", w->implName, w->implName);
-  emitSignals(f, w);
+  emitSignals(f, w, lang);
   if (lang == VHDL) {
     fprintf(f,
 	    "end component %s;\n\n"
 	    "constant worker : ocpi.wci.worker_t;\n",
 	    w->implName);
-    if (w->ctl.nRunProperties)
+    //    if (w->ctl.nRunProperties)
       fprintf(f, "constant properties : ocpi.wci.properties_t;\n");
     if ((err = emitOuterVhdlPortRecords(f, w)))
       return err;
@@ -1335,7 +1335,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	  "%s This file contains the implementation declarations for worker %s\n"
 	  "%s Interface definition signal names are defined with pattern rule: \"%s\"\n\n",
 	  comment, w->implName, comment, w->pattern);
-  unsigned maxPropName = 0;
+  unsigned maxPropName = 18;
   bool readback = false;
   for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
     OU::Property &pr = **pi;
@@ -1491,7 +1491,11 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	    "package body %s_defs is\n"
 	    "  constant worker : ocpi.wci.worker_t := (%u, \"%s\");\n",
 	    w->implName, decodeWidth, ops);
-    if (w->ctl.nRunProperties) {
+    if (!w->ctl.nRunProperties) {
+      fprintf(f,
+	      "  constant properties : ocpi.wci.properties_t(1 to 0) := "
+	      "(others => (0,0,0,0,0,false,false,false,false));\n");
+    } else {
       fprintf(f, "  constant properties : ocpi.wci.properties_t := (\n");
       bool first = true;
       unsigned n = 0;
@@ -1523,7 +1527,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	      //	      "library work; use work.all, work.%s_defs.all;\n"
 	      "entity %s is\n", w->implName, w->implName);
       emitParameters(f, w, comment);
-      emitSignals(f, w);
+      emitSignals(f, w, w->language);
     } else
     // Verilog just needs the module declaration and any other associate declarations
     // required for the module declaration.
@@ -1944,60 +1948,61 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	      "  wciAddr(inputs.MAddr'range) <= inputs.MAddr;\n");
       if (decodeWidth < 32)
 	fprintf(f,
-		"  wciAddr(31 downto inputs.MAddr'length) <= (others => '0');\n");
+              "  wciAddr(31 downto inputs.MAddr'length) <= (others => '0');\n");
       if (!wci->ocp.SData.value)
 	fprintf(f,
-		"  outputs.SData <= (others => '0'); -- avoid a warning..\n");
+	      "  outputs.SData                          <= (others => '0'); -- avoid a warning..\n");
       fprintf(f,
-	      "  outputs.SFlag(0) <= '1' when its(attention) else '0';\n"
-	      "  outputs.SFlag(1) <= '1'; -- worker is present\n"
-	      "  outputs.SThreadBusy(0) <= '0' when its(done) else '1';\n"
+	      "  outputs.SFlag(0)                       <= '1' when its(attention) else '0';\n"
+	      "  outputs.SFlag(1)                       <= '1'; -- worker is present\n"
+	      "  outputs.SThreadBusy(0)                 <= '0' when its(done) else '1';\n"
 	      //	    "  my_clk <= inputs.Clk;\n"
-	      "  my_reset <= to_bool(inputs.MReset_n = '0');\n"
-	      "  reset <= my_reset;\n");
-      if (w->ctl.readables || w->ctl.writables) {
+	      "  my_reset                               <= to_bool(inputs.MReset_n = '0');\n"
+	      "  reset                                  <= my_reset;\n");
+      if (w->ctl.nRunProperties)
 	fprintf(f,
-		"  x : component wci.decoder\n"
+		"  wci_decode : component wci.decoder\n"
 		"      generic map(worker               => %s_defs.worker,\n"
-		"                  properties           => %s_defs.properties)\n"
-		"      port map(   ocp_in.Clk           => inputs.Clk,\n"
-		"                  ocp_in.Maddr         => wciAddr,\n"
-		,//"                  ocp_in.Maddr(inputs.Maddr'left downto 0) => inputs.MAddr,\n",
+		"                  properties           => %s_defs.properties)\n",
 		w->implName, w->implName);
-#if 0
-	if (decodeWidth < 32)
-	  fprintf(f,
-		  "                  ocp_in.MAddr(31 downto %u) => (others => '0'),\n",
-		  decodeWidth);
-#endif
+      else
 	fprintf(f,
-		"                  ocp_in.MAddrSpace    => %s,\n"
-		"                  ocp_in.MByteEn       => %s,\n"
-		"                  ocp_in.MCmd          => inputs.MCmd,\n"
-		"                  ocp_in.MData         => %s,\n"
-		"                  ocp_in.MFlag         => inputs.MFlag,\n"
-		"                  ocp_in.MReset_n      => inputs.MReset_n,\n",
-		wci->ocp.MAddrSpace.value ? "inputs.MAddrSpace" : "\"0\"",
-		wci->ocp.MByteEn.value ? "inputs.MByteEn" : "\"0000\"",
-		wci->ocp.MData.value ? "inputs.MData" : "\"00000000000000000000000000000000\"");
+		"  wci_decode : component wci.control_decoder\n"
+		"      generic map(worker               => %s_defs.worker)\n",
+		w->implName);
+      fprintf(f,
+	      "      port map(   ocp_in.Clk           => inputs.Clk,\n"
+	      "                  ocp_in.Maddr         => wciAddr,\n"
+	      "                  ocp_in.MAddrSpace    => %s,\n"
+	      "                  ocp_in.MByteEn       => %s,\n"
+	      "                  ocp_in.MCmd          => inputs.MCmd,\n"
+	      "                  ocp_in.MData         => %s,\n"
+	      "                  ocp_in.MFlag         => inputs.MFlag,\n"
+	      "                  ocp_in.MReset_n      => inputs.MReset_n,\n",
+	      wci->ocp.MAddrSpace.value ? "inputs.MAddrSpace" : "\"0\"",
+	      wci->ocp.MByteEn.value ? "inputs.MByteEn" : "\"0000\"",
+	      wci->ocp.MData.value ? "inputs.MData" : "\"00000000000000000000000000000000\"");
+      fprintf(f,
+	      "                  done                 => done,\n"
+	      "                  resp                 => outputs.SResp,\n"
+	      "                  control_op           => control_op,\n"
+	      "                  state                => state,\n"
+	      "                  is_operating         => is_operating,\n"
+	      "                  abort_control_op     => abort_control_op,\n"
+	      "                  is_big_endian        => is_big_endian");
+      if (w->ctl.nRunProperties)
 	fprintf(f,
-    
-		"                  done                 => done,\n"
-		"                  resp                 => outputs.SResp,\n"
+		",\n"
 		"                  write_enables        => write_enables,\n"
 		"                  read_enables         => %s,\n"
 		"                  offsets              => offsets,\n"
 		"                  indices              => indices,\n"
 		"                  hi32                 => hi32,\n"
 		"                  nbytes_1             => nbytes_1,\n"
-		"                  data_outputs         => data,\n"
-		"                  control_op           => control_op,\n"
-		"                  state                => state,\n"
-		"                  is_operating         => is_operating,\n"
-		"                  abort_control_op     => abort_control_op,\n"
-		"                  is_big_endian        => is_big_endian);\n",
+		"                  data_outputs         => data);\n",
 		w->ctl.readables ? "read_enables" : "open");
-      }
+      else
+	fprintf(f, ");\n");
       if (w->ctl.readables)
 	fprintf(f,
 		"readback : component wci.readback\n"
@@ -2561,10 +2566,23 @@ OCPI_PROPERTY_DATA_TYPES
 	    comment = oa->comment ? oa->comment : thisComment;
 	  }
 	}
-      if (ip->port->type == WCIPort)
-	nControlInstance++;
     } // end of port loop
     fprintf(f, ");%s%s\n", comment[0] ? " // " : "", comment);
+    // Now we must tie off any outputs that are generically expected, but are not
+    // part of the worker's interface
+    for (ip = i->ports, nn = 0; nn < i->worker->ports.size(); nn++, ip++) {
+      switch (ip->port->type) {
+      case WCIPort:
+	if (!ip->port->ocp.SData.value) {
+	    const char *externalName;
+	    asprintf((char **)&externalName, ip->externalPort->ocp.SData.signal, nControlInstance);
+	  fprintf(f, "assign %s = 32'b0;\n", externalName);
+	}
+	nControlInstance++;
+	break;
+      default:;
+      }
+    }
   }
 #if 0
   Worker *ww = a->workers;

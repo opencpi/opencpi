@@ -791,7 +791,8 @@ namespace OCPI {
 #endif
 
 bool Value::
-unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, unsigned nItems) const {
+unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, unsigned nItems,
+		 char comma) const {
   unsigned
     nextDim = dim + 1,
     dimension = m_vt->m_arrayDimensions[dim],
@@ -808,13 +809,13 @@ unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, u
       offset += skip;
     } else {
       if (n != 0)
-	v += ',';
+	v += comma;
       if (needsCommaDimension()) {
 	v += '{';
-	thisNull = unparseValue(v, nseq, offset++);
+	thisNull = unparseValue(v, nseq, offset++, comma);
 	v += '}';
       } else
-	thisNull = unparseValue(v, nseq, offset++);
+	thisNull = unparseValue(v, nseq, offset++, comma);
     }
     if (thisNull) {
       if (!prevNull)
@@ -828,11 +829,11 @@ unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, u
 }
 
 void Value::
-unparseElement(std::string &s, unsigned nSeq) const {
+unparseElement(std::string &s, unsigned nSeq, char comma) const {
   if (m_vt->m_arrayRank)
-    unparseDimension(s, nSeq, 0, 0, m_vt->m_nItems);
+    unparseDimension(s, nSeq, 0, 0, m_vt->m_nItems, comma);
   else
-    unparseValue(s, nSeq, 0);
+    unparseValue(s, nSeq, 0, comma);
 }
 
 static void doFormat(std::string &s, const char *fmt, ...) {
@@ -845,7 +846,7 @@ static void doFormat(std::string &s, const char *fmt, ...) {
   free(cp);
 }
 
-void Value::unparse(std::string &s, bool append) const {
+    void Value::unparse(std::string &s, bool append, char comma) const {
   if (!append)
     s.clear();
   if (m_vt->m_isSequence) {
@@ -853,20 +854,20 @@ void Value::unparse(std::string &s, bool append) const {
     //    doFormat(s, "\\<%lu\\>", m_nElements);
     for (unsigned n = 0; n < m_nElements; n++) {
       if (n)
-	s += ',';
+	s += comma;
       if (needsCommaElement()) {
 	s += '{';
-	unparseElement(s, n);
+	unparseElement(s, n, comma);
 	s += '}';
       } else
-	unparseElement(s, n);
+	unparseElement(s, n, comma);
     }
   } else
-    unparseElement(s, 0);
+    unparseElement(s, 0, comma);
 }
 
 bool Value::
-unparseValue(std::string &s, unsigned nSeq, unsigned nArray) const {
+unparseValue(std::string &s, unsigned nSeq, unsigned nArray, char comma) const {
   switch (m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(sca,c,u,b,run,pretty,storage)     		 \
   case OA::OCPI_##pretty:		        			 \
@@ -876,10 +877,14 @@ unparseValue(std::string &s, unsigned nSeq, unsigned nArray) const {
 		           m_##pretty); 				 \
       break;
     OCPI_PROPERTY_DATA_TYPES
-    OCPI_DATA_TYPE(sca,corba,letter,bits,StructValue,Struct,store)
     OCPI_DATA_TYPE(sca,corba,letter,bits,TypeValue,Type,store)
     OCPI_DATA_TYPE(sca,corba,letter,bits,EnumValue,Enum,store)
 #undef OCPI_DATA_TYPE
+  case OA::OCPI_Struct:
+    return unparseStruct(s,
+			 m_vt->m_isSequence || m_vt->m_arrayRank ?
+			 m_pStruct[nSeq * m_vt->m_nItems + nArray] :
+		         m_Struct, comma);
   case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
   }
   return false;
@@ -1003,14 +1008,14 @@ bool Value::needsCommaElement() const {
   return m_vt->m_arrayRank == 1 || m_vt->m_baseType == OA::OCPI_Struct;
 }
 bool Value::
-unparseStruct(std::string &s, StructValue val) const {
+unparseStruct(std::string &s, StructValue val, char comma) const {
   bool seenOne = false;
   
   for (unsigned n = 0; n < m_vt->m_nMembers; n++) {
     Value *v = *val++;
     if (v) {
       if (seenOne)
-	s += ',';
+	s += comma;
       s += m_vt->m_members[n].m_name;
       s += ' ';
       if (v->needsComma()) {

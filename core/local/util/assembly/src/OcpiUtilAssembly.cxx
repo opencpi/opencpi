@@ -196,12 +196,18 @@ namespace OCPI {
     const char *Assembly::Property::
     setValue(ezxml_t px) {
       const char *cp, *err = NULL;
-      if ((cp = ezxml_cattr(px, "value")))
+      const char *df = ezxml_cattr(px, "dumpFile");
+      m_hasValue = false;
+      if ((cp = ezxml_cattr(px, "value"))) {
+	m_hasValue = true;
 	m_value = cp;
-      else if ((cp = ezxml_cattr(px, "valueFile")))
-	err = fileString(m_value, cp);
-      else
-	err = "Missing value or valuefile attribute for instance property value";
+      } else if ((cp = ezxml_cattr(px, "valueFile"))) {
+	m_hasValue = true;
+	err = file2String(m_value, cp);
+      } else if (!df)
+	return "Missing value or valueFile or dumpFile attribute for instance property";
+      if (!err && df)
+	m_dumpFile = df;
       return err;
     }
 
@@ -210,7 +216,7 @@ namespace OCPI {
       const char *err;
       std::string instance;
 
-      if ((err = OE::checkAttrs(px, "name", "value", "valuefile", "instance", "property", NULL)) ||
+      if ((err = OE::checkAttrs(px, "name", "value", "valuefile", "dumpFile", "instance", "property", NULL)) ||
 	  (err = OE::getRequiredString(px, m_name, "name", "property")) ||
 	  (err = OE::getRequiredString(px, instance, "instance", "property")) ||
 	  (err = a.getInstance(instance.c_str(), m_instance)))
@@ -221,7 +227,7 @@ namespace OCPI {
 	  return esprintf("Duplicate mapped property: %s", m_name.c_str());
       const char *cp = ezxml_cattr(px, "property");
       m_instPropName = cp ? cp : m_name.c_str();
-      if (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile"))
+      if (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile") || ezxml_cattr(px, "dumpFile"))
 	a.m_instances[m_instance].addProperty(m_instPropName.c_str(), px);
       return NULL;
     }
@@ -230,7 +236,7 @@ namespace OCPI {
     parse(ezxml_t px) {
       const char *err;
 
-      if ((err = OE::checkAttrs(px, "name", "value", "valuefile", NULL)) ||
+      if ((err = OE::checkAttrs(px, "name", "value", "valuefile", "dumpFile", NULL)) ||
 	  (err = OE::getRequiredString(px, m_name, "name", "property")))
 	return err;
       return setValue(px);

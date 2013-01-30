@@ -57,7 +57,7 @@ HdlToolLibraryRefFile=
 # When XST compiles Verilog files it creates <lib>.sdbl, <lib>.sdbx
 # Core platform and assembly modes only use Verilog
 # Libraries and workers may also have VHDL
-ifneq ($(findstring $(HdlMode),core platform assembly),)
+ifneq ($(findstring $(HdlMode),core platform assembly container),)
   HdlLibSuffix=sdbl
 else
    ifneq ($(strip $(filter %.vhd,$(CompiledSourceFiles))),)
@@ -205,7 +205,8 @@ XstGoodOptions=-bufg -opt_mode -opt_level -read_cores -iobuf \
 # This is the set for building cores, not chips.
 XstDefaultOptions=\
     -ifmt mixed -bufg 0 -iobuf no -opt_mode speed -opt_level 2 -ofmt NGC \
-    -keep_hierarchy soft -netlist_hierarchy rebuilt -read_cores optimize \
+    -keep_hierarchy soft -netlist_hierarchy rebuilt \
+    -read_cores $(if $(filter assembly,$(HdlMode)),yes,optimize) \
     -hierarchy_separator /
 
 # Extra default ones:\
@@ -276,7 +277,7 @@ XstMakeIni=\
 
 XstMakeLso=\
   (\
-   $(if $(PreBuiltCore)$(findstring core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
+   $(if $(PreBuiltCore)$(filter worker core,$(HdlMode)),,echo work;) $(if $(findstring work,$(LibName)),,echo $(LibName);) \
    $(foreach l,$(XstLibraries) $(CDKComponentLibraries) $(CDKDeviceLibraries) $(ComponentLibraries) $(DeviceLibraries),\
                       echo $(lastword $(subst -, ,$(notdir $(l))));)\
   $(foreach l,$(Cores),\
@@ -298,8 +299,14 @@ XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));
 #$(info TARGETDIR: $(TargetDir))
 # $(and $(findstring worker,$(HdlMode)),-work_lib work) 
 # $(and $(findstring worker,$(HdlMode)),-work_lib $(call ToLower,$(Worker))) 
+# -p $(strip \
+      $(foreach t,$(or $(HdlExactPart),$(HdlTarget)),\
+        $(if $(findstring $t,$(HdlAllFamilies)),\
+           $(firstword $(HdlTargets_$(t))),$t))) \
+
 XstOptions +=\
- -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) -p $(or $(HdlExactPart),$(HdlTarget)) \
+ -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top) \
+ -p $(or $(HdlExactPart),$(HdlTarget))\
  $(and $(VerilogIncludeDirs),$(strip\
    -vlgincdir { \
      $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
@@ -316,12 +323,7 @@ XstOptions +=\
      $(foreach l,$(DeviceLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/lib/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
-     $(foreach c,$(Cores),$(sort \
-	$(foreach d,$(sort \
-	   $(and $(HdlPart),$(call HdlLibraryRefDir,$(c),$(HdlPart),$(HdlPart))) \
-	   $(if $(findstring $(HdlTarget),$(HdlAllFamilies)),,$(call HdlLibraryRefDir,$(c),$(HdlTarget),$(HdlTarget))) \
-           $(call HdlLibraryRefDir,$(c),$(HdlTarget))),\
-	   $(and $(realpath $d),$(call FindRelative,$(TargetDir),$d)))))\
+     $(foreach c,$(Cores),$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
       })
 
 XstNgcOptions=\
@@ -411,9 +413,17 @@ define HdlToolDoPlatform
 $(call NgdName,$1): $(call AppNgcName,$1) $(HdlPlatformsDir)/$1/$1.ucf $(call TopNgcName,$1) | $(call PlatformDir,$1)
 	$(AT)echo -n For $(Worker) on $1: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
 	$(AT)$(call DoXilinx,ngdbuild,$1,\
-	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
+	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) \
+                $$(foreach d, ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
+		              $$(foreach l,$$(ComponentLibraries),$$(strip \
+			       $$(call FindRelative,$(call PlatformDir,$1), \
+				  $$(call HdlComponentLibrary,$$l,$(HdlPart_$1))))), \
+			-sd $$d) \
 	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgdName,$1)))
-	$(AT)$(call DoXilinx,ngcbuild,$1,\
+
+
+# This is unnecessary
+#	$(AT)$(call DoXilinx,ngcbuild,$1,\
 	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) -sd ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
 	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgcName,$1)))
 # Map to physical elements

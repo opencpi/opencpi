@@ -102,7 +102,7 @@ $(call OcpiDbgVar,IsimFiles)
 #        -lib $(notdir $(l))_$(notdir $(w))=$(strip\
 
 IsimLibs=\
-  $(and $(filter assembly,$(HdlMode)),\
+  $(and $(filter assembly container,$(HdlMode)),\
   $(eval $(HdlSetWorkers)) \
   $(foreach w,$(HdlWorkers),\
     $(foreach f,$(firstword \
@@ -112,7 +112,8 @@ IsimLibs=\
                        $(error Worker $w not found in any component library.))),\
       -lib $w=$(call FindRelative,$(TargetDir),$f)))) \
   $(foreach l,\
-    $(HdlLibraries) $(Cores) $(and $(findstring $(HdlMode),worker device platform assembly),util_xilinx),\
+    $(HdlLibraries) $(Cores) $(and $(findstring $(HdlMode),worker device platform assembly container),\
+				   util_xilinx),\
     -lib $(notdir $(l))=$(strip \
           $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim))))
 

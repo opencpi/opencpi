@@ -177,13 +177,14 @@ hdlcomps:
 	$(MAKE) -C hdl components
 
 hdlapps: hdlcomps hdl
-	$(MAKE) -C hdl applications
+	$(MAKE) -C hdl assemblies
 
 hdl:
 	$(MAKE) -C hdl
 
 cleanhdl:
 	$(MAKE) -C hdl clean
+	$(MAKE) -C components cleanhdl
 
 rcc:
 	make -C components rcc

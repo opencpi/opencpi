@@ -10,10 +10,12 @@ _HDL_TARGETS_=here
 #Testing: HdlTopTargets=xilinx altera verilator test1
 HdlTopTargets:=xilinx altera icarus verilator isim modelsim # icarus altera # verilator # altera
 
+# The first part in a family is the one used for core building
+# Usually it should be the largest
 HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp xsim
-HdlTargets_virtex5:=xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t xc5vtx240t
+HdlTargets_virtex5:=xc5vtx240t xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t
 HdlTargets_virtex6:=xc6vlx240t xc6slx45t
-HdlTargets_spartan3:=xc3sd3400a
+HdlTargets_spartan3adsp:=xc3sd3400a
 
 HdlTargets_altera:=stratix4 stratix5 # altera-sim
 HdlTargets_stratix4:=ep4sgx230k ep4sgx360
@@ -35,7 +37,7 @@ HdlToolSet_stratix4:=quartus
 HdlToolSet_stratix5:=quartus
 
 # Platforms
-HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 isim_pf xsim_pf
+HdlAllPlatforms:=ml555 schist ml605 ocpiIsim alst4 isim_pf xsim_pf n210
 # Parts as chip-speed-package
 HdlPart_ml555:=xc5vlx50t-1-ff1136
 HdlPart_schist:=xc5vsx95t-2-ff1136
