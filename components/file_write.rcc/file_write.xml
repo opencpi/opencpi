@@ -6,9 +6,9 @@ Properties:
 <RccImplementation controloperations="start">
   <ComponentSpec name='file_write'>
     <DataInterfaceSpec Name="in"/>
-    <property name='messagesInFile' type='bool' readable='true'/>
+    <property name='messagesInFile' type='bool' readable='true' initial='true'/>
     <property name='bytesWritten' type='uLongLong' readable='true'/>
     <property name='messagesRead' type='uLongLong' readable='true'/>
-    <property name='fileName' type='string' stringLength='1024'/>
+    <property name='fileName' type='string' stringLength='1024' initial='true' readable='true'/>
   </ComponentSpec>
 </RccImplementation>

@@ -13,13 +13,12 @@ Properties:
       <!-- <xi:include href="rstream_with_sync_protocol.xml"/> -->
     </DataInterfaceSpec>
 
-    <property name='messagesInFile' type='bool' readable='true'/>
-    <property name='opcode' type='uchar' readable='true'/>
-    <property name='messageSize' type='ulong' readable='true'/>
-    <property name='granularity' type='ulong' readable='true'/>
+    <property name='messagesInFile' type='bool' readable='true' initial='true' default='false'/>
+    <property name='opcode' type='uchar' readable='true' initial='true' default='0'/>
+    <property name='messageSize' type='ulong' readable='true' initial='true' default='4096'/>
+    <property name='granularity' type='ulong' readable='true' initial='true' default='1'/>
     <property name='bytesRead' type='uLongLong' readable='true'/>
     <property name='messagesWritten' type='uLongLong' readable='true'/>
-    <property name='fileName' type='string' stringLength='1024'/>
-    <Property Name="test" type="Short" ArrayLength="4" Readable="true" Writable="true" default="1,2,3,4"/>
+    <property name='fileName' type='string' readable='true' initial='true' stringLength='1024'/>
   </ComponentSpec>
 </RccImplementation>
