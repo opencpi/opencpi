@@ -1,5 +1,5 @@
 # The isim_pf platform.
-Libraries=bsv util ocpi
+HdlLibraries=bsv util ocpi
 # Configurations=....
 SourceFiles=fpgaTop_isim_pf.v mkSimDCP.v mkSimIO.v main.v
 IsimTop=isim_pf.main

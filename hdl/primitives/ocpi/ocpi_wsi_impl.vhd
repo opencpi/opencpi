@@ -111,6 +111,7 @@ architecture rtl of slave is
   signal fifo_in, fifo_out : std_logic_vector(fifo_width - 1 downto 0);
   signal fifo_enq : std_logic;
   signal fifo_ready : bool_t;
+  --signal fifo_full_r : bool_t;
 begin
   -- Combi resets:
   --   We get wci reset and wsi peer reset (from master)
@@ -152,7 +153,7 @@ begin
   fifo_enq <= fifo_valid or fifo_som or fifo_eom;
 
   -- Instantiate and connect the FIFO
-  fifo : FIFO2
+  fifo : FIFO2X
     generic map(width                       => fifo_width)
     port    map(clk                         => Clk,
                 rst                         => reset_n,
@@ -164,7 +165,7 @@ begin
                 empty_n                     => fifo_ready,
                 clr                         => '0');
   -- FIXME WHEN OWN CLOCK
-  SThreadBusy(0) <= reset_i or not fifo_full_n or not wci_is_operating;
+  SThreadBusy(0) <= reset_i or not wci_is_operating or not fifo_full_n;
 
   -- Manage two little bits of state - are we inside a message and was the
   -- previous clock a last-word-in-a-message
@@ -175,7 +176,9 @@ begin
       if its(reset_i) then
         in_message <= bfalse;
         last_was_eom <= bfalse;
+--        fifo_full_r <= btrue;
       else
+--        fifo_full_r <= not fifo_full_n;
         if MCmd = ocpi.ocp.MCmd_WRITE then -- FIXME: pipelined input
           in_message <= btrue;
         elsif its(last_was_eom) then
@@ -237,6 +240,7 @@ entity master is
 end entity;
 architecture rtl of master is
   signal reset_i   : Bool_t; -- internal reset, in ports clock domain
+  signal ready_i   : Bool_t;
   signal early_som : Bool_t; -- som has been given without eom or valid
   signal last_eom  : Bool_t; -- previous give was eom
   signal opcode_i  : std_logic_vector(opcode'range);
@@ -244,9 +248,10 @@ begin
   -- FIXME WHEN OWN CLOCK
   reset_i <= wci_reset or not SReset_n;
   reset <= reset_i;
+  ready <= ready_i;
   -- FIXME WHEN OWN CLOCK
   MReset_n <= not wci_reset;
-  MCmd <= ocpi.ocp.MCmd_WRITE when give and not its(early_som) else ocpi.ocp.MCmd_IDLE;
+  MCmd <= ocpi.ocp.MCmd_WRITE when its(give) and ready_i and not its(early_som) else ocpi.ocp.MCmd_IDLE;
   MData <= data;
   MDataLast <= give and eom;
   MReqLast <= give and eom;
@@ -259,14 +264,14 @@ begin
   begin
     if rising_edge(Clk) then
       if its(reset_i) then
-        ready <= bfalse;
+        ready_i <= bfalse;
         last_eom <= bfalse;
         early_som <= bfalse;
         opcode_i <= (others => '0'); -- perhaps unnecessary, but supresses a warning
       else
-        ready <= wci_is_operating and not SThreadBusy(0);
+        ready_i <= wci_is_operating and not SThreadBusy(0);
       end if;
-      if its(give) then
+      if give and ready_i then -- prevent the worker from giving when not ready
         if som or last_eom then
           if not its(valid) and not its(eom) then
             early_som <= btrue;

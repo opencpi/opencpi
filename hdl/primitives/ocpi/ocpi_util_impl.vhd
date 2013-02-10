@@ -38,12 +38,16 @@ architecture rtl of message_bounds is
   signal my_take     : bool_t;
   signal my_core_enable : bool_t;
   signal my_reset_n     : bool_t;
+  signal zero_count : bool_t;
+  signal fifo_out   : std_logic_vector(width-1 downto 0);
 begin
+  fifo_count <= unsigned(fifo_out);
+  zero_count <= to_bool(fifo_ready and fifo_count = 0);
   -- som is first data or when empty message
-  som_out <= to_bool(out_count_r = 1 and (core_out or (fifo_eom and fifo_count = 0)));
+  som_out <= to_bool(out_count_r = 1 and (core_out or (its(fifo_eom) and zero_count)));
   -- eom is last data or when empty message
   fifo_deq <= to_bool(its(fifo_eom) and ready_out and
-                      ((core_out and out_count_r = fifo_count) or fifo_count = 0));
+                      ((core_out and out_count_r = fifo_count) or zero_count));
   eom_out <= fifo_deq;
   -- data is always sent since we can't hold it back
   valid_out <= core_out;
@@ -66,7 +70,7 @@ begin
                 d_in            => std_logic_vector(fifo_in),
                 enq             => fifo_enq,
                 full_n          => fifo_ready,
-                unsigned(d_out) => fifo_count,
+                d_out           => fifo_out,
                 deq             => fifo_deq,
                 empty_n         => fifo_eom,
                 clr             => '0');
@@ -78,10 +82,12 @@ begin
         in_count_r <= to_unsigned(0, width);
         out_count_r <= to_unsigned(1, width);
       else
-        if its(eom_in) then
-          in_count_r <= to_unsigned(0, width);
-        elsif valid_in and my_take then
-          in_count_r <= in_count_r + 1;
+        if its(my_take) then
+          if its(eom_in) then
+            in_count_r <= to_unsigned(0, width);
+          elsif its(valid_in) then
+            in_count_r <= in_count_r + 1;
+          end if;
         end if;
         if its(fifo_deq) then
           out_count_r <= to_unsigned(1, width);

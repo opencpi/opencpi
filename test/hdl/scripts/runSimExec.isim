@@ -3,7 +3,7 @@ if [[ $OCPI_XILINX_TOOLS_DIR == "" ]]; then
    echo "The OCPI_XILINX_TOOLS_DIR environment variable is not set, and is required for isim executables."
    exit 1
 fi
-set -evx
+set -e
 # Pass arguments to the settings script to override current args
 . $OCPI_XILINX_TOOLS_DIR/settings64.sh $OCPI_XILINX_TOOLS_DIR
 appname=$1

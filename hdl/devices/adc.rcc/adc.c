@@ -256,12 +256,12 @@ static RCCResult run ( RCCWorker* self,
   ( void ) timedOut;
   ( void ) newRunCondition;
 
-  uint8_t* buffer = ( uint8_t* ) self->ports [ ADC_WSIOUT ].current.data;
+  uint8_t* buffer = ( uint8_t* ) self->ports [ ADC_OUT ].current.data;
 
 #if 0
   FILE* file = *( ( FILE** ) self->memories [ FILE_POINTER_INDEX ] );
 
-  size_t n_bytes = self->ports [ ADC_WSIOUT ].current.maxLength;
+  size_t n_bytes = self->ports [ ADC_OUT ].current.maxLength;
 
   size_t offset = 0;
 
@@ -289,10 +289,10 @@ static RCCResult run ( RCCWorker* self,
   */
   do_sample_swap ( ( uint32_t* ) buffer,
                    ( uint32_t* ) buffer,
-                   self->ports [ ADC_WSIOUT ].current.maxLength );
+                   self->ports [ ADC_OUT ].current.maxLength );
 
-  self->ports [ ADC_WSIOUT ].output.length =
-                               self->ports [ ADC_WSIOUT ].current.maxLength;
+  self->ports [ ADC_OUT ].output.length =
+                               self->ports [ ADC_OUT ].current.maxLength;
 
   return RCC_ADVANCE;
 }

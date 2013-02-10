@@ -3057,11 +3057,14 @@ emitWorker(FILE *f, Worker *w)
  static void
 emitInstance(Instance *i, FILE *f)
 {
-  fprintf(f, "<%s name=\"%s\" worker=\"%s\" occpIndex=\"%u\"",
+  
+  fprintf(f, "<%s name=\"%s\" worker=\"%s\"",
 	  i->iType == Instance::Application ? "instance" :
 	  i->iType == Instance::Interconnect ? "interconnect" :
 	  i->iType == Instance::IO ? "io" : "adapter",
-	  i->name, i->worker->implName, i->index);
+	  i->name, i->worker->implName);
+  if (!i->worker->noControl)
+    fprintf(f, " occpIndex=\"%u\"", i->index);
 #if 0
   bool any = false;
   Port *p = i->worker->ports;

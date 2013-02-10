@@ -158,6 +158,7 @@ namespace OCPI {
     public:
       static unsigned s_count;
       std::string m_name;
+      std::string m_package;
       int m_doneInstance; // -1 for none
       std::vector<Instance> m_instances;
       std::list<Connection> m_connections;

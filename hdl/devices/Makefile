@@ -42,6 +42,7 @@
 
 # The names of the device workers are only qualified when we have more than
 # one -- until we have a good naming convension.
+Package=ocpi.devices
 XmlIncludeDirs=../../components/specs
 Implementations = \
 	dac.hdl \

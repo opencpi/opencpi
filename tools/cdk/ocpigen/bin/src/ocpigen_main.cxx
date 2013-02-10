@@ -70,7 +70,7 @@ add to tree.
 
 int
 main(int argc, char **argv) {
-  const char *library = "work", *outDir = 0, *wksFile = NULL;
+  const char *library = "work", *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
     doBsv = false, doArt = false;
@@ -90,6 +90,7 @@ main(int argc, char **argv) {
 	    " -P <platform> The platform for the artifact\n"
 	    " -e <device>   The device for the artifact\n"
 	    " -L <loadinfo> The load information for the device\n"
+            " -p <package>  The package name for component specifications\n"
 	    " Other options:\n"
 	    " -l <lib>      The VHDL library name that <www>_defs.vhd will be placed in (-i)\n"
 	    " -D <dir>      Specify the output directory for generated files\n"
@@ -152,6 +153,9 @@ main(int argc, char **argv) {
 	break;
       case 'P':
 	platform = *++ap;
+	break;
+      case 'p':
+	package = *++ap;
 	break;
       default:
 	fprintf(stderr, "Unknown flag: %s\n", *ap);

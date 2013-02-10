@@ -305,7 +305,7 @@ namespace OCPI {
 	formatStringAddV(std::string &out, const char *fmt, va_list ap);
       // Return an error string (caller can throw if desired)
       const char
-	*file2String(std::string &out, const char *file),
+	*file2String(std::string &out, const char *file, char replaceNewline = 0),
 	*string2File(const std::string &in, const char *file),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 

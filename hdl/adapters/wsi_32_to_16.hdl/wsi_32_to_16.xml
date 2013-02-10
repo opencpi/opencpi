@@ -1,5 +1,9 @@
 <HDLImplementation language="vhdl">
-  <xi:include href="in1_out1_spec.xml"/>
+  <!-- for now the spec is specific to the adapter -->
+  <ComponentSpec name="wsi_32_to_16" nocontrol='true'>
+    <DataInterfaceSpec Name="in" Producer="false"/>
+    <DataInterfaceSpec Name="out" Producer="true"/>
+  </ComponentSpec>
   <streaminterface name='in' datawidth='32'/>
   <streaminterface name='out' datawidth='16'/>
 </HDLImplementation>

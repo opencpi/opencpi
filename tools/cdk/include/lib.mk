@@ -48,6 +48,25 @@ include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 ifndef LibName
 LibName=$(CwdName)
 endif
+ifndef Package
+$(error The "Package" variable it not set for this library. (e.g. Package=com.ibm.prod1).)
+endif
+PackageFile:=lib/package-name
+ifeq ($(wildcard lib),)
+$(shell mkdir -p lib)
+endif
+ifeq ($(wildcard $(PackageFile)),)
+  $(shell echo $(Package) > $(PackageFile))
+else
+  PackageName:=$(shell cat $(PackageFile))
+  ifneq ($(Package),$(PackageName))
+    ifneq ($(MAKECMDGOALS),clean)
+      $(error You must make clean after changing the package name.)
+    endif
+  endif
+endif
+clean::
+	$(AT)rm -f $(PackageFile)
 # we need to factor the model-specifics our of here...
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))

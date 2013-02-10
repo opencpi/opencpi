@@ -241,9 +241,9 @@ namespace OCPI {
       *pn = uProp.m_ordinal; // remember position in property list 
       pv->setType(uProp);    // set the data type of the Value from the metadata property
       if ((err = pv->parse(value)))
-	throw OU::Error("Value \"%s\" for property \"%s\" of instance \"%s\" of "
+	throw OU::Error("Value for property \"%s\" of instance \"%s\" of "
 			"component \"%s\" is invalid for its type: %s",
-			value, pName, name, impl.m_metadataImpl.specName().c_str(), err);
+			pName, name, impl.m_metadataImpl.specName().c_str(), err);
       pv++, pn++;
     }
     void ApplicationI::
@@ -729,8 +729,14 @@ namespace OCPI {
 	return false;
       Property &p = m_properties[ordinal];
       name = p.m_name;
-      std::string dummy;
-      return m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);
+      OC::Worker &w = *m_workers[p.m_instance];
+      OU::Property &wp = w.property(p.m_property);
+      if (wp.m_isReadable) {
+	std::string dummy;
+	m_workers[p.m_instance]->getProperty(p.m_property, dummy, value);
+      } else
+	value = "<unreadable>";
+      return true;
     }
 
     ApplicationI::Property &ApplicationI::
@@ -767,7 +773,9 @@ namespace OCPI {
     }
 
     ApplicationI::Instance::Instance() :
-      m_impl(NULL), m_propValues(NULL), m_propOrdinals(NULL) { //, m_candidate(0) {
+      m_impl(NULL), m_container(0), m_nPropValues(0), m_propValues(NULL), m_propOrdinals(NULL),
+      m_feasibleContainers(NULL), m_nCandidates(0)
+    {
     }
     ApplicationI::Instance::~Instance() {
       delete [] m_propValues;

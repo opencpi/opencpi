@@ -520,7 +520,7 @@ formatStringAdd(std::string &out, const char *fmt, ...) {
 
 // Use vanilla C file I/O
 const char *OCPI::Util::
-file2String(std::string &out, const char *file) {
+file2String(std::string &out, const char *file, char replaceNewLine) {
   FILE *f = fopen(file, "r");
   long size;
   const char *err = NULL;
@@ -529,24 +529,46 @@ file2String(std::string &out, const char *file) {
       fseek(f, 0, SEEK_END) == 0 &&
       (size = ftell(f)) > 0 &&
       fseek(f, 0, SEEK_SET) == 0) {
+    out.reserve(size);
     // To avoid requiring double storage, we chunk the input.
     char buf[4*1024];
-    out.reserve(size);
+    bool initial = true;  // for trimming initial which space
+    bool newLine = false; // for trimming trailing newline when replacing newlines
     size_t n;
-    for (; (n = fread(buf, 1, sizeof(buf), f)) && n <= (size_t)size; size -= n) {
-      unsigned nn = n;
-      for (char *cp = buf; nn; nn--, cp++)
-	if (*cp == '\n')
-	  *cp = ',';
-      out.append(buf, n);
+    while ((n = fread(buf, 1, sizeof(buf), f))) {
+      char *cp = buf;
+      if (initial) {
+	// Trim initial white space
+	for (; n && isspace(*cp); n--, cp++)
+	  ;
+	if (n)
+	  initial = false;
+      }
+      if (replaceNewLine) {
+	if (newLine) {
+	  out += replaceNewLine;
+	  newLine = false;
+	}
+	char *np = cp;
+	for (unsigned nn = n; nn; nn--, np++)
+	  if (*np == '\n')
+	    if (nn == 1)
+	      newLine = true, n--;
+	    else
+	      *np = replaceNewLine;
+      }
+      out.append(cp, n);
     }
-    if (n)
-      err = "file longer than expected";
+    if (ferror(f))
+      err = "error reading file";
   } else
     err = "file could not be open for reading";
-  fclose(f);
-  if (err)
+  if (f)
+    fclose(f);
+  if (err) {
+    out.clear();
     return esprintf("Can't process file \"%s\" for string: %s", file, err);
+  }
   return NULL;
 }
 const char *OCPI::Util::

@@ -83,7 +83,7 @@ namespace OCPI {
       m_processors = 0;
       ezxml_t ax = m_xml;
       const char *err;
-      static const char *baseAttrs[] = { "name", NULL};
+      static const char *baseAttrs[] = { "name", "package", NULL};
       bool maxProcs = false, minProcs = false, roundRobin = false;
       // FIXME: move app-specific parsing up into library assy
       if ((err = OE::checkAttrsVV(ax, baseAttrs, extraTopAttrs, NULL)) ||
@@ -120,6 +120,9 @@ namespace OCPI {
       }
 	
       OE::getNameWithDefault(ax, m_name, defaultName ? defaultName : "unnamed%u", s_count);
+      OE::getOptionalString(ax, m_package, "package");
+      if (m_package.empty())
+	m_package = "org.opencpi";
       m_instances.resize(OE::countChildren(ax, "Instance"));
       Instance *i = &m_instances[0];
       unsigned n = 0;
@@ -203,7 +206,7 @@ namespace OCPI {
 	m_value = cp;
       } else if ((cp = ezxml_cattr(px, "valueFile"))) {
 	m_hasValue = true;
-	err = file2String(m_value, cp);
+	err = file2String(m_value, cp, ',');
       } else if (!df)
 	return "Missing value or valueFile or dumpFile attribute for instance property";
       if (!err && df)
@@ -284,6 +287,8 @@ namespace OCPI {
 					"external", NULL};
       if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)))
 	return err;
+      std::string component;
+      const char *dot = 0;
       if (a.isImpl()) {
 	if (ezxml_cattr(ix, "component"))
 	  err = "'component' attributes invalid in this implementaiton assembly";
@@ -291,8 +296,18 @@ namespace OCPI {
 	  OE::getOptionalString(ix, m_implName, "worker"); // FIXME: optional due to container xml...
       } else {
 	OE::getOptionalString(ix, m_implName, "worker");
-	err = OE::getRequiredString(ix, m_specName, "component", "instance");
+	if (!(err = OE::getRequiredString(ix, component, "component", "instance"))) {
+	  if ((dot = strrchr(component.c_str(), '.')))
+	    dot++;
+	  else {
+	    m_specName = a.m_package;
+	    m_specName += ".";
+	    dot = component.c_str();
+	  }
+	  m_specName += component;
+	}
       }
+
       if (err ||
 	  (err = OE::checkElements(ix, "property", NULL)))
 	return err;
@@ -305,19 +320,21 @@ namespace OCPI {
 	  const char
 	    *c = ezxml_cattr(x, "component"),
 	    *w = ezxml_cattr(x, "worker");
-	  if (m_specName.size() && c && m_specName == c ||
+	  if (component.size() && c && !strcmp(dot, c) ||
 	      m_implName.size() && w && m_implName == w) {
 	    if (x == ix)
 	      me = n;
 	    n++;
 	  }
 	}
-	const char *myBase = m_specName.size() ? m_specName.c_str() : m_implName.c_str();
+	const char *myBase = component.size() ? dot : m_implName.c_str();
 	if (n > 1)
 	  formatString(m_name, "%s%u", myBase, me);
 	else
 	  m_name = myBase;
       }
+      ocpiDebug("Component: %s name: %s impl: %s spec: %s",
+		component.c_str(), m_name.c_str(), m_implName.c_str(), m_specName.c_str());
       m_properties.resize(OE::countChildren(ix, "property"));
       Property *p = &m_properties[0];
       for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px), p++)

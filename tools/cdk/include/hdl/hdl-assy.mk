@@ -142,6 +142,9 @@ ContainerWorkersFile=$(call PlatformDir,$1)/$(ContainerModule).wks
 # Second arg is part
 # Third arg is family
 define DoContainer
+
+-include $(call PlatformDir,$1)/*.deps
+
 $(call OcpiDbg,DoContainer($1,$2,$3,$(HdlBin)))
 
 ifdef HdlToolNeedBB

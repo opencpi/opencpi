@@ -182,6 +182,7 @@ namespace OCPI {
       friend class Port;
       const char *implName, *instName;
       mutable uint32_t m_window; // perfect use-case for mutable..
+      bool m_hasControl;
     protected:
       Access m_properties;
       Container &m_wciContainer;
@@ -189,45 +190,53 @@ namespace OCPI {
       // (since we inherit this in some cases were it is not needed).
       unsigned myOccpIndex;
       WciControl(Container &container, ezxml_t implXml, ezxml_t instXml)
-        : implName(0), instName(0), m_window(0), m_wciContainer(container)
+        : implName(0), instName(0), m_window(0), m_hasControl(false), m_wciContainer(container)
       {
 	setControlOperations(ezxml_cattr(implXml, "controlOperations"));
         if (!implXml)
           return;
         implName = ezxml_attr(implXml, "name");
         instName = ezxml_attr(instXml, "name");
-	setControlMask(getControlMask() | 1 << OM::Worker::OpStart);
-        myOccpIndex = OC::getAttrNum(instXml, "occpIndex");
-        uint32_t timeout = OC::getAttrNum(implXml, "timeout", true);
-        if (!timeout)
-          timeout = 16;
-        unsigned logTimeout = 31;
-        for (uint32_t u = 1 << logTimeout; !(u & timeout);
-             u >>= 1, logTimeout--)
-          ;
-        ocpiDebug("Timeout for $%s is %d\n", implName, logTimeout);
-	// Get access to registers and properties
-        container.getWorkerAccess(myOccpIndex, *this, m_properties);
-        // Assert Reset
-        // myRegisters->control =  logTimeout;
-        set32Register(control,  OccpWorkerRegisters, logTimeout);
+        myOccpIndex = OC::getAttrNum(instXml, "occpIndex", true, &m_hasControl);
+	if (m_hasControl) {
+	  setControlMask(getControlMask() | 1 << OM::Worker::OpStart);
+	  uint32_t timeout = OC::getAttrNum(implXml, "timeout", true);
+	  if (!timeout)
+	    timeout = 16;
+	  unsigned logTimeout = 31;
+	  for (uint32_t u = 1 << logTimeout; !(u & timeout);
+	       u >>= 1, logTimeout--)
+	    ;
+	  ocpiDebug("Timeout for $%s is %d\n", implName, logTimeout);
+	  // Get access to registers and properties
+	  container.getWorkerAccess(myOccpIndex, *this, m_properties);
+	  // Assert Reset
+	  // myRegisters->control =  logTimeout;
+	  set32Register(control,  OccpWorkerRegisters, logTimeout);
 #ifndef SHEP_FIXME_THE_RESET
-        struct timespec spec;
-        spec.tv_sec = 0;
-        spec.tv_nsec = 10000;
-        int bad = nanosleep(&spec, 0);
-        ocpiCheck(bad == 0);
+	  struct timespec spec;
+	  spec.tv_sec = 0;
+	  spec.tv_nsec = 10000;
+	  int bad = nanosleep(&spec, 0);
+	  ocpiCheck(bad == 0);
 #endif
-        // Take out of reset
-        // myRegisters->control = OCCP_CONTROL_ENABLE | logTimeout ;
-        set32Register(control,  OccpWorkerRegisters, OCCP_WORKER_CONTROL_ENABLE | logTimeout);
-	m_window = 0;
+	  // Take out of reset
+	  // myRegisters->control = OCCP_CONTROL_ENABLE | logTimeout ;
+	  set32Register(control,  OccpWorkerRegisters, OCCP_WORKER_CONTROL_ENABLE | logTimeout);
+	  ocpiDebug("Deasserted reset on worker %s.%s", implName, instName);
 #if 0 // do this by changing the accessor
-        if (getenv("OCPI_OCFRP_DUMMY")) {
-          *(uint32_t *)&myRegisters->initialize = OCCP_SUCCESS_RESULT; //fakeout
-          *(uint32_t *)&myRegisters->start = OCCP_SUCCESS_RESULT; //fakeout
-        }
+	  if (getenv("OCPI_OCFRP_DUMMY")) {
+	    *(uint32_t *)&myRegisters->initialize = OCCP_SUCCESS_RESULT; //fakeout
+	    *(uint32_t *)&myRegisters->start = OCCP_SUCCESS_RESULT; //fakeout
+	  }
 #endif
+	} else {
+	  setControlMask(0);
+	  ocpiDebug("HDL container found impl %s inst %s with no control",
+		    implName ? implName : "<none>", 
+		    instName ? instName : "<none>");
+	}
+	m_window = 0;
       }
       virtual ~WciControl() {
 	m_wciContainer.releaseWorkerAccess(myOccpIndex, *this, m_properties);
@@ -238,6 +247,7 @@ namespace OCPI {
       virtual void prepareProperty(OU::Property &md, 
 				   volatile void *&writeVaddr,
 				   const volatile void *&readVaddr) {
+	ocpiAssert(m_hasControl);
 	(void)readVaddr;
         if (m_properties.registers() &&
 	    md.m_baseType != OA::OCPI_Struct && !md.m_isSequence &&
@@ -256,7 +266,8 @@ namespace OCPI {
 	  uint32_t result =
 	    // *((volatile uint32_t *)myRegisters + controlOffsets[op]);
 	    get32RegisterOffset(controlOffsets[op]);
-	  if (result != OCCP_SUCCESS_RESULT) {
+	  if (result != OCCP_SUCCESS_RESULT
+	      && result != 0 && result != 0x01020304) { // TEMP HACK UNTIL SHEP FIXES WCI MASTER
 	    const char *oops;
 	    switch (result) {
 	    case OCCP_TIMEOUT_RESULT:
@@ -274,12 +285,13 @@ namespace OCPI {
 	    default:
 	      oops = "returned unknown result value from control operation";
 	    }
-	    throw OU::Error("worker %s:%s %s (%0x" PRIx32 ")", implName, instName, oops, result);
+	    throw OU::Error("worker %s:%s op %u %s (%0x" PRIx32 ")", implName, instName, op, oops, result);
 	  }
 	}
       }
       inline uint32_t
       checkWindow(uint32_t offset, unsigned nBytes) const {
+	ocpiAssert(m_hasControl);
 	unsigned window = offset & ~(OCCP_WORKER_CONFIG_SIZE-1);
         ocpiAssert(window == ((offset+nBytes)&~(OCCP_WORKER_CONFIG_SIZE-1)));
 	if (window != m_window) {

@@ -2015,7 +2015,7 @@ struct Sim {
 	  m_dcp += nn;
 	}
       }
-      ocpiDebug("have written to ioctl crediting %zu bytes", nactual);
+      ocpiDebug("have written request to client crediting %zu bytes", nactual);
       n -= nactual;
     }
     return false;
@@ -2025,7 +2025,7 @@ struct Sim {
   // set error on fatal problems
   // return any execution ticks provided.
   uint64_t
-  doit(const char *script, uint64_t cum, std::string &error) {
+  doit(const char *script, uint64_t /*cum*/, std::string &error) {
     char msg[2];
     uint64_t ticks = 0;
     if (m_dcp) {
@@ -2034,14 +2034,21 @@ struct Sim {
       assert(write(m_ctl.m_wfd, msg, 2) == 2);
       ticks = spinCount;
     }
+#if 1
     {
       unsigned n = 0;
       if (ioctl(m_req.m_rfd, FIONREAD, &n) == -1) {
 	error = "fionread syscall on req";
 	return ticks;
       }
-      ocpiDebug("Request FIFO has %u", n);
+      unsigned n1 = 0;
+      if (ioctl(m_ctl.m_rfd, FIONREAD, &n1) == -1) {
+	error = "fionread syscall on ctl";
+	return ticks;
+      }
+      ocpiDebug("Request FIFO has %u, control has %u", n, n1);
     }
+#endif
     fd_set fds[1];
     FD_ZERO(fds);
     FD_SET(m_ext.m_rfd, fds);
@@ -2051,7 +2058,7 @@ struct Sim {
     timeout[0].tv_usec = sleepUsecs%1000000;
     switch (select(m_nfds, fds, NULL, NULL, timeout)) {
     case 0: // timeout
-      ocpiDebug("Select timeout. cumulative simulator ticks: %" PRIu64, cum);
+      //      ocpiDebug("Select timeout. cumulative simulator ticks: %" PRIu64, cum);
       return ticks;
     default:
       if (errno == EINTR)

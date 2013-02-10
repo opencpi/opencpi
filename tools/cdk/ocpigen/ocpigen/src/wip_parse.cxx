@@ -231,9 +231,9 @@ tryInclude(ezxml_t x, const char *parent, const char *element, ezxml_t *parsed,
   const char *ifile = ezxml_cattr(x, "href");
   if (!ifile)
     return OU::esprintf("xi:include missing an href attribute in file \"%s\"", parent);
-  *child = ifile;
   if ((err = parseFile(ifile, parent, element, parsed, &ifile, optional)))
     return OU::esprintf("Error in %s: %s", ifile, err);
+  *child = ifile;
   return NULL;
 }
 
@@ -665,9 +665,29 @@ parseSpec(ezxml_t xml, const char *file, Worker *w) {
   ezxml_t spec;
   if ((err = tryOneChildInclude(xml, w->file, "ComponentSpec", &spec, &w->specFile, false)))
     return err;
-  w->specName = ezxml_cattr(spec, "Name");
-  if (!w->specName)
+  std::string packageFileDir, packageName;
+  const char *cp = strrchr(w->specFile, '/');
+  if (cp)
+    packageFileDir.assign(w->specFile, cp + 1 - w->specFile);
+  // FIXME: Fix this using the include path maybe?
+  std::string packageFileName = packageFileDir + "package-name";
+  if ((err = OU::file2String(packageName, packageFileName.c_str()))) {
+    packageFileName = packageFileDir + "../package-name";
+    if ((err = OU::file2String(packageName, packageFileName.c_str()))) {
+      packageFileName = packageFileDir + "../lib/package-name";
+      if ((err = OU::file2String(packageName, packageFileName.c_str())))
+	return OU::esprintf("Missing package-name file: %s", err);
+    }
+  }
+  for (cp = packageName.c_str(); *cp && isspace(*cp); cp++)
+    ;
+  const char *ep;
+  for (ep = cp; *ep && !isspace(*ep); ep++)
+    ;
+  const char *specName = ezxml_cattr(spec, "Name");
+  if (!specName)
     return "Missing Name attribute for ComponentSpec";
+  asprintf((char **)&w->specName, "%.*s.%s", (int)(ep - cp), cp, specName);
   if ((err = OE::checkAttrs(spec, "Name", "NoControl", (void*)0)) ||
       (err = OE::getBoolean(spec, "NoControl", &w->noControl)))
     return err;
@@ -1229,7 +1249,7 @@ parseAssy(ezxml_t xml, Worker *aw,
 	 i->worker = new Worker;
 	 a->workers.push_back(i->worker);
 	 if ((err = parseWorker(i->wName, aw->file, i->worker)))
-	   return OU::esprintf("in file %s: %s", i->wName, err);
+	   return OU::esprintf("for worker %s: %s", i->wName, err);
        }
        // Initialize the instance ports
        i->ports = myCalloc(InstancePort, i->worker->ports.size());
@@ -1675,16 +1695,6 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
 		    w->fileName, w->implName);
   if ((err = OE::checkAttrs(xml, TOP_ATTRS (void*)0)))
     return err;
-  const char *lang = ezxml_cattr(xml, "Language");
-  if (!lang)
-    return "Missing Language attribute for ComponentImplementation element";
-  if (!strcasecmp(lang, "Verilog"))
-    w->language = Verilog;
-  else if (!strcasecmp(lang, "VHDL"))
-    w->language = VHDL;
-  else
-    return OU::esprintf("Language attribute \"%s\" is not \"Verilog\" or \"VHDL\" in ComponentImplementation",
-			lang);
   w->pattern = ezxml_cattr(xml, "Pattern");
   w->portPattern = ezxml_cattr(xml, "PortPattern");
   if (!w->pattern)
@@ -1693,9 +1703,20 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
     w->portPattern = "%s_%n";
   // Here is where there is a difference between a implementation and as assembly
   if (!strcasecmp(xml->name, "HdlImplementation")) {
+    const char *lang = ezxml_cattr(xml, "Language");
+    if (!lang)
+      return "Missing Language attribute for ComponentImplementation element";
+    if (!strcasecmp(lang, "Verilog"))
+      w->language = Verilog;
+    else if (!strcasecmp(lang, "VHDL"))
+      w->language = VHDL;
+    else
+      return OU::esprintf("Language attribute \"%s\" is not \"Verilog\" or \"VHDL\""
+			  " in ComponentImplementation", lang);
     if ((err = parseHdlImpl(xml, file, w)))
       return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
   } else if (!strcasecmp(xml->name, "HdlAssembly")) {
+    w->language = Verilog;
     if ((err = parseHdlAssy(xml, w)))
       return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
   } else

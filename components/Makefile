@@ -35,6 +35,8 @@
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
+Package=ocpi.components
+
 Tests = \
 	unit.test \
 	dds_complex.test \

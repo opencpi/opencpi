@@ -31,7 +31,7 @@
     <Property Name="reserved4" Readable="true" Writable="false" Type="ULong" SequenceLength="256"/>
     <Property Name="clockspi" Readable="true" Writable="false" Type="ULong" SequenceLength="64"/>
   </Properties>
-  <DataInterfaceSpec Name="WSIout" Producer="true">
+  <DataInterfaceSpec Name="out" Producer="true">
     <ProtocolSummary DataValueWidth="16" MaxMessageValues="2048" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
   </DataInterfaceSpec>
 </ComponentSpec>

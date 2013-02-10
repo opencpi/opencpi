@@ -152,7 +152,7 @@ namespace OCPI {
 	}
     break2:
       while (end > last && isspace(end[-1]))
-	end --;
+	end--;
       return NULL;
     }
 
@@ -663,7 +663,7 @@ namespace OCPI {
 	skip = nItems/dimension;
       const char *err;
       const char *last = 0;
-      for (unsigned n = 0; n < m_vt->m_arrayDimensions[dim]; n++) {
+      for (unsigned n = 0; n < dimension; n++) {
 	const char *start, *end;
 	if ((err = doElement(unparsed, stop, start, end, nextDim == m_vt->m_arrayRank)))
 	  return err;
@@ -690,6 +690,8 @@ namespace OCPI {
 	    return err;
 	}
       }
+      if (unparsed < stop)
+	return esprintf("excess data for array: \"%-*s\"", (int)(stop - unparsed), unparsed);
       return NULL;
     }
     // Parse a value that is a sequence element or a single standalone value.
