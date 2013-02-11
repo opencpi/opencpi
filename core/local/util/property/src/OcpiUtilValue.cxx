@@ -114,8 +114,11 @@ namespace OCPI {
     // "start" and "end" is the element found
     // The fundamental delimiter of elements is comma,
     // but braces must be counted since they can have commas within
+    // The "comma" argument indicates whether the comma must be present.
+    // If false, a top level close brace can also terminate the element.
     static const char *
-    doElement(const char *&unparsed, const char *stop, const char *&start, const char *&end, bool comma = true) {
+    doElement(const char *&unparsed, const char *stop, const char *&start, const char *&end,
+	      bool comma = true) {
       // Skip initial white space
       const char *tmp = unparsed;
       while (unparsed != stop && isspace(*unparsed))
@@ -665,7 +668,7 @@ namespace OCPI {
       const char *last = 0;
       for (unsigned n = 0; n < dimension; n++) {
 	const char *start, *end;
-	if ((err = doElement(unparsed, stop, start, end, nextDim == m_vt->m_arrayRank)))
+	if ((err = doElement(unparsed, stop, start, end, true))) // nextDim != 1))) // = m_vt->m_arrayRank)))
 	  return err;
 	if (n && start == end)
 	  break; // return "insufficient array elements";
@@ -805,6 +808,8 @@ unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, u
   for (unsigned n = 0; n < m_vt->m_arrayDimensions[dim]; n++) {
     bool thisNull;
     if (nextDim < m_vt->m_arrayRank) {
+      if (n != 0)
+	v += comma;
       v += '{';
       thisNull = unparseDimension(v, nseq, nextDim, offset, skip);
       v += '}';
@@ -823,8 +828,10 @@ unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, u
       if (!prevNull)
 	length = v.length();
       prevNull = true;
-    } else
+    } else {
+      length = 0;
       allNull = prevNull = false;
+    }
   }
   s.append(v.c_str(), length ? length : v.length());
   return allNull;
@@ -848,7 +855,7 @@ static void doFormat(std::string &s, const char *fmt, ...) {
   free(cp);
 }
 
-    void Value::unparse(std::string &s, bool append, char comma) const {
+void Value::unparse(std::string &s, bool append, char comma) const {
   if (!append)
     s.clear();
   if (m_vt->m_isSequence) {
@@ -993,27 +1000,28 @@ unparseULongLong(std::string &s, uint64_t val) const {
 }
 bool Value::
 unparseString(std::string &s, const char *val) const {
-  if (!*val)
+  if (!val || !*val) {
     s += "\"\"";
-  else
+    return true;
+  } else
     while (*val)
       unparseChar(s, *val++);
-  return *val == 0;
+  return false;
 }
 bool Value::needsComma() const {
-  return m_vt->m_isSequence || m_vt->m_arrayRank == 1 || m_vt->m_baseType == OA::OCPI_Struct;
+  return m_vt->m_isSequence || m_vt->m_arrayRank != 0 || m_vt->m_baseType == OA::OCPI_Struct;
 }
 bool Value::needsCommaDimension() const {
   return /* m_vt->m_arrayRank == 1 || */ m_vt->m_baseType == OA::OCPI_Struct;
 }
 bool Value::needsCommaElement() const {
-  return m_vt->m_arrayRank == 1 || m_vt->m_baseType == OA::OCPI_Struct;
+  return m_vt->m_arrayRank != 0 || m_vt->m_baseType == OA::OCPI_Struct;
 }
 bool Value::
 unparseStruct(std::string &s, StructValue val, char comma) const {
   bool seenOne = false;
   
-  for (unsigned n = 0; n < m_vt->m_nMembers; n++) {
+  for (unsigned n = 0; val && n < m_vt->m_nMembers; n++) {
     Value *v = *val++;
     if (v) {
       if (seenOne)
