@@ -35,7 +35,7 @@
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
-Package=ocpi.components
+Package=ocpi
 
 Tests = \
 	unit.test \
@@ -112,6 +112,7 @@ Implementations = \
 	pattern.hdl pattern.rcc \
 	capture.hdl capture.rcc \
 	bias_vhdl.hdl \
+	ptest.rcc \
 	$(Tests)
 
 #	fir_prog.hdl \

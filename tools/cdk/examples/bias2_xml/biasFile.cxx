@@ -8,7 +8,7 @@ namespace OA = OCPI::API;
 
 int main(int argc, char **argv) {
   std::string hello =
-    "<application done='file_write'>"
+    "<application done='file_write' package='ocpi'>"
     "  <instance component='file_read'>"
     "    <property name='filename' value='test.input'/>"
     "    <property name='granularity' value='4'/>"
@@ -51,10 +51,10 @@ int main(int argc, char **argv) {
     app.initialize();
     fprintf(stderr, "Application established: containers, workers, connections all created\n");
     fprintf(stderr, "Communication with the application established\n");
-#if 1
-    OA::Property p(app, "file_write:filename");
+#if 0
+    OA::Property p(app, "file_write.filename");
     p.setStringValue("test.output");
-    OA::Property p1(app, "file_read:test");
+    OA::Property p1(app, "file_read.test");
     short s[] = {-1,-2, 0, -32768, 32767};
     p1.setShortSequenceValue(s, 4);
 #else

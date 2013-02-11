@@ -72,7 +72,7 @@ int main ( int argc, char* argv [ ] )
 	OA::PVEnd
       };
       OA::Worker &features_worker =
-	rcc_application->createWorker("features", "good_features_to_track", features_pvlist);
+	rcc_application->createWorker("features", "ocpi.good_features_to_track", features_pvlist);
       // features_worker.setProperties( features_worker_pvlist );
       std::string name, value;
       for (unsigned n = 0; features_worker.getProperty(n, name, value); n++)
@@ -89,7 +89,7 @@ int main ( int argc, char* argv [ ] )
 	OA::PVEnd
       };
       OA::Worker &min_worker =
-	rcc_application->createWorker("min", "min_eigen_val", min_pvlist);
+	rcc_application->createWorker("min", "ocpi.min_eigen_val", min_pvlist);
       OA::Port
 	&minOut = min_worker.getPort("out"),
 	&minIn = min_worker.getPort("in");
@@ -101,7 +101,7 @@ int main ( int argc, char* argv [ ] )
 	OA::PVEnd
       };
       OA::Worker &corner_worker =
-	rcc_application->createWorker("corner", "corner_eigen_vals_vecs", corner_pvlist);
+	rcc_application->createWorker("corner", "ocpi.corner_eigen_vals_vecs", corner_pvlist);
 
       OA::Port
 	&cornerOut = corner_worker.getPort("out"),
@@ -178,6 +178,7 @@ int main ( int argc, char* argv [ ] )
   catch ( const std::string& s )
     {
       std::cerr << "\n\nException(s): " << s << "\n" << std::endl;
+      return 1;
     }
   catch ( std::exception& g )
     {
@@ -187,10 +188,12 @@ int main ( int argc, char* argv [ ] )
 		<< g.what ( )
 		<< "\n"
 		<< std::endl;
+      return 1;
     }
   catch ( ... )
     {
       std::cerr << "\n\nException(u): unknown\n" << std::endl;
+      return 1;
     }
 
   return 0;

@@ -60,7 +60,8 @@ int main ( int argc, char* argv [ ] )
 
     /* ---- Create the RCC container and application -------------- */
     OA::Container *rcc_container = OA::ContainerManager::find("rcc");
-    OA::ContainerApplication *rcc_application = rcc_container->createApplication( );
+    OA::PValue params[] = {OA::PVString("package", "ocpi"), OA::PVEnd};
+    OA::ContainerApplication *rcc_application = rcc_container->createApplication("canny", params );
 
     /* ---- Create the workers --------------------------------- */
     // canny_partial
@@ -198,15 +199,18 @@ int main ( int argc, char* argv [ ] )
   catch ( std::string s )
   {
     std::cerr << "\n\nException(s): " << s << "\n" << std::endl;
+    return 1;
   }
   catch ( std::exception& g )
   {
     std::cerr << "\nException(g): " << typeid( g ).name( ) << " : "
                                        << g.what ( ) << "\n" << std::endl;
+    return 1;
   }
   catch ( ... )
   {
     std::cerr << "\n\nException(u): unknown\n" << std::endl;
+    return 1;
   }
 
   return 0;

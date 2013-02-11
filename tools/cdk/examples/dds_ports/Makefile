@@ -1,5 +1,5 @@
-ifndef OCPI_OPENSPLICE_HOME
-$(info Set OCPI_OPENSPLICE_HOME to the OpenSplice install location to use this example (e.g. /usr/local))
+ifneq (OCPI_HAVE_OPENSPLICE,1)
+#$(info Set OCPI_OPENSPLICE_HOME to the OpenSplice install location to use this example (e.g. /usr/local))
 $(info OpenSplice/DDS not available.)
 all:
 run:

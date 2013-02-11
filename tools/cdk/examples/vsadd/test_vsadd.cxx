@@ -76,7 +76,7 @@ namespace
       // Create a worker of type "vsadd", whose name in this
       // app will be "vsadd_instance".
       OCPI::API::Worker& w = a.createWorker ( "vsadd", // vsadd_instance
-                                              "vsadd");
+                                              "ocpi.vsadd");
 
       // Get a handle (reference) on the "in" port of the worker
       OCPI::API::Port& port_in = w.getPort ( "in" );
@@ -195,19 +195,23 @@ int main ( int argc, char* argv [ ] )
   catch ( const OCPI::Util::EmbeddedException& e )
   {
     std::cerr << "\nException(e): " << e.getAuxInfo ( ) << std::endl;
+    return 1;
   }
   catch ( const OCPI::API::Error& e )
   {
     std::cerr << "\nException(a): " << e.error ( ) << std::endl;
+    return 1;
   }
 #endif
   catch ( const std::string& s )
   {
     std::cerr << "\nException(s): " << s << std::endl;
+    return 1;
   }
   catch ( ... )
   {
     std::cerr << "\nException(u): unknown" << std::endl;
+    return 1;
   }
 
   std::cout << "\nDone\n" << std::endl;

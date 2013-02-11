@@ -49,7 +49,8 @@ ifndef LibName
 LibName=$(CwdName)
 endif
 ifndef Package
-$(error The "Package" variable it not set for this library. (e.g. Package=com.ibm.prod1).)
+$(info The "Package" variable is not set. Assuming Package=local.)
+Package:=local
 endif
 PackageFile:=lib/package-name
 ifeq ($(wildcard lib),)

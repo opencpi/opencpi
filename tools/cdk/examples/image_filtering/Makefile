@@ -29,7 +29,7 @@ image_filtering: image_filtering.cxx
 run: image_filtering
 	export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components; \
 	export OCPI_SMB_SIZE=100000000; \
-	./image_filtering  boston_small.jpg erode > /dev/null	
+	./image_filtering  boston_small.jpg ocpi.erode > /dev/null	
 
 clean::
 	rm -f -r image_filtering *.dSYM *.*~ *~ output_image.jpg *.o *.d

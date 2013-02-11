@@ -122,7 +122,7 @@ namespace OCPI {
       OE::getNameWithDefault(ax, m_name, defaultName ? defaultName : "unnamed%u", s_count);
       OE::getOptionalString(ax, m_package, "package");
       if (m_package.empty())
-	m_package = "org.opencpi";
+	m_package = "local";
       m_instances.resize(OE::countChildren(ax, "Instance"));
       Instance *i = &m_instances[0];
       unsigned n = 0;
@@ -284,7 +284,7 @@ namespace OCPI {
       m_ordinal = ordinal;
       const char *err;
       static const char *instAttrs[] = { "component", "Worker", "Name", "connect", "to", "from",
-					"external", NULL};
+					 "external", "selection", NULL};
       if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)))
 	return err;
       std::string component;
@@ -320,8 +320,8 @@ namespace OCPI {
 	  const char
 	    *c = ezxml_cattr(x, "component"),
 	    *w = ezxml_cattr(x, "worker");
-	  if (component.size() && c && !strcmp(dot, c) ||
-	      m_implName.size() && w && m_implName == w) {
+	  if (component.size() && c && !strcasecmp(dot, c) ||
+	      m_implName.size() && w && !strcasecmp(m_implName.c_str(), w)) {
 	    if (x == ix)
 	      me = n;
 	    n++;
@@ -452,7 +452,7 @@ namespace OCPI {
 	} else if (!strcasecmp(r, "bidirectional")) {
 	  m_bidirectional = true;
 	  m_knownRole = true;
-	} else
+	} else if (*r)
 	  return esprintf("Invalid external role: %s", r);
       }
       return NULL;

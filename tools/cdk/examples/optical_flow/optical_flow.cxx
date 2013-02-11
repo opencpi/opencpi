@@ -66,7 +66,7 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVEnd
       };
       OA::Worker &features_worker =
-	rcc_application->createWorker("good_features_to_track", "good_features_to_track",
+	rcc_application->createWorker("good_features_to_track", "ocpi.good_features_to_track",
 				      features_pvlist);
       OA::Port
 	&featuresOut = features_worker.getPort("out"),
@@ -79,7 +79,7 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVEnd
       };
       OA::Worker &min_worker =
-	rcc_application->createWorker("min_eigen_val", "min_eigen_val",
+	rcc_application->createWorker("min_eigen_val", "ocpi.min_eigen_val",
 				      min_pvlist);
       OA::Port
 	&minOut = min_worker.getPort("out"),
@@ -92,7 +92,7 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVEnd
       };
       OA::Worker &corner_worker =
-	rcc_application->createWorker("corner_eigen_vals_vecs", "corner_eigen_vals_vecs",
+	rcc_application->createWorker("corner_eigen_vals_vecs", "ocpi.corner_eigen_vals_vecs",
 				      corner_pvlist);
       OA::Port
 	&cornerOut = corner_worker.getPort("out"),
@@ -100,7 +100,7 @@ int main ( int argc, char* argv [ ] )
 
       // good_features_to_track (copy)
       OA::Worker &features_workerA =
-	rcc_application->createWorker("good_features_to_track", "good_features_to_track",
+	rcc_application->createWorker("good_features_to_track", "ocpi.good_features_to_track",
 				      features_pvlist);
 
       OA::Port
@@ -109,7 +109,7 @@ int main ( int argc, char* argv [ ] )
 
       // min_eigen_val (copy)
       OA::Worker &min_workerA =
-	rcc_application->createWorker("min_eigen_val", "min_eigen_val",
+	rcc_application->createWorker("min_eigen_val", "ocpi.min_eigen_val",
 				      min_pvlist);
       OA::Port
 	&minAOut = min_workerA.getPort("out"),
@@ -117,7 +117,7 @@ int main ( int argc, char* argv [ ] )
 
       // corner_eigen_vals_vecs (copy)
       OA::Worker &corner_workerA =
-	rcc_application->createWorker("corner_eigen_vals_vecs", "corner_eigen_vals_vecs",
+	rcc_application->createWorker("corner_eigen_vals_vecs", "ocpi.corner_eigen_vals_vecs",
 				      corner_pvlist);
       OA::Port
 	&cornerAOut = corner_workerA.getPort("out"),
@@ -131,7 +131,7 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVEnd
       };
       OA::Worker &sobel_adx_worker =
-	rcc_application->createWorker("sobel_32f", "sobel_32f",  sobel_dx_pvlist);
+	rcc_application->createWorker("sobel_32f", "ocpi.sobel_32f",  sobel_dx_pvlist);
 
       OA::Port
 	&sobelAdxOut = sobel_adx_worker.getPort("out_32f"),
@@ -146,7 +146,7 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVEnd
       };
       OA::Worker &sobel_ady_worker =
-	rcc_application->createWorker("sobel_32f1", "sobel_32f",  sobel_dy_pvlist);
+	rcc_application->createWorker("sobel_32f1", "ocpi.sobel_32f",  sobel_dy_pvlist);
       OA::Port
 	&sobelAdyOut = sobel_ady_worker.getPort("out_32f"),
 	&sobelAdy8UOut = sobel_ady_worker.getPort("out"),
@@ -154,7 +154,7 @@ int main ( int argc, char* argv [ ] )
 
       // sobel_32f (A_d2x)
       OA::Worker &sobel_ad2x_worker =
-	rcc_application->createWorker("sobel_32f2", "sobel_32f",  sobel_dx_pvlist);
+	rcc_application->createWorker("sobel_32f2", "ocpi.sobel_32f",  sobel_dx_pvlist);
 
       OA::Port
 	&sobelAd2xOut = sobel_ad2x_worker.getPort("out_32f"),
@@ -163,7 +163,7 @@ int main ( int argc, char* argv [ ] )
 
       // sobel_32f (A_d2y)
       OA::Worker &sobel_ad2y_worker =
-	rcc_application->createWorker("sobel_32f3", "sobel_32f",  sobel_dy_pvlist);
+	rcc_application->createWorker("sobel_32f3", "ocpi.sobel_32f",  sobel_dy_pvlist);
 
       OA::Port
 	&sobelAd2yOut = sobel_ad2y_worker.getPort("out_32f"),
@@ -172,7 +172,7 @@ int main ( int argc, char* argv [ ] )
 
       // sobel_32f (A_dxdy_x)
       OA::Worker &sobel_adxdy_x_worker =
-	rcc_application->createWorker("sobel_32f4", "sobel_32f",  sobel_dx_pvlist);
+	rcc_application->createWorker("sobel_32f4", "ocpi.sobel_32f",  sobel_dx_pvlist);
 
       OA::Port
 	&sobelAdxdyXOut = sobel_adxdy_x_worker.getPort("out_32f"),
@@ -181,7 +181,7 @@ int main ( int argc, char* argv [ ] )
 
       // sobel_32f (A_dxdy_y)
       OA::Worker &sobel_adxdy_y_worker =
-	rcc_application->createWorker("sobel_32f5", "sobel_32f",  sobel_dy_pvlist);
+	rcc_application->createWorker("sobel_32f5", "ocpi.sobel_32f",  sobel_dy_pvlist);
 
       OA::Port
 	&sobelAdxdyYOut = sobel_adxdy_y_worker.getPort("out_32f"),
@@ -190,7 +190,7 @@ int main ( int argc, char* argv [ ] )
 
       // sobel_32f (B_dx)
       OA::Worker &sobel_bdx_worker =
-	rcc_application->createWorker("sobel_32f6", "sobel_32f",  sobel_dx_pvlist);
+	rcc_application->createWorker("sobel_32f6", "ocpi.sobel_32f",  sobel_dx_pvlist);
 
       OA::Port
 	&sobelBdxOut = sobel_bdx_worker.getPort("out_32f"),
@@ -199,7 +199,7 @@ int main ( int argc, char* argv [ ] )
 
       // sobel_32f (B_dy)
       OA::Worker &sobel_bdy_worker =
-	rcc_application->createWorker("sobel_32f7", "sobel_32f",  sobel_dy_pvlist);
+	rcc_application->createWorker("sobel_32f7", "ocpi.sobel_32f",  sobel_dy_pvlist);
 
       OA::Port
 	&sobelBdyOut = sobel_bdy_worker.getPort("out_32f"),
@@ -219,7 +219,7 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVEnd
       };
       OA::Worker &optical_flow_worker =
-	rcc_application->createWorker("optical_flow_pyr_lk", "optical_flow_pyr_lk", optical_flow_pvlist);
+	rcc_application->createWorker("optical_flow_pyr_lk", "ocpi.optical_flow_pyr_lk", optical_flow_pvlist);
 
       OA::Port
 	&opticalFlowInA = optical_flow_worker.getPort("in_A"),

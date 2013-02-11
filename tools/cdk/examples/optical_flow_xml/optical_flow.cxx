@@ -33,7 +33,7 @@ static const double pi = 3.14159265358979323846;
 
 int main ( int argc, char* argv [ ] )
 {
-  std::string of_app_xml("<application>"
+  std::string of_app_xml("<application package='ocpi'>"
 			 " <policy mapping='MaxProcessors' processors='0'/>"
 			 "  <instance component='min_eigen_val' name='min_worker' selection='model==\"rcc\"'>"
 			 "    <property name='height' value='360'/> "
@@ -536,6 +536,7 @@ int main ( int argc, char* argv [ ] )
   catch ( const std::string& s )
     {
       std::cerr << "\n\nException(s): " << s << "\n" << std::endl;
+      return 1;
     }
   catch ( std::exception& g )
     {
@@ -545,10 +546,12 @@ int main ( int argc, char* argv [ ] )
 		<< g.what ( )
 		<< "\n"
 		<< std::endl;
+      return 1;
     }
   catch ( ... )
     {
       std::cerr << "\n\nException(u): unknown\n" << std::endl;
+      return 1;
     }
 
   return 0;

@@ -90,7 +90,7 @@ static OCPI::API::PValue maxp_policy[] = {
 
 int main ( int argc, char* argv [ ] )
 {
-  const char * axml("<application>"
+  const char * axml("<application package='ocpi'>"
 
 		      "  <instance component='file_read_msg' >"
 		      "    <property name='fileName' value='dataIn.dat'/> "		      
@@ -331,6 +331,7 @@ int main ( int argc, char* argv [ ] )
 catch ( const std::string& s )
   {
     std::cerr << "\n\nException(s): " << s << "\n" << std::endl;
+     return 1;
   }
  catch ( std::exception& g )
    {
@@ -340,13 +341,15 @@ catch ( const std::string& s )
 	       << g.what ( )
 	       << "\n"
 	       << std::endl;
+     return 1;
    }
  catch ( ... )
    {
      std::cerr << "\n\nException(u): unknown\n" << std::endl;
+     return 1;
    }
 
-return 0;
+  return 0;
 }
 
 

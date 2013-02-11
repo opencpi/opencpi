@@ -1,4 +1,4 @@
-<application>
+<application package='ocpi'>
   <instance component='ptest'>
     <property name='p1' value='\376'/>
     <property name='p3' value='123.456'/>
@@ -7,7 +7,7 @@
     <property name='sp11' value='"first", "second", "third"'/>
     <property name='ap1' value='x,y'/>
     <property name='ap11' value='a,b,c,d,e,f,g,h,i,j,k,l'/>
-    <property name='sap4' value='{-1,0,1,2,3,4},{4,5,6,7,8}'/>
+    <property name='sap4' value='{-1,0,1,2,3},{4,5,6,7,8}'/>
     <property name='sap11' value='{a,b,c,d,e,f,g,h,i,j,k,l},{a,b,c,d,e,f,g,h,i,j,k,l}'/>
   </instance>
 </application>

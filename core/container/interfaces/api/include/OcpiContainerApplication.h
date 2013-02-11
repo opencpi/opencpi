@@ -61,6 +61,7 @@ namespace OCPI {
       public OCPI::API::ContainerApplication
     {      friend class Container;
       friend class Artifact;
+      std::string m_package;
     protected:
       Application(const OCPI::Util::PValue *props = 0);
     public:

@@ -57,7 +57,9 @@ export OCPI_TRANSPORT_LIBS=rdma_drivers util  msg_driver_interface  msg_drivers
 # 2. At link time, look in OCPI_LIB_DIR to find explicitly mentioned libraries
 # 3. At link time, look in OCPI_API_LIBS for functions called from the program
 export OCPI_LD_FLAGS= $(OCPI_DRIVER_OBJS) $(OcpiAsNeeded) -Xlinker -rpath -Xlinker "$(OCPI_LIB_DIR)" -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-l%)
+ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
 OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocl),$(shell $(OCPI_BIN_DIR)/ocpiocl test; if [ $$? = 0 ]; then echo 1; fi),)
+endif
 #$(info OCL=$(OCPI_HAVE_OPENCL)=)
 ifeq ($(origin OCPI_SUDO),undefined)
 OCPI_SUDO=sudo -E

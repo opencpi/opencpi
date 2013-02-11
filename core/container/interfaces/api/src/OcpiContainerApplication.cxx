@@ -40,10 +40,17 @@
 
 namespace OA = OCPI::API;
 namespace OL = OCPI::Library;
+namespace OU = OCPI::Util;
 
 namespace OCPI {
   namespace Container {
-    Application::Application(const OA::PValue *) {
+    Application::Application(const OA::PValue *params) {
+      const char *package;
+      if (OU::findString(params, "package", package))
+	m_package = package;
+      else
+	m_package = "local";
+      m_package += '.';
     }
     Application::~Application() {
       ocpiDebug("In  Application::~Application()\n");
@@ -72,12 +79,20 @@ namespace OCPI {
 		 const OA::PValue *selectCriteria, 
 		 const OA::Connection *connections) {
       // Find an artifact (and instance within the artifact), for this worker
+      std::string spec;
+      const char *dot = strchr(specName, '.');
+      if (dot)
+	spec = specName;
+      else {
+	spec = m_package;
+	spec += specName;
+      }
       const char *artInst = NULL;
       OL::Artifact &a =
-	OL::Manager::findArtifact(container(), specName, wParams, selectCriteria,  connections, artInst);
+	OL::Manager::findArtifact(container(), spec.c_str(), wParams, selectCriteria,  connections, artInst);
       // Load the artifact and create the worker
       return
-	container().loadArtifact(a).createWorker(*this, instName, specName, artInst, wProps, wParams);
+	container().loadArtifact(a).createWorker(*this, instName, spec.c_str(), artInst, wProps, wParams);
     }
     Worker &Application::
     createWorker(OCPI::Library::Artifact &art, const char *appInstName, 

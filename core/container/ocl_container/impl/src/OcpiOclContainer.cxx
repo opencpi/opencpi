@@ -1188,7 +1188,7 @@ namespace OCPI
           int max_mailbox;
 
           if ( sscanf ( other.desc.oob.oep,
-                        "ocpi-smb-pio:pioXfer%d:%d.%d.%d",
+                        "ocpi-smb-pio:pioXfer%d;%d.%d.%d",
                         &pid,
                         &nAlloc,
                         &mailbox,

@@ -174,6 +174,7 @@ int main ( int argc, char* argv [ ] )
   catch ( const std::string& s )
     {
       std::cerr << "\n\nException(s): " << s << "\n" << std::endl;
+      return 1;
     }
   catch ( std::exception& g )
     {
@@ -183,10 +184,12 @@ int main ( int argc, char* argv [ ] )
 		<< g.what ( )
 		<< "\n"
 		<< std::endl;
+      return 1;
     }
   catch ( ... )
     {
       std::cerr << "\n\nException(u): unknown\n" << std::endl;
+      return 1;
     }
 
   return 0;

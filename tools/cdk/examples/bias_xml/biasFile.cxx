@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     }
   }
   std::string hello =
-    "<application done='file_write'>"
+    "<application done='file_write' package='ocpi'>"
     "  <instance component='file_read'>"
     "    <property name='filename' value='test.input'/>"
     "    <property name='granularity' value='4'/>"
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 #if 0 // original simple way
     app.setProperty("file_write", "filename", "test.output");
 #else
-    OA::Property p(app, "file_write:filename");
+    OA::Property p(app, "file_write.filename");
     p.setStringValue("test.output");
 #endif
     app.start();
