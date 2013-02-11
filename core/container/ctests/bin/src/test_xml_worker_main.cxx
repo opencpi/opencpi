@@ -194,13 +194,13 @@ int  main( int argc, char** argv)
 #else
   const char * w1Url = "../../../../components/lib/rcc/Linux-x86_64/zcworkers.so";
 #endif
-  OCPI::API::Worker & consumer = ca[0].app->createWorker( w1Url, NULL, "testConsumer", "Consumer" );
-  OCPI::API::Worker & producer = ca[0].app->createWorker( w1Url, NULL, "testProducer", "Producer" );
+  OCPI::API::Worker & consumer = ca[0].app->createWorker( w1Url, NULL, "testConsumer", "ocpi.Consumer" );
+  OCPI::API::Worker & producer = ca[0].app->createWorker( w1Url, NULL, "testProducer", "ocpi.Producer" );
 #else
   // New library-based components
   OCPI::API::Worker
-    & consumer = ca[0].app->createWorker("testConsumer", "Consumer" ),
-    & producer = ca[0].app->createWorker("testProducer", "Producer" );
+    & consumer = ca[0].app->createWorker("testConsumer", "ocpi.Consumer" ),
+    & producer = ca[0].app->createWorker("testProducer", "ocpi.Producer" );
 #endif
   OCPI::API::Port & pout = producer.getPort( "Out" );
   OCPI::API::Port & cin = consumer.getPort( "In" );
