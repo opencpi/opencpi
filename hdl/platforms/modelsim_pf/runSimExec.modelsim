@@ -1,0 +1,18 @@
+#!/bin/sh
+if [[ $OCPI_MODELSIM_DIR == "" ]]; then
+   echo "The OCPI_MODELSIM_DIR environment variable is not set, and is required for modelsim executables."
+   exit 1
+fi
+if [[ $OCPI_MODELSIM_LICENSE_FILE == "" ]]; then
+   echo "The OCPI_MODELSIM_LICENSE_FILE environment variable is not set, and is required for modelsim executables."
+   exit 1
+fi
+set -e
+appname=$1
+shift
+export LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE
+exec $(OCPI_MODELSIM_DIR)/bin/vsim -c modelsim_pf.main -c -f vsim.args $* <<EOF
+archive load vsim.dbar
+log -r /*
+run 1 s
+EOF
