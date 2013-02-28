@@ -211,13 +211,13 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
      self->container.setError( "error reading file: %s", strerror(errno));
      return RCC_ERROR;
    } 
+   if ( n == 0 ) {
+     printf("file_reader_msg: Finished !!\n");
+     props->finished = 1;
+     return retDone( props->continuous );
+   }
    printf("file_reader_msg(%s): Data length = %d\n", props->fileName, s->header.length );
    s->blcm = s->header.length;
- }
- if ( n == 0 ) {
-   printf("file_reader_msg: Finished !!\n");
-   props->finished = 1;
-   return retDone( props->continuous );
  }
  self->ports[FILE_READ_MSG_OUT].output.u.operation = s->header.opcode;
 

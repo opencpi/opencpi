@@ -118,7 +118,7 @@ namespace OCPI {
 	  struct in_addr x;
 	  if (!inet_aton(m, &x))
 	    return m_error = true;
-	  char *cp = strrchr(m, ':');
+	  const char *cp = strrchr(m, ':');
 	  if (cp)
 	    m_udp.port = atoi(cp+1);
 	  else
