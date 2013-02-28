@@ -166,7 +166,8 @@ N_OCP_SIGNALS
 extern OcpSignalDesc ocpSignals[N_OCP_SIGNALS+1];
 #undef OCP_SIGNAL
 struct OcpSignal {
-  uint8_t *value, width;
+  uint8_t *value;
+  unsigned width;
   const char *signal;
 };
 union OcpSignals {

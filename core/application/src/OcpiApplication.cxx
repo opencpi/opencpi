@@ -499,6 +499,7 @@ namespace OCPI {
       checkInstanceParams("selection", params);
       checkInstanceParams("model", params);
       checkInstanceParams("container", params);
+      checkInstanceParams("platform", params);
       // First pass - make sure there are some containers to support some candidate
       // and remember which containers can support which candidates
       Instance *i = m_instances;
@@ -513,11 +514,14 @@ namespace OCPI {
 	OU::findAssign(params, "container", ai.m_name.c_str(), container);
 	const char *model = NULL;
 	OU::findAssign(params, "model", ai.m_name.c_str(), model);
+	const char *platform = NULL;
+	OU::findAssign(params, "platform", ai.m_name.c_str(), platform);
 	CMap sum = 0;
 	for (unsigned m = 0; m < i->m_nCandidates; m++) {
 	  m_curMap = 0;        // to accumulate containers suitable for this candidate
 	  m_curContainers = 0; // to count suitable containers for this candidate
-	  if (!model || cs[m].impl->m_metadataImpl.model() == model)
+	  if ((!model || cs[m].impl->m_metadataImpl.model() == model) &&
+	      (!platform || cs[m].impl->m_artifact.platform() == platform))
 	    (void)OC::Manager::findContainers(*this, cs[m].impl->m_metadataImpl, container);
 	  i->m_feasibleContainers[m] = m_curMap;
 	  sum |= m_curMap;

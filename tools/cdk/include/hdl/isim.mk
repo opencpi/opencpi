@@ -179,7 +179,7 @@ define HdlToolDoPlatform
 $$(BitName): TargetDir=$(call PlatformDir,$(IsimPlatform))
 $$(BitName): HdlToolCompile=$(IsimFuseCmd)
 $$(BitName): HdlToolSet=fuse
-$$(BitName): HdlTarget=isim
+$$(BitName): override HdlTarget=isim
 $$(BitName): $(IsimPlatformDir)/target-isim/$(IsimPlatform) $(IsimTargetDir)/mkOCApp4B | $(IsimTargetDir)
 	$(AT)echo Building isim simulation executable: $$(BitName).  Details in $$(IsimAppName)-fuse.out
 	$(AT)$$(HdlCompile)

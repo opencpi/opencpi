@@ -178,7 +178,7 @@ $$(BitName): TargetDir=$(call PlatformDir,$(ModelsimPlatform))
 $$(BitName): HdlToolCompile=$$(ModelsimBuildCmd)
 $$(BitName): HdlToolSet=vsim
 $$(BitName): HdlToolPost=
-$$(BitName): HdlTarget=modelsim
+$$(BitName): override HdlTarget=modelsim
 $$(BitName): HdlName=$(ModelsimAppName)
 $$(BitName): $(ModelsimPlatformDir)/target-modelsim/$(ModeisimPlatform) $(ModelsimTargetDir)/mkOCApp4B | $(ModelsimTargetDir)
 	$(AT)echo Building modelsim simulation executable: $$(BitName).  Details in $$(ModelsimAppName)-vsim.out

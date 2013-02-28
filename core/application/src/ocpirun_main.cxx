@@ -33,14 +33,16 @@ usage(const char *name) {
 	  "    -v           # be verbose in describing what is happening\n"
 	  "    -s <instance-name>=<expression>\n"
 	  "                 # provide selection expression for worker instance\n"
-	  "    -m <instance-name>=<model>\n"
+	  "    -m [<instance-name>]=<model>\n"
 	  "                 # set model (rcc, hdl, ocl, etc.) for worker instance\n"
 	  "    -p <instance-name>=<property>=<value>\n"
 	  "                 # set a property value of a worker instance\n"
 	  "    -n <processor-count>]\n"
 	  "                 # set processor allocation policy for application\n"
-	  "    -c <instance-name>=<container-name>]\n"
-	  "                 # assign instance to a specific container\n"
+	  "    -c [<instance-name>]=<container-name>]\n"
+	  "                 # assign instance to a specific container (name or number from -C)\n"
+	  "    -P [<instance-name>]=<platform-name>]\n"
+	  "                 # assign instance to a specific container (name or number from -C)\n"
 	  "    -l <log-level>\n"
 	  "                 # set log level during execution\n"
 	  "    -t <seconds>\n"
@@ -93,6 +95,9 @@ main(int /*argc*/, const char **argv) {
 	break;
       case 'c':
 	addParam("container", ap);
+	break;
+      case 'P':
+	addParam("platform", ap);
 	break;
       case 'n':
 	nProcs = atoi(ap[0][2] ? &ap[0][2] : *++ap);
