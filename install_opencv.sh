@@ -12,8 +12,8 @@ if test ! -d opencv ; then
   mkdir -p opencv
 fi
 cd opencv
-OPENCV_MAJOR=2.3.1
-OPENCV_MINOR=a
+OPENCV_MAJOR=2.4.3
+OPENCV_MINOR=
 OPENCV_VERSION=$OPENCV_MAJOR$OPENCV_MINOR
 TarFile=OpenCV-$OPENCV_VERSION.tar
 BZFile=$TarFile.bz2

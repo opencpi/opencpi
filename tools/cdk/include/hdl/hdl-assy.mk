@@ -176,8 +176,8 @@ ifdef HdlToolRealCore
 $(OutDir)target-$3/$(Worker):
 	$(AT)ln -s . $$@
 else
-$(OutDir)target-$3/$(Worker)/$3: | $(OutDir)target-$3/$(Worker)
-	$(AT)ln -s . $$@
+#$(OutDir)target-$3/$(Worker)/$3: | $(OutDir)target-$3/$(Worker)
+#	$(AT)ln -s . $$@
 endif
 
 #$(OutDir)target-$3/$3 $(OutDir)target-$1/$3 $(OutDir)target-$1/$(Worker):
@@ -194,7 +194,6 @@ $(OutDir)target-$1/container.v: | $(OutDir)target-$1
 ContainerCores+=$(OutDir)target-$1/$(ContainerModule)$(HdlBin)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): Core=$(ContainerModule)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): Top=$(ContainerModule)
-# The extra slash below is to avoid the interpretation that the core is in the CDK dir
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override Cores=$(OutDir)target-$3/$(Worker)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override LibName=$(ContainerModule)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override ImplWorkersFiles=$(call ContainerWorkersFile,$1)
@@ -211,7 +210,7 @@ $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/metadatarom.d
 ifdef HdlToolRealCore
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$3/$(Worker)$(HdlBin)
 else
-$(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(foreach c,$(call HdlLibraryRefFile,$(OutDir)target-$3/$(Worker),$3),$c)
+#$(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(foreach c,$(call HdlLibraryRefFile,$(OutDir)target-$3/$(Worker),$3),$c)
 endif
 # Need the link to the bb lib
 ifdef HdlToolNeedBB

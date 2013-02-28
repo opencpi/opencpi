@@ -50,6 +50,22 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 Model=hdl
 
 ################################################################################
+# Add the default libraries
+# FIXME: when tools don't really elaborate or search, capture the needed libraries for later
+# FIXME: but that still means a flat library space...
+# Note this is evaluted in a context when HdlTarget is set
+HdlLibrariesInternal = \
+  $(foreach l,$(call Unique,\
+                $(HdlLibraries)\
+                $(foreach f,$(call HdlGetFamily,$(HdlTarget)),\
+		  $(foreach v,$(call HdlGetTop,$f),\
+	            $(foreach p,ocpi util_$f util_$v util bsv vendor_$f vendor_$v, \
+	              $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p))))),$(strip \
+    $l))
+#    $(info Hdl Library is $l)$l))
+
+
+################################################################################
 # The generic hdl compile that depends on HdlToolCompile
 HdlName=$(if $(findstring library,$(HdlMode)),$(LibName),$(Core))
 HdlLog=$(HdlName)-$(HdlToolSet).out

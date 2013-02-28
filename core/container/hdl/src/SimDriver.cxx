@@ -1,14 +1,4 @@
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
- *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
- *
  *  This file is part of OpenCPI (www.opencpi.org).
  *     ____                   __________   ____
  *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -40,9 +30,6 @@
 #include "OcpiOsTimer.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilException.h"
-#include "HdlAccess.h"
-#include "HdlOCCP.h"
-#include "EtherDefs.h"
 #include "SimDriver.h"
 
 namespace OCPI {
@@ -50,269 +37,56 @@ namespace OCPI {
     namespace Sim {
       namespace OS = OCPI::OS;
       namespace OU = OCPI::Util;
-      using namespace OCPI::HDL::Ether;
+      namespace OE = OCPI::OS::Ether;
       
       class Device
-	: public OCPI::HDL::Device,
-	  public OCPI::HDL::Accessor {
+	: public OCPI::HDL::Net::Device {
 	friend class Driver;
-	bool m_discovery;
-	std::string m_directory;
-	EtherControlPacket m_request;
-	int m_toSim, m_fromSim, m_toServer, m_fromServer;
       protected:
-	Device(std::string &name, std::string &dir, bool discovery, std::string &error)
-	  : OCPI::HDL::Device(name),
-	    m_discovery(discovery), m_directory(dir), m_toSim(-1), m_fromSim(-1) {
-	  m_request.header.tag = 0;
-	  const char *cp = name.c_str();
-	  if (!strncasecmp("Sim:", cp, 4))
-	    cp += 4;
-	  std::string
-	    toServer(m_directory + "/server"),
-	    fromServer(m_directory + "/client"),
-	    toSim(m_directory + "/external"),
-	    fromSim(m_directory + "/response");
-	  if ((m_toSim = open(toSim.c_str(), O_WRONLY | O_NONBLOCK)) < 0 ||
-	      fcntl(m_toSim, F_SETFL, 0) != 0) {
-	    OU::formatString(error, "Can't open or set up named pipe to simulator: %s", toSim.c_str());
-	    return;
-	  }
-	  if ((m_fromSim = open(fromSim.c_str(), O_RDONLY | O_NONBLOCK)) < 0 ||
-	      fcntl(m_fromSim, F_SETFL, 0) != 0) {
-	    OU::formatString(error, "Can't open or set up named pipe from simulator: %s", fromSim.c_str());
-	    return;
-	  }
-	  if ((m_toServer = open(toServer.c_str(), O_WRONLY | O_NONBLOCK)) < 0 ||
-	      fcntl(m_toServer, F_SETFL, 0) != 0) {
-	    OU::formatString(error, "Can't open or set up named pipe to sim server: %s", toServer.c_str());
-	    return;
-	  }
-	  if ((m_fromServer = open(fromServer.c_str(), O_RDONLY | O_NONBLOCK)) < 0 ||
-	      fcntl(m_fromServer, F_SETFL, 0) != 0) {
-	    OU::formatString(error, "Can't open or set up named pipe from sim server: %s", toServer.c_str());
-	    return;
-	  }
-	  ocpiDebug("Sim container %s opened both named pipes", name.c_str());
-	  uint16_t c[2] = {0, 1};
-	  if (mywrite(m_toServer, (const void *)c, sizeof(c)))
-	    throw OU::Error("Can't write flush message to sim server");
-	  if (myread(m_fromServer, (char *)c, sizeof(c)) != sizeof(c))
-	    throw OU::Error("Can't read flush response from sim server");
-	  //OU::formatString(m_endpointSpecific, "ocpi-ether-rdma:%s", cp);
-	  m_endpointSize = sizeof(OccpSpace);
-	  cAccess().setAccess(NULL, this, m_endpointSize - sizeof(OccpSpace));
-	  // dAccess().setAccess(NULL, this, 0);
+	Device(Driver &driver, OS::Ether::Interface &ifc, std::string &name,
+	       OE::Address addr, bool discovery, std::string &error)
+	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-udp-rdma", 1000, error) {
+	  // Send the "flush all state - I am a new master" command.
+	  if (error.empty())
+	    command("", 1, NULL, 0, 2000);
 	}
       public:
 	~Device() {
 	}
       private:
-	ssize_t 
-	myread(int fd, void *argBuf, size_t n) {
-	  ocpiDebug("myread of %zu", n);
-	  uint8_t *buf = (uint8_t*)argBuf;
-	  ssize_t soFar = 0;
-	  do {
-	    ssize_t r = read(fd, buf, n);
-	    switch(r) {
-	    case -1:
-	      if (errno == EINTR)
-		continue;
-	      // fall into
-	    case 0:
-	      m_isAlive = false;
-	      return r;
-	    default:
-	      soFar += r;
-	      buf += r;
-	      n -= r;
-	    }
-	  } while (n);
-	  return soFar;
-	}
-	bool
-	mywrite(int fd, const void *buf, unsigned n) {
-	  ssize_t nr = write(fd, buf, n);
-	  if (nr == n)
-	    return false;
-	  if (nr == 0 || errno == EPIPE)
-	    m_isAlive = false;
-	  return true;
+	// Convenience for setting the m_isAlive and throwing OU::Error
+	void throwit(const char *fmt, ...) __attribute__((format(printf, 2, 3))) {
+	  m_isAlive = false;
+	  va_list ap;
+	  va_start(ap, fmt);
+	  throw OU::Error(ap, fmt);
 	}
       public:
 	// Load a bitstream via jtag
 	void load(const char *name) {
-	  uint16_t c[2];
-	  unsigned
-	    hlen = sizeof(c),
-	    namelen = strlen(name),
-	    msglen = hlen + namelen + 1;
-	  c[0] = namelen + 1;
-	  c[1] = 0;
-	  std::string msg(msglen, 0);
-	  msg.replace(0, hlen, (const char *)c);
-	  msg.replace(hlen, namelen, name);
-	  ocpiDebug("Request to sim server to load %s (len %u)", name, msglen); 
-	  if (mywrite(m_toServer, msg.c_str(), msglen))
-	    throw OU::Error("Can't write load request message to sim server");
-	  if (myread(m_fromServer, (char *)c, sizeof(c)) != sizeof(c))
-	    throw OU::Error("Can't read header from sim server");
-	  if (c[0] != 0) {
-	    char *err = new char[c[0]];
-	    if (myread(m_fromServer, err, c[0]) != c[0]) {
-	      delete err;
-	      throw OU::Error("Can't read header from sim server");
-	    }
-	    std::string error(err);
-	    delete err;
-	    throw OU::Error("Loading new executable %s failed: %s", name, error.c_str());
-	  }
-	  if (c[1] != 0)
-	    throw OU::Error("Bad command returned from server: %u", c[1]);
+	  char err[1000];
+	  err[0] = 0;
+	  command(name, strlen(name)+1, err, sizeof(err), 2000);
+	  err[sizeof(err)-1] = 0;
+	  if (*err)
+	    throwit("Loading new executable %s failed: %s", name, err);
 	  ocpiInfo("Successfully loaded new sim executable: %s", name);
 	}
-	void request(EtherControlMessageType type, RegisterOffset offset,
-		     unsigned bytes, EtherControlPacket &responsePacket, uint32_t *status) {
-	  m_request.header.pad = 0;
-	  m_request.header.tag++;
-	  m_request.header.typeEtc =
-	    OCCP_ETHER_TYPE_ETC(type,
-				(~(-1 << bytes) << (offset & 3)) & 0xf,
-				m_discovery ? 1 : 0);
-	  EtherControlResponse response = OK;
-	  if (status)
-	    *status = 0;
-	  ocpiDebug("Sim request sent type %u tag %u offset %u",
-		    OCCP_ETHER_MESSAGE_TYPE(m_request.header.typeEtc), m_request.header.tag,
-		    ntohl(((EtherControlRead *)&m_request)->address));
-	  if (mywrite(m_toSim, (const void*)&m_request.header.length, typeLength[type]-2))
-	    throw OU::Error("Can't write %u bytes of control request to sim server", typeLength[type]-2);
-	  ssize_t r = myread(m_fromSim, (uint8_t*)&responsePacket.header+2,
-			     sizeof(responsePacket.header)-2);
-	  if (r != sizeof(responsePacket.header)-2) {
-	    m_isAlive = false;
-	    throw OU::Error(r ? "Can't read header of control request to named pipe: %zd %d" :
-			    "Simulation server has shut down",
-			    r, errno);
-	  }
-	  ocpiDebug("response received from sim %x %x %x",
-		    responsePacket.header.length, responsePacket.header.typeEtc,
-		    responsePacket.header.tag);
-	  if (OCCP_ETHER_MESSAGE_TYPE(responsePacket.header.typeEtc) != OCCP_RESPONSE)
-	    throw OU::Error("Control packet from sim not a response, ignored: typeEtc 0x%x",
-			    responsePacket.header.typeEtc);
-	  if (responsePacket.header.tag != m_request.header.tag)
-	    throw OU::Error("Control packet from sim has extraneous tag %u, expecting %u, ignored",
-			    responsePacket.header.tag, m_request.header.tag);
-	  if (type != OCCP_WRITE &&
-	      (r = myread(m_fromSim, (void*)(&responsePacket.header + 1), 4)) != 4)
-	    throw OU::Error("Can't read response data (4 bytes) of control request to named pipe %zd %d",
-			    r, errno);
-	  if ((response = OCCP_ETHER_RESPONSE(responsePacket.header.typeEtc)) == OK)
-	    return;
-	  ocpiInfo("Control packet from sim got non-OK response: %u", response);
-	  if (status)
-	    *status =
-	      response == WORKER_TIMEOUT ? OCCP_STATUS_READ_TIMEOUT :
-	      response == ERROR ? OCCP_STATUS_READ_ERROR :
-	      OCCP_STATUS_ACCESS_ERROR;
-	  else
-	    throw OU::Error("HDL Sim Control %s error: %s",
-			    type == OCCP_READ ? "read" : "write",
-			    response == WORKER_TIMEOUT ? "worker timeout" :
-			    response == ERROR ? "worker error" :
-			    "ethernet timeout - no valid response");
-	}
-
-	// Shared "get" that returns value, and *status if status != NULL
-	uint32_t get(RegisterOffset offset, unsigned bytes, uint32_t *status) {
-	  EtherControlRead &ecr =  m_request.read;
-	  ecr.address = htonl((offset & 0xffffff) & ~3);
-	  ecr.header.length = htons(sizeof(ecr)-2);
-	  EtherControlPacket responsePacket;
-	  request(OCCP_READ, offset, bytes, responsePacket, status);
-	  uint32_t data = ntohl(responsePacket.readResponse.data);
-	  ocpiDebug("Accessor read received 0x%x from offset %x tag %u", data, offset, ecr.header.tag);
-	  return data;
-	}
-	void
-	set(RegisterOffset offset, unsigned bytes, uint32_t data, uint32_t *status) {
-	  EtherControlWrite &ecw =  m_request.write;
-	  ecw.address = htonl((offset & 0xffffff) & ~3);
-	  ecw.data = htonl(data);
-	  ecw.header.length = htons(sizeof(ecw)-2);
-	  EtherControlPacket responsePacket;
-	  request(OCCP_WRITE, offset, bytes, responsePacket, status);
-	}
-      public:
-	uint64_t get64(RegisterOffset offset, uint32_t *status) {
-	  union {
-	    uint64_t u64;
-	    uint32_t u32[sizeof(uint64_t) / sizeof(uint32_t)];
-	  } u;
-	  u.u32[0] = get(offset, sizeof(uint32_t), status);
-	  if (!status || !*status)
-	    u.u32[1] = get(offset + sizeof(uint32_t), sizeof(uint32_t), status);
-	  return u.u64;
-	}
-	uint32_t get32(RegisterOffset offset, uint32_t *status) {
-	  return get(offset, sizeof(uint32_t), status);
-	}
-	uint16_t get16(RegisterOffset offset, uint32_t *status) {
-	  return (uint16_t)get(offset, sizeof(uint16_t), status);
-	}
-	uint8_t get8(RegisterOffset offset, uint32_t *status) {
-	  return (uint8_t)get(offset, sizeof(uint8_t), status);
-	}
-	void getBytes(RegisterOffset offset, uint8_t *buf, unsigned length, uint32_t *status) {
-	  while (length) {
-	    unsigned bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
-	    if (bytes > length)
-	      bytes = length;
-	    uint32_t val = get(offset, bytes, status);
-	    if (status && *status)
-	      return;
-	    memcpy(buf, (uint8_t*)&val + (offset & 3), bytes);
-	    length -= bytes;
-	    buf += bytes;
-	    offset += bytes;
-	  }
-	}
-	void set64(RegisterOffset offset, uint64_t val, uint32_t *status) {
-	  set(offset, sizeof(uint32_t), (uint32_t)val, status);
-	  if (!status || !*status)
-	    set(offset + sizeof(uint32_t), sizeof(uint32_t), (uint32_t)(val >> 32), status);
-	}
-	void set32(RegisterOffset offset, uint32_t val, uint32_t *status) {
-	  set(offset, sizeof(uint32_t), val, status);
-	}
-	void set16(RegisterOffset offset, uint16_t val, uint32_t *status) {
-	  set(offset, sizeof(uint16_t), val << ((offset & 3) * 8), status);
-	}
-	void set8(RegisterOffset offset, uint8_t val, uint32_t *status) {
-	  set(offset, sizeof(uint8_t), val << ((offset & 3) * 8), status);
-	}
-	void setBytes(RegisterOffset offset, const uint8_t *buf, unsigned length, uint32_t *status)  {
-	  while (length) {
-	    unsigned bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
-	    if (bytes > length)
-	      bytes = length;
-	    uint32_t data;
-	    memcpy((uint8_t*)&data + (offset & 3), buf, bytes);
-	    set(offset, bytes, data, status);
-	    if (status && *status)
-	      return;
-	    length -= bytes;
-	    buf += bytes;
-	    offset += bytes;
-	  }
-	}
       };
+
       Driver::
       ~Driver() {
       }
-
+      Net::Device &Driver::
+      createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
+		   bool discovery, std::string &error) {
+	std::string name("sim:");
+	name += addr.pretty();
+	return *new Device(*this, ifc, name, addr, discovery, error);
+      }
+#if 0
+      
+      // Our official names are just sim:<ipaddr>
       OCPI::HDL::Device *Driver::
       open(const char *name, bool discovery, std::string &error) {
 	std::string myName;
@@ -384,6 +158,7 @@ namespace OCPI {
 	}
 	return count;
       }
+#endif
     } // namespace Sim
   } // namespace HDL
 } // namespace OCPI

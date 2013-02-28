@@ -1,4 +1,4 @@
-<application >
+<application package='ocpi'>
   <instance component="pattern" connect="bias">
     <property name="messagesToSend" value='1'/>
     <property name="metadata" value='{12,3}'/>

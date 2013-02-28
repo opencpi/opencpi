@@ -502,8 +502,17 @@ formatStringAddV(std::string &out, const char *fmt, va_list ap) {
   out += cp;
   free(cp);
 }
+// FIXME remove this when all callers are fixed.
 void OCPI::Util::
 formatString(std::string &out, const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  out.clear();
+  formatStringAddV(out, fmt, ap);
+  va_end(ap);
+}
+void OCPI::Util::
+format(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   out.clear();

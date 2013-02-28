@@ -59,6 +59,7 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 # #### Location of the Xilinx tools ####################################### #
 
 export OCPI_XILINX_TOOLS_DIR=/opt/Xilinx/14.1/ISE_DS
+export OCPI_VIVADO_TOOLS_DIR=/home/jek1/mac/Xilinx/Vivado/2012.1
 
 # #### Location of the Altera tools ####################################### #
 
@@ -127,7 +128,7 @@ export OCPI_HAVE_IBVERBS=0
 
 
 #export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
-export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl_container/impl/include
+export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl/include
 export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 export OCPI_HAVE_OPENCL=1
 # ######################################################################### #

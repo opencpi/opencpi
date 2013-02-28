@@ -60,7 +60,7 @@ $(OCPI_OUT_DIR):
 	mkdir $@
 
 $(ALLBIN): $(OCPI_OUT_DIR)/%: src/%.c | $(OCPI_OUT_DIR)
-	gcc -o $@ -std=c99 -I../../core/container/hdl_container/impl/include $(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
+	gcc -o $@ -std=c99 -I../../core/container/hdl/include $(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
 
 clean:
 	rm -r -f *-bin

@@ -72,6 +72,7 @@ end entity;
 
 library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wsi.all; use ocpi.util.all;
+library bsv;
 architecture rtl of slave is
   signal reset_i : Bool_t; -- internal version of output to worker
   signal reset_n   : Bool_t; -- internal assert-low reset (to avoid silly isim warning).
@@ -112,6 +113,7 @@ architecture rtl of slave is
   signal fifo_enq : std_logic;
   signal fifo_ready : bool_t;
   --signal fifo_full_r : bool_t;
+  for fifo : FIFO2X use entity bsv.FIFO2X;
 begin
   -- Combi resets:
   --   We get wci reset and wsi peer reset (from master)

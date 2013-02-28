@@ -9,11 +9,11 @@ component FIFO2X
            RST     : in  std_logic;
            D_IN    : in  std_logic_vector(width - 1 downto 0);
            ENQ     : in  std_logic;
-           DEQ     : in  std_logic;
-           CLR     : in  std_logic;
            FULL_N  : out std_logic;
+           D_OUT   : out std_logic_vector(width - 1 downto 0);
+           DEQ     : in  std_logic;
            EMPTY_N : out std_logic;
-           D_OUT   : out std_logic_vector(width - 1 downto 0));
+           CLR     : in  std_logic);
 end component FIFO2X;
 component FIFO2
   generic (width   : natural := 1; \guarded\ : natural := 1);
@@ -21,11 +21,11 @@ component FIFO2
            RST     : in  std_logic;
            D_IN    : in  std_logic_vector(width - 1 downto 0);
            ENQ     : in  std_logic;
-           DEQ     : in  std_logic;
-           CLR     : in  std_logic;
            FULL_N  : out std_logic;
+           D_OUT   : out std_logic_vector(width - 1 downto 0);
+           DEQ     : in  std_logic;
            EMPTY_N : out std_logic;
-           D_OUT   : out std_logic_vector(width - 1 downto 0));
+           CLR     : in  std_logic);
 end component FIFO2;
 
 component message_bounds

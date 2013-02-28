@@ -22,13 +22,13 @@
 #
 ########################################################################### #
 
-# This file has the HDL tool details for isim
+# This file has the HDL tool details for modelsim
 
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
 # built when the library is built.
-# In isim the result is a library directory that is always built all at once, and is
+# In modelsim the result is a library directory that is always built all at once, and is
 # always removed entirely each time it is built.  It is so fast that there is no
 # point in fussing over "incremental" mode.
 # So there not a specific file name we can look for
@@ -77,40 +77,37 @@ $(call OcpiDbgVar,ModelsimFiles)
 ModelsimVlogLibs=
 
 #  $(foreach l,$(ComponentLibraries),\
-     $(foreach w,$(wildcard $(l)/lib/hdl/isim/*),\
+     $(foreach w,$(wildcard $(l)/lib/hdl/modelsim/*),\
         -L $(notdir $(w))=$(strip\
-	  $(call FindRelative,$(TargetDir),$(l)/lib/hdl/isim/$(notdir $(w))))))\
-  $(foreach l,$(HdlLibraries) $(Cores),\
+	  $(call FindRelative,$(TargetDir),$(l)/lib/hdl/modelisim/$(notdir $(w))))))\
+  $(foreach l,$(HdlLibrariesInternal) $(Cores),\
      -lib $(notdir $(l))=$(strip \
-          $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(l),isim))))
+          $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(l),modelisim))))
 
 ModelSimVlogIncs=\
   $(foreach d,$(VerilogDefines),+define+$d) \
-  $(foreach d,$(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d)) \
-  -pedanticerrors \
-  -modelsimini=modelsim.ini \
+  $(foreach d,$(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d))
 
 #  $(foreach l,$(ComponentLibraries),\
-#     $(foreach w,$(wildcard $(l)/lib/hdl/isim/*),\
-#        -i $(call FindRelative,$(TargetDir),$(l)/lib/hdl/isim/$(notdir $(w)))))
+#     $(foreach w,$(wildcard $(l)/lib/hdl/modelisim/*),\
+#        -i $(call FindRelative,$(TargetDir),$(l)/lib/hdl/modelisim/$(notdir $(w)))))
 
-ifndef IsimTop
-IsimTop=$(Worker).$(Worker)
-endif
+
 
 HdlToolCompile=\
   (echo '; This file is generated for building this '$(LibName)' library.';\
    echo '[library]' ; \
-   $(foreach l,$(HdlLibraries),\
+   $(foreach l,$(HdlLibrariesInternal),\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$l,$(HdlTarget)))));) \
    echo others=$(OCPI_MODELSIM_DIR)/modelsim.ini \
    ) > modelsim.ini ; \
+   export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE); \
   $(if $(filter work,$(LibName)),,$(OCPI_MODELSIM_DIR)/bin/vlib $(LibName);) \
-  $(OCPI_MODELSIM_DIR)/bin/$(if $(filter .v,$(suffix $(firstword $(ModelsimFiles)))),vlog $(VlogIncs) $(VlogLibs),vcom) \
+  $(OCPI_MODELSIM_DIR)/bin/$(if $(filter .v,$(suffix $(firstword $(ModelsimFiles)))),$(strip\
+     vlog $(ModelSimVlogIncs) $(VlogLibs)),vcom -preserve -bindAtCompile -error 1253) \
    -pedanticerrors \
-   -93 \
    -work $(LibName) \
    -modelsimini modelsim.ini \
      $(ModelsimFiles) 
@@ -132,53 +129,59 @@ HdlToolPost=\
     touch $(LibName);\
   fi;
 
-IsimPlatform:=ocpiIsim
-IsimAppName=$(call AppName,$(IsimPlatform))
-ExeFile=$(IsimAppName).exe
-BitFile=$(IsimAppName).bit
-BitName=$(call PlatformDir,$(IsimPlatform))/$(BitFile)
-IsimPlatformDir=$(HdlPlatformsDir)/$(IsimPlatform)
-IsimTargetDir=$(call PlatformDir,$(IsimPlatform))
-IsimFuseCmd=\
-  $(Modelsim) fuse  ocpiIsim.main ocpiIsim.glbl -v 2 \
-		-lib ocpiIsim=$(IsimPlatformDir)/target-isim/ocpiIsim \
-		-lib mkOCApp4B=mkOCApp4B \
-	        -lib $(Worker)=../target-isim/isim/$(Worker) \
-	$$(IsimLibs) -L unisims_ver -o $(ExeFile) && \
-	tar cf $(BitFile) $(ExeFile) metadatarom.data isim
+ModelsimPlatform:=modelsim_pf
+ModelsimAppName=$(call AppName,$(ModelsimPlatform))
+ExeFile=$(ModelsimAppName).exe
+BitFile=$(ModelsimAppName).bit
+BitName=$(call PlatformDir,$(ModelsimPlatform))/$(BitFile)
+ModelsimPlatformDir=$(HdlPlatformsDir)/$(ModelsimPlatform)
+ModelsimTargetDir=$(call PlatformDir,$(ModelsimPlatform))
 
-#		-lib work=$(IsimPlatformDir)/target-isim/isim/work \
-#" > $$(call AppName,$(IsimPlatform))-fuse.out 2>&1
 
+ModelsimBuildCmd=\
+  $(eval $(HdlSetWorkers)) \
+  $(eval MyLibMap:=$(strip \
+    $(foreach l,$(HdlLibrariesInternal),\
+       $(lastword $(subst -, ,$(notdir $l)))=$(strip \
+         $(call FindRelative,$(TargetDir),$(strip \
+           $(call HdlLibraryRefDir,$l,$(HdlTarget)))))) \
+    $(foreach w,$(HdlWorkers),\
+      $(foreach f,$(firstword \
+                    $(or $(foreach c,$(ComponentLibraries), \
+                           $(foreach d,$(call HdlComponentLibrary,$c,modelsim),\
+	                     $(wildcard $d/$w))),\
+                       $(error Worker $w not found in any component library.))),\
+        $w=$(call FindRelative,$(TargetDir),$f))) \
+    $(ModelsimPlatform)=$(ModelsimPlatformDir)/target-modelsim/modelsim_pf \
+    mkOCApp4B=mkOCApp4B \
+    $(Worker)=../target-modelsim/$(Worker))) \
+  $(eval MyLibs:=$(foreach m,$(MyLibMap),$(firstword $(subst =, ,$m)))) \
+  (echo '; This file is generated for building this '$(LibName)' library.';\
+   echo '[library]' ; \
+   $(foreach l,$(MyLibMap),echo $l;) \
+   echo others=$(OCPI_MODELSIM_DIR)/modelsim.ini; \
+   ) > $(ModelsimAppName).ini ; \
+   echo $(foreach l,$(MyLibs),-L $l) > vsim.args; \
+   export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE); \
+   echo 'log -r /*; archive write vsim.dbar -wlf vsim.wlf -include_src ; quit' | \
+   $(OCPI_MODELSIM_DIR)/bin/vsim -c modelsim_pf.main -modelsimini $(ModelsimAppName).ini \
+	-f vsim.args && \
+    echo vsim exited successfully, now creating archive: $(BitName) && \
+    pax -wf $(BitFile) -L vsim.dbar vsim.args metadatarom.data \
+      -s =../target-modelsim/$(Worker)/modelsim== \
+      $(foreach l,$(MyLibMap),-s =$(word 2,$(subst =, ,$l))=$(firstword $(subst =, ,$l))=)  \
+      $(foreach l,$(MyLibMap),$(word 2,$(subst =, ,$l))) \
 
 define HdlToolDoPlatform
 # Generate bitstream
-$$(BitName): TargetDir=$(call PlatformDir,$(IsimPlatform))
-$$(BitName): HdlToolCompile=$(IsimFuseCmd)
-$$(BitName): HdlToolSet=fuse
-$$(BitName): $(IsimPlatformDir)/target-isim/$(IsimPlatform) $(IsimTargetDir)/mkOCApp4B | $(IsimTargetDir)
-	$(AT)echo Building isim simulation executable: $$(BitName).  Details in $$(IsimAppName)-fuse.out
+$$(BitName): TargetDir=$(call PlatformDir,$(ModelsimPlatform))
+$$(BitName): HdlToolCompile=$$(ModelsimBuildCmd)
+$$(BitName): HdlToolSet=vsim
+$$(BitName): HdlToolPost=
+$$(BitName): HdlTarget=modelsim
+$$(BitName): HdlName=$(ModelsimAppName)
+$$(BitName): $(ModelsimPlatformDir)/target-modelsim/$(ModeisimPlatform) $(ModelsimTargetDir)/mkOCApp4B | $(ModelsimTargetDir)
+	$(AT)echo Building modelsim simulation executable: $$(BitName).  Details in $$(ModelsimAppName)-vsim.out
 	$(AT)$$(HdlCompile)
 endef
 
-ifdef FFF
-	$(AT)$(TIME) sh -c "cd $$(TargetDir); \
-	$(Xilinx) fuse  ocpiIsim.main work.glbl \
-		-lib ocpiIsim=$(IsimPlatformDir)/target-isim/ocpiIsim \
-		-lib work=$(IsimPlatformDir)/target-isim/isim/work \
-		-lib mkOCApp4B=$(IsimTargetDir)/mkOCApp4B \
-	$$(IsimLibs) -L unisims_ver -o $(BitFile)" > $$(call AppName,$(IsimPlatform))-fuse.out 2>&1
-
-endif
-
-
-# fancier looking at output file?
-ifneq (,)
-  if grep -q 'Number of errors   :    0 ' xst-$(Core).out; then \
-    ngc2edif -w $(Core).ngc >> xst-$(Core).out; \
-    exit 0; \
-  else \
-    exit 1; \
-  fi
-  if test $$EC = 0
-endif

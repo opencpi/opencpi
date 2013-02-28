@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -32,19 +31,13 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <errno.h>
+
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <errno.h>
 #include <sys/mman.h>
-#include <sys/time.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <arpa/inet.h>
+#include <signal.h> // for SIGPIPE
 #include <uuid/uuid.h>
-#include <dirent.h>
 // FIXME: integrate this into our UUID utility properly
 #ifndef _UUID_STRING_T
 #define _UUID_STRING_T
@@ -52,24 +45,17 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
 #include "zlib.h"
 #include "OcpiOsMisc.h"
-#include "OcpiOsFileSystem.h"
-#include "OcpiOsFileIterator.h"
-#include "OcpiPValue.h"
 #include "OcpiUtilMisc.h"
-#include "DtSharedMemoryInterface.h"
 #include "DtTransferInternal.h"
-#include "EtherDriver.h"
-#include "SimDriver.h"
+#include "SimServer.h"
 #include "HdlDriver.h"
 #include "HdlContainer.h"
-#include "HdlOCCP.h"
 #include "HdlOCDP.h"
 
 namespace OE = OCPI::OS::Ether;
-namespace HE = OCPI::HDL::Ether;
+namespace HE = OCPI::HDL::Net;
 namespace OH = OCPI::HDL;
 namespace OU = OCPI::Util;
-namespace OP = OCPI::HDL::PCI;
 namespace OA = OCPI::API;
 namespace OD = OCPI::DataTransport;
 namespace OC = OCPI::Container;
@@ -101,11 +87,12 @@ static Function
   wread, wwrite, sendData, receiveData, receiveRDMA, sendRDMA, simulate;
 static bool verbose = false, parseable = false;
 static int log = -1;
-std::string platform, simexec;
+std::string platform, simExec;
 static const char
-*interface = NULL, *device = NULL, *part = NULL, *simDump = NULL;
+*interface = NULL, *device = NULL, *part = NULL;
+static bool simDump = true;
 static unsigned
-  sleepUsecs = 100000,  // how much time between quota injections
+  sleepUsecs = 200000,  // how much time between quota injections
   spinCount = 255,      // how much quote per timeout AND per control message
   simTicks = 10000000;   // how much quote to run
 static std::string name, error, endpoint;
@@ -269,7 +256,7 @@ doFlags(const char **&ap) {
       device = next(ap);
       break;
     case 'e':
-      simexec = next(ap);
+      simExec = next(ap);
       break;
     case 'p':
       platform = next(ap);
@@ -290,7 +277,7 @@ doFlags(const char **&ap) {
       simTicks = atoi(next(ap));
       break;
     case 'D':
-      simDump = next(ap);
+      simDump = false;
       break;
     case 'v':
       verbose = true;
@@ -401,44 +388,6 @@ static void probe(const char **) {
   dev->print();
 }
 
-static void initAdmin(OH::OccpAdminRegisters &admin, const char *platform) {
-  memset(&admin, 0, sizeof(admin));
-#define unconst32(a) (*(uint32_t *)&(a))
-#define unconst64(a) (*(uint64_t *)&(a))
-  unconst64(admin.magic) = OCCP_MAGIC;
-  unconst32(admin.revision) = 0;
-  unconst32(admin.birthday) = time(0);
-  unconst32(admin.config) = 0xf0;
-  unconst32(admin.pciDevice) = 0;
-  unconst32(admin.attention) = 0;
-  unconst32(admin.status) = 0;
-  admin.scratch20 = 0xf00dface;
-  admin.scratch24 = 0xdeadbeef;
-  admin.control = 0;
-  unconst32(admin.reset) = 0;
-  unconst32(admin.timeStatus) = 0;
-  admin.timeControl = 0;
-  admin.time = 0;
-  admin.timeDelta = 0;
-  unconst32(admin.timeClksPerPps) = 0;
-  unconst64(admin.dna) = 0;
-  unconst32(admin.numRegions) = 1;
-  unconst32(admin.regions[0]) = 0;
-  uuid_t uuid;
-  uuid_generate(uuid);
-  uuid_string_t textUUID;
-  uuid_unparse_lower(uuid, textUUID);
-  ocpiDebug("Emulator UUID: %s", textUUID);
-  OH::HdlUUID temp;
-  temp.birthday = time(0) + 1;
-  memcpy(temp.uuid, uuid, sizeof(admin.uuid.uuid));
-  strcpy(temp.platform, platform);
-  strcpy(temp.device, "devemu");
-  strcpy(temp.load, "ld");
-  strcpy(temp.dna, "\001\002\003\004\005\006\007");
-  for (unsigned n = 0; n < sizeof(OH::HdlUUID); n++)
-    ((uint8_t*)&admin.uuid)[n] = ((uint8_t *)&temp)[(n & ~3) + (3 - (n&3))];
-}
 
 static const char *ops[] =
   { "initialize", "start", "stop", "release", "test", "before", "after", "reserved7", 0};
@@ -450,14 +399,14 @@ static void emulate(const char **) {
   OE::Interface eif;
   while (error.empty() && ifs.getNext(eif, error, interface)) {
     if (eif.up && eif.connected) {
-      printf("Using interface %s with address %s\n", eif.name.c_str(), eif.addr.pretty());
       OE::Socket s(eif, ocpi_slave, NULL, 0, error);
       if (error.size())
 	bad("Failed to open slave socket");
+      printf("Using interface %s with address %s\n", eif.name.c_str(), s.ifAddr().pretty());
       OE::Packet rFrame, sFrame;
       static char cadmin[sizeof(OH::OccpSpace)];
       memset(cadmin, 0, sizeof(cadmin));
-      initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator");
+      OH::Sim::Server::initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator");
       HE::EtherControlHeader &ech_out =  *(HE::EtherControlHeader *)(sFrame.payload);
       bool haveTag = false;
       OE::Address to;
@@ -467,7 +416,6 @@ static void emulate(const char **) {
 	if (s.receive(rFrame, length, 0, from, error)) {
 	  if (from == eif.addr)
 	    continue;
-	  ocpiDebug("Received packet from %s, length %u\n", from.pretty(), length);
 	  bool sent;
 	  HE::EtherControlHeader &ech_in =  *(HE::EtherControlHeader *)(rFrame.payload);
 	  HE::EtherControlMessageType type = OCCP_ETHER_MESSAGE_TYPE(ech_in.typeEtc);
@@ -477,7 +425,7 @@ static void emulate(const char **) {
 	  HE::EtherControlRead &ecr =  *(HE::EtherControlRead *)(rFrame.payload);
 	  uint32_t offset = ntohl(ecr.address); // for read or write
 	  HE::EtherControlWrite &ecw =  *(HE::EtherControlWrite *)(rFrame.payload);
-	  printf("Received type %u, length 0x%x ntohs 0x%x tag %3d from %s, offset 0x%8" PRIx32
+	  ocpiDebug("Received type %u, length 0x%x ntohs 0x%x tag %3d from %s, offset 0x%8" PRIx32
 		 ", data 0x%8" PRIx32 "\n",
 		 type, ech_in.length, ntohs(ech_in.length), ech_in.tag, from.pretty(), offset,
 		 ntohl(ecw.data));
@@ -555,14 +503,19 @@ static void emulate(const char **) {
 	      }
 	      // Modify the outgoing packet last since we might be doing it in the
 	      // received buffer (for uncached mode).
-	      echp->typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, uncache);
+	      echp->typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, uncache, 0);
 	      ocpiDebug("Sending read/write response packet: length is htons %x, ntohs %u tag %u",
 			echp->length, ntohs(echp->length), echp->tag);
 	    }
-	    sent = s.send(out, ntohs(echp->length) + 2, from, 0, error);
+	    sent = s.send(out, ntohs(echp->length) + 2, from, 0, NULL, error);
 	    break;
 	  case HE::OCCP_NOP:
-	    {
+	    if (OCCP_ETHER_RESERVED(ech_in.typeEtc)) {
+	      ocpiInfo("Received reserved command with lenth: %zu",
+		       ntohs(ech_in.length) - sizeof(HE::EtherControlHeader));
+	      ech_in.length = htons(sizeof(HE::EtherControlHeader)-2);
+	      ech_in.typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, 1, 0);
+	    } else {
 	      HE::EtherControlNop &ecn =  *(HE::EtherControlNop *)(rFrame.payload);
 	      ocpiDebug("Received NOP: sizeof h %zd sizeof nop %zd offset %zd from %s\n",
 			sizeof(HE::EtherControlHeader), sizeof(HE::EtherControlNop),
@@ -571,15 +524,15 @@ static void emulate(const char **) {
 	      HE::EtherControlNopResponse &ecnr =  *(HE::EtherControlNopResponse *)(rFrame.payload);
 	      // Tag is the same
 	      ech_in.length = htons(sizeof(ecnr)-2);
-	      ech_in.typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, uncache);
+	      ech_in.typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, uncache, 0);
 	      ecnr.mbx40 = 0x40;
 	      ecnr.mbz0 = 0;
 	      ecnr.mbz1 = 0;
 	      ecnr.maxCoalesced = 1;
 	      ocpiDebug("Sending nop response packet: length is sizeof %zu, htons %u, ntohs %u",
 			sizeof(HE::EtherControlNopResponse), ech_in.length, ntohs(ech_in.length));
-	      sent = s.send(rFrame, ntohs(ech_in.length)+2, from, 0, error);
 	    }
+	    sent = s.send(rFrame, ntohs(ech_in.length)+2, from, 0, NULL, error);
 	    break;
 	  default:
 	    bad("Invalid control packet type: typeEtc = 0x%x", ech_in.typeEtc);
@@ -593,9 +546,9 @@ static void emulate(const char **) {
 	  bad("Slave Recv failed");
       } while (1);
     } else if (interface)
-      OU::formatString(error, "interface %s is %s and %s", interface,
-		       eif.up ? "up" : "down",
-		       eif.connected ? "connected" : "not connected");
+      OU::format(error, "interface %s is %s and %s", interface,
+		 eif.up ? "up" : "down",
+		 eif.connected ? "connected" : "not connected");
   }	  
   if (error.size())
     bad("Error getting interface %s", interface ? interface : "that is up and connected");
@@ -1193,14 +1146,14 @@ static OE::Socket *getSock() {
 static void
 sendData(const char **ap) {
   OE::Address a(ap[0]);
-  if (a.error())
+  if (a.hasError())
     bad("Establishing remote address as %s", ap[0]);
   OE::Socket *s = getSock();
   OE::Packet p;
   ((uint16_t *)p.payload)[1] = 123;
   for (unsigned n = 0; n < 10; n++) {
     p.payload[4] = n;
-    if (!s->send(p, 5, a, 0, error))
+    if (!s->send(p, 5, a, 0, NULL, error))
       bad("sending");
   }
 }
@@ -1551,638 +1504,12 @@ sendRDMA(const char **ap) {
   port.reset();
 }
 
-// Our added-value wait-for-process call.
-// If "hang", we wait for the process to end, and if it stops, we term+kill it.
-// Return true on bad unexpected things
-static bool
-mywait(pid_t pid, bool hang, std::string &error) {
-  int status;
-  pid_t wpid;
-  do
-    wpid = waitpid(pid, &status, (hang ? 0 : WNOHANG) | WUNTRACED);
-  while (wpid == -1 && errno == EINTR);
-  if (wpid == 0) // can't happen if hanging
-    ocpiDebug("Wait returned 0 - subprocess running");
-  else if ((int)wpid == -1) {
-    error = "waitpid error";
-    return true;
-  } else if (WIFEXITED(status)) {
-    int exitStatus = WEXITSTATUS(status);
-    if (exitStatus > 10)
-      OU::formatString(error, "Simulation subprocess couldn't execute simulator executable \"%s\" (got %s - %d)",
-		       simexec.c_str(), strerror(exitStatus - 10), exitStatus - 10);
-    else
-      OU::formatString(error, "Simulation subprocess for executable \"%s\" terminated with exit status %d",
-		       simexec.c_str(), exitStatus);
-    if (hang) {
-      // If waiting for termination, its not our error
-      ocpiInfo("%s", error.c_str());
-      error.clear();
-    } else
-      return true;
-  } else if (WIFSIGNALED(status)) {
-    int termSig = WTERMSIG(status);
-    OU::formatString(error, "Simulation subprocess for executable \"%s\" terminated with signal %s (%d)",
-		     simexec.c_str(), strsignal(termSig), termSig);
-    if (hang) {
-      // If waiting for termination, its not our error
-      ocpiInfo("%s", error.c_str());
-      error.clear();
-    } else
-      return true;
-  } else if (WIFSTOPPED(status)) {
-    int stopSig = WSTOPSIG(status);
-    ocpiInfo("Simulator subprocess for executable \"%s\" stopped with signal %s (%d)",
-	     simexec.c_str(), strsignal(stopSig), stopSig);
-    if (hang) {
-      kill(pid, SIGTERM);
-      sleep(1);
-      kill(pid, SIGKILL);
-      return mywait(pid, true, error);
-    }
-  }
-  return false;
-}
-
-// return true on error, otherwise read the amount requested
-bool
-myread(int fd, char *buf, unsigned nRequested, std::string &error) {
-  ocpiDebug("SIM reading %u from  fd %d", nRequested, fd);
-  do {
-    ssize_t nread = read(fd, buf, nRequested);
-    if (nread == 0)
-      // shouldn't happen because we have it open for writing too
-      error = "eof on FIFO"; 
-    else if (nread > 0) {
-      nRequested -= nread;
-      buf += nread;
-    } else if (errno != EINTR)
-      error = "error reading FIFO";
-  } while (error.empty() && nRequested);
-  return !error.empty();
-}
-
-// Our named pipes.
-struct Fifo {
-  std::string m_name;
-  int m_rfd, m_wfd;
-  bool m_read;
-  Fifo(std::string strName, bool iRead, const char *old, std::string &error)
-    : m_name(strName), m_rfd(-1), m_wfd(-1), m_read(iRead) {
-    if (error.size())
-      return;
-    const char *name = m_name.c_str();
-    if (mkfifo(name, 0666))
-      OU::formatString(error, "can't create fifo: %s (%s %d)",
-		       name, strerror(errno), errno);
-    else if ((m_rfd = open(name, O_RDONLY | O_NONBLOCK)) < 0)
-      OU::formatString(error, "can't open fifo %s for reading (%s %d)",
-		       name, strerror(errno), errno);
-    else if (fcntl(m_rfd, F_SETFL, 0) != 0)
-      OU::formatString(error, "can't set blocking flags on reading fifo %s (%s %d)", name,
-		       strerror(errno), errno);
-    else if ((m_wfd = open(name, O_WRONLY | O_NONBLOCK)) < 0)
-      OU::formatString(error, "can't open fifo %s for writing (%s %d)",
-		       name, strerror(errno), errno);
-    else if (fcntl(m_wfd, F_SETFL, 0) != 0)
-      OU::formatString(error, "can't set blocking flags on writing fifo %s (%s %d)", name,
-		       strerror(errno), errno);
-    if (old) {
-      unlink(old);
-      if (symlink(name, old) != 0)
-	OU::formatString(error, "can't symlink from %s to %s (%s %d)", old, name,
-		       strerror(errno), errno);
-    }
-    ocpiDebug("Fifo %s created and opened for %s", name, iRead ? "reading" : "writing");
-  }    
-  ~Fifo() {
-    ocpiDebug("Destroying fifo %s", m_name.c_str());
-    if (m_rfd >= 0) close(m_rfd);
-    if (m_wfd >= 0) close(m_wfd);
-    unlink(m_name.c_str());
-  }
-  // Get rid of any state in the pipe
-  void
-  flush() {
-    int r, n;
-    char buf[256];
-    while (ioctl(m_rfd, FIONREAD, &n) >= 0 && n > 0 &&
-	   ((r = read(m_rfd, buf, sizeof(buf))) > 0 ||
-	    r < 0 && errno == EINTR))
-      ;
-  }
-};
-
-
-struct Sim {
-  enum Action {
-    SPIN_CREDIT = 0,
-    DCP_CREDIT = 1,
-    DUMP_OFF = 253,
-    DUMP_ON = 254,
-    TERMINATE = 255
-  };
-
-  // This fifo is read by the sim and we write it.
-  // It carries CP traffic from us to the sim
-  Fifo m_req;
-  // This fifo is created and we open it for reading, but never read it.
-  // It carries CP traffic from the sim back to the client.
-  Fifo m_resp;
-  // This fifo is read by the sim and we write it.
-  // It carries sim controls from us to the sim.
-  Fifo m_ctl;
-  // This fifo is read by us and written by the client
-  // It carries CP traffic from the client to us, on the way to the sim
-  Fifo m_ext;
-  // This fifo is for client->server control requests
-  Fifo m_server;
-  // This fifo is for server->client control responses
-  Fifo m_client;
-  int m_nfds;
-  static pid_t s_pid;
-  char *m_buffer;
-  unsigned m_bufferSize;
-  uint64_t m_dcp;
-  char m_admin[sizeof(OH::OccpAdminRegisters)];
-  Sim(std::string &simDir, std::string &error)
-    : m_req(simDir + "/request", false, "/tmp/OpenCPI0_Req", error),
-      m_resp(simDir + "/response", true, "/tmp/OpenCPI0_Resp", error),
-      m_ctl(simDir + "/control", false, "/tmp/OpenCPI0_IOCtl", error),
-      m_ext(simDir + "/external", true, "/tmp/OpenCPI0_Ext", error),
-      m_server(simDir + "/server", true, NULL, error),
-      m_client(simDir + "/client", true, NULL, error),
-      m_nfds((m_ext.m_rfd > m_server.m_rfd ? m_ext.m_rfd : m_server.m_rfd) + 1),
-      m_buffer(NULL), m_bufferSize(0), m_dcp(0)
-  {
-    std::string plat(platform);
-    plat += "_pf";
-    initAdmin(*(OH::OccpAdminRegisters*)m_admin, plat.c_str());
-  }
-  ~Sim() {
-    delete [] m_buffer;
-  }
-  // Establish a new simulator from a new executable.
-  // Return error in the string and return true
-  bool
-  loadRun(const char *script, std::string &err) {
-    const char *file = simexec.c_str();
-    if (verbose)
-      fprintf(stderr, "Initializing simulator from %s executable/bitstream: %s\n",
-	      platform.c_str(), file);
-    ocpiDebug("Starting the simulator load of %s bitstream: %s", platform.c_str(), file);
-    // First establish a directory for the simulation based on the name of the file
-    const char 
-      *slash = strrchr(file, '/'),
-      *suff = strrchr(file, '-');
-    if (!suff) {
-      OU::formatString(err, "simulator file name %s is not formatted properly", file);
-      return true;
-    }
-    const char *dot = strchr(suff + 1, '.');
-    if (!dot) {
-      OU::formatString(err, "simulator file name %s is not formatted properly", file);
-      return true;
-    }
-    slash = slash ? slash + 1 : file;
-    std::string
-      app(slash, suff - slash),
-      plat(suff + 1, (dot - suff) - 1),
-      dir(app);
-    
-    if (!strcmp("_pf", plat.c_str() + plat.length() - 3))
-      plat.resize(plat.length() - 3);
-    if (plat != platform) {
-      OU::formatString(err, "simulator platform mismatch:  executable is %s for platform %s",
-		       file, platform.c_str());
-      return true;
-    }
-
-    char date[100];
-    time_t now = time(NULL);
-    struct tm nowtm;
-    localtime_r(&now, &nowtm);
-    strftime(date, sizeof(date), ".%Y%m%d%H%M%S", &nowtm);
-    dir += ".";
-    dir += platform;
-    dir += date;
-    ocpiDebug("Sim executable is %s, app is %s, platform is %s dir is %s", file, app.c_str(), plat.c_str(), dir.c_str());
-    if (mkdir(dir.c_str(), 0777) != 0 && errno != EEXIST) {
-      OU::formatString(err, "Can't create directory %s to run simulation", dir.c_str());
-      return true;
-    }
-    std::string untar;
-    OU::formatString(untar,
-		     "set -e; file=%s; "
-		     "xlength=`tail -1 $file | sed 's/^.*X//'` && "
-		     "trimlength=$(($xlength + ${#xlength} + 2)) && "
-		     "head -c -$trimlength < $file | tar -xzf - -C %s",
-		     file, dir.c_str());
-    ocpiDebug("Executing command to load bit stream for sim: %s", untar.c_str());
-    int rc = system(untar.c_str());
-    switch (rc) {
-    case 127:
-      OU::formatString(err, "Couldn't start execution of command: %s", untar.c_str());
-      return 0;
-    case -1:
-      OU::formatString(err, "System error (%s, errno %d) while executing bitstream loading command",
-		       strerror(errno), errno);
-      return 0;
-    default:
-      OU::formatString(err, "Error return %u while executing bitstream loading command", rc);
-      return 0;
-    case 0:
-      if (verbose)
-	fprintf(stderr, "Executable/bitstream is installed and ready, in directory %s.\n",
-		dir.c_str());
-      ocpiInfo("Successfully loaded bitstream file: \"%s\" for simulation", file);
-      break;
-    }
-    std::string cmd;
-
-    const char *xenv = getenv("OCPI_CDK_DIR");
-    if (!xenv) {
-      err = " The OCPI_CDK_DIR environment variable is not set";
-      return true;
-    }
-    OU::formatString(cmd, "exec %s %s %s", script, app.c_str(),
-		     simDump && !strcasecmp(simDump, "on") ? "-testplusarg bscvcd" : "");
-    if (verbose)
-      fprintf(stderr, "Starting execution of simulator for HDL assembly: %s (executable \"%s\".\n", app.c_str(), file);
-    switch ((s_pid = fork())) {
-    case 0:
-      if (chdir(dir.c_str()) != 0) {
-	std::string x("Cannot change to simulation subdirectory: ");
-	int e = errno;
-	x += dir;
-	x += "\n";
-	write(2, x.c_str(), x.length());
-	_exit(10 + e);
-      }
-      {
-	int fd = creat("sim.out", 0666);
-	if (fd < 0) {
-	  std::string x("Error: Cannot create sim.out file for simulation output.\n");
-	  int e = errno;
-	  write(2, x.c_str(), x.length());
-	  _exit(10 + e);
-	}
-	if (dup2(fd, 1) < 0 ||
-	    dup2(fd, 2) < 0)
-	  _exit(10 + errno);
-	assert(fd > 2);
-	if (execl("/bin/sh", "/bin/sh", "-c", cmd.c_str(), NULL))
-	  _exit(10 + errno);
-      }
-      break; // not used.
-    case -1:
-      OU::formatString(err, "Could not create simulator sub-process for: %s", simexec.c_str());
-      ocpiBad("%s", err.c_str());
-      return true;
-    default:
-      ocpiInfo("Simluator subprocess has pid: %u.", s_pid);
-    }
-    if (verbose)
-      fprintf(stderr, "Simulator process (process id %u) started, with its output in %s/sim.out\n",
-	      s_pid, dir.c_str());
-    // just improve the odds of an immediate error giving a good error message
-    char msg[2];
-    msg[0] = SPIN_CREDIT;
-    msg[1] = spinCount;
-    assert(write(m_ctl.m_wfd, msg, 2) == 2);
-    if (simDump) {
-      msg[0] = !strcasecmp(simDump, "on") ? DUMP_ON : DUMP_OFF;
-      msg[1] = 0;
-      assert(write(m_ctl.m_wfd, msg, 2) == 2);
-    } 
-    ocpiInfo("Waiting 5 seconds for simlator to start before issueing any more credits.");
-    sleep(5);
-    if (mywait(s_pid, false, error))
-      return true;
-    if (verbose)
-      fprintf(stderr, "Simulator process is running.\n");
-    error.clear();
-    return false;
-  }
-  // Flush all comms to the sim process since we have a new client.
-  void
-  flush() {
-    m_req.flush();
-    m_resp.flush();
-    m_ext.flush();
-  }
-  void
-  shutdown() {
-    if (s_pid) {
-      char msg[2];
-      std::string error;
-      msg[0] = TERMINATE;
-      msg[1] = 0;
-      assert(write(m_ctl.m_wfd, msg, 2) == 2);
-      ocpiInfo("Waiting for simulator process to exit");
-      mywait(s_pid, true, error);
-      m_ctl.flush();
-      flush();
-      if (error.size())
-	ocpiBad("Error when shutting down simulator: %s", error.c_str());
-      m_dcp = 0;
-      s_pid = 0;
-    }
-  }
-  bool
-  doServer(const char *script, std::string &error) {
-    uint16_t c[2];
-    // This protocol has a count byte and a command byte.
-    if (myread(m_server.m_rfd, (char *)c, sizeof(c), error)) {
-      ocpiBad("Error reading server fifo for header: %s", error.c_str());
-      return true;
-    }
-    if (c[0] > m_bufferSize) {
-      delete [] m_buffer;
-      m_buffer = new char[c[0]];
-      m_bufferSize = c[0];
-    }
-    if (c[0] && myread(m_server.m_rfd, m_buffer, c[0], error)) {
-      ocpiBad("Error reading server fifo for name: %s", error.c_str());
-      return true;
-    }
-    ocpiDebug("Server fifo received %u %u: %s", c[0], c[1], c[0] ? m_buffer : "");
-    switch (c[1]) {
-    case 0:
-      shutdown();
-      simexec = m_buffer;
-      loadRun(script, error);
-      break;
-    case 1:
-      flush();
-      break;
-    }
-    c[0] = error.empty() ? 0 : (uint16_t)error.size() + 1;
-    if (write(m_client.m_wfd, c, sizeof(c)) != sizeof(c)) {
-      error = "serverFifo write header failed";
-      return true;
-    }
-    if (c[0] && write(m_client.m_wfd, error.c_str(), c[0]) != c[0]) {
-      error = "serverFifo write data failed";
-      return true;
-    }
-    ocpiDebug("serverFifo sent: %s", c[0] ? "<success>" : error.c_str());
-    return false;
-  }
-
-  // There is no simulator running, handle it ourselves.
-  bool
-  doEmulate(std::string &error) {
-    HE::EtherControlPacket pkt;
-    if (myread(m_ext.m_rfd, (char*)&pkt + 2, sizeof(HE::EtherControlHeader) - 2, error)) {
-      ocpiBad("Error reading header from client fifo: %s", error.c_str());
-      return true;
-    }
-    unsigned n = ntohs(pkt.header.length);
-    //    ocpiDebug("Got header.  Need %u header %u", n, sizeof(HE::EtherControlHeader)-2);
-    if (n < sizeof(HE::EtherControlHeader) - 2) {
-      OU::formatString(error, "bad client message length: %u", n);
-      return true;
-    } else if (n > sizeof(HE::EtherControlHeader) - 2 &&
-	       myread(m_ext.m_rfd, (char*)(&pkt.header + 1),
-		      n - (sizeof(HE::EtherControlHeader) - 2), error)) {
-      ocpiBad("Error reading message from client fifo: %s", error.c_str());
-      return true;
-    }
-    unsigned uncache = OCCP_ETHER_UNCACHED(pkt.header.typeEtc) ? 1 : 0;
-    HE::EtherControlMessageType action = OCCP_ETHER_MESSAGE_TYPE(pkt.header.typeEtc);
-    pkt.header.typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, uncache);
-    //ocpiDebug("Got message");
-    uint32_t offset;
-    ssize_t len;
-    switch (action) {
-    default:
-      OU::formatString(error, "Invalid control message received when no sim executable %x",
-		       pkt.header.typeEtc);
-      return true;
-    case HE::OCCP_WRITE:
-      offset = ntohl(pkt.write.address); // for read or write
-      len = sizeof(HE::EtherControlWriteResponse) - 2;
-      if (offset > sizeof(m_admin))
-	ocpiDebug("Write offset out of range: 0x%" PRIx32 "\n", offset);
-      else
-	*(uint32_t *)(&((char *)&m_admin) [offset]) = ntohl(pkt.write.data);
-      break;
-    case HE::OCCP_READ:
-      offset = ntohl(pkt.read.address); // for read or write
-      len = sizeof(HE::EtherControlReadResponse) - 2;
-      pkt.readResponse.data = htonl(*(uint32_t *)(&((char *)&m_admin) [offset]));
-    }
-    pkt.header.length = htons(len);
-    //ocpiDebug("Writing message %u", len);
-    if (write(m_resp.m_wfd, (char *)&pkt + 2, len) != len) {
-      error = "Error writing response fifo to client";
-      return true;
-    }
-    return false;
-  }
-
-  bool
-  sendToSim(unsigned n, std::string &error) {
-    while (n) {
-      char buf[250], *bp = buf;
-      ssize_t nactual = read(m_ext.m_rfd, buf, n > sizeof(buf) ? sizeof(buf) : n);
-      if (nactual < 0)
-	if (errno == EINTR)
-	  continue;
-	else {
-	  error = "read error from external fifo";
-	  return true;
-	}
-      ssize_t nn;
-      for (unsigned nw = 0; nw < nactual; nw += nn, bp += nn) {
-	if ((nn = write(m_req.m_wfd, bp, nactual - nw)) < 0) {
-	  if (errno != EINTR) {
-	    error = "write error to request fifo";
-	    return true;
-	  }
-	} else if (nn == 0) {
-	  error = "write zero bytes to request fifo";
-	  return true;
-	} else {
-	  char msg[2];
-	  msg[0] = DCP_CREDIT;
-	  msg[1] = nn;
-	  if (write(m_ctl.m_wfd, msg, 2) != 2) {
-	    error = "write error to control fifo";
-	    return true;
-	  }
-	  m_dcp += nn;
-	}
-      }
-      ocpiDebug("have written request to client crediting %zu bytes", nactual);
-      n -= nactual;
-    }
-    return false;
-  }
-  
-  // Perform one action: wait for data or timeout, and act accordingly.
-  // set error on fatal problems
-  // return any execution ticks provided.
-  uint64_t
-  doit(const char *script, uint64_t /*cum*/, std::string &error) {
-    char msg[2];
-    uint64_t ticks = 0;
-    if (m_dcp) {
-      msg[0] = SPIN_CREDIT;
-      msg[1] = spinCount;
-      assert(write(m_ctl.m_wfd, msg, 2) == 2);
-      ticks = spinCount;
-    }
-#if 1
-    {
-      unsigned n = 0;
-      if (ioctl(m_req.m_rfd, FIONREAD, &n) == -1) {
-	error = "fionread syscall on req";
-	return ticks;
-      }
-      unsigned n1 = 0;
-      if (ioctl(m_ctl.m_rfd, FIONREAD, &n1) == -1) {
-	error = "fionread syscall on ctl";
-	return ticks;
-      }
-      ocpiDebug("Request FIFO has %u, control has %u", n, n1);
-    }
-#endif
-    fd_set fds[1];
-    FD_ZERO(fds);
-    FD_SET(m_ext.m_rfd, fds);
-    FD_SET(m_server.m_rfd, fds);
-    struct timeval timeout[1];
-    timeout[0].tv_sec = sleepUsecs/1000000;
-    timeout[0].tv_usec = sleepUsecs%1000000;
-    switch (select(m_nfds, fds, NULL, NULL, timeout)) {
-    case 0: // timeout
-      //      ocpiDebug("Select timeout. cumulative simulator ticks: %" PRIu64, cum);
-      return ticks;
-    default:
-      if (errno == EINTR)
-	return ticks;
-      OU::formatString(error, "Select failed: %s %u", strerror(errno), errno);
-      return ticks;
-    case 2: case 1:
-      ;
-    }
-    if (FD_ISSET(m_server.m_rfd, fds))
-      return doServer(script, error);
-    if (FD_ISSET(m_ext.m_rfd, fds)) {
-      unsigned n = 0;
-      if (ioctl(m_ext.m_rfd, FIONREAD, &n) == -1) {
-	error = "fionread syscall";
-	return ticks;
-      }
-      if (n == 0) {
-	error = "Return from select with 0 bytes";
-	return ticks;
-      }
-      ocpiDebug("Client sent %u bytes", n);
-      if (!s_pid)
-	return doEmulate(error);
-      return sendToSim(n, error);
-    }
-    return ticks;
-  }
-};
-pid_t Sim::s_pid;
-
-static bool stopped = false;
-static void sigint(int /* signal */) {
-  if (Sim::s_pid) {
-    if (stopped) {
-      fflush(stderr);
-      fprintf(stderr, "\nSimulator process pid %u still running.\n", Sim::s_pid);
-      fflush(stderr);
-      signal(SIGINT, SIG_DFL);
-    }
-    stopped = true;
-  }
-  else
-    _exit(1);
-}
-
 static void
 simulate(const char **ap) {
-  // FIXME - determine this via argv0
-  const char *xenv = getenv("OCPI_CDK_DIR");
-  if (!xenv)
-    bad("The OCPI_CDK_DIR environment variable is not set");
-  std::string script(xenv);
-  script += "/scripts/";
-  if (platform.empty()) {
-    OS::FileIterator fi(script, "runSimExec.*");
-    if (fi.end())
-      bad("There is no supported simulation platform (no %s/runSimExec.*)", script.c_str());
-    std::string cmd = fi.relativeName();
-    const char *cp = strchr(cmd.c_str(), '.');
-    assert(cp);
-    platform = ++cp;
-    script += cmd;
-  } else {
-    if (!strcmp("_pf", platform.c_str() + platform.length() - 3))
-      platform.resize(platform.length() - 3);
-    script += "runSimExec.";
-    script += platform;
-    if (!OS::FileSystem::exists(script))
-      bad("\"%s\" is not a supported simulation platform (no %s)", platform.c_str(), script.c_str());
-  }      
-  pid_t pid = getpid();
-  std::string simDir;
-  OU::formatString(simDir, "%s/%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR);
-  if (mkdir(simDir.c_str(), 0777) != 0 && errno != EEXIST)
-    bad("Can't create directory for all OpenCPI simulator containers: %s", simDir.c_str());
-  std::string simName;
-  if (*ap)
-    simName = *ap;
-  else
-    OU::formatString(simName, "%s.%u", platform.c_str(), pid);
-  OU::formatString(simDir, "%s/%s/%s.%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR, OH::Sim::SIMPREF, simName.c_str());
-  if (mkdir(simDir.c_str(), 0777) != 0)
-    if (errno == EEXIST)
-      bad("Diretory for this simulator, \"%s\", already exists (/tmp not cleared?)", simDir.c_str());
-    else
-      bad("Can't create the new diretory for this simulator: %s", simDir.c_str());
-  do {
-    if (verbose)
-      fprintf(stderr, "Registering HDL simulation device \"sim:%s\" in directory: %s for platform: %s\n",
-	      simName.c_str(), simDir.c_str(), platform.c_str());
-    Sim sim(simDir, error);
-    if (error.size())
-      break;
-    ocpiInfo("Simulator named \"sim:%s\" created in %s. All fifos are open.",
-	     strrchr(simDir.c_str(), '.') + 1, simDir.c_str());
-    assert(signal(SIGINT, sigint) != SIG_ERR);
-    // If we were given an executable, start sim with it.
-    if (simexec.length() && sim.loadRun(script.c_str(), error))
-      bad("failed to start simulator");
-    uint64_t cum, last, ticks;
-    for (last = cum = 0; !stopped && error.empty() && cum < simTicks; cum += ticks) {
-      if (cum - last > 1000) {
-	ocpiInfo("Spin credit at: %20" PRIu64, cum);
-	last = cum;
-      }
-      ticks = sim.doit(script.c_str(), cum, error);
-    }
-    if (stopped) {
-      if (verbose)
-	fprintf(stderr, "Stopping simulator due to signal\n");
-      ocpiInfo("Stopping simulator due to signal");
-    } else if (cum >= simTicks) {
-      if (verbose)
-	fprintf(stderr, "Simulator credits at %" PRIu64 " exceeded %u, stopping simulation\n",
-		cum, simTicks);
-      ocpiInfo("Simulator credits at %" PRIu64 " exceeded %u, stopping simulation",
-	       cum, simTicks);
-    }
-    sim.shutdown();
-    // destroy all automatic objects
-  } while (0);
-  ocpiDebug("Removing sim directory: %s", simDir.c_str());
-  assert(rmdir(simDir.c_str()) == 0);
+  OH::Sim::Server server(*ap, platform, spinCount, sleepUsecs,
+			 simTicks, verbose, simDump, error);
   if (error.length())
-    bad("simulator error");
+    bad("Simulator server creation error");
+  if (server.run(simExec, error))
+    bad("Simulator server execution error");
 }

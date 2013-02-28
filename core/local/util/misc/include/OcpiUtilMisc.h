@@ -301,6 +301,7 @@ namespace OCPI {
 
       void
 	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
+	format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatStringAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	formatStringAddV(std::string &out, const char *fmt, va_list ap);
       // Return an error string (caller can throw if desired)

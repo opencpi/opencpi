@@ -14,26 +14,10 @@ namespace OCPI {
   namespace HDL {
     extern const char *hdl;
 
-#if 0 // obsolete
-**************
-The issue is that the ether scanner has an open socket for discovery,
-  and tryether uses the drivers inherited HasRegisters, which needs its own raw socket.
-  Perhaps ether::search can share a socket with hdl::driver?
-  We probably need to conserve this socket thingy.
-  This means that different containers will be sending/receiving from different addresses.
-  Which means at least that we really need that single socket, at least for now perprocess.
-  The m_accessor of the driver's hasregisters is a pointer, so perhaps we really don't want an accessor
-  per container anyway.  accessor and socket are different things.
-  sooo, the accessor object has interesting state, so perhaps its just all about sharing sockets.
-  So the accessors per container referene a higher order socket.
-  That means we need to coordinate "receives" from this socket - for discovery, and per container.
-#endif
-
-
     class Container;
     class Driver
       : public OCPI::Container::DriverBase<Driver, Container, hdl>,
-	public OCPI::HDL::PCI::Driver,
+	OCPI::HDL::PCI::Driver,
 	OCPI::HDL::Ether::Driver,
 	OCPI::HDL::Sim::Driver,
 	Access, // for temporary probing

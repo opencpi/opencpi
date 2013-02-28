@@ -85,7 +85,7 @@ namespace DataTransfer {
 	  }
 	  cp = strchr(ep, ';');
 	  m_addr.setString(ep);
-	  if (!cp || m_addr.error())
+	  if (!cp || m_addr.hasError())
 	    error = OCPI_ETHER_RDMA ": invalid ethernet address in endpoint string";
 	  else
 	    ep = cp + 1;
@@ -151,7 +151,7 @@ namespace DataTransfer {
 	DatagramEndPoint *dep = static_cast<DatagramEndPoint *>(frame.endpoint);
 	std::string error;
 	for (unsigned n = 0; error.empty() && n < 10; n++) {
-	  if (m_socket->send(frame.iov, frame.iovlen, dep->addr(), 0, error))
+	  if (m_socket->send(frame.iov, frame.iovlen, dep->addr(), 0, NULL, error))
 	    return;
 	  ocpiDebug("Sending packet error: %s", error.size() ? error.c_str() : "timeout");
 	}

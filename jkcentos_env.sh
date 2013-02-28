@@ -119,7 +119,7 @@ export OCPI_HAVE_IBVERBS=0
 # #### OpenCL exports ##################################################### #
 
 #export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
-export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl_container/impl/include
+export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl/include
 export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 
 # ######################################################################### #

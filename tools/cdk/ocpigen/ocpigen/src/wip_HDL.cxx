@@ -1851,7 +1851,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	      "-- which can be used by the worker implementer to avoid all the OCP/WCI issues\n"
 	      "library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	      "library ocpi; use ocpi.all, ocpi.types.all;\n"
-	      "use work.all, work.%s_defs.all;\n"
+	      "library %s; use %s.all, %s.%s_defs.all;\n"
 	      "entity %s_wci is\n"
 	      "  port(\n"
 	      "    %-*s : in  %s_in_t;         -- signal bundle from wci interface\n"
@@ -1865,7 +1865,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	      "    %-*s : out bool_t;           -- for endian-switchable workers\n"
 	      "    %-*s : out bool_t%s           -- forcible abort a control-op when\n"
 	      "                                              -- worker uses 'done' to delay it\n",
-	      w->implName, w->implName,
+	      w->implName, w->implName, w->implName, w->implName, w->implName,
 	      maxPropName, "inputs", w->ports[0]->name,
 	      maxPropName, "done",
 	      maxPropName, "attention",

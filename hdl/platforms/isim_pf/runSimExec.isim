@@ -8,7 +8,10 @@ set -e
 . $OCPI_XILINX_TOOLS_DIR/settings64.sh $OCPI_XILINX_TOOLS_DIR
 appname=$1
 shift
-exec ./$appname-isim_pf.exe $* <<EOF
+for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
+echo plusargs are: $plusargs
+echo doing ./$appname-isim_pf.exe $plusargs
+exec ./$appname-isim_pf.exe $plusargs <<EOF
 scope
 show child -r
 wave log -r /

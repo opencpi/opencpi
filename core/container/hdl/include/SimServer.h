@@ -1,15 +1,4 @@
-
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
- *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
- *
  *  This file is part of OpenCPI (www.opencpi.org).
  *     ____                   __________   ____
  *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -31,31 +20,25 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-/*
-  Generic Ethernet L2 "discovery" etc.
-  We define L2 Ethernet discovery as sending a broadcast packet with a defined ethertype and payload,
-  and receiving one or more responses back of the same ethertype, and with a payload.
-  This the "found" callback is the "name" (including mac address) and response payload.
-  Thus this module knows about ethernet, but not about the details of discovery payloads.
-*/
-
-#ifndef ETHERDRIVER_H
-#define ETHERDRIVER_H
-#include "NetDriver.h"
+#ifndef SIM_SERVER_H
+#define SIM_SERVER_H
+#include "HdlOCCP.h"
 namespace OCPI {
   namespace HDL {
-    namespace Ether {
-      class Device;
-      class Driver : public OCPI::HDL::Net::Driver {
-	friend class Device;
-      protected:
-	virtual ~Driver();
-	// constructor
-	virtual Net::Device &createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
-				     bool discovery, std::string &error);
+    namespace Sim {
+      struct Sim;
+      class Server {
+	Sim *m_sim;
+	std::string m_simDir;
+      public:
+	Server(const char *name, const std::string &platform, unsigned spinCount,
+	       unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump, std::string &error);
+	~Server();
+	bool run(const std::string &exec, std::string &error);
+	static void initAdmin(OCPI::HDL::OccpAdminRegisters &admin, const char *platform);
       };
     }
   }
 }
 #endif
+

@@ -44,7 +44,8 @@ usage(const char *name) {
 	  "    -l <log-level>\n"
 	  "                 # set log level during execution\n"
 	  "    -t <seconds>\n"
-	  "                 # specify seconds of runtime\n",
+	  "                 # specify seconds of runtime\n"
+	  "    -C           # show available containers\n",
 	  name);
   exit(1);
 }
@@ -57,7 +58,7 @@ static void addParam(const char *name, const char **&ap) {
 
 int
 main(int /*argc*/, const char **argv) {
-  bool verbose = false, dump = false;
+  bool verbose = false, dump = false, containers = false;
   unsigned seconds = 0, nProcs = 0;
   const char *argv0 = strrchr(argv[0], '/');
   if (argv0)
@@ -73,6 +74,7 @@ main(int /*argc*/, const char **argv) {
       switch (ap[0][1]) {
       case 'v':
 	verbose = true;
+	params.push_back(OA::PVBool("verbose", true));
 	break;
       case 't':
 	seconds = atoi(ap[0][2] ? &ap[0][2] : *++ap);
@@ -98,17 +100,23 @@ main(int /*argc*/, const char **argv) {
       case 'l':
 	OCPI::OS::logSetLevel(atoi(ap[0][2] ? &ap[0][2] : *++ap));
 	break;
+      case 'C':
+	containers = true;
+	break;
       default:
 	usage(argv0);
       }
-    if (!*ap)
+    if (!*ap && !containers)
       usage(argv0);
-    std::string file(*ap);
-    if (!OS::FileSystem::exists(file)) {
-      file += ".xml";
+    std::string file;
+    if (*ap) {
+      file = *ap;
       if (!OS::FileSystem::exists(file)) {
-	fprintf(stderr, "Error: file %s (or %s.xml) does not exist\n", *ap, *ap);
-	return 1;
+	file += ".xml";
+	if (!OS::FileSystem::exists(file)) {
+	  fprintf(stderr, "Error: file %s (or %s.xml) does not exist\n", *ap, *ap);
+	  return 1;
+	}
       }
     }
     if (params.size())
@@ -120,11 +128,23 @@ main(int /*argc*/, const char **argv) {
 	OU::formatString(name, "rcc%d", n);
 	OA::ContainerManager::find("rcc", name.c_str());
       }
-    if (verbose) {
+    if (containers) {
+      c = OA::ContainerManager::get(0); // force config
+      printf("Containers:\n"
+	     " #  Model  Platform     OS         Name\n");
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	fprintf(stderr, "%s[%d]: %s", n ? ", " : "Available containers are: ", n, c->name().c_str());
+	printf("%2u  %-6s %-12s %-10s %s\n",
+	       n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(), c->name().c_str());
+      fflush(stdout);
+    } else if (verbose) {
+      for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
+	fprintf(stderr, "%s%s [m: %s o: %s P: %s]", n ? ", " : "Available containers are: ",
+		c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
       fprintf(stderr, "\n");
     }
+    
+    if (file.empty())
+      return 0;
     OA::Application app(file.c_str(), params.size() ? params.data() : NULL);
     if (verbose)
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
@@ -150,6 +170,8 @@ main(int /*argc*/, const char **argv) {
       if (verbose)
 	fprintf(stderr, "After %u seconds...\n", seconds);
     } else {
+      if (verbose)
+	fprintf(stderr, "Waiting for application to be finished (no timeout)\n");
       app.wait();
       if (verbose)
 	fprintf(stderr, "Application finished\n");
@@ -166,8 +188,10 @@ main(int /*argc*/, const char **argv) {
     return 0;
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+    return 1;
   } catch (...) {
     fprintf(stderr, "Unexpected/unknown exception thrown\n");
+    return 1;
   }
   return 1;
 }

@@ -128,7 +128,7 @@ export OCPI_HAVE_IBVERBS=0
 # #### OpenCL exports ##################################################### #
 
 #export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
-export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl_container/impl/include
+export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl/include
 export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 export OCPI_OCL_OBJS=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
 # ######################################################################### #
@@ -141,6 +141,7 @@ export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/darwin-x86_64
 # suppress execution while allowing building
 #export OCPI_HAVE_OPENSPLICE=1
 export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
-
+# temporarily remove this
+export OCPI_HAVE_OPENCL=
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

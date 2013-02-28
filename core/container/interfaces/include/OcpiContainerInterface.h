@@ -119,6 +119,10 @@ namespace OCPI {
 
       ~Container();
 
+      const std::string &platform() const { return m_platform; }
+      const std::string &model() const { return m_model; }
+      const std::string &os() const { return m_os; }
+
       virtual Container *nextContainer() = 0;
       bool supportsImplementation(OCPI::Util::Implementation &);
       /**

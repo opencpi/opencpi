@@ -34,6 +34,6 @@
 #
 ########################################################################### #
 
-include ../../../../../Makefile.ocpi.for-src
+include ../../../../Makefile.ocpi.for-src
 #to just optimize this package
 #CXXFLAGS:=-Wall -fPIC -O2

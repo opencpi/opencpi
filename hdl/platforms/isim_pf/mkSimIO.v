@@ -162,6 +162,10 @@ module mkSimIO(CLK,
 	       b__h2718;
   wire [15 : 0] b__h1083, b__h824;
 
+  // File Names
+  reg [100*8:1] respFile;
+  reg [100*8:1] reqFile;
+  reg [100*8:1] ctlFile;
   // actionvalue method host_request_get
   assign host_request_get = reqF$D_OUT ;
   assign RDY_host_request_get = reqF$EMPTY_N ;
@@ -388,7 +392,16 @@ module mkSimIO(CLK,
     if (RST_N != `BSV_RESET_VALUE)
       if (!w_hdl[32])
 	begin
-	  TASK_fopen___d24 = $fopen("/tmp/OpenCPI0_Resp", "wb");
+          if ($value$plusargs("resp=%s", respFile))
+	    begin
+//	      TASK_fopen___d24 = $fopen("/tmp/OpenCPI0_Resp", "wb");
+//	      $display("Got resp=%s", respFile);
+	      TASK_fopen___d24 = $fopen(respFile, "wb");
+            end
+          else
+	    begin
+	      $display("Missing resp= plusarg");
+	    end
 	  #0;
 	end
     if (RST_N != `BSV_RESET_VALUE)
@@ -402,7 +415,15 @@ module mkSimIO(CLK,
     if (RST_N != `BSV_RESET_VALUE)
       if (WILL_FIRE_RL_do_r_open)
 	begin
-	  TASK_fopen___d38 = $fopen("/tmp/OpenCPI0_Req", "rb");
+//	  TASK_fopen___d38 = $fopen("/tmp/OpenCPI0_Req", "rb");
+          if ($value$plusargs("req=%s", reqFile))
+	    begin
+	      TASK_fopen___d38 = $fopen(reqFile, "rb");
+            end
+          else
+	    begin
+	      $display("Missing req= plusarg");
+	    end
 	  #0;
 	end
     if (RST_N != `BSV_RESET_VALUE)
@@ -528,7 +549,15 @@ module mkSimIO(CLK,
     if (RST_N != `BSV_RESET_VALUE)
       if (WILL_FIRE_RL_do_s_open)
 	begin
-	  TASK_fopen___d31 = $fopen("/tmp/OpenCPI0_IOCtl", "rb");
+	  //TASK_fopen___d31 = $fopen("/tmp/OpenCPI0_IOCtl", "rb");
+          if ($value$plusargs("ctl=%s", ctlFile))
+	    begin
+	      TASK_fopen___d31 = $fopen(ctlFile, "rb");
+            end
+          else
+	    begin
+	      $display("Missing ctl= plusarg");
+	    end
 	  #0;
 	end
     if (RST_N != `BSV_RESET_VALUE)

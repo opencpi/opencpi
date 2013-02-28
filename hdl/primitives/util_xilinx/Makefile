@@ -27,7 +27,7 @@
 SimLibraries=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims
 SimFiles=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
 OnlyTargets=xilinx
-Imports=$(foreach i,bsv/BRAM1 bsv/fBRAM1BE bsv/BRAM2 ocpi/ddrOutput2 ocpi/ddrInput2 ocpi/IDELAYCTRL_GRP,\
+Imports=$(foreach i,bsv/BRAM1 bsv/fBRAM1BE ocpi/ddrOutput2 ocpi/ddrInput2 ocpi/IDELAYCTRL_GRP,\
 	  $(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/$i.v)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives
 

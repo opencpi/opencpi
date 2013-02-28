@@ -32,6 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <limits.h>
+#include <stdio.h>
 #include "PciDriver.h"
 
 typedef int bool;

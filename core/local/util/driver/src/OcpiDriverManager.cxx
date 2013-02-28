@@ -118,7 +118,9 @@ namespace OCPI {
       }
     }
     // Cleanup all managers
+    bool ManagerManager::s_exiting = false;
     void ManagerManager::cleanup() {
+      s_exiting = true;
       ManagerManager *mm = &Singleton<ManagerManager>::getSingleton();
       // Before simply deleting the managermanager, we delete the
       // managers in order of their "cleanupPosition()"

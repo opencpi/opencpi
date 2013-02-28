@@ -1,14 +1,4 @@
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
- *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
- *
  *  This file is part of OpenCPI (www.opencpi.org).
  *     ____                   __________   ____
  *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
@@ -42,14 +32,14 @@
   Thus this module knows about ethernet, but not about the details of discovery payloads.
 */
 
-#ifndef ETHERDEFS_H
-#define ETHERDEFS_H
+#ifndef NETDEFS_H
+#define NETDEFS_H
 #ifdef __cplusplus
 namespace OCPI {
   namespace HDL {
-    namespace Ether {
+    namespace Net {
       extern unsigned typeLength[];
-#define OCPI_HDL_ETHER OCPI::HDL::Ether::
+#define OCPI_HDL_ETHER OCPI::HDL::Net::
 #else
 #define OCPI_HDL_ETHER
 #endif
@@ -119,7 +109,10 @@ typedef enum {
 #define OCCP_ETHER_MESSAGE_TYPE(t_and_be) ((OCPI_HDL_ETHER EtherControlMessageType)(((t_and_be) >> 4) & 3))
 #define OCCP_ETHER_BYTE_ENABLES(t_and_be) ((t_and_be) & 0xf)
 #define OCCP_ETHER_RESPONSE(t_and_be) ((OCPI_HDL_ETHER EtherControlResponse)((t_and_be) & 0xf))
-#define OCCP_ETHER_TYPE_ETC(type, be, uncache) (((type) << 4) | ((be) & 0xf) | ((uncache) << 6))
+#define OCCP_ETHER_TYPE_ETC(type, be, uncache, rsvd) \
+  (((type) << 4) | ((be) & 0xf) | ((uncache) << 6) | ((rsvd) << 7))
+#define OCCP_ETHER_RESERVED(t_and_be) ((t_and_be) & 0x80)
+
 #ifdef __cplusplus
     }
   }

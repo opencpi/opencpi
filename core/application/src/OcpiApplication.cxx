@@ -491,6 +491,9 @@ namespace OCPI {
       // Set the instance map policy
       setPolicy(params);
 
+      bool verbose = false;
+      OU::findBool(params, "verbose", verbose);
+      
       // Check that params that reference instances are valid.
       checkInstanceParams("property", params, true);
       checkInstanceParams("selection", params);
@@ -556,7 +559,8 @@ namespace OCPI {
       // Now add the containers for the static instances
       i = m_instances;
       d = m_bestDeployments;
-      ocpiInfo("Final deployment after processor policy applied is:");
+      if (verbose)
+	fprintf(stderr, "Actual deployment is:\n");
       for (unsigned n = 0; n < m_nInstances; n++, i++, d++) {
 	const OL::Implementation &impl = *i->m_impl;
 	if (impl.m_staticInstance) {
@@ -564,7 +568,8 @@ namespace OCPI {
 	  i->m_container = m_allMap & (1 << cNum) ? m_global2used[cNum] : addContainer(cNum);
 	}
 	OC::Container &c = OC::Container::nthContainer(m_usedContainers[i->m_container]);
-	ocpiInfo(" Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s", 
+	if (verbose)
+	  fprintf(stderr, " Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s\n", 
 		 n, m_assembly.m_instances[n].m_name.c_str(),
 		 m_assembly.m_instances[n].m_specName.c_str(),
 		 c.m_model.c_str(), c.name().c_str(),

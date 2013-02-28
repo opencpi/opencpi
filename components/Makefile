@@ -1,4 +1,4 @@
-# #####
+###########################################################################
 #
 #  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
 #
@@ -31,7 +31,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
-########################################################################### #
+###########################################################################
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
@@ -107,7 +107,6 @@ Implementations = \
         file_read_msg.rcc \
         file_write.rcc \
         file_write_msg.rcc \
-	ptest.rcc \
 	bias.rcc \
 	pattern.hdl pattern.rcc \
 	capture.hdl capture.rcc \

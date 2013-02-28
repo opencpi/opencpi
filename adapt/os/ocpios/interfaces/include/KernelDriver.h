@@ -62,7 +62,7 @@ typedef enum {
                   // On receive: deliver to me for endpoint
   ocpi_role_limit
 } ocpi_role_t;
-#define PF_OPENCPI PF_ECONET // poach temporarily
+#define PF_OPENCPI PF_DECnet // poach temporarily
 typedef struct sockaddr_ocpi {
   sa_family_t ocpi_family;      // mandatory
   uint8_t     ocpi_role;        // discover, master, slave, data

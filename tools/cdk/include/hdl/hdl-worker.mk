@@ -105,14 +105,21 @@ else
 HdlSourceSuffix:=$(HdlVHDLSuffix)
 HdlIncSuffix:=$(HdlVHDLIncSuffix)
 endif
+ifdef sdf
 # The ocpi library is required for VHDL
 $(call OcpiDbgVar,HdlLibraries,Add ocpi library perhaps)
-# FIXME: why is this needed for assemblies since workers are cores?
-#------- perhaps for vhdl workers?
-$(if $(filter ocpi,$(HdlLibraries)),,\
-   $(if $(or $(findstring vhdl,$(HdlLanguage)),$(findstring assembly,$(HdlMode))),\
-     $(eval HdlLibraries:=ocpi $(HdlLibraries))))
+# FIXME: when tools don't really elaborate or search, capture the needed libraries for later
+# FIXME: but that still means a flat library space...
+HdlLibrariesInternal = \
+  $(foreach l,$(call Unique,\
+                $(HdlLibraries) \
+                $(foreach f,$(call HdlGetFamily,$(HdlTarget)),\
+	          $(foreach p,ocpi util_$f util bsv vendor_$f vendor_$(call HdlGetTop,$f), \
+	              $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p)))),$(strip \
+    $(info Hdl Library is $l)$l))
+
 $(call OcpiDbgVar,HdlLibraries,After adding ocpi if not there )
+endif
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 $(call OcpiDbgVar,Worker)

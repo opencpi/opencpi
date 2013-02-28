@@ -53,12 +53,14 @@ MODNAME = opencpi
 .DELETE_ON_ERROR:
 MyDir:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 MyIncs= \
-         -I$(realpath $(MyDir)/../../../../../core/container/hdl_container/impl/include) \
+         -I$(realpath $(MyDir)/../../../../../core/container/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
 #$(info MyIncs: $(MyIncs))
 MyLib:=$(realpath $(MyDir)/../../../../../lib/linux-x86_64-bin)
 ifeq ($(strip $(MyLib)),)
+ifneq ($(MAKECMDGOALS),topclean)
 $(error OpenCpi libraries must be built before the driver is built)
+endif
 endif
 # This is what works with RHEL5
 export EXTRA_CFLAGS := $(MyIncs) -Wformat=2

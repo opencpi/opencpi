@@ -184,19 +184,17 @@ namespace OCPI {
       uuid_string_t textUUID;
       uuid_unparse_lower(m_UUID.uuid, textUUID);
 
-      time_t bsvbd, bsbd;
-      bsvbd = m_cAccess.get32Register(birthday, OccpAdminRegisters);
+      time_t bsbd;
+      //      bsvbd = m_cAccess.get32Register(birthday, OccpAdminRegisters);
       bsbd = m_UUID.birthday;
 
-      char tbuf[30], tbuf1[30];
-      ctime_r(&bsvbd, tbuf);
+      char tbuf[30];
+      ctime_r(&bsbd, tbuf);
       tbuf[strlen(tbuf)-1] = 0;
-      ctime_r(&bsbd, tbuf1);
-      tbuf1[strlen(tbuf1)-1] = 0;
 
-      printf("OpenCPI HDL device found: '%s': BSV date %s, bitstream date %s, "
+      printf("OpenCPI HDL device found: '%s': bitstream date %s, "
 	     "platform \"%s\", part \"%s\", UUID %s\n",
-	     m_name.c_str(), tbuf, tbuf1, m_platform.c_str(), m_part.c_str(), textUUID);
+	     m_name.c_str(), tbuf, m_platform.c_str(), m_part.c_str(), textUUID);
     }
     bool Device::
     isLoadedUUID(const std::string &uuid) {

@@ -735,7 +735,7 @@ OCPIOS_EXPORTS = $(OCPI_BASE_DIR)/adapt/os/ocpios/interfaces/include
 OCPIOS_LIBS = $(OCPI_BASE_DIR)/adapt/os/ocpios/ocpios
 
 APPLICATION_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/application/api/include
+	$(OCPI_BASE_DIR)/core/application/include
 
 LIBRARY_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/library/include
@@ -766,15 +766,15 @@ DATA_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/core/dataplane/transport/transport
 
 
 CONTAINER_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/container/interfaces/api/include \
-	$(OCPI_BASE_DIR)/core/container/ocl_container/include \
-	$(OCPI_BASE_DIR)/core/container/rcc_container/include
+	$(OCPI_BASE_DIR)/core/container/interfaces/include \
+	$(OCPI_BASE_DIR)/core/container/ocl/include \
+	$(OCPI_BASE_DIR)/core/container/rcc/include
 
 HDL_CONTAINER_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/container/hdl_container/impl/include
+	$(OCPI_BASE_DIR)/core/container/hdl/include
 
 OCL_CONTAINER_EXPORTS = \
-	$(OCPI_BASE_DIR)/core/container/ocl_container/impl/include
+	$(OCPI_BASE_DIR)/core/container/ocl/include
 
 CONTAINER_LIBS = \
 	$(OCPI_BASE_DIR)/core/container/interfaces/interfaces
@@ -786,13 +786,13 @@ LIBRARY_LIBS = \
 	$(OCPI_BASE_DIR)/core/library/library
 
 RCC_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/container/rcc_container/rcc_container
+	$(OCPI_BASE_DIR)/core/container/rcc/rcc
 
 HDL_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/container/hdl_container/hdl_container
+	$(OCPI_BASE_DIR)/core/container/hdl/hdl
 
 OCL_CONTAINER_LIBS = \
-	$(OCPI_BASE_DIR)/core/container/ocl_container/ocl_container
+	$(OCPI_BASE_DIR)/core/container/ocl/ocl
 
 ALL_CONTAINER_LIBS = \
 	$(RCC_CONTAINER_LIBS) \
@@ -863,11 +863,11 @@ CF_UTIL_EXPORTS = \
 CF_UTIL_LIBS = $(OCPI_BASE_DIR)/core/sca/cf_util/cf_util
 
 
-WCI_API_BASE = $(OCPI_BASE_DIR)/core/control/wci_api
-WCI_API_EXPORTS = $(WCI_API_BASE)/interface/include \
-	$(WCI_API_BASE)/rpl/include \
-	$(WCI_API_BASE)/api/include
-WCI_API_LIBS = $(WCI_API_BASE)/wci_api
+#WCI_API_BASE = $(OCPI_BASE_DIR)/core/control/wci_api
+#WCI_API_EXPORTS = $(WCI_API_BASE)/interface/include \
+#	$(WCI_API_BASE)/rpl/include \
+#	$(WCI_API_BASE)/api/include
+#WCI_API_LIBS = $(WCI_API_BASE)/wci_api
 
 TEST_FRAMEWORK_LIBS = $(OCPI_BASE_DIR)/tests/framework/framework/framework
 

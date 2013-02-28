@@ -24,6 +24,7 @@ entity message_bounds is
        give_out     : out bool_t);
 end entity message_bounds;
 
+library bsv;
 architecture rtl of message_bounds is
   signal in_count_r  : unsigned(width-1 downto 0);
   signal out_count_r : unsigned(width-1 downto 0);
@@ -40,6 +41,7 @@ architecture rtl of message_bounds is
   signal my_reset_n     : bool_t;
   signal zero_count : bool_t;
   signal fifo_out   : std_logic_vector(width-1 downto 0);
+  for myfifo : FIFO2 use entity bsv.FIFO2;
 begin
   fifo_count <= unsigned(fifo_out);
   zero_count <= to_bool(fifo_ready and fifo_count = 0);

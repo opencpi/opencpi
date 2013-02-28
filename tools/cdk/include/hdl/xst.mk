@@ -247,11 +247,7 @@ $(call XstPruneOption,$(XstDefaultOptions)) $(XstExtraOptions) $(XstInternalOpti
 XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
 
-XstLibraries=$(HdlLibraries) \
-             $(if $(findstring $(HdlMode),library),,\
-               $(foreach l,$(if $(findstring util_xilinx,$(LibName)),,util_xilinx) \
-                           util_$(call HdlGetFamily, $(HdlTarget)),\
-                 $(and $(wildcard $(call HdlLibraryRefDir,$l,$(HdlTarget))),$l)))
+XstLibraries=$(HdlLibrariesInternal)
 
 XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
 #   $(and $(findstring worker,$(HdlMode)),echo $(call ToLower,$(Worker))=$(call ToLower,$(Worker));) 
@@ -338,7 +334,7 @@ XstNgcOptions=\
   $(foreach c,$(Cores), -sd \
     $(call FindRelative,$(TargetDir),$(call HdlCoreRefDir,$(c),$(or $(HdlPart),$(HdlTarget))))) 
 
-#$(info lib=$(HdlLibraries)= cores=$(Cores)= Comps=$(ComponentLibraries)= td=$(TargetDir)= @=$(@))
+#$(info lib=$(HdlLibrariesInternal)= cores=$(Cores)= Comps=$(ComponentLibraries)= td=$(TargetDir)= @=$(@))
 
 HdlToolCompile=\
   $(foreach l,$(XstLibraries),\

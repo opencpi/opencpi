@@ -11,8 +11,14 @@ set -e
 appname=$1
 shift
 export LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE
-exec $(OCPI_MODELSIM_DIR)/bin/vsim -c modelsim_pf.main -c -f vsim.args $* <<EOF
-archive load vsim.dbar
+for i in $*; do echo for $i; plusargs="$plusargs +$i"; done
+echo plusargs are: $plusargs
+exec $OCPI_MODELSIM_DIR/bin/vsim -c modelsim_pf.main -c -f vsim.args $plusargs <<EOF
+#archive load vsim.dbar
+dataset list
+dataset info file
 log -r /*
-run 1 s
+run 1000ms
+dataset save sim
+quit
 EOF

@@ -68,8 +68,8 @@ export OCPI_ALTERA_LICENSE_FILE=/home/jek1/mac/altera/1-9095JT_License.dat
 
 # #### Location of the Modelsim tools ####################################### #
 
-export OCPI_MODELSIM_DIR=$OCPI_ALTERA_TOOLS_DIR/modelsim_ase
-
+export OCPI_MODELSIM_DIR=/home/jek1/mac/Mentor/modelsim_dlx
+export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
 # #### Location of Google Test (gtest) #################################### #
 
 export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
@@ -133,7 +133,7 @@ export OCPI_HAVE_IBVERBS=0
 
 
 #export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
-export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl_container/impl/include
+export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl/include
 export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 
 # ######################################################################### #

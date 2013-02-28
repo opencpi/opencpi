@@ -79,6 +79,11 @@ endef
 HdlGetTargetFromPart=$(firstword $(subst -, ,$1))
 
 ################################################################################
+# $(call HdlGetTop,family)
+# Return the top name from a family
+HdlGetTop=$(strip $(foreach v,$(HdlTopTargets),$(or $(filter $1,$v),$(and $(filter $1,$(HdlTargets_$v)),$v))))
+
+################################################################################
 # $(call HdlGetFamily,hdl-target,[multi-ok?])
 # Return the family name associated with the target(usually a part)
 # If the target IS a family, just return it.

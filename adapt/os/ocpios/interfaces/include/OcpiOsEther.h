@@ -50,6 +50,7 @@
 namespace OCPI {
   namespace OS {
     namespace Ether {
+      const uint16_t c_udpPort = 18077;
       typedef uint16_t Type;
       // Note this value includes the ethertype bytes
       const unsigned MaxPacketSize = (1518 - 4 - 12);
@@ -59,15 +60,25 @@ namespace OCPI {
       public:
 	static const unsigned s_size = 6;
       private:
+	bool m_isEther;
 	union {
 	  uint8_t m_addr[s_size];
+	  struct {
+	    uint32_t addr;
+	    uint16_t port;
+	  } m_udp;
 	  uint64_t m_addr64;
 	};
 	char m_pretty[s_size*3+1];
 	bool m_error, m_broadcast;
       public:
-	void setString(const char *x);
+	inline bool isEther() const { return m_isEther; }
+	bool setString(const char *x); // return true on error
 	void set(const void *x);
+	void set(uint16_t, uint32_t);
+	void set64(uint64_t a) { m_addr64 = a; }
+	Address(bool isUdp);
+
 	inline explicit Address(const unsigned char *m = NULL) {
 	  set(m);
 	}
@@ -75,13 +86,18 @@ namespace OCPI {
 	  setString(m);
 	}
 	Address(const Address &addr) {
-	  set(addr.addr());
+	  m_isEther = addr.m_isEther;
+	  set64(addr.addr64());
+	  m_broadcast = addr.m_broadcast;
+	  m_pretty[0] = 0;
 	}
 	inline const uint8_t *addr() const { return m_addr; }
 	inline uint64_t addr64() const { return m_addr64; }
+	inline uint16_t addrPort() const { return m_udp.port; }
+	inline uint32_t addrInAddr() const { return m_udp.addr; }
 	const char *pretty();
-	inline bool error() const { return m_error; }
-	inline bool broadcast() const { return m_broadcast; }
+	inline bool hasError() const { return m_error; }
+	inline bool isBroadcast() const { return m_broadcast; }
 	inline bool operator==(const Address &rhs) {
 	  return memcmp(addr(), rhs.addr(), s_size) == 0;
 	}
@@ -116,9 +132,8 @@ namespace OCPI {
       // there may only be one underlying socket, depending on the OS/implementation.
       class Socket {
 	unsigned m_ifIndex;
-	Address m_ifAddr;
+	Address m_ifAddr, m_ipAddr, m_brdAddr;
 	Type m_type;
-	//	Address m_addr; // not a reference
 	int m_fd;
 	unsigned m_timeout;
 	ocpi_role_t m_role;
@@ -135,21 +150,28 @@ namespace OCPI {
 		     Address &addr, std::string &error);
 	// Send, and fill out the addressing first (hence packet not const).
 	// If no "addr", then use address in socket.
+	// If an ifc is supplied, send on that ifc.
 	// Return false if error or timeout
-	bool send(Packet &, unsigned payloadLength, Address &addr, unsigned timeoutms, std::string &error);
-	bool send(IOVec *, unsigned vecLen, Address &addr, unsigned timeoutms, std::string &error);
+	bool send(Packet &, unsigned payloadLength, Address &addr, unsigned timeoutms, Interface *,
+		  std::string &error);
+	bool send(IOVec *, unsigned vecLen, Address &addr, unsigned timeoutms, Interface *,
+		  std::string &error);
+	inline int fd() const { return m_fd; }
       };
       // The interface object has no dependencies on the scanner.
+      // It also does not have to persist after sockets are created from it.
       struct Interface {
 	Interface();
 	Interface(const char *name, std::string &error);
 	unsigned index;
 	std::string name;
-	Address addr;
-	bool up, connected;
+	Address addr, ipAddr, brdAddr;
+	bool up, connected, loopback;
       };
       class IfScanner {
 	uint64_t m_opaque[4];
+	bool     m_init;
+	unsigned m_index;
       public:
 	// Initialize the scanner
 	// err is set if there is an error
@@ -157,6 +179,8 @@ namespace OCPI {
 	~IfScanner();
 	// Get the basic information about the current interface, without "opening" it for I/O
 	bool getNext(Interface &i, std::string &err, const char *only = NULL);
+      private:
+	bool init(std::string &err);
       };
     }
   }

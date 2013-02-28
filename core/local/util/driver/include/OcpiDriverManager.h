@@ -94,9 +94,11 @@ namespace OCPI {
       OCPI::OS::Mutex m_mutex;  // for thread-safe configuration
       std::string m_configFile; // system configuration file
       bool m_configured;        // to do lazy (and avoid redundant) configuration
+      static bool s_exiting;
     public:
-      void configureOnce(const char *cf = NULL);
       ManagerManager();
+      static bool exiting() { return s_exiting; }
+      void configureOnce(const char *cf = NULL);
       // This is public only for debugging, etc.
       static ManagerManager *getManagerManager();
       // Use this method to do early what will be done anyway at static destruction

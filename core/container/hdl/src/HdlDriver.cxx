@@ -91,7 +91,7 @@ namespace OCPI {
       unsigned count = 0;
       m_params = params;
       std::string error;
-      count += Ether::Driver::search(params, exclude, error);
+      count += Ether::Driver::search(params, exclude, false, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got ethernet search error: %s", error.c_str());
 	error.clear();
@@ -101,7 +101,11 @@ namespace OCPI {
 	ocpiBad("In HDL Container driver, got pci search error: %s", error.c_str());
 	error.clear();
       }
-      count += Sim::Driver::search(params, exclude, error);
+      count += Sim::Driver::search(params, exclude, true, error);
+      if (error.size()) {
+	ocpiBad("In HDL Container driver, got sim/udp search error: %s", error.c_str());
+	error.clear();
+      }
       return count;
     }
     

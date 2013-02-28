@@ -35,6 +35,7 @@
 #include <cstdio>
 
 #include "OcpiOsAssert.h"
+#include "OcpiDriverManager.h"
 #include "OcpiUtilException.h"
 
 namespace OCPI {
@@ -55,6 +56,11 @@ namespace OCPI {
     }
     ApiError::~ApiError(){}
     Error::Error(){}
+
+    Error::Error(va_list ap, const char *err) {
+      setFormatV(err, ap);
+      ocpiBad("Error Exception: %s", this->c_str());
+    }
     Error::Error(const char *err, ...) {
       va_list ap;
       va_start(ap, err);
@@ -85,6 +91,14 @@ namespace OCPI {
     void Error::setFormatV(const char *err, va_list ap) {
       char *s;
       vasprintf(&s, err, ap);
+      if (OCPI::Driver::ManagerManager::exiting()) {
+	static const char pre[] = "\n***Exception during shutdown: ";
+	static const char post[] = "***\n";
+	write(2, pre, strlen(pre));
+	write(2, s, strlen(s));
+	write(2, post, strlen(post));
+	OCPI::OS::dumpStack();
+      }
       append(s);
     }
     Error::~Error(){}

@@ -62,6 +62,7 @@ namespace OCPI {
       public:
 	Error(const char *err, ...) __attribute__((format(printf, 2, 3)));
 	Error(unsigned level, const char *err, ...) __attribute__((format(printf, 3, 4)));
+	Error(va_list ap, const char *err);
 	virtual ~Error();
       protected:
 	Error();

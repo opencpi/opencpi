@@ -199,6 +199,9 @@ namespace OCPI {
       virtual void thread() = 0;
       virtual void stop() = 0;
       virtual const std::string &name() const = 0;
+      virtual const std::string &os() const = 0;
+      virtual const std::string &platform() const = 0;
+      virtual const std::string &model() const = 0;
     };
     class ContainerManager {
     public:

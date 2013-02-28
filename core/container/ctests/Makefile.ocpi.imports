@@ -48,7 +48,7 @@ ALLINC += $(OCPIOS_EXPORTS) \
 
 DYNOBJS += \
 	../../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
-	../../../../../core/container/rcc_container/$(OCPI_OUT_DIR)/OcpiRccDriver.obj \
+	../../../../../core/container/rcc/$(OCPI_OUT_DIR)/OcpiRccDriver.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramUDPDriver.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
 	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \

@@ -62,18 +62,18 @@ ifeq ($(OCPI_OS),darwin)
 #DYNOBJS += ../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj \
 #	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj
 DYNOBJS += \
-../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
-../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
+../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
+../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
 
 else
 #../../../cp289_container/$(OCPI_OUT_DIR)/OcpiContainerDriver.obj 
+#../../../../core/container/hdl/$(OCPI_OUT_DIR)/HdlContainer.obj
 DYNOBJS += \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
-	../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
-        ../../../../../core/container/hdl_container/$(OCPI_OUT_DIR)/HdlContainer.obj \
-        ../../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
-../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
-../../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
+	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPCIPioXfer.obj \
+	../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtPioXfer.obj \
+        ../../../../core/library/$(OCPI_OUT_DIR)/OcpiComponentLibrary.obj \
+../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramXfer.obj \
+../../../../core/dataplane/rdma_drivers/$(OCPI_OUT_DIR)/DtDataGramEtherDriver.obj
 
 endif
 endif

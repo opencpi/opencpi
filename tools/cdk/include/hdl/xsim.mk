@@ -91,7 +91,7 @@ $(call OcpiDbgVar,XsimFiles)
 
 #        -lib $(notdir $(l))_$(notdir $(w))=$(strip\
 
-XsimLibraries=$(HdlLibraries) $(if $(findstring library,$(HdlMode)),,util_xilinx)
+XsimLibraries=$(HdlLibrariesInternal)
 XsimLibs=\
   $(and $(filter assembly container,$(HdlMode)),\
   $(eval $(HdlSetWorkers)) \
@@ -103,8 +103,7 @@ XsimLibs=\
                        $(error Worker $w not found in any component library.))),\
       -lib $w=$(call FindRelative,$(TargetDir),$f)))) \
   $(foreach l,\
-    $(HdlLibraries) $(Cores) $(and $(findstring $(HdlMode),worker device platform assembly container),\
-                                   util_xilinx),\
+    $(HdlLibrariesInternal) $(Cores),\
     -lib $(notdir $(l))=$(strip \
           $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,xsim))))
 
@@ -128,7 +127,7 @@ endif
 
 HdlToolCompile=\
   (echo '-- This file is generated for building this '$(LibName)' library.  Used for both VHDL and verilog';\
-   $(foreach l,$(HdlLibraries),\
+   $(foreach l,$(HdlLibrariesInternal),\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$l,$(HdlTarget)))));) \

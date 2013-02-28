@@ -56,7 +56,7 @@
 
 #include "HdlOCCP.h"
 #include "PciDriver.h"
-#include "EtherDefs.h"
+#include "NetDefs.h"
 #include "KernelDriver.h"                    // includes shared with user mode
 
 #define DRIVER_NAME "opencpi"

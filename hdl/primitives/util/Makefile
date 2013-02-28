@@ -38,6 +38,6 @@
 #ExcludeTargets=verilator
 Imports=\
 $(foreach x,\
-arSRLFIFOD arSRLFIFO,\
-$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/ocpi/$(x).v)
+bsv/BRAM2.v ocpi/arSRLFIFOD ocpi/arSRLFIFO,\
+$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/$x.v)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives

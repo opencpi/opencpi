@@ -81,9 +81,9 @@ PACKAGES += \
 	 core/dataplane/msg_drivers \
 	 core/library \
 	 core/container/interfaces \
-	 core/container/hdl_container \
-	 core/container/ocl_container \
-	 core/container/rcc_container \
+	 core/container/hdl \
+	 core/container/ocl \
+	 core/container/rcc \
 	 core/container/ctests \
 	 core/dataplane/rdma_tests \
          core/application
@@ -136,9 +136,9 @@ ALLPACKAGES = \
 	core/dataplane/msg_drivers \
 	core/library \
 	core/container/interfaces \
-	core/container/hdl_container \
-	core/container/ocl_container \
-	core/container/rcc_container \
+	core/container/hdl \
+	core/container/ocl \
+	core/container/rcc \
 	core/container/ctests \
 	test \
 	tests/facilities/test_os \
@@ -275,7 +275,7 @@ diff.q:
 core/local/logger: adapt/os/ocpios
 core/local/util: core/local/logger
 core/dataplane/tests: \
-	core/container/rcc_container core/dataplane/transport \
+	core/container/rcc core/dataplane/transport \
 	core/dataplane/rdma_driver_interface
 
 #core/control/wci_api
@@ -287,7 +287,7 @@ core/sca/sgac: core/sca/cf_util
 core/sca/gpped: core/sca/cf_util
 tools/local/binder: core/local/util
 tools/local/tester: \
-	core/container/rcc_container core/dataplane/transport \
+	core/container/rcc core/dataplane/transport \
 	core/dataplane/rdma_driver_interface
 test: tools/local/binder tools/local/tester
 

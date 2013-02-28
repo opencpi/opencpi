@@ -8,7 +8,7 @@ _HDL_TARGETS_=here
 # The levels are: top, family, part, speed
 
 #Testing: HdlTopTargets=xilinx altera verilator test1
-HdlTopTargets:=xilinx altera icarus verilator isim modelsim # icarus altera # verilator # altera
+HdlTopTargets:=xilinx altera icarus verilator modelsim # icarus altera # verilator # altera
 
 # The first part in a family is the one used for core building
 # Usually it should be the largest
@@ -21,7 +21,7 @@ HdlTargets_altera:=stratix4 stratix5 # altera-sim
 HdlTargets_stratix4:=ep4sgx230k ep4sgx360
 #Testing: HdlTargets_test1=test2
 
-HdlSimTools=isim icarus verilator ghdl xsim
+HdlSimTools=isim icarus verilator ghdl xsim modelsim
 
 # Tools are associated with the family or above
 HdlToolSet_ghdl:=ghdl
@@ -46,5 +46,5 @@ HdlPart_alst4:=ep4sgx230k-c2-f40
 HdlPart_n210:=xc3sd3400a-5-fg676
 HdlPart_isim_pf:=isim
 HdlPart_xsim_pf:=xsim
-HdlPart_modelsim:=modelsim
+HdlPart_modelsim_pf:=modelsim
 endif

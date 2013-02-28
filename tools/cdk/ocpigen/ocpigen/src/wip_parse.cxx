@@ -1611,8 +1611,10 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
         case WCIPort:
           // Make assembly WCI the union of all inside, with a replication count
           // We make it easier for CTOP, hoping that wires dissolve appropriately
-          if (iw->ctl.sizeOfConfigSpace > aw->ctl.sizeOfConfigSpace)
-            aw->ctl.sizeOfConfigSpace = iw->ctl.sizeOfConfigSpace;
+	  // FIXME: when we generate containers, these might be customized, but not now
+          //if (iw->ctl.sizeOfConfigSpace > aw->ctl.sizeOfConfigSpace)
+	  //            aw->ctl.sizeOfConfigSpace = iw->ctl.sizeOfConfigSpace;
+	  aw->ctl.sizeOfConfigSpace = (1ll<<32) - 1;
           if (iw->ctl.writables)
             aw->ctl.writables = true;
 #if 0

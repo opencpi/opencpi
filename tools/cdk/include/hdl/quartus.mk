@@ -110,11 +110,7 @@ QuartusFamily_stratix5:=Stratix V
 QuartusMakePart1=$(firstword $1)$(word 3,$1)$(word 2,$1)
 QuartusMakePart=$(call QuartusMakePart1,$(subst -, ,$1))
 
-QuartusLibraries=$(strip \
-  $(HdlLibraries) \
-  $(if $(findstring $(HdlMode),library),,\
-     $(foreach l,util_$(call HdlGetFamily, $(HdlTarget)),\
-       $(and $(wildcard $(call HdlLibraryRefDir,$l,$(HdlTarget))),$l))))
+QuartusLibraries=$(HdlLibrariesInternal)
 
 # Make the file that lists the files in order when we are building a library
 QuartusMakeExport= \

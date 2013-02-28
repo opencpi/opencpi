@@ -90,7 +90,7 @@ HdlToolNeedBB=
 # Function required by toolset: $(call HdlToolLibRef,libname)
 # This is the name after library name in a path
 # It might adjust (genericize?) the target
-HdlToolLibRef=isim
+HdlToolLibRef=$(if $(foreach d,$(subst /, ,$3),$(filter target,$(subst -, ,$d))),,isim)
 
 # filter %.v %.V,$^),\
 
@@ -101,9 +101,11 @@ $(call OcpiDbgVar,IsimFiles)
 
 #        -lib $(notdir $(l))_$(notdir $(w))=$(strip\
 
+# Note third arg to HdlLibraryRefDir to allow is to avoid the target
+# FIXME: make this "target-" hack generic
 IsimLibs=\
   $(and $(filter assembly container,$(HdlMode)),\
-  $(eval $(HdlSetWorkers)) \
+  $(eval $(HdlSetWorkers))\
   $(foreach w,$(HdlWorkers),\
     $(foreach f,$(firstword \
                   $(or $(foreach c,$(ComponentLibraries), \
@@ -112,10 +114,9 @@ IsimLibs=\
                        $(error Worker $w not found in any component library.))),\
       -lib $w=$(call FindRelative,$(TargetDir),$f)))) \
   $(foreach l,\
-    $(HdlLibraries) $(Cores) $(and $(findstring $(HdlMode),worker device platform assembly container),\
-				   util_xilinx),\
+    $(HdlLibrariesInternal) $(Cores),\
     -lib $(notdir $(l))=$(strip \
-          $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim))))
+          $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim,$l))))
 
 MyIncs=\
   $(foreach d,$(VerilogDefines),-d $d) \
@@ -178,29 +179,10 @@ define HdlToolDoPlatform
 $$(BitName): TargetDir=$(call PlatformDir,$(IsimPlatform))
 $$(BitName): HdlToolCompile=$(IsimFuseCmd)
 $$(BitName): HdlToolSet=fuse
+$$(BitName): HdlTarget=isim
 $$(BitName): $(IsimPlatformDir)/target-isim/$(IsimPlatform) $(IsimTargetDir)/mkOCApp4B | $(IsimTargetDir)
 	$(AT)echo Building isim simulation executable: $$(BitName).  Details in $$(IsimAppName)-fuse.out
 	$(AT)$$(HdlCompile)
 endef
 
-ifdef FFF
-	$(AT)$(TIME) sh -c "cd $$(TargetDir); \
-	$(Xilinx) fuse  isim_pf.main work.glbl \
-		-lib isim_pf=$(IsimPlatformDir)/target-isim/isim_pf \
-		-lib work=$(IsimPlatformDir)/target-isim/isim/work \
-		-lib mkOCApp4B=$(IsimTargetDir)/mkOCApp4B \
-	$$(IsimLibs) -L unisims_ver -o $(BitFile)" > $$(call AppName,$(IsimPlatform))-fuse.out 2>&1
 
-endif
-
-
-# fancier looking at output file?
-ifneq (,)
-  if grep -q 'Number of errors   :    0 ' xst-$(Core).out; then \
-    ngc2edif -w $(Core).ngc >> xst-$(Core).out; \
-    exit 0; \
-  else \
-    exit 1; \
-  fi
-  if test $$EC = 0
-endif

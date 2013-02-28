@@ -83,6 +83,10 @@ namespace OCPI {
     void dumpStack (std::ostream & out)
       throw ();
 
+    // version with no I/O library dependencies
+    void dumpStack ()
+      throw ();
+
     /**
      * Breaks the program, so that it can be debugged.
      *
