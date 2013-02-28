@@ -31,7 +31,7 @@ OCPI_OCL_LIBS=-locl -framework OpenCL
 OcpiAsNeeded=
 else
 OcpiLibraryPathEnv=LD_LIBRARY_PATH
-OCPI_OCL_LIBS=  -Xlinker --undefined=_ZN4OCPI3OCL6driverE -locl_container -lOpenCL
+OCPI_OCL_LIBS=  -Xlinker --undefined=_ZN4OCPI3OCL6driverE -locl -lOpenCL
 OCPI_EXTRA_LIBS=rt dl uuid
 # for static builds
 ifneq ($(wildcard $(OCPI_LIB_DIR)/*.a),)
