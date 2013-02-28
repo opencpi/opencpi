@@ -27,7 +27,7 @@ export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_RUNTIME_SYSTEM)
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
 ifneq ($(findstring darwin,$(OCPI_RUNTIME_SYSTEM)),)
 Ocpilibrarypathenv=DYLD_LIBRARY_PATH
-OCPI_OCL_LIBS=-locl_container -framework OpenCL
+OCPI_OCL_LIBS=-locl -framework OpenCL
 OcpiAsNeeded=
 else
 OcpiLibraryPathEnv=LD_LIBRARY_PATH
