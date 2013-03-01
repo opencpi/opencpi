@@ -256,8 +256,6 @@ int main ( int argc, char* argv [ ] )
     return 0;
   }
     
-  std::string value;
-  OA::Application * app = NULL;
   try
     {      
       // Create several containers to distribute the workers on
@@ -283,27 +281,28 @@ int main ( int argc, char* argv [ ] )
 	policy = minp_policy;
       }
       
-      app = new OA::Application( app_xml, policy);	
+      OA::Application app( app_xml, policy);	
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
-      app->initialize();
+      app.initialize();
 
 
+      std::string value;
 #ifdef TIME_PROPERTY_FUNTIONS
       // This here to simulate the AGC
-      app->getProperty( "tx_fir_r", "gain", value);
-      app->setProperty("tx_fir_r","gain","1");
-      app->getProperty( "rx_fir_r", "gain", value);
-      app->setProperty("rx_fir_r","gain","1");
-      app->getProperty( "tx_fir_r", "gain", value);
-      app->setProperty("tx_fir_r","gain","1");
-      app->getProperty( "rx_fir_r", "gain", value);
-      app->setProperty("rx_fir_r","gain","1");
+      app.getProperty( "tx_fir_r", "gain", value);
+      app.setProperty("tx_fir_r","gain","1");
+      app.getProperty( "rx_fir_r", "gain", value);
+      app.setProperty("rx_fir_r","gain","1");
+      app.getProperty( "tx_fir_r", "gain", value);
+      app.setProperty("tx_fir_r","gain","1");
+      app.getProperty( "rx_fir_r", "gain", value);
+      app.setProperty("rx_fir_r","gain","1");
 #endif
 
 
       fprintf(stderr, "Application established: containers, workers, connections all created\n");
       printf(">>> DONE Initializing!\n");
-      app->start();
+      app.start();
 
       unsigned count=0,
 	mcount = 4;
@@ -314,13 +313,13 @@ int main ( int argc, char* argv [ ] )
 	 *  DEBUG, step thru data
 	 ****/
 	if ( config.step ) {
-	  app->getProperty( "file_read_msg", "stepNow", value);
+	  app.getProperty( "file_read_msg", "stepNow", value);
 	  if ( value == "false" ) {
 	    // wait for user
 	    char c;
 	    std::cout << "Hit any key to continue" << std::endl;
 	    std::cin >> c;
-	    app->setProperty("file_read_msg","stepNow","true");
+	    app.setProperty("file_read_msg","stepNow","true");
 	  }
 	}
       

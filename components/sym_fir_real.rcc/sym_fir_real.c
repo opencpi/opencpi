@@ -54,7 +54,7 @@ static RCCResult start(RCCWorker *self )
 
 
 static double
-apply_filter( double taps[],  Sym_fir_realInData * input )
+apply_filter( double taps[],  int16_t *input )
 {
   unsigned	i = 0;
   double	
@@ -64,13 +64,13 @@ apply_filter( double taps[],  Sym_fir_realInData * input )
     acum3 = 0;
   unsigned	n = (NTAPS / UnRoll) * UnRoll;
   for (i = 0; i < n; i += UnRoll){
-    acum0 += taps[i + 0] * Uscale( input->real[i + 0] );
-    acum1 += taps[i + 1] * Uscale( input->real[i + 1] );
-    acum2 += taps[i + 2] * Uscale( input->real[i + 2] );
-    acum3 += taps[i + 3] * Uscale( input->real[i + 3] );
+    acum0 += taps[i + 0] * Uscale( input[i + 0] );
+    acum1 += taps[i + 1] * Uscale( input[i + 1] );
+    acum2 += taps[i + 2] * Uscale( input[i + 2] );
+    acum3 += taps[i + 3] * Uscale( input[i + 3] );
   }
   for (; i < NTAPS; i++)
-    acum0 += taps[i] * Uscale( input->real[i] );
+    acum0 += taps[i] * Uscale( input[i] );
   return (acum0 + acum1 + acum2 + acum3);
 }
 
@@ -112,7 +112,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 	double gain = Gain( p->gain);
 	unsigned len = byteLen2Real(in->input.length) - UnRoll;
 	for ( i=0; i<len; i++ ) {
-	  double v = apply_filter( myState->taps, inData );
+	  double v = apply_filter( myState->taps, &inData->real[i] );
 	  if ( fabs(v) > p->peakDetect ) {
 	    p->peakDetect = Scale( fabs(v) );
 	  }

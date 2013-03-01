@@ -129,7 +129,7 @@ namespace OCPI {
 	}
 	if (response == OK)
 	  response = ETHER_TIMEOUT;
-	if (response != OK)
+	if (response != OK) {
 	  if (status)
 	    *status =
 	      response == WORKER_TIMEOUT ? OCCP_STATUS_READ_TIMEOUT :
@@ -142,6 +142,7 @@ namespace OCPI {
 			    response == WORKER_TIMEOUT ? "worker timeout" :
 			    response == ERROR ? "worker error" :
 			    "ethernet timeout - no valid response");
+	}
       }
 
 	// Shared "get" that returns value, and *status if status != NULL
@@ -229,6 +230,8 @@ namespace OCPI {
       }
       static void
       initNop(EtherControlNop &nop) {
+	nop.header.etherTypeOverlay = 0; // for valgrind
+        nop.header.tag = 0;
 	nop.header.length = htons(sizeof(nop)-2);
 	nop.header.pad = 0;
 	nop.header.typeEtc = OCCP_ETHER_TYPE_ETC(OCCP_NOP, 0xf, 1, 0);
@@ -254,6 +257,10 @@ namespace OCPI {
       }
       Driver::
       ~Driver() {
+	for (SocketsIter si = m_sockets.begin(); si != m_sockets.end(); si = m_sockets.begin()) {
+	  delete (*si).second;
+	  m_sockets.erase(si);
+	}
       }
       OE::Socket *Driver::
       findSocket(OE::Interface &ifc, bool discovery, std::string &error) {

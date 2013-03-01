@@ -47,8 +47,8 @@ namespace OCPI {
 	const char **m_exclude;            // during discovery
 	// A mapping from interface name to sockets per interface, during discovery
 	typedef std::map<const std::string, OCPI::OS::Ether::Socket *> Sockets;
-	typedef Sockets::const_iterator SocketsIter;
-	typedef std::pair<const std::string, OCPI::OS::Ether::Socket*> SocketPair;
+	typedef Sockets::iterator SocketsIter;
+	typedef std::pair<std::string, OCPI::OS::Ether::Socket*> SocketPair;
 	Sockets m_sockets;
 	bool trySocket(OCPI::OS::Ether::Interface &ifc, OCPI::OS::Ether::Socket &s,
 		       OCPI::OS::Ether::Address &addr, bool discovery, const char **exclude,

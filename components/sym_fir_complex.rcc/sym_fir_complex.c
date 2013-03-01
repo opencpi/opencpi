@@ -52,7 +52,7 @@ static RCCResult start(RCCWorker *self )
 
 
 static void
-apply_filter( double taps[],  Sym_fir_complexInIq * input, double * i, double * q )
+apply_filter( double taps[], struct Sym_fir_complexInIqData * input, double * i, double * q )
 {
   unsigned	n;
   double	
@@ -62,24 +62,24 @@ apply_filter( double taps[],  Sym_fir_complexInIq * input, double * i, double * 
     acum3 = 0;
   unsigned	len = (NTAPS / UnRoll) * UnRoll;
   for (n = 0; n < len; n += UnRoll){
-    acum0 += taps[n + 0] * Uscale( input->data[n + 0].I );
-    acum1 += taps[n + 1] * Uscale( input->data[n + 1].I );
-    acum2 += taps[n + 2] * Uscale( input->data[n + 2].I );
-    acum3 += taps[n + 3] * Uscale( input->data[n + 3].I );
+    acum0 += taps[n + 0] * Uscale( input[n + 0].I );
+    acum1 += taps[n + 1] * Uscale( input[n + 1].I );
+    acum2 += taps[n + 2] * Uscale( input[n + 2].I );
+    acum3 += taps[n + 3] * Uscale( input[n + 3].I );
   }
   for (; n < NTAPS; n++)
-    acum0 += taps[n] * Uscale( input->data[n].I );
+    acum0 += taps[n] * Uscale( input[n].I );
   *i = acum0 + acum1 + acum2 + acum3;
 
   acum0 = acum1 = acum2 = acum3 = 0;
   for (n = 0; n < n; n += UnRoll){
-    acum0 += taps[n + 0] * Uscale( input->data[n + 0].Q );
-    acum1 += taps[n + 1] * Uscale( input->data[n + 1].Q );
-    acum2 += taps[n + 2] * Uscale( input->data[n + 2].Q );
-    acum3 += taps[n + 3] * Uscale( input->data[n + 3].Q );
+    acum0 += taps[n + 0] * Uscale( input[n + 0].Q );
+    acum1 += taps[n + 1] * Uscale( input[n + 1].Q );
+    acum2 += taps[n + 2] * Uscale( input[n + 2].Q );
+    acum3 += taps[n + 3] * Uscale( input[n + 3].Q );
   }
   for (; n < NTAPS; n++)
-    acum0 += taps[n] * Uscale( input->data[n].Q );
+    acum0 += taps[n] * Uscale( input[n].Q );
   *q = acum0 + acum1 + acum2 + acum3;
 }
 
@@ -120,7 +120,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 	double gain = Gain( p->gain);
 	for ( n=0; n<len; n++ ) {
 	  double i,q;
-	  apply_filter( myState->taps, &inData[n], &i, &q );
+	  apply_filter( myState->taps, &inData->data[n], &i, &q );
 	  double v = scabs(i,q);
 	  if ( v > Uscale( p->peakDetect ) ) {
 	    p->peakDetect = Scale( v );

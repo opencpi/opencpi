@@ -105,7 +105,7 @@ RCCResult genTestFile( RCCWorker * self )
       return RCC_ERROR;
     }
     uint16_t buffer[DATA_SIZE*2];
-    for ( n=0; n<h.length / (sizeof(uint16_t)*2); n+=2 ) {
+    for ( n=0; n<h.length / sizeof(uint16_t); n+=2 ) {
       buffer[n] = (uint16_t) ( SCALE_F * sin( interval * n ));
       buffer[n+1] = (uint16_t) ( SCALE_F * cos( interval * n ));
     }
