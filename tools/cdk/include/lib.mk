@@ -121,7 +121,7 @@ BuildImplementation=\
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \
-	       $(and $(filter hdl,$1),HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative,$l),$l)) util ocpi bsv"\
+	       $(and $(filter hdl,$1),HdlLibraries="$(foreach l,$(HdlLibraries),$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))"\
                VerilogIncludeDirs=$(call AdjustRelative,$(VerilogIncludeDirs))) \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
 

@@ -60,6 +60,7 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 export OCPI_XILINX_TOOLS_DIR=/home/jek1/mac/Xilinx/14.4/ISE_DS
 export OCPI_VIVADO_TOOLS_DIR=/home/jek1/mac/Xilinx/Vivado/2012.4
+export OCPI_XILINX_LICENSE_FILE=/home/jek1/mac/Xilinx/Xilinx-License-VM.lic
 
 # #### Location of the Altera tools ####################################### #
 

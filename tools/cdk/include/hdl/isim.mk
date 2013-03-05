@@ -127,17 +127,22 @@ ifndef IsimTop
 IsimTop=$(Worker).$(Worker)
 endif
 
+IsimArgs=-v 2 -work $(call ToLower,$(LibName))=$(LibName) $(IsimLibs)
 HdlToolCompile=\
-  $(Xilinx) $(call OcpiDbgVar,IsimFiles,htc) $(call OcpiDbgVar,SourceFiles,htc) $(call OcpiDbgVar,CompiledSourceFiles,htc) $(call OcpiDbgVar,CoreBlackBoxFile,htc) $(if $(filter .v,$(suffix $(firstword $(IsimFiles)))),vlogcomp $(MyIncs),vhpcomp) -v 2 -work $(call ToLower,$(LibName))=$(LibName) $(IsimLibs) \
-     $(IsimFiles) $(if $(findstring $(HdlMode),platform),\
-	 	       $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) \
-  && ls $(if $(findstring $(HdlMode),worker), && \
+  $(XilinxInit);\
+  $(call OcpiDbgVar,IsimFiles,htc) $(call OcpiDbgVar,SourceFiles,htc) $(call OcpiDbgVar,CompiledSourceFiles,htc) $(call OcpiDbgVar,CoreBlackBoxFile,htc)\
+  $(and $(filter %.vhd,$(IsimFiles)),\
+    vhpcomp $(IsimArgs) $(filter %.vhd,$(IsimFiles)) ;)\
+  $(and $(filter %.v,$(IsimFiles))$(findstring $(HdlMode),platform),\
+    vlogcomp $(MyIncs) $(IsimArgs) $(filter %.v,$(IsimFiles)) \
+       $(and $(findstring $(HdlMode),platform), $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) ;) \
+  $(if $(findstring $(HdlMode),worker), \
     echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
 	> $(Worker).prj \
     $(if $(HdlSkipSimElaboration),,&& ls &&  \
       fuse $(IsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
 	-o $(Worker).exe -lib $(call ToLower,$(Worker))=$(Worker) $(IsimLibs))) \
-  $(if $(findstring $(HdlMode),platform), && \
+  $(if $(findstring $(HdlMode),platform), \
     echo verilog work ../../../containers/mkOCApp_bb.v > $(Worker).prj && \
     fuse $(IsimTop) $(Worker).glbl -v 2 -prj $(Worker).prj -L unisims_ver \
 	-o $(Worker).exe -lib work=work -lib $(call ToLower,$(Worker))=$(Worker) $(IsimLibs))
@@ -163,7 +168,7 @@ BitName=$(call PlatformDir,$(IsimPlatform))/$(BitFile)
 IsimPlatformDir=$(HdlPlatformsDir)/$(IsimPlatform)
 IsimTargetDir=$(call PlatformDir,$(IsimPlatform))
 IsimFuseCmd=\
-  $(Xilinx) fuse  isim_pf.main isim_pf.glbl -v 2 \
+  $(XilinxInit); fuse  isim_pf.main isim_pf.glbl -v 2 \
 		-lib isim_pf=$(IsimPlatformDir)/target-isim/isim_pf \
 		-lib mkOCApp4B=mkOCApp4B \
 	        -lib $(Worker)=../target-isim/$(Worker) \

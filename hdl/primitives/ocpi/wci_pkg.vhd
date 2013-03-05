@@ -180,5 +180,21 @@ TYPE State_t IS (EXISTS_e,            -- 0
       data_output  : out std_logic_vector(31 downto 0)
       );
   end component readback;
+  component property_decoder
+  generic (
+        property     : property_t;   -- property type
+        decode_width : natural);     -- decoder width in bits
+  port (
+        reset        : in  bool_t;                            -- active-low WCI worker reset
+        offset_in    : in  unsigned(decode_width-1 downto 0); -- offset in Bytes
+        nbytes_1     : in  byte_offset_t;                     -- how many valid bytes
+        access_in    : in  access_t;                          -- Enumerated WCI access type
+        data_in      : in  std_logic_vector(31 downto 0);     -- WCI master data
+        write_enable : out bool_t;                            -- active-high write pulse
+        read_enable  : out bool_t;                            -- active-high read pulse
+        offset_out   : out unsigned(decode_width-1 downto 0); -- 
+        index_out    : out unsigned(decode_width-1 downto 0); --
+        data_out     : out std_logic_vector(31 downto 0)); --
+  end component property_decoder;
 end package wci;
 

@@ -131,6 +131,7 @@ xxx=$(and $(ComponentLibraries),echo '\#' Search paths for component libraries;)
 	  $(error No component library at $(abspath $t)))))) \
     $(eval HdlWorkers:=$$(strip $$(foreach i,$$(shell grep -v '\\\#' $$(ImplWorkersFile)),\
                          $$(if $$(filter $$(firstword $$(subst :, ,$$i)),$$(HdlPlatformWorkers)),,$$i))))
+
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
 # remote libraries use pathnames so that you can have files with the same names.
@@ -146,22 +147,22 @@ QuartusMakeQsf=\
                                              $(HdlTarget)))); \
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   \
-  $(and $(QuartusLibraries),echo '\#' Assignment for library source files since quartus cannot precompile;) \
-  $(foreach l,$(QuartusLibraries),\
-    $(foreach hlr,$(call HdlLibraryRefDir,$l,$(HdlTarget)),\
-      $(if $(realpath $(hlr)),,$(error No altera library at $(abspath $(hlr))))\
-      $(if $(realpath $(hlr)/$(notdir $l)-sources.mk),,\
-        $(error No source list file in altera library at $(abspath $(hlr)/$(notdir $l))))\
-      echo '\# Source files from the "$l" library'; \
-      $(foreach r,$(call FindRelative,$(TargetDir),$(hlr)),\
-	$(foreach f,$(shell grep -v '\\\#' $(hlr)/$(notdir $l)-sources.mk),\
-           echo set_global_assignment -name $(strip \
-	    $(if $(filter %.v,$f),VERILOG_FILE,VHDL_FILE -library $(notdir $l)) '\"'$r/$f'\"');)))) \
-  \
   echo '\# Search path(s) for local files'; \
   $(foreach d,$(call Unique,$(patsubst %/,%,$(dir $(QuartusSources)) $(VerilogIncludeDirs))), \
     echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
      $(call FindRelative,$(TargetDir),$d))'\"';) \
+  \
+  $(and $(QuartusLibraries),echo '\#' Assignment for adding libraries to search path;) \
+  $(foreach l,$(QuartusLibraries),\
+    $(foreach hlr,$(call HdlLibraryRefDir,$l,$(HdlTarget)),\
+      $(if $(realpath $(hlr)),,$(error No altera library at $(abspath $(hlr))))\
+      echo set_global_assignment -name SEARCH_PATH '\"'$(call FindRelative,$(TargetDir),$(hlr))'\"'; \
+      $(foreach f,$(wildcard $(hlr)/*_pkg.vhd),\
+        echo set_global_assignment -name VHDL_FILE -library $(notdir $l) '\"'$f'\"';\
+        $(foreach b,$(subst _pkg.vhd,_body.vhd,$f),\
+          $(and $(wildcard $b),\
+	     echo set_global_assignment -name VHDL_FILE -library $(notdir $l) '\"'$b'\"';))))) \
+  \
   echo '\#' Assignment for local source files using search paths above; \
   $(foreach s,$(QuartusSources), \
     echo set_global_assignment -name $(if $(filter %.v,$s),VERILOG_FILE,VHDL_FILE -library $(LibName)) \
@@ -222,8 +223,6 @@ HdlToolPost=\
     touch $(LibName);\
   fi;
 
-#    $(call DoAltera,quartus_map --analysis_and_elaboration --write_settings_files=off $(Core)); \
-#    $(call DoAltera,quartus_cdb --incremental_compilation_import=on --write_settings_files=off $(Core)); \
 # When making a library, quartus still wants a "top" since we can't precompile 
 # separately from synthesis (e.g. it can't do what vlogcomp can with isim)
 # Need to be conditional on libraries
@@ -264,14 +263,8 @@ QuartusMakeTopQsf=\
   echo set_global_assignment -name PARTITION_HIERARCHY db/plat -to '"fpgaTop"' -section_id "plat" ; \
 
 BitName=$(call PlatformDir,$1)/$(call AppName,$1).sof
-define HdlToolDoPlatform
-
-$(call BitName,$1): \
-		$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin) \
-		$(OutDir)target-$1/$(ContainerModule)$(HdlBin)
-	$(AT) set -e; \
-	cd $(call PlatformDir,$1) ; \
-	( set -e; \
+QuartusCmd=\
+	set -e; \
 	rm -r -f db incremental_db ; \
 	$(call QuartusMakeTopQsf,$1) ; \
 	cp $(call AppName,$1).qsf $(call AppName,$1).qsf.pre-fit ; \
@@ -279,9 +272,23 @@ $(call BitName,$1): \
 	$(call DoAltera,quartus_fit $(call AppName,$1)); \
 	QuartusStatus=$$$$? ; echo QuartusStatus after fit is $$$$QuartusStatus; \
 	cp $(call AppName,$1).qsf $(call AppName,$1).qsf.post-fit; \
-	$(call DoAltera,quartus_asm $(call AppName,$1)); \
-	QuartusStatus=$$$$? ; echo QuartusStatus after asm is $$$$QuartusStatus; \
-	) > $(call AppName,$1)-quartus.out
+	$(call DoAltera,quartus_asm $(call AppName,$1))
+
+
+#	QuartusStatus=$$$$? ; echo QuartusStatus after asm is $$$$QuartusStatus
+
+
+define HdlToolDoPlatform
+
+# Generate bitstream
+$$(call BitName,$1): override TargetDir=$(call PlatformDir,$1)
+$$(call BitName,$1): HdlToolCompile=$(QuartusCmd)
+$$(call BitName,$1): HdlToolSet=quartus
+$$(call BitName,$1): override HdlTarget=$(call HdlGetFamily,$1)
+$$(call BitName,$1): $(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin) \
+	             $(OutDir)target-$1/$(ContainerModule)$(HdlBin)
+	$(AT)echo Creating Quartus/$$(HdlTarget) bitstream: $$@.  Details in $$(call AppName,$1).out
+	$(AT)$$(HdlCompile)
 
 endef
 

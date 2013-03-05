@@ -32,28 +32,37 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
-########################################################################### #
+############################################################################
 
 # This primitive library contains VHDL primitive modules that are used
 # by all workers
-LibName=ocpi
+
+# the generated entities for each property type
+Types=bool char double float short long uchar ulong ushort longlong ulonglong string
+TypeEntities=$(foreach t,$(Types),$t_property $t_array_property $t_read_property $t_read_array_property)
+TypeFiles=$(TypeEntities:%=gen/%.vhd)
 
 # These need to be in order for most tools that aren't smart about figuring it out.
-SourceFiles=ocpi_ocp.vhd ocpi_types.vhd ocpi_util.vhd ocpi_wci.vhd ocpi_wsi.vhd ocpi_worker.vhd \
-            ocpi_util_body.vhd ocpi_types_body.vhd ocpi_wci_body.vhd \
-            ocpi_wci_impl.vhd gen/ocpi_props.vhd gen/ocpi_props_impl.vhd \
-	    ocpi_wsi_impl.vhd ocpi_util_impl.vhd
-#	    ocpi_wsi_impl.vhd ocpi_wsi_adapt.vhd ocpi_util_impl.vhd
+SourceFiles=ocp_pkg.vhd types_pkg.vhd util_pkg.vhd wci_pkg.vhd wsi_pkg.vhd ocpi_worker.vhd \
+            util_body.vhd types_body.vhd wci_body.vhd \
+            property_decoder.vhd decoder.vhd readback.vhd control_decoder.vhd \
+            gen/props_pkg.vhd \
+	    master.vhd slave.vhd ocpi_util_impl.vhd \
+	    $(TypeFiles)
+
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library
+
+CPP_TO_VHD=\
+ gcc -E -P -std=c99 -xc $< | tr '$$' '\n' | tr '@' ' ' | tr '~' "'" | sed '/^ *$$/d' > $@
+
+gen/proptypes.gen: proptypes.cpp_gen
+	$(AT)$(CPP_TO_VHD)
+
+$(TypeFiles): gen/proptypes.gen
+	$(AT)sed -e '1,/^-- FILE: $(@:gen/%.vhd=%)/d' -e '/^-- END:/,$$d' $< > $@
 
 CPPFiles=$(wildcard *.cpp_vhd)
 GenFiles=$(CPPFiles:%.cpp_vhd=gen/%.vhd)
 $(GenFiles): gen/%.vhd : %.cpp_vhd | gen
 	$(AT)echo Preprocessing $< into $@:
-	$(AT)gcc -E -P -std=c99 -xc \
-        -imacros $$OCPI_BASE_DIR/core/local/util/property/include/OcpiUtilDataTypesApi.h \
-	-o foo $< ;  tr '$$' '\n' < foo | tr '@' ' ' | tr '~' "'" | sed '/^ *$$/d' > $@; rm foo
-
-#gen:
-#	@mkdir -p gen
-
+	$(AT)$(CPP_TO_VHD)

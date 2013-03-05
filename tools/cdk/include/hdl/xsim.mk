@@ -82,8 +82,6 @@ HdlToolNeedBB=
 # It might adjust (genericize?) the target
 HdlToolLibRef=xsim
 
-# filter %.v %.V,$^),\
-
 XsimFiles=\
   $(foreach f,$(HdlSources),\
      $(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f)))
@@ -107,15 +105,6 @@ XsimLibs=\
     -lib $(notdir $(l))=$(strip \
           $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,xsim))))
 
-XXXsimLibs=\
-  $(foreach l,$(ComponentLibraries),\
-     $(foreach w,$(wildcard $(l)/lib/hdl/xsim/*),\
-        -lib $(notdir $(w))=$(strip\
-	  $(call FindRelative,$(TargetDir),$(l)/lib/hdl/xsim/$(notdir $(w))))))\
-  $(foreach l,$(XsimLibraries) $(Cores),\
-     -lib $(notdir $(l))=$(strip \
-          $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(l),xsim))))
-
 XsimVerilogIncs=\
   $(foreach d,$(VerilogDefines),-d $d) \
   $(foreach d,$(VerilogIncludeDirs),-i $(call FindRelative,$(TargetDir),$(d))) \
@@ -125,38 +114,35 @@ ifndef XsimTop
 XsimTop=$(Worker).$(Worker)
 endif
 
+XsimArgs=\
+  -initfile xsim.ini \
+  -v 2 \
+  -work $(call ToLower,$(LibName))=$(LibName) \
+
 HdlToolCompile=\
   (echo '-- This file is generated for building this '$(LibName)' library.  Used for both VHDL and verilog';\
    $(foreach l,$(HdlLibrariesInternal),\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$l,$(HdlTarget)))));) \
-   ) > xsim.ini && \
-  $(VivadoXilinx) $(if $(filter .v,$(suffix $(firstword $(XsimFiles)))),\
-    xvlog $(XsimVerilogIncs),xvhdl) \
-	-initfile xsim.ini \
-	-v 2 \
-	-work $(call ToLower,$(LibName))=$(LibName) \
-	$(XsimFiles) $(if $(findstring $(HdlMode),platform),\
-		 	       $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) \
-  $(if $(findstring $(HdlMode),worker), && \
+   ) > xsim.ini ; \
+   $(VivadoXilinx); \
+   $(and $(filter %.vhd,$(XsimFiles)),\
+     xvhdl $(XsimArgs) $(filter %.vhd,$(XsimFiles)) ; ) \
+   $(and $(filter %.v,$(XsimFiles))$(findstring $(HdlMode),platform),\
+     xvlog $(XsimVerilogIncs) $(XsimArgs) $(filter %.v,$(XsimFiles)) \
+       $(and $(findstring $(HdlMode),platform),\
+         $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) ;) \
+  $(if $(findstring $(HdlMode),worker),\
     echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
-	> $(Worker).prj \
-    $(if $(HdlSkipSimElaboration),,&& \
-      $(VivadoXilinx) xelab $(XsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
-	-s $(Worker).exe -lib $(Worker)=$(Worker) $(XsimLibs))) \
-  $(if $(findstring $(HdlMode),platform), && \
-    echo verilog work ../../../containers/mkOCApp_bb.v > $(Worker).prj && \
-    $(VivadoXilinx) xelab $(XsimTop) $(Worker).glbl -v 2 -prj $(Worker).prj -L unisims_ver \
-	-s $(Worker).exe -lib work=work -lib $(call ToLower,$(Worker))=$(Worker) $(XsimLibs))
-
-ifdef sdfg
-    fuse $(XsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
-    echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
-	> $(Worker).prj && \
-
-endif
-
+	> $(Worker).prj; \
+    $(if $(HdlSkipSimElaboration),, \
+      xelab $(XsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
+	-s $(Worker).exe -lib $(Worker)=$(Worker) $(XsimLibs);)) \
+  $(if $(findstring $(HdlMode),platform),\
+    echo verilog work ../../../containers/mkOCApp_bb.v > $(Worker).prj ; \
+    xelab $(XsimTop) $(Worker).glbl -v 2 -prj $(Worker).prj -L unisims_ver \
+	-s $(Worker).exe -lib work=work -lib $(call ToLower,$(Worker))=$(Worker) $(XsimLibs) ;)
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
@@ -174,45 +160,20 @@ BitName=$(call PlatformDir,$(XsimPlatform))/$(BitFile)
 XsimPlatformDir=$(HdlPlatformsDir)/$(XsimPlatform)
 XsimTargetDir=$(call PlatformDir,$(XsimPlatform))
 XsimFuseCmd=\
-  $(VivadoXilinx) xelab $(XsimPlatform).main $(XsimPlatform).glbl -v 2 -debug typical \
+  $(VivadoXilinx); xelab $(XsimPlatform).main $(XsimPlatform).glbl -v 2 -debug typical \
 		-lib $(XsimPlatform)=$(XsimPlatformDir)/target-xsim/$(XsimPlatform) \
 		-lib mkOCApp4B=mkOCApp4B \
 	        -lib $(Worker)=../target-xsim/$(Worker) \
 	$$(XsimLibs) -L unisims_ver -s $(ExeFile) && \
 	tar -c -f $(BitFile) xsim.dir metadatarom.data
 
-#		-lib work=$(XsimPlatformDir)/target-xsim/xsim/work \
-#" > $$(call AppName,$(XsimPlatform))-fuse.out 2>&1
-
-
 define HdlToolDoPlatform
 # Generate bitstream
 $$(BitName): TargetDir=$(call PlatformDir,$(XsimPlatform))
 $$(BitName): HdlToolCompile=$(XsimFuseCmd)
 $$(BitName): HdlToolSet=xelab
+$$(BitName): override HdlTarget=xsim
 $$(BitName): $(XsimPlatformDir)/target-xsim/$(XsimPlatform) $(XsimTargetDir)/mkOCApp4B | $(XsimTargetDir)
 	$(AT)echo Building xsim simulation executable: $$(BitName).  Details in $$(XsimAppName)-xelab.out
 	$(AT)$$(HdlCompile)
 endef
-
-ifdef FFF
-	$(AT)$(TIME) sh -c "cd $$(TargetDir); \
-	$(Xilinx) fuse  $(XsimPlatform).main work.glbl \
-		-lib $(XsimPlatform)=$(XsimPlatformDir)/target-xsim/$(XsimPlatform) \
-		-lib work=$(XsimPlatformDir)/target-xsim/xsim/work \
-		-lib mkOCApp4B=$(XsimTargetDir)/mkOCApp4B \
-	$$(XsimLibs) -L unisims_ver -o $(BitFile)" > $$(call AppName,$(XsimPlatform))-fuse.out 2>&1
-
-endif
-
-
-# fancier looking at output file?
-ifneq (,)
-  if grep -q 'Number of errors   :    0 ' xst-$(Core).out; then \
-    ngc2edif -w $(Core).ngc >> xst-$(Core).out; \
-    exit 0; \
-  else \
-    exit 1; \
-  fi
-  if test $$EC = 0
-endif

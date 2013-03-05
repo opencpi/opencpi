@@ -1,8 +1,10 @@
+#include <cstdio>
+#include <typeinfo>
 #include <iostream>
 #include "OcpiApi.h"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
-#include <OcpiUtilCommandLineConfiguration.h>
+#include "OcpiUtilCommandLineConfiguration.h"
 
 namespace OA = OCPI::API;
 

@@ -76,23 +76,11 @@ $(call OcpiDbgVar,ModelsimFiles)
 
 ModelsimVlogLibs=
 
-#  $(foreach l,$(ComponentLibraries),\
-     $(foreach w,$(wildcard $(l)/lib/hdl/modelsim/*),\
-        -L $(notdir $(w))=$(strip\
-	  $(call FindRelative,$(TargetDir),$(l)/lib/hdl/modelisim/$(notdir $(w))))))\
-  $(foreach l,$(HdlLibrariesInternal) $(Cores),\
-     -lib $(notdir $(l))=$(strip \
-          $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$(l),modelisim))))
-
 ModelSimVlogIncs=\
   $(foreach d,$(VerilogDefines),+define+$d) \
   $(foreach d,$(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d))
 
-#  $(foreach l,$(ComponentLibraries),\
-#     $(foreach w,$(wildcard $(l)/lib/hdl/modelisim/*),\
-#        -i $(call FindRelative,$(TargetDir),$(l)/lib/hdl/modelisim/$(notdir $(w)))))
-
-
+ModelsimArgs=-pedanticerrors -work $(LibName) -modelsimini modelsim.ini
 
 HdlToolCompile=\
   (echo '; This file is generated for building this '$(LibName)' library.';\
@@ -104,22 +92,11 @@ HdlToolCompile=\
    echo others=$(OCPI_MODELSIM_DIR)/modelsim.ini \
    ) > modelsim.ini ; \
    export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE); \
-  $(if $(filter work,$(LibName)),,$(OCPI_MODELSIM_DIR)/bin/vlib $(LibName);) \
-  $(OCPI_MODELSIM_DIR)/bin/$(if $(filter .v,$(suffix $(firstword $(ModelsimFiles)))),$(strip\
-     vlog $(ModelSimVlogIncs) $(VlogLibs)),vcom -preserve -bindAtCompile -error 1253) \
-   -pedanticerrors \
-   -work $(LibName) \
-   -modelsimini modelsim.ini \
-     $(ModelsimFiles) 
-
-
-ifdef sdf
-    fuse $(IsimTop) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
-    echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
-	> $(Worker).prj && \
-
-endif
-
+   $(if $(filter work,$(LibName)),,$(OCPI_MODELSIM_DIR)/bin/vlib $(LibName) &&) \
+   $(and $(filter %.vhd,$(ModelsimFiles)),\
+    $(OCPI_MODELSIM_DIR)/bin/vcom -preserve -bindAtCompile -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)) ;)\
+   $(and $(filter %.v,$(ModelsimFiles)),\
+    $(OCPI_MODELSIM_DIR)/bin/vlog $(ModelSimVlogIncs) $(VlogLibs) $(ModelsimArgs) $(filter %.v, $(ModelsimFiles)))
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\

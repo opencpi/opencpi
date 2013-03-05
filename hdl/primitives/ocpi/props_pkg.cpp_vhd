@@ -30,7 +30,7 @@ $end component;
 $--\
 $-- readback scalar <=32 property \
 $--\
-$component read_##pretty##_property \
+$component pretty##_read_property \
 $@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_t; \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0)); \
@@ -55,7 +55,7 @@ $end component;
 $--\
 $-- readback scalar <=32 property \
 $--\
-$component read_##pretty##_property \
+$component pretty##_read_property \
 $@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_t; \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0); \
@@ -81,7 +81,7 @@ $end component;
 $--\
 $-- readback scalar >32 property \
 $--\
-$component read_##pretty##_property \
+$component pretty##_read_property \
 $@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_t; \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0); \
@@ -109,7 +109,7 @@ $end component;
 $--\
 $-- readback scalar <=32 property array \
 $--\
-$component read_##pretty##_array_property \
+$component pretty##_read_array_property \
 $@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_array_t(0 to property.nitems-1); \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0); \
@@ -138,7 +138,7 @@ $end component;
 $--\
 $-- readback scalar >32 property array \
 $--\
-$component read_##pretty##_array_property \
+$component pretty##_read_array_property \
 $@@generic (worker : worker_t; property : property_t); \
 $@@port (value       : in pretty##_array_t(0 to property.nitems-1); \
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0); \
@@ -168,7 +168,7 @@ $end component;
 $--\
 $-- readback string property array \
 $--\
-$component read_##pretty##_array_property \
+$component pretty##_read_array_property \
 $@@generic (worker : worker_t; property : property_t);\
 $@@port@@@ (value@@@ : in@ pretty##_array_t(0 to property.nitems-1,\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@0 to (property.string_length+4)/4*4-1);\

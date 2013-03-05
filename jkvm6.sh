@@ -22,17 +22,18 @@ export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
 
 # #### Location of the Xilinx tools ####################################### #
 
-export OCPI_XILINX_TOOLS_DIR=/home/jek1/mac/Xilinx/14.4/ISE_DS
-export OCPI_VIVADO_TOOLS_DIR=/home/jek1/mac/Xilinx/Vivado/2012.4
+export OCPI_XILINX_TOOLS_DIR=/home/jek/mac/Xilinx/14.4/ISE_DS
+export OCPI_VIVADO_TOOLS_DIR=/home/jek/mac/Xilinx/Vivado/2012.4
+export OCPI_XILINX_LICENSE_FILE=/home/jek/mac/Xilinx/Xilinx-License-VM.lic
 
 # #### Location of the Altera tools ####################################### #
 
-export OCPI_ALTERA_TOOLS_DIR=/home/jek1/mac/altera/12.1
-export OCPI_ALTERA_LICENSE_FILE=/home/jek1/mac/altera/1-9095JT_License.dat
+export OCPI_ALTERA_TOOLS_DIR=/home/jek/mac/altera/12.1
+export OCPI_ALTERA_LICENSE_FILE=/home/jek/mac/altera/1-9095JT_License.dat
 
 # #### Location of the Modelsim tools ####################################### #
 
-export OCPI_MODELSIM_DIR=/home/jek1/mac/Mentor/modelsim_dlx
+export OCPI_MODELSIM_DIR=/home/jek/mac/Mentor/modelsim_dlx
 export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
 # #### Location of Google Test (gtest) #################################### #
 
@@ -103,8 +104,8 @@ export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
 # ######################################################################### #
 
 #export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-x86_64
-export OCPI_HAVE_OPENSPLICE=1
-export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
+#export OCPI_HAVE_OPENSPLICE=1
+#export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
 
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_

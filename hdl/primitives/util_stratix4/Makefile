@@ -34,13 +34,18 @@
 #
 ########################################################################### #
 
-# This library is for stratix4-specific primitives, that may shadow things in other libraries
-# This library is for opencpi code, not vendor code.
+# This library is for things that have common interfaces (either in generic versions or other
+# vendor/family secific versions), but have stratix4-specific implementations that will shadow
+# modules in other libraries (util_altera, and util).
+# NOTE********** The BRAMs are manually imported and renamed
+# This following line would import if we didn't have to rename,
+# But quartus (at least) requires file names in verilog libraries to match module names
+# $(foreach i,BRAM1 BRAM1BE BRAM2,$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/bsv/bram_patch/$i_alt.v)
 OnlyTargets=stratix4
 Imports=\
  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128/pcie_hip_s4gx_gen2_x4_128_wrapper.v \
  $(foreach i,BRAM1 BRAM1BE BRAM2,$(OCPI_HDL_IMPORTS_DIR)/libsrc/hdl/bsv/bram_patch/$i_alt.v)
-
+HdlNoLibraries=yes
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives
 
 

@@ -2073,7 +2073,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	}
 	if (pr.m_isReadable) {
 	  fprintf(f, 
-		  "  %s_readback : component ocpi.props.read_%s%s_property\n"
+		  "  %s_readback : component ocpi.props.%s_read%s_property\n"
 		  "    generic map(worker       => %s_defs.worker,\n"
 		  "                property     => %s_defs.properties(%u))\n"
 		  "    port map(",

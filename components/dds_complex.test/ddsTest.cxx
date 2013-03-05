@@ -1,4 +1,6 @@
+#include <cstdio>
 #include <iostream>
+#include <typeinfo>
 #include "OcpiApi.h"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
@@ -143,7 +145,7 @@ int main ( int argc, char* argv [ ] )
     const std::string & pval = (*ipit).second;
     printf("utp(%s) = %s\n", pname.c_str(), pval.c_str() );
     char buf[1024];
-    snprintf("<property name='%s' value='%s'/> ", 1023, pname.c_str(), pval.c_str() );
+    snprintf(buf, sizeof(buf), "<property name='%s' value='%s'/> ", pname.c_str(), pval.c_str() );
     utp += buf;    
   }
   if ( ! utp.empty() )
@@ -154,7 +156,7 @@ int main ( int argc, char* argv [ ] )
     const std::string & pval = (*ipit).second;
     printf("compp('%s') = %s\n", pname.c_str(), pval.c_str() );
     char buf[1024];
-    snprintf(buf, 1023, "<property name='%s' value='%s'/> ", pname.c_str(), pval.c_str() );
+    snprintf(buf, sizeof(buf), "<property name='%s' value='%s'/> ", pname.c_str(), pval.c_str() );
     compp += buf;    
   }
   if ( ! compp.empty() ) 

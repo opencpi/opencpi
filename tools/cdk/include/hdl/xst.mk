@@ -350,7 +350,7 @@ HdlToolCompile=\
   $(XstMakeLso)\
   $(and $(XstNeedIni),$(XstMakeIni)) \
   $(XstMakeScr)\
-  $(Xilinx) xst -ifn $(XstScrFile) && touch $(LibName)
+  $(call XilinxInit); xst -ifn $(XstScrFile) && touch $(LibName)
 
 # optional creation of these doesn't work...
 #    $(XstMakeLso) $(XstMakeIni))\
@@ -359,7 +359,7 @@ HdlToolCompile=\
 # Plus we create the edif all the time...
 HdlToolPost=\
   if grep -q 'Number of errors   :    0 ' $(HdlLog); then \
-    ($(Xilinx) ngc2edif -w $(Core).ngc) >> $(HdlLog) 2>&1 ; \
+    ($(call XilinxInit); ngc2edif -w $(Core).ngc) >> $(HdlLog) 2>&1 ; \
     HdlExit=0; \
   else \
     HdlExit=1; \
@@ -375,7 +375,7 @@ HdlToolPost=\
 #
 ################################################################################
 # Generate the per-platform files into platform-specific target dirs
-InitXilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh > /dev/null
+# obsolete InitXilinx=. $(OCPI_XILINX_TOOLS_DIR)/settings64.sh > /dev/null
 XilinxAfter=grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
 	     if grep -q $2 $1.out; then \
 	       echo Time: `cat $1.time`; \
@@ -386,8 +386,8 @@ XilinxAfter=grep -i error $1.out|grep -v '^WARNING:'|grep -i -v '[_a-z]error'; \
 # Use default pattern to find error string in tool output
 DoXilinx=$(call DoXilinxPat,$1,$2,$3,'Number of error.*s: *0')
 DoXilinxPat=\
-	echo " "Details in $1.out; cd $(call PlatformDir,$2); $(InitXilinx); \
-	echo Command: $1 $3 > $1.out; \
+	echo " "Details in $1.out; cd $(call PlatformDir,$2); $(call XilinxInit,$1.out); \
+	echo Command: $1 $3 >> $1.out; \
 	/usr/bin/time -f %E -o $1.time sh -c "$1 $3; echo $$? > $1.status" >> $1.out 2>&1;\
 	(echo -n Time:; cat $1.time) >> $1.out; \
 	$(call XilinxAfter,$1,$4)

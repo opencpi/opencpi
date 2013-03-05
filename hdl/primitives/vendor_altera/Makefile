@@ -41,7 +41,7 @@ Imports=\
  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128/pcie_hip_s4gx_gen2_x4_128_examples/chaining_dma/pcie_hip_s4gx_gen2_x4_128_rs_hip.v \
  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128/pci_express_compiler-library/altpcie_reconfig_4sgx.v \
  $(OCPI_HDL_IMPORTS_DIR)/scripts/altera/cleaned_alst4/pll1.v
-
+HdlNoLibraries=yes
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives
 
 

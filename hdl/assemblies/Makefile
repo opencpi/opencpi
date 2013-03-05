@@ -60,7 +60,6 @@ $(Applications):
 	$(AT)$(MAKE) -C $@ HdlPlatforms="$(HdlPlatforms)" \
 	       LibDir=$(call AdjustRelative,$(LibDir)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)) \
-		HdlLibraries="ocpi bsv" \
 		ComponentLibraries=$(call AdjustRelative,$(OCPI_CDK_DIR)/lib/components) \
 	       $(PassOutDir)
 

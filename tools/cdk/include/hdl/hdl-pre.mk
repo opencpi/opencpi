@@ -57,10 +57,11 @@ Model=hdl
 HdlLibrariesInternal = \
   $(foreach l,$(call Unique,\
                 $(HdlLibraries)\
-                $(foreach f,$(call HdlGetFamily,$(HdlTarget)),\
-		  $(foreach v,$(call HdlGetTop,$f),\
-	            $(foreach p,ocpi util_$f util_$v util bsv vendor_$f vendor_$v, \
-	              $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p))))),$(strip \
+                $(if $(HdlNoLibraries),,\
+	          $(foreach f,$(call HdlGetFamily,$(HdlTarget)),\
+		    $(foreach v,$(call HdlGetTop,$f),\
+	              $(foreach p,$(filter-out $(LibName),ocpi util_$f util_$v util bsv vendor_$f vendor_$v),\
+	                $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p)))))),$(strip \
     $l))
 #    $(info Hdl Library is $l)$l))
 
@@ -74,7 +75,7 @@ HdlCompile=\
   cd $(TargetDir); \
   export HdlCommand="set -e; $(HdlToolCompile)"; \
   $(TIME) sh -c \
-   '(/bin/echo Command: "$$HdlCommand"; eval "$$HdlCommand") > $(HdlLog) 2>&1' \
+   '(/bin/echo Commands to execute tool:@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@/g" | tr "@" "\n"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
     > $(HdlTime) 2>&1; \
   HdlExit=$$?; \
   cat $(HdlTime) >> $(HdlLog); \
