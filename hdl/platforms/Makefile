@@ -33,6 +33,10 @@
 #
 ########################################################################### #
 
+ifndef HdlPlatforms
+HdlPlatforms=$(filter-out Makefile,$(wildcard *))
+endif
+
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 .PHONY: $(HdlPlatforms)
@@ -45,5 +49,6 @@ $(HdlPlatforms):
 
 clean:
 	$(AT)for p in $(HdlPlatforms); do \
+	      echo Cleaning platform $$p; \
 	      $(MAKE) --no-print-directory -C $$p clean; \
 	     done

@@ -143,7 +143,7 @@ QuartusMakeQsf=\
   echo set_global_assignment -name FAMILY '\"'$(QuartusFamily_$(call HdlGetFamily,$(HdlTarget)))'\"'; \
   echo set_global_assignment -name DEVICE $(call ToUpper,$(if $(findstring $(HdlTarget),$(HdlAllFamilies)),AUTO,\
                                             $(if $(findstring $(HdlMode),platform assembly container),\
-                                             $(call QuartusMakePart,$(HdlPart_$(firstword $(HdlPlatforms)))),\
+                                             $(call QuartusMakePart,$(HdlPart_$(HdlPlatform))),\
                                              $(HdlTarget)))); \
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   \
