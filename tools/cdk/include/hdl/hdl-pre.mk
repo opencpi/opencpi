@@ -131,6 +131,7 @@ endef
 # or core location and a target name.  They return the actual directory of that
 # library/core that the tool wants to see for that target.
 # These are not for component libraries, but a primitive libraries and cores
+# The third argument is just for callers to pass something private to HdlToolLibRef
 HdlLibraryRefDir=$(strip \
   $(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1)/$(strip \
     $(call HdlToolLibRef,$(notdir $1),$2,$3)))

@@ -200,6 +200,7 @@ $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override ImplWorkersFiles=$(call
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override VerilogIncludeDirs=
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlTarget:=$2
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlFamily:=$3
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlPlatform:=$1
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override TargetDir=$(OutDir)target-$1
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override HdlMode:=container
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): | $$$$(TargetDir)

@@ -90,7 +90,7 @@ HdlToolNeedBB=
 # Function required by toolset: $(call HdlToolLibRef,libname)
 # This is the name after library name in a path
 # It might adjust (genericize?) the target
-HdlToolLibRef=$(if $(foreach d,$(subst /, ,$3),$(filter target,$(subst -, ,$d))),,isim)
+HdlToolLibRef=$(if $(strip $(foreach d,$(subst /, ,$3),$(filter target,$(subst -, ,$d)))),,isim)
 
 # filter %.v %.V,$^),\
 
