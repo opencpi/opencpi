@@ -105,21 +105,6 @@ else
 HdlSourceSuffix:=$(HdlVHDLSuffix)
 HdlIncSuffix:=$(HdlVHDLIncSuffix)
 endif
-ifdef sdf
-# The ocpi library is required for VHDL
-$(call OcpiDbgVar,HdlLibraries,Add ocpi library perhaps)
-# FIXME: when tools don't really elaborate or search, capture the needed libraries for later
-# FIXME: but that still means a flat library space...
-HdlLibrariesInternal = \
-  $(foreach l,$(call Unique,\
-                $(HdlLibraries) \
-                $(foreach f,$(call HdlGetFamily,$(HdlTarget)),\
-	          $(foreach p,ocpi util_$f util bsv vendor_$f vendor_$(call HdlGetTop,$f), \
-	              $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p)))),$(strip \
-    $(info Hdl Library is $l)$l))
-
-$(call OcpiDbgVar,HdlLibraries,After adding ocpi if not there )
-endif
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 $(call OcpiDbgVar,Worker)
@@ -173,7 +158,7 @@ $(call OcpiDbg,Before all: "$(LibDir)/$(ImplXmlFile)")
 all: $(LibDir)/$(ImplXmlFile)
 
 $(LibDir)/$(ImplXmlFile): | $(LibDir)
-	$(AT)echo Creating a link from $(LibDir) to $(ImplXmlFile) to expose the $(CwdName) xml.
+	$(AT)echo Creating a link from $(LibDir) to $(ImplXmlFile) to expose the $(CwdName) implementation xml.
 	$(AT)$(call MakeSymLink,$(ImplXmlFile),$(LibDir))
 endif
 

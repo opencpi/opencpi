@@ -47,7 +47,8 @@ SourceFiles=ocp_pkg.vhd types_pkg.vhd util_pkg.vhd wci_pkg.vhd wsi_pkg.vhd ocpi_
             util_body.vhd types_body.vhd wci_body.vhd \
             property_decoder.vhd decoder.vhd readback.vhd control_decoder.vhd \
             gen/props_pkg.vhd \
-	    master.vhd slave.vhd ocpi_util_impl.vhd \
+	    master.vhd slave.vhd  \
+	    message_bounds.vhd clock_limiter.vhd \
 	    $(TypeFiles)
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library

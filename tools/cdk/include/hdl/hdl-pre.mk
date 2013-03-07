@@ -63,7 +63,9 @@ HdlLibrariesInternal = \
 	              $(foreach p,$(filter-out $(LibName),ocpi util_$f util_$v util bsv vendor_$f vendor_$v),\
 	                $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p)))))),$(strip \
     $l))
+
 #    $(info Hdl Library is $l)$l))
+
 
 
 ################################################################################
@@ -124,6 +126,10 @@ endef
 
 
 
+# This works when wildcard doesn't.  FIXME: put into util.mk and use it more
+# Sad, as it slows things down.  Perhaps better to use realpath?
+HdlExists=$(strip $(shell if test -e $1; then echo $1; fi))
+
 ################################################################################
 # $(call HdlLibraryRefDir,location-dir)
 # $(call HdlCoreRefDir,location-dir,target)
@@ -132,27 +138,66 @@ endef
 # library/core that the tool wants to see for that target.
 # These are not for component libraries, but a primitive libraries and cores
 # The third argument is just for callers to pass something private to HdlToolLibRef
-HdlLibraryRefDir=$(strip \
-  $(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1)/$(strip \
-    $(call HdlToolLibRef,$(notdir $1),$2,$3)))
+HdlLibraryRefDir=$(foreach i,$(call HdlLibraryRefFile,$1,$2,$3),$i)
+
+#strip \
+#  $(foreach r,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),$(strip\
+#    $(if $(wildcard $r/target-$2),$r/target-$2/$(notdir $1),)/$(strip\
+#      $(call HdlToolLibRef,$(notdir $1),$2,$3)))))
+
+HdlCRF=$(strip \
+  $(foreach r,\
+    $(if $(call HdlExists,$1/target-$2),\
+       $1/target-$2/$3,\
+       $1/$2/$3),\
+     $r))
+
+#    $(info Result:$r)$r))
+
 
 HdlCoreRef=$(strip \
   $(foreach d,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),\
    $(foreach c,$(notdir $1)$(HdlBin),\
-     $(or $(wildcard $d$(HdlBin)),\
-	  $(wildcard $d/$2/$c),\
-          $(wildcard $d/$(call HdlGetFamily,$2)/$c),\
+     $(or $(call HdlExists,$(call HdlCRF,$1,$2,$c)),\
+	  $(call HdlExists,$(call HdlCRF,$1,$(call HdlGetFamily,$2),$c)),\
 	$(error No core file ($c) for target "$2" found for "$1".)))))
 
 
 ################################################################################
 # $(call HdlLibraryRefFile,location-dir,target)
 # This function takes a user-specified (friendly, target-independent) library
-# or core location and a target name.  They return the actual filename of that
-# library/core that the tool wants to see for that target, for depedencies.
+# or core location and a target name.  They return the actual pathname of that
+# library/core file or directory for "make" dependencies.
+# We rely on the underlying tool for the actual filename, if it is not just
+# the directory
+#HdlLRF=$(info LRF:$(shell pwd):$1:$2:$1/target-$2:$(wildcard $1/target-$2/*))$(strip\
+#    $(if $(info D:$(shell pwd):$1:$2:$1/target-$2:$(call HdlWild,$1/target-$2))$(call HdlWild,$1/target-$2),\
+
+
+HdlLRF=$(strip \
+  $(foreach r,\
+    $(if $(call HdlExists,$1/target-$2),\
+       $1/target-$2/$(call HdlToolLibraryBuildFile,$(or $3,$(notdir $1))),\
+       $1/$2/$(call HdlToolInstallFile,$(or $3,$(notdir $1)),$t)),\
+     $r))
+
+#   $(info Result:$r)$r))
+
 HdlLibraryRefFile=$(strip \
-  $(if $(findstring /,$1),$1/$2/,$(OCPI_CDK_DIR)/lib/hdl/$1/$2/)$(strip \
-    $(call HdlToolLibraryRefFile,$(notdir $1),$2)))
+  $(foreach r,$(if $(findstring /,$1),$1,$(OCPI_CDK_DIR)/lib/hdl/$1),\
+    $(foreach f,$(call HdlGetFamily,$2),\
+       $(if $(filter $f,$2),\
+          $(call HdlLRF,$r,$2,$3),\
+	  $(or $(call HdlExists,$(call HdlLRF,$r,$2)),$(call HdlLRF,$r,$f,$3))))))
+
+# Default for all tools: libraries are directories whose name is the library name itself
+# Return the name of the thing in the build directory (whose name is target-<target>)
+# But if there is a single file there, that should be returned
+HdlToolLibraryBuildFile=$1
+# Default for all tools: installed libraries are just the directory whose name is the target
+# Return the name of the thing in the install directory (whose name is the target)
+# But if there is a single file there, that should be returned
+HdlToolLibraryInstallFile=
 
 ################################################################################
 # $(call HdlGetToolSet,hdl-target)

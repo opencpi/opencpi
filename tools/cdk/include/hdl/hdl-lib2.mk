@@ -46,7 +46,7 @@ $(call OutLibFile,$(1)): override HdlTarget:=$(1)
 $(call OutLibFile,$(1)): HdlSources=$$(filter-out $$(CoreBlackBoxFile),$$(CompiledSourceFiles))
 #$(call OutLibFile,$(1)): $$$$(filter-out $$$$(CoreBlackBoxFile),$$$$(CompiledSourceFiles)) | $$$$(TargetDir)
 $(call OutLibFile,$(1)): $$$$(HdlSources) | $$$$(TargetDir)
-	$(AT)echo Building the $(LibName) library for $$(HdlTarget) \($$@\) 
+	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) 
 	$(AT)$$(HdlCompile)
 
 #	$(AT)echo Building the $(LibName) library for $$(HdlTarget) \($$@\) cb $(CoreBlackBoxFile) hdls $$(HdlSources) deps $$^

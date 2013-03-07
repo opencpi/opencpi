@@ -4,13 +4,14 @@ package util is
 function width_for_max (n : natural) return natural;
 
 component message_bounds
+  generic(width     : natural);
   port(Clk          : in  std_logic;
        RST          : in  bool_t;
        -- input side interface
        som_in       : in  bool_t;
        valid_in     : in  bool_t;
        eom_in       : in  bool_t;
-       take_in      : in  bool_t; -- input side is taking the input from the input port
+       take_in      : out bool_t; -- input side is taking the input from the input port
        -- core facing signals
        core_out     : in  bool_t; -- output side has a valid value
        core_ready   : in  bool_t;

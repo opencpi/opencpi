@@ -260,7 +260,8 @@ XstMakeIni=\
    $(foreach l,$(Cores),\
       echo $(lastword $(subst -, ,$(notdir $(l))))_bb=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
-           $(call HdlLibraryRefDir,$(l)_bb,$(HdlTarget)))));) \
+	 $(or $(call HdlExists,$(call HdlLibraryRefDir,$l_bb,$(or $(HdlTarget),$(info NONE2)))),\
+              $(call HdlExists,$(call HdlLibraryRefDir,$l,$(or $(HdlTarget),$(info NONE3)),$(notdir $l)_bb))))));)\
    $(foreach l,$(CDKComponentLibraries),echo $(notdir $(l))=$(strip \
      $(call FindRelative,$(TargetDir),$(l)/hdl/stubs/$(call HdlToolLibRef,,$(HdlTarget))));) \
    $(foreach l,$(CDKDeviceLibraries),echo $(notdir $(l))=$(strip \
@@ -341,7 +342,8 @@ HdlToolCompile=\
      $(if $(wildcard $(call HdlLibraryRefDir,$(l),$(HdlTarget))),,\
           $(error Error: Specified library: "$(l)", in the "HdlLibraries" variable, was not found for $(HdlTarget).))) \
   $(foreach l,$(Cores),\
-     $(if $(wildcard $(call HdlLibraryRefDir,$(l)_bb,$(or $(HdlTarget),$(info NONE2)))),,\
+     $(if $(or $(call HdlExists,$(call HdlLibraryRefDir,$l_bb,$(or $(HdlTarget),$(info NONE2)))),$(strip\
+               $(call HdlExists,$(call HdlLibraryRefDir,$l,$(or $(HdlTarget),$(info NONE3)),$(notdir $l)_bb)))),,\
 	  $(info Error: Specified core library "$l", in the "Cores" variable, was not found.) \
           $(error Error:   after looking for "$(call HdlLibraryRefDir,$l_bb,$(HdlTarget))"))) \
   echo '  'Creating $@ with top == $(Top)\; details in $(TargetDir)/xst-$(Core).out.;\

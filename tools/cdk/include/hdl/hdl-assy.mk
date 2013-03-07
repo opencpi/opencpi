@@ -188,13 +188,12 @@ endif
 # we fake it since it is already in the target dir
 # BUT: if the tool can't create real cores, the target name subdir is
 # created in any case.
-
 Containers+=$(OutDir)target-$1/$(ContainerModule).v
 $(OutDir)target-$1/container.v: | $(OutDir)target-$1
 ContainerCores+=$(OutDir)target-$1/$(ContainerModule)$(HdlBin)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): Core=$(ContainerModule)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): Top=$(ContainerModule)
-$(OutDir)target-$1/$(ContainerModule)$(HdlBin): override Cores=$(OutDir)target-$3/$(Worker)
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): override Cores=$(OutDir)../$(Worker)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override LibName=$(ContainerModule)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override ImplWorkersFiles=$(call ContainerWorkersFile,$1)
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): override VerilogIncludeDirs=

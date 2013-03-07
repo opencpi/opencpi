@@ -105,18 +105,21 @@ $(call OcpiDbgVar,IsimFiles)
 # FIXME: make this "target-" hack generic
 IsimLibs=\
   $(and $(filter assembly container,$(HdlMode)),\
-  $(eval $(HdlSetWorkers))\
-  $(foreach w,$(HdlWorkers),\
-    $(foreach f,$(firstword \
-                  $(or $(foreach c,$(ComponentLibraries), \
-                         $(foreach d,$(call HdlComponentLibrary,$c,isim),\
-	                   $(wildcard $d/$w))),\
-                       $(error Worker $w not found in any component library.))),\
-      -lib $w=$(call FindRelative,$(TargetDir),$f)))) \
-  $(foreach l,\
-    $(HdlLibrariesInternal) $(Cores),\
-    -lib $(notdir $(l))=$(strip \
-          $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim,$l))))
+    $(eval $(HdlSetWorkers))\
+    $(foreach w,$(HdlWorkers),\
+      $(foreach f,$(firstword \
+                    $(or $(foreach c,$(ComponentLibraries), \
+                           $(foreach d,$(call HdlComponentLibrary,$c,isim),\
+	                     $(wildcard $d/$w))),\
+                         $(error Worker $w not found in any component library.))),\
+        -lib $w=$(call FindRelative,$(TargetDir),$f)))) \
+    $(foreach l,\
+      $(HdlLibrariesInternal),\
+      -lib $(notdir $(l))=$(strip \
+            $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim)))) \
+    $(foreach c, $(Cores),\
+      -lib $(notdir $(c))=$(strip \
+            $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$c,isim))))
 
 MyIncs=\
   $(foreach d,$(VerilogDefines),-d $d) \

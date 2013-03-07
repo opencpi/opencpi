@@ -110,8 +110,6 @@ QuartusFamily_stratix5:=Stratix V
 QuartusMakePart1=$(firstword $1)$(word 3,$1)$(word 2,$1)
 QuartusMakePart=$(call QuartusMakePart1,$(subst -, ,$1))
 
-QuartusLibraries=$(HdlLibrariesInternal)
-
 # Make the file that lists the files in order when we are building a library
 QuartusMakeExport= \
  $(and $(findstring library,$(HdlMode)), \
@@ -152,10 +150,10 @@ QuartusMakeQsf=\
     echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
      $(call FindRelative,$(TargetDir),$d))'\"';) \
   \
-  $(and $(QuartusLibraries),echo '\#' Assignment for adding libraries to search path;) \
-  $(foreach l,$(QuartusLibraries),\
+  $(and $(HdlLibrariesInternal),echo '\#' Assignment for adding libraries to search path;) \
+  $(foreach l,$(HdlLibrariesInternal),\
     $(foreach hlr,$(call HdlLibraryRefDir,$l,$(HdlTarget)),\
-      $(if $(realpath $(hlr)),,$(error No altera library at $(abspath $(hlr))))\
+      $(if $(realpath $(hlr)),,$(error No altera library for $l at $(abspath $(hlr))))\
       echo set_global_assignment -name SEARCH_PATH '\"'$(call FindRelative,$(TargetDir),$(hlr))'\"'; \
       $(foreach f,$(wildcard $(hlr)/*_pkg.vhd),\
         echo set_global_assignment -name VHDL_FILE -library $(notdir $l) '\"'$f'\"';\
@@ -216,12 +214,14 @@ HdlToolCompile=\
   $(if $(findstring $(HdlMode),library),\
     $(call DoAltera,quartus_map --analysis_and_elaboration --write_settings_files=off $(HdlName))); \
 
+ifdef sdf
 # We can't trust xst's exit code so we conservatively check for zero errors
 # Plus we create the edif all the time...
 HdlToolPost=\
   if test $$HdlExit == 0; then \
     touch $(LibName);\
   fi;
+endif
 
 # When making a library, quartus still wants a "top" since we can't precompile 
 # separately from synthesis (e.g. it can't do what vlogcomp can with isim)
@@ -232,14 +232,31 @@ Core=onewire
 Top=onewire
 endif
 endif
-# We are a tool that really has no layered building at all for libraries
-#FIXME: rename the HdlSimNoLibraries since its not about "sim"
-$(eval $(call HdlSimNoLibraries))
+
 HdlToolFiles=\
-  $(LibName)-sources.mk \
-  $(SimFiles) \
   $(foreach f,$(QuartusSources),\
      $(call FindRelative,$(TargetDir),$(dir $f))/$(notdir $f))
+
+# To create the "library result", we create a directory full of source files
+# that have the quartus library directive inserted as the first line to
+# force them into the correct library when they are "discovered" via SEARCH_PATH.
+ifeq ($(HdlMode),library)
+HdlToolPost=\
+  if test $$HdlExit = 0; then \
+    if ! test -d $(LibName); then \
+      mkdir $(LibName); \
+    else \
+      rm -f $(LibName)/*; \
+    fi;\
+    for s in $(HdlToolFiles); do \
+      if [[ $$s == *.vhd ]]; then \
+        echo -- synthesis library $(LibName) | cat - $$s > $(LibName)/`basename $$s`; \
+      else \
+        ln -s ../$$s $(LibName); \
+      fi; \
+    done; \
+  fi;
+endif
 
 ################################################################################
 # Final bitstream building support, given that the "container" core is built
