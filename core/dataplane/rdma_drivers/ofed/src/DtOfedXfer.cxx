@@ -356,7 +356,7 @@ namespace DataTransfer {
       void allocateEndpoints(std::vector<std::string> &l);
 
       // From driver base class
-      unsigned search(const OCPI::Util::PValue* props, const char **exclude)
+      unsigned search(const OCPI::Util::PValue* props, const char **exclude, bool discoveryOnly)
 	throw (OCPI::Util::EmbeddedException);
 
     protected:
@@ -520,7 +520,7 @@ namespace DataTransfer {
 
     unsigned 
     XferFactory::
-    search(const OCPI::Util::PValue* /*props*/, const char ** /*exclude*/)
+    search(const OCPI::Util::PValue* /*props*/, const char ** /*exclude*/, bool /* discoveryOnly */)
       throw (OCPI::Util::EmbeddedException) 
     {
       int num_of_device;

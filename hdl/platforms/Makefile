@@ -34,9 +34,10 @@
 ########################################################################### #
 
 ifndef HdlPlatforms
-HdlPlatforms=$(filter-out Makefile,$(wildcard *))
+ifndef HdlPlatform
+HdlPlatforms=$(filter-out Makefile common,$(wildcard *))
 endif
-
+endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 .PHONY: $(HdlPlatforms)

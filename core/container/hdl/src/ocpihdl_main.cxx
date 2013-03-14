@@ -93,7 +93,7 @@ static const char
 static bool simDump = true;
 static unsigned
   sleepUsecs = 200000,  // how much time between quota injections
-  spinCount = 255,      // how much quote per timeout AND per control message
+  spinCount = 20,      // how much quote per timeout AND per control message
   simTicks = 10000000;   // how much quote to run
 static std::string name, error, endpoint;
 static OH::Driver *driver;
@@ -382,7 +382,7 @@ static void search(const char **) {
     vals[n++] = OA::PVEnd;
 #endif
 
-  OCPI::HDL::Driver::getSingleton().search(vals, NULL);
+    OCPI::HDL::Driver::getSingleton().search(vals, NULL, true);
 }
 static void probe(const char **) {
   dev->print();

@@ -188,6 +188,9 @@ namespace OCPI {
 
       void reset ()
         throw ();
+      // reset and start
+      void restart ()
+        throw ();
 
       /**
        * Query the accumulated elapsed time.

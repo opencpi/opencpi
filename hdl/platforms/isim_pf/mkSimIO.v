@@ -158,6 +158,7 @@ module mkSimIO(CLK,
   reg [31 : 0] TASK_fopen___d24,
 	       TASK_fopen___d31,
 	       TASK_fopen___d38,
+	       TASK_fopen___ack,
 	       b__h2122,
 	       b__h2718;
   wire [15 : 0] b__h1083, b__h824;
@@ -166,6 +167,7 @@ module mkSimIO(CLK,
   reg [100*8:1] respFile;
   reg [100*8:1] reqFile;
   reg [100*8:1] ctlFile;
+  reg [100*8:1] ackFile;
   // actionvalue method host_request_get
   assign host_request_get = reqF$D_OUT ;
   assign RDY_host_request_get = reqF$EMPTY_N ;
@@ -544,6 +546,12 @@ module mkSimIO(CLK,
 	$fclose(r_hdl[31:0]);
     if (RST_N != `BSV_RESET_VALUE)
       if (WILL_FIRE_RL_do_w_char) $fwrite(w_hdl[31:0], "%c", respF$D_OUT);
+    if (RST_N != `BSV_RESET_VALUE) 
+      if (spinCredit_value == 32'd3) begin
+        $fwrite(TASK_fopen___ack, "%c", 8'd1);
+	$fflush(TASK_fopen___ack);
+        $display("[%0d]: sending ACK byte:", $time);
+      end
     if (RST_N != `BSV_RESET_VALUE)
       if (WILL_FIRE_RL_do_w_char) $fflush(w_hdl[31:0]);
     if (RST_N != `BSV_RESET_VALUE)
@@ -557,6 +565,14 @@ module mkSimIO(CLK,
           else
 	    begin
 	      $display("Missing ctl= plusarg");
+	    end
+          if ($value$plusargs("ack=%s", ackFile))
+	    begin
+	      TASK_fopen___ack = $fopen(ackFile, "wb");
+            end
+          else
+	    begin
+	      $display("Missing ack= plusarg");
 	    end
 	  #0;
 	end

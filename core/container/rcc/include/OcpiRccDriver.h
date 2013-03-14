@@ -17,7 +17,7 @@ namespace OCPI {
 	throw ( OCPI::Util::EmbeddedException );
       // Per driver discovery routine to create devices
       unsigned
-	search(const OCPI::API::PValue* props, const char **exclude)
+	search(const OCPI::API::PValue* props, const char **exclude, bool discoveryOnly)
 	throw ( OCPI::Util::EmbeddedException );
       ~Driver() throw ( );
     };

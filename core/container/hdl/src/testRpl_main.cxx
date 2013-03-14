@@ -62,55 +62,6 @@
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 
-#if 0
-namespace OCPI {
-  namespace RPL {
-
-    class Driver : public OCPI::Util::Driver {
-      // The fd for mapped memory, until we have a driver to restrict it.
-      static int pciMemFd;
-    public:
-      // This constructor simply registers itself. This class has no state.
-      Driver() :
-        OCPI::Util::Driver("OCFRP","Global",true) {
-      }
-      // This driver method is called when container-discovery happens, to see if there
-      // are any container devices supported by this driver
-      // It uses a generic PCI scanner to find candidates, and when found, calls the "found" method below.
-      virtual unsigned search(const OCPI::Util::PValue*, const char **exclude)
-        throw (OCPI::Util::EmbeddedException)
-      {
-	(void)exclude;
-        if (getenv("OCPI_OCFRP_DUMMY"))
-          probe(0,"0");
-
-#ifdef DONT_COMPILE
-        unsigned n = 0;
-        const char *err = PCI::search(exclude, OCFRP0_VENDOR, OCFRP0_DEVICE,
-                                      OCFRP0_CLASS, OCFRP0_SUBCLASS, found, n);
-
-        if (err)
-          fprintf(stderr, "PCI Scanner Error: %s\n", err);
-        return n;
-#else
-        return 0;
-#endif
-      }
-
-      // This driver method is called to see if a particular container device exists,
-      // and if so, to instantiate a container
-      virtual OCPI::Util::Device *probe(const OCPI::Util::PValue*, const char *which  )
-        throw (OCPI::Util::EmbeddedException);
-
-      virtual ~Driver()
-        throw() {};
-
-    };
-
-  }
-}
-#endif
-
 #define D2E7  128.0
 #define D2E15 32768.0
 #define NPTS  4096

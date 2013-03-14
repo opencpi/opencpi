@@ -46,7 +46,8 @@ namespace OCPI {
       Device(Driver &driver, OE::Interface &ifc, std::string &name, OS::Ether::Address &devAddr,
 	     bool discovery, const char *data_proto, unsigned delayms, std::string &error)
 	: OCPI::HDL::Device(name, data_proto),
-	  m_socket(NULL), m_devAddr(devAddr), m_discovery(discovery), m_delayms(delayms) {
+	  m_socket(NULL), m_devAddr(devAddr), m_discovery(discovery), m_delayms(delayms),
+	  m_failed(false) {
 	// We need to get a socket to talk to this device.
 	// If we are at the ethernet level AND we don't a driver,
 	// we must share the socket for all devices on the same interface
@@ -72,11 +73,15 @@ namespace OCPI {
       request(EtherControlMessageType type, RegisterOffset offset,
 	      unsigned bytes, OS::Ether::Packet &recvFrame, uint32_t *status,
 	      unsigned extra, unsigned delayms) {
-	if (!delayms)
-	  delayms = m_delayms;
+	if (m_failed)
+	  throw OU::Error("HDL::Net::Device::request after previous failure");
 	EtherControlHeader &ech_out =  *(EtherControlHeader *)(m_request.payload);
+	ocpiDebug("Net::Driver request: delay %u m_delay %u tag %u",
+		  delayms, m_delayms, ech_out.tag);
 	ech_out.pad = 0;
 	ech_out.tag++;
+	if (!delayms)
+	  delayms = m_delayms;
 	ech_out.typeEtc =
 	  OCCP_ETHER_TYPE_ETC(type,
 			      (~(-1 << bytes) << (offset & 3)) & 0xf,
@@ -91,7 +96,8 @@ namespace OCPI {
 	       m_socket->send(m_request, ntohs(ech_out.length)+2, m_devAddr, 0, NULL, m_error); n++) {
 	  unsigned length;
 	  OS::Ether::Address addr;
-	  OS::Timer timer(0, delayms * 1000000);
+	  uint64_t ns = delayms * (uint64_t)1000000;
+	  OS::Timer timer(ns / 1000000, ns % 1000000);
 	  // FIXME: use shared receive socket
 	  ocpiDebug("Request type %u tag %u offset %u delay %u",
 		    OCCP_ETHER_MESSAGE_TYPE(ech_out.typeEtc), ech_out.tag,
@@ -135,13 +141,15 @@ namespace OCPI {
 	      response == WORKER_TIMEOUT ? OCCP_STATUS_READ_TIMEOUT :
 	      response == ERROR ? OCCP_STATUS_READ_ERROR :
 	      OCCP_STATUS_ACCESS_ERROR;
-	  else
+	  else {
+	    m_failed = true;
 	    throw OU::Error("HDL network %s error: %s",
 			    extra ? "command" : (type == OCCP_READ ? "read" :
 						 (type == OCCP_WRITE ? "write" : "nop")),
 			    response == WORKER_TIMEOUT ? "worker timeout" :
 			    response == ERROR ? "worker error" :
 			    "ethernet timeout - no valid response");
+	  }
 	}
       }
 
@@ -410,7 +418,8 @@ namespace OCPI {
       }
 
       unsigned Driver::
-      search(const OU::PValue *props, const char **exclude, bool udp, std::string &error) {
+      search(const OU::PValue *props, const char **exclude, bool discoveryOnly, bool udp,
+	     std::string &error) {
 	unsigned count = 0;
 	OE::IfScanner ifs(error);
 	if (error.size())
@@ -425,7 +434,7 @@ namespace OCPI {
 	    Access cAccess, dAccess;
 	    std::string name, endpoint;
 	    OE::Address bcast(udp);
-	    count += tryIface(eif, bcast, exclude, NULL, true, error);
+	    count += tryIface(eif, bcast, exclude, NULL, discoveryOnly, error);
 	    if (error.size()) {
 	      ocpiInfo("Error during network discovery on '%s': %s",
 		       eif.name.c_str(), error.c_str());

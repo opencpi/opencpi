@@ -436,6 +436,14 @@ reset ()
   else
     tci.accumulatedTime.set(0);
 }
+void
+Timer::
+restart ()
+  throw ()
+{
+  reset();
+  start();
+}
 
 bool
 Timer::expired() {

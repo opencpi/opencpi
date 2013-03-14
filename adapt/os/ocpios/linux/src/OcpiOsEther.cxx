@@ -512,7 +512,8 @@ namespace OCPI {
         msg.msg_iov = (iovec*)iov;
 	msg.msg_iovlen = iovlen;
 	ssize_t rlen = sendmsg(m_fd, &msg, 0);
-	ocpiDebug("Send packet length %zd, to %s, returned %zd", len, addr.pretty(), rlen);
+	ocpiDebug("Send packet length %zd, to %s, port %u returned %zd", len,
+		  inet_ntoa(sa.in.sin_addr), ntohs(sa.in.sin_port), rlen);
 	if (rlen != (ssize_t)len) {
 	  setError(error, "sendto of %u bytes failed, returning %d", len, rlen);
 	  return false;

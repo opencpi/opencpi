@@ -6,6 +6,7 @@ fi
 set -e
 # Pass arguments to the settings script to override current args
 . $OCPI_XILINX_TOOLS_DIR/settings64.sh $OCPI_XILINX_TOOLS_DIR
+export LM_LICENSE_FILE=$OCPI_XILINX_LICENSE_FILE
 appname=$1
 shift
 for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done

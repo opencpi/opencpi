@@ -45,10 +45,10 @@ namespace OCPI {
       protected:
 	Device(Driver &driver, OS::Ether::Interface &ifc, std::string &name,
 	       OE::Address addr, bool discovery, std::string &error)
-	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-udp-rdma", 1000, error) {
+	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-udp-rdma", 10000, error) {
 	  // Send the "flush all state - I am a new master" command.
 	  if (error.empty())
-	    command("", 1, NULL, 0, 2000);
+	    command("", 1, NULL, 0, 5000);
 	}
       public:
 	~Device() {
@@ -66,7 +66,7 @@ namespace OCPI {
 	void load(const char *name) {
 	  char err[1000];
 	  err[0] = 0;
-	  command(name, strlen(name)+1, err, sizeof(err), 2000);
+	  command(name, strlen(name)+1, err, sizeof(err), 5000);
 	  err[sizeof(err)-1] = 0;
 	  if (*err)
 	    throwit("Loading new executable %s failed: %s", name, err);
@@ -115,7 +115,7 @@ namespace OCPI {
 	return new Device(myName, dir, discovery, error);
       }
       unsigned Driver::
-      search(const OU::PValue */*params*/, const char **exclude, std::string &error) {
+      search(const OU::PValue */*params*/, const char **exclude, bool discoveryOnly, std::string &error) {
 	unsigned count = 0;
 	std::string simDir;
 	OU::formatString(simDir, "%s/%s", TMPDIR, SIMDIR);
@@ -136,7 +136,7 @@ namespace OCPI {
 	      }
 	      const char *pidStr = ent->d_name + len + 1;
 	      // Opening implies canonicalizing the name, which is needed for excludes
-	      OCPI::HDL::Device *dev = open(pidStr, true, error);
+	      OCPI::HDL::Device *dev = open(pidStr, discoveryOnly, error);
 	      if (error.empty()) {
 		if (exclude)
 		  for (const char **ap = exclude; *ap; ap++)

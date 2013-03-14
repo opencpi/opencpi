@@ -248,9 +248,8 @@ clean distclean: cleancomponents cleanexamples
 	-rm -r -f lib
 
 cleaneverything: clean
-	make -C hdl/prims clean
+	make -C hdl clean
 	make -C components clean
-	make -C hdl/apps clean
 
 tar:
 	tar cvf ocpi.tar MakeVars.ocpi Makefile.ocpi Makefile.ocpi.for-* $(ALLPACKAGES)

@@ -40,6 +40,7 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
+#include "OcpiOsTimer.h"
 #include "OcpiUtilMisc.h"
 #include "SimServer.h"
 #include "SimDriver.h"
@@ -78,9 +79,9 @@ namespace OCPI {
       struct Fifo {
 	std::string m_name;
 	int m_rfd, m_wfd;
-	bool m_read;
+	//	bool m_read;
 	Fifo(std::string strName, bool iRead, const char *old, std::string &error)
-	  : m_name(strName), m_rfd(-1), m_wfd(-1), m_read(iRead) {
+	  : m_name(strName), m_rfd(-1), m_wfd(-1) { // , m_read(iRead) {
 	  if (error.size())
 	    return;
 	  const char *name = m_name.c_str();
@@ -143,6 +144,9 @@ namespace OCPI {
 	// This fifo is read by the sim and we write it.
 	// It carries sim controls from us to the sim.
 	Fifo m_ctl;
+	// This fifo is for control responses from the sim to us.
+	// Currently this is simply an "ack" for spincredits.
+	Fifo m_ack;
 #if 0
 	// This fifo is for client->server control requests
 	// This is single-writer socket
@@ -160,6 +164,7 @@ namespace OCPI {
 	static const unsigned RESP_MIN = 10;
 	static const unsigned RESP_MAX = 14;
 	static const unsigned RESP_LEN = 3; // index in layload buffer where length hides
+	static const unsigned RESP_TAG = 7; // index in layload buffer where length hides
 	OE::Packet m_response, m_serverResponse;
 	OE::Address m_lastClient;
 	bool m_haveTag;
@@ -169,8 +174,10 @@ namespace OCPI {
 	std::queue<OE::Address> m_respQueue;
 	std::string m_platform;
 	std::string m_exec; // simulation executable
-	bool m_verbose, m_dump;
+	bool m_verbose, m_dump, m_spinning;
 	unsigned m_spinCount, m_sleepUsecs, m_simTicks;
+	uint64_t m_cumTicks;
+	OS::Timer m_spinTimer;
 	Sim(std::string &simDir, std::string &script, const std::string &platform,
 	    unsigned spinCount, unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
 	    std::string &error)
@@ -179,17 +186,22 @@ namespace OCPI {
 	    m_req(simDir + "/request", false, "/tmp/OpenCPI0_Req", error),
 	    m_resp(simDir + "/response", true, "/tmp/OpenCPI0_Resp", error),
 	    m_ctl(simDir + "/control", false, "/tmp/OpenCPI0_IOCtl", error),
+	    m_ack(simDir + "/ack", false, NULL, error),
 	    //      m_server(simDir + "/server", true, NULL, error),
 	    //      m_client(simDir + "/client", true, NULL, error),
 	    m_nfds(0), m_dcp(0), m_script(script), m_haveTag(false),
 	    m_respLeft(0), m_respPtr(NULL), m_platform(platform), m_verbose(verbose),
-	    m_dump(dump), m_spinCount(spinCount), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks) {
+	    m_dump(dump), m_spinning(false), m_spinCount(spinCount), m_sleepUsecs(sleepUsecs),
+	    m_simTicks(simTicks), m_cumTicks(0)
+	{
 	  if (error.length())
 	    return;
 	  m_nfds = m_ext.fd();
 	  //    if (m_server.m_rfd > m_nfds) m_nfds = m_server.m_rfd;
 	  if (m_resp.m_rfd > m_nfds) m_nfds = m_resp.m_rfd;
+	  if (m_ack.m_rfd >m_nfds) m_nfds = m_ack.m_rfd;
 	  m_nfds++;
+	  ocpiDebug("resp %d ext %d ack %d nfds %d", m_resp.m_rfd, m_ext.fd(), m_ack.m_rfd, m_nfds);
 	  std::string plat(m_platform);
 	  plat += "_pf";
 	  Server::initAdmin(*(OH::OccpAdminRegisters*)m_admin, plat.c_str());
@@ -207,7 +219,7 @@ namespace OCPI {
 	    wpid = waitpid(pid, &status, (hang ? 0 : WNOHANG) | WUNTRACED);
 	  while (wpid == -1 && errno == EINTR);
 	  if (wpid == 0) // can't happen if hanging
-	    ocpiDebug("Wait returned 0 - subprocess running");
+	    ;//    ocpiDebug("Wait returned 0 - subprocess running");
 	  else if ((int)wpid == -1) {
 	    error = "waitpid error";
 	    return true;
@@ -249,6 +261,34 @@ namespace OCPI {
 	      return mywait(pid, true, error);
 	    }
 	  }
+	  return false;
+	}
+	bool
+	spin(std::string &error) {
+	  if (!m_spinning) {
+	    char msg[2];
+	    msg[0] = SPIN_CREDIT;
+	    msg[1] = m_spinCount;
+	    ssize_t w = write(m_ctl.m_wfd, msg, 2);
+	    if (w != 2) {
+	      OU::format(error, "spin control write to sim failed. w %zd", w);
+	      return true;
+	    }
+	    m_cumTicks += m_spinCount;
+	    m_spinTimer.restart();
+	    m_spinning = true;
+	  }
+	  return false;
+	}
+	bool
+	ack(std::string &error) {
+	  char c;
+	  ssize_t r = read(m_ack.m_rfd, &c, 1);
+	  if (r != 1 || c != 1) {
+	    OU::format(error, "ack read from sim failed. r %zd c %u", r, c);
+	    return true;
+	  }
+	  m_spinning = false;
 	  return false;
 	}
 	// Establish a new simulator from a new executable.
@@ -335,14 +375,16 @@ namespace OCPI {
 	    err = " The OCPI_CDK_DIR environment variable is not set";
 	    return true;
 	  }
-	  OU::format(cmd, "exec %s %s req=%s resp=%s ctl=%s ", m_script.c_str(), app.c_str(),
-			   m_req.m_name.c_str(), m_resp.m_name.c_str(), m_ctl.m_name.c_str());
+	  OU::format(cmd, "exec %s %s req=%s resp=%s ctl=%s ack=%s", m_script.c_str(), app.c_str(),
+		     m_req.m_name.c_str(), m_resp.m_name.c_str(), m_ctl.m_name.c_str(),
+		     m_ack.m_name.c_str());
 
 	  if (m_dump)
 	    cmd += " bscvcd";
       
 	  if (m_verbose)
-	    fprintf(stderr, "Starting execution of simulator for HDL assembly: %s (executable \"%s\".\n", app.c_str(), file);
+	    fprintf(stderr, "Starting execution of simulator for HDL assembly: %s "
+		    "(executable \"%s\".\n", app.c_str(), file);
 	  switch ((s_pid = fork())) {
 	  case 0:
 	    if (chdir(dir.c_str()) != 0) {
@@ -378,18 +420,15 @@ namespace OCPI {
 	  if (m_verbose)
 	    fprintf(stderr, "Simulator process (process id %u) started, with its output in %s/sim.out\n",
 		    s_pid, dir.c_str());
-	  // just improve the odds of an immediate error giving a good error message
 	  char msg[2];
-	  msg[0] = SPIN_CREDIT;
-	  msg[1] = m_spinCount;
-	  assert(write(m_ctl.m_wfd, msg, 2) == 2);
 	  msg[0] = m_dump ? DUMP_ON : DUMP_OFF;
 	  msg[1] = 0;
 	  assert(write(m_ctl.m_wfd, msg, 2) == 2);
-	  ocpiInfo("Waiting 5 seconds for simlator to start before issueing any more credits.");
-	  sleep(5);
-	  if (mywait(s_pid, false, err))
-	    return true;
+	  // Improve the odds of an immediate error giving a good error message by letting the sim run
+	  ocpiInfo("Waiting for simulator to start before issueing any more credits.");
+	  for (unsigned n = 0; n < 1; n++)
+	    if (spin(err) || mywait(s_pid, false, err) || ack(err))
+	      return true;
 	  if (m_verbose)
 	    fprintf(stderr, "Simulator process is running.\n");
 	  err.clear();
@@ -449,8 +488,13 @@ namespace OCPI {
 		return true;
 	      }
 	      OE::Address &from = m_respQueue.back();
+	      printTime("after response full read");
 	      bool ok = m_ext.send(m_response, len + 2, from, 0, NULL, error);
+	      ocpiDebug("writing response to client: len %u tag %d to %s", len,
+			m_response.payload[RESP_TAG], from.pretty());
 	      m_respQueue.pop();
+	      if (m_respQueue.empty() && spin(error))
+		return true;
 	      return !ok;
 	    }
 	  }
@@ -579,27 +623,34 @@ namespace OCPI {
 		return true;
 	      }
 	      m_dcp += nn;
+	      if (spin(error))
+	        return true;
 	    }
 	  }
 	  ocpiDebug("written request to sim: len %u action %u tag %u proto len %u", length, 
 		    OCCP_ETHER_MESSAGE_TYPE(hdr_in.typeEtc), hdr_in.tag, ntohs(hdr_in.length));
+	  printTime("request written to sim");
 	  m_respQueue.push(from);
 	  return false;
 	}
   
-	// Perform one action: wait for data or timeout, and act accordingly.
+	void
+	printTime(const char *msg) {
+	  OS::ElapsedTime et = m_spinTimer.getElapsed();
+	  ocpiDebug("When %s time since spin is: %" PRIu32 ".%03" PRIu32 " s ago", msg,
+		    et.seconds(), (et.nanoseconds() + 500000) / 1000000);
+	}
+	// Perform one action, waiting for any of:
+	// 1. Data from sim to forward back to client
+	// 2. Data from client to either act on as server or forward to sim.
+	// 3. Ack from sim to release more spin credits
+	// 4. Timeout meaning sim is taking a long time to go through spin credits
 	// set error on fatal problems
-	// return any execution ticks provided.
+	// return any execution spin credits provided.
 	bool
-	doit(uint64_t /*cum*/, uint64_t ticks, std::string &error) {
-	  char msg[2];
-	  if (m_dcp) {
-	    msg[0] = SPIN_CREDIT;
-	    msg[1] = m_spinCount;
-	    assert(write(m_ctl.m_wfd, msg, 2) == 2);
-	    ticks += m_spinCount;
-	  }
-#if 1
+	doit(std::string &error) {
+#ifndef NDEBUG
+	  // Just interesting debug info
 	  {
 	    unsigned n = 0;
 	    if (ioctl(m_req.m_rfd, FIONREAD, &n) == -1) {
@@ -611,7 +662,13 @@ namespace OCPI {
 	      error = "fionread syscall on ctl";
 	      return true;
 	    }
-	    ocpiDebug("Request FIFO has %u, control has %u", n, n1);
+	    unsigned n2 = 0;
+	    if (ioctl(m_ack.m_rfd, FIONREAD, &n2) == -1) {
+	      error = "fionread syscall on ctl";
+	      return true;
+	    }
+	    if (n || n1 || n2)
+	      ocpiDebug("Request FIFO has %u, control has %u, ack has %u, dcp %" PRIu64, n, n1, n2, m_dcp);
 	  }
 #endif
 	  if (s_pid && mywait(s_pid, false, error)) {
@@ -623,16 +680,17 @@ namespace OCPI {
 	  }
 	  fd_set fds[1];
 	  FD_ZERO(fds);
-	  FD_SET(m_ext.fd(), fds);      // CP traffic from clients
-	  //    FD_SET(m_server.m_rfd, fds);  // server commands from clients
-	  FD_SET(m_resp.m_rfd, fds);    // sim responses from sim
+	  FD_SET(m_ext.fd(), fds);      // CP or command traffic from clients
+	  FD_SET(m_resp.m_rfd, fds);    // CP responses from sim
+	  if (m_dcp)                    // only do this after SOME control op
+	    FD_SET(m_ack.m_rfd, fds);   // spin credit ACKS from sim
 	  struct timeval timeout[1];
 	  timeout[0].tv_sec = m_sleepUsecs/1000000;
 	  timeout[0].tv_usec = m_sleepUsecs%1000000;
 	  errno = 0;
 	  switch (select(m_nfds, fds, NULL, NULL, timeout)) {
-	  case 0: // timeout
-	    //      ocpiDebug("Select timeout. cumulative simulator ticks: %" PRIu64, cum);
+	  case 0: // timeout.   Someday accumulate this time and assume sim is hung/crashes
+	    printTime("select timeout");
 	    return false;
 	  default:
 	    if (errno == EINTR)
@@ -644,8 +702,10 @@ namespace OCPI {
 	  }
 	  // Top priority is getting responses from the sim
 	  if (FD_ISSET(m_resp.m_rfd, fds) && doResponse(error))
-	    //	FD_ISSET(m_server.m_rfd, fds) && doServer(error))
 	    return true;
+	  // Next priority is to process messages from clients.
+	  // Especially, if they are CP requests, we want to send DCP credits
+	  // before spin credits, so that the CP info is read before spin credits
 	  if (FD_ISSET(m_ext.fd(), fds)) {
 	    OE::Packet rFrame;
 	    unsigned length;
@@ -657,12 +717,20 @@ namespace OCPI {
 		if (doServer(rFrame.payload, length, from, sizeof(rFrame.payload), error) ||
 		    !m_ext.send(rFrame, length, from, 0, NULL, error))
 		  return true;
-	      } else if (s_pid)
-		return sendToSim(rFrame.payload, length, from, error);
-	      else if (doEmulate(rFrame.payload, length, error) ||
+	      } else if (s_pid) {
+		if (sendToSim(rFrame.payload, length, from, error))
+		  return true;
+	      } else if (doEmulate(rFrame.payload, length, error) ||
 		       !m_ext.send(rFrame, length, from, 0, NULL, error))
 		return true;
 	    }
+	  }
+	  // Next is to keep sim running by providing more credits
+	  // We will only enable this fd when there is no response queue
+	  if (FD_ISSET(m_ack.m_rfd, fds)) {
+	    printTime("Received ACK indication");
+	    if (ack(error) || spin(error))
+	      return true;
 	  }
 	  return false;
 	}
@@ -685,14 +753,14 @@ namespace OCPI {
 	  // If we were given an executable, start sim with it.
 	  if (exec.length() && loadRun(exec.c_str(), error))
 	    return true;
-	  uint64_t cum, last, ticks = 0;
-	  for (last = cum = 0;
-	       !Sim::s_exited && !Sim::s_stopped && error.empty() && cum < m_simTicks; cum += ticks) {
-	    if (cum - last > 1000) {
-	      ocpiInfo("Spin credit at: %20" PRIu64, cum);
-	      last = cum;
+	  uint64_t last = 0;
+	  while (!s_exited && !s_stopped && error.empty() && m_cumTicks < m_simTicks) {
+	    if (m_cumTicks - last > 1000) {
+	      ocpiInfo("Spin credit at: %20" PRIu64, m_cumTicks);
+	      last = m_cumTicks;
 	    }
-	    doit(cum, ticks, error);
+	    if (doit(error))
+	      break;
 	  }
 	  if (s_exited) {
 	    if (m_verbose)
@@ -702,15 +770,15 @@ namespace OCPI {
 	    if (m_verbose)
 	      fprintf(stderr, "Stopping simulator due to signal\n");
 	    ocpiInfo("Stopping simulator due to signal");
-	  } else if (cum >= m_simTicks) {
+	  } else if (m_cumTicks >= m_simTicks) {
 	    if (m_verbose)
 	      fprintf(stderr, "Simulator credits at %" PRIu64 " exceeded %u, stopping simulation\n",
-		      cum, m_simTicks);
+		      m_cumTicks, m_simTicks);
 	    ocpiInfo("Simulator credits at %" PRIu64 " exceeded %u, stopping simulation",
-		     cum, m_simTicks);
+		     m_cumTicks, m_simTicks);
 	  }
 	  shutdown();
-	  return error.length();
+	  return !error.empty();
 	}
       };
       pid_t Sim::s_pid = 0;

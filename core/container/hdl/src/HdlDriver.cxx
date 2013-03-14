@@ -86,22 +86,22 @@ namespace OCPI {
     } 
 
     unsigned Driver::
-    search(const OA::PValue *params, const char **exclude) {
+    search(const OA::PValue *params, const char **exclude, bool discoveryOnly) {
       OU::SelfAutoMutex x(this); // protect m_params etc.
       unsigned count = 0;
       m_params = params;
       std::string error;
-      count += Ether::Driver::search(params, exclude, false, error);
+      count += Ether::Driver::search(params, exclude, discoveryOnly, false, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got ethernet search error: %s", error.c_str());
 	error.clear();
       }
-      count += PCI::Driver::search(params, exclude, error);
+      count += PCI::Driver::search(params, exclude, discoveryOnly, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got pci search error: %s", error.c_str());
 	error.clear();
       }
-      count += Sim::Driver::search(params, exclude, true, error);
+      count += Sim::Driver::search(params, exclude, discoveryOnly, true, error);
       if (error.size()) {
 	ocpiBad("In HDL Container driver, got sim/udp search error: %s", error.c_str());
 	error.clear();

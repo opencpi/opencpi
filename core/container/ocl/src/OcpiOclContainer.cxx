@@ -165,7 +165,7 @@ namespace OCPI
 
       public:
         unsigned search ( const OA::PValue*,
-                          const char** exclude );
+                          const char** exclude, bool discoveryOnly );
 
         OC::Container* probeContainer ( const char* which,
 					std::string &error,
@@ -239,11 +239,9 @@ namespace OCPI
 
     }; // End: class Container
 
-    unsigned Driver::search ( const OA::PValue* props,
-                              const char** exclude )
+    unsigned Driver::search ( const OA::PValue* /* params */, const char** /* exclude */,
+			      bool /*discoveryOnly*/ )
     {
-      (void) props;
-      (void) exclude;
       return 1;
     }
 

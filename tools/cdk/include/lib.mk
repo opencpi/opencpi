@@ -68,6 +68,9 @@ else
 endif
 clean::
 	$(AT)rm -f $(PackageFile)
+ifndef Implementations
+Implementations=$(foreach m,$(Models),$(wildcard *.$m))
+endif
 # we need to factor the model-specifics our of here...
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))

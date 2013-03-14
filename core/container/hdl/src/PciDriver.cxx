@@ -346,7 +346,8 @@ namespace OCPI {
 	return false;
       }
       unsigned Driver::
-      search(const OU::PValue */*params*/, const char **exclude, std::string &error) {
+      search(const OU::PValue */*params*/, const char **exclude, bool /*discoveryOnly*/,
+	     std::string &error) {
 	unsigned count = 0;
 	const char *dir = m_useDriver ? OCPI_DRIVER_PCI : PCIDIR;
 	DIR *pcid = opendir(dir);

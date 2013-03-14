@@ -6,10 +6,14 @@ fi
 set -e
 # Pass arguments to the settings script to override current args
 . $OCPI_VIVADO_TOOLS_DIR/.settings64.sh $OCPI_VIVADO_TOOLS_DIR
+export LM_LICENSE_FILE=$OCPI_XILINX_LICENSE_FILE
 set -vx
 appname=$1
 shift
-exec xsim  -tl $* $appname-xsim_pf.exe <<EOF
+for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
+echo plusargs are: $plusargs
+echo doing ./$appname-xsim_pf.exe $plusargs
+exec xsim  -tl $plusargs $appname-xsim_pf.exe <<EOF
 report_scopes
 report_objects
 log_wave -r /

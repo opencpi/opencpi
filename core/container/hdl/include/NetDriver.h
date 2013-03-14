@@ -35,8 +35,8 @@
 namespace OCPI {
   namespace HDL {
     namespace Net {
-      const unsigned RETRIES = 10;
-      const unsigned DELAYMS = 100;
+      const unsigned RETRIES = 3;
+      const unsigned DELAYMS = 500;
       const unsigned MAX_INTERFACES = 10;
 
       class Device;
@@ -44,7 +44,7 @@ namespace OCPI {
 	friend class Device;
 	// discovery socket. pointer since we only open it on demand
 	OCPI::OS::Ether::Socket *m_socket;
-	const char **m_exclude;            // during discovery
+	//	const char **m_exclude;            // during discovery
 	// A mapping from interface name to sockets per interface, during discovery
 	typedef std::map<const std::string, OCPI::OS::Ether::Socket *> Sockets;
 	typedef Sockets::iterator SocketsIter;
@@ -69,7 +69,8 @@ namespace OCPI {
 	OCPI::OS::Ether::Socket *
 	findSocket(OCPI::OS::Ether::Interface &ifc, bool discovery, std::string &error);
 	unsigned
-        search(const OCPI::Util::PValue *props, const char **exclude, bool udp, std::string &error);
+	search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
+	       bool udp, std::string &error);
 	OCPI::HDL::Device *
 	open(const char *etherName, bool discovery, std::string &err);
 	// callback when found
@@ -85,6 +86,7 @@ namespace OCPI {
 	std::string m_error;
 	bool m_discovery;
 	unsigned m_delayms;
+	bool m_failed;
       protected:
 	Device(Driver &driver, OCPI::OS::Ether::Interface &ifc, std::string &name,
 	       OCPI::OS::Ether::Address &devAddr, bool discovery,

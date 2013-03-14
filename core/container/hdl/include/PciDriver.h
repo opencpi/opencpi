@@ -70,7 +70,8 @@ namespace OCPI {
 	void *
 	map(uint32_t size, uint64_t &base, std::string &error);
 	unsigned
-	search(const OCPI::Util::PValue *props, const char **exclude, std::string &error);
+	  search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
+		 std::string &error);
 	OCPI::HDL::Device *
 	open(const char *pciName, std::string &err);
 	// Callback when found
