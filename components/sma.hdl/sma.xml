@@ -3,11 +3,11 @@
   <ControlInterface Sub32BitConfigProperties="true" SizeOfConfigSpace="4g" ControlOperations="initialize">
     <Property Name="mesgCount" Readable="true"/>
     <Property Name="abortCount" Readable="true"/>
-    <Property Name="dummy0"/>
+    <Property Name="dummy0" padding='true'/>
     <Property Name="thisMesg" Readable="true"/>
     <Property Name="lastMesg" Readable="true"/>
     <Property Name="portStatus" Readable="true"/>
-    <Property Name="dummy1"/>
+    <Property Name="dummy1" padding='true'/>
     <Property Name="wsiSpMesgCount" Readable="true"/>
     <Property Name="wsiSiMesgCount" Readable="true"/>
     <Property Name="wsiStBusyCount" Readable="true"/>

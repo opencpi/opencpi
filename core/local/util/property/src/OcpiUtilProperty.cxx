@@ -43,7 +43,7 @@
 
 // Used both in spec and in impl
 #define ACCESS_ATTRIBUTES \
-"Readable", "Writable", "Volatile", "Initial"
+  "Readable", "Writable", "Volatile", "Initial", "Padding"
 
 #define PROPERTY_ATTRIBUTES \
   OCPI_UTIL_MEMBER_ATTRS, ACCESS_ATTRIBUTES, "IsTest", "Default"
@@ -97,10 +97,12 @@ namespace OCPI {
     Property::parseAccess(ezxml_t prop, bool &readableConfigs, bool &writableConfigs,
 			  bool addAccess) {
       const char *err;
+      bool padding;
       if ((err = OE::getBoolean(prop, "Readable", &m_isReadable, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Writable", &m_isWritable, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Initial", &m_isInitial, addAccess)) ||
-	  (err = OE::getBoolean(prop, "Volatile", &m_isVolatile, addAccess)))
+	  (err = OE::getBoolean(prop, "Volatile", &m_isVolatile, addAccess)) ||
+	  (err = OE::getBoolean(prop, "Padding", &padding, false)))
 	return err;
       if (m_isInitial)
 	m_isWritable = true;
@@ -110,7 +112,7 @@ namespace OCPI {
 	readableConfigs = true;
       if (m_isWritable)
 	writableConfigs = true;
-      if (!m_isWritable && !m_isReadable && !m_isParameter)
+      if (!m_isWritable && !m_isReadable && !m_isParameter && !padding)
 	return "property is not readable or writable or a parameter";
       return NULL;
     }
@@ -124,11 +126,13 @@ namespace OCPI {
       if ((err = includeImpl ?
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, IMPL_ATTRIBUTES, NULL) :
 	   OE::checkAttrs(prop, "Name", PROPERTY_ATTRIBUTES, NULL)) ||
+	  includeImpl && (err = parseImplAlso(prop)) ||
 	  (err = parseAccess(prop, readableConfigs, writableConfigs, false)) ||
-	  (err = Member::parse(prop, true, true, "default", ordinal)) ||
-	  includeImpl &&
-	  (err = parseImplAlso(prop)))
+	  (err = Member::parse(prop, true, true, "default", ordinal)))
 	return err;
+      if (m_isParameter && (m_isWritable || m_isIndirect))
+	return esprintf("Property \"%s\" is a parameter and can't be writable or indirect",
+			m_name.c_str());
       // This call is solely used for sub32 determination.  The rest are ignored here.
       // FIXME: move this determination into the parse to avoid all this...
       unsigned maxAlign = 1; // dummy and not really used since property sheet is zero based anyway
@@ -189,9 +193,6 @@ namespace OCPI {
 	  // FIXME: consider allowing this only for HDL somehow.
 	  (err = OE::getNumber(prop, "Indirect", &m_indirectAddr, &m_isIndirect, 0, true)))
 	return err;
-      if (m_isParameter && (m_isWritable | m_isIndirect))
-	return esprintf("Property \"%s\" is a parameter and can't be writable or indirect",
-			m_name.c_str());
       // FIXME: add overrides: writable clears initial
       return 0;
     }
