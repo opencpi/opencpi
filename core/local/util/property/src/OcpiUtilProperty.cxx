@@ -110,6 +110,8 @@ namespace OCPI {
 	readableConfigs = true;
       if (m_isWritable)
 	writableConfigs = true;
+      if (!m_isWritable && !m_isReadable && !m_isParameter)
+	return "property is not readable or writable or a parameter";
       return NULL;
     }
     // This is parsing a newly create property that might be only defined in

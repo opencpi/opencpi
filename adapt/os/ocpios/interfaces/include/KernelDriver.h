@@ -60,6 +60,8 @@ typedef enum {
                   // On receive: deliver if to broadcast.
   ocpi_data,      // I am a DP endpoint
                   // On receive: deliver to me for endpoint
+  ocpi_device,    // Not used in the kernel driver, but used for a non-broadcast-receiving slave
+                  // when there are multiple devices per address, e.g. with UDP
   ocpi_role_limit
 } ocpi_role_t;
 #define PF_OPENCPI PF_DECnet // poach temporarily

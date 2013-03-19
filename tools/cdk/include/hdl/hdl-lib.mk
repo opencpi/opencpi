@@ -54,6 +54,9 @@ stublibrary:
 endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib2.mk
 
+# only install if there is an install dir
+ifneq ($(HdlInstallDir)$(HdlInstallLibDir),)
+
 # This can be overriden
 HdlInstallLibDir=$(HdlInstallDir)/$(LibName)
 $(HdlInstallLibDir):
@@ -67,7 +70,13 @@ install: $(OutLibFiles) | $(HdlInstallLibDir)
              $(HdlInstallLibDir)/$$f)); \
 	done
 
+else
+install:
+
+endif # end of installation if there is an install dir
+
 endif
+
 ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk
 endif

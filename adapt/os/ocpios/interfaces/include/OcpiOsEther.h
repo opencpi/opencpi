@@ -132,7 +132,8 @@ namespace OCPI {
       // there may only be one underlying socket, depending on the OS/implementation.
       class Socket {
 	unsigned m_ifIndex;
-	Address m_ifAddr, m_ipAddr, m_brdAddr;
+	Address m_ifAddr, m_brdAddr;
+	//m_ipAddr;
 	Type m_type;
 	int m_fd;
 	unsigned m_timeout;
@@ -142,12 +143,14 @@ namespace OCPI {
 	Socket(Interface &, ocpi_role_t role, Address *remote, uint16_t endpoint, std::string &error);
 	~Socket();
 	inline Address &ifAddr() { return m_ifAddr; }
+	inline unsigned ifIndex() { return m_ifIndex; }
+	//	inline Address &ipAddr() { return m_ipAddr; }
 	// These return false if error or timeout
 	// Receive directly into packet buffer.
 	bool receive(Packet &, unsigned &payLoadLength, unsigned timeoutms,
-		     Address &addr, std::string &error);
+		     Address &addr, std::string &error, unsigned *indexp = NULL);
 	bool receive(uint8_t *buf, unsigned &offset, unsigned &length, unsigned timeoutms,
-		     Address &addr, std::string &error);
+		     Address &addr, std::string &error, unsigned *indexp = NULL);
 	// Send, and fill out the addressing first (hence packet not const).
 	// If no "addr", then use address in socket.
 	// If an ifc is supplied, send on that ifc.

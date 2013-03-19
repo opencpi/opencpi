@@ -156,6 +156,8 @@ override HdlTargets:=$(call Unique,$(HdlTargets) \
 	               $(call HdlGetFamilies,$(HdlAllPlatformParts)))
 endif
 
+# This function adjusts only things that have a slash
+HdlAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
 
 $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)

@@ -160,7 +160,7 @@ usage(const char *name) {
           "    wadmin <hdl-dev> <offset> <value>\n"
 	  "                                 # write admin word <value> for <hdl-device> at <offset>\n"
           "    radmin <hdl-dev> <offset>    # read admin word for <hdl-device> at <offset>\n"
-	  "    settime <hdl-dev>            # set the GPT time of the device to syste time\n"
+	  "    settime <hdl-dev>            # set the GPS time of the device to syste time\n"
 	  "    deltatime <hdl-dev>          # measure round trip and difference between host and device\n"
           "    dump <hdl-dev>               # dump all state/status of <platform> including all workers\n"
           "    reset <hdl-dev>              # reset platform\n"
@@ -306,6 +306,8 @@ main(int argc, const char **argv)
   doFlags(argv);
   Command *found = NULL, *exact = NULL;
   bool ambiguous = false;
+  if (!argv[0])
+    bad("Missing command name");
   for (Command *c = commands; c->name; c++)
     if (!strncmp(argv[0], c->name, strlen(argv[0])))
       if (!strcmp(argv[0], c->name)) {
@@ -324,6 +326,8 @@ main(int argc, const char **argv)
       exact = found;
   argv++;
   doFlags(argv);
+  if (log != -1)
+    OCPI::OS::logSetLevel(log);
 #if 0
   if ((exact->options & SUDO) && geteuid()) {
     int dfd = ::open(OCPI_DRIVER_MEM, O_RDONLY);

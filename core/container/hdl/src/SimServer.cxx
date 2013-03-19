@@ -37,6 +37,7 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #endif
 #include <set>
 #include <queue>
+#include <list>
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
@@ -132,9 +133,14 @@ namespace OCPI {
 	};
 
 	OE::Interface m_udp;
-	// This endpoint is where we act like a discoverable device
+	// This endpoint is where we get "discovered" and we only only receive, never transmit
+	OE::Socket m_disc;
+	// This endpoint is what we use for everything but receiving discovery messages
 	// We forward responses from the sim back to the requester
-	OE::Socket m_ext;
+	typedef std::list<OE::Socket*> Clients;
+	typedef Clients::iterator ClientsIter;
+	Clients m_clients;
+	
 	// This fifo is read by the sim and we write it.
 	// It carries CP traffic from us to the sim
 	Fifo m_req;
@@ -147,14 +153,8 @@ namespace OCPI {
 	// This fifo is for control responses from the sim to us.
 	// Currently this is simply an "ack" for spincredits.
 	Fifo m_ack;
-#if 0
-	// This fifo is for client->server control requests
-	// This is single-writer socket
-	Fifo m_server;
-	// This fifo is for server->client control responses
-	Fifo m_client;
-#endif
-	int m_nfds;
+	int m_maxFd;
+	fd_set m_alwaysSet;
 	static pid_t s_pid;
 	static bool s_stopped;
 	static bool s_exited;
@@ -170,44 +170,98 @@ namespace OCPI {
 	bool m_haveTag;
 	unsigned m_respLeft;
 	uint8_t *m_respPtr;
-	std::set<Fifo *> m_clients;
-	std::queue<OE::Address> m_respQueue;
+	// This structure is what we remember about a request: which socket and from which address
+	struct Request {
+	  OE::Socket &sock;
+	  OE::Address from;
+	  unsigned index;
+	  Request(OE::Socket &sock, OE::Address addr, unsigned index)
+	    : sock(sock), from(addr), index(index) {}
+	};
+	std::queue<Request> m_respQueue;
 	std::string m_platform;
 	std::string m_exec; // simulation executable
 	bool m_verbose, m_dump, m_spinning;
 	unsigned m_spinCount, m_sleepUsecs, m_simTicks;
 	uint64_t m_cumTicks;
 	OS::Timer m_spinTimer;
+	std::string m_name;
+	uuid_string_t m_textUUID;
 	Sim(std::string &simDir, std::string &script, const std::string &platform,
 	    unsigned spinCount, unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
 	    std::string &error)
-	  : m_udp("udp", error),
-	    m_ext(m_udp, ocpi_slave, NULL, 0, error),
+	  : m_udp("udp", error),                       // the generic interface for udp broadcast receives
+	    m_disc(m_udp, ocpi_slave, NULL, 0, error), // the broadcast receiver
+	    //	    m_ext(m_udp, ocpi_device, NULL, 0, error),
 	    m_req(simDir + "/request", false, "/tmp/OpenCPI0_Req", error),
 	    m_resp(simDir + "/response", true, "/tmp/OpenCPI0_Resp", error),
 	    m_ctl(simDir + "/control", false, "/tmp/OpenCPI0_IOCtl", error),
 	    m_ack(simDir + "/ack", false, NULL, error),
 	    //      m_server(simDir + "/server", true, NULL, error),
 	    //      m_client(simDir + "/client", true, NULL, error),
-	    m_nfds(0), m_dcp(0), m_script(script), m_haveTag(false),
+	    m_maxFd(-1), m_dcp(0), m_script(script), m_haveTag(false),
 	    m_respLeft(0), m_respPtr(NULL), m_platform(platform), m_verbose(verbose),
 	    m_dump(dump), m_spinning(false), m_spinCount(spinCount), m_sleepUsecs(sleepUsecs),
 	    m_simTicks(simTicks), m_cumTicks(0)
 	{
 	  if (error.length())
 	    return;
-	  m_nfds = m_ext.fd();
-	  //    if (m_server.m_rfd > m_nfds) m_nfds = m_server.m_rfd;
-	  if (m_resp.m_rfd > m_nfds) m_nfds = m_resp.m_rfd;
-	  if (m_ack.m_rfd >m_nfds) m_nfds = m_ack.m_rfd;
-	  m_nfds++;
-	  ocpiDebug("resp %d ext %d ack %d nfds %d", m_resp.m_rfd, m_ext.fd(), m_ack.m_rfd, m_nfds);
+	  FD_ZERO(&m_alwaysSet);
+	  addFd(m_disc.fd(), true);
+	  addFd(m_resp.m_rfd, true);
+	  addFd(m_ack.m_rfd, false);
+	  OE::IfScanner ifs(error);
+	  if (!error.empty())
+	    return;
+	  OE::Interface eif;
+	  OE::Address udp(true);
+	  while (ifs.getNext(eif, error, NULL) && error.empty()) {
+	    if (eif.up && eif.connected) {
+	      OE::Socket *s = new OE::Socket(eif, ocpi_device, &udp, 0, error);
+	      if (!error.empty()) {
+		delete s;
+		return;
+	      }
+	      m_clients.push_back(s);
+	      addFd(s->fd(), true);
+	    }
+	  }
+	  if (!error.empty())
+	    return;
+	  if (m_clients.empty()) {
+	    error = "no network interfaces found";
+	    return;
+	  }
+	  ocpiDebug("resp %d ack %d nfds %d", m_resp.m_rfd, m_ack.m_rfd, m_maxFd);
 	  std::string plat(m_platform);
 	  plat += "_pf";
-	  Server::initAdmin(*(OH::OccpAdminRegisters*)m_admin, plat.c_str());
+	  Server::initAdmin(*(OH::OccpAdminRegisters*)m_admin, plat.c_str(), &m_textUUID);
+	  m_name = "sim:";
+	  m_name += m_clients.front()->ifAddr().pretty();
+	  if (verbose) {
+	    fprintf(stderr, "Simulation server for %s (UUID %s), reachable at: ",
+		    m_platform.c_str(), uuid());
+	    for (ClientsIter ci = m_clients.begin(); ci != m_clients.end(); ci++)
+	      fprintf(stderr, "%s%s", ci == m_clients.begin() ? "" : ", ", (*ci)->ifAddr().pretty());
+	    fprintf(stderr, "\n");
+	    fflush(stderr);
+	  }
 	}
 	~Sim() {
+	  while (!m_clients.empty()) {
+	    OE::Socket *s = m_clients.front();
+	    m_clients.pop_front();
+	    delete s;
+	  }
 	}
+	const char *uuid() const { return m_textUUID; }
+	void addFd(int fd, bool always) {
+	  if (fd > m_maxFd)
+	    m_maxFd = fd;
+	  if (always)
+	    FD_SET(fd, &m_alwaysSet);
+	}
+	const std::string &name() { return m_name; }
 	// Our added-value wait-for-process call.
 	// If "hang", we wait for the process to end, and if it stops, we term+kill it.
 	// Return true on bad unexpected things
@@ -487,15 +541,15 @@ namespace OCPI {
 		OU::format(error, "Response client queue empty");
 		return true;
 	      }
-	      OE::Address &from = m_respQueue.back();
+	      Request &request = m_respQueue.back();
 	      printTime("after response full read");
-	      bool ok = m_ext.send(m_response, len + 2, from, 0, NULL, error);
-	      ocpiDebug("writing response to client: len %u tag %d to %s", len,
-			m_response.payload[RESP_TAG], from.pretty());
+	      ocpiDebug("writing response to client: len %u tag %d to %s via index %u", len,
+			m_response.payload[RESP_TAG], request.from.pretty(), request.index);
+	      bool bad = sendToIfc(request.sock, request.index, m_response, len + 2, request.from, error);
 	      m_respQueue.pop();
 	      if (m_respQueue.empty() && spin(error))
 		return true;
-	      return !ok;
+	      return bad;
 	    }
 	  }
 	  return false;
@@ -600,7 +654,8 @@ namespace OCPI {
 	}
 
 	bool
-	sendToSim(uint8_t *payload, unsigned length, OE::Address &from, std::string &error) {
+	sendToSim(OE::Socket &s, uint8_t *payload, unsigned length, OE::Address &from, unsigned index,
+		  std::string &error) {
 	  HN::EtherControlHeader &hdr_in = *(HN::EtherControlHeader *)payload;
 	  uint8_t *bp = payload + 2;
 	  unsigned nactual = length - 2;
@@ -630,7 +685,7 @@ namespace OCPI {
 	  ocpiDebug("written request to sim: len %u action %u tag %u proto len %u", length, 
 		    OCCP_ETHER_MESSAGE_TYPE(hdr_in.typeEtc), hdr_in.tag, ntohs(hdr_in.length));
 	  printTime("request written to sim");
-	  m_respQueue.push(from);
+	  m_respQueue.push(Request(s, from, index));
 	  return false;
 	}
   
@@ -640,6 +695,52 @@ namespace OCPI {
 	  ocpiDebug("When %s time since spin is: %" PRIu32 ".%03" PRIu32 " s ago", msg,
 		    et.seconds(), (et.nanoseconds() + 500000) / 1000000);
 	}
+	// Send to the client over the given interface
+	// If the interface is zero, use the socket
+	bool
+	sendToIfc(OE::Socket &sock, unsigned index, OE::Packet &rFrame, unsigned length,
+		  OE::Address &to, std::string &error) {
+	  OE::Socket *s = &sock;
+	  if (index) {
+	    for (ClientsIter ci = m_clients.begin(); ci != m_clients.end(); ci++)
+	      if ((*ci)->ifIndex() == index) {
+		s = *ci;
+		break;
+	      }
+	    if (!s) {
+	      OU::format(error, "can't find a client socket with interface %u", index);
+	      return true;
+	    }
+	  }
+	  return !s->send(rFrame, length, to, 0, NULL, error);
+	}
+	// A select call has indicated a socket ready to read.
+	// It might be the discovery socket
+	bool
+	receiveExt(OE::Socket &ext, bool discovery, std::string &error) {
+	  OE::Packet rFrame;
+	  unsigned length;
+	  OE::Address from;
+	  unsigned index = 0;
+	  if (ext.receive(rFrame, length, 0, from, error, discovery ? &index : NULL)) {
+	    assert(from != m_udp.addr);
+	    ocpiDebug("Received request packet from %s, length %u\n", from.pretty(), length);
+	    if (isServerCommand(rFrame.payload)) {
+	      assert(!discovery);
+	      if (doServer(rFrame.payload, length, from, sizeof(rFrame.payload), error))
+		return true;
+	      if (!ext.send(rFrame, length, from, 0, NULL, error))
+		return true;
+	    } else if (s_pid) {
+	      if (sendToSim(ext, rFrame.payload, length, from, index, error))
+		return true;
+	    } else if (doEmulate(rFrame.payload, length, error) ||
+		       sendToIfc(ext, index, rFrame, length, from, error))
+	      return true;
+	  }
+	  return false;
+	}
+
 	// Perform one action, waiting for any of:
 	// 1. Data from sim to forward back to client
 	// 2. Data from client to either act on as server or forward to sim.
@@ -679,16 +780,14 @@ namespace OCPI {
 	    return true;
 	  }
 	  fd_set fds[1];
-	  FD_ZERO(fds);
-	  FD_SET(m_ext.fd(), fds);      // CP or command traffic from clients
-	  FD_SET(m_resp.m_rfd, fds);    // CP responses from sim
+	  *fds = m_alwaysSet;
 	  if (m_dcp)                    // only do this after SOME control op
 	    FD_SET(m_ack.m_rfd, fds);   // spin credit ACKS from sim
 	  struct timeval timeout[1];
 	  timeout[0].tv_sec = m_sleepUsecs/1000000;
 	  timeout[0].tv_usec = m_sleepUsecs%1000000;
 	  errno = 0;
-	  switch (select(m_nfds, fds, NULL, NULL, timeout)) {
+	  switch (select(m_maxFd+1, fds, NULL, NULL, timeout)) {
 	  case 0: // timeout.   Someday accumulate this time and assume sim is hung/crashes
 	    printTime("select timeout");
 	    return false;
@@ -700,31 +799,16 @@ namespace OCPI {
 	  case 3: case 2: case 1:
 	    ;
 	  }
-	  // Top priority is getting responses from the sim
-	  if (FD_ISSET(m_resp.m_rfd, fds) && doResponse(error))
-	    return true;
+	  // Top priority is getting responses from the sim back to clients
 	  // Next priority is to process messages from clients.
 	  // Especially, if they are CP requests, we want to send DCP credits
 	  // before spin credits, so that the CP info is read before spin credits
-	  if (FD_ISSET(m_ext.fd(), fds)) {
-	    OE::Packet rFrame;
-	    unsigned length;
-	    OE::Address from;
-	    if (m_ext.receive(rFrame, length, 0, from, error)) {
-	      assert(from != m_udp.addr);
-	      ocpiDebug("Received request packet from %s, length %u\n", from.pretty(), length);
-	      if (isServerCommand(rFrame.payload)) {
-		if (doServer(rFrame.payload, length, from, sizeof(rFrame.payload), error) ||
-		    !m_ext.send(rFrame, length, from, 0, NULL, error))
-		  return true;
-	      } else if (s_pid) {
-		if (sendToSim(rFrame.payload, length, from, error))
-		  return true;
-	      } else if (doEmulate(rFrame.payload, length, error) ||
-		       !m_ext.send(rFrame, length, from, 0, NULL, error))
-		return true;
-	    }
-	  }
+	  if (FD_ISSET(m_resp.m_rfd, fds) && doResponse(error) ||
+	      FD_ISSET(m_disc.fd(), fds) && receiveExt(m_disc, true, error))
+	    return true;
+	  for (ClientsIter ci = m_clients.begin(); ci != m_clients.end(); ci++)
+	    if (FD_ISSET((*ci)->fd(), fds) && receiveExt(**ci, false, error))
+	      return true;
 	  // Next is to keep sim running by providing more credits
 	  // We will only enable this fd when there is no response queue
 	  if (FD_ISSET(m_ack.m_rfd, fds)) {
@@ -845,9 +929,6 @@ namespace OCPI {
 	    OU::format(error, "Can't create the new diretory for this simulator: %s", m_simDir.c_str());
 	  return;
 	}
-	if (verbose)
-	  fprintf(stderr, "Registering HDL simulation device \"sim:%s\" in directory: %s for platform: %s\n",
-		  simName.c_str(), m_simDir.c_str(), actualPlatform.c_str());
 	m_sim = new Sim(m_simDir, script, actualPlatform, spinCount, sleepUsecs, simTicks, verbose, dump,
 			error);
 	if (error.size())
@@ -869,7 +950,7 @@ namespace OCPI {
       }
 
       void Server::
-      initAdmin(OH::OccpAdminRegisters &admin, const char *platform) {
+      initAdmin(OH::OccpAdminRegisters &admin, const char *platform, uuid_string_t *uuidString) {
 	memset(&admin, 0, sizeof(admin));
 #define unconst32(a) (*(uint32_t *)&(a))
 #define unconst64(a) (*(uint64_t *)&(a))
@@ -894,9 +975,10 @@ namespace OCPI {
 	unconst32(admin.regions[0]) = 0;
 	uuid_t uuid;
 	uuid_generate(uuid);
-	uuid_string_t textUUID;
-	uuid_unparse_lower(uuid, textUUID);
-	ocpiDebug("Emulator UUID: %s", textUUID);
+	if (uuidString) {
+	  uuid_unparse_lower(uuid, *uuidString);
+	  ocpiDebug("Emulator UUID: %s", *uuidString);
+	}
 	OH::HdlUUID temp;
 	temp.birthday = time(0) + 1;
 	memcpy(temp.uuid, uuid, sizeof(admin.uuid.uuid));

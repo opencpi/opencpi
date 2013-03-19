@@ -50,7 +50,9 @@ namespace OCPI {
 	unsigned n = 0;
 	for (const char *cp = strchr(which, ':'); cp; n++, cp = strchr(cp+1, ':'))
 	  ;
-	if (n != 5)
+	if (n == 5)
+	  ether = true;
+	else
 	  pci = true;
       }
       Device *dev =

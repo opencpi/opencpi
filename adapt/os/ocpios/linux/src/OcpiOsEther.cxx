@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <netdb.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
@@ -112,13 +113,21 @@ namespace OCPI {
       }
 
       bool Address::setString(const char *m) {
+	m_error = false;
 	m_pretty[0] = 0;
+	m_addr64 = 0;
 	if (strchr(m, '.')) {
 	  m_isEther = false;
 	  struct in_addr x;
-	  if (!inet_aton(m, &x))
+	  char addr[3+1+3+1+3+1+3+1+5+1];
+	  if (strlen(m) >= sizeof(addr))
 	    return m_error = true;
-	  const char *cp = strrchr(m, ':');
+	  strcpy(addr, m);
+	  char *cp = strrchr(addr, ':');
+	  if (cp)
+	    *cp = 0;
+	  if (!inet_aton(addr, &x))
+	    return m_error = true;
 	  if (cp)
 	    m_udp.port = atoi(cp+1);
 	  else
@@ -172,9 +181,32 @@ namespace OCPI {
 	return false;
 #endif
       }
+      // Pick the "primary" address
+      in_addr_t
+      myAddress() {
+	static char name[256];
+	static in_addr_t addr;
+	if (!addr) {
+	  struct hostent * hent;
+	  if (gethostname(name, sizeof(name)) != 0 ||
+	      !(hent = ::gethostbyname (name)) ||
+	      !hent->h_name || !*hent->h_addr_list)
+	    throw std::string ("gethostbyname() failed");
+	  struct in_addr in;
+	  for (char **ap = hent->h_addr_list; *ap; ap++) {
+	    in = *(in_addr*)*ap;
+	    if (in.s_addr != INADDR_LOOPBACK)
+	      break;
+	  }
+	  ocpiDebug("My own address is %s", inet_ntoa(in));
+	  addr = in.s_addr;
+	}
+	return addr;
+      }
       Socket::
       Socket(Interface &i, ocpi_role_t role, Address *remote, uint16_t endpoint, std::string &error)
-	: m_ifIndex(i.index), m_ifAddr(i.addr), m_ipAddr(i.ipAddr), m_brdAddr(i.brdAddr),
+	: m_ifIndex(i.index), m_ifAddr(i.addr), m_brdAddr(i.brdAddr),
+	  //	  m_ipAddr(i.ipAddr),
 	  m_type(role == ocpi_data ? OCDP_ETHER_TYPE : OCCP_ETHER_MTYPE),
 	  m_fd(-1), m_timeout(0), m_role(role), m_endpoint(endpoint)
       {
@@ -260,29 +292,59 @@ namespace OCPI {
 	    return;
 	  }
 	  struct sockaddr_in sin;
-#ifdef OCPI_OS_darwin
-	  sin.sin_len = sizeof(sin);
-#endif
-	  sin.sin_family = AF_INET;
-	  sin.sin_port = role == ocpi_slave ? htons(c_udpPort) : 0;
-	  sin.sin_addr.s_addr = INADDR_ANY;
-	  if (::bind(m_fd, (struct sockaddr*)&sin, sizeof(sin))) {
-	    OS::setError(error, "opening binding udp socket");
-	    ::close(m_fd);
-	    return;
-	  }
+	  memset(&sin, 0, sizeof(sin));
 	  int val = 1;
-	  socklen_t alen = sizeof(sin);
-	  if (::setsockopt(m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof(val)) ||
-	      ::getsockname(m_fd, (struct sockaddr *)&sin, &alen)) {
-	    OS::setError(error, "setting udp for broadcast");
-	    ::close(m_fd);
+	  do { // break on error
+	    if ((role == ocpi_slave && ::setsockopt(m_fd, SOL_SOCKET,
+#ifdef OCPI_OS_darwin
+						    SO_REUSEPORT
+#else
+						    SO_REUSEADDR
+#endif
+						    , &val, sizeof(val)))) {
+	      OS::setError(error, "setting udp socket options");
+	      break;
+	    }
+#ifdef OCPI_OS_darwin
+	    sin.sin_len = sizeof(sin);
+#endif
+	    sin.sin_family = AF_INET;
+	    sin.sin_port = role == ocpi_slave ? htons(c_udpPort) : 0;
+	    sin.sin_addr.s_addr = i.ipAddr.addrInAddr();
+	    if (::bind(m_fd, (struct sockaddr*)&sin, sizeof(sin))) {
+	      OS::setError(error, "binding udp socket for role %u", role);
+	      break;
+	    }
+	    switch (role) {
+	    case ocpi_slave:
+	      if (::setsockopt(m_fd, IPPROTO_IP, IP_PKTINFO, &val, sizeof(val))) {
+		OS::setError(error, "enabling interface information");
+		break;
+	      }
+	      // fall into
+	    case ocpi_discovery:
+	    case ocpi_master:
+	      if (::setsockopt(m_fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof(val))) {
+		OS::setError(error, "enabling broadcast option");
+		break;
+	      }
+	    default:;
+	    }
+	    if (!error.empty())
+	      break;
+	    socklen_t alen = sizeof(sin);
+	    if (::getsockname(m_fd, (struct sockaddr *)&sin, &alen)) {
+	      OS::setError(error, "getting udp address");
+	      break;
+	    }
+	    // We use m_type for port for UDP
+	    m_type = ntohs(sin.sin_port);
+	    m_ifAddr.set(m_type, sin.sin_addr.s_addr);
+	    ocpiDebug("Successfully opened udp socket on '%s' for port %u bound to %s role %u",
+		      i.name.c_str(), m_type, m_ifAddr.pretty(), role);
 	    return;
-	  }
-	  m_type = ntohs(sin.sin_port);
-	  m_ifAddr.set(m_type, sin.sin_addr.s_addr);
-	  ocpiDebug("Successfully opened udp socket on '%s' for port %u bound to %s",
-		    i.name.c_str(), m_type, m_ifAddr.pretty());
+	  } while (0);
+	  ::close(m_fd);
 	}
       }
       Socket::
@@ -293,15 +355,15 @@ namespace OCPI {
 
       bool Socket::
       receive(Packet &packet, unsigned &payLoadLength, unsigned timeoutms, Address &addr,
-	      std::string &error) {
+	      std::string &error, unsigned *indexp) {
 	unsigned offset;
-	bool b = receive((uint8_t *)&packet, offset, payLoadLength, timeoutms, addr, error);
+	bool b = receive((uint8_t *)&packet, offset, payLoadLength, timeoutms, addr, error, indexp);
 	ocpiAssert(offset == offsetof(Packet, payload));
 	return b;
       }
       bool Socket::
       receive(uint8_t *buffer, unsigned &offset, unsigned &payLoadLength, unsigned timeoutms,
-	      Address &addr, std::string &error) {
+	      Address &addr, std::string &error, unsigned *indexp) {
 	if (timeoutms != m_timeout) {
 	  struct timeval tv;
 	  tv.tv_sec = timeoutms/1000;
@@ -314,15 +376,16 @@ namespace OCPI {
 	  m_timeout = timeoutms;
 	}
 	union {
-	  struct sockaddr_in in;
+	  struct sockaddr      saddr;
+	  struct sockaddr_in   in;
 	  struct sockaddr_ocpi ocpi;
 #ifdef OCPI_OS_darwin
-	  struct sockaddr_dl dl;
+	  struct sockaddr_dl   dl;
 #else
-	  struct sockaddr_ll ll;
+	  struct sockaddr_ll   ll;
 #endif
 	} sa;
-	socklen_t alen;
+	socklen_t alen;  // must be set exactly, not larger
 	int flags = 0;
 
 	offset = offsetof(Packet, payload);
@@ -343,58 +406,97 @@ namespace OCPI {
 	  payload = packet.payload;
 	  alen = sizeof(sa.in);
 	}
+	struct iovec iov;
+	iov.iov_base = payload;
+	iov.iov_len = sizeof(Packet);
+	struct {
+	  struct cmsghdr hdr;
+	  struct in_pktinfo info;
+	} cmsg;
+	struct msghdr mh;
+	mh.msg_name = &sa.saddr;
+	mh.msg_namelen = alen;
+	mh.msg_iovlen = 1;
+	mh.msg_iov = &iov;
+	mh.msg_control = &cmsg;
+	mh.msg_controllen = sizeof(cmsg);
+	ssize_t rlen;
 	do { // loop to filter our junk packets
-	  socklen_t before = alen;
-	  ssize_t rlen = recvfrom(m_fd, payload, sizeof(Packet), flags, (struct sockaddr*)&sa, &alen);
-	  if (rlen < 0) {
-	    if (errno != EAGAIN && errno != EINTR)
-	      setError(error, "receiving packet bytes failed");
-	    return false;
-	  }
-	  ocpiDebug("Received packet length %zu address: sizeof %zu alen %u family %u", 
-		    rlen, sizeof(sa), alen, ((struct sockaddr *)&sa)->sa_family);
-	  if (alen > before) {
-	    ocpiDebug("received sockaddr len is %d, should be %u", alen, before);
-	    setError(error, "received sockaddr len is %d, should be %u", alen, sizeof(sa));
-	    return false;
-	  }
-	  payLoadLength = rlen - (sizeof(Header) - sizeof(uint16_t));
-	  if (m_ifAddr.isEther()) {
-	    if (haveDriver()) {
-	      ocpiDebug("fam %u role %u index %d",
-			sa.ocpi.ocpi_family, sa.ocpi.ocpi_role, sa.ocpi.ocpi_ifindex);
-	      payLoadLength = rlen;
-	      addr.set(sa.ocpi.ocpi_remote);
-	    } else {
-	      addr.set(packet.source);
-#ifdef OCPI_OS_linux
-	      ocpiDebug("fam %u prot %u index %d hatype %u ptype %u len %u off %zu",
-			sa.ll.sll_family, sa.ll.sll_protocol, sa.ll.sll_ifindex, sa.ll.sll_hatype,
-			sa.ll.sll_pkttype, sa.ll.sll_halen, offsetof(struct sockaddr_ll, sll_addr[0]));
-#else
-	      ocpiDebug("fam %u index %u type %u len %u off %zu",
-			sa.dl.sdl_family, sa.dl.sdl_index, sa.dl.sdl_type, sa.dl.sdl_len,
-			offsetof(struct sockaddr_dl, sdl_data[0]));
-#endif
-	    }
-	    Type type = ((Header *)&packet)->type;
-	    if (m_type != ntohs(type)) {
-	      setError(error, "Ethertype mismatch: ours is 0x%x, packet's is0x%x",
-		       m_type, ntohs(type));
-	      return false;
-	    }
-	  } else {
-	    payLoadLength = rlen;
-	    addr.set(ntohs(sa.in.sin_port), sa.in.sin_addr.s_addr);
-	    ocpiDebug("udp: fam %u port %u addr %s",
-		      sa.in.sin_family, ntohs(sa.in.sin_port), inet_ntoa(sa.in.sin_addr));
-	  }	    
-	  if (addr.addr64() == m_ifAddr.addr64()) {
-	    ocpiDebug("Received packet from myself\n");
+	  if ((rlen = recvmsg(m_fd, &mh, flags)) < 0 && errno == EINTR)
 	    continue;
-	  }
-	  return true;
+	  if (rlen <= 0)
+	    break;
+	  // figure out the address to loop and skip packets to myself
+	  if (m_ifAddr.isEther())
+	    addr.set(haveDriver() ? sa.ocpi.ocpi_remote : packet.source);
+	  else
+	    addr.set(ntohs(sa.in.sin_port), sa.in.sin_addr.s_addr);
+	  if (addr.addr64() != m_ifAddr.addr64())
+	    break;
+	  ocpiDebug("Received packet from myself\n");
 	} while (1);
+
+	if (rlen < 0 && errno == EWOULDBLOCK)
+	  return false; // timeout
+	if (rlen <= 0 || mh.msg_flags & MSG_TRUNC) {
+	  setError(error, "receiving %zd packet bytes failed%s", rlen,
+		   mh.msg_flags & MSG_TRUNC ? ": truncated" : "");
+	  return false;
+	}
+	if (mh.msg_namelen < alen) {
+	  ocpiDebug("received sockaddr len is %d, should be %u", mh.msg_namelen, alen);
+	  setError(error, "received sockaddr len is %d, should be %u", alen, sizeof(sa));
+	  return false;
+	}
+	// Figure out actual payload length and ifindex
+	unsigned int ifindex = 0;
+	if (m_ifAddr.isEther()) {
+	  Type type = ntohs(((Header *)&packet)->type);
+	  if (m_type != type) {
+	    setError(error, "Ethertype mismatch: ours is 0x%x, packet's is0x%x",
+		     m_type, type);
+	    return false;
+	  }
+	  if (haveDriver()) {
+	    ocpiDebug("driver packet fam %u role %u index %d",
+		      sa.ocpi.ocpi_family, sa.ocpi.ocpi_role, sa.ocpi.ocpi_ifindex);
+	    payLoadLength = rlen;
+	    ifindex = sa.ocpi.ocpi_ifindex;
+	  } else {
+	    payLoadLength = rlen - (sizeof(Header) - sizeof(uint16_t));
+#ifdef OCPI_OS_linux
+	    ocpiDebug("fam %u prot %u index %d hatype %u ptype %u len %u off %zu",
+		      sa.ll.sll_family, sa.ll.sll_protocol, sa.ll.sll_ifindex, sa.ll.sll_hatype,
+		      sa.ll.sll_pkttype, sa.ll.sll_halen, offsetof(struct sockaddr_ll, sll_addr[0]));
+	    ifindex = sa.ll.sll_ifindex;
+#else
+	    ocpiDebug("fam %u index %u type %u len %u off %zu",
+		      sa.dl.sdl_family, sa.dl.sdl_index, sa.dl.sdl_type, sa.dl.sdl_len,
+		      offsetof(struct sockaddr_dl, sdl_data[0]));
+	    ifindex = sa.dl.sdl_index;
+#endif
+	  }
+	} else {
+	  payLoadLength = rlen;
+	  ocpiDebug("udp: fam %u port %u addr %s",
+		    sa.in.sin_family, ntohs(sa.in.sin_port), inet_ntoa(sa.in.sin_addr));
+	  // iterate through all the control headers
+	  for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&mh); cmsg != NULL; cmsg = CMSG_NXTHDR(&mh, cmsg))
+	    if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO) {
+	      ifindex = ((struct in_pktinfo *)CMSG_DATA(cmsg))->ipi_ifindex;
+	      break;
+	    }
+	}
+	if (indexp)
+	  if (ifindex)
+	    *indexp = ifindex;
+	  else {
+	    setError(error, "Cannot determine interface index");
+	    return false;
+	  }
+	ocpiDebug("Received packet length %zu address: sizeof %zu alen %u family %u index %u", 
+		  rlen, sizeof(sa), mh.msg_namelen, ((struct sockaddr *)&sa)->sa_family, ifindex);
+	return true;
       }
 
       bool Socket::
@@ -708,8 +810,6 @@ namespace OCPI {
       }
 
 #endif
-
-
 
       bool IfScanner::
       getNext(Interface &i, std::string &err, const char *only) {
