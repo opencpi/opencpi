@@ -2,8 +2,8 @@
   <xi:include href="psd_spec.xml"/>
   <!-- force byte enables because shep always uses them -->
   <ControlInterface Sub32BitConfigProperties="true" ControlOperations="initialize">
-    <Property Name="dummy0x8"/>
-    <Property Name="dummy0xc"/>
+    <Property Name="dummy0x8" padding='true'/>
+    <Property Name="dummy0xc" padding='true'/>
     <Property Name="portStatus" Readable="true"/>
     <Property Name="wsiSpMesgCount" Readable="true"/>
     <Property Name="wsiSiMesgCount" Readable="true"/>

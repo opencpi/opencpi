@@ -21,16 +21,16 @@ values and override values written in EEPROM.
        (Since they are really somewhat different, this is not an array).
        These are initialized from EEPROM on power up.
     -->
-    <Property Name="OutputControl0" Readable="true" Writable="true"/>
-    <Property Name="OutputControl1" Readable="true" Writable="true"/>
-    <Property Name="OutputControl2" Readable="true" Writable="true"/>
-    <Property Name="OutputControl3" Readable="true" Writable="true"/>
-    <Property Name="OutputControl4" Readable="true" Writable="true"/>
-    <Property Name="OutputControl5" Readable="true" Writable="true"/>
-    <Property Name="OutputControl6" Readable="true" Writable="true"/>
-    <Property Name="OutputControl7" Readable="true" Writable="true"/>
-    <Property Name="OutputControl8" Readable="true" Writable="true"/>
-    <Property Name="OutputControl9" Readable="true" Writable="true"/>
+    <Property Name="Control0" Readable="true" Writable="true"/>
+    <Property Name="Control1" Readable="true" Writable="true"/>
+    <Property Name="Control2" Readable="true" Writable="true"/>
+    <Property Name="Control3" Readable="true" Writable="true"/>
+    <Property Name="Control4" Readable="true" Writable="true"/>
+    <Property Name="Control5" Readable="true" Writable="true"/>
+    <Property Name="Control6" Readable="true" Writable="true"/>
+    <Property Name="Control7" Readable="true" Writable="true"/>
+    <Property Name="Control8" Readable="true" Writable="true"/>
+    <Property Name="Control9" Readable="true" Writable="true"/>
     <!-- reg 10: 
 	 reference (PRI/SEC) divider bits 13:0 and VXXO/AUX/SEC divider bits 27:14 are here
 	 initialized from EEPROM on power up -->
@@ -43,7 +43,7 @@ values and override values written in EEPROM.
 	 test/diagnostic control and other status
 	 partially initialized to specific values on power no (NOT EEPROM).
 	 partially read-only -->
-    <Property Name="TestStatus" Readable="true" Writable="true"/>
+    <Property Name="TestStatus" Volatile="true" Writable="true"/>
   </controlinterface>
   <!-- From here on are the actual signal names of this worker -->
   <Signal input="spi_miso"/>

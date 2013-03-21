@@ -975,7 +975,7 @@ unparseLong(std::string &s, int32_t val) const {
 }
 bool Value::
 unparseUChar(std::string &s, uint8_t val) const {
-  doFormat(s, "0x%0x", val);
+  doFormat(s, "%u", val);
   return val == 0;
 }
 bool Value::
@@ -1054,135 +1054,6 @@ unparseEnum(std::string &s, EnumValue val) const {
   s += m_vt->m_enums[val];
   return val == 0;
 }
-#if 0
-
-  char *cp = 0, *cp1 = 0;
-  switch (m_vt->m_baseType) {
-  case OA::OCPI_Float:
-    asprintf(&cp, "%g", (double)m_Float);
-    break;
-  case OA::OCPI_Double:
-    asprintf(&cp, "%g", m_Double);
-    break;
-#if 0
-  case OA::OCPI_LongDouble:
-    asprintf(&cp, "%Lg", m_LongDouble);
-    break;
-#endif
-  case OA::OCPI_Short:
-    asprintf(&cp, "%ld", (long)m_Short);
-    break;
-  case OA::OCPI_Long:
-    asprintf(&cp, "%ld", (long)m_Long);
-    break;
-  case OA::OCPI_LongLong:
-    asprintf(&cp, "%lld", (long long)m_LongLong);
-    break;
-  case OA::OCPI_UShort:
-    asprintf(&cp, "%lu", (unsigned long)m_UShort);
-    break;
-  case OA::OCPI_ULong:
-    asprintf(&cp, "%lu", (unsigned long)m_ULong);
-    break;
-  case OA::OCPI_ULongLong:
-    asprintf(&cp, "%llu", (unsigned long long)m_ULongLong);
-    break;
-  case OA::OCPI_Char:
-    cp1 = cp = (char*)malloc(10); // need to match asprintf
-    if (isprint(m_Char)) {
-      switch (m_Char) {
-      case '\\':
-      case '"':
-      case '?':
-      case '\'':
-	*cp1++ = '\\';
-	break;
-      default:
-	;
-      }
-      *cp1++ = m_Char;
-    } else {
-      *cp1++ = '\\';
-      switch (m_Char) {
-      case '\a':
-	*cp1++ = 'a';
-	break;
-      case 'b':
-	*cp1++ = 'b';
-	break;
-      case 'f':
-	*cp1++ = 'f';
-	break;
-      case 'n':
-	*cp1++ = 'n';
-	break;
-      case 'r':
-	*cp1++ = 'r';
-	break;
-      case 't':
-	*cp1++ = 't';
-	break;
-      case 'v':
-	*cp1++ = 'v';
-	break;
-      default:
-	*cp1++ = '0' + ((m_Char >> 6) & 7);
-	*cp1++ = '0' + ((m_Char >> 3) & 7);
-	*cp1++ = '0' + (m_Char & 7);
-      }
-      *cp1 = 0;
-      break;
-    case OA::OCPI_Struct: 
-    case OA::OCPI_Type: 
-      break;
-    case OA::OCPI_Enum: 
-      s = m_vt->m_enums[m_ULong];
-      break;
-    case OA::OCPI_none:
-    case OA::OCPI_scalar_type_limit:;
-    }
-    break;
-#if 0
-  case OA::OCPI_WChar:
-    cp = (char *)malloc(MB_LEN_MAX + 1);
-    wctomb(cp, m_wchar); // FIXME: could worry about escapes in this string?
-    break;
-#endif
-  case OA::OCPI_Bool:
-    asprintf(&cp, m_Bool ? "true" : "false");
-    break;
-  case OA::OCPI_UChar:
-    asprintf(&cp, "0x%x", m_UChar);
-    break;
-#if 0
-  case OA::OCPI_Objref:
-#endif
-  case OA::OCPI_String:
-    s = m_String;
-    break;
-#if 0
-  case Type::WSTRING:
-  case Type::FIXED:
-  case Type::ENUM:
-  case Type::UNION:
-    // These are not used for properties.
-    break;
-  case Type::STRUCT:
-    assert(0); // unimplemented yet.
-  case Type::ANY:
-  case Type::VOID:
-  case Type::NONE:
-  default:
-    // These are not used for properties.
-    ;
-#endif
-  }
-  if (cp) {
-    s = cp; // makes a copy
-    free(cp);
-  }
-}
-#endif    
 void Value::
 generateDimension(unsigned nseq, unsigned dim, unsigned offset, unsigned nItems) {
   unsigned

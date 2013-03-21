@@ -24,6 +24,6 @@ Properties:
   <property name='granularity' type='ulong' readable='true' initial='true' default='1'/>
 
   <!-- Readback status properties -->
-  <property name='bytesRead' type='uLongLong' readable='true'/>
+  <property name='bytesRead' type='uLongLong' volatile='true'/>
   <property name='messagesWritten' type='uLongLong' volatile='true'/>
 </ComponentSpec>

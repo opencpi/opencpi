@@ -2,7 +2,7 @@
   <xi:include href="ddc_spec.xml"/>
   <!-- force byte enables because shep always uses them -->
   <ControlInterface Sub32BitConfigProperties="true" controlOperations="initialize">
-    <property name="reserved_0x08" arraylength="2"/>
+    <property name="reserved_0x08" arraylength="2" padding='true'/>
     <property name="has_debug" readable="true" writable="false"/>
     <property name="wsiSpMesgCount" readable="true" writable="false"/>
     <property name="wsiSiMesgCount" readable="true" writable="false"/>
@@ -15,19 +15,19 @@
     <property name="ambaRespCnt" readable="true" writable="false"/>
     <property name="ambaErrCnt" readable="true" writable="false"/>
     <property name="outMesgCnt" readable="true" writable="false"/>
-    <property name="reserved_0x0040" arraylength="1008"/>
+    <property name="reserved_0x0040" arraylength="1008" padding='true'/>
     <property name="lock" readable="true" writable="true"/>
     <property name="bank_select" readable="true" writable="true"/>
-    <property name="reserved_0x1008" arraylength="30"/>
+    <property name="reserved_0x1008" arraylength="30" padding='true'/>
     <property name="config" readable="true" writable="false"/>
     <property name="mrm" readable="true" writable="false"/>
     <property name="freq_raster" readable="true" writable="false"/>
-    <property name="reserved_0x108c" arraylength="5"/>
+    <property name="reserved_0x108c" arraylength="5" padding='true'/>
     <property name="int_en" readable="true" writable="true"/>
     <property name="int_stat_mask" readable="true" writable="false"/>
     <property name="int_stat_raw" readable="true" writable="false"/>
     <property name="int_clear" readable="false" writable="true"/>
-    <property name="reserved_0x10b0" arraylength="20"/>
+    <property name="reserved_0x10b0" arraylength="20" padding='true'/>
     <property name="a_frequency_00" readable="true" writable="true"/>
     <property name="a_frequency_01" readable="true" writable="true"/>
     <property name="a_frequency_02" readable="true" writable="true"/>
@@ -46,7 +46,7 @@
     <property name="a_frequency_15" readable="true" writable="true"/>
     <property name="a_frequency_16" readable="true" writable="true"/>
     <property name="a_frequency_17" readable="true" writable="true"/>
-    <property name="reserved_0x1148" arraylength="46"/>
+    <property name="reserved_0x1148" arraylength="46" padding='true'/>
     <property name="a_phase_00" readable="true" writable="false"/>
     <property name="a_phase_01" readable="true" writable="false"/>
     <property name="a_phase_02" readable="true" writable="false"/>
@@ -65,7 +65,7 @@
     <property name="a_phase_15" readable="true" writable="false"/>
     <property name="a_phase_16" readable="true" writable="false"/>
     <property name="a_phase_17" readable="true" writable="false"/>
-    <property name="reserved_0x1248" arraylength="46"/>
+    <property name="reserved_0x1248" arraylength="46" padding='true'/>
     <property name="a_gain_00" readable="true" writable="true"/>
     <property name="a_gain_01" readable="true" writable="true"/>
     <property name="a_gain_02" readable="true" writable="true"/>
@@ -84,7 +84,7 @@
     <property name="a_gain_15" readable="true" writable="true"/>
     <property name="a_gain_16" readable="true" writable="true"/>
     <property name="a_gain_17" readable="true" writable="true"/>
-    <property name="reserved_0x1348" arraylength="110"/>
+    <property name="reserved_0x1348" arraylength="110" padding='true'/>
     <property name="b_frequency_00" readable="true" writable="true"/>
     <property name="b_frequency_01" readable="true" writable="true"/>
     <property name="b_frequency_02" readable="true" writable="true"/>
@@ -103,7 +103,7 @@
     <property name="b_frequency_15" readable="true" writable="true"/>
     <property name="b_frequency_16" readable="true" writable="true"/>
     <property name="b_frequency_17" readable="true" writable="true"/>
-    <property name="reserved_0x1548" arraylength="46"/>
+    <property name="reserved_0x1548" arraylength="46" padding='true'/>
     <property name="b_phase_00" readable="true" writable="false"/>
     <property name="b_phase_01" readable="true" writable="false"/>
     <property name="b_phase_02" readable="true" writable="false"/>
@@ -122,7 +122,7 @@
     <property name="b_phase_15" readable="true" writable="false"/>
     <property name="b_phase_16" readable="true" writable="false"/>
     <property name="b_phase_17" readable="true" writable="false"/>
-    <property name="reserved_0x1648" arraylength="46"/>
+    <property name="reserved_0x1648" arraylength="46" padding='true'/>
     <property name="b_gain_00" readable="true" writable="true"/>
     <property name="b_gain_01" readable="true" writable="true"/>
     <property name="b_gain_02" readable="true" writable="true"/>

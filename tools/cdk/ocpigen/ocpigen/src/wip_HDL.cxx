@@ -2100,7 +2100,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	    }
 	    if (pr.m_nBits == 64)
 	      fprintf(f, ",\n"
-		      "           hi32       => hi32");
+		      "                hi32       => hi32");
 	  }
 	  fprintf(f, ");\n");
 	}
@@ -3024,6 +3024,8 @@ emitWorker(FILE *f, Worker *w)
       fprintf(f, " readError=\"true\"");
     if (prop->m_writeError)
       fprintf(f, " writeError=\"true\"");
+    if (!prop->m_isReadable && !prop->m_isWritable)
+      fprintf(f, " padding='true'");
     if (prop->m_isIndirect)
       fprintf(f, " indirect=\"%"PRIu32"u\"", prop->m_indirectAddr);
     prop->printChildren(f, "property");
