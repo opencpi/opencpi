@@ -1,6 +1,6 @@
 #include <cstdio>
 #include <cassert>
-#include <string>
+#include <cstring>
 #include "OcpiApi.h"
 
 namespace OA = OCPI::API;
@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
       while (!(b = ep.getBuffer(data, length)))
 	sleep(1);
       snprintf((char*)data, length, "Hello, World %u\n", n);
+      printf("length: %u\n", length);
       data[length-1] = 0;
       b->put(strlen((char*)data));
     }
