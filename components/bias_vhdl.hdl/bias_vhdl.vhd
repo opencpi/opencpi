@@ -13,7 +13,7 @@ begin
   in_out.take <= in_in.ready and out_in.ready;
 -- WSI output interface outputs
   out_out.give <= in_in.ready and out_in.ready;
-  out_out.data <= std_logic_vector(unsigned(in_in.data) + props_write.biasValue);
+  out_out.data <= std_logic_vector(unsigned(in_in.data) + props_in.biasValue);
   out_out.som <= in_in.som;
   out_out.eom <= in_in.eom;
   out_out.valid <= in_in.valid;

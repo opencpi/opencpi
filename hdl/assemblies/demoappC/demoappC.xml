@@ -1,4 +1,4 @@
-<HdlAssembly Name="demoappC" Language="Verilog">
+<HdlAssembly Name="demoappC">
   <Instance Worker="delay.xml" Name="delay"/>
   <Instance Worker="sma.xml" Name="sma0"/>
   <Instance Worker="sma.xml" Name="sma1"/>

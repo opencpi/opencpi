@@ -87,7 +87,8 @@ namespace OCPI {
       bool maxProcs = false, minProcs = false, roundRobin = false;
       // FIXME: move app-specific parsing up into library assy
       if ((err = OE::checkAttrsVV(ax, baseAttrs, extraTopAttrs, NULL)) ||
-	  (err = OE::checkElements(ax, "instance", "connection", "policy", "property", NULL)) ||
+	  (err = OE::checkElements(ax, "instance", "connection", "policy", "property", "external",
+				   NULL)) ||
 	  (err = OE::getNumber(ax, "maxprocessors", &m_processors, &maxProcs)) ||
 	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &minProcs)) ||
 	  (err = OE::getBoolean(ax, "roundrobin", &roundRobin)))
@@ -147,6 +148,18 @@ namespace OCPI {
 	if ((err = m_connections.back().parse(cx, *this, n)))
 	  return err;
       }
+      // Add top level externals that simply define single port external connections
+      // name defaults from port.
+      for (ezxml_t ex = ezxml_cchild(ax, "External"); ex; ex = ezxml_next(ex)) {
+	unsigned n;
+	std::string instance, port, name;
+	OE::getOptionalString(ex, name, "name");
+	if ((err = OE::getRequiredString(ex, instance, "instance", "external")) ||
+	    (err = OE::getRequiredString(ex, port, "port", "external")) ||
+	    (err = getInstance(instance.c_str(), n))  ||
+	    (err = addExternalConnection(n, port.c_str(), name.length() ? name.c_str() : NULL)))
+	  return err;
+      }
       i = &m_instances[0];
       for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix), i++)
 	if ((err = i->parseConnection(ix, *this)))
@@ -187,12 +200,14 @@ namespace OCPI {
       return err;
     }
     const char *Assembly::
-    addExternalConnection(unsigned instance, const char *port) {
+    addExternalConnection(unsigned instance, const char *port, const char *ext) {
       Connection *c;
-      const char *err = addConnection(port, c);
+      if (!ext)
+	ext = port;
+      const char *err = addConnection(ext, c);
       if (!err) {
 	c->addPort(*this, instance, port, false, false, false); // we don't know the direction
-	c->addExternal(port);
+	c->addExternal(ext);
       }
       return err;
     }
@@ -208,7 +223,8 @@ namespace OCPI {
 	m_hasValue = true;
 	err = file2String(m_value, cp, ',');
       } else if (!df)
-	return "Missing value or valueFile or dumpFile attribute for instance property";
+	return esprintf("Missing value or valueFile or dumpFile attribute "
+			"for instance property: %s", m_name.c_str());
       if (!err && df)
 	m_dumpFile = df;
       return err;
@@ -252,7 +268,7 @@ namespace OCPI {
       const char
 	*err = NULL,
 	*c = ezxml_cattr(ix, "connect"),
-	*e = ezxml_cattr(ix, "external");
+	*e = ezxml_cattr(ix, "external"); // short cut for indicating one port is external
       if (c) {
 	unsigned n;
 	if ((err = a.getInstance(c, n)))

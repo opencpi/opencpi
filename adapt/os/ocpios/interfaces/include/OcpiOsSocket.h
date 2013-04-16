@@ -293,6 +293,9 @@ namespace OCPI {
       Socket dup ()
         throw (std::string);
 
+      int fd()
+	throw();
+
     protected:
       OCPI::OS::uint64_t m_osOpaque[1];
     private:

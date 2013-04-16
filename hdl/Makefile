@@ -9,10 +9,12 @@ $(info Setting OCPI_CDK_DIR to $(OCPI_CDK_DIR))
 endif
 all:assemblies
 
+base: components adapters devices platforms
+
 adapters: primitives
 	$(AT)$(call MyMake,adapters)
 
-assemblies: components platforms adapters
+assemblies: base
 	$(AT)$(call MyMake,assemblies)
 
 components: primitives

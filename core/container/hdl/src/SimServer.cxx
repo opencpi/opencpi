@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <limits.h>
 #include <signal.h>     // for kill
 #include <sys/types.h>  // for mkfifo, waitpid
 #include <sys/stat.h>   // for mkfifo
@@ -41,6 +43,7 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
+#include "OcpiOsServerSocket.h"
 #include "OcpiOsTimer.h"
 #include "OcpiUtilMisc.h"
 #include "SimServer.h"
@@ -80,7 +83,6 @@ namespace OCPI {
       struct Fifo {
 	std::string m_name;
 	int m_rfd, m_wfd;
-	//	bool m_read;
 	Fifo(std::string strName, bool iRead, const char *old, std::string &error)
 	  : m_name(strName), m_rfd(-1), m_wfd(-1) { // , m_read(iRead) {
 	  if (error.size())
@@ -160,7 +162,7 @@ namespace OCPI {
 	static bool s_exited;
 	uint64_t m_dcp;
 	char m_admin[sizeof(OH::OccpAdminRegisters)];
-	std::string m_script;
+	std::string m_script, m_dir, m_app;
 	static const unsigned RESP_MIN = 10;
 	static const unsigned RESP_MAX = 14;
 	static const unsigned RESP_LEN = 3; // index in layload buffer where length hides
@@ -180,13 +182,22 @@ namespace OCPI {
 	};
 	std::queue<Request> m_respQueue;
 	std::string m_platform;
-	std::string m_exec; // simulation executable
-	bool m_verbose, m_dump, m_spinning;
+	std::string m_exec; // simulation executable local relative path name
+	bool m_verbose, m_dump, m_spinning, m_loading;
 	unsigned m_spinCount, m_sleepUsecs, m_simTicks;
 	uint64_t m_cumTicks;
 	OS::Timer m_spinTimer;
 	std::string m_name;
 	uuid_string_t m_textUUID;
+	// Start local state for executable file transfer
+	OS::ServerSocket *m_xferSrvr; // not NULL after establishment and before acceptace
+	OS::Socket *m_xferSckt;       // not NULL after acceptance, before EOF
+	char m_xferBuf[64*1024];
+	uint64_t m_xferSize;        // how many bytes need to be transferred?
+	uint64_t m_xferCount;       // how many bytes transferred so far?
+	std::string m_xferError;    // eror occurred during background file transfer
+	int m_xfd;                  // fd for writing local copy of executable
+	// End local state for executable file transfer
 	Sim(std::string &simDir, std::string &script, const std::string &platform,
 	    unsigned spinCount, unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
 	    std::string &error)
@@ -202,7 +213,8 @@ namespace OCPI {
 	    m_maxFd(-1), m_dcp(0), m_script(script), m_haveTag(false),
 	    m_respLeft(0), m_respPtr(NULL), m_platform(platform), m_verbose(verbose),
 	    m_dump(dump), m_spinning(false), m_spinCount(spinCount), m_sleepUsecs(sleepUsecs),
-	    m_simTicks(simTicks), m_cumTicks(0)
+	    m_simTicks(simTicks), m_cumTicks(0), m_xferSrvr(NULL), m_xferSckt(NULL),
+	    m_xferSize(0), m_xferCount(0), m_xfd(-1)
 	{
 	  if (error.length())
 	    return;
@@ -248,6 +260,7 @@ namespace OCPI {
 	  }
 	}
 	~Sim() {
+	  flush();
 	  while (!m_clients.empty()) {
 	    OE::Socket *s = m_clients.front();
 	    m_clients.pop_front();
@@ -281,7 +294,7 @@ namespace OCPI {
 	    int exitStatus = WEXITSTATUS(status);
 	    if (exitStatus > 10)
 	      OU::format(error,
-			 "Simulation subprocess couldn't execute simulator executable \"%s\" (got %s - %d)",
+			 "Simulation subprocess couldn't execute from simulator executable \"%s\" (got %s - %d)",
 			 m_exec.c_str(), strerror(exitStatus - 10), exitStatus - 10);
 	    else if (exitStatus)
 	      OU::format(error, "Simulation subprocess for executable \"%s\" terminated with exit status %d",
@@ -345,63 +358,22 @@ namespace OCPI {
 	  m_spinning = false;
 	  return false;
 	}
-	// Establish a new simulator from a new executable.
-	// Return error in the string and return true
+	// Do the work of loading the file and starting the sim
+	// when we have the bit file ready to process
+	// This is called:
+	//  from loadRun when we are not transfering the file
+	//  from doServer when we are done transferring the file (the 'R' command)
 	bool
-	loadRun(const char *file, std::string &err) {
-	  m_exec = file;
-	  if (m_verbose)
-	    fprintf(stderr, "Initializing simulator from %s executable/bitstream: %s\n",
-		    m_platform.c_str(), file);
-	  ocpiDebug("Starting the simulator load of %s bitstream: %s", m_platform.c_str(), file);
-	  // First establish a directory for the simulation based on the name of the file
-	  const char 
-	    *slash = strrchr(file, '/'),
-	    *suff = strrchr(file, '-');
-	  if (!suff) {
-	    OU::format(err, "simulator file name %s is not formatted properly", file);
-	    return true;
-	  }
-	  const char *dot = strchr(suff + 1, '.');
-	  if (!dot) {
-	    OU::format(err, "simulator file name %s is not formatted properly", file);
-	    return true;
-	  }
-	  slash = slash ? slash + 1 : file;
-	  std::string
-	    app(slash, suff - slash),
-	    plat(suff + 1, (dot - suff) - 1),
-	    dir(app);
-    
-	  if (!strcmp("_pf", plat.c_str() + plat.length() - 3))
-	    plat.resize(plat.length() - 3);
-	  if (plat != m_platform) {
-	    OU::format(err, "simulator platform mismatch:  executable is %s for platform %s",
-		       file, m_platform.c_str());
-	    return true;
-	  }
-
-	  char date[100];
-	  time_t now = time(NULL);
-	  struct tm nowtm;
-	  localtime_r(&now, &nowtm);
-	  strftime(date, sizeof(date), ".%Y%m%d%H%M%S", &nowtm);
-	  dir += ".";
-	  dir += m_platform;
-	  dir += date;
-	  ocpiDebug("Sim executable is %s, app is %s, platform is %s dir is %s",
-		    file, app.c_str(), plat.c_str(), dir.c_str());
-	  if (mkdir(dir.c_str(), 0777) != 0 && errno != EEXIST) {
-	    OU::format(err, "Can't create directory %s to run simulation", dir.c_str());
-	    return true;
-	  }
+	finishLoadRun(const char *file, char *response, std::string &err) {
+	  *response = 'E';
+	  assert(!m_xferSrvr && !m_xferSckt);
 	  std::string untar;
 	  OU::format(untar,
 		     "set -e; file=%s; "
 		     "xlength=`tail -1 $file | sed 's/^.*X//'` && "
 		     "trimlength=$(($xlength + ${#xlength} + 2)) && "
 		     "head -c -$trimlength < $file | tar -xzf - -C %s",
-		     file, dir.c_str());
+		     file, m_dir.c_str());
 	  ocpiDebug("Executing command to load bit stream for sim: %s", untar.c_str());
 	  int rc = system(untar.c_str());
 	  switch (rc) {
@@ -410,7 +382,7 @@ namespace OCPI {
 	    return 0;
 	  case -1:
 	    OU::format(err, "System error (%s, errno %d) while executing bitstream loading command",
-			     strerror(errno), errno);
+		       strerror(errno), errno);
 	    return 0;
 	  default:
 	    OU::format(err, "Error return %u while executing bitstream loading command", rc);
@@ -418,7 +390,7 @@ namespace OCPI {
 	  case 0:
 	    if (m_verbose)
 	      fprintf(stderr, "Executable/bitstream is installed and ready, in directory %s.\n",
-		      dir.c_str());
+		      m_dir.c_str());
 	    ocpiInfo("Successfully loaded bitstream file: \"%s\" for simulation", file);
 	    break;
 	  }
@@ -429,7 +401,7 @@ namespace OCPI {
 	    err = " The OCPI_CDK_DIR environment variable is not set";
 	    return true;
 	  }
-	  OU::format(cmd, "exec %s %s req=%s resp=%s ctl=%s ack=%s", m_script.c_str(), app.c_str(),
+	  OU::format(cmd, "exec %s %s req=%s resp=%s ctl=%s ack=%s", m_script.c_str(), m_app.c_str(),
 		     m_req.m_name.c_str(), m_resp.m_name.c_str(), m_ctl.m_name.c_str(),
 		     m_ack.m_name.c_str());
 
@@ -438,13 +410,13 @@ namespace OCPI {
       
 	  if (m_verbose)
 	    fprintf(stderr, "Starting execution of simulator for HDL assembly: %s "
-		    "(executable \"%s\".\n", app.c_str(), file);
+		    "(executable \"%s\".\n", m_app.c_str(), file);
 	  switch ((s_pid = fork())) {
 	  case 0:
-	    if (chdir(dir.c_str()) != 0) {
+	    if (chdir(m_dir.c_str()) != 0) {
 	      std::string x("Cannot change to simulation subdirectory: ");
 	      int e = errno;
-	      x += dir;
+	      x += m_dir;
 	      x += "\n";
 	      write(2, x.c_str(), x.length());
 	      _exit(10 + e);
@@ -466,14 +438,14 @@ namespace OCPI {
 	    }
 	    break; // not used.
 	  case -1:
-	    OU::format(err, "Could not create simulator sub-process for: %s", m_exec.c_str());
+	    OU::format(err, "Could not create simulator sub-process for: %s", file);
 	    return true;
 	  default:
 	    ocpiInfo("Simluator subprocess has pid: %u.", s_pid);
 	  }
 	  if (m_verbose)
 	    fprintf(stderr, "Simulator process (process id %u) started, with its output in %s/sim.out\n",
-		    s_pid, dir.c_str());
+		    s_pid, m_dir.c_str());
 	  char msg[2];
 	  msg[0] = m_dump ? DUMP_ON : DUMP_OFF;
 	  msg[1] = 0;
@@ -486,13 +458,96 @@ namespace OCPI {
 	  if (m_verbose)
 	    fprintf(stderr, "Simulator process is running.\n");
 	  err.clear();
+	  *response = 'O';
 	  return false;
 	}
+	// Establish a new simulator from a new executable.
+	// Set the response code back to the client:
+	// E for error, O for OK, X for transfer
+	// Put the string for the response in "err"
+	// Return true if not ok
+	bool
+	loadRun(const char *file, uint64_t size, char *response, std::string &err) {
+	  *response = 'E';
+	  if (m_verbose)
+	    fprintf(stderr, "Initializing simulator from %s executable/bitstream: %s\n",
+		    m_platform.c_str(), file);
+	  ocpiDebug("Starting the simulator load of %s bitstream: %s", m_platform.c_str(), file);
+	  // First establish a directory for the simulation based on the name of the file
+	  const char 
+	    *slash = strrchr(file, '/'),
+	    *suff = strrchr(file, '-');
+	  if (!suff) {
+	    OU::format(err, "simulator file name %s is not formatted properly", file);
+	    return true;
+	  }
+	  const char *dot = strchr(suff + 1, '.');
+	  if (!dot) {
+	    OU::format(err, "simulator file name %s is not formatted properly", file);
+	    return true;
+	  }
+	  slash = slash ? slash + 1 : file;
+	  std::string plat(suff + 1, (dot - suff) - 1);
+	  m_app.assign(slash, suff - slash),
+	  m_dir = m_app;
+    
+	  if (!strcmp("_pf", plat.c_str() + plat.length() - 3))
+	    plat.resize(plat.length() - 3);
+	  if (plat != m_platform) {
+	    OU::format(err, "simulator platform mismatch:  executable is %s for platform %s",
+		       file, m_platform.c_str());
+	    return true;
+	  }
+
+	  char date[100];
+	  time_t now = time(NULL);
+	  struct tm nowtm;
+	  localtime_r(&now, &nowtm);
+	  strftime(date, sizeof(date), ".%Y%m%d%H%M%S", &nowtm);
+	  m_dir += ".";
+	  m_dir += m_platform;
+	  m_dir += date;
+	  ocpiDebug("Sim executable is %s, app is %s, platform is %s dir is %s",
+		    file, m_app.c_str(), plat.c_str(), m_dir.c_str());
+	  if (mkdir(m_dir.c_str(), 0777) != 0 && errno != EEXIST) {
+	    OU::format(err, "Can't create directory %s to run simulation", m_dir.c_str());
+	    return true;
+	  }
+	  // This name is the local name for when a copy is made
+	  m_exec = m_dir;
+	  m_exec += '/';
+	  m_exec += slash; // remember file name, whether local or not
+	  // At this point we are ready to actually receive the file.
+	  // If the client is local, we try and ready it directly (from "file"), otherwise
+	  if (size == 0)
+	    return finishLoadRun(file, response, err);
+	  m_xferSize = size;
+	  m_xferCount = 0;
+	  // The file is remote.
+	  // We need to create a socket to receive it
+	  m_xferSrvr = new OS::ServerSocket(0); // m_xferSrvr specifies the state of being loaded
+	  unsigned port = m_xferSrvr->getPortNo();
+	  ocpiDebug("Socket for loading bit file established at port %u", port);
+	  OU::format(err, "%u", port);
+	  *response = 'X';
+	  addFd(m_xferSrvr->fd(), false);
+	  return true; // not OK/done
+	}
 	// Flush all comms to the sim process since we have a new client.
+	// Called from destructor too
 	void
 	flush() {
 	  m_req.flush();  // FIXME: could this steal partial requests and get things out of sync?
 	  m_resp.flush(); // FIXME: should we wait for the request fifo to clear?
+	  m_exec.clear();
+	  if (m_xferSrvr) {
+	    delete m_xferSrvr;
+	    m_xferSrvr = NULL;
+	  }
+	  if (m_xferSckt) {
+	    delete m_xferSckt;
+	    m_xferSckt = NULL;
+	  }
 	}
 	void
 	shutdown() {
@@ -562,8 +617,9 @@ namespace OCPI {
 
 	// This is essentially a separate channel with its own tags
 	bool
-	doServer(uint8_t *payload, unsigned &length, OE::Address &from, unsigned maxPayLoad,
-		 std::string &error) {
+	doServer(OE::Socket &ext, OE::Packet &rFrame, unsigned &length, OE::Address &from,
+		 bool local, unsigned maxPayLoad, std::string &error) {
+	  uint8_t *payload = rFrame.payload;
 	  HN::EtherControlHeader &hdr_in = *(HN::EtherControlHeader *)payload;
 	  HN::EtherControlMessageType action = OCCP_ETHER_MESSAGE_TYPE(hdr_in.typeEtc);
 	  unsigned clen = ntohs(hdr_in.length) - (sizeof(hdr_in) - 2);
@@ -574,33 +630,66 @@ namespace OCPI {
 	    return true;
 	  }
 	  HN::EtherControlHeader &hdr_out =  *(HN::EtherControlHeader *)(m_serverResponse.payload);
-	  ocpiDebug("server command: action %u length %u tag %u actual '%s'",
-		    action, clen, hdr_in.tag, command);
+	  ocpiDebug("server command from %s: action %u length %u tag %u actual '%s'",
+		    from.pretty(), action, clen, hdr_in.tag, command);
 	  if (!m_haveTag || hdr_in.tag != hdr_out.tag || from != m_lastClient) {
 	    m_lastClient = from;
 	    m_haveTag = true;
 	    hdr_out.tag = hdr_in.tag;
+	    char *response = (char *)(&hdr_out + 1);
 	    ocpiDebug("Server fifo received '%s'", command);
-	    if (*command) {
-	      shutdown();
-	      loadRun(command, error);
-	    } else {
+	    switch (*command) {
+	    case 'L': // load and execute the simulation executable
+	      {
+		char *end;
+		m_xferError.clear();
+		errno = 0;
+		unsigned long long size = strtoull(command + 1, &end, 0);
+		if (errno || size == ULLONG_MAX)
+		  error = "EInvalid file size";
+		else {
+		  while (*end && isspace(*end))
+		    end++;
+		  shutdown();
+		  loadRun(end, local ? 0 : size, response, error);
+		}
+	      }
+	      break;
+	    case 'F': // flush all file and sim executable state
+	      *response = 'O';
 	      flush();
+	      break;
+	    case 'R':
+	      // Run the executable after it has been transferred to the server
+	      // This is only seen when the Load command returned X (transfer).
+	      if (m_xferError.length()) {
+		*response++ = 'E';
+		error = m_xferError;
+	      }
+	      if (!m_xferSize || m_xferSrvr || m_xferSckt)
+		// Nothing in progress or Work in progress, don't return anything
+		return false;
+	      // So everything is ok.  Let's try running the sim
+	      finishLoadRun(m_exec.c_str(), response, error);
+	      break;
+	    default:
+	      OU::format(error, "received invalid command: '%s'", command);
+	      return true;
 	    }
-	    if (error.length() >= maxPayLoad) {
+	    if (error.length() >= maxPayLoad - 1) {
 	      OU::format(error, "command response to '%s' too long (%zu) for %u",
 			       command, error.length(), maxPayLoad);
 	      return true;
 	    }
-	    strcpy((char *)(&hdr_out + 1), error.c_str());
-	    length = sizeof(hdr_out) + strlen(error.c_str())+1;
+	    strcpy(response+1, error.c_str());
+	    length = sizeof(hdr_out) + strlen(response)+1;
 	    hdr_out.length = htons(length - 2);
 	    hdr_out.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, 0, 1);
 	    ocpiDebug("command result is: '%s'", error.c_str());
 	  } else
 	    length = ntohs(hdr_out.length) + 2;
 	  memcpy(payload, m_serverResponse.payload, length);
-	  return false;
+	  return !ext.send(rFrame, length, from, 0, NULL, error);
 	}
 	// There is no simulator running, handle it ourselves.
 	// Return true if error is set
@@ -727,9 +816,7 @@ namespace OCPI {
 	    ocpiDebug("Received request packet from %s, length %u\n", from.pretty(), length);
 	    if (isServerCommand(rFrame.payload)) {
 	      assert(!discovery);
-	      if (doServer(rFrame.payload, length, from, sizeof(rFrame.payload), error))
-		return true;
-	      if (!ext.send(rFrame, length, from, 0, NULL, error))
+	      if (doServer(ext, rFrame, length, from, false, sizeof(rFrame.payload), error))
 		return true;
 	    } else if (s_pid) {
 	      if (sendToSim(ext, rFrame.payload, length, from, index, error))
@@ -738,6 +825,33 @@ namespace OCPI {
 		       sendToIfc(ext, index, rFrame, length, from, error))
 	      return true;
 	  }
+	  return false;
+	}
+	// Do some reading from the file transfer socket
+	// Return true if fatal error
+	bool
+	doXfer(std::string &/*err*/) {
+	  // Reader has stuff to read: FIXME: make this fd non-blocking for cleanliness
+	  assert(m_xfd >= 0);
+	  unsigned long long n = m_xferSckt->recv(m_xferBuf, sizeof(m_xferBuf), 0);
+	  switch(n) {
+	  default:
+	    if (write(m_xfd, m_xferBuf, n) == (ssize_t)n)
+	      return false;
+	    OU::format(m_xferError, "Error writing executable file: %s", strerror(errno));
+	    break;
+	  case 0:
+	    if (m_xferCount != m_xferSize)
+	      OU::format(m_xferError, "Executable transfer got %" PRIu64 " bytes, expected %" PRIu64,
+			 m_xferCount, m_xferSize);
+	    break;
+	  case ULLONG_MAX:
+	    OU::format(m_xferError, "Unexpected timeout on reading transfer socket");
+	    break;
+	  }
+	  close(m_xfd);
+	  delete m_xferSckt;
+	  m_xferSckt = 0;
 	  return false;
 	}
 
@@ -783,6 +897,10 @@ namespace OCPI {
 	  *fds = m_alwaysSet;
 	  if (m_dcp)                    // only do this after SOME control op
 	    FD_SET(m_ack.m_rfd, fds);   // spin credit ACKS from sim
+	  if (m_xferSrvr)
+	    FD_SET(m_xferSrvr->fd(), fds);
+	  if (m_xferSckt)
+	    FD_SET(m_xferSckt->fd(), fds);
 	  struct timeval timeout[1];
 	  timeout[0].tv_sec = m_sleepUsecs/1000000;
 	  timeout[0].tv_usec = m_sleepUsecs%1000000;
@@ -791,12 +909,12 @@ namespace OCPI {
 	  case 0: // timeout.   Someday accumulate this time and assume sim is hung/crashes
 	    printTime("select timeout");
 	    return false;
-	  default:
+	  case -1:
 	    if (errno == EINTR)
 	      return false;
 	    OU::format(error, "Select failed: %s %u", strerror(errno), errno);
 	    return true;
-	  case 3: case 2: case 1:
+	  default:
 	    ;
 	  }
 	  // Top priority is getting responses from the sim back to clients
@@ -816,6 +934,20 @@ namespace OCPI {
 	    if (ack(error) || spin(error))
 	      return true;
 	  }
+	  if (m_xferSrvr && FD_ISSET(m_xferSrvr->fd(), fds)) {
+	    // Client has connected to our bit file transfer socket
+	    if ((m_xfd = creat(m_exec.c_str(), 0666)) < 0)
+	      OU::format(m_xferError, "Couldn't create local copy of executable: '%s' (%s)",
+			 m_exec.c_str(), strerror(errno));
+	    else {
+	      m_xferSckt = new OS::Socket();
+	      *m_xferSckt = m_xferSrvr->accept();
+	    }
+	    delete m_xferSrvr;
+	    m_xferSrvr = NULL;
+	  }
+	  if (m_xferSckt && FD_ISSET(m_xferSckt->fd(), fds) && doXfer(error))
+	    return true;
 	  return false;
 	}
 	static void
@@ -831,11 +963,13 @@ namespace OCPI {
 	  } else
 	    _exit(1);
 	}
+
 	bool
 	run(const std::string &exec, std::string &error) {
 	  assert(signal(SIGINT, sigint) != SIG_ERR);
 	  // If we were given an executable, start sim with it.
-	  if (exec.length() && loadRun(exec.c_str(), error))
+	  char response[1];
+	  if (exec.length() && loadRun(exec.c_str(), 0, response, error))
 	    return true;
 	  uint64_t last = 0;
 	  while (!s_exited && !s_stopped && error.empty() && m_cumTicks < m_simTicks) {
@@ -908,6 +1042,7 @@ namespace OCPI {
 	pid_t pid = getpid();
 	OU::format(m_simDir, "%s/%s", OH::Sim::TMPDIR, OH::Sim::SIMDIR);
 	// We do not clean this up - it is created on demand.
+	// FIXME: do we need this at all?
 	if (mkdir(m_simDir.c_str(), 0777) != 0 && errno != EEXIST) {
 	  OU::format(error, "Can't create directory for all OpenCPI simulator containers: %s",
 		     m_simDir.c_str());

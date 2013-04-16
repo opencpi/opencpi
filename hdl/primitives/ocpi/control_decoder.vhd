@@ -10,6 +10,7 @@ entity control_decoder is
   port (
       ocp_in                 : in in_t;       
       done                   : in bool_t := btrue;
+      error                  : in bool_t := bfalse;
       resp                   : out ocp.SResp_t;
       control_op             : out control_op_t;
       state                  : out state_t;
@@ -64,7 +65,10 @@ begin
         end if;
         allowed_ops := next_ops(state_t'pos(my_state));
       elsif my_control_op /= NO_OP_e then
-        if its(done) then                   -- FIXME done should also control config i/o
+        if its(error) then
+          resp <= ocp.SResp_ERR;
+          my_control_op <= NO_OP_e;
+        elsif its(done) then                   -- FIXME done should also control config i/o
           -- finish the control by setting the state
           is_operating <= bfalse;
           case my_control_op is

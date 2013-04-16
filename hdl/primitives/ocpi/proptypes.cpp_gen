@@ -49,7 +49,7 @@ $@@@@@@@@data_out    : out std_logic_vector(31 downto 0));\
 $end entity; \
 $architecture rtl of pretty##_read_property is begin\
 $@@data_out <= std_logic_vector(resize(shift_left(unsigned(lhs(value)),\
-$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(property.offset rem 4)*8),\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer(property.offset rem 4)*8),\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@32));\
 $end rtl;
 
@@ -243,7 +243,7 @@ $@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i)) when nbytes_1 = 2
 $@@@@std_logic_vector(value(i+3)) & std_logic_vector(value(i+2)) &\
 $@@@@std_logic_vector(value(i+1)) & std_logic_vector(value(i));\
 $@@data_out <= word_t(shift_left(unsigned(word),\
-$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@((property.offset+to_integer(index)) rem 4) *8));\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer((property.offset+to_integer(index)) rem 4) *8));\
 $end rtl;
 
 #define RPROP_ARRAY_16(pretty,which,def,rng,lhs,rhs) \

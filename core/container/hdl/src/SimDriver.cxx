@@ -21,6 +21,8 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <errno.h> 
 #include <signal.h>
 #include <dirent.h>
@@ -28,6 +30,7 @@
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsMisc.h"
 #include "OcpiOsTimer.h"
+#include "OcpiOsClientSocket.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilException.h"
 #include "SimDriver.h"
@@ -48,7 +51,7 @@ namespace OCPI {
 	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-udp-rdma", 10000, error) {
 	  // Send the "flush all state - I am a new master" command.
 	  if (error.empty())
-	    command("", 1, NULL, 0, 5000);
+	    command("F", 1, NULL, 0, 5000);
 	}
       public:
 	~Device() {
@@ -66,11 +69,60 @@ namespace OCPI {
 	void load(const char *name) {
 	  char err[1000];
 	  err[0] = 0;
-	  command(name, strlen(name)+1, err, sizeof(err), 5000);
+	  std::string cmd(name);
+	  bool isDir;
+	  uint64_t length;
+	  if (!OS::FileSystem::exists(cmd, &isDir, &length) || isDir)
+	    throwit("New sim executable file '%s' is non-existent or a directory", name);
+	  OU::format(cmd, "L%" PRIu64 " %s", length, name);
+	  command(cmd.c_str(), cmd.length()+1, err, sizeof(err), 5000);
 	  err[sizeof(err)-1] = 0;
-	  if (*err)
-	    throwit("Loading new executable %s failed: %s", name, err);
-	  ocpiInfo("Successfully loaded new sim executable: %s", name);
+	  switch (*err) {
+	  case 'E': // we have an error
+	    throwit("Loading new executable %s failed: %s", name, err + 1);
+	  case 'O': // OK its loaded and running
+	    ocpiInfo("Successfully loaded new sim executable: %s", name);
+	    break;
+	  case 'X': // The file needs to be transferred
+	    {
+	      unsigned port = atoi(err + 1);
+	      std::string addr = this->addr().pretty(); // this will have a colon and port...
+	      OS::Socket wskt = OS::ClientSocket::connect(addr, port);
+	      wskt.linger(true); //  wait on close for far side ack of all data
+	      int rfd;
+	      try { // socket I/O can throw
+		if ((rfd = open(name, O_RDONLY)) < 0)
+		  throwit("Can't open executable: %s", name);
+		char buf[64*1024];
+		ssize_t n;
+		while ((n = read(rfd, buf, sizeof(buf))) > 0) {
+		  while (n) {
+		    unsigned nn = (unsigned)wskt.send(buf, n);
+		    // no errors - it throws
+		    n -= nn;
+		  }
+		}
+		if (n < 0)
+		  throwit("Error reading executable file: %s", name);
+		wskt.shutdown(true);
+		wskt.close();
+		close(rfd);
+	      } catch(...) {
+		try {
+		  wskt.close();
+		} catch(...) {};
+		if (rfd > 0)
+		  close(rfd);
+		throw;
+	      }
+	      if (rfd > 0)
+		close(rfd);
+	      cmd = "R";
+	      command(cmd.c_str(), cmd.length()+1, err, sizeof(err), 5000);
+	      if (*err != 'O')
+		throwit("Error, after transferring executable, starting sim: %s", err + 1);
+	    }
+	  }
 	}
       };
 

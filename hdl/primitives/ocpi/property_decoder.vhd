@@ -37,7 +37,7 @@ architecture rtl of property_decoder is
     return to_unsigned(bytes, decode_t'length);
   end element_bytes;
 begin
-  my_offset    <= offset_in - property.offset;
+  my_offset    <= offset_in - property.offset(decode_width-1 downto 0);
   -- Is this for me now?
   my_decode    <= to_bool(not its(reset) and 
                           offset_in >= property.offset and

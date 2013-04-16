@@ -12,28 +12,18 @@ TYPE control_op_t IS (INITIALIZE_e,
                       TEST_e,
                       NO_OP_e);
 subtype control_op_mask_t is std_logic_vector(control_op_t'pos(no_op_e) downto 0);
---subtype control_op_t is unsigned(2 downto 0); -- natural range 0 to 7;
---constant  INITIALIZE_e   : control_op_t := to_unsigned(0,3);
---constant  START_e        : control_op_t := to_unsigned(1,3);
---constant  STOP_e         : control_op_t := to_unsigned(2,3);
---constant  RELEASE_e      : control_op_t := to_unsigned(3,3);
---constant  BEFORE_QUERY_e : control_op_t := to_unsigned(4,3);
---constant  AFTER_CONFIG_e : control_op_t := to_unsigned(5,3);
---constant  TEST_e         : control_op_t := to_unsigned(6,3);
---constant  NO_OP_e        : control_op_t := to_unsigned(7,3);
---subtype control_op_mask_t is std_logic_vector(to_integer(NO_OP_e) downto 0);
 
 type worker_t is record
   decode_width : natural;
   allowed_ops : control_op_mask_t;
 end record worker_t;
 type property_t is record
-  data_width,                         -- data width of datum in bits, but 32 for strings
-  offset,                             -- offset in property space in bytes
-  bytes_1,                            -- total bytes in this property minus 1
-  string_length,                      -- bytes (excluding null) for string values
-  nitems                              -- nitems array
-    : natural;                -- with of a single item
+  data_width : natural; -- data width of datum in bits, but 32 for strings
+  offset : unsigned(31 downto 0);    -- offset in property space in bytes
+  bytes_1,              -- total bytes in this property minus 1
+  string_length,        -- bytes (excluding null) for string values
+  nitems                -- nitems array
+    : natural;          -- with of a single item
   writable, readable, volatile, parameter : boolean;
 end record property_t;
 
@@ -50,13 +40,6 @@ TYPE State_t IS (EXISTS_e,            -- 0
                  OPERATING_e,         -- 2
                  SUSPENDED_e,         -- 3
                  UNUSABLE_e);         -- 4
---subtype State_t is natural range 0 to 4;
---constant  EXISTS_e      : State_t := 0;
---constant  INITIALIZED_e : State_t := 1;
---constant  OPERATING_e   : State_t := 2;
---constant  SUSPENDED_e   : State_t := 3;
---constant  UNUSABLE_e    : State_t := 4;
-
 
   type control_op_masks_t is array (natural range <>) of control_op_mask_t;
 
@@ -68,24 +51,6 @@ TYPE State_t IS (EXISTS_e,            -- 0
      "00111010",       -- SUSPENDED_e
      "00000000"        -- UNUSABLE_e: nothing to do but reset
      );
-  
-  --SUBTYPE  State_t IS std_logic_vector(2 DOWNTO 0);
-  --CONSTANT EXISTS      : State_t := "000";
-  --CONSTANT INITIALIZED : State_t := "001";
-  --CONSTANT OPERATING   : State_t := "010";
-  --CONSTANT SUSPENDED   : State_t := "011";
-  --CONSTANT UNUSABLE    : State_t := "100";
-
-  ---- Worker Control Operations
-  --SUBTYPE  ControlOp_t IS std_logic_vector(2 DOWNTO 0);
-  --CONSTANT INITIALIZE   : ControlOp_t := "000";
-  --CONSTANT START        : ControlOp_t := "001";
-  --CONSTANT STOP         : ControlOp_t := "010";
-  --CONSTANT RELEASE      : ControlOp_t := "011";
-  --CONSTANT TEST         : ControlOp_t := "100";
-  --CONSTANT BEFORE_QUERY : ControlOp_t := "101";
-  --CONSTANT AFTER_CONFIG : ControlOp_t := "110";
-  --CONSTANT RESERVED     : ControlOp_t := "111";
 
   type in_t is record
     Clk                 : std_logic;
@@ -100,7 +65,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
 
   type out_t is record
     SData               : std_logic_vector(31 downto 0);
-    SFlag               : std_logic_vector(1 downto 0);
+    SFlag               : std_logic_vector(2 downto 0);
     SResp               : ocp.SResp_t;
     SThreadBusy         : std_logic_vector(0 downto 0);
   end record out_t;
@@ -141,6 +106,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
     port(
       ocp_in                 : in  in_t;       
       done                   : in  bool_t := btrue;
+      error                  : in  bool_t := btrue;
       resp                   : out ocp.SResp_t;
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);
@@ -163,6 +129,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
     port (
       ocp_in                 : in in_t;       
       done                   : in bool_t := btrue;
+      error                  : in bool_t := bfalse;
       resp                   : out ocp.SResp_t;
       control_op             : out control_op_t;
       state                  : out state_t;

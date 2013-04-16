@@ -50,10 +50,10 @@
  *
  */
 
-#include <OcpiOsDataTypes.h>
 #include <string>
 #include <cstddef>
-
+#include <OcpiOsDataTypes.h>
+#include <OcpiOsSocket.h>
 namespace OCPI {
   namespace OS {
 
@@ -198,6 +198,8 @@ namespace OCPI {
       void close ()
         throw (std::string);
 
+      int fd()
+	throw();
     protected:
       OCPI::OS::uint64_t m_osOpaque[1];
 

@@ -182,9 +182,13 @@ hdlapps: hdlcomps hdl
 hdl:
 	$(MAKE) -C hdl
 
+hdlbase:
+	$(MAKE) -C hdl base
+
 cleanhdl:
 	$(MAKE) -C hdl clean
-	$(MAKE) -C components cleanhdl
+
+#	$(MAKE) -C components cleanhdl this happens in the hdl subdir (using ../components)
 
 rcc:
 	make -C components rcc

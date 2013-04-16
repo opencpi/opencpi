@@ -23,6 +23,7 @@ entity slave is
            data_info_width : natural; -- width of data info path
            burst_width     : natural; -- burst width
            n_bytes         : natural; -- number of bytes
+           byte_width      : natural; -- byte_width
            opcode_width    : natural; -- bits in reqinfo
            own_clock       : boolean; -- does the port have a clock different thanthe wci?
            early_request   : boolean  -- are datavalid and datalast used? 
@@ -58,7 +59,7 @@ entity slave is
     reset            : out Bool_t; -- this port is being reset from outside/peer
     ready            : out Bool_t; -- data can be taken
     som, eom, valid  : out Bool_t;
-    data             : out std_logic_vector(data_width-1 downto 0);
+    data             : out  std_logic_vector(byte_width*n_bytes-1 downto 0);
     -- only used if abortable
     abort            : out Bool_t; -- message is aborted
     -- only used if bytes are required (zlm or byte size < data width)
@@ -90,15 +91,15 @@ architecture rtl of slave is
   constant enable_bits : natural := info_bits - data_info_width;
   constant burst_bits  : natural := enable_bits - n_bytes;
   constant opcode_bits : natural := burst_bits - burst_width;
-  function pack(data : std_logic_vector(data_width - 1 downto 0);
+  function pack(data : std_logic_vector(n_bytes * byte_width - 1 downto 0);
                 valid, som, eom : std_logic;
-                info : std_logic_vector(data_info_width - 1 downto 0);
+                abort : std_logic;
                 enable : std_logic_vector(n_bytes - 1 downto 0);
                 burst : std_logic_vector(burst_width - 1 downto 0);
                 opcode : std_logic_vector(opcode_width - 1 downto 0))
     return std_logic_vector is
   begin
-    return data & valid & som & eom & info & enable & burst & opcode;
+    return data & valid & som & eom & abort & enable & burst & opcode;
   end pack;
 
   -- output signals from the fifo
@@ -112,6 +113,7 @@ architecture rtl of slave is
   signal fifo_in, fifo_out : std_logic_vector(fifo_width - 1 downto 0);
   signal fifo_enq : std_logic;
   signal fifo_ready : bool_t;
+  signal my_data : std_logic_vector(n_bytes * byte_width - 1 downto 0);
   --signal fifo_full_r : bool_t;
 --  for fifo : FIFO2X use entity bsv.FIFO2X;
 begin
@@ -124,13 +126,20 @@ begin
   reset <= reset_i; -- in wci clock domain for now
   -- Pear sees reset if wci is doing it or we're not started
   SReset_n <= not wci_reset; -- FIXME WHEN OWN CLOCK
+  gen0: for i in 0 to n_bytes-1 generate
+    my_data(i*byte_width + 7 downto i*byte_width) <= MData(i*8+7 downto i*8);
+    gen1: if data_info_width > 1 generate
+      my_data(i*byte_width + byte_width-1 downto i*byte_width + byte_width - (byte_width - 8)) <=
+        MDataInfo(i*(byte_width-8) + (byte_width-8)-1 downto i*(byte_width-8));
+    end generate gen1;
+  end generate gen0;
 
   -- pack fifo input
-  fifo_in <= pack(MData,
+  fifo_in <= pack(my_data,
                   fifo_valid,
                   fifo_som,
                   fifo_eom,
-                  MDataInfo,
+                  MDataInfo(data_info_width-1),
                   MByteEn,
                   MBurstLength,
                   MReqInfo);

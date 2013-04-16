@@ -1,4 +1,4 @@
-<HdlAssembly Name="demoappE" Language="Verilog">
+<HdlAssembly Name="demoappE">
   <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
   <Instance Worker="sma.xml" Name="sma0"/>
   <Instance Worker="delay.xml"/>

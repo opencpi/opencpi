@@ -1,4 +1,4 @@
-<HdlAssembly Name="testpsd" Language="Verilog">
+<HdlAssembly Name="testpsd">
   <Instance Worker="sma.xml"/>
   <Instance Worker="bias.xml"/>
   <Instance Worker="sma.xml"/>

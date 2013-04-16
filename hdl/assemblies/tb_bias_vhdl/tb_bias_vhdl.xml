@@ -1,15 +1,7 @@
-<HdlAssembly Language="Verilog">
-  <instance worker="pattern"/>
-  <instance Worker="bias_vhdl"/>
+<HdlAssembly>
+  <instance worker="pattern" connect='bias_vhdl'/>
+  <instance Worker="bias_vhdl" connect='capture'/>
   <instance worker="capture"/>
-  <connection>
-    <port instance="pattern" name='out'/>
-    <port instance="bias_vhdl" name='in'/>
-  </connection>
-  <connection>
-    <port instance="bias_vhdl" name='out'/>
-    <port instance="capture" name='in'/>
-  </connection>
 </HdlAssembly>
 
    

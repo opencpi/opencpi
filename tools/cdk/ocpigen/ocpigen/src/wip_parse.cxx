@@ -309,6 +309,8 @@ addProperty(Worker *w, ezxml_t prop, bool includeImpl)
   if (!err) {
     if (p->m_isVolatile)
       w->ctl.volatiles = true;
+    if (p->m_isVolatile || p->m_isReadable && !p->m_isWritable)
+      w->ctl.readbacks = true;
     if (!p->m_isParameter || p->m_isReadable)
       w->ctl.nRunProperties++;
   }
@@ -389,7 +391,7 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     if (p->m_defaultValue && ezxml_cattr(maybe, "Default"))
       return OU::esprintf("Implementation property named \"%s\" cannot override "
 			  "previous default value", name);
-    // So simply add impl to the existing propert
+    // So simply add impl info to the existing property
     return p->parseImpl(maybe, w->ctl.readables, w->ctl.writables);
   } else if (p)
       return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
@@ -766,12 +768,33 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   ezxml_t xctl;
   uint32_t dw;
   bool dwFound;
+  const char *lang = ezxml_cattr(xml, "Language");
+  if (!lang)
+    return "Missing Language attribute for HdlImplementation element";
+  if (!strcasecmp(lang, "Verilog"))
+      w->language = Verilog;
+    else if (!strcasecmp(lang, "VHDL"))
+      w->language = VHDL;
+    else
+      return OU::esprintf("Language attribute \"%s\" is not \"Verilog\" or \"VHDL\""
+			  " in HdlImplementation", lang);
   if ((err = parseSpec(xml, file, w)) ||
       (err = parseImplControl(xml, file, w, xctl)) ||
       (err = OE::getNumber(xml, "datawidth", &dw, &dwFound)))
     return err;
   if (dwFound)
     w->defaultDataWidth = (int)dw; // override the -1 default if set
+  // Parse the optional endian attribute.
+  // If not specified, it will be defaulted later based on protocols
+  const char *endian = ezxml_cattr(xml, "endian");
+  if (endian) {
+    static const char *endians[] = {ENDIANS, NULL};
+    for (const char **ap = endians; *ap; ap++)
+      if (!strcasecmp(endian, *ap)) {
+	w->endian = (Endian)(ap - endians);
+	break;
+      }
+  }
   Port *wci;
   if (!w->noControl) {
     // Insert the control port at the beginning of the port list since we want
@@ -799,6 +822,8 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     if (!wci->name)
       wci->name = "ctl";
     wci->type = WCIPort;
+    if (w->ctl.sub32Bits)
+      w->needsEndian = true;
   } else
     wci = 0;
 #if 0
@@ -913,9 +938,13 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
 	  dp->byteWidth = dp->dataWidth;
 	else
 	  dp->byteWidth = dp->protocol->m_dataValueWidth;
+	if (dp->dataWidth % dp->byteWidth)
+	  return "Specified ByteWidth does not divide evenly into specified DataWidth";
+	// Check if this port requires endianness
+	// Either the granule is smaller than or not a multiple of data path width
+	if (granuleWidth < dp->dataWidth || granuleWidth % dp->dataWidth)
+	  w->needsEndian = true;
       }
-      if (dp->dataWidth % dp->byteWidth)
-	return "Specified ByteWidth does not divide evenly into specified DataWidth";
       break;
     default:;
     }
@@ -1015,6 +1044,9 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
         return err;
     }
   }
+  // Finalize endian default
+  if (w->endian == NoEndian)
+    w->endian = w->needsEndian ? Little : Neutral;
   return 0;
 }
 
@@ -1140,7 +1172,7 @@ doAssyClock(Worker *aw, Instance *i, Port *p) {
   }
 }
 #endif
-// This is a parsed for the assembly of what does into a single worker binary
+// This is a parsed for the assembly of what goes into a single worker binary
  const char *
 parseRccAssy(ezxml_t xml, const char *file, Worker *aw) {
   const char *err;
@@ -1393,7 +1425,7 @@ parseAssy(ezxml_t xml, Worker *aw,
    return 0;
  }
 
-#define TOP_ATTRS "Name", "Pattern", "Language", "PortPattern", "DataWidth",
+#define TOP_ATTRS "Name", "Pattern", "PortPattern", "DataWidth",
 const char *
 parseHdlAssy(ezxml_t xml, Worker *aw) {
   const char *err;
@@ -1695,8 +1727,6 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
   if (strcmp(w->implName, w->fileName))
     return OU::esprintf("File name (%s) and implementation name in XML (%s) don't match",
 		    w->fileName, w->implName);
-  if ((err = OE::checkAttrs(xml, TOP_ATTRS (void*)0)))
-    return err;
   w->pattern = ezxml_cattr(xml, "Pattern");
   w->portPattern = ezxml_cattr(xml, "PortPattern");
   if (!w->pattern)
@@ -1705,19 +1735,13 @@ parseHdl(ezxml_t xml, const char *file, Worker *w) {
     w->portPattern = "%s_%n";
   // Here is where there is a difference between a implementation and as assembly
   if (!strcasecmp(xml->name, "HdlImplementation")) {
-    const char *lang = ezxml_cattr(xml, "Language");
-    if (!lang)
-      return "Missing Language attribute for ComponentImplementation element";
-    if (!strcasecmp(lang, "Verilog"))
-      w->language = Verilog;
-    else if (!strcasecmp(lang, "VHDL"))
-      w->language = VHDL;
-    else
-      return OU::esprintf("Language attribute \"%s\" is not \"Verilog\" or \"VHDL\""
-			  " in ComponentImplementation", lang);
+    if ((err = OE::checkAttrs(xml, TOP_ATTRS "Language", (void*)0)))
+      return err;
     if ((err = parseHdlImpl(xml, file, w)))
       return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
   } else if (!strcasecmp(xml->name, "HdlAssembly")) {
+    if ((err = OE::checkAttrs(xml, TOP_ATTRS (void*)0)))
+      return err;
     w->language = Verilog;
     if ((err = parseHdlAssy(xml, w)))
       return OU::esprintf("in %s for %s: %s", xml->name, w->implName, err);
@@ -1900,13 +1924,13 @@ Assembly::Assembly()
 }
 Control::Control()
   : sizeOfConfigSpace(0), writables(false), readables(false), sub32Bits(false), volatiles(false),
-    nRunProperties(0), controlOps(0), offset(0), ordinal(0)
+    readbacks(false), nRunProperties(0), controlOps(0), offset(0), ordinal(0)
 {
 }
 Worker::Worker()
   : model(NoModel), modelString(NULL), isDevice(false), noControl(false), file(0), specFile(0),
     implName(0), specName(0), fileName(0), isThreaded(false), nClocks(0),
-    clocks(0), endian(NoEndian), pattern(0), staticPattern(0), isAssembly(false),
+    clocks(0), endian(NoEndian), needsEndian(false), pattern(0), staticPattern(0), isAssembly(false),
     defaultDataWidth(-1), nInstances(0), language(NoLanguage), nSignals(0), signals(0)
 {
 }

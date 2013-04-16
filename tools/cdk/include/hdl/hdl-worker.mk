@@ -89,15 +89,18 @@ ifdef Language
 HdlLanguage:=$(call ToLower,$(Language))
 endif
 ifndef HdlLanguage
+ifeq ($(HdlMode),assembly)
+HdlLanguage=verilog
+else
 # Ugly grab of the language attribute from the XML file
 HdlLanguage:=$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z)
-endif
-#$(info HdlLanguage is $(HdlLanguage))
 ifeq ($(HdlLanguage),)
 HdlLanguage:=vhdl
 else
 HdlLanguage:=$(call ToLower,$(HdlLanguage))
 endif
+endif # not assembly
+endif # not defined
 ifeq ($(HdlLanguage),verilog)
 HdlSourceSuffix:=$(HdlVerilogSuffix)
 HdlIncSuffix:=$(HdlVerilogIncSuffix)

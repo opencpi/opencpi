@@ -1,4 +1,4 @@
-<HdlAssembly Language="Verilog">
+<HdlAssembly>
   <instance worker="pattern"/>
   <instance Worker="bias"/>
   <instance worker="capture"/>

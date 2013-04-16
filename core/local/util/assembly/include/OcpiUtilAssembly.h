@@ -104,7 +104,7 @@ namespace OCPI {
 	const char *addProperty(const char *name, ezxml_t px);
 	const char *parseConnection(ezxml_t ix, Assembly &a);
       };
-      // The attachment of a connection to external or port
+      // The attachment of a connection to externalxo or port
       struct External {
 	std::string m_name;   // the name of the "external port" to the assembly
 	std::string m_url;    // the URL that this external attachment has
@@ -180,7 +180,7 @@ namespace OCPI {
         *getInstance(const char *name, unsigned &),
 	*addConnection(const char *name, Connection *&c),
         *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort),
-        *addExternalConnection(unsigned instance, const char *port);
+        *addExternalConnection(unsigned instance, const char *port, const char *ext = NULL);
       inline ezxml_t xml() { return m_xml; }
       inline bool isImpl() { return m_isImpl; }
     };

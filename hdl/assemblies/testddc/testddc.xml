@@ -1,4 +1,4 @@
-<HdlAssembly Name="testddc" Language="Verilog">
+<HdlAssembly Name="testddc">
   <Instance Worker="sma.xml"/>
   <Instance Worker="ddc.xml"/>
   <Instance Worker="sma.xml"/>

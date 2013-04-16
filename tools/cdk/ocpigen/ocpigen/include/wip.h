@@ -305,6 +305,7 @@ class Control {
   bool readables;
   bool sub32Bits;
   bool volatiles;
+  bool readbacks;
   unsigned nRunProperties; // all but non-readable parameters.
   uint32_t controlOps; // bit mask
   Properties properties;
@@ -313,13 +314,14 @@ class Control {
 };
 
 enum Endian {
-  NoEndian,
-  Neutral,
+  NoEndian, // unspecified
+  Neutral,  // doesn't have any relevant functionality, can be used anywhere
   Big,
   Little,
-  Static,
-  Dynamic
+  Static,   // can be provided with a parameter
+  Dynamic   // can be provided with an MFLAG
 };
+#define ENDIANS "none", "neutral", "big", "little", "static", "dynamic"
 
 enum Language {
   NoLanguage,
@@ -418,6 +420,7 @@ class Worker {
   unsigned nClocks;
   Clock *clocks;
   Endian endian;
+  bool needsEndian;               // does any port imply an endian issue?
   const char 
     *pattern,                     // pattern for signal names within ports
     *portPattern;                 // pattern for port names

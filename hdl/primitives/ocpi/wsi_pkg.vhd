@@ -11,6 +11,7 @@ component slave
            data_info_width : natural; -- width of data path
            burst_width     : natural; -- burst width
            n_bytes         : natural; -- number of bytes
+           byte_width      : natural; -- byte_width
            opcode_width    : natural; -- bits in reqinfo
            own_clock       : boolean; -- does the port have a clock different thanthe wci?
            early_request   : boolean  -- are datavalid and datalast used? 
@@ -45,7 +46,7 @@ component slave
     reset            : out Bool_t; -- this port is being reset from outside/peer
     ready            : out Bool_t; -- data can be taken
     som, eom, valid  : out Bool_t;
-    data             : out std_logic_vector(data_width-1 downto 0);
+    data             : out std_logic_vector(byte_width*n_bytes-1 downto 0);
     -- only used if abortable
     abort            : out Bool_t; -- message is aborted
     -- only used if bytes are required (zlm or byte size < data width)
@@ -63,6 +64,7 @@ component master
            data_info_width : natural; -- width of data path
            burst_width     : natural; -- width of burst width
            n_bytes         : natural; -- number of bytes
+           byte_width      : natural; -- byte_width
            opcode_width    : natural; -- bits in reqinfo
            own_clock       : boolean; -- does the port have a clock different thanthe wci?
            early_request   : boolean  -- are datavalid and datalast used? 
@@ -97,7 +99,7 @@ component master
     -- only used if number of opcodes > 1
     opcode           : in  std_logic_vector(opcode_width-1 downto 0);
     give             : in  Bool_t;
-    data             : in  std_logic_vector(data_width-1 downto 0);
+    data             : in  std_logic_vector(byte_width*n_bytes-1 downto 0);
     byte_enable      : in  std_logic_vector(n_bytes-1 downto 0) := (n_bytes-1 downto 0 => '1');
     som, eom, valid  : in  Bool_t);
 end component master;

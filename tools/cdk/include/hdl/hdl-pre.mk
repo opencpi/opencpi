@@ -60,6 +60,10 @@ HdlLibrariesInternal = \
                 $(if $(HdlNoLibraries),,\
 	          $(foreach f,$(call HdlGetFamily,$(HdlTarget)),\
 		    $(foreach v,$(call HdlGetTop,$f),\
+	              $(if $(findstring library,$(HdlMode)),,\
+			$(foreach p,$(filter-out $(LibName),ocpi util bsv ),\
+	                	$(if $(wildcard $(call HdlLibraryRefDir,$p,$f)),,\
+				  $(error Primitive library "$p" non-existent or not built for $f))))\
 	              $(foreach p,$(filter-out $(LibName),ocpi util_$f util_$v util bsv vendor_$f vendor_$v),\
 	                $(and $(wildcard $(call HdlLibraryRefDir,$p,$f)),$p)))))),$(strip \
     $l))

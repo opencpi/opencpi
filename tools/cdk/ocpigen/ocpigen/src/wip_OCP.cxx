@@ -130,7 +130,7 @@ deriveOCP(Worker *w) {
       ocp->MReset_n.value = s;
       if (w->ctl.readables)
 	ocp->SData.width = 32;
-      ocp->SFlag.width = 2;  //FIXME should be 1
+      ocp->SFlag.width = 3;
       ocp->SResp.value = s;
       ocp->SThreadBusy.value = s;
       break;

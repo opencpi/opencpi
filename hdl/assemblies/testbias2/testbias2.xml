@@ -1,4 +1,4 @@
-<HdlAssembly Name="testbias2" Language="Verilog">
+<HdlAssembly Name="testbias2">
   <Instance Worker="bias" Name="bias0"/>
   <Instance Worker="bias" Name="bias1"/>
   <Connection Name="in" External="consumer">

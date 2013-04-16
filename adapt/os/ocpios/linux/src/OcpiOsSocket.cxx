@@ -51,7 +51,7 @@
 #include "OcpiOsPosixError.h"
 #include "OcpiOsPosixSocket.h"
 
-inline
+static inline
 int &
 o2fd (OCPI::OS::uint64_t * ptr)
   throw ()
@@ -59,7 +59,7 @@ o2fd (OCPI::OS::uint64_t * ptr)
   return *reinterpret_cast<int *> (ptr);
 }
 
-inline
+static inline
 const int &
 o2fd (const OCPI::OS::uint64_t * ptr)
   throw ()
@@ -67,6 +67,9 @@ o2fd (const OCPI::OS::uint64_t * ptr)
   return *reinterpret_cast<const int *> (ptr);
 }
 
+int OCPI::OS::Socket::fd() throw() {
+  return o2fd(m_osOpaque);
+}
 OCPI::OS::Socket::Socket ()
   throw ()
 {

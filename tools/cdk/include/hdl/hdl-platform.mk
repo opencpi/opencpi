@@ -46,6 +46,7 @@ HdlExactPart:=$(HdlPart_$(CwdName))
 HdlPart:=$(call HdlGetPart,$(CwdName))
 $(call OcpiDbgVar,HdlPart)
 override HdlTargets:=$(HdlPart)
+override OnlyTargets:=$(HdlPart)
 $(call OcpiDbgVar,HdlTargets,After HdlGetPart )
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 LibName=$(CwdName)

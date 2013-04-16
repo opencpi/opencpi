@@ -152,7 +152,7 @@ CleanModel=\
       fi;\
     done; \
   fi; \
-  rm -r -f lib/$1
+  rm -r -f lib/$1 gen/$1
 
 
 all: workers

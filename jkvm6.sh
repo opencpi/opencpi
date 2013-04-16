@@ -34,7 +34,9 @@ export OCPI_ALTERA_LICENSE_FILE=/home/jek/mac/altera/1-9095JT_License.dat
 # #### Location of the Modelsim tools ####################################### #
 
 export OCPI_MODELSIM_DIR=/home/jek/mac/Mentor/modelsim_dlx
-export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
+export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../james.non-server.lic.txt
+#export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../3113964_multipleServers.txt
+#export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
 # #### Location of Google Test (gtest) #################################### #
 
 export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest

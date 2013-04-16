@@ -8,6 +8,7 @@ entity decoder is
   port (
       ocp_in                 : in in_t;       
       done                   : in bool_t := btrue;
+      error                  : in bool_t := bfalse;
       resp                   : out ocp.SResp_t;
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);
@@ -27,10 +28,11 @@ end entity;
 architecture rtl of decoder is
   signal beoffset  : unsigned(1 downto 0);
   signal offset    : unsigned(worker.decode_width-1 downto 0);
-  signal my_access : access_t;
+  signal access_in : access_t;          -- combi decode of access type
   signal control_op_in : control_op_t;
   signal my_write_enables, my_read_enables : bool_array_t(properties'range);
   signal my_control_op : control_op_t;
+  signal my_access : access_t;          -- registered access in progress
   type my_offset_a_t is array(properties'range) of unsigned (worker.decode_width -1 downto 0);
   signal my_offsets : my_offset_a_t;
   signal my_state : state_t;
@@ -66,7 +68,7 @@ begin
   abort_control_op <= to_bool(ocp_in.MFlag(0) = '1');
   beoffset <= be2offset(ocp_in);
   offset <= unsigned(ocp_in.MAddr(worker.decode_width-1 downto 2)) & beoffset;
-  my_access <= decode_access(ocp_in);
+  access_in <= decode_access(ocp_in);
   control_op_in <= ocpi.wci.to_control_op(ocp_in.MAddr(4 downto 2));
   hi32 <= to_bool(ocp_in.MAddr(2) = '1');
   my_reset <= not ocp_in.MReset_n;
@@ -79,7 +81,7 @@ begin
       port map(reset        => my_reset,
                offset_in    => offset,
                nbytes_1     => my_nbytes_1,
-               access_in    => my_access,
+               access_in    => access_in,
                data_in      => ocp_in.MData,
                write_enable => my_write_enables(i),
                read_enable  => my_read_enables(i),
@@ -116,14 +118,19 @@ begin
       if ocp_in.MReset_n = '0' then
         is_operating <= bfalse;
         my_control_op <= NO_OP_e;
+        my_access <= None_e;
         if worker.allowed_ops(control_op_t'pos(initialize_e)) = '1' then
           my_state <= exists_e;
         else
           my_state <= initialized_e;
         end if;
         allowed_ops := next_ops(state_t'pos(my_state));
+      -- check for control op in progress
       elsif my_control_op /= NO_OP_e then
-        if its(done) then                   -- FIXME done should also control config i/o
+        if its(error) then
+          resp <= ocp.SResp_ERR;
+          my_control_op <= NO_OP_e;
+        elsif its(done) then                   -- FIXME done should also control config i/o
           -- finish the control by setting the state
           is_operating <= bfalse;
           case my_control_op is
@@ -141,19 +148,31 @@ begin
           resp <= ocp.SResp_DVA;
           my_control_op <= NO_OP_e;
         end if;
+      -- check for config access in progress
+      elsif my_access = Read_e or my_access = Write_e then
+        if its(done) then
+          resp <= ocp.SResp_DVA;
+          my_access <= None_e;
+        elsif its(error) then
+          resp <= ocp.SResp_ERR;
+          my_access <= None_e;
+        end if;
+      -- nothing in progress, look for new decodes
       else
-        case my_access is
+        case access_in is
           when Error_e =>
-            resp <= ocp.SResp_ERR;          -- we don't support read yet
+            resp <= ocp.SResp_ERR;
           when Read_e =>
             if any_true(my_read_enables) then
-              resp <= ocp.SResp_DVA;        -- assume there is no delay for property capture
+              my_access <= Read_e;
+              --resp <= ocp.SResp_DVA;        -- assume there is no delay for property capture
             else
               resp <= ocp.SResp_ERR;        -- a write that no property accepted...
             end if;
           when Write_e =>
             if any_true(my_write_enables) then
-              resp <= ocp.SResp_DVA;        -- assume there is no delay for property capture
+              my_access <= Write_e;
+              -- resp <= ocp.SResp_DVA;        -- assume there is no delay for property capture
             else
               resp <= ocp.SResp_ERR;        -- a write that no property accepted...
             end if;

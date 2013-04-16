@@ -65,6 +65,9 @@ namespace {
   };
 }
 
+int OCPI::OS::ServerSocket::fd() throw() {
+  return o2fd(m_osOpaque);
+}
 OCPI::OS::ServerSocket::ServerSocket ()
   throw ()
 {
