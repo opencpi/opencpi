@@ -93,7 +93,7 @@ module wbr (
   // ====================
   // Method = ctl_sFlag
   //   result => ctl_SFlag            2   Bit#(2)
-  output  [ 1 : 0 ] ctl_SFlag;
+  output  [ 2 : 0 ] ctl_SFlag;
 
   // ====================
   // Method = ctl_mFlag
@@ -134,7 +134,7 @@ module wbr (
   wire   [ 1 : 0 ] ctl_Sresp;  // ctl_resp[33:32]
   wire   [ 31 : 0 ] ctl_Sdata;  // ctl_resp[31:0]
   wire   ctl_SThreadBusy;
-  wire   [ 1 : 0 ] ctl_SFlag;
+  wire   [ 2 : 0 ] ctl_SFlag;
   wire   dif_SThreadBusy;
   wire   [ 2 : 0 ] chan_Mcmd;  // chan_req[49:47]
   wire   chan_MreqLast;  // chan_req[46:46]

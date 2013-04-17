@@ -88,6 +88,8 @@ OCPI::OS::ServerSocket::ServerSocket (unsigned int portNo, bool reuse )
 OCPI::OS::ServerSocket::~ServerSocket ()
   throw ()
 {
+  o2fd (m_osOpaque) >= 0;
+  close();
   ocpiAssert (o2fd (m_osOpaque) == -1);
 }
 

@@ -51,7 +51,7 @@ namespace OCPI {
 	  : Net::Device(driver, ifc, name, addr, discovery, "ocpi-udp-rdma", 10000, error) {
 	  // Send the "flush all state - I am a new master" command.
 	  if (error.empty())
-	    command("F", 1, NULL, 0, 5000);
+	    command("F", 2, NULL, 0, 5000);
 	}
       public:
 	~Device() {
@@ -87,6 +87,8 @@ namespace OCPI {
 	    {
 	      unsigned port = atoi(err + 1);
 	      std::string addr = this->addr().pretty(); // this will have a colon and port...
+	      addr.resize(addr.find_first_of(':'));
+	      
 	      OS::Socket wskt = OS::ClientSocket::connect(addr, port);
 	      wskt.linger(true); //  wait on close for far side ack of all data
 	      int rfd;
@@ -105,6 +107,9 @@ namespace OCPI {
 		if (n < 0)
 		  throwit("Error reading executable file: %s", name);
 		wskt.shutdown(true);
+		char c;
+		// Wait for the other end to shutdown its writing side to give us the EOF
+		wskt.recv(&c, 1, 0);
 		wskt.close();
 		close(rfd);
 	      } catch(...) {

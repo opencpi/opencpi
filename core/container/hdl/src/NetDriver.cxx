@@ -184,7 +184,7 @@ namespace OCPI {
 	request(OCCP_NOP, 0, 0, recvFrame, NULL, bytes, delayms);
 	EtherControlHeader &eh_in =  *(EtherControlHeader *)(recvFrame.payload);
 	if (response) {
-	  unsigned length = ntohs(eh_in.length) - sizeof(eh_in);
+	  unsigned length = ntohs(eh_in.length) - (sizeof(eh_in) - 2);
 	  memcpy(response, (void*)(&eh_in+1), length > rlen ? rlen : length);
 	}
       }

@@ -56,7 +56,7 @@ all: $(Applications)
 .PHONY: $(Applications) $(Platforms) $(Targets) clean
 
 $(Applications):
-	$(AT)echo =============Building application $@ for all targets/platforms
+	$(AT)echo =============Building assembly $@ for platforms: $(HdlPlatforms)
 	$(AT)$(MAKE) -C $@ HdlPlatforms="$(HdlPlatforms)" \
 	       LibDir=$(call AdjustRelative,$(LibDir)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)) \

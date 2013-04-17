@@ -68,7 +68,7 @@ else
 endif
 
 HdlToolLibraryFile=$(strip \
-  $2/$(if $(filter virtex6,$(call HdlGetFamily,$1)),$2.$(HdlLibSuffix),hdllib.ref))
+  $2/$(if $(filter virtex6 spartan6,$(call HdlGetFamily,$1)),$2.$(HdlLibSuffix),hdllib.ref))
 
 ################################################################################
 # Function required by toolset: given a list of targets for this tool set
@@ -109,9 +109,9 @@ HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
 ################################################################################
 # $(call XstLibraryFileTarget2(target,libname)
 # Return the actual file to depend on when it is built
-XstLibraryFileTarget=$(if $(filter virtex6,$(call HdlGetFamily,$(1))),$(2).sdbl,hdllib.ref)
+XstLibraryFileTarget=$(if $(filter virtex6 spartan6,$(call HdlGetFamily,$(1))),$(2).sdbl,hdllib.ref)
 XstLibraryCleanTargets=$(strip \
-  $(if $(filter virtex5,$(call HdlFamily,$(1))),hdllib.ref vlg??,*.sdb?))
+  $(if $(filter virtex6 spartan6,$(call HdlFamily,$(1))),*.sdb?,hdllib.ref vlg??))
 # When making a library, xst still wants a "top" since we can't precompile 
 # separately from synthesis (e.g. it can't do what vlogcomp can with isim)
 # Need to be conditional on libraries

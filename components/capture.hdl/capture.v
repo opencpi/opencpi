@@ -130,7 +130,7 @@ module mkWSICaptureWorker4B(wciS0_Clk,
   output wciS0_SThreadBusy;
 
   // value method wciS0_sFlag
-  output [1 : 0] wciS0_SFlag;
+  output [2 : 0] wciS0_SFlag;
 
   // action method wciS0_mFlag
   input  [1 : 0] wciS0_MFlag;
@@ -185,7 +185,8 @@ module mkWSICaptureWorker4B(wciS0_Clk,
 `endif
   // signals for module outputs
   wire [31 : 0] wciS0_SData;
-  wire [1 : 0] wciS0_SFlag, wciS0_SResp;
+  wire [2 : 0] 	wciS0_SFlag;
+  wire [1 : 0]  wciS0_SResp;
   wire [0:0]wciS0_SThreadBusy;
   wire wsiS0_SReset_n;
   wire     [0:0]wsiS0_SThreadBusy; 
@@ -944,7 +945,7 @@ module mkWSICaptureWorker4B(wciS0_Clk,
 	     wci_wslv_reqF_countReg > 2'd1 || wci_wslv_isReset_isInReset ;
 
   // value method wciS0_sFlag
-  assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg } ;
+  assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg, 1'd0 } ;
 
   // value method wsiS0_sThreadBusy
   assign wsiS0_SThreadBusy[0] =

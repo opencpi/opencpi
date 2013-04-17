@@ -206,7 +206,7 @@ module mkSMAdapter4B(wciS0_Clk,
   output wciS0_SThreadBusy;
 
   // value method wciS0_sFlag
-  output [1 : 0] wciS0_SFlag;
+  output [2 : 0] wciS0_SFlag;
 
   // action method wciS0_mFlag
   input  [1 : 0] wciS0_MFlag;
@@ -345,7 +345,8 @@ module mkSMAdapter4B(wciS0_Clk,
   wire [7 : 0] wsiM0_MReqInfo;
   wire [3 : 0] wmiM0_MDataByteEn, wsiM0_MByteEn;
   wire [2 : 0] wmiM0_MCmd, wsiM0_MCmd;
-  wire [1 : 0] wciS0_SFlag, wciS0_SResp;
+  wire [2 : 0] wciS0_SFlag;
+  wire [1 : 0] wciS0_SResp;
   wire [0:0]wciS0_SThreadBusy;
   wire [0:0] wmiM0_MAddrSpace;
   wire
@@ -1064,7 +1065,7 @@ module mkSMAdapter4B(wciS0_Clk,
 	     wci_wslv_reqF_countReg > 2'd1 || wci_wslv_isReset_isInReset ;
 
   // value method wciS0_sFlag
-  assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg } ;
+  assign wciS0_SFlag = { 1'd1, wci_wslv_sFlagReg, 1'd0 } ;
 
   // value method wmiM0_mCmd
   assign wmiM0_MCmd = wmi_sThreadBusy_d ? 3'd0 : wmi_reqF_q_0[31:29] ;

@@ -112,10 +112,8 @@ OCPI::OS::ClientSocket::connect (const std::string & remoteHost,
   }
 
   if (::connect (fileno, (struct sockaddr *) &sin, sizeof (sin)) != 0) {
-#ifndef NDEBUG
-    printf("Connect failed to \"%s\" (%s) port %u with error \"%s\" (%d)\n",
-	   remoteHost.c_str(), inet_ntoa(sin.sin_addr), remotePort, strerror(errno), errno);
-#endif
+    ocpiDebug("Connect failed to \"%s\" (%s) port %u with error \"%s\" (%d)\n",
+	      remoteHost.c_str(), inet_ntoa(sin.sin_addr), remotePort, strerror(errno), errno);
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }
 #ifndef NDEBUG

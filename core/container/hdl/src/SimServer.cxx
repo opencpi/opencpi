@@ -366,7 +366,7 @@ namespace OCPI {
 	bool
 	finishLoadRun(const char *file, char *response, std::string &err) {
 	  *response = 'E';
-	  assert(!m_xferSrvr && !m_xferSckt);
+	  assert(!m_xferSrvr);
 	  std::string untar;
 	  OU::format(untar,
 		     "set -e; file=%s; "
@@ -410,7 +410,7 @@ namespace OCPI {
       
 	  if (m_verbose)
 	    fprintf(stderr, "Starting execution of simulator for HDL assembly: %s "
-		    "(executable \"%s\".\n", m_app.c_str(), file);
+		    "(executable \"%s\").\n", m_app.c_str(), file);
 	  switch ((s_pid = fork())) {
 	  case 0:
 	    if (chdir(m_dir.c_str()) != 0) {
@@ -637,7 +637,7 @@ namespace OCPI {
 	    m_haveTag = true;
 	    hdr_out.tag = hdr_in.tag;
 	    char *response = (char *)(&hdr_out + 1);
-	    ocpiDebug("Server fifo received '%s'", command);
+	    ocpiDebug("Server received command '%s'", command);
 	    switch (*command) {
 	    case 'L': // load and execute the simulation executable
 	      {
@@ -665,12 +665,17 @@ namespace OCPI {
 	      if (m_xferError.length()) {
 		*response++ = 'E';
 		error = m_xferError;
-	      }
-	      if (!m_xferSize || m_xferSrvr || m_xferSckt)
+	      } else if (!m_xferSize || m_xferSrvr)
 		// Nothing in progress or Work in progress, don't return anything
 		return false;
-	      // So everything is ok.  Let's try running the sim
-	      finishLoadRun(m_exec.c_str(), response, error);
+	      else if (m_xferSize != m_xferCount) {
+		*response++ = 'E';
+		OU::format(error, "Received %" PRIu64 " bytes, expected %" PRIu64" bytes when receiving file");
+	      } else
+		// So everything is ok.  Let's try running the sim
+		finishLoadRun(m_exec.c_str(), response, error);
+	      delete m_xferSckt;
+	      m_xferSckt = NULL;
 	      break;
 	    default:
 	      OU::format(error, "received invalid command: '%s'", command);
@@ -685,9 +690,10 @@ namespace OCPI {
 	    length = sizeof(hdr_out) + strlen(response)+1;
 	    hdr_out.length = htons(length - 2);
 	    hdr_out.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, 0, 1);
-	    ocpiDebug("command result is: '%s'", error.c_str());
+	    ocpiDebug("command result is: '%s'", response);
 	  } else
 	    length = ntohs(hdr_out.length) + 2;
+	  error.clear();
 	  memcpy(payload, m_serverResponse.payload, length);
 	  return !ext.send(rFrame, length, from, 0, NULL, error);
 	}
@@ -836,14 +842,19 @@ namespace OCPI {
 	  unsigned long long n = m_xferSckt->recv(m_xferBuf, sizeof(m_xferBuf), 0);
 	  switch(n) {
 	  default:
-	    if (write(m_xfd, m_xferBuf, n) == (ssize_t)n)
+	    if (write(m_xfd, m_xferBuf, n) == (ssize_t)n) {
+	      m_xferCount += n;
 	      return false;
+	    }
 	    OU::format(m_xferError, "Error writing executable file: %s", strerror(errno));
 	    break;
 	  case 0:
 	    if (m_xferCount != m_xferSize)
 	      OU::format(m_xferError, "Executable transfer got %" PRIu64 " bytes, expected %" PRIu64,
 			 m_xferCount, m_xferSize);
+	    // Force EOF on the other end
+	    m_xferSckt->shutdown(true);
+	    return false;
 	    break;
 	  case ULLONG_MAX:
 	    OU::format(m_xferError, "Unexpected timeout on reading transfer socket");
@@ -936,12 +947,14 @@ namespace OCPI {
 	  }
 	  if (m_xferSrvr && FD_ISSET(m_xferSrvr->fd(), fds)) {
 	    // Client has connected to our bit file transfer socket
-	    if ((m_xfd = creat(m_exec.c_str(), 0666)) < 0)
+	    if ((m_xfd = creat(m_exec.c_str(), 0666)) < 0) {
 	      OU::format(m_xferError, "Couldn't create local copy of executable: '%s' (%s)",
 			 m_exec.c_str(), strerror(errno));
-	    else {
+	    } else {
 	      m_xferSckt = new OS::Socket();
 	      *m_xferSckt = m_xferSrvr->accept();
+	      addFd(m_xferSckt->fd(), false);
+
 	    }
 	    delete m_xferSrvr;
 	    m_xferSrvr = NULL;
