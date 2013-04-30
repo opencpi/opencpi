@@ -63,7 +63,7 @@ namespace
     t.start ( );
     t.stop( );
     OCPI::OS::ElapsedTime e = t.getElapsed();
-    EXPECT_EQ ( true, true );
+    EXPECT_NE ( e, 0 );
   }
 
 

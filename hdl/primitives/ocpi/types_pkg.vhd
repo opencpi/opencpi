@@ -40,9 +40,6 @@ function "nor"  ( l : boolean; r : bool_t ) return boolean;
 function "xor"  ( l : boolean; r : bool_t ) return boolean;
 function "xnor" ( l : boolean; r : bool_t ) return boolean;
 
---function "or"   ( l : bool_t; r : boolean ) return bool_t;
-
-
 function "not"  ( l : bool_t             ) return boolean;
 
 -- THESE ARE Bool_t related definitions independent of whether bool_t is boolean or std_logic

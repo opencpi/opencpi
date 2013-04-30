@@ -285,7 +285,7 @@ $(error Building Windows shared libraries with msvc is not supported yet.)
 endif
 
 else
-ifneq ($(filter linux darwin,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_OS)),)
 #
 # Unix compile-time configuration
 #
@@ -293,7 +293,7 @@ ifneq ($(filter linux darwin,$(OCPI_OS)),)
 MAIN_LDFLAGS+=\
   -Xlinker -rpath -Xlinker "$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)" \
   $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
-ifeq ($(OCPI_OS),darwin)
+ifeq ($(OCPI_OS),macos)
 SO=dylib
 LD_ALLOW_UNDEFINED=-undefined dynamic_lookup
 SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOW_UNDEFINED) -install_name @rpath/$(notdir $@)
@@ -324,6 +324,7 @@ else
 CC = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-gcc
 CXX = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-c++
 LD = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-c++
+AR = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-ar
 endif
 
 MKDEPENDFLAGS += --xpattern "/usr"
@@ -336,7 +337,7 @@ ifeq ($(findstring timesys,$(OCPI_CROSS_BUILD_BIN_DIR)),timesys)
 MKDEPENDFLAGS += --xpattern "timesys"
 endif
 
-ifeq ($(OCPI_OS),darwin)
+ifeq ($(OCPI_OS),macos)
 CFLAGS+=-DMACOS
 CXXFLAGS+=-DMACOS -D_DARWIN_C_SOURCE
 endif
@@ -353,11 +354,11 @@ endif
 
 ifeq ($(OCPI_OS),linux)
 # Linux libraries
-BASICLIBS = -lpthread -lrt -ldl -luuid
+BASICLIBS = -lpthread -lrt -ldl
 #ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 #BASICLIBS += -ldl
 #endif
-else ifneq ($(OCPI_OS),darwin)
+else ifneq ($(OCPI_OS),macos)
 # Solaris libraries
 BASICLIBS = -lpthread -lsocket -lnsl -lrt
 endif
@@ -819,6 +820,7 @@ UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/local/util/streamfs/include \
 	$(OCPI_BASE_DIR)/core/local/util/tcp/include \
 	$(OCPI_BASE_DIR)/core/local/util/timeEmit/include \
+	$(OCPI_BASE_DIR)/core/local/util/uuid/include \
 	$(OCPI_BASE_DIR)/core/local/util/vfs/include \
 	$(OCPI_BASE_DIR)/core/local/util/zipfs/include \
 	$(OCPI_BASE_DIR)/core/local/util/res/include \
@@ -827,6 +829,7 @@ UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/core/local/util/fasttime/include \
 	$(OCPI_BASE_DIR)/core/local/util/sockets/include \
 	$(OCPI_BASE_DIR)/core/local/util/assembly/include \
+	$(OCPI_BASE_DIR)/core/local/util/zlib/include \
 	$(OCPI_BASE_DIR)/core/include 
 UTIL_LIBS = $(OCPI_BASE_DIR)/core/local/util/util
 
@@ -878,3 +881,4 @@ TEST_LIBS = \
 	$(TEST_OS_LIBS) \
 	$(TEST_LOGGER_LIBS) 
 
+#$(info OD:$(OCPI_OUT_DIR) CC:$(CC))

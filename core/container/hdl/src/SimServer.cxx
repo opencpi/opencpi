@@ -32,11 +32,6 @@
 #include <sys/stat.h>   // for mkfifo
 #include <sys/wait.h>   // for waitpid
 #include <netinet/in.h> // for ntohs etc.
-#include <uuid/uuid.h>
-#ifndef _UUID_STRING_T
-#define _UUID_STRING_T
-typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
-#endif
 #include <set>
 #include <queue>
 #include <list>
@@ -45,6 +40,7 @@ typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsServerSocket.h"
 #include "OcpiOsTimer.h"
+#include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
 #include "SimServer.h"
 #include "SimDriver.h"
@@ -188,13 +184,14 @@ namespace OCPI {
 	uint64_t m_cumTicks;
 	OS::Timer m_spinTimer;
 	std::string m_name;
-	uuid_string_t m_textUUID;
+	OU::UuidString m_textUUID;
 	// Start local state for executable file transfer
 	OS::ServerSocket *m_xferSrvr; // not NULL after establishment and before acceptace
 	OS::Socket *m_xferSckt;       // not NULL after acceptance, before EOF
 	char m_xferBuf[64*1024];
 	uint64_t m_xferSize;        // how many bytes need to be transferred?
 	uint64_t m_xferCount;       // how many bytes transferred so far?
+	bool m_xferDone;
 	std::string m_xferError;    // eror occurred during background file transfer
 	int m_xfd;                  // fd for writing local copy of executable
 	// End local state for executable file transfer
@@ -214,7 +211,7 @@ namespace OCPI {
 	    m_respLeft(0), m_respPtr(NULL), m_platform(platform), m_verbose(verbose),
 	    m_dump(dump), m_spinning(false), m_spinCount(spinCount), m_sleepUsecs(sleepUsecs),
 	    m_simTicks(simTicks), m_cumTicks(0), m_xferSrvr(NULL), m_xferSckt(NULL),
-	    m_xferSize(0), m_xferCount(0), m_xfd(-1)
+	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1)
 	{
 	  if (error.length())
 	    return;
@@ -670,7 +667,8 @@ namespace OCPI {
 		return false;
 	      else if (m_xferSize != m_xferCount) {
 		*response++ = 'E';
-		OU::format(error, "Received %" PRIu64 " bytes, expected %" PRIu64" bytes when receiving file");
+		OU::format(error, "Received %" PRIu64 " bytes, expected %" PRIu64" bytes when receiving file",
+			   m_xferCount, m_xferSize);
 	      } else
 		// So everything is ok.  Let's try running the sim
 		finishLoadRun(m_exec.c_str(), response, error);
@@ -854,6 +852,7 @@ namespace OCPI {
 			 m_xferCount, m_xferSize);
 	    // Force EOF on the other end
 	    m_xferSckt->shutdown(true);
+	    m_xferDone = true;
 	    return false;
 	    break;
 	  case ULLONG_MAX:
@@ -910,7 +909,7 @@ namespace OCPI {
 	    FD_SET(m_ack.m_rfd, fds);   // spin credit ACKS from sim
 	  if (m_xferSrvr)
 	    FD_SET(m_xferSrvr->fd(), fds);
-	  if (m_xferSckt)
+	  if (m_xferSckt && !m_xferDone)
 	    FD_SET(m_xferSckt->fd(), fds);
 	  struct timeval timeout[1];
 	  timeout[0].tv_sec = m_sleepUsecs/1000000;
@@ -953,6 +952,7 @@ namespace OCPI {
 	    } else {
 	      m_xferSckt = new OS::Socket();
 	      *m_xferSckt = m_xferSrvr->accept();
+	      m_xferDone = false;
 	      addFd(m_xferSckt->fd(), false);
 
 	    }
@@ -1098,7 +1098,7 @@ namespace OCPI {
       }
 
       void Server::
-      initAdmin(OH::OccpAdminRegisters &admin, const char *platform, uuid_string_t *uuidString) {
+      initAdmin(OH::OccpAdminRegisters &admin, const char *platform, OU::UuidString *uuidString) {
 	memset(&admin, 0, sizeof(admin));
 #define unconst32(a) (*(uint32_t *)&(a))
 #define unconst64(a) (*(uint64_t *)&(a))
@@ -1121,10 +1121,10 @@ namespace OCPI {
 	unconst64(admin.dna) = 0;
 	unconst32(admin.numRegions) = 1;
 	unconst32(admin.regions[0]) = 0;
-	uuid_t uuid;
-	uuid_generate(uuid);
+	OU::Uuid uuid;
+	OU::generateUuid(uuid);
 	if (uuidString) {
-	  uuid_unparse_lower(uuid, *uuidString);
+	  OU::uuid2string(uuid, *uuidString);
 	  ocpiDebug("Emulator UUID: %s", *uuidString);
 	}
 	OH::HdlUUID temp;

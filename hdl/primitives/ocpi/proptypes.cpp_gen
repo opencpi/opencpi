@@ -48,9 +48,8 @@ $@@port (value       : in pretty##_t;\
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0));\
 $end entity; \
 $architecture rtl of pretty##_read_property is begin\
-$@@data_out <= std_logic_vector(resize(shift_left(unsigned(lhs(value)),\
-$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer(property.offset rem 4)*8),\
-$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@32));\
+$@@data_out <= std_logic_vector(shift_left(resize(unsigned(lhs(value)),32),\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer(property.offset rem 4)*8));\
 $end rtl;
 
 #define ENTITY_64(pretty,which,def,rng) \
@@ -141,10 +140,12 @@ ENTITY_HEADER(pretty##_read,readback string property)\
 $@@generic (worker : worker_t; property : property_t);\
 $@@port (value       : in pretty##_t;\
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
-$@@@@@@@@offset      : in unsigned(worker.decode_width-1 downto 0));\
+$@@@@@@@@offset      : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@read_enable : in bool_t);\
 $end entity;\
 $architecture rtl of pretty##_read_property is begin\
-$@@data_out <= from_string(value, offset);\
+$@@data_out <= from_string(value, offset) when read_enable and offset <= value~right\
+$@@@@@@@@@@@@@@else (others => '0');\
 $end rtl;
 
 #define ENTITY_ARRAY(pretty,which,def,rng) \
@@ -465,7 +466,7 @@ $end rtl;
   RPROP##_ARRAY_##an(type,X,def,rng,lhs,rhs)\
 
 #define TYPEV(type,an) TYPE(type,(others => '0'),type##_t~range,,,,type##_t,an)
-#define TYPEV64(type,s) TYPE(type,(others => '0'),type##_t~range,_64,,(31 downto 0),s,64)
+#define TYPEV64(type,s) TYPE(type,(others => '0'),type##_t~range,_64,,,s,64)
 
 TYPE(bool,bfalse,0 downto 0,,,from_bool,to_bool,1)
 TYPEV(char,8)

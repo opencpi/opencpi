@@ -84,7 +84,8 @@ static void
 printMember(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &pad,
 	    const char *parent, bool isFixed, bool &isLast, bool topSeq);
 
-static void printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast, bool topSeq) {
+static void
+printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast, bool topSeq) {
   if (m->m_arrayRank)
     for (unsigned n = 0; n < m->m_arrayRank; n++)
       fprintf(f, "[%u]", m->m_arrayDimensions[n]);
@@ -94,9 +95,9 @@ static void printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast, bool 
     else
       fprintf(f, "[1]");
   }
-  // Although we align strings on a 4 byte boundary, we don't pad them to anything.
+  // We align strings on a 4 byte boundary, and implicitly pad them to a 4 byte boundary too
   if (m->m_baseType == OA::OCPI_String) {
-    fprintf(f, "[%u]", isFixed ? m->m_stringLength + 1 : 1);
+    fprintf(f, "[%u]", isFixed ? (m->m_stringLength + 4) & ~3 : 4);
     if (m->m_stringLength == 0)
       isLast = true;
   }

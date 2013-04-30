@@ -135,7 +135,7 @@ main(int /*argc*/, const char **argv) {
       }
     if (containers) {
       c = OA::ContainerManager::get(0); // force config
-      printf("Containers:\n"
+      printf("Available containers:\n"
 	     " #  Model  Platform     OS         Name\n");
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
 	printf("%2u  %-6s %-12s %-10s %s\n",
@@ -143,7 +143,7 @@ main(int /*argc*/, const char **argv) {
       fflush(stdout);
     } else if (verbose) {
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	fprintf(stderr, "%s%s [m: %s o: %s P: %s]", n ? ", " : "Available containers are: ",
+	fprintf(stderr, "%s%s [model: %s os: %s platform: %s]", n ? ", " : "Available containers are: ",
 		c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
       fprintf(stderr, "\n");
     }

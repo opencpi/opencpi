@@ -1,0 +1,22 @@
+uuid_time.h:#ifdef HAVE_SYS_TIME_H
+uuid_time.h:#ifdef HAVE_SYS_TYPES_H
+uuid_time.h:#ifndef HAVE_STRUCT_TIMEVAL
+uuid_mac.c:#ifdef HAVE_SYS_PARAM_H
+uuid_mac.c:#ifdef HAVE_SYS_IOCTL_H
+uuid_mac.c:#ifdef HAVE_SYS_SOCKET_H
+uuid_mac.c:#ifdef HAVE_SYS_SOCKIO_H
+uuid_mac.c:#ifdef HAVE_NETDB_H
+uuid_mac.c:#ifdef HAVE_NET_IF_H
+uuid_mac.c:#ifdef HAVE_NET_IF_DL_H
+uuid_mac.c:#ifdef HAVE_NET_IF_ARP_H
+uuid_mac.c:#ifdef HAVE_NETINET_IN_H
+uuid_mac.c:#ifdef HAVE_ARPA_INET_H
+uuid_mac.c:#ifdef HAVE_IFADDRS_H
+uuid_mac.c:#if defined(HAVE_IFADDRS_H) && defined(HAVE_NET_IF_DL_H) && defined(HAVE_GETIFADDRS)
+uuid_mac.c:#if defined(HAVE_NET_IF_H) && defined(SIOCGIFHWADDR)
+uuid_str.c:#if HAVE_LONG_LONG
+uuid_str.c:#if HAVE_LONG_DOUBLE
+uuid_time.c:#ifdef HAVE_SYS_SELECT_H
+uuid_time.c:#if defined(HAVE_GETTIMEOFDAY)
+uuid_time.c:#elif defined(HAVE_CLOCK_GETTIME)
+uuid_time.c:#elif defined(HAVE_NANOSLEEP)

@@ -50,12 +50,6 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <errno.h>
-#include <uuid/uuid.h>
-// FIXME: integrate this into our UUID utility properly
-#ifndef _UUID_STRING_T
-#define _UUID_STRING_T
-typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
-#endif
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiPValue.h"

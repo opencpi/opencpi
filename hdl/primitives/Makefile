@@ -79,6 +79,7 @@ MyMake=$(MAKE) HdlTargets="$(HdlTargets)" --no-print-directory -C $1 \
   HdlInstallDir=$(call AdjustRelative,$(HdlInstallDir)) \
 
 all: $(Libs) $(Cores)
+hdl: all
 # enable cores to use libs
 $(LocalCores): $(Libs)
 

@@ -1,5 +1,5 @@
 <HdlAssembly>
-  <instance worker="pattern" connect='bias_vhdl'/>
+  <instance worker="file_read" connect='bias_vhdl'/>
   <instance Worker="bias_vhdl" connect='capture'/>
   <instance worker="capture"/>
 </HdlAssembly>

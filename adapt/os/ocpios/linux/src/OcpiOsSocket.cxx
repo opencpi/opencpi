@@ -207,7 +207,7 @@ OCPI::OS::Socket::send (const char * data, unsigned long long amount)
   ocpiAssert (static_cast<unsigned long long> (count) == amount);
 
   size_t ret = ::send (o2fd (m_osOpaque), data, count, 
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 		       0 // darwin uses setsockopt for this
 #else
 		       MSG_NOSIGNAL
@@ -298,7 +298,7 @@ OCPI::OS::Socket::linger (bool opt)
                     (char *) &lopt, sizeof (struct linger)) != 0) {
     throw OCPI::OS::Posix::getErrorMessage (errno);
   }   
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
   int x = 1;
   if (::setsockopt (o2fd (m_osOpaque), SOL_SOCKET, SO_NOSIGPIPE,
                     (void *) &x, sizeof (x)) != 0) {

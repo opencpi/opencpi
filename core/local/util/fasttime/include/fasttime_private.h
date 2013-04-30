@@ -94,6 +94,15 @@ typedef union _tick_t {
     uint64_t ll;
 } tick_t;
 
+#ifdef _CPU_ARM
+static inline void get_tick_count(tick_t *t)
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  t->l.high = tv.tv_sec;
+  t->l.low = (tv.tv_usec * ((uint64_t)0x100000000ull + 500))/1000;
+}
+#endif
 /* Tick count code for PowerPC (Apple G3, G4, G5) */
 #ifdef _CPU_POWERPC
 static inline void get_tick_count(tick_t *t)
@@ -173,8 +182,8 @@ static inline void atomic_inc(unsigned int *addr)
 }
 #endif
 
-/* Atomic increment for powerpc not implemented yet */
-#ifdef _CPU_POWERPC
+/* Atomic increment for powerpc or arm not implemented yet */
+#if defined(_CPU_POWERPC) || defined(_CPU_ARM)
 static inline void atomic_inc(unsigned int *addr)
 {
     (*addr)++;

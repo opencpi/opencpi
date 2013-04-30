@@ -19,6 +19,6 @@ dataset list
 dataset info file
 log -r /*
 run 1000ms
-dataset save sim
+dataset close -all
 quit
 EOF

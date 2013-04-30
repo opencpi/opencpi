@@ -558,7 +558,10 @@ namespace OCPI {
 	m_align = (m_nBits + CHAR_BIT - 1) / CHAR_BIT;
 	unsigned scalarBits;
 	if (m_baseType == OA::OCPI_String) {
-	  nBytes = m_stringLength + 1;
+	  // Make strings whole 32 bit words
+	  // Since this is not CDR anyway, this is best for hardware
+	  // And meets the rule: nothing both spans and shares words.
+	  nBytes = (m_stringLength + 4) & ~3;
 	  scalarBits = CHAR_BIT;
 	  if (!m_stringLength)
 	    unBounded = true;

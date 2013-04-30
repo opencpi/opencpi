@@ -1,5 +1,26 @@
 #!/bin/sh
+# This script is a bash script so that can be used either in makefiles or shell files
+# It produced a hyphen-separated string used to identify unique build targets from the existing runtime env
+# It isn't a "source" script, so the caller must pull it apart.
+# If it returns nothing (""), that is an error
 HostSystem=`uname -s | tr A-Z a-z`
 HostProcessor=`uname -m | tr A-Z a-z`
-if test $HostProcessor=i386; then HostProcessor=x86_64; fi
-echo $HostSystem-$HostProcessor
+if test -f /etc/redhat-release; then
+  # redhat/centos is just based on the major release number,
+  # with minor releases assumed to be binary compatible.
+  rhr=(`sed < /etc/redhat-release 's/^\(.\).*release \([0-9]\)\..*/\1 \2/' | tr A-Z a-z`)
+  echo info: 1"${rhr}"x 2"${rhr[*]}"x 3"${#rhr[*]}"x 1>&2
+  if test "${rhr}" = "" -o "${rhr[*]}" = "" -o "${#rhr[*]}" != 2; then
+    echo Cannot parse redhat/centos release from /etc/redhat-release 1>&2
+    exit 1
+  fi
+  HostVersion=${rhr[0]}${rhr[1]}
+elif test $HostSystem = darwin -a "`which sw_vers`" != ""; then
+  HostSystem=macos
+  HostVersion=`sw_vers -productVersion | sed 's/\.[0-9][0-9]*$//'`
+else
+  echo Cannot determine runtime host'!!' 1>&2
+  exit 1
+fi
+echo $HostSystem $HostVersion $HostProcessor
+exit 0

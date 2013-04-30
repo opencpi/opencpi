@@ -34,7 +34,7 @@ int main ( int argc, char* argv [ ] )
 	      << std::endl;
     return 0;
   }
-  char* worker_name = argv[2];
+  std::string worker_name = argv[2];
 
   try
     {
@@ -73,7 +73,7 @@ int main ( int argc, char* argv [ ] )
 	OCPI::API::PVEnd
       };
       OA::Worker &worker =
-	rcc_application->createWorker(worker_name, worker_name, worker_pvlist );
+	rcc_application->createWorker(worker_name.c_str(), worker_name.c_str(), worker_pvlist );
 
       // filter specific
       if ( worker_name == "gaussian_blur" ) {

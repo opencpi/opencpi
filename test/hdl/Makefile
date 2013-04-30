@@ -34,35 +34,59 @@
 #
 ########################################################################### #
 
-ifndef OCPI_OS
-OCPI_OS=$(shell uname -s | tr A-Z a-z)
-endif
+#ifndef OCPI_OS
+#OCPI_OS=$(shell uname -s | tr A-Z a-z)
+#endif
 # Use of -static requires optional glibc-static package
 # Red Hat advises against the use of -static
-#ifneq ($(OCPI_OS),darwin)
+#ifneq ($(OCPI_OS),macos)
 #DOSTATIC=-static
 #endif
-PROC:=$(shell uname -m)
-ifeq ($(OCPI_OS),darwin)
-ifeq ($(PROC),i386)
-PROC:=x86_64
-endif
+#PROC:=$(shell uname -m)
+ifeq ($(OCPI_OS),macos)
+#ifeq ($(PROC),i386)
+#PROC:=x86_64
+#endif
 else
-BASICLIBS=-luuid -lrt # ocfrp_check needs this, only on linux
+BASICLIBS= -lrt # ocfrp_check needs this, only on linux
 endif
-OCPI_OUT_DIR = $(OCPI_OS)-$(PROC)-bin
-ALL=$(basename $(notdir $(wildcard src/*.c)))
-ALLBIN=$(ALL:%=$(OCPI_OUT_DIR)/%)
+ifeq ($(OCPI_CROSS_HOST),)
+CC = gcc
+CXX = c++
+LD = c++
+else
+CC = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-gcc
+CXX = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-c++
+LD = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-c++
+AR = $(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-ar
+endif
+#OCPI_OUT_DIR = $(OCPI_OS)-$(PROC)-bin
+ALLC=$(basename $(notdir $(wildcard src/*.c)))
+ALLBINC=$(ALLC:%=$(OCPI_OUT_DIR)/%)
+ALLCXX=$(basename $(notdir $(wildcard src/*.cxx)))
+ALLBINCXX=$(ALLCXX:%=$(OCPI_OUT_DIR)/%)
 $(OCPI_OUT_DIR)/cosgen: LIBS=-lm
 $(OCPI_OUT_DIR)/nft: LIBS=-lpthread
-all: $(ALLBIN)
+$(OCPI_OUT_DIR)/ocfrp_check: LIBS=-L ../../core/local/util/$(OCPI_OUT_DIR) -lutil
+all: $(ALLBINC) $(ALLBINCXX)
 $(OCPI_OUT_DIR):
 	mkdir $@
 
-$(ALLBIN): $(OCPI_OUT_DIR)/%: src/%.c | $(OCPI_OUT_DIR)
-	gcc -o $@ -std=c99 -I../../core/container/hdl/include $(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
+$(ALLBINC): $(OCPI_OUT_DIR)/%: src/%.c | $(OCPI_OUT_DIR)
+	$(CC) -o $@ -std=c99 -I../../core/container/hdl/include $(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
+$(ALLBINCXX): $(OCPI_OUT_DIR)/%: src/%.cxx | $(OCPI_OUT_DIR)
+	$(CXX) -o $@ \
+	-I../../core/container/hdl/include \
+	-I../../core/local/util/uuid/include \
+	-I../../core/local/util/property/include \
+	-I../../core/local/util/ezxml/include \
+	-I../../core/local/util/misc/include \
+	-I../../core/local/util/vfs/include \
+	-I../../adapt/os/ocpios/interfaces/include \
+	$(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
 
 clean:
-	rm -r -f *-bin
+	rm -r -f target-*
+
 
 

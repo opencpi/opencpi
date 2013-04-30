@@ -77,10 +77,10 @@ PACKAGELIB = $(WINLIB)
 endif
 
 else
-ifneq ($(filter linux darwin,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_OS)),)
 
 EXCLUDE_FACILITIES += winnt vxworksdkm
-ifeq ($(OCPI_OS),darwin)
+ifeq ($(OCPI_OS),macos)
 #EXCLUDE_FACILITIES += pci smb_pcig
 endif
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
@@ -153,7 +153,7 @@ lib: objects
 	fi
 
 FILTEROBJS=$(foreach o,$(filter-out %_main.obj,$1),$(if $(foreach x,$(foreach f,$2,$(findstring $f,$(notdir $o))),$x),,$o))
-ifneq ($(filter linux darwin,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_OS)),)
 $(UNIXLIB): $(OBJECTS)
 	-rm -f $@
 	ar r $@ $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS))

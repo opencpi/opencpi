@@ -210,7 +210,8 @@ $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$1/metadatarom.d
 ifdef HdlToolRealCore
 $(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$3/$(Worker)$(HdlBin)
 else
-#$(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(foreach c,$(call HdlLibraryRefFile,$(OutDir)target-$3/$(Worker),$3),$c)
+# It is a directory of stuff, and we assume the directory is touched when built
+$(OutDir)target-$1/$(ContainerModule)$(HdlBin): $(OutDir)target-$3/$(Worker)
 endif
 # Need the link to the bb lib
 ifdef HdlToolNeedBB

@@ -41,7 +41,7 @@
 #include <sys/socket.h>
 #include <sys/sysctl.h>
 #include <stdio.h>
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 #include <net/if.h>
@@ -231,7 +231,7 @@ namespace OCPI {
 	      return;
 	    }
 	  } else {
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	    (void)remote;
 	    if ((m_fd = socket(PF_NDRV, SOCK_RAW, 0)) < 0) {
 	      OS::setError(error, "opening raw socket");
@@ -296,7 +296,7 @@ namespace OCPI {
 	  int val = 1;
 	  do { // break on error
 	    if ((role == ocpi_slave && ::setsockopt(m_fd, SOL_SOCKET,
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 						    SO_REUSEPORT
 #else
 						    SO_REUSEADDR
@@ -305,7 +305,7 @@ namespace OCPI {
 	      OS::setError(error, "setting udp socket options");
 	      break;
 	    }
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	    sin.sin_len = sizeof(sin);
 #endif
 	    sin.sin_family = AF_INET;
@@ -379,7 +379,7 @@ namespace OCPI {
 	  struct sockaddr      saddr;
 	  struct sockaddr_in   in;
 	  struct sockaddr_ocpi ocpi;
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	  struct sockaddr_dl   dl;
 #else
 	  struct sockaddr_ll   ll;
@@ -392,7 +392,7 @@ namespace OCPI {
 	Packet &packet(*(Packet *)buffer);
 	void *payload = (void *)buffer;
 	if (m_ifAddr.isEther()) {
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	  alen = sizeof(sa.dl);
 #else
 	  flags = MSG_TRUNC;
@@ -518,7 +518,7 @@ namespace OCPI {
 	IOVec myiov[10];
 	ocpiAssert(iovlen < 10);
 	union {
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	  struct sockaddr_dl dl;
 #else
 	  struct sockaddr_ll ll;
@@ -543,7 +543,7 @@ namespace OCPI {
 	    memcpy(sa.ocpi.ocpi_remote, addr.addr(), Address::s_size);
 	    msg.msg_namelen = sizeof(sa.ocpi);
 	  } else {
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	    sa.dl.sdl_len = sizeof(sa);
 	    sa.dl.sdl_family = AF_LINK;
 	    sa.dl.sdl_index = 0;
@@ -579,7 +579,7 @@ namespace OCPI {
 	    header.type = htons(m_type);
 	  }
 	} else {
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	  sa.in.sin_len = sizeof(sa.in);
 #endif
 	  msg.msg_namelen = sizeof(sa.in);
@@ -624,7 +624,7 @@ namespace OCPI {
       }
       // status of interface scanning
       struct Opaque {
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	char *buffer, *end;
 	struct if_msghdr *ifm;
 #else
@@ -643,7 +643,7 @@ namespace OCPI {
       IfScanner::
       ~IfScanner() {
 	Opaque *o = (Opaque *)m_opaque;
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	delete o->buffer;
 #else
 	if (o->dfd >= 0)
@@ -658,7 +658,7 @@ namespace OCPI {
       init(std::string &err) {
 	Opaque &o = *(Opaque *)m_opaque;
 	err.clear();
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	o.buffer = NULL;
 	// We need this loop because things can change out from under us.
 	for (unsigned n = 0; err.empty() && n < 10; n++) {
@@ -728,7 +728,7 @@ namespace OCPI {
       }
 #endif
 
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 /*
  * Systems missing SA_SIZE(). Taken from FreeBSD net/route.h:1.63
  */
@@ -829,7 +829,7 @@ namespace OCPI {
 	}
 	if (m_index == 1 && !m_init && init(err))
 	  return false;
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	ocpiAssert(o.buffer);
 	// Loop through all messages until we have a good one.
 	bool found = false;
@@ -869,7 +869,7 @@ namespace OCPI {
 
 	      if (getValue(s, "type", &nval) && nval == ARPHRD_ETHER &&
 		  getValue(s, "address", NULL, &addr) &&
-		  getValue(s, "ifindex", &index) && (only || index == m_index) &&
+		  getValue(s, "ifindex", &index) && (only || (unsigned)index == m_index) &&
 		  getValue(s, "carrier", &carrier) &&
 		  getValue(s, "flags", &nval)) {
 		i.addr.setString(addr.c_str());

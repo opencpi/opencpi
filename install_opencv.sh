@@ -1,6 +1,6 @@
 #!/bin/bash --noprofile
 . setup_install.sh
-CMAKE=$OCPI_PREREQUISITES_INSTALL_DIR/cmake/$OCPI_BUILD_HOST/bin/cmake
+CMAKE=$OCPI_PREREQUISITES_INSTALL_DIR/cmake/$OCPI_TOOL_HOST/bin/cmake
 if test ! -x $CMAKE ; then
   echo No cmake found at: $CMAKE
   echo Installing opencv requires cmake, and it is not installed as an opencpi prerequisite.
@@ -29,16 +29,16 @@ if test ! -f $BZFile ; then
 fi
 rm -f $TarFile
 OPENCV_DIR=OpenCV-$OPENCV_MAJOR
-OPENCV_INSTALL_DIR=$OCPI_PREREQUISITES_INSTALL_DIR/opencv/$OCPI_BUILD_TARGET
+OPENCV_INSTALL_DIR=$OCPI_PREREQUISITES_INSTALL_DIR/opencv/$OCPI_TARGET_HOST
 rm -f -r $OPENCV_DIR
 rm -f -r $OPENCV_INSTALL_DIR
 bunzip2 -d $BZFile
 tar xf $TarFile
 cd OpenCV-$OPENCV_MAJOR
-mkdir build-$OCPI_BUILD_TARGET
-if test `uname` == Darwin; then
+mkdir build-$OCPI_TARGET_HOST
+if test `uname` == XXXDarwin; then
   # Force the rpath in the various targets to be @rpath
-  for sd in modules/{gpu,haartraining,highgui,stitching,traincascade}/CMakeLists.txt OpenCVModule.cmake; do
+  for sd in modules/{gpu,highgui,stitching}/CMakeLists.txt OpenCVModule.cmake; do
     echo editing $sd to force @rpath as install_name
     ed $sd <<EOF    
 g/INSTALL_NAME_DIR/s/lib/@rpath/p
@@ -46,7 +46,7 @@ w
 EOF
   done
 fi
-cd build-$OCPI_BUILD_TARGET
+cd build-$OCPI_TARGET_HOST
 #if test ! -d release ; then
 #mkdir release
 #fi

@@ -285,9 +285,9 @@ int main ( int argc, char* argv [ ] )
 	&myInAd2y = sobelAd2y8UOut.connectExternal("aci_in_Ad2y");
 
       OA::ExternalPort
-	&myOutAdxdy = sobelAdxdyXIn.connectExternal("aci_out_Adxdy"),
 	&myInAdxdy = sobelAdxdyY8UOut.connectExternal("aci_in_Adxdy"),
-	&myIn32fAdxdy_X = sobelAdxdyXOut.connectExternal("aci_in_32f_Adxdy_X");
+	&myIn32fAdxdy_X = sobelAdxdyXOut.connectExternal("aci_in_32f_Adxdy_X"),
+	&myOutAdxdy = sobelAdxdyXIn.connectExternal("aci_out_Adxdy");
 
       OA::ExternalPort
 	&myOutFeature = cornerIn.connectExternal("aci_out"),
@@ -295,10 +295,10 @@ int main ( int argc, char* argv [ ] )
 	&myInFeatureA = featuresAOut.connectExternal("aci_in_featureA");
 
       OA::ExternalPort
-	&myOutBdx = sobelBdxIn.connectExternal("aci_out_Bdx"),
-	&myOutBdy = sobelBdyIn.connectExternal("aci_out_Bdy"),
 	&myInBdx = sobelBdx8UOut.connectExternal("aci_in_Bdx"),
-	&myInBdy = sobelBdy8UOut.connectExternal("aci_in_Bdy");
+	&myInBdy = sobelBdy8UOut.connectExternal("aci_in_Bdy"),
+	&myOutBdx = sobelBdxIn.connectExternal("aci_out_Bdx"),
+	&myOutBdy = sobelBdyIn.connectExternal("aci_out_Bdy");
 
       printf(">>> DONE CONNECTING (all)!\n");
 

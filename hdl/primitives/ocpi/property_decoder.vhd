@@ -12,7 +12,8 @@ entity property_decoder is
         reset        : in  bool_t;                            -- active-low WCI worker reset
         offset_in    : in  unsigned(decode_width-1 downto 0); -- offset in Bytes
         nbytes_1     : in  byte_offset_t;                     -- how many valid bytes
-        access_in    : in  access_t;                          -- Enumerated WCI access type
+        is_read      : in  bool_t;
+        is_write     : in  bool_t;
         data_in      : in  std_logic_vector(31 downto 0);     -- WCI master data
         write_enable : out bool_t;                            -- active-high write pulse
         read_enable  : out bool_t;                            -- active-high read pulse
@@ -41,13 +42,11 @@ begin
   -- Is this for me now?
   my_decode    <= to_bool(not its(reset) and 
                           offset_in >= property.offset and
-                          (my_offset = 0 or
-                           (property.data_width > 32 and my_offset = 4) or
-                           (property.nitems > 1 and my_offset > 0 and my_offset <= property.bytes_1)));
+                          my_offset <= property.bytes_1);
   byte_offset  <= offset_in(1 downto 0);
-  write_enable <= to_bool(access_in = write_e and property.writable and my_decode);
-  read_enable  <= to_bool(access_in = read_e and property.readable and my_decode);
-  offset_out   <= (others => '0') when property.nitems <= 1 else my_offset;
+  write_enable <= to_bool(is_write and property.writable and my_decode);
+  read_enable  <= to_bool(is_read and property.readable and my_decode);
+  offset_out   <= my_offset; --(others => '0') when property.nitems <= 1 else my_offset;
   l32: if property.data_width = 32 generate
    data_out <= data_in;
   end generate;

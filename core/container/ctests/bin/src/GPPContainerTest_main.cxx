@@ -43,7 +43,6 @@
  * Then it will exchange its consumer descriptor.
  */
 
-
 #include <stdio.h>
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
@@ -196,7 +195,7 @@ void writeDesc( std::string& desc, const char* file_name )
   ssize_t br;
   br = write(fd,desc.c_str(), desc.length() + 1);
   if ( br <= 0  ) {
-    printf("Attempted to write %u bytes and only wrote  %" PRIsize_t " bytes to %s\n",
+    printf("Attempted to write %u bytes and only wrote  %zd bytes to %s\n",
             MAX_DESC_LEN, br, fn.c_str() );
     exit(-1);
   }

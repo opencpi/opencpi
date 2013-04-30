@@ -1,21 +1,13 @@
-ifndef OCPI_CDK_DIR
-# if not set, assume we are either in the development tree or in an exported cdk
-OCPI_CDK_DIR=$(or $(wildcard ../../export),../..)
-endif
+#$(info start $(MAKECMDGOALS))
+APP=hello
+include ../setup.mk
 
-include $(OCPI_CDK_DIR)/ocpisetup.mk
-
-all: hello
-
-hello: hello.cxx
-	g++ -Wall -g -o $@ -I$(OCPI_INC_DIR) $^ $(OCPI_LD_FLAGS)
-
-# OCPI_LIBRARY_PATH is like LD_LIBRARY_PATH, but for OpenCPI components.
+#$(info beforex $(MAKECMDGOALS))
+#.PHONY: run
 run: all
-	OCPI_LIBRARY_PATH=lib $(VG) ./hello > /dev/null	
+	OCPI_LIBRARY_PATH=lib $(VG) $(PROG) $(OUT)
 
-clean::
-	rm -f -r hello hello.dSYM lib
+#$(info aftery $(MAKECMDGOALS))
 
 # These make the worker library for this application
 Implementations = hello.rcc

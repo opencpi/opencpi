@@ -53,14 +53,14 @@ Model=hdl
 # Add the default libraries
 # FIXME: when tools don't really elaborate or search, capture the needed libraries for later
 # FIXME: but that still means a flat library space...
-# Note this is evaluted in a context when HdlTarget is set
+# Note this is evaluted in a context when HdlTarget is set, but can also just supply it as $1
 HdlLibrariesInternal = \
   $(foreach l,$(call Unique,\
                 $(HdlLibraries)\
                 $(if $(HdlNoLibraries),,\
-	          $(foreach f,$(call HdlGetFamily,$(HdlTarget)),\
+	          $(foreach f,$(call HdlGetFamily,$(or $1,$(HdlTarget))),\
 		    $(foreach v,$(call HdlGetTop,$f),\
-	              $(if $(findstring library,$(HdlMode)),,\
+	              $(if $(findstring library,$(HdlMode))$(findstring clean,$(MAKECMDGOALS)),,\
 			$(foreach p,$(filter-out $(LibName),ocpi util bsv ),\
 	                	$(if $(wildcard $(call HdlLibraryRefDir,$p,$f)),,\
 				  $(error Primitive library "$p" non-existent or not built for $f))))\

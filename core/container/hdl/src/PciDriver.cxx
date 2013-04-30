@@ -352,7 +352,7 @@ namespace OCPI {
 	const char *dir = m_useDriver ? OCPI_DRIVER_PCI : PCIDIR;
 	DIR *pcid = opendir(dir);
 	if (!pcid) {
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
 	    return 0;
 #else
 	  if (m_useDriver)

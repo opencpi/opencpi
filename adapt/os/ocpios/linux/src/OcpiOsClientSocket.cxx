@@ -62,7 +62,7 @@ OCPI::OS::ClientSocket::connect (const std::string & remoteHost,
   std::memset (&sin, 0, sizeof (struct sockaddr_in));
 
   sin.sin_family = AF_INET;
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
   sin.sin_len = sizeof(sin);
 #endif
   sin.sin_port = htons (remotePort);

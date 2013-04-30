@@ -12,7 +12,7 @@ if [ -d ossie-embedded ]; then
   mv ossie-embedded ossie-$OCPI_OSSIE_VERSION
 fi
 cd ossie-$OCPI_OSSIE_VERSION
-if test $OCPI_BUILD_OS == darwin; then
+if test $OCPI_BUILD_OS == macos; then
 mkdir -p tmpbin
 cat > tmpbin/libtoolize <<EOF
 #!/bin/sh

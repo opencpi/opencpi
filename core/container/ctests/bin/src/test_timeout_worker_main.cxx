@@ -362,7 +362,7 @@ int  main( int argc, char** argv)
   g_testUtilVerbose = config.verbose;
   cmap[0] = cmap[1] = cmap[2] = 0;
   if ( config.verbose ) {
-    printf("endpoints count = %" PRIsize_t "\n", config.endpoints.size() );
+    printf("endpoints count = %zu\n", config.endpoints.size() );
   }
 
   for ( unsigned int n=0; n<config.endpoints.size(); n++ ) {

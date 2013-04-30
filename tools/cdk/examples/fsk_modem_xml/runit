@@ -1,3 +1,0 @@
-export OCPI_SMB_SIZE=400000000
-./optical_flow uavA.jpg uavB.jpg
-

@@ -41,7 +41,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
                  SUSPENDED_e,         -- 3
                  UNUSABLE_e);         -- 4
 
-  type control_op_masks_t is array (natural range <>) of control_op_mask_t;
+  type control_op_masks_t is array (natural range 0 to state_t'pos(unusable_e)) of control_op_mask_t;
 
   -- constant masks for what control op is allowed in each state
   constant next_ops : control_op_masks_t :=
@@ -71,7 +71,7 @@ TYPE State_t IS (EXISTS_e,            -- 0
   end record out_t;
 
   -- This is the type of access to the property, or none
-  type Access_t IS (None_e, Error_e, Read_e, Write_e, Control_e);
+  type Access_t IS (Init_e, None_e, Error_e, Read_e, Write_e, Control_e);
 
   -- Return the currently decoded access
   function decode_access(input : in_t) return Access_t;
@@ -155,7 +155,8 @@ TYPE State_t IS (EXISTS_e,            -- 0
         reset        : in  bool_t;                            -- active-low WCI worker reset
         offset_in    : in  unsigned(decode_width-1 downto 0); -- offset in Bytes
         nbytes_1     : in  byte_offset_t;                     -- how many valid bytes
-        access_in    : in  access_t;                          -- Enumerated WCI access type
+        is_read      : in  bool_t;
+        is_write     : in  bool_t;
         data_in      : in  std_logic_vector(31 downto 0);     -- WCI master data
         write_enable : out bool_t;                            -- active-high write pulse
         read_enable  : out bool_t;                            -- active-high read pulse

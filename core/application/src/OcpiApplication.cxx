@@ -526,10 +526,29 @@ namespace OCPI {
 	  i->m_feasibleContainers[m] = m_curMap;
 	  sum |= m_curMap;
 	}
-	if (!sum)
+	if (!sum) {
+	  if (verbose) {
+	    fprintf(stderr, "No containers were found for deploying instance '%s' (spec '%s').  The implementations found were:\n",
+		    ai.m_name.c_str(), ai.m_specName.c_str());
+	    for (unsigned m = 0; m < i->m_nCandidates; m++) {
+	      const OL::Implementation &lImpl = *cs[m].impl;
+	      OU::Implementation &mImpl = lImpl.m_metadataImpl;
+	      fprintf(stderr, "  Name: %s, Model: %s, Platform: %s%s%s, File: %s\n",
+		      mImpl.name().c_str(),
+		      mImpl.model().c_str(),
+		      lImpl.m_artifact.platform().c_str(),
+		      lImpl.m_staticInstance ? ", Artifact instance: " : "",
+		      lImpl.m_staticInstance ? ezxml_cattr(lImpl.m_staticInstance, "name") : "",
+		      lImpl.m_artifact.name().c_str());
+	    }
+	  }
 	  throw OU::Error("For instance \"%s\" for spec \"%s\": "
-			  "no feasible containers found for any implementation",
-			  ai.m_name.c_str(), ai.m_specName.c_str());
+			  "no feasible containers found for %sthe %u implementation%s found.",
+			  ai.m_name.c_str(), ai.m_specName.c_str(),
+			  i->m_nCandidates == 1 ? "" : "any of ",
+			  i->m_nCandidates,
+			  i->m_nCandidates == 1 ? "" : "s");
+	}
       }
       
       // Second pass - search for best feasible choice

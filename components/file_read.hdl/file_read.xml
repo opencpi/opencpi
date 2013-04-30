@@ -1,0 +1,5 @@
+<HdlImplementation Language="vhdl">
+  <xi:include href="file_read_spec.xml"/>
+  <specproperty name="fileName" readable='true'/>
+  <streaminterface name="out" datawidth='32'/>
+</HdlImplementation>

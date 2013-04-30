@@ -49,7 +49,7 @@
 #define OCPI_PVALUE_H
 
 #include <cstring>
-#include <stdarg.h>
+#include <cstdarg>
 #include "ezxml.h"
 #include "OcpiUtilException.h"
 #include "OcpiPValueApi.h"
@@ -83,7 +83,7 @@ namespace OCPI {
     // that a PValue * can be used.  The values come from attributes.
     class PValueList {
       PValue *m_list;
-      const char *vParse(const PValue *p, ezxml_t x, va_list ap);
+      const char *vParse(const PValue *p, ezxml_t x, std::va_list ap);
     public:
       PValueList(PValue *);
       PValueList();

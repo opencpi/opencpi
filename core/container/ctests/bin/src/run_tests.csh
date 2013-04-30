@@ -37,15 +37,15 @@
 
 # quick hack to run all tests
 # run this in the binary executables directory by doing: ../bin/src/run_tests.csh
-setenv OCPI_RCC_TARGET $OCPI_BUILD_HOST
+setenv OCPI_RCC_TARGET $OCPI_TOOL_HOST
 setenv OCPI_SMB_SIZE 3000000
 setenv OCPI_LIBRARY_PATH ../../../../components/lib/rcc
-if $OCPI_RUNTIME_HOST == darwin-x86_64 then
+if $OCPI_TOOL_OS == macos then
   setenv OCPI_RCC_SUFFIX dylib
-#  setenv DYLD_LIBRARY_PATH ../../../../lib/$OCPI_RUNTIME_HOST-bin
+#  setenv DYLD_LIBRARY_PATH ../../../../lib/target-$OCPI_TOOL_HOST
 else
   setenv OCPI_RCC_SUFFIX so
-  setenv LD_LIBRARY_PATH ../../../../lib/$OCPI_RUNTIME_HOST-bin
+  setenv LD_LIBRARY_PATH ../../../../lib/target-$OCPI_TOOL_HOST
 endif
 if $#argv == 1 then
   sh -c "./$argv[1] 2> /dev/null | grep Test:"

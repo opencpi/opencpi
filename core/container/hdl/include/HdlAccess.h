@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <stdint.h>
 #include <string>
-#include <uuid/uuid.h>
+#include "OcpiUuid.h"
 #include "OcpiUtilEzxml.h"
 #include "HdlOCCP.h"
 namespace OCPI {
@@ -131,7 +131,7 @@ namespace OCPI {
     // It is specialized by the access paths and driver issues (for pci, ethernet etc.)
     class Device {
       HdlUUID m_UUID;
-      uuid_t m_loadedUUID;
+      OCPI::Util::Uuid m_loadedUUID;
     protected:
       std::string m_name, m_platform, m_part, m_esn, m_position, m_loadParams, m_protocol;
       // This is the protocol-specific part of the endpoint.

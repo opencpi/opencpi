@@ -288,7 +288,7 @@ CounterFreq::operator uint64_t () const
   #define TBL( t ) __asm__ __volatile__ ( "rdtsc" : "=a" ( tb_lower ), \
                                                     "=d" ( tb_upper ) );
 
-#else // vxWorks Diab and Green Hills inline assembler format
+#elif defined (__vxWorks__) // vxWorks Diab and Green Hills inline assembler format
 
 #define TBU( t ) tm_move_from_tbr_upper ( t )
 #define TBL( t ) tm_move_from_tbr_lower ( t )
@@ -307,6 +307,9 @@ asm void tm_move_from_tbr_lower ( unsigned int time_val )
 %reg time_val // Must be in the first column
   mfspr time_val,268;
 }
+#else
+#define TBU( t ) abort()
+#define TBL( t ) abort()
 
 #endif
 

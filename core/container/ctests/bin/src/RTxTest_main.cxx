@@ -264,7 +264,7 @@ int server_connect(int port)
 #else
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in sa;
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
   sa.sin_len = sizeof(sa);
 #endif
   sa.sin_family = AF_INET;

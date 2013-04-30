@@ -37,14 +37,9 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <signal.h> // for SIGPIPE
-#include <uuid/uuid.h>
-// FIXME: integrate this into our UUID utility properly
-#ifndef _UUID_STRING_T
-#define _UUID_STRING_T
-typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
-#endif
 #include "zlib.h"
 #include "OcpiOsMisc.h"
+#include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
 #include "DtTransferInternal.h"
 #include "SimServer.h"
@@ -810,16 +805,16 @@ uuid(const char **ap) {
   if (strlen(part) > sizeof(uuidRegs.device) - 1)
     bad("Part/chip: '%s' is too long.  Must be < %u long",
 	part, sizeof(uuidRegs.device) - 1);
-  uuid_t uuid;
-  uuid_generate(uuid);
+  OU::Uuid uuid;
+  OU::generateUuid(uuid);
   memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
   uuidRegs.birthday = time(0);
   strncpy(uuidRegs.platform, platform.c_str(), sizeof(uuidRegs.platform));
   strncpy(uuidRegs.device, part, sizeof(uuidRegs.device));
   strncpy(uuidRegs.load, "", sizeof(uuidRegs.load));
   assert(sizeof(uuidRegs) * 8 == 512);
-  uuid_string_t textUUID;
-  uuid_unparse_lower(uuid, textUUID);
+  OU::UuidString textUUID;
+  OU::uuid2string(uuid, textUUID);
   fprintf(ofp,
 	  "// UUID generated for platform '%s', device '%s', uuid '%s'\n"
 	  "module mkUUID(uuid);\n"

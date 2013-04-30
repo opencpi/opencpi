@@ -7,8 +7,11 @@
 #define CONFIG_H
 
 //#define _CPU_POWERPC
-#ifndef _CPU_IA64
+#if !defined(_CPU_IA64) && defined(__x86_64__)
 #define _CPU_IA64
+#endif
+#if defined(__arm__)
+#define _CPU_ARM
 #endif
 
 #include <stdint.h>

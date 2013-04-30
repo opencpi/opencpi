@@ -1,24 +1,4 @@
-
-# Build from 32-bit x86 Linux for Linux
-
-# #### Absolute path to the base directory of the OpenCPI installation #### #
-
-#if [ -z "$OCPI_BASE_DIR" ]
-#then
-  export OCPI_BASE_DIR=`pwd`
-#fi
-
-#if [ -z "$OCPI_CDK_DIR" ]
-#then
-  export OCPI_CDK_DIR=$OCPI_BASE_DIR/ocpi
-#fi
-
-# #### Build target architecture and OS ################################### #
-
-export OCPI_OS=linux
-export OCPI_ARCH=x86_64
-export OCPI_BUILD_HOST=linux-x86_64
-export OCPI_RUNTIME_HOST=$OCPI_BUILD_HOST
+. ./generic_env.sh
 
 # #### Location of the Xilinx tools ####################################### #
 
@@ -37,35 +17,12 @@ export OCPI_MODELSIM_DIR=/home/jek/mac/Mentor/modelsim_dlx
 export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../james.non-server.lic.txt
 #export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../3113964_multipleServers.txt
 #export OCPI_MODELSIM_LICENSE_FILE=$OCPI_MODELSIM_DIR/../Site_3113964.txt
-# #### Location of Google Test (gtest) #################################### #
-
-export OCPI_GTEST_DIR=/opt/opencpi/prerequisites/gtest
-
-# #### Location of Verilator #################################### #
-
-export OCPI_VERILATOR_DIR=/opt/opencpi/prerequisites/verilator/$OCPI_BUILD_HOST
-
-# #### Location of Icarus #################################### #
-
-export OCPI_ICARUS_DIR=/opt/opencpi/prerequisites/icarus/linux-x86_64
-# #### Build output location ############################################## #
-
-export OCPI_OUT_DIR=$OCPI_OS-$OCPI_ARCH-bin
-
-#export LD_LIBRARY_PATH=$OCPI_BASE_DIR/lib/$OCPI_BUILD_HOST-bin:$OCPI_GTEST_DIR/lib:$LD_LIBRARY_PATH
 
 # #### Compiler linker flags ############################################## #
 
 export OCPI_CFLAGS=-m64
-export OCPI_CXXFLAGS=-m64
+export OCPI_CXXFLAGS="-m64 -Wno-dangling-else"
 export OCPI_LDFLAGS=-m64
-
-# #### Debug and assert settings ########################################## #
-
-# Change both to 0 for "release" build
-
-export OCPI_DEBUG=1
-export OCPI_ASSERT=1
 
 # #### Shared library build settings ###################################### #
 
@@ -74,40 +31,6 @@ export OCPI_SHARED_LIBRARIES_FLAGS="-m64 -m elf_x86_64"
 # Set to 0 to build static libraries
 export OCPI_BUILD_SHARED_LIBRARIES=0
 
-# #### CORBA OCPI_CORBA_ORB/IDL tools ################################################ #
+export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-c6-x86_64
 
-export HAVE_CORBA=1
-
-# OpenCPI uses OmniORB exclusivly
-export OCPI_CORBA_ORB=OMNI
-export OCPI_OMNI_DIR=/opt/opencpi/prerequisites/omniorb
-export OCPI_OMNI_BIN_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/bin
-export OCPI_OMNI_IDL_DIR=$OCPI_OMNI_DIR/share/idl/omniORB
-export OCPI_OMNI_LIBRARY_DIR=$OCPI_OMNI_DIR/$OCPI_BUILD_HOST/lib
-export OCPI_OMNI_INCLUDE_DIR=$OCPI_OMNI_DIR/include
-
-# #### Path to Mercury tools and libraries ################################ #
-
-export OCPI_PPP_LIBRARY_DIR=
-export OCPI_PPP_INCLUDE_DIR=
-
-# #### Other settings ##################################################### #
-
-# Set this to "1" to include the OFED IBVERBS transfer driver
-export OCPI_HAVE_IBVERBS=0
-
-# #### OpenCL exports ##################################################### #
-
-
-#export OPENCL_INCLUDE_DIR=/usr/local/share/NVIDIA_GPU_Computing_SDK/OpenCL/common/inc
-export OPENCL_INCLUDE_DIR=$OCPI_BASE_DIR/core/container/ocl/include
-export OPENCL_EXPORTS="$OPENCL_INCLUDE_DIR $OPENCL_INCLUDE_DIR/CL"
-
-# ######################################################################### #
-
-#export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/linux-x86_64
-#export OCPI_HAVE_OPENSPLICE=1
-#export OCPI_OPENSPLICE_HOME=/opt/opencpi/prerequisites/opensplice/linux-x86_64
-
-echo ""; echo " *** OpenCPI Environment settings"; echo ""
-env | grep OCPI_
+. ./generic_env_post.sh

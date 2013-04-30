@@ -1,11 +1,6 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <uuid/uuid.h>
-// FIXME: integrate this into our UUID utility properly
-#ifndef _UUID_STRING_T
-#define _UUID_STRING_T
-typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
-#endif
+#include "OcpiUuid.h"
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "HdlAccess.h"
@@ -181,8 +176,8 @@ namespace OCPI {
     }
     void Device::
     print() {
-      uuid_string_t textUUID;
-      uuid_unparse_lower(m_UUID.uuid, textUUID);
+      OU::UuidString textUUID;
+      OU::uuid2string(m_UUID.uuid, textUUID);
 
       time_t bsbd;
       //      bsvbd = m_cAccess.get32Register(birthday, OccpAdminRegisters);
@@ -198,8 +193,8 @@ namespace OCPI {
     }
     bool Device::
     isLoadedUUID(const std::string &uuid) {
-      uuid_string_t parsed;
-      uuid_unparse(m_loadedUUID, parsed);
+      OU::UuidString parsed;
+      OU::uuid2string(m_loadedUUID, parsed);
       ocpiDebug("UUID check: want %s have %s", uuid.c_str(), parsed);
       return uuid == parsed;
     }

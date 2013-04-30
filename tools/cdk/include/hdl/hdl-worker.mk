@@ -85,22 +85,28 @@ $(call OcpiDbgVar,Worker_$(Worker)_xml)
 #ifeq ($(realpath $(HdlXmlFile)),)
 #  $(error Missing XML implementation file: $(HdlXmlFile))
 #endif
-ifdef Language
-HdlLanguage:=$(call ToLower,$(Language))
-endif
 ifndef HdlLanguage
-ifeq ($(HdlMode),assembly)
-HdlLanguage=verilog
-else
-# Ugly grab of the language attribute from the XML file
-HdlLanguage:=$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z)
-ifeq ($(HdlLanguage),)
-HdlLanguage:=vhdl
-else
-HdlLanguage:=$(call ToLower,$(HdlLanguage))
-endif
-endif # not assembly
-endif # not defined
+  ifeq ($(HdlMode),assembly)
+    HdlLanguage:=verilog
+  else
+    # Ugly grab of the language attribute from the XML file
+    HdlLanguage:=$(shell grep -i 'language *=' $(HdlXmlFile) | sed "s/^.*[lL]anguage= *['\"]\\([^\"']*\\).*$$/\1/" | tr A-Z a-z)
+    ifdef Language
+      ifdef HdlLanguage
+        ifneq ($(Language),$(HdlLanguage))
+          $(error The "Language" setting in the Makefile ($(Language)) is inconsistent with the setting in the XML/OWD file (file: $(HdlXmlFile), setting: $(HdlLanguage)))
+        endif # error check
+      else
+        HdlLanguage:= $(Language)
+      endif # found language attribute
+    else
+      ifndef HdlLanguage
+        HdlLanguage:=vhdl
+      endif
+    endif
+  endif
+endif # HdlLanguage not initially defined (probably true)
+
 ifeq ($(HdlLanguage),verilog)
 HdlSourceSuffix:=$(HdlVerilogSuffix)
 HdlIncSuffix:=$(HdlVerilogIncSuffix)

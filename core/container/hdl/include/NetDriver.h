@@ -112,10 +112,10 @@ namespace OCPI {
 	  return get(offset, sizeof(uint32_t), status);
 	}
 	inline uint16_t get16(RegisterOffset offset, uint32_t *status) {
-	  return (uint16_t)get(offset, sizeof(uint16_t), status);
+	  return (uint16_t)(get(offset, sizeof(uint16_t), status) >> ((offset&3)*8));
 	}
 	inline uint8_t get8(RegisterOffset offset, uint32_t *status) {
-	  return (uint8_t)get(offset, sizeof(uint8_t), status);
+	  return (uint8_t)(get(offset, sizeof(uint8_t), status) >> ((offset&3)*8));
 	}
 	void getBytes(RegisterOffset offset, uint8_t *buf, unsigned length, uint32_t *status);
 	void set64(RegisterOffset offset, uint64_t val, uint32_t *status);

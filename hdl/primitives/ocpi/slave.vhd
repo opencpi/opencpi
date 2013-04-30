@@ -87,8 +87,7 @@ architecture rtl of slave is
   constant som_bit     : natural := valid_bit - 1;
   constant eom_bit     : natural := som_bit - 1;
   constant abort_bit   : natural := eom_bit - 1;
-  constant info_bits   : natural := eom_bit - 1;
-  constant enable_bits : natural := info_bits - data_info_width;
+  constant enable_bits : natural := abort_bit - 1;
   constant burst_bits  : natural := enable_bits - n_bytes;
   constant opcode_bits : natural := burst_bits - burst_width;
   function pack(data : std_logic_vector(n_bytes * byte_width - 1 downto 0);

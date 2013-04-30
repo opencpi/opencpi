@@ -662,13 +662,15 @@ void Worker::run(bool &anyone_run) {
       OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
       char *err = m_context->errorString ? m_context->errorString : m_errorString;
       if (err) {
-	ocpiInfo("Worker %s produced error during execution: %s",
-		 name().c_str(), err);
+	std::string e;
+	OU::format(e, "Worker %s produced error during execution: %s",
+		   name().c_str(), err);
 	m_context->errorString = NULL;
 	if (m_errorString) {
 	  free(m_errorString);
 	  m_errorString = NULL;
 	}
+	throw OU::Error(e.c_str());
       }
       if (newRunCondition) {
 	m_runCondition = m_context->runCondition ? m_context->runCondition : &m_defaultRunCondition;

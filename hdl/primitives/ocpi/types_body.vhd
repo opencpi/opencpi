@@ -127,10 +127,17 @@ function from_string(s : string_t; offset : unsigned) return word_t is
   variable w : word_t;
 begin 
   off := to_integer(offset);
-  w(31 downto 24) := std_logic_vector(s(off+3));
-  w(23 downto 16) := std_logic_vector(s(off+2));
-  w(15 downto  8) := std_logic_vector(s(off+1));
-  w( 7 downto  0) := std_logic_vector(s(off+0));
+  w := (others => '0');
+  w(7 downto  0) := std_logic_vector(s(off));
+  if off+1 <= s'right then
+    w(15 downto  8) := std_logic_vector(s(off+1));
+    if off+2 <= s'right then
+      w(23 downto 16) := std_logic_vector(s(off+2));
+      if off+3 < s'right then
+        w(31 downto 24) := std_logic_vector(s(off+3));
+      end if;
+    end if;
+  end if;
   return w;
 end from_string;
 

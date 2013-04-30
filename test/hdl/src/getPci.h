@@ -35,9 +35,11 @@
 #include <stdio.h>
 #include "PciDriver.h"
 
+#ifndef __cplusplus
 typedef int bool;
 const bool false = 0;
 const bool true = 1;
+#endif
 typedef struct {
   uint64_t address;
   uint64_t size;
@@ -46,7 +48,7 @@ typedef struct {
 } Bar;
 #define PCIDIR "/sys/bus/pci/devices"
 static const char *
-getPciValue(const char *dev, char *value, char *buf, unsigned len)
+getPciValue(const char *dev, const char *value, char *buf, unsigned len)
 {
   int n, fd;
   // get bars
@@ -64,7 +66,7 @@ getPciValue(const char *dev, char *value, char *buf, unsigned len)
   return 0;
 }
 static const char*
-getPciNumber(const char *dev, char *value, char *buf, unsigned len, unsigned long long *np)
+getPciNumber(const char *dev, const char *value, char *buf, unsigned len, unsigned long long *np)
 {
   const char *err = getPciValue(dev, value, buf, len);
   if (err)

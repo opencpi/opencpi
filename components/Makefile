@@ -112,21 +112,19 @@ Implementations = \
 	capture.hdl capture.rcc \
 	bias_vhdl.hdl \
 	ptest.rcc \
+        file_read.hdl \
 	$(Tests)
 
+#       file_write.hdl \
 #	fir_prog.hdl \
 
 #	wbr.hdl 
 
 #HdlTargets=all
 
-
-ifndef OCPI_RUNTIME_HOST
-RccTargets=$(HostTarget)
-else
-RccTargets=$(OCPI_RUNTIME_HOST)
+ifndef RccTargets
+RccTargets=$(OCPI_TARGET_HOST)
 endif
-
 
 include $(OCPI_CDK_DIR)/include/lib.mk
 

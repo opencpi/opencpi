@@ -8,7 +8,9 @@ Properties:
 -->
 <ComponentSpec name='file_read'>
 
-  <DataInterfaceSpec Name="out" Producer="true"/>
+  <DataInterfaceSpec Name="out" Producer="true">
+    <protocolsummary numberofopcodes='256'/>
+  </DataInterfaceSpec>
 
   <!-- Setup/initial properties -->
 

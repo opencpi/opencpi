@@ -21,12 +21,12 @@ ifneq ($(realpath $(OCPI_CDK_DIR)/ocpisetup.mk),$(realpath $(OcpiThisFile)))
 $(error Inconsistent usage of this file ($(OcpiThisFile)) vs. OCPI_CDK_DIR ($(OCPI_CDK_DIR)))
 endif
 endif
-export OCPI_RUNTIME_SYSTEM:=$(shell $(OCPI_CDK_DIR)/scripts/showRuntimeHost)
-export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_RUNTIME_SYSTEM)
-export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_RUNTIME_SYSTEM)
+#export OCPI_RUNTIME_SYSTEM:=$(shell $(OCPI_CDK_DIR)/scripts/showRuntimeHost)
+export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_HOST)
+export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_HOST)
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include
-ifneq ($(findstring darwin,$(OCPI_RUNTIME_SYSTEM)),)
-Ocpilibrarypathenv=DYLD_LIBRARY_PATH
+ifneq ($(findstring macos,$(OCPI_TARGET_OS)),)
+OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
 OCPI_OCL_LIBS=-locl -framework OpenCL
 OcpiAsNeeded=
 else
@@ -64,4 +64,8 @@ endif
 ifeq ($(origin OCPI_SUDO),undefined)
 OCPI_SUDO=sudo -E
 endif
+OCPI_TARGET_DIR=target-$(OCPI_TARGET_HOST)
+all:
+$(OCPI_TARGET_DIR):
+	mkdir $@
 

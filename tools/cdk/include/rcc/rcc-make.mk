@@ -44,7 +44,7 @@ RccTarget:=$(RccTargets)
 endif
 
 ifndef RccTarget
-RccTarget:=$(HostTarget)
+RccTarget:=$(OCPI_TARGET_HOST)
 endif
 
 ifeq ($(RccTarget),Linux-MCS_864x)

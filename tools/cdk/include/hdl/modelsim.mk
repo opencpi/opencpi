@@ -92,6 +92,7 @@ HdlToolCompile=\
    echo others=$(OCPI_MODELSIM_DIR)/modelsim.ini \
    ) > modelsim.ini ; \
    export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE); \
+   rm -r -f $(LibName); \
    $(if $(filter work,$(LibName)),,$(OCPI_MODELSIM_DIR)/bin/vlib $(LibName) &&) \
    $(and $(filter %.vhd,$(ModelsimFiles)),\
     $(OCPI_MODELSIM_DIR)/bin/vcom -preserve -bindAtCompile -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)) ;)\

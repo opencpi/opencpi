@@ -88,8 +88,8 @@ OCPI::OS::ServerSocket::ServerSocket (unsigned int portNo, bool reuse )
 OCPI::OS::ServerSocket::~ServerSocket ()
   throw ()
 {
-  o2fd (m_osOpaque) >= 0;
-  close();
+  if (o2fd (m_osOpaque) >= 0)
+    close();
   ocpiAssert (o2fd (m_osOpaque) == -1);
 }
 
@@ -103,7 +103,7 @@ OCPI::OS::ServerSocket::bind (unsigned int portNo, bool reuse, bool udp )
   memset (&sin, 0, sizeof (struct sockaddr_in));
 
   sin.sin_family = AF_INET;
-#ifdef OCPI_OS_darwin
+#ifdef OCPI_OS_macos
   sin.sin_len = sizeof(sin);
 #endif
   sin.sin_port = htons (portNo);

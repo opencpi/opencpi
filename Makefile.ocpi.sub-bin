@@ -51,7 +51,7 @@ ALLEXECUTABLES = $(ORIGEXECUTABLES) $(WINNTEXECUTABLES) \
 ifeq ($(OCPI_OS),winnt)
 EXECUTABLES = $(WINNTEXECUTABLES)
 else
-ifneq ($(filter linux darwin,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_OS)),)
 EXECUTABLES = $(LINUXEXECUTABLES)
 else
 ifeq ($(OCPI_OS),vxworksdkm)
@@ -78,7 +78,7 @@ ifeq ($(OCPI_OS),winnt)
 $(OBJDIR)/%.exe: $(OBJDIR)/%_main.exe
 	cp $< $@
 else
-ifneq ($(filter linux darwin,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_OS)),)
 $(OBJDIR)/%: $(OBJDIR)/%_main.exe
 	cp -p $< $@; touch $@
 else
@@ -100,7 +100,7 @@ $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj $(OTHEROBJS) $(wildcard $(L
 	$(join $(addsuffix $(OCPI_OUT_DIR)/,$(dir $(ALLLIBS))),$(addsuffix .lib,$(notdir $(ALLLIBS))))
 endif
 else
-ifneq ($(filter linux darwin,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_OS)),)
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 $(EXECUTABLES): $(OBJDIR)/%: $(OBJDIR)/%_main.exe
 #$(info $(OBJDIR) ccc)

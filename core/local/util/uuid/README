@@ -1,0 +1,21 @@
+This directory came from the uuid-1.6.2 from the The OSSP Project <http://www.ossp.org/>
+It is here just to allow standalone building, and may be removed in order to
+build directly against standard packages that are preinstalled on a system to save space.
+
+centos6: -DHAVE_CONFIG_H -fPIC -DPIC
+mac: -DHAVE_CONFIG_H -fno-common -DPIC
+
+Changed from the original:
+Moved uuid.h to from src/ to include/
+In config.h:
+
+#ifdef __APPLE__
+#define HAVE_NET_IF_DL_H 1
+#define HAVE_SYS_SOCKIO_H 1
+#else
+#define HAVE_LIBNSL 1
+#endif
+
+
+
+

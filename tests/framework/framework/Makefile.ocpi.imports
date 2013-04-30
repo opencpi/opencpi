@@ -40,6 +40,6 @@ ALLINC += $(UTIL_EXPORTS) $(OCPI_GTEST_DIR)/include
 # !!!Mike please do not change this back to TEST_LIBS since that causes a circular dependency
 ALLLIBS += $(UTIL_LIBS) $(TEST_LOGGER_LIBS) $(TEST_OS_LIBS) $(OCPIOS_LIBS)
 
-SYSLIBS += $(OCPI_GTEST_DIR)/$(OCPI_BUILD_HOST)/lib/gtest
+SYSLIBS += $(OCPI_GTEST_DIR)/$(OCPI_TARGET_HOST)/lib/gtest
 
 

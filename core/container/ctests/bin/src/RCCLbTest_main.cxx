@@ -218,7 +218,7 @@ void readPortDecsFile( std::string& rpl_output, std::string& rpl_input )
   char buf[MAX_DESC_LEN];
   br = read(cfd, buf, MAX_DESC_LEN);
   if ( (br==0) || (br >= MAX_DESC_LEN)  ) {
-    printf("(2)Attempted to read %d bytes and only read %" PRIssize_t " bytes from descriptor file\n", MAX_DESC_LEN, br );
+    printf("(2)Attempted to read %d bytes and only read %zd bytes from descriptor file\n", MAX_DESC_LEN, br );
     exit(-1);
   }
   rpl_input.assign( buf, br );
@@ -226,7 +226,7 @@ void readPortDecsFile( std::string& rpl_output, std::string& rpl_input )
 
   br = read(pfd, buf, MAX_DESC_LEN);
   if ( br >= MAX_DESC_LEN ) {
-    printf("Attempted to read %d bytes and only read %" PRIssize_t " bytes from descriptor file\n", MAX_DESC_LEN, br );
+    printf("Attempted to read %d bytes and only read %zd bytes from descriptor file\n", MAX_DESC_LEN, br );
     exit(-1);
   }
   rpl_output.assign( buf, br );
@@ -272,13 +272,13 @@ void writePortDecsFile( std::string& rpl_output, std::string& rpl_input )
 
   br = write(cfd, rpl_input.c_str(), rpl_input.length() );
   if ( (br==0) || (br >= MAX_DESC_LEN) ) {
-    printf("(2)Attempted to write %d bytes and only wrote %" PRIssize_t " bytes from descriptor file\n", MAX_DESC_LEN, br );
+    printf("(2)Attempted to write %d bytes and only wrote %zd bytes from descriptor file\n", MAX_DESC_LEN, br );
     exit(-1);
   }
 
   br = write(pfd, rpl_output.c_str(), rpl_output.length() );
   if ((br==0) || ( br >= MAX_DESC_LEN )) {
-    printf("Attempted to write %d bytes and only wrote %" PRIssize_t " bytes from descriptor file\n", MAX_DESC_LEN, br );
+    printf("Attempted to write %d bytes and only wrote %zd bytes from descriptor file\n", MAX_DESC_LEN, br );
     exit(-1);
   }
 

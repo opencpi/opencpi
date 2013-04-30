@@ -37,12 +37,12 @@
 
 ################################################################################
 # Tools for metadata and generated files
-ToolsTarget=$(HostTarget)
-ToolsDir=$(OCPI_CDK_DIR)/bin/$(HostTarget)
+#ToolsTarget=$(OCPI_TOOL_HOST)
+ToolsDir=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)
 ifeq ($(HostSystem),darwin)
-DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(HostTarget)
+DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
 else
-DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(HostTarget)
+DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_HOST)
 endif
 #$(info OCDK $(OCPI_CDK_DIR))
 OcpiGen=\
@@ -60,6 +60,7 @@ ImplHeaderFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(ImplSuffix))
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
 	$(AT)$(OcpiGen) -i  $<
+
 # FIXME - should not be referencing HdlMode
 ifneq ($(HdlMode),assembly)
 SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$(w)$(SkelSuffix))
@@ -144,14 +145,15 @@ $(call WkrObject,$(1),$(2)): $(1) $(ImplHeaderFiles) | $(call WkrTargetDir,$(2))
 
 endef
 
-# Function to make worker objects depend on impl headers: 
+# Function to make worker objects depend on impl headers and primitive libraries: 
 # $(call WkrWorkerDep,worker,target)
 define WkrWorkerDep
 
 $(call WkrObject,$1,$2): TargetDir=$(OutDir)target-$2
+$(call WkrObject,$1,$2): $(CapModel)Target=$2
 $(call WkrObject,$1,$2): \
    $(GeneratedDir)/$1$(ImplSuffix) \
-   $(foreach l,$($(CapModel)Libraries),$$(call LibraryRefFile,$l,$2))
+   $(foreach l,$(call $(CapModel)LibrariesInternal,$2),$$(call LibraryRefFile,$l,$2))
 
 endef
 

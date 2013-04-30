@@ -1,0 +1,14 @@
+<application package='ocpi'>
+  <instance component="file_read" connect="bias"> 
+    <property name='filename' value='/home/jek/mac/ocpi/opencpi/tools/cdk/examples/xml/sig' />
+    <!-- <property name='filename' value='sig' /> -->
+    <property name='messagesInFile' value='false' />
+    <property name='opcode' value='1' />
+    <property name='messageSize' value='1024' /> <!-- 4096 -->
+    <property name='granularity' value='4' />
+  </instance>
+  <instance component='bias' connect="capture">
+    <property name='biasValue' value='0x01020304'/>
+  </instance>
+  <instance component="capture"/>
+</application>

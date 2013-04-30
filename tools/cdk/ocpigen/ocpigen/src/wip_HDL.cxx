@@ -38,12 +38,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
-#include <uuid/uuid.h>
-// FIXME: integrate this into our UUID utility properly
-#ifndef _UUID_STRING_T
-#define _UUID_STRING_T
-typedef char uuid_string_t[50]; // darwin has 37 - lousy unsafe interface
-#endif
+#include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
 #include "HdlOCCP.h"
 #include "wip.h"
@@ -1616,13 +1611,13 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	      "(others => (0,x\"00000000\",0,0,0,false,false,false,false));\n");
     } else {
       fprintf(f, "  constant properties : ocpi.wci.properties_t := (\n");
-      bool first = true;
       unsigned n = 0;
+      const char *last = NULL;
       for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++, n++) {
 	OU::Property *pr = *pi;
 	if (!pr->m_isParameter || pr->m_isReadable) {
-	  fprintf(f, "%s   %u => (%2u, x\"%08x\", %6u, %6u, %6u, %s %s %s %s)",
-		  first ? "" : ",\n", n,
+	  fprintf(f, "%s%s%s   %u => (%2u, x\"%08x\", %6u, %6u, %6u, %s %s %s %s)",
+		  last ? ", -- " : "", last ? last : "", last ? "\n" : "", n,
 		  pr->m_nBits,
 		  pr->m_offset,
 		  pr->m_nBytes - 1,
@@ -1632,10 +1627,10 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 		  pr->m_isReadable ? "true, " : "false,",
 		  pr->m_isVolatile ? "true, " : "false,",
 		  pr->m_isParameter  ? "true" : "false");
-	  first = false;
+	  last = pr->m_name.c_str();
 	}
       }    
-      fprintf(f, "\n  );\n");
+      fprintf(f, "  -- %s\n  );\n", last);
     }
       fprintf(f, 
 	      "end %s_defs;\n"
@@ -2177,7 +2172,7 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 		w->ctl.readbacks ? "read_enables" : "open");
       else
 	fprintf(f, ");\n");
-      if (w->ctl.readbacks)
+      if (w->ctl.readables)
 	fprintf(f,
 		"  readback : component wci.readback\n"
 		"    generic map(%s_defs.properties)\n"
@@ -2276,7 +2271,11 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	      fprintf(f, ",\n"
 		      "                hi32       => hi32");
 	  }
-	  fprintf(f, ");\n");
+	  // provide read enable to suppress out-of-bound reads
+	  if (pr.m_baseType == OA::OCPI_String || pr.m_arrayRank)
+	    fprintf(f, ",\n                read_enable  => read_enables(%u));\n", n);
+	  else
+	    fprintf(f, ");\n");
 	}
       }
       fprintf(f,
@@ -3271,7 +3270,7 @@ emitInstance(Instance *i, FILE *f)
 }
 
 static const char *
-emitUuidHDL(const Worker *aw, const char *outDir, const uuid_t &uuid) {
+emitUuidHDL(const Worker *aw, const char *outDir, const OU::Uuid &uuid) {
   const char *err;
   FILE *f;
   if ((err = openOutput(aw->implName, outDir, "", "_UUID", aw->language == VHDL ? VHD : VER, NULL, f)))
@@ -3300,8 +3299,8 @@ emitUuidHDL(const Worker *aw, const char *outDir, const uuid_t &uuid) {
 const char *
 emitArtHDL(Worker *aw, const char *outDir, const char *wksFile) {
   const char *err;
-  uuid_t uuid;
-  uuid_generate(uuid);
+  OU::Uuid uuid;
+  OU::generateUuid(uuid);
   if ((err = emitUuidHDL(aw, outDir, uuid)))
     return err;
   FILE *f;
@@ -3326,8 +3325,8 @@ emitArtHDL(Worker *aw, const char *outDir, const char *wksFile) {
   if ((err = parseFile(container, 0, "HdlContainer", &dep, &dw->file)) ||
       (err = parseHdlAssy(dep, dw)))
     return err;
-  uuid_string_t uuid_string;
-  uuid_unparse_lower(uuid, uuid_string);
+  OU::UuidString uuid_string;
+  OU::uuid2string(uuid, uuid_string);
   fprintf(f, "<artifact platform=\"%s\" device=\"%s\" uuid=\"%s\">\n",
 	  platform, device, uuid_string);
   // Define all workers

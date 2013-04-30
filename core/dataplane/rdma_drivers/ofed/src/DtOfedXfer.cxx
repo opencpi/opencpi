@@ -1152,7 +1152,7 @@ namespace DataTransfer {
       m_ofed_ep->m_device->destroyMemContext( this );
       delete [] m_mem;
     }
-#ifndef OCPI_OS_darwin
+#ifndef OCPI_OS_macos
     RegisterTransferDriver<XferFactory> driver;
 #endif
   }
