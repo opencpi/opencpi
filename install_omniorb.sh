@@ -4,11 +4,11 @@
 # 2. OCPI_TARGET_HOST is set properly (our target scheme, not the gnu target scheme)
 # 3. OCPI_CROSS_TARGET is the gnu cross target
 set -evx
-OCPI_OMNIORB_VERSION=4.1.5
+OCPI_OMNIORB_VERSION=4.1.6
 . ./setup_install.sh
 mkdir -p omniorb
 cd omniorb
-echo Building omniorb in `pwd`
+echo Building omniorb in `pwd` for $OCPI_TARGET_HOST
 sudo rm -r -f omniorb* $OCPI_TARGET_HOST omniORB* include lib share etc
 curl -O http://iweb.dl.sourceforge.net/project/omniorb/omniORB/omniORB-$OCPI_OMNIORB_VERSION/omniORB-$OCPI_OMNIORB_VERSION.tar.bz2
 #cp ../omniORB-$OCPI_OMNIORB_VERSION.tar.bz2 .
@@ -23,7 +23,7 @@ if test "$OCPI_CROSS_HOST" != ""; then
 fi
 ../configure  \
   $crossConfig \
-  --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/omniorb \
+  --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/omniorb/$OCPI_TARGET_HOST \
   --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/omniorb/$OCPI_TARGET_HOST \
   --with-omniORB-config=$OCPI_PREREQUISITES_INSTALL_DIR/omniorb/etc/omniORB.cfg \
   --with-omniNames-logdir=$OCPI_PREREQUISITES_INSTALL_DIR/omniorb/logs \

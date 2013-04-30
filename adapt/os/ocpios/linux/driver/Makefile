@@ -56,7 +56,7 @@ MyIncs= \
          -I$(realpath $(MyDir)/../../../../../core/container/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
 #$(info MyIncs: $(MyIncs))
-MyLib:=$(realpath $(MyDir)/../../../../../lib/linux-x86_64-bin)
+MyLib:=$(realpath $(MyDir)/../../../../../lib/target-$(OCPI_TARGET_HOST))
 ifeq ($(strip $(MyLib)),)
 ifneq ($(MAKECMDGOALS),topclean)
 $(error OpenCpi libraries must be built before the driver is built)
