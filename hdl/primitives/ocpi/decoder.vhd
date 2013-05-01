@@ -57,6 +57,33 @@ architecture rtl of decoder is
   signal ok_op           : std_logic;
   signal state_pos       : natural;
   signal op_pos          : natural;
+  -- convert state enum value to state number
+  -- because at least isim is broken and does not implement the "pos" function
+  function get_state_pos(input: state_t) return natural is
+  begin
+    case input is
+      when exists_e => return 0;
+      when initialized_e => return 1;
+      when operating_e => return 2;
+      when suspended_e => return 3;
+      when unusable_e => return 4;
+    end case;
+  end get_state_pos;
+  -- convert control op enum value to a number
+  -- because at least isim is broken and does not implement the "pos" function
+  function get_op_pos(input: control_op_t) return natural is
+  begin
+    case input is
+      when initialize_e   => return 0;
+      when start_e        => return 1;
+      when stop_e         => return 2;
+      when release_e      => return 3;
+      when before_query_e => return 4;
+      when after_config_e => return 5;
+      when test_e         => return 6;
+      when no_op_e        => return 7;
+    end case;
+  end get_op_pos;
   -- convert byte enables to low order address bytes
   function be2offset(input: in_t) return byte_offset_t is
     variable byte_en : std_logic_vector(input.MByteEn'range) := input.MByteEn; -- avoid pedantic error
@@ -120,8 +147,8 @@ begin
   is_write    <= to_bool(my_access = write_e);
 
   -- our own error checking (not the worker's)
-  state_pos <= state_t'pos(my_state_r);
-  op_pos    <= control_op_t'pos(my_control_op);
+  state_pos <= get_state_pos(my_state_r);
+  op_pos    <= get_op_pos(my_control_op);
   next_op   <= next_ops(state_pos)(op_pos);
   ok_op     <= worker.allowed_ops(op_pos);
   my_error  <= to_bool(my_access = error_e or

@@ -836,8 +836,9 @@ emitDefsHDL(Worker *w, const char *outDir, bool wrap) {
 	    "end component %s;\n\n"
 	    "constant worker : ocpi.wci.worker_t;\n",
 	    w->implName);
-    //    if (w->ctl.nRunProperties)
-      fprintf(f, "constant properties : ocpi.wci.properties_t;\n");
+    if (w->ctl.nRunProperties)
+      fprintf(f, "constant properties : ocpi.wci.properties_t(0 to %u);\n",
+	      w->ctl.nRunProperties - 1);
     if ((err = emitOuterVhdlPortRecords(f, w)))
       return err;
     fprintf(f, "end package %s_defs;\n", w->implName);
@@ -1606,9 +1607,9 @@ emitImplHDL(Worker *w, const char *outDir, const char * /* library */) {
 	    "  constant worker : ocpi.wci.worker_t := (%u, \"%s\");\n",
 	    w->implName, decodeWidth, ops);
     if (!w->ctl.nRunProperties) {
-      fprintf(f,
-	      "  constant properties : ocpi.wci.properties_t(1 to 0) := "
-	      "(others => (0,x\"00000000\",0,0,0,false,false,false,false));\n");
+      fprintf(f, "-- no properties for this worker\n");
+      //	      "  constant properties : ocpi.wci.properties_t(1 to 0) := "
+      //"(others => (0,x\"00000000\",0,0,0,false,false,false,false));\n");
     } else {
       fprintf(f, "  constant properties : ocpi.wci.properties_t := (\n");
       unsigned n = 0;
