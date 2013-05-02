@@ -1,0 +1,31 @@
+#!/bin/bash
+
+if test "$1" != ""; then
+  cd $1
+  shift
+fi
+
+if test -f isim.wdb; then
+  set -e 
+  . $OCPI_XILINX_TOOLS_DIR/settings64.sh > /dev/null
+  export LM_LICENSE_FILE=$OCPI_XILINX_LICENSE_FILE
+  exec isimgui -view isim.wdb
+elif test -f vsim.wlf; then
+  export LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE
+  exec $OCPI_MODELSIM_DIR/bin/vsim -view vsim.wlf
+else
+  files=(`shopt -s nullglob; echo *.*sim.20*[0-9]`)
+  nfiles=${#files[@]}
+  if test $nfiles == 0; then
+    echo No simulation files \(isim.wdb or vsim.wlf\) nor simulation directories \(*.*sim.\<date\>\) found.
+    exit 1
+  fi
+  files=(`ls -dtr ${files[*]}`)
+  nfiles=${#files[@]}
+  last=${files[$nfiles-1]}
+  if test -f $last/isim.wdb -o -f $last/vsim.wlf; then
+    exec sh $0 $last
+  fi
+  echo Although a simulation directory was found \($last\), no sim files were found \($last/isim.wdb or $last/vsim.wlf\)
+  exit 1
+fi
