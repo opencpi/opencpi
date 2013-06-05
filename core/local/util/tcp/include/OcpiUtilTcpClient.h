@@ -97,7 +97,7 @@ namespace OCPI {
          * \throw std::string If the connection can not be established.
          */
 
-        Client (const std::string & host, unsigned int port)
+        Client (const std::string & host, uint16_t port)
           throw (std::string);
 
         /**
@@ -120,7 +120,7 @@ namespace OCPI {
          * \throw std::string If the connection can not be established.
          */
 
-        void connect (const std::string & host, unsigned int port)
+        void connect (const std::string & host, uint16_t port)
           throw (std::string);
 
       private:

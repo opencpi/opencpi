@@ -149,7 +149,7 @@ namespace OCPI {
         ( void ) s_port;
         ( void ) input;
         ( void ) cont;
-        ocpiAssert(!"Unsupported data transfer request rejected !!\n");
+        ocpiAssert("Unsupported data transfer request rejected !!\n"==0);
         throw OCPI::Util::EmbeddedException("Unsupported data transfer request rejected !!\n");
       }
 
@@ -162,7 +162,7 @@ namespace OCPI {
         ( void ) input;
         ( void ) output;
         ( void ) cont;
-        ocpiAssert(!"Unsupported data transfer request rejected !!\n");
+        ocpiAssert("Unsupported data transfer request rejected !!\n"==0);
         throw OCPI::Util::EmbeddedException("Unsupported data transfer request rejected !!\n");
       }
 

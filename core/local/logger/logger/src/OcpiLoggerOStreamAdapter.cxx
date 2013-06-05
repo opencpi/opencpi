@@ -103,7 +103,7 @@ OStreamAdapterBuf::overflow (int_type c)
     m_first = false;
   }
 
-  if (traits_type::eq (c, traits_type::eof())) {
+  if (traits_type::eq_int_type (c, traits_type::eof())) {
     m_selfLock.unlock ();
     return traits_type::not_eof (c);
   }
@@ -121,7 +121,7 @@ OStreamAdapterBuf::xsputn (const char * data,
   std::streamsize total = 0;
   std::streamsize idx;
 
-  if (traits_type::eq (overflow (traits_type::eof()), traits_type::eof())) {
+  if (traits_type::eq_int_type (overflow (traits_type::eof()), traits_type::eof())) {
     return 0;
   }
 

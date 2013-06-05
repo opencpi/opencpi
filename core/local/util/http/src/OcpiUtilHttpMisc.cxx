@@ -180,7 +180,7 @@ OCPI::Util::Http::parseHttpDate (const std::string & httpDate)
   }
 
   char * dptr = 0;
-  timeStr.tm_mday = std::strtol (day.c_str(), &dptr, 10);
+  timeStr.tm_mday = (int)strtoul (day.c_str(), &dptr, 10);
 
   if (!dptr || *dptr) {
     throw std::string ("invalid day of the month");
@@ -200,7 +200,7 @@ OCPI::Util::Http::parseHttpDate (const std::string & httpDate)
   timeStr.tm_mon = monthsSinceJan;
 
   dptr = 0;
-  int yearno = std::strtol (year.c_str(), &dptr, 10);
+  int yearno = (int)std::strtol (year.c_str(), &dptr, 10);
 
   if (!dptr || *dptr) {
     throw std::string ("invalid year");
@@ -226,21 +226,21 @@ OCPI::Util::Http::parseHttpDate (const std::string & httpDate)
   std::string second = time.substr (6, 2);
 
   char * tptr = 0;
-  timeStr.tm_hour = std::strtol (hour.c_str(), &tptr, 10);
+  timeStr.tm_hour = (int)std::strtol (hour.c_str(), &tptr, 10);
 
   if (!tptr || *tptr) {
     throw std::string ("invalid hour");
   }
 
   tptr = 0;
-  timeStr.tm_min = std::strtol (minute.c_str(), &tptr, 10);
+  timeStr.tm_min = (int)std::strtol (minute.c_str(), &tptr, 10);
 
   if (!tptr || *tptr) {
     throw std::string ("invalid minute");
   }
 
   tptr = 0;
-  timeStr.tm_sec = std::strtol (second.c_str(), &tptr, 10);
+  timeStr.tm_sec = (int)std::strtol (second.c_str(), &tptr, 10);
 
   if (!tptr || *tptr) {
     throw std::string ("invalid second");

@@ -118,7 +118,7 @@ overflow (int_type c)
     m_logMessage.clear ();
   }
 
-  if (traits_type::eq (c, traits_type::eof())) {
+  if (traits_type::eq_int_type (c, traits_type::eof())) {
     return traits_type::not_eof (c);
   }
 

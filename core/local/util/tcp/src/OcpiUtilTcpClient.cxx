@@ -47,7 +47,7 @@ OCPI::Util::Tcp::Client::Client ()
 {
 }
 
-OCPI::Util::Tcp::Client::Client (const std::string & host, unsigned int port)
+OCPI::Util::Tcp::Client::Client (const std::string & host, uint16_t port)
     throw (std::string)
 {
   connect (host, port);
@@ -59,7 +59,7 @@ OCPI::Util::Tcp::Client::~Client ()
 }
 
 void
-OCPI::Util::Tcp::Client::connect (const std::string & host, unsigned int port)
+OCPI::Util::Tcp::Client::connect (const std::string & host, uint16_t port)
     throw (std::string)
 {
   OCPI::OS::Socket conn = OCPI::OS::ClientSocket::connect (host, port);

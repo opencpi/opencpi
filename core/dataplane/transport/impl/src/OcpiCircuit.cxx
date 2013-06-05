@@ -84,8 +84,8 @@ using namespace OCPI::OS;
 using namespace ::DataTransport::Interface;
 namespace DtI = ::DataTransport::Interface;
 
-// our init flag
-OCPI::OS::uint32_t OCPI::DataTransport::Circuit::m_init=0;
+// our static init
+//uint32_t OCPI::DataTransport::Circuit::m_init=0;
 
 
 /**********************************
@@ -94,7 +94,7 @@ OCPI::OS::uint32_t OCPI::DataTransport::Circuit::m_init=0;
 OCPI::DataTransport::Circuit::
 Circuit( 
         OCPI::DataTransport::Transport* t,
-        CircuitId& id,
+        CircuitId id,
         ConnectionMetaData* connection, 
         PortOrdinal src_ps[],
         PortOrdinal dest_pss[])
@@ -249,7 +249,7 @@ Circuit(
       = m_transport->m_transportGlobal->m_cont4;
 
   }
-  m_init++;
+  //  m_init++;
 
   // Now we can initialize our port sets.
   update();
@@ -257,7 +257,7 @@ Circuit(
   m_lastPortSet = 0;
   m_maxPortOrd = 0;
 
-  for ( OCPI::OS::uint32_t psc=0; psc<m_metaData->m_portSetMd.size(); psc++ ) {
+  for ( uint32_t psc=0; psc<m_metaData->m_portSetMd.size(); psc++ ) {
     m_maxPortOrd+= static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[psc])->m_portMd.size();
   }
 
@@ -306,7 +306,7 @@ OCPI::DataTransport::Circuit::
 
 #ifdef DD_N_P_SUPPORTED
   // First we will try to tell all of the input ports that we are going away.
-  for ( OCPI::OS::uint32_t n=0; n<this->getOutputPortSet()->getPortCount(); n++ ) {
+  for ( uint32_t n=0; n<this->getOutputPortSet()->getPortCount(); n++ ) {
     ocpiDebug("spc = %d", this->getOutputPortSet()->getPortCount());
     OCPI::DataTransport::Port* port = 
       static_cast<OCPI::DataTransport::Port*>(this->getOutputPortSet()->getPortFromIndex(n));
@@ -336,21 +336,18 @@ OCPI::DataTransport::Circuit::
 
 
 void OCPI::DataTransport::Circuit::
-updateInputs( void* data )
+updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit*update)
 {
   m_updated = true;
-  DataTransfer::ContainerComms::RequestUpdateCircuit* update = 
-    static_cast<DataTransfer::ContainerComms::RequestUpdateCircuit*>(data);
-
   // This is a request coming from the primary output port (ordinal 0).  It is telling us
   // about the other ports in the circuit and also about its endpoint and offsets so that
-  // we can let it know when we have consumed a buffer that it sent ot us.
+  // we can let it know when we have consumed a buffer that it sent to us.
 
   // Port set ordinal 0 is always the output set, we need to update ours 
   static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[0])->getPortInfo(0)->real_location_string = update->output_end_point;
 
   this->getOutputPortSet()->getPort(0)->m_data->m_bufferData->outputOffsets.portSetControlOffset=
-    update->senderOutputControlOffset;
+    OCPI_UTRUNCATE(OCPI::Util::ResAddr, update->senderOutputControlOffset);
   this->getOutputPortSet()->getPort(0)->initialize();
 
   // Now update the input port set with all of the real information associated with the circuit
@@ -368,7 +365,8 @@ updateInputs( void* data )
   }
 
   OCPI::DataTransport::Port* port = 
-    static_cast<OCPI::DataTransport::Port*>(this->getInputPortSet(0)->getPortFromOrdinal(update->receiverPortId));
+    static_cast<OCPI::DataTransport::Port*>
+    (this->getInputPortSet(0)->getPortFromOrdinal((PortOrdinal)update->receiverPortId));
 
   port->m_data->remoteCircuitId = update->senderCircuitId;
   port->m_data->remotePortId    = update->senderPortId;
@@ -377,22 +375,22 @@ updateInputs( void* data )
 
   // Go through each port and make sure they are updated
   OCPI::DataTransport::PortSet* ps = getOutputPortSet();
-  OCPI::OS::uint32_t i;
-  OCPI::OS::uint32_t sports=0, tports=0;
-  for ( i=0; i<ps->getPortCount(); i++ ) {
+  PortOrdinal i;
+  uint32_t sports=0, tports=0;
+  for (i=0; i < ps->getPortCount(); i++) {
     ps->getPort(i)->update();
     sports++;
   }
-  for ( OCPI::OS::uint32_t m=0; m<getInputPortSetCount(); m++) {
+  for (PortOrdinal m = 0; m < getInputPortSetCount(); m++) {
     ps = getInputPortSet(m);
-    for ( i=0; i<ps->getPortCount(); i++ ) {
+    for (i=0; i<ps->getPortCount(); i++ ) {
       ps->getPort(i)->update();
       tports++;
     }
   }
 
   m_maxPortOrd = 0;
-  for ( OCPI::OS::uint32_t psc=0; psc<m_metaData->m_portSetMd.size(); psc++ ) {
+  for ( uint32_t psc=0; psc<m_metaData->m_portSetMd.size(); psc++ ) {
     m_maxPortOrd+=static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[psc])->m_portMd.size();
   }
 
@@ -412,12 +410,12 @@ getOutputPort(int ord)
   return getOutputPortSet()->getPortFromOrdinal(ord);
 }
 
+#if 0
 bool 
 OCPI::DataTransport::Circuit::
 updateInputs()
 {
-  OCPI::DataTransport::Port* output_port = 
-    static_cast<OCPI::DataTransport::Port*>(getOutputPortSet()->getPortFromIndex(0));
+  OCPI::DataTransport::Port* output_port = getOutputPortSet()->getPortFromIndex(0);
 
   // Make the request to get our offset
   SMBResources* s_res = XferFactoryManager::getFactoryManager().getSMBResources( output_port->getEndpoint() );
@@ -430,9 +428,9 @@ updateInputs()
   // Do for all input ports
   OCPI::Util::VList& tps = getInputPortSets();
   PortSet* ps;
-  for ( OCPI::OS::uint32_t n=0; n<getInputPortSetCount(); n++ ) {
+  for ( uint32_t n=0; n<getInputPortSetCount(); n++ ) {
     ps = static_cast<PortSet*>(tps[n]);
-    for ( OCPI::OS::uint32_t i=0; i<ps->getPortCount(); i++ ) {
+    for ( uint32_t i=0; i<ps->getPortCount(); i++ ) {
       OCPI::DataTransport::Port* port = static_cast<OCPI::DataTransport::Port*>(ps->getPortFromIndex(i));
       // Ignore local ports
       if ( m_transport->isLocalEndpoint( port->getRealShemServices()->endpoint()->end_point.c_str() ) ) {
@@ -454,17 +452,17 @@ updateInputs()
       SMBResources* t_res = 
         XferFactoryManager::getFactoryManager().getSMBResources( static_cast<OCPI::DataTransport::Port*>(ps->getPortFromIndex(i))->getEndpoint() );
       DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
-      mb->request.reqUpdateCircuit.type = DataTransfer::ContainerComms::ReqUpdateCircuit;
+      mb->request.type = DataTransfer::ContainerComms::ReqUpdateCircuit;
+      mb->request.circuitId = port->m_data->remoteCircuitId;
       mb->request.reqUpdateCircuit.senderCircuitId = port->getCircuit()->getCircuitId();
       mb->request.reqUpdateCircuit.senderPortId = port->getPortId();
-      mb->request.reqUpdateCircuit.receiverCircuitId = port->m_data->remoteCircuitId;
       mb->request.reqUpdateCircuit.receiverPortId = port->m_data->remotePortId;
       mb->request.reqUpdateCircuit.senderOutputPortId = output_port->getPortId();
       mb->request.reqUpdateCircuit.senderOutputControlOffset = 
         output_port->m_data->m_bufferData->outputOffsets.portSetControlOffset;
       strcpy(mb->request.reqUpdateCircuit.output_end_point, output_port->getEndpoint()->end_point.c_str() );
       mb->request.reqUpdateCircuit.tPortCount = ps->getPortCount();
-      mb->return_offset = -1;
+      mb->return_offset = 0; // unused when size is zero
       mb->return_size = 0;
       mb->returnMailboxId = output_port->getMailbox();
       ocpiDebug("ReqUpdateCircuit for %x", getCircuitId());
@@ -473,7 +471,7 @@ updateInputs()
   }
 
   m_maxPortOrd = 0;
-  for ( OCPI::OS::uint32_t psc=0; psc<m_metaData->m_portSetMd.size(); psc++ ) {
+  for ( uint32_t psc=0; psc<m_metaData->m_portSetMd.size(); psc++ ) {
     m_maxPortOrd+=static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[psc])->m_portMd.size();
   }
 
@@ -483,7 +481,7 @@ updateInputs()
   }
   return true;
 }
-
+#endif
 
 namespace OCPI {
   namespace DataTransport {
@@ -492,9 +490,9 @@ namespace OCPI {
     {
 
     private:
-      volatile OCPI::OS::uint8_t* current_src_buffer_ptr;
-      volatile OCPI::OS::uint64_t* current_src_metaData_ptr;
-      volatile OCPI::OS::uint32_t* current_empty_flag_ptr;
+      volatile uint8_t* current_src_buffer_ptr;
+      volatile uint64_t* current_src_metaData_ptr;
+      volatile uint32_t* current_empty_flag_ptr;
 
     public:
 
@@ -506,7 +504,7 @@ namespace OCPI {
         current_empty_flag_ptr = pull_data_info->empty_flag;
       }
 
-      bool checkBufferEmpty( OCPI::OS::uint8_t* buffer_data, OCPI::OS::uint32_t tlen, OCPI::OS::uint64_t& metaData ) {
+      bool checkBufferEmpty( uint8_t* buffer_data, uint32_t tlen, uint64_t& metaData ) {
 
 #ifdef SLEEP_DEBUG
           // for debug
@@ -522,7 +520,7 @@ namespace OCPI {
 #endif
 
           // get the number of output buffers available
-          OCPI::OS::uint32_t src_buffers_available = *pull_data_info->src_flag;
+          uint32_t src_buffers_available = *pull_data_info->src_flag;
 
           ocpiDebug("FPGA producer has %d buffers available, tlen = %d", 
                  src_buffers_available, tlen );
@@ -533,14 +531,14 @@ namespace OCPI {
             return true;
           }
 
-          OCPI::OS::uint32_t* tgt_buffer = (OCPI::OS::uint32_t*)buffer_data;
+          uint32_t* tgt_buffer = (uint32_t*)buffer_data;
 
           ocpiDebug("Moving data from FPGA producer to local consumer, tgt buf = %p", tgt_buffer);
           ocpiDebug("current_src = %p tlen = %u, fw = %d", current_src_buffer_ptr, tlen, *current_src_buffer_ptr );
           ocpiDebug("The meta data word = %" PRIu64, *current_src_metaData_ptr );
 
 #ifndef IP_SUPPORTS_64BIT_ACCESS
-          volatile OCPI::OS::uint32_t* src = (volatile OCPI::OS::uint32_t*)current_src_buffer_ptr;
+          volatile uint32_t* src = (volatile uint32_t*)current_src_buffer_ptr;
           for ( unsigned int n=0; n<(tlen/4); n++ ) {
             tgt_buffer[n] = src[n];
           }
@@ -575,7 +573,7 @@ namespace OCPI {
 #endif
 
           // get the number of input buffers available
-          OCPI::OS::uint32_t buffers_available = *pull_data_info->empty_flag;
+          uint32_t buffers_available = *pull_data_info->empty_flag;
       
           if ( buffers_available == 0 ) {
             return false;
@@ -627,25 +625,25 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
     tres = &m_transport->getEndpoint( pdesc.desc.oob.oep, false )->getSMBResources();
     PullDataInfo* pull_data_info = new PullDataInfo;
     // Get the local and remote vaddrs
-    pull_data_info->src_buffer = (volatile OCPI::OS::uint8_t*)
+    pull_data_info->src_buffer = (volatile uint8_t*)
       sres->sMemServices->map( pdesc.desc.dataBufferBaseAddr, 
                                pdesc.desc.dataBufferPitch == 0 ? 
                                pdesc.desc.dataBufferSize : pdesc.desc.dataBufferPitch * pdesc.desc.nBuffers );
 
-    pull_data_info->src_metaData = (volatile OCPI::OS::uint64_t*)
+    pull_data_info->src_metaData = (volatile uint64_t*)
       sres->sMemServices->map( pdesc.desc.metaDataBaseAddr,
                                pdesc.desc.metaDataPitch == 0 ? 
-                               sizeof(OCPI::OS::uint64_t) : pdesc.desc.metaDataPitch * pdesc.desc.nBuffers );
+                               sizeof(uint64_t) : pdesc.desc.metaDataPitch * pdesc.desc.nBuffers );
 
-    pull_data_info->src_flag = (volatile OCPI::OS::uint32_t*)
+    pull_data_info->src_flag = (volatile uint32_t*)
       sres->sMemServices->map( pdesc.desc.fullFlagBaseAddr,
                                pdesc.desc.fullFlagPitch == 0 ? 
-                               sizeof(OCPI::OS::uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
+                               sizeof(uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
 
-    pull_data_info->empty_flag = (OCPI::OS::uint32_t*)
+    pull_data_info->empty_flag = (uint32_t*)
       sres->sMemServices->map( pdesc.desc.emptyFlagBaseAddr,
                                pdesc.desc.emptyFlagPitch == 0 ? 
-                               sizeof(OCPI::OS::uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
+                               sizeof(uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
     memcpy(&pull_data_info->pdesc, &pdesc, sizeof(OCPI::RDT::Descriptors));
     pdd = new OCPI::DataTransport::PullDataDriverIP( pull_data_info );
   }
@@ -670,15 +668,15 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
     }
 
     PullDataInfo* pull_data_info = new PullDataInfo;
-    pull_data_info->empty_flag = (OCPI::OS::uint32_t*)
+    pull_data_info->empty_flag = (uint32_t*)
       tres->sMemServices->map( pdesc.desc.emptyFlagBaseAddr,
                                pdesc.desc.emptyFlagPitch == 0 ? 
-                               sizeof(OCPI::OS::uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
+                               sizeof(uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
 
-    pull_data_info->src_flag = (volatile OCPI::OS::uint32_t*)
+    pull_data_info->src_flag = (volatile uint32_t*)
       tres->sMemServices->map( pdesc.desc.fullFlagBaseAddr,
                                pdesc.desc.fullFlagPitch == 0 ? 
-                               sizeof(OCPI::OS::uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
+                               sizeof(uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
     memcpy(&pull_data_info->pdesc, &pdesc, sizeof(OCPI::RDT::Descriptors));
     pdd = new OCPI::DataTransport::PullDataDriverIP( pull_data_info );
   }
@@ -701,8 +699,9 @@ setFlowControlDescriptor( OCPI::DataTransport::Port* p, const OCPI::RDT::Descrip
   // make sure it gets initialized
   OCPI::DataTransport::Port* sport = m_outputPs->getPort(0);
 
-  ocpiDebug("<< Output port Full buffer flag = 0x%llx >>", (long long)pdesc.desc.emptyFlagValue );
-  ocpiDebug("<< Channel = %d", (int)((pdesc.desc.emptyFlagValue>>32) & 0xfff) );
+  ocpiDebug("<< Output port Full buffer flag = 0x%" DTOSDATATYPES_FLAG_PRIx" >>",
+	    pdesc.desc.emptyFlagValue );
+  // What is this???  ocpiDebug("<< Channel = %d", (int)((pdesc.desc.emptyFlagValue>>32) & 0xfff) );
   ocpiDebug("Setting the shadow port ep to %s", pdesc.desc.oob.oep );
 
   if ( pdesc.desc.oob.oep[0] != 0 ) {
@@ -725,6 +724,7 @@ setFlowControlDescriptor( OCPI::DataTransport::Port* p, const OCPI::RDT::Descrip
     ocpiAssert(0);
   }
 
+#if 0
   if ( pdesc.desc.oob.oep[0] != 0 ) {
     try {
       std::string s(pdesc.desc.oob.oep);
@@ -737,7 +737,7 @@ setFlowControlDescriptor( OCPI::DataTransport::Port* p, const OCPI::RDT::Descrip
       ocpiBad("ERROR: Unable to set event id");
     }
   }
-
+#endif
   // At this point we are setup, however if the output port is passive, we need to
   // Create a driver for it.
   if ( pdesc.role == OCPI::RDT::Passive ) {
@@ -824,39 +824,6 @@ addPort( PortMetaData* pmd )
 }
 
 
-#if 0
-void
-OCPI::DataTransport::Circuit::
-getUserPortFlowControlDescriptor( OCPI::RDT::Descriptors * fb, unsigned int idx )
-{
-  PortSet * sps = static_cast<PortSet*>(m_inputPs[0]);
-  if ( idx >= sps->getPortCount() ) {
-    return;
-  }
-
-  Port* port = this->getOutputPortSet()->getPortFromIndex(idx);
-  const char* ep = port->getEndpoint()->end_point.c_str();
-
-
-  // If our output is in "ActiveFlowControl" mode, we do not need
-  // to tell the input about our input shadow buffers since they
-  // do not need to indicate when they have consumed data, we dont care
-  // because we are not managing the transfers from our output to their
-  // inputs.  Instead, we will send them the output descriptor so that 
-  // they can "pull" data from us, and indicate when the data transfer has
-  // completed.
-  if ( getOutputPortSet()->getPort(0)->getMetaData()->m_descriptor.role == OCPI::RDT::ActiveFlowControl ) {
-    *fb = getOutputPortSet()->getPort(0)->getMetaData()->m_descriptor;
-    fb->type = OCPI::RDT::ProducerDescT;
-  }
-  else {
-    *fb = sps->getPort(idx)->getMetaData()->m_shadowPortDescriptor;
-    fb->type = OCPI::RDT::ConsumerFlowControlDescT;
-  }
-  strncpy(fb->desc.oob.oep,ep,127 );
-  fb->desc.oob.oep[127] = 0;
-}
-#endif
 
 
 /**********************************
@@ -868,8 +835,9 @@ addInputPort(DataTransfer::EndPoint &iep, const OCPI::RDT::Descriptors& inputDes
 	     DataTransfer::EndPoint &oep)
 {
 
-  ocpiDebug("<< Input port Full buffer flag = 0x%llx >>", (long long)inputDesc.desc.fullFlagValue );
-  ocpiDebug("<< Channel = %d", (int)((inputDesc.desc.fullFlagValue>>32) & 0xfff) );
+  ocpiDebug("<< Input port Full buffer flag = 0x%" DTOSDATATYPES_FLAG_PRIx" >>",
+	    inputDesc.desc.fullFlagValue);
+  // ocpiDebug("<< Channel = %d", (int)((inputDesc.desc.fullFlagValue>>32) & 0xfff) );
 
   // Create a new port set description
   PortSetMetaData* psmd;
@@ -893,43 +861,7 @@ addInputPort(DataTransfer::EndPoint &iep, const OCPI::RDT::Descriptors& inputDes
     ord++;
   }
 
-  iep.event_id = (int)((inputDesc.desc.fullFlagValue>>32) & 0xfff);
-#if 0
-  ocpiAssert(inputDesc.desc.oob.oep[0]);
-  if ( inputDesc.desc.oob.oep[0] ) {
-    EndPoint *ep = m_transport->getEndpoint(  inputDesc.desc.oob.oep );
-    if ( ep ) {
-      ep->event_id = (int)((inputDesc.desc.fullFlagValue>>32) & 0xfff);
-    }
-  }
-#endif
-
-#if 0
-  // This stuff is now deferred to "finalize"
-
-  // Since we now have a complete circuit description, we need to tell the input ports
-  // about us and about each other so they can complete their circuits
-  ocpiAssert(fb);
-  if ( !fb ) {
-    while ( ! updateInputs() ) {
-    }
-  }
-  else {
-    getUserPortFlowControlDescriptor(fb,0);
-    ocpiDebug("Circuit %p is closed 6: id %x", this, getCircuitId());
-    m_openCircuit = false;
-  }
-
-  // Now that we have our ports created, we need to see if this is a "pull" protocol
-  // If so, we need to create a pull driver for this port.
-  if ( pdesc.role == OCPI::RDT::Passive ) {
-    OCPI::DataTransport::PortSet* portset = (OCPI::DataTransport::PortSet*)this->getInputPortSet(0);
-    OCPI::DataTransport::Port* port = portset->getPort(0);
-    ocpiDebug("Found a Passive Consumer Port !!");
-    PullDataDriver* pd = createPullDriver( pdesc, port );
-    static_cast<OCPI::DataTransport::Port*>(port)->attachPullDriver( pd );
-  }
-#endif
+  //  iep.event_id = (int)((inputDesc.desc.fullFlagValue>>32) & 0xfff);
 }
 
 
@@ -945,19 +877,19 @@ ready()
   if (m_ready)
     return true;
 
-  OCPI::OS::uint32_t n,y;
+  PortOrdinal n,y;
 
   // We need to go through each port and determine if its buffers are complete
   OCPI::DataTransport::PortSet* s_ps = getOutputPortSet();
-  for (n=0; n<s_ps->getPortCount(); n++ ) {
+  for (n =0; n < s_ps->getPortCount(); n++) {
     OCPI::DataTransport::Port* sp = s_ps->getPort(n);
-    if ( ! sp->ready() ) {
+    if (!sp->ready()) {
       return false;
     }
   }
 
   // Now do the input port sets
-  for (y=0; y<this->getInputPortSetCount(); y++ ) {
+  for (y = 0; y < this->getInputPortSetCount(); y++) {
                 
     OCPI::DataTransport::PortSet* t_ps = getInputPortSet(y);
     for (n=0; n<t_ps->getPortCount(); n++ ) {
@@ -973,17 +905,6 @@ ready()
   return true;
 }
 
-#if 0
-/**********************************
- * Updates an existing connection with a new port
- *********************************/
-bool 
-OCPI::DataTransport::Circuit::
-updateConnection(OCPI::DataTransport::Port*,OCPI::OS::uint32_t)
-{
-  return ready();
-}
-#endif
 /**********************************
  * Initialize transfers
  *********************************/
@@ -997,11 +918,11 @@ initializeDataTransfers()
   ocpiAssert ( ready() );
 
   //Go through the input ports and make sure we have the buffers allocated
-  for ( OCPI::OS::uint32_t n=0; n<this->m_connection->getInputPortSetCount(); n++ ) {
+  for ( PortOrdinal n=0; n<this->m_connection->getInputPortSetCount(); n++ ) {
     OCPI::DataTransport::PortSet* portset = (OCPI::DataTransport::PortSet*)this->m_connection->getInputPortSet(n);
-    for ( OCPI::OS::uint32_t y=0; y<portset->getPortCount(); y++ ) {
+    for ( PortOrdinal y=0; y<portset->getPortCount(); y++ ) {
       OCPI::DataTransport::Port* port = portset->getPort(y);
-      for ( OCPI::OS::uint32_t b=0; b<port->getNumBuffers(); b++ ) {
+      for (BufferOrdinal b=0; b<port->getNumBuffers(); b++ ) {
 
         InputBuffer* tb = port->getInputBuffer(b);
         if ( tb ) {
@@ -1015,9 +936,9 @@ initializeDataTransfers()
   }
 
   OCPI::DataTransport::Port* sport = m_outputPs->getPort(0);
-  for ( OCPI::OS::uint32_t y=0; y<m_outputPs->getPortCount(); y++ ) {
+  for ( uint32_t y=0; y<m_outputPs->getPortCount(); y++ ) {
     OCPI::DataTransport::Port* port = m_outputPs->getPort(y);
-    for ( OCPI::OS::uint32_t b=0; b<port->getNumBuffers(); b++ ) {
+    for ( uint32_t b=0; b<port->getNumBuffers(); b++ ) {
 
       OutputBuffer* tb = port->getOutputBuffer(b);
       if ( tb ) {
@@ -1052,7 +973,7 @@ void
 OCPI::DataTransport::Circuit::
 createCircuitTemplateGenerators()
 {
-  OCPI::OS::uint32_t n;
+  PortOrdinal n;
 
   // We need a template generator per output/input pair
   OCPI::DataTransport::PortSet *output_port_set = m_outputPs;
@@ -1128,9 +1049,9 @@ checkIOZCopyQ()
   int total = 0;
 
 
-  for ( OCPI::OS::uint32_t n=0; n<m_maxPortOrd; n++ ) {
+  for ( uint32_t n=0; n<m_maxPortOrd; n++ ) {
 
-    OCPI::OS::uint32_t n_queued = m_queuedInputOutputTransfers[n].getElementCount();
+    uint32_t n_queued = m_queuedInputOutputTransfers[n].getElementCount();
     total += n_queued;
 
     if ( n_queued == 0 ) {
@@ -1153,7 +1074,7 @@ OCPI::DataTransport::Circuit::
 QInputToWaitForOutput( 
                       Port* out_port,
                       Buffer* input_buf,
-                      OCPI::OS::uint32_t )
+                      size_t )
 {
 
 #ifdef DEBUG_L2
@@ -1174,7 +1095,7 @@ OCPI::DataTransport::Circuit::
 QInputToOutput( 
                Port* out_port,
                Buffer* input_buf,
-               OCPI::OS::uint32_t )
+               size_t )
 {
 
   // Get the next available output buffer
@@ -1219,21 +1140,21 @@ void OCPI::DataTransport::Circuit::
 sendZcopyInputBuffer( 
                      Port* out_port,
                      Buffer* input_buf,
-                     OCPI::OS::uint32_t len )
+                     size_t len )
 {
   QInputToWaitForOutput( out_port, input_buf, len);
 }
 
-OCPI::OS::uint32_t 
+uint32_t 
 OCPI::DataTransport::Circuit::
 checkQueuedTransfers()
 {
 
-  OCPI::OS::uint32_t total=0;
+  uint32_t total=0;
         
-  for ( OCPI::OS::uint32_t n=0; n<m_maxPortOrd; n++ ) {
+  for ( uint32_t n=0; n<m_maxPortOrd; n++ ) {
                 
-    OCPI::OS::uint32_t n_queued = m_queuedTransfers[n].getElementCount();
+    uint32_t n_queued = m_queuedTransfers[n].getElementCount();
     total += n_queued;
                 
 #ifdef DEBUG_L2
@@ -1245,7 +1166,7 @@ checkQueuedTransfers()
 #ifdef QUE_CHECK
     // que integrity check
     Buffer* b[MAX_PORT_COUNT];
-    for (OCPI::OS::int32_t i=0; i<n_queued; i++ ) {
+    for (int32_t i=0; i<n_queued; i++ ) {
       b[i] = 
         static_cast<Buffer*>(get_entry(&m_queuedTransfers, i));
     }
@@ -1350,7 +1271,7 @@ startBufferTransfer( Buffer* src_buf )
 #endif
 
   // We need to start a transfer for each input port set
-  for ( OCPI::OS::uint32_t n=0; n<this->getQualifiedInputPortSetCount(); n++ ) {
+  for ( uint32_t n=0; n<this->getQualifiedInputPortSetCount(); n++ ) {
     OCPI::DataTransport::PortSet* t_port = this->getQualifiedInputPortSet(n);
     if ( (t_port->getTxController()->produce( src_buf )) ) {
       this->queTransfer( src_buf, true );
@@ -1387,7 +1308,7 @@ broadcastBuffer( Buffer* src_buf )
   buffer->getMetaData()->broadCast = 1;
 
   // We need to start a transfer for each input port set
-  for ( OCPI::OS::uint32_t n=0; n<this->getInputPortSetCount(); n++ ) {
+  for (PortOrdinal n=0; n<this->getInputPortSetCount(); n++ ) {
     OCPI::DataTransport::PortSet* t_port = this->getInputPortSet(n);
     t_port->getTxController()->produce( src_buf, true );
   }
@@ -1423,7 +1344,7 @@ queTransfer( Buffer* src_buf, bool prepend )
 
 #ifdef QUE_CHECK
   // debug
-  OCPI::OS::int32_t n_queued = get_nentries(&m_queuedTransfers);
+  int32_t n_queued = get_nentries(&m_queuedTransfers);
   Buffer* b1  = 
     static_cast<Buffer*>(get_entry(&m_queuedTransfers, 0));
   Buffer* b2  = 
@@ -1443,7 +1364,7 @@ queTransfer( Buffer* src_buf, bool prepend )
  * receive data based upon the circuits data distribution type.  If the circuits
  * DD type is parallel, then 
  *********************************/
-OCPI::OS::uint32_t 
+uint32_t 
 OCPI::DataTransport::Circuit::
 getQualifiedInputPortSetCount( bool queued )
 {
@@ -1467,7 +1388,7 @@ getQualifiedInputPortSetCount( bool queued )
 
 OCPI::DataTransport::PortSet* 
 OCPI::DataTransport::Circuit::
-getQualifiedInputPortSet(OCPI::OS::uint32_t n, bool queued)
+getQualifiedInputPortSet(uint32_t n, bool queued)
 {
 
   if ( queued ) {
@@ -1514,9 +1435,9 @@ canTransferBuffer( Buffer* src_buf, bool queued_transfer )
       return false;
     }
 
-    OCPI::OS::uint32_t n_queued = m_queuedTransfers[src_buf->getPort()->getPortId()].getElementCount();
+    uint32_t n_queued = m_queuedTransfers[src_buf->getPort()->getPortId()].getElementCount();
     if ( n_queued ) {
-      for ( OCPI::OS::uint32_t n=0; n<this->getQualifiedInputPortSetCount(queued_transfer); n++ ) {
+      for ( uint32_t n=0; n<this->getQualifiedInputPortSetCount(queued_transfer); n++ ) {
         OCPI::DataTransport::PortSet* t_port = this->getQualifiedInputPortSet(n, queued_transfer);
         if ( ! t_port->getTxController()->canTransferBufferWhileOthersAreQueued()) {
           return false;
@@ -1538,7 +1459,7 @@ canTransferBuffer( Buffer* src_buf, bool queued_transfer )
   }
 
   // We need to go to each input port set and determine if we can procuce
-  for ( OCPI::OS::uint32_t n=0; n<this->getQualifiedInputPortSetCount(worst_case); n++ ) {
+  for ( uint32_t n=0; n<this->getQualifiedInputPortSetCount(worst_case); n++ ) {
     OCPI::DataTransport::PortSet *input_port_set = getQualifiedInputPortSet(n, worst_case);
     if ( ! input_port_set->getTxController()->canProduce( src_buf ) ) {
       return false;
@@ -1556,7 +1477,7 @@ void
 OCPI::DataTransport::Circuit::
 debugDump()
 {
-  OCPI::OS::uint32_t n;
+  uint32_t n;
   ocpiDebug("Debug dump for circuit");
   ocpiDebug("  Circuit is %s", this->m_openCircuit ? "open" : "closed" );
   ocpiDebug("  There are %d ports in the output port set", getOutputPortSet()->getPortCount() );
@@ -1567,7 +1488,7 @@ debugDump()
   ocpiDebug("  There are %d input port sets", getInputPortSetCount() );
   for ( n=0; n<getInputPortSetCount(); n++ ) {
     ocpiDebug("  Input port set %d, has %d ports",n,getInputPortSet(n)->getPortCount());
-    for ( OCPI::OS::uint32_t m=0; m<getInputPortSet(n)->getPortCount(); m++ ) {
+    for ( uint32_t m=0; m<getInputPortSet(n)->getPortCount(); m++ ) {
       OCPI::DataTransport::Port* port = static_cast<OCPI::DataTransport::Port*>(this->getInputPortSet(n)->getPortFromIndex(m));
       port->debugDump();
     }
@@ -1623,8 +1544,6 @@ void
 Circuit::
 release()
 {
-  m_ref_count--;
-  if (   m_ref_count == 0 ) {
-    m_transport->deleteCircuit( getCircuitId() );
-  }
+  if (--m_ref_count == 0)
+    m_transport->deleteCircuit(this);
 }

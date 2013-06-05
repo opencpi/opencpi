@@ -332,17 +332,17 @@ ZipFileTest::run ()
 
   ezxml_t fileNode = ezxml_child (root, "file");
   test (fileNode);
-  test (ezxml_txt (fileNode));
+  test (ezxml_txt (fileNode) != 0);
   test (std::strcmp (ezxml_txt (fileNode), dllFile.relName.c_str()) == 0);
 
   ezxml_t epNode = ezxml_get (root, "worker", 0, "entrypoint", -1);
   test (epNode);
-  test (ezxml_txt (epNode));
+  test (ezxml_txt (epNode) != 0);
   test (std::strcmp (ezxml_txt (epNode), "dummyEntrypoint") == 0);
 
   ezxml_t propNode = ezxml_get (root, "worker", 0, "properties", -1);
   test (propNode);
-  test (ezxml_txt (propNode));
+  test (ezxml_txt (propNode) != 0);
   test (std::strcmp (ezxml_txt (propNode), "1/4/262/4/38/0/0$videoDevice~1/0/0/0/001100110|k256/$width~1/0/256/0/001100110|j0/$height~1/0/258/0/001100110|j0/$fps~1/0/260/0/001100110|j0/$VideoOut~00|") == 0);
 
   std::string executable = readFile (zip, dllFile.relName);
@@ -413,7 +413,7 @@ CreateSPDTest::run ()
 
   ezxml_t epNode = ezxml_get (root, "implementation", 0, "code", 0, "entrypoint", -1);
   test (epNode);
-  test (ezxml_txt (epNode));
+  test (ezxml_txt (epNode) != 0);
   test (std::strcmp (ezxml_txt (epNode), "dummyEntrypoint") == 0);
 
   ezxml_t pref1Node = ezxml_get (root, "implementation", 0, "dependency", 0, "propertyref", -1);
@@ -525,12 +525,12 @@ UpdateSPDNoImplementationTest::run ()
 
   ezxml_t titleNode = ezxml_child (root, "title");
   test (titleNode);
-  test (ezxml_txt (titleNode));
+  test (ezxml_txt (titleNode) != 0);
   test (std::strcmp (ezxml_txt (titleNode), "Video Capture Component") == 0);
 
   ezxml_t nameNode = ezxml_get (root, "author", 0, "name", -1);
   test (nameNode);
-  test (ezxml_txt (nameNode));
+  test (ezxml_txt (nameNode) != 0);
   test (std::strcmp (ezxml_txt (nameNode), "Frank Pilhofer") == 0);
 
   /*
@@ -539,7 +539,7 @@ UpdateSPDNoImplementationTest::run ()
 
   ezxml_t epNode = ezxml_get (root, "implementation", 0, "code", 0, "entrypoint", -1);
   test (epNode);
-  test (ezxml_txt (epNode));
+  test (ezxml_txt (epNode)!= 0);
   test (std::strcmp (ezxml_txt (epNode), "dummyEntrypoint") == 0);
 
   ezxml_t osNode = ezxml_get (root, "implementation", 0, "os", -1);
@@ -696,7 +696,7 @@ UpdateSPDExistingImplementationTest::testUpdateAll ()
 
   ezxml_t epNode = ezxml_get (root, "implementation", 0, "code", 0, "entrypoint", -1);
   test (epNode);
-  test (ezxml_txt (epNode));
+  test (ezxml_txt (epNode) != 0);
   test (std::strcmp (ezxml_txt (epNode), "dummyEntrypoint") == 0);
 
   ezxml_t osNode = ezxml_get (root, "implementation", 0, "os", -1);
@@ -839,7 +839,7 @@ UpdateSPDExistingImplementationTest::testUpdateByInfo ()
 
   ezxml_t epNode = ezxml_get (root, "implementation", 0, "code", 0, "entrypoint", -1);
   test (epNode);
-  test (ezxml_txt (epNode));
+  test (ezxml_txt (epNode) != 0);
   test (std::strcmp (ezxml_txt (epNode), "dummyEntrypoint") == 0);
 
   ezxml_t osNode = ezxml_get (root, "implementation", 0, "os", -1);
@@ -869,11 +869,11 @@ UpdateSPDExistingImplementationTest::testUpdateByInfo ()
  */
 
 static
-int
+size_t
 testRccBinderInt (int argc, char * argv[])
 {
   TestBinderConfigurator config;
-  int n_failed = 0;
+  size_t n_failed = 0;
 
   try {
     config.configure (argc, argv);
@@ -915,7 +915,7 @@ testRccBinderInt (int argc, char * argv[])
  */
 
 extern "C" {
-  int
+  size_t
   testRccBinder (int argc, char * argv[])
   {
     return testRccBinderInt (argc, argv);
@@ -940,5 +940,5 @@ main (int argc, char * argv[])
   }
 #endif
 
-  return testRccBinderInt (argc, argv);
+  return (int)testRccBinderInt (argc, argv);
 }

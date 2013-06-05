@@ -68,12 +68,10 @@ DispatchSourceFile = $(GeneratedDir)/$(word 1,$(Workers))_dispatch.c
 GeneratedSourceFiles += $(DispatchSourceFile)
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
-ArtifactXmlFile = $(TargetDir)/$(word 1,$(Workers))_assy_art.xml
-GCC=gcc
-GCCLINK=gcc
+ArtifactXmlFile=$(call WkrTargetDir,$1)/$(word 1,$(Workers))_assy_art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)
-LinkBinary=$(GCCLINK) $(SharedLibLinkOptions) -o $$@ \
+LinkBinary=$$(GCCLINK_$$(RccTarget)) $(SharedLibLinkOptions) -o $$@ \
 $(AEPLibraries) \
 $(foreach ol,$(Libraries),$(or $(wildcard $(OcpiLibDir)/lib$(ol)$(SOEXT)),$(OcpiLibDir)/lib$(ol)$(AREXT)))
 CompilerWarnings= -Wall -Wextra
@@ -85,7 +83,7 @@ else
 CompilerOptions=$(CompilerOptimizeFlags)
 endif
 Compile_c=\
-  $(GCC) -MMD -MP -MF $(TargetDir)/$$(@F).deps -c \
+  $$(GCC_$$(RccTarget)) -MMD -MP -MF $$(TargetDir)/$$(@F).deps -c \
   $(CompilerWarnings) $(CompilerOptions) \
   $(SharedLibCompileOptions) $(ExtraCompilerOptions) $(IncludeDirs:%=-I%) -o $$@ $$<
 
@@ -97,11 +95,19 @@ $(RccAssemblyFile): | $(GeneratedDir)
 	  for w in $(Workers); do echo "<Worker File=\"$$w.xml\"/>"; done; \
 	  echo "</RccAssembly>") > $@
 
+define DoRccArtifactFile
 # Different since it is in the targetdir
-$(ArtifactXmlFile): $(RccAssemblyFile)
-	@echo Generating artifact/runtime xml file \($(ArtifactXmlFile)\) for all workers in one binary
-	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(TargetDir)/$(@F).deps \
-	     -D $(TargetDir) $(XmlIncludeDirs:%=-I%) -A $(RccAssemblyFile)
+$(call ArtifactXmlFile,$1): $(RccAssemblyFile)
+	@echo Generating artifact/runtime xml file $$@ for all workers in one binary
+	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1)/$(@F).deps \
+	     -O $(call RccOs,$1) \
+             -V $(call RccOsVersion,$1) \
+             -P $(call RccArch,$1) \
+	     -D $(call WkrTargetDir,$1) $(XmlIncludeDirs:%=-I%) -A $(RccAssemblyFile)
+
+endef
+
+$(foreach t,$(RccTargets),$(eval $(call DoRccArtifactFile,$t)))
 
 #$(OcpiGen) -A $(RccAssemblyFile)
 

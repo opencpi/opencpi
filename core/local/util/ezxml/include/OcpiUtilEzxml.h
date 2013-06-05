@@ -242,8 +242,8 @@ namespace OCPI {
 	*checkAttrsV(ezxml_t x, const char **attrs),
 	*checkAttrsVV(ezxml_t x, ...),
         *checkElements(ezxml_t x, ...),
-        *getNumber(ezxml_t x, const char *attr, uint32_t *np,
-		   bool *found = NULL, uint32_t defaultValue = 0,
+        *getNumber(ezxml_t x, const char *attr, size_t *np,
+		   bool *found = NULL, size_t defaultValue = 0,
 		   bool setDefault = true),
         *getNumber8(ezxml_t x, const char *attr, uint8_t *np,
 		    bool *found = NULL, uint32_t defaultValue = 0,
@@ -257,7 +257,7 @@ namespace OCPI {
       extern bool
 	inList(const char *item, const char *list),
 	hasAttrEq(ezxml_t x, const char *attrName, const char *val),
-        getUNum(const char *s, uint32_t *valp),
+        getUNum(const char *s, size_t *valp),
         getUNum64(const char *s, uint64_t *valp),
         parseBool(const char *a, const char *end, bool *b);
       extern void

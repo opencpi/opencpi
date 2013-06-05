@@ -46,7 +46,7 @@ namespace OCPI
     class Memory
     {
       public:
-        uint32_t    m_nBytes;
+        size_t    m_nBytes;
         std::string m_name;
         ezxml_t     m_xml;
         Memory ();

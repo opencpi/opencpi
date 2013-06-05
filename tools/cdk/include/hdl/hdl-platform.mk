@@ -53,7 +53,9 @@ LibName=$(CwdName)
 Core=$(CwdName)
 HdlPlatform:=$(CwdName)
 HdlTarget:=$(HdlActualTarget)
+ifndef Top
 Top=fpgaTop
+endif
 # black box doesn't work for some sim tools - at least isim for now
 ifndef HdlSimTool
 CompiledSourceFiles+=../../containers/mkOCApp_bb.v

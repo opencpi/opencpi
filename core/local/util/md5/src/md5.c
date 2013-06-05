@@ -190,7 +190,7 @@ md5_process(md5_state_t *pms, const md5_byte_t *data /*[64]*/)
 #    define xbuf X                /* (static only) */
 #  endif
             for (i = 0; i < 16; ++i, xp += 4)
-                xbuf[i] = xp[0] + (xp[1] << 8) + (xp[2] << 16) + (xp[3] << 24);
+	      xbuf[i] = (md5_word_t)(xp[0] + (xp[1] << 8) + (xp[2] << 16) + (xp[3] << 24));
         }
 #endif
     }
@@ -321,10 +321,10 @@ md5_init(md5_state_t *pms)
 }
 
 void
-md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes)
+md5_append(md5_state_t *pms, const md5_byte_t *data, unsigned int nbytes)
 {
     const md5_byte_t *p = data;
-    int left = nbytes;
+    unsigned int left = nbytes;
     int offset = (pms->count[0] >> 3) & 63;
     md5_word_t nbits = (md5_word_t)(nbytes << 3);
 
@@ -339,7 +339,7 @@ md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes)
 
     /* Process an initial partial block. */
     if (offset) {
-        int copy = (offset + nbytes > 64 ? 64 - offset : nbytes);
+        unsigned int copy = (offset + nbytes > 64 ? 64 - offset : nbytes);
 
         memcpy(pms->buf + offset, p, copy);
         if (offset + copy < 64)

@@ -98,7 +98,7 @@ namespace OCPI {
 #ifndef NDEBUG
 	for (Sibling<TChild> *cp = m_children; cp; cp = cp->m_next)
 	  if (cp == sibling)
-	    assert(!"duplicate child in parent");
+	    assert("duplicate child in parent"==0);
 #endif
 	
 	sibling->m_next = m_children;
@@ -113,7 +113,7 @@ namespace OCPI {
 	      *c = child->m_next;
 	      return;
 	    }
-          assert(!"child missing from parent");
+          assert("child missing from parent"==0);
 	}
       }
 

@@ -50,7 +50,7 @@ namespace OCPI {
     namespace OE = OCPI::Util::EzXml;
 
     ValueType::ValueType(OA::BaseType bt)
-      : m_baseType(bt), m_arrayRank(0), m_nMembers(0), m_nBits(0), m_align(1),
+      : m_baseType(bt), m_arrayRank(0), m_nMembers(0), m_dataAlign(0), m_align(1), m_nBits(0),
 	m_isSequence(false), m_nBytes(0), m_arrayDimensions(NULL), m_stringLength(0),
 	m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL), m_nEnums(0),
 	m_nItems(1)
@@ -90,7 +90,7 @@ namespace OCPI {
     void Reader::endSequence(Member &){}
     void Reader::endString(Member &){}
     void Reader::beginStruct(Member &){}
-    void Reader::beginArray(Member &, uint32_t){}
+    void Reader::beginArray(Member &, size_t){}
     void Reader::endArray(Member &){}
     void Reader::endStruct(Member &){}
     void Reader::beginType(Member &){}
@@ -101,7 +101,7 @@ namespace OCPI {
     void Writer::endSequence(Member &){}
     void Writer::writeOpcode(const char *, uint8_t) {}
     void Writer::beginStruct(Member &){}
-    void Writer::beginArray(Member &, uint32_t){}
+    void Writer::beginArray(Member &, size_t){}
     void Writer::endArray(Member &){}
     void Writer::endStruct(Member &){}
     void Writer::beginType(Member &){}
@@ -197,7 +197,7 @@ namespace OCPI {
       // Deal with arrays now that we have the "basic" type dealt with
 
       bool isArray = false;
-      uint32_t arrayLength;
+      size_t arrayLength;
       const char *arrayDimensions;
       if ((err = OE::getNumber(xm, "ArrayLength", &arrayLength, &isArray, 0, false)))
 	return err;
@@ -206,7 +206,7 @@ namespace OCPI {
 	  return "ArrayLength cannot be zero";
 	// Single dimension array
 	m_arrayRank = 1;
-	m_arrayDimensions = new uint32_t[1];
+	m_arrayDimensions = new size_t[1];
 	*m_arrayDimensions = arrayLength;
 	m_nItems = arrayLength;
       } else if ((arrayDimensions = ezxml_cattr(xm, "ArrayDimensions"))) {
@@ -218,7 +218,7 @@ namespace OCPI {
 	if ((err = v.parse(arrayDimensions)))
 	  return esprintf("Error parsing array dimensions: %s", err);
 	m_arrayRank = v.m_nElements;
-	m_arrayDimensions = new uint32_t[v.m_nElements];
+	m_arrayDimensions = new size_t[v.m_nElements];
 	uint32_t *p = v.m_pULong;
 	for (unsigned n = 0; n < v.m_nElements; n++, p++) {
 	  if (*p == 0)
@@ -255,15 +255,15 @@ namespace OCPI {
       if (m_baseType != OA::OCPI_ULong)
 	fprintf(f, " type=\"%s\"", baseTypeNames[m_baseType]);
       if (m_baseType == OA::OCPI_String)
-	fprintf(f, " stringLength=\"%u\"", m_stringLength);
+	fprintf(f, " stringLength=\"%zu\"", m_stringLength);
       if (m_isSequence)
-	fprintf(f, " sequenceLength=\"%u\"", m_sequenceLength);
+	fprintf(f, " sequenceLength=\"%zu\"", m_sequenceLength);
       if (m_arrayRank == 1)
-	fprintf(f, " arrayLength=\"%u\"", m_arrayDimensions[0]);
+	fprintf(f, " arrayLength=\"%zu\"", m_arrayDimensions[0]);
       else if (m_arrayRank > 1) {
 	fprintf(f, " arrayDimensions=\"");
-	for (unsigned n = 0; n < m_arrayRank; n++)
-	  fprintf(f, "%s%u", n ? "," : "", m_arrayDimensions[n]);
+	for (size_t n = 0; n < m_arrayRank; n++)
+	  fprintf(f, "%s%zu", n ? "," : "", m_arrayDimensions[n]);
 	fprintf(f, "\"");
       }
       if (m_nEnums) {
@@ -301,26 +301,26 @@ namespace OCPI {
       printAttrs(f, tag, indent);
       printChildren(f, tag, indent);
     }
-    inline void advance(const uint8_t *&p, unsigned nBytes, uint32_t &length) {
+    inline void advance(const uint8_t *&p, size_t nBytes, size_t &length) {
       if (nBytes > length)
 	throw Error("Aligning data exceeds buffer when writing");
       length -= nBytes;
       p += nBytes;
     }
-    inline void radvance(uint8_t *&p, unsigned nBytes, uint32_t &length) {
+    inline void radvance(uint8_t *&p, size_t nBytes, size_t &length) {
       advance(*(const uint8_t **)&p, nBytes, length);
     }
-    inline void align(const uint8_t *&p, unsigned n, uint32_t &length) {
+    inline void align(const uint8_t *&p, size_t n, size_t &length) {
       uint8_t *tmp = (uint8_t *)(((uintptr_t)p + (n - 1)) & ~((uintptr_t)(n)-1));
       advance(p, tmp - p, length);
     }
     // We clear bytes we skip
-    inline void ralign(uint8_t *&p, unsigned n, uint32_t &length) {
+    inline void ralign(uint8_t *&p, size_t n, size_t &length) {
       align(*(const uint8_t **)&p, n, length);
     }
     // Push the data in the linear buffer into a writer object
-    void Member::write(Writer &writer, const uint8_t *&data, uint32_t &length, bool topSeq) {
-      unsigned nElements = 1;
+    void Member::write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq) {
+      size_t nElements = 1;
       if (m_isSequence) {
 	if (topSeq) {
 	  ocpiAssert(((intptr_t)data & ~(m_align - 1)) == 0);
@@ -331,7 +331,7 @@ namespace OCPI {
 	  nElements = *(uint32_t *)data;
 	}
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
-	  throw Error("Sequence in buffer exceeds max length (%u)", m_sequenceLength);
+	  throw Error("Sequence in buffer exceeds max length (%zu)", m_sequenceLength);
 	writer.beginSequence(*this, nElements);
 	advance(data, m_align, length); // skip over count, and align for data
 	if (!nElements)
@@ -362,7 +362,7 @@ namespace OCPI {
 	for (unsigned n = 0; n < nElements; n++) {
 	  align(data, 4, length);
 	  WriteDataPtr p = {data};
-	  unsigned nBytes = strlen((const char *)data) + 1;
+	  size_t nBytes = strlen((const char *)data) + 1;
 	  advance(data, nBytes, length);
 	  writer.writeString(*this, p, nBytes - 1, n == 0, topSeq);
 	}
@@ -371,7 +371,7 @@ namespace OCPI {
 	{ // Scalar - write them all at once
 	  align(data, m_align, length);
 	  WriteDataPtr p = {data};
-	  unsigned nBytes = nElements * (m_nBits / 8);
+	  size_t nBytes = nElements * (m_nBits / 8);
 	  advance(data, nBytes, length);
 	  writer.writeData(*this, p, nBytes, nElements);
 	  break;
@@ -389,16 +389,17 @@ namespace OCPI {
     }
 
     // Fill the linear buffer from a reader object
-    void Member::read(Reader &reader, uint8_t *&data, uint32_t &length) {
-      unsigned nElements = 1;
+    void Member::read(Reader &reader, uint8_t *&data, size_t &length) {
+      size_t nElements = 1;
       if (m_isSequence) {
 	ralign(data, m_align, length);
 	uint32_t *start = (uint32_t *)data;
 	radvance(data, m_align, length); // skip over count, check for space
-	if (!(*start = nElements = reader.beginSequence(*this)))
+	nElements = reader.beginSequence(*this);
+	if (!(*start = (uint32_t)nElements))
 	  return;
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
-	  throw Error("Sequence in being read exceeds max length (%u)", m_sequenceLength);
+	  throw Error("Sequence in being read exceeds max length (%zu)", m_sequenceLength);
       }
 
       if ( m_arrayRank ) {
@@ -425,7 +426,7 @@ namespace OCPI {
 	for (unsigned n = 0; n < nElements; n++) {
 	  ralign(data, 4, length);
 	  const char *chars;
-	  uint32_t strLength = reader.beginString(*this, chars, n == 0);
+	  size_t strLength = reader.beginString(*this, chars, n == 0);
 	  if (m_stringLength != 0 && strLength > m_stringLength)
 	    throw Error("String being read is larger than max length");
 	  uint8_t *start = data;
@@ -438,7 +439,7 @@ namespace OCPI {
 	{ // Scalar - write them all at once
 	  ralign(data, m_align, length);
 	  ReadDataPtr p = {data};
-	  unsigned nBytes = nElements * (m_nBits / 8);
+	  size_t nBytes = nElements * (m_nBits / 8);
 	  radvance(data, nBytes, length);
 	  reader.readData(*this, p, nBytes, nElements);
 	  break;
@@ -466,7 +467,7 @@ namespace OCPI {
 	m_sequenceLength = random() & 1 ? 0 : random() % 10;
       if (random() & 1) {
 	m_arrayRank = random() % 3 + 1;
-	m_arrayDimensions = new uint32_t[m_arrayRank];
+	m_arrayDimensions = new size_t[m_arrayRank];
 	for (unsigned n = 0; n < m_arrayRank; n++) {
 	  m_arrayDimensions[n] = random() % 3 + 1;
 	  m_nItems *= m_arrayDimensions[n];
@@ -515,7 +516,7 @@ namespace OCPI {
     // This static method is shared between parsing members of a structure and parsing arguments
     // to an operation.
     const char *
-    Member::parseMembers(ezxml_t mems, unsigned &nMembers, Member *&members,
+    Member::parseMembers(ezxml_t mems, size_t &nMembers, Member *&members,
 			 bool isFixed, const char *tag, const char *hasDefault) {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
 	nMembers++;
@@ -526,15 +527,15 @@ namespace OCPI {
 	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_next(mx), m++) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
 				    hasDefault ? hasDefault : NULL, NULL)) ||
-	      (err = m->parse(mx, isFixed, true, hasDefault, m - members)))
+	      (err = m->parse(mx, isFixed, true, hasDefault, (unsigned)(m - members))))
 	    return err;
 	}
       }
       return NULL;
     }
     const char *Member::
-    offset(unsigned &maxAlign, uint32_t &argOffset,
-	   unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop) {
+    offset(size_t &maxAlign, size_t &argOffset,
+	   size_t &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop) {
       const char *err;
       uint64_t nBytes;
       m_offset = 0;
@@ -556,7 +557,7 @@ namespace OCPI {
 	// No special enum processing here
 	m_nBits = baseTypeSizes[m_baseType];
 	m_align = (m_nBits + CHAR_BIT - 1) / CHAR_BIT;
-	unsigned scalarBits;
+	size_t scalarBits;
 	if (m_baseType == OA::OCPI_String) {
 	  // Make strings whole 32 bit words
 	  // Since this is not CDR anyway, this is best for hardware
@@ -582,8 +583,8 @@ namespace OCPI {
 	return "Total member size in bytes is too large (> 4G)";
       // Array?
       if (m_arrayRank) {
-	uint32_t *p = m_arrayDimensions;
-	nBytes = roundup(nBytes, m_align);
+	size_t *p = m_arrayDimensions;
+	nBytes = roundup((uint32_t)nBytes, m_align);
 	for (unsigned n = 0; n < m_arrayRank; n++, p++) {
 	  nBytes *= *p;
 	  if (nBytes > UINT32_MAX)
@@ -593,7 +594,7 @@ namespace OCPI {
       m_dataAlign = m_align; // capture this before adjusting it in the sequence case.
       if (m_isSequence) {
 	// Pad the size to be what is required for an array of same.
-	nBytes = roundup(nBytes, m_align);
+	nBytes = roundup((uint32_t)nBytes, m_align);
 	if (m_sequenceLength != 0)
 	  nBytes *= m_sequenceLength;
 	else
@@ -618,9 +619,9 @@ namespace OCPI {
       return 0;
     }
     const char *
-    Member::alignMembers(Member *m, unsigned nMembers, 
-			 unsigned &maxAlign, uint32_t &myOffset,
-			 unsigned &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded,
+    Member::alignMembers(Member *m, size_t nMembers, 
+			 size_t &maxAlign, size_t &myOffset,
+			 size_t &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded,
 			 bool isTop) {
       const char *err;
       for (unsigned n = 0; n < nMembers; n++, m++)

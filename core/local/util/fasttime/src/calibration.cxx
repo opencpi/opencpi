@@ -76,7 +76,7 @@ void slew_clock(fasttime_t *storage,
 
 /* Most recent */
 static conversion_t current_conversion;
-static int offset = 0;
+static int32_t offset = 0;
 static double old_gradient = 0;
 static int delay;
 /*static int dispersion;*/
@@ -227,13 +227,13 @@ void calibrate(fasttime_t *storage)
     
     /* mu: time in ticks between loop invocation */
     mu = ticks3.ll - last_time;
-    offset = (min_dt1 - min_dt2) / 2;
+    offset = (int32_t)((min_dt1 - min_dt2) / 2);
     last_time = ticks3.ll;
 
     /* Calculate NTP-like stats */
     prediction = ( int ) ( old_offset + mu * (current_conversion.gradient - old_gradient));
     correction = (offset - prediction/2);
-    delay = min_dt1 + min_dt2;
+    delay = (int)(min_dt1 + min_dt2);
     /* dispersion = delay + PRECISION; */ /*  Or is this completely wrong? */
     old_jitter = jitter*jitter;
     epsil = offset - old_offset;
@@ -391,7 +391,7 @@ void slew_clock(fasttime_t *storage,
                 double gradient,
                 uint64_t sync)
 {
-    int i;
+    unsigned i;
     double ticks_per_segment; 
     double tmp_pwr;
     int64_t intercept_new;

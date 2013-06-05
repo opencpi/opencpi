@@ -43,15 +43,16 @@
  *
  */
 
-#include <fasttime.h>
-#include <OcpiOsMisc.h>
-#include <OcpiOsAssert.h>
-#include <DtDataGramXfer.h>
+#include "fasttime.h"
+#include "OcpiOsMisc.h"
+#include "OcpiOsAssert.h"
+#include "OcpiUtilMisc.h"
+#include "DtDataGramXfer.h"
 
 namespace DataTransfer {
 
-  using namespace OCPI::Util;
-  using namespace OCPI::OS;
+  namespace DDT = DtOsDataTypes;
+
   const char *datagramsocket = "datagram-socket"; // name passed to inherited template class
   static const unsigned MAX_TRANSACTION_HISTORY = 512;  // Max records per source
   static const unsigned MAX_FRAME_HISTORY = 0xff; 
@@ -111,9 +112,9 @@ namespace DataTransfer {
     return dgs;
   }
 
-  void DatagramXferRequest::modify( uint32_t  */*new_offsets[]*/ , uint32_t  */*old_offsets[]*/  )
+  void DatagramXferRequest::modify( DtOsDataTypes::Offset  */*new_offsets[]*/ , DtOsDataTypes::Offset  */*old_offsets[]*/  )
   {
-    ocpiAssert(!"modify not inplemented");
+    ocpiAssert("modify not inplemented"==0);
   }
 
   // DatagramXferRequest destructor implementation
@@ -131,9 +132,9 @@ namespace DataTransfer {
   }
 
   // Create a transfer request
-  XferRequest* DatagramXferRequest::copy (uint32_t srcoffs, 
-					  uint32_t dstoffs, 
-					  uint32_t nbytes, 
+  XferRequest* DatagramXferRequest::copy (DtOsDataTypes::Offset srcoffs, 
+					  DtOsDataTypes::Offset dstoffs, 
+					  size_t nbytes, 
 					  XferRequest::Flags flags
 					  )
   {
@@ -155,15 +156,14 @@ namespace DataTransfer {
     // multiple "messages".  Each message gets it own header so each one is self contained and can be
     // acted upon by the receiver without being dependent on previous messages (which could get lost).
     // We ask the underlying transmission layer for the max frame payload size.
-    unsigned maxpl =
+    size_t maxpl =
       parent().maxPayloadSize() - (sizeof(DatagramMsgHeader) + sizeof(DatagramFrameHeader) + 8);
     if (!init())
       // conservative estimate, but it still might be exceeded
       init((nbytes + maxpl - 1)/maxpl + 1);
-    unsigned length;
-    for (uint8_t *src = (uint8_t*)parent().m_txTemplate.ssmem->map(srcoffs,0);
-	 nbytes > 0;
-	 nbytes -= length, src += length, dstoffs += length) {
+    size_t length;
+    for (uint8_t *src = (uint8_t*)parent().m_txTemplate.ssmem->map(srcoffs,0); nbytes > 0;
+	 nbytes -= length, src += length, dstoffs += OCPI_UTRUNCATE(DDT::Offset, length)) {
       length = nbytes > maxpl ? maxpl : nbytes;
       add(src, dstoffs, length);
     }						
@@ -205,8 +205,8 @@ namespace DataTransfer {
   DatagramXferServices::  
   nextFreeFrame( )  {
     OCPI::Util::SelfAutoMutex guard ( this );
-    int seq = m_frameSeq++;
-    unsigned  mseq = seq & FRAME_SEQ_MASK;
+    uint16_t seq = m_frameSeq++;
+    uint16_t mseq = seq & FRAME_SEQ_MASK;
     ocpiAssert( mseq < m_freeFrames.size() );
     Frame & f = m_freeFrames[mseq];
     ocpiAssert( f.is_free );
@@ -239,7 +239,7 @@ namespace DataTransfer {
 
     //#define ACK_NOW
 #ifdef ACK_NOW
-    int bytes_left;
+    size_t bytes_left;
     Frame & frame = getFrame( bytes_left );
     frame.frameHdr.ackOnly = 1;
 ss    post( frame );
@@ -264,7 +264,7 @@ ss    post( frame );
   sendAcks( uint64_t time_now, uint64_t timeout )
   {
     if (m_acks.size() && ( time_now - m_last_ack_send ) > timeout ) {
-      unsigned bytes_left;
+      size_t bytes_left;
       Frame & frame = getFrame( bytes_left );
       post( frame );
     }
@@ -273,7 +273,7 @@ ss    post( frame );
 
   Frame & 
   DatagramXferServices::
-  getFrame(unsigned & bytes_left  )
+  getFrame(size_t & bytes_left  )
   {
     OCPI::Util::SelfAutoMutex guard ( this );
     Frame & frame = *nextFreeFrame(); 
@@ -327,8 +327,8 @@ ss    post( frame );
   DatagramXferRequest::
   post()
   {
-    unsigned bytes_left;
-    unsigned msg = 0;
+    size_t bytes_left;
+    uint16_t msg = 0;
     DatagramTransaction & t = *this;
     t.m_nMessagesRx = 0;
     while ( msg < t.msgCount() ) {
@@ -344,7 +344,7 @@ ss    post( frame );
 
       // Stuff as many messages into the frame as we can
       while (bytes_left > 0 && msg < t.msgCount()) {
-	unsigned need = sizeof(DatagramMsgHeader) + ((t.hdrPtr(msg)->dataLen + 7) & ~7);
+	size_t need = sizeof(DatagramMsgHeader) + ((t.hdrPtr(msg)->dataLen + 7) & ~7);
 	if ( bytes_left < need) {
 	  ocpiAssert(msg > 0);
 	  // Need a new frame
@@ -381,7 +381,7 @@ ss    post( frame );
 
   void 
   DatagramTransaction::
-  init( uint32_t nMsgs) {
+  init(size_t nMsgs) {
     ocpiAssert( ! m_init );
     m_nMessagesTx = 0;
     m_messages.reserve(nMsgs ? nMsgs : 1);
@@ -394,12 +394,12 @@ ss    post( frame );
   // essentially filling in the constant fields
   void 
   DatagramTransaction::
-  fini( uint32_t flag, uint32_t dst) {
+  fini( uint32_t flag, DtOsDataTypes::Offset dst) {
     Message *m = &m_messages[0];
     for (unsigned n = 0; n < m_nMessagesTx; n++, m++) {
       m->hdr.transactionId = m_tid; 
-      m->hdr.numMsgsInTransaction = m_nMessagesTx == 1 ? 0 : m_nMessagesTx;
-      m->hdr.flagAddr = dst;
+      m->hdr.numMsgsInTransaction = (uint16_t)(m_nMessagesTx == 1 ? 0 : m_nMessagesTx);
+      m->hdr.flagAddr = (uint32_t)dst;
       m->hdr.flagValue = flag;
     }
   }
@@ -408,21 +408,21 @@ ss    post( frame );
   // src == NULL means the message only carries the flag and the transaction has no other messages
   void 
   DatagramTransaction::
-  add(uint8_t * src, uint64_t dst_offset, uint32_t length)
+  add(uint8_t * src, DtOsDataTypes::Offset dst_offset, size_t length)
   {
     if ( m_nMessagesTx >= m_messages.size() )
       m_messages.reserve( m_nMessagesTx + 10 );
     m_messages.resize(++m_nMessagesTx);
     Message &m = m_messages.back();
 
-    m.hdr.dataAddr = dst_offset;
-    m.hdr.dataLen = length;
+    m.hdr.dataAddr = (uint32_t)dst_offset;
+    m.hdr.dataLen = (uint16_t)length;
     m.src_adr = src;
 
     // This might disappear since we could put disconnect in a frame flag
     m.hdr.type = DataTransfer::DatagramMsgHeader::DATA;
     // This might disappear unless there is a use-case for its heuristic value
-    m.hdr.msgSequence = m_nMessagesTx;
+    m.hdr.msgSequence = (uint16_t)m_nMessagesTx;
   }
 
 #ifdef PKT_DEBUG
@@ -453,8 +453,8 @@ ss    post( frame );
       while ( m_run ) {
 	unsigned size =	maxPayloadSize();
 	uint8_t buf[size];
-	unsigned offset;
-	unsigned n = receive(buf, offset);
+	size_t offset;
+	size_t n = receive(buf, offset);
 	if (n == 0)
 	  continue; // zero is timeout
 	// This causes a frame drop for testing
@@ -565,7 +565,7 @@ ss    post( frame );
 	      post( m_freeFrames[n] );
 	    }
 	ss    else {
-	      ocpiAssert(!"Exceeded resend limit !!\n");
+	      ocpiAssert("Exceeded resend limit !!\n"==0);
 	    }
 #else
 	    post( m_freeFrames[n] );
@@ -594,7 +594,7 @@ ss    post( frame );
 	     );
 
       if (  ! m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].acked  ) {
-	ocpiAssert( !"programming error, cant have dup without ACK ");
+	ocpiAssert("programming error, cant have dup without ACK "==0);
       }	    
 
       ocpiDebug("********  Found a duplicate frame, Ignoring it !!");
@@ -668,7 +668,7 @@ ss    post( frame );
 	  // Not yet handled
 	case DataTransfer::DatagramMsgHeader::DISCONNECT:
 	  break;	    
-	  ocpiAssert(! "Unhandled Datagram message type");
+	  ocpiAssert("Unhandled Datagram message type"==0);
 	}
 
 	fr.msgsProcessed++;

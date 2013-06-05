@@ -80,7 +80,7 @@ namespace OCPI {
 	std::string m_dirName, m_pattern;
 	bool m_recursive;
 	Dir *m_dir;
-	unsigned m_skipLength;
+	size_t m_skipLength;
       public:
         /**
          * Constructor

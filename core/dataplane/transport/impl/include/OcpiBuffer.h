@@ -288,10 +288,10 @@ namespace OCPI {
 
       // If we are zero copy, the buffer that we are attached to goes here
       OCPI::Util::VList m_dependentZeroCopyPorts;
-      unsigned int m_dependentZeroCopyCount;
+      PortOrdinal m_dependentZeroCopyCount;
 
       // Last mcos error
-      OCPI::OS::int32_t m_mcosReturnCode;
+      int32_t m_mcosReturnCode;
 
       // buffer in use
       bool m_InUse;

@@ -272,7 +272,7 @@ namespace OCPI {
          *                  connection.
          */
 
-        void getPeerName (std::string & host, unsigned int & port)
+        void getPeerName (std::string & host, uint16_t & port)
           throw (std::string);
 
         /** \cond */

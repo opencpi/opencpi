@@ -368,10 +368,10 @@ private:
   LoadedDllInfos m_loadedDlls;
   PortMap m_portMap;
 
-  unsigned int m_nprops;
-  unsigned int m_nports;
-  unsigned int m_ntests;
-  unsigned int m_sizeOfPropertySpace;
+  size_t m_nprops;
+  size_t m_nports;
+  size_t m_ntests;
+  size_t m_sizeOfPropertySpace;
   OCPI::SCA::Property * m_props;
   OCPI::SCA::Port * m_ports;
   OCPI::SCA::Test * m_tests;
@@ -556,7 +556,7 @@ runTest ()
   ezxml_t fileNode = ezxml_child (metaRoot, "file");
   bool foundEntrypoint = false;
 
-  if (!fileNode || !ezxml_txt (fileNode)) {
+  if (!fileNode || ezxml_txt (fileNode)==0) {
     std::string msg = "Error parsing meta-data from \"";
     msg += s_metaFileName;
     msg += "\": \"file\" field missing or empty";
@@ -1343,7 +1343,7 @@ configureWorker ()
 
       case OCPI::SCA::SCA_string:
         {
-          unsigned int len = value.length () + 1;
+          size_t len = value.length () + 1;
 
           if (len > pt.size + 1) {
             throw std::string ("String exceeds maximum length");

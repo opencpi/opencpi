@@ -97,9 +97,9 @@ struct WDI {
   // bool variableMessageLength;
   // bool zeroLengthMessages;
   bool isOptional;
-  unsigned minBufferCount;
-  unsigned nOpcodes;
-  unsigned bufferSize;
+  size_t minBufferCount;
+  size_t nOpcodes;
+  size_t bufferSize;
 };
 // OCP_SIGNAL_I(name,
 // OCP_SIGNAL_IV(name,
@@ -139,7 +139,7 @@ struct OcpSignalDesc {
   const char *name;
   bool vector;
   bool master;
-  unsigned width;
+  size_t width;
   bool type;
   bool request;
 };
@@ -147,7 +147,7 @@ struct OcpSignalDesc {
 struct Signal {
   const char *name;
   enum Direction { IN, OUT, INOUT } direction;
-  unsigned width;
+  size_t width;
 };
 #define OCP_SIGNAL_MT(n,w) OCP_SIGNAL_MV(n,w)
 #define OCP_SIGNAL_ST(n,w) OCP_SIGNAL_SV(n,w)
@@ -167,7 +167,7 @@ extern OcpSignalDesc ocpSignals[N_OCP_SIGNALS+1];
 #undef OCP_SIGNAL
 struct OcpSignal {
   uint8_t *value;
-  unsigned width;
+  size_t width;
   const char *signal;
 };
 union OcpSignals {
@@ -191,11 +191,11 @@ OCP_SIGNALS
 struct WCI {
   char *name;
   bool resetWhileSuspended;
-  uint32_t timeout;
+  size_t timeout;
 };
 
 struct WTI {
-  unsigned secondsWidth, fractionWidth;
+  size_t secondsWidth, fractionWidth;
   bool allowUnavailable;
 };
 struct WSI {
@@ -207,12 +207,12 @@ struct WSI {
 struct WMI {
   WDI wdi;
   bool talkBack;
-  uint32_t mflagWidth;// kludge for shep - FIXME
+  size_t mflagWidth;// kludge for shep - FIXME
 };
 struct WMemI {
   bool writeDataFlowControl, readDataFlowControl, isSlave;
   uint64_t memoryWords;
-  uint32_t maxBurstLength;
+  size_t maxBurstLength;
 };
 enum WIPType{
   NoPort,
@@ -246,13 +246,13 @@ public:
   std::string fullNameIn, fullNameOut; // used during HDL generation
   std::string typeNameIn, typeNameOut; // used during HDL generation
   Worker *worker;
-  unsigned count;
+  size_t count;
   bool isExternal;          // external port of an assembly (not part of worker)
   bool isData;		    // data plane port, model independent
   const char *pattern;      // pattern if it overrides global pattern
   WIPType type;
-  unsigned dataWidth;
-  unsigned byteWidth; // derived
+  size_t dataWidth;
+  size_t byteWidth; // derived
   bool impreciseBurst;// used in multiple types, but not all
   bool preciseBurst;  // used in multiple types, but not all
   Clock *clock;
@@ -292,7 +292,7 @@ class LocalMemory {
       // Empty
     }
     const char* name;
-    unsigned int sizeOfLocalMemory;
+    size_t sizeOfLocalMemory;
 };
 
 typedef std::list<OU::Property *> Properties;
@@ -309,7 +309,7 @@ class Control {
   unsigned nRunProperties; // all but non-readable parameters.
   uint32_t controlOps; // bit mask
   Properties properties;
-  unsigned offset;// temporary while properties are being parsed.
+  size_t offset;// temporary while properties are being parsed.
   unsigned ordinal; // ditto
 };
 
@@ -353,7 +353,7 @@ struct Instance {
   Worker *worker;
   Clock **clocks;      // mapping of instance's clocks to assembly clocks
   InstancePort *ports;
-  uint32_t index;      // index within container
+  size_t index;      // index within container
   enum {
     Application, Interconnect, IO, Adapter
   } iType;
@@ -361,7 +361,7 @@ struct Instance {
   unsigned nValues;    // number of property values
   InstanceProperty *properties;
   bool hasConfig;      // hack for adapter configuration FIXME make normal properties
-  uint32_t config;
+  size_t config;
 };
 struct OcpAdapt {
   const char *expr;
@@ -376,7 +376,7 @@ struct InstancePort {
   Port *port;  // The actual port of the instance's or assembly's worker
   OU::Assembly::External *external;
   const char *name;
-  unsigned ordinal; // ordinal for external array ports (e.g. WCI)
+  size_t ordinal; // ordinal for external array ports (e.g. WCI)
   Port *externalPort;
   // Information for making the connection, perhaps tieoff etc.
   OcpAdapt ocp[N_OCP_SIGNALS];
@@ -389,9 +389,9 @@ class Assembly {
   bool isContainer;
   Worker *outside;
   Workers workers;
-  unsigned nInstances;
+  size_t nInstances;
   Instance *instances;
-  unsigned nConnections;
+  size_t nConnections;
   Connection *connections;
   OU::Assembly *assembly;
 };
@@ -456,7 +456,7 @@ static inline bool masterIn(Port *p) {
 #define VERH ".vh"
 #define BOOL(b) ((b) ? "true" : "false")
 extern const char
-  *container, *platform, *device, *load,
+  *container, *platform, *device, *load, *os, *os_version,
   *openOutput(const char *name, const char *outDir, const char *prefix,
 	      const char *suffix, const char *ext, const char *other, FILE *&f),
   *propertyTypes[],
@@ -490,6 +490,6 @@ extern void
   emitWorker(FILE *f, Worker *w),
   cleanWIP(Worker *w);
 
-extern uint64_t ceilLog2(uint64_t n);
+extern size_t ceilLog2(uint64_t n);
 
 #endif

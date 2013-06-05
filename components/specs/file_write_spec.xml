@@ -1,0 +1,11 @@
+  <ComponentSpec name='file_write'>
+  <DataInterfaceSpec Name="in">
+    <protocolsummary numberofopcodes='256'/>
+  </DataInterfaceSpec>
+    <!-- File name to write to -->
+    <property name='fileName' type='string' stringLength='1024' initial='true'/>
+    <!-- Does the file contain messages with opcodes and lengths? -->
+    <property name='messagesInFile' type='bool' readable='true' initial='true' default='false'/>
+    <property name='bytesWritten' type='uLongLong' volatile='true'/>
+    <property name='messagesWritten' type='uLongLong' volatile='true'/>
+  </ComponentSpec>

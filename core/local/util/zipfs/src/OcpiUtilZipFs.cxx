@@ -999,7 +999,7 @@ OCPI::Util::ZipFs::ZipFs::closeIterator (OCPI::Util::Vfs::Iterator * it)
 class OCPI::Util::ZipFs::Dir : public OCPI::Util::Vfs::Dir  {
     ZipFs &m_zfs;
     ZipFs::FileInfos::const_iterator m_iterator;
-    unsigned m_length;
+    size_t m_length;
     std::set<std::string> m_seenDirectories;
   public:
     Dir(ZipFs &fs, std::string name)

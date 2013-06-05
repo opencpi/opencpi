@@ -110,14 +110,14 @@ typedef struct {
  } Test;
 
 // Return a single string, to be freed by caller, or NULL on error.
-extern char *encode_props(Property *properties, unsigned nprops, unsigned size,
-                          Port *ports, unsigned nports,
-                          Test *tests, unsigned ntests);
+extern char *encode_props(Property *properties, size_t nprops, size_t size,
+                          Port *ports, size_t nports,
+                          Test *tests, size_t ntests);
 // Return an array of structs, to be freed by caller (in one "free");
 extern bool decode_props(const char *props,
-                         Property **propsp, unsigned *nprops, unsigned *size,
-                         Port **ports, unsigned *nports,
-                         Test **tests, unsigned *ntests);
+                         Property **propsp, size_t *nprops, size_t *size,
+                         Port **ports, size_t *nports,
+                         Test **tests, size_t *ntests);
 }
 }
 #endif

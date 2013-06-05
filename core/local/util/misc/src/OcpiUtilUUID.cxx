@@ -83,8 +83,8 @@ OCPI::Util::UUID::produceRandomUUID ()
    * UUIDs.
    */
 
-  value.data[6] = (value.data[6] & 0x0f) | 0x40;
-  value.data[8] = (value.data[8] & 0x3f) | 0x80;
+  value.data[6] = (uint8_t)((value.data[6] & 0x0f) | 0x40);
+  value.data[8] = (uint8_t)((value.data[8] & 0x3f) | 0x80);
   return value;
 }
 

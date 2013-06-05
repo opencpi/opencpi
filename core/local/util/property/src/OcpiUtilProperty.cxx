@@ -135,17 +135,17 @@ namespace OCPI {
 			m_name.c_str());
       // This call is solely used for sub32 determination.  The rest are ignored here.
       // FIXME: move this determination into the parse to avoid all this...
-      unsigned maxAlign = 1; // dummy and not really used since property sheet is zero based anyway
-      unsigned minSize = 0;
+      size_t maxAlign = 1; // dummy and not really used since property sheet is zero based anyway
+      size_t minSize = 0;
       bool diverseSizes = false;
       bool unBoundedDummy;   // we are precluding unbounded in any case
-      uint32_t myOffset = 0;
+      size_t myOffset = 0;
       return Member::offset(maxAlign, myOffset, minSize, diverseSizes, sub32Configs,
 			    unBoundedDummy);
     }
     // A higher up is creating offsets in a list of properties after we know it all
     void Property::
-    offset(unsigned &cumOffset, uint64_t &sizeofConfigSpace) {
+    offset(size_t &cumOffset, uint64_t &sizeofConfigSpace) {
       if (m_isIndirect) {
 	uint64_t top = m_indirectAddr;
 	top += m_nBytes;

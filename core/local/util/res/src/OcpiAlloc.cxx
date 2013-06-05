@@ -36,24 +36,25 @@
 #include <inttypes.h>
 #include <list>
 #include <cstdio>
-#include <OcpiOsDataTypes.h>
-#include <OcpiOsAssert.h>
-#include <OcpiRes.h>
+#include "OcpiOsDataTypes.h"
+#include "OcpiOsAssert.h"
+#include "OcpiUtilMisc.h"
+#include "OcpiRes.h"
 
 namespace OCPI {
   namespace Util {
     struct Block {
-      ResPool*               rp;
-      OCPI::OS::uint64_t       size;
-      OCPI::Util::ResAddrType  addr;
-      OCPI::Util::ResAddrType  aligned_addr;      
-      Block( ResPool* rpp, OCPI::OS::uint64_t s, OCPI::OS::uint64_t adr,  OCPI::OS::uint64_t a_adr)
+      ResPool*                 rp;
+      size_t                   size;
+      ResAddrType  addr;
+      ResAddrType  aligned_addr;      
+      Block( ResPool* rpp, size_t s, ResAddrType adr,  ResAddrType a_adr)
         :rp(rpp),size(s),addr(adr),aligned_addr(a_adr){}
       int operator<(const Block& rhs)const;
     };
     struct ResPool {
       OCPI::Util::ResAddrType  start_off;
-      OCPI::OS::uint64_t  total_size, used;
+      size_t  total_size, used;
       std::list<Block> free_list;
       std::list<Block> alloc_list;
       bool             sort_by_size;
@@ -80,7 +81,7 @@ static void dumpList( std::list<OCPI::Util::Block>& list )
 #ifdef DEBUG_LISTS
   std::list<OCPI::Util::Block>::iterator it;
   for ( it=list.begin(); it !=list.end(); it++ ) {
-    ocpiDebug("addr = %" PRIx64 ", aligned_addr = %" PRIx64 ", size = %" PRIu64 "", 
+    ocpiDebug("addr = %" PRIx32 ", aligned_addr = %" PRIx32 ", size = %zu", 
 	      (*it).addr, 
 	      (*it).aligned_addr, 
 	      (*it).size );
@@ -135,12 +136,12 @@ void OCPI::Util::ResPool::defrag()
 }
 
 
-int OCPI::Util::MemBlockMgr::alloc(uint32_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
+int OCPI::Util::MemBlockMgr::alloc(size_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
   throw( std::bad_alloc ) 
 {
 
   if ( nbytes > 2000000 ) {
-    ocpiInfo("Allocating large mem %" PRIu32 "K in %p %" PRIu64 " of %" PRIu64 " used",
+    ocpiInfo("Allocating large mem %zuK in %p %zu of %zu used",
 	     nbytes/1024, this, m_pool->used, m_pool->total_size);
     // OCPI::OS::dumpStack (std::cerr);
   }
@@ -161,11 +162,11 @@ int OCPI::Util::MemBlockMgr::alloc(uint32_t nbytes, unsigned int alignment, OCPI
     for ( it=m_pool->free_list.begin(); it !=m_pool->free_list.end(); it++ ) {
       if ( ((*it).size > nbytes) ) {
         req_addr = ALIGN((*it).addr, alignment);
-        OCPI::Util::ResAddrType taddr = (*it).addr;
-        (*it).addr += nbytes;
+        ResAddr taddr = (*it).addr;
+        (*it).addr += OCPI_UTRUNCATE(ResAddr, nbytes);
         (*it).size -= nbytes;      
         m_pool->alloc_list.push_back( Block(m_pool, nbytes, taddr, ALIGN(req_addr, alignment)) );
-        ocpiDebug("**** Alloc Returning address = %" PRIx32 ", %" PRIx32 "", 
+        ocpiDebug("**** Alloc Returning address = %" OCPI_UTIL_RESADDR_PRIx ", %" OCPI_UTIL_RESADDR_PRIx "", 
                taddr, req_addr );
 	m_pool->used += nbytes;
         return 0;
@@ -174,7 +175,7 @@ int OCPI::Util::MemBlockMgr::alloc(uint32_t nbytes, unsigned int alignment, OCPI
         req_addr = ALIGN((*it).addr, alignment);
         (*it).aligned_addr = req_addr;
         m_pool->alloc_list.push_back( *it );
-        ocpiDebug("**** Alloc Returning address = %" PRIx32 ", %" PRIx32 "", 
+        ocpiDebug("**** Alloc Returning address = %" OCPI_UTIL_RESADDR_PRIx ", %" OCPI_UTIL_RESADDR_PRIx "", 
                (*it).addr, req_addr );
         m_pool->free_list.erase( it );      
 	m_pool->used += nbytes;
@@ -208,7 +209,7 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
 
 #ifndef NDEBUG
       if ( (*it).size > 2000000 ) {
-	ocpiInfo("Freeing large mem %" PRIu64 "K in %p %" PRIu64 " of %" PRIu64 " used",
+	ocpiInfo("Freeing large mem %zuK in %p %zu of %zu used",
 		 (*it).size/1024, this, m_pool->used, m_pool->total_size);
 	//        OCPI::OS::dumpStack (std::cerr);
       }
@@ -233,7 +234,7 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
 return -1;
 }
 
-OCPI::Util::MemBlockMgr::MemBlockMgr(OCPI::Util::ResAddrType start, OCPI::OS::uint32_t size )
+OCPI::Util::MemBlockMgr::MemBlockMgr(OCPI::Util::ResAddrType start, size_t size )
   throw( std::bad_alloc ) 
 {
   

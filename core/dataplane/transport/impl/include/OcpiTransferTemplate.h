@@ -109,7 +109,7 @@ namespace OCPI {
       /**********************************
        * Start the input reply transfer
        *********************************/
-      virtual void modify( OCPI::OS::uint32_t new_off[], OCPI::OS::uint32_t old_off[] );
+      virtual void modify(DtOsDataTypes::Offset new_off[], DtOsDataTypes::Offset old_off[] );
 
       /**********************************
        * Get/Set transfer type id

@@ -229,7 +229,7 @@ MemIStream::MemIStreamBuf::xsgetn (char * s, std::streamsize n)
 
     traits_type::copy (s, ptr, count);
 
-    gbump (count);
+    gbump ((int)count);
     remaining -= count;
     total += count;
     s += count;
@@ -269,7 +269,7 @@ MemIStream::MemIStreamBuf::pbackfail (int_type c)
       return traits_type::eof ();
     }
 
-    if (traits_type::eq (c, traits_type::to_int_type (prevChunk->ptr[curpos]))) {
+    if (traits_type::eq_int_type (c, traits_type::to_int_type (prevChunk->ptr[curpos]))) {
       return traits_type::eof ();
     }
 

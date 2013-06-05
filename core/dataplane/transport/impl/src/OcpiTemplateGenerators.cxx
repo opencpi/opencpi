@@ -44,6 +44,7 @@
  *    Revision Detail: Created
  */
 
+#include "OcpiUtilMisc.h"
 #include <DtTransferInternal.h>
 #include <OcpiPortSet.h>
 #include <OcpiBuffer.h>
@@ -65,8 +66,8 @@
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;
 using namespace DtI;
-using namespace OCPI::OS;
-
+namespace OS = OCPI::OS;
+namespace DDT = DtOsDataTypes;
 
 TransferTemplateGenerator::
 TransferTemplateGenerator()
@@ -91,7 +92,7 @@ create( Transport* transport, PortSet* output, PortSet* input, TransferControlle
 
   // We need to create transfers for every output and destination port 
   // the exists in the context of this container.  
-  for ( OCPI::OS::uint32_t s_n=0; s_n<output->getPortCount(); s_n++ ) {
+  for (PortOrdinal s_n=0; s_n<output->getPortCount(); s_n++ ) {
 
     Port* s_port = output->getPort(s_n);
 
@@ -116,7 +117,7 @@ create( Transport* transport, PortSet* output, PortSet* input, TransferControlle
 
   }
 
-  for ( OCPI::OS::uint32_t t_n=0; t_n<input->getPortCount(); t_n++ ) {
+  for (PortOrdinal t_n = 0; t_n < input->getPortCount(); t_n++) {
 
     Port* t_port = input->getPort(t_n);
 
@@ -143,7 +144,7 @@ create( Transport* transport, PortSet* output, PortSet* input, TransferControlle
   }
 
   if ( ! generated ) {
-    ocpiAssert( ! "PROGRAMMING ERROR!! no templates were generated for this circuit !!\n");
+    ocpiAssert("PROGRAMMING ERROR!! no templates were generated for this circuit !!\n"==0);
   }
 
 }
@@ -172,15 +173,13 @@ void TransferTemplateGenerator::createInputBroadcastTemplates(PortSet* output,
                                                                TransferController* cont
                                                                )
 {
-  OCPI::OS::uint32_t n;
-
   // We need to create the transfers to tell all of our shadow ports that a buffer
   // became available, 
-  int n_t_buffers = input->getBufferCount();
+  BufferOrdinal n_t_buffers = input->getBufferCount();
 
   // We need a transfer template to allow a transfer for each input buffer to its
   // associated shadows
-  for ( int t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
+  for ( BufferOrdinal t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
     // input buffer
     InputBuffer* t_buf = static_cast<InputBuffer*>(input->getBuffer(t_buffers));
@@ -200,7 +199,7 @@ void TransferTemplateGenerator::createInputBroadcastTemplates(PortSet* output,
       &input->getMetaData()->m_bufferData[t_tid].inputOffsets;
 
     // We need to setup a transfer for each shadow, they exist in the unique output circuits
-    for ( n=0; n<output->getPortCount(); n++ ) {
+    for (PortOrdinal n = 0; n < output->getPortCount(); n++) {
 
       // Since the shadows only exist in the circuits with instances of real
       // output ports, the offsets are indexed via the output port ordinals.
@@ -348,16 +347,16 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
 
           // Create the transfer that copys the output meta-data to the input meta-data
 	  ptransfer->copy (
-			   output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-			   input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			   output_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
+			   input_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
 			   sizeof(OCPI::OS::int64_t),
 			   XferRequest::MetaDataTransfer );
 
 
           // Create the transfer that copys the output state to the remote input state
           ptransfer->copy (
-			   output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-			   input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   output_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			   input_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
 			   sizeof(BufferState),
 			   XferRequest::FlagTransfer );
 
@@ -378,7 +377,7 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
       // A output braodcast must also send to all other outputs to update them as well
       // Now we need to pass the output control baton onto the next output port
       XferRequest* ptransfer2=NULL;
-      for ( OCPI::OS::uint32_t ns=0; ns<s_port->getPortSet()->getPortCount(); ns++ ) {
+      for (PortOrdinal ns=0; ns<s_port->getPortSet()->getPortCount(); ns++ ) {
         Port* next_sp = 
           static_cast<Port*>(s_port->getPortSet()->getPortFromIndex(ns));
         if ( next_sp == s_port ) {
@@ -432,15 +431,13 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
                                                       TransferController* cont )
 
 {
-  OCPI::OS::uint32_t n;
-
   // We need to create the transfers to tell all of our shadow ports that a buffer
   // became available, 
-  OCPI::OS::uint32_t n_t_buffers = input->getBufferCount();
+  size_t n_t_buffers = input->getBufferCount();
 
   // We need a transfer template to allow a transfer for each input buffer to its
   // associated shadows
-  for ( OCPI::OS::uint32_t t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
+  for ( size_t t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
     // input buffer
     InputBuffer* t_buf = input->getInputBuffer(t_buffers);
@@ -464,7 +461,7 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
     memset(sent,0,sizeof(int)*MAX_PCONTRIBS);
 
     // We need to setup a transfer for each shadow, they exist in the unique output circuits
-    for ( n=0; n<output->getPortCount(); n++ ) {
+    for (PortOrdinal n = 0; n < output->getPortCount(); n++) {
 
       // Since the shadows only exist in the circuits with instances of real
       // output ports, the offsets are indexed via the output port ordinals.
@@ -508,7 +505,9 @@ void TransferTemplateGenerator::createInputTransfers(PortSet* output, Port* inpu
       try {
         // Create the copy in the template
         ptransfer->copy (
-			 input_offsets->localStateOffset + (sizeof(BufferState) * MAX_PCONTRIBS) + (sizeof(BufferState)* input->getPortId()),
+			 input_offsets->localStateOffset +
+			 (OCPI_SIZEOF(DDT::Offset, BufferState) * MAX_PCONTRIBS) +
+			 (OCPI_SIZEOF(DDT::Offset, BufferState)* input->getPortId()),
 			 input_offsets->myShadowsRemoteStateOffsets[s_pid],
 			 sizeof(BufferState),
 			 XferRequest::FlagTransfer );
@@ -648,16 +647,17 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
 
           // Create the transfer that copys the output meta-data to the input meta-data
           ptransfer->copy (
-			   output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-			   input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			   output_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
+			   input_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
 			   sizeof(OCPI::OS::int64_t),
 			   XferRequest::MetaDataTransfer  );
 
 
           // Create the transfer that copys the output state to the remote input state
           ptransfer->copy (
-			   output_offsets->localStateOffset + sizeof(BufferState) * MAX_PCONTRIBS + s_port->getPortId() * sizeof(BufferState),
-			   input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   output_offsets->localStateOffset + OCPI_SIZEOF(DDT::Offset, BufferState) * MAX_PCONTRIBS +
+			   s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			   input_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
 			   sizeof(BufferState),
 			   XferRequest::FlagTransfer );
 
@@ -725,11 +725,10 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
     return;
   }
 
-  int n;
   PortSet* output = s_port->getPortSet();
   int n_s_buffers = output->getBufferCount();
   int n_t_buffers = input->getBufferCount();
-  int n_t_ports = input->getPortCount();
+  PortOrdinal n_t_ports = input->getPortCount();
 
   // We need a transfer template to allow a transfer from each output buffer to every
   // input buffer for this pattern.
@@ -766,7 +765,7 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
       // We need to setup a transfer for each input port. 
       ocpiDebug("Number of input ports = %d", n_t_ports);
 
-      for ( n=0; n<n_t_ports; n++ ) {
+      for (PortOrdinal n = 0; n < n_t_ports; n++) {
 
         // Get the input port
         Port* t_port = input->getPort(n);
@@ -805,8 +804,8 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
 
           // Create the transfer that copys the output state to the remote input state
           ptransfer->copy (
-			   output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-			   input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   output_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			   input_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
 			   sizeof(BufferState),
 			   XferRequest::FlagTransfer );
 
@@ -836,16 +835,13 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
                                                       TransferController* cont )
 
 {
-
-  OCPI::OS::uint32_t n;
-
   // We need to create the transfers to tell all of our shadow ports that a buffer
   // became available, 
-  OCPI::OS::uint32_t n_t_buffers = input->getBufferCount();
+  BufferOrdinal n_t_buffers = input->getBufferCount();
 
   // We need a transfer template to allow a transfer for each input buffer to its
   // associated shadows
-  for ( OCPI::OS::uint32_t t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
+  for ( BufferOrdinal t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
     // input buffer
     InputBuffer* t_buf = input->getInputBuffer(t_buffers);
@@ -866,7 +862,7 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
     memset(sent,0,sizeof(int)*MAX_PCONTRIBS);
 
     // We need to setup a transfer for each shadow, they exist in the unique output circuits
-    for ( n=0; n<output->getPortCount(); n++ ) {
+    for (PortOrdinal n=0; n<output->getPortCount(); n++ ) {
 
       // Since the shadows only exist in the circuits with instances of real
       // output ports, the offsets are indexed via the output port ordinals.
@@ -907,7 +903,7 @@ void TransferTemplateGeneratorPattern1AFC::createInputTransfers(PortSet* output,
 void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_port, PortSet* input,
                                                               TransferController* cont )
 {
-  ocpiAssert(!"pattern1AFCshadow output");
+  ocpiAssert("pattern1AFCshadow output"==0);
 
   // Since this is a whole output distribution, only port 0 of the output
   // set gets to do anything.
@@ -1004,8 +1000,8 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
 
           // Create the transfer that copies the output meta-data to the input meta-data 
           ptransfer->copy (
-			   output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-			   input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			   output_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
+			   input_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
 			   sizeof(OCPI::OS::int64_t),
 			   XferRequest::MetaDataTransfer  );
 
@@ -1014,8 +1010,8 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
           // Create the transfer that copies our state to back to the output to indicate that its buffer
           // is now available for re-use.
           ptransfer->copy (
-			   input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-			   output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			   input_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			   output_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
 			   sizeof(BufferState),
 			   XferRequest::FlagTransfer );
 
@@ -1076,7 +1072,7 @@ createOutputTransfers(Port* s_port,
                       TransferController* cont  )
 {
 
-  ocpiAssert(!"pattern2 output");
+  ocpiAssert("pattern2 output"==0);
   /*
    *        For a WP / SW transfer, we need to be capable of transfering from any
    *  output buffer to any one input buffer.
@@ -1196,8 +1192,8 @@ createOutputTransfers(Port* s_port,
 
           try {
             ptransfer->copy (
-			     output_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
-			     input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			     output_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
+			     input_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
 			     sizeof(OCPI::OS::int64_t),
 			     XferRequest::MetaDataTransfer );
           }
@@ -1214,8 +1210,8 @@ createOutputTransfers(Port* s_port,
         if ( standard_transfer ) {
           try {
             ptransfer->copy (
-			     output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-			     input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			     output_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			     input_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
 			     sizeof(BufferState),
 			     XferRequest::FlagTransfer );
           }
@@ -1260,7 +1256,7 @@ bool TransferTemplateGeneratorPattern3::addTransferPreState( XferRequest* pt, TD
   int our_smb_id = tdi.s_port->getMailbox();
 
   PortSet *sps = static_cast<PortSet*>(tdi.s_port->getPortSet());
-  for ( OCPI::OS::uint32_t n=0; n<sps->getPortCount(); n++ ) {
+  for (PortOrdinal n = 0; n < sps->getPortCount(); n++) {
 
     Port* shadow_port = static_cast<Port*>(sps->getPortFromIndex(n));
     int idx = shadow_port->getMailbox();
@@ -1376,7 +1372,7 @@ createOutputTransfers(Port* s_port,
                       TransferController* cont  )
 {
 
-  ocpiAssert(!"pattern4 output");
+  ocpiAssert("pattern4 output"==0);
   /*
    *        For a WP / P(Parts) transfer, we need to be capable of transfering from any
    *  output buffer to all input port buffers.
@@ -1536,15 +1532,15 @@ createOutputTransfers(Port* s_port,
 
               // Create the transfer that copys the output meta-data to the input meta-data
               ptransfer->copy (
-			       output_offsets->metaDataOffset + t_port->getPortId() * sizeof(BufferMetaData),
-			       input_offsets->metaDataOffset + s_port->getPortId() * sizeof(BufferMetaData),
+			       output_offsets->metaDataOffset + t_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
+			       input_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
 			       sizeof(OCPI::OS::uint64_t),
 			       XferRequest::MetaDataTransfer );
 
               // Create the transfer that copys the output state to the remote input state
               ptransfer->copy (
-			       output_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
-			       input_offsets->localStateOffset + s_port->getPortId() * sizeof(BufferState),
+			       output_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			       input_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
 			       sizeof(BufferState),
 			       XferRequest::FlagTransfer );
             }

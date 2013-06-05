@@ -166,7 +166,7 @@ read (CF::OctetSequence_out data,
          CORBA::SystemException)
 {
   CF::OctetSequence_var buf = new CF::OctetSequence (length);
-  buf->length (length);
+  buf->length (OCPI_UTRUNCATE(unsigned,length));
 
   char * pbuf = reinterpret_cast<char *> (buf->get_buffer ());
 
@@ -179,7 +179,7 @@ read (CF::OctetSequence_out data,
     throw ioe;
   }
 
-  buf->length (m_in->gcount());
+  buf->length (OCPI_UTRUNCATE(unsigned, m_in->gcount()));
   data = buf._retn ();
 }
 

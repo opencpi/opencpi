@@ -69,8 +69,8 @@ namespace OCPI {
       OCPI::RDT::Descriptors  pdd;
     };
 
-    // Unique ordinal for a circuit
-    typedef OCPI::OS::int32_t CircuitId;
+    // Unique ordinal for a circuit, with zero being a sentinel
+    typedef uint32_t CircuitId;
 
     class Transport;
 
@@ -85,7 +85,7 @@ namespace OCPI {
        * Constructors
        *********************************/
       Circuit( Transport* tpg,
-               CircuitId&  iid, ConnectionMetaData* connection, 
+               CircuitId  iid, ConnectionMetaData* connection, 
                PortOrdinal sps[], 
                PortOrdinal dpss[]);
 
@@ -128,7 +128,7 @@ namespace OCPI {
       /**********************************
        * Attempts to make the circuit ready
        *********************************/
-      bool updateConnection(OCPI::DataTransport::Port*,OCPI::OS::uint32_t count);
+      bool updateConnection(OCPI::DataTransport::Port*,uint32_t count);
 
       /**********************************
        * Adds a port to the circuit
@@ -158,8 +158,8 @@ namespace OCPI {
       /**********************************
        * Updates our input ports
        *********************************/
-      bool updateInputs();
-      void updateInputs( void* );
+      //      bool updateInputs();
+      void updateInputs(DataTransfer::ContainerComms::RequestUpdateCircuit*);
 
       /**********************************
        * Initialize transfers
@@ -171,7 +171,7 @@ namespace OCPI {
        * This method is reponsible for cheching its queued request buffers and
        * starting any queued requests if possible.
        *********************************/
-      OCPI::OS::uint32_t checkQueuedTransfers();
+      uint32_t checkQueuedTransfers();
 
       /**********************************
        * This method causes the buffer to be transfered to the
@@ -189,7 +189,7 @@ namespace OCPI {
       void sendZcopyInputBuffer( 
                                 Port* out_port,
                                 Buffer* src_buf,
-                                OCPI::OS::uint32_t len );
+                                size_t len );
 
 
       /***********************************
@@ -218,7 +218,7 @@ namespace OCPI {
       /**********************************
        * Get the maximum port ordinal for this circuit
        *********************************/
-      OCPI::OS::uint32_t getMaxPortOrd();
+      PortOrdinal getMaxPortOrd();
 
       PullDataDriver* createPullDriver( const OCPI::RDT::Descriptors& pdesc);
 
@@ -239,8 +239,8 @@ namespace OCPI {
        * "busy" factor back to the output ports for load balancing.  The higher the value,
        * the busier the circuit.
        *********************************/
-      virtual void setRelativeLoadFactor( OCPI::OS::uint32_t load_factor );
-      OCPI::OS::uint32_t getRelativeLoadFactor();
+      virtual void setRelativeLoadFactor( uint32_t load_factor );
+      uint32_t getRelativeLoadFactor();
 
       /**********************************
        * Get/Set circuit id
@@ -262,7 +262,7 @@ namespace OCPI {
       /**********************************
        * Get the number of destination port sets
        *********************************/
-      OCPI::OS::uint32_t getInputPortSetCount();
+      PortOrdinal getInputPortSetCount();
 
 
       /**********************************
@@ -277,7 +277,7 @@ namespace OCPI {
        *
        * returns: Null terminated list of port sets
        *********************************/
-      PortSet* getInputPortSet(OCPI::OS::uint32_t idx );
+      PortSet* getInputPortSet(uint32_t idx );
       void addPortSet( PortSet* port_set );
 
 
@@ -294,14 +294,14 @@ namespace OCPI {
       /**********************************
        * store and retrieve protocol info during connection setup
        *********************************/
-      void getProtocolInfo(uint32_t &size, uint64_t &offset) {
+      void getProtocolInfo(size_t &size, OCPI::Util::ResAddr &offset) {
 	// ocpiAssert(m_protocol != 0 && m_protocol->length() != 0 && m_protocolOffset != 0);
 	size = m_protocolSize;
 	offset = m_protocolOffset;
       }
 
       // Estalish where in the local SMB the protocol does or will exist.
-      inline void setProtocolInfo(uint32_t size, uint64_t offset) {
+      inline void setProtocolInfo(size_t size, OCPI::Util::ResAddrType offset) {
 	m_protocolSize = size;
 	m_protocolOffset = offset;
 	//	if (m_protocol) {
@@ -332,12 +332,12 @@ namespace OCPI {
       void QInputToWaitForOutput( 
                                  Port* out_port,
                                  Buffer* input_buf,
-                                 OCPI::OS::uint32_t len );
+                                 size_t len );
 
       void QInputToOutput( 
                           Port* out_port,
                           Buffer* input_buf,
-                          OCPI::OS::uint32_t len );
+                          size_t len );
 
       void checkIOZCopyQ();
  
@@ -370,14 +370,14 @@ namespace OCPI {
        * receive data based upon the circuits data distribution type.  If the circuits
        * DD type is parallel, then 
        *********************************/
-      OCPI::OS::uint32_t getQualifiedInputPortSetCount(bool queued=false);
-      PortSet* getQualifiedInputPortSet(OCPI::OS::uint32_t n, bool queued=false );
+      uint32_t getQualifiedInputPortSetCount(bool queued=false);
+      PortSet* getQualifiedInputPortSet(uint32_t n, bool queued=false );
 
       // our init flag
-      static OCPI::OS::uint32_t m_init;
+      //      static uint32_t m_init;
 
       // Queued transfer lists
-      OCPI::OS::uint32_t m_maxPortOrd;
+      uint32_t m_maxPortOrd;
       CU::VList m_queuedTransfers[MAX_PCONTRIBS];
 
       // ZCopy transfer list.  This list is used to Q up zero copy transfers of another
@@ -385,7 +385,7 @@ namespace OCPI {
       CU::VList m_queuedInputOutputTransfers[MAX_PCONTRIBS];
 
       // Last input port set processed, (used for sequential distribution at connection level)
-      OCPI::OS::uint32_t m_lastPortSet;
+      uint32_t m_lastPortSet;
 
       // Debug stuff
       bool m_fromQ;
@@ -407,7 +407,7 @@ namespace OCPI {
       bool m_openCircuit;
     protected:
       // Relative load factor
-      OCPI::OS::uint32_t m_loadFactor;
+      uint32_t m_loadFactor;
 
       // Circuit ordinal
       CircuitId m_circuitId;
@@ -422,7 +422,7 @@ namespace OCPI {
       ConnectionMetaData* m_metaData;
 
       // Number of port sets already initialized
-      OCPI::OS::uint32_t m_portsets_init;
+      uint32_t m_portsets_init;
 
       // Reference count
       int m_ref_count;
@@ -450,8 +450,8 @@ namespace OCPI {
       char *m_protocol; // a char array we own
       // Offset in our local endpoint smb where we have put the protoco info for sending to the
       // server side.
-      uint32_t m_protocolSize;
-      uint64_t m_protocolOffset;
+      size_t m_protocolSize;
+      OCPI::Util::ResAddrType m_protocolOffset;
     };
 
 
@@ -460,16 +460,16 @@ namespace OCPI {
      * inline declarations
      ****
      *********************************/
-    inline OCPI::OS::uint32_t Circuit::getMaxPortOrd(){return m_maxPortOrd;}
+    inline PortOrdinal Circuit::getMaxPortOrd(){return m_maxPortOrd;}
     inline bool Circuit::isCircuitOpen(){return m_openCircuit;}
-    inline void Circuit::setRelativeLoadFactor( OCPI::OS::uint32_t load_factor ){m_loadFactor = load_factor;}
-    inline OCPI::OS::uint32_t Circuit::getRelativeLoadFactor(){return m_loadFactor;}
+    inline void Circuit::setRelativeLoadFactor( uint32_t load_factor ){m_loadFactor = load_factor;}
+    inline uint32_t Circuit::getRelativeLoadFactor(){return m_loadFactor;}
     inline void Circuit::setCircuitId( CircuitId id ){m_circuitId = id;}
     inline CircuitId Circuit::getCircuitId(){return m_circuitId;}
     inline PortSet* Circuit::getOutputPortSet() {return m_outputPs;}
-    inline OCPI::OS::uint32_t Circuit::getInputPortSetCount() {return m_inputPs.size();}
+    inline PortOrdinal Circuit::getInputPortSetCount() {return m_inputPs.size();}
     inline OCPI::Util::VList& Circuit::getInputPortSets() {return m_inputPs; }
-    inline PortSet* Circuit::getInputPortSet(OCPI::OS::uint32_t idx) {return static_cast<PortSet*>(m_inputPs[idx]);}
+    inline PortSet* Circuit::getInputPortSet(uint32_t idx) {return static_cast<PortSet*>(m_inputPs[idx]);}
     inline ConnectionMetaData * Circuit::getConnectionMetaData() {return m_metaData;}
 
   }

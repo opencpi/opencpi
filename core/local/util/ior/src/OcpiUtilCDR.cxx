@@ -141,7 +141,7 @@ OCPI::Util::CDR::Encoder::
 putString (const std::string & value)
   throw ()
 {
-  putULong (value.length() + 1);
+  putULong ((uint32_t)(value.length() + 1));
   m_data.append (value.data(), value.length());
   m_data.append ("\0", 1);
 }
@@ -151,7 +151,7 @@ OCPI::Util::CDR::Encoder::
 putOctetSeq (const std::string & value)
   throw ()
 {
-  putULong (value.length());
+  putULong ((uint32_t)value.length());
   m_data.append (value.data(), value.length());
 }
 

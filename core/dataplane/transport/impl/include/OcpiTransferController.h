@@ -303,7 +303,7 @@ namespace OCPI {
         ( void ) output;
         ( void ) input;
         ( void ) whole_output_set;
-        ocpiAssert(!"Unsupported data transfer request rejected !!\n");
+        ocpiAssert("Unsupported data transfer request rejected !!\n"==0);
         throw OCPI::Util::EmbeddedException("Unsupported data transfer request rejected !!\n");
         return NULL;
       }

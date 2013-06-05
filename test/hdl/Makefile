@@ -67,7 +67,7 @@ ALLCXX=$(basename $(notdir $(wildcard src/*.cxx)))
 ALLBINCXX=$(ALLCXX:%=$(OCPI_OUT_DIR)/%)
 $(OCPI_OUT_DIR)/cosgen: LIBS=-lm
 $(OCPI_OUT_DIR)/nft: LIBS=-lpthread
-$(OCPI_OUT_DIR)/ocfrp_check: LIBS=-L ../../core/local/util/$(OCPI_OUT_DIR) -lutil
+$(OCPI_OUT_DIR)/ocfrp_check: LIBS=-L ../../lib/$(OCPI_OUT_DIR) -lutil -llogger -locpios
 all: $(ALLBINC) $(ALLBINCXX)
 $(OCPI_OUT_DIR):
 	mkdir $@
@@ -82,7 +82,9 @@ $(ALLBINCXX): $(OCPI_OUT_DIR)/%: src/%.cxx | $(OCPI_OUT_DIR)
 	-I../../core/local/util/ezxml/include \
 	-I../../core/local/util/misc/include \
 	-I../../core/local/util/vfs/include \
+	-I../../core/local/util/res/include \
 	-I../../adapt/os/ocpios/interfaces/include \
+	-I../../core/dataplane/rdma_driver_interface/interfaces/include \
 	$(DOSTATIC) -Wall -g $^ $(LIBS) $(BASICLIBS)
 
 clean:

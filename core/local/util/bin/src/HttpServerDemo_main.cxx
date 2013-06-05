@@ -51,10 +51,10 @@ main (int argc, char *argv[])
     return 1;
   }
 
-  unsigned int portNo = 0;
+  uint16_t portNo = 0;
 
   if (argc == 2) {
-    portNo = std::strtoul (argv[1], 0, 0);
+    portNo = (uint16_t)std::strtoul (argv[1], 0, 0);
   }
 
   try {

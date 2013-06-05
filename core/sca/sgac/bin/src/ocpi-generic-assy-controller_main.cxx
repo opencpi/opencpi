@@ -50,6 +50,7 @@
 #include <OcpiOsMisc.h>
 #include <OcpiOsDebug.h>
 #include <OcpiOsAssert.h>
+#include <OcpiUtilMisc.h>
 #include <OcpiLoggerDebugLogger.h>
 #include <OcpiLoggerOStreamOutput.h>
 #include <OcpiStringifyCorbaException.h>
@@ -199,7 +200,7 @@ startGenericAssemblyControllerCmdInt (CORBA::ORB_ptr orb,
     PortableServer::POA_var poa = PortableServer::POA::_narrow (obj);
 
 #if !defined (NDEBUG)
-    OCPI::Logger::debug (applicationName, config.debugLevel);
+    OCPI::Logger::debug (applicationName, OCPI_UTRUNCATE(unsigned,config.debugLevel));
 #endif
 
     OCPI::Logger::Logger * logger = 0;

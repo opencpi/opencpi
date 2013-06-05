@@ -137,7 +137,7 @@ configure (int & argc, char *argv[],
             optionName[0] == 'n' && optionName[1] == 'o' &&
             std::isupper (optionName[2])) {
           std::string realOptionName = optionName.substr (2);
-          realOptionName[0] = std::tolower (realOptionName[0]);
+          realOptionName[0] = (char)std::tolower (realOptionName[0]);
           const Option * realOptSpec = findOption (realOptionName);
 
           if (realOptSpec && realOptSpec->type == OptionType::BOOLEAN) {

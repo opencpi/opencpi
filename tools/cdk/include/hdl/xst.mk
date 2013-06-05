@@ -123,8 +123,10 @@ endif
 CompiledSourceFiles:= $(OCPI_CDK_DIR)/include/hdl/onewire.v $(CompiledSourceFiles)
 WorkLibrarySources:=$(WorkLibrarySources) $(OCPI_CDK_DIR)/include/hdl/onewire.v
 else ifeq ($(HdlMode),platform)
+ifeq ($(origin XstExtraOptions),undefined)
 XstExtraOptions=-iobuf yes -bufg 32
-XstInternalOptions=-uc ../$(HdlPlatform).xcf
+endif
+XstInternalOptions=$(and $(wildcard $(HdlPlatform).xcf),-uc ../$(HdlPlatform).xcf)
 endif
 $(call OcpiDbgVar,Core)
 $(call OcpiDbgVar,HdlMode)
@@ -308,7 +310,7 @@ XstOptions +=\
    -vlgincdir { \
      $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
     })) \
-  $(and $(CDKComponentLibraries)$(CDKDeviceLibraries)$(ComponentLibraries)$(DeviceLibraries)$(Cores),-sd { \
+  $(and $(CDKComponentLibraries)$(CDKDeviceLibraries)$(ComponentLibraries)$(DeviceLibraries)$(Cores)$(PlatformCores),-sd { \
      $(foreach l,$(CDKComponentLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
@@ -321,6 +323,7 @@ XstOptions +=\
        $(call FindRelative,$(TargetDir),\
          $(l)/lib/hdl/$(call HdlToolLibRef,$(LibName),$(HdlTarget)))))\
      $(foreach c,$(Cores),$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
+     $(and $(findstring platform,$(HdlMode)),..) \
       })
 
 XstNgcOptions=\
@@ -352,7 +355,8 @@ HdlToolCompile=\
   $(XstMakeLso)\
   $(and $(XstNeedIni),$(XstMakeIni)) \
   $(XstMakeScr)\
-  $(call XilinxInit); xst -ifn $(XstScrFile) && touch $(LibName)
+  $(call XilinxInit); xst -ifn $(XstScrFile) && touch $(LibName) \
+  $(and $(PlatformCores), && mv $(Core).ngc temp.ngc && ngcbuild -sd .. temp.ngc $(Core).ngc)
 
 # optional creation of these doesn't work...
 #    $(XstMakeLso) $(XstMakeIni))\
@@ -390,7 +394,7 @@ DoXilinx=$(call DoXilinxPat,$1,$2,$3,'Number of error.*s: *0')
 DoXilinxPat=\
 	echo " "Details in $1.out; cd $(call PlatformDir,$2); $(call XilinxInit,$1.out); \
 	echo Command: $1 $3 >> $1.out; \
-	/usr/bin/time -f %E -o $1.time sh -c "$1 $3; echo $$? > $1.status" >> $1.out 2>&1;\
+	/usr/bin/time -f %E -o $1.time sh -c "$1 $3; RC=$$$$?; echo Exit status: $$$$RC; echo $$$$RC > $1.status" >> $1.out 2>&1;\
 	(echo -n Time:; cat $1.time) >> $1.out; \
 	$(call XilinxAfter,$1,$4)
 #AppBaseName=$(PlatformDir)/$(Worker)-$(HdlPlatform)
@@ -408,14 +412,16 @@ TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
 
 define HdlToolDoPlatform
 
-$(call NgdName,$1): $(call AppNgcName,$1) $(HdlPlatformsDir)/$1/$1.ucf $(call TopNgcName,$1) | $(call PlatformDir,$1)
+$(call NgdName,$1): $(call AppNgcName,$1) $(wildcard $(HdlPlatformsDir)/$1/*.ucf) $(call TopNgcName,$1) | $(call PlatformDir,$1)
 	$(AT)echo -n For $(Worker) on $1: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
 	$(AT)$(call DoXilinx,ngdbuild,$1,\
-	        -aul -aut -uc $(HdlPlatformsDir)/$1/$1.ucf -p $(HdlPart_$1) \
+	        -aul -aut $(foreach u,$(wildcard $(HdlPlatformsDir)/$1/*.ucf),-uc $u) -p $(HdlPart_$1) \
                 $$(foreach d, ../target-$(call HdlGetFamily,$(call HdlGetPart,$1)) \
 		              $$(foreach l,$$(ComponentLibraries),$$(strip \
-			       $$(call FindRelative,$(call PlatformDir,$1), \
-				  $$(call HdlComponentLibrary,$$l,$(HdlPart_$1))))), \
+			        $$(call FindRelative,$(call PlatformDir,$1), \
+			          $$(call HdlComponentLibrary,$$l,$(HdlPart_$1))))) \
+			      $$(call FindRelative,$(call PlatformDir,$1), \
+			         $$(HdlPlatformsDir)/$1),\
 			-sd $$d) \
 	        $$(call FindRelative,$(call PlatformDir,$1),$(call TopNgcName,$1)) $(notdir $(call NgdName,$1)))
 
@@ -442,9 +448,14 @@ $(call ParName,$1): $(call MapName,$1) $(call PcfName,$1)
 		$(notdir $(call ParName,$1)) $(notdir $(call PcfName,$1)))
 
 # Generate bitstream
+# using: '-intstyle ise" makes a nice option table, but also causes the return code to be "1",
+# rather than zero.
+
 $(call BitName,$1): $(call ParName,$1) $(call PcfName,$1)
 	$(AT)echo -n For $(Worker) on $1: Generating bitstream file $$@.
-	$(AT)$(call DoXilinxPat,bitgen,$1,-f $(HdlPlatformsDir)/common/bitgen_bit.ut \
+	$(AT)$(call DoXilinxPat,bitgen,$1,\
+		-f $$(call FindRelative,$(call PlatformDir,$1),$(strip \
+		$(or $(wildcard $(HdlPlatformsDir)/$1/$1.ut),$(HdlPlatformsDir)/common/bitgen_bit.ut))) \
                 $(notdir $(call ParName,$1)) $(notdir $(call BitName,$1)) \
 		$(notdir $(call PcfName,$1)), 'DRC detected 0 errors')
 

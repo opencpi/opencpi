@@ -164,7 +164,7 @@ namespace OCPI {
 	throw (std::string)
       {
 	unsigned int blockSize = 16384;
-	unsigned int length = 0;
+	size_t length = 0;
 	unsigned int curAlloc = blockSize;
 	m_doc = new char [blockSize];
 	char * ptr = m_doc;
@@ -181,7 +181,7 @@ namespace OCPI {
 	    curAlloc += blockSize;
 	  }
 
-	  unsigned int count = in->read (ptr, blockSize).gcount ();
+	  std::streamsize count = in->read (ptr, blockSize).gcount ();
 	  length += count;
 	  ptr += count;
 	}
@@ -229,10 +229,10 @@ namespace OCPI {
 	 * of having to keep reallocating it.
 	 */
 
-	unsigned long long fileSize;
+	size_t fileSize;
 
 	try {
-	  fileSize = fs.size (fileName);
+	  fileSize = OCPI_UTRUNCATE(size_t, fs.size (fileName));
 	}
 	catch (...) {
 	  /*
@@ -269,7 +269,7 @@ namespace OCPI {
 	}
 
 	m_doc = new char [fileSize];
-	unsigned int count = in->read (m_doc, fileSize).gcount ();
+	std::streamsize count = in->read (m_doc, fileSize).gcount ();
 
 	try {
 	  fs.close (in);
@@ -385,10 +385,10 @@ namespace OCPI {
       }
 
       bool
-      getUNum(const char *s, uint32_t *valp) {
+      getUNum(const char *s, size_t *valp) {
 	char *endptr;
 	errno = 0;
-	uint32_t val =  strtoul(s, &endptr, 0);
+	unsigned long val = strtoul(s, &endptr, 0);
 	if (errno == 0) {
 	  if (*endptr == 'K' || *endptr == 'k') {
 	    endptr++;
@@ -412,15 +412,15 @@ namespace OCPI {
 		val--;
 	    }
 	  }
-	  *valp = val;
+	  *valp = (size_t)val;
 	  return false;
 	}
 	return true;
       }
 
       const char *
-      getNumber(ezxml_t x, const char *attr, uint32_t *np, bool *found,
-		uint32_t defaultValue, bool setDefault) {
+      getNumber(ezxml_t x, const char *attr, size_t *np, bool *found,
+		size_t defaultValue, bool setDefault) {
 	const char *a = ezxml_cattr(x, attr);
 	if (!a) {
 	  if (found)
@@ -441,11 +441,11 @@ namespace OCPI {
       const char *
       getNumber8(ezxml_t x, const char *attr, uint8_t *np, bool *found,
 		 uint32_t defaultValue, bool setDefault) {
-	uint32_t i32;
-	const char *err = getNumber(x, attr, &i32, found, defaultValue,
+	size_t n;
+	const char *err = getNumber(x, attr, &n, found, defaultValue,
 				    setDefault);
 	if (!err)
-	  *np = (uint8_t)i32;
+	  *np = (uint8_t)n;
 	return err;
       }
 
@@ -505,7 +505,7 @@ namespace OCPI {
       bool
       parseBool(const char *a, const char *end, bool *b)
       {
-	unsigned n = end ? end - a : strlen(a);
+	size_t n = end ? end - a : strlen(a);
 	if (n == 4 && !strncasecmp(a, "true", 4) || n == 1 && !strncmp(a, "1", 1))
 	  *b = true;
 	else if (n == 5 && !strncasecmp(a, "false", 5)  || n == 1 && !strncmp(a, "0", 1))

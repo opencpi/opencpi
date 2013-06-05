@@ -98,7 +98,7 @@ namespace OCPI {
       bool readableConfigs, writableConfigs, sub32Configs; // all unused
       for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x), prop++) {
         if ((err = prop->parse(x, readableConfigs, writableConfigs,
-			       sub32Configs, true, prop - m_properties)))
+			       sub32Configs, true, (unsigned)(prop - m_properties))))
           return esprintf("Invalid xml property description: %s", err);
         m_totalPropertySize += prop->m_nBytes;
       }

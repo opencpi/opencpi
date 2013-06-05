@@ -93,7 +93,7 @@ namespace OCPI {
       if (name)
 	m_qualifiedName = name;
       bool sub32dummy;
-      unsigned maxAlignDummy = 0;
+      size_t maxAlignDummy = 0;
       if ((err = OE::getBoolean(op, "TwoWay", &m_isTwoWay)))
 	return err;
       if (m_isTwoWay)
@@ -125,13 +125,13 @@ namespace OCPI {
       } else
 	fprintf(f, "/>\n");
     }
-    void Operation::write(Writer &writer, const uint8_t *data, uint32_t length) {
-      for (unsigned n = 0; n < m_nArgs; n++)
+    void Operation::write(Writer &writer, const uint8_t *data, size_t length) {
+      for (size_t n = 0; n < m_nArgs; n++)
 	m_args[n].write(writer, data, length, isTopFixedSequence());
     }
 
-    uint32_t Operation::read(Reader &reader, uint8_t *&data, uint32_t maxLength) {
-      uint32_t max = maxLength;
+    size_t Operation::read(Reader &reader, uint8_t *&data, size_t maxLength) {
+      size_t max = maxLength;
       for (unsigned n = 0; n < m_nArgs; n++)
 	m_args[n].read(reader, data, maxLength);
       return max - maxLength;
@@ -149,7 +149,7 @@ namespace OCPI {
       }
       const char *err;
       bool sub32dummy = false;
-      unsigned maxAlignDummy = 1;
+      size_t maxAlignDummy = 1;
       if ((err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
 				      p.m_dataValueWidth, p.m_diverseDataSizes,
 				      sub32dummy, p.m_isUnbounded, m_topFixedSequence)))
@@ -319,7 +319,7 @@ namespace OCPI {
     void Protocol::generate(const char *name) {
       struct timeval tv;
       gettimeofday(&tv, NULL);
-      srandom(tv.tv_sec + tv.tv_usec);
+      srandom((unsigned)(tv.tv_sec + tv.tv_usec));
       m_name = name;
       m_dataValueWidth = 0;
       m_nOperations = random() % 10 + 1;
@@ -335,7 +335,7 @@ namespace OCPI {
     }
     // Generate a message for a random opcode
     void Protocol::generateOperation(uint8_t &opcode, Value **&v) {
-      opcode = random() % m_nOperations;
+      opcode = (uint8_t)(random() % m_nOperations);
       m_operations[opcode].generateArgs(v);
     }
 
@@ -385,7 +385,7 @@ namespace OCPI {
 	  return err;
 	// Allow dvw to be overridden to provide for future finer granularity 
 	// (e.g. force 8 when proto says 16)
-	unsigned dvwattr;
+	size_t dvwattr;
 	bool hasDvw;
 	if ((err = OE::getNumber(prot, "datavaluewidth", &dvwattr, &hasDvw, m_dataValueWidth)) ||
 	    (err = OE::getNumber(prot, "datavaluegranularity", &m_dataValueGranularity, NULL,
@@ -400,7 +400,7 @@ namespace OCPI {
 	}
 	if (m_dataValueWidth) {
 	  // Convert max size from bytes back to values
-	  unsigned bytes = (m_dataValueWidth + CHAR_BIT - 1) / CHAR_BIT;
+	  size_t bytes = (m_dataValueWidth + CHAR_BIT - 1) / CHAR_BIT;
 	  m_maxMessageValues += bytes - 1;
 	  m_maxMessageValues /= bytes;
 	}
@@ -426,11 +426,11 @@ namespace OCPI {
 	// We don't have operation details so we'll put out all the summary attributes
 	// We could prune this to what is needed by anyone
 	fprintf(f,
-		" dataValueWidth=\"%u\""
-		" dataValueGranularity=\"%u\""
+		" dataValueWidth=\"%zu\""
+		" dataValueGranularity=\"%zu\""
 		" diverseDataSizes=\"%u\""
-		" minMessaveValues=\"%u\""
-		" maxMessageValues=\"%u\"",
+		" minMessaveValues=\"%zu\""
+		" maxMessageValues=\"%zu\"",
 		m_dataValueWidth, m_dataValueGranularity, m_diverseDataSizes,
 		m_minMessageValues, m_maxMessageValues);
 	if (m_zeroLengthMessages)
@@ -457,7 +457,7 @@ namespace OCPI {
       m_operations[opcode].write(writer, data, length);
       writer.end();
     }
-    uint32_t Protocol::read(Reader &reader, uint8_t *data, uint32_t maxLength, uint8_t opcode) {
+    size_t Protocol::read(Reader &reader, uint8_t *data, size_t maxLength, uint8_t opcode) {
       assert(!((intptr_t)data & (maxDataTypeAlignment - 1)));
       if (!m_operations)
 	throw Error("No operations in protocol for writing");

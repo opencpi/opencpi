@@ -62,6 +62,8 @@ namespace OCPI {
     
     namespace Formatter {
 
+      typedef OCPI::Time::Emit::OwnerId OwnerId;
+      typedef OCPI::Time::Emit::EventId EventId;
       class XMLReader {
 
      private:
@@ -145,7 +147,7 @@ namespace OCPI {
 	  std::string                   svalue;
 	};
 	struct Description {
-	  int id;
+	  EventId id;
 	  OCPI::Time::Emit::EventType etype;
 	  OCPI::Time::Emit::DataType  dtype;
 	  std::string desc;
@@ -154,9 +156,9 @@ namespace OCPI {
 
 	// The Owner is the source of an emiited event
 	struct Owner {
-	  int id;
+	  OwnerId id;
 	  std::string name;
-	  int parentIndex;
+	  OwnerId parentIndex;
 	  std::string postfix;
 	};
 	std::vector<Event> & getEvents(){return m_events;}
@@ -222,7 +224,7 @@ namespace OCPI {
 	    std::cout << ezxml_cattr(x,"id") << " " << ezxml_cattr(x,"description") <<  std::endl;
 #endif
 	    Description d;
-	    d.id =  atoi( ezxml_cattr(x,"id") );
+	    d.id =  (OwnerId)atoi( ezxml_cattr(x,"id") );
 	    d.width =  atoi( ezxml_cattr(x,"width") );
 	    d.desc =   ezxml_cattr(x,"description");
 	    OCPI::Time::Emit::EventType etype = (OCPI::Time::Emit::EventType)atoi( ezxml_cattr(x,"etype") );	    
@@ -233,7 +235,7 @@ namespace OCPI {
 	      d.etype = etype;
 	      break;
 	    default:
-	      ocpiAssert( !"Bad type found in data");
+	      ocpiAssert("Bad type found in data"==0);
 	    };
 	    d.dtype = (OCPI::Time::Emit::DataType)atoi( ezxml_cattr(x,"dtype") );
 	    m_desc.push_back(d);
@@ -253,9 +255,9 @@ namespace OCPI {
 	      std::endl;
 #endif
 	    Owner o;
-	    o.id =  atoi( ezxml_cattr(x,"id") );
+	    o.id =  (OwnerId)atoi( ezxml_cattr(x,"id") );
 	    o.name =   ezxml_cattr(x,"name");
-	    o.parentIndex =   atoi( ezxml_cattr(x,"parent") );
+	    o.parentIndex = (OwnerId)atoi( ezxml_cattr(x,"parent") );
 	    m_owners.push_back(o);
 	  }
 	  std::sort( m_owners.begin(), m_owners.end(), SortPredicateOwners );
@@ -275,8 +277,8 @@ namespace OCPI {
 #endif
 
 	    sscanf( ezxml_cattr(x,"time"), "%llu", (unsigned long long*) &e.hdr.time_ticks);
-	    e.hdr.eid = atoi( ezxml_cattr(x,"id") );
-	    e.hdr.owner = atoi( ezxml_cattr(x,"owner") );
+	    e.hdr.eid = (EventId)atoi( ezxml_cattr(x,"id") );
+	    e.hdr.owner = (OwnerId)atoi( ezxml_cattr(x,"owner") );
 	    e.svalue = ezxml_cattr(x,"value");
 	    if ( strcmp( ezxml_cattr(x,"type"), "Long") == 0 ) {
 	      sscanf( e.svalue.c_str(), "%lld", (long long*)&e.v.ivalue);
@@ -521,7 +523,7 @@ namespace OCPI {
 	
 	std::string itos(int n, char * digits ) {
 	  char s[16];
-	  std::size_t base = SYMLEN;
+	  unsigned base = SYMLEN;
 	  int i=0;
 	  do {      
 	    s[i++] = digits[n % base]; 

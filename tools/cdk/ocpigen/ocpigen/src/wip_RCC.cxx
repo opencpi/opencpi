@@ -55,7 +55,7 @@ namespace OU = OCPI::Util;
 static char *
 upperdup(const char *s) {
   char *upper = (char *)malloc(strlen(s) + 1);
-  for (char *u = upper; (*u++ = toupper(*s)); s++)
+  for (char *u = upper; (*u++ = (char)toupper(*s)); s++)
     ;
   return upper;
 }
@@ -65,44 +65,44 @@ static const char *rccTypes[] = {"none",
 				 "uint32_t", "uint16_t", "int64_t", "uint64_t", "RCCChar" };
 
 static void camel(std::string &s, const char *s1, const char *s2 = NULL, const char *s3 = NULL) {
-  s = toupper(s1[0]);
+  s = (char)toupper(s1[0]);
   s += s1 + 1;
   if (s2) {
-    s += toupper(s2[0]);
+    s += (char)toupper(s2[0]);
     s += s2 + 1;
   }
   if (s3) {
-    s += toupper(s3[0]);
+    s += (char)toupper(s3[0]);
     s += s3 + 1;
   }
 }
 
 static void
-emitStructRCC(FILE *f, unsigned nMembers, OU::Member *members, unsigned indent,
+emitStructRCC(FILE *f, size_t nMembers, OU::Member *members, unsigned indent,
 	      const char *parent, bool isFixed, bool &isLast, bool topSeq);
 static void
-printMember(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &pad,
+printMember(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
 	    const char *parent, bool isFixed, bool &isLast, bool topSeq);
 
 static void
 printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast, bool topSeq) {
   if (m->m_arrayRank)
     for (unsigned n = 0; n < m->m_arrayRank; n++)
-      fprintf(f, "[%u]", m->m_arrayDimensions[n]);
+      fprintf(f, "[%zu]", m->m_arrayDimensions[n]);
   if (topSeq) {
     if (m->m_sequenceLength)
-      fprintf(f, "[%u]", m->m_sequenceLength);
+      fprintf(f, "[%zu]", m->m_sequenceLength);
     else
       fprintf(f, "[1]");
   }
   // We align strings on a 4 byte boundary, and implicitly pad them to a 4 byte boundary too
   if (m->m_baseType == OA::OCPI_String) {
-    fprintf(f, "[%u]", isFixed ? (m->m_stringLength + 4) & ~3 : 4);
+    fprintf(f, "[%zu]", isFixed ? (m->m_stringLength + 4) & ~3 : 4);
     if (m->m_stringLength == 0)
       isLast = true;
   }
   // End of declarator. If we're a sequence we close off the struct.
-  fprintf(f, "; /* %8xx", m->m_offset); 
+  fprintf(f, "; /* %8zxx", m->m_offset); 
   if (topSeq)
     fprintf(f, "this is a top level sequence of fixed size elements");
   fprintf(f, " */\n");
@@ -110,11 +110,11 @@ printArray(FILE *f, OU::Member *m, bool isFixed, bool &isLast, bool topSeq) {
 
 // Print type, including sequence type etc.
 static void
-printType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &pad,
+printType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
 	  const char *parent, bool isFixed, bool &isLast, bool topSeq);
 // Just print the data type, not the "member", with names or arrays etc.
 static void
-printBaseType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &pad,
+printBaseType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
 	      const char *parent, bool isFixed, bool &isLast) {
   if (m->m_baseType == OA::OCPI_Struct) {
     std::string s;
@@ -129,7 +129,7 @@ printBaseType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigne
 }
 // Print type, including sequence type etc.
 static void
-printType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &pad,
+printType(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
 	  const char *parent, bool isFixed, bool &isLast, bool topSeq) {
   if (m->m_isSequence && !topSeq) {
     fprintf(f,
@@ -138,14 +138,14 @@ printType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &p
 	    indent, "", indent, "");
     //    offset += 4;
     if (m->m_dataAlign > sizeof(uint32_t)) {
-      unsigned align = m->m_dataAlign - (unsigned)sizeof(uint32_t);
-      fprintf(f, "%*s  char pad%u_[%u];\n", indent, "", pad++, align);
+      size_t align = m->m_dataAlign - (unsigned)sizeof(uint32_t);
+      fprintf(f, "%*s  char pad%u_[%zu];\n", indent, "", pad++, align);
       //      offset += align;
     }
     printBaseType(f, m, indent + 2, offset, pad, parent, isFixed, isLast);
     fprintf(f, " data");
     if (m->m_sequenceLength && isFixed)
-      fprintf(f, "[%u]", m->m_sequenceLength);
+      fprintf(f, "[%zu]", m->m_sequenceLength);
     else {
       fprintf(f, "[]");
       isLast = true;
@@ -159,13 +159,13 @@ printType(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &p
 // Returns true when something is variable length.
 // strings or sequences are like that unless then are bounded.
 static void
-printMember(FILE *f, OU::Member *m, unsigned indent, unsigned &offset, unsigned &pad,
+printMember(FILE *f, OU::Member *m, unsigned indent, size_t &offset, unsigned &pad,
 	    const char *parent, bool isFixed, bool &isLast, bool topSeq)
 {
   //  printf("name %s offset %u m->m_offset %u bytes %u\n",
   //	 m->m_name.c_str(), offset, m->m_offset, m->m_nBytes);
   if (offset < m->m_offset) {
-    fprintf(f, "%*schar pad%u_[%u];\n",
+    fprintf(f, "%*schar pad%u_[%zu];\n",
 	    indent, "", pad++, m->m_offset - offset);
     offset = m->m_offset;
   }
@@ -186,7 +186,7 @@ methodName(Worker *w, const char *method, const char *&mName) {
     mName = method;
     return 0;
   }
-  unsigned length =
+  size_t length =
     strlen(w->implName) + strlen(method) + strlen(pat) + 1;
   char c, *s = (char *)malloc(length);
   mName = s;
@@ -205,7 +205,7 @@ methodName(Worker *w, const char *method, const char *&mName) {
 	s++;
       break;
     case 'M':
-      *s++ = toupper(method[0]);
+      *s++ = (char)toupper(method[0]);
       strcpy(s, method + 1);
       while (*s)
 	s++;
@@ -216,7 +216,7 @@ methodName(Worker *w, const char *method, const char *&mName) {
 	s++;
       break;
     case 'W':
-      *s++ = toupper(w->implName[0]);
+      *s++ = (char)toupper(w->implName[0]);
       strcpy(s, w->implName + 1);
       while (*s)
 	s++;
@@ -230,9 +230,10 @@ methodName(Worker *w, const char *method, const char *&mName) {
 }
 
 static void
-emitStructRCC(FILE *f, unsigned nMembers, OU::Member *members, unsigned indent,
+emitStructRCC(FILE *f, size_t nMembers, OU::Member *members, unsigned indent,
 	      const char *parent, bool isFixed, bool &isLast, bool topSeq) {
-  unsigned offset = 0, pad = 0;
+  size_t offset = 0;
+  unsigned pad = 0;
   for (unsigned n = 0; !isLast && n < nMembers; n++, members++)
     printMember(f, members, indent, offset, pad, parent, isFixed, isLast, topSeq);
 }
@@ -290,7 +291,8 @@ emitImplRCC(Worker *w, const char *outDir, const char *library) {
 	    " */\n"
 	    "typedef struct {\n",
 	    w->implName);
-    unsigned pad = 0, offset = 0;
+    unsigned pad = 0;
+    size_t offset = 0;
     bool isLastDummy = false;
     for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++)
       printMember(f, *pi, 2, offset, pad, w->implName, true, isLastDummy, false);
@@ -526,16 +528,8 @@ emitArtRCC(Worker *aw, const char *outDir) {
 "<artifact os=\"%s\" osVersion=\"%s\" platform=\"%s\" "
 "runtime=\"%s\" runtimeVersion=\"%s\" "
 	  "tool=\"%s\" toolVersion=\"%s\">\n",
-	  OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
-	  OCPI_CPP_STRINGIFY(OCPI_OS_VERSION),
-	  OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
+	  os, os_version, platform,
 	  "", "", "", "");
-#if 0
-  OCPI_CPP_STRINGIFY(OCPI_RUNTIME),
-    OCPI_CPP_STRINGIFY(OCPI_RUNTIME_VERSION),
-    OCPI_CPP_STRINGIFY(OCPI_TOOL),
-    OCPI_CPP_STRINGIFY(OCPI_TOOL_VERSION));
-#endif
 // Define all workers
 for (WorkersIter wi = aw->assembly.workers.begin();
      wi != aw->assembly.workers.end(); wi++)

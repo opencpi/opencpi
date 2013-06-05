@@ -152,19 +152,8 @@ namespace OCPI {
        * Creates a new circuit within a connection based upon the source
        * Port set and destibnation ports set(s)
        *********************************/
-      Circuit * createCircuit( 
-                              const char* id,                        
-                              ConnectionMetaData* connection,                
-                              PortOrdinal src_ports[]=NULL,        
-                              PortOrdinal dest_ports[]=NULL,   
-                              uint32_t flags = 0,
-			      const char *protocol = NULL,
-			      OCPI::OS::Timer *timer = 0
-                              );                                        
-
       // ports in the connection are used.
-      Circuit * createCircuit( 
-                              CircuitId& cid,                     
+      Circuit * createCircuit(CircuitId cid, // when zero, allocate one
                               ConnectionMetaData* connection,                
                               PortOrdinal src_ports[]=NULL,        
                               PortOrdinal dest_ports[]=NULL,        
@@ -193,14 +182,14 @@ namespace OCPI {
       /**********************************
        * Deletes a circuit
        *********************************/
-      void deleteCircuit( CircuitId circuit );        
+      //      void deleteCircuit( CircuitId circuit );        
       void deleteCircuit( Circuit* circuit );        
 
       /**********************************
        * Retrieves the requested circuit
        *********************************/
-      Circuit* getCircuit( CircuitId& circuit_id );
-      OCPI::OS::uint32_t getCircuitCount();
+      Circuit* getCircuit( CircuitId circuit_id );
+      size_t getCircuitCount();
 
       /**********************************
        * General house keeping 
@@ -231,13 +220,14 @@ namespace OCPI {
       /**********************************
        * Clear remote mailbox
        *********************************/
-      void clearRemoteMailbox( OCPI::OS::uint32_t offset, DataTransfer::EndPoint* loc );
+      void clearRemoteMailbox(size_t offset, DataTransfer::EndPoint* loc );
 
       /**********************************
        * Send remote port our offset information
        *********************************/
-      void sendOffsets( OCPI::Util::VList& offsets, DataTransfer::EndPoint *ep,
-			uint32_t extraSize = 0, uint64_t extraFrom = 0, uint64_t extraTo = 0);
+      void sendOffsets( OCPI::Util::VList& offsets, DataTransfer::EndPoint &ep,
+			size_t extraSize = 0, DtOsDataTypes::Offset extraFrom = 0,
+			DtOsDataTypes::Offset extraTo = 0);
 
       /**********************************
        * Request a new connection
@@ -258,7 +248,7 @@ namespace OCPI {
       /**********************************
        * Our mailbox handler
        *********************************/
-      void checkMailBoxs();
+      void checkMailBoxes();
 
       // List of interprocess mutex's that we use to lock mailboxes
       OCPI::Util::VList m_mailbox_locks;

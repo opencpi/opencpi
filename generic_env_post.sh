@@ -20,6 +20,8 @@ fi
 # compatibility
 export OCPI_OS=$OCPI_TARGET_OS
 export OCPI_ARCH=$OCPI_TARGET_ARCH
-. ocpi/ocpisetup.sh
+# For now this script needs to know where it is, and on some cira 2002 bash versions,
+# it can't
+. ocpi/ocpisetup.sh ocpi/ocpisetup.sh
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_ | sort

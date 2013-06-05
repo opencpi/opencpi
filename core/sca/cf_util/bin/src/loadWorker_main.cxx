@@ -47,6 +47,7 @@
 #include <OcpiOsDebug.h>
 #include <OcpiOsAssert.h>
 #include <OcpiOsFileSystem.h>
+#include <OcpiUtilMisc.h>
 #include <OcpiUtilVfs.h>
 #include <OcpiUtilFileFs.h>
 #include <OcpiUtilCommandLineConfiguration.h>
@@ -351,7 +352,7 @@ loadWorkerInt (CORBA::ORB_ptr orb,
        * Make up a nice list of execution parameters.
        */
 
-      CORBA::ULong numExecParams = 3 + config.execParameters.size ();
+      CORBA::ULong numExecParams = OCPI_UTRUNCATE(CORBA::ULong, 3 + config.execParameters.size ());
       CF::Properties execParams (numExecParams);
       execParams.length (numExecParams);
 

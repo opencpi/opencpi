@@ -51,7 +51,7 @@ public:
 	m_v = m.m_defaultValue;
       m_parent->m_next++;
     } else
-      assert(!"Recursive type not struct/type");
+      assert("Recursive type not struct/type"==0);
     if (m_v)
       m_v->m_next = 0;
   }
@@ -59,7 +59,7 @@ public:
 public:
   // Either a top level sequence, or a sequence under type or struct
   // This makes it obvious when we are recursing.
-  unsigned beginSequence(OU::Member &m) {
+  size_t beginSequence(OU::Member &m) {
     nextItem(m, true);
 #if 0
     if (m_v) {
@@ -99,7 +99,7 @@ public:
   }
 
   // A leaf request
-  unsigned beginString(OU::Member &m, const char *&chars, bool start) {
+  size_t beginString(OU::Member &m, const char *&chars, bool start) {
     if (start)
       nextItem(m);
     if (!m_v) {
@@ -110,7 +110,7 @@ public:
     return strlen(chars);
   }
   // Called on a leaf, with contiguous non-string data
-  void readData(OU::Member &m, OU::ReadDataPtr p, uint32_t nBytes, uint32_t nElements) {
+  void readData(OU::Member &m, OU::ReadDataPtr p, size_t nBytes, size_t nElements) {
     nextItem(m);
     (void)nElements;
     if (!m_v)
@@ -130,20 +130,20 @@ class Writer : public OU::Writer {
   OU::Value *m_v;
   OU::Value *m_parent; // parent of current node
   bool m_first;
-  uint32_t m_nElements;
-  unsigned m_n, m_nArgs;        // index in top level vector (m_values);
+  size_t m_nElements;
+  size_t m_n, m_nArgs;        // index in top level vector (m_values);
 
   void newItem(OU::Member &m) {
     if (!m_parent) {
       assert(m_n < m_nArgs);
       m_values[m_n++] = m_v = new OU::Value(m, NULL);
     } else if (m_parent->m_vt->m_baseType == OA::OCPI_Type) {
-      assert(m_parent->m_typeNext - m_parent->m_types < m_parent->m_nTotal);
+      assert((size_t)(m_parent->m_typeNext - m_parent->m_types) < m_parent->m_nTotal);
       m_v = m_parent->m_typeNext++;
     } else if (m_parent->m_vt->m_baseType == OA::OCPI_Struct)
       m_v = new OU::Value(m, m_parent);
     else
-      assert(!"recursive type not struct/type");
+      assert("recursive type not struct/type"==0);
     m_v->m_nTotal = m_v->m_vt->m_nItems;
     if (m_v->m_vt->m_isSequence) {
       m_v->m_nElements = m_nElements;
@@ -159,10 +159,10 @@ class Writer : public OU::Writer {
     }
   }
 public:
-  Writer(OU::Value **v, unsigned nArgs)
+  Writer(OU::Value **v, size_t nArgs)
     : m_values(v), m_v(NULL), m_parent(NULL), m_first(true), m_nElements(0), m_n(0), m_nArgs(nArgs) {
   }
-  void beginSequence(OU::Member &m, uint32_t nElements) {
+  void beginSequence(OU::Member &m, size_t nElements) {
     m_nElements = nElements;
     if (!nElements)
       newItem(m);
@@ -191,7 +191,7 @@ public:
   void endType(OU::Member &) {
     m_parent = m_parent->m_parent;
   }
-  void writeString(OU::Member &m, OU::WriteDataPtr p, uint32_t strLen, bool start, bool /*top*/) {
+  void writeString(OU::Member &m, OU::WriteDataPtr p, size_t strLen, bool start, bool /*top*/) {
 
     if (start)
       newItem(m);
@@ -203,7 +203,7 @@ public:
     *m_v->m_stringNext++ = 0;
     // autoexpand.
   }
-  void writeData(OU::Member &m, OU::WriteDataPtr p, uint32_t nBytes, uint32_t ) {
+  void writeData(OU::Member &m, OU::WriteDataPtr p, size_t nBytes, size_t ) {
     newItem(m);
     assert(nBytes <= m_v->m_length);
     memcpy((void *)(m.m_isSequence || m.m_arrayRank ? m_v->m_pULong : &m_v->m_ULong),
@@ -244,22 +244,22 @@ void dataTypeTest(const char *arg) {
     p.generateOperation(opcode, v);
     p.printOperation(stdout, opcode, v);
     p.testOperation(stdout, opcode, v);
-    printf("Min Buffer Size: %u %u %u\n", p.m_minBufferSize, p.m_dataValueWidth, p.m_minMessageValues);
+    printf("Min Buffer Size: %zu %zu %zu\n", p.m_minBufferSize, p.m_dataValueWidth, p.m_minMessageValues);
     fflush(stdout);
     Reader r(v);
     unsigned len = 1000000;
     uint8_t *buf = new uint8_t[len];
     memset(buf, 0, len);
-    unsigned rlen = p.read(r, buf, len, opcode);
-    printf("Length was %u\n", rlen);
-    unsigned nArgs = p.m_operations[opcode].m_nArgs;
+    size_t rlen = p.read(r, buf, len, opcode);
+    printf("Length was %zu\n", rlen);
+    size_t nArgs = p.m_operations[opcode].m_nArgs;
     OU::Value **v1 = new OU::Value *[nArgs];
     Writer w(v1, nArgs);
     p.write(w, buf, len, opcode);
     uint8_t *buf1 = new uint8_t[rlen];
     memset(buf1, 0, rlen);
     Reader r1(v1);
-    unsigned rlen1 = p.read(r1, buf1, rlen, opcode);
+    size_t rlen1 = p.read(r1, buf1, rlen, opcode);
     assert(rlen == rlen1);
     int dif = memcmp(buf, buf1, rlen);
     if (dif)
@@ -267,7 +267,7 @@ void dataTypeTest(const char *arg) {
 	if (buf[n] != buf1[n]) {
 	  printf("Buffer differs at byte %u [%llx %llx]\n",
 		 n, (long long unsigned)&buf[n], (long long unsigned)&buf1[n]);
-	  assert(!"buffers different");
+	  assert("buffers different"==0);
 	}
     for (unsigned n = 0; n < nArgs; n++) {
       delete v[n];

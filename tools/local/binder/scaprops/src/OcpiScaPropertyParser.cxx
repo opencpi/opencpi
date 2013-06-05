@@ -58,6 +58,7 @@
 #include <ctype.h>
 #include <ezxml.h>
 #include <OcpiOsAssert.h>
+#include <OcpiUtilMisc.h>
 #include <OcpiUtilUri.h>
 #include <OcpiUtilVfs.h>
 #include <OcpiUtilEzxml.h>
@@ -776,7 +777,7 @@ processPRF (ezxml_t prfRoot, bool impl)
    */
 
   unsigned int propIdx = m_numProperties;
-  unsigned int offset = m_sizeOfPropertySpace;
+  size_t offset = m_sizeOfPropertySpace;
   propertyNode = prfRoot->child;
 
   while (propertyNode) {
@@ -857,7 +858,7 @@ processPRF (ezxml_t prfRoot, bool impl)
         throw std::string ("Missing \"id\" attribute for test element");
       }
 
-      testData->testId = std::strtoul (testIdStr, &endPtr, 10);
+      testData->testId = OCPI_UTRUNCATE(uint32_t, std::strtoul (testIdStr, &endPtr, 10));
 
       if (*endPtr) {
         std::string errMsg = "Invalid test id \"";
@@ -995,14 +996,14 @@ doProperty(ezxml_t node, OCPI::SCA::Property * propData,
 // Either a simple property or a struct member
 void
 OCPI::SCA::PropertyParser::
-doSimple(ezxml_t simplePropertyNode, OCPI::SCA::SimpleType *pt, unsigned &max_align, unsigned &size)
+doSimple(ezxml_t simplePropertyNode, OCPI::SCA::SimpleType *pt, size_t &max_align, size_t &size)
 {
   const char * propType = ezxml_attr (simplePropertyNode, "type");
   if (!propType) {
     throw std::string ("property lacks \"type\" attribute");
   }
 
-  unsigned align;
+  size_t align;
   if (std::strcmp (propType, "string") == 0) {
     /*
      * CP289 proposed a "max_string_size" attribute.  But since CP289
@@ -1026,7 +1027,7 @@ doSimple(ezxml_t simplePropertyNode, OCPI::SCA::SimpleType *pt, unsigned &max_al
 
     if (propMaxSize) {
       char * endPtr;
-      size = std::strtoul (propMaxSize, &endPtr, 10);
+      size = OCPI_UTRUNCATE(unsigned, std::strtoul (propMaxSize, &endPtr, 10));
 
       if (!size || *endPtr) {
         std::string errMsg = "Invalid value \"";
@@ -1062,7 +1063,7 @@ void
 OCPI::SCA::PropertyParser::
 processStructProperty (ezxml_t structPropertyNode,
                        OCPI::SCA::Property * propData,
-                       unsigned int & offset,
+                       size_t & offset,
                        bool isSequence,
                        bool isTest,
 		       bool isImpl)
@@ -1075,7 +1076,7 @@ processStructProperty (ezxml_t structPropertyNode,
     propData->num_members++;
   // Count members
   propData->types = new OCPI::SCA::SimpleType [propData->num_members];
-  unsigned max_align = isSequence ? 4 : 0, size;
+  size_t max_align = isSequence ? 4 : 0, size;
   // First pass for alignment
   for (ezxml_t child = ezxml_child(structPropertyNode, "simple"); child;
        child = ezxml_next(child))
@@ -1087,7 +1088,7 @@ processStructProperty (ezxml_t structPropertyNode,
   for (ezxml_t child = ezxml_child(structPropertyNode, "simple"); child;
        child = ezxml_next(child), pt++) {
     pt->name = strdup(ezxml_attr(child, "name"));
-    unsigned align = 0;
+    size_t align = 0;
     doSimple(child, pt, align, size);
     offset = roundUp(offset, align);
     offset += size;
@@ -1097,7 +1098,7 @@ void
 OCPI::SCA::PropertyParser::
 processSimpleProperty (ezxml_t simplePropertyNode,
                        OCPI::SCA::Property * propData,
-                       unsigned int & offset,
+                       size_t & offset,
                        bool isSequence,
                        bool isTest,
 		       bool isImpl)
@@ -1108,7 +1109,7 @@ processSimpleProperty (ezxml_t simplePropertyNode,
   propData->is_struct = false;
   propData->num_members = 1;
   propData->types = new OCPI::SCA::SimpleType [1];
-  unsigned align = isSequence ? 4 : 0, size;
+  size_t align = isSequence ? 4 : 0, size;
   doSimple(simplePropertyNode, propData->types, align, size);
   if (isSequence) {
     /*
@@ -1269,7 +1270,7 @@ mapPropertyType (const char * type)
   throw errMsg;
 }
 
-unsigned int
+size_t
 OCPI::SCA::PropertyParser::
 propertySize (OCPI::SCA::DataType type)
   throw ()
@@ -1292,7 +1293,7 @@ propertySize (OCPI::SCA::DataType type)
   return size;
 }
 
-unsigned int
+size_t
 OCPI::SCA::PropertyParser::
 propertyAlign (OCPI::SCA::DataType type)
   throw ()
@@ -1315,9 +1316,9 @@ propertyAlign (OCPI::SCA::DataType type)
   return align;
 }
 
-unsigned int
+size_t
 OCPI::SCA::PropertyParser::
-roundUp (unsigned int value, unsigned int align)
+roundUp (size_t value, size_t align)
   throw ()
 {
   return ((value + (align - 1)) / align) * align;
@@ -1328,7 +1329,7 @@ OCPI::SCA::PropertyParser::
 strdup (const char * string)
   throw ()
 {
-  unsigned int len = std::strlen (string);
+  size_t len = std::strlen (string);
   char * dup = new char [len+1];
   std::memcpy (dup, string, len);
   dup[len] = 0;

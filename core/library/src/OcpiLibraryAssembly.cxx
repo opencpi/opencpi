@@ -232,7 +232,7 @@ namespace OCPI {
 			  "for \"%s\" (for selection: '%s')",
 			  inst.m_specName.c_str(), selection);
 	if (m_tempCandidates->size() > m_maxCandidates)
-	  m_maxCandidates = m_tempCandidates->size();
+	  m_maxCandidates = (unsigned)m_tempCandidates->size();
       }
       // Check for interface and connection compatibility.
       // We assume all implementations have the same protocol metadata

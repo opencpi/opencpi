@@ -85,7 +85,10 @@ override XmlIncludeDirs+=. $(XmlIncludeDirsInternal) $(OCPI_CDK_DIR)/lib/compone
 -include $(TargetDir)/*.deps
 
 clean:: cleanfirst
-	$(AT)rm -r -f $(GeneratedDir) $(TargetDir)
+	$(AT)rm -r -f $(GeneratedDir) \
+             $(if $(filter all,$($(CapModel)Targets)),\
+                  $(wildcard $(call WkrTargetDir,*)),\
+                  $(foreach t,$($(CapModel)Targets),$(call WkrTargetDir,$t)))
 
 ################################################################################
 # source files that are target-independent
@@ -172,7 +175,8 @@ $$(call OcpiDbgVar,GeneratedSourceFiles)
 $(foreach s,$(AuthoredSourceFiles) $(GeneratedSourceFiles),\
           $(call WkrMakeObject,$(s),$(1)))
 
-$(call WkrBinary,$(1)): $$(ObjectFiles_$(1)) $(ArtifactXmlFile) \
+$(call WkrBinary,$(1)): $(CapModel)Target=$1
+$(call WkrBinary,$(1)): $$(ObjectFiles_$(1)) $$(call ArtifactXmlFile,$1) \
 			| $(call WkrTargetDir,$(1))
 	$(LinkBinary) $$(ObjectFiles_$(1)) $(OtherLibraries)
 	$(AT)if test -f "$(ArtifactXmlFile)"; then \

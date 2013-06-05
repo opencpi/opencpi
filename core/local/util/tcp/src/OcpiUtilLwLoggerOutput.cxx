@@ -126,7 +126,7 @@ overflow (int_type c)
 {
   ocpiAssert (m_locked);
 
-  if (traits_type::eq (c, traits_type::eof())) {
+  if (traits_type::eq_int_type (c, traits_type::eof())) {
     return traits_type::not_eof (c);
   }
 
@@ -213,7 +213,7 @@ sendMessage ()
   request.putString (m_logMessage);
 
   const std::string & requestData = request.data ();
-  OCPI::OS::uint32_t messageLength = requestData.length();
+  size_t messageLength = requestData.length();
 
   /*
    * GIOP header.

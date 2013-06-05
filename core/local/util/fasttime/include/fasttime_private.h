@@ -55,7 +55,7 @@ typedef struct _fasttime_t {
     int offset;
 #endif
     int valid;
-    int linear_segments;
+    unsigned linear_segments;
     conversion_t conversions[MAX_LINEAR_SEGMENTS];
     uint64_t tick_first;
     unsigned char log_ticks_per_segment;
@@ -100,7 +100,7 @@ static inline void get_tick_count(tick_t *t)
   struct timeval tv;
   gettimeofday(&tv, NULL);
   t->l.high = tv.tv_sec;
-  t->l.low = (tv.tv_usec * ((uint64_t)0x100000000ull + 500))/1000;
+  t->l.low = (uint32_t)((tv.tv_usec * ((uint64_t)0x100000000ull + 500))/1000);
 }
 #endif
 /* Tick count code for PowerPC (Apple G3, G4, G5) */

@@ -193,7 +193,7 @@ namespace
       {
         // run multiple processes
         OCPI::OS::sleep ( 10000 );
-        return ( std::time ( 0 ) % 128 );
+        return (int)(std::time ( 0 ) % 128);
       }
       else if ( testNum == 5 )
       {

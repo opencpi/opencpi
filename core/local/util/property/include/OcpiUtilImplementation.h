@@ -116,7 +116,7 @@ namespace OCPI {
       Memory *m_memories;
       Test *m_tests;
       unsigned m_nPorts, m_nTests, m_nMemories;//, size;
-      uint32_t m_totalPropertySize;
+      size_t m_totalPropertySize;
       Test &findTest(unsigned int testId) const;
     public:
       unsigned m_nProperties;
@@ -163,7 +163,7 @@ namespace OCPI {
         n_memories = m_nMemories;
         return m_memories;
       }
-      inline uint32_t totalPropertySize( ) const
+      inline size_t totalPropertySize( ) const
       {
         return m_totalPropertySize;
       }

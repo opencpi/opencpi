@@ -46,7 +46,7 @@
 namespace {
 
   std::string
-  decodeURI (const char * uri, unsigned int length)
+  decodeURI (const char * uri, size_t length)
     throw ()
   {
     std::string res;
@@ -75,8 +75,8 @@ namespace {
   }
 
   std::string
-  encodeURI (const char * uri, unsigned int length,
-             const char * allowedChars, unsigned int numAllowedChars)
+  encodeURI (const char * uri, size_t length,
+             const char * allowedChars, size_t numAllowedChars)
     throw ()
   {
     std::string res;
@@ -100,8 +100,8 @@ namespace {
         x1 = (unsigned char) *uri >> 4;
         x2 = (unsigned char) *uri & 15;
         res += '%';
-        res += ((x1 > 9) ? ('a' + x1 - 10) : ('0' + x1));
-        res += ((x2 > 9) ? ('a' + x2 - 10) : ('0' + x2));
+        res += (char)((x1 > 9) ? ('a' + x1 - 10) : ('0' + x1));
+        res += (char)((x2 > 9) ? ('a' + x2 - 10) : ('0' + x2));
       }
       else {
         res += *uri;
@@ -680,8 +680,8 @@ OCPI::Util::Uri::parse (const std::string & data)
       int x1, x2;
       x1 = (unsigned char) uri[idx] >> 4;
       x2 = (unsigned char) uri[idx] & 15;
-      c1 = ((x1 > 9) ? ('a' + x1 - 10) : ('0' + x1));
-      c2 = ((x2 > 9) ? ('a' + x2 - 10) : ('0' + x2));
+      c1 = (char)(((x1 > 9) ? ('a' + x1 - 10) : ('0' + x1)));
+      c2 = (char)(((x2 > 9) ? ('a' + x2 - 10) : ('0' + x2)));
 
       reason += "'";
       reason += "%";

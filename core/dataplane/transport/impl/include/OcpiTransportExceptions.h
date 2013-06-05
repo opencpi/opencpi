@@ -48,38 +48,37 @@
 #ifndef OCPI_TRANSPORT_EXCEPTIONS_H_
 #define OCPI_TRANSPORT_EXCEPTIONS_H_
 
-#include <OcpiUtilException.h>
-#include <OcpiIntTransportExceptions.h>
+#include "OcpiIntTransportExceptions.h"
 
 namespace OCPI  {
 
   namespace DataTransport {
 
     // Our error code defintiions
-    const OCPI::OS::uint32_t OCPI_EX_SOURCE_ID = 07;
-    const OCPI::OS::uint32_t UNSUPPORTED_ENDPOINT         = (OCPI_EX_SOURCE_ID << 16) + 1;
-    const OCPI::OS::uint32_t CIRCUIT_DISCONNECTING         = (OCPI_EX_SOURCE_ID << 16) + 2;
-    const OCPI::OS::uint32_t INTERNAL_PROGRAMMING_ERROR   = (OCPI_EX_SOURCE_ID << 16) + 3;
-    const OCPI::OS::uint32_t NO_MORE_BUFFER_AVAILABLE      = (OCPI_EX_SOURCE_ID << 16) + 4;
-    const OCPI::OS::uint32_t UNABLE_TO_CREATE_TX_REQUEST  = (OCPI_EX_SOURCE_ID << 16) + 5;
-    const OCPI::OS::uint32_t INTERNAL_PROGRAMMING_ERROR1  = (OCPI_EX_SOURCE_ID << 16) + 6;
-    const OCPI::OS::uint32_t MAX_ENDPOINT_COUNT_EXCEEDED  = (OCPI_EX_SOURCE_ID << 16) + 7;
+    const uint32_t OCPI_EX_SOURCE_ID = 07;
+    const uint32_t UNSUPPORTED_ENDPOINT         = (OCPI_EX_SOURCE_ID << 16) + 1;
+    const uint32_t CIRCUIT_DISCONNECTING         = (OCPI_EX_SOURCE_ID << 16) + 2;
+    const uint32_t INTERNAL_PROGRAMMING_ERROR   = (OCPI_EX_SOURCE_ID << 16) + 3;
+    const uint32_t NO_MORE_BUFFER_AVAILABLE      = (OCPI_EX_SOURCE_ID << 16) + 4;
+    const uint32_t UNABLE_TO_CREATE_TX_REQUEST  = (OCPI_EX_SOURCE_ID << 16) + 5;
+    const uint32_t INTERNAL_PROGRAMMING_ERROR1  = (OCPI_EX_SOURCE_ID << 16) + 6;
+    const uint32_t MAX_ENDPOINT_COUNT_EXCEEDED  = (OCPI_EX_SOURCE_ID << 16) + 7;
                 
     /**********************************
      * Exception definitions
      *********************************/
                 
-    class UnsupportedEndpointEx : public  DT::Interface::TransportExcept {
+    class UnsupportedEndpointEx : public  TransportExcept {
     public:
       UnsupportedEndpointEx( const char* aux)
-        : DT::Interface::TransportExcept(UNSUPPORTED_ENDPOINT, aux)
+        : TransportExcept(UNSUPPORTED_ENDPOINT, aux)
         {setAuxInfo(aux);}
     };
                 
-    class CircuitDisconnectingEx : public DT::Interface::TransportExcept {
+    class CircuitDisconnectingEx : public TransportExcept {
     public:
       CircuitDisconnectingEx( const char* aux="")
-        : DT::Interface::TransportExcept(CIRCUIT_DISCONNECTING, aux )
+        : TransportExcept(CIRCUIT_DISCONNECTING, aux )
         {setAuxInfo(aux);}
     };
 

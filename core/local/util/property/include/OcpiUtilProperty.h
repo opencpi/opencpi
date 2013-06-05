@@ -66,7 +66,7 @@ namespace OCPI {
       PropertyInfo();
       bool m_readSync, m_writeSync, m_isWritable, m_isReadable, m_readError, m_writeError,
 	   m_isVolatile, m_isInitial, m_isIndirect;
-      uint32_t m_indirectAddr; // when isIndirect. zero means impl sets address
+      size_t m_indirectAddr; // when isIndirect. zero means impl sets address
     };
   }
 
@@ -97,7 +97,7 @@ namespace OCPI {
       const char *parseImpl(ezxml_t x, bool &readableConfigs, bool &writableConfigs);
       const char *parse(ezxml_t x, unsigned ordinal);
       const char *parseValue(const char *unparsed, Value &value);
-      void offset(unsigned &cumOffset, uint64_t &sizeofConfigSpace);
+      void offset(size_t &cumOffset, uint64_t &sizeofConfigSpace);
       // Check when accessing with scalar type and sequence length
       const char *checkType(OCPI::API::BaseType ctype, unsigned n, bool write);
       const char *getValue(ExprValue &val);

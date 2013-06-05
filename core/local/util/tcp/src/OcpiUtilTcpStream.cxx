@@ -129,7 +129,7 @@ underflow ()
    * Read some data
    */
 
-  unsigned long long count;
+  size_t count;
 
   try {
     count = m_socket.recv (m_inputBuffer, m_inputBufferSize);
@@ -336,7 +336,7 @@ OCPI::Util::Tcp::Stream::getPortNo ()
 }
 
 void
-OCPI::Util::Tcp::Stream::getPeerName (std::string & host, unsigned int & port)
+OCPI::Util::Tcp::Stream::getPeerName (std::string & host, uint16_t & port)
   throw (std::string)
 { 
   if (!m_mode) {

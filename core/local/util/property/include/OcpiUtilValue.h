@@ -60,19 +60,19 @@ namespace OCPI {
       const ValueType *m_vt;
       static OS::Mutex s_mutex;
       static Value *s_parent;
-      unsigned
+      size_t
 	m_nElements,        // How many in the sequence?
 	m_nTotal;           // Now many total? (including arrays).
       // allocated space for array of strings, and running pointer during parsing
       char *m_stringSpace, *m_stringNext;
-      unsigned m_stringSpaceLength;
+      size_t m_stringSpaceLength;
       // allocated space for an array of Value ptrs that might be zero for missing members
       Value **m_struct, **m_structNext;
       // allocated space for OCPI_Type - a contiguous array of value objects
       Value *m_types, *m_typeNext;
       Value *m_parent;       // for navigating upward
       unsigned m_next;       // for navigating horizontally
-      unsigned m_length;     // for debugging - length of value buffer
+      size_t m_length;     // for debugging - length of value buffer
       Value(const ValueType &vt, Value* parent = Value::s_parent);
       Value();
       ~Value();
@@ -107,8 +107,8 @@ namespace OCPI {
       void
 	generate(),
 	generateElement(unsigned nSeq),
-	generateDimension(unsigned nseq, unsigned dim, unsigned offset, unsigned nItems),
-	generateValue(unsigned nSeq, unsigned nArray);
+	generateDimension(unsigned nseq, size_t dim, size_t offset, size_t nItems),
+	generateValue(unsigned nSeq, size_t nArray);
       const char *getValue(ExprValue &val);
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
       run generate##pretty();
@@ -121,10 +121,10 @@ namespace OCPI {
 	unparse(std::string &s, bool append = false, char comma = ',') const,
 	unparseElement(std::string &s, unsigned nSeq, char comma = ',') const;
       bool
-	unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset,
-			 unsigned nItems, char comma = ',') const;
+	unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset,
+			 size_t nItems, char comma = ',') const;
       // return TRUE if value is an empty value
-      bool unparseValue(std::string &s, unsigned nSeq, unsigned nArray, char comma = ',') const;
+      bool unparseValue(std::string &s, unsigned nSeq, size_t nArray, char comma = ',') const;
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
       bool unparse##pretty(std::string &s, run) const;
 	OCPI_PROPERTY_DATA_TYPES
@@ -135,10 +135,10 @@ namespace OCPI {
     private:
       const char
 	*parseValue(const char *unparsed, const char *stop,
-		   unsigned nSeq, unsigned nArray),
+		   unsigned nSeq, size_t nArray),
 	*parseElement(const char *start, const char *end, unsigned nSeq),
 	*parseDimension(const char *unparsed, const char *stop,
-			unsigned nseq, unsigned dim, unsigned offset, unsigned nItems);
+			unsigned nseq, size_t dim, size_t offset, size_t nItems);
       void clear();
       void clearStruct();
     };

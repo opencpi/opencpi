@@ -50,7 +50,7 @@ OCPI::Util::Tcp::Server::Server ()
   m_open = false;
 }
 
-OCPI::Util::Tcp::Server::Server (unsigned int portno, bool reuse)
+OCPI::Util::Tcp::Server::Server (uint16_t portno, bool reuse)
   throw (std::string)
 {
   m_open = false;
@@ -66,7 +66,7 @@ OCPI::Util::Tcp::Server::~Server ()
 }
 
 void
-OCPI::Util::Tcp::Server::bind (unsigned int portNo, bool reuse)
+OCPI::Util::Tcp::Server::bind (uint16_t portNo, bool reuse)
   throw (std::string)
 {
   if (m_open) {
@@ -93,7 +93,7 @@ OCPI::Util::Tcp::Server::accept (unsigned long timeout)
   return new OCPI::Util::Tcp::Stream (conn);
 }
 
-unsigned int
+uint16_t
 OCPI::Util::Tcp::Server::getPortNo ()
   throw (std::string)
 {

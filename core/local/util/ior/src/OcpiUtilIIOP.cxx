@@ -159,8 +159,8 @@ encode () const
   ce.putOctetSeq (object_key);
 
   if (iiop_version.minor >= 1) {
-    unsigned long numComponents = components.size ();
-    ce.putULong (numComponents);
+    size_t numComponents = components.size ();
+    ce.putULong ((uint32_t)numComponents);
 
     for (unsigned long pi=0; pi<numComponents; pi++) {
       ce.putULong (components[pi].tag);

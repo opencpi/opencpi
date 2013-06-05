@@ -164,7 +164,7 @@ namespace OCPI {
       std::list<Connection> m_connections;
       typedef std::list<Connection>::iterator ConnectionIter;
       CMapPolicy m_cMapPolicy;
-      uint32_t   m_processors;
+      size_t   m_processors;
       MappedProperties m_mappedProperties; // top level mapped to instance properties.
       // Provide a file name.
       explicit Assembly(const char *file, const char **extraTopAttrs = NULL,

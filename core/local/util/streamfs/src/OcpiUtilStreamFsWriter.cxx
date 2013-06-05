@@ -138,7 +138,7 @@ namespace OcpiUtilStreamFsWriter {
       return traits_type::not_eof (i);
     }
 
-    m_stream->put (i);
+    m_stream->put ((traits_type::char_type)i);
 
     if (m_stream->fail()) {
       return traits_type::eof ();
@@ -599,7 +599,7 @@ close (std::ios * str)
   TOC::iterator it = m_toc.find (fileName);
   ocpiAssert (it != m_toc.end());
 
-  std::streamsize fileSize = sfws->tellp ();
+  std::streamoff fileSize = sfws->tellp ();
   ocpiAssert (fileSize >= 0);
 
   delete sfws;

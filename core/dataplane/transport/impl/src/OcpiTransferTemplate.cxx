@@ -334,7 +334,7 @@ consume()
 /**********************************
  * Start the input reply transfer
  *********************************/
-void OcpiTransferTemplate::modify( OCPI::OS::uint32_t new_off[], OCPI::OS::uint32_t old_off[] )
+void OcpiTransferTemplate::modify(DtOsDataTypes::Offset new_off[], DtOsDataTypes::Offset old_off[] )
 {
   for ( OCPI::OS::uint32_t n=0; n<n_transfers; n++ ) {
     m_xferReq[n]->modify( new_off, old_off );

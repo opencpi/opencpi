@@ -328,10 +328,10 @@ namespace OCPI {
 #define SCA_SIMPLE(l,c,t,n,h,pt,run)                                        \
     case OA::OCPI_##pt:					\
     if (p.m_info.m_isSequence) {						\
-      unsigned size = p.m_info.m_sequenceLength;                                        \
+      size_t size = p.m_info.m_sequenceLength;                                        \
       /* is a sequence FIXME trycatch for allocation unless cached*/        \
       /* cached is probaby better but must not consume into any */        \
-      CORBA::c##Seq *seq = new CORBA::c##Seq(size);                        \
+      CORBA::c##Seq *seq = new CORBA::c##Seq(OCPI_UTRUNCATE(unsigned,size)); \
       seq->length(p.get##pt##SequenceValue((run *)seq->get_buffer(), size)); \
       any <<= seq; /* seq and its buffer are consumed */                \
     } else {                                                                \
@@ -358,13 +358,13 @@ namespace OCPI {
       switch (p.m_info.m_baseType) {
         OCPI_PROPERTY_DATA_TYPES
       case OA::OCPI_String: {
-	  unsigned length = p.m_info.m_stringLength;
+	  size_t length = p.m_info.m_stringLength;
 	  if (p.m_info.m_isSequence) {
-	    uint32_t limit = p.m_info.m_sequenceLength;
-	    CORBA::StringSeq *seq = new CORBA::StringSeq(limit);
-	    seq->length(limit);
+	    size_t limit = p.m_info.m_sequenceLength;
+	    CORBA::StringSeq *seq = new CORBA::StringSeq(OCPI_UTRUNCATE(unsigned,limit));
+	    seq->length(OCPI_UTRUNCATE(unsigned,limit));
 	    char **data = seq->get_buffer();
-	    uint32_t nSpace = limit * (length + 1);
+	    size_t nSpace = limit * (length + 1);
 	    char *space = new char[nSpace];
 	    p.getStringSequenceValue(data, limit, space, nSpace);
 	    for (unsigned i = 0; i < limit; i++)
@@ -376,7 +376,7 @@ namespace OCPI {
 	      any <<= seq;
 	  } else {
 	    /* we have a string, not a sequence */
-	    char *cp = CORBA::string_alloc(length + 1);
+	    char *cp = CORBA::string_alloc(OCPI_UTRUNCATE(unsigned,length + 1));
 	    if (!cp)
 	      oops =  "can't allocate string for property value";
 	    else {

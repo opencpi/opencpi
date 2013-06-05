@@ -69,6 +69,7 @@
 #include <ctime>
 #include <OcpiOsDebug.h>
 #include <OcpiOsAssert.h>
+#include <OcpiUtilMisc.h>
 #include <OcpiUtilVfs.h>
 #include <OcpiUtilFileFs.h>
 #include <OcpiUtilEzxml.h>
@@ -325,7 +326,7 @@ generateHeader (OCPI::Util::Vfs::Vfs & fs,
        * alignment.
        */
 
-      unsigned int offset = 0;
+      size_t offset = 0;
 
       *out << "typedef struct {" << std::endl;
 
@@ -348,7 +349,7 @@ generateHeader (OCPI::Util::Vfs::Vfs & fs,
            */
 
           if (offset != roundUp (offset, 4)) {
-            unsigned int pad = roundUp (offset, 4) - offset;
+            size_t pad = roundUp (offset, 4) - offset;
             *out << "  char pad_" << p.name << "[" << pad << "];" << std::endl;
             offset += pad;
           }
@@ -883,7 +884,7 @@ uppercase (const std::string & str)
 
   while (len) {
     for (t=tmp, i=0; i<64 && i<len; i++) {
-      *t++ = std::toupper (*ptr++);
+      *t++ = OCPI_UTRUNCATE(char, ::toupper (*ptr++));
     }
     res.append (tmp, i);
     len -= i;

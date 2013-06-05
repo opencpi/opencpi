@@ -54,8 +54,8 @@ namespace OCPI {
       bool        m_provider;
       bool        m_optional;
       bool        m_bidirectional;   // implementation-defined value
-      uint32_t    m_minBufferCount;  // implementation-defined value
-      uint32_t    m_bufferSize;      // metadata protocol override, if non-zero
+      size_t      m_minBufferCount;  // implementation-defined value
+      size_t      m_bufferSize;      // metadata protocol override, if non-zero
       ezxml_t     m_xml;
       //      Port       *m_connected;       // static connection of this port.
       Implementation *m_implementation;

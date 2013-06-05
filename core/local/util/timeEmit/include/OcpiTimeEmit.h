@@ -287,9 +287,9 @@ namespace OCPI {
     class Emit {
 
     public:
-      typedef OCPI::OS::uint16_t EventId;
-      typedef OCPI::OS::uint16_t OwnerId;
-      typedef OCPI::OS::uint64_t Time;
+      typedef uint16_t EventId;
+      typedef int16_t OwnerId; // -1 is sentinel
+      typedef uint64_t Time;
 
       enum EventType {
         Transient,
@@ -354,11 +354,11 @@ namespace OCPI {
                        DataType dt=OCPI::Time::Emit::u
                        );
         RegisterEvent( OCPI::API::PValue& pvstr );
-        static int registerEvent( const char* event_name,
-                           int width=1, 
-                           EventType type=OCPI::Time::Emit::Transient,
-                           DataType dt=OCPI::Time::Emit::u
-                           );
+        static Emit::EventId registerEvent( const char* event_name,
+					    int width=1, 
+					    EventType type=OCPI::Time::Emit::Transient,
+					    DataType dt=OCPI::Time::Emit::u
+					    );
 
         operator EventId () const {return m_eid;}
 

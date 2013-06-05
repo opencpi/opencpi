@@ -139,8 +139,8 @@ bool Buffer::isEmpty()
   // automatically detached, OOP buffers require a little more work.
   if ( m_dependentZeroCopyCount ) {
     if ( m_remoteZCopy ) {
-      for ( unsigned int n=0; n<reinterpret_cast<OCPI::DataTransport::Circuit*>(m_port->getCircuit())->getMaxPortOrd() &&
-              n<m_dependentZeroCopyCount && n<m_dependentZeroCopyPorts.size();
+      for ( PortOrdinal n=0; n<m_port->getCircuit()->getMaxPortOrd() &&
+              n<m_dependentZeroCopyCount && n<(PortOrdinal)m_dependentZeroCopyPorts.size();
             n++ ) {
         if ( m_dependentZeroCopyPorts[n] &&
              static_cast<Buffer*>(m_dependentZeroCopyPorts[n])->getPort()->isShadow() && 

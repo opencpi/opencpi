@@ -87,7 +87,9 @@ main(int argc, char **argv) {
 	    " -W <file>     Generate an assembly or container workers file: xyz.wks\n"
 	    " Options for artifact XML and UUID source generation (-A):\n"
 	    " -c <file>     The HDL container file to use for the artifact XML\n"
-	    " -P <platform> The platform for the artifact\n"
+	    " -P <platform> The platform for the artifact (or cpu for rcc)\n"
+	    " -O <os>       The OS for the artifact (rcc)\n"
+	    " -V <version>  The OS version for the artifact (rcc)\n"
 	    " -e <device>   The device for the artifact\n"
 	    " -L <loadinfo> The load information for the device\n"
             " -p <package>  The package name for component specifications\n"
@@ -154,6 +156,12 @@ main(int argc, char **argv) {
       case 'P':
 	platform = *++ap;
 	break;
+      case 'O':
+	os = *++ap;
+	break;
+      case 'V':
+	os_version = *++ap;
+	break;
       case 'p':
 	package = *++ap;
 	break;
@@ -200,11 +208,17 @@ main(int argc, char **argv) {
 	    fprintf(stderr,
 		    "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
 	    return 1;
-	  } else if ((err = emitArtHDL(w, root, wksFile)))
+	  }
+	  if ((err = emitArtHDL(w, root, wksFile)))
 	    fprintf(stderr, "%s: Error generating bitstream artifact XML: %s\n",
 		    *ap, err);
 	  break;
 	case RccModel:
+	  if (!os || !os_version || !platform) {
+	    fprintf(stderr,
+		    "%s: Missing os/os_version/platform options for RCC artifact descriptor", *ap);
+	    return 1;
+	  }
 	  if ((err = emitArtRCC(w, root)))
 	    fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
 		    *ap, err);

@@ -48,17 +48,18 @@
 #ifndef OCPI_DATATRANSPORT_EXCEPTIONS_H_
 #define OCPI_DATATRANSPORT_EXCEPTIONS_H_
 
-#include <OcpiUtilException.h>
+#include <stdint.h>
+#include "OcpiUtilException.h"
 
-namespace DT {
+namespace OCPI {
 
-  namespace Interface {
+  namespace DataTransport {
 
     // Our error code defintiions
-    const OCPI::OS::uint32_t DTP_EX_SOURCE_ID = 05;
-    const OCPI::OS::uint32_t CIRCUIT_ALREADY_EXISTS      = (DTP_EX_SOURCE_ID << 16) + 1;
-    const OCPI::OS::uint32_t SERVER_NOT_RESPONDING       = (DTP_EX_SOURCE_ID << 16) + 2;
-    const OCPI::OS::uint32_t FAILED_TO_CREATE_CIRCUIT    = (DTP_EX_SOURCE_ID << 16) + 3;
+    const uint32_t DTP_EX_SOURCE_ID = 05;
+    const uint32_t CIRCUIT_ALREADY_EXISTS      = (DTP_EX_SOURCE_ID << 16) + 1;
+    const uint32_t SERVER_NOT_RESPONDING       = (DTP_EX_SOURCE_ID << 16) + 2;
+    const uint32_t FAILED_TO_CREATE_CIRCUIT    = (DTP_EX_SOURCE_ID << 16) + 3;
 
 
     /**********************************
@@ -66,7 +67,7 @@ namespace DT {
      *********************************/
     class TransportExcept : public OCPI::Util::EmbeddedException {
     public:
-    TransportExcept(const OCPI::OS::uint32_t errorCode, const char* ex="")
+    TransportExcept(const uint32_t errorCode, const char* ex="")
       :OCPI::Util::EmbeddedException( errorCode, ex ){}
     };
 

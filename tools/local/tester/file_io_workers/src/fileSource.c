@@ -101,7 +101,7 @@ FileSourceStart (RCCWorker * wctx)
               strerror (errno));
     }
 
-    props->errnoValue = errno;
+    props->errnoValue = (uint32_t)errno;
     return RCC_ERROR;
   }
 
@@ -143,7 +143,7 @@ FileSourceRun (RCCWorker * wctx,
 
   RCCPort * pDataOut = &wctx->ports[FILESOURCE_DATAOUT];
 
-  uint32_t max = props->bytesPerPacket ? props->bytesPerPacket : pDataOut->current.maxLength;
+  size_t max = props->bytesPerPacket ? props->bytesPerPacket : pDataOut->current.maxLength;
   ssize_t count = read (ctx->fd, (char *) pDataOut->current.data, max);
 
   if (count < 0) {
@@ -153,7 +153,7 @@ FileSourceRun (RCCWorker * wctx,
               strerror (errno));
     }
 
-    props->errnoValue = errno;
+    props->errnoValue = (uint32_t)errno;
     return RCC_ERROR;
   }
   else if (count == 0) {
@@ -166,9 +166,9 @@ FileSourceRun (RCCWorker * wctx,
     return RCC_DONE;
   }
 
-  pDataOut->output.length = count;
+  pDataOut->output.length = (size_t)count;
   pDataOut->output.u.operation = 0;
-  props->offset += count;
+  props->offset += (uint32_t)count;
 
   if (props->verbose) {
     printf ("Input port %s: Read %d bytes.\n",
@@ -179,7 +179,7 @@ FileSourceRun (RCCWorker * wctx,
 }
 
 static
-uint32_t
+size_t
 FileSourceMemories[] = {
   sizeof (FileSourceContext),
   0

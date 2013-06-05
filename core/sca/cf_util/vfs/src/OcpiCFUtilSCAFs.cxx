@@ -262,7 +262,7 @@ std::streamsize
 SCAFileStream::Buf::
 showmanyc ()
 {
-  int res = egptr() - gptr();
+  std::streamsize res = egptr() - gptr();
 
   if (!traits_type::eq_int_type (m_putback, traits_type::eof())) {
     res++;
@@ -308,7 +308,7 @@ xsgetn (char * s, std::streamsize n)
 
     traits_type::copy (s, ptr, count);
 
-    gbump (count);
+    gbump ((int)count);
     remaining -= count;
     total += count;
     s += count;
@@ -343,14 +343,14 @@ SCAFileStream::Buf::
 sync ()
 {
   if (pptr() && pptr() > pbase()) {
-    unsigned int count = pptr() - pbase();
+    size_t count = (size_t)(pptr() - pbase());
 
     ocpiAssert (!gptr());
     ocpiAssert (m_bufferInUse);
     ocpiAssert (count <= m_buffer->length());
 
     if (count) {
-      m_buffer->length (count);
+      m_buffer->length(OCPI_UTRUNCATE(unsigned, count));
 
       try {
         m_file->write (m_buffer.in());
@@ -365,7 +365,7 @@ sync ()
     setp (0, 0);
   }
   else if (gptr()) {
-    unsigned int count = gptr() - eback();
+    std::streamsize count = gptr() - eback();
     m_bufferBeginPos += count;
 
     if (!traits_type::eq_int_type (m_putback, traits_type::eof())) {
@@ -441,7 +441,7 @@ xsputn (const char * s, std::streamsize n)
 
     traits_type::copy (ptr, s, count);
 
-    pbump (count);
+    pbump (OCPI_STRUNCATE(int,count));
     remaining -= count;
     total += count;
     s += count;
@@ -951,7 +951,7 @@ closeIterator (OCPI::Util::Vfs::Iterator * it)
 class OCPI::CFUtil::SCADir : public OCPI::Util::Vfs::Dir {
   OCPI::CFUtil::SCAFs &m_scaFs;
   std::string m_absName;
-  unsigned m_nameLength;
+  size_t m_nameLength;
   unsigned m_index;
   CF::FileSystem::FileInformationSequence_var m_fis;
   std::set<std::string> m_seenDirectories;

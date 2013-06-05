@@ -34,6 +34,7 @@
 #
 ########################################################################### #
 
+OnlyTargets=isim modelsim
 Libraries=bsv util
 Container=mkOCApp-3w.v
 include $(OCPI_CDK_DIR)/include/hdl/hdl-app.mk

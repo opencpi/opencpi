@@ -180,7 +180,8 @@ namespace OCPI {
           getProfile(connection, OCPI_SOURCE_SHADOW_PORT_DATA_TAG, shadow);
           if (shadow.empty())
             throw std::string ("OCPI source shadow port profile missing from object reference");
-          Cp289ProviderPort::Octets os(shadow.length(), shadow.length(), (CORBA::Octet*)shadow.data());
+          Cp289ProviderPort::Octets os(OCPI_UTRUNCATE(CORBA::ULong, shadow.length()),
+				       OCPI_UTRUNCATE(CORBA::ULong, shadow.length()), (CORBA::Octet*)shadow.data());
           connectInitial(os);
         } else {
           // So we are a user port with no existing connections
@@ -222,7 +223,8 @@ namespace OCPI {
                 // some final information about the connection, we may still need some final
                 // information from the provider (like RDMA flow control for the
                 // provider-to-user data flow).
-                const Cp289ProviderPort::Octets iui(initialUserInfo.length(), initialUserInfo.length(),
+                const Cp289ProviderPort::Octets iui(OCPI_UTRUNCATE(CORBA::ULong,initialUserInfo.length()),
+						    OCPI_UTRUNCATE(CORBA::ULong,initialUserInfo.length()),
 						    (CORBA::Octet*)initialUserInfo.data());
                 Cp289ProviderPort::Octets_var finalProviderInfo = remoteProvider->connectInitial(iui);
                 // Yes this copies it...
@@ -233,7 +235,8 @@ namespace OCPI {
                   std::string finalUserInfo;
 		  m_ocpiPort.setFinalProviderInfo(fpi, finalUserInfo);
                   if (!finalUserInfo.empty()) {
-                    const Cp289ProviderPort::Octets fui(finalUserInfo.length(), finalUserInfo.length(),
+                    const Cp289ProviderPort::Octets fui(OCPI_UTRUNCATE(CORBA::ULong,finalUserInfo.length()),
+							OCPI_UTRUNCATE(CORBA::ULong,finalUserInfo.length()),
 							(CORBA::Octet*)finalUserInfo.data());
                     remoteProvider->connectFinal(fui);
                   }
@@ -312,7 +315,8 @@ namespace OCPI {
 	  m_ocpiPort.setInitialUserInfo(iui, finalProviderInfo);
           // String is not copied here
           Cp289ProviderPort::Octets* fpi =
-            new Cp289ProviderPort::Octets(finalProviderInfo.length(), finalProviderInfo.length(),
+            new Cp289ProviderPort::Octets(OCPI_UTRUNCATE(CORBA::ULong,finalProviderInfo.length()),
+					  OCPI_UTRUNCATE(CORBA::ULong,finalProviderInfo.length()),
                                           (CORBA::Octet*)finalProviderInfo.data());
           return fpi;
         } catch (const char* e) {

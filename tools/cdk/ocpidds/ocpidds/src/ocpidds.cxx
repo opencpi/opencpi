@@ -240,7 +240,7 @@ static const char omniidl_be[] = {
 // Its too much trouble to keep track of when we need this and when we don't
 // so its just redundantly present...
 // Its in darwin and ubuntu, but not RHEL5 or linux
-static int OURmkstemps(char *temp, int suffixlen) {
+static int OURmkstemps(char *temp, size_t suffixlen) {
   char *cp = temp + strlen(temp) - suffixlen;
   char save = *cp;
   *cp = 0;
@@ -384,7 +384,7 @@ run(const char *command, char *&out)
 	  break;
 	default:
 	  char *myErr;
-	  int n;
+	  ssize_t n;
 	  // since windows translates CRLF sequences, the size of the
 	  // file is NOT what will be read.  Any CRLFs read as LFs.
 	  if (lseek(efd, 0, SEEK_SET) != 0 ||
@@ -432,7 +432,7 @@ idl2ifr(const char *const *argv, char *&repo)
   const char *err = 0;
   repo = 0;
   do { //break on error to cleanup
-    unsigned size = 0, files = 0;
+    size_t size = 0, files = 0;
     for (const char * const *ap = argv; *ap; ap++) {
       size += strlen(*ap) * 2 + 3; // all escaped, quoted, spaced
       if (ap[0][0] == '-') {
@@ -500,7 +500,7 @@ static void getString(std::string &s, const char *&p, const char *sep = " ") {
   const char *np = p;
   while (*np && !strchr(sep, *np))
     np++;
-  unsigned length = np - p;
+  size_t length = np - p;
   s.assign(p, length);
   p += length;
   if (*p)
@@ -541,12 +541,12 @@ void getType(OU::ValueType &t, const char *&cp, const char *term) {
   // Is this type a single or sequence of an array?
   if (kind == "array") {
     // An array of what comes after
-    std::vector<uint32_t> dimensions;
+    std::vector<size_t> dimensions;
     while (isdigit(*cp)) {
       dimensions.push_back(getNum(cp));
       t.m_arrayRank++;
     }
-    t.m_arrayDimensions = new uint32_t[t.m_arrayRank];
+    t.m_arrayDimensions = new size_t[t.m_arrayRank];
     for (unsigned i = 0; i < t.m_arrayRank; i++)
       t.m_arrayDimensions[i] = dimensions[i];
     save = cp;

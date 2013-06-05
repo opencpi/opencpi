@@ -66,7 +66,7 @@ OCPI_CONTROL_OPS
 #undef CONTROL_OP
 0};
 
-const char *container = 0, *platform = 0, *device = 0, *load = 0;
+const char *container = 0, *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0;
 
 // MyClock boolean simply says whether the clock is "homed" and "named" here.
 // The clock attribute says that the clock is defined elsewhere
@@ -178,10 +178,10 @@ checkDataPort(Worker *w, ezxml_t impl, Port **dpp) {
     dp->protocol->m_dataValueWidth = dp->dataWidth;
   if (dp->dataWidth >= dp->protocol->m_dataValueWidth) {
     if (dp->dataWidth % dp->protocol->m_dataValueWidth)
-      return OU::esprintf("DataWidth (%u) on port '%s' not a multiple of DataValueWidth (%u)",
+      return OU::esprintf("DataWidth (%zu) on port '%s' not a multiple of DataValueWidth (%zu)",
 			  dp->dataWidth, dp->name, dp->protocol->m_dataValueWidth);
   } else if (dp->protocol->m_dataValueWidth % dp->dataWidth)
-      return OU::esprintf("DataValueWidth (%u) on port '%s' not a multiple of DataWidth (%u)",
+      return OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
 			  dp->protocol->m_dataValueWidth, dp->name, dp->dataWidth);
   if (!dp->impreciseBurst && !dp->preciseBurst)
     dp->impreciseBurst = true;
@@ -305,7 +305,7 @@ addProperty(Worker *w, ezxml_t prop, bool includeImpl)
   
   const char *err =
     p->parse(prop, w->ctl.readables, w->ctl.writables, w->ctl.sub32Bits,
-	     includeImpl, w->ctl.ordinal++);
+	     includeImpl, (unsigned)(w->ctl.ordinal++));
   if (!err) {
     if (p->m_isVolatile)
       w->ctl.volatiles = true;
@@ -611,7 +611,7 @@ parseSpecControl(Worker *w, ezxml_t ps) {
 }
 
 static const char *checkSuffix(const char *str, const char *suff, const char *last) {
-  unsigned nstr = last - str, nsuff = strlen(suff);
+  size_t nstr = last - str, nsuff = strlen(suff);
   const char *start = str + nstr - nsuff;
   return nstr > nsuff && !strncmp(suff, start, nsuff) ? start : str + nstr;
 }
@@ -766,7 +766,7 @@ static const char *
 parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   const char *err;
   ezxml_t xctl;
-  uint32_t dw;
+  size_t dw;
   bool dwFound;
   const char *lang = ezxml_cattr(xml, "Language");
   if (!lang)
@@ -836,7 +836,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
   unsigned nextPort = w->ports.size();
   w->ports.resize(w->ports.size() + extraPorts);
 #endif
-  unsigned oldSize = w->ports.size(); // remember the base of extra ports
+  size_t oldSize = w->ports.size(); // remember the base of extra ports
   unsigned nMem = 0, nTime = 0, memOrd = 0, timeOrd = 0;
   // Clocks depend on port names, so get those names in first pass(non-control ports)
   for (ezxml_t x = ezxml_cchild(xml, "MemoryInterface"); x;
@@ -930,7 +930,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     case WMIPort:
       {
 	// If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
-	unsigned granuleWidth =
+	size_t granuleWidth =
 	  dp->protocol->m_dataValueWidth * dp->protocol->m_dataValueGranularity;
 	// If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
 	if (granuleWidth >= dp->dataWidth && (granuleWidth % dp->dataWidth) == 0 && 
@@ -949,7 +949,7 @@ parseHdlImpl(ezxml_t xml, const char *file, Worker *w) {
     default:;
     }
   }
-  unsigned nextPort = oldSize;
+  size_t nextPort = oldSize;
   for (ezxml_t m = ezxml_cchild(xml, "MemoryInterface"); m; m = ezxml_next(m), nextPort++) {
     Port *mp = w->ports[nextPort];
     mp->type = WMemIPort;
@@ -1293,14 +1293,14 @@ parseAssy(ezxml_t xml, Worker *aw,
      // Parse property values now that we know the actual workers.
      OU::Assembly::Property *ap = &ai->m_properties[0];
      InstanceProperty *ipv = i->properties =	myCalloc(InstanceProperty, ai->m_properties.size());
-     for (unsigned n = ai->m_properties.size(); n; n--, ap++, ipv++)
+     for (size_t n = ai->m_properties.size(); n; n--, ap++, ipv++)
        if ((err = ipv->property->parseValue(ap->m_value.c_str(), ipv->value)))
 	 return err;
    }
    // Initialize our connections based on the generic assembly connections
    Connection *c = a->connections = myCalloc(Connection, a->assembly->m_connections.size());
    OU::Assembly::ConnectionIter ci = a->assembly->m_connections.begin();
-   for (unsigned n = a->assembly->m_connections.size(); n; n--, c++, ci++) {
+   for (size_t n = a->assembly->m_connections.size(); n; n--, c++, ci++) {
      c->connection = &(*ci);
      c->name = c->connection->m_name.c_str();
      unsigned nn = 0;
@@ -1567,7 +1567,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
   for (n = 0, c = a->connections; n < a->nConnections; n++, c++)
     for (ip = c->ports; ip; ip = ip->nextConn)
       if (!ip->external) {
-        unsigned nc = ip->port->clock - ip->instance->worker->clocks;
+        size_t nc = ip->port->clock - ip->instance->worker->clocks;
         if (!c->clock) {
           // This connection doesn't have a clock yet,
           // so its not using the WCI clock either
@@ -1611,7 +1611,7 @@ parseHdlAssy(ezxml_t xml, Worker *aw) {
     if (i->worker) {
       unsigned nn;
       for (nn = 0, ip = i->ports; nn < i->worker->ports.size(); nn++, ip++) {
-        unsigned nc = ip->port->clock - ip->instance->worker->clocks;
+        size_t nc = ip->port->clock - ip->instance->worker->clocks;
         if (!i->clocks[nc]) {
           if (ip->port->type == WSIPort || ip->port->type == WMIPort)
             return OU::esprintf("Unconnected data interface %s of instance %s has its own clock",

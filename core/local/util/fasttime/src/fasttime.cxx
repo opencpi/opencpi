@@ -173,11 +173,11 @@ int fasttime_gettime_context(fasttime_context_t context,
     /* Determine which conversion to use (which piecewise linear
      * segment) */
     get_tick_count(&ticks);
-    conversion_index = (ticks.ll - current->tick_first) >> 
-                        current->log_ticks_per_segment;
+    conversion_index = (unsigned)((ticks.ll - current->tick_first) >> 
+				  current->log_ticks_per_segment);
 
     /* If daemon has fallen behind, just use the most recent conversion */
-    if ((int)conversion_index >= current->linear_segments)
+    if (conversion_index >= current->linear_segments)
         conversion_index = current->linear_segments - 1;
 
     conversion = &current->conversions[conversion_index];

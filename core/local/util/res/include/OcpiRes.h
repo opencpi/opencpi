@@ -40,18 +40,25 @@
 
 namespace OCPI {
   namespace Util {
-    typedef uint32_t ResAddrType;
+    // This data type is the offset within an allocation pool.
+    // It must be a type with an explicit width (e.g. uint32_t),
+    // that does not vary with compiler or architecture.
+    // If you change it, change the printf macro also
+    typedef uint32_t ResAddr;
+#define OCPI_UTIL_RESADDR_PRIx PRIx32
+
+    typedef ResAddr ResAddrType; // backwards compatibility
     struct ResPool;
     class MemBlockMgr
     {
     public:
-      MemBlockMgr(ResAddrType start, OCPI::OS::uint32_t size)
+      MemBlockMgr(ResAddr start, size_t size)
         throw( std::bad_alloc );
       ~MemBlockMgr()
         throw();
-      int alloc(uint32_t nbytes, unsigned int alignment, ResAddrType& req_addr)
+      int alloc(size_t nbytes, unsigned alignment, ResAddr& req_addr)
         throw( std::bad_alloc );
-      int free(ResAddrType  addr )
+      int free(ResAddr  addr )
         throw( std::bad_alloc );
 
 

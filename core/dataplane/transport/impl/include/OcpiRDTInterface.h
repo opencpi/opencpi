@@ -35,7 +35,8 @@
 #ifndef OCPIRDT_INTERFACE_H_
 #define OCPIRDT_INTERFACE_H_
 
-#include <OcpiOsDataTypes.h>
+#include <stdint.h>
+#include "DtOsDataTypes.h"
 
 namespace OCPI {
   namespace RDT {
@@ -73,43 +74,42 @@ namespace OCPI {
       MaxOption
     };
 
-    const uint32_t MAX_EPS_SIZE=256;
-    const uint32_t MAX_PROTOS_SIZE=64;
+    //    const uint32_t MAX_EPS_SIZE=256;
+    //    const uint32_t MAX_PROTOS_SIZE=64;
     struct OutOfBandData {
-      uint64_t            port_id;     // Port Id
-      char                oep[MAX_EPS_SIZE];    // Originators endpoint
-      uint64_t            cookie;      // Optional opaque value for endpoint connection cookie
+      uint64_t               port_id;     // Port Id
+      char                   oep[256];    // Originators endpoint
+      uint64_t               cookie;      // Optional opaque value for endpoint connection cookie
       // These values are information common to all endpoints
-      uint64_t            address;     // Address of endpoint in its address space (usually 0)
-      uint32_t            size;        // EndpointSize
-      uint16_t            mailBox;     // endpoint mailbox
-      uint16_t            maxCount;    // Number of mailboxes in communication domain
+      uint64_t               address;     // Base address of endpoint in its address space (usually 0)
+      DtOsDataTypes::Offset  size;        // EndpointSize
+      DtOsDataTypes::MailBox mailBox;     // endpoint mailbox
+      DtOsDataTypes::MailBox maxCount;    // Number of mailboxes in communication domain
     };
 
     struct Desc_t {
-      uint32_t  nBuffers;
-      uint64_t  dataBufferBaseAddr;
-      uint32_t  dataBufferPitch;
-      uint32_t  dataBufferSize;
-      uint64_t  metaDataBaseAddr;
-      uint32_t  metaDataPitch;
-      uint64_t  fullFlagBaseAddr; 
-      uint32_t  fullFlagSize;
-      uint32_t  fullFlagPitch;
-      uint64_t  fullFlagValue;
-      uint64_t  emptyFlagBaseAddr; // when consumer is passive
-      uint32_t  emptyFlagSize;
-      uint32_t  emptyFlagPitch;
-      uint64_t  emptyFlagValue;
-
-      OutOfBandData       oob;
+      uint32_t               nBuffers;
+      DtOsDataTypes::Offset  dataBufferBaseAddr; // address in endpoint
+      uint32_t               dataBufferPitch;
+      uint32_t               dataBufferSize;
+      DtOsDataTypes::Offset  metaDataBaseAddr;
+      uint32_t               metaDataPitch;
+      DtOsDataTypes::Offset  fullFlagBaseAddr; 
+      uint32_t               fullFlagSize;       // size to transfer, must be <= sizeof(Flag)
+      uint32_t               fullFlagPitch;
+      DtOsDataTypes::Flag    fullFlagValue;
+      DtOsDataTypes::Offset  emptyFlagBaseAddr;  // when consumer is passive
+      uint32_t               emptyFlagSize;      // size to transfer, must be <= sizeof(Flag)
+      uint32_t               emptyFlagPitch;
+      DtOsDataTypes::Flag    emptyFlagValue;
+      OutOfBandData          oob;
     };
 
     struct Descriptors {
       uint32_t  type;
-      int32_t   role;     // signed to suppress compiler warnings vs. enums
+      int32_t   role;    // signed to suppress compiler warnings vs. enums
       uint32_t  options; // bit fields based on role.
-      Desc_t desc;
+      Desc_t    desc;
       Descriptors() : role(NoRole){}
     };
     typedef Descriptors Descriptor;

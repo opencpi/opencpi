@@ -47,11 +47,11 @@ namespace OCPI  {
       friend class Protocol;
       std::string m_name, m_qualifiedName;
       bool m_isTwoWay;         // not supported much yet...
-      unsigned m_nArgs;
+      size_t m_nArgs;
       Member *m_args;           // both input and output args.  if twoway, first is return value
-      unsigned m_nExceptions;
+      size_t m_nExceptions;
       Operation *m_exceptions;  // if twoway
-      unsigned m_myOffset;      // for determining message sizes
+      size_t m_myOffset;      // for determining message sizes
       bool m_topFixedSequence;  // is this operation a single top level sequence of fixed size elements?
       const char *parse(ezxml_t op, Protocol &);
       Operation();
@@ -61,12 +61,12 @@ namespace OCPI  {
       Operation & operator=(const Operation & p );
       inline bool isTwoWay() const { return m_isTwoWay; }
       inline Member *args() const { return m_args; }
-      inline unsigned nArgs() const { return m_nArgs; }
+      inline size_t nArgs() const { return m_nArgs; }
       inline const std::string &name() const { return m_name; }
       inline bool isTopFixedSequence() const { return m_topFixedSequence; }
       void printXML(FILE *f, unsigned indent = 0) const;
-      void write(Writer &writer, const uint8_t *data, uint32_t length);
-      uint32_t read(Reader &reader, uint8_t *&data, uint32_t maxLength);
+      void write(Writer &writer, const uint8_t *data, size_t length);
+      size_t read(Reader &reader, uint8_t *&data, size_t maxLength);
       // for testing
       void generate(const char *name, Protocol &p);
       void generateArgs(Value **&);
@@ -75,24 +75,24 @@ namespace OCPI  {
     };
     class Protocol {
     public:
-      unsigned m_nOperations;
+      size_t m_nOperations;
       Operation *m_operations;
       Operation *m_op;                 // used during parsing
       std::string
 	m_qualifiedName,               // IDL-style qualified name (double colon separators)
 	m_name;
       // Summary attributes derived from protocols.  May be specified in the absense of protocol
-      unsigned m_defaultBufferSize;    // Allow the protocol to simply override the protocol size, if != 0
+      size_t m_defaultBufferSize;      // Allow the protocol to simply override the protocol size, if != 0
                                        // and particularly when it is unbounded
-      unsigned m_minBufferSize;        // convenience - in bytes
-      unsigned m_dataValueWidth;       // the smallest atomic data size in any message
-      unsigned m_dataValueGranularity; // smallest multiple of atomic data size
+      size_t m_minBufferSize;          // convenience - in bytes
+      size_t m_dataValueWidth;         // the smallest atomic data size in any message
+      size_t m_dataValueGranularity;   // smallest multiple of atomic data size
       bool m_diverseDataSizes;         // are there atomic types greater than m_dataValueWidth?
-      unsigned m_minMessageValues;     // the smallest valid message size for any operation
+      size_t m_minMessageValues;       // the smallest valid message size for any operation
                                        // this size would be adequate if you knew that only that
                                        // operation would be used, and, if unbounded, the smallest
                                        // possible message size for that operation. Might be zero
-      unsigned m_maxMessageValues;     // the largest size, in values, in any message
+      size_t m_maxMessageValues;       // the largest size, in values, in any message
                                        // for unbounded, defaults to zero, but can be overriden to
                                        // to simply apply a bound anyway.
       bool m_variableMessageLength;    // are there messages or different or unbounded sizes?
@@ -107,7 +107,7 @@ namespace OCPI  {
       virtual const char *parseOperation(ezxml_t op);
       void finishOperation(const Operation &op);
       inline bool isTwoWay() { return m_isTwoWay; }
-      inline unsigned &nOperations() { return m_nOperations; }
+      inline size_t &nOperations() { return m_nOperations; }
       inline Operation *operations() { return m_operations; }
       inline const std::string &name() const { return m_name; }
       const char *parse(ezxml_t x, bool top = true);
@@ -117,7 +117,7 @@ namespace OCPI  {
       const char *finishParse();
       void printXML(FILE *f, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, uint32_t length, uint8_t opcode);
-      uint32_t read(Reader &reader, uint8_t *data, uint32_t maxLength, uint8_t opcode);
+      size_t read(Reader &reader, uint8_t *data, size_t maxLength, uint8_t opcode);
       void generate(const char *name);
       void generateOperation(uint8_t &opcode, Value **&v);
       void freeOperation(uint8_t operation, Value **v);

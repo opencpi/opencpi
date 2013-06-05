@@ -1,5 +1,6 @@
 // Generic one-size-fits-all container declaration
 (* box_type="user_black_box" *)
+/* synthesis syn_black_box */
 module mkOCApp4B(RST_N_rst_0,
 		 RST_N_rst_1,
 		 RST_N_rst_2,

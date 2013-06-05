@@ -61,9 +61,9 @@ namespace OCPI {
       {
 	return Emit::RegisterEvent::registerEvent( signal_name );
       }
-      void OcpiEmit( int sig ) 
+      void OcpiEmit( unsigned sig ) 
       {
-	Emit::getSEmit().emit(sig);
+	Emit::getSEmit().emit((Emit::EventId)sig);
       }
     }
 
@@ -337,8 +337,8 @@ namespace OCPI {
       int instance;
       getHeaderInfo( t, instance );
       // Add the header for this class/instance
-      int myIndex = getHeader().classDefs.size();
-      getHeader().classDefs.push_back( HeaderEntry(m_className, m_instanceName, instance, m_parentIndex ) );
+      OwnerId myIndex = (OwnerId)(getHeader().classDefs.size());
+      getHeader().classDefs.push_back( HeaderEntry(m_className, m_instanceName, instance, (EventId)m_parentIndex ) );
       return myIndex;
     }
 
@@ -378,7 +378,7 @@ namespace OCPI {
     isChild( Emit::OwnerId id ) {
 
       AUTO_MUTEX(Emit::getGMutex());
-      if ( id >= getHeader().classDefs.size() ) {
+      if ( id == -1 || (size_t)id >= getHeader().classDefs.size() ) {
 	return false;
       }
       Emit::HeaderEntry& child = getHeader().classDefs[id];
@@ -432,13 +432,13 @@ namespace OCPI {
 
 
 
-    int 
+    Emit::EventId 
     Emit::RegisterEvent::
     registerEvent( const char* event_name, int width,
 		   EventType type,
 		   DataType dtype)
     {
-      int e;
+      EventId e;
       AUTO_MUTEX(Emit::getGMutex());
       // Make sure this event does not already exist
       std::vector<EventMap>::iterator it;
@@ -630,7 +630,7 @@ namespace OCPI {
       // Owners
       {
 	out << "  <Owners>" << std::endl;
-	for (unsigned int n=0; n<Emit::getHeader().classDefs.size(); n++ ) {
+	for (Emit::EventId n=0; n<Emit::getHeader().classDefs.size(); n++ ) {
 	  std::string owner;
 	  formatOwnerString(n, owner, false);      
 	  out << "    <Owner id=\"" << n << "\" name=\"" << owner << "\"" << " parent=\"" << Emit::getHeader().classDefs[n].parentIndex <<
@@ -652,7 +652,7 @@ namespace OCPI {
       
 
     void EmitFormatter::formatOwnerString( Emit::OwnerId id, std::string& str, bool full_path ) {
-      if ( id >= Emit::getHeader().classDefs.size() ) {
+      if ( id == -1 || (size_t)id >= Emit::getHeader().classDefs.size() ) {
 	return;
       }
 
@@ -732,7 +732,7 @@ namespace OCPI {
     Emit::FastSystemTime::
     FastSystemTime()
     {
-      int wait_time;
+      long int wait_time;
       int result;
       fasttime_statistics_t stats;
       struct timespec tp_fast, tp_actual;
@@ -757,12 +757,12 @@ namespace OCPI {
 
         default:
 	  printf("Error in init; quitting\n");
-	  ocpiAssert(!"Fasttime method not supported");
+	  ocpiAssert("Fasttime method not supported"==0);
 	}
 
       /* Check availability */
       while (fasttime_getstatistics(NULL, &stats) != 0) {
-	printf("Waiting for fasttime to warm up !!\n");
+	ocpiDebug("Waiting for fasttime to warm up !!");
 	OCPI::OS::sleep( 1000 );
       };
 
@@ -773,7 +773,7 @@ namespace OCPI {
 	  wait_time = stats.ready_time - tp_actual.tv_sec;
 	  if (wait_time > 0)
 	    {
-	      printf("Waiting %d secs for fasttime to get ready...\n", wait_time);
+	      ocpiDebug("Waiting %lu secs for fasttime to get ready...", wait_time);
 	      OCPI::OS::sleep(wait_time*1000);
 	    }
 	}

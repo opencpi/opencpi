@@ -1,3 +1,7 @@
+# Default settings
+export OCPI_CFLAGS="-Wall -Wextra -Wfloat-equal -fno-strict-aliasing -Wconversion -c90"
+export OCPI_CXXFLAGS="-Wall -Wextra -Wfloat-equal -fno-strict-aliasing -Wconversion"
+
 export OCPI_BASE_DIR=`pwd`
 export OCPI_CDK_DIR=$OCPI_BASE_DIR/ocpi
 if test "$OCPI_TOOL_HOST" = ""; then

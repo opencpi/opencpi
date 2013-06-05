@@ -82,7 +82,7 @@ OCPI::Util::Vfs::md5 (std::istream * str, std::streamsize count)
 
     md5_append (&hash,
                 reinterpret_cast<unsigned char *> (buffer),
-                amount);
+                (unsigned)amount);
 
     if (count != -1) {
       count -= amount;

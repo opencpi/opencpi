@@ -221,7 +221,7 @@ idl2ifr(char **argv, char *&repo)
       err = "internal error naming idl back end file";
       break;
     }
-    unsigned size = 0, files = 0;
+    size_t size = 0, files = 0;
     for (char **ap = argv; *ap; ap++) {
       size += strlen(*ap) * 2 + 3; // all escaped, quoted, spaced
       if (ap[0][0] == '-') {

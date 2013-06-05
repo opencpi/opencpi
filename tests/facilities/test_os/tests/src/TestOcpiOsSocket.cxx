@@ -56,7 +56,7 @@ namespace
   {
     try
     {
-      unsigned int* portNoPtr = reinterpret_cast<unsigned int*> ( opaque );
+      uint16_t* portNoPtr = reinterpret_cast<uint16_t*> ( opaque );
       OCPI::OS::Socket cs = OCPI::OS::ClientSocket::connect ( OCPI::OS::getHostname ( ),
                                                             *portNoPtr );
       cs.close ( );
@@ -76,7 +76,7 @@ namespace
 
   void test04Thread ( void* opaque )
   {
-    unsigned int* portNoPtr = reinterpret_cast<unsigned int*> ( opaque );
+    uint16_t* portNoPtr = reinterpret_cast<uint16_t*> ( opaque );
     OCPI::OS::Socket cs = OCPI::OS::ClientSocket::connect ( OCPI::OS::getHostname ( ),
                                                             *portNoPtr );
     cs.send ( "Hello World!", 13 );
@@ -85,13 +85,13 @@ namespace
 
   void test05Thread ( void* opaque )
   {
-    unsigned int* portNoPtr = reinterpret_cast<unsigned int*> ( opaque );
+    uint16_t* portNoPtr = reinterpret_cast<uint16_t*> ( opaque );
 
     OCPI::OS::Socket cs = OCPI::OS::ClientSocket::connect ( OCPI::OS::getHostname ( ),
                                                             *portNoPtr );
     char buffer [ 1024] ;
     char* ptr = buffer;
-    unsigned long long count, total = 0;
+    size_t count, total = 0;
 
     do
     {
@@ -159,7 +159,7 @@ namespace
       ap++;
     }
 
-    unsigned int* portNoPtr = reinterpret_cast<unsigned int*> ( opaque );
+    uint16_t* portNoPtr = reinterpret_cast<uint16_t*> ( opaque );
 
     OCPI::OS::Socket cs =
       OCPI::OS::ClientSocket::connect ( myAddress, *portNoPtr );
@@ -181,7 +181,7 @@ namespace
   TEST( TestOcpiOsSocket, test_1 )
   {
     OCPI::OS::ServerSocket so ( 0 );
-    unsigned int portNo = so.getPortNo ( );
+    uint16_t portNo = so.getPortNo ( );
     so.close ( );
     EXPECT_GT( portNo, 0u );
     EXPECT_LT( portNo, 65536u );
@@ -192,7 +192,7 @@ namespace
   TEST( TestOcpiOsSocket, test_2 )
   {
     OCPI::OS::ServerSocket so ( 6274, true );
-    unsigned int portNo = so.getPortNo ( );
+    uint16_t portNo = so.getPortNo ( );
     so.close ( );
     EXPECT_EQ( portNo, 6274u );
   }
@@ -203,7 +203,7 @@ namespace
   {
     try
     {
-      unsigned int portNo = 6275;
+      uint16_t portNo = 6275;
       OCPI::OS::ServerSocket se ( portNo, true );
       OCPI::OS::ThreadManager tm ( test03Thread, &portNo );
       OCPI::OS::Socket so = se.accept ( );
@@ -230,12 +230,12 @@ namespace
   {
     try
     {
-      unsigned int portNo = 6276;
+      uint16_t portNo = 6276;
       OCPI::OS::ServerSocket se ( portNo, true );
       OCPI::OS::ThreadManager tm ( test04Thread, &portNo );
       OCPI::OS::Socket so = se.accept ( );
       char buf [ 16 ];
-      unsigned long long count = so.recv ( buf, 16 );
+      size_t count = so.recv ( buf, 16 );
       EXPECT_EQ( count, 13u );
       EXPECT_EQ(std::strcmp ( buf, "Hello World!" ), 0 );
       so.close ( );
@@ -260,7 +260,7 @@ namespace
   {
     try
     {
-      unsigned int portNo = 6277;
+      uint16_t portNo = 6277;
       OCPI::OS::ServerSocket se ( portNo, true );
       OCPI::OS::ThreadManager tm ( test05Thread, &portNo );
       OCPI::OS::Socket so = se.accept ( );
@@ -329,12 +329,12 @@ namespace
   // Test 7: Use dotted decimal IP address
   TEST( TestOcpiOsSocket, test_7 )
   {
-    unsigned int portNo = 6276;
+    uint16_t portNo = 6276;
     OCPI::OS::ServerSocket se ( portNo, true) ;
     OCPI::OS::ThreadManager tm ( test07Thread, &portNo );
     OCPI::OS::Socket so = se.accept ( );
     char buf [ 16 ];
-    unsigned long long count = so.recv ( buf, 16 );
+    size_t count = so.recv ( buf, 16 );
     EXPECT_EQ( count, 13u );
     EXPECT_EQ( std::strcmp ( buf, "Hello World!" ), 0 );
     so.close ( );

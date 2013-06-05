@@ -241,7 +241,7 @@ namespace OCPI {
 	  (err = a.getInstance(instance.c_str(), m_instance)))
 	return err;
       MappedProperty *p = &a.m_mappedProperties[0];
-      for (unsigned n = a.m_mappedProperties.size(); n && p < this; n--, p++)
+      for (size_t n = a.m_mappedProperties.size(); n && p < this; n--, p++)
 	if (p->m_name == m_name)
 	  return esprintf("Duplicate mapped property: %s", m_name.c_str());
       const char *cp = ezxml_cattr(px, "property");
@@ -283,7 +283,7 @@ namespace OCPI {
     const char *Assembly::Instance::
     addProperty(const char *name, ezxml_t px) {
       Property *p = &m_properties[0];
-      unsigned n;
+      size_t n;
       for (n = m_properties.size(); n ; n--, p++)
 	if (p->m_name == name)
 	  break;

@@ -66,7 +66,7 @@ OCPI::Logger::NullOutput::NullOutputBuf::setProducerName (const char *)
 std::streambuf::int_type
 OCPI::Logger::NullOutput::NullOutputBuf::overflow (int_type c)
 {
-  if (traits_type::eq (c, traits_type::eof())) {
+  if (traits_type::eq_int_type (c, traits_type::eof())) {
     return traits_type::not_eof (c);
   }
 

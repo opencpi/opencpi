@@ -189,7 +189,7 @@ FileFs::FileFs (const char *root)
     /*
      * Our "root" must be an absolute directory name.
      */
-    for (unsigned n = m_root.length(); n > 1 && m_root[n-1] == '/'; )
+    for (size_t n = m_root.length(); n > 1 && m_root[n-1] == '/'; )
       m_root.resize(--n);
   
     testFilenameForValidity (m_root);
@@ -352,7 +352,7 @@ FileFs::URIToName (const std::string & struri) const
         OCPI::Util::Uri::isalpha (authority[0]) &&
         authority[1] == ':') {
       drivePrefix = authority;
-      drivePrefix[0] = std::tolower (drivePrefix[0]);
+      drivePrefix[0] = (char)std::tolower (drivePrefix[0]);
     }
     else {
       /*

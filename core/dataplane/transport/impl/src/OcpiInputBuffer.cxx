@@ -379,7 +379,7 @@ void InputBuffer::markBufferEmpty()
     }
   }
   else {
-    ocpiAssert(!"marking shadow input empty?");
+    ocpiAssert("marking shadow input empty?"==0);
     m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsFull = EF_EMPTY_VALUE;
     volatile BufferState* state = this->getState();
     state->bufferIsFull = EF_EMPTY_VALUE;

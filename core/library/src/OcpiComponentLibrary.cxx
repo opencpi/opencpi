@@ -69,9 +69,10 @@ namespace OCPI {
 	    for (char *cp = &buf[sizeof(buf)-2]; cp >= buf; cp--)
 	      if (*cp == 'X' && isdigit(cp[1])) {
 		char *end;
-		long long n = strtoll(cp + 1, &end, 10);
+		long l = strtol(cp + 1, &end, 10);
+		off_t n = (off_t)l;
 		// strtoll error reporting is truly bizarre
-		if (n != LLONG_MAX && n >= 0 && cp[1] && isspace(*end)) {
+		if (l != LONG_MAX && l > 0 && cp[1] && isspace(*end)) {
 		  off_t metaStart = fileLength - sizeof(buf) + (cp - buf) - n;
 		  if (lseek(fd, metaStart, SEEK_SET) != -1) {
 		    data = new char[n + 1];
@@ -112,7 +113,7 @@ namespace OCPI {
 	      doPath(OS::FileSystem::joinNames(libName, dir.relativeName()));
 	  } else {
 	    const char *name = libName.c_str();
-	    unsigned len = strlen(name), xlen = strlen(".xml");
+	    size_t len = strlen(name), xlen = strlen(".xml");
 	  
 	    if (len < xlen || strcasecmp(name + len - xlen, ".xml")) {
 	    // FIXME: supply library level xml for the artifact

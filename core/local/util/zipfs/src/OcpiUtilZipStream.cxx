@@ -154,7 +154,7 @@ xsgetn (char * buffer, std::streamsize count)
   }
 
   while (count && !unzeof (m_zipFile)) {
-    int amount = unzReadCurrentFile (m_zipFile, buffer, count);
+    int amount = unzReadCurrentFile (m_zipFile, buffer, (unsigned)count);
 
     if (amount < 0) {
       break;
@@ -301,8 +301,8 @@ seekpos (pos_type pos, std::ios_base::openmode)
     char buffer[4096];
 
     while (curpos < pos) {
-      unsigned int count = ((pos - curpos) < 4096) ? (pos - curpos) : 4096;
-      int amount = unzReadCurrentFile (m_zipFile, buffer, count);
+      pos_type count = ((pos - curpos) < 4096) ? (pos - curpos) : 4096;
+      int amount = unzReadCurrentFile (m_zipFile, buffer, (unsigned)count);
 
       if (amount < 0) {
         return static_cast<pos_type> (-1);
@@ -391,7 +391,7 @@ xsputn (const char * buffer, std::streamsize count)
     return 0;
   }
 
-  if (zipWriteInFileInZip (m_zipFile, buffer, count) != ZIP_OK) {
+  if (zipWriteInFileInZip (m_zipFile, buffer, (unsigned)count) != ZIP_OK) {
     return 0;
   }
 

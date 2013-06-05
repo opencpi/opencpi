@@ -99,7 +99,7 @@ FileSinkStart (RCCWorker * wctx)
               strerror (errno));
     }
 
-    props->errnoValue = errno;
+    props->errnoValue = (uint32_t)errno;
     return RCC_ERROR;
   }
 
@@ -126,7 +126,7 @@ FileSinkStop (RCCWorker * wctx)
               strerror (errno));
     }
 
-    props->errnoValue = errno;
+    props->errnoValue = (uint32_t)errno;
     return RCC_ERROR;
   }
 
@@ -159,7 +159,7 @@ FileSinkRun (RCCWorker * wctx,
               strerror (errno));
     }
 
-    props->errnoValue = errno;
+    props->errnoValue = (uint32_t)errno;
     return RCC_ERROR;
   }
 
@@ -168,12 +168,12 @@ FileSinkRun (RCCWorker * wctx,
             props->portName, (int) count);
   }
 
-  props->offset += count;
+  props->offset += (uint32_t)count;
   return RCC_ADVANCE;
 }
 
 static
-uint32_t
+size_t
 FileSinkMemories[] = {
   sizeof (FileSinkContext),
   0

@@ -145,7 +145,8 @@ namespace OCPI {
 	throw OU::Error("Error parsing selection expression: %s", err);
       if (!val.isNumber)
 	throw OU::Error("selection expression has string value");
-      score = val.number < 0 ? 0: val.number; // force non-negative
+      // FIXME test if overflow
+      score = (unsigned)(val.number < 0 ? 0: val.number); // force non-negative
       return val.number > 0;
     }
 

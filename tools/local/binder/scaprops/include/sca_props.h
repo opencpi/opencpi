@@ -81,7 +81,7 @@ SCA_data_type_limit
 
 // Describe a simple type, along with its max size(for strings)
 typedef struct {
-  unsigned long size;
+  size_t size;
   DataType data_type;
   const char *name; // for struct members
 } SimpleType;
@@ -92,7 +92,7 @@ typedef struct {
   bool is_sequence, is_struct, is_readable, is_writable,
     read_error, write_error, read_sync, write_sync, is_test,
     is_impl;
-  unsigned long sequence_size, num_members, offset, data_offset;
+  size_t sequence_size, num_members, offset, data_offset;
   const volatile unsigned char *read_vaddr;
   volatile unsigned char *write_vaddr;
   SimpleType *types; // More than one when type is struct.
@@ -106,27 +106,27 @@ typedef struct {
  } Port;
 
  typedef struct {
-   unsigned int testId;
+   uint32_t testId;
    unsigned int numInputs, numResults;
    unsigned int * inputValues;  // reference to property[n]
    unsigned int * resultValues;
  } Test;
 
 // Return a single string, to be freed by caller, or NULL on error.
-extern char *encode_props(Property *properties, unsigned nprops, unsigned size,
-                          Port *ports, unsigned nports,
-                          Test *tests, unsigned ntests);
+extern char *encode_props(Property *properties, size_t nprops, size_t size,
+                          Port *ports, size_t nports,
+                          Test *tests, size_t ntests);
 // Return an array of structs, to be freed by caller (in one "free");
 extern bool decode_props(const char *props,
-                         Property **propsp, unsigned *nprops, unsigned *size,
-                         Port **ports, unsigned *nports,
-                         Test **tests, unsigned *ntests);
+                         Property **propsp, size_t *nprops, size_t *size,
+                         Port **ports, size_t *nports,
+                         Test **tests, size_t *ntests);
 extern const char *emit_ocpi_xml(const char *specFile, const char *implFile,
 				 const char *specName, const char *implName,
 				 const char *parentFile, const char *model,
 				 char *idlFiles[], bool debug,
-				 Property *properties, unsigned nprops,
-				 Port *ports, unsigned nports,
-				 Test *tests, unsigned ntests);
+				 Property *properties, size_t nprops,
+				 Port *ports, size_t nports,
+				 Test *tests, size_t ntests);
 }}
 #endif

@@ -133,11 +133,11 @@ $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)
 
 ifeq ($(origin HdlPlatforms),undefined)
-ifdef HdlPlatform
-HdlPlatforms:=$(HdlPlatform)
-else
-HdlPlatforms:=ml605
-endif
+  ifdef HdlPlatform
+    HdlPlatforms:=$(HdlPlatform)
+  else
+    HdlPlatforms:=ml605
+  endif
 endif
 ifeq ($(origin HdlTargets),undefined)
 ifdef HdlPlatforms

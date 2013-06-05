@@ -147,7 +147,7 @@ OCPI::Logger::OStreamOutput::OStreamOutputBuf::overflow (int_type c)
     }
   }
 
-  if (traits_type::eq (c, traits_type::eof())) {
+  if (traits_type::eq_int_type (c, traits_type::eof())) {
     if (!m_out->good()) {
       return traits_type::eof ();
     }

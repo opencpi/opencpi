@@ -106,7 +106,7 @@ insert_to_list(List *list, void *item, int isize, int incr)
   else if (list->nentries == list->nspaces) {
     /* Need to expand the list */
     /* Calculate the new size for the list */
-    int size = (list->nspaces + incr) * sizeof(void *);
+    size_t size = (list->nspaces + incr) * sizeof(void *);
     /* Reallocate the list */
     if (!(list->entries = (void **)realloc(list->entries, size))) {
       /* Allocation failed */
@@ -140,7 +140,7 @@ prepend_to_list(List *list, void *item, int isize, int incr)
   else if (list->nentries == list->nspaces) {
     /* Need to expand the list */
     /* Calculate the new size for the list */
-    int size = (list->nspaces + incr) * sizeof(void *);
+    size_t size = (list->nspaces + incr) * sizeof(void *);
     /* Reallocate the list */
     if (!(list->entries = (void **)realloc(list->entries, size))) {
       /* Allocation failed */

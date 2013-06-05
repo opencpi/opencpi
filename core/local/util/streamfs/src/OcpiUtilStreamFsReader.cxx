@@ -1055,7 +1055,7 @@ close (std::ios * str)
    */
 
   sfrs->clear ();
-  std::streamsize read = sfrs->tellg ();
+  std::streamoff read = sfrs->tellg ();
   ocpiAssert (read >= 0);
   m_pos += read;
 

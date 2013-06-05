@@ -72,6 +72,7 @@ namespace OCPI {
 
   namespace DataTransport {
 
+    typedef size_t BufferOrdinal;
     class PullDataDriver;
     class PortSet;
     class Buffer;
@@ -131,14 +132,14 @@ namespace OCPI {
       /**********************************
        * Reteives the next available input buffer.
        *********************************/
-      BufferUserFacet* getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode);
+      BufferUserFacet* getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode);
       Buffer* getNextFullInputBuffer();
 
       /**********************************
        * This method retreives the next available buffer from the local (our)
        * port set.  A NULL port indicates local context.
        *********************************/
-      BufferUserFacet* getNextEmptyOutputBuffer(void *&data, uint32_t &length);
+      BufferUserFacet* getNextEmptyOutputBuffer(void *&data, size_t &length);
       Buffer* getNextEmptyOutputBuffer();
 
       /**********************************
@@ -156,9 +157,9 @@ namespace OCPI {
       /**************************************
        * Get the buffer by index
        ***************************************/
-      inline Buffer* getBuffer( uint32_t index ){return m_buffers[index];}
-      OCPI::DataTransport::OutputBuffer* getOutputBuffer(uint32_t idx);
-      OCPI::DataTransport::InputBuffer* getInputBuffer(uint32_t idx);
+      inline Buffer* getBuffer( BufferOrdinal index ){return m_buffers[index];}
+      OCPI::DataTransport::OutputBuffer* getOutputBuffer(BufferOrdinal idx);
+      OCPI::DataTransport::InputBuffer* getInputBuffer(BufferOrdinal idx);
 
       /**************************************
        * Are we a shadow port ?
@@ -183,8 +184,8 @@ namespace OCPI {
       /**************************************
        * Get buffer count
        ***************************************/
-      uint32_t getBufferCount();
-      uint32_t getBufferLength();
+      BufferOrdinal getBufferCount();
+      size_t getBufferLength();
 
       /**********************************
        * Get port data
@@ -201,7 +202,7 @@ namespace OCPI {
        * This method is used to send an input buffer thru an output port with Zero copy, 
        * if possible.
        *********************************/
-      void sendZcopyInputBuffer( Buffer* src_buf, unsigned int len, uint8_t op );
+      void sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op );
 
       /**********************************
        * This method causes the specified input buffer to be marked
@@ -213,7 +214,7 @@ namespace OCPI {
       /**********************************
        * Send an output buffer
        *********************************/
-      void sendOutputBuffer( BufferUserFacet* b, unsigned int length, uint8_t opcode );
+      void sendOutputBuffer( BufferUserFacet* b, size_t length, uint8_t opcode );
 
 
       // Advanced buffer management
@@ -264,7 +265,7 @@ namespace OCPI {
       void createBuffers();
 
       // Last buffer that was processed
-      uint32_t m_lastBufferTidProcessed;
+      BufferOrdinal m_lastBufferTidProcessed;
 
       // Sequence number of last buffer that was transfered
       uint32_t m_sequence;
@@ -279,16 +280,16 @@ namespace OCPI {
       bool m_eos;
 
       // Our mailbox
-      uint32_t m_mailbox;
+      uint16_t m_mailbox;
 
       // Our port dependency data
       PortMetaData::OcpiPortDependencyData m_portDependencyData;
 
       // Offset into the SMB to our offsets
-      uint32_t m_offsetsOffset;
+      OCPI::Util::ResAddr m_offsetsOffset;
 
       // used to cycle through buffers
-      int m_lastBufferOrd;
+      BufferOrdinal m_lastBufferOrd;
 
       // This port is externally connected
       enum ExternalConnectState {
@@ -333,7 +334,7 @@ namespace OCPI {
        * Get the ordinal of the last buffer 
        * processed
        ***************************************/
-      int &getLastBufferOrd();
+      BufferOrdinal &getLastBufferOrd();
 
       // List of zCopy buffers to send to 
       OCPI::Util::VList m_zCopyBufferQ;
@@ -341,7 +342,7 @@ namespace OCPI {
       /**************************************
        * Get the next full input buffer
        ***************************************/
-      uint32_t& getLastBufferTidProcessed();
+      BufferOrdinal& getLastBufferTidProcessed();
 
       /**************************************
        * Get the buffer transfer sequence
@@ -395,11 +396,10 @@ namespace OCPI {
        * get buffer offsets to dependent data
        *********************************/
       struct ToFrom_ {
-        uint64_t from_offset;
-        uint64_t to_offset;
+	DtOsDataTypes::Offset from_offset, to_offset;
       };
       typedef ToFrom_ ToFrom;
-      void getOffsets( uint64_t to_base_offset, OCPI::Util::VList& offsets );
+      void getOffsets(DtOsDataTypes::Offset to_base_offset, OCPI::Util::VList& offsets );
       void releaseOffsets( OCPI::Util::VList& offsets );
 
 
@@ -409,7 +409,7 @@ namespace OCPI {
       DataTransfer::SmemServices* getRealShemServices();
       DataTransfer::SmemServices* getShadowShemServices();
       DataTransfer::SmemServices* getLocalShemServices();
-      uint32_t                            getMailbox();
+      uint16_t                            getMailbox();
 
       /**********************************
        * Get this source port's control structure
@@ -447,15 +447,15 @@ namespace OCPI {
     inline PortMetaData::OcpiPortDependencyData& Port::getPortDependencyData(){return m_portDependencyData;}
     inline uint32_t& Port::getBufferSequence(){return m_sequence;}
     inline bool Port::isShadow(){return m_shadow;}
-    inline uint32_t& Port::getLastBufferTidProcessed(){return m_lastBufferTidProcessed;}
+    inline BufferOrdinal &Port::getLastBufferTidProcessed(){return m_lastBufferTidProcessed;}
     inline const char* Port::getSMBAddress(){return m_data->m_real_location->getAddress();}
     inline DataTransfer::EndPoint* Port::getEndpoint(){return m_data->m_real_location;}
     inline std::string& Port::getShadowEndpoint(){return m_data->m_shadow_location->end_point;}
     inline volatile DataTransfer::OutputPortSetControl* Port::getOutputControlBlock(){return m_hsPortControl;}
     inline void Port::setOutputControlBlock( volatile DataTransfer::OutputPortSetControl* scb ){m_hsPortControl=scb;}
-    inline OCPI::DataTransport::OutputBuffer* Port::getOutputBuffer(uint32_t idx)
+    inline OCPI::DataTransport::OutputBuffer* Port::getOutputBuffer(BufferOrdinal idx)
       {return reinterpret_cast<OCPI::DataTransport::OutputBuffer*>(Port::getBuffer(idx));}
-    inline OCPI::DataTransport::InputBuffer* Port::getInputBuffer(uint32_t idx)
+    inline OCPI::DataTransport::InputBuffer* Port::getInputBuffer(BufferOrdinal idx)
       {return reinterpret_cast<OCPI::DataTransport::InputBuffer*>(Port::getBuffer(idx));}
 
 
@@ -463,14 +463,14 @@ namespace OCPI {
     inline void Port::setBusyFactor(uint32_t bf ){m_busyFactor=bf;}
     inline uint32_t Port::getBusyFactor(){return m_busyFactor;}
     inline void Port::setEOS(){m_eos=true;}
-    inline int& Port::getLastBufferOrd(){return m_lastBufferOrd;}
+    inline BufferOrdinal& Port::getLastBufferOrd(){return m_lastBufferOrd;}
     inline void Port::attachPullDriver( PullDataDriver* pd ){m_pdDriver=pd;}
     inline PullDataDriver* Port::getPullDriver(){return m_pdDriver;}
 
     /**************************************
      * Our mailbox
      ***************************************/
-    inline uint32_t        Port::getMailbox(){return m_mailbox;}
+    inline uint16_t        Port::getMailbox(){return m_mailbox;}
 
   }
 }

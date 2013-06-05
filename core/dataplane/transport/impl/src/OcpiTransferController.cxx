@@ -114,7 +114,7 @@ bool TransferController::hasEmptyOutputBuffer(
                                                   OCPI::DataTransport::Port* src_port
                                                   )const
 {
-  OCPI::OS::uint32_t &n = src_port->getLastBufferTidProcessed();
+  BufferOrdinal &n = src_port->getLastBufferTidProcessed();
   OutputBuffer* buffer =  src_port->getOutputBuffer(n);
   if (  buffer->isEmpty() && ! buffer->inUse() ) {
     return true;
@@ -128,8 +128,9 @@ bool TransferController::hasFullInputBuffer(
                                              )const
 {
   InputBuffer* buffer;
-  int& lo = input_port->getLastBufferOrd();
-  int tlo = ((lo+1)%input_port->getBufferCount());
+  BufferOrdinal
+    &lo = input_port->getLastBufferOrd(),
+    tlo = ((lo+1)%input_port->getBufferCount());
   *retb = buffer = input_port->getInputBuffer(tlo);
   if (  ! buffer->isEmpty() && ! buffer->inUse() ) {
     return true;
@@ -177,7 +178,7 @@ Buffer* TransferController::getNextEmptyOutputBuffer(
 {
   // This default implementation simply finds the first available output buffer
   OutputBuffer* boi=NULL;        
-  OCPI::OS::uint32_t &n = src_port->getLastBufferTidProcessed();
+  BufferOrdinal &n = src_port->getLastBufferTidProcessed();
   OutputBuffer* buffer = src_port->getOutputBuffer(n);
   if (  buffer->isEmpty() && ! buffer->inUse() ) {
     boi = buffer;
@@ -270,8 +271,9 @@ Buffer* TransferController::getNextFullInputBuffer(
 #ifdef SIMPLE_AND_FAST
 
   InputBuffer* buffer=NULL; 
-  int& lo = input_port->getLastBufferOrd();
-  int tlo = ((lo+1)%input_port->getBufferCount());
+  BufferOrdinal
+    &lo = input_port->getLastBufferOrd(),
+    tlo = ((lo+1)%input_port->getBufferCount());
   buffer = input_port->getInputBuffer(tlo);
   if ( ! buffer->isEmpty() && ! buffer->inUse() ) {
     lo = tlo;
@@ -352,7 +354,7 @@ bool TransferController::canBroadcast(
   // to re-sequence there own buffers
 
   for ( OCPI::OS::uint32_t p=0; p<m_input->getBufferCount(); p++ ) {
-    for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
+    for (PortOrdinal n = 0; n < m_input->getPortCount(); n++) {
       OCPI::DataTransport::Port* port = m_input->getPort(n);
       if ( port->getBuffer(p)->isEmpty() ) {
         produce = true;
@@ -392,7 +394,7 @@ void TransferController::broadCastOutput( Buffer* b )
   // We need to mark the buffer as full
   buffer->markBufferFull();
         
-  for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
+  for (PortOrdinal n = 0; n < m_input->getPortCount(); n++) {
     Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid));
     tbuf->markBufferFull();
 
@@ -492,8 +494,8 @@ canProduce( Buffer* buffer )
 
   // We treat the input buffers as a circular queue, so we only need to check
   // the next buffer 
-  for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
-    OCPI::DataTransport::Port* port = m_input->getPort(n);
+  for (PortOrdinal n = 0; n < m_input->getPortCount(); n++) {
+    Port* port = m_input->getPort(n);
     if ( port->getBuffer(m_nextTid)->isEmpty() ) {
       produce = true;
     }
@@ -531,9 +533,9 @@ void TransferController::modifyOutputOffsets( Buffer* me, Buffer* new_buffer, bo
   else {
 
     // Note: this needs to me augmented for DRI
-    OCPI::OS::uint32_t new_offsets[2];
+    DtOsDataTypes::Offset new_offsets[2];
     new_offsets[1] = 0;
-    OCPI::OS::uint32_t old_offsets[2];
+    DtOsDataTypes::Offset old_offsets[2];
     Buffer* nb;
     Buffer *cnew_buffer =  static_cast<Buffer*>(new_buffer);
     if ( cnew_buffer->m_zeroCopyFromBuffer ) {
@@ -607,7 +609,7 @@ int TransferController1::produce( Buffer* b, bool bcast )
   // We need to mark the buffer as full
   buffer->markBufferFull();
 
-  for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
+  for (PortOrdinal n = 0; n < m_input->getPortCount(); n++) {
     Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid) );
     tbuf->markBufferFull();
   }
@@ -748,12 +750,9 @@ TransferController* TransferController2::createController(
  * This method determines if we can produce from the indicated buffer
  *********************************/
 bool TransferController2::canProduce( 
-                                     Buffer* b                                // InOut - Buffer to produce from
+                                     Buffer* buffer                         // InOut - Buffer to produce from
                                      )
 {
-
-  Buffer* buffer = static_cast<Buffer*>(b);
-
   // With this pattern, only port 0 of the output port set can produce
   if ( m_wholeOutputSet && buffer->getPort()->getRank() != 0 ) {
     return true;
@@ -764,7 +763,7 @@ bool TransferController2::canProduce(
 #ifdef DEBUG_L2
     ocpiDebug("*** Testing canproduce via broacast !!");
 #endif
-    return canBroadcast( b );
+    return canBroadcast( buffer );
   }
 
   // Make sure we have the barrier token
@@ -782,8 +781,8 @@ bool TransferController2::canProduce(
   // sequencing through its buffers in order because the inputs have the logic needed
   // to re-sequence there own buffers
         
-  for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
-    OCPI::DataTransport::Port* port = m_input->getPort(n);
+  for (PortOrdinal n = 0; n < m_input->getPortCount(); n++) {
+    Port* port = m_input->getPort(n);
     for ( OCPI::OS::uint32_t p=0; p<m_input->getBufferCount(); p++ ) {
 
 #ifdef DEBUG_L2
@@ -1055,7 +1054,7 @@ int TransferController4::produce( Buffer* b, bool bcast )
     if ( temp && temp->getTypeId() == 4 ) {
 
       // This is effectivly a broadcst to all port buffers, so we need to mark them as full
-      for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
+      for (PortOrdinal n = 0; n < m_input->getPortCount(); n++) {
         Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid));
         tbuf->markBufferFull();
       }

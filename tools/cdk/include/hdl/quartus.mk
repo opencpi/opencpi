@@ -166,7 +166,7 @@ QuartusMakeQsf=\
     echo set_global_assignment -name $(if $(filter %.v,$s),VERILOG_FILE,VHDL_FILE -library $(LibName)) \
        '\"'$(notdir $s)'\"';) \
   \
-  $(and $(filter assembly container,$(HdlMode)), \
+  $(and $(filter assembly,$(HdlMode)), \
     echo '\#' Import qxp files for each worker used in the assembly; \
     $(eval $(HdlSetWorkers)) \
     $(foreach w,$(HdlWorkers),\
@@ -178,17 +178,20 @@ QuartusMakeQsf=\
         echo set_global_assignment -name PARTITION_IMPORT_FILE \
         '\"'$(call FindRelative,$(TargetDir),$f)'\"'\
         -section_id '\"'$i'\"';\
-      echo set_global_assignment -name PARTITION_HIERARCHY db/$(subst :,_,$i) -to '\"$i\"' \
+      echo set_instance_assignment -name PARTITION_HIERARCHY db/$(subst :,_,$i) -to '\"$i\"' \
       -section_id '\"'$i'\"';)))\
   $(and $(Cores),echo '\#' Import QXP file for each core;) \
   $(foreach l,$(Cores),\
     echo set_global_assignment -name QXP_FILE \
       '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRef,$l,$(HdlTarget)))'\"';)\
-  $(if $(findstring $(HdlMode),platform),\
-    echo '\#' Make sure the app is defined as an empty partition. ;\
-    echo set_global_assignment -name PARTITION_HIERARCHY db/app -to '\"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app\"' \
-      -section_id '\"'app'\"'; \
-    echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'app'\"' EMPTY; ) \
+  $(and $(findstring $(HdlMode),platform),\
+    echo '\#' Make sure the container is defined as an empty partition. ;\
+    echo set_instance_assignment -name PARTITION_HIERARCHY container -to '\"mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app\"' \
+      -section_id '\"'container'\"'; \
+    echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'container'\"' EMPTY; \
+    echo set_instance_assignment -name PARTITION_HIERARCHY root_partition -to '|' \
+      -section_id Top; \
+    echo set_global_assignment -name PARTITION_NETLIST_TYPE -section_id '\"'Top'\"' POST_SYNTH; ) \
   $(if $(findstring $(HdlMode),core worker platform assembly container),\
     echo '\#' Assignments for building cores; \
     echo set_global_assignment -name AUTO_EXPORT_INCREMENTAL_COMPILATION on; \
@@ -268,10 +271,23 @@ QuartusMakeTopQsf=\
   echo set_global_assignment -name DEVICE $(call ToUpper,$(call QuartusMakePart,$(HdlPart_$1))); \
   echo set_global_assignment -name TOP_LEVEL_ENTITY fpgaTop; \
   echo set_global_assignment -name QXP_FILE '"'$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin)'"'; \
-  echo set_global_assignment -name QXP_FILE '"'$(ContainerModule)$(HdlBin)'"'; \
-  echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformsDir)/$1/$1.sdc'"'; \
+   echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformsDir)/$1/$1.sdc'"'; \
+  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(ContainerModule)$(HdlBin)'"' \
+        -section_id container; \
+ echo set_global_assignment -name PARTITION_ALWAYS_USE_QXP_NETLIST -section_id container On\
  ) > $(call AppName,$1).qsf
 
+# echo set_global_assignment -name QXP_FILE '"'$(ContainerModule)$(HdlBin)'"'; \
+#  echo set_instance_assignment -name PARTITION_HIERARCHY db/container -to '"'fpgaTop|mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app'"' \
+        -section_id container; \
+#  echo set_instance_assignment -name PARTITION_ALWAYS_USE_QXP_NETLIST -to '"'fpgaTop|mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app'"' -section_id container On\
+#  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(ContainerModule)$(HdlBin)'"' \
+        -section_id container; \
+#  echo set_instance_assignment -name PARTITION_HIERARCHY db/container -to '"'mkFTop_alst4:ftop|mkCTop4B:ctop|mkOCApp4B:app'"' \
+        -section_id container; \
+#  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1$(HdlBin)'"' \
+        -section_id Top; \
+#  echo set_instance_assignment -name PARTITION_HIERARCHY db/top -to '|' -section_id Top; \
 # echo 'module onewire(input  W_IN, output W_OUT); assign W_OUT = W_IN; endmodule' > onewire.v; \
 #  echo set_global_assignment -name VERILOG_FILE onewire.v; \
 #  echo set_global_assignment -name PARTITION_IMPORT_FILE '"'$(ContainerModule)$(HdlBin)'"' -section_id "app"; \
@@ -286,6 +302,7 @@ QuartusCmd=\
 	$(call QuartusMakeTopQsf,$1) ; \
 	cp $(call AppName,$1).qsf $(call AppName,$1).qsf.pre-fit ; \
 	$(call DoAltera,quartus_map $(call AppName,$1)); \
+	$(call DoAltera,quartus_cdb --merge=on --override_partition_netlist_type=container=import --write_settings_files=off $(call AppName,$1)); \
 	$(call DoAltera,quartus_fit $(call AppName,$1)); \
 	QuartusStatus=$$$$? ; echo QuartusStatus after fit is $$$$QuartusStatus; \
 	cp $(call AppName,$1).qsf $(call AppName,$1).qsf.post-fit; \

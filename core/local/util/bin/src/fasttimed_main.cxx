@@ -123,7 +123,7 @@ static void parse_options(int argc, char **argv)
                         break;
                     }
                     else if (option->type == option_t::type_int)
-                        *((int *) option->val) = strtol(*argv, &endptr, 10);
+		      *((int *) option->val) = (int)strtol(*argv, &endptr, 10); // FIXME long?
                     else if (option->type == option_t::type_double)
                         *((double *) option->val) = strtod(*argv, &endptr);
                     

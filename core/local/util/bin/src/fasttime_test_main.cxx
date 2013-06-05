@@ -26,7 +26,7 @@ int main()
     int i;
     int method;
     int result;
-    int wait_time;
+    long int wait_time;
     fasttime_statistics_t stats;
     
     method = fasttime_init_context(NULL, 
@@ -61,7 +61,7 @@ int main()
       wait_time = stats.ready_time - tp_actual.tv_sec;
         if (wait_time > 0)
         {
-            printf("Waiting %d secs for fasttime to get ready...\n", wait_time);
+            printf("Waiting %ld secs for fasttime to get ready...\n", wait_time);
             OCPI::OS::sleep(wait_time);
         }
     }
@@ -94,7 +94,7 @@ int main()
     printf(" Actual: %f secs\n", (double) actual_time / 1000000000.0);
     
     printf("Improvement: %f times faster\n", 
-        (double) actual_time / fast_time);
+	   (double) actual_time / (double)fast_time);
 
 #ifdef PRINT_LOOP
     while ( 1 ) {

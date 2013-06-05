@@ -93,12 +93,13 @@ namespace OCPI {
     bool 							        \
     find##pretty(const PValue* p, const char* name, run &value) { \
       const PValue *fp = find(p, name);					\
-      if (fp)								\
+      if (fp) {								\
         if (fp->type == OCPI::API::OCPI_##pretty) {	                \
           value = fp->v##pretty;					\
           return true;							\
 	} else								\
 	  throw ApiError("Property \"", name, "\" is not a ", #pretty, NULL); \
+      }                                                                 \
       return false;							\
     }
 #if 0
@@ -106,12 +107,13 @@ namespace OCPI {
     bool 							        \
     find##pretty(const PValue* p, const char* name, run &value) {	\
       const PValue *fp = find(p, name);					\
-      if (fp)								\
+      if (fp) {								\
         if (fp->type == OCPI::API::OCPI_##pretty) {	                \
           value = fp->v##pretty;					\
           return true;							\
 	} else								\
 	  throw ApiError("Parameter \"", name, "\" is not a ", #pretty, NULL); \
+      }                                                                 \
       return false;							\
     }
 #endif
@@ -125,9 +127,9 @@ namespace OCPI {
     findAssign(const PValue *p, const char *name, const char *var, const char *&val) {
       if (p)
 	for (; p->name; p++)
-	  if (!strcasecmp(p->name, name))
+	  if (!strcasecmp(p->name, name)) {
 	    if (p->type == OCPI::API::OCPI_String) {
-	      unsigned len = p->vString[0] == '=' ? 0 : strlen(var);
+	      size_t len = p->vString[0] == '=' ? 0 : strlen(var);
 	      if (len == 0 ||
 		  !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
 		val = p->vString + len + 1;
@@ -135,6 +137,7 @@ namespace OCPI {
 	      }
 	    } else
 	      throw ApiError("Parameter \"", name, "\" is not a string", NULL);
+	  }
       return false;
     }
 
@@ -143,14 +146,14 @@ namespace OCPI {
 		   const char *&val, unsigned &next) {
       if (p)
 	for (unsigned n = 0; p->name; p++, n++)
-	  if (n >= next && !strcasecmp(p->name, name))
+	  if (n >= next && !strcasecmp(p->name, name)) {
 	    if (p->type == OCPI::API::OCPI_String) {
 	      if (!var) {
 		val = p->vString;
 		next = n + 1;
 		return true;
 	      } else {
-		unsigned len = p->vString[0] == '=' ? 0 : strlen(var);
+		size_t len = p->vString[0] == '=' ? 0 : strlen(var);
 		if (len == 0 ||
 		    !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
 		  val = p->vString + len + 1;
@@ -160,6 +163,7 @@ namespace OCPI {
 	      }
 	    } else
 	      throw ApiError("Parameter \"", name, "\" is not a string", NULL);
+	  }
       return false;
     }
 

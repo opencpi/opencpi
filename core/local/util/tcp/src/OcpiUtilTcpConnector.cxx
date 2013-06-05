@@ -64,7 +64,7 @@ OCPI::Util::Tcp::Connector::connect (const std::string & authority)
 {
   std::string::size_type pos = authority.rfind (':');
   std::string host, portAsString;
-  unsigned int portno;
+  uint16_t portno;
 
   if (pos == std::string::npos) {
     host = authority;
@@ -73,7 +73,7 @@ OCPI::Util::Tcp::Connector::connect (const std::string & authority)
   else {
     host = authority.substr (0, pos);
     portAsString = authority.substr (pos+1);
-    portno = std::atoi (portAsString.c_str());
+    portno = (uint16_t)std::atoi (portAsString.c_str());
 
     if (portno == 0) {
       std::string reason = "bad port number: \"";

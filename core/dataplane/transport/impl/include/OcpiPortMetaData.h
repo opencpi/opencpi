@@ -48,11 +48,12 @@
 #ifndef OCPI_DataTransport_PortMetaData_H_
 #define OCPI_DataTransport_PortMetaData_H_
 
-#include <OcpiTransportConstants.h>
-#include <DtOsDataTypes.h>
-#include <OcpiRDTInterface.h>
-#include <OcpiParentChild.h>
-namespace CU = ::OCPI::Util;
+#include "OcpiParentChild.h"
+#include "DtHandshakeControl.h"
+#include "OcpiTransportConstants.h"
+#include "OcpiRDTInterface.h"
+
+namespace OU = OCPI::Util;
 
 namespace DataTransfer {
   class XferFactory;
@@ -68,9 +69,9 @@ namespace OCPI {
     class PortSet;
 
     // Port Ordinal
-    typedef OCPI::OS::uint32_t PortOrdinal;
+    typedef DataTransfer::PortId PortOrdinal;
 
-    struct PortMetaData : public OCPI::Util::Child<PortSetMetaData,PortMetaData>
+    struct PortMetaData : public OU::Child<PortSetMetaData,PortMetaData>
     {
 
       // Are we a shadow port >
@@ -83,14 +84,14 @@ namespace OCPI {
       std::string shadow_location_string;
 
       // Remote Circuit id if we are a shadow
-      OCPI::OS::int32_t       remoteCircuitId;
-      OCPI::OS::int64_t   remotePortId;
+      int32_t       remoteCircuitId;
+      PortOrdinal   remotePortId;
 
       // port id
       PortOrdinal id;
 
       // Our rank in the port set
-      OCPI::OS::uint32_t rank;
+      uint32_t rank;
 
       // Output port
       bool output;
@@ -111,30 +112,33 @@ namespace OCPI {
       DataTransfer::XferFactory * m_shadow_tfactory;
 
       // Ports local "port set" control structure offset
-      DtOsDataTypes::Offset m_localPortSetControl;
+      OU::ResAddr m_localPortSetControl;
 
       // Offsets for port communication structures
       struct OutputPortBufferControlMap {
-        DtOsDataTypes::Offset bufferOffset;                  // offset to our buffer
-        OCPI::OS::uint32_t bufferSize;                          // Buffer size in bytes
-        DtOsDataTypes::Offset localStateOffset;          // offset to our state structure
-        DtOsDataTypes::Offset metaDataOffset;                  // offset to our meta-data structure
-        DtOsDataTypes::Offset portSetControlOffset;  // offset to our port set control structure
+        OU::ResAddr bufferOffset;          // offset to our buffer
+	OU::ResAddr bufferSize;            // Buffer size in bytes
+        OU::ResAddr localStateOffset;      // offset to our state structure
+        OU::ResAddr metaDataOffset;        // offset to our meta-data structure
+        OU::ResAddr portSetControlOffset;  // offset to our port set control structure
       };
 
       // In this structure, the number of offsets for the remote state and meta data
       // is equal to the number of ports in the output port set.
       struct InputPortBufferControlMap {
-        DtOsDataTypes::Offset bufferOffset;                            // offset to our buffer
-        OCPI::OS::uint32_t bufferSize;                                    // Buffer size in bytes
-
+        OU::ResAddr bufferOffset;          // offset to our buffer
+	OU::ResAddr bufferSize;            // Buffer size in bytes
         /*
          *  The input buffers need N number of local states where N is the number of 
          *  output ports that can write to the input.  We will create a contiguous array
          *  of states so we only need 1 offset
          */
-        DtOsDataTypes::Offset localStateOffset; // offset to our state structure
+        OU::ResAddr localStateOffset; // offset to our state structure
 
+        // Each output that can write data to our buffer will also write its meta-data here.
+        // This array is also indexed by the output port id.  We will create a contiguous array
+        // so we only need 1 offset
+        OU::ResAddr metaDataOffset;
         /*
          *  The remote state structure contains the offsets to all of our remote
          *  states.  The remote states exist in the "shadow" input buffers in our
@@ -146,19 +150,12 @@ namespace OCPI {
          *  If this is a shadow port, these are not initialized.
          */
 
-        // Offsets to our remote "shadow" input ports states.  When we indicate 
-        // that this buffer is empty, we need to inform all of the shadows that have
+        // Offsets to our remote "shadow" input ports states.  When we locally indicate 
+        // that an input buffer is empty, we need to also inform all of the shadows (producers) that have
         // a "real" output port.   This array is indexed by the port id, so only the output
         // port id's are valid.
-        DtOsDataTypes::Offset myShadowsRemoteStateOffsets[MAX_PCONTRIBS]; 
-
-
-        // Each output that can write data to our buffer will also write its meta-data here.
-        // This array is also indexed by the output port id.  We will create a contiguous array
-        // so we only need 1 offset
-        DtOsDataTypes::Offset metaDataOffset;
-        OCPI::OS::uint32_t     metaDataSize;
-
+	// It is the remotely mappable offset in an endpoint, hence the type is DtOsDataTypes::Offset
+	DtOsDataTypes::Offset myShadowsRemoteStateOffsets[MAX_PCONTRIBS]; 
       };
 
       union BufferOffsets {
@@ -207,7 +204,7 @@ namespace OCPI {
                     DataTransfer::EndPoint &ep, 
                     DataTransfer::EndPoint &shadow_ep, 
                     const OCPI::RDT::Descriptors& pd, 
-		    //                    OCPI::OS::uint32_t circuitId,
+		    //                    uint32_t circuitId,
                     PortSetMetaData* psmd );
 
       virtual ~PortMetaData();

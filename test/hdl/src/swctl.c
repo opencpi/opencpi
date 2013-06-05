@@ -64,7 +64,7 @@ typedef struct {
 } OCDP_Space;
 #endif
 
-#define WN(p,w) ((OccpWorker *)(w) - (p)->worker)
+#define WN(p,w) ((unsigned)((OccpWorker *)(w) - (p)->worker))
 typedef int func(volatile OccpSpace *, char **, volatile OccpWorkerRegisters *, volatile uint8_t *, volatile uint8_t *);
 static func admin, wdump, wread, wwrite, wadmin, radmin, settime, deltatime, wop, wwctl, wwpage, dtest, smtest, dmeta, dpnd, dread, dwrite, wunreset, wreset;
 
@@ -406,7 +406,7 @@ wread(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatil
     case 8:
       val = *((uint64_t *)p8);
     }
-    printf("Worker %ld, offset:0x%08x(%d), hexVal:0x%08llx decVal:%lld, %d\n",
+    printf("Worker %u, offset:0x%08x(%d), hexVal:0x%08llx decVal:%lld, %d\n",
 	   WN(p, w), off, size, (long long)val, (long long)val, (int)sizeof(val));
   }
   return 0;
@@ -435,7 +435,7 @@ wop(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile 
     if (*ap && strcmp(*ap, ops[i].name) == 0) {
       unsigned off = ops[i].off;
       uint32_t v, *cp = (uint32_t *)((uint8_t *)w + off);
-      printf("Worker %ld control op: %s(%x)\n", WN(p,w), *ap, off);
+      printf("Worker %u control op: %s(%x)\n", WN(p,w), *ap, off);
       v = *cp;
       printf("Result: 0x%08x\n", v);
       return 0;
@@ -457,7 +457,7 @@ wwrite(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volati
   }
 #endif
   uint32_t *p32 = (uint32_t *)&config[off];
-  printf("Worker %ld, offset 0x%x, writing value: 0x%x\n", WN(p,w), off, val);
+  printf("Worker %u, offset 0x%x, writing value: 0x%x\n", WN(p,w), off, val);
   
   switch(size) {
     case 1:
@@ -490,7 +490,7 @@ dtest(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatil
   printf("dtest\n"); fflush(stdout);
 
   printf("npages:2^%d  pagesz(4B words):2^%d  memoryBytes:2^%d\n", DRAM_L2NPAGES, DRAM_L2PAGESZ, DRAM_L2NPAGES+DRAM_L2PAGESZ+2);
-  printf("Worker %ld, memory test offset 0x%x, test loop count: %d\n", WN(p,w), off, val);
+  printf("Worker %u, memory test offset 0x%x, test loop count: %d\n", WN(p,w), off, val);
   fflush(stdout);
   
   unsigned int exp, got, i, j, k, pg;
@@ -545,7 +545,7 @@ smtest(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volati
   unsigned int ugot32;
   unsigned int pollCount = 0;
 
-  printf("Worker %ld, SelectMAP ICAP Communication Test \n", WN(p,w));
+  printf("Worker %u, SelectMAP ICAP Communication Test \n", WN(p,w));
 
   printf("Worker Status  is: 0x%08x\n", *s32);
   printf("Enabling Write ICAP\n");
@@ -623,7 +623,7 @@ wwctl(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatil
 {
   unsigned val = atoi_any(*ap, 0);
   uint32_t *p32 = (uint32_t *)&w->control;
-  printf("Worker %ld, writing control register value: 0x%x\n", WN(p,w), val);
+  printf("Worker %u, writing control register value: 0x%x\n", WN(p,w), val);
   
   *p32 = val;
   return 0;
@@ -634,7 +634,7 @@ wwpage(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volati
 {
   unsigned val = atoi_any(*ap, 0);
   uint32_t *p32 = (uint32_t *)&w->window;
-  printf("Worker %ld, pageWindow register value: 0x%x\n", WN(p,w), val);
+  printf("Worker %u, pageWindow register value: 0x%x\n", WN(p,w), val);
   
   *p32 = val;
   return 0;
@@ -645,7 +645,7 @@ wunreset(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, vola
 {
   volatile uint32_t *p32 = (uint32_t *)&w->control;
   uint32_t val = *p32;
-  printf("Worker %ld, writing control register value to unreset: 0x%x\n", WN(p,w), val | 0x8000000);
+  printf("Worker %u, writing control register value to unreset: 0x%x\n", WN(p,w), val | 0x8000000);
   
   *p32 = val | 0x80000000;
   return 0;
@@ -656,7 +656,7 @@ wreset(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volati
 {
   volatile uint32_t *p32 = (uint32_t *)&w->control;
   uint32_t val = *p32;
-  printf("Worker %ld, writing control register value to reset: 0x%x\n", WN(p,w), val & ~0x8000000);
+  printf("Worker %u, writing control register value to reset: 0x%x\n", WN(p,w), val & ~0x8000000);
   
   *p32 = val & ~0x80000000;
   return 0;
@@ -665,7 +665,7 @@ wreset(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volati
 static int
 wdump(volatile OccpSpace *p, char **ap, volatile OccpWorkerRegisters *w, volatile uint8_t *config, volatile uint8_t *dpx)
 {
-  printf("Worker %ld\n", WN(p,w));
+  printf("Worker %u\n", WN(p,w));
   printf(" Status:     0x%08x\n", w->status);
   printf(" Control:    0x%08x\n", w->control);
   printf(" ConfigAddr: 0x%08x\n", w->lastConfig);

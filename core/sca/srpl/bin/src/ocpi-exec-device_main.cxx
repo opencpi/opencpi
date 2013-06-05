@@ -363,7 +363,7 @@ startOcpiExecutableDeviceCmdInt (CORBA::ORB_ptr orb,
     PortableServer::POA_var poa = PortableServer::POA::_narrow (obj);
 
 #if !defined (NDEBUG)
-    OCPI::Logger::debug (config.label, config.debugLevel);
+    OCPI::Logger::debug (config.label, OCPI_UTRUNCATE(unsigned, config.debugLevel));
 #endif
 
     OCPI::Logger::Logger * logger = 0;

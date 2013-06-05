@@ -54,14 +54,15 @@ namespace OCPI {
     class ValueType {
     public:
       OCPI::API::BaseType m_baseType; // The basic type - scalar, string, struct or typedef
-      unsigned
+      size_t
         m_arrayRank,                  // If > 0, we have an array
-	m_nMembers,                   // For structs
-	m_nBits,
+	m_nMembers;                   // For structs
+      size_t 
 	m_dataAlign,                  // Alignment of data for this type (i.e. not sequence count)
-	m_align;                      // The alignment requirement for this type
+	m_align,                      // The alignment requirement for this type
+	m_nBits;
       bool m_isSequence;              // Are we a sequence?
-      uint32_t
+      size_t
         m_nBytes,                     // Total bytes (if bounded), minimum bytes if unbounded
 	*m_arrayDimensions,           // != NULL for an array, m_arrayRank long
         m_stringLength,               // maximum strlen (null not included, like strlen)
@@ -69,8 +70,8 @@ namespace OCPI {
       Member *m_members;              // if a struct, these are the members
       Member *m_type;                 // if a recursive type, that type
       const char **m_enums;
-      uint32_t m_nEnums;
-      uint32_t m_nItems;              // total number of fixed items
+      size_t m_nEnums;
+      size_t m_nItems;              // total number of fixed items
       std::string m_typeDef;          // If we were created from a typedef
       // unions and enums
       ValueType(OCPI::API::BaseType bt = OCPI::API::OCPI_none);
@@ -109,16 +110,16 @@ namespace OCPI {
     public:      
       virtual void 
 	writeOpcode(const char *name, uint8_t opcode),
-	beginSequence(Member &m, uint32_t nElements) = 0,
-	beginArray(Member &m, uint32_t nItems),
+	beginSequence(Member &m, size_t nElements) = 0,
+	beginArray(Member &m, size_t nItems),
 	endArray(Member &m ),
 	endSequence(Member &m),
 	beginStruct(Member &m),
 	endStruct(Member &m),
 	beginType(Member &m),
 	endType(Member &m),
-	writeString(Member &m, WriteDataPtr p, uint32_t strLen, bool start, bool top) = 0,
-	writeData(Member &m, WriteDataPtr p, uint32_t nBytes, uint32_t nElements) = 0,
+	writeString(Member &m, WriteDataPtr p, size_t strLen, bool start, bool top) = 0,
+	writeData(Member &m, WriteDataPtr p, size_t nBytes, size_t nElements) = 0,
 	end();
     };
     class Reader {
@@ -126,11 +127,11 @@ namespace OCPI {
       Reader();
       virtual ~Reader();
     public:      
-      virtual unsigned
+      virtual size_t
 	beginSequence(Member &m) = 0,
 	beginString(Member &m, const char *&chars, bool first) = 0;
       virtual void 
-	beginArray(Member &m, uint32_t nItems),
+	beginArray(Member &m, size_t nItems),
 	endArray(Member &m ),
 	endSequence(Member &m),
 	endString(Member &m),
@@ -138,7 +139,7 @@ namespace OCPI {
 	endStruct(Member &m),
 	beginType(Member &m),
 	endType(Member &m),
-	readData(Member &m, ReadDataPtr p, uint32_t nBytes, uint32_t nElements) = 0,
+	readData(Member &m, ReadDataPtr p, size_t nBytes, size_t nElements) = 0,
 	end();
     };
     // There are the data type attributes allowed for members
@@ -151,7 +152,7 @@ namespace OCPI {
     class Value;
     class Member : public ValueType {
     public:
-      uint32_t m_offset;              // in group
+      size_t m_offset;              // in group
       std::string m_name;
       bool m_isIn, m_isOut, m_isKey;  // for arguments (could use another class, but not worth it)
       Value *m_defaultValue;          // A default value, if one is appropriate and there is one
@@ -161,21 +162,21 @@ namespace OCPI {
       void printAttrs(FILE *f, const char *tag, unsigned indent = 0);
       void printChildren(FILE *f, const char *tag, unsigned indent = 0);
       void printXML(FILE *f, const char *tag, unsigned indent);
-      void write(Writer &writer, const uint8_t *&data, uint32_t &length, bool topSeq = false);
-      void read(Reader &reader, uint8_t *&data, uint32_t &length);
+      void write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq = false);
+      void read(Reader &reader, uint8_t *&data, size_t &length);
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       const char *
 	parse(ezxml_t xp, bool isFixed, bool hasName, const char *hasDefault, unsigned ordinal);
       const char *
-      offset(unsigned &maxAlign, uint32_t &argOffset,
-	     unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop = false);
+      offset(size_t &maxAlign, size_t &argOffset,
+	     size_t &minSize, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop = false);
       static const char *
-      parseMembers(ezxml_t prop, unsigned &nMembers, Member *&members,
+      parseMembers(ezxml_t prop, size_t &nMembers, Member *&members,
 		   bool isFixed, const char *tag, const char *vtag);
       static const char *
-      alignMembers(Member *m, unsigned nMembers,
-		   unsigned &maxAlign, uint32_t &myOffset,
-		   unsigned &minSize, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop = false);
+      alignMembers(Member *m, size_t nMembers,
+		   size_t &maxAlign, size_t &myOffset,
+		   size_t &minSize, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop = false);
     };
     // These two are indexed by the BaseType
     extern const char *baseTypeNames[];

@@ -55,8 +55,10 @@ namespace {
   };
 }
 
+namespace OCPI {
+  namespace Util {
 std::string
-OCPI::Util::integerToString (int value)
+integerToString (int value)
 {
   bool positive = (value >= 0);
   int count=1, tmp;
@@ -89,7 +91,7 @@ OCPI::Util::integerToString (int value)
 }
 
 std::string
-OCPI::Util::unsignedToString (unsigned int value,
+unsignedToString (unsigned int value,
                                    unsigned int base,
                                    unsigned int mindigits,
                                    char pad)
@@ -141,7 +143,7 @@ OCPI::Util::unsignedToString (unsigned int value,
 }
 
 std::string
-OCPI::Util::unsignedToString (unsigned long long value,
+unsignedToString (unsigned long long value,
                                    unsigned int base,
                                    unsigned int mindigits,
                                    char pad)
@@ -193,7 +195,7 @@ OCPI::Util::unsignedToString (unsigned long long value,
 }
 
 std::string
-OCPI::Util::doubleToString (double value)
+doubleToString (double value)
 {
   char tmp[32]; // C Programmer's Disease
   sprintf (tmp, "%g", value);
@@ -207,7 +209,7 @@ OCPI::Util::doubleToString (double value)
  */
 
 int
-OCPI::Util::stringToInteger (const std::string & str)
+stringToInteger (const std::string & str)
 {
   const char * txtPtr = str.c_str ();
   long int value;
@@ -230,7 +232,7 @@ OCPI::Util::stringToInteger (const std::string & str)
 }
 
 unsigned int
-OCPI::Util::stringToUnsigned (const std::string & str,
+stringToUnsigned (const std::string & str,
                                    unsigned int base)
 {
   const char * txtPtr = str.c_str ();
@@ -254,7 +256,7 @@ OCPI::Util::stringToUnsigned (const std::string & str,
 }
 
 unsigned long long
-OCPI::Util::stringToULongLong (const std::string & str,
+stringToULongLong (const std::string & str,
                                     unsigned int base)
 {
   const char * txtPtr = str.c_str ();
@@ -286,7 +288,7 @@ OCPI::Util::stringToULongLong (const std::string & str,
  */
 
 std::streamsize
-OCPI::Util::unsignedToStreamsize (unsigned long long value, bool minusone)
+unsignedToStreamsize (unsigned long long value, bool minusone)
 {
   /*
    * Microsoft C++ generates a "W1" warning, even when static_cast<> is
@@ -322,7 +324,7 @@ OCPI::Util::unsignedToStreamsize (unsigned long long value, bool minusone)
  */
 
 std::string
-OCPI::Util::readline (std::istream * conn, unsigned int maxSize)
+readline (std::istream * conn, unsigned int maxSize)
 {
   std::string res;
   char c;
@@ -363,14 +365,15 @@ OCPI::Util::readline (std::istream * conn, unsigned int maxSize)
  */
 
 int
-OCPI::Util::
+
 caseInsensitiveStringCompare (const std::string & s1,
                               const std::string & s2)
 {
-  int s1l = s1.length ();
-  int s2l = s2.length ();
-  int l = (s1l < s2l) ? s1l : s2l;
-  int i, c;
+  size_t s1l = s1.length ();
+  size_t s2l = s2.length ();
+  size_t l = (s1l < s2l) ? s1l : s2l;
+  size_t i;
+  int c;
 
   for (i=0; i<l; i++) {
     if (std::isalpha (s1[i]) && std::isalpha (s2[i])) {
@@ -391,11 +394,11 @@ caseInsensitiveStringCompare (const std::string & s1,
     }
   }
   
-  return s2l - s1l;
+  return (int)(s2l - s1l);
 }
 
 bool
-OCPI::Util::CaseInsensitiveStringLess::
+CaseInsensitiveStringLess::
 operator() (const std::string & s1,
             const std::string & s2) const
 {
@@ -409,11 +412,11 @@ operator() (const std::string & s1,
  */
 
 bool
-OCPI::Util::glob (const std::string & str,
+glob (const std::string & str,
                        const std::string & pat)
 {
-  int strIdx = 0, strLen = str.length ();
-  int patIdx = 0, patLen = pat.length ();
+  size_t strIdx = 0, strLen = str.length ();
+  size_t patIdx = 0, patLen = pat.length ();
   const char * name = str.data ();
   const char * pattern = pat.data ();
 
@@ -464,7 +467,7 @@ OCPI::Util::glob (const std::string & str,
  */
 
 bool
-OCPI::Util::isXMLDocument (std::istream * istr)
+isXMLDocument (std::istream * istr)
 {
   /*
    * We read the first four bytes of the file, which must be "<?xm"
@@ -494,7 +497,7 @@ OCPI::Util::isXMLDocument (std::istream * istr)
   return result;
 }
 
-void OCPI::Util::
+void 
 formatStringAddV(std::string &out, const char *fmt, va_list ap) {
   char *cp;
   vasprintf(&cp, fmt, ap);
@@ -503,7 +506,7 @@ formatStringAddV(std::string &out, const char *fmt, va_list ap) {
   free(cp);
 }
 // FIXME remove this when all callers are fixed.
-void OCPI::Util::
+void 
 formatString(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -511,7 +514,7 @@ formatString(std::string &out, const char *fmt, ...) {
   formatStringAddV(out, fmt, ap);
   va_end(ap);
 }
-void OCPI::Util::
+void 
 format(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -519,7 +522,7 @@ format(std::string &out, const char *fmt, ...) {
   formatStringAddV(out, fmt, ap);
   va_end(ap);
 }
-void OCPI::Util::
+void 
 formatStringAdd(std::string &out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -528,7 +531,7 @@ formatStringAdd(std::string &out, const char *fmt, ...) {
 }
 
 // Use vanilla C file I/O
-const char *OCPI::Util::
+const char *
 file2String(std::string &out, const char *file, char replaceNewLine) {
   FILE *f = fopen(file, "r");
   long size;
@@ -559,12 +562,13 @@ file2String(std::string &out, const char *file, char replaceNewLine) {
 	  newLine = false;
 	}
 	char *np = cp;
-	for (unsigned nn = n; nn; nn--, np++)
-	  if (*np == '\n')
+	for (size_t nn = n; nn; nn--, np++)
+	  if (*np == '\n') {
 	    if (nn == 1)
 	      newLine = true, n--;
 	    else
 	      *np = replaceNewLine;
+	  }
       }
       out.append(cp, n);
     }
@@ -580,17 +584,17 @@ file2String(std::string &out, const char *file, char replaceNewLine) {
   }
   return NULL;
 }
-const char *OCPI::Util::
+const char *
 string2File(const std::string &in, const char *file) {
   FILE *f = fopen(file, "w");
-  unsigned n = in.size();
+  size_t n = in.size();
 
   if (f && fwrite(in.c_str(), 1, n, f) == n && fclose(f) == 0)
     return NULL;
   return esprintf("error writing string value to file '%s'", file);
 }
 
-const char *OCPI::Util::
+const char *
 esprintf(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -598,4 +602,7 @@ esprintf(const char *fmt, ...) {
   vasprintf(&buf, fmt, ap);
   va_end(ap);
   return buf;
+}
+
+  }
 }

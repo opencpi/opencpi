@@ -64,14 +64,14 @@ namespace OCPI { namespace SCA {
 // or NULL on error
     bool
 decode_props(const char *props,
-             Property **propsp, unsigned *npropsp, unsigned *sizep,
-             Port **portsp, unsigned *nportsp,
-             Test **testsp, unsigned *ntestsp)
+             Property **propsp, size_t *npropsp, size_t *sizep,
+             Port **portsp, size_t *nportsp,
+             Test **testsp, size_t *ntestsp)
 {
-  unsigned nprops, namesize, nmembers, size, nports, ntests, ntestps, n;
+  size_t nprops, namesize, nmembers, size, nports, ntests, ntestps, n;
   const char *cp;
 
-  n = sscanf (props, "%u/%u/%u/%u/%u/%u/%u$",
+  n = sscanf (props, "%zu/%zu/%zu/%zu/%zu/%zu/%zu$",
               &nports, &nprops, &size, &nmembers, &namesize,
               &ntests, &ntestps);
 
@@ -88,12 +88,12 @@ decode_props(const char *props,
   cp++;
 
   // Compute allocation to hold all properties, names, types etc.
-  unsigned int memSize = (nprops * sizeof(Property) +
-                          nmembers * sizeof(SimpleType) +
-                          nports * sizeof(Port) + 
-                          ntests * sizeof(Test) +
-                          ntestps * sizeof(unsigned int) +
-                          namesize);
+  size_t memSize = (nprops * sizeof(Property) +
+		    nmembers * sizeof(SimpleType) +
+		    nports * sizeof(Port) + 
+		    ntests * sizeof(Test) +
+		    ntestps * sizeof(unsigned int) +
+		    namesize);
   Property *properties = (Property *) malloc (memSize);
   if (!properties)
     return true;

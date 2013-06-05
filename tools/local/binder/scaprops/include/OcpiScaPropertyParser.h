@@ -183,7 +183,7 @@ namespace OCPI {
        * \return The size of the property space, in bytes.
        */
 
-      unsigned int sizeOfPropertySpace () const
+      size_t sizeOfPropertySpace () const
         throw ();
 
       /**
@@ -245,7 +245,7 @@ namespace OCPI {
 
       void processSimpleProperty (ezxml_t simplePropertyNode,
                                   OCPI::SCA::Property * propData,
-                                  unsigned int & offset,
+                                  size_t & offset,
                                   bool isSequence,
                                   bool isTest,
 				  bool isImpl = false)
@@ -259,13 +259,13 @@ namespace OCPI {
 
       void processStructProperty (ezxml_t simplePropertyNode,
                                   OCPI::SCA::Property * propData,
-                                  unsigned int & offset,
+                                  size_t & offset,
                                   bool isSequence,
                                   bool isTest,
 				  bool isImpl = false)
         throw (std::string);
 
-      static void doSimple(ezxml_t simplePropertyNode, OCPI::SCA::SimpleType *pt, unsigned &max_align, unsigned &size);
+      static void doSimple(ezxml_t simplePropertyNode, OCPI::SCA::SimpleType *pt, size_t &max_align, size_t &size);
 
       const char * getNameOrId (ezxml_t node)
         throw ();
@@ -279,13 +279,13 @@ namespace OCPI {
       static OCPI::SCA::DataType mapPropertyType (const char * type)
         throw (std::string);
 
-      static unsigned int propertySize (OCPI::SCA::DataType type)
+      static size_t propertySize (OCPI::SCA::DataType type)
         throw ();
 
-      static unsigned int propertyAlign (OCPI::SCA::DataType type)
+      static size_t propertyAlign (OCPI::SCA::DataType type)
         throw ();
 
-      static unsigned int roundUp (unsigned int, unsigned int)
+      static size_t roundUp (size_t, size_t)
         throw ();
 
       static char * strdup (const char *)
@@ -293,7 +293,7 @@ namespace OCPI {
 
     protected:
       char * m_magicString;
-      unsigned int m_sizeOfPropertySpace;
+      size_t m_sizeOfPropertySpace;
 
       unsigned int m_numProperties;
       OCPI::SCA::Property * m_properties;
@@ -314,7 +314,7 @@ namespace OCPI {
 }
 
 inline
-unsigned int
+size_t
 OCPI::SCA::PropertyParser::
 sizeOfPropertySpace () const
   throw ()

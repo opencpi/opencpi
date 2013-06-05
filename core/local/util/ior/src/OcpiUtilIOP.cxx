@@ -135,7 +135,7 @@ namespace {
       unsigned char h2 = *src++;
       length--;
 
-      *ptr++ = (hc2i[h1] << 4) | hc2i[h2];
+      *ptr++ = (unsigned char)((hc2i[h1] << 4) | hc2i[h2]);
       rl++;
     }
 
@@ -282,8 +282,8 @@ encode () const
 
   ce.putString (m_type_id);
 
-  unsigned long numProfiles = m_profiles.size ();
-  ce.putULong (numProfiles);
+  size_t numProfiles = m_profiles.size ();
+  ce.putULong ((uint32_t)numProfiles);
 
   for (unsigned long pi=0; pi<numProfiles; pi++) {
     ce.putULong (m_profiles[pi].tag);
@@ -481,7 +481,7 @@ doKey(const std::string &key) throw() {
   m_corbaloc += "/";
   const char *cp = key.data();
   ocpiDebug("key length is %zu", key.length());
-  for (unsigned len = key.length(); len; len--, cp++)
+  for (size_t len = key.length(); len; len--, cp++)
     if (isalnum(*cp))
       m_corbaloc += *cp;
     else switch (*cp) {
@@ -669,8 +669,8 @@ encode () const
   bool bo = OCPI::Util::CDR::nativeByteorder ();
   ce.putBoolean (bo);
 
-  unsigned long numComponents = m_components.size ();
-  ce.putULong (numComponents);
+  size_t numComponents = m_components.size ();
+  ce.putULong ((uint32_t)numComponents);
 
   for (unsigned long pi=0; pi<numComponents; pi++) {
     ce.putULong (m_components[pi].tag);

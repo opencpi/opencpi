@@ -71,7 +71,7 @@ OutputBuffer::OutputBuffer( OCPI::DataTransport::Port* port, OCPI::OS::uint32_t 
   m_bcsVaddr = 0;
 
   // update
-  ocpiDebug("OutputBuffer: port %p bmd %p offset 0x%" PRIx64,
+  ocpiDebug("OutputBuffer: port %p bmd %p offset 0x%" OCPI_UTIL_RESADDR_PRIx,
 	    port, port->getMetaData()->m_bufferData,
 	    port->getMetaData()->m_bufferData[0].outputOffsets.bufferOffset);
   update(0);
@@ -105,7 +105,8 @@ void OutputBuffer::update(bool critical)
   // First we will map our buffer
   if ( !m_bVaddr && output_offsets->bufferOffset ) {
 
-    ocpiDebug("OutputBuffer:update: port %p bmd %p mapping buffer %p tid %d offset 0x%" PRIx64 " at %p",
+    ocpiDebug("OutputBuffer:update: port %p bmd %p mapping buffer %p tid %d offset 0x%"
+	      OCPI_UTIL_RESADDR_PRIx" at %p",
 	      getPort(), getPort()->getMetaData()->m_bufferData,
 	      this, tid, output_offsets->bufferOffset, output_offsets);
 
@@ -192,11 +193,11 @@ volatile BufferState* OutputBuffer::getState()
     //    ocpiDebug("ob %p zc %u dep ports %u",
     //	      this, m_dependentZeroCopyCount,
     //	      m_dependentZeroCopyPorts.size());
-    OCPI::OS::uint32_t c=0;
-    for ( OCPI::OS::uint32_t n=0;
-          c<m_dependentZeroCopyCount && n<m_dependentZeroCopyPorts.size(); n++) {
+    PortOrdinal c=0;
+    for ( PortOrdinal n=0;
+          c<m_dependentZeroCopyCount && n<(PortOrdinal)m_dependentZeroCopyPorts.size(); n++) {
       if ( m_dependentZeroCopyPorts[n] ) {
-	unsigned i = static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId();
+	PortOrdinal i = static_cast<InputBuffer*>(m_dependentZeroCopyPorts[n])->getPort()->getPortId();
 	// If any of our dependent zc inputs are still full,
 	// then we must be treated as still full (still not evacuated).
 	uint32_t state = m_state[0][i].bufferIsEmpty & EF_MASK;
@@ -303,7 +304,7 @@ OCPI::OS::uint32_t OutputBuffer::getNumberOfBytesTransfered()
 
 void OutputBuffer::setMetaData()
 {
-  for ( unsigned int b=0; b<reinterpret_cast<OCPI::DataTransport::Circuit*>(m_port->getCircuit())->getMaxPortOrd(); b++ ) {
+  for ( PortOrdinal b=0; b< m_port->getCircuit()->getMaxPortOrd(); b++ ) {
     if (b != m_pid) {
       memcpy((void*) &m_sbMd[0][b].ocpiMetaDataWord, (void*)&m_sbMd[0][m_pid].ocpiMetaDataWord, sizeof(RplMetaData) );
 

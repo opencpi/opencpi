@@ -46,12 +46,12 @@ namespace OCPI { namespace SCA {
 
 // Return a single string, to be freed by caller, or NULL on error.
  char *
-encode_props(Property *properties, unsigned nprops, unsigned size,
-             Port *ports, unsigned nports,
-             Test *tests, unsigned ntests)
+encode_props(Property *properties, size_t nprops, size_t size,
+             Port *ports, size_t nports,
+             Test *tests, size_t ntests)
 {
   Property *p;
-  unsigned length, n, nmems, ntestps;
+  size_t length, n, nmems, ntestps;
   
   // Compute length of string encoding and allocate.
   for (p = properties, length = 0, nmems = 0, n = 0; n < nprops; n++, p++) {
@@ -69,7 +69,7 @@ encode_props(Property *properties, unsigned nprops, unsigned size,
     ntestps += test->numInputs + test->numResults;
     
   // This is pretty lame...
-  unsigned total =
+  size_t total =
     2 + // header delimiter and final null
     5 * 11 + // 3 values in header
     nprops * (4 * 11 + 9 + 2) + // 4 values, 9 booleans, + delimeter
@@ -84,11 +84,11 @@ encode_props(Property *properties, unsigned nprops, unsigned size,
     return NULL;
   char *cp = props;
   // header
-  cp += sprintf(cp, "%u/%u/%u/%u/%u/%u/%u$", nports, nprops, size, nmems, length, ntests, ntestps);
+  cp += sprintf(cp, "%zu/%zu/%zu/%zu/%zu/%zu/%zu$", nports, nprops, size, nmems, length, ntests, ntestps);
   // Encode properties.
   for (p = properties, n = 0; n < nprops; n++, p++) {
     ocpiAssert(!strchr(p->name, '~'));
-    cp += sprintf(cp, "%s~%lu/%lu/%lu/%lu/%c%c%c%c%c%c%c%c%c|", 
+    cp += sprintf(cp, "%s~%zu/%zu/%zu/%zu/%c%c%c%c%c%c%c%c%c|", 
                   p->name, p->num_members, p->sequence_size, p->offset, p->data_offset,
                   p->is_sequence ? '1' : '0',
                   p->is_struct ? '1' : '0',
@@ -100,9 +100,9 @@ encode_props(Property *properties, unsigned nprops, unsigned size,
                   p->write_sync ? '1' : '0',
                   p->is_test ? '1' : '0');
     // Now do the structure members (or the single simple data type)
-    unsigned nm = p->num_members;
+    size_t nm = p->num_members;
     for (SimpleType *t = p->types; nm--; t++)
-      cp += sprintf(cp, "%c%lu/",'a'+ (unsigned)t->data_type, t->size);
+      cp += sprintf(cp, "%c%zu/",'a'+ (unsigned)t->data_type, t->size);
     // Terminate the property
     *cp++ = '$';
   }
@@ -115,7 +115,8 @@ encode_props(Property *properties, unsigned nprops, unsigned size,
 
   // Encode tests
   for (test = tests, n = 0; n < ntests; n++, test++) {
-    unsigned int pi, *v;
+    size_t pi;
+    unsigned *v;
     cp += sprintf (cp, "%u/%u/%u|", test->testId, test->numInputs, test->numResults);
     for (pi=0, v=test->inputValues; pi<test->numInputs; pi++, v++) {
       cp += sprintf (cp, "%u/", *v);
@@ -138,11 +139,11 @@ SCA_DATA_TYPES
 #undef SCA_DATA_TYPE
 };
     
-static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
+static void emit_props(FILE *f, Property *props, size_t nProps, bool impl) {
   bool first = true;
   if (nProps) {
     Property *p = props;
-    for (unsigned n = 0; n < nProps; n++, p++) {
+    for (size_t n = 0; n < nProps; n++, p++) {
       if (p->is_impl != impl)
 	continue;
       if (first) {
@@ -155,15 +156,15 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
       if (p->is_writable)
 	fprintf(f, " Writable=\"true\"");
       if (p->is_sequence)
-	fprintf(f, " SequenceLength=\"%lu\"", p->sequence_size);
+	fprintf(f, " SequenceLength=\"%zu\"", p->sequence_size);
       if (p->is_struct) {
 	fprintf(f, " Type=\"Struct\">\n");
 	SimpleType *s = p->types;
-	for (unsigned m = 0; m < p->num_members; m++, s++) {
-	  fprintf(f, "      <Member Name=\"m%d\" Type=\"%s\"", m,
+	for (size_t m = 0; m < p->num_members; m++, s++) {
+	  fprintf(f, "      <Member Name=\"m%zu\" Type=\"%s\"", m,
 		  s->data_type == SCA_octet ? "UChar" : names[s->data_type]);
 	  if (s->data_type == SCA_string)
-	    fprintf(f, " StringLength=\"%lu\"", s->size);
+	    fprintf(f, " StringLength=\"%zu\"", s->size);
 	  fprintf(f, "/>\n");
 	}
 	fprintf(f, "    </Property>\n");
@@ -171,7 +172,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
 	fprintf(f, " Type=\"%s\"",
 		p->types->data_type == SCA_octet ? "UChar" : names[p->types->data_type]);
 	if (p->types->data_type == SCA_string)
-	  fprintf(f, " StringLength=\"%lu\"", p->types->size);
+	  fprintf(f, " StringLength=\"%zu\"", p->types->size);
 	fprintf(f, "/>\n");
       }
     }
@@ -180,7 +181,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
   }
 }
  static const char *
- doPort(FILE *f, OCPI::SCA::Port *p, unsigned n, const char *repo, bool debug)
+ doPort(FILE *f, OCPI::SCA::Port *p, size_t n, const char *repo, bool debug)
 {
   ( void ) n;
   ( void ) debug;
@@ -203,7 +204,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
   fwrite(cp, 1, end + 1 - cp, f);
 #if 0
   fprintf(f, "    <Protocol>\n");
-  for (unsigned i = 0; i < nops; ++i) {
+  for (size_t i = 0; i < nops; ++i) {
     CORBA::OperationDef_var op =
       CORBA::OperationDef::_narrow (operations[i].in());
     bool twoway = op->mode() == CORBA::OP_NORMAL;
@@ -211,12 +212,12 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
       p->twoway = true;
     fprintf(f, "      <Operation Name=\"%s\"%s", op->name(), twoway ? "Twoway=\"true\"" : "");
     CORBA::ParDescriptionSeq_var args = op->params();
-    unsigned nargs = args->length();
+    size_t nargs = args->length();
     if (!nargs)
       fprintf(f, "/>\n");
     else {
       fprintf(f, ">\n");
-      for (unsigned j = 0; j < nargs; j++) {
+      for (size_t j = 0; j < nargs; j++) {
 	CORBA::ParameterDescription *arg = &args[j];
 	CORBA::TypeCode *type = arg->type.in();
 	CORBA::TCKind kind = type->kind();
@@ -276,7 +277,7 @@ static void emit_props(FILE *f, Property *props, unsigned nProps, bool impl) {
 	case CORBA::tk_string:
 	case CORBA::tk_objref: // modeled as a string
 	  ocpiType = "String";
-	  fprintf(f, " StringLength=\"%lu\"", (unsigned long)type->length());	
+	  fprintf(f, " StringLength=\"%lu\"", (size_t long)type->length());	
 	  break;
 	case CORBA::tk_struct:
 	  ocpiType = "Struct";
@@ -328,9 +329,9 @@ const char *emit_ocpi_xml(const char *specFile, const char *implFile,
 			  const char *specName, const char *implName,
 			  const char *parentFile, const char *model,
 			  char *idlFiles[], bool debug,
-			  Property *properties, unsigned nProps,
-			  Port *ports, unsigned nPorts,
-			  Test *tests, unsigned nTests)
+			  Property *properties, size_t nProps,
+			  Port *ports, size_t nPorts,
+			  Test *tests, size_t nTests)
 {
   ( void ) tests;
   ( void ) nTests;
@@ -363,7 +364,7 @@ const char *emit_ocpi_xml(const char *specFile, const char *implFile,
 	  "<ComponentSpec Name=\"%s\">\n", specName);
   emit_props(f, properties, nProps, false);
   Port *p = ports;
-  for (unsigned n = 0; n < nPorts; n++, p++) {
+  for (size_t n = 0; n < nPorts; n++, p++) {
     fprintf(f, "  <DataInterfaceSpec Name=\"%s\" Producer=\"%s\">\n",
 	    p->name, p->provider ? "false" : "true");
     if ((err = doPort(f, p, n, repo, debug)))

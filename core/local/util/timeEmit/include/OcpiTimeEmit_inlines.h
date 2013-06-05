@@ -134,9 +134,9 @@ namespace OCPI {
       std::string     className;
       std::string     instanceName;
       int             instanceId;
-      int             parentIndex;   // Index into this vector
+      OwnerId         parentIndex;   // Index into this vector
       std::string     outputPostFix;
-      HeaderEntry( std::string& cn, std::string& in, int i, int pi  )
+      HeaderEntry( std::string& cn, std::string& in, int i, OwnerId pi  )
         :className(cn),instanceName(in),instanceId(i),parentIndex(pi){};
     };
 
@@ -384,7 +384,7 @@ inline void OCPI::Time::Emit::emitT( EventId id, OCPI::API::PValue& p, Time t, E
     break;    
 
   case OCPI::API::OCPI_String:
-    m_q->current->size = strlen(p.vString) + 1;
+    m_q->current->size = (unsigned)strlen(p.vString) + 1;
     memcpy( &m_q->current[1], &p.vString, m_q->current->size );
     break;    
 

@@ -119,7 +119,7 @@ getNextSym( char * mysym )
   if ( ! init ) {
     init = true;
     for ( int n=0; n<SYMLEN; n++ ) {
-      syms[n] = SYMSTART + n;
+      syms[n] = (char)(SYMSTART + n);
     }
   }
 
@@ -182,7 +182,7 @@ struct VCDValue :  public VCDBase {
         type = VariableT;
         // Format 01010token
         std::string t;
-        int n;
+        long n;
         for (n=m_value.length()-1; n>=0; n--) {
           if ( (m_value[n]>=48) && (m_value[n]<=57) ) {
             memcpy(token,t.c_str(),t.length());

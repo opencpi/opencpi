@@ -100,13 +100,13 @@ rotRun (RCCWorker * wctx,
   pDataOut->output.length = count;
 
   while (count--) {
-    int c = *iptr++;
+    char c = *iptr++;
 
     if (isupper (c)) {
-      c = 'A' + (((c - 'A') + key) % 26);
+      c = (char)('A' + (((c - 'A') + key) % 26));
     }
     else if (islower (c)) {
-      c = 'a' + (((c - 'a') + key) % 26);
+      c = (char)('a' + (((c - 'a') + key) % 26));
     }
 
     *optr++ = c;

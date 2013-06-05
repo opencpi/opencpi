@@ -49,5 +49,3 @@ make install
 sed < ../sample.cfg 's/^#.*InitRef\(.*\)my.host.name.*/InitRef\1localhost/' > omniORB.cfg
 cp omniORB.cfg $OCPI_PREREQUISITES_INSTALL_DIR/omniorb/etc
 echo ============= omniorb for $OCPI_TARGET_HOST built and installed in $OCPI_PREREQUISITES_INSTALL_DIR/omniorb/$OCPI_TARGET_HOST
-
-

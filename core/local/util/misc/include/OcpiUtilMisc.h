@@ -46,6 +46,7 @@
  *                  Initial version.
  */
 
+#include <stdint.h>
 #include <string>
 #include <cstdio>
 #include <istream>
@@ -73,12 +74,38 @@
 #define TRACE(s)
 #endif
 
+#if defined(NDEBUG)
+#define OCPI_UTRUNCATE(type, val) ((type)(val))
+#define OCPI_STRUNCATE(type, val) ((type)(val))
+#define OCPI_SIZEOF(utype, stype) ((utype)sizeof(stype))
+#else
+#define OCPI_UTRUNCATE(type, val) \
+  ((type)OCPI::Util::utruncate((uint64_t)(val), sizeof(type)))
+#define OCPI_STRUNCATE(type, val) \
+  ((type)OCPI::Util::struncate((int64_t)(val), sizeof(type)))
+#define OCPI_SIZEOF(utype, stype) \
+  ((utype)OCPI::Util::utruncate((uint64_t)sizeof(stype), sizeof(utype)))
+#endif
 
 namespace OCPI {
   namespace Util {
+
     /**
      * \brief Miscellaneous utilities.
      */
+    inline uint64_t utruncate(uint64_t val, unsigned bytes) {
+      ocpiAssert(bytes == sizeof(val) ||
+		 val <= ~((uint64_t)-1 << (bytes*8)));
+      return val;
+    }
+    inline int64_t struncate(int64_t val, unsigned bytes) {
+      ocpiAssert(bytes == sizeof(val) ||
+		 (val < 0 ?
+		  val >= (int64_t)-1 << (bytes*8-1) :
+		  val <= ~((int64_t)-1 << (bytes*8-1))));
+      return val;
+    }
+    int64_t struncate(int64_t val, unsigned bytes);
       /**
        * \brief Convert an integer to a string.
        *

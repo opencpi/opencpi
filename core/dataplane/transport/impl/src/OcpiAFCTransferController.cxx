@@ -99,7 +99,7 @@ modifyOutputOffsets( Buffer* me, Buffer* new_buffer, bool reverse )
   ( void ) me;
   ( void ) new_buffer;
   ( void ) reverse;
-  ocpiAssert(!"AFCShadowTransferController::modifyOutputOffsets() Should never be called !!\n");
+  ocpiAssert("AFCShadowTransferController::modifyOutputOffsets() Should never be called !!\n"==0);
 }
 
 
@@ -245,8 +245,9 @@ getNextFullInputBuffer(
 
   InputBuffer* buffer;
   if ( hasFullInputBuffer( input_port, &buffer ) ) {
-    int& lo = input_port->getLastBufferOrd();
-    int tlo = ((lo+1)%input_port->getBufferCount());
+    BufferOrdinal
+      &lo = input_port->getLastBufferOrd(),
+      tlo = ((lo+1)%input_port->getBufferCount());
     lo = tlo;    
     buffer->setInUse( true );
     buffer->m_pullTransferInProgress = NULL;
@@ -274,8 +275,9 @@ hasFullInputBuffer(
                     )const
 {
   InputBuffer* buffer;
-  int& lo = input_port->getLastBufferOrd();
-  int tlo = ((lo+1)%input_port->getBufferCount());
+  BufferOrdinal
+    &lo = input_port->getLastBufferOrd(),
+    tlo = ((lo+1)%input_port->getBufferCount());
   *retb = buffer = static_cast<InputBuffer*>(input_port->getBuffer(tlo));
   volatile BufferState* state = buffer->getState();
   //  ocpiAssert(!"AFC buffer check");

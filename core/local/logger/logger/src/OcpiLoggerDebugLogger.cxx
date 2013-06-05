@@ -212,7 +212,7 @@ DebugLoggerBuf::overflow (int_type c)
   ocpiAssert (m_locked);
 
   if (!m_shouldprint) {
-    if (traits_type::eq (c, traits_type::eof())) {
+    if (traits_type::eq_int_type (c, traits_type::eof())) {
       return traits_type::not_eof (c);
     }
 
@@ -220,12 +220,12 @@ DebugLoggerBuf::overflow (int_type c)
   }
 
   if (m_first) {
-    m_out.setLogLevel (9 + m_verbosity);
+    m_out.setLogLevel ((unsigned short)(9 + m_verbosity));
     m_out.setProducerName (m_producerName.c_str());
     m_first = false;
   }
 
-  if (traits_type::eq (c, traits_type::eof())) {
+  if (traits_type::eq_int_type (c, traits_type::eof())) {
     return traits_type::not_eof (c);
   }
 
@@ -243,7 +243,7 @@ DebugLoggerBuf::xsputn (const char * data, std::streamsize count)
   }
 
   if (m_first) {
-    if (traits_type::eq (overflow (traits_type::eof()), traits_type::eof())) {
+    if (traits_type::eq_int_type (overflow (traits_type::eof()), traits_type::eof())) {
       return 0;
     }
   }

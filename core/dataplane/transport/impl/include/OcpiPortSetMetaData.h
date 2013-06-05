@@ -81,15 +81,15 @@ namespace OCPI {
 
       // buffer count, the number of buffers for all ports within a port set
       // must be the same
-      OCPI::OS::uint32_t bufferCount;
+      uint32_t bufferCount;
 
       // Buffer length of all buffers in the set
-      OCPI::OS::uint32_t bufferLength;
+      uint32_t bufferLength;
 
       // Port Set id
-      OCPI::OS::int32_t        portSetId;
+      int32_t        portSetId;
 
-      inline PortMetaData* getPortInfo( OCPI::OS::int32_t idx )
+      inline PortMetaData* getPortInfo(int32_t idx )
       {return static_cast<PortMetaData*>(m_portMd[idx]);}
 
       // User data
@@ -115,7 +115,6 @@ namespace OCPI {
                        ConnectionMetaData* c,
 		       DataTransfer::EndPoint &inputEp,
                        const OCPI::RDT::Descriptors* inputDesc, 
-		       //                       OCPI::OS::uint32_t cid,
                        int port_count,
                        int buffer_count,
                        int buffer_size,

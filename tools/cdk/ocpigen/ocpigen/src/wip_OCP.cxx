@@ -69,19 +69,19 @@ static unsigned myfls(uint64_t n) {
   return 0;
 }
 // Derive the OCP signal configuration based on the WIP profile
-uint64_t ceilLog2(uint64_t n) {
-  return n ? myfls(n - 1) : 0;
+size_t ceilLog2(uint64_t n) {
+  return OCPI_UTRUNCATE(size_t, n ? myfls(n - 1) : 0);
 }
-static unsigned floorLog2(uint64_t n) {
+static size_t floorLog2(uint64_t n) {
   //  ocpiInfo("Floor log2 of %u is %u", n, myfls(n)-1);
-  return myfls(n) - 1;
+  return OCPI_UTRUNCATE(size_t, myfls(n) - 1);
 }
 #define max(a,b) ((a) > (b) ? (a) : (b))
 
 static void fixOCP(Port *p) {
   OcpSignal *o = p->ocp.signals;
   OcpSignalDesc *osd = ocpSignals;
-  unsigned nAlloc = 0;
+  size_t nAlloc = 0;
   for (unsigned i = 0; i < N_OCP_SIGNALS; i++, o++, osd++)
     if (o->value || o->width) {
       if (osd->vector) {
@@ -176,11 +176,11 @@ deriveOCP(Worker *w) {
     case WMIPort:
       p->master = true;
       {
-	unsigned n = (p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth +
+	size_t n = (p->protocol->m_maxMessageValues * p->protocol->m_dataValueWidth +
 		      p->dataWidth - 1) / p->dataWidth;
 	if (n > 1) {
 	  ocp->MAddr.width = ceilLog2(n);
-	  unsigned nn = ceilLog2(p->dataWidth);
+	  unsigned long nn = ceilLog2(p->dataWidth);
 	  if (nn > 3)
 	    ocp->MAddr.width += ceilLog2(p->dataWidth) - 3;
 	}

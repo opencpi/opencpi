@@ -39,23 +39,38 @@ ifndef RCC_MAKE_MK
 RCC_MAKE_MK:=xxx
 include $(OCPI_CDK_DIR)/include/util.mk
 
-ifdef RccTargets
-RccTarget:=$(RccTargets)
-endif
+#ifdef RccTargets
+#RccTarget:=$(RccTargets)
+#endif
 
-ifndef RccTarget
-RccTarget:=$(OCPI_TARGET_HOST)
-endif
-
-ifeq ($(RccTarget),Linux-MCS_864x)
-GCC=/opt/timesys/toolchains/ppc86xx-linux/bin/ppc86xx-linux-gcc
-GCCLINK=$(GCC)
-else ifeq ($(RccTarget),Linux-x86_32)
-GCC=gcc -m32
-GCCLINK=gcc -m32 -m elf_i386
-endif
-$(call OcpiDbgVar,RccTarget)
 ifndef RccTargets
-RccTargets=$(RccTarget)
+ifdef RccTarget
+RccTargets:=$(RccTarget)
+else
+RccTargets:=$(OCPI_TARGET_HOST)
+endif
+endif
+
+$(call OcpiDbgVar,RccTargets)
+
+RccOs=$(word 1,$(subst -, ,$1))
+RccOsVersion=$(word 2,$(subst -, ,$1))
+RccArch=$(word 3,$(subst -, ,$1))
+
+#ifndef RccTargets
+#RccTargets=$(RccTarget)
+#endif
+# Read in all the tool sets indicated by the targets
+# 
+ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
+
+$(foreach t,$(RccTargets),\
+  $(foreach m,$(if $(findstring $(OCPI_TOOL_HOST),$t),$t, $(OCPI_TOOL_HOST)=$t),\
+    $(if $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
+       $(eval include $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
+       $(if $(findstring =,$m),\
+         $(error There is no cross compiler defined from $(OCPI_TOOL_HOST) to $t),\
+         $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk)))))
+
 endif
 endif

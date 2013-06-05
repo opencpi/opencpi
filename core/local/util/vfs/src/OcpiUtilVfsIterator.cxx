@@ -40,8 +40,8 @@ namespace {
         const std::string & pat)
     throw ()
   {
-    int strIdx = 0, strLen = str.length ();
-    int patIdx = 0, patLen = pat.length ();
+    size_t strIdx = 0, strLen = str.length ();
+    size_t patIdx = 0, patLen = pat.length ();
     const char * name = str.data ();
     const char * pattern = pat.data ();
 

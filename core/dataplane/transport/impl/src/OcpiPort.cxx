@@ -63,10 +63,9 @@
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;
 using namespace DtI;
-using namespace DtOsDataTypes;
-using namespace OCPI::OS;
+namespace OS = OCPI::OS;
 namespace OU = OCPI::Util;
-
+namespace DDT = DtOsDataTypes;
 // Buffer allignment
 #define BUF_ALIGNMENT 7
 
@@ -161,10 +160,10 @@ void OCPI::DataTransport::Port::initialize()
   m_portDependencyData.offsets = static_cast<PortMetaData::BufferOffsets*>
     (m_localSMemResources->sMemServices->map 
      (m_offsetsOffset, 
-      sizeof(PortMetaData::BufferOffsets)*m_bufferCount ));
+      sizeof(PortMetaData::BufferOffsets)*m_bufferCount));
 
   memcpy(m_portDependencyData.offsets,m_data->m_bufferData,
-         sizeof(PortMetaData::BufferOffsets[m_bufferCount]));
+         sizeof(PortMetaData::BufferOffsets)*m_bufferCount);
 
   delete [] m_data->m_bufferData;
   m_data->m_bufferData = m_portDependencyData.offsets;
@@ -391,8 +390,8 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
         desc.desc.emptyFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
 
     }
-
-      if ( getCircuit()->m_transport->m_transportGlobal->useEvents() ) {
+#if 0
+    if ( getCircuit()->m_transport->m_transportGlobal->useEvents() ) {
 
       ocpiDebug("We are using EVENTS\n");
                 
@@ -409,10 +408,12 @@ void OCPI::DataTransport::Port::getPortDescriptor( OCPI::RDT::Descriptors& desc,
       desc.desc.fullFlagValue = 1 | 
         ((OCPI::OS::uint64_t)(0xfff)<<32) | (OCPI::OS::uint64_t)1<<63;
     }
+#else
+    desc.desc.fullFlagValue = 1;
+#endif
+    ocpiDebug("Full flag value = 0x%" DTOSDATATYPES_FLAG_PRIx"\n", desc.desc.fullFlagValue);
 
-    ocpiDebug("Full flag value = 0x%llx\n", (long long)desc.desc.fullFlagValue );
-
-    desc.desc.oob.port_id = reinterpret_cast<uint64_t>(this);
+    desc.desc.oob.port_id = getPortId(); //reinterpret_cast<uint64_t>(this);
     strcpy(desc.desc.oob.oep, m_realSMemResources->sMemServices->endpoint()->end_point.c_str());
     desc.desc.nBuffers = getPortSet()->getBufferCount();
     desc.desc.dataBufferSize = this->getPortSet()->getBufferLength();
@@ -533,17 +534,17 @@ OCPI::DataTransport::Port::
 createBuffers()
 {
         
-  ocpiDebug("Number of buffers = %d", this->getBufferCount() );
+  ocpiDebug("Number of buffers = %zd", this->getBufferCount() );
 
   ocpiAssert(m_bufferCount == this->getBufferCount());
 
-  ocpiDebug("Port::CreateBuffers1: port %p bmd %p offset 0x%" PRIx64,
+  ocpiDebug("Port::CreateBuffers1: port %p bmd %p offset 0x%" OCPI_UTIL_RESADDR_PRIx,
 	    this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
 
   // Do the resource allocation first to make sure we can habdle the request.
   allocateBufferResources();
 
-  ocpiDebug("Port::CreateBuffers2: port %p bmd %p offset 0x%" PRIx64,
+  ocpiDebug("Port::CreateBuffers2: port %p bmd %p offset 0x%" OCPI_UTIL_RESADDR_PRIx,
 	    this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
 
   // Here we will create our buffers
@@ -564,7 +565,7 @@ createBuffers()
 
 }
 
-OCPI::OS::uint32_t 
+size_t
 Port::
 getBufferCount()
 {
@@ -638,8 +639,10 @@ OCPI::DataTransport::Port::
 	res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_shadow_location )->sMemResourceMgr;
 	ocpiAssert( res_mgr );
 
-	rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox],
-			    sizeof(BufferState));
+	rc = res_mgr->free(OCPI_UTRUNCATE(OU::ResAddr,
+					  m_data->m_bufferData[index].inputOffsets.
+					  myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox]),
+			   sizeof(BufferState));
 	ocpiAssert( rc == 0 );
       }
 
@@ -695,7 +698,7 @@ bool OCPI::DataTransport::Port::ready()
     if ( ! isOutput() ) {  // Real input
 
       // Now make sure that all of our shadow offsets have been allocated
-      for ( OCPI::OS::uint32_t n=0; n<getCircuit()->getOutputPortSet()->getPortCount(); n++ ) {
+      for (PortOrdinal n = 0; n < getCircuit()->getOutputPortSet()->getPortCount(); n++) {
 
         PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
         OCPI::DataTransport::Port* output_port = static_cast<OCPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
@@ -726,16 +729,16 @@ bool OCPI::DataTransport::Port::ready()
 		    getCircuit()->getCircuitId());
                                         
           DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
-          mb->request.reqShadowOffsets.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
+          mb->request.header.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
                   
 
-          if ( this->m_data->remoteCircuitId != -1 ) {
-            mb->request.reqShadowOffsets.circuitId = this->m_data->remoteCircuitId;
-            mb->request.reqShadowOffsets.portId    = this->m_data->remotePortId;
+          if ( this->m_data->remoteCircuitId != 0 ) {
+            mb->request.header.circuitId = this->m_data->remoteCircuitId;
+            mb->request.reqShadowOffsets.portId = this->m_data->remotePortId;
           }
           else {
-            mb->request.reqShadowOffsets.circuitId = getCircuit()->getCircuitId();
-            mb->request.reqShadowOffsets.portId    = getPortId();
+            mb->request.header.circuitId = getCircuit()->getCircuitId();
+            mb->request.reqShadowOffsets.portId = getPortId();
           }
 
           ocpiDebug("Making return address to %s", 
@@ -795,14 +798,14 @@ bool OCPI::DataTransport::Port::ready()
 		  (long long unsigned)m_offsetsOffset, getCircuit()->getCircuitId());
 
         DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
-        mb->request.reqInputOffsets.type = DataTransfer::ContainerComms::ReqInputOffsets;
+        mb->request.header.type = DataTransfer::ContainerComms::ReqInputOffsets;
 
-        if ( this->m_data->remoteCircuitId != -1 ) {
-          mb->request.reqInputOffsets.circuitId = this->m_data->remoteCircuitId;
+        if ( this->m_data->remoteCircuitId != 0 ) {
+          mb->request.header.circuitId = this->m_data->remoteCircuitId;
           mb->request.reqInputOffsets.portId    = this->m_data->remotePortId;
         }
         else {
-          mb->request.reqInputOffsets.circuitId = getCircuit()->getCircuitId();
+          mb->request.header.circuitId = getCircuit()->getCircuitId();
           mb->request.reqInputOffsets.portId    = getPortId();
         }
 
@@ -822,7 +825,7 @@ bool OCPI::DataTransport::Port::ready()
 
 
       // Now make sure that all of our shadow offsets have been allocated
-      for ( OCPI::OS::uint32_t n=0; n<getCircuit()->getOutputPortSet()->getPortCount(); n++ ) {
+      for (PortOrdinal n = 0; n < getCircuit()->getOutputPortSet()->getPortCount(); n++) {
                                 
         PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
         OCPI::DataTransport::Port* shadow_port = static_cast<OCPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
@@ -848,15 +851,15 @@ bool OCPI::DataTransport::Port::ready()
 		    getCircuit()->getCircuitId());
 
           DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
-          mb->request.reqShadowOffsets.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
+          mb->request.header.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
                                 
 
-          if ( this->m_data->remoteCircuitId != -1 ) {
-            mb->request.reqShadowOffsets.circuitId = this->m_data->remoteCircuitId;
+          if ( this->m_data->remoteCircuitId != 0) {
+            mb->request.header.circuitId = this->m_data->remoteCircuitId;
             mb->request.reqShadowOffsets.portId    = this->m_data->remotePortId;
           }
           else {
-            mb->request.reqShadowOffsets.circuitId = getCircuit()->getCircuitId();
+            mb->request.header.circuitId = getCircuit()->getCircuitId();
             mb->request.reqShadowOffsets.portId    = getPortId();
           }
 
@@ -887,8 +890,8 @@ bool OCPI::DataTransport::Port::ready()
 	// We have received the output offsets.  Perform any required protocol info
 	// processing if there is any.  This means stashing the received protocol info
 	// into the circuit object.
-	uint32_t protocolSize;
-	uint64_t protocolOffset;
+	size_t protocolSize;
+	OCPI::Util::ResAddrType protocolOffset;
 	getCircuit()->getProtocolInfo(protocolSize, protocolOffset);
 	if (protocolSize) {
 	  ocpiDebug("Receiving protocol info offset 0x%llx size %lu",
@@ -900,7 +903,7 @@ bool OCPI::DataTransport::Port::ready()
 	  char *copy = new char[protocolSize];
 	  memcpy(copy, myProtocolBuffer, protocolSize);
 	  ocpiDebug("Received protocol info: \"%s\"", isprint(*copy) ? copy : "unprintable");
-	  getCircuit()->setProtocol(copy);
+	  getCircuit()->setProtocol(copy); // clears procotol size
 	  s_res->sMemServices->unMap();	  
 	}
       } else {
@@ -914,15 +917,15 @@ bool OCPI::DataTransport::Port::ready()
 		  getCircuit()->getCircuitId());
 
         DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
-        mb->request.reqOutputContOffset.type = DataTransfer::ContainerComms::ReqOutputControlOffset;
+        mb->request.header.type = DataTransfer::ContainerComms::ReqOutputControlOffset;
 
             
-        if ( this->m_data->remoteCircuitId != -1 ) {
-          mb->request.reqOutputContOffset.circuitId = this->m_data->remoteCircuitId;
+        if ( this->m_data->remoteCircuitId != 0 ) {
+          mb->request.header.circuitId = this->m_data->remoteCircuitId;
           mb->request.reqOutputContOffset.portId    = this->m_data->remotePortId;
         }
         else {
-          mb->request.reqOutputContOffset.circuitId = getCircuit()->getCircuitId();
+          mb->request.header.circuitId = getCircuit()->getCircuitId();
           mb->request.reqOutputContOffset.portId    = getPortId();
         }
 
@@ -930,11 +933,14 @@ bool OCPI::DataTransport::Port::ready()
         strcpy(mb->request.reqOutputContOffset.shadow_end_point,
                m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
 
-	uint32_t protocolSize;
-	getCircuit()->getProtocolInfo(protocolSize, mb->request.reqOutputContOffset.protocol_offset);
+	size_t protocolSize;
+	OU::ResAddr poffset;
+	getCircuit()->getProtocolInfo(protocolSize, poffset);
+	// convert local offset into a remote one for the other guy
+	mb->request.reqOutputContOffset.protocol_offset = poffset;
 
         ocpiDebug("Making return address to %s", 
-               m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
+		  m_localSMemResources->sMemServices->endpoint()->end_point.c_str());
         ocpiDebug("Setting port id = %lld", (long long)mb->request.reqShadowOffsets.portId );
 
         mb->return_offset = m_offsetsOffset;
@@ -1023,10 +1029,58 @@ void OCPI::DataTransport::Port::releaseOffsets( OCPI::Util::VList& offsets )
   offsets.destroyList();
 }
 
+static void
+addOffset(OU::VList& offsets, DDT::Offset from_base, DDT::Offset to_base,
+	  size_t adjust, const char *debug) {
+  Port::ToFrom* tf = new Port::ToFrom;
+  DDT::Offset adj = OCPI_UTRUNCATE(DDT::Offset, adjust);
+  tf->from_offset = from_base + adj;
+  tf->to_offset = to_base + adj;
+  offsets.push_back(tf);
+  ocpiDebug("Wrote %s offsets 0x%" DTOSDATATYPES_OFFSET_PRIx
+	    " to address 0x%" DTOSDATATYPES_OFFSET_PRIx, 
+	    debug, tf->from_offset, tf->to_offset );
+}
+
 /**********************************
  * get buffer offsets to dependent data
  *********************************/
-void OCPI::DataTransport::Port::getOffsets( OCPI::OS::uint64_t to_base_offset, OCPI::Util::VList& offsets )
+// g++ doesn't allow a computed address
+#define myoffsetof(t,m) ((size_t)(&((t*)0)->m))
+
+void OCPI::DataTransport::Port::
+getOffsets( DDT::Offset to_base_offset, OU::VList& offsets )
+{
+  DDT::Offset
+    from_offset = m_offsetsOffset,
+    to_offset = to_base_offset,
+    increment = OCPI_UTRUNCATE(DDT::Offset, sizeof(PortMetaData::BufferOffsets));
+  
+  for (unsigned n = 0; n < getPortSet()->getBufferCount();
+       n++, from_offset += increment, to_offset += increment) {
+    size_t adjust;    
+    const char *type;
+    if (isOutput()) {
+      adjust = myoffsetof(PortMetaData::BufferOffsets, outputOffsets.portSetControlOffset);
+      type = "output";
+    } else if (m_shadow) {
+      adjust = myoffsetof(PortMetaData::BufferOffsets, inputOffsets.myShadowsRemoteStateOffsets[m_mailbox]);
+      type = "shadow";
+    } else {
+      // Real input ports get three extra ones
+      addOffset(offsets, from_offset, to_offset, 
+		myoffsetof(PortMetaData::BufferOffsets, inputOffsets.bufferOffset), "input");		
+      addOffset(offsets, from_offset, to_offset, 
+		myoffsetof(PortMetaData::BufferOffsets, inputOffsets.bufferSize), "buffer size");		
+      addOffset(offsets, from_offset, to_offset, 
+		myoffsetof(PortMetaData::BufferOffsets, inputOffsets.localStateOffset), "local state");
+      adjust = myoffsetof(PortMetaData::BufferOffsets, inputOffsets.metaDataOffset);
+    }
+    addOffset(offsets, from_offset, to_offset, adjust, type);
+  }
+}
+
+#if 0
 {
   PortMetaData::BufferOffsets* from_offset = (PortMetaData::BufferOffsets*)m_offsetsOffset;
   PortMetaData::BufferOffsets* to_offset = (PortMetaData::BufferOffsets*)to_base_offset;
@@ -1092,7 +1146,7 @@ void OCPI::DataTransport::Port::getOffsets( OCPI::OS::uint64_t to_base_offset, O
                                 
   }
 }
-
+#endif
 
 
 /**********************************
@@ -1139,7 +1193,7 @@ void
 Port::
 createOutputOffsets()
 {
-  uint32_t boffset, moffset, soffset, coffset;
+  OCPI::Util::ResAddrType boffset, moffset, soffset, coffset;
   int rc;
   bool local=false;
   uint32_t index;
@@ -1171,15 +1225,15 @@ createOutputOffsets()
                                          NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
     }
 
-    ocpiDebug("Port::createOutputOffsets1: port %p bmd %p offset 0x%" PRIx64,
+    ocpiDebug("Port::createOutputOffsets1: port %p bmd %p offset 0x%" OCPI_UTIL_RESADDR_PRIx,
 	      this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.bufferOffset = boffset+(index*m_data->m_portSetMd->bufferLength);
       m_data->m_bufferData[index].outputOffsets.bufferSize =  m_data->m_portSetMd->bufferLength;
     }
-    ocpiDebug("Port %p bmd %p count %d boffset %" PRIx32, this, m_data->m_bufferData,
+    ocpiDebug("Port %p bmd %p count %d boffset %" OCPI_UTIL_RESADDR_PRIx, this, m_data->m_bufferData,
 	      bCount, boffset);
-    ocpiDebug("Port::createOutputOffsets2: port %p bmd %p offset 0x%" PRIx64,
+    ocpiDebug("Port::createOutputOffsets2: port %p bmd %p offset 0x%" OCPI_UTIL_RESADDR_PRIx,
 	      this, m_data->m_bufferData, m_data->m_bufferData[0].outputOffsets.bufferOffset);
     // Allocate the local state
     rc = res_mgr->alloc( sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2, 
@@ -1191,7 +1245,7 @@ createOutputOffsets()
     }
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.localStateOffset = 
-        soffset + index * MAX_PCONTRIBS * sizeof(BufferState) * 2;
+        soffset + index * MAX_PCONTRIBS * OCPI_UTRUNCATE(OU::ResAddr, sizeof(BufferState)) * 2;
     }
                 
     // Allocate the meta-data structure
@@ -1205,7 +1259,7 @@ createOutputOffsets()
     }
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.metaDataOffset = 
-        moffset + index * MAX_PCONTRIBS * sizeof(BufferMetaData);
+        moffset + index * MAX_PCONTRIBS * OCPI_UTRUNCATE(OU::ResAddr, sizeof(BufferMetaData));
     }
 
     // Allocate the port set control structure if needed (even shadows get one of these)
@@ -1235,7 +1289,7 @@ void
 Port::
 createInputOffsets() 
 {
-    uint32_t boffset, moffset, soffset;
+  OCPI::Util::ResAddrType boffset, moffset, soffset;
     int rc;
     bool local=false;
     ResourceServices* res_mgr;
@@ -1270,7 +1324,7 @@ createInputOffsets()
         m_data->m_bufferData[index].inputOffsets.bufferSize = m_data->m_portSetMd->bufferLength;
       }
                 
-      ocpiDebug("***Input buffer offset = 0x%" PRIx32 "", boffset );
+      ocpiDebug("***Input buffer offset = 0x%" OCPI_UTIL_RESADDR_PRIx "", boffset );
                 
       // Allocate the meta-data structure
       rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount, 
@@ -1281,7 +1335,7 @@ createInputOffsets()
       }
       for ( index=0; index<bCount; index++ ) {
         m_data->m_bufferData[index].inputOffsets.metaDataOffset = 
-          moffset + index * sizeof(BufferMetaData) * MAX_PCONTRIBS;
+          moffset + index * OCPI_UTRUNCATE(OU::ResAddr, sizeof(BufferMetaData)) * MAX_PCONTRIBS;
       }
                 
       // Allocate the local state(s)
@@ -1295,7 +1349,7 @@ createInputOffsets()
       }
       for ( index=0; index<bCount; index++ ) {
         m_data->m_bufferData[index].inputOffsets.localStateOffset = 
-          soffset + (index * sizeof(BufferState) * MAX_PCONTRIBS * 2);
+          soffset + (index * OCPI_UTRUNCATE(OU::ResAddr, sizeof(BufferState)) * MAX_PCONTRIBS * 2);
       }
                 
     }
@@ -1314,6 +1368,7 @@ createInputOffsets()
       m_data->m_shadowPortDescriptor.desc.emptyFlagSize = sizeof(BufferState);
       m_data->m_shadowPortDescriptor.desc.emptyFlagPitch = sizeof(BufferState);
 
+#if 0
       if ( getCircuit()->m_transport->m_transportGlobal->useEvents() ) {
         int lr,hr;
         getCircuit()->m_transport->m_transportGlobal->getEventManager()->getEventRange(lr,hr);
@@ -1326,19 +1381,21 @@ createInputOffsets()
           ((OCPI::OS::uint64_t)(0xfff)<<32)
           | (OCPI::OS::uint64_t)1<<63;
       }
-                
+#else
+      // We are telling the real input port what to send to us to indicate that the
+      // buffer has become empty
+      m_data->m_shadowPortDescriptor.desc.emptyFlagValue = EF_EMPTY_VALUE;
+#endif                
       //    printf("EmptyFlag value = 0x%llx\n", m_shadowPortDescriptor.desc.emptyFlagValue);
                 
-#if 0
-      strcpy( m_data->m_shadowPortDescriptor.desc.oob.oep,m_data->m_shadow_location->end_point.c_str());
-#else
       Transport::fillDescriptorFromEndPoint(*m_data->m_shadow_location, 
-				 m_data->m_shadowPortDescriptor);
-#endif
-      m_data->m_shadowPortDescriptor.desc.oob.port_id = m_data->m_externPortDependencyData.desc.oob.port_id;
+					    m_data->m_shadowPortDescriptor);
+      m_data->m_shadowPortDescriptor.desc.oob.port_id =
+	m_data->m_externPortDependencyData.desc.oob.port_id;
       for ( index=0; index<bCount; index++ ) {
-        m_data->m_bufferData[index].inputOffsets.myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox] = 
-          soffset + index * sizeof(BufferState);
+        m_data->m_bufferData[index].inputOffsets.
+	  myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox] = 
+          soffset + index * OCPI_UTRUNCATE(OU::ResAddr, sizeof(BufferState));
       }
 
     }
@@ -1409,13 +1466,13 @@ hasEmptyOutputBuffer()
 
 OCPI::DataTransport::BufferUserFacet* 
 OCPI::DataTransport::Port::
-getNextFullInputBuffer(void *&data, uint32_t &length, uint8_t &opcode)
+getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
 {
   OCPI::DataTransport::Buffer* buf = getNextFullInputBuffer();
   if (buf) {
 
     data = (void*)buf->getBuffer(); // cast off the volatile
-    opcode = buf->getMetaData()->ocpiMetaDataWord.opCode;
+    opcode = (uint8_t)buf->getMetaData()->ocpiMetaDataWord.opCode;
     length = buf->getDataLength();
     OCPI_EMIT_CAT__("Data Buffer Received" , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
 
@@ -1477,7 +1534,7 @@ inputAvailable( Buffer* input_buf )
  *********************************/
 OCPI::DataTransport::BufferUserFacet* 
 OCPI::DataTransport::Port::
-getNextEmptyOutputBuffer(void *&data, uint32_t &length)
+getNextEmptyOutputBuffer(void *&data, size_t &length)
 {
   OCPI::DataTransport::Buffer *buf = getNextEmptyOutputBuffer();
   if (buf) {
@@ -1545,15 +1602,14 @@ getNextEmptyOutputBuffer()
 
 void 
 Port::
-sendZcopyInputBuffer( Buffer* src_buf, unsigned int len, uint8_t op)
+sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op)
 {
-  src_buf->getMetaData()->ocpiMetaDataWord.length = len;
+  src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
   getCircuit()->sendZcopyInputBuffer( this, src_buf, len );
 }
 
-OCPI::OS::uint32_t 
-Port::
+size_t Port::
 getBufferLength()
 {
   return getPortSet()->getBufferLength();
@@ -1561,15 +1617,15 @@ getBufferLength()
 
 void 
 Port::
-sendOutputBuffer( BufferUserFacet* buf, unsigned int length, uint8_t opcode )
+sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
 {
   if (length > getBufferLength())
-    throw OU::Error("Buffer being sent with data length (%u) exceeding buffer length (%u)",
+    throw OU::Error("Buffer being sent with data length (%zu) exceeding buffer length (%zu)",
 		    length, getBufferLength());
   Buffer *b = static_cast<Buffer *>(buf);
   // Put the actual opcode and data length in the meta-data
   b->getMetaData()->ocpiMetaDataWord.opCode = opcode;
-  b->getMetaData()->ocpiMetaDataWord.length = length;
+  b->getMetaData()->ocpiMetaDataWord.length = (uint32_t)length; // FIXME check truncation?
 
   
 

@@ -358,7 +358,7 @@ namespace OCPI {
       int64_t n;
       if (getNum64(cp, &n) || n > INT16_MAX || n < INT16_MIN)
 	return "bad Short value";
-      vp = n;
+      vp = (int16_t)n;
       return NULL;
     }
     const char *Value::
@@ -367,7 +367,7 @@ namespace OCPI {
       int64_t n;
       if (getNum64(cp, &n) || n > INT32_MAX || n < INT32_MIN)
 	return "bad Long value";
-      vp = n;
+      vp = (int32_t)n;
       return NULL;
     }
     const char *Value::
@@ -383,7 +383,7 @@ namespace OCPI {
 	uint64_t n;
 	if (getUNum64(cp, &n) || n > UINT8_MAX)
 	  return "bad UChar value";
-	vp = n;
+	vp = (uint8_t)n;
       }
       return NULL;
     }
@@ -393,7 +393,7 @@ namespace OCPI {
       uint64_t n;
       if (getUNum64(cp, &n) || n > UINT32_MAX)
 	return "bad ULong value";
-      vp = n;
+      vp = (uint32_t)n;
       return NULL;
     }
     const char *Value::
@@ -402,7 +402,7 @@ namespace OCPI {
       uint64_t n;
       if (getUNum64(cp, &n) || n > UINT16_MAX)
 	return "bad UShort value";
-      vp = n;
+      vp = (uint16_t)n;
       return NULL;
     }
     const char *Value::
@@ -460,7 +460,7 @@ namespace OCPI {
 	doElement(unparsed, stop, start, end);
 	if (start == end)
 	  return "empty member value in struct value";
-	unsigned n, len;
+	size_t n, len;
 	for (n = 0; n < m_vt->m_nMembers; n++) {
 	  const char *mName = m_vt->m_members[n].m_name.c_str();
 	  len = strlen(mName);
@@ -504,11 +504,11 @@ namespace OCPI {
     }
     const char *Value::
     parseEnum(const char *unparsed, const char *stop, EnumValue &sv) {
-      for (unsigned n = 0; n < m_vt->m_nEnums; n++) {
-	unsigned len = strlen(m_vt->m_enums[n]);
+      for (size_t n = 0; n < m_vt->m_nEnums; n++) {
+	size_t len = strlen(m_vt->m_enums[n]);
 	if (!strncasecmp(m_vt->m_enums[n], unparsed, len) &&
 	    unparsed + len == stop) {
-	  sv = n;
+	  sv = (EnumValue)n;
 	  return NULL;
 	}
       }
@@ -570,7 +570,7 @@ namespace OCPI {
 	if (m_nElements == 0)
 	  return NULL;
 	if (m_vt->m_sequenceLength && m_nElements > m_vt->m_sequenceLength)
-	  return esprintf("Too many elements (%u) in bounded sequence (%u)",
+	  return esprintf("Too many elements (%zu) in bounded sequence (%zu)",
 			  m_nElements, m_vt->m_sequenceLength);
       }
       switch (m_vt->m_baseType) {
@@ -591,9 +591,9 @@ namespace OCPI {
 	case OA::OCPI_none: case OA::OCPI_scalar_type_limit:;
 	}
       if (m_vt->m_baseType == OA::OCPI_Struct) {
-	unsigned nElements = m_nTotal * m_vt->m_nMembers;
+	size_t nElements = m_nTotal * m_vt->m_nMembers;
 	m_struct = m_structNext = new Value *[nElements];
-	for (unsigned n = 0; n < nElements; n++)
+	for (size_t n = 0; n < nElements; n++)
 	  m_struct[n] = 0;
       } else if (m_vt->m_baseType == OA::OCPI_Type) {
 	// This mutex/static ugliness is to supply an argument to the default constructor of Value
@@ -623,7 +623,7 @@ namespace OCPI {
       if (m_vt->m_isSequence) {
 	// Figure out how many elements in the sequence
 	m_nElements = 0;
-	unsigned len;
+	size_t len;
 	do {
 	  if ((err = doElement(tmp, stop, start, end)))
 	    return err;
@@ -659,8 +659,8 @@ namespace OCPI {
     }
     const char *Value::
     parseDimension(const char *unparsed, const char *stop,
-		   unsigned nseq, unsigned dim, unsigned offset, unsigned nItems) {
-      unsigned
+		   unsigned nseq, size_t dim, size_t offset, size_t nItems) {
+      size_t
 	nextDim = dim + 1,
 	dimension = m_vt->m_arrayDimensions[dim],
 	skip = nItems/dimension;
@@ -706,7 +706,7 @@ namespace OCPI {
     }
     // A single value
     const char *Value::
-    parseValue(const char *start, const char *end, unsigned nSeq, unsigned nArray) {
+    parseValue(const char *start, const char *end, unsigned nSeq, size_t nArray) {
       const char *err;
       switch (m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)			        \
@@ -796,14 +796,14 @@ namespace OCPI {
 #endif
 
 bool Value::
-unparseDimension(std::string &s, unsigned nseq, unsigned dim, unsigned offset, unsigned nItems,
+unparseDimension(std::string &s, unsigned nseq, size_t dim, size_t offset, size_t nItems,
 		 char comma) const {
-  unsigned
+  size_t
     nextDim = dim + 1,
     dimension = m_vt->m_arrayDimensions[dim],
     skip = nItems/dimension;
   bool prevNull = false, allNull = true;
-  unsigned length = 0;
+  size_t length = 0;
   std::string v;
   for (unsigned n = 0; n < m_vt->m_arrayDimensions[dim]; n++) {
     bool thisNull;
@@ -876,7 +876,7 @@ void Value::unparse(std::string &s, bool append, char comma) const {
 }
 
 bool Value::
-unparseValue(std::string &s, unsigned nSeq, unsigned nArray, char comma) const {
+unparseValue(std::string &s, unsigned nSeq, size_t nArray, char comma) const {
   switch (m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(sca,c,u,b,run,pretty,storage)     		 \
   case OA::OCPI_##pretty:		        			 \
@@ -905,7 +905,7 @@ unparseBool(std::string &s, bool val) const {
 }
 bool Value::
 unparseChar(std::string &s, char argVal) const {
-  uint8_t val = argVal & 0xff;
+  uint8_t val = (uint8_t)(argVal & 0xff);
   if (isprint(val)) {
     switch (val) {
     case '\\':
@@ -932,9 +932,9 @@ unparseChar(std::string &s, char argVal) const {
     case '\f': c = 'f'; break;
     case '\a': c = 'a'; break;
     default:
-	s += '0' + ((val >> 6) & 7);
-	s += '0' + ((val >> 3) & 7);
-	c = '0' + (val & 7);
+      s += (char)('0' + ((val >> 6) & 7));
+      s += (char)('0' + ((val >> 3) & 7));
+      c = (char)('0' + (val & 7));
     }
     s += c;
   }
@@ -1055,8 +1055,8 @@ unparseEnum(std::string &s, EnumValue val) const {
   return val == 0;
 }
 void Value::
-generateDimension(unsigned nseq, unsigned dim, unsigned offset, unsigned nItems) {
-  unsigned
+generateDimension(unsigned nseq, size_t dim, size_t offset, size_t nItems) {
+  size_t
     nextDim = dim + 1,
     dimension = m_vt->m_arrayDimensions[dim],
     skip = nItems/dimension;
@@ -1096,7 +1096,7 @@ void Value::generate() {
 
 // Generate a random value for this type
 void Value::
-generateValue(unsigned nSeq, unsigned nArray) {
+generateValue(unsigned nSeq, size_t nArray) {
   switch (m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)  \
     case OA::OCPI_##pretty:			    \
@@ -1118,35 +1118,35 @@ generateBool() {
 }
 char Value::
 generateChar() {
-  return random();
+  return (char)random();
 }
 double Value::
 generateDouble() {
-  return myRandom();
+  return (double)myRandom();
 }
 float Value::
 generateFloat() {
-  return myRandom();
+  return (float)myRandom();
 }
 int16_t Value::
 generateShort() {
-  return myRandom();
+  return (int16_t)myRandom();
 }
 int32_t Value::
 generateLong() {
-  return myRandom();
+  return (int32_t)myRandom();
 }
 uint8_t Value::
 generateUChar() {
-  return random();
+  return (uint8_t)random();
 }
 uint32_t Value::
 generateULong() {
-  return myRandom();
+  return (uint32_t)myRandom();
 }
 uint16_t Value::
 generateUShort() {
-  return myRandom();
+  return (uint16_t)myRandom();
 }
 int64_t Value::
 generateLongLong() {
@@ -1159,9 +1159,9 @@ generateULongLong() {
 OA::CharP Value::
 generateString() {
   char *cp = m_stringNext;
-  for (unsigned len = random() % (m_vt->m_stringLength ? m_vt->m_stringLength + 1 : testMaxStringLength);
+  for (size_t len = random() % (m_vt->m_stringLength ? m_vt->m_stringLength + 1 : testMaxStringLength);
        len; len--)
-    *m_stringNext++ = random() % (0177 - 036) + 036;
+    *m_stringNext++ = (char)(random() % (0177 - 036) + 036);
   *m_stringNext++ = 0;
   return cp;
 }
@@ -1184,7 +1184,7 @@ generateType() {
 }
 EnumValue Value::
 generateEnum() {
-  return random() % m_vt->m_nEnums;
+  return (EnumValue)(random() % m_vt->m_nEnums);
 }
 const char *Value::getValue(ExprValue &val) {
   val.isNumber = true;

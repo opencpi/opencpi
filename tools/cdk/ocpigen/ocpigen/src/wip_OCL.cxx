@@ -54,7 +54,7 @@ namespace OU = OCPI::Util;
 static const char *
 upperdup(const char *s) {
   char *upper = (char *)malloc(strlen(s) + 1);
-  for (char *u = upper; (*u++ = toupper(*s)); s++)
+  for (char *u = upper; (*u++ = (char)toupper(*s)); s++)
     ;
   return upper;
 }
@@ -67,17 +67,17 @@ static const char *oclTypes[] = {"none",
   "uint32_t", "uint16_t", "int64_t", "uint64_t", "OCLChar" };
 
 static void
-printMember(FILE *f, OU::Member *t, const char *prefix, unsigned &offset, unsigned &pad)
+printMember(FILE *f, OU::Member *t, const char *prefix, size_t &offset, unsigned &pad)
 {
-  unsigned rem = offset & (t->m_align - 1);
+  size_t rem = offset & (t->m_align - 1);
   if (rem)
-    fprintf(f, "%s  char         pad%u_[%u];\n",
+    fprintf(f, "%s  char         pad%u_[%zu];\n",
 	    prefix, pad++, t->m_align - rem);
   offset = roundup(offset, t->m_align);
   if (t->m_isSequence) {
     fprintf(f, "%s  uint32_t     %s_length;\n", prefix, t->m_name.c_str());
     if (t->m_align > sizeof(uint32_t))
-      fprintf(f, "%s  char         pad%u_[%u];\n",
+      fprintf(f, "%s  char         pad%u_[%zu];\n",
 	      prefix, pad++, t->m_align - (unsigned)sizeof(uint32_t));
     offset += t->m_align;
   }
@@ -85,8 +85,8 @@ printMember(FILE *f, OU::Member *t, const char *prefix, unsigned &offset, unsign
   if (t->m_baseType == OA::OCPI_String)
     fprintf(f, "[%lu]", roundup(t->m_stringLength + 1, 4));
   if (t->m_isSequence || t->m_arrayRank)
-    fprintf(f, "[%u]", t->m_sequenceLength);
-  fprintf(f, "; // offset %u, 0x%x\n", offset, offset);
+    fprintf(f, "[%zu]", t->m_sequenceLength);
+  fprintf(f, "; // offset %zu, 0x%zx\n", offset, offset);
   offset += t->m_nBytes;
 }
 
@@ -97,7 +97,7 @@ methodName(Worker *w, const char *method, const char *&mName) {
     mName = method;
     return 0;
   }
-  unsigned length =
+  size_t length =
     strlen(w->implName) + strlen(method) + strlen(pat) + 1;
   char c, *s = (char *)malloc(length);
   mName = s;
@@ -116,7 +116,7 @@ methodName(Worker *w, const char *method, const char *&mName) {
 	  s++;
 	break;
       case 'M':
-	*s++ = toupper(method[0]);
+	*s++ = (char)toupper(method[0]);
 	strcpy(s, method + 1);
 	while (*s)
 	  s++;
@@ -127,7 +127,7 @@ methodName(Worker *w, const char *method, const char *&mName) {
 	  s++;
 	break;
       case 'W':
-	*s++ = toupper(w->implName[0]);
+	*s++ = (char)toupper(w->implName[0]);
 	strcpy(s, w->implName + 1);
 	while (*s)
 	  s++;
@@ -148,8 +148,9 @@ methodName(Worker *w, const char *method, const char *&mName) {
 
 */
 static void
-emitStructOCL(FILE *f, unsigned nMembers, OU::Member *members, const char *indent) {
-  unsigned align = 0, pad = 0;
+emitStructOCL(FILE *f, size_t nMembers, OU::Member *members, const char *indent) {
+  size_t align = 0;
+  unsigned pad = 0;
   for (unsigned n = 0; n < nMembers; n++, members++)
     printMember(f, members, indent, align, pad);
 }
@@ -183,13 +184,14 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
             " */\n"
             "typedef struct {\n",
             w->implName);
-    unsigned pad = 0, align = 0;
+    size_t align = 0;
+    unsigned pad = 0;
     for (PropertiesIter pi = w->ctl.properties.begin(); pi != w->ctl.properties.end(); pi++) {
       OU::Property *p = *pi;
       if (p->m_isSequence) {
         fprintf(f, "  uint32_t %s_length;\n", p->m_name.c_str());
         if (p->m_align > sizeof(uint32_t))
-          fprintf(f, "  char pad%u_[%u];\n",
+          fprintf(f, "  char pad%u_[%zu];\n",
                   pad++, p->m_align - (unsigned)sizeof(uint32_t));
         align += p->m_align;
       }
@@ -200,7 +202,7 @@ emitImplOCL(Worker *w, const char *outDir, const char *library) {
         emitStructOCL(f, p->m_nMembers, p->m_members, "  ");
         fprintf(f, "  } %s", p->m_name.c_str());
         if (p->m_isSequence)
-          fprintf(f, "[%u]", p->m_sequenceLength);
+          fprintf(f, "[%zu]", p->m_sequenceLength);
         fprintf(f, ";\n");
       } else
         printMember(f, p, "", align, pad);

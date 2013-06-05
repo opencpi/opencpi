@@ -138,7 +138,7 @@ namespace OCPI {
       /**********************************
        * Get the port count
        *********************************/
-      OCPI::OS::uint32_t getPortCount();
+      PortOrdinal getPortCount();
 
       /**********************************
        * Get the port set meta-data
@@ -216,7 +216,7 @@ namespace OCPI {
      ****
      *********************************/
     inline TransferController* PortSet::getTxController(){return m_transferController;}
-    inline OCPI::OS::uint32_t PortSet::getPortCount(){return m_data.portCount;}
+    inline PortOrdinal PortSet::getPortCount(){return m_data.portCount;}
     inline OCPI::OS::uint32_t PortSet::getBufferCount(){return m_data.psMetaData->bufferCount;}
     inline OCPI::OS::uint32_t PortSet::getBufferLength(){return m_data.psMetaData->bufferLength;}
     inline bool PortSet::isOutput(){return m_data.psMetaData->output;}
